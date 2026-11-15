@@ -39,8 +39,6 @@
 #include <pmmintrin.h>
 #endif
 
-RaycastOcclusionCull* RaycastOcclusionCull::raycast_singleton = nullptr;
-
 void RaycastOcclusionCull::RaycastHZBuffer::clear()
 {
 	HZBuffer::clear();
@@ -179,20 +177,30 @@ RaycastOcclusionCull::RaycastHZBuffer::~RaycastHZBuffer()
 	}
 }
 
-bool RaycastOcclusionCull::is_occluder(RID p_rid) { return occluder_owner.owns(p_rid); }
+bool RaycastOcclusionCull::is_occluder(RID p_rid)
+{
+	ERR_FAIL_NULL_V(data, false);
+	return data->occluder_owner.owns(p_rid);
+}
 
-RID RaycastOcclusionCull::occluder_allocate() { return occluder_owner.allocate_rid(); }
+RID RaycastOcclusionCull::occluder_allocate()
+{
+	ERR_FAIL_NULL_V(data, RID());
+	return data->occluder_owner.allocate_rid();
+}
 
 void RaycastOcclusionCull::occluder_initialize(RID p_occluder)
 {
+	ERR_FAIL_NULL(data);
 	Occluder* occluder = memnew(Occluder);
-	occluder_owner.initialize_rid(p_occluder, occluder);
+	data->occluder_owner.initialize_rid(p_occluder, occluder);
 }
 
 void RaycastOcclusionCull::occluder_set_mesh(
 	RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices)
 {
-	Occluder* occluder = occluder_owner.get_or_null(p_occluder);
+	ERR_FAIL_NULL(data);
+	Occluder* occluder = data->occluder_owner.get_or_null(p_occluder);
 	ERR_FAIL_NULL(occluder);
 
 	occluder->vertices = p_vertices;
@@ -201,8 +209,8 @@ void RaycastOcclusionCull::occluder_set_mesh(
 	for (const InstanceID& E : occluder->users) {
 		RID scenario_rid = E.scenario;
 		RID instance_rid = E.instance;
-		ERR_CONTINUE(!scenarios.has(scenario_rid));
-		Scenario& scenario = scenarios[scenario_rid];
+		ERR_CONTINUE(!data->scenarios.has(scenario_rid));
+		Scenario& scenario = data->scenarios[scenario_rid];
 		ERR_CONTINUE(!scenario.instances.has(instance_rid));
 
 		if (!scenario.dirty_instances.has(instance_rid)) {
@@ -214,31 +222,35 @@ void RaycastOcclusionCull::occluder_set_mesh(
 
 void RaycastOcclusionCull::free_occluder(RID p_occluder)
 {
-	Occluder* occluder = occluder_owner.get_or_null(p_occluder);
+	ERR_FAIL_NULL(data);
+	Occluder* occluder = data->occluder_owner.get_or_null(p_occluder);
 	ERR_FAIL_NULL(occluder);
 	memdelete(occluder);
-	occluder_owner.free(p_occluder);
+	data->occluder_owner.free(p_occluder);
 }
 
 void RaycastOcclusionCull::add_scenario(RID p_scenario)
 {
-	ERR_FAIL_COND(scenarios.has(p_scenario));
-	scenarios[p_scenario] = Scenario();
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(data->scenarios.has(p_scenario));
+	data->scenarios[p_scenario] = Scenario();
 }
 
 void RaycastOcclusionCull::remove_scenario(RID p_scenario)
 {
-	Scenario* scenario = scenarios.getptr(p_scenario);
+	ERR_FAIL_NULL(data);
+	Scenario* scenario = data->scenarios.getptr(p_scenario);
 	ERR_FAIL_NULL(scenario);
 	scenario->free();
-	scenarios.erase(p_scenario);
+	data->scenarios.erase(p_scenario);
 }
 
 void RaycastOcclusionCull::scenario_set_instance(
 	RID p_scenario, RID p_instance, RID p_occluder, const Transform3D& p_xform, bool p_enabled)
 {
-	ERR_FAIL_COND(!scenarios.has(p_scenario));
-	Scenario& scenario = scenarios[p_scenario];
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(!data->scenarios.has(p_scenario));
+	Scenario& scenario = data->scenarios[p_scenario];
 
 	if (!scenario.instances.has(p_instance)) {
 		scenario.instances[p_instance] = OccluderInstance();
@@ -255,7 +267,7 @@ void RaycastOcclusionCull::scenario_set_instance(
 	}
 
 	if (instance.occluder != p_occluder) {
-		Occluder* old_occluder = occluder_owner.get_or_null(instance.occluder);
+		Occluder* old_occluder = data->occluder_owner.get_or_null(instance.occluder);
 		if (old_occluder) {
 			old_occluder->users.erase(InstanceID(p_scenario, p_instance));
 		}
@@ -263,7 +275,7 @@ void RaycastOcclusionCull::scenario_set_instance(
 		instance.occluder = p_occluder;
 
 		if (p_occluder.is_valid()) {
-			Occluder* occluder = occluder_owner.get_or_null(p_occluder);
+			Occluder* occluder = data->occluder_owner.get_or_null(p_occluder);
 			ERR_FAIL_NULL(occluder);
 			occluder->users.insert(InstanceID(p_scenario, p_instance));
 		}
@@ -290,14 +302,15 @@ void RaycastOcclusionCull::scenario_set_instance(
 
 void RaycastOcclusionCull::scenario_remove_instance(RID p_scenario, RID p_instance)
 {
-	ERR_FAIL_COND(!scenarios.has(p_scenario));
-	Scenario& scenario = scenarios[p_scenario];
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(!data->scenarios.has(p_scenario));
+	Scenario& scenario = data->scenarios[p_scenario];
 
 	if (scenario.instances.has(p_instance)) {
 		OccluderInstance& instance = scenario.instances[p_instance];
 
 		if (!instance.removed) {
-			Occluder* occluder = occluder_owner.get_or_null(instance.occluder);
+			Occluder* occluder = data->occluder_owner.get_or_null(instance.occluder);
 			if (occluder) {
 				occluder->users.erase(InstanceID(p_scenario, p_instance));
 			}
@@ -378,32 +391,36 @@ void RaycastOcclusionCull::Scenario::_raycast(
 
 void RaycastOcclusionCull::add_buffer(RID p_buffer)
 {
-	ERR_FAIL_COND(buffers.has(p_buffer));
-	buffers[p_buffer] = RaycastHZBuffer();
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(data->buffers.has(p_buffer));
+	data->buffers[p_buffer] = RaycastHZBuffer();
 }
 
 void RaycastOcclusionCull::remove_buffer(RID p_buffer)
 {
-	ERR_FAIL_COND(!buffers.has(p_buffer));
-	buffers.erase(p_buffer);
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(!data->buffers.has(p_buffer));
+	data->buffers.erase(p_buffer);
 }
 
 void RaycastOcclusionCull::buffer_set_scenario(RID p_buffer, RID p_scenario)
 {
-	ERR_FAIL_COND(!buffers.has(p_buffer));
-	ERR_FAIL_COND(p_scenario.is_valid() && !scenarios.has(p_scenario));
-	buffers[p_buffer].scenario_rid = p_scenario;
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(!data->buffers.has(p_buffer));
+	ERR_FAIL_COND(p_scenario.is_valid() && !data->scenarios.has(p_scenario));
+	data->buffers[p_buffer].scenario_rid = p_scenario;
 }
 
 void RaycastOcclusionCull::buffer_set_size(RID p_buffer, const Vector2i& p_size)
 {
-	ERR_FAIL_COND(!buffers.has(p_buffer));
-	buffers[p_buffer].resize(p_size);
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(!data->buffers.has(p_buffer));
+	data->buffers[p_buffer].resize(p_size);
 }
 
 Vector2 RaycastOcclusionCull::_get_jitter(const Rect2& p_viewport_rect, const Size2i& p_buffer_size)
 {
-	if (!_jitter_enabled) {
+	if (!data || !data->_jitter_enabled) {
 		return Vector2();
 	}
 
@@ -479,17 +496,18 @@ Rect2 _get_viewport_rect(const Projection& p_cam_projection)
 void RaycastOcclusionCull::buffer_update(RID p_buffer, const Transform3D& p_cam_transform,
 	const Projection& p_cam_projection, bool p_cam_orthogonal)
 {
-	if (!buffers.has(p_buffer)) {
+	ERR_FAIL_NULL(data);
+	if (!data->buffers.has(p_buffer)) {
 		return;
 	}
 
-	RaycastHZBuffer& buffer = buffers[p_buffer];
+	RaycastHZBuffer& buffer = data->buffers[p_buffer];
 
-	if (buffer.is_empty() || !scenarios.has(buffer.scenario_rid)) {
+	if (buffer.is_empty() || !data->scenarios.has(buffer.scenario_rid)) {
 		return;
 	}
 
-	Scenario& scenario = scenarios[buffer.scenario_rid];
+	Scenario& scenario = data->scenarios[buffer.scenario_rid];
 	scenario.update();
 
 	Rect2 vp_rect = _get_viewport_rect(p_cam_projection);
@@ -509,63 +527,86 @@ void RaycastOcclusionCull::buffer_update(RID p_buffer, const Transform3D& p_cam_
 
 RaycastOcclusionCull::HZBuffer* RaycastOcclusionCull::buffer_get_ptr(RID p_buffer)
 {
-	if (!buffers.has(p_buffer)) {
+	ERR_FAIL_NULL_V(data, nullptr);
+	if (!data->buffers.has(p_buffer)) {
 		return nullptr;
 	}
-	return &buffers[p_buffer];
+	return &data->buffers[p_buffer];
 }
 
 RID RaycastOcclusionCull::buffer_get_debug_texture(RID p_buffer)
 {
-	ERR_FAIL_COND_V(!buffers.has(p_buffer), RID());
-	return buffers[p_buffer].get_debug_texture();
+	ERR_FAIL_NULL_V(data, RID());
+	ERR_FAIL_COND_V(!data->buffers.has(p_buffer), RID());
+	return data->buffers[p_buffer].get_debug_texture();
 }
 
 void RaycastOcclusionCull::set_build_quality(RSE::ViewportOcclusionCullingBuildQuality p_quality)
 {
-	if (build_quality == p_quality) {
+	ERR_FAIL_NULL(data);
+	if (data->build_quality == p_quality) {
 		return;
 	}
 
-	build_quality = p_quality;
+	data->build_quality = p_quality;
 
-	for (KeyValue<RID, Scenario>& K : scenarios) {
+	for (KeyValue<RID, Scenario>& K : data->scenarios) {
 		K.value.dirty = true;
 	}
 }
 
 void RaycastOcclusionCull::_init_embree()
 {
+	ERR_FAIL_NULL(data);
 #ifdef __SSE2__
 	_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
 	_MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
 #endif
 
 	String settings = vformat("threads=%d", MAX(1, OS::get_processor_count() - 2));
-	ebr_device = rtcNewDevice(settings.utf8().ptr());
+	data->ebr_device = rtcNewDevice(settings.utf8().ptr());
 }
 
-RaycastOcclusionCull::~RaycastOcclusionCull()
+void RaycastOcclusionCull::initialize()
 {
-	for (KeyValue<RID, Scenario>& K : scenarios) {
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+	RendererSceneOcclusionCull::bind<RaycastOcclusionCull>();
+}
+
+void RaycastOcclusionCull::finalize()
+{
+	if (!data) {
+		return;
+	}
+
+	RendererSceneOcclusionCull::reset();
+
+	for (KeyValue<RID, Scenario>& K : data->scenarios) {
 		K.value.free();
 	}
+	data->scenarios.clear();
+	data->buffers.clear();
 
-	if (ebr_device != nullptr) {
-		rtcReleaseDevice(ebr_device);
+	if (data->ebr_device != nullptr) {
+		rtcReleaseDevice(data->ebr_device);
+		data->ebr_device = nullptr;
 	}
 
-	raycast_singleton = nullptr;
+	memdelete(data);
+	data = nullptr;
 }
-
-
 
 void RaycastOcclusionCull::Scenario::_update_dirty_instance(int, RID*) {}
 
 void RaycastOcclusionCull::Scenario::update() {}
 
-void RaycastOcclusionCull::Scenario::raycast(RTCRayHit16*, unsigned int const*, unsigned int) const {}
+void RaycastOcclusionCull::Scenario::raycast(
+	RTCRayHit16*, unsigned int const*, unsigned int) const
+{
+}
 
-RaycastOcclusionCull::RaycastOcclusionCull() {}
-
-void RaycastOcclusionCull::RaycastHZBuffer::update_camera_rays(Transform3D const&, Vector3 const&, Vector2 const&, float, bool) {}
+void RaycastOcclusionCull::RaycastHZBuffer::update_camera_rays(
+	Transform3D const&, Vector3 const&, Vector2 const&, float, bool)
+{
+}

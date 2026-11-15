@@ -133,10 +133,6 @@ public:
 	void occluder_set_mesh(
 		RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices);
 
-	/* VISIBILITY NOTIFIER API */
-
-	RendererSceneOcclusionCull* dummy_occlusion_culling = nullptr;
-
 	/* SCENARIO API */
 
 	struct Instance;

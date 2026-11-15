@@ -38,12 +38,11 @@
 
 #include <cfloat> // FLT_MIN, FLT_MAX
 
-class RendererSceneOcclusionCull {
-protected:
-	static RendererSceneOcclusionCull *singleton;
-
+class RendererSceneOcclusionCull final
+{
 public:
-	class HZBuffer {
+	class HZBuffer
+	{
 	protected:
 		LocalVector<float> data;
 		LocalVector<Size2i> sizes;
@@ -206,44 +205,134 @@ public:
 		virtual ~HZBuffer() {}
 	};
 
-	static RendererSceneOcclusionCull *get_singleton() { return singleton; }
-
-	void _print_warning() {
+private:
+	static void _print_warning()
+	{
 		WARN_PRINT_ONCE("Occlusion culling is disabled at build-time.");
 	}
 
-	virtual bool is_occluder(RID p_rid) { return false; }
-	virtual RID occluder_allocate() { return RID(); }
-	virtual void occluder_initialize(RID p_occluder) {}
-	virtual void free_occluder(RID p_occluder) { _print_warning(); }
-	virtual void occluder_set_mesh(RID p_occluder, const PackedVector3Array &p_vertices, const PackedInt32Array &p_indices) { _print_warning(); }
-
-	virtual void add_scenario(RID p_scenario) {}
-	virtual void remove_scenario(RID p_scenario) {}
-	virtual void scenario_set_instance(RID p_scenario, RID p_instance, RID p_occluder, const Transform3D &p_xform, bool p_enabled) { _print_warning(); }
-	virtual void scenario_remove_instance(RID p_scenario, RID p_instance) { _print_warning(); }
-
-	virtual void add_buffer(RID p_buffer) { _print_warning(); }
-	virtual void remove_buffer(RID p_buffer) { _print_warning(); }
-	virtual HZBuffer *buffer_get_ptr(RID p_buffer) {
-		return nullptr;
+	static bool _default_is_occluder(RID p_rid) { return false; }
+	static RID _default_occluder_allocate() { return RID(); }
+	static void _default_occluder_initialize(RID p_occluder) {}
+	static void _default_free_occluder(RID p_occluder) { _print_warning(); }
+	static void _default_occluder_set_mesh(
+		RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices)
+	{
+		_print_warning();
 	}
-	virtual void buffer_set_scenario(RID p_buffer, RID p_scenario) { _print_warning(); }
-	virtual void buffer_set_size(RID p_buffer, const Vector2i &p_size) { _print_warning(); }
-	virtual void buffer_update(RID p_buffer, const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal) {}
 
-	virtual RID buffer_get_debug_texture(RID p_buffer) {
+	static void _default_add_scenario(RID p_scenario) {}
+	static void _default_remove_scenario(RID p_scenario) {}
+	static void _default_scenario_set_instance(RID p_scenario, RID p_instance, RID p_occluder,
+		const Transform3D& p_xform, bool p_enabled)
+	{
+		_print_warning();
+	}
+	static void _default_scenario_remove_instance(RID p_scenario, RID p_instance)
+	{
+		_print_warning();
+	}
+
+	static void _default_add_buffer(RID p_buffer) { _print_warning(); }
+	static void _default_remove_buffer(RID p_buffer) { _print_warning(); }
+	static HZBuffer* _default_buffer_get_ptr(RID p_buffer) { return nullptr; }
+	static void _default_buffer_set_scenario(RID p_buffer, RID p_scenario) { _print_warning(); }
+	static void _default_buffer_set_size(RID p_buffer, const Vector2i& p_size) { _print_warning(); }
+	static void _default_buffer_update(RID p_buffer, const Transform3D& p_cam_transform,
+		const Projection& p_cam_projection, bool p_cam_orthogonal)
+	{
+	}
+
+	static RID _default_buffer_get_debug_texture(RID p_buffer)
+	{
 		_print_warning();
 		return RID();
 	}
 
-	virtual void set_build_quality(RSE::ViewportOcclusionCullingBuildQuality p_quality) {}
+	static void _default_set_build_quality(RSE::ViewportOcclusionCullingBuildQuality p_quality) {}
 
-	RendererSceneOcclusionCull() {
-		singleton = this;
+public:
+	inline static bool (*is_occluder)(RID p_rid) = &_default_is_occluder;
+	inline static RID (*occluder_allocate)() = &_default_occluder_allocate;
+	inline static void (*occluder_initialize)(RID p_occluder) = &_default_occluder_initialize;
+	inline static void (*free_occluder)(RID p_occluder) = &_default_free_occluder;
+	inline static void (*occluder_set_mesh)(RID p_occluder, const PackedVector3Array& p_vertices,
+		const PackedInt32Array& p_indices) = &_default_occluder_set_mesh;
+
+	inline static void (*add_scenario)(RID p_scenario) = &_default_add_scenario;
+	inline static void (*remove_scenario)(RID p_scenario) = &_default_remove_scenario;
+	inline static void (*scenario_set_instance)(RID p_scenario, RID p_instance, RID p_occluder,
+		const Transform3D& p_xform, bool p_enabled) = &_default_scenario_set_instance;
+	inline static void (*scenario_remove_instance)(
+		RID p_scenario, RID p_instance) = &_default_scenario_remove_instance;
+
+	inline static void (*add_buffer)(RID p_buffer) = &_default_add_buffer;
+	inline static void (*remove_buffer)(RID p_buffer) = &_default_remove_buffer;
+	inline static HZBuffer* (*buffer_get_ptr)(RID p_buffer) = &_default_buffer_get_ptr;
+	inline static void (*buffer_set_scenario)(
+		RID p_buffer, RID p_scenario) = &_default_buffer_set_scenario;
+	inline static void (*buffer_set_size)(
+		RID p_buffer, const Vector2i& p_size) = &_default_buffer_set_size;
+	inline static void (*buffer_update)(RID p_buffer, const Transform3D& p_cam_transform,
+		const Projection& p_cam_projection, bool p_cam_orthogonal) = &_default_buffer_update;
+
+	inline static RID (*buffer_get_debug_texture)(RID p_buffer) = &_default_buffer_get_debug_texture;
+
+	inline static void (*set_build_quality)(
+		RSE::ViewportOcclusionCullingBuildQuality p_quality) = &_default_set_build_quality;
+
+	template <typename Impl> static void bind()
+	{
+		is_occluder = &Impl::is_occluder;
+		occluder_allocate = &Impl::occluder_allocate;
+		occluder_initialize = &Impl::occluder_initialize;
+		free_occluder = &Impl::free_occluder;
+		occluder_set_mesh = &Impl::occluder_set_mesh;
+
+		add_scenario = &Impl::add_scenario;
+		remove_scenario = &Impl::remove_scenario;
+		scenario_set_instance = &Impl::scenario_set_instance;
+		scenario_remove_instance = &Impl::scenario_remove_instance;
+
+		add_buffer = &Impl::add_buffer;
+		remove_buffer = &Impl::remove_buffer;
+		buffer_get_ptr = &Impl::buffer_get_ptr;
+		buffer_set_scenario = &Impl::buffer_set_scenario;
+		buffer_set_size = &Impl::buffer_set_size;
+		buffer_update = &Impl::buffer_update;
+
+		buffer_get_debug_texture = &Impl::buffer_get_debug_texture;
+
+		set_build_quality = &Impl::set_build_quality;
 	}
 
-	virtual ~RendererSceneOcclusionCull() {
-		singleton = nullptr;
+	static void reset()
+	{
+		is_occluder = &_default_is_occluder;
+		occluder_allocate = &_default_occluder_allocate;
+		occluder_initialize = &_default_occluder_initialize;
+		free_occluder = &_default_free_occluder;
+		occluder_set_mesh = &_default_occluder_set_mesh;
+
+		add_scenario = &_default_add_scenario;
+		remove_scenario = &_default_remove_scenario;
+		scenario_set_instance = &_default_scenario_set_instance;
+		scenario_remove_instance = &_default_scenario_remove_instance;
+
+		add_buffer = &_default_add_buffer;
+		remove_buffer = &_default_remove_buffer;
+		buffer_get_ptr = &_default_buffer_get_ptr;
+		buffer_set_scenario = &_default_buffer_set_scenario;
+		buffer_set_size = &_default_buffer_set_size;
+		buffer_update = &_default_buffer_update;
+
+		buffer_get_debug_texture = &_default_buffer_get_debug_texture;
+
+		set_build_quality = &_default_set_build_quality;
 	}
+
+	RendererSceneOcclusionCull() = delete;
+	RendererSceneOcclusionCull(const RendererSceneOcclusionCull&) = delete;
+	RendererSceneOcclusionCull& operator=(const RendererSceneOcclusionCull&) = delete;
+	~RendererSceneOcclusionCull() = delete;
 };

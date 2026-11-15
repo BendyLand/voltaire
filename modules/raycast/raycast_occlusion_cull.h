@@ -40,11 +40,15 @@
 
 struct Projection;
 
-class RaycastOcclusionCull : public RendererSceneOcclusionCull {
+class RaycastOcclusionCull final
+{
 	typedef RTCRayHit16 CameraRayTile;
 
 public:
-	class RaycastHZBuffer : public HZBuffer {
+	using HZBuffer = RendererSceneOcclusionCull::HZBuffer;
+
+	class RaycastHZBuffer : public HZBuffer
+	{
 	private:
 		Size2i tile_grid_size;
 
@@ -151,44 +155,59 @@ private:
 		void raycast(CameraRayTile *r_rays, const uint32_t *p_valid_masks, uint32_t p_tile_count) const;
 	};
 
-	static RaycastOcclusionCull *raycast_singleton;
-
 	static const int TILE_SIZE = 4;
 	static const int TILE_RAYS = TILE_SIZE * TILE_SIZE;
 
-	RTCDevice ebr_device = nullptr;
-	RID_PtrOwner<Occluder> occluder_owner;
-	HashMap<RID, Scenario> scenarios;
-	HashMap<RID, RaycastHZBuffer> buffers;
-	RSE::ViewportOcclusionCullingBuildQuality build_quality;
-	bool _jitter_enabled = false;
+public:
+	struct Data
+	{
+		RTCDevice ebr_device = nullptr;
+		RID_PtrOwner<Occluder> occluder_owner;
+		HashMap<RID, Scenario> scenarios;
+		HashMap<RID, RaycastHZBuffer> buffers;
+		RSE::ViewportOcclusionCullingBuildQuality build_quality =
+			RSE::VIEWPORT_OCCLUSION_BUILD_QUALITY_MEDIUM;
+		bool _jitter_enabled = false;
+	};
 
-	void _init_embree();
-	Vector2 _get_jitter(const Rect2 &p_viewport_rect, const Size2i &p_buffer_size);
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
+private:
+	static void _init_embree();
+	static Vector2 _get_jitter(const Rect2& p_viewport_rect, const Size2i& p_buffer_size);
 
 public:
-	virtual bool is_occluder(RID p_rid) override;
-	virtual RID occluder_allocate() override;
-	virtual void occluder_initialize(RID p_occluder) override;
-	virtual void occluder_set_mesh(RID p_occluder, const PackedVector3Array &p_vertices, const PackedInt32Array &p_indices) override;
-	virtual void free_occluder(RID p_occluder) override;
+	static bool is_occluder(RID p_rid);
+	static RID occluder_allocate();
+	static void occluder_initialize(RID p_occluder);
+	static void occluder_set_mesh(
+		RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices);
+	static void free_occluder(RID p_occluder);
 
-	virtual void add_scenario(RID p_scenario) override;
-	virtual void remove_scenario(RID p_scenario) override;
-	virtual void scenario_set_instance(RID p_scenario, RID p_instance, RID p_occluder, const Transform3D &p_xform, bool p_enabled) override;
-	virtual void scenario_remove_instance(RID p_scenario, RID p_instance) override;
+	static void add_scenario(RID p_scenario);
+	static void remove_scenario(RID p_scenario);
+	static void scenario_set_instance(RID p_scenario, RID p_instance, RID p_occluder,
+		const Transform3D& p_xform, bool p_enabled);
+	static void scenario_remove_instance(RID p_scenario, RID p_instance);
 
-	virtual void add_buffer(RID p_buffer) override;
-	virtual void remove_buffer(RID p_buffer) override;
-	virtual HZBuffer *buffer_get_ptr(RID p_buffer) override;
-	virtual void buffer_set_scenario(RID p_buffer, RID p_scenario) override;
-	virtual void buffer_set_size(RID p_buffer, const Vector2i &p_size) override;
-	virtual void buffer_update(RID p_buffer, const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal) override;
+	static void add_buffer(RID p_buffer);
+	static void remove_buffer(RID p_buffer);
+	static HZBuffer* buffer_get_ptr(RID p_buffer);
+	static void buffer_set_scenario(RID p_buffer, RID p_scenario);
+	static void buffer_set_size(RID p_buffer, const Vector2i& p_size);
+	static void buffer_update(RID p_buffer, const Transform3D& p_cam_transform,
+		const Projection& p_cam_projection, bool p_cam_orthogonal);
 
-	virtual RID buffer_get_debug_texture(RID p_buffer) override;
+	static RID buffer_get_debug_texture(RID p_buffer);
 
-	virtual void set_build_quality(RSE::ViewportOcclusionCullingBuildQuality p_quality) override;
+	static void set_build_quality(RSE::ViewportOcclusionCullingBuildQuality p_quality);
 
-	RaycastOcclusionCull();
-	~RaycastOcclusionCull();
+	RaycastOcclusionCull() = delete;
+	RaycastOcclusionCull(const RaycastOcclusionCull&) = delete;
+	RaycastOcclusionCull& operator=(const RaycastOcclusionCull&) = delete;
+	~RaycastOcclusionCull() = delete;
 };

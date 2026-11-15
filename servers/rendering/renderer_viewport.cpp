@@ -1160,7 +1160,7 @@ RID RendererViewport::viewport_get_occluder_debug_texture(RID p_viewport) const
 
 	if (viewport->use_occlusion_culling &&
 		viewport->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_OCCLUDERS) {
-		return RendererSceneOcclusionCull::get_singleton()->buffer_get_debug_texture(p_viewport);
+		return RendererSceneOcclusionCull::buffer_get_debug_texture(p_viewport);
 	}
 	return RID();
 }
@@ -1241,7 +1241,7 @@ void RendererViewport::viewport_set_scenario(RID p_viewport, RID p_scenario)
 
 	viewport->scenario = p_scenario;
 	if (viewport->use_occlusion_culling) {
-		RendererSceneOcclusionCull::get_singleton()->buffer_set_scenario(p_viewport, p_scenario);
+		RendererSceneOcclusionCull::buffer_set_scenario(p_viewport, p_scenario);
 	}
 }
 
@@ -1479,12 +1479,11 @@ void RendererViewport::viewport_set_use_occlusion_culling(
 	viewport->use_occlusion_culling = p_use_occlusion_culling;
 
 	if (viewport->use_occlusion_culling) {
-		RendererSceneOcclusionCull::get_singleton()->add_buffer(p_viewport);
-		RendererSceneOcclusionCull::get_singleton()->buffer_set_scenario(
-			p_viewport, viewport->scenario);
+		RendererSceneOcclusionCull::add_buffer(p_viewport);
+		RendererSceneOcclusionCull::buffer_set_scenario(p_viewport, viewport->scenario);
 	}
 	else {
-		RendererSceneOcclusionCull::get_singleton()->remove_buffer(p_viewport);
+		RendererSceneOcclusionCull::remove_buffer(p_viewport);
 	}
 
 	viewport->occlusion_buffer_dirty = true;
@@ -1506,7 +1505,7 @@ void RendererViewport::viewport_set_occlusion_rays_per_thread(int p_rays_per_thr
 void RendererViewport::viewport_set_occlusion_culling_build_quality(
 	RSE::ViewportOcclusionCullingBuildQuality p_quality)
 {
-	RendererSceneOcclusionCull::get_singleton()->set_build_quality(p_quality);
+	RendererSceneOcclusionCull::set_build_quality(p_quality);
 }
 
 void RendererViewport::viewport_set_mesh_lod_threshold(RID p_viewport, float p_pixels)
@@ -1677,7 +1676,7 @@ bool RendererViewport::free(RID p_rid)
 		sorted_active_viewports_dirty = true;
 
 		if (viewport->use_occlusion_culling) {
-			RendererSceneOcclusionCull::get_singleton()->remove_buffer(p_rid);
+			RendererSceneOcclusionCull::remove_buffer(p_rid);
 		}
 
 		if (_viewport_requires_motion_vectors(viewport)) {

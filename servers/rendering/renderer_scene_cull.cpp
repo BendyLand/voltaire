@@ -169,19 +169,18 @@ bool RendererSceneCull::is_camera(RID p_camera) const { return camera_owner.owns
 
 RID RendererSceneCull::occluder_allocate()
 {
-	return RendererSceneOcclusionCull::get_singleton()->occluder_allocate();
+	return RendererSceneOcclusionCull::occluder_allocate();
 }
 
 void RendererSceneCull::occluder_initialize(RID p_rid)
 {
-	RendererSceneOcclusionCull::get_singleton()->occluder_initialize(p_rid);
+	RendererSceneOcclusionCull::occluder_initialize(p_rid);
 }
 
 void RendererSceneCull::occluder_set_mesh(
 	RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices)
 {
-	RendererSceneOcclusionCull::get_singleton()->occluder_set_mesh(
-		p_occluder, p_vertices, p_indices);
+	RendererSceneOcclusionCull::occluder_set_mesh(p_occluder, p_vertices, p_indices);
 }
 
 /* SCENARIO API */
@@ -506,7 +505,7 @@ void RendererSceneCull::scenario_initialize(RID p_rid)
 	scenario->instance_data.set_page_pool(&instance_data_page_pool);
 	scenario->instance_visibility.set_page_pool(&instance_visibility_data_page_pool);
 
-	RendererSceneOcclusionCull::get_singleton()->add_scenario(p_rid);
+	RendererSceneOcclusionCull::add_scenario(p_rid);
 }
 
 void RendererSceneCull::scenario_set_environment(RID p_scenario, RID p_environment)
@@ -757,7 +756,7 @@ void RendererSceneCull::instance_set_base(RID p_instance, RID p_base)
 		} break;
 		case RSE::INSTANCE_OCCLUDER: {
 			if (scenario && instance->visible) {
-				RendererSceneOcclusionCull::get_singleton()->scenario_remove_instance(
+				RendererSceneOcclusionCull::scenario_remove_instance(
 					instance->scenario->self, p_instance);
 			}
 		} break;
@@ -781,7 +780,7 @@ void RendererSceneCull::instance_set_base(RID p_instance, RID p_base)
 
 		// fix up a specific malfunctioning case before the switch, so it can be handled
 		if (instance->base_type == RSE::INSTANCE_NONE &&
-			RendererSceneOcclusionCull::get_singleton()->is_occluder(p_base)) {
+			RendererSceneOcclusionCull::is_occluder(p_base)) {
 			instance->base_type = RSE::INSTANCE_OCCLUDER;
 		}
 
@@ -897,7 +896,7 @@ void RendererSceneCull::instance_set_base(RID p_instance, RID p_base)
 		} break;
 		case RSE::INSTANCE_OCCLUDER: {
 			if (scenario) {
-				RendererSceneOcclusionCull::get_singleton()->scenario_set_instance(
+				RendererSceneOcclusionCull::scenario_set_instance(
 					scenario->self, p_instance, p_base, instance->transform, instance->visible);
 			}
 		} break;
@@ -979,7 +978,7 @@ void RendererSceneCull::instance_set_scenario(RID p_instance, RID p_scenario)
 		} break;
 		case RSE::INSTANCE_OCCLUDER: {
 			if (instance->visible) {
-				RendererSceneOcclusionCull::get_singleton()->scenario_remove_instance(
+				RendererSceneOcclusionCull::scenario_remove_instance(
 					instance->scenario->self, p_instance);
 			}
 		} break;
@@ -1013,7 +1012,7 @@ void RendererSceneCull::instance_set_scenario(RID p_instance, RID p_scenario)
 			}
 		} break;
 		case RSE::INSTANCE_OCCLUDER: {
-			RendererSceneOcclusionCull::get_singleton()->scenario_set_instance(
+			RendererSceneOcclusionCull::scenario_set_instance(
 				scenario->self, p_instance, instance->base, instance->transform, instance->visible);
 		} break;
 		default: {
@@ -1192,9 +1191,8 @@ void RendererSceneCull::instance_set_visible(RID p_instance, bool p_visible)
 
 	if (instance->base_type == RSE::INSTANCE_OCCLUDER) {
 		if (instance->scenario) {
-			RendererSceneOcclusionCull::get_singleton()->scenario_set_instance(
-				instance->scenario->self, p_instance, instance->base, instance->transform,
-				p_visible);
+			RendererSceneOcclusionCull::scenario_set_instance(instance->scenario->self, p_instance,
+				instance->base, instance->transform, p_visible);
 		}
 	}
 }
@@ -1759,9 +1757,8 @@ void RendererSceneCull::_update_instance(Instance* p_instance) const
 	}
 	else if (p_instance->base_type == RSE::INSTANCE_OCCLUDER) {
 		if (p_instance->scenario) {
-			RendererSceneOcclusionCull::get_singleton()->scenario_set_instance(
-				p_instance->scenario->self, p_instance->self, p_instance->base, *instance_xform,
-				p_instance->visible);
+			RendererSceneOcclusionCull::scenario_set_instance(p_instance->scenario->self,
+				p_instance->self, p_instance->base, *instance_xform, p_instance->visible);
 		}
 	}
 	else if (p_instance->base_type == RSE::INSTANCE_NONE) {
@@ -3522,8 +3519,6 @@ RendererSceneCull::~RendererSceneCull()
 		thread.reset();
 	}
 	scene_cull_result_threads.clear();
-
-	memdelete(dummy_occlusion_culling);
 
 	if (light_culler) {
 		memdelete(light_culler);

@@ -34,8 +34,6 @@
 #include "core/config/engine.h"
 #include "servers/rendering/renderer.h"
 
-RendererSceneOcclusionCull *RendererSceneOcclusionCull::singleton = nullptr;
-
 bool RendererSceneOcclusionCull::HZBuffer::occlusion_jitter_enabled = false;
 
 void RendererSceneOcclusionCull::HZBuffer::clear() {

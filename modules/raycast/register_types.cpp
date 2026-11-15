@@ -35,9 +35,8 @@
 #include "raycast_occlusion_cull.h"
 #include "static_raycaster_embree.h"
 
-RaycastOcclusionCull *raycast_occlusion_cull = nullptr;
-
-void initialize_raycast_module(ModuleInitializationLevel p_level) {
+void initialize_raycast_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
@@ -46,15 +45,16 @@ void initialize_raycast_module(ModuleInitializationLevel p_level) {
 	LightmapRaycasterEmbree::make_default_raycaster();
 	StaticRaycasterEmbree::make_default_raycaster();
 #endif
-	raycast_occlusion_cull = memnew(RaycastOcclusionCull);
+	RaycastOcclusionCull::initialize();
 }
 
-void uninitialize_raycast_module(ModuleInitializationLevel p_level) {
+void uninitialize_raycast_module(ModuleInitializationLevel p_level)
+{
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
-	memdelete(raycast_occlusion_cull);
+	RaycastOcclusionCull::finalize();
 #ifdef TOOLS_ENABLED
 	StaticRaycasterEmbree::free();
 #endif
