@@ -48,9 +48,11 @@ void ProjectManager::initialize(RID p_viewport_rid, Size2i p_size)
 	// 1. Allocate or reuse the root Viewport & Canvas directly on the Renderer
 	if (p_viewport_rid.is_valid()) {
 		data->viewport_rid = p_viewport_rid;
+		data->owns_viewport = false;
 	}
 	else {
 		data->viewport_rid = Renderer::viewport_create();
+		data->owns_viewport = true;
 	}
 
 	data->canvas_rid = Renderer::canvas_create();
@@ -78,7 +80,34 @@ void ProjectManager::initialize(RID p_viewport_rid, Size2i p_size)
 	data->buttons.push_back({"Support", Rect2(), &ProjectManager::_open_donate_page, false});
 
 	_initialized = true;
+	data->needs_redraw = false;
 	process_and_draw();
+}
+
+void ProjectManager::poll()
+{
+	if (!data) {
+		return;
+	}
+
+	if (DisplayServer::get_singleton()) {
+		Size2i ds_size =
+			DisplayServer::get_singleton()->window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
+		if (ds_size.x > 0 && ds_size.y > 0 && ds_size != data->window_size) {
+			data->window_size = ds_size;
+			Renderer::viewport_set_size(
+				data->viewport_rid, data->window_size.x, data->window_size.y);
+			Renderer::viewport_attach_to_screen(data->viewport_rid,
+				Rect2(0, 0, data->window_size.x, data->window_size.y),
+				DisplayServerEnums::MAIN_WINDOW_ID);
+			data->needs_redraw = true;
+		}
+	}
+
+	if (data->needs_redraw) {
+		data->needs_redraw = false;
+		process_and_draw();
+	}
 }
 
 void ProjectManager::process_and_draw()
@@ -185,6 +214,9 @@ void ProjectManager::finalize()
 	}
 	if (data->canvas_rid.is_valid()) {
 		Renderer::free_rid(data->canvas_rid);
+	}
+	if (data->owns_viewport && data->viewport_rid.is_valid()) {
+		Renderer::free_rid(data->viewport_rid);
 	}
 	memdelete(data);
 	data = nullptr;

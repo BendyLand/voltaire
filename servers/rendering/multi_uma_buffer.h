@@ -314,6 +314,11 @@ class MultiUmaBuffer : public MultiUmaBufferBase
 				buffer = RD::vertex_buffer_create(
 					info.size_bytes, Vector<uint8_t>(), RD::BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT);
 				break;
+			case MultiUmaBufferType::UNIFORM:
+			default:
+				buffer = RD::uniform_buffer_create(
+					info.size_bytes, Vector<uint8_t>(), RD::BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT);
+				break;
 			}
 			buffers.push_back(buffer);
 		}

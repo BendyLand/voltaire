@@ -3944,80 +3944,68 @@ int Main::start()
 	}
 #endif
 
-	MainLoop* main_loop = memnew(SceneTree);
+	SceneTree* scene_tree = memnew(SceneTree);
+    if (!script.is_empty()) {
+        memdelete(scene_tree);
+        return EXIT_FAILURE;
+    }
 
-	if (!script.is_empty()) {
-		return EXIT_FAILURE;
-	}
+    if (!scene_tree) {
+        ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
+    }
 
-	if (!main_loop && main_loop_type.is_empty()) {
-		main_loop_type = "SceneTree";
-	}
+    OS::set_main_loop(scene_tree);
 
-	if (!main_loop) {
-		memdelete(main_loop);
-		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
-	}
-
-	OS::set_main_loop(main_loop);
-
-	if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_ICON) &&
-		!has_icon && OS::get_bundle_icon_path().is_empty()) {
-		Ref<Image> icon = memnew(Image(app_icon_png));
-		DisplayServer::get_singleton()->set_icon(icon);
-	}
+    if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_ICON) &&
+        !has_icon && OS::get_bundle_icon_path().is_empty()) {
+        Ref<Image> icon = memnew(Image(app_icon_png));
+        DisplayServer::get_singleton()->set_icon(icon);
+    }
 
 #ifdef MACOS_ENABLED
-	// TODO: Used to fix full-screen splash drawing on macOS, processing events before main loop is
-	// fully initialized cause issues on Wayland, and has no effect on other platforms.
-	if (minimum_time_msec) {
-		int64_t minimum_time = 1000 * minimum_time_msec;
-		uint64_t prev_time = OS::get_ticks_usec();
-		while (minimum_time > 0) {
-			DisplayServer::get_singleton()->process_events();
-			O S::get_singleton()->delay_usec(100);
+    // TODO: Used to fix full-screen splash drawing on macOS, processing events before main loop is
+    // fully initialized cause issues on Wayland, and has no effect on other platforms.
+    if (minimum_time_msec) {
+        int64_t minimum_time = 1000 * minimum_time_msec;
+        uint64_t prev_time = OS::get_ticks_usec();
+        while (minimum_time > 0) {
+            DisplayServer::get_singleton()->process_events();
+            OS::get_singleton()->delay_usec(100);
 
-			uint64_t next_time = OS::get_ticks_usec();
-			minimum_time -= (next_time - prev_time);
-			prev_time = next_time;
-		}
-	}
-	else {
-		DisplayServer::get_singleton()->process_events();
-	}
+            uint64_t next_time = OS::get_ticks_usec();
+            minimum_time -= (next_time - prev_time);
+            prev_time = next_time;
+        }
+    }
+    else {
+        DisplayServer::get_singleton()->process_events();
+    }
 #endif
 
-	OS::benchmark_end_measure("Startup", "Main::Start");
-	OS::benchmark_dump();
-	Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
-	SceneTree* scene_tree = memnew(SceneTree);
+    OS::benchmark_end_measure("Startup", "Main::Start");
+    OS::benchmark_dump();
 
-	if (!script.is_empty()) {
-		memdelete(scene_tree);
-		return EXIT_FAILURE;
-	}
+    Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
+    scene_tree->initialize();
 
-	if (!scene_tree) {
-		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
-	}
-
-	OS::set_main_loop(scene_tree);
-	scene_tree->initialize();
-
-	Window* root = scene_tree->get_root();
+    Window* root = scene_tree->get_root();
     if (root) {
         root->show();
         Size2i win_size = root->get_size();
+        if ((win_size.x <= 0 || win_size.y <= 0) && DisplayServer::get_singleton()) {
+            win_size = DisplayServer::get_singleton()->window_get_size(
+                DisplayServerEnums::MAIN_WINDOW_ID);
+        }
         if (win_size.x <= 0 || win_size.y <= 0) {
             win_size = Size2i(1152, 648);
         }
-        ProjectManager::initialize(root->get_viewport_rid(), win_size);
+        ProjectManager::initialize(RID(), win_size);
     }
-	else {
-		__print_line("Window root failed to be created");
-		return EXIT_FAILURE;
-	}
-	return EXIT_SUCCESS;
+    else {
+        __print_line("Window root failed to be created");
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }
 
 /* Main iteration
@@ -4117,6 +4105,10 @@ bool Main::iteration()
 #endif // NAVIGATION_3D_DISABLED
 
 	Renderer::sync(); // sync if still drawing from previous frames.
+
+	if (ProjectManager::is_initialized()) {
+		ProjectManager::poll();
+	}
 
 	if (DisplayServer::get_singleton()->window_can_draw()) {
 		Renderer::draw(true, scaled_step);
@@ -4287,6 +4279,10 @@ void Main::cleanup(bool p_force)
 	// Sync pending commands that may have been queued from a different thread during ScriptServer
 	// finalization
 	Renderer::sync();
+
+	if (ProjectManager::is_initialized()) {
+		ProjectManager::finalize();
+	}
 
 	// clear global shader variables before scene and other graphics stuff are deinitialized.
 	Renderer::global_shader_parameters_clear();

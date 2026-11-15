@@ -6482,7 +6482,6 @@ void RenderingDeviceDriverVulkan::command_begin_render_pass(CommandBufferID p_cm
 	CommandBufferInfo* command_buffer = (CommandBufferInfo*)(p_cmd_buffer.id);
 	RenderPassInfo* render_pass = (RenderPassInfo*)(p_render_pass.id);
 	Framebuffer* framebuffer = (Framebuffer*)(p_framebuffer.id);
-	// DUMP(framebuffer);
 
 	ERR_FAIL_NULL(command_buffer);
 	ERR_FAIL_COND(command_buffer->vk_command_buffer == VK_NULL_HANDLE);

@@ -579,10 +579,16 @@ public:
     template <typename T>
     static void bind()
     {
+        initialize = &T::initialize;
+        finalize = &T::finalize;
+
         request_polygon = &T::request_polygon;
         free_polygon = &T::free_polygon;
 
         canvas_render_items = &T::canvas_render_items;
+        set_time = &T::set_time;
+        update = &T::update;
+        free = &T::free;
         set_debug_redraw = &T::set_debug_redraw;
         get_pipeline_compilations = &T::get_pipeline_compilations;
 

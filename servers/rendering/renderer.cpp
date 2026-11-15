@@ -2795,13 +2795,23 @@ void Renderer::reflection_probe_set_update_mode(RID p_probe, RSE::ReflectionProb
 
 void Renderer::draw(bool p_swap_buffers, double frame_step)
 {
-    if (viewport) {
-        viewport->draw_viewports(p_swap_buffers);
-    }
+	RendererCompositor::begin_frame(frame_step);
 
-    if (canvas) {
-        canvas->update();
-    }
+	if (RendererUtilities::update_dirty_resources) {
+		RendererUtilities::update_dirty_resources();
+	}
 
-    RendererCompositor::end_frame(p_swap_buffers);
+	if (canvas) {
+		canvas->update();
+	}
+
+	if (viewport) {
+		viewport->draw_viewports(p_swap_buffers);
+	}
+
+	if (RendererCanvasRender::update) {
+		RendererCanvasRender::update();
+	}
+
+	RendererCompositor::end_frame(p_swap_buffers);
 }

@@ -1521,7 +1521,7 @@ _FORCE_INLINE_ static uint32_t _indices_to_primitives(
 void RasterizerCanvasGLES3::_render_batch(
 	Light* p_lights, uint32_t p_index, RenderingServerTypes::RenderInfo* r_render_info)
 {
-	ERR_FAIL_NULL(state.canvas_instance_batches[state.current_batch_index].command);
+	ERR_FAIL_NULL(state.canvas_instance_batches[p_index].command);
 
 	// Used by Polygon and Mesh.
 	static const GLenum prim[5] = {
@@ -3092,7 +3092,6 @@ void RasterizerCanvasGLES3::set_time(double p_time) { state.time = p_time; }
 
 void RasterizerCanvasGLES3::initialize()
 {
-	GLES3::TextureStorage* texture_storage = texture_storage;
 	GLES3::Config* config = GLES3::Config::get_singleton();
 
 	glVertexAttrib4f(RSE::ARRAY_COLOR, 1.0, 1.0, 1.0, 1.0);
@@ -3334,8 +3333,14 @@ void RasterizerCanvasGLES3::finalize()
 	glDeleteBuffers(1, &data.canvas_quad_vertices);
 	glDeleteVertexArrays(1, &data.canvas_quad_array);
 
-	glDeleteBuffers(1, &data.canvas_quad_vertices);
-	glDeleteVertexArrays(1, &data.canvas_quad_array);
+	glDeleteBuffers(1, &data.particle_quad_vertices);
+	glDeleteVertexArrays(1, &data.particle_quad_array);
+
+	glDeleteBuffers(1, &data.ninepatch_vertices);
+	glDeleteBuffers(1, &data.ninepatch_elements);
+
+	glDeleteBuffers(1, &data.indexed_quad_buffer);
+	glDeleteVertexArrays(1, &data.indexed_quad_array);
 
 	GLES3::TextureStorage::canvas_texture_free(default_canvas_texture);
 	memdelete_arr(state.instance_data_array);
@@ -3351,6 +3356,9 @@ void RasterizerCanvasGLES3::finalize()
 	}
 
 	for (uint32_t i = 0; i < state.canvas_instance_data_buffers.size(); i++) {
+		if (state.canvas_instance_data_buffers[i].fence != GLsync()) {
+			glDeleteSync(state.canvas_instance_data_buffers[i].fence);
+		}
 		for (int j = 0; j < state.canvas_instance_data_buffers[i].instance_buffers.size(); j++) {
 			if (state.canvas_instance_data_buffers[i].instance_buffers[j]) {
 				GLES3::Utilities::buffer_free_data(

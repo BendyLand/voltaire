@@ -340,6 +340,8 @@ PolygonID RendererCanvasRenderRD::request_polygon(
 			uint8_t* w = index_buffer.ptrw();
 			memcpy(w, p_indices.ptr(), sizeof(int32_t) * p_indices.size());
 		}
+		pb.index_buffer =
+			RD::index_buffer_create(p_count, RDC::INDEX_BUFFER_FORMAT_UINT32, index_buffer);
 		pb.indices = RD::index_array_create(pb.index_buffer, 0, p_count);
 		pb.primitive_count = p_count;
 	}
@@ -680,6 +682,11 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 		light_count = index;
 	}
 
+	if (light_count > 0) {
+		RD::buffer_update(RendererRD::state.lights_storage_buffer, 0,
+			sizeof(RendererRD::LightUniform) * light_count, &RendererRD::state.light_uniforms[0]);
+	}
+
 	bool use_linear_colors =
 		RendererRD::TextureStorage::render_target_is_using_hdr(p_to_render_target);
 
@@ -741,6 +748,9 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 		state_buffer.shadow_pixel_size = 1.0f / (float)(RendererRD::state.shadow_texture_size);
 
 		state_buffer.flags = use_linear_colors ? CANVAS_FLAGS_CONVERT_ATTRIBUTES_TO_LINEAR : 0;
+
+		RD::buffer_update(RendererRD::state.canvas_state_buffer, 0,
+			sizeof(RendererRD::State::Buffer), &state_buffer);
 	}
 
 	{ // default filter/repeat
@@ -1427,6 +1437,182 @@ void RendererCanvasRenderRD::_render_batch_items(RenderTarget p_to_render_target
 	const Transform2D& p_canvas_transform_inverse, Light* p_lights, bool& r_sdf_used,
 	bool p_to_backbuffer, RenderingServerTypes::RenderInfo* r_render_info)
 {
+	// Record batches
+	{
+		RCR::Item* current_clip = nullptr;
+
+		// First item always forms its own batch.
+		bool batch_broken = false;
+		RendererRD::Batch* current_batch = _new_batch(batch_broken);
+
+		for (int i = 0; i < p_item_count; i++) {
+			RCR::Item* ci = items[i];
+
+			if (ci->final_clip_owner != current_batch->clip) {
+				current_batch = _new_batch(batch_broken);
+				current_batch->clip = ci->final_clip_owner;
+				current_clip = ci->final_clip_owner;
+			}
+
+			RID material =
+				ci->material_owner == nullptr ? ci->material : ci->material_owner->material;
+
+			if (ci->use_canvas_group) {
+				if (ci->canvas_group->mode == RSE::CANVAS_GROUP_MODE_CLIP_AND_DRAW) {
+					material = default_clip_children_material;
+				}
+				else {
+					if (material.is_null()) {
+						if (ci->canvas_group->mode == RSE::CANVAS_GROUP_MODE_CLIP_ONLY) {
+							material = default_clip_children_material;
+						}
+						else {
+							material = default_canvas_group_material;
+						}
+					}
+				}
+			}
+
+			if (material != current_batch->material) {
+				current_batch = _new_batch(batch_broken);
+
+				RendererRD::CanvasMaterialData* material_data = nullptr;
+				if (material.is_valid()) {
+					material_data = static_cast<RendererRD::CanvasMaterialData*>(
+						RendererRD::MaterialStorage::material_get_data(
+							material, RendererRD::MaterialStorage::SHADER_TYPE_2D));
+				}
+
+				current_batch->material = material;
+				current_batch->material_data = material_data;
+			}
+
+			if (ci->repeat_source_item == nullptr || ci->repeat_size == Vector2()) {
+				Transform2D base_transform = p_canvas_transform_inverse * ci->final_transform;
+				_record_item_commands(ci, p_to_render_target, base_transform, current_clip,
+					p_lights, batch_broken, r_sdf_used, current_batch);
+			}
+			else {
+				Point2 start_pos = ci->repeat_size * -(ci->repeat_times / 2);
+				Point2 offset;
+				int repeat_times_x = ci->repeat_size.x ? ci->repeat_times : 0;
+				int repeat_times_y = ci->repeat_size.y ? ci->repeat_times : 0;
+				for (int ry = 0; ry <= repeat_times_y; ry++) {
+					offset.y = start_pos.y + ry * ci->repeat_size.y;
+					for (int rx = 0; rx <= repeat_times_x; rx++) {
+						offset.x = start_pos.x + rx * ci->repeat_size.x;
+						Transform2D base_transform = ci->final_transform;
+						base_transform.columns[2] +=
+							ci->repeat_source_item->final_transform.basis_xform(offset);
+						base_transform = p_canvas_transform_inverse * base_transform;
+						_record_item_commands(ci, p_to_render_target, base_transform, current_clip,
+							p_lights, batch_broken, r_sdf_used, current_batch);
+					}
+				}
+			}
+		}
+	}
+
+	if (RendererRD::state.canvas_instance_batches.is_empty()) {
+		return;
+	}
+
+	// Render batches
+	RID framebuffer;
+	RID fb_uniform_set;
+	bool clear = false;
+	Color clear_color;
+
+	if (p_to_backbuffer) {
+		framebuffer = RendererRD::TextureStorage::render_target_get_rd_backbuffer_framebuffer(
+			p_to_render_target.render_target);
+		fb_uniform_set = RendererRD::TextureStorage::render_target_get_backbuffer_uniform_set(
+			p_to_render_target.render_target);
+	}
+	else {
+		framebuffer = RendererRD::TextureStorage::render_target_get_rd_framebuffer(
+			p_to_render_target.render_target);
+		RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(
+			p_to_render_target.render_target, false);
+
+		if (RendererRD::TextureStorage::render_target_is_clear_requested(
+				p_to_render_target.render_target)) {
+			clear = true;
+			clear_color = RendererRD::TextureStorage::render_target_get_clear_request_color(
+				p_to_render_target.render_target);
+			if (RendererRD::TextureStorage::render_target_is_using_hdr(
+					p_to_render_target.render_target)) {
+				clear_color = clear_color.srgb_to_linear();
+			}
+			RendererRD::TextureStorage::render_target_disable_clear_request(
+				p_to_render_target.render_target);
+		}
+		fb_uniform_set = RendererRD::TextureStorage::render_target_get_framebuffer_uniform_set(
+			p_to_render_target.render_target);
+	}
+
+	if (fb_uniform_set.is_null() || !RD::uniform_set_is_valid(fb_uniform_set)) {
+		fb_uniform_set = _create_base_uniform_set(p_to_render_target.render_target, p_to_backbuffer);
+	}
+
+	RD::FramebufferFormatID fb_format = RD::framebuffer_get_format(framebuffer);
+
+	Vector<Color> clear_colors;
+	if (clear) {
+		clear_colors.push_back(clear_color);
+	}
+	RD::DrawListID draw_list = RD::draw_list_begin(framebuffer,
+		clear ? RD::DRAW_CLEAR_COLOR_0 : RD::DRAW_DEFAULT_ALL, clear_colors, 1.0f, 0, Rect2(),
+		RDC::BreadcrumbMarker::UI_PASS);
+
+	RD::draw_list_bind_uniform_set(draw_list, fb_uniform_set, BASE_UNIFORM_SET);
+	RD::draw_list_bind_uniform_set(
+		draw_list, RendererRD::state.default_transforms_uniform_set, TRANSFORMS_UNIFORM_SET);
+
+	RCR::Item* current_clip = nullptr;
+	RendererRD::state.current_batch_uniform_set = RID();
+
+	for (uint32_t i = 0; i <= RendererRD::state.current_batch_index; i++) {
+		RendererRD::Batch* current_batch = &RendererRD::state.canvas_instance_batches[i];
+		if (current_batch->instance_count == 0) {
+			continue;
+		}
+
+		if (current_clip != current_batch->clip) {
+			current_clip = current_batch->clip;
+			if (current_clip) {
+				RD::draw_list_enable_scissor(draw_list, current_clip->final_clip_rect);
+			}
+			else {
+				RD::draw_list_disable_scissor(draw_list);
+			}
+		}
+
+		RendererRD::CanvasShaderData* shader_data = RendererRD::shader.default_version_data;
+		RendererRD::CanvasMaterialData* material_data = current_batch->material_data;
+		if (material_data) {
+			if (material_data->shader_data->version.is_valid() &&
+				material_data->shader_data->is_valid()) {
+				shader_data = material_data->shader_data;
+				RID uniform_set =
+					RendererRD::TextureStorage::render_target_is_using_hdr(
+						p_to_render_target.render_target)
+						? material_data->uniform_set
+						: material_data->uniform_set_srgb;
+				if (uniform_set.is_valid() && RD::uniform_set_is_valid(uniform_set)) {
+					RD::draw_list_bind_uniform_set(draw_list, uniform_set, MATERIAL_UNIFORM_SET);
+					material_data->set_as_used();
+				}
+			}
+		}
+
+		_render_batch(draw_list, shader_data, fb_format, p_lights, current_batch, r_render_info);
+	}
+
+	RD::draw_list_end();
+
+	RendererRD::state.current_batch_index = 0;
+	RendererRD::state.canvas_instance_batches.clear();
 }
 
 void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, RenderTarget p_render_target,
@@ -2213,6 +2399,39 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 	pipeline_key.lcd_blend = p_batch->has_blend;
 
 	switch (p_batch->command_type) {
+	case RCR::Item::Command::TYPE_RECT:
+	case RCR::Item::Command::TYPE_NINEPATCH: {
+		RendererRD::PushConstant push_constant = p_batch->push_constant();
+
+		pipeline_key.vertex_format_id = RendererRD::shader.quad_vertex_format_id;
+		pipeline =
+			_get_pipeline_specialization_or_ubershader(p_shader_data, pipeline_key, push_constant);
+		RD::draw_list_bind_render_pipeline(p_draw_list, pipeline);
+		if (p_batch->has_blend) {
+			RD::draw_list_set_blend_constants(p_draw_list, p_batch->modulate);
+		}
+
+		RD::draw_list_set_push_constant(p_draw_list, &push_constant, sizeof(push_constant));
+		FixedVector<RID, 1> vb = {p_batch->instance_buffer};
+		FixedVector<uint64_t, 1> vo = {
+			uint64_t(p_batch->start) * sizeof(RendererRD::InstanceData)};
+		RD::draw_list_bind_vertex_buffers_format(
+			p_draw_list, RendererRD::shader.quad_vertex_format_id, 1, vb, vo);
+		RD::draw_list_bind_index_array(p_draw_list, RendererRD::shader.quad_index_array);
+		RD::draw_list_draw(p_draw_list, true, p_batch->instance_count);
+
+		if (r_render_info) {
+			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
+							   [RSE::VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME] +=
+				p_batch->instance_count;
+			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
+							   [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] +=
+				2 * p_batch->instance_count;
+			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
+							   [RSE::VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME]++;
+		}
+	} break;
+
 	case RCR::Item::Command::TYPE_POLYGON: {
 		ERR_FAIL_NULL(p_batch->command);
 		RendererRD::PushConstantAttributes push_constant = p_batch->push_constant_attributes();
@@ -2241,6 +2460,45 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
 							   [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] +=
 				_indices_to_primitives(polygon->primitive, pb->primitive_count);
+			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
+							   [RSE::VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME]++;
+		}
+	} break;
+
+	case RCR::Item::Command::TYPE_PRIMITIVE: {
+		ERR_FAIL_NULL(p_batch->command);
+
+		const RCR::Item::CommandPrimitive* primitive =
+			static_cast<const RCR::Item::CommandPrimitive*>(p_batch->command);
+
+		RendererRD::PushConstant push_constant = p_batch->push_constant();
+		pipeline_key.vertex_format_id = RendererRD::shader.primitive_vertex_format_id;
+		pipeline =
+			_get_pipeline_specialization_or_ubershader(p_shader_data, pipeline_key, push_constant);
+		RD::draw_list_bind_render_pipeline(p_draw_list, pipeline);
+
+		RD::draw_list_set_push_constant(p_draw_list, &push_constant, sizeof(push_constant));
+		FixedVector<RID, 1> vb = {p_batch->instance_buffer};
+		FixedVector<uint64_t, 1> vo = {
+			uint64_t(p_batch->start) * sizeof(RendererRD::InstanceData)};
+		RD::draw_list_bind_vertex_buffers_format(
+			p_draw_list, RendererRD::shader.primitive_vertex_format_id, 1, vb, vo);
+		RD::draw_list_bind_index_array(
+			p_draw_list, primitive_arrays.index_array[MIN(3u, primitive->point_count) - 1]);
+		uint32_t instance_count = p_batch->instance_count;
+		RD::draw_list_draw(p_draw_list, true, instance_count);
+
+		if (r_render_info) {
+			const RSE::PrimitiveType rs_primitive[5] = {RSE::PRIMITIVE_POINTS,
+				RSE::PRIMITIVE_POINTS, RSE::PRIMITIVE_LINES, RSE::PRIMITIVE_TRIANGLES,
+				RSE::PRIMITIVE_TRIANGLES};
+			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
+							   [RSE::VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME] += instance_count;
+			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
+							   [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] +=
+				_indices_to_primitives(
+					rs_primitive[p_batch->primitive_points], p_batch->primitive_points) *
+				instance_count;
 			r_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_CANVAS]
 							   [RSE::VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME]++;
 		}
@@ -2490,7 +2748,432 @@ void RendererCanvasRenderRD::_prepare_batch_texture_info(
 	p_info->texpixel_size = Vector2(1.0 / float(info.size.width), 1.0 / float(info.size.height));
 }
 
-void RendererCanvasRenderRD::initialize() {}
+void RendererCanvasRenderRD::initialize()
+{
+	// preallocate slots for uniform set 3
+	RendererRD::state.batch_texture_uniforms.resize(4);
+
+	{ // shader variants
+		String global_defines;
+		global_defines += "#define MAX_LIGHTS " + itos(MAX_LIGHTS_PER_RENDER) + "\n";
+		global_defines += "\n#define SAMPLERS_BINDING_FIRST_INDEX " +
+						  itos(SAMPLERS_BINDING_FIRST_INDEX) + "\n";
+
+		RendererRD::state.light_uniforms =
+			memnew_arr(RendererRD::LightUniform, MAX_LIGHTS_PER_RENDER);
+		Vector<String> variants;
+		const uint32_t ubershader_iterations = 1;
+		for (uint32_t ubershader = 0; ubershader < ubershader_iterations; ubershader++) {
+			const String base_define = ubershader ? "\n#define UBERSHADER\n" : "";
+			variants.push_back(base_define + ""); // SHADER_VARIANT_QUAD
+			variants.push_back(base_define + "#define USE_NINEPATCH\n"); // SHADER_VARIANT_NINEPATCH
+			variants.push_back(base_define + "#define USE_PRIMITIVE\n"); // SHADER_VARIANT_PRIMITIVE
+			variants.push_back(base_define +
+							   "#define USE_PRIMITIVE\n#define USE_POINT_SIZE\n"); // PRIMITIVE_POINTS
+			variants.push_back(
+				base_define + "#define USE_ATTRIBUTES\n"); // SHADER_VARIANT_ATTRIBUTES
+			variants.push_back(base_define +
+							   "#define USE_ATTRIBUTES\n#define USE_POINT_SIZE\n"); // ATTRIBUTES_POINTS
+		}
+
+		RendererRD::shader.canvas_shader.initialize(variants, global_defines, {}, {});
+
+		RendererRD::shader.default_version_data = memnew(RendererRD::CanvasShaderData);
+		RendererRD::shader.default_version_data->version =
+			RendererRD::shader.canvas_shader.version_create();
+		RendererRD::shader.default_version_data->blend_mode =
+			RendererRD::MaterialStorage::ShaderData::BLEND_MODE_MIX;
+		RendererRD::shader.default_version_rd_shader =
+			RendererRD::shader.default_version_data->get_shader(
+				RendererRD::SHADER_VARIANT_QUAD, false);
+	}
+
+	{
+		// shader compiler
+		ShaderCompiler::DefaultIdentifierActions actions;
+
+		actions.renames["VERTEX"] = "vertex";
+		actions.renames["LIGHT_VERTEX"] = "light_vertex";
+		actions.renames["SHADOW_VERTEX"] = "shadow_vertex";
+		actions.renames["UV"] = "uv";
+		actions.renames["POINT_SIZE"] = "point_size";
+
+		actions.renames["MODEL_MATRIX"] = "model_matrix";
+		actions.renames["CANVAS_MATRIX"] = "canvas_data.canvas_transform";
+		actions.renames["SCREEN_MATRIX"] = "canvas_data.screen_transform";
+		actions.renames["TIME"] = "canvas_data.time";
+		actions.renames["PI"] = String::num(Math::PI);
+		actions.renames["TAU"] = String::num(Math::TAU);
+		actions.renames["E"] = String::num(Math::E);
+		actions.renames["AT_LIGHT_PASS"] = "false";
+		actions.renames["INSTANCE_CUSTOM"] = "instance_custom";
+
+		actions.renames["COLOR"] = "color";
+		actions.renames["NORMAL"] = "normal";
+		actions.renames["NORMAL_MAP"] = "normal_map";
+		actions.renames["NORMAL_MAP_DEPTH"] = "normal_map_depth";
+		actions.renames["TEXTURE"] = "color_texture";
+		actions.renames["TEXTURE_PIXEL_SIZE"] = "read_draw_data_color_texture_pixel_size";
+		actions.renames["NORMAL_TEXTURE"] = "normal_texture";
+		actions.renames["SPECULAR_SHININESS_TEXTURE"] = "specular_texture";
+		actions.renames["SPECULAR_SHININESS"] = "specular_shininess";
+		actions.renames["SCREEN_UV"] = "screen_uv";
+		actions.renames["REGION_RECT"] = "region_rect";
+		actions.renames["SCREEN_PIXEL_SIZE"] = "canvas_data.screen_pixel_size";
+		actions.renames["FRAGCOORD"] = "gl_FragCoord";
+		actions.renames["POINT_COORD"] = "gl_PointCoord";
+		actions.renames["INSTANCE_ID"] = "gl_InstanceIndex";
+		actions.renames["VERTEX_ID"] = "gl_VertexIndex";
+
+		actions.renames["CUSTOM0"] = "custom0";
+		actions.renames["CUSTOM1"] = "custom1";
+
+		actions.renames["LIGHT_POSITION"] = "light_position";
+		actions.renames["LIGHT_DIRECTION"] = "light_direction";
+		actions.renames["LIGHT_IS_DIRECTIONAL"] = "is_directional";
+		actions.renames["LIGHT_COLOR"] = "light_color";
+		actions.renames["LIGHT_ENERGY"] = "light_energy";
+		actions.renames["LIGHT"] = "light";
+		actions.renames["SHADOW_MODULATE"] = "shadow_modulate";
+
+		actions.renames["texture_sdf"] = "texture_sdf";
+		actions.renames["texture_sdf_normal"] = "texture_sdf_normal";
+		actions.renames["sdf_to_screen_uv"] = "sdf_to_screen_uv";
+		actions.renames["screen_uv_to_sdf"] = "screen_uv_to_sdf";
+
+		actions.usage_defines["COLOR"] = "#define COLOR_USED\n";
+		actions.usage_defines["SCREEN_UV"] = "#define SCREEN_UV_USED\n";
+		actions.usage_defines["SCREEN_PIXEL_SIZE"] = "@SCREEN_UV";
+		actions.usage_defines["NORMAL"] = "#define NORMAL_USED\n";
+		actions.usage_defines["NORMAL_MAP"] = "#define NORMAL_MAP_USED\n";
+		actions.usage_defines["SPECULAR_SHININESS"] = "#define SPECULAR_SHININESS_USED\n";
+		actions.usage_defines["POINT_SIZE"] = "#define USE_POINT_SIZE\n";
+		actions.usage_defines["CUSTOM0"] = "#define CUSTOM0_USED\n";
+		actions.usage_defines["CUSTOM1"] = "#define CUSTOM1_USED\n";
+
+		actions.render_mode_defines["skip_vertex_transform"] = "#define SKIP_TRANSFORM_USED\n";
+		actions.render_mode_defines["unshaded"] = "#define MODE_UNSHADED\n";
+		actions.render_mode_defines["light_only"] = "#define MODE_LIGHT_ONLY\n";
+		actions.render_mode_defines["world_vertex_coords"] = "#define USE_WORLD_VERTEX_COORDS\n";
+
+		actions.custom_samplers["TEXTURE"] = "texture_sampler";
+		actions.custom_samplers["NORMAL_TEXTURE"] = "texture_sampler";
+		actions.custom_samplers["SPECULAR_SHININESS_TEXTURE"] = "texture_sampler";
+		actions.base_texture_binding_index = 1;
+		actions.texture_layout_set = MATERIAL_UNIFORM_SET;
+		actions.base_uniform_string = "material.";
+		actions.default_filter = ShaderLanguage::FILTER_LINEAR;
+		actions.default_repeat = ShaderLanguage::REPEAT_DISABLE;
+		actions.base_varying_index = 9;
+
+		actions.global_buffer_array_variable = "global_shader_uniforms.data";
+		actions.instance_uniform_index_variable = "read_draw_data_instance_offset";
+
+		RendererRD::shader.compiler.initialize(actions);
+	}
+
+	{ // shadow rendering
+		Vector<String> versions;
+		versions.push_back("\n#define MODE_SHADOW\n");
+		versions.push_back("\n#define MODE_SHADOW\n#define POSITIONAL_SHADOW\n");
+		versions.push_back("\n#define MODE_SDF\n");
+		shadow_render.shader.initialize(versions);
+
+		{
+			Vector<RD::AttachmentFormat> attachments;
+
+			RD::AttachmentFormat af_color;
+			af_color.format = RDC::DATA_FORMAT_R32_SFLOAT;
+			af_color.usage_flags =
+				RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+			attachments.push_back(af_color);
+
+			RD::AttachmentFormat af_depth;
+			af_depth.format = RDC::DATA_FORMAT_D32_SFLOAT;
+			af_depth.usage_flags = RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+			attachments.push_back(af_depth);
+
+			shadow_render.framebuffer_format = RD::framebuffer_format_create(attachments);
+		}
+
+		{
+			Vector<RD::AttachmentFormat> attachments;
+
+			RD::AttachmentFormat af_color;
+			af_color.format = RDC::DATA_FORMAT_R8_UNORM;
+			af_color.usage_flags = RDC::TEXTURE_USAGE_SAMPLING_BIT |
+								   RDC::TEXTURE_USAGE_STORAGE_BIT |
+								   RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+			attachments.push_back(af_color);
+
+			shadow_render.sdf_framebuffer_format = RD::framebuffer_format_create(attachments);
+		}
+
+		Vector<RDC::VertexAttribute> vf;
+		RDC::VertexAttribute vd;
+		vd.format = RDC::DATA_FORMAT_R32G32B32_SFLOAT;
+		vd.stride = sizeof(float) * 3;
+		vd.location = 0;
+		vd.offset = 0;
+		vf.push_back(vd);
+		shadow_render.vertex_format = RD::vertex_format_create(vf);
+
+		vd.format = RDC::DATA_FORMAT_R32G32_SFLOAT;
+		vd.stride = sizeof(float) * 2;
+		vf.write[0] = vd;
+		shadow_render.sdf_vertex_format = RD::vertex_format_create(vf);
+
+		shadow_render.shader_version = shadow_render.shader.version_create();
+
+		for (int i = 0; i < 2; i++) {
+			RDC::PipelineRasterizationState rs;
+			RDC::PipelineDepthStencilState ds;
+			ds.enable_depth_write = true;
+			ds.enable_depth_test = true;
+			ds.depth_compare_operator = RDC::COMPARE_OP_LESS;
+			shadow_render.render_pipelines[i] = RD::render_pipeline_create(
+				shadow_render.shader.version_get_shader(
+					shadow_render.shader_version, ShadowRenderMode(i)),
+				shadow_render.framebuffer_format, shadow_render.vertex_format,
+				RDC::RENDER_PRIMITIVE_TRIANGLES, rs, RDC::PipelineMultisampleState(), ds,
+				RDC::PipelineColorBlendState::create_disabled(), 0);
+		}
+
+		for (int i = 0; i < 2; i++) {
+			shadow_render.sdf_render_pipelines[i] = RD::render_pipeline_create(
+				shadow_render.shader.version_get_shader(
+					shadow_render.shader_version, SHADOW_RENDER_MODE_SDF),
+				shadow_render.sdf_framebuffer_format, shadow_render.sdf_vertex_format,
+				i == 0 ? RDC::RENDER_PRIMITIVE_TRIANGLES : RDC::RENDER_PRIMITIVE_LINES,
+				RDC::PipelineRasterizationState(), RDC::PipelineMultisampleState(),
+				RDC::PipelineDepthStencilState(), RDC::PipelineColorBlendState::create_disabled(),
+				0);
+		}
+
+		RD::shader_destroy_modules(shadow_render.shader.version_get_shader(
+			shadow_render.shader_version, SHADOW_RENDER_MODE_DIRECTIONAL_SHADOW));
+		RD::shader_destroy_modules(shadow_render.shader.version_get_shader(
+			shadow_render.shader_version, SHADOW_RENDER_MODE_POSITIONAL_SHADOW));
+		RD::shader_destroy_modules(shadow_render.shader.version_get_shader(
+			shadow_render.shader_version, SHADOW_RENDER_MODE_SDF));
+	}
+
+	{ // bindings
+		RendererRD::state.canvas_state_buffer =
+			RD::uniform_buffer_create(sizeof(RendererRD::State::Buffer));
+		RendererRD::state.lights_storage_buffer =
+			RD::storage_buffer_create(sizeof(RendererRD::LightUniform) * MAX_LIGHTS_PER_RENDER);
+
+		RDC::SamplerState shadow_sampler_state;
+		shadow_sampler_state.mag_filter = RDC::SAMPLER_FILTER_NEAREST;
+		shadow_sampler_state.min_filter = RDC::SAMPLER_FILTER_NEAREST;
+		shadow_sampler_state.repeat_u = RDC::SAMPLER_REPEAT_MODE_REPEAT;
+		RendererRD::state.shadow_sampler = RD::sampler_create(shadow_sampler_state);
+	}
+
+	{
+		RendererRD::polygon_buffers.last_id = 1;
+	}
+
+	{ // default index buffer
+		Vector<uint8_t> pv;
+		pv.resize(6 * 2);
+		{
+			uint8_t* w = pv.ptrw();
+			uint16_t* p16 = (uint16_t*)w;
+			p16[0] = 0;
+			p16[1] = 1;
+			p16[2] = 2;
+			p16[3] = 0;
+			p16[4] = 2;
+			p16[5] = 3;
+		}
+		RendererRD::shader.quad_index_buffer =
+			RD::index_buffer_create(6, RDC::INDEX_BUFFER_FORMAT_UINT16, pv);
+		RendererRD::shader.quad_index_array =
+			RD::index_array_create(RendererRD::shader.quad_index_buffer, 0, 6);
+	}
+
+	{
+		Vector<RDC::VertexAttribute> vf;
+		uint32_t offset = 0;
+		RDC::VertexAttribute vd;
+		vd.format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
+		vd.stride = sizeof(RendererRD::InstanceData);
+		vd.frequency = RDC::VERTEX_FREQUENCY_INSTANCE;
+		vd.location = 8;
+		vd.binding = 0;
+		vd.offset = offset;
+		offset += sizeof(float) * 4;
+		vf.push_back(vd); // attrib_A
+
+		vd.location = 9;
+		vd.offset = offset;
+		offset += sizeof(float) * 4;
+		vf.push_back(vd); // attrib_B
+
+		vd.location = 10;
+		vd.offset = offset;
+		offset += sizeof(float) * 4;
+		vf.push_back(vd); // attrib_C
+
+		vd.location = 11;
+		vd.offset = offset;
+		offset += sizeof(float) * 4;
+		vf.push_back(vd); // attrib_D
+
+		vd.location = 12;
+		vd.offset = offset;
+		offset += sizeof(float) * 4;
+		vf.push_back(vd); // attrib_E
+
+		uint32_t attrib_F_index = vf.size();
+		vd.location = 13;
+		vd.offset = offset;
+		offset += sizeof(float) * 4;
+		vf.push_back(vd); // attrib_F (RECT, NINEPATCH)
+
+		vd.format = RDC::DATA_FORMAT_R32G32B32A32_UINT;
+		vd.location = 14;
+		vd.offset = offset;
+		offset += sizeof(uint32_t) * 4;
+		vf.push_back(vd); // attrib_G
+
+		vd.location = 15;
+		vd.offset = offset;
+		offset += sizeof(uint32_t) * 4;
+		vf.push_back(vd); // attrib_H
+
+		// RECT, NINEPATCH
+		RendererRD::shader.quad_vertex_format_id = RD::vertex_format_create(vf);
+
+		// PRIMITIVE
+		vf.write[attrib_F_index].format = RDC::DATA_FORMAT_R32G32B32A32_UINT;
+		RendererRD::shader.primitive_vertex_format_id = RD::vertex_format_create(vf);
+	}
+
+	{ // primitive
+		primitive_arrays.index_array[0] =
+			RD::index_array_create(RendererRD::shader.quad_index_buffer, 0, 1);
+		primitive_arrays.index_array[1] =
+			RD::index_array_create(RendererRD::shader.quad_index_buffer, 0, 2);
+		primitive_arrays.index_array[2] =
+			RD::index_array_create(RendererRD::shader.quad_index_buffer, 0, 3);
+		primitive_arrays.index_array[3] =
+			RD::index_array_create(RendererRD::shader.quad_index_buffer, 0, 6);
+	}
+
+	{
+		// default shadow texture to keep uniform set happy
+		RDC::TextureFormat tf;
+		tf.texture_type = RDC::TEXTURE_TYPE_2D;
+		tf.width = 4;
+		tf.height = 4;
+		tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT;
+		tf.format = RDC::DATA_FORMAT_R32_SFLOAT;
+
+		RendererRD::state.shadow_texture = RD::texture_create(tf, RDD::TextureView());
+	}
+
+	{
+		Vector<RD::Uniform> uniforms;
+		{
+			RD::Uniform u;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.binding = 0;
+			u.append_id(RendererRD::MeshStorage::get_default_rd_storage_buffer());
+			uniforms.push_back(u);
+		}
+
+		RendererRD::state.default_transforms_uniform_set = RD::uniform_set_create(
+			uniforms, RendererRD::shader.default_version_rd_shader, TRANSFORMS_UNIFORM_SET);
+	}
+
+	default_canvas_texture = RendererRD::TextureStorage::canvas_texture_allocate();
+	RendererRD::TextureStorage::canvas_texture_initialize(default_canvas_texture);
+
+	RendererRD::TextureStorage::CanvasTextureInfo info =
+		RendererRD::TextureStorage::canvas_texture_get_info(
+			default_canvas_texture, default_filter, default_repeat, false, false);
+	default_texture_info.diffuse = info.diffuse;
+	default_texture_info.normal = info.normal;
+	default_texture_info.specular = info.specular;
+	default_texture_info.sampler = info.sampler;
+
+	RendererRD::state.shadow_texture_size = 2048;
+
+	RendererRD::MaterialStorage::shader_set_data_request_function(
+		RendererRD::MaterialStorage::SHADER_TYPE_2D, _create_shader_funcs);
+	RendererRD::MaterialStorage::material_set_data_request_function(
+		RendererRD::MaterialStorage::SHADER_TYPE_2D, _create_material_funcs);
+
+	RendererRD::state.time = 0;
+
+	{
+		default_canvas_group_shader = RendererRD::MaterialStorage::shader_allocate();
+		RendererRD::MaterialStorage::shader_initialize(default_canvas_group_shader);
+
+		RendererRD::MaterialStorage::shader_set_code(default_canvas_group_shader, R"(
+// Default CanvasGroup shader.
+
+shader_type canvas_item;
+render_mode unshaded;
+
+uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_nearest;
+
+void fragment() {
+	vec4 c = textureLod(screen_texture, SCREEN_UV, 0.0);
+
+	if (c.a > 0.0001) {
+		c.rgb /= c.a;
+	}
+
+	COLOR *= c;
+}
+)");
+		default_canvas_group_material = RendererRD::MaterialStorage::material_allocate();
+		RendererRD::MaterialStorage::material_initialize(default_canvas_group_material);
+		RendererRD::MaterialStorage::material_set_shader(
+			default_canvas_group_material, default_canvas_group_shader);
+	}
+
+	{
+		default_clip_children_shader = RendererRD::MaterialStorage::shader_allocate();
+		RendererRD::MaterialStorage::shader_initialize(default_clip_children_shader);
+
+		RendererRD::MaterialStorage::shader_set_code(default_clip_children_shader, R"(
+// Default clip children shader.
+
+shader_type canvas_item;
+render_mode unshaded;
+
+uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_nearest;
+
+void fragment() {
+	vec4 c = textureLod(screen_texture, SCREEN_UV, 0.0);
+	COLOR.rgb = c.rgb;
+}
+)");
+		default_clip_children_material = RendererRD::MaterialStorage::material_allocate();
+		RendererRD::MaterialStorage::material_initialize(default_clip_children_material);
+		RendererRD::MaterialStorage::material_set_shader(
+			default_clip_children_material, default_clip_children_shader);
+	}
+
+	{
+		uint32_t cache_size = 1024;
+		rid_set_to_uniform_set.set_capacity(cache_size);
+	}
+
+	{
+		RendererRD::state.max_instances_per_buffer = 16384;
+		RendererRD::state.max_instance_buffer_size =
+			RendererRD::state.max_instances_per_buffer * sizeof(RendererRD::InstanceData);
+		RendererRD::state.canvas_instance_batches.reserve(200);
+		RendererRD::state.instance_buffers.set_vertex_size(
+			0, RendererRD::state.max_instance_buffer_size);
+	}
+}
 
 void RendererCanvasRenderRD::finalize()
 {
@@ -2578,16 +3261,71 @@ void RendererCanvasRenderRD::finalize()
 }
 
 RID RendererCanvasRenderRD::_get_pipeline_specialization_or_ubershader(
-	RendererRD::CanvasShaderData*, RendererRD::PipelineKey&,
-	RendererRD::PushConstant&, RID, void*, unsigned int, RID*)
+	RendererRD::CanvasShaderData* p_shader_data, RendererRD::PipelineKey& r_pipeline_key,
+	RendererRD::PushConstant& r_push_constant, RID p_mesh_instance, void* p_surface,
+	uint32_t p_surface_index, RID* r_vertex_array)
 {
+	r_pipeline_key.ubershader = 0;
+
+	const uint32_t ubershader_iterations = 1;
+	while (r_pipeline_key.ubershader < ubershader_iterations) {
+		if (r_vertex_array != nullptr) {
+			uint64_t input_mask = p_shader_data->get_vertex_input_mask(
+				r_pipeline_key.variant, r_pipeline_key.ubershader);
+			if (p_mesh_instance.is_valid()) {
+				RendererRD::MeshStorage::mesh_instance_surface_get_vertex_arrays_and_format(
+					p_mesh_instance, p_surface_index, input_mask, false, false, *r_vertex_array,
+					r_pipeline_key.vertex_format_id);
+			}
+			else {
+				RendererRD::MeshStorage::mesh_surface_get_vertex_arrays_and_format(p_surface,
+					input_mask, false, false, *r_vertex_array, r_pipeline_key.vertex_format_id);
+			}
+		}
+
+		if (r_pipeline_key.ubershader) {
+			r_push_constant.shader_specialization = r_pipeline_key.shader_specialization;
+			r_pipeline_key.shader_specialization = {};
+		}
+		else {
+			r_push_constant.shader_specialization = {};
+		}
+
+		bool wait_for_compilation = r_pipeline_key.ubershader || ubershader_iterations == 1;
+		RSE::PipelineSource source = RSE::PIPELINE_SOURCE_CANVAS;
+		RID pipeline = p_shader_data->pipeline_hash_map.get_pipeline(
+			r_pipeline_key, r_pipeline_key.hash(), wait_for_compilation, source);
+		if (pipeline.is_valid()) {
+			return pipeline;
+		}
+
+		r_pipeline_key.ubershader++;
+	}
+
 	return RID();
 }
 
 RID RendererRD::CanvasShaderData::get_shader(
-	ShaderVariant, bool) const
+	ShaderVariant p_shader_variant, bool p_ubershader) const
 {
-	return RID();
+	if (version.is_valid()) {
+		uint32_t variant_index = p_shader_variant + (p_ubershader ? SHADER_VARIANT_MAX : 0);
+		MutexLock lock(shader.mutex);
+		return shader.canvas_shader.version_get_shader(version, variant_index);
+	}
+	else {
+		return RID();
+	}
+}
+
+RendererRD::CanvasShaderData::~CanvasShaderData()
+{
+	pipeline_hash_map.clear_pipelines();
+
+	if (version.is_valid()) {
+		MutexLock lock(shader.mutex);
+		shader.canvas_shader.version_free(version);
+	}
 }
 
 void RendererCanvasRenderRD::light_update_shadow(RID p_light, int p_shadow_index,
@@ -2607,6 +3345,72 @@ void RendererCanvasRenderRD::render_sdf(
 {
 }
 
-void RendererRD::CanvasShaderData::set_code(const String& p_code) {}
+void RendererRD::CanvasShaderData::set_code(const String& p_code)
+{
+	code = p_code;
+	ubo_size = 0;
+	uniforms.clear();
+	uses_screen_texture = false;
+	uses_screen_texture_mipmaps = false;
+	uses_sdf = false;
+	uses_time = false;
+	_clear_vertex_input_mask_cache();
+
+	if (code.is_empty()) {
+		return;
+	}
+
+	ShaderCompiler::GeneratedCode gen_code;
+
+	blend_mode = BLEND_MODE_MIX;
+
+	ShaderCompiler::IdentifierActions actions;
+	actions.entry_point_stages["vertex"] = ShaderCompiler::STAGE_VERTEX;
+	actions.entry_point_stages["fragment"] = ShaderCompiler::STAGE_FRAGMENT;
+	actions.entry_point_stages["light"] = ShaderCompiler::STAGE_FRAGMENT;
+
+	actions.render_mode_values["blend_add"] = Pair<int*, int>(&blend_mode, BLEND_MODE_ADD);
+	actions.render_mode_values["blend_mix"] = Pair<int*, int>(&blend_mode, BLEND_MODE_MIX);
+	actions.render_mode_values["blend_sub"] = Pair<int*, int>(&blend_mode, BLEND_MODE_SUB);
+	actions.render_mode_values["blend_mul"] = Pair<int*, int>(&blend_mode, BLEND_MODE_MUL);
+	actions.render_mode_values["blend_premul_alpha"] =
+		Pair<int*, int>(&blend_mode, BLEND_MODE_PREMULTIPLIED_ALPHA);
+	actions.render_mode_values["blend_disabled"] =
+		Pair<int*, int>(&blend_mode, BLEND_MODE_DISABLED);
+
+	actions.usage_flag_pointers["texture_sdf"] = &uses_sdf;
+	actions.usage_flag_pointers["texture_sdf_normal"] = &uses_sdf;
+	actions.usage_flag_pointers["TIME"] = &uses_time;
+
+	actions.uniforms = &uniforms;
+
+	MutexLock lock(shader.mutex);
+
+	Error err = shader.compiler.compile(RSE::SHADER_CANVAS_ITEM, code, &actions, path, gen_code);
+	if (err != OK) {
+		if (version.is_valid()) {
+			shader.canvas_shader.version_free(version);
+			version = RID();
+		}
+		ERR_FAIL_MSG("Shader compilation failed.");
+	}
+
+	uses_screen_texture_mipmaps = gen_code.uses_screen_texture_mipmaps;
+	uses_screen_texture = gen_code.uses_screen_texture;
+
+	pipeline_hash_map.clear_pipelines();
+
+	if (version.is_null()) {
+		version = shader.canvas_shader.version_create(false);
+	}
+
+	shader.canvas_shader.version_set_code(version, gen_code.code, gen_code.uniforms,
+		gen_code.stage_globals[ShaderCompiler::STAGE_VERTEX],
+		gen_code.stage_globals[ShaderCompiler::STAGE_FRAGMENT], gen_code.defines);
+
+	ubo_size = gen_code.uniform_total_size;
+	ubo_offsets = gen_code.uniform_offsets;
+	texture_uniforms = gen_code.texture_uniforms;
+}
 
 

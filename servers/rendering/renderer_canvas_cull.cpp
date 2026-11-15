@@ -2283,7 +2283,12 @@ void RendererCanvasCull::canvas_light_initialize(RID p_rid)
 	clight->light_internal = Renderer::canvas_render->light_create();
 }
 
-void RendererCanvasCull::update() {}
+void RendererCanvasCull::update()
+{
+	while (SelfList<Item>* E = _item_update_list.first()) {
+		_item_update_list.remove(E);
+	}
+}
 
 void RendererCanvasCull::canvas_light_set_mode(RID p_light, RSE::CanvasLightMode p_mode)
 {

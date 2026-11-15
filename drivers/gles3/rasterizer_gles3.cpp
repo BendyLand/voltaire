@@ -29,7 +29,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "rasterizer_gles3.h"
 #include "drivers/gles3/rasterizer_canvas_gles3.h"
 #include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/storage/material_storage.h"
@@ -37,6 +36,7 @@
 #include "drivers/gles3/storage/particles_storage.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
+#include "rasterizer_gles3.h"
 #include "servers/rendering/storage/utilities.h"
 
 #ifdef GLES3_ENABLED
@@ -127,25 +127,35 @@ void RasterizerGLES3::bind_mesh_storage()
 {
 	RendererMeshStorage::mesh_allocate = &GLES3::MeshStorage::mesh_allocate;
 	RendererMeshStorage::mesh_initialize = &GLES3::MeshStorage::mesh_initialize;
-	RendererMeshStorage::mesh_set_blend_shape_count = &GLES3::MeshStorage::mesh_set_blend_shape_count;
+	RendererMeshStorage::mesh_set_blend_shape_count =
+		&GLES3::MeshStorage::mesh_set_blend_shape_count;
 	RendererMeshStorage::mesh_needs_instance = &GLES3::MeshStorage::mesh_needs_instance;
 	RendererMeshStorage::mesh_add_surface = &GLES3::MeshStorage::mesh_add_surface;
-	RendererMeshStorage::mesh_get_blend_shape_count = &GLES3::MeshStorage::mesh_get_blend_shape_count;
+	RendererMeshStorage::mesh_get_blend_shape_count =
+		&GLES3::MeshStorage::mesh_get_blend_shape_count;
 	RendererMeshStorage::mesh_set_blend_shape_mode = &GLES3::MeshStorage::mesh_set_blend_shape_mode;
 	RendererMeshStorage::mesh_get_blend_shape_mode = &GLES3::MeshStorage::mesh_get_blend_shape_mode;
-	RendererMeshStorage::mesh_surface_update_vertex_region = &GLES3::MeshStorage::mesh_surface_update_vertex_region;
-	RendererMeshStorage::mesh_surface_update_attribute_region = &GLES3::MeshStorage::mesh_surface_update_attribute_region;
-	RendererMeshStorage::mesh_surface_update_skin_region = &GLES3::MeshStorage::mesh_surface_update_skin_region;
-	RendererMeshStorage::mesh_surface_update_index_region = &GLES3::MeshStorage::mesh_surface_update_index_region;
+	RendererMeshStorage::mesh_surface_update_vertex_region =
+		&GLES3::MeshStorage::mesh_surface_update_vertex_region;
+	RendererMeshStorage::mesh_surface_update_attribute_region =
+		&GLES3::MeshStorage::mesh_surface_update_attribute_region;
+	RendererMeshStorage::mesh_surface_update_skin_region =
+		&GLES3::MeshStorage::mesh_surface_update_skin_region;
+	RendererMeshStorage::mesh_surface_update_index_region =
+		&GLES3::MeshStorage::mesh_surface_update_index_region;
 	RendererMeshStorage::mesh_surface_set_material = &GLES3::MeshStorage::mesh_surface_set_material;
 	RendererMeshStorage::mesh_surface_get_material = &GLES3::MeshStorage::mesh_surface_get_material;
 	RendererMeshStorage::mesh_get_surface = [](RID p_mesh, int p_surface) {
 		return GLES3::MeshStorage::mesh_get_surface(p_mesh, p_surface);
 	};
-	RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid = &GLES3::MeshStorage::mesh_surface_get_vertex_buffer_rd_rid;
-	RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid = &GLES3::MeshStorage::mesh_surface_get_attribute_buffer_rd_rid;
-	RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid = &GLES3::MeshStorage::mesh_surface_get_skin_buffer_rd_rid;
-	RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid = &GLES3::MeshStorage::mesh_surface_get_index_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid =
+		&GLES3::MeshStorage::mesh_surface_get_vertex_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid =
+		&GLES3::MeshStorage::mesh_surface_get_attribute_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid =
+		&GLES3::MeshStorage::mesh_surface_get_skin_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid =
+		&GLES3::MeshStorage::mesh_surface_get_index_buffer_rd_rid;
 	RendererMeshStorage::mesh_get_surface_count = &GLES3::MeshStorage::mesh_get_surface_count;
 	RendererMeshStorage::mesh_set_custom_aabb = &GLES3::MeshStorage::mesh_set_custom_aabb;
 	RendererMeshStorage::mesh_get_custom_aabb = &GLES3::MeshStorage::mesh_get_custom_aabb;
@@ -159,55 +169,78 @@ void RasterizerGLES3::bind_mesh_storage()
 
 	RendererMeshStorage::mesh_instance_create = &GLES3::MeshStorage::mesh_instance_create;
 	RendererMeshStorage::mesh_instance_free = &GLES3::MeshStorage::mesh_instance_free;
-	RendererMeshStorage::mesh_instance_set_skeleton = &GLES3::MeshStorage::mesh_instance_set_skeleton;
-	RendererMeshStorage::mesh_instance_set_blend_shape_weight = &GLES3::MeshStorage::mesh_instance_set_blend_shape_weight;
-	RendererMeshStorage::mesh_instance_check_for_update = &GLES3::MeshStorage::mesh_instance_check_for_update;
-	RendererMeshStorage::mesh_instance_set_canvas_item_transform = &GLES3::MeshStorage::mesh_instance_set_canvas_item_transform;
+	RendererMeshStorage::mesh_instance_set_skeleton =
+		&GLES3::MeshStorage::mesh_instance_set_skeleton;
+	RendererMeshStorage::mesh_instance_set_blend_shape_weight =
+		&GLES3::MeshStorage::mesh_instance_set_blend_shape_weight;
+	RendererMeshStorage::mesh_instance_check_for_update =
+		&GLES3::MeshStorage::mesh_instance_check_for_update;
+	RendererMeshStorage::mesh_instance_set_canvas_item_transform =
+		&GLES3::MeshStorage::mesh_instance_set_canvas_item_transform;
 	RendererMeshStorage::update_mesh_instances = &GLES3::MeshStorage::update_mesh_instances;
 
 	RendererMeshStorage::_multimesh_allocate = &GLES3::MeshStorage::_multimesh_allocate;
 	RendererMeshStorage::_multimesh_initialize = &GLES3::MeshStorage::_multimesh_initialize;
 	RendererMeshStorage::_multimesh_free = &GLES3::MeshStorage::_multimesh_free;
 	RendererMeshStorage::_multimesh_allocate_data = &GLES3::MeshStorage::_multimesh_allocate_data;
-	RendererMeshStorage::_multimesh_get_instance_count = &GLES3::MeshStorage::_multimesh_get_instance_count;
+	RendererMeshStorage::_multimesh_get_instance_count =
+		&GLES3::MeshStorage::_multimesh_get_instance_count;
 	RendererMeshStorage::_multimesh_set_mesh = &GLES3::MeshStorage::_multimesh_set_mesh;
-	RendererMeshStorage::_multimesh_instance_set_transform = &GLES3::MeshStorage::_multimesh_instance_set_transform;
-	RendererMeshStorage::_multimesh_instance_set_transform_2d = &GLES3::MeshStorage::_multimesh_instance_set_transform_2d;
-	RendererMeshStorage::_multimesh_instance_set_color = &GLES3::MeshStorage::_multimesh_instance_set_color;
-	RendererMeshStorage::_multimesh_instance_set_custom_data = &GLES3::MeshStorage::_multimesh_instance_set_custom_data;
-	RendererMeshStorage::_multimesh_set_custom_aabb = &GLES3::MeshStorage::_multimesh_set_custom_aabb;
-	RendererMeshStorage::_multimesh_get_custom_aabb = &GLES3::MeshStorage::_multimesh_get_custom_aabb;
+	RendererMeshStorage::_multimesh_instance_set_transform =
+		&GLES3::MeshStorage::_multimesh_instance_set_transform;
+	RendererMeshStorage::_multimesh_instance_set_transform_2d =
+		&GLES3::MeshStorage::_multimesh_instance_set_transform_2d;
+	RendererMeshStorage::_multimesh_instance_set_color =
+		&GLES3::MeshStorage::_multimesh_instance_set_color;
+	RendererMeshStorage::_multimesh_instance_set_custom_data =
+		&GLES3::MeshStorage::_multimesh_instance_set_custom_data;
+	RendererMeshStorage::_multimesh_set_custom_aabb =
+		&GLES3::MeshStorage::_multimesh_set_custom_aabb;
+	RendererMeshStorage::_multimesh_get_custom_aabb =
+		&GLES3::MeshStorage::_multimesh_get_custom_aabb;
 	RendererMeshStorage::_multimesh_get_mesh = &GLES3::MeshStorage::_multimesh_get_mesh;
-	RendererMeshStorage::_multimesh_instance_get_transform = &GLES3::MeshStorage::_multimesh_instance_get_transform;
-	RendererMeshStorage::_multimesh_instance_get_transform_2d = &GLES3::MeshStorage::_multimesh_instance_get_transform_2d;
-	RendererMeshStorage::_multimesh_instance_get_color = &GLES3::MeshStorage::_multimesh_instance_get_color;
-	RendererMeshStorage::_multimesh_instance_get_custom_data = &GLES3::MeshStorage::_multimesh_instance_get_custom_data;
+	RendererMeshStorage::_multimesh_instance_get_transform =
+		&GLES3::MeshStorage::_multimesh_instance_get_transform;
+	RendererMeshStorage::_multimesh_instance_get_transform_2d =
+		&GLES3::MeshStorage::_multimesh_instance_get_transform_2d;
+	RendererMeshStorage::_multimesh_instance_get_color =
+		&GLES3::MeshStorage::_multimesh_instance_get_color;
+	RendererMeshStorage::_multimesh_instance_get_custom_data =
+		&GLES3::MeshStorage::_multimesh_instance_get_custom_data;
 	RendererMeshStorage::_multimesh_set_buffer = &GLES3::MeshStorage::_multimesh_set_buffer;
-	RendererMeshStorage::_multimesh_get_command_buffer_rd_rid = &GLES3::MeshStorage::_multimesh_get_command_buffer_rd_rid;
-	RendererMeshStorage::_multimesh_get_buffer_rd_rid = &GLES3::MeshStorage::_multimesh_get_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_command_buffer_rd_rid =
+		&GLES3::MeshStorage::_multimesh_get_command_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_buffer_rd_rid =
+		&GLES3::MeshStorage::_multimesh_get_buffer_rd_rid;
 	RendererMeshStorage::_multimesh_get_buffer = &GLES3::MeshStorage::_multimesh_get_buffer;
-	RendererMeshStorage::_multimesh_set_visible_instances = &GLES3::MeshStorage::_multimesh_set_visible_instances;
-	RendererMeshStorage::_multimesh_get_visible_instances = &GLES3::MeshStorage::_multimesh_get_visible_instances;
+	RendererMeshStorage::_multimesh_set_visible_instances =
+		&GLES3::MeshStorage::_multimesh_set_visible_instances;
+	RendererMeshStorage::_multimesh_get_visible_instances =
+		&GLES3::MeshStorage::_multimesh_get_visible_instances;
 	RendererMeshStorage::_multimesh_get_aabb = &GLES3::MeshStorage::_multimesh_get_aabb;
-	RendererMeshStorage::_multimesh_get_interpolator = &GLES3::MeshStorage::_multimesh_get_interpolator;
+	RendererMeshStorage::_multimesh_get_interpolator =
+		&GLES3::MeshStorage::_multimesh_get_interpolator;
 
 	RendererMeshStorage::skeleton_allocate = &GLES3::MeshStorage::skeleton_allocate;
 	RendererMeshStorage::skeleton_initialize = &GLES3::MeshStorage::skeleton_initialize;
 	RendererMeshStorage::skeleton_free = &GLES3::MeshStorage::skeleton_free;
 	RendererMeshStorage::skeleton_allocate_data = &GLES3::MeshStorage::skeleton_allocate_data;
-	RendererMeshStorage::skeleton_set_base_transform_2d = &GLES3::MeshStorage::skeleton_set_base_transform_2d;
+	RendererMeshStorage::skeleton_set_base_transform_2d =
+		&GLES3::MeshStorage::skeleton_set_base_transform_2d;
 	RendererMeshStorage::skeleton_get_bone_count = &GLES3::MeshStorage::skeleton_get_bone_count;
-	RendererMeshStorage::skeleton_bone_set_transform = &GLES3::MeshStorage::skeleton_bone_set_transform;
-	RendererMeshStorage::skeleton_bone_get_transform = &GLES3::MeshStorage::skeleton_bone_get_transform;
-	RendererMeshStorage::skeleton_bone_set_transform_2d = &GLES3::MeshStorage::skeleton_bone_set_transform_2d;
-	RendererMeshStorage::skeleton_bone_get_transform_2d = &GLES3::MeshStorage::skeleton_bone_get_transform_2d;
-	RendererMeshStorage::skeleton_update_dependency = &GLES3::MeshStorage::skeleton_update_dependency;
+	RendererMeshStorage::skeleton_bone_set_transform =
+		&GLES3::MeshStorage::skeleton_bone_set_transform;
+	RendererMeshStorage::skeleton_bone_get_transform =
+		&GLES3::MeshStorage::skeleton_bone_get_transform;
+	RendererMeshStorage::skeleton_bone_set_transform_2d =
+		&GLES3::MeshStorage::skeleton_bone_set_transform_2d;
+	RendererMeshStorage::skeleton_bone_get_transform_2d =
+		&GLES3::MeshStorage::skeleton_bone_get_transform_2d;
+	RendererMeshStorage::skeleton_update_dependency =
+		&GLES3::MeshStorage::skeleton_update_dependency;
 }
 
-void RasterizerGLES3::end_frame(bool p_swap_buffers)
-{
-	GLES3::Utilities::capture_timestamps_end();
-}
+void RasterizerGLES3::end_frame(bool p_swap_buffers) { GLES3::Utilities::capture_timestamps_end(); }
 
 void RasterizerGLES3::gl_end_frame(bool p_swap_buffers)
 {
@@ -340,153 +373,155 @@ void RasterizerGLES3::initialize()
 	ERR_FAIL_COND_MSG(!glad_loaded, "Error initializing GLAD.");
 #endif // GLAD_ENABLED
 
-    // Print adapter details only AFTER GLAD has populated glGetString
-    Engine::print_header(
-        vformat("OpenGL API %s - Compatibility - Using Device: %s - %s",
-            Renderer::get_video_adapter_api_version(), Renderer::get_video_adapter_vendor(),
-            Renderer::get_video_adapter_name()));
-    if (Engine::get_gpu_index() >= 0) {
-        WARN_PRINT(
-            "The Compatibility renderer does not support overriding the GPU with the --gpu-index "
-            "command line argument. Falling back to the default GPU for OpenGL applications.");
-    }
+	// Print adapter details only AFTER GLAD has populated glGetString
+	Engine::print_header(vformat("OpenGL API %s - Compatibility - Using Device: %s - %s",
+		Renderer::get_video_adapter_api_version(), Renderer::get_video_adapter_vendor(),
+		Renderer::get_video_adapter_name()));
+	if (Engine::get_gpu_index() >= 0) {
+		WARN_PRINT(
+			"The Compatibility renderer does not support overriding the GPU with the --gpu-index "
+			"command line argument. Falling back to the default GPU for OpenGL applications.");
+	}
 
 #ifdef GL_DEBUG_CALLBACK
-    // Setup OpenGL debug callback, via DebugMessageCallbackARB (GLAD or EGL).
+	// Setup OpenGL debug callback, via DebugMessageCallbackARB (GLAD or EGL).
 
 #ifdef GLAD_ENABLED
-    if (RasterizerUtilGLES3::is_gles_over_gl()) {
-        if (OS::is_stdout_verbose()) {
-            if (GLAD_GL_ARB_debug_output) {
-                glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-                glDebugMessageCallbackARB((GLDEBUGPROCARB)_gl_debug_print, nullptr);
-                glEnable(_EXT_DEBUG_OUTPUT);
-            } else {
-                __print_line("OpenGL debugging not supported!");
-            }
-        }
-    }
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (OS::is_stdout_verbose()) {
+			if (GLAD_GL_ARB_debug_output) {
+				glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+				glDebugMessageCallbackARB((GLDEBUGPROCARB)_gl_debug_print, nullptr);
+				glEnable(_EXT_DEBUG_OUTPUT);
+			}
+			else {
+				__print_line("OpenGL debugging not supported!");
+			}
+		}
+	}
 
 #ifdef GL_API_ENABLED
-    if (RasterizerUtilGLES3::is_gles_over_gl()) {
-        if (OS::is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
-            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_ERROR_ARB,
-                _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
-                _EXT_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
-                GL_TRUE);
-            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
-                _EXT_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
-                GL_TRUE);
-            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PORTABILITY_ARB,
-                _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PERFORMANCE_ARB,
-                _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-            glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_OTHER_ARB,
-                _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
-        }
-    }
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (OS::is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_ERROR_ARB,
+				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
+				_EXT_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
+				GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
+				_EXT_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
+				GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PORTABILITY_ARB,
+				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PERFORMANCE_ARB,
+				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_OTHER_ARB,
+				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+		}
+	}
 #endif // GL_API_ENABLED
 #endif // GLAD_ENABLED
 
 #if defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
 #ifdef GLES_API_ENABLED
-    if (!RasterizerUtilGLES3::is_gles_over_gl()) {
-        if (OS::is_stdout_verbose()) {
-            DebugMessageCallbackARB callback =
-                (DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallback");
-            if (!callback) {
-                callback = (DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallbackKHR");
-            }
+	if (!RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (OS::is_stdout_verbose()) {
+			DebugMessageCallbackARB callback =
+				(DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallback");
+			if (!callback) {
+				callback = (DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallbackKHR");
+			}
 
-            if (callback) {
-                __print_line("godot: ENABLING GL DEBUG");
-                glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-                callback((DEBUGPROCARB)_gl_debug_print, nullptr);
-                glEnable(_EXT_DEBUG_OUTPUT);
-            }
-        }
-    }
+			if (callback) {
+				__print_line("godot: ENABLING GL DEBUG");
+				glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+				callback((DEBUGPROCARB)_gl_debug_print, nullptr);
+				glEnable(_EXT_DEBUG_OUTPUT);
+			}
+		}
+	}
 #endif // GLES_API_ENABLED
 #endif // EGL_ENABLED || ANDROID_ENABLED
 
 #endif // GL_DEBUG_CALLBACK
 
-    {
-        // Setup shader cache.
+	{
+		// Setup shader cache.
 
-        String shader_cache_dir = Engine::get_shader_cache_path();
-        if (shader_cache_dir.is_empty()) {
-            shader_cache_dir = "user://";
-        }
-        Ref<DirAccess> da = DirAccess::open(shader_cache_dir);
-        if (da.is_null()) {
-            ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
-                      shader_cache_dir);
-        } else {
-            Error err = da->change_dir("shader_cache");
-            if (err != OK) {
-                err = da->make_dir("shader_cache");
-            }
-            if (err != OK) {
-                ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
-                          shader_cache_dir);
-            } else {
-                shader_cache_dir = shader_cache_dir.path_join("shader_cache");
-                if (!Engine::is_editor_hint()) {
-                    shader_cache_dir = String(); // disable only if not editor
-                }
-                if (!shader_cache_dir.is_empty()) {
-                    ShaderGLES3::set_shader_cache_dir(shader_cache_dir);
-                }
-            }
-        }
-    }
+		String shader_cache_dir = Engine::get_shader_cache_path();
+		if (shader_cache_dir.is_empty()) {
+			shader_cache_dir = "user://";
+		}
+		Ref<DirAccess> da = DirAccess::open(shader_cache_dir);
+		if (da.is_null()) {
+			ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
+					  shader_cache_dir);
+		}
+		else {
+			Error err = da->change_dir("shader_cache");
+			if (err != OK) {
+				err = da->make_dir("shader_cache");
+			}
+			if (err != OK) {
+				ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
+						  shader_cache_dir);
+			}
+			else {
+				shader_cache_dir = shader_cache_dir.path_join("shader_cache");
+				if (!Engine::is_editor_hint()) {
+					shader_cache_dir = String(); // disable only if not editor
+				}
+				if (!shader_cache_dir.is_empty()) {
+					ShaderGLES3::set_shader_cache_dir(shader_cache_dir);
+				}
+			}
+		}
+	}
 
-    // OpenGL needs to be initialized before initializing the Rasterizers
-    config = memnew(GLES3::Config);
-    GLES3::Utilities::initialize();
-    GLES3::TextureStorage::initialize();
-    GLES3::MaterialStorage::initialize();
-    GLES3::MeshStorage::initialize();
-    GLES3::LightStorage::initialize();
-    GLES3::ParticlesStorage::initialize();
-    copy_effects = memnew(GLES3::CopyEffects);
-    cubemap_filter = memnew(GLES3::CubemapFilter);
-    glow = memnew(GLES3::Glow);
-    post_effects = memnew(GLES3::PostEffects);
-    feed_effects = memnew(GLES3::FeedEffects);
-    GLES3::GI::initialize();
-    GLES3::Fog::initialize();
+	// OpenGL needs to be initialized before initializing the Rasterizers
+	config = memnew(GLES3::Config);
+	GLES3::Utilities::initialize();
+	GLES3::TextureStorage::initialize();
+	GLES3::MaterialStorage::initialize();
+	GLES3::MeshStorage::initialize();
+	GLES3::LightStorage::initialize();
+	GLES3::ParticlesStorage::initialize();
+	copy_effects = memnew(GLES3::CopyEffects);
+	cubemap_filter = memnew(GLES3::CubemapFilter);
+	glow = memnew(GLES3::Glow);
+	post_effects = memnew(GLES3::PostEffects);
+	feed_effects = memnew(GLES3::FeedEffects);
+	GLES3::GI::initialize();
+	GLES3::Fog::initialize();
 
-    RasterizerCanvasGLES3::initialize();
-    scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
+	RasterizerCanvasGLES3::initialize();
+	scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
 	printf("[LIFECYCLE 1] Scene allocated: scene=%p, vptr=%p\n", (void*)scene, *(void**)scene);
 	fflush(stdout);
-    RendererTextureStorage::bind<GLES3::TextureStorage>();
-    // Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
-    // TexBlit Shaders
-    GLES3::TextureStorage::_tex_blit_shader_initialize();
+	RendererTextureStorage::bind<GLES3::TextureStorage>();
+	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
+	// TexBlit Shaders
+	GLES3::TextureStorage::_tex_blit_shader_initialize();
 
-    // Disable OpenGL linear to sRGB conversion, because Godot will always do this conversion
-    // itself.
-    if (config->srgb_framebuffer_supported) {
-        glDisable(GL_FRAMEBUFFER_SRGB);
-    }
+	// Disable OpenGL linear to sRGB conversion, because Godot will always do this conversion
+	// itself.
+	if (config->srgb_framebuffer_supported) {
+		glDisable(GL_FRAMEBUFFER_SRGB);
+	}
 }
 
 void RasterizerGLES3::finalize()
 {
 	static bool finalized = false;
-    if (finalized) {
-        return;
-    }
-    finalized = true;
+	if (finalized) {
+		return;
+	}
+	finalized = true;
 	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
 	// TexBlit Shaders
 	GLES3::TextureStorage::_tex_blit_shader_free();
-	printf("[LIFECYCLE 4] About to memdelete(scene): scene=%p, vptr=%p\n",
-       (void*)scene, scene ? *(void**)scene : nullptr);
+	printf("[LIFECYCLE 4] About to memdelete(scene): scene=%p, vptr=%p\n", (void*)scene,
+		scene ? *(void**)scene : nullptr);
 	fflush(stdout);
 	if (scene) {
 		memdelete(scene);
@@ -538,88 +573,57 @@ void RasterizerGLES3::make_current(bool p_gles_over_gl)
 void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID p_screen,
 	const RenderingServerTypes::BlitToScreen& p_blit, bool p_first)
 {
-	GLES3::RenderTarget* rt =
-		GLES3::TextureStorage::get_render_target(p_blit.render_target);
-
+	GLES3::RenderTarget* rt = GLES3::TextureStorage::get_render_target(p_blit.render_target);
 	ERR_FAIL_NULL(rt);
-
-	// We normally render to the render target upside down, so flip Y when blitting to the screen.
-	bool flip_y = true;
-	bool linear_to_srgb = false;
-	if (rt->overridden.color.is_valid()) {
-		// If we've overridden the render target's color texture, that means we
-		// didn't render upside down, so we don't need to flip it.
-		// We're probably rendering directly to an XR device.
-		flip_y = false;
-
-		// It is 99% likely our texture uses the GL_SRGB8_ALPHA8 texture format in
-		// which case we have a GPU sRGB to Linear conversion on texture read.
-		// We need to counter this.
-		// Unfortunately we do not have an API to check this as Godot does not
-		// track this.
-		linear_to_srgb = true;
-	}
-
-#ifdef WINDOWS_ENABLED
-	if (screen_flipped_y) {
-		flip_y = !flip_y;
-	}
-#endif
 
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 
-	// Handled at the start of blit_render_targets_to_screen to match Vulkan's magenta screen clear.
-	// if (p_first) {
-	// 	if (p_blit.dst_rect.position != Vector2() || p_blit.dst_rect.size != rt->size) {
-	// 		Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
-	// 		glViewport(0, 0, max_vp[0], max_vp[1]);
-	// 		glClearColor(0.0, 0.0, 0.0, 1.0);
-	// 		glClear(GL_COLOR_BUFFER_BIT);
-	// 	}
-	// }
+	if (p_first) {
+		if (p_blit.dst_rect.position != Vector2() || p_blit.dst_rect.size != rt->size) {
+			Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
+			glViewport(0, 0, max_vp[0], max_vp[1]);
+			glClearColor(0.0, 0.0, 0.0, 1.0);
+			glClear(GL_COLOR_BUFFER_BIT);
+		}
+	}
 
 	Vector2 screen_rect_end = p_blit.dst_rect.get_end();
-
-	Vector2 p1 = Vector2(
-		p_blit.dst_rect.position.x, flip_y ? screen_rect_end.y : p_blit.dst_rect.position.y);
-	Vector2 p2 =
-		Vector2(screen_rect_end.x, flip_y ? p_blit.dst_rect.position.y : screen_rect_end.y);
+	Vector2 p1 = Vector2(p_blit.dst_rect.position.x, screen_rect_end.y);
+	Vector2 p2 = Vector2(screen_rect_end.x, p_blit.dst_rect.position.y);
 	Vector2 size = p2 - p1;
 
+	bool flip_y = !rt->overridden.is_overridden;
+	bool linear_to_srgb = false;
+
 	Rect2 screenrect = Rect2(Vector2(0.0, flip_y ? 1.0 : 0.0), Vector2(1.0, flip_y ? -1.0 : 1.0));
+	glViewport(int(p1.x), int(DisplayServer::get_singleton()->window_get_size(p_screen).y - p1.y),
+		int(size.x), int(-size.y));
 
-	glViewport(int(MIN(p1.x, p2.x)), int(MIN(p1.y, p2.y)), Math::abs(size.x), Math::abs(size.y));
-
+	GLenum target = (rt->view_count > 1) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
 	glActiveTexture(GL_TEXTURE0);
-	GLenum target = rt->view_count > 1 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
 	glBindTexture(target, rt->color);
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glDisable(GL_CULL_FACE);
-
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_SCISSOR_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
 
-	// Disabled while matching Vulkan's magenta overlay stage so the empty render target
-	// does not overwrite the magenta screen clear.
-	// if (p_blit.lens_distortion.apply &&
-	// 	(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
-	// 	copy_effects->copy_with_lens_distortion(screenrect,
-	// 		p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
-	// 		p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
-	// 		p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
-	// }
-	// else if (rt->view_count > 1) {
-	// 	copy_effects->copy_to_rect_3d(screenrect,
-	// 		p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
-	// 		0.0, linear_to_srgb);
-	// }
-	// else {
-	// 	copy_effects->copy_to_rect(screenrect, linear_to_srgb);
-	// }
-	(void)screenrect;
-	(void)linear_to_srgb;
+	if (p_blit.lens_distortion.apply &&
+		(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
+		GLES3::CopyEffects::get_singleton()->copy_with_lens_distortion(screenrect,
+			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
+			p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
+			p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
+	}
+	else if (rt->view_count > 1) {
+		GLES3::CopyEffects::get_singleton()->copy_to_rect_3d(screenrect,
+			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
+			0.0, linear_to_srgb);
+	}
+	else {
+		GLES3::CopyEffects::get_singleton()->copy_to_rect(screenrect, linear_to_srgb);
+	}
 
 	glBindTexture(target, 0);
 }
@@ -636,8 +640,8 @@ void RasterizerGLES3::blit_render_targets_to_screen(DisplayServerEnums::WindowID
 	// ensure the entire window is covered (including across resizes).
 	Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
 	glViewport(0, 0, max_vp[0], max_vp[1]);
-	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	// glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+	// glClear(GL_COLOR_BUFFER_BIT);
 
 	for (int i = 0; i < p_amount; i++) {
 		_blit_render_target_to_screen(p_screen, p_render_targets[i], i == 0);
@@ -658,8 +662,7 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	glDepthMask(GL_FALSE);
-	glClearColor(p_color.r, p_color.g, p_color.b,
-		OS::is_layered_allowed() ? p_color.a : 1.0);
+	glClearColor(p_color.r, p_color.g, p_color.b, OS::is_layered_allowed() ? p_color.a : 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	RID texture = GLES3::TextureStorage::texture_allocate();
@@ -696,41 +699,51 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 
 void RasterizerGLES3::bind_utilities()
 {
-    RendererUtilities::visibility_notifier_allocate = &GLES3::Utilities::visibility_notifier_allocate;
-    RendererUtilities::visibility_notifier_initialize = &GLES3::Utilities::visibility_notifier_initialize;
-    RendererUtilities::visibility_notifier_free = &GLES3::Utilities::visibility_notifier_free;
-    RendererUtilities::visibility_notifier_set_aabb = &GLES3::Utilities::visibility_notifier_set_aabb;
-    RendererUtilities::visibility_notifier_get_aabb = &GLES3::Utilities::visibility_notifier_get_aabb;
-    RendererUtilities::visibility_notifier_call = &GLES3::Utilities::visibility_notifier_call;
+	RendererUtilities::visibility_notifier_allocate =
+		&GLES3::Utilities::visibility_notifier_allocate;
+	RendererUtilities::visibility_notifier_initialize =
+		&GLES3::Utilities::visibility_notifier_initialize;
+	RendererUtilities::visibility_notifier_free = &GLES3::Utilities::visibility_notifier_free;
+	RendererUtilities::visibility_notifier_set_aabb =
+		&GLES3::Utilities::visibility_notifier_set_aabb;
+	RendererUtilities::visibility_notifier_get_aabb =
+		&GLES3::Utilities::visibility_notifier_get_aabb;
+	RendererUtilities::visibility_notifier_call = &GLES3::Utilities::visibility_notifier_call;
 
-    RendererUtilities::free = &GLES3::Utilities::free;
-    RendererUtilities::get_base_type = &GLES3::Utilities::get_base_type;
-    RendererUtilities::base_update_dependency = &GLES3::Utilities::base_update_dependency;
+	RendererUtilities::free = &GLES3::Utilities::free;
+	RendererUtilities::get_base_type = &GLES3::Utilities::get_base_type;
+	RendererUtilities::base_update_dependency = &GLES3::Utilities::base_update_dependency;
 
-    RendererUtilities::capture_timestamps_begin = &GLES3::Utilities::capture_timestamps_begin;
-    RendererUtilities::capture_timestamp = &GLES3::Utilities::capture_timestamp;
-    RendererUtilities::get_captured_timestamps_count = &GLES3::Utilities::get_captured_timestamps_count;
-    RendererUtilities::get_captured_timestamps_frame = &GLES3::Utilities::get_captured_timestamps_frame;
-    RendererUtilities::get_captured_timestamp_gpu_time = &GLES3::Utilities::get_captured_timestamp_gpu_time;
-    RendererUtilities::get_captured_timestamp_cpu_time = &GLES3::Utilities::get_captured_timestamp_cpu_time;
-    RendererUtilities::get_captured_timestamp_name = &GLES3::Utilities::get_captured_timestamp_name;
+	RendererUtilities::capture_timestamps_begin = &GLES3::Utilities::capture_timestamps_begin;
+	RendererUtilities::capture_timestamp = &GLES3::Utilities::capture_timestamp;
+	RendererUtilities::get_captured_timestamps_count =
+		&GLES3::Utilities::get_captured_timestamps_count;
+	RendererUtilities::get_captured_timestamps_frame =
+		&GLES3::Utilities::get_captured_timestamps_frame;
+	RendererUtilities::get_captured_timestamp_gpu_time =
+		&GLES3::Utilities::get_captured_timestamp_gpu_time;
+	RendererUtilities::get_captured_timestamp_cpu_time =
+		&GLES3::Utilities::get_captured_timestamp_cpu_time;
+	RendererUtilities::get_captured_timestamp_name =
+&GLES3::Utilities::get_captured_timestamp_name;
 
-    RendererUtilities::update_dirty_resources = &GLES3::Utilities::update_dirty_resources;
-    RendererUtilities::set_debug_generate_wireframes = &GLES3::Utilities::set_debug_generate_wireframes;
-    RendererUtilities::has_os_feature = &GLES3::Utilities::has_os_feature;
-    RendererUtilities::update_memory_info = &GLES3::Utilities::update_memory_info;
+	RendererUtilities::update_dirty_resources = &GLES3::Utilities::update_dirty_resources;
+	RendererUtilities::set_debug_generate_wireframes =
+		&GLES3::Utilities::set_debug_generate_wireframes;
+	RendererUtilities::has_os_feature = &GLES3::Utilities::has_os_feature;
+	RendererUtilities::update_memory_info = &GLES3::Utilities::update_memory_info;
 
-    RendererUtilities::get_rendering_info = &GLES3::Utilities::get_rendering_info;
-    RendererUtilities::get_video_adapter_name = &GLES3::Utilities::get_video_adapter_name;
-    RendererUtilities::get_video_adapter_vendor = &GLES3::Utilities::get_video_adapter_vendor;
-    RendererUtilities::get_video_adapter_type = &GLES3::Utilities::get_video_adapter_type;
-    RendererUtilities::get_video_adapter_api_version = &GLES3::Utilities::get_video_adapter_api_version;
+	RendererUtilities::get_rendering_info = &GLES3::Utilities::get_rendering_info;
+	RendererUtilities::get_video_adapter_name = &GLES3::Utilities::get_video_adapter_name;
+	RendererUtilities::get_video_adapter_vendor = &GLES3::Utilities::get_video_adapter_vendor;
+	RendererUtilities::get_video_adapter_type = &GLES3::Utilities::get_video_adapter_type;
+	RendererUtilities::get_video_adapter_api_version =
+		&GLES3::Utilities::get_video_adapter_api_version;
 
-    RendererUtilities::get_maximum_viewport_size = &GLES3::Utilities::get_maximum_viewport_size;
-    RendererUtilities::get_maximum_shader_varyings = &GLES3::Utilities::get_maximum_shader_varyings;
-    RendererUtilities::get_maximum_uniform_buffer_size = &GLES3::Utilities::get_maximum_uniform_buffer_size;
+	RendererUtilities::get_maximum_viewport_size = &GLES3::Utilities::get_maximum_viewport_size;
+	RendererUtilities::get_maximum_shader_varyings = &GLES3::Utilities::get_maximum_shader_varyings;
+	RendererUtilities::get_maximum_uniform_buffer_size =
+		&GLES3::Utilities::get_maximum_uniform_buffer_size;
 }
 
 #endif // GLES3_ENABLED
-
-

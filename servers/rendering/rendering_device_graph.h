@@ -1061,6 +1061,7 @@ public:
 	void add_driver_callback(RDD::DriverCallback p_callback, void* p_userdata,
 		VectorView<ResourceTracker*> p_trackers, VectorView<ResourceUsage> p_usages);
 	void add_raytracing_list_begin();
+	void add_raytracing_list_bind_pipeline(RDD::RaytracingPipelineID p_pipeline);
 	void add_raytracing_list_bind_uniform_set(
 		RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index);
 	void add_raytracing_list_set_push_constant(
@@ -1076,6 +1077,7 @@ public:
 	void add_raytracing_list_end();
 	void add_compute_list_begin(RDC::BreadcrumbMarker p_phase = RDC::BreadcrumbMarker::NONE,
 		uint32_t p_breadcrumb_data = 0);
+	void add_compute_list_bind_pipeline(RDD::PipelineID p_pipeline);
 	void add_compute_list_bind_uniform_set(
 		RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index);
 	void add_compute_list_bind_uniform_sets(RDD::ShaderID p_shader,
@@ -1109,6 +1111,8 @@ public:
 		RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index);
 	void add_draw_list_bind_uniform_sets(RDD::ShaderID p_shader,
 		VectorView<RDD::UniformSetID> p_uniform_set, uint32_t p_first_index, uint32_t p_set_count);
+	void add_draw_list_bind_vertex_buffers(
+		Span<RDD::BufferID> p_vertex_buffers, Span<uint64_t> p_vertex_buffer_offsets);
 	void add_draw_list_clear_attachments(VectorView<RDD::AttachmentClear> p_attachments_clear,
 		VectorView<Rect2i> p_attachments_clear_rect);
 	void add_draw_list_draw(uint32_t p_vertex_count, uint32_t p_instance_count);

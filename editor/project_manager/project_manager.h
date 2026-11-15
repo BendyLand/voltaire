@@ -68,6 +68,7 @@ public:
 
 		Ref<Font> ui_font;
 		LocalVector<UIButton> buttons;
+		bool owns_viewport = false;
 		bool needs_redraw = true;
 	};
 
@@ -77,6 +78,7 @@ public:
 	static bool is_initialized() { return _initialized; };
 	static void initialize(RID p_viewport_rid = RID(),
 		Size2i p_size = Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT));
+	static void poll();
 	static void process_and_draw();
 	static void finalize();
 

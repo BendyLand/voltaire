@@ -60,8 +60,9 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
     BlitPipelines blit_pipelines =
         _get_blit_pipelines_for_format(RD::screen_get_framebuffer_format(p_screen));
 
-    // RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen);
-    RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen, Color(1, 0, 1, 1));
+    RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen);
+	// magneta overlay
+    // RD::DrawListID draw_list = RD::draw_list_begin_for_screen(p_screen, Color(1, 0, 1, 1));
     ERR_FAIL_COND(draw_list == RDC::INVALID_ID);
 
     const RDC::ColorSpace color_space = RD::screen_get_color_space(p_screen);
@@ -82,6 +83,10 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
         RDC::TextureFormat tex_format = RD::texture_get_format(rd_texture);
         int tex_w = tex_format.width;
         int tex_h = tex_format.height;
+		static uint64_t blit_dbg = 0;
+		if ((++blit_dbg % 60) == 1) {
+		    DUMP(i, p_amount, rd_texture.get_id(), tex_w, tex_h, RD::screen_get_width(p_screen), RD::screen_get_height(p_screen));
+		}
         if (tex_w <= 0 || tex_h <= 0) {
             continue;
         }
@@ -176,9 +181,9 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
         blit->push_constant.upscale = p_render_targets[i].lens_distortion.upscale;
         blit->push_constant.aspect_ratio = p_render_targets[i].lens_distortion.aspect_ratio;
         blit->push_constant.source_is_srgb =
-            !texture_storage->render_target_is_using_hdr(p_render_targets[i].render_target);
+            !RendererRD::TextureStorage::render_target_is_using_hdr(p_render_targets[i].render_target);
         blit->push_constant.use_debanding =
-            texture_storage->render_target_is_using_debanding(p_render_targets[i].render_target);
+            RendererRD::TextureStorage::render_target_is_using_debanding(p_render_targets[i].render_target);
         blit->push_constant.target_color_space = color_space;
         blit->push_constant.reference_multiplier = reference_multiplier;
         blit->push_constant.output_max_value = output_max_value;
@@ -197,12 +202,15 @@ void RendererCompositorRD::begin_frame(double frame_step)
 	time += frame_step;
 
 	double time_roll_over = GLOBAL_GET_CACHED(double, "rendering/limits/time/time_rollover_secs");
+	if (time_roll_over <= 0.0) {
+		time_roll_over = 3600.0;
+	}
 	time = Math::fmod(time, time_roll_over);
 
 	if (RendererCanvasRender::set_time) {
 		RendererCanvasRender::set_time(time);
 	}
-	scene->set_time(time, frame_step);
+	RendererSceneRenderRD::set_time(time, frame_step);
 }
 
 void RendererCompositorRD::end_frame(bool p_present) { RD::swap_buffers(p_present); }
@@ -216,9 +224,13 @@ void RendererCompositorRD::initialize()
 	UniformSetCacheRD::initialize();
 	FramebufferCacheRD::initialize();
 
+	RendererRD::TextureStorage::initialize();
+	RendererRD::MaterialStorage::initialize();
 	RendererRD::MeshStorage::initialize();
-	RendererSceneRenderRD::initialize();
+	RendererRD::Fog::initialize();
 	RendererCanvasRenderRD::initialize();
+	RendererRD::TextureStorage::_tex_blit_shader_initialize();
+	RendererSceneRenderRD::initialize();
 	bind_canvas_render();
 	bind_mesh_storage();
 
@@ -247,7 +259,6 @@ void RendererCompositorRD::initialize()
 			p16[4] = 2;
 			p16[5] = 3;
 		}
-		DUMP(pv);
 		blit->index_buffer = RD::index_buffer_create(6, RDC::INDEX_BUFFER_FORMAT_UINT16, pv);
 		blit->array = RD::index_array_create(blit->index_buffer, 0, 6);
 		blit->sampler = RD::sampler_create(RDC::SamplerState());
@@ -314,9 +325,9 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	BlitPipelines blit_pipelines = _get_blit_pipelines_for_format(
 		RD::screen_get_framebuffer_format(DisplayServerEnums::MAIN_WINDOW_ID));
 
-	RID texture = texture_storage->texture_allocate();
-	texture_storage->texture_2d_initialize(texture, p_image);
-	RID rd_texture = texture_storage->texture_get_rd_texture(texture, false);
+	RID texture = RendererRD::TextureStorage::texture_allocate();
+	RendererRD::TextureStorage::texture_2d_initialize(texture, p_image);
+	RID rd_texture = RendererRD::TextureStorage::texture_get_rd_texture(texture, false);
 
 	RDC::SamplerState sampler_state;
 	sampler_state.min_filter =
@@ -327,6 +338,17 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 	RID sampler = RD::sampler_create(sampler_state);
 
 	RID uset;
+	{
+		Vector<RD::Uniform> uniforms;
+		RD::Uniform u;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
+		u.binding = 0;
+		u.append_id(sampler);
+		u.append_id(rd_texture);
+		uniforms.push_back(u);
+		uset = RD::uniform_set_create(
+			uniforms, blit->shader.version_get_shader(blit->shader_version, BLIT_MODE_NORMAL), 0);
+	}
 
 	Size2 window_size = DisplayServer::get_singleton()->window_get_size();
 
@@ -397,7 +419,7 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 
 	RD::swap_buffers(true);
 
-	texture_storage->texture_free(texture);
+	RendererRD::TextureStorage::texture_free(texture);
 	RD::free_rid(sampler);
 }
 

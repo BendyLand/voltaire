@@ -3684,7 +3684,541 @@ void RendererRD::TextureStorage::texture_3d_initialize(RID p_texture, Image::For
 
 void RendererRD::TextureStorage::initialize()
 {
-	texture_2d_placeholder = Image::create_empty(4, 4, false, Image::FORMAT_RGBA8);
+	{ // create default textures
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_2D;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			// Opaque white.
+			pv.set(i * 4 + 0, 255);
+			pv.set(i * 4 + 1, 255);
+			pv.set(i * 4 + 2, 255);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_WHITE] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+
+		for (int i = 0; i < 16; i++) {
+			// Opaque black.
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_BLACK] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+
+		for (int i = 0; i < 16; i++) {
+			// Transparent black.
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 0);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_TRANSPARENT] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+
+		for (int i = 0; i < 16; i++) {
+			// Opaque normal map "flat" color.
+			pv.set(i * 4 + 0, 128);
+			pv.set(i * 4 + 1, 128);
+			pv.set(i * 4 + 2, 255);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_NORMAL] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+
+		for (int i = 0; i < 16; i++) {
+			// Opaque flowmap "flat" color.
+			pv.set(i * 4 + 0, 255);
+			pv.set(i * 4 + 1, 128);
+			pv.set(i * 4 + 2, 255);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_ANISO] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+
+		{
+			RDC::TextureFormat tf;
+			tf.format = RDC::DATA_FORMAT_D16_UNORM;
+			tf.width = 4;
+			tf.height = 4;
+			tf.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT |
+							RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+			tf.texture_type = RDC::TEXTURE_TYPE_2D;
+
+			Vector<uint8_t> sv;
+			sv.resize(16 * 2);
+			uint16_t* ptr = (uint16_t*)sv.ptrw();
+			for (int i = 0; i < 16; i++) {
+				ptr[i] = Math::make_half_float(1.0f);
+			}
+
+			default_rd_textures[DEFAULT_RD_TEXTURE_DEPTH] =
+				RD::texture_create(tf, RDD::TextureView());
+			RD::texture_update(default_rd_textures[DEFAULT_RD_TEXTURE_DEPTH], 0, sv);
+		}
+	}
+
+	{ // create default black cubemap array
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 6;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_CUBE_ARRAY;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			for (int i = 0; i < 6; i++) {
+				vpv.push_back(pv);
+			}
+			default_rd_textures[DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_BLACK] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // create default white cubemap array
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 6;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_CUBE_ARRAY;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 255);
+			pv.set(i * 4 + 1, 255);
+			pv.set(i * 4 + 2, 255);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			for (int i = 0; i < 6; i++) {
+				vpv.push_back(pv);
+			}
+			default_rd_textures[DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_WHITE] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // create default transparent cubemap array
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 6;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_CUBE_ARRAY;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 0);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			for (int i = 0; i < 6; i++) {
+				vpv.push_back(pv);
+			}
+			default_rd_textures[DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_TRANSPARENT] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // create default black cubemap
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 6;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_CUBE;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			for (int i = 0; i < 6; i++) {
+				vpv.push_back(pv);
+			}
+			default_rd_textures[DEFAULT_RD_TEXTURE_CUBEMAP_BLACK] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // create default white cubemap
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 6;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_CUBE;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 255);
+			pv.set(i * 4 + 1, 255);
+			pv.set(i * 4 + 2, 255);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			for (int i = 0; i < 6; i++) {
+				vpv.push_back(pv);
+			}
+			default_rd_textures[DEFAULT_RD_TEXTURE_CUBEMAP_WHITE] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // create default transparent cubemap
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 6;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_CUBE;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 0);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			for (int i = 0; i < 6; i++) {
+				vpv.push_back(pv);
+			}
+			default_rd_textures[DEFAULT_RD_TEXTURE_CUBEMAP_TRANSPARENT] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // create default 3D
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.depth = 4;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_3D;
+
+		Vector<uint8_t> pv;
+		pv.resize(64 * 4);
+		for (int i = 0; i < 64; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_3D_BLACK] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+		for (int i = 0; i < 64; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 0);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_3D_TRANSPARENT] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+		for (int i = 0; i < 64; i++) {
+			pv.set(i * 4 + 0, 255);
+			pv.set(i * 4 + 1, 255);
+			pv.set(i * 4 + 2, 255);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_3D_WHITE] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // Creates a default 2D texture array filled with a white color.
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 1;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 255);
+			pv.set(i * 4 + 1, 255);
+			pv.set(i * 4 + 2, 255);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // Creates a default 2D texture array filled with a black color.
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 1;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // Creates a default 2D texture array filled with a transparent color.
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 1;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 0);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_2D_ARRAY_TRANSPARENT] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // create default array normal
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 1;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 128);
+			pv.set(i * 4 + 1, 128);
+			pv.set(i * 4 + 2, 255);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		{
+			Vector<Vector<uint8_t>> vpv;
+			vpv.push_back(pv);
+			default_rd_textures[DEFAULT_RD_TEXTURE_2D_ARRAY_NORMAL] =
+				RD::texture_create(tformat, RDD::TextureView(), vpv);
+		}
+	}
+
+	{ // create default array depth
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_D16_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.array_layers = 1;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT |
+							 RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_2D_ARRAY;
+
+		Vector<uint8_t> sv;
+		sv.resize(16 * 2);
+		uint16_t* ptr = (uint16_t*)sv.ptrw();
+		for (int i = 0; i < 16; i++) {
+			ptr[i] = Math::make_half_float(1.0f);
+		}
+
+		default_rd_textures[DEFAULT_RD_TEXTURE_2D_ARRAY_DEPTH] =
+			RD::texture_create(tformat, RDD::TextureView());
+		RD::texture_update(default_rd_textures[DEFAULT_RD_TEXTURE_2D_ARRAY_DEPTH], 0, sv);
+	}
+
+	{ // default decal atlas texture
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_2D;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		Vector<Vector<uint8_t>> vpv;
+		vpv.push_back(pv);
+		decal_atlas.texture = RD::texture_create(tformat, RDD::TextureView(), vpv);
+		decal_atlas.texture_srgb = decal_atlas.texture;
+	}
+
+	{ // default area light atlas texture
+		RDC::TextureFormat tformat;
+		tformat.format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		tformat.width = 4;
+		tformat.height = 4;
+		tformat.usage_bits = RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		tformat.texture_type = RDC::TEXTURE_TYPE_2D;
+
+		Vector<uint8_t> pv;
+		pv.resize(16 * 4);
+		for (int i = 0; i < 16; i++) {
+			pv.set(i * 4 + 0, 0);
+			pv.set(i * 4 + 1, 0);
+			pv.set(i * 4 + 2, 0);
+			pv.set(i * 4 + 3, 255);
+		}
+
+		Vector<Vector<uint8_t>> vpv;
+		vpv.push_back(pv);
+		area_light_atlas.texture = RD::texture_create(tformat, RDD::TextureView(), vpv);
+	}
+
+	{
+		Vector<String> sdf_modes;
+		sdf_modes.push_back("\n#define MODE_LOAD\n");
+		sdf_modes.push_back("\n#define MODE_LOAD_SHRINK\n");
+		sdf_modes.push_back("\n#define MODE_PROCESS\n");
+		sdf_modes.push_back("\n#define MODE_PROCESS_OPTIMIZED\n");
+		sdf_modes.push_back("\n#define MODE_STORE\n");
+		sdf_modes.push_back("\n#define MODE_STORE_SHRINK\n");
+
+		rt_sdf.shader.initialize(sdf_modes);
+		rt_sdf.shader_version = rt_sdf.shader.version_create();
+	}
+
+	constexpr int placeholder_size = 4;
+	texture_2d_placeholder =
+		Image::create_empty(placeholder_size, placeholder_size, false, Image::FORMAT_RGBA8);
+	for (int i = 0; i < placeholder_size * placeholder_size; i++) {
+		const int x = i % placeholder_size;
+		const int y = i / placeholder_size;
+		texture_2d_placeholder->set_pixel(
+			x, y, (x + y) % 2 == 0 ? Color(1, 0, 1) : Color(0, 0, 0));
+	}
+
+	texture_2d_array_placeholder.push_back(texture_2d_placeholder);
+
+	for (int i = 0; i < 6; i++) {
+		cubemap_placeholder.push_back(texture_2d_placeholder);
+	}
+
+	Ref<Image> texture_2d_placeholder_rotated;
+	texture_2d_placeholder_rotated.instantiate();
+	texture_2d_placeholder_rotated->copy_internals_from(texture_2d_placeholder);
+	texture_2d_placeholder_rotated->rotate_90(CLOCKWISE);
+	for (int i = 0; i < 4; i++) {
+		texture_3d_placeholder.push_back(
+			i % 2 == 0 ? texture_2d_placeholder : texture_2d_placeholder_rotated);
+	}
 }
 
 void RendererRD::TextureStorage::texture_2d_update(

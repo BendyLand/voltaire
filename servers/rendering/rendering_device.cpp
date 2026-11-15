@@ -191,7 +191,7 @@ void RenderingDevice::_free_dependencies(RID p_id)
 	Vector<RID> dependencies_to_free;
 
 	{
-		MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+		MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 		// Direct dependencies must be freed.
 		HashMap<RID, HashSet<RID>>::Iterator E = data->dependency_map.find(p_id);
@@ -848,8 +848,7 @@ RenderingDevice::Buffer* RenderingDevice::_get_buffer_from_owner(RID p_buffer)
 		buffer = data->uniform_buffer_owner.get_or_null(p_buffer);
 	}
 	else if (data->texture_buffer_owner.owns(p_buffer)) {
-		DEV_ASSERT(false && "FIXME: Broken.");
-		// buffer = texture_buffer_owner.get_or_null(p_buffer)->buffer;
+		buffer = data->texture_buffer_owner.get_or_null(p_buffer);
 	}
 	else if (data->storage_buffer_owner.owns(p_buffer)) {
 		buffer = data->storage_buffer_owner.get_or_null(p_buffer);
@@ -1035,6 +1034,16 @@ void RenderingDevice::_staging_buffer_execute_required_action(
 	StagingBuffers& p_staging_buffers, StagingRequiredAction p_required_action)
 {
 	switch (p_required_action) {
+	case STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL: {
+		_flush_and_stall_for_all_frames();
+		p_staging_buffers.blocks.write[p_staging_buffers.current].frame_used = data->frames_drawn;
+		p_staging_buffers.blocks.write[p_staging_buffers.current].fill_amount = 0;
+	} break;
+	case STAGING_REQUIRED_ACTION_STALL_PREVIOUS: {
+		_stall_for_previous_frames();
+		p_staging_buffers.blocks.write[p_staging_buffers.current].frame_used = data->frames_drawn;
+		p_staging_buffers.blocks.write[p_staging_buffers.current].fill_amount = 0;
+	} break;
 	case STAGING_REQUIRED_ACTION_NONE: {
 		// Do nothing.
 	} break;
@@ -1042,6 +1051,114 @@ void RenderingDevice::_staging_buffer_execute_required_action(
 		DEV_ASSERT(false && "Unknown required action.");
 	} break;
 	}
+}
+
+Error RenderingDevice::_buffer_update(
+	Buffer* p_buffer, RID p_buffer_id, uint32_t p_offset, uint32_t p_size, const void* p_data)
+{
+	data->copy_bytes_count += p_size;
+
+	if (p_buffer->usage & RDD::BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT) {
+		uint8_t* dst_data = data->driver->buffer_persistent_map_advance(
+			p_buffer->driver_id, data->frames_drawn);
+
+		memcpy(dst_data + p_offset, p_data, p_size);
+		data->direct_copy_count++;
+		buffer_flush(p_buffer_id);
+		return OK;
+	}
+
+	_check_transfer_worker_buffer(p_buffer);
+
+	size_t to_submit = p_size;
+	size_t submit_from = 0;
+
+	thread_local LocalVector<RDG::RecordedBufferCopy> command_buffer_copies_vector;
+	command_buffer_copies_vector.clear();
+
+	const uint8_t* src_data = reinterpret_cast<const uint8_t*>(p_data);
+	const uint32_t required_align = 32;
+	while (to_submit > 0) {
+		uint32_t block_write_offset;
+		uint32_t block_write_amount;
+		StagingRequiredAction required_action;
+
+		Error err = _staging_buffer_allocate(data->upload_staging_buffers,
+			MIN(to_submit, data->upload_staging_buffers.block_size), required_align,
+			block_write_offset, block_write_amount, required_action);
+		if (err) {
+			return err;
+		}
+
+		if (!command_buffer_copies_vector.is_empty() &&
+			required_action == STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL) {
+			if (_buffer_make_mutable(p_buffer, p_buffer_id)) {
+				data->draw_graph.add_synchronization();
+			}
+
+			data->draw_graph.add_buffer_update(
+				p_buffer->driver_id, p_buffer->draw_tracker, command_buffer_copies_vector);
+			command_buffer_copies_vector.clear();
+		}
+
+		_staging_buffer_execute_required_action(data->upload_staging_buffers, required_action);
+
+		memcpy(data->upload_staging_buffers.blocks[data->upload_staging_buffers.current].data_ptr +
+				   block_write_offset,
+			src_data + submit_from, block_write_amount);
+
+		RDD::BufferCopyRegion region;
+		region.src_offset = block_write_offset;
+		region.dst_offset = submit_from + p_offset;
+		region.size = block_write_amount;
+
+		RDG::RecordedBufferCopy buffer_copy;
+		buffer_copy.source =
+			data->upload_staging_buffers.blocks[data->upload_staging_buffers.current].driver_id;
+		buffer_copy.region = region;
+		command_buffer_copies_vector.push_back(buffer_copy);
+
+		data->upload_staging_buffers.blocks.write[data->upload_staging_buffers.current]
+			.fill_amount = block_write_offset + block_write_amount;
+
+		to_submit -= block_write_amount;
+		submit_from += block_write_amount;
+	}
+
+	if (!command_buffer_copies_vector.is_empty()) {
+		if (_buffer_make_mutable(p_buffer, p_buffer_id)) {
+			data->draw_graph.add_synchronization();
+		}
+
+		data->draw_graph.add_buffer_update(
+			p_buffer->driver_id, p_buffer->draw_tracker, command_buffer_copies_vector);
+	}
+
+	data->gpu_copy_count++;
+
+	return OK;
+}
+
+Error RenderingDevice::buffer_update(
+	RID p_buffer, uint32_t p_offset, uint32_t p_size, const void* p_data, bool p_skip_check)
+{
+	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
+
+	ERR_FAIL_COND_V_MSG(data->draw_list.active && !p_skip_check, ERR_INVALID_PARAMETER,
+		"Updating buffers is forbidden during creation of a draw list.");
+	ERR_FAIL_COND_V_MSG(data->compute_list.active && !p_skip_check, ERR_INVALID_PARAMETER,
+		"Updating buffers is forbidden during creation of a compute list.");
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active && !p_skip_check, ERR_INVALID_PARAMETER,
+		"Updating buffers is forbidden during creation of a raytracing list.");
+
+	Buffer* buffer = _get_buffer_from_owner(p_buffer);
+	ERR_FAIL_NULL_V_MSG(
+		buffer, ERR_INVALID_PARAMETER, "Buffer argument is not a valid buffer of any type.");
+	ERR_FAIL_COND_V_MSG(p_offset + p_size > buffer->size, ERR_INVALID_PARAMETER,
+		"Attempted to write buffer (" + itos((p_offset + p_size) - buffer->size) +
+			" bytes) past the end.");
+
+	return _buffer_update(buffer, p_buffer, p_offset, p_size, p_data);
 }
 
 Error RenderingDevice::buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset,
@@ -1153,10 +1270,81 @@ Error RenderingDevice::driver_callback_add(
 	return OK;
 }
 
+RID RenderingDevice::uniform_buffer_create(
+	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
+{
+	ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != p_size_bytes, RID());
+
+	Buffer buffer;
+	buffer.size = p_size_bytes;
+	buffer.usage = (RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_UNIFORM_BIT);
+	if (p_creation_bits & BUFFER_CREATION_DEVICE_ADDRESS_BIT) {
+		buffer.usage |= RDD::BUFFER_USAGE_DEVICE_ADDRESS_BIT;
+	}
+	if (p_creation_bits & BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT) {
+		buffer.usage |= RDD::BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT;
+		buffer.usage &= ~uint32_t(RDD::BUFFER_USAGE_TRANSFER_TO_BIT);
+	}
+	buffer.driver_id = data->driver->buffer_create(
+		buffer.size, buffer.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
+	ERR_FAIL_COND_V(!buffer.driver_id, RID());
+
+	if (p_data.is_empty()) {
+		buffer.draw_tracker = RDG::resource_tracker_create();
+		buffer.draw_tracker->buffer_driver_id = buffer.driver_id;
+	}
+
+	if (p_data.size()) {
+		_buffer_initialize(&buffer, p_data);
+	}
+
+	data->buffer_memory.add(buffer.size);
+
+	RID id = data->uniform_buffer_owner.make_rid(buffer);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+	return id;
+}
+
 RID RenderingDevice::storage_buffer_create(
 	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
 {
-	return RID();
+	ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != p_size_bytes, RID());
+
+	Buffer buffer;
+	buffer.size = p_size_bytes;
+	buffer.usage = (RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT |
+					RDD::BUFFER_USAGE_STORAGE_BIT);
+	if (p_creation_bits & BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT) {
+		buffer.usage |= RDD::BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT;
+		buffer.usage &= ~uint32_t(RDD::BUFFER_USAGE_TRANSFER_TO_BIT);
+	}
+	if (p_creation_bits & BUFFER_CREATION_DEVICE_ADDRESS_BIT) {
+		buffer.usage |= RDD::BUFFER_USAGE_DEVICE_ADDRESS_BIT;
+	}
+	if (p_creation_bits & BUFFER_CREATION_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT) {
+		buffer.usage |= RDD::BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT;
+	}
+
+	buffer.driver_id = data->driver->buffer_create(
+		buffer.size, buffer.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
+	ERR_FAIL_COND_V(!buffer.driver_id, RID());
+
+	buffer.draw_tracker = RDG::resource_tracker_create();
+	buffer.draw_tracker->buffer_driver_id = buffer.driver_id;
+
+	if (p_data.size()) {
+		_buffer_initialize(&buffer, p_data);
+	}
+
+	data->buffer_memory.add(buffer.size);
+
+	RID id = data->storage_buffer_owner.make_rid(buffer);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+	return id;
 }
 
 String RenderingDevice::get_perf_report()
@@ -1182,7 +1370,51 @@ void RenderingDevice::update_perf_report()
 
 Vector<uint8_t> RenderingDevice::buffer_get_data(RID p_buffer, uint32_t p_offset, uint32_t p_size)
 {
-	return Vector<uint8_t>();
+	ERR_RENDER_THREAD_GUARD_V(Vector<uint8_t>());
+
+	Buffer* buffer = _get_buffer_from_owner(p_buffer);
+	if (!buffer) {
+		ERR_FAIL_V_MSG(Vector<uint8_t>(),
+			"Buffer is either invalid or this type of buffer can't be retrieved.");
+	}
+
+	if (!p_size) {
+		p_size = buffer->size;
+	}
+	else {
+		ERR_FAIL_COND_V_MSG(
+			p_size + p_offset > buffer->size, Vector<uint8_t>(), "Size is larger than the buffer.");
+	}
+
+	_check_transfer_worker_buffer(buffer);
+
+	RDD::BufferID tmp_buffer = data->driver->buffer_create(buffer->size,
+		RDD::BUFFER_USAGE_TRANSFER_TO_BIT, RDD::MEMORY_ALLOCATION_TYPE_CPU, data->frames_drawn);
+	ERR_FAIL_COND_V(!tmp_buffer, Vector<uint8_t>());
+
+	RDD::BufferCopyRegion region;
+	region.src_offset = p_offset;
+	region.size = p_size;
+
+	data->draw_graph.add_buffer_get_data(
+		buffer->driver_id, buffer->draw_tracker, tmp_buffer, region);
+
+	_flush_and_stall_for_all_frames();
+
+	uint8_t* buffer_mem = data->driver->buffer_map(tmp_buffer);
+	ERR_FAIL_NULL_V(buffer_mem, Vector<uint8_t>());
+
+	Vector<uint8_t> buffer_data;
+	{
+		buffer_data.resize(p_size);
+		uint8_t* w = buffer_data.ptrw();
+		memcpy(w, buffer_mem, p_size);
+	}
+
+	data->driver->buffer_unmap(tmp_buffer);
+	data->driver->buffer_free(tmp_buffer);
+
+	return buffer_data;
 }
 
 Error RenderingDevice::buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_size)
@@ -1281,43 +1513,528 @@ RID RenderingDevice::texture_buffer_create(
 	return id;
 }
 
-RID RenderingDevice::texture_create(const RDC::TextureFormat& p_format,
-	const RDD::TextureView& p_view, const Vector<Vector<uint8_t>>& p_data)
+static _ALWAYS_INLINE_ void _copy_region(const uint8_t* __restrict p_src, uint8_t* __restrict p_dst,
+	uint32_t p_src_x, uint32_t p_src_y, uint32_t p_src_w, uint32_t p_src_h, uint32_t p_src_full_w,
+	uint32_t p_dst_pitch, uint32_t p_unit_size)
+{
+	uint32_t src_offset = (p_src_y * p_src_full_w + p_src_x) * p_unit_size;
+	uint32_t dst_offset = 0;
+	for (uint32_t y = p_src_h; y > 0; y--) {
+		const uint8_t* __restrict src = p_src + src_offset;
+		uint8_t* __restrict dst = p_dst + dst_offset;
+		for (uint32_t x = p_src_w * p_unit_size; x > 0; x--) {
+			*dst = *src;
+			src++;
+			dst++;
+		}
+		src_offset += p_src_full_w * p_unit_size;
+		dst_offset += p_dst_pitch;
+	}
+}
+
+static _ALWAYS_INLINE_ void _copy_region_block_or_regular(const uint8_t* p_read_ptr,
+	uint8_t* p_write_ptr, uint32_t p_x, uint32_t p_y, uint32_t p_width, uint32_t p_region_w,
+	uint32_t p_region_h, uint32_t p_block_w, uint32_t p_block_h, uint32_t p_dst_pitch,
+	uint32_t p_pixel_size, uint32_t p_block_size)
+{
+	if (p_block_w != 1 || p_block_h != 1) {
+		// Block format.
+		uint32_t xb = p_x / p_block_w;
+		uint32_t yb = p_y / p_block_h;
+		uint32_t wb = p_width / p_block_w;
+		uint32_t region_wb = p_region_w / p_block_w;
+		uint32_t region_hb = p_region_h / p_block_h;
+		_copy_region(
+			p_read_ptr, p_write_ptr, xb, yb, region_wb, region_hb, wb, p_dst_pitch, p_block_size);
+	}
+	else {
+		// Regular format.
+		_copy_region(p_read_ptr, p_write_ptr, p_x, p_y, p_region_w, p_region_h, p_width,
+			p_dst_pitch, p_pixel_size);
+	}
+}
+
+Error RenderingDevice::_texture_initialize(RID p_texture, uint32_t p_layer,
+	const Vector<uint8_t>& p_data, RDD::TextureLayout p_dst_layout, bool p_immediate_flush)
+{
+	Texture* texture = data->texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(texture, ERR_INVALID_PARAMETER);
+
+	if (texture->owner != RID()) {
+		p_texture = texture->owner;
+		texture = data->texture_owner.get_or_null(texture->owner);
+		ERR_FAIL_NULL_V(texture, ERR_BUG);
+	}
+
+	uint32_t layer_count = _texture_layer_count(texture);
+	ERR_FAIL_COND_V(p_layer >= layer_count, ERR_INVALID_PARAMETER);
+
+	uint32_t width, height;
+	uint32_t tight_mip_size = RDC::get_image_format_required_size(texture->format, texture->width,
+		texture->height, texture->depth, texture->mipmaps, &width, &height);
+	uint32_t required_size = tight_mip_size;
+	uint32_t required_align = _texture_alignment(texture);
+
+	ERR_FAIL_COND_V_MSG(required_size != (uint32_t)p_data.size(), ERR_INVALID_PARAMETER,
+		"Required size for texture update (" + itos(required_size) +
+			") does not match data supplied size (" + itos(p_data.size()) + ").");
+
+	uint32_t block_w, block_h;
+	RDC::get_compressed_image_format_block_dimensions(texture->format, block_w, block_h);
+
+	uint32_t pixel_size = RDC::get_image_format_pixel_size(texture->format);
+	uint32_t block_size = RDC::get_compressed_image_format_block_byte_size(texture->format);
+
+	uint32_t staging_worker_offset = 0;
+	uint32_t staging_local_offset = 0;
+	TransferWorker* transfer_worker = nullptr;
+	const uint8_t* read_ptr = p_data.ptr();
+	uint8_t* write_ptr = nullptr;
+	for (uint32_t pass = 0; pass < 2; pass++) {
+		const bool copy_pass = (pass == 1);
+		if (copy_pass) {
+			transfer_worker = _acquire_transfer_worker(
+				staging_local_offset, required_align, staging_worker_offset);
+			texture->transfer_worker_index = transfer_worker->index;
+
+			{
+				MutexLock lock(transfer_worker->operations_mutex);
+				texture->transfer_worker_operation = ++transfer_worker->operations_counter;
+			}
+
+			staging_local_offset = 0;
+
+			write_ptr = data->driver->buffer_map(transfer_worker->staging_buffer);
+			ERR_FAIL_NULL_V(write_ptr, ERR_CANT_CREATE);
+
+			if (data->driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
+				RDD::TextureBarrier tb;
+				tb.texture = texture->driver_id;
+				tb.dst_access = RDD::BARRIER_ACCESS_COPY_WRITE_BIT;
+				tb.prev_layout = RDD::TEXTURE_LAYOUT_UNDEFINED;
+				tb.next_layout = p_dst_layout;
+				tb.subresources.aspect = texture->barrier_aspect_flags;
+				tb.subresources.mipmap_count = texture->mipmaps;
+				tb.subresources.base_layer = p_layer;
+				tb.subresources.layer_count = 1;
+				data->driver->command_pipeline_barrier(transfer_worker->command_buffer,
+					RDD::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, RDD::PIPELINE_STAGE_COPY_BIT, {}, {},
+					tb, {});
+			}
+		}
+
+		uint32_t mipmap_offset = 0;
+		uint32_t logic_width = texture->width;
+		uint32_t logic_height = texture->height;
+		for (uint32_t mm_i = 0; mm_i < texture->mipmaps; mm_i++) {
+			uint32_t depth = 0;
+			uint32_t image_total = RDC::get_image_format_required_size(texture->format,
+				texture->width, texture->height, texture->depth, mm_i + 1, &width, &height, &depth);
+
+			const uint8_t* read_ptr_mipmap = read_ptr + mipmap_offset;
+			tight_mip_size = image_total - mipmap_offset;
+
+			for (uint32_t z = 0; z < depth; z++) {
+				if (required_align > 0) {
+					uint32_t align_offset = staging_local_offset % required_align;
+					if (align_offset != 0) {
+						staging_local_offset += required_align - align_offset;
+					}
+				}
+
+				uint32_t pitch = RDC::get_compressed_image_format_pixels_shifted(
+					texture->format, width * pixel_size * block_w);
+				uint32_t pitch_step =
+					data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP);
+				pitch = STEPIFY(pitch, pitch_step);
+				uint32_t to_allocate = RDC::get_compressed_image_format_pixels_shifted(
+					texture->format, pitch * height);
+
+				if (copy_pass) {
+					const uint8_t* read_ptr_mipmap_layer =
+						read_ptr_mipmap + (tight_mip_size / depth) * z;
+					uint64_t staging_buffer_offset = staging_worker_offset + staging_local_offset;
+					uint8_t* write_ptr_mipmap_layer = write_ptr + staging_buffer_offset;
+					_copy_region_block_or_regular(read_ptr_mipmap_layer, write_ptr_mipmap_layer, 0,
+						0, width, width, height, block_w, block_h, pitch, pixel_size, block_size);
+
+					RDD::BufferTextureCopyRegion copy_region;
+					copy_region.buffer_offset = staging_buffer_offset;
+					copy_region.row_pitch = pitch;
+					copy_region.texture_subresource.aspect =
+						(texture->read_aspect_flags & RDD::TEXTURE_ASPECT_DEPTH_BIT)
+							? RDD::TEXTURE_ASPECT_DEPTH
+							: RDD::TEXTURE_ASPECT_COLOR;
+					copy_region.texture_subresource.mipmap = mm_i;
+					copy_region.texture_subresource.layer = p_layer;
+					copy_region.texture_offset = Vector3i(0, 0, z);
+					copy_region.texture_region_size = Vector3i(logic_width, logic_height, 1);
+					data->driver->command_copy_buffer_to_texture(transfer_worker->command_buffer,
+						transfer_worker->staging_buffer, texture->driver_id, p_dst_layout,
+						copy_region);
+				}
+
+				staging_local_offset += to_allocate;
+			}
+
+			mipmap_offset = image_total;
+			logic_width = MAX(1u, logic_width >> 1);
+			logic_height = MAX(1u, logic_height >> 1);
+		}
+
+		if (copy_pass) {
+			data->driver->buffer_unmap(transfer_worker->staging_buffer);
+
+			if (texture->draw_tracker == nullptr &&
+				data->driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
+				RDD::TextureBarrier tb;
+				tb.texture = texture->driver_id;
+				tb.src_access = RDD::BARRIER_ACCESS_COPY_WRITE_BIT;
+				tb.prev_layout = p_dst_layout;
+				tb.next_layout = RDD::TEXTURE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				tb.subresources.aspect = texture->barrier_aspect_flags;
+				tb.subresources.mipmap_count = texture->mipmaps;
+				tb.subresources.base_layer = p_layer;
+				tb.subresources.layer_count = 1;
+				transfer_worker->texture_barriers.push_back(tb);
+			}
+
+			if (p_immediate_flush) {
+				_end_transfer_worker(transfer_worker);
+				_submit_transfer_worker(transfer_worker);
+				_wait_for_transfer_worker(transfer_worker);
+			}
+
+			_release_transfer_worker(transfer_worker);
+		}
+	}
+
+	return OK;
+}
+
+RID RenderingDevice::texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view,
+	const Vector<Vector<uint8_t>>& p_data)
 {
 	ERR_RENDER_THREAD_GUARD_V(RID());
 
-	Texture texture;
-	texture.type = p_format.texture_type;
-	texture.format = p_format.format;
-	texture.width = p_format.width;
-	texture.height = p_format.height;
-	texture.depth = p_format.depth;
-	texture.layers = p_format.array_layers;
-	texture.mipmaps = p_format.mipmaps;
-	texture.usage_flags = p_format.usage_bits;
-	texture.samples = p_format.samples;
+	RDC::TextureFormat format = p_format;
 
-	texture.allowed_shared_formats = p_format.shareable_formats;
+	if (format.shareable_formats.size()) {
+		ERR_FAIL_COND_V_MSG(!format.shareable_formats.has(format.format), RID(),
+			"If supplied a list of shareable formats, the current format must be present in the "
+			"list");
+		ERR_FAIL_COND_V_MSG(p_view.format_override != RDC::DATA_FORMAT_MAX &&
+								!format.shareable_formats.has(p_view.format_override),
+			RID(),
+			"If supplied a list of shareable formats, the current view format override must be "
+			"present in the list");
+	}
+
+	ERR_FAIL_INDEX_V(format.texture_type, RDC::TEXTURE_TYPE_MAX, RID());
+	ERR_FAIL_COND_V_MSG(
+		format.width < 1, RID(), "Width must be equal or greater than 1 for all textures");
+
+	if (format.texture_type != RDC::TEXTURE_TYPE_1D &&
+		format.texture_type != RDC::TEXTURE_TYPE_1D_ARRAY) {
+		ERR_FAIL_COND_V_MSG(format.height < 1, RID(),
+			"Height must be equal or greater than 1 for 2D and 3D textures");
+	}
+
+	if (format.texture_type == RDC::TEXTURE_TYPE_3D) {
+		ERR_FAIL_COND_V_MSG(
+			format.depth < 1, RID(), "Depth must be equal or greater than 1 for 3D textures");
+	}
+
+	ERR_FAIL_COND_V(format.mipmaps < 1, RID());
+
+	if (format.texture_type == RDC::TEXTURE_TYPE_1D_ARRAY ||
+		format.texture_type == RDC::TEXTURE_TYPE_2D_ARRAY ||
+		format.texture_type == RDC::TEXTURE_TYPE_CUBE_ARRAY ||
+		format.texture_type == RDC::TEXTURE_TYPE_CUBE) {
+		ERR_FAIL_COND_V_MSG(format.array_layers < 1, RID(),
+			"Number of layers must be equal or greater than 1 for arrays and cubemaps.");
+		ERR_FAIL_COND_V_MSG((format.texture_type == RDC::TEXTURE_TYPE_CUBE_ARRAY ||
+								format.texture_type == RDC::TEXTURE_TYPE_CUBE) &&
+								(format.array_layers % 6) != 0,
+			RID(),
+			"Cubemap and cubemap array textures must provide a layer number that is multiple of 6");
+		ERR_FAIL_COND_V_MSG((format.texture_type == RDC::TEXTURE_TYPE_CUBE_ARRAY ||
+								format.texture_type == RDC::TEXTURE_TYPE_CUBE) &&
+								(format.width != format.height),
+			RID(), "Cubemap and cubemap array textures must have equal width and height.");
+	}
+	else {
+		format.array_layers = 1;
+	}
+
+	ERR_FAIL_INDEX_V(format.samples, RDC::TEXTURE_SAMPLES_MAX, RID());
+	ERR_FAIL_COND_V_MSG(
+		format.usage_bits == 0, RID(), "No usage bits specified (at least one is needed)");
+
+	format.height = format.texture_type != RDC::TEXTURE_TYPE_1D &&
+							format.texture_type != RDC::TEXTURE_TYPE_1D_ARRAY
+						? format.height
+						: 1;
+	format.depth = format.texture_type == RDC::TEXTURE_TYPE_3D ? format.depth : 1;
+
+	Vector<Vector<uint8_t>> tex_data = p_data;
+	bool immediate_flush = false;
+
+	if (tex_data.is_empty() && (p_format.usage_bits & RDC::TEXTURE_USAGE_VRS_ATTACHMENT_BIT)) {
+		immediate_flush = true;
+		for (uint32_t i = 0; i < format.array_layers; i++) {
+			uint32_t required_size = RDC::get_image_format_required_size(
+				format.format, format.width, format.height, format.depth, format.mipmaps);
+			Vector<uint8_t> layer;
+			layer.resize(required_size);
+			layer.fill(255);
+			tex_data.push_back(layer);
+		}
+	}
+
+	uint32_t forced_usage_bits = _texture_vrs_method_to_usage_bits();
+	if (tex_data.size()) {
+		ERR_FAIL_COND_V_MSG(tex_data.size() != (int)format.array_layers, RID(),
+			"Default supplied data for image format is of invalid length (" +
+				itos(tex_data.size()) + "), should be (" + itos(format.array_layers) + ").");
+
+		for (uint32_t i = 0; i < format.array_layers; i++) {
+			uint32_t required_size = RDC::get_image_format_required_size(
+				format.format, format.width, format.height, format.depth, format.mipmaps);
+			ERR_FAIL_COND_V_MSG((uint32_t)tex_data[i].size() != required_size, RID(),
+				"Data for slice index " + itos(i) + " differs in size (" +
+					itos(tex_data[i].size()) + ") than required (" + itos(required_size) + ").");
+		}
+
+		if (!(format.usage_bits & RDC::TEXTURE_USAGE_CAN_UPDATE_BIT)) {
+			forced_usage_bits |= RDC::TEXTURE_USAGE_CAN_UPDATE_BIT;
+		}
+	}
+
+	RDD::TextureView tv;
+	if (p_view.format_override == RDC::DATA_FORMAT_MAX) {
+		tv.format = format.format;
+	}
+	else {
+		ERR_FAIL_INDEX_V(p_view.format_override, RDC::DATA_FORMAT_MAX, RID());
+		tv.format = p_view.format_override;
+	}
+	tv.swizzle_r = p_view.swizzle_r;
+	tv.swizzle_g = p_view.swizzle_g;
+	tv.swizzle_b = p_view.swizzle_b;
+	tv.swizzle_a = p_view.swizzle_a;
+
+	Texture texture;
+	format.usage_bits |= forced_usage_bits;
+	texture.driver_id = data->driver->texture_create(format, tv);
+	ERR_FAIL_COND_V(!texture.driver_id, RID());
+	texture.type = format.texture_type;
+	texture.format = format.format;
+	texture.width = format.width;
+	texture.height = format.height;
+	texture.depth = format.depth;
+	texture.layers = format.array_layers;
+	texture.mipmaps = format.mipmaps;
+	texture.base_mipmap = 0;
+	texture.base_layer = 0;
+	texture.is_resolve_buffer = format.is_resolve_buffer;
+	texture.is_discardable = format.is_discardable;
+	texture.is_subsampled = format.is_subsampled;
+	texture.usage_flags = format.usage_bits & ~forced_usage_bits;
+	texture.samples = format.samples;
+	texture.allowed_shared_formats = format.shareable_formats;
 	if (!texture.allowed_shared_formats.has(texture.format)) {
 		texture.allowed_shared_formats.push_back(texture.format);
 	}
+	texture.has_initial_data = !tex_data.is_empty();
 
-	RDD::TextureView tv = p_view;
-	if (tv.format == RDC::DATA_FORMAT_MAX) {
-		tv.format = texture.format;
+	if (data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_OUTPUTS_REQUIRE_CLEARS)) {
+		texture.pending_clear =
+			!texture.has_initial_data &&
+			(format.usage_bits &
+				(RDC::TEXTURE_USAGE_STORAGE_BIT | RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT |
+					RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT));
 	}
 
-	texture.driver_id = data->driver->texture_create(p_format, tv);
-	ERR_FAIL_COND_V(texture.driver_id == RDD::TextureID(), RID());
+	if ((format.usage_bits & (RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+								 RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT))) {
+		texture.read_aspect_flags |= RDD::TEXTURE_ASPECT_DEPTH_BIT;
+		texture.barrier_aspect_flags |= RDD::TEXTURE_ASPECT_DEPTH_BIT;
+		if (RDC::format_has_stencil(format.format)) {
+			texture.barrier_aspect_flags |= RDD::TEXTURE_ASPECT_STENCIL_BIT;
+		}
+	}
+	else {
+		texture.read_aspect_flags |= RDD::TEXTURE_ASPECT_COLOR_BIT;
+		texture.barrier_aspect_flags |= RDD::TEXTURE_ASPECT_COLOR_BIT;
+	}
+
+	texture.bound = false;
+
+	bool texture_mutable_by_default =
+		texture.usage_flags &
+		(RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+			RDC::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_STORAGE_BIT |
+			RDC::TEXTURE_USAGE_STORAGE_ATOMIC_BIT);
+	if (tex_data.is_empty() || texture_mutable_by_default) {
+		_texture_make_mutable(&texture, RID());
+	}
 
 	data->texture_memory.add(data->driver->texture_get_allocation_size(texture.driver_id));
 
-	return data->texture_owner.make_rid(texture);
+	RID id = data->texture_owner.make_rid(texture);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+
+	if (tex_data.size()) {
+		const bool use_general_in_copy_queues =
+			data->driver->api_trait_get(RDD::API_TRAIT_USE_GENERAL_IN_COPY_QUEUES);
+		const RDD::TextureLayout dst_layout = use_general_in_copy_queues
+												  ? RDD::TEXTURE_LAYOUT_GENERAL
+												  : RDD::TEXTURE_LAYOUT_COPY_DST_OPTIMAL;
+		for (uint32_t i = 0; i < format.array_layers; i++) {
+			_texture_initialize(id, i, tex_data[i], dst_layout, immediate_flush);
+		}
+
+		Texture* stored_tex = data->texture_owner.get_or_null(id);
+		if (stored_tex && stored_tex->draw_tracker != nullptr) {
+			stored_tex->draw_tracker->usage = use_general_in_copy_queues
+												  ? RDG::RESOURCE_USAGE_GENERAL
+												  : RDG::RESOURCE_USAGE_COPY_TO;
+		}
+	}
+
+	return id;
+}
+
+RID RenderingDevice::texture_create(const RDC::TextureFormat& p_format,
+	const RDD::TextureView& p_view, const Vector<Vector<uint8_t>>& p_data)
+{
+	TextureView view;
+	view.format_override = p_view.format;
+	view.swizzle_r = p_view.swizzle_r;
+	view.swizzle_g = p_view.swizzle_g;
+	view.swizzle_b = p_view.swizzle_b;
+	view.swizzle_a = p_view.swizzle_a;
+	return texture_create(p_format, view, p_data);
 }
 
 Vector<uint8_t> RenderingDevice::texture_get_data(RID p_texture, uint32_t p_layer)
 {
-	return Vector<uint8_t>();
+	ERR_RENDER_THREAD_GUARD_V(Vector<uint8_t>());
+
+	Texture* tex = data->texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(tex, Vector<uint8_t>());
+
+	ERR_FAIL_COND_V_MSG(tex->bound, Vector<uint8_t>(),
+		"Texture can't be retrieved while a draw list that uses it as part of a framebuffer is "
+		"being created.");
+	ERR_FAIL_COND_V_MSG(!(tex->usage_flags & RDC::TEXTURE_USAGE_CAN_COPY_FROM_BIT),
+		Vector<uint8_t>(),
+		"Texture requires `TEXTURE_USAGE_CAN_COPY_FROM_BIT` to be set to be retrieved.");
+
+	ERR_FAIL_COND_V(p_layer >= tex->layers, Vector<uint8_t>());
+
+	_texture_check_pending_clear(p_texture, tex);
+	_check_transfer_worker_texture(tex);
+
+	if (tex->usage_flags & RDC::TEXTURE_USAGE_CPU_READ_BIT) {
+		return data->driver->texture_get_data(tex->driver_id, p_layer);
+	}
+
+	RDD::TextureAspect aspect = (tex->read_aspect_flags & RDD::TEXTURE_ASPECT_DEPTH_BIT)
+									? RDD::TEXTURE_ASPECT_DEPTH
+									: RDD::TEXTURE_ASPECT_COLOR;
+	uint32_t mip_alignment =
+		data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT);
+	uint32_t buffer_size = 0;
+
+	thread_local LocalVector<RDD::TextureCopyableLayout> mip_layouts;
+	thread_local LocalVector<RDD::BufferTextureCopyRegion> copy_regions;
+	mip_layouts.resize(tex->mipmaps);
+	copy_regions.resize(tex->mipmaps);
+
+	for (uint32_t i = 0; i < tex->mipmaps; i++) {
+		RDD::TextureSubresource subres;
+		subres.aspect = aspect;
+		subres.layer = p_layer;
+		subres.mipmap = i;
+
+		RDD::TextureCopyableLayout& mip_layout = mip_layouts[i];
+		data->driver->texture_get_copyable_layout(tex->driver_id, subres, &mip_layout);
+
+		uint32_t mip_offset = STEPIFY(buffer_size, mip_alignment);
+		buffer_size = mip_offset + mip_layout.size;
+
+		RDD::BufferTextureCopyRegion& copy_region = copy_regions[i];
+		copy_region.buffer_offset = mip_offset;
+		copy_region.row_pitch = mip_layout.row_pitch;
+		copy_region.texture_subresource.aspect = aspect;
+		copy_region.texture_subresource.mipmap = i;
+		copy_region.texture_subresource.layer = p_layer;
+		copy_region.texture_region_size.x = MAX(1u, tex->width >> i);
+		copy_region.texture_region_size.y = MAX(1u, tex->height >> i);
+		copy_region.texture_region_size.z = MAX(1u, tex->depth >> i);
+	}
+
+	RDD::BufferID tmp_buffer = data->driver->buffer_create(buffer_size,
+		RDD::BUFFER_USAGE_TRANSFER_TO_BIT, RDD::MEMORY_ALLOCATION_TYPE_CPU, data->frames_drawn);
+	ERR_FAIL_COND_V(!tmp_buffer, Vector<uint8_t>());
+
+	if (_texture_make_mutable(tex, p_texture)) {
+		data->draw_graph.add_synchronization();
+	}
+
+	data->draw_graph.add_texture_get_data(
+		tex->driver_id, tex->draw_tracker, tmp_buffer, copy_regions);
+
+	_flush_and_stall_for_all_frames();
+
+	const uint8_t* read_ptr = data->driver->buffer_map(tmp_buffer);
+	ERR_FAIL_NULL_V(read_ptr, Vector<uint8_t>());
+
+	uint32_t block_w = 0;
+	uint32_t block_h = 0;
+	RDC::get_compressed_image_format_block_dimensions(tex->format, block_w, block_h);
+
+	Vector<uint8_t> buffer_data;
+	uint32_t tight_buffer_size = RDC::get_image_format_required_size(
+		tex->format, tex->width, tex->height, tex->depth, tex->mipmaps);
+	buffer_data.resize(tight_buffer_size);
+
+	uint8_t* write_ptr = buffer_data.ptrw();
+
+	for (uint32_t i = 0; i < tex->mipmaps; i++) {
+		uint32_t width = 0, height = 0, depth = 0;
+
+		uint32_t tight_mip_size = RDC::get_image_format_required_size(tex->format,
+			MAX(1u, tex->width >> i), MAX(1u, tex->height >> i), MAX(1u, tex->depth >> i), 1,
+			&width, &height, &depth);
+
+		uint32_t row_count = (height / block_h) * depth;
+		uint32_t tight_row_pitch = tight_mip_size / row_count;
+
+		const uint8_t* rp = read_ptr + copy_regions[i].buffer_offset;
+		uint32_t row_pitch = mip_layouts[i].row_pitch;
+
+		if (tight_row_pitch == row_pitch) {
+			memcpy(write_ptr, rp, tight_mip_size);
+			write_ptr += tight_mip_size;
+		}
+		else {
+			for (uint32_t j = 0; j < row_count; j++) {
+				memcpy(write_ptr, rp, tight_row_pitch);
+				rp += row_pitch;
+				write_ptr += tight_row_pitch;
+			}
+		}
+	}
+
+	data->driver->buffer_unmap(tmp_buffer);
+	data->driver->buffer_free(tmp_buffer);
+
+	return buffer_data;
 }
 
 RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with_texture)
@@ -1377,47 +2094,6 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 	}
 
 	return data->texture_owner.make_rid(texture);
-}
-
-static _ALWAYS_INLINE_ void _copy_region(const uint8_t* __restrict p_src, uint8_t* __restrict p_dst,
-	uint32_t p_src_x, uint32_t p_src_y, uint32_t p_src_w, uint32_t p_src_h, uint32_t p_src_full_w,
-	uint32_t p_dst_pitch, uint32_t p_unit_size)
-{
-	uint32_t src_offset = (p_src_y * p_src_full_w + p_src_x) * p_unit_size;
-	uint32_t dst_offset = 0;
-	for (uint32_t y = p_src_h; y > 0; y--) {
-		const uint8_t* __restrict src = p_src + src_offset;
-		uint8_t* __restrict dst = p_dst + dst_offset;
-		for (uint32_t x = p_src_w * p_unit_size; x > 0; x--) {
-			*dst = *src;
-			src++;
-			dst++;
-		}
-		src_offset += p_src_full_w * p_unit_size;
-		dst_offset += p_dst_pitch;
-	}
-}
-
-static _ALWAYS_INLINE_ void _copy_region_block_or_regular(const uint8_t* p_read_ptr,
-	uint8_t* p_write_ptr, uint32_t p_x, uint32_t p_y, uint32_t p_width, uint32_t p_region_w,
-	uint32_t p_region_h, uint32_t p_block_w, uint32_t p_block_h, uint32_t p_dst_pitch,
-	uint32_t p_pixel_size, uint32_t p_block_size)
-{
-	if (p_block_w != 1 || p_block_h != 1) {
-		// Block format.
-		uint32_t xb = p_x / p_block_w;
-		uint32_t yb = p_y / p_block_h;
-		uint32_t wb = p_width / p_block_w;
-		uint32_t region_wb = p_region_w / p_block_w;
-		uint32_t region_hb = p_region_h / p_block_h;
-		_copy_region(
-			p_read_ptr, p_write_ptr, xb, yb, region_wb, region_hb, wb, p_dst_pitch, p_block_size);
-	}
-	else {
-		// Regular format.
-		_copy_region(p_read_ptr, p_write_ptr, p_x, p_y, p_region_w, p_region_h, p_width,
-			p_dst_pitch, p_pixel_size);
-	}
 }
 
 uint32_t RenderingDevice::_texture_layer_count(Texture* p_texture)
@@ -2512,7 +3188,7 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_
 	const Vector<AttachmentFormat>& p_attachments, const Vector<FramebufferPass>& p_passes,
 	uint32_t p_view_count, int32_t p_vrs_attachment)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	FramebufferFormatKey key;
 	key.attachments = p_attachments;
@@ -2571,7 +3247,7 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_
 RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_empty(
 	RDC::TextureSamples p_samples)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	FramebufferFormatKey key;
 	key.passes.push_back(FramebufferPass());
@@ -2612,7 +3288,7 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create_
 RDC::TextureSamples RenderingDevice::framebuffer_format_get_texture_samples(
 	FramebufferFormatID p_format, uint32_t p_pass)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	HashMap<FramebufferFormatID, FramebufferFormat>::Iterator E =
 		data->framebuffer_formats.find(p_format);
@@ -2625,7 +3301,7 @@ RDC::TextureSamples RenderingDevice::framebuffer_format_get_texture_samples(
 RID RenderingDevice::framebuffer_create_empty(
 	const Size2i& p_size, RDC::TextureSamples p_samples, FramebufferFormatID p_format_check)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Framebuffer framebuffer;
 	framebuffer.format_id = framebuffer_format_create_empty(p_samples);
@@ -2655,7 +3331,7 @@ RID RenderingDevice::framebuffer_create_empty(
 RID RenderingDevice::framebuffer_create(const Vector<RID>& p_texture_attachments,
 	FramebufferFormatID p_format_check, uint32_t p_view_count)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	FramebufferPass pass;
 
@@ -2700,7 +3376,7 @@ RID RenderingDevice::framebuffer_create_multipass(const Vector<RID>& p_texture_a
 	const Vector<FramebufferPass>& p_passes, FramebufferFormatID p_format_check,
 	uint32_t p_view_count)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Vector<AttachmentFormat> attachments;
 	LocalVector<RDD::TextureID> textures;
@@ -2801,7 +3477,7 @@ RID RenderingDevice::framebuffer_create_multipass(const Vector<RID>& p_texture_a
 
 RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_get_format(RID p_framebuffer)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Framebuffer* framebuffer = data->framebuffer_owner.get_or_null(p_framebuffer);
 	ERR_FAIL_NULL_V(framebuffer, RDC::INVALID_ID);
@@ -2811,7 +3487,7 @@ RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_get_format(RID
 
 Size2 RenderingDevice::framebuffer_get_size(RID p_framebuffer)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Framebuffer* framebuffer = data->framebuffer_owner.get_or_null(p_framebuffer);
 	ERR_FAIL_NULL_V(framebuffer, Size2(0, 0));
@@ -2821,7 +3497,7 @@ Size2 RenderingDevice::framebuffer_get_size(RID p_framebuffer)
 
 bool RenderingDevice::framebuffer_is_valid(RID p_framebuffer)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	return data->framebuffer_owner.owns(p_framebuffer);
 }
@@ -2829,7 +3505,7 @@ bool RenderingDevice::framebuffer_is_valid(RID p_framebuffer)
 void RenderingDevice::framebuffer_set_invalidation_callback(
 	RID p_framebuffer, InvalidationCallback p_callback, void* p_userdata)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Framebuffer* framebuffer = data->framebuffer_owner.get_or_null(p_framebuffer);
 	ERR_FAIL_NULL(framebuffer);
@@ -2840,7 +3516,7 @@ void RenderingDevice::framebuffer_set_invalidation_callback(
 
 RID RenderingDevice::sampler_create(const RDC::SamplerState& p_state)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	ERR_FAIL_INDEX_V(p_state.repeat_u, RDC::SAMPLER_REPEAT_MODE_MAX, RID());
 	ERR_FAIL_INDEX_V(p_state.repeat_v, RDC::SAMPLER_REPEAT_MODE_MAX, RID());
@@ -2861,7 +3537,7 @@ RID RenderingDevice::sampler_create(const RDC::SamplerState& p_state)
 bool RenderingDevice::sampler_is_format_supported_for_filter(
 	RDC::DataFormat p_format, RDC::SamplerFilter p_sampler_filter)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	ERR_FAIL_INDEX_V(p_format, RDC::DATA_FORMAT_MAX, false);
 
@@ -2873,7 +3549,7 @@ bool RenderingDevice::sampler_is_format_supported_for_filter(
 RenderingDevice::VertexFormatID RenderingDevice::vertex_format_create(
 	const Vector<RDC::VertexAttribute>& p_vertex_descriptions)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	VertexDescriptionKey key;
 	key.vertex_formats = p_vertex_descriptions;
@@ -2940,7 +3616,7 @@ RenderingDevice::VertexFormatID RenderingDevice::vertex_format_create(
 RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format,
 	const Vector<RID>& p_src_buffers, const Vector<uint64_t>& p_offsets)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	ERR_FAIL_COND_V(!data->vertex_formats.has(p_vertex_format), RID());
 	const VertexDescriptionCache& vd = data->vertex_formats[p_vertex_format];
@@ -3039,7 +3715,7 @@ RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID
 RID RenderingDevice::index_array_create(
 	RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	ERR_FAIL_COND_V(!data->index_buffer_owner.owns(p_index_buffer), RID());
 
@@ -3138,7 +3814,7 @@ void RenderingDevice::shader_destroy_modules(RID p_shader)
 
 RID RenderingDevice::shader_create_placeholder()
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Shader shader;
 	return data->shader_owner.make_rid(shader);
@@ -3146,7 +3822,7 @@ RID RenderingDevice::shader_create_placeholder()
 
 uint64_t RenderingDevice::shader_get_vertex_input_attribute_mask(RID p_shader)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	const Shader* shader = data->shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL_V(shader, 0);
@@ -3161,7 +3837,7 @@ RID RenderingDevice::uniform_set_create(
 	RDD::ShaderID shader_driver_id;
 	uint32_t set_format = 0;
 	{
-		MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+		MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 		const Shader* shader = data->shader_owner.get_or_null(p_shader);
 		ERR_FAIL_NULL_V(shader, RID());
 		ERR_FAIL_INDEX_V(p_shader_set, (uint32_t)shader->set_formats.size(), RID());
@@ -3348,7 +4024,7 @@ RID RenderingDevice::uniform_set_create(
 		bound_uniforms, shader_driver_id, p_shader_set, linear_pool_index);
 	ERR_FAIL_COND_V(uniform_set.driver_id == RDD::UniformSetID(), RID());
 
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 	RID id = data->uniform_set_owner.make_rid(uniform_set);
 
 	_add_dependency(id, p_shader);
@@ -3372,7 +4048,7 @@ void RenderingDevice::_uniform_set_update_shared(UniformSet* p_uniform_set)
 
 bool RenderingDevice::uniform_set_is_valid(RID p_uniform_set)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	return data->uniform_set_owner.owns(p_uniform_set);
 }
@@ -3380,7 +4056,7 @@ bool RenderingDevice::uniform_set_is_valid(RID p_uniform_set)
 void RenderingDevice::uniform_set_set_invalidation_callback(
 	RID p_uniform_set, InvalidationCallback p_callback, void* p_userdata)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	UniformSet* us = data->uniform_set_owner.get_or_null(p_uniform_set);
 	ERR_FAIL_NULL(us);
@@ -3395,14 +4071,14 @@ bool RenderingDevice::uniform_sets_have_linear_pools()
 
 bool RenderingDevice::render_pipeline_is_valid(RID p_pipeline)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	return data->render_pipeline_owner.owns(p_pipeline);
 }
 
 bool RenderingDevice::compute_pipeline_is_valid(RID p_pipeline)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	return data->compute_pipeline_owner.owns(p_pipeline);
 }
@@ -3492,7 +4168,7 @@ uint32_t RenderingDevice::_get_swap_chain_desired_count()
 
 Error RenderingDevice::screen_create(DisplayServerEnums::WindowID p_screen)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	RenderingContextDriver::SurfaceID surface = data->context->surface_get_from_window(p_screen);
 	ERR_FAIL_COND_V_MSG(surface == 0, ERR_CANT_CREATE, "A surface was not created for the screen.");
@@ -3512,7 +4188,7 @@ Error RenderingDevice::screen_create(DisplayServerEnums::WindowID p_screen)
 
 int RenderingDevice::screen_get_width(DisplayServerEnums::WindowID p_screen)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	RenderingContextDriver::SurfaceID surface = data->context->surface_get_from_window(p_screen);
 	ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
@@ -3521,7 +4197,7 @@ int RenderingDevice::screen_get_width(DisplayServerEnums::WindowID p_screen)
 
 int RenderingDevice::screen_get_height(DisplayServerEnums::WindowID p_screen)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	RenderingContextDriver::SurfaceID surface = data->context->surface_get_from_window(p_screen);
 	ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
@@ -3531,7 +4207,7 @@ int RenderingDevice::screen_get_height(DisplayServerEnums::WindowID p_screen)
 int RenderingDevice::screen_get_pre_rotation_degrees(DisplayServerEnums::WindowID p_screen)
 
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
 		data->screen_swap_chains.find(p_screen);
@@ -3546,7 +4222,7 @@ RenderingDevice::FramebufferFormatID RenderingDevice::screen_get_framebuffer_for
 {
 	RDC::DataFormat format;
 	{
-		MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+		MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 		HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
 			data->screen_swap_chains.find(p_screen);
 		ERR_FAIL_COND_V_MSG(
@@ -3565,7 +4241,7 @@ RenderingDevice::FramebufferFormatID RenderingDevice::screen_get_framebuffer_for
 
 RDC::ColorSpace RenderingDevice::screen_get_color_space(DisplayServerEnums::WindowID p_screen)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
 		data->screen_swap_chains.find(p_screen);
@@ -3580,7 +4256,7 @@ RDC::ColorSpace RenderingDevice::screen_get_color_space(DisplayServerEnums::Wind
 
 bool RenderingDevice::screen_get_hdr_output_supported(DisplayServerEnums::WindowID p_screen)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	HashMap<DisplayServerEnums::WindowID, RDD::SwapChainID>::ConstIterator it =
 		data->screen_swap_chains.find(p_screen);
@@ -4189,6 +4865,83 @@ RenderingDevice::ComputeListID RenderingDevice::compute_list_begin()
 	data->draw_graph.add_compute_list_begin();
 
 	return ID_TYPE_COMPUTE_LIST;
+}
+
+void RenderingDevice::compute_list_bind_compute_pipeline(
+	ComputeListID p_list, RID p_compute_pipeline)
+{
+	ERR_RENDER_THREAD_GUARD();
+
+	ERR_FAIL_COND(p_list != ID_TYPE_COMPUTE_LIST);
+	ERR_FAIL_COND(!data->compute_list.active);
+
+	const ComputePipeline* pipeline = data->compute_pipeline_owner.get_or_null(p_compute_pipeline);
+	ERR_FAIL_NULL(pipeline);
+
+	if (p_compute_pipeline == data->compute_list.state.pipeline) {
+		return; // Redundant state, return.
+	}
+
+	data->compute_list.state.pipeline = p_compute_pipeline;
+
+	data->draw_graph.add_compute_list_bind_pipeline(pipeline->driver_id);
+
+	if (data->compute_list.state.pipeline_shader != pipeline->shader) {
+		uint32_t pcount = pipeline->set_formats.size();
+		data->compute_list.state.set_count = MAX(data->compute_list.state.set_count, pcount);
+		const uint32_t* pformats = pipeline->set_formats.ptr();
+
+		uint32_t first_invalid_set = UINT32_MAX;
+		switch (data->driver->api_trait_get(RDD::API_TRAIT_SHADER_CHANGE_INVALIDATION)) {
+		case RDD::SHADER_CHANGE_INVALIDATION_ALL_BOUND_UNIFORM_SETS: {
+			first_invalid_set = 0;
+		} break;
+		case RDD::SHADER_CHANGE_INVALIDATION_INCOMPATIBLE_SETS_PLUS_CASCADE: {
+			for (uint32_t i = 0; i < pcount; i++) {
+				if (data->compute_list.state.sets[i].pipeline_expected_format != pformats[i]) {
+					first_invalid_set = i;
+					break;
+				}
+			}
+		} break;
+		case RDD::SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH: {
+			if (data->compute_list.state.pipeline_shader_layout_hash !=
+				pipeline->shader_layout_hash) {
+				first_invalid_set = 0;
+			}
+		} break;
+		}
+
+		for (uint32_t i = 0; i < pcount; i++) {
+			data->compute_list.state.sets[i].bound =
+				data->compute_list.state.sets[i].bound && i < first_invalid_set;
+			data->compute_list.state.sets[i].pipeline_expected_format = pformats[i];
+		}
+
+		for (uint32_t i = pcount; i < data->compute_list.state.set_count; i++) {
+			data->compute_list.state.sets[i].bound = false;
+		}
+
+		data->compute_list.state.set_count = pcount;
+
+		if (pipeline->push_constant_size) {
+#ifdef DEBUG_ENABLED
+			data->compute_list.validation.pipeline_push_constant_supplied = false;
+#endif
+		}
+
+		data->compute_list.state.pipeline_shader = pipeline->shader;
+		data->compute_list.state.pipeline_shader_driver_id = pipeline->shader_driver_id;
+		data->compute_list.state.pipeline_shader_layout_hash = pipeline->shader_layout_hash;
+		data->compute_list.state.local_group_size[0] = pipeline->local_group_size[0];
+		data->compute_list.state.local_group_size[1] = pipeline->local_group_size[1];
+		data->compute_list.state.local_group_size[2] = pipeline->local_group_size[2];
+	}
+
+#ifdef DEBUG_ENABLED
+	data->compute_list.validation.pipeline_active = true;
+	data->compute_list.validation.pipeline_push_constant_size = pipeline->push_constant_size;
+#endif
 }
 
 void RenderingDevice::compute_list_bind_uniform_set(
@@ -5047,7 +5800,7 @@ bool RenderingDevice::_dependencies_make_mutable_recursive(
 
 bool RenderingDevice::_dependencies_make_mutable(RID p_id, RDG::ResourceTracker* p_resource_tracker)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 	return _dependencies_make_mutable_recursive(p_id, p_resource_tracker);
 }
 
@@ -5229,7 +5982,7 @@ void RenderingDevice::_free_internal(RID p_id)
 // We just expose the resources that are owned and can be accessed easily.
 void RenderingDevice::set_resource_name(RID p_id, const String& p_name)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	if (data->texture_owner.owns(p_id)) {
 		Texture* texture = data->texture_owner.get_or_null(p_id);
@@ -5940,45 +6693,95 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 }
 #endif
 
-void RenderingDevice::swap_buffers(bool p_present)
+void RenderingDevice::_stall_for_previous_frames()
 {
-    ERR_RENDER_THREAD_GUARD();
-
-    if (p_present) {
-        for (const KeyValue<DisplayServerEnums::WindowID, RDD::SwapChainID>& it :
-            data->screen_swap_chains) {
-            if (data->screen_framebuffers.has(it.key)) {
-                data->frames[data->frame].swap_chains_to_present.push_back(it.value);
-            }
-        }
-    }
-
-    RDD::CommandBufferID command_buffer = data->frames[data->frame].command_buffer;
-    data->driver->command_buffer_begin(command_buffer);
-
-    data->draw_graph.end(RENDER_GRAPH_REORDER, RENDER_GRAPH_FULL_BARRIERS, command_buffer,
-        data->frames[data->frame].command_buffer_pool);
-
-    data->driver->command_buffer_end(command_buffer);
-
-    _execute_frame(p_present);
-
-    data->screen_framebuffers.clear();
-    data->frame = (data->frame + 1) % data->frames.size();
-    data->frames_drawn++;
-
-    if (data->frames[data->frame].fence_signaled) {
-        data->driver->fence_wait(data->frames[data->frame].fence);
-        data->frames[data->frame].fence_signaled = false;
-    }
-
-    data->driver->command_pool_reset(data->frames[data->frame].command_pool);
-    _free_pending_resources(data->frame);
-
-    data->draw_graph.begin();
+	for (uint32_t i = 0; i < data->frames.size(); i++) {
+		if (data->frames[i].fence_signaled) {
+			data->driver->fence_wait(data->frames[i].fence);
+			data->frames[i].fence_signaled = false;
+		}
+	}
 }
 
-Error RenderingDevice::screen_free(int) { return OK; }
+void RenderingDevice::_flush_and_stall_for_all_frames()
+{
+	_stall_for_previous_frames();
+	swap_buffers(false);
+	_stall_for_previous_frames();
+}
+
+void RenderingDevice::swap_buffers(bool p_present)
+{
+	ERR_RENDER_THREAD_GUARD();
+
+	if (p_present) {
+		for (const KeyValue<DisplayServerEnums::WindowID, RDD::SwapChainID>& it :
+			data->screen_swap_chains) {
+			if (data->screen_framebuffers.has(it.key)) {
+				data->frames[data->frame].swap_chains_to_present.push_back(it.value);
+			}
+		}
+	}
+
+	RDD::CommandBufferID command_buffer = data->frames[data->frame].command_buffer;
+	data->driver->command_buffer_begin(command_buffer);
+
+	_submit_transfer_workers(command_buffer);
+	_submit_transfer_barriers(command_buffer);
+
+	data->draw_graph.end(RENDER_GRAPH_REORDER, RENDER_GRAPH_FULL_BARRIERS, command_buffer,
+		data->frames[data->frame].command_buffer_pool);
+
+	data->driver->command_buffer_end(command_buffer);
+
+	_execute_frame(p_present);
+
+	if (p_present) {
+		data->screen_framebuffers.clear();
+	}
+	data->frame = (data->frame + 1) % data->frames.size();
+	data->frames_drawn++;
+
+	if (data->frames[data->frame].fence_signaled) {
+		data->driver->fence_wait(data->frames[data->frame].fence);
+		data->frames[data->frame].fence_signaled = false;
+	}
+
+	data->driver->command_pool_reset(data->frames[data->frame].command_pool);
+	if (p_present) {
+		update_perf_report();
+		data->driver->linear_uniform_set_pools_reset(data->frame);
+	}
+	_free_pending_resources(data->frame);
+
+	if (data->upload_staging_buffers.used) {
+		data->upload_staging_buffers.current =
+			(data->upload_staging_buffers.current + 1) %
+			data->upload_staging_buffers.blocks.size();
+		data->upload_staging_buffers.used = false;
+	}
+
+	if (data->download_staging_buffers.used) {
+		data->download_staging_buffers.current =
+			(data->download_staging_buffers.current + 1) %
+			data->download_staging_buffers.blocks.size();
+		data->download_staging_buffers.used = false;
+	}
+
+	data->draw_graph.begin();
+}
+
+Error RenderingDevice::screen_free(int p_screen)
+{
+	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
+	if (data && data->screen_swap_chains.has(p_screen)) {
+		_stall_for_previous_frames();
+		data->driver->swap_chain_free(data->screen_swap_chains[p_screen]);
+		data->screen_swap_chains.erase(p_screen);
+		data->screen_framebuffers.erase(p_screen);
+	}
+	return OK;
+}
 
 RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format,
 	VertexFormatID p_vertex_format, RDC::RenderPrimitive p_render_primitive,
@@ -6013,6 +6816,12 @@ RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_
 		p_depth_stencil_state, p_blend_state, color_attachments, p_dynamic_state_flags, render_pass,
 		p_for_render_pass, p_specialization_constants);
 
+	if (unlikely(!pipeline_id &&
+				 data->driver->get_driver_workarounds()
+					 .dont_print_on_render_pipeline_creation_failure)) {
+		return RID();
+	}
+
 	ERR_FAIL_COND_V(!pipeline_id, RID());
 
 	RenderPipeline pipeline;
@@ -6022,40 +6831,33 @@ RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_
 	pipeline.shader_layout_hash = shader->layout_hash;
 	pipeline.set_formats = shader->set_formats;
 	pipeline.push_constant_size = shader->push_constant_size;
+	pipeline.stage_bits = shader->stage_bits;
 
 #ifdef DEBUG_ENABLED
 	pipeline.validation.framebuffer_format = p_framebuffer_format;
 	pipeline.validation.render_pass = p_for_render_pass;
 	pipeline.validation.dynamic_state = p_dynamic_state_flags;
 	pipeline.validation.vertex_format = p_vertex_format;
+	pipeline.validation.uses_restart_indices =
+		p_render_primitive == RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX;
 
-	switch (p_render_primitive) {
-	case RDC::RENDER_PRIMITIVE_POINTS:
-		pipeline.validation.primitive_divisor = 1;
-		break;
-	case RDC::RENDER_PRIMITIVE_LINES:
-	case RDC::RENDER_PRIMITIVE_LINES_WITH_ADJACENCY:
-		pipeline.validation.primitive_divisor = 2;
-		break;
-	case RDC::RENDER_PRIMITIVE_LINESTRIPS:
-	case RDC::RENDER_PRIMITIVE_LINESTRIPS_WITH_ADJACENCY:
-	case RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS:
-	case RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_ADJACENCY:
-	case RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX:
-	case RDC::RENDER_PRIMITIVE_TESSELLATION_PATCH:
-		pipeline.validation.primitive_divisor = 1;
-		break;
-	case RDC::RENDER_PRIMITIVE_TRIANGLES:
-	case RDC::RENDER_PRIMITIVE_TRIANGLES_WITH_ADJACENCY:
-		pipeline.validation.primitive_divisor = 3;
-		break;
-	default:
-		pipeline.validation.primitive_divisor = 1;
-		break;
-	}
+	static const uint32_t primitive_divisor[RDC::RENDER_PRIMITIVE_MAX] = {
+		1, 2, 1, 1, 1, 3, 1, 1, 1, 1, 1};
+	pipeline.validation.primitive_divisor = primitive_divisor[p_render_primitive];
+	static const uint32_t primitive_minimum[RDC::RENDER_PRIMITIVE_MAX] = {
+		1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 1};
+	pipeline.validation.primitive_minimum = primitive_minimum[p_render_primitive];
 #endif
 
-	return data->render_pipeline_owner.make_rid(pipeline);
+	RID id = data->render_pipeline_owner.make_rid(pipeline);
+	{
+		MutexLock<Mutex> _thread_safe_method_lock(_thread_safe_mutex);
+#ifdef DEV_ENABLED
+		set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+		_add_dependency(id, p_shader);
+	}
+	return id;
 }
 
 RID RenderingDevice::texture_create_from_extension(RDC::TextureType p_type,
@@ -6068,6 +6870,158 @@ RID RenderingDevice::texture_create_from_extension(RDC::TextureType p_type,
 Error RenderingDevice::texture_update(
 	RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data)
 {
+	ERR_RENDER_THREAD_GUARD_V(ERR_UNAVAILABLE);
+
+	ERR_FAIL_COND_V_MSG(data->draw_list.active, ERR_INVALID_PARAMETER,
+		"Updating textures is forbidden during creation of a draw list.");
+	ERR_FAIL_COND_V_MSG(data->compute_list.active, ERR_INVALID_PARAMETER,
+		"Updating textures is forbidden during creation of a compute list.");
+	ERR_FAIL_COND_V_MSG(data->raytracing_list.active, ERR_INVALID_PARAMETER,
+		"Updating textures is forbidden during creation of a raytracing list.");
+
+	Texture* texture = data->texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(texture, ERR_INVALID_PARAMETER);
+
+	if (texture->owner != RID()) {
+		p_texture = texture->owner;
+		texture = data->texture_owner.get_or_null(texture->owner);
+		ERR_FAIL_NULL_V(texture, ERR_BUG);
+	}
+
+	ERR_FAIL_COND_V_MSG(texture->bound, ERR_CANT_ACQUIRE_RESOURCE,
+		"Texture can't be updated while bound to an active draw list framebuffer.");
+
+	ERR_FAIL_COND_V_MSG(!(texture->usage_flags & RDC::TEXTURE_USAGE_CAN_UPDATE_BIT),
+		ERR_INVALID_PARAMETER, "Texture requires `TEXTURE_USAGE_CAN_UPDATE_BIT` to be updatable.");
+
+	uint32_t layer_count = _texture_layer_count(texture);
+	ERR_FAIL_COND_V(p_layer >= layer_count, ERR_INVALID_PARAMETER);
+
+	uint32_t width, height;
+	uint32_t tight_mip_size = RDC::get_image_format_required_size(texture->format, texture->width,
+		texture->height, texture->depth, texture->mipmaps, &width, &height);
+	uint32_t required_size = tight_mip_size;
+	uint32_t required_align = _texture_alignment(texture);
+
+	ERR_FAIL_COND_V_MSG(required_size != (uint32_t)p_data.size(), ERR_INVALID_PARAMETER,
+		"Required size for texture update (" + itos(required_size) +
+			") does not match data supplied size (" + itos(p_data.size()) + ").");
+
+	_texture_check_pending_clear(p_texture, texture);
+	_check_transfer_worker_texture(texture);
+
+	uint32_t block_w, block_h;
+	RDC::get_compressed_image_format_block_dimensions(texture->format, block_w, block_h);
+
+	uint32_t pixel_size = RDC::get_image_format_pixel_size(texture->format);
+	uint32_t block_size = RDC::get_compressed_image_format_block_byte_size(texture->format);
+
+	uint32_t region_size = MAX(64u, data->texture_upload_region_size_px);
+
+	const uint8_t* read_ptr = p_data.ptr();
+
+	thread_local LocalVector<RDG::RecordedBufferToTextureCopy>
+		command_buffer_to_texture_copies_vector;
+	command_buffer_to_texture_copies_vector.clear();
+
+	_texture_update_shared_fallback(p_texture, texture, true);
+
+	uint32_t mipmap_offset = 0;
+	uint32_t logic_width = texture->width;
+	uint32_t logic_height = texture->height;
+
+	for (uint32_t mm_i = 0; mm_i < texture->mipmaps; mm_i++) {
+		uint32_t depth = 0;
+		uint32_t image_total = RDC::get_image_format_required_size(texture->format, texture->width,
+			texture->height, texture->depth, mm_i + 1, &width, &height, &depth);
+
+		const uint8_t* read_ptr_mipmap = read_ptr + mipmap_offset;
+		tight_mip_size = image_total - mipmap_offset;
+
+		for (uint32_t z = 0; z < depth; z++) {
+			const uint8_t* read_ptr_mipmap_layer = read_ptr_mipmap + (tight_mip_size / depth) * z;
+			for (uint32_t y = 0; y < height; y += region_size) {
+				for (uint32_t x = 0; x < width; x += region_size) {
+					uint32_t region_w = MIN(region_size, width - x);
+					uint32_t region_h = MIN(region_size, height - y);
+
+					uint32_t region_logic_w = MIN(region_size, logic_width - x);
+					uint32_t region_logic_h = MIN(region_size, logic_height - y);
+
+					uint32_t region_pitch = RDC::get_compressed_image_format_pixels_shifted(
+						texture->format, region_w * pixel_size * block_w);
+					uint32_t pitch_step =
+						data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP);
+					region_pitch = STEPIFY(region_pitch, pitch_step);
+					uint32_t to_allocate = region_pitch * region_h;
+					uint32_t alloc_offset = 0, alloc_size = 0;
+					StagingRequiredAction required_action;
+					Error err = _staging_buffer_allocate(data->upload_staging_buffers, to_allocate,
+						required_align, alloc_offset, alloc_size, required_action, false);
+					ERR_FAIL_COND_V(err, ERR_CANT_CREATE);
+
+					if (!command_buffer_to_texture_copies_vector.is_empty() &&
+						required_action == STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL) {
+						if (_texture_make_mutable(texture, p_texture)) {
+							data->draw_graph.add_synchronization();
+						}
+
+						data->draw_graph.add_texture_update(texture->driver_id,
+							texture->draw_tracker, command_buffer_to_texture_copies_vector);
+						command_buffer_to_texture_copies_vector.clear();
+					}
+
+					_staging_buffer_execute_required_action(
+						data->upload_staging_buffers, required_action);
+
+					uint8_t* write_ptr =
+						data->upload_staging_buffers.blocks[data->upload_staging_buffers.current]
+							.data_ptr +
+						alloc_offset;
+
+					ERR_FAIL_COND_V(region_w % block_w, ERR_BUG);
+					ERR_FAIL_COND_V(region_h % block_h, ERR_BUG);
+
+					_copy_region_block_or_regular(read_ptr_mipmap_layer, write_ptr, x, y, width,
+						region_w, region_h, block_w, block_h, region_pitch, pixel_size, block_size);
+
+					RDD::BufferTextureCopyRegion copy_region;
+					copy_region.buffer_offset = alloc_offset;
+					copy_region.row_pitch = region_pitch;
+					copy_region.texture_subresource.aspect =
+						(texture->read_aspect_flags & RDD::TEXTURE_ASPECT_DEPTH_BIT)
+							? RDD::TEXTURE_ASPECT_DEPTH
+							: RDD::TEXTURE_ASPECT_COLOR;
+					copy_region.texture_subresource.mipmap = mm_i;
+					copy_region.texture_subresource.layer = p_layer;
+					copy_region.texture_offset = Vector3i(x, y, z);
+					copy_region.texture_region_size = Vector3i(region_logic_w, region_logic_h, 1);
+
+					RDG::RecordedBufferToTextureCopy buffer_to_texture_copy;
+					buffer_to_texture_copy.from_buffer =
+						data->upload_staging_buffers.blocks[data->upload_staging_buffers.current]
+							.driver_id;
+					buffer_to_texture_copy.region = copy_region;
+					command_buffer_to_texture_copies_vector.push_back(buffer_to_texture_copy);
+
+					data->upload_staging_buffers.blocks.write[data->upload_staging_buffers.current]
+						.fill_amount = alloc_offset + alloc_size;
+				}
+			}
+		}
+
+		mipmap_offset = image_total;
+		logic_width = MAX(1u, logic_width >> 1);
+		logic_height = MAX(1u, logic_height >> 1);
+	}
+
+	if (_texture_make_mutable(texture, p_texture)) {
+		data->draw_graph.add_synchronization();
+	}
+
+	data->draw_graph.add_texture_update(
+		texture->driver_id, texture->draw_tracker, command_buffer_to_texture_copies_vector);
+
 	return OK;
 }
 
@@ -6109,10 +7063,21 @@ Error RenderingDevice::initialize(
 
 	data->transfer_queue_family =
 		data->driver->command_queue_family_get(RDD::COMMAND_QUEUE_FAMILY_TRANSFER_BIT);
+	if (!data->transfer_queue_family) {
+		data->transfer_queue_family = data->main_queue_family;
+	}
 	data->transfer_queue = data->driver->command_queue_create(data->transfer_queue_family, false);
 
 	data->present_queue_family = data->main_queue_family;
 	data->present_queue = data->main_queue;
+
+	data->transfer_worker_pool_max_size = MAX(1u, uint32_t(OS::get_processor_count()));
+	data->transfer_worker_pool.resize(data->transfer_worker_pool_max_size);
+	data->transfer_worker_operation_used_by_draw.resize(data->transfer_worker_pool_max_size);
+	for (uint32_t i = 0; i < data->transfer_worker_pool_max_size; i++) {
+		data->transfer_worker_pool[i] = nullptr;
+		data->transfer_worker_operation_used_by_draw[i] = 0;
+	}
 
 	for (uint32_t i = 0; i < frame_count; i++) {
 		data->frames[i].command_pool = data->driver->command_pool_create(
@@ -6123,19 +7088,193 @@ Error RenderingDevice::initialize(
 		data->frames[i].semaphore = data->driver->semaphore_create();
 		data->frames[i].fence = data->driver->fence_create();
 		data->frames[i].fence_signaled = false;
+
+		data->frames[i].transfer_worker_semaphores.resize(data->transfer_worker_pool_max_size);
+		for (uint32_t j = 0; j < data->transfer_worker_pool_max_size; j++) {
+			data->frames[i].transfer_worker_semaphores[j] = data->driver->semaphore_create();
+		}
 	}
 
+	// Start from frame count so staging blocks and persistent dynamic buffers treat 0 as old.
+	data->frames_drawn = frame_count;
+
 	data->draw_graph.initialize(data->driver, &RenderingDevice::_render_pass_create_from_graph,
-		frame_count, data->main_queue_family, 0);
+		frame_count, data->main_queue_family, 4);
 	data->draw_graph.begin();
 
+	data->upload_staging_buffers.block_size = 256 * 1024;
+	data->upload_staging_buffers.max_size = 128 * 1024 * 1024;
+	data->upload_staging_buffers.current = 0;
+	data->upload_staging_buffers.used = false;
+	data->upload_staging_buffers.usage_bits = RDD::BUFFER_USAGE_TRANSFER_FROM_BIT;
+
+	data->download_staging_buffers.block_size = data->upload_staging_buffers.block_size;
+	data->download_staging_buffers.max_size = data->upload_staging_buffers.max_size;
+	data->download_staging_buffers.current = 0;
+	data->download_staging_buffers.used = false;
+	data->download_staging_buffers.usage_bits = RDD::BUFFER_USAGE_TRANSFER_TO_BIT;
+
+	data->texture_upload_region_size_px = 64;
+	data->texture_download_region_size_px = 64;
+
+	for (uint32_t i = 0; i < frame_count; i++) {
+		err = _insert_staging_block(data->upload_staging_buffers);
+		ERR_FAIL_COND_V(err != OK, err);
+
+		err = _insert_staging_block(data->download_staging_buffers);
+		ERR_FAIL_COND_V(err != OK, err);
+	}
+
+	data->draw_list = DrawList();
+	data->compute_list = ComputeList();
+	data->raytracing_list = RaytracingList();
+
+	_vrs_detect_method();
+
 	return OK;
+}
+
+void RenderingDevice::finalize()
+{
+	if (data == nullptr) {
+		return;
+	}
+
+	if (!data->frames.is_empty()) {
+		_flush_and_stall_for_all_frames();
+	}
+
+	_submit_transfer_workers();
+	_wait_for_transfer_workers();
+
+	data->draw_graph.finalize();
+
+	_free_rids(data->render_pipeline_owner, "Pipeline");
+	_free_rids(data->compute_pipeline_owner, "Compute");
+	_free_rids(data->raytracing_pipeline_owner, "RaytracingPipeline");
+	_free_rids(data->acceleration_structure_owner, "AccelerationStructure");
+	_free_rids(data->hit_sbt_owner, "HitShaderBindingTable");
+	_free_rids(data->uniform_set_owner, "UniformSet");
+	_free_rids(data->texture_buffer_owner, "TextureBuffer");
+	_free_rids(data->storage_buffer_owner, "StorageBuffer");
+	_free_rids(data->uniform_buffer_owner, "UniformBuffer");
+	_free_rids(data->shader_owner, "Shader");
+	_free_rids(data->index_array_owner, "IndexArray");
+	_free_rids(data->index_buffer_owner, "IndexBuffer");
+	_free_rids(data->vertex_array_owner, "VertexArray");
+	_free_rids(data->vertex_buffer_owner, "VertexBuffer");
+	_free_rids(data->framebuffer_owner, "Framebuffer");
+	_free_rids(data->sampler_owner, "Sampler");
+	{
+		LocalVector<RID> owned = data->texture_owner.get_owned_list();
+		if (owned.size()) {
+			LocalVector<RID> owned_non_shared;
+			for (const RID& texture_rid : owned) {
+				if (texture_is_shared(texture_rid)) {
+					free_rid(texture_rid);
+				}
+				else {
+					owned_non_shared.push_back(texture_rid);
+				}
+			}
+			for (const RID& texture_rid : owned_non_shared) {
+				free_rid(texture_rid);
+			}
+		}
+	}
+
+	_free_transfer_workers();
+
+	for (uint32_t i = 0; i < data->frames.size(); i++) {
+		int f = (data->frame + i) % data->frames.size();
+		_free_pending_resources(f);
+		if (data->frames[i].command_pool) {
+			data->driver->command_pool_free(data->frames[i].command_pool);
+		}
+		if (data->frames[i].timestamp_pool) {
+			data->driver->timestamp_query_pool_free(data->frames[i].timestamp_pool);
+		}
+		if (data->frames[i].semaphore) {
+			data->driver->semaphore_free(data->frames[i].semaphore);
+		}
+		if (data->frames[i].fence) {
+			data->driver->fence_free(data->frames[i].fence);
+		}
+
+		RDG::CommandBufferPool& buffer_pool = data->frames[i].command_buffer_pool;
+		for (uint32_t j = 0; j < buffer_pool.buffers.size(); j++) {
+			data->driver->semaphore_free(buffer_pool.semaphores[j]);
+		}
+
+		for (uint32_t j = 0; j < data->frames[i].transfer_worker_semaphores.size(); j++) {
+			if (data->frames[i].transfer_worker_semaphores[j]) {
+				data->driver->semaphore_free(data->frames[i].transfer_worker_semaphores[j]);
+			}
+		}
+	}
+
+	data->frames.clear();
+
+	for (int i = 0; i < data->upload_staging_buffers.blocks.size(); i++) {
+		data->driver->buffer_unmap(data->upload_staging_buffers.blocks[i].driver_id);
+		data->driver->buffer_free(data->upload_staging_buffers.blocks[i].driver_id);
+	}
+
+	for (int i = 0; i < data->download_staging_buffers.blocks.size(); i++) {
+		data->driver->buffer_unmap(data->download_staging_buffers.blocks[i].driver_id);
+		data->driver->buffer_free(data->download_staging_buffers.blocks[i].driver_id);
+	}
+
+	while (data->vertex_formats.size()) {
+		HashMap<VertexFormatID, VertexDescriptionCache>::Iterator temp =
+			data->vertex_formats.begin();
+		data->driver->vertex_format_free(temp->value.driver_id);
+		data->vertex_formats.remove(temp);
+	}
+
+	for (KeyValue<FramebufferFormatID, FramebufferFormat>& E : data->framebuffer_formats) {
+		data->driver->render_pass_free(E.value.render_pass);
+	}
+	data->framebuffer_formats.clear();
+
+	for (const KeyValue<DisplayServerEnums::WindowID, RDD::SwapChainID>& it :
+		data->screen_swap_chains) {
+		data->driver->swap_chain_free(it.value);
+	}
+	data->screen_swap_chains.clear();
+
+	if (data->present_queue) {
+		if (data->main_queue != data->present_queue) {
+			data->driver->command_queue_free(data->present_queue);
+		}
+		data->present_queue = RDD::CommandQueueID();
+	}
+
+	if (data->transfer_queue) {
+		if (data->main_queue != data->transfer_queue) {
+			data->driver->command_queue_free(data->transfer_queue);
+		}
+		data->transfer_queue = RDD::CommandQueueID();
+	}
+
+	if (data->main_queue) {
+		data->driver->command_queue_free(data->main_queue);
+		data->main_queue = RDD::CommandQueueID();
+	}
+
+	if (data->driver != nullptr) {
+		data->context->driver_free(data->driver);
+		data->driver = nullptr;
+	}
+
+	memdelete(data);
+	data = nullptr;
 }
 
 RID RenderingDevice::index_buffer_create(uint32_t p_index_count, RDC::IndexBufferFormat p_format,
 	Span<uint8_t> p_data, bool p_use_restart_indices)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(_thread_safe_mutex);
 	IndexBuffer ib;
 	uint32_t index_size = (p_format == RDC::INDEX_BUFFER_FORMAT_UINT16) ? 2 : 4;
 	ib.size = p_index_count * index_size;
@@ -6143,17 +7282,17 @@ RID RenderingDevice::index_buffer_create(uint32_t p_index_count, RDC::IndexBuffe
 	ib.index_count = p_index_count;
 	ib.supports_restart_indices = p_use_restart_indices;
 	ib.max_index = (p_format == RDC::INDEX_BUFFER_FORMAT_UINT16) ? 0xFFFF : 0xFFFFFFFF;
-	ib.usage = RDD::BUFFER_USAGE_INDEX_BIT;
+	ib.usage = RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT |
+			   RDD::BUFFER_USAGE_INDEX_BIT;
 
-	if (!p_data.is_empty()) {
-		ib.usage |= RDD::BUFFER_USAGE_TRANSFER_TO_BIT;
-	}
-	// Allocate the underlying GPU buffer in VRAM
 	ib.driver_id = data->driver->buffer_create(
 		ib.size, ib.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
 	ERR_FAIL_COND_V(!ib.driver_id, RID());
+	if (p_data.is_empty()) {
+		ib.draw_tracker = RDG::resource_tracker_create();
+		ib.draw_tracker->buffer_driver_id = ib.driver_id;
+	}
 	data->buffer_memory.add(ib.size);
-	// If initial index data was provided, copy it through the staging transfer worker
 	if (!p_data.is_empty()) {
 		Error err = _buffer_initialize(&ib, p_data);
 		if (err != OK) {
@@ -6171,16 +7310,37 @@ RID RenderingDevice::index_buffer_create(uint32_t p_index_count, RDC::IndexBuffe
 RID RenderingDevice::vertex_buffer_create(
 	uint32_t p_size_bytes, Span<uint8_t> p_data, uint32_t p_creation_bits)
 {
-	MutexLock<BinaryMutex> _thread_safe_method_lock(_thread_safe_mutex);
+	ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != p_size_bytes, RID());
+
+	MutexLock<Mutex> _thread_safe_method_lock(_thread_safe_mutex);
 	Buffer vb;
 	vb.size = p_size_bytes;
-	vb.usage = RDD::BUFFER_USAGE_VERTEX_BIT;
-	if (!p_data.is_empty()) {
-		vb.usage |= RDD::BUFFER_USAGE_TRANSFER_TO_BIT;
+	vb.usage = RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT |
+			   RDD::BUFFER_USAGE_VERTEX_BIT;
+	if (p_creation_bits & BUFFER_CREATION_AS_STORAGE_BIT) {
+		vb.usage |= RDD::BUFFER_USAGE_STORAGE_BIT;
 	}
+	if (p_creation_bits & BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT) {
+		vb.usage |= RDD::BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT;
+		vb.usage &= ~uint32_t(RDD::BUFFER_USAGE_TRANSFER_TO_BIT);
+	}
+	if (p_creation_bits & BUFFER_CREATION_DEVICE_ADDRESS_BIT) {
+		vb.usage |= RDD::BUFFER_USAGE_DEVICE_ADDRESS_BIT;
+	}
+	if (p_creation_bits & BUFFER_CREATION_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT) {
+		vb.usage |= RDD::BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT;
+	}
+
 	vb.driver_id = data->driver->buffer_create(
 		vb.size, vb.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
 	ERR_FAIL_COND_V(!vb.driver_id, RID());
+
+	if (p_data.is_empty() || (p_creation_bits & BUFFER_CREATION_AS_STORAGE_BIT) ||
+		(p_creation_bits & BUFFER_CREATION_DYNAMIC_PERSISTENT_BIT)) {
+		vb.draw_tracker = RDG::resource_tracker_create();
+		vb.draw_tracker->buffer_driver_id = vb.driver_id;
+	}
+
 	data->buffer_memory.add(vb.size);
 	if (!p_data.is_empty()) {
 		Error err = _buffer_initialize(&vb, p_data);
@@ -6209,17 +7369,25 @@ RID RenderingDevice::compute_pipeline_create(
 		data->driver->compute_pipeline_create(shader->driver_id, p_specialization_constants);
 	ERR_FAIL_COND_V(!pipeline_id, RID());
 
-	ComputePipeline* pipeline = memnew(ComputePipeline);
-	pipeline->driver_id = pipeline_id;
-	pipeline->shader = p_shader;
-	pipeline->shader_driver_id = shader->driver_id;
-	pipeline->shader_layout_hash = shader->layout_hash;
-	pipeline->set_formats = shader->set_formats;
+	ComputePipeline pipeline;
+	pipeline.driver_id = pipeline_id;
+	pipeline.shader = p_shader;
+	pipeline.shader_driver_id = shader->driver_id;
+	pipeline.shader_layout_hash = shader->layout_hash;
+	pipeline.set_formats = shader->set_formats;
+	pipeline.push_constant_size = shader->push_constant_size;
+	for (uint32_t i = 0; i < 3; i++) {
+		pipeline.local_group_size[i] = shader->compute_local_size[i];
+	}
 
-	RID id = data->compute_pipeline_owner.make_rid();
+	RID id = data->compute_pipeline_owner.make_rid(pipeline);
+	{
+		MutexLock<Mutex> _thread_safe_method_lock(_thread_safe_mutex);
 #ifdef DEV_ENABLED
-	set_resource_name(id, "RID:" + itos(id.get_id()));
+		set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
+		_add_dependency(id, p_shader);
+	}
 	return id;
 }
 
@@ -6446,13 +7614,137 @@ void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_verte
 	VertexArray* vertex_array = data->vertex_array_owner.get_or_null(p_vertex_array);
 	ERR_FAIL_NULL(vertex_array);
 
-	data->draw_graph.add_draw_list_usages(
-		vertex_array->draw_trackers, RDG::RESOURCE_USAGE_VERTEX_BUFFER_READ);
+	if (data->draw_list.state.vertex_array == p_vertex_array) {
+		return;
+	}
+
+	_check_transfer_worker_vertex_array(vertex_array);
+
+	data->draw_list.state.vertex_array = p_vertex_array;
 
 #ifdef DEBUG_ENABLED
 	data->draw_list.validation.vertex_format = vertex_array->description;
-	data->draw_list.validation.vertex_array_size = vertex_array->vertex_count;
 	data->draw_list.validation.vertex_max_instances_allowed = vertex_array->max_instances_allowed;
+#endif
+	data->draw_list.validation.vertex_array_size = vertex_array->vertex_count;
+
+	data->draw_graph.add_draw_list_bind_vertex_buffers(vertex_array->buffers, vertex_array->offsets);
+
+	for (int i = 0; i < vertex_array->draw_trackers.size(); i++) {
+		data->draw_graph.add_draw_list_usage(
+			vertex_array->draw_trackers[i], RDG::RESOURCE_USAGE_VERTEX_BUFFER_READ);
+	}
+}
+
+void RenderingDevice::draw_list_bind_vertex_buffers_format(DrawListID p_list,
+	VertexFormatID p_vertex_format, uint32_t p_vertex_count, const Span<RID>& p_vertex_buffers,
+	const Span<uint64_t>& p_offsets)
+{
+	ERR_RENDER_THREAD_GUARD();
+
+	ERR_FAIL_COND(!data->draw_list.active);
+
+	const VertexDescriptionCache* vertex_description;
+	{
+		MutexLock<Mutex> _thread_safe_method_lock(_thread_safe_mutex);
+		vertex_description = data->vertex_formats.getptr(p_vertex_format);
+	}
+	ERR_FAIL_NULL_MSG(vertex_description, "Supplied vertex format does not exist.");
+
+	Span<uint64_t> offsets_span = p_offsets;
+	FixedVector<uint64_t, 32> offsets;
+	if (offsets_span.is_empty()) {
+		offsets.resize_initialized(p_vertex_buffers.size());
+		offsets_span = offsets;
+	}
+	else {
+		ERR_FAIL_COND_MSG(offsets_span.size() != p_vertex_buffers.size(),
+			"Number of vertex buffer offsets (" + itos(offsets_span.size()) +
+				") does not match number of vertex buffers (" + itos(p_vertex_buffers.size()) +
+				").");
+	}
+
+	FixedVector<RDD::BufferID, 32> driver_buffers;
+	driver_buffers.resize_initialized(p_vertex_buffers.size());
+
+	FixedVector<RDG::ResourceTracker*, 32> draw_trackers;
+
+#ifdef DEBUG_ENABLED
+	uint32_t max_instances_allowed = 0xFFFFFFFF;
+#endif
+
+	for (uint32_t i = 0; i < p_vertex_buffers.size(); i++) {
+		RID buffer_rid = p_vertex_buffers[i];
+		if (buffer_rid.is_null()) {
+			continue;
+		}
+		ERR_FAIL_COND_MSG(!data->vertex_buffer_owner.owns(buffer_rid),
+			"Vertex buffer at index " + itos(i) + " is invalid.");
+
+		Buffer* buffer = data->vertex_buffer_owner.get_or_null(buffer_rid);
+		ERR_FAIL_NULL(buffer);
+
+		_check_transfer_worker_buffer(buffer);
+
+#ifdef DEBUG_ENABLED
+		uint64_t binding_offset = offsets_span[i];
+		ERR_FAIL_COND_MSG(binding_offset > buffer->size,
+			"Vertex buffer offset for attachment (" + itos(i) + ") exceeds buffer size.");
+
+		const RDC::VertexAttribute& attribute = vertex_description->vertex_formats[i];
+		uint32_t element_size = RDC::get_format_vertex_size(attribute.format);
+		ERR_FAIL_COND_MSG(element_size == 0,
+			"Vertex attribute format for attachment (" + itos(i) + ") is invalid.");
+
+		uint64_t attribute_offset = binding_offset + attribute.offset;
+		ERR_FAIL_COND_MSG(attribute_offset > buffer->size,
+			"Vertex attribute offset for attachment (" + itos(i) + ") exceeds buffer size.");
+		ERR_FAIL_COND_MSG(attribute_offset + element_size > buffer->size,
+			"Vertex buffer (" + itos(i) + ") will read past the end of the buffer.");
+
+		if (attribute.frequency == RDC::VERTEX_FREQUENCY_VERTEX) {
+			ERR_FAIL_COND_MSG(p_vertex_count == 0,
+				"Vertex count must be greater than 0 when binding vertex buffers.");
+
+			uint64_t required_size = attribute_offset + element_size;
+			if (p_vertex_count > 1) {
+				required_size += uint64_t(attribute.stride) * (uint64_t(p_vertex_count) - 1);
+			}
+
+			ERR_FAIL_COND_MSG(required_size > buffer->size,
+				"Vertex buffer (" + itos(i) + ") will read past the end of the buffer.");
+		}
+		else {
+			uint64_t available = buffer->size - attribute_offset;
+			ERR_FAIL_COND_MSG(available < element_size,
+				"Vertex buffer (" + itos(i) + ") uses instancing, but it's just too small.");
+
+			uint32_t instances_allowed =
+				attribute.stride == 0 ? 0 : uint32_t(buffer->size / attribute.stride);
+			max_instances_allowed = MIN(instances_allowed, max_instances_allowed);
+		}
+#endif
+
+		driver_buffers[i] = buffer->driver_id;
+
+		if (buffer->draw_tracker != nullptr) {
+			draw_trackers.push_back(buffer->draw_tracker);
+		}
+	}
+
+	data->draw_list.state.vertex_array = RID();
+
+	data->draw_graph.add_draw_list_bind_vertex_buffers(driver_buffers, offsets_span);
+
+	for (RDG::ResourceTracker* tracker : draw_trackers) {
+		data->draw_graph.add_draw_list_usage(tracker, RDG::RESOURCE_USAGE_VERTEX_BUFFER_READ);
+	}
+
+	data->draw_list.validation.vertex_array_size = p_vertex_count;
+
+#ifdef DEBUG_ENABLED
+	data->draw_list.validation.vertex_format = p_vertex_format;
+	data->draw_list.validation.vertex_max_instances_allowed = max_instances_allowed;
 #endif
 }
 
@@ -6471,27 +7763,63 @@ RID RenderingDevice::shader_create_from_bytecode(
 		data->driver->shader_create_from_container(container, immutable_samplers);
 	ERR_FAIL_COND_V(!driver_id, RID());
 
-	MutexLock<BinaryMutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
+	MutexLock<Mutex> _thread_safe_method_lock(RenderingDevice::_thread_safe_mutex);
 
 	Shader shader;
 	static_cast<RDC::ShaderReflection&>(shader) = container->get_shader_reflection();
+	shader.name.clear();
+	shader.name.append_utf8(container->shader_name);
 	shader.driver_id = driver_id;
 	shader.layout_hash = data->driver->shader_get_layout_hash(driver_id);
-	shader.stage_bits = shader.stages_bits;
+	shader.stage_bits = 0;
 
 	shader.set_formats.resize(shader.uniform_sets.size());
 	for (int i = 0; i < shader.uniform_sets.size(); i++) {
-		UniformSetFormat usf;
-		usf.uniforms = shader.uniform_sets[i];
 		uint32_t format_id = 0;
-		if (data->uniform_set_format_cache.has(usf)) {
-			format_id = data->uniform_set_format_cache[usf];
-		}
-		else {
-			format_id = data->uniform_set_format_cache.size() + 1;
-			data->uniform_set_format_cache[usf] = format_id;
+		if (shader.uniform_sets[i].size()) {
+			shader.uniform_sets.write[i].sort();
+
+			UniformSetFormat usf;
+			usf.uniforms = shader.uniform_sets[i];
+			if (data->uniform_set_format_cache.has(usf)) {
+				format_id = data->uniform_set_format_cache[usf];
+			}
+			else {
+				format_id = data->uniform_set_format_cache.size() + 1;
+				data->uniform_set_format_cache[usf] = format_id;
+			}
 		}
 		shader.set_formats.write[i] = format_id;
+	}
+
+	for (RDC::ShaderStage stage : shader.stages_vector) {
+		switch (stage) {
+		case RDC::SHADER_STAGE_VERTEX:
+			shader.stage_bits |= RDD::PIPELINE_STAGE_VERTEX_SHADER_BIT;
+			break;
+		case RDC::SHADER_STAGE_FRAGMENT:
+			shader.stage_bits |= RDD::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			break;
+		case RDC::SHADER_STAGE_TESSELATION_CONTROL:
+			shader.stage_bits |= RDD::PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+			break;
+		case RDC::SHADER_STAGE_TESSELATION_EVALUATION:
+			shader.stage_bits |= RDD::PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+			break;
+		case RDC::SHADER_STAGE_COMPUTE:
+			shader.stage_bits |= RDD::PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+			break;
+		case RDC::SHADER_STAGE_RAYGEN:
+		case RDC::SHADER_STAGE_ANY_HIT:
+		case RDC::SHADER_STAGE_CLOSEST_HIT:
+		case RDC::SHADER_STAGE_MISS:
+		case RDC::SHADER_STAGE_INTERSECTION:
+			shader.stage_bits |= RDD::PIPELINE_STAGE_RAY_TRACING_SHADER_BIT;
+			break;
+		default:
+			DEV_ASSERT(false && "Unknown shader stage.");
+			break;
+		}
 	}
 
 	if (p_placeholder.is_valid()) {
@@ -6659,7 +7987,7 @@ void RenderingDevice::_texture_check_pending_clear(RID p_texture_rid, Texture* p
 	if (p_texture->owner.is_valid()) {
 		// Check the owner texture instead if it exists.
 		p_texture_rid = p_texture->owner;
-		p_texture = texture_owner.get_or_null(p_texture_rid);
+		p_texture = data->texture_owner.get_or_null(p_texture_rid);
 		clear = p_texture->pending_clear;
 	}
 
@@ -6700,9 +8028,9 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 
 	if (_texture_make_mutable(p_texture, p_texture_rid)) {
 		// The texture must be mutable to be used as a clear destination.
-		draw_graph.add_synchronization();
+		data->draw_graph.add_synchronization();
 	}
 
-	draw_graph.add_texture_clear_depth_stencil(
+	data->draw_graph.add_texture_clear_depth_stencil(
 		p_texture->driver_id, p_texture->draw_tracker, p_depth, p_stencil, range);
 }

@@ -65,7 +65,7 @@ class RDHitGroup;
 
 class RenderingDevice final
 {
-	static inline BinaryMutex _thread_safe_mutex;
+	static inline Mutex _thread_safe_mutex;
 
 public:
 	using DrawListID = int64_t;
@@ -414,6 +414,8 @@ public:
 	static RID index_array_create(
 		RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count);
 
+	static RID uniform_buffer_create(
+		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
 	static RID storage_buffer_create(
 		uint32_t p_size_bytes, Span<uint8_t> p_data = {}, uint32_t p_creation_bits = 0);
 	static RID texture_buffer_create(
@@ -421,6 +423,8 @@ public:
 
 	static Error buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset,
 		uint32_t p_dst_offset, uint32_t p_size);
+	static Error buffer_update(RID p_buffer, uint32_t p_offset, uint32_t p_size,
+		const void* p_data, bool p_skip_check = false);
 	static Error buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_size);
 	static Vector<uint8_t> buffer_get_data(
 		RID p_buffer, uint32_t p_offset = 0, uint32_t p_size = 0);
@@ -558,6 +562,10 @@ public:
 	static void draw_list_bind_render_pipeline(DrawListID p_list, RID p_render_pipeline);
 	static void draw_list_bind_uniform_set(DrawListID p_list, RID p_uniform_set, uint32_t p_index);
 	static void draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array);
+	static void draw_list_bind_vertex_buffers_format(DrawListID p_list,
+		VertexFormatID p_vertex_format, uint32_t p_vertex_count,
+		const Span<RID>& p_vertex_buffers,
+		const Span<uint64_t>& p_offsets = Vector<uint64_t>());
 	static void draw_list_bind_index_array(DrawListID p_list, RID p_index_array);
 	static void draw_list_set_line_width(DrawListID p_list, float p_width);
 	static void draw_list_set_push_constant(
@@ -574,6 +582,7 @@ public:
 	static void draw_list_end();
 
 	static ComputeListID compute_list_begin();
+	static void compute_list_bind_compute_pipeline(ComputeListID p_list, RID p_compute_pipeline);
 	static void compute_list_bind_uniform_set(
 		ComputeListID p_list, RID p_uniform_set, uint32_t p_index);
 	static void compute_list_set_push_constant(
@@ -710,6 +719,8 @@ private:
 	static Buffer* _get_buffer_from_owner(RID p_buffer);
 	static Error _buffer_initialize(
 		Buffer* p_buffer, Span<uint8_t> p_data, uint32_t p_required_align = 32);
+	static Error _buffer_update(
+		Buffer* p_buffer, RID p_buffer_id, uint32_t p_offset, uint32_t p_size, const void* p_data);
 
 	static void update_perf_report();
 
@@ -1498,6 +1509,8 @@ private:
 	};
 
 	static void _free_pending_resources(int p_frame);
+	static void _stall_for_previous_frames();
+	static void _flush_and_stall_for_all_frames();
 
 	static void execute_chained_cmds(bool p_present_swap_chain,
 		RenderingDeviceDriver::FenceID p_draw_fence,
@@ -1631,19 +1644,13 @@ public:
 		uint32_t p_base_layer, uint32_t p_layers);
 
 	static RID texture_create(const RDC::TextureFormat& p_format, const TextureView& p_view,
-	    const Vector<Vector<uint8_t>>& p_data);
+		const Vector<Vector<uint8_t>>& p_data = {});
 
 	static Error initialize(
 		RenderingContextDriver* p_context, RenderingContextDriver::Device p_device);
-	static void finalize()
-	{
-		memdelete(data);
-		data = nullptr;
-	}
+	static void finalize();
 
 	static bool is_initialized() { return data != nullptr; }
-	static inline RID_Owner<Texture, true> texture_owner;
-	static inline RenderingDeviceGraph draw_graph;
 
 	RenderingDevice() = delete;
 	RenderingDevice(const RenderingDevice&) = delete;

@@ -147,7 +147,7 @@ struct CanvasShaderData : public RendererRD::MaterialStorage::ShaderData
 	bool is_valid() const;
 
 	CanvasShaderData();
-	virtual ~CanvasShaderData() = default;
+	virtual ~CanvasShaderData();
 };
 
 struct CanvasMaterialData : public RendererRD::MaterialStorage::MaterialData

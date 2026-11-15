@@ -1742,11 +1742,6 @@ int RendererViewport::get_num_viewports_with_motion_vectors() const
 
 void RendererViewport::draw_viewports(bool p_swap_buffers)
 {
-	static uint64_t dv_count = 0;
-	if ((++dv_count % 60) == 1) {
-		printf("[DRAW_VIEWPORTS] call %llu, rid_count=%u\n", (unsigned long long)dv_count,
-			viewport_owner.get_rid_count());
-	}
 	draw_viewports_pass++;
 	total_objects_drawn = 0;
 	total_vertices_drawn = 0;
@@ -1765,8 +1760,7 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 	rids.resize(rid_count);
 	viewport_owner.fill_owned_buffer(rids.ptr());
 
-	LocalVector<Viewport*> active_viewports;
-
+	LocalVector<Viewport*> viewports;
 	for (uint32_t i = 0; i < rid_count; i++) {
 		Viewport* v = viewport_owner.get_or_null(rids[i]);
 		if (!v) {
@@ -1781,16 +1775,16 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 			v->update_mode = RenderingServerEnums::VIEWPORT_UPDATE_DISABLED;
 		}
 
-		active_viewports.push_back(v);
+		viewports.push_back(v);
 	}
 
-	active_viewports.sort_custom<ViewportSort>();
+	viewports.sort_custom<ViewportSort>();
 
 	HashMap<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>
 		blit_to_screen;
 
-	for (uint32_t i = 0; i < active_viewports.size(); i++) {
-		Viewport* v = active_viewports[i];
+	for (uint32_t i = 0; i < viewports.size(); i++) {
+		Viewport* v = viewports[i];
 		_draw_viewport(v);
 		if (v->viewport_to_screen != DisplayServerEnums::INVALID_WINDOW_ID &&
 			v->render_target.is_valid()) {

@@ -48,6 +48,10 @@
 #define _GL_TEXTURE_EXTERNAL_OES 0x8D65
 #endif
 
+#ifndef _GL_TEXTURE_MAX_ANISOTROPY_EXT
+#define _GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
+#endif
+
 #ifndef _EXT_TEXTURE_CUBE_MAP_SEAMLESS
 #define _EXT_TEXTURE_CUBE_MAP_SEAMLESS 0x884F
 #endif
@@ -336,8 +340,8 @@ struct Texture
 	void* detect_roughness_callback_ud = nullptr;
 	bool redraw_if_visible = false;
 
-	RSE::CanvasItemTextureFilter filter_cache = RSE::CANVAS_ITEM_TEXTURE_FILTER_DEFAULT;
-	RSE::CanvasItemTextureRepeat repeat_cache = RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
+	RSE::CanvasItemTextureFilter filter_cache = RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX;
+	RSE::CanvasItemTextureRepeat repeat_cache = RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX;
 
 	void copy_from(const Texture& p_from)
 	{
@@ -377,9 +381,104 @@ struct Texture
 		repeat_cache = p_from.repeat_cache;
 	}
 
-	void gl_set_filter(RSE::CanvasItemTextureFilter p_filter) { filter_cache = p_filter; }
+	void gl_set_filter(RSE::CanvasItemTextureFilter p_filter)
+	{
+		if (p_filter == filter_cache) {
+			return;
+		}
+		Config* config = Config::get_singleton();
+		filter_cache = p_filter;
+		GLenum pmin = GL_NEAREST;
+		GLenum pmag = GL_NEAREST;
+		GLint max_lod = 0;
+		GLfloat anisotropy = 1.0f;
+		switch (filter_cache) {
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST: {
+			pmin = GL_NEAREST;
+			pmag = GL_NEAREST;
+			max_lod = 0;
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR: {
+			pmin = GL_LINEAR;
+			pmag = GL_LINEAR;
+			max_lod = 0;
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC: {
+			anisotropy = config->anisotropic_level;
+		};
+			[[fallthrough]];
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS: {
+			pmag = GL_NEAREST;
+			if (mipmaps <= 1) {
+				pmin = GL_NEAREST;
+				max_lod = 0;
+			}
+			else if (config->use_nearest_mip_filter) {
+				pmin = GL_NEAREST_MIPMAP_NEAREST;
+				max_lod = mipmaps - 1;
+			}
+			else {
+				pmin = GL_NEAREST_MIPMAP_LINEAR;
+				max_lod = mipmaps - 1;
+			}
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC: {
+			anisotropy = config->anisotropic_level;
+		};
+			[[fallthrough]];
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS: {
+			pmag = GL_LINEAR;
+			if (mipmaps <= 1) {
+				pmin = GL_LINEAR;
+				max_lod = 0;
+			}
+			else if (config->use_nearest_mip_filter) {
+				pmin = GL_LINEAR_MIPMAP_NEAREST;
+				max_lod = mipmaps - 1;
+			}
+			else {
+				pmin = GL_LINEAR_MIPMAP_LINEAR;
+				max_lod = mipmaps - 1;
+			}
+		} break;
+		default: {
+			return;
+		} break;
+		}
+		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, pmin);
+		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, pmag);
+		glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+		glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_lod);
+		if (config->support_anisotropic_filter) {
+			glTexParameterf(target, _GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
+		}
+	}
 
-	void gl_set_repeat(RSE::CanvasItemTextureRepeat p_repeat) { repeat_cache = p_repeat; }
+	void gl_set_repeat(RSE::CanvasItemTextureRepeat p_repeat)
+	{
+		if (p_repeat == repeat_cache) {
+			return;
+		}
+		repeat_cache = p_repeat;
+		GLenum prep = GL_CLAMP_TO_EDGE;
+		switch (repeat_cache) {
+		case RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED: {
+			prep = GL_CLAMP_TO_EDGE;
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED: {
+			prep = GL_REPEAT;
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_REPEAT_MIRROR: {
+			prep = GL_MIRRORED_REPEAT;
+		} break;
+		default: {
+			return;
+		} break;
+		}
+		glTexParameteri(target, GL_TEXTURE_WRAP_T, prep);
+		glTexParameteri(target, GL_TEXTURE_WRAP_R, prep);
+		glTexParameteri(target, GL_TEXTURE_WRAP_S, prep);
+	}
 };
 
 struct TextureAtlas

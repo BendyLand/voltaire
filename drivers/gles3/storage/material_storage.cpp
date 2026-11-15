@@ -1967,96 +1967,508 @@ GLES3::MaterialData* GLES3::_create_tex_blit_material_func(ShaderData* p_shader)
 
 void GLES3::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
 
-void GLES3::MaterialStorage::material_free(RID p_rid) {}
+void GLES3::MaterialStorage::material_free(RID p_rid)
+{
+	GLES3::Material* material = material_owner.get_or_null(p_rid);
+	ERR_FAIL_NULL(material);
+
+	material_set_shader(p_rid, RID());
+	material_set_next_pass(p_rid, RID());
+
+	if (material->update_element.in_list()) {
+		material_update_list.remove(&material->update_element);
+	}
+
+	material->dependency.deleted_notify(p_rid);
+	material_owner.free(p_rid);
+}
 
 void GLES3::MaterialStorage::initialize()
 {
 	shaders = memnew(Shaders);
-	shader_data_request_func[RSE::SHADER_CANVAS_ITEM] = _create_canvas_shader_func;
-	material_data_request_func[RSE::SHADER_CANVAS_ITEM] = _create_canvas_material_func;
 
 	shader_data_request_func[RSE::SHADER_SPATIAL] = _create_scene_shader_func;
-	material_data_request_func[RSE::SHADER_SPATIAL] = _create_scene_material_func;
-
+	shader_data_request_func[RSE::SHADER_CANVAS_ITEM] = _create_canvas_shader_func;
 	shader_data_request_func[RSE::SHADER_PARTICLES] = _create_particles_shader_func;
-	material_data_request_func[RSE::SHADER_PARTICLES] = _create_particles_material_func;
-
 	shader_data_request_func[RSE::SHADER_SKY] = _create_sky_shader_func;
-	material_data_request_func[RSE::SHADER_SKY] = _create_sky_material_func;
-
+	shader_data_request_func[RSE::SHADER_TEXTURE_BLIT] = _create_tex_blit_shader_func;
 	shader_data_request_func[RSE::SHADER_FOG] = nullptr;
+
+	material_data_request_func[RSE::SHADER_SPATIAL] = _create_scene_material_func;
+	material_data_request_func[RSE::SHADER_CANVAS_ITEM] = _create_canvas_material_func;
+	material_data_request_func[RSE::SHADER_PARTICLES] = _create_particles_material_func;
+	material_data_request_func[RSE::SHADER_SKY] = _create_sky_material_func;
+	material_data_request_func[RSE::SHADER_TEXTURE_BLIT] = _create_tex_blit_material_func;
 	material_data_request_func[RSE::SHADER_FOG] = nullptr;
 
-	shaders->canvas_shader.initialize();
-	shaders->sky_shader.initialize();
-	shaders->particles_process_shader.initialize();
-	shaders->tex_blit_shader.initialize();
+	static_assert(sizeof(GlobalShaderUniforms::Value) == 16);
 
-	// Canvas
-	ShaderCompiler::DefaultIdentifierActions actions_canvas;
-	actions_canvas.renames["VERTEX"] = "vertex";
-	actions_canvas.renames["COLOR"] = "color";
-	actions_canvas.renames["POINT_SIZE"] = "point_size";
-	actions_canvas.renames["UV"] = "uv";
-	actions_canvas.renames["CUSTOM0"] = "custom0";
-	actions_canvas.renames["CUSTOM1"] = "custom1";
-	shaders->compiler_canvas.initialize(actions_canvas);
+	global_shader_uniforms.buffer_size = 256;
+	if (global_shader_uniforms.buffer_size * sizeof(GlobalShaderUniforms::Value) >
+		uint32_t(Config::get_singleton()->max_uniform_buffer_size)) {
+		global_shader_uniforms.buffer_size =
+			uint32_t(Config::get_singleton()->max_uniform_buffer_size) /
+			sizeof(GlobalShaderUniforms::Value);
+	}
 
-	// Scene / Spatial
-	ShaderCompiler::DefaultIdentifierActions actions_scene;
-	actions_scene.renames["VERTEX"] = "vertex";
-	actions_scene.renames["NORMAL"] = "normal";
-	actions_scene.renames["TANGENT"] = "tangent";
-	actions_scene.renames["BINORMAL"] = "binormal";
-	actions_scene.renames["COLOR"] = "color";
-	actions_scene.renames["UV"] = "uv";
-	actions_scene.renames["UV2"] = "uv2";
-	actions_scene.renames["CUSTOM0"] = "custom0";
-	actions_scene.renames["CUSTOM1"] = "custom1";
-	actions_scene.renames["CUSTOM2"] = "custom2";
-	actions_scene.renames["CUSTOM3"] = "custom3";
-	actions_scene.renames["BONES"] = "bones";
-	actions_scene.renames["WEIGHTS"] = "weights";
-	actions_scene.renames["POINT_SIZE"] = "point_size";
-	shaders->compiler_scene.initialize(actions_scene);
+	global_shader_uniforms.buffer_values =
+		memnew_arr(GlobalShaderUniforms::Value, global_shader_uniforms.buffer_size);
+	memset(global_shader_uniforms.buffer_values, 0,
+		sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size);
+	global_shader_uniforms.buffer_usage =
+		memnew_arr(GlobalShaderUniforms::ValueUsage, global_shader_uniforms.buffer_size);
+	global_shader_uniforms.buffer_dirty_regions = memnew_arr(bool,
+		1 + (global_shader_uniforms.buffer_size / GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE));
+	memset(global_shader_uniforms.buffer_dirty_regions, 0,
+		sizeof(bool) * (1 + (global_shader_uniforms.buffer_size /
+								GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE)));
+	glGenBuffers(1, &global_shader_uniforms.buffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, global_shader_uniforms.buffer);
+	glBufferData(GL_UNIFORM_BUFFER,
+		sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size,
+		global_shader_uniforms.buffer_values, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	// Particles
-	ShaderCompiler::DefaultIdentifierActions actions_particles;
-	shaders->compiler_particles.initialize(actions_particles);
+	{
+		// Setup CanvasItem compiler
+		ShaderCompiler::DefaultIdentifierActions actions;
 
-	// Sky
-	ShaderCompiler::DefaultIdentifierActions actions_sky;
-	shaders->compiler_sky.initialize(actions_sky);
+		actions.renames["VERTEX"] = "vertex";
+		actions.renames["LIGHT_VERTEX"] = "light_vertex";
+		actions.renames["SHADOW_VERTEX"] = "shadow_vertex";
+		actions.renames["UV"] = "uv";
+		actions.renames["POINT_SIZE"] = "point_size";
 
-	// Tex Blit
-	ShaderCompiler::DefaultIdentifierActions actions_tex_blit;
-	actions_tex_blit.renames["VERTEX"] = "vertex";
-	actions_tex_blit.renames["UV"] = "uv";
-	shaders->compiler_tex_blit.initialize(actions_tex_blit);
+		actions.renames["MODEL_MATRIX"] = "model_matrix";
+		actions.renames["CANVAS_MATRIX"] = "canvas_transform";
+		actions.renames["SCREEN_MATRIX"] = "screen_transform";
+		actions.renames["TIME"] = "time";
+		actions.renames["PI"] = String::num(Math::PI);
+		actions.renames["TAU"] = String::num(Math::TAU);
+		actions.renames["E"] = String::num(Math::E);
+		actions.renames["AT_LIGHT_PASS"] = "false";
+		actions.renames["INSTANCE_CUSTOM"] = "instance_custom";
+
+		actions.renames["COLOR"] = "color";
+		actions.renames["NORMAL"] = "normal";
+		actions.renames["NORMAL_MAP"] = "normal_map";
+		actions.renames["NORMAL_MAP_DEPTH"] = "normal_map_depth";
+		actions.renames["TEXTURE"] = "color_texture";
+		actions.renames["TEXTURE_PIXEL_SIZE"] = "color_texture_pixel_size";
+		actions.renames["NORMAL_TEXTURE"] = "normal_texture";
+		actions.renames["SPECULAR_SHININESS_TEXTURE"] = "specular_texture";
+		actions.renames["SPECULAR_SHININESS"] = "specular_shininess";
+		actions.renames["SCREEN_UV"] = "screen_uv";
+		actions.renames["REGION_RECT"] = "region_rect";
+		actions.renames["SCREEN_PIXEL_SIZE"] = "screen_pixel_size";
+		actions.renames["FRAGCOORD"] = "gl_FragCoord";
+		actions.renames["POINT_COORD"] = "gl_PointCoord";
+		actions.renames["INSTANCE_ID"] = "gl_InstanceID";
+		actions.renames["VERTEX_ID"] = "gl_VertexID";
+
+		actions.renames["CUSTOM0"] = "custom0";
+		actions.renames["CUSTOM1"] = "custom1";
+
+		actions.renames["LIGHT_POSITION"] = "light_position";
+		actions.renames["LIGHT_DIRECTION"] = "light_direction";
+		actions.renames["LIGHT_IS_DIRECTIONAL"] = "is_directional";
+		actions.renames["LIGHT_COLOR"] = "light_color";
+		actions.renames["LIGHT_ENERGY"] = "light_energy";
+		actions.renames["LIGHT"] = "light";
+		actions.renames["SHADOW_MODULATE"] = "shadow_modulate";
+
+		actions.renames["texture_sdf"] = "texture_sdf";
+		actions.renames["texture_sdf_normal"] = "texture_sdf_normal";
+		actions.renames["sdf_to_screen_uv"] = "sdf_to_screen_uv";
+		actions.renames["screen_uv_to_sdf"] = "screen_uv_to_sdf";
+
+		actions.usage_defines["COLOR"] = "#define COLOR_USED\n";
+		actions.usage_defines["SCREEN_UV"] = "#define SCREEN_UV_USED\n";
+		actions.usage_defines["SCREEN_PIXEL_SIZE"] = "@SCREEN_UV";
+		actions.usage_defines["NORMAL"] = "#define NORMAL_USED\n";
+		actions.usage_defines["NORMAL_MAP"] = "#define NORMAL_MAP_USED\n";
+		actions.usage_defines["SPECULAR_SHININESS"] = "#define SPECULAR_SHININESS_USED\n";
+		actions.usage_defines["CUSTOM0"] = "#define CUSTOM0_USED\n";
+		actions.usage_defines["CUSTOM1"] = "#define CUSTOM1_USED\n";
+
+		actions.render_mode_defines["skip_vertex_transform"] = "#define SKIP_TRANSFORM_USED\n";
+		actions.render_mode_defines["unshaded"] = "#define MODE_UNSHADED\n";
+		actions.render_mode_defines["light_only"] = "#define MODE_LIGHT_ONLY\n";
+		actions.render_mode_defines["world_vertex_coords"] = "#define USE_WORLD_VERTEX_COORDS\n";
+
+		actions.global_buffer_array_variable = "global_shader_uniforms";
+		actions.instance_uniform_index_variable = "read_draw_data_instance_offset";
+
+		shaders->compiler_canvas.initialize(actions);
+	}
+
+	{
+		// Setup Scene compiler
+		ShaderCompiler::DefaultIdentifierActions actions;
+
+		actions.renames["MODEL_MATRIX"] = "model_matrix";
+		actions.renames["MODEL_NORMAL_MATRIX"] = "model_normal_matrix";
+		actions.renames["VIEW_MATRIX"] = "scene_data_block.data.view_matrix";
+		actions.renames["INV_VIEW_MATRIX"] = "scene_data_block.data.inv_view_matrix";
+		actions.renames["PROJECTION_MATRIX"] = "projection_matrix";
+		actions.renames["INV_PROJECTION_MATRIX"] = "inv_projection_matrix";
+		actions.renames["MODELVIEW_MATRIX"] = "modelview";
+		actions.renames["MODELVIEW_NORMAL_MATRIX"] = "modelview_normal";
+		actions.renames["MAIN_CAM_INV_VIEW_MATRIX"] =
+			"scene_data_block.data.main_cam_inv_view_matrix";
+
+		actions.renames["VERTEX"] = "vertex";
+		actions.renames["NORMAL"] = "normal";
+		actions.renames["TANGENT"] = "tangent";
+		actions.renames["BINORMAL"] = "binormal";
+		actions.renames["POSITION"] = "position";
+		actions.renames["UV"] = "uv_interp";
+		actions.renames["UV2"] = "uv2_interp";
+		actions.renames["COLOR"] = "color_interp";
+		actions.renames["POINT_SIZE"] = "point_size";
+		actions.renames["INSTANCE_ID"] = "gl_InstanceID";
+		actions.renames["VERTEX_ID"] = "gl_VertexID";
+		actions.renames["Z_CLIP_SCALE"] = "z_clip_scale";
+
+		actions.renames["ALPHA_SCISSOR_THRESHOLD"] = "alpha_scissor_threshold";
+		actions.renames["ALPHA_HASH_SCALE"] = "alpha_hash_scale";
+		actions.renames["ALPHA_ANTIALIASING_EDGE"] = "alpha_antialiasing_edge";
+		actions.renames["ALPHA_TEXTURE_COORDINATE"] = "alpha_texture_coordinate";
+
+		actions.renames["TIME"] = "scene_data_block.data.time";
+		actions.renames["EXPOSURE"] =
+			"(1.0 / scene_data_block.data.emissive_exposure_normalization)";
+		actions.renames["PI"] = String::num(Math::PI);
+		actions.renames["TAU"] = String::num(Math::TAU);
+		actions.renames["E"] = String::num(Math::E);
+		actions.renames["OUTPUT_IS_SRGB"] = "SHADER_IS_SRGB";
+		actions.renames["CLIP_SPACE_FAR"] = "SHADER_SPACE_FAR";
+		actions.renames["IN_SHADOW_PASS"] = "IN_SHADOW_PASS";
+		actions.renames["VIEWPORT_SIZE"] = "scene_data_block.data.viewport_size";
+
+		actions.renames["FRAGCOORD"] = "gl_FragCoord";
+		actions.renames["FRONT_FACING"] = "gl_FrontFacing";
+		actions.renames["NORMAL_MAP"] = "normal_map";
+		actions.renames["NORMAL_MAP_DEPTH"] = "normal_map_depth";
+		actions.renames["BENT_NORMAL_MAP"] = "bent_normal_map";
+		actions.renames["ALBEDO"] = "albedo";
+		actions.renames["ALPHA"] = "alpha";
+		actions.renames["PREMUL_ALPHA_FACTOR"] = "premul_alpha";
+		actions.renames["METALLIC"] = "metallic";
+		actions.renames["SPECULAR"] = "specular";
+		actions.renames["ROUGHNESS"] = "roughness";
+		actions.renames["RIM"] = "rim";
+		actions.renames["RIM_TINT"] = "rim_tint";
+		actions.renames["CLEARCOAT"] = "clearcoat";
+		actions.renames["CLEARCOAT_ROUGHNESS"] = "clearcoat_roughness";
+		actions.renames["ANISOTROPY"] = "anisotropy";
+		actions.renames["ANISOTROPY_FLOW"] = "anisotropy_flow";
+		actions.renames["SSS_STRENGTH"] = "sss_strength";
+		actions.renames["SSS_TRANSMITTANCE_COLOR"] = "transmittance_color";
+		actions.renames["SSS_TRANSMITTANCE_DEPTH"] = "transmittance_depth";
+		actions.renames["SSS_TRANSMITTANCE_BOOST"] = "transmittance_boost";
+		actions.renames["BACKLIGHT"] = "backlight";
+		actions.renames["AO"] = "ao";
+		actions.renames["AO_LIGHT_AFFECT"] = "ao_light_affect";
+		actions.renames["EMISSION"] = "emission";
+		actions.renames["POINT_COORD"] = "gl_PointCoord";
+		actions.renames["INSTANCE_CUSTOM"] = "instance_custom";
+		actions.renames["SCREEN_UV"] = "screen_uv";
+		actions.renames["DEPTH"] = "gl_FragDepth";
+		actions.renames["FOG"] = "fog";
+		actions.renames["RADIANCE"] = "custom_radiance";
+		actions.renames["IRRADIANCE"] = "custom_irradiance";
+		actions.renames["BONE_INDICES"] = "bone_attrib";
+		actions.renames["BONE_WEIGHTS"] = "weight_attrib";
+		actions.renames["CUSTOM0"] = "custom0_attrib";
+		actions.renames["CUSTOM1"] = "custom1_attrib";
+		actions.renames["CUSTOM2"] = "custom2_attrib";
+		actions.renames["CUSTOM3"] = "custom3_attrib";
+		actions.renames["LIGHT_VERTEX"] = "light_vertex";
+
+		actions.renames["NODE_POSITION_WORLD"] = "model_matrix[3].xyz";
+		actions.renames["CAMERA_POSITION_WORLD"] = "scene_data_block.data.inv_view_matrix[3].xyz";
+		actions.renames["CAMERA_DIRECTION_WORLD"] = "scene_data_block.data.inv_view_matrix[2].xyz";
+		actions.renames["CAMERA_VISIBLE_LAYERS"] = "scene_data_block.data.camera_visible_layers";
+		actions.renames["NODE_POSITION_VIEW"] =
+			"(scene_data_block.data.view_matrix * model_matrix)[3].xyz";
+
+		actions.renames["IS_MULTIVIEW"] = "OUTPUT_IS_MULTIVIEW";
+		actions.renames["VIEW_INDEX"] = "ViewIndex";
+		actions.renames["VIEW_MONO_LEFT"] = "uint(0)";
+		actions.renames["VIEW_RIGHT"] = "uint(1)";
+		actions.renames["EYE_OFFSET"] = "eye_offset";
+
+		actions.renames["VIEW"] = "view";
+		actions.renames["SPECULAR_AMOUNT"] = "specular_amount";
+		actions.renames["LIGHT_COLOR"] = "light_color";
+		actions.renames["LIGHT_IS_DIRECTIONAL"] = "is_directional";
+		actions.renames["LIGHT_IS_AREA"] = "is_area";
+		actions.renames["LIGHT_AREA_DIFFUSE_MULTIPLIER"] = "area_diffuse";
+		actions.renames["LIGHT_AREA_SPECULAR_MULTIPLIER"] = "area_specular";
+		actions.renames["LIGHT"] = "light";
+		actions.renames["ATTENUATION"] = "attenuation";
+		actions.renames["DIFFUSE_LIGHT"] = "diffuse_light";
+		actions.renames["SPECULAR_LIGHT"] = "specular_light";
+
+		actions.usage_defines["NORMAL"] = "#define NORMAL_USED\n";
+		actions.usage_defines["TANGENT"] = "#define TANGENT_USED\n";
+		actions.usage_defines["BINORMAL"] = "@TANGENT";
+		actions.usage_defines["RIM"] = "#define LIGHT_RIM_USED\n";
+		actions.usage_defines["RIM_TINT"] = "@RIM";
+		actions.usage_defines["CLEARCOAT"] = "#define LIGHT_CLEARCOAT_USED\n";
+		actions.usage_defines["CLEARCOAT_ROUGHNESS"] = "@CLEARCOAT";
+		actions.usage_defines["ANISOTROPY"] = "#define LIGHT_ANISOTROPY_USED\n";
+		actions.usage_defines["ANISOTROPY_FLOW"] = "@ANISOTROPY";
+		actions.usage_defines["AO"] = "#define AO_USED\n";
+		actions.usage_defines["AO_LIGHT_AFFECT"] = "#define AO_USED\n";
+		actions.usage_defines["UV"] = "#define UV_USED\n";
+		actions.usage_defines["UV2"] = "#define UV2_USED\n";
+		actions.usage_defines["BONE_INDICES"] = "#define BONES_USED\n";
+		actions.usage_defines["BONE_WEIGHTS"] = "#define WEIGHTS_USED\n";
+		actions.usage_defines["CUSTOM0"] = "#define CUSTOM0_USED\n";
+		actions.usage_defines["CUSTOM1"] = "#define CUSTOM1_USED\n";
+		actions.usage_defines["CUSTOM2"] = "#define CUSTOM2_USED\n";
+		actions.usage_defines["CUSTOM3"] = "#define CUSTOM3_USED\n";
+		actions.usage_defines["NORMAL_MAP"] = "#define NORMAL_MAP_USED\n";
+		actions.usage_defines["NORMAL_MAP_DEPTH"] = "@NORMAL_MAP";
+		actions.usage_defines["BENT_NORMAL_MAP"] = "#define BENT_NORMAL_MAP_USED\n";
+		actions.usage_defines["COLOR"] = "#define COLOR_USED\n";
+		actions.usage_defines["INSTANCE_CUSTOM"] = "#define ENABLE_INSTANCE_CUSTOM\n";
+		actions.usage_defines["POSITION"] = "#define OVERRIDE_POSITION\n";
+		actions.usage_defines["LIGHT_VERTEX"] = "#define LIGHT_VERTEX_USED\n";
+		actions.usage_defines["Z_CLIP_SCALE"] = "#define Z_CLIP_SCALE_USED\n";
+		actions.usage_defines["LIGHT_AREA_DIFFUSE_MULTIPLIER"] = "#define AREA_LIGHT_CODE_USED\n";
+		actions.usage_defines["LIGHT_AREA_SPECULAR_MULTIPLIER"] = "@LIGHT_AREA_DIFFUSE_MULTIPLIER";
+		actions.usage_defines["LIGHT_IS_AREA"] = "@LIGHT_AREA_DIFFUSE_MULTIPLIER";
+
+		actions.usage_defines["ALPHA_SCISSOR_THRESHOLD"] = "#define ALPHA_SCISSOR_USED\n";
+		actions.usage_defines["ALPHA_HASH_SCALE"] = "#define ALPHA_HASH_USED\n";
+		actions.usage_defines["ALPHA_ANTIALIASING_EDGE"] = "#define ALPHA_ANTIALIASING_EDGE_USED\n";
+		actions.usage_defines["ALPHA_TEXTURE_COORDINATE"] = "@ALPHA_ANTIALIASING_EDGE";
+		actions.usage_defines["PREMULT_ALPHA_FACTOR"] = "#define PREMULT_ALPHA_USED";
+
+		actions.usage_defines["SSS_STRENGTH"] = "#define ENABLE_SSS\n";
+		actions.usage_defines["SSS_TRANSMITTANCE_DEPTH"] = "#define ENABLE_TRANSMITTANCE\n";
+		actions.usage_defines["BACKLIGHT"] = "#define LIGHT_BACKLIGHT_USED\n";
+		actions.usage_defines["SCREEN_UV"] = "#define SCREEN_UV_USED\n";
+
+		actions.usage_defines["FOG"] = "#define CUSTOM_FOG_USED\n";
+		actions.usage_defines["RADIANCE"] = "#define CUSTOM_RADIANCE_USED\n";
+		actions.usage_defines["IRRADIANCE"] = "#define CUSTOM_IRRADIANCE_USED\n";
+
+		actions.render_mode_defines["skip_vertex_transform"] = "#define SKIP_TRANSFORM_USED\n";
+		actions.render_mode_defines["world_vertex_coords"] = "#define VERTEX_WORLD_COORDS_USED\n";
+		actions.render_mode_defines["ensure_correct_normals"] = "#define ENSURE_CORRECT_NORMALS\n";
+		actions.render_mode_defines["cull_front"] = "#define DO_SIDE_CHECK\n";
+		actions.render_mode_defines["cull_disabled"] = "#define DO_SIDE_CHECK\n";
+		actions.render_mode_defines["particle_trails"] = "#define USE_PARTICLE_TRAILS\n";
+		actions.render_mode_defines["depth_prepass_alpha"] = "#define USE_OPAQUE_PREPASS\n";
+
+		actions.render_mode_defines["diffuse_lambert_wrap"] = "#define DIFFUSE_LAMBERT_WRAP\n";
+		actions.render_mode_defines["diffuse_toon"] = "#define DIFFUSE_TOON\n";
+
+		actions.render_mode_defines["sss_mode_skin"] = "#define SSS_MODE_SKIN\n";
+
+		actions.render_mode_defines["specular_schlick_ggx"] = "#define SPECULAR_SCHLICK_GGX\n";
+		actions.render_mode_defines["specular_toon"] = "#define SPECULAR_TOON\n";
+		actions.render_mode_defines["specular_disabled"] = "#define SPECULAR_DISABLED\n";
+		actions.render_mode_defines["shadows_disabled"] = "#define SHADOWS_DISABLED\n";
+		actions.render_mode_defines["ambient_light_disabled"] = "#define AMBIENT_LIGHT_DISABLED\n";
+		actions.render_mode_defines["shadow_to_opacity"] = "#define USE_SHADOW_TO_OPACITY\n";
+		actions.render_mode_defines["unshaded"] = "#define MODE_UNSHADED\n";
+		if (!GLES3::Config::get_singleton()->force_vertex_shading) {
+			actions.render_mode_defines["vertex_lighting"] = "#define USE_VERTEX_LIGHTING\n";
+		}
+		actions.render_mode_defines["fog_disabled"] = "#define FOG_DISABLED\n";
+		actions.render_mode_defines["specular_occlusion_disabled"] =
+			"#define SPECULAR_OCCLUSION_DISABLED\n";
+
+		actions.default_filter = ShaderLanguage::FILTER_LINEAR_MIPMAP;
+		actions.default_repeat = ShaderLanguage::REPEAT_ENABLE;
+
+		actions.apply_luminance_multiplier = true;
+		actions.check_multiview_samplers = RendererCompositor::is_xr_enabled();
+		actions.global_buffer_array_variable = "global_shader_uniforms";
+		actions.instance_uniform_index_variable = "instance_offset";
+
+		shaders->compiler_scene.initialize(actions);
+	}
+
+	{
+		// Setup Particles compiler
+		ShaderCompiler::DefaultIdentifierActions actions;
+
+		actions.renames["COLOR"] = "out_color";
+		actions.renames["VELOCITY"] = "out_velocity_flags.xyz";
+		actions.renames["MASS"] = "mass";
+		actions.renames["ACTIVE"] = "particle_active";
+		actions.renames["RESTART"] = "restart";
+		actions.renames["CUSTOM"] = "out_custom";
+		for (int i = 0; i < PARTICLES_MAX_USERDATAS; i++) {
+			String udname = "USERDATA" + itos(i + 1);
+			actions.renames[udname] = "out_userdata" + itos(i + 1);
+			actions.usage_defines[udname] = "#define USERDATA" + itos(i + 1) + "_USED\n";
+		}
+		actions.renames["TRANSFORM"] = "xform";
+		actions.renames["TIME"] = "time";
+		actions.renames["PI"] = String::num(Math::PI);
+		actions.renames["TAU"] = String::num(Math::TAU);
+		actions.renames["E"] = String::num(Math::E);
+		actions.renames["LIFETIME"] = "lifetime";
+		actions.renames["DELTA"] = "local_delta";
+		actions.renames["NUMBER"] = "particle_number";
+		actions.renames["INDEX"] = "index";
+		actions.renames["AMOUNT_RATIO"] = "amount_ratio";
+		actions.renames["EMISSION_TRANSFORM"] = "emission_transform";
+		actions.renames["RANDOM_SEED"] = "random_seed";
+		actions.renames["RESTART_POSITION"] = "restart_position";
+		actions.renames["RESTART_ROT_SCALE"] = "restart_rotation_scale";
+		actions.renames["RESTART_VELOCITY"] = "restart_velocity";
+		actions.renames["RESTART_COLOR"] = "restart_color";
+		actions.renames["RESTART_CUSTOM"] = "restart_custom";
+		actions.renames["COLLIDED"] = "collided";
+		actions.renames["COLLISION_NORMAL"] = "collision_normal";
+		actions.renames["COLLISION_DEPTH"] = "collision_depth";
+		actions.renames["ATTRACTOR_FORCE"] = "attractor_force";
+		actions.renames["EMITTER_VELOCITY"] = "emitter_velocity";
+		actions.renames["INTERPOLATE_TO_END"] = "interp_to_end";
+
+		actions.renames["FLAG_EMIT_POSITION"] = "uint(1)";
+		actions.renames["FLAG_EMIT_ROT_SCALE"] = "uint(2)";
+		actions.renames["FLAG_EMIT_VELOCITY"] = "uint(4)";
+		actions.renames["FLAG_EMIT_COLOR"] = "uint(8)";
+		actions.renames["FLAG_EMIT_CUSTOM"] = "uint(16)";
+		actions.renames["emit_subparticle"] = "emit_subparticle";
+		actions.usage_defines["emit_subparticle"] =
+			"\nbool emit_subparticle(mat4 p_xform, vec3 p_velocity, vec4 p_color, vec4 p_custom, "
+			"uint p_flags) {\n\treturn false;\n}\n";
+
+		actions.render_mode_defines["disable_force"] = "#define DISABLE_FORCE\n";
+		actions.render_mode_defines["disable_velocity"] = "#define DISABLE_VELOCITY\n";
+		actions.render_mode_defines["keep_data"] = "#define ENABLE_KEEP_DATA\n";
+		actions.render_mode_defines["collision_use_scale"] = "#define USE_COLLISION_SCALE\n";
+
+		actions.default_filter = ShaderLanguage::FILTER_LINEAR_MIPMAP;
+		actions.default_repeat = ShaderLanguage::REPEAT_ENABLE;
+
+		actions.global_buffer_array_variable = "global_shader_uniforms";
+
+		shaders->compiler_particles.initialize(actions);
+	}
+
+	{
+		// Setup Sky compiler
+		ShaderCompiler::DefaultIdentifierActions actions;
+
+		actions.renames["COLOR"] = "color";
+		actions.renames["ALPHA"] = "alpha";
+		actions.renames["EYEDIR"] = "cube_normal";
+		actions.renames["POSITION"] = "position";
+		actions.renames["SKY_COORDS"] = "panorama_coords";
+		actions.renames["SCREEN_UV"] = "uv";
+		actions.renames["TIME"] = "time";
+		actions.renames["FRAGCOORD"] = "gl_FragCoord";
+		actions.renames["PI"] = String::num(Math::PI);
+		actions.renames["TAU"] = String::num(Math::TAU);
+		actions.renames["E"] = String::num(Math::E);
+		actions.renames["HALF_RES_COLOR"] = "half_res_color";
+		actions.renames["QUARTER_RES_COLOR"] = "quarter_res_color";
+		actions.renames["RADIANCE"] = "radiance";
+		actions.renames["FOG"] = "custom_fog";
+		actions.renames["LIGHT0_ENABLED"] =
+			"bool(directional_lights.data[0].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
+		actions.renames["LIGHT0_DIRECTION"] = "directional_lights.data[0].direction_energy.xyz";
+		actions.renames["LIGHT0_ENERGY"] = "directional_lights.data[0].direction_energy.w";
+		actions.renames["LIGHT0_COLOR"] = "directional_lights.data[0].color_size.xyz";
+		actions.renames["LIGHT0_SIZE"] = "directional_lights.data[0].color_size.w";
+		actions.renames["LIGHT1_ENABLED"] =
+			"bool(directional_lights.data[1].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
+		actions.renames["LIGHT1_DIRECTION"] = "directional_lights.data[1].direction_energy.xyz";
+		actions.renames["LIGHT1_ENERGY"] = "directional_lights.data[1].direction_energy.w";
+		actions.renames["LIGHT1_COLOR"] = "directional_lights.data[1].color_size.xyz";
+		actions.renames["LIGHT1_SIZE"] = "directional_lights.data[1].color_size.w";
+		actions.renames["LIGHT2_ENABLED"] =
+			"bool(directional_lights.data[2].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
+		actions.renames["LIGHT2_DIRECTION"] = "directional_lights.data[2].direction_energy.xyz";
+		actions.renames["LIGHT2_ENERGY"] = "directional_lights.data[2].direction_energy.w";
+		actions.renames["LIGHT2_COLOR"] = "directional_lights.data[2].color_size.xyz";
+		actions.renames["LIGHT2_SIZE"] = "directional_lights.data[2].color_size.w";
+		actions.renames["LIGHT3_ENABLED"] =
+			"bool(directional_lights.data[3].enabled_bake_mode & DIRECTIONAL_LIGHT_ENABLED)";
+		actions.renames["LIGHT3_DIRECTION"] = "directional_lights.data[3].direction_energy.xyz";
+		actions.renames["LIGHT3_ENERGY"] = "directional_lights.data[3].direction_energy.w";
+		actions.renames["LIGHT3_COLOR"] = "directional_lights.data[3].color_size.xyz";
+		actions.renames["LIGHT3_SIZE"] = "directional_lights.data[3].color_size.w";
+		actions.renames["AT_CUBEMAP_PASS"] = "AT_CUBEMAP_PASS";
+		actions.renames["AT_HALF_RES_PASS"] = "AT_HALF_RES_PASS";
+		actions.renames["AT_QUARTER_RES_PASS"] = "AT_QUARTER_RES_PASS";
+		actions.usage_defines["HALF_RES_COLOR"] = "\n#define USES_HALF_RES_COLOR\n";
+		actions.usage_defines["QUARTER_RES_COLOR"] = "\n#define USES_QUARTER_RES_COLOR\n";
+		actions.render_mode_defines["disable_fog"] = "#define DISABLE_FOG\n";
+		actions.render_mode_defines["use_debanding"] = "#define USE_DEBANDING\n";
+
+		actions.default_filter = ShaderLanguage::FILTER_LINEAR_MIPMAP;
+		actions.default_repeat = ShaderLanguage::REPEAT_ENABLE;
+
+		actions.global_buffer_array_variable = "global_shader_uniforms";
+
+		shaders->compiler_sky.initialize(actions);
+	}
+
+	{
+		// Setup TextureBlit compiler
+		ShaderCompiler::DefaultIdentifierActions actions;
+
+		actions.renames["TIME"] = "time";
+		actions.renames["PI"] = String::num(Math::PI);
+		actions.renames["TAU"] = String::num(Math::TAU);
+		actions.renames["E"] = String::num(Math::E);
+
+		actions.renames["FRAGCOORD"] = "gl_FragCoord";
+
+		actions.renames["UV"] = "uv";
+		actions.renames["MODULATE"] = "modulate";
+
+		actions.renames["COLOR0"] = "color0";
+		actions.renames["COLOR1"] = "color1";
+		actions.renames["COLOR2"] = "color2";
+		actions.renames["COLOR3"] = "color3";
+
+		shaders->compiler_tex_blit.initialize(actions);
+	}
 }
 
 void GLES3::MaterialStorage::finalize()
 {
+	LocalVector<RID> owned_materials = material_owner.get_owned_list();
+	for (const RID& E : owned_materials) {
+		material_free(E);
+	}
+	LocalVector<RID> owned_shaders = shader_owner.get_owned_list();
+	for (const RID& E : owned_shaders) {
+		shader_free(E);
+	}
 	if (global_shader_uniforms.buffer != 0) {
 		glDeleteBuffers(1, &global_shader_uniforms.buffer);
 		global_shader_uniforms.buffer = 0;
 	}
 	if (global_shader_uniforms.buffer_values) {
-		memfree(global_shader_uniforms.buffer_values);
+		memdelete_arr(global_shader_uniforms.buffer_values);
 		global_shader_uniforms.buffer_values = nullptr;
 	}
 	if (global_shader_uniforms.buffer_usage) {
-		memfree(global_shader_uniforms.buffer_usage);
+		memdelete_arr(global_shader_uniforms.buffer_usage);
 		global_shader_uniforms.buffer_usage = nullptr;
 	}
 	if (global_shader_uniforms.buffer_dirty_regions) {
-		memfree(global_shader_uniforms.buffer_dirty_regions);
+		memdelete_arr(global_shader_uniforms.buffer_dirty_regions);
 		global_shader_uniforms.buffer_dirty_regions = nullptr;
 	}
 	if (shaders) {
-        memdelete(shaders);
-        shaders = nullptr;
-    }
+		memdelete(shaders);
+		shaders = nullptr;
+	}
 }
 
 #endif // !GLES3_ENABLED

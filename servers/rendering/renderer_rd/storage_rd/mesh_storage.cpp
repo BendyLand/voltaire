@@ -2286,13 +2286,181 @@ void RendererRD::MeshStorage::mesh_surface_update_attribute_region(
 
 void RendererRD::MeshStorage::initialize()
 {
-    skeleton_shader = memnew(SkeletonShader);
+	default_rd_storage_buffer = RD::storage_buffer_create(sizeof(uint32_t) * 4);
+
+	{
+		Vector<uint8_t> buffer;
+		{
+			buffer.resize(sizeof(float) * 3);
+			{
+				uint8_t* w = buffer.ptrw();
+				float* fptr = reinterpret_cast<float*>(w);
+				fptr[0] = 0.0f;
+				fptr[1] = 0.0f;
+				fptr[2] = 0.0f;
+			}
+			mesh_default_rd_buffers[DEFAULT_RD_BUFFER_VERTEX] =
+				RD::vertex_buffer_create(buffer.size(), buffer);
+		}
+
+		{
+			buffer.resize(sizeof(float) * 3);
+			{
+				uint8_t* w = buffer.ptrw();
+				float* fptr = reinterpret_cast<float*>(w);
+				fptr[0] = 1.0f;
+				fptr[1] = 0.0f;
+				fptr[2] = 0.0f;
+			}
+			mesh_default_rd_buffers[DEFAULT_RD_BUFFER_NORMAL] =
+				RD::vertex_buffer_create(buffer.size(), buffer);
+		}
+
+		{
+			buffer.resize(sizeof(float) * 4);
+			{
+				uint8_t* w = buffer.ptrw();
+				float* fptr = reinterpret_cast<float*>(w);
+				fptr[0] = 1.0f;
+				fptr[1] = 0.0f;
+				fptr[2] = 0.0f;
+				fptr[3] = 0.0f;
+			}
+			mesh_default_rd_buffers[DEFAULT_RD_BUFFER_TANGENT] =
+				RD::vertex_buffer_create(buffer.size(), buffer);
+		}
+
+		{
+			buffer.resize(sizeof(float) * 4);
+			{
+				uint8_t* w = buffer.ptrw();
+				float* fptr = reinterpret_cast<float*>(w);
+				fptr[0] = 1.0f;
+				fptr[1] = 1.0f;
+				fptr[2] = 1.0f;
+				fptr[3] = 1.0f;
+			}
+			mesh_default_rd_buffers[DEFAULT_RD_BUFFER_COLOR] =
+				RD::vertex_buffer_create(buffer.size(), buffer);
+		}
+
+		{
+			buffer.resize(sizeof(float) * 2);
+			{
+				uint8_t* w = buffer.ptrw();
+				float* fptr = reinterpret_cast<float*>(w);
+				fptr[0] = 0.0f;
+				fptr[1] = 0.0f;
+			}
+			mesh_default_rd_buffers[DEFAULT_RD_BUFFER_TEX_UV] =
+				RD::vertex_buffer_create(buffer.size(), buffer);
+		}
+
+		{
+			buffer.resize(sizeof(float) * 2);
+			{
+				uint8_t* w = buffer.ptrw();
+				float* fptr = reinterpret_cast<float*>(w);
+				fptr[0] = 0.0f;
+				fptr[1] = 0.0f;
+			}
+			mesh_default_rd_buffers[DEFAULT_RD_BUFFER_TEX_UV2] =
+				RD::vertex_buffer_create(buffer.size(), buffer);
+		}
+
+		for (int i = 0; i < RSE::ARRAY_CUSTOM_COUNT; i++) {
+			buffer.resize(sizeof(float) * 4);
+			{
+				uint8_t* w = buffer.ptrw();
+				float* fptr = reinterpret_cast<float*>(w);
+				fptr[0] = 0.0f;
+				fptr[1] = 0.0f;
+				fptr[2] = 0.0f;
+				fptr[3] = 0.0f;
+			}
+			mesh_default_rd_buffers[DEFAULT_RD_BUFFER_CUSTOM0 + i] =
+				RD::vertex_buffer_create(buffer.size(), buffer);
+		}
+
+		{
+			buffer.resize(sizeof(uint32_t) * 4);
+			{
+				uint8_t* w = buffer.ptrw();
+				uint32_t* fptr = reinterpret_cast<uint32_t*>(w);
+				fptr[0] = 0;
+				fptr[1] = 0;
+				fptr[2] = 0;
+				fptr[3] = 0;
+			}
+			mesh_default_rd_buffers[DEFAULT_RD_BUFFER_BONES] =
+				RD::vertex_buffer_create(buffer.size(), buffer);
+		}
+
+		{
+			buffer.resize(sizeof(float) * 4);
+			{
+				uint8_t* w = buffer.ptrw();
+				float* fptr = reinterpret_cast<float*>(w);
+				fptr[0] = 0.0f;
+				fptr[1] = 0.0f;
+				fptr[2] = 0.0f;
+				fptr[3] = 0.0f;
+			}
+			mesh_default_rd_buffers[DEFAULT_RD_BUFFER_WEIGHTS] =
+				RD::vertex_buffer_create(buffer.size(), buffer);
+		}
+	}
+
+	skeleton_shader = memnew(SkeletonShader);
+	{
+		Vector<String> skeleton_modes;
+		skeleton_modes.push_back("\n#define MODE_2D\n");
+		skeleton_modes.push_back("");
+
+		skeleton_shader->shader.initialize(skeleton_modes);
+		skeleton_shader->version = skeleton_shader->shader.version_create();
+		for (int i = 0; i < SkeletonShader::SHADER_MODE_MAX; i++) {
+			skeleton_shader->version_shader[i] =
+				skeleton_shader->shader.version_get_shader(skeleton_shader->version, i);
+			skeleton_shader->pipeline[i] =
+				RD::compute_pipeline_create(skeleton_shader->version_shader[i]);
+		}
+
+		{
+			Vector<RD::Uniform> uniforms;
+			{
+				RD::Uniform u;
+				u.binding = 0;
+				u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+				u.append_id(default_rd_storage_buffer);
+				uniforms.push_back(u);
+			}
+			skeleton_shader->default_skeleton_uniform_set = RD::uniform_set_create(
+				uniforms, skeleton_shader->version_shader[0], SkeletonShader::UNIFORM_SET_SKELETON);
+		}
+	}
 }
 
 void RendererRD::MeshStorage::finalize()
 {
-    if (skeleton_shader) {
-        memdelete(skeleton_shader);
-        skeleton_shader = nullptr;
-    }
+	for (int i = 0; i < DEFAULT_RD_BUFFER_MAX; i++) {
+		if (mesh_default_rd_buffers[i].is_valid()) {
+			RD::free_rid(mesh_default_rd_buffers[i]);
+			mesh_default_rd_buffers[i] = RID();
+		}
+	}
+
+	if (skeleton_shader) {
+		if (skeleton_shader->version.is_valid()) {
+			skeleton_shader->shader.version_free(skeleton_shader->version);
+			skeleton_shader->version = RID();
+		}
+		memdelete(skeleton_shader);
+		skeleton_shader = nullptr;
+	}
+
+	if (default_rd_storage_buffer.is_valid()) {
+		RD::free_rid(default_rd_storage_buffer);
+		default_rd_storage_buffer = RID();
+	}
 }

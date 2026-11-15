@@ -1380,11 +1380,73 @@ RendererRD::MaterialStorage::MaterialDataRequestFunction RendererRD::MaterialSto
 	return material_data_request_func[p_shader_type];
 }
 
-void RendererRD::MaterialStorage::_update_queued_materials() {}
+void RendererRD::MaterialStorage::_update_queued_materials()
+{
+	SelfList<Material>::List copy;
+	{
+		MutexLock lock(material_update_list_mutex);
+		while (SelfList<Material>* E = material_update_list.first()) {
+			DEV_ASSERT(E == &E->self()->update_element);
+			material_update_list.remove(E);
+			copy.add(E);
+		}
+	}
+
+	while (SelfList<Material>* E = copy.first()) {
+		Material* material = E->self();
+		copy.remove(E);
+		material->texture_dirty = false;
+		material->uniform_dirty = false;
+	}
+}
 
 void RendererRD::MaterialStorage::TexBlitShaderData::set_code(const String& p_code) {}
 
 void RendererRD::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
+
+void RendererRD::MaterialStorage::initialize()
+{
+	default_samplers = samplers_rd_allocate();
+
+	{
+		Vector<uint8_t> pv;
+		pv.resize(6 * 2);
+		{
+			uint8_t* w = pv.ptrw();
+			uint16_t* p16 = (uint16_t*)w;
+			p16[0] = 0;
+			p16[1] = 1;
+			p16[2] = 2;
+			p16[3] = 0;
+			p16[4] = 2;
+			p16[5] = 3;
+		}
+		quad_index_buffer = RD::index_buffer_create(6, RDC::INDEX_BUFFER_FORMAT_UINT16, pv);
+		quad_index_array = RD::index_array_create(quad_index_buffer, 0, 6);
+	}
+
+	for (int i = 0; i < SHADER_TYPE_MAX; i++) {
+		shader_data_request_func[i] = nullptr;
+		material_data_request_func[i] = nullptr;
+	}
+
+	static_assert(sizeof(GlobalShaderUniforms::Value) == 16);
+
+	global_shader_uniforms.buffer_size = 65536;
+	global_shader_uniforms.buffer_values =
+		memnew_arr(GlobalShaderUniforms::Value, global_shader_uniforms.buffer_size);
+	memset(global_shader_uniforms.buffer_values, 0,
+		sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size);
+	global_shader_uniforms.buffer_usage =
+		memnew_arr(GlobalShaderUniforms::ValueUsage, global_shader_uniforms.buffer_size);
+	global_shader_uniforms.buffer_dirty_regions = memnew_arr(bool,
+		1 + (global_shader_uniforms.buffer_size / GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE));
+	memset(global_shader_uniforms.buffer_dirty_regions, 0,
+		sizeof(bool) * (1 + (global_shader_uniforms.buffer_size /
+								GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE)));
+	global_shader_uniforms.buffer = RD::storage_buffer_create(
+		sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size);
+}
 
 void RendererRD::MaterialStorage::finalize()
 {
@@ -1405,15 +1467,15 @@ void RendererRD::MaterialStorage::finalize()
 		global_shader_uniforms.buffer = RID();
 	}
 	if (global_shader_uniforms.buffer_values) {
-		memfree(global_shader_uniforms.buffer_values);
+		memdelete_arr(global_shader_uniforms.buffer_values);
 		global_shader_uniforms.buffer_values = nullptr;
 	}
 	if (global_shader_uniforms.buffer_usage) {
-		memfree(global_shader_uniforms.buffer_usage);
+		memdelete_arr(global_shader_uniforms.buffer_usage);
 		global_shader_uniforms.buffer_usage = nullptr;
 	}
 	if (global_shader_uniforms.buffer_dirty_regions) {
-		memfree(global_shader_uniforms.buffer_dirty_regions);
+		memdelete_arr(global_shader_uniforms.buffer_dirty_regions);
 		global_shader_uniforms.buffer_dirty_regions = nullptr;
 	}
 	if (default_samplers.is_valid()) {
@@ -1427,8 +1489,8 @@ void RendererRD::MaterialStorage::finalize()
 		RD::free_rid(quad_index_buffer);
 		quad_index_buffer = RID();
 	}
-    // Clear global uniform tables and cache maps
-    global_shader_parameters_clear();
+	// Clear global uniform tables and cache maps
+	global_shader_parameters_clear();
 }
 
 void RendererRD::MaterialStorage::material_free(RID p_rid)

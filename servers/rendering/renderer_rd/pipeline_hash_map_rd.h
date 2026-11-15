@@ -56,6 +56,18 @@ private:
 	RBSet<uint32_t> compilation_set;
 	Mutex local_mutex;
 
+	bool _add_new_pipelines_to_map()
+	{
+		bool added = false;
+		MutexLock lock(compiled_queue_mutex);
+		for (const Pair<uint32_t, RID>& pair : compiled_queue) {
+			hash_map[pair.first] = pair.second;
+			added = true;
+		}
+		compiled_queue.clear();
+		return added;
+	}
+
 public:
 	void add_compiled_pipeline(uint32_t p_hash, RID p_pipeline)
 	{
@@ -74,18 +86,20 @@ public:
 			(creation_object != nullptr) && (creation_function != nullptr) &&
 			"Creation object and function was not set before attempting to compile a pipeline.");
 
-		MutexLock local_lock(local_mutex);
-		if (compilation_set.has(p_key_hash)) {
-			// Check if the pipeline was already submitted.
-			return;
-		}
+		{
+			MutexLock local_lock(local_mutex);
+			if (compilation_set.has(p_key_hash)) {
+				// Check if the pipeline was already submitted.
+				return;
+			}
 
-		// Record the pipeline as submitted, a task can't be started for it again.
-		compilation_set.insert(p_key_hash);
+			// Record the pipeline as submitted, a task can't be started for it again.
+			compilation_set.insert(p_key_hash);
 
-		if (compilations_mutex != nullptr) {
-			MutexLock compilations_lock(*compilations_mutex);
-			compilations[p_source]++;
+			if (compilations_mutex != nullptr) {
+				MutexLock compilations_lock(*compilations_mutex);
+				compilations[p_source]++;
+			}
 		}
 
 #if PRINT_PIPELINE_COMPILATION_KEYS
@@ -110,6 +124,56 @@ public:
 
 		print_line("HASH:", p_key_hash, "SOURCE:", source_name);
 #endif
+
+		(creation_object->*creation_function)(p_key);
+	}
+
+	RID get_pipeline(const Key& p_key, uint32_t p_key_hash, bool p_wait_for_compilation,
+		RSE::PipelineSource p_source)
+	{
+		RBMap<uint32_t, RID>::Element* e = hash_map.find(p_key_hash);
+
+		if (e == nullptr) {
+			if (_add_new_pipelines_to_map()) {
+				e = hash_map.find(p_key_hash);
+			}
+		}
+
+		if (e == nullptr) {
+			compile_pipeline(p_key, p_key_hash, p_source, p_wait_for_compilation);
+			_add_new_pipelines_to_map();
+
+			e = hash_map.find(p_key_hash);
+			if (e != nullptr) {
+				return e->value();
+			}
+			else if (p_wait_for_compilation) {
+				hash_map[p_key_hash] = RID();
+				return RID();
+			}
+			else {
+				return RID();
+			}
+		}
+		else {
+			return e->value();
+		}
+	}
+
+	void clear_pipelines()
+	{
+		_add_new_pipelines_to_map();
+
+		if (RD::is_initialized()) {
+			for (KeyValue<uint32_t, RID> entry : hash_map) {
+				if (entry.value.is_valid()) {
+					RD::free_rid(entry.value);
+				}
+			}
+		}
+
+		hash_map.clear();
+		compilation_set.clear();
 	}
 
 	// Set the external pipeline compilations array to increase the counters on every time a
@@ -129,7 +193,7 @@ public:
 
 	PipelineHashMapRD() {}
 
-	~PipelineHashMapRD() {}
+	~PipelineHashMapRD() { clear_pipelines(); }
 };
 
 
