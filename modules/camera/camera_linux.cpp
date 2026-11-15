@@ -37,28 +37,29 @@
 #include "camera_feed_linux.h"
 #include "camera_linux.h"
 
-void CameraLinux::camera_thread_func(void* p_camera_linux)
+void CameraLinux::camera_thread_func(void* p_userdata)
 {
-	if (p_camera_linux) {
-		CameraLinux* camera_linux = (CameraLinux*)p_camera_linux;
-		camera_linux->_update_devices();
-	}
+	(void)p_userdata;
+	_update_devices();
 }
 
 void CameraLinux::_update_devices()
 {
-	while (!exit_flag.is_set()) {
-		{
-			MutexLock lock(camera_mutex);
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_NULL(CameraServer::data);
 
-			for (int i = feeds.size() - 1; i >= 0; i--) {
-				Ref<CameraFeedLinux> feed = (Ref<CameraFeedLinux>)feeds[i];
+	while (!data->exit_flag.is_set()) {
+		{
+			MutexLock lock(data->camera_mutex);
+
+			for (int i = CameraServer::data->feeds.size() - 1; i >= 0; i--) {
+				Ref<CameraFeedLinux> feed = (Ref<CameraFeedLinux>)CameraServer::data->feeds[i];
 				if (feed.is_null()) {
 					continue;
 				}
 				String device_name = feed->get_device_name();
 				if (!_is_active(device_name)) {
-					remove_feed(feed);
+					CameraServer::remove_feed(feed);
 				}
 			}
 
@@ -86,8 +87,10 @@ void CameraLinux::_update_devices()
 
 bool CameraLinux::_has_device(const String& p_device_name)
 {
-	for (int i = 0; i < feeds.size(); i++) {
-		Ref<CameraFeedLinux> feed = (Ref<CameraFeedLinux>)feeds[i];
+	ERR_FAIL_NULL_V(CameraServer::data, false);
+
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedLinux> feed = (Ref<CameraFeedLinux>)CameraServer::data->feeds[i];
 		if (feed.is_null()) {
 			continue;
 		}
@@ -105,7 +108,7 @@ void CameraLinux::_add_device(const String& p_device_name)
 	if (file_descriptor != -1) {
 		if (_is_video_capture_device(file_descriptor)) {
 			Ref<CameraFeedLinux> feed = memnew(CameraFeedLinux(p_device_name));
-			add_feed(feed);
+			CameraServer::add_feed(feed);
 		}
 	}
 
@@ -168,30 +171,42 @@ bool CameraLinux::_can_query_format(int p_file_descriptor, int p_type)
 	return ioctl(p_file_descriptor, VIDIOC_G_FMT, &format) != -1;
 }
 
-inline void CameraLinux::set_monitoring_feeds(bool p_monitoring_feeds)
+void CameraLinux::initialize()
 {
-	if (p_monitoring_feeds == monitoring_feeds) {
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+}
+
+void CameraLinux::finalize()
+{
+	if (!data) {
+		return;
+	}
+	data->exit_flag.set();
+	if (data->camera_thread.is_started()) {
+		data->camera_thread.wait_to_finish();
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void CameraLinux::set_monitoring_feeds(bool p_monitoring_feeds)
+{
+	ERR_FAIL_NULL(data);
+	if (p_monitoring_feeds == CameraServer::is_monitoring_feeds()) {
 		return;
 	}
 
-	CameraServer::set_monitoring_feeds(p_monitoring_feeds);
+	CameraServer::set_monitoring_feeds_state(p_monitoring_feeds);
 	if (p_monitoring_feeds) {
-		exit_flag.clear();
-		camera_thread.start(CameraLinux::camera_thread_func, this);
+		data->exit_flag.clear();
+		data->camera_thread.start(CameraLinux::camera_thread_func, nullptr);
 	}
 	else {
-		exit_flag.set();
-		if (camera_thread.is_started()) {
-			camera_thread.wait_to_finish();
+		data->exit_flag.set();
+		if (data->camera_thread.is_started()) {
+			data->camera_thread.wait_to_finish();
 		}
-	}
-}
-
-CameraLinux::~CameraLinux()
-{
-	exit_flag.set();
-	if (camera_thread.is_started()) {
-		camera_thread.wait_to_finish();
 	}
 }
 

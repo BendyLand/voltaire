@@ -753,28 +753,45 @@ void CameraFeedAndroid::onDisconnected(void *context, ACameraDevice *p_device) {
 //////////////////////////////////////////////////////////////////////////
 // CameraAndroid - Subclass for our camera server on Android
 
+void CameraAndroid::initialize() {
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+}
+
+void CameraAndroid::finalize() {
+	if (!data) {
+		return;
+	}
+	remove_all_feeds();
+	memdelete(data);
+	data = nullptr;
+}
+
 void CameraAndroid::update_feeds() {
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_NULL(CameraServer::data);
+
 	ACameraIdList *cameraIds = nullptr;
-	camera_status_t c_status = ACameraManager_getCameraIdList(cameraManager, &cameraIds);
+	camera_status_t c_status = ACameraManager_getCameraIdList(data->camera_manager, &cameraIds);
 	ERR_FAIL_COND(c_status != ACAMERA_OK);
 
 	// Deactivate all feeds before removing to ensure proper cleanup.
-	for (int i = 0; i < feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = feeds[i];
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid() && feed->is_active()) {
 			feed->deactivate_feed();
 		}
 	}
 
 	// remove existing devices
-	for (int i = feeds.size() - 1; i >= 0; i--) {
-		remove_feed(feeds[i]);
+	for (int i = CameraServer::data->feeds.size() - 1; i >= 0; i--) {
+		CameraServer::remove_feed(CameraServer::data->feeds[i]);
 	}
 
 	for (int c = 0; c < cameraIds->numCameras; ++c) {
 		const char *id = cameraIds->cameraIds[c];
 		ACameraMetadata *metadata = nullptr;
-		ACameraManager_getCameraCharacteristics(cameraManager, id, &metadata);
+		ACameraManager_getCameraCharacteristics(data->camera_manager, id, &metadata);
 		if (!metadata) {
 			continue;
 		}
@@ -809,45 +826,48 @@ void CameraAndroid::update_feeds() {
 			continue;
 		}
 
-		Ref<CameraFeedAndroid> feed = memnew(CameraFeedAndroid(cameraManager, metadata, id, position, cameraOrientation));
-		add_feed(feed);
+		Ref<CameraFeedAndroid> feed = memnew(CameraFeedAndroid(data->camera_manager, metadata, id, position, cameraOrientation));
+		CameraServer::add_feed(feed);
 	}
 
 	ACameraManager_deleteCameraIdList(cameraIds);
-	emit_signal(SNAME(CameraServer::feeds_updated_signal_name));
 }
 
 void CameraAndroid::remove_all_feeds() {
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_NULL(CameraServer::data);
+
 	// Deactivate all feeds before removing to ensure proper cleanup.
 	// This prevents "Device is closed but session is not notified" warnings
 	// that can occur if feeds are destroyed while still active.
-	for (int i = 0; i < feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = feeds[i];
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid() && feed->is_active()) {
 			feed->deactivate_feed();
 		}
 	}
 
 	// remove existing devices
-	for (int i = feeds.size() - 1; i >= 0; i--) {
-		remove_feed(feeds[i]);
+	for (int i = CameraServer::data->feeds.size() - 1; i >= 0; i--) {
+		CameraServer::remove_feed(CameraServer::data->feeds[i]);
 	}
 
-	if (cameraManager != nullptr) {
-		ACameraManager_delete(cameraManager);
-		cameraManager = nullptr;
+	if (data->camera_manager != nullptr) {
+		ACameraManager_delete(data->camera_manager);
+		data->camera_manager = nullptr;
 	}
 }
 
 void CameraAndroid::set_monitoring_feeds(bool p_monitoring_feeds) {
-	if (p_monitoring_feeds == monitoring_feeds) {
+	ERR_FAIL_NULL(data);
+	if (p_monitoring_feeds == CameraServer::is_monitoring_feeds()) {
 		return;
 	}
 
-	CameraServer::set_monitoring_feeds(p_monitoring_feeds);
+	CameraServer::set_monitoring_feeds_state(p_monitoring_feeds);
 	if (p_monitoring_feeds) {
-		if (cameraManager == nullptr) {
-			cameraManager = ACameraManager_create();
+		if (data->camera_manager == nullptr) {
+			data->camera_manager = ACameraManager_create();
 		}
 
 		// Update feeds
@@ -858,8 +878,9 @@ void CameraAndroid::set_monitoring_feeds(bool p_monitoring_feeds) {
 }
 
 void CameraAndroid::handle_application_pause() {
-	for (int i = 0; i < feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = feeds[i];
+	ERR_FAIL_NULL(CameraServer::data);
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid()) {
 			feed->handle_pause();
 		}
@@ -867,8 +888,9 @@ void CameraAndroid::handle_application_pause() {
 }
 
 void CameraAndroid::handle_application_resume() {
-	for (int i = 0; i < feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = feeds[i];
+	ERR_FAIL_NULL(CameraServer::data);
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid()) {
 			feed->handle_resume();
 		}
@@ -876,16 +898,13 @@ void CameraAndroid::handle_application_resume() {
 }
 
 void CameraAndroid::handle_display_rotation_change(int) {
-	for (int i = 0; i < feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = feeds[i];
+	ERR_FAIL_NULL(CameraServer::data);
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid()) {
 			feed->handle_rotation_change();
 		}
 	}
-}
-
-CameraAndroid::~CameraAndroid() {
-	remove_all_feeds();
 }
 
 std::optional<int> CameraFeedAndroid::calculate_rotation(const CameraRotationParams &p_params) {

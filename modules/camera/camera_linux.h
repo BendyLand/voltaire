@@ -36,26 +36,39 @@
 #include "core/templates/safe_refcount.h"
 #include "servers/camera/camera_server.h"
 
-class CameraLinux : public CameraServer {
+class CameraLinux final
+{
 private:
-	SafeFlag exit_flag;
-	Thread camera_thread;
-	Mutex camera_mutex;
+	struct Data
+	{
+		SafeFlag exit_flag;
+		Thread camera_thread;
+		Mutex camera_mutex;
+	};
 
-	static void camera_thread_func(void *p_camera_linux);
+	static inline Data* data = nullptr;
 
-	void _update_devices();
-	bool _has_device(const String &p_device_name);
-	void _add_device(const String &p_device_name);
-	void _remove_device(const String &p_device_name);
-	int _open_device(const String &p_device_name);
-	bool _is_active(const String &p_device_name);
-	bool _is_video_capture_device(int p_file_descriptor);
-	bool _can_query_format(int p_file_descriptor, int p_type);
+	static void camera_thread_func(void* p_userdata);
+
+	static void _update_devices();
+	static bool _has_device(const String& p_device_name);
+	static void _add_device(const String& p_device_name);
+	static int _open_device(const String& p_device_name);
+	static bool _is_active(const String& p_device_name);
+	static bool _is_video_capture_device(int p_file_descriptor);
+	static bool _can_query_format(int p_file_descriptor, int p_type);
 
 public:
-	CameraLinux() = default;
-	~CameraLinux();
+	static void initialize();
+	static void finalize();
 
-	void set_monitoring_feeds(bool p_monitoring_feeds) override;
+	static void set_monitoring_feeds(bool p_monitoring_feeds);
+	static void handle_application_pause() {}
+	static void handle_application_resume() {}
+	static void handle_display_rotation_change(int p_orientation) { (void)p_orientation; }
+
+	CameraLinux() = delete;
+	CameraLinux(const CameraLinux&) = delete;
+	CameraLinux& operator=(const CameraLinux&) = delete;
+	~CameraLinux() = delete;
 };

@@ -284,9 +284,8 @@
 									 UIInterfaceOrientation orientation = self.view.window.windowScene.interfaceOrientation;
 
 									 // Notify camera server of orientation change
-									 CameraServer *camera_server = CameraServer::get_singleton();
-									 if (camera_server) {
-										 camera_server->handle_display_rotation_change((int)orientation);
+									 if (CameraServer::is_initialized()) {
+										 CameraServer::handle_display_rotation_change((int)orientation);
 									 }
 
 									 DisplayServer *display_server = DisplayServer::get_singleton();

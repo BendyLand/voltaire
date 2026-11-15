@@ -425,25 +425,21 @@ void CameraFeedApple::deactivate_feed() {
 // MyDeviceNotifications - This is a little helper class gets notifications
 // when devices are connected/disconnected
 
-@interface MyDeviceNotifications : NSObject {
-	CameraApple *camera_server;
-}
+@interface MyDeviceNotifications : NSObject
 
 @end
 
 @implementation MyDeviceNotifications
 
 - (void)devices_changed:(NSNotification *)notification {
-	camera_server->update_feeds();
+	CameraApple::update_feeds();
 }
 
-- (id)initForServer:(CameraApple *)p_server {
+- (id)init {
 	if (self = [super init]) {
-		camera_server = p_server;
-
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(devices_changed:) name:AVCaptureDeviceWasConnectedNotification object:nil];
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(devices_changed:) name:AVCaptureDeviceWasDisconnectedNotification object:nil];
-	};
+	}
 	return self;
 }
 
@@ -460,7 +456,13 @@ MyDeviceNotifications *device_notifications = nil;
 //////////////////////////////////////////////////////////////////////////
 // CameraApple - Subclass for our camera server on macOS
 
+void CameraApple::finalize() {
+	device_notifications = nil;
+}
+
 void CameraApple::update_feeds() {
+	ERR_FAIL_NULL(CameraServer::data);
+
 	NSArray<AVCaptureDevice *> *devices = nullptr;
 #ifdef APPLE_EMBEDDED_ENABLED
 	{
@@ -490,8 +492,8 @@ void CameraApple::update_feeds() {
 #endif // APPLE_EMBEDDED_ENABLED
 
 	// Deactivate feeds that are gone before removing them.
-	for (int i = feeds.size() - 1; i >= 0; i--) {
-		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)feeds[i];
+	for (int i = CameraServer::data->feeds.size() - 1; i >= 0; i--) {
+		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
 		if (feed.is_null()) {
 			continue;
 		}
@@ -500,30 +502,30 @@ void CameraApple::update_feeds() {
 			if (feed->is_active()) {
 				feed->deactivate_feed();
 			}
-			remove_feed(feed);
-		};
-	};
+			CameraServer::remove_feed(feed);
+		}
+	}
 
 	for (AVCaptureDevice *device in devices) {
 		bool found = false;
-		for (int i = 0; i < feeds.size() && !found; i++) {
-			Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)feeds[i];
+		for (int i = 0; i < CameraServer::data->feeds.size() && !found; i++) {
+			Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
 			if (feed.is_null()) {
 				continue;
 			}
 			if (feed->get_device() == device) {
 				found = true;
-			};
-		};
+			}
+		}
 
 		if (!found) {
 			Ref<CameraFeedApple> newfeed;
 			newfeed.instantiate();
 			newfeed->set_device(device);
 
-			add_feed(newfeed);
-		};
-	};
+			CameraServer::add_feed(newfeed);
+		}
+	}
 
 #ifdef IOS_ENABLED
 	// Update rotation for all feeds.
@@ -535,22 +537,20 @@ void CameraApple::update_feeds() {
 	}
 	handle_display_rotation_change((int)orientation);
 #endif // IOS_ENABLED
-
-	emit_signal(SNAME(CameraServer::feeds_updated_signal_name));
 }
 
 void CameraApple::set_monitoring_feeds(bool p_monitoring_feeds) {
-	if (p_monitoring_feeds == monitoring_feeds) {
+	if (p_monitoring_feeds == CameraServer::is_monitoring_feeds()) {
 		return;
 	}
 
-	CameraServer::set_monitoring_feeds(p_monitoring_feeds);
+	CameraServer::set_monitoring_feeds_state(p_monitoring_feeds);
 	if (p_monitoring_feeds) {
 		// Find available cameras we have at this time.
 		update_feeds();
 
 		// Get notified on feed changes.
-		device_notifications = [[MyDeviceNotifications alloc] initForServer:this];
+		device_notifications = [[MyDeviceNotifications alloc] init];
 	} else {
 		// Stop monitoring feed changes.
 		device_notifications = nil;
@@ -558,8 +558,9 @@ void CameraApple::set_monitoring_feeds(bool p_monitoring_feeds) {
 }
 
 void CameraApple::handle_display_rotation_change(int p_orientation) {
-	for (int i = 0; i < feeds.size(); i++) {
-		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)feeds[i];
+	ERR_FAIL_NULL(CameraServer::data);
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
 		if (feed.is_valid()) {
 			feed->handle_rotation_change(p_orientation);
 		}
@@ -567,8 +568,9 @@ void CameraApple::handle_display_rotation_change(int p_orientation) {
 }
 
 void CameraApple::handle_application_pause() {
-	for (int i = 0; i < feeds.size(); i++) {
-		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)feeds[i];
+	ERR_FAIL_NULL(CameraServer::data);
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
 		if (feed.is_valid()) {
 			feed->handle_pause();
 		}
@@ -576,8 +578,9 @@ void CameraApple::handle_application_pause() {
 }
 
 void CameraApple::handle_application_resume() {
-	for (int i = 0; i < feeds.size(); i++) {
-		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)feeds[i];
+	ERR_FAIL_NULL(CameraServer::data);
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
 		if (feed.is_valid()) {
 			feed->handle_resume();
 		}
@@ -587,7 +590,7 @@ void CameraApple::handle_application_resume() {
 #ifdef APPLE_EMBEDDED_ENABLED
 
 void register_camera_external_module() {
-	CameraServer::make_default<CameraApple>();
+	CameraServer::bind<CameraApple>();
 }
 
 void unregister_camera_external_module() {

@@ -35,7 +35,7 @@
 
 int CameraTexture::get_width() const
 {
-	Ref<CameraFeed> feed = CameraServer::get_singleton()->get_feed_by_id(camera_feed_id);
+	Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
 	if (feed.is_valid()) {
 		return feed->get_base_width();
 	}
@@ -46,7 +46,7 @@ int CameraTexture::get_width() const
 
 int CameraTexture::get_height() const
 {
-	Ref<CameraFeed> feed = CameraServer::get_singleton()->get_feed_by_id(camera_feed_id);
+	Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
 	if (feed.is_valid()) {
 		return feed->get_base_height();
 	}
@@ -59,7 +59,7 @@ bool CameraTexture::has_alpha() const { return false; }
 
 RID CameraTexture::get_rid() const
 {
-	Ref<CameraFeed> feed = CameraServer::get_singleton()->get_feed_by_id(camera_feed_id);
+	Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
 	if (feed.is_valid()) {
 		return feed->get_texture(which_feed);
 	}
@@ -82,7 +82,7 @@ CameraServer::FeedImage CameraTexture::get_which_feed() const { return which_fee
 
 bool CameraTexture::get_camera_active() const
 {
-	Ref<CameraFeed> feed = CameraServer::get_singleton()->get_feed_by_id(camera_feed_id);
+	Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
 	if (feed.is_valid()) {
 		return feed->is_active();
 	}
@@ -96,7 +96,7 @@ CameraTexture::CameraTexture()
 	// Note: When any CameraTexture is created, we need to automatically activate monitoring
 	//       of camera feeds. This may incur a small lag spike, so it may be preferable to
 	//       enable it manually before creating the camera texture.
-	CameraServer::get_singleton()->set_monitoring_feeds(true);
+	CameraServer::set_monitoring_feeds(true);
 }
 
 CameraTexture::~CameraTexture()

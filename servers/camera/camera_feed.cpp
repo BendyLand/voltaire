@@ -82,7 +82,7 @@ uint64_t CameraFeed::get_texture_tex_id(CameraServer::FeedImage p_which)
 CameraFeed::CameraFeed()
 {
 	// initialize our feed
-	id = CameraServer::get_singleton()->get_free_id();
+	id = CameraServer::get_free_id();
 	base_width = 0;
 	base_height = 0;
 	name = "???";
@@ -99,7 +99,7 @@ CameraFeed::CameraFeed()
 CameraFeed::CameraFeed(String p_name, FeedPosition p_position)
 {
 	// initialize our feed
-	id = CameraServer::get_singleton()->get_free_id();
+	id = CameraServer::get_free_id();
 	base_width = 0;
 	base_height = 0;
 	name = p_name;
@@ -131,12 +131,6 @@ bool CameraFeed::activate_feed() { return false; }
 
 void CameraFeed::deactivate_feed() {}
 
-
-
 void CameraFeed::set_rgb_image(Ref<Image> const&) {}
-
-void CameraServer::add_feed(Ref<CameraFeed> const&) {}
-
-void CameraServer::remove_feed(Ref<CameraFeed> const&) {}
 
 void CameraFeed::set_ycbcr_images(Ref<Image> const&, Ref<Image> const&) {}

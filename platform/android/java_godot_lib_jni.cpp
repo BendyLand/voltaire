@@ -656,9 +656,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onRendererResumed(JNI
 
 	// We force redraw to ensure we render at least once when resuming the app.
 	Main::force_redraw();
-	CameraServer *camera_server = CameraServer::get_singleton();
-	if (camera_server) {
-		camera_server->handle_application_resume();
+	if (CameraServer::is_initialized()) {
+		CameraServer::handle_application_resume();
 	}
 	if (os_android->get_main_loop()) {
 		os_android->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_RESUMED);
@@ -670,9 +669,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onRendererPaused(JNIE
 		return;
 	}
 
-	CameraServer *camera_server = CameraServer::get_singleton();
-	if (camera_server) {
-		camera_server->handle_application_pause();
+	if (CameraServer::is_initialized()) {
+		CameraServer::handle_application_pause();
 	}
 
 	if (os_android->get_main_loop()) {
@@ -689,9 +687,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onOrientationChange(J
 		return;
 	}
 
-	CameraServer *camera_server = CameraServer::get_singleton();
-	if (camera_server) {
-		camera_server->handle_display_rotation_change(p_orientation);
+	if (CameraServer::is_initialized()) {
+		CameraServer::handle_display_rotation_change(p_orientation);
 	}
 
 	DisplayServer *display_server = DisplayServer::get_singleton();

@@ -3363,7 +3363,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 		scene_state.enable_gl_blend(false);
 		scene_state.set_gl_cull_mode(RSE::CULL_MODE_BACK);
 
-		Ref<CameraFeed> feed = CameraServer::get_singleton()->get_feed_by_id(camera_feed_id);
+		Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
 
 		if (feed.is_valid()) {
 			RID camera_YCBCR = feed->get_texture(CameraServer::FEED_YCBCR_IMAGE);

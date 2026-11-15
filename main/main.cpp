@@ -169,7 +169,6 @@ static SteamTracker* steam_tracker = nullptr;
 
 // Initialized in setup2()
 static AudioServer* audio_server = nullptr;
-static CameraServer* camera_server = nullptr;
 static AccessibilityServer* accessibility_server = nullptr;
 static DisplayServer* display_server = nullptr;
 static TextServerManager* tsman = nullptr;
@@ -3566,7 +3565,7 @@ Error Main::setup2(bool p_show_boot_logo)
 
 	OS::benchmark_begin_measure("Startup", "Finalize Setup");
 
-	camera_server = CameraServer::create();
+	CameraServer::initialize();
 
 	MAIN_PRINT("Main: Load Physics");
 
@@ -4297,6 +4296,8 @@ void Main::cleanup(bool p_force)
 	NavigationServer3D::finalize();
 #endif // NAVIGATION_3D_DISABLED
 
+	CameraServer::finalize();
+
 	OS::_cmdline.clear();
 	OS::_user_args.clear();
 	OS::_execpath = "";
@@ -4339,8 +4340,6 @@ void Main::cleanup(bool p_force)
 		audio_server->finish();
 		memdelete(audio_server);
 	}
-
-	memdelete(camera_server);
 
 	OS::finalize();
 

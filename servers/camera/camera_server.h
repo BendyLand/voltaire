@@ -43,12 +43,11 @@
 class CameraFeed;
 template <typename T> class TypedArray;
 
-class CameraServer
+class CameraServer final
 {
-	_THREAD_SAFE_CLASS_
+	static inline Mutex _thread_safe_;
 
 public:
-
 	enum FeedImage
 	{
 		FEED_RGBA_IMAGE = 0,
@@ -58,62 +57,86 @@ public:
 		FEED_IMAGES = 2
 	};
 
-	typedef CameraServer* (*CreateFunc)();
 	static inline constexpr const char feeds_updated_signal_name[] = "camera_feeds_updated";
 
+	struct Data
+	{
+		bool monitoring_feeds = false;
+		Vector<Ref<CameraFeed>> feeds;
+	};
+
+	static inline Data* data = nullptr;
+
 private:
-protected:
-	static CreateFunc create_func;
+	static void _default_initialize_backend() {}
+	static void _default_finalize_backend() {}
+	static void _default_set_monitoring_feeds(bool p_monitoring_feeds);
+	static void _default_handle_application_pause() {}
+	static void _default_handle_application_resume() {}
+	static void _default_handle_display_rotation_change(int p_orientation) { (void)p_orientation; }
 
-	bool monitoring_feeds = false;
-	Vector<Ref<CameraFeed>> feeds;
-
-	static CameraServer* singleton;
-
-
-	template <typename T> static CameraServer* _create_builtin() { return memnew(T); }
+	inline static void (*_initialize_backend)() = &_default_initialize_backend;
+	inline static void (*_finalize_backend)() = &_default_finalize_backend;
 
 public:
-	static CameraServer* get_singleton();
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	template <typename T> static void make_default() { create_func = _create_builtin<T>; }
-
-	static CameraServer* create()
+	static void set_monitoring_feeds_state(bool p_monitoring_feeds);
+	_FORCE_INLINE_ static bool is_monitoring_feeds()
 	{
-		CameraServer* server = create_func ? create_func() : memnew(CameraServer);
-		return server;
+		return data ? data->monitoring_feeds : false;
 	}
 
-	virtual void set_monitoring_feeds(bool p_monitoring_feeds);
+	inline static void (*set_monitoring_feeds)(
+		bool p_monitoring_feeds) = &_default_set_monitoring_feeds;
+	inline static void (*handle_application_pause)() = &_default_handle_application_pause;
+	inline static void (*handle_application_resume)() = &_default_handle_application_resume;
+	inline static void (*handle_display_rotation_change)(
+		int p_orientation) = &_default_handle_display_rotation_change;
 
-	_FORCE_INLINE_ bool is_monitoring_feeds() const { return monitoring_feeds; }
+	template <typename Impl> static void bind()
+	{
+		_initialize_backend = &Impl::initialize;
+		_finalize_backend = &Impl::finalize;
+		set_monitoring_feeds = &Impl::set_monitoring_feeds;
+		handle_application_pause = &Impl::handle_application_pause;
+		handle_application_resume = &Impl::handle_application_resume;
+		handle_display_rotation_change = &Impl::handle_display_rotation_change;
+	}
+
+	static void reset_backend()
+	{
+		_initialize_backend = &_default_initialize_backend;
+		_finalize_backend = &_default_finalize_backend;
+		set_monitoring_feeds = &_default_set_monitoring_feeds;
+		handle_application_pause = &_default_handle_application_pause;
+		handle_application_resume = &_default_handle_application_resume;
+		handle_display_rotation_change = &_default_handle_display_rotation_change;
+	}
 
 	// Right now we identify our feed by it's ID when it's used in the background.
 	// May see if we can change this to purely relying on CameraFeed objects or by name.
-	int get_free_id();
-	int get_feed_index(int p_id);
-	Ref<CameraFeed> get_feed_by_id(int p_id);
+	static int get_free_id();
+	static int get_feed_index(int p_id);
+	static Ref<CameraFeed> get_feed_by_id(int p_id);
 
 	// Add and remove feeds.
-	void add_feed(const Ref<CameraFeed>& p_feed);
-	void remove_feed(const Ref<CameraFeed>& p_feed);
+	static void add_feed(const Ref<CameraFeed>& p_feed);
+	static void remove_feed(const Ref<CameraFeed>& p_feed);
 
 	// Get our feeds.
-	Ref<CameraFeed> get_feed(int p_index);
-	int get_feed_count();
+	static Ref<CameraFeed> get_feed(int p_index);
+	static int get_feed_count();
 
 	// Intended for use with custom CameraServer implementation.
-	RID feed_texture(int p_id, FeedImage p_texture);
+	static RID feed_texture(int p_id, FeedImage p_texture);
 
-	// Platform lifecycle callbacks (virtual, default empty implementation).
-	virtual void handle_application_pause() {}
-
-	virtual void handle_application_resume() {}
-
-	virtual void handle_display_rotation_change(int p_orientation) { (void)p_orientation; }
-
-	CameraServer();
-	~CameraServer();
+	CameraServer() = delete;
+	CameraServer(const CameraServer&) = delete;
+	CameraServer& operator=(const CameraServer&) = delete;
+	~CameraServer() = delete;
 };
 
 

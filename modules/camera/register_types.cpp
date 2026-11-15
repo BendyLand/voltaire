@@ -50,16 +50,16 @@ void initialize_camera_module(ModuleInitializationLevel p_level) {
 	}
 
 #if defined(LINUXBSD_ENABLED)
-	CameraServer::make_default<CameraLinux>();
+	CameraServer::bind<CameraLinux>();
 #endif
 #if defined(WINDOWS_ENABLED)
-	CameraServer::make_default<CameraWindows>();
+	CameraServer::bind<CameraWindows>();
 #endif
 #if defined(MACOS_ENABLED)
-	CameraServer::make_default<CameraApple>();
+	CameraServer::bind<CameraApple>();
 #endif
 #if defined(ANDROID_ENABLED)
-	CameraServer::make_default<CameraAndroid>();
+	CameraServer::bind<CameraAndroid>();
 #endif
 }
 

@@ -818,9 +818,8 @@ void OS_AppleEmbedded::on_focus_in() {
 void OS_AppleEmbedded::on_enter_background() {
 	// Do not check for is_focused, because on_focus_out will always be fired first by applicationWillResignActive.
 
-	CameraServer *camera_server = CameraServer::get_singleton();
-	if (camera_server) {
-		camera_server->handle_application_pause();
+	if (CameraServer::is_initialized()) {
+		CameraServer::handle_application_pause();
 	}
 
 	if (OS::get_singleton()->get_main_loop()) {
@@ -838,9 +837,8 @@ void OS_AppleEmbedded::on_exit_background() {
 			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_RESUMED);
 		}
 
-		CameraServer *camera_server = CameraServer::get_singleton();
-		if (camera_server) {
-			camera_server->handle_application_resume();
+		if (CameraServer::is_initialized()) {
+			CameraServer::handle_application_resume();
 		}
 	}
 }
