@@ -73,7 +73,7 @@ protected:
 		MAKE_NORMAL_FLAG = 4
 	};
 
-	Mutex mutex;
+	static inline Mutex mutex;
 
 	struct MakeInfo
 	{
@@ -82,14 +82,13 @@ protected:
 		RSE::TextureDetectRoughnessChannel channel_for_roughness = RSE::TEXTURE_DETECT_ROUGHNESS_R;
 	};
 
-	HashMap<String, MakeInfo> make_flags;
+	static inline HashMap<String, MakeInfo> make_flags;
 
 	static void _texture_reimport_roughness(const Ref<CompressedTexture2D>& p_tex,
 		const String& p_normal_path, RSE::TextureDetectRoughnessChannel p_channel);
 	static void _texture_reimport_3d(const Ref<CompressedTexture2D>& p_tex);
 	static void _texture_reimport_normal(const Ref<CompressedTexture2D>& p_tex);
 
-	static ResourceImporterTexture* singleton;
 	static const char* compression_formats[];
 
 	static inline void _remap_channels(Ref<Image>& r_image, ChannelRemap p_options[4]);
@@ -102,8 +101,6 @@ public:
 		Image::CompressMode p_compress_format, Image::CompressProfile p_compress_profile,
 		float p_lossy_quality, const Image::BasisUniversalPackerParams& p_basisu_params,
 		Image::BPTCFormat p_bptc_format);
-
-	static ResourceImporterTexture* get_singleton() { return singleton; }
 
 	virtual String get_importer_name() const override;
 	virtual String get_visible_name() const override;

@@ -58,7 +58,7 @@
 
 void EditorSettingsDialog::ok_pressed()
 {
-	if (!EditorSettings::get_singleton()) {
+	if (!EditorSettings::is_initialized()) {
 		return;
 	}
 	_settings_save();
@@ -69,17 +69,17 @@ void EditorSettingsDialog::_settings_save()
 	if (!timer->is_stopped()) {
 		timer->stop();
 	}
-	EditorSettings::get_singleton()->notify_changes();
-	EditorSettings::get_singleton()->save();
+	EditorSettings::notify_changes();
+	EditorSettings::save();
 }
 
 void EditorSettingsDialog::cancel_pressed()
 {
-	if (!EditorSettings::get_singleton()) {
+	if (!EditorSettings::is_initialized()) {
 		return;
 	}
 
-	EditorSettings::get_singleton()->notify_changes();
+	EditorSettings::notify_changes();
 }
 
 bool EditorSettingsDialog::_is_in_project_manager() const

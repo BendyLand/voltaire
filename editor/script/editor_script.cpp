@@ -29,19 +29,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor/editor_interface.h"
 #include "editor/editor_node.h"
 #include "editor_script.h"
 #include "scene/main/node.h"
-
-#ifndef DISABLE_DEPRECATED
-EditorInterface* EditorScript::get_editor_interface() const
-{
-	WARN_DEPRECATED_MSG(
-		"EditorInterface is a global singleton and can be accessed directly by its name.");
-	return EditorInterface::get_singleton();
-}
-#endif // DISABLE_DEPRECATED
 
 void EditorScript::run() {}
 

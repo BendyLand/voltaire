@@ -36,3 +36,15 @@
 
 int DebugAdapterServer::port_override = -1;
 
+DebugAdapterServer::DebugAdapterServer()
+{
+	if (!DebugAdapterProtocol::is_initialized()) {
+		DebugAdapterProtocol::initialize();
+	}
+}
+
+DebugAdapterServer::~DebugAdapterServer()
+{
+	DebugAdapterProtocol::finalize();
+}
+

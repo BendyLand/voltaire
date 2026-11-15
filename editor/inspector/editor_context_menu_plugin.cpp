@@ -49,45 +49,50 @@ void EditorContextMenuPlugin::add_context_submenu_item(
 	context_menu_items.insert(p_name, item);
 }
 
+void EditorContextMenuPluginManager::initialize()
+{
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+}
+
+void EditorContextMenuPluginManager::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
 void EditorContextMenuPluginManager::add_plugin(
 	EditorContextMenuPlugin::ContextMenuSlot p_slot, const Ref<EditorContextMenuPlugin>& p_plugin)
 {
+	ERR_FAIL_NULL(data);
 	ERR_FAIL_COND(p_plugin.is_null());
-	ERR_FAIL_COND(plugin_list.has(p_plugin));
+	ERR_FAIL_COND(data->plugin_list.has(p_plugin));
 
 	p_plugin->slot = p_slot;
-	plugin_list.push_back(p_plugin);
+	data->plugin_list.push_back(p_plugin);
 }
 
 void EditorContextMenuPluginManager::remove_plugin(const Ref<EditorContextMenuPlugin>& p_plugin)
 {
+	ERR_FAIL_NULL(data);
 	ERR_FAIL_COND(p_plugin.is_null());
-	ERR_FAIL_COND(!plugin_list.has(p_plugin));
+	ERR_FAIL_COND(!data->plugin_list.has(p_plugin));
 
-	plugin_list.erase(p_plugin);
+	data->plugin_list.erase(p_plugin);
 }
 
 bool EditorContextMenuPluginManager::has_plugins_for_slot(ContextMenuSlot p_slot)
 {
-	for (Ref<EditorContextMenuPlugin>& plugin : plugin_list) {
+	ERR_FAIL_NULL_V(data, false);
+	for (Ref<EditorContextMenuPlugin>& plugin : data->plugin_list) {
 		if (plugin->slot == p_slot) {
 			return true;
 		}
 	}
 	return false;
-}
-
-void EditorContextMenuPluginManager::create()
-{
-	ERR_FAIL_COND(singleton != nullptr);
-	singleton = memnew(EditorContextMenuPluginManager);
-}
-
-void EditorContextMenuPluginManager::cleanup()
-{
-	ERR_FAIL_NULL(singleton);
-	memdelete(singleton);
-	singleton = nullptr;
 }
 
 EditorContextMenuPlugin::EditorContextMenuPlugin() {}

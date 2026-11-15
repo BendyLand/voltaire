@@ -87,7 +87,7 @@ void EditorPlugin::remove_control_from_docks(Control* p_control)
 	// Ensure freeing the legacy dock won't free `p_control` (freeing it is up to the user).
 	legacy_docks[p_control]->remove_child(p_control);
 
-	EditorDockManager::get_singleton()->remove_dock(legacy_docks[p_control]);
+	EditorDockManager::remove_dock(legacy_docks[p_control]);
 	legacy_docks[p_control]->queue_free();
 	legacy_docks.erase(p_control);
 }
@@ -108,12 +108,12 @@ void EditorPlugin::remove_control_from_bottom_panel(Control* p_control)
 
 void EditorPlugin::add_dock(EditorDock* p_dock)
 {
-	EditorDockManager::get_singleton()->add_dock(p_dock);
+	EditorDockManager::add_dock(p_dock);
 }
 
 void EditorPlugin::remove_dock(EditorDock* p_dock)
 {
-	EditorDockManager::get_singleton()->remove_dock(p_dock);
+	EditorDockManager::remove_dock(p_dock);
 }
 
 void EditorPlugin::add_control_to_container(CustomControlContainer p_location, Control* p_control)
@@ -243,15 +243,14 @@ bool EditorPlugin::get_remove_list(List<Node*>* p_list) { return false; }
 void EditorPlugin::add_translation_parser_plugin(const Ref<EditorTranslationParserPlugin>& p_parser)
 {
 	ERR_FAIL_COND(p_parser.is_null());
-	EditorTranslationParser::get_singleton()->add_parser(p_parser, EditorTranslationParser::CUSTOM);
+	EditorTranslationParser::add_parser(p_parser, EditorTranslationParser::CUSTOM);
 }
 
 void EditorPlugin::remove_translation_parser_plugin(
 	const Ref<EditorTranslationParserPlugin>& p_parser)
 {
 	ERR_FAIL_COND(p_parser.is_null());
-	EditorTranslationParser::get_singleton()->remove_parser(
-		p_parser, EditorTranslationParser::CUSTOM);
+	EditorTranslationParser::remove_parser(p_parser, EditorTranslationParser::CUSTOM);
 }
 
 void EditorPlugin::add_export_plugin(const Ref<EditorExportPlugin>& p_exporter)
@@ -318,12 +317,12 @@ void EditorPlugin::remove_inspector_plugin(const Ref<EditorInspectorPlugin>& p_p
 void EditorPlugin::add_context_menu_plugin(
 	EditorContextMenuPlugin::ContextMenuSlot p_slot, const Ref<EditorContextMenuPlugin>& p_plugin)
 {
-	EditorContextMenuPluginManager::get_singleton()->add_plugin(p_slot, p_plugin);
+	EditorContextMenuPluginManager::add_plugin(p_slot, p_plugin);
 }
 
 void EditorPlugin::remove_context_menu_plugin(const Ref<EditorContextMenuPlugin>& p_plugin)
 {
-	EditorContextMenuPluginManager::get_singleton()->remove_plugin(p_plugin);
+	EditorContextMenuPluginManager::remove_plugin(p_plugin);
 }
 
 int find(const PackedStringArray& a, const String& v)
@@ -349,8 +348,6 @@ void EditorPlugin::make_bottom_panel_item_visible(Control* p_item)
 }
 
 void EditorPlugin::hide_bottom_panel() { EditorNode::get_bottom_panel()->hide_bottom_panel(); }
-
-EditorInterface* EditorPlugin::get_editor_interface() { return EditorInterface::get_singleton(); }
 
 ScriptCreateDialog* EditorPlugin::get_script_create_dialog()
 {
@@ -382,11 +379,6 @@ void EditorPlugin::remove_resource_conversion_plugin(
 void EditorPlugin::enable_plugin() {}
 
 void EditorPlugin::disable_plugin() {}
-
-EditorUndoRedoManager* EditorPlugin::get_undo_redo()
-{
-	return EditorUndoRedoManager::get_singleton();
-}
 
 EditorPluginCreateFunc EditorPlugins::creation_funcs[MAX_CREATE_FUNCS];
 

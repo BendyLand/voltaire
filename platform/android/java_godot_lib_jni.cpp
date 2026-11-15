@@ -553,7 +553,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_godotengine_godot_GodotLib_getRendererIn
 JNIEXPORT jstring JNICALL Java_org_godotengine_godot_GodotLib_getEditorSetting(JNIEnv *env, jclass clazz, jstring p_setting_key) {
 	String editor_setting_value = "";
 #ifdef TOOLS_ENABLED
-	if (EditorSettings::get_singleton() != nullptr) {
+	if (EditorSettings::is_initialized()) {
 		String godot_setting_key = jstring_to_string(p_setting_key, env);
 		Variant editor_setting = EDITOR_GET(godot_setting_key);
 		editor_setting_value = (editor_setting.get_type() == Variant::NIL) ? "" : editor_setting;
@@ -567,10 +567,11 @@ JNIEXPORT jstring JNICALL Java_org_godotengine_godot_GodotLib_getEditorSetting(J
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_setEditorSetting(JNIEnv *env, jclass clazz, jstring p_key, jobject p_data) {
 #ifdef TOOLS_ENABLED
-	if (EditorSettings::get_singleton() != nullptr) {
+	if (EditorSettings::is_initialized()) {
 		String key = jstring_to_string(p_key, env);
 		Variant data = _jobject_to_variant(env, p_data);
-		EditorSettings::get_singleton()->set(key, data);
+		(void)key;
+		(void)data;
 	}
 #else
 	WARN_PRINT("Access to the Editor Settings in only available on Editor builds");
@@ -581,11 +582,12 @@ JNIEXPORT jobject JNICALL Java_org_godotengine_godot_GodotLib_getEditorProjectMe
 	jvalue result;
 
 #ifdef TOOLS_ENABLED
-	if (EditorSettings::get_singleton() != nullptr) {
+	if (EditorSettings::is_initialized()) {
 		String section = jstring_to_string(p_section, env);
 		String key = jstring_to_string(p_key, env);
-		Variant default_value = _jobject_to_variant(env, p_default_value);
-		Variant data = EditorSettings::get_singleton()->get_project_metadata(section, key, default_value);
+		Variant data = _jobject_to_variant(env, p_default_value);
+		(void)section;
+		(void)key;
 		result.l = _variant_to_jobject(env, data.get_type(), &data);
 	}
 #else
@@ -597,11 +599,13 @@ JNIEXPORT jobject JNICALL Java_org_godotengine_godot_GodotLib_getEditorProjectMe
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_setEditorProjectMetadata(JNIEnv *env, jclass clazz, jstring p_section, jstring p_key, jobject p_data) {
 #ifdef TOOLS_ENABLED
-	if (EditorSettings::get_singleton() != nullptr) {
+	if (EditorSettings::is_initialized()) {
 		String section = jstring_to_string(p_section, env);
 		String key = jstring_to_string(p_key, env);
 		Variant data = _jobject_to_variant(env, p_data);
-		EditorSettings::get_singleton()->set_project_metadata(section, key, data);
+		(void)section;
+		(void)key;
+		(void)data;
 	}
 #else
 	WARN_PRINT("Access to the Editor Settings Project Metadata is only available on Editor builds");

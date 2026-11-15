@@ -42,8 +42,7 @@ EditorPropertyNameProcessor::Style EditorPropertyNameProcessor::get_tooltip_styl
 
 bool EditorPropertyNameProcessor::is_localization_available()
 {
-	return EditorSettings::get_singleton() &&
-		   EditorSettings::get_singleton()->get_language() != "en";
+	return EditorSettings::is_initialized() && EditorSettings::get_language() != "en";
 }
 
 String EditorPropertyNameProcessor::_capitalize_name(const String& p_name) const

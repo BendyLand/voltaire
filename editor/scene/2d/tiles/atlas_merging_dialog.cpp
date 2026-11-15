@@ -46,9 +46,8 @@ void AtlasMergingDialog::ok_pressed()
 
 void AtlasMergingDialog::cancel_pressed()
 {
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	for (int i = 0; i < committed_actions_count; i++) {
-		undo_redo->undo();
+		EditorUndoRedoManager::undo();
 	}
 	committed_actions_count = 0;
 }

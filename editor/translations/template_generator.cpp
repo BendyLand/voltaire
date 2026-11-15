@@ -35,7 +35,7 @@
 #include "template_generator.h"
 
 TranslationTemplateGenerator::MessageMap TranslationTemplateGenerator::parse(
-	const Vector<String>& p_sources, bool p_add_builtin) const
+	const Vector<String>& p_sources, bool p_add_builtin)
 {
 	Vector<Vector<String>> raw;
 
@@ -43,11 +43,10 @@ TranslationTemplateGenerator::MessageMap TranslationTemplateGenerator::parse(
 		Vector<Vector<String>> parsed_from_file;
 
 		const String& extension = path.get_extension();
-		ERR_CONTINUE_MSG(!EditorTranslationParser::get_singleton()->can_parse(extension),
+		ERR_CONTINUE_MSG(!EditorTranslationParser::can_parse(extension),
 			vformat("Cannot parse file '%s': unrecognized file extension. Skipping.", path));
 
-		EditorTranslationParser::get_singleton()->get_parser(extension)->parse_file(
-			path, &parsed_from_file);
+		EditorTranslationParser::get_parser(extension)->parse_file(path, &parsed_from_file);
 
 		for (const Vector<String>& entry : parsed_from_file) {
 			ERR_CONTINUE(entry.is_empty());
@@ -72,7 +71,7 @@ TranslationTemplateGenerator::MessageMap TranslationTemplateGenerator::parse(
 		}
 	}
 
-	EditorTranslationParser::get_singleton()->customize_strings(raw);
+	EditorTranslationParser::customize_strings(raw);
 
 	MessageMap result;
 	for (Vector<String>& entry : raw) {
@@ -145,7 +144,7 @@ static String _join_strings(const HashSet<String>& p_strings)
 }
 
 void TranslationTemplateGenerator::_write_to_csv(
-	Ref<FileAccess> p_file, const MessageMap& p_map) const
+	Ref<FileAccess> p_file, const MessageMap& p_map)
 {
 	// Avoid adding unnecessary columns.
 	bool context_used = false;
@@ -200,20 +199,6 @@ void TranslationTemplateGenerator::_write_to_csv(
 		}
 		p_file->store_csv_line(line);
 	}
-}
-
-TranslationTemplateGenerator* TranslationTemplateGenerator::get_singleton()
-{
-	if (!singleton) {
-		singleton = memnew(TranslationTemplateGenerator);
-	}
-	return singleton;
-}
-
-TranslationTemplateGenerator::~TranslationTemplateGenerator()
-{
-	memdelete(singleton);
-	singleton = nullptr;
 }
 
 

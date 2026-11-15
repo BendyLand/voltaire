@@ -34,73 +34,103 @@
 #include "core/config/engine.h"
 #include "core/os/memory.h"
 
-ScriptEditorNavigationMarker *ScriptEditorNavigationMarker::get_singleton() {
-	if (!singleton) {
-		singleton = memnew(ScriptEditorNavigationMarker);
+void ScriptEditorNavigationMarker::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
 	}
-	return singleton;
 }
 
-void ScriptEditorNavigationMarker::release_singleton() {
-	if (!singleton) {
+void ScriptEditorNavigationMarker::finalize()
+{
+	if (!data) {
 		return;
 	}
-	memdelete(singleton);
-	singleton = nullptr;
+	memdelete(data);
+	data = nullptr;
 }
 
-void ScriptEditorNavigationMarker::init_begin() {
-	init_in_progress = true;
+void ScriptEditorNavigationMarker::init_begin()
+{
+	initialize();
+	data->init_in_progress = true;
 }
 
-void ScriptEditorNavigationMarker::init_end() {
-	init_in_progress = false;
+void ScriptEditorNavigationMarker::init_end()
+{
+	if (!data) {
+		return;
+	}
+	data->init_in_progress = false;
 }
 
-void ScriptEditorNavigationMarker::locate_begin() {
-	locate_in_progress = true;
+void ScriptEditorNavigationMarker::locate_begin()
+{
+	initialize();
+	data->locate_in_progress = true;
 }
 
-void ScriptEditorNavigationMarker::locate_end() {
-	locate_in_progress = false;
-	locate_end_physics_frame = Engine::get_physics_frames();
-	locate_end_process_frame = Engine::get_process_frames();
+void ScriptEditorNavigationMarker::locate_end()
+{
+	initialize();
+	data->locate_in_progress = false;
+	data->locate_end_physics_frame = Engine::get_physics_frames();
+	data->locate_end_process_frame = Engine::get_process_frames();
 }
 
-void ScriptEditorNavigationMarker::traverse_begin() {
-	traverse_in_progress = true;
+void ScriptEditorNavigationMarker::traverse_begin()
+{
+	initialize();
+	data->traverse_in_progress = true;
 }
 
-void ScriptEditorNavigationMarker::traverse_end() {
-	traverse_in_progress = false;
-	traverse_end_physics_frame = Engine::get_physics_frames();
-	traverse_end_process_frame = Engine::get_process_frames();
+void ScriptEditorNavigationMarker::traverse_end()
+{
+	initialize();
+	data->traverse_in_progress = false;
+	data->traverse_end_physics_frame = Engine::get_physics_frames();
+	data->traverse_end_process_frame = Engine::get_process_frames();
 }
 
-bool ScriptEditorNavigationMarker::is_initializing() const {
-	return init_in_progress;
+bool ScriptEditorNavigationMarker::is_initializing()
+{
+	return data && data->init_in_progress;
 }
 
-bool ScriptEditorNavigationMarker::is_locating() const {
-	return locate_in_progress;
+bool ScriptEditorNavigationMarker::is_locating()
+{
+	return data && data->locate_in_progress;
 }
 
-bool ScriptEditorNavigationMarker::is_traversing() const {
-	return traverse_in_progress;
+bool ScriptEditorNavigationMarker::is_traversing()
+{
+	return data && data->traverse_in_progress;
 }
 
-bool ScriptEditorNavigationMarker::is_locate_just_occured() const {
+bool ScriptEditorNavigationMarker::is_locate_just_occured()
+{
+	if (!data) {
+		return false;
+	}
 	if (Engine::is_in_physics_frame()) {
-		return locate_end_physics_frame == Engine::get_physics_frames() || locate_end_physics_frame == Engine::get_physics_frames() - 1;
-	} else {
-		return locate_end_process_frame == Engine::get_process_frames();
+		return data->locate_end_physics_frame == Engine::get_physics_frames() ||
+			   data->locate_end_physics_frame == Engine::get_physics_frames() - 1;
+	}
+	else {
+		return data->locate_end_process_frame == Engine::get_process_frames();
 	}
 }
 
-bool ScriptEditorNavigationMarker::is_traverse_just_occured() const {
+bool ScriptEditorNavigationMarker::is_traverse_just_occured()
+{
+	if (!data) {
+		return false;
+	}
 	if (Engine::is_in_physics_frame()) {
-		return traverse_end_physics_frame == Engine::get_physics_frames() || traverse_end_physics_frame == Engine::get_physics_frames() - 1;
-	} else {
-		return traverse_end_process_frame == Engine::get_process_frames();
+		return data->traverse_end_physics_frame == Engine::get_physics_frames() ||
+			   data->traverse_end_physics_frame == Engine::get_physics_frames() - 1;
+	}
+	else {
+		return data->traverse_end_process_frame == Engine::get_process_frames();
 	}
 }

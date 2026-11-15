@@ -388,7 +388,7 @@ void QuickOpenResultContainer::_move_selection_index(Key p_key)
 
 String QuickOpenResultContainer::_get_cache_file_path() const
 {
-	return EditorPaths::get_singleton()->get_project_settings_dir().path_join(
+	return EditorPaths::get_project_settings_dir().path_join(
 		"quick_open_dialog_cache.cfg");
 }
 

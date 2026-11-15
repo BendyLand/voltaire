@@ -287,7 +287,7 @@ String EditorExportPlatformWeb::get_option_tooltip(int p_index) const
 Error EditorExportPlatformWeb::_export_project(
 	const Ref<EditorExportPreset>& p_preset, int p_debug_flags)
 {
-	const String dest = EditorPaths::get_singleton()->get_temp_dir().path_join("web");
+	const String dest = EditorPaths::get_temp_dir().path_join("web");
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	if (!da->dir_exists(dest)) {
 		Error err = da->make_dir_recursive(dest);

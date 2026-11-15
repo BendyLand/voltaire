@@ -76,7 +76,7 @@ void AnimationLibraryEditor::_save_mixer_lib_folding(TreeItem* p_item)
 	config.instantiate();
 
 	String path =
-		EditorPaths::get_singleton()->get_project_settings_dir().path_join("lib_folding.cfg");
+		EditorPaths::get_project_settings_dir().path_join("lib_folding.cfg");
 	Error err = config->load(path);
 	if (err != OK && err != ERR_FILE_NOT_FOUND) {
 		ERR_PRINT("Error loading lib_folding.cfg: " + itos(err));

@@ -41,10 +41,8 @@ public:
 	void customize_strings(Vector<Vector<String>>& r_strings) const;
 };
 
-class EditorTranslationParser
+class EditorTranslationParser final
 {
-	static EditorTranslationParser* singleton;
-
 public:
 	enum ParserType
 	{
@@ -53,20 +51,29 @@ public:
 				  // extension type is defined.
 	};
 
-	static EditorTranslationParser* get_singleton();
+	struct Data
+	{
+		Vector<Ref<EditorTranslationParserPlugin>> standard_parsers;
+		Vector<Ref<EditorTranslationParserPlugin>> custom_parsers;
+	};
 
-	Vector<Ref<EditorTranslationParserPlugin>> standard_parsers;
-	Vector<Ref<EditorTranslationParserPlugin>> custom_parsers;
+	static inline Data* data = nullptr;
 
-	void get_recognized_extensions(List<String>* r_extensions) const;
-	bool can_parse(const String& p_extension) const;
-	Ref<EditorTranslationParserPlugin> get_parser(const String& p_extension) const;
-	void customize_strings(Vector<Vector<String>>& r_strings) const;
-	void add_parser(const Ref<EditorTranslationParserPlugin>& p_parser, ParserType p_type);
-	void remove_parser(const Ref<EditorTranslationParserPlugin>& p_parser, ParserType p_type);
-	void clean_parsers();
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
 
-	~EditorTranslationParser();
+	static void get_recognized_extensions(List<String>* r_extensions);
+	static bool can_parse(const String& p_extension);
+	static Ref<EditorTranslationParserPlugin> get_parser(const String& p_extension);
+	static void customize_strings(Vector<Vector<String>>& r_strings);
+	static void add_parser(const Ref<EditorTranslationParserPlugin>& p_parser, ParserType p_type);
+	static void remove_parser(
+		const Ref<EditorTranslationParserPlugin>& p_parser, ParserType p_type);
+	static void clean_parsers();
+
+	EditorTranslationParser() = delete;
+	~EditorTranslationParser() = delete;
 };
 
 

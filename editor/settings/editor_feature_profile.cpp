@@ -241,9 +241,9 @@ void EditorFeatureProfileManager::_erase_selected_profile()
 {
 	String selected = _get_selected_profile();
 	ERR_FAIL_COND(selected.is_empty());
-	Ref<DirAccess> da = DirAccess::open(EditorPaths::get_singleton()->get_feature_profiles_dir());
+	Ref<DirAccess> da = DirAccess::open(EditorPaths::get_feature_profiles_dir());
 	ERR_FAIL_COND_MSG(da.is_null(), "Cannot open directory '" +
-										EditorPaths::get_singleton()->get_feature_profiles_dir() +
+										EditorPaths::get_feature_profiles_dir() +
 										"'.");
 
 	da->remove(selected + ".profile");
@@ -264,7 +264,7 @@ void EditorFeatureProfileManager::_create_new_profile()
 		return;
 	}
 	String file =
-		EditorPaths::get_singleton()->get_feature_profiles_dir().path_join(name + ".profile");
+		EditorPaths::get_feature_profiles_dir().path_join(name + ".profile");
 	if (FileAccess::exists(file)) {
 		EditorNode::get_singleton()->show_warning(TTR("Profile with this name already exists."));
 		return;
@@ -303,7 +303,7 @@ void EditorFeatureProfileManager::_import_profiles(const Vector<String>& p_paths
 		}
 
 		String dst_file =
-			EditorPaths::get_singleton()->get_feature_profiles_dir().path_join(basefile);
+			EditorPaths::get_feature_profiles_dir().path_join(basefile);
 
 		if (FileAccess::exists(dst_file)) {
 			EditorNode::get_singleton()->show_warning(
@@ -322,7 +322,7 @@ void EditorFeatureProfileManager::_import_profiles(const Vector<String>& p_paths
 		ERR_CONTINUE(err != OK);
 		String basefile = p_paths[i].get_file();
 		String dst_file =
-			EditorPaths::get_singleton()->get_feature_profiles_dir().path_join(basefile);
+			EditorPaths::get_feature_profiles_dir().path_join(basefile);
 		profile->save_to_file(dst_file);
 	}
 

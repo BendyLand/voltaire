@@ -40,7 +40,20 @@
 #include "editor/run/editor_run_bar.h"
 #include "editor/settings/editor_settings.h"
 
-DebugAdapterProtocol* DebugAdapterProtocol::singleton = nullptr;
+void DebugAdapterProtocol::initialize()
+{
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+}
+
+void DebugAdapterProtocol::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
 Error DAPeer::handle_data()
 {
@@ -105,7 +118,7 @@ Error DAPeer::handle_data()
 		}
 
 		// Response
-		if (DebugAdapterProtocol::get_singleton()->process_message(msg)) {
+		if (DebugAdapterProtocol::process_message(msg)) {
 			// Reset to read again
 			req_pos = 0;
 			has_header = false;
@@ -117,51 +130,59 @@ Error DAPeer::handle_data()
 
 void DebugAdapterProtocol::reset_current_info()
 {
-	_current_request = "";
-	_current_peer.unref();
+	ERR_FAIL_NULL(data);
+	data->_current_request = "";
+	data->_current_peer.unref();
 }
 
 void DebugAdapterProtocol::reset_ids()
 {
-	breakpoint_id = 0;
-	breakpoint_list.clear();
-	breakpoint_source_list.clear();
+	ERR_FAIL_NULL(data);
+	data->breakpoint_id = 0;
+	data->breakpoint_list.clear();
+	data->breakpoint_source_list.clear();
 
 	reset_stack_info();
 }
 
 void DebugAdapterProtocol::reset_stack_info()
 {
-	stackframe_id = 0;
-	variable_id = 1;
+	ERR_FAIL_NULL(data);
+	data->stackframe_id = 0;
+	data->variable_id = 1;
 
-	stackframe_list.clear();
-	scope_list.clear();
+	data->stackframe_list.clear();
+	data->scope_list.clear();
 }
 
 bool DebugAdapterProtocol::request_remote_evaluate(const String& p_eval, int p_stack_frame)
 {
+	ERR_FAIL_NULL_V(data, false);
 	// If the eval is already on the pending list, we don't need to request it again
-	if (eval_pending_list.has(p_eval)) {
+	if (data->eval_pending_list.has(p_eval)) {
 		return false;
 	}
 
 	EditorDebuggerNode::get_singleton()->get_default_debugger()->request_remote_evaluate(
 		p_eval, p_stack_frame);
-	eval_pending_list.insert(p_eval);
+	data->eval_pending_list.insert(p_eval);
 
 	return true;
 }
 
 const DAP::Source& DebugAdapterProtocol::fetch_source(const String& p_path)
 {
+	static DAP::Source empty_source;
+	ERR_FAIL_NULL_V(data, empty_source);
+
 	const String& global_path = ProjectSettings::globalize_path(p_path);
 
-	HashMap<String, DAP::Source>::Iterator E = breakpoint_source_list.find(global_path);
-	if (E != breakpoint_source_list.end()) {
+	HashMap<String, DAP::Source>::Iterator E = data->breakpoint_source_list.find(global_path);
+	if (E != data->breakpoint_source_list.end()) {
 		return E->value;
 	}
-	DAP::Source& added_source = breakpoint_source_list.insert(global_path, DAP::Source())->value;
+	DAP::Source& added_source =
+		data->breakpoint_source_list.insert(global_path, DAP::Source())->value;
 	added_source.name = global_path.get_file();
 	added_source.path = global_path;
 	added_source.compute_checksums();
@@ -171,10 +192,11 @@ const DAP::Source& DebugAdapterProtocol::fetch_source(const String& p_path)
 
 void DebugAdapterProtocol::update_source(const String& p_path)
 {
+	ERR_FAIL_NULL(data);
 	const String& global_path = ProjectSettings::globalize_path(p_path);
 
-	HashMap<String, DAP::Source>::Iterator E = breakpoint_source_list.find(global_path);
-	if (E != breakpoint_source_list.end()) {
+	HashMap<String, DAP::Source>::Iterator E = data->breakpoint_source_list.find(global_path);
+	if (E != data->breakpoint_source_list.end()) {
 		E->value.compute_checksums();
 	}
 }
@@ -199,18 +221,19 @@ void DebugAdapterProtocol::on_debug_stopped()
 void DebugAdapterProtocol::on_debug_breaked(const bool& p_reallydid, const bool& p_can_debug,
 	const String& p_reason, const bool& p_has_stackdump)
 {
+	ERR_FAIL_NULL(data);
 	if (!p_reallydid) {
 		notify_continued();
 		return;
 	}
 
 	if (p_reason == "Breakpoint") {
-		if (_stepping) {
+		if (data->_stepping) {
 			notify_stopped_step();
-			_stepping = false;
+			data->_stepping = false;
 		}
 		else {
-			_processing_breakpoint =
+			data->_processing_breakpoint =
 				true; // Wait for stack_dump to find where the breakpoint happened
 		}
 	}
@@ -218,27 +241,28 @@ void DebugAdapterProtocol::on_debug_breaked(const bool& p_reallydid, const bool&
 		notify_stopped_exception(p_reason);
 	}
 
-	_processing_stackdump = p_has_stackdump;
+	data->_processing_stackdump = p_has_stackdump;
 }
 
 void DebugAdapterProtocol::on_debug_breakpoint_toggled(
 	const String& p_path, const int& p_line, const bool& p_enabled)
 {
+	ERR_FAIL_NULL(data);
 	DAP::Breakpoint breakpoint(fetch_source(p_path));
 	breakpoint.verified = true;
 	breakpoint.line = p_line;
 
 	if (p_enabled) {
 		// Add the breakpoint
-		breakpoint.id = breakpoint_id++;
-		breakpoint_list.push_back(breakpoint);
+		breakpoint.id = data->breakpoint_id++;
+		data->breakpoint_list.push_back(breakpoint);
 	}
 	else {
 		// Remove the breakpoint
-		List<DAP::Breakpoint>::Element* E = breakpoint_list.find(breakpoint);
+		List<DAP::Breakpoint>::Element* E = data->breakpoint_list.find(breakpoint);
 		if (E) {
 			breakpoint.id = E->get().id;
-			breakpoint_list.erase(E);
+			data->breakpoint_list.erase(E);
 		}
 	}
 
@@ -247,18 +271,25 @@ void DebugAdapterProtocol::on_debug_breakpoint_toggled(
 
 void DebugAdapterProtocol::stop()
 {
-	for (const Ref<DAPeer>& peer : clients) {
+	ERR_FAIL_NULL(data);
+	for (const Ref<DAPeer>& peer : data->clients) {
 		peer->connection->disconnect_from_host();
 	}
 
-	clients.clear();
-	server->stop();
-	_initialized = false;
+	data->clients.clear();
+	if (data->server.is_valid()) {
+		data->server->stop();
+	}
+	data->_initialized = false;
 }
 
 void DebugAdapterProtocol::notify_continued() {}
 
-bool DebugAdapterProtocol::process_message(const String& p_message) {}
+bool DebugAdapterProtocol::process_message(const String& p_message)
+{
+	(void)p_message;
+	return false;
+}
 
 void DebugAdapterProtocol::notify_terminated() {}
 

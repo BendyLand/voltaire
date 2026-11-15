@@ -189,7 +189,7 @@ void GameViewPluginBase::_focus_another_editor()
 				EditorMainScreen::EDITOR_2D);
 		}
 		else {
-			EditorInterface::get_singleton()->set_main_screen_editor(last_editor);
+			EditorInterface::set_main_screen_editor(last_editor);
 		}
 	}
 }

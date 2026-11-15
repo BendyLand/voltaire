@@ -46,8 +46,8 @@ void EditorDockDragHint::_drag_move_tab(int p_from_index, int p_to_index)
 void EditorDockDragHint::_drag_move_tab_from(
 	TabBar* p_from_tabbar, int p_from_index, int p_to_index)
 {
-	EditorDockManager* dock_manager = EditorDockManager::get_singleton();
-	dock_manager->_move_dock(dock_manager->_get_dock_tab_dragged(), dock_container, p_to_index);
+	EditorDockManager::_move_dock(
+		EditorDockManager::_get_dock_tab_dragged(), dock_container, p_to_index);
 }
 
 void EditorDockDragHint::set_slot(DockTabContainer* p_slot)
@@ -61,7 +61,7 @@ void EditorDockDragHint::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_DRAG_BEGIN: {
-		EditorDock* dragged_dock = EditorDockManager::get_singleton()->_get_dock_tab_dragged();
+		EditorDock* dragged_dock = EditorDockManager::_get_dock_tab_dragged();
 		if (!dragged_dock) {
 			return;
 		}
@@ -128,7 +128,7 @@ void DockTabContainer::update_visibility() {}
 
 bool DockTabContainer::can_switch_dock() const
 {
-	return EditorDockManager::get_singleton()->are_docks_visible();
+	return EditorDockManager::are_docks_visible();
 }
 
 void DockTabContainer::add_margin_valid_drop(int p_margin, int p_target_dock_slot)
@@ -143,8 +143,7 @@ int DockTabContainer::get_margin_drop_slot(int p_margin) const
 	if (!target_slot) {
 		return -1;
 	}
-	DockTabContainer* tab_container =
-		EditorDockManager::get_singleton()->get_dock_container(*target_slot);
+	DockTabContainer* tab_container = EditorDockManager::get_dock_container(*target_slot);
 	if (!tab_container->is_visible()) {
 		return *target_slot;
 	}

@@ -29,441 +29,190 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/engine.h"
-#include "core/config/project_settings.h"
-#include "core/input/input.h"
-#include "core/io/config_file.h"
-#include "core/io/dir_access.h"
-#include "core/io/file_access.h"
-#include "core/os/keyboard.h"
 #include "core/os/os.h"
-#include "core/version.h"
-#include "editor/asset_library/asset_library_editor_plugin.h"
-#include "editor/doc/editor_help.h"
-#include "editor/editor_string_names.h"
-#include "editor/gui/editor_about.h"
-#include "editor/gui/editor_file_dialog.h"
-#include "editor/gui/editor_title_bar.h"
-#include "editor/gui/editor_version_button.h"
-#include "editor/inspector/editor_inspector.h"
-#include "editor/project_manager/engine_update_label.h"
-#include "editor/project_manager/project_dialog.h"
-#include "editor/project_manager/project_list.h"
-#include "editor/project_manager/project_tag.h"
-#include "editor/project_manager/quick_settings_dialog.h"
-#include "editor/settings/editor_settings.h"
-#include "editor/themes/editor_scale.h"
-#include "editor/themes/editor_theme_manager.h"
-#include "main/main.h"
 #include "project_manager.h"
-#include "scene/gui/check_box.h"
-#include "scene/gui/flow_container.h"
-#include "scene/gui/line_edit.h"
-#include "scene/gui/margin_container.h"
-#include "scene/gui/menu_bar.h"
-#include "scene/gui/option_button.h"
-#include "scene/gui/panel_container.h"
-#include "scene/gui/rich_text_label.h"
-#include "scene/gui/separator.h"
-#include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/display_server.h"
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/rendering/renderer.h"
 
-#ifndef PHYSICS_2D_DISABLED
-#include "servers/physics_2d/physics_server_2d.h"
-#endif // PHYSICS_2D_DISABLED
-
-#ifndef PHYSICS_3D_DISABLED
-#include "servers/physics_3d/physics_server_3d.h"
-#endif // PHYSICS_3D_DISABLED
-
-#include "modules/modules_enabled.gen.h" // For gdscript, mono. (For editor help highlighter).
-
-constexpr int GODOT4_CONFIG_VERSION = 5;
-
-ProjectManager* ProjectManager::singleton = nullptr;
-
-Ref<Texture2D> ProjectManager::_file_dialog_get_icon(const String& p_path)
+void ProjectManager::initialize(RID p_viewport_rid, Size2i p_size)
 {
-	if (p_path.has_extension("godot")) {
-		return singleton->icon_type_cache["GodotMonochrome"];
-	}
-
-	return singleton->icon_type_cache["Object"];
-}
-
-Ref<Texture2D> ProjectManager::_file_dialog_get_thumbnail(const String& p_path)
-{
-	if (p_path.has_extension("godot")) {
-		return singleton->icon_type_cache["GodotFile"];
-	}
-
-	return Ref<Texture2D>();
-}
-
-void ProjectManager::_build_icon_type_cache(Ref<Theme> p_theme)
-{
-	if (p_theme.is_null()) {
+	if (data) {
 		return;
 	}
-	List<String> tl;
-	p_theme->get_icon_list(EditorString(EditorIcons), &tl);
-	for (const String& name : tl) {
-		icon_type_cache[name] = p_theme->get_icon(name, EditorString(EditorIcons));
+	data = memnew(Data);
+	data->window_size = (p_size.x > 0 && p_size.y > 0)
+							? p_size
+							: Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+
+	// 1. Allocate or reuse the root Viewport & Canvas directly on the Renderer
+	if (p_viewport_rid.is_valid()) {
+		data->viewport_rid = p_viewport_rid;
 	}
+	else {
+		data->viewport_rid = Renderer::viewport_create();
+	}
+
+	data->canvas_rid = Renderer::canvas_create();
+	Renderer::viewport_attach_canvas(data->viewport_rid, data->canvas_rid);
+	Renderer::viewport_set_size(data->viewport_rid, data->window_size.x, data->window_size.y);
+	Renderer::viewport_set_active(data->viewport_rid, true);
+	Renderer::viewport_set_update_mode(data->viewport_rid, RSE::VIEWPORT_UPDATE_ALWAYS);
+	Renderer::viewport_attach_to_screen(data->viewport_rid,
+		Rect2(0, 0, data->window_size.x, data->window_size.y), DisplayServerEnums::MAIN_WINDOW_ID);
+
+	// 2. Allocate a single CanvasItem for the ProjectManager UI
+	data->canvas_item_rid = Renderer::canvas_item_create();
+	Renderer::canvas_item_set_parent(data->canvas_item_rid, data->canvas_rid);
+	Renderer::canvas_item_set_visible(data->canvas_item_rid, true);
+
+	// 3. Grab default fallback font from ThemeDB if available
+	if (ThemeDB::get_singleton()) {
+		data->ui_font = ThemeDB::get_singleton()->get_fallback_font();
+	}
+
+	// 4. Register toolbar buttons (layout rects are computed in process_and_draw)
+	data->buttons.push_back({"+ New Project", Rect2(), &ProjectManager::_new_project, false});
+	data->buttons.push_back({"Import", Rect2(), &ProjectManager::_import_project, false});
+	data->buttons.push_back({"Scan", Rect2(), &ProjectManager::_scan_projects, false});
+	data->buttons.push_back({"Support", Rect2(), &ProjectManager::_open_donate_page, false});
+
+	_initialized = true;
+	process_and_draw();
 }
 
-void ProjectManager::_project_list_menu_option(int p_option)
+void ProjectManager::process_and_draw()
 {
-	switch (p_option) {
-	case ProjectList::MENU_EDIT:
-		_open_selected_projects();
-		break;
+	if (!data || !data->canvas_item_rid.is_valid()) {
+		return;
+	}
 
-	case ProjectList::MENU_EDIT_VERBOSE:
-		open_in_verbose_mode = true;
-		_open_selected_projects_check_warnings();
-		break;
+	RID ci = data->canvas_item_rid;
+	Renderer::canvas_item_clear(ci);
 
-	case ProjectList::MENU_SHOW_IN_FILE_MANAGER:
-		_show_project_in_file_manager();
-		break;
+	const float W = (float)data->window_size.x;
+	const float H = (float)data->window_size.y;
+	const float pad = 24.0f;
 
-	case ProjectList::MENU_COPY_PATH: {
-		const Vector<ProjectList::Item>& selected_list = project_list->get_selected_projects();
-		if (selected_list.is_empty()) {
-			return;
+	// Palette
+	const Color col_bg(0.09f, 0.10f, 0.12f, 1.0f);
+	const Color col_header(0.13f, 0.15f, 0.18f, 1.0f);
+	const Color col_btn(0.20f, 0.24f, 0.30f, 1.0f);
+	const Color col_btn_hover(0.28f, 0.35f, 0.45f, 1.0f);
+	const Color col_accent(0.0f, 0.75f, 0.95f, 1.0f);
+	const Color col_search_bg(0.06f, 0.07f, 0.09f, 1.0f);
+	const Color col_workspace(0.12f, 0.14f, 0.17f, 1.0f);
+	const Color col_text(0.92f, 0.94f, 0.96f, 1.0f);
+
+	// 1. Full-window background
+	Renderer::canvas_item_add_rect(ci, Rect2(0, 0, W, H), col_bg);
+
+	// 2. Top Header Bar (y = 20, height = 48)
+	float y = 20.0f;
+	const float header_h = 48.0f;
+	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, W - pad * 2.0f, header_h), col_header);
+	// Left cyan accent strip on header
+	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, 4.0f, header_h), col_accent);
+
+	if (data->ui_font.is_valid()) {
+		data->ui_font->draw_string(ci, Point2(pad + 18.0f, y + 30.0f),
+			"VOLTAIRE // PROJECT MANAGER", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, col_text);
+	}
+
+	// 3. Toolbar Buttons aligned to the right of the header bar
+	float btn_w = 120.0f;
+	float btn_h = 34.0f;
+	float btn_gap = 10.0f;
+	float btn_x = (W - pad - 10.0f) - (data->buttons.size() * (btn_w + btn_gap)) + btn_gap;
+	float btn_y = y + (header_h - btn_h) * 0.5f;
+
+	for (uint32_t i = 0; i < data->buttons.size(); i++) {
+		UIButton& btn = data->buttons[i];
+		btn.rect = Rect2(btn_x, btn_y, btn_w, btn_h);
+		Renderer::canvas_item_add_rect(ci, btn.rect, btn.hovered ? col_btn_hover : col_btn);
+		// Bottom button border highlight
+		Renderer::canvas_item_add_rect(
+			ci, Rect2(btn_x, btn_y + btn_h - 2.0f, btn_w, 2.0f), col_accent);
+
+		if (data->ui_font.is_valid()) {
+			data->ui_font->draw_string(ci, Point2(btn_x + 12.0f, btn_y + 22.0f), btn.label,
+				HORIZONTAL_ALIGNMENT_LEFT, btn_w - 24.0f, 14, col_text);
 		}
-		DisplayServer::get_singleton()->clipboard_set(selected_list[0].path);
-	} break;
+		btn_x += btn_w + btn_gap;
+	}
 
-	case ProjectList::MENU_RENAME:
-		_rename_project();
-		break;
+	y += header_h + 12.0f;
 
-	case ProjectList::MENU_MANAGE_TAGS:
-		_manage_project_tags();
-		break;
+	// 4. Horizontal Separator (height = 2)
+	Renderer::canvas_item_add_rect(
+		ci, Rect2(pad, y, W - pad * 2.0f, 2.0f), Color(0.22f, 0.25f, 0.30f, 1.0f));
+	y += 14.0f;
 
-	case ProjectList::MENU_DUPLICATE:
-		_duplicate_project();
-		break;
+	// 5. Search Bar Box (height = 38)
+	const float search_h = 38.0f;
+	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, W - pad * 2.0f, search_h), col_search_bg);
+	if (data->ui_font.is_valid()) {
+		String display_search =
+			data->search_text.is_empty() ? "Filter projects..." : data->search_text;
+		data->ui_font->draw_string(ci, Point2(pad + 12.0f, y + 24.0f), display_search,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.55f, 0.60f, 0.68f, 1.0f));
+	}
+	y += search_h + 14.0f;
+
+	// 6. Main Workspace Panel (fills remaining height)
+	const float workspace_h = MAX(100.0f, H - y - pad);
+	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, W - pad * 2.0f, workspace_h), col_workspace);
+
+	// Inner project card preview row inside workspace
+	Renderer::canvas_item_add_rect(ci,
+		Rect2(pad + 16.0f, y + 16.0f, W - (pad + 16.0f) * 2.0f, 64.0f),
+		Color(0.16f, 0.19f, 0.24f, 1.0f));
+	Renderer::canvas_item_add_rect(ci, Rect2(pad + 16.0f, y + 16.0f, 4.0f, 64.0f), col_accent);
+
+	if (data->ui_font.is_valid()) {
+		data->ui_font->draw_string(ci, Point2(pad + 32.0f, y + 54.0f), data->status_text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 15, col_text);
 	}
 }
 
-void ProjectManager::_dim_window()
+void ProjectManager::finalize()
 {
-	// This method must be called before calling `get_tree()->quit()`.
-	// Otherwise, its effect won't be visible
-
-	// Dim the project manager window while it's quitting to make it clearer that it's busy.
-	// No transition is applied, as the effect needs to be visible immediately
-	float c = 0.5f;
-	Color dim_color = Color(c, c, c);
-	set_modulate(dim_color);
-}
-
-void ProjectManager::_restart_confirmed()
-{
-	List<String> args = OS::get_cmdline_args();
-	Error err = OS::create_instance(args);
-	ERR_FAIL_COND(err);
-
-	_dim_window();
-	get_tree()->quit();
-}
-
-void ProjectManager::_scan_projects() { scan_dir->popup_file_dialog(); }
-
-void ProjectManager::_install_project(const String& p_zip_path, const String& p_title)
-{
-	project_dialog->set_mode(ProjectDialog::MODE_INSTALL);
-	project_dialog->set_zip_path(p_zip_path);
-	project_dialog->set_zip_title(p_title);
-	project_dialog->show_dialog();
-}
-
-void ProjectManager::_import_project()
-{
-	project_dialog->set_mode(ProjectDialog::MODE_IMPORT);
-	project_dialog->ask_for_path_and_show();
+	if (!data) {
+		return;
+	}
+	if (data->canvas_item_rid.is_valid()) {
+		Renderer::free_rid(data->canvas_item_rid);
+	}
+	if (data->canvas_rid.is_valid()) {
+		Renderer::free_rid(data->canvas_rid);
+	}
+	memdelete(data);
+	data = nullptr;
+	_initialized = false;
 }
 
 void ProjectManager::_new_project()
 {
-	project_dialog->set_mode(ProjectDialog::MODE_NEW);
-	project_dialog->show_dialog();
-}
-
-void ProjectManager::_rename_project()
-{
-	const Vector<ProjectList::Item>& selected_list = project_list->get_selected_projects();
-
-	if (selected_list.is_empty()) {
-		return;
-	}
-
-	for (const ProjectList::Item& E : selected_list) {
-		project_dialog->set_project_name(E.project_name);
-		project_dialog->set_project_path(E.path);
-		project_dialog->set_mode(ProjectDialog::MODE_RENAME);
-		project_dialog->show_dialog();
+	if (data) {
+		data->status_text = "Action: + New Project clicked";
+		process_and_draw();
 	}
 }
 
-void ProjectManager::_duplicate_project()
+void ProjectManager::_import_project()
 {
-	_duplicate_project_with_action(POST_DUPLICATE_ACTION_NONE);
-}
-
-void ProjectManager::_duplicate_project_with_action(PostDuplicateAction p_post_action)
-{
-	Vector<ProjectList::Item> selected_projects = project_list->get_selected_projects();
-	if (selected_projects.is_empty()) {
-		return;
-	}
-
-	post_duplicate_action = p_post_action;
-
-	const ProjectList::Item& project = selected_projects[0];
-
-	project_dialog->set_mode(ProjectDialog::MODE_DUPLICATE);
-	project_dialog->set_project_name(vformat("%s (%s)", project.project_name,
-		p_post_action == POST_DUPLICATE_ACTION_NONE ? "Copy" : project.project_version));
-	project_dialog->set_original_project_path(project.path);
-	project_dialog->set_duplicate_can_edit(p_post_action == POST_DUPLICATE_ACTION_NONE);
-	project_dialog->show_dialog(false);
-}
-
-void ProjectManager::_show_project_in_file_manager()
-{
-	const Vector<ProjectList::Item>& selected_list = project_list->get_selected_projects();
-	if (selected_list.is_empty()) {
-		return;
-	}
-
-	for (const ProjectList::Item& E : selected_list) {
-		OS::shell_show_in_file_manager(E.path, true);
+	if (data) {
+		data->status_text = "Action: Import Project clicked";
+		process_and_draw();
 	}
 }
 
-void ProjectManager::_erase_project_confirm()
+void ProjectManager::_scan_projects()
 {
-	project_list->erase_selected_projects(false);
-	_update_project_buttons();
-	_update_list_placeholder();
-}
-
-void ProjectManager::_erase_missing_projects_confirm()
-{
-	project_list->erase_missing_projects();
-	_update_project_buttons();
-	_update_list_placeholder();
-}
-
-void ProjectManager::_open_options_popup()
-{
-	Rect2 rect = open_btn_container->get_screen_rect();
-	rect.position.y += rect.size.height;
-	open_options_popup->set_size(Size2(rect.size.width, 0));
-	open_options_popup->set_position(rect.position);
-
-	open_options_popup->popup();
-}
-
-void ProjectManager::_on_projects_updated()
-{
-	Vector<ProjectList::Item> selected_projects = project_list->get_selected_projects();
-	int index = 0;
-	for (int i = 0; i < selected_projects.size(); ++i) {
-		index = project_list->refresh_project(selected_projects[i].path);
-	}
-	if (index != -1) {
-		project_list->ensure_project_visible(index);
-	}
-
-	project_list->update_dock_menu();
-}
-
-void ProjectManager::_on_open_options_selected(int p_option)
-{
-	switch (p_option) {
-	case 0: // Edit in verbose mode.
-		open_in_verbose_mode = true;
-		_open_selected_projects_check_warnings();
-		break;
+	if (data) {
+		data->status_text = "Action: Scan Projects clicked";
+		process_and_draw();
 	}
 }
 
-void ProjectManager::_on_recovery_mode_popup_open_normal()
-{
-	open_recovery_mode_ask->hide();
-	open_in_recovery_mode = false;
-	_open_selected_projects_check_warnings();
-}
-
-void ProjectManager::_on_recovery_mode_popup_open_recovery()
-{
-	open_in_recovery_mode = true;
-	_open_selected_projects_check_warnings();
-}
-
-void ProjectManager::_on_project_created(const String& dir, bool edit)
-{
-	project_list->add_project(dir, false);
-	project_list->save_config();
-	search_box->clear();
-
-	int i = project_list->refresh_project(dir);
-	project_list->ensure_project_visible(i);
-	_update_list_placeholder();
-
-	if (edit) {
-		_open_selected_projects_check_warnings();
-	}
-
-	project_list->update_dock_menu();
-}
-
-void ProjectManager::_on_project_duplicated(
-	const String& p_original_path, const String& p_duplicate_path, bool p_edit)
-{
-	if (post_duplicate_action == POST_DUPLICATE_ACTION_NONE) {
-		_on_project_created(p_duplicate_path, p_edit);
-	}
-	else {
-		project_list->add_project(p_duplicate_path, false);
-		project_list->save_config();
-		project_list->update_dock_menu();
-	}
-
-	post_duplicate_action = POST_DUPLICATE_ACTION_NONE;
-}
-
-void ProjectManager::_on_order_option_changed(int p_idx)
-{
-	if (is_inside_tree()) {
-		project_list->set_order_option(p_idx, true);
-	}
-}
-
-void ProjectManager::_on_search_term_changed(const String& p_term)
-{
-	project_list->set_search_term(p_term);
-	project_list->sort_projects();
-
-	// Select the first visible project in the list.
-	// This makes it possible to open a project without ever touching the mouse,
-	// as the search field is automatically focused on startup.
-	project_list->select_first_visible_project();
-	_update_project_buttons();
-}
-
-LineEdit* ProjectManager::get_search_box() { return search_box; }
-
-void ProjectManager::_create_new_tag()
-{
-	if (!tag_error->get_text().is_empty()) {
-		return;
-	}
-	create_tag_dialog->hide(); // When using text_submitted, need to hide manually.
-
-	// Enforce a valid tag name (no spaces, lowercase only) automatically.
-	// The project manager displays underscores as spaces, and capitalization is performed
-	// automatically.
-	const String new_tag = new_tag_name->get_text().strip_edges().to_lower().replace_char(' ', '_');
-	add_new_tag(new_tag);
-	_add_project_tag(new_tag);
-}
-
-void ProjectManager::_migration_guide_button_pressed()
-{
-	const String url = vformat("%s/tutorials/migrating/index.html", VLTR_VERSION_DOCS_URL);
-	OS::shell_open(url);
-}
-
-void ProjectManager::_files_dropped(PackedStringArray p_files)
-{
-	// TODO: Support installing multiple ZIPs at the same time?
-	if (p_files.size() == 1 && p_files[0].ends_with(".zip")) {
-		const String& file = p_files[0];
-		_install_project(file, file.get_file().get_basename().capitalize());
-		return;
-	}
-
-	HashSet<String> folders_set;
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	for (int i = 0; i < p_files.size(); i++) {
-		const String& file = p_files[i];
-		folders_set.insert(da->dir_exists(file) ? file : file.get_base_dir());
-	}
-	ERR_FAIL_COND(
-		folders_set
-			.is_empty()); // This can't really happen, we consume every dropped file path above.
-
-	PackedStringArray folders;
-	for (const String& E : folders_set) {
-		folders.push_back(E);
-	}
-	project_list->find_projects_multiple(folders);
-}
-
-void ProjectManager::_titlebar_resized()
-{
-	DisplayServer::get_singleton()->window_set_window_buttons_offset(
-		Vector2i(title_bar->get_global_position().y + title_bar->get_size().y / 2,
-			title_bar->get_global_position().y + title_bar->get_size().y / 2),
-		DisplayServerEnums::MAIN_WINDOW_ID);
-	const Vector3i& margin = DisplayServer::get_singleton()->window_get_safe_title_margins(
-		DisplayServerEnums::MAIN_WINDOW_ID);
-	if (left_menu_spacer) {
-		int w = (root_container->is_layout_rtl()) ? margin.y : margin.x;
-		left_menu_spacer->set_custom_minimum_size(Size2(w, 0));
-	}
-	if (right_menu_spacer) {
-		int w = (root_container->is_layout_rtl()) ? margin.x : margin.y;
-		right_menu_spacer->set_custom_minimum_size(Size2(w, 0));
-	}
-	if (title_bar) {
-		title_bar->set_custom_minimum_size(Size2(0, margin.z - title_bar->get_global_position().y));
-	}
-}
-
-void ProjectManager::_open_donate_page()
-{
-	OS::shell_open("https://ko-fi.com/bendyland");
-}
-
-ProjectManager::~ProjectManager()
-{
-	singleton = nullptr;
-	EditorInspector::cleanup_plugins();
-
-#if defined(MODULE_GDSCRIPT_ENABLED) || defined(MODULE_MONO_ENABLED)
-	EditorHelpHighlighter::free_singleton();
-#endif
-
-	if (EditorSettings::get_singleton()) {
-		EditorSettings::destroy();
-	}
-
-	EditorThemeManager::finalize();
-}
-
-void ProjectManager::_open_selected_projects_check_warnings() {}
-
-
-
-void ProjectManager::_update_project_buttons() {}
-
-void ProjectManager::_update_list_placeholder() {}
-
-void ProjectManager::_open_selected_projects() {}
-
-void ProjectManager::_manage_project_tags() {}
-
-void ProjectManager::_add_project_tag(String const&) {}
-
-void ProjectManager::add_new_tag(String const&) {}
+void ProjectManager::_open_donate_page() { OS::shell_open("https://ko-fi.com/bendyland"); }

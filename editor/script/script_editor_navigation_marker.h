@@ -33,35 +33,42 @@
 
 #include <cstdint>
 
-class ScriptEditorNavigationMarker {
-	static inline ScriptEditorNavigationMarker *singleton = nullptr;
+class ScriptEditorNavigationMarker final
+{
+	struct Data
+	{
+		bool init_in_progress = false;
 
-private:
-	bool init_in_progress = false;
+		bool locate_in_progress = false;
+		uint64_t locate_end_physics_frame = 0;
+		uint64_t locate_end_process_frame = 0;
 
-	bool locate_in_progress = false;
-	uint64_t locate_end_physics_frame = 0;
-	uint64_t locate_end_process_frame = 0;
-
-	bool traverse_in_progress = false;
-	uint64_t traverse_end_physics_frame = 0;
-	uint64_t traverse_end_process_frame = 0;
+		bool traverse_in_progress = false;
+		uint64_t traverse_end_physics_frame = 0;
+		uint64_t traverse_end_process_frame = 0;
+	};
 
 public:
-	static ScriptEditorNavigationMarker *get_singleton();
-	static void release_singleton();
+	static inline Data* data = nullptr;
 
-	void init_begin();
-	void init_end();
-	void locate_begin();
-	void locate_end();
-	void traverse_begin();
-	void traverse_end();
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
 
-	bool is_initializing() const;
-	bool is_locating() const;
-	bool is_traversing() const;
+	static void init_begin();
+	static void init_end();
+	static void locate_begin();
+	static void locate_end();
+	static void traverse_begin();
+	static void traverse_end();
 
-	bool is_locate_just_occured() const;
-	bool is_traverse_just_occured() const;
+	static bool is_initializing();
+	static bool is_locating();
+	static bool is_traversing();
+
+	static bool is_locate_just_occured();
+	static bool is_traverse_just_occured();
+
+	ScriptEditorNavigationMarker() = delete;
+	~ScriptEditorNavigationMarker() = delete;
 };

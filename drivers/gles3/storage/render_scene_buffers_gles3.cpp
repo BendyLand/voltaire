@@ -468,7 +468,7 @@ void RenderSceneBuffersGLES3::_check_render_buffers()
 				_clear_msaa3d_buffers();
 				msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
 				WARN_PRINT("Could not create 3D MSAA framebuffer, status: " +
-						   texture_storage->get_framebuffer_error(status));
+						   GLES3::TextureStorage::get_framebuffer_error(status));
 			}
 
 			glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);

@@ -6137,6 +6137,20 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 		return;
 	}
 
+#if defined(GLES3_ENABLED)
+	if (rendering_driver == "opengl3_es") {
+		gl_manager_egl = memnew(GLManagerEGL_X11);
+		if (gl_manager_egl->initialize(x11_display) != OK ||
+			gl_manager_egl->open_display(x11_display) != OK) {
+			memdelete(gl_manager_egl);
+			gl_manager_egl = nullptr;
+			r_error = ERR_UNAVAILABLE;
+			ERR_FAIL_MSG("Could not initialize OpenGL ES.");
+		}
+		RasterizerGLES3::make_current(false);
+	}
+#endif
+
 #if defined(XRANDR_ENABLED)
 	xrandr_ext_ok = (initialize_xrandr(0) == 0);
 #else
@@ -6163,14 +6177,41 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 	int y = p_position ? p_position->y : 0;
 
 	::Window root = RootWindow(x11_display, DefaultScreen(x11_display));
-	XSetWindowAttributes wa;
+	XSetWindowAttributes wa = {};
 	wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | PointerMotionMask |
 					ButtonPressMask | ButtonReleaseMask | ExposureMask | FocusChangeMask |
 					EnterWindowMask | LeaveWindowMask;
 	wa.background_pixel = BlackPixel(x11_display, DefaultScreen(x11_display));
+	wa.border_pixel = 0;
 
-	::Window x11_win = XCreateWindow(x11_display, root, x, y, width, height, 0, CopyFromParent,
-		InputOutput, CopyFromParent, CWBackPixel | CWEventMask, &wa);
+	int depth = CopyFromParent;
+	Visual* visual = CopyFromParent;
+	unsigned long valuemask = CWBackPixel | CWEventMask;
+
+#if defined(GLES3_ENABLED)
+	if (gl_manager_egl) {
+		int visual_id = gl_manager_egl->display_get_native_visual_id(x11_display);
+		if (visual_id >= 0) {
+			XVisualInfo visual_info_template = {};
+			visual_info_template.visualid = (VisualID)visual_id;
+			int number_of_visuals = 0;
+			XVisualInfo* vi_list = XGetVisualInfo(
+				x11_display, VisualIDMask, &visual_info_template, &number_of_visuals);
+			if (vi_list && number_of_visuals > 0) {
+				depth = vi_list[0].depth;
+				visual = vi_list[0].visual;
+				wa.colormap = XCreateColormap(x11_display, root, visual, AllocNone);
+				valuemask |= CWBorderPixel | CWColormap;
+			}
+			if (vi_list) {
+				XFree(vi_list);
+			}
+		}
+	}
+#endif
+
+	::Window x11_win = XCreateWindow(
+		x11_display, root, x, y, width, height, 0, depth, InputOutput, visual, valuemask, &wa);
 
 	if (!x11_win) {
 		r_error = ERR_CANT_CREATE;
@@ -6250,6 +6291,15 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 			DisplayServerEnums::MAIN_WINDOW_ID, x11_win, x11_display, width, height);
 		if (err != OK) {
 			ERR_PRINT("Failed to create OpenGL context for Window 0");
+		}
+	}
+	if (gl_manager_egl) {
+		Error err = gl_manager_egl->window_create(DisplayServerEnums::MAIN_WINDOW_ID, x11_display,
+			&windows[DisplayServerEnums::MAIN_WINDOW_ID].x11_window, width, height);
+		if (err != OK) {
+			ERR_PRINT("Failed to create OpenGL ES context for Window 0");
+			r_error = ERR_CANT_CREATE;
+			return;
 		}
 	}
 #endif

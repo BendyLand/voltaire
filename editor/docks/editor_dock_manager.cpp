@@ -50,7 +50,7 @@ void DockSplitContainer::_notification(int p_what)
 {
 	switch (p_what) {
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-		if (!EditorSettings::get_singleton()->check_changed_settings_in_group(
+		if (!EditorSettings::check_changed_settings_in_group(
 				"interface/touchscreen")) {
 			return;
 		}
@@ -58,22 +58,43 @@ void DockSplitContainer::_notification(int p_what)
 	}
 }
 
-void EditorDockManager::_dock_drag_stopped() { dock_tab_dragged = nullptr; }
-
-DockTabContainer* EditorDockManager::get_dock_container(int p_slot) const
+void EditorDockManager::initialize()
 {
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+}
+
+void EditorDockManager::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void EditorDockManager::_dock_drag_stopped()
+{
+	ERR_FAIL_NULL(data);
+	data->dock_tab_dragged = nullptr;
+}
+
+DockTabContainer* EditorDockManager::get_dock_container(int p_slot)
+{
+	ERR_FAIL_NULL_V(data, nullptr);
 	ERR_FAIL_INDEX_V(p_slot, EditorDock::DOCK_SLOT_MAX, nullptr);
-	return dock_slots[p_slot];
+	return data->dock_slots[p_slot];
 }
 
 void EditorDockManager::_update_dirty_dock_tabs()
 {
+	ERR_FAIL_NULL(data);
 	bool update_menu = false;
-	for (EditorDock* dock : dirty_docks) {
+	for (EditorDock* dock : data->dirty_docks) {
 		update_menu = update_menu || dock->global;
 		dock->update_tab_style();
 	}
-	dirty_docks.clear();
+	data->dirty_docks.clear();
 
 	if (update_menu) {
 		update_docks_menu();
@@ -104,25 +125,36 @@ void EditorDockManager::_make_dock_visible(EditorDock* p_dock, bool p_grab_focus
 	}
 }
 
-bool EditorDockManager::are_docks_visible() const { return docks_visible; }
+bool EditorDockManager::are_docks_visible()
+{
+	return data ? data->docks_visible : false;
+}
 
 void EditorDockManager::update_tab_styles()
 {
-	for (EditorDock* dock : all_docks) {
+	ERR_FAIL_NULL(data);
+	for (EditorDock* dock : data->all_docks) {
 		dock->update_tab_style();
 	}
 }
 
 void EditorDockManager::set_tab_icon_max_width(int p_max_width)
 {
+	ERR_FAIL_NULL(data);
 	for (int i = 0; i < EditorDock::DOCK_SLOT_MAX; i++) {
-		dock_slots[i]->add_theme_constant_override(SNAME("icon_max_width"), p_max_width);
+		data->dock_slots[i]->add_theme_constant_override(SNAME("icon_max_width"), p_max_width);
 	}
 }
 
-int EditorDockManager::get_vsplit_count() const { return vsplits.size(); }
+int EditorDockManager::get_vsplit_count()
+{
+	return data ? data->vsplits.size() : 0;
+}
 
-PopupMenu* EditorDockManager::get_docks_menu() { return docks_menu; }
+PopupMenu* EditorDockManager::get_docks_menu()
+{
+	return data ? data->docks_menu : nullptr;
+}
 
 void DockContextPopup::set_dock(EditorDock* p_dock)
 {
@@ -141,8 +173,9 @@ void DockContextPopup::docks_updated()
 
 void DockSlotGrid::_update_rect_cache()
 {
+	ERR_FAIL_NULL(EditorDockManager::data);
 	for (int i = 0; i < EditorDock::DOCK_SLOT_MAX; i++) {
-		Rect2 rect = EditorDockManager::get_singleton()->dock_slots[i]->grid_rect;
+		Rect2 rect = EditorDockManager::data->dock_slots[i]->grid_rect;
 		if (is_layout_rtl()) {
 			rect.position.x = GRID_SIZE.x - rect.position.x - rect.size.x;
 		}
@@ -190,8 +223,7 @@ void EditorDockManager::update_docks_menu() {}
 
 EditorDock* EditorDockManager::_get_dock_tab_dragged()
 {
-	EditorDock ed = EditorDock();
-	return &ed;
+	return data ? data->dock_tab_dragged : nullptr;
 }
 
 void EditorDockManager::_move_dock(EditorDock*, Control*, int, bool) {}

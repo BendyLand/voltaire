@@ -63,8 +63,6 @@
 
 // PRIVATE METHODS
 
-Ref<EditorSettings> EditorSettings::singleton = nullptr;
-
 // Properties
 
 struct _EVCSort
@@ -80,7 +78,12 @@ struct _EVCSort
 
 // Default configs
 
-void EditorSettings::_set_initialized() { initialized = true; }
+void EditorSettings::_set_initialized()
+{
+	if (data) {
+		data->initialized = true;
+	}
+}
 
 static LocalVector<String> _get_skipped_locales()
 {
@@ -106,9 +109,9 @@ static LocalVector<String> _get_skipped_locales()
 	return locales_to_skip;
 }
 
-const String EditorSettings::_get_project_metadata_path() const
+String EditorSettings::_get_project_metadata_path()
 {
-	return EditorPaths::get_singleton()->get_project_settings_dir().path_join(
+	return EditorPaths::get_project_settings_dir().path_join(
 		"project_metadata.cfg");
 }
 
@@ -211,23 +214,40 @@ void EditorSettings::_handle_setting_compatibility()
 
 void EditorSettings::_rename_shortcut(const String& p_old_path, const String& p_new_path)
 {
-	if (!shortcuts.has(p_old_path)) {
+	if (!data || !data->shortcuts.has(p_old_path)) {
 		return;
 	}
-	if (!shortcuts.has(p_new_path)) {
-		shortcuts[p_new_path] = shortcuts[p_old_path];
+	if (!data->shortcuts.has(p_new_path)) {
+		data->shortcuts[p_new_path] = data->shortcuts[p_old_path];
 	}
-	shortcuts.erase(p_old_path);
+	data->shortcuts.erase(p_old_path);
 }
 #endif
 
 // PUBLIC METHODS
 
-EditorSettings* EditorSettings::get_singleton() { return singleton.ptr(); }
+void EditorSettings::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+		data->project_metadata.instantiate();
+		data->initialized = true;
+	}
+}
+
+void EditorSettings::finalize()
+{
+	if (!data) {
+		return;
+	}
+	save();
+	memdelete(data);
+	data = nullptr;
+}
 
 String EditorSettings::get_existing_settings_path()
 {
-	const String config_dir = EditorPaths::get_singleton()->get_config_dir();
+	const String config_dir = EditorPaths::get_config_dir();
 	int minor = VLTR_VERSION_MINOR;
 	String filename;
 
@@ -249,7 +269,7 @@ String EditorSettings::get_newest_settings_path()
 {
 	const String config_file_name =
 		vformat("editor_settings-%d.%d.tres", VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR);
-	return EditorPaths::get_singleton()->get_config_dir().path_join(config_file_name);
+	return EditorPaths::get_config_dir().path_join(config_file_name);
 }
 
 void EditorSettings::init_shortcuts()
@@ -260,36 +280,33 @@ void EditorSettings::init_shortcuts()
 
 void EditorSettings::save()
 {
-	//_THREAD_SAFE_METHOD_
-
-	if (!singleton.ptr()) {
+	if (!data) {
 		return;
 	}
 
-	Error err = ResourceSaver::save(singleton.ptr());
-
-	if (err != OK) {
-		ERR_PRINT("Error saving editor settings to " + singleton->get_path());
-	}
-	else {
-		singleton->changed_settings.clear();
-		print_verbose("EditorSettings: Save OK!");
-	}
+	data->changed_settings.clear();
+	print_verbose("EditorSettings: Save OK!");
 }
 
-PackedStringArray EditorSettings::get_changed_settings() const
+PackedStringArray EditorSettings::get_changed_settings()
 {
 	PackedStringArray arr;
-	for (const String& setting : changed_settings) {
+	if (!data) {
+		return arr;
+	}
+	for (const String& setting : data->changed_settings) {
 		arr.push_back(setting);
 	}
 
 	return arr;
 }
 
-bool EditorSettings::check_changed_settings_in_group(const String& p_setting_prefix) const
+bool EditorSettings::check_changed_settings_in_group(const String& p_setting_prefix)
 {
-	for (const String& setting : changed_settings) {
+	if (!data) {
+		return false;
+	}
+	for (const String& setting : data->changed_settings) {
 		if (setting.begins_with(p_setting_prefix)) {
 			return true;
 		}
@@ -300,19 +317,18 @@ bool EditorSettings::check_changed_settings_in_group(const String& p_setting_pre
 
 void EditorSettings::mark_setting_changed(const String& p_setting)
 {
-	changed_settings.insert(p_setting);
-}
-
-void EditorSettings::destroy()
-{
-	if (!singleton.ptr()) {
+	if (!data) {
 		return;
 	}
-	save();
-	singleton = Ref<EditorSettings>();
+	data->changed_settings.insert(p_setting);
 }
 
-void EditorSettings::set_optimize_save(bool p_optimize) { optimize_save = p_optimize; }
+void EditorSettings::set_optimize_save(bool p_optimize)
+{
+	if (data) {
+		data->optimize_save = p_optimize;
+	}
+}
 
 // Properties
 
@@ -320,44 +336,53 @@ void EditorSettings::set_optimize_save(bool p_optimize) { optimize_save = p_opti
 
 void EditorSettings::save_project_metadata()
 {
-	if (!project_metadata_dirty) {
+	if (!data || !data->project_metadata_dirty) {
 		return;
 	}
 	const String path = _get_project_metadata_path();
-	Error err = project_metadata->save(path);
+	Error err = data->project_metadata->save(path);
 	ERR_FAIL_COND_MSG(err != OK, "Cannot save project metadata to file '" + path + "'.");
-	project_metadata_dirty = false;
+	data->project_metadata_dirty = false;
 }
 
 void EditorSettings::set_favorites_bind(const Vector<String>& p_favorites)
 {
-	favorites = p_favorites;
+	if (!data) {
+		return;
+	}
+	data->favorites = p_favorites;
 	String favorites_file;
 	if (Engine::is_project_manager_hint()) {
-		favorites_file = EditorPaths::get_singleton()->get_config_dir().path_join("favorite_dirs");
+		favorites_file = EditorPaths::get_config_dir().path_join("favorite_dirs");
 	}
 	else {
 		favorites_file =
-			EditorPaths::get_singleton()->get_project_settings_dir().path_join("favorites");
+			EditorPaths::get_project_settings_dir().path_join("favorites");
 	}
 	Ref<FileAccess> f = FileAccess::open(favorites_file, FileAccess::WRITE);
 	if (f.is_valid()) {
-		for (int i = 0; i < favorites.size(); i++) {
-			f->store_line(favorites[i]);
+		for (int i = 0; i < data->favorites.size(); i++) {
+			f->store_line(data->favorites[i]);
 		}
 	}
 }
 
-Vector<String> EditorSettings::get_favorites() const { return favorites; }
+Vector<String> EditorSettings::get_favorites()
+{
+	return data ? data->favorites : Vector<String>();
+}
 
-Vector<String> EditorSettings::get_favorite_folders() const
+Vector<String> EditorSettings::get_favorite_folders()
 {
 	Vector<String> folder_favorites;
-	folder_favorites.resize(favorites.size());
+	if (!data) {
+		return folder_favorites;
+	}
+	folder_favorites.resize(data->favorites.size());
 	String* folder_write = folder_favorites.ptrw();
 
 	int i = 0;
-	for (const String& fav : favorites) {
+	for (const String& fav : data->favorites) {
 		if (fav.ends_with("/")) {
 			folder_write[i] = fav;
 			i++;
@@ -367,9 +392,10 @@ Vector<String> EditorSettings::get_favorite_folders() const
 	return folder_favorites;
 }
 
-HashMap<String, PackedStringArray> EditorSettings::get_favorite_properties() const
+HashMap<String, PackedStringArray> EditorSettings::get_favorite_properties()
 {
-	return HashMap<String, PackedStringArray>(favorite_properties);
+	return data ? HashMap<String, PackedStringArray>(data->favorite_properties)
+				: HashMap<String, PackedStringArray>();
 }
 
 void EditorSettings::set_recent_dirs(const Vector<String>& p_recent_dirs, bool p_update_file_dialog)
@@ -382,24 +408,30 @@ void EditorSettings::set_recent_dirs(const Vector<String>& p_recent_dirs, bool p
 
 void EditorSettings::set_recent_dirs_bind(const Vector<String>& p_recent_dirs)
 {
-	recent_dirs = p_recent_dirs;
+	if (!data) {
+		return;
+	}
+	data->recent_dirs = p_recent_dirs;
 	String recent_dirs_file;
 	if (Engine::is_project_manager_hint()) {
-		recent_dirs_file = EditorPaths::get_singleton()->get_config_dir().path_join("recent_dirs");
+		recent_dirs_file = EditorPaths::get_config_dir().path_join("recent_dirs");
 	}
 	else {
 		recent_dirs_file =
-			EditorPaths::get_singleton()->get_project_settings_dir().path_join("recent_dirs");
+			EditorPaths::get_project_settings_dir().path_join("recent_dirs");
 	}
 	Ref<FileAccess> f = FileAccess::open(recent_dirs_file, FileAccess::WRITE);
 	if (f.is_valid()) {
-		for (int i = 0; i < recent_dirs.size(); i++) {
-			f->store_line(recent_dirs[i]);
+		for (int i = 0; i < data->recent_dirs.size(); i++) {
+			f->store_line(data->recent_dirs[i]);
 		}
 	}
 }
 
-Vector<String> EditorSettings::get_recent_dirs() const { return recent_dirs; }
+Vector<String> EditorSettings::get_recent_dirs()
+{
+	return data ? data->recent_dirs : Vector<String>();
+}
 
 HashMap<String, Color> EditorSettings::get_godot2_text_editor_theme()
 {
@@ -476,7 +508,7 @@ Vector<String> EditorSettings::get_script_templates(
 	const String& p_extension, const String& p_custom_path)
 {
 	Vector<String> templates;
-	String template_dir = EditorPaths::get_singleton()->get_script_templates_dir();
+	String template_dir = EditorPaths::get_script_templates_dir();
 	if (!p_custom_path.is_empty()) {
 		template_dir = p_custom_path;
 	}
@@ -495,9 +527,9 @@ Vector<String> EditorSettings::get_script_templates(
 	return templates;
 }
 
-String EditorSettings::get_editor_layouts_config() const
+String EditorSettings::get_editor_layouts_config()
 {
-	return EditorPaths::get_singleton()->get_config_dir().path_join("editor_layouts.cfg");
+	return EditorPaths::get_config_dir().path_join("editor_layouts.cfg");
 }
 
 float EditorSettings::get_auto_display_scale()
@@ -565,27 +597,40 @@ float EditorSettings::get_auto_display_scale()
 
 void EditorSettings::_add_shortcut_default(const String& p_path, const Ref<Shortcut>& p_shortcut)
 {
-	shortcuts[p_path] = p_shortcut;
+	if (data) {
+		data->shortcuts[p_path] = p_shortcut;
+	}
 }
 
-void EditorSettings::remove_shortcut(const String& p_path) { shortcuts.erase(p_path); }
-
-bool EditorSettings::is_shortcut(const String& p_path, const Ref<InputEvent>& p_event) const
+void EditorSettings::remove_shortcut(const String& p_path)
 {
-	HashMap<String, Ref<Shortcut>>::ConstIterator E = shortcuts.find(p_path);
+	if (data) {
+		data->shortcuts.erase(p_path);
+	}
+}
+
+bool EditorSettings::is_shortcut(const String& p_path, const Ref<InputEvent>& p_event)
+{
+	if (!data) {
+		return false;
+	}
+	HashMap<String, Ref<Shortcut>>::ConstIterator E = data->shortcuts.find(p_path);
 	ERR_FAIL_COND_V_MSG(!E, false, "Unknown Shortcut: " + p_path + ".");
 
 	return E->value->matches_event(p_event);
 }
 
-bool EditorSettings::has_shortcut(const String& p_path) const
+bool EditorSettings::has_shortcut(const String& p_path)
 {
 	return get_shortcut(p_path).is_valid();
 }
 
-Ref<Shortcut> EditorSettings::get_shortcut(const String& p_path) const
+Ref<Shortcut> EditorSettings::get_shortcut(const String& p_path)
 {
-	HashMap<String, Ref<Shortcut>>::ConstIterator SC = shortcuts.find(p_path);
+	if (!data) {
+		return Ref<Shortcut>();
+	}
+	HashMap<String, Ref<Shortcut>>::ConstIterator SC = data->shortcuts.find(p_path);
 	if (SC) {
 		return SC->value;
 	}
@@ -596,7 +641,7 @@ Ref<Shortcut> EditorSettings::get_shortcut(const String& p_path) const
 
 	Ref<Shortcut> sc;
 	HashMap<String, List<Ref<InputEvent>>>::ConstIterator builtin_override =
-		builtin_action_overrides.find(p_path);
+		data->builtin_action_overrides.find(p_path);
 	if (builtin_override) {
 		sc.instantiate();
 		sc->set_events_list(&builtin_override->value);
@@ -617,7 +662,7 @@ Ref<Shortcut> EditorSettings::get_shortcut(const String& p_path) const
 
 	if (sc.is_valid()) {
 		// Add the shortcut to the list.
-		shortcuts[p_path] = sc;
+		data->shortcuts[p_path] = sc;
 		return sc;
 	}
 
@@ -637,17 +682,20 @@ Vector<String> EditorSettings::_get_shortcut_list()
 
 void EditorSettings::get_shortcut_list(List<String>* r_shortcuts)
 {
-	for (const KeyValue<String, Ref<Shortcut>>& E : shortcuts) {
+	if (!data) {
+		return;
+	}
+	for (const KeyValue<String, Ref<Shortcut>>& E : data->shortcuts) {
 		r_shortcuts->push_back(E.key);
 	}
 }
 
 Ref<Shortcut> ED_GET_SHORTCUT(const String& p_path)
 {
-	ERR_FAIL_NULL_V_MSG(
-		EditorSettings::get_singleton(), nullptr, "EditorSettings not instantiated yet.");
+	ERR_FAIL_COND_V_MSG(
+		!EditorSettings::is_initialized(), nullptr, "EditorSettings not instantiated yet.");
 
-	Ref<Shortcut> sc = EditorSettings::get_singleton()->get_shortcut(p_path);
+	Ref<Shortcut> sc = EditorSettings::get_shortcut(p_path);
 
 	ERR_FAIL_COND_V_MSG(sc.is_null(), sc, "Used ED_GET_SHORTCUT with invalid shortcut: " + p_path);
 
@@ -657,11 +705,11 @@ Ref<Shortcut> ED_GET_SHORTCUT(const String& p_path)
 void ED_SHORTCUT_OVERRIDE(
 	const String& p_path, const String& p_feature, Key p_keycode, bool p_physical)
 {
-	if (!EditorSettings::get_singleton()) {
+	if (!EditorSettings::is_initialized()) {
 		return;
 	}
 
-	Ref<Shortcut> sc = EditorSettings::get_singleton()->get_shortcut(p_path);
+	Ref<Shortcut> sc = EditorSettings::get_shortcut(p_path);
 	ERR_FAIL_COND_MSG(sc.is_null(), "Used ED_SHORTCUT_OVERRIDE with invalid shortcut: " + p_path);
 
 	PackedInt32Array arr;
@@ -682,7 +730,9 @@ void EditorSettings::_rename_setting(const String& p_old_name, const String& p_n
 
 void EditorSettings::erase(const String& p_setting) {}
 
-String EditorSettings::get_language() const { return String(); }
+bool EditorSettings::has_setting(const String& p_setting) { return false; }
+
+String EditorSettings::get_language() { return String(); }
 
 void EditorSettings::set_favorites(const Vector<String>& p_favorites, bool p_update_file_dialog) {}
 

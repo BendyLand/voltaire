@@ -436,14 +436,13 @@ void SpriteFramesEditor::_paste_pressed()
 {
 	ERR_FAIL_COND(!frames->has_animation(edited_anim));
 
-	Ref<ClipboardSpriteFrames> clipboard_frames =
-		EditorSettings::get_singleton()->get_resource_clipboard();
+	Ref<ClipboardSpriteFrames> clipboard_frames = EditorSettings::get_resource_clipboard();
 	if (clipboard_frames.is_valid()) {
 		_paste_frame_array(clipboard_frames);
 		return;
 	}
 
-	Ref<Texture2D> texture = EditorSettings::get_singleton()->get_resource_clipboard();
+	Ref<Texture2D> texture = EditorSettings::get_resource_clipboard();
 	if (texture.is_valid()) {
 		_paste_texture(texture);
 		return;
@@ -474,7 +473,7 @@ void SpriteFramesEditor::_copy_pressed()
 
 		clipboard_frames->frames.push_back(frame);
 	}
-	EditorSettings::get_singleton()->set_resource_clipboard(clipboard_frames);
+	EditorSettings::set_resource_clipboard(clipboard_frames);
 }
 
 void SpriteFramesEditor::_animation_cut()
@@ -486,7 +485,7 @@ void SpriteFramesEditor::_animation_cut()
 	// Copy animation to clipboard.
 	Ref<ClipboardAnimation> clipboard_anim =
 		ClipboardAnimation::from_sprite_frames(frames, edited_anim);
-	EditorSettings::get_singleton()->set_resource_clipboard(clipboard_anim);
+	EditorSettings::set_resource_clipboard(clipboard_anim);
 
 	// Remove animation with undo/redo (no confirmation dialog).
 	_animation_remove_undo_redo(TTR("Cut Animation"), &clipboard_anim->frames);
@@ -500,7 +499,7 @@ void SpriteFramesEditor::_animation_copy()
 
 	Ref<ClipboardAnimation> clipboard_anim =
 		ClipboardAnimation::from_sprite_frames(frames, edited_anim);
-	EditorSettings::get_singleton()->set_resource_clipboard(clipboard_anim);
+	EditorSettings::set_resource_clipboard(clipboard_anim);
 }
 
 void SpriteFramesEditor::_animation_remove_confirmed()

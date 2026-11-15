@@ -262,23 +262,23 @@ bool EditorThemeManager::is_generated_theme_outdated()
 		// TODO: We can use this information more intelligently to do partial theme updates and
 		// speed things up.
 		outdated_cache =
-			EditorSettings::get_singleton()->check_changed_settings_in_group("interface/theme") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group("interface/theme") ||
+			EditorSettings::check_changed_settings_in_group(
 				"interface/editor/fonts") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group(
 				"interface/editor/appearance/max_sticky_tree_items") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group(
 				"interface/touchscreen/enable_touch_optimizations") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group(
 				"editors/visual_editors") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor/theme") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group("text_editor/theme") ||
+			EditorSettings::check_changed_settings_in_group(
 				"text_editor/help/help") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group(
 				"docks/property_editor/subresource_hue_tint") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group(
 				"filesystem/file_dialog/thumbnail_size") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group(
 				"run/output/font_size");
 
 		// The outdated flag is relevant at the moment of changing editor settings.

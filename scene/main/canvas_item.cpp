@@ -1172,15 +1172,18 @@ void CanvasTexture::set_texture_repeat(CanvasItem::TextureRepeat p_repeat)
 
 void CanvasItem::queue_redraw()
 {
-	if (!canvas_item.is_valid()) {
-		return;
-	}
-	Renderer::canvas_item_clear(canvas_item);
-	drawing = true;
-	if (draw_callback) {
-		draw_callback(this);
-	}
-	drawing = false;
+    if (!is_inside_tree() || !canvas_item.is_valid()) {
+        return;
+    }
+    Renderer::canvas_item_clear(canvas_item);
+    if (is_visible_in_tree()) {
+        drawing = true;
+        notification(NOTIFICATION_DRAW);
+        if (draw_callback) {
+            draw_callback(this);
+        }
+        drawing = false;
+    }
 }
 
 CanvasItem::TextureRepeat CanvasTexture::get_texture_repeat() const { return texture_repeat; }

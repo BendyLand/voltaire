@@ -96,8 +96,7 @@ void LocalizationEditor::_update_template_source_file_extensions()
 {
 	template_source_open_dialog->clear_filters();
 	List<String> translation_parse_file_extensions;
-	EditorTranslationParser::get_singleton()->get_recognized_extensions(
-		&translation_parse_file_extensions);
+	EditorTranslationParser::get_recognized_extensions(&translation_parse_file_extensions);
 	for (const String& E : translation_parse_file_extensions) {
 		template_source_open_dialog->add_filter("*." + E);
 	}

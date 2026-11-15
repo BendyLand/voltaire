@@ -49,36 +49,51 @@
 #include "servers/rendering/renderer.h"
 #include "tiles_editor_plugin.h"
 
-TilesEditorUtils* TilesEditorUtils::singleton = nullptr;
 TileMapEditorPlugin* tile_map_plugin_singleton = nullptr;
 TileSetEditorPlugin* tile_set_plugin_singleton = nullptr;
 
-void TilesEditorUtils::_pattern_preview_done() { pattern_preview_done.post(); }
+void TilesEditorUtils::_pattern_preview_done()
+{
+	ERR_FAIL_NULL(data);
+	data->pattern_preview_done.post();
+}
 
 void TilesEditorUtils::_thread_func(void* ud)
 {
-	TilesEditorUtils* te = static_cast<TilesEditorUtils*>(ud);
+	(void)ud;
 	set_current_thread_safe_for_nodes(true);
-	te->_thread();
+	_thread();
 }
 
 void TilesEditorUtils::set_sources_lists_current(int p_current)
 {
-	atlas_sources_lists_current = p_current;
+	ERR_FAIL_NULL(data);
+	data->atlas_sources_lists_current = p_current;
 }
 
-void TilesEditorUtils::_thread() {}
+void TilesEditorUtils::_thread()
+{
+	if (data) {
+		data->pattern_thread_exited.set();
+	}
+}
 
 void TilesEditorUtils::set_atlas_view_transform(float p_zoom, Vector2 p_scroll)
 {
-	atlas_view_zoom = p_zoom;
-	atlas_view_scroll = p_scroll;
+	ERR_FAIL_NULL(data);
+	data->atlas_view_zoom = p_zoom;
+	data->atlas_view_scroll = p_scroll;
 }
 
-void TilesEditorUtils::set_sorting_option(int p_option) { source_sort = p_option; }
-
-List<int> TilesEditorUtils::get_sorted_sources(const Ref<TileSet> p_tile_set) const
+void TilesEditorUtils::set_sorting_option(int p_option)
 {
+	ERR_FAIL_NULL(data);
+	data->source_sort = p_option;
+}
+
+List<int> TilesEditorUtils::get_sorted_sources(const Ref<TileSet> p_tile_set)
+{
+	ERR_FAIL_NULL_V(data, List<int>());
 	SourceNameComparator::tile_set = p_tile_set;
 	List<int> source_ids;
 
@@ -86,7 +101,7 @@ List<int> TilesEditorUtils::get_sorted_sources(const Ref<TileSet> p_tile_set) co
 		source_ids.push_back(p_tile_set->get_source_id(i));
 	}
 
-	switch (source_sort) {
+	switch (data->source_sort) {
 	case SOURCE_SORT_ID_REVERSE:
 		// Already sorted.
 		source_ids.reverse();
@@ -108,11 +123,13 @@ List<int> TilesEditorUtils::get_sorted_sources(const Ref<TileSet> p_tile_set) co
 
 Ref<TileSet> TilesEditorUtils::SourceNameComparator::tile_set;
 
-TilesEditorUtils::TilesEditorUtils()
+void TilesEditorUtils::initialize()
 {
-	singleton = this;
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+
 	// Pattern preview generation thread.
-	pattern_preview_thread.start(_thread_func, this);
+	data->pattern_preview_thread.start(_thread_func, nullptr);
 
 	ED_SHORTCUT("tiles_editor/cut", TTRC("Cut"), KeyModifierMask::CMD_OR_CTRL | Key::X);
 	ED_SHORTCUT("tiles_editor/copy", TTRC("Copy"), KeyModifierMask::CMD_OR_CTRL | Key::C);
@@ -128,18 +145,22 @@ TilesEditorUtils::TilesEditorUtils()
 	ED_SHORTCUT("tiles_editor/picker", TTRC("Picker Tool"), Key::P);
 }
 
-TilesEditorUtils::~TilesEditorUtils()
+void TilesEditorUtils::finalize()
 {
-	if (pattern_preview_thread.is_started()) {
-		pattern_thread_exit.set();
-		pattern_preview_sem.post();
-		while (!pattern_thread_exited.is_set()) {
+	if (!data) {
+		return;
+	}
+	if (data->pattern_preview_thread.is_started()) {
+		data->pattern_thread_exit.set();
+		data->pattern_preview_sem.post();
+		while (!data->pattern_thread_exited.is_set()) {
 			OS::delay_usec(10000);
 			Renderer::sync(); // sync pending stuff, as thread may be blocked on visual server
 		}
-		pattern_preview_thread.wait_to_finish();
+		data->pattern_preview_thread.wait_to_finish();
 	}
-	singleton = nullptr;
+	memdelete(data);
+	data = nullptr;
 }
 
 bool TileMapEditorPlugin::forward_canvas_gui_input(const Ref<InputEvent>& p_event)

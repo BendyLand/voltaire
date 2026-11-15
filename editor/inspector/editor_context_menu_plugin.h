@@ -88,23 +88,31 @@ public:
 	void add_custom_options(const Vector<String>& p_paths);
 };
 
-class EditorContextMenuPluginManager
+class EditorContextMenuPluginManager final
 {
 	using ContextMenuSlot = EditorContextMenuPlugin::ContextMenuSlot;
-	static inline EditorContextMenuPluginManager* singleton = nullptr;
 
-	LocalVector<Ref<EditorContextMenuPlugin>> plugin_list;
+	struct Data
+	{
+		LocalVector<Ref<EditorContextMenuPlugin>> plugin_list;
+	};
+
+	static inline Data* data = nullptr;
 
 public:
-	static EditorContextMenuPluginManager* get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	void add_plugin(ContextMenuSlot p_slot, const Ref<EditorContextMenuPlugin>& p_plugin);
-	void remove_plugin(const Ref<EditorContextMenuPlugin>& p_plugin);
+	static void add_plugin(ContextMenuSlot p_slot, const Ref<EditorContextMenuPlugin>& p_plugin);
+	static void remove_plugin(const Ref<EditorContextMenuPlugin>& p_plugin);
 
-	bool has_plugins_for_slot(ContextMenuSlot p_slot);
+	static bool has_plugins_for_slot(ContextMenuSlot p_slot);
 
-	static void create();
-	static void cleanup();
+	EditorContextMenuPluginManager() = delete;
+	EditorContextMenuPluginManager(const EditorContextMenuPluginManager&) = delete;
+	EditorContextMenuPluginManager& operator=(const EditorContextMenuPluginManager&) = delete;
+	~EditorContextMenuPluginManager() = delete;
 };
 
 

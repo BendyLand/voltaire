@@ -29,10 +29,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/os/memory.h"
 #include "editor/editor_node.h"
 #include "editor_vcs_interface.h"
 
-EditorVCSInterface* EditorVCSInterface::singleton = nullptr;
+void EditorVCSInterface::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
 void EditorVCSInterface::popup_error(const String& p_msg)
 {
@@ -40,10 +48,6 @@ void EditorVCSInterface::popup_error(const String& p_msg)
 	EditorNode::get_singleton()->show_warning(
 		p_msg.strip_edges(), vformat(TTR("%s Error"), get_vcs_name()));
 }
-
-EditorVCSInterface* EditorVCSInterface::get_singleton() { return singleton; }
-
-void EditorVCSInterface::set_singleton(EditorVCSInterface* p_singleton) { singleton = p_singleton; }
 
 void EditorVCSInterface::create_vcs_metadata_files(VCSMetadata p_vcs_metadata_type, String& p_dir)
 {

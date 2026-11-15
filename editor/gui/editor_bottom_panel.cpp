@@ -132,7 +132,7 @@ void EditorBottomPanel::remove_item(Control* p_item)
 	legacy_buttons[item_idx]->queue_free();
 	legacy_buttons.remove_at(item_idx);
 
-	EditorDockManager::get_singleton()->remove_dock(dock);
+	EditorDockManager::remove_dock(dock);
 	dock->remove_child(p_item);
 	dock->queue_free();
 }

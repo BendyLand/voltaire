@@ -237,8 +237,8 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #ifdef TOOLS_ENABLED
 			if (name.contains("[Editor]")) {
 				Engine::set_editor_hint(true);
-				EditorPaths::create();
-				EditorSettings::create();
+				EditorPaths::initialize();
+				EditorSettings::initialize();
 			}
 #endif // TOOLS_ENABLED
 
@@ -275,14 +275,14 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 	void test_case_end(const doctest::CurrentTestCaseStats &) override {
 #ifdef TOOLS_ENABLED
-		if (EditorSettings::get_singleton()) {
-			EditorSettings::destroy();
+		if (EditorSettings::is_initialized()) {
+			EditorSettings::finalize();
 
 			// Instantiating the EditorSettings singleton sets the locale to the editor's language.
 			TranslationServer::get_singleton()->set_locale("en");
 		}
-		if (EditorPaths::get_singleton()) {
-			EditorPaths::free();
+		if (EditorPaths::is_initialized()) {
+			EditorPaths::finalize();
 		}
 #endif // TOOLS_ENABLED
 

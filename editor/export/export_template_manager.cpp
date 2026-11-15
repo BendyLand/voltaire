@@ -337,7 +337,7 @@ void ExportTemplateManager::_update_folding_cache(TreeItem* p_item)
 
 String ExportTemplateManager::_get_template_folder_path(const String& p_version) const
 {
-	return EditorPaths::get_singleton()->get_export_templates_dir().path_join(p_version);
+	return EditorPaths::get_export_templates_dir().path_join(p_version);
 }
 
 Ref<Texture2D> ExportTemplateManager::_get_platform_icon(const String& p_platform_name)

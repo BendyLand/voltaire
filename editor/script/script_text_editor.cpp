@@ -158,9 +158,9 @@ String ScriptTextEditor::_get_absolute_path(const String& rel_path)
 
 void ScriptTextEditor::_goto_line(int p_line)
 {
-	ScriptEditorNavigationMarker::get_singleton()->locate_begin();
+	ScriptEditorNavigationMarker::locate_begin();
 	goto_line(p_line);
-	ScriptEditorNavigationMarker::get_singleton()->locate_end();
+	ScriptEditorNavigationMarker::locate_end();
 }
 
 void ScriptTextEditor::_update_gutter_indexes()

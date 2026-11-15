@@ -549,9 +549,9 @@ void TextShaderEditor::_notification(int p_what)
 	switch (p_what) {
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
 		if (EditorThemeManager::is_generated_theme_outdated() ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group(
 				"interface/editor/fonts") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor")) {
+			EditorSettings::check_changed_settings_in_group("text_editor")) {
 			_apply_editor_settings();
 		}
 	} break;

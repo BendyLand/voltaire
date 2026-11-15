@@ -56,7 +56,7 @@ void EditorHTTPServer::_clear_client() {
 }
 
 void EditorHTTPServer::_set_internal_certs(Ref<Crypto> p_crypto) {
-	const String cache_path = EditorPaths::get_singleton()->get_cache_dir();
+	const String cache_path = EditorPaths::get_cache_dir();
 	const String key_path = cache_path.path_join("html5_server.key");
 	const String crt_path = cache_path.path_join("html5_server.crt");
 	bool regen = !FileAccess::exists(key_path) || !FileAccess::exists(crt_path);
@@ -91,7 +91,7 @@ void EditorHTTPServer::_send_response() {
 
 	const String req_file = path.get_file();
 	const String req_ext = path.get_extension();
-	const String cache_path = EditorPaths::get_singleton()->get_temp_dir().path_join("web");
+	const String cache_path = EditorPaths::get_temp_dir().path_join("web");
 	const String filepath = cache_path.path_join(req_file);
 
 	if (!mimes.has(req_ext) || !FileAccess::exists(filepath)) {

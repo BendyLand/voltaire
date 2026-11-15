@@ -84,14 +84,9 @@ private:
 	Mode mode;
 	static const char* compression_formats[];
 
-protected:
-	static ResourceImporterLayeredTexture* singleton;
-
 public:
 	void _check_compress_ctex(
 		const String& p_source_file, Ref<LayeredTextureImport> r_texture_import);
-
-	static ResourceImporterLayeredTexture* get_singleton() { return singleton; }
 
 	virtual String get_importer_name() const override;
 	virtual String get_visible_name() const override;

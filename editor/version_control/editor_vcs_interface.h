@@ -33,7 +33,7 @@
 
 #include "core/string/ustring.h"
 
-class EditorVCSInterface
+class EditorVCSInterface final
 {
 public:
 	enum ChangeType
@@ -94,13 +94,15 @@ public:
 		String file_path;
 	};
 
-protected:
-	static EditorVCSInterface* singleton;
+	struct Data
+	{
+		bool active = false;
+	};
 
+	static inline Data* data = nullptr;
 
-public:
-	static EditorVCSInterface* get_singleton();
-	static void set_singleton(EditorVCSInterface* p_singleton);
+	static void finalize();
+	static bool is_initialized() { return data != nullptr && data->active; }
 
 	enum class VCSMetadata
 	{
@@ -110,27 +112,30 @@ public:
 	static void create_vcs_metadata_files(VCSMetadata p_vcs_metadata_type, String& p_dir);
 
 	// Proxies to the editor for use
-	bool initialize(const String& p_project_path);
-	void set_credentials(const String& p_username, const String& p_password,
+	static bool initialize(const String& p_project_path);
+	static void set_credentials(const String& p_username, const String& p_password,
 		const String& p_ssh_public_key_path, const String& p_ssh_private_key_path,
 		const String& p_ssh_passphrase);
-	void stage_file(const String& p_file_path);
-	void unstage_file(const String& p_file_path);
-	void discard_file(const String& p_file_path);
-	void commit(const String& p_msg, bool p_amend);
-	bool allow_amends();
-	bool shut_down();
-	String get_vcs_name();
-	void create_branch(const String& p_branch_name);
-	void remove_branch(const String& p_branch_name);
-	void create_remote(const String& p_remote_name, const String& p_remote_url);
-	void remove_remote(const String& p_remote_name);
-	String get_current_branch_name();
-	bool checkout_branch(const String& p_branch_name);
-	void pull(const String& p_remote);
-	void push(const String& p_remote, bool p_force);
-	void fetch(const String& p_remote);
-	void popup_error(const String& p_msg);
+	static void stage_file(const String& p_file_path);
+	static void unstage_file(const String& p_file_path);
+	static void discard_file(const String& p_file_path);
+	static void commit(const String& p_msg, bool p_amend);
+	static bool allow_amends();
+	static bool shut_down();
+	static String get_vcs_name();
+	static void create_branch(const String& p_branch_name);
+	static void remove_branch(const String& p_branch_name);
+	static void create_remote(const String& p_remote_name, const String& p_remote_url);
+	static void remove_remote(const String& p_remote_name);
+	static String get_current_branch_name();
+	static bool checkout_branch(const String& p_branch_name);
+	static void pull(const String& p_remote);
+	static void push(const String& p_remote, bool p_force);
+	static void fetch(const String& p_remote);
+	static void popup_error(const String& p_msg);
+
+	EditorVCSInterface() = delete;
+	~EditorVCSInterface() = delete;
 };
 
 

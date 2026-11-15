@@ -357,8 +357,7 @@ String EditorExportPlatform::find_export_template(
 	const String& template_file_name, String* err) const
 {
 	String current_version = VLTR_VERSION_FULL_CONFIG;
-	String template_path = EditorPaths::get_singleton()
-							   ->get_export_templates_dir()
+	String template_path = EditorPaths::get_export_templates_dir()
 							   .path_join(current_version)
 							   .path_join(template_file_name);
 

@@ -212,8 +212,8 @@ void ScriptEditor::_theme_option(int p_option)
 		file_dialog->popup_file_dialog();
 	} break;
 	case THEME_RELOAD: {
-		EditorSettings::get_singleton()->mark_setting_changed("text_editor/theme/color_theme");
-		EditorSettings::get_singleton()->notify_changes();
+		EditorSettings::mark_setting_changed("text_editor/theme/color_theme");
+		EditorSettings::notify_changes();
 	} break;
 	case THEME_SAVE_AS: {
 		ScriptEditor::_show_save_theme_as_dialog();
@@ -348,18 +348,18 @@ void ScriptEditor::_script_list_clicked(
 void ScriptEditor::_history_forward()
 {
 	if (history_pos < history.size() - 1) {
-		ScriptEditorNavigationMarker::get_singleton()->traverse_begin();
+		ScriptEditorNavigationMarker::traverse_begin();
 		_update_history_pos(history_pos + 1);
-		ScriptEditorNavigationMarker::get_singleton()->traverse_end();
+		ScriptEditorNavigationMarker::traverse_end();
 	}
 }
 
 void ScriptEditor::_history_back()
 {
 	if (history_pos > 0) {
-		ScriptEditorNavigationMarker::get_singleton()->traverse_begin();
+		ScriptEditorNavigationMarker::traverse_begin();
 		_update_history_pos(history_pos - 1);
-		ScriptEditorNavigationMarker::get_singleton()->traverse_end();
+		ScriptEditorNavigationMarker::traverse_end();
 	}
 }
 
@@ -464,14 +464,14 @@ void ScriptEditor::_filter_scripts_text_changed(const String& p_newtext) { _upda
 ScriptEditor::~ScriptEditor()
 {
 	memdelete(find_in_files);
-	ScriptEditorNavigationMarker::release_singleton();
+	ScriptEditorNavigationMarker::finalize();
 }
 
 void ScriptEditorPlugin::_focus_another_editor()
 {
 	if (window_wrapper->get_window_enabled()) {
 		ERR_FAIL_COND(last_editor.is_empty());
-		EditorInterface::get_singleton()->set_main_screen_editor(last_editor);
+		EditorInterface::set_main_screen_editor(last_editor);
 	}
 }
 

@@ -44,44 +44,44 @@ void ResourceImporterTexture::_texture_reimport_roughness(const Ref<CompressedTe
 {
 	ERR_FAIL_COND(p_tex.is_null());
 
-	MutexLock lock(singleton->mutex);
+	MutexLock lock(mutex);
 	String path = p_tex->get_path();
 
-	if (!singleton->make_flags.has(path)) {
-		singleton->make_flags[path] = MakeInfo();
+	if (!make_flags.has(path)) {
+		make_flags[path] = MakeInfo();
 	}
 
-	singleton->make_flags[path].flags |= MAKE_ROUGHNESS_FLAG;
-	singleton->make_flags[path].channel_for_roughness = p_channel;
-	singleton->make_flags[path].normal_path_for_roughness = p_normal_path;
+	make_flags[path].flags |= MAKE_ROUGHNESS_FLAG;
+	make_flags[path].channel_for_roughness = p_channel;
+	make_flags[path].normal_path_for_roughness = p_normal_path;
 }
 
 void ResourceImporterTexture::_texture_reimport_3d(const Ref<CompressedTexture2D>& p_tex)
 {
 	ERR_FAIL_COND(p_tex.is_null());
 
-	MutexLock lock(singleton->mutex);
+	MutexLock lock(mutex);
 	String path = p_tex->get_path();
 
-	if (!singleton->make_flags.has(path)) {
-		singleton->make_flags[path] = MakeInfo();
+	if (!make_flags.has(path)) {
+		make_flags[path] = MakeInfo();
 	}
 
-	singleton->make_flags[path].flags |= MAKE_3D_FLAG;
+	make_flags[path].flags |= MAKE_3D_FLAG;
 }
 
 void ResourceImporterTexture::_texture_reimport_normal(const Ref<CompressedTexture2D>& p_tex)
 {
 	ERR_FAIL_COND(p_tex.is_null());
 
-	MutexLock lock(singleton->mutex);
+	MutexLock lock(mutex);
 	String path = p_tex->get_path();
 
-	if (!singleton->make_flags.has(path)) {
-		singleton->make_flags[path] = MakeInfo();
+	if (!make_flags.has(path)) {
+		make_flags[path] = MakeInfo();
 	}
 
-	singleton->make_flags[path].flags |= MAKE_NORMAL_FLAG;
+	make_flags[path].flags |= MAKE_NORMAL_FLAG;
 }
 
 String ResourceImporterTexture::get_importer_name() const { return "texture"; }
@@ -390,26 +390,16 @@ luma) /
 
 const char* ResourceImporterTexture::compression_formats[] = {"s3tc_bptc", "etc2_astc", nullptr};
 
-ResourceImporterTexture* ResourceImporterTexture::singleton = nullptr;
-
 ResourceImporterTexture::ResourceImporterTexture(bool p_singleton)
 {
-	// This should only be set through the EditorNode.
-	if (p_singleton) {
-		singleton = this;
-	}
+	(void)p_singleton;
 
 	CompressedTexture2D::request_3d_callback = _texture_reimport_3d;
 	CompressedTexture2D::request_roughness_callback = _texture_reimport_roughness;
 	CompressedTexture2D::request_normal_callback = _texture_reimport_normal;
 }
 
-ResourceImporterTexture::~ResourceImporterTexture()
-{
-	if (singleton == this) {
-		singleton = nullptr;
-	}
-}
+ResourceImporterTexture::~ResourceImporterTexture() {}
 
 void ResourceImporterTexture::save_to_ctex_format(Ref<FileAccess> f, const Ref<Image>& p_image,
 	CompressMode p_compress_mode, Image::UsedChannels p_channels,

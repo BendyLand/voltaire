@@ -123,7 +123,7 @@ void ConnectionsDock::_notification(int p_what)
 {
 	switch (p_what) {
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-		if (EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editors")) {
+		if (EditorSettings::check_changed_settings_in_group("interface/editors")) {
 			update_tree();
 		}
 	} break;

@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "core/templates/vector.h"
+#include "core/types.h"
 #include "node.h"
 #include "scene/resources/environment.h"
 
@@ -1821,7 +1822,8 @@ Node::~Node()
 #endif
 }
 
-Node::Node() {
+Node::Node()
+{
 	// Initialize scalar and pointer fields
 	data.name = String();
 	data.parent = nullptr;
@@ -1857,8 +1859,6 @@ String Node::get_description(bool p_show_not_in_tree) const { return String(); }
 
 void Node::set_name(const String& p_name) { data.name = p_name; }
 
-void Node::propagate_notification(int p_notification) {}
-
 void Node::_emit_editor_state_changed() {}
 
 void Node::_move_child(Node* p_child, int p_index, bool p_ignore_end) {}
@@ -1883,11 +1883,8 @@ Node* Node::_duplicate(int,
 	HashMap<Node const*, Node*, HashMapHasherDefault, HashMapComparatorDefault<Node const*, void>,
 		DefaultTypedAllocator<HashMapElement<Node const*, Node*>>>*) const
 {
-	Node n = Node();
-	return &n;
+	return nullptr;
 }
-
-void Node::_validate_child_name(Node*, bool) {}
 
 void Node::set_process_unhandled_key_input(bool) {}
 
@@ -1902,35 +1899,92 @@ void Node::_propagate_translation_domain_dirty() {}
 
 void Node::_propagate_suspend_notification(bool) {}
 
-void Node::_propagate_ready() {}
-
 void Node::_propagate_pause_notification(bool) {}
 
-void Node::_propagate_exit_tree() {}
+void Node::_propagate_enter_tree()
+{
+	if (data.parent) {
+		data.tree = data.parent->data.tree;
+		data.depth = data.parent->data.depth + 1;
+	}
 
-void Node::_propagate_enter_tree() {}
+	data.inside_tree = true;
 
-void Node::_propagate_after_exit_tree() {}
+	// 1. Notify this node that it entered the tree (attaches CanvasItem RID & Control
+	// theme/viewport)
+	notification(NOTIFICATION_ENTER_TREE);
+
+	// 2. Propagate down to all children
+	for (KeyValue<String, Node*>& K : data.children) {
+		if (K.value && !K.value->is_inside_tree()) {
+			K.value->_propagate_enter_tree();
+		}
+	}
+}
+
+void Node::_propagate_ready()
+{
+    _update_children_cache();
+    for (uint32_t i = 0; i < data.children_cache.size(); i++) {
+        Node* c = data.children_cache[i];
+        if (c) {
+            c->_propagate_ready();
+        }
+    }
+
+    notification(NOTIFICATION_POST_ENTER_TREE);
+
+    if (data.ready_first) {
+        data.ready_first = false;
+        notification(NOTIFICATION_READY);
+    }
+    data.ready_notified = true;
+}
+
+void Node::_propagate_exit_tree()
+{
+    _update_children_cache();
+    for (int i = (int)data.children_cache.size() - 1; i >= 0; i--) {
+        Node* c = data.children_cache[i];
+        if (c && c->is_inside_tree()) {
+            c->_propagate_exit_tree();
+        }
+    }
+
+    notification(NOTIFICATION_EXIT_TREE, true);
+
+    data.inside_tree = false;
+    data.ready_notified = false;
+    data.tree = nullptr;
+    data.depth = -1;
+}
+
+void Node::_propagate_after_exit_tree()
+{
+    _update_children_cache();
+    for (uint32_t i = 0; i < data.children_cache.size(); i++) {
+        Node* c = data.children_cache[i];
+        if (c) {
+            c->_propagate_after_exit_tree();
+        }
+    }
+    notification(NOTIFICATION_UNPARENTED);
+}
+
+void Node::propagate_notification(int p_notification)
+{
+    notification(p_notification);
+    _update_children_cache();
+    for (uint32_t i = 0; i < data.children_cache.size(); i++) {
+        if (data.children_cache[i]) {
+            data.children_cache[i]->propagate_notification(p_notification);
+        }
+    }
+}
 
 Node* Node::get_node_and_resource(NodePath const&, Ref<Resource>&, Vector<String>&, bool) const
 {
-	Node n = Node();
-	return &n;
-}
-
-void Node::_add_child_nocheck(Node* p_child, const String& p_name, InternalMode p_internal)
-{
-	p_child->data.parent = this;
-	p_child->data.name = p_name;
-	p_child->data.internal_mode = p_internal;
-
-	// Add to children collection
-	data.children.insert(p_name, p_child);
-
-	// THIS IS WHAT POPULATES data.tree ON THE CHILD:
-	if (data.tree) {
-		p_child->_set_tree(data.tree);
-	}
+	return nullptr;
 }
 
 void Node::set_translation_domain(const String& p_domain) {}
@@ -1949,4 +2003,50 @@ int Node::get_persistent_signal_connection_count() const { return 0; }
 
 void Node::get_meta_list(List<String>* p_list) const {}
 
+void Node::_notification(int p_what)
+{
+	switch (p_what) {
+	case NOTIFICATION_PROCESS: {
+		// Virtual process hook if used
+	} break;
+	case NOTIFICATION_ENTER_TREE: {
+		ERR_FAIL_NULL(data.tree);
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		ERR_FAIL_NULL(data.tree);
+	} break;
+	case NOTIFICATION_READY: {
+		// Ready hook
+	} break;
+	}
+}
 
+void Node::_validate_child_name(Node* p_child, bool p_force_human_readable)
+{
+	String name = p_child->data.name;
+	if (name.is_empty() || data.children.has(name)) {
+		// Generate a guaranteed unique key so HashMap doesn't overwrite unnamed UI children
+		static uint64_t auto_id = 0;
+		name = vformat("@Node@%d", ++auto_id);
+		p_child->data.name = name;
+	}
+}
+
+void Node::_add_child_nocheck(Node* p_child, const String& p_name, InternalMode p_internal)
+{
+	p_child->data.name = p_name;
+	_validate_child_name(p_child, false);
+
+	p_child->data.parent = this;
+	p_child->data.internal_mode = p_internal;
+
+	data.children.insert(p_child->data.name, p_child);
+	data.children_cache_dirty = true;
+
+	// If parent is already in the tree, bring the new child (and its subtree) into the tree!
+	if (data.tree) {
+		p_child->_set_tree(data.tree);
+	}
+
+	notification(NOTIFICATION_CHILD_ORDER_CHANGED);
+}

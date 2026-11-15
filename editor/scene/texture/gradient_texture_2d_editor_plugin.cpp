@@ -70,8 +70,8 @@ void GradientTexture2DEdit::set_fill_pos(const Vector2& p_pos)
 	}
 
 	const String property_name = (grabbed == HANDLE_FROM) ? "fill_from" : "fill_to";
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->commit_action();
+	(void)property_name;
+	EditorUndoRedoManager::commit_action();
 }
 
 void GradientTexture2DEdit::_notification(int p_what)

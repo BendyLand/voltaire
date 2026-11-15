@@ -166,7 +166,7 @@ void EditorAudioBuses::_update_file_label_size()
 EditorAudioBuses* EditorAudioBuses::register_editor()
 {
 	EditorAudioBuses* audio_buses = memnew(EditorAudioBuses);
-	EditorDockManager::get_singleton()->add_dock(audio_buses);
+	EditorDockManager::add_dock(audio_buses);
 	return audio_buses;
 }
 

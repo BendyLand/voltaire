@@ -174,13 +174,13 @@ void EditorAssetLibrary::_notification(int p_what)
 	} break;
 
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-		if (EditorSettings::get_singleton()->check_changed_settings_in_group(
+		if (EditorSettings::check_changed_settings_in_group(
 				"asset_store/use_threads") ||
-			EditorSettings::get_singleton()->check_changed_settings_in_group(
+			EditorSettings::check_changed_settings_in_group(
 				"network/http_proxy")) {
 		}
 
-		if (EditorSettings::get_singleton()->check_changed_settings_in_group(
+		if (EditorSettings::check_changed_settings_in_group(
 				"asset_store/available_urls")) {
 			_update_repository_options();
 
@@ -218,7 +218,7 @@ void EditorAssetLibrary::_image_update(void* p_image_queue)
 	PackedByteArray image_data = iq->data;
 
 	if (iq->use_cache) {
-		String cache_filename_base = EditorPaths::get_singleton()->get_cache_dir().path_join(
+		String cache_filename_base = EditorPaths::get_cache_dir().path_join(
 			"assetimage_" + iq->image_url.md5_text());
 
 		Ref<FileAccess> file = FileAccess::open(cache_filename_base + ".data", FileAccess::READ);

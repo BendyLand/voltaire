@@ -539,8 +539,8 @@ void EditorExportPlatformAppleEmbedded::_check_for_changes_poll_thread(void* ud)
 
 		// Enum real devices (via ios_deploy, pre Xcode 15).
 		String ios_deploy_setting = "export/" + ea->get_platform_name() + "/ios_deploy";
-		if (EditorSettings::get_singleton() &&
-			EditorSettings::get_singleton()->has_setting(ios_deploy_setting)) {
+		if (EditorSettings::is_initialized() &&
+			EditorSettings::has_setting(ios_deploy_setting)) {
 			String idepl = EDITOR_GET(ios_deploy_setting);
 			if (ea->has_runnable_preset.is_set() && !idepl.is_empty()) {
 				String devices_json;
@@ -815,15 +815,15 @@ Error EditorExportPlatformAppleEmbedded::run(
 
 	Ref<DirAccess> filesystem_da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	ERR_FAIL_COND_V_MSG(filesystem_da.is_null(), ERR_CANT_CREATE,
-		"Cannot create DirAccess for path '" + EditorPaths::get_singleton()->get_temp_dir() + "'.");
-	filesystem_da->make_dir_recursive(EditorPaths::get_singleton()->get_temp_dir().path_join(id));
+		"Cannot create DirAccess for path '" + EditorPaths::get_temp_dir() + "'.");
+	filesystem_da->make_dir_recursive(EditorPaths::get_temp_dir().path_join(id));
 	String tmp_export_path =
-		EditorPaths::get_singleton()->get_temp_dir().path_join(id).path_join("export.ipa");
+		EditorPaths::get_temp_dir().path_join(id).path_join("export.ipa");
 
 #define CLEANUP_AND_RETURN(m_err)                                                                  \
 	{                                                                                              \
 		if (filesystem_da->change_dir(                                                             \
-				EditorPaths::get_singleton()->get_temp_dir().path_join(id)) == OK) {               \
+				EditorPaths::get_temp_dir().path_join(id)) == OK) {               \
 			filesystem_da->erase_contents_recursive();                                             \
 			filesystem_da->change_dir("..");                                                       \
 			filesystem_da->remove(id);                                                             \
@@ -903,7 +903,7 @@ Error EditorExportPlatformAppleEmbedded::run(
 			args.push_back(dev.id);
 			args.push_back("--justlaunch");
 			args.push_back("--bundle");
-			args.push_back(EditorPaths::get_singleton()->get_temp_dir().path_join(id).path_join(
+			args.push_back(EditorPaths::get_temp_dir().path_join(id).path_join(
 				"export.xcarchive/Products/Applications/export.app"));
 			String app_args;
 			for (const String& E : cmd_args_list) {
@@ -947,7 +947,7 @@ Error EditorExportPlatformAppleEmbedded::run(
 			args.push_back("app");
 			args.push_back("-d");
 			args.push_back(dev.id);
-			args.push_back(EditorPaths::get_singleton()->get_temp_dir().path_join(id).path_join(
+			args.push_back(EditorPaths::get_temp_dir().path_join(id).path_join(
 				"export.xcarchive/Products/Applications/export.app"));
 
 			String log;

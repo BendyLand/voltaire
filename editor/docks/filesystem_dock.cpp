@@ -448,7 +448,7 @@ String FileSystemDock::_get_unique_name(const FileOrFolder& p_entry, const Strin
 void FileSystemDock::_update_favorites_after_move(const HashMap<String, String>& p_files_renames,
 	const HashMap<String, String>& p_folders_renames) const
 {
-	Vector<String> favorite_files = EditorSettings::get_singleton()->get_favorites();
+	Vector<String> favorite_files = EditorSettings::get_favorites();
 	Vector<String> new_favorite_files;
 	for (const String& old_path : favorite_files) {
 		if (p_folders_renames.has(old_path)) {
@@ -461,16 +461,16 @@ void FileSystemDock::_update_favorites_after_move(const HashMap<String, String>&
 			new_favorite_files.push_back(old_path);
 		}
 	}
-	EditorSettings::get_singleton()->set_favorites(new_favorite_files);
+	EditorSettings::set_favorites(new_favorite_files);
 
 	HashMap<String, PackedStringArray> favorite_properties =
-		EditorSettings::get_singleton()->get_favorite_properties();
+		EditorSettings::get_favorite_properties();
 	for (const KeyValue<String, String>& KV : p_files_renames) {
 		if (favorite_properties.has(KV.key)) {
 			favorite_properties.replace_key(KV.key, KV.value);
 		}
 	}
-	EditorSettings::get_singleton()->set_favorite_properties(favorite_properties);
+	EditorSettings::set_favorite_properties(favorite_properties);
 }
 
 Vector<String> FileSystemDock::_check_existing()

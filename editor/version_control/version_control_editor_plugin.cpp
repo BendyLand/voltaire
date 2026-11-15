@@ -54,7 +54,7 @@
 #include "version_control_editor_plugin.h"
 
 #define CHECK_PLUGIN_INITIALIZED()                                                                 \
-	ERR_FAIL_NULL_MSG(EditorVCSInterface::get_singleton(),                                         \
+	ERR_FAIL_COND_MSG(!EditorVCSInterface::is_initialized(),                                       \
 		"No VCS plugin is initialized. Select a Version Control Plugin from Project menu.");
 
 VersionControlEditorPlugin* VersionControlEditorPlugin::singleton = nullptr;
@@ -142,8 +142,8 @@ void VersionControlEditorPlugin::_create_branch()
 
 	String new_branch_name = branch_create_name_input->get_text().strip_edges();
 
-	EditorVCSInterface::get_singleton()->create_branch(new_branch_name);
-	EditorVCSInterface::get_singleton()->checkout_branch(new_branch_name);
+	EditorVCSInterface::create_branch(new_branch_name);
+	EditorVCSInterface::checkout_branch(new_branch_name);
 
 	branch_create_name_input->clear();
 	_refresh_branch_list();
@@ -156,7 +156,7 @@ void VersionControlEditorPlugin::_create_remote()
 	String new_remote_name = remote_create_name_input->get_text().strip_edges();
 	String new_remote_url = remote_create_url_input->get_text().strip_edges();
 
-	EditorVCSInterface::get_singleton()->create_remote(new_remote_name, new_remote_url);
+	EditorVCSInterface::create_remote(new_remote_name, new_remote_url);
 
 	remote_create_name_input->clear();
 	remote_create_url_input->clear();
@@ -182,7 +182,7 @@ void VersionControlEditorPlugin::_remove_branch()
 {
 	CHECK_PLUGIN_INITIALIZED();
 
-	EditorVCSInterface::get_singleton()->remove_branch(branch_to_remove);
+	EditorVCSInterface::remove_branch(branch_to_remove);
 	branch_to_remove.clear();
 
 	_refresh_branch_list();
@@ -192,7 +192,7 @@ void VersionControlEditorPlugin::_remove_remote()
 {
 	CHECK_PLUGIN_INITIALIZED();
 
-	EditorVCSInterface::get_singleton()->remove_remote(remote_to_remove);
+	EditorVCSInterface::remove_remote(remote_to_remove);
 	remote_to_remove.clear();
 
 	_refresh_remote_list();
@@ -228,8 +228,8 @@ void VersionControlEditorPlugin::fetch_available_vcs_plugin_names() { available_
 
 void VersionControlEditorPlugin::register_editor()
 {
-	EditorDockManager::get_singleton()->add_dock(version_commit_dock);
-	EditorDockManager::get_singleton()->add_dock(version_control_dock);
+	EditorDockManager::add_dock(version_commit_dock);
+	EditorDockManager::add_dock(version_control_dock);
 
 	_set_vcs_ui_state(true);
 }

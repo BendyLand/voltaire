@@ -73,6 +73,10 @@ protected:
 	};
 
 public:
+	void notification(int p_what, bool p_reversed = false)
+	{
+		_notification(p_what);
+	}
 	// N.B. Any enum stored as a bitfield should be specified as UNSIGNED to work around
 	// some compilers trying to store it as signed, and requiring 1 more bit than necessary.
 	enum ProcessMode : unsigned int
@@ -238,6 +242,7 @@ private:
 		String scene_file_path;
 		Ref<SceneState> instance_state;
 		Ref<SceneState> inherited_state;
+		bool inside_tree;
 
 		Node* parent = nullptr;
 		Node* owner = nullptr;

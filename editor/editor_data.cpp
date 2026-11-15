@@ -141,7 +141,7 @@ void EditorData::set_scene_as_saved(int p_idx)
 	}
 	ERR_FAIL_INDEX(p_idx, edited_scene.size());
 
-	undo_redo_manager->set_history_as_saved(edited_scene[p_idx].history_id);
+	EditorUndoRedoManager::set_history_as_saved(edited_scene[p_idx].history_id);
 }
 
 int EditorData::get_scene_history_id_from_path(const String& p_path) const
@@ -527,7 +527,7 @@ Ref<Texture2D> EditorData::_load_script_icon(const String& p_path) const
 void EditorData::clear_script_icon_cache() { _script_icon_cache.clear(); }
 
 
-EditorData::~EditorData() { memdelete(undo_redo_manager); }
+EditorData::~EditorData() { EditorUndoRedoManager::finalize(); }
 
 Ref<Texture2D> EditorData::extension_class_get_icon(const String& p_class) const
 {

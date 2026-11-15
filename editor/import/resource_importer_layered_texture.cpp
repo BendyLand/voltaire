@@ -271,24 +271,13 @@ void ResourceImporterLayeredTexture::_save_tex(Vector<Ref<Image>> p_images, cons
 const char* ResourceImporterLayeredTexture::compression_formats[] = {
 	"s3tc_bptc", "etc2_astc", nullptr};
 
-ResourceImporterLayeredTexture* ResourceImporterLayeredTexture::singleton = nullptr;
-
 ResourceImporterLayeredTexture::ResourceImporterLayeredTexture(bool p_singleton)
 {
-	// This should only be set through the EditorNode.
-	if (p_singleton) {
-		singleton = this;
-	}
-
+	(void)p_singleton;
 	mode = MODE_CUBEMAP;
 }
 
-ResourceImporterLayeredTexture::~ResourceImporterLayeredTexture()
-{
-	if (singleton == this) {
-		singleton = nullptr;
-	}
-}
+ResourceImporterLayeredTexture::~ResourceImporterLayeredTexture() {}
 
 void ResourceImporterLayeredTexture::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const

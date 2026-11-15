@@ -69,10 +69,11 @@ void HistoryDock::refresh_version()
 		return;
 	}
 
-	const EditorUndoRedoManager::History& current_scene_history = ur_manager->get_or_create_history(
-		EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	const EditorUndoRedoManager::History& current_scene_history =
+		EditorUndoRedoManager::get_or_create_history(
+			EditorNode::get_editor_data().get_current_edited_scene_history_id());
 	const EditorUndoRedoManager::History& global_history =
-		ur_manager->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
+		EditorUndoRedoManager::get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 	double newest_undo_timestamp = 0;
 
 	if (include_scene && !current_scene_history.undo_stack.is_empty()) {
@@ -129,28 +130,28 @@ void HistoryDock::seek_history(int p_index)
 	while (current_version < p_index) {
 		if (include_scene) {
 			if (include_global) {
-				ur_manager->undo();
+				EditorUndoRedoManager::undo();
 			}
 			else {
-				ur_manager->undo_history(current_scene_id);
+				EditorUndoRedoManager::undo_history(current_scene_id);
 			}
 		}
 		else {
-			ur_manager->undo_history(EditorUndoRedoManager::GLOBAL_HISTORY);
+			EditorUndoRedoManager::undo_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 		}
 	}
 
 	while (current_version > p_index) {
 		if (include_scene) {
 			if (include_global) {
-				ur_manager->redo();
+				EditorUndoRedoManager::redo();
 			}
 			else {
-				ur_manager->redo_history(current_scene_id);
+				EditorUndoRedoManager::redo_history(current_scene_id);
 			}
 		}
 		else {
-			ur_manager->redo_history(EditorUndoRedoManager::GLOBAL_HISTORY);
+			EditorUndoRedoManager::redo_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 		}
 	}
 }

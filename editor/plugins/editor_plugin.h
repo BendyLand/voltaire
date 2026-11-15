@@ -114,8 +114,6 @@ public:
 	};
 
 protected:
-	EditorUndoRedoManager* get_undo_redo();
-
 	void remove_custom_type(const String& p_type);
 
 #ifndef DISABLE_DEPRECATED
@@ -191,7 +189,6 @@ public:
 	build(); // builds with external tools. Returns true if safe to continue running scene.
 	virtual void run_scene(const String& p_scene, Vector<String>& r_args);
 
-	EditorInterface* get_editor_interface();
 	ScriptCreateDialog* get_script_create_dialog();
 
 	void make_bottom_panel_item_visible(Control* p_item);

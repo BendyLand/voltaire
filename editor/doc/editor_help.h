@@ -346,7 +346,7 @@ public:
 
 class EditorSyntaxHighlighter;
 
-class EditorHelpHighlighter
+class EditorHelpHighlighter final
 {
 public:
 	enum Language
@@ -359,25 +359,29 @@ public:
 private:
 	using HighlightData = Vector<Pair<int, Color>>;
 
-	static EditorHelpHighlighter* singleton;
+	struct Data
+	{
+		HashMap<String, HighlightData> highlight_data_caches[LANGUAGE_MAX];
+		TextEdit* text_edits[LANGUAGE_MAX] = {};
+		Ref<EditorSyntaxHighlighter> highlighters[LANGUAGE_MAX];
+	};
 
-	HashMap<String, HighlightData> highlight_data_caches[LANGUAGE_MAX];
+	static inline Data* data = nullptr;
 
-	TextEdit* text_edits[LANGUAGE_MAX];
-	Ref<EditorSyntaxHighlighter> highlighters[LANGUAGE_MAX];
-
-	HighlightData _get_highlight_data(
+	static HighlightData _get_highlight_data(
 		Language p_language, const String& p_source, bool p_use_cache);
 
 public:
-	static void create_singleton();
-	static void free_singleton();
-	static EditorHelpHighlighter* get_singleton();
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	void reset_cache();
+	static void reset_cache();
 
-	EditorHelpHighlighter();
-	virtual ~EditorHelpHighlighter();
+	EditorHelpHighlighter() = delete;
+	EditorHelpHighlighter(const EditorHelpHighlighter&) = delete;
+	EditorHelpHighlighter& operator=(const EditorHelpHighlighter&) = delete;
+	~EditorHelpHighlighter() = delete;
 };
 
 

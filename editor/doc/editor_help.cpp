@@ -305,7 +305,7 @@ void EditorHelp::_class_desc_select(const String& p_select)
 		// `@GlobalScope`.
 		if (table->has(link)) {
 			// Found in the current page.
-			ScriptEditorNavigationMarker::get_singleton()->locate_begin();
+			ScriptEditorNavigationMarker::locate_begin();
 			if (class_desc->is_finished()) {
 				_class_desc_scroll_to_paragraph((*table)[link], _need_save_new_history());
 			}
@@ -313,7 +313,7 @@ void EditorHelp::_class_desc_select(const String& p_select)
 				scroll_to = (*table)[link];
 				need_save_new_history = _need_save_new_history();
 			}
-			ScriptEditorNavigationMarker::get_singleton()->locate_end();
+			ScriptEditorNavigationMarker::locate_end();
 		}
 	}
 	else if (p_select.begins_with("http:") || p_select.begins_with("https:")) {
@@ -390,8 +390,8 @@ void EditorHelp::_add_bulletpoint()
 
 bool EditorHelp::_need_save_new_history() const
 {
-	return !ScriptEditorNavigationMarker::get_singleton()->is_initializing() &&
-		   ScriptEditorNavigationMarker::get_singleton()->is_locating();
+	return !ScriptEditorNavigationMarker::is_initializing() &&
+		   ScriptEditorNavigationMarker::is_locating();
 }
 
 void EditorHelp::_wait_for_thread(Thread& p_thread)
@@ -403,13 +403,13 @@ void EditorHelp::_wait_for_thread(Thread& p_thread)
 
 String EditorHelp::get_cache_full_path()
 {
-	return EditorPaths::get_singleton()->get_cache_dir().path_join(
+	return EditorPaths::get_cache_dir().path_join(
 		vformat("editor_doc_cache-%d.%d.res", VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR));
 }
 
 String EditorHelp::get_script_doc_cache_full_path()
 {
-	return EditorPaths::get_singleton()->get_project_settings_dir().path_join(
+	return EditorPaths::get_project_settings_dir().path_join(
 		"editor_script_doc_cache.res");
 }
 
@@ -651,11 +651,11 @@ void EditorHelp::_notification(int p_what)
 	switch (p_what) {
 	case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
 		bool need_update = false;
-		if (EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor/help")) {
+		if (EditorSettings::check_changed_settings_in_group("text_editor/help")) {
 			need_update = true;
 		}
 #if defined(MODULE_GDSCRIPT_ENABLED) || defined(MODULE_MONO_ENABLED)
-		if (!need_update && EditorSettings::get_singleton()->check_changed_settings_in_group(
+		if (!need_update && EditorSettings::check_changed_settings_in_group(
 								"text_editor/theme/highlighting")) {
 			need_update = true;
 		}
@@ -717,7 +717,7 @@ Vector<Pair<String, int>> EditorHelp::get_sections()
 void EditorHelp::scroll_to_section(int p_section_index)
 {
 	_wait_for_thread();
-	ScriptEditorNavigationMarker::get_singleton()->locate_begin();
+	ScriptEditorNavigationMarker::locate_begin();
 	int line = section_line[p_section_index].second;
 	if (class_desc->is_finished()) {
 		_class_desc_scroll_to_paragraph(line, _need_save_new_history());
@@ -726,7 +726,7 @@ void EditorHelp::scroll_to_section(int p_section_index)
 		scroll_to = line;
 		need_save_new_history = _need_save_new_history();
 	}
-	ScriptEditorNavigationMarker::get_singleton()->locate_end();
+	ScriptEditorNavigationMarker::locate_end();
 }
 
 String EditorHelp::get_class() { return edited_class; }
@@ -1197,26 +1197,50 @@ void EditorHelpBitTooltip::_notification(int p_what)
 	}
 }
 
-EditorHelpHighlighter* EditorHelpHighlighter::singleton = nullptr;
-
-void EditorHelpHighlighter::create_singleton()
+void EditorHelpHighlighter::initialize()
 {
-	ERR_FAIL_COND(singleton != nullptr);
-	singleton = memnew(EditorHelpHighlighter);
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+
+#ifdef MODULE_MONO_ENABLED
+	TextEdit* csharp_text_edit = memnew(TextEdit);
+	csharp_text_edit->add_theme_color_override(SceneString(font_color), text_color);
+
+	Ref<EditorStandardSyntaxHighlighter> csharp_highlighter;
+	csharp_highlighter.instantiate();
+	csharp_highlighter->set_text_edit(csharp_text_edit);
+	csharp_highlighter->_set_script_language(CSharpLanguage::get_singleton());
+
+	data->text_edits[LANGUAGE_CSHARP] = csharp_text_edit;
+	data->highlighters[LANGUAGE_CSHARP] = csharp_highlighter;
+#endif
 }
 
-void EditorHelpHighlighter::free_singleton()
+void EditorHelpHighlighter::finalize()
 {
-	ERR_FAIL_NULL(singleton);
-	memdelete(singleton);
-	singleton = nullptr;
-}
+	if (!data) {
+		return;
+	}
+#ifdef MODULE_GDSCRIPT_ENABLED
+	if (data->text_edits[LANGUAGE_GDSCRIPT]) {
+		memdelete(data->text_edits[LANGUAGE_GDSCRIPT]);
+	}
+#endif
 
-EditorHelpHighlighter* EditorHelpHighlighter::get_singleton() { return singleton; }
+#ifdef MODULE_MONO_ENABLED
+	if (data->text_edits[LANGUAGE_CSHARP]) {
+		memdelete(data->text_edits[LANGUAGE_CSHARP]);
+	}
+#endif
+	memdelete(data);
+	data = nullptr;
+}
 
 EditorHelpHighlighter::HighlightData EditorHelpHighlighter::_get_highlight_data(
 	Language p_language, const String& p_source, bool p_use_cache)
 {
+	ERR_FAIL_NULL_V(data, HighlightData());
+
 	switch (p_language) {
 	case LANGUAGE_GDSCRIPT:
 #ifndef MODULE_GDSCRIPT_ENABLED
@@ -1234,26 +1258,24 @@ EditorHelpHighlighter::HighlightData EditorHelpHighlighter::_get_highlight_data(
 
 	if (p_use_cache) {
 		const HashMap<String, HighlightData>::ConstIterator E =
-			highlight_data_caches[p_language].find(p_source);
+			data->highlight_data_caches[p_language].find(p_source);
 		if (E) {
 			return E->value;
 		}
 	}
 
-	text_edits[p_language]->set_text(p_source);
-	highlighters[p_language]->_update_cache();
+	data->text_edits[p_language]->set_text(p_source);
+	data->highlighters[p_language]->_update_cache();
 
 	HighlightData result;
 
 	int source_offset = 0;
-	int result_index = 0;
-	for (int i = 0; i < text_edits[p_language]->get_line_count(); i++) {
-		int prev_column = -1;
-		source_offset += text_edits[p_language]->get_line(i).length() + 1; // Plus newline.
+	for (int i = 0; i < data->text_edits[p_language]->get_line_count(); i++) {
+		source_offset += data->text_edits[p_language]->get_line(i).length() + 1; // Plus newline.
 	}
 
 	if (p_use_cache) {
-		highlight_data_caches[p_language][p_source] = result;
+		data->highlight_data_caches[p_language][p_source] = result;
 	}
 
 	return result;
@@ -1261,51 +1283,18 @@ EditorHelpHighlighter::HighlightData EditorHelpHighlighter::_get_highlight_data(
 
 void EditorHelpHighlighter::reset_cache()
 {
+	ERR_FAIL_NULL(data);
+
 #ifdef MODULE_GDSCRIPT_ENABLED
-	highlight_data_caches[LANGUAGE_GDSCRIPT].clear();
-	text_edits[LANGUAGE_GDSCRIPT]->add_theme_color_override(
+	data->highlight_data_caches[LANGUAGE_GDSCRIPT].clear();
+	data->text_edits[LANGUAGE_GDSCRIPT]->add_theme_color_override(
 		SceneString(font_color), text_color);
 #endif
 
 #ifdef MODULE_MONO_ENABLED
-	highlight_data_caches[LANGUAGE_CSHARP].clear();
-	text_edits[LANGUAGE_CSHARP]->add_theme_color_override(SceneString(font_color), text_color);
-#endif
-}
-
-EditorHelpHighlighter::EditorHelpHighlighter()
-{
-#ifdef MODULE_MONO_E
-	NABLED
-	TextEdit* csharp_text_edit = memnew(TextEdit);
-	csharp_text_edit->add_theme_color_override(SceneString(font_color), text_color);
-
-	// See G
-	H - 89610.
-		// Ref<CSharpScript> csharp;
-		// csharp.instantiate();
-
-		Ref<EditorStandardSyntaxHighlighter>
-			csharp_highlighter;
-	csharp_highlighter.instantiate();
-	csharp_highlighter->set_text_edit(csharp_text_edit);
-	// csharp_highlighter->_set_edited_resource(csharp);
-	csharp_highlighter->_set_script_language(CSharpLanguage::get_singleton());
-
-	text_edits[LANGUAGE_CSHARP] = csharp_text_edit;
-	// scripts[LANGUAGE_CSHARP] = csharp;
-	highlighters[LANGUAGE_CSHARP] = csharp_highlighter;
-#endif
-}
-
-EditorHelpHighlighter::~EditorHelpHighlighter()
-{
-#ifdef MODULE_GDSCRIPT_ENABLED
-	memdelete(text_edits[LANGUAGE_GDSCRIPT]);
-#endif
-
-#ifdef MODULE_MONO_ENABLED
-	memdelete(text_edits[LANGUAGE_CSHARP]);
+	data->highlight_data_caches[LANGUAGE_CSHARP].clear();
+	data->text_edits[LANGUAGE_CSHARP]->add_theme_color_override(
+		SceneString(font_color), text_color);
 #endif
 }
 

@@ -46,9 +46,8 @@ void TileProxiesManagerDialog::_menu_id_pressed(int p_id)
 
 void TileProxiesManagerDialog::cancel_pressed()
 {
-	EditorUndoRedoManager* undo_redo = EditorUndoRedoManager::get_singleton();
 	for (int i = 0; i < committed_actions_count; i++) {
-		undo_redo->undo();
+		EditorUndoRedoManager::undo();
 	}
 	committed_actions_count = 0;
 }

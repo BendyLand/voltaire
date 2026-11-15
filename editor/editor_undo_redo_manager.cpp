@@ -38,16 +38,37 @@
 #include "editor_undo_redo_manager.h"
 #include "scene/main/node.h"
 
-EditorUndoRedoManager* EditorUndoRedoManager::singleton = nullptr;
+void EditorUndoRedoManager::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void EditorUndoRedoManager::finalize()
+{
+	if (!data) {
+		return;
+	}
+	for (const KeyValue<int, History>& E : data->history_map) {
+		discard_history(E.key, false);
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
 void EditorUndoRedoManager::force_fixed_history()
 {
-	ERR_FAIL_COND_MSG(pending_action.history_id == INVALID_HISTORY,
+	initialize();
+	ERR_FAIL_COND_MSG(data->pending_action.history_id == INVALID_HISTORY,
 		"The current action has no valid history assigned.");
-	forced_history = true;
+	data->forced_history = true;
 }
 
-bool EditorUndoRedoManager::is_committing_action() const { return is_committing; }
+bool EditorUndoRedoManager::is_committing_action()
+{
+	return data && data->is_committing;
+}
 
 bool EditorUndoRedoManager::undo()
 {
@@ -112,7 +133,10 @@ void EditorUndoRedoManager::set_history_as_unsaved(int p_id)
 
 bool EditorUndoRedoManager::has_undo()
 {
-	for (const KeyValue<int, History>& E : history_map) {
+	if (!data) {
+		return false;
+	}
+	for (const KeyValue<int, History>& E : data->history_map) {
 		if ((E.key == GLOBAL_HISTORY || E.key == REMOTE_HISTORY ||
 				E.key == EditorNode::get_editor_data().get_current_edited_scene_history_id()) &&
 			!E.value.undo_stack.is_empty()) {
@@ -124,7 +148,10 @@ bool EditorUndoRedoManager::has_undo()
 
 bool EditorUndoRedoManager::has_redo()
 {
-	for (const KeyValue<int, History>& E : history_map) {
+	if (!data) {
+		return false;
+	}
+	for (const KeyValue<int, History>& E : data->history_map) {
 		if ((E.key == GLOBAL_HISTORY || E.key == REMOTE_HISTORY ||
 				E.key == EditorNode::get_editor_data().get_current_edited_scene_history_id()) &&
 			!E.value.redo_stack.is_empty()) {
@@ -134,7 +161,10 @@ bool EditorUndoRedoManager::has_redo()
 	return false;
 }
 
-bool EditorUndoRedoManager::has_history(int p_idx) const { return history_map.has(p_idx); }
+bool EditorUndoRedoManager::has_history(int p_idx)
+{
+	return data && data->history_map.has(p_idx);
+}
 
 int EditorUndoRedoManager::get_current_action_history_id()
 {
@@ -182,37 +212,15 @@ EditorUndoRedoManager::History* EditorUndoRedoManager::_get_newest_undo()
 	return selected_history;
 }
 
-// In editor/editor_undo_redo_manager.cpp
-
-// 1. Define static helper wrappers at the top of the file or above _bind_methods()
-static void _bind_commit_action(bool p_execute)
-{
-	if (EditorUndoRedoManager::get_singleton()) {
-		EditorUndoRedoManager::get_singleton()->commit_action(p_execute);
-	}
-}
-
-static bool _bind_is_committing_action()
-{
-	if (EditorUndoRedoManager::get_singleton()) {
-		return EditorUndoRedoManager::get_singleton()->is_committing_action();
-	}
-	return false;
-}
-
-EditorUndoRedoManager* EditorUndoRedoManager::get_singleton() { return singleton; }
-
-EditorUndoRedoManager::~EditorUndoRedoManager()
-{
-	for (const KeyValue<int, History>& E : history_map) {
-		discard_history(E.key, false);
-	}
-}
-
 EditorUndoRedoManager::History& EditorUndoRedoManager::get_or_create_history(int p_idx)
 {
-	EditorUndoRedoManager::History eh = EditorUndoRedoManager::History();
-	return eh;
+	initialize();
+	if (!data->history_map.has(p_idx)) {
+		History history;
+		history.id = p_idx;
+		data->history_map[p_idx] = history;
+	}
+	return data->history_map[p_idx];
 }
 
 bool EditorUndoRedoManager::undo_history(int p_history_id) { return false; }

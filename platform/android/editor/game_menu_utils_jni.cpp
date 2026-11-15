@@ -147,8 +147,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_editor_utils_GameMenuUtils_res
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_editor_utils_GameMenuUtils_playMainScene(JNIEnv *env, jclass clazz) {
 #ifdef TOOLS_ENABLED
-	if (EditorInterface::get_singleton()) {
-		EditorInterface::get_singleton()->play_main_scene();
+	if (EditorInterface::is_initialized()) {
+		EditorInterface::play_main_scene();
 	}
 #endif
 }

@@ -33,9 +33,8 @@
 
 #include "core/types.h"
 
-class EditorUndoRedoManager
+class EditorUndoRedoManager final
 {
-	static EditorUndoRedoManager* singleton;
 	static constexpr uint64_t UNSAVED_VERSION = 0;
 
 public:
@@ -64,42 +63,50 @@ public:
 	};
 
 private:
-	HashMap<int, History> history_map;
-	Action pending_action;
+	struct Data
+	{
+		HashMap<int, History> history_map;
+		Action pending_action;
 
-	bool forced_history = false;
-	bool is_committing = false;
+		bool forced_history = false;
+		bool is_committing = false;
+	};
 
-	History* _get_newest_undo();
+	static History* _get_newest_undo();
 
 public:
-	History& get_or_create_history(int p_idx);
-	void force_fixed_history();
+	static inline Data* data = nullptr;
 
-	void commit_action(bool p_execute = true);
-	bool is_committing_action() const;
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
 
-	bool undo();
-	bool undo_history(int p_id);
-	bool redo();
-	bool redo_history(int p_id);
-	void clear_history(int p_idx = INVALID_HISTORY, bool p_increase_version = true);
+	static History& get_or_create_history(int p_idx);
+	static void force_fixed_history();
 
-	void set_history_as_saved(int p_idx);
-	void set_history_as_unsaved(int p_idx);
-	bool is_history_unsaved(int p_idx);
-	bool has_undo();
-	bool has_redo();
-	bool has_history(int p_idx) const;
+	static void commit_action(bool p_execute = true);
+	static bool is_committing_action();
 
-	String get_current_action_name();
-	int get_current_action_history_id();
+	static bool undo();
+	static bool undo_history(int p_id);
+	static bool redo();
+	static bool redo_history(int p_id);
+	static void clear_history(int p_idx = INVALID_HISTORY, bool p_increase_version = true);
 
-	void discard_history(int p_idx, bool p_erase_from_map = true);
+	static void set_history_as_saved(int p_idx);
+	static void set_history_as_unsaved(int p_idx);
+	static bool is_history_unsaved(int p_idx);
+	static bool has_undo();
+	static bool has_redo();
+	static bool has_history(int p_idx);
 
-	static EditorUndoRedoManager* get_singleton();
-	EditorUndoRedoManager();
-	~EditorUndoRedoManager();
+	static String get_current_action_name();
+	static int get_current_action_history_id();
+
+	static void discard_history(int p_idx, bool p_erase_from_map = true);
+
+	EditorUndoRedoManager() = delete;
+	~EditorUndoRedoManager() = delete;
 };
 
 

@@ -63,88 +63,97 @@ struct DAPeer : RefCounted
 	Error send_data();
 };
 
-class DebugAdapterProtocol
+class DebugAdapterProtocol final
 {
 	friend class DebugAdapterParser;
+	friend class DebugAdapterServer;
 
 	using DAPVarID = int;
 	using DAPStackFrameID = int;
 
 private:
-	static DebugAdapterProtocol* singleton;
+	struct Data
+	{
+		List<Ref<DAPeer>> clients;
+		Ref<TCPServer> server;
 
-	List<Ref<DAPeer>> clients;
-	Ref<TCPServer> server;
+		bool _initialized = false;
+		bool _processing_breakpoint = false;
+		bool _stepping = false;
+		bool _processing_stackdump = false;
+		int _remaining_vars = 0;
+		int _current_frame = 0;
+		uint64_t _request_timeout = 5000;
+		bool _sync_breakpoints = false;
 
-	void on_debug_paused();
-	void on_debug_stopped();
-	void on_debug_output(const String& p_message, int p_type);
-	void on_debug_breaked(const bool& p_reallydid, const bool& p_can_debug, const String& p_reason,
-		const bool& p_has_stackdump);
-	void on_debug_breakpoint_toggled(
+		String _current_request;
+		Ref<DAPeer> _current_peer;
+
+		int breakpoint_id = 0;
+		int stackframe_id = 0;
+		DAPVarID variable_id = 0;
+		List<DAP::Breakpoint> breakpoint_list;
+		HashMap<String, DAP::Source> breakpoint_source_list;
+		List<DAP::StackFrame> stackframe_list;
+		HashMap<DAPStackFrameID, Vector<int>> scope_list;
+		HashMap<String, DAP::Variable> eval_list;
+		HashSet<String> eval_pending_list;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void on_debug_paused();
+	static void on_debug_stopped();
+	static void on_debug_output(const String& p_message, int p_type);
+	static void on_debug_breaked(const bool& p_reallydid, const bool& p_can_debug,
+		const String& p_reason, const bool& p_has_stackdump);
+	static void on_debug_breakpoint_toggled(
 		const String& p_path, const int& p_line, const bool& p_enabled);
-	void on_debug_stack_frame_vars(const int& p_size);
+	static void on_debug_stack_frame_vars(const int& p_size);
 
-	void reset_current_info();
-	void reset_ids();
-	void reset_stack_info();
+	static void reset_current_info();
+	static void reset_ids();
+	static void reset_stack_info();
 
-	bool request_remote_evaluate(const String& p_eval, int p_stack_frame);
+	static bool request_remote_evaluate(const String& p_eval, int p_stack_frame);
 
-	const DAP::Source& fetch_source(const String& p_path);
-	void update_source(const String& p_path);
-
-	bool _initialized = false;
-	bool _processing_breakpoint = false;
-	bool _stepping = false;
-	bool _processing_stackdump = false;
-	int _remaining_vars = 0;
-	int _current_frame = 0;
-	uint64_t _request_timeout = 5000;
-	bool _sync_breakpoints = false;
-
-	String _current_request;
-	Ref<DAPeer> _current_peer;
-
-	int breakpoint_id = 0;
-	int stackframe_id = 0;
-	DAPVarID variable_id = 0;
-	List<DAP::Breakpoint> breakpoint_list;
-	HashMap<String, DAP::Source> breakpoint_source_list;
-	List<DAP::StackFrame> stackframe_list;
-	HashMap<DAPStackFrameID, Vector<int>> scope_list;
-	HashMap<String, DAP::Variable> eval_list;
-	HashSet<String> eval_pending_list;
+	static const DAP::Source& fetch_source(const String& p_path);
+	static void update_source(const String& p_path);
 
 public:
-	friend class DebugAdapterServer;
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	_FORCE_INLINE_ static DebugAdapterProtocol* get_singleton() { return singleton; }
+	_FORCE_INLINE_ static bool is_active()
+	{
+		return data && data->_initialized && data->clients.size() > 0;
+	}
 
-	_FORCE_INLINE_ bool is_active() const { return _initialized && clients.size() > 0; }
+	static bool process_message(const String& p_text);
 
-	bool process_message(const String& p_text);
+	static String get_current_request() { return data ? data->_current_request : String(); }
 
-	String get_current_request() const { return _current_request; }
+	static Ref<DAPeer> get_current_peer() { return data ? data->_current_peer : Ref<DAPeer>(); }
 
-	Ref<DAPeer> get_current_peer() const { return _current_peer; }
+	static void notify_initialized();
+	static void notify_process();
+	static void notify_terminated();
+	static void notify_exited(const int& p_exitcode = 0);
+	static void notify_stopped_paused();
+	static void notify_stopped_exception(const String& p_error);
+	static void notify_stopped_breakpoint(const int& p_id);
+	static void notify_stopped_step();
+	static void notify_continued();
+	static void notify_breakpoint(const DAP::Breakpoint& p_breakpoint, const bool& p_enabled);
 
-	void notify_initialized();
-	void notify_process();
-	void notify_terminated();
-	void notify_exited(const int& p_exitcode = 0);
-	void notify_stopped_paused();
-	void notify_stopped_exception(const String& p_error);
-	void notify_stopped_breakpoint(const int& p_id);
-	void notify_stopped_step();
-	void notify_continued();
-	void notify_breakpoint(const DAP::Breakpoint& p_breakpoint, const bool& p_enabled);
+	static Error start(int p_port, const IPAddress& p_bind_ip);
+	static void stop();
 
-	Error start(int p_port, const IPAddress& p_bind_ip);
-	void stop();
-
-	DebugAdapterProtocol() = default;
-	~DebugAdapterProtocol() = default;
+	DebugAdapterProtocol() = delete;
+	DebugAdapterProtocol(const DebugAdapterProtocol&) = delete;
+	DebugAdapterProtocol& operator=(const DebugAdapterProtocol&) = delete;
+	~DebugAdapterProtocol() = delete;
 };
 
 

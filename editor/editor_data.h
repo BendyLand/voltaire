@@ -132,7 +132,6 @@ private:
 	HashMap<String, Vector<CustomType>> custom_types;
 
 	List<PropertyData> clipboard;
-	EditorUndoRedoManager* undo_redo_manager;
 
 	Vector<EditedScene> edited_scene;
 	int current_edited_scene = -1;

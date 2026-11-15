@@ -40,7 +40,7 @@
 bool EditorFolding::has_folding_data(const String& p_path)
 {
 	String file = p_path.get_file() + "-folding-" + p_path.md5_text() + ".cfg";
-	file = EditorPaths::get_singleton()->get_project_settings_dir().path_join(file);
+	file = EditorPaths::get_project_settings_dir().path_join(file);
 	return FileAccess::exists(file);
 }
 

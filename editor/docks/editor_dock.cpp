@@ -47,7 +47,7 @@ void EditorDock::set_global(bool p_global)
 	}
 	global = p_global;
 	if (is_inside_tree()) {
-		EditorDockManager::get_singleton()->update_docks_menu();
+		EditorDockManager::update_docks_menu();
 	}
 }
 

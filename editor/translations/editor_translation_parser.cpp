@@ -30,10 +30,9 @@
 /**************************************************************************/
 
 #include "core/error/error_macros.h"
+#include "core/os/memory.h"
 #include "core/templates/hash_set.h"
 #include "editor_translation_parser.h"
-
-EditorTranslationParser* EditorTranslationParser::singleton = nullptr;
 
 void EditorTranslationParserPlugin::get_recognized_extensions(List<String>* r_extensions) const
 {
@@ -43,15 +42,35 @@ void EditorTranslationParserPlugin::get_recognized_extensions(List<String>* r_ex
 	}
 }
 
-void EditorTranslationParser::get_recognized_extensions(List<String>* r_extensions) const
+void EditorTranslationParser::initialize()
 {
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void EditorTranslationParser::finalize()
+{
+	if (!data) {
+		return;
+	}
+	clean_parsers();
+	memdelete(data);
+	data = nullptr;
+}
+
+void EditorTranslationParser::get_recognized_extensions(List<String>* r_extensions)
+{
+	if (!data) {
+		return;
+	}
 	HashSet<String> extensions;
 	List<String> temp;
-	for (int i = 0; i < standard_parsers.size(); i++) {
-		standard_parsers[i]->get_recognized_extensions(&temp);
+	for (int i = 0; i < data->standard_parsers.size(); i++) {
+		data->standard_parsers[i]->get_recognized_extensions(&temp);
 	}
-	for (int i = 0; i < custom_parsers.size(); i++) {
-		custom_parsers[i]->get_recognized_extensions(&temp);
+	for (int i = 0; i < data->custom_parsers.size(); i++) {
+		data->custom_parsers[i]->get_recognized_extensions(&temp);
 	}
 	// Remove duplicates.
 	for (const String& E : temp) {
@@ -62,7 +81,7 @@ void EditorTranslationParser::get_recognized_extensions(List<String>* r_extensio
 	}
 }
 
-bool EditorTranslationParser::can_parse(const String& p_extension) const
+bool EditorTranslationParser::can_parse(const String& p_extension)
 {
 	List<String> extensions;
 	get_recognized_extensions(&extensions);
@@ -74,26 +93,27 @@ bool EditorTranslationParser::can_parse(const String& p_extension) const
 	return false;
 }
 
-Ref<EditorTranslationParserPlugin> EditorTranslationParser::get_parser(
-	const String& p_extension) const
+Ref<EditorTranslationParserPlugin> EditorTranslationParser::get_parser(const String& p_extension)
 {
-	// Consider user-defined parsers first.
-	for (int i = 0; i < custom_parsers.size(); i++) {
-		List<String> temp;
-		custom_parsers[i]->get_recognized_extensions(&temp);
-		for (const String& E : temp) {
-			if (E == p_extension) {
-				return custom_parsers[i];
+	if (data) {
+		// Consider user-defined parsers first.
+		for (int i = 0; i < data->custom_parsers.size(); i++) {
+			List<String> temp;
+			data->custom_parsers[i]->get_recognized_extensions(&temp);
+			for (const String& E : temp) {
+				if (E == p_extension) {
+					return data->custom_parsers[i];
+				}
 			}
 		}
-	}
 
-	for (int i = 0; i < standard_parsers.size(); i++) {
-		List<String> temp;
-		standard_parsers[i]->get_recognized_extensions(&temp);
-		for (const String& E : temp) {
-			if (E == p_extension) {
-				return standard_parsers[i];
+		for (int i = 0; i < data->standard_parsers.size(); i++) {
+			List<String> temp;
+			data->standard_parsers[i]->get_recognized_extensions(&temp);
+			for (const String& E : temp) {
+				if (E == p_extension) {
+					return data->standard_parsers[i];
+				}
 			}
 		}
 	}
@@ -103,9 +123,12 @@ Ref<EditorTranslationParserPlugin> EditorTranslationParser::get_parser(
 	return nullptr;
 }
 
-void EditorTranslationParser::customize_strings(Vector<Vector<String>>& r_strings) const
+void EditorTranslationParser::customize_strings(Vector<Vector<String>>& r_strings)
 {
-	for (const Ref<EditorTranslationParserPlugin>& parser : custom_parsers) {
+	if (!data) {
+		return;
+	}
+	for (const Ref<EditorTranslationParserPlugin>& parser : data->custom_parsers) {
 		parser->customize_strings(r_strings);
 	}
 }
@@ -113,43 +136,36 @@ void EditorTranslationParser::customize_strings(Vector<Vector<String>>& r_string
 void EditorTranslationParser::add_parser(
 	const Ref<EditorTranslationParserPlugin>& p_parser, ParserType p_type)
 {
+	initialize();
 	if (p_type == ParserType::STANDARD) {
-		standard_parsers.push_back(p_parser);
+		data->standard_parsers.push_back(p_parser);
 	}
 	else if (p_type == ParserType::CUSTOM) {
-		custom_parsers.push_back(p_parser);
+		data->custom_parsers.push_back(p_parser);
 	}
 }
 
 void EditorTranslationParser::remove_parser(
 	const Ref<EditorTranslationParserPlugin>& p_parser, ParserType p_type)
 {
+	if (!data) {
+		return;
+	}
 	if (p_type == ParserType::STANDARD) {
-		standard_parsers.erase(p_parser);
+		data->standard_parsers.erase(p_parser);
 	}
 	else if (p_type == ParserType::CUSTOM) {
-		custom_parsers.erase(p_parser);
+		data->custom_parsers.erase(p_parser);
 	}
 }
 
 void EditorTranslationParser::clean_parsers()
 {
-	standard_parsers.clear();
-	custom_parsers.clear();
-}
-
-EditorTranslationParser* EditorTranslationParser::get_singleton()
-{
-	if (!singleton) {
-		singleton = memnew(EditorTranslationParser);
+	if (!data) {
+		return;
 	}
-	return singleton;
-}
-
-EditorTranslationParser::~EditorTranslationParser()
-{
-	memdelete(singleton);
-	singleton = nullptr;
+	data->standard_parsers.clear();
+	data->custom_parsers.clear();
 }
 
 void EditorTranslationParserPlugin::customize_strings(Vector<Vector<String>>&) const {}

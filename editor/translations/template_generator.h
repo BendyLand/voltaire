@@ -34,10 +34,10 @@
 #include "core/io/file_access.h"
 #include "core/string/translation.h"
 
-class TranslationTemplateGenerator {
-	static inline TranslationTemplateGenerator *singleton = nullptr;
-
-	struct MessageData {
+class TranslationTemplateGenerator final
+{
+	struct MessageData
+	{
 		String plural;
 		HashSet<String> locations;
 		HashSet<String> comments;
@@ -45,15 +45,14 @@ class TranslationTemplateGenerator {
 
 	using MessageMap = HashMap<Translation::MessageKey, MessageData, Translation::MessageKey>;
 
-	MessageMap parse(const Vector<String> &p_sources, bool p_add_builtin) const;
+	static MessageMap parse(const Vector<String>& p_sources, bool p_add_builtin);
 
-	void _write_to_pot(Ref<FileAccess> p_file, const MessageMap &p_map) const;
-	void _write_to_csv(Ref<FileAccess> p_file, const MessageMap &p_map) const;
+	static void _write_to_pot(Ref<FileAccess> p_file, const MessageMap& p_map);
+	static void _write_to_csv(Ref<FileAccess> p_file, const MessageMap& p_map);
 
 public:
-	static TranslationTemplateGenerator *get_singleton();
+	static void generate(const String& p_file);
 
-	void generate(const String &p_file);
-
-	~TranslationTemplateGenerator();
+	TranslationTemplateGenerator() = delete;
+	~TranslationTemplateGenerator() = delete;
 };

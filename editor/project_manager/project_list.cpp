@@ -232,7 +232,7 @@ void ProjectList::_scan_finished()
 
 	save_config();
 
-	if (ProjectManager::get_singleton()->is_initialized()) {
+	if (ProjectManager::is_initialized()) {
 		update_project_list();
 	}
 }
@@ -592,7 +592,9 @@ void ProjectList::add_search_tag(const String& p_tag)
 	else {
 		_search_term += " " + tag_string;
 	}
-	ProjectManager::get_singleton()->get_search_box()->set_text(_search_term);
+	if (ProjectManager::data) {
+		ProjectManager::data->search_text = _search_term;
+	}
 
 	sort_projects();
 }
@@ -605,7 +607,7 @@ ProjectList::ProjectList()
 	project_list_vbox->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	add_child(project_list_vbox);
 
-	_config_path = EditorPaths::get_singleton()->get_data_dir().path_join("projects.cfg");
+	_config_path = EditorPaths::get_data_dir().path_join("projects.cfg");
 	_migrate_config();
 }
 

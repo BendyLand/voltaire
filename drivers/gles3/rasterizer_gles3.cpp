@@ -303,48 +303,41 @@ void* _egl_load_function_wrapper(const char* p_name) { return (void*)eglGetProcA
 void RasterizerGLES3::initialize()
 {
 #ifdef GLAD_ENABLED
-    bool glad_loaded = false;
-
-    // 1. Try desktop OpenGL loader first (GLX / libGL on Linux desktop)
-    if (gladLoaderLoadGL()) {
-        glad_loaded = true;
-        RasterizerUtilGLES3::set_gles_over_gl(true);
-        OS::set_gles_over_gl(true);
-    }
+	bool glad_loaded = false;
 
 #ifdef EGL_ENABLED
-    // 2. Fall back to EGL (Wayland / mobile / embedded) if desktop GL loader failed
-    if (!glad_loaded) {
 #if defined(EGL_STATIC)
-        bool has_egl = true;
+	bool has_egl = true;
 #else
-        bool has_egl = (eglGetProcAddress != nullptr);
+	bool has_egl = (eglGetProcAddress != nullptr);
 #endif
-        if (has_egl) {
-            if (RasterizerUtilGLES3::is_gles_over_gl()) {
-                if (gladLoadGL((GLADloadfunc)&_egl_load_function_wrapper)) {
-                    glad_loaded = true;
-                }
-            } else {
-                if (gladLoadGLES2((GLADloadfunc)&_egl_load_function_wrapper)) {
-                    glad_loaded = true;
-                }
-            }
-        }
-    }
+
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (has_egl && !glad_loaded && gladLoadGL((GLADloadfunc)&_egl_load_function_wrapper)) {
+			glad_loaded = true;
+		}
+	}
+	else {
+		if (has_egl && !glad_loaded && gladLoadGLES2((GLADloadfunc)&_egl_load_function_wrapper)) {
+			glad_loaded = true;
+		}
+	}
 #endif // EGL_ENABLED
 
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (!glad_loaded && gladLoaderLoadGL()) {
+			glad_loaded = true;
+		}
 #ifdef GLES_API_ENABLED
-    if (!glad_loaded) {
-        if (gladLoaderLoadGLES2()) {
-            glad_loaded = true;
-            RasterizerUtilGLES3::set_gles_over_gl(false);
-            OS::set_gles_over_gl(false);
-        }
-    }
+	}
+	else {
+		if (!glad_loaded && gladLoaderLoadGLES2()) {
+			glad_loaded = true;
+		}
 #endif
+	}
 
-    ERR_FAIL_COND_MSG(!glad_loaded, "Error initializing GLAD.");
+	ERR_FAIL_COND_MSG(!glad_loaded, "Error initializing GLAD.");
 #endif // GLAD_ENABLED
 
     // Print adapter details only AFTER GLAD has populated glGetString
@@ -524,7 +517,9 @@ void RasterizerGLES3::finalize()
 	}
 	GLES3::ParticlesStorage::finalize();
 	GLES3::MeshStorage::finalize();
+	GLES3::MaterialStorage::finalize();
 	GLES3::TextureStorage::finalize();
+	GLES3::Utilities::finalize();
 	if (config) {
 		memdelete(config);
 		config = nullptr;
@@ -667,8 +662,8 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 		OS::is_layered_allowed() ? p_color.a : 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	RID texture = texture_storage->texture_allocate();
-	texture_storage->texture_2d_initialize(texture, p_image);
+	RID texture = GLES3::TextureStorage::texture_allocate();
+	GLES3::TextureStorage::texture_2d_initialize(texture, p_image);
 
 	Rect2 screenrect = RenderingServerTypes::get_splash_stretched_screen_rect(
 		p_image->get_size(), win_size, p_stretch_mode);
@@ -686,7 +681,7 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 	screenrect.position /= win_size;
 	screenrect.size /= win_size;
 
-	GLES3::Texture* t = texture_storage->get_texture(texture);
+	GLES3::Texture* t = GLES3::TextureStorage::get_texture(texture);
 	t->gl_set_filter(p_use_filter ? RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR
 								  : RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST);
 	glActiveTexture(GL_TEXTURE0);
@@ -696,7 +691,7 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 
 	gl_end_frame(true);
 
-	texture_storage->texture_free(texture);
+	GLES3::TextureStorage::texture_free(texture);
 }
 
 void RasterizerGLES3::bind_utilities()

@@ -909,14 +909,14 @@ LightmapperRD::BakeError LightmapperRD::_denoise_oidn(RenderingDevice* p_rd, RID
 
 	for (int i = 0; i < p_atlas_slices; i++) {
 		String fname_norm_in =
-			EditorPaths::get_singleton()->get_cache_dir().path_join(vformat("temp_norm_%d.pfm", i));
+			EditorPaths::get_cache_dir().path_join(vformat("temp_norm_%d.pfm", i));
 		_store_pfm(p_rd, p_source_normal_tex, i, p_atlas_size, fname_norm_in, false);
 
 		for (int j = 0; j < (p_bake_sh ? 4 : 1); j++) {
 			int index = i * (p_bake_sh ? 4 : 1) + j;
-			String fname_light_in = EditorPaths::get_singleton()->get_cache_dir().path_join(
+			String fname_light_in = EditorPaths::get_cache_dir().path_join(
 				vformat("temp_light_%d.pfm", index));
-			String fname_out = EditorPaths::get_singleton()->get_cache_dir().path_join(
+			String fname_out = EditorPaths::get_cache_dir().path_join(
 				vformat("temp_denoised_%d.pfm", index));
 
 			_store_pfm(p_rd, p_source_light_tex, index, p_atlas_size, fname_light_in, p_shadowmask);

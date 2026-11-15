@@ -433,7 +433,6 @@ private:
 	Button* new_inherited_button = nullptr;
 	String open_import_request;
 
-	EditorDockManager* editor_dock_manager = nullptr;
 	Timer* editor_layout_save_delay_timer = nullptr;
 	Timer* scan_changes_timer = nullptr;
 	Button* distraction_free = nullptr;

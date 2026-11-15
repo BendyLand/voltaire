@@ -40,7 +40,6 @@ class EditorUndoRedoManager;
 
 class HistoryDock : public EditorDock
 {
-	EditorUndoRedoManager* ur_manager;
 	ItemList* action_list = nullptr;
 
 	CheckBox* current_scene_checkbox = nullptr;

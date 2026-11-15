@@ -72,9 +72,9 @@ void GotoLinePopup::_goto_line()
 
 void GotoLinePopup::_submit()
 {
-	ScriptEditorNavigationMarker::get_singleton()->locate_begin();
+	ScriptEditorNavigationMarker::locate_begin();
 	_goto_line();
-	ScriptEditorNavigationMarker::get_singleton()->locate_end();
+	ScriptEditorNavigationMarker::locate_end();
 	hide();
 }
 

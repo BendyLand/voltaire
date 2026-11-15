@@ -36,10 +36,8 @@
 #include "editor/scene/2d/tiles/tile_map_layer_editor.h"
 #include "editor/scene/2d/tiles/tile_set_editor.h"
 
-class TilesEditorUtils
+class TilesEditorUtils final
 {
-	static TilesEditorUtils* singleton;
-
 public:
 	enum SourceSortOption
 	{
@@ -51,14 +49,6 @@ public:
 	};
 
 private:
-	// For synchronization.
-	int atlas_sources_lists_current = 0;
-	float atlas_view_zoom = 1.0;
-	Vector2 atlas_view_scroll;
-
-	// Source sorting.
-	int source_sort = SOURCE_SORT_ID;
-
 	struct SourceNameComparator
 	{
 		static Ref<TileSet> tile_set;
@@ -72,35 +62,53 @@ private:
 		Ref<TileMapPattern> pattern;
 	};
 
-	List<QueueItem> pattern_preview_queue;
-	Mutex pattern_preview_mutex;
-	Semaphore pattern_preview_sem;
-	Thread pattern_preview_thread;
-	SafeFlag pattern_thread_exit;
-	SafeFlag pattern_thread_exited;
-	Semaphore pattern_preview_done;
-	void _preview_frame_started();
-	void _pattern_preview_done();
+	struct Data
+	{
+		// For synchronization.
+		int atlas_sources_lists_current = 0;
+		float atlas_view_zoom = 1.0;
+		Vector2 atlas_view_scroll;
+
+		// Source sorting.
+		int source_sort = SOURCE_SORT_ID;
+
+		List<QueueItem> pattern_preview_queue;
+		Mutex pattern_preview_mutex;
+		Semaphore pattern_preview_sem;
+		Thread pattern_preview_thread;
+		SafeFlag pattern_thread_exit;
+		SafeFlag pattern_thread_exited;
+		Semaphore pattern_preview_done;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void _preview_frame_started();
+	static void _pattern_preview_done();
 	static void _thread_func(void* ud);
-	void _thread();
+	static void _thread();
 
 public:
-	_FORCE_INLINE_ static TilesEditorUtils* get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
 	// To synchronize the atlas sources lists.
-	void set_sources_lists_current(int p_current);
+	static void set_sources_lists_current(int p_current);
 
-	void set_atlas_view_transform(float p_zoom, Vector2 p_scroll);
+	static void set_atlas_view_transform(float p_zoom, Vector2 p_scroll);
 
 	// Sorting.
-	void set_sorting_option(int p_option);
-	List<int> get_sorted_sources(const Ref<TileSet> p_tile_set) const;
+	static void set_sorting_option(int p_option);
+	static List<int> get_sorted_sources(const Ref<TileSet> p_tile_set);
 
 	// Misc.
-	void display_tile_set_editor_panel();
+	static void display_tile_set_editor_panel();
 
-	TilesEditorUtils();
-	~TilesEditorUtils();
+	TilesEditorUtils() = delete;
+	TilesEditorUtils(const TilesEditorUtils&) = delete;
+	TilesEditorUtils& operator=(const TilesEditorUtils&) = delete;
+	~TilesEditorUtils() = delete;
 };
 
 class TileSetSourceItemList : public ItemList

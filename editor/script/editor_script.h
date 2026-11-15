@@ -40,9 +40,6 @@ class Node;
 class EditorScript : public RefCounted
 {
 public:
-#ifndef DISABLE_DEPRECATED
-	EditorInterface* get_editor_interface() const;
-#endif
 	virtual void run();
 };
 

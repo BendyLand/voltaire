@@ -5244,7 +5244,6 @@ RasterizerSceneGLES3::RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_stor
     GLES3::MaterialStorage* p_material_storage, GLES3::LightStorage* p_light_storage)
 {
     singleton = this;
-    GLES3::MaterialStorage* material_storage = p_material_storage;
     GLES3::Config* config = GLES3::Config::get_singleton();
 
     cull_argument.set_page_pool(&cull_argument_pool);
@@ -5356,18 +5355,18 @@ RasterizerSceneGLES3::RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_stor
         if (!config->specular_occlusion) {
             global_defines += "\n#define SPECULAR_OCCLUSION_DISABLED\n";
         }
-        material_storage->shaders->scene_shader.initialize(global_defines);
+        GLES3::MaterialStorage::shaders->scene_shader.initialize(global_defines);
         scene_globals.shader_default_version =
-            material_storage->shaders->scene_shader.version_create();
-        material_storage->shaders->scene_shader.version_bind_shader(
+            GLES3::MaterialStorage::shaders->scene_shader.version_create();
+        GLES3::MaterialStorage::shaders->scene_shader.version_bind_shader(
             scene_globals.shader_default_version, SceneShaderGLES3::MODE_COLOR);
     }
 
     {
         // default material and shader
-        scene_globals.default_shader = material_storage->shader_allocate();
-        material_storage->shader_initialize(scene_globals.default_shader);
-        material_storage->shader_set_code(scene_globals.default_shader, R"(
+        scene_globals.default_shader = GLES3::MaterialStorage::shader_allocate();
+        GLES3::MaterialStorage::shader_initialize(scene_globals.default_shader);
+        GLES3::MaterialStorage::shader_set_code(scene_globals.default_shader, R"(
 // Default 3D material shader (Compatibility).
 
 shader_type spatial;
@@ -5382,20 +5381,20 @@ void fragment() {
     METALLIC = 0.2;
 }
 )");
-        scene_globals.default_material = material_storage->material_allocate();
-        material_storage->material_initialize(scene_globals.default_material);
-        material_storage->material_set_shader(
+        scene_globals.default_material = GLES3::MaterialStorage::material_allocate();
+        GLES3::MaterialStorage::material_initialize(scene_globals.default_material);
+        GLES3::MaterialStorage::material_set_shader(
             scene_globals.default_material, scene_globals.default_shader);
         default_material_data_ptr =
-            static_cast<GLES3::SceneMaterialData*>(material_storage->material_get_data(
+            static_cast<GLES3::SceneMaterialData*>(GLES3::MaterialStorage::material_get_data(
                 scene_globals.default_material, RSE::SHADER_SPATIAL));
     }
 
     {
         // Overdraw material and shader.
-        scene_globals.overdraw_shader = material_storage->shader_allocate();
-        material_storage->shader_initialize(scene_globals.overdraw_shader);
-        material_storage->shader_set_code(scene_globals.overdraw_shader, R"(
+        scene_globals.overdraw_shader = GLES3::MaterialStorage::shader_allocate();
+        GLES3::MaterialStorage::shader_initialize(scene_globals.overdraw_shader);
+        GLES3::MaterialStorage::shader_set_code(scene_globals.overdraw_shader, R"(
 // 3D editor Overdraw debug draw mode shader (Compatibility).
 
 shader_type spatial;
@@ -5407,12 +5406,12 @@ void fragment() {
     ALPHA = 0.2;
 }
 )");
-        scene_globals.overdraw_material = material_storage->material_allocate();
-        material_storage->material_initialize(scene_globals.overdraw_material);
-        material_storage->material_set_shader(
+        scene_globals.overdraw_material = GLES3::MaterialStorage::material_allocate();
+        GLES3::MaterialStorage::material_initialize(scene_globals.overdraw_material);
+        GLES3::MaterialStorage::material_set_shader(
             scene_globals.overdraw_material, scene_globals.overdraw_shader);
         overdraw_material_data_ptr =
-            static_cast<GLES3::SceneMaterialData*>(material_storage->material_get_data(
+            static_cast<GLES3::SceneMaterialData*>(GLES3::MaterialStorage::material_get_data(
                 scene_globals.overdraw_material, RSE::SHADER_SPATIAL));
     }
 
@@ -5422,16 +5421,17 @@ void fragment() {
             "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
         global_defines += "\n#define MAX_DIRECTIONAL_LIGHT_DATA_STRUCTS " +
                           itos(sky_globals.max_directional_lights) + "\n";
-        material_storage->shaders->sky_shader.initialize(global_defines);
-        sky_globals.shader_default_version = material_storage->shaders->sky_shader.version_create();
+        GLES3::MaterialStorage::shaders->sky_shader.initialize(global_defines);
+        sky_globals.shader_default_version =
+            GLES3::MaterialStorage::shaders->sky_shader.version_create();
     }
 
     {
-        sky_globals.default_shader = material_storage->shader_allocate();
+        sky_globals.default_shader = GLES3::MaterialStorage::shader_allocate();
 
-        material_storage->shader_initialize(sky_globals.default_shader);
+        GLES3::MaterialStorage::shader_initialize(sky_globals.default_shader);
 
-        material_storage->shader_set_code(sky_globals.default_shader, R"(
+        GLES3::MaterialStorage::shader_set_code(sky_globals.default_shader, R"(
 // Default sky shader.
 
 shader_type sky;
@@ -5440,17 +5440,17 @@ void sky() {
     COLOR = vec3(0.0);
 }
 )");
-        sky_globals.default_material = material_storage->material_allocate();
-        material_storage->material_initialize(sky_globals.default_material);
+        sky_globals.default_material = GLES3::MaterialStorage::material_allocate();
+        GLES3::MaterialStorage::material_initialize(sky_globals.default_material);
 
-        material_storage->material_set_shader(
+        GLES3::MaterialStorage::material_set_shader(
             sky_globals.default_material, sky_globals.default_shader);
     }
     {
-        sky_globals.fog_shader = material_storage->shader_allocate();
-        material_storage->shader_initialize(sky_globals.fog_shader);
+        sky_globals.fog_shader = GLES3::MaterialStorage::shader_allocate();
+        GLES3::MaterialStorage::shader_initialize(sky_globals.fog_shader);
 
-        material_storage->shader_set_code(sky_globals.fog_shader, R"(
+        GLES3::MaterialStorage::shader_set_code(sky_globals.fog_shader, R"(
 // Default clear color sky shader.
 
 shader_type sky;
@@ -5461,10 +5461,11 @@ void sky() {
     COLOR = clear_color.rgb;
 }
 )");
-        sky_globals.fog_material = material_storage->material_allocate();
-        material_storage->material_initialize(sky_globals.fog_material);
+        sky_globals.fog_material = GLES3::MaterialStorage::material_allocate();
+        GLES3::MaterialStorage::material_initialize(sky_globals.fog_material);
 
-        material_storage->material_set_shader(sky_globals.fog_material, sky_globals.fog_shader);
+        GLES3::MaterialStorage::material_set_shader(
+            sky_globals.fog_material, sky_globals.fog_shader);
     }
 
     {

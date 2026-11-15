@@ -2975,13 +2975,16 @@ Error Main::setup2(bool p_show_boot_logo)
 	if (editor || project_manager || cmdline_tool) {
 		OS::benchmark_begin_measure("Startup", "Initialize Early Settings");
 
-		EditorPaths::create();
+		EditorPaths::initialize();
+		if (editor || project_manager) {
+			EditorSettings::initialize();
+		}
 
 		// Editor setting class is not available, load config directly.
 		if (!init_use_custom_screen && (editor || project_manager) &&
-			EditorPaths::get_singleton()->are_paths_valid()) {
+			EditorPaths::are_paths_valid()) {
 			ERR_FAIL_COND_V(
-				!DirAccess::dir_exists_absolute(EditorPaths::get_singleton()->get_config_dir()),
+				!DirAccess::dir_exists_absolute(EditorPaths::get_config_dir()),
 				FAILED);
 
 			String config_file_path = EditorSettings::get_existing_settings_path();
@@ -2991,7 +2994,7 @@ Error Main::setup2(bool p_show_boot_logo)
 			}
 		}
 
-		if (found_project && EditorPaths::get_singleton()->is_self_contained()) {
+		if (found_project && EditorPaths::is_self_contained()) {
 			if (ProjectSettings::get_resource_path() ==
 				OS::get_executable_path().get_base_dir()) {
 				ERR_PRINT("You are trying to run a self-contained editor at the same location as a "
@@ -3009,7 +3012,7 @@ Error Main::setup2(bool p_show_boot_logo)
 			config.instantiate();
 			// Load and amend existing config if it exists.
 			Error err =
-				config->load(EditorPaths::get_singleton()->get_project_settings_dir().path_join(
+				config->load(EditorPaths::get_project_settings_dir().path_join(
 					"editor_layout.cfg"));
 		}
 
@@ -4002,38 +4005,14 @@ int Main::start()
 	scene_tree->initialize();
 
 	Window* root = scene_tree->get_root();
-	if (root) {
-		root->show();
-
-		// Determine window dimensions
-		Size2i win_size = root->get_size();
-		if (win_size.x <= 0 || win_size.y <= 0) {
-			win_size = Size2i(1024, 600);
-		}
-
-		RID viewport_rid = root->get_viewport_rid();
-		RID root_canvas = root->find_world_2d()->get_canvas();
-
-		// Configure the server viewport to render and present to the OS window
-		Renderer::viewport_set_size(viewport_rid, win_size.x, win_size.y);
-		Renderer::viewport_set_active(viewport_rid, true);
-		Renderer::viewport_set_update_mode(viewport_rid, RSE::VIEWPORT_UPDATE_ALWAYS);
-		Renderer::viewport_attach_to_screen(
-			viewport_rid, Rect2(0, 0, win_size.x, win_size.y), DisplayServerEnums::MAIN_WINDOW_ID);
-
-		// Instantiate and attach ColorRect directly to root canvas
-		ColorRect* rect = memnew(ColorRect);
-		root->add_child(rect);
-		rect->set_size(Size2(300, 200));
-		rect->set_color(Color(1.0f, 0.0f, 0.0f, 1.0f));
-
-		// Link canvas item to canvas and mark visible
-		Renderer::canvas_item_set_parent(rect->get_canvas_item(), root_canvas);
-		Renderer::canvas_item_set_visible(rect->get_canvas_item(), true);
-
-		// Statically trigger draw
-		rect->notification(CanvasItem::NOTIFICATION_DRAW);
-	}
+    if (root) {
+        root->show();
+        Size2i win_size = root->get_size();
+        if (win_size.x <= 0 || win_size.y <= 0) {
+            win_size = Size2i(1152, 648);
+        }
+        ProjectManager::initialize(root->get_viewport_rid(), win_size);
+    }
 	else {
 		__print_line("Window root failed to be created");
 		return EXIT_FAILURE;
@@ -4329,6 +4308,10 @@ void Main::cleanup(bool p_force)
 	unregister_scene_types();
 
 	finalize_theme_db();
+#ifdef TOOLS_ENABLED
+	EditorSettings::finalize();
+	EditorPaths::finalize();
+#endif
 	finalize_physics();
 	unregister_server_types();
 

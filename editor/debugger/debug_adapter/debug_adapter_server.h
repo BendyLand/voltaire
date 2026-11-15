@@ -36,8 +36,6 @@
 
 class DebugAdapterServer : public EditorPlugin
 {
-	DebugAdapterProtocol protocol;
-
 	int remote_port = 6006;
 	bool started = false;
 	bool polling = false;
@@ -47,7 +45,8 @@ private:
 
 public:
 	static int port_override;
-	DebugAdapterServer() = default;
+	DebugAdapterServer();
+	~DebugAdapterServer();
 };
 
 

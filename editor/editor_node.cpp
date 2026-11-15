@@ -130,6 +130,7 @@
 #include "editor/scene/material_editor_plugin.h"
 #include "editor/scene/particle_process_material_editor_plugin.h"
 #include "editor/script/editor_script.h"
+#include "editor/script/script_editor_navigation_marker.h"
 #include "editor/script/script_text_editor.h"
 #include "editor/script/text_editor.h"
 #include "editor/settings/editor_build_profile.h"
@@ -365,7 +366,7 @@ void EditorNode::_propagate_translation_notification()
 bool EditorNode::_is_project_data_missing()
 {
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	const String project_data_dir = EditorPaths::get_singleton()->get_project_data_dir();
+	const String project_data_dir = EditorPaths::get_project_data_dir();
 	if (!da->dir_exists(project_data_dir)) {
 		return true;
 	}
@@ -389,7 +390,7 @@ bool EditorNode::_is_project_data_missing()
 		}
 	}
 
-	const String dirs[] = {EditorPaths::get_singleton()->get_project_settings_dir(),
+	const String dirs[] = {EditorPaths::get_project_settings_dir(),
 		ProjectSettings::get_imported_files_path()};
 	for (const String& dir : dirs) {
 		if (!da->dir_exists(dir)) {
@@ -507,7 +508,7 @@ bool EditorNode::is_scene_unsaved(int p_idx)
 		return false;
 	}
 
-	if (EditorUndoRedoManager::get_singleton()->is_history_unsaved(
+	if (EditorUndoRedoManager::is_history_unsaved(
 			editor_data.get_scene_history_id(p_idx))) {
 		return true;
 	}
@@ -621,7 +622,7 @@ int EditorNode::_next_unsaved_scene(bool p_valid_filename, int p_start)
 			continue;
 		}
 
-		bool unsaved = EditorUndoRedoManager::get_singleton()->is_history_unsaved(
+		bool unsaved = EditorUndoRedoManager::is_history_unsaved(
 			editor_data.get_scene_history_id(i));
 		if (unsaved) {
 			return i;
@@ -667,7 +668,7 @@ bool EditorNode::is_pseudolocalization_enabled() const
 Ref<ConfigFile> EditorNode::_load_scene_config(const String& p_scene_path)
 {
 	const String config_file_path =
-		EditorPaths::get_singleton()->get_project_settings_dir().path_join(
+		EditorPaths::get_project_settings_dir().path_join(
 			p_scene_path.get_file() + "-editstate-" + p_scene_path.md5_text() + ".cfg");
 
 	Ref<ConfigFile> editor_state_cf;
@@ -871,8 +872,7 @@ void EditorNode::_progress_dialog_visibility_changed()
 {
 	// Open the io errors after the progress dialog is closed.
 	if (load_errors_queued_to_display && !progress_dialog->is_visible()) {
-		EditorInterface::get_singleton()->popup_dialog_centered_ratio(
-			singleton->load_error_dialog, 0.5);
+		EditorInterface::popup_dialog_centered_ratio(singleton->load_error_dialog, 0.5);
 		load_errors_queued_to_display = false;
 	}
 }
@@ -973,7 +973,7 @@ void EditorNode::show_save_accept(const String& p_text, const String& p_ok_text)
 		save_accept->set_ok_button_text(p_ok_text);
 		save_accept->set_text(p_text);
 		save_accept->reset_size();
-		EditorInterface::get_singleton()->popup_dialog_centered_clamped(save_accept, Size2i(), 0.0);
+		EditorInterface::popup_dialog_centered_clamped(save_accept, Size2i(), 0.0);
 	}
 }
 
@@ -984,7 +984,7 @@ void EditorNode::show_warning(const String& p_text, const String& p_title)
 		warning->set_text(p_text);
 		warning->set_title(p_title);
 		warning->reset_size();
-		EditorInterface::get_singleton()->popup_dialog_centered_clamped(warning, Size2i(), 0.0);
+		EditorInterface::popup_dialog_centered_clamped(warning, Size2i(), 0.0);
 	}
 	else {
 		WARN_PRINT(p_title + " " + p_text);
@@ -1328,14 +1328,17 @@ void EditorNode::notify_settings_overrides_changed() { settings_overrides_change
 EditorNode::~EditorNode()
 {
 	EditorInspector::cleanup_plugins();
-	EditorTranslationParser::get_singleton()->clean_parsers();
+	EditorTranslationParser::finalize();
 	ResourceImporterScene::clean_up_importer_plugins();
-	EditorContextMenuPluginManager::cleanup();
+	EditorContextMenuPluginManager::finalize();
+	ScriptEditorNavigationMarker::finalize();
+	EditorVCSInterface::finalize();
+	EditorInterface::finalize();
 
 	remove_print_handler(&print_handler);
 	EditorHelp::cleanup_doc();
 #if defined(MODULE_GDSCRIPT_ENABLED) || defined(MODULE_MONO_ENABLED)
-	EditorHelpHighlighter::free_singleton();
+	EditorHelpHighlighter::finalize();
 #endif
 	memdelete(editor_selection);
 	memdelete(editor_plugins_over);
@@ -1343,10 +1346,11 @@ EditorNode::~EditorNode()
 	memdelete(editor_plugins_force_input_forwarding);
 	memdelete(progress_hb);
 	memdelete(project_upgrade_tool);
-	memdelete(editor_dock_manager);
+	EditorDockManager::finalize();
 
-	EditorSettings::destroy();
+	EditorSettings::finalize();
 	EditorThemeManager::finalize();
+	EditorStrings::finalize();
 
 	FileDialog::register_func = nullptr;
 	FileDialog::unregister_func = nullptr;

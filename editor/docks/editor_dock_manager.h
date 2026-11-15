@@ -74,7 +74,7 @@ class DockContextPopup;
 class EditorDockDragHint;
 class DockTabContainer;
 
-class EditorDockManager
+class EditorDockManager final
 {
 private:
 	friend class DockContextPopup;
@@ -82,79 +82,99 @@ private:
 	friend class DockShortcutHandler;
 	friend class DockSlotGrid;
 
-	static inline EditorDockManager* singleton = nullptr;
+	struct Data
+	{
+		// To access splits easily by index.
+		Vector<DockSplitContainer*> vsplits;
+		DockSplitContainer* main_vsplit = nullptr;
+		DockSplitContainer* main_hsplit = nullptr;
+		DockSplitContainer* bottom_hsplit = nullptr;
 
-	// To access splits easily by index.
-	Vector<DockSplitContainer*> vsplits;
-	DockSplitContainer* main_vsplit = nullptr;
-	DockSplitContainer* main_hsplit = nullptr;
-	DockSplitContainer* bottom_hsplit = nullptr;
+		DockTabContainer* dock_slots[EditorDock::DOCK_SLOT_MAX] = {};
+		Vector<WindowWrapper*> dock_windows;
+		LocalVector<EditorDock*> all_docks;
+		HashSet<EditorDock*> dirty_docks;
 
-	DockTabContainer* dock_slots[EditorDock::DOCK_SLOT_MAX];
-	Vector<WindowWrapper*> dock_windows;
-	LocalVector<EditorDock*> all_docks;
-	HashSet<EditorDock*> dirty_docks;
+		EditorDock* dock_tab_dragged = nullptr;
+		bool docks_visible = true;
 
-	EditorDock* dock_tab_dragged = nullptr;
-	bool docks_visible = true;
+		DockContextPopup* dock_context_popup = nullptr;
+		PopupMenu* docks_menu = nullptr;
+		LocalVector<EditorDock*> docks_menu_docks;
+		Control* closed_dock_parent = nullptr;
+	};
 
-	DockContextPopup* dock_context_popup = nullptr;
-	PopupMenu* docks_menu = nullptr;
-	LocalVector<EditorDock*> docks_menu_docks;
-	Control* closed_dock_parent = nullptr;
+	static inline Data* data = nullptr;
 
-	EditorDock* _get_dock_tab_dragged();
-	void _dock_drag_stopped();
+	static EditorDock* _get_dock_tab_dragged();
+	static void _dock_drag_stopped();
 
-	void _docks_menu_option(int p_id);
+	static void _docks_menu_option(int p_id);
 
-	EditorDock* _close_window(WindowWrapper* p_wrapper);
+	static EditorDock* _close_window(WindowWrapper* p_wrapper);
 
-	void _make_dock_visible(EditorDock* p_dock, bool p_grab_focus);
-	void _move_dock(
+	static void _make_dock_visible(EditorDock* p_dock, bool p_grab_focus);
+	static void _move_dock(
 		EditorDock* p_dock, Control* p_target, int p_tab_index = -1, bool p_set_current = true);
 
-	void _queue_update_tab_style(EditorDock* p_dock);
-	void _update_dirty_dock_tabs();
+	static void _queue_update_tab_style(EditorDock* p_dock);
+	static void _update_dirty_dock_tabs();
 
-	void _register_split(DockSplitContainer** p_var, DockSplitContainer* p_split);
+	static void _register_split(DockSplitContainer** p_var, DockSplitContainer* p_split);
 
 public:
-	static EditorDockManager* get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	DockTabContainer* get_dock_container(int p_slot) const;
+	static DockTabContainer* get_dock_container(int p_slot);
 
-	void update_docks_menu();
-	void update_tab_styles();
-	void set_tab_icon_max_width(int p_max_width);
+	static void update_docks_menu();
+	static void update_tab_styles();
+	static void set_tab_icon_max_width(int p_max_width);
 
-	void add_vsplit(DockSplitContainer* p_split);
+	static void add_vsplit(DockSplitContainer* p_split);
 
-	void set_main_vsplit(DockSplitContainer* p_split) { _register_split(&main_vsplit, p_split); }
-
-	void set_main_hsplit(DockSplitContainer* p_split) { _register_split(&main_hsplit, p_split); }
-
-	void set_bottom_hsplit(DockSplitContainer* p_split)
+	static void set_main_vsplit(DockSplitContainer* p_split)
 	{
-		_register_split(&bottom_hsplit, p_split);
+		if (data) {
+			_register_split(&data->main_vsplit, p_split);
+		}
 	}
 
-	void register_dock_slot(DockTabContainer* p_tab_container);
-	int get_vsplit_count() const;
-	PopupMenu* get_docks_menu();
+	static void set_main_hsplit(DockSplitContainer* p_split)
+	{
+		if (data) {
+			_register_split(&data->main_hsplit, p_split);
+		}
+	}
 
-	void save_docks_to_config(Ref<ConfigFile> p_layout, const String& p_section) const;
-	void load_docks_from_config(
+	static void set_bottom_hsplit(DockSplitContainer* p_split)
+	{
+		if (data) {
+			_register_split(&data->bottom_hsplit, p_split);
+		}
+	}
+
+	static void register_dock_slot(DockTabContainer* p_tab_container);
+	static int get_vsplit_count();
+	static PopupMenu* get_docks_menu();
+
+	static void save_docks_to_config(Ref<ConfigFile> p_layout, const String& p_section);
+	static void load_docks_from_config(
 		Ref<ConfigFile> p_layout, const String& p_section, bool p_first_load = false);
 
-	void focus_dock(EditorDock* p_dock);
+	static void focus_dock(EditorDock* p_dock);
 
-	bool are_docks_visible() const;
+	static bool are_docks_visible();
 
-	void add_dock(EditorDock* p_dock);
-	void remove_dock(EditorDock* p_dock);
+	static void add_dock(EditorDock* p_dock);
+	static void remove_dock(EditorDock* p_dock);
 
-	EditorDockManager();
+	EditorDockManager() = delete;
+	EditorDockManager(const EditorDockManager&) = delete;
+	EditorDockManager& operator=(const EditorDockManager&) = delete;
+	~EditorDockManager() = delete;
 };
 
 class DockSlotGrid : public Control
@@ -195,8 +215,6 @@ private:
 	DockSlotGrid* dock_select = nullptr;
 
 	EditorDock* context_dock = nullptr;
-
-	EditorDockManager* dock_manager = nullptr;
 
 	void _tab_move_left();
 	void _tab_move_right();
