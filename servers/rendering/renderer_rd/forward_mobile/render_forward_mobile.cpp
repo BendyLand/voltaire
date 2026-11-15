@@ -1065,10 +1065,10 @@ void RenderForwardMobile::_render_shadow_pass(RID p_light, RID p_shadow_atlas, i
 			Rect2 atlas_rect_norm = atlas_rect;
 			atlas_rect_norm.position /= float(atlas_size);
 			atlas_rect_norm.size /= float(atlas_size);
-			RendererSceneRenderRD::data->copy_effects->copy_cubemap_to_dp(render_texture, atlas_fb,
+			RendererRD::CopyEffects::copy_cubemap_to_dp(render_texture, atlas_fb,
 				atlas_rect_norm, atlas_rect.size, light_projection.get_z_near(), zfar, false);
 			atlas_rect_norm.position += Vector2(dual_paraboloid_offset) * atlas_rect_norm.size;
-			RendererSceneRenderRD::data->copy_effects->copy_cubemap_to_dp(render_texture, atlas_fb,
+			RendererRD::CopyEffects::copy_cubemap_to_dp(render_texture, atlas_fb,
 				atlas_rect_norm, atlas_rect.size, light_projection.get_z_near(), zfar, true);
 
 			// restore transform so it can be properly used
@@ -2682,7 +2682,7 @@ void RenderForwardMobile::_mesh_compile_pipelines_for_surface(const SurfacePipel
 	const GlobalPipelineData& p_global, RSE::PipelineSource p_source,
 	Vector<ShaderPipelinePair>* r_pipeline_pairs)
 {
-	bool octmap_use_storage = !((RendererSceneRenderRD::data->copy_effects->get_raster_effects() &
+	bool octmap_use_storage = !((RendererRD::CopyEffects::get_raster_effects() &
 									RendererRD::CopyEffects::RASTER_EFFECT_OCTMAP) != 0);
 
 	// Set the attributes common to all pipelines.
@@ -2965,11 +2965,6 @@ RenderForwardMobile::~RenderForwardMobile()
 		RD::free_rid(scene_state.lightmap_capture_buffer);
 		memdelete_arr(scene_state.lightmap_captures);
 	}
-}
-
-void RendererRD::CopyEffects::copy_cubemap_to_dp(RID p_source_rd_texture, RID p_dst_framebuffer,
-	const Rect2& p_rect, const Vector2& p_dst_size, float p_z_near, float p_z_far, bool p_dp_flip)
-{
 }
 
 void RendererSceneRenderImplementation::RenderForwardMobile::_render_list_with_draw_list(

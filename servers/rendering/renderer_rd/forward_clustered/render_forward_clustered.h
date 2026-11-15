@@ -953,7 +953,6 @@ private:
 
 	RendererRD::TAA* taa = nullptr;
 	RendererRD::FSR2Effect* fsr2_effect = nullptr;
-	RendererRD::SSEffects* ss_effects = nullptr;
 
 #ifdef METAL_MFXTEMPORAL_ENABLED
 	RendererRD::MFXTemporalEffect* mfx_temporal_effect = nullptr;
@@ -1060,8 +1059,6 @@ public:
 	static RenderForwardClustered* get_singleton() { return singleton; }
 
 	ClusterBuilderSharedDataRD* get_cluster_builder_shared() { return &cluster_builder_shared; }
-
-	RendererRD::SSEffects* get_ss_effects() { return ss_effects; }
 
 	/* callback from updating our lighting UBOs, used to populate cluster builder */
 	virtual void setup_added_reflection_probe(

@@ -1648,8 +1648,7 @@ void RendererRD::TextureStorage::area_light_atlas_remove_texture(RID p_texture)
 
 void RendererRD::TextureStorage::update_area_light_atlas()
 {
-	CopyEffects* copy_effects = CopyEffects::get_singleton();
-	ERR_FAIL_NULL(copy_effects);
+	ERR_FAIL_COND(!CopyEffects::is_initialized());
 
 	if (!area_light_atlas.dirty) {
 		return; // nothing to do
@@ -2001,8 +2000,7 @@ Dependency* RendererRD::TextureStorage::decal_get_dependency(RID p_decal)
 
 void RendererRD::TextureStorage::update_decal_atlas()
 {
-	CopyEffects* copy_effects = CopyEffects::get_singleton();
-	ERR_FAIL_NULL(copy_effects);
+	ERR_FAIL_COND(!CopyEffects::is_initialized());
 
 	if (!decal_atlas.dirty) {
 		return; // nothing to do
@@ -3338,8 +3336,7 @@ void RendererRD::TextureStorage::render_target_sdf_process(RID p_render_target)
 void RendererRD::TextureStorage::render_target_copy_to_back_buffer(
 	RID p_render_target, const Rect2i& p_region, bool p_gen_mipmaps)
 {
-	CopyEffects* copy_effects = CopyEffects::get_singleton();
-	ERR_FAIL_NULL(copy_effects);
+	ERR_FAIL_COND(!CopyEffects::is_initialized());
 
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3361,14 +3358,14 @@ void RendererRD::TextureStorage::render_target_copy_to_back_buffer(
 	// TODO figure out stereo support here
 
 	if (RendererSceneRenderRD::_render_buffers_can_be_storage()) {
-		copy_effects->copy_to_rect(
+		CopyEffects::copy_to_rect(
 			rt->color, rt->backbuffer_mipmap0, region, false, false, false, !rt->use_hdr, true);
 	}
 	else {
 		Rect2 src_rect = Rect2(region);
 		src_rect.position /= Size2(rt->size);
 		src_rect.size /= Size2(rt->size);
-		copy_effects->copy_to_fb_rect(rt->color, rt->backbuffer_fb, region, false, false, false,
+		CopyEffects::copy_to_fb_rect(rt->color, rt->backbuffer_fb, region, false, false, false,
 			false, RID(), false, true, false, false, src_rect);
 	}
 
@@ -3389,10 +3386,10 @@ void RendererRD::TextureStorage::render_target_copy_to_back_buffer(
 
 		RID mipmap = rt->backbuffer_mipmaps[i];
 		if (RendererSceneRenderRD::_render_buffers_can_be_storage()) {
-			copy_effects->gaussian_blur(prev_texture, mipmap, region, texture_size, !rt->use_hdr);
+			CopyEffects::gaussian_blur(prev_texture, mipmap, region, texture_size, !rt->use_hdr);
 		}
 		else {
-			copy_effects->gaussian_blur_raster(prev_texture, mipmap, region, texture_size);
+			CopyEffects::gaussian_blur_raster(prev_texture, mipmap, region, texture_size);
 		}
 		prev_texture = mipmap;
 	}
@@ -3405,8 +3402,7 @@ void RendererRD::TextureStorage::render_target_clear_back_buffer(
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
 
-	CopyEffects* copy_effects = CopyEffects::get_singleton();
-	ERR_FAIL_NULL(copy_effects);
+	ERR_FAIL_COND(!CopyEffects::is_initialized());
 
 	if (!rt->backbuffer.is_valid()) {
 		_create_render_target_backbuffer(rt);
@@ -3425,10 +3421,10 @@ void RendererRD::TextureStorage::render_target_clear_back_buffer(
 
 	// Single texture copy for backbuffer.
 	if (RendererSceneRenderRD::_render_buffers_can_be_storage()) {
-		copy_effects->set_color(rt->backbuffer_mipmap0, p_color, region, !rt->use_hdr);
+		CopyEffects::set_color(rt->backbuffer_mipmap0, p_color, region, !rt->use_hdr);
 	}
 	else {
-		copy_effects->set_color_raster(rt->backbuffer_mipmap0, p_color, region);
+		CopyEffects::set_color_raster(rt->backbuffer_mipmap0, p_color, region);
 	}
 }
 
@@ -3438,8 +3434,7 @@ void RendererRD::TextureStorage::render_target_gen_back_buffer_mipmaps(
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
 
-	CopyEffects* copy_effects = CopyEffects::get_singleton();
-	ERR_FAIL_NULL(copy_effects);
+	ERR_FAIL_COND(!CopyEffects::is_initialized());
 
 	if (!rt->backbuffer.is_valid()) {
 		_create_render_target_backbuffer(rt);
@@ -3469,10 +3464,10 @@ void RendererRD::TextureStorage::render_target_gen_back_buffer_mipmaps(
 		RID mipmap = rt->backbuffer_mipmaps[i];
 
 		if (RendererSceneRenderRD::_render_buffers_can_be_storage()) {
-			copy_effects->gaussian_blur(prev_texture, mipmap, region, texture_size, !rt->use_hdr);
+			CopyEffects::gaussian_blur(prev_texture, mipmap, region, texture_size, !rt->use_hdr);
 		}
 		else {
-			copy_effects->gaussian_blur_raster(prev_texture, mipmap, region, texture_size);
+			CopyEffects::gaussian_blur_raster(prev_texture, mipmap, region, texture_size);
 		}
 		prev_texture = mipmap;
 	}

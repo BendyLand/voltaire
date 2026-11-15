@@ -73,7 +73,6 @@ public:
 	{
 		RendererRD::ForwardIDStorage* forward_id_storage = nullptr;
 		RendererRD::BokehDOF* bokeh_dof = nullptr;
-		RendererRD::CopyEffects* copy_effects = nullptr;
 		RendererRD::DebugEffects* debug_effects = nullptr;
 		RendererRD::Luminance* luminance = nullptr;
 		RendererRD::SMAA* smaa = nullptr;

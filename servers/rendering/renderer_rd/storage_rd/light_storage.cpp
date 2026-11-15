@@ -1833,8 +1833,8 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
 	}
 
 	if (atlas->reflection.is_null()) {
-		RendererRD::CopyEffects* copy_effects = RendererRD::CopyEffects::get_singleton();
-		ERR_FAIL_NULL_V_MSG(copy_effects, false, "Effects haven't been initialized");
+		ERR_FAIL_COND_V_MSG(
+			!RendererRD::CopyEffects::is_initialized(), false, "Effects haven't been initialized");
 
 		int mipmaps = MIN(RendererSceneRenderRD::get_sky()->roughness_layers,
 			Image::get_image_required_mipmaps(atlas->size, atlas->size, Image::FORMAT_RGBAH) + 1);
@@ -1847,7 +1847,7 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
 		atlas->uv_border_size = float(padding_pixels) / float(atlas->reflection_texture_size);
 
 		bool use_storage =
-			!((copy_effects->get_raster_effects() & CopyEffects::RASTER_EFFECT_OCTMAP) != 0);
+			!((CopyEffects::get_raster_effects() & CopyEffects::RASTER_EFFECT_OCTMAP) != 0);
 		{
 			RDC::TextureFormat tf;
 			tf.array_layers = atlas->count;
@@ -1942,8 +1942,8 @@ bool RendererRD::LightStorage::reflection_probe_instance_begin_render(
 bool RendererRD::LightStorage::reflection_probe_instance_end_render(
 	RID p_instance, RID p_reflection_atlas)
 {
-	RendererRD::CopyEffects* copy_effects = RendererRD::CopyEffects::get_singleton();
-	ERR_FAIL_NULL_V_MSG(copy_effects, false, "Effects haven't been initialized");
+	ERR_FAIL_COND_V_MSG(
+		!RendererRD::CopyEffects::is_initialized(), false, "Effects haven't been initialized");
 
 	ReflectionAtlas* atlas = reflection_atlas_owner.get_or_null(p_reflection_atlas);
 	ERR_FAIL_NULL_V(atlas, false);
@@ -1952,7 +1952,7 @@ bool RendererRD::LightStorage::reflection_probe_instance_end_render(
 	ERR_FAIL_NULL_V(rpi, false);
 
 	RD::draw_command_begin_label("Convert reflection probe to octahedral");
-	copy_effects->copy_cubemap_to_octmap(atlas->color_buffer,
+	CopyEffects::copy_cubemap_to_octmap(atlas->color_buffer,
 		atlas->reflections.write[rpi->atlas_index].data.layers[0].mipmaps[0].framebuffer,
 		atlas->uv_border_size);
 	RD::draw_command_end_label();

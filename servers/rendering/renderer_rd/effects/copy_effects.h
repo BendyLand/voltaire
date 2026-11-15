@@ -49,7 +49,7 @@
 namespace RendererRD
 {
 
-class CopyEffects
+class CopyEffects final
 {
 public:
 	enum RasterEffects
@@ -59,9 +59,12 @@ public:
 		RASTER_EFFECT_OCTMAP = 1 << 2,
 	};
 
-private:
-	uint32_t raster_effects;
+	CopyEffects() = delete;
+	~CopyEffects() = delete;
+	CopyEffects(const CopyEffects&) = delete;
+	CopyEffects& operator=(const CopyEffects&) = delete;
 
+private:
 	// Blur raster shader
 
 	enum BlurRasterMode
@@ -112,7 +115,7 @@ private:
 		RID shader_version;
 		PipelineCacheRD pipelines[BLUR_MODE_MAX];
 		RID glow_sampler;
-	} blur_raster;
+	};
 
 	// Copy shader
 
@@ -180,8 +183,7 @@ private:
 		CopyShaderRD shader;
 		RID shader_version;
 		PipelineDeferredRD pipelines[COPY_MODE_MAX];
-
-	} copy;
+	};
 
 	// Copy to FB shader
 
@@ -229,8 +231,7 @@ private:
 		CopyToFbShaderRD shader;
 		RID shader_version;
 		PipelineCacheRD pipelines[COPY_TO_FB_MAX];
-
-	} copy_to_fb;
+	};
 
 	// Copy to DP
 
@@ -246,7 +247,7 @@ private:
 		CubeToDpShaderRD shader;
 		RID shader_version;
 		PipelineCacheRD pipeline;
-	} cube_to_dp;
+	};
 
 	// Copy to Octmap
 
@@ -262,7 +263,7 @@ private:
 		CubeToOctmapShaderRD shader;
 		RID shader_version;
 		PipelineCacheRD pipeline;
-	} cube_to_octmap;
+	};
 
 	// Octmap effects
 
@@ -289,7 +290,7 @@ private:
 		RID shader_version;
 		PipelineDeferredRD compute_pipelines[DOWNSAMPLER_MODE_COMPUTE_MAX];
 		PipelineCacheRD raster_pipeline;
-	} octmap_downsampler;
+	};
 
 	enum OctmapFilterMode
 	{
@@ -327,9 +328,8 @@ private:
 
 		RID uniform_set;
 		RID coefficient_buffer;
-		bool use_high_quality;
-
-	} filter;
+		bool use_high_quality = false;
+	};
 
 	enum OctmapRoughnessMode
 	{
@@ -358,7 +358,7 @@ private:
 		RID shader_version;
 		PipelineDeferredRD compute_pipelines[ROUGHNESS_MODE_MAX];
 		PipelineCacheRD raster_pipeline;
-	} roughness;
+	};
 
 	// Merge specular
 
@@ -386,86 +386,101 @@ private:
 		SpecularMergeShaderRD shader;
 		RID shader_version;
 		PipelineCacheRD pipelines[SPECULAR_MERGE_MAX];
+	};
 
-	} specular_merge;
+	struct Data
+	{
+		uint32_t raster_effects = 0;
+		BlurRaster blur_raster;
+		Copy copy;
+		CopyToFb copy_to_fb;
+		CopyToDP cube_to_dp;
+		CopyToOctmap cube_to_octmap;
+		OctmapDownsampler octmap_downsampler;
+		OctmapFilter filter;
+		OctmapRoughness roughness;
+		SpecularMerge specular_merge;
+	};
 
-	static CopyEffects* singleton;
+	static inline Data* data = nullptr;
 
 public:
-	static CopyEffects* get_singleton();
+	static void initialize(uint32_t p_raster_effects = 0);
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
 
-	CopyEffects(uint32_t p_raster_effects) : raster_effects(p_raster_effects) {}
+	static uint32_t get_raster_effects() { return data ? data->raster_effects : 0; }
 
-	~CopyEffects() = default;
-
-	uint32_t get_raster_effects() { return raster_effects; }
-
-	void copy_to_rect(RID p_source_rd_texture, RID p_dest_texture, const Rect2i& p_rect,
+	static void copy_to_rect(RID p_source_rd_texture, RID p_dest_texture, const Rect2i& p_rect,
 		bool p_flip_y = false, bool p_force_luminance = false, bool p_all_source = false,
 		bool p_8_bit_dst = false, bool p_alpha_to_one = false, bool p_sanitize_inf_nan = false);
-	void copy_octmap_to_panorama(RID p_source_octmap, RID p_dest_panorama,
+	static void copy_octmap_to_panorama(RID p_source_octmap, RID p_dest_panorama,
 		const Size2i& p_panorama_size, float p_lod, bool p_is_array,
 		const Size2& p_source_octmap_border_size);
-	void copy_depth_to_rect(RID p_source_rd_texture, RID p_dest_framebuffer, const Rect2i& p_rect,
-		bool p_flip_y = false);
-	void copy_depth_to_rect_and_linearize(RID p_source_rd_texture, RID p_dest_texture,
+	static void copy_depth_to_rect(RID p_source_rd_texture, RID p_dest_framebuffer,
+		const Rect2i& p_rect, bool p_flip_y = false);
+	static void copy_depth_to_rect_and_linearize(RID p_source_rd_texture, RID p_dest_texture,
 		const Rect2i& p_rect, bool p_flip_y, float p_z_near, float p_z_far);
-	void copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffer, const Rect2i& p_rect,
-		bool p_flip_y = false, bool p_force_luminance = false, bool p_alpha_to_zero = false,
-		bool p_srgb = false, RID p_secondary = RID(), bool p_multiview = false,
-		bool alpha_to_one = false, bool p_linear = false, bool p_normal = false,
-		const Rect2& p_src_rect = Rect2(), float p_linear_luminance_multiplier = 1.0,
-		bool p_bilinear_filtering = true);
-	void copy_to_atlas_fb(RID p_source_rd_texture, RID p_dest_framebuffer, const Rect2& p_uv_rect,
-		RD::DrawListID p_draw_list, bool p_flip_y = false, bool p_panorama = false);
-	void copy_to_drawlist(RD::DrawListID p_draw_list, RD::FramebufferFormatID p_fb_format,
+	static void copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffer,
+		const Rect2i& p_rect, bool p_flip_y = false, bool p_force_luminance = false,
+		bool p_alpha_to_zero = false, bool p_srgb = false, RID p_secondary = RID(),
+		bool p_multiview = false, bool alpha_to_one = false, bool p_linear = false,
+		bool p_normal = false, const Rect2& p_src_rect = Rect2(),
+		float p_linear_luminance_multiplier = 1.0, bool p_bilinear_filtering = true);
+	static void copy_to_atlas_fb(RID p_source_rd_texture, RID p_dest_framebuffer,
+		const Rect2& p_uv_rect, RD::DrawListID p_draw_list, bool p_flip_y = false,
+		bool p_panorama = false);
+	static void copy_to_drawlist(RD::DrawListID p_draw_list, RD::FramebufferFormatID p_fb_format,
 		RID p_source_rd_texture, bool p_linear = false, float p_linear_luminance_multiplier = 1.0);
-	void copy_raster(RID p_source_texture, RID p_dest_framebuffer);
+	static void copy_raster(RID p_source_texture, RID p_dest_framebuffer);
 
-	void gaussian_blur(RID p_source_rd_texture, RID p_texture, const Rect2i& p_region,
+	static void gaussian_blur(RID p_source_rd_texture, RID p_texture, const Rect2i& p_region,
 		const Size2i& p_size, bool p_8bit_dst = false);
-	void gaussian_blur_raster(
+	static void gaussian_blur_raster(
 		RID p_source_rd_texture, RID p_dest_texture, const Rect2i& p_region, const Size2i& p_size);
-	void gaussian_glow(RID p_source_rd_texture, RID p_back_texture, const Size2i& p_size,
+	static void gaussian_glow(RID p_source_rd_texture, RID p_back_texture, const Size2i& p_size,
 		float p_strength = 1.0, bool p_first_pass = false, float p_luminance_cap = 16.0,
 		float p_exposure = 1.0, float p_bloom = 0.0, float p_hdr_bleed_threshold = 1.0,
 		float p_hdr_bleed_scale = 1.0, RID p_auto_exposure = RID(),
 		float p_auto_exposure_scale = 1.0);
-	void gaussian_glow_downsample_raster(RID p_source_rd_texture, RID p_dest_texture,
+	static void gaussian_glow_downsample_raster(RID p_source_rd_texture, RID p_dest_texture,
 		float p_luminance_multiplier, const Size2i& p_size, float p_strength = 1.0,
 		bool p_first_pass = false, float p_luminance_cap = 16.0, float p_exposure = 1.0,
 		float p_bloom = 0.0, float p_hdr_bleed_threshold = 1.0, float p_hdr_bleed_scale = 1.0);
-	void gaussian_glow_upsample_raster(RID p_source_rd_texture, RID p_dest_texture,
+	static void gaussian_glow_upsample_raster(RID p_source_rd_texture, RID p_dest_texture,
 		RID p_blend_texture, float p_luminance_multiplier, const Size2i& p_source_size,
 		const Size2i& p_dest_size, float p_level, float p_base_strength, bool p_use_debanding);
 
-	void make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
-	void make_mipmap_raster(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
+	static void make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
+	static void make_mipmap_raster(
+		RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
 
-	void set_color(
+	static void set_color(
 		RID p_dest_texture, const Color& p_color, const Rect2i& p_region, bool p_8bit_dst = false);
-	void set_color_raster(RID p_dest_texture, const Color& p_color, const Rect2i& p_region);
+	static void set_color_raster(RID p_dest_texture, const Color& p_color, const Rect2i& p_region);
 
-	void copy_cubemap_to_dp(RID p_source_rd_texture, RID p_dst_framebuffer, const Rect2& p_rect,
-		const Vector2& p_dst_size, float p_z_near, float p_z_far, bool p_dp_flip);
-	void copy_cubemap_to_octmap(
+	static void copy_cubemap_to_dp(RID p_source_rd_texture, RID p_dst_framebuffer,
+		const Rect2& p_rect, const Vector2& p_dst_size, float p_z_near, float p_z_far,
+		bool p_dp_flip);
+	static void copy_cubemap_to_octmap(
 		RID p_source_rd_texture, RID p_dst_framebuffer, float p_border_size);
-	void octmap_downsample(
+	static void octmap_downsample(
 		RID p_source_octmap, RID p_dest_octmap, const Size2i& p_size, float p_border_size);
-	void octmap_downsample_raster(
+	static void octmap_downsample_raster(
 		RID p_source_octmap, RID p_dest_framebuffer, const Size2i& p_size, float p_border_size);
-	void octmap_filter(RID p_source_octmap, const Vector<RID>& p_dest_octmap, bool p_use_array,
-		float p_border_size);
-	void octmap_filter_raster(
+	static void octmap_filter(RID p_source_octmap, const Vector<RID>& p_dest_octmap,
+		bool p_use_array, float p_border_size);
+	static void octmap_filter_raster(
 		RID p_source_octmap, RID p_dest_framebuffer, uint32_t p_mip_level, float p_border_size);
-	void octmap_roughness(RID p_source_rd_texture, RID p_dest_texture, uint32_t p_sample_count,
-		float p_roughness, uint32_t p_source_size, uint32_t p_dest_size, float p_border_size);
-	void octmap_roughness_raster(RID p_source_rd_texture, RID p_dest_framebuffer,
+	static void octmap_roughness(RID p_source_rd_texture, RID p_dest_texture,
+		uint32_t p_sample_count, float p_roughness, uint32_t p_source_size, uint32_t p_dest_size,
+		float p_border_size);
+	static void octmap_roughness_raster(RID p_source_rd_texture, RID p_dest_framebuffer,
 		uint32_t p_sample_count, float p_roughness, uint32_t p_source_size, uint32_t p_dest_size,
 		float p_border_size);
 
-	void merge_specular(RID p_dest_framebuffer, RID p_specular, RID p_base, RID p_reflection,
-		uint32_t p_view_count);
+	static void merge_specular(RID p_dest_framebuffer, RID p_specular, RID p_base,
+		RID p_reflection, uint32_t p_view_count);
 };
 
 } // namespace RendererRD

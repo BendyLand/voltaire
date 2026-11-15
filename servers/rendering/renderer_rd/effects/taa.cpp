@@ -41,7 +41,7 @@ TAA::~TAA() { taa_shader.version_free(shader_version); }
 void TAA::process(Ref<RenderSceneBuffersRD> p_render_buffers, RDC::DataFormat p_format,
 	float p_z_near, float p_z_far)
 {
-	CopyEffects* copy_effects = CopyEffects::get_singleton();
+	ERR_FAIL_COND(!CopyEffects::is_initialized());
 
 	uint32_t view_count = p_render_buffers->get_view_count();
 	Size2i internal_size = p_render_buffers->get_internal_size();
@@ -75,13 +75,13 @@ void TAA::process(Ref<RenderSceneBuffersRD> p_render_buffers, RDC::DataFormat p_
 			RID taa_temp = p_render_buffers->get_texture_slice(SNAME("taa"), SNAME("temp"), v, 0);
 			resolve(internal_texture, taa_temp, depth_texture, velocity_buffer, taa_prev_velocity,
 				taa_history, Size2(internal_size.x, internal_size.y), p_z_near, p_z_far);
-			copy_effects->copy_to_rect(
+			CopyEffects::copy_to_rect(
 				taa_temp, internal_texture, Rect2(0, 0, internal_size.x, internal_size.y));
 		}
 
-		copy_effects->copy_to_rect(
+		CopyEffects::copy_to_rect(
 			internal_texture, taa_history, Rect2(0, 0, internal_size.x, internal_size.y));
-		copy_effects->copy_to_rect(
+		CopyEffects::copy_to_rect(
 			velocity_buffer, taa_prev_velocity, Rect2(0, 0, target_size.x, target_size.y));
 	}
 

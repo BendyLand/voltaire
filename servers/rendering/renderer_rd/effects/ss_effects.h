@@ -70,33 +70,38 @@
 
 class RenderSceneBuffersRD;
 
-namespace RendererRD {
+namespace RendererRD
+{
 
-class CopyEffects;
-
-class SSEffects {
-private:
-	static SSEffects *singleton;
-
+class SSEffects final
+{
 public:
-	static SSEffects *get_singleton() { return singleton; }
+	SSEffects() = delete;
+	~SSEffects() = delete;
+	SSEffects(const SSEffects&) = delete;
+	SSEffects& operator=(const SSEffects&) = delete;
 
-	SSEffects();
-	~SSEffects();
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
 
 	/* Last Frame */
 
-	void allocate_last_frame_buffer(Ref<RenderSceneBuffersRD> p_render_buffers, bool p_use_ssil, bool p_use_ssr);
-	void copy_internal_texture_to_last_frame(Ref<RenderSceneBuffersRD> p_render_buffers, CopyEffects &p_copy_effects);
+	static void allocate_last_frame_buffer(
+		Ref<RenderSceneBuffersRD> p_render_buffers, bool p_use_ssil, bool p_use_ssr);
+	static void copy_internal_texture_to_last_frame(Ref<RenderSceneBuffersRD> p_render_buffers);
 
 	/* SS Downsampler */
 
-	void downsample_depth(Ref<RenderSceneBuffersRD> p_render_buffers, uint32_t p_view, const Projection &p_projection);
+	static void downsample_depth(
+		Ref<RenderSceneBuffersRD> p_render_buffers, uint32_t p_view, const Projection& p_projection);
 
 	/* SSIL */
-	void ssil_set_quality(RSE::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to);
+	static void ssil_set_quality(RSE::EnvironmentSSILQuality p_quality, bool p_half_size,
+		float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to);
 
-	struct SSILRenderBuffers {
+	struct SSILRenderBuffers
+	{
 		bool half_size = false;
 		int buffer_width;
 		int buffer_height;
@@ -104,7 +109,8 @@ public:
 		int half_buffer_height;
 	};
 
-	struct SSILSettings {
+	struct SSILSettings
+	{
 		float radius = 1.0;
 		float intensity = 2.0;
 		float sharpness = 0.98;
@@ -113,13 +119,19 @@ public:
 		Size2i full_screen_size;
 	};
 
-	void ssil_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, SSILRenderBuffers &p_ssil_buffers, const SSILSettings &p_settings);
-	void screen_space_indirect_lighting(Ref<RenderSceneBuffersRD> p_render_buffers, SSILRenderBuffers &p_ssil_buffers, uint32_t p_view, RID p_normal_buffer, const Projection &p_projection, const Projection &p_last_projection, const SSILSettings &p_settings);
+	static void ssil_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSILRenderBuffers& p_ssil_buffers, const SSILSettings& p_settings);
+	static void screen_space_indirect_lighting(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSILRenderBuffers& p_ssil_buffers, uint32_t p_view, RID p_normal_buffer,
+		const Projection& p_projection, const Projection& p_last_projection,
+		const SSILSettings& p_settings);
 
 	/* SSAO */
-	void ssao_set_quality(RSE::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to);
+	static void ssao_set_quality(RSE::EnvironmentSSAOQuality p_quality, bool p_half_size,
+		float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to);
 
-	struct SSAORenderBuffers {
+	struct SSAORenderBuffers
+	{
 		bool half_size = false;
 		int buffer_width;
 		int buffer_height;
@@ -127,7 +139,8 @@ public:
 		int half_buffer_height;
 	};
 
-	struct SSAOSettings {
+	struct SSAOSettings
+	{
 		float radius = 1.0;
 		float intensity = 2.0;
 		float power = 1.5;
@@ -138,54 +151,42 @@ public:
 		Size2i full_screen_size;
 	};
 
-	void ssao_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, SSAORenderBuffers &p_ssao_buffers, const SSAOSettings &p_settings);
-	void generate_ssao(Ref<RenderSceneBuffersRD> p_render_buffers, SSAORenderBuffers &p_ssao_buffers, uint32_t p_view, RID p_normal_buffer, const Projection &p_projection, const SSAOSettings &p_settings);
+	static void ssao_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSAORenderBuffers& p_ssao_buffers, const SSAOSettings& p_settings);
+	static void generate_ssao(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSAORenderBuffers& p_ssao_buffers, uint32_t p_view, RID p_normal_buffer,
+		const Projection& p_projection, const SSAOSettings& p_settings);
 
 	/* Screen Space Reflection */
-	void ssr_set_half_size(bool p_half_size);
+	static void ssr_set_half_size(bool p_half_size);
 
-	struct SSRRenderBuffers {
+	struct SSRRenderBuffers
+	{
 		Size2i size;
 		uint32_t mipmaps = 1;
 		bool half_size = false;
 	};
 
-	void ssr_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, SSRRenderBuffers &p_ssr_buffers, const RDC::DataFormat p_color_format);
-	void screen_space_reflection(Ref<RenderSceneBuffersRD> p_render_buffers, SSRRenderBuffers &p_ssr_buffers, const RID *p_normal_roughness_slices, int p_max_steps, float p_fade_in, float p_fade_out, float p_tolerance, const Projection *p_projections, const Projection *p_reprojections, const Vector3 *p_eye_offsets, RendererRD::CopyEffects &p_copy_effects);
+	static void ssr_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSRRenderBuffers& p_ssr_buffers, const RDC::DataFormat p_color_format);
+	static void screen_space_reflection(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSRRenderBuffers& p_ssr_buffers, const RID* p_normal_roughness_slices, int p_max_steps,
+		float p_fade_in, float p_fade_out, float p_tolerance, const Projection* p_projections,
+		const Projection* p_reprojections, const Vector3* p_eye_offsets);
 
 	/* subsurface scattering */
-	void sss_set_quality(RSE::SubSurfaceScatteringQuality p_quality);
-	RSE::SubSurfaceScatteringQuality sss_get_quality() const;
-	void sss_set_scale(float p_scale, float p_depth_scale);
+	static void sss_set_quality(RSE::SubSurfaceScatteringQuality p_quality);
+	static RSE::SubSurfaceScatteringQuality sss_get_quality();
+	static void sss_set_scale(float p_scale, float p_depth_scale);
 
-	void sub_surface_scattering(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_diffuse, RID p_depth, const Projection &p_camera, const Size2i &p_screen_size);
+	static void sub_surface_scattering(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_diffuse,
+		RID p_depth, const Projection& p_camera, const Size2i& p_screen_size);
 
 private:
-	/* Settings */
-
-	RSE::EnvironmentSSAOQuality ssao_quality = RSE::ENV_SSAO_QUALITY_MEDIUM;
-	bool ssao_half_size = false;
-	float ssao_adaptive_target = 0.5;
-	int ssao_blur_passes = 2;
-	float ssao_fadeout_from = 50.0;
-	float ssao_fadeout_to = 300.0;
-
-	RSE::EnvironmentSSILQuality ssil_quality = RSE::ENV_SSIL_QUALITY_MEDIUM;
-	bool ssil_half_size = false;
-	float ssil_adaptive_target = 0.5;
-	int ssil_blur_passes = 4;
-	float ssil_fadeout_from = 50.0;
-	float ssil_fadeout_to = 300.0;
-
-	bool ssr_half_size = false;
-
-	RSE::SubSurfaceScatteringQuality sss_quality = RSE::SUB_SURFACE_SCATTERING_QUALITY_MEDIUM;
-	float sss_scale = 0.05;
-	float sss_depth_scale = 0.01;
-
 	/* SS Downsampler */
 
-	struct SSEffectsDownsamplePushConstant {
+	struct SSEffectsDownsamplePushConstant
+	{
 		float pixel_size[2];
 		float z_far;
 		float z_near;
@@ -194,7 +195,8 @@ private:
 		uint32_t pad[2];
 	};
 
-	enum SSEffectsMode {
+	enum SSEffectsMode
+	{
 		SS_EFFECTS_DOWNSAMPLE,
 		SS_EFFECTS_DOWNSAMPLE_HALF_RES,
 		SS_EFFECTS_DOWNSAMPLE_MIPMAP,
@@ -205,11 +207,13 @@ private:
 		SS_EFFECTS_MAX
 	};
 
-	struct SSEffectsGatherConstants {
-		float rotation_matrices[80]; //5 vec4s * 4
+	struct SSEffectsGatherConstants
+	{
+		float rotation_matrices[80]; // 5 vec4s * 4
 	};
 
-	struct SSEffectsShader {
+	struct SSEffectsShader
+	{
 		SSEffectsDownsamplePushConstant downsample_push_constant;
 		SsEffectsDownsampleShaderRD downsample_shader;
 		RID downsample_shader_version;
@@ -222,11 +226,12 @@ private:
 		RID mirror_sampler;
 
 		PipelineDeferredRD pipelines[SS_EFFECTS_MAX];
-	} ss_effects;
+	};
 
 	/* SSIL */
 
-	enum SSILMode {
+	enum SSILMode
+	{
 		SSIL_GATHER,
 		SSIL_GATHER_BASE,
 		SSIL_GATHER_ADAPTIVE,
@@ -242,7 +247,8 @@ private:
 		SSIL_MAX
 	};
 
-	struct SSILGatherPushConstant {
+	struct SSILGatherPushConstant
+	{
 		int32_t screen_size[2];
 		int pass;
 		int quality;
@@ -276,29 +282,34 @@ private:
 		float pass_uv_offset[2];
 	};
 
-	struct SSILImportanceMapPushConstant {
+	struct SSILImportanceMapPushConstant
+	{
 		float half_screen_pixel_size[2];
 		float intensity;
 		float pad;
 	};
 
-	struct SSILBlurPushConstant {
+	struct SSILBlurPushConstant
+	{
 		float edge_sharpness;
 		float pad;
 		float half_screen_pixel_size[2];
 	};
 
-	struct SSILInterleavePushConstant {
+	struct SSILInterleavePushConstant
+	{
 		float inv_sharpness;
 		uint32_t size_modifier;
 		float pixel_size[2];
 	};
 
-	struct SSILProjectionUniforms {
+	struct SSILProjectionUniforms
+	{
 		float inv_last_frame_projection_matrix[16];
 	};
 
-	struct SSIL {
+	struct SSIL
+	{
 		SSILGatherPushConstant gather_push_constant;
 		SsilShaderRD gather_shader;
 		RID gather_shader_version;
@@ -319,13 +330,16 @@ private:
 		RID interleave_shader_version;
 
 		PipelineDeferredRD pipelines[SSIL_MAX];
-	} ssil;
+	};
 
-	void gather_ssil(RD::ComputeListID p_compute_list, const RID *p_ssil_slices, const RID *p_edges_slices, const SSILSettings &p_settings, bool p_adaptive_base_pass, RID p_gather_uniform_set, RID p_importance_map_uniform_set, RID p_projection_uniform_set);
+	static void gather_ssil(RD::ComputeListID p_compute_list, const RID* p_ssil_slices,
+		const RID* p_edges_slices, const SSILSettings& p_settings, bool p_adaptive_base_pass,
+		RID p_gather_uniform_set, RID p_importance_map_uniform_set, RID p_projection_uniform_set);
 
 	/* SSAO */
 
-	enum SSAOMode {
+	enum SSAOMode
+	{
 		SSAO_GATHER,
 		SSAO_GATHER_BASE,
 		SSAO_GATHER_ADAPTIVE,
@@ -341,7 +355,8 @@ private:
 		SSAO_MAX
 	};
 
-	struct SSAOGatherPushConstant {
+	struct SSAOGatherPushConstant
+	{
 		int32_t screen_size[2];
 		int pass;
 		int quality;
@@ -375,25 +390,29 @@ private:
 		float pass_uv_offset[2];
 	};
 
-	struct SSAOImportanceMapPushConstant {
+	struct SSAOImportanceMapPushConstant
+	{
 		float half_screen_pixel_size[2];
 		float intensity;
 		float power;
 	};
 
-	struct SSAOBlurPushConstant {
+	struct SSAOBlurPushConstant
+	{
 		float edge_sharpness;
 		float pad;
 		float half_screen_pixel_size[2];
 	};
 
-	struct SSAOInterleavePushConstant {
+	struct SSAOInterleavePushConstant
+	{
 		float inv_sharpness;
 		uint32_t size_modifier;
 		float pixel_size[2];
 	};
 
-	struct SSAO {
+	struct SSAO
+	{
 		SSAOGatherPushConstant gather_push_constant;
 		SsaoShaderRD gather_shader;
 		RID gather_shader_version;
@@ -413,13 +432,16 @@ private:
 		RID interleave_shader_version;
 
 		PipelineDeferredRD pipelines[SSAO_MAX];
-	} ssao;
+	};
 
-	void gather_ssao(RD::ComputeListID p_compute_list, const RID *p_ao_slices, const SSAOSettings &p_settings, bool p_adaptive_base_pass, RID p_gather_uniform_set, RID p_importance_map_uniform_set);
+	static void gather_ssao(RD::ComputeListID p_compute_list, const RID* p_ao_slices,
+		const SSAOSettings& p_settings, bool p_adaptive_base_pass, RID p_gather_uniform_set,
+		RID p_importance_map_uniform_set);
 
 	/* Screen Space Reflection */
 
-	enum ScreenSpaceReflectionDownsampleMode {
+	enum ScreenSpaceReflectionDownsampleMode
+	{
 		SCREEN_SPACE_REFLECTION_DOWNSAMPLE_DEFAULT,
 		SCREEN_SPACE_REFLECTION_DOWNSAMPLE_ODD_WIDTH,
 		SCREEN_SPACE_REFLECTION_DOWNSAMPLE_ODD_HEIGHT,
@@ -427,12 +449,14 @@ private:
 		SCREEN_SPACE_REFLECTION_DOWNSAMPLE_MAX
 	};
 
-	struct ScreenSpaceReflectionDownsamplePushConstant {
+	struct ScreenSpaceReflectionDownsamplePushConstant
+	{
 		int32_t screen_size[2];
 		int32_t pad[2];
 	};
 
-	enum ScreenSpaceReflectionHizMode {
+	enum ScreenSpaceReflectionHizMode
+	{
 		SCREEN_SPACE_REFLECTION_HIZ_DEFAULT,
 		SCREEN_SPACE_REFLECTION_HIZ_ODD_WIDTH,
 		SCREEN_SPACE_REFLECTION_HIZ_ODD_HEIGHT,
@@ -440,19 +464,22 @@ private:
 		SCREEN_SPACE_REFLECTION_HIZ_MAX
 	};
 
-	struct ScreenSpaceReflectionHizPushConstant {
+	struct ScreenSpaceReflectionHizPushConstant
+	{
 		int32_t screen_size[2];
 		int32_t pad[2];
 	};
 
-	struct ScreenSpaceReflectionSceneData {
+	struct ScreenSpaceReflectionSceneData
+	{
 		float projection[2][16];
 		float inv_projection[2][16];
 		float reprojection[2][16];
 		float eye_offset[2][4];
 	};
 
-	struct ScreenSpaceReflectionPushConstant {
+	struct ScreenSpaceReflectionPushConstant
+	{
 		int32_t screen_size[2];
 		int32_t mipmaps;
 		int32_t num_steps;
@@ -464,18 +491,21 @@ private:
 		int32_t pad[3];
 	};
 
-	struct ScreenSpaceReflectionFilterPushConstant {
+	struct ScreenSpaceReflectionFilterPushConstant
+	{
 		int32_t screen_size[2];
 		uint32_t mip_level;
 		int32_t pad;
 	};
 
-	struct ScreenSpaceReflectionResolvePushConstant {
+	struct ScreenSpaceReflectionResolvePushConstant
+	{
 		int32_t screen_size[2];
 		int32_t pad[2];
 	};
 
-	struct ScreenSpaceReflection {
+	struct ScreenSpaceReflection
+	{
 		ScreenSpaceReflectionDownsampleShaderRD downsample_shader;
 		RID downsample_shader_version;
 		PipelineDeferredRD downsample_pipelines[SCREEN_SPACE_REFLECTION_DOWNSAMPLE_MAX];
@@ -496,18 +526,20 @@ private:
 		ScreenSpaceReflectionResolveShaderRD resolve_shader;
 		RID resolve_shader_version;
 		PipelineDeferredRD resolve_pipeline;
-	} ssr;
+	};
 
 	/* Subsurface scattering */
 
-	enum SSSMode {
+	enum SSSMode
+	{
 		SUBSURFACE_SCATTERING_MODE_LOW_QUALITY,
 		SUBSURFACE_SCATTERING_MODE_MEDIUM_QUALITY,
 		SUBSURFACE_SCATTERING_MODE_HIGH_QUALITY,
 		SUBSURFACE_SCATTERING_MODE_MAX
 	};
 
-	struct SubSurfaceScatteringPushConstant {
+	struct SubSurfaceScatteringPushConstant
+	{
 		int32_t screen_size[2];
 		float camera_z_far;
 		float camera_z_near;
@@ -521,12 +553,44 @@ private:
 		uint32_t pad[3];
 	};
 
-	struct SubSurfaceScattering {
+	struct SubSurfaceScattering
+	{
 		SubSurfaceScatteringPushConstant push_constant;
 		SubsurfaceScatteringShaderRD shader;
 		RID shader_version;
 		PipelineDeferredRD pipelines[SUBSURFACE_SCATTERING_MODE_MAX];
-	} sss;
+	};
+
+	struct Data
+	{
+		RSE::EnvironmentSSAOQuality ssao_quality = RSE::ENV_SSAO_QUALITY_MEDIUM;
+		bool ssao_half_size = false;
+		float ssao_adaptive_target = 0.5f;
+		int ssao_blur_passes = 2;
+		float ssao_fadeout_from = 50.0f;
+		float ssao_fadeout_to = 300.0f;
+
+		RSE::EnvironmentSSILQuality ssil_quality = RSE::ENV_SSIL_QUALITY_MEDIUM;
+		bool ssil_half_size = false;
+		float ssil_adaptive_target = 0.5f;
+		int ssil_blur_passes = 4;
+		float ssil_fadeout_from = 50.0f;
+		float ssil_fadeout_to = 300.0f;
+
+		bool ssr_half_size = false;
+
+		RSE::SubSurfaceScatteringQuality sss_quality = RSE::SUB_SURFACE_SCATTERING_QUALITY_MEDIUM;
+		float sss_scale = 0.05f;
+		float sss_depth_scale = 0.01f;
+
+		SSEffectsShader ss_effects;
+		SSIL ssil;
+		SSAO ssao;
+		ScreenSpaceReflection ssr;
+		SubSurfaceScattering sss;
+	};
+
+	static inline Data* data = nullptr;
 };
 
 } // namespace RendererRD

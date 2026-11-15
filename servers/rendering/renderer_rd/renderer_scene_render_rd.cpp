@@ -33,6 +33,7 @@
 #include "core/io/image.h"
 #include "core/os/memory.h"
 #include "renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/effects/ss_effects.h"
 #include "servers/rendering/renderer_rd/environment/fog.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
@@ -420,11 +421,11 @@ void RendererSceneRenderRD::_render_buffers_copy_screen_texture(const RenderData
 		RID dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, texture_name, v, 0);
 
 		if (can_use_storage) {
-			data->copy_effects->copy_to_rect(texture, dest, Rect2i(0, 0, size.x, size.y));
+			RendererRD::CopyEffects::copy_to_rect(texture, dest, Rect2i(0, 0, size.x, size.y));
 		}
 		else {
 			RID fb = FramebufferCacheRD::get_cache(dest);
-			data->copy_effects->copy_to_fb_rect(texture, fb, Rect2i(0, 0, size.x, size.y));
+			RendererRD::CopyEffects::copy_to_fb_rect(texture, fb, Rect2i(0, 0, size.x, size.y));
 		}
 
 		for (int i = 1; i < mipmaps; i++) {
@@ -433,10 +434,10 @@ void RendererSceneRenderRD::_render_buffers_copy_screen_texture(const RenderData
 			Size2i msize = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, texture_name, i);
 
 			if (can_use_storage) {
-				data->copy_effects->make_mipmap(source, dest, msize);
+				RendererRD::CopyEffects::make_mipmap(source, dest, msize);
 			}
 			else {
-				data->copy_effects->make_mipmap_raster(source, dest, msize);
+				RendererRD::CopyEffects::make_mipmap_raster(source, dest, msize);
 			}
 		}
 	}
@@ -485,7 +486,7 @@ void RendererSceneRenderRD::_render_buffers_copy_depth_texture(
 		RID depth_back_texture = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH, v, 0);
 
 		if (can_use_storage) {
-			data->copy_effects->copy_depth_to_rect(
+			RendererRD::CopyEffects::copy_depth_to_rect(
 				depth_texture, depth_back_texture, Rect2i(0, 0, size.x, size.y));
 		}
 		else {
@@ -497,7 +498,7 @@ void RendererSceneRenderRD::_render_buffers_copy_depth_texture(
 					rb->get_depth_msaa(v), depth_back_fb, texture_multisamples[rb->get_msaa_3d()]);
 			}
 			else {
-				data->copy_effects->copy_to_fb_rect(
+				RendererRD::CopyEffects::copy_to_fb_rect(
 					depth_texture, depth_back_fb, Rect2i(0, 0, size.x, size.y));
 			}
 		}
@@ -706,7 +707,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				Size2i vp_size = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, 0);
 				RID source = rb->get_internal_texture(l);
 				RID dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, 0);
-				data->copy_effects->gaussian_glow(source, dest, vp_size,
+				RendererRD::CopyEffects::gaussian_glow(source, dest, vp_size,
 					RendererSceneRender::environment_get_glow_strength(p_render_data->environment), true,
 					RendererSceneRender::environment_get_glow_hdr_luminance_cap(p_render_data->environment),
 					RendererSceneRender::environment_get_exposure(p_render_data->environment),
@@ -719,7 +720,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 					source = dest;
 					vp_size = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, i);
 					dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, i);
-					data->copy_effects->gaussian_glow(source, dest, vp_size,
+					RendererRD::CopyEffects::gaussian_glow(source, dest, vp_size,
 						RendererSceneRender::environment_get_glow_strength(p_render_data->environment));
 				}
 			}
@@ -743,7 +744,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				dest = rb->get_texture_slice(
 					RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, 1); // Level 1 is quarter res.
 
-				data->copy_effects->gaussian_glow_downsample_raster(source, dest, luminance_multiplier,
+				RendererRD::CopyEffects::gaussian_glow_downsample_raster(source, dest, luminance_multiplier,
 					source_size, RendererSceneRender::environment_get_glow_strength(p_render_data->environment), true,
 					RendererSceneRender::environment_get_glow_hdr_luminance_cap(p_render_data->environment),
 					RendererSceneRender::environment_get_exposure(p_render_data->environment),
@@ -757,7 +758,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 					vp_size = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, i);
 					dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, i + 1);
 
-					data->copy_effects->gaussian_glow_downsample_raster(source, dest,
+					RendererRD::CopyEffects::gaussian_glow_downsample_raster(source, dest,
 						luminance_multiplier, vp_size,
 						RendererSceneRender::environment_get_glow_strength(p_render_data->environment));
 				}
@@ -776,7 +777,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 					RID blend_tex = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, 1);
 					source_size = vp_size;
 
-					data->copy_effects->gaussian_glow_upsample_raster(source, dest, blend_tex,
+					RendererRD::CopyEffects::gaussian_glow_upsample_raster(source, dest, blend_tex,
 						luminance_multiplier, source_size, vp_size, glow_levels[0], 0.0,
 						use_debanding);
 				}
@@ -792,7 +793,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 					RID blend_tex =
 						rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, l, i + 1);
 
-					data->copy_effects->gaussian_glow_upsample_raster(source, dest, blend_tex,
+					RendererRD::CopyEffects::gaussian_glow_upsample_raster(source, dest, blend_tex,
 						luminance_multiplier, source_size, vp_size, glow_levels[i],
 						i == (max_glow_index - 1) ? glow_levels[i + 1] : 1.0, use_debanding);
 				}
@@ -1073,7 +1074,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 				use_smaa ? SNAME("data->SMAA") : SNAME("Tonemapper"), SNAME("destination"));
 			RID dest_texture = RendererRD::TextureStorage::render_target_get_rd_texture(render_target);
 			RID dest_fb = FramebufferCacheRD::get_cache(dest_texture);
-			data->copy_effects->copy_to_fb_rect(source_texture, dest_fb,
+			RendererRD::CopyEffects::copy_to_fb_rect(source_texture, dest_fb,
 				Rect2i(Point2i(), rb->get_target_size()), false, false, false, false, RID(),
 				rb->get_view_count() > 1, false, false, false, Rect2(), 1.0,
 				scale_mode != RSE::VIEWPORT_SCALING_3D_MODE_NEAREST);
@@ -1084,7 +1085,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(
 			RID source_texture = RendererRD::TextureStorage::render_target_get_rd_texture(render_target);
 			RID dest_fb = FramebufferCacheRD::get_cache(
 				RendererRD::TextureStorage::render_target_get_rd_texture_msaa(render_target));
-			data->copy_effects->copy_to_fb_rect(
+			RendererRD::CopyEffects::copy_to_fb_rect(
 				source_texture, dest_fb, Rect2i(Point2i(), rb->get_target_size()));
 
 			RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(
@@ -1291,7 +1292,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 			}
 
 			Size2 rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
-			data->copy_effects->copy_to_fb_rect(shadow_atlas_texture,
+			RendererRD::CopyEffects::copy_to_fb_rect(shadow_atlas_texture,
 				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize / 2), false, true);
 		}
@@ -1314,7 +1315,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 				size.x = size.y;
 			}
 
-			data->copy_effects->copy_to_fb_rect(
+			RendererRD::CopyEffects::copy_to_fb_rect(
 				shadow_atlas_texture, dest_fb, Rect2i(Vector2(), size), false, true);
 
 			// Visualize our view frustum to show coverage.
@@ -1337,7 +1338,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 		if (decal_atlas.is_valid()) {
 			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 
-			data->copy_effects->copy_to_fb_rect(decal_atlas,
+			RendererRD::CopyEffects::copy_to_fb_rect(decal_atlas,
 				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize / 2), false, false, true);
 		}
@@ -1350,7 +1351,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 		if (area_light_atlas.is_valid()) {
 			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 
-			data->copy_effects->copy_to_fb_rect(area_light_atlas,
+			RendererRD::CopyEffects::copy_to_fb_rect(area_light_atlas,
 				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize / 2), false, false, true);
 		}
@@ -1361,7 +1362,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 		if (luminance_texture.is_valid()) {
 			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
 
-			data->copy_effects->copy_to_fb_rect(luminance_texture,
+			RendererRD::CopyEffects::copy_to_fb_rect(luminance_texture,
 				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2(Vector2(), rtsize / 8), false, true);
 		}
@@ -1369,7 +1370,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_INTERNAL_BUFFER) {
 		Size2 rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
-		data->copy_effects->copy_to_fb_rect(rb->get_internal_texture(),
+		RendererRD::CopyEffects::copy_to_fb_rect(rb->get_internal_texture(),
 			RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 			Rect2(Vector2(), rtsize), false, false);
 	}
@@ -1377,7 +1378,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_NORMAL_BUFFER &&
 		_render_buffers_get_normal_texture(rb).is_valid()) {
 		Size2 rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
-		data->copy_effects->copy_to_fb_rect(_render_buffers_get_normal_texture(rb),
+		RendererRD::CopyEffects::copy_to_fb_rect(_render_buffers_get_normal_texture(rb),
 			RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 			Rect2(Vector2(), rtsize), false, false, false, false, RID(), false, false, false, true);
 	}
@@ -1385,7 +1386,7 @@ void RendererSceneRenderRD::_render_buffers_debug_draw(const RenderDataRD* p_ren
 	if (data->debug_draw == RSE::VIEWPORT_DEBUG_DRAW_OCCLUDERS) {
 		if (p_render_data->occluder_debug_tex.is_valid()) {
 			Size2i rtsize = RendererRD::TextureStorage::render_target_get_size(render_target);
-			data->copy_effects->copy_to_fb_rect(
+			RendererRD::CopyEffects::copy_to_fb_rect(
 				RendererRD::TextureStorage::texture_get_rd_texture(p_render_data->occluder_debug_tex),
 				RendererRD::TextureStorage::render_target_get_rd_framebuffer(render_target),
 				Rect2i(Vector2(), rtsize), true, false);
@@ -1910,82 +1911,83 @@ bool RendererSceneRenderRD::is_volumetric_supported()
 
 void RendererSceneRenderRD::initialize()
 {
-    data = memnew(RendererSceneRenderRD::Data);
+	data = memnew(RendererSceneRenderRD::Data);
 
-    data->forward_id_storage = create_forward_id_storage();
-    data->bokeh_dof = memnew(RendererRD::BokehDOF(false));
-    data->copy_effects = memnew(RendererRD::CopyEffects(0));
-    data->debug_effects = memnew(RendererRD::DebugEffects);
-    data->luminance = memnew(RendererRD::Luminance(data->copy_effects));
-    data->smaa = memnew(RendererRD::SMAA);
-    data->tone_mapper = memnew(RendererRD::ToneMapper(data->copy_effects));
-    data->fsr = memnew(RendererRD::FSR);
-    data->vrs = memnew(RendererRD::VRS);
-    data->resolve_effects = memnew(RendererRD::Resolve(data->copy_effects));
+	RendererRD::CopyEffects::initialize(0);
+	RendererRD::SSEffects::initialize();
+
+	data->forward_id_storage = create_forward_id_storage();
+	data->bokeh_dof = memnew(RendererRD::BokehDOF(false));
+	data->debug_effects = memnew(RendererRD::DebugEffects);
+	data->luminance = memnew(RendererRD::Luminance(false));
+	data->smaa = memnew(RendererRD::SMAA);
+	data->tone_mapper = memnew(RendererRD::ToneMapper(false));
+	data->fsr = memnew(RendererRD::FSR);
+	data->vrs = memnew(RendererRD::VRS);
+	data->resolve_effects = memnew(RendererRD::Resolve(false));
 #ifdef METAL_ENABLED
-    data->mfx_spatial = memnew(RendererRD::MFXSpatialEffect);
+	data->mfx_spatial = memnew(RendererRD::MFXSpatialEffect);
 #endif
-    data->sky.init();
-    RendererRD::GI::initialize(&data->sky);
+	data->sky.init();
+	RendererRD::GI::initialize(&data->sky);
 
-    _update_shader_quality_settings();
+	_update_shader_quality_settings();
 }
 
 void RendererSceneRenderRD::finalize()
 {
-    if (!data) {
-        return;
-    }
-    RendererRD::GI::free();
-    if (data->directional_penumbra_shadow_kernel) {
-        memdelete_arr(data->directional_penumbra_shadow_kernel);
-    }
-    if (data->directional_soft_shadow_kernel) {
-        memdelete_arr(data->directional_soft_shadow_kernel);
-    }
-    if (data->penumbra_shadow_kernel) {
-        memdelete_arr(data->penumbra_shadow_kernel);
-    }
-    if (data->soft_shadow_kernel) {
-        memdelete_arr(data->soft_shadow_kernel);
-    }
+	if (!data) {
+		return;
+	}
+	RendererRD::GI::free();
+	if (data->directional_penumbra_shadow_kernel) {
+		memdelete_arr(data->directional_penumbra_shadow_kernel);
+	}
+	if (data->directional_soft_shadow_kernel) {
+		memdelete_arr(data->directional_soft_shadow_kernel);
+	}
+	if (data->penumbra_shadow_kernel) {
+		memdelete_arr(data->penumbra_shadow_kernel);
+	}
+	if (data->soft_shadow_kernel) {
+		memdelete_arr(data->soft_shadow_kernel);
+	}
 #ifdef METAL_ENABLED
-    if (data->mfx_spatial) {
-        memdelete(data->mfx_spatial);
-    }
+	if (data->mfx_spatial) {
+		memdelete(data->mfx_spatial);
+	}
 #endif
-    if (data->resolve_effects) {
-        memdelete(data->resolve_effects);
-    }
-    if (data->vrs) {
-        memdelete(data->vrs);
-    }
-    if (data->fsr) {
-        memdelete(data->fsr);
-    }
-    if (data->tone_mapper) {
-        memdelete(data->tone_mapper);
-    }
-    if (data->smaa) {
-        memdelete(data->smaa);
-    }
-    if (data->luminance) {
-        memdelete(data->luminance);
-    }
-    if (data->debug_effects) {
-        memdelete(data->debug_effects);
-    }
-    if (data->copy_effects) {
-        memdelete(data->copy_effects);
-    }
-    if (data->bokeh_dof) {
-        memdelete(data->bokeh_dof);
-    }
-    if (data->forward_id_storage) {
-        memdelete(data->forward_id_storage);
-    }
-    memdelete(data);
-    data = nullptr;
+	if (data->resolve_effects) {
+		memdelete(data->resolve_effects);
+	}
+	if (data->vrs) {
+		memdelete(data->vrs);
+	}
+	if (data->fsr) {
+		memdelete(data->fsr);
+	}
+	if (data->tone_mapper) {
+		memdelete(data->tone_mapper);
+	}
+	if (data->smaa) {
+		memdelete(data->smaa);
+	}
+	if (data->luminance) {
+		memdelete(data->luminance);
+	}
+	if (data->debug_effects) {
+		memdelete(data->debug_effects);
+	}
+	if (data->bokeh_dof) {
+		memdelete(data->bokeh_dof);
+	}
+	if (data->forward_id_storage) {
+		memdelete(data->forward_id_storage);
+	}
+	RendererRD::SSEffects::finalize();
+	RendererRD::CopyEffects::finalize();
+	memdelete(data);
+	data = nullptr;
 }
 
 uint32_t RendererSceneRenderRD::get_max_elements()
