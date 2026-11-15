@@ -71,7 +71,6 @@ public:
 
 	struct Data
 	{
-		RendererRD::ForwardIDStorage* forward_id_storage = nullptr;
 		RendererRD::BokehDOF* bokeh_dof = nullptr;
 		RendererRD::DebugEffects* debug_effects = nullptr;
 		RendererRD::Luminance* luminance = nullptr;
@@ -213,11 +212,6 @@ public:
 
 	static RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers);
 	static RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers);
-
-	static RendererRD::ForwardIDStorage* create_forward_id_storage()
-	{
-		return memnew(RendererRD::ForwardIDStorage);
-	}
 
 	static void _post_prepass_render(RenderDataRD* p_render_data, bool p_use_gi);
 

@@ -2203,14 +2203,14 @@ RID RendererRD::TextureStorage::decal_instance_create(RID p_decal)
 {
 	DecalInstance di;
 	di.decal = p_decal;
-	di.forward_id = ForwardIDStorage::get_singleton()->allocate_forward_id(FORWARD_ID_TYPE_DECAL);
+	di.forward_id = ForwardIDStorage::allocate_forward_id(FORWARD_ID_TYPE_DECAL);
 	return decal_instance_owner.make_rid(di);
 }
 
 void RendererRD::TextureStorage::decal_instance_free(RID p_decal_instance)
 {
 	DecalInstance* di = decal_instance_owner.get_or_null(p_decal_instance);
-	ForwardIDStorage::get_singleton()->free_forward_id(FORWARD_ID_TYPE_DECAL, di->forward_id);
+	ForwardIDStorage::free_forward_id(FORWARD_ID_TYPE_DECAL, di->forward_id);
 	decal_instance_owner.free(p_decal_instance);
 }
 
@@ -2260,8 +2260,6 @@ void RendererRD::TextureStorage::set_max_decals(const uint32_t p_max_decals)
 void RendererRD::TextureStorage::update_decal_buffer(
 	const PagedArray<RID>& p_decals, const Transform3D& p_camera_xform)
 {
-	ForwardIDStorage* forward_id_storage = ForwardIDStorage::get_singleton();
-
 	Transform3D uv_xform;
 	uv_xform.basis.scale(Vector3(2.0, 1.0, 2.0));
 	uv_xform.origin = Vector3(-1.0, 0.0, -1.0);
@@ -2307,13 +2305,13 @@ void RendererRD::TextureStorage::update_decal_buffer(
 		sort_array.sort(decal_sort, decal_count);
 	}
 
-	bool using_forward_ids = forward_id_storage->uses_forward_ids();
+	bool using_forward_ids = ForwardIDStorage::uses_forward_ids();
 	for (uint32_t i = 0; i < decal_count; i++) {
 		DecalInstance* decal_instance = decal_sort[i].decal_instance;
 		Decal* decal = decal_sort[i].decal;
 
 		if (using_forward_ids) {
-			forward_id_storage->map_forward_id(FORWARD_ID_TYPE_DECAL, decal_instance->forward_id, i,
+			ForwardIDStorage::map_forward_id(FORWARD_ID_TYPE_DECAL, decal_instance->forward_id, i,
 				RendererCompositor::get_frame_number());
 		}
 

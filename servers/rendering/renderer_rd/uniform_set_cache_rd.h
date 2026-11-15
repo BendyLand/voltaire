@@ -35,8 +35,9 @@
 #include "core/templates/paged_allocator.h"
 #include "servers/rendering/rendering_device.h"
 
-class UniformSetCacheRD
+class UniformSetCacheRD final
 {
+public:
 	struct Cache
 	{
 		Cache* prev = nullptr;
@@ -48,15 +49,25 @@ class UniformSetCacheRD
 		LocalVector<RD::Uniform> uniforms;
 	};
 
-	static inline PagedAllocator<Cache> cache_allocator = {};
-
 	enum
 	{
 		HASH_TABLE_SIZE = 16381 // Prime
 	};
 
-	static inline Cache* hash_table[HASH_TABLE_SIZE] = {};
+	struct Data
+	{
+		PagedAllocator<Cache> cache_allocator;
+		Cache* hash_table[HASH_TABLE_SIZE] = {};
+		uint32_t cache_instances_used = 0;
+	};
 
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
+private:
 	static _FORCE_INLINE_ uint32_t _hash_uniform(const RD::Uniform& u, uint32_t h)
 	{
 		h = hash_murmur3_one_32(u.uniform_type, h);
@@ -88,26 +99,26 @@ class UniformSetCacheRD
 		return true;
 	}
 
-	_FORCE_INLINE_ uint32_t _hash_args(uint32_t h, const RD::Uniform& arg)
+	static _FORCE_INLINE_ uint32_t _hash_args(uint32_t h, const RD::Uniform& arg)
 	{
 		return _hash_uniform(arg, h);
 	}
 
 	template <typename... Args>
-	uint32_t _hash_args(uint32_t h, const RD::Uniform& arg, Args... args)
+	static uint32_t _hash_args(uint32_t h, const RD::Uniform& arg, Args... args)
 	{
 		h = _hash_uniform(arg, h);
 		return _hash_args(h, args...);
 	}
 
-	_FORCE_INLINE_ bool _compare_args(
+	static _FORCE_INLINE_ bool _compare_args(
 		uint32_t idx, const LocalVector<RD::Uniform>& uniforms, const RD::Uniform& arg)
 	{
 		return _compare_uniform(uniforms[idx], arg);
 	}
 
 	template <typename... Args>
-	_FORCE_INLINE_ bool _compare_args(uint32_t idx, const LocalVector<RD::Uniform>& uniforms,
+	static _FORCE_INLINE_ bool _compare_args(uint32_t idx, const LocalVector<RD::Uniform>& uniforms,
 		const RD::Uniform& arg, Args... args)
 	{
 		if (!_compare_uniform(uniforms[idx], arg)) {
@@ -116,22 +127,19 @@ class UniformSetCacheRD
 		return _compare_args(idx + 1, uniforms, args...);
 	}
 
-	static UniformSetCacheRD* singleton;
-
-	static inline uint32_t cache_instances_used = 0;
-
-	void _invalidate(Cache* p_cache);
+	static void _invalidate(Cache* p_cache);
 	static void _uniform_set_invalidation_callback(void* p_userdata);
 
 	template <typename Collection>
-	static RID _allocate_from_uniforms(RID p_shader, uint32_t p_set, uint32_t p_hash, uint32_t p_table_idx,
-		const Collection& p_uniforms)
+	static RID _allocate_from_uniforms(RID p_shader, uint32_t p_set, uint32_t p_hash,
+		uint32_t p_table_idx, const Collection& p_uniforms)
 	{
-		if (!cache_instances_used) cache_instances_used = 0;
+		ERR_FAIL_COND_V(data == nullptr, RID());
+
 		RID rid = RD::uniform_set_create(p_uniforms, p_shader, p_set);
 		ERR_FAIL_COND_V(rid.is_null(), rid);
 
-		Cache* c = cache_allocator.alloc();
+		Cache* c = data->cache_allocator.alloc();
 		c->hash = p_hash;
 		c->set = p_set;
 		c->shader = p_shader;
@@ -141,32 +149,31 @@ class UniformSetCacheRD
 			c->uniforms[i] = p_uniforms[i];
 		}
 		c->prev = nullptr;
-		c->next = hash_table[p_table_idx];
-		if (hash_table[p_table_idx]) {
-			hash_table[p_table_idx]->prev = c;
+		c->next = data->hash_table[p_table_idx];
+		if (data->hash_table[p_table_idx]) {
+			data->hash_table[p_table_idx]->prev = c;
 		}
-		hash_table[p_table_idx] = c;
+		data->hash_table[p_table_idx] = c;
 
-		RD::uniform_set_set_invalidation_callback(
-			rid, _uniform_set_invalidation_callback, c);
+		RD::uniform_set_set_invalidation_callback(rid, _uniform_set_invalidation_callback, c);
 
-		cache_instances_used++;
+		data->cache_instances_used++;
 
 		return rid;
 	}
 
-private:
-
 public:
-	template <typename... Args> RID get_cache(RID p_shader, uint32_t p_set, Args... args)
+	template <typename... Args> static RID get_cache(RID p_shader, uint32_t p_set, Args... args)
 	{
+		ERR_FAIL_COND_V(data == nullptr, RID());
+
 		uint32_t h = hash_murmur3_one_64(p_shader.get_id());
 		h = hash_murmur3_one_32(p_set, h);
 		h = _hash_args(h, args...);
 
 		uint32_t table_idx = h % HASH_TABLE_SIZE;
 		{
-			const Cache* c = hash_table[table_idx];
+			const Cache* c = data->hash_table[table_idx];
 
 			while (c) {
 				if (c->hash == h && c->set == p_set && c->shader == p_shader &&
@@ -179,13 +186,14 @@ public:
 		}
 
 		// Not in cache, create:
-
 		return _allocate_from_uniforms(p_shader, p_set, h, table_idx, Vector<RD::Uniform>{args...});
 	}
 
-	template <typename... Args>
-	static RID get_cache_vec(RID p_shader, uint32_t p_set, const LocalVector<RD::Uniform>& p_uniforms)
+	static RID get_cache_vec(
+		RID p_shader, uint32_t p_set, const LocalVector<RD::Uniform>& p_uniforms)
 	{
+		ERR_FAIL_COND_V(data == nullptr, RID());
+
 		uint32_t h = hash_murmur3_one_64(p_shader.get_id());
 		h = hash_murmur3_one_32(p_set, h);
 		for (uint32_t i = 0; i < p_uniforms.size(); i++) {
@@ -196,7 +204,7 @@ public:
 
 		uint32_t table_idx = h % HASH_TABLE_SIZE;
 		{
-			const Cache* c = hash_table[table_idx];
+			const Cache* c = data->hash_table[table_idx];
 
 			while (c) {
 				if (c->hash == h && c->set == p_set && c->shader == p_shader &&
@@ -221,10 +229,10 @@ public:
 		return _allocate_from_uniforms(p_shader, p_set, h, table_idx, p_uniforms);
 	}
 
-	static UniformSetCacheRD* get_singleton() { return singleton; }
-
-	UniformSetCacheRD();
-	~UniformSetCacheRD();
+	UniformSetCacheRD() = delete;
+	UniformSetCacheRD(const UniformSetCacheRD&) = delete;
+	UniformSetCacheRD& operator=(const UniformSetCacheRD&) = delete;
+	~UniformSetCacheRD() = delete;
 };
 
 

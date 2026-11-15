@@ -103,9 +103,6 @@ public:
 	};
 
 private:
-	static inline UniformSetCacheRD* uniform_set_cache = nullptr;
-	static inline FramebufferCacheRD* framebuffer_cache = nullptr;
-
 	static inline RendererCanvasRenderRD* canvas = nullptr;
 	static inline RendererSceneRenderRD* scene = nullptr;
 

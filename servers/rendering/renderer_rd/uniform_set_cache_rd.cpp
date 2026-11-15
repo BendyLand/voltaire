@@ -32,44 +32,51 @@
 #include "servers/rendering/rendering_device_binds.h"
 #include "uniform_set_cache_rd.h"
 
-UniformSetCacheRD* UniformSetCacheRD::singleton = nullptr;
-
 void UniformSetCacheRD::_invalidate(Cache* p_cache)
 {
+	if (!data) {
+		return;
+	}
+
 	if (p_cache->prev) {
 		p_cache->prev->next = p_cache->next;
 	}
 	else {
 		// At beginning of table
 		uint32_t table_idx = p_cache->hash % HASH_TABLE_SIZE;
-		hash_table[table_idx] = p_cache->next;
+		data->hash_table[table_idx] = p_cache->next;
 	}
 
 	if (p_cache->next) {
 		p_cache->next->prev = p_cache->prev;
 	}
 
-	cache_allocator.free(p_cache);
-	cache_instances_used--;
+	data->cache_allocator.free(p_cache);
+	data->cache_instances_used--;
 }
 
 void UniformSetCacheRD::_uniform_set_invalidation_callback(void* p_userdata)
 {
-	singleton->_invalidate(reinterpret_cast<Cache*>(p_userdata));
+	_invalidate(reinterpret_cast<Cache*>(p_userdata));
 }
 
-UniformSetCacheRD::UniformSetCacheRD()
+void UniformSetCacheRD::initialize()
 {
-	ERR_FAIL_COND(singleton != nullptr);
-	singleton = this;
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
 }
 
-UniformSetCacheRD::~UniformSetCacheRD()
+void UniformSetCacheRD::finalize()
 {
-	if (cache_instances_used > 0) {
-		ERR_PRINT("At exit: " + itos(cache_instances_used) +
+	if (!data) {
+		return;
+	}
+	if (data->cache_instances_used > 0) {
+		ERR_PRINT("At exit: " + itos(data->cache_instances_used) +
 				  " uniform set cache instance(s) still in use.");
 	}
+	memdelete(data);
+	data = nullptr;
 }
 
 

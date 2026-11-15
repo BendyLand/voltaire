@@ -50,31 +50,46 @@ enum ForwardIDType
 	FORWARD_ID_MAX,
 };
 
-class ForwardIDStorage
+class ForwardIDStorage final
 {
 private:
-	static inline ForwardIDStorage* singleton = nullptr;
+	static ForwardID _default_allocate_forward_id(ForwardIDType p_type) { return -1; }
+	static void _default_free_forward_id(ForwardIDType p_type, ForwardID p_id) {}
+	static void _default_map_forward_id(
+		ForwardIDType p_type, ForwardID p_id, uint32_t p_index, uint64_t p_last_pass)
+	{
+	}
+	static bool _default_uses_forward_ids() { return false; }
 
 public:
-	static ForwardIDStorage* get_singleton() { return singleton; }
+	inline static ForwardID (*allocate_forward_id)(ForwardIDType p_type) =
+		&_default_allocate_forward_id;
+	inline static void (*free_forward_id)(ForwardIDType p_type, ForwardID p_id) =
+		&_default_free_forward_id;
+	inline static void (*map_forward_id)(ForwardIDType p_type, ForwardID p_id, uint32_t p_index,
+		uint64_t p_last_pass) = &_default_map_forward_id;
+	inline static bool (*uses_forward_ids)() = &_default_uses_forward_ids;
 
-	ForwardIDStorage() { singleton = this; }
-
-	virtual ~ForwardIDStorage() { singleton = nullptr; }
-
-	virtual RendererRD::ForwardID allocate_forward_id(RendererRD::ForwardIDType p_type)
+	template <typename Impl> static void bind()
 	{
-		return -1;
+		allocate_forward_id = &Impl::allocate_forward_id;
+		free_forward_id = &Impl::free_forward_id;
+		map_forward_id = &Impl::map_forward_id;
+		uses_forward_ids = &Impl::uses_forward_ids;
 	}
 
-	virtual void free_forward_id(RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id) {}
-
-	virtual void map_forward_id(RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id,
-		uint32_t p_index, uint64_t p_last_pass)
+	static void reset()
 	{
+		allocate_forward_id = &_default_allocate_forward_id;
+		free_forward_id = &_default_free_forward_id;
+		map_forward_id = &_default_map_forward_id;
+		uses_forward_ids = &_default_uses_forward_ids;
 	}
 
-	virtual bool uses_forward_ids() const { return false; }
+	ForwardIDStorage() = delete;
+	ForwardIDStorage(const ForwardIDStorage&) = delete;
+	ForwardIDStorage& operator=(const ForwardIDStorage&) = delete;
+	~ForwardIDStorage() = delete;
 };
 
 } // namespace RendererRD

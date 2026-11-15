@@ -34,6 +34,10 @@
 
 void FramebufferCacheRD::_invalidate(Cache* p_cache)
 {
+	if (!data) {
+		return;
+	}
+
 	if (p_cache->prev) {
 		p_cache->prev->next = p_cache->next;
 	}
@@ -54,6 +58,25 @@ void FramebufferCacheRD::_invalidate(Cache* p_cache)
 void FramebufferCacheRD::_framebuffer_invalidation_callback(void* p_userdata)
 {
 	_invalidate(reinterpret_cast<Cache*>(p_userdata));
+}
+
+void FramebufferCacheRD::initialize()
+{
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+}
+
+void FramebufferCacheRD::finalize()
+{
+	if (!data) {
+		return;
+	}
+	if (data->cache_instances_used > 0) {
+		ERR_PRINT("At exit: " + itos(data->cache_instances_used) +
+				  " framebuffer cache instance(s) still in use.");
+	}
+	memdelete(data);
+	data = nullptr;
 }
 
 

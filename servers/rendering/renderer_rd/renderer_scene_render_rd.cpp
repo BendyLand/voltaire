@@ -1916,7 +1916,6 @@ void RendererSceneRenderRD::initialize()
 	RendererRD::CopyEffects::initialize(0);
 	RendererRD::SSEffects::initialize();
 
-	data->forward_id_storage = create_forward_id_storage();
 	data->bokeh_dof = memnew(RendererRD::BokehDOF(false));
 	data->debug_effects = memnew(RendererRD::DebugEffects);
 	data->luminance = memnew(RendererRD::Luminance(false));
@@ -1981,9 +1980,7 @@ void RendererSceneRenderRD::finalize()
 	if (data->bokeh_dof) {
 		memdelete(data->bokeh_dof);
 	}
-	if (data->forward_id_storage) {
-		memdelete(data->forward_id_storage);
-	}
+	RendererRD::ForwardIDStorage::reset();
 	RendererRD::SSEffects::finalize();
 	RendererRD::CopyEffects::finalize();
 	memdelete(data);

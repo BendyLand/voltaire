@@ -213,6 +213,9 @@ void RendererCompositorRD::initialize()
 		return;
 	}
 
+	UniformSetCacheRD::initialize();
+	FramebufferCacheRD::initialize();
+
 	RendererRD::MeshStorage::initialize();
 	RendererSceneRenderRD::initialize();
 	RendererCanvasRenderRD::initialize();
@@ -280,6 +283,9 @@ void RendererCompositorRD::finalize()
 		memdelete(blit);
 		blit = nullptr;
 	}
+
+	FramebufferCacheRD::finalize();
+	UniformSetCacheRD::finalize();
 }
 
 float RendererCompositorRD::_compute_reference_multiplier(RDC::ColorSpace p_color_space,

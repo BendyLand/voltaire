@@ -558,8 +558,7 @@ RID RendererRD::LightStorage::light_instance_create(RID p_light)
 	light_instance->light_type = light_get_type(p_light);
 	if (light_instance->light_type != RSE::LIGHT_DIRECTIONAL) {
 		ForwardIDType forward_id_type = _light_type_to_forward_id_type(light_instance->light_type);
-		light_instance->forward_id =
-			ForwardIDStorage::get_singleton()->allocate_forward_id(forward_id_type);
+		light_instance->forward_id = ForwardIDStorage::allocate_forward_id(forward_id_type);
 	}
 
 	return li;
@@ -589,8 +588,7 @@ void RendererRD::LightStorage::light_instance_free(RID p_light)
 
 	if (light_instance->light_type != RSE::LIGHT_DIRECTIONAL) {
 		ForwardIDType forward_id_type = _light_type_to_forward_id_type(light_instance->light_type);
-		ForwardIDStorage::get_singleton()->free_forward_id(
-			forward_id_type, light_instance->forward_id);
+		ForwardIDStorage::free_forward_id(forward_id_type, light_instance->forward_id);
 	}
 	light_instance_owner.free(p_light);
 }
@@ -703,8 +701,6 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 	bool p_using_shadows, uint32_t& r_directional_light_count, uint32_t& r_positional_light_count,
 	bool& r_directional_light_soft_shadows)
 {
-	ForwardIDStorage* forward_id_storage = ForwardIDStorage::get_singleton();
-
 	Transform3D inverse_transform = p_camera_transform.affine_inverse();
 
 	r_directional_light_count = 0;
@@ -973,7 +969,7 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		sorter.sort(area_light_sort, area_light_count);
 	}
 
-	bool using_forward_ids = forward_id_storage->uses_forward_ids();
+	bool using_forward_ids = ForwardIDStorage::uses_forward_ids();
 
 	for (uint32_t i = 0; i < (omni_light_count + spot_light_count + area_light_count); i++) {
 		uint32_t index;
@@ -1011,7 +1007,7 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 		if (using_forward_ids) {
 			ForwardIDType forward_id_type =
 				_light_type_to_forward_id_type(light_instance->light_type);
-			forward_id_storage->map_forward_id(
+			ForwardIDStorage::map_forward_id(
 				forward_id_type, light_instance->forward_id, index, light_instance->last_pass);
 		}
 
@@ -1696,8 +1692,7 @@ RID RendererRD::LightStorage::reflection_probe_instance_create(RID p_probe)
 {
 	ReflectionProbeInstance rpi;
 	rpi.probe = p_probe;
-	rpi.forward_id =
-		ForwardIDStorage::get_singleton()->allocate_forward_id(FORWARD_ID_TYPE_REFLECTION_PROBE);
+	rpi.forward_id = ForwardIDStorage::allocate_forward_id(FORWARD_ID_TYPE_REFLECTION_PROBE);
 
 	return reflection_probe_instance_owner.make_rid(rpi);
 }
@@ -1705,8 +1700,7 @@ RID RendererRD::LightStorage::reflection_probe_instance_create(RID p_probe)
 void RendererRD::LightStorage::reflection_probe_instance_free(RID p_instance)
 {
 	ReflectionProbeInstance* rpi = reflection_probe_instance_owner.get_or_null(p_instance);
-	ForwardIDStorage::get_singleton()->free_forward_id(
-		FORWARD_ID_TYPE_REFLECTION_PROBE, rpi->forward_id);
+	ForwardIDStorage::free_forward_id(FORWARD_ID_TYPE_REFLECTION_PROBE, rpi->forward_id);
 	reflection_probe_release_atlas_index(p_instance);
 	reflection_probe_instance_owner.free(p_instance);
 }
@@ -2096,8 +2090,6 @@ void RendererRD::LightStorage::update_reflection_probe_buffer(RenderDataRD* p_re
 	const PagedArray<RID>& p_reflections, const Transform3D& p_camera_inverse_transform,
 	RID p_environment)
 {
-	ForwardIDStorage* forward_id_storage = ForwardIDStorage::get_singleton();
-
 	reflection_count = 0;
 
 	for (uint32_t i = 0; i < (uint32_t)p_reflections.size(); i++) {
@@ -2124,14 +2116,14 @@ void RendererRD::LightStorage::update_reflection_probe_buffer(RenderDataRD* p_re
 		sort_array.sort(reflection_sort, reflection_count);
 	}
 
-	bool using_forward_ids = forward_id_storage->uses_forward_ids();
+	bool using_forward_ids = ForwardIDStorage::uses_forward_ids();
 	for (uint32_t i = 0; i < reflection_count; i++) {
 		ReflectionProbeInstance* rpi = reflection_sort[i].probe_instance;
 
 		rpi->last_pass = RendererCompositor::get_frame_number();
 
 		if (using_forward_ids) {
-			forward_id_storage->map_forward_id(
+			ForwardIDStorage::map_forward_id(
 				FORWARD_ID_TYPE_REFLECTION_PROBE, rpi->forward_id, i, rpi->last_pass);
 		}
 

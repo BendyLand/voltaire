@@ -741,7 +741,7 @@ protected:
 
 	/* Forward ID */
 
-	class ForwardIDStorageMobile : public RendererRD::ForwardIDStorage
+	class ForwardIDStorageMobile final
 	{
 	public:
 		struct ForwardIDAllocator
@@ -751,29 +751,32 @@ protected:
 			LocalVector<uint64_t> last_pass;
 		};
 
-		ForwardIDAllocator forward_id_allocators[RendererRD::FORWARD_ID_MAX];
+		struct Data
+		{
+			ForwardIDAllocator forward_id_allocators[RendererRD::FORWARD_ID_MAX];
+		};
 
-	public:
-		virtual RendererRD::ForwardID allocate_forward_id(
-			RendererRD::ForwardIDType p_type);
-		virtual void free_forward_id(
-			RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id);
-		virtual void map_forward_id(RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id,
+		static inline Data* data = nullptr;
+
+		static void initialize();
+		static void finalize();
+		static bool is_initialized() { return data != nullptr; }
+
+		static RendererRD::ForwardID allocate_forward_id(RendererRD::ForwardIDType p_type);
+		static void free_forward_id(RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id);
+		static void map_forward_id(RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id,
 			uint32_t p_index, uint64_t p_last_pass);
 
-		virtual bool uses_forward_ids() const { return true; }
-	};
+		static bool uses_forward_ids() { return true; }
 
-	ForwardIDStorageMobile* forward_id_storage_mobile = nullptr;
+		ForwardIDStorageMobile() = delete;
+		ForwardIDStorageMobile(const ForwardIDStorageMobile&) = delete;
+		ForwardIDStorageMobile& operator=(const ForwardIDStorageMobile&) = delete;
+		~ForwardIDStorageMobile() = delete;
+	};
 
 	void fill_push_constant_instance_indices(
 		SceneState::InstanceData* p_instance_data, const GeometryInstanceForwardMobile* p_instance);
-
-	virtual RendererRD::ForwardIDStorage* create_forward_id_storage()
-	{
-		forward_id_storage_mobile = memnew(ForwardIDStorageMobile);
-		return forward_id_storage_mobile;
-	}
 
 	struct ForwardIDByMapSort
 	{
