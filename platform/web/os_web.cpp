@@ -57,6 +57,8 @@ void OS_Web::initialize() {
 	IPWeb::make_default();
 	NetSocketWeb::make_default();
 	DisplayServerWeb::register_web_driver();
+	MIDIDriver::bind<MIDIDriverWebMidi>();
+	MIDIDriver::initialize();
 }
 
 void OS_Web::resume_audio() {
@@ -96,6 +98,8 @@ void OS_Web::delete_main_loop() {
 
 void OS_Web::finalize() {
 	delete_main_loop();
+	MIDIDriver::finalize();
+	MIDIDriver::reset_backend();
 	for (AudioDriverWeb *driver : audio_drivers) {
 		memdelete(driver);
 	}

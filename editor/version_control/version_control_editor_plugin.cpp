@@ -104,9 +104,8 @@ String VersionControlEditorPlugin::_get_date_string_from(
 	int64_t p_unix_timestamp, int64_t p_offset_minutes) const
 {
 	return vformat("%s %s",
-		Time::get_singleton()->get_datetime_string_from_unix_time(
-			p_unix_timestamp + p_offset_minutes * 60, true),
-		Time::get_singleton()->get_offset_string_from_offset_minutes(p_offset_minutes));
+		Time::get_datetime_string_from_unix_time(p_unix_timestamp + p_offset_minutes * 60, true),
+		Time::get_offset_string_from_offset_minutes(p_offset_minutes));
 }
 
 void VersionControlEditorPlugin::_set_commit_list_size(int p_index) { _refresh_commit_list(); }

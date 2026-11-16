@@ -72,10 +72,6 @@ private:
 	static inline AudioDriverALSA driver_alsa;
 #endif
 
-#ifdef ALSAMIDI_ENABLED
-	static inline MIDIDriverALSAMidi driver_alsamidi;
-#endif
-
 #ifdef PULSEAUDIO_ENABLED
 	static inline AudioDriverPulseAudio driver_pulseaudio;
 #endif

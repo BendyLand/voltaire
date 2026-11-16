@@ -577,8 +577,8 @@ static String _get_unsaved_scene_dialog_text(String p_scene_filename, uint64_t p
 	// Consider scene opening to be a point of saving, so that when you
 	// close and reopen the editor, you don't get an excessively long
 	// "modified X hours ago".
-	const uint64_t last_modified_seconds = Time::get_singleton()->get_unix_time_from_system() -
-										   MAX(p_opened_timestamp, scene_modified_time);
+	const uint64_t last_modified_seconds =
+		Time::get_unix_time_from_system() - MAX(p_opened_timestamp, scene_modified_time);
 
 	String last_modified_string;
 	if (last_modified_seconds < 120) {

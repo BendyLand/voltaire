@@ -365,9 +365,8 @@ Ref<DirAccess> DirAccess::create_temp(const String& p_prefix, bool p_keep, Error
 	uint32_t suffix_i = 0;
 	String path;
 	while (true) {
-		String datetime =
-			Time::get_singleton()->get_datetime_string_from_system().remove_chars("-T:");
-		datetime += itos(Time::get_singleton()->get_ticks_usec());
+		String datetime = Time::get_datetime_string_from_system().remove_chars("-T:");
+		datetime += itos(Time::get_ticks_usec());
 		String suffix = datetime + (suffix_i > 0 ? itos(suffix_i) : "");
 		path = (p_prefix.is_empty() ? "" : p_prefix + "-") + suffix;
 		if (!path.is_valid_filename()) {

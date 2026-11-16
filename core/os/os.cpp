@@ -565,8 +565,8 @@ List<String> OS::get_restart_on_exit_arguments() { return List<String>(restart_c
 
 PackedStringArray OS::get_connected_midi_inputs()
 {
-	if (MIDIDriver::get_singleton()) {
-		return MIDIDriver::get_singleton()->get_connected_inputs();
+	if (MIDIDriver::is_bound()) {
+		return MIDIDriver::get_connected_inputs();
 	}
 
 	PackedStringArray list;
@@ -576,8 +576,8 @@ PackedStringArray OS::get_connected_midi_inputs()
 
 void OS::open_midi_inputs()
 {
-	if (MIDIDriver::get_singleton()) {
-		MIDIDriver::get_singleton()->open();
+	if (MIDIDriver::is_bound()) {
+		MIDIDriver::open();
 	}
 	else {
 		ERR_PRINT(vformat("MIDI input isn't supported on %s.", OS::get_name()));
@@ -586,8 +586,8 @@ void OS::open_midi_inputs()
 
 void OS::close_midi_inputs()
 {
-	if (MIDIDriver::get_singleton()) {
-		MIDIDriver::get_singleton()->close();
+	if (MIDIDriver::is_bound()) {
+		MIDIDriver::close();
 	}
 	else {
 		ERR_PRINT(vformat("MIDI input isn't supported on %s.", OS::get_name()));

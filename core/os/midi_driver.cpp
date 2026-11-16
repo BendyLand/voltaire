@@ -33,11 +33,35 @@
 #include "midi_driver.h"
 
 uint8_t MIDIDriver::last_received_message = 0x00;
-MIDIDriver* MIDIDriver::singleton = nullptr;
 
-MIDIDriver* MIDIDriver::get_singleton() { return singleton; }
+void MIDIDriver::initialize()
+{
+	if (data != nullptr) {
+		return;
+	}
+	data = memnew(Data);
+	_initialize_backend();
+}
 
-MIDIDriver::MIDIDriver() { singleton = this; }
+void MIDIDriver::finalize()
+{
+	if (data == nullptr) {
+		return;
+	}
+	close();
+	_finalize_backend();
+	memdelete(data);
+	data = nullptr;
+}
+
+void MIDIDriver::reset_backend()
+{
+	_initialize_backend = &_default_initialize_backend;
+	_finalize_backend = &_default_finalize_backend;
+	open = &_default_open;
+	close = &_default_close;
+	_is_bound = false;
+}
 
 MIDIDriver::MessageCategory MIDIDriver::Parser::category(uint8_t p_midi_fragment)
 {
@@ -207,6 +231,23 @@ void MIDIDriver::Parser::parse_fragment(uint8_t p_fragment)
 	}
 }
 
-PackedStringArray MIDIDriver::get_connected_inputs() const { return connected_input_names; }
+void MIDIDriver::add_connected_input(const String& p_name)
+{
+	if (data != nullptr) {
+		data->connected_input_names.push_back(p_name);
+	}
+}
+
+void MIDIDriver::clear_connected_inputs()
+{
+	if (data != nullptr) {
+		data->connected_input_names.clear();
+	}
+}
+
+PackedStringArray MIDIDriver::get_connected_inputs()
+{
+	return data != nullptr ? data->connected_input_names : PackedStringArray();
+}
 
 

@@ -40,17 +40,30 @@
 
 #include <mmsystem.h>
 
-class MIDIDriverWinMidi : public MIDIDriver {
-	Vector<HMIDIIN> connected_sources;
+class MIDIDriverWinMidi final
+{
+public:
+	struct Data
+	{
+		Vector<HMIDIIN> connected_sources;
+	};
 
-	static void CALLBACK read(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
+	static inline Data* data = nullptr;
+
+private:
+	static void CALLBACK read(
+		HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
 
 public:
-	virtual Error open() override;
-	virtual void close() override;
+	static void initialize();
+	static void finalize();
+	static Error open();
+	static void close();
 
-	MIDIDriverWinMidi() = default;
-	virtual ~MIDIDriverWinMidi();
+	MIDIDriverWinMidi() = delete;
+	MIDIDriverWinMidi(const MIDIDriverWinMidi&) = delete;
+	MIDIDriverWinMidi& operator=(const MIDIDriverWinMidi&) = delete;
+	~MIDIDriverWinMidi() = delete;
 };
 
 #endif // WINMIDI_ENABLED

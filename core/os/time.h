@@ -44,31 +44,29 @@
 // Leap seconds are not handled, they must be done manually if desired.
 // Suffixes such as "Z" are not handled, you need to strip them away manually.
 
-class Time
+class Time final
 {
-	static Time* singleton;
-
 public:
-	static Time* get_singleton();
-
 	// Methods that convert times.
-	String get_datetime_string_from_unix_time(
-		int64_t p_unix_time_val, bool p_use_space = false) const;
-	String get_date_string_from_unix_time(int64_t p_unix_time_val) const;
-	String get_time_string_from_unix_time(int64_t p_unix_time_val) const;
-	int64_t get_unix_time_from_datetime_string(const String& p_datetime) const;
-	String get_offset_string_from_offset_minutes(int64_t p_offset_minutes) const;
+	static String get_datetime_string_from_unix_time(
+		int64_t p_unix_time_val, bool p_use_space = false);
+	static String get_date_string_from_unix_time(int64_t p_unix_time_val);
+	static String get_time_string_from_unix_time(int64_t p_unix_time_val);
+	static int64_t get_unix_time_from_datetime_string(const String& p_datetime);
+	static String get_offset_string_from_offset_minutes(int64_t p_offset_minutes);
 
 	// Methods that get information from OS.
-	String get_datetime_string_from_system(bool p_utc = false, bool p_use_space = false) const;
-	String get_date_string_from_system(bool p_utc = false) const;
-	String get_time_string_from_system(bool p_utc = false) const;
-	double get_unix_time_from_system() const;
-	uint64_t get_ticks_msec() const;
-	uint64_t get_ticks_usec() const;
+	static String get_datetime_string_from_system(bool p_utc = false, bool p_use_space = false);
+	static String get_date_string_from_system(bool p_utc = false);
+	static String get_time_string_from_system(bool p_utc = false);
+	static double get_unix_time_from_system();
+	static uint64_t get_ticks_msec();
+	static uint64_t get_ticks_usec();
 
-	Time();
-	virtual ~Time();
+	Time() = delete;
+	Time(const Time&) = delete;
+	Time& operator=(const Time&) = delete;
+	~Time() = delete;
 };
 
 

@@ -95,7 +95,6 @@ static Ref<ResourceFormatLoaderJSON> resource_loader_json;
 static CoreBind::ResourceLoader* _resource_loader = nullptr;
 
 static IP* ip = nullptr;
-static Time* _time = nullptr;
 
 extern Mutex _global_mutex;
 
@@ -114,7 +113,6 @@ void register_core_types()
 
 	register_global_constants();
 
-	_time = memnew(Time);
 	ResourceLoader::initialize();
 
 	resource_format_po.instantiate();

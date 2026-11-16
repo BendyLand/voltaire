@@ -107,9 +107,8 @@ Ref<FileAccess> FileAccess::create_temp(ModeFlags p_mode_flags, const String& p_
 	uint32_t suffix_i = 0;
 	String path;
 	while (true) {
-		String datetime =
-			Time::get_singleton()->get_datetime_string_from_system().remove_chars("-T:");
-		datetime += itos(Time::get_singleton()->get_ticks_usec());
+		String datetime = Time::get_datetime_string_from_system().remove_chars("-T:");
+		datetime += itos(Time::get_ticks_usec());
 		String suffix = datetime + (suffix_i > 0 ? itos(suffix_i) : "");
 		path = TEMP_DIR.path_join((p_prefix.is_empty() ? "" : p_prefix + "-") + suffix +
 								  (extension.is_empty() ? "" : "." + extension));

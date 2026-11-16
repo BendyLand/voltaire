@@ -94,6 +94,11 @@ void OS_MacOS::initialize() {
 	crash_handler.initialize();
 
 	initialize_core();
+
+#ifdef COREMIDI_ENABLED
+	MIDIDriver::bind<MIDIDriverCoreMidi>();
+	MIDIDriver::initialize();
+#endif
 }
 
 String OS_MacOS::get_model_name() const {
@@ -234,7 +239,8 @@ void OS_MacOS::finalize() {
 	}
 
 #ifdef COREMIDI_ENABLED
-	midi_driver.close();
+	MIDIDriver::finalize();
+	MIDIDriver::reset_backend();
 #endif
 
 	delete_main_loop();

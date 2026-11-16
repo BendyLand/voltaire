@@ -46,9 +46,6 @@ class OS_MacOS : public OS_Unix {
 #ifdef COREAUDIO_ENABLED
 	AudioDriverCoreAudio audio_driver;
 #endif
-#ifdef COREMIDI_ENABLED
-	MIDIDriverCoreMidi midi_driver;
-#endif
 
 	CrashHandler crash_handler;
 

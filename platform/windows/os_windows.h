@@ -127,9 +127,6 @@ private:
 #ifdef XAUDIO2_ENABLED
 	static inline AudioDriverXAudio2 driver_xaudio2;
 #endif
-#ifdef WINMIDI_ENABLED
-	static inline MIDIDriverWinMidi driver_midi;
-#endif
 
 	static inline CrashHandler crash_handler;
 

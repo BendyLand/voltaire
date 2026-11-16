@@ -394,14 +394,14 @@ void Main::print_header(bool p_rich)
 		if (p_rich) {
 			Engine::print_header_rich("\u001b[38;5;39m" + String(VLTR_VERSION_NAME) +
 									  "\u001b[0m v" + get_full_version_string() + " (" +
-									  Time::get_singleton()->get_datetime_string_from_unix_time(
+									  Time::get_datetime_string_from_unix_time(
 										  VLTR_VERSION_TIMESTAMP, true) +
 									  " UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
 		}
 		else {
 			Engine::print_header(String(VLTR_VERSION_NAME) + " v" + get_full_version_string() +
 								 " (" +
-								 Time::get_singleton()->get_datetime_string_from_unix_time(
+								 Time::get_datetime_string_from_unix_time(
 									 VLTR_VERSION_TIMESTAMP, true) +
 								 " UTC) - " + String(VLTR_VERSION_WEBSITE));
 		}

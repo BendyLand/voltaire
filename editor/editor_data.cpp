@@ -237,7 +237,7 @@ int EditorData::add_edited_scene(int p_at_pos)
 	es.history_current = -1;
 	es.live_edit_root = NodePath(String("/root"));
 	es.history_id = last_created_scene++;
-	es.time_opened = Time::get_singleton()->get_unix_time_from_system();
+	es.time_opened = Time::get_unix_time_from_system();
 
 	if (p_at_pos == edited_scene.size()) {
 		edited_scene.push_back(es);

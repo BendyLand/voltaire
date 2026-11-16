@@ -189,6 +189,11 @@ void OS_LinuxBSD::initialize()
 	AudioDriverManager::add_driver(&driver_alsa);
 #endif
 
+#ifdef ALSAMIDI_ENABLED
+	MIDIDriver::bind<MIDIDriverALSAMidi>();
+	MIDIDriver::initialize();
+#endif
+
 #ifdef X11_ENABLED
 	DisplayServerX11::register_x11_driver();
 #endif
@@ -342,7 +347,8 @@ void OS_LinuxBSD::finalize_core()
 	main_loop = nullptr;
 
 #ifdef ALSAMIDI_ENABLED
-	driver_alsamidi.close();
+	MIDIDriver::finalize();
+	MIDIDriver::reset_backend();
 #endif
 
 #ifdef SDL_ENABLED
@@ -1604,35 +1610,40 @@ bool OS::_test_create_rendering_device_and_gl(const String& p_display_driver)
 {
 	return OS_LinuxBSD::_test_create_rendering_device_and_gl(p_display_driver);
 }
+#endif // TOOLS_ENABLED
 
 void OS_LinuxBSD::finalize()
 {
+#ifdef ALSAMIDI_ENABLED
+	MIDIDriver::finalize();
+	MIDIDriver::reset_backend();
+#endif
+
 #ifdef FONTCONFIG_ENABLED
-    if (font_config_initialized) {
-        if (object_set) {
-            FcObjectSetDestroy(object_set);
-            object_set = nullptr;
-        }
-        if (config) {
-            FcConfigDestroy(config);
-            config = nullptr;
-        }
-        font_config_initialized = false;
-    }
+	if (font_config_initialized) {
+		if (object_set) {
+			FcObjectSetDestroy(object_set);
+			object_set = nullptr;
+		}
+		if (config) {
+			FcConfigDestroy(config);
+			config = nullptr;
+		}
+		font_config_initialized = false;
+	}
 #endif // FONTCONFIG_ENABLED
 }
 
 void OS::finalize()
 {
-    _initialized = false;
+	_initialized = false;
 
-    // Platform-specific teardown
-    OS_LinuxBSD::finalize();
+	// Platform-specific teardown
+	OS_LinuxBSD::finalize();
 
-    // Core OS logging cleanup
-    if (_logger) {
-        memdelete(_logger);
-        _logger = nullptr;
-    }
+	// Core OS logging cleanup
+	if (_logger) {
+		memdelete(_logger);
+		_logger = nullptr;
+	}
 }
-#endif

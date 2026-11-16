@@ -41,36 +41,47 @@
 
 typedef struct _snd_rawmidi snd_rawmidi_t;
 
-class MIDIDriverALSAMidi : public MIDIDriver {
-	Thread thread;
-	Mutex mutex;
-
-	struct InputConnection {
+class MIDIDriverALSAMidi final
+{
+	struct InputConnection
+	{
 		InputConnection() = default;
-		InputConnection(int p_device_index, snd_rawmidi_t *p_rawmidi);
+		InputConnection(int p_device_index, snd_rawmidi_t* p_rawmidi);
 
-		Parser parser;
-		snd_rawmidi_t *rawmidi_ptr = nullptr;
+		MIDIDriver::Parser parser;
+		snd_rawmidi_t* rawmidi_ptr = nullptr;
 
 		// Read in and parse available data, forwarding complete events to Input.
 		void read();
 	};
 
-	Vector<InputConnection> connected_inputs;
+public:
+	struct Data
+	{
+		Thread thread;
+		Mutex mutex;
+		Vector<InputConnection> connected_inputs;
+		SafeFlag exit_thread;
+	};
 
-	SafeFlag exit_thread;
+	static inline Data* data = nullptr;
 
-	static void thread_func(void *p_udata);
+private:
+	static void thread_func(void* p_udata);
 
-	void lock() const;
-	void unlock() const;
+	static void lock();
+	static void unlock();
 
 public:
-	virtual Error open() override;
-	virtual void close() override;
+	static void initialize();
+	static void finalize();
+	static Error open();
+	static void close();
 
-	MIDIDriverALSAMidi();
-	virtual ~MIDIDriverALSAMidi();
+	MIDIDriverALSAMidi() = delete;
+	MIDIDriverALSAMidi(const MIDIDriverALSAMidi&) = delete;
+	MIDIDriverALSAMidi& operator=(const MIDIDriverALSAMidi&) = delete;
+	~MIDIDriverALSAMidi() = delete;
 };
 
 #endif // ALSAMIDI_ENABLED

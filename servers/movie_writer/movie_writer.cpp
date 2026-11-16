@@ -158,9 +158,9 @@ void MovieWriter::add_frame()
 
 	AudioDriverDummy::get_dummy_singleton()->mix_audio(mix_rate / fps, audio_mix_buffer.ptr());
 
-	uint64_t encoding_start_usec = Time::get_singleton()->get_ticks_usec();
+	uint64_t encoding_start_usec = Time::get_ticks_usec();
 	write_frame(vp_tex, audio_mix_buffer.ptr());
-	uint64_t encoding_end_usec = Time::get_singleton()->get_ticks_usec();
+	uint64_t encoding_end_usec = Time::get_ticks_usec();
 	encoding_time_usec += encoding_end_usec - encoding_start_usec;
 }
 

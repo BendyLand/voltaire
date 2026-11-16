@@ -212,11 +212,7 @@ static const uint8_t MONTH_DAYS_TABLE[2][12] = {{31, 28, 31, 30, 31, 30, 31, 31,
 	int minute = p_datetime.has(MINUTE_KEY) ? int(p_datetime[MINUTE_KEY]) : 0;                     \
 	int second = p_datetime.has(SECOND_KEY) ? int(p_datetime[SECOND_KEY]) : 0;
 
-Time* Time::singleton = nullptr;
-
-Time* Time::get_singleton() { return singleton; }
-
-String Time::get_datetime_string_from_unix_time(int64_t p_unix_time_val, bool p_use_space) const
+String Time::get_datetime_string_from_unix_time(int64_t p_unix_time_val, bool p_use_space)
 {
 	UNIX_TIME_TO_HMS
 	UNIX_TIME_TO_YMD
@@ -225,20 +221,20 @@ String Time::get_datetime_string_from_unix_time(int64_t p_unix_time_val, bool p_
 	return vformat(format_string, year, (uint8_t)month, day, hour, minute, second);
 }
 
-String Time::get_date_string_from_unix_time(int64_t p_unix_time_val) const
+String Time::get_date_string_from_unix_time(int64_t p_unix_time_val)
 {
 	UNIX_TIME_TO_YMD
 	// Android is picky about the types passed to make Variant, so we need a cast.
 	return vformat("%04d-%02d-%02d", year, (uint8_t)month, day);
 }
 
-String Time::get_time_string_from_unix_time(int64_t p_unix_time_val) const
+String Time::get_time_string_from_unix_time(int64_t p_unix_time_val)
 {
 	UNIX_TIME_TO_HMS
 	return vformat("%02d:%02d:%02d", hour, minute, second);
 }
 
-int64_t Time::get_unix_time_from_datetime_string(const String& p_datetime) const
+int64_t Time::get_unix_time_from_datetime_string(const String& p_datetime)
 {
 	PARSE_ISO8601_STRING(-1)
 	VALIDATE_YMDHMS(0)
@@ -246,7 +242,7 @@ int64_t Time::get_unix_time_from_datetime_string(const String& p_datetime) const
 	return day_number * SECONDS_PER_DAY + hour * 3600 + minute * 60 + second;
 }
 
-String Time::get_offset_string_from_offset_minutes(int64_t p_offset_minutes) const
+String Time::get_offset_string_from_offset_minutes(int64_t p_offset_minutes)
 {
 	String sign;
 	if (p_offset_minutes < 0) {
@@ -263,7 +259,7 @@ String Time::get_offset_string_from_offset_minutes(int64_t p_offset_minutes) con
 	return vformat("%s%02d:%02d", sign, offset_hours, offset_minutes);
 }
 
-String Time::get_datetime_string_from_system(bool p_utc, bool p_use_space) const
+String Time::get_datetime_string_from_system(bool p_utc, bool p_use_space)
 {
 	OS::DateTime dt = OS::get_datetime(p_utc);
 	const String format_string =
@@ -272,31 +268,23 @@ String Time::get_datetime_string_from_system(bool p_utc, bool p_use_space) const
 		format_string, dt.year, (uint8_t)dt.month, dt.day, dt.hour, dt.minute, dt.second);
 }
 
-String Time::get_date_string_from_system(bool p_utc) const
+String Time::get_date_string_from_system(bool p_utc)
 {
 	OS::DateTime dt = OS::get_datetime(p_utc);
 	// Android is picky about the types passed to make Variant, so we need a cast.
 	return vformat("%04d-%02d-%02d", dt.year, (uint8_t)dt.month, dt.day);
 }
 
-String Time::get_time_string_from_system(bool p_utc) const
+String Time::get_time_string_from_system(bool p_utc)
 {
 	OS::DateTime dt = OS::get_datetime(p_utc);
 	return vformat("%02d:%02d:%02d", dt.hour, dt.minute, dt.second);
 }
 
-double Time::get_unix_time_from_system() const { return OS::get_unix_time(); }
+double Time::get_unix_time_from_system() { return OS::get_unix_time(); }
 
-uint64_t Time::get_ticks_msec() const { return OS::get_ticks_msec(); }
+uint64_t Time::get_ticks_msec() { return OS::get_ticks_msec(); }
 
-uint64_t Time::get_ticks_usec() const { return OS::get_ticks_usec(); }
-
-Time::Time()
-{
-	ERR_FAIL_COND_MSG(singleton, "Singleton for Time already exists.");
-	singleton = this;
-}
-
-Time::~Time() { singleton = nullptr; }
+uint64_t Time::get_ticks_usec() { return OS::get_ticks_usec(); }
 
 

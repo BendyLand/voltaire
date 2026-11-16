@@ -65,22 +65,48 @@ void MIDIDriverALSAMidi::InputConnection::read() {
 	} while (read_count > 0);
 }
 
-void MIDIDriverALSAMidi::thread_func(void *p_udata) {
-	MIDIDriverALSAMidi *md = static_cast<MIDIDriverALSAMidi *>(p_udata);
+void MIDIDriverALSAMidi::thread_func(void* p_udata)
+{
+	(void)p_udata;
+	if (!data) {
+		return;
+	}
 
-	while (!md->exit_thread.is_set()) {
-		md->lock();
-		for (InputConnection &conn : md->connected_inputs) {
+	while (!data->exit_thread.is_set()) {
+		lock();
+		for (InputConnection& conn : data->connected_inputs) {
 			conn.read();
 		}
-		md->unlock();
+		unlock();
 
 		OS::delay_usec(1000);
 	}
 }
 
-Error MIDIDriverALSAMidi::open() {
-	void **hints;
+void MIDIDriverALSAMidi::initialize()
+{
+	if (data != nullptr) {
+		return;
+	}
+	data = memnew(Data);
+	data->exit_thread.clear();
+}
+
+void MIDIDriverALSAMidi::finalize()
+{
+	if (data == nullptr) {
+		return;
+	}
+	close();
+	memdelete(data);
+	data = nullptr;
+}
+
+Error MIDIDriverALSAMidi::open()
+{
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+
+	void** hints;
 
 	if (snd_device_name_hint(-1, "rawmidi", &hints) < 0) {
 		return ERR_CANT_OPEN;
@@ -88,21 +114,21 @@ Error MIDIDriverALSAMidi::open() {
 
 	lock();
 	int device_index = 0;
-	for (void **h = hints; *h != nullptr; h++) {
-		char *name = snd_device_name_get_hint(*h, "NAME");
+	for (void** h = hints; *h != nullptr; h++) {
+		char* name = snd_device_name_get_hint(*h, "NAME");
 
 		if (name != nullptr) {
-			snd_rawmidi_t *midi_in;
+			snd_rawmidi_t* midi_in;
 			int ret = snd_rawmidi_open(&midi_in, nullptr, name, SND_RAWMIDI_NONBLOCK);
 			if (ret >= 0) {
 				// Get display name.
-				snd_rawmidi_info_t *info;
+				snd_rawmidi_info_t* info;
 				snd_rawmidi_info_malloc(&info);
 				snd_rawmidi_info(midi_in, info);
-				connected_input_names.push_back(snd_rawmidi_info_get_name(info));
+				MIDIDriver::add_connected_input(snd_rawmidi_info_get_name(info));
 				snd_rawmidi_info_free(info);
 
-				connected_inputs.push_back(InputConnection(device_index, midi_in));
+				data->connected_inputs.push_back(InputConnection(device_index, midi_in));
 				// Only increment device_index for successfully connected devices.
 				device_index++;
 			}
@@ -115,40 +141,43 @@ Error MIDIDriverALSAMidi::open() {
 	snd_device_name_free_hint(hints);
 	unlock();
 
-	exit_thread.clear();
-	thread.start(MIDIDriverALSAMidi::thread_func, this);
+	data->exit_thread.clear();
+	data->thread.start(MIDIDriverALSAMidi::thread_func, nullptr);
 
 	return OK;
 }
 
-void MIDIDriverALSAMidi::close() {
-	exit_thread.set();
-	if (thread.is_started()) {
-		thread.wait_to_finish();
+void MIDIDriverALSAMidi::close()
+{
+	if (data == nullptr) {
+		return;
 	}
 
-	for (const InputConnection &conn : connected_inputs) {
+	data->exit_thread.set();
+	if (data->thread.is_started()) {
+		data->thread.wait_to_finish();
+	}
+
+	for (const InputConnection& conn : data->connected_inputs) {
 		snd_rawmidi_close(conn.rawmidi_ptr);
 	}
 
-	connected_inputs.clear();
-	connected_input_names.clear();
+	data->connected_inputs.clear();
+	MIDIDriver::clear_connected_inputs();
 }
 
-void MIDIDriverALSAMidi::lock() const {
-	mutex.lock();
+void MIDIDriverALSAMidi::lock()
+{
+	if (data) {
+		data->mutex.lock();
+	}
 }
 
-void MIDIDriverALSAMidi::unlock() const {
-	mutex.unlock();
-}
-
-MIDIDriverALSAMidi::MIDIDriverALSAMidi() {
-	exit_thread.clear();
-}
-
-MIDIDriverALSAMidi::~MIDIDriverALSAMidi() {
-	close();
+void MIDIDriverALSAMidi::unlock()
+{
+	if (data) {
+		data->mutex.unlock();
+	}
 }
 
 #endif // ALSAMIDI_ENABLED

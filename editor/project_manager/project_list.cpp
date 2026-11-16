@@ -141,8 +141,7 @@ String ProjectList::Item::get_last_edited_string() const
 	}
 
 	OS::TimeZoneInfo tz = OS::get_time_zone_info();
-	return Time::get_singleton()->get_datetime_string_from_unix_time(
-		last_edited + tz.bias * 60, true);
+	return Time::get_datetime_string_from_unix_time(last_edited + tz.bias * 60, true);
 }
 
 bool ProjectList::project_feature_looks_like_version(const String& p_feature)

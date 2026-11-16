@@ -35,24 +35,28 @@
 
 #include "core/os/midi_driver.h"
 
-class MIDIDriverWebMidi : public MIDIDriver {
+class MIDIDriverWebMidi final
+{
 private:
-	static const int MAX_EVENT_BUFFER_LENGTH = 2;
-	uint8_t _event_buffer[MAX_EVENT_BUFFER_LENGTH];
+	static constexpr int MAX_EVENT_BUFFER_LENGTH = 2;
+	static inline uint8_t _event_buffer[MAX_EVENT_BUFFER_LENGTH] = {0};
 
 public:
-	// Override return type to make writing static callbacks less tedious.
-	static MIDIDriverWebMidi *get_singleton();
+	static void initialize();
+	static void finalize();
+	static Error open();
+	static void close();
 
-	virtual Error open() override;
-	virtual void close() override final;
+	MIDIDriverWebMidi() = delete;
+	MIDIDriverWebMidi(const MIDIDriverWebMidi&) = delete;
+	MIDIDriverWebMidi& operator=(const MIDIDriverWebMidi&) = delete;
+	~MIDIDriverWebMidi() = delete;
 
-	MIDIDriverWebMidi() = default;
-	virtual ~MIDIDriverWebMidi();
+	WASM_EXPORT static void set_input_names_callback(int p_size, const char** p_input_names);
+	static void _set_input_names_callback(const Vector<String>& p_input_names);
 
-	WASM_EXPORT static void set_input_names_callback(int p_size, const char **p_input_names);
-	static void _set_input_names_callback(const Vector<String> &p_input_names);
-
-	WASM_EXPORT static void on_midi_message(int p_device_index, int p_status, const uint8_t *p_data, int p_data_len);
-	static void _on_midi_message(int p_device_index, int p_status, const PackedByteArray &p_data, int p_data_len);
+	WASM_EXPORT static void on_midi_message(
+		int p_device_index, int p_status, const uint8_t* p_data, int p_data_len);
+	static void _on_midi_message(
+		int p_device_index, int p_status, const PackedByteArray& p_data, int p_data_len);
 };

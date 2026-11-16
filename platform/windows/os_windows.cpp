@@ -343,6 +343,11 @@ void OS_Windows::initialize() {
 	}
 
 	FileAccessWindows::initialize();
+
+#ifdef WINMIDI_ENABLED
+	MIDIDriver::bind<MIDIDriverWinMidi>();
+	MIDIDriver::initialize();
+#endif
 }
 
 void OS_Windows::delete_main_loop() {
@@ -372,7 +377,8 @@ void OS_Windows::finalize() {
 		dwrite_factory = nullptr;
 	}
 #ifdef WINMIDI_ENABLED
-	driver_midi.close();
+	MIDIDriver::finalize();
+	MIDIDriver::reset_backend();
 #endif
 
 	memdelete(main_loop);

@@ -76,7 +76,7 @@ Ref<PListNode> PListNode::new_date(const String& p_string)
 	node->data_type = PList::PLNodeType::PL_NODE_TYPE_DATE;
 	node->data_string = p_string.utf8();
 	node->data_real =
-		(double)Time::get_singleton()->get_unix_time_from_datetime_string(p_string) - 978307200.0;
+		(double)Time::get_unix_time_from_datetime_string(p_string) - 978307200.0;
 	return node;
 }
 
@@ -452,9 +452,8 @@ Ref<PListNode> PList::read_bplist_obj(Ref<FileAccess> p_file, uint64_t p_offset_
 	case 0x30: {
 		node->data_type = PL_NODE_TYPE_DATE;
 		node->data_int = BSWAP64(p_file->get_64());
-		node->data_string = Time::get_singleton()
-								->get_datetime_string_from_unix_time(node->data_real + 978307200.0)
-								.utf8();
+		node->data_string =
+			Time::get_datetime_string_from_unix_time(node->data_real + 978307200.0).utf8();
 	} break;
 	case 0x40: {
 		if (marker_size == 0x0F) {
