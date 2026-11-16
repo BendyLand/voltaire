@@ -354,7 +354,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 				GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 			texture_atlas = tex->tex_id;
 		}
-		glActiveTexture(GL_TEXTURE0 + GLES3::Config::get_singleton()->max_texture_image_units - 2);
+		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 2);
 		glBindTexture(GL_TEXTURE_2D, texture_atlas);
 		GLuint shadow_tex = state.shadow_texture;
 		if (shadow_tex == 0) {
@@ -362,7 +362,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 				GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 			shadow_tex = tex->tex_id;
 		}
-		glActiveTexture(GL_TEXTURE0 + GLES3::Config::get_singleton()->max_texture_image_units - 3);
+		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 3);
 		glBindTexture(GL_TEXTURE_2D, shadow_tex);
 	}
 
@@ -433,7 +433,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 
-	glActiveTexture(GL_TEXTURE0 + GLES3::Config::get_singleton()->max_texture_image_units - 5);
+	glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 5);
 	glBindTexture(
 		GL_TEXTURE_2D, GLES3::TextureStorage::render_target_get_sdf_texture(p_to_render_target));
 
@@ -779,9 +779,8 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 
 	state.current_tex = RID();
 
-	const uint64_t base_specialization = GLES3::Config::get_singleton()->float_texture_supported
-											 ? 0
-											 : CanvasShaderGLES3::USE_RGBA_SHADOWS;
+	const uint64_t base_specialization =
+		GLES3::Config::float_texture_supported ? 0 : CanvasShaderGLES3::USE_RGBA_SHADOWS;
 
 	for (uint32_t i = 0; i <= state.current_batch_index; i++) {
 		// Skipping when there is no instances.
@@ -1939,8 +1938,6 @@ void RasterizerCanvasGLES3::light_update_shadow(RID p_rid, int p_shadow_index,
 	const Transform2D& p_light_xform, int p_light_mask, float p_near, float p_far,
 	LightOccluderInstance* p_occluders, const Rect2& p_light_rect)
 {
-	GLES3::Config* config = GLES3::Config::get_singleton();
-
 	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
 	ERR_FAIL_COND(!cl->shadow.enabled);
 
@@ -1969,8 +1966,8 @@ void RasterizerCanvasGLES3::light_update_shadow(RID p_rid, int p_shadow_index,
 	RSE::CanvasOccluderPolygonCullMode cull_mode = RSE::CANVAS_OCCLUDER_POLYGON_CULL_DISABLED;
 
 	CanvasOcclusionShaderGLES3::ShaderVariant variant =
-		config->float_texture_supported ? CanvasOcclusionShaderGLES3::MODE_SHADOW
-										: CanvasOcclusionShaderGLES3::MODE_SHADOW_RGBA;
+		GLES3::Config::float_texture_supported ? CanvasOcclusionShaderGLES3::MODE_SHADOW
+											   : CanvasOcclusionShaderGLES3::MODE_SHADOW_RGBA;
 	bool success = shadow_render.shader.version_bind_shader(shadow_render.shader_version, variant);
 	if (!success) {
 		return;
@@ -2076,8 +2073,6 @@ void RasterizerCanvasGLES3::light_update_directional_shadow(RID p_rid, int p_sha
 	const Transform2D& p_light_xform, int p_light_mask, float p_cull_distance,
 	const Rect2& p_clip_rect, LightOccluderInstance* p_occluders)
 {
-	GLES3::Config* config = GLES3::Config::get_singleton();
-
 	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
 	ERR_FAIL_COND(!cl->shadow.enabled);
 
@@ -2126,8 +2121,8 @@ void RasterizerCanvasGLES3::light_update_directional_shadow(RID p_rid, int p_sha
 	RSE::CanvasOccluderPolygonCullMode cull_mode = RSE::CANVAS_OCCLUDER_POLYGON_CULL_DISABLED;
 
 	CanvasOcclusionShaderGLES3::ShaderVariant variant =
-		config->float_texture_supported ? CanvasOcclusionShaderGLES3::MODE_SHADOW
-										: CanvasOcclusionShaderGLES3::MODE_SHADOW_RGBA;
+		GLES3::Config::float_texture_supported ? CanvasOcclusionShaderGLES3::MODE_SHADOW
+											   : CanvasOcclusionShaderGLES3::MODE_SHADOW_RGBA;
 	bool success = shadow_render.shader.version_bind_shader(shadow_render.shader_version, variant);
 	if (!success) {
 		return;
@@ -2201,8 +2196,6 @@ void RasterizerCanvasGLES3::light_update_directional_shadow(RID p_rid, int p_sha
 
 void RasterizerCanvasGLES3::_update_shadow_atlas()
 {
-	GLES3::Config* config = GLES3::Config::get_singleton();
-
 	if (state.shadow_fb == 0) {
 		glActiveTexture(GL_TEXTURE0);
 
@@ -2218,7 +2211,7 @@ void RasterizerCanvasGLES3::_update_shadow_atlas()
 
 		glGenTextures(1, &state.shadow_texture);
 		glBindTexture(GL_TEXTURE_2D, state.shadow_texture);
-		if (config->float_texture_supported) {
+		if (GLES3::Config::float_texture_supported) {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, state.shadow_texture_size,
 				data.max_lights_per_render * 2, 0, GL_RED, GL_FLOAT, nullptr);
 		}
@@ -2535,13 +2528,12 @@ void RasterizerCanvasGLES3::occluder_polygon_set_cull_mode(
 
 void RasterizerCanvasGLES3::set_shadow_texture_size(int p_size)
 {
-	GLES3::Config* config = GLES3::Config::get_singleton();
 	p_size = Math::nearest_power_of_2_templated(p_size);
 
-	if (p_size > config->max_texture_size) {
-		p_size = config->max_texture_size;
+	if (p_size > GLES3::Config::max_texture_size) {
+		p_size = GLES3::Config::max_texture_size;
 		WARN_PRINT("Attempting to set RCR::CanvasItem shadow atlas size to " + itos(p_size) +
-				   " which is beyond limit of " + itos(config->max_texture_size) +
+				   " which is beyond limit of " + itos(GLES3::Config::max_texture_size) +
 				   "supported by hardware.");
 	}
 
@@ -2584,20 +2576,18 @@ void RasterizerCanvasGLES3::update() {}
 void RasterizerCanvasGLES3::canvas_begin(
 	RID p_to_render_target, bool p_to_backbuffer, bool p_backbuffer_has_mipmaps)
 {
-	GLES3::Config* config = GLES3::Config::get_singleton();
-
 	GLES3::RenderTarget* render_target = GLES3::TextureStorage::get_render_target(p_to_render_target);
 
 	if (p_to_backbuffer) {
 		glBindFramebuffer(GL_FRAMEBUFFER, render_target->backbuffer_fbo);
-		glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 4);
+		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 4);
 		GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
 			GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 		glBindTexture(GL_TEXTURE_2D, tex->tex_id);
 	}
 	else {
 		glBindFramebuffer(GL_FRAMEBUFFER, render_target->fbo);
-		glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 4);
+		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 4);
 		glBindTexture(GL_TEXTURE_2D, render_target->backbuffer);
 		if (render_target->backbuffer != 0) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,
@@ -2631,8 +2621,6 @@ void RasterizerCanvasGLES3::canvas_begin(
 void RasterizerCanvasGLES3::_bind_canvas_texture(RID p_texture,
 	RSE::CanvasItemTextureFilter p_base_filter, RSE::CanvasItemTextureRepeat p_base_repeat)
 {
-	GLES3::Config* config = GLES3::Config::get_singleton();
-
 	if (p_texture == RID()) {
 		p_texture = default_canvas_texture;
 	}
@@ -2698,13 +2686,13 @@ void RasterizerCanvasGLES3::_bind_canvas_texture(RID p_texture,
 	GLES3::Texture* normal_map = GLES3::TextureStorage::get_texture(ct->normal_map);
 
 	if (!normal_map) {
-		glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 6);
+		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 6);
 		GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
 			GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_NORMAL));
 		glBindTexture(GL_TEXTURE_2D, tex->tex_id);
 	}
 	else {
-		glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 6);
+		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 6);
 		glBindTexture(GL_TEXTURE_2D, normal_map->tex_id);
 		normal_map->gl_set_filter(filter);
 		normal_map->gl_set_repeat(repeat);
@@ -2716,13 +2704,13 @@ void RasterizerCanvasGLES3::_bind_canvas_texture(RID p_texture,
 	GLES3::Texture* specular_map = GLES3::TextureStorage::get_texture(ct->specular);
 
 	if (!specular_map) {
-		glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 7);
+		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 7);
 		GLES3::Texture* tex = GLES3::TextureStorage::get_texture(
 			GLES3::TextureStorage::texture_gl_get_default(GLES3::DEFAULT_GL_TEXTURE_WHITE));
 		glBindTexture(GL_TEXTURE_2D, tex->tex_id);
 	}
 	else {
-		glActiveTexture(GL_TEXTURE0 + config->max_texture_image_units - 7);
+		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 7);
 		glBindTexture(GL_TEXTURE_2D, specular_map->tex_id);
 		specular_map->gl_set_filter(filter);
 		specular_map->gl_set_repeat(repeat);
@@ -2825,9 +2813,9 @@ void RasterizerCanvasGLES3::reset_canvas()
 	glBlendEquation(GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
 
-	glActiveTexture(GL_TEXTURE0 + GLES3::Config::get_singleton()->max_texture_image_units - 2);
+	glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 2);
 	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0 + GLES3::Config::get_singleton()->max_texture_image_units - 3);
+	glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 3);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 
@@ -3092,8 +3080,6 @@ void RasterizerCanvasGLES3::set_time(double p_time) { state.time = p_time; }
 
 void RasterizerCanvasGLES3::initialize()
 {
-	GLES3::Config* config = GLES3::Config::get_singleton();
-
 	glVertexAttrib4f(RSE::ARRAY_COLOR, 1.0, 1.0, 1.0, 1.0);
 
 	polygon_buffers.last_id = 1;
@@ -3196,7 +3182,7 @@ void RasterizerCanvasGLES3::initialize()
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-	if (config->max_uniform_buffer_size < 65536) {
+	if (GLES3::Config::max_uniform_buffer_size < 65536) {
 		data.max_lights_per_render = 64;
 	}
 	else {

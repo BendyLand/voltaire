@@ -63,7 +63,6 @@ private:
 	static inline bool screen_flipped_y = false;
 #endif
 
-	static inline GLES3::Config* config = nullptr;
 	static inline GLES3::TextureStorage* texture_storage = nullptr;
 	static inline GLES3::MaterialStorage* material_storage = nullptr;
 	static inline GLES3::ParticlesStorage* particles_storage = nullptr;

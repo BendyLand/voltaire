@@ -612,8 +612,7 @@ int32_t GLES3::MaterialStorage::global_shader_parameters_instance_allocate(RID p
 		vformat("Too many instances using shader instance variables. Consider increasing "
 				"rendering/limits/global_shader_variables/buffer_size in the Project Settings. "
 				"Maximum items supported by this hardware is: %d.",
-			Config::get_singleton()->max_uniform_buffer_size /
-				sizeof(GlobalShaderUniforms::Value)));
+			Config::max_uniform_buffer_size / sizeof(GlobalShaderUniforms::Value)));
 	global_shader_uniforms.buffer_usage[pos].elements =
 		ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES;
 	return pos;
@@ -1216,8 +1215,7 @@ static void bind_uniforms_generic(const Vector<RID>& p_textures,
 		if (texture) {
 			glActiveTexture(GL_TEXTURE0 + texture_offset + ti);
 			GLenum target = target_from_type[texture_uniform.type];
-			if (target == _GL_TEXTURE_EXTERNAL_OES &&
-				!GLES3::Config::get_singleton()->external_texture_supported) {
+			if (target == _GL_TEXTURE_EXTERNAL_OES && !GLES3::Config::external_texture_supported) {
 				target = GL_TEXTURE_2D;
 			}
 			glBindTexture(target, texture->tex_id);
@@ -2005,10 +2003,9 @@ void GLES3::MaterialStorage::initialize()
 
 	global_shader_uniforms.buffer_size = 256;
 	if (global_shader_uniforms.buffer_size * sizeof(GlobalShaderUniforms::Value) >
-		uint32_t(Config::get_singleton()->max_uniform_buffer_size)) {
+		uint32_t(Config::max_uniform_buffer_size)) {
 		global_shader_uniforms.buffer_size =
-			uint32_t(Config::get_singleton()->max_uniform_buffer_size) /
-			sizeof(GlobalShaderUniforms::Value);
+			uint32_t(Config::max_uniform_buffer_size) / sizeof(GlobalShaderUniforms::Value);
 	}
 
 	global_shader_uniforms.buffer_values =
@@ -2277,7 +2274,7 @@ void GLES3::MaterialStorage::initialize()
 		actions.render_mode_defines["ambient_light_disabled"] = "#define AMBIENT_LIGHT_DISABLED\n";
 		actions.render_mode_defines["shadow_to_opacity"] = "#define USE_SHADOW_TO_OPACITY\n";
 		actions.render_mode_defines["unshaded"] = "#define MODE_UNSHADED\n";
-		if (!GLES3::Config::get_singleton()->force_vertex_shading) {
+		if (!GLES3::Config::force_vertex_shading) {
 			actions.render_mode_defines["vertex_lighting"] = "#define USE_VERTEX_LIGHTING\n";
 		}
 		actions.render_mode_defines["fog_disabled"] = "#define FOG_DISABLED\n";

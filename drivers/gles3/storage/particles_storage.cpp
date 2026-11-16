@@ -115,7 +115,7 @@ void ParticlesStorage::particles_set_mode(RID p_particles, RSE::ParticlesMode p_
 
 void ParticlesStorage::particles_set_emitting(RID p_particles, bool p_emitting)
 {
-	ERR_FAIL_COND_MSG(GLES3::Config::get_singleton()->disable_particles_workaround,
+	ERR_FAIL_COND_MSG(GLES3::Config::disable_particles_workaround,
 		"Due to driver bugs, GPUParticles are not supported on Adreno 3XX devices. Please use "
 		"CPUParticles instead.");
 
@@ -127,7 +127,7 @@ void ParticlesStorage::particles_set_emitting(RID p_particles, bool p_emitting)
 
 bool ParticlesStorage::particles_get_emitting(RID p_particles)
 {
-	if (GLES3::Config::get_singleton()->disable_particles_workaround) {
+	if (GLES3::Config::disable_particles_workaround) {
 		return false;
 	}
 

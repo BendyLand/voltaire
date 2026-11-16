@@ -35,7 +35,6 @@
 
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "drivers/gles3/rasterizer_util_gles3.h"
 
 #ifdef ANDROID_ENABLED
@@ -50,11 +49,17 @@ using namespace GLES3;
 
 #define _GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
 
-Config* Config::singleton = nullptr;
-
-Config::Config()
+void Config::initialize()
 {
-	singleton = this;
+	if (_initialized) {
+		return;
+	}
+	_initialized = true;
+
+	extensions.clear();
+	polyfill_half2float = true;
+	disable_particles_workaround = false;
+	disable_transform_feedback_shader_cache = false;
 
 #ifdef WEB_ENABLED
 	// Starting with Emscripten 3.1.51, glGetStringi(GL_EXTENSIONS, i) will only ever return
@@ -190,8 +195,7 @@ Config::Config()
 	if (rt_msaa_supported) {
 		eglFramebufferTexture2DMultisampleEXT =
 			(PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC)eglGetProcAddress(
-				"glFramebuffer
-Texture2DMultisampleEXT");
+				"glFramebufferTexture2DMultisampleEXT");
 		if (eglFramebufferTexture2DMultisampleEXT == nullptr) {
 			rt_msaa_supported = false;
 		}
@@ -251,8 +255,14 @@ Texture2DMultisampleEXT");
 #endif
 }
 
-Config::~Config() { singleton = nullptr; }
+void Config::finalize()
+{
+	if (!_initialized) {
+		return;
+	}
+
+	extensions.reset();
+	_initialized = false;
+}
 
 #endif // GLES3_ENABLED
-
-

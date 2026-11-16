@@ -344,8 +344,7 @@ void MeshStorage::mesh_add_surface(RID p_mesh, const RenderingServerTypes::Surfa
 	ERR_FAIL_COND_MSG(!new_surface.index_count && !new_surface.vertex_count,
 		"Meshes must contain a vertex array, an index array, or both");
 
-	if (GLES3::Config::get_singleton()->generate_wireframes &&
-		s->primitive == RSE::PRIMITIVE_TRIANGLES) {
+	if (GLES3::Config::generate_wireframes && s->primitive == RSE::PRIMITIVE_TRIANGLES) {
 		// Generate wireframes. This is mostly used by the editor.
 		s->wireframe = memnew(Mesh::Surface::Wireframe);
 		Vector<uint32_t> wf_indices;

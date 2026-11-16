@@ -296,7 +296,7 @@ bool WebXRInterfaceJS::initialize() {
 			return false;
 		}
 
-		if (session_mode == "immersive-vr" && !GLES3::Config::get_singleton()->multiview_supported) {
+		if (session_mode == "immersive-vr" && !GLES3::Config::multiview_supported) {
 			emit_signal("session_failed", "Stereo rendering in Godot requires multiview, but this web browser doesn't support it.");
 			return false;
 		}

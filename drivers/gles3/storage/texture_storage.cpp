@@ -208,8 +208,6 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 	Image::Format& r_real_format, GLenum& r_gl_format, GLenum& r_gl_internal_format,
 	GLenum& r_gl_type)
 {
-	Config* config = Config::get_singleton();
-
 	switch (p_format) {
 	case Image::FORMAT_L8: {
 		if (RasterizerUtilGLES3::is_gles_over_gl()) {
@@ -266,7 +264,7 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 		r_gl_type = GL_UNSIGNED_SHORT_5_6_5;
 	} break;
 	case Image::FORMAT_RF: {
-		if (config->float_texture_linear_supported) {
+		if (Config::float_texture_linear_supported) {
 			r_gl_internal_format = GL_R32F;
 			r_gl_format = GL_RED;
 			r_gl_type = GL_FLOAT;
@@ -282,7 +280,7 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 		}
 	} break;
 	case Image::FORMAT_RGF: {
-		if (config->float_texture_linear_supported) {
+		if (Config::float_texture_linear_supported) {
 			r_gl_internal_format = GL_RG32F;
 			r_gl_format = GL_RG;
 			r_gl_type = GL_FLOAT;
@@ -298,7 +296,7 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 		}
 	} break;
 	case Image::FORMAT_RGBF: {
-		if (config->float_texture_linear_supported) {
+		if (Config::float_texture_linear_supported) {
 			r_gl_internal_format = GL_RGB32F;
 			r_gl_format = GL_RGB;
 			r_gl_type = GL_FLOAT;
@@ -314,7 +312,7 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 		}
 	} break;
 	case Image::FORMAT_RGBAF: {
-		if (config->float_texture_linear_supported) {
+		if (Config::float_texture_linear_supported) {
 			r_gl_internal_format = GL_RGBA32F;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_FLOAT;
@@ -355,13 +353,13 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 		r_gl_type = GL_UNSIGNED_INT_5_9_9_9_REV;
 	} break;
 	case Image::FORMAT_R16: {
-		if (config->unorm16_texture_supported) {
+		if (Config::unorm16_texture_supported) {
 			r_gl_internal_format = _EXT_R16;
 			r_gl_format = GL_RED;
 			r_gl_type = GL_UNSIGNED_SHORT;
 		}
 		else {
-			if (config->float_texture_linear_supported) {
+			if (Config::float_texture_linear_supported) {
 				if (p_image.is_valid()) {
 					p_image->convert(Image::FORMAT_RF);
 				}
@@ -382,13 +380,13 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 		}
 	} break;
 	case Image::FORMAT_RG16: {
-		if (config->unorm16_texture_supported) {
+		if (Config::unorm16_texture_supported) {
 			r_gl_internal_format = _EXT_RG16;
 			r_gl_format = GL_RG;
 			r_gl_type = GL_UNSIGNED_SHORT;
 		}
 		else {
-			if (config->float_texture_linear_supported) {
+			if (Config::float_texture_linear_supported) {
 				if (p_image.is_valid()) {
 					p_image->convert(Image::FORMAT_RGF);
 				}
@@ -409,13 +407,13 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 		}
 	} break;
 	case Image::FORMAT_RGB16: {
-		if (config->unorm16_texture_supported) {
+		if (Config::unorm16_texture_supported) {
 			r_gl_internal_format = _EXT_RGB16;
 			r_gl_format = GL_RGB;
 			r_gl_type = GL_UNSIGNED_SHORT;
 		}
 		else {
-			if (config->float_texture_linear_supported) {
+			if (Config::float_texture_linear_supported) {
 				if (p_image.is_valid()) {
 					p_image->convert(Image::FORMAT_RGBF);
 				}
@@ -436,13 +434,13 @@ static inline Error _get_gl_uncompressed_format(const Ref<Image>& p_image, Image
 		}
 	} break;
 	case Image::FORMAT_RGBA16: {
-		if (config->unorm16_texture_supported) {
+		if (Config::unorm16_texture_supported) {
 			r_gl_internal_format = _EXT_RGBA16;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_SHORT;
 		}
 		else {
-			if (config->float_texture_linear_supported) {
+			if (Config::float_texture_linear_supported) {
 				if (p_image.is_valid()) {
 					p_image->convert(Image::FORMAT_RGBAF);
 				}
@@ -494,7 +492,6 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 	Image::Format p_format, Image::Format& r_real_format, GLenum& r_gl_format,
 	GLenum& r_gl_internal_format, GLenum& r_gl_type, bool& r_compressed, bool p_force_decompress)
 {
-	Config* config = Config::get_singleton();
 	r_gl_format = 0;
 	Ref<Image> image = p_image;
 	r_compressed = false;
@@ -522,7 +519,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 
 	switch (p_format) {
 	case Image::FORMAT_DXT1: {
-		if (config->s3tc_supported) {
+		if (Config::s3tc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGB_S3TC_DXT1_EXT;
 			r_gl_format = GL_RGB;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -533,7 +530,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_DXT3: {
-		if (config->s3tc_supported) {
+		if (Config::s3tc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -544,7 +541,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_DXT5: {
-		if (config->s3tc_supported) {
+		if (Config::s3tc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -555,7 +552,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_RGTC_R: {
-		if (config->rgtc_supported) {
+		if (Config::rgtc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RED_RGTC1_EXT;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -566,7 +563,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_RGTC_RG: {
-		if (config->rgtc_supported) {
+		if (Config::rgtc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RED_GREEN_RGTC2_EXT;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -577,7 +574,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_BPTC_RGBA: {
-		if (config->bptc_supported) {
+		if (Config::bptc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_BPTC_UNORM;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -588,7 +585,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_BPTC_RGBF: {
-		if (config->bptc_supported) {
+		if (Config::bptc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGB_BPTC_SIGNED_FLOAT;
 			r_gl_format = GL_RGB;
 			r_gl_type = GL_FLOAT;
@@ -599,7 +596,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_BPTC_RGBFU: {
-		if (config->bptc_supported) {
+		if (Config::bptc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
 			r_gl_format = GL_RGB;
 			r_gl_type = GL_FLOAT;
@@ -610,7 +607,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ETC2_R11: {
-		if (config->etc2_supported) {
+		if (Config::etc2_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_R11_EAC;
 			r_gl_format = GL_RED;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -621,7 +618,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ETC2_R11S: {
-		if (config->etc2_supported) {
+		if (Config::etc2_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_SIGNED_R11_EAC;
 			r_gl_format = GL_RED;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -632,7 +629,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ETC2_RG11: {
-		if (config->etc2_supported) {
+		if (Config::etc2_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RG11_EAC;
 			r_gl_format = GL_RG;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -643,7 +640,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ETC2_RG11S: {
-		if (config->etc2_supported) {
+		if (Config::etc2_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_SIGNED_RG11_EAC;
 			r_gl_format = GL_RG;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -655,7 +652,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 	} break;
 	case Image::FORMAT_ETC:
 	case Image::FORMAT_ETC2_RGB8: {
-		if (config->etc2_supported) {
+		if (Config::etc2_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGB8_ETC2;
 			r_gl_format = GL_RGB;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -666,7 +663,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ETC2_RGBA8: {
-		if (config->etc2_supported) {
+		if (Config::etc2_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA8_ETC2_EAC;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -677,7 +674,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ETC2_RGB8A1: {
-		if (config->etc2_supported) {
+		if (Config::etc2_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -689,7 +686,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 	} break;
 	case Image::FORMAT_ETC2_RA_AS_RG: {
 #ifndef WEB_ENABLED
-		if (config->etc2_supported) {
+		if (Config::etc2_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA8_ETC2_EAC;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -704,7 +701,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 	} break;
 	case Image::FORMAT_DXT5_RA_AS_RG: {
 #ifndef WEB_ENABLED
-		if (config->s3tc_supported) {
+		if (Config::s3tc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -718,7 +715,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		decompress_ra_to_rg = true;
 	} break;
 	case Image::FORMAT_ASTC_4x4: {
-		if (config->astc_supported) {
+		if (Config::astc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_ASTC_4x4_KHR;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -729,7 +726,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ASTC_4x4_HDR: {
-		if (config->astc_hdr_supported) {
+		if (Config::astc_hdr_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_ASTC_4x4_KHR;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -740,7 +737,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ASTC_6x6: {
-		if (config->astc_supported) {
+		if (Config::astc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_ASTC_6x6_KHR;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -751,7 +748,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ASTC_6x6_HDR: {
-		if (config->astc_hdr_supported) {
+		if (Config::astc_hdr_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_ASTC_6x6_KHR;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -762,7 +759,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ASTC_8x8: {
-		if (config->astc_supported) {
+		if (Config::astc_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_ASTC_8x8_KHR;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -773,7 +770,7 @@ Ref<Image> GLES3::TextureStorage::_get_gl_image_and_format(const Ref<Image>& p_i
 		}
 	} break;
 	case Image::FORMAT_ASTC_8x8_HDR: {
-		if (config->astc_hdr_supported) {
+		if (Config::astc_hdr_supported) {
 			r_gl_internal_format = _EXT_COMPRESSED_RGBA_ASTC_8x8_KHR;
 			r_gl_format = GL_RGBA;
 			r_gl_type = GL_UNSIGNED_BYTE;
@@ -871,7 +868,7 @@ void GLES3::TextureStorage::texture_external_initialize(
 	texture.real_format = texture.format = Image::FORMAT_RGB8;
 	texture.type = Texture::TYPE_2D;
 
-	if (GLES3::Config::get_singleton()->external_texture_supported) {
+	if (GLES3::Config::external_texture_supported) {
 		texture.target = _GL_TEXTURE_EXTERNAL_OES;
 	}
 	else {
@@ -884,7 +881,7 @@ void GLES3::TextureStorage::texture_external_initialize(
 #ifdef ANDROID_ENABLED
 	if (texture.target == _GL_TEXTURE_EXTERNAL_OES) {
 		if (p_external_buffer) {
-			GLES3::Config::get_singleton()->eglEGLImageTargetTexture2DOES(
+			GLES3::Config::eglEGLImageTargetTexture2DOES(
 				_GL_TEXTURE_EXTERNAL_OES, reinterpret_cast<void*>(p_external_buffer));
 		}
 		texture.total_data_size = 0;
@@ -1161,7 +1158,7 @@ void GLES3::TextureStorage::texture_external_update(
 #ifdef ANDROID_ENABLED
 	if (tex->target == _GL_TEXTURE_EXTERNAL_OES && p_external_buffer) {
 		glBindTexture(_GL_TEXTURE_EXTERNAL_OES, tex->tex_id);
-		GLES3::Config::get_singleton()->eglEGLImageTargetTexture2DOES(
+		GLES3::Config::eglEGLImageTargetTexture2DOES(
 			_GL_TEXTURE_EXTERNAL_OES, reinterpret_cast<void*>(p_external_buffer));
 		glBindTexture(_GL_TEXTURE_EXTERNAL_OES, 0);
 	}
@@ -2358,8 +2355,6 @@ void GLES3::TextureStorage::_update_render_target_color(RenderTarget* rt)
 		return;
 	}
 
-	Config* config = Config::get_singleton();
-
 	if (rt->hdr) {
 		rt->color_internal_format = GL_RGBA16F;
 		rt->color_format = GL_RGBA;
@@ -2388,7 +2383,7 @@ void GLES3::TextureStorage::_update_render_target_color(RenderTarget* rt)
 
 	{
 		Texture* texture;
-		bool use_multiview = rt->view_count > 1 && config->multiview_supported;
+		bool use_multiview = rt->view_count > 1 && Config::multiview_supported;
 		GLenum texture_target = use_multiview ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
 
 		/* Front FBO */
@@ -2515,7 +2510,7 @@ void GLES3::TextureStorage::_update_render_target_color(RenderTarget* rt)
 			texture->format = rt->image_format;
 			texture->real_format = rt->image_format;
 			texture->target = texture_target;
-			if (rt->view_count > 1 && config->multiview_supported) {
+			if (rt->view_count > 1 && Config::multiview_supported) {
 				texture->type = Texture::TYPE_LAYERED;
 				texture->layers = rt->view_count;
 			}

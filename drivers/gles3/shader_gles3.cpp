@@ -184,7 +184,7 @@ void ShaderGLES3::_build_variant_code(StringBuilder& builder, uint32_t p_variant
 		builder.append("#version 300 es\n");
 	}
 
-	if (GLES3::Config::get_singleton()->polyfill_half2float) {
+	if (GLES3::Config::polyfill_half2float) {
 		builder.append("#define USE_HALF2FLOAT\n");
 	}
 
@@ -210,7 +210,7 @@ void ShaderGLES3::_build_variant_code(StringBuilder& builder, uint32_t p_variant
 	builder.append("\n"); // make sure defines begin at newline
 
 	// Optional support for external textures.
-	if (GLES3::Config::get_singleton()->external_texture_supported) {
+	if (GLES3::Config::external_texture_supported) {
 		builder.append("#extension GL_OES_EGL_image_external : enable\n");
 		builder.append("#extension GL_OES_EGL_image_external_essl3 : enable\n");
 	}
@@ -757,7 +757,7 @@ void ShaderGLES3::_initialize_version(Version* p_version)
 	ERR_FAIL_COND(p_version->variants.size() > 0);
 	bool use_cache = shader_cache_dir_valid &&
 					 !(feedback_count > 0 &&
-						 GLES3::Config::get_singleton()->disable_transform_feedback_shader_cache);
+						 GLES3::Config::disable_transform_feedback_shader_cache);
 	if (use_cache && _load_from_cache(p_version)) {
 		return;
 	}
@@ -868,9 +868,8 @@ void ShaderGLES3::initialize(const String& p_general_defines, int p_base_texture
 		print_verbose("Shader '" + name + "' SHA256: " + base_sha256);
 	}
 
-	GLES3::Config* config = GLES3::Config::get_singleton();
-	ERR_FAIL_NULL(config);
-	max_image_units = config->max_texture_image_units;
+	ERR_FAIL_COND(!GLES3::Config::is_initialized());
+	max_image_units = GLES3::Config::max_texture_image_units;
 }
 
 void ShaderGLES3::set_shader_cache_dir(const String& p_dir) { shader_cache_dir = p_dir; }

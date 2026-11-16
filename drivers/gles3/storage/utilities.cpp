@@ -430,34 +430,32 @@ void Utilities::update_dirty_resources()
 
 void Utilities::set_debug_generate_wireframes(bool p_generate)
 {
-	Config* config = Config::get_singleton();
-	config->generate_wireframes = p_generate;
+	Config::generate_wireframes = p_generate;
 }
 
 bool Utilities::has_os_feature(const String& p_feature)
 {
-	Config* config = Config::get_singleton();
-	if (!config) {
+	if (!Config::is_initialized()) {
 		return false;
 	}
 
 	if (p_feature == "rgtc") {
-		return config->rgtc_supported;
+		return Config::rgtc_supported;
 	}
 	if (p_feature == "s3tc") {
-		return config->s3tc_supported;
+		return Config::s3tc_supported;
 	}
 	if (p_feature == "bptc") {
-		return config->bptc_supported;
+		return Config::bptc_supported;
 	}
 	if (p_feature == "astc") {
-		return config->astc_supported;
+		return Config::astc_supported;
 	}
 	if (p_feature == "etc2") {
-		return config->etc2_supported;
+		return Config::etc2_supported;
 	}
 	if (p_feature == "astc_hdr") {
-		return config->astc_hdr_supported;
+		return Config::astc_hdr_supported;
 	}
 
 	return false;
@@ -508,23 +506,20 @@ String Utilities::get_video_adapter_api_version()
 
 Size2i Utilities::get_maximum_viewport_size()
 {
-	Config* config = Config::get_singleton();
-	ERR_FAIL_NULL_V(config, Size2i());
-	return Size2i(config->max_viewport_size[0], config->max_viewport_size[1]);
+	ERR_FAIL_COND_V(!Config::is_initialized(), Size2i());
+	return Size2i(Config::max_viewport_size[0], Config::max_viewport_size[1]);
 }
 
 uint32_t Utilities::get_maximum_shader_varyings()
 {
-	Config* config = Config::get_singleton();
-	ERR_FAIL_NULL_V(config, 31);
-	return config->max_shader_varyings;
+	ERR_FAIL_COND_V(!Config::is_initialized(), 31);
+	return Config::max_shader_varyings;
 }
 
 uint64_t Utilities::get_maximum_uniform_buffer_size()
 {
-	Config* config = Config::get_singleton();
-	ERR_FAIL_NULL_V(config, 65536);
-	return uint64_t(config->max_uniform_buffer_size);
+	ERR_FAIL_COND_V(!Config::is_initialized(), 65536);
+	return uint64_t(Config::max_uniform_buffer_size);
 }
 
 #endif // GLES3_ENABLED

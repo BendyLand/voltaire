@@ -144,8 +144,6 @@ GLuint RenderSceneBuffersGLES3::_rt_get_cached_fbo(
 
 void RenderSceneBuffersGLES3::configure(const RenderSceneBuffersConfiguration* p_config)
 {
-	GLES3::Config* config = GLES3::Config::get_singleton();
-
 	free_render_buffer_data();
 
 	internal_size = p_config->get_internal_size();
@@ -158,7 +156,7 @@ void RenderSceneBuffersGLES3::configure(const RenderSceneBuffersConfiguration* p
 	msaa3d.mode = p_config->get_msaa_3d();
 	// screen_space_aa = p_config->get_screen_space_aa();
 	// use_debanding = p_config->get_use_debanding();
-	view_count = config->multiview_supported ? p_config->get_view_count() : 1;
+	view_count = GLES3::Config::multiview_supported ? p_config->get_view_count() : 1;
 
 	bool use_multiview = view_count > 1;
 
@@ -206,12 +204,13 @@ void RenderSceneBuffersGLES3::configure(const RenderSceneBuffersConfiguration* p
 		msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
 	}
 	else if (!use_multiview && msaa3d.mode != RSE::VIEWPORT_MSAA_DISABLED &&
-			   !config->msaa_supported && !config->rt_msaa_supported) {
+			   !GLES3::Config::msaa_supported && !GLES3::Config::rt_msaa_supported) {
 		WARN_PRINT_ONCE("MSAA is not supported on this device.");
 		msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
 	}
 	else if (use_multiview && msaa3d.mode != RSE::VIEWPORT_MSAA_DISABLED &&
-			   !config->msaa_multiview_supported && !config->rt_msaa_multiview_supported) {
+			   !GLES3::Config::msaa_multiview_supported &&
+			   !GLES3::Config::rt_msaa_multiview_supported) {
 		WARN_PRINT_ONCE("Multiview MSAA is not supported on this device.");
 		msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
 	}
@@ -222,8 +221,6 @@ void RenderSceneBuffersGLES3::configure(const RenderSceneBuffersConfiguration* p
 
 void RenderSceneBuffersGLES3::_check_render_buffers()
 {
-	GLES3::Config* config = GLES3::Config::get_singleton();
-
 	ERR_FAIL_COND(view_count == 0);
 
 	bool use_internal_buffer = scaling_3d_mode != RSE::VIEWPORT_SCALING_3D_MODE_OFF ||
@@ -328,11 +325,11 @@ void RenderSceneBuffersGLES3::_check_render_buffers()
 		msaa3d.samples = samples[msaa3d.mode];
 
 		// Constrain by limits of OpenGL driver.
-		if (msaa3d.samples > config->msaa_max_samples) {
-			msaa3d.samples = config->msaa_max_samples;
+		if (msaa3d.samples > GLES3::Config::msaa_max_samples) {
+			msaa3d.samples = GLES3::Config::msaa_max_samples;
 		}
 
-		if (!use_multiview && !config->rt_msaa_supported) {
+		if (!use_multiview && !GLES3::Config::rt_msaa_supported) {
 			// Render to texture extensions not supported? fall back to MSAA framebuffer through
 			// GL_EXT_framebuffer_multisample. Note, if 2D MSAA matches 3D MSAA and we're not
 			// scaling, it would be ideal if we reuse our 2D MSAA buffer here. We can't however
@@ -383,7 +380,7 @@ void RenderSceneBuffersGLES3::_check_render_buffers()
 			glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 #if !defined(IOS_ENABLED) && !defined(WEB_ENABLED)
 		}
-		else if (use_multiview && !config->rt_msaa_multiview_supported) {
+		else if (use_multiview && !GLES3::Config::rt_msaa_multiview_supported) {
 			// Render to texture extensions not supported? fall back to MSAA textures through
 			// GL_EXT_multiview_texture_multisample.
 			msaa3d.needs_resolve = true;
@@ -557,7 +554,7 @@ void RenderSceneBuffersGLES3::check_backbuffer(bool p_need_color, bool p_need_de
 
 	glBindFramebuffer(GL_FRAMEBUFFER, backbuffer3d.fbo);
 
-	bool use_multiview = view_count > 1 && GLES3::Config::get_singleton()->multiview_supported;
+	bool use_multiview = view_count > 1 && GLES3::Config::multiview_supported;
 	GLenum texture_target = use_multiview ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
 	GLenum depth_format = GL_DEPTH24_STENCIL8;
 	uint32_t depth_format_size = 4;

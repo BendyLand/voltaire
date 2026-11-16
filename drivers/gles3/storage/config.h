@@ -34,6 +34,7 @@
 #ifdef GLES3_ENABLED
 
 #include <platform_gl.h>
+#include "core/string/ustring.h"
 #include "core/templates/hash_set.h"
 #undef ConnectFlags // Defined by windows.h through egl.h, breaks object.h.
 
@@ -49,98 +50,98 @@ typedef void (*PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC)(
 typedef void (*PFNEGLIMAGETARGETTEXTURE2DOESPROC)(GLenum, void*);
 #endif
 
-class String;
-
 namespace GLES3
 {
 
-class Config
+class Config final
 {
 private:
-	static Config* singleton;
+	static inline bool _initialized = false;
 
 public:
-	bool use_nearest_mip_filter = false;
-	bool use_depth_prepass = true;
+	Config() = delete;
+	~Config() = delete;
+	Config(const Config&) = delete;
+	Config& operator=(const Config&) = delete;
 
-	GLint max_vertex_texture_image_units = 0;
-	GLint max_texture_image_units = 0;
-	GLint max_texture_size = 0;
-	GLint max_viewport_size[2] = {0, 0};
-	GLint max_vertex_attribs = 0;
-	GLint64 max_uniform_buffer_size = 0;
-	uint32_t max_shader_varyings = 0;
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return _initialized; }
 
-	int64_t max_renderable_elements = 0;
-	int64_t max_renderable_lights = 0;
-	int64_t max_lights_per_object = 0;
+	static inline bool use_nearest_mip_filter = false;
+	static inline bool use_depth_prepass = true;
 
-	bool generate_wireframes = false;
+	static inline GLint max_vertex_texture_image_units = 0;
+	static inline GLint max_texture_image_units = 0;
+	static inline GLint max_texture_size = 0;
+	static inline GLint max_viewport_size[2] = {0, 0};
+	static inline GLint max_vertex_attribs = 0;
+	static inline GLint64 max_uniform_buffer_size = 0;
+	static inline uint32_t max_shader_varyings = 0;
 
-	HashSet<String> extensions;
+	static inline int64_t max_renderable_elements = 0;
+	static inline int64_t max_renderable_lights = 0;
+	static inline int64_t max_lights_per_object = 0;
 
-	bool float_texture_supported = false;
-	bool float_texture_linear_supported = false;
-	bool s3tc_supported = false;
-	bool rgtc_supported = false;
-	bool bptc_supported = false;
-	bool etc2_supported = false;
-	bool astc_supported = false;
-	bool astc_hdr_supported = false;
-	bool astc_layered_supported = false;
-	bool astc_3d_supported = false;
-	bool srgb_framebuffer_supported = false;
-	bool unorm16_texture_supported = false;
+	static inline bool generate_wireframes = false;
 
-	bool force_vertex_shading = false;
-	bool specular_occlusion = false;
+	static inline HashSet<String> extensions;
 
-	bool support_anisotropic_filter = false;
-	float anisotropic_level = 0.0f;
+	static inline bool float_texture_supported = false;
+	static inline bool float_texture_linear_supported = false;
+	static inline bool s3tc_supported = false;
+	static inline bool rgtc_supported = false;
+	static inline bool bptc_supported = false;
+	static inline bool etc2_supported = false;
+	static inline bool astc_supported = false;
+	static inline bool astc_hdr_supported = false;
+	static inline bool astc_layered_supported = false;
+	static inline bool astc_3d_supported = false;
+	static inline bool srgb_framebuffer_supported = false;
+	static inline bool unorm16_texture_supported = false;
 
-	GLint msaa_max_samples = 0;
-	bool msaa_supported = false;
-	bool msaa_multiview_supported = false;
-	bool rt_msaa_supported = false;
-	bool rt_msaa_multiview_supported = false;
-	bool multiview_supported = false;
-	bool external_texture_supported = false;
+	static inline bool force_vertex_shading = false;
+	static inline bool specular_occlusion = false;
+
+	static inline bool support_anisotropic_filter = false;
+	static inline float anisotropic_level = 0.0f;
+
+	static inline GLint msaa_max_samples = 0;
+	static inline bool msaa_supported = false;
+	static inline bool msaa_multiview_supported = false;
+	static inline bool rt_msaa_supported = false;
+	static inline bool rt_msaa_multiview_supported = false;
+	static inline bool multiview_supported = false;
+	static inline bool external_texture_supported = false;
 
 	// Adreno 3XX compatibility.
-	bool disable_particles_workaround = false; // Set to 'true' to disable 'GPUParticles'.
+	static inline bool disable_particles_workaround = false; // Set to 'true' to disable 'GPUParticles'.
 
 	// PowerVR GE 8320 workaround.
-	bool disable_transform_feedback_shader_cache = false;
+	static inline bool disable_transform_feedback_shader_cache = false;
 
 	// ANGLE shader workaround.
-	bool polyfill_half2float = true;
+	static inline bool polyfill_half2float = true;
 
 #ifdef ANDROID_ENABLED
-	PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC eglFramebufferTextureMultiviewOVR = nullptr;
-	PFNGLTEXSTORAGE3DMULTISAMPLEPROC eglTexStorage3DMultisample = nullptr;
-	PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC eglFramebufferTexture2DMultisampleEXT = nullptr;
-	PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC
+	static inline PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC eglFramebufferTextureMultiviewOVR =
+		nullptr;
+	static inline PFNGLTEXSTORAGE3DMULTISAMPLEPROC eglTexStorage3DMultisample = nullptr;
+	static inline PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC
+		eglFramebufferTexture2DMultisampleEXT = nullptr;
+	static inline PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC
 		eglFramebufferTextureMultisampleMultiviewOVR = nullptr;
-	PFNEGLIMAGETARGETTEXTURE2DOESPROC eglEGLImageTargetTexture2DOES = nullptr;
+	static inline PFNEGLIMAGETARGETTEXTURE2DOESPROC eglEGLImageTargetTexture2DOES = nullptr;
 
-#define glFramebufferTextureMultiviewOVR                                                           \
-	GLES3::Config::get_singleton()->eglFramebufferTextureMultiviewOVR
-#define glTexStorage3DMultisample GLES3::Config::get_singleton()->eglTexStorage3DMultisample
-#define glFramebufferTexture2DMultisampleEXT                                                       \
-	GLES3::Config::get_singleton()->eglFramebufferTexture2DMultisampleEXT
+#define glFramebufferTextureMultiviewOVR GLES3::Config::eglFramebufferTextureMultiviewOVR
+#define glTexStorage3DMultisample GLES3::Config::eglTexStorage3DMultisample
+#define glFramebufferTexture2DMultisampleEXT GLES3::Config::eglFramebufferTexture2DMultisampleEXT
 #define glFramebufferTextureMultisampleMultiviewOVR                                                \
-	GLES3::Config::get_singleton()->eglFramebufferTextureMultisampleMultiviewOVR
-#define glEGLImageTargetTexture2DOES GLES3::Config::get_singleton()->eglEGLImageTargetTexture2DOES
+	GLES3::Config::eglFramebufferTextureMultisampleMultiviewOVR
+#define glEGLImageTargetTexture2DOES GLES3::Config::eglEGLImageTargetTexture2DOES
 #endif // ANDROID_ENABLED
-
-	static Config* get_singleton() { return singleton; }
-
-	Config();
-	~Config();
 };
 
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-
-

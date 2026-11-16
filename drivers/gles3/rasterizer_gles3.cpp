@@ -479,7 +479,7 @@ void RasterizerGLES3::initialize()
 	}
 
 	// OpenGL needs to be initialized before initializing the Rasterizers
-	config = memnew(GLES3::Config);
+	GLES3::Config::initialize();
 	GLES3::Utilities::initialize();
 	GLES3::TextureStorage::initialize();
 	GLES3::MaterialStorage::initialize();
@@ -505,7 +505,7 @@ void RasterizerGLES3::initialize()
 
 	// Disable OpenGL linear to sRGB conversion, because Godot will always do this conversion
 	// itself.
-	if (config->srgb_framebuffer_supported) {
+	if (GLES3::Config::srgb_framebuffer_supported) {
 		glDisable(GL_FRAMEBUFFER_SRGB);
 	}
 }
@@ -540,10 +540,7 @@ void RasterizerGLES3::finalize()
 	GLES3::MaterialStorage::finalize();
 	GLES3::TextureStorage::finalize();
 	GLES3::Utilities::finalize();
-	if (config) {
-		memdelete(config);
-		config = nullptr;
-	}
+	GLES3::Config::finalize();
 }
 
 void RasterizerGLES3::make_current(bool p_gles_over_gl)
