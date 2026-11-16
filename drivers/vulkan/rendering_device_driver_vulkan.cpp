@@ -936,8 +936,8 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 		enabled_device_extension_names.has(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
 
 	bool use_fdm_offsets = false;
-	if (VulkanHooks::get_singleton() != nullptr) {
-		use_fdm_offsets = VulkanHooks::get_singleton()->use_fragment_density_offsets();
+	if (VulkanHooks::is_bound()) {
+		use_fdm_offsets = VulkanHooks::use_fragment_density_offsets();
 	}
 
 	// References:
@@ -1662,11 +1662,10 @@ Error RenderingDeviceDriverVulkan::_initialize_device(
 	create_info.ppEnabledExtensionNames = enabled_extension_names.ptr();
 	create_info.pEnabledFeatures = &requested_device_features;
 
-	if (VulkanHooks::get_singleton() != nullptr) {
-		bool device_created =
-			VulkanHooks::get_singleton()->create_vulkan_device(&create_info, &vk_device);
+	if (VulkanHooks::is_bound()) {
+		bool device_created = VulkanHooks::create_vulkan_device(&create_info, &vk_device);
 		ERR_FAIL_COND_V_MSG(!device_created, ERR_CANT_CREATE,
-			"Couldn't create a Vulkan device through the VulkanHooks singleton.");
+			"Couldn't create a Vulkan device through VulkanHooks.");
 	}
 	else {
 		VkResult err = vkCreateDevice(physical_device, &create_info,
@@ -2132,7 +2131,7 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 		GLOBAL_GET("display/window/frame_pacing/android/enable_frame_pacing");
 	swappy_mode = GLOBAL_GET("display/window/frame_pacing/android/swappy_mode");
 
-	if (VulkanHooks::get_singleton() != nullptr) {
+	if (VulkanHooks::is_bound()) {
 		// Hooks control device creation & possibly presentation
 		// (e.g. OpenXR) thus it's too risky to use Swappy.
 		swappy_frame_pacer_enable = false;
@@ -2585,7 +2584,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 	}
 
 	bool use_subsampled_images =
-		VulkanHooks::get_singleton() && VulkanHooks::get_singleton()->use_subsampled_images();
+		VulkanHooks::is_bound() && VulkanHooks::use_subsampled_images();
 	if (fdm_capabilities.attachment_supported && use_subsampled_images && p_format.is_subsampled &&
 		(p_format.usage_bits &
 			(RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
@@ -3634,9 +3633,8 @@ RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(
 	queue_family[picked_queue_index].virtual_count++;
 
 	// If is was identified as the main queue and a hook is active, indicate it as such to the hook.
-	if (p_identify_as_main_queue && (VulkanHooks::get_singleton() != nullptr)) {
-		VulkanHooks::get_singleton()->set_direct_queue_family_and_index(
-			family_index, picked_queue_index);
+	if (p_identify_as_main_queue && VulkanHooks::is_bound()) {
+		VulkanHooks::set_direct_queue_family_and_index(family_index, picked_queue_index);
 	}
 
 	return CommandQueueID(command_queue);
@@ -6547,8 +6545,8 @@ void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_
 	if (device_functions.EndRenderPass2KHR != nullptr && fdm_capabilities.offset_supported &&
 		command_buffer->active_render_pass->uses_fragment_density_map) {
 		LocalVector<VkOffset2D> fragment_density_offsets;
-		if (VulkanHooks::get_singleton() != nullptr) {
-			VulkanHooks::get_singleton()->get_fragment_density_offsets(
+		if (VulkanHooks::is_bound()) {
+			VulkanHooks::get_fragment_density_offsets(
 				fragment_density_offsets, fdm_capabilities.offset_granularity);
 		}
 		if (fragment_density_offsets.size() > 0) {

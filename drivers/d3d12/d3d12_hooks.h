@@ -33,17 +33,41 @@
 
 #include <drivers/d3d12/godot_d3dx12.h>
 
-class D3D12Hooks {
+class D3D12Hooks final
+{
 private:
-	static D3D12Hooks *singleton;
+	static inline bool _is_bound = false;
+
+	static D3D_FEATURE_LEVEL _default_get_feature_level() { return D3D_FEATURE_LEVEL_11_0; }
+	static LUID _default_get_adapter_luid() { return {}; }
+	static void _default_set_device(ID3D12Device* p_device) { (void)p_device; }
+	static void _default_set_command_queue(ID3D12CommandQueue* p_queue) { (void)p_queue; }
+	static void _default_cleanup_device() {}
 
 public:
-	D3D12Hooks();
-	virtual ~D3D12Hooks();
-	virtual D3D_FEATURE_LEVEL get_feature_level() const = 0;
-	virtual LUID get_adapter_luid() const = 0;
-	virtual void set_device(ID3D12Device *p_device) = 0;
-	virtual void set_command_queue(ID3D12CommandQueue *p_queue) = 0;
-	virtual void cleanup_device() = 0;
-	static D3D12Hooks *get_singleton() { return singleton; }
+	static bool is_bound() { return _is_bound; }
+
+	inline static D3D_FEATURE_LEVEL (*get_feature_level)() = &_default_get_feature_level;
+	inline static LUID (*get_adapter_luid)() = &_default_get_adapter_luid;
+	inline static void (*set_device)(ID3D12Device* p_device) = &_default_set_device;
+	inline static void (*set_command_queue)(
+		ID3D12CommandQueue* p_queue) = &_default_set_command_queue;
+	inline static void (*cleanup_device)() = &_default_cleanup_device;
+
+	template <typename Impl> static void bind()
+	{
+		get_feature_level = &Impl::get_feature_level;
+		get_adapter_luid = &Impl::get_adapter_luid;
+		set_device = &Impl::set_device;
+		set_command_queue = &Impl::set_command_queue;
+		cleanup_device = &Impl::cleanup_device;
+		_is_bound = true;
+	}
+
+	static void reset();
+
+	D3D12Hooks() = delete;
+	D3D12Hooks(const D3D12Hooks&) = delete;
+	D3D12Hooks& operator=(const D3D12Hooks&) = delete;
+	~D3D12Hooks() = delete;
 };

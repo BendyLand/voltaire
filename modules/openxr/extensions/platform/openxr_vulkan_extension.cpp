@@ -36,6 +36,24 @@
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
+OpenXRVulkanExtension* OpenXRVulkanExtension::singleton = nullptr;
+
+OpenXRVulkanExtension::OpenXRVulkanExtension()
+{
+	if (singleton == nullptr) {
+		singleton = this;
+		VulkanHooks::bind<OpenXRVulkanExtension>();
+	}
+}
+
+OpenXRVulkanExtension::~OpenXRVulkanExtension()
+{
+	if (singleton == this) {
+		VulkanHooks::reset();
+		singleton = nullptr;
+	}
+}
+
 HashMap<String, bool*> OpenXRVulkanExtension::get_requested_extensions(XrVersion p_version)
 {
 	HashMap<String, bool*> request_extensions;
@@ -61,8 +79,9 @@ void OpenXRVulkanExtension::on_instance_created(const XrInstance p_instance)
 void OpenXRVulkanExtension::set_direct_queue_family_and_index(
 	uint32_t p_queue_family_index, uint32_t p_queue_index)
 {
-	vulkan_queue_family_index = p_queue_family_index;
-	vulkan_queue_index = p_queue_index;
+	ERR_FAIL_NULL(singleton);
+	singleton->vulkan_queue_family_index = p_queue_family_index;
+	singleton->vulkan_queue_index = p_queue_index;
 }
 
 bool OpenXRVulkanExtension::use_fragment_density_offsets()
@@ -472,18 +491,18 @@ String OpenXRVulkanExtension::get_swapchain_format_name(int64_t p_swapchain_form
 }
 
 bool OpenXRVulkanExtension::create_vulkan_instance(
-	const VkInstanceCreateInfo* p_create_info, VkInstance_T** r_instance)
+	const VkInstanceCreateInfo* p_create_info, VkInstance* r_instance)
 {
 	return true;
 }
 
-bool OpenXRVulkanExtension::get_physical_device(VkPhysicalDevice_T** r_physical_device)
+bool OpenXRVulkanExtension::get_physical_device(VkPhysicalDevice* r_physical_device)
 {
 	return true;
 }
 
 bool OpenXRVulkanExtension::create_vulkan_device(
-	const VkDeviceCreateInfo* p_create_info, VkDevice_T** r_device)
+	const VkDeviceCreateInfo* p_create_info, VkDevice* r_device)
 {
 	return true;
 }

@@ -2460,8 +2460,8 @@ RDD::CommandQueueID RenderingDeviceDriverD3D12::command_queue_create(CommandQueu
 	HRESULT res = device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(d3d_queue.GetAddressOf()));
 	ERR_FAIL_COND_V(!SUCCEEDED(res), CommandQueueID());
 
-	if (p_identify_as_main_queue && D3D12Hooks::get_singleton() != nullptr) {
-		D3D12Hooks::get_singleton()->set_command_queue(d3d_queue.Get());
+	if (p_identify_as_main_queue && D3D12Hooks::is_bound()) {
+		D3D12Hooks::set_command_queue(d3d_queue.Get());
 	}
 
 	CommandQueueInfo *command_queue = memnew(CommandQueueInfo);
@@ -5952,8 +5952,8 @@ RenderingDeviceDriverD3D12::~RenderingDeviceDriverD3D12() {
 		}
 	}
 
-	if (D3D12Hooks::get_singleton() != nullptr) {
-		D3D12Hooks::get_singleton()->cleanup_device();
+	if (D3D12Hooks::is_bound()) {
+		D3D12Hooks::cleanup_device();
 	}
 
 	glsl_type_singleton_decref();
@@ -5992,9 +5992,9 @@ Error RenderingDeviceDriverD3D12::_initialize_device() {
 
 	D3D_FEATURE_LEVEL requested_feature_level = D3D_FEATURE_LEVEL_11_0;
 	// Override the adapter and feature level if needed by the XR backend.
-	if (D3D12Hooks::get_singleton() != nullptr) {
-		const LUID adapter_luid = D3D12Hooks::get_singleton()->get_adapter_luid();
-		requested_feature_level = D3D12Hooks::get_singleton()->get_feature_level();
+	if (D3D12Hooks::is_bound()) {
+		const LUID adapter_luid = D3D12Hooks::get_adapter_luid();
+		requested_feature_level = D3D12Hooks::get_feature_level();
 		ComPtr<IDXGIAdapter1> desired_adapter;
 		for (UINT adapter_index = 0;; adapter_index++) {
 			// EnumAdapters1 will fail with DXGI_ERROR_NOT_FOUND when there are no more adapters to
@@ -6023,8 +6023,8 @@ Error RenderingDeviceDriverD3D12::_initialize_device() {
 	}
 	ERR_FAIL_COND_V_MSG(!SUCCEEDED(res), ERR_CANT_CREATE, "D3D12CreateDevice failed with error " + vformat("0x%08ux", (uint64_t)res) + ".");
 
-	if (D3D12Hooks::get_singleton() != nullptr) {
-		D3D12Hooks::get_singleton()->set_device(device.Get());
+	if (D3D12Hooks::is_bound()) {
+		D3D12Hooks::set_device(device.Get());
 	}
 
 	if (context_driver->use_validation_layers()) {

@@ -31,16 +31,12 @@
 
 #include "d3d12_hooks.h"
 
-D3D12Hooks *D3D12Hooks::singleton = nullptr;
-
-D3D12Hooks::D3D12Hooks() {
-	if (singleton == nullptr) {
-		singleton = this;
-	}
-}
-
-D3D12Hooks::~D3D12Hooks() {
-	if (singleton == this) {
-		singleton = nullptr;
-	}
+void D3D12Hooks::reset()
+{
+	get_feature_level = &_default_get_feature_level;
+	get_adapter_luid = &_default_get_adapter_luid;
+	set_device = &_default_set_device;
+	set_command_queue = &_default_set_command_queue;
+	cleanup_device = &_default_cleanup_device;
+	_is_bound = false;
 }

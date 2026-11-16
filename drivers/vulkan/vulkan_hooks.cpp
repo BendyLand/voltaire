@@ -31,16 +31,14 @@
 
 #include "vulkan_hooks.h"
 
-VulkanHooks *VulkanHooks::singleton = nullptr;
-
-VulkanHooks::VulkanHooks() {
-	if (singleton == nullptr) {
-		singleton = this;
-	}
-}
-
-VulkanHooks::~VulkanHooks() {
-	if (singleton == this) {
-		singleton = nullptr;
-	}
+void VulkanHooks::reset()
+{
+	create_vulkan_instance = &_default_create_vulkan_instance;
+	get_physical_device = &_default_get_physical_device;
+	create_vulkan_device = &_default_create_vulkan_device;
+	set_direct_queue_family_and_index = &_default_set_direct_queue_family_and_index;
+	use_fragment_density_offsets = &_default_use_fragment_density_offsets;
+	get_fragment_density_offsets = &_default_get_fragment_density_offsets;
+	use_subsampled_images = &_default_use_subsampled_images;
+	_is_bound = false;
 }

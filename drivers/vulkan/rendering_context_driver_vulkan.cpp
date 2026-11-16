@@ -920,9 +920,9 @@ Error RenderingContextDriverVulkan::_initialize_instance()
 
 Error RenderingContextDriverVulkan::_initialize_devices()
 {
-	if (VulkanHooks::get_singleton() != nullptr) {
+	if (VulkanHooks::is_bound()) {
 		VkPhysicalDevice physical_device;
-		bool device_retrieved = VulkanHooks::get_singleton()->get_physical_device(&physical_device);
+		bool device_retrieved = VulkanHooks::get_physical_device(&physical_device);
 		ERR_FAIL_COND_V(!device_retrieved, ERR_CANT_CREATE);
 
 		// When a hook is active, pretend the device returned by the hook is the only device
@@ -981,8 +981,8 @@ bool RenderingContextDriverVulkan::_use_validation_layers() const
 Error RenderingContextDriverVulkan::_create_vulkan_instance(
 	const VkInstanceCreateInfo* p_create_info, VkInstance* r_instance)
 {
-	if (VulkanHooks::get_singleton() != nullptr) {
-		return VulkanHooks::get_singleton()->create_vulkan_instance(p_create_info, r_instance)
+	if (VulkanHooks::is_bound()) {
+		return VulkanHooks::create_vulkan_instance(p_create_info, r_instance)
 				   ? OK
 				   : ERR_CANT_CREATE;
 	}

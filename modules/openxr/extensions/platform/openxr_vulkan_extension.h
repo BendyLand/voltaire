@@ -39,28 +39,28 @@
 // Always include this as late as possible.
 #include "../../openxr_platform_inc.h" // IWYU pragma: keep.
 
-class OpenXRVulkanExtension : VulkanHooks
+class OpenXRVulkanExtension
 {
 public:
-	OpenXRVulkanExtension() = default;
-	virtual ~OpenXRVulkanExtension() override = default;
+	OpenXRVulkanExtension();
+	virtual ~OpenXRVulkanExtension();
 
 	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
 	virtual void on_instance_created(const XrInstance p_instance);
 	virtual void* set_session_create_and_get_next_pointer(void* p_next_pointer);
 
-	virtual bool create_vulkan_instance(
-		const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance) override final;
-	virtual bool get_physical_device(VkPhysicalDevice* r_device) override final;
-	virtual bool create_vulkan_device(
-		const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device) override final;
-	virtual void set_direct_queue_family_and_index(
-		uint32_t p_queue_family_index, uint32_t p_queue_index) override final;
-	virtual bool use_subsampled_images() override final;
-	virtual bool use_fragment_density_offsets() override final;
-	virtual void get_fragment_density_offsets(
-		LocalVector<VkOffset2D>& r_offets, const Vector2i& p_granularity) override final;
+	static bool create_vulkan_instance(
+		const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance);
+	static bool get_physical_device(VkPhysicalDevice* r_device);
+	static bool create_vulkan_device(
+		const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device);
+	static void set_direct_queue_family_and_index(
+		uint32_t p_queue_family_index, uint32_t p_queue_index);
+	static bool use_subsampled_images();
+	static bool use_fragment_density_offsets();
+	static void get_fragment_density_offsets(
+		LocalVector<VkOffset2D>& r_offets, const Vector2i& p_granularity);
 
 	virtual void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
 	virtual void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
