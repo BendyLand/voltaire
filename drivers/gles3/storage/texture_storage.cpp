@@ -1345,7 +1345,7 @@ Ref<Image> GLES3::TextureStorage::texture_2d_get(RID p_texture)
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		CopyEffects::get_singleton()->copy_to_rect(Rect2i(0, 0, 1.0, 1.0));
+		CopyEffects::copy_to_rect(Rect2i(0, 0, 1.0, 1.0));
 
 		glReadPixels(
 			0, 0, texture->alloc_width, texture->alloc_height, GL_RGBA, GL_UNSIGNED_BYTE, &w[0]);
@@ -1429,8 +1429,7 @@ Ref<Image> GLES3::TextureStorage::texture_2d_layer_get(RID p_texture, int p_laye
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	CopyEffects::get_singleton()->copy_to_rect_3d(
-		Rect2i(0, 0, 1, 1), p_layer, Texture::TYPE_LAYERED);
+	CopyEffects::copy_to_rect_3d(Rect2i(0, 0, 1, 1), p_layer, Texture::TYPE_LAYERED);
 
 	glReadPixels(
 		0, 0, texture->alloc_width, texture->alloc_height, GL_RGBA, GL_UNSIGNED_BYTE, &w[0]);
@@ -1484,8 +1483,7 @@ Vector<Ref<Image>> GLES3::TextureStorage::_texture_3d_read_framebuffer(GLES3::Te
 			uint8_t* w = data.ptrw();
 
 			float layer_f = layer / float(depth);
-			CopyEffects::get_singleton()->copy_to_rect_3d(
-				Rect2i(0, 0, 1, 1), layer_f, Texture::TYPE_3D, mipmap_level);
+			CopyEffects::copy_to_rect_3d(Rect2i(0, 0, 1, 1), layer_f, Texture::TYPE_3D, mipmap_level);
 			glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, &w[0]);
 
 			data.resize(data_size);
@@ -1568,8 +1566,7 @@ void GLES3::TextureStorage::texture_drawable_generate_mipmaps(RID p_texture)
 {
 	Texture* texture = get_texture(p_texture);
 	Vector3i size = texture_get_size(p_texture);
-	CopyEffects::get_singleton()->bilinear_blur(
-		texture->tex_id, texture->mipmaps, Rect2i(0, 0, size.x, size.y));
+	CopyEffects::bilinear_blur(texture->tex_id, texture->mipmaps, Rect2i(0, 0, size.x, size.y));
 }
 
 RID GLES3::TextureStorage::texture_drawable_get_default_material()
@@ -2141,8 +2138,7 @@ GLuint GLES3::TextureStorage::texture_atlas_get_texture() { return texture_atlas
 
 void GLES3::TextureStorage::update_texture_atlas()
 {
-	CopyEffects* copy_effects = CopyEffects::get_singleton();
-	ERR_FAIL_NULL(copy_effects);
+	ERR_FAIL_COND(!CopyEffects::is_initialized());
 
 	if (!texture_atlas.dirty) {
 		return; // nothing to do
@@ -2310,7 +2306,7 @@ void GLES3::TextureStorage::update_texture_atlas()
 			Texture* src_tex = get_texture(E.key);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, src_tex->tex_id);
-			copy_effects->copy_to_rect(t->uv_rect);
+			CopyEffects::copy_to_rect(t->uv_rect);
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
@@ -3482,7 +3478,7 @@ GLuint GLES3::TextureStorage::render_target_get_sdf_framebuffer(RID p_render_tar
 
 void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 {
-	CopyEffects* copy_effects = CopyEffects::get_singleton();
+	ERR_FAIL_COND(!CopyEffects::is_initialized());
 
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3542,7 +3538,7 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 	glEnable(GL_SCISSOR_TEST);
 	glScissor(0, 0, size.width, size.height);
 
-	copy_effects->draw_screen_triangle();
+	CopyEffects::draw_screen_triangle();
 
 	// Process
 
@@ -3575,7 +3571,7 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 		sdf_shader.shader.version_set_uniform(
 			CanvasSdfShaderGLES3::STRIDE, stride, sdf_shader.shader_version, variant);
 
-		copy_effects->draw_screen_triangle();
+		CopyEffects::draw_screen_triangle();
 
 		stride /= 2;
 		swap = !swap;
@@ -3603,7 +3599,7 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 		GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->sdf_texture_read, 0);
 	glBindTexture(GL_TEXTURE_2D, rt->sdf_texture_process[swap ? 1 : 0]);
 
-	copy_effects->draw_screen_triangle();
+	CopyEffects::draw_screen_triangle();
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, system_fbo);
@@ -3641,11 +3637,10 @@ void GLES3::TextureStorage::render_target_copy_to_back_buffer(
 	Rect2 normalized_region = region;
 	normalized_region.position = normalized_region.position / Size2(rt->size);
 	normalized_region.size = normalized_region.size / Size2(rt->size);
-	GLES3::CopyEffects::get_singleton()->copy_to_and_from_rect(normalized_region);
+	GLES3::CopyEffects::copy_to_and_from_rect(normalized_region);
 
 	if (p_gen_mipmaps) {
-		GLES3::CopyEffects::get_singleton()->gaussian_blur(
-			rt->backbuffer, rt->mipmap_count, region, rt->size);
+		GLES3::CopyEffects::gaussian_blur(rt->backbuffer, rt->mipmap_count, region, rt->size);
 		glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);
 	}
 
@@ -3677,7 +3672,7 @@ void GLES3::TextureStorage::render_target_clear_back_buffer(
 			return; // nothing to do
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);
-		GLES3::CopyEffects::get_singleton()->set_color(p_color, region);
+		GLES3::CopyEffects::set_color(p_color, region);
 	}
 }
 
@@ -3702,8 +3697,7 @@ void GLES3::TextureStorage::render_target_gen_back_buffer_mipmaps(
 		}
 	}
 	glDisable(GL_BLEND);
-	GLES3::CopyEffects::get_singleton()->gaussian_blur(
-		rt->backbuffer, rt->mipmap_count, region, rt->size);
+	GLES3::CopyEffects::gaussian_blur(rt->backbuffer, rt->mipmap_count, region, rt->size);
 	glEnable(GL_BLEND); // 2D starts with blend enabled.
 
 	glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);

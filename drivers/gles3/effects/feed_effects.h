@@ -35,30 +35,41 @@
 
 #include "drivers/gles3/shaders/feed.glsl.gen.h"
 
-namespace GLES3 {
+namespace GLES3
+{
 
-class FeedEffects {
+class FeedEffects final
+{
+public:
+	FeedEffects() = delete;
+	~FeedEffects() = delete;
+	FeedEffects(const FeedEffects&) = delete;
+	FeedEffects& operator=(const FeedEffects&) = delete;
+
 private:
-	struct Feed {
+	struct Feed
+	{
 		FeedShaderGLES3 shader;
 		RID shader_version;
-	} feed;
+	};
 
-	static FeedEffects *singleton;
+	struct Data
+	{
+		Feed feed;
+		GLuint screen_triangle = 0;
+		GLuint screen_triangle_array = 0;
+	};
 
-	GLuint screen_triangle = 0;
-	GLuint screen_triangle_array = 0;
+	static inline Data* data = nullptr;
+
+	static void draw_screen_triangle();
 
 public:
-	static FeedEffects *get_singleton();
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
 
-	FeedEffects();
-	~FeedEffects();
-
-	void draw();
-
-private:
-	void draw_screen_triangle();
+	static void draw();
 };
 
 } // namespace GLES3

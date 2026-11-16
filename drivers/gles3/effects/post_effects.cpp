@@ -37,22 +37,20 @@
 
 using namespace GLES3;
 
-PostEffects *PostEffects::singleton = nullptr;
+void PostEffects::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
 
-PostEffects *PostEffects::get_singleton() {
-	return singleton;
-}
-
-PostEffects::PostEffects() {
-	singleton = this;
-
-	post.shader.initialize();
-	post.shader_version = post.shader.version_create();
-	post.shader.version_bind_shader(post.shader_version, PostShaderGLES3::MODE_DEFAULT);
+	data->post.shader.initialize();
+	data->post.shader_version = data->post.shader.version_create();
+	data->post.shader.version_bind_shader(data->post.shader_version, PostShaderGLES3::MODE_DEFAULT);
 
 	{ // Screen Triangle.
-		glGenBuffers(1, &screen_triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 
 		const float qv[6] = {
 			-1.0f,
@@ -64,36 +62,49 @@ PostEffects::PostEffects() {
 		};
 
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
-		glGenVertexArrays(1, &screen_triangle_array);
-		glBindVertexArray(screen_triangle_array);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
 		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
 		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 	}
 }
 
-PostEffects::~PostEffects() {
-	singleton = nullptr;
-	glDeleteBuffers(1, &screen_triangle);
-	glDeleteVertexArrays(1, &screen_triangle_array);
-	post.shader.version_free(post.shader_version);
+void PostEffects::finalize()
+{
+	if (!data) {
+		return;
+	}
+
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	data->post.shader.version_free(data->post.shader_version);
+
+	memdelete(data);
+	data = nullptr;
 }
 
-void PostEffects::_draw_screen_triangle() {
-	glBindVertexArray(screen_triangle_array);
+void PostEffects::_draw_screen_triangle()
+{
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->screen_triangle_array);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	glBindVertexArray(0);
 }
 
-void PostEffects::post_copy(
-		GLuint p_dest_framebuffer, Size2i p_dest_size, GLuint p_source_color,
-		GLuint p_source_depth, bool p_ssao_enabled, int p_ssao_quality_level, float p_ssao_strength, float p_ssao_radius,
-		Size2i p_source_size, float p_luminance_multiplier, const Glow::Level *p_glow_buffers, float p_glow_intensity,
-		float p_srgb_white, uint32_t p_view, bool p_use_multiview, uint64_t p_spec_constants, bool p_bilinear_filtering) {
+void PostEffects::post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuint p_source_color,
+	GLuint p_source_depth, bool p_ssao_enabled, int p_ssao_quality_level, float p_ssao_strength,
+	float p_ssao_radius, Size2i p_source_size, float p_luminance_multiplier,
+	const Glow::Level* p_glow_buffers, float p_glow_intensity, float p_srgb_white, uint32_t p_view,
+	bool p_use_multiview, uint64_t p_spec_constants, bool p_bilinear_filtering)
+{
+	ERR_FAIL_NULL(data);
+
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_BLEND);
@@ -112,13 +123,17 @@ void PostEffects::post_copy(
 	if (p_ssao_enabled) {
 		if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_VERY_LOW) {
 			flags |= PostShaderGLES3::USE_SSAO_ABYSS;
-		} else if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_LOW) {
+		}
+		else if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_LOW) {
 			flags |= PostShaderGLES3::USE_SSAO_LOW;
-		} else if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_HIGH) {
+		}
+		else if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_HIGH) {
 			flags |= PostShaderGLES3::USE_SSAO_HIGH;
-		} else if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_ULTRA) {
+		}
+		else if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_ULTRA) {
 			flags |= PostShaderGLES3::USE_SSAO_MEGA;
-		} else {
+		}
+		else {
 			flags |= PostShaderGLES3::USE_SSAO_MED;
 		}
 	}
@@ -126,7 +141,7 @@ void PostEffects::post_copy(
 		flags |= PostShaderGLES3::USE_LUMINANCE_MULTIPLIER;
 	}
 
-	bool success = post.shader.version_bind_shader(post.shader_version, mode, flags);
+	bool success = data->post.shader.version_bind_shader(data->post.shader_version, mode, flags);
 	if (!success) {
 		return;
 	}
@@ -135,8 +150,10 @@ void PostEffects::post_copy(
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(texture_target, p_source_color);
 
-	glTexParameteri(texture_target, GL_TEXTURE_MAG_FILTER, p_bilinear_filtering ? GL_LINEAR : GL_NEAREST);
-	glTexParameteri(texture_target, GL_TEXTURE_MIN_FILTER, p_bilinear_filtering ? GL_LINEAR : GL_NEAREST);
+	glTexParameteri(
+		texture_target, GL_TEXTURE_MAG_FILTER, p_bilinear_filtering ? GL_LINEAR : GL_NEAREST);
+	glTexParameteri(
+		texture_target, GL_TEXTURE_MIN_FILTER, p_bilinear_filtering ? GL_LINEAR : GL_NEAREST);
 
 	if (p_ssao_enabled) {
 		glActiveTexture(GL_TEXTURE3);
@@ -144,25 +161,34 @@ void PostEffects::post_copy(
 		glTexParameteri(texture_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // Thanks to mrjustaguy!
 		glTexParameteri(texture_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-		post.shader.version_set_uniform(PostShaderGLES3::SSAO_INTENSITY, p_ssao_strength, post.shader_version, mode, flags);
-		post.shader.version_set_uniform(PostShaderGLES3::SSAO_RADIUS_FRAC, p_ssao_radius, post.shader_version, mode, flags);
-		post.shader.version_set_uniform(PostShaderGLES3::SSAO_PRN_UV, // This converts the UV coordinate into a pseudo-random number.
-				p_source_size.x * 1.087f * ((1.0f + sqrt(5.0f)) / 2.0f),
-				p_source_size.y * 1.087f * ((9.0f + sqrt(221.0f)) / 10.0f),
-				post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::SSAO_INTENSITY, p_ssao_strength, data->post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::SSAO_RADIUS_FRAC, p_ssao_radius, data->post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::SSAO_PRN_UV, // This converts the UV coordinate into a pseudo-random
+										  // number.
+			p_source_size.x * 1.087f * ((1.0f + sqrt(5.0f)) / 2.0f),
+			p_source_size.y * 1.087f * ((9.0f + sqrt(221.0f)) / 10.0f), data->post.shader_version,
+			mode, flags);
 	}
 
 	if (p_glow_buffers != nullptr) {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, p_glow_buffers[0].color);
 
-		post.shader.version_set_uniform(PostShaderGLES3::PIXEL_SIZE, 1.0 / p_source_size.x, 1.0 / p_source_size.y, post.shader_version, mode, flags);
-		post.shader.version_set_uniform(PostShaderGLES3::GLOW_INTENSITY, p_glow_intensity, post.shader_version, mode, flags);
-		post.shader.version_set_uniform(PostShaderGLES3::SRGB_WHITE, p_srgb_white, post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(PostShaderGLES3::PIXEL_SIZE, 1.0 / p_source_size.x,
+			1.0 / p_source_size.y, data->post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::GLOW_INTENSITY, p_glow_intensity, data->post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::SRGB_WHITE, p_srgb_white, data->post.shader_version, mode, flags);
 	}
 
-	post.shader.version_set_uniform(PostShaderGLES3::VIEW, float(p_view), post.shader_version, mode, flags);
-	post.shader.version_set_uniform(PostShaderGLES3::LUMINANCE_MULTIPLIER, p_luminance_multiplier, post.shader_version, mode, flags);
+	data->post.shader.version_set_uniform(
+		PostShaderGLES3::VIEW, float(p_view), data->post.shader_version, mode, flags);
+	data->post.shader.version_set_uniform(PostShaderGLES3::LUMINANCE_MULTIPLIER,
+		p_luminance_multiplier, data->post.shader_version, mode, flags);
 
 	_draw_screen_triangle();
 

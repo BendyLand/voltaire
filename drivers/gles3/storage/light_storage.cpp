@@ -1146,7 +1146,6 @@ Ref<RenderSceneBuffers> GLES3::LightStorage::reflection_probe_atlas_get_render_b
 
 bool GLES3::LightStorage::reflection_probe_instance_postprocess_step(RID p_instance)
 {
-	GLES3::CubemapFilter* cubemap_filter = GLES3::CubemapFilter::get_singleton();
 	ReflectionProbeInstance* rpi = reflection_probe_instance_owner.get_or_null(p_instance);
 	ERR_FAIL_NULL_V(rpi, false);
 	ERR_FAIL_COND_V(!rpi->rendering, false);
@@ -1167,7 +1166,7 @@ bool GLES3::LightStorage::reflection_probe_instance_postprocess_step(RID p_insta
 		for (int m = 0; m < atlas->mipmap_count; m++) {
 			const GLES3::ReflectionAtlas::Reflection& reflection =
 				atlas->reflections[rpi->atlas_index];
-			cubemap_filter->filter_radiance(reflection.color, reflection.radiance,
+			GLES3::CubemapFilter::filter_radiance(reflection.color, reflection.radiance,
 				reflection.fbos[6], atlas->size, atlas->mipmap_count, m);
 		}
 
@@ -1177,8 +1176,8 @@ bool GLES3::LightStorage::reflection_probe_instance_postprocess_step(RID p_insta
 	}
 	else {
 		const GLES3::ReflectionAtlas::Reflection& reflection = atlas->reflections[rpi->atlas_index];
-		cubemap_filter->filter_radiance(reflection.color, reflection.radiance, reflection.fbos[6],
-			atlas->size, atlas->mipmap_count, rpi->processing_layer);
+		GLES3::CubemapFilter::filter_radiance(reflection.color, reflection.radiance,
+			reflection.fbos[6], atlas->size, atlas->mipmap_count, rpi->processing_layer);
 
 		rpi->processing_layer++;
 		if (rpi->processing_layer == atlas->mipmap_count) {

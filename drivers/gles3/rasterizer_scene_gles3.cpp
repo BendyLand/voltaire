@@ -1121,7 +1121,6 @@ void RasterizerSceneGLES3::_draw_sky(RID p_env, const Projection& p_projection,
 void RasterizerSceneGLES3::_update_sky_radiance(RID p_env, const Projection& p_projection,
 	const Transform3D& p_transform, float p_sky_energy_multiplier)
 {
-	GLES3::CubemapFilter* cubemap_filter = GLES3::CubemapFilter::get_singleton();
 	ERR_FAIL_COND(p_env.is_null());
 
 	GLES3::SkyMaterialData* material_data = _get_sky_material_data(p_env);
@@ -1221,12 +1220,12 @@ void RasterizerSceneGLES3::_update_sky_radiance(RID p_env, const Projection& p_p
 
 		if (update_single_frame) {
 			for (int i = 0; i < max_processing_layer; i++) {
-				cubemap_filter->filter_radiance(sky->raw_radiance, sky->radiance,
+				GLES3::CubemapFilter::filter_radiance(sky->raw_radiance, sky->radiance,
 					sky->radiance_framebuffer, sky->radiance_size, sky->mipmap_count, i);
 			}
 		}
 		else {
-			cubemap_filter->filter_radiance(sky->raw_radiance, sky->radiance,
+			GLES3::CubemapFilter::filter_radiance(sky->raw_radiance, sky->radiance,
 				sky->radiance_framebuffer, sky->radiance_size, sky->mipmap_count,
 				0); // Just copy over the first mipmap.
 		}
@@ -1240,7 +1239,7 @@ void RasterizerSceneGLES3::_update_sky_radiance(RID p_env, const Projection& p_p
 			scene_state.set_gl_cull_mode(RSE::CULL_MODE_DISABLED);
 			scene_state.enable_gl_blend(false);
 
-			cubemap_filter->filter_radiance(sky->raw_radiance, sky->radiance,
+			GLES3::CubemapFilter::filter_radiance(sky->raw_radiance, sky->radiance,
 				sky->radiance_framebuffer, sky->radiance_size, sky->mipmap_count,
 				sky->processing_layer);
 			sky->processing_layer++;
@@ -1261,7 +1260,6 @@ Ref<Image> RasterizerSceneGLES3::sky_bake_panorama(
 		return Ref<Image>();
 	}
 
-	GLES3::CopyEffects* copy_effects = GLES3::CopyEffects::get_singleton();
 	GLES3::Config* config = GLES3::Config::get_singleton();
 
 	GLuint rad_tex = 0;
@@ -1293,7 +1291,7 @@ Ref<Image> RasterizerSceneGLES3::sky_bake_panorama(
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	copy_effects->copy_cube_to_panorama(p_bake_irradiance ? float(sky->mipmap_count) : 0.0);
+	GLES3::CopyEffects::copy_cube_to_panorama(p_bake_irradiance ? float(sky->mipmap_count) : 0.0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 	glDeleteFramebuffers(1, &rad_fbo);
@@ -3304,8 +3302,6 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 	}
 	if ((keep_color || draw_canvas) && rt && fbo != rt->fbo) {
 		// Need to copy our current contents to our intermediate/MSAA buffer
-		GLES3::CopyEffects* copy_effects = GLES3::CopyEffects::get_singleton();
-
 		scene_state.enable_gl_depth_test(false);
 		scene_state.enable_gl_depth_draw(false);
 
@@ -3313,11 +3309,11 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 		glBindTexture(rt->view_count > 1 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, rt->color);
 
 		if (apply_canvas_bg_exposure) {
-			copy_effects->copy_with_exposure(
+			GLES3::CopyEffects::copy_with_exposure(
 				tonemap_ubo.exposure, render_data.luminance_multiplier);
 		}
 		else {
-			copy_effects->copy_screen(render_data.luminance_multiplier);
+			GLES3::CopyEffects::copy_screen(render_data.luminance_multiplier);
 		}
 
 		scene_state.enable_gl_depth_test(true);
@@ -3369,8 +3365,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 			RID camera_YCBCR = feed->get_texture(CameraServer::FEED_YCBCR_IMAGE);
 			GLES3::TextureStorage::texture_bind(camera_YCBCR, 0);
 
-			GLES3::FeedEffects* feed_effects = GLES3::FeedEffects::get_singleton();
-			feed_effects->draw();
+			GLES3::FeedEffects::draw();
 		}
 		scene_state.enable_gl_depth_draw(true);
 		scene_state.enable_gl_depth_test(true);
@@ -3470,9 +3465,6 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 
 void RasterizerSceneGLES3::_render_post_processing(const RenderDataGLES3* p_render_data)
 {
-	GLES3::Glow* glow = GLES3::Glow::get_singleton();
-	GLES3::PostEffects* post_effects = GLES3::PostEffects::get_singleton();
-
 	Ref<RenderSceneBuffersGLES3> rb = p_render_data->render_buffers;
 	ERR_FAIL_COND(rb.is_null());
 
@@ -3592,19 +3584,19 @@ void RasterizerSceneGLES3::_render_post_processing(const RenderDataGLES3* p_rend
 			if (glow_enabled) {
 				glow_buffers = rb->get_glow_buffers();
 
-				glow->set_luminance_multiplier(p_render_data->luminance_multiplier);
+				GLES3::Glow::set_luminance_multiplier(p_render_data->luminance_multiplier);
 
-				glow->set_intensity(glow_intensity);
-				glow->set_glow_bloom(glow_bloom);
-				glow->set_glow_hdr_bleed_threshold(glow_hdr_bleed_threshold);
-				glow->set_glow_hdr_bleed_scale(glow_hdr_bleed_scale);
-				glow->set_glow_hdr_luminance_cap(glow_hdr_luminance_cap);
+				GLES3::Glow::set_intensity(glow_intensity);
+				GLES3::Glow::set_glow_bloom(glow_bloom);
+				GLES3::Glow::set_glow_hdr_bleed_threshold(glow_hdr_bleed_threshold);
+				GLES3::Glow::set_glow_hdr_bleed_scale(glow_hdr_bleed_scale);
+				GLES3::Glow::set_glow_hdr_luminance_cap(glow_hdr_luminance_cap);
 
-				glow->process_glow(color, internal_size, glow_buffers);
+				GLES3::Glow::process_glow(color, internal_size, glow_buffers);
 			}
 
 			// Copy color buffer
-			post_effects->post_copy(fbo_rt, target_size, color, depth_buffer, ssao_enabled,
+			GLES3::PostEffects::post_copy(fbo_rt, target_size, color, depth_buffer, ssao_enabled,
 				ssao_quality, ssao_strength, ssao_radius, internal_size,
 				p_render_data->luminance_multiplier, glow_buffers, glow_intensity, srgb_white, 0,
 				false, bcs_spec_constants,
@@ -3673,25 +3665,25 @@ void RasterizerSceneGLES3::_render_post_processing(const RenderDataGLES3* p_rend
 			if (glow_enabled) {
 				glow_buffers = rb->get_glow_buffers();
 
-				glow->set_luminance_multiplier(p_render_data->luminance_multiplier);
+				GLES3::Glow::set_luminance_multiplier(p_render_data->luminance_multiplier);
 
-				glow->set_intensity(glow_intensity);
-				glow->set_glow_bloom(glow_bloom);
-				glow->set_glow_hdr_bleed_threshold(glow_hdr_bleed_threshold);
-				glow->set_glow_hdr_bleed_scale(glow_hdr_bleed_scale);
-				glow->set_glow_hdr_luminance_cap(glow_hdr_luminance_cap);
+				GLES3::Glow::set_intensity(glow_intensity);
+				GLES3::Glow::set_glow_bloom(glow_bloom);
+				GLES3::Glow::set_glow_hdr_bleed_threshold(glow_hdr_bleed_threshold);
+				GLES3::Glow::set_glow_hdr_bleed_scale(glow_hdr_bleed_scale);
+				GLES3::Glow::set_glow_hdr_luminance_cap(glow_hdr_luminance_cap);
 			}
 
 			GLuint write_color = GLES3::TextureStorage::render_target_get_color(render_target);
 
 			for (uint32_t v = 0; v < view_count; v++) {
 				if (glow_enabled) {
-					glow->process_glow(source_color, internal_size, glow_buffers, v, true);
+					GLES3::Glow::process_glow(source_color, internal_size, glow_buffers, v, true);
 				}
 
 				glBindFramebuffer(GL_FRAMEBUFFER, fbos[2]);
 				glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, write_color, 0, v);
-				post_effects->post_copy(fbos[2], target_size, source_color, read_depth,
+				GLES3::PostEffects::post_copy(fbos[2], target_size, source_color, read_depth,
 					ssao_enabled, ssao_quality, ssao_strength, ssao_radius, internal_size,
 					p_render_data->luminance_multiplier, glow_buffers, glow_intensity, srgb_white,
 					v, true, bcs_spec_constants,
@@ -5053,8 +5045,6 @@ Ref<RenderSceneBuffers> RasterizerSceneGLES3::render_buffers_create()
 void RasterizerSceneGLES3::_render_buffers_debug_draw(
 	Ref<RenderSceneBuffersGLES3> p_render_buffers, RID p_shadow_atlas, GLuint p_fbo)
 {
-	GLES3::CopyEffects* copy_effects = GLES3::CopyEffects::get_singleton();
-
 	ERR_FAIL_COND(p_render_buffers.is_null());
 
 	RID render_target = p_render_buffers->render_target;
@@ -5117,7 +5107,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 						glBindTexture(GL_TEXTURE_CUBE_MAP, shadow_tex);
 						glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-						copy_effects->copy_cube_to_rect(atlas_uv_rect);
+						GLES3::CopyEffects::copy_cube_to_rect(atlas_uv_rect);
 
 						glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE,
 							GL_COMPARE_REF_TO_TEXTURE);
@@ -5127,7 +5117,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 						glBindTexture(GL_TEXTURE_2D, shadow_tex);
 						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-						copy_effects->copy_to_rect(atlas_uv_rect);
+						GLES3::CopyEffects::copy_to_rect(atlas_uv_rect);
 
 						glTexParameteri(
 							GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
@@ -5142,7 +5132,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 			glViewport(0, 0, size.width, size.height);
 			glBindTexture(GL_TEXTURE_2D, shadow_atlas_texture);
 
-			copy_effects->copy_to_rect(Rect2(Vector2(), Vector2(0.5, 0.5)));
+			GLES3::CopyEffects::copy_to_rect(Rect2(Vector2(), Vector2(0.5, 0.5)));
 			glBindTexture(GL_TEXTURE_2D, 0);
 			glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 		}
@@ -5161,7 +5151,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 			scene_state.enable_gl_depth_test(false);
 			scene_state.enable_gl_depth_draw(false);
 
-			copy_effects->copy_to_rect(Rect2(Vector2(), Vector2(0.5, 0.5)));
+			GLES3::CopyEffects::copy_to_rect(Rect2(Vector2(), Vector2(0.5, 0.5)));
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);

@@ -35,34 +35,47 @@
 
 #include "drivers/gles3/shaders/effects/cubemap_filter.glsl.gen.h"
 
-namespace GLES3 {
+namespace GLES3
+{
 
-class CubemapFilter {
+class CubemapFilter final
+{
+public:
+	CubemapFilter() = delete;
+	~CubemapFilter() = delete;
+	CubemapFilter(const CubemapFilter&) = delete;
+	CubemapFilter& operator=(const CubemapFilter&) = delete;
+
 private:
-	struct CMF {
+	struct CMF
+	{
 		CubemapFilterShaderGLES3 shader;
 		RID shader_version;
-	} cubemap_filter;
+	};
 
-	static CubemapFilter *singleton;
+	struct Data
+	{
+		CMF cubemap_filter;
 
-	// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates pixel overdraw along the diagonal.
-	GLuint screen_triangle = 0;
-	GLuint screen_triangle_array = 0;
+		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
+		// pixel overdraw along the diagonal.
+		GLuint screen_triangle = 0;
+		GLuint screen_triangle_array = 0;
 
-	uint32_t ggx_samples = 128;
+		uint32_t ggx_samples = 128;
+	};
+
+	static inline Data* data = nullptr;
 
 public:
-	static CubemapFilter *get_singleton() {
-		return singleton;
-	}
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
 
-	CubemapFilter();
-	~CubemapFilter();
-
-	void filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap, GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer);
+	static void filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap,
+		GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer);
 };
 
-} //namespace GLES3
+} // namespace GLES3
 
 #endif // GLES3_ENABLED

@@ -68,11 +68,6 @@ private:
 	static inline GLES3::MaterialStorage* material_storage = nullptr;
 	static inline GLES3::ParticlesStorage* particles_storage = nullptr;
 	static inline GLES3::LightStorage* light_storage = nullptr;
-	static inline GLES3::CopyEffects* copy_effects = nullptr;
-	static inline GLES3::CubemapFilter* cubemap_filter = nullptr;
-	static inline GLES3::Glow* glow = nullptr;
-	static inline GLES3::PostEffects* post_effects = nullptr;
-	static inline GLES3::FeedEffects* feed_effects = nullptr;
 	static inline RasterizerCanvasGLES3* canvas = nullptr;
 	static inline RasterizerSceneGLES3* scene = nullptr;
 

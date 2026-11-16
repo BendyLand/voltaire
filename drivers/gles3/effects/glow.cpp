@@ -37,21 +37,19 @@
 
 using namespace GLES3;
 
-Glow *Glow::singleton = nullptr;
+void Glow::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
 
-Glow *Glow::get_singleton() {
-	return singleton;
-}
-
-Glow::Glow() {
-	singleton = this;
-
-	glow.shader.initialize();
-	glow.shader_version = glow.shader.version_create();
+	data->glow.shader.initialize();
+	data->glow.shader_version = data->glow.shader.version_create();
 
 	{ // Screen Triangle.
-		glGenBuffers(1, &screen_triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 
 		const float qv[6] = {
 			-1.0f,
@@ -63,34 +61,45 @@ Glow::Glow() {
 		};
 
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
-		glGenVertexArrays(1, &screen_triangle_array);
-		glBindVertexArray(screen_triangle_array);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
 		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
 		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 	}
 }
 
-Glow::~Glow() {
-	glDeleteBuffers(1, &screen_triangle);
-	glDeleteVertexArrays(1, &screen_triangle_array);
+void Glow::finalize()
+{
+	if (!data) {
+		return;
+	}
 
-	glow.shader.version_free(glow.shader_version);
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	data->glow.shader.version_free(data->glow.shader_version);
 
-	singleton = nullptr;
+	memdelete(data);
+	data = nullptr;
 }
 
-void Glow::_draw_screen_triangle() {
-	glBindVertexArray(screen_triangle_array);
+void Glow::_draw_screen_triangle()
+{
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->screen_triangle_array);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	glBindVertexArray(0);
 }
 
-void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level *p_glow_buffers, uint32_t p_view, bool p_use_multiview) {
+void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level* p_glow_buffers,
+	uint32_t p_view, bool p_use_multiview)
+{
+	ERR_FAIL_NULL(data);
 	ERR_FAIL_COND(p_source_color == 0);
 	ERR_FAIL_COND(p_glow_buffers[3].color == 0);
 
@@ -108,25 +117,39 @@ void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level 
 		glBindTexture(p_use_multiview ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, p_source_color);
 
 		uint64_t specialization = p_use_multiview ? GlowShaderGLES3::USE_MULTIVIEW : 0;
-		bool success = glow.shader.version_bind_shader(glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		bool success = data->glow.shader.version_bind_shader(
+			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
 		if (!success) {
 			return;
 		}
 
-		glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE, 1.0 / p_glow_buffers[0].size.x, 1.0 / p_glow_buffers[0].size.y, glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
-		glow.shader.version_set_uniform(GlowShaderGLES3::VIEW, float(p_view), glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
-		glow.shader.version_set_uniform(GlowShaderGLES3::LUMINANCE_MULTIPLIER, luminance_multiplier, glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
-		glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_BLOOM, glow_bloom, glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
-		glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_THRESHOLD, glow_hdr_bleed_threshold, glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
-		glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_SCALE, glow_hdr_bleed_scale, glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
-		glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_LUMINANCE_CAP, glow_hdr_luminance_cap, glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
+			1.0 / p_glow_buffers[0].size.x, 1.0 / p_glow_buffers[0].size.y,
+			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::VIEW, float(p_view),
+			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::LUMINANCE_MULTIPLIER,
+			data->luminance_multiplier, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+			specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_BLOOM, data->glow_bloom,
+			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_THRESHOLD,
+			data->glow_hdr_bleed_threshold, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+			specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_SCALE,
+			data->glow_hdr_bleed_scale, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+			specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_LUMINANCE_CAP,
+			data->glow_hdr_luminance_cap, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+			specialization);
 
 		_draw_screen_triangle();
 	}
 
 	// Continue with downsampling
 	{
-		bool success = glow.shader.version_bind_shader(glow.shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE, 0);
+		bool success = data->glow.shader.version_bind_shader(
+			data->glow.shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE, 0);
 		if (!success) {
 			return;
 		}
@@ -138,7 +161,9 @@ void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, p_glow_buffers[i - 1].color);
 
-			glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE, 1.0 / p_glow_buffers[i].size.x, 1.0 / p_glow_buffers[i].size.y, glow.shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE);
+			data->glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
+				1.0 / p_glow_buffers[i].size.x, 1.0 / p_glow_buffers[i].size.y,
+				data->glow.shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE);
 
 			_draw_screen_triangle();
 		}
@@ -146,7 +171,8 @@ void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level 
 
 	// Now upsample
 	{
-		bool success = glow.shader.version_bind_shader(glow.shader_version, GlowShaderGLES3::MODE_UPSAMPLE, 0);
+		bool success = data->glow.shader.version_bind_shader(
+			data->glow.shader_version, GlowShaderGLES3::MODE_UPSAMPLE, 0);
 		if (!success) {
 			return;
 		}
@@ -158,7 +184,9 @@ void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, p_glow_buffers[i + 1].color);
 
-			glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE, 1.0 / p_glow_buffers[i].size.x, 1.0 / p_glow_buffers[i].size.y, glow.shader_version, GlowShaderGLES3::MODE_UPSAMPLE);
+			data->glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
+				1.0 / p_glow_buffers[i].size.x, 1.0 / p_glow_buffers[i].size.y,
+				data->glow.shader_version, GlowShaderGLES3::MODE_UPSAMPLE);
 
 			_draw_screen_triangle();
 		}

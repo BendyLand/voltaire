@@ -486,11 +486,11 @@ void RasterizerGLES3::initialize()
 	GLES3::MeshStorage::initialize();
 	GLES3::LightStorage::initialize();
 	GLES3::ParticlesStorage::initialize();
-	copy_effects = memnew(GLES3::CopyEffects);
-	cubemap_filter = memnew(GLES3::CubemapFilter);
-	glow = memnew(GLES3::Glow);
-	post_effects = memnew(GLES3::PostEffects);
-	feed_effects = memnew(GLES3::FeedEffects);
+	GLES3::CopyEffects::initialize();
+	GLES3::CubemapFilter::initialize();
+	GLES3::Glow::initialize();
+	GLES3::PostEffects::initialize();
+	GLES3::FeedEffects::initialize();
 	GLES3::GI::initialize();
 	GLES3::Fog::initialize();
 
@@ -530,26 +530,11 @@ void RasterizerGLES3::finalize()
 	RasterizerCanvasGLES3::finalize();
 	GLES3::GI::finalize();
 	GLES3::Fog::finalize();
-	if (post_effects) {
-		memdelete(post_effects);
-		post_effects = nullptr;
-	}
-	if (glow) {
-		memdelete(glow);
-		glow = nullptr;
-	}
-	if (cubemap_filter) {
-		memdelete(cubemap_filter);
-		cubemap_filter = nullptr;
-	}
-	if (copy_effects) {
-		memdelete(copy_effects);
-		copy_effects = nullptr;
-	}
-	if (feed_effects) {
-		memdelete(feed_effects);
-		feed_effects = nullptr;
-	}
+	GLES3::PostEffects::finalize();
+	GLES3::Glow::finalize();
+	GLES3::CubemapFilter::finalize();
+	GLES3::CopyEffects::finalize();
+	GLES3::FeedEffects::finalize();
 	GLES3::ParticlesStorage::finalize();
 	GLES3::MeshStorage::finalize();
 	GLES3::MaterialStorage::finalize();
@@ -611,18 +596,18 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 
 	if (p_blit.lens_distortion.apply &&
 		(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
-		GLES3::CopyEffects::get_singleton()->copy_with_lens_distortion(screenrect,
+		GLES3::CopyEffects::copy_with_lens_distortion(screenrect,
 			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
 			p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
 			p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
 	}
 	else if (rt->view_count > 1) {
-		GLES3::CopyEffects::get_singleton()->copy_to_rect_3d(screenrect,
+		GLES3::CopyEffects::copy_to_rect_3d(screenrect,
 			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
 			0.0, linear_to_srgb);
 	}
 	else {
-		GLES3::CopyEffects::get_singleton()->copy_to_rect(screenrect, linear_to_srgb);
+		GLES3::CopyEffects::copy_to_rect(screenrect, linear_to_srgb);
 	}
 
 	glBindTexture(target, 0);
@@ -689,7 +674,7 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 								  : RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, t->tex_id);
-	copy_effects->copy_to_rect(screenrect);
+	GLES3::CopyEffects::copy_to_rect(screenrect);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	gl_end_frame(true);

@@ -37,21 +37,20 @@
 
 using namespace GLES3;
 
-CopyEffects* CopyEffects::singleton = nullptr;
-
-CopyEffects* CopyEffects::get_singleton() { return singleton; }
-
-CopyEffects::CopyEffects()
+void CopyEffects::initialize()
 {
-	singleton = this;
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
 
-	copy.shader.initialize();
-	copy.shader_version = copy.shader.version_create();
-	copy.shader.version_bind_shader(copy.shader_version, CopyShaderGLES3::MODE_DEFAULT);
+	data->copy.shader.initialize();
+	data->copy.shader_version = data->copy.shader.version_create();
+	data->copy.shader.version_bind_shader(data->copy.shader_version, CopyShaderGLES3::MODE_DEFAULT);
 
 	{ // Screen Triangle.
-		glGenBuffers(1, &screen_triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 
 		const float qv[6] = {
 			-1.0f,
@@ -65,9 +64,9 @@ CopyEffects::CopyEffects()
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
-		glGenVertexArrays(1, &screen_triangle_array);
-		glBindVertexArray(screen_triangle_array);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
 		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
 		glBindVertexArray(0);
@@ -75,9 +74,8 @@ CopyEffects::CopyEffects()
 	}
 
 	{ // Screen Quad
-
-		glGenBuffers(1, &quad);
-		glBindBuffer(GL_ARRAY_BUFFER, quad);
+		glGenBuffers(1, &data->quad);
+		glBindBuffer(GL_ARRAY_BUFFER, data->quad);
 
 		const float qv[12] = {
 			-1.0f,
@@ -97,9 +95,9 @@ CopyEffects::CopyEffects()
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, qv, GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
-		glGenVertexArrays(1, &quad_array);
-		glBindVertexArray(quad_array);
-		glBindBuffer(GL_ARRAY_BUFFER, quad);
+		glGenVertexArrays(1, &data->quad_array);
+		glBindVertexArray(data->quad_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->quad);
 		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
 		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
 		glBindVertexArray(0);
@@ -107,28 +105,36 @@ CopyEffects::CopyEffects()
 	}
 }
 
-CopyEffects::~CopyEffects()
+void CopyEffects::finalize()
 {
-	singleton = nullptr;
-	glDeleteBuffers(1, &screen_triangle);
-	glDeleteVertexArrays(1, &screen_triangle_array);
-	glDeleteBuffers(1, &quad);
-	glDeleteVertexArrays(1, &quad_array);
-	copy.shader.version_free(copy.shader_version);
+	if (!data) {
+		return;
+	}
+
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	glDeleteBuffers(1, &data->quad);
+	glDeleteVertexArrays(1, &data->quad_array);
+	data->copy.shader.version_free(data->copy.shader_version);
+
+	memdelete(data);
+	data = nullptr;
 }
 
 void CopyEffects::copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb)
 {
+	ERR_FAIL_NULL(data);
+
 	uint64_t specializations = p_linear_to_srgb ? CopyShaderGLES3::CONVERT_LINEAR_TO_SRGB : 0;
 
-	bool success = copy.shader.version_bind_shader(
-		copy.shader_version, CopyShaderGLES3::MODE_COPY_SECTION, specializations);
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_COPY_SECTION, specializations);
 	if (!success) {
 		return;
 	}
 
-	copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, copy.shader_version,
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
 		CopyShaderGLES3::MODE_COPY_SECTION, specializations);
 	draw_screen_quad();
 }
@@ -136,6 +142,7 @@ void CopyEffects::copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb)
 void CopyEffects::copy_to_rect_3d(
 	const Rect2& p_rect, float p_layer, int p_type, float p_lod, bool p_linear_to_srgb)
 {
+	ERR_FAIL_NULL(data);
 	ERR_FAIL_COND(p_type != Texture::TYPE_LAYERED && p_type != Texture::TYPE_3D);
 
 	CopyShaderGLES3::ShaderVariant variant = p_type == Texture::TYPE_LAYERED
@@ -143,18 +150,19 @@ void CopyEffects::copy_to_rect_3d(
 												 : CopyShaderGLES3::MODE_COPY_SECTION_3D;
 	uint64_t specializations = p_linear_to_srgb ? CopyShaderGLES3::CONVERT_LINEAR_TO_SRGB : 0;
 
-	bool success = copy.shader.version_bind_shader(copy.shader_version, variant, specializations);
+	bool success =
+		data->copy.shader.version_bind_shader(data->copy.shader_version, variant, specializations);
 	if (!success) {
 		return;
 	}
 
-	copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, copy.shader_version, variant,
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version, variant,
 		specializations);
-	copy.shader.version_set_uniform(
-		CopyShaderGLES3::LAYER, p_layer, copy.shader_version, variant, specializations);
-	copy.shader.version_set_uniform(
-		CopyShaderGLES3::LOD, p_lod, copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::LAYER, p_layer, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::LOD, p_lod, data->copy.shader_version, variant, specializations);
 	draw_screen_quad();
 }
 
@@ -162,49 +170,54 @@ void CopyEffects::copy_with_lens_distortion(const Rect2& p_rect, float p_layer,
 	const Vector2& p_eye_center, float p_k1, float p_k2, float p_upscale, float p_aspect_ration,
 	bool p_linear_to_srgb)
 {
+	ERR_FAIL_NULL(data);
+
 	CopyShaderGLES3::ShaderVariant variant = CopyShaderGLES3::MODE_LENS_DISTORTION;
 
 	uint64_t specializations = p_linear_to_srgb ? CopyShaderGLES3::CONVERT_LINEAR_TO_SRGB : 0;
 
-	bool success = copy.shader.version_bind_shader(copy.shader_version, variant, specializations);
+	bool success =
+		data->copy.shader.version_bind_shader(data->copy.shader_version, variant, specializations);
 	if (!success) {
 		return;
 	}
 
-	copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, copy.shader_version, variant,
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version, variant,
 		specializations);
-	copy.shader.version_set_uniform(
-		CopyShaderGLES3::LAYER, p_layer, copy.shader_version, variant, specializations);
-	copy.shader.version_set_uniform(
-		CopyShaderGLES3::LOD, 0.0, copy.shader_version, variant, specializations);
-	copy.shader.version_set_uniform(CopyShaderGLES3::EYE_CENTER, p_eye_center.x, p_eye_center.y,
-		copy.shader_version, variant, specializations);
-	copy.shader.version_set_uniform(
-		CopyShaderGLES3::K1, p_k1, copy.shader_version, variant, specializations);
-	copy.shader.version_set_uniform(
-		CopyShaderGLES3::K2, p_k2, copy.shader_version, variant, specializations);
-	copy.shader.version_set_uniform(
-		CopyShaderGLES3::UPSCALE, p_upscale, copy.shader_version, variant, specializations);
-	copy.shader.version_set_uniform(CopyShaderGLES3::ASPECT_RATIO, p_aspect_ration,
-		copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::LAYER, p_layer, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::LOD, 0.0, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::EYE_CENTER, p_eye_center.x,
+		p_eye_center.y, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::K1, p_k1, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::K2, p_k2, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::UPSCALE, p_upscale, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::ASPECT_RATIO, p_aspect_ration,
+		data->copy.shader_version, variant, specializations);
 
 	draw_screen_quad();
 }
 
 void CopyEffects::copy_to_and_from_rect(const Rect2& p_rect)
 {
-	bool success = copy.shader.version_bind_shader(
-		copy.shader_version, CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
 	if (!success) {
 		return;
 	}
 
-	copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, copy.shader_version,
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
 		CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
-	copy.shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, copy.shader_version,
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
 		CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
 
 	draw_screen_quad();
@@ -212,58 +225,66 @@ void CopyEffects::copy_to_and_from_rect(const Rect2& p_rect)
 
 void CopyEffects::copy_screen(float p_multiply)
 {
-	bool success =
-		copy.shader.version_bind_shader(copy.shader_version, CopyShaderGLES3::MODE_SCREEN);
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_SCREEN);
 	if (!success) {
 		return;
 	}
 
-	copy.shader.version_set_uniform(
-		CopyShaderGLES3::MULTIPLY, p_multiply, copy.shader_version, CopyShaderGLES3::MODE_SCREEN);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::MULTIPLY, p_multiply,
+		data->copy.shader_version, CopyShaderGLES3::MODE_SCREEN);
 
 	draw_screen_triangle();
 }
 
 void CopyEffects::copy_with_exposure(float p_exposure, float p_multiply)
 {
-	bool success = copy.shader.version_bind_shader(
-		copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
 	if (!success) {
 		return;
 	}
 
-	copy.shader.version_set_uniform(CopyShaderGLES3::EXPOSURE, p_exposure, copy.shader_version,
-		CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
-	copy.shader.version_set_uniform(CopyShaderGLES3::MULTIPLY, p_multiply, copy.shader_version,
-		CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::EXPOSURE, p_exposure,
+		data->copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::MULTIPLY, p_multiply,
+		data->copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
 
 	draw_screen_triangle();
 }
 
 void CopyEffects::copy_cube_to_rect(const Rect2& p_rect)
 {
-	bool success = copy.shader.version_bind_shader(
-		copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_OCTAHEDRAL);
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_OCTAHEDRAL);
 	if (!success) {
 		return;
 	}
 
-	copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, copy.shader_version,
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
 		CopyShaderGLES3::MODE_CUBE_TO_OCTAHEDRAL);
 	draw_screen_quad();
 }
 
 void CopyEffects::copy_cube_to_panorama(float p_mip_level)
 {
-	bool success = copy.shader.version_bind_shader(
-		copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
 	if (!success) {
 		return;
 	}
 
-	copy.shader.version_set_uniform(CopyShaderGLES3::MIP_LEVEL, p_mip_level, copy.shader_version,
-		CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::MIP_LEVEL, p_mip_level,
+		data->copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
 	draw_screen_quad();
 }
 
@@ -303,6 +324,8 @@ void CopyEffects::bilinear_blur(GLuint p_source_texture, int p_mipmap_count, con
 void CopyEffects::gaussian_blur(
 	GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region, const Size2i& p_size)
 {
+	ERR_FAIL_NULL(data);
+
 	GLuint framebuffer;
 	glGenFramebuffers(1, &framebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -346,8 +369,8 @@ void CopyEffects::gaussian_blur(
 
 		glViewport(0, 0, base_size.x, base_size.y);
 
-		bool success = copy.shader.version_bind_shader(
-			copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+		bool success = data->copy.shader.version_bind_shader(
+			data->copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
 		if (!success) {
 			return;
 		}
@@ -356,16 +379,16 @@ void CopyEffects::gaussian_blur(
 		normalized_dest_region.position = Size2(dest_region.position) / float_size;
 		normalized_dest_region.size = Size2(dest_region.size) / float_size;
 
-		copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION,
+		data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION,
 			normalized_dest_region.position.x, normalized_dest_region.position.y,
-			normalized_dest_region.size.x, normalized_dest_region.size.y, copy.shader_version,
+			normalized_dest_region.size.x, normalized_dest_region.size.y, data->copy.shader_version,
 			CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
-		copy.shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION,
+		data->copy.shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION,
 			normalized_source_region.position.x, normalized_source_region.position.y,
-			normalized_source_region.size.x, normalized_source_region.size.y, copy.shader_version,
-			CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
-		copy.shader.version_set_uniform(CopyShaderGLES3::PIXEL_SIZE, 1.0 / float_size.x,
-			1.0 / float_size.y, copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+			normalized_source_region.size.x, normalized_source_region.size.y,
+			data->copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+		data->copy.shader.version_set_uniform(CopyShaderGLES3::PIXEL_SIZE, 1.0 / float_size.x,
+			1.0 / float_size.y, data->copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
 
 		draw_screen_quad();
 
@@ -386,34 +409,38 @@ void CopyEffects::gaussian_blur(
 
 void CopyEffects::set_color(const Color& p_color, const Rect2i& p_region)
 {
-	bool success =
-		copy.shader.version_bind_shader(copy.shader_version, CopyShaderGLES3::MODE_SIMPLE_COLOR);
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_SIMPLE_COLOR);
 	if (!success) {
 		return;
 	}
 
-	copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_region.position.x,
-		p_region.position.y, p_region.size.x, p_region.size.y, copy.shader_version,
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_region.position.x,
+		p_region.position.y, p_region.size.x, p_region.size.y, data->copy.shader_version,
 		CopyShaderGLES3::MODE_SIMPLE_COLOR);
-	copy.shader.version_set_uniform(CopyShaderGLES3::COLOR_IN, p_color, copy.shader_version,
-		CopyShaderGLES3::MODE_SIMPLE_COLOR);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COLOR_IN, p_color,
+		data->copy.shader_version, CopyShaderGLES3::MODE_SIMPLE_COLOR);
 	draw_screen_quad();
 }
 
 void CopyEffects::draw_screen_triangle()
 {
-	glBindVertexArray(screen_triangle_array);
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->screen_triangle_array);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	glBindVertexArray(0);
 }
 
 void CopyEffects::draw_screen_quad()
 {
-	glBindVertexArray(quad_array);
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->quad_array);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
 }
 
 #endif // GLES3_ENABLED
-
-

@@ -38,55 +38,63 @@
 namespace GLES3
 {
 
-class CopyEffects
+class CopyEffects final
 {
+public:
+	CopyEffects() = delete;
+	~CopyEffects() = delete;
+	CopyEffects(const CopyEffects&) = delete;
+	CopyEffects& operator=(const CopyEffects&) = delete;
+
 private:
 	struct Copy
 	{
 		CopyShaderGLES3 shader;
 		RID shader_version;
-	} copy;
+	};
 
-	static CopyEffects* singleton;
+	struct Data
+	{
+		Copy copy;
 
-	// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
-	// pixel overdraw along the diagonal.
-	GLuint screen_triangle = 0;
-	GLuint screen_triangle_array = 0;
+		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
+		// pixel overdraw along the diagonal.
+		GLuint screen_triangle = 0;
+		GLuint screen_triangle_array = 0;
 
-	// Use for rect-based effects.
-	GLuint quad = 0;
-	GLuint quad_array = 0;
+		// Use for rect-based effects.
+		GLuint quad = 0;
+		GLuint quad_array = 0;
+	};
+
+	static inline Data* data = nullptr;
 
 public:
-	static CopyEffects* get_singleton();
-
-	CopyEffects();
-	~CopyEffects();
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
 
 	// These functions assume that a framebuffer and texture are bound already. They only manage the
 	// shader, uniforms, and vertex array.
-	void copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb = false);
-	void copy_to_rect_3d(const Rect2& p_rect, float p_layer, int p_type, float p_lod = 0.0f,
+	static void copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb = false);
+	static void copy_to_rect_3d(const Rect2& p_rect, float p_layer, int p_type, float p_lod = 0.0f,
 		bool p_linear_to_srgb = false);
-	void copy_with_lens_distortion(const Rect2& p_rect, float p_layer, const Vector2& p_eye_center,
-		float p_k1, float p_k2, float p_upscale, float p_aspect_ration,
-		bool p_linear_to_srgb = false);
-	void copy_to_and_from_rect(const Rect2& p_rect);
-	void copy_screen(float p_multiply = 1.0);
-	void copy_with_exposure(float p_exposure, float p_multiply);
-	void copy_cube_to_rect(const Rect2& p_rect);
-	void copy_cube_to_panorama(float p_mip_level);
-	void bilinear_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region);
-	void gaussian_blur(
+	static void copy_with_lens_distortion(const Rect2& p_rect, float p_layer,
+		const Vector2& p_eye_center, float p_k1, float p_k2, float p_upscale,
+		float p_aspect_ration, bool p_linear_to_srgb = false);
+	static void copy_to_and_from_rect(const Rect2& p_rect);
+	static void copy_screen(float p_multiply = 1.0);
+	static void copy_with_exposure(float p_exposure, float p_multiply);
+	static void copy_cube_to_rect(const Rect2& p_rect);
+	static void copy_cube_to_panorama(float p_mip_level);
+	static void bilinear_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region);
+	static void gaussian_blur(
 		GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region, const Size2i& p_size);
-	void set_color(const Color& p_color, const Rect2i& p_region);
-	void draw_screen_triangle();
-	void draw_screen_quad();
+	static void set_color(const Color& p_color, const Rect2i& p_region);
+	static void draw_screen_triangle();
+	static void draw_screen_quad();
 };
 
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-
-

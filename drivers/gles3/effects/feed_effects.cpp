@@ -38,22 +38,20 @@
 
 using namespace GLES3;
 
-FeedEffects *FeedEffects::singleton = nullptr;
+void FeedEffects::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
 
-FeedEffects *FeedEffects::get_singleton() {
-	return singleton;
-}
-
-FeedEffects::FeedEffects() {
-	singleton = this;
-
-	feed.shader.initialize();
-	feed.shader_version = feed.shader.version_create();
-	feed.shader.version_bind_shader(feed.shader_version, FeedShaderGLES3::MODE_DEFAULT);
+	data->feed.shader.initialize();
+	data->feed.shader_version = data->feed.shader.version_create();
+	data->feed.shader.version_bind_shader(data->feed.shader_version, FeedShaderGLES3::MODE_DEFAULT);
 
 	{ // Screen Triangle.
-		glGenBuffers(1, &screen_triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 
 		const float qv[6] = {
 			-1.0f,
@@ -65,26 +63,34 @@ FeedEffects::FeedEffects() {
 		};
 
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
-		glGenVertexArrays(1, &screen_triangle_array);
-		glBindVertexArray(screen_triangle_array);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
 		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
 		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 	}
 }
 
-FeedEffects::~FeedEffects() {
-	singleton = nullptr;
-	glDeleteBuffers(1, &screen_triangle);
-	glDeleteVertexArrays(1, &screen_triangle_array);
-	feed.shader.version_free(feed.shader_version);
+void FeedEffects::finalize()
+{
+	if (!data) {
+		return;
+	}
+
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	data->feed.shader.version_free(data->feed.shader_version);
+
+	memdelete(data);
+	data = nullptr;
 }
 
-Transform3D transform3D_from_mat4(const float *p_mat4) {
+Transform3D transform3D_from_mat4(const float* p_mat4)
+{
 	Transform3D res;
 
 	res.basis.rows[0][0] = p_mat4[0];
@@ -107,8 +113,12 @@ Transform3D transform3D_from_mat4(const float *p_mat4) {
 	return res;
 }
 
-void FeedEffects::draw() {
-	bool success = feed.shader.version_bind_shader(feed.shader_version, FeedShaderGLES3::MODE_DEFAULT, FeedShaderGLES3::USE_EXTERNAL_SAMPLER);
+void FeedEffects::draw()
+{
+	ERR_FAIL_NULL(data);
+
+	bool success = data->feed.shader.version_bind_shader(
+		data->feed.shader_version, FeedShaderGLES3::MODE_DEFAULT, FeedShaderGLES3::USE_EXTERNAL_SAMPLER);
 	if (!success) {
 		OS::print("Godot : FeedShaderGLES3 Could not bind version_bind_shader USE_EXTERNAL_SAMPLER");
 		return;
@@ -117,8 +127,11 @@ void FeedEffects::draw() {
 	draw_screen_triangle();
 }
 
-void FeedEffects::draw_screen_triangle() {
-	glBindVertexArray(screen_triangle_array);
+void FeedEffects::draw_screen_triangle()
+{
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->screen_triangle_array);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	glBindVertexArray(0);
 }

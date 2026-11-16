@@ -38,21 +38,23 @@
 
 using namespace GLES3;
 
-CubemapFilter *CubemapFilter::singleton = nullptr;
-
-CubemapFilter::CubemapFilter() {
-	singleton = this;
+void CubemapFilter::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
 
 	{
 		String defines;
-		defines += "\n#define MAX_SAMPLE_COUNT " + itos(ggx_samples) + "\n";
-		cubemap_filter.shader.initialize(defines);
-		cubemap_filter.shader_version = cubemap_filter.shader.version_create();
+		defines += "\n#define MAX_SAMPLE_COUNT " + itos(data->ggx_samples) + "\n";
+		data->cubemap_filter.shader.initialize(defines);
+		data->cubemap_filter.shader_version = data->cubemap_filter.shader.version_create();
 	}
 
 	{ // Screen Triangle.
-		glGenBuffers(1, &screen_triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 
 		const float qv[6] = {
 			-1.0f,
@@ -64,29 +66,36 @@ CubemapFilter::CubemapFilter() {
 		};
 
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
-		glGenVertexArrays(1, &screen_triangle_array);
-		glBindVertexArray(screen_triangle_array);
-		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
 		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
 		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
 		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 	}
 }
 
-CubemapFilter::~CubemapFilter() {
-	glDeleteBuffers(1, &screen_triangle);
-	glDeleteVertexArrays(1, &screen_triangle_array);
+void CubemapFilter::finalize()
+{
+	if (!data) {
+		return;
+	}
 
-	cubemap_filter.shader.version_free(cubemap_filter.shader_version);
-	singleton = nullptr;
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	data->cubemap_filter.shader.version_free(data->cubemap_filter.shader_version);
+
+	memdelete(data);
+	data = nullptr;
 }
 
 // Helper functions for IBL filtering
 
-Vector3 importance_sample_GGX(Vector2 xi, float roughness4) {
+Vector3 importance_sample_GGX(Vector2 xi, float roughness4)
+{
 	// Compute distribution direction
 	float phi = 2.0 * Math::PI * xi.x;
 	float cos_theta = std::sqrt((1.0 - xi.y) / (1.0 + (roughness4 - 1.0) * xi.y));
@@ -101,7 +110,8 @@ Vector3 importance_sample_GGX(Vector2 xi, float roughness4) {
 	return half_vector;
 }
 
-float distribution_GGX(float NdotH, float roughness4) {
+float distribution_GGX(float NdotH, float roughness4)
+{
 	float NdotH2 = NdotH * NdotH;
 	float denom = (NdotH2 * (roughness4 - 1.0) + 1.0);
 	denom = Math::PI * denom * denom;
@@ -109,7 +119,8 @@ float distribution_GGX(float NdotH, float roughness4) {
 	return roughness4 / denom;
 }
 
-float radical_inverse_vdC(uint32_t bits) {
+float radical_inverse_vdC(uint32_t bits)
+{
 	bits = (bits << 16) | (bits >> 16);
 	bits = ((bits & 0x55555555) << 1) | ((bits & 0xAAAAAAAA) >> 1);
 	bits = ((bits & 0x33333333) << 2) | ((bits & 0xCCCCCCCC) >> 2);
@@ -119,11 +130,16 @@ float radical_inverse_vdC(uint32_t bits) {
 	return float(bits) * 2.3283064365386963e-10;
 }
 
-Vector2 hammersley(uint32_t i, uint32_t N) {
+Vector2 hammersley(uint32_t i, uint32_t N)
+{
 	return Vector2(float(i) / float(N), radical_inverse_vdC(i));
 }
 
-void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap, GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer) {
+void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap,
+	GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer)
+{
+	ERR_FAIL_NULL(data);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, p_source_cubemap);
 	glBindFramebuffer(GL_FRAMEBUFFER, p_dest_framebuffer);
@@ -138,15 +154,17 @@ void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubem
 
 	int size = p_source_size >> p_layer;
 	glViewport(0, 0, size, size);
-	glBindVertexArray(screen_triangle_array);
+	glBindVertexArray(data->screen_triangle_array);
 
-	bool success = cubemap_filter.shader.version_bind_shader(cubemap_filter.shader_version, mode);
+	bool success =
+		data->cubemap_filter.shader.version_bind_shader(data->cubemap_filter.shader_version, mode);
 	if (!success) {
 		return;
 	}
 
 	if (p_layer > 0) {
-		const uint32_t sample_counts[5] = { 1, ggx_samples / 16, ggx_samples / 8, ggx_samples / 4, ggx_samples };
+		const uint32_t sample_counts[5] = {
+			1, data->ggx_samples / 16, data->ggx_samples / 8, data->ggx_samples / 4, data->ggx_samples};
 		uint32_t sample_count = sample_counts[MIN(4, p_layer)];
 
 		float roughness = float(p_layer) / (p_mipmap_count - 1);
@@ -179,27 +197,38 @@ void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubem
 
 			float solid_angle_sample = 1.0 / (float(sample_count) * pdf + 0.0001);
 
-			float mip_level = MAX(0.5 * std::log2(solid_angle_sample / solid_angle_texel) + float(MAX(1, p_layer - 3)), 1.0);
+			float mip_level =
+				MAX(0.5 * std::log2(solid_angle_sample / solid_angle_texel) + float(MAX(1, p_layer - 3)),
+					1.0);
 
 			sample_directions[index * 4 + 3] = mip_level;
 			weight += light_vec.z;
 			index++;
 		}
 
-		glUniform4fv(cubemap_filter.shader.version_get_uniform(CubemapFilterShaderGLES3::SAMPLE_DIRECTIONS_MIP, cubemap_filter.shader_version, mode), sample_count, sample_directions.ptr());
-		cubemap_filter.shader.version_set_uniform(CubemapFilterShaderGLES3::WEIGHT, weight, cubemap_filter.shader_version, mode);
-		cubemap_filter.shader.version_set_uniform(CubemapFilterShaderGLES3::SAMPLE_COUNT, index, cubemap_filter.shader_version, mode);
+		glUniform4fv(
+			data->cubemap_filter.shader.version_get_uniform(
+				CubemapFilterShaderGLES3::SAMPLE_DIRECTIONS_MIP,
+				data->cubemap_filter.shader_version, mode),
+			sample_count, sample_directions.ptr());
+		data->cubemap_filter.shader.version_set_uniform(
+			CubemapFilterShaderGLES3::WEIGHT, weight, data->cubemap_filter.shader_version, mode);
+		data->cubemap_filter.shader.version_set_uniform(
+			CubemapFilterShaderGLES3::SAMPLE_COUNT, index, data->cubemap_filter.shader_version, mode);
 	}
 
 	for (int i = 0; i < 6; i++) {
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, p_dest_cubemap, p_layer);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, p_dest_cubemap, p_layer);
 #ifdef DEBUG_ENABLED
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
-			WARN_PRINT("Could not bind sky radiance face: " + itos(i) + ", status: " + GLES3::TextureStorage::get_framebuffer_error(status));
+			WARN_PRINT("Could not bind sky radiance face: " + itos(i) +
+					   ", status: " + GLES3::TextureStorage::get_framebuffer_error(status));
 		}
 #endif
-		cubemap_filter.shader.version_set_uniform(CubemapFilterShaderGLES3::FACE_ID, i, cubemap_filter.shader_version, mode);
+		data->cubemap_filter.shader.version_set_uniform(
+			CubemapFilterShaderGLES3::FACE_ID, i, data->cubemap_filter.shader_version, mode);
 
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 	}
