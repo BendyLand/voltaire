@@ -66,7 +66,7 @@ void SeparationRayShape3D::set_slide_on_slope(bool p_active)
 bool SeparationRayShape3D::get_slide_on_slope() const { return slide_on_slope; }
 
 SeparationRayShape3D::SeparationRayShape3D()
-	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_SEPARATION_RAY))
+	: Shape3D(PhysicsServer3D::shape_create(PS3DE::SHAPE_SEPARATION_RAY))
 {
 	/* Code copied from setters to prevent the use of uninitialized variables */
 	_update_shape();

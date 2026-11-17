@@ -33,33 +33,42 @@
 
 #include "core/types.h"
 
-class OpenXREyeGazeInteractionExtension
+class OpenXREyeGazeInteractionExtension final
 {
 public:
-	static OpenXREyeGazeInteractionExtension* get_singleton();
 
-	OpenXREyeGazeInteractionExtension();
-	~OpenXREyeGazeInteractionExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	virtual void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+	static PackedStringArray get_suggested_tracker_names();
 
-	PackedStringArray get_suggested_tracker_names();
+	static bool is_available();
+	static bool supports_eye_gaze_interaction();
 
-	bool is_available();
-	bool supports_eye_gaze_interaction();
-
-	bool get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose);
+	static bool get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose);
 
 private:
-	static OpenXREyeGazeInteractionExtension* singleton;
 
-	bool available = false;
-	XrSystemEyeGazeInteractionPropertiesEXT properties;
+public:
+	struct Data
+	{
+		bool available = false;
+		XrSystemEyeGazeInteractionPropertiesEXT properties;
+		bool init_eye_gaze_pose = false;
+		RID eye_tracker;
+		RID eye_action;
+	};
 
-	bool init_eye_gaze_pose = false;
-	RID eye_tracker;
-	RID eye_action;
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXREyeGazeInteractionExtension() = delete;
+	OpenXREyeGazeInteractionExtension(const OpenXREyeGazeInteractionExtension&) = delete;
+	OpenXREyeGazeInteractionExtension& operator=(const OpenXREyeGazeInteractionExtension&) = delete;
+	~OpenXREyeGazeInteractionExtension() = delete;
 };
 
 

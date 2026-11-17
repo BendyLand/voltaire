@@ -104,11 +104,11 @@ void VideoStreamPlayer::_mix_audio()
 
 	AudioFrame vol = AudioFrame(volume, volume);
 
-	int cc = AudioServer::get_singleton()->get_channel_count();
+	int cc = AudioServer::get_channel_count();
 
 	if (cc == 1) {
 		AudioFrame* target =
-			AudioServer::get_singleton()->thread_get_channel_mix_buffer(bus_index, 0);
+			AudioServer::thread_get_channel_mix_buffer(bus_index, 0);
 		ERR_FAIL_NULL(target);
 
 		for (int j = 0; j < buffer_size; j++) {
@@ -120,7 +120,7 @@ void VideoStreamPlayer::_mix_audio()
 		AudioFrame* targets[4];
 
 		for (int k = 0; k < cc; k++) {
-			targets[k] = AudioServer::get_singleton()->thread_get_channel_mix_buffer(bus_index, k);
+			targets[k] = AudioServer::thread_get_channel_mix_buffer(bus_index, k);
 			ERR_FAIL_NULL(targets[k]);
 		}
 
@@ -311,15 +311,15 @@ bool VideoStreamPlayer::has_autoplay() const { return autoplay; }
 void VideoStreamPlayer::set_bus(const String& p_bus)
 {
 	// If audio is active, must lock this.
-	AudioServer::get_singleton()->lock();
+	AudioServer::lock();
 	bus = p_bus;
-	AudioServer::get_singleton()->unlock();
+	AudioServer::unlock();
 }
 
 String VideoStreamPlayer::get_bus() const
 {
-	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
-		if (AudioServer::get_singleton()->get_bus_name(i) == bus) {
+	for (int i = 0; i < AudioServer::get_bus_count(); i++) {
+		if (AudioServer::get_bus_name(i) == bus) {
 			return bus;
 		}
 	}

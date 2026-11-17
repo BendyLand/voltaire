@@ -43,9 +43,8 @@ OpenXRSpatialEntityTracker::OpenXRSpatialEntityTracker()
 OpenXRSpatialEntityTracker::~OpenXRSpatialEntityTracker()
 {
 	if (spatial_entity.is_valid()) {
-		OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-		if (se_extension) {
-			se_extension->free_spatial_entity(spatial_entity);
+		if (OpenXRSpatialEntityExtension::is_initialized()) {
+			OpenXRSpatialEntityExtension::free_spatial_entity(spatial_entity);
 			spatial_entity = RID();
 		}
 	}
@@ -68,9 +67,8 @@ void OpenXRSpatialEntityTracker::set_entity(const RID& p_entity)
 			return;
 		}
 
-		OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-		if (se_extension) {
-			se_extension->free_spatial_entity(spatial_entity);
+		if (OpenXRSpatialEntityExtension::is_initialized()) {
+			OpenXRSpatialEntityExtension::free_spatial_entity(spatial_entity);
 			spatial_entity = RID();
 		}
 	}
@@ -78,10 +76,9 @@ void OpenXRSpatialEntityTracker::set_entity(const RID& p_entity)
 	spatial_entity = p_entity;
 
 	if (p_entity.is_valid()) {
-		OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-		ERR_FAIL_NULL(se_extension);
+		ERR_FAIL_COND(!OpenXRSpatialEntityExtension::is_initialized());
 
-		XrSpatialEntityIdEXT entity_id = se_extension->get_spatial_entity_id(p_entity);
+		XrSpatialEntityIdEXT entity_id = OpenXRSpatialEntityExtension::get_spatial_entity_id(p_entity);
 
 		String tracker_name = String("openxr/spatial_entity/") + String::num_int64(entity_id);
 		set_tracker_name(tracker_name);
@@ -183,18 +180,16 @@ Transform3D OpenXRSpatialComponentBounded2DList::get_center_pose(int64_t p_index
 {
 	ERR_FAIL_INDEX_V(p_index, bounded2d_data.size(), Transform3D());
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
 
-	return openxr_api->transform_from_pose(bounded2d_data[p_index].center);
+	return OpenXRAPI::transform_from_pose(bounded2d_data[p_index].center);
 }
 
 Vector2 OpenXRSpatialComponentBounded2DList::get_size(int64_t p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, bounded2d_data.size(), Vector2());
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, Vector2());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector2());
 
 	const XrExtent2Df& extents = bounded2d_data[p_index].extents;
 	return Vector2(extents.width, extents.height);
@@ -223,18 +218,16 @@ Transform3D OpenXRSpatialComponentBounded3DList::get_center_pose(int64_t p_index
 {
 	ERR_FAIL_INDEX_V(p_index, bounded3d_data.size(), Transform3D());
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
 
-	return openxr_api->transform_from_pose(bounded3d_data[p_index].center);
+	return OpenXRAPI::transform_from_pose(bounded3d_data[p_index].center);
 }
 
 Vector3 OpenXRSpatialComponentBounded3DList::get_size(int64_t p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, bounded3d_data.size(), Vector3());
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, Vector3());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector3());
 
 	const XrExtent3Df& extents = bounded3d_data[p_index].extents;
 	return Vector3(extents.width, extents.height, extents.depth);
@@ -263,10 +256,9 @@ RID OpenXRSpatialComponentParentList::get_parent(int64_t p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, parent_data.size(), RID());
 
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL_V(se_extension, RID());
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), RID());
 
-	return se_extension->find_spatial_entity(parent_data[p_index]);
+	return OpenXRSpatialEntityExtension::find_spatial_entity(parent_data[p_index]);
 }
 
 void OpenXRSpatialComponentMesh2DList::set_capacity(uint32_t p_capacity)
@@ -292,10 +284,9 @@ Transform3D OpenXRSpatialComponentMesh2DList::get_transform(int64_t p_index) con
 {
 	ERR_FAIL_INDEX_V(p_index, mesh2d_data.size(), Transform3D());
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
 
-	return openxr_api->transform_from_pose(mesh2d_data[p_index].origin);
+	return OpenXRAPI::transform_from_pose(mesh2d_data[p_index].origin);
 }
 
 PackedVector2Array OpenXRSpatialComponentMesh2DList::get_vertices(
@@ -311,10 +302,9 @@ PackedVector2Array OpenXRSpatialComponentMesh2DList::get_vertices(
 
 	ERR_FAIL_COND_V(buffer.bufferType != XR_SPATIAL_BUFFER_TYPE_VECTOR2F_EXT, PackedVector2Array());
 
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL_V(se_extension, PackedVector2Array());
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedVector2Array());
 
-	return se_extension->get_vector2_buffer(p_snapshot, buffer.bufferId);
+	return OpenXRSpatialEntityExtension::get_vector2_buffer(p_snapshot, buffer.bufferId);
 }
 
 PackedInt32Array OpenXRSpatialComponentMesh2DList::get_indices(
@@ -328,14 +318,13 @@ PackedInt32Array OpenXRSpatialComponentMesh2DList::get_indices(
 		return PackedInt32Array();
 	}
 
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL_V(se_extension, PackedInt32Array());
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedInt32Array());
 
 	PackedInt32Array ret;
 
 	switch (buffer.bufferType) {
 	case XR_SPATIAL_BUFFER_TYPE_UINT8_EXT: {
-		PackedByteArray data = se_extension->get_uint8_buffer(p_snapshot, buffer.bufferId);
+		PackedByteArray data = OpenXRSpatialEntityExtension::get_uint8_buffer(p_snapshot, buffer.bufferId);
 
 		ret.resize(data.size());
 		int count = ret.size();
@@ -345,7 +334,7 @@ PackedInt32Array OpenXRSpatialComponentMesh2DList::get_indices(
 		}
 	} break;
 	case XR_SPATIAL_BUFFER_TYPE_UINT16_EXT: {
-		Vector<uint16_t> data = se_extension->get_uint16_buffer(p_snapshot, buffer.bufferId);
+		Vector<uint16_t> data = OpenXRSpatialEntityExtension::get_uint16_buffer(p_snapshot, buffer.bufferId);
 
 		ret.resize(data.size());
 		int count = ret.size();
@@ -355,7 +344,7 @@ PackedInt32Array OpenXRSpatialComponentMesh2DList::get_indices(
 		}
 	} break;
 	case XR_SPATIAL_BUFFER_TYPE_UINT32_EXT: {
-		Vector<uint32_t> data = se_extension->get_uint32_buffer(p_snapshot, buffer.bufferId);
+		Vector<uint32_t> data = OpenXRSpatialEntityExtension::get_uint32_buffer(p_snapshot, buffer.bufferId);
 
 		ret.resize(data.size());
 		int count = ret.size();
@@ -395,10 +384,9 @@ Transform3D OpenXRSpatialComponentMesh3DList::get_transform(int64_t p_index) con
 {
 	ERR_FAIL_INDEX_V(p_index, mesh3d_data.size(), Transform3D());
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
 
-	return openxr_api->transform_from_pose(mesh3d_data[p_index].origin);
+	return OpenXRAPI::transform_from_pose(mesh3d_data[p_index].origin);
 }
 
 Ref<Mesh> OpenXRSpatialComponentMesh3DList::get_mesh(int64_t p_index) const

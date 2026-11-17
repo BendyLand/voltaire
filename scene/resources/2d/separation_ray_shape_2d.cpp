@@ -96,7 +96,7 @@ void SeparationRayShape2D::set_slide_on_slope(bool p_active)
 bool SeparationRayShape2D::get_slide_on_slope() const { return slide_on_slope; }
 
 SeparationRayShape2D::SeparationRayShape2D()
-	: Shape2D(PhysicsServer2D::get_singleton()->separation_ray_shape_create())
+	: Shape2D(PhysicsServer2D::separation_ray_shape_create())
 {
 	_update_shape();
 }

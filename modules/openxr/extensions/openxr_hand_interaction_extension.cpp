@@ -35,71 +35,76 @@
 #include "core/config/project_settings.h"
 #include "openxr_hand_interaction_extension.h"
 
-OpenXRHandInteractionExtension* OpenXRHandInteractionExtension::singleton = nullptr;
-
-OpenXRHandInteractionExtension* OpenXRHandInteractionExtension::get_singleton()
+void OpenXRHandInteractionExtension::initialize()
 {
-	return singleton;
+	if (!data) {
+		data = memnew(Data);
+	}
 }
 
-OpenXRHandInteractionExtension::OpenXRHandInteractionExtension() { singleton = this; }
+void OpenXRHandInteractionExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
-OpenXRHandInteractionExtension::~OpenXRHandInteractionExtension() { singleton = nullptr; }
 
-bool OpenXRHandInteractionExtension::is_available() { return available; }
+bool OpenXRHandInteractionExtension::is_available() { return data != nullptr && data->available; }
 
-void OpenXRHandInteractionExtension::on_register_metadata(
-	OpenXRInteractionProfileMetadata* p_interaction_profile_metadata)
+void OpenXRHandInteractionExtension::on_register_metadata()
 {
 	// Hand interaction profile.
 	const String profile_path = "/interaction_profiles/ext/hand_interaction_ext";
-	p_interaction_profile_metadata->register_interaction_profile(
+	OpenXRInteractionProfileMetadata::register_interaction_profile(
 		"Hand interaction", profile_path, XR_EXT_HAND_INTERACTION_EXTENSION_NAME);
 	for (const String user_path : {"/user/hand/left", "/user/hand/right"}) {
-		p_interaction_profile_metadata->register_io_path(profile_path, "Grip pose", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Grip pose", user_path,
 			user_path + "/input/grip/pose", "", OpenXRAction::OPENXR_ACTION_POSE);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Aim pose", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Aim pose", user_path,
 			user_path + "/input/aim/pose", "", OpenXRAction::OPENXR_ACTION_POSE);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Pinch pose", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Pinch pose", user_path,
 			user_path + "/input/pinch_ext/pose", "", OpenXRAction::OPENXR_ACTION_POSE);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Poke pose", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Poke pose", user_path,
 			user_path + "/input/poke_ext/pose", "", OpenXRAction::OPENXR_ACTION_POSE);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Grip surface pose",
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Grip surface pose",
 			user_path, user_path + "/input/grip_surface/pose",
 			XR_EXT_PALM_POSE_EXTENSION_NAME "," XR_KHR_MAINTENANCE1_EXTENSION_NAME
 											"," XR_OPENXR_1_1_NAME,
 			OpenXRAction::OPENXR_ACTION_POSE);
 
-		p_interaction_profile_metadata->register_io_path(profile_path, "Pinch", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Pinch", user_path,
 			user_path + "/input/pinch_ext/value", "", OpenXRAction::OPENXR_ACTION_FLOAT);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Pinch ready", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Pinch ready", user_path,
 			user_path + "/input/pinch_ext/ready_ext", "", OpenXRAction::OPENXR_ACTION_BOOL);
 
-		p_interaction_profile_metadata->register_io_path(profile_path, "Aim activate", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Aim activate", user_path,
 			user_path + "/input/aim_activate_ext/value", "", OpenXRAction::OPENXR_ACTION_FLOAT);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Aim activate ready",
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Aim activate ready",
 			user_path, user_path + "/input/aim_activate_ext/ready_ext", "",
 			OpenXRAction::OPENXR_ACTION_BOOL);
 
-		p_interaction_profile_metadata->register_io_path(profile_path, "Grasp", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Grasp", user_path,
 			user_path + "/input/grasp_ext/value", "", OpenXRAction::OPENXR_ACTION_FLOAT);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Grasp ready", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Grasp ready", user_path,
 			user_path + "/input/grasp_ext/ready_ext", "", OpenXRAction::OPENXR_ACTION_BOOL);
 
 		// Hand tracking microgestures.
-		p_interaction_profile_metadata->register_io_path(profile_path, "Swipe left", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Swipe left", user_path,
 			user_path + "/input/swipe_left_meta/click", "XR_META_hand_tracking_microgestures",
 			OpenXRAction::OPENXR_ACTION_BOOL);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Swipe right", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Swipe right", user_path,
 			user_path + "/input/swipe_right_meta/click", "XR_META_hand_tracking_microgestures",
 			OpenXRAction::OPENXR_ACTION_BOOL);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Swipe forward", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Swipe forward", user_path,
 			user_path + "/input/swipe_forward_meta/click", "XR_META_hand_tracking_microgestures",
 			OpenXRAction::OPENXR_ACTION_BOOL);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Swipe backward", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Swipe backward", user_path,
 			user_path + "/input/swipe_backward_meta/click", "XR_META_hand_tracking_microgestures",
 			OpenXRAction::OPENXR_ACTION_BOOL);
-		p_interaction_profile_metadata->register_io_path(profile_path, "Tap thumb", user_path,
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Tap thumb", user_path,
 			user_path + "/input/tap_thumb_meta/click", "XR_META_hand_tracking_microgestures",
 			OpenXRAction::OPENXR_ACTION_BOOL);
 	}

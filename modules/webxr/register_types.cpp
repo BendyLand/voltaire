@@ -47,9 +47,9 @@ void initialize_webxr_module(ModuleInitializationLevel p_level)
 		return;
 	}
 #ifdef WEB_ENABLED
-	if (XRServer::get_singleton()) {
+	if (XRServer::is_initialized()) {
 		webxr.instantiate();
-		XRServer::get_singleton()->add_interface(webxr);
+		XRServer::add_interface(webxr);
 	}
 #endif
 }
@@ -68,8 +68,8 @@ void uninitialize_webxr_module(ModuleInitializationLevel p_level)
 		}
 
 		// unregister our interface from the XR server
-		if (XRServer::get_singleton()) {
-			XRServer::get_singleton()->remove_interface(webxr);
+		if (XRServer::is_initialized()) {
+			XRServer::remove_interface(webxr);
 		}
 
 		// and release

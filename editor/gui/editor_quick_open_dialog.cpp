@@ -162,8 +162,8 @@ void QuickOpenResultContainer::_sort_uids(int p_max_results)
 	{
 		bool operator()(const ResourceUID::ID& p_lhs, const ResourceUID::ID& p_rhs) const
 		{
-			String lhs_path = ResourceUID::get_singleton()->get_id_path(p_lhs);
-			String rhs_path = ResourceUID::get_singleton()->get_id_path(p_rhs);
+			String lhs_path = ResourceUID::get_id_path(p_lhs);
+			String rhs_path = ResourceUID::get_id_path(p_rhs);
 
 			// Sort on (length, alphanumeric) to prioritize shorter filepaths
 			return lhs_path.length() == rhs_path.length() ? lhs_path < rhs_path
@@ -198,7 +198,7 @@ Vector<ResourceUID::ID>* QuickOpenResultContainer::_get_history()
 QuickOpenResultCandidate QuickOpenResultCandidate::from_uid(
 	const ResourceUID::ID& p_uid, bool& r_success)
 {
-	if (p_uid == ResourceUID::INVALID_ID || !ResourceUID::get_singleton()->has_id(p_uid)) {
+	if (p_uid == ResourceUID::INVALID_ID || !ResourceUID::has_id(p_uid)) {
 		r_success = false;
 		return QuickOpenResultCandidate();
 	}
@@ -226,7 +226,7 @@ QuickOpenResultCandidate QuickOpenResultCandidate::from_result(
 
 void QuickOpenResultContainer::_add_candidate(QuickOpenResultCandidate& p_candidate)
 {
-	ERR_FAIL_COND(!ResourceUID::get_singleton()->has_id(p_candidate.uid));
+	ERR_FAIL_COND(!ResourceUID::has_id(p_candidate.uid));
 
 	String actual_type;
 	{
@@ -236,11 +236,11 @@ void QuickOpenResultContainer::_add_candidate(QuickOpenResultCandidate& p_candid
 		}
 		else {
 			ERR_PRINT(vformat("EditorQuickOpenDialog: No type for path %s.",
-				ResourceUID::get_singleton()->get_id_path(p_candidate.uid)));
+				ResourceUID::get_id_path(p_candidate.uid)));
 		}
 	}
 
-	String file_path = ResourceUID::get_singleton()->get_id_path(p_candidate.uid);
+	String file_path = ResourceUID::get_id_path(p_candidate.uid);
 
 	// Verify that a PackedScene is actually a "real" Scene if in a Open Scene context.
 	if (base_types[0] == SNAME("PackedScene")) {
@@ -433,7 +433,7 @@ String QuickOpenResultContainer::get_selected_path() const
 {
 	ERR_FAIL_COND_V_MSG(
 		has_nothing_selected(), "", "Tried to get selected file path, but nothing was selected.");
-	String path = ResourceUID::get_singleton()->get_id_path(candidates[selection_index].uid);
+	String path = ResourceUID::get_id_path(candidates[selection_index].uid);
 	ERR_FAIL_COND_V_MSG(path.is_empty(), "", "Failed to get selected file path.");
 	return path;
 }
@@ -465,7 +465,7 @@ String _get_uid_string(const String& p_filepath)
 {
 	ResourceUID::ID id = EditorFileSystem::get_singleton()->get_file_uid(p_filepath);
 	return id == ResourceUID::INVALID_ID ? p_filepath
-										 : ResourceUID::get_singleton()->id_to_text(id);
+										 : ResourceUID::id_to_text(id);
 }
 
 bool QuickOpenResultContainer::is_instant_preview_enabled() const
@@ -571,7 +571,7 @@ void QuickOpenResultListItem::set_content(
 {
 	thumbnail->set_texture(p_candidate.thumbnail);
 
-	String file_path = ResourceUID::get_singleton()->get_id_path(p_candidate.uid);
+	String file_path = ResourceUID::get_id_path(p_candidate.uid);
 	name->set_text(file_path.get_file());
 	path->set_text(file_path.get_base_dir());
 	name->reset_highlights();

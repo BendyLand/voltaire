@@ -389,7 +389,7 @@ void ResourceLoaderBinary::get_dependencies(
 		String fallback_path;
 
 		if (external_resources[i].uid != ResourceUID::INVALID_ID) {
-			dep = ResourceUID::get_singleton()->id_to_text(external_resources[i].uid);
+			dep = ResourceUID::id_to_text(external_resources[i].uid);
 			fallback_path =
 				external_resources[i].path; // Used by Dependency Editor, in case uid path fails.
 		}
@@ -513,10 +513,10 @@ void ResourceLoaderBinary::open(Ref<FileAccess> p_file, bool p_no_resources, boo
 		if (using_uids) {
 			er.uid = ResourceUID::ID(f->get_64());
 			if (!p_keep_uuid_paths && er.uid != ResourceUID::INVALID_ID) {
-				if (ResourceUID::get_singleton()->has_id(er.uid)) {
+				if (ResourceUID::has_id(er.uid)) {
 					// If a UID is found and the path is valid, it will be used, otherwise, it falls
 					// back to the path.
-					er.path = ResourceUID::get_singleton()->get_id_path(er.uid);
+					er.path = ResourceUID::get_id_path(er.uid);
 				}
 				else {
 #ifdef TOOLS_ENABLED
@@ -525,13 +525,13 @@ void ResourceLoaderBinary::open(Ref<FileAccess> p_file, bool p_no_resources, boo
 					if (ResourceLoader::get_resource_uid(res_path) != er.uid) {
 						WARN_PRINT(vformat("'%s': In external resource #%d, invalid UID: '%s' - "
 										   "using text path instead: '%s'.",
-							res_path, i, ResourceUID::get_singleton()->id_to_text(er.uid),
+							res_path, i, ResourceUID::id_to_text(er.uid),
 							er.path));
 					}
 #else
 					WARN_PRINT(vformat("'%s': In external resource #%d, invalid UID: '%s' - using "
 									   "text path instead: '%s'.",
-						res_path, i, ResourceUID::get_singleton()->id_to_text(er.uid), er.path));
+						res_path, i, ResourceUID::id_to_text(er.uid), er.path));
 #endif
 				}
 			}
@@ -826,7 +826,8 @@ Error ResourceFormatLoaderBinary::rename_dependencies(
 		Ref<Resource> res = loader.get_resource();
 		ERR_FAIL_COND_V(res.is_null(), ERR_FILE_CORRUPT);
 
-		return ResourceFormatSaverBinary::singleton->save(res, p_path);
+		ResourceFormatSaverBinaryInstance saver;
+		return saver.save(ProjectSettings::localize_path(p_path), res);
 	}
 
 	if (ver_format > FORMAT_VERSION || ver_major > VLTR_VERSION_MAJOR) {
@@ -883,10 +884,10 @@ Error ResourceFormatLoaderBinary::rename_dependencies(
 		if (using_uids) {
 			ResourceUID::ID uid = f->get_64();
 			if (uid != ResourceUID::INVALID_ID) {
-				if (ResourceUID::get_singleton()->has_id(uid)) {
+				if (ResourceUID::has_id(uid)) {
 					// If a UID is found and the path is valid, it will be used, otherwise, it falls
 					// back to the path.
-					path = ResourceUID::get_singleton()->get_id_path(uid);
+					path = ResourceUID::get_id_path(uid);
 				}
 			}
 		}
@@ -1414,6 +1415,5 @@ void ResourceFormatSaverBinary::get_recognized_extensions(
 	}
 }
 
-ResourceFormatSaverBinary::ResourceFormatSaverBinary() { singleton = this; }
 
 

@@ -34,20 +34,29 @@
 #include "core/config/project_settings.h"
 #include "openxr_spatial_entity_extension.h"
 
-OpenXRSpatialEntityExtension* OpenXRSpatialEntityExtension::singleton = nullptr;
+void OpenXRSpatialEntityExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
 
-OpenXRSpatialEntityExtension* OpenXRSpatialEntityExtension::get_singleton() { return singleton; }
+void OpenXRSpatialEntityExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
-OpenXRSpatialEntityExtension::OpenXRSpatialEntityExtension() { singleton = this; }
-
-OpenXRSpatialEntityExtension::~OpenXRSpatialEntityExtension() { singleton = nullptr; }
 
 HashMap<String, bool*> OpenXRSpatialEntityExtension::get_requested_extensions(XrVersion p_version)
 {
 	HashMap<String, bool*> request_extensions;
 
 	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled")) {
-		request_extensions[XR_EXT_SPATIAL_ENTITY_EXTENSION_NAME] = &spatial_entity_ext;
+		request_extensions[XR_EXT_SPATIAL_ENTITY_EXTENSION_NAME] = &data->spatial_entity_ext;
 	}
 
 	return request_extensions;
@@ -55,7 +64,7 @@ HashMap<String, bool*> OpenXRSpatialEntityExtension::get_requested_extensions(Xr
 
 void OpenXRSpatialEntityExtension::on_instance_created(const XrInstance p_instance)
 {
-	if (spatial_entity_ext) {
+	if (data->spatial_entity_ext) {
 		EXT_INIT_XR_FUNC(xrEnumerateSpatialCapabilitiesEXT);
 		EXT_INIT_XR_FUNC(xrEnumerateSpatialCapabilityComponentTypesEXT);
 		EXT_INIT_XR_FUNC(xrEnumerateSpatialCapabilityFeaturesEXT);
@@ -81,8 +90,8 @@ void OpenXRSpatialEntityExtension::on_instance_created(const XrInstance p_instan
 
 void OpenXRSpatialEntityExtension::on_instance_destroyed()
 {
-	supported_capabilities.clear();
-	capabilities_load_state = 0;
+	data->supported_capabilities.clear();
+	data->capabilities_load_state = 0;
 
 	xrEnumerateSpatialCapabilitiesEXT_ptr = nullptr;
 	xrEnumerateSpatialCapabilityComponentTypesEXT_ptr = nullptr;
@@ -106,26 +115,25 @@ void OpenXRSpatialEntityExtension::on_instance_destroyed()
 	xrGetSpatialBufferVector3fEXT_ptr = nullptr;
 }
 
-bool OpenXRSpatialEntityExtension::get_active() const { return spatial_entity_ext; }
+bool OpenXRSpatialEntityExtension::get_active() { return data != nullptr && data->spatial_entity_ext; }
 
 bool OpenXRSpatialEntityExtension::_load_capabilities()
 {
-	if (capabilities_load_state == 0) {
-		if (!spatial_entity_ext) {
+	if (data->capabilities_load_state == 0) {
+		if (!data->spatial_entity_ext) {
 			return false;
 		}
 
-		OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-		ERR_FAIL_NULL_V(openxr_api, false);
+		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
-		XrInstance instance = openxr_api->get_instance();
+		XrInstance instance = OpenXRAPI::get_instance();
 		ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
-		XrSystemId system_id = openxr_api->get_system_id();
+		XrSystemId system_id = OpenXRAPI::get_system_id();
 		ERR_FAIL_COND_V(system_id == 0, false);
 
 		// If we fail before this point, this may be called too early.
 		// Assume failure so we don't keep trying this unless we succeed.
-		capabilities_load_state = 2;
+		data->capabilities_load_state = 2;
 
 		// Check our capabilities.
 		Vector<XrSpatialCapabilityEXT> capabilities;
@@ -135,7 +143,7 @@ bool OpenXRSpatialEntityExtension::_load_capabilities()
 		if (XR_FAILED(result)) {
 			// Not successful? then exit.
 			ERR_FAIL_V_MSG(false, "OpenXR: Failed to get spatial entity capability count [" +
-									  openxr_api->get_error_string(result) + "]");
+									  OpenXRAPI::get_error_string(result) + "]");
 		}
 
 		if (capability_size > 0) {
@@ -145,7 +153,7 @@ bool OpenXRSpatialEntityExtension::_load_capabilities()
 			if (XR_FAILED(result)) {
 				// Not successful? then exit.
 				ERR_FAIL_V_MSG(false, "OpenXR: Failed to get spatial entity capabilities [" +
-										  openxr_api->get_error_string(result) + "]");
+										  OpenXRAPI::get_error_string(result) + "]");
 			}
 
 			// Loop through capabilities
@@ -154,7 +162,7 @@ bool OpenXRSpatialEntityExtension::_load_capabilities()
 							  get_spatial_capability_name(capability) + ".");
 
 				SpatialEntityCapabality& spatial_entity_capability =
-					supported_capabilities[capability];
+					data->supported_capabilities[capability];
 
 				// retrieve component types for this capability
 				XrSpatialCapabilityComponentTypesEXT component_types = {
@@ -169,7 +177,7 @@ bool OpenXRSpatialEntityExtension::_load_capabilities()
 				if (XR_FAILED(result)) {
 					// Not successful? just keep going.
 					ERR_PRINT("OpenXR: Failed to get spatial entity component type count [" +
-							  openxr_api->get_error_string(result) + "]");
+							  OpenXRAPI::get_error_string(result) + "]");
 				}
 				else if (component_types.componentTypeCountOutput > 0) {
 					spatial_entity_capability.component_types.resize(
@@ -184,7 +192,7 @@ bool OpenXRSpatialEntityExtension::_load_capabilities()
 					if (XR_FAILED(result)) {
 						// Not successful? just keep going.
 						ERR_PRINT("OpenXR: Failed to get spatial entity component types [" +
-								  openxr_api->get_error_string(result) + "]");
+								  OpenXRAPI::get_error_string(result) + "]");
 					}
 					else if (is_print_verbose_enabled()) {
 						for (const XrSpatialComponentTypeEXT& component_type :
@@ -201,7 +209,7 @@ bool OpenXRSpatialEntityExtension::_load_capabilities()
 				if (XR_FAILED(result)) {
 					// Not successful? just keep going.
 					ERR_PRINT("OpenXR: Failed to get spatial entity feature count [" +
-							  openxr_api->get_error_string(result) + "]");
+							  OpenXRAPI::get_error_string(result) + "]");
 				}
 				else if (capability_size > 0) {
 					spatial_entity_capability.features.resize(capability_size);
@@ -211,7 +219,7 @@ bool OpenXRSpatialEntityExtension::_load_capabilities()
 					if (XR_FAILED(result)) {
 						// Not successful? just keep going.
 						ERR_PRINT("OpenXR: Failed to get spatial entity features [" +
-								  openxr_api->get_error_string(result) + "]");
+								  OpenXRAPI::get_error_string(result) + "]");
 					}
 					else if (is_print_verbose_enabled()) {
 						for (const XrSpatialCapabilityFeatureEXT& feature :
@@ -223,10 +231,10 @@ bool OpenXRSpatialEntityExtension::_load_capabilities()
 			}
 		}
 
-		capabilities_load_state = 1; // success!
+		data->capabilities_load_state = 1; // success!
 	}
 
-	return capabilities_load_state == 1;
+	return data->capabilities_load_state == 1;
 }
 
 bool OpenXRSpatialEntityExtension::supports_capability(XrSpatialCapabilityEXT p_capability)
@@ -235,7 +243,7 @@ bool OpenXRSpatialEntityExtension::supports_capability(XrSpatialCapabilityEXT p_
 		return false;
 	}
 
-	return supported_capabilities.has(p_capability);
+	return data->supported_capabilities.has(p_capability);
 }
 
 bool OpenXRSpatialEntityExtension::_supports_capability(Capability p_capability)
@@ -250,8 +258,8 @@ bool OpenXRSpatialEntityExtension::supports_component_type(
 		return false;
 	}
 
-	if (supported_capabilities.has(p_capability)) {
-		return supported_capabilities[p_capability].component_types.has(p_component_type);
+	if (data->supported_capabilities.has(p_capability)) {
+		return data->supported_capabilities[p_capability].component_types.has(p_component_type);
 	}
 	return false;
 }
@@ -263,9 +271,9 @@ bool OpenXRSpatialEntityExtension::_supports_component_type(
 		(XrSpatialCapabilityEXT)p_capability, (XrSpatialComponentTypeEXT)p_component_type);
 }
 
-bool OpenXRSpatialEntityExtension::get_spatial_context_ready(RID p_spatial_context) const
+bool OpenXRSpatialEntityExtension::get_spatial_context_ready(RID p_spatial_context)
 {
-	SpatialContextData* context_data = spatial_context_owner.get_or_null(p_spatial_context);
+	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
 	ERR_FAIL_NULL_V(context_data, false);
 
 	return context_data->spatial_context != XR_NULL_HANDLE;
@@ -273,37 +281,36 @@ bool OpenXRSpatialEntityExtension::get_spatial_context_ready(RID p_spatial_conte
 
 void OpenXRSpatialEntityExtension::free_spatial_context(RID p_spatial_context)
 {
-	SpatialContextData* context_data = spatial_context_owner.get_or_null(p_spatial_context);
+	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
 	ERR_FAIL_NULL(context_data);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	if (context_data->spatial_context != XR_NULL_HANDLE) {
 		// Destroy our spatial context
 		XrResult result = xrDestroySpatialContextEXT(context_data->spatial_context);
 		if (XR_FAILED(result)) {
 			WARN_PRINT("OpenXR: Failed to destroy the spatial context [" +
-					   openxr_api->get_error_string(result) + "]");
+					   OpenXRAPI::get_error_string(result) + "]");
 		}
 		context_data->spatial_context = XR_NULL_HANDLE;
 
 		// And remove our RID.
-		spatial_context_owner.free(p_spatial_context);
+		data->spatial_context_owner.free(p_spatial_context);
 	}
 }
 
 XrSpatialContextEXT OpenXRSpatialEntityExtension::get_spatial_context_handle(
-	RID p_spatial_context) const
+	RID p_spatial_context)
 {
-	SpatialContextData* context_data = spatial_context_owner.get_or_null(p_spatial_context);
+	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
 	ERR_FAIL_NULL_V(context_data, XR_NULL_HANDLE);
 
 	return context_data->spatial_context;
 }
 
 // For exposing this to GDExtension
-uint64_t OpenXRSpatialEntityExtension::_get_spatial_context_handle(RID p_spatial_context) const
+uint64_t OpenXRSpatialEntityExtension::_get_spatial_context_handle(RID p_spatial_context)
 {
 	return (uint64_t)get_spatial_context_handle(p_spatial_context);
 }
@@ -321,11 +328,10 @@ RID OpenXRSpatialEntityExtension::update_spatial_entities(RID p_spatial_context,
 
 	ERR_FAIL_COND_V(p_entities.is_empty(), RID());
 
-	SpatialContextData* context_data = spatial_context_owner.get_or_null(p_spatial_context);
+	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
 	ERR_FAIL_NULL_V(context_data, RID());
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, RID());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
 
 	// Convert our entity RIDs to XrSpatialEntityEXT
 	thread_local LocalVector<XrSpatialEntityEXT> entities;
@@ -333,7 +339,7 @@ RID OpenXRSpatialEntityExtension::update_spatial_entities(RID p_spatial_context,
 	entities.resize(p_entities.size());
 	XrSpatialEntityEXT* ptr = entities.ptr();
 	for (const RID& rid : p_entities) {
-		SpatialEntityData* entity_data = spatial_entity_owner.get_or_null(rid);
+		SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(rid);
 		*ptr = entity_data ? entity_data->entity : XR_NULL_HANDLE;
 		ptr++;
 	}
@@ -356,75 +362,73 @@ RID OpenXRSpatialEntityExtension::update_spatial_entities(RID p_spatial_context,
 		entities.ptr(),													  // entities
 		(uint32_t)p_component_types.size(),								  // componentTypeCount
 		p_component_types.is_empty() ? nullptr : p_component_types.ptr(), // componentTypes
-		openxr_api->get_play_space(),									  // baseSpace
-		openxr_api->get_predicted_display_time()						  // time
+		OpenXRAPI::get_play_space(),									  // baseSpace
+		OpenXRAPI::get_predicted_display_time()						  // time
 	};
 	XrResult result = xrCreateSpatialUpdateSnapshotEXT(
 		context_data->spatial_context, &create_info, &spatial_snapshot_data.spatial_snapshot);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(RID(), "OpenXR: Failed to create update snapshot [" +
-								  openxr_api->get_error_string(result) + "]");
+								  OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	// Store our snapshot in an RID and return.
-	return spatial_snapshot_owner.make_rid(spatial_snapshot_data);
+	return data->spatial_snapshot_owner.make_rid(spatial_snapshot_data);
 }
 
 void OpenXRSpatialEntityExtension::free_spatial_snapshot(RID p_spatial_snapshot)
 {
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL(snapshot_data);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	if (snapshot_data->spatial_snapshot != XR_NULL_HANDLE) {
 		// Destroy our spatial context
 		XrResult result = xrDestroySpatialSnapshotEXT(snapshot_data->spatial_snapshot);
 		if (XR_FAILED(result)) {
 			WARN_PRINT("OpenXR: Failed to destroy the spatial snapshot [" +
-					   openxr_api->get_error_string(result) + "]");
+					   OpenXRAPI::get_error_string(result) + "]");
 		}
 		snapshot_data->spatial_snapshot = XR_NULL_HANDLE;
 	}
 
 	// And remove our RID.
-	spatial_snapshot_owner.free(p_spatial_snapshot);
+	data->spatial_snapshot_owner.free(p_spatial_snapshot);
 }
 
 XrSpatialSnapshotEXT OpenXRSpatialEntityExtension::get_spatial_snapshot_handle(
-	RID p_spatial_snapshot) const
+	RID p_spatial_snapshot)
 {
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL_V(snapshot_data, XR_NULL_HANDLE);
 
 	return snapshot_data->spatial_snapshot;
 }
 
-RID OpenXRSpatialEntityExtension::get_spatial_snapshot_context(RID p_spatial_snapshot) const
+RID OpenXRSpatialEntityExtension::get_spatial_snapshot_context(RID p_spatial_snapshot)
 {
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL_V(snapshot_data, RID());
 
 	return snapshot_data->spatial_context;
 }
 
 // For exposing this to GDExtension
-uint64_t OpenXRSpatialEntityExtension::_get_spatial_snapshot_handle(RID p_spatial_snapshot) const
+uint64_t OpenXRSpatialEntityExtension::_get_spatial_snapshot_handle(RID p_spatial_snapshot)
 {
 	return (uint64_t)get_spatial_snapshot_handle(p_spatial_snapshot);
 }
 
 String OpenXRSpatialEntityExtension::get_string(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
 {
 	String ret;
 
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL_V(snapshot_data, ret);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, ret);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
 
 	XrSpatialBufferGetInfoEXT info = {
 		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT, // type
@@ -437,7 +441,7 @@ String OpenXRSpatialEntityExtension::get_string(
 		xrGetSpatialBufferStringEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	LocalVector<char> buffer;
@@ -449,7 +453,7 @@ String OpenXRSpatialEntityExtension::get_string(
 		snapshot_data->spatial_snapshot, &info, buffer.size(), &count, buffer.ptr());
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(
-			ret, "OpenXR: Failed to get buffer [" + openxr_api->get_error_string(result) + "]");
+			ret, "OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	ret = String::utf8(buffer.ptr());
@@ -457,15 +461,14 @@ String OpenXRSpatialEntityExtension::get_string(
 }
 
 PackedByteArray OpenXRSpatialEntityExtension::get_uint8_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
 {
 	PackedByteArray ret;
 
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL_V(snapshot_data, ret);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, ret);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
 
 	XrSpatialBufferGetInfoEXT info = {
 		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT, // type
@@ -478,7 +481,7 @@ PackedByteArray OpenXRSpatialEntityExtension::get_uint8_buffer(
 		xrGetSpatialBufferUint8EXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	ret.resize(count);
@@ -487,22 +490,21 @@ PackedByteArray OpenXRSpatialEntityExtension::get_uint8_buffer(
 		snapshot_data->spatial_snapshot, &info, ret.size(), &count, (uint8_t*)ret.ptrw());
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(PackedByteArray(),
-			"OpenXR: Failed to get buffer [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	return ret;
 }
 
 Vector<uint16_t> OpenXRSpatialEntityExtension::get_uint16_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
 {
 	Vector<uint16_t> ret;
 
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL_V(snapshot_data, ret);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, ret);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
 
 	XrSpatialBufferGetInfoEXT info = {
 		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT, // type
@@ -515,7 +517,7 @@ Vector<uint16_t> OpenXRSpatialEntityExtension::get_uint16_buffer(
 		xrGetSpatialBufferUint16EXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	ret.resize(count);
@@ -524,22 +526,21 @@ Vector<uint16_t> OpenXRSpatialEntityExtension::get_uint16_buffer(
 		snapshot_data->spatial_snapshot, &info, ret.size(), &count, ret.ptrw());
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(Vector<uint16_t>(),
-			"OpenXR: Failed to get buffer [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	return ret;
 }
 
 Vector<uint32_t> OpenXRSpatialEntityExtension::get_uint32_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
 {
 	Vector<uint32_t> ret;
 
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL_V(snapshot_data, ret);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, ret);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
 
 	XrSpatialBufferGetInfoEXT info = {
 		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT, // type
@@ -552,7 +553,7 @@ Vector<uint32_t> OpenXRSpatialEntityExtension::get_uint32_buffer(
 		xrGetSpatialBufferUint32EXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	ret.resize(count);
@@ -561,22 +562,21 @@ Vector<uint32_t> OpenXRSpatialEntityExtension::get_uint32_buffer(
 		snapshot_data->spatial_snapshot, &info, ret.size(), &count, ret.ptrw());
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(Vector<uint32_t>(),
-			"OpenXR: Failed to get buffer [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	return ret;
 }
 
 PackedFloat32Array OpenXRSpatialEntityExtension::get_float_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
 {
 	PackedFloat32Array ret;
 
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL_V(snapshot_data, ret);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, ret);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
 
 	XrSpatialBufferGetInfoEXT info = {
 		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT, // type
@@ -589,7 +589,7 @@ PackedFloat32Array OpenXRSpatialEntityExtension::get_float_buffer(
 		xrGetSpatialBufferFloatEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	ret.resize(count);
@@ -598,22 +598,21 @@ PackedFloat32Array OpenXRSpatialEntityExtension::get_float_buffer(
 		snapshot_data->spatial_snapshot, &info, ret.size(), &count, ret.ptrw());
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(PackedFloat32Array(),
-			"OpenXR: Failed to get buffer [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	return ret;
 }
 
 PackedVector2Array OpenXRSpatialEntityExtension::get_vector2_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
 {
 	PackedVector2Array ret;
 
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL_V(snapshot_data, ret);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, ret);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
 
 	XrSpatialBufferGetInfoEXT info = {
 		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT, // type
@@ -626,7 +625,7 @@ PackedVector2Array OpenXRSpatialEntityExtension::get_vector2_buffer(
 		xrGetSpatialBufferVector2fEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 #ifdef REAL_T_IS_DOUBLE
@@ -638,7 +637,7 @@ PackedVector2Array OpenXRSpatialEntityExtension::get_vector2_buffer(
 		snapshot_data->spatial_snapshot, &info, buffer.size(), &count, buffer.ptr());
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(
-			ret, "OpenXR: Failed to get buffer [" + openxr_api->get_error_string(result) + "]");
+			ret, "OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	ret.resize(count);
@@ -655,7 +654,7 @@ PackedVector2Array OpenXRSpatialEntityExtension::get_vector2_buffer(
 		snapshot_data->spatial_snapshot, &info, ret.size(), &count, (XrVector2f*)ret.ptrw());
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(PackedVector2Array(),
-			"OpenXR: Failed to get buffer [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 #endif
 
@@ -663,15 +662,14 @@ PackedVector2Array OpenXRSpatialEntityExtension::get_vector2_buffer(
 }
 
 PackedVector3Array OpenXRSpatialEntityExtension::get_vector3_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
 {
 	PackedVector3Array ret;
 
-	SpatialSnapshotData* snapshot_data = spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	SpatialSnapshotData* snapshot_data = data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
 	ERR_FAIL_NULL_V(snapshot_data, ret);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, ret);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
 
 	XrSpatialBufferGetInfoEXT info = {
 		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT, // type
@@ -684,7 +682,7 @@ PackedVector3Array OpenXRSpatialEntityExtension::get_vector3_buffer(
 		xrGetSpatialBufferVector3fEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 #ifdef REAL_T_IS_DOUBLE
@@ -696,7 +694,7 @@ PackedVector3Array OpenXRSpatialEntityExtension::get_vector3_buffer(
 		snapshot_data->spatial_snapshot, &info, buffer.size(), &count, buffer.ptr());
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(
-			ret, "OpenXR: Failed to get buffer [" + openxr_api->get_error_string(result) + "]");
+			ret, "OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	ret.resize(count);
@@ -714,26 +712,26 @@ PackedVector3Array OpenXRSpatialEntityExtension::get_vector3_buffer(
 		snapshot_data->spatial_snapshot, &info, ret.size(), &count, (XrVector3f*)ret.ptrw());
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(PackedVector3Array(),
-			"OpenXR: Failed to get buffer [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 #endif
 
 	return ret;
 }
 
-String OpenXRSpatialEntityExtension::_get_string(RID p_spatial_snapshot, uint64_t p_buffer_id) const
+String OpenXRSpatialEntityExtension::_get_string(RID p_spatial_snapshot, uint64_t p_buffer_id)
 {
 	return get_string(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
 }
 
 PackedByteArray OpenXRSpatialEntityExtension::_get_uint8_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id) const
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
 {
 	return get_uint8_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
 }
 
 PackedInt32Array OpenXRSpatialEntityExtension::_get_uint16_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id) const
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
 {
 	PackedInt32Array ret;
 	Vector<uint16_t> buffer =
@@ -755,7 +753,7 @@ PackedInt32Array OpenXRSpatialEntityExtension::_get_uint16_buffer(
 }
 
 PackedInt32Array OpenXRSpatialEntityExtension::_get_uint32_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id) const
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
 {
 	PackedInt32Array ret;
 	Vector<uint32_t> buffer =
@@ -778,30 +776,30 @@ PackedInt32Array OpenXRSpatialEntityExtension::_get_uint32_buffer(
 }
 
 PackedFloat32Array OpenXRSpatialEntityExtension::_get_float_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id) const
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
 {
 	return get_float_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
 }
 
 PackedVector2Array OpenXRSpatialEntityExtension::_get_vector2_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id) const
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
 {
 	return get_vector2_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
 }
 
 PackedVector3Array OpenXRSpatialEntityExtension::_get_vector3_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id) const
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
 {
 	return get_vector3_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
 }
 
-RID OpenXRSpatialEntityExtension::find_spatial_entity(XrSpatialEntityIdEXT p_entity_id) const
+RID OpenXRSpatialEntityExtension::find_spatial_entity(XrSpatialEntityIdEXT p_entity_id)
 {
 	ERR_FAIL_COND_V(!get_active(), RID());
 
-	LocalVector<RID> entities = spatial_entity_owner.get_owned_list();
+	LocalVector<RID> entities = data->spatial_entity_owner.get_owned_list();
 	for (const RID& entity : entities) {
-		SpatialEntityData* entity_data = spatial_entity_owner.get_or_null(entity);
+		SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(entity);
 		ERR_FAIL_NULL_V(entity_data, RID());
 
 		if (entity_data->entity_id == p_entity_id) {
@@ -829,7 +827,7 @@ RID OpenXRSpatialEntityExtension::add_spatial_entity(
 	spatial_entity_data.entity_id = p_entity_id;
 	spatial_entity_data.entity = p_entity;
 
-	return spatial_entity_owner.make_rid(spatial_entity_data);
+	return data->spatial_entity_owner.make_rid(spatial_entity_data);
 }
 
 RID OpenXRSpatialEntityExtension::_add_entity(
@@ -843,8 +841,7 @@ RID OpenXRSpatialEntityExtension::make_spatial_entity(
 	RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id)
 {
 	ERR_FAIL_COND_V(!get_active(), RID());
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, RID());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
 
 	SpatialEntityData spatial_entity_data;
 
@@ -859,10 +856,10 @@ RID OpenXRSpatialEntityExtension::make_spatial_entity(
 		get_spatial_context_handle(p_spatial_context), &create_info, &spatial_entity_data.entity);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(RID(), "OpenXR: Failed to create spatial entity [" +
-								  openxr_api->get_error_string(result) + "]");
+								  OpenXRAPI::get_error_string(result) + "]");
 	}
 
-	return spatial_entity_owner.make_rid(spatial_entity_data);
+	return data->spatial_entity_owner.make_rid(spatial_entity_data);
 }
 
 RID OpenXRSpatialEntityExtension::_make_entity(RID p_spatial_context, uint64_t p_entity_id)
@@ -870,22 +867,22 @@ RID OpenXRSpatialEntityExtension::_make_entity(RID p_spatial_context, uint64_t p
 	return make_spatial_entity(p_spatial_context, (XrSpatialEntityIdEXT)p_entity_id);
 }
 
-XrSpatialEntityIdEXT OpenXRSpatialEntityExtension::get_spatial_entity_id(RID p_entity) const
+XrSpatialEntityIdEXT OpenXRSpatialEntityExtension::get_spatial_entity_id(RID p_entity)
 {
-	SpatialEntityData* entity_data = spatial_entity_owner.get_or_null(p_entity);
+	SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(p_entity);
 	ERR_FAIL_NULL_V(entity_data, XR_NULL_ENTITY);
 
 	return entity_data->entity_id;
 }
 
-uint64_t OpenXRSpatialEntityExtension::_get_entity_id(RID p_entity) const
+uint64_t OpenXRSpatialEntityExtension::_get_entity_id(RID p_entity)
 {
 	return (uint64_t)get_spatial_entity_id(p_entity);
 }
 
-RID OpenXRSpatialEntityExtension::get_spatial_entity_context(RID p_entity) const
+RID OpenXRSpatialEntityExtension::get_spatial_entity_context(RID p_entity)
 {
-	SpatialEntityData* entity_data = spatial_entity_owner.get_or_null(p_entity);
+	SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(p_entity);
 	ERR_FAIL_NULL_V(entity_data, RID());
 
 	return entity_data->spatial_context;
@@ -893,21 +890,20 @@ RID OpenXRSpatialEntityExtension::get_spatial_entity_context(RID p_entity) const
 
 void OpenXRSpatialEntityExtension::free_spatial_entity(RID p_entity)
 {
-	SpatialEntityData* entity_data = spatial_entity_owner.get_or_null(p_entity);
+	SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(p_entity);
 	ERR_FAIL_NULL(entity_data);
 	ERR_FAIL_COND(entity_data->entity == XR_NULL_HANDLE);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	XrResult result = xrDestroySpatialEntityEXT_ptr(entity_data->entity);
 	if (XR_FAILED(result)) {
 		WARN_PRINT("OpenXR: Failed to destroy spatial entity [" +
-				   openxr_api->get_error_string(result) + "]");
+				   OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	// And remove our RID.
-	spatial_entity_owner.free(p_entity);
+	data->spatial_entity_owner.free(p_entity);
 }
 
 String OpenXRSpatialEntityExtension::get_spatial_capability_name(

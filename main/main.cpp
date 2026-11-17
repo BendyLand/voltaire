@@ -153,27 +153,9 @@
 
 // Singletons
 
-// Initialized in setup()
-static TranslationServer* translation_server = nullptr;
-
 #if defined(STEAMAPI_ENABLED)
 static SteamTracker* steam_tracker = nullptr;
 #endif
-
-// Initialized in setup2()
-static AudioServer* audio_server = nullptr;
-static TextServerManager* tsman = nullptr;
-#ifndef PHYSICS_2D_DISABLED
-static PhysicsServer2DManager* physics_server_2d_manager = nullptr;
-static PhysicsServer2D* physics_server_2d = nullptr;
-#endif // PHYSICS_2D_DISABLED
-#ifndef PHYSICS_3D_DISABLED
-static PhysicsServer3DManager* physics_server_3d_manager = nullptr;
-static PhysicsServer3D* physics_server_3d = nullptr;
-#endif // PHYSICS_3D_DISABLED
-#ifndef XR_DISABLED
-static XRServer* xr_server = nullptr;
-#endif // XR_DISABLED
 // We error out if setup2() doesn't turn this true
 static bool _start_success = false;
 
@@ -338,18 +320,16 @@ static Vector<String> get_files_with_extension(const String& p_root, const Strin
 void finalize_physics()
 {
 #ifndef PHYSICS_3D_DISABLED
-	if (physics_server_3d) {
-		physics_server_3d->finish();
-		memdelete(physics_server_3d);
-		physics_server_3d = nullptr;
+	if (PhysicsServer3D::is_initialized()) {
+		PhysicsServer3D::finish();
+		PhysicsServer3D::finalize();
 	}
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-	if (physics_server_2d) {
-		physics_server_2d->finish();
-		memdelete(physics_server_2d);
-		physics_server_2d = nullptr;
+	if (PhysicsServer2D::is_initialized()) {
+		PhysicsServer2D::finish();
+		PhysicsServer2D::finalize();
 	}
 #endif // PHYSICS_2D_DISABLED
 }
@@ -871,20 +851,20 @@ Error Main::test_setup()
 
 	register_core_settings(); // Here globals are present.
 
-	translation_server = memnew(TranslationServer);
-	tsman = memnew(TextServerManager);
+	TranslationServer::initialize();
+	TextServerManager::initialize();
 
-	if (tsman) {
+	if (TextServerManager::is_initialized()) {
 		Ref<TextServerDummy> ts;
 		ts.instantiate();
-		tsman->add_interface(ts);
+		TextServerManager::add_interface(ts);
 	}
 
 #ifndef PHYSICS_3D_DISABLED
-	physics_server_3d_manager = memnew(PhysicsServer3DManager);
+	PhysicsServer3DManager::initialize();
 #endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
-	physics_server_2d_manager = memnew(PhysicsServer2DManager);
+	PhysicsServer2DManager::initialize();
 #endif // PHYSICS_2D_DISABLED
 
 	// From `Main::setup2()`.
@@ -903,11 +883,11 @@ Error Main::test_setup()
 	GDExtensionManager::get_singleton()->initialize_extensions(
 		GDExtension::INITIALIZATION_LEVEL_SERVERS);
 
-	translation_server->setup(); // register translations, load them, etc.
+	TranslationServer::setup(); // register translations, load them, etc.
 	if (!locale.is_empty()) {
-		translation_server->set_locale(locale);
+		TranslationServer::set_locale(locale);
 	}
-	translation_server->load_project_translations(translation_server->get_main_domain());
+	TranslationServer::load_project_translations(TranslationServer::get_main_domain());
 	ResourceLoader::load_translation_remaps(); // load remaps for resources
 
 	message_queue = memnew(MessageQueue);
@@ -953,12 +933,12 @@ Error Main::test_setup()
 	ThemeDB::initialize_theme_noproject();
 
 	ERR_FAIL_COND_V(
-		TextServerManager::get_singleton()->get_interface_count() == 0, ERR_CANT_CREATE);
+		TextServerManager::get_interface_count() == 0, ERR_CANT_CREATE);
 
 	/* Use one with the most features available. */
 	int max_features = 0;
-	for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-		uint32_t features = TextServerManager::get_singleton()->get_interface(i)->get_features();
+	for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+		uint32_t features = TextServerManager::get_interface(i)->get_features();
 		int feature_number = 0;
 		while (features) {
 			feature_number += features & 1;
@@ -970,8 +950,8 @@ Error Main::test_setup()
 		}
 	}
 	if (text_driver_idx >= 0) {
-		Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(text_driver_idx);
-		TextServerManager::get_singleton()->set_primary_interface(ts);
+		Ref<TextServer> ts = TextServerManager::get_interface(text_driver_idx);
+		TextServerManager::set_primary_interface(ts);
 		if (ts->has_feature(TextServer::FEATURE_USE_SUPPORT_DATA)) {
 			ts->load_support_data("res://" + ts->get_support_data_filename());
 		}
@@ -997,8 +977,8 @@ void Main::test_cleanup()
 	// Printing in the usual way can become problematic during/after cleanup.
 	CoreGlobals::print_ready = false;
 
-	for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-		TextServerManager::get_singleton()->get_interface(i)->cleanup();
+	for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+		TextServerManager::get_interface(i)->cleanup();
 	}
 
 	ResourceLoader::remove_custom_loaders();
@@ -1052,13 +1032,13 @@ void Main::test_cleanup()
 	ZipArchive::finalize();
 #endif
 	PackedData::finalize();
-	memdelete(translation_server);
-	memdelete(tsman);
+	TranslationServer::finalize();
+	TextServerManager::finalize();
 #ifndef PHYSICS_3D_DISABLED
-	memdelete(physics_server_3d_manager);
+	PhysicsServer3DManager::finalize();
 #endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
-	memdelete(physics_server_2d_manager);
+	PhysicsServer2DManager::finalize();
 #endif // PHYSICS_2D_DISABLED
 
 	unregister_core_driver_types();
@@ -1175,7 +1155,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 	register_core_settings(); // here globals are present
 
-	translation_server = memnew(TranslationServer);
+	TranslationServer::initialize();
 	Performance::initialize();
 
 	MAIN_PRINT("Main: Parse CMDLine");
@@ -2528,9 +2508,9 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 								// display
 
 	if (!editor) {
-		ResourceUID::get_singleton()->enable_reverse_cache();
+		ResourceUID::enable_reverse_cache();
 	}
-	ResourceUID::get_singleton()->load_from_cache(true); // Load UUIDs from cache.
+	ResourceUID::load_from_cache(true); // Load UUIDs from cache.
 	ProjectSettings::fix_autoload_paths();				 // Handles autoloads saved as UID.
 
 	if (ProjectSettings::has_custom_feature("dedicated_server")) {
@@ -2863,7 +2843,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (Engine::get_write_movie_path() != String()) {
 		// Always use dummy driver for audio driver (which is last), also in no threaded mode.
 		audio_driver_idx = AudioDriverManager::get_driver_count() - 1;
-		AudioDriverDummy::get_dummy_singleton()->set_use_threads(false);
+		AudioDriverManager::get_dummy_driver()->set_use_threads(false);
 	}
 
 #if defined(MACOS_ENABLED) || defined(IOS_ENABLED)
@@ -2911,7 +2891,7 @@ error:
 
 	Performance::finalize();
 	InputMap::finalize();
-	memdelete(translation_server);
+	TranslationServer::finalize();
 #ifdef MINIZIP_ENABLED
 	ZipArchive::finalize();
 #endif
@@ -3008,18 +2988,18 @@ Error Main::setup2(bool p_show_boot_logo)
 
 	OS::benchmark_begin_measure("Startup", "Servers");
 
-	tsman = memnew(TextServerManager);
-	if (tsman) {
+	TextServerManager::initialize();
+	if (TextServerManager::is_initialized()) {
 		Ref<TextServerDummy> ts;
 		ts.instantiate();
-		tsman->add_interface(ts);
+		TextServerManager::add_interface(ts);
 	}
 
 #ifndef PHYSICS_3D_DISABLED
-	physics_server_3d_manager = memnew(PhysicsServer3DManager);
+	PhysicsServer3DManager::initialize();
 #endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
-	physics_server_2d_manager = memnew(PhysicsServer2DManager);
+	PhysicsServer2DManager::initialize();
 #endif // PHYSICS_2D_DISABLED
 
 	register_server_types();
@@ -3184,12 +3164,12 @@ Error Main::setup2(bool p_show_boot_logo)
 			unregister_server_types();
 
 			Input::finalize();
-			memdelete(tsman);
+			TextServerManager::finalize();
 #ifndef PHYSICS_3D_DISABLED
-			memdelete(physics_server_3d_manager);
+			PhysicsServer3DManager::finalize();
 #endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
-			memdelete(physics_server_2d_manager);
+			PhysicsServer2DManager::finalize();
 #endif // PHYSICS_2D_DISABLED
 
 			return err;
@@ -3338,8 +3318,8 @@ Error Main::setup2(bool p_show_boot_logo)
 		AudioDriverManager::initialize(audio_driver_idx);
 
 		// Right moment to create and initialize the audio server.
-		audio_server = memnew(AudioServer);
-		audio_server->init();
+		AudioServer::initialize();
+		AudioServer::init();
 
 		OS::benchmark_end_measure("Servers", "Audio");
 	}
@@ -3350,7 +3330,7 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::benchmark_begin_measure("Servers", "XR");
 
-		xr_server = memnew(XRServer);
+		XRServer::initialize();
 
 		OS::benchmark_end_measure("Servers", "XR");
 	}
@@ -3410,11 +3390,11 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::benchmark_begin_measure("Startup", "Translations and Remaps");
 
-		translation_server->setup(); // register translations, load them, etc.
+		TranslationServer::setup(); // register translations, load them, etc.
 		if (!locale.is_empty()) {
-			translation_server->set_locale(locale);
+			TranslationServer::set_locale(locale);
 		}
-		translation_server->load_project_translations(translation_server->get_main_domain());
+		TranslationServer::load_project_translations(TranslationServer::get_main_domain());
 		ResourceLoader::load_translation_remaps(); // load remaps for resources
 
 		OS::benchmark_end_measure("Startup", "Translations and Remaps");
@@ -3429,9 +3409,9 @@ Error Main::setup2(bool p_show_boot_logo)
 
 		/* Enum text drivers */
 		String text_driver_options;
-		for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
+		for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
 			const String driver_name =
-				TextServerManager::get_singleton()->get_interface(i)->get_name();
+				TextServerManager::get_interface(i)->get_name();
 			if (driver_name == "Dummy") {
 				// Dummy text driver cannot draw any text, making the editor unusable if selected.
 				continue;
@@ -3445,10 +3425,10 @@ Error Main::setup2(bool p_show_boot_logo)
 
 		if (!text_driver.is_empty()) {
 			/* Load user selected text server. */
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				if (TextServerManager::get_singleton()->get_interface(i)->get_short_name() ==
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				if (TextServerManager::get_interface(i)->get_short_name() ==
 						text_driver ||
-					TextServerManager::get_singleton()->get_interface(i)->get_name() ==
+					TextServerManager::get_interface(i)->get_name() ==
 						text_driver) {
 					text_driver_idx = i;
 					break;
@@ -3459,9 +3439,9 @@ Error Main::setup2(bool p_show_boot_logo)
 		if (text_driver_idx < 0) {
 			/* If not selected, use one with the most features available. */
 			int max_features = 0;
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
 				uint32_t features =
-					TextServerManager::get_singleton()->get_interface(i)->get_features();
+					TextServerManager::get_interface(i)->get_features();
 				int feature_number = 0;
 				while (features) {
 					feature_number += features & 1;
@@ -3474,8 +3454,8 @@ Error Main::setup2(bool p_show_boot_logo)
 			}
 		}
 		if (text_driver_idx >= 0) {
-			Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(text_driver_idx);
-			TextServerManager::get_singleton()->set_primary_interface(ts);
+			Ref<TextServer> ts = TextServerManager::get_interface(text_driver_idx);
+			TextServerManager::set_primary_interface(ts);
 			if (ts->has_feature(TextServer::FEATURE_USE_SUPPORT_DATA)) {
 				ts->load_support_data("res://" + ts->get_support_data_filename());
 			}
@@ -3564,7 +3544,7 @@ Error Main::setup2(bool p_show_boot_logo)
 
 #endif
 	ThemeDB::initialize_theme();
-	audio_server->load_default_bus_layout();
+	AudioServer::load_default_bus_layout();
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 	// Hacky to have it here, but we don't have good facility yet to let modules
 	// register command line options to call at the right time. This needs to happen
@@ -4063,7 +4043,7 @@ bool Main::iteration()
 	// process all our active interfaces
 #ifndef XR_DISABLED
 
-	XRServer::get_singleton()->_process();
+	XRServer::_process();
 #endif // XR_DISABLED
 
 	if (Input::is_agile_input_event_flushing()) {
@@ -4100,7 +4080,7 @@ bool Main::iteration()
 	process_max = MAX(process_ticks, process_max);
 	uint64_t frame_time = OS::get_ticks_usec() - ticks;
 
-	AudioServer::get_singleton()->update();
+	AudioServer::update();
 
 	frames++;
 	Engine::_process_frames++;
@@ -4215,8 +4195,8 @@ void Main::cleanup(bool p_force)
 	}
 #endif
 
-	for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-		TextServerManager::get_singleton()->get_interface(i)->cleanup();
+	for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+		TextServerManager::get_interface(i)->cleanup();
 	}
 
 	if (movie_writer) {
@@ -4268,10 +4248,10 @@ void Main::cleanup(bool p_force)
 	Renderer::finalize();
 
 #ifndef XR_DISABLED
-	if (xr_server) {
+	if (XRServer::is_initialized()) {
 		// Now that we're unregistering properly in plugins we need to keep access to xr_server for
 		// a little longer We do however unset our primary interface
-		xr_server->set_primary_interface(Ref<XRInterface>());
+		XRServer::set_primary_interface(Ref<XRInterface>());
 	}
 #endif // XR_DISABLED
 
@@ -4290,12 +4270,12 @@ void Main::cleanup(bool p_force)
 	unregister_server_types();
 
 #ifndef XR_DISABLED
-	memdelete(xr_server);
+	XRServer::finalize();
 #endif // XR_DISABLED
 
-	if (audio_server) {
-		audio_server->finish();
-		memdelete(audio_server);
+	if (AudioServer::is_initialized()) {
+		AudioServer::finish();
+		AudioServer::finalize();
 	}
 
 	OS::finalize();
@@ -4310,13 +4290,13 @@ void Main::cleanup(bool p_force)
 	PackedData::finalize();
 	Performance::finalize();
 	InputMap::finalize();
-	memdelete(translation_server);
-	memdelete(tsman);
+	TranslationServer::finalize();
+	TextServerManager::finalize();
 #ifndef PHYSICS_3D_DISABLED
-	memdelete(physics_server_3d_manager);
+	PhysicsServer3DManager::finalize();
 #endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
-	memdelete(physics_server_2d_manager);
+	PhysicsServer2DManager::finalize();
 #endif // PHYSICS_2D_DISABLED
 
 	if (OS::is_restart_on_exit_set()) {

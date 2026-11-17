@@ -50,18 +50,18 @@ void AudioStreamPlayer2D::_notification(int p_what)
 
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		AudioServer::get_singleton()->add_listener_changed_callback(_listener_changed_cb, this);
+		AudioServer::add_listener_changed_callback(_listener_changed_cb, this);
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		AudioServer::get_singleton()->remove_listener_changed_callback(_listener_changed_cb, this);
+		AudioServer::remove_listener_changed_callback(_listener_changed_cb, this);
 	} break;
 
 	case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 		// Update anything related to position first, if possible of course.
 		if (setplay.get() > 0 ||
 			(internal->active.is_set() &&
-				last_mix_count != AudioServer::get_singleton()->get_mix_count()) ||
+				last_mix_count != AudioServer::get_mix_count()) ||
 			force_update_panning) {
 			force_update_panning = false;
 			_update_panning();
@@ -69,7 +69,7 @@ void AudioStreamPlayer2D::_notification(int p_what)
 
 		if (setplayback.is_valid() && setplay.get() >= 0) {
 			internal->active.set();
-			AudioServer::get_singleton()->start_playback_stream(setplayback, _get_actual_bus(),
+			AudioServer::start_playback_stream(setplayback, _get_actual_bus(),
 				volume_vector, setplay.get(), internal->pitch_scale);
 			setplayback.unref();
 			setplay.set(-1);
@@ -162,20 +162,20 @@ void AudioStreamPlayer2D::_update_panning()
 	}
 
 	for (const Ref<AudioStreamPlayback>& playback : internal->stream_playbacks) {
-		AudioServer::get_singleton()->set_playback_bus_exclusive(
+		AudioServer::set_playback_bus_exclusive(
 			playback, actual_bus, volume_vector);
 	}
 
 	for (const Ref<AudioStreamPlayback>& playback : internal->stream_playbacks) {
-		AudioServer::get_singleton()->set_playback_pitch_scale(playback, internal->pitch_scale);
+		AudioServer::set_playback_pitch_scale(playback, internal->pitch_scale);
 		if (playback->get_is_sample() && playback->get_sample_playback().is_valid()) {
 			Ref<AudioSamplePlayback> sample_playback = playback->get_sample_playback();
-			AudioServer::get_singleton()->update_sample_playback_pitch_scale(
+			AudioServer::update_sample_playback_pitch_scale(
 				sample_playback, internal->pitch_scale);
 		}
 	}
 
-	last_mix_count = AudioServer::get_singleton()->get_mix_count();
+	last_mix_count = AudioServer::get_mix_count();
 }
 
 void AudioStreamPlayer2D::set_stream(Ref<AudioStream> p_stream) { internal->set_stream(p_stream); }
@@ -219,7 +219,7 @@ void AudioStreamPlayer2D::play(float p_from_pos)
 		sample_playback->offset = p_from_pos;
 		sample_playback->bus = _get_actual_bus();
 
-		AudioServer::get_singleton()->start_sample_playback(sample_playback);
+		AudioServer::start_sample_playback(sample_playback);
 	}
 }
 

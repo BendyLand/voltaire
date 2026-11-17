@@ -94,7 +94,7 @@ void ConcavePolygonShape3D::set_backface_collision_enabled(bool p_enabled)
 bool ConcavePolygonShape3D::is_backface_collision_enabled() const { return backface_collision; }
 
 ConcavePolygonShape3D::ConcavePolygonShape3D()
-	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CONCAVE_POLYGON))
+	: Shape3D(PhysicsServer3D::shape_create(PS3DE::SHAPE_CONCAVE_POLYGON))
 {
 	// set_planes(Vector3(1,1,1));
 }

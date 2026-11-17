@@ -88,7 +88,7 @@ void CylinderShape3D::set_height(float p_height)
 float CylinderShape3D::get_height() const { return height; }
 
 CylinderShape3D::CylinderShape3D()
-	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CYLINDER))
+	: Shape3D(PhysicsServer3D::shape_create(PS3DE::SHAPE_CYLINDER))
 {
 	_update_shape();
 }

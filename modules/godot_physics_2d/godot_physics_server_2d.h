@@ -38,7 +38,7 @@
 #include "godot_step_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
-class GodotPhysicsServer2D : public PhysicsServer2D
+class GodotPhysicsServer2D : public PhysicsServer2DDriver
 {
 	friend class GodotPhysicsDirectSpaceState2D;
 	friend class GodotPhysicsDirectBodyState2D;
@@ -62,7 +62,6 @@ class GodotPhysicsServer2D : public PhysicsServer2D
 	mutable RID_PtrOwner<GodotBody2D, true> body_owner{65536, 1048576};
 	mutable RID_PtrOwner<GodotJoint2D, true> joint_owner;
 
-	static GodotPhysicsServer2D* godot_singleton;
 
 	friend class GodotCollisionObject2D;
 	SelfList<GodotCollisionObject2D>::List pending_shape_update_list;

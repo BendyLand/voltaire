@@ -127,7 +127,7 @@ real_t ConvexPolygonShape2D::get_enclosing_radius() const
 }
 
 ConvexPolygonShape2D::ConvexPolygonShape2D()
-	: Shape2D(PhysicsServer2D::get_singleton()->convex_polygon_shape_create())
+	: Shape2D(PhysicsServer2D::convex_polygon_shape_create())
 {
 }
 

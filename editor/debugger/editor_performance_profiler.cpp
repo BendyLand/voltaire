@@ -51,8 +51,6 @@ EditorPerformanceProfiler::Monitor::Monitor(const String& p_name, const String& 
 String EditorPerformanceProfiler::_format_label(
 	float p_value, Performance::MonitorType p_type) const
 {
-	const TranslationServer* ts = TranslationServer::get_singleton();
-
 	switch (p_type) {
 	case Performance::MONITOR_TYPE_MEMORY: {
 		return String::humanize_size(p_value);

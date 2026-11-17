@@ -135,7 +135,7 @@ void RigidBody2D::set_use_custom_integrator(bool p_enable)
 	}
 
 	custom_integrator = p_enable;
-	PhysicsServer2D::get_singleton()->body_set_omit_force_integration(get_rid(), p_enable);
+	PhysicsServer2D::body_set_omit_force_integration(get_rid(), p_enable);
 }
 
 bool RigidBody2D::is_using_custom_integrator() { return custom_integrator; }
@@ -150,7 +150,7 @@ void RigidBody2D::set_max_contacts_reported(int p_amount)
 		"Max contacts reported allocates memory (about 100 bytes each), and therefore must not be "
 		"set too high.");
 	max_contacts_reported = p_amount;
-	PhysicsServer2D::get_singleton()->body_set_max_contacts_reported(get_rid(), p_amount);
+	PhysicsServer2D::body_set_max_contacts_reported(get_rid(), p_amount);
 }
 
 int RigidBody2D::get_max_contacts_reported() const { return max_contacts_reported; }
@@ -159,73 +159,73 @@ int RigidBody2D::get_contact_count() const { return contact_count; }
 
 void RigidBody2D::apply_central_impulse(const Vector2& p_impulse)
 {
-	PhysicsServer2D::get_singleton()->body_apply_central_impulse(get_rid(), p_impulse);
+	PhysicsServer2D::body_apply_central_impulse(get_rid(), p_impulse);
 }
 
 void RigidBody2D::apply_impulse(const Vector2& p_impulse, const Vector2& p_position)
 {
-	PhysicsServer2D::get_singleton()->body_apply_impulse(get_rid(), p_impulse, p_position);
+	PhysicsServer2D::body_apply_impulse(get_rid(), p_impulse, p_position);
 }
 
 void RigidBody2D::apply_torque_impulse(real_t p_torque)
 {
-	PhysicsServer2D::get_singleton()->body_apply_torque_impulse(get_rid(), p_torque);
+	PhysicsServer2D::body_apply_torque_impulse(get_rid(), p_torque);
 }
 
 void RigidBody2D::apply_central_force(const Vector2& p_force)
 {
-	PhysicsServer2D::get_singleton()->body_apply_central_force(get_rid(), p_force);
+	PhysicsServer2D::body_apply_central_force(get_rid(), p_force);
 }
 
 void RigidBody2D::apply_force(const Vector2& p_force, const Vector2& p_position)
 {
-	PhysicsServer2D::get_singleton()->body_apply_force(get_rid(), p_force, p_position);
+	PhysicsServer2D::body_apply_force(get_rid(), p_force, p_position);
 }
 
 void RigidBody2D::apply_torque(real_t p_torque)
 {
-	PhysicsServer2D::get_singleton()->body_apply_torque(get_rid(), p_torque);
+	PhysicsServer2D::body_apply_torque(get_rid(), p_torque);
 }
 
 void RigidBody2D::add_constant_central_force(const Vector2& p_force)
 {
-	PhysicsServer2D::get_singleton()->body_add_constant_central_force(get_rid(), p_force);
+	PhysicsServer2D::body_add_constant_central_force(get_rid(), p_force);
 }
 
 void RigidBody2D::add_constant_force(const Vector2& p_force, const Vector2& p_position)
 {
-	PhysicsServer2D::get_singleton()->body_add_constant_force(get_rid(), p_force, p_position);
+	PhysicsServer2D::body_add_constant_force(get_rid(), p_force, p_position);
 }
 
 void RigidBody2D::add_constant_torque(const real_t p_torque)
 {
-	PhysicsServer2D::get_singleton()->body_add_constant_torque(get_rid(), p_torque);
+	PhysicsServer2D::body_add_constant_torque(get_rid(), p_torque);
 }
 
 void RigidBody2D::set_constant_force(const Vector2& p_force)
 {
-	PhysicsServer2D::get_singleton()->body_set_constant_force(get_rid(), p_force);
+	PhysicsServer2D::body_set_constant_force(get_rid(), p_force);
 }
 
 Vector2 RigidBody2D::get_constant_force() const
 {
-	return PhysicsServer2D::get_singleton()->body_get_constant_force(get_rid());
+	return PhysicsServer2D::body_get_constant_force(get_rid());
 }
 
 void RigidBody2D::set_constant_torque(real_t p_torque)
 {
-	PhysicsServer2D::get_singleton()->body_set_constant_torque(get_rid(), p_torque);
+	PhysicsServer2D::body_set_constant_torque(get_rid(), p_torque);
 }
 
 real_t RigidBody2D::get_constant_torque() const
 {
-	return PhysicsServer2D::get_singleton()->body_get_constant_torque(get_rid());
+	return PhysicsServer2D::body_get_constant_torque(get_rid());
 }
 
 void RigidBody2D::set_continuous_collision_detection_mode(CCDMode p_mode)
 {
 	ccd_mode = p_mode;
-	PhysicsServer2D::get_singleton()->body_set_continuous_collision_detection_mode(
+	PhysicsServer2D::body_set_continuous_collision_detection_mode(
 		get_rid(), PS2DE::CCDMode(p_mode));
 }
 

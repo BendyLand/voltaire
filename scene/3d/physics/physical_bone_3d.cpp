@@ -39,12 +39,12 @@
 
 void PhysicalBone3D::apply_central_impulse(const Vector3& p_impulse)
 {
-	PhysicsServer3D::get_singleton()->body_apply_central_impulse(get_rid(), p_impulse);
+	PhysicsServer3D::body_apply_central_impulse(get_rid(), p_impulse);
 }
 
 void PhysicalBone3D::apply_impulse(const Vector3& p_impulse, const Vector3& p_position)
 {
-	PhysicsServer3D::get_singleton()->body_apply_impulse(get_rid(), p_impulse, p_position);
+	PhysicsServer3D::body_apply_impulse(get_rid(), p_impulse, p_position);
 }
 
 Vector3 PhysicalBone3D::get_linear_velocity() const { return linear_velocity; }
@@ -58,7 +58,7 @@ void PhysicalBone3D::set_use_custom_integrator(bool p_enable)
 	}
 
 	custom_integrator = p_enable;
-	PhysicsServer3D::get_singleton()->body_set_omit_force_integration(get_rid(), p_enable);
+	PhysicsServer3D::body_set_omit_force_integration(get_rid(), p_enable);
 }
 
 bool PhysicalBone3D::is_using_custom_integrator() { return custom_integrator; }
@@ -161,15 +161,15 @@ bool PhysicalBone3D::is_able_to_sleep() const { return can_sleep; }
 
 PhysicalBone3D::PhysicalBone3D() : PhysicsBody3D(PS3DE::BODY_MODE_STATIC)
 {
-	joint = PhysicsServer3D::get_singleton()->joint_create();
+	joint = PhysicsServer3D::joint_create();
 	reset_physics_simulation_state();
 }
 
 PhysicalBone3D::~PhysicalBone3D()
 {
 	memdelete(joint_data);
-	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
-	PhysicsServer3D::get_singleton()->free_rid(joint);
+	ERR_FAIL_COND(!PhysicsServer3D::is_initialized());
+	PhysicsServer3D::free_rid(joint);
 }
 
 void PhysicalBone3D::_stop_physics_simulation() {}

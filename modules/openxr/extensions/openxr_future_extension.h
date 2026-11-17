@@ -79,42 +79,51 @@ private:
 	uint64_t _get_future() const;
 };
 
-class OpenXRFutureExtension
+class OpenXRFutureExtension final
 {
 protected:
 
 public:
-	static OpenXRFutureExtension* get_singleton();
 
-	OpenXRFutureExtension();
-	virtual ~OpenXRFutureExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+	static void on_session_destroyed();
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_instance_destroyed();
-	virtual void on_session_destroyed();
+	static void on_process();
 
-	virtual void on_process();
+	static bool is_active();
 
-	bool is_active() const;
-
-	void cancel_future(XrFutureEXT p_future);
+	static void cancel_future(XrFutureEXT p_future);
 
 private:
-	static OpenXRFutureExtension* singleton;
 
-	bool future_ext = false;
-
-	HashMap<XrFutureEXT, Ref<OpenXRFutureResult>> futures;
-
-	void _cancel_future(uint64_t p_future);
+	static void _cancel_future(uint64_t p_future);
 
 	// Futures
 	EXT_PROTO_XRRESULT_FUNC3(xrPollFutureEXT, (XrInstance), instance, (const XrFuturePollInfoEXT*),
 		poll_info, (XrFuturePollResultEXT*), poll_result);
 	EXT_PROTO_XRRESULT_FUNC2(
 		xrCancelFutureEXT, (XrInstance), instance, (const XrFutureCancelInfoEXT*), cancel_info);
+
+public:
+	struct Data
+	{
+		bool future_ext = false;
+		HashMap<XrFutureEXT, Ref<OpenXRFutureResult>> futures;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRFutureExtension() = delete;
+	OpenXRFutureExtension(const OpenXRFutureExtension&) = delete;
+	OpenXRFutureExtension& operator=(const OpenXRFutureExtension&) = delete;
+	~OpenXRFutureExtension() = delete;
 };
 
 

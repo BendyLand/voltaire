@@ -48,7 +48,7 @@ void GodotCollisionObject2D::add_shape(GodotShape2D *p_shape, const Transform2D 
 	p_shape->add_owner(this);
 
 	if (!pending_shape_update_list.in_list()) {
-		GodotPhysicsServer2D::godot_singleton->pending_shape_update_list.add(&pending_shape_update_list);
+		PhysicsServer2D::driver_as<GodotPhysicsServer2D>()->pending_shape_update_list.add(&pending_shape_update_list);
 	}
 }
 
@@ -60,7 +60,7 @@ void GodotCollisionObject2D::set_shape(int p_index, GodotShape2D *p_shape) {
 	p_shape->add_owner(this);
 
 	if (!pending_shape_update_list.in_list()) {
-		GodotPhysicsServer2D::godot_singleton->pending_shape_update_list.add(&pending_shape_update_list);
+		PhysicsServer2D::driver_as<GodotPhysicsServer2D>()->pending_shape_update_list.add(&pending_shape_update_list);
 	}
 }
 
@@ -71,7 +71,7 @@ void GodotCollisionObject2D::set_shape_transform(int p_index, const Transform2D 
 	shapes.write[p_index].xform_inv = p_transform.affine_inverse();
 
 	if (!pending_shape_update_list.in_list()) {
-		GodotPhysicsServer2D::godot_singleton->pending_shape_update_list.add(&pending_shape_update_list);
+		PhysicsServer2D::driver_as<GodotPhysicsServer2D>()->pending_shape_update_list.add(&pending_shape_update_list);
 	}
 }
 
@@ -93,11 +93,11 @@ void GodotCollisionObject2D::set_shape_disabled(int p_idx, bool p_disabled) {
 		space->get_broadphase()->remove(shape.bpid);
 		shape.bpid = 0;
 		if (!pending_shape_update_list.in_list()) {
-			GodotPhysicsServer2D::godot_singleton->pending_shape_update_list.add(&pending_shape_update_list);
+			PhysicsServer2D::driver_as<GodotPhysicsServer2D>()->pending_shape_update_list.add(&pending_shape_update_list);
 		}
 	} else if (!p_disabled && shape.bpid == 0) {
 		if (!pending_shape_update_list.in_list()) {
-			GodotPhysicsServer2D::godot_singleton->pending_shape_update_list.add(&pending_shape_update_list);
+			PhysicsServer2D::driver_as<GodotPhysicsServer2D>()->pending_shape_update_list.add(&pending_shape_update_list);
 		}
 	}
 }
@@ -127,7 +127,7 @@ void GodotCollisionObject2D::remove_shape(int p_index) {
 	shapes.remove_at(p_index);
 
 	if (!pending_shape_update_list.in_list()) {
-		GodotPhysicsServer2D::godot_singleton->pending_shape_update_list.add(&pending_shape_update_list);
+		PhysicsServer2D::driver_as<GodotPhysicsServer2D>()->pending_shape_update_list.add(&pending_shape_update_list);
 	}
 	// _update_shapes();
 	// _shapes_changed();

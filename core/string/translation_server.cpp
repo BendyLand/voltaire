@@ -169,7 +169,7 @@ TranslationServer::Locale::operator String() const
 }
 
 TranslationServer::Locale::Locale(
-	const TranslationServer& p_server, const String& p_locale, bool p_add_defaults)
+	const String& p_locale, bool p_add_defaults)
 {
 	// Replaces '-' with '_' for macOS style locales.
 	String univ_locale = p_locale.replace_char('-', '_');
@@ -194,14 +194,14 @@ TranslationServer::Locale::Locale(
 			is_ascii_upper_case(locale_elements[2][1])) {
 			country = locale_elements[2];
 		}
-		else if (p_server.variant_map.has(locale_elements[2].to_lower()) &&
-				   p_server.variant_map[locale_elements[2].to_lower()] == language) {
+		else if (TranslationServer::variant_map.has(locale_elements[2].to_lower()) &&
+				   TranslationServer::variant_map[locale_elements[2].to_lower()] == language) {
 			variant = locale_elements[2].to_lower();
 		}
 	}
 	if (locale_elements.size() >= 4) {
-		if (p_server.variant_map.has(locale_elements[3].to_lower()) &&
-			p_server.variant_map[locale_elements[3].to_lower()] == language) {
+		if (TranslationServer::variant_map.has(locale_elements[3].to_lower()) &&
+			TranslationServer::variant_map[locale_elements[3].to_lower()] == language) {
 			variant = locale_elements[3].to_lower();
 		}
 	}
@@ -221,32 +221,32 @@ TranslationServer::Locale::Locale(
 			script = "Deva";
 			break;
 		}
-		else if (p_server.variant_map.has(script_extra[i].to_lower()) &&
-				   p_server.variant_map[script_extra[i].to_lower()] == language) {
+		else if (TranslationServer::variant_map.has(script_extra[i].to_lower()) &&
+				   TranslationServer::variant_map[script_extra[i].to_lower()] == language) {
 			variant = script_extra[i].to_lower();
 		}
 	}
 
 	// Handles known non-ISO language names used e.g. on Windows.
-	if (p_server.locale_rename_map.has(language)) {
-		language = p_server.locale_rename_map[language];
+	if (TranslationServer::locale_rename_map.has(language)) {
+		language = TranslationServer::locale_rename_map[language];
 	}
 
 	// Handle country renames.
-	if (p_server.country_rename_map.has(country)) {
-		country = p_server.country_rename_map[country];
+	if (TranslationServer::country_rename_map.has(country)) {
+		country = TranslationServer::country_rename_map[country];
 	}
 
 	// Remove unsupported script codes.
-	if (!p_server.script_map.has(script)) {
+	if (!TranslationServer::script_map.has(script)) {
 		script = "";
 	}
 
 	// Add script code base on language and country codes for some ambiguous cases.
 	if (p_add_defaults) {
 		if (script.is_empty()) {
-			for (int i = 0; i < p_server.locale_script_info.size(); i++) {
-				const LocaleScriptInfo& info = p_server.locale_script_info[i];
+			for (int i = 0; i < TranslationServer::locale_script_info.size(); i++) {
+				const LocaleScriptInfo& info = TranslationServer::locale_script_info[i];
 				if (info.name == language) {
 					if (country.is_empty() || info.supported_countries.has(country)) {
 						script = info.script;
@@ -257,8 +257,8 @@ TranslationServer::Locale::Locale(
 		}
 		if (!script.is_empty() && country.is_empty()) {
 			// Add conntry code based on script for some ambiguous cases.
-			for (int i = 0; i < p_server.locale_script_info.size(); i++) {
-				const LocaleScriptInfo& info = p_server.locale_script_info[i];
+			for (int i = 0; i < TranslationServer::locale_script_info.size(); i++) {
+				const LocaleScriptInfo& info = TranslationServer::locale_script_info[i];
 				if (info.name == language && info.script == script) {
 					country = info.default_country;
 					break;
@@ -268,7 +268,7 @@ TranslationServer::Locale::Locale(
 	}
 }
 
-String TranslationServer::format_number(const String& p_string, const String& p_locale) const
+String TranslationServer::format_number(const String& p_string, const String& p_locale)
 {
 	ERR_FAIL_COND_V(p_locale.is_empty(), p_string);
 	if (!num_system_map.has(p_locale)) {
@@ -281,19 +281,19 @@ String TranslationServer::format_number(const String& p_string, const String& p_
 	String res = p_string;
 	res = res.replace("e", nsd.exp_l);
 	res = res.replace("E", nsd.exp_u);
-	char32_t* data = res.ptrw();
+	char32_t* res_data = res.ptrw();
 	for (int j = 0; j < res.length(); j++) {
-		if (data[j] >= 0x30 && data[j] <= 0x39) {
-			data[j] = nsd.digits[data[j] - 0x30];
+		if (res_data[j] >= 0x30 && res_data[j] <= 0x39) {
+			res_data[j] = nsd.digits[res_data[j] - 0x30];
 		}
-		else if (data[j] == '.' || data[j] == ',') {
-			data[j] = nsd.digits[10];
+		else if (res_data[j] == '.' || res_data[j] == ',') {
+			res_data[j] = nsd.digits[10];
 		}
 	}
 	return res;
 }
 
-String TranslationServer::parse_number(const String& p_string, const String& p_locale) const
+String TranslationServer::parse_number(const String& p_string, const String& p_locale)
 {
 	ERR_FAIL_COND_V(p_locale.is_empty(), p_string);
 	if (!num_system_map.has(p_locale)) {
@@ -306,15 +306,15 @@ String TranslationServer::parse_number(const String& p_string, const String& p_l
 	String res = p_string;
 	res = res.replace(nsd.exp_l, "e");
 	res = res.replace(nsd.exp_u, "E");
-	char32_t* data = res.ptrw();
+	char32_t* res_data = res.ptrw();
 	for (int j = 0; j < res.length(); j++) {
-		if (data[j] == nsd.digits[10]) {
-			data[j] = '.';
+		if (res_data[j] == nsd.digits[10]) {
+			res_data[j] = '.';
 		}
 		else {
 			for (int k = 0; k < 10; k++) {
-				if (data[j] == nsd.digits[k]) {
-					data[j] = 0x30 + k;
+				if (res_data[j] == nsd.digits[k]) {
+					res_data[j] = 0x30 + k;
 				}
 			}
 		}
@@ -322,7 +322,7 @@ String TranslationServer::parse_number(const String& p_string, const String& p_l
 	return res;
 }
 
-String TranslationServer::get_percent_sign(const String& p_locale) const
+String TranslationServer::get_percent_sign(const String& p_locale)
 {
 	ERR_FAIL_COND_V(p_locale.is_empty(), "%");
 	if (!num_system_map.has(p_locale)) {
@@ -333,12 +333,12 @@ String TranslationServer::get_percent_sign(const String& p_locale) const
 	return num_system_data[index].percent_sign;
 }
 
-String TranslationServer::standardize_locale(const String& p_locale, bool p_add_defaults) const
+String TranslationServer::standardize_locale(const String& p_locale, bool p_add_defaults)
 {
-	return Locale(*this, p_locale, p_add_defaults).operator String();
+	return Locale(p_locale, p_add_defaults).operator String();
 }
 
-int TranslationServer::compare_locales(const String& p_locale_a, const String& p_locale_b) const
+int TranslationServer::compare_locales(const String& p_locale_a, const String& p_locale_b)
 {
 	if (p_locale_a == p_locale_b) {
 		// Exact match.
@@ -346,23 +346,23 @@ int TranslationServer::compare_locales(const String& p_locale_a, const String& p
 	}
 
 	const String cache_key = p_locale_a + "|" + p_locale_b;
-	const int* cached_result = locale_compare_cache.getptr(cache_key);
+	const int* cached_result = data->locale_compare_cache.getptr(cache_key);
 	if (cached_result) {
 		return *cached_result;
 	}
 
-	Locale locale_a = Locale(*this, p_locale_a, true);
-	Locale locale_b = Locale(*this, p_locale_b, true);
+	Locale locale_a = Locale(p_locale_a, true);
+	Locale locale_b = Locale(p_locale_b, true);
 
 	if (locale_a == locale_b) {
 		// Exact match.
-		locale_compare_cache.insert(cache_key, 10);
+		data->locale_compare_cache.insert(cache_key, 10);
 		return 10;
 	}
 
 	if (locale_a.language != locale_b.language) {
 		// No match.
-		locale_compare_cache.insert(cache_key, 0);
+		data->locale_compare_cache.insert(cache_key, 0);
 		return 0;
 	}
 
@@ -396,11 +396,11 @@ int TranslationServer::compare_locales(const String& p_locale_a, const String& p
 		}
 	}
 
-	locale_compare_cache.insert(cache_key, score);
+	data->locale_compare_cache.insert(cache_key, score);
 	return score;
 }
 
-String TranslationServer::get_locale_name(const String& p_locale) const
+String TranslationServer::get_locale_name(const String& p_locale)
 {
 	String lang_name, script_name, country_name;
 	Vector<String> locale_elements = standardize_locale(p_locale).split("_");
@@ -434,14 +434,14 @@ String TranslationServer::get_locale_name(const String& p_locale) const
 	return name;
 }
 
-String TranslationServer::get_plural_rules(const String& p_locale) const
+String TranslationServer::get_plural_rules(const String& p_locale)
 {
 	const String* rule = plural_rules_map.getptr(p_locale);
 	if (rule) {
 		return *rule;
 	}
 
-	Locale l = Locale(*this, p_locale, false);
+	Locale l = Locale(p_locale, false);
 	if (!l.country.is_empty()) {
 		rule = plural_rules_map.getptr(l.language + "_" + l.country);
 		if (rule) {
@@ -455,7 +455,7 @@ String TranslationServer::get_plural_rules(const String& p_locale) const
 	return String();
 }
 
-Vector<String> TranslationServer::get_all_languages() const
+Vector<String> TranslationServer::get_all_languages()
 {
 	Vector<String> languages;
 
@@ -466,7 +466,7 @@ Vector<String> TranslationServer::get_all_languages() const
 	return languages;
 }
 
-String TranslationServer::get_language_name(const String& p_language) const
+String TranslationServer::get_language_name(const String& p_language)
 {
 	if (language_map.has(p_language)) {
 		return language_map[p_language];
@@ -476,7 +476,7 @@ String TranslationServer::get_language_name(const String& p_language) const
 	}
 }
 
-Vector<String> TranslationServer::get_all_scripts() const
+Vector<String> TranslationServer::get_all_scripts()
 {
 	Vector<String> scripts;
 
@@ -487,7 +487,7 @@ Vector<String> TranslationServer::get_all_scripts() const
 	return scripts;
 }
 
-String TranslationServer::get_script_name(const String& p_script) const
+String TranslationServer::get_script_name(const String& p_script)
 {
 	if (script_map.has(p_script)) {
 		return script_map[p_script];
@@ -497,7 +497,7 @@ String TranslationServer::get_script_name(const String& p_script) const
 	}
 }
 
-Vector<String> TranslationServer::get_all_countries() const
+Vector<String> TranslationServer::get_all_countries()
 {
 	Vector<String> countries;
 
@@ -508,7 +508,7 @@ Vector<String> TranslationServer::get_all_countries() const
 	return countries;
 }
 
-String TranslationServer::get_country_name(const String& p_country) const
+String TranslationServer::get_country_name(const String& p_country)
 {
 	if (country_name_map.has(p_country)) {
 		return country_name_map[p_country];
@@ -523,28 +523,28 @@ void TranslationServer::set_locale(const String& p_locale)
 	ERR_FAIL_COND_MSG(p_locale.is_empty(), "Locale cannot be an empty string.");
 
 	String new_locale = standardize_locale(p_locale);
-	if (locale == new_locale) {
+	if (data->locale == new_locale) {
 		return;
 	}
 
-	locale = new_locale;
+	data->locale = new_locale;
 	ResourceLoader::reload_translation_remaps();
 }
 
-String TranslationServer::get_locale() const { return locale; }
+String TranslationServer::get_locale() { return data->locale; }
 
-void TranslationServer::set_fallback_allowed(const bool& p_allow) { allow_fallback = p_allow; }
+void TranslationServer::set_fallback_allowed(const bool& p_allow) { data->allow_fallback = p_allow; }
 
-bool TranslationServer::is_fallback_allowed() const { return allow_fallback; }
+bool TranslationServer::is_fallback_allowed() { return data->allow_fallback; }
 
-void TranslationServer::set_fallback_locale(const String& p_locale) { fallback = p_locale; }
+void TranslationServer::set_fallback_locale(const String& p_locale) { data->fallback = p_locale; }
 
-String TranslationServer::get_fallback_locale() const { return fallback; }
+String TranslationServer::get_fallback_locale() { return data->fallback; }
 
 bool TranslationServer::is_script_suppored_by_locale(
-	const String& p_locale, const String& p_script) const
+	const String& p_locale, const String& p_script)
 {
-	Locale l = Locale(*this, p_locale, true);
+	Locale l = Locale(p_locale, true);
 	if (l.script == p_script) {
 		return true;
 	}
@@ -554,66 +554,66 @@ bool TranslationServer::is_script_suppored_by_locale(
 	return language_script_map[l.language].has(p_script);
 }
 
-PackedStringArray TranslationServer::get_loaded_locales() const
+PackedStringArray TranslationServer::get_loaded_locales()
 {
-	return main_domain->get_loaded_locales();
+	return data->main_domain->get_loaded_locales();
 }
 
 void TranslationServer::add_translation(const Ref<Translation>& p_translation)
 {
-	main_domain->add_translation(p_translation);
+	data->main_domain->add_translation(p_translation);
 }
 
 void TranslationServer::remove_translation(const Ref<Translation>& p_translation)
 {
-	main_domain->remove_translation(p_translation);
+	data->main_domain->remove_translation(p_translation);
 }
 
 #ifndef DISABLE_DEPRECATED
 Ref<Translation> TranslationServer::get_translation_object(const String& p_locale)
 {
-	return main_domain->get_translation_object(p_locale);
+	return data->main_domain->get_translation_object(p_locale);
 }
 #endif
 
-bool TranslationServer::has_translation(const Ref<Translation>& p_translation) const
+bool TranslationServer::has_translation(const Ref<Translation>& p_translation)
 {
-	return main_domain->has_translation(p_translation);
+	return data->main_domain->has_translation(p_translation);
 }
 
-bool TranslationServer::has_translation_for_locale(const String& p_locale, bool p_exact) const
+bool TranslationServer::has_translation_for_locale(const String& p_locale, bool p_exact)
 {
-	return main_domain->has_translation_for_locale(p_locale, p_exact);
+	return data->main_domain->has_translation_for_locale(p_locale, p_exact);
 }
 
-void TranslationServer::clear() { main_domain->clear(); }
+void TranslationServer::clear() { data->main_domain->clear(); }
 
 String TranslationServer::translate(
-	const String& p_message, const String& p_context) const
+	const String& p_message, const String& p_context)
 {
-	return main_domain->translate(p_message, p_context);
+	return data->main_domain->translate(p_message, p_context);
 }
 
 String TranslationServer::translate_plural(const String& p_message,
-	const String& p_message_plural, int p_n, const String& p_context) const
+	const String& p_message_plural, int p_n, const String& p_context)
 {
-	return main_domain->translate_plural(p_message, p_message_plural, p_n, p_context);
+	return data->main_domain->translate_plural(p_message, p_message_plural, p_n, p_context);
 }
 
-bool TranslationServer::has_domain(const String& p_domain) const
+bool TranslationServer::has_domain(const String& p_domain)
 {
 	if (p_domain == String()) {
 		return true;
 	}
-	return custom_domains.has(p_domain);
+	return data->custom_domains.has(p_domain);
 }
 
 Ref<TranslationDomain> TranslationServer::get_or_add_domain(const String& p_domain)
 {
 	if (p_domain == String()) {
-		return main_domain;
+		return data->main_domain;
 	}
-	const Ref<TranslationDomain>* domain = custom_domains.getptr(p_domain);
+	const Ref<TranslationDomain>* domain = data->custom_domains.getptr(p_domain);
 	if (domain) {
 		if (domain->is_valid()) {
 			return *domain;
@@ -621,14 +621,14 @@ Ref<TranslationDomain> TranslationServer::get_or_add_domain(const String& p_doma
 		ERR_PRINT("Bug (please report): Found invalid translation domain.");
 	}
 	Ref<TranslationDomain> new_domain = memnew(TranslationDomain);
-	custom_domains[p_domain] = new_domain;
+	data->custom_domains[p_domain] = new_domain;
 	return new_domain;
 }
 
 void TranslationServer::remove_domain(const String& p_domain)
 {
 	ERR_FAIL_COND_MSG(p_domain == String(), "Cannot remove main translation domain.");
-	custom_domains.erase(p_domain);
+	data->custom_domains.erase(p_domain);
 }
 
 String TranslationServer::get_tool_locale()
@@ -636,8 +636,8 @@ String TranslationServer::get_tool_locale()
 #ifdef TOOLS_ENABLED
 	if (Engine::is_editor_hint() ||
 		Engine::is_project_manager_hint()) {
-		if (editor_domain->has_translation_for_locale(locale, true)) {
-			return locale;
+		if (data->editor_domain->has_translation_for_locale(data->locale, true)) {
+			return data->locale;
 		}
 		return "en";
 	}
@@ -646,34 +646,34 @@ String TranslationServer::get_tool_locale()
 	Ref<Translation> res;
 	int best_score = 0;
 
-	for (const Ref<Translation>& E : main_domain->get_translations()) {
-		int score = TranslationServer::get_singleton()->compare_locales(locale, E->get_locale());
+	for (const Ref<Translation>& E : data->main_domain->get_translations()) {
+		int score = TranslationServer::compare_locales(data->locale, E->get_locale());
 		if (score > 0 && score >= best_score) {
 			res = E;
 			best_score = score;
 			if (score == 10) {
-				return locale; // Exact match.
+				return data->locale; // Exact match.
 			}
 		}
 	}
-	return res.is_valid() ? res->get_locale() : fallback;
+	return res.is_valid() ? res->get_locale() : data->fallback;
 }
 
-bool TranslationServer::is_pseudolocalization_enabled() const
+bool TranslationServer::is_pseudolocalization_enabled()
 {
-	return main_domain->is_pseudolocalization_enabled();
+	return data->main_domain->is_pseudolocalization_enabled();
 }
 
 void TranslationServer::set_pseudolocalization_enabled(bool p_enabled)
 {
-	main_domain->set_pseudolocalization_enabled(p_enabled);
+	data->main_domain->set_pseudolocalization_enabled(p_enabled);
 
 	ResourceLoader::reload_translation_remaps();
 }
 
-String TranslationServer::pseudolocalize(const String& p_message) const
+String TranslationServer::pseudolocalize(const String& p_message)
 {
-	return main_domain->pseudolocalize(p_message);
+	return data->main_domain->pseudolocalize(p_message);
 }
 
 
@@ -688,21 +688,33 @@ void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domai
 	}
 }
 void TranslationServer::get_argument_options(
-	const String& p_function, int p_idx, List<String>* r_options) const {}
+	const String& p_function, int p_idx, List<String>* r_options) {}
 
-TranslationServer::TranslationServer()
+void TranslationServer::initialize()
 {
-	singleton = this;
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
 
-	main_domain.instantiate();
+	data->main_domain.instantiate();
 
 #ifdef TOOLS_ENABLED
-	editor_domain = get_or_add_domain("godot.editor");
-	property_domain = get_or_add_domain("godot.properties");
-	doc_domain = get_or_add_domain("godot.documentation");
+	data->editor_domain = get_or_add_domain("godot.editor");
+	data->property_domain = get_or_add_domain("godot.properties");
+	data->doc_domain = get_or_add_domain("godot.documentation");
 #endif // TOOLS_ENABLED
 
 	init_locale_info();
+}
+
+void TranslationServer::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
 }
 
 void TranslationServer::setup() {}

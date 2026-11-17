@@ -63,64 +63,44 @@ public:
 	~OpenXRRenderModelData() = default;
 };
 
-class OpenXRRenderModelExtension
+class OpenXRRenderModelExtension final
 {
 public:
-	static OpenXRRenderModelExtension* get_singleton();
 
-	OpenXRRenderModelExtension();
-	virtual ~OpenXRRenderModelExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_session_created(const XrSession p_session);
+	static void on_instance_destroyed();
+	static void on_session_destroyed();
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_session_created(const XrSession p_session);
-	virtual void on_instance_destroyed();
-	virtual void on_session_destroyed();
+	static bool on_event_polled(const XrEventDataBuffer& event);
+	static void on_sync_actions();
 
-	virtual bool on_event_polled(const XrEventDataBuffer& event);
-	virtual void on_sync_actions();
-
-	bool is_active() const;
+	static bool is_active();
 
 	// Render model.
-	bool has_render_model(RID p_render_model) const;
-	RID render_model_create(XrRenderModelIdEXT p_render_model_id);
-	void render_model_destroy(RID p_render_model);
+	static bool has_render_model(RID p_render_model);
+	static RID render_model_create(XrRenderModelIdEXT p_render_model_id);
+	static void render_model_destroy(RID p_render_model);
 
-	TypedArray<RID> render_model_get_all();
-	Node3D* render_model_new_scene_instance(RID p_render_model) const;
-	PackedStringArray render_model_get_subaction_paths(RID p_render_model);
-	XrPath render_model_get_top_level_path(RID p_render_model) const;
-	String render_model_get_top_level_path_as_string(RID p_render_model) const;
-	XRPose::TrackingConfidence render_model_get_confidence(RID p_render_model) const;
-	Transform3D render_model_get_root_transform(RID p_render_model) const;
-	uint32_t render_model_get_animatable_node_count(RID p_render_model) const;
-	String render_model_get_animatable_node_name(RID p_render_model, uint32_t p_index) const;
-	bool render_model_is_animatable_node_visible(RID p_render_model, uint32_t p_index) const;
-	Transform3D render_model_get_animatable_node_transform(
-		RID p_render_model, uint32_t p_index) const;
+	static TypedArray<RID> render_model_get_all();
+	static Node3D* render_model_new_scene_instance(RID p_render_model);
+	static PackedStringArray render_model_get_subaction_paths(RID p_render_model);
+	static XrPath render_model_get_top_level_path(RID p_render_model);
+	static String render_model_get_top_level_path_as_string(RID p_render_model);
+	static XRPose::TrackingConfidence render_model_get_confidence(RID p_render_model);
+	static Transform3D render_model_get_root_transform(RID p_render_model);
+	static uint32_t render_model_get_animatable_node_count(RID p_render_model);
+	static String render_model_get_animatable_node_name(RID p_render_model, uint32_t p_index);
+	static bool render_model_is_animatable_node_visible(RID p_render_model, uint32_t p_index);
+	static Transform3D render_model_get_animatable_node_transform(
+		RID p_render_model, uint32_t p_index);
 
 private:
-	static OpenXRRenderModelExtension* singleton;
 
-	// Related extensions.
-	bool uuid_ext = false;
-	bool render_model_ext = false;
-	bool interaction_render_model_ext = false;
-
-	// XrSync status
-	bool xr_sync_has_run = false;
-
-	// Interaction data.
-	bool _interaction_data_dirty = true;
-	HashMap<XrRenderModelIdEXT, RID> interaction_render_models;
-
-	void _clear_interaction_data();
-	bool _update_interaction_data();
-
-	// Render model.
-	Vector<XrPath> toplevel_paths;
+	static void _clear_interaction_data();
+	static bool _update_interaction_data();
 
 	struct RenderModel
 	{
@@ -136,19 +116,14 @@ private:
 		XrPath top_level_path = XR_NULL_PATH;
 	};
 
-	mutable RID_Owner<RenderModel, true> render_model_owner;
-
-	// GLTF asset cache
-	HashMap<XrUuidEXT, Ref<OpenXRRenderModelData>, HashMapHasherXrUuidEXT> render_model_data_cache;
-
-	Ref<OpenXRRenderModelData> _get_render_model_data(
+	static Ref<OpenXRRenderModelData> _get_render_model_data(
 		XrUuidEXT p_cache_id, uint32_t p_animatable_node_count);
-	Ref<OpenXRRenderModelData> _load_asset(
+	static Ref<OpenXRRenderModelData> _load_asset(
 		XrRenderModelAssetEXT p_asset, uint32_t p_animatable_node_count);
-	void _clear_render_model_data();
+	static void _clear_render_model_data();
 
 	// GDScript/GDExtension passthroughs
-	RID _render_model_create(uint64_t p_render_model_id);
+	static RID _render_model_create(uint64_t p_render_model_id);
 
 	// OpenXR API call wrappers
 	EXT_PROTO_XRRESULT_FUNC3(xrCreateRenderModelEXT, (XrSession), session,
@@ -185,6 +160,31 @@ private:
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpace, (XrSpace), space);
 	EXT_PROTO_XRRESULT_FUNC5(xrPathToString, (XrInstance), instance, (XrPath), path, (uint32_t),
 		bufferCapacityInput, (uint32_t*), bufferCountOutput, (char*), buffer);
+
+public:
+	struct Data
+	{
+		bool uuid_ext = false;
+		bool render_model_ext = false;
+		bool interaction_render_model_ext = false;
+		bool xr_sync_has_run = false;
+		bool _interaction_data_dirty = true;
+		HashMap<XrRenderModelIdEXT, RID> interaction_render_models;
+		Vector<XrPath> toplevel_paths;
+		RID_Owner<RenderModel, true> render_model_owner;
+		HashMap<XrUuidEXT, Ref<OpenXRRenderModelData>, HashMapHasherXrUuidEXT> render_model_data_cache;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRRenderModelExtension() = delete;
+	OpenXRRenderModelExtension(const OpenXRRenderModelExtension&) = delete;
+	OpenXRRenderModelExtension& operator=(const OpenXRRenderModelExtension&) = delete;
+	~OpenXRRenderModelExtension() = delete;
 };
 #endif // MODULE_GLTF_ENABLED
 

@@ -35,27 +35,37 @@
 
 #include <jni.h>
 
-class OpenXRAndroidExtension : public OpenXRExtensionWrapper {
+class OpenXRAndroidExtension final
+{
 public:
-	static OpenXRAndroidExtension *get_singleton();
 
-	OpenXRAndroidExtension();
-
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
-	virtual void on_before_instance_created() override;
-	virtual void *set_instance_create_info_and_get_next_pointer(XrVersion p_xr_version, void *p_next_pointer) override;
-
-	virtual ~OpenXRAndroidExtension() override;
+	static HashMap<String, bool *> get_requested_extensions(XrVersion p_version);
+	static void on_before_instance_created();
+	static void *set_instance_create_info_and_get_next_pointer(XrVersion p_xr_version, void *p_next_pointer);
 
 private:
-	static OpenXRAndroidExtension *singleton;
-
-	JavaVM *vm;
-	jobject activity_object;
-	bool loader_init_extension_available = false;
-	bool loader_init_android_extension_available = false;
-	bool create_instance_extension_available = false;
 
 	// Initialize the loader
 	EXT_PROTO_XRRESULT_FUNC1(xrInitializeLoaderKHR, (const XrLoaderInitInfoBaseHeaderKHR *), loaderInitInfo)
+
+public:
+	struct Data
+	{
+		JavaVM *vm;
+		jobject activity_object;
+		bool loader_init_extension_available = false;
+		bool loader_init_android_extension_available = false;
+		bool create_instance_extension_available = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRAndroidExtension() = delete;
+	OpenXRAndroidExtension(const OpenXRAndroidExtension&) = delete;
+	OpenXRAndroidExtension& operator=(const OpenXRAndroidExtension&) = delete;
+	~OpenXRAndroidExtension() = delete;
 };

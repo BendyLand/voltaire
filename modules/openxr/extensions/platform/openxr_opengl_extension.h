@@ -40,32 +40,31 @@
 // Always include this as late as possible.
 #include "../../openxr_platform_inc.h" // IWYU pragma: keep.
 
-class OpenXROpenGLExtension
+class OpenXROpenGLExtension final
 {
 public:
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void* set_session_create_and_get_next_pointer(void* p_next_pointer);
+	static void on_instance_created(const XrInstance p_instance);
+	static void* set_session_create_and_get_next_pointer(void* p_next_pointer);
 
-	virtual void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
-	virtual void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
-	virtual String get_swapchain_format_name(int64_t p_swapchain_format) const;
-	virtual bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format,
+	static void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
+	static void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
+	static String get_swapchain_format_name(int64_t p_swapchain_format);
+	static bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format,
 		uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size,
 		void** r_swapchain_graphics_data);
-	virtual void cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data);
-	virtual bool create_projection_fov(
+	static void cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data);
+	static bool create_projection_fov(
 		const XrFovf p_fov, double p_z_near, double p_z_far, Projection& r_camera_matrix);
-	virtual RID get_texture(void* p_swapchain_graphics_data, int p_image_index);
+	static RID get_texture(void* p_swapchain_graphics_data, int p_image_index);
 
-	virtual RID get_density_map(void* p_swapchain_graphics_data, int p_image_index)
+	static RID get_density_map(void* p_swapchain_graphics_data, int p_image_index)
 	{
 		return RID();
 	}
 
 private:
-	static OpenXROpenGLExtension* singleton;
 
 #ifdef WIN32
 	static XrGraphicsBindingOpenGLWin32KHR graphics_binding_gl;
@@ -78,7 +77,6 @@ private:
 #if defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
 	static XrGraphicsBindingEGLMNDX graphics_binding_egl;
 
-	bool egl_extension_enabled = false;
 #endif
 #else
 #error "OpenXR with OpenGL isn't supported on this platform"
@@ -90,7 +88,7 @@ private:
 		Vector<RID> texture_rids;
 	};
 
-	bool check_graphics_api_support(XrVersion p_desired_version);
+	static bool check_graphics_api_support(XrVersion p_desired_version);
 
 #ifdef XR_USE_GRAPHICS_API_OPENGL_ES
 	EXT_PROTO_XRRESULT_FUNC3(xrGetOpenGLESGraphicsRequirementsKHR, (XrInstance), p_instance,
@@ -102,6 +100,25 @@ private:
 	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSwapchainImages, (XrSwapchain), p_swapchain, (uint32_t),
 		p_image_capacity_input, (uint32_t*), p_image_count_output, (XrSwapchainImageBaseHeader*),
 		p_images)
+
+public:
+	struct Data
+	{
+#if defined(LINUXBSD_ENABLED) && defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
+		bool egl_extension_enabled = false;
+#endif
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXROpenGLExtension() = delete;
+	OpenXROpenGLExtension(const OpenXROpenGLExtension&) = delete;
+	OpenXROpenGLExtension& operator=(const OpenXROpenGLExtension&) = delete;
+	~OpenXROpenGLExtension() = delete;
 };
 
 #endif // GLES3_ENABLED

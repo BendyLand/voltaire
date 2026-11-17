@@ -350,7 +350,7 @@ void JoltSpace3D::remove_object(const JPH::BodyID& p_jolt_id)
 	// clean up Jolt's broad phase instead, otherwise performance can degrade when doing things like
 	// switching scenes. We'll never actually have zero bodies in any space though, since we always
 	// have the default area, so we check if there's one or fewer left instead.
-	if (!JoltPhysicsServer3D::get_singleton()->is_active() && physics_system->GetNumBodies() <= 1) {
+	if (!PhysicsServer3D::driver_as<JoltPhysicsServer3D>()->is_active() && physics_system->GetNumBodies() <= 1) {
 		physics_system->OptimizeBroadPhase();
 	}
 }

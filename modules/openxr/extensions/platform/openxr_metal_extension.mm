@@ -48,14 +48,14 @@ HashMap<String, bool *> OpenXRMetalExtension::get_requested_extensions(XrVersion
 
 void OpenXRMetalExtension::on_instance_created(const XrInstance p_instance) {
 	// Obtain pointers to functions we're accessing here.
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	EXT_INIT_XR_FUNC(xrGetMetalGraphicsRequirementsKHR);
 	EXT_INIT_XR_FUNC(xrEnumerateSwapchainImages);
 }
 
 bool OpenXRMetalExtension::check_graphics_api_support() {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
 	// TODO We may need to do a callback like we do in Vulkan where we run this first
 	// and provide the obtained metalDevice to our Metal driver to use.
@@ -66,8 +66,8 @@ bool OpenXRMetalExtension::check_graphics_api_support() {
 	// can't support applications that want to add XR as an optional/temporary
 	// feature that users enable when needed.
 
-	XrSystemId system_id = OpenXRAPI::get_singleton()->get_system_id();
-	XrInstance instance = OpenXRAPI::get_singleton()->get_instance();
+	XrSystemId system_id = OpenXRAPI::get_system_id();
+	XrInstance instance = OpenXRAPI::get_instance();
 
 	XrGraphicsRequirementsMetalKHR metal_requirements;
 	metal_requirements.type = XR_TYPE_GRAPHICS_REQUIREMENTS_METAL_KHR;
@@ -75,7 +75,7 @@ bool OpenXRMetalExtension::check_graphics_api_support() {
 	metal_requirements.metalDevice = nullptr;
 
 	XrResult result = xrGetMetalGraphicsRequirementsKHR(instance, system_id, &metal_requirements);
-	if (!OpenXRAPI::get_singleton()->xr_result(result, "Failed to get Metal graphics requirements!")) {
+	if (!OpenXRAPI::xr_result(result, "Failed to get Metal graphics requirements!")) {
 		return false;
 	}
 
@@ -158,7 +158,7 @@ bool OpenXRMetalExtension::get_swapchain_image_data(XrSwapchain p_swapchain, int
 	uint32_t swapchain_length;
 	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
 	if (XR_FAILED(result)) {
-		print_line("OpenXR: Failed to get swapchain image count [", OpenXRAPI::get_singleton()->get_error_string(result), "]");
+		print_line("OpenXR: Failed to get swapchain image count [", OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -172,7 +172,7 @@ bool OpenXRMetalExtension::get_swapchain_image_data(XrSwapchain p_swapchain, int
 
 	result = xrEnumerateSwapchainImages(p_swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader *)images.ptr());
 	if (XR_FAILED(result)) {
-		print_line("OpenXR: Failed to get swapchain images [", OpenXRAPI::get_singleton()->get_error_string(result), "]");
+		print_line("OpenXR: Failed to get swapchain images [", OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 

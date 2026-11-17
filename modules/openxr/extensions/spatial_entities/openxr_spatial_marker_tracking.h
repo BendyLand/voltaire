@@ -218,48 +218,55 @@ private:
 };
 
 // Marker tracking logic
-class OpenXRSpatialMarkerTrackingCapability
+class OpenXRSpatialMarkerTrackingCapability final
 {
 public:
-	static OpenXRSpatialMarkerTrackingCapability* get_singleton();
 
-	OpenXRSpatialMarkerTrackingCapability();
-	virtual ~OpenXRSpatialMarkerTrackingCapability();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_session_created(const XrSession p_session);
+	static void on_session_destroyed();
 
-	virtual void on_session_created(const XrSession p_session);
-	virtual void on_session_destroyed();
+	static void on_process();
 
-	virtual void on_process();
-
-	bool is_qrcode_supported();
-	bool is_micro_qrcode_supported();
-	bool is_aruco_supported();
-	bool is_april_tag_supported();
+	static bool is_qrcode_supported();
+	static bool is_micro_qrcode_supported();
+	static bool is_aruco_supported();
+	static bool is_april_tag_supported();
 
 private:
-	static OpenXRSpatialMarkerTrackingCapability* singleton;
-	bool spatial_marker_tracking_ext = false;
-
-	RID spatial_context;
-	bool need_discovery = false;
-	int discovery_cooldown = 0;
-	Ref<OpenXRFutureResult> discovery_query_result;
-
-	Ref<OpenXRSpatialCapabilityConfigurationQrCode> qrcode_configuration;
-	Ref<OpenXRSpatialCapabilityConfigurationMicroQrCode> micro_qrcode_configuration;
-	Ref<OpenXRSpatialCapabilityConfigurationAruco> aruco_configuration;
-	Ref<OpenXRSpatialCapabilityConfigurationAprilTag> april_tag_configuration;
 
 	// Discovery logic
-	Ref<OpenXRFutureResult> _create_spatial_context();
-	void _on_spatial_context_created(RID p_spatial_context);
+	static Ref<OpenXRFutureResult> _create_spatial_context();
+	static void _on_spatial_context_created(RID p_spatial_context);
 
-	void _on_spatial_discovery_recommended(RID p_spatial_context);
+	static void _on_spatial_discovery_recommended(RID p_spatial_context);
 
-	// Trackers; maps each Spatial Context RID to their marker entities and trackers
-	HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRMarkerTracker>>> marker_trackers;
+public:
+	struct Data
+	{
+		bool spatial_marker_tracking_ext = false;
+		RID spatial_context;
+		bool need_discovery = false;
+		int discovery_cooldown = 0;
+		Ref<OpenXRFutureResult> discovery_query_result;
+		Ref<OpenXRSpatialCapabilityConfigurationQrCode> qrcode_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationMicroQrCode> micro_qrcode_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationAruco> aruco_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationAprilTag> april_tag_configuration;
+		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRMarkerTracker>>> marker_trackers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRSpatialMarkerTrackingCapability() = delete;
+	OpenXRSpatialMarkerTrackingCapability(const OpenXRSpatialMarkerTrackingCapability&) = delete;
+	OpenXRSpatialMarkerTrackingCapability& operator=(const OpenXRSpatialMarkerTrackingCapability&) = delete;
+	~OpenXRSpatialMarkerTrackingCapability() = delete;
 };
 
 

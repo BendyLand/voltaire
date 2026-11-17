@@ -35,7 +35,7 @@
 void AudioEffectPhaserInstance::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	float sampling_rate = AudioServer::get_singleton()->get_mix_rate();
+	float sampling_rate = AudioServer::get_mix_rate();
 
 	float dmin = base->range_min / (sampling_rate / 2.0);
 	float dmax = base->range_max / (sampling_rate / 2.0);

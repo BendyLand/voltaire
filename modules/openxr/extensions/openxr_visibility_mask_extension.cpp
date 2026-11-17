@@ -34,6 +34,23 @@
 #include "openxr_visibility_mask_extension.h"
 #include "servers/rendering/renderer.h"
 
+void OpenXRVisibilityMaskExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRVisibilityMaskExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+
 static const char* VISIBILITY_MASK_SHADER_CODE =
 	"shader_type spatial;\n"
 	"render_mode unshaded, shadows_disabled, cull_disabled;\n"
@@ -53,50 +70,41 @@ static const char* VISIBILITY_MASK_SHADER_CODE =
 	"\tALBEDO = vec3(0.0, 0.0, 0.0);\n"
 	"}\n";
 
-OpenXRVisibilityMaskExtension* OpenXRVisibilityMaskExtension::singleton = nullptr;
-
-OpenXRVisibilityMaskExtension* OpenXRVisibilityMaskExtension::get_singleton() { return singleton; }
-
-OpenXRVisibilityMaskExtension::OpenXRVisibilityMaskExtension() { singleton = this; }
-
-OpenXRVisibilityMaskExtension::~OpenXRVisibilityMaskExtension() { singleton = nullptr; }
-
 HashMap<String, bool*> OpenXRVisibilityMaskExtension::get_requested_extensions(XrVersion p_version)
 {
 	HashMap<String, bool*> request_extensions;
 
-	request_extensions[XR_KHR_VISIBILITY_MASK_EXTENSION_NAME] = &available;
+	request_extensions[XR_KHR_VISIBILITY_MASK_EXTENSION_NAME] = &data->available;
 
 	return request_extensions;
 }
 
 void OpenXRVisibilityMaskExtension::on_instance_created(const XrInstance p_instance)
 {
-	if (available) {
+	if (data->available) {
 		EXT_INIT_XR_FUNC(xrGetVisibilityMaskKHR);
 	}
 }
 
 void OpenXRVisibilityMaskExtension::on_session_created(const XrSession p_instance)
 {
-	if (available) {
+	if (data->available) {
 		ERR_FAIL_NULL(Renderer::data);
 
-		OpenXRAPI* openxr_api = (OpenXRAPI*)OpenXRAPI::get_singleton();
-		ERR_FAIL_NULL(openxr_api);
+		ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 		// Create our shader.
-		shader = Renderer::shader_create();
-		Renderer::shader_set_code(shader, VISIBILITY_MASK_SHADER_CODE);
+		data->shader = Renderer::shader_create();
+		Renderer::shader_set_code(data->shader, VISIBILITY_MASK_SHADER_CODE);
 
 		// Create our material.
-		material = Renderer::material_create();
-		Renderer::material_set_shader(material, shader);
-		Renderer::material_set_render_priority(material, 99);
+		data->material = Renderer::material_create();
+		Renderer::material_set_shader(data->material, data->shader);
+		Renderer::material_set_render_priority(data->material, 99);
 
 		// Get our initial mesh data.
-		mesh_count = openxr_api->get_view_count(); // We need a mesh for each view.
-		for (uint32_t i = 0; i < mesh_count; i++) {
+		data->mesh_count = OpenXRAPI::get_view_count(); // We need a mesh for each view.
+		for (uint32_t i = 0; i < data->mesh_count; i++) {
 			_update_mesh_data(i);
 		}
 
@@ -110,24 +118,24 @@ void OpenXRVisibilityMaskExtension::on_session_destroyed()
 	ERR_FAIL_NULL(Renderer::data);
 
 	// Free our mesh.
-	if (mesh.is_valid()) {
-		Renderer::free_rid(mesh);
-		mesh = RID();
+	if (data->mesh.is_valid()) {
+		Renderer::free_rid(data->mesh);
+		data->mesh = RID();
 	}
 
 	// Free our material.
-	if (material.is_valid()) {
-		Renderer::free_rid(material);
-		material = RID();
+	if (data->material.is_valid()) {
+		Renderer::free_rid(data->material);
+		data->material = RID();
 	}
 
 	// Free our shader.
-	if (shader.is_valid()) {
-		Renderer::free_rid(shader);
-		shader = RID();
+	if (data->shader.is_valid()) {
+		Renderer::free_rid(data->shader);
+		data->shader = RID();
 	}
 
-	mesh_count = 0;
+	data->mesh_count = 0;
 }
 
 void OpenXRVisibilityMaskExtension::on_pre_render()
@@ -147,7 +155,7 @@ bool OpenXRVisibilityMaskExtension::on_event_polled(const XrEventDataBuffer& eve
 		print_verbose("OpenXR EVENT: Visibility mask changed for view " +
 					  String::num_uint64(vismask_event->viewIndex));
 
-		if (available) { // This event won't be called if this extension is not available but better
+		if (data->available) { // This event won't be called if this extension is not available but better
 						 // safe than sorry.
 			_update_mesh_data(vismask_event->viewIndex);
 		}
@@ -158,20 +166,19 @@ bool OpenXRVisibilityMaskExtension::on_event_polled(const XrEventDataBuffer& eve
 	return false;
 }
 
-bool OpenXRVisibilityMaskExtension::is_available() { return available; }
+bool OpenXRVisibilityMaskExtension::is_available() { return data != nullptr && data->available; }
 
-RID OpenXRVisibilityMaskExtension::get_mesh() { return mesh; }
+RID OpenXRVisibilityMaskExtension::get_mesh() { return data ? data->mesh : RID(); }
 
 void OpenXRVisibilityMaskExtension::_update_mesh_data(uint32_t p_view)
 {
-	if (available) {
+	if (data->available) {
 		ERR_FAIL_UNSIGNED_INDEX(p_view, 4);
 
-		OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-		ERR_FAIL_NULL(openxr_api);
+		ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
-		XrSession session = openxr_api->get_session();
-		XrViewConfigurationType view_configuration_type = openxr_api->get_view_configuration();
+		XrSession session = OpenXRAPI::get_session();
+		XrViewConfigurationType view_configuration_type = OpenXRAPI::get_view_configuration();
 
 		// Figure out how much data we're getting.
 		XrVisibilityMaskKHR visibility_mask_data = {
@@ -189,29 +196,29 @@ void OpenXRVisibilityMaskExtension::_update_mesh_data(uint32_t p_view)
 			XR_VISIBILITY_MASK_TYPE_HIDDEN_TRIANGLE_MESH_KHR, &visibility_mask_data);
 		if (XR_FAILED(result)) {
 			// print_line("OpenXR: Unable to obtain visibility mask metrics [",
-			// openxr_api->get_error_string(result), "]");
+			// OpenXRAPI::get_error_string(result), "]");
 			return;
 		}
 
 		// Resize buffers
-		mesh_data[p_view].vertices.resize(visibility_mask_data.vertexCountOutput);
-		mesh_data[p_view].indices.resize(visibility_mask_data.indexCountOutput);
+		data->mesh_data[p_view].vertices.resize(visibility_mask_data.vertexCountOutput);
+		data->mesh_data[p_view].indices.resize(visibility_mask_data.indexCountOutput);
 
 		visibility_mask_data.vertexCapacityInput = visibility_mask_data.vertexCountOutput;
-		visibility_mask_data.vertices = mesh_data[p_view].vertices.ptrw();
+		visibility_mask_data.vertices = data->mesh_data[p_view].vertices.ptrw();
 		visibility_mask_data.indexCapacityInput = visibility_mask_data.indexCountOutput;
-		visibility_mask_data.indices = mesh_data[p_view].indices.ptrw();
+		visibility_mask_data.indices = data->mesh_data[p_view].indices.ptrw();
 
 		result = xrGetVisibilityMaskKHR(session, view_configuration_type, p_view,
 			XR_VISIBILITY_MASK_TYPE_HIDDEN_TRIANGLE_MESH_KHR, &visibility_mask_data);
 		if (XR_FAILED(result)) {
 			// print_line("OpenXR: Unable to obtain visibility mask data [",
-			// openxr_api->get_error_string(result), "]");
+			// OpenXRAPI::get_error_string(result), "]");
 			return;
 		}
 
 		// Mark as dirty, we have updated mesh data.
-		is_dirty = true;
+		data->is_dirty = true;
 	}
 }
 

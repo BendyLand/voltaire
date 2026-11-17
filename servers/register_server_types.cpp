@@ -111,11 +111,11 @@
 #endif // XR_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-static PhysicsServer2D* _create_dummy_physics_server_2d() { return memnew(PhysicsServer2DDummy); }
+static PhysicsServer2DDriver* _create_dummy_physics_server_2d() { return memnew(PhysicsServer2DDummy); }
 #endif // PHYSICS_2D_DISABLED
 
 #ifndef PHYSICS_3D_DISABLED
-static PhysicsServer3D* _create_dummy_physics_server_3d() { return memnew(PhysicsServer3DDummy); }
+static PhysicsServer3DDriver* _create_dummy_physics_server_3d() { return memnew(PhysicsServer3DDummy); }
 #endif // PHYSICS_3D_DISABLED
 
 static bool has_server_feature_callback(const String& p_feature)

@@ -196,7 +196,6 @@ public:
 class ResourceFormatSaverBinary : public ResourceFormatSaver
 {
 public:
-	static inline ResourceFormatSaverBinary* singleton = nullptr;
 	virtual Error save(
 		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
 	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid) override;
@@ -204,7 +203,7 @@ public:
 	virtual void get_recognized_extensions(
 		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
 
-	ResourceFormatSaverBinary();
+	ResourceFormatSaverBinary() = default;
 };
 
 

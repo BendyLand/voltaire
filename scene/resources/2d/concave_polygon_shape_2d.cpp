@@ -110,7 +110,7 @@ real_t ConcavePolygonShape2D::get_enclosing_radius() const
 
 
 ConcavePolygonShape2D::ConcavePolygonShape2D()
-	: Shape2D(PhysicsServer2D::get_singleton()->concave_polygon_shape_create())
+	: Shape2D(PhysicsServer2D::concave_polygon_shape_create())
 {
 	Vector<Vector2> empty;
 	set_segments(empty);

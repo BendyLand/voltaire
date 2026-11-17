@@ -31,21 +31,24 @@
 
 #include "openxr_composition_layer_depth_extension.h"
 
-OpenXRCompositionLayerDepthExtension* OpenXRCompositionLayerDepthExtension::singleton = nullptr;
-
-OpenXRCompositionLayerDepthExtension* OpenXRCompositionLayerDepthExtension::get_singleton()
+void OpenXRCompositionLayerDepthExtension::initialize()
 {
-	return singleton;
+	if (!data) {
+		data = memnew(Data);
+	}
 }
 
-OpenXRCompositionLayerDepthExtension::OpenXRCompositionLayerDepthExtension() { singleton = this; }
-
-OpenXRCompositionLayerDepthExtension::~OpenXRCompositionLayerDepthExtension()
+void OpenXRCompositionLayerDepthExtension::finalize()
 {
-	singleton = nullptr;
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
 }
 
-bool OpenXRCompositionLayerDepthExtension::is_available() { return available; }
+
+bool OpenXRCompositionLayerDepthExtension::is_available() { return data != nullptr && data->available; }
 
 int OpenXRCompositionLayerDepthExtension::get_composition_layer_count() { return 0; }
 

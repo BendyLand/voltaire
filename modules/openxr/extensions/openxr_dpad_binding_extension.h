@@ -36,25 +36,35 @@
 #include "../action_map/openxr_haptic_feedback.h"
 #include "core/types.h"
 
-class OpenXRDPadBindingExtension
+class OpenXRDPadBindingExtension final
 {
 protected:
 
 public:
-	static OpenXRDPadBindingExtension* get_singleton();
 
-	OpenXRDPadBindingExtension();
-	virtual ~OpenXRDPadBindingExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	bool is_available();
+	static bool is_available();
 
 private:
-	static OpenXRDPadBindingExtension* singleton;
 
-	bool binding_modifier_ext = false;
-	bool dpad_binding_ext = false;
+public:
+	struct Data
+	{
+		bool binding_modifier_ext = false;
+		bool dpad_binding_ext = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRDPadBindingExtension() = delete;
+	OpenXRDPadBindingExtension(const OpenXRDPadBindingExtension&) = delete;
+	OpenXRDPadBindingExtension& operator=(const OpenXRDPadBindingExtension&) = delete;
+	~OpenXRDPadBindingExtension() = delete;
 };
 
 class OpenXRDpadBindingModifier : public OpenXRIPBindingModifier

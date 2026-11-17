@@ -4483,7 +4483,7 @@ RID TextServerFallback::_find_sys_font_for_text(const RID &p_fdef, const String 
 			font_style.set_flag(TextServer::FONT_ITALIC);
 		}
 
-		String locale = (p_language.is_empty()) ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
+		String locale = (p_language.is_empty()) ? TranslationServer::get_tool_locale() : p_language;
 		PackedStringArray fallback_font_name = OS::get_system_font_path_for_text(font_name, p_text, locale, p_script_code, font_weight, font_stretch, font_style & TextServer::FONT_ITALIC);
 		for (const String &E : fallback_font_name) {
 			SystemFontKey key = SystemFontKey(E, font_style & TextServer::FONT_ITALIC, font_weight, font_stretch, p_fdef, this);

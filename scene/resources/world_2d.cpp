@@ -43,7 +43,7 @@ RID World2D::get_canvas() const { return canvas; }
 #ifndef PHYSICS_2D_DISABLED
 PhysicsDirectSpaceState2D* World2D::get_direct_space_state()
 {
-	return PhysicsServer2D::get_singleton()->space_get_direct_state(get_space());
+	return PhysicsServer2D::space_get_direct_state(get_space());
 }
 #endif // PHYSICS_2D_DISABLED
 
@@ -67,8 +67,8 @@ World2D::~World2D()
 
 #ifndef PHYSICS_2D_DISABLED
 	if (space.is_valid()) {
-		ERR_FAIL_NULL(PhysicsServer2D::get_singleton());
-		PhysicsServer2D::get_singleton()->free_rid(space);
+		ERR_FAIL_COND(!PhysicsServer2D::is_initialized());
+		PhysicsServer2D::free_rid(space);
 	}
 #endif // PHYSICS_2D_DISABLED
 }

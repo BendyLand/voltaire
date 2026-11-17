@@ -435,11 +435,11 @@ Vector3 GridMap::map_to_local(const Vector3i& p_map_position) const
 void GridMap::_update_physics_bodies_collision_properties()
 {
 	for (const KeyValue<OctantKey, Octant*>& E : octant_map) {
-		PhysicsServer3D::get_singleton()->body_set_collision_layer(
+		PhysicsServer3D::body_set_collision_layer(
 			E.value->static_body, collision_layer);
-		PhysicsServer3D::get_singleton()->body_set_collision_mask(
+		PhysicsServer3D::body_set_collision_mask(
 			E.value->static_body, collision_mask);
-		PhysicsServer3D::get_singleton()->body_set_collision_priority(
+		PhysicsServer3D::body_set_collision_priority(
 			E.value->static_body, collision_priority);
 	}
 }
@@ -450,7 +450,7 @@ void GridMap::_octant_clean_up(const OctantKey& p_key)
 {
 	ERR_FAIL_NULL(Renderer::data);
 #ifndef PHYSICS_3D_DISABLED
-	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
+	ERR_FAIL_COND(!PhysicsServer3D::is_initialized());
 #endif // PHYSICS_3D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
 	ERR_FAIL_NULL(NavigationServer3D::data);
@@ -467,7 +467,7 @@ void GridMap::_octant_clean_up(const OctantKey& p_key)
 		Renderer::free_rid(g.collision_debug_instance);
 	}
 
-	PhysicsServer3D::get_singleton()->free_rid(g.static_body);
+	PhysicsServer3D::free_rid(g.static_body);
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef NAVIGATION_3D_DISABLED

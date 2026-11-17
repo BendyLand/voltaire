@@ -34,30 +34,39 @@
 #include "servers/rendering/renderer.h"
 #include "servers/xr/xr_server.h"
 
+void OpenXRFrameSynthesisExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRFrameSynthesisExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+
 #define GL_RGBA16F 0x881A
 #define GL_DEPTH24_STENCIL8 0x88F0
 
 #define VK_FORMAT_R16G16B16A16_SFLOAT 97
 #define VK_FORMAT_D24_UNORM_S8_UINT 129
 
-OpenXRFrameSynthesisExtension* OpenXRFrameSynthesisExtension::singleton = nullptr;
-
-OpenXRFrameSynthesisExtension* OpenXRFrameSynthesisExtension::get_singleton() { return singleton; }
-
-OpenXRFrameSynthesisExtension::OpenXRFrameSynthesisExtension() { singleton = this; }
-
-OpenXRFrameSynthesisExtension::~OpenXRFrameSynthesisExtension() { singleton = nullptr; }
-
 void OpenXRFrameSynthesisExtension::prepare_view_configuration(uint32_t p_view_count)
 {
-	if (!frame_synthesis_ext) {
+	if (!data->frame_synthesis_ext) {
 		return;
 	}
 
 	// Called during initialization, we can safely change this.
-	render_state.config_views.resize(p_view_count);
+	data->render_state.config_views.resize(p_view_count);
 
-	for (XrFrameSynthesisConfigViewEXT& config_view : render_state.config_views) {
+	for (XrFrameSynthesisConfigViewEXT& config_view : data->render_state.config_views) {
 		config_view.type = XR_TYPE_FRAME_SYNTHESIS_CONFIG_VIEW_EXT;
 		config_view.next = nullptr;
 
@@ -70,14 +79,14 @@ void OpenXRFrameSynthesisExtension::prepare_view_configuration(uint32_t p_view_c
 void* OpenXRFrameSynthesisExtension::set_view_configuration_and_get_next_pointer(
 	uint32_t p_view, void* p_next_pointer)
 {
-	if (!frame_synthesis_ext) {
+	if (!data->frame_synthesis_ext) {
 		return nullptr;
 	}
 
 	// Called during initialization, we can safely access this.
-	ERR_FAIL_UNSIGNED_INDEX_V(p_view, render_state.config_views.size(), nullptr);
+	ERR_FAIL_UNSIGNED_INDEX_V(p_view, data->render_state.config_views.size(), nullptr);
 
-	XrFrameSynthesisConfigViewEXT& config_view = render_state.config_views[p_view];
+	XrFrameSynthesisConfigViewEXT& config_view = data->render_state.config_views[p_view];
 	config_view.next = p_next_pointer;
 
 	return &config_view;
@@ -85,7 +94,7 @@ void* OpenXRFrameSynthesisExtension::set_view_configuration_and_get_next_pointer
 
 void OpenXRFrameSynthesisExtension::on_session_destroyed()
 {
-	if (!frame_synthesis_ext) {
+	if (!data->frame_synthesis_ext) {
 		return;
 	}
 
@@ -95,21 +104,20 @@ void OpenXRFrameSynthesisExtension::on_session_destroyed()
 
 void OpenXRFrameSynthesisExtension::on_pre_draw_viewport(RID p_render_target)
 {
-	if (!frame_synthesis_ext) {
+	if (!data->frame_synthesis_ext) {
 		return;
 	}
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
-	if (!enabled || render_state.config_views.size() != 2 ||
-		render_state.frame_synthesis_info.size() != 2 || render_state.skip_next_frame) {
+	if (!data->enabled || data->render_state.config_views.size() != 2 ||
+		data->render_state.frame_synthesis_info.size() != 2 || data->render_state.skip_next_frame) {
 		// Unset these just in case.
-		openxr_api->set_velocity_texture(RID());
-		openxr_api->set_velocity_depth_texture(RID());
+		OpenXRAPI::set_velocity_texture(RID());
+		OpenXRAPI::set_velocity_depth_texture(RID());
 
 		// Remember our transform just in case we (re)start frame synthesis later on.
-		render_state.previous_transform = XRServer::get_singleton()->get_world_origin();
+		data->render_state.previous_transform = XRServer::get_world_origin();
 
 		return;
 	}
@@ -117,32 +125,32 @@ void OpenXRFrameSynthesisExtension::on_pre_draw_viewport(RID p_render_target)
 	// Acquire our swapchains.
 	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
 		bool should_render = true;
-		render_state.swapchains[i].acquire(should_render);
+		data->render_state.swapchains[i].acquire(should_render);
 	}
 
 	// Set our images.
-	openxr_api->set_velocity_texture(render_state.swapchains[SWAPCHAIN_MOTION_VECTOR].get_image());
-	openxr_api->set_velocity_depth_texture(render_state.swapchains[SWAPCHAIN_DEPTH].get_image());
+	OpenXRAPI::set_velocity_texture(data->render_state.swapchains[SWAPCHAIN_MOTION_VECTOR].get_image());
+	OpenXRAPI::set_velocity_depth_texture(data->render_state.swapchains[SWAPCHAIN_DEPTH].get_image());
 
 	// Set our size.
-	uint32_t width = render_state.config_views[0].recommendedMotionVectorImageRectWidth;
-	uint32_t height = render_state.config_views[0].recommendedMotionVectorImageRectHeight;
-	openxr_api->set_velocity_target_size(Size2i(width, height));
+	uint32_t width = data->render_state.config_views[0].recommendedMotionVectorImageRectWidth;
+	uint32_t height = data->render_state.config_views[0].recommendedMotionVectorImageRectHeight;
+	OpenXRAPI::set_velocity_target_size(Size2i(width, height));
 
 	// Get our head motion
-	Transform3D world_transform = XRServer::get_singleton()->get_world_origin();
+	Transform3D world_transform = XRServer::get_world_origin();
 	Transform3D delta_transform =
-		render_state.previous_transform.affine_inverse() * world_transform;
+		data->render_state.previous_transform.affine_inverse() * world_transform;
 	Quaternion delta_quat = delta_transform.basis.get_quaternion();
 	Vector3 delta_origin = delta_transform.origin;
 
-	float z_far = openxr_api->get_render_state_z_far();
-	float z_near = openxr_api->get_render_state_z_near();
+	float z_far = OpenXRAPI::get_render_state_z_far();
+	float z_near = OpenXRAPI::get_render_state_z_near();
 
 	// Z near/far can change per frame, so make sure we update this.
-	for (XrFrameSynthesisInfoEXT& frame_synthesis_info : render_state.frame_synthesis_info) {
+	for (XrFrameSynthesisInfoEXT& frame_synthesis_info : data->render_state.frame_synthesis_info) {
 		frame_synthesis_info.layerFlags =
-			render_state.relax_frame_interval
+			data->render_state.relax_frame_interval
 				? XR_FRAME_SYNTHESIS_INFO_REQUEST_RELAXED_FRAME_INTERVAL_BIT_EXT
 				: 0;
 
@@ -159,20 +167,20 @@ void OpenXRFrameSynthesisExtension::on_pre_draw_viewport(RID p_render_target)
 	}
 
 	// Remember our transform.
-	render_state.previous_transform = world_transform;
+	data->render_state.previous_transform = world_transform;
 }
 
 void OpenXRFrameSynthesisExtension::on_post_draw_viewport(RID p_render_target)
 {
 	// Check if our extension is supported and enabled.
-	if (!frame_synthesis_ext || !enabled || render_state.config_views.size() != 2 ||
-		render_state.frame_synthesis_info.size() != 2 || render_state.skip_next_frame) {
+	if (!data->frame_synthesis_ext || !data->enabled || data->render_state.config_views.size() != 2 ||
+		data->render_state.frame_synthesis_info.size() != 2 || data->render_state.skip_next_frame) {
 		return;
 	}
 
 	// Release our swapchains.
 	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
-		render_state.swapchains[i].release();
+		data->render_state.swapchains[i].release();
 	}
 }
 
@@ -180,53 +188,51 @@ void* OpenXRFrameSynthesisExtension::set_projection_views_and_get_next_pointer(
 	int p_view_index, void* p_next_pointer)
 {
 	// Check if our extension is supported and enabled.
-	if (!frame_synthesis_ext || !enabled || render_state.config_views.size() != 2 ||
-		render_state.frame_synthesis_info.size() != 2) {
+	if (!data->frame_synthesis_ext || !data->enabled || data->render_state.config_views.size() != 2 ||
+		data->render_state.frame_synthesis_info.size() != 2) {
 		return nullptr;
 	}
 
 	// Did we skip this frame?
-	if (render_state.skip_next_frame) {
+	if (data->render_state.skip_next_frame) {
 		// Only unset when we've handled both eyes.
 		if (p_view_index == 1) {
-			render_state.skip_next_frame = false;
+			data->render_state.skip_next_frame = false;
 		}
 		return nullptr;
 	}
 
-	render_state.frame_synthesis_info[p_view_index].next = p_next_pointer;
-	return &render_state.frame_synthesis_info[p_view_index];
+	data->render_state.frame_synthesis_info[p_view_index].next = p_next_pointer;
+	return &data->render_state.frame_synthesis_info[p_view_index];
 }
 
-bool OpenXRFrameSynthesisExtension::is_available() const { return frame_synthesis_ext; }
+bool OpenXRFrameSynthesisExtension::is_available() { return data != nullptr && data->frame_synthesis_ext; }
 
-bool OpenXRFrameSynthesisExtension::is_enabled() const { return frame_synthesis_ext && enabled; }
+bool OpenXRFrameSynthesisExtension::is_enabled() { return data != nullptr && data->frame_synthesis_ext && data->enabled; }
 
-bool OpenXRFrameSynthesisExtension::get_relax_frame_interval() const
-{
-	return relax_frame_interval;
-}
+bool OpenXRFrameSynthesisExtension::get_relax_frame_interval()
+{ return data != nullptr && data->relax_frame_interval; }
 
 void OpenXRFrameSynthesisExtension::_set_render_state_enabled_rt(bool p_enabled)
 {
-	render_state.enabled = p_enabled;
+	data->render_state.enabled = p_enabled;
 }
 
 void OpenXRFrameSynthesisExtension::_set_relax_frame_interval_rt(bool p_relax_frame_interval)
 {
-	render_state.relax_frame_interval = p_relax_frame_interval;
+	data->render_state.relax_frame_interval = p_relax_frame_interval;
 }
 
 void OpenXRFrameSynthesisExtension::free_swapchains()
 {
 	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
-		render_state.swapchains[i].queue_free();
+		data->render_state.swapchains[i].queue_free();
 	}
 }
 
 void OpenXRFrameSynthesisExtension::_set_skip_next_frame_rt()
 {
-	render_state.skip_next_frame = true;
+	data->render_state.skip_next_frame = true;
 }
 
 HashMap<String, bool*> OpenXRFrameSynthesisExtension::get_requested_extensions(
@@ -239,7 +245,7 @@ void OpenXRFrameSynthesisExtension::on_instance_created(XrInstance_T* p_instance
 
 void OpenXRFrameSynthesisExtension::on_instance_destroyed() {}
 
-void OpenXRFrameSynthesisExtension::print_view_configuration_info(unsigned int p_view_config) const
+void OpenXRFrameSynthesisExtension::print_view_configuration_info(unsigned int p_view_config)
 {
 }
 

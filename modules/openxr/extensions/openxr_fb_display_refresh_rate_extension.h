@@ -39,27 +39,20 @@
 #include "../util.h"
 #include "core/types.h"
 
-class OpenXRDisplayRefreshRateExtension
+class OpenXRDisplayRefreshRateExtension final
 {
 public:
-	static OpenXRDisplayRefreshRateExtension* get_singleton();
 
-	OpenXRDisplayRefreshRateExtension();
-	virtual ~OpenXRDisplayRefreshRateExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+	static bool on_event_polled(const XrEventDataBuffer& event);
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_instance_destroyed();
-	virtual bool on_event_polled(const XrEventDataBuffer& event);
-
-	float get_refresh_rate() const;
-	void set_refresh_rate(float p_refresh_rate);
+	static float get_refresh_rate();
+	static void set_refresh_rate(float p_refresh_rate);
 
 private:
-	static OpenXRDisplayRefreshRateExtension* singleton;
-
-	bool display_refresh_rate_ext = false;
 
 	// OpenXR API call wrappers
 	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateDisplayRefreshRatesFB, (XrSession), session, (uint32_t),
@@ -69,6 +62,23 @@ private:
 		xrGetDisplayRefreshRateFB, (XrSession), session, (float*), display_refresh_rate);
 	EXT_PROTO_XRRESULT_FUNC2(
 		xrRequestDisplayRefreshRateFB, (XrSession), session, (float), display_refresh_rate);
+
+public:
+	struct Data
+	{
+		bool display_refresh_rate_ext = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRDisplayRefreshRateExtension() = delete;
+	OpenXRDisplayRefreshRateExtension(const OpenXRDisplayRefreshRateExtension&) = delete;
+	OpenXRDisplayRefreshRateExtension& operator=(const OpenXRDisplayRefreshRateExtension&) = delete;
+	~OpenXRDisplayRefreshRateExtension() = delete;
 };
 
 

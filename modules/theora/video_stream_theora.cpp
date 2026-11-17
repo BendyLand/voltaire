@@ -538,7 +538,7 @@ double VideoStreamPlaybackTheora::get_time() const
 	// FIXME: AudioServer output latency was fixed in af9bb0e, previously it used to
 	// systematically return 0. Now that it gives a proper latency, it broke this
 	// code where the delay compensation likely never really worked.
-	return time - /* AudioServer::get_singleton()->get_output_latency() - */ delay_compensation;
+	return time - /* AudioServer::get_output_latency() - */ delay_compensation;
 }
 
 Ref<Texture2D> VideoStreamPlaybackTheora::get_texture() const { return texture; }

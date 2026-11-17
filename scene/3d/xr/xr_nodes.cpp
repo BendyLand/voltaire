@@ -61,10 +61,9 @@ void XRCamera3D::_pose_changed(const Ref<XRPose>& p_pose)
 Vector3 XRCamera3D::project_local_ray_normal(const Point2& p_pos) const
 {
 	// get our XRServer
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, Vector3());
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector3());
 
-	Ref<XRInterface> xr_interface = xr_server->get_primary_interface();
+	Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
 	if (xr_interface.is_null()) {
 		// we might be in the editor or have VR turned off, just call superclass
 		return Camera3D::project_local_ray_normal(p_pos);
@@ -90,10 +89,9 @@ Vector3 XRCamera3D::project_local_ray_normal(const Point2& p_pos) const
 Point2 XRCamera3D::unproject_position(const Vector3& p_pos) const
 {
 	// get our XRServer
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, Vector2());
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector2());
 
-	Ref<XRInterface> xr_interface = xr_server->get_primary_interface();
+	Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
 	if (xr_interface.is_null()) {
 		// we might be in the editor or have VR turned off, just call superclass
 		return Camera3D::unproject_position(p_pos);
@@ -122,10 +120,9 @@ Point2 XRCamera3D::unproject_position(const Vector3& p_pos) const
 Vector3 XRCamera3D::project_position(const Point2& p_point, real_t p_z_depth) const
 {
 	// get our XRServer
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, Vector3());
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector3());
 
-	Ref<XRInterface> xr_interface = xr_server->get_primary_interface();
+	Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
 	if (xr_interface.is_null()) {
 		// we might be in the editor or have VR turned off, just call superclass
 		return Camera3D::project_position(p_point, p_z_depth);
@@ -154,10 +151,9 @@ Vector3 XRCamera3D::project_position(const Point2& p_point, real_t p_z_depth) co
 Vector<Plane> XRCamera3D::get_frustum() const
 {
 	// get our XRServer
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, Vector<Plane>());
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector<Plane>());
 
-	Ref<XRInterface> xr_interface = xr_server->get_primary_interface();
+	Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
 	if (xr_interface.is_null()) {
 		// we might be in the editor or have VR turned off, just call superclass
 		return Camera3D::get_frustum();
@@ -222,9 +218,8 @@ void XRNode3D::trigger_haptic_pulse(const String& p_action_name, double p_freque
 	// TODO need to link trackers to the interface that registered them so we can call this on the
 	// correct interface. For now this works fine as in 99% of the cases we only have our primary
 	// interface active
-	XRServer* xr_server = XRServer::get_singleton();
-	if (xr_server != nullptr) {
-		Ref<XRInterface> xr_interface = xr_server->get_primary_interface();
+	if (XRServer::is_initialized()) {
+		Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
 		if (xr_interface.is_valid()) {
 			xr_interface->trigger_haptic_pulse(
 				p_action_name, tracker_name, p_frequency, p_amplitude, p_duration_sec, p_delay_sec);
@@ -281,9 +276,8 @@ void XRNode3D::_update_visibility()
 	// If configured, show or hide the node based on tracking data.
 	if (show_when_tracked) {
 		// Only react to this if we have a primary interface.
-		XRServer* xr_server = XRServer::get_singleton();
-		if (xr_server != nullptr) {
-			Ref<XRInterface> xr_interface = xr_server->get_primary_interface();
+		if (XRServer::is_initialized()) {
+			Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
 			if (xr_interface.is_valid()) {
 				set_visible(has_tracking_data);
 			}
@@ -318,19 +312,17 @@ Vector<XROrigin3D*> XROrigin3D::origin_nodes;
 real_t XROrigin3D::get_world_scale() const
 {
 	// get our XRServer
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, 1.0);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), 1.0);
 
-	return xr_server->get_world_scale();
+	return XRServer::get_world_scale();
 }
 
 void XROrigin3D::set_world_scale(real_t p_world_scale)
 {
 	// get our XRServer
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
+	ERR_FAIL_COND(!XRServer::is_initialized());
 
-	xr_server->set_world_scale(p_world_scale);
+	XRServer::set_world_scale(p_world_scale);
 }
 
 void XROrigin3D::_set_current(bool p_enabled, bool p_update_others)
@@ -350,10 +342,9 @@ void XROrigin3D::_set_current(bool p_enabled, bool p_update_others)
 
 	// update XRServer with our current position
 	if (current) {
-		XRServer* xr_server = XRServer::get_singleton();
-		ERR_FAIL_NULL(xr_server);
+		ERR_FAIL_COND(!XRServer::is_initialized());
 
-		xr_server->set_world_origin(get_global_transform());
+		XRServer::set_world_origin(get_global_transform());
 
 		if (is_physics_interpolated()) {
 			set_process_internal(true);

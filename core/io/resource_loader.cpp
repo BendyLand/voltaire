@@ -91,7 +91,7 @@ ResourceUID::ID ResourceFormatLoader::get_resource_uid(const String& p_path) con
 	int64_t uid = ResourceUID::INVALID_ID;
 	Ref<FileAccess> file = FileAccess::open(p_path + ".uid", FileAccess::READ);
 	if (file.is_valid()) {
-		uid = ResourceUID::get_singleton()->text_to_id(file->get_line());
+		uid = ResourceUID::text_to_id(file->get_line());
 	}
 	return uid;
 }
@@ -182,7 +182,7 @@ Ref<Resource> ResourceLoader::_load(const String& p_path, const String& p_origin
 
 #ifdef TOOLS_ENABLED
 	if (Engine::is_editor_hint()) {
-		if (ResourceFormatImporter::get_singleton()->get_importer_by_file(p_path).is_valid()) {
+		if (ResourceFormatImporter::get_importer_by_file(p_path).is_valid()) {
 			// The format is known to the editor, but the file hasn't been imported
 			// (otherwise, ResourceFormatImporter would have been found as a suitable loader).
 			found = true;
@@ -220,9 +220,9 @@ Ref<Resource> ResourceLoader::_load(const String& p_path, const String& p_origin
 
 String ResourceLoader::_validate_local_path(const String& p_path)
 {
-	ResourceUID::ID uid = ResourceUID::get_singleton()->text_to_id(p_path);
+	ResourceUID::ID uid = ResourceUID::text_to_id(p_path);
 	if (uid != ResourceUID::INVALID_ID) {
-		return ResourceUID::get_singleton()->get_id_path(uid);
+		return ResourceUID::get_id_path(uid);
 	}
 	else if (p_path.is_relative_path()) {
 		return ("res://" + p_path).simplify_path();
@@ -896,7 +896,7 @@ ResourceUID::ID ResourceLoader::get_resource_uid(const String& p_path)
 {
 	const String local_path = _validate_local_path(p_path);
 	if (!Engine::is_editor_hint()) {
-		return ResourceUID::get_singleton()->get_path_id(local_path);
+		return ResourceUID::get_path_id(local_path);
 	}
 
 	for (int i = 0; i < loader_count; i++) {
@@ -939,7 +939,7 @@ String ResourceLoader::_path_remap(const String& p_path, bool* r_translation_rem
 		// An extra remap may still be necessary afterwards due to the text -> binary converter on
 		// export.
 
-		String locale = TranslationServer::get_singleton()->get_locale();
+		String locale = TranslationServer::get_locale();
 		ERR_FAIL_COND_V_MSG(locale.length() < 2, p_path,
 			vformat(
 				"Could not remap path '%s' for translation as configured locale '%s' is invalid.",
@@ -954,7 +954,7 @@ String ResourceLoader::_path_remap(const String& p_path, bool* r_translation_rem
 				continue;
 			}
 			String l = res_remaps[i].substr(split + 1).strip_edges();
-			int score = TranslationServer::get_singleton()->compare_locales(locale, l);
+			int score = TranslationServer::compare_locales(locale, l);
 			if (score > 0 && score >= best_score) {
 				new_path = res_remaps[i].left(split);
 				best_score = score;
@@ -985,8 +985,8 @@ String ResourceLoader::_path_remap(const String& p_path, bool* r_translation_rem
 
 String ResourceLoader::import_remap(const String& p_path)
 {
-	if (ResourceFormatImporter::get_singleton()->recognize_path(p_path)) {
-		return ResourceFormatImporter::get_singleton()->get_internal_resource_path(p_path);
+	if (ResourceFormatImporter::recognize_path(p_path)) {
+		return ResourceFormatImporter::get_internal_resource_path(p_path);
 	}
 
 	return p_path;

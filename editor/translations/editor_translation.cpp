@@ -76,18 +76,18 @@ static void _load(const Ref<TranslationDomain> p_domain, const String &p_locale,
 void load_editor_translations(const String &p_locale) {
 	Ref<TranslationDomain> domain;
 
-	domain = TranslationServer::get_singleton()->get_editor_domain();
+	domain = TranslationServer::get_editor_domain();
 	domain->clear();
 	_load(domain, p_locale, _editor_translations);
 	_load(domain, p_locale, _extractable_translations);
 
-	domain = TranslationServer::get_singleton()->get_property_domain();
+	domain = TranslationServer::get_property_domain();
 	domain->clear();
 	_load(domain, p_locale, _property_translations);
 }
 
 void load_doc_translations(const String &p_locale) {
-	const Ref<TranslationDomain> domain = TranslationServer::get_singleton()->get_doc_domain();
+	const Ref<TranslationDomain> domain = TranslationServer::get_doc_domain();
 	domain->clear();
 	_load(domain, p_locale, _doc_translations);
 }

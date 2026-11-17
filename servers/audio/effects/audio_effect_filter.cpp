@@ -78,7 +78,7 @@ void AudioEffectFilterInstance::process(
 	filter.set_mode(base->mode);
 	int stages = int(base->db) + 1;
 	filter.set_stages(stages);
-	filter.set_sampling_rate(AudioServer::get_singleton()->get_mix_rate());
+	filter.set_sampling_rate(AudioServer::get_mix_rate());
 
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 4; j++) {

@@ -59,7 +59,7 @@ void ImportDefaultsEditor::clear()
 	importers->clear();
 
 	List<Ref<ResourceImporter>> importer_list;
-	ResourceFormatImporter::get_singleton()->get_importers(&importer_list);
+	ResourceFormatImporter::get_importers(&importer_list);
 	Vector<String> names;
 	for (const Ref<ResourceImporter>& E : importer_list) {
 		String vn = E->get_visible_name();

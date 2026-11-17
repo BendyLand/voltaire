@@ -292,7 +292,7 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(
 	RID vrs_texture;
 #ifndef XR_DISABLED
 	if (render_buffers->get_vrs_mode() == RSE::VIEWPORT_VRS_XR) {
-		Ref<XRInterface> interface = XRServer::get_singleton()->get_primary_interface();
+		Ref<XRInterface> interface = XRServer::get_primary_interface();
 		if (interface.is_valid() && RD::vrs_get_method() == RD::VRS_METHOD_FRAGMENT_DENSITY_MAP &&
 			interface->get_vrs_texture_format() ==
 				XRInterface::XR_VRS_TEXTURE_FORMAT_FRAGMENT_DENSITY_MAP) {

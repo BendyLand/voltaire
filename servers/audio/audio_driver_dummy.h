@@ -55,8 +55,6 @@ class AudioDriverDummy : public AudioDriver {
 
 	bool use_threads = true;
 
-	static AudioDriverDummy *singleton;
-
 public:
 	virtual const char *get_name() const override {
 		return "Dummy";
@@ -78,8 +76,6 @@ public:
 	uint32_t get_channels() const;
 
 	void mix_audio(int p_frames, int32_t *p_buffer);
-
-	static AudioDriverDummy *get_dummy_singleton() { return singleton; }
 
 	AudioDriverDummy();
 	~AudioDriverDummy() {}

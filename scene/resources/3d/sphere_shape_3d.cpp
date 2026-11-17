@@ -69,7 +69,7 @@ void SphereShape3D::set_radius(float p_radius)
 float SphereShape3D::get_radius() const { return radius; }
 
 SphereShape3D::SphereShape3D()
-	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_SPHERE))
+	: Shape3D(PhysicsServer3D::shape_create(PS3DE::SHAPE_SPHERE))
 {
 	set_radius(0.5);
 }

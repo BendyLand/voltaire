@@ -35,17 +35,22 @@
 #include "core/os/os.h"
 #include "openxr_eye_gaze_interaction.h"
 
-OpenXREyeGazeInteractionExtension* OpenXREyeGazeInteractionExtension::singleton = nullptr;
-
-OpenXREyeGazeInteractionExtension* OpenXREyeGazeInteractionExtension::get_singleton()
+void OpenXREyeGazeInteractionExtension::initialize()
 {
-	ERR_FAIL_NULL_V(singleton, nullptr);
-	return singleton;
+	if (!data) {
+		data = memnew(Data);
+	}
 }
 
-OpenXREyeGazeInteractionExtension::OpenXREyeGazeInteractionExtension() { singleton = this; }
+void OpenXREyeGazeInteractionExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
-OpenXREyeGazeInteractionExtension::~OpenXREyeGazeInteractionExtension() { singleton = nullptr; }
 
 HashMap<String, bool*> OpenXREyeGazeInteractionExtension::get_requested_extensions(
 	XrVersion p_version)
@@ -57,7 +62,7 @@ HashMap<String, bool*> OpenXREyeGazeInteractionExtension::get_requested_extensio
 	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/eye_gaze_interaction") &&
 		(!OS::has_feature("mobile") ||
 			OS::has_feature(XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME))) {
-		request_extensions[XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME] = &available;
+		request_extensions[XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME] = &data->available;
 	}
 
 	return request_extensions;
@@ -66,15 +71,15 @@ HashMap<String, bool*> OpenXREyeGazeInteractionExtension::get_requested_extensio
 void* OpenXREyeGazeInteractionExtension::set_system_properties_and_get_next_pointer(
 	void* p_next_pointer)
 {
-	if (!available) {
+	if (!data->available) {
 		return p_next_pointer;
 	}
 
-	properties.type = XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT;
-	properties.next = p_next_pointer;
-	properties.supportsEyeGazeInteraction = false;
+	data->properties.type = XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT;
+	data->properties.next = p_next_pointer;
+	data->properties.supportsEyeGazeInteraction = false;
 
-	return &properties;
+	return &data->properties;
 }
 
 PackedStringArray OpenXREyeGazeInteractionExtension::get_suggested_tracker_names()
@@ -83,7 +88,7 @@ PackedStringArray OpenXREyeGazeInteractionExtension::get_suggested_tracker_names
 	return arr;
 }
 
-bool OpenXREyeGazeInteractionExtension::is_available() { return available; }
+bool OpenXREyeGazeInteractionExtension::is_available() { return data != nullptr && data->available; }
 
 bool OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction()
 {
@@ -91,7 +96,7 @@ bool OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction()
 	// The `supportsEyeGazeInteraction` is set to true if the device also supports this.
 	// Thus both need to be true.
 	// In addition, on mobile runtimes, the proper permission needs to be granted.
-	if (available && properties.supportsEyeGazeInteraction) {
+	if (data->available && data->properties.supportsEyeGazeInteraction) {
 		return !OS::has_feature("mobile") ||
 			   OS::has_feature("PERMISSION_XR_EXT_eye_gaze_interaction");
 	}
@@ -101,33 +106,32 @@ bool OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction()
 
 bool OpenXREyeGazeInteractionExtension::get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose)
 {
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
-	if (!init_eye_gaze_pose) {
-		init_eye_gaze_pose = true;
+	if (!data->init_eye_gaze_pose) {
+		data->init_eye_gaze_pose = true;
 
-		eye_tracker = openxr_api->find_tracker("/user/eyes_ext");
-		if (eye_tracker.is_null()) {
+		data->eye_tracker = OpenXRAPI::find_tracker("/user/eyes_ext");
+		if (data->eye_tracker.is_null()) {
 			WARN_PRINT("Couldn't obtain eye tracker");
 		}
 
-		eye_action = openxr_api->find_action("eye_gaze_pose");
-		if (eye_action.is_null()) {
+		data->eye_action = OpenXRAPI::find_action("eye_gaze_pose");
+		if (data->eye_action.is_null()) {
 			WARN_PRINT("Couldn't obtain pose action for `eye_gaze_pose`, make sure to add this to "
 					   "your action map.");
 		}
 	}
 
-	if (eye_tracker.is_null() || eye_action.is_null()) {
+	if (data->eye_tracker.is_null() || data->eye_action.is_null()) {
 		return false;
 	}
 
 	Transform3D eye_transform;
 	Vector3 linear_velocity;
 	Vector3 angular_velocity;
-	XRPose::TrackingConfidence confidence = openxr_api->get_action_pose(
-		eye_action, eye_tracker, eye_transform, linear_velocity, angular_velocity);
+	XRPose::TrackingConfidence confidence = OpenXRAPI::get_action_pose(
+		data->eye_action, data->eye_tracker, eye_transform, linear_velocity, angular_velocity);
 	if (confidence == XRPose::XR_TRACKING_CONFIDENCE_NONE) {
 		return false;
 	}

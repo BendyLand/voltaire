@@ -39,32 +39,41 @@
 // See: https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#XR_EXT_user_presence
 // for more information.
 
-class OpenXRUserPresenceExtension
+class OpenXRUserPresenceExtension final
 {
 public:
-	static OpenXRUserPresenceExtension* get_singleton();
 
-	OpenXRUserPresenceExtension();
-	virtual ~OpenXRUserPresenceExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	virtual void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+	static void on_state_ready();
+	static void on_state_stopping();
 
-	virtual void on_state_ready();
-	virtual void on_state_stopping();
+	static bool on_event_polled(const XrEventDataBuffer& event);
 
-	virtual bool on_event_polled(const XrEventDataBuffer& event);
-
-	bool is_user_present() const;
-	bool is_active() const;
+	static bool is_user_present();
+	static bool is_active();
 
 private:
-	static OpenXRUserPresenceExtension* singleton;
 
-	bool available = false;
-	XrSystemUserPresencePropertiesEXT properties;
+public:
+	struct Data
+	{
+		bool available = false;
+		XrSystemUserPresencePropertiesEXT properties;
+		bool user_present = true;
+	};
 
-	bool user_present = true;
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRUserPresenceExtension() = delete;
+	OpenXRUserPresenceExtension(const OpenXRUserPresenceExtension&) = delete;
+	OpenXRUserPresenceExtension& operator=(const OpenXRUserPresenceExtension&) = delete;
+	~OpenXRUserPresenceExtension() = delete;
 };
 
 

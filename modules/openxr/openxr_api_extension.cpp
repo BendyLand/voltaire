@@ -35,40 +35,40 @@
 
 uint64_t OpenXRAPIExtension::get_openxr_version()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (uint64_t)OpenXRAPI::get_singleton()->get_openxr_version();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_openxr_version();
 }
 
 uint64_t OpenXRAPIExtension::get_instance()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (uint64_t)OpenXRAPI::get_singleton()->get_instance();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_instance();
 }
 
 uint64_t OpenXRAPIExtension::get_system_id()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (uint64_t)OpenXRAPI::get_singleton()->get_system_id();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_system_id();
 }
 
 uint64_t OpenXRAPIExtension::get_session()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (uint64_t)OpenXRAPI::get_singleton()->get_session();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_session();
 }
 
 bool OpenXRAPIExtension::openxr_is_enabled(bool p_check_run_in_editor)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 	return OpenXRAPI::openxr_is_enabled(p_check_run_in_editor);
 }
 
 uint64_t OpenXRAPIExtension::get_instance_proc_addr(const String& p_name)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
 	CharString str = p_name.utf8();
 	PFN_xrVoidFunction addr = nullptr;
-	XrResult result = OpenXRAPI::get_singleton()->get_instance_proc_addr(str.get_data(), &addr);
+	XrResult result = OpenXRAPI::get_instance_proc_addr(str.get_data(), &addr);
 	if (result != XR_SUCCESS) {
 		return 0;
 	}
@@ -77,161 +77,161 @@ uint64_t OpenXRAPIExtension::get_instance_proc_addr(const String& p_name)
 
 String OpenXRAPIExtension::get_error_string(uint64_t result)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), String());
-	return OpenXRAPI::get_singleton()->get_error_string((XrResult)result);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), String());
+	return OpenXRAPI::get_error_string((XrResult)result);
 }
 
 String OpenXRAPIExtension::get_swapchain_format_name(int64_t p_swapchain_format)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), String());
-	return OpenXRAPI::get_singleton()->get_swapchain_format_name(p_swapchain_format);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), String());
+	return OpenXRAPI::get_swapchain_format_name(p_swapchain_format);
 }
 
 void OpenXRAPIExtension::set_object_name(
 	int64_t p_object_type, uint64_t p_object_handle, const String& p_object_name)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
-	OpenXRAPI::get_singleton()->set_object_name(
+	OpenXRAPI::set_object_name(
 		XrObjectType(p_object_type), p_object_handle, p_object_name);
 }
 
 void OpenXRAPIExtension::begin_debug_label_region(const String& p_label_name)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
-	OpenXRAPI::get_singleton()->begin_debug_label_region(p_label_name);
+	OpenXRAPI::begin_debug_label_region(p_label_name);
 }
 
 void OpenXRAPIExtension::end_debug_label_region()
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
-	OpenXRAPI::get_singleton()->end_debug_label_region();
+	OpenXRAPI::end_debug_label_region();
 }
 
 void OpenXRAPIExtension::insert_debug_label(const String& p_label_name)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
-	OpenXRAPI::get_singleton()->insert_debug_label(p_label_name);
+	OpenXRAPI::insert_debug_label(p_label_name);
 }
 
 uint32_t OpenXRAPIExtension::get_view_count() const
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (uint32_t)OpenXRAPI::get_singleton()->get_view_count();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint32_t)OpenXRAPI::get_view_count();
 }
 
 uint64_t OpenXRAPIExtension::get_view_configuration() const
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (uint64_t)OpenXRAPI::get_singleton()->get_view_configuration();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_view_configuration();
 }
 
 bool OpenXRAPIExtension::is_initialized()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), false);
-	return OpenXRAPI::get_singleton()->is_initialized();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::is_initialized();
 }
 
 bool OpenXRAPIExtension::is_running()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), false);
-	return OpenXRAPI::get_singleton()->is_running();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::is_running();
 }
 
 uint64_t OpenXRAPIExtension::get_play_space()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (uint64_t)OpenXRAPI::get_singleton()->get_play_space();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_play_space();
 }
 
 int64_t OpenXRAPIExtension::get_predicted_display_time()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (XrTime)OpenXRAPI::get_singleton()->get_predicted_display_time();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (XrTime)OpenXRAPI::get_predicted_display_time();
 }
 
 int64_t OpenXRAPIExtension::get_next_frame_time()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
 
 	// In the past we needed to look a frame ahead, may be calling this unintentionally so lets warn
 	// the dev.
 	WARN_PRINT_ONCE("OpenXR: Next frame timing called, verify this is intended.");
 
-	return (XrTime)OpenXRAPI::get_singleton()->get_next_frame_time();
+	return (XrTime)OpenXRAPI::get_next_frame_time();
 }
 
 bool OpenXRAPIExtension::can_render()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), false);
-	return OpenXRAPI::get_singleton()->can_render();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::can_render();
 }
 
 RID OpenXRAPIExtension::find_action(const String& p_name, const RID& p_action_set)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), RID());
-	return OpenXRAPI::get_singleton()->find_action(p_name, p_action_set);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
+	return OpenXRAPI::find_action(p_name, p_action_set);
 }
 
 uint64_t OpenXRAPIExtension::action_get_handle(RID p_action)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	XrAction action_handle = OpenXRAPI::get_singleton()->action_get_handle(p_action);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	XrAction action_handle = OpenXRAPI::action_get_handle(p_action);
 	return (uint64_t)action_handle;
 }
 
 uint64_t OpenXRAPIExtension::get_hand_tracker(int p_hand_index)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (uint64_t)OpenXRAPI::get_singleton()->get_hand_tracker(p_hand_index);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_hand_tracker(p_hand_index);
 }
 
 double OpenXRAPIExtension::get_render_state_z_near()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(0.0);
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0.0);
-	return OpenXRAPI::get_singleton()->get_render_state_z_near();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0.0);
+	return OpenXRAPI::get_render_state_z_near();
 }
 
 double OpenXRAPIExtension::get_render_state_z_far()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(0.0);
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0.0);
-	return OpenXRAPI::get_singleton()->get_render_state_z_far();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0.0);
+	return OpenXRAPI::get_render_state_z_far();
 }
 
 void OpenXRAPIExtension::set_velocity_texture(RID p_render_target)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
-	OpenXRAPI::get_singleton()->set_velocity_texture(p_render_target);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_velocity_texture(p_render_target);
 }
 
 void OpenXRAPIExtension::set_velocity_depth_texture(RID p_render_target)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
-	OpenXRAPI::get_singleton()->set_velocity_depth_texture(p_render_target);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_velocity_depth_texture(p_render_target);
 }
 
 void OpenXRAPIExtension::set_velocity_target_size(const Size2i& p_target_size)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
-	OpenXRAPI::get_singleton()->set_velocity_target_size(p_target_size);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_velocity_target_size(p_target_size);
 }
 
 PackedInt64Array OpenXRAPIExtension::get_supported_swapchain_formats()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), PackedInt64Array());
-	return OpenXRAPI::get_singleton()->get_supported_swapchain_formats();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedInt64Array());
+	return OpenXRAPI::get_supported_swapchain_formats();
 }
 
 uint64_t OpenXRAPIExtension::openxr_swapchain_create(XrSwapchainCreateFlags p_create_flags,
 	XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width,
 	uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
 
 	OpenXRAPI::OpenXRSwapChainInfo* new_swapchain_info = memnew(OpenXRAPI::OpenXRSwapChainInfo);
 	new_swapchain_info->create(p_create_flags, p_usage_flags, p_swapchain_format, p_width, p_height,
@@ -241,7 +241,7 @@ uint64_t OpenXRAPIExtension::openxr_swapchain_create(XrSwapchainCreateFlags p_cr
 
 void OpenXRAPIExtension::openxr_swapchain_free(uint64_t p_swapchain_info)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
 		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
@@ -251,7 +251,7 @@ void OpenXRAPIExtension::openxr_swapchain_free(uint64_t p_swapchain_info)
 
 uint64_t OpenXRAPIExtension::openxr_swapchain_get_swapchain(uint64_t p_swapchain_info)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
 
 	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
 		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
@@ -261,7 +261,7 @@ uint64_t OpenXRAPIExtension::openxr_swapchain_get_swapchain(uint64_t p_swapchain
 
 void OpenXRAPIExtension::openxr_swapchain_acquire(uint64_t p_swapchain_info)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
 		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
@@ -271,7 +271,7 @@ void OpenXRAPIExtension::openxr_swapchain_acquire(uint64_t p_swapchain_info)
 
 RID OpenXRAPIExtension::openxr_swapchain_get_image(uint64_t p_swapchain_info)
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), RID());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
 
 	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
 		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
@@ -280,7 +280,7 @@ RID OpenXRAPIExtension::openxr_swapchain_get_image(uint64_t p_swapchain_info)
 
 void OpenXRAPIExtension::openxr_swapchain_release(uint64_t p_swapchain_info)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
 		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
@@ -289,34 +289,33 @@ void OpenXRAPIExtension::openxr_swapchain_release(uint64_t p_swapchain_info)
 
 uint64_t OpenXRAPIExtension::get_projection_layer()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), 0);
-	return (uint64_t)OpenXRAPI::get_singleton()->get_projection_layer();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_projection_layer();
 }
 
 void OpenXRAPIExtension::set_render_region(const Rect2i& p_render_region)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
-	OpenXRAPI::get_singleton()->set_render_region(p_render_region);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_render_region(p_render_region);
 }
 
 void OpenXRAPIExtension::update_main_swapchain_size()
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
-	OpenXRAPI::get_singleton()->update_main_swapchain_size();
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::update_main_swapchain_size();
 }
 
 void OpenXRAPIExtension::set_emulate_environment_blend_mode_alpha_blend(bool p_enabled)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
-	OpenXRAPI::get_singleton()->set_emulate_environment_blend_mode_alpha_blend(p_enabled);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_emulate_environment_blend_mode_alpha_blend(p_enabled);
 }
 
 OpenXRAPIExtension::OpenXRAlphaBlendModeSupport
 OpenXRAPIExtension::is_environment_blend_mode_alpha_blend_supported()
 {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE);
-	return (OpenXRAPIExtension::OpenXRAlphaBlendModeSupport)OpenXRAPI::get_singleton()
-		->is_environment_blend_mode_alpha_blend_supported();
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE);
+	return (OpenXRAPIExtension::OpenXRAlphaBlendModeSupport)OpenXRAPI::is_environment_blend_mode_alpha_blend_supported();
 }
 
 OpenXRAPIExtension::OpenXRAPIExtension() {}

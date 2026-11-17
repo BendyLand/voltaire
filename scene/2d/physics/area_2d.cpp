@@ -77,7 +77,7 @@ bool Area2D::is_monitoring() const { return monitoring; }
 void Area2D::set_monitorable(bool p_enable)
 {
 	ERR_FAIL_COND_MSG(
-		locked || (is_inside_tree() && PhysicsServer2D::get_singleton()->is_flushing_queries()),
+		locked || (is_inside_tree() && PhysicsServer2D::is_flushing_queries()),
 		"Function blocked during in/out signal. Use set_deferred(\"monitorable\", true/false).");
 
 	if (p_enable == monitorable) {
@@ -86,7 +86,7 @@ void Area2D::set_monitorable(bool p_enable)
 
 	monitorable = p_enable;
 
-	PhysicsServer2D::get_singleton()->area_set_monitorable(get_rid(), monitorable);
+	PhysicsServer2D::area_set_monitorable(get_rid(), monitorable);
 }
 
 bool Area2D::is_monitorable() const { return monitorable; }
@@ -99,8 +99,8 @@ void Area2D::set_audio_bus_name(const String& p_audio_bus) { audio_bus = p_audio
 
 String Area2D::get_audio_bus_name() const
 {
-	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
-		if (AudioServer::get_singleton()->get_bus_name(i) == audio_bus) {
+	for (int i = 0; i < AudioServer::get_bus_count(); i++) {
+		if (AudioServer::get_bus_name(i) == audio_bus) {
 			return audio_bus;
 		}
 	}

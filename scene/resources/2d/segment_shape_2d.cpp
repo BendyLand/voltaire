@@ -77,7 +77,7 @@ Rect2 SegmentShape2D::get_rect() const
 
 real_t SegmentShape2D::get_enclosing_radius() const { return (a + b).length(); }
 
-SegmentShape2D::SegmentShape2D() : Shape2D(PhysicsServer2D::get_singleton()->segment_shape_create())
+SegmentShape2D::SegmentShape2D() : Shape2D(PhysicsServer2D::segment_shape_create())
 {
 	a = Vector2();
 	b = Vector2(0, 10);

@@ -71,7 +71,7 @@ Rect2 RectangleShape2D::get_rect() const { return Rect2(-size * 0.5, size); }
 real_t RectangleShape2D::get_enclosing_radius() const { return size.length() / 2; }
 
 RectangleShape2D::RectangleShape2D()
-	: Shape2D(PhysicsServer2D::get_singleton()->rectangle_shape_create())
+	: Shape2D(PhysicsServer2D::rectangle_shape_create())
 {
 	size = Size2(20, 20);
 	_update_shape();

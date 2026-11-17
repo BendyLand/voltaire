@@ -51,7 +51,7 @@
 // forward declarations, we don't want to include these fully
 class OpenXRInterface;
 
-class OpenXRAPI
+class OpenXRAPI final
 {
 public:
 	class OpenXRSwapChainInfo
@@ -84,85 +84,12 @@ public:
 	};
 
 private:
-	// our singleton
-	static OpenXRAPI* singleton;
-
-	// Registered extension wrappers
-
-	// linked XR interface
-	OpenXRInterface* xr_interface = nullptr;
-
-	// layers
-	LocalVector<XrApiLayerProperties> layer_properties;
-
-	// extensions
-	LocalVector<XrExtensionProperties> supported_extensions;
-	LocalVector<CharString> enabled_extensions;
-
-	// view configuration
-	LocalVector<XrViewConfigurationType> supported_view_configuration_types;
-
-	// reference spaces
-	LocalVector<XrReferenceSpaceType> supported_reference_spaces;
-
-	// swapchains (note these are platform dependent)
-	PackedInt64Array supported_swapchain_formats;
-
-	// system info
-	XrVersion openxr_version;
-	String runtime_name;
-	String runtime_version;
-
-	// configuration
-	XrFormFactor form_factor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-	XrViewConfigurationType view_configuration = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
-	XrReferenceSpaceType requested_reference_space = XR_REFERENCE_SPACE_TYPE_STAGE;
-	XrReferenceSpaceType reference_space = XR_REFERENCE_SPACE_TYPE_LOCAL;
-	bool submit_depth_buffer = false; // if set to true we submit depth buffers to OpenXR if a
-									  // suitable extension is enabled.
-
-	// blend mode
-	XrEnvironmentBlendMode environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-	XrEnvironmentBlendMode requested_environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-	Vector<XrEnvironmentBlendMode> supported_environment_blend_modes;
-	bool emulate_environment_blend_mode_alpha_blend = false;
-
-	// state
-	XrInstance instance = XR_NULL_HANDLE;
-	XrSystemId system_id = 0;
-	String system_name;
-	uint32_t vendor_id = 0;
-	XrSystemTrackingProperties tracking_properties;
-	XrSession session = XR_NULL_HANDLE;
-	XrSessionState session_state = XR_SESSION_STATE_UNKNOWN;
-	bool running = false;
-	XrFrameState frame_state = {XR_TYPE_FRAME_STATE, nullptr, 0, 0, false};
-	double render_target_size_multiplier = 1.0;
-	Rect2i render_region;
-
-	XrSystemGraphicsProperties graphics_properties;
-
-	LocalVector<XrViewConfigurationView> view_configuration_views;
-
 	enum OpenXRSwapChainTypes
 	{
 		OPENXR_SWAPCHAIN_COLOR,
 		OPENXR_SWAPCHAIN_DEPTH,
 		OPENXR_SWAPCHAIN_MAX
 	};
-
-	int64_t color_swapchain_format = 0;
-	int64_t depth_swapchain_format = 0;
-
-	bool play_space_is_dirty = true;
-	XrSpace play_space = XR_NULL_HANDLE;
-	XrSpace custom_play_space = XR_NULL_HANDLE;
-	XrSpace view_space = XR_NULL_HANDLE;
-	XRPose::TrackingConfidence head_pose_confidence = XRPose::XR_TRACKING_CONFIDENCE_NONE;
-
-	RID velocity_texture;
-	RID velocity_depth_texture;
-	Size2i velocity_target_size;
 
 	// When LOCAL_FLOOR isn't supported, we use an approach based on the example code in the
 	// OpenXR spec in order to emulate it.
@@ -173,14 +100,14 @@ private:
 		XrSpace local_space = XR_NULL_HANDLE;
 		XrSpace stage_space = XR_NULL_HANDLE;
 		bool should_reset_floor_height = false;
-	} local_floor_emulation;
+	};
 
-	bool reset_emulated_floor_height();
+	static bool reset_emulated_floor_height();
 
-	bool load_layer_properties();
-	bool load_supported_extensions();
-	bool is_extension_supported(const String& p_extension) const;
-	bool is_any_extension_enabled(const String& p_extensions) const;
+	static bool load_layer_properties();
+	static bool load_supported_extensions();
+	static bool is_extension_supported(const String& p_extension);
+	static bool is_any_extension_enabled(const String& p_extensions);
 
 	struct RequestExtension
 	{
@@ -188,21 +115,12 @@ private:
 		bool* enabled;
 	};
 
-	XrResult attempt_create_instance(XrVersion p_version);
+	static XrResult attempt_create_instance(XrVersion p_version);
 
-	bool openxr_loader_init();
-	bool resolve_instance_openxr_symbols();
-
-#ifdef ANDROID_ENABLED
-	// On Android we keep tracker of our external OpenXR loader
-	void* openxr_loader_library_handle = nullptr;
-#endif
+	static bool openxr_loader_init();
+	static bool resolve_instance_openxr_symbols();
 
 	// function pointers
-#ifdef ANDROID_ENABLED
-	// On non-Android platforms we use the OpenXR symbol linked into the engine binary.
-	PFN_xrGetInstanceProcAddr xrGetInstanceProcAddr = nullptr;
-#endif
 	EXT_PROTO_XRRESULT_FUNC3(xrAcquireSwapchainImage, (XrSwapchain), swapchain,
 		(const XrSwapchainImageAcquireInfo*), acquireInfo, (uint32_t*), index)
 	EXT_PROTO_XRRESULT_FUNC3(xrApplyHapticFeedback, (XrSession), session,
@@ -295,26 +213,26 @@ private:
 		xrWaitSwapchainImage, (XrSwapchain), swapchain, (const XrSwapchainImageWaitInfo*), waitInfo)
 
 	// instance
-	bool create_instance();
-	bool get_system_info();
-	bool load_supported_view_configuration_types();
-	bool load_supported_environmental_blend_modes();
-	bool is_view_configuration_supported(XrViewConfigurationType p_configuration_type) const;
-	bool load_supported_view_configuration_views(XrViewConfigurationType p_configuration_type);
-	void destroy_instance();
+	static bool create_instance();
+	static bool get_system_info();
+	static bool load_supported_view_configuration_types();
+	static bool load_supported_environmental_blend_modes();
+	static bool is_view_configuration_supported(XrViewConfigurationType p_configuration_type);
+	static bool load_supported_view_configuration_views(XrViewConfigurationType p_configuration_type);
+	static void destroy_instance();
 
 	// session
-	bool create_session();
-	bool load_supported_reference_spaces();
-	bool is_reference_space_supported(XrReferenceSpaceType p_reference_space);
-	bool setup_play_space();
-	bool setup_view_space();
-	bool load_supported_swapchain_formats();
-	bool is_swapchain_format_supported(int64_t p_swapchain_format);
-	bool obtain_swapchain_formats();
-	bool create_main_swapchains(const Size2i& p_size);
-	void free_main_swapchains();
-	void destroy_session();
+	static bool create_session();
+	static bool load_supported_reference_spaces();
+	static bool is_reference_space_supported(XrReferenceSpaceType p_reference_space);
+	static bool setup_play_space();
+	static bool setup_view_space();
+	static bool load_supported_swapchain_formats();
+	static bool is_swapchain_format_supported(int64_t p_swapchain_format);
+	static bool obtain_swapchain_formats();
+	static bool create_main_swapchains(const Size2i& p_size);
+	static void free_main_swapchains();
+	static void destroy_session();
 
 	// action map
 	struct Tracker
@@ -323,11 +241,7 @@ private:
 		XrPath toplevel_path;	// OpenXR XrPath for this tracker
 		RID active_profile_rid; // RID of the active profile for this tracker
 	};
-
-	RID_Owner<Tracker, true> tracker_owner;
-	RID get_tracker_rid(XrPath p_path);
-	bool interaction_profile_changed =
-		true; // If true we need to check for updates to our active_profile_rid.
+	static RID get_tracker_rid(XrPath p_path); // If true we need to check for updates to our active_profile_rid.
 
 	struct ActionSet
 	{						// Action sets define a set of actions that can be enabled together
@@ -336,8 +250,6 @@ private:
 							// longer be modified
 		XrActionSet handle; // OpenXR handle for this action set
 	};
-
-	RID_Owner<ActionSet, true> action_set_owner;
 
 	struct ActionTracker
 	{							 // Links and action to a tracker
@@ -354,9 +266,7 @@ private:
 		Vector<ActionTracker> trackers; // The trackers this action can be used with
 		XrAction handle;				// OpenXR handle for this action
 	};
-
-	RID_Owner<Action, true> action_owner;
-	RID get_action_rid(XrAction p_action);
+	static RID get_action_rid(XrAction p_action);
 
 	struct InteractionProfile
 	{ // Interaction profiles define suggested bindings between the physical inputs on controller
@@ -370,15 +280,13 @@ private:
 		Vector<PackedByteArray>
 			modifiers; // Array of modifiers we'll add into XrBindingModificationsKHR
 	};
+	static RID get_interaction_profile_rid(XrPath p_path);
+	static XrPath get_interaction_profile_path(RID p_interaction_profile);
 
-	RID_Owner<InteractionProfile, true> interaction_profile_owner;
-	RID get_interaction_profile_rid(XrPath p_path);
-	XrPath get_interaction_profile_path(RID p_interaction_profile);
-
-	CharString get_interaction_profile_internal_name(
-		const String& p_interaction_profile_name) const;
-	const char* check_profile_path(
-		const CharString& p_interaction_profile_name, const char* p_path) const;
+	static CharString get_interaction_profile_internal_name(
+		const String& p_interaction_profile_name);
+	static const char* check_profile_path(
+		const CharString& p_interaction_profile_name, const char* p_path);
 
 	struct OrderedCompositionLayer
 	{
@@ -395,18 +303,18 @@ private:
 	};
 
 	// state changes
-	bool poll_events();
-	bool on_state_idle();
-	bool on_state_ready();
-	bool on_state_synchronized();
-	bool on_state_visible();
-	bool on_state_focused();
-	bool on_state_stopping();
-	bool on_state_loss_pending();
-	bool on_state_exiting();
+	static bool poll_events();
+	static bool on_state_idle();
+	static bool on_state_ready();
+	static bool on_state_synchronized();
+	static bool on_state_visible();
+	static bool on_state_focused();
+	static bool on_state_stopping();
+	static bool on_state_loss_pending();
+	static bool on_state_exiting();
 
 	// convenience
-	void copy_string_to_char_buffer(const String& p_string, char* p_buffer, int p_buffer_len);
+	static void copy_string_to_char_buffer(const String& p_string, char* p_buffer, int p_buffer_len);
 
 	// Render state, Only accessible in rendering thread
 	struct RenderState
@@ -445,7 +353,7 @@ private:
 
 		Size2i main_swapchain_size;
 		OpenXRSwapChainInfo main_swapchains[OPENXR_SWAPCHAIN_MAX];
-	} render_state;
+	};
 
 	static void _allocate_view_buffers_rt(uint32_t p_view_count, bool p_submit_depth_buffer);
 	static void _set_render_session_running_rt(bool p_is_running);
@@ -456,232 +364,230 @@ private:
 	static void _set_render_state_render_region_rt(const Rect2i& p_render_region);
 	static void _update_main_swapchain_size_rt();
 
-	void allocate_view_buffers(uint32_t p_view_count, bool p_submit_depth_buffer);
-	void set_render_session_running(bool p_is_running);
-	void set_render_display_info(XrTime p_predicted_display_time, bool p_should_render);
-	void set_render_play_space(XrSpace p_play_space);
-	void set_render_environment_blend_mode(XrEnvironmentBlendMode p_mode);
-	void set_render_state_multiplier(double p_render_target_size_multiplier);
-	void set_render_state_render_region(const Rect2i& p_render_region);
+	static void allocate_view_buffers(uint32_t p_view_count, bool p_submit_depth_buffer);
+	static void set_render_session_running(bool p_is_running);
+	static void set_render_display_info(XrTime p_predicted_display_time, bool p_should_render);
+	static void set_render_play_space(XrSpace p_play_space);
+	static void set_render_environment_blend_mode(XrEnvironmentBlendMode p_mode);
+	static void set_render_state_multiplier(double p_render_target_size_multiplier);
+	static void set_render_state_render_region(const Rect2i& p_render_region);
 
 public:
-	void update_main_swapchain_size();
+	static void update_main_swapchain_size();
 
-	XrVersion get_openxr_version() const { return openxr_version; }
+	static XrVersion get_openxr_version() { return data->openxr_version; }
 
-	XrInstance get_instance() const { return instance; }
+	static XrInstance get_instance() { return data->instance; }
 
-	XrSystemId get_system_id() const { return system_id; }
+	static XrSystemId get_system_id() { return data->system_id; }
 
-	XrSession get_session() const { return session; }
+	static XrSession get_session() { return data->session; }
 
-	XrSessionState get_session_state() const { return session_state; }
+	static XrSessionState get_session_state() { return data->session_state; }
 
-	String get_runtime_name() const { return runtime_name; }
+	static String get_runtime_name() { return data->runtime_name; }
 
-	String get_runtime_version() const { return runtime_version; }
+	static String get_runtime_version() { return data->runtime_version; }
 
-	String get_system_name() const { return system_name; }
+	static String get_system_name() { return data->system_name; }
 
-	uint32_t get_vendor_id() const { return vendor_id; }
+	static uint32_t get_vendor_id() { return data->vendor_id; }
 
 	// helper method to convert an XrPosef to a Transform3D
-	Transform3D transform_from_pose(const XrPosef& p_pose);
-	XrPosef pose_from_transform(const Transform3D& p_transform);
+	static Transform3D transform_from_pose(const XrPosef& p_pose);
+	static XrPosef pose_from_transform(const Transform3D& p_transform);
 
 	// helper method to get a valid Transform3D from an openxr space location
-	XRPose::TrackingConfidence transform_from_location(
+	static XRPose::TrackingConfidence transform_from_location(
 		const XrSpaceLocation& p_location, Transform3D& r_transform);
-	XRPose::TrackingConfidence transform_from_location(
+	static XRPose::TrackingConfidence transform_from_location(
 		const XrHandJointLocationEXT& p_location, Transform3D& r_transform);
-	void parse_velocities(
+	static void parse_velocities(
 		const XrSpaceVelocity& p_velocity, Vector3& r_linear_velocity, Vector3& r_angular_velocity);
-	XrPath get_xr_path(const String& p_path);
-	String get_xr_path_name(const XrPath& p_path);
-	bool is_top_level_path_supported(const String& p_toplevel_path);
-	bool is_interaction_profile_supported(const String& p_ip_path);
-	bool interaction_profile_supports_io_path(const String& p_ip_path, const String& p_io_path);
+	static XrPath get_xr_path(const String& p_path);
+	static String get_xr_path_name(const XrPath& p_path);
+	static bool is_top_level_path_supported(const String& p_toplevel_path);
+	static bool is_interaction_profile_supported(const String& p_ip_path);
+	static bool interaction_profile_supports_io_path(const String& p_ip_path, const String& p_io_path);
 
 	static bool openxr_is_enabled(bool p_check_run_in_editor = true);
 
-	_FORCE_INLINE_ static OpenXRAPI* get_singleton() { return singleton; }
-
-	XrResult try_get_instance_proc_addr(const char* p_name, PFN_xrVoidFunction* p_addr);
-	XrResult get_instance_proc_addr(const char* p_name, PFN_xrVoidFunction* p_addr);
-	String get_error_string(XrResult result) const;
-	String get_swapchain_format_name(int64_t p_swapchain_format) const;
-	void set_object_name(
+	static XrResult try_get_instance_proc_addr(const char* p_name, PFN_xrVoidFunction* p_addr);
+	static XrResult get_instance_proc_addr(const char* p_name, PFN_xrVoidFunction* p_addr);
+	static String get_error_string(XrResult result);
+	static String get_swapchain_format_name(int64_t p_swapchain_format);
+	static void set_object_name(
 		XrObjectType p_object_type, uint64_t p_object_handle, const String& p_object_name);
-	void begin_debug_label_region(const String& p_label_name);
-	void end_debug_label_region();
-	void insert_debug_label(const String& p_label_name);
+	static void begin_debug_label_region(const String& p_label_name);
+	static void end_debug_label_region();
+	static void insert_debug_label(const String& p_label_name);
 
-	OpenXRInterface* get_xr_interface() const { return xr_interface; }
+	static OpenXRInterface* get_xr_interface() { return data->xr_interface; }
 
-	void set_xr_interface(OpenXRInterface* p_xr_interface);
+	static void set_xr_interface(OpenXRInterface* p_xr_interface);
 	static void cleanup_extension_wrappers();
 	static PackedStringArray get_all_requested_extensions(XrVersion p_xr_version);
 
-	void set_form_factor(XrFormFactor p_form_factor);
+	static void set_form_factor(XrFormFactor p_form_factor);
 
-	XrFormFactor get_form_factor() const { return form_factor; }
+	static XrFormFactor get_form_factor() { return data->form_factor; }
 
-	uint32_t get_view_count() const;
-	void set_view_configuration(XrViewConfigurationType p_view_configuration);
+	static uint32_t get_view_count();
+	static void set_view_configuration(XrViewConfigurationType p_view_configuration);
 
-	XrViewConfigurationType get_view_configuration() const { return view_configuration; }
+	static XrViewConfigurationType get_view_configuration() { return data->view_configuration; }
 
-	bool set_requested_reference_space(XrReferenceSpaceType p_requested_reference_space);
+	static bool set_requested_reference_space(XrReferenceSpaceType p_requested_reference_space);
 
-	XrReferenceSpaceType get_requested_reference_space() const { return requested_reference_space; }
+	static XrReferenceSpaceType get_requested_reference_space() { return data->requested_reference_space; }
 
-	XrReferenceSpaceType get_reference_space() const { return reference_space; }
+	static XrReferenceSpaceType get_reference_space() { return data->reference_space; }
 
-	void set_custom_play_space(XrSpace p_custom_space);
+	static void set_custom_play_space(XrSpace p_custom_space);
 
-	void set_submit_depth_buffer(bool p_submit_depth_buffer);
+	static void set_submit_depth_buffer(bool p_submit_depth_buffer);
 
-	bool get_submit_depth_buffer() const { return submit_depth_buffer; }
+	static bool get_submit_depth_buffer() { return data->submit_depth_buffer; }
 
-	bool is_initialized();
-	bool is_running();
-	bool initialize(const String& p_rendering_driver);
-	bool initialize_session();
-	void finish();
+	static bool is_initialized();
+	static bool is_running();
+	static bool initialize(const String& p_rendering_driver);
+	static bool initialize_session();
+	static void finish();
 
-	_FORCE_INLINE_ XrSpace get_play_space() const { return play_space; }
+	static _FORCE_INLINE_ XrSpace get_play_space() { return data->play_space; }
 
-	_FORCE_INLINE_ XrSpace get_view_space() const { return view_space; }
+	static _FORCE_INLINE_ XrSpace get_view_space() { return data->view_space; }
 
-	_FORCE_INLINE_ XrTime get_predicted_display_time() { return frame_state.predictedDisplayTime; }
+	static _FORCE_INLINE_ XrTime get_predicted_display_time() { return data->frame_state.predictedDisplayTime; }
 
-	_FORCE_INLINE_ XrTime get_next_frame_time()
+	static _FORCE_INLINE_ XrTime get_next_frame_time()
 	{
-		return frame_state.predictedDisplayTime + frame_state.predictedDisplayPeriod;
+		return data->frame_state.predictedDisplayTime + data->frame_state.predictedDisplayPeriod;
 	}
 
-	_FORCE_INLINE_ bool can_render()
+	static _FORCE_INLINE_ bool can_render()
 	{
-		return instance != XR_NULL_HANDLE && session != XR_NULL_HANDLE && running &&
-			   frame_state.shouldRender;
+		return data->instance != XR_NULL_HANDLE && data->session != XR_NULL_HANDLE && data->running &&
+			   data->frame_state.shouldRender;
 	}
 
-	XrHandTrackerEXT get_hand_tracker(int p_hand_index);
+	static XrHandTrackerEXT get_hand_tracker(int p_hand_index);
 
-	Size2 get_recommended_target_size();
-	XRPose::TrackingConfidence get_head_center(
+	static Size2 get_recommended_target_size();
+	static XRPose::TrackingConfidence get_head_center(
 		Transform3D& r_transform, Vector3& r_linear_velocity, Vector3& r_angular_velocity);
-	bool get_view_transform(uint32_t p_view, Transform3D& r_transform);
-	bool get_view_projection(
+	static bool get_view_transform(uint32_t p_view, Transform3D& r_transform);
+	static bool get_view_projection(
 		uint32_t p_view, double p_z_near, double p_z_far, Projection& p_camera_matrix);
-	Vector2 get_eye_focus(uint32_t p_view, float p_aspect);
-	bool process();
+	static Vector2 get_eye_focus(uint32_t p_view, float p_aspect);
+	static bool process();
 
-	void pre_render();
-	bool pre_draw_viewport(RID p_render_target);
-	XrSwapchain get_color_swapchain();
-	RID get_color_texture();
-	RID get_depth_texture();
-	RID get_density_map_texture();
-	void set_velocity_texture(RID p_render_target);
-	RID get_velocity_texture();
-	void set_velocity_depth_texture(RID p_render_target);
-	RID get_velocity_depth_texture();
-	void set_velocity_target_size(const Size2i& p_target_size);
-	Size2i get_velocity_target_size();
-	const XrCompositionLayerProjection* get_projection_layer() const;
-	void post_draw_viewport(RID p_render_target);
-	void end_frame();
+	static void pre_render();
+	static bool pre_draw_viewport(RID p_render_target);
+	static XrSwapchain get_color_swapchain();
+	static RID get_color_texture();
+	static RID get_depth_texture();
+	static RID get_density_map_texture();
+	static void set_velocity_texture(RID p_render_target);
+	static RID get_velocity_texture();
+	static void set_velocity_depth_texture(RID p_render_target);
+	static RID get_velocity_depth_texture();
+	static void set_velocity_target_size(const Size2i& p_target_size);
+	static Size2i get_velocity_target_size();
+	static const XrCompositionLayerProjection* get_projection_layer();
+	static void post_draw_viewport(RID p_render_target);
+	static void end_frame();
 
 	// Display refresh rate
-	float get_display_refresh_rate() const;
-	void set_display_refresh_rate(float p_refresh_rate);
+	static float get_display_refresh_rate();
+	static void set_display_refresh_rate(float p_refresh_rate);
 
 	// Render Target size multiplier
-	double get_render_target_size_multiplier() const;
-	void set_render_target_size_multiplier(double multiplier);
+	static double get_render_target_size_multiplier();
+	static void set_render_target_size_multiplier(double multiplier);
 
-	Rect2i get_render_region() const;
-	void set_render_region(const Rect2i& p_render_region);
+	static Rect2i get_render_region();
+	static void set_render_region(const Rect2i& p_render_region);
 
 	// Foveation settings
-	bool is_foveation_supported() const;
+	static bool is_foveation_supported();
 
-	int get_foveation_level() const;
-	void set_foveation_level(int p_foveation_level);
+	static int get_foveation_level();
+	static void set_foveation_level(int p_foveation_level);
 
-	bool get_foveation_dynamic() const;
-	void set_foveation_dynamic(bool p_foveation_dynamic);
+	static bool get_foveation_dynamic();
+	static void set_foveation_dynamic(bool p_foveation_dynamic);
 
-	bool get_foveation_with_subsampled_images() const;
-	void set_foveation_with_subsampled_images(bool p_enabled);
+	static bool get_foveation_with_subsampled_images();
+	static void set_foveation_with_subsampled_images(bool p_enabled);
 
 	// Play space.
-	Size2 get_play_space_bounds() const;
+	static Size2 get_play_space_bounds();
 
 	// swapchains
-	PackedInt64Array get_supported_swapchain_formats();
+	static PackedInt64Array get_supported_swapchain_formats();
 
-	int64_t get_color_swapchain_format() const { return color_swapchain_format; }
+	static int64_t get_color_swapchain_format() { return data->color_swapchain_format; }
 
-	int64_t get_depth_swapchain_format() const { return depth_swapchain_format; }
+	static int64_t get_depth_swapchain_format() { return data->depth_swapchain_format; }
 
-	double get_render_state_z_near() const { return render_state.z_near; }
+	static double get_render_state_z_near() { return data->render_state.z_near; }
 
-	double get_render_state_z_far() const { return render_state.z_far; }
+	static double get_render_state_z_far() { return data->render_state.z_far; }
 
 	// action map
-	String get_default_action_map_resource_name();
+	static String get_default_action_map_resource_name();
 
-	RID tracker_create(const String& p_name);
-	String tracker_get_name(RID p_tracker);
-	void tracker_check_profile(RID p_tracker, XrSession p_session = XR_NULL_HANDLE);
-	void tracker_free(RID p_tracker);
+	static RID tracker_create(const String& p_name);
+	static String tracker_get_name(RID p_tracker);
+	static void tracker_check_profile(RID p_tracker, XrSession p_session = XR_NULL_HANDLE);
+	static void tracker_free(RID p_tracker);
 
-	RID action_set_create(
+	static RID action_set_create(
 		const String& p_name, const String& p_localized_name, const int p_priority);
-	String action_set_get_name(RID p_action_set);
-	XrActionSet action_set_get_handle(RID p_action_set);
-	bool attach_action_sets(const Vector<RID>& p_action_sets);
-	void action_set_free(RID p_action_set);
+	static String action_set_get_name(RID p_action_set);
+	static XrActionSet action_set_get_handle(RID p_action_set);
+	static bool attach_action_sets(const Vector<RID>& p_action_sets);
+	static void action_set_free(RID p_action_set);
 
-	RID action_create(RID p_action_set, const String& p_name, const String& p_localized_name,
+	static RID action_create(RID p_action_set, const String& p_name, const String& p_localized_name,
 		OpenXRAction::ActionType p_action_type, const Vector<RID>& p_trackers);
-	String action_get_name(RID p_action);
-	XrAction action_get_handle(RID p_action);
-	void action_free(RID p_action);
+	static String action_get_name(RID p_action);
+	static XrAction action_get_handle(RID p_action);
+	static void action_free(RID p_action);
 
-	RID interaction_profile_create(const String& p_name);
-	String interaction_profile_get_name(RID p_interaction_profile);
-	void interaction_profile_clear_bindings(RID p_interaction_profile);
-	int interaction_profile_add_binding(
+	static RID interaction_profile_create(const String& p_name);
+	static String interaction_profile_get_name(RID p_interaction_profile);
+	static void interaction_profile_clear_bindings(RID p_interaction_profile);
+	static int interaction_profile_add_binding(
 		RID p_interaction_profile, RID p_action, const String& p_path);
-	bool interaction_profile_add_modifier(
+	static bool interaction_profile_add_modifier(
 		RID p_interaction_profile, const PackedByteArray& p_modifier);
-	bool interaction_profile_suggest_bindings(RID p_interaction_profile);
-	void interaction_profile_free(RID p_interaction_profile);
+	static bool interaction_profile_suggest_bindings(RID p_interaction_profile);
+	static void interaction_profile_free(RID p_interaction_profile);
 
-	RID find_tracker(const String& p_name);
-	RID find_action_set(const String& p_name);
-	RID find_action(const String& p_name, const RID& p_action_set = RID());
+	static RID find_tracker(const String& p_name);
+	static RID find_action_set(const String& p_name);
+	static RID find_action(const String& p_name, const RID& p_action_set = RID());
 
-	bool sync_action_sets(const Vector<RID>& p_active_sets);
-	bool get_action_bool(RID p_action, RID p_tracker);
-	float get_action_float(RID p_action, RID p_tracker);
-	Vector2 get_action_vector2(RID p_action, RID p_tracker);
-	XRPose::TrackingConfidence get_action_pose(RID p_action, RID p_tracker,
+	static bool sync_action_sets(const Vector<RID>& p_active_sets);
+	static bool get_action_bool(RID p_action, RID p_tracker);
+	static float get_action_float(RID p_action, RID p_tracker);
+	static Vector2 get_action_vector2(RID p_action, RID p_tracker);
+	static XRPose::TrackingConfidence get_action_pose(RID p_action, RID p_tracker,
 		Transform3D& r_transform, Vector3& r_linear_velocity, Vector3& r_angular_velocity);
-	bool trigger_haptic_pulse(RID p_action, RID p_tracker, float p_frequency, float p_amplitude,
+	static bool trigger_haptic_pulse(RID p_action, RID p_tracker, float p_frequency, float p_amplitude,
 		XrDuration p_duration_ns);
 
-	const Vector<XrEnvironmentBlendMode> get_supported_environment_blend_modes();
+	static const Vector<XrEnvironmentBlendMode> get_supported_environment_blend_modes();
 
-	bool is_environment_blend_mode_supported(XrEnvironmentBlendMode p_blend_mode) const;
-	bool set_environment_blend_mode(XrEnvironmentBlendMode p_blend_mode);
+	static bool is_environment_blend_mode_supported(XrEnvironmentBlendMode p_blend_mode);
+	static bool set_environment_blend_mode(XrEnvironmentBlendMode p_blend_mode);
 
-	XrEnvironmentBlendMode get_environment_blend_mode() const
+	static XrEnvironmentBlendMode get_environment_blend_mode()
 	{
-		return requested_environment_blend_mode;
+		return data->requested_environment_blend_mode;
 	}
 
 	enum OpenXRAlphaBlendModeSupport
@@ -691,11 +597,78 @@ public:
 		OPENXR_ALPHA_BLEND_MODE_SUPPORT_EMULATING = 2,
 	};
 
-	void set_emulate_environment_blend_mode_alpha_blend(bool p_enabled);
-	OpenXRAlphaBlendModeSupport is_environment_blend_mode_alpha_blend_supported();
+	static void set_emulate_environment_blend_mode_alpha_blend(bool p_enabled);
+	static OpenXRAlphaBlendModeSupport is_environment_blend_mode_alpha_blend_supported();
 
-	OpenXRAPI();
-	~OpenXRAPI();
+public:
+	struct Data
+	{
+#ifdef ANDROID_ENABLED
+		void* openxr_loader_library_handle = nullptr;
+		PFN_xrGetInstanceProcAddr xrGetInstanceProcAddr = nullptr;
+#endif
+		OpenXRInterface* xr_interface = nullptr;
+		LocalVector<XrApiLayerProperties> layer_properties;
+		LocalVector<XrExtensionProperties> supported_extensions;
+		LocalVector<CharString> enabled_extensions;
+		LocalVector<XrViewConfigurationType> supported_view_configuration_types;
+		LocalVector<XrReferenceSpaceType> supported_reference_spaces;
+		PackedInt64Array supported_swapchain_formats;
+		XrVersion openxr_version;
+		String runtime_name;
+		String runtime_version;
+		XrFormFactor form_factor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
+		XrViewConfigurationType view_configuration = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+		XrReferenceSpaceType requested_reference_space = XR_REFERENCE_SPACE_TYPE_STAGE;
+		XrReferenceSpaceType reference_space = XR_REFERENCE_SPACE_TYPE_LOCAL;
+		bool submit_depth_buffer = false;
+		XrEnvironmentBlendMode environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+		XrEnvironmentBlendMode requested_environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+		Vector<XrEnvironmentBlendMode> supported_environment_blend_modes;
+		bool emulate_environment_blend_mode_alpha_blend = false;
+		XrInstance instance = XR_NULL_HANDLE;
+		XrSystemId system_id = 0;
+		String system_name;
+		uint32_t vendor_id = 0;
+		XrSystemTrackingProperties tracking_properties;
+		XrSession session = XR_NULL_HANDLE;
+		XrSessionState session_state = XR_SESSION_STATE_UNKNOWN;
+		bool running = false;
+		XrFrameState frame_state = {XR_TYPE_FRAME_STATE, nullptr, 0, 0, false};
+		double render_target_size_multiplier = 1.0;
+		Rect2i render_region;
+		XrSystemGraphicsProperties graphics_properties;
+		LocalVector<XrViewConfigurationView> view_configuration_views;
+		int64_t color_swapchain_format = 0;
+		int64_t depth_swapchain_format = 0;
+		bool play_space_is_dirty = true;
+		XrSpace play_space = XR_NULL_HANDLE;
+		XrSpace custom_play_space = XR_NULL_HANDLE;
+		XrSpace view_space = XR_NULL_HANDLE;
+		XRPose::TrackingConfidence head_pose_confidence = XRPose::XR_TRACKING_CONFIDENCE_NONE;
+		RID velocity_texture;
+		RID velocity_depth_texture;
+		Size2i velocity_target_size;
+		LocalFloorEmulation local_floor_emulation;
+		RID_Owner<Tracker, true> tracker_owner;
+		bool interaction_profile_changed =
+		true;
+		RID_Owner<ActionSet, true> action_set_owner;
+		RID_Owner<Action, true> action_owner;
+		RID_Owner<InteractionProfile, true> interaction_profile_owner;
+		RenderState render_state;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void setup();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_allocated() { return data != nullptr; }
+
+	OpenXRAPI() = delete;
+	OpenXRAPI(const OpenXRAPI&) = delete;
+	OpenXRAPI& operator=(const OpenXRAPI&) = delete;
+	~OpenXRAPI() = delete;
 };
 
 

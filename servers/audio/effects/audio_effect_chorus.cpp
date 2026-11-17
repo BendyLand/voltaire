@@ -59,7 +59,7 @@ void AudioEffectChorusInstance::_process_chunk(
 		p_dst_frames[i] = p_src_frames[i] * base->dry;
 	}
 
-	float mix_rate = AudioServer::get_singleton()->get_mix_rate();
+	float mix_rate = AudioServer::get_mix_rate();
 
 	/* process voices */
 	for (int vc = 0; vc < base->voice_count; vc++) {
@@ -165,7 +165,7 @@ Ref<AudioEffectInstance> AudioEffectChorus::instantiate()
 
 	ring_buffer_max_size *= 2;		// just to avoid complications
 	ring_buffer_max_size /= 1000.0; // convert to seconds
-	ring_buffer_max_size *= AudioServer::get_singleton()->get_mix_rate();
+	ring_buffer_max_size *= AudioServer::get_mix_rate();
 
 	int ringbuff_size = ring_buffer_max_size;
 

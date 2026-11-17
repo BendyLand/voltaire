@@ -55,7 +55,7 @@ void ConvexPolygonShape3D::set_points(const Vector<Vector3>& p_points)
 Vector<Vector3> ConvexPolygonShape3D::get_points() const { return points; }
 
 ConvexPolygonShape3D::ConvexPolygonShape3D()
-	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CONVEX_POLYGON))
+	: Shape3D(PhysicsServer3D::shape_create(PS3DE::SHAPE_CONVEX_POLYGON))
 {
 }
 

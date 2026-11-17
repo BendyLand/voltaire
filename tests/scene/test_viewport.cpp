@@ -1594,7 +1594,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 	// FIXME: MOUSE_MODE_CAPTURED if-conditions are not testable, because DisplayServerMock doesn't support it.
 
 	// NOTE: This test requires a real physics server.
-	PhysicsServer2DDummy *physics_server_2d_dummy = Object::cast_to<PhysicsServer2DDummy>(PhysicsServer2D::get_singleton());
+	PhysicsServer2DDummy *physics_server_2d_dummy = PhysicsServer2D::driver_as<PhysicsServer2DDummy>();
 	if (physics_server_2d_dummy) {
 		return;
 	}

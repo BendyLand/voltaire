@@ -35,23 +35,33 @@
 #include "../action_map/openxr_haptic_feedback.h"
 #include "core/types.h"
 
-class OpenXRValveAnalogThresholdExtension
+class OpenXRValveAnalogThresholdExtension final
 {
 public:
-	static OpenXRValveAnalogThresholdExtension* get_singleton();
 
-	OpenXRValveAnalogThresholdExtension();
-	virtual ~OpenXRValveAnalogThresholdExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	bool is_available();
+	static bool is_available();
 
 private:
-	static OpenXRValveAnalogThresholdExtension* singleton;
 
-	bool binding_modifier_ext = false;
-	bool threshold_ext = false;
+public:
+	struct Data
+	{
+		bool binding_modifier_ext = false;
+		bool threshold_ext = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRValveAnalogThresholdExtension() = delete;
+	OpenXRValveAnalogThresholdExtension(const OpenXRValveAnalogThresholdExtension&) = delete;
+	OpenXRValveAnalogThresholdExtension& operator=(const OpenXRValveAnalogThresholdExtension&) = delete;
+	~OpenXRValveAnalogThresholdExtension() = delete;
 };
 
 class OpenXRAnalogThresholdModifier : public OpenXRActionBindingModifier

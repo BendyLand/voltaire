@@ -38,29 +38,44 @@
 
 XRServer::XRMode XRServer::xr_mode = XRMODE_DEFAULT;
 
+void XRServer::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+}
+
+void XRServer::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
 XRServer::XRMode XRServer::get_xr_mode() { return xr_mode; }
 
 void XRServer::set_xr_mode(XRServer::XRMode p_mode) { xr_mode = p_mode; }
 
-XRServer* XRServer::singleton = nullptr;
-
-XRServer* XRServer::get_singleton() { return singleton; }
-
-double XRServer::get_world_scale() const
+double XRServer::get_world_scale()
 {
+	ERR_FAIL_NULL_V(data, 1.0);
 	if (Renderer::data && Renderer::is_on_render_thread()) {
 		// Return the value with which we're currently rendering,
 		// if we're on the render thread
-		return render_state.world_scale;
+		return data->render_state.world_scale;
 	}
 	else {
 		// Return our current value
-		return world_scale;
+		return data->world_scale;
 	}
 }
 
 void XRServer::set_world_scale(double p_world_scale)
 {
+	ERR_FAIL_NULL(data);
 	if (p_world_scale < 0.01) {
 		p_world_scale = 0.01;
 	}
@@ -68,8 +83,8 @@ void XRServer::set_world_scale(double p_world_scale)
 		p_world_scale = 1000.0;
 	}
 
-	world_scale = p_world_scale;
-	set_render_world_scale(world_scale);
+	data->world_scale = p_world_scale;
+	set_render_world_scale(data->world_scale);
 }
 
 void XRServer::_set_render_world_scale(double p_world_scale)
@@ -77,9 +92,8 @@ void XRServer::_set_render_world_scale(double p_world_scale)
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-	xr_server->render_state.world_scale = p_world_scale;
+	ERR_FAIL_NULL(data);
+	data->render_state.world_scale = p_world_scale;
 }
 
 void XRServer::_set_render_world_origin(const Transform3D& p_world_origin)
@@ -87,9 +101,8 @@ void XRServer::_set_render_world_origin(const Transform3D& p_world_origin)
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-	xr_server->render_state.world_origin = p_world_origin;
+	ERR_FAIL_NULL(data);
+	data->render_state.world_origin = p_world_origin;
 }
 
 void XRServer::_set_render_reference_frame(const Transform3D& p_reference_frame)
@@ -97,17 +110,19 @@ void XRServer::_set_render_reference_frame(const Transform3D& p_reference_frame)
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	XRServer*
- xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-	xr_server->render_state.reference_frame = p_reference_frame;
+	ERR_FAIL_NULL(data);
+	data->render_state.reference_frame = p_reference_frame;
 }
 
-Transform3D XRServer::get_reference_frame() const { return Transform3D(); }
+Transform3D XRServer::get_reference_frame() { return Transform3D(); }
 
-void XRServer::set_camera_locked_to_origin(bool p_enable) { camera_locked_to_origin = p_enable; }
+void XRServer::set_camera_locked_to_origin(bool p_enable)
+{
+	ERR_FAIL_NULL(data);
+	data->camera_locked_to_origin = p_enable;
+}
 
-Ref<XRInterface> XRServer::get_primary_interface() const
+Ref<XRInterface> XRServer::get_primary_interface()
 {
 	Ref<XRInterface> xri = memnew(XRInterface);
 	return xri;
@@ -115,13 +130,11 @@ Ref<XRInterface> XRServer::get_primary_interface() const
 
 void XRServer::remove_tracker(const Ref<XRTracker>& p_tracker) {}
 
-XRServer::XRServer() { singleton = this; }
-
 void XRServer::set_primary_interface(const Ref<XRInterface>& p_primary_interface) {}
 
 void XRServer::add_tracker(const Ref<XRTracker>& p_tracker) {}
 
-Ref<XRTracker> XRServer::get_tracker(const String& p_name) const
+Ref<XRTracker> XRServer::get_tracker(const String& p_name)
 {
 	Ref<XRTracker> xpt = memnew(XRTracker);
 	return xpt;
@@ -131,7 +144,7 @@ void XRServer::set_render_world_scale(double p_scale) {}
 
 void XRServer::remove_interface(const Ref<XRInterface>& p_interface) {}
 
-Transform3D XRServer::get_world_origin() const { return Transform3D(); }
+Transform3D XRServer::get_world_origin() { return Transform3D(); }
 
 void XRServer::set_world_origin(const Transform3D& p_world_origin) {}
 
@@ -140,5 +153,3 @@ void XRServer::_process() {}
 void XRServer::clear_reference_frame() {}
 
 void XRServer::add_interface(const Ref<XRInterface>& p_interface) {}
-
-

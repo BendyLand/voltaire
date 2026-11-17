@@ -35,7 +35,7 @@
 
 OpenXRCompositionLayerCylinder::OpenXRCompositionLayerCylinder()
 {
-	if (composition_layer_extension) {
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
 		XrCompositionLayerCylinderKHR openxr_composition_layer = {
 			XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR, // type
 			nullptr,								// next
@@ -48,7 +48,7 @@ OpenXRCompositionLayerCylinder::OpenXRCompositionLayerCylinder()
 			central_angle,							// centralAngle
 			aspect_ratio,							// aspectRatio
 		};
-		composition_layer = composition_layer_extension->composition_layer_create(
+		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
 			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
 	}
 }
@@ -59,8 +59,8 @@ void OpenXRCompositionLayerCylinder::set_radius(float p_radius)
 {
 	ERR_FAIL_COND(p_radius <= 0);
 	radius = p_radius;
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_cylinder_radius(
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_cylinder_radius(
 			composition_layer, p_radius);
 	}
 	update_fallback_mesh();
@@ -72,8 +72,8 @@ void OpenXRCompositionLayerCylinder::set_aspect_ratio(float p_aspect_ratio)
 {
 	ERR_FAIL_COND(p_aspect_ratio <= 0);
 	aspect_ratio = p_aspect_ratio;
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_cylinder_aspect_ratio(
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_cylinder_aspect_ratio(
 			composition_layer, p_aspect_ratio);
 	}
 	update_fallback_mesh();
@@ -85,8 +85,8 @@ void OpenXRCompositionLayerCylinder::set_central_angle(float p_central_angle)
 {
 	ERR_FAIL_COND(p_central_angle <= 0);
 	central_angle = p_central_angle;
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_cylinder_central_angle(
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_cylinder_central_angle(
 			composition_layer, p_central_angle);
 	}
 	update_fallback_mesh();

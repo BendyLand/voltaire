@@ -36,11 +36,22 @@
 #include "openxr_hand_tracking_extension.h"
 #include "servers/xr/xr_server.h"
 
-OpenXRHandTrackingExtension* OpenXRHandTrackingExtension::singleton = nullptr;
+void OpenXRHandTrackingExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
 
-OpenXRHandTrackingExtension* OpenXRHandTrackingExtension::get_singleton() { return singleton; }
+void OpenXRHandTrackingExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
-OpenXRHandTrackingExtension::~OpenXRHandTrackingExtension() { singleton = nullptr; }
 
 void OpenXRHandTrackingExtension::on_session_destroyed() { cleanup_hand_tracking(); }
 
@@ -51,11 +62,11 @@ void OpenXRHandTrackingExtension::on_state_stopping()
 }
 
 const OpenXRHandTrackingExtension::HandTracker* OpenXRHandTrackingExtension::get_hand_tracker(
-	HandTrackedHands p_hand) const
+	HandTrackedHands p_hand)
 {
 	ERR_FAIL_UNSIGNED_INDEX_V(p_hand, OPENXR_MAX_TRACKED_HANDS, nullptr);
 
-	return &hand_trackers[p_hand];
+	return &data->hand_trackers[p_hand];
 }
 
 bool OpenXRHandTrackingExtension::get_active() { return true; }

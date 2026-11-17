@@ -196,7 +196,7 @@ Ref<AudioEffectInstance> AudioEffectSpectrumAnalyzer::instantiate()
 	ins->base = Ref<AudioEffectSpectrumAnalyzer>(this);
 	static const int fft_sizes[FFT_SIZE_MAX] = {256, 512, 1024, 2048, 4096};
 	ins->fft_size = fft_sizes[fft_size];
-	ins->mix_rate = AudioServer::get_singleton()->get_mix_rate();
+	ins->mix_rate = AudioServer::get_mix_rate();
 	ins->fft_count = (buffer_length / (float(ins->fft_size) / ins->mix_rate)) + 1;
 	ins->fft_pos = 0;
 	ins->fft_history.resize(ins->fft_count);

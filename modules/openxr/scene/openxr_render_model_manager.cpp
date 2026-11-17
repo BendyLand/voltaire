@@ -85,9 +85,7 @@ void OpenXRRenderModelManager::set_tracker(RenderModelTracker p_tracker)
 			xr_path = XR_NULL_PATH;
 		}
 		else if (!Engine::is_editor_hint()) {
-			XRServer* xr_server = XRServer::get_singleton();
-			OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-			if (openxr_api && xr_server) {
+			if (OpenXRAPI::is_allocated() && XRServer::is_initialized()) {
 				String toplevel_path;
 				String tracker_name;
 				if (tracker == RENDER_MODEL_TRACKER_LEFT_HAND) {
@@ -102,12 +100,12 @@ void OpenXRRenderModelManager::set_tracker(RenderModelTracker p_tracker)
 					ERR_FAIL_MSG("Unsupported tracker value set.");
 				}
 
-				positional_tracker = xr_server->get_tracker(tracker_name);
+				positional_tracker = XRServer::get_tracker(tracker_name);
 				if (positional_tracker.is_null()) {
 					WARN_PRINT("OpenXR: Can't find tracker " + tracker_name);
 				}
 
-				xr_path = openxr_api->get_xr_path(toplevel_path);
+				xr_path = OpenXRAPI::get_xr_path(toplevel_path);
 				if (xr_path == XR_NULL_PATH) {
 					WARN_PRINT("OpenXR: Can't find path for " + toplevel_path);
 				}

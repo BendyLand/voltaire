@@ -35,7 +35,7 @@
 #include "core/math/quaternion.h"
 #include "servers/xr/xr_hand_tracker.h"
 
-class OpenXRHandTrackingExtension
+class OpenXRHandTrackingExtension final
 {
 public:
 	enum HandTrackedHands
@@ -61,36 +61,44 @@ public:
 		HandTrackedSource source = OPENXR_SOURCE_UNKNOWN;
 	};
 
-	static OpenXRHandTrackingExtension* get_singleton();
 
-	OpenXRHandTrackingExtension();
-	virtual ~OpenXRHandTrackingExtension();
+	static void on_instance_destroyed();
+	static void on_session_destroyed();
 
-	virtual void on_instance_destroyed();
-	virtual void on_session_destroyed();
+	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+	static void on_state_ready();
+	static void on_process();
+	static void on_state_stopping();
 
-	virtual void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
-	virtual void on_state_ready();
-	virtual void on_process();
-	virtual void on_state_stopping();
-
-	bool get_active();
-	const HandTracker* get_hand_tracker(HandTrackedHands p_hand) const;
+	static bool get_active();
+	static const HandTracker* get_hand_tracker(HandTrackedHands p_hand);
 
 private:
-	static OpenXRHandTrackingExtension* singleton;
-
-	HandTracker hand_trackers[OPENXR_MAX_TRACKED_HANDS]; // Fixed for left and right hand
-
-	// related extensions
-	bool hand_tracking_ext = false;
-	bool hand_motion_range_ext = false;
-	bool hand_tracking_source_ext = false;
-	bool unobstructed_data_source = false;
-	bool controller_data_source = false;
 
 	// functions
-	void cleanup_hand_tracking();
+	static void cleanup_hand_tracking();
+
+public:
+	struct Data
+	{
+		HandTracker hand_trackers[OPENXR_MAX_TRACKED_HANDS];
+		bool hand_tracking_ext = false;
+		bool hand_motion_range_ext = false;
+		bool hand_tracking_source_ext = false;
+		bool unobstructed_data_source = false;
+		bool controller_data_source = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRHandTrackingExtension() = delete;
+	OpenXRHandTrackingExtension(const OpenXRHandTrackingExtension&) = delete;
+	OpenXRHandTrackingExtension& operator=(const OpenXRHandTrackingExtension&) = delete;
+	~OpenXRHandTrackingExtension() = delete;
 };
 
 

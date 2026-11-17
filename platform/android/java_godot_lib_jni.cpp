@@ -643,7 +643,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_filePickerCallback(JN
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_requestPermissionResult(JNIEnv *env, jclass clazz, jstring p_permission, jboolean p_result) {
 	String permission = jstring_to_string(p_permission, env);
 	if (permission == "android.permission.RECORD_AUDIO" && p_result) {
-		AudioDriver::get_singleton()->input_start();
+		AudioDriverManager::get_active_driver()->input_start();
 	}
 
 }

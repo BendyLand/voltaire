@@ -503,11 +503,11 @@ bool AudioStreamWAV::is_monophonic() const { return false; }
 
 void AudioStreamWAV::set_data(const Vector<uint8_t>& p_data)
 {
-	AudioServer::get_singleton()->lock();
+	AudioServer::lock();
 
 	data = p_data;
 
-	AudioServer::get_singleton()->unlock();
+	AudioServer::unlock();
 }
 
 Vector<uint8_t> AudioStreamWAV::get_data() const { return Vector<uint8_t>(data); }

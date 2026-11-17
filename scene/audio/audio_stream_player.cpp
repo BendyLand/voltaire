@@ -45,7 +45,7 @@ void AudioStreamPlayer::set_volume_db(float p_volume)
 
 	Vector<AudioFrame> volume_vector = _get_volume_vector();
 	for (Ref<AudioStreamPlayback>& playback : internal->stream_playbacks) {
-		AudioServer::get_singleton()->set_playback_all_bus_volumes_linear(playback, volume_vector);
+		AudioServer::set_playback_all_bus_volumes_linear(playback, volume_vector);
 	}
 }
 
@@ -78,7 +78,7 @@ void AudioStreamPlayer::play(float p_from_pos)
 	if (stream_playback.is_null()) {
 		return;
 	}
-	AudioServer::get_singleton()->start_playback_stream(
+	AudioServer::start_playback_stream(
 		stream_playback, internal->bus, _get_volume_vector(), p_from_pos, internal->pitch_scale);
 	internal->ensure_playback_limit();
 
@@ -89,7 +89,7 @@ void AudioStreamPlayer::play(float p_from_pos)
 		sample_playback->volume_vector = _get_volume_vector();
 		sample_playback->bus = get_bus();
 
-		AudioServer::get_singleton()->start_sample_playback(sample_playback);
+		AudioServer::start_sample_playback(sample_playback);
 	}
 }
 
@@ -105,7 +105,7 @@ void AudioStreamPlayer::set_bus(const String& p_bus)
 {
 	internal->bus = p_bus;
 	for (const Ref<AudioStreamPlayback>& playback : internal->stream_playbacks) {
-		AudioServer::get_singleton()->set_playback_bus_exclusive(
+		AudioServer::set_playback_bus_exclusive(
 			playback, p_bus, _get_volume_vector());
 	}
 }
@@ -141,7 +141,7 @@ Vector<AudioFrame> AudioStreamPlayer::_get_volume_vector()
 
 	// Set the volume vector up according to the speaker mode and mix target.
 	// TODO do we need to scale the volume down when we output to more channels?
-	if (AudioServer::get_singleton()->get_speaker_mode() == AudioServer::SPEAKER_MODE_STEREO) {
+	if (AudioServer::get_speaker_mode() == AudioServer::SPEAKER_MODE_STEREO) {
 		volume_vector.write[0] = AudioFrame(volume_linear, volume_linear);
 	}
 	else {

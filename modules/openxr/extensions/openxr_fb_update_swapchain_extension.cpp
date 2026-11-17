@@ -34,6 +34,24 @@
 // Always include this as late as possible.
 #include "../openxr_platform_inc.h"
 
+void OpenXRFBUpdateSwapchainExtension::initialize(const String& p_rendering_driver)
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+	data->rendering_driver = p_rendering_driver;
+}
+
+void OpenXRFBUpdateSwapchainExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+
 #ifndef GL_CUBIC_IMG
 #define GL_CUBIC_IMG 0x9139
 #endif
@@ -47,80 +65,61 @@
 #define GL_CLAMP_TO_BORDER 0x812D
 #endif
 
-OpenXRFBUpdateSwapchainExtension *OpenXRFBUpdateSwapchainExtension::singleton = nullptr;
-
-OpenXRFBUpdateSwapchainExtension *OpenXRFBUpdateSwapchainExtension::get_singleton() {
-	return singleton;
-}
-
-OpenXRFBUpdateSwapchainExtension::OpenXRFBUpdateSwapchainExtension(const String &p_rendering_driver) {
-	singleton = this;
-	rendering_driver = p_rendering_driver;
-}
-
-OpenXRFBUpdateSwapchainExtension::~OpenXRFBUpdateSwapchainExtension() {
-	singleton = nullptr;
-}
-
 HashMap<String, bool *> OpenXRFBUpdateSwapchainExtension::get_requested_extensions(XrVersion p_version) {
 	HashMap<String, bool *> request_extensions;
 
-	request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME] = &fb_swapchain_update_state_ext;
+	request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME] = &data->fb_swapchain_update_state_ext;
 
-	if (rendering_driver == "vulkan") {
+	if (data->rendering_driver == "vulkan") {
 #ifdef XR_USE_GRAPHICS_API_VULKAN
-		request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_VULKAN_EXTENSION_NAME] = &fb_swapchain_update_state_vulkan_ext;
+		request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_VULKAN_EXTENSION_NAME] = &data->fb_swapchain_update_state_vulkan_ext;
 #endif
-	} else if (rendering_driver == "opengl3" || rendering_driver == "opengl3_es") {
+	} else if (data->rendering_driver == "opengl3" || data->rendering_driver == "opengl3_es") {
 #ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-		request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_OPENGL_ES_EXTENSION_NAME] = &fb_swapchain_update_state_opengles_ext;
+		request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_OPENGL_ES_EXTENSION_NAME] = &data->fb_swapchain_update_state_opengles_ext;
 #endif
 	}
 
 #ifdef ANDROID_ENABLED
-	request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_ANDROID_SURFACE_EXTENSION_NAME] = &fb_swapchain_update_state_android_ext;
+	request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_ANDROID_SURFACE_EXTENSION_NAME] = &data->fb_swapchain_update_state_android_ext;
 #endif
 
 	return request_extensions;
 }
 
 void OpenXRFBUpdateSwapchainExtension::on_instance_created(const XrInstance p_instance) {
-	if (fb_swapchain_update_state_ext) {
+	if (data->fb_swapchain_update_state_ext) {
 		EXT_INIT_XR_FUNC(xrUpdateSwapchainFB);
 		EXT_INIT_XR_FUNC(xrGetSwapchainStateFB);
 	}
 
-	if (fb_swapchain_update_state_vulkan_ext) {
+	if (data->fb_swapchain_update_state_vulkan_ext) {
 		// nothing to register here...
 	}
 
-	if (fb_swapchain_update_state_opengles_ext) {
+	if (data->fb_swapchain_update_state_opengles_ext) {
 		// nothing to register here...
 	}
 }
 
 void OpenXRFBUpdateSwapchainExtension::on_instance_destroyed() {
-	fb_swapchain_update_state_ext = false;
-	fb_swapchain_update_state_vulkan_ext = false;
-	fb_swapchain_update_state_opengles_ext = false;
+	data->fb_swapchain_update_state_ext = false;
+	data->fb_swapchain_update_state_vulkan_ext = false;
+	data->fb_swapchain_update_state_opengles_ext = false;
 }
 
-bool OpenXRFBUpdateSwapchainExtension::is_enabled() const {
-	return fb_swapchain_update_state_ext;
-}
+bool OpenXRFBUpdateSwapchainExtension::is_enabled() { return data != nullptr && data->fb_swapchain_update_state_ext; }
 
-bool OpenXRFBUpdateSwapchainExtension::is_android_ext_enabled() const {
-	return fb_swapchain_update_state_android_ext;
-}
+bool OpenXRFBUpdateSwapchainExtension::is_android_ext_enabled() { return data != nullptr && data->fb_swapchain_update_state_android_ext; }
 
 void OpenXRFBUpdateSwapchainExtension::update_swapchain_state(XrSwapchain p_swapchain, const OpenXRCompositionLayerExtension::SwapchainState *p_swapchain_state) {
 	if (!p_swapchain_state) {
 		return;
 	}
 
-	if (rendering_driver == "vulkan") {
+	if (data->rendering_driver == "vulkan") {
 #ifdef XR_USE_GRAPHICS_API_VULKAN
-		if (!fb_swapchain_update_state_ext || !fb_swapchain_update_state_vulkan_ext) {
+		if (!data->fb_swapchain_update_state_ext || !data->fb_swapchain_update_state_vulkan_ext) {
 			return;
 		}
 
@@ -143,13 +142,13 @@ void OpenXRFBUpdateSwapchainExtension::update_swapchain_state(XrSwapchain p_swap
 
 		XrResult result = xrUpdateSwapchainFB(p_swapchain, (XrSwapchainStateBaseHeaderFB *)&swapchain_state);
 		if (XR_FAILED(result)) {
-			print_error(vformat("OpenXR: Failed to update swapchain [%s]", OpenXRAPI::get_singleton()->get_error_string(result)));
+			print_error(vformat("OpenXR: Failed to update swapchain [%s]", OpenXRAPI::get_error_string(result)));
 			return;
 		}
 #endif
-	} else if (rendering_driver == "opengl3" || rendering_driver == "opengl3_es") {
+	} else if (data->rendering_driver == "opengl3" || data->rendering_driver == "opengl3_es") {
 #ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-		if (!fb_swapchain_update_state_ext || !fb_swapchain_update_state_opengles_ext) {
+		if (!data->fb_swapchain_update_state_ext || !data->fb_swapchain_update_state_opengles_ext) {
 			return;
 		}
 
@@ -171,7 +170,7 @@ void OpenXRFBUpdateSwapchainExtension::update_swapchain_state(XrSwapchain p_swap
 
 		XrResult result = xrUpdateSwapchainFB(p_swapchain, (XrSwapchainStateBaseHeaderFB *)&swapchain_state);
 		if (XR_FAILED(result)) {
-			print_error(vformat("OpenXR: Failed to update swapchain [%s]", OpenXRAPI::get_singleton()->get_error_string(result)));
+			print_error(vformat("OpenXR: Failed to update swapchain [%s]", OpenXRAPI::get_error_string(result)));
 			return;
 		}
 #endif
@@ -180,7 +179,7 @@ void OpenXRFBUpdateSwapchainExtension::update_swapchain_state(XrSwapchain p_swap
 
 void OpenXRFBUpdateSwapchainExtension::update_swapchain_surface_size(XrSwapchain p_swapchain, const Size2i &p_size) {
 #ifdef ANDROID_ENABLED
-	if (!fb_swapchain_update_state_ext || !fb_swapchain_update_state_android_ext) {
+	if (!data->fb_swapchain_update_state_ext || !data->fb_swapchain_update_state_android_ext) {
 		return;
 	}
 
@@ -193,7 +192,7 @@ void OpenXRFBUpdateSwapchainExtension::update_swapchain_surface_size(XrSwapchain
 
 	XrResult result = xrUpdateSwapchainFB(p_swapchain, (XrSwapchainStateBaseHeaderFB *)&swapchain_state);
 	if (XR_FAILED(result)) {
-		print_error(vformat("OpenXR: Failed to update swapchain surface size [%s]", OpenXRAPI::get_singleton()->get_error_string(result)));
+		print_error(vformat("OpenXR: Failed to update swapchain surface size [%s]", OpenXRAPI::get_error_string(result)));
 	}
 #endif
 }

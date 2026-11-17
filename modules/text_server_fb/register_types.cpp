@@ -40,11 +40,10 @@ void initialize_text_server_fb_module(ModuleInitializationLevel p_level) {
 	}
 
 	GDREGISTER_CLASS(TextServerFallback);
-	TextServerManager *tsman = TextServerManager::get_singleton();
-	if (tsman) {
+	if (TextServerManager::is_initialized()) {
 		Ref<TextServerFallback> ts;
 		ts.instantiate();
-		tsman->add_interface(ts);
+		TextServerManager::add_interface(ts);
 	}
 }
 

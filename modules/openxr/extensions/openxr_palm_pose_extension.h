@@ -33,22 +33,32 @@
 
 #include "core/types.h"
 
-class OpenXRPalmPoseExtension
+class OpenXRPalmPoseExtension final
 {
 public:
-	static OpenXRPalmPoseExtension* get_singleton();
 
-	OpenXRPalmPoseExtension();
-	virtual ~OpenXRPalmPoseExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	bool is_available();
+	static bool is_available();
 
 private:
-	static OpenXRPalmPoseExtension* singleton;
 
-	bool available = false;
+public:
+	struct Data
+	{
+		bool available = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRPalmPoseExtension() = delete;
+	OpenXRPalmPoseExtension(const OpenXRPalmPoseExtension&) = delete;
+	OpenXRPalmPoseExtension& operator=(const OpenXRPalmPoseExtension&) = delete;
+	~OpenXRPalmPoseExtension() = delete;
 };
 
 

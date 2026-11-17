@@ -219,43 +219,50 @@ private:
 };
 
 // Plane tracking logic
-class OpenXRSpatialPlaneTrackingCapability
+class OpenXRSpatialPlaneTrackingCapability final
 {
 public:
-	static OpenXRSpatialPlaneTrackingCapability* get_singleton();
 
-	OpenXRSpatialPlaneTrackingCapability();
-	virtual ~OpenXRSpatialPlaneTrackingCapability();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_session_created(const XrSession p_session);
+	static void on_session_destroyed();
 
-	virtual void on_session_created(const XrSession p_session);
-	virtual void on_session_destroyed();
+	static void on_process();
 
-	virtual void on_process();
-
-	bool is_supported();
+	static bool is_supported();
 
 private:
-	static OpenXRSpatialPlaneTrackingCapability* singleton;
-	bool spatial_plane_tracking_ext = false;
-	bool spatial_plane_tracking_supported = false;
-
-	RID spatial_context;
-	bool need_discovery = false;
-	int discovery_cooldown = 0;
-	Ref<OpenXRFutureResult> discovery_query_result;
-
-	Ref<OpenXRSpatialCapabilityConfigurationPlaneTracking> plane_configuration;
 
 	// Discovery logic
-	Ref<OpenXRFutureResult> _create_spatial_context();
-	void _on_spatial_context_created(RID p_spatial_context);
+	static Ref<OpenXRFutureResult> _create_spatial_context();
+	static void _on_spatial_context_created(RID p_spatial_context);
 
-	void _on_spatial_discovery_recommended(RID p_spatial_context);
+	static void _on_spatial_discovery_recommended(RID p_spatial_context);
 
-	// Trackers; maps each Spatial Context RID to their plane entities and trackers
-	HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRPlaneTracker>>> plane_trackers;
+public:
+	struct Data
+	{
+		bool spatial_plane_tracking_ext = false;
+		bool spatial_plane_tracking_supported = false;
+		RID spatial_context;
+		bool need_discovery = false;
+		int discovery_cooldown = 0;
+		Ref<OpenXRFutureResult> discovery_query_result;
+		Ref<OpenXRSpatialCapabilityConfigurationPlaneTracking> plane_configuration;
+		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRPlaneTracker>>> plane_trackers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRSpatialPlaneTrackingCapability() = delete;
+	OpenXRSpatialPlaneTrackingCapability(const OpenXRSpatialPlaneTrackingCapability&) = delete;
+	OpenXRSpatialPlaneTrackingCapability& operator=(const OpenXRSpatialPlaneTrackingCapability&) = delete;
+	~OpenXRSpatialPlaneTrackingCapability() = delete;
 };
 
 

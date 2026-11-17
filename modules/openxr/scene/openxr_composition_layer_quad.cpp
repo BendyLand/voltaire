@@ -35,7 +35,7 @@
 
 OpenXRCompositionLayerQuad::OpenXRCompositionLayerQuad()
 {
-	if (composition_layer_extension) {
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
 		XrCompositionLayerQuad openxr_composition_layer = {
 			XR_TYPE_COMPOSITION_LAYER_QUAD,			  // type
 			nullptr,								  // next
@@ -46,7 +46,7 @@ OpenXRCompositionLayerQuad::OpenXRCompositionLayerQuad()
 			{{0, 0, 0, 0}, {0, 0, 0}},				  // pose
 			{(float)quad_size.x, (float)quad_size.y}, // size
 		};
-		composition_layer = composition_layer_extension->composition_layer_create(
+		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
 			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
 	}
 }
@@ -65,8 +65,8 @@ Ref<Mesh> OpenXRCompositionLayerQuad::_create_fallback_mesh()
 void OpenXRCompositionLayerQuad::set_quad_size(const Size2& p_size)
 {
 	quad_size = p_size;
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_quad_size(composition_layer, p_size);
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_quad_size(composition_layer, p_size);
 	}
 	update_fallback_mesh();
 }

@@ -32,33 +32,36 @@
 #include "../openxr_interface.h"
 #include "openxr_fb_display_refresh_rate_extension.h"
 
-OpenXRDisplayRefreshRateExtension* OpenXRDisplayRefreshRateExtension::singleton = nullptr;
-
-OpenXRDisplayRefreshRateExtension* OpenXRDisplayRefreshRateExtension::get_singleton()
+void OpenXRDisplayRefreshRateExtension::initialize()
 {
-	return singleton;
+	if (!data) {
+		data = memnew(Data);
+	}
 }
 
-OpenXRDisplayRefreshRateExtension::OpenXRDisplayRefreshRateExtension() { singleton = this; }
-
-OpenXRDisplayRefreshRateExtension::~OpenXRDisplayRefreshRateExtension()
+void OpenXRDisplayRefreshRateExtension::finalize()
 {
-	display_refresh_rate_ext = false;
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
 }
+
 
 HashMap<String, bool*> OpenXRDisplayRefreshRateExtension::get_requested_extensions(
 	XrVersion p_version)
 {
 	HashMap<String, bool*> request_extensions;
 
-	request_extensions[XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME] = &display_refresh_rate_ext;
+	request_extensions[XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME] = &data->display_refresh_rate_ext;
 
 	return request_extensions;
 }
 
 void OpenXRDisplayRefreshRateExtension::on_instance_created(const XrInstance p_instance)
 {
-	if (display_refresh_rate_ext) {
+	if (data->display_refresh_rate_ext) {
 		EXT_INIT_XR_FUNC(xrEnumerateDisplayRefreshRatesFB);
 		EXT_INIT_XR_FUNC(xrGetDisplayRefreshRateFB);
 		EXT_INIT_XR_FUNC(xrRequestDisplayRefreshRateFB);
@@ -67,7 +70,7 @@ void OpenXRDisplayRefreshRateExtension::on_instance_created(const XrInstance p_i
 
 void OpenXRDisplayRefreshRateExtension::on_instance_destroyed()
 {
-	display_refresh_rate_ext = false;
+	data->display_refresh_rate_ext = false;
 }
 
 bool OpenXRDisplayRefreshRateExtension::on_event_polled(const XrEventDataBuffer& event)
@@ -77,7 +80,7 @@ bool OpenXRDisplayRefreshRateExtension::on_event_polled(const XrEventDataBuffer&
 		const XrEventDataDisplayRefreshRateChangedFB* event_fb =
 			(XrEventDataDisplayRefreshRateChangedFB*)&event;
 
-		OpenXRInterface* xr_interface = OpenXRAPI::get_singleton()->get_xr_interface();
+		OpenXRInterface* xr_interface = OpenXRAPI::get_xr_interface();
 		if (xr_interface) {
 			xr_interface->on_refresh_rate_changes(event_fb->toDisplayRefreshRate);
 		}
@@ -91,6 +94,6 @@ bool OpenXRDisplayRefreshRateExtension::on_event_polled(const XrEventDataBuffer&
 
 void OpenXRDisplayRefreshRateExtension::set_refresh_rate(float p_rate) {}
 
-float OpenXRDisplayRefreshRateExtension::get_refresh_rate() const { return 0.0f; }
+float OpenXRDisplayRefreshRateExtension::get_refresh_rate() { return 0.0f; }
 
 

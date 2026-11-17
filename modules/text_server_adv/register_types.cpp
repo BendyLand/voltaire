@@ -37,11 +37,10 @@ void initialize_text_server_adv_module(ModuleInitializationLevel p_level)
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
 		return;
 	}
-	TextServerManager* tsman = TextServerManager::get_singleton();
-	if (tsman) {
+	if (TextServerManager::is_initialized()) {
 		Ref<TextServerAdvanced> ts;
 		ts.instantiate();
-		tsman->add_interface(ts);
+		TextServerManager::add_interface(ts);
 	}
 }
 

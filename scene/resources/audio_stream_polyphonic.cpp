@@ -82,7 +82,7 @@ void AudioStreamPlaybackPolyphonic::stop()
 		if (s.active.is_set()) {
 			// Need locking because something may still be mixing.
 			locked = true;
-			AudioServer::get_singleton()->lock();
+			AudioServer::lock();
 		}
 		s.active.clear();
 		s.finish_request.clear();
@@ -90,7 +90,7 @@ void AudioStreamPlaybackPolyphonic::stop()
 		s.stream.unref();
 	}
 	if (locked) {
-		AudioServer::get_singleton()->unlock();
+		AudioServer::unlock();
 	}
 
 	active = false;
@@ -135,7 +135,7 @@ int AudioStreamPlaybackPolyphonic::mix(AudioFrame* p_buffer, float p_rate_scale,
 		if (s.stream_playback->get_is_sample()) {
 			if (s.finish_request.is_set()) {
 				s.active.clear();
-				AudioServer::get_singleton()->stop_sample_playback(
+				AudioServer::stop_sample_playback(
 					s.stream_playback->get_sample_playback());
 			}
 			continue;
@@ -209,7 +209,7 @@ AudioStreamPlaybackPolyphonic::ID AudioStreamPlaybackPolyphonic::play_stream(
 
 	AudioServer::PlaybackType playback_type =
 		p_playback_type == AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT
-			? AudioServer::get_singleton()->get_default_playback_type()
+			? AudioServer::get_default_playback_type()
 			: p_playback_type;
 
 	for (uint32_t i = 0; i < streams.size(); i++) {
@@ -217,7 +217,7 @@ AudioStreamPlaybackPolyphonic::ID AudioStreamPlaybackPolyphonic::play_stream(
 			Ref<AudioSamplePlayback> active_sample_playback =
 				streams[i].stream_playback->get_sample_playback();
 			if (active_sample_playback.is_null() ||
-				!AudioServer::get_singleton()->is_sample_playback_active(active_sample_playback)) {
+				!AudioServer::is_sample_playback_active(active_sample_playback)) {
 				streams[i].active.clear();
 			}
 		}
@@ -239,8 +239,8 @@ AudioStreamPlaybackPolyphonic::ID AudioStreamPlaybackPolyphonic::play_stream(
 			if (playback_type == AudioServer::PlaybackType::PLAYBACK_TYPE_SAMPLE &&
 				p_stream->can_be_sampled()) {
 				streams[i].stream_playback->set_is_sample(true);
-				if (!AudioServer::get_singleton()->is_stream_registered_as_sample(p_stream)) {
-					AudioServer::get_singleton()->register_stream_as_sample(p_stream);
+				if (!AudioServer::is_stream_registered_as_sample(p_stream)) {
+					AudioServer::register_stream_as_sample(p_stream);
 				}
 				float linear_volume = Math::db_to_linear(p_volume_db);
 				Ref<AudioSamplePlayback> sp;
@@ -255,11 +255,11 @@ AudioStreamPlaybackPolyphonic::ID AudioStreamPlaybackPolyphonic::play_stream(
 				sp->bus = p_bus;
 
 				if (streams[i].stream_playback->get_sample_playback().is_valid()) {
-					AudioServer::get_singleton()->stop_playback_stream(streams[i].stream_playback);
+					AudioServer::stop_playback_stream(streams[i].stream_playback);
 				}
 
 				streams[i].stream_playback->set_sample_playback(sp);
-				AudioServer::get_singleton()->start_sample_playback(sp);
+				AudioServer::start_sample_playback(sp);
 			}
 
 			return (ID(i) << INDEX_SHIFT) | ID(streams[i].id);

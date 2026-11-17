@@ -36,40 +36,29 @@
 #include "thirdparty/openxr/include/openxr/openxr.h"
 
 
-class OpenXRDebugUtilsExtension
+class OpenXRDebugUtilsExtension final
 {
 public:
-	static OpenXRDebugUtilsExtension* get_singleton();
 
-	OpenXRDebugUtilsExtension();
-	virtual ~OpenXRDebugUtilsExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_instance_destroyed();
+	static bool get_active();
 
-	bool get_active();
-
-	void set_object_name(
+	static void set_object_name(
 		XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name);
-	void begin_debug_label_region(const char* p_label_name);
-	void end_debug_label_region();
-	void insert_debug_label(const char* p_label_name);
+	static void begin_debug_label_region(const char* p_label_name);
+	static void end_debug_label_region();
+	static void insert_debug_label(const char* p_label_name);
 
 private:
-	static OpenXRDebugUtilsExtension* singleton;
-
-	// related extensions
-	bool debug_utils_ext = false;
-
-	// debug handlers
-	XrDebugUtilsMessengerEXT default_messenger = XR_NULL_HANDLE;
 
 	static XrBool32 XRAPI_PTR _debug_callback(
 		XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
 		XrDebugUtilsMessageTypeFlagsEXT p_message_types,
 		const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data);
-	XrBool32 debug_callback(XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
+	static XrBool32 debug_callback(XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
 		XrDebugUtilsMessageTypeFlagsEXT p_message_types,
 		const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data);
 
@@ -86,6 +75,24 @@ private:
 	EXT_PROTO_XRRESULT_FUNC1(xrSessionEndDebugUtilsLabelRegionEXT, (XrSession), p_session)
 	EXT_PROTO_XRRESULT_FUNC2(xrSessionInsertDebugUtilsLabelEXT, (XrSession), p_session,
 		(const XrDebugUtilsLabelEXT*), p_label_info)
+
+public:
+	struct Data
+	{
+		bool debug_utils_ext = false;
+		XrDebugUtilsMessengerEXT default_messenger = XR_NULL_HANDLE;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRDebugUtilsExtension() = delete;
+	OpenXRDebugUtilsExtension(const OpenXRDebugUtilsExtension&) = delete;
+	OpenXRDebugUtilsExtension& operator=(const OpenXRDebugUtilsExtension&) = delete;
+	~OpenXRDebugUtilsExtension() = delete;
 };
 
 

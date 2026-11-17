@@ -39,7 +39,7 @@ void AudioEffectStereoEnhanceInstance::process(
 	bool surround_mode = base->surround > 0;
 	float surround_amount = base->surround;
 	unsigned int delay_frames =
-		(base->time_pullout / 1000.0) * AudioServer::get_singleton()->get_mix_rate();
+		(base->time_pullout / 1000.0) * AudioServer::get_mix_rate();
 
 	for (int i = 0; i < p_frame_count; i++) {
 		float left = p_src_frames[i].left;
@@ -90,7 +90,7 @@ Ref<AudioEffectInstance> AudioEffectStereoEnhance::instantiate()
 
 	float ring_buffer_max_size = AudioEffectStereoEnhanceInstance::MAX_DELAY_MS + 2;
 	ring_buffer_max_size /= 1000.0; // convert to seconds
-	ring_buffer_max_size *= AudioServer::get_singleton()->get_mix_rate();
+	ring_buffer_max_size *= AudioServer::get_mix_rate();
 
 	int ringbuff_size = (int)ring_buffer_max_size;
 

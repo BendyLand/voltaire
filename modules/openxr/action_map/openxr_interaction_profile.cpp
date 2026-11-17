@@ -55,9 +55,8 @@ Ref<OpenXRAction> OpenXRIPBinding::get_action() const { return action; }
 
 void OpenXRIPBinding::set_binding_path(const String& p_path)
 {
-	OpenXRInteractionProfileMetadata* pmd = OpenXRInteractionProfileMetadata::get_singleton();
-	if (pmd) {
-		binding_path = pmd->check_path_name(p_path);
+	if (OpenXRInteractionProfileMetadata::is_initialized()) {
+		binding_path = OpenXRInteractionProfileMetadata::check_path_name(p_path);
 	}
 	else {
 		// OpenXR not enabled, ignore checks.
@@ -204,9 +203,8 @@ Ref<OpenXRInteractionProfile> OpenXRInteractionProfile::new_profile(
 
 void OpenXRInteractionProfile::set_interaction_profile_path(const String& p_input_profile_path)
 {
-	OpenXRInteractionProfileMetadata* pmd = OpenXRInteractionProfileMetadata::get_singleton();
-	if (pmd) {
-		interaction_profile_path = pmd->check_profile_name(p_input_profile_path);
+	if (OpenXRInteractionProfileMetadata::is_initialized()) {
+		interaction_profile_path = OpenXRInteractionProfileMetadata::check_profile_name(p_input_profile_path);
 	}
 	else {
 		// OpenXR not enabled, ignore checks.

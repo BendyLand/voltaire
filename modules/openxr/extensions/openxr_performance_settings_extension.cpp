@@ -33,30 +33,33 @@
 
 #include "../openxr_api.h"
 
-OpenXRPerformanceSettingsExtension *OpenXRPerformanceSettingsExtension::singleton = nullptr;
-
-OpenXRPerformanceSettingsExtension *OpenXRPerformanceSettingsExtension::get_singleton() {
-	return singleton;
+void OpenXRPerformanceSettingsExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
 }
 
-OpenXRPerformanceSettingsExtension::OpenXRPerformanceSettingsExtension() {
-	singleton = this;
+void OpenXRPerformanceSettingsExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
 }
 
-OpenXRPerformanceSettingsExtension::~OpenXRPerformanceSettingsExtension() {
-	singleton = nullptr;
-}
 
 HashMap<String, bool *> OpenXRPerformanceSettingsExtension::get_requested_extensions(XrVersion p_version) {
 	HashMap<String, bool *> request_extensions;
 
-	request_extensions[XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME] = &available;
+	request_extensions[XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME] = &data->available;
 
 	return request_extensions;
 }
 
 void OpenXRPerformanceSettingsExtension::on_instance_created(const XrInstance p_instance) {
-	if (available) {
+	if (data->available) {
 		EXT_INIT_XR_FUNC(xrPerfSettingsSetPerformanceLevelEXT);
 	}
 }
@@ -70,7 +73,7 @@ bool OpenXRPerformanceSettingsExtension::on_event_polled(const XrEventDataBuffer
 			OpenXRInterface::PerfSettingsNotificationLevel from_level = openxr_to_notification_level(perf_settings_event->fromLevel);
 			OpenXRInterface::PerfSettingsNotificationLevel to_level = openxr_to_notification_level(perf_settings_event->toLevel);
 
-			OpenXRInterface *openxr_interface = OpenXRAPI::get_singleton()->get_xr_interface();
+			OpenXRInterface *openxr_interface = OpenXRAPI::get_xr_interface();
 
 			if (perf_settings_event->domain == XR_PERF_SETTINGS_DOMAIN_CPU_EXT) {
 				openxr_interface->on_cpu_level_changed(sub_domain, from_level, to_level);
@@ -86,27 +89,25 @@ bool OpenXRPerformanceSettingsExtension::on_event_polled(const XrEventDataBuffer
 	}
 }
 
-bool OpenXRPerformanceSettingsExtension::is_available() {
-	return available;
-}
+bool OpenXRPerformanceSettingsExtension::is_available() { return data != nullptr && data->available; }
 
 void OpenXRPerformanceSettingsExtension::set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level) {
-	XrSession session = OpenXRAPI::get_singleton()->get_session();
+	XrSession session = OpenXRAPI::get_session();
 	XrPerfSettingsLevelEXT xr_level = level_to_openxr(p_level);
 
 	XrResult result = xrPerfSettingsSetPerformanceLevelEXT(session, XR_PERF_SETTINGS_DOMAIN_CPU_EXT, xr_level);
 	if (XR_FAILED(result)) {
-		print_error(vformat("OpenXR: failed to set CPU performance level [%s]", OpenXRAPI::get_singleton()->get_error_string(result)));
+		print_error(vformat("OpenXR: failed to set CPU performance level [%s]", OpenXRAPI::get_error_string(result)));
 	}
 }
 
 void OpenXRPerformanceSettingsExtension::set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level) {
-	XrSession session = OpenXRAPI::get_singleton()->get_session();
+	XrSession session = OpenXRAPI::get_session();
 	XrPerfSettingsLevelEXT xr_level = level_to_openxr(p_level);
 
 	XrResult result = xrPerfSettingsSetPerformanceLevelEXT(session, XR_PERF_SETTINGS_DOMAIN_GPU_EXT, xr_level);
 	if (XR_FAILED(result)) {
-		print_error(vformat("OpenXR: failed to set GPU performance level [%s]", OpenXRAPI::get_singleton()->get_error_string(result)));
+		print_error(vformat("OpenXR: failed to set GPU performance level [%s]", OpenXRAPI::get_error_string(result)));
 	}
 }
 

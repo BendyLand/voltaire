@@ -4511,7 +4511,7 @@ void TextServerAdvanced::_update_chars(ShapedTextDataAdvanced* p_sd) const
 			int r_end = MIN(spans[i].end - p_sd->start, p_sd->text.length());
 			UBreakIterator* bi = ubrk_open(UBRK_CHARACTER,
 				(language.is_empty())
-					? TranslationServer::get_singleton()->get_tool_locale().ascii().get_data()
+					? TranslationServer::get_tool_locale().ascii().get_data()
 					: language.ascii().get_data(),
 				data + _convert_pos_inv(p_sd, r_start), _convert_pos_inv(p_sd, r_end - r_start),
 				&err);
@@ -4891,7 +4891,7 @@ UBreakIterator* TextServerAdvanced::_create_line_break_iterator_for_locale(
 	// new ones.
 
 	String language =
-		p_language.is_empty() ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
+		p_language.is_empty() ? TranslationServer::get_tool_locale() : p_language;
 	if (!language.contains("@")) {
 		if (lb_strictness == LB_LOOSE) {
 			language += "@lb=loose";
@@ -5191,7 +5191,7 @@ String TextServerAdvanced::_string_to_upper(const String& p_string, const String
 		return p_string;
 	}
 	const String lang = (p_language.is_empty())
-							? TranslationServer::get_singleton()->get_tool_locale()
+							? TranslationServer::get_tool_locale()
 							: p_language;
 
 	// Convert to UTF-16.
@@ -5222,7 +5222,7 @@ String TextServerAdvanced::_string_to_lower(const String& p_string, const String
 		return p_string;
 	}
 	const String lang = (p_language.is_empty())
-							? TranslationServer::get_singleton()->get_tool_locale()
+							? TranslationServer::get_tool_locale()
 							: p_language;
 	// Convert to UTF-16.
 	Char16String utf16 = p_string.utf16();
@@ -5252,7 +5252,7 @@ String TextServerAdvanced::_string_to_title(const String& p_string, const String
 		return p_string;
 	}
 	const String lang = (p_language.is_empty())
-							? TranslationServer::get_singleton()->get_tool_locale()
+							? TranslationServer::get_tool_locale()
 							: p_language;
 
 	// Convert to UTF-16.
@@ -5276,7 +5276,7 @@ PackedInt32Array TextServerAdvanced::_string_get_word_breaks(
 	const String& p_string, const String& p_language, int64_t p_chars_per_line) const
 {
 	const String lang = (p_language.is_empty())
-							? TranslationServer::get_singleton()->get_tool_locale()
+							? TranslationServer::get_tool_locale()
 							: p_language;
 	// Convert to UTF-16.
 	Char16String utf16 = p_string.utf16();
@@ -5418,7 +5418,7 @@ PackedInt32Array TextServerAdvanced::_string_get_character_breaks(
 	const String& p_string, const String& p_language) const
 {
 	const String lang = (p_language.is_empty())
-							? TranslationServer::get_singleton()->get_tool_locale()
+							? TranslationServer::get_tool_locale()
 							: p_language;
 	// Convert to UTF-16.
 	Char16String utf16 = p_string.utf16();

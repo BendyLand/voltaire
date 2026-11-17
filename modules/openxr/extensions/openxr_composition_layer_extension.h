@@ -45,7 +45,7 @@ typedef XrResult(XRAPI_PTR* PFN_xrCreateSwapchainAndroidSurfaceKHR)(
 class JavaObject;
 
 // OpenXRCompositionLayerExtension enables the extensions related to this functionality
-class OpenXRCompositionLayerExtension
+class OpenXRCompositionLayerExtension final
 {
 public:
 	// Must be identical to Filter enum definition in OpenXRCompositionLayer.
@@ -114,40 +114,36 @@ public:
 		Color border_color = {0.0, 0.0, 0.0, 0.0};
 	};
 
-	static OpenXRCompositionLayerExtension* get_singleton();
 
-	OpenXRCompositionLayerExtension();
-	virtual ~OpenXRCompositionLayerExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_session_created(const XrSession p_session);
+	static void on_session_destroyed();
+	static void on_pre_render();
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_session_created(const XrSession p_session);
-	virtual void on_session_destroyed();
-	virtual void on_pre_render();
-
-	virtual int get_composition_layer_count();
-	virtual XrCompositionLayerBaseHeader* get_composition_layer(int p_index);
-	virtual int get_composition_layer_order(int p_index);
+	static int get_composition_layer_count();
+	static XrCompositionLayerBaseHeader* get_composition_layer(int p_index);
+	static int get_composition_layer_order(int p_index);
 
 	// The data on p_openxr_layer will be copied - there is no need to keep it valid after this
 	// call.
-	RID composition_layer_create(XrCompositionLayerBaseHeader* p_openxr_layer);
-	void composition_layer_free(RID p_layer);
+	static RID composition_layer_create(XrCompositionLayerBaseHeader* p_openxr_layer);
+	static void composition_layer_free(RID p_layer);
 
-	void composition_layer_register(RID p_layer);
-	void composition_layer_unregister(RID p_layer);
+	static void composition_layer_register(RID p_layer);
+	static void composition_layer_unregister(RID p_layer);
 
 	// This extension provides access to composition layers for displaying 2D content through the XR
 	// compositor. Declarations are made here, and implementations in the .cpp, to avoid having to
 	// include Renderer in a header.
 
 #define OPENXR_LAYER_FUNC1_DECL(m_name, m_arg1)                                                    \
-	void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1);                                 \
-	void composition_layer_##m_name(RID p_layer, m_arg1 p1);
+	static void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1);                          \
+	static void composition_layer_##m_name(RID p_layer, m_arg1 p1);
 
 #define OPENXR_LAYER_FUNC2_DECL(m_name, m_arg1, m_arg2)                                            \
-	void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1, m_arg2 p2);                      \
-	void composition_layer_##m_name(RID p_layer, m_arg1 p1, m_arg2 p2);
+	static void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1, m_arg2 p2);               \
+	static void composition_layer_##m_name(RID p_layer, m_arg1 p1, m_arg2 p2);
 
 	OPENXR_LAYER_FUNC2_DECL(set_viewport, RID, const Size2i&);
 	OPENXR_LAYER_FUNC2_DECL(set_use_android_surface, bool, const Size2i&);
@@ -184,25 +180,20 @@ public:
 #undef OPENXR_LAYER_FUNC1_DECL
 #undef OPENXR_LAYER_FUNC2_DECL
 
-	Ref<JavaObject> composition_layer_get_android_surface(RID p_layer);
+	static Ref<JavaObject> composition_layer_get_android_surface(RID p_layer);
 
-	bool is_available(XrStructureType p_which);
+	static bool is_available(XrStructureType p_which);
 
-	bool is_android_surface_swapchain_available() { return android_surface_ext_available; }
+	static bool is_android_surface_swapchain_available() { return data != nullptr && data->android_surface_ext_available; }
 
 private:
-	static OpenXRCompositionLayerExtension* singleton;
 
-	bool cylinder_ext_available = false;
-	bool equirect_ext_available = false;
-	bool android_surface_ext_available = false;
-
-	void _composition_layer_free_rt(RID p_layer);
-	void _composition_layer_register_rt(RID p_layer);
-	void _composition_layer_unregister_rt(RID p_layer);
+	static void _composition_layer_free_rt(RID p_layer);
+	static void _composition_layer_register_rt(RID p_layer);
+	static void _composition_layer_unregister_rt(RID p_layer);
 
 #ifdef ANDROID_ENABLED
-	bool create_android_surface_swapchain(
+	static bool create_android_surface_swapchain(
 		XrSwapchainCreateInfo* p_info, XrSwapchain* r_swapchain, jobject* r_surface);
 
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroySwapchain, (XrSwapchain), swapchain)
@@ -307,9 +298,27 @@ private:
 #endif
 	};
 
-	Mutex composition_layer_mutex;
-	RID_Owner<CompositionLayer, true> composition_layer_owner;
-	LocalVector<CompositionLayer*> registered_composition_layers;
+public:
+	struct Data
+	{
+		bool cylinder_ext_available = false;
+		bool equirect_ext_available = false;
+		bool android_surface_ext_available = false;
+		Mutex composition_layer_mutex;
+		RID_Owner<CompositionLayer, true> composition_layer_owner;
+		LocalVector<CompositionLayer*> registered_composition_layers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRCompositionLayerExtension() = delete;
+	OpenXRCompositionLayerExtension(const OpenXRCompositionLayerExtension&) = delete;
+	OpenXRCompositionLayerExtension& operator=(const OpenXRCompositionLayerExtension&) = delete;
+	~OpenXRCompositionLayerExtension() = delete;
 };
 
 

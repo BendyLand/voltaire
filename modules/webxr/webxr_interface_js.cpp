@@ -49,10 +49,9 @@
 #include <cstdlib>
 
 void _emwebxr_on_session_supported(char *p_session_mode, int p_supported) {
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
+	ERR_FAIL_COND(!XRServer::is_initialized());
 
-	Ref<WebXRInterfaceJS> interface = xr_server->find_interface("WebXR");
+	Ref<WebXRInterfaceJS> interface = XRServer::find_interface("WebXR");
 	ERR_FAIL_COND(interface.is_null());
 
 	String session_mode = String(p_session_mode);
@@ -60,10 +59,9 @@ void _emwebxr_on_session_supported(char *p_session_mode, int p_supported) {
 }
 
 void _emwebxr_on_session_started(char *p_reference_space_type, char *p_enabled_features, char *p_environment_blend_mode) {
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
+	ERR_FAIL_COND(!XRServer::is_initialized());
 
-	Ref<WebXRInterfaceJS> interface = xr_server->find_interface("WebXR");
+	Ref<WebXRInterfaceJS> interface = XRServer::find_interface("WebXR");
 	ERR_FAIL_COND(interface.is_null());
 
 	String reference_space_type = String(p_reference_space_type);
@@ -74,10 +72,9 @@ void _emwebxr_on_session_started(char *p_reference_space_type, char *p_enabled_f
 }
 
 void _emwebxr_on_session_ended() {
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
+	ERR_FAIL_COND(!XRServer::is_initialized());
 
-	Ref<WebXRInterfaceJS> interface = xr_server->find_interface("WebXR");
+	Ref<WebXRInterfaceJS> interface = XRServer::find_interface("WebXR");
 	ERR_FAIL_COND(interface.is_null());
 
 	interface->uninitialize();
@@ -85,10 +82,9 @@ void _emwebxr_on_session_ended() {
 }
 
 void _emwebxr_on_session_failed(char *p_message) {
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
+	ERR_FAIL_COND(!XRServer::is_initialized());
 
-	Ref<WebXRInterfaceJS> interface = xr_server->find_interface("WebXR");
+	Ref<WebXRInterfaceJS> interface = XRServer::find_interface("WebXR");
 	ERR_FAIL_COND(interface.is_null());
 
 	interface->uninitialize();
@@ -98,20 +94,18 @@ void _emwebxr_on_session_failed(char *p_message) {
 }
 
 extern "C" EMSCRIPTEN_KEEPALIVE void _emwebxr_on_input_event(int p_event_type, int p_input_source_id) {
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
+	ERR_FAIL_COND(!XRServer::is_initialized());
 
-	Ref<WebXRInterfaceJS> interface = xr_server->find_interface("WebXR");
+	Ref<WebXRInterfaceJS> interface = XRServer::find_interface("WebXR");
 	ERR_FAIL_COND(interface.is_null());
 
 	interface->_on_input_event(p_event_type, p_input_source_id);
 }
 
 extern "C" EMSCRIPTEN_KEEPALIVE void _emwebxr_on_simple_event(char *p_signal_name) {
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
+	ERR_FAIL_COND(!XRServer::is_initialized());
 
-	Ref<WebXRInterfaceJS> interface = xr_server->find_interface("WebXR");
+	Ref<WebXRInterfaceJS> interface = XRServer::find_interface("WebXR");
 	ERR_FAIL_COND(interface.is_null());
 
 	String signal_name = String(p_signal_name);
@@ -287,8 +281,7 @@ bool WebXRInterfaceJS::is_initialized() const {
 }
 
 bool WebXRInterfaceJS::initialize() {
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, false);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), false);
 
 	if (!initialized) {
 		if (!godot_webxr_is_supported()) {
@@ -315,10 +308,10 @@ bool WebXRInterfaceJS::initialize() {
 		head_tracker->set_tracker_type(XRServer::TRACKER_HEAD);
 		head_tracker->set_tracker_name("head");
 		head_tracker->set_tracker_desc("Players head");
-		xr_server->add_tracker(head_tracker);
+		XRServer::add_tracker(head_tracker);
 
 		// Make this our primary interface.
-		xr_server->set_primary_interface(this);
+		XRServer::set_primary_interface(this);
 
 		// Clear render_targetsize to make sure it gets reset to the new size.
 		// Clearing in uninitialize() doesn't work because a frame can still be
@@ -345,25 +338,24 @@ bool WebXRInterfaceJS::initialize() {
 
 void WebXRInterfaceJS::uninitialize() {
 	if (initialized) {
-		XRServer *xr_server = XRServer::get_singleton();
-		if (xr_server != nullptr) {
+		if (XRServer::is_initialized()) {
 			if (head_tracker.is_valid()) {
-				xr_server->remove_tracker(head_tracker);
+				XRServer::remove_tracker(head_tracker);
 
 				head_tracker.unref();
 			}
 
 			for (int i = 0; i < HAND_MAX; i++) {
 				if (hand_trackers[i].is_valid()) {
-					xr_server->remove_tracker(hand_trackers[i]);
+					XRServer::remove_tracker(hand_trackers[i]);
 
 					hand_trackers[i].unref();
 				}
 			}
 
-			if (xr_server->get_primary_interface() == this) {
+			if (XRServer::get_primary_interface() == this) {
 				// no longer our primary interface
-				xr_server->set_primary_interface(nullptr);
+				XRServer::set_primary_interface(nullptr);
 			}
 		}
 
@@ -440,24 +432,22 @@ Size2 WebXRInterfaceJS::get_render_target_size() {
 Transform3D WebXRInterfaceJS::get_camera_transform() {
 	Transform3D camera_transform;
 
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, camera_transform);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), camera_transform);
 
 	if (initialized) {
-		double world_scale = xr_server->get_world_scale();
+		double world_scale = XRServer::get_world_scale();
 
 		Transform3D _head_transform = head_transform;
 		_head_transform.origin *= world_scale;
 
-		camera_transform = (xr_server->get_reference_frame()) * _head_transform;
+		camera_transform = (XRServer::get_reference_frame()) * _head_transform;
 	}
 
 	return camera_transform;
 }
 
 Transform3D WebXRInterfaceJS::get_transform_for_view(uint32_t p_view, const Transform3D &p_cam_transform) {
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, p_cam_transform);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), p_cam_transform);
 	ERR_FAIL_COND_V(!initialized, p_cam_transform);
 
 	float js_matrix[16];
@@ -468,10 +458,10 @@ Transform3D WebXRInterfaceJS::get_transform_for_view(uint32_t p_view, const Tran
 
 	Transform3D transform_for_view = _js_matrix_to_transform(js_matrix);
 
-	double world_scale = xr_server->get_world_scale();
+	double world_scale = XRServer::get_world_scale();
 	transform_for_view.origin *= world_scale;
 
-	return p_cam_transform * xr_server->get_reference_frame() * transform_for_view;
+	return p_cam_transform * XRServer::get_reference_frame() * transform_for_view;
 }
 
 Projection WebXRInterfaceJS::get_projection_for_view(uint32_t p_view, double p_aspect, double p_z_near, double p_z_far) {
@@ -619,8 +609,7 @@ void WebXRInterfaceJS::process() {
 }
 
 void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
-	XRServer *xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
+	ERR_FAIL_COND(!XRServer::is_initialized());
 
 	InputSource &input_source = input_sources[p_input_source_id];
 
@@ -656,7 +645,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 
 	if (!input_source.active) {
 		if (input_source.tracker.is_valid()) {
-			xr_server->remove_tracker(input_source.tracker);
+			XRServer::remove_tracker(input_source.tracker);
 			input_source.tracker.unref();
 		}
 		return;
@@ -686,7 +675,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 			tracker->set_tracker_name(tracker_name);
 			tracker->set_tracker_desc(tracker_name);
 		}
-		xr_server->add_tracker(tracker);
+		XRServer::add_tracker(tracker);
 	}
 
 	Transform3D aim_transform = _js_matrix_to_transform(target_pose);
@@ -772,7 +761,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 				}
 
 				hand_trackers[p_input_source_id] = hand_tracker;
-				xr_server->add_tracker(hand_tracker);
+				XRServer::add_tracker(hand_tracker);
 			}
 
 			hand_tracker->set_has_tracking_data(true);

@@ -38,6 +38,23 @@
 #include "drivers/gles3/storage/texture_storage.h"
 #include "servers/display/display_server.h"
 
+void OpenXROpenGLExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXROpenGLExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+
 // OpenXR requires us to submit sRGB textures so that it recognizes the content
 // as being in sRGB color space. We do fall back on "normal" textures but this
 // will likely result in incorrect colors as OpenXR will double the sRGB conversion.
@@ -65,7 +82,7 @@ HashMap<String, bool*> OpenXROpenGLExtension::get_requested_extensions(XrVersion
 	request_extensions[XR_KHR_OPENGL_ENABLE_EXTENSION_NAME] = nullptr;
 #endif
 #if defined(LINUXBSD_ENABLED) && defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
-	request_extensions[XR_MNDX_EGL_ENABLE_EXTENSION_NAME] = &egl_extension_enabled;
+	request_extensions[XR_MNDX_EGL_ENABLE_EXTENSION_NAME] = &data->egl_extension_enabled;
 #endif
 
 	return request_extensions;
@@ -74,7 +91,7 @@ HashMap<String, bool*> OpenXROpenGLExtension::get_requested_extensions(XrVersion
 void OpenXROpenGLExtension::on_instance_created(const XrInstance p_instance)
 {
 	// Obtain pointers to functions we're accessing here.
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 #ifdef XR_USE_GRAPHICS_API_OPENGL_ES
 	EXT_INIT_XR_FUNC(xrGetOpenGLESGraphicsRequirementsKHR);
@@ -132,7 +149,7 @@ void* OpenXROpenGLExtension::set_session_create_and_get_next_pointer(void* p_nex
 #else
 #if defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
 	if (DisplayServer::get_name() == "Wayland") {
-		ERR_FAIL_COND_V_MSG(!egl_extension_enabled, p_next_pointer,
+		ERR_FAIL_COND_V_MSG(!data->egl_extension_enabled, p_next_pointer,
 			"OpenXR cannot initialize on Wayland without the XR_MNDX_egl_enable extension.");
 
 		graphics_binding_egl.type = XR_TYPE_GRAPHICS_BINDING_EGL_MNDX;
@@ -201,7 +218,7 @@ bool OpenXROpenGLExtension::get_swapchain_image_data(XrSwapchain p_swapchain,
 	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: Failed to get swapchain image count [",
-		// OpenXRAPI::get_singleton()->get_error_string(result), "]");
+		// OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -227,7 +244,7 @@ bool OpenXROpenGLExtension::get_swapchain_image_data(XrSwapchain p_swapchain,
 		(XrSwapchainImageBaseHeader*)images.ptr());
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: Failed to get swapchain images [",
-		// OpenXRAPI::get_singleton()->get_error_string(result), "]");
+		// OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -302,7 +319,7 @@ void OpenXROpenGLExtension::cleanup_swapchain_graphics_data(void** p_swapchain_g
 		return String(#e);                                                                         \
 	} break;
 
-String OpenXROpenGLExtension::get_swapchain_format_name(int64_t p_swapchain_format) const
+String OpenXROpenGLExtension::get_swapchain_format_name(int64_t p_swapchain_format)
 {
 	// These are somewhat different per platform, will need to weed some stuff out...
 	switch (p_swapchain_format) {

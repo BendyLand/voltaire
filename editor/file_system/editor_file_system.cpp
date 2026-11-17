@@ -151,11 +151,11 @@ Vector<String> EditorFileSystemDirectory::get_file_deps(int p_idx) const
 		if (sep_idx != -1) {
 			dep = dep.substr(0, sep_idx);
 		}
-		ResourceUID::ID uid = ResourceUID::get_singleton()->text_to_id(dep);
+		ResourceUID::ID uid = ResourceUID::text_to_id(dep);
 		if (uid != ResourceUID::INVALID_ID) {
 			// return proper dependency resource from uid
-			if (ResourceUID::get_singleton()->has_id(uid)) {
-				dep = ResourceUID::get_singleton()->get_id_path(uid);
+			if (ResourceUID::has_id(uid)) {
+				dep = ResourceUID::get_id_path(uid);
 			}
 			else {
 				continue;
@@ -262,7 +262,7 @@ void EditorFileSystem::scan_for_uid()
 	// Load extensions for which an .import should exists.
 	List<String> extensionsl;
 	HashSet<String> import_extensions;
-	ResourceFormatImporter::get_singleton()->get_recognized_extensions(&extensionsl);
+	ResourceFormatImporter::get_recognized_extensions(&extensionsl);
 	for (const String& E : extensionsl) {
 		import_extensions.insert(E);
 	}
@@ -292,7 +292,7 @@ void EditorFileSystem::_scan_for_uid_directory(
 		ResourceUID::ID uid = ResourceUID::INVALID_ID;
 		if (p_import_extensions.has(ext)) {
 			if (FileAccess::exists(path + ".import")) {
-				uid = ResourceFormatImporter::get_singleton()->get_resource_uid(path);
+				uid = ResourceFormatImporter::get_resource_uid(path);
 			}
 		}
 		else {
@@ -300,8 +300,8 @@ void EditorFileSystem::_scan_for_uid_directory(
 		}
 
 		if (uid != ResourceUID::INVALID_ID) {
-			if (!ResourceUID::get_singleton()->has_id(uid)) {
-				ResourceUID::get_singleton()->add_id(uid, path);
+			if (!ResourceUID::has_id(uid)) {
+				ResourceUID::add_id(uid, path);
 			}
 		}
 	}
@@ -462,7 +462,7 @@ void EditorFileSystem::_delete_internal_files(const String& p_file)
 {
 	if (FileAccess::exists(p_file + ".import")) {
 		List<String> paths;
-		ResourceFormatImporter::get_singleton()->get_internal_resource_path_list(p_file, &paths);
+		ResourceFormatImporter::get_internal_resource_path_list(p_file, &paths);
 		Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 		for (const String& E : paths) {
 			da->remove(E);
@@ -774,9 +774,9 @@ Vector<String> EditorFileSystem::_get_dependencies(const String& p_path)
 	// Avoid error spam on first opening of a not yet imported project by treating the following
 	// situation as a benign one, not letting the file open error happen: the resource is of an
 	// importable type but it has not been imported yet.
-	if (ResourceFormatImporter::get_singleton()->recognize_path(p_path)) {
+	if (ResourceFormatImporter::recognize_path(p_path)) {
 		const String& internal_path =
-			ResourceFormatImporter::get_singleton()->get_internal_resource_path(p_path);
+			ResourceFormatImporter::get_internal_resource_path(p_path);
 		if (!internal_path.is_empty() &&
 			!FileAccess::exists(
 				internal_path)) { // If path is empty (error), keep the code flow to the error.
@@ -897,7 +897,7 @@ ResourceUID::ID EditorFileSystem::_resource_saver_get_resource_id_for_path(
 		}
 
 		if (p_generate) {
-			return ResourceUID::get_singleton()->create_id_for_path(
+			return ResourceUID::create_id_for_path(
 				p_path); // Just create a new one, we will be notified of save anyway and fetch the
 						 // right UID at that time, to keep things simple.
 		}
@@ -909,7 +909,7 @@ ResourceUID::ID EditorFileSystem::_resource_saver_get_resource_id_for_path(
 		return fs->files[cpos]->uid;
 	}
 	else if (p_generate) {
-		return ResourceUID::get_singleton()->create_id_for_path(
+		return ResourceUID::create_id_for_path(
 			p_path); // Just create a new one, we will be notified of save anyway and fetch the
 					 // right UID at that time, to keep things simple.
 	}

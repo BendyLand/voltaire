@@ -426,8 +426,8 @@ void Viewport::_check_xr_size()
 {
 #ifndef XR_DISABLED
 	// If our viewport has the use_xr flag set, our size and layout is managed by the XRServer.
-	if (use_xr && XRServer::get_singleton() != nullptr) {
-		Ref<XRInterface> xr_interface = XRServer::get_singleton()->get_primary_interface();
+	if (use_xr && XRServer::is_initialized()) {
+		Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
 		if (xr_interface.is_valid() && xr_interface->is_initialized()) {
 			Size2 xr_size = xr_interface->get_render_target_size();
 			int xr_view_count = xr_interface->get_view_count();
@@ -1994,8 +1994,8 @@ bool Viewport::get_canvas_cull_mask_bit(uint32_t p_layer) const
 
 void Viewport::_update_audio_listener_2d()
 {
-	if (AudioServer::get_singleton()) {
-		AudioServer::get_singleton()->notify_listener_changed();
+	if (AudioServer::is_initialized()) {
+		AudioServer::notify_listener_changed();
 	}
 }
 
@@ -2118,8 +2118,8 @@ bool Viewport::is_audio_listener_3d() const
 
 void Viewport::_update_audio_listener_3d()
 {
-	if (AudioServer::get_singleton()) {
-		AudioServer::get_singleton()->notify_listener_changed();
+	if (AudioServer::is_initialized()) {
+		AudioServer::notify_listener_changed();
 	}
 }
 

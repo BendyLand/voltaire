@@ -623,13 +623,13 @@ void SceneTree::set_pause(bool p_enabled)
 	data->paused = p_enabled;
 
 #ifndef PHYSICS_3D_DISABLED
-	if (PhysicsServer3D::get_singleton()) {
-		PhysicsServer3D::get_singleton()->set_active(!p_enabled);
+	if (PhysicsServer3D::is_initialized()) {
+		PhysicsServer3D::set_active(!p_enabled);
 	}
 #endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
-	if (PhysicsServer2D::get_singleton()) {
-		PhysicsServer2D::get_singleton()->set_active(!p_enabled);
+	if (PhysicsServer2D::is_initialized()) {
+		PhysicsServer2D::set_active(!p_enabled);
 	}
 #endif // PHYSICS_2D_DISABLED
 	if (data->root) {
@@ -651,13 +651,13 @@ void SceneTree::set_suspend(bool p_enabled)
 	Engine::set_freeze_time_scale(p_enabled);
 
 #ifndef PHYSICS_3D_DISABLED
-	if (PhysicsServer3D::get_singleton()) {
-		PhysicsServer3D::get_singleton()->set_active(!p_enabled && !data->paused);
+	if (PhysicsServer3D::is_initialized()) {
+		PhysicsServer3D::set_active(!p_enabled && !data->paused);
 	}
 #endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
-	if (PhysicsServer2D::get_singleton()) {
-		PhysicsServer2D::get_singleton()->set_active(!p_enabled && !data->paused);
+	if (PhysicsServer2D::is_initialized()) {
+		PhysicsServer2D::set_active(!p_enabled && !data->paused);
 	}
 #endif // PHYSICS_2D_DISABLED
 	if (data->root) {

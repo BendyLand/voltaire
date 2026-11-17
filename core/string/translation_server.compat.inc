@@ -33,7 +33,7 @@
 
 #include "translation_server.h"
 
-String TranslationServer::_standardize_locale_bind_compat_98972(const String& p_locale) const
+String TranslationServer::_standardize_locale_bind_compat_98972(const String& p_locale)
 {
 	return standardize_locale(p_locale, false);
 }

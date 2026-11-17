@@ -113,7 +113,7 @@ Ref<Compositor> World3D::get_compositor() const { return compositor; }
 #ifndef PHYSICS_3D_DISABLED
 PhysicsDirectSpaceState3D* World3D::get_direct_space_state()
 {
-	return PhysicsServer3D::get_singleton()->space_get_direct_state(get_space());
+	return PhysicsServer3D::space_get_direct_state(get_space());
 }
 #endif // PHYSICS_3D_DISABLED
 
@@ -132,8 +132,8 @@ World3D::~World3D()
 
 #ifndef PHYSICS_3D_DISABLED
 	if (space.is_valid()) {
-		ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
-		PhysicsServer3D::get_singleton()->free_rid(space);
+		ERR_FAIL_COND(!PhysicsServer3D::is_initialized());
+		PhysicsServer3D::free_rid(space);
 	}
 #endif // PHYSICS_3D_DISABLED
 

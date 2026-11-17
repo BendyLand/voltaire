@@ -34,22 +34,28 @@
 #include "../openxr_api.h"
 #include "openxr_valve_analog_threshold_extension.h"
 
+void OpenXRValveAnalogThresholdExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRValveAnalogThresholdExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+
 // Implementation for:
 // https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#XR_VALVE_analog_threshold
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // OpenXRValveAnalogThresholdExtension
-
-OpenXRValveAnalogThresholdExtension* OpenXRValveAnalogThresholdExtension::singleton = nullptr;
-
-OpenXRValveAnalogThresholdExtension* OpenXRValveAnalogThresholdExtension::get_singleton()
-{
-	return singleton;
-}
-
-OpenXRValveAnalogThresholdExtension::OpenXRValveAnalogThresholdExtension() { singleton = this; }
-
-OpenXRValveAnalogThresholdExtension::~OpenXRValveAnalogThresholdExtension() { singleton = nullptr; }
 
 HashMap<String, bool*> OpenXRValveAnalogThresholdExtension::get_requested_extensions(
 	XrVersion p_version)
@@ -58,16 +64,14 @@ HashMap<String, bool*> OpenXRValveAnalogThresholdExtension::get_requested_extens
 
 	// Note, we're dependent on the binding modifier extension, this may be requested by multiple
 	// extension wrappers.
-	request_extensions[XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME] = &binding_modifier_ext;
-	request_extensions[XR_VALVE_ANALOG_THRESHOLD_EXTENSION_NAME] = &threshold_ext;
+	request_extensions[XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME] = &data->binding_modifier_ext;
+	request_extensions[XR_VALVE_ANALOG_THRESHOLD_EXTENSION_NAME] = &data->threshold_ext;
 
 	return request_extensions;
 }
 
 bool OpenXRValveAnalogThresholdExtension::is_available()
-{
-	return binding_modifier_ext && threshold_ext;
-}
+{ return data != nullptr && data->binding_modifier_ext && data->threshold_ext; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // OpenXRAnalogThresholdModifier
@@ -128,12 +132,9 @@ PackedByteArray OpenXRAnalogThresholdModifier::get_ip_modification()
 {
 	PackedByteArray ret;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, ret);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
 
-	OpenXRValveAnalogThresholdExtension* analog_threshold_ext =
-		OpenXRValveAnalogThresholdExtension::get_singleton();
-	if (!analog_threshold_ext || !analog_threshold_ext->is_available()) {
+	if (!OpenXRValveAnalogThresholdExtension::is_initialized() || !OpenXRValveAnalogThresholdExtension::is_available()) {
 		// Extension not enabled!
 		WARN_PRINT("Analog threshold extension is not enabled or available.");
 		return ret;
@@ -147,16 +148,16 @@ PackedByteArray OpenXRAnalogThresholdModifier::get_ip_modification()
 	// Get our action set
 	Ref<OpenXRActionSet> action_set = action->get_action_set();
 	ERR_FAIL_COND_V(action_set.is_null(), ret);
-	RID action_set_rid = openxr_api->find_action_set(action_set->get_name());
+	RID action_set_rid = OpenXRAPI::find_action_set(action_set->get_name());
 	ERR_FAIL_COND_V(!action_set_rid.is_valid(), ret);
 
 	// Get our action
-	RID action_rid = openxr_api->find_action(action->get_name(), action_set_rid);
+	RID action_rid = OpenXRAPI::find_action(action->get_name(), action_set_rid);
 	ERR_FAIL_COND_V(!action_rid.is_valid(), ret);
 
-	analog_threshold.action = openxr_api->action_get_handle(action_rid);
+	analog_threshold.action = OpenXRAPI::action_get_handle(action_rid);
 
-	analog_threshold.binding = openxr_api->get_xr_path(ip_binding->get_binding_path());
+	analog_threshold.binding = OpenXRAPI::get_xr_path(ip_binding->get_binding_path());
 	ERR_FAIL_COND_V(analog_threshold.binding == XR_NULL_PATH, ret);
 
 	// These are set already:

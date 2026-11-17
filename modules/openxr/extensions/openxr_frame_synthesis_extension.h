@@ -35,46 +35,42 @@
 #include "../openxr_api.h"
 #include "core/types.h"
 
-class OpenXRFrameSynthesisExtension
+class OpenXRFrameSynthesisExtension final
 {
 public:
-	static OpenXRFrameSynthesisExtension* get_singleton();
 
-	OpenXRFrameSynthesisExtension();
-	virtual ~OpenXRFrameSynthesisExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_instance_destroyed();
-
-	virtual void prepare_view_configuration(uint32_t p_view_count);
-	virtual void* set_view_configuration_and_get_next_pointer(
+	static void prepare_view_configuration(uint32_t p_view_count);
+	static void* set_view_configuration_and_get_next_pointer(
 		uint32_t p_view, void* p_next_pointer);
-	virtual void print_view_configuration_info(uint32_t p_view) const;
+	static void print_view_configuration_info(uint32_t p_view);
 
-	virtual void on_session_destroyed();
+	static void on_session_destroyed();
 
-	virtual void on_main_swapchains_created();
-	virtual void on_pre_draw_viewport(RID p_render_target);
-	virtual void on_post_draw_viewport(RID p_render_target);
-	virtual void* set_projection_views_and_get_next_pointer(int p_view_index, void* p_next_pointer);
+	static void on_main_swapchains_created();
+	static void on_pre_draw_viewport(RID p_render_target);
+	static void on_post_draw_viewport(RID p_render_target);
+	static void* set_projection_views_and_get_next_pointer(int p_view_index, void* p_next_pointer);
 
-	bool is_available() const;
+	static bool is_available();
 
-	bool is_enabled() const;
-	void set_enabled(bool p_enabled);
+	static bool is_enabled();
+	static void set_enabled(bool p_enabled);
 
-	bool get_relax_frame_interval() const;
-	void set_relax_frame_interval(bool p_relax_frame_interval);
+	static bool get_relax_frame_interval();
+	static void set_relax_frame_interval(bool p_relax_frame_interval);
 
-	void skip_next_frame();
+	static void skip_next_frame();
 
 protected:
 
-	void _set_render_state_enabled_rt(bool p_enabled);
-	void _set_relax_frame_interval_rt(bool p_relax_frame_interval);
-	void _set_skip_next_frame_rt();
+	static void _set_render_state_enabled_rt(bool p_enabled);
+	static void _set_relax_frame_interval_rt(bool p_relax_frame_interval);
+	static void _set_skip_next_frame_rt();
 
 private:
 	enum SwapchainTypes
@@ -84,13 +80,7 @@ private:
 		SWAPCHAIN_MAX
 	};
 
-	void free_swapchains();
-
-	static OpenXRFrameSynthesisExtension* singleton;
-
-	bool frame_synthesis_ext = false;
-	bool enabled = true;
-	bool relax_frame_interval = false;
+	static void free_swapchains();
 
 	// Frame synthesis render state, only accessible on render thread
 	struct RenderState
@@ -103,7 +93,27 @@ private:
 		OpenXRAPI::OpenXRSwapChainInfo swapchains[SWAPCHAIN_MAX];
 		LocalVector<XrFrameSynthesisInfoEXT> frame_synthesis_info;
 		Transform3D previous_transform;
-	} render_state;
+	};
+
+public:
+	struct Data
+	{
+		bool frame_synthesis_ext = false;
+		bool enabled = true;
+		bool relax_frame_interval = false;
+		RenderState render_state;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRFrameSynthesisExtension() = delete;
+	OpenXRFrameSynthesisExtension(const OpenXRFrameSynthesisExtension&) = delete;
+	OpenXRFrameSynthesisExtension& operator=(const OpenXRFrameSynthesisExtension&) = delete;
+	~OpenXRFrameSynthesisExtension() = delete;
 };
 
 

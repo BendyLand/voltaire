@@ -43,10 +43,8 @@ class JoltSoftBody3D;
 class JoltSpace3D;
 class JoltTempAllocator;
 
-class JoltPhysicsServer3D final : public PhysicsServer3D
+class JoltPhysicsServer3D final : public PhysicsServer3DDriver
 {
-	inline static JoltPhysicsServer3D* singleton = nullptr;
-
 	mutable RID_PtrOwner<JoltSpace3D, true> space_owner;
 	mutable RID_PtrOwner<JoltArea3D, true> area_owner;
 	mutable RID_PtrOwner<JoltBody3D, true> body_owner{65536, 1048576};
@@ -129,8 +127,6 @@ private:
 public:
 	explicit JoltPhysicsServer3D(bool p_on_separate_thread);
 	~JoltPhysicsServer3D();
-
-	static JoltPhysicsServer3D* get_singleton() { return singleton; }
 
 	virtual RID world_boundary_shape_create() override;
 	virtual RID separation_ray_shape_create() override;

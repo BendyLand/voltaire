@@ -33,37 +33,46 @@
 #include "core/config/project_settings.h"
 #include "openxr_user_presence_extension.h"
 
-OpenXRUserPresenceExtension* OpenXRUserPresenceExtension::singleton = nullptr;
+void OpenXRUserPresenceExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
 
-OpenXRUserPresenceExtension* OpenXRUserPresenceExtension::get_singleton() { return singleton; }
+void OpenXRUserPresenceExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
-OpenXRUserPresenceExtension::OpenXRUserPresenceExtension() { singleton = this; }
-
-OpenXRUserPresenceExtension::~OpenXRUserPresenceExtension() { singleton = nullptr; }
 
 void* OpenXRUserPresenceExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
 {
-	if (!available) {
+	if (!data->available) {
 		return p_next_pointer;
 	}
 
-	properties.type = XR_TYPE_SYSTEM_USER_PRESENCE_PROPERTIES_EXT;
-	properties.next = p_next_pointer;
-	properties.supportsUserPresence = false;
+	data->properties.type = XR_TYPE_SYSTEM_USER_PRESENCE_PROPERTIES_EXT;
+	data->properties.next = p_next_pointer;
+	data->properties.supportsUserPresence = false;
 
-	return &properties;
+	return &data->properties;
 }
 
-bool OpenXRUserPresenceExtension::is_active() const
+bool OpenXRUserPresenceExtension::is_active()
 {
-	return available && properties.supportsUserPresence;
+	return data->available && data->properties.supportsUserPresence;
 }
 
-void OpenXRUserPresenceExtension::on_state_ready() { user_present = true; }
+void OpenXRUserPresenceExtension::on_state_ready() { data->user_present = true; }
 
-void OpenXRUserPresenceExtension::on_state_stopping() { user_present = false; }
+void OpenXRUserPresenceExtension::on_state_stopping() { data->user_present = false; }
 
-bool OpenXRUserPresenceExtension::is_user_present() const { return user_present; }
+bool OpenXRUserPresenceExtension::is_user_present() { return data != nullptr && data->user_present; }
 
 HashMap<String, bool*> OpenXRUserPresenceExtension::get_requested_extensions(
 	unsigned long p_extension_flags)

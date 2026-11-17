@@ -152,10 +152,10 @@ struct GodotTestCaseListener : public doctest::IReporter {
 	GodotTestCaseListener(const doctest::ContextOptions &p_in) {}
 
 #ifndef PHYSICS_2D_DISABLED
-	PhysicsServer2D *physics_server_2d = nullptr;
+	PhysicsServer2DDriver *physics_server_2d = nullptr;
 #endif // PHYSICS_2D_DISABLED
 #ifndef PHYSICS_3D_DISABLED
-	PhysicsServer3D *physics_server_3d = nullptr;
+	PhysicsServer3DDriver *physics_server_3d = nullptr;
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef NAVIGATION_2D_DISABLED
@@ -200,7 +200,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 			ThemeDB::initialize_theme();
 
 #ifndef PHYSICS_3D_DISABLED
-			physics_server_3d = PhysicsServer3DManager::get_singleton()->new_default_server();
+			physics_server_3d = PhysicsServer3DManager::new_default_server();
 			if (!physics_server_3d) {
 				physics_server_3d = memnew(PhysicsServer3DDummy);
 			}
@@ -208,7 +208,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-			physics_server_2d = PhysicsServer2DManager::get_singleton()->new_default_server();
+			physics_server_2d = PhysicsServer2DManager::new_default_server();
 			if (!physics_server_2d) {
 				physics_server_2d = memnew(PhysicsServer2DDummy);
 			}
@@ -278,7 +278,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 			EditorSettings::finalize();
 
 			// Instantiating the EditorSettings singleton sets the locale to the editor's language.
-			TranslationServer::get_singleton()->set_locale("en");
+			TranslationServer::set_locale("en");
 		}
 		if (EditorPaths::is_initialized()) {
 			EditorPaths::finalize();
@@ -338,9 +338,9 @@ struct GodotTestCaseListener : public doctest::IReporter {
 		AccessibilityServer::finalize();
 		InputMap::finalize();
 
-		if (AudioServer::get_singleton()) {
-			AudioServer::get_singleton()->finish();
-			memdelete(AudioServer::get_singleton());
+		if (AudioServer::is_initialized()) {
+			AudioServer::finish();
+			AudioServer::finalize();
 		}
 	}
 

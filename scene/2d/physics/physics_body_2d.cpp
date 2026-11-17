@@ -35,7 +35,7 @@
 #include "servers/physics_2d/physics_server_2d.h"
 
 PhysicsBody2D::PhysicsBody2D(PS2DE::BodyMode p_mode)
-	: CollisionObject2D(PhysicsServer2D::get_singleton()->body_create(), false)
+	: CollisionObject2D(PhysicsServer2D::body_create(), false)
 {
 	set_body_mode(p_mode);
 	set_pickable(false);
@@ -44,7 +44,7 @@ PhysicsBody2D::PhysicsBody2D(PS2DE::BodyMode p_mode)
 Vector2 PhysicsBody2D::get_gravity() const
 {
 	PhysicsDirectBodyState2D* state =
-		PhysicsServer2D::get_singleton()->body_get_direct_state(get_rid());
+		PhysicsServer2D::body_get_direct_state(get_rid());
 	ERR_FAIL_NULL_V(state, Vector2());
 	return state->get_total_gravity();
 }

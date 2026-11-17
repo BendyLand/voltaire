@@ -156,7 +156,7 @@ void MovieWriter::add_frame()
 	gpu_time +=
 		Renderer::viewport_get_measured_render_time_gpu(main_vp_rid);
 
-	AudioDriverDummy::get_dummy_singleton()->mix_audio(mix_rate / fps, audio_mix_buffer.ptr());
+	AudioDriverManager::get_dummy_driver()->mix_audio(mix_rate / fps, audio_mix_buffer.ptr());
 
 	uint64_t encoding_start_usec = Time::get_ticks_usec();
 	write_frame(vp_tex, audio_mix_buffer.ptr());

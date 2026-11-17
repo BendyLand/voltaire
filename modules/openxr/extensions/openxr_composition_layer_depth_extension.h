@@ -33,23 +33,33 @@
 
 #include "core/types.h"
 
-class OpenXRCompositionLayerDepthExtension
+class OpenXRCompositionLayerDepthExtension final
 {
 
 public:
-	static OpenXRCompositionLayerDepthExtension* get_singleton();
 
-	OpenXRCompositionLayerDepthExtension();
-	virtual ~OpenXRCompositionLayerDepthExtension();
-
-	bool is_available();
-	virtual int get_composition_layer_count();
-	virtual int get_composition_layer_order(int p_index);
+	static bool is_available();
+	static int get_composition_layer_count();
+	static int get_composition_layer_order(int p_index);
 
 private:
-	static OpenXRCompositionLayerDepthExtension* singleton;
 
-	bool available = false;
+public:
+	struct Data
+	{
+		bool available = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRCompositionLayerDepthExtension() = delete;
+	OpenXRCompositionLayerDepthExtension(const OpenXRCompositionLayerDepthExtension&) = delete;
+	OpenXRCompositionLayerDepthExtension& operator=(const OpenXRCompositionLayerDepthExtension&) = delete;
+	~OpenXRCompositionLayerDepthExtension() = delete;
 };
 
 

@@ -203,7 +203,7 @@ void JoltJoint3D::set_collision_disabled(bool p_disabled)
 		return;
 	}
 
-	JoltPhysicsServer3D* physics_server = JoltPhysicsServer3D::get_singleton();
+	JoltPhysicsServer3D* physics_server = PhysicsServer3D::driver_as<JoltPhysicsServer3D>();
 
 	if (collision_disabled) {
 		physics_server->body_add_collision_exception(body_a->get_rid(), body_b->get_rid());

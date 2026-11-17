@@ -46,7 +46,7 @@ void BoxShape3D::set_size(const Vector3& p_size)
 
 Vector3 BoxShape3D::get_size() const { return size; }
 
-BoxShape3D::BoxShape3D() : Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_BOX))
+BoxShape3D::BoxShape3D() : Shape3D(PhysicsServer3D::shape_create(PS3DE::SHAPE_BOX))
 {
 	set_size(Vector3(1, 1, 1));
 }

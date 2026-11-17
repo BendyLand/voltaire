@@ -41,7 +41,7 @@ static void _editor_init()
 {
 	Ref<ResourceImporterMP3> mp3_import;
 	mp3_import.instantiate();
-	ResourceFormatImporter::get_singleton()->add_importer(mp3_import);
+	ResourceFormatImporter::add_importer(mp3_import);
 }
 #endif
 

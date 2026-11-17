@@ -292,7 +292,7 @@ void HeightMapShape3D::update_map_data_from_image(
 }
 
 HeightMapShape3D::HeightMapShape3D()
-	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_HEIGHTMAP))
+	: Shape3D(PhysicsServer3D::shape_create(PS3DE::SHAPE_HEIGHTMAP))
 {
 	map_data.resize(map_width * map_depth);
 	real_t* w = map_data.ptrw();

@@ -76,8 +76,6 @@ private:
 		int parent_joint = -1;
 	};
 
-	OpenXRAPI* openxr_api = nullptr;
-	OpenXRHandTrackingExtension* hand_tracking_ext = nullptr;
 
 	Hands hand = HAND_LEFT;
 	MotionRange motion_range = MOTION_RANGE_UNOBSTRUCTED;

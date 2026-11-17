@@ -82,7 +82,7 @@ void OpenXRInteractionProfileEditorBase::setup(const Ref<OpenXRActionMap>& p_act
 	String profile_path = interaction_profile->get_interaction_profile_path();
 	String profile_name = profile_path;
 
-	profile_def = OpenXRInteractionProfileMetadata::get_singleton()->get_profile(profile_path);
+	profile_def = OpenXRInteractionProfileMetadata::get_profile(profile_path);
 	if (profile_def != nullptr) {
 		profile_name = profile_def->display_name;
 
@@ -146,7 +146,7 @@ void OpenXRInteractionProfileEditor::_update_interaction_profile()
 
 		Label* label = memnew(Label);
 		label->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-		label->set_text(OpenXRInteractionProfileMetadata::get_singleton()->get_top_level_name(
+		label->set_text(OpenXRInteractionProfileMetadata::get_top_level_name(
 			top_level_paths[i]));
 		container->add_child(label);
 

@@ -133,7 +133,7 @@ Rect2 WorldBoundaryShape2D::get_rect() const
 real_t WorldBoundaryShape2D::get_enclosing_radius() const { return distance; }
 
 WorldBoundaryShape2D::WorldBoundaryShape2D()
-	: Shape2D(PhysicsServer2D::get_singleton()->world_boundary_shape_create())
+	: Shape2D(PhysicsServer2D::world_boundary_shape_create())
 {
 	_update_shape();
 }

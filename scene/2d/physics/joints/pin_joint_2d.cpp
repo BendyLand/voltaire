@@ -56,19 +56,19 @@ void PinJoint2D::_notification(int p_what)
 
 void PinJoint2D::_configure_joint(RID p_joint, PhysicsBody2D* body_a, PhysicsBody2D* body_b)
 {
-	PhysicsServer2D::get_singleton()->joint_make_pin(
+	PhysicsServer2D::joint_make_pin(
 		p_joint, get_global_position(), body_a->get_rid(), body_b ? body_b->get_rid() : RID());
-	PhysicsServer2D::get_singleton()->pin_joint_set_param(
+	PhysicsServer2D::pin_joint_set_param(
 		p_joint, PS2DE::PIN_JOINT_SOFTNESS, softness);
-	PhysicsServer2D::get_singleton()->pin_joint_set_param(
+	PhysicsServer2D::pin_joint_set_param(
 		p_joint, PS2DE::PIN_JOINT_LIMIT_UPPER, angular_limit_upper);
-	PhysicsServer2D::get_singleton()->pin_joint_set_param(
+	PhysicsServer2D::pin_joint_set_param(
 		p_joint, PS2DE::PIN_JOINT_LIMIT_LOWER, angular_limit_lower);
-	PhysicsServer2D::get_singleton()->pin_joint_set_param(
+	PhysicsServer2D::pin_joint_set_param(
 		p_joint, PS2DE::PIN_JOINT_MOTOR_TARGET_VELOCITY, motor_target_velocity);
-	PhysicsServer2D::get_singleton()->pin_joint_set_flag(
+	PhysicsServer2D::pin_joint_set_flag(
 		p_joint, PS2DE::PIN_JOINT_FLAG_MOTOR_ENABLED, motor_enabled);
-	PhysicsServer2D::get_singleton()->pin_joint_set_flag(
+	PhysicsServer2D::pin_joint_set_flag(
 		p_joint, PS2DE::PIN_JOINT_FLAG_ANGULAR_LIMIT_ENABLED, angular_limit_enabled);
 }
 

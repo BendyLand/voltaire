@@ -108,7 +108,7 @@ void CapsuleShape3D::set_mid_height(real_t p_mid_height)
 real_t CapsuleShape3D::get_mid_height() const { return height - radius * 2.0f; }
 
 CapsuleShape3D::CapsuleShape3D()
-	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_CAPSULE))
+	: Shape3D(PhysicsServer3D::shape_create(PS3DE::SHAPE_CAPSULE))
 {
 	_update_shape();
 }

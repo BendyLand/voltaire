@@ -209,7 +209,7 @@ public:
 	}
 };
 
-class PhysicsServer3DDummy : public PhysicsServer3D
+class PhysicsServer3DDummy : public PhysicsServer3DDriver
 {
 	PhysicsDirectBodyState3DDummy* body_state_dummy = nullptr;
 	PhysicsDirectSpaceState3DDummy* space_state_dummy = nullptr;

@@ -31,20 +31,30 @@
 
 #pragma once
 
-class OpenXRLocalFloorExtension
+class OpenXRLocalFloorExtension final
 {
 public:
-	static OpenXRLocalFloorExtension* get_singleton();
 
-	OpenXRLocalFloorExtension();
-	virtual ~OpenXRLocalFloorExtension();
-
-	bool is_available();
+	static bool is_available();
 
 private:
-	static OpenXRLocalFloorExtension* singleton;
 
-	bool available = false;
+public:
+	struct Data
+	{
+		bool available = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRLocalFloorExtension() = delete;
+	OpenXRLocalFloorExtension(const OpenXRLocalFloorExtension&) = delete;
+	OpenXRLocalFloorExtension& operator=(const OpenXRLocalFloorExtension&) = delete;
+	~OpenXRLocalFloorExtension() = delete;
 };
 
 

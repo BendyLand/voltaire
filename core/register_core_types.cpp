@@ -83,7 +83,7 @@
 
 static Ref<ResourceFormatSaverBinary> resource_saver_binary;
 static Ref<ResourceFormatLoaderBinary> resource_loader_binary;
-static Ref<ResourceFormatImporter> resource_format_importer;
+static Ref<ResourceFormatImporterLoader> resource_format_importer;
 static Ref<ResourceFormatImporterSaver> resource_format_importer_saver;
 static Ref<ResourceFormatLoaderImage> resource_format_image;
 static Ref<TranslationLoaderPO> resource_format_po;
@@ -98,8 +98,6 @@ extern Mutex _global_mutex;
 
 extern void register_global_constants();
 extern void unregister_global_constants();
-
-static ResourceUID* resource_uid = nullptr;
 
 static bool _is_core_extensions_registered = false;
 
@@ -121,6 +119,7 @@ void register_core_types()
 	resource_loader_binary.instantiate();
 	ResourceLoader::add_resource_format_loader(resource_loader_binary);
 
+	ResourceFormatImporter::initialize();
 	resource_format_importer.instantiate();
 	ResourceLoader::add_resource_format_loader(resource_format_importer);
 
@@ -145,7 +144,7 @@ void register_core_types()
 #ifndef DISABLE_DEPRECATED
 #endif
 
-	resource_uid = memnew(ResourceUID);
+	ResourceUID::initialize();
 
 	IP::initialize();
 
@@ -177,6 +176,8 @@ void unregister_core_extensions()
 void unregister_core_types()
 {
 	IP::finalize();
+	ResourceFormatImporter::finalize();
+	ResourceUID::finalize();
 }
 
 

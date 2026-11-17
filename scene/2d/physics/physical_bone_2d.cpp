@@ -91,9 +91,9 @@ void PhysicalBone2D::_start_physics_simulation()
 	_position_at_bone2d();
 
 	// Apply the layers and masks.
-	PhysicsServer2D::get_singleton()->body_set_collision_layer(get_rid(), get_collision_layer());
-	PhysicsServer2D::get_singleton()->body_set_collision_mask(get_rid(), get_collision_mask());
-	PhysicsServer2D::get_singleton()->body_set_collision_priority(
+	PhysicsServer2D::body_set_collision_layer(get_rid(), get_collision_layer());
+	PhysicsServer2D::body_set_collision_mask(get_rid(), get_collision_mask());
+	PhysicsServer2D::body_set_collision_priority(
 		get_rid(), get_collision_priority());
 
 	// Apply the correct mode.
@@ -112,10 +112,10 @@ void PhysicalBone2D::_stop_physics_simulation()
 		_position_at_bone2d();
 
 		set_physics_process_internal(false);
-		PhysicsServer2D::get_singleton()->body_set_collision_layer(get_rid(), 0);
-		PhysicsServer2D::get_singleton()->body_set_collision_mask(get_rid(), 0);
-		PhysicsServer2D::get_singleton()->body_set_collision_priority(get_rid(), 1.0);
-		PhysicsServer2D::get_singleton()->body_set_mode(
+		PhysicsServer2D::body_set_collision_layer(get_rid(), 0);
+		PhysicsServer2D::body_set_collision_mask(get_rid(), 0);
+		PhysicsServer2D::body_set_collision_priority(get_rid(), 1.0);
+		PhysicsServer2D::body_set_mode(
 			get_rid(), PS2DE::BodyMode::BODY_MODE_STATIC);
 	}
 }
@@ -168,9 +168,9 @@ bool PhysicalBone2D::get_follow_bone_when_simulating() const { return follow_bon
 PhysicalBone2D::PhysicalBone2D()
 {
 	// Stop the RigidBody from executing its force integration.
-	PhysicsServer2D::get_singleton()->body_set_collision_layer(get_rid(), 0);
-	PhysicsServer2D::get_singleton()->body_set_collision_mask(get_rid(), 0);
-	PhysicsServer2D::get_singleton()->body_set_mode(get_rid(), PS2DE::BodyMode::BODY_MODE_STATIC);
+	PhysicsServer2D::body_set_collision_layer(get_rid(), 0);
+	PhysicsServer2D::body_set_collision_mask(get_rid(), 0);
+	PhysicsServer2D::body_set_mode(get_rid(), PS2DE::BodyMode::BODY_MODE_STATIC);
 
 	child_joint = nullptr;
 }

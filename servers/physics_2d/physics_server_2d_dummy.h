@@ -201,7 +201,7 @@ public:
 	}
 };
 
-class PhysicsServer2DDummy : public PhysicsServer2D
+class PhysicsServer2DDummy : public PhysicsServer2DDriver
 {
 	PhysicsDirectSpaceState2DDummy* space_state_dummy = nullptr;
 	PhysicsDirectBodyState2DDummy* body_state_dummy = nullptr;

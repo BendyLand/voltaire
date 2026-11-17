@@ -132,8 +132,6 @@ private:
 	XRCamera3D* _get_xrcamera3d_ancestor() const;
 
 protected:
-	OpenXRAPI* openxr_api = nullptr;
-	OpenXRCompositionLayerExtension* composition_layer_extension = nullptr;
 
 	void _notification(int p_what);
 

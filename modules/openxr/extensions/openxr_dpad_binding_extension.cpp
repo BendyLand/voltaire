@@ -33,19 +33,28 @@
 #include "core/math/math_funcs.h"
 #include "openxr_dpad_binding_extension.h"
 
+void OpenXRDPadBindingExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRDPadBindingExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+
 // Implementation for:
 // https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#XR_EXT_dpad_binding
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // OpenXRDPadBindingExtension
-
-OpenXRDPadBindingExtension* OpenXRDPadBindingExtension::singleton = nullptr;
-
-OpenXRDPadBindingExtension* OpenXRDPadBindingExtension::get_singleton() { return singleton; }
-
-OpenXRDPadBindingExtension::OpenXRDPadBindingExtension() { singleton = this; }
-
-OpenXRDPadBindingExtension::~OpenXRDPadBindingExtension() { singleton = nullptr; }
 
 HashMap<String, bool*> OpenXRDPadBindingExtension::get_requested_extensions(XrVersion p_version)
 {
@@ -53,13 +62,13 @@ HashMap<String, bool*> OpenXRDPadBindingExtension::get_requested_extensions(XrVe
 
 	// Note, we're dependent on the binding modifier extension, this may be requested by multiple
 	// extension wrappers.
-	request_extensions[XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME] = &binding_modifier_ext;
-	request_extensions[XR_EXT_DPAD_BINDING_EXTENSION_NAME] = &dpad_binding_ext;
+	request_extensions[XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME] = &data->binding_modifier_ext;
+	request_extensions[XR_EXT_DPAD_BINDING_EXTENSION_NAME] = &data->dpad_binding_ext;
 
 	return request_extensions;
 }
 
-bool OpenXRDPadBindingExtension::is_available() { return binding_modifier_ext && dpad_binding_ext; }
+bool OpenXRDPadBindingExtension::is_available() { return data != nullptr && data->binding_modifier_ext && data->dpad_binding_ext; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // OpenXRDpadBindingModifier
@@ -200,24 +209,22 @@ PackedByteArray OpenXRDpadBindingModifier::get_ip_modification()
 {
 	ERR_FAIL_NULL_V(dpad_bindings, PackedByteArray());
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, PackedByteArray());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedByteArray());
 
-	OpenXRDPadBindingExtension* dpad_binding_ext = OpenXRDPadBindingExtension::get_singleton();
-	if (!dpad_binding_ext || !dpad_binding_ext->is_available()) {
+	if (!OpenXRDPadBindingExtension::is_initialized() || !OpenXRDPadBindingExtension::is_available()) {
 		// Extension not enabled!
 		WARN_PRINT("DPad binding extension is not enabled or available.");
 		return PackedByteArray();
 	}
 
-	dpad_bindings->binding = openxr_api->get_xr_path(input_path);
+	dpad_bindings->binding = OpenXRAPI::get_xr_path(input_path);
 	ERR_FAIL_COND_V(dpad_bindings->binding == XR_NULL_PATH, PackedByteArray());
 
 	// Get our action set
 	ERR_FAIL_COND_V(action_set.is_null(), PackedByteArray());
-	RID action_set_rid = openxr_api->find_action_set(action_set->get_name());
+	RID action_set_rid = OpenXRAPI::find_action_set(action_set->get_name());
 	ERR_FAIL_COND_V(!action_set_rid.is_valid(), PackedByteArray());
-	dpad_bindings->actionSet = openxr_api->action_set_get_handle(action_set_rid);
+	dpad_bindings->actionSet = OpenXRAPI::action_set_get_handle(action_set_rid);
 
 	// These are set already:
 	// - forceThreshold

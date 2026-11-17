@@ -55,7 +55,7 @@ void AudioEffectDelayInstance::_process_chunk(
 {
 	float main_level_f = base->dry;
 
-	float mix_rate = AudioServer::get_singleton()->get_mix_rate();
+	float mix_rate = AudioServer::get_mix_rate();
 
 	float tap_1_level_f = base->tap_1_active ? Math::db_to_linear(base->tap_1_level) : 0.0;
 	int tap_1_delay_frames = int((base->tap_1_delay_ms / 1000.0) * mix_rate);
@@ -123,7 +123,7 @@ Ref<AudioEffectInstance> AudioEffectDelay::instantiate()
 
 	float ring_buffer_max_size = MAX_DELAY_MS + 100; // add 100ms of extra room, just in case
 	ring_buffer_max_size /= 1000.0;					 // convert to seconds
-	ring_buffer_max_size *= AudioServer::get_singleton()->get_mix_rate();
+	ring_buffer_max_size *= AudioServer::get_mix_rate();
 
 	int ringbuff_size = ring_buffer_max_size;
 

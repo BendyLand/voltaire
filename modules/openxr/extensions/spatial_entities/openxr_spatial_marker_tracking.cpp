@@ -35,25 +35,37 @@
 #include "openxr_spatial_marker_tracking.h"
 #include "servers/xr/xr_server.h"
 
+void OpenXRSpatialMarkerTrackingCapability::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRSpatialMarkerTrackingCapability::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+
 bool OpenXRSpatialCapabilityConfigurationQrCode::has_valid_configuration() const
 {
-	OpenXRSpatialMarkerTrackingCapability* capability =
-		OpenXRSpatialMarkerTrackingCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
 
-	return capability->is_qrcode_supported();
+	return OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported();
 }
 
 XrSpatialCapabilityConfigurationBaseHeaderEXT*
 OpenXRSpatialCapabilityConfigurationQrCode::get_configuration()
 {
-	OpenXRSpatialMarkerTrackingCapability* capability =
-		OpenXRSpatialMarkerTrackingCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, nullptr);
+	ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
 
-	if (capability->is_qrcode_supported()) {
-		OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-		ERR_FAIL_NULL_V(se_extension, nullptr);
+	if (OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported()) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
 
 		// Guaranteed components:
 		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
@@ -83,23 +95,18 @@ PackedInt64Array OpenXRSpatialCapabilityConfigurationQrCode::_get_enabled_compon
 
 bool OpenXRSpatialCapabilityConfigurationMicroQrCode::has_valid_configuration() const
 {
-	OpenXRSpatialMarkerTrackingCapability* capability =
-		OpenXRSpatialMarkerTrackingCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
 
-	return capability->is_micro_qrcode_supported();
+	return OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported();
 }
 
 XrSpatialCapabilityConfigurationBaseHeaderEXT*
 OpenXRSpatialCapabilityConfigurationMicroQrCode::get_configuration()
 {
-	OpenXRSpatialMarkerTrackingCapability* capability =
-		OpenXRSpatialMarkerTrackingCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, nullptr);
+	ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
 
-	if (capability->is_micro_qrcode_supported()) {
-		OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-		ERR_FAIL_NULL_V(se_extension, nullptr);
+	if (OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported()) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
 
 		// Guaranteed components:
 		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
@@ -138,23 +145,18 @@ OpenXRSpatialCapabilityConfigurationAruco::~OpenXRSpatialCapabilityConfiguration
 
 bool OpenXRSpatialCapabilityConfigurationAruco::has_valid_configuration() const
 {
-	OpenXRSpatialMarkerTrackingCapability* capability =
-		OpenXRSpatialMarkerTrackingCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
 
-	return capability->is_aruco_supported();
+	return OpenXRSpatialMarkerTrackingCapability::is_aruco_supported();
 }
 
 XrSpatialCapabilityConfigurationBaseHeaderEXT*
 OpenXRSpatialCapabilityConfigurationAruco::get_configuration()
 {
-	OpenXRSpatialMarkerTrackingCapability* capability =
-		OpenXRSpatialMarkerTrackingCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, nullptr);
+	ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
 
-	if (capability->is_aruco_supported()) {
-		OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-		ERR_FAIL_NULL_V(se_extension, nullptr);
+	if (OpenXRSpatialMarkerTrackingCapability::is_aruco_supported()) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
 
 		// Guaranteed components:
 		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
@@ -215,23 +217,18 @@ OpenXRSpatialCapabilityConfigurationAprilTag::~OpenXRSpatialCapabilityConfigurat
 
 bool OpenXRSpatialCapabilityConfigurationAprilTag::has_valid_configuration() const
 {
-	OpenXRSpatialMarkerTrackingCapability* capability =
-		OpenXRSpatialMarkerTrackingCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
 
-	return capability->is_april_tag_supported();
+	return OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported();
 }
 
 XrSpatialCapabilityConfigurationBaseHeaderEXT*
 OpenXRSpatialCapabilityConfigurationAprilTag::get_configuration()
 {
-	OpenXRSpatialMarkerTrackingCapability* capability =
-		OpenXRSpatialMarkerTrackingCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, nullptr);
+	ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
 
-	if (capability->is_april_tag_supported()) {
-		OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-		ERR_FAIL_NULL_V(se_extension, nullptr);
+	if (OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported()) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
 
 		// Guaranteed components:
 		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
@@ -356,20 +353,6 @@ void OpenXRMarkerTracker::set_marker_id(uint32_t p_id) { marker_id = p_id; }
 
 uint32_t OpenXRMarkerTracker::get_marker_id() const { return marker_id; }
 
-OpenXRSpatialMarkerTrackingCapability* OpenXRSpatialMarkerTrackingCapability::singleton = nullptr;
-
-OpenXRSpatialMarkerTrackingCapability* OpenXRSpatialMarkerTrackingCapability::get_singleton()
-{
-	return singleton;
-}
-
-OpenXRSpatialMarkerTrackingCapability::OpenXRSpatialMarkerTrackingCapability() { singleton = this; }
-
-OpenXRSpatialMarkerTrackingCapability::~OpenXRSpatialMarkerTrackingCapability()
-{
-	singleton = nullptr;
-}
-
 HashMap<String, bool*> OpenXRSpatialMarkerTrackingCapability::get_requested_extensions(
 	XrVersion p_version)
 {
@@ -378,7 +361,7 @@ HashMap<String, bool*> OpenXRSpatialMarkerTrackingCapability::get_requested_exte
 	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled") &&
 		GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enable_marker_tracking")) {
 		request_extensions[XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME] =
-			&spatial_marker_tracking_ext;
+			&data->spatial_marker_tracking_ext;
 	}
 
 	return request_extensions;
@@ -386,53 +369,49 @@ HashMap<String, bool*> OpenXRSpatialMarkerTrackingCapability::get_requested_exte
 
 bool OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported()
 {
-	if (!spatial_marker_tracking_ext) {
+	if (!data->spatial_marker_tracking_ext) {
 		return false;
 	}
 
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL_V(se_extension, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
 
-	return se_extension->supports_capability(XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT);
+	return OpenXRSpatialEntityExtension::supports_capability(XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT);
 }
 
 bool OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported()
 {
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL_V(se_extension, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
 
-	return se_extension->supports_capability(
+	return OpenXRSpatialEntityExtension::supports_capability(
 		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT);
 }
 
 bool OpenXRSpatialMarkerTrackingCapability::is_aruco_supported()
 {
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL_V(se_extension, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
 
-	return se_extension->supports_capability(
+	return OpenXRSpatialEntityExtension::supports_capability(
 		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT);
 }
 
 bool OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported()
 {
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL_V(se_extension, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
 
-	return se_extension->supports_capability(XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT);
+	return OpenXRSpatialEntityExtension::supports_capability(XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT);
 }
 
 void OpenXRSpatialMarkerTrackingCapability::_on_spatial_context_created(RID p_spatial_context)
 {
-	spatial_context = p_spatial_context;
-	need_discovery = true;
+	data->spatial_context = p_spatial_context;
+	data->need_discovery = true;
 }
 
 void OpenXRSpatialMarkerTrackingCapability::_on_spatial_discovery_recommended(RID p_spatial_context)
 {
-	if (p_spatial_context == spatial_context) {
+	if (p_spatial_context == data->spatial_context) {
 		// Trigger new discovery.
-		need_discovery = true;
+		data->need_discovery = true;
 	}
 }
 

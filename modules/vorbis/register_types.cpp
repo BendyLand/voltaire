@@ -41,7 +41,7 @@ static void _editor_init()
 {
 	Ref<ResourceImporterOggVorbis> ogg_vorbis_importer;
 	ogg_vorbis_importer.instantiate();
-	ResourceFormatImporter::get_singleton()->add_importer(ogg_vorbis_importer);
+	ResourceFormatImporter::add_importer(ogg_vorbis_importer);
 }
 #endif
 

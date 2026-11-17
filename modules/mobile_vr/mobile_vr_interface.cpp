@@ -296,8 +296,7 @@ bool MobileVRInterface::is_initialized() const { return (initialized); }
 
 bool MobileVRInterface::initialize()
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, false);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), false);
 
 	if (!initialized) {
 		// reset our sensor data
@@ -316,10 +315,10 @@ bool MobileVRInterface::initialize()
 		head->set_tracker_type(XRServer::TRACKER_HEAD);
 		head->set_tracker_name("head");
 		head->set_tracker_desc("Players head");
-		xr_server->add_tracker(head);
+		XRServer::add_tracker(head);
 
 		// make this our primary interface
-		xr_server->set_primary_interface(this);
+		XRServer::set_primary_interface(this);
 
 		last_ticks = OS::get_ticks_usec();
 
@@ -333,17 +332,16 @@ void MobileVRInterface::uninitialize()
 {
 	if (initialized) {
 		// do any cleanup here...
-		XRServer* xr_server = XRServer::get_singleton();
-		if (xr_server != nullptr) {
+		if (XRServer::is_initialized()) {
 			if (head.is_valid()) {
-				xr_server->remove_tracker(head);
+				XRServer::remove_tracker(head);
 
 				head.unref();
 			}
 
-			if (xr_server->get_primary_interface() == this) {
+			if (XRServer::get_primary_interface() == this) {
 				// no longer our primary interface
-				xr_server->set_primary_interface(nullptr);
+				XRServer::set_primary_interface(nullptr);
 			}
 		}
 
@@ -386,17 +384,16 @@ Transform3D MobileVRInterface::get_camera_transform()
 
 	Transform3D transform_for_eye;
 
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, transform_for_eye);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), transform_for_eye);
 
 	if (initialized) {
-		float world_scale = xr_server->get_world_scale();
+		float world_scale = XRServer::get_world_scale();
 
 		// just scale our origin point of our transform
 		Transform3D _head_transform = head_transform;
 		_head_transform.origin *= world_scale;
 
-		transform_for_eye = (xr_server->get_reference_frame()) * _head_transform;
+		transform_for_eye = (XRServer::get_reference_frame()) * _head_transform;
 	}
 
 	return transform_for_eye;
@@ -409,11 +406,10 @@ Transform3D MobileVRInterface::get_transform_for_view(
 
 	Transform3D transform_for_eye;
 
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, transform_for_eye);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), transform_for_eye);
 
 	if (initialized) {
-		float world_scale = xr_server->get_world_scale();
+		float world_scale = XRServer::get_world_scale();
 
 		// we don't need to check for the existence of our HMD, doesn't affect our values...
 		// note * 0.01 to convert cm to m and * 0.5 as we're moving half in each direction...
@@ -431,7 +427,7 @@ Transform3D MobileVRInterface::get_transform_for_view(
 		Transform3D _head_transform = head_transform;
 		_head_transform.origin *= world_scale;
 
-		transform_for_eye = p_cam_transform * (xr_server->get_reference_frame()) * _head_transform *
+		transform_for_eye = p_cam_transform * (XRServer::get_reference_frame()) * _head_transform *
 							transform_for_eye;
 	}
 	else {

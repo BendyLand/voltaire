@@ -90,7 +90,7 @@ Vector<String> Translation::get_translated_message_list() const
 
 void Translation::set_locale(const String& p_locale)
 {
-	locale = TranslationServer::get_singleton()->standardize_locale(p_locale);
+	locale = TranslationServer::standardize_locale(p_locale);
 
 	if (plural_rules_cache && plural_rules_override.is_empty()) {
 		memdelete(plural_rules_cache);
@@ -183,7 +183,7 @@ PluralRules* Translation::_get_plural_rules() const
 
 	if (!plural_rules_cache) {
 		// Locale's default plural rules.
-		const String& default_rule = TranslationServer::get_singleton()->get_plural_rules(locale);
+		const String& default_rule = TranslationServer::get_plural_rules(locale);
 		if (!default_rule.is_empty()) {
 			plural_rules_cache = PluralRules::parse(default_rule);
 		}

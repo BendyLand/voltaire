@@ -36,7 +36,7 @@ bool PhysicsBody3D::move_and_collide(const PS3DT::MotionParameters& p_parameters
 	PS3DT::MotionResult& r_result, bool p_test_only, bool p_cancel_sliding)
 {
 	bool colliding =
-		PhysicsServer3D::get_singleton()->body_test_motion(get_rid(), p_parameters, &r_result);
+		PhysicsServer3D::body_test_motion(get_rid(), p_parameters, &r_result);
 
 	// Restore direction of motion to be along original motion,
 	// in order to avoid sliding due to recovery,
@@ -111,13 +111,13 @@ bool PhysicsBody3D::test_move(const Transform3D& p_from, const Vector3& p_motion
 	parameters.recovery_as_collision = p_recovery_as_collision;
 	parameters.max_collisions = p_max_collisions;
 
-	return PhysicsServer3D::get_singleton()->body_test_motion(get_rid(), parameters, r);
+	return PhysicsServer3D::body_test_motion(get_rid(), parameters, r);
 }
 
 Vector3 PhysicsBody3D::get_gravity() const
 {
 	PhysicsDirectBodyState3D* state =
-		PhysicsServer3D::get_singleton()->body_get_direct_state(get_rid());
+		PhysicsServer3D::body_get_direct_state(get_rid());
 	ERR_FAIL_NULL_V(state, Vector3());
 	return state->get_total_gravity();
 }
@@ -130,7 +130,7 @@ void PhysicsBody3D::set_axis_lock(PS3DE::BodyAxis p_axis, bool p_lock)
 	else {
 		locked_axis &= (~p_axis);
 	}
-	PhysicsServer3D::get_singleton()->body_set_axis_lock(get_rid(), p_axis, p_lock);
+	PhysicsServer3D::body_set_axis_lock(get_rid(), p_axis, p_lock);
 }
 
 bool PhysicsBody3D::get_axis_lock(PS3DE::BodyAxis p_axis) const { return (locked_axis & p_axis); }

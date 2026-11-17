@@ -37,13 +37,22 @@
 #include "core/string/print_string.h"
 #include "servers/xr/xr_server.h"
 
-OpenXRRenderModelExtension* OpenXRRenderModelExtension::singleton = nullptr;
+void OpenXRRenderModelExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
 
-OpenXRRenderModelExtension* OpenXRRenderModelExtension::get_singleton() { return singleton; }
+void OpenXRRenderModelExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
-OpenXRRenderModelExtension::OpenXRRenderModelExtension() { singleton = this; }
-
-OpenXRRenderModelExtension::~OpenXRRenderModelExtension() { singleton = nullptr; }
 
 void OpenXRRenderModelExtension::on_instance_created(const XrInstance p_instance)
 {
@@ -52,7 +61,7 @@ void OpenXRRenderModelExtension::on_instance_created(const XrInstance p_instance
 	EXT_INIT_XR_FUNC(xrDestroySpace);
 	EXT_INIT_XR_FUNC(xrPathToString);
 
-	if (render_model_ext) {
+	if (data->render_model_ext) {
 		EXT_INIT_XR_FUNC(xrCreateRenderModelEXT);
 		EXT_INIT_XR_FUNC(xrDestroyRenderModelEXT);
 		EXT_INIT_XR_FUNC(xrGetRenderModelPropertiesEXT);
@@ -64,7 +73,7 @@ void OpenXRRenderModelExtension::on_instance_created(const XrInstance p_instance
 		EXT_INIT_XR_FUNC(xrGetRenderModelStateEXT);
 	}
 
-	if (interaction_render_model_ext) {
+	if (data->interaction_render_model_ext) {
 		EXT_INIT_XR_FUNC(xrEnumerateInteractionRenderModelIdsEXT);
 		EXT_INIT_XR_FUNC(xrEnumerateRenderModelSubactionPathsEXT);
 		EXT_INIT_XR_FUNC(xrGetRenderModelPoseTopLevelUserPathEXT);
@@ -73,7 +82,7 @@ void OpenXRRenderModelExtension::on_instance_created(const XrInstance p_instance
 
 void OpenXRRenderModelExtension::on_session_created(const XrSession p_session)
 {
-	_interaction_data_dirty = true;
+	data->_interaction_data_dirty = true;
 }
 
 void OpenXRRenderModelExtension::on_instance_destroyed()
@@ -91,9 +100,9 @@ void OpenXRRenderModelExtension::on_instance_destroyed()
 	xrEnumerateRenderModelSubactionPathsEXT_ptr = nullptr;
 	xrGetRenderModelPoseTopLevelUserPathEXT_ptr = nullptr;
 
-	uuid_ext = false;
-	render_model_ext = false;
-	interaction_render_model_ext = false;
+	data->uuid_ext = false;
+	data->render_model_ext = false;
+	data->interaction_render_model_ext = false;
 }
 
 void OpenXRRenderModelExtension::on_session_destroyed()
@@ -102,14 +111,14 @@ void OpenXRRenderModelExtension::on_session_destroyed()
 	_clear_render_model_data();
 
 	// We no longer have valid sync data.
-	xr_sync_has_run = false;
+	data->xr_sync_has_run = false;
 }
 
 bool OpenXRRenderModelExtension::on_event_polled(const XrEventDataBuffer& event)
 {
 	if (event.type == XR_TYPE_EVENT_DATA_INTERACTION_RENDER_MODELS_CHANGED_EXT) {
 		// Mark interaction data as dirty so that we update it on sync.
-		_interaction_data_dirty = true;
+		data->_interaction_data_dirty = true;
 
 		return true;
 	}
@@ -117,7 +126,7 @@ bool OpenXRRenderModelExtension::on_event_polled(const XrEventDataBuffer& event)
 		// If our controller bindings changed, its likely our render models change too.
 		// We should be getting a XR_TYPE_EVENT_DATA_INTERACTION_RENDER_MODELS_CHANGED_EXT
 		// but checking for this scenario just in case.
-		_interaction_data_dirty = true;
+		data->_interaction_data_dirty = true;
 
 		// Do not consider this handled, we simply do additional logic.
 		return false;
@@ -132,22 +141,21 @@ void OpenXRRenderModelExtension::on_sync_actions()
 		return;
 	}
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	// Mark sync as run
-	xr_sync_has_run = true;
+	data->xr_sync_has_run = true;
 
 	// Update our interaction data if needed
-	if (_interaction_data_dirty) {
+	if (data->_interaction_data_dirty) {
 		_update_interaction_data();
 	}
 
 	// Loop through all of our render models to update our space and state info
-	LocalVector<RID> owned = render_model_owner.get_owned_list();
+	LocalVector<RID> owned = data->render_model_owner.get_owned_list();
 
 	for (const RID& rid : owned) {
-		RenderModel* render_model = render_model_owner.get_or_null(rid);
+		RenderModel* render_model = data->render_model_owner.get_or_null(rid);
 		if (render_model && render_model->xr_space != XR_NULL_HANDLE) {
 			XrSpaceLocation render_model_location = {
 				XR_TYPE_SPACE_LOCATION,					 // type
@@ -156,12 +164,12 @@ void OpenXRRenderModelExtension::on_sync_actions()
 				{{0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}}, // pose
 			};
 
-			XrResult result = xrLocateSpace(render_model->xr_space, openxr_api->get_play_space(),
-				openxr_api->get_predicted_display_time(), &render_model_location);
+			XrResult result = xrLocateSpace(render_model->xr_space, OpenXRAPI::get_play_space(),
+				OpenXRAPI::get_predicted_display_time(), &render_model_location);
 			ERR_CONTINUE_MSG(XR_FAILED(result), "OpenXR: Failed to locate render model space [" +
-													openxr_api->get_error_string(result) + "]");
+													OpenXRAPI::get_error_string(result) + "]");
 
-			render_model->confidence = openxr_api->transform_from_location(
+			render_model->confidence = OpenXRAPI::transform_from_location(
 				render_model_location, render_model->root_transform);
 
 			if (!render_model->node_states.is_empty()) {
@@ -169,7 +177,7 @@ void OpenXRRenderModelExtension::on_sync_actions()
 				XrRenderModelStateGetInfoEXT get_state_info = {
 					XR_TYPE_RENDER_MODEL_STATE_GET_INFO_EXT, // type
 					nullptr,								 // next
-					openxr_api->get_predicted_display_time() // displayTime
+					OpenXRAPI::get_predicted_display_time() // displayTime
 				};
 
 				XrRenderModelStateEXT state = {
@@ -183,33 +191,33 @@ void OpenXRRenderModelExtension::on_sync_actions()
 					render_model->xr_render_model, &get_state_info, &state);
 				if (XR_FAILED(result)) {
 					ERR_PRINT("OpenXR: Failed to update node states [" +
-							  openxr_api->get_error_string(result) + "]");
+							  OpenXRAPI::get_error_string(result) + "]");
 				}
 			}
 
 			XrPath new_path = XR_NULL_PATH;
 
-			if (toplevel_paths.is_empty()) {
+			if (data->toplevel_paths.is_empty()) {
 				// Set this up just once with paths we support here.
-				toplevel_paths.push_back(openxr_api->get_xr_path("/user/hand/left"));
-				toplevel_paths.push_back(openxr_api->get_xr_path("/user/hand/right"));
+				data->toplevel_paths.push_back(OpenXRAPI::get_xr_path("/user/hand/left"));
+				data->toplevel_paths.push_back(OpenXRAPI::get_xr_path("/user/hand/right"));
 			}
 
 			XrInteractionRenderModelTopLevelUserPathGetInfoEXT info = {
 				XR_TYPE_INTERACTION_RENDER_MODEL_TOP_LEVEL_USER_PATH_GET_INFO_EXT, // type
 				nullptr,														   // next
-				(uint32_t)toplevel_paths.size(), // topLevelUserPathCount
-				toplevel_paths.ptr()			 // topLevelUserPaths
+				(uint32_t)data->toplevel_paths.size(), // topLevelUserPathCount
+				data->toplevel_paths.ptr()			 // topLevelUserPaths
 			};
 			result = xrGetRenderModelPoseTopLevelUserPathEXT(
 				render_model->xr_render_model, &info, &new_path);
 			if (XR_FAILED(result)) {
 				ERR_PRINT("OpenXR: Failed to update the top level path for render models [" +
-						  openxr_api->get_error_string(result) + "]");
+						  OpenXRAPI::get_error_string(result) + "]");
 			}
 			else if (new_path != render_model->top_level_path) {
 				print_verbose("OpenXR: Render model top level path changed to " +
-							  openxr_api->get_xr_path_name(new_path));
+							  OpenXRAPI::get_xr_path_name(new_path));
 				// Set the new path
 				render_model->top_level_path = new_path;
 			}
@@ -217,39 +225,36 @@ void OpenXRRenderModelExtension::on_sync_actions()
 	}
 }
 
-bool OpenXRRenderModelExtension::is_active() const
-{
-	return render_model_ext && interaction_render_model_ext;
-}
+bool OpenXRRenderModelExtension::is_active()
+{ return data != nullptr && data->render_model_ext && data->interaction_render_model_ext; }
 
 void OpenXRRenderModelExtension::_clear_interaction_data()
 {
-	for (const KeyValue<XrRenderModelIdEXT, RID>& e : interaction_render_models) {
+	for (const KeyValue<XrRenderModelIdEXT, RID>& e : data->interaction_render_models) {
 		render_model_destroy(e.value);
 	}
-	interaction_render_models.clear();
+	data->interaction_render_models.clear();
 }
 
 bool OpenXRRenderModelExtension::_update_interaction_data()
 {
-	ERR_FAIL_COND_V_MSG(!interaction_render_model_ext, false,
+	ERR_FAIL_COND_V_MSG(!data->interaction_render_model_ext, false,
 		"Interaction render model extension hasn't been enabled.");
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
-	XrSession session = openxr_api->get_session();
+	XrSession session = OpenXRAPI::get_session();
 	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
 
 	// Check if syncActions has been run at least once or there is no point in getting data.
-	if (!xr_sync_has_run) {
+	if (!data->xr_sync_has_run) {
 		// Do not treat this as an error.
 		return true;
 	}
 
 	// If we get this far, no longer mark as dirty.
 	// Else we just repeat the same error over and over again.
-	_interaction_data_dirty = false;
+	data->_interaction_data_dirty = false;
 
 	// Obtain interaction info.
 	XrInteractionRenderModelIdsEnumerateInfoEXT interaction_info = {
@@ -264,7 +269,7 @@ bool OpenXRRenderModelExtension::_update_interaction_data()
 	if (XR_FAILED(result)) {
 		// not successful? then we do nothing.
 		ERR_FAIL_V_MSG(false, "OpenXR: Failed to obtain render model interaction id count [" +
-								  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+								  OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	// Create some storage
@@ -279,13 +284,13 @@ bool OpenXRRenderModelExtension::_update_interaction_data()
 			render_model_interaction_ids.ptr());
 		if (XR_FAILED(result)) {
 			ERR_FAIL_V_MSG(false, "OpenXR: Failed to obtain render model interaction ids [" +
-									  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+									  OpenXRAPI::get_error_string(result) + "]");
 		}
 	}
 
 	// Remove render models that are no longer tracked
 	LocalVector<XrRenderModelIdEXT> erase_ids;
-	for (const KeyValue<XrRenderModelIdEXT, RID>& e : interaction_render_models) {
+	for (const KeyValue<XrRenderModelIdEXT, RID>& e : data->interaction_render_models) {
 		if (!render_model_interaction_ids.has(e.key)) {
 			if (e.value.is_valid()) {
 				render_model_destroy(e.value);
@@ -297,33 +302,32 @@ bool OpenXRRenderModelExtension::_update_interaction_data()
 
 	// Remove these from our hashmap
 	for (const XrRenderModelIdEXT& id : erase_ids) {
-		interaction_render_models.erase(id);
+		data->interaction_render_models.erase(id);
 	}
 
 	// Now update our models
 	for (const XrRenderModelIdEXT& id : render_model_interaction_ids) {
-		if (!interaction_render_models.has(id)) {
+		if (!data->interaction_render_models.has(id)) {
 			// Even if this fails we add it so we don't repeat trying to create it
-			interaction_render_models[id] = render_model_create(id);
+			data->interaction_render_models[id] = render_model_create(id);
 		}
 	}
 
 	return true;
 }
 
-bool OpenXRRenderModelExtension::has_render_model(RID p_render_model) const
+bool OpenXRRenderModelExtension::has_render_model(RID p_render_model)
 {
-	return render_model_owner.owns(p_render_model);
+	return data->render_model_owner.owns(p_render_model);
 }
 
 RID OpenXRRenderModelExtension::render_model_create(XrRenderModelIdEXT p_render_model_id)
 {
-	ERR_FAIL_COND_V_MSG(!render_model_ext, RID(), "Render model extension hasn't been enabled.");
+	ERR_FAIL_COND_V_MSG(!data->render_model_ext, RID(), "Render model extension hasn't been enabled.");
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, RID());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
 
-	XrSession session = openxr_api->get_session();
+	XrSession session = OpenXRAPI::get_session();
 	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, RID());
 
 	RenderModel render_model;
@@ -358,7 +362,7 @@ RID OpenXRRenderModelExtension::render_model_create(XrRenderModelIdEXT p_render_
 	XrResult result = xrCreateRenderModelEXT(session, &create_info, &render_model.xr_render_model);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(RID(), "OpenXR: Failed to create render model [" +
-								  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+								  OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	XrRenderModelPropertiesGetInfoEXT properties_info = {
@@ -377,7 +381,7 @@ RID OpenXRRenderModelExtension::render_model_create(XrRenderModelIdEXT p_render_
 		xrGetRenderModelPropertiesEXT(render_model.xr_render_model, &properties_info, &properties);
 	if (XR_FAILED(result)) {
 		ERR_PRINT("OpenXR: Failed to get render model properties [" +
-				  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+				  OpenXRAPI::get_error_string(result) + "]");
 	}
 	else {
 		render_model.animatable_node_count = properties.animatableNodeCount;
@@ -395,14 +399,14 @@ RID OpenXRRenderModelExtension::render_model_create(XrRenderModelIdEXT p_render_
 	result = xrCreateRenderModelSpaceEXT(session, &space_create_info, &render_model.xr_space);
 	if (XR_FAILED(result)) {
 		ERR_PRINT("OpenXR: Failed to create render model space [" +
-				  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+				  OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	if (render_model.animatable_node_count > 0) {
 		render_model.node_states.resize(render_model.animatable_node_count);
 	}
 
-	RID new_rid = render_model_owner.make_rid(render_model);
+	RID new_rid = data->render_model_owner.make_rid(render_model);
 
 	return new_rid;
 }
@@ -422,9 +426,9 @@ RID OpenXRRenderModelExtension::_render_model_create(uint64_t p_render_model_id)
 
 void OpenXRRenderModelExtension::render_model_destroy(RID p_render_model)
 {
-	ERR_FAIL_COND_MSG(!render_model_ext, "Render model extension hasn't been enabled.");
+	ERR_FAIL_COND_MSG(!data->render_model_ext, "Render model extension hasn't been enabled.");
 
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL(render_model);
 
 	// Clean up.
@@ -438,15 +442,15 @@ void OpenXRRenderModelExtension::render_model_destroy(RID p_render_model)
 	XrResult result = xrDestroyRenderModelEXT(render_model->xr_render_model);
 	if (XR_FAILED(result)) {
 		ERR_PRINT("OpenXR: Failed to destroy render model [" +
-				  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+				  OpenXRAPI::get_error_string(result) + "]");
 	}
 
-	render_model_owner.free(p_render_model);
+	data->render_model_owner.free(p_render_model);
 }
 
-Node3D* OpenXRRenderModelExtension::render_model_new_scene_instance(RID p_render_model) const
+Node3D* OpenXRRenderModelExtension::render_model_new_scene_instance(RID p_render_model)
 {
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL_V(render_model, nullptr);
 
 	if (render_model->render_model_data.is_null()) {
@@ -459,13 +463,12 @@ Node3D* OpenXRRenderModelExtension::render_model_new_scene_instance(RID p_render
 
 PackedStringArray OpenXRRenderModelExtension::render_model_get_subaction_paths(RID p_render_model)
 {
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, PackedStringArray());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedStringArray());
 
-	XrInstance instance = openxr_api->get_instance();
+	XrInstance instance = OpenXRAPI::get_instance();
 	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, PackedStringArray());
 
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL_V(render_model, PackedStringArray());
 
 	PackedStringArray subaction_paths;
@@ -482,7 +485,7 @@ PackedStringArray OpenXRRenderModelExtension::render_model_get_subaction_paths(R
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(
 			PackedStringArray(), "OpenXR: Failed to obtain render model subaction path count [" +
-									 OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+									 OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	if (capacity > 0) {
@@ -495,7 +498,7 @@ PackedStringArray OpenXRRenderModelExtension::render_model_get_subaction_paths(R
 		if (XR_FAILED(result)) {
 			ERR_FAIL_V_MSG(PackedStringArray(),
 				"OpenXR: Failed to obtain render model subaction paths [" +
-					OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+					OpenXRAPI::get_error_string(result) + "]");
 		}
 
 		for (uint32_t i = 0; i < capacity; i++) {
@@ -511,21 +514,20 @@ PackedStringArray OpenXRRenderModelExtension::render_model_get_subaction_paths(R
 	return subaction_paths;
 }
 
-XrPath OpenXRRenderModelExtension::render_model_get_top_level_path(RID p_render_model) const
+XrPath OpenXRRenderModelExtension::render_model_get_top_level_path(RID p_render_model)
 {
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL_V(render_model, XRPose::TrackingConfidence::XR_TRACKING_CONFIDENCE_NONE);
 
 	return render_model->top_level_path;
 }
 
 String OpenXRRenderModelExtension::render_model_get_top_level_path_as_string(
-	RID p_render_model) const
+	RID p_render_model)
 {
 	String ret;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, ret);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
 
 	if (is_active() && has_render_model(p_render_model)) {
 		XrPath path = render_model_get_top_level_path(p_render_model);
@@ -533,7 +535,7 @@ String OpenXRRenderModelExtension::render_model_get_top_level_path_as_string(
 			return "None";
 		}
 		else {
-			return openxr_api->get_xr_path_name(path);
+			return OpenXRAPI::get_xr_path_name(path);
 		}
 	}
 
@@ -541,43 +543,42 @@ String OpenXRRenderModelExtension::render_model_get_top_level_path_as_string(
 }
 
 XRPose::TrackingConfidence OpenXRRenderModelExtension::render_model_get_confidence(
-	RID p_render_model) const
+	RID p_render_model)
 {
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL_V(render_model, XRPose::TrackingConfidence::XR_TRACKING_CONFIDENCE_NONE);
 
 	return render_model->confidence;
 }
 
-Transform3D OpenXRRenderModelExtension::render_model_get_root_transform(RID p_render_model) const
+Transform3D OpenXRRenderModelExtension::render_model_get_root_transform(RID p_render_model)
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, Transform3D());
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Transform3D());
 
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL_V(render_model, Transform3D());
 
 	// Scale our root transform
-	real_t world_scale = xr_server->get_world_scale();
+	real_t world_scale = XRServer::get_world_scale();
 	Transform3D root_transform =
 		render_model->root_transform.scaled(Vector3(world_scale, world_scale, world_scale));
 
-	return xr_server->get_reference_frame() * root_transform;
+	return XRServer::get_reference_frame() * root_transform;
 }
 
 uint32_t OpenXRRenderModelExtension::render_model_get_animatable_node_count(
-	RID p_render_model) const
+	RID p_render_model)
 {
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL_V(render_model, 0);
 
 	return render_model->animatable_node_count;
 }
 
 String OpenXRRenderModelExtension::render_model_get_animatable_node_name(
-	RID p_render_model, uint32_t p_index) const
+	RID p_render_model, uint32_t p_index)
 {
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL_V(render_model, String());
 
 	if (render_model->render_model_data.is_null()) {
@@ -589,9 +590,9 @@ String OpenXRRenderModelExtension::render_model_get_animatable_node_name(
 }
 
 bool OpenXRRenderModelExtension::render_model_is_animatable_node_visible(
-	RID p_render_model, uint32_t p_index) const
+	RID p_render_model, uint32_t p_index)
 {
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL_V(render_model, false);
 
 	ERR_FAIL_UNSIGNED_INDEX_V(p_index, render_model->animatable_node_count, false);
@@ -605,12 +606,11 @@ bool OpenXRRenderModelExtension::render_model_is_animatable_node_visible(
 }
 
 Transform3D OpenXRRenderModelExtension::render_model_get_animatable_node_transform(
-	RID p_render_model, uint32_t p_index) const
+	RID p_render_model, uint32_t p_index)
 {
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
 
-	RenderModel* render_model = render_model_owner.get_or_null(p_render_model);
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
 	ERR_FAIL_NULL_V(render_model, Transform3D());
 
 	ERR_FAIL_UNSIGNED_INDEX_V(p_index, render_model->animatable_node_count, Transform3D());
@@ -620,22 +620,21 @@ Transform3D OpenXRRenderModelExtension::render_model_get_animatable_node_transfo
 		return Transform3D();
 	}
 
-	return openxr_api->transform_from_pose(render_model->node_states[p_index].nodePose);
+	return OpenXRAPI::transform_from_pose(render_model->node_states[p_index].nodePose);
 }
 
 Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_get_render_model_data(
 	XrUuidEXT p_cache_id, uint32_t p_animatable_node_count)
 {
-	if (render_model_data_cache.has(p_cache_id)) {
-		return render_model_data_cache[p_cache_id];
+	if (data->render_model_data_cache.has(p_cache_id)) {
+		return data->render_model_data_cache[p_cache_id];
 	}
 
 	// We don't have this cached, lets load it up
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, nullptr);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), nullptr);
 
-	XrSession session = openxr_api->get_session();
+	XrSession session = OpenXRAPI::get_session();
 	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, nullptr);
 
 	XrRenderModelAssetEXT asset;
@@ -649,7 +648,7 @@ Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_get_render_model_data(
 	XrResult result = xrCreateRenderModelAssetEXT(session, &create_info, &asset);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to create render model asset [" +
-									OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+									OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	Ref<OpenXRRenderModelData> render_model_data = _load_asset(asset, p_animatable_node_count);
@@ -658,11 +657,11 @@ Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_get_render_model_data(
 	result = xrDestroyRenderModelAssetEXT(asset);
 	if (XR_FAILED(result)) {
 		ERR_PRINT("OpenXR: Failed to destroy render model asset [" +
-				  OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+				  OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	// And cache it
-	render_model_data_cache[p_cache_id] = render_model_data;
+	data->render_model_data_cache[p_cache_id] = render_model_data;
 
 	return render_model_data;
 }
@@ -687,7 +686,7 @@ Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_load_asset(
 	XrResult result = xrGetRenderModelAssetDataEXT(p_asset, &get_info, &asset_data);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to get render model buffer size [" +
-									OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+									OpenXRAPI::get_error_string(result) + "]");
 	}
 	ERR_FAIL_COND_V(asset_data.bufferCountOutput == 0, nullptr);
 
@@ -701,7 +700,7 @@ Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_load_asset(
 	result = xrGetRenderModelAssetDataEXT(p_asset, &get_info, &asset_data);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to get render model buffer [" +
-									OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+									OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	// Get the names of any animatable nodes
@@ -727,7 +726,7 @@ Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_load_asset(
 		result = xrGetRenderModelAssetPropertiesEXT(p_asset, &properties_info, &asset_properties);
 		if (XR_FAILED(result)) {
 			ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to get render model property info [" +
-										OpenXRAPI::get_singleton()->get_error_string(result) + "]");
+										OpenXRAPI::get_error_string(result) + "]");
 		}
 
 		node_names.resize(p_animatable_node_count);
@@ -749,13 +748,13 @@ Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_load_asset(
 void OpenXRRenderModelExtension::_clear_render_model_data()
 {
 	// Clear our toplevel paths filter.
-	toplevel_paths.clear();
+	data->toplevel_paths.clear();
 
 	// Clear our render model cache.
-	render_model_data_cache.clear();
+	data->render_model_data_cache.clear();
 
 	// Loop through all of our render models and destroy them.
-	LocalVector<RID> owned = render_model_owner.get_owned_list();
+	LocalVector<RID> owned = data->render_model_owner.get_owned_list();
 	for (const RID& rid : owned) {
 		render_model_destroy(rid);
 	}

@@ -118,7 +118,7 @@ Rect2 CapsuleShape2D::get_rect() const
 
 real_t CapsuleShape2D::get_enclosing_radius() const { return height * 0.5f; }
 
-CapsuleShape2D::CapsuleShape2D() : Shape2D(PhysicsServer2D::get_singleton()->capsule_shape_create())
+CapsuleShape2D::CapsuleShape2D() : Shape2D(PhysicsServer2D::capsule_shape_create())
 {
 	_update_shape();
 }

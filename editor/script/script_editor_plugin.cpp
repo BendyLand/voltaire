@@ -129,7 +129,7 @@ void ScriptEditor::_copy_script_uid()
 		Ref<Resource> scr = seb->get_edited_resource();
 		ResourceUID::ID uid = ResourceLoader::get_resource_uid(scr->get_path());
 		DisplayServer::clipboard_set(
-			ResourceUID::get_singleton()->id_to_text(uid));
+			ResourceUID::id_to_text(uid));
 	}
 }
 

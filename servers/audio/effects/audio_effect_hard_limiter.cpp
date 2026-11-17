@@ -35,7 +35,7 @@
 void AudioEffectHardLimiterInstance::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	float sample_rate = AudioServer::get_singleton()->get_mix_rate();
+	float sample_rate = AudioServer::get_mix_rate();
 
 	float ceiling = Math::db_to_linear(base->ceiling);
 	float release = base->release;
@@ -107,7 +107,7 @@ Ref<AudioEffectInstance> AudioEffectHardLimiter::instantiate()
 	ins.instantiate();
 	ins->base = Ref<AudioEffectHardLimiter>(this);
 
-	float mix_rate = AudioServer::get_singleton()->get_mix_rate();
+	float mix_rate = AudioServer::get_mix_rate();
 
 	for (int i = 0; i < (int)Math::ceil(mix_rate * attack) + 1; i++) {
 		ins->sample_buffer_left.push_back(0.0f);

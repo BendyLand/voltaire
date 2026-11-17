@@ -52,14 +52,13 @@ Transform3D XRPose::get_adjusted_transform() const
 {
 	Transform3D adjusted_transform = transform;
 
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, transform);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), transform);
 
 	// apply world scale
-	adjusted_transform.origin *= xr_server->get_world_scale();
+	adjusted_transform.origin *= XRServer::get_world_scale();
 
 	// apply reference frame
-	adjusted_transform = xr_server->get_reference_frame() * adjusted_transform;
+	adjusted_transform = XRServer::get_reference_frame() * adjusted_transform;
 
 	return adjusted_transform;
 }

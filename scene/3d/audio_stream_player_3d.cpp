@@ -121,7 +121,7 @@ void AudioStreamPlayer3D::_calc_output_vol(const Vector3& source_dir, real_t tig
 	FixedVector<AudioFrame, VOLUME_VECTOR_SIZE>& output)
 {
 	unsigned int speaker_count = 0; // only main speakers (no LFE)
-	switch (AudioServer::get_singleton()->get_speaker_mode()) {
+	switch (AudioServer::get_speaker_mode()) {
 	case AudioServer::SPEAKER_MODE_STEREO:
 		speaker_count = 2;
 		break;
@@ -141,7 +141,7 @@ void AudioStreamPlayer3D::_calc_output_vol(const Vector3& source_dir, real_t tig
 	real_t volumes[7] = {};
 	spcap.calculate(source_dir, tightness, speaker_count, volumes);
 
-	switch (AudioServer::get_singleton()->get_speaker_mode()) {
+	switch (AudioServer::get_speaker_mode()) {
 	case AudioServer::SPEAKER_SURROUND_71:
 		output[3].left = volumes[5];  // side-left
 		output[3].right = volumes[6]; // side-right
@@ -196,7 +196,7 @@ void AudioStreamPlayer3D::_calc_reverb_vol(Area3D* area, Vector3 listener_area_p
 		// Determine the fraction of sound that would come from each speaker if they were all driven
 		// uniformly.
 		float center_val[3] = {0.5f, 0.25f, 0.16666f};
-		int channel_count = AudioServer::get_singleton()->get_channel_count();
+		int channel_count = AudioServer::get_channel_count();
 		AudioFrame center_frame(center_val[channel_count - 1], center_val[channel_count - 1]);
 
 		if (attenuation < 1.0) {
@@ -289,11 +289,11 @@ void AudioStreamPlayer3D::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
 		velocity_tracker->reset(get_global_transform().origin);
-		AudioServer::get_singleton()->add_listener_changed_callback(_listener_changed_cb, this);
+		AudioServer::add_listener_changed_callback(_listener_changed_cb, this);
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		AudioServer::get_singleton()->remove_listener_changed_callback(_listener_changed_cb, this);
+		AudioServer::remove_listener_changed_callback(_listener_changed_cb, this);
 	} break;
 
 	case NOTIFICATION_TRANSFORM_CHANGED: {
@@ -307,7 +307,7 @@ void AudioStreamPlayer3D::_notification(int p_what)
 		Vector<AudioFrame> volume_vector;
 		if (setplay.get() > 0 ||
 			(internal->active.is_set() &&
-				last_mix_count != AudioServer::get_singleton()->get_mix_count()) ||
+				last_mix_count != AudioServer::get_mix_count()) ||
 			force_update_panning) {
 			force_update_panning = false;
 			volume_vector = _update_panning();
@@ -317,7 +317,7 @@ void AudioStreamPlayer3D::_notification(int p_what)
 			internal->active.set();
 			HashMap<String, Vector<AudioFrame>> bus_map;
 			bus_map[_get_actual_bus()] = volume_vector;
-			AudioServer::get_singleton()->start_playback_stream(setplayback, bus_map, setplay.get(),
+			AudioServer::start_playback_stream(setplayback, bus_map, setplay.get(),
 				actual_pitch_scale, linear_attenuation, attenuation_filter_cutoff_hz);
 			setplayback.unref();
 			setplay.set(-1);
@@ -395,7 +395,7 @@ Vector<AudioFrame> AudioStreamPlayer3D::_update_panning()
 
 #ifndef PHYSICS_3D_DISABLED
 	PhysicsDirectSpaceState3D* space_state =
-		PhysicsServer3D::get_singleton()->space_get_direct_state(world_3d->get_space());
+		PhysicsServer3D::space_get_direct_state(world_3d->get_space());
 	Area3D* area = _get_overriding_area();
 #endif // PHYSICS_3D_DISABLED
 
@@ -489,7 +489,7 @@ Vector<AudioFrame> AudioStreamPlayer3D::_update_panning()
 			frame = AudioFrame(0, 0);
 		}
 
-		if (AudioServer::get_singleton()->get_speaker_mode() == AudioServer::SPEAKER_MODE_STEREO) {
+		if (AudioServer::get_speaker_mode() == AudioServer::SPEAKER_MODE_STEREO) {
 			listener_volume_vector[0] = _calc_output_vol_stereo(
 				local_pos, cached_global_panning_strength * panning_strength);
 		}
@@ -556,7 +556,7 @@ Vector<AudioFrame> AudioStreamPlayer3D::_update_panning()
 	}
 
 	for (Ref<AudioStreamPlayback>& playback : internal->stream_playbacks) {
-		AudioServer::get_singleton()->set_playback_highshelf_params(
+		AudioServer::set_playback_highshelf_params(
 			playback, linear_attenuation, attenuation_filter_cutoff_hz);
 	}
 
@@ -589,15 +589,15 @@ Vector<AudioFrame> AudioStreamPlayer3D::_update_panning()
 
 	if (!skip_setting_volumes) {
 		for (Ref<AudioStreamPlayback>& playback : internal->stream_playbacks) {
-			AudioServer::get_singleton()->set_playback_bus_volumes_linear(playback, bus_volumes);
+			AudioServer::set_playback_bus_volumes_linear(playback, bus_volumes);
 		}
 
 		for (Ref<AudioStreamPlayback>& playback : internal->stream_playbacks) {
-			AudioServer::get_singleton()->set_playback_pitch_scale(playback, actual_pitch_scale);
+			AudioServer::set_playback_pitch_scale(playback, actual_pitch_scale);
 			if (playback->get_is_sample()) {
 				Ref<AudioSamplePlayback> sample_playback = playback->get_sample_playback();
 				if (sample_playback.is_valid()) {
-					AudioServer::get_singleton()->update_sample_playback_pitch_scale(
+					AudioServer::update_sample_playback_pitch_scale(
 						sample_playback, actual_pitch_scale);
 				}
 			}
@@ -653,7 +653,7 @@ void AudioStreamPlayer3D::play(float p_from_pos)
 		sample_playback->offset = p_from_pos;
 		sample_playback->bus = _get_actual_bus();
 
-		AudioServer::get_singleton()->start_sample_playback(sample_playback);
+		AudioServer::start_sample_playback(sample_playback);
 	}
 }
 

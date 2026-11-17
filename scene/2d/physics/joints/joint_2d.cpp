@@ -61,7 +61,7 @@ void Joint2D::set_bias(real_t p_bias)
 {
 	bias = p_bias;
 	if (joint.is_valid()) {
-		PhysicsServer2D::get_singleton()->joint_set_param(joint, PS2DE::JOINT_PARAM_BIAS, bias);
+		PhysicsServer2D::joint_set_param(joint, PS2DE::JOINT_PARAM_BIAS, bias);
 	}
 }
 
@@ -96,14 +96,14 @@ PackedStringArray Joint2D::get_configuration_warnings() const
 
 Joint2D::Joint2D()
 {
-	joint = PhysicsServer2D::get_singleton()->joint_create();
+	joint = PhysicsServer2D::joint_create();
 	set_hide_clip_children(true);
 }
 
 Joint2D::~Joint2D()
 {
-	ERR_FAIL_NULL(PhysicsServer2D::get_singleton());
-	PhysicsServer2D::get_singleton()->free_rid(joint);
+	ERR_FAIL_COND(!PhysicsServer2D::is_initialized());
+	PhysicsServer2D::free_rid(joint);
 }
 
 void Joint2D::_update_joint(bool p_only_free) {}

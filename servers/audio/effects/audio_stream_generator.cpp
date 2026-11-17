@@ -55,9 +55,9 @@ float AudioStreamGenerator::_get_target_rate() const
 {
 	switch (mix_rate_mode) {
 	case AudioStreamGeneratorMixRate::MIX_RATE_OUTPUT:
-		return AudioServer::get_singleton()->get_mix_rate();
+		return AudioServer::get_mix_rate();
 	case AudioStreamGeneratorMixRate::MIX_RATE_INPUT:
-		return AudioServer::get_singleton()->get_input_mix_rate();
+		return AudioServer::get_input_mix_rate();
 	default:
 		return mix_rate;
 	}

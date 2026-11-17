@@ -69,7 +69,7 @@ Ref<AudioEffectInstance> AudioEffectCapture::instantiate()
 {
 	if (!buffer_initialized) {
 		float target_buffer_size =
-			AudioServer::get_singleton()->get_mix_rate() * buffer_length_seconds;
+			AudioServer::get_mix_rate() * buffer_length_seconds;
 		ERR_FAIL_COND_V(
 			target_buffer_size <= 0 || target_buffer_size >= (1 << 27), Ref<AudioEffectInstance>());
 		buffer.resize(Math::nearest_shift((uint32_t)target_buffer_size));

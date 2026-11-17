@@ -40,17 +40,13 @@
 #include "../util.h"
 #endif
 
-class OpenXRAndroidThreadSettingsExtension
+class OpenXRAndroidThreadSettingsExtension final
 {
 public:
-	static OpenXRAndroidThreadSettingsExtension* get_singleton();
 
-	OpenXRAndroidThreadSettingsExtension();
-	virtual ~OpenXRAndroidThreadSettingsExtension();
-
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	virtual void on_instance_created(XrInstance p_instance);
-	virtual void on_session_created(XrSession p_session);
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(XrInstance p_instance);
+	static void on_session_created(XrSession p_session);
 
 	enum ThreadType
 	{
@@ -60,22 +56,36 @@ public:
 		THREAD_TYPE_RENDERER_WORKER,
 	};
 
-	bool set_application_thread_type(ThreadType p_thread_type, uint32_t p_thread_id = 0);
+	static bool set_application_thread_type(ThreadType p_thread_type, uint32_t p_thread_id = 0);
 
 protected:
 
 private:
-	static OpenXRAndroidThreadSettingsExtension* singleton;
 
-	bool _initialize_openxr_android_thread_settings_extension();
-	void _set_render_thread_type();
-
-	bool available = false;
+	static bool _initialize_openxr_android_thread_settings_extension();
+	static void _set_render_thread_type();
 
 #ifdef XR_USE_PLATFORM_ANDROID
 	EXT_PROTO_XRRESULT_FUNC3(xrSetAndroidApplicationThreadKHR, (XrSession), session,
 		(XrAndroidThreadTypeKHR), threadType, (uint32_t), threadId);
 #endif
+
+public:
+	struct Data
+	{
+		bool available = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRAndroidThreadSettingsExtension() = delete;
+	OpenXRAndroidThreadSettingsExtension(const OpenXRAndroidThreadSettingsExtension&) = delete;
+	OpenXRAndroidThreadSettingsExtension& operator=(const OpenXRAndroidThreadSettingsExtension&) = delete;
+	~OpenXRAndroidThreadSettingsExtension() = delete;
 };
 
 

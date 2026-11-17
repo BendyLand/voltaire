@@ -64,7 +64,7 @@ void EditorAudioBus::_notification(int p_what)
 		}
 
 		for (int i = 0; i < cc; i++) {
-			if (AudioServer::get_singleton()->is_bus_channel_active(get_index(), i)) {
+			if (AudioServer::is_bus_channel_active(get_index(), i)) {
 				channel[i].prev_active = false;
 			}
 			else {

@@ -39,57 +39,66 @@
 #include "../util.h"
 #include "openxr_composition_layer_extension.h"
 
-class OpenXRFBUpdateSwapchainExtension
+class OpenXRFBUpdateSwapchainExtension final
 {
 protected:
 
 	friend class OpenXRFBFoveationExtension;
 
 public:
-	static OpenXRFBUpdateSwapchainExtension* get_singleton();
 
-	OpenXRFBUpdateSwapchainExtension(const String& p_rendering_driver);
-	virtual ~OpenXRFBUpdateSwapchainExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_instance_destroyed();
+	static bool is_enabled();
+	static bool is_android_ext_enabled();
 
-	bool is_enabled() const;
-	bool is_android_ext_enabled() const;
-
-	void update_swapchain_state(XrSwapchain p_swapchain,
+	static void update_swapchain_state(XrSwapchain p_swapchain,
 		const OpenXRCompositionLayerExtension::SwapchainState* p_swapchain_state);
 
-	void update_swapchain_surface_size(XrSwapchain p_swapchain, const Size2i& p_size);
+	static void update_swapchain_surface_size(XrSwapchain p_swapchain, const Size2i& p_size);
 
 private:
-	static OpenXRFBUpdateSwapchainExtension* singleton;
 
-	// Setup
-	String rendering_driver;
-	bool fb_swapchain_update_state_ext = false;
-	bool fb_swapchain_update_state_vulkan_ext = false;
-	bool fb_swapchain_update_state_opengles_ext = false;
-	bool fb_swapchain_update_state_android_ext = false;
-
-	uint32_t filter_to_gl(OpenXRCompositionLayerExtension::Filter p_filter,
+	static uint32_t filter_to_gl(OpenXRCompositionLayerExtension::Filter p_filter,
 		OpenXRCompositionLayerExtension::MipmapMode p_mipmap_mode =
 			OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_DISABLED);
-	uint32_t wrap_to_gl(OpenXRCompositionLayerExtension::Wrap p_wrap);
-	uint32_t swizzle_to_gl(OpenXRCompositionLayerExtension::Swizzle p_swizzle);
+	static uint32_t wrap_to_gl(OpenXRCompositionLayerExtension::Wrap p_wrap);
+	static uint32_t swizzle_to_gl(OpenXRCompositionLayerExtension::Swizzle p_swizzle);
 
-	uint32_t filter_to_vk(OpenXRCompositionLayerExtension::Filter p_filter);
-	uint32_t mipmap_mode_to_vk(OpenXRCompositionLayerExtension::MipmapMode p_mipmap);
-	uint32_t wrap_to_vk(OpenXRCompositionLayerExtension::Wrap p_wrap);
-	uint32_t swizzle_to_vk(OpenXRCompositionLayerExtension::Swizzle p_swizzle);
+	static uint32_t filter_to_vk(OpenXRCompositionLayerExtension::Filter p_filter);
+	static uint32_t mipmap_mode_to_vk(OpenXRCompositionLayerExtension::MipmapMode p_mipmap);
+	static uint32_t wrap_to_vk(OpenXRCompositionLayerExtension::Wrap p_wrap);
+	static uint32_t swizzle_to_vk(OpenXRCompositionLayerExtension::Swizzle p_swizzle);
 
 	// OpenXR API call wrappers
 	EXT_PROTO_XRRESULT_FUNC2(xrUpdateSwapchainFB, (XrSwapchain), swapchain,
 		(const XrSwapchainStateBaseHeaderFB*), state);
 	EXT_PROTO_XRRESULT_FUNC2(
 		xrGetSwapchainStateFB, (XrSwapchain), swapchain, (XrSwapchainStateBaseHeaderFB*), state);
+
+public:
+	struct Data
+	{
+		String rendering_driver;
+		bool fb_swapchain_update_state_ext = false;
+		bool fb_swapchain_update_state_vulkan_ext = false;
+		bool fb_swapchain_update_state_opengles_ext = false;
+		bool fb_swapchain_update_state_android_ext = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize(const String& p_rendering_driver = String());
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRFBUpdateSwapchainExtension() = delete;
+	OpenXRFBUpdateSwapchainExtension(const OpenXRFBUpdateSwapchainExtension&) = delete;
+	OpenXRFBUpdateSwapchainExtension& operator=(const OpenXRFBUpdateSwapchainExtension&) = delete;
+	~OpenXRFBUpdateSwapchainExtension() = delete;
 };
 
 

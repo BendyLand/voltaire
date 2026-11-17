@@ -47,12 +47,12 @@ void AudioStreamPlaylist::set_list_stream(int p_stream_index, Ref<AudioStream> p
 	ERR_FAIL_COND(p_stream == this);
 	ERR_FAIL_INDEX(p_stream_index, MAX_STREAMS);
 
-	AudioServer::get_singleton()->lock();
+	AudioServer::lock();
 	audio_streams[p_stream_index] = p_stream;
 	for (AudioStreamPlaybackPlaylist* E : playbacks) {
 		E->_update_playback_instances();
 	}
-	AudioServer::get_singleton()->unlock();
+	AudioServer::unlock();
 }
 
 Ref<AudioStream> AudioStreamPlaylist::get_list_stream(int p_stream_index) const
@@ -96,9 +96,9 @@ double AudioStreamPlaylist::get_length() const
 void AudioStreamPlaylist::set_stream_count(int p_count)
 {
 	ERR_FAIL_COND(p_count < 0 || p_count > MAX_STREAMS);
-	AudioServer::get_singleton()->lock();
+	AudioServer::lock();
 	stream_count = p_count;
-	AudioServer::get_singleton()->unlock();
+	AudioServer::unlock();
 }
 
 int AudioStreamPlaylist::get_stream_count() const { return stream_count; }
@@ -214,8 +214,8 @@ int AudioStreamPlaybackPlaylist::mix(AudioFrame* p_buffer, float p_rate_scale, i
 		return 0;
 	}
 
-	double time_dec = (1.0 / AudioServer::get_singleton()->get_mix_rate());
-	double fade_dec = (1.0 / playlist->fade_time) / AudioServer::get_singleton()->get_mix_rate();
+	double time_dec = (1.0 / AudioServer::get_mix_rate());
+	double fade_dec = (1.0 / playlist->fade_time) / AudioServer::get_mix_rate();
 
 	int todo = p_frames;
 

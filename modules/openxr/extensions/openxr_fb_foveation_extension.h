@@ -43,71 +43,42 @@
 // Always include this as late as possible.
 #include "../openxr_platform_inc.h" // IWYU pragma: keep.
 
-class OpenXRFBFoveationExtension
+class OpenXRFBFoveationExtension final
 {
 public:
-	static OpenXRFBFoveationExtension* get_singleton();
 
-	OpenXRFBFoveationExtension(const String& p_rendering_driver);
-	virtual ~OpenXRFBFoveationExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_instance_destroyed();
+	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+	static void* set_swapchain_create_info_and_get_next_pointer(void* p_next_pointer);
 
-	virtual void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
-	virtual void* set_swapchain_create_info_and_get_next_pointer(void* p_next_pointer);
+	static void on_main_swapchains_created();
 
-	virtual void on_main_swapchains_created();
+	static bool is_enabled();
 
-	bool is_enabled() const;
+	static XrFoveationLevelFB get_foveation_level();
+	static void set_foveation_level(XrFoveationLevelFB p_foveation_level);
 
-	XrFoveationLevelFB get_foveation_level() const;
-	void set_foveation_level(XrFoveationLevelFB p_foveation_level);
+	static XrFoveationDynamicFB get_foveation_dynamic();
+	static void set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic);
 
-	XrFoveationDynamicFB get_foveation_dynamic() const;
-	void set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic);
+	static bool is_foveation_eye_tracked_enabled();
+	static void get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets);
 
-	bool is_foveation_eye_tracked_enabled() const;
-	void get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets);
+	static void set_foveation_with_subsampled_images_enabled(bool p_enabled);
+	static bool is_foveation_with_subsampled_images_enabled();
 
-	void set_foveation_with_subsampled_images_enabled(bool p_enabled);
-	bool is_foveation_with_subsampled_images_enabled() const;
-
-	void set_foveation_with_subsampled_images_active(bool p_active);
+	static void set_foveation_with_subsampled_images_active(bool p_active);
 
 private:
-	static OpenXRFBFoveationExtension* singleton;
 
-	// Setup
-	String rendering_driver;
-	bool fb_foveation_ext = false;
-	bool fb_foveation_configuration_ext = false;
-	bool fb_foveation_vulkan_ext = false;
-	bool meta_foveation_eye_tracked_ext = false;
-	bool meta_vulkan_swapchain_create_info_ext = false;
+	static void _update_profile_rt();
 
-	// Configuration
-	XrFoveationLevelFB foveation_level = XR_FOVEATION_LEVEL_NONE_FB;
-	XrFoveationDynamicFB foveation_dynamic = XR_FOVEATION_DYNAMIC_DISABLED_FB;
-	bool foveation_with_subsampled_images_enabled = false;
-	bool foveation_with_subsampled_images_active = false;
+	static void update_profile();
 
-	void _update_profile_rt();
-
-	void update_profile();
-
-	// Enable foveation on this swapchain
-	XrSwapchainCreateInfoFoveationFB swapchain_create_info_foveation_fb;
-	OpenXRFBUpdateSwapchainExtension* swapchain_update_state_ext = nullptr;
-
-	// Enable eye tracked foveation
-	XrSystemFoveationEyeTrackedPropertiesMETA meta_foveation_eye_tracked_properties;
-	XrFoveationEyeTrackedProfileCreateInfoMETA meta_foveation_eye_tracked_create_info;
-#ifdef VULKAN_ENABLED
-	XrVulkanSwapchainCreateInfoMETA meta_vulkan_swapchain_create_info;
-#endif
 
 	// OpenXR API call wrappers
 	EXT_PROTO_XRRESULT_FUNC3(xrCreateFoveationProfileFB, (XrSession), session,
@@ -115,6 +86,38 @@ private:
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroyFoveationProfileFB, (XrFoveationProfileFB), profile);
 	EXT_PROTO_XRRESULT_FUNC2(xrGetFoveationEyeTrackedStateMETA, (XrSession), session,
 		(XrFoveationEyeTrackedStateMETA*), foveationState);
+
+public:
+	struct Data
+	{
+#ifdef VULKAN_ENABLED
+		XrVulkanSwapchainCreateInfoMETA meta_vulkan_swapchain_create_info;
+#endif
+		String rendering_driver;
+		bool fb_foveation_ext = false;
+		bool fb_foveation_configuration_ext = false;
+		bool fb_foveation_vulkan_ext = false;
+		bool meta_foveation_eye_tracked_ext = false;
+		bool meta_vulkan_swapchain_create_info_ext = false;
+		XrFoveationLevelFB foveation_level = XR_FOVEATION_LEVEL_NONE_FB;
+		XrFoveationDynamicFB foveation_dynamic = XR_FOVEATION_DYNAMIC_DISABLED_FB;
+		bool foveation_with_subsampled_images_enabled = false;
+		bool foveation_with_subsampled_images_active = false;
+		XrSwapchainCreateInfoFoveationFB swapchain_create_info_foveation_fb;
+		XrSystemFoveationEyeTrackedPropertiesMETA meta_foveation_eye_tracked_properties;
+		XrFoveationEyeTrackedProfileCreateInfoMETA meta_foveation_eye_tracked_create_info;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize(const String& p_rendering_driver = String());
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRFBFoveationExtension() = delete;
+	OpenXRFBFoveationExtension(const OpenXRFBFoveationExtension&) = delete;
+	OpenXRFBFoveationExtension& operator=(const OpenXRFBFoveationExtension&) = delete;
+	~OpenXRFBFoveationExtension() = delete;
 };
 
 

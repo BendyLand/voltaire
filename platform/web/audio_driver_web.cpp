@@ -65,7 +65,7 @@ void AudioDriverWeb::_sample_playback_finished_callback(const char *p_playback_o
 		return;
 	}
 
-	AudioServer::get_singleton()->stop_sample_playback(playback);
+	AudioServer::stop_sample_playback(playback);
 }
 
 void AudioDriverWeb::_audio_driver_process(int p_from, int p_samples) {
@@ -292,7 +292,7 @@ void AudioDriverWeb::start_sample_playback(const Ref<AudioSamplePlayback> &p_pla
 	godot_audio_sample_start(
 			itos(p_playback->get_instance_id()).utf8().get_data(),
 			itos(p_playback->stream->get_instance_id()).utf8().get_data(),
-			AudioServer::get_singleton()->get_bus_index(p_playback->bus),
+			AudioServer::get_bus_index(p_playback->bus),
 			p_playback->offset,
 			p_playback->pitch_scale,
 			volume_ptrw);
@@ -338,7 +338,7 @@ void AudioDriverWeb::set_sample_playback_bus_volumes_linear(const Ref<AudioSampl
 	float *values_ptrw = values.ptrw();
 	int idx = 0;
 	for (KeyValue<String, Vector<AudioFrame>> pair : p_bus_volumes) {
-		int bus_index = AudioServer::get_singleton()->get_bus_index(pair.key);
+		int bus_index = AudioServer::get_bus_index(pair.key);
 		buses_ptrw[idx] = bus_index;
 		ERR_FAIL_COND(pair.value.size() != AudioServer::MAX_CHANNELS_PER_BUS);
 		for (int i = 0; i < real_max_channels; i += 2) {
@@ -373,7 +373,7 @@ void AudioDriverWeb::move_sample_bus(int p_bus, int p_to_pos) {
 }
 
 void AudioDriverWeb::set_sample_bus_send(int p_bus, const String &p_send) {
-	godot_audio_sample_bus_set_send(p_bus, AudioServer::get_singleton()->get_bus_index(p_send));
+	godot_audio_sample_bus_set_send(p_bus, AudioServer::get_bus_index(p_send));
 }
 
 void AudioDriverWeb::set_sample_bus_volume_db(int p_bus, float p_volume_db) {
@@ -455,8 +455,6 @@ void AudioDriverWorklet::finish_driver() {
 #else // No threads.
 
 /// AudioWorkletNode implementation (no threads)
-AudioDriverWorklet *AudioDriverWorklet::singleton = nullptr;
-
 Error AudioDriverWorklet::create(int &p_buffer_size, int p_channels) {
 	if (!godot_audio_has_worklet()) {
 		return ERR_UNAVAILABLE;
@@ -470,23 +468,22 @@ void AudioDriverWorklet::start(float *p_out_buf, int p_out_buf_size, float *p_in
 }
 
 void AudioDriverWorklet::_process_callback(int p_pos, int p_samples) {
-	AudioDriverWorklet *driver = AudioDriverWorklet::get_singleton();
+	AudioDriverWorklet *driver = static_cast<AudioDriverWorklet *>(AudioDriverManager::get_active_driver());
 	driver->_audio_driver_process(p_pos, p_samples);
 }
 
 void AudioDriverWorklet::_capture_callback(int p_pos, int p_samples) {
-	AudioDriverWorklet *driver = AudioDriverWorklet::get_singleton();
+	AudioDriverWorklet *driver = static_cast<AudioDriverWorklet *>(AudioDriverManager::get_active_driver());
 	driver->_audio_driver_capture(p_pos, p_samples);
 }
 
 #endif // THREADS_ENABLED
 
 /// ScriptProcessorNode implementation
-AudioDriverScriptProcessor *AudioDriverScriptProcessor::singleton = nullptr;
-
 void AudioDriverScriptProcessor::_process_callback() {
-	AudioDriverScriptProcessor::get_singleton()->_audio_driver_capture();
-	AudioDriverScriptProcessor::get_singleton()->_audio_driver_process();
+	AudioDriverScriptProcessor *driver = static_cast<AudioDriverScriptProcessor *>(AudioDriverManager::get_active_driver());
+	driver->_audio_driver_capture();
+	driver->_audio_driver_process();
 }
 
 Error AudioDriverScriptProcessor::create(int &p_buffer_samples, int p_channels) {

@@ -314,7 +314,7 @@ bool ProjectSettings::_load_resource_pack(
 		refresh_global_class_list();
 
 		// This pack may have defined new UIDs, make sure they are cached.
-		ResourceUID::get_singleton()->load_from_cache(false);
+		ResourceUID::load_from_cache(false);
 	}
 
 	// If the data pack was found, all directory access will be from here.

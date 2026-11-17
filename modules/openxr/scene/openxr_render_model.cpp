@@ -42,10 +42,8 @@ String OpenXRRenderModel::get_top_level_path() const
 {
 	String ret;
 
-	OpenXRRenderModelExtension* render_model_extension =
-		OpenXRRenderModelExtension::get_singleton();
-	if (render_model.is_valid() && render_model_extension) {
-		ret = render_model_extension->render_model_get_top_level_path_as_string(render_model);
+	if (render_model.is_valid() && OpenXRRenderModelExtension::is_initialized()) {
+		ret = OpenXRRenderModelExtension::render_model_get_top_level_path_as_string(render_model);
 	}
 
 	return ret;

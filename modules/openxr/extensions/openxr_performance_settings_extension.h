@@ -34,37 +34,47 @@
 #include "../openxr_interface.h"
 #include "../util.h"
 
-class OpenXRPerformanceSettingsExtension
+class OpenXRPerformanceSettingsExtension final
 {
 public:
-	static OpenXRPerformanceSettingsExtension* get_singleton();
 
-	OpenXRPerformanceSettingsExtension();
-	virtual ~OpenXRPerformanceSettingsExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static bool on_event_polled(const XrEventDataBuffer& event);
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual bool on_event_polled(const XrEventDataBuffer& event);
+	static bool is_available();
 
-	bool is_available();
-
-	void set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level);
-	void set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level);
+	static void set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level);
+	static void set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level);
 
 private:
-	static OpenXRPerformanceSettingsExtension* singleton;
 
-	bool available = false;
-
-	XrPerfSettingsLevelEXT level_to_openxr(OpenXRInterface::PerfSettingsLevel p_level);
-	OpenXRInterface::PerfSettingsSubDomain openxr_to_sub_domain(
+	static XrPerfSettingsLevelEXT level_to_openxr(OpenXRInterface::PerfSettingsLevel p_level);
+	static OpenXRInterface::PerfSettingsSubDomain openxr_to_sub_domain(
 		XrPerfSettingsSubDomainEXT p_sub_domain);
-	OpenXRInterface::PerfSettingsNotificationLevel openxr_to_notification_level(
+	static OpenXRInterface::PerfSettingsNotificationLevel openxr_to_notification_level(
 		XrPerfSettingsNotificationLevelEXT p_notification_level);
 
 	EXT_PROTO_XRRESULT_FUNC3(xrPerfSettingsSetPerformanceLevelEXT, (XrSession), session,
 		(XrPerfSettingsDomainEXT), domain, (XrPerfSettingsLevelEXT), level)
+
+public:
+	struct Data
+	{
+		bool available = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRPerformanceSettingsExtension() = delete;
+	OpenXRPerformanceSettingsExtension(const OpenXRPerformanceSettingsExtension&) = delete;
+	OpenXRPerformanceSettingsExtension& operator=(const OpenXRPerformanceSettingsExtension&) = delete;
+	~OpenXRPerformanceSettingsExtension() = delete;
 };
 
 

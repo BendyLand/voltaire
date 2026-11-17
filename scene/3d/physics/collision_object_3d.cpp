@@ -40,10 +40,10 @@ void CollisionObject3D::set_collision_layer(uint32_t p_layer)
 {
 	collision_layer = p_layer;
 	if (area) {
-		PhysicsServer3D::get_singleton()->area_set_collision_layer(get_rid(), p_layer);
+		PhysicsServer3D::area_set_collision_layer(get_rid(), p_layer);
 	}
 	else {
-		PhysicsServer3D::get_singleton()->body_set_collision_layer(get_rid(), p_layer);
+		PhysicsServer3D::body_set_collision_layer(get_rid(), p_layer);
 	}
 }
 
@@ -53,10 +53,10 @@ void CollisionObject3D::set_collision_mask(uint32_t p_mask)
 {
 	collision_mask = p_mask;
 	if (area) {
-		PhysicsServer3D::get_singleton()->area_set_collision_mask(get_rid(), p_mask);
+		PhysicsServer3D::area_set_collision_mask(get_rid(), p_mask);
 	}
 	else {
-		PhysicsServer3D::get_singleton()->body_set_collision_mask(get_rid(), p_mask);
+		PhysicsServer3D::body_set_collision_mask(get_rid(), p_mask);
 	}
 }
 
@@ -116,7 +116,7 @@ void CollisionObject3D::set_collision_priority(real_t p_priority)
 {
 	collision_priority = p_priority;
 	if (!area) {
-		PhysicsServer3D::get_singleton()->body_set_collision_priority(get_rid(), p_priority);
+		PhysicsServer3D::body_set_collision_priority(get_rid(), p_priority);
 	}
 }
 
@@ -157,10 +157,10 @@ void CollisionObject3D::_apply_disabled()
 			}
 			else {
 				if (area) {
-					PhysicsServer3D::get_singleton()->area_set_space(rid, RID());
+					PhysicsServer3D::area_set_space(rid, RID());
 				}
 				else {
-					PhysicsServer3D::get_singleton()->body_set_space(rid, RID());
+					PhysicsServer3D::body_set_space(rid, RID());
 				}
 				_space_changed(RID());
 			}
@@ -169,7 +169,7 @@ void CollisionObject3D::_apply_disabled()
 
 	case DISABLE_MODE_MAKE_STATIC: {
 		if (!area && (body_mode != PS3DE::BODY_MODE_STATIC)) {
-			PhysicsServer3D::get_singleton()->body_set_mode(rid, PS3DE::BODY_MODE_STATIC);
+			PhysicsServer3D::body_set_mode(rid, PS3DE::BODY_MODE_STATIC);
 		}
 	} break;
 
@@ -186,10 +186,10 @@ void CollisionObject3D::_apply_enabled()
 		if (is_inside_tree()) {
 			RID space = get_world_3d()->get_space();
 			if (area) {
-				PhysicsServer3D::get_singleton()->area_set_space(rid, space);
+				PhysicsServer3D::area_set_space(rid, space);
 			}
 			else {
-				PhysicsServer3D::get_singleton()->body_set_space(rid, space);
+				PhysicsServer3D::body_set_space(rid, space);
 			}
 			_space_changed(space);
 		}
@@ -197,7 +197,7 @@ void CollisionObject3D::_apply_enabled()
 
 	case DISABLE_MODE_MAKE_STATIC: {
 		if (!area && (body_mode != PS3DE::BODY_MODE_STATIC)) {
-			PhysicsServer3D::get_singleton()->body_set_mode(rid, body_mode);
+			PhysicsServer3D::body_set_mode(rid, body_mode);
 		}
 	} break;
 
@@ -221,7 +221,7 @@ void CollisionObject3D::set_body_mode(PS3DE::BodyMode p_mode)
 		return;
 	}
 
-	PhysicsServer3D::get_singleton()->body_set_mode(rid, p_mode);
+	PhysicsServer3D::body_set_mode(rid, p_mode);
 }
 
 void CollisionObject3D::_input_event_call(Camera3D* p_camera, const Ref<InputEvent>& p_input_event,
@@ -253,10 +253,10 @@ void CollisionObject3D::_update_pickable()
 
 	bool pickable = ray_pickable && is_visible_in_tree();
 	if (area) {
-		PhysicsServer3D::get_singleton()->area_set_ray_pickable(rid, pickable);
+		PhysicsServer3D::area_set_ray_pickable(rid, pickable);
 	}
 	else {
-		PhysicsServer3D::get_singleton()->body_set_ray_pickable(rid, pickable);
+		PhysicsServer3D::body_set_ray_pickable(rid, pickable);
 	}
 }
 
@@ -323,11 +323,11 @@ void CollisionObject3D::shape_owner_set_disabled(uint32_t p_owner, bool p_disabl
 
 	for (int i = 0; i < sd.shapes.size(); i++) {
 		if (area) {
-			PhysicsServer3D::get_singleton()->area_set_shape_disabled(
+			PhysicsServer3D::area_set_shape_disabled(
 				rid, sd.shapes[i].index, p_disabled);
 		}
 		else {
-			PhysicsServer3D::get_singleton()->body_set_shape_disabled(
+			PhysicsServer3D::body_set_shape_disabled(
 				rid, sd.shapes[i].index, p_disabled);
 		}
 	}
@@ -366,11 +366,11 @@ void CollisionObject3D::shape_owner_set_transform(uint32_t p_owner, const Transf
 	sd.xform = p_transform;
 	for (int i = 0; i < sd.shapes.size(); i++) {
 		if (area) {
-			PhysicsServer3D::get_singleton()->area_set_shape_transform(
+			PhysicsServer3D::area_set_shape_transform(
 				rid, sd.shapes[i].index, p_transform);
 		}
 		else {
-			PhysicsServer3D::get_singleton()->body_set_shape_transform(
+			PhysicsServer3D::body_set_shape_transform(
 				rid, sd.shapes[i].index, p_transform);
 		}
 	}
@@ -451,8 +451,8 @@ PackedStringArray CollisionObject3D::get_configuration_warnings() const
 
 CollisionObject3D::~CollisionObject3D()
 {
-	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
-	PhysicsServer3D::get_singleton()->free_rid(rid);
+	ERR_FAIL_COND(!PhysicsServer3D::is_initialized());
+	PhysicsServer3D::free_rid(rid);
 }
 
 void CollisionObject3D::_update_shape_data(unsigned int) {}

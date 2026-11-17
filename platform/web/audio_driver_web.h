@@ -61,8 +61,6 @@ private:
 	WASM_EXPORT static void _latency_update_callback(float p_latency);
 	WASM_EXPORT static void _sample_playback_finished_callback(const char* p_playback_object_id);
 
-	static AudioDriverWeb* singleton;
-
 protected:
 	void _audio_driver_process(int p_from = 0, int p_samples = 0);
 	void _audio_driver_capture(int p_from = 0, int p_samples = 0);
@@ -162,8 +160,6 @@ private:
 	static void _process_callback(int p_pos, int p_samples);
 	static void _capture_callback(int p_pos, int p_samples);
 
-	static AudioDriverWorklet* singleton;
-
 protected:
 	virtual Error create(int& p_buffer_size, int p_output_channels) override;
 	virtual void start(
@@ -176,9 +172,7 @@ public:
 
 	virtual void unlock() override {}
 
-	static AudioDriverWorklet* get_singleton() { return singleton; }
-
-	AudioDriverWorklet() { singleton = this; }
+	AudioDriverWorklet() {}
 };
 
 #endif // THREADS_ENABLED
@@ -187,8 +181,6 @@ class AudioDriverScriptProcessor : public AudioDriverWeb
 {
 private:
 	static void _process_callback();
-
-	static AudioDriverScriptProcessor* singleton;
 
 protected:
 	virtual Error create(int& p_buffer_size, int p_output_channels) override;
@@ -202,9 +194,7 @@ public:
 
 	virtual void unlock() override {}
 
-	static AudioDriverScriptProcessor* get_singleton() { return singleton; }
-
-	AudioDriverScriptProcessor() { singleton = this; }
+	AudioDriverScriptProcessor() {}
 };
 
 

@@ -39,9 +39,9 @@ void initialize_mobile_vr_module(ModuleInitializationLevel p_level)
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	if (XRServer::get_singleton()) {
+	if (XRServer::is_initialized()) {
 		mobile_vr.instantiate();
-		XRServer::get_singleton()->add_interface(mobile_vr);
+		XRServer::add_interface(mobile_vr);
 	}
 }
 
@@ -58,8 +58,8 @@ void uninitialize_mobile_vr_module(ModuleInitializationLevel p_level)
 		}
 
 		// unregister our interface from the XR server
-		if (XRServer::get_singleton()) {
-			XRServer::get_singleton()->remove_interface(mobile_vr);
+		if (XRServer::is_initialized()) {
+			XRServer::remove_interface(mobile_vr);
 		}
 
 		// and release

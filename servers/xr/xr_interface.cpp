@@ -34,24 +34,22 @@
 
 bool XRInterface::is_primary()
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, false);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), false);
 
-	return xr_server->get_primary_interface() == this;
+	return XRServer::get_primary_interface() == this;
 }
 
 void XRInterface::set_primary(bool p_primary)
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
+	ERR_FAIL_COND(!XRServer::is_initialized());
 
 	if (p_primary) {
 		ERR_FAIL_COND(!is_initialized());
 
-		xr_server->set_primary_interface(this);
+		XRServer::set_primary_interface(this);
 	}
-	else if (xr_server->get_primary_interface() == this) {
-		xr_server->set_primary_interface(nullptr);
+	else if (XRServer::get_primary_interface() == this) {
+		XRServer::set_primary_interface(nullptr);
 	}
 }
 

@@ -38,7 +38,7 @@ TEST_FORCE_LINK(test_translation_server)
 namespace TestTranslationServer {
 
 TEST_CASE("[TranslationServer] Translation operations") {
-	Ref<TranslationDomain> td = TranslationServer::get_singleton()->get_or_add_domain("godot.test");
+	Ref<TranslationDomain> td = TranslationServer::get_or_add_domain("godot.test");
 	CHECK(td->get_translations().is_empty());
 
 	Ref<Translation> t1 = memnew(Translation);
@@ -86,81 +86,79 @@ TEST_CASE("[TranslationServer] Translation operations") {
 	// If no suitable Translation object has been found - the original message should be returned.
 	CHECK(td->translate("Good Morning", String()) == "Good Morning");
 
-	TranslationServer::get_singleton()->remove_domain("godot.test");
+	TranslationServer::remove_domain("godot.test");
 }
 
 TEST_CASE("[TranslationServer] Locale operations") {
-	TranslationServer *ts = TranslationServer::get_singleton();
 
 	// Language variant test; we supplied the variant of Español and the result should be the same string.
 	String loc = "es_Hani_ES_tradnl";
-	String res = ts->standardize_locale(loc);
+	String res = TranslationServer::standardize_locale(loc);
 
 	CHECK(res == loc);
 
 	// No such variant in variant_map; should return everything except the variant.
 	loc = "es_Hani_ES_missing";
-	res = ts->standardize_locale(loc);
+	res = TranslationServer::standardize_locale(loc);
 
 	CHECK(res == "es_Hani_ES");
 
 	// Non-ISO language name check (Windows issue).
 	loc = "iw_Hani_IL";
-	res = ts->standardize_locale(loc);
+	res = TranslationServer::standardize_locale(loc);
 
 	CHECK(res == "he_Hani_IL");
 
 	// Country rename check.
 	loc = "uk_Hani_UK";
-	res = ts->standardize_locale(loc);
+	res = TranslationServer::standardize_locale(loc);
 
 	CHECK(res == "uk_Hani_GB");
 
 	// Supplying a script name that is not in the list.
 	loc = "de_Wrong_DE";
-	res = ts->standardize_locale(loc);
+	res = TranslationServer::standardize_locale(loc);
 
 	CHECK(res == "de_DE");
 
 	// No added defaults.
 	loc = "es_ES";
-	res = ts->standardize_locale(loc, true);
+	res = TranslationServer::standardize_locale(loc, true);
 
 	CHECK(res == "es_ES");
 
 	// Add default script.
 	loc = "az_AZ";
-	res = ts->standardize_locale(loc, true);
+	res = TranslationServer::standardize_locale(loc, true);
 
 	CHECK(res == "az_Latn_AZ");
 
 	// Add default country.
 	loc = "pa_Arab";
-	res = ts->standardize_locale(loc, true);
+	res = TranslationServer::standardize_locale(loc, true);
 
 	CHECK(res == "pa_Arab_PK");
 
 	// Add default script and country.
 	loc = "zh";
-	res = ts->standardize_locale(loc, true);
+	res = TranslationServer::standardize_locale(loc, true);
 
 	CHECK(res == "zh_Hans_CN");
 
 	// Explicitly don't add defaults.
 	loc = "zh";
-	res = ts->standardize_locale(loc, false);
+	res = TranslationServer::standardize_locale(loc, false);
 
 	CHECK(res == "zh");
 }
 
 TEST_CASE("[TranslationServer] Comparing locales") {
-	TranslationServer *ts = TranslationServer::get_singleton();
 
 	String locale_a = "es";
 	String locale_b = "es";
 
 	// Exact match check.
-	int res = ts->compare_locales(locale_a, locale_b);
+	int res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 10);
 
@@ -168,7 +166,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 	locale_b = "sr-Latn-RS";
 
 	// Script matches (+1) but country doesn't (-1).
-	res = ts->compare_locales(locale_a, locale_b);
+	res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 5);
 
@@ -176,7 +174,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 	locale_b = "uz-Latn-UZ";
 
 	// Country matches (+1) but script doesn't (-1).
-	res = ts->compare_locales(locale_a, locale_b);
+	res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 5);
 
@@ -184,7 +182,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 	locale_b = "aa-Latn-ER-saaho";
 
 	// Script and country match (+2) with variant on one locale (+0).
-	res = ts->compare_locales(locale_a, locale_b);
+	res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 7);
 
@@ -192,7 +190,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 	locale_b = "uz-Latn-KG";
 
 	// Both script and country mismatched (-2).
-	res = ts->compare_locales(locale_a, locale_b);
+	res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 3);
 
@@ -200,7 +198,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 	locale_b = "es-AR";
 
 	// Mismatched country (-1).
-	res = ts->compare_locales(locale_a, locale_b);
+	res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 4);
 
@@ -208,7 +206,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 	locale_b = "es-AR";
 
 	// No country for one locale (+0).
-	res = ts->compare_locales(locale_a, locale_b);
+	res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 5);
 
@@ -216,7 +214,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 	locale_b = "fr-LU";
 
 	// No match.
-	res = ts->compare_locales(locale_a, locale_b);
+	res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 0);
 
@@ -225,7 +223,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 
 	// In full standardization, zh-HK becomes zh_Hant_HK and zh becomes
 	// zh_Hans_CN. Both script and country mismatch (-2).
-	res = ts->compare_locales(locale_a, locale_b);
+	res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 3);
 
@@ -234,7 +232,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 
 	// In full standardization, zh and zh-CN both become zh_Hans_CN for an
 	// exact match.
-	res = ts->compare_locales(locale_a, locale_b);
+	res = TranslationServer::compare_locales(locale_a, locale_b);
 
 	CHECK(res == 10);
 }

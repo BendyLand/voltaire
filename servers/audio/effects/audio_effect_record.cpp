@@ -134,7 +134,7 @@ Ref<AudioEffectInstance> AudioEffectRecord::instantiate()
 	// Reusing the buffer size calculations from audio_effect_delay.cpp.
 	float ring_buffer_max_size = IO_BUFFER_SIZE_MS;
 	ring_buffer_max_size /= 1000.0; // convert to seconds
-	ring_buffer_max_size *= AudioServer::get_singleton()->get_mix_rate();
+	ring_buffer_max_size *= AudioServer::get_mix_rate();
 
 	int ringbuff_size = ring_buffer_max_size;
 
@@ -269,7 +269,7 @@ Ref<AudioStreamWAV> AudioEffectRecord::get_recording() const
 	else if (dst_format == AudioStreamWAV::FORMAT_QOA) {
 		qoa_desc desc = {};
 		desc.samples = current_instance->recording_data.size() / 2;
-		desc.samplerate = AudioServer::get_singleton()->get_mix_rate();
+		desc.samplerate = AudioServer::get_mix_rate();
 		desc.channels = 2;
 		AudioStreamWAV::_compress_qoa(current_instance->recording_data, dst_data, &desc);
 	}
@@ -281,7 +281,7 @@ Ref<AudioStreamWAV> AudioEffectRecord::get_recording() const
 	sample.instantiate();
 	sample->set_data(dst_data);
 	sample->set_format(dst_format);
-	sample->set_mix_rate(AudioServer::get_singleton()->get_mix_rate());
+	sample->set_mix_rate(AudioServer::get_mix_rate());
 	sample->set_loop_mode(AudioStreamWAV::LOOP_DISABLED);
 	sample->set_loop_begin(0);
 	sample->set_loop_end(0);

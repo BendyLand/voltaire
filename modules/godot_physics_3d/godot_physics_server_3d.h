@@ -38,7 +38,7 @@
 #include "godot_step_3d.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
-class GodotPhysicsServer3D : public PhysicsServer3D
+class GodotPhysicsServer3D : public PhysicsServer3DDriver
 {
 
 	friend class GodotPhysicsDirectSpaceState3D;
@@ -67,7 +67,6 @@ class GodotPhysicsServer3D : public PhysicsServer3D
 	SelfList<GodotCollisionObject3D>::List pending_shape_update_list;
 	void _update_shapes();
 
-	static GodotPhysicsServer3D* godot_singleton;
 
 public:
 	struct CollCbkData

@@ -69,7 +69,7 @@ bool GodotPhysicsDirectSpaceState3D::collide_shape(const PS3DT::ShapeParameters&
 	}
 
 	GodotShape3D* shape =
-		GodotPhysicsServer3D::godot_singleton->shape_owner.get_or_null(p_parameters.shape_rid);
+		PhysicsServer3D::driver_as<GodotPhysicsServer3D>()->shape_owner.get_or_null(p_parameters.shape_rid);
 	ERR_FAIL_NULL_V(shape, false);
 
 	AABB aabb = p_parameters.transform.xform(shape->get_aabb());
@@ -210,9 +210,9 @@ Vector3 GodotPhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
 	RID p_object, const Vector3 p_point) const
 {
 	GodotCollisionObject3D* obj =
-		GodotPhysicsServer3D::godot_singleton->area_owner.get_or_null(p_object);
+		PhysicsServer3D::driver_as<GodotPhysicsServer3D>()->area_owner.get_or_null(p_object);
 	if (!obj) {
-		obj = GodotPhysicsServer3D::godot_singleton->body_owner.get_or_null(p_object);
+		obj = PhysicsServer3D::driver_as<GodotPhysicsServer3D>()->body_owner.get_or_null(p_object);
 	}
 	ERR_FAIL_NULL_V(obj, Vector3());
 

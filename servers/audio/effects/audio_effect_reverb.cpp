@@ -78,9 +78,9 @@ void AudioEffectReverbInstance::process(
 
 AudioEffectReverbInstance::AudioEffectReverbInstance()
 {
-	reverb[0].set_mix_rate(AudioServer::get_singleton()->get_mix_rate());
+	reverb[0].set_mix_rate(AudioServer::get_mix_rate());
 	reverb[0].set_extra_spread_base(0);
-	reverb[1].set_mix_rate(AudioServer::get_singleton()->get_mix_rate());
+	reverb[1].set_mix_rate(AudioServer::get_mix_rate());
 	reverb[1].set_extra_spread_base(0.000521); // for stereo effect
 }
 

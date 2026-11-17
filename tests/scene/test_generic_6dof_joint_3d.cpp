@@ -110,7 +110,7 @@ TEST_CASE("[SceneTree][Generic6DOFJoint3D] Explicit quaternion target shadows Eu
 	memdelete(joint);
 }
 
-static RID make_configured_generic_6dof_joint(PhysicsServer3D *p_server, RID &r_body_a, RID &r_body_b) {
+static RID make_configured_generic_6dof_joint(PhysicsServer3DDriver *p_server, RID &r_body_a, RID &r_body_b) {
 	r_body_a = p_server->body_create();
 	r_body_b = p_server->body_create();
 
@@ -146,7 +146,7 @@ TEST_CASE("[SceneTree][Generic6DOFJoint3D] Drive force and torque limits default
 }
 
 TEST_CASE("[SceneTree][PhysicsServer3D][Generic6DOFJoint3D] Drive force and torque limits params round-trip per axis") {
-	PhysicsServer3D *physics_server = PhysicsServer3D::get_singleton();
+	PhysicsServer3DDriver *physics_server = PhysicsServer3D::get_driver();
 	REQUIRE(physics_server != nullptr);
 
 	RID body_a;
@@ -173,7 +173,7 @@ TEST_CASE("[SceneTree][PhysicsServer3D][Generic6DOFJoint3D] Drive force and torq
 }
 
 TEST_CASE("[SceneTree][PhysicsServer3D][Generic6DOFJoint3D] Drive force and torque limits defaults are unlimited") {
-	PhysicsServer3D *physics_server = PhysicsServer3D::get_singleton();
+	PhysicsServer3DDriver *physics_server = PhysicsServer3D::get_driver();
 	REQUIRE(physics_server != nullptr);
 
 	RID body_a;
@@ -209,7 +209,7 @@ TEST_CASE("[SceneTree][Generic6DOFJoint3D] Legacy motor and DRIVE limits are sto
 }
 
 TEST_CASE("[SceneTree][PhysicsServer3D][Generic6DOFJoint3D] DRIVE FLT_MAX after legacy motor round-trips through storage") {
-	PhysicsServer3D *physics_server = PhysicsServer3D::get_singleton();
+	PhysicsServer3DDriver *physics_server = PhysicsServer3D::get_driver();
 	REQUIRE(physics_server != nullptr);
 
 	RID body_a;

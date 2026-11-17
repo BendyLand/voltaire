@@ -108,10 +108,10 @@ void AudioStreamPreviewGenerator::_preview_thread(void* p_preview)
 	Thread::set_name("AudioStreamPreviewGenerator");
 	Preview* preview = static_cast<Preview*>(p_preview);
 	float muxbuff_chunk_s = 0.25;
-	int mixbuff_chunk_frames = AudioServer::get_singleton()->get_mix_rate() * muxbuff_chunk_s;
+	int mixbuff_chunk_frames = AudioServer::get_mix_rate() * muxbuff_chunk_s;
 	Vector<AudioFrame> mix_chunk;
 	mix_chunk.resize(mixbuff_chunk_frames);
-	int frames_total = AudioServer::get_singleton()->get_mix_rate() * preview->preview->length;
+	int frames_total = AudioServer::get_mix_rate() * preview->preview->length;
 	int frames_todo = frames_total;
 	preview->playback->start();
 	while (frames_todo) {

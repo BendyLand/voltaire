@@ -82,10 +82,9 @@ bool OpenXRAPI::OpenXRSwapChainInfo::create(XrSwapchainCreateFlags p_create_flag
 	XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width,
 	uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, bool p_use_next_extensions)
 {
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
-	XrSession xr_session = openxr_api->get_session();
+	XrSession xr_session = OpenXRAPI::get_session();
 	ERR_FAIL_COND_V(xr_session == XR_NULL_HANDLE, false);
 
 	// We already have a swapchain?
@@ -110,9 +109,9 @@ bool OpenXRAPI::OpenXRSwapChainInfo::create(XrSwapchainCreateFlags p_create_flag
 	};
 
 	XrSwapchain new_swapchain;
-	result = openxr_api->xrCreateSwapchain(xr_session, &swapchain_create_info, &new_swapchain);
+	result = OpenXRAPI::xrCreateSwapchain(xr_session, &swapchain_create_info, &new_swapchain);
 	if (XR_FAILED(result)) {
-		// print_line("OpenXR: Failed to get swapchain [", openxr_api->get_error_string(result),
+		// print_line("OpenXR: Failed to get swapchain [", OpenXRAPI::get_error_string(result),
 		// "]");
 		return false;
 	}
@@ -146,15 +145,14 @@ void OpenXRAPI::OpenXRSwapChainInfo::free_queued()
 
 void OpenXRAPI::OpenXRSwapChainInfo::free()
 {
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	if (image_acquired) {
 		release();
 	}
 
 	if (swapchain != XR_NULL_HANDLE) {
-		openxr_api->xrDestroySwapchain(swapchain);
+		OpenXRAPI::xrDestroySwapchain(swapchain);
 		swapchain = XR_NULL_HANDLE;
 	}
 }
@@ -168,24 +166,21 @@ bool OpenXRAPI::OpenXRSwapChainInfo::release()
 
 	image_acquired = false; // Regardless if we succeed or not, consider this released.
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
 	XrSwapchainImageReleaseInfo swapchain_image_release_info = {
 		XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO, // type
 		nullptr								  // next
 	};
-	XrResult result = openxr_api->xrReleaseSwapchainImage(swapchain, &swapchain_image_release_info);
+	XrResult result = OpenXRAPI::xrReleaseSwapchainImage(swapchain, &swapchain_image_release_info);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to release swapchain image! [",
-		// openxr_api->get_error_string(result), "]");
+		// OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
 	return true;
 }
-
-OpenXRAPI* OpenXRAPI::singleton = nullptr;
 
 bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
 {
@@ -198,58 +193,54 @@ bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
 	}
 }
 
-String OpenXRAPI::get_error_string(XrResult result) const { return String(); }
+String OpenXRAPI::get_error_string(XrResult result) { return String(); }
 
 void OpenXRAPI::set_object_name(
 	XrObjectType p_object_type, uint64_t p_object_handle, const String& p_object_name)
 {
-	OpenXRDebugUtilsExtension* debug_utils = OpenXRDebugUtilsExtension::get_singleton();
-	if (!debug_utils || !debug_utils->get_active()) {
+	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	debug_utils->set_object_name(p_object_type, p_object_handle, p_object_name.utf8().get_data());
+	OpenXRDebugUtilsExtension::set_object_name(p_object_type, p_object_handle, p_object_name.utf8().get_data());
 }
 
 void OpenXRAPI::begin_debug_label_region(const String& p_label_name)
 {
-	OpenXRDebugUtilsExtension* debug_utils = OpenXRDebugUtilsExtension::get_singleton();
-	if (!debug_utils || !debug_utils->get_active()) {
+	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	debug_utils->begin_debug_label_region(p_label_name.utf8().get_data());
+	OpenXRDebugUtilsExtension::begin_debug_label_region(p_label_name.utf8().get_data());
 }
 
 void OpenXRAPI::end_debug_label_region()
 {
-	OpenXRDebugUtilsExtension* debug_utils = OpenXRDebugUtilsExtension::get_singleton();
-	if (!debug_utils || !debug_utils->get_active()) {
+	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	debug_utils->end_debug_label_region();
+	OpenXRDebugUtilsExtension::end_debug_label_region();
 }
 
 void OpenXRAPI::insert_debug_label(const String& p_label_name)
 {
-	OpenXRDebugUtilsExtension* debug_utils = OpenXRDebugUtilsExtension::get_singleton();
-	if (!debug_utils || !debug_utils->get_active()) {
+	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	debug_utils->insert_debug_label(p_label_name.utf8().get_data());
+	OpenXRDebugUtilsExtension::insert_debug_label(p_label_name.utf8().get_data());
 }
 
 bool OpenXRAPI::load_layer_properties()
 {
 	// This queries additional layers that are available and can be initialized when we create our
 	// OpenXR instance
-	if (!layer_properties.is_empty()) {
+	if (!data->layer_properties.is_empty()) {
 		// already retrieved this
 		return true;
 	}
@@ -260,18 +251,18 @@ bool OpenXRAPI::load_layer_properties()
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate number of api layer properties");
 
-	layer_properties.resize(num_layer_properties);
-	for (XrApiLayerProperties& layer : layer_properties) {
+	data->layer_properties.resize(num_layer_properties);
+	for (XrApiLayerProperties& layer : data->layer_properties) {
 		layer.type = XR_TYPE_API_LAYER_PROPERTIES;
 		layer.next = nullptr;
 	}
 
 	result = xrEnumerateApiLayerProperties(
-		num_layer_properties, &num_layer_properties, layer_properties.ptr());
+		num_layer_properties, &num_layer_properties, data->layer_properties.ptr());
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate api layer properties");
 
-	for (const XrApiLayerProperties& layer : layer_properties) {
+	for (const XrApiLayerProperties& layer : data->layer_properties) {
 		print_verbose(vformat("OpenXR: Found OpenXR layer %s.", layer.layerName));
 	}
 
@@ -283,7 +274,7 @@ bool OpenXRAPI::load_supported_extensions()
 	// This queries supported extensions that are available and can be initialized when we create
 	// our OpenXR instance
 
-	if (!supported_extensions.is_empty()) {
+	if (!data->supported_extensions.is_empty()) {
 		// already retrieved this
 		return true;
 	}
@@ -295,28 +286,28 @@ bool OpenXRAPI::load_supported_extensions()
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate number of extension properties");
 
-	supported_extensions.resize(num_supported_extensions);
+	data->supported_extensions.resize(num_supported_extensions);
 
 	// set our types
-	for (XrExtensionProperties& extension : supported_extensions) {
+	for (XrExtensionProperties& extension : data->supported_extensions) {
 		extension.type = XR_TYPE_EXTENSION_PROPERTIES;
 		extension.next = nullptr;
 	}
 	result = xrEnumerateInstanceExtensionProperties(
-		nullptr, num_supported_extensions, &num_supported_extensions, supported_extensions.ptr());
+		nullptr, num_supported_extensions, &num_supported_extensions, data->supported_extensions.ptr());
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate extension properties");
 
-	for (const XrExtensionProperties& extension : supported_extensions) {
+	for (const XrExtensionProperties& extension : data->supported_extensions) {
 		print_verbose(vformat("OpenXR: Found OpenXR extension %s.", extension.extensionName));
 	}
 
 	return true;
 }
 
-bool OpenXRAPI::is_extension_supported(const String& p_extension) const
+bool OpenXRAPI::is_extension_supported(const String& p_extension)
 {
-	for (const XrExtensionProperties& extension : supported_extensions) {
+	for (const XrExtensionProperties& extension : data->supported_extensions) {
 		if (extension.extensionName == p_extension) {
 			return true;
 		}
@@ -325,7 +316,7 @@ bool OpenXRAPI::is_extension_supported(const String& p_extension) const
 	return false;
 }
 
-bool OpenXRAPI::is_any_extension_enabled(const String& p_extensions) const
+bool OpenXRAPI::is_any_extension_enabled(const String& p_extensions)
 {
 	// We allow a comma separated list of extensions here, only one needs to be supported.
 	// This allows us to check for extensions that were renamed or that were embedded in core
@@ -333,7 +324,7 @@ bool OpenXRAPI::is_any_extension_enabled(const String& p_extensions) const
 	for (const String& name : p_extensions.split(",", false)) {
 		CharString extension = name.utf8();
 
-		if (enabled_extensions.has(extension)) {
+		if (data->enabled_extensions.has(extension)) {
 			return true;
 		}
 	}
@@ -344,7 +335,7 @@ bool OpenXRAPI::is_any_extension_enabled(const String& p_extensions) const
 bool OpenXRAPI::is_top_level_path_supported(const String& p_toplevel_path)
 {
 	String required_extensions =
-		OpenXRInteractionProfileMetadata::get_singleton()->get_top_level_extensions(
+		OpenXRInteractionProfileMetadata::get_top_level_extensions(
 			p_toplevel_path);
 
 	// If unsupported is returned we likely have a misspelled interaction profile path in our action
@@ -372,7 +363,7 @@ bool OpenXRAPI::is_top_level_path_supported(const String& p_toplevel_path)
 bool OpenXRAPI::is_interaction_profile_supported(const String& p_ip_path)
 {
 	String required_extensions =
-		OpenXRInteractionProfileMetadata::get_singleton()->get_interaction_profile_extensions(
+		OpenXRInteractionProfileMetadata::get_interaction_profile_extensions(
 			p_ip_path);
 
 	// If unsupported is returned we likely have a misspelled interaction profile path in our action
@@ -405,7 +396,7 @@ bool OpenXRAPI::interaction_profile_supports_io_path(
 	}
 
 	const OpenXRInteractionProfileMetadata::IOPath* io_path =
-		OpenXRInteractionProfileMetadata::get_singleton()->get_io_path(p_ip_path, p_io_path);
+		OpenXRInteractionProfileMetadata::get_io_path(p_ip_path, p_io_path);
 
 	// If the io_path is not part of our metadata we've likely got a misspelled name or a bad action
 	// map, report
@@ -450,40 +441,40 @@ bool OpenXRAPI::load_supported_view_configuration_types()
 	// This queries the supported configuration types, likely there will only be one choosing
 	// between Mono (phone AR) and Stereo (HMDs)
 
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, false);
 
-	supported_view_configuration_types.clear();
+	data->supported_view_configuration_types.clear();
 
 	uint32_t num_view_configuration_types = 0;
 	XrResult result = xrEnumerateViewConfigurations(
-		instance, system_id, 0, &num_view_configuration_types, nullptr);
+		data->instance, data->system_id, 0, &num_view_configuration_types, nullptr);
 	if (XR_FAILED(result)) {
 		// print_line(
 		// 	"OpenXR: Failed to get view configuration count [", get_error_string(result), "]");
 		return false;
 	}
 
-	supported_view_configuration_types.resize(num_view_configuration_types);
+	data->supported_view_configuration_types.resize(num_view_configuration_types);
 
-	result = xrEnumerateViewConfigurations(instance, system_id, num_view_configuration_types,
-		&num_view_configuration_types, supported_view_configuration_types.ptr());
+	result = xrEnumerateViewConfigurations(data->instance, data->system_id, num_view_configuration_types,
+		&num_view_configuration_types, data->supported_view_configuration_types.ptr());
 	ERR_FAIL_COND_V_MSG(XR_FAILED(result), false, "OpenXR: Failed to enumerateview configurations");
 	ERR_FAIL_COND_V_MSG(num_view_configuration_types == 0, false,
 		"OpenXR: Failed to enumerateview configurations"); // JIC there should be at least 1!
 
 	for (const XrViewConfigurationType& view_configuration_type :
-		supported_view_configuration_types) {
+		data->supported_view_configuration_types) {
 		print_verbose(vformat("OpenXR: Found supported view configuration %s.",
 			OpenXRUtil::get_view_configuration_name(view_configuration_type)));
 	}
 
 	// Check value we loaded at startup...
-	if (!is_view_configuration_supported(view_configuration)) {
+	if (!is_view_configuration_supported(data->view_configuration)) {
 		print_verbose(vformat("OpenXR: %s isn't supported, defaulting to %s.",
-			OpenXRUtil::get_view_configuration_name(view_configuration),
-			OpenXRUtil::get_view_configuration_name(supported_view_configuration_types[0])));
+			OpenXRUtil::get_view_configuration_name(data->view_configuration),
+			OpenXRUtil::get_view_configuration_name(data->supported_view_configuration_types[0])));
 
-		view_configuration = supported_view_configuration_types[0];
+		data->view_configuration = data->supported_view_configuration_types[0];
 	}
 
 	return true;
@@ -493,12 +484,12 @@ bool OpenXRAPI::load_supported_environmental_blend_modes()
 {
 	// This queries the supported environmental blend modes.
 
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, false);
 
-	supported_environment_blend_modes.clear();
+	data->supported_environment_blend_modes.clear();
 
 	uint32_t num_supported_environment_blend_modes = 0;
-	XrResult result = xrEnumerateEnvironmentBlendModes(instance, system_id, view_configuration, 0,
+	XrResult result = xrEnumerateEnvironmentBlendModes(data->instance, data->system_id, data->view_configuration, 0,
 		&num_supported_environment_blend_modes, nullptr);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: Failed to get supported environmental blend mode count [",
@@ -506,18 +497,18 @@ bool OpenXRAPI::load_supported_environmental_blend_modes()
 		return false;
 	}
 
-	supported_environment_blend_modes.resize(num_supported_environment_blend_modes);
+	data->supported_environment_blend_modes.resize(num_supported_environment_blend_modes);
 
-	result = xrEnumerateEnvironmentBlendModes(instance, system_id, view_configuration,
+	result = xrEnumerateEnvironmentBlendModes(data->instance, data->system_id, data->view_configuration,
 		num_supported_environment_blend_modes, &num_supported_environment_blend_modes,
-		supported_environment_blend_modes.ptrw());
+		data->supported_environment_blend_modes.ptrw());
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate environmental blend modes");
 	ERR_FAIL_COND_V_MSG(num_supported_environment_blend_modes == 0, false,
 		"OpenXR: Failed to enumerate environmental blend modes"); // JIC there should be at least 1!
 
 	for (const XrEnvironmentBlendMode& supported_environment_blend_mode :
-		supported_environment_blend_modes) {
+		data->supported_environment_blend_modes) {
 		print_verbose(vformat("OpenXR: Found environmental blend mode %s.",
 			OpenXRUtil::get_environment_blend_mode_name(supported_environment_blend_mode)));
 	}
@@ -525,91 +516,91 @@ bool OpenXRAPI::load_supported_environmental_blend_modes()
 	return true;
 }
 
-bool OpenXRAPI::is_view_configuration_supported(XrViewConfigurationType p_configuration_type) const
+bool OpenXRAPI::is_view_configuration_supported(XrViewConfigurationType p_configuration_type)
 {
-	return supported_view_configuration_types.has(p_configuration_type);
+	return data->supported_view_configuration_types.has(p_configuration_type);
 }
 
 bool OpenXRAPI::is_reference_space_supported(XrReferenceSpaceType p_reference_space)
 {
-	return supported_reference_spaces.has(p_reference_space);
+	return data->supported_reference_spaces.has(p_reference_space);
 }
 
 bool OpenXRAPI::is_swapchain_format_supported(int64_t p_swapchain_format)
 {
-	return supported_swapchain_formats.has(p_swapchain_format);
+	return data->supported_swapchain_formats.has(p_swapchain_format);
 }
 
 void OpenXRAPI::set_form_factor(XrFormFactor p_form_factor)
 {
 	ERR_FAIL_COND(is_initialized());
 
-	form_factor = p_form_factor;
+	data->form_factor = p_form_factor;
 }
 
-uint32_t OpenXRAPI::get_view_count() const { return view_configuration_views.size(); }
+uint32_t OpenXRAPI::get_view_count() { return data->view_configuration_views.size(); }
 
 void OpenXRAPI::set_view_configuration(XrViewConfigurationType p_view_configuration)
 {
 	ERR_FAIL_COND(is_initialized());
 
-	view_configuration = p_view_configuration;
+	data->view_configuration = p_view_configuration;
 }
 
 bool OpenXRAPI::set_requested_reference_space(XrReferenceSpaceType p_requested_reference_space)
 {
-	if (custom_play_space != XR_NULL_HANDLE) {
+	if (data->custom_play_space != XR_NULL_HANDLE) {
 		return false;
 	}
 
-	requested_reference_space = p_requested_reference_space;
-	play_space_is_dirty = true;
+	data->requested_reference_space = p_requested_reference_space;
+	data->play_space_is_dirty = true;
 
 	return true;
 }
 
 void OpenXRAPI::set_custom_play_space(XrSpace p_custom_space)
 {
-	custom_play_space = p_custom_space;
-	play_space_is_dirty = true;
+	data->custom_play_space = p_custom_space;
+	data->play_space_is_dirty = true;
 }
 
 void OpenXRAPI::set_submit_depth_buffer(bool p_submit_depth_buffer)
 {
 	ERR_FAIL_COND(is_initialized());
 
-	submit_depth_buffer = p_submit_depth_buffer;
+	data->submit_depth_buffer = p_submit_depth_buffer;
 }
 
-bool OpenXRAPI::is_initialized() { return (instance != XR_NULL_HANDLE); }
+bool OpenXRAPI::is_initialized() { return data != nullptr && (data->instance != XR_NULL_HANDLE); }
 
 bool OpenXRAPI::is_running()
 {
-	if (instance == XR_NULL_HANDLE) {
+	if (data->instance == XR_NULL_HANDLE) {
 		return false;
 	}
-	if (session == XR_NULL_HANDLE) {
+	if (data->session == XR_NULL_HANDLE) {
 		return false;
 	}
 
-	return running;
+	return data->running;
 }
 
 bool OpenXRAPI::openxr_loader_init()
 {
 #ifdef ANDROID_ENABLED
 	ERR_FAIL_COND_V_MSG(
-		openxr_loader_library_handle != nullptr, false, "OpenXR Loader library is already loaded.");
+		data->openxr_loader_library_handle != nullptr, false, "OpenXR Loader library is already loaded.");
 
 	{
 		Error error_code = OS::open_dynamic_library(
-			OPENXR_LOADER_NAME, openxr_loader_library_handle);
+			OPENXR_LOADER_NAME, data->openxr_loader_library_handle);
 		ERR_FAIL_COND_V_MSG(error_code != OK, false, "OpenXR loader not found.");
 	}
 
 	{
 		Error error_code = OS::get_dynamic_library_symbol_handle(
-			openxr_loader_library_handle, "xrGetInstanceProcAddr", (void*&)xrGetInstanceProcAddr);
+			data->openxr_loader_library_handle, "xrGetInstanceProcAddr", (void*&)data->xrGetInstanceProcAddr);
 		ERR_FAIL_COND_V_MSG(error_code != OK, false,
 			"Symbol xrGetInstanceProcAddr not found in OpenXR Loader library.");
 	}
@@ -625,7 +616,7 @@ bool OpenXRAPI::openxr_loader_init()
 
 bool OpenXRAPI::resolve_instance_openxr_symbols()
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, false);
 
 	OPENXR_API_INIT_XR_FUNC_V(xrAcquireSwapchainImage);
 	OPENXR_API_INIT_XR_FUNC_V(xrApplyHapticFeedback);
@@ -675,7 +666,11 @@ bool OpenXRAPI::resolve_instance_openxr_symbols()
 
 XrResult OpenXRAPI::try_get_instance_proc_addr(const char* p_name, PFN_xrVoidFunction* p_addr)
 {
-	return xrGetInstanceProcAddr(instance, p_name, p_addr);
+	#ifdef ANDROID_ENABLED
+	return data->xrGetInstanceProcAddr(data->instance, p_name, p_addr);
+#else
+	return ::xrGetInstanceProcAddr(data->instance, p_name, p_addr);
+#endif
 }
 
 XrResult OpenXRAPI::get_instance_proc_addr(const char* p_name, PFN_xrVoidFunction* p_addr)
@@ -717,7 +712,7 @@ bool OpenXRAPI::initialize_session()
 		return false;
 	}
 
-	allocate_view_buffers(view_configuration_views.size(), submit_depth_buffer);
+	allocate_view_buffers(data->view_configuration_views.size(), data->submit_depth_buffer);
 
 	return true;
 }
@@ -729,25 +724,25 @@ void OpenXRAPI::finish()
 	destroy_instance();
 }
 
-void OpenXRAPI::set_xr_interface(OpenXRInterface* p_xr_interface) { xr_interface = p_xr_interface; }
+void OpenXRAPI::set_xr_interface(OpenXRInterface* p_xr_interface) { data->xr_interface = p_xr_interface; }
 
 Size2 OpenXRAPI::get_recommended_target_size()
 {
-	ERR_FAIL_COND_V(view_configuration_views.is_empty(), Size2());
+	ERR_FAIL_COND_V(data->view_configuration_views.is_empty(), Size2());
 
 	Size2 target_size;
 
 	if (Renderer::data && Renderer::is_on_render_thread()) {
-		target_size.width = view_configuration_views[0].recommendedImageRectWidth *
-							render_state.render_target_size_multiplier;
-		target_size.height = view_configuration_views[0].recommendedImageRectHeight *
-							 render_state.render_target_size_multiplier;
+		target_size.width = data->view_configuration_views[0].recommendedImageRectWidth *
+							data->render_state.render_target_size_multiplier;
+		target_size.height = data->view_configuration_views[0].recommendedImageRectHeight *
+							 data->render_state.render_target_size_multiplier;
 	}
 	else {
 		target_size.width =
-			view_configuration_views[0].recommendedImageRectWidth * render_target_size_multiplier;
+			data->view_configuration_views[0].recommendedImageRectWidth * data->render_target_size_multiplier;
 		target_size.height =
-			view_configuration_views[0].recommendedImageRectHeight * render_target_size_multiplier;
+			data->view_configuration_views[0].recommendedImageRectHeight * data->render_target_size_multiplier;
 	}
 
 	return target_size;
@@ -758,7 +753,7 @@ XRPose::TrackingConfidence OpenXRAPI::get_head_center(
 {
 	XrResult result;
 
-	if (!running) {
+	if (!data->running) {
 		return XRPose::XR_TRACKING_CONFIDENCE_NONE;
 	}
 
@@ -786,7 +781,7 @@ XRPose::TrackingConfidence OpenXRAPI::get_head_center(
 		}						  // pose
 	};
 
-	result = xrLocateSpace(view_space, play_space, display_time, &location);
+	result = xrLocateSpace(data->view_space, data->play_space, display_time, &location);
 	if (XR_FAILED(result)) {
 		// print_line(
 		// 	"OpenXR: Failed to locate view space in play space [", get_error_string(result), "]");
@@ -796,13 +791,13 @@ XRPose::TrackingConfidence OpenXRAPI::get_head_center(
 	XRPose::TrackingConfidence confidence = transform_from_location(location, r_transform);
 	parse_velocities(velocity, r_linear_velocity, r_angular_velocity);
 
-	if (head_pose_confidence != confidence) {
+	if (data->head_pose_confidence != confidence) {
 		// prevent error spam
-		head_pose_confidence = confidence;
-		if (head_pose_confidence == XRPose::XR_TRACKING_CONFIDENCE_NONE) {
+		data->head_pose_confidence = confidence;
+		if (data->head_pose_confidence == XRPose::XR_TRACKING_CONFIDENCE_NONE) {
 			// print_line("OpenXR head space location not valid (check tracking?)");
 		}
-		else if (head_pose_confidence == XRPose::XR_TRACKING_CONFIDENCE_LOW) {
+		else if (data->head_pose_confidence == XRPose::XR_TRACKING_CONFIDENCE_LOW) {
 			print_verbose("OpenVR Head pose now tracking with low confidence");
 		}
 		else {
@@ -817,17 +812,17 @@ bool OpenXRAPI::get_view_transform(uint32_t p_view, Transform3D& r_transform)
 {
 	ERR_NOT_ON_RENDER_THREAD_V(false);
 
-	if (!render_state.running) {
+	if (!data->render_state.running) {
 		return false;
 	}
 
 	// we don't have valid view info
-	if (render_state.views.is_empty() || !render_state.view_pose_valid) {
+	if (data->render_state.views.is_empty() || !data->render_state.view_pose_valid) {
 		return false;
 	}
 
 	// Note, the timing of this is set right before rendering, which is what we need here.
-	r_transform = transform_from_pose(render_state.views[p_view].pose);
+	r_transform = transform_from_pose(data->render_state.views[p_view].pose);
 
 	return true;
 }
@@ -837,23 +832,22 @@ void OpenXRAPI::_allocate_view_buffers_rt(uint32_t p_view_count, bool p_submit_d
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
-	openxr_api->render_state.submit_depth_buffer = p_submit_depth_buffer;
+	data->render_state.submit_depth_buffer = p_submit_depth_buffer;
 
 	// Allocate buffers we'll be populating with view information.
-	openxr_api->render_state.views.resize(p_view_count);
-	openxr_api->render_state.projection_views.resize(p_view_count);
+	data->render_state.views.resize(p_view_count);
+	data->render_state.projection_views.resize(p_view_count);
 
 	for (uint32_t i = 0; i < p_view_count; i++) {
-		openxr_api->render_state.views[i] = {
+		data->render_state.views[i] = {
 			XR_TYPE_VIEW, // type
 			nullptr,	  // next
 			{},			  // pose
 			{},			  // fov
 		};
-		openxr_api->render_state.projection_views[i] = {
+		data->render_state.projection_views[i] = {
 			XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW, // type
 			nullptr,								   // next
 			{},										   // pose
@@ -863,11 +857,11 @@ void OpenXRAPI::_allocate_view_buffers_rt(uint32_t p_view_count, bool p_submit_d
 	}
 
 	if (p_submit_depth_buffer &&
-		OpenXRCompositionLayerDepthExtension::get_singleton()->is_available()) {
-		openxr_api->render_state.depth_views.resize(p_view_count);
+		OpenXRCompositionLayerDepthExtension::is_available()) {
+		data->render_state.depth_views.resize(p_view_count);
 
 		for (uint32_t i = 0; i < p_view_count; i++) {
-			openxr_api->render_state.depth_views[i] = {
+			data->render_state.depth_views[i] = {
 				XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR, // type
 				nullptr,								  // next
 				{},										  // subImage
@@ -885,9 +879,8 @@ void OpenXRAPI::_set_render_session_running_rt(bool p_is_running)
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.running = p_is_running;
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.running = p_is_running;
 }
 
 void OpenXRAPI::_set_render_display_info_rt(XrTime p_predicted_display_time, bool p_should_render)
@@ -895,10 +888,9 @@ void OpenXRAPI::_set_render_display_info_rt(XrTime p_predicted_display_time, boo
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.predicted_display_time = p_predicted_display_time;
-	openxr_api->render_state.should_render = p_should_render;
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.predicted_display_time = p_predicted_display_time;
+	data->render_state.should_render = p_should_render;
 }
 
 void OpenXRAPI::_set_render_environment_blend_mode_rt(int32_t p_environment_blend_mode)
@@ -906,9 +898,8 @@ void OpenXRAPI::_set_render_environment_blend_mode_rt(int32_t p_environment_blen
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.environment_blend_mode =
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.environment_blend_mode =
 		XrEnvironmentBlendMode(p_environment_blend_mode);
 }
 
@@ -917,9 +908,8 @@ void OpenXRAPI::_set_render_play_space_rt(uint64_t p_play_space)
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.play_space = XrSpace(p_play_space);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.play_space = XrSpace(p_play_space);
 }
 
 void OpenXRAPI::_set_render_state_multiplier_rt(double p_render_target_size_multiplier)
@@ -927,31 +917,28 @@ void OpenXRAPI::_set_render_state_multiplier_rt(double p_render_target_size_mult
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.render_target_size_multiplier = p_render_target_size_multiplier;
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.render_target_size_multiplier = p_render_target_size_multiplier;
 }
 
 void OpenXRAPI::_set_render_state_render_region_rt(const Rect2i& p_render_region)
 {
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.render_region = p_render_region;
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.render_region = p_render_region;
 }
 
 void OpenXRAPI::_update_main_swapchain_size_rt()
 {
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	uint32_t view_count_output = 0;
-	XrResult result = openxr_api->xrEnumerateViewConfigurationViews(openxr_api->instance,
-		openxr_api->system_id, openxr_api->view_configuration, openxr_api->get_view_count(),
-		&view_count_output, openxr_api->view_configuration_views.ptr());
+	XrResult result = OpenXRAPI::xrEnumerateViewConfigurationViews(data->instance,
+		data->system_id, data->view_configuration, OpenXRAPI::get_view_count(),
+		&view_count_output, data->view_configuration_views.ptr());
 	if (XR_FAILED(result)) {
 		return;
 	}
@@ -960,9 +947,9 @@ void OpenXRAPI::_update_main_swapchain_size_rt()
 	for (uint32_t i = 0; i < view_count_output; i++) {
 		print_verbose("OpenXR: Recommended resolution changed");
 		print_verbose(String(" - recommended render width: ") +
-					  itos(openxr_api->view_configuration_views[i].recommendedImageRectWidth));
+					  itos(data->view_configuration_views[i].recommendedImageRectWidth));
 		print_verbose(String(" - recommended render height: ") +
-					  itos(openxr_api->view_configuration_views[i].recommendedImageRectHeight));
+					  itos(data->view_configuration_views[i].recommendedImageRectHeight));
 	}
 #endif
 }
@@ -970,7 +957,7 @@ void OpenXRAPI::_update_main_swapchain_size_rt()
 void OpenXRAPI::free_main_swapchains()
 {
 	for (int i = 0; i < OPENXR_SWAPCHAIN_MAX; i++) {
-		render_state.main_swapchains[i].queue_free();
+		data->render_state.main_swapchains[i].queue_free();
 	}
 }
 
@@ -978,14 +965,14 @@ XrSwapchain OpenXRAPI::get_color_swapchain()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(XR_NULL_HANDLE);
 
-	return render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_swapchain();
+	return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_swapchain();
 }
 
 RID OpenXRAPI::get_color_texture()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
-	return render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_image();
+	return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_image();
 }
 
 RID OpenXRAPI::get_depth_texture()
@@ -993,9 +980,9 @@ RID OpenXRAPI::get_depth_texture()
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
 	// Note, image will not be acquired if we didn't have a suitable swap chain format.
-	if (render_state.submit_depth_buffer &&
-		render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].is_image_acquired()) {
-		return render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].get_image();
+	if (data->render_state.submit_depth_buffer &&
+		data->render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].is_image_acquired()) {
+		return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].get_image();
 	}
 	else {
 		return RID();
@@ -1006,44 +993,42 @@ RID OpenXRAPI::get_density_map_texture()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext && fov_ext->is_enabled()) {
-		return render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_density_map();
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+		return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_density_map();
 	}
 
 	return RID();
 }
 
-void OpenXRAPI::set_velocity_texture(RID p_render_target) { velocity_texture = p_render_target; }
+void OpenXRAPI::set_velocity_texture(RID p_render_target) { data->velocity_texture = p_render_target; }
 
-RID OpenXRAPI::get_velocity_texture() { return velocity_texture; }
+RID OpenXRAPI::get_velocity_texture() { return data->velocity_texture; }
 
 void OpenXRAPI::set_velocity_depth_texture(RID p_render_target)
 {
-	velocity_depth_texture = p_render_target;
+	data->velocity_depth_texture = p_render_target;
 }
 
-RID OpenXRAPI::get_velocity_depth_texture() { return velocity_depth_texture; }
+RID OpenXRAPI::get_velocity_depth_texture() { return data->velocity_depth_texture; }
 
 void OpenXRAPI::set_velocity_target_size(const Size2i& p_target_size)
 {
-	velocity_target_size = p_target_size;
+	data->velocity_target_size = p_target_size;
 }
 
-Size2i OpenXRAPI::get_velocity_target_size() { return velocity_target_size; }
+Size2i OpenXRAPI::get_velocity_target_size() { return data->velocity_target_size; }
 
-const XrCompositionLayerProjection* OpenXRAPI::get_projection_layer() const
+const XrCompositionLayerProjection* OpenXRAPI::get_projection_layer()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(nullptr);
 
-	return &render_state.projection_layer;
+	return &data->render_state.projection_layer;
 }
 
-float OpenXRAPI::get_display_refresh_rate() const
+float OpenXRAPI::get_display_refresh_rate()
 {
-	OpenXRDisplayRefreshRateExtension* drrext = OpenXRDisplayRefreshRateExtension::get_singleton();
-	if (drrext) {
-		return drrext->get_refresh_rate();
+	if (OpenXRDisplayRefreshRateExtension::is_initialized()) {
+		return OpenXRDisplayRefreshRateExtension::get_refresh_rate();
 	}
 
 	return 0.0;
@@ -1051,42 +1036,39 @@ float OpenXRAPI::get_display_refresh_rate() const
 
 void OpenXRAPI::set_display_refresh_rate(float p_refresh_rate)
 {
-	OpenXRDisplayRefreshRateExtension* drrext = OpenXRDisplayRefreshRateExtension::get_singleton();
-	if (drrext != nullptr) {
-		drrext->set_refresh_rate(p_refresh_rate);
+	if (OpenXRDisplayRefreshRateExtension::is_initialized()) {
+		OpenXRDisplayRefreshRateExtension::set_refresh_rate(p_refresh_rate);
 	}
 }
 
-double OpenXRAPI::get_render_target_size_multiplier() const
+double OpenXRAPI::get_render_target_size_multiplier()
 {
-	return render_target_size_multiplier;
+	return data->render_target_size_multiplier;
 }
 
 void OpenXRAPI::set_render_target_size_multiplier(double multiplier)
 {
-	render_target_size_multiplier = multiplier;
+	data->render_target_size_multiplier = multiplier;
 	set_render_state_multiplier(multiplier);
 }
 
-Rect2i OpenXRAPI::get_render_region() const { return render_region; }
+Rect2i OpenXRAPI::get_render_region() { return data->render_region; }
 
 void OpenXRAPI::set_render_region(const Rect2i& p_render_region)
 {
-	render_region = p_render_region;
+	data->render_region = p_render_region;
 	set_render_state_render_region(p_render_region);
 }
 
-bool OpenXRAPI::is_foveation_supported() const
+bool OpenXRAPI::is_foveation_supported()
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	return fov_ext != nullptr && fov_ext->is_enabled();
+	return OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled();
 }
 
-int OpenXRAPI::get_foveation_level() const
+int OpenXRAPI::get_foveation_level()
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr && fov_ext->is_enabled()) {
-		switch (fov_ext->get_foveation_level()) {
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+		switch (OpenXRFBFoveationExtension::get_foveation_level()) {
 		case XR_FOVEATION_LEVEL_NONE_FB:
 			return 0;
 		case XR_FOVEATION_LEVEL_LOW_FB:
@@ -1106,52 +1088,47 @@ int OpenXRAPI::get_foveation_level() const
 void OpenXRAPI::set_foveation_level(int p_foveation_level)
 {
 	ERR_FAIL_UNSIGNED_INDEX(p_foveation_level, 4);
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr && fov_ext->is_enabled()) {
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
 		XrFoveationLevelFB levels[] = {XR_FOVEATION_LEVEL_NONE_FB, XR_FOVEATION_LEVEL_LOW_FB,
 			XR_FOVEATION_LEVEL_MEDIUM_FB, XR_FOVEATION_LEVEL_HIGH_FB};
-		fov_ext->set_foveation_level(levels[p_foveation_level]);
+		OpenXRFBFoveationExtension::set_foveation_level(levels[p_foveation_level]);
 	}
 }
 
-bool OpenXRAPI::get_foveation_dynamic() const
+bool OpenXRAPI::get_foveation_dynamic()
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr && fov_ext->is_enabled()) {
-		return fov_ext->get_foveation_dynamic() == XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB;
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+		return OpenXRFBFoveationExtension::get_foveation_dynamic() == XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB;
 	}
 	return false;
 }
 
 void OpenXRAPI::set_foveation_dynamic(bool p_foveation_dynamic)
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr && fov_ext->is_enabled()) {
-		fov_ext->set_foveation_dynamic(p_foveation_dynamic ? XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+		OpenXRFBFoveationExtension::set_foveation_dynamic(p_foveation_dynamic ? XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB
 														   : XR_FOVEATION_DYNAMIC_DISABLED_FB);
 	}
 }
 
-bool OpenXRAPI::get_foveation_with_subsampled_images() const
+bool OpenXRAPI::get_foveation_with_subsampled_images()
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr) {
-		return fov_ext->is_foveation_with_subsampled_images_enabled();
+	if (OpenXRFBFoveationExtension::is_initialized()) {
+		return OpenXRFBFoveationExtension::is_foveation_with_subsampled_images_enabled();
 	}
 	return false;
 }
 
 void OpenXRAPI::set_foveation_with_subsampled_images(bool p_enabled)
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr) {
-		fov_ext->set_foveation_with_subsampled_images_enabled(p_enabled);
+	if (OpenXRFBFoveationExtension::is_initialized()) {
+		OpenXRFBFoveationExtension::set_foveation_with_subsampled_images_enabled(p_enabled);
 	}
 }
 
 PackedInt64Array OpenXRAPI::get_supported_swapchain_formats()
 {
-	return supported_swapchain_formats;
+	return data->supported_swapchain_formats;
 }
 
 Transform3D OpenXRAPI::transform_from_pose(const XrPosef& p_pose)
@@ -1265,12 +1242,12 @@ XrPath OpenXRAPI::get_xr_path(const String& p_path) { return XrPath(); }
 
 String OpenXRAPI::get_xr_path_name(const XrPath& p_path)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, String());
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, String());
 
 	uint32_t size = 0;
 	char path_name[XR_MAX_PATH_LENGTH];
 
-	XrResult result = xrPathToString(instance, p_path, XR_MAX_PATH_LENGTH, &size, path_name);
+	XrResult result = xrPathToString(data->instance, p_path, XR_MAX_PATH_LENGTH, &size, path_name);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(
 			String(), "OpenXR: failed to get name for a path! [" + get_error_string(result) + "]");
@@ -1281,8 +1258,8 @@ String OpenXRAPI::get_xr_path_name(const XrPath& p_path)
 
 RID OpenXRAPI::get_tracker_rid(XrPath p_path)
 {
-	for (const RID& tracker_rid : tracker_owner.get_owned_list()) {
-		Tracker* tracker = tracker_owner.get_or_null(tracker_rid);
+	for (const RID& tracker_rid : data->tracker_owner.get_owned_list()) {
+		Tracker* tracker = data->tracker_owner.get_or_null(tracker_rid);
 		if (tracker && tracker->toplevel_path == p_path) {
 			return tracker_rid;
 		}
@@ -1293,8 +1270,8 @@ RID OpenXRAPI::get_tracker_rid(XrPath p_path)
 
 RID OpenXRAPI::find_tracker(const String& p_name)
 {
-	for (const RID& tracker_rid : tracker_owner.get_owned_list()) {
-		Tracker* tracker = tracker_owner.get_or_null(tracker_rid);
+	for (const RID& tracker_rid : data->tracker_owner.get_owned_list()) {
+		Tracker* tracker = data->tracker_owner.get_or_null(tracker_rid);
 		if (tracker && tracker->name == p_name) {
 			return tracker_rid;
 		}
@@ -1305,7 +1282,7 @@ RID OpenXRAPI::find_tracker(const String& p_name)
 
 RID OpenXRAPI::tracker_create(const String& p_name)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, RID());
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, RID());
 
 	Tracker new_tracker;
 	new_tracker.name = p_name;
@@ -1315,7 +1292,7 @@ RID OpenXRAPI::tracker_create(const String& p_name)
 	new_tracker.toplevel_path = get_xr_path(p_name);
 	ERR_FAIL_COND_V(new_tracker.toplevel_path == XR_NULL_PATH, RID());
 
-	return tracker_owner.make_rid(new_tracker);
+	return data->tracker_owner.make_rid(new_tracker);
 }
 
 String OpenXRAPI::tracker_get_name(RID p_tracker)
@@ -1324,7 +1301,7 @@ String OpenXRAPI::tracker_get_name(RID p_tracker)
 		return String("None");
 	}
 
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, String());
 
 	return tracker->name;
@@ -1333,10 +1310,10 @@ String OpenXRAPI::tracker_get_name(RID p_tracker)
 void OpenXRAPI::tracker_check_profile(RID p_tracker, XrSession p_session)
 {
 	if (p_session == XR_NULL_HANDLE) {
-		p_session = session;
+		p_session = data->session;
 	}
 
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL(tracker);
 
 	if (tracker->toplevel_path == XR_NULL_PATH) {
@@ -1363,26 +1340,26 @@ void OpenXRAPI::tracker_check_profile(RID p_tracker, XrSession p_session)
 	if (was_profile != new_profile) {
 		tracker->active_profile_rid = get_interaction_profile_rid(new_profile);
 
-		if (xr_interface) {
-			xr_interface->tracker_profile_changed(p_tracker, tracker->active_profile_rid);
+		if (data->xr_interface) {
+			data->xr_interface->tracker_profile_changed(p_tracker, tracker->active_profile_rid);
 		}
 	}
 }
 
 void OpenXRAPI::tracker_free(RID p_tracker)
 {
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL(tracker);
 
 	// there is nothing to free here
 
-	tracker_owner.free(p_tracker);
+	data->tracker_owner.free(p_tracker);
 }
 
 RID OpenXRAPI::action_set_create(
 	const String& p_name, const String& p_localized_name, const int p_priority)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, RID());
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, RID());
 	ActionSet action_set;
 
 	action_set.name = p_name;
@@ -1401,7 +1378,7 @@ RID OpenXRAPI::action_set_create(
 	copy_string_to_char_buffer(p_localized_name, action_set_info.localizedActionSetName,
 		XR_MAX_LOCALIZED_ACTION_SET_NAME_SIZE);
 
-	XrResult result = xrCreateActionSet(instance, &action_set_info, &action_set.handle);
+	XrResult result = xrCreateActionSet(data->instance, &action_set_info, &action_set.handle);
 	if (XR_FAILED(result)) {
 		// print_line(
 		// 	"OpenXR: failed to create action set ", p_name, "! [", get_error_string(result), "]");
@@ -1410,13 +1387,13 @@ RID OpenXRAPI::action_set_create(
 
 	set_object_name(XR_OBJECT_TYPE_ACTION_SET, uint64_t(action_set.handle), p_name);
 
-	return action_set_owner.make_rid(action_set);
+	return data->action_set_owner.make_rid(action_set);
 }
 
 RID OpenXRAPI::find_action_set(const String& p_name)
 {
-	for (const RID& action_set_rid : action_set_owner.get_owned_list()) {
-		ActionSet* action_set = action_set_owner.get_or_null(action_set_rid);
+	for (const RID& action_set_rid : data->action_set_owner.get_owned_list()) {
+		ActionSet* action_set = data->action_set_owner.get_or_null(action_set_rid);
 		if (action_set && action_set->name == p_name) {
 			return action_set_rid;
 		}
@@ -1431,7 +1408,7 @@ String OpenXRAPI::action_set_get_name(RID p_action_set)
 		return String("None");
 	}
 
-	ActionSet* action_set = action_set_owner.get_or_null(p_action_set);
+	ActionSet* action_set = data->action_set_owner.get_or_null(p_action_set);
 	ERR_FAIL_NULL_V(action_set, String());
 
 	return action_set->name;
@@ -1443,7 +1420,7 @@ XrActionSet OpenXRAPI::action_set_get_handle(RID p_action_set)
 		return XR_NULL_HANDLE;
 	}
 
-	ActionSet* action_set = action_set_owner.get_or_null(p_action_set);
+	ActionSet* action_set = data->action_set_owner.get_or_null(p_action_set);
 	ERR_FAIL_NULL_V(action_set, XR_NULL_HANDLE);
 
 	return action_set->handle;
@@ -1451,12 +1428,12 @@ XrActionSet OpenXRAPI::action_set_get_handle(RID p_action_set)
 
 bool OpenXRAPI::attach_action_sets(const Vector<RID>& p_action_sets)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, false);
 
 	Vector<XrActionSet> action_handles;
 	action_handles.resize(p_action_sets.size());
 	for (int i = 0; i < p_action_sets.size(); i++) {
-		ActionSet* action_set = action_set_owner.get_or_null(p_action_sets[i]);
+		ActionSet* action_set = data->action_set_owner.get_or_null(p_action_sets[i]);
 		ERR_FAIL_NULL_V(action_set, false);
 
 		if (action_set->is_attached) {
@@ -1475,14 +1452,14 @@ bool OpenXRAPI::attach_action_sets(const Vector<RID>& p_action_sets)
 		action_handles.ptr()					 // actionSets
 	};
 
-	XrResult result = xrAttachSessionActionSets(session, &attach_info);
+	XrResult result = xrAttachSessionActionSets(data->session, &attach_info);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to attach action sets! [", get_error_string(result), "]");
 		return false;
 	}
 
 	for (int i = 0; i < p_action_sets.size(); i++) {
-		ActionSet* action_set = action_set_owner.get_or_null(p_action_sets[i]);
+		ActionSet* action_set = data->action_set_owner.get_or_null(p_action_sets[i]);
 		ERR_FAIL_NULL_V(action_set, false);
 		action_set->is_attached = true;
 	}
@@ -1510,20 +1487,20 @@ bool OpenXRAPI::attach_action_sets(const Vector<RID>& p_action_sets)
 
 void OpenXRAPI::action_set_free(RID p_action_set)
 {
-	ActionSet* action_set = action_set_owner.get_or_null(p_action_set);
+	ActionSet* action_set = data->action_set_owner.get_or_null(p_action_set);
 	ERR_FAIL_NULL(action_set);
 
 	if (action_set->handle != XR_NULL_HANDLE) {
 		xrDestroyActionSet(action_set->handle);
 	}
 
-	action_set_owner.free(p_action_set);
+	data->action_set_owner.free(p_action_set);
 }
 
 RID OpenXRAPI::get_action_rid(XrAction p_action)
 {
-	for (const RID& action_rid : action_owner.get_owned_list()) {
-		Action* action = action_owner.get_or_null(action_rid);
+	for (const RID& action_rid : data->action_owner.get_owned_list()) {
+		Action* action = data->action_owner.get_or_null(action_rid);
 		if (action && action->handle == p_action) {
 			return action_rid;
 		}
@@ -1534,8 +1511,8 @@ RID OpenXRAPI::get_action_rid(XrAction p_action)
 
 RID OpenXRAPI::find_action(const String& p_name, const RID& p_action_set)
 {
-	for (const RID& action_rid : action_owner.get_owned_list()) {
-		Action* action = action_owner.get_or_null(action_rid);
+	for (const RID& action_rid : data->action_owner.get_owned_list()) {
+		Action* action = data->action_owner.get_or_null(action_rid);
 		if (action && action->name == p_name &&
 			(p_action_set.is_null() || action->action_set_rid == p_action_set)) {
 			return action_rid;
@@ -1548,12 +1525,12 @@ RID OpenXRAPI::find_action(const String& p_name, const RID& p_action_set)
 RID OpenXRAPI::action_create(RID p_action_set, const String& p_name, const String& p_localized_name,
 	OpenXRAction::ActionType p_action_type, const Vector<RID>& p_trackers)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, RID());
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, RID());
 
 	Action action;
 	action.name = p_name;
 
-	ActionSet* action_set = action_set_owner.get_or_null(p_action_set);
+	ActionSet* action_set = data->action_set_owner.get_or_null(p_action_set);
 	ERR_FAIL_NULL_V(action_set, RID());
 	ERR_FAIL_COND_V(action_set->handle == XR_NULL_HANDLE, RID());
 	action.action_set_rid = p_action_set;
@@ -1581,7 +1558,7 @@ RID OpenXRAPI::action_create(RID p_action_set, const String& p_name, const Strin
 
 	Vector<XrPath> toplevel_paths;
 	for (int i = 0; i < p_trackers.size(); i++) {
-		Tracker* tracker = tracker_owner.get_or_null(p_trackers[i]);
+		Tracker* tracker = data->tracker_owner.get_or_null(p_trackers[i]);
 		if (tracker != nullptr && tracker->toplevel_path != XR_NULL_PATH) {
 			ActionTracker action_tracker = {
 				p_trackers[i],	// tracker
@@ -1617,7 +1594,7 @@ RID OpenXRAPI::action_create(RID p_action_set, const String& p_name, const Strin
 
 	set_object_name(XR_OBJECT_TYPE_ACTION, uint64_t(action.handle), p_name);
 
-	return action_owner.make_rid(action);
+	return data->action_owner.make_rid(action);
 }
 
 String OpenXRAPI::action_get_name(RID p_action)
@@ -1626,7 +1603,7 @@ String OpenXRAPI::action_get_name(RID p_action)
 		return String("None");
 	}
 
-	Action* action = action_owner.get_or_null(p_action);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, String());
 
 	return action->name;
@@ -1638,7 +1615,7 @@ XrAction OpenXRAPI::action_get_handle(RID p_action)
 		return XR_NULL_HANDLE;
 	}
 
-	Action* action = action_owner.get_or_null(p_action);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, XR_NULL_HANDLE);
 
 	return action->handle;
@@ -1646,20 +1623,20 @@ XrAction OpenXRAPI::action_get_handle(RID p_action)
 
 void OpenXRAPI::action_free(RID p_action)
 {
-	Action* action = action_owner.get_or_null(p_action);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL(action);
 
 	if (action->handle != XR_NULL_HANDLE) {
 		xrDestroyAction(action->handle);
 	}
 
-	action_owner.free(p_action);
+	data->action_owner.free(p_action);
 }
 
 RID OpenXRAPI::get_interaction_profile_rid(XrPath p_path)
 {
-	for (const RID& ip_rid : interaction_profile_owner.get_owned_list()) {
-		InteractionProfile* ip = interaction_profile_owner.get_or_null(ip_rid);
+	for (const RID& ip_rid : data->interaction_profile_owner.get_owned_list()) {
+		InteractionProfile* ip = data->interaction_profile_owner.get_or_null(ip_rid);
 		if (ip && ip->path == p_path) {
 			return ip_rid;
 		}
@@ -1674,7 +1651,7 @@ XrPath OpenXRAPI::get_interaction_profile_path(RID p_interaction_profile)
 		return XR_NULL_PATH;
 	}
 
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, XR_NULL_PATH);
 
 	return ip->path;
@@ -1693,7 +1670,7 @@ RID OpenXRAPI::interaction_profile_create(const String& p_name)
 	new_interaction_profile.internal_name = get_interaction_profile_internal_name(p_name);
 
 	XrResult result = xrStringToPath(
-		instance, new_interaction_profile.internal_name.get_data(), &new_interaction_profile.path);
+		data->instance, new_interaction_profile.internal_name.get_data(), &new_interaction_profile.path);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to get path for ", p_name, "! [", get_error_string(result),
 		// "]");
@@ -1706,7 +1683,7 @@ RID OpenXRAPI::interaction_profile_create(const String& p_name)
 	}
 
 	new_interaction_profile.name = p_name;
-	return interaction_profile_owner.make_rid(new_interaction_profile);
+	return data->interaction_profile_owner.make_rid(new_interaction_profile);
 }
 
 String OpenXRAPI::interaction_profile_get_name(RID p_interaction_profile)
@@ -1715,7 +1692,7 @@ String OpenXRAPI::interaction_profile_get_name(RID p_interaction_profile)
 		return String("None");
 	}
 
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, String());
 
 	return ip->name;
@@ -1723,18 +1700,18 @@ String OpenXRAPI::interaction_profile_get_name(RID p_interaction_profile)
 
 void OpenXRAPI::interaction_profile_clear_bindings(RID p_interaction_profile)
 {
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL(ip);
 
 	ip->bindings.clear();
 }
 
 CharString OpenXRAPI::get_interaction_profile_internal_name(
-	const String& p_interaction_profile_name) const
+	const String& p_interaction_profile_name)
 {
 	CharString internal_name = p_interaction_profile_name.utf8();
 
-	if (openxr_version < XR_API_VERSION_1_1_0) {
+	if (data->openxr_version < XR_API_VERSION_1_1_0) {
 		// These interaction profiles were renamed in OpenXR 1.1,
 		// if we don't support OpenXR 1.1, rename them back.
 		if (internal_name == "/interaction_profiles/meta/touch_pro_controller") {
@@ -1749,7 +1726,7 @@ CharString OpenXRAPI::get_interaction_profile_internal_name(
 }
 
 const char* OpenXRAPI::check_profile_path(
-	const CharString& p_interaction_profile_name, const char* p_path) const
+	const CharString& p_interaction_profile_name, const char* p_path)
 {
 	// We store the new names of these paths in our action map, so if we're on older versions of
 	// OpenXR, we need to use the old names.
@@ -1872,7 +1849,7 @@ const char* OpenXRAPI::check_profile_path(
 	for (size_t i = 0; i < length; i++) {
 		const RenameMap& rename = renames[i];
 
-		if (rename.before_version != 0 && openxr_version >= rename.before_version) {
+		if (rename.before_version != 0 && data->openxr_version >= rename.before_version) {
 			// We're done, we are on a new version than this, no need to check further.
 			return p_path;
 		}
@@ -1889,7 +1866,7 @@ const char* OpenXRAPI::check_profile_path(
 int OpenXRAPI::interaction_profile_add_binding(
 	RID p_interaction_profile, RID p_action, const String& p_path)
 {
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, -1);
 
 	if (!interaction_profile_supports_io_path(ip->name, p_path)) {
@@ -1898,12 +1875,12 @@ int OpenXRAPI::interaction_profile_add_binding(
 
 	XrActionSuggestedBinding binding;
 
-	Action* action = action_owner.get_or_null(p_action);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_COND_V(action == nullptr || action->handle == XR_NULL_HANDLE, -1);
 
 	binding.action = action->handle;
 
-	XrResult result = xrStringToPath(instance,
+	XrResult result = xrStringToPath(data->instance,
 		check_profile_path(ip->internal_name, p_path.utf8().get_data()), &binding.binding);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to get path for ", p_path, "! [", get_error_string(result),
@@ -1919,7 +1896,7 @@ int OpenXRAPI::interaction_profile_add_binding(
 bool OpenXRAPI::interaction_profile_add_modifier(
 	RID p_interaction_profile, const PackedByteArray& p_modifier)
 {
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, false);
 
 	if (!p_modifier.is_empty()) {
@@ -1932,9 +1909,9 @@ bool OpenXRAPI::interaction_profile_add_modifier(
 
 bool OpenXRAPI::interaction_profile_suggest_bindings(RID p_interaction_profile)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, false);
 
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, false);
 
 	void* next = nullptr;
@@ -1964,7 +1941,7 @@ bool OpenXRAPI::interaction_profile_suggest_bindings(RID p_interaction_profile)
 		ip->bindings.ptr()							   // suggestedBindings
 	};
 
-	XrResult result = xrSuggestInteractionProfileBindings(instance, &suggested_bindings);
+	XrResult result = xrSuggestInteractionProfileBindings(data->instance, &suggested_bindings);
 	if (result == XR_ERROR_PATH_UNSUPPORTED) {
 		// this is fine, not all runtimes support all devices.
 		print_verbose(
@@ -1997,24 +1974,24 @@ bool OpenXRAPI::interaction_profile_suggest_bindings(RID p_interaction_profile)
 
 void OpenXRAPI::interaction_profile_free(RID p_interaction_profile)
 {
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL(ip);
 
 	ip->bindings.clear();
 	ip->modifiers.clear();
 
-	interaction_profile_owner.free(p_interaction_profile);
+	data->interaction_profile_owner.free(p_interaction_profile);
 }
 
 bool OpenXRAPI::get_action_bool(RID p_action, RID p_tracker)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, false);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, false);
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, false);
 
-	if (!running) {
+	if (!data->running) {
 		return false;
 	}
 
@@ -2029,7 +2006,7 @@ bool OpenXRAPI::get_action_bool(RID p_action, RID p_tracker)
 
 	XrActionStateBoolean result_state;
 	result_state.type = XR_TYPE_ACTION_STATE_BOOLEAN, result_state.next = nullptr;
-	XrResult result = xrGetActionStateBoolean(session, &get_info, &result_state);
+	XrResult result = xrGetActionStateBoolean(data->session, &get_info, &result_state);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: couldn't get action boolean! [", get_error_string(result), "]");
 		return false;
@@ -2040,13 +2017,13 @@ bool OpenXRAPI::get_action_bool(RID p_action, RID p_tracker)
 
 float OpenXRAPI::get_action_float(RID p_action, RID p_tracker)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, 0.0);
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, 0.0);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, 0.0);
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, 0.0);
 
-	if (!running) {
+	if (!data->running) {
 
 		return 0.0;
 	}
@@ -2062,7 +2039,7 @@ float OpenXRAPI::get_action_float(RID p_action, RID p_tracker)
 
 	XrActionStateFloat result_state;
 	result_state.type = XR_TYPE_ACTION_STATE_FLOAT, result_state.next = nullptr;
-	XrResult result = xrGetActionStateFloat(session, &get_info, &result_state);
+	XrResult result = xrGetActionStateFloat(data->session, &get_info, &result_state);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: couldn't get action float! [", get_error_string(result), "]");
 		return 0.0;
@@ -2073,13 +2050,13 @@ float OpenXRAPI::get_action_float(RID p_action, RID p_tracker)
 
 Vector2 OpenXRAPI::get_action_vector2(RID p_action, RID p_tracker)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, Vector2());
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, Vector2());
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, Vector2());
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, Vector2());
 
-	if (!running) {
+	if (!data->running) {
 		return Vector2();
 	}
 
@@ -2094,7 +2071,7 @@ Vector2 OpenXRAPI::get_action_vector2(RID p_action, RID p_tracker)
 
 	XrActionStateVector2f result_state;
 	result_state.type = XR_TYPE_ACTION_STATE_VECTOR2F, result_state.next = nullptr;
-	XrResult result = xrGetActionStateVector2f(session, &get_info, &result_state);
+	XrResult result = xrGetActionStateVector2f(data->session, &get_info, &result_state);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: couldn't get action vector2! [", get_error_string(result), "]");
 		return Vector2();
@@ -2107,13 +2084,13 @@ Vector2 OpenXRAPI::get_action_vector2(RID p_action, RID p_tracker)
 XRPose::TrackingConfidence OpenXRAPI::get_action_pose(RID p_action, RID p_tracker,
 	Transform3D& r_transform, Vector3& r_linear_velocity, Vector3& r_angular_velocity)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, XRPose::XR_TRACKING_CONFIDENCE_NONE);
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, XRPose::XR_TRACKING_CONFIDENCE_NONE);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, XRPose::XR_TRACKING_CONFIDENCE_NONE);
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, XRPose::XR_TRACKING_CONFIDENCE_NONE);
 
-	if (!running) {
+	if (!data->running) {
 		return XRPose::XR_TRACKING_CONFIDENCE_NONE;
 	}
 
@@ -2156,7 +2133,7 @@ XRPose::TrackingConfidence OpenXRAPI::get_action_pose(RID p_action, RID p_tracke
 		};
 
 		XrSpace space;
-		XrResult result = xrCreateActionSpace(session, &action_space_info, &space);
+		XrResult result = xrCreateActionSpace(data->session, &action_space_info, &space);
 		if (XR_FAILED(result)) {
 			// print_line("OpenXR: couldn't create action space! [", get_error_string(result), "]");
 			return XRPose::XR_TRACKING_CONFIDENCE_NONE;
@@ -2184,7 +2161,7 @@ XRPose::TrackingConfidence OpenXRAPI::get_action_pose(RID p_action, RID p_tracke
 	};
 
 	XrResult result =
-		xrLocateSpace(action->trackers[index].space, play_space, display_time, &location);
+		xrLocateSpace(action->trackers[index].space, data->play_space, display_time, &location);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to locate space! [", get_error_string(result), "]");
 		return XRPose::XR_TRACKING_CONFIDENCE_NONE;
@@ -2199,13 +2176,13 @@ XRPose::TrackingConfidence OpenXRAPI::get_action_pose(RID p_action, RID p_tracke
 bool OpenXRAPI::trigger_haptic_pulse(
 	RID p_action, RID p_tracker, float p_frequency, float p_amplitude, XrDuration p_duration_ns)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, false);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, false);
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, false);
 
-	if (!running) {
+	if (!data->running) {
 		return false;
 	}
 
@@ -2227,7 +2204,7 @@ bool OpenXRAPI::trigger_haptic_pulse(
 	};
 
 	XrResult result =
-		xrApplyHapticFeedback(session, &action_info, (const XrHapticBaseHeader*)&vibration);
+		xrApplyHapticFeedback(data->session, &action_info, (const XrHapticBaseHeader*)&vibration);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to apply haptic feedback! [", get_error_string(result), "]");
 		return false;
@@ -2238,29 +2215,29 @@ bool OpenXRAPI::trigger_haptic_pulse(
 
 const Vector<XrEnvironmentBlendMode> OpenXRAPI::get_supported_environment_blend_modes()
 {
-	return supported_environment_blend_modes;
+	return data->supported_environment_blend_modes;
 }
 
-bool OpenXRAPI::is_environment_blend_mode_supported(XrEnvironmentBlendMode p_blend_mode) const
+bool OpenXRAPI::is_environment_blend_mode_supported(XrEnvironmentBlendMode p_blend_mode)
 {
-	return supported_environment_blend_modes.has(p_blend_mode);
+	return data->supported_environment_blend_modes.has(p_blend_mode);
 }
 
 bool OpenXRAPI::set_environment_blend_mode(XrEnvironmentBlendMode p_blend_mode)
 {
-	if (emulate_environment_blend_mode_alpha_blend &&
+	if (data->emulate_environment_blend_mode_alpha_blend &&
 		p_blend_mode == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
-		requested_environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
-		environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-		set_render_environment_blend_mode(environment_blend_mode);
+		data->requested_environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
+		data->environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+		set_render_environment_blend_mode(data->environment_blend_mode);
 		return true;
 	}
 	// We allow setting this when not initialized and will check if it is supported when
 	// initializing. After OpenXR is initialized we verify we're setting a supported blend mode.
 	else if (!is_initialized() || is_environment_blend_mode_supported(p_blend_mode)) {
-		requested_environment_blend_mode = p_blend_mode;
-		environment_blend_mode = p_blend_mode;
-		set_render_environment_blend_mode(environment_blend_mode);
+		data->requested_environment_blend_mode = p_blend_mode;
+		data->environment_blend_mode = p_blend_mode;
+		set_render_environment_blend_mode(data->environment_blend_mode);
 		return true;
 	}
 	return false;
@@ -2268,12 +2245,12 @@ bool OpenXRAPI::set_environment_blend_mode(XrEnvironmentBlendMode p_blend_mode)
 
 void OpenXRAPI::set_emulate_environment_blend_mode_alpha_blend(bool p_enabled)
 {
-	emulate_environment_blend_mode_alpha_blend = p_enabled;
+	data->emulate_environment_blend_mode_alpha_blend = p_enabled;
 }
 
 OpenXRAPI::OpenXRAlphaBlendModeSupport OpenXRAPI::is_environment_blend_mode_alpha_blend_supported()
 {
-	if (emulate_environment_blend_mode_alpha_blend) {
+	if (data->emulate_environment_blend_mode_alpha_blend) {
 		return OPENXR_ALPHA_BLEND_MODE_SUPPORT_EMULATING;
 	}
 	else if (is_environment_blend_mode_supported(XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND)) {
@@ -2306,7 +2283,22 @@ void OpenXRAPI::post_draw_viewport(RID p_render_target) {}
 
 RID OpenXRAPI::OpenXRSwapChainInfo::get_density_map() { return RID(); }
 
-OpenXRAPI::~OpenXRAPI() {}
+void OpenXRAPI::setup()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRAPI::finalize()
+{
+	if (!data) {
+		return;
+	}
+	finish();
+	memdelete(data);
+	data = nullptr;
+}
 
 bool OpenXRAPI::obtain_swapchain_formats() { return true; }
 
@@ -2320,7 +2312,7 @@ bool OpenXRAPI::get_view_projection(
 	return true;
 }
 
-Size2 OpenXRAPI::get_play_space_bounds() const { return Size2(); }
+Size2 OpenXRAPI::get_play_space_bounds() { return Size2(); }
 
 XrHandTrackerEXT OpenXRAPI::get_hand_tracker(int p_hand_index) { return XrHandTrackerEXT(); }
 
@@ -2341,6 +2333,6 @@ void OpenXRAPI::cleanup_extension_wrappers() {}
 
 void OpenXRAPI::allocate_view_buffers(uint32_t p_view_count, bool p_submit_depth_buffer) {}
 
-String OpenXRAPI::get_swapchain_format_name(long p_swapchain_format) const { return String(); }
+String OpenXRAPI::get_swapchain_format_name(long p_swapchain_format) { return String(); }
 
 

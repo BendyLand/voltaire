@@ -37,26 +37,40 @@
 #include "openxr_spatial_entity_extension.h"
 #include "servers/xr/xr_server.h"
 
+void OpenXRSpatialAnchorCapability::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRSpatialAnchorCapability::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialCapabilityConfigurationAnchor
 
 bool OpenXRSpatialCapabilityConfigurationAnchor::has_valid_configuration() const
 {
-	OpenXRSpatialAnchorCapability* capability = OpenXRSpatialAnchorCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
 
-	return capability->is_spatial_anchor_supported();
+	return OpenXRSpatialAnchorCapability::is_spatial_anchor_supported();
 }
 
 XrSpatialCapabilityConfigurationBaseHeaderEXT*
 OpenXRSpatialCapabilityConfigurationAnchor::get_configuration()
 {
-	OpenXRSpatialAnchorCapability* capability = OpenXRSpatialAnchorCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, nullptr);
+	ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
 
-	if (capability->is_spatial_anchor_supported()) {
-		OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-		ERR_FAIL_NULL_V(se_extension, nullptr);
+	if (OpenXRSpatialAnchorCapability::is_spatial_anchor_supported()) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
 
 		anchor_enabled_components.clear();
 
@@ -64,7 +78,7 @@ OpenXRSpatialCapabilityConfigurationAnchor::get_configuration()
 		anchor_enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT);
 
 		// enable optional components
-		if (capability->is_spatial_persistence_supported()) {
+		if (OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
 			anchor_enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT);
 		}
 
@@ -115,10 +129,9 @@ Transform3D OpenXRSpatialComponentAnchorList::get_entity_pose(int64_t p_index) c
 {
 	ERR_FAIL_INDEX_V(p_index, entity_poses.size(), Transform3D());
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
 
-	return openxr_api->transform_from_pose(entity_poses[p_index]);
+	return OpenXRAPI::transform_from_pose(entity_poses[p_index]);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -126,10 +139,9 @@ Transform3D OpenXRSpatialComponentAnchorList::get_entity_pose(int64_t p_index) c
 
 bool OpenXRSpatialContextPersistenceConfig::has_valid_configuration() const
 {
-	OpenXRSpatialAnchorCapability* capability = OpenXRSpatialAnchorCapability::get_singleton();
-	ERR_FAIL_NULL_V(capability, false);
+	ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
 
-	if (!capability->is_spatial_persistence_supported()) {
+	if (!OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
 		return false;
 	}
 
@@ -149,9 +161,7 @@ void* OpenXRSpatialContextPersistenceConfig::get_header(void* p_next)
 	}
 
 	if (has_valid_configuration()) {
-		OpenXRSpatialAnchorCapability* anchor_capability =
-			OpenXRSpatialAnchorCapability::get_singleton();
-		ERR_FAIL_NULL_V(anchor_capability, nullptr);
+		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
 
 		// Prepare our buffer.
 		context_handles.resize(persistence_contexts.size());
@@ -160,7 +170,7 @@ void* OpenXRSpatialContextPersistenceConfig::get_header(void* p_next)
 		XrSpatialPersistenceContextEXT* ptr = context_handles.ptrw();
 		int i = 0;
 		for (const RID& rid : persistence_contexts) {
-			ptr[i++] = anchor_capability->get_persistence_context_handle(rid);
+			ptr[i++] = OpenXRSpatialAnchorCapability::get_persistence_context_handle(rid);
 		}
 
 		persistence_config.next = n;
@@ -292,27 +302,19 @@ bool OpenXRAnchorTracker::uuid_is_equal(const XrUuid& p_a, const XrUuid& p_b)
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialAnchorCapability
 
-OpenXRSpatialAnchorCapability* OpenXRSpatialAnchorCapability::singleton = nullptr;
-
-OpenXRSpatialAnchorCapability* OpenXRSpatialAnchorCapability::get_singleton() { return singleton; }
-
-OpenXRSpatialAnchorCapability::OpenXRSpatialAnchorCapability() { singleton = this; }
-
-OpenXRSpatialAnchorCapability::~OpenXRSpatialAnchorCapability() { singleton = nullptr; }
-
 HashMap<String, bool*> OpenXRSpatialAnchorCapability::get_requested_extensions(XrVersion p_version)
 {
 	HashMap<String, bool*> request_extensions;
 
 	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled") &&
 		GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enable_spatial_anchors")) {
-		request_extensions[XR_EXT_SPATIAL_ANCHOR_EXTENSION_NAME] = &spatial_anchor_ext;
+		request_extensions[XR_EXT_SPATIAL_ANCHOR_EXTENSION_NAME] = &data->spatial_anchor_ext;
 		if (GLOBAL_GET_CACHED(
 				bool, "xr/openxr/extensions/spatial_entity/enable_persistent_anchors")) {
 			request_extensions[XR_EXT_SPATIAL_PERSISTENCE_EXTENSION_NAME] =
-				&spatial_persistence_ext;
+				&data->spatial_persistence_ext;
 			request_extensions[XR_EXT_SPATIAL_PERSISTENCE_OPERATIONS_EXTENSION_NAME] =
-				&spatial_persistence_operations_ext;
+				&data->spatial_persistence_operations_ext;
 		}
 	}
 
@@ -321,28 +323,26 @@ HashMap<String, bool*> OpenXRSpatialAnchorCapability::get_requested_extensions(X
 
 void OpenXRSpatialAnchorCapability::on_instance_created(const XrInstance p_instance)
 {
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL(se_extension);
+	ERR_FAIL_COND(!OpenXRSpatialEntityExtension::is_initialized());
 
-	if (spatial_anchor_ext) {
+	if (data->spatial_anchor_ext) {
 		EXT_INIT_XR_FUNC(xrCreateSpatialAnchorEXT);
 	}
 
-	if (spatial_persistence_ext) {
-		OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-		ERR_FAIL_NULL(openxr_api);
+	if (data->spatial_persistence_ext) {
+		ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 		// TODO REMOVE THIS WORKAROUND ONCE POSSIBLE
 		// There has been some back and forth between stores and scopes. Scopes won out.
 		XrResult xr_result =
-			openxr_api->get_instance_proc_addr("xrEnumerateSpatialPersistenceScopesEXT",
+			OpenXRAPI::get_instance_proc_addr("xrEnumerateSpatialPersistenceScopesEXT",
 				(PFN_xrVoidFunction*)&xrEnumerateSpatialPersistenceScopesEXT_ptr);
 		if (xr_result != XR_SUCCESS) {
 			// Check for stores for compatibility with beta runtimes.
 			// Lucky for us, related structs and enums are compatible.
 			print_verbose("OpenXR: xrEnumerateSpatialPersistenceScopesEXT is not supported, "
 						  "falling back to xrEnumerateSpatialPersistenceStoresEXT!");
-			xr_result = openxr_api->get_instance_proc_addr("xrEnumerateSpatialPersistenceStoresEXT",
+			xr_result = OpenXRAPI::get_instance_proc_addr("xrEnumerateSpatialPersistenceStoresEXT",
 				(PFN_xrVoidFunction*)&xrEnumerateSpatialPersistenceScopesEXT_ptr);
 		}
 		ERR_FAIL_COND(XR_FAILED(xr_result));
@@ -353,7 +353,7 @@ void OpenXRSpatialAnchorCapability::on_instance_created(const XrInstance p_insta
 		EXT_INIT_XR_FUNC(xrDestroySpatialPersistenceContextEXT);
 	}
 
-	if (spatial_persistence_operations_ext) {
+	if (data->spatial_persistence_operations_ext) {
 		EXT_INIT_XR_FUNC(xrPersistSpatialEntityAsyncEXT);
 		EXT_INIT_XR_FUNC(xrPersistSpatialEntityCompleteEXT);
 		EXT_INIT_XR_FUNC(xrUnpersistSpatialEntityAsyncEXT);
@@ -372,9 +372,7 @@ void OpenXRSpatialAnchorCapability::on_instance_destroyed()
 }
 
 bool OpenXRSpatialAnchorCapability::is_spatial_anchor_supported()
-{
-	return spatial_anchor_supported;
-}
+{ return data != nullptr && data->spatial_anchor_supported; }
 
 bool OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()
 {
@@ -383,7 +381,7 @@ bool OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()
 		return false;
 	}
 
-	return spatial_persistence_ext;
+	return data->spatial_persistence_ext;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -393,13 +391,12 @@ bool OpenXRSpatialAnchorCapability::_load_supported_persistence_scopes()
 {
 	ERR_FAIL_COND_V(!is_spatial_persistence_supported(), false);
 
-	if (supported_persistence_scopes.is_empty()) {
-		OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-		ERR_FAIL_NULL_V(openxr_api, false);
+	if (data->supported_persistence_scopes.is_empty()) {
+		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
 		uint32_t size;
-		XrInstance instance = openxr_api->get_instance();
-		XrSystemId system_id = openxr_api->get_system_id();
+		XrInstance instance = OpenXRAPI::get_instance();
+		XrSystemId system_id = OpenXRAPI::get_system_id();
 
 		ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
 
@@ -407,23 +404,23 @@ bool OpenXRSpatialAnchorCapability::_load_supported_persistence_scopes()
 			xrEnumerateSpatialPersistenceScopesEXT(instance, system_id, 0, &size, nullptr);
 		if (XR_FAILED(result)) {
 			ERR_FAIL_V_MSG(false, "OpenXR: Failed to query persistence scope count [" +
-									  openxr_api->get_error_string(result) + "]");
+									  OpenXRAPI::get_error_string(result) + "]");
 		}
 
 		if (size > 0) {
-			supported_persistence_scopes.resize(size);
+			data->supported_persistence_scopes.resize(size);
 			result = xrEnumerateSpatialPersistenceScopesEXT(instance, system_id,
-				supported_persistence_scopes.size(), &size, supported_persistence_scopes.ptrw());
+				data->supported_persistence_scopes.size(), &size, data->supported_persistence_scopes.ptrw());
 			if (XR_FAILED(result)) {
 				ERR_FAIL_V_MSG(false, "OpenXR: Failed to query persistence scopes [" +
-										  openxr_api->get_error_string(result) + "]");
+										  OpenXRAPI::get_error_string(result) + "]");
 			}
 		}
 
 		if (is_print_verbose_enabled()) {
-			if (!supported_persistence_scopes.is_empty()) {
+			if (!data->supported_persistence_scopes.is_empty()) {
 				print_verbose("OpenXR: Supported spatial persistence scopes:");
-				for (const XrSpatialPersistenceScopeEXT& scope : supported_persistence_scopes) {
+				for (const XrSpatialPersistenceScopeEXT& scope : data->supported_persistence_scopes) {
 					print_verbose(" - " + get_spatial_persistence_scope_name(scope));
 				}
 			}
@@ -447,7 +444,7 @@ bool OpenXRSpatialAnchorCapability::is_persistence_scope_supported(
 		return false;
 	}
 
-	return supported_persistence_scopes.has(p_scope);
+	return data->supported_persistence_scopes.has(p_scope);
 }
 
 bool OpenXRSpatialAnchorCapability::_is_persistence_scope_supported(PersistenceScope p_scope)
@@ -456,17 +453,17 @@ bool OpenXRSpatialAnchorCapability::_is_persistence_scope_supported(PersistenceS
 }
 
 XrSpatialPersistenceContextEXT OpenXRSpatialAnchorCapability::get_persistence_context_handle(
-	RID p_persistence_context) const
+	RID p_persistence_context)
 {
 	PersistenceContextData* persistence_context_data =
-		persistence_context_owner.get_or_null(p_persistence_context);
+		data->persistence_context_owner.get_or_null(p_persistence_context);
 	ERR_FAIL_NULL_V(persistence_context_data, XR_NULL_HANDLE);
 
 	return persistence_context_data->persistence_context;
 }
 
 uint64_t OpenXRSpatialAnchorCapability::_get_persistence_context_handle(
-	RID p_persistence_context) const
+	RID p_persistence_context)
 {
 	return (uint64_t)get_persistence_context_handle(p_persistence_context);
 }
@@ -474,11 +471,10 @@ uint64_t OpenXRSpatialAnchorCapability::_get_persistence_context_handle(
 void OpenXRSpatialAnchorCapability::free_persistence_context(RID p_persistence_context)
 {
 	PersistenceContextData* persistence_context_data =
-		persistence_context_owner.get_or_null(p_persistence_context);
+		data->persistence_context_owner.get_or_null(p_persistence_context);
 	ERR_FAIL_NULL(persistence_context_data);
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	if (persistence_context_data->persistence_context != XR_NULL_HANDLE) {
 		// Destroy our spatial context
@@ -486,13 +482,13 @@ void OpenXRSpatialAnchorCapability::free_persistence_context(RID p_persistence_c
 			xrDestroySpatialPersistenceContextEXT(persistence_context_data->persistence_context);
 		if (XR_FAILED(result)) {
 			WARN_PRINT("OpenXR: Failed to destroy the persistence context [" +
-					   openxr_api->get_error_string(result) + "]");
+					   OpenXRAPI::get_error_string(result) + "]");
 		}
 		persistence_context_data->persistence_context = XR_NULL_HANDLE;
 	}
 
 	// And remove our RID.
-	persistence_context_owner.free(p_persistence_context);
+	data->persistence_context_owner.free(p_persistence_context);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -500,22 +496,22 @@ void OpenXRSpatialAnchorCapability::free_persistence_context(RID p_persistence_c
 
 void OpenXRSpatialAnchorCapability::_on_persistence_context_completed(RID p_persistence_context)
 {
-	persistence_context = p_persistence_context;
+	data->persistence_context = p_persistence_context;
 
 	_create_spatial_context();
 }
 
 void OpenXRSpatialAnchorCapability::_on_spatial_context_created(RID p_spatial_context)
 {
-	spatial_context = p_spatial_context;
-	need_discovery = true;
+	data->spatial_context = p_spatial_context;
+	data->need_discovery = true;
 }
 
 void OpenXRSpatialAnchorCapability::_on_spatial_discovery_recommended(RID p_spatial_context)
 {
-	if (p_spatial_context == spatial_context) {
+	if (p_spatial_context == data->spatial_context) {
 		// Trigger new discovery.
-		need_discovery = true;
+		data->need_discovery = true;
 	}
 }
 
@@ -530,18 +526,15 @@ Ref<OpenXRAnchorTracker> OpenXRSpatialAnchorCapability::create_new_anchor(
 	ERR_FAIL_COND_V_MSG(!is_spatial_anchor_supported(), tracker,
 		"OpenXR: Spatial entity anchor capability is not supported on this hardware!");
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, tracker);
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, tracker);
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL_V(se_extension, tracker);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), tracker);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), tracker);
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), tracker);
 
 	// TODO reverse apply world scale and reference frame to transform.
 
-	XrPosef pose = openxr_api->pose_from_transform(p_transform);
+	XrPosef pose = OpenXRAPI::pose_from_transform(p_transform);
 
-	RID sc = p_spatial_context.is_valid() ? p_spatial_context : spatial_context;
+	RID sc = p_spatial_context.is_valid() ? p_spatial_context : data->spatial_context;
 	ERR_FAIL_COND_V(sc.is_null(), tracker);
 
 	void* next = nullptr;
@@ -552,41 +545,38 @@ Ref<OpenXRAnchorTracker> OpenXRSpatialAnchorCapability::create_new_anchor(
 	XrSpatialAnchorCreateInfoEXT create_info = {
 		XR_TYPE_SPATIAL_ANCHOR_CREATE_INFO_EXT,	  // type
 		next,									  // next
-		openxr_api->get_play_space(),			  // baseSpace
-		openxr_api->get_predicted_display_time(), // time
+		OpenXRAPI::get_play_space(),			  // baseSpace
+		OpenXRAPI::get_predicted_display_time(), // time
 		pose									  // pose
 	};
 	XrSpatialEntityIdEXT entity_id;
 	XrSpatialEntityEXT entity;
 	XrResult result = xrCreateSpatialAnchorEXT(
-		se_extension->get_spatial_context_handle(sc), &create_info, &entity_id, &entity);
+		OpenXRSpatialEntityExtension::get_spatial_context_handle(sc), &create_info, &entity_id, &entity);
 	if (XR_FAILED(result)) { // Did our xrCreateSpatialContextCompleteEXT call fail?
 		ERR_FAIL_V_MSG(tracker,
-			"OpenXR: Failed to create anchor [" + openxr_api->get_error_string(result) + "]");
+			"OpenXR: Failed to create anchor [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 
 	tracker.instantiate();
 	tracker->set_spatial_context(sc);
-	tracker->set_entity(se_extension->add_spatial_entity(sc, entity_id, entity));
+	tracker->set_entity(OpenXRSpatialEntityExtension::add_spatial_entity(sc, entity_id, entity));
 	tracker->set_tracker_desc("Anchor");
 	tracker->set_pose(SNAME("default"), p_transform, Vector3(), Vector3());
 	tracker->add_next(p_next);
 
 	// Remember our tracker.
-	anchor_trackers[sc][entity_id] = tracker;
-	xr_server->add_tracker(tracker);
+	data->anchor_trackers[sc][entity_id] = tracker;
+	XRServer::add_tracker(tracker);
 
 	return tracker;
 }
 
 void OpenXRSpatialAnchorCapability::remove_anchor(Ref<OpenXRAnchorTracker> p_anchor_tracker)
 {
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-	OpenXRSpatialEntityExtension* se_extension = OpenXRSpatialEntityExtension::get_singleton();
-	ERR_FAIL_NULL(se_extension);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	ERR_FAIL_COND(!XRServer::is_initialized());
+	ERR_FAIL_COND(!OpenXRSpatialEntityExtension::is_initialized());
 
 	// We check for this here. We could do this asynchronous but the caller may than wrongly expect
 	// this method to be instant.
@@ -594,19 +584,19 @@ void OpenXRSpatialAnchorCapability::remove_anchor(Ref<OpenXRAnchorTracker> p_anc
 		"OpenXR: This anchor is persistent. It must first be made unpersistent.");
 
 	// Attempt to unregister it from our xr_server.
-	xr_server->remove_tracker(p_anchor_tracker);
+	XRServer::remove_tracker(p_anchor_tracker);
 
 	// Get our entity.
 	RID entity = p_anchor_tracker->get_entity();
 	ERR_FAIL_COND(entity.is_null());
 
 	// Get our entity id.
-	XrSpatialEntityIdEXT entity_id = se_extension->get_spatial_entity_id(entity);
+	XrSpatialEntityIdEXT entity_id = OpenXRSpatialEntityExtension::get_spatial_entity_id(entity);
 	ERR_FAIL_COND(entity_id == XR_NULL_ENTITY);
 
 	// Remove it from our entity list.
 	for (KeyValue<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRAnchorTracker>>>& anchors :
-		anchor_trackers) {
+		data->anchor_trackers) {
 		if (anchors.value.has(entity_id)) {
 			anchors.value.erase(entity_id);
 			break;

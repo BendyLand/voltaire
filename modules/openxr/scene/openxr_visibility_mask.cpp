@@ -39,10 +39,8 @@ void OpenXRVisibilityMask::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		OpenXRVisibilityMaskExtension* vis_mask_ext =
-			OpenXRVisibilityMaskExtension::get_singleton();
-		if (vis_mask_ext && vis_mask_ext->is_available()) {
-			set_base(vis_mask_ext->get_mesh());
+		if (OpenXRVisibilityMaskExtension::is_initialized() && OpenXRVisibilityMaskExtension::is_available()) {
+			set_base(OpenXRVisibilityMaskExtension::get_mesh());
 		}
 	} break;
 	case NOTIFICATION_EXIT_TREE: {
@@ -54,10 +52,8 @@ void OpenXRVisibilityMask::_notification(int p_what)
 void OpenXRVisibilityMask::_on_openxr_session_begun()
 {
 	if (is_inside_tree()) {
-		OpenXRVisibilityMaskExtension* vis_mask_ext =
-			OpenXRVisibilityMaskExtension::get_singleton();
-		if (vis_mask_ext && vis_mask_ext->is_available()) {
-			set_base(vis_mask_ext->get_mesh());
+		if (OpenXRVisibilityMaskExtension::is_initialized() && OpenXRVisibilityMaskExtension::is_available()) {
+			set_base(OpenXRVisibilityMaskExtension::get_mesh());
 		}
 	}
 }

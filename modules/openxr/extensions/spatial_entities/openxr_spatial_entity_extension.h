@@ -37,7 +37,7 @@
 #include "openxr_spatial_entities.h"
 
 // Spatial entity extension
-class OpenXRSpatialEntityExtension
+class OpenXRSpatialEntityExtension final
 {
 public:
 	enum Capability
@@ -67,62 +67,58 @@ public:
 		COMPONENT_TYPE_PERSISTENCE = XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT,
 	};
 
-	static OpenXRSpatialEntityExtension* get_singleton();
 
-	OpenXRSpatialEntityExtension();
-	virtual ~OpenXRSpatialEntityExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+	static void on_session_destroyed();
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_instance_destroyed();
-	virtual void on_session_destroyed();
+	static bool on_event_polled(const XrEventDataBuffer& event);
 
-	virtual bool on_event_polled(const XrEventDataBuffer& event);
-
-	bool get_active() const;
-	bool supports_capability(XrSpatialCapabilityEXT p_capability);
-	bool supports_component_type(
+	static bool get_active();
+	static bool supports_capability(XrSpatialCapabilityEXT p_capability);
+	static bool supports_component_type(
 		XrSpatialCapabilityEXT p_capability, XrSpatialComponentTypeEXT p_component_type);
 
 	// Spatial contexts
-	bool get_spatial_context_ready(RID p_spatial_context) const;
-	void free_spatial_context(RID p_spatial_context);
-	XrSpatialContextEXT get_spatial_context_handle(RID p_spatial_context) const;
+	static bool get_spatial_context_ready(RID p_spatial_context);
+	static void free_spatial_context(RID p_spatial_context);
+	static XrSpatialContextEXT get_spatial_context_handle(RID p_spatial_context);
 
 	// Update query
-	RID update_spatial_entities(RID p_spatial_context, const LocalVector<RID>& p_entities,
+	static RID update_spatial_entities(RID p_spatial_context, const LocalVector<RID>& p_entities,
 		const LocalVector<XrSpatialComponentTypeEXT>& p_component_types,
 		Ref<OpenXRStructureBase> p_next);
 
 	// Snapshot data
-	void free_spatial_snapshot(RID p_spatial_snapshot);
-	XrSpatialSnapshotEXT get_spatial_snapshot_handle(RID p_spatial_snapshot) const;
-	RID get_spatial_snapshot_context(RID p_spatial_snapshot) const;
+	static void free_spatial_snapshot(RID p_spatial_snapshot);
+	static XrSpatialSnapshotEXT get_spatial_snapshot_handle(RID p_spatial_snapshot);
+	static RID get_spatial_snapshot_context(RID p_spatial_snapshot);
 
 	// Buffers from snapshot
-	String get_string(RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const;
-	PackedByteArray get_uint8_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const;
-	Vector<uint16_t> get_uint16_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const;
-	Vector<uint32_t> get_uint32_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const;
-	PackedFloat32Array get_float_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const;
-	PackedVector2Array get_vector2_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const;
-	PackedVector3Array get_vector3_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id) const;
+	static String get_string(RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static PackedByteArray get_uint8_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static Vector<uint16_t> get_uint16_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static Vector<uint32_t> get_uint32_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static PackedFloat32Array get_float_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static PackedVector2Array get_vector2_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static PackedVector3Array get_vector3_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
 
 	// Entities
-	RID find_spatial_entity(XrSpatialEntityIdEXT p_entity_id) const;
-	RID add_spatial_entity(
+	static RID find_spatial_entity(XrSpatialEntityIdEXT p_entity_id);
+	static RID add_spatial_entity(
 		RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id, XrSpatialEntityEXT p_entity);
-	RID make_spatial_entity(RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id);
-	XrSpatialEntityIdEXT get_spatial_entity_id(RID p_entity) const;
-	RID get_spatial_entity_context(RID p_entity) const;
-	void free_spatial_entity(RID p_entity);
+	static RID make_spatial_entity(RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id);
+	static XrSpatialEntityIdEXT get_spatial_entity_id(RID p_entity);
+	static RID get_spatial_entity_context(RID p_entity);
+	static void free_spatial_entity(RID p_entity);
 
 	static String get_spatial_capability_name(XrSpatialCapabilityEXT p_capability);
 	static String get_spatial_component_type_name(XrSpatialComponentTypeEXT p_component_type);
@@ -131,23 +127,17 @@ public:
 protected:
 
 private:
-	static OpenXRSpatialEntityExtension* singleton;
-
-	bool spatial_entity_ext = false;
 
 	// Capabilities
 	struct SpatialEntityCapabality
 	{
 		Vector<XrSpatialComponentTypeEXT> component_types;
 		Vector<XrSpatialCapabilityFeatureEXT> features;
-	};
+	}; // 0 = no, 1 = yes, 2 = failed
+	static bool _load_capabilities();
 
-	HashMap<XrSpatialCapabilityEXT, SpatialEntityCapabality> supported_capabilities;
-	int capabilities_load_state = 0; // 0 = no, 1 = yes, 2 = failed
-	bool _load_capabilities();
-
-	bool _supports_capability(Capability p_capability);
-	bool _supports_component_type(Capability p_capability, ComponentType p_component_type);
+	static bool _supports_capability(Capability p_capability);
+	static bool _supports_component_type(Capability p_capability, ComponentType p_component_type);
 
 	// Spatial context
 	struct SpatialContextData
@@ -155,9 +145,7 @@ private:
 		XrSpatialContextEXT spatial_context = XR_NULL_HANDLE;
 	};
 
-	mutable RID_Owner<SpatialContextData> spatial_context_owner;
-
-	uint64_t _get_spatial_context_handle(RID p_spatial_context) const;
+	static uint64_t _get_spatial_context_handle(RID p_spatial_context);
 
 	// Snapshot data
 	struct SpatialSnapshotData
@@ -166,18 +154,16 @@ private:
 		XrSpatialSnapshotEXT spatial_snapshot = XR_NULL_HANDLE;
 	};
 
-	mutable RID_Owner<SpatialSnapshotData> spatial_snapshot_owner;
-
-	uint64_t _get_spatial_snapshot_handle(RID p_spatial_snapshot) const;
+	static uint64_t _get_spatial_snapshot_handle(RID p_spatial_snapshot);
 
 	// Buffers from snapshot
-	String _get_string(RID p_spatial_snapshot, uint64_t p_buffer_id) const;
-	PackedByteArray _get_uint8_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id) const;
-	PackedInt32Array _get_uint16_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id) const;
-	PackedInt32Array _get_uint32_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id) const;
-	PackedFloat32Array _get_float_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id) const;
-	PackedVector2Array _get_vector2_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id) const;
-	PackedVector3Array _get_vector3_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id) const;
+	static String _get_string(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedByteArray _get_uint8_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedInt32Array _get_uint16_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedInt32Array _get_uint32_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedFloat32Array _get_float_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedVector2Array _get_vector2_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedVector3Array _get_vector3_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
 
 	// Entities
 	struct SpatialEntityData
@@ -187,12 +173,10 @@ private:
 		XrSpatialEntityEXT entity = XR_NULL_HANDLE;
 	};
 
-	mutable RID_Owner<SpatialEntityData> spatial_entity_owner;
-
-	RID _find_entity(uint64_t p_entity_id);
-	RID _add_entity(RID p_spatial_context, uint64_t p_entity_id, uint64_t p_entity);
-	RID _make_entity(RID p_spatial_context, uint64_t p_entity_id);
-	uint64_t _get_entity_id(RID p_entity) const;
+	static RID _find_entity(uint64_t p_entity_id);
+	static RID _add_entity(RID p_spatial_context, uint64_t p_entity_id, uint64_t p_entity);
+	static RID _make_entity(RID p_spatial_context, uint64_t p_entity_id);
+	static uint64_t _get_entity_id(RID p_entity);
 
 	// OpenXR API call wrappers
 
@@ -251,6 +235,28 @@ private:
 	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferVector3fEXT, (XrSpatialSnapshotEXT), snapshot,
 		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
 		buffer_count_output, (XrVector3f*), buffer);
+
+public:
+	struct Data
+	{
+		bool spatial_entity_ext = false;
+		HashMap<XrSpatialCapabilityEXT, SpatialEntityCapabality> supported_capabilities;
+		int capabilities_load_state = 0;
+		RID_Owner<SpatialContextData> spatial_context_owner;
+		RID_Owner<SpatialSnapshotData> spatial_snapshot_owner;
+		RID_Owner<SpatialEntityData> spatial_entity_owner;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRSpatialEntityExtension() = delete;
+	OpenXRSpatialEntityExtension(const OpenXRSpatialEntityExtension&) = delete;
+	OpenXRSpatialEntityExtension& operator=(const OpenXRSpatialEntityExtension&) = delete;
+	~OpenXRSpatialEntityExtension() = delete;
 };
 
 

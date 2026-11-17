@@ -1073,31 +1073,41 @@ struct CaretInfo
 	TextServer::Direction t_dir;
 };
 
-class TextServerManager
+class TextServerManager final
 {
 private:
-	static TextServerManager* singleton;
+	struct Data
+	{
+		Ref<TextServer> primary_interface;
+		Vector<Ref<TextServer>> interfaces;
+	};
 
-	Ref<TextServer> primary_interface;
-	Vector<Ref<TextServer>> interfaces;
+	static inline Data* data = nullptr;
 
 public:
-	_FORCE_INLINE_ static TextServerManager* get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	void add_interface(const Ref<TextServer>& p_interface);
-	void remove_interface(const Ref<TextServer>& p_interface);
-	int get_interface_count() const;
-	Ref<TextServer> get_interface(int p_index) const;
-	Ref<TextServer> find_interface(const String& p_name) const;
+	static void add_interface(const Ref<TextServer>& p_interface);
+	static void remove_interface(const Ref<TextServer>& p_interface);
+	static int get_interface_count();
+	static Ref<TextServer> get_interface(int p_index);
+	static Ref<TextServer> find_interface(const String& p_name);
 
-	_FORCE_INLINE_ Ref<TextServer> get_primary_interface() const { return primary_interface; }
+	_FORCE_INLINE_ static Ref<TextServer> get_primary_interface()
+	{
+		return data ? data->primary_interface : Ref<TextServer>();
+	}
 
-	void set_primary_interface(const Ref<TextServer>& p_primary_interface);
+	static void set_primary_interface(const Ref<TextServer>& p_primary_interface);
 
-	TextServerManager();
-	~TextServerManager();
+	TextServerManager() = delete;
+	TextServerManager(const TextServerManager&) = delete;
+	TextServerManager& operator=(const TextServerManager&) = delete;
+	~TextServerManager() = delete;
 };
 
-#define TS TextServerManager::get_singleton()->get_primary_interface()
+#define TS TextServerManager::get_primary_interface()
 
 

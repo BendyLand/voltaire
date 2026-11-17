@@ -63,7 +63,7 @@ void WorldBoundaryShape3D::set_plane(const Plane& p_plane)
 const Plane& WorldBoundaryShape3D::get_plane() const { return plane; }
 
 WorldBoundaryShape3D::WorldBoundaryShape3D()
-	: Shape3D(PhysicsServer3D::get_singleton()->shape_create(PS3DE::SHAPE_WORLD_BOUNDARY))
+	: Shape3D(PhysicsServer3D::shape_create(PS3DE::SHAPE_WORLD_BOUNDARY))
 {
 	set_plane(Plane(0, 1, 0, 0));
 }

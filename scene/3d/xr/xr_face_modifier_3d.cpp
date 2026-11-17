@@ -431,13 +431,12 @@ void XRFaceModifier3D::_get_blend_data()
 void XRFaceModifier3D::_update_face_blends() const
 {
 	// Get the XR Server.
-	const XRServer* xr_server = XRServer::get_singleton();
-	if (!xr_server) {
+	if (!XRServer::is_initialized()) {
 		return;
 	}
 
 	// Get the face tracker.
-	const Ref<XRFaceTracker> tracker = xr_server->get_tracker(tracker_name);
+	const Ref<XRFaceTracker> tracker = XRServer::get_tracker(tracker_name);
 	if (tracker.is_null()) {
 		return;
 	}

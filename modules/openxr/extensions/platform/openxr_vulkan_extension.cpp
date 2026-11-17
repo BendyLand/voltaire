@@ -36,21 +36,20 @@
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
-OpenXRVulkanExtension* OpenXRVulkanExtension::singleton = nullptr;
-
-OpenXRVulkanExtension::OpenXRVulkanExtension()
+void OpenXRVulkanExtension::initialize()
 {
-	if (singleton == nullptr) {
-		singleton = this;
+	if (data == nullptr) {
+		data = memnew(Data);
 		VulkanHooks::bind<OpenXRVulkanExtension>();
 	}
 }
 
-OpenXRVulkanExtension::~OpenXRVulkanExtension()
+void OpenXRVulkanExtension::finalize()
 {
-	if (singleton == this) {
+	if (data != nullptr) {
 		VulkanHooks::reset();
-		singleton = nullptr;
+		memdelete(data);
+		data = nullptr;
 	}
 }
 
@@ -65,7 +64,7 @@ HashMap<String, bool*> OpenXRVulkanExtension::get_requested_extensions(XrVersion
 
 void OpenXRVulkanExtension::on_instance_created(const XrInstance p_instance)
 {
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	// Obtain pointers to functions we're accessing here, they are (not yet) part of core.
 
@@ -79,31 +78,29 @@ void OpenXRVulkanExtension::on_instance_created(const XrInstance p_instance)
 void OpenXRVulkanExtension::set_direct_queue_family_and_index(
 	uint32_t p_queue_family_index, uint32_t p_queue_index)
 {
-	ERR_FAIL_NULL(singleton);
-	singleton->vulkan_queue_family_index = p_queue_family_index;
-	singleton->vulkan_queue_index = p_queue_index;
+	ERR_FAIL_NULL(data);
+	data->vulkan_queue_family_index = p_queue_family_index;
+	data->vulkan_queue_index = p_queue_index;
 }
 
 bool OpenXRVulkanExtension::use_fragment_density_offsets()
 {
-	OpenXRFBFoveationExtension* fb_foveation = OpenXRFBFoveationExtension::get_singleton();
-	if (fb_foveation == nullptr) {
+	if (!OpenXRFBFoveationExtension::is_initialized()) {
 		return false;
 	}
 
-	return fb_foveation->is_foveation_eye_tracked_enabled();
+	return OpenXRFBFoveationExtension::is_foveation_eye_tracked_enabled();
 }
 
 void OpenXRVulkanExtension::get_fragment_density_offsets(
 	LocalVector<VkOffset2D>& r_vk_offsets, const Vector2i& p_granularity)
 {
-	OpenXRFBFoveationExtension* fb_foveation = OpenXRFBFoveationExtension::get_singleton();
-	if (fb_foveation == nullptr) {
+	if (!OpenXRFBFoveationExtension::is_initialized()) {
 		return;
 	}
 
 	LocalVector<Vector2i> offsets;
-	fb_foveation->get_fragment_density_offsets(offsets);
+	OpenXRFBFoveationExtension::get_fragment_density_offsets(offsets);
 
 	r_vk_offsets.reserve(offsets.size());
 	for (Vector2i offset : offsets) {
@@ -115,29 +112,28 @@ void OpenXRVulkanExtension::get_fragment_density_offsets(
 
 bool OpenXRVulkanExtension::use_subsampled_images()
 {
-	OpenXRFBFoveationExtension* fb_foveation = OpenXRFBFoveationExtension::get_singleton();
-	if (fb_foveation == nullptr) {
+	if (!OpenXRFBFoveationExtension::is_initialized()) {
 		return false;
 	}
 
-	return fb_foveation->is_foveation_with_subsampled_images_enabled();
+	return OpenXRFBFoveationExtension::is_foveation_with_subsampled_images_enabled();
 }
 
 XrGraphicsBindingVulkanKHR OpenXRVulkanExtension::graphics_binding_vulkan;
 
 void* OpenXRVulkanExtension::set_session_create_and_get_next_pointer(void* p_next_pointer)
 {
-	DEV_ASSERT(vulkan_queue_family_index < UINT32_MAX &&
+	DEV_ASSERT(data->vulkan_queue_family_index < UINT32_MAX &&
 			   "Direct queue family index was not specified yet.");
-	DEV_ASSERT(vulkan_queue_index < UINT32_MAX && "Direct queue index was not specified yet.");
+	DEV_ASSERT(data->vulkan_queue_index < UINT32_MAX && "Direct queue index was not specified yet.");
 
 	graphics_binding_vulkan.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
 	graphics_binding_vulkan.next = p_next_pointer;
-	graphics_binding_vulkan.instance = vulkan_instance;
-	graphics_binding_vulkan.physicalDevice = vulkan_physical_device;
-	graphics_binding_vulkan.device = vulkan_device;
-	graphics_binding_vulkan.queueFamilyIndex = vulkan_queue_family_index;
-	graphics_binding_vulkan.queueIndex = vulkan_queue_index;
+	graphics_binding_vulkan.instance = data->vulkan_instance;
+	graphics_binding_vulkan.physicalDevice = data->vulkan_physical_device;
+	graphics_binding_vulkan.device = data->vulkan_device;
+	graphics_binding_vulkan.queueFamilyIndex = data->vulkan_queue_family_index;
+	graphics_binding_vulkan.queueIndex = data->vulkan_queue_index;
 
 	return &graphics_binding_vulkan;
 }
@@ -231,7 +227,7 @@ void OpenXRVulkanExtension::cleanup_swapchain_graphics_data(void** p_swapchain_g
 		return String(#e);                                                                         \
 	} break;
 
-String OpenXRVulkanExtension::get_swapchain_format_name(int64_t p_swapchain_format) const
+String OpenXRVulkanExtension::get_swapchain_format_name(int64_t p_swapchain_format)
 {
 	// This really should be in vulkan_context...
 	VkFormat format = VkFormat(p_swapchain_format);

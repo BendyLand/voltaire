@@ -40,46 +40,66 @@
 #include "core/string/translation_server.h"
 #endif // DISABLE_DEPRECATED
 
-TextServerManager* TextServerManager::singleton = nullptr;
+void TextServerManager::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+}
+
+void TextServerManager::finalize()
+{
+	if (!data) {
+		return;
+	}
+	if (data->primary_interface.is_valid()) {
+		data->primary_interface.unref();
+	}
+	while (data->interfaces.size() > 0) {
+		data->interfaces.remove_at(0);
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
 void TextServerManager::add_interface(const Ref<TextServer>& p_interface)
 {
-	interfaces.append(p_interface);
+	ERR_FAIL_NULL(data);
+	data->interfaces.append(p_interface);
 }
 
-int TextServerManager::get_interface_count() const { return interfaces.size(); }
-
-Ref<TextServer> TextServerManager::get_interface(int p_index) const
+void TextServerManager::remove_interface(const Ref<TextServer>& p_interface)
 {
-	ERR_FAIL_INDEX_V(p_index, interfaces.size(), nullptr);
-	return interfaces[p_index];
+	ERR_FAIL_NULL(data);
+	data->interfaces.erase(p_interface);
 }
 
-Ref<TextServer> TextServerManager::find_interface(const String& p_name) const
+int TextServerManager::get_interface_count()
 {
+	return data ? data->interfaces.size() : 0;
+}
+
+Ref<TextServer> TextServerManager::get_interface(int p_index)
+{
+	ERR_FAIL_NULL_V(data, nullptr);
+	ERR_FAIL_INDEX_V(p_index, data->interfaces.size(), nullptr);
+	return data->interfaces[p_index];
+}
+
+Ref<TextServer> TextServerManager::find_interface(const String& p_name)
+{
+	ERR_FAIL_NULL_V(data, nullptr);
 	int idx = -1;
-	for (int i = 0; i < interfaces.size(); i++) {
-		if (interfaces[i]->get_name() == p_name) {
+	for (int i = 0; i < data->interfaces.size(); i++) {
+		if (data->interfaces[i]->get_name() == p_name) {
 			idx = i;
 			break;
-		};
-	};
+		}
+	}
 
 	ERR_FAIL_COND_V_MSG(idx == -1, nullptr, "Interface not found.");
-	return interfaces[idx];
-}
-
-TextServerManager::TextServerManager() { singleton = this; }
-
-TextServerManager::~TextServerManager()
-{
-	if (primary_interface.is_valid()) {
-		primary_interface.unref();
-	}
-	while (interfaces.size() > 0) {
-		interfaces.remove_at(0);
-	}
-	singleton = nullptr;
+	return data->interfaces[idx];
 }
 
 bool Glyph::operator==(const Glyph& p_a) const
@@ -1243,22 +1263,22 @@ String TextServer::strip_diacritics(const String& p_string) const
 String TextServer::format_number(const String& p_string, const String& p_language) const
 {
 	const String lang =
-		p_language.is_empty() ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
-	return TranslationServer::get_singleton()->format_number(p_string, lang);
+		p_language.is_empty() ? TranslationServer::get_tool_locale() : p_language;
+	return TranslationServer::format_number(p_string, lang);
 }
 
 String TextServer::parse_number(const String& p_string, const String& p_language) const
 {
 	const String lang =
-		p_language.is_empty() ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
-	return TranslationServer::get_singleton()->parse_number(p_string, lang);
+		p_language.is_empty() ? TranslationServer::get_tool_locale() : p_language;
+	return TranslationServer::parse_number(p_string, lang);
 }
 
 String TextServer::percent_sign(const String& p_language) const
 {
 	const String lang =
-		p_language.is_empty() ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
-	return TranslationServer::get_singleton()->get_percent_sign(lang);
+		p_language.is_empty() ? TranslationServer::get_tool_locale() : p_language;
+	return TranslationServer::get_percent_sign(lang);
 }
 #endif // DISABLE_DEPRECATED
 

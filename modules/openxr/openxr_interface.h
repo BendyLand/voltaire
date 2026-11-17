@@ -66,7 +66,6 @@
 class OpenXRInterface : public XRInterface
 {
 private:
-	OpenXRAPI* openxr_api = nullptr;
 	bool initialized = false;
 	bool reference_stage_changing = false;
 	XRInterface::TrackingStatus tracking_state;

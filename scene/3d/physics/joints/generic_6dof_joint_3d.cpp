@@ -120,7 +120,7 @@ void Generic6DOFJoint3D::set_angular_target_rotation(const Quaternion& p_target_
 		return;
 	}
 
-	PhysicsServer3D::get_singleton()->generic_6dof_joint_set_angular_target_rotation(
+	PhysicsServer3D::generic_6dof_joint_set_angular_target_rotation(
 		get_rid(), angular_target_rotation);
 }
 
@@ -131,7 +131,7 @@ Quaternion Generic6DOFJoint3D::get_angular_target_rotation() const
 	}
 
 	if (is_configured()) {
-		return PhysicsServer3D::get_singleton()->generic_6dof_joint_get_angular_target_rotation(
+		return PhysicsServer3D::generic_6dof_joint_get_angular_target_rotation(
 			get_rid());
 	}
 
@@ -157,14 +157,13 @@ void Generic6DOFJoint3D::clear_angular_target_rotation()
 		return;
 	}
 
-	PhysicsServer3D* server = PhysicsServer3D::get_singleton();
-	server->generic_6dof_joint_set_param(get_rid(), Vector3::AXIS_X,
+	PhysicsServer3D::generic_6dof_joint_set_param(get_rid(), Vector3::AXIS_X,
 		PS3DE::G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT,
 		params_x[PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT]);
-	server->generic_6dof_joint_set_param(get_rid(), Vector3::AXIS_Y,
+	PhysicsServer3D::generic_6dof_joint_set_param(get_rid(), Vector3::AXIS_Y,
 		PS3DE::G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT,
 		params_y[PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT]);
-	server->generic_6dof_joint_set_param(get_rid(), Vector3::AXIS_Z,
+	PhysicsServer3D::generic_6dof_joint_set_param(get_rid(), Vector3::AXIS_Z,
 		PS3DE::G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT,
 		params_z[PARAM_ANGULAR_SPRING_EQUILIBRIUM_POINT]);
 }
@@ -188,34 +187,34 @@ void Generic6DOFJoint3D::_configure_joint(RID p_joint, PhysicsBody3D* body_a, Ph
 
 	local_b.orthonormalize();
 
-	PhysicsServer3D::get_singleton()->joint_make_generic_6dof(
+	PhysicsServer3D::joint_make_generic_6dof(
 		p_joint, body_a->get_rid(), local_a, body_b ? body_b->get_rid() : RID(), local_b);
 	for (int i = 0; i < PARAM_MAX; i++) {
 		const Param param = static_cast<Param>(i);
 		if (_should_replay_param(Vector3::AXIS_X, param)) {
-			PhysicsServer3D::get_singleton()->generic_6dof_joint_set_param(
+			PhysicsServer3D::generic_6dof_joint_set_param(
 				p_joint, Vector3::AXIS_X, PS3DE::G6DOFJointAxisParam(i), params_x[i]);
 		}
 		if (_should_replay_param(Vector3::AXIS_Y, param)) {
-			PhysicsServer3D::get_singleton()->generic_6dof_joint_set_param(
+			PhysicsServer3D::generic_6dof_joint_set_param(
 				p_joint, Vector3::AXIS_Y, PS3DE::G6DOFJointAxisParam(i), params_y[i]);
 		}
 		if (_should_replay_param(Vector3::AXIS_Z, param)) {
-			PhysicsServer3D::get_singleton()->generic_6dof_joint_set_param(
+			PhysicsServer3D::generic_6dof_joint_set_param(
 				p_joint, Vector3::AXIS_Z, PS3DE::G6DOFJointAxisParam(i), params_z[i]);
 		}
 	}
 	for (int i = 0; i < FLAG_MAX; i++) {
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_flag(
+		PhysicsServer3D::generic_6dof_joint_set_flag(
 			p_joint, Vector3::AXIS_X, PS3DE::G6DOFJointAxisFlag(i), flags_x[i]);
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_flag(
+		PhysicsServer3D::generic_6dof_joint_set_flag(
 			p_joint, Vector3::AXIS_Y, PS3DE::G6DOFJointAxisFlag(i), flags_y[i]);
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_flag(
+		PhysicsServer3D::generic_6dof_joint_set_flag(
 			p_joint, Vector3::AXIS_Z, PS3DE::G6DOFJointAxisFlag(i), flags_z[i]);
 	}
 
 	if (has_angular_target_rotation) {
-		PhysicsServer3D::get_singleton()->generic_6dof_joint_set_angular_target_rotation(
+		PhysicsServer3D::generic_6dof_joint_set_angular_target_rotation(
 			p_joint, angular_target_rotation);
 	}
 }

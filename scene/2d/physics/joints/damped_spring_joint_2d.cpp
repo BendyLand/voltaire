@@ -62,15 +62,15 @@ void DampedSpringJoint2D::_configure_joint(
 	Vector2 anchor_A = gt.get_origin();
 	Vector2 anchor_B = gt.xform(Vector2(0, length));
 
-	PhysicsServer2D::get_singleton()->joint_make_damped_spring(
+	PhysicsServer2D::joint_make_damped_spring(
 		p_joint, anchor_A, anchor_B, body_a->get_rid(), body_b->get_rid());
 	if (rest_length) {
-		PhysicsServer2D::get_singleton()->damped_spring_joint_set_param(
+		PhysicsServer2D::damped_spring_joint_set_param(
 			p_joint, PS2DE::DAMPED_SPRING_REST_LENGTH, rest_length);
 	}
-	PhysicsServer2D::get_singleton()->damped_spring_joint_set_param(
+	PhysicsServer2D::damped_spring_joint_set_param(
 		p_joint, PS2DE::DAMPED_SPRING_STIFFNESS, stiffness);
-	PhysicsServer2D::get_singleton()->damped_spring_joint_set_param(
+	PhysicsServer2D::damped_spring_joint_set_param(
 		p_joint, PS2DE::DAMPED_SPRING_DAMPING, damping);
 }
 

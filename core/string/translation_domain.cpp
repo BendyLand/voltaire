@@ -219,7 +219,7 @@ String TranslationDomain::get_message_from_translations(
 	int best_score = 0;
 
 	for (const Ref<Translation>& E : translations) {
-		int score = TranslationServer::get_singleton()->compare_locales(p_locale, E->get_locale());
+		int score = TranslationServer::compare_locales(p_locale, E->get_locale());
 		if (score > 0 && score >= best_score) {
 			const String r = E->get_message(p_message, p_context);
 			if (r.is_empty()) {
@@ -244,7 +244,7 @@ String TranslationDomain::get_message_from_translations(const String& p_locale,
 	int best_score = 0;
 
 	for (const Ref<Translation>& E : translations) {
-		int score = TranslationServer::get_singleton()->compare_locales(p_locale, E->get_locale());
+		int score = TranslationServer::compare_locales(p_locale, E->get_locale());
 		if (score > 0 && score >= best_score) {
 			const String r = E->get_plural_message(p_message, p_message_plural, p_n, p_context);
 			if (r.is_empty()) {
@@ -280,7 +280,7 @@ Ref<Translation> TranslationDomain::get_translation_object(const String& p_local
 	int best_score = 0;
 
 	for (const Ref<Translation>& E : translations) {
-		int score = TranslationServer::get_singleton()->compare_locales(p_locale, E->get_locale());
+		int score = TranslationServer::compare_locales(p_locale, E->get_locale());
 		if (score > 0 && score >= best_score) {
 			res = E;
 			best_score = score;
@@ -324,7 +324,7 @@ HashSet<Ref<Translation>> TranslationDomain::find_translations(
 	}
 	else {
 		for (const Ref<Translation>& E : translations) {
-			if (TranslationServer::get_singleton()->compare_locales(p_locale, E->get_locale()) >
+			if (TranslationServer::compare_locales(p_locale, E->get_locale()) >
 				0) {
 				res.insert(E);
 			}
@@ -349,7 +349,7 @@ bool TranslationDomain::has_translation_for_locale(const String& p_locale, bool 
 	}
 	else {
 		for (const Ref<Translation>& E : translations) {
-			if (TranslationServer::get_singleton()->compare_locales(p_locale, E->get_locale()) >
+			if (TranslationServer::compare_locales(p_locale, E->get_locale()) >
 				0) {
 				return true;
 			}
@@ -366,12 +366,12 @@ String TranslationDomain::translate(
 	}
 
 	const String& locale = locale_override.is_empty()
-							   ? TranslationServer::get_singleton()->get_locale()
+							   ? TranslationServer::get_locale()
 							   : locale_override;
 	String res = get_message_from_translations(locale, p_message, p_context);
 
-	const bool& allow_fallback = TranslationServer::get_singleton()->is_fallback_allowed();
-	const String& fallback = TranslationServer::get_singleton()->get_fallback_locale();
+	const bool& allow_fallback = TranslationServer::is_fallback_allowed();
+	const String& fallback = TranslationServer::get_fallback_locale();
 	if (res.is_empty() && allow_fallback && fallback.length() >= 2) {
 		res = get_message_from_translations(fallback, p_message, p_context);
 	}
@@ -390,13 +390,13 @@ String TranslationDomain::translate_plural(const String& p_message,
 	}
 
 	const String& locale = locale_override.is_empty()
-							   ? TranslationServer::get_singleton()->get_locale()
+							   ? TranslationServer::get_locale()
 							   : locale_override;
 	String res =
 		get_message_from_translations(locale, p_message, p_message_plural, p_n, p_context);
 
-	const bool& allow_fallback = TranslationServer::get_singleton()->is_fallback_allowed();
-	const String& fallback = TranslationServer::get_singleton()->get_fallback_locale();
+	const bool& allow_fallback = TranslationServer::is_fallback_allowed();
+	const String& fallback = TranslationServer::get_fallback_locale();
 	if (res.is_empty() && allow_fallback && fallback.length() >= 2) {
 		res = get_message_from_translations(fallback, p_message, p_message_plural, p_n, p_context);
 	}
@@ -416,7 +416,7 @@ void TranslationDomain::set_locale_override(const String& p_locale)
 {
 	locale_override = p_locale.is_empty()
 						  ? p_locale
-						  : TranslationServer::get_singleton()->standardize_locale(p_locale);
+						  : TranslationServer::standardize_locale(p_locale);
 }
 
 bool TranslationDomain::is_enabled() const { return enabled; }

@@ -37,21 +37,20 @@
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
 
-OpenXRD3D12Extension* OpenXRD3D12Extension::singleton = nullptr;
-
-OpenXRD3D12Extension::OpenXRD3D12Extension()
+void OpenXRD3D12Extension::initialize()
 {
-	if (singleton == nullptr) {
-		singleton = this;
+	if (data == nullptr) {
+		data = memnew(Data);
 		D3D12Hooks::bind<OpenXRD3D12Extension>();
 	}
 }
 
-OpenXRD3D12Extension::~OpenXRD3D12Extension()
+void OpenXRD3D12Extension::finalize()
 {
-	if (singleton == this) {
+	if (data != nullptr) {
 		D3D12Hooks::reset();
-		singleton = nullptr;
+		memdelete(data);
+		data = nullptr;
 	}
 }
 
@@ -67,7 +66,7 @@ HashMap<String, bool*> OpenXRD3D12Extension::get_requested_extensions(XrVersion 
 void OpenXRD3D12Extension::on_instance_created(const XrInstance p_instance)
 {
 	// Obtain pointers to functions we're accessing here.
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	EXT_INIT_XR_FUNC(xrGetD3D12GraphicsRequirementsKHR);
 	EXT_INIT_XR_FUNC(xrEnumerateSwapchainImages);
@@ -75,8 +74,8 @@ void OpenXRD3D12Extension::on_instance_created(const XrInstance p_instance)
 
 D3D_FEATURE_LEVEL OpenXRD3D12Extension::get_feature_level()
 {
-	ERR_FAIL_NULL_V(singleton, D3D_FEATURE_LEVEL_11_0);
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), D3D_FEATURE_LEVEL_11_0);
+	ERR_FAIL_NULL_V(data, D3D_FEATURE_LEVEL_11_0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), D3D_FEATURE_LEVEL_11_0);
 
 	XrGraphicsRequirementsD3D12KHR d3d12_requirements = {
 		XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR, // type
@@ -85,12 +84,12 @@ D3D_FEATURE_LEVEL OpenXRD3D12Extension::get_feature_level()
 		(D3D_FEATURE_LEVEL)0					 // minFeatureLevel
 	};
 
-	XrResult result = singleton->xrGetD3D12GraphicsRequirementsKHR(
-		OpenXRAPI::get_singleton()->get_instance(), OpenXRAPI::get_singleton()->get_system_id(),
+	XrResult result = xrGetD3D12GraphicsRequirementsKHR(
+		OpenXRAPI::get_instance(), OpenXRAPI::get_system_id(),
 		&d3d12_requirements);
 	if (XR_FAILED(result)) {
 		print_line("OpenXR: Failed to get Direct3D 12 graphics requirements [",
-			OpenXRAPI::get_singleton()->get_error_string(result), "]");
+			OpenXRAPI::get_error_string(result), "]");
 		return D3D_FEATURE_LEVEL_11_0; // Good default.
 	}
 
@@ -104,8 +103,8 @@ D3D_FEATURE_LEVEL OpenXRD3D12Extension::get_feature_level()
 
 LUID OpenXRD3D12Extension::get_adapter_luid()
 {
-	ERR_FAIL_NULL_V(singleton, LUID{});
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), LUID{});
+	ERR_FAIL_NULL_V(data, LUID{});
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), LUID{});
 
 	XrGraphicsRequirementsD3D12KHR d3d12_requirements = {
 		XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR, // type
@@ -114,12 +113,12 @@ LUID OpenXRD3D12Extension::get_adapter_luid()
 		(D3D_FEATURE_LEVEL)0					 // minFeatureLevel
 	};
 
-	XrResult result = singleton->xrGetD3D12GraphicsRequirementsKHR(
-		OpenXRAPI::get_singleton()->get_instance(), OpenXRAPI::get_singleton()->get_system_id(),
+	XrResult result = xrGetD3D12GraphicsRequirementsKHR(
+		OpenXRAPI::get_instance(), OpenXRAPI::get_system_id(),
 		&d3d12_requirements);
 	if (XR_FAILED(result)) {
 		print_line("OpenXR: Failed to get Direct3D 12 graphics requirements [",
-			OpenXRAPI::get_singleton()->get_error_string(result), "]");
+			OpenXRAPI::get_error_string(result), "]");
 		return {};
 	}
 
@@ -128,34 +127,34 @@ LUID OpenXRD3D12Extension::get_adapter_luid()
 
 void OpenXRD3D12Extension::set_device(ID3D12Device* p_device)
 {
-	ERR_FAIL_NULL(singleton);
-	singleton->graphics_device = p_device;
+	ERR_FAIL_NULL(data);
+	data->graphics_device = p_device;
 }
 
 void OpenXRD3D12Extension::set_command_queue(ID3D12CommandQueue* p_queue)
 {
-	ERR_FAIL_NULL(singleton);
-	singleton->command_queue = p_queue;
+	ERR_FAIL_NULL(data);
+	data->command_queue = p_queue;
 }
 
 void OpenXRD3D12Extension::cleanup_device()
 {
-	ERR_FAIL_NULL(singleton);
-	singleton->command_queue.Reset();
-	singleton->graphics_device.Reset();
+	ERR_FAIL_NULL(data);
+	data->command_queue.Reset();
+	data->graphics_device.Reset();
 }
 
 XrGraphicsBindingD3D12KHR OpenXRD3D12Extension::graphics_binding_d3d12;
 
 void* OpenXRD3D12Extension::set_session_create_and_get_next_pointer(void* p_next_pointer)
 {
-	DEV_ASSERT(graphics_device && "Graphics Device was not specified yet.");
-	DEV_ASSERT(command_queue && "Command queue was not specified yet.");
+	DEV_ASSERT(data->graphics_device && "Graphics Device was not specified yet.");
+	DEV_ASSERT(data->command_queue && "Command queue was not specified yet.");
 
 	graphics_binding_d3d12.type = XR_TYPE_GRAPHICS_BINDING_D3D12_KHR,
 	graphics_binding_d3d12.next = p_next_pointer;
-	graphics_binding_d3d12.device = graphics_device.Get();
-	graphics_binding_d3d12.queue = command_queue.Get();
+	graphics_binding_d3d12.device = data->graphics_device.Get();
+	graphics_binding_d3d12.queue = data->command_queue.Get();
 
 	return &graphics_binding_d3d12;
 }
@@ -187,7 +186,7 @@ bool OpenXRD3D12Extension::get_swapchain_image_data(XrSwapchain p_swapchain,
 	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
 	if (XR_FAILED(result)) {
 		print_line("OpenXR: Failed to get swapchain image count [",
-			OpenXRAPI::get_singleton()->get_error_string(result), "]");
+			OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -204,7 +203,7 @@ bool OpenXRD3D12Extension::get_swapchain_image_data(XrSwapchain p_swapchain,
 		(XrSwapchainImageBaseHeader*)images.ptr());
 	if (XR_FAILED(result)) {
 		print_line("OpenXR: Failed to get swapchain images [",
-			OpenXRAPI::get_singleton()->get_error_string(result), "]");
+			OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -363,7 +362,7 @@ void OpenXRD3D12Extension::cleanup_swapchain_graphics_data(void** p_swapchain_gr
 		return String(#e);                                                                         \
 	} break;
 
-String OpenXRD3D12Extension::get_swapchain_format_name(int64_t p_swapchain_format) const
+String OpenXRD3D12Extension::get_swapchain_format_name(int64_t p_swapchain_format)
 {
 	// These are somewhat different per platform, will need to weed some stuff out...
 	switch (p_swapchain_format) {

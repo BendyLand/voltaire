@@ -382,9 +382,9 @@ bool EditorNode::_is_project_data_missing()
 		}
 	}
 
-	String uid_cache = ResourceUID::get_singleton()->get_cache_file();
+	String uid_cache = ResourceUID::get_cache_file();
 	if (!da->file_exists(uid_cache)) {
-		Error err = ResourceUID::get_singleton()->save_to_cache();
+		Error err = ResourceUID::save_to_cache();
 		if (err != OK) {
 			ERR_PRINT("Failed to create file " + uid_cache.quote() + ".");
 		}
@@ -654,14 +654,14 @@ bool EditorNode::is_addon_plugin_enabled(const String& p_addon) const
 String EditorNode::get_preview_locale() const
 {
 	const Ref<TranslationDomain>& main_domain =
-		TranslationServer::get_singleton()->get_main_domain();
+		TranslationServer::get_main_domain();
 	return main_domain->is_enabled() ? main_domain->get_locale_override() : String();
 }
 
 bool EditorNode::is_pseudolocalization_enabled() const
 {
 	const Ref<TranslationDomain>& main_domain =
-		TranslationServer::get_singleton()->get_main_domain();
+		TranslationServer::get_main_domain();
 	return main_domain->is_pseudolocalization_enabled();
 }
 

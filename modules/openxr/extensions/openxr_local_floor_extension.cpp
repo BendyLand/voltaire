@@ -32,14 +32,23 @@
 #include "../openxr_api.h"
 #include "openxr_local_floor_extension.h"
 
-OpenXRLocalFloorExtension* OpenXRLocalFloorExtension::singleton = nullptr;
+void OpenXRLocalFloorExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
 
-OpenXRLocalFloorExtension* OpenXRLocalFloorExtension::get_singleton() { return singleton; }
+void OpenXRLocalFloorExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
-OpenXRLocalFloorExtension::OpenXRLocalFloorExtension() { singleton = this; }
 
-OpenXRLocalFloorExtension::~OpenXRLocalFloorExtension() { singleton = nullptr; }
-
-bool OpenXRLocalFloorExtension::is_available() { return available; }
+bool OpenXRLocalFloorExtension::is_available() { return data != nullptr && data->available; }
 
 

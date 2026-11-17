@@ -160,11 +160,11 @@ static String _get_resolved_dep_path(const String& p_dep)
 	}
 
 	const String uid_text = p_dep.get_slice("::", 0);
-	ResourceUID::ID uid = ResourceUID::get_singleton()->text_to_id(uid_text);
+	ResourceUID::ID uid = ResourceUID::text_to_id(uid_text);
 
 	// Dependency is in UID format, obtain proper path.
-	if (uid != ResourceUID::INVALID_ID && ResourceUID::get_singleton()->has_id(uid)) {
-		return ResourceUID::get_singleton()->get_id_path(uid);
+	if (uid != ResourceUID::INVALID_ID && ResourceUID::has_id(uid)) {
+		return ResourceUID::get_id_path(uid);
 	}
 
 	// UID fallback path.

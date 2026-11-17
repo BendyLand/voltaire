@@ -39,10 +39,8 @@
 #include "servers/physics_2d/queries/physics_testmotion_query_parameters_2d.h"
 #include "servers/physics_2d/queries/physics_testmotion_query_result_2d.h"
 
-class PhysicsServer2D
+class PhysicsServer2DDriver
 {
-	static PhysicsServer2D* singleton;
-
 	virtual bool _body_test_motion(RID p_body, PhysicsTestMotionParameters2D* rp_parameters,
 		const Ref<PhysicsTestMotionResult2D>& p_result = Ref<PhysicsTestMotionResult2D>());
 
@@ -55,8 +53,6 @@ protected:
 #endif
 
 public:
-	static PhysicsServer2D* get_singleton();
-
 	virtual RID world_boundary_shape_create() = 0;
 	virtual RID separation_ray_shape_create() = 0;
 	virtual RID segment_shape_create() = 0;
@@ -277,35 +273,189 @@ public:
 
 	virtual int get_process_info(PS2DE::ProcessInfo p_info) = 0;
 
-	PhysicsServer2D() = default;
-	~PhysicsServer2D();
+	PhysicsServer2DDriver() = default;
+	virtual ~PhysicsServer2DDriver() = default;
 };
 
-class PhysicsServer2DManager
+
+class PhysicsServer2D final
 {
-	static PhysicsServer2DManager* singleton;
+public:
+	struct Data
+	{
+		PhysicsServer2DDriver* driver = nullptr;
+	};
 
-	int default_server_id = -1;
-	int default_server_priority = -1;
+	static inline Data* data = nullptr;
 
-	void on_servers_changed();
+	static void initialize(PhysicsServer2DDriver* p_driver);
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized()
+	{
+		return data != nullptr && data->driver != nullptr;
+	}
+	_FORCE_INLINE_ static PhysicsServer2DDriver* get_driver() { return data ? data->driver : nullptr; }
+	template <typename T> _FORCE_INLINE_ static T* driver_as()
+	{
+		return data ? dynamic_cast<T*>(data->driver) : nullptr;
+	}
 
-protected:
+	static RID world_boundary_shape_create();
+	static RID separation_ray_shape_create();
+	static RID segment_shape_create();
+	static RID circle_shape_create();
+	static RID rectangle_shape_create();
+	static RID capsule_shape_create();
+	static RID convex_polygon_shape_create();
+	static RID concave_polygon_shape_create();
+	static void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
+	static PS2DE::ShapeType shape_get_type(RID p_shape);
+	static real_t shape_get_custom_solver_bias(RID p_shape);
+	static bool shape_collide(RID p_shape_A, const Transform2D& p_xform_A, const Vector2& p_motion_A, RID p_shape_B, const Transform2D& p_xform_B, const Vector2& p_motion_B, Vector2* r_results, int p_result_max, int& r_result_count);
+	static RID space_create();
+	static void space_set_active(RID p_space, bool p_active);
+	static bool space_is_active(RID p_space);
+	static void space_set_param(RID p_space, PS2DE::SpaceParameter p_param, real_t p_value);
+	static real_t space_get_param(RID p_space, PS2DE::SpaceParameter p_param);
+	static PhysicsDirectSpaceState2D* space_get_direct_state(RID p_space);
+	static void space_set_debug_contacts(RID p_space, int p_max_contacts);
+	static Vector<Vector2> space_get_contacts(RID p_space);
+	static int space_get_contact_count(RID p_space);
+	static RID area_create();
+	static void area_set_space(RID p_area, RID p_space);
+	static RID area_get_space(RID p_area);
+	static void area_add_shape(RID p_area, RID p_shape, const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	static void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
+	static void area_set_shape_transform(RID p_area, int p_shape_idx, const Transform2D& p_transform);
+	static int area_get_shape_count(RID p_area);
+	static RID area_get_shape(RID p_area, int p_shape_idx);
+	static Transform2D area_get_shape_transform(RID p_area, int p_shape_idx);
+	static void area_remove_shape(RID p_area, int p_shape_idx);
+	static void area_clear_shapes(RID p_area);
+	static void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled);
+	static void area_set_transform(RID p_area, const Transform2D& p_transform);
+	static Transform2D area_get_transform(RID p_area);
+	static void area_set_collision_layer(RID p_area, uint32_t p_layer);
+	static uint32_t area_get_collision_layer(RID p_area);
+	static void area_set_collision_mask(RID p_area, uint32_t p_mask);
+	static uint32_t area_get_collision_mask(RID p_area);
+	static void area_set_monitorable(RID p_area, bool p_monitorable);
+	static void area_set_pickable(RID p_area, bool p_pickable);
+	static RID body_create();
+	static void body_set_space(RID p_body, RID p_space);
+	static RID body_get_space(RID p_body);
+	static void body_set_mode(RID p_body, PS2DE::BodyMode p_mode);
+	static PS2DE::BodyMode body_get_mode(RID p_body);
+	static void body_add_shape(RID p_body, RID p_shape, const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	static void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
+	static void body_set_shape_transform(RID p_body, int p_shape_idx, const Transform2D& p_transform);
+	static int body_get_shape_count(RID p_body);
+	static RID body_get_shape(RID p_body, int p_shape_idx);
+	static Transform2D body_get_shape_transform(RID p_body, int p_shape_idx);
+	static void body_set_shape_disabled(RID p_body, int p_shape, bool p_disabled);
+	static void body_set_shape_as_one_way_collision(RID p_body, int p_shape, bool p_enabled, real_t p_margin = 0, const Vector2& p_direction = Vector2(0, 1));
+	static void body_remove_shape(RID p_body, int p_shape_idx);
+	static void body_clear_shapes(RID p_body);
+	static void body_set_continuous_collision_detection_mode(RID p_body, PS2DE::CCDMode p_mode);
+	static PS2DE::CCDMode body_get_continuous_collision_detection_mode(RID p_body);
+	static void body_set_collision_layer(RID p_body, uint32_t p_layer);
+	static uint32_t body_get_collision_layer(RID p_body);
+	static void body_set_collision_mask(RID p_body, uint32_t p_mask);
+	static uint32_t body_get_collision_mask(RID p_body);
+	static void body_set_collision_priority(RID p_body, real_t p_priority);
+	static real_t body_get_collision_priority(RID p_body);
+	static void body_reset_mass_properties(RID p_body);
+	static void body_apply_central_impulse(RID p_body, const Vector2& p_impulse);
+	static void body_apply_torque_impulse(RID p_body, real_t p_torque);
+	static void body_apply_impulse(RID p_body, const Vector2& p_impulse, const Vector2& p_position = Vector2());
+	static void body_apply_central_force(RID p_body, const Vector2& p_force);
+	static void body_apply_force(RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	static void body_apply_torque(RID p_body, real_t p_torque);
+	static void body_add_constant_central_force(RID p_body, const Vector2& p_force);
+	static void body_add_constant_force(RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	static void body_add_constant_torque(RID p_body, real_t p_torque);
+	static void body_set_constant_force(RID p_body, const Vector2& p_force);
+	static Vector2 body_get_constant_force(RID p_body);
+	static void body_set_constant_torque(RID p_body, real_t p_torque);
+	static real_t body_get_constant_torque(RID p_body);
+	static void body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity);
+	static void body_add_collision_exception(RID p_body, RID p_body_b);
+	static void body_remove_collision_exception(RID p_body, RID p_body_b);
+	static void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+	static void body_set_max_contacts_reported(RID p_body, int p_contacts);
+	static int body_get_max_contacts_reported(RID p_body);
+	static void body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold);
+	static real_t body_get_contacts_reported_depth_threshold(RID p_body);
+	static void body_set_omit_force_integration(RID p_body, bool p_omit);
+	static bool body_is_omitting_force_integration(RID p_body);
+	static bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape, const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results, int p_result_max, int& r_result_count);
+	static void body_set_pickable(RID p_body, bool p_pickable);
+	static PhysicsDirectBodyState2D* body_get_direct_state(RID p_body);
+	static bool body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters, PS2DT::MotionResult* r_result = nullptr);
+	static RID joint_create();
+	static void joint_clear(RID p_joint);
+	static void joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value);
+	static real_t joint_get_param(RID p_joint, PS2DE::JointParam p_param);
+	static void joint_disable_collisions_between_bodies(RID p_joint, const bool p_disable);
+	static bool joint_is_disabled_collisions_between_bodies(RID p_joint);
+	static void joint_make_pin(RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b = RID());
+	static void joint_make_groove(RID p_joint, const Vector2& p_a_groove1, const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b);
+	static void joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a, const Vector2& p_anchor_b, RID p_body_a, RID p_body_b = RID());
+	static void pin_joint_set_param(RID p_joint, PS2DE::PinJointParam p_param, real_t p_value);
+	static real_t pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param);
+	static void pin_joint_set_flag(RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled);
+	static bool pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag);
+	static void damped_spring_joint_set_param(RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value);
+	static real_t damped_spring_joint_get_param(RID p_joint, PS2DE::DampedSpringParam p_param);
+	static PS2DE::JointType joint_get_type(RID p_joint);
+	static void free_rid(RID p_rid);
+	static void set_active(bool p_active);
+	static void init();
+	static void step(real_t p_step);
+	static void sync();
+	static void flush_queries();
+	static void end_sync();
+	static void finish();
+	static bool is_flushing_queries();
+	static int get_process_info(PS2DE::ProcessInfo p_info);
+#ifndef DISABLE_DEPRECATED
+	[[deprecated("Use `free_rid()` instead.")]] static void free(RID p_rid) { free_rid(p_rid); }
+#endif // DISABLE_DEPRECATED
+
+	PhysicsServer2D() = delete;
+	PhysicsServer2D(const PhysicsServer2D&) = delete;
+	PhysicsServer2D& operator=(const PhysicsServer2D&) = delete;
+	~PhysicsServer2D() = delete;
+};
+
+class PhysicsServer2DManager final
+{
+	struct Data
+	{
+		int default_server_id = -1;
+		int default_server_priority = -1;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void on_servers_changed();
 
 public:
 	static const String setting_property_name;
 
-	static PhysicsServer2DManager* get_singleton();
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	void set_default_server(const String& p_name, int p_priority = 0);
-	int find_server_id(const String& p_name);
-	int get_servers_count();
-	String get_server_name(int p_id);
-	PhysicsServer2D* new_default_server();
-	PhysicsServer2D* new_server(const String& p_name);
+	static void set_default_server(const String& p_name, int p_priority = 0);
+	static int find_server_id(const String& p_name);
+	static int get_servers_count();
+	static String get_server_name(int p_id);
+	static PhysicsServer2DDriver* new_default_server();
+	static PhysicsServer2DDriver* new_server(const String& p_name);
 
-	PhysicsServer2DManager();
-	~PhysicsServer2DManager();
+	PhysicsServer2DManager() = delete;
+	PhysicsServer2DManager(const PhysicsServer2DManager&) = delete;
+	PhysicsServer2DManager& operator=(const PhysicsServer2DManager&) = delete;
+	~PhysicsServer2DManager() = delete;
 };
-
-

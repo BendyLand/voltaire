@@ -105,8 +105,6 @@
 #include "editor/editor_node.h"
 #endif
 
-static OpenXRAPI* openxr_api = nullptr;
-static OpenXRInteractionProfileMetadata* openxr_interaction_profile_metadata = nullptr;
 static Ref<OpenXRInterface> openxr_interface;
 
 void uninitialize_openxr_module(ModuleInitializationLevel p_level)
@@ -122,28 +120,23 @@ void uninitialize_openxr_module(ModuleInitializationLevel p_level)
 		}
 
 		// unregister our interface from the XR server
-		XRServer* xr_server = XRServer::get_singleton();
-		if (xr_server) {
-			if (xr_server->get_primary_interface() == openxr_interface) {
-				xr_server->set_primary_interface(Ref<XRInterface>());
+		if (XRServer::is_initialized()) {
+			if (XRServer::get_primary_interface() == openxr_interface) {
+				XRServer::set_primary_interface(Ref<XRInterface>());
 			}
-			xr_server->remove_interface(openxr_interface);
+			XRServer::remove_interface(openxr_interface);
 		}
 
 		// and release
 		openxr_interface.unref();
 	}
 
-	if (openxr_api) {
-		openxr_api->finish();
-
-		memdelete(openxr_api);
-		openxr_api = nullptr;
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::finalize();
 	}
 
-	if (openxr_interaction_profile_metadata) {
-		memdelete(openxr_interaction_profile_metadata);
-		openxr_interaction_profile_metadata = nullptr;
+	if (OpenXRInteractionProfileMetadata::is_initialized()) {
+		OpenXRInteractionProfileMetadata::finalize();
 	}
 
 	// cleanup our extension wrappers

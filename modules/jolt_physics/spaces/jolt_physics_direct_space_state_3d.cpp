@@ -223,7 +223,7 @@ bool JoltPhysicsDirectSpaceState3D::collide_shape(const PS3DT::ShapeParameters& 
 
 	space->flush_pending_objects();
 
-	JoltShape3D* shape = JoltPhysicsServer3D::get_singleton()->get_shape(p_parameters.shape_rid);
+	JoltShape3D* shape = PhysicsServer3D::driver_as<JoltPhysicsServer3D>()->get_shape(p_parameters.shape_rid);
 	ERR_FAIL_NULL_V(shape, false);
 
 	const JPH::ShapeRefC jolt_shape = shape->try_build();
@@ -299,7 +299,7 @@ Vector3 JoltPhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
 
 	space->flush_pending_objects();
 
-	JoltPhysicsServer3D* physics_server = JoltPhysicsServer3D::get_singleton();
+	JoltPhysicsServer3D* physics_server = PhysicsServer3D::driver_as<JoltPhysicsServer3D>();
 	JoltObject3D* object = physics_server->get_area(p_object);
 
 	if (object == nullptr) {

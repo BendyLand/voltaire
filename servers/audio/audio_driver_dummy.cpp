@@ -33,8 +33,6 @@
 
 #include "core/os/os.h"
 
-AudioDriverDummy *AudioDriverDummy::singleton = nullptr;
-
 Error AudioDriverDummy::init() {
 	active.clear();
 	exit_thread.clear();
@@ -146,6 +144,4 @@ void AudioDriverDummy::finish() {
 	}
 }
 
-AudioDriverDummy::AudioDriverDummy() {
-	singleton = this;
-}
+AudioDriverDummy::AudioDriverDummy() {}

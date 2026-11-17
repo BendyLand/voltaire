@@ -291,7 +291,7 @@ Error ResourceLoaderText::set_uid(Ref<FileAccess> p_f, ResourceUID::ID p_uid)
 	fw = FileAccess::open(local_path + ".uidren", FileAccess::WRITE);
 	if (is_scene) {
 		fw->store_string("[gd_scene format=" + itos(format_version) + " uid=\"" +
-						 ResourceUID::get_singleton()->id_to_text(p_uid) + "\"]");
+						 ResourceUID::id_to_text(p_uid) + "\"]");
 	}
 	else {
 		String script_res_text;
@@ -301,7 +301,7 @@ Error ResourceLoaderText::set_uid(Ref<FileAccess> p_f, ResourceUID::ID p_uid)
 
 		fw->store_string("[gd_resource type=\"" + res_type + "\" " + script_res_text +
 						 "format=" + itos(format_version) + " uid=\"" +
-						 ResourceUID::get_singleton()->id_to_text(p_uid) + "\"]");
+						 ResourceUID::id_to_text(p_uid) + "\"]");
 	}
 
 	uint8_t c = f->get_8();

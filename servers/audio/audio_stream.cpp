@@ -70,8 +70,8 @@ AudioStreamPlayback::AudioStreamPlayback() {}
 
 AudioStreamPlayback::~AudioStreamPlayback()
 {
-	if (get_sample_playback().is_valid() && likely(AudioServer::get_singleton() != nullptr)) {
-		AudioServer::get_singleton()->stop_sample_playback(get_sample_playback());
+	if (get_sample_playback().is_valid() && likely(AudioServer::is_initialized())) {
+		AudioServer::stop_sample_playback(get_sample_playback());
 	}
 }
 
@@ -89,8 +89,8 @@ void AudioStreamPlaybackResampled::begin_resample()
 
 int AudioStreamPlaybackResampled::mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames)
 {
-	float target_rate = AudioServer::get_singleton()->get_mix_rate();
-	float playback_speed_scale = AudioServer::get_singleton()->get_playback_speed_scale();
+	float target_rate = AudioServer::get_mix_rate();
+	float playback_speed_scale = AudioServer::get_playback_speed_scale();
 
 	uint64_t mix_increment = uint64_t(
 		((get_stream_sampling_rate() * p_rate_scale * playback_speed_scale) / double(target_rate)) *
@@ -151,9 +151,9 @@ int AudioStreamPlaybackResampled::mix(AudioFrame* p_buffer, float p_rate_scale, 
 
 void AudioStream::tag_used(float p_offset)
 {
-	if (tagged_frame != AudioServer::get_singleton()->get_mixed_frames()) {
+	if (tagged_frame != AudioServer::get_mixed_frames()) {
 		offset_count = 0;
-		tagged_frame = AudioServer::get_singleton()->get_mixed_frames();
+		tagged_frame = AudioServer::get_mixed_frames();
 	}
 	if (offset_count < MAX_TAGGED_OFFSETS) {
 		tagged_offsets[offset_count++] = p_offset;
@@ -200,7 +200,7 @@ int AudioStreamPlaybackMicrophone::mix(AudioFrame* p_buffer, float p_rate_scale,
 
 float AudioStreamPlaybackMicrophone::get_stream_sampling_rate()
 {
-	return AudioDriver::get_singleton()->get_input_mix_rate();
+	return AudioDriverManager::get_active_driver()->get_input_mix_rate();
 }
 
 void AudioStreamPlaybackMicrophone::start(double p_from_pos)
@@ -211,7 +211,7 @@ void AudioStreamPlaybackMicrophone::start(double p_from_pos)
 
 	input_ofs = 0;
 
-	if (AudioServer::get_singleton()->set_input_device_active(true) == OK) {
+	if (AudioServer::set_input_device_active(true) == OK) {
 		active = true;
 		begin_resample();
 	}
@@ -220,7 +220,7 @@ void AudioStreamPlaybackMicrophone::start(double p_from_pos)
 void AudioStreamPlaybackMicrophone::stop()
 {
 	if (active) {
-		AudioServer::get_singleton()->set_input_device_active(false);
+		AudioServer::set_input_device_active(false);
 		active = false;
 	}
 }

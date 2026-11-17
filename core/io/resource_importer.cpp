@@ -42,7 +42,7 @@ bool ResourceFormatImporter::SortImporterByName::operator()(
 }
 
 Error ResourceFormatImporter::_get_path_and_type(
-	const String& p_path, PathAndType& r_path_and_type, bool p_load, bool* r_valid) const
+	const String& p_path, PathAndType& r_path_and_type, bool p_load, bool* r_valid)
 {
 	Error err;
 	Ref<FileAccess> f = FileAccess::open(p_path + ".import", FileAccess::READ, &err);
@@ -118,7 +118,7 @@ Ref<Resource> ResourceFormatImporter::load(const String& p_path, const String& p
 	// even if it is not yet imported.
 	if (ResourceImporter::load_on_startup != nullptr) {
 		return ResourceImporter::load_on_startup(
-			this, p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
+			p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
 	}
 #endif
 
@@ -153,13 +153,13 @@ Ref<Resource> ResourceFormatImporter::load_internal(const String& p_path, Error*
 	return res;
 }
 
-void ResourceFormatImporter::get_recognized_extensions(List<String>* p_extensions) const
+void ResourceFormatImporter::get_recognized_extensions(List<String>* p_extensions)
 {
 	HashSet<String> found;
 
-	for (int i = 0; i < importers.size(); i++) {
+	for (int i = 0; i < data->importers.size(); i++) {
 		List<String> local_exts;
-		importers[i]->get_recognized_extensions(&local_exts);
+		data->importers[i]->get_recognized_extensions(&local_exts);
 		for (const String& F : local_exts) {
 			if (!found.has(F)) {
 				p_extensions->push_back(F);
@@ -170,7 +170,7 @@ void ResourceFormatImporter::get_recognized_extensions(List<String>* p_extension
 }
 
 void ResourceFormatImporter::get_recognized_extensions_for_type(
-	const String& p_type, List<String>* p_extensions) const
+	const String& p_type, List<String>* p_extensions)
 {
 	if (p_type.is_empty()) {
 		get_recognized_extensions(p_extensions);
@@ -179,14 +179,14 @@ void ResourceFormatImporter::get_recognized_extensions_for_type(
 
 	HashSet<String> found;
 
-	for (int i = 0; i < importers.size(); i++) {
-		String res_type = importers[i]->get_resource_type();
+	for (int i = 0; i < data->importers.size(); i++) {
+		String res_type = data->importers[i]->get_resource_type();
 		if (res_type.is_empty()) {
 			continue;
 		}
 
 		List<String> local_exts;
-		importers[i]->get_recognized_extensions(&local_exts);
+		data->importers[i]->get_recognized_extensions(&local_exts);
 		for (const String& F : local_exts) {
 			if (!found.has(F)) {
 				p_extensions->push_back(F);
@@ -196,18 +196,18 @@ void ResourceFormatImporter::get_recognized_extensions_for_type(
 	}
 }
 
-bool ResourceFormatImporter::exists(const String& p_path) const
+bool ResourceFormatImporter::exists(const String& p_path)
 {
 	return FileAccess::exists(p_path + ".import");
 }
 
-bool ResourceFormatImporter::recognize_path(const String& p_path, const String& p_for_type) const
+bool ResourceFormatImporter::recognize_path(const String& p_path, const String& p_for_type)
 {
 	return FileAccess::exists(p_path + ".import");
 }
 
 Error ResourceFormatImporter::get_import_order_threads_and_importer(
-	const String& p_path, int& r_order, bool& r_can_threads, String& r_importer) const
+	const String& p_path, int& r_order, bool& r_can_threads, String& r_importer)
 {
 	r_order = 0;
 	r_importer = "";
@@ -238,7 +238,7 @@ Error ResourceFormatImporter::get_import_order_threads_and_importer(
 	}
 }
 
-int ResourceFormatImporter::get_import_order(const String& p_path) const
+int ResourceFormatImporter::get_import_order(const String& p_path)
 {
 	Ref<ResourceImporter> importer;
 
@@ -261,10 +261,10 @@ int ResourceFormatImporter::get_import_order(const String& p_path) const
 	return 0;
 }
 
-bool ResourceFormatImporter::handles_type(const String& p_type) const
+bool ResourceFormatImporter::handles_type(const String& p_type)
 {
-	for (int i = 0; i < importers.size(); i++) {
-		String res_type = importers[i]->get_resource_type();
+	for (int i = 0; i < data->importers.size(); i++) {
+		String res_type = data->importers[i]->get_resource_type();
 		if (res_type.is_empty()) {
 			continue;
 		}
@@ -273,7 +273,7 @@ bool ResourceFormatImporter::handles_type(const String& p_type) const
 	return true;
 }
 
-String ResourceFormatImporter::get_internal_resource_path(const String& p_path) const
+String ResourceFormatImporter::get_internal_resource_path(const String& p_path)
 {
 	PathAndType pat;
 	Error err = _get_path_and_type(p_path, pat, false);
@@ -285,7 +285,7 @@ String ResourceFormatImporter::get_internal_resource_path(const String& p_path) 
 	return pat.path;
 }
 
-String ResourceFormatImporter::get_import_group_file(const String& p_path) const
+String ResourceFormatImporter::get_import_group_file(const String& p_path)
 {
 	bool valid = true;
 	PathAndType pat;
@@ -293,7 +293,7 @@ String ResourceFormatImporter::get_import_group_file(const String& p_path) const
 	return valid ? pat.group_file : String();
 }
 
-bool ResourceFormatImporter::is_import_valid(const String& p_path) const
+bool ResourceFormatImporter::is_import_valid(const String& p_path)
 {
 	bool valid = true;
 	PathAndType pat;
@@ -301,7 +301,7 @@ bool ResourceFormatImporter::is_import_valid(const String& p_path) const
 	return valid;
 }
 
-String ResourceFormatImporter::get_resource_type(const String& p_path) const
+String ResourceFormatImporter::get_resource_type(const String& p_path)
 {
 	PathAndType pat;
 	Error err = _get_path_and_type(p_path, pat, false);
@@ -313,7 +313,7 @@ String ResourceFormatImporter::get_resource_type(const String& p_path) const
 	return pat.type;
 }
 
-String ResourceFormatImporter::get_resource_script_class(const String& p_path) const
+String ResourceFormatImporter::get_resource_script_class(const String& p_path)
 {
 	PathAndType pat;
 	Error err = _get_path_and_type(p_path, pat, false);
@@ -325,7 +325,7 @@ String ResourceFormatImporter::get_resource_script_class(const String& p_path) c
 	return ResourceLoader::get_resource_script_class(pat.path);
 }
 
-ResourceUID::ID ResourceFormatImporter::get_resource_uid(const String& p_path) const
+ResourceUID::ID ResourceFormatImporter::get_resource_uid(const String& p_path)
 {
 	PathAndType pat;
 	Error err = _get_path_and_type(p_path, pat, false);
@@ -337,10 +337,10 @@ ResourceUID::ID ResourceFormatImporter::get_resource_uid(const String& p_path) c
 	return pat.uid;
 }
 
-bool ResourceFormatImporter::has_custom_uid_support() const { return true; }
+bool ResourceFormatImporter::has_custom_uid_support() { return true; }
 
 Error ResourceFormatImporter::get_resource_import_info(const String& p_path, String& r_type,
-	ResourceUID::ID& r_uid, String& r_import_group_file) const
+	ResourceUID::ID& r_uid, String& r_import_group_file)
 {
 	PathAndType pat;
 	Error err = _get_path_and_type(p_path, pat, false);
@@ -398,11 +398,11 @@ void ResourceFormatImporter::get_build_dependencies(
 	}
 }
 
-Ref<ResourceImporter> ResourceFormatImporter::get_importer_by_name(const String& p_name) const
+Ref<ResourceImporter> ResourceFormatImporter::get_importer_by_name(const String& p_name)
 {
-	for (int i = 0; i < importers.size(); i++) {
-		if (importers[i]->get_importer_name() == p_name) {
-			return importers[i];
+	for (int i = 0; i < data->importers.size(); i++) {
+		if (data->importers[i]->get_importer_name() == p_name) {
+			return data->importers[i];
 		}
 	}
 
@@ -414,22 +414,22 @@ void ResourceFormatImporter::add_importer(
 {
 	ERR_FAIL_COND(p_importer.is_null());
 	if (p_first_priority) {
-		importers.insert(0, p_importer);
+		data->importers.insert(0, p_importer);
 	}
 	else {
-		importers.push_back(p_importer);
+		data->importers.push_back(p_importer);
 	}
 }
 
 void ResourceFormatImporter::get_importers_for_file(
 	const String& p_file, List<Ref<ResourceImporter>>* r_importers)
 {
-	for (int i = 0; i < importers.size(); i++) {
+	for (int i = 0; i < data->importers.size(); i++) {
 		List<String> local_exts;
-		importers[i]->get_recognized_extensions(&local_exts);
+		data->importers[i]->get_recognized_extensions(&local_exts);
 		for (const String& F : local_exts) {
 			if (p_file.right(F.length()).nocasecmp_to(F) == 0) {
-				r_importers->push_back(importers[i]);
+				r_importers->push_back(data->importers[i]);
 				break;
 			}
 		}
@@ -438,24 +438,24 @@ void ResourceFormatImporter::get_importers_for_file(
 
 void ResourceFormatImporter::get_importers(List<Ref<ResourceImporter>>* r_importers)
 {
-	for (int i = 0; i < importers.size(); i++) {
-		r_importers->push_back(importers[i]);
+	for (int i = 0; i < data->importers.size(); i++) {
+		r_importers->push_back(data->importers[i]);
 	}
 }
 
-Ref<ResourceImporter> ResourceFormatImporter::get_importer_by_file(const String& p_file) const
+Ref<ResourceImporter> ResourceFormatImporter::get_importer_by_file(const String& p_file)
 {
 	Ref<ResourceImporter> importer;
 	float priority = 0;
 
-	for (int i = 0; i < importers.size(); i++) {
+	for (int i = 0; i < data->importers.size(); i++) {
 		List<String> local_exts;
-		importers[i]->get_recognized_extensions(&local_exts);
+		data->importers[i]->get_recognized_extensions(&local_exts);
 		for (const String& F : local_exts) {
 			if (p_file.right(F.length()).nocasecmp_to(F) == 0 &&
-				importers[i]->get_priority() > priority) {
-				importer = importers[i];
-				priority = importers[i]->get_priority();
+				data->importers[i]->get_priority() > priority) {
+				importer = data->importers[i];
+				priority = data->importers[i]->get_priority();
 				break;
 			}
 		}
@@ -464,13 +464,13 @@ Ref<ResourceImporter> ResourceFormatImporter::get_importer_by_file(const String&
 	return importer;
 }
 
-String ResourceFormatImporter::get_import_base_path(const String& p_for_file) const
+String ResourceFormatImporter::get_import_base_path(const String& p_for_file)
 {
 	return ProjectSettings::get_imported_files_path().path_join(
 		p_for_file.get_file() + "-" + p_for_file.md5_text());
 }
 
-bool ResourceFormatImporter::are_import_settings_valid(const String& p_path) const
+bool ResourceFormatImporter::are_import_settings_valid(const String& p_path)
 {
 	bool valid = true;
 	PathAndType pat;
@@ -483,9 +483,9 @@ bool ResourceFormatImporter::are_import_settings_valid(const String& p_path) con
 	return true;
 }
 
-String ResourceFormatImporter::get_import_settings_hash() const
+String ResourceFormatImporter::get_import_settings_hash()
 {
-	Vector<Ref<ResourceImporter>> sorted_importers = importers;
+	Vector<Ref<ResourceImporter>> sorted_importers = data->importers;
 
 	sorted_importers.sort_custom<SortImporterByName>();
 
@@ -497,7 +497,22 @@ String ResourceFormatImporter::get_import_settings_hash() const
 	return hash.md5_text();
 }
 
-ResourceFormatImporter::ResourceFormatImporter() { singleton = this; }
+void ResourceFormatImporter::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+}
+
+void ResourceFormatImporter::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
 void ResourceImporter::get_build_dependencies(const String& p_path, HashSet<String>* r_dependencies)
 {

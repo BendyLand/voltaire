@@ -65,7 +65,7 @@ void EditorLocaleDialog::ok_pressed()
 
 void EditorLocaleDialog::set_locale(const String& p_locale)
 {
-	const String& locale = TranslationServer::get_singleton()->standardize_locale(p_locale);
+	const String& locale = TranslationServer::standardize_locale(p_locale);
 	if (locale.is_empty()) {
 		locale_set = false;
 

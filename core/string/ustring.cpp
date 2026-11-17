@@ -5643,8 +5643,8 @@ Vector<uint8_t> String::to_multibyte_char_buffer(const String& p_encoding) const
  */
 String TTR(const String& p_text, const String& p_context)
 {
-	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->get_editor_domain()->translate(
+	if (TranslationServer::is_initialized()) {
+		return TranslationServer::get_editor_domain()->translate(
 			p_text, p_context);
 	}
 
@@ -5665,8 +5665,8 @@ String TTR(const String& p_text, const String& p_context)
  */
 String TTRN(const String& p_text, const String& p_text_plural, int p_n, const String& p_context)
 {
-	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->get_editor_domain()->translate_plural(
+	if (TranslationServer::is_initialized()) {
+		return TranslationServer::get_editor_domain()->translate_plural(
 			p_text, p_text_plural, p_n, p_context);
 	}
 
@@ -5688,9 +5688,9 @@ String DTR(const String& p_text, const String& p_context)
 	// Comes straight from the XML, so remove indentation and any trailing whitespace.
 	const String text = p_text.dedent().strip_edges();
 
-	if (TranslationServer::get_singleton()) {
+	if (TranslationServer::is_initialized()) {
 		return String(
-			TranslationServer::get_singleton()->get_doc_domain()->translate(text, p_context))
+			TranslationServer::get_doc_domain()->translate(text, p_context))
 			.replace("$DOCS_URL", VLTR_VERSION_DOCS_URL);
 	}
 
@@ -5708,8 +5708,8 @@ String DTRN(const String& p_text, const String& p_text_plural, int p_n, const St
 	const String text = p_text.dedent().strip_edges();
 	const String text_plural = p_text_plural.dedent().strip_edges();
 
-	if (TranslationServer::get_singleton()) {
-		return String(TranslationServer::get_singleton()->get_doc_domain()->translate_plural(
+	if (TranslationServer::is_initialized()) {
+		return String(TranslationServer::get_doc_domain()->translate_plural(
 						  text, text_plural, p_n, p_context))
 			.replace("$DOCS_URL", VLTR_VERSION_DOCS_URL);
 	}
@@ -5736,15 +5736,15 @@ or internationalization
  */
 String RTR(const String& p_text, const String& p_context)
 {
-	if (TranslationServer::get_singleton()) {
+	if (TranslationServer::is_initialized()) {
 #ifdef TOOLS_ENABLED
 		String rtr =
-			TranslationServer::get_singleton()->get_editor_domain()->translate(p_text, p_context);
+			TranslationServer::get_editor_domain()->translate(p_text, p_context);
 		if (!rtr.is_empty() && rtr != p_text) {
 			return rtr;
 		}
 #endif // TOOLS_ENABLED
-		return TranslationServer::get_singleton()->translate(p_text, p_context);
+		return TranslationServer::translate(p_text, p_context);
 	}
 
 	return p_text;
@@ -5763,15 +5763,15 @@ String RTR(const String& p_text, const String& p_context)
  */
 String RTRN(const String& p_text, const String& p_text_plural, int p_n, const String& p_context)
 {
-	if (TranslationServer::get_singleton()) {
+	if (TranslationServer::is_initialized()) {
 #ifdef TOOLS_ENABLED
-		String rtr = TranslationServer::get_singleton()->get_editor_domain()->translate_plural(
+		String rtr = TranslationServer::get_editor_domain()->translate_plural(
 			p_text, p_text_plural, p_n, p_context);
 		if (!rtr.is_empty() && rtr != p_text && rtr != p_text_plural) {
 			return rtr;
 		}
 #endif // TOOLS_ENABLED
-		return TranslationServer::get_singleton()->translate_plural(
+		return TranslationServer::translate_plural(
 			p_text, p_text_plural, p_n, p_context);
 	}
 

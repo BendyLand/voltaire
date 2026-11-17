@@ -67,7 +67,7 @@ void Joint3D::set_solver_priority(int p_priority)
 {
 	solver_priority = p_priority;
 	if (joint.is_valid()) {
-		PhysicsServer3D::get_singleton()->joint_set_solver_priority(joint, solver_priority);
+		PhysicsServer3D::joint_set_solver_priority(joint, solver_priority);
 	}
 }
 
@@ -122,13 +122,13 @@ PackedStringArray Joint3D::get_configuration_warnings() const
 Joint3D::Joint3D()
 {
 	set_notify_transform(true);
-	joint = PhysicsServer3D::get_singleton()->joint_create();
+	joint = PhysicsServer3D::joint_create();
 }
 
 Joint3D::~Joint3D()
 {
-	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
-	PhysicsServer3D::get_singleton()->free_rid(joint);
+	ERR_FAIL_COND(!PhysicsServer3D::is_initialized());
+	PhysicsServer3D::free_rid(joint);
 }
 
 void Joint3D::_update_joint(bool p_only_free) {}

@@ -55,10 +55,10 @@ void ConeTwistJoint3D::_configure_joint(RID p_joint, PhysicsBody3D* body_a, Phys
 
 	local_b.orthonormalize();
 
-	PhysicsServer3D::get_singleton()->joint_make_cone_twist(
+	PhysicsServer3D::joint_make_cone_twist(
 		p_joint, body_a->get_rid(), local_a, body_b ? body_b->get_rid() : RID(), local_b);
 	for (int i = 0; i < PARAM_MAX; i++) {
-		PhysicsServer3D::get_singleton()->cone_twist_joint_set_param(
+		PhysicsServer3D::cone_twist_joint_set_param(
 			p_joint, PS3DE::ConeTwistJointParam(i), params[i]);
 	}
 }

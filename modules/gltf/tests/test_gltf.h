@@ -54,7 +54,7 @@ static Node *gltf_import(const String &p_file) {
 	// Setting up importers.
 	Ref<ResourceImporterScene> import_scene;
 	import_scene.instantiate("PackedScene");
-	ResourceFormatImporter::get_singleton()->add_importer(import_scene);
+	ResourceFormatImporter::add_importer(import_scene);
 	Ref<EditorSceneFormatImporterGLTF> import_gltf;
 	import_gltf.instantiate();
 	ResourceImporterScene::add_scene_importer(import_gltf);
@@ -62,7 +62,7 @@ static Node *gltf_import(const String &p_file) {
 	// Support processing png files in editor import.
 	Ref<ResourceImporterTexture> import_texture;
 	import_texture.instantiate(true);
-	ResourceFormatImporter::get_singleton()->add_importer(import_texture);
+	ResourceFormatImporter::add_importer(import_texture);
 
 	// Once editor import convert pngs to ctex, we will need to load it as ctex resource.
 	Ref<ResourceFormatLoaderCompressedTexture2D> resource_loader_stream_texture;
@@ -103,7 +103,7 @@ static Node *gltf_import(const String &p_file) {
 	Node *p_scene = packed_scene->instantiate();
 
 	ResourceImporterScene::remove_scene_importer(import_gltf);
-	ResourceFormatImporter::get_singleton()->remove_importer(import_texture);
+	ResourceFormatImporter::remove_importer(import_texture);
 	if constexpr (GD_IS_CLASS_ENABLED(CompressedTexture2D)) {
 		ResourceLoader::remove_resource_format_loader(resource_loader_stream_texture);
 		resource_loader_stream_texture.unref();

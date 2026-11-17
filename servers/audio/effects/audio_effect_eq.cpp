@@ -95,7 +95,7 @@ int AudioEffectEQ::get_band_count() const { return gain.size(); }
 
 AudioEffectEQ::AudioEffectEQ(EQ::Preset p_preset)
 {
-	eq.set_mix_rate(AudioServer::get_singleton()->get_mix_rate());
+	eq.set_mix_rate(AudioServer::get_mix_rate());
 	eq.set_preset_band_mode(p_preset);
 	gain.resize(eq.get_band_count());
 	for (int i = 0; i < gain.size(); i++) {

@@ -81,7 +81,7 @@ void CircleShape2D::draw(const RID& p_to_rid, const Color& p_color)
 	}
 }
 
-CircleShape2D::CircleShape2D() : Shape2D(PhysicsServer2D::get_singleton()->circle_shape_create())
+CircleShape2D::CircleShape2D() : Shape2D(PhysicsServer2D::circle_shape_create())
 {
 	_update_shape();
 }

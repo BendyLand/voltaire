@@ -52,25 +52,34 @@
 
 class OpenXRInteractionProfileMetadata;
 
-class OpenXRHandInteractionExtension
+class OpenXRHandInteractionExtension final
 {
 public:
-	static OpenXRHandInteractionExtension* get_singleton();
 
-	OpenXRHandInteractionExtension();
-	virtual ~OpenXRHandInteractionExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static bool is_available();
 
-	bool is_available();
-
-	virtual void on_register_metadata(
-		OpenXRInteractionProfileMetadata* p_interaction_profile_metadata);
+	static void on_register_metadata();
 
 private:
-	static OpenXRHandInteractionExtension* singleton;
 
-	bool available = false;
+public:
+	struct Data
+	{
+		bool available = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRHandInteractionExtension() = delete;
+	OpenXRHandInteractionExtension(const OpenXRHandInteractionExtension&) = delete;
+	OpenXRHandInteractionExtension& operator=(const OpenXRHandInteractionExtension&) = delete;
+	~OpenXRHandInteractionExtension() = delete;
 };
 
 

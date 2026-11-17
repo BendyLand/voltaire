@@ -302,7 +302,7 @@ void AudioEffectPitchShiftInstance::process(
 		return;
 	}
 
-	float sample_rate = AudioServer::get_singleton()->get_mix_rate();
+	float sample_rate = AudioServer::get_mix_rate();
 
 	float* in_l = (float*)p_src_frames;
 	float* in_r = in_l + 1;

@@ -54,7 +54,7 @@ XRInterface::TrackingStatus OpenXRInterface::get_tracking_status() const { retur
 OpenXRInterface::ActionSet* OpenXRInterface::create_action_set(
 	const String& p_action_set_name, const String& p_localized_name, const int p_priority)
 {
-	ERR_FAIL_NULL_V(openxr_api, nullptr);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), nullptr);
 
 	// find if it already exists
 	for (int i = 0; i < action_sets.size(); i++) {
@@ -68,7 +68,7 @@ OpenXRInterface::ActionSet* OpenXRInterface::create_action_set(
 	action_set->action_set_name = p_action_set_name;
 	action_set->is_active = true;
 	action_set->action_set_rid =
-		openxr_api->action_set_create(p_action_set_name, p_localized_name, p_priority);
+		OpenXRAPI::action_set_create(p_action_set_name, p_localized_name, p_priority);
 	action_sets.push_back(action_set);
 
 	return action_set;
@@ -76,14 +76,14 @@ OpenXRInterface::ActionSet* OpenXRInterface::create_action_set(
 
 void OpenXRInterface::free_action_sets()
 {
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	for (int i = 0; i < action_sets.size(); i++) {
 		ActionSet* action_set = action_sets[i];
 
 		free_actions(action_set);
 
-		openxr_api->action_set_free(action_set->action_set_rid);
+		OpenXRAPI::action_set_free(action_set->action_set_rid);
 
 		memfree(action_set);
 	}
@@ -94,7 +94,7 @@ OpenXRInterface::Action* OpenXRInterface::create_action(ActionSet* p_action_set,
 	const String& p_action_name, const String& p_localized_name,
 	OpenXRAction::ActionType p_action_type, const Vector<Tracker*> p_trackers)
 {
-	ERR_FAIL_NULL_V(openxr_api, nullptr);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), nullptr);
 
 	for (int i = 0; i < p_action_set->actions.size(); i++) {
 		if (p_action_set->actions[i]->action_name == p_action_name) {
@@ -132,7 +132,7 @@ OpenXRInterface::Action* OpenXRInterface::create_action(ActionSet* p_action_set,
 	}
 
 	action->action_type = p_action_type;
-	action->action_rid = openxr_api->action_create(
+	action->action_rid = OpenXRAPI::action_create(
 		p_action_set->action_set_rid, p_action_name, p_localized_name, p_action_type, tracker_rids);
 	p_action_set->actions.push_back(action);
 
@@ -165,12 +165,12 @@ OpenXRInterface::Action* OpenXRInterface::find_action(const String& p_action_nam
 
 void OpenXRInterface::free_actions(ActionSet* p_action_set)
 {
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	for (int i = 0; i < p_action_set->actions.size(); i++) {
 		Action* action = p_action_set->actions[i];
 
-		openxr_api->action_free(action->action_rid);
+		OpenXRAPI::action_free(action->action_rid);
 
 		memdelete(action);
 	}
@@ -179,9 +179,8 @@ void OpenXRInterface::free_actions(ActionSet* p_action_set)
 
 OpenXRInterface::Tracker* OpenXRInterface::find_tracker(const String& p_tracker_name, bool p_create)
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, nullptr);
-	ERR_FAIL_NULL_V(openxr_api, nullptr);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), nullptr);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), nullptr);
 
 	Tracker* tracker = nullptr;
 	for (int i = 0; i < trackers.size(); i++) {
@@ -195,10 +194,10 @@ OpenXRInterface::Tracker* OpenXRInterface::find_tracker(const String& p_tracker_
 		return nullptr;
 	}
 
-	ERR_FAIL_COND_V(!openxr_api->is_top_level_path_supported(p_tracker_name), nullptr);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_top_level_path_supported(p_tracker_name), nullptr);
 
 	// Create our RID
-	RID tracker_rid = openxr_api->tracker_create(p_tracker_name);
+	RID tracker_rid = OpenXRAPI::tracker_create(p_tracker_name);
 	ERR_FAIL_COND_V(tracker_rid.is_null(), nullptr);
 
 	// Create our controller tracker.
@@ -222,7 +221,7 @@ OpenXRInterface::Tracker* OpenXRInterface::find_tracker(const String& p_tracker_
 		controller_tracker->set_tracker_desc(p_tracker_name);
 	}
 	controller_tracker->set_tracker_profile(INTERACTION_PROFILE_NONE);
-	xr_server->add_tracker(controller_tracker);
+	XRServer::add_tracker(controller_tracker);
 
 	// create a new entry
 	tracker = memnew(Tracker);
@@ -253,7 +252,7 @@ void OpenXRInterface::tracker_profile_changed(RID p_tracker, RID p_interaction_p
 		tracker->controller_tracker->set_tracker_profile(INTERACTION_PROFILE_NONE);
 	}
 	else {
-		String name = openxr_api->interaction_profile_get_name(p_interaction_profile);
+		String name = OpenXRAPI::interaction_profile_get_name(p_interaction_profile);
 		print_verbose(
 			"OpenXR: Interaction profile for " + tracker->tracker_name + " changed to " + name);
 		tracker->controller_tracker->set_tracker_profile(name);
@@ -264,7 +263,7 @@ void OpenXRInterface::trigger_haptic_pulse(const String& p_action_name,
 	const String& p_tracker_name, double p_frequency, double p_amplitude, double p_duration_sec,
 	double p_delay_sec)
 {
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	Action* action = find_action(p_action_name);
 	ERR_FAIL_NULL(action);
@@ -284,21 +283,20 @@ void OpenXRInterface::trigger_haptic_pulse(const String& p_action_name,
 
 	XrDuration duration = XrDuration(p_duration_sec * 1000000000.0); // seconds -> nanoseconds
 
-	openxr_api->trigger_haptic_pulse(
+	OpenXRAPI::trigger_haptic_pulse(
 		action->action_rid, tracker->tracker_rid, p_frequency, p_amplitude, duration);
 }
 
 void OpenXRInterface::free_trackers()
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL(xr_server);
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!XRServer::is_initialized());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	for (int i = 0; i < trackers.size(); i++) {
 		Tracker* tracker = trackers[i];
 
-		openxr_api->tracker_free(tracker->tracker_rid);
-		xr_server->remove_tracker(tracker->controller_tracker);
+		OpenXRAPI::tracker_free(tracker->tracker_rid);
+		XRServer::remove_tracker(tracker->controller_tracker);
 		tracker->controller_tracker.unref();
 
 		memdelete(tracker);
@@ -308,20 +306,20 @@ void OpenXRInterface::free_trackers()
 
 void OpenXRInterface::free_interaction_profiles()
 {
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	for (const RID& interaction_profile : interaction_profiles) {
-		openxr_api->interaction_profile_free(interaction_profile);
+		OpenXRAPI::interaction_profile_free(interaction_profile);
 	}
 	interaction_profiles.clear();
 }
 
 bool OpenXRInterface::initialize_on_startup() const
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return false;
 	}
-	else if (!openxr_api->is_initialized()) {
+	else if (!OpenXRAPI::is_initialized()) {
 		return false;
 	}
 	else {
@@ -341,11 +339,11 @@ bool OpenXRInterface::supports_play_area_mode(XRInterface::PlayAreaMode p_mode)
 
 XRInterface::PlayAreaMode OpenXRInterface::get_play_area_mode() const
 {
-	if (!openxr_api || !initialized) {
+	if (!OpenXRAPI::is_allocated() || !initialized) {
 		return XRInterface::XR_PLAY_AREA_UNKNOWN;
 	}
 
-	XrReferenceSpaceType reference_space = openxr_api->get_reference_space();
+	XrReferenceSpaceType reference_space = OpenXRAPI::get_reference_space();
 
 	if (reference_space == XR_REFERENCE_SPACE_TYPE_LOCAL) {
 		return XRInterface::XR_PLAY_AREA_SITTING;
@@ -365,7 +363,7 @@ XRInterface::PlayAreaMode OpenXRInterface::get_play_area_mode() const
 
 bool OpenXRInterface::set_play_area_mode(XRInterface::PlayAreaMode p_mode)
 {
-	ERR_FAIL_NULL_V(openxr_api, false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
 	XrReferenceSpaceType reference_space;
 
@@ -382,10 +380,9 @@ bool OpenXRInterface::set_play_area_mode(XRInterface::PlayAreaMode p_mode)
 		return false;
 	}
 
-	if (openxr_api->set_requested_reference_space(reference_space)) {
-		XRServer* xr_server = XRServer::get_singleton();
-		if (xr_server) {
-			xr_server->clear_reference_frame();
+	if (OpenXRAPI::set_requested_reference_space(reference_space)) {
+		if (XRServer::is_initialized()) {
+			XRServer::clear_reference_frame();
 		}
 		return true;
 	}
@@ -395,8 +392,7 @@ bool OpenXRInterface::set_play_area_mode(XRInterface::PlayAreaMode p_mode)
 
 PackedVector3Array OpenXRInterface::get_play_area() const
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, PackedVector3Array());
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), PackedVector3Array());
 	PackedVector3Array arr;
 
 	Vector3 sides[4] = {
@@ -406,10 +402,10 @@ PackedVector3Array OpenXRInterface::get_play_area() const
 		Vector3(-0.5f, 0.0f, 0.5f),
 	};
 
-	if (openxr_api != nullptr && openxr_api->is_initialized()) {
-		Size2 extents = openxr_api->get_play_space_bounds();
+	if (OpenXRAPI::is_allocated() && OpenXRAPI::is_initialized()) {
+		Size2 extents = OpenXRAPI::get_play_space_bounds();
 		if (extents.width != 0.0 && extents.height != 0.0) {
-			Transform3D reference_frame = xr_server->get_reference_frame();
+			Transform3D reference_frame = XRServer::get_reference_frame();
 
 			for (int i = 0; i < 4; i++) {
 				Vector3 coord = sides[i];
@@ -433,86 +429,80 @@ PackedVector3Array OpenXRInterface::get_play_area() const
 
 float OpenXRInterface::get_display_refresh_rate() const
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return 0.0;
 	}
-	else if (!openxr_api->is_initialized()) {
+	else if (!OpenXRAPI::is_initialized()) {
 		return 0.0;
 	}
 	else {
-		return openxr_api->get_display_refresh_rate();
+		return OpenXRAPI::get_display_refresh_rate();
 	}
 }
 
 void OpenXRInterface::set_display_refresh_rate(float p_refresh_rate)
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return;
 	}
-	else if (!openxr_api->is_initialized()) {
+	else if (!OpenXRAPI::is_initialized()) {
 		return;
 	}
 	else {
-		openxr_api->set_display_refresh_rate(p_refresh_rate);
+		OpenXRAPI::set_display_refresh_rate(p_refresh_rate);
 	}
 }
 
 bool OpenXRInterface::is_hand_tracking_supported()
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return false;
 	}
-	else if (!openxr_api->is_initialized()) {
+	else if (!OpenXRAPI::is_initialized()) {
 		return false;
 	}
 	else {
-		OpenXRHandTrackingExtension* hand_tracking_ext =
-			OpenXRHandTrackingExtension::get_singleton();
-		if (hand_tracking_ext == nullptr) {
+		if (!OpenXRHandTrackingExtension::is_initialized()) {
 			return false;
 		}
 		else {
-			return hand_tracking_ext->get_active();
+			return OpenXRHandTrackingExtension::get_active();
 		}
 	}
 }
 
 bool OpenXRInterface::is_hand_interaction_supported() const
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return false;
 	}
-	else if (!openxr_api->is_initialized()) {
+	else if (!OpenXRAPI::is_initialized()) {
 		return false;
 	}
 	else {
-		OpenXRHandInteractionExtension* hand_interaction_ext =
-			OpenXRHandInteractionExtension::get_singleton();
-		if (hand_interaction_ext == nullptr) {
+		if (!OpenXRHandInteractionExtension::is_initialized()) {
 			return false;
 		}
 		else {
-			return hand_interaction_ext->is_available();
+			return OpenXRHandInteractionExtension::is_available();
 		}
 	}
 }
 
 bool OpenXRInterface::is_eye_gaze_interaction_supported()
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return false;
 	}
-	else if (!openxr_api->is_initialized()) {
+	else if (!OpenXRAPI::is_initialized()) {
 		return false;
 	}
 	else {
-		OpenXREyeGazeInteractionExtension* eye_gaze_ext =
-			OpenXREyeGazeInteractionExtension::get_singleton();
-		if (eye_gaze_ext == nullptr) {
+		if (!OpenXREyeGazeInteractionExtension::is_initialized()) {
 			return false;
 		}
 		else {
-			return eye_gaze_ext->supports_eye_gaze_interaction();
+			return OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction();
 		}
 	}
 }
@@ -557,101 +547,101 @@ void OpenXRInterface::set_vrs_strength(float p_vrs_strength)
 
 double OpenXRInterface::get_render_target_size_multiplier() const
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return 1.0;
 	}
 	else {
-		return openxr_api->get_render_target_size_multiplier();
+		return OpenXRAPI::get_render_target_size_multiplier();
 	}
 }
 
 void OpenXRInterface::set_render_target_size_multiplier(double multiplier)
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return;
 	}
 	else {
-		openxr_api->set_render_target_size_multiplier(multiplier);
+		OpenXRAPI::set_render_target_size_multiplier(multiplier);
 	}
 }
 
 bool OpenXRInterface::is_foveation_supported() const
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return false;
 	}
 	else {
-		return openxr_api->is_foveation_supported();
+		return OpenXRAPI::is_foveation_supported();
 	}
 }
 
 int OpenXRInterface::get_foveation_level() const
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return 0;
 	}
 	else {
-		return openxr_api->get_foveation_level();
+		return OpenXRAPI::get_foveation_level();
 	}
 }
 
 void OpenXRInterface::set_foveation_level(int p_foveation_level)
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return;
 	}
 	else {
-		openxr_api->set_foveation_level(p_foveation_level);
+		OpenXRAPI::set_foveation_level(p_foveation_level);
 	}
 }
 
 bool OpenXRInterface::get_foveation_dynamic() const
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return false;
 	}
 	else {
-		return openxr_api->get_foveation_dynamic();
+		return OpenXRAPI::get_foveation_dynamic();
 	}
 }
 
 void OpenXRInterface::set_foveation_dynamic(bool p_foveation_dynamic)
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return;
 	}
 	else {
-		openxr_api->set_foveation_dynamic(p_foveation_dynamic);
+		OpenXRAPI::set_foveation_dynamic(p_foveation_dynamic);
 	}
 }
 
 bool OpenXRInterface::get_foveation_with_subsampled_images() const
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return false;
 	}
 	else {
-		return openxr_api->get_foveation_with_subsampled_images();
+		return OpenXRAPI::get_foveation_with_subsampled_images();
 	}
 }
 
 void OpenXRInterface::set_foveation_with_subsampled_images(bool p_enabled)
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return;
 	}
 	else {
-		openxr_api->set_foveation_with_subsampled_images(p_enabled);
+		OpenXRAPI::set_foveation_with_subsampled_images(p_enabled);
 	}
 }
 
 Size2 OpenXRInterface::get_render_target_size()
 {
-	if (openxr_api == nullptr) {
+	if (!OpenXRAPI::is_allocated()) {
 		return Size2();
 	}
 	else {
-		return openxr_api->get_recommended_target_size();
+		return OpenXRAPI::get_recommended_target_size();
 	}
 }
 
@@ -680,11 +670,10 @@ void OpenXRInterface::_set_default_pos(
 
 Transform3D OpenXRInterface::get_camera_transform()
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, Transform3D());
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Transform3D());
 
 	Transform3D hmd_transform;
-	double world_scale = xr_server->get_world_scale();
+	double world_scale = XRServer::get_world_scale();
 
 	// head_transform should be updated in process
 
@@ -697,13 +686,12 @@ Transform3D OpenXRInterface::get_camera_transform()
 Transform3D OpenXRInterface::get_transform_for_view(
 	uint32_t p_view, const Transform3D& p_cam_transform)
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, Transform3D());
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Transform3D());
 	ERR_FAIL_UNSIGNED_INDEX_V_MSG(
 		p_view, get_view_count(), Transform3D(), "View index outside bounds.");
 
 	Transform3D t;
-	if (openxr_api && openxr_api->get_view_transform(p_view, t)) {
+	if (OpenXRAPI::is_allocated() && OpenXRAPI::get_view_transform(p_view, t)) {
 		// update our cached value if we have a valid transform
 		transform_for_view[p_view] = t;
 	}
@@ -713,10 +701,10 @@ Transform3D OpenXRInterface::get_transform_for_view(
 	}
 
 	// Apply our world scale
-	double world_scale = xr_server->get_world_scale();
+	double world_scale = XRServer::get_world_scale();
 	t.origin *= world_scale;
 
-	return p_cam_transform * xr_server->get_reference_frame() * t;
+	return p_cam_transform * XRServer::get_reference_frame() * t;
 }
 
 Projection OpenXRInterface::get_projection_for_view(
@@ -725,8 +713,8 @@ Projection OpenXRInterface::get_projection_for_view(
 	Projection cm;
 	ERR_FAIL_UNSIGNED_INDEX_V_MSG(p_view, get_view_count(), cm, "View index outside bounds.");
 
-	if (openxr_api) {
-		if (openxr_api->get_view_projection(p_view, p_z_near, p_z_far, cm)) {
+	if (OpenXRAPI::is_allocated()) {
+		if (OpenXRAPI::get_view_projection(p_view, p_z_near, p_z_far, cm)) {
 			return cm;
 		}
 	}
@@ -739,8 +727,8 @@ Projection OpenXRInterface::get_projection_for_view(
 
 Rect2i OpenXRInterface::get_render_region()
 {
-	if (openxr_api) {
-		return openxr_api->get_render_region();
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_render_region();
 	}
 	else {
 		return Rect2i();
@@ -749,8 +737,8 @@ Rect2i OpenXRInterface::get_render_region()
 
 RID OpenXRInterface::get_color_texture()
 {
-	if (openxr_api) {
-		return openxr_api->get_color_texture();
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_color_texture();
 	}
 	else {
 		return RID();
@@ -759,8 +747,8 @@ RID OpenXRInterface::get_color_texture()
 
 RID OpenXRInterface::get_depth_texture()
 {
-	if (openxr_api) {
-		return openxr_api->get_depth_texture();
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_depth_texture();
 	}
 	else {
 		return RID();
@@ -769,8 +757,8 @@ RID OpenXRInterface::get_depth_texture()
 
 RID OpenXRInterface::get_velocity_texture()
 {
-	if (openxr_api) {
-		return openxr_api->get_velocity_texture();
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_velocity_texture();
 	}
 	else {
 		return RID();
@@ -779,8 +767,8 @@ RID OpenXRInterface::get_velocity_texture()
 
 RID OpenXRInterface::get_velocity_depth_texture()
 {
-	if (openxr_api) {
-		return openxr_api->get_velocity_depth_texture();
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_velocity_depth_texture();
 	}
 	else {
 		return RID();
@@ -789,8 +777,8 @@ RID OpenXRInterface::get_velocity_depth_texture()
 
 Size2i OpenXRInterface::get_velocity_target_size()
 {
-	if (openxr_api) {
-		return openxr_api->get_velocity_target_size();
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_velocity_target_size();
 	}
 	else {
 		return Size2i();
@@ -799,15 +787,15 @@ Size2i OpenXRInterface::get_velocity_target_size()
 
 void OpenXRInterface::pre_render()
 {
-	if (openxr_api) {
-		openxr_api->pre_render();
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::pre_render();
 	}
 }
 
 bool OpenXRInterface::pre_draw_viewport(RID p_render_target)
 {
-	if (openxr_api) {
-		return openxr_api->pre_draw_viewport(p_render_target);
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::pre_draw_viewport(p_render_target);
 	}
 	else {
 		// don't render
@@ -849,8 +837,8 @@ Vector<RenderingServerTypes::BlitToScreen> OpenXRInterface::post_draw_viewport(
 	}
 #endif
 
-	if (openxr_api) {
-		openxr_api->post_draw_viewport(p_render_target);
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::post_draw_viewport(p_render_target);
 	}
 
 	return blit_to_screen;
@@ -858,8 +846,8 @@ Vector<RenderingServerTypes::BlitToScreen> OpenXRInterface::post_draw_viewport(
 
 void OpenXRInterface::end_frame()
 {
-	if (openxr_api) {
-		openxr_api->end_frame();
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::end_frame();
 	}
 }
 
@@ -877,8 +865,8 @@ void OpenXRInterface::stop_passthrough() { set_environment_blend_mode(XR_ENV_BLE
 
 XRInterface::EnvironmentBlendMode OpenXRInterface::get_environment_blend_mode() const
 {
-	if (openxr_api) {
-		XrEnvironmentBlendMode oxr_blend_mode = openxr_api->get_environment_blend_mode();
+	if (OpenXRAPI::is_allocated()) {
+		XrEnvironmentBlendMode oxr_blend_mode = OpenXRAPI::get_environment_blend_mode();
 		switch (oxr_blend_mode) {
 		case XR_ENVIRONMENT_BLEND_MODE_OPAQUE: {
 			return XR_ENV_BLEND_MODE_OPAQUE;
@@ -899,7 +887,7 @@ XRInterface::EnvironmentBlendMode OpenXRInterface::get_environment_blend_mode() 
 
 bool OpenXRInterface::set_environment_blend_mode(XRInterface::EnvironmentBlendMode mode)
 {
-	if (openxr_api) {
+	if (OpenXRAPI::is_allocated()) {
 		XrEnvironmentBlendMode oxr_blend_mode;
 		switch (mode) {
 		case XR_ENV_BLEND_MODE_OPAQUE:
@@ -915,7 +903,7 @@ bool OpenXRInterface::set_environment_blend_mode(XRInterface::EnvironmentBlendMo
 			WARN_PRINT("Unknown blend mode requested: " + String::num_int64(int64_t(mode)));
 			oxr_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
 		}
-		return openxr_api->set_environment_blend_mode(oxr_blend_mode);
+		return OpenXRAPI::set_environment_blend_mode(oxr_blend_mode);
 	}
 	return false;
 }
@@ -950,8 +938,8 @@ void OpenXRInterface::on_reference_space_change_pending(XrReferenceSpaceType p_t
 
 OpenXRInterface::SessionState OpenXRInterface::get_session_state()
 {
-	if (openxr_api) {
-		return (SessionState)openxr_api->get_session_state();
+	if (OpenXRAPI::is_allocated()) {
+		return (SessionState)OpenXRAPI::get_session_state();
 	}
 
 	return SESSION_STATE_UNKNOWN;
@@ -960,13 +948,11 @@ OpenXRInterface::SessionState OpenXRInterface::get_session_state()
 /** User Presence. */
 bool OpenXRInterface::is_user_presence_supported() const
 {
-	if (!openxr_api || !openxr_api->is_initialized()) {
+	if (!OpenXRAPI::is_initialized()) {
 		return false;
 	}
 	else {
-		OpenXRUserPresenceExtension* user_presence_ext =
-			OpenXRUserPresenceExtension::get_singleton();
-		return user_presence_ext && user_presence_ext->is_active();
+		return OpenXRUserPresenceExtension::is_initialized() && OpenXRUserPresenceExtension::is_active();
 	}
 }
 
@@ -977,19 +963,17 @@ bool OpenXRInterface::is_user_present() const
 		return true;
 	}
 	else {
-		OpenXRUserPresenceExtension* user_presence_ext =
-			OpenXRUserPresenceExtension::get_singleton();
-		return user_presence_ext->is_user_present();
+		return OpenXRUserPresenceExtension::is_user_present();
 	}
 }
 
 RID OpenXRInterface::get_vrs_texture()
 {
-	if (!openxr_api) {
+	if (!OpenXRAPI::is_allocated()) {
 		return RID();
 	}
 
-	RID density_map = openxr_api->get_density_map_texture();
+	RID density_map = OpenXRAPI::get_density_map_texture();
 	if (density_map.is_valid()) {
 		return density_map;
 	}
@@ -1001,7 +985,7 @@ RID OpenXRInterface::get_vrs_texture()
 	uint32_t view_count = get_view_count();
 
 	for (uint32_t v = 0; v < view_count; v++) {
-		eye_foci.push_back(openxr_api->get_eye_focus(v, aspect_ratio));
+		eye_foci.push_back(OpenXRAPI::get_eye_focus(v, aspect_ratio));
 	}
 
 	xr_vrs.set_vrs_render_region(get_render_region());
@@ -1011,11 +995,11 @@ RID OpenXRInterface::get_vrs_texture()
 
 XRInterface::VRSTextureFormat OpenXRInterface::get_vrs_texture_format()
 {
-	if (!openxr_api) {
+	if (!OpenXRAPI::is_allocated()) {
 		return XR_VRS_TEXTURE_FORMAT_UNIFIED;
 	}
 
-	RID density_map = openxr_api->get_density_map_texture();
+	RID density_map = OpenXRAPI::get_density_map_texture();
 	if (density_map.is_valid()) {
 		return XR_VRS_TEXTURE_FORMAT_FRAGMENT_DENSITY_MAP;
 	}
@@ -1025,27 +1009,22 @@ XRInterface::VRSTextureFormat OpenXRInterface::get_vrs_texture_format()
 
 void OpenXRInterface::set_cpu_level(PerfSettingsLevel p_level)
 {
-	OpenXRPerformanceSettingsExtension* performance_settings_ext =
-		OpenXRPerformanceSettingsExtension::get_singleton();
-	if (performance_settings_ext && performance_settings_ext->is_available()) {
-		performance_settings_ext->set_cpu_level(p_level);
+	if (OpenXRPerformanceSettingsExtension::is_initialized() && OpenXRPerformanceSettingsExtension::is_available()) {
+		OpenXRPerformanceSettingsExtension::set_cpu_level(p_level);
 	}
 }
 
 void OpenXRInterface::set_gpu_level(PerfSettingsLevel p_level)
 {
-	OpenXRPerformanceSettingsExtension* performance_settings_ext =
-		OpenXRPerformanceSettingsExtension::get_singleton();
-	if (performance_settings_ext && performance_settings_ext->is_available()) {
-		performance_settings_ext->set_gpu_level(p_level);
+	if (OpenXRPerformanceSettingsExtension::is_initialized() && OpenXRPerformanceSettingsExtension::is_available()) {
+		OpenXRPerformanceSettingsExtension::set_gpu_level(p_level);
 	}
 }
 
 OpenXRInterface::OpenXRInterface()
 {
-	openxr_api = OpenXRAPI::get_singleton();
-	if (openxr_api) {
-		openxr_api->set_xr_interface(this);
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::set_xr_interface(this);
 	}
 
 	// while we don't have head tracking, don't put the headset on the floor...
@@ -1060,9 +1039,8 @@ OpenXRInterface::~OpenXRInterface()
 		uninitialize();
 	}
 
-	if (openxr_api) {
-		openxr_api->set_xr_interface(nullptr);
-		openxr_api = nullptr;
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::set_xr_interface(nullptr);
 	}
 }
 

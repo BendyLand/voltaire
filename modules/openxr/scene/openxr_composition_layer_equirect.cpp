@@ -35,7 +35,7 @@
 
 OpenXRCompositionLayerEquirect::OpenXRCompositionLayerEquirect()
 {
-	if (composition_layer_extension) {
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
 		XrCompositionLayerEquirect2KHR openxr_composition_layer = {
 			XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR, // type
 			nullptr,								 // next
@@ -49,7 +49,7 @@ OpenXRCompositionLayerEquirect::OpenXRCompositionLayerEquirect()
 			upper_vertical_angle,					 // upperVerticalAngle
 			-lower_vertical_angle,					 // lowerVerticalAngle
 		};
-		composition_layer = composition_layer_extension->composition_layer_create(
+		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
 			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
 	}
 }
@@ -60,8 +60,8 @@ void OpenXRCompositionLayerEquirect::set_radius(float p_radius)
 {
 	ERR_FAIL_COND(p_radius <= 0);
 	radius = p_radius;
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_equirect_radius(
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_radius(
 			composition_layer, p_radius);
 	}
 	update_fallback_mesh();
@@ -73,8 +73,8 @@ void OpenXRCompositionLayerEquirect::set_central_horizontal_angle(float p_angle)
 {
 	ERR_FAIL_COND(p_angle <= 0);
 	central_horizontal_angle = p_angle;
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_equirect_central_horizontal_angle(
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_central_horizontal_angle(
 			composition_layer, p_angle);
 	}
 	update_fallback_mesh();
@@ -89,8 +89,8 @@ void OpenXRCompositionLayerEquirect::set_upper_vertical_angle(float p_angle)
 {
 	ERR_FAIL_COND(p_angle <= 0 || p_angle > (Math::PI / 2.0));
 	upper_vertical_angle = p_angle;
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_equirect_upper_vertical_angle(
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_upper_vertical_angle(
 			composition_layer, p_angle);
 	}
 	update_fallback_mesh();
@@ -105,8 +105,8 @@ void OpenXRCompositionLayerEquirect::set_lower_vertical_angle(float p_angle)
 {
 	ERR_FAIL_COND(p_angle <= 0 || p_angle > (Math::PI / 2.0));
 	lower_vertical_angle = p_angle;
-	if (composition_layer_extension) {
-		composition_layer_extension->composition_layer_set_equirect_lower_vertical_angle(
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_lower_vertical_angle(
 			composition_layer, -p_angle);
 	}
 	update_fallback_mesh();

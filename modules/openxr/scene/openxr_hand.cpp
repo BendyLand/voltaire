@@ -36,11 +36,7 @@
 #include "servers/xr/xr_server.h"
 
 
-OpenXRHand::OpenXRHand()
-{
-	openxr_api = OpenXRAPI::get_singleton();
-	hand_tracking_ext = OpenXRHandTrackingExtension::get_singleton();
-}
+OpenXRHand::OpenXRHand() {}
 
 void OpenXRHand::set_hand(Hands p_hand)
 {

@@ -36,21 +36,24 @@
 #ifdef XR_USE_PLATFORM_ANDROID
 #include <unistd.h>
 #include "../openxr_api.h"
+
+void OpenXRAndroidThreadSettingsExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRAndroidThreadSettingsExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
 #endif
-
-OpenXRAndroidThreadSettingsExtension* OpenXRAndroidThreadSettingsExtension::singleton = nullptr;
-
-OpenXRAndroidThreadSettingsExtension* OpenXRAndroidThreadSettingsExtension::get_singleton()
-{
-	return singleton;
-}
-
-OpenXRAndroidThreadSettingsExtension::OpenXRAndroidThreadSettingsExtension() { singleton = this; }
-
-OpenXRAndroidThreadSettingsExtension::~OpenXRAndroidThreadSettingsExtension()
-{
-	singleton = nullptr;
-}
 
 HashMap<String, bool*> OpenXRAndroidThreadSettingsExtension::get_requested_extensions(
 	XrVersion p_version)
@@ -58,7 +61,7 @@ HashMap<String, bool*> OpenXRAndroidThreadSettingsExtension::get_requested_exten
 	HashMap<String, bool*> request_extensions;
 
 #ifdef XR_USE_PLATFORM_ANDROID
-	request_extensions[XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME] = &available;
+	request_extensions[XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME] = &data->available;
 #endif
 
 	return request_extensions;
@@ -66,20 +69,20 @@ HashMap<String, bool*> OpenXRAndroidThreadSettingsExtension::get_requested_exten
 
 void OpenXRAndroidThreadSettingsExtension::on_instance_created(XrInstance p_instance)
 {
-	if (!available) {
+	if (!data->available) {
 		return;
 	}
 
 	if (!_initialize_openxr_android_thread_settings_extension()) {
 		print_error("OpenXR: Failed to initialize android thread settings extension");
-		available = false;
+		data->available = false;
 	}
 }
 
 bool OpenXRAndroidThreadSettingsExtension::set_application_thread_type(
 	ThreadType p_thread_type, uint32_t p_thread_id)
 {
-	if (!available) {
+	if (!data->available) {
 		return false;
 	}
 
@@ -105,11 +108,11 @@ bool OpenXRAndroidThreadSettingsExtension::set_application_thread_type(
 		return false;
 	}
 
-	XrResult result = xrSetAndroidApplicationThreadKHR(OpenXRAPI::get_singleton()->get_session(),
+	XrResult result = xrSetAndroidApplicationThreadKHR(OpenXRAPI::get_session(),
 		thread_type, p_thread_id == 0 ? gettid() : p_thread_id);
 	if (result != XR_SUCCESS) {
 		print_error(vformat("OpenXR: Failed to set android application thread; %s",
-			OpenXRAPI::get_singleton()->get_error_string(result)));
+			OpenXRAPI::get_error_string(result)));
 		return false;
 	}
 #endif

@@ -45,36 +45,24 @@
 //
 // https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_visibility_mask
 
-class OpenXRVisibilityMaskExtension
+class OpenXRVisibilityMaskExtension final
 {
 public:
-	static OpenXRVisibilityMaskExtension* get_singleton();
 
-	OpenXRVisibilityMaskExtension();
-	virtual ~OpenXRVisibilityMaskExtension();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
 
-	virtual void on_instance_created(const XrInstance p_instance);
+	static void on_session_created(const XrSession p_instance);
+	static void on_session_destroyed();
 
-	virtual void on_session_created(const XrSession p_instance);
-	virtual void on_session_destroyed();
+	static void on_pre_render();
+	static bool on_event_polled(const XrEventDataBuffer& event);
 
-	virtual void on_pre_render();
-	virtual bool on_event_polled(const XrEventDataBuffer& event);
-
-	bool is_available();
-	RID get_mesh();
+	static bool is_available();
+	static RID get_mesh();
 
 private:
-	static OpenXRVisibilityMaskExtension* singleton;
-
-	bool available = false;
-	bool is_dirty = false;
-
-	RID shader;
-	RID material;
-	RID mesh;
 
 	struct MeshData
 	{
@@ -82,16 +70,36 @@ private:
 		Vector<uint32_t> indices;
 	};
 
-	uint32_t mesh_count = 0;
-	MeshData mesh_data[4];
-
-	void _update_mesh_data(uint32_t p_view);
-	void _update_mesh();
+	static void _update_mesh_data(uint32_t p_view);
+	static void _update_mesh();
 
 	// OpenXR API call wrappers
 	EXT_PROTO_XRRESULT_FUNC5(xrGetVisibilityMaskKHR, (XrSession), session,
 		(XrViewConfigurationType), viewConfigurationType, (uint32_t), viewIndex,
 		(XrVisibilityMaskTypeKHR), visibilityMaskType, (XrVisibilityMaskKHR*), visibilityMask);
+
+public:
+	struct Data
+	{
+		bool available = false;
+		bool is_dirty = false;
+		RID shader;
+		RID material;
+		RID mesh;
+		uint32_t mesh_count = 0;
+		MeshData mesh_data[4];
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRVisibilityMaskExtension() = delete;
+	OpenXRVisibilityMaskExtension(const OpenXRVisibilityMaskExtension&) = delete;
+	OpenXRVisibilityMaskExtension& operator=(const OpenXRVisibilityMaskExtension&) = delete;
+	~OpenXRVisibilityMaskExtension() = delete;
 };
 
 

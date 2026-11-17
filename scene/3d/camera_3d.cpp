@@ -458,8 +458,8 @@ Camera3D::~Camera3D()
 	Renderer::free_rid(camera);
 #ifndef PHYSICS_3D_DISABLED
 	if (pyramid_shape.is_valid()) {
-		ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
-		PhysicsServer3D::get_singleton()->free_rid(pyramid_shape);
+		ERR_FAIL_COND(!PhysicsServer3D::is_initialized());
+		PhysicsServer3D::free_rid(pyramid_shape);
 	}
 #endif // PHYSICS_3D_DISABLED
 }

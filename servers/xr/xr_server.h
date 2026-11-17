@@ -38,21 +38,9 @@ class XRInterface;
 class XRTracker;
 class XRPositionalTracker;
 
-/**
-	The XR server is a singleton object that gives access to the various
-	objects and SDKs that are available on the system.
-	Because there can be multiple SDKs active this is exposed as an array
-	and our XR server object acts as a pass through
-	Also each positioning tracker is accessible from here.
-
-	I've added some additional info into this header file that should move
-	into the documentation, I will do so when we're close to accepting this PR
-	or as a separate PR once this has been merged into the master branch.
-**/
-
-class XRServer
+class XRServer final
 {
-	_THREAD_SAFE_CLASS_
+	static inline Mutex _thread_safe_;
 
 public:
 	enum XRMode
@@ -91,10 +79,6 @@ public:
 private:
 	static XRMode xr_mode;
 
-
-	double world_scale = 1.0; /* scale by which we multiply our tracker positions */
-	bool camera_locked_to_origin = false;
-
 	// As we may be updating our main state for our next frame while we're still rendering our
 	// previous frame, we need to keep copies around.
 	struct RenderState
@@ -105,145 +89,81 @@ private:
 		Transform3D reference_frame; /* our reference frame */
 	};
 
-	RenderState render_state;
+	struct Data
+	{
+		double world_scale = 1.0; /* scale by which we multiply our tracker positions */
+		bool camera_locked_to_origin = false;
+		RenderState render_state;
+	};
+
+	static inline Data* data = nullptr;
 
 	static void _set_render_world_scale(double p_world_scale);
 	static void _set_render_world_origin(const Transform3D& p_world_origin);
 	static void _set_render_reference_frame(const Transform3D& p_reference_frame);
 
-	void set_render_world_scale(double p_world_scale);
-	void set_render_world_origin(const Transform3D& p_world_origin);
-	void set_render_reference_frame(const Transform3D& p_reference_frame);
-
-protected:
-	static XRServer* singleton;
-
+	static void set_render_world_scale(double p_world_scale);
+	static void set_render_world_origin(const Transform3D& p_world_origin);
+	static void set_render_reference_frame(const Transform3D& p_reference_frame);
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
-	void _add_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker);
-	void _remove_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker);
-	Ref<XRPositionalTracker> _get_tracker_bind_compat_90645(const String& p_name) const;
+	static void _add_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker);
+	static void _remove_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker);
+	static Ref<XRPositionalTracker> _get_tracker_bind_compat_90645(const String& p_name);
 #endif
 
 public:
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
 	static XRMode get_xr_mode();
 	static void set_xr_mode(XRMode p_mode);
 
-	static XRServer* get_singleton();
+	static double get_world_scale();
+	static void set_world_scale(double p_world_scale);
 
-	/*
-		World scale allows you to specify a scale factor that is applied to all positioning vectors
-	   in our VR world in essence scaling up, or scaling down the world. For stereoscopic rendering
-	   specifically this is very important to give an accurate sense of scale. Add controllers into
-	   the mix and an accurate mapping of real world movement to perceived virtual movement becomes
-	   very important.
+	static Transform3D get_world_origin();
+	static void set_world_origin(const Transform3D& p_world_origin);
 
-		Most VR platforms, and our assumption, is that 1 unit in our virtual world equates to 1
-	   meter in the real mode. This scale basically effects the unit size relationship to real world
-	   size.
+	static Transform3D get_reference_frame();
+	static void clear_reference_frame();
+	static void center_on_hmd(RotationMode p_rotation_mode, bool p_keep_height);
 
-		I may remove access to this property in GDScript in favor of exposing it on the XROrigin3D
-	   node
-	*/
-	double get_world_scale() const;
-	void set_world_scale(double p_world_scale);
+	static Transform3D get_hmd_transform();
 
-	/*
-		The world maps the 0,0,0 coordinate of our real world coordinate system for our tracking
-	   volume to a location in our virtual world. It is this origin point that should be moved when
-	   the player is moved through the world by controller actions be it straffing, teleporting,
-	   etc. Movement of the player by moving through the physical space is always tracked in
-	   relation to this point.
+	static void set_camera_locked_to_origin(bool p_enable);
 
-		Note that the XROrigin3D spatial node in your scene automatically updates this property and
-	   it should be used instead of direct access to this property and it therefore is not available
-	   in GDScript
+	static inline bool is_camera_locked_to_origin()
+	{
+		return data ? data->camera_locked_to_origin : false;
+	}
 
-		Note: this should not be used in AR and should be ignored by an AR based interface as it
-	   would throw what you're looking at in the real world and in the virtual world out of sync
-	*/
-	Transform3D get_world_origin() const;
-	void set_world_origin(const Transform3D& p_world_origin);
+	static void add_interface(const Ref<XRInterface>& p_interface);
+	static void remove_interface(const Ref<XRInterface>& p_interface);
+	static int get_interface_count();
+	static Ref<XRInterface> get_interface(int p_index);
+	static Ref<XRInterface> find_interface(const String& p_name);
 
-	/*
-		center_on_hmd calculates a new reference frame. This ensures the HMD is positioned to 0,0,0
-	   facing 0,0,-1 (need to verify this direction) in the virtual world.
+	static Ref<XRInterface> get_primary_interface();
+	static void set_primary_interface(const Ref<XRInterface>& p_primary_interface);
 
-		You can ignore the tilt of the device ensuring you're looking straight forward even if the
-	   player is looking down or sideways. You can chose to keep the height the tracking provides
-	   which is important for room scale capable tracking.
+	static void add_tracker(const Ref<XRTracker>& p_tracker);
+	static void remove_tracker(const Ref<XRTracker>& p_tracker);
+	static Ref<XRTracker> get_tracker(const String& p_name);
 
-		Note: this should not be used in AR and should be ignored by an AR based interface as it
-	   would throw what you're looking at in the real world and in the virtual world out of sync
-	*/
-	Transform3D get_reference_frame() const;
-	void clear_reference_frame();
-	void center_on_hmd(RotationMode p_rotation_mode, bool p_keep_height);
+	static PackedStringArray get_suggested_tracker_names();
+	static PackedStringArray get_suggested_pose_names(const String& p_tracker_name);
 
-	/*
-		get_hmd_transform gets our hmd transform (centered between eyes) with most up to date
-	   tracking, relative to the origin
-	*/
-	Transform3D get_hmd_transform();
+	static void _process();
+	static void pre_render();
+	static void end_frame();
 
-	void set_camera_locked_to_origin(bool p_enable);
-
-	inline bool is_camera_locked_to_origin() const { return camera_locked_to_origin; }
-
-	/*
-		Interfaces are objects that 'glue' Godot to an AR or VR SDK such as the Oculus SDK, OpenVR,
-	   OpenHMD, etc.
-	*/
-	void add_interface(const Ref<XRInterface>& p_interface);
-	void remove_interface(const Ref<XRInterface>& p_interface);
-	int get_interface_count() const;
-	Ref<XRInterface> get_interface(int p_index) const;
-	Ref<XRInterface> find_interface(const String& p_name) const;
-
-	/*
-		note, more then one interface can technically be active, especially on mobile, but only one
-	   interface is used for rendering. This interface identifies itself by calling
-	   set_primary_interface when it is initialized
-	*/
-	Ref<XRInterface> get_primary_interface() const;
-	void set_primary_interface(const Ref<XRInterface>& p_primary_interface);
-
-	/*
-		Our trackers are objects that expose tracked information about physical objects such as
-	   controller, anchor points, faces, hands etc. They are created and managed by our active AR/VR
-	   interfaces.
-	*/
-	void add_tracker(const Ref<XRTracker>& p_tracker);
-	void remove_tracker(const Ref<XRTracker>& p_tracker);
-	Ref<XRTracker> get_tracker(const String& p_name) const;
-
-	/*
-		We don't know which trackers and actions will existing during runtime but we can request
-	   suggested names from our interfaces to help our IDE UI.
-	*/
-	PackedStringArray get_suggested_tracker_names() const;
-	PackedStringArray get_suggested_pose_names(const String& p_tracker_name) const;
-	// Q: Should we add get_suggested_input_names and get_suggested_haptic_names even though we
-	// don't use them for the IDE?
-
-	// Process is called before we handle our physics process and game process. This is where our
-	// interfaces will update controller data and such.
-	void _process();
-
-	// Pre-render is called right before we're rendering our viewports.
-	// This is where interfaces such as OpenVR and OpenXR will update positioning data.
-	// Many of these interfaces will also do a predictive sync which ensures we run at a steady
-	// framerate.
-	void pre_render();
-
-	// End-frame is called right after Godot has finished its rendering bits.
-	void end_frame();
-
-	XRServer();
-	~XRServer() = default;
+	XRServer() = delete;
+	XRServer(const XRServer&) = delete;
+	XRServer& operator=(const XRServer&) = delete;
+	~XRServer() = delete;
 };
 
 #define XR XRServer
-
-

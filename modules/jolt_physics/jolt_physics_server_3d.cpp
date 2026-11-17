@@ -56,15 +56,9 @@
 JoltPhysicsServer3D::JoltPhysicsServer3D(bool p_on_separate_thread)
 	: on_separate_thread(p_on_separate_thread)
 {
-	singleton = this;
 }
 
-JoltPhysicsServer3D::~JoltPhysicsServer3D()
-{
-	if (singleton == this) {
-		singleton = nullptr;
-	}
-}
+JoltPhysicsServer3D::~JoltPhysicsServer3D() = default;
 
 RID JoltPhysicsServer3D::world_boundary_shape_create()
 {

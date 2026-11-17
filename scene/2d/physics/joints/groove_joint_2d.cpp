@@ -64,7 +64,7 @@ void GrooveJoint2D::_configure_joint(RID p_joint, PhysicsBody2D* body_a, Physics
 	Vector2 groove_A2 = gt.xform(Vector2(0, length));
 	Vector2 anchor_B = gt.xform(Vector2(0, initial_offset));
 
-	PhysicsServer2D::get_singleton()->joint_make_groove(
+	PhysicsServer2D::joint_make_groove(
 		p_joint, groove_A1, groove_A2, anchor_B, body_a->get_rid(), body_b->get_rid());
 }
 

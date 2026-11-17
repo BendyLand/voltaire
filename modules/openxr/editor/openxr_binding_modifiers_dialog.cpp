@@ -101,7 +101,6 @@ void OpenXRBindingModifiersDialog::setup(const Ref<OpenXRActionMap>& p_action_ma
 	const Ref<OpenXRInteractionProfile>& p_interaction_profile,
 	const Ref<OpenXRIPBinding>& p_ip_binding)
 {
-	OpenXRInteractionProfileMetadata* meta_data = OpenXRInteractionProfileMetadata::get_singleton();
 	action_map = p_action_map;
 	interaction_profile = p_interaction_profile;
 	ip_binding = p_ip_binding;
@@ -118,7 +117,7 @@ void OpenXRBindingModifiersDialog::setup(const Ref<OpenXRActionMap>& p_action_ma
 		}
 
 		const OpenXRInteractionProfileMetadata::IOPath* io_path =
-			meta_data->get_io_path(profile_path, p_ip_binding->get_binding_path());
+			OpenXRInteractionProfileMetadata::get_io_path(profile_path, p_ip_binding->get_binding_path());
 		if (io_path != nullptr) {
 			path_name = io_path->display_name;
 		}
@@ -130,7 +129,7 @@ void OpenXRBindingModifiersDialog::setup(const Ref<OpenXRActionMap>& p_action_ma
 		String profile_name = profile_path;
 
 		const OpenXRInteractionProfileMetadata::InteractionProfile* profile_def =
-			meta_data->get_profile(profile_path);
+			OpenXRInteractionProfileMetadata::get_profile(profile_path);
 		if (profile_def != nullptr) {
 			profile_name = profile_def->display_name;
 		}

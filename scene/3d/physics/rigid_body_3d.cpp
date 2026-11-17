@@ -149,7 +149,7 @@ void RigidBody3D::set_use_custom_integrator(bool p_enable)
 	}
 
 	custom_integrator = p_enable;
-	PhysicsServer3D::get_singleton()->body_set_omit_force_integration(get_rid(), p_enable);
+	PhysicsServer3D::body_set_omit_force_integration(get_rid(), p_enable);
 }
 
 bool RigidBody3D::is_using_custom_integrator() { return custom_integrator; }
@@ -164,7 +164,7 @@ void RigidBody3D::set_max_contacts_reported(int p_amount)
 		"Max contacts reported allocates memory (about 80 bytes each), and therefore must not be "
 		"set too high.");
 	max_contacts_reported = p_amount;
-	PhysicsServer3D::get_singleton()->body_set_max_contacts_reported(get_rid(), p_amount);
+	PhysicsServer3D::body_set_max_contacts_reported(get_rid(), p_amount);
 }
 
 int RigidBody3D::get_max_contacts_reported() const { return max_contacts_reported; }
@@ -173,76 +173,73 @@ int RigidBody3D::get_contact_count() const { return contact_count; }
 
 void RigidBody3D::apply_central_impulse(const Vector3& p_impulse)
 {
-	PhysicsServer3D::get_singleton()->body_apply_central_impulse(get_rid(), p_impulse);
+	PhysicsServer3D::body_apply_central_impulse(get_rid(), p_impulse);
 }
 
 void RigidBody3D::apply_impulse(const Vector3& p_impulse, const Vector3& p_position)
 {
-	PhysicsServer3D* singleton = PhysicsServer3D::get_singleton();
-	singleton->body_apply_impulse(get_rid(), p_impulse, p_position);
+	PhysicsServer3D::body_apply_impulse(get_rid(), p_impulse, p_position);
 }
 
 void RigidBody3D::apply_torque_impulse(const Vector3& p_impulse)
 {
-	PhysicsServer3D::get_singleton()->body_apply_torque_impulse(get_rid(), p_impulse);
+	PhysicsServer3D::body_apply_torque_impulse(get_rid(), p_impulse);
 }
 
 void RigidBody3D::apply_central_force(const Vector3& p_force)
 {
-	PhysicsServer3D::get_singleton()->body_apply_central_force(get_rid(), p_force);
+	PhysicsServer3D::body_apply_central_force(get_rid(), p_force);
 }
 
 void RigidBody3D::apply_force(const Vector3& p_force, const Vector3& p_position)
 {
-	PhysicsServer3D* singleton = PhysicsServer3D::get_singleton();
-	singleton->body_apply_force(get_rid(), p_force, p_position);
+	PhysicsServer3D::body_apply_force(get_rid(), p_force, p_position);
 }
 
 void RigidBody3D::apply_torque(const Vector3& p_torque)
 {
-	PhysicsServer3D::get_singleton()->body_apply_torque(get_rid(), p_torque);
+	PhysicsServer3D::body_apply_torque(get_rid(), p_torque);
 }
 
 void RigidBody3D::add_constant_central_force(const Vector3& p_force)
 {
-	PhysicsServer3D::get_singleton()->body_add_constant_central_force(get_rid(), p_force);
+	PhysicsServer3D::body_add_constant_central_force(get_rid(), p_force);
 }
 
 void RigidBody3D::add_constant_force(const Vector3& p_force, const Vector3& p_position)
 {
-	PhysicsServer3D* singleton = PhysicsServer3D::get_singleton();
-	singleton->body_add_constant_force(get_rid(), p_force, p_position);
+	PhysicsServer3D::body_add_constant_force(get_rid(), p_force, p_position);
 }
 
 void RigidBody3D::add_constant_torque(const Vector3& p_torque)
 {
-	PhysicsServer3D::get_singleton()->body_add_constant_torque(get_rid(), p_torque);
+	PhysicsServer3D::body_add_constant_torque(get_rid(), p_torque);
 }
 
 void RigidBody3D::set_constant_force(const Vector3& p_force)
 {
-	PhysicsServer3D::get_singleton()->body_set_constant_force(get_rid(), p_force);
+	PhysicsServer3D::body_set_constant_force(get_rid(), p_force);
 }
 
 Vector3 RigidBody3D::get_constant_force() const
 {
-	return PhysicsServer3D::get_singleton()->body_get_constant_force(get_rid());
+	return PhysicsServer3D::body_get_constant_force(get_rid());
 }
 
 void RigidBody3D::set_constant_torque(const Vector3& p_torque)
 {
-	PhysicsServer3D::get_singleton()->body_set_constant_torque(get_rid(), p_torque);
+	PhysicsServer3D::body_set_constant_torque(get_rid(), p_torque);
 }
 
 Vector3 RigidBody3D::get_constant_torque() const
 {
-	return PhysicsServer3D::get_singleton()->body_get_constant_torque(get_rid());
+	return PhysicsServer3D::body_get_constant_torque(get_rid());
 }
 
 void RigidBody3D::set_use_continuous_collision_detection(bool p_enable)
 {
 	ccd = p_enable;
-	PhysicsServer3D::get_singleton()->body_set_enable_continuous_collision_detection(
+	PhysicsServer3D::body_set_enable_continuous_collision_detection(
 		get_rid(), p_enable);
 }
 

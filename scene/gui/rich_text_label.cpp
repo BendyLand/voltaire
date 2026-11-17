@@ -317,7 +317,7 @@ String RichTextLabel::_get_prefix(
 		if (p_list_items[i]->list_type == LIST_NUMBERS) {
 			segment = itos(p_list_index[i]);
 			if (is_localizing_numeral_system()) {
-				segment = TranslationServer::get_singleton()->format_number(
+				segment = TranslationServer::format_number(
 					segment, _find_language(p_item));
 			}
 			segments++;

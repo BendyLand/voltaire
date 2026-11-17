@@ -65,7 +65,7 @@ void CSGShape3D::set_collision_layer(uint32_t p_layer)
 {
 	collision_layer = p_layer;
 	if (root_collision_body.is_valid()) {
-		PhysicsServer3D::get_singleton()->body_set_collision_layer(root_collision_body, p_layer);
+		PhysicsServer3D::body_set_collision_layer(root_collision_body, p_layer);
 	}
 }
 
@@ -75,7 +75,7 @@ void CSGShape3D::set_collision_mask(uint32_t p_mask)
 {
 	collision_mask = p_mask;
 	if (root_collision_body.is_valid()) {
-		PhysicsServer3D::get_singleton()->body_set_collision_mask(root_collision_body, p_mask);
+		PhysicsServer3D::body_set_collision_mask(root_collision_body, p_mask);
 	}
 }
 
@@ -147,7 +147,7 @@ void CSGShape3D::set_collision_priority(real_t p_priority)
 {
 	collision_priority = p_priority;
 	if (root_collision_body.is_valid()) {
-		PhysicsServer3D::get_singleton()->body_set_collision_priority(
+		PhysicsServer3D::body_set_collision_priority(
 			root_collision_body, p_priority);
 	}
 }

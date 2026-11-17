@@ -47,12 +47,12 @@ void AudioStreamSynchronized::set_sync_stream(int p_stream_index, Ref<AudioStrea
 	ERR_FAIL_COND(p_stream == this);
 	ERR_FAIL_INDEX(p_stream_index, MAX_STREAMS);
 
-	AudioServer::get_singleton()->lock();
+	AudioServer::lock();
 	audio_streams[p_stream_index] = p_stream;
 	for (AudioStreamPlaybackSynchronized* E : playbacks) {
 		E->_update_playback_instances();
 	}
-	AudioServer::get_singleton()->unlock();
+	AudioServer::unlock();
 }
 
 Ref<AudioStream> AudioStreamSynchronized::get_sync_stream(int p_stream_index) const
@@ -137,9 +137,9 @@ double AudioStreamSynchronized::get_length() const
 void AudioStreamSynchronized::set_stream_count(int p_count)
 {
 	ERR_FAIL_COND(p_count < 0 || p_count > MAX_STREAMS);
-	AudioServer::get_singleton()->lock();
+	AudioServer::lock();
 	stream_count = p_count;
-	AudioServer::get_singleton()->unlock();
+	AudioServer::unlock();
 }
 
 int AudioStreamSynchronized::get_stream_count() const { return stream_count; }

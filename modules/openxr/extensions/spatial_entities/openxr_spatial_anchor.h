@@ -140,7 +140,7 @@ private:
 };
 
 // (Persistent) anchor logic
-class OpenXRSpatialAnchorCapability
+class OpenXRSpatialAnchorCapability final
 {
 public:
 	enum PersistenceScope
@@ -149,33 +149,29 @@ public:
 		PERSISTENCE_SCOPE_LOCAL_ANCHORS = XR_SPATIAL_PERSISTENCE_SCOPE_LOCAL_ANCHORS_EXT,
 	};
 
-	static OpenXRSpatialAnchorCapability* get_singleton();
 
-	OpenXRSpatialAnchorCapability();
-	virtual ~OpenXRSpatialAnchorCapability();
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+	static void on_session_created(const XrSession p_session);
+	static void on_session_destroyed();
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void on_instance_destroyed();
-	virtual void on_session_created(const XrSession p_session);
-	virtual void on_session_destroyed();
+	static void on_process();
 
-	virtual void on_process();
-
-	bool is_spatial_anchor_supported();
-	bool is_spatial_persistence_supported();
+	static bool is_spatial_anchor_supported();
+	static bool is_spatial_persistence_supported();
 
 	// Persistence scopes
-	bool is_persistence_scope_supported(XrSpatialPersistenceScopeEXT p_scope);
+	static bool is_persistence_scope_supported(XrSpatialPersistenceScopeEXT p_scope);
 
-	XrSpatialPersistenceContextEXT get_persistence_context_handle(RID p_persistence_context) const;
-	void free_persistence_context(RID p_persistence_context);
+	static XrSpatialPersistenceContextEXT get_persistence_context_handle(RID p_persistence_context);
+	static void free_persistence_context(RID p_persistence_context);
 
-	Ref<OpenXRAnchorTracker> create_new_anchor(const Transform3D& p_transform,
+	static Ref<OpenXRAnchorTracker> create_new_anchor(const Transform3D& p_transform,
 		RID p_spatial_context = RID(),
 		Ref<OpenXRStructureBase> p_next = Ref<OpenXRStructureBase>());
-	void remove_anchor(Ref<OpenXRAnchorTracker> p_anchor_tracker);
+	static void remove_anchor(Ref<OpenXRAnchorTracker> p_anchor_tracker);
 
 	static String get_spatial_persistence_scope_name(XrSpatialPersistenceScopeEXT p_scope);
 	static String get_spatial_persistence_context_result_name(
@@ -184,29 +180,12 @@ public:
 protected:
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
-	Ref<OpenXRAnchorTracker> _create_new_anchor_bind_compat_118128(
+	static Ref<OpenXRAnchorTracker> _create_new_anchor_bind_compat_118128(
 		const Transform3D& p_transform, RID p_spatial_context);
 #endif
 
 private:
-	static OpenXRSpatialAnchorCapability* singleton;
-
-	bool spatial_anchor_ext = false;
-	bool spatial_persistence_ext = false;
-	bool spatial_persistence_operations_ext = false;
-	bool spatial_anchor_supported = false;
-
-	RID spatial_context;
-	RID persistence_context;
-	bool need_discovery = false;
-	int discovery_cooldown = 0;
-	Ref<OpenXRFutureResult> discovery_query_result;
-
-	Ref<OpenXRSpatialCapabilityConfigurationAnchor> anchor_configuration;
-	Ref<OpenXRSpatialContextPersistenceConfig> persistence_configuration;
-
-	Vector<XrSpatialPersistenceScopeEXT> supported_persistence_scopes;
-	bool _load_supported_persistence_scopes();
+	static bool _load_supported_persistence_scopes();
 
 	// Persistence scopes
 	struct PersistenceContextData
@@ -215,22 +194,17 @@ private:
 		XrSpatialPersistenceContextEXT persistence_context = XR_NULL_HANDLE;
 	};
 
-	mutable RID_Owner<PersistenceContextData> persistence_context_owner;
+	static bool _is_persistence_scope_supported(PersistenceScope p_scope);
 
-	bool _is_persistence_scope_supported(PersistenceScope p_scope);
-
-	uint64_t _get_persistence_context_handle(RID p_persistence_context) const;
+	static uint64_t _get_persistence_context_handle(RID p_persistence_context);
 
 	// Discovery logic
-	void _on_persistence_context_completed(RID p_persistence_context);
+	static void _on_persistence_context_completed(RID p_persistence_context);
 
-	Ref<OpenXRFutureResult> _create_spatial_context();
-	void _on_spatial_context_created(RID p_spatial_context);
+	static Ref<OpenXRFutureResult> _create_spatial_context();
+	static void _on_spatial_context_created(RID p_spatial_context);
 
-	void _on_spatial_discovery_recommended(RID p_spatial_context);
-
-	// Trackers; maps each Spatial Context RID to their anchor entities and trackers
-	HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRAnchorTracker>>> anchor_trackers;
+	static void _on_spatial_discovery_recommended(RID p_spatial_context);
 
 	// OpenXR API call wrappers
 	EXT_PROTO_XRRESULT_FUNC4(xrCreateSpatialAnchorEXT, (XrSpatialContextEXT), spatialContext,
@@ -259,6 +233,36 @@ private:
 	EXT_PROTO_XRRESULT_FUNC3(xrUnpersistSpatialEntityCompleteEXT, (XrSpatialPersistenceContextEXT),
 		persistence_context, (XrFutureEXT), future, (XrUnpersistSpatialEntityCompletionEXT*),
 		completion);
+
+public:
+	struct Data
+	{
+		bool spatial_anchor_ext = false;
+		bool spatial_persistence_ext = false;
+		bool spatial_persistence_operations_ext = false;
+		bool spatial_anchor_supported = false;
+		RID spatial_context;
+		RID persistence_context;
+		bool need_discovery = false;
+		int discovery_cooldown = 0;
+		Ref<OpenXRFutureResult> discovery_query_result;
+		Ref<OpenXRSpatialCapabilityConfigurationAnchor> anchor_configuration;
+		Ref<OpenXRSpatialContextPersistenceConfig> persistence_configuration;
+		Vector<XrSpatialPersistenceScopeEXT> supported_persistence_scopes;
+		RID_Owner<PersistenceContextData> persistence_context_owner;
+		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRAnchorTracker>>> anchor_trackers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRSpatialAnchorCapability() = delete;
+	OpenXRSpatialAnchorCapability(const OpenXRSpatialAnchorCapability&) = delete;
+	OpenXRSpatialAnchorCapability& operator=(const OpenXRSpatialAnchorCapability&) = delete;
+	~OpenXRSpatialAnchorCapability() = delete;
 };
 
 

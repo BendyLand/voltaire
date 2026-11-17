@@ -105,9 +105,9 @@ void AudioStreamInteractive::erase_transition(int p_from_clip, int p_to_clip)
 {
 	TransitionKey tk(p_from_clip, p_to_clip);
 	ERR_FAIL_COND(!transition_map.has(tk));
-	AudioDriver::get_singleton()->lock();
+	AudioDriverManager::get_active_driver()->lock();
 	transition_map.erase(tk);
-	AudioDriver::get_singleton()->unlock();
+	AudioDriverManager::get_active_driver()->unlock();
 }
 
 PackedInt32Array AudioStreamInteractive::get_transition_list() const
@@ -142,9 +142,9 @@ void AudioStreamInteractive::add_transition(int p_from_clip, int p_to_clip,
 
 	TransitionKey tk(p_from_clip, p_to_clip);
 
-	AudioDriver::get_singleton()->lock();
+	AudioDriverManager::get_active_driver()->lock();
 	transition_map[tk] = tr;
-	AudioDriver::get_singleton()->unlock();
+	AudioDriverManager::get_active_driver()->unlock();
 }
 
 AudioStreamInteractive::TransitionFromTime AudioStreamInteractive::get_transition_from_time(
@@ -645,7 +645,7 @@ void AudioStreamPlaybackInteractive::_mix_internal(int p_frames)
 void AudioStreamPlaybackInteractive::_mix_internal_state(int p_state_idx, int p_frames)
 {
 	State& state = states[p_state_idx];
-	double mix_rate = double(AudioServer::get_singleton()->get_mix_rate());
+	double mix_rate = double(AudioServer::get_mix_rate());
 	double frame_inc = 1.0 / mix_rate;
 
 	int from_frame = 0;
