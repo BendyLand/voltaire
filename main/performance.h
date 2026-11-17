@@ -38,16 +38,17 @@
 
 template <typename T> class TypedArray;
 
-class Performance
+class Performance final
 {
-	static Performance* singleton;
+	static inline bool _initialized = false;
 
-	int _get_node_count() const;
-	int _get_orphan_node_count() const;
+	static int _get_node_count();
+	static int _get_orphan_node_count();
 
-	double _process_time;
-	double _physics_process_time;
-	double _navigation_process_time;
+	static inline double _process_time = 0.0;
+	static inline double _physics_process_time = 0.0;
+	static inline double _navigation_process_time = 0.0;
+	static inline uint64_t _monitor_modification_time = 0;
 
 public:
 	enum Monitor
@@ -125,20 +126,25 @@ public:
 		MONITOR_TYPE_PERCENTAGE,
 	};
 
-	double get_monitor(Monitor p_monitor) const;
-	String get_monitor_name(Monitor p_monitor) const;
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
 
-	MonitorType get_monitor_type(Monitor p_monitor) const;
+	static double get_monitor(Monitor p_monitor);
+	static String get_monitor_name(Monitor p_monitor);
 
-	void set_process_time(double p_pt);
-	void set_physics_process_time(double p_pt);
-	void set_navigation_process_time(double p_pt);
+	static MonitorType get_monitor_type(Monitor p_monitor);
 
-	uint64_t get_monitor_modification_time();
+	static void set_process_time(double p_pt);
+	static void set_physics_process_time(double p_pt);
+	static void set_navigation_process_time(double p_pt);
 
-	static Performance* get_singleton() { return singleton; }
+	static uint64_t get_monitor_modification_time();
 
-	Performance();
+	Performance() = delete;
+	Performance(const Performance&) = delete;
+	Performance& operator=(const Performance&) = delete;
+	~Performance() = delete;
 
 private:
 	class MonitorCall
@@ -150,8 +156,4 @@ private:
 
 		inline MonitorType get_monitor_type() const { return _type; }
 	};
-
-	uint64_t _monitor_modification_time;
 };
-
-

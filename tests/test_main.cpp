@@ -151,8 +151,6 @@ int test_main(int argc, char *argv[]) {
 struct GodotTestCaseListener : public doctest::IReporter {
 	GodotTestCaseListener(const doctest::ContextOptions &p_in) {}
 
-	SignalWatcher *signal_watcher = nullptr;
-
 #ifndef PHYSICS_2D_DISABLED
 	PhysicsServer2D *physics_server_2d = nullptr;
 #endif // PHYSICS_2D_DISABLED
@@ -347,11 +345,11 @@ struct GodotTestCaseListener : public doctest::IReporter {
 	}
 
 	void test_run_start() override {
-		signal_watcher = memnew(SignalWatcher);
+		SignalWatcher::initialize();
 	}
 
 	void test_run_end(const doctest::TestRunStats &) override {
-		memdelete(signal_watcher);
+		SignalWatcher::finalize();
 	}
 
 	void test_case_reenter(const doctest::TestCaseData &) override {
@@ -373,7 +371,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 private:
 	void reinitialize() {
 		Math::seed(0x60d07);
-		SignalWatcher::get_singleton()->_clear_signals();
+		SignalWatcher::_clear_signals();
 	}
 };
 

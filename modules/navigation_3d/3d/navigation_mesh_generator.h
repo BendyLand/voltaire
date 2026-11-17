@@ -35,20 +35,20 @@
 
 class NavigationMeshSourceGeometryData3D;
 
-class NavigationMeshGenerator
+class NavigationMeshGenerator final
 {
-	static NavigationMeshGenerator* singleton;
-
-protected:
+	static inline bool _initialized = false;
 
 public:
-	static NavigationMeshGenerator* get_singleton();
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
 
-	NavigationMeshGenerator();
-	~NavigationMeshGenerator();
+	static void bake(const Ref<NavigationMesh>& p_navigation_mesh, Node* p_root_node);
+	static void clear(Ref<NavigationMesh> p_navigation_mesh);
 
-	void bake(const Ref<NavigationMesh>& p_navigation_mesh, Node* p_root_node);
-	void clear(Ref<NavigationMesh> p_navigation_mesh);
+	NavigationMeshGenerator() = delete;
+	NavigationMeshGenerator(const NavigationMeshGenerator&) = delete;
+	NavigationMeshGenerator& operator=(const NavigationMeshGenerator&) = delete;
+	~NavigationMeshGenerator() = delete;
 };
-
-

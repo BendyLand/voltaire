@@ -41,7 +41,6 @@
 #include "scene/resources/2d/navigation_mesh_source_geometry_data_2d.h"
 #include "scene/resources/2d/navigation_polygon.h"
 
-NavMeshGenerator2D* NavMeshGenerator2D::singleton = nullptr;
 Mutex NavMeshGenerator2D::baking_navmesh_mutex;
 Mutex NavMeshGenerator2D::generator_task_mutex;
 RWLock NavMeshGenerator2D::generator_parsers_rwlock;
@@ -51,9 +50,19 @@ bool NavMeshGenerator2D::baking_use_high_priority_threads = true;
 HashSet<Ref<NavigationPolygon>> NavMeshGenerator2D::baking_navmeshes;
 LocalVector<NavMeshGeometryParser2D*> NavMeshGenerator2D::generator_parsers;
 
-NavMeshGenerator2D* NavMeshGenerator2D::get_singleton() { return singleton; }
+void NavMeshGenerator2D::initialize()
+{
+	_initialized = true;
+}
 
-NavMeshGenerator2D::~NavMeshGenerator2D() { cleanup(); }
+void NavMeshGenerator2D::finalize()
+{
+	if (!_initialized) {
+		return;
+	}
+	cleanup();
+	_initialized = false;
+}
 
 void NavMeshGenerator2D::finish() { cleanup(); }
 
@@ -353,10 +362,10 @@ void NavMeshGenerator2D::generator_bake_from_source_geometry_data(
 	p_navigation_mesh->set_data(new_vertices, new_polygons);
 }
 
-#endif // CLIPPER2_ENABLED
-
 void NavMeshGenerator2D::sync() {}
 
 void NavMeshGenerator2D::cleanup() {}
+
+#endif // CLIPPER2_ENABLED
 
 

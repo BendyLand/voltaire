@@ -53,9 +53,7 @@
 #include "servers/physics_3d/physics_server_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
-Performance* Performance::singleton = nullptr;
-
-int Performance::_get_orphan_node_count() const
+int Performance::_get_orphan_node_count()
 {
 #ifdef DEBUG_ENABLED
 	const int total_node_count = Node::total_node_count.get();
@@ -66,7 +64,7 @@ int Performance::_get_orphan_node_count() const
 #endif
 }
 
-String Performance::get_monitor_name(Monitor p_monitor) const
+String Performance::get_monitor_name(Monitor p_monitor)
 {
 	ERR_FAIL_INDEX_V(p_monitor, MONITOR_MAX, String());
 	static const char* names[MONITOR_MAX] = {
@@ -141,7 +139,7 @@ String Performance::get_monitor_name(Monitor p_monitor) const
 	return names[p_monitor];
 }
 
-double Performance::get_monitor(Monitor p_monitor) const
+double Performance::get_monitor(Monitor p_monitor)
 {
 	int info = 0;
 
@@ -411,7 +409,7 @@ double Performance::get_monitor(Monitor p_monitor) const
 	return 0;
 }
 
-Performance::MonitorType Performance::get_monitor_type(Monitor p_monitor) const
+Performance::MonitorType Performance::get_monitor_type(Monitor p_monitor)
 {
 	ERR_FAIL_INDEX_V(p_monitor, MONITOR_MAX, MONITOR_TYPE_QUANTITY);
 	// ugly
@@ -492,17 +490,26 @@ void Performance::set_navigation_process_time(double p_pt) { _navigation_process
 
 uint64_t Performance::get_monitor_modification_time() { return _monitor_modification_time; }
 
-Performance::Performance()
+void Performance::initialize()
 {
-	_process_time = 0;
-	_physics_process_time = 0;
-	_navigation_process_time = 0;
+	_process_time = 0.0;
+	_physics_process_time = 0.0;
+	_navigation_process_time = 0.0;
 	_monitor_modification_time = 0;
-	singleton = this;
+	_initialized = true;
+}
+
+void Performance::finalize()
+{
+	_process_time = 0.0;
+	_physics_process_time = 0.0;
+	_navigation_process_time = 0.0;
+	_monitor_modification_time = 0;
+	_initialized = false;
 }
 
 Performance::MonitorCall::MonitorCall() {}
 
-int Performance::_get_node_count() const { return 0; }
+int Performance::_get_node_count() { return 0; }
 
 

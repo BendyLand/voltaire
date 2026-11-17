@@ -37,9 +37,9 @@ class Node;
 class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
 
-class NavMeshGenerator3D
+class NavMeshGenerator3D final
 {
-	static NavMeshGenerator3D* singleton;
+	static inline bool _initialized = false;
 
 	static Mutex baking_navmesh_mutex;
 	static Mutex generator_task_mutex;
@@ -101,7 +101,9 @@ private:
 	static void generator_bake_from_source_geometry_data(NavMeshGeneratorTask3D* p_generator_task);
 
 public:
-	static NavMeshGenerator3D* get_singleton();
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
 
 	static void sync();
 	static void cleanup();
@@ -110,8 +112,8 @@ public:
 	static bool is_baking(Ref<NavigationMesh> p_navigation_mesh);
 	static String get_baking_state_msg(Ref<NavigationMesh> p_navigation_mesh);
 
-	NavMeshGenerator3D();
-	~NavMeshGenerator3D();
+	NavMeshGenerator3D() = delete;
+	NavMeshGenerator3D(const NavMeshGenerator3D&) = delete;
+	NavMeshGenerator3D& operator=(const NavMeshGenerator3D&) = delete;
+	~NavMeshGenerator3D() = delete;
 };
-
-

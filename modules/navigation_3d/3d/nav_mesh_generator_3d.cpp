@@ -38,7 +38,6 @@
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
 #include "scene/resources/navigation_mesh.h"
 
-NavMeshGenerator3D* NavMeshGenerator3D::singleton = nullptr;
 Mutex NavMeshGenerator3D::baking_navmesh_mutex;
 Mutex NavMeshGenerator3D::generator_task_mutex;
 RWLock NavMeshGenerator3D::generator_parsers_rwlock;
@@ -65,9 +64,19 @@ static const char*
 		"Baking finished.",
 };
 
-NavMeshGenerator3D* NavMeshGenerator3D::get_singleton() { return singleton; }
+void NavMeshGenerator3D::initialize()
+{
+	_initialized = true;
+}
 
-NavMeshGenerator3D::~NavMeshGenerator3D() { cleanup(); }
+void NavMeshGenerator3D::finalize()
+{
+	if (!_initialized) {
+		return;
+	}
+	cleanup();
+	_initialized = false;
+}
 
 void NavMeshGenerator3D::finish() { cleanup(); }
 

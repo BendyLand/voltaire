@@ -34,13 +34,15 @@
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 
-NavigationMeshGenerator* NavigationMeshGenerator::singleton = nullptr;
+void NavigationMeshGenerator::initialize()
+{
+	_initialized = true;
+}
 
-NavigationMeshGenerator* NavigationMeshGenerator::get_singleton() { return singleton; }
-
-NavigationMeshGenerator::NavigationMeshGenerator() { singleton = this; }
-
-NavigationMeshGenerator::~NavigationMeshGenerator() {}
+void NavigationMeshGenerator::finalize()
+{
+	_initialized = false;
+}
 
 void NavigationMeshGenerator::bake(const Ref<NavigationMesh>& p_navigation_mesh, Node* p_root_node)
 {
@@ -60,4 +62,3 @@ void NavigationMeshGenerator::clear(Ref<NavigationMesh> p_navigation_mesh)
 		p_navigation_mesh->set_vertices(Vector<Vector3>());
 	}
 }
-

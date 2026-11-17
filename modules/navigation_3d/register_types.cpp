@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "register_types.h"
+#include "3d/nav_mesh_generator_3d.h"
 
 #ifndef DISABLE_DEPRECATED
 #include "3d/navigation_mesh_generator.h"
@@ -44,10 +45,6 @@
 #include "core/config/engine.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 
-#ifndef DISABLE_DEPRECATED
-NavigationMeshGenerator* _nav_mesh_generator = nullptr;
-#endif // DISABLE_DEPRECATED
-
 void uninitialize_navigation_3d_module(ModuleInitializationLevel p_level)
 {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
@@ -55,10 +52,19 @@ void uninitialize_navigation_3d_module(ModuleInitializationLevel p_level)
 	}
 
 #ifndef DISABLE_DEPRECATED
-	memdelete(_nav_mesh_generator);
+	NavigationMeshGenerator::finalize();
 #endif // DISABLE_DEPRECATED
+	NavMeshGenerator3D::finalize();
 }
 
-void initialize_navigation_3d_module(ModuleInitializationLevel p_level) {}
+void initialize_navigation_3d_module(ModuleInitializationLevel p_level)
+{
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
+		NavMeshGenerator3D::initialize();
+#ifndef DISABLE_DEPRECATED
+		NavigationMeshGenerator::initialize();
+#endif // DISABLE_DEPRECATED
+	}
+}
 
 

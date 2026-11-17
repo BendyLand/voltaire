@@ -32,6 +32,10 @@
 #include "register_types.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 
+#ifdef CLIPPER2_ENABLED
+#include "2d/nav_mesh_generator_2d.h"
+#endif
+
 #ifdef TOOLS_ENABLED
 #include "editor/navigation_link_2d_editor_plugin.h"
 #include "editor/navigation_obstacle_2d_editor_plugin.h"
@@ -40,6 +44,12 @@
 
 void initialize_navigation_2d_module(ModuleInitializationLevel p_level)
 {
+#ifdef CLIPPER2_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
+		NavMeshGenerator2D::initialize();
+	}
+#endif
+
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		EditorPlugins::add_by_type<NavigationLink2DEditorPlugin>();
@@ -54,6 +64,10 @@ void uninitialize_navigation_2d_module(ModuleInitializationLevel p_level)
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
 		return;
 	}
+
+#ifdef CLIPPER2_ENABLED
+	NavMeshGenerator2D::finalize();
+#endif
 }
 
 

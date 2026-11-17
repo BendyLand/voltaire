@@ -161,7 +161,7 @@ void ScriptEditorDebugger::_file_selected(const String& p_file)
 
 		// signatures
 		for (int i = 0; i < Performance::MONITOR_MAX; i++) {
-			line.write[i] = Performance::get_singleton()->get_monitor_name(Performance::Monitor(i));
+			line.write[i] = Performance::get_monitor_name(Performance::Monitor(i));
 		}
 		file->store_csv_line(line);
 
@@ -173,7 +173,7 @@ void ScriptEditorDebugger::_file_selected(const String& p_file)
 			iterators.write[i] =
 				performance_profiler
 					->get_monitor_data(
-						Performance::get_singleton()->get_monitor_name(Performance::Monitor(i)))
+						Performance::get_monitor_name(Performance::Monitor(i)))
 					->back();
 			continue_iteration = continue_iteration || iterators[i];
 		}

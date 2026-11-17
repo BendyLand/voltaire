@@ -155,7 +155,6 @@
 
 // Initialized in setup()
 static TranslationServer* translation_server = nullptr;
-static Performance* performance = nullptr;
 
 #if defined(STEAMAPI_ENABLED)
 static SteamTracker* steam_tracker = nullptr;
@@ -1177,7 +1176,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	register_core_settings(); // here globals are present
 
 	translation_server = memnew(TranslationServer);
-	performance = memnew(Performance);
+	Performance::initialize();
 
 	MAIN_PRINT("Main: Parse CMDLine");
 
@@ -2910,7 +2909,7 @@ error:
 		OS::remove_lock_file();
 	}
 
-	memdelete(performance);
+	Performance::finalize();
 	InputMap::finalize();
 	memdelete(translation_server);
 #ifdef MINIZIP_ENABLED
@@ -4126,9 +4125,9 @@ bool Main::iteration()
 		}
 
 		Engine::_fps = frames;
-		performance->set_process_time(USEC_TO_SEC(process_max));
-		performance->set_physics_process_time(USEC_TO_SEC(physics_process_max));
-		performance->set_navigation_process_time(USEC_TO_SEC(navigation_process_max));
+		Performance::set_process_time(USEC_TO_SEC(process_max));
+		Performance::set_physics_process_time(USEC_TO_SEC(physics_process_max));
+		Performance::set_navigation_process_time(USEC_TO_SEC(navigation_process_max));
 		process_max = 0;
 		physics_process_max = 0;
 		navigation_process_max = 0;
@@ -4309,7 +4308,7 @@ void Main::cleanup(bool p_force)
 	ZipArchive::finalize();
 #endif
 	PackedData::finalize();
-	memdelete(performance);
+	Performance::finalize();
 	InputMap::finalize();
 	memdelete(translation_server);
 	memdelete(tsman);

@@ -44,9 +44,9 @@ struct NavMeshGeometryParser2D
 	RID self;
 };
 
-class NavMeshGenerator2D
+class NavMeshGenerator2D final
 {
-	static NavMeshGenerator2D* singleton;
+	static inline bool _initialized = false;
 
 	static Mutex baking_navmesh_mutex;
 	static Mutex generator_task_mutex;
@@ -88,7 +88,9 @@ class NavMeshGenerator2D
 		Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data);
 
 public:
-	static NavMeshGenerator2D* get_singleton();
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
 
 	static void sync();
 	static void cleanup();
@@ -96,13 +98,12 @@ public:
 
 	static void set_generator_parsers(const LocalVector<NavMeshGeometryParser2D*>& p_parsers);
 
-	static bool is_baking(Ref<NavigationPolygon>
- p_navigation_polygon);
+	static bool is_baking(Ref<NavigationPolygon> p_navigation_polygon);
 
-	NavMeshGenerator2D() = default;
-	~NavMeshGenerator2D();
+	NavMeshGenerator2D() = delete;
+	NavMeshGenerator2D(const NavMeshGenerator2D&) = delete;
+	NavMeshGenerator2D& operator=(const NavMeshGenerator2D&) = delete;
+	~NavMeshGenerator2D() = delete;
 };
 
 #endif // CLIPPER2_ENABLED
-
-
