@@ -34,9 +34,7 @@
 #include "core/input/input_event.h"
 #include "core/templates/hash_map.h"
 
-template <typename T> class TypedArray;
-
-class InputMap
+class InputMap final
 {
 public:
 	/**
@@ -55,70 +53,75 @@ public:
 	// Keep bigger deadzone for toggle actions (default `ui_*` actions, axis `pressed`) (GH-103360).
 	static constexpr float DEFAULT_TOGGLE_DEADZONE = 0.5f;
 
+	struct Data
+	{
+		HashMap<String, Action> input_map;
+		HashMap<String, List<Ref<InputEvent>>> default_builtin_cache;
+		HashMap<String, List<Ref<InputEvent>>> default_builtin_with_overrides_cache;
+		int last_id = 1;
+	};
+
+	static inline Data* data = nullptr;
+
 private:
-	static inline InputMap* singleton = nullptr;
-
-	mutable HashMap<String, Action> input_map;
-	HashMap<String, List<Ref<InputEvent>>> default_builtin_cache;
-	HashMap<String, List<Ref<InputEvent>>> default_builtin_with_overrides_cache;
-
-	List<Ref<InputEvent>>::Element* _find_event(Action& p_action, const Ref<InputEvent>& p_event,
-		bool p_exact_match = false, bool* r_pressed = nullptr, float* r_strength = nullptr,
-		float* r_raw_strength = nullptr, int* r_event_index = nullptr) const;
-
-	Vector<Ref<InputEvent>> _action_get_events(const String& p_action);
-
-protected:
+	static List<Ref<InputEvent>>::Element* _find_event(Action& p_action,
+		const Ref<InputEvent>& p_event, bool p_exact_match = false, bool* r_pressed = nullptr,
+		float* r_strength = nullptr, float* r_raw_strength = nullptr,
+		int* r_event_index = nullptr);
 
 #ifndef DISABLE_DEPRECATED
-	void _add_action_bind_compat_97281(const String& p_action, float p_deadzone = 0.5);
+	static void _add_action_bind_compat_97281(const String& p_action, float p_deadzone = 0.5);
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
 public:
-	static _FORCE_INLINE_ InputMap* get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	bool has_action(const String& p_action) const;
-	TypedArray<String> get_actions();
-	void add_action(const String& p_action, float p_deadzone = DEFAULT_DEADZONE);
-	void erase_action(const String& p_action);
+	static bool has_action(const String& p_action);
+	static void add_action(const String& p_action, float p_deadzone = DEFAULT_DEADZONE);
+	static void erase_action(const String& p_action);
 
-	String get_action_description(const String& p_action) const;
+	static String get_action_description(const String& p_action);
 
-	float action_get_deadzone(const String& p_action);
-	void action_set_deadzone(const String& p_action, float p_deadzone);
-	void action_add_event(const String& p_action, InputEvent* rp_event);
-	bool action_has_event(const String& p_action, InputEvent* rp_event);
-	void action_erase_event(const String& p_action, InputEvent* rp_event);
-	void action_erase_events(const String& p_action);
+	static float action_get_deadzone(const String& p_action);
+	static void action_set_deadzone(const String& p_action, float p_deadzone);
+	static void action_add_event(const String& p_action, InputEvent* rp_event);
+	static bool action_has_event(const String& p_action, InputEvent* rp_event);
+	static void action_erase_event(const String& p_action, InputEvent* rp_event);
+	static void action_erase_events(const String& p_action);
 
-	const List<Ref<InputEvent>>* action_get_events(const String& p_action);
-	bool event_is_action(InputEvent* rp_event, const String& p_action,
-		bool p_exact_match = false) const;
-	int event_get_index(const Ref<InputEvent>& p_event, const String& p_action,
-		bool p_exact_match = false) const;
-	bool event_get_action_status(const Ref<InputEvent>& p_event, const String& p_action,
+	static const List<Ref<InputEvent>>* action_get_events(const String& p_action);
+	static bool event_is_action(
+		InputEvent* rp_event, const String& p_action, bool p_exact_match = false);
+	static int event_get_index(
+		const Ref<InputEvent>& p_event, const String& p_action, bool p_exact_match = false);
+	static bool event_get_action_status(const Ref<InputEvent>& p_event, const String& p_action,
 		bool p_exact_match = false, bool* r_pressed = nullptr, float* r_strength = nullptr,
-		float* r_raw_strength = nullptr, int* r_event_index = nullptr) const;
+		float* r_raw_strength = nullptr, int* r_event_index = nullptr);
 
-	const HashMap<String, Action>& get_action_map() const;
-	void load_from_project_settings();
-	void load_default();
+	static const HashMap<String, Action>& get_action_map();
+	static void load_from_project_settings();
+	static void load_default();
 
-	String suggest_actions(const String& p_action) const;
+	static String suggest_actions(const String& p_action);
 
 #ifdef TOOLS_ENABLED
-	virtual void get_argument_options(
-		const String& p_function, int p_idx, List<String>* r_options) const;
+	static void get_argument_options(
+		const String& p_function, int p_idx, List<String>* r_options);
 #endif
 
-	String get_builtin_display_name(const String& p_name) const;
+	static String get_builtin_display_name(const String& p_name);
 	// Use an Ordered Map so insertion order is preserved. We want the elements to be 'grouped'
 	// somewhat.
-	const HashMap<String, List<Ref<InputEvent>>>& get_builtins();
-	const HashMap<String, List<Ref<InputEvent>>>& get_builtins_with_feature_overrides_applied();
+	static const HashMap<String, List<Ref<InputEvent>>>& get_builtins();
+	static const HashMap<String, List<Ref<InputEvent>>>&
+	get_builtins_with_feature_overrides_applied();
 
-	InputMap();
-	~InputMap();
+	InputMap() = delete;
+	InputMap(const InputMap&) = delete;
+	InputMap& operator=(const InputMap&) = delete;
+	~InputMap() = delete;
 };
 

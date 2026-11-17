@@ -36,22 +36,39 @@
 #include "input_map.compat.inc"
 #include "input_map.h"
 
+void InputMap::initialize()
+{
+	if (data == nullptr) {
+		data = memnew(Data);
+	}
+}
+
+void InputMap::finalize()
+{
+	if (data != nullptr) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
 /**
  * Returns an nonexistent action error message with a suggestion of the closest
  * matching action name (if possible).
  */
-String InputMap::suggest_actions(const String& p_action) const
+String InputMap::suggest_actions(const String& p_action)
 {
 	String closest_action;
 	float closest_similarity = 0.0;
 
-	// Find the most action with the most similar name.
-	for (const KeyValue<String, Action>& kv : input_map) {
-		const float similarity = String(kv.key).similarity(p_action);
+	if (data != nullptr) {
+		// Find the most action with the most similar name.
+		for (const KeyValue<String, Action>& kv : data->input_map) {
+			const float similarity = String(kv.key).similarity(p_action);
 
-		if (similarity > closest_similarity) {
-			closest_action = kv.key;
-			closest_similarity = similarity;
+			if (similarity > closest_similarity) {
+				closest_action = kv.key;
+				closest_similarity = similarity;
+			}
 		}
 	}
 
@@ -66,8 +83,9 @@ String InputMap::suggest_actions(const String& p_action) const
 
 #ifdef TOOLS_ENABLED
 void InputMap::get_argument_options(
-	const String& p_function, int p_idx, List<String>* r_options) const
+	const String& p_function, int p_idx, List<String>* r_options)
 {
+	(void)r_options;
 	const String pf = p_function;
 	bool first_argument_is_action = false;
 	if (p_idx == 0) {
@@ -77,30 +95,32 @@ void InputMap::get_argument_options(
 				pf == "action_add_event" || pf == "action_get_events" ||
 				pf == "action_erase_event" || pf == "action_erase_events");
 	}
+	(void)first_argument_is_action;
 }
 #endif
 
 void InputMap::add_action(const String& p_action, float p_deadzone)
 {
-	ERR_FAIL_COND_MSG(
-		input_map.has(p_action), vformat("InputMap already has action \"%s\".", String(p_action)));
-	input_map[p_action] = Action();
-	static int last_id = 1;
-	input_map[p_action].id = last_id;
-	input_map[p_action].deadzone = p_deadzone;
-	last_id++;
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(data->input_map.has(p_action),
+		vformat("InputMap already has action \"%s\".", String(p_action)));
+	data->input_map[p_action] = Action();
+	data->input_map[p_action].id = data->last_id;
+	data->input_map[p_action].deadzone = p_deadzone;
+	data->last_id++;
 }
 
 void InputMap::erase_action(const String& p_action)
 {
-	ERR_FAIL_COND_MSG(!input_map.has(p_action), suggest_actions(p_action));
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
 
-	input_map.erase(p_action);
+	data->input_map.erase(p_action);
 }
 
 List<Ref<InputEvent>>::Element* InputMap::_find_event(Action& p_action,
 	const Ref<InputEvent>& p_event, bool p_exact_match, bool* r_pressed, float* r_strength,
-	float* r_raw_strength, int* r_event_index) const
+	float* r_raw_strength, int* r_event_index)
 {
 	ERR_FAIL_COND_V(p_event.is_null(), nullptr);
 
@@ -122,28 +142,38 @@ List<Ref<InputEvent>>::Element* InputMap::_find_event(Action& p_action,
 	return nullptr;
 }
 
-bool InputMap::has_action(const String& p_action) const { return input_map.has(p_action); }
+bool InputMap::has_action(const String& p_action)
+{
+	return data != nullptr && data->input_map.has(p_action);
+}
 
-String InputMap::get_action_description(const String& p_action) const {}
+String InputMap::get_action_description(const String& p_action)
+{
+	(void)p_action;
+	return String();
+}
 
 float InputMap::action_get_deadzone(const String& p_action)
 {
-	ERR_FAIL_COND_V_MSG(!input_map.has(p_action), 0.0f, suggest_actions(p_action));
+	ERR_FAIL_NULL_V(data, 0.0f);
+	ERR_FAIL_COND_V_MSG(!data->input_map.has(p_action), 0.0f, suggest_actions(p_action));
 
-	return input_map[p_action].deadzone;
+	return data->input_map[p_action].deadzone;
 }
 
 void InputMap::action_set_deadzone(const String& p_action, float p_deadzone)
 {
-	ERR_FAIL_COND_MSG(!input_map.has(p_action), suggest_actions(p_action));
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
 
-	input_map[p_action].deadzone = p_deadzone;
+	data->input_map[p_action].deadzone = p_deadzone;
 }
 
 void InputMap::action_add_event(const String& p_action, InputEvent* rp_event)
 {
-	ERR_FAIL_COND_MSG(!input_map.has(p_action), suggest_actions(p_action));
-	if (_find_event(input_map[p_action], rp_event, true)) {
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
+	if (_find_event(data->input_map[p_action], rp_event, true)) {
 		return; // Already added.
 	}
 
@@ -163,22 +193,24 @@ void InputMap::action_add_event(const String& p_action, InputEvent* rp_event)
 		}
 	}
 
-	input_map[p_action].inputs.push_back(rp_event);
+	data->input_map[p_action].inputs.push_back(rp_event);
 }
 
 bool InputMap::action_has_event(const String& p_action, InputEvent* rp_event)
 {
-	ERR_FAIL_COND_V_MSG(!input_map.has(p_action), false, suggest_actions(p_action));
-	return (_find_event(input_map[p_action], rp_event, true) != nullptr);
+	ERR_FAIL_NULL_V(data, false);
+	ERR_FAIL_COND_V_MSG(!data->input_map.has(p_action), false, suggest_actions(p_action));
+	return (_find_event(data->input_map[p_action], rp_event, true) != nullptr);
 }
 
 void InputMap::action_erase_event(const String& p_action, InputEvent* rp_event)
 {
-	ERR_FAIL_COND_MSG(!input_map.has(p_action), suggest_actions(p_action));
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
 
-	List<Ref<InputEvent>>::Element* E = _find_event(input_map[p_action], rp_event, true);
+	List<Ref<InputEvent>>::Element* E = _find_event(data->input_map[p_action], rp_event, true);
 	if (E) {
-		input_map[p_action].inputs.erase(E);
+		data->input_map[p_action].inputs.erase(E);
 
 		if (Input::get_singleton()->is_action_pressed(p_action)) {
 			Input::get_singleton()->action_release(p_action);
@@ -188,18 +220,20 @@ void InputMap::action_erase_event(const String& p_action, InputEvent* rp_event)
 
 void InputMap::action_erase_events(const String& p_action)
 {
-	ERR_FAIL_COND_MSG(!input_map.has(p_action), suggest_actions(p_action));
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
 
 	if (Input::get_singleton()->is_action_pressed(p_action)) {
 		Input::get_singleton()->action_release(p_action);
 	}
 
-	input_map[p_action].inputs.clear();
+	data->input_map[p_action].inputs.clear();
 }
 
 const List<Ref<InputEvent>>* InputMap::action_get_events(const String& p_action)
 {
-	HashMap<String, Action>::Iterator E = input_map.find(p_action);
+	ERR_FAIL_NULL_V(data, nullptr);
+	HashMap<String, Action>::Iterator E = data->input_map.find(p_action);
 	if (!E) {
 		return nullptr;
 	}
@@ -208,13 +242,13 @@ const List<Ref<InputEvent>>* InputMap::action_get_events(const String& p_action)
 }
 
 bool InputMap::event_is_action(
-	InputEvent* rp_event, const String& p_action, bool p_exact_match) const
+	InputEvent* rp_event, const String& p_action, bool p_exact_match)
 {
 	return event_get_action_status(rp_event, p_action, p_exact_match);
 }
 
 int InputMap::event_get_index(
-	const Ref<InputEvent>& p_event, const String& p_action, bool p_exact_match) const
+	const Ref<InputEvent>& p_event, const String& p_action, bool p_exact_match)
 {
 	int index = -1;
 	bool valid = event_get_action_status(
@@ -224,9 +258,10 @@ int InputMap::event_get_index(
 
 bool InputMap::event_get_action_status(const Ref<InputEvent>& p_event, const String& p_action,
 	bool p_exact_match, bool* r_pressed, float* r_strength, float* r_raw_strength,
-	int* r_event_index) const
+	int* r_event_index)
 {
-	HashMap<String, Action>::Iterator E = input_map.find(p_action);
+	ERR_FAIL_NULL_V(data, false);
+	HashMap<String, Action>::Iterator E = data->input_map.find(p_action);
 	ERR_FAIL_COND_V_MSG(!E, false, suggest_actions(p_action));
 
 	Ref<InputEventAction> input_event_action = static_cast<InputEventAction*>(p_event.ptr());
@@ -283,7 +318,12 @@ bool InputMap::event_get_action_status(const Ref<InputEvent>& p_event, const Str
 	return false;
 }
 
-const HashMap<String, InputMap::Action>& InputMap::get_action_map() const { return input_map; }
+const HashMap<String, InputMap::Action>& InputMap::get_action_map()
+{
+	static const HashMap<String, Action> _empty_action_map;
+	ERR_FAIL_NULL_V(data, _empty_action_map);
+	return data->input_map;
+}
 
 struct _BuiltinActionDisplayName
 {
@@ -367,7 +407,7 @@ static const _BuiltinActionDisplayName _builtin_action_display_names[] = {
 	/* clang-format on */
 };
 
-String InputMap::get_builtin_display_name(const String& p_name) const
+String InputMap::get_builtin_display_name(const String& p_name)
 {
 	const String name = p_name.get_slicec('.', 0);
 	constexpr int len = std_size(_builtin_action_display_names);
@@ -382,6 +422,11 @@ String InputMap::get_builtin_display_name(const String& p_name) const
 
 const HashMap<String, List<Ref<InputEvent>>>& InputMap::get_builtins()
 {
+	static const HashMap<String, List<Ref<InputEvent>>> _empty_builtin_map;
+	ERR_FAIL_NULL_V(data, _empty_builtin_map);
+
+	HashMap<String, List<Ref<InputEvent>>>& default_builtin_cache = data->default_builtin_cache;
+
 	// Return cache if it has already been built.
 	if (default_builtin_cache.size()) {
 		return default_builtin_cache;
@@ -846,6 +891,12 @@ const HashMap<String, List<Ref<InputEvent>>>& InputMap::get_builtins()
 const HashMap<String, List<Ref<InputEvent>>>&
 InputMap::get_builtins_with_feature_overrides_applied()
 {
+	static const HashMap<String, List<Ref<InputEvent>>> _empty_builtin_map;
+	ERR_FAIL_NULL_V(data, _empty_builtin_map);
+
+	HashMap<String, List<Ref<InputEvent>>>& default_builtin_with_overrides_cache =
+		data->default_builtin_with_overrides_cache;
+
 	if (default_builtin_with_overrides_cache.size() > 0) {
 		return default_builtin_with_overrides_cache;
 	}
@@ -904,14 +955,6 @@ void InputMap::load_default()
 		}
 	}
 }
-
-InputMap::InputMap()
-{
-	ERR_FAIL_COND_MSG(singleton, "Singleton in InputMap already exists.");
-	singleton = this;
-}
-
-InputMap::~InputMap() { singleton = nullptr; }
 
 void InputMap::load_from_project_settings() {}
 

@@ -272,8 +272,7 @@ bool Input::is_joy_button_pressed(int p_device, JoyButton p_button) const
 
 bool Input::is_action_pressed(const String& p_action, bool p_exact) const
 {
-	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
-		InputMap::get_singleton()->suggest_actions(p_action));
+	ERR_FAIL_COND_V_MSG(!InputMap::has_action(p_action), false, InputMap::suggest_actions(p_action));
 
 	if (disable_input) {
 		return false;
@@ -289,8 +288,7 @@ bool Input::is_action_pressed(const String& p_action, bool p_exact) const
 
 bool Input::is_action_just_pressed(const String& p_action, bool p_exact) const
 {
-	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
-		InputMap::get_singleton()->suggest_actions(p_action));
+	ERR_FAIL_COND_V_MSG(!InputMap::has_action(p_action), false, InputMap::suggest_actions(p_action));
 
 	if (disable_input) {
 		return false;
@@ -321,8 +319,7 @@ bool Input::is_action_just_pressed(const String& p_action, bool p_exact) const
 bool Input::is_action_just_pressed_by_event(
 	const String& p_action, InputEvent* rp_event, bool p_exact) const
 {
-	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
-		InputMap::get_singleton()->suggest_actions(p_action));
+	ERR_FAIL_COND_V_MSG(!InputMap::has_action(p_action), false, InputMap::suggest_actions(p_action));
 	if (disable_input) {
 		return false;
 	}
@@ -351,8 +348,7 @@ bool Input::is_action_just_pressed_by_event(
 
 bool Input::is_action_just_released(const String& p_action, bool p_exact) const
 {
-	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
-		InputMap::get_singleton()->suggest_actions(p_action));
+	ERR_FAIL_COND_V_MSG(!InputMap::has_action(p_action), false, InputMap::suggest_actions(p_action));
 
 	if (disable_input) {
 		return false;
@@ -383,8 +379,7 @@ bool Input::is_action_just_released(const String& p_action, bool p_exact) const
 bool Input::is_action_just_released_by_event(
 	const String& p_action, InputEvent* rp_event, bool p_exact) const
 {
-	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), false,
-		InputMap::get_singleton()->suggest_actions(p_action));
+	ERR_FAIL_COND_V_MSG(!InputMap::has_action(p_action), false, InputMap::suggest_actions(p_action));
 	if (disable_input) {
 		return false;
 	}
@@ -413,8 +408,7 @@ bool Input::is_action_just_released_by_event(
 
 float Input::get_action_strength(const String& p_action, bool p_exact) const
 {
-	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), 0.0,
-		InputMap::get_singleton()->suggest_actions(p_action));
+	ERR_FAIL_COND_V_MSG(!InputMap::has_action(p_action), 0.0, InputMap::suggest_actions(p_action));
 
 	if (disable_input) {
 		return 0.0f;
@@ -434,8 +428,7 @@ float Input::get_action_strength(const String& p_action, bool p_exact) const
 
 float Input::get_action_raw_strength(const String& p_action, bool p_exact) const
 {
-	ERR_FAIL_COND_V_MSG(!InputMap::get_singleton()->has_action(p_action), 0.0,
-		InputMap::get_singleton()->suggest_actions(p_action));
+	ERR_FAIL_COND_V_MSG(!InputMap::has_action(p_action), 0.0, InputMap::suggest_actions(p_action));
 
 	if (disable_input) {
 		return 0.0f;
@@ -468,10 +461,10 @@ Vector2 Input::get_vector(const String& p_negative_x, const String& p_positive_x
 
 	if (p_deadzone < 0.0f) {
 		// If the deadzone isn't specified, get it from the average of the actions.
-		p_deadzone = 0.25 * (InputMap::get_singleton()->action_get_deadzone(p_positive_x) +
-								InputMap::get_singleton()->action_get_deadzone(p_negative_x) +
-								InputMap::get_singleton()->action_get_deadzone(p_positive_y) +
-								InputMap::get_singleton()->action_get_deadzone(p_negative_y));
+		p_deadzone = 0.25 * (InputMap::action_get_deadzone(p_positive_x) +
+								InputMap::action_get_deadzone(p_negative_x) +
+								InputMap::action_get_deadzone(p_positive_y) +
+								InputMap::action_get_deadzone(p_negative_y));
 	}
 
 	// Circular length limiting and deadzone.
@@ -923,9 +916,8 @@ void Input::_parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_em
 		}
 	}
 
-	for (const KeyValue<String, InputMap::Action>& E :
-		InputMap::get_singleton()->get_action_map()) {
-		const int event_index = InputMap::get_singleton()->event_get_index(p_event, E.key);
+	for (const KeyValue<String, InputMap::Action>& E : InputMap::get_action_map()) {
+		const int event_index = InputMap::event_get_index(p_event, E.key);
 		if (event_index == -1) {
 			continue;
 		}
@@ -950,7 +942,7 @@ void Input::_parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_em
 				false; // Always release the event from action_press() method.
 			action_state.api_strength = 0.0;
 		}
-		action_state.exact = InputMap::get_singleton()->event_is_action(p_event.ptr(), E.key, true);
+		action_state.exact = InputMap::event_is_action(p_event.ptr(), E.key, true);
 
 		bool was_pressed = action_state.cache.pressed;
 		_update_action_cache(E.key, action_state);
@@ -1332,8 +1324,7 @@ Point2 Input::warp_mouse_motion(const Ref<InputEventMouseMotion>& p_motion, cons
 
 void Input::action_press(const String& p_action, float p_strength)
 {
-	ERR_FAIL_COND_MSG(!InputMap::get_singleton()->has_action(p_action),
-		InputMap::get_singleton()->suggest_actions(p_action));
+	ERR_FAIL_COND_MSG(!InputMap::has_action(p_action), InputMap::suggest_actions(p_action));
 
 	// Create or retrieve existing action.
 	ActionState& action_state = action_states[p_action];
@@ -1352,8 +1343,7 @@ void Input::action_press(const String& p_action, float p_strength)
 
 void Input::action_release(const String& p_action)
 {
-	ERR_FAIL_COND_MSG(!InputMap::get_singleton()->has_action(p_action),
-		InputMap::get_singleton()->suggest_actions(p_action));
+	ERR_FAIL_COND_MSG(!InputMap::has_action(p_action), InputMap::suggest_actions(p_action));
 
 	// Create or retrieve existing action.
 	ActionState& action_state = action_states[p_action];
@@ -1546,7 +1536,7 @@ void Input::release_pressed_events()
 		for (KeyValue<String, Input::ActionState>& E : action_states) {
 			if (E.value.cache.pressed) {
 				bool is_only_joypad_pressed = true;
-				int max_event = InputMap::get_singleton()->action_get_events(E.key)->size() +
+				int max_event = InputMap::action_get_events(E.key)->size() +
 								1; // +1 comes from InputEventAction.
 
 				for (const KeyValue<int, ActionState::DeviceState>& kv : E.value.device_states) {
@@ -1805,7 +1795,7 @@ void Input::_update_action_cache(const String& p_action_name, ActionState& r_act
 	r_action_state.cache.strength = 0.0;
 	r_action_state.cache.raw_strength = 0.0;
 
-	int max_event = InputMap::get_singleton()->action_get_events(p_action_name)->size() +
+	int max_event = InputMap::action_get_events(p_action_name)->size() +
 					1; // +1 comes from InputEventAction.
 	for (const KeyValue<int, ActionState::DeviceState>& kv : r_action_state.device_states) {
 		const ActionState::DeviceState& device_state = kv.value;

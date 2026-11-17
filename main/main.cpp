@@ -155,7 +155,6 @@
 
 // Initialized in setup()
 static Input* input = nullptr;
-static InputMap* input_map = nullptr;
 static TranslationServer* translation_server = nullptr;
 static Performance* performance = nullptr;
 static PackedData* packed_data = nullptr;
@@ -1179,7 +1178,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 	MAIN_PRINT("Main: Initialize Globals");
 
-	input_map = memnew(InputMap);
+	InputMap::initialize();
 
 	// initialize internal ProjectSettings::Data struct
 	ProjectSettings::initialize();
@@ -2601,10 +2600,10 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (editor || project_manager) {
 		Engine::set_editor_hint(true);
 		use_custom_res = false;
-		input_map->load_default(); // keys for editor
+		InputMap::load_default(); // keys for editor
 	}
 	else {
-		input_map->load_from_project_settings(); // keys for game
+		InputMap::load_from_project_settings(); // keys for game
 	}
 
 	if (quiet_stdout) {
@@ -2931,7 +2930,7 @@ error:
 	}
 
 	memdelete(performance);
-	memdelete(input_map);
+	InputMap::finalize();
 	memdelete(translation_server);
 	memdelete(packed_data);
 
@@ -4328,7 +4327,7 @@ void Main::cleanup(bool p_force)
 
 	memdelete(packed_data);
 	memdelete(performance);
-	memdelete(input_map);
+	InputMap::finalize();
 	memdelete(translation_server);
 	memdelete(tsman);
 #ifndef PHYSICS_3D_DISABLED

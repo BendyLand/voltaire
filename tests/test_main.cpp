@@ -225,8 +225,8 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #endif // NAVIGATION_2D_DISABLED
 			ERR_PRINT_ON;
 
-			memnew(InputMap);
-			InputMap::get_singleton()->load_default();
+			InputMap::initialize();
+			InputMap::load_default();
 
 			memnew(SceneTree);
 			SceneTree::get_singleton()->initialize();
@@ -336,7 +336,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 		memdelete(AccessibilityServer::get_singleton());
 		memdelete(DisplayServer::get_singleton());
-		memdelete(InputMap::get_singleton());
+		InputMap::finalize();
 
 		if (AudioServer::get_singleton()) {
 			AudioServer::get_singleton()->finish();

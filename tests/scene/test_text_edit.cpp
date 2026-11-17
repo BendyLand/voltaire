@@ -4063,7 +4063,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 
 		SUBCASE("[TextEdit] ui_text_backspace_all_to_left") {
 			Ref<InputEvent> tmpevent = InputEventKey::create_reference(Key::BACKSPACE | KeyModifierMask::ALT | KeyModifierMask::CMD_OR_CTRL);
-			InputMap::get_singleton()->action_add_event("ui_text_backspace_all_to_left", tmpevent);
+			InputMap::action_add_event("ui_text_backspace_all_to_left", tmpevent);
 
 			text_edit->set_text("\nthis is some test text.\n\nthis is some test text.");
 			MessageQueue::get_singleton()->flush();
@@ -4235,7 +4235,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			CHECK(text_edit->get_caret_column(0) == 4);
 			text_edit->remove_secondary_carets();
 
-			InputMap::get_singleton()->action_erase_event("ui_text_backspace_all_to_left", tmpevent);
+			InputMap::action_erase_event("ui_text_backspace_all_to_left", tmpevent);
 		}
 
 		SUBCASE("[TextEdit] ui_text_backspace_word") {
@@ -4739,7 +4739,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 
 		SUBCASE("[TextEdit] ui_text_delete_all_to_right") {
 			Ref<InputEvent> tmpevent = InputEventKey::create_reference(Key::BACKSPACE | KeyModifierMask::ALT | KeyModifierMask::CMD_OR_CTRL);
-			InputMap::get_singleton()->action_add_event("ui_text_delete_all_to_right", tmpevent);
+			InputMap::action_add_event("ui_text_delete_all_to_right", tmpevent);
 
 			text_edit->set_text("this is some test text.\nthis is some test text.\n");
 			MessageQueue::get_singleton()->flush();
@@ -4878,7 +4878,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_CHECK("text_changed", empty_signal_args);
 			SIGNAL_CHECK("lines_edited_from", lines_edited_args);
 
-			InputMap::get_singleton()->action_erase_event("ui_text_delete_all_to_right", tmpevent);
+			InputMap::action_erase_event("ui_text_delete_all_to_right", tmpevent);
 		}
 
 		SUBCASE("[TextEdit] ui_text_delete_word") {

@@ -645,18 +645,18 @@ Ref<Shortcut> EditorSettings::get_shortcut(const String& p_path)
 	if (builtin_override) {
 		sc.instantiate();
 		sc->set_events_list(&builtin_override->value);
-		sc->set_name(InputMap::get_singleton()->get_builtin_display_name(p_path));
+		sc->set_name(InputMap::get_builtin_display_name(p_path));
 	}
 
 	// If there was no override, check the default builtins to see if it has an InputEvent for the
 	// provided name.
 	if (sc.is_null()) {
 		HashMap<String, List<Ref<InputEvent>>>::ConstIterator builtin_default =
-			InputMap::get_singleton()->get_builtins_with_feature_overrides_applied().find(p_path);
+			InputMap::get_builtins_with_feature_overrides_applied().find(p_path);
 		if (builtin_default) {
 			sc.instantiate();
 			sc->set_events_list(&builtin_default->value);
-			sc->set_name(InputMap::get_singleton()->get_builtin_display_name(p_path));
+			sc->set_name(InputMap::get_builtin_display_name(p_path));
 		}
 	}
 

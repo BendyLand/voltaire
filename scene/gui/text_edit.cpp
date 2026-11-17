@@ -3677,7 +3677,7 @@ void TextEdit::_copy_internal(int p_caret)
 
 Key TextEdit::_get_menu_action_accelerator(const String& p_action)
 {
-	const List<Ref<InputEvent>>* events = InputMap::get_singleton()->action_get_events(p_action);
+	const List<Ref<InputEvent>>* events = InputMap::action_get_events(p_action);
 	if (!events) {
 		return Key::NONE;
 	}
