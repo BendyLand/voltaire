@@ -108,15 +108,34 @@ static void godot_free(voidpf p_opaque, voidpf r_address) {
 }
 } // extern "C"
 
-void ZipArchive::close_handle(unzFile p_file) const {
+void ZipArchive::initialize()
+{
+	if (data == nullptr) {
+		data = memnew(Data);
+	}
+}
+
+void ZipArchive::finalize()
+{
+	if (data != nullptr) {
+		data->packages.clear();
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
+void ZipArchive::close_handle(unzFile p_file)
+{
 	ERR_FAIL_NULL_MSG(p_file, "Cannot close a file if none is open.");
 	unzCloseCurrentFile(p_file);
 	unzClose(p_file);
 }
 
-unzFile ZipArchive::get_file_handle(const String &p_file) const {
+unzFile ZipArchive::get_file_handle(const String& p_file)
+{
+	ERR_FAIL_NULL_V(data, nullptr);
 	ERR_FAIL_COND_V_MSG(!file_exists(p_file), nullptr, vformat("File '%s' doesn't exist.", p_file));
-	File file = files[p_file];
+	File file = data->files[p_file];
 
 	zlib_filefunc_def io;
 	memset(&io, 0, sizeof(io));
@@ -134,8 +153,9 @@ unzFile ZipArchive::get_file_handle(const String &p_file) const {
 	io.alloc_mem = godot_alloc;
 	io.free_mem = godot_free;
 
-	unzFile pkg = unzOpen2(packages[file.package].filename.utf8().get_data(), &io);
-	ERR_FAIL_NULL_V_MSG(pkg, nullptr, vformat("Cannot open file '%s'.", packages[file.package].filename));
+	unzFile pkg = unzOpen2(data->packages[file.package].filename.utf8().get_data(), &io);
+	ERR_FAIL_NULL_V_MSG(
+		pkg, nullptr, vformat("Cannot open file '%s'.", data->packages[file.package].filename));
 	int unz_err = unzGoToFilePos(pkg, &file.file_pos);
 	if (unz_err != UNZ_OK || unzOpenCurrentFile(pkg) != UNZ_OK) {
 		unzClose(pkg);
@@ -145,11 +165,20 @@ unzFile ZipArchive::get_file_handle(const String &p_file) const {
 	return pkg;
 }
 
-bool ZipArchive::try_open_pack(const String &p_path, bool p_replace_files, uint64_t p_offset, const Vector<uint8_t> &p_decryption_key) {
-	// load with offset feature only supported for PCK files
-	ERR_FAIL_COND_V_MSG(p_offset != 0, false, "Invalid PCK data. Note that loading files with a non-zero offset isn't supported with ZIP archives.");
+bool ZipArchive::try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
+	PackSource* p_source, const Vector<uint8_t>& p_decryption_key)
+{
+	(void)p_decryption_key;
+	initialize();
+	ERR_FAIL_NULL_V(data, false);
 
-	if (p_path.get_extension().nocasecmp_to("zip") != 0 && p_path.get_extension().nocasecmp_to("pcz") != 0) {
+	// load with offset feature only supported for PCK files
+	ERR_FAIL_COND_V_MSG(p_offset != 0, false,
+		"Invalid PCK data. Note that loading files with a non-zero offset isn't supported with ZIP "
+		"archives.");
+
+	if (p_path.get_extension().nocasecmp_to("zip") != 0 &&
+		p_path.get_extension().nocasecmp_to("pcz") != 0) {
 		return false;
 	}
 
@@ -175,14 +204,15 @@ bool ZipArchive::try_open_pack(const String &p_path, bool p_replace_files, uint6
 
 	Package pkg;
 	pkg.filename = p_path;
-	packages.push_back(pkg);
-	int pkg_num = packages.size() - 1;
+	data->packages.push_back(pkg);
+	int pkg_num = data->packages.size() - 1;
 
 	for (uint64_t i = 0; i < gi.number_entry; i++) {
 		char filename_inzip[256];
 
 		unz_file_info64 file_info;
-		err = unzGetCurrentFileInfo64(zfile, &file_info, filename_inzip, sizeof(filename_inzip), nullptr, 0, nullptr, 0);
+		err = unzGetCurrentFileInfo64(
+			zfile, &file_info, filename_inzip, sizeof(filename_inzip), nullptr, 0, nullptr, 0);
 		ERR_CONTINUE(err != UNZ_OK);
 
 		File f;
@@ -190,11 +220,10 @@ bool ZipArchive::try_open_pack(const String &p_path, bool p_replace_files, uint6
 		unzGetFilePos(zfile, &f.file_pos);
 
 		String fname = String("res://") + String::utf8(filename_inzip);
-		files[fname] = f;
+		data->files[fname] = f;
 
-		uint8_t md5[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-		PackedData::get_singleton()->add_path(p_path, fname, 1, 0, md5, this, p_replace_files, false);
-		//printf("packed data add path %s, %s\n", p_name.utf8().get_data(), fname.utf8().get_data());
+		uint8_t md5[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		PackedData::add_path(p_path, fname, 1, 0, md5, p_source, p_replace_files, false);
 
 		if ((i + 1) < gi.number_entry) {
 			unzGoToNextFile(zfile);
@@ -206,37 +235,37 @@ bool ZipArchive::try_open_pack(const String &p_path, bool p_replace_files, uint6
 	return true;
 }
 
-bool ZipArchive::file_exists(const String &p_name) const {
-	return files.has(p_name);
+bool ZipArchive::file_exists(const String& p_name)
+{
+	return data != nullptr && data->files.has(p_name);
 }
 
-Ref<FileAccess> ZipArchive::get_file(const String &p_path, PackedData::PackedFile *p_file, const Vector<uint8_t> &p_decryption_key) {
+Ref<FileAccess> ZipArchive::get_file(
+	const String& p_path, PackedData::PackedFile* p_file, const Vector<uint8_t>& p_decryption_key)
+{
+	(void)p_decryption_key;
 	return memnew(FileAccessZip(p_path, *p_file));
 }
 
-ZipArchive *ZipArchive::get_singleton() {
-	if (instance == nullptr) {
-		instance = memnew(ZipArchive);
-	}
-
-	return instance;
+bool PackedSourceZIP::try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
+	const Vector<uint8_t>& p_decryption_key)
+{
+	return ZipArchive::try_open_pack(p_path, p_replace_files, p_offset, this, p_decryption_key);
 }
 
-ZipArchive::ZipArchive() {
-	instance = this;
+Ref<FileAccess> PackedSourceZIP::get_file(
+	const String& p_path, PackedData::PackedFile* p_file, const Vector<uint8_t>& p_decryption_key)
+{
+	return ZipArchive::get_file(p_path, p_file, p_decryption_key);
 }
 
-ZipArchive::~ZipArchive() {
-	packages.clear();
-}
-
-Error FileAccessZip::open_internal(const String &p_path, int p_mode_flags) {
+Error FileAccessZip::open_internal(const String& p_path, int p_mode_flags)
+{
 	_close();
 
 	ERR_FAIL_COND_V(p_mode_flags & FileAccess::WRITE, FAILED);
-	ZipArchive *arch = ZipArchive::get_singleton();
-	ERR_FAIL_NULL_V(arch, FAILED);
-	zfile = arch->get_file_handle(p_path);
+	ERR_FAIL_COND_V(!ZipArchive::is_initialized(), FAILED);
+	zfile = ZipArchive::get_file_handle(p_path);
 	ERR_FAIL_NULL_V(zfile, FAILED);
 
 	int err = unzGetCurrentFileInfo64(zfile, &file_info, nullptr, 0, nullptr, 0, nullptr, 0);
@@ -245,14 +274,13 @@ Error FileAccessZip::open_internal(const String &p_path, int p_mode_flags) {
 	return OK;
 }
 
-void FileAccessZip::_close() {
+void FileAccessZip::_close()
+{
 	if (!zfile) {
 		return;
 	}
 
-	ZipArchive *arch = ZipArchive::get_singleton();
-	ERR_FAIL_NULL(arch);
-	arch->close_handle(zfile);
+	ZipArchive::close_handle(zfile);
 	zfile = nullptr;
 }
 

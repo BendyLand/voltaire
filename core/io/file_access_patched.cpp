@@ -39,7 +39,7 @@ Error FileAccessPatched::_apply_patch() const {
 	ERR_FAIL_COND_V(!is_open(), FAILED);
 
 	String path = old_file->get_path();
-	Vector<PackedData::PackedFile> delta_patches = PackedData::get_singleton()->get_delta_patches(path);
+	Vector<PackedData::PackedFile> delta_patches = PackedData::get_delta_patches(path);
 	Vector<uint8_t> old_file_data = old_file->get_buffer(old_file->get_length());
 
 	for (int i = 0; i < delta_patches.size(); ++i) {

@@ -53,8 +53,8 @@ Ref<FileAccess> FileAccess::create(AccessType p_access)
 
 bool FileAccess::exists(const String& p_name)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		PackedData::get_singleton()->has_path(p_name)) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		PackedData::has_path(p_name)) {
 		return true;
 	}
 
@@ -177,9 +177,9 @@ Ref<FileAccess> FileAccess::open(const String& p_path, int p_mode_flags, Error* 
 	// try packed data first
 
 	Ref<FileAccess> ret;
-	if (!(p_mode_flags & WRITE) && !(p_mode_flags & SKIP_PACK) && PackedData::get_singleton() &&
-		!PackedData::get_singleton()->is_disabled()) {
-		ret = PackedData::get_singleton()->try_open_path(p_path);
+	if (!(p_mode_flags & WRITE) && !(p_mode_flags & SKIP_PACK) && PackedData::is_initialized() &&
+		!PackedData::is_disabled()) {
+		ret = PackedData::try_open_path(p_path);
 		if (ret.is_valid()) {
 			if (r_error) {
 				*r_error = OK;
@@ -671,9 +671,8 @@ bool FileAccess::store_double(double p_dest)
 
 uint64_t FileAccess::get_modified_time(const String& p_file)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return 0;
 	}
 
@@ -686,9 +685,8 @@ uint64_t FileAccess::get_modified_time(const String& p_file)
 
 uint64_t FileAccess::get_access_time(const String& p_file)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return 0;
 	}
 
@@ -700,10 +698,9 @@ uint64_t FileAccess::get_access_time(const String& p_file)
 
 int64_t FileAccess::get_size(const String& p_file)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
-		return PackedData::get_singleton()->get_size(p_file);
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
+		return PackedData::get_size(p_file);
 	}
 
 	Ref<FileAccess> fa = create_for_path(p_file);
@@ -714,9 +711,8 @@ int64_t FileAccess::get_size(const String& p_file)
 
 uint32_t FileAccess::get_unix_permissions(const String& p_file)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return 0;
 	}
 
@@ -729,9 +725,8 @@ uint32_t FileAccess::get_unix_permissions(const String& p_file)
 
 Error FileAccess::set_unix_permissions(const String& p_file, uint32_t p_permissions)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return ERR_UNAVAILABLE;
 	}
 
@@ -745,9 +740,8 @@ Error FileAccess::set_unix_permissions(const String& p_file, uint32_t p_permissi
 
 bool FileAccess::get_hidden_attribute(const String& p_file)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return false;
 	}
 
@@ -760,9 +754,8 @@ bool FileAccess::get_hidden_attribute(const String& p_file)
 
 Error FileAccess::set_hidden_attribute(const String& p_file, bool p_hidden)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return ERR_UNAVAILABLE;
 	}
 
@@ -776,9 +769,8 @@ Error FileAccess::set_hidden_attribute(const String& p_file, bool p_hidden)
 
 bool FileAccess::get_read_only_attribute(const String& p_file)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return false;
 	}
 
@@ -791,9 +783,8 @@ bool FileAccess::get_read_only_attribute(const String& p_file)
 
 Error FileAccess::set_read_only_attribute(const String& p_file, bool p_ro)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return ERR_UNAVAILABLE;
 	}
 
@@ -808,9 +799,8 @@ Error FileAccess::set_read_only_attribute(const String& p_file, bool p_ro)
 Vector<uint8_t> FileAccess::get_extended_attribute(
 	const String& p_file, const String& p_attribute_name)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return Vector<uint8_t>();
 	}
 
@@ -824,9 +814,8 @@ Vector<uint8_t> FileAccess::get_extended_attribute(
 String FileAccess::get_extended_attribute_string(
 	const String& p_file, const String& p_attribute_name)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return String();
 	}
 
@@ -844,9 +833,8 @@ String FileAccess::get_extended_attribute_string(
 Error FileAccess::set_extended_attribute(
 	const String& p_file, const String& p_attribute_name, const Vector<uint8_t>& p_data)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return ERR_UNAVAILABLE;
 	}
 
@@ -860,9 +848,8 @@ Error FileAccess::set_extended_attribute(
 Error FileAccess::set_extended_attribute_string(
 	const String& p_file, const String& p_attribute_name, const String& p_data)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return ERR_UNAVAILABLE;
 	}
 
@@ -882,9 +869,8 @@ Error FileAccess::set_extended_attribute_string(
 
 Error FileAccess::remove_extended_attribute(const String& p_file, const String& p_attribute_name)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return ERR_UNAVAILABLE;
 	}
 
@@ -897,9 +883,8 @@ Error FileAccess::remove_extended_attribute(const String& p_file, const String& 
 
 Vector<String> FileAccess::get_extended_attributes_list(const String& p_file)
 {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() &&
-		(PackedData::get_singleton()->has_path(p_file) ||
-			PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::is_initialized() && !PackedData::is_disabled() &&
+		(PackedData::has_path(p_file) || PackedData::has_directory(p_file))) {
 		return Vector<String>();
 	}
 

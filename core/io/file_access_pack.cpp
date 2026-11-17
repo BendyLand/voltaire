@@ -35,11 +35,38 @@
 #include "core/version.h"
 #include "file_access_pack.h"
 
+void PackedData::initialize()
+{
+	if (data != nullptr) {
+		return;
+	}
+	data = memnew(Data);
+	data->root = memnew(PackedDir);
+	add_pack_source(memnew(PackedSourcePCK));
+}
+
+void PackedData::finalize()
+{
+	if (data == nullptr) {
+		return;
+	}
+
+	for (int i = 0; i < data->sources.size(); i++) {
+		memdelete(data->sources[i]);
+	}
+	if (data->root != nullptr) {
+		_free_packed_dirs(data->root);
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
 Error PackedData::add_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
 	const Vector<uint8_t>& p_decryption_key)
 {
-	for (int i = 0; i < sources.size(); i++) {
-		if (sources[i]->try_open_pack(p_path, p_replace_files, p_offset, p_decryption_key)) {
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+	for (int i = 0; i < data->sources.size(); i++) {
+		if (data->sources[i]->try_open_pack(p_path, p_replace_files, p_offset, p_decryption_key)) {
 			return OK;
 		}
 	}
@@ -51,10 +78,11 @@ void PackedData::add_path(const String& p_pkg_path, const String& p_path, uint64
 	uint64_t p_size, const uint8_t* p_md5, PackSource* p_src, bool p_replace_files,
 	bool p_encrypted, bool p_bundle, bool p_delta, const String& p_salt)
 {
+	ERR_FAIL_NULL(data);
 	String simplified_path = p_path.simplify_path().trim_prefix("res://");
 	PathMD5 pmd5(simplified_path.md5_buffer());
 
-	bool exists = files.has(pmd5);
+	bool exists = data->files.has(pmd5);
 
 	PackedFile pf;
 	pf.encrypted = p_encrypted;
@@ -70,16 +98,16 @@ void PackedData::add_path(const String& p_pkg_path, const String& p_path, uint64
 	pf.src = p_src;
 
 	if (p_delta) {
-		delta_patches[pmd5].push_back(pf);
+		data->delta_patches[pmd5].push_back(pf);
 	}
 	else if (!exists || p_replace_files) {
-		files[pmd5] = pf;
-		delta_patches[pmd5].clear();
+		data->files[pmd5] = pf;
+		data->delta_patches[pmd5].clear();
 	}
 
 	if (!exists) {
 		// Search for directory.
-		PackedDir* cd = root;
+		PackedDir* cd = data->root;
 
 		if (simplified_path.contains_char('/')) { // In a subdirectory.
 			Vector<String> ds = simplified_path.get_base_dir().split("/");
@@ -107,14 +135,15 @@ void PackedData::add_path(const String& p_pkg_path, const String& p_path, uint64
 
 void PackedData::remove_path(const String& p_path)
 {
+	ERR_FAIL_NULL(data);
 	String simplified_path = p_path.simplify_path().trim_prefix("res://");
 	PathMD5 pmd5(simplified_path.md5_buffer());
-	if (!files.has(pmd5)) {
+	if (!data->files.has(pmd5)) {
 		return;
 	}
 
 	// Search for directory.
-	PackedDir* cd = root;
+	PackedDir* cd = data->root;
 
 	if (simplified_path.contains_char('/')) { // In a subdirectory.
 		Vector<String> ds = simplified_path.get_base_dir().split("/");
@@ -131,21 +160,23 @@ void PackedData::remove_path(const String& p_path)
 
 	cd->files.erase(simplified_path.get_file());
 
-	files.erase(pmd5);
+	data->files.erase(pmd5);
 }
 
 void PackedData::add_pack_source(PackSource* p_source)
 {
+	ERR_FAIL_NULL(data);
 	if (p_source != nullptr) {
-		sources.push_back(p_source);
+		data->sources.push_back(p_source);
 	}
 }
 
 uint8_t* PackedData::get_file_hash(const String& p_path)
 {
+	ERR_FAIL_NULL_V(data, nullptr);
 	String simplified_path = p_path.simplify_path().trim_prefix("res://");
 	PathMD5 pmd5(simplified_path.md5_buffer());
-	HashMap<PathMD5, PackedFile, PathMD5>::Iterator E = files.find(pmd5);
+	HashMap<PathMD5, PackedFile, PathMD5>::Iterator E = data->files.find(pmd5);
 	if (!E) {
 		return nullptr;
 	}
@@ -153,11 +184,13 @@ uint8_t* PackedData::get_file_hash(const String& p_path)
 	return E->value.md5;
 }
 
-Vector<PackedData::PackedFile> PackedData::get_delta_patches(const String& p_path) const
+Vector<PackedData::PackedFile> PackedData::get_delta_patches(const String& p_path)
 {
+	ERR_FAIL_NULL_V(data, Vector<PackedFile>());
 	String simplified_path = p_path.simplify_path().trim_prefix("res://");
 	PathMD5 pmd5(simplified_path.md5_buffer());
-	HashMap<PathMD5, Vector<PackedFile>, PathMD5>::ConstIterator E = delta_patches.find(pmd5);
+	HashMap<PathMD5, Vector<PackedFile>, PathMD5>::ConstIterator E =
+		data->delta_patches.find(pmd5);
 	if (!E) {
 		return Vector<PackedFile>();
 	}
@@ -165,11 +198,15 @@ Vector<PackedData::PackedFile> PackedData::get_delta_patches(const String& p_pat
 	return E->value;
 }
 
-bool PackedData::has_delta_patches(const String& p_path) const
+bool PackedData::has_delta_patches(const String& p_path)
 {
+	if (data == nullptr) {
+		return false;
+	}
 	String simplified_path = p_path.simplify_path().trim_prefix("res://");
 	PathMD5 pmd5(simplified_path.md5_buffer());
-	HashMap<PathMD5, Vector<PackedFile>, PathMD5>::ConstIterator E = delta_patches.find(pmd5);
+	HashMap<PathMD5, Vector<PackedFile>, PathMD5>::ConstIterator E =
+		data->delta_patches.find(pmd5);
 	if (!E) {
 		return false;
 	}
@@ -177,15 +214,16 @@ bool PackedData::has_delta_patches(const String& p_path) const
 	return !E->value.is_empty();
 }
 
-HashSet<String> PackedData::get_file_paths() const
+HashSet<String> PackedData::get_file_paths()
 {
 	HashSet<String> file_paths;
-	_get_file_paths(root, root->name, file_paths);
+	ERR_FAIL_NULL_V(data, file_paths);
+	_get_file_paths(data->root, data->root->name, file_paths);
 	return file_paths;
 }
 
 void PackedData::_get_file_paths(
-	PackedDir* p_dir, const String& p_parent_dir, HashSet<String>& r_paths) const
+	PackedDir* p_dir, const String& p_parent_dir, HashSet<String>& r_paths)
 {
 	for (const String& E : p_dir->files) {
 		r_paths.insert(p_parent_dir.path_join(E));
@@ -198,18 +236,11 @@ void PackedData::_get_file_paths(
 
 void PackedData::clear()
 {
-	files.clear();
-	delta_patches.clear();
-	_free_packed_dirs(root);
-	root = memnew(PackedDir);
-}
-
-PackedData::PackedData()
-{
-	singleton = this;
-	root = memnew(PackedDir);
-
-	add_pack_source(memnew(PackedSourcePCK));
+	ERR_FAIL_NULL(data);
+	data->files.clear();
+	data->delta_patches.clear();
+	_free_packed_dirs(data->root);
+	data->root = memnew(PackedDir);
 }
 
 void PackedData::_free_packed_dirs(PackedDir* p_dir)
@@ -218,18 +249,6 @@ void PackedData::_free_packed_dirs(PackedDir* p_dir)
 		_free_packed_dirs(E.value);
 	}
 	memdelete(p_dir);
-}
-
-PackedData::~PackedData()
-{
-	if (singleton == this) {
-		singleton = nullptr;
-	}
-
-	for (int i = 0; i < sources.size(); i++) {
-		memdelete(sources[i]);
-	}
-	_free_packed_dirs(root);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -394,12 +413,11 @@ bool PackedSourcePCK::try_open_pack(const String& p_path, bool p_replace_files, 
 		uint32_t flags = f->get_32();
 
 		if (flags & PACK_FILE_REMOVAL) { // The file was removed.
-			PackedData::get_singleton()->remove_path(path);
+			PackedData::remove_path(path);
 		}
 		else {
-			PackedData::get_singleton()->add_path(p_path, path, file_base + ofs, size, md5, this,
-				p_replace_files, (flags & PACK_FILE_ENCRYPTED), sparse_bundle,
-				(flags & PACK_FILE_DELTA), salt);
+			PackedData::add_path(p_path, path, file_base + ofs, size, md5, this, p_replace_files,
+				(flags & PACK_FILE_ENCRYPTED), sparse_bundle, (flags & PACK_FILE_DELTA), salt);
 		}
 	}
 
@@ -411,7 +429,7 @@ Ref<FileAccess> PackedSourcePCK::get_file(
 {
 	Ref<FileAccess> file(memnew(FileAccessPack(p_path, *p_file, p_decryption_key)));
 
-	if (PackedData::get_singleton()->has_delta_patches(p_path)) {
+	if (PackedData::has_delta_patches(p_path)) {
 		Ref<FileAccessPatched> file_patched;
 		file_patched.instantiate();
 		Error err = file_patched->open_custom(file);
@@ -458,7 +476,7 @@ void PackedSourceDirectory::add_directory(const String& p_path, bool p_replace_f
 	for (const String& file_name : da->get_files()) {
 		String file_path = p_path.path_join(file_name);
 		uint8_t md5[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		PackedData::get_singleton()->add_path(
+		PackedData::add_path(
 			p_path, file_path, 0, 0, md5, this, p_replace_files, false, false, false);
 	}
 
@@ -706,10 +724,14 @@ PackedData::PackedDir* DirAccessPack::_find_dir(const String& p_dir)
 	PackedData::PackedDir* pd;
 
 	if (absolute) {
-		pd = PackedData::get_singleton()->root;
+		pd = PackedData::data ? PackedData::data->root : nullptr;
 	}
 	else {
 		pd = current;
+	}
+
+	if (!pd) {
+		return nullptr;
 	}
 
 	for (int i = 0; i < paths.size(); i++) {
@@ -781,6 +803,9 @@ uint64_t DirAccessPack::get_space_left() { return 0; }
 
 String DirAccessPack::get_filesystem_type() const { return "PCK"; }
 
-DirAccessPack::DirAccessPack() { current = PackedData::get_singleton()->root; }
+DirAccessPack::DirAccessPack()
+{
+	current = PackedData::data ? PackedData::data->root : nullptr;
+}
 
 

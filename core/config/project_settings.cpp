@@ -286,7 +286,7 @@ bool ProjectSettings::load_resource_pack(const String& p_pack, bool p_replace_fi
 bool ProjectSettings::_load_resource_pack(
 	const String& p_pack, bool p_replace_files, int p_offset, bool p_main_pack)
 {
-	if (PackedData::get_singleton()->is_disabled()) {
+	if (PackedData::is_disabled()) {
 		return false;
 	}
 
@@ -298,13 +298,13 @@ bool ProjectSettings::_load_resource_pack(
 	if (!p_main_pack && !data->using_datapack && !OS::get_resource_dir().is_empty()) {
 		// Add the project's resource file system to PackedData so directory access keeps working
 		// when the game is running without a main pack, like in the editor or on Android.
-		PackedData::get_singleton()->add_pack_source(memnew(PackedSourceDirectory));
-		PackedData::get_singleton()->add_pack("res://", false, 0);
+		PackedData::add_pack_source(memnew(PackedSourceDirectory));
+		PackedData::add_pack("res://", false, 0);
 		DirAccess::make_default<DirAccessPack>(DirAccess::ACCESS_RESOURCES);
 		data->using_datapack = true;
 	}
 
-	bool ok = PackedData::get_singleton()->add_pack(p_pack, p_replace_files, p_offset) == OK;
+	bool ok = PackedData::add_pack(p_pack, p_replace_files, p_offset) == OK;
 	if (!ok) {
 		return false;
 	}

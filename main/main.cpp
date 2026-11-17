@@ -156,10 +156,6 @@
 // Initialized in setup()
 static TranslationServer* translation_server = nullptr;
 static Performance* performance = nullptr;
-static PackedData* packed_data = nullptr;
-#ifdef MINIZIP_ENABLED
-static ZipArchive* zip_packed_data = nullptr;
-#endif
 
 #if defined(STEAMAPI_ENABLED)
 static SteamTracker* steam_tracker = nullptr;
@@ -879,7 +875,7 @@ Error Main::test_setup()
 	register_core_types();
 	register_core_driver_types();
 
-	packed_data = memnew(PackedData);
+	PackedData::initialize();
 
 	register_core_settings(); // Here globals are present.
 
@@ -1060,7 +1056,10 @@ void Main::test_cleanup()
 	EngineDebugger::deinitialize();
 	OS::finalize();
 
-	memdelete(packed_data);
+#ifdef MINIZIP_ENABLED
+	ZipArchive::finalize();
+#endif
+	PackedData::finalize();
 	memdelete(translation_server);
 	memdelete(tsman);
 #ifndef PHYSICS_3D_DISABLED
@@ -1243,21 +1242,11 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	String default_renderer_mobile = "";
 	String renderer_hints = "";
 
-	packed_data = PackedData::get_singleton();
-	if (!packed_data) {
-		packed_data = memnew(PackedData);
-	}
+	PackedData::initialize();
 
 #ifdef MINIZIP_ENABLED
-
-	// XXX: always get_singleton() == 0x0
-	zip_packed_data = ZipArchive::get_singleton();
-	// TODO: remove this temporary fix
-	if (!zip_packed_data) {
-		zip_packed_data = memnew(ZipArchive);
-	}
-
-	packed_data->add_pack_source(zip_packed_data);
+	ZipArchive::initialize();
+	PackedData::add_pack_source(memnew(PackedSourceZIP));
 #endif
 
 	// Exit error code used in the `goto error` conditions.
@@ -2559,7 +2548,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 #ifdef TOOLS_ENABLED
 	if (editor) {
-		packed_data->set_disabled(true);
+		PackedData::set_disabled(true);
 	}
 #endif
 
@@ -2931,7 +2920,10 @@ error:
 	memdelete(performance);
 	InputMap::finalize();
 	memdelete(translation_server);
-	memdelete(packed_data);
+#ifdef MINIZIP_ENABLED
+	ZipArchive::finalize();
+#endif
+	PackedData::finalize();
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
@@ -4322,7 +4314,10 @@ void Main::cleanup(bool p_force)
 
 	Input::finalize();
 
-	memdelete(packed_data);
+#ifdef MINIZIP_ENABLED
+	ZipArchive::finalize();
+#endif
+	PackedData::finalize();
 	memdelete(performance);
 	InputMap::finalize();
 	memdelete(translation_server);

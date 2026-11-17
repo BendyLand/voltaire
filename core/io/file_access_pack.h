@@ -64,7 +64,7 @@ enum PackFileFlags
 
 class PackSource;
 
-class PackedData
+class PackedData final
 {
 	friend class FileAccessPack;
 	friend class DirAccessPack;
@@ -115,21 +115,24 @@ private:
 		}
 	};
 
-	HashMap<PathMD5, PackedFile, PathMD5> files;
-	HashMap<PathMD5, Vector<PackedFile>, PathMD5> delta_patches;
+public:
+	struct Data
+	{
+		HashMap<PathMD5, PackedFile, PathMD5> files;
+		HashMap<PathMD5, Vector<PackedFile>, PathMD5> delta_patches;
+		Vector<PackSource*> sources;
+		PackedDir* root = nullptr;
+		bool disabled = false;
+	};
 
-	Vector<PackSource*> sources;
+	static inline Data* data = nullptr;
 
-	PackedDir* root = nullptr;
+private:
+	static void _free_packed_dirs(PackedDir* p_dir);
+	static void _get_file_paths(
+		PackedDir* p_dir, const String& p_parent_dir, HashSet<String>& r_paths);
 
-	static inline PackedData* singleton = nullptr;
-	bool disabled = false;
-
-	void _free_packed_dirs(PackedDir* p_dir);
-	void _get_file_paths(
-		PackedDir* p_dir, const String& p_parent_dir, HashSet<String>& r_paths) const;
-
-	_FORCE_INLINE_ PathMD5 _get_simplified_path(const String& p_path)
+	_FORCE_INLINE_ static PathMD5 _get_simplified_path(const String& p_path)
 	{
 		String simplified_path = p_path;
 		if (simplified_path.begins_with("uid://")) {
@@ -140,39 +143,48 @@ private:
 	}
 
 public:
-	void add_pack_source(PackSource* p_source);
-	void add_path(const String& p_pkg_path, const String& p_path, uint64_t p_ofs, uint64_t p_size,
-		const uint8_t* p_md5, PackSource* p_src, bool p_replace_files, bool p_encrypted = false,
-		bool p_bundle = false, bool p_delta = false,
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	static void add_pack_source(PackSource* p_source);
+	static void add_path(const String& p_pkg_path, const String& p_path, uint64_t p_ofs,
+		uint64_t p_size, const uint8_t* p_md5, PackSource* p_src, bool p_replace_files,
+		bool p_encrypted = false, bool p_bundle = false, bool p_delta = false,
 		const String& p_salt = String()); // for PackSource
-	void remove_path(const String& p_path);
-	uint8_t* get_file_hash(const String& p_path);
-	Vector<PackedFile> get_delta_patches(const String& p_path) const;
-	bool has_delta_patches(const String& p_path) const;
-	HashSet<String> get_file_paths() const;
+	static void remove_path(const String& p_path);
+	static uint8_t* get_file_hash(const String& p_path);
+	static Vector<PackedFile> get_delta_patches(const String& p_path);
+	static bool has_delta_patches(const String& p_path);
+	static HashSet<String> get_file_paths();
 
-	void set_disabled(bool p_disabled) { disabled = p_disabled; }
+	static void set_disabled(bool p_disabled)
+	{
+		if (data != nullptr) {
+			data->disabled = p_disabled;
+		}
+	}
 
-	_FORCE_INLINE_ bool is_disabled() const { return disabled; }
+	_FORCE_INLINE_ static bool is_disabled() { return data != nullptr ? data->disabled : true; }
 
-	static PackedData* get_singleton() { return singleton; }
-
-	Error add_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
+	static Error add_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
 		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>());
 
-	void clear();
+	static void clear();
 
-	_FORCE_INLINE_ Ref<FileAccess> try_open_path(
+	_FORCE_INLINE_ static Ref<FileAccess> try_open_path(
 		const String& p_path, const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>());
-	_FORCE_INLINE_ bool has_path(const String& p_path);
+	_FORCE_INLINE_ static bool has_path(const String& p_path);
 
-	_FORCE_INLINE_ int64_t get_size(const String& p_path);
+	_FORCE_INLINE_ static int64_t get_size(const String& p_path);
 
-	_FORCE_INLINE_ Ref<DirAccess> try_open_directory(const String& p_path);
-	_FORCE_INLINE_ bool has_directory(const String& p_path);
+	_FORCE_INLINE_ static Ref<DirAccess> try_open_directory(const String& p_path);
+	_FORCE_INLINE_ static bool has_directory(const String& p_path);
 
-	PackedData();
-	~PackedData();
+	PackedData() = delete;
+	PackedData(const PackedData&) = delete;
+	PackedData& operator=(const PackedData&) = delete;
+	~PackedData() = delete;
 };
 
 class PackSource
@@ -285,7 +297,11 @@ public:
 
 int64_t PackedData::get_size(const String& p_path)
 {
-	HashMap<PathMD5, PackedFile, PathMD5>::Iterator E = files.find(_get_simplified_path(p_path));
+	if (data == nullptr) {
+		return -1;
+	}
+	HashMap<PathMD5, PackedFile, PathMD5>::Iterator E =
+		data->files.find(_get_simplified_path(p_path));
 	if (!E) {
 		return -1; // File not found.
 	}
@@ -298,7 +314,11 @@ int64_t PackedData::get_size(const String& p_path)
 Ref<FileAccess> PackedData::try_open_path(
 	const String& p_path, const Vector<uint8_t>& p_decryption_key)
 {
-	HashMap<PathMD5, PackedFile, PathMD5>::Iterator E = files.find(_get_simplified_path(p_path));
+	if (data == nullptr) {
+		return nullptr;
+	}
+	HashMap<PathMD5, PackedFile, PathMD5>::Iterator E =
+		data->files.find(_get_simplified_path(p_path));
 	if (!E) {
 		return nullptr; // Not found.
 	}
@@ -306,10 +326,16 @@ Ref<FileAccess> PackedData::try_open_path(
 	return E->value.src->get_file(p_path, &E->value, p_decryption_key);
 }
 
-bool PackedData::has_path(const String& p_path) { return files.has(_get_simplified_path(p_path)); }
+bool PackedData::has_path(const String& p_path)
+{
+	return data != nullptr && data->files.has(_get_simplified_path(p_path));
+}
 
 bool PackedData::has_directory(const String& p_path)
 {
+	if (data == nullptr) {
+		return false;
+	}
 	Ref<DirAccess> da = try_open_directory(p_path);
 	if (da.is_valid()) {
 		return true;

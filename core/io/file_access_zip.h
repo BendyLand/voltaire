@@ -36,7 +36,7 @@
 #include <thirdparty/minizip/unzip.h>
 #include "core/io/file_access_pack.h"
 
-class ZipArchive : public PackSource
+class ZipArchive final
 {
 public:
 	struct File
@@ -51,29 +51,42 @@ private:
 		String filename;
 	};
 
-	Vector<Package> packages;
-
-	HashMap<String, File> files;
-
-	static inline ZipArchive* instance = nullptr;
-
 public:
-	void close_handle(unzFile p_file) const;
-	unzFile get_file_handle(const String& p_file) const;
+	struct Data
+	{
+		Vector<Package> packages;
+		HashMap<String, File> files;
+	};
 
-	Error add_package(const String& p_name);
+	static inline Data* data = nullptr;
 
-	bool file_exists(const String& p_name) const;
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
+	static void close_handle(unzFile p_file);
+	static unzFile get_file_handle(const String& p_file);
+
+	static bool file_exists(const String& p_name);
+
+	static bool try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
+		PackSource* p_source, const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>());
+	static Ref<FileAccess> get_file(const String& p_path, PackedData::PackedFile* p_file,
+		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>());
+
+	ZipArchive() = delete;
+	ZipArchive(const ZipArchive&) = delete;
+	ZipArchive& operator=(const ZipArchive&) = delete;
+	~ZipArchive() = delete;
+};
+
+class PackedSourceZIP : public PackSource
+{
+public:
 	virtual bool try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
 		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) override;
-	Ref<FileAccess> get_file(const String& p_path, PackedData::PackedFile* p_file,
+	virtual Ref<FileAccess> get_file(const String& p_path, PackedData::PackedFile* p_file,
 		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) override;
-
-	static ZipArchive* get_singleton();
-
-	ZipArchive();
-	~ZipArchive();
 };
 
 class FileAccessZip : public FileAccess

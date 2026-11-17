@@ -263,7 +263,7 @@ Error EditorExportPlatform::_load_patches(
 				patch_temp_dirs.push_back(temp_dir);
 			}
 
-			Error err = PackedData::get_singleton()->add_pack(
+			Error err = PackedData::add_pack(
 				pck_path, true, 0, _get_script_encryption_key_bytes(p_preset));
 			if (err != OK) {
 				_unload_patches();
@@ -279,7 +279,7 @@ Error EditorExportPlatform::_load_patches(
 
 void EditorExportPlatform::_unload_patches()
 {
-	PackedData::get_singleton()->clear();
+	PackedData::clear();
 
 	for (const String& temp_dir : patch_temp_dirs) {
 		Ref<DirAccess> temp_dir_da = DirAccess::open(temp_dir);
