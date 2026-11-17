@@ -35,17 +35,19 @@
 
 #include "core/io/ip.h"
 
-class IPWindows : public IP {
-
-	virtual void _resolve_hostname(List<IPAddress> &r_addresses, const String &p_hostname, Type p_type = TYPE_ANY) const override;
-
-	static IP *_create_unix();
-
+class IPWindows final
+{
 public:
-	virtual void get_local_interfaces(HashMap<String, Interface_Info> *r_interfaces) const override;
+	static void _resolve_hostname(
+		List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type = IP::TYPE_ANY);
+	static void get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces);
 
 	static void make_default();
-	IPWindows();
+
+	IPWindows() = delete;
+	IPWindows(const IPWindows&) = delete;
+	IPWindows& operator=(const IPWindows&) = delete;
+	~IPWindows() = delete;
 };
 
 #endif // WINDOWS_ENABLED

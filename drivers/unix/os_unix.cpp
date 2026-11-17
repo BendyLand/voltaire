@@ -187,6 +187,8 @@ void OS_Unix::finalize_core()
         process_map = nullptr;
     }
 #ifndef UNIX_SOCKET_UNAVAILABLE
+	IP::finalize();
+	IP::reset_backend();
 	NetSocketUnix::cleanup();
 #endif
 }

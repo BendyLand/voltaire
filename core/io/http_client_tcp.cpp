@@ -105,7 +105,7 @@ Error HTTPClientTCP::connect_to_host(const String& p_host, int p_port, Ref<TLSOp
 	}
 	else {
 		// Host contains hostname and needs to be resolved to IP.
-		resolving = IP::get_singleton()->resolve_hostname_queue_item(server_host);
+		resolving = IP::resolve_hostname_queue_item(server_host);
 		if (resolving == IP::RESOLVER_INVALID_ID) {
 			status = STATUS_CANT_RESOLVE;
 			return ERR_CANT_RESOLVE;
@@ -260,7 +260,7 @@ void HTTPClientTCP::close()
 	status = STATUS_DISCONNECTED;
 	head_request = false;
 	if (resolving != IP::RESOLVER_INVALID_ID) {
-		IP::get_singleton()->erase_resolve_item(resolving);
+		IP::erase_resolve_item(resolving);
 		resolving = IP::RESOLVER_INVALID_ID;
 	}
 	response_headers.clear();
@@ -284,13 +284,13 @@ Error HTTPClientTCP::poll()
 	case STATUS_RESOLVING: {
 		ERR_FAIL_COND_V(resolving == IP::RESOLVER_INVALID_ID, ERR_BUG);
 
-		IP::ResolverStatus rstatus = IP::get_singleton()->get_resolve_item_status(resolving);
+		IP::ResolverStatus rstatus = IP::get_resolve_item_status(resolving);
 		switch (rstatus) {
 		case IP::RESOLVER_STATUS_WAITING:
 			return OK; // Still resolving.
 
 		case IP::RESOLVER_STATUS_DONE: {
-			IP::get_singleton()->erase_resolve_item(resolving);
+			IP::erase_resolve_item(resolving);
 			resolving = IP::RESOLVER_INVALID_ID;
 
 			Error err = ERR_BUG; // Should be at least one entry.
@@ -303,7 +303,7 @@ Error HTTPClientTCP::poll()
 		} break;
 		case IP::RESOLVER_STATUS_NONE:
 		case IP::RESOLVER_STATUS_ERROR: {
-			IP::get_singleton()->erase_resolve_item(resolving);
+			IP::erase_resolve_item(resolving);
 			resolving = IP::RESOLVER_INVALID_ID;
 			close();
 			status = STATUS_CANT_RESOLVE;

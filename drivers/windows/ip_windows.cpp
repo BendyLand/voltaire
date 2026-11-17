@@ -52,17 +52,21 @@ static IPAddress _sockaddr2ip(struct sockaddr *p_addr) {
 	return ip;
 }
 
-void IPWindows::_resolve_hostname(List<IPAddress> &r_addresses, const String &p_hostname, Type p_type) const {
+void IPWindows::_resolve_hostname(
+	List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type)
+{
 	struct addrinfo hints;
-	struct addrinfo *result = nullptr;
+	struct addrinfo* result = nullptr;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
-	if (p_type == TYPE_IPV4) {
+	if (p_type == IP::TYPE_IPV4) {
 		hints.ai_family = AF_INET;
-	} else if (p_type == TYPE_IPV6) {
+	}
+	else if (p_type == IP::TYPE_IPV6) {
 		hints.ai_family = AF_INET6;
 		hints.ai_flags = 0;
-	} else {
+	}
+	else {
 		hints.ai_family = AF_UNSPEC;
 		hints.ai_flags = AI_ADDRCONFIG;
 	}
@@ -99,14 +103,17 @@ void IPWindows::_resolve_hostname(List<IPAddress> &r_addresses, const String &p_
 	freeaddrinfo(result);
 }
 
-void IPWindows::get_local_interfaces(HashMap<String, Interface_Info> *r_interfaces) const {
+void IPWindows::get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces)
+{
 	ULONG buf_size = 1024;
-	IP_ADAPTER_ADDRESSES *addrs;
+	IP_ADAPTER_ADDRESSES* addrs;
 
 	while (true) {
-		addrs = (IP_ADAPTER_ADDRESSES *)memalloc(buf_size);
-		int err = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER | GAA_FLAG_SKIP_FRIENDLY_NAME,
-				nullptr, addrs, &buf_size);
+		addrs = (IP_ADAPTER_ADDRESSES*)memalloc(buf_size);
+		int err = GetAdaptersAddresses(AF_UNSPEC,
+			GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER |
+				GAA_FLAG_SKIP_FRIENDLY_NAME,
+			nullptr, addrs, &buf_size);
 		if (err == NO_ERROR) {
 			break;
 		}
@@ -118,15 +125,15 @@ void IPWindows::get_local_interfaces(HashMap<String, Interface_Info> *r_interfac
 		ERR_FAIL_MSG("Call to GetAdaptersAddresses failed with error " + itos(err) + ".");
 	}
 
-	IP_ADAPTER_ADDRESSES *adapter = addrs;
+	IP_ADAPTER_ADDRESSES* adapter = addrs;
 
 	while (adapter != nullptr) {
-		Interface_Info info;
+		IP::Interface_Info info;
 		info.name = adapter->AdapterName;
 		info.name_friendly = adapter->FriendlyName;
 		info.index = String::num_uint64(adapter->IfIndex);
 
-		IP_ADAPTER_UNICAST_ADDRESS *address = adapter->FirstUnicastAddress;
+		IP_ADAPTER_UNICAST_ADDRESS* address = adapter->FirstUnicastAddress;
 		while (address != nullptr) {
 			int family = address->Address.lpSockaddr->sa_family;
 			if (family != AF_INET && family != AF_INET6) {
@@ -145,15 +152,9 @@ void IPWindows::get_local_interfaces(HashMap<String, Interface_Info> *r_interfac
 	memfree(addrs);
 }
 
-void IPWindows::make_default() {
-	_create = _create_unix;
-}
-
-IP *IPWindows::_create_unix() {
-	return memnew(IPWindows);
-}
-
-IPWindows::IPWindows() {
+void IPWindows::make_default()
+{
+	IP::bind<IPWindows>();
 }
 
 #endif // WINDOWS_ENABLED

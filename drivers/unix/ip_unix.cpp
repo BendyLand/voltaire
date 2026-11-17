@@ -69,17 +69,21 @@ static IPAddress _sockaddr2ip(struct sockaddr *p_addr) {
 	return ip;
 }
 
-void IPUnix::_resolve_hostname(List<IPAddress> &r_addresses, const String &p_hostname, Type p_type) const {
+void IPUnix::_resolve_hostname(
+	List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type)
+{
 	struct addrinfo hints;
-	struct addrinfo *result = nullptr;
+	struct addrinfo* result = nullptr;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
-	if (p_type == TYPE_IPV4) {
+	if (p_type == IP::TYPE_IPV4) {
 		hints.ai_family = AF_INET;
-	} else if (p_type == TYPE_IPV6) {
+	}
+	else if (p_type == IP::TYPE_IPV6) {
 		hints.ai_family = AF_INET6;
 		hints.ai_flags = 0;
-	} else {
+	}
+	else {
 		hints.ai_family = AF_UNSPEC;
 		hints.ai_flags = AI_ADDRCONFIG;
 	}
@@ -116,9 +120,10 @@ void IPUnix::_resolve_hostname(List<IPAddress> &r_addresses, const String &p_hos
 	freeaddrinfo(result);
 }
 
-void IPUnix::get_local_interfaces(HashMap<String, Interface_Info> *r_interfaces) const {
-	struct ifaddrs *ifAddrStruct = nullptr;
-	struct ifaddrs *ifa = nullptr;
+void IPUnix::get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces)
+{
+	struct ifaddrs* ifAddrStruct = nullptr;
+	struct ifaddrs* ifa = nullptr;
 	int family;
 
 	getifaddrs(&ifAddrStruct);
@@ -134,9 +139,9 @@ void IPUnix::get_local_interfaces(HashMap<String, Interface_Info> *r_interfaces)
 			continue;
 		}
 
-		HashMap<String, Interface_Info>::Iterator E = r_interfaces->find(ifa->ifa_name);
+		HashMap<String, IP::Interface_Info>::Iterator E = r_interfaces->find(ifa->ifa_name);
 		if (!E) {
-			Interface_Info info;
+			IP::Interface_Info info;
 			info.name = ifa->ifa_name;
 			info.name_friendly = ifa->ifa_name;
 			info.index = String::num_uint64(if_nametoindex(ifa->ifa_name));
@@ -144,7 +149,7 @@ void IPUnix::get_local_interfaces(HashMap<String, Interface_Info> *r_interfaces)
 			ERR_CONTINUE(!E);
 		}
 
-		Interface_Info &info = E->value;
+		IP::Interface_Info& info = E->value;
 		info.ip_addresses.push_front(_sockaddr2ip(ifa->ifa_addr));
 	}
 
@@ -153,15 +158,9 @@ void IPUnix::get_local_interfaces(HashMap<String, Interface_Info> *r_interfaces)
 	}
 }
 
-void IPUnix::make_default() {
-	_create = _create_unix;
-}
-
-IP *IPUnix::_create_unix() {
-	return memnew(IPUnix);
-}
-
-IPUnix::IPUnix() {
+void IPUnix::make_default()
+{
+	IP::bind<IPUnix>();
 }
 
 #endif // UNIX_ENABLED

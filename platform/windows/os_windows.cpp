@@ -398,6 +398,8 @@ void OS_Windows::finalize_core() {
 #endif
 
 	memdelete(process_map);
+	IP::finalize();
+	IP::reset_backend();
 	NetSocketWinSock::cleanup();
 
 #ifdef WINDOWS_DEBUG_OUTPUT_ENABLED

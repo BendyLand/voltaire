@@ -127,7 +127,7 @@ Error StreamPeerTCP::_connect(const String& p_address, int p_port)
 		ip = p_address;
 	}
 	else {
-		ip = IP::get_singleton()->resolve_hostname(p_address);
+		ip = IP::resolve_hostname(p_address);
 		if (!ip.is_valid()) {
 			return ERR_CANT_RESOLVE;
 		}

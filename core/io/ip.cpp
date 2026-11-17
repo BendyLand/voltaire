@@ -91,7 +91,7 @@ struct _IP_ResolverPrivate
 
 			// We should not lock while resolving the hostname,
 			// only when modifying the queue.
-			IP::get_singleton()->_resolve_hostname(response, hostname, type);
+			IP::_resolve_hostname(response, hostname, type);
 
 			lock.temp_relock();
 			// Could have been completed by another function, or deleted.
@@ -136,6 +136,9 @@ IPAddress IP::resolve_hostname(const String& p_hostname, IP::Type p_type)
 
 Vector<String> IP::resolve_hostname_addresses(const String& p_hostname, Type p_type)
 {
+	ERR_FAIL_NULL_V(data, Vector<String>());
+	_IP_ResolverPrivate* resolver = data->resolver;
+
 	List<IPAddress> res;
 	String key = _IP_ResolverPrivate::get_cache_key(p_hostname, p_type);
 
@@ -167,6 +170,9 @@ Vector<String> IP::resolve_hostname_addresses(const String& p_hostname, Type p_t
 
 IP::ResolverID IP::resolve_hostname_queue_item(const String& p_hostname, IP::Type p_type)
 {
+	ERR_FAIL_NULL_V(data, RESOLVER_INVALID_ID);
+	_IP_ResolverPrivate* resolver = data->resolver;
+
 	MutexLock lock(resolver->mutex);
 
 	ResolverID id = resolver->find_empty_id();
@@ -197,14 +203,15 @@ IP::ResolverID IP::resolve_hostname_queue_item(const String& p_hostname, IP::Typ
 	return id;
 }
 
-IP::ResolverStatus IP::get_resolve_item_status(ResolverID p_id) const
+IP::ResolverStatus IP::get_resolve_item_status(ResolverID p_id)
 {
+	ERR_FAIL_NULL_V(data, IP::RESOLVER_STATUS_NONE);
 	ERR_FAIL_INDEX_V_MSG(p_id, IP::RESOLVER_MAX_QUERIES, IP::RESOLVER_STATUS_NONE,
 		vformat("Too many concurrent DNS resolver queries (%d, but should be %d at most). Try "
 				"performing less network requests at once.",
 			p_id, IP::RESOLVER_MAX_QUERIES));
 
-	IP::ResolverStatus res = resolver->queue[p_id].status.get();
+	IP::ResolverStatus res = data->resolver->queue[p_id].status.get();
 	if (res == IP::RESOLVER_STATUS_NONE) {
 		ERR_PRINT("Condition status == IP::RESOLVER_STATUS_NONE");
 		return IP::RESOLVER_STATUS_NONE;
@@ -212,13 +219,15 @@ IP::ResolverStatus IP::get_resolve_item_status(ResolverID p_id) const
 	return res;
 }
 
-IPAddress IP::get_resolve_item_address(ResolverID p_id) const
+IPAddress IP::get_resolve_item_address(ResolverID p_id)
 {
+	ERR_FAIL_NULL_V(data, IPAddress());
 	ERR_FAIL_INDEX_V_MSG(p_id, IP::RESOLVER_MAX_QUERIES, IPAddress(),
 		vformat("Too many concurrent DNS resolver queries (%d, but should be %d at most). Try "
 				"performing less network requests at once.",
 			p_id, IP::RESOLVER_MAX_QUERIES));
 
+	_IP_ResolverPrivate* resolver = data->resolver;
 	MutexLock lock(resolver->mutex);
 
 	if (resolver->queue[p_id].status.get() != IP::RESOLVER_STATUS_DONE) {
@@ -238,16 +247,19 @@ IPAddress IP::get_resolve_item_address(ResolverID p_id) const
 
 void IP::erase_resolve_item(ResolverID p_id)
 {
+	ERR_FAIL_NULL(data);
 	ERR_FAIL_INDEX_MSG(p_id, IP::RESOLVER_MAX_QUERIES,
 		vformat("Too many concurrent DNS resolver queries (%d, but should be %d at most). Try "
 				"performing less network requests at once.",
 			p_id, IP::RESOLVER_MAX_QUERIES));
 
-	resolver->queue[p_id].status.set(IP::RESOLVER_STATUS_NONE);
+	data->resolver->queue[p_id].status.set(IP::RESOLVER_STATUS_NONE);
 }
 
 void IP::clear_cache(const String& p_hostname)
 {
+	ERR_FAIL_NULL(data);
+	_IP_ResolverPrivate* resolver = data->resolver;
 	MutexLock lock(resolver->mutex);
 
 	if (p_hostname.is_empty()) {
@@ -261,7 +273,7 @@ void IP::clear_cache(const String& p_hostname)
 	}
 }
 
-Vector<String> IP::_get_local_addresses() const
+Vector<String> IP::_get_local_addresses()
 {
 	Vector<String> addresses;
 	List<IPAddress> ip_addresses;
@@ -273,7 +285,7 @@ Vector<String> IP::_get_local_addresses() const
 	return addresses;
 }
 
-void IP::get_local_addresses(List<IPAddress>* r_addresses) const
+void IP::get_local_addresses(List<IPAddress>* r_addresses)
 {
 	HashMap<String, Interface_Info> interfaces;
 	get_local_interfaces(&interfaces);
@@ -284,33 +296,39 @@ void IP::get_local_addresses(List<IPAddress>* r_addresses) const
 	}
 }
 
-IP* IP::get_singleton() { return singleton; }
-
-IP* (*IP::_create)() = nullptr;
-
-IP* IP::create()
+void IP::initialize()
 {
-	ERR_FAIL_COND_V_MSG(singleton, nullptr, "IP singleton already exists.");
-	ERR_FAIL_NULL_V(_create, nullptr);
-	return _create();
+	if (data != nullptr) {
+		return;
+	}
+	data = memnew(Data);
+	data->resolver = memnew(_IP_ResolverPrivate);
+	data->resolver->thread_abort.clear();
+	data->resolver->thread.start(_IP_ResolverPrivate::_thread_function, data->resolver);
 }
 
-IP::IP()
+void IP::finalize()
 {
-	singleton = this;
-	resolver = memnew(_IP_ResolverPrivate);
-
-	resolver->thread_abort.clear();
-	resolver->thread.start(_IP_ResolverPrivate::_thread_function, resolver);
+	if (data == nullptr) {
+		return;
+	}
+	if (data->resolver != nullptr) {
+		data->resolver->thread_abort.set();
+		data->resolver->sem.post();
+		if (data->resolver->thread.is_started()) {
+			data->resolver->thread.wait_to_finish();
+		}
+		memdelete(data->resolver);
+		data->resolver = nullptr;
+	}
+	memdelete(data);
+	data = nullptr;
 }
 
-IP::~IP()
+void IP::reset_backend()
 {
-	resolver->thread_abort.set();
-	resolver->sem.post();
-	resolver->thread.wait_to_finish();
-
-	memdelete(resolver);
+	_resolve_hostname = &_default_resolve_hostname;
+	get_local_interfaces = &_default_get_local_interfaces;
 }
 
 

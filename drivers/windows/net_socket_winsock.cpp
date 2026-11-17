@@ -171,7 +171,7 @@ _FORCE_INLINE_ Error NetSocketWinSock::_change_multicast_group(IPAddress p_ip, S
 	IPAddress if_ip;
 	uint32_t if_v6id = 0;
 	HashMap<String, IP::Interface_Info> if_info;
-	IP::get_singleton()->get_local_interfaces(&if_info);
+	IP::get_local_interfaces(&if_info);
 	for (KeyValue<String, IP::Interface_Info> &E : if_info) {
 		IP::Interface_Info &c = E.value;
 		if (c.name != p_if_name) {

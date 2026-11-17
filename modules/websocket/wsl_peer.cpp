@@ -46,7 +46,7 @@ WebSocketPeer* WSLPeer::_create(bool p_notify_postinitialize)
 void WSLPeer::Resolver::stop()
 {
 	if (resolver_id != IP::RESOLVER_INVALID_ID) {
-		IP::get_singleton()->erase_resolve_item(resolver_id);
+		IP::erase_resolve_item(resolver_id);
 		resolver_id = IP::RESOLVER_INVALID_ID;
 	}
 	port = 0;

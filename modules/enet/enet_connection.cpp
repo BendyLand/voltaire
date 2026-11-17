@@ -75,9 +75,9 @@ Ref<ENetPacketPeer> ENetConnection::connect_to_host(
 	}
 	else {
 #ifdef GODOT_ENET
-		ip = IP::get_singleton()->resolve_hostname(p_address);
+		ip = IP::resolve_hostname(p_address);
 #else
-		ip = IP::get_singleton()->resolve_hostname(p_address, IP::TYPE_IPV4);
+		ip = IP::resolve_hostname(p_address, IP::TYPE_IPV4);
 #endif
 		ERR_FAIL_COND_V_MSG(
 			!ip.is_valid(), out, "Couldn't resolve the server IP address or domain name.");
@@ -349,9 +349,9 @@ void ENetConnection::socket_send(
 	}
 	else {
 #ifdef GODOT_ENET
-		ip = IP::get_singleton()->resolve_hostname(p_address);
+		ip = IP::resolve_hostname(p_address);
 #else
-		ip = IP::get_singleton()->resolve_hostname(p_address, IP::TYPE_IPV4);
+		ip = IP::resolve_hostname(p_address, IP::TYPE_IPV4);
 #endif
 		ERR_FAIL_COND_MSG(!ip.is_valid(), "Couldn't resolve the server IP address or domain name.");
 	}

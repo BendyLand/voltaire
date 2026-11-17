@@ -94,8 +94,6 @@ static Ref<ResourceFormatLoaderJSON> resource_loader_json;
 
 static CoreBind::ResourceLoader* _resource_loader = nullptr;
 
-static IP* ip = nullptr;
-
 extern Mutex _global_mutex;
 
 extern void register_global_constants();
@@ -149,7 +147,7 @@ void register_core_types()
 
 	resource_uid = memnew(ResourceUID);
 
-	ip = IP::create();
+	IP::initialize();
 
 	OS::benchmark_end_measure("Core", "Register Types");
 }
@@ -176,6 +174,9 @@ void unregister_core_extensions()
 	OS::benchmark_end_measure("Core", "Unregister Extensions");
 }
 
-void unregister_core_types() {}
+void unregister_core_types()
+{
+	IP::finalize();
+}
 
 
