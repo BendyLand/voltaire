@@ -104,8 +104,9 @@ SubtweenTweener* Tween::tween_subtween(Tween* rp_subtween)
 	// Remove the tween from its parent tree, if it has one.
 	// If the user created this tween without a parent tree attached,
 	// then this step isn't necessary.
-	if (tweener->subtween->parent_tree != nullptr) {
-		tweener->subtween->parent_tree->remove_tween(tweener->subtween);
+	if (tweener->subtween->is_in_tree) {
+		SceneTree::remove_tween(tweener->subtween);
+		tweener->subtween->is_in_tree = false;
 	}
 	subtweens.push_back(rp_subtween);
 	append(tweener);
@@ -285,9 +286,9 @@ real_t Tween::run_equation(TransitionType p_trans_type, EaseType p_ease_type, re
 
 Tween::Tween() { ERR_FAIL_MSG("Tween can't be created directly. Use create_tween() method."); }
 
-Tween::Tween(SceneTree* p_parent_tree)
+Tween::Tween(bool p_in_tree)
 {
-	parent_tree = p_parent_tree;
+	is_in_tree = p_in_tree;
 	valid = true;
 }
 

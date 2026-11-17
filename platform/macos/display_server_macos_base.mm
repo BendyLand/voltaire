@@ -466,7 +466,9 @@ void DisplayServerMacOSBase::update_im_text(const Point2i &p_selection, const St
 	im_selection = p_selection;
 	im_text = p_text;
 
-	OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+	}
 }
 
 Point2i DisplayServerMacOSBase::ime_get_selection() const {

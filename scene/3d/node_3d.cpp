@@ -86,7 +86,9 @@ void Node3D::_notify_dirty()
 	if (data.notify_transform && !data.ignore_notification && !xform_change.in_list()) {
 
 #endif
-		get_tree()->xform_change_list.add(&xform_change);
+		if (SceneTree::data) {
+			SceneTree::data->xform_change_list.add(&xform_change);
+		}
 	}
 }
 
@@ -183,7 +185,7 @@ void Node3D::fti_pump_xform() { data.local_transform_prev = get_transform(); }
 void Node3D::fti_notify_node_changed(bool p_transform_changed)
 {
 	if (is_inside_tree()) {
-		get_tree()->get_scene_tree_fti().node_3d_notify_changed(*this, p_transform_changed);
+		SceneTreeFTI::node_3d_notify_changed(*this, p_transform_changed);
 	}
 }
 
@@ -264,9 +266,8 @@ void Node3D::_disable_client_physics_interpolation()
 		memdelete(data.client_physics_interpolation_data);
 		data.client_physics_interpolation_data = nullptr;
 
-		SceneTree* tree = get_tree();
-		if (tree && _client_physics_interpolation_node_3d_list.in_list()) {
-			tree->client_physics_interpolation_remove_node_3d(
+		if (SceneTree::is_initialized() && _client_physics_interpolation_node_3d_list.in_list()) {
+			SceneTree::client_physics_interpolation_remove_node_3d(
 				&_client_physics_interpolation_node_3d_list);
 		}
 	}
@@ -312,12 +313,10 @@ Transform3D Node3D::_get_global_transform_interpolated(real_t p_interpolation_fr
 	TransformInterpolator::interpolate_transform_3d(
 		xform_prev, xform_curr, res, p_interpolation_fraction);
 
-	SceneTree* tree = get_tree();
-
-	// This should not happen, as is_inside_tree() is checked earlier.
-	ERR_FAIL_NULL_V(tree, res);
+	ERR_FAIL_COND_V(!SceneTree::is_initialized(), res);
 	if (!_client_physics_interpolation_node_3d_list.in_list()) {
-		tree->client_physics_interpolation_add_node_3d(&_client_physics_interpolation_node_3d_list);
+		SceneTree::client_physics_interpolation_add_node_3d(
+			&_client_physics_interpolation_node_3d_list);
 	}
 
 	return res;
@@ -883,7 +882,7 @@ Node3D::~Node3D()
 	_disable_client_physics_interpolation();
 
 	if (is_inside_tree()) {
-		get_tree()->get_scene_tree_fti().node_3d_notify_delete(this);
+		SceneTreeFTI::node_3d_notify_delete(this);
 	}
 }
 

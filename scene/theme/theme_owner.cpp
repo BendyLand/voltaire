@@ -52,7 +52,7 @@ ThemeContext* ThemeOwner::_get_active_owner_context() const
 		return owner_context;
 	}
 
-	return ThemeDB::get_singleton()->get_default_theme_context();
+	return ThemeDB::get_default_theme_context();
 }
 
 bool ThemeOwner::has_theme_item_in_types(
@@ -123,7 +123,7 @@ float ThemeOwner::get_theme_default_base_scale()
 	}
 
 	// Finally, if no match exists, return the universal default.
-	return ThemeDB::get_singleton()->get_fallback_base_scale();
+	return ThemeDB::get_fallback_base_scale();
 }
 
 Ref<Font> ThemeOwner::get_theme_default_font()
@@ -154,7 +154,7 @@ Ref<Font> ThemeOwner::get_theme_default_font()
 	}
 
 	// Finally, if no match exists, return the universal default.
-	return ThemeDB::get_singleton()->get_fallback_font();
+	return ThemeDB::get_fallback_font();
 }
 
 int ThemeOwner::get_theme_default_font_size()
@@ -185,7 +185,7 @@ int ThemeOwner::get_theme_default_font_size()
 	}
 
 	// Finally, if no match exists, return the universal default.
-	return ThemeDB::get_singleton()->get_fallback_font_size();
+	return ThemeDB::get_fallback_font_size();
 }
 
 
@@ -195,23 +195,5 @@ void ThemeOwner::set_owner_node(Node*) {}
 void ThemeOwner::set_owner_context(ThemeContext*, bool) {}
 
 void ThemeOwner::propagate_theme_changed(Node*, Node*, bool, bool) {}
-
-ThemeDB::ThemeDB() {}
-
-void ThemeDB::update_class_instance_items(Node*) {}
-
-void ThemeDB::set_fallback_stylebox(Ref<StyleBox> const&) {}
-
-void ThemeDB::set_fallback_icon(Ref<Texture2D> const&) {}
-
-void ThemeDB::set_fallback_font_size(int) {}
-
-void ThemeDB::set_fallback_font(Ref<Font> const&) {}
-
-void ThemeDB::set_fallback_base_scale(float) {}
-
-void ThemeDB::initialize_theme() {}
-
-ThemeContext* ThemeDB::create_theme_context(Node*, Vector<Ref<Theme>>&) {}
 
 void ThemeContext::set_themes(Vector<Ref<Theme>>&) {}

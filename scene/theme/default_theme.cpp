@@ -144,12 +144,12 @@ void make_default_theme(float p_scale, Ref<Font> p_font,
 	}
 	fill_default_theme(t, default_font, bold_font, bold_italics_font, italics_font, default_icon,
 		default_style, default_scale);
-	ThemeDB::get_singleton()->set_default_theme(t);
-	ThemeDB::get_singleton()->set_fallback_base_scale(default_scale);
-	ThemeDB::get_singleton()->set_fallback_icon(default_icon);
-	ThemeDB::get_singleton()->set_fallback_stylebox(default_style);
-	ThemeDB::get_singleton()->set_fallback_font(default_font);
-	ThemeDB::get_singleton()->set_fallback_font_size(default_font_size * default_scale);
+	ThemeDB::set_default_theme(t);
+	ThemeDB::set_fallback_base_scale(default_scale);
+	ThemeDB::set_fallback_icon(default_icon);
+	ThemeDB::set_fallback_stylebox(default_style);
+	ThemeDB::set_fallback_font(default_font);
+	ThemeDB::set_fallback_font_size(default_font_size * default_scale);
 }
 
 void fill_default_theme(Ref<Theme>& r_theme, const Ref<Font>& p_font, const Ref<Font>& p_bold_font,

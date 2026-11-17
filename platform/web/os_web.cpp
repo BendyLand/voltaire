@@ -65,14 +65,6 @@ void OS_Web::resume_audio() {
 	AudioDriverWeb::resume();
 }
 
-void OS_Web::set_main_loop(MainLoop *p_main_loop) {
-	main_loop = p_main_loop;
-}
-
-MainLoop *OS_Web::get_main_loop() const {
-	return main_loop;
-}
-
 void OS_Web::fs_sync_callback() {
 	get_singleton()->idb_is_syncing = false;
 }
@@ -92,8 +84,7 @@ bool OS_Web::main_loop_iterate() {
 }
 
 void OS_Web::delete_main_loop() {
-	memdelete(main_loop);
-	main_loop = nullptr;
+	MainLoop::clear();
 }
 
 void OS_Web::finalize() {

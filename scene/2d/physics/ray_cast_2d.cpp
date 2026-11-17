@@ -83,7 +83,7 @@ bool RayCast2D::get_exclude_parent_body() const { return exclude_parent_body; }
 
 void RayCast2D::_draw_debug_shape()
 {
-	Color draw_col = collided ? Color(1.0, 0.01, 0) : get_tree()->get_debug_collisions_color();
+	Color draw_col = collided ? Color(1.0, 0.01, 0) : SceneTree::get_debug_collisions_color();
 	if (!enabled) {
 		const float g = draw_col.get_v();
 		draw_col.r = g;

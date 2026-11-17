@@ -62,8 +62,6 @@ private:
 
 	AudioDriverOpenSL audio_driver_android;
 
-	MainLoop *main_loop = nullptr;
-
 	struct FontInfo {
 		String font_name;
 		HashSet<String> lang;
@@ -101,8 +99,7 @@ public:
 
 	virtual void initialize_joypads() override;
 
-	virtual void set_main_loop(MainLoop *p_main_loop) override;
-	virtual void delete_main_loop() override;
+	void delete_main_loop();
 
 	virtual void finalize() override;
 
@@ -122,8 +119,6 @@ public:
 	virtual String get_distribution_name() const override;
 	virtual String get_version() const override;
 	virtual String get_version_alias() const override;
-
-	virtual MainLoop *get_main_loop() const override;
 
 	void main_loop_begin();
 	bool main_loop_iterate(bool *r_should_swap_buffers = nullptr);

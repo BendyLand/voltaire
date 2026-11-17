@@ -97,7 +97,7 @@ void NavigationAgent3D::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_UNSUSPENDED: {
-		if (get_tree()->is_paused()) {
+		if (SceneTree::is_paused()) {
 			break;
 		}
 		[[fallthrough]];

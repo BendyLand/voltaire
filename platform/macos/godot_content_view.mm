@@ -38,6 +38,7 @@
 #include "core/input/input.h"
 #include "core/input/input_event.h"
 #include "core/os/keyboard.h"
+#include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
 #include "main/main.h"
@@ -61,7 +62,7 @@
 
 - (void)displayLayer:(CALayer *)layer {
 	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
-	if (OS::get_singleton()->get_main_loop() && ds->get_is_resizing() && need_redraw) {
+	if (MainLoop::is_active() && ds->get_is_resizing() && need_redraw) {
 		GodotProfileFrameMark;
 		GodotProfileZone("[GodotContentLayerDelegate displayLayer]");
 

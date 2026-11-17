@@ -63,7 +63,7 @@ TEST_CASE("[SceneTree][Node2D]") {
 		Node2D *main = memnew(Node2D);
 		Node2D *outer = memnew(Node2D);
 		Node2D *inner = memnew(Node2D);
-		SceneTree::get_singleton()->get_root()->add_child(main);
+		SceneTree::get_root()->add_child(main);
 
 		main->set_position(Point2(100, 100));
 		outer->set_position(Point2(10, 0));
@@ -92,7 +92,7 @@ TEST_CASE("[SceneTree][Node2D] Utility methods") {
 	Node2D *test_node2 = memnew(Node2D);
 	Node2D *test_node3 = memnew(Node2D);
 	Node2D *test_sibling = memnew(Node2D);
-	SceneTree::get_singleton()->get_root()->add_child(test_node1);
+	SceneTree::get_root()->add_child(test_node1);
 
 	test_node1->set_position(Point2(100, 100));
 	test_node1->set_rotation(Math::deg_to_rad(30.0));

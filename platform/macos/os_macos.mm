@@ -261,17 +261,8 @@ void OS_MacOS::initialize_joypads() {
 #endif
 }
 
-void OS_MacOS::set_main_loop(MainLoop *p_main_loop) {
-	main_loop = p_main_loop;
-}
-
 void OS_MacOS::delete_main_loop() {
-	if (!main_loop) {
-		return;
-	}
-
-	memdelete(main_loop);
-	main_loop = nullptr;
+	MainLoop::clear();
 }
 
 void OS_MacOS::set_cmdline_platform_args(const List<String> &p_args) {
@@ -419,10 +410,6 @@ Error OS_MacOS::open_dynamic_library(const String &p_path, void *&p_library_hand
 	}
 
 	return OK;
-}
-
-MainLoop *OS_MacOS::get_main_loop() const {
-	return main_loop;
 }
 
 String OS_MacOS::get_config_path() const {
@@ -1092,9 +1079,9 @@ void OS_MacOS_NSApp::start_main() {
 			ret = Main::start();
 		}
 		if (ret == EXIT_SUCCESS) {
-			if (main_loop) {
+			if (MainLoop::is_active()) {
 				@autoreleasepool {
-					main_loop->initialize();
+					MainLoop::initialize();
 				}
 				DisplayServer *ds = DisplayServer::get_singleton();
 				DisplayServerMacOS *ds_mac = Object::cast_to<DisplayServerMacOS>(ds);
@@ -1155,8 +1142,8 @@ void OS_MacOS_NSApp::terminate() {
 }
 
 void OS_MacOS_NSApp::cleanup() {
-	if (main_loop) {
-		main_loop->finalize();
+	if (MainLoop::is_active()) {
+		MainLoop::finalize();
 	}
 	if (main_started) {
 		@autoreleasepool {
@@ -1212,9 +1199,9 @@ void OS_MacOS_Headless::run() {
 		ret = Main::start();
 	}
 
-	if (ret == EXIT_SUCCESS && main_loop) {
+	if (ret == EXIT_SUCCESS && MainLoop::is_active()) {
 		@autoreleasepool {
-			main_loop->initialize();
+			MainLoop::initialize();
 		}
 
 		while (true) {
@@ -1235,7 +1222,7 @@ void OS_MacOS_Headless::run() {
 			}
 		}
 
-		main_loop->finalize();
+		MainLoop::finalize();
 	}
 
 	Main::cleanup();
@@ -1272,9 +1259,9 @@ void OS_MacOS_Embedded::run() {
 		ERR_FAIL_MSG("DisplayServerMacOSEmbedded is not initialized.");
 	}
 
-	if (ds && ret == EXIT_SUCCESS && main_loop) {
+	if (ds && ret == EXIT_SUCCESS && MainLoop::is_active()) {
 		@autoreleasepool {
-			main_loop->initialize();
+			MainLoop::initialize();
 		}
 
 		while (true) {
@@ -1301,7 +1288,7 @@ void OS_MacOS_Embedded::run() {
 			}
 		}
 
-		main_loop->finalize();
+		MainLoop::finalize();
 	}
 
 	Main::cleanup();

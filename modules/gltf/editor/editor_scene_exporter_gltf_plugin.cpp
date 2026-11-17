@@ -72,7 +72,7 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin()
 
 void SceneExporterGLTFPlugin::_popup_gltf_export_dialog()
 {
-	Node* root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
+	Node* root = SceneTree::get_edited_scene_root();
 	if (!root) {
 		EditorNode::get_singleton()->show_warning(
 			TTR("This operation can't be done without a scene."));

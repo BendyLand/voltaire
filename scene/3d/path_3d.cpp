@@ -37,8 +37,7 @@
 
 Path3D::Path3D()
 {
-	SceneTree* st = SceneTree::get_singleton();
-	if (st && st->is_debugging_paths_hint()) {
+	if (SceneTree::is_initialized() && SceneTree::is_debugging_paths_hint()) {
 		debug_instance = Renderer::instance_create();
 		set_notify_transform(true);
 		_update_debug_mesh();

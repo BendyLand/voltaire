@@ -900,7 +900,9 @@ void DisplayServerWeb::_ime_callback(int p_type, const String &p_text) {
 					break;
 				}
 			}
-			OS::get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+			if (MainLoop::is_active()) {
+				MainLoop::notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+			}
 			ds->ime_started = true;
 		} break;
 		case 1: {
@@ -908,7 +910,9 @@ void DisplayServerWeb::_ime_callback(int p_type, const String &p_text) {
 			if (ds->ime_active && ds->ime_started) {
 				ds->ime_text = p_text;
 				ds->ime_selection = Vector2i(ds->ime_text.length(), ds->ime_text.length());
-				OS::get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				if (MainLoop::is_active()) {
+					MainLoop::notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				}
 			}
 		} break;
 		case 2: {
@@ -918,7 +922,9 @@ void DisplayServerWeb::_ime_callback(int p_type, const String &p_text) {
 
 				ds->ime_text = String();
 				ds->ime_selection = Vector2i();
-				OS::get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				if (MainLoop::is_active()) {
+					MainLoop::notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				}
 
 				String text = p_text;
 				for (int i = 0; i < text.length(); i++) {

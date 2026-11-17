@@ -114,7 +114,7 @@ Ref<Texture2D> Theme::get_icon(const String& p_name, const String& p_theme_type)
 		return icon_map[p_theme_type][p_name];
 	}
 	else {
-		return ThemeDB::get_singleton()->get_fallback_icon();
+		return ThemeDB::get_fallback_icon();
 	}
 }
 
@@ -203,7 +203,7 @@ Ref<StyleBox> Theme::get_stylebox(const String& p_name, const String& p_theme_ty
 		return style_map[p_theme_type][p_name];
 	}
 	else {
-		return ThemeDB::get_singleton()->get_fallback_stylebox();
+		return ThemeDB::get_fallback_stylebox();
 	}
 }
 
@@ -297,7 +297,7 @@ Ref<Font> Theme::get_font(const String& p_name, const String& p_theme_type) cons
 		return default_font;
 	}
 	else {
-		return ThemeDB::get_singleton()->get_fallback_font();
+		return ThemeDB::get_fallback_font();
 	}
 }
 
@@ -409,7 +409,7 @@ int Theme::get_font_size(const String& p_name, const String& p_theme_type) const
 		return default_font_size;
 	}
 	else {
-		return ThemeDB::get_singleton()->get_fallback_font_size();
+		return ThemeDB::get_fallback_font_size();
 	}
 }
 
@@ -1217,7 +1217,7 @@ void Theme::get_type_dependencies(
 	}
 
 	// Continue building the chain using native class hierarchy.
-	ThemeDB::get_singleton()->get_native_type_dependencies(p_base_type, r_result);
+	ThemeDB::get_native_type_dependencies(p_base_type, r_result);
 }
 
 // Internal methods for getting lists as a Vector of String (compatible with public API).

@@ -44,7 +44,7 @@ void PinJoint2D::_notification(int p_what)
 		}
 
 		if (!Engine::is_editor_hint() &&
-			!get_tree()->is_debugging_collisions_hint()) {
+			!SceneTree::is_debugging_collisions_hint()) {
 			break;
 		}
 

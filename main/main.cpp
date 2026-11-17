@@ -166,7 +166,6 @@ static AudioServer* audio_server = nullptr;
 static AccessibilityServer* accessibility_server = nullptr;
 static DisplayServer* display_server = nullptr;
 static TextServerManager* tsman = nullptr;
-static ThemeDB* theme_db = nullptr;
 #ifndef PHYSICS_2D_DISABLED
 static PhysicsServer2DManager* physics_server_2d_manager = nullptr;
 static PhysicsServer2D* physics_server_2d = nullptr;
@@ -366,13 +365,9 @@ void finalize_display()
 	memdelete(accessibility_server);
 }
 
-void initialize_theme_db() { theme_db = memnew(ThemeDB); }
+void initialize_theme_db() { ThemeDB::initialize(); }
 
-void finalize_theme_db()
-{
-	memdelete(theme_db);
-	theme_db = nullptr;
-}
+void finalize_theme_db() { ThemeDB::finalize(); }
 
 // #define DEBUG_INIT
 #ifdef DEBUG_INIT
@@ -958,7 +953,7 @@ Error Main::test_setup()
 	register_platform_apis();
 
 	// Theme needs modules to be initialized so that sub-resources can be loaded.
-	theme_db->initialize_theme_noproject();
+	ThemeDB::initialize_theme_noproject();
 
 	ERR_FAIL_COND_V(
 		TextServerManager::get_singleton()->get_interface_count() == 0, ERR_CANT_CREATE);
@@ -3570,7 +3565,7 @@ Error Main::setup2(bool p_show_boot_logo)
 	}
 
 #endif
-	theme_db->initialize_theme();
+	ThemeDB::initialize_theme();
 	audio_server->load_default_bus_layout();
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 	// Hacky to have it here, but we don't have good facility yet to let modules
@@ -3932,19 +3927,17 @@ int Main::start()
 	}
 #endif
 
-	SceneTree* scene_tree = memnew(SceneTree);
-    if (!script.is_empty()) {
-        memdelete(scene_tree);
-        return EXIT_FAILURE;
-    }
+	SceneTree::initialize();
+	if (!script.is_empty()) {
+		SceneTree::finalize();
+		return EXIT_FAILURE;
+	}
 
-    if (!scene_tree) {
-        ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
-    }
+	if (!SceneTree::is_initialized()) {
+		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
+	}
 
-    OS::set_main_loop(scene_tree);
-
-    if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_ICON) &&
+	if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_ICON) &&
         !has_icon && OS::get_bundle_icon_path().is_empty()) {
         Ref<Image> icon = memnew(Image(app_icon_png));
         DisplayServer::get_singleton()->set_icon(icon);
@@ -3974,9 +3967,9 @@ int Main::start()
     OS::benchmark_dump();
 
     Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
-    scene_tree->initialize();
+    SceneTree::initialize_tree();
 
-    Window* root = scene_tree->get_root();
+    Window* root = SceneTree::get_root();
     if (root) {
         root->show();
         Size2i win_size = root->get_size();
@@ -4081,7 +4074,7 @@ bool Main::iteration()
 
 	uint64_t process_begin = OS::get_ticks_usec();
 
-	if (OS::get_main_loop()->process(process_step * time_scale)) {
+	if (MainLoop::process(process_step * time_scale)) {
 		exit = true;
 	}
 
@@ -4172,8 +4165,7 @@ bool Main::iteration()
 		return exit;
 	}
 
-	SceneTree* scene_tree = SceneTree::get_singleton();
-	bool wake_for_events = scene_tree && scene_tree->is_accessibility_enabled();
+	bool wake_for_events = SceneTree::is_initialized() && SceneTree::is_accessibility_enabled();
 
 	OS::add_frame_delay(
 		DisplayServer::get_singleton()->window_can_draw(), wake_for_events);

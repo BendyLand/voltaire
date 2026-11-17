@@ -320,7 +320,6 @@ void OS_Windows::initialize() {
 	process_map->insert(GetCurrentProcessId(), current_pi);
 
 	IPWindows::make_default();
-	main_loop = nullptr;
 
 	HRESULT hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown **>(&dwrite_factory));
 	if (SUCCEEDED(hr)) {
@@ -351,12 +350,7 @@ void OS_Windows::initialize() {
 }
 
 void OS_Windows::delete_main_loop() {
-	memdelete(main_loop);
-	main_loop = nullptr;
-}
-
-void OS_Windows::set_main_loop(MainLoop *p_main_loop) {
-	main_loop = p_main_loop;
+	MainLoop::clear();
 }
 
 void OS_Windows::finalize() {
@@ -381,9 +375,7 @@ void OS_Windows::finalize() {
 	MIDIDriver::reset_backend();
 #endif
 
-	memdelete(main_loop);
-
-	main_loop = nullptr;
+	MainLoop::clear();
 }
 
 void OS_Windows::finalize_core() {
@@ -2354,11 +2346,11 @@ String OS_Windows::get_processor_name() const {
 }
 
 void OS_Windows::run() {
-	if (!main_loop) {
+	if (!MainLoop::is_active()) {
 		return;
 	}
 
-	main_loop->initialize();
+	MainLoop::initialize();
 
 	while (true) {
 		GodotProfileFrameMark;
@@ -2369,11 +2361,7 @@ void OS_Windows::run() {
 		}
 	}
 
-	main_loop->finalize();
-}
-
-MainLoop *OS_Windows::get_main_loop() const {
-	return main_loop;
+	MainLoop::finalize();
 }
 
 uint64_t OS_Windows::get_embedded_pck_offset() const {

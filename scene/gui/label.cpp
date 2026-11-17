@@ -406,7 +406,7 @@ PackedStringArray Label::get_configuration_warnings() const
 	// FIXME: This is not ideal and the sizing model should be fixed,
 	// but for now we have to warn about this impossible to resolve combination.
 	// See GH-83546.
-	if (is_inside_tree() && get_tree()->get_edited_scene_root() != this) {
+	if (is_inside_tree() && SceneTree::get_edited_scene_root() != this) {
 		if (autowrap_mode != TextServer::AUTOWRAP_OFF && get_combined_maximum_size().width <= 0 &&
 			get_custom_minimum_size().width <= 0) {
 			warnings.push_back(RTR("Labels with autowrapping enabled must have a positive custom "

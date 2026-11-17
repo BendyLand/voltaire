@@ -141,8 +141,8 @@ static GDTViewController *mainViewController = nil;
 }
 
 - (void)applicationDidReceiveMemoryWarning:(UIApplication *)application {
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_OS_MEMORY_WARNING);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_OS_MEMORY_WARNING);
 	}
 }
 

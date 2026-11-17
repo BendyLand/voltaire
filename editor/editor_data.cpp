@@ -479,7 +479,7 @@ void EditorData::clear_edited_scenes()
 		memdelete(edited_scene[i].root);
 	}
 	edited_scene.clear();
-	SceneTree::get_singleton()->set_edited_scene_root(nullptr);
+	SceneTree::set_edited_scene_root(nullptr);
 }
 
 void EditorData::set_plugin_window_layout

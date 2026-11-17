@@ -54,7 +54,7 @@ TEST_SUITE("[Navigation2D]") {
 
 	TEST_CASE("[SceneTree][NavigationAgent2D] New agent should attach to default map") {
 		Node2D *node_2d = memnew(Node2D);
-		SceneTree::get_singleton()->get_root()->add_child(node_2d);
+		SceneTree::get_root()->add_child(node_2d);
 
 		NavigationAgent2D *agent_node = memnew(NavigationAgent2D);
 

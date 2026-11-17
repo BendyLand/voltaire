@@ -83,7 +83,7 @@ void AnimationLibraryEditor::_save_mixer_lib_folding(TreeItem* p_item)
 	}
 
 	// Get unique identifier for this scene+mixer combination.
-	const String md = (mixer->get_tree()->get_edited_scene_root()->get_scene_file_path() +
+	const String md = (SceneTree::get_edited_scene_root()->get_scene_file_path() +
 					   String(mixer->get_path()))
 						  .md5_text();
 

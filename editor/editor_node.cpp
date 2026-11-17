@@ -776,8 +776,8 @@ bool EditorNode::is_resource_read_only(
 			// If the base resource is a packed scene, we treat it as read-only if it is not the
 			// currently edited scene.
 			if (ResourceLoader::get_resource_type(base) == "PackedScene") {
-				if (!get_tree()->get_edited_scene_root() ||
-					get_tree()->get_edited_scene_root()->get_scene_file_path() != base) {
+				if (!SceneTree::get_edited_scene_root() ||
+					SceneTree::get_edited_scene_root()->get_scene_file_path() != base) {
 					// If we have not flagged foreign resources as writable or the base scene the
 					// resource is part was imported, it can be considered read-only.
 					if (!p_foreign_resources_are_writable || FileAccess::exists(base + ".import")) {

@@ -46,7 +46,7 @@ namespace TestTabContainer {
 
 TEST_CASE("[SceneTree][TabContainer] tab operations") {
 	TabContainer *tab_container = memnew(TabContainer);
-	SceneTree::get_singleton()->get_root()->add_child(tab_container);
+	SceneTree::get_root()->add_child(tab_container);
 	MessageQueue::get_singleton()->flush();
 	SIGNAL_WATCH(tab_container, "tab_selected");
 	SIGNAL_WATCH(tab_container, "tab_changed");
@@ -356,7 +356,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
 
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
+		SceneTree::get_root()->add_child(tab_container);
 		MessageQueue::get_singleton()->flush();
 		CHECK(tab_container->get_tab_count() == 2);
 		CHECK(tab_container->get_current_tab() == 0);
@@ -394,7 +394,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		SIGNAL_CHECK_FALSE("tab_changed");
 
 		// Current tab is set when entering the tree.
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
+		SceneTree::get_root()->add_child(tab_container);
 		MessageQueue::get_singleton()->flush();
 		CHECK(tab_container->get_tab_count() == 3);
 		CHECK(tab_container->get_current_tab() == 1);
@@ -429,7 +429,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 
 		// This will print an error message as if `set_current_tab` was called after.
 		ERR_PRINT_OFF;
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
+		SceneTree::get_root()->add_child(tab_container);
 		MessageQueue::get_singleton()->flush();
 		CHECK(tab_container->get_tab_count() == 2);
 		CHECK(tab_container->get_current_tab() == 0);
@@ -473,7 +473,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		CHECK(tab0->is_visible());
 		CHECK(tab1->is_visible());
 
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
+		SceneTree::get_root()->add_child(tab_container);
 		MessageQueue::get_singleton()->flush();
 		CHECK(tab_container->get_tab_count() == 2);
 		CHECK(tab_container->get_current_tab() == 1);
@@ -509,7 +509,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		CHECK(tab_container->get_previous_tab() == -1);
 
 		// Current tab is set when entering the tree.
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
+		SceneTree::get_root()->add_child(tab_container);
 		MessageQueue::get_singleton()->flush();
 		CHECK(tab_container->get_tab_count() == 3);
 		CHECK(tab_container->get_current_tab() == 1);
@@ -532,7 +532,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 
 TEST_CASE("[SceneTree][TabContainer] layout and offset") {
 	TabContainer *tab_container = memnew(TabContainer);
-	SceneTree::get_singleton()->get_root()->add_child(tab_container);
+	SceneTree::get_root()->add_child(tab_container);
 	tab_container->set_clip_tabs(false);
 
 	Control *tab0 = memnew(Control);
@@ -665,7 +665,7 @@ TEST_CASE("[SceneTree][TabContainer] layout and offset") {
 
 TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 	TabContainer *tab_container = memnew(TabContainer);
-	SceneTree::get_singleton()->get_root()->add_child(tab_container);
+	SceneTree::get_root()->add_child(tab_container);
 
 	tab_container->set_clip_tabs(false);
 	Control *tab0 = memnew(Control);
@@ -797,7 +797,7 @@ TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 
 	SUBCASE("[TabContainer] Drag and drop to different TabContainer") {
 		TabContainer *target_tab_container = memnew(TabContainer);
-		SceneTree::get_singleton()->get_root()->add_child(target_tab_container);
+		SceneTree::get_root()->add_child(target_tab_container);
 
 		target_tab_container->set_clip_tabs(false);
 		Control *other_tab0 = memnew(Control);

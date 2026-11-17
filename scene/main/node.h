@@ -242,7 +242,7 @@ private:
 		String scene_file_path;
 		Ref<SceneState> instance_state;
 		Ref<SceneState> inherited_state;
-		bool inside_tree;
+		bool inside_tree = false;
 
 		Node* parent = nullptr;
 		Node* owner = nullptr;
@@ -260,7 +260,6 @@ private:
 		int blocked = 0; // Safeguard that throws an error when attempting to modify the tree in a
 						 // harmful way while being traversed.
 		String name;
-		SceneTree* tree = nullptr;
 
 		String editor_description;
 
@@ -371,7 +370,7 @@ private:
 
 	friend class SceneTree;
 
-	void _set_tree(SceneTree* p_tree);
+	void _set_tree(bool p_in_tree);
 	void _propagate_pause_notification(bool p_enable);
 	void _propagate_suspend_notification(bool p_enable);
 
@@ -593,13 +592,7 @@ public:
 	Window* get_non_popup_window() const;
 	Window* get_last_exclusive_window() const;
 
-	_FORCE_INLINE_ SceneTree* get_tree() const
-	{
-		ERR_FAIL_NULL_V(data.tree, nullptr);
-		return data.tree;
-	}
-
-	_FORCE_INLINE_ bool is_inside_tree() const { return data.tree; }
+	_FORCE_INLINE_ bool is_inside_tree() const { return data.inside_tree; }
 
 	bool is_internal() const { return data.internal_mode != INTERNAL_MODE_DISABLED; }
 
@@ -743,7 +736,7 @@ public:
 			// No thread processing.
 			// Only accessible if node is outside the scene tree
 			// or access will happen from a node-safe thread.
-			return !data.tree || is_current_thread_safe_for_nodes();
+			return !data.inside_tree || is_current_thread_safe_for_nodes();
 		}
 		else {
 			// Thread processing.
@@ -757,7 +750,7 @@ public:
 			// No thread processing.
 			// Only accessible if node is outside the scene tree
 			// or access will happen from a node-safe thread.
-			return is_current_thread_safe_for_nodes() || unlikely(!data.tree);
+			return is_current_thread_safe_for_nodes() || unlikely(!data.inside_tree);
 		}
 		else {
 			// Thread processing.

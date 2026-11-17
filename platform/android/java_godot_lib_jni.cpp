@@ -645,9 +645,6 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_requestPermissionResu
 		AudioDriver::get_singleton()->input_start();
 	}
 
-	if (os_android->get_main_loop()) {
-		os_android->get_main_loop()->emit_signal(SNAME("on_request_permissions_result"), permission, p_result == JNI_TRUE);
-	}
 }
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onRendererResumed(JNIEnv *env, jclass clazz) {
@@ -660,8 +657,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onRendererResumed(JNI
 	if (CameraServer::is_initialized()) {
 		CameraServer::handle_application_resume();
 	}
-	if (os_android->get_main_loop()) {
-		os_android->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_RESUMED);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_RESUMED);
 	}
 }
 
@@ -674,8 +671,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onRendererPaused(JNIE
 		CameraServer::handle_application_pause();
 	}
 
-	if (os_android->get_main_loop()) {
-		os_android->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_PAUSED);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_PAUSED);
 	}
 
 	if (DisplayServerAndroid *dsa = Object::cast_to<DisplayServerAndroid>(DisplayServer::get_singleton())) {
@@ -739,11 +736,11 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onPictureInPictureMod
 		return;
 	}
 
-	if (os_android->get_main_loop()) {
+	if (MainLoop::is_active()) {
 		if (p_is_in_picture_in_picture_mode) {
-			os_android->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_PIP_MODE_ENTERED);
+			MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_PIP_MODE_ENTERED);
 		} else {
-			os_android->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_PIP_MODE_EXITED);
+			MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_PIP_MODE_EXITED);
 		}
 	}
 }

@@ -43,8 +43,35 @@
 #include "servers/text/text_server.h"
 #include "theme_db.h"
 
+void ThemeDB::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void ThemeDB::finalize()
+{
+	if (!data) {
+		return;
+	}
+	_finalize_theme_contexts();
+	data->default_theme.unref();
+	data->project_theme.unref();
+	data->fallback_font.unref();
+	data->fallback_icon.unref();
+	data->fallback_stylebox.unref();
+	memdelete(data);
+	data = nullptr;
+}
+
+void ThemeDB::initialize_theme() {}
+
 void ThemeDB::initialize_theme_noproject()
 {
+	if (!data) {
+		return;
+	}
 	if (Renderer::data) {
 		make_default_theme(1.0, Ref<Font>());
 	}
@@ -53,43 +80,69 @@ void ThemeDB::initialize_theme_noproject()
 
 void ThemeDB::finalize_theme()
 {
+	if (!data) {
+		return;
+	}
 	if (!Renderer::data) {
 		WARN_PRINT("Finalizing theme when there is no Renderer is an error; check the order "
 				   "of operations.");
 	}
 	_finalize_theme_contexts();
-	default_theme.unref();
-	fallback_font.unref();
-	fallback_icon.unref();
-	fallback_stylebox.unref();
+	data->default_theme.unref();
+	data->fallback_font.unref();
+	data->fallback_icon.unref();
+	data->fallback_stylebox.unref();
 }
 
 // Global Theme resources.
 
-void ThemeDB::set_default_theme(const Ref<Theme>& p_default) { default_theme = p_default; }
+void ThemeDB::set_default_theme(const Ref<Theme>& p_default)
+{
+	if (data) {
+		data->default_theme = p_default;
+	}
+}
 
-Ref<Theme> ThemeDB::get_default_theme() { return default_theme; }
+Ref<Theme> ThemeDB::get_default_theme() { return data ? data->default_theme : Ref<Theme>(); }
 
 void ThemeDB::set_project_theme(const Ref<Theme>& p_project_default)
 {
-	project_theme = p_project_default;
+	if (data) {
+		data->project_theme = p_project_default;
+	}
 }
 
-Ref<Theme> ThemeDB::get_project_theme() { return project_theme; }
+Ref<Theme> ThemeDB::get_project_theme() { return data ? data->project_theme : Ref<Theme>(); }
 
-float ThemeDB::get_fallback_base_scale() { return fallback_base_scale; }
+void ThemeDB::set_fallback_base_scale(float p_base_scale) { (void)p_base_scale; }
 
-Ref<Font> ThemeDB::get_fallback_font() { return fallback_font; }
+float ThemeDB::get_fallback_base_scale() { return data ? data->fallback_base_scale : 1.0f; }
 
-int ThemeDB::get_fallback_font_size() { return fallback_font_size; }
+void ThemeDB::set_fallback_font(const Ref<Font>& p_font) { (void)p_font; }
 
-Ref<Texture2D> ThemeDB::get_fallback_icon() { return fallback_icon; }
+Ref<Font> ThemeDB::get_fallback_font() { return data ? data->fallback_font : Ref<Font>(); }
 
-Ref<StyleBox> ThemeDB::get_fallback_stylebox() { return fallback_stylebox; }
+void ThemeDB::set_fallback_font_size(int p_font_size) { (void)p_font_size; }
 
-void ThemeDB::get_native_type_dependencies(
-	const String& p_base_type, Vector<String>& r_result)
+int ThemeDB::get_fallback_font_size() { return data ? data->fallback_font_size : 16; }
+
+void ThemeDB::set_fallback_icon(const Ref<Texture2D>& p_icon) { (void)p_icon; }
+
+Ref<Texture2D> ThemeDB::get_fallback_icon()
 {
+	return data ? data->fallback_icon : Ref<Texture2D>();
+}
+
+void ThemeDB::set_fallback_stylebox(const Ref<StyleBox>& p_stylebox) { (void)p_stylebox; }
+
+Ref<StyleBox> ThemeDB::get_fallback_stylebox()
+{
+	return data ? data->fallback_stylebox : Ref<StyleBox>();
+}
+
+void ThemeDB::get_native_type_dependencies(const String& p_base_type, Vector<String>& r_result)
+{
+	(void)r_result;
 	if (p_base_type == String()) {
 		return;
 	}
@@ -97,52 +150,81 @@ void ThemeDB::get_native_type_dependencies(
 
 void ThemeDB::_init_default_theme_context()
 {
-	default_theme_context = memnew(ThemeContext);
+	if (!data) {
+		return;
+	}
+	if (data->default_theme_context) {
+		memdelete(data->default_theme_context);
+	}
+	data->default_theme_context = memnew(ThemeContext);
 	Vector<Ref<Theme>> themes;
-
-	// Only add the project theme to the default context when running projects.
 
 #ifdef TOOLS_ENABLED
 	if (!Engine::is_editor_hint()) {
-		themes.push_back(project_theme);
+		themes.push_back(data->project_theme);
 	}
 #else
-	themes.push_back(project_theme);
+	themes.push_back(data->project_theme);
 #endif
-	themes.push_back(default_theme);
-	default_theme_context->set_themes(themes);
+	themes.push_back(data->default_theme);
+	data->default_theme_context->set_themes(themes);
 }
 
 void ThemeDB::_finalize_theme_contexts()
 {
-	if (default_theme_context) {
-		memdelete(default_theme_context);
-		default_theme_context = nullptr;
+	if (!data) {
+		return;
 	}
-	while (theme_contexts.size()) {
-		HashMap<Node*, ThemeContext*>::Iterator E = theme_contexts.begin();
+	if (data->default_theme_context) {
+		memdelete(data->default_theme_context);
+		data->default_theme_context = nullptr;
+	}
+	while (data->theme_contexts.size()) {
+		HashMap<Node*, ThemeContext*>::Iterator E = data->theme_contexts.begin();
 		memdelete(E->value);
-		theme_contexts.remove(E);
+		data->theme_contexts.remove(E);
 	}
 }
 
-ThemeContext* ThemeDB::get_theme_context(Node* p_node) const
+ThemeContext* ThemeDB::create_theme_context(Node* p_node, Vector<Ref<Theme>>& p_themes)
 {
-	if (!theme_contexts.has(p_node)) {
+	(void)p_node;
+	(void)p_themes;
+	return nullptr;
+}
+
+void ThemeDB::destroy_theme_context(Node* p_node)
+{
+	if (!data || !data->theme_contexts.has(p_node)) {
+		return;
+	}
+	memdelete(data->theme_contexts[p_node]);
+	data->theme_contexts.erase(p_node);
+}
+
+ThemeContext* ThemeDB::get_theme_context(Node* p_node)
+{
+	if (!data || !data->theme_contexts.has(p_node)) {
 		return nullptr;
 	}
-	return theme_contexts[p_node];
+	return data->theme_contexts[p_node];
 }
 
-ThemeContext* ThemeDB::get_default_theme_context() const { return default_theme_context; }
-
-ThemeContext* ThemeDB::get_nearest_theme_context(Node* p_for_node) const
+ThemeContext* ThemeDB::get_default_theme_context()
 {
+	return data ? data->default_theme_context : nullptr;
+}
+
+ThemeContext* ThemeDB::get_nearest_theme_context(Node* p_for_node)
+{
+	if (!data || !p_for_node) {
+		return nullptr;
+	}
 	ERR_FAIL_COND_V(!p_for_node->is_inside_tree(), nullptr);
 	Node* parent_node = p_for_node->get_parent();
 	while (parent_node) {
-		if (theme_contexts.has(parent_node)) {
-			return theme_contexts[parent_node];
+		if (data->theme_contexts.has(parent_node)) {
+			return data->theme_contexts[parent_node];
 		}
 		parent_node = parent_node->get_parent();
 	}
@@ -154,7 +236,10 @@ ThemeContext* ThemeDB::get_nearest_theme_context(Node* p_for_node) const
 void ThemeDB::bind_class_item(Theme::DataType p_data_type, const String& p_class_name,
 	const String& p_prop_name, const String& p_item_name, ThemeItemSetter p_setter)
 {
-	ERR_FAIL_COND_MSG(theme_item_binds[p_class_name].has(p_prop_name),
+	if (!data) {
+		return;
+	}
+	ERR_FAIL_COND_MSG(data->theme_item_binds[p_class_name].has(p_prop_name),
 		vformat("Failed to bind theme item '%s' in class '%s': already bound", p_prop_name,
 			p_class_name));
 	ThemeItemBind bind;
@@ -162,15 +247,18 @@ void ThemeDB::bind_class_item(Theme::DataType p_data_type, const String& p_class
 	bind.class_name = p_class_name;
 	bind.item_name = p_item_name;
 	bind.setter = p_setter;
-	theme_item_binds[p_class_name][p_prop_name] = bind;
-	theme_item_binds_list[p_class_name].push_back(bind);
+	data->theme_item_binds[p_class_name][p_prop_name] = bind;
+	data->theme_item_binds_list[p_class_name].push_back(bind);
 }
 
 void ThemeDB::bind_class_external_item(Theme::DataType p_data_type, const String& p_class_name,
 	const String& p_prop_name, const String& p_item_name, const String& p_type_name,
 	ThemeItemSetter p_setter)
 {
-	ERR_FAIL_COND_MSG(theme_item_binds[p_class_name].has(p_prop_name),
+	if (!data) {
+		return;
+	}
+	ERR_FAIL_COND_MSG(data->theme_item_binds[p_class_name].has(p_prop_name),
 		vformat("Failed to bind theme item '%s' in class '%s': already bound", p_prop_name,
 			p_class_name));
 	ThemeItemBind bind;
@@ -180,34 +268,39 @@ void ThemeDB::bind_class_external_item(Theme::DataType p_data_type, const String
 	bind.type_name = p_type_name;
 	bind.external = true;
 	bind.setter = p_setter;
-	theme_item_binds[p_class_name][p_prop_name] = bind;
-	theme_item_binds_list[p_class_name].push_back(bind);
+	data->theme_item_binds[p_class_name][p_prop_name] = bind;
+	data->theme_item_binds_list[p_class_name].push_back(bind);
 }
+
+void ThemeDB::update_class_instance_items(Node* p_instance) { (void)p_instance; }
 
 void ThemeDB::get_class_items(const String& p_class_name, List<ThemeItemBind>* r_list,
 	bool p_include_inherited, Theme::DataType p_filter_type)
 {
+	if (!data) {
+		return;
+	}
 	List<String> class_hierarchy;
 	String class_name = p_class_name;
 	while (class_name != String()) {
-		class_hierarchy.push_front(class_name); // Put parent classes in front.
+		class_hierarchy.push_front(class_name);
 	}
 	HashSet<String> inherited_props;
 	for (const String& theme_type : class_hierarchy) {
 		HashMap<String, List<ThemeItemBind>>::Iterator E =
-			theme_item_binds_list.find(theme_type);
+			data->theme_item_binds_list.find(theme_type);
 		if (E) {
 			for (const ThemeItemBind& F : E->value) {
 				if (p_filter_type != Theme::DATA_TYPE_MAX && F.data_type != p_filter_type) {
 					continue;
 				}
 				if (inherited_props.has(F.item_name)) {
-					continue; // Skip inherited properties.
+					continue;
 				}
 				if (F.external || F.class_name != p_class_name) {
 					inherited_props.insert(F.item_name);
 					if (!p_include_inherited) {
-						continue; // Track properties defined in parent classes, and skip them.
+						continue;
 					}
 				}
 				r_list->push_back(F);
@@ -218,38 +311,20 @@ void ThemeDB::get_class_items(const String& p_class_name, List<ThemeItemBind>* r
 
 void ThemeDB::_sort_theme_items()
 {
-	for (KeyValue<String, List<ThemeDB::ThemeItemBind>>& E : theme_item_binds_list) {
+	if (!data) {
+		return;
+	}
+	for (KeyValue<String, List<ThemeDB::ThemeItemBind>>& E : data->theme_item_binds_list) {
 		E.value.sort_custom<ThemeItemBind::SortByType>();
 	}
-}
-
-ThemeDB* ThemeDB::singleton = nullptr;
-
-ThemeDB* ThemeDB::get_singleton() { return singleton; }
-
-ThemeDB::~ThemeDB()
-{
-	// For technical reasons unit tests recreate and destroy the default
-	// theme over and over again. Make sure that finalize_theme() also
-	// frees any objects that can be recreated by initialize_theme*().
-	_finalize_theme_contexts();
-	default_theme.unref();
-	project_theme.unref();
-	fallback_font.unref();
-	fallback_icon.unref();
-	fallback_stylebox.unref();
-	singleton = nullptr;
 }
 
 const Vector<Ref<Theme>> ThemeContext::get_themes() const { return themes; }
 
 Ref<Theme> ThemeContext::get_fallback_theme() const
 {
-	// We expect all contexts to be valid and non-empty, but just in case...
 	if (themes.is_empty()) {
-		return ThemeDB::get_singleton()->get_default_theme();
+		return ThemeDB::get_default_theme();
 	}
 	return themes[themes.size() - 1];
 }
-
-

@@ -81,8 +81,8 @@ void ThemeEditorPreview::_notification(int p_what)
 	// removal, this is the notification needed, as it can be triggered indefinitely.
 	case NOTIFICATION_POST_ENTER_TREE: {
 		Vector<Ref<Theme>> preview_themes;
-		preview_themes.push_back(ThemeDB::get_singleton()->get_default_theme());
-		ThemeDB::get_singleton()->create_theme_context(preview_root, preview_themes);
+		preview_themes.push_back(ThemeDB::get_default_theme());
+		ThemeDB::create_theme_context(preview_root, preview_themes);
 	} break;
 	}
 }

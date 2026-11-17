@@ -128,7 +128,7 @@ static inline void set_size_flags(SplitContainer *p_sc, Vector<float> p_expand_r
 TEST_CASE("[SceneTree][SplitContainer] Add and remove children") {
 	SplitContainer *split_container = memnew(SplitContainer);
 	split_container->set_size(Size2(500, 500));
-	SceneTree::get_singleton()->get_root()->add_child(split_container);
+	SceneTree::get_root()->add_child(split_container);
 
 	SUBCASE("[SplitContainer] One child") {
 		Control *child_a = memnew(Control);
@@ -193,7 +193,7 @@ TEST_CASE("[SceneTree][SplitContainer] Add and remove children") {
 TEST_CASE("[SceneTree][SplitContainer] Dragger visibility") {
 	SplitContainer *split_container = memnew(SplitContainer);
 	split_container->set_size(Size2(500, 500));
-	SceneTree::get_singleton()->get_root()->add_child(split_container);
+	SceneTree::get_root()->add_child(split_container);
 	Control *child_a = memnew(Control);
 	Control *child_b = memnew(Control);
 	split_container->add_child(child_a);
@@ -265,7 +265,7 @@ TEST_CASE("[SceneTree][SplitContainer] Collapsed") {
 
 	SplitContainer *split_container = memnew(SplitContainer);
 	split_container->set_size(Size2(500, 500));
-	SceneTree::get_singleton()->get_root()->add_child(split_container);
+	SceneTree::get_root()->add_child(split_container);
 	Control *child_a = memnew(Control);
 	split_container->add_child(child_a);
 	Control *child_b = memnew(Control);
@@ -367,7 +367,7 @@ TEST_CASE("[SceneTree][SplitContainer] Cursor shape") {
 
 	SplitContainer *split_container = memnew(SplitContainer);
 	split_container->set_size(Size2(500, 500));
-	SceneTree::get_singleton()->get_root()->add_child(split_container);
+	SceneTree::get_root()->add_child(split_container);
 	Control *child_a = memnew(Control);
 	split_container->add_child(child_a);
 	Control *child_b = memnew(Control);
@@ -402,7 +402,7 @@ TEST_CASE("[SceneTree][SplitContainer] Cursor shape") {
 TEST_CASE("[SceneTree][SplitContainer] Two children") {
 	SplitContainer *split_container = memnew(SplitContainer);
 	split_container->set_size(Size2(500, 500));
-	SceneTree::get_singleton()->get_root()->add_child(split_container);
+	SceneTree::get_root()->add_child(split_container);
 	Control *child_a = memnew(Control);
 	Control *child_b = memnew(Control);
 	split_container->add_child(child_a);
@@ -1771,7 +1771,7 @@ TEST_CASE("[SceneTree][SplitContainer] Two children") {
 TEST_CASE("[SceneTree][SplitContainer] More children") {
 	SplitContainer *split_container = memnew(SplitContainer);
 	split_container->set_size(Size2(500, 500));
-	SceneTree::get_singleton()->get_root()->add_child(split_container);
+	SceneTree::get_root()->add_child(split_container);
 	Control *child_a = memnew(Control);
 	Control *child_b = memnew(Control);
 	Control *child_c = memnew(Control);
@@ -1790,7 +1790,7 @@ TEST_CASE("[SceneTree][SplitContainer] More children") {
 	SUBCASE("[SplitContainer] Duplicate") {
 		// Make sure dynamically added internal draggers duplicate properly.
 		SplitContainer *duplicate = (SplitContainer *)(Node *)split_container->duplicate();
-		SceneTree::get_singleton()->get_root()->add_child(duplicate);
+		SceneTree::get_root()->add_child(duplicate);
 		MessageQueue::get_singleton()->flush();
 		CHECK(duplicate->get_child_count(false) == split_container->get_child_count(false));
 		CHECK(duplicate->get_child_count(true) == split_container->get_child_count(true));

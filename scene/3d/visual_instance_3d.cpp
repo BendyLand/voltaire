@@ -98,7 +98,7 @@ void VisualInstance3D::_notification(int p_what)
 	case NOTIFICATION_TRANSFORM_CHANGED: {
 		// ToDo : Can we turn off notify transform for physics interpolated cases?
 		if (_is_vi_visible() &&
-			!(is_inside_tree() && get_tree()->is_physics_interpolation_enabled()) &&
+			!(is_inside_tree() && SceneTree::is_physics_interpolation_enabled()) &&
 			!_is_using_identity_transform()) {
 			// Physics interpolation global off, always send.
 			Renderer::instance_set_transform(

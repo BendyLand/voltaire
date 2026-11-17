@@ -68,7 +68,7 @@ TEST_CASE("[SceneTree][CSG] CSGPolygon3D") {
 		path->set_curve(curve);
 
 		CSGPolygon3D *csg_polygon_3d = memnew(CSGPolygon3D);
-		SceneTree::get_singleton()->get_root()->add_child(csg_polygon_3d);
+		SceneTree::get_root()->add_child(csg_polygon_3d);
 
 		csg_polygon_3d->add_child(path);
 		csg_polygon_3d->set_path_node(csg_polygon_3d->get_path_to(path));
@@ -103,7 +103,7 @@ TEST_CASE("[SceneTree][CSG] CSGPolygon3D") {
 		CHECK(csg_polygon_3d->get_aabb().is_equal_approx(expected_aabb));
 
 		csg_polygon_3d->remove_child(path);
-		SceneTree::get_singleton()->get_root()->remove_child(csg_polygon_3d);
+		SceneTree::get_root()->remove_child(csg_polygon_3d);
 
 		memdelete(csg_polygon_3d);
 		memdelete(path);

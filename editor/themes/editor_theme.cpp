@@ -75,7 +75,7 @@ Ref<Font> EditorTheme::get_font(const String &p_name, const String &p_theme_type
 		if (editor_theme_types.has(p_theme_type)) {
 			WARN_PRINT(vformat("Trying to access a non-existing editor theme font '%s' in '%s'.", p_name, p_theme_type));
 		}
-		return ThemeDB::get_singleton()->get_fallback_font();
+		return ThemeDB::get_fallback_font();
 	}
 }
 
@@ -92,7 +92,7 @@ int EditorTheme::get_font_size(const String &p_name, const String &p_theme_type)
 		if (editor_theme_types.has(p_theme_type)) {
 			WARN_PRINT(vformat("Trying to access a non-existing editor theme font size '%s' in '%s'.", p_name, p_theme_type));
 		}
-		return ThemeDB::get_singleton()->get_fallback_font_size();
+		return ThemeDB::get_fallback_font_size();
 	}
 }
 
@@ -104,7 +104,7 @@ Ref<Texture2D> EditorTheme::get_icon(const String &p_name, const String &p_theme
 		if (editor_theme_types.has(p_theme_type)) {
 			WARN_PRINT(vformat("Trying to access a non-existing editor theme icon '%s' in '%s'.", p_name, p_theme_type));
 		}
-		return ThemeDB::get_singleton()->get_fallback_icon();
+		return ThemeDB::get_fallback_icon();
 	}
 }
 
@@ -116,7 +116,7 @@ Ref<StyleBox> EditorTheme::get_stylebox(const String &p_name, const String &p_th
 		if (editor_theme_types.has(p_theme_type)) {
 			WARN_PRINT(vformat("Trying to access a non-existing editor theme stylebox '%s' in '%s'.", p_name, p_theme_type));
 		}
-		return ThemeDB::get_singleton()->get_fallback_stylebox();
+		return ThemeDB::get_fallback_stylebox();
 	}
 }
 

@@ -440,14 +440,14 @@ void ColorPicker::_text_changed(const String&) { text_changed = true; }
 
 void ColorPicker::_block_input_on_popup_show()
 {
-	if (!get_tree()->get_root()->is_embedding_subwindows()) {
+	if (!SceneTree::get_root()->is_embedding_subwindows()) {
 		get_viewport()->set_disable_input(true);
 	}
 }
 
 void ColorPicker::_enable_input_on_popup_hide()
 {
-	if (!get_tree()->get_root()->is_embedding_subwindows()) {
+	if (!SceneTree::get_root()->is_embedding_subwindows()) {
 		get_viewport()->set_disable_input(false);
 	}
 }

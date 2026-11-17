@@ -40,34 +40,8 @@ class StyleBox;
 class Texture2D;
 class ThemeContext;
 
-class ThemeDB
+class ThemeDB final
 {
-	static ThemeDB* singleton;
-
-	// Global Theme resources used by the default theme context.
-
-	Ref<Theme> default_theme;
-	Ref<Theme> project_theme;
-
-	// Universal default values, final fallback for every theme.
-
-	float fallback_base_scale = 1.0;
-	Ref<Font> fallback_font;
-	int fallback_font_size = 16;
-	Ref<Texture2D> fallback_icon;
-	Ref<StyleBox> fallback_stylebox;
-
-	// Global theme contexts used to scope global Theme resources.
-
-	ThemeContext* default_theme_context = nullptr;
-	HashMap<Node*, ThemeContext*> theme_contexts;
-
-	void _propagate_theme_context(Node* p_from_node, ThemeContext* p_context);
-	void _init_default_theme_context();
-	void _finalize_theme_contexts();
-
-	// Binding of theme items to Node classes.
-
 public:
 	typedef std::function<void(Node*, const String&, const String&)> ThemeItemSetter;
 
@@ -90,70 +64,89 @@ public:
 		};
 	};
 
-private:
-	HashMap<String, HashMap<String, ThemeItemBind>> theme_item_binds;
-	HashMap<String, List<ThemeItemBind>> theme_item_binds_list; // Used for listing purposes.
+	struct Data
+	{
+		// Global Theme resources used by the default theme context.
+		Ref<Theme> default_theme;
+		Ref<Theme> project_theme;
 
-	void _sort_theme_items();
+		// Universal default values, final fallback for every theme.
+		float fallback_base_scale = 1.0f;
+		Ref<Font> fallback_font;
+		int fallback_font_size = 16;
+		Ref<Texture2D> fallback_icon;
+		Ref<StyleBox> fallback_stylebox;
+
+		// Global theme contexts used to scope global Theme resources.
+		ThemeContext* default_theme_context = nullptr;
+		HashMap<Node*, ThemeContext*> theme_contexts;
+
+		HashMap<String, HashMap<String, ThemeItemBind>> theme_item_binds;
+		HashMap<String, List<ThemeItemBind>> theme_item_binds_list;
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+	static void _propagate_theme_context(Node* p_from_node, ThemeContext* p_context);
+	static void _init_default_theme_context();
+	static void _finalize_theme_contexts();
+	static void _sort_theme_items();
 
 public:
-	void initialize_theme();
-	void initialize_theme_noproject();
-	void finalize_theme();
+	ThemeDB() = delete;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	static void initialize_theme();
+	static void initialize_theme_noproject();
+	static void finalize_theme();
 
 	// Global Theme resources.
+	static void set_default_theme(const Ref<Theme>& p_default);
+	static Ref<Theme> get_default_theme();
 
-	void set_default_theme(const Ref<Theme>& p_default);
-	Ref<Theme> get_default_theme();
-
-	void set_project_theme(const Ref<Theme>& p_project_default);
-	Ref<Theme> get_project_theme();
+	static void set_project_theme(const Ref<Theme>& p_project_default);
+	static Ref<Theme> get_project_theme();
 
 	// Universal fallback values.
+	static void set_fallback_base_scale(float p_base_scale);
+	static float get_fallback_base_scale();
 
-	void set_fallback_base_scale(float p_base_scale);
-	float get_fallback_base_scale();
+	static void set_fallback_font(const Ref<Font>& p_font);
+	static Ref<Font> get_fallback_font();
 
-	void set_fallback_font(const Ref<Font>& p_font);
-	Ref<Font> get_fallback_font();
+	static void set_fallback_font_size(int p_font_size);
+	static int get_fallback_font_size();
 
-	void set_fallback_font_size(int p_font_size);
-	int get_fallback_font_size();
+	static void set_fallback_icon(const Ref<Texture2D>& p_icon);
+	static Ref<Texture2D> get_fallback_icon();
 
-	void set_fallback_icon(const Ref<Texture2D>& p_icon);
-	Ref<Texture2D> get_fallback_icon();
+	static void set_fallback_stylebox(const Ref<StyleBox>& p_stylebox);
+	static Ref<StyleBox> get_fallback_stylebox();
 
-	void set_fallback_stylebox(const Ref<StyleBox>& p_stylebox);
-	Ref<StyleBox> get_fallback_stylebox();
-
-	void get_native_type_dependencies(const String& p_base_type, Vector<String>& r_result);
+	static void get_native_type_dependencies(const String& p_base_type, Vector<String>& r_result);
 
 	// Global theme contexts.
+	static ThemeContext* create_theme_context(Node* p_node, Vector<Ref<Theme>>& p_themes);
+	static void destroy_theme_context(Node* p_node);
 
-	ThemeContext* create_theme_context(Node* p_node, Vector<Ref<Theme>>& p_themes);
-	void destroy_theme_context(Node* p_node);
-
-	ThemeContext* get_theme_context(Node* p_node) const;
-	ThemeContext* get_default_theme_context() const;
-	ThemeContext* get_nearest_theme_context(Node* p_for_node) const;
+	static ThemeContext* get_theme_context(Node* p_node);
+	static ThemeContext* get_default_theme_context();
+	static ThemeContext* get_nearest_theme_context(Node* p_for_node);
 
 	// Theme item binding.
-
-	void bind_class_item(Theme::DataType p_data_type, const String& p_class_name,
+	static void bind_class_item(Theme::DataType p_data_type, const String& p_class_name,
 		const String& p_prop_name, const String& p_item_name, ThemeItemSetter p_setter);
-	void bind_class_external_item(Theme::DataType p_data_type, const String& p_class_name,
+	static void bind_class_external_item(Theme::DataType p_data_type, const String& p_class_name,
 		const String& p_prop_name, const String& p_item_name, const String& p_type_name,
 		ThemeItemSetter p_setter);
-	void update_class_instance_items(Node* p_instance);
+	static void update_class_instance_items(Node* p_instance);
 
-	void get_class_items(const String& p_class_name, List<ThemeItemBind>* r_list,
+	static void get_class_items(const String& p_class_name, List<ThemeItemBind>* r_list,
 		bool p_include_inherited = false, Theme::DataType p_filter_type = Theme::DATA_TYPE_MAX);
-
-	// Memory management, reference, and initialization.
-
-	static ThemeDB* get_singleton();
-	ThemeDB();
-	~ThemeDB();
 };
 
 class ThemeContext
@@ -175,5 +168,3 @@ public:
 	const Vector<Ref<Theme>> get_themes() const;
 	Ref<Theme> get_fallback_theme() const;
 };
-
-

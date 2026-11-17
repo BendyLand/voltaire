@@ -5451,8 +5451,8 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				break;
 			}
 			app_focused = new_app_focused;
-			if (OS::get_main_loop()) {
-				OS::get_main_loop()->notification(app_focused ? MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN : MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
+			if (MainLoop::is_active()) {
+				MainLoop::notification(app_focused ? MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN : MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
 			}
 		} break;
 		case WM_ACTIVATE: {
@@ -6663,7 +6663,9 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 			if (windows[window_id].ime_active) {
 				SetCaretPos(windows[window_id].im_position.x, windows[window_id].im_position.y);
-				OS::get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				if (MainLoop::is_active()) {
+					MainLoop::notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				}
 			}
 		} break;
 		case WM_INPUTLANGCHANGEREQUEST: {

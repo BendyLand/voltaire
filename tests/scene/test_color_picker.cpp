@@ -43,7 +43,7 @@ namespace TestColorPicker {
 
 TEST_CASE("[SceneTree][ColorPicker]") {
 	ColorPicker *cp = memnew(ColorPicker);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(cp);
 
 	SUBCASE("[COLOR_PICKER] Mouse movement after Slider release") {

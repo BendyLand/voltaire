@@ -188,7 +188,7 @@ void TileDataOcclusionShapeEditor::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		polygon_editor->set_polygons_color(get_tree()->get_debug_collisions_color());
+		polygon_editor->set_polygons_color(SceneTree::get_debug_collisions_color());
 	} break;
 	}
 }
@@ -220,7 +220,7 @@ void TileDataCollisionEditor::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		polygon_editor->set_polygons_color(get_tree()->get_debug_collisions_color());
+		polygon_editor->set_polygons_color(SceneTree::get_debug_collisions_color());
 	} break;
 	case NOTIFICATION_TRANSLATION_CHANGED: {
 		if (is_ready()) {

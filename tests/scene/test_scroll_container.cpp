@@ -42,7 +42,7 @@ namespace TestScrollContainer {
 
 TEST_CASE("[SceneTree][ScrollContainer] Default behavior") {
 	ScrollContainer *test_container = memnew(ScrollContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_container);
 
 	Control *test_control = memnew(Control);
@@ -50,7 +50,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Default behavior") {
 	test_container->add_child(test_control);
 
 	test_container->set_size(Size2(100, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_container->get_horizontal_scroll_mode() == ScrollContainer::SCROLL_MODE_AUTO,
@@ -114,7 +114,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Default behavior") {
 
 TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	ScrollContainer *test_container = memnew(ScrollContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_container);
 	Control *test_control = memnew(Control);
 	test_container->add_child(test_control);
@@ -126,7 +126,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	test_control->add_child(target_control);
 
 	test_container->set_size(Size2(50, 50));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_container->get_h_scroll_bar()->is_visible(),
@@ -137,7 +137,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 			"V Scrollbar displays when ScrollContainer height is smaller than contents height with SCROLL_MODE_AUTO.");
 
 	test_container->set_size(Size2(150, 150));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!test_container->get_h_scroll_bar()->is_visible(),
@@ -151,7 +151,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	test_container->set_vertical_scroll_mode(ScrollContainer::SCROLL_MODE_DISABLED);
 
 	test_container->set_size(Size2(50, 50));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!test_container->get_h_scroll_bar()->is_visible(),
@@ -166,7 +166,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	int disabled_h_scroll_before = test_container->get_h_scroll();
 	int disabled_v_scroll_before = test_container->get_v_scroll();
 	test_container->ensure_control_visible(target_control);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_container->get_h_scroll() == disabled_h_scroll_before,
@@ -180,7 +180,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	test_container->set_v_scroll(0);
 
 	test_container->set_size(Size2(150, 150));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!test_container->get_h_scroll_bar()->is_visible(),
@@ -194,7 +194,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	test_container->set_vertical_scroll_mode(ScrollContainer::SCROLL_MODE_SHOW_ALWAYS);
 
 	test_container->set_size(Size2(50, 50));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_container->get_h_scroll_bar()->is_visible(),
@@ -205,7 +205,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 			"V Scrollbar displays when ScrollContainer height is smaller than contents height with SCROLL_MODE_SHOW_ALWAYS.");
 
 	test_container->set_size(Size2(150, 150));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_container->get_h_scroll_bar()->is_visible(),
@@ -219,7 +219,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	test_container->set_vertical_scroll_mode(ScrollContainer::SCROLL_MODE_SHOW_NEVER);
 
 	test_container->set_size(Size2(50, 50));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!test_container->get_h_scroll_bar()->is_visible(),
@@ -234,7 +234,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	int show_never_h_scroll_before = test_container->get_h_scroll();
 	int show_never_v_scroll_before = test_container->get_v_scroll();
 	test_container->ensure_control_visible(target_control);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_container->get_h_scroll() > show_never_h_scroll_before,
@@ -248,7 +248,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	test_container->set_v_scroll(0);
 
 	test_container->set_size(Size2(150, 150));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!test_container->get_h_scroll_bar()->is_visible(),
@@ -262,7 +262,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 	test_container->set_vertical_scroll_mode(ScrollContainer::SCROLL_MODE_RESERVE);
 
 	test_container->set_size(Size2(50, 50));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_container->get_h_scroll_bar()->is_visible(),
@@ -273,7 +273,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 			"V Scrollbar displays when ScrollContainer height is smaller than contents height with SCROLL_MODE_RESERVE.");
 
 	test_container->set_size(Size2(150, 150));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!test_container->get_h_scroll_bar()->is_visible(),
@@ -289,7 +289,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll modes") {
 
 TEST_CASE("[SceneTree][ScrollContainer] Scroll values and property setters") {
 	ScrollContainer *test_container = memnew(ScrollContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_container);
 
 	Control *test_control = memnew(Control);
@@ -297,7 +297,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Scroll values and property setters") {
 	test_container->add_child(test_control);
 
 	test_container->set_size(Size2(100, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	test_container->set_h_scroll(25);
 	test_container->set_v_scroll(35);
@@ -359,7 +359,7 @@ TEST_CASE("[SceneTree][ScrollContainer] ensure_control_visible and follow_focus"
 	const Size2 container_size = Size2(100, 100);
 	ScrollContainer *test_container = memnew(ScrollContainer);
 	test_container->set_size(container_size);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_container);
 
 	Control *content_control = memnew(Control);
@@ -374,13 +374,13 @@ TEST_CASE("[SceneTree][ScrollContainer] ensure_control_visible and follow_focus"
 	REQUIRE_EQ(test_container->get_h_scroll(), 0);
 	REQUIRE_EQ(test_container->get_v_scroll(), 0);
 
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	const Point2 initial_scroll = Point2(450, 450);
 	test_container->set_h_scroll(initial_scroll.x);
 	test_container->set_v_scroll(initial_scroll.y);
 
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 	REQUIRE_EQ(test_container->get_h_scroll(), initial_scroll.x);
 	REQUIRE_EQ(test_container->get_v_scroll(), initial_scroll.y);
 	REQUIRE_UNARY(test_container->get_h_scroll_bar()->is_visible_in_tree());
@@ -481,7 +481,7 @@ TEST_CASE("[SceneTree][ScrollContainer] ensure_control_visible and follow_focus"
 
 TEST_CASE("[SceneTree][ScrollContainer] Configuration warnings") {
 	ScrollContainer *test_container = memnew(ScrollContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_container);
 
 	CHECK_MESSAGE(

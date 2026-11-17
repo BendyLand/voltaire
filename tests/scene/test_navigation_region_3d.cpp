@@ -54,7 +54,7 @@ TEST_SUITE("[Navigation3D]") {
 
 	TEST_CASE("[SceneTree][NavigationRegion3D] Region should bake successfully from valid geometry") {
 		Node3D *node_3d = memnew(Node3D);
-		SceneTree::get_singleton()->get_root()->add_child(node_3d);
+		SceneTree::get_root()->add_child(node_3d);
 		Ref<NavigationMesh> navigation_mesh = memnew(NavigationMesh);
 		NavigationRegion3D *navigation_region = memnew(NavigationRegion3D);
 		navigation_region->set_navigation_mesh(navigation_mesh);

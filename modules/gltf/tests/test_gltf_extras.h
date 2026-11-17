@@ -73,7 +73,7 @@ TEST_CASE("[SceneTree][Node] GLTF test mesh and material meta export and import"
 	original_mesh_instance->set_meta("extras", mesh_instance_dict);
 
 	Node3D *original = memnew(Node3D);
-	SceneTree::get_singleton()->get_root()->add_child(original);
+	SceneTree::get_root()->add_child(original);
 	original->add_child(original_mesh_instance);
 	original->set_name("node3d");
 	Dictionary node_dict;
@@ -81,8 +81,8 @@ TEST_CASE("[SceneTree][Node] GLTF test mesh and material meta export and import"
 	original->set_meta("extras", node_dict);
 	original->set_meta("meta_not_nested_under_extras", "should not propagate");
 
-	original->set_owner(SceneTree::get_singleton()->get_root());
-	original_mesh_instance->set_owner(SceneTree::get_singleton()->get_root());
+	original->set_owner(SceneTree::get_root());
+	original_mesh_instance->set_owner(SceneTree::get_root());
 
 	// Convert to GLFT and back.
 	Node *loaded = gltf_export_then_import(original, "gltf_extras");
@@ -141,7 +141,7 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 	mesh->set_name("mesh_instance_3d");
 
 	Node3D *original = memnew(Node3D);
-	SceneTree::get_singleton()->get_root()->add_child(original);
+	SceneTree::get_root()->add_child(original);
 	original->add_child(skeleton);
 	original->add_child(mesh);
 	original->set_name("node3d");
@@ -149,8 +149,8 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 	// Now that both skeleton and mesh are part of scene, link them.
 	mesh->set_skeleton_path(mesh->get_path_to(skeleton));
 
-	mesh->set_owner(SceneTree::get_singleton()->get_root());
-	original->set_owner(SceneTree::get_singleton()->get_root());
+	mesh->set_owner(SceneTree::get_root());
+	original->set_owner(SceneTree::get_root());
 
 	// Convert to GLFT and back.
 	Node *loaded = gltf_export_then_import(original, "gltf_bone_extras");

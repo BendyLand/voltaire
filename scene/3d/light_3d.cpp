@@ -184,9 +184,9 @@ void Light3D::_update_visibility()
 			editor_ok = false;
 		}
 		else {
-			editor_ok = (get_tree()->get_edited_scene_root() &&
-						 (this == get_tree()->get_edited_scene_root() ||
-							 get_owner() == get_tree()->get_edited_scene_root()));
+			editor_ok = (SceneTree::get_edited_scene_root() &&
+						 (this == SceneTree::get_edited_scene_root() ||
+							 get_owner() == SceneTree::get_edited_scene_root()));
 		}
 	}
 #else

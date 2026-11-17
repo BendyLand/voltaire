@@ -192,7 +192,7 @@ static const char *godot_ac_ctx = "gd_accessibility_observer_ctx";
 		}
 	}
 	if (!args.is_empty()) {
-		if (os_mac->get_main_loop()) {
+		if (MainLoop::is_active()) {
 			// Application is already running, open a new instance with the URL/files as command line arguments.
 			os_mac->create_instance(args);
 		} else if (os_mac->get_cmd_argc() == 0) {
@@ -209,7 +209,7 @@ static const char *godot_ac_ctx = "gd_accessibility_observer_ctx";
 		args.push_back(String::utf8([url.path UTF8String]));
 	}
 	if (!args.is_empty()) {
-		if (os_mac->get_main_loop()) {
+		if (MainLoop::is_active()) {
 			// Application is already running, open a new instance with the URL/files as command line arguments.
 			os_mac->create_instance(args);
 		} else if (os_mac->get_cmd_argc() == 0) {
@@ -224,8 +224,8 @@ static const char *godot_ac_ctx = "gd_accessibility_observer_ctx";
 	if (ds) {
 		ds->mouse_process_popups(true);
 	}
-	if (os_mac->get_main_loop()) {
-		os_mac->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
 	}
 }
 
@@ -244,8 +244,8 @@ static const CGKeyCode modifiers[8] = {
 constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEventModifierFlagShift | NSEventModifierFlagOption | NSEventModifierFlagControl;
 
 - (void)applicationDidBecomeActive:(NSNotification *)notification {
-	if (os_mac->get_main_loop()) {
-		os_mac->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
 	}
 	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
 	if (!ds) {
@@ -330,8 +330,8 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 }
 
 - (void)showAbout:(id)sender {
-	if (os_mac->get_main_loop()) {
-		os_mac->get_main_loop()->notification(MainLoop::NOTIFICATION_WM_ABOUT);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_WM_ABOUT);
 	}
 }
 

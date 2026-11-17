@@ -44,7 +44,7 @@ namespace TestRichTextLabel {
 TEST_CASE("[SceneTree][RichTextLabel] Custom minimum size with fit content") {
 	// This is an anti-regression test case introduced in GH-116640. When the old minimum size behavior is removed, this test case should be removed too.
 	RichTextLabel *test_label = memnew(RichTextLabel);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_label);
 
 	real_t min_width = 50;
@@ -53,28 +53,28 @@ TEST_CASE("[SceneTree][RichTextLabel] Custom minimum size with fit content") {
 	test_label->set_custom_minimum_size(Size2(min_width, 0));
 	test_label->set_autowrap_mode(TextServer::AUTOWRAP_OFF);
 	test_label->set_text("This is a long text that should be wrapped and exceeds minimum size.");
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_label->get_size().width > min_width,
 			"Label width will increase to fit the text with AUTOWRAP_OFF.");
 
 	test_label->set_autowrap_mode(TextServer::AUTOWRAP_ARBITRARY);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			Math::is_equal_approx(test_label->get_size().width, min_width),
 			"Label width will be equal to custom minimum width with AUTOWRAP_ARBITRARY.");
 
 	test_label->set_autowrap_mode(TextServer::AUTOWRAP_WORD);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			Math::is_equal_approx(test_label->get_size().width, min_width),
 			"Label width will be equal to custom minimum width with AUTOWRAP_WORD.");
 
 	test_label->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			Math::is_equal_approx(test_label->get_size().width, min_width),
@@ -85,7 +85,7 @@ TEST_CASE("[SceneTree][RichTextLabel] Custom minimum size with fit content") {
 
 TEST_CASE("[SceneTree][RichTextLabel] Sizing with fit content") {
 	RichTextLabel *test_label = memnew(RichTextLabel);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_label);
 
 	real_t max_width = 50;
@@ -96,7 +96,7 @@ TEST_CASE("[SceneTree][RichTextLabel] Sizing with fit content") {
 	test_label->set_custom_minimum_size(Size2(min_width, 0));
 	test_label->set_autowrap_mode(TextServer::AUTOWRAP_OFF);
 	test_label->set_text("This is a long text that should be wrapped and exceeds minimum size.");
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_label->get_size().width <= max_width,
@@ -106,7 +106,7 @@ TEST_CASE("[SceneTree][RichTextLabel] Sizing with fit content") {
 			"Label width will increase beyond the custom minimum width with AUTOWRAP_OFF.");
 
 	test_label->set_autowrap_mode(TextServer::AUTOWRAP_ARBITRARY);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_label->get_size().width <= max_width,
@@ -116,7 +116,7 @@ TEST_CASE("[SceneTree][RichTextLabel] Sizing with fit content") {
 			"Label width will increase beyond the custom minimum width with AUTOWRAP_ARBITRARY.");
 
 	test_label->set_autowrap_mode(TextServer::AUTOWRAP_WORD);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_label->get_size().width <= max_width,
@@ -126,7 +126,7 @@ TEST_CASE("[SceneTree][RichTextLabel] Sizing with fit content") {
 			"Label width will increase beyond the custom minimum width with AUTOWRAP_WORD.");
 
 	test_label->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			test_label->get_size().width <= max_width,

@@ -149,7 +149,6 @@ OS_AppleEmbedded::OS_AppleEmbedded() {
 	apple_embedded_platform_init_callbacks_count = 0;
 	apple_embedded_platform_init_callbacks_capacity = 0;
 
-	main_loop = nullptr;
 
 	Vector<Logger *> loggers;
 	loggers.push_back(memnew(OsLogLogger(NSBundle.mainBundle.bundleIdentifier.UTF8String)));
@@ -197,25 +196,12 @@ void OS_AppleEmbedded::deinitialize_modules() {
 	memdelete(apple_embedded);
 }
 
-void OS_AppleEmbedded::set_main_loop(MainLoop *p_main_loop) {
-	main_loop = p_main_loop;
-}
-
-MainLoop *OS_AppleEmbedded::get_main_loop() const {
-	return main_loop;
-}
-
 void OS_AppleEmbedded::delete_main_loop() {
-	if (main_loop) {
-		main_loop->finalize();
-		memdelete(main_loop);
-	}
-
-	main_loop = nullptr;
+	MainLoop::clear();
 }
 
 bool OS_AppleEmbedded::iterate() {
-	if (!main_loop) {
+	if (!MainLoop::is_active()) {
 		return true;
 	}
 
@@ -237,7 +223,7 @@ bool OS_AppleEmbedded::iterate() {
 
 void OS_AppleEmbedded::start() {
 	if (Main::start() == EXIT_SUCCESS) {
-		main_loop->initialize();
+		MainLoop::initialize();
 	}
 }
 
@@ -787,8 +773,8 @@ void OS_AppleEmbedded::on_focus_out() {
 			DisplayServerAppleEmbedded::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
 		}
 
-		if (OS::get_singleton()->get_main_loop()) {
-			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
+		if (MainLoop::is_active()) {
+			MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
 		}
 
 		[GDTAppDelegateService.viewController.godotView stopRendering];
@@ -805,8 +791,8 @@ void OS_AppleEmbedded::on_focus_in() {
 			DisplayServerAppleEmbedded::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
 		}
 
-		if (OS::get_singleton()->get_main_loop()) {
-			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
+		if (MainLoop::is_active()) {
+			MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
 		}
 
 		[GDTAppDelegateService.viewController.godotView startRendering];
@@ -822,8 +808,8 @@ void OS_AppleEmbedded::on_enter_background() {
 		CameraServer::handle_application_pause();
 	}
 
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_PAUSED);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_PAUSED);
 	}
 
 	on_focus_out();
@@ -833,8 +819,8 @@ void OS_AppleEmbedded::on_exit_background() {
 	if (!is_focused) {
 		on_focus_in();
 
-		if (OS::get_singleton()->get_main_loop()) {
-			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_RESUMED);
+		if (MainLoop::is_active()) {
+			MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_RESUMED);
 		}
 
 		if (CameraServer::is_initialized()) {
@@ -873,7 +859,6 @@ bool OS_AppleEmbedded::request_permission(const String &p_name) {
 			} else {
 				// Request the permission, but for now return false as documented.
 				[AVAudioApplication requestRecordPermissionWithCompletionHandler:^(BOOL granted) {
-					get_main_loop()->emit_signal(SNAME("on_request_permissions_result"), p_name, granted);
 				}];
 			}
 		}

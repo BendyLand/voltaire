@@ -110,7 +110,7 @@ private:
 	TransitionType default_transition = TransitionType::TRANS_LINEAR;
 	EaseType default_ease = EaseType::EASE_IN_OUT;
 
-	SceneTree* parent_tree = nullptr;
+	bool is_in_tree = false;
 	LocalVector<List<Ref<Tweener>>> tweeners;
 	LocalVector<Ref<Tween>> subtweens;
 	double total_time = 0;
@@ -186,7 +186,7 @@ public:
 	double get_total_time() const;
 
 	Tween();
-	Tween(SceneTree* p_parent_tree);
+	explicit Tween(bool p_in_tree);
 };
 
 class PropertyTweener : public Tweener

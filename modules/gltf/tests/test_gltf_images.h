@@ -92,10 +92,10 @@ TEST_CASE("[SceneTree][Node] Export GLTF with external texture and import") {
 	original_mesh_instance->set_name("mesh_instance_3d");
 
 	Node3D *original = memnew(Node3D);
-	SceneTree::get_singleton()->get_root()->add_child(original);
+	SceneTree::get_root()->add_child(original);
 	original->add_child(original_mesh_instance);
-	original->set_owner(SceneTree::get_singleton()->get_root());
-	original_mesh_instance->set_owner(SceneTree::get_singleton()->get_root());
+	original->set_owner(SceneTree::get_root());
+	original_mesh_instance->set_owner(SceneTree::get_root());
 
 	// Convert to GLFT and back.
 	Node *loaded = gltf_export_then_import(original, "gltf_images");

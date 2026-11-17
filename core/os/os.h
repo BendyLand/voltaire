@@ -42,8 +42,6 @@
 #include "core/templates/vector.h"
 #include "core/types.h"
 
-class MainLoop;
-
 class OS final
 {
 public:
@@ -191,9 +189,7 @@ public:
 
 	static void set_cmdline(
 		const char* p_execpath, const List<String>& p_args, const List<String>& p_user_args);
-	static void set_main_loop(MainLoop* p_main_loop);
 	static void delete_main_loop();
-	static MainLoop* get_main_loop();
 
 	static bool prefer_meta_over_ctrl();
 

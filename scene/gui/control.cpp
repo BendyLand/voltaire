@@ -201,7 +201,7 @@ Rect2 Control::get_parent_anchorable_rect() const
 	}
 	else {
 #ifdef TOOLS_ENABLED
-		Node* edited_scene_root = get_tree()->get_edited_scene_root();
+		Node* edited_scene_root = SceneTree::get_edited_scene_root();
 		Node* scene_root_parent = edited_scene_root ? edited_scene_root->get_parent() : nullptr;
 		if (scene_root_parent && get_viewport() == scene_root_parent->get_viewport()) {
 			parent_rect.size =
@@ -210,8 +210,8 @@ Rect2 Control::get_parent_anchorable_rect() const
 		}
 		else {
 			Viewport* vp = get_viewport();
-			if (!vp && get_tree()) {
-				vp = get_tree()->get_root();
+			if (!vp && SceneTree::is_initialized()) {
+				vp = SceneTree::get_root();
 			}
 
 			if (vp) {
@@ -1629,7 +1629,7 @@ void Control::remove_child_notify(Node* p_child) {}
 
 bool Control::_is_focusable() const
 {
-	bool ac_enabled = is_inside_tree() && get_tree()->is_accessibility_enabled();
+	bool ac_enabled = is_inside_tree() && SceneTree::is_accessibility_enabled();
 	return (is_visible_in_tree() &&
 			((get_focus_mode_with_override() == FOCUS_ALL) ||
 				(get_focus_mode_with_override() == FOCUS_CLICK) ||
@@ -1677,7 +1677,7 @@ void Control::grab_focus(bool p_hide_focus)
 	ERR_FAIL_COND(!is_inside_tree());
 
 	if (get_focus_mode_with_override() == FOCUS_ACCESSIBILITY) {
-		if (!get_tree()->is_accessibility_enabled()) {
+		if (!SceneTree::is_accessibility_enabled()) {
 			WARN_PRINT(
 				"This control can grab focus only when screen reader is active. Use "
 				"set_focus_mode() and set_focus_behavior_recursive() to allow a control to get "
@@ -1824,7 +1824,7 @@ void Control::_invalidate_theme_cache()
 
 void Control::_update_theme_item_cache()
 {
-	ThemeDB::get_singleton()->update_class_instance_items(this);
+	ThemeDB::update_class_instance_items(this);
 }
 
 void Control::set_theme_owner_node(Node* p_node)

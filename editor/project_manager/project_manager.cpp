@@ -69,8 +69,8 @@ void ProjectManager::initialize(RID p_viewport_rid, Size2i p_size)
 	Renderer::canvas_item_set_visible(data->canvas_item_rid, true);
 
 	// 3. Grab default fallback font from ThemeDB if available
-	if (ThemeDB::get_singleton()) {
-		data->ui_font = ThemeDB::get_singleton()->get_fallback_font();
+	if (ThemeDB::is_initialized()) {
+		data->ui_font = ThemeDB::get_fallback_font();
 	}
 
 	// 4. Register toolbar buttons (layout rects are computed in process_and_draw)

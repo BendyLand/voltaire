@@ -53,6 +53,28 @@
 
 #endif
 
+void SceneTreeFTI::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void SceneTreeFTI::finalize()
+{
+	if (!data) {
+		return;
+	}
+#ifdef GODOT_SCENE_TREE_FTI_VERIFY
+	if (data->_tests) {
+		memfree(data->_tests);
+		data->_tests = nullptr;
+	}
+#endif
+	memdelete(data);
+	data = nullptr;
+}
+
 void SceneTreeFTI::_reset_node3d_flags(Node3D& r_node)
 {
 	r_node.data.fti_on_tick_xform_list = false;
@@ -66,22 +88,22 @@ void SceneTreeFTI::_reset_node3d_flags(Node3D& r_node)
 
 void SceneTreeFTI::set_enabled(Node* p_root, bool p_enabled)
 {
-	if (data.enabled == p_enabled) {
+	if (!data || data->enabled == p_enabled) {
 		return;
 	}
-	MutexLock lock(data.mutex);
+	MutexLock lock(data->mutex);
 
-	data.tick_xform_list[0].clear();
-	data.tick_xform_list[1].clear();
+	data->tick_xform_list[0].clear();
+	data->tick_xform_list[1].clear();
 
-	data.frame_xform_list.clear();
-	data.frame_xform_list_forced.clear();
+	data->frame_xform_list.clear();
+	data->frame_xform_list_forced.clear();
 
-	data.tick_property_list[0].clear();
-	data.tick_property_list[1].clear();
+	data->tick_property_list[0].clear();
+	data->tick_property_list[1].clear();
 
-	data.frame_property_list.clear();
-	data.request_reset_list.clear();
+	data->frame_property_list.clear();
+	data->request_reset_list.clear();
 
 	_clear_depth_lists();
 
@@ -90,23 +112,23 @@ void SceneTreeFTI::set_enabled(Node* p_root, bool p_enabled)
 		_reset_flags(p_root);
 	}
 
-	data.enabled = p_enabled;
+	data->enabled = p_enabled;
 }
 
 void SceneTreeFTI::tick_update()
 {
-	if (!data.enabled) {
+	if (!data || !data->enabled) {
 		return;
 	}
-	MutexLock lock(data.mutex);
+	MutexLock lock(data->mutex);
 
 	_update_request_resets();
 
-	uint32_t curr_mirror = data.mirror;
+	uint32_t curr_mirror = data->mirror;
 	uint32_t prev_mirror = curr_mirror ? 0 : 1;
 
-	LocalVector<Node3D*>& curr = data.tick_xform_list[curr_mirror];
-	LocalVector<Node3D*>& prev = data.tick_xform_list[prev_mirror];
+	LocalVector<Node3D*>& curr = data->tick_xform_list[curr_mirror];
+	LocalVector<Node3D*>& prev = data->tick_xform_list[prev_mirror];
 
 	// First detect on the previous list but not on this tick list.
 	for (uint32_t n = 0; n < prev.size(); n++) {
@@ -135,8 +157,8 @@ void SceneTreeFTI::tick_update()
 		}
 	}
 
-	LocalVector<Node3D*>& curr_prop = data.tick_property_list[curr_mirror];
-	LocalVector<Node3D*>& prev_prop = data.tick_property_list[prev_mirror];
+	LocalVector<Node3D*>& curr_prop = data->tick_property_list[curr_mirror];
+	LocalVector<Node3D*>& prev_prop = data->tick_property_list[prev_mirror];
 
 	// Detect on the previous property list but not on this tick list.
 	for (uint32_t n = 0; n < prev_prop.size(); n++) {
@@ -152,10 +174,10 @@ void SceneTreeFTI::tick_update()
 			// Remove from interpolation list.
 			if (s->data.fti_on_frame_property_list) {
 				s->data.fti_on_frame_property_list = false;
-				data.frame_property_list.erase_unordered(s);
+				data->frame_property_list.erase_unordered(s);
 
 #ifdef GODOT_SCENE_TREE_FTI_EXTRA_CHECKS
-				DEV_CHECK_ONCE(data.frame_property_list.find(s) == -1);
+				DEV_CHECK_ONCE(data->frame_property_list.find(s) == -1);
 #endif
 			}
 		}
@@ -184,32 +206,35 @@ void SceneTreeFTI::tick_update()
 	// Clear previous list and flip.
 	prev.clear();
 	prev_prop.clear();
-	data.mirror = prev_mirror;
+	data->mirror = prev_mirror;
 }
 
 void SceneTreeFTI::node_3d_request_reset(Node3D* p_node)
 {
-	DEV_CHECK_ONCE(data.enabled);
+	if (!data) {
+		return;
+	}
+	DEV_CHECK_ONCE(data->enabled);
 	DEV_ASSERT(p_node);
 
-	MutexLock lock(data.mutex);
+	MutexLock lock(data->mutex);
 
 	if (!p_node->_is_physics_interpolation_reset_requested()) {
 		p_node->_set_physics_interpolation_reset_requested(true);
 #ifdef GODOT_SCENE_TREE_FTI_EXTRA_CHECKS
-		DEV_CHECK_ONCE(data.request_reset_list.find(p_node) == -1);
+		DEV_CHECK_ONCE(data->request_reset_list.find(p_node) == -1);
 #endif
-		data.request_reset_list.push_back(p_node);
+		data->request_reset_list.push_back(p_node);
 	}
 }
 
 void SceneTreeFTI::_node_3d_notify_set_property(Node3D& r_node)
 {
-	if (!r_node.is_physics_interpolated()) {
+	if (!data || !r_node.is_physics_interpolated()) {
 		return;
 	}
 
-	DEV_CHECK_ONCE(data.enabled);
+	DEV_CHECK_ONCE(data->enabled);
 
 	// Note that a Node3D can be on BOTH the transform list and the property list.
 	if (!r_node.data.fti_on_tick_property_list) {
@@ -217,9 +242,9 @@ void SceneTreeFTI::_node_3d_notify_set_property(Node3D& r_node)
 
 		// Should only appear once in the property list.
 #ifdef GODOT_SCENE_TREE_FTI_EXTRA_CHECKS
-		DEV_CHECK_ONCE(data.tick_property_list[data.mirror].find(&r_node) == -1);
+		DEV_CHECK_ONCE(data->tick_property_list[data->mirror].find(&r_node) == -1);
 #endif
-		data.tick_property_list[data.mirror].push_back(&r_node);
+		data->tick_property_list[data->mirror].push_back(&r_node);
 	}
 
 	if (!r_node.data.fti_on_frame_property_list) {
@@ -227,62 +252,74 @@ void SceneTreeFTI::_node_3d_notify_set_property(Node3D& r_node)
 
 		// Should only appear once in the property frame list.
 #ifdef GODOT_SCENE_TREE_FTI_EXTRA_CHECKS
-		DEV_CHECK_ONCE(data.frame_property_list.find(&r_node) == -1);
+		DEV_CHECK_ONCE(data->frame_property_list.find(&r_node) == -1);
 #endif
-		data.frame_property_list.push_back(&r_node);
+		data->frame_property_list.push_back(&r_node);
 	}
 }
 
 void SceneTreeFTI::_clear_depth_lists()
 {
-	for (uint32_t d = 0; d < data.scene_tree_depth_limit; d++) {
-		data.dirty_node_depth_lists[d].clear();
+	if (!data) {
+		return;
+	}
+	for (uint32_t d = 0; d < Data::scene_tree_depth_limit; d++) {
+		data->dirty_node_depth_lists[d].clear();
 	}
 }
 
 void SceneTreeFTI::_node_add_to_frame_list(Node3D& r_node, bool p_forced)
 {
+	if (!data) {
+		return;
+	}
 	if (p_forced) {
 		DEV_ASSERT(!r_node.data.fti_frame_xform_force_update);
 #ifdef GODOT_SCENE_TREE_FTI_EXTRA_CHECKS
-		int64_t found = data.frame_xform_list_forced.find(&r_node);
+		int64_t found = data->frame_xform_list_forced.find(&r_node);
 		if (found != -1) {
 			ERR_FAIL_COND(found != -1);
 		}
 #endif
-		data.frame_xform_list_forced.push_back(&r_node);
+		data->frame_xform_list_forced.push_back(&r_node);
 		r_node.data.fti_frame_xform_force_update = true;
 	}
 	else {
 		DEV_ASSERT(!r_node.data.fti_on_frame_xform_list);
 #ifdef GODOT_SCENE_TREE_FTI_EXTRA_CHECKS
-		int64_t found = data.frame_xform_list.find(&r_node);
+		int64_t found = data->frame_xform_list.find(&r_node);
 		if (found != -1) {
 			ERR_FAIL_COND(found != -1);
 		}
 #endif
-		data.frame_xform_list.push_back(&r_node);
+		data->frame_xform_list.push_back(&r_node);
 		r_node.data.fti_on_frame_xform_list = true;
 	}
 }
 
 void SceneTreeFTI::_node_remove_from_frame_list(Node3D& r_node, bool p_forced)
 {
+	if (!data) {
+		return;
+	}
 	if (p_forced) {
 		DEV_ASSERT(r_node.data.fti_frame_xform_force_update);
-		data.frame_xform_list_forced.erase_unordered(&r_node);
+		data->frame_xform_list_forced.erase_unordered(&r_node);
 		r_node.data.fti_frame_xform_force_update = false;
 	}
 	else {
 		DEV_ASSERT(r_node.data.fti_on_frame_xform_list);
-		data.frame_xform_list.erase_unordered(&r_node);
+		data->frame_xform_list.erase_unordered(&r_node);
 		r_node.data.fti_on_frame_xform_list = false;
 	}
 }
 
 void SceneTreeFTI::_node_3d_notify_set_xform(Node3D& r_node)
 {
-	DEV_CHECK_ONCE(data.enabled);
+	if (!data) {
+		return;
+	}
+	DEV_CHECK_ONCE(data->enabled);
 
 	if (!r_node.is_physics_interpolated()) {
 		// Force an update of non-interpolated to servers
@@ -305,17 +342,9 @@ void SceneTreeFTI::_node_3d_notify_set_xform(Node3D& r_node)
 
 		// Should only appear once in the xform list.
 #ifdef GODOT_SCENE_TREE_FTI_EXTRA_CHECKS
-		DEV_CHECK_ONCE(data.tick_xform_list[data.mirror].find(&r_node) == -1);
+		DEV_CHECK_ONCE(data->tick_xform_list[data->mirror].find(&r_node) == -1);
 #endif
-		data.tick_xform_list[data.mirror].push_back(&r_node);
-
-		// The following flag could have been previously set
-		// (for removal from the tick list).
-		// We no longer need this guarantee,
-		// however there is probably no downside to leaving it set
-		// as it will be cleared on the next frame anyway.
-		// This line is left for reference.
-		// r_node.data.fti_frame_xform_force_update = false;
+		data->tick_xform_list[data->mirror].push_back(&r_node);
 	}
 
 	if (!r_node.data.fti_on_frame_xform_list) {
@@ -324,7 +353,7 @@ void SceneTreeFTI::_node_3d_notify_set_xform(Node3D& r_node)
 
 	// If we are in the second half of a frame, always add to the force update list,
 	// because we ignore the tick update list during the second update.
-	if (data.in_frame) {
+	if (data->in_frame) {
 		if (!r_node.data.fti_frame_xform_force_update) {
 			_node_add_to_frame_list(r_node, true);
 		}
@@ -333,13 +362,13 @@ void SceneTreeFTI::_node_3d_notify_set_xform(Node3D& r_node)
 
 void SceneTreeFTI::node_3d_notify_delete(Node3D* p_node)
 {
-	if (!data.enabled) {
+	if (!data || !data->enabled) {
 		return;
 	}
 
 	ERR_FAIL_NULL(p_node);
 
-	MutexLock lock(data.mutex);
+	MutexLock lock(data->mutex);
 
 	// Remove from frame lists.
 	if (p_node->data.fti_on_frame_xform_list) {
@@ -360,46 +389,42 @@ void SceneTreeFTI::node_3d_notify_delete(Node3D* p_node)
 
 	// This can potentially be optimized for large scenes with large churn,
 	// as it will be doing a linear search through the lists.
-	data.tick_xform_list[0].erase_unordered(p_node);
-	data.tick_xform_list[1].erase_unordered(p_node);
+	data->tick_xform_list[0].erase_unordered(p_node);
+	data->tick_xform_list[1].erase_unordered(p_node);
 
-	data.tick_property_list[0].erase_unordered(p_node);
-	data.tick_property_list[1].erase_unordered(p_node);
+	data->tick_property_list[0].erase_unordered(p_node);
+	data->tick_property_list[1].erase_unordered(p_node);
 
-	data.frame_property_list.erase_unordered(p_node);
-	data.request_reset_list.erase_unordered(p_node);
+	data->frame_property_list.erase_unordered(p_node);
+	data->request_reset_list.erase_unordered(p_node);
 
 #ifdef GODOT_SCENE_TREE_FTI_EXTRA_CHECKS
 	// There should only be one occurrence on the lists.
 	// Check this in DEV_ENABLED builds.
-	DEV_CHECK_ONCE(data.tick_xform_list[0].find(p_node) == -1);
-	DEV_CHECK_ONCE(data.tick_xform_list[1].find(p_node) == -1);
+	DEV_CHECK_ONCE(data->tick_xform_list[0].find(p_node) == -1);
+	DEV_CHECK_ONCE(data->tick_xform_list[1].find(p_node) == -1);
 
-	DEV_CHECK_ONCE(data.tick_property_list[0].find(p_node) == -1);
-	DEV_CHECK_ONCE(data.tick_property_list[1].find(p_node) == -1);
+	DEV_CHECK_ONCE(data->tick_property_list[0].find(p_node) == -1);
+	DEV_CHECK_ONCE(data->tick_property_list[1].find(p_node) == -1);
 
-	DEV_CHECK_ONCE(data.frame_property_list.find(p_node) == -1);
-	DEV_CHECK_ONCE(data.request_reset_list.find(p_node) == -1);
+	DEV_CHECK_ONCE(data->frame_property_list.find(p_node) == -1);
+	DEV_CHECK_ONCE(data->request_reset_list.find(p_node) == -1);
 
-	DEV_CHECK_ONCE(data.frame_xform_list.find(p_node) == -1);
-	DEV_CHECK_ONCE(data.frame_xform_list_forced.find(p_node) == -1);
+	DEV_CHECK_ONCE(data->frame_xform_list.find(p_node) == -1);
+	DEV_CHECK_ONCE(data->frame_xform_list_forced.find(p_node) == -1);
 #endif
 }
 
-SceneTreeFTI::~SceneTreeFTI()
+void SceneTreeFTI::frame_update(Node* p_root, bool p_frame_start)
 {
-#ifdef GODOT_SCENE_TREE_FTI_VERIFY
-	if (_tests) {
-		memfree(_tests);
-		_tests = nullptr;
-	}
-#endif
+	(void)p_root;
+	(void)p_frame_start;
 }
 
-#endif // ndef _3D_DISABLED
-
-
+void SceneTreeFTI::_create_depth_lists() {}
 
 void SceneTreeFTI::_update_request_resets() {}
 
 void SceneTreeFTI::_reset_flags(Node*) {}
+
+#endif // ndef _3D_DISABLED

@@ -935,7 +935,7 @@ void Node3DEditorViewport::_init_gizmo_instance(int p_idx)
 		Renderer::instance_set_base(
 			move_gizmo_instance[i], spatial_editor->get_move_gizmo(i)->get_rid());
 		Renderer::instance_set_scenario(
-			move_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
+			move_gizmo_instance[i], SceneTree::get_root()->get_world_3d()->get_scenario());
 		Renderer::instance_set_visible(move_gizmo_instance[i], false);
 		Renderer::instance_geometry_set_cast_shadows_setting(
 			move_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
@@ -949,7 +949,7 @@ void Node3DEditorViewport::_init_gizmo_instance(int p_idx)
 		Renderer::instance_set_base(
 			move_plane_gizmo_instance[i], spatial_editor->get_move_plane_gizmo(i)->get_rid());
 		Renderer::instance_set_scenario(
-			move_plane_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
+			move_plane_gizmo_instance[i], SceneTree::get_root()->get_world_3d()->get_scenario());
 		Renderer::instance_set_visible(move_plane_gizmo_instance[i], false);
 		Renderer::instance_geometry_set_cast_shadows_setting(
 			move_plane_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
@@ -963,7 +963,7 @@ void Node3DEditorViewport::_init_gizmo_instance(int p_idx)
 		Renderer::instance_set_base(
 			scale_gizmo_instance[i], spatial_editor->get_scale_gizmo(i)->get_rid());
 		Renderer::instance_set_scenario(
-			scale_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
+			scale_gizmo_instance[i], SceneTree::get_root()->get_world_3d()->get_scenario());
 		Renderer::instance_set_visible(scale_gizmo_instance[i], false);
 		Renderer::instance_geometry_set_cast_shadows_setting(
 			scale_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
@@ -977,7 +977,7 @@ void Node3DEditorViewport::_init_gizmo_instance(int p_idx)
 		Renderer::instance_set_base(
 			scale_plane_gizmo_instance[i], spatial_editor->get_scale_plane_gizmo(i)->get_rid());
 		Renderer::instance_set_scenario(
-			scale_plane_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
+			scale_plane_gizmo_instance[i], SceneTree::get_root()->get_world_3d()->get_scenario());
 		Renderer::instance_set_visible(scale_plane_gizmo_instance[i], false);
 		Renderer::instance_geometry_set_cast_shadows_setting(
 			scale_plane_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
@@ -994,7 +994,7 @@ void Node3DEditorViewport::_init_gizmo_instance(int p_idx)
 		Renderer::instance_set_base(
 			axis_gizmo_instance[i], spatial_editor->get_axis_gizmo(i)->get_rid());
 		Renderer::instance_set_scenario(
-			axis_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
+			axis_gizmo_instance[i], SceneTree::get_root()->get_world_3d()->get_scenario());
 		Renderer::instance_set_visible(axis_gizmo_instance[i], true);
 		Renderer::instance_geometry_set_cast_shadows_setting(
 			axis_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
@@ -1010,7 +1010,7 @@ void Node3DEditorViewport::_init_gizmo_instance(int p_idx)
 		Renderer::instance_set_base(
 			rotate_gizmo_instance[i], spatial_editor->get_rotate_gizmo(i)->get_rid());
 		Renderer::instance_set_scenario(
-			rotate_gizmo_instance[i], get_tree()->get_root()->get_world_3d()->get_scenario());
+			rotate_gizmo_instance[i], SceneTree::get_root()->get_world_3d()->get_scenario());
 		Renderer::instance_set_visible(rotate_gizmo_instance[i], false);
 		Renderer::instance_geometry_set_cast_shadows_setting(
 			rotate_gizmo_instance[i], RSE::SHADOW_CASTING_SETTING_OFF);
@@ -1026,7 +1026,7 @@ void Node3DEditorViewport::_init_gizmo_instance(int p_idx)
 	Renderer::instance_set_base(
 		trackball_sphere_instance, spatial_editor->get_trackball_sphere_gizmo()->get_rid());
 	Renderer::instance_set_scenario(
-		trackball_sphere_instance, get_tree()->get_root()->get_world_3d()->get_scenario());
+		trackball_sphere_instance, SceneTree::get_root()->get_world_3d()->get_scenario());
 	Renderer::instance_set_visible(trackball_sphere_instance, false);
 	Renderer::instance_geometry_set_cast_shadows_setting(
 		trackball_sphere_instance, RSE::SHADOW_CASTING_SETTING_OFF);

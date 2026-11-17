@@ -63,7 +63,7 @@ TEST_CASE("[Multiplayer][SceneMultiplayer] Defaults") {
 }
 
 TEST_CASE("[Multiplayer][SceneMultiplayer][SceneTree] SceneTree has a OfflineMultiplayerPeer by default") {
-	Ref<SceneMultiplayer> scene_multiplayer = SceneTree::get_singleton()->get_multiplayer();
+	Ref<SceneMultiplayer> scene_multiplayer = SceneTree::get_multiplayer();
 	REQUIRE(scene_multiplayer->has_multiplayer_peer());
 
 	Ref<MultiplayerPeer> multiplayer_peer = scene_multiplayer->get_multiplayer_peer();
@@ -159,7 +159,7 @@ static Variant auth_callback(Variant sv, Variant pvav) {
 TEST_CASE("[Multiplayer][SceneMultiplayer][SceneTree] Send Authentication") {
 	Ref<SceneMultiplayer> scene_multiplayer;
 	scene_multiplayer.instantiate();
-	SceneTree::get_singleton()->set_multiplayer(scene_multiplayer);
+	SceneTree::set_multiplayer(scene_multiplayer);
 	scene_multiplayer->set_auth_callback(callable_mp_static(auth_callback));
 
 	SUBCASE("Is properly sent") {
@@ -232,7 +232,7 @@ TEST_CASE("[Multiplayer][SceneMultiplayer][SceneTree] Send Authentication") {
 TEST_CASE("[Multiplayer][SceneMultiplayer][SceneTree] Complete Authentication") {
 	Ref<SceneMultiplayer> scene_multiplayer;
 	scene_multiplayer.instantiate();
-	SceneTree::get_singleton()->set_multiplayer(scene_multiplayer);
+	SceneTree::set_multiplayer(scene_multiplayer);
 	scene_multiplayer->set_auth_callback(callable_mp_static(auth_callback));
 
 	SUBCASE("Is properly completed") {

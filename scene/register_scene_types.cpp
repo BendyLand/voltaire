@@ -163,6 +163,7 @@
 #include "scene/resources/texture_rd.h"
 #include "scene/resources/theme.h"
 #include "scene/resources/video_stream.h"
+#include "scene/scene_string_names.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
@@ -385,9 +386,9 @@ static Ref<ResourceFormatLoaderShader> resource_loader_shader;
 static Ref<ResourceFormatSaverShaderInclude> resource_saver_shader_include;
 static Ref<ResourceFormatLoaderShaderInclude> resource_loader_shader_include;
 
-void unregister_scene_types() {}
+void unregister_scene_types() { SceneStrings::finalize(); }
 
-void register_scene_types() {}
+void register_scene_types() { SceneStrings::initialize(); }
 
 void register_scene_singletons() {}
 

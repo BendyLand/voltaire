@@ -42,7 +42,7 @@ namespace TestGridContainer {
 
 TEST_CASE("[SceneTree][GridContainer] Default properties") {
 	GridContainer *grid_container = memnew(GridContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(grid_container);
 
 	grid_container->set_size(Size2(200, 200));
@@ -52,7 +52,7 @@ TEST_CASE("[SceneTree][GridContainer] Default properties") {
 	Control *child_control = memnew(Control);
 	child_control->set_custom_minimum_size(Size2(20, 10));
 	grid_container->add_child(child_control);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			grid_container->get_columns() == 1,
@@ -72,7 +72,7 @@ TEST_CASE("[SceneTree][GridContainer] Default properties") {
 
 TEST_CASE("[SceneTree][GridContainer] Columns and placement order") {
 	GridContainer *grid_container = memnew(GridContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(grid_container);
 
 	Control *child_control_1 = memnew(Control);
@@ -92,7 +92,7 @@ TEST_CASE("[SceneTree][GridContainer] Columns and placement order") {
 	grid_container->add_child(child_control_2);
 	grid_container->add_child(child_control_3);
 	grid_container->add_child(child_control_4);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			grid_container->get_columns() == 2,
@@ -123,7 +123,7 @@ TEST_CASE("[SceneTree][GridContainer] Columns and placement order") {
 
 TEST_CASE("[SceneTree][GridContainer] Separation and minimum size") {
 	GridContainer *grid_container = memnew(GridContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(grid_container);
 
 	Control *child_control_1 = memnew(Control);
@@ -139,7 +139,7 @@ TEST_CASE("[SceneTree][GridContainer] Separation and minimum size") {
 	grid_container->add_child(child_control_1);
 	grid_container->add_child(child_control_2);
 	grid_container->add_child(child_control_3);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			grid_container->get_h_separation() == 5,
@@ -150,7 +150,7 @@ TEST_CASE("[SceneTree][GridContainer] Separation and minimum size") {
 			"GridContainer minimum size matches per-column and per-row maxima plus separations.");
 
 	grid_container->set_size(Size2(50, 67));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control_1->get_position().is_equal_approx(Point2(0, 0)),
@@ -184,7 +184,7 @@ TEST_CASE("[SceneTree][GridContainer] Separation and minimum size") {
 
 TEST_CASE("[SceneTree][GridContainer] Expanding rows and columns") {
 	GridContainer *grid_container = memnew(GridContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(grid_container);
 
 	Control *child_control_1 = memnew(Control);
@@ -203,7 +203,7 @@ TEST_CASE("[SceneTree][GridContainer] Expanding rows and columns") {
 	grid_container->add_child(child_control_1);
 	grid_container->add_child(child_control_2);
 	grid_container->add_child(child_control_3);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control_1->get_size().is_equal_approx(Size2(80, 80)),
@@ -233,7 +233,7 @@ TEST_CASE("[SceneTree][GridContainer] Expanding rows and columns") {
 
 TEST_CASE("[SceneTree][GridContainer] RTL placement") {
 	GridContainer *grid_container = memnew(GridContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(grid_container);
 
 	Control *child_control_1 = memnew(Control);
@@ -248,7 +248,7 @@ TEST_CASE("[SceneTree][GridContainer] RTL placement") {
 	grid_container->add_child(child_control_1);
 	grid_container->add_child(child_control_2);
 	grid_container->set_layout_direction(Control::LAYOUT_DIRECTION_RTL);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control_1->get_position().is_equal_approx(Point2(20, 0)),

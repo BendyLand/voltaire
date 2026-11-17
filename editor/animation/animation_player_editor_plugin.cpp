@@ -218,7 +218,7 @@ void AnimationPlayerEditor::_allocate_onion_layers()
 	Renderer::canvas_item_clear(onion.capture.canvas_item);
 	Renderer::canvas_item_add_texture_rect(onion.capture.canvas_item,
 		Rect2(Point2(), Point2(capture_size.x, -capture_size.y)),
-		get_tree()->get_root()->get_texture()->get_rid());
+		SceneTree::get_root()->get_texture()->get_rid());
 
 	onion.capture_size = capture_size;
 }

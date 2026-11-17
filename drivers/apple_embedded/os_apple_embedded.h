@@ -62,17 +62,12 @@ private:
 	JoypadSDL *joypad_sdl = nullptr;
 #endif
 
-	MainLoop *main_loop = nullptr;
-
 	virtual void initialize_core() override;
 	virtual void initialize() override;
 
 	virtual void initialize_joypads() override;
 
-	virtual void set_main_loop(MainLoop *p_main_loop) override;
-	virtual MainLoop *get_main_loop() const override;
-
-	virtual void delete_main_loop() override;
+	void delete_main_loop();
 
 	virtual void finalize() override;
 

@@ -341,8 +341,8 @@ void GLManager_X11::swap_buffers()
 				fflush(stdout);
 				extern bool s_quit_requested;
 				s_quit_requested = true;
-				if (OS::is_initialized() && OS::get_main_loop()) {
-					OS::get_main_loop()->finalize();
+				if (OS::is_initialized() && MainLoop::is_active()) {
+					MainLoop::finalize();
 				}
 				return; // Do NOT call glXSwapBuffers!
 			}
@@ -352,8 +352,8 @@ void GLManager_X11::swap_buffers()
 			fflush(stdout);
 			extern bool s_quit_requested;
 			s_quit_requested = true;
-			if (OS::is_initialized() && OS::get_main_loop()) {
-				OS::get_main_loop()->finalize();
+			if (OS::is_initialized() && MainLoop::is_active()) {
+				MainLoop::finalize();
 			}
 			return; // Do NOT call glXSwapBuffers!
 		}

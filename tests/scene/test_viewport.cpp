@@ -208,7 +208,7 @@ TEST_CASE("[SceneTree][Viewport] Controls and InputEvent handling") {
 	node_h->set_focus_mode(Control::FOCUS_CLICK);
 	node_i->set_focus_mode(Control::FOCUS_CLICK);
 	node_j->set_focus_mode(Control::FOCUS_CLICK);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
 
 	// Scene tree:
@@ -1530,7 +1530,7 @@ TEST_CASE("[SceneTree][Viewport] Control mouse cursor shape") {
 		node_c->set_size(Point2i(100, 100));
 		node_a->set_default_cursor_shape(Control::CURSOR_ARROW);
 		node_c->set_default_cursor_shape(Control::CURSOR_FORBIDDEN);
-		Window *root = SceneTree::get_singleton()->get_root();
+		Window *root = SceneTree::get_root();
 		DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
 
 		// Scene tree:
@@ -1605,14 +1605,13 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		Ref<RectangleShape2D> r;
 	};
 
-	SceneTree *tree = SceneTree::get_singleton();
-	Window *root = tree->get_root();
+	Window *root = SceneTree::get_root();
 	root->set_physics_object_picking(true);
 
 	Point2i on_background = Point2i(800, 800);
 	Point2i on_outside = Point2i(-1, -1);
 	SEND_GUI_MOUSE_MOTION_EVENT(on_background, MouseButtonMask::NONE, Key::NONE);
-	tree->physics_process(1);
+	SceneTree::physics_process(1);
 
 	Vector<PickingCollider> v;
 	for (int i = 0; i < 4; i++) {
@@ -1658,7 +1657,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 
 	SUBCASE("[Viewport][Picking2D] Mouse Motion") {
 		SEND_GUI_MOUSE_MOTION_EVENT(on_all, MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		SIGNAL_CHECK(SceneString(mouse_entered), empty_signal_args_4);
 		SIGNAL_CHECK_FALSE(SceneString(mouse_exited));
 		for (PickingCollider E : v) {
@@ -1668,7 +1667,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		}
 
 		SEND_GUI_MOUSE_MOTION_EVENT(on_01, MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		SIGNAL_CHECK_FALSE(SceneString(mouse_entered));
 		SIGNAL_CHECK(SceneString(mouse_exited), empty_signal_args_2);
 
@@ -1683,7 +1682,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		}
 
 		SEND_GUI_MOUSE_MOTION_EVENT(on_outside, MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		SIGNAL_CHECK_FALSE(SceneString(mouse_entered));
 		SIGNAL_CHECK(SceneString(mouse_exited), empty_signal_args_2);
 		for (int i = 0; i < v.size(); i++) {
@@ -1699,7 +1698,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 
 	SUBCASE("[Viewport][Picking2D] Object moved / passive hovering") {
 		SEND_GUI_MOUSE_MOTION_EVENT(on_all, MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		for (int i = 0; i < v.size(); i++) {
 			CHECK(v[i].a->enter_id);
 			CHECK_FALSE(v[i].a->exit_id);
@@ -1707,7 +1706,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		}
 
 		node_b->set_position(Point2i(200, 0));
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		for (int i = 0; i < v.size(); i++) {
 			CHECK_FALSE(v[i].a->enter_id);
 			if (i < 2) {
@@ -1719,7 +1718,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		}
 
 		node_b->set_position(Point2i(100, 0));
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		for (int i = 0; i < v.size(); i++) {
 			if (i < 2) {
 				CHECK_FALSE(v[i].a->enter_id);
@@ -1733,7 +1732,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 
 	SUBCASE("[Viewport][Picking2D] No Processing") {
 		SEND_GUI_MOUSE_MOTION_EVENT(on_background, MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		for (PickingCollider E : v) {
 			E.a->test_reset();
 		}
@@ -1741,7 +1740,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		v[0].a->set_process_mode(Node::PROCESS_MODE_DISABLED);
 		v[0].c->set_process_mode(Node::PROCESS_MODE_DISABLED);
 		SEND_GUI_MOUSE_MOTION_EVENT(on_02, MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		CHECK_FALSE(v[0].a->enter_id);
 		CHECK_FALSE(v[0].a->exit_id);
 		CHECK(v[2].a->enter_id);
@@ -1751,7 +1750,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		}
 
 		SEND_GUI_MOUSE_MOTION_EVENT(on_background, MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		CHECK_FALSE(v[0].a->enter_id);
 		CHECK_FALSE(v[0].a->exit_id);
 		CHECK_FALSE(v[2].a->enter_id);
@@ -1767,7 +1766,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 	SUBCASE("[Viewport][Picking2D] Multiple events in series") {
 		SEND_GUI_MOUSE_MOTION_EVENT(on_0, MouseButtonMask::NONE, Key::NONE);
 		SEND_GUI_MOUSE_MOTION_EVENT(on_0 + Point2i(10, 0), MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 
 		for (int i = 0; i < v.size(); i++) {
 			if (i < 1) {
@@ -1781,7 +1780,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 
 		SEND_GUI_MOUSE_MOTION_EVENT(on_background, MouseButtonMask::NONE, Key::NONE);
 		SEND_GUI_MOUSE_MOTION_EVENT(on_background + Point2i(10, 10), MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 
 		for (int i = 0; i < v.size(); i++) {
 			CHECK_FALSE(v[i].a->enter_id);
@@ -1800,7 +1799,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		root->set_physics_object_picking(false);
 		CHECK_FALSE(root->get_physics_object_picking());
 
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 
 		for (int i = 0; i < v.size(); i++) {
 			CHECK_FALSE(v[i].a->enter_id);
@@ -1821,7 +1820,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		v[3].a->reparent(node_c, false);
 
 		SEND_GUI_MOUSE_MOTION_EVENT(on_02, MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 
 		for (int i = 0; i < v.size(); i++) {
 			if (i == 0 || i == 3) {
@@ -1853,7 +1852,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 
 			TestArea2D::counter = 0;
 			SEND_GUI_MOUSE_MOTION_EVENT(on_all, MouseButtonMask::NONE, Key::NONE);
-			tree->physics_process(1);
+			SceneTree::physics_process(1);
 
 			CHECK(v[0].a->enter_id == 4);
 			CHECK(v[1].a->enter_id == 2);
@@ -1866,7 +1865,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 
 			TestArea2D::counter = 0;
 			SEND_GUI_MOUSE_MOTION_EVENT(on_background, MouseButtonMask::NONE, Key::NONE);
-			tree->physics_process(1);
+			SceneTree::physics_process(1);
 
 			CHECK(v[0].a->exit_id == 4);
 			CHECK(v[1].a->exit_id == 2);
@@ -1886,7 +1885,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		SUBCASE("[Viewport][Picking2D] Picking Sort Scene Tree Location") {
 			TestArea2D::counter = 0;
 			SEND_GUI_MOUSE_MOTION_EVENT(on_all, MouseButtonMask::NONE, Key::NONE);
-			tree->physics_process(1);
+			SceneTree::physics_process(1);
 
 			for (int i = 0; i < v.size(); i++) {
 				CHECK(v[i].a->enter_id == 4 - i);
@@ -1896,7 +1895,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 
 			TestArea2D::counter = 0;
 			SEND_GUI_MOUSE_MOTION_EVENT(on_background, MouseButtonMask::NONE, Key::NONE);
-			tree->physics_process(1);
+			SceneTree::physics_process(1);
 
 			for (int i = 0; i < v.size(); i++) {
 				CHECK_FALSE(v[i].a->enter_id);
@@ -1911,7 +1910,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 
 	SUBCASE("[Viewport][Picking2D] Mouse Button") {
 		SEND_GUI_MOUSE_BUTTON_EVENT(on_0, MouseButton::LEFT, MouseButtonMask::LEFT, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 
 		for (int i = 0; i < v.size(); i++) {
 			if (i == 0) {
@@ -1924,7 +1923,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		}
 
 		SEND_GUI_MOUSE_BUTTON_RELEASED_EVENT(on_0, MouseButton::LEFT, MouseButtonMask::NONE, Key::NONE);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 
 		for (int i = 0; i < v.size(); i++) {
 			CHECK_FALSE(v[i].a->enter_id);
@@ -1935,7 +1934,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 
 	SUBCASE("[Viewport][Picking2D] Screen Touch") {
 		SEND_GUI_TOUCH_EVENT(on_01, true, false);
-		tree->physics_process(1);
+		SceneTree::physics_process(1);
 		for (int i = 0; i < v.size(); i++) {
 			if (i < 2) {
 				Ref<InputEventScreenTouch> st = v[i].a->last_input_event;
@@ -1957,7 +1956,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 #endif // PHYSICS_2D_DISABLED
 
 TEST_CASE("[SceneTree][Viewport] Embedded Windows") {
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	Window *w = memnew(Window);
 
 	SUBCASE("[Viewport] Safe-rect of embedded Window") {

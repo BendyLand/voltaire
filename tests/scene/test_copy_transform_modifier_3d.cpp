@@ -116,7 +116,6 @@ Vector3 inv_all(Vector3 p_scl) {
 }
 
 TEST_CASE("[SceneTree][CopyTransformModifier3D]") {
-	SceneTree *tree = SceneTree::get_singleton();
 	int seed = 12345;
 	Skeleton3D *skeleton = memnew(Skeleton3D);
 	CopyTransformModifier3D *mod = memnew(CopyTransformModifier3D);
@@ -125,7 +124,7 @@ TEST_CASE("[SceneTree][CopyTransformModifier3D]") {
 	// force notify NOTIFICATION_UPDATE_SKELETON and get the modified pose from the BoneAttachment's transform.
 	BoneAttachment3D *modified = memnew(BoneAttachment3D);
 
-	tree->get_root()->add_child(skeleton);
+	SceneTree::get_root()->add_child(skeleton);
 
 	int root = skeleton->add_bone("root");
 	skeleton->set_bone_rest(root, make_random_transform_3d(++seed));

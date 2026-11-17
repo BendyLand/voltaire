@@ -119,7 +119,6 @@ private:
 	static inline uint64_t delay_resolution = 1000;
 
 	static inline HINSTANCE hInstance = nullptr;
-	static inline MainLoop* main_loop = nullptr;
 
 #ifdef WASAPI_ENABLED
 	static inline AudioDriverWASAPI driver_wasapi;
@@ -166,7 +165,6 @@ private:
 
 public:
 	static void initialize();
-	static void set_main_loop(MainLoop* p_main_loop);
 	static void delete_main_loop();
 	static void finalize();
 	static void finalize_core();
@@ -186,8 +184,6 @@ public:
 	static Error close_dynamic_library(void* p_library_handle);
 	static Error get_dynamic_library_symbol_handle(void* p_library_handle, const String& p_name,
 		void*& p_symbol_handle, bool p_optional = false);
-
-	static MainLoop* get_main_loop();
 
 	static String get_name();
 	static String get_distribution_name();

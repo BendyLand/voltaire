@@ -197,8 +197,9 @@ struct GodotTestCaseListener : public doctest::IReporter {
 			// ThemeDB requires Renderer to initialize the default theme.
 			// So we have to do this for each test case. Also make sure there is
 			// no residual theme from something else.
-			ThemeDB::get_singleton()->finalize_theme();
-			ThemeDB::get_singleton()->initialize_theme();
+			ThemeDB::initialize();
+			ThemeDB::finalize_theme();
+			ThemeDB::initialize_theme();
 
 #ifndef PHYSICS_3D_DISABLED
 			physics_server_3d = PhysicsServer3DManager::get_singleton()->new_default_server();
@@ -228,10 +229,10 @@ struct GodotTestCaseListener : public doctest::IReporter {
 			InputMap::initialize();
 			InputMap::load_default();
 
-			memnew(SceneTree);
-			SceneTree::get_singleton()->initialize();
+			SceneTree::initialize();
+			SceneTree::initialize_tree();
 			if (!DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS)) {
-				SceneTree::get_singleton()->get_root()->set_embedding_subwindows(true);
+				SceneTree::get_root()->set_embedding_subwindows(true);
 			}
 
 #ifdef TOOLS_ENABLED
@@ -288,15 +289,15 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 		Engine::set_editor_hint(false);
 
-		if (SceneTree::get_singleton()) {
-			SceneTree::get_singleton()->finalize();
+		if (SceneTree::is_initialized()) {
+			SceneTree::finalize_tree();
 		}
 
 		if (MessageQueue::get_singleton()) {
 			MessageQueue::get_singleton()->flush();
 		}
 
-		memdelete(SceneTree::get_singleton());
+		SceneTree::finalize();
 
 #ifndef NAVIGATION_3D_DISABLED
 		if (navigation_server_3d) {
@@ -330,9 +331,10 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 		Input::finalize();
 
-		if (Renderer::get_singleton()) {
-			ThemeDB::get_singleton()->finalize_theme();
+		if (Renderer::data) {
+			ThemeDB::finalize_theme();
 		}
+		ThemeDB::finalize();
 
 		memdelete(AccessibilityServer::get_singleton());
 		memdelete(DisplayServer::get_singleton());

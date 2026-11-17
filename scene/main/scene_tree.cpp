@@ -91,8 +91,6 @@ void SceneTreeTimer::set_ignore_time_scale(bool p_ignore) { ignore_time_scale = 
 bool SceneTreeTimer::is_ignoring_time_scale() { return ignore_time_scale; }
 
 #ifndef _3D_DISABLED
-// This should be called once per physics tick, to make sure the transform previous and current
-// is kept up to date on the few Node3Ds that are using client side physics interpolation.
 void SceneTree::ClientPhysicsInterpolation::physics_process()
 {
 	for (SelfList<Node3D>* E = _node_3d_list.first(); E;) {
@@ -103,10 +101,6 @@ void SceneTree::ClientPhysicsInterpolation::physics_process()
 		// Get the next element here BEFORE we potentially delete one.
 		E = E->next();
 
-		// This will return false if the Node3D has timed out ..
-		// i.e. if get_global_transform_interpolated() has not been called
-		// for a few seconds, we can delete from the list to keep processing
-		// to a minimum.
 		if (!node_3d->update_client_physics_interpolation_data()) {
 			_node_3d_list.remove(current);
 		}
@@ -117,13 +111,105 @@ void SceneTree::ClientPhysicsInterpolation::physics_process()
 bool SceneTree::_physics_interpolation_enabled = false;
 bool SceneTree::_physics_interpolation_enabled_in_project = false;
 
+void SceneTree::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+	SceneTreeFTI::initialize();
+	MainLoop::bind<SceneTree>();
+}
+
+void SceneTree::finalize()
+{
+	if (!data) {
+		return;
+	}
+
+	finalize_tree();
+
+	for (ProcessGroup* pg : data->process_groups) {
+		if (pg) {
+			memdelete(pg);
+		}
+	}
+	data->process_groups.clear();
+
+	SceneTreeFTI::finalize();
+
+	memdelete(data);
+	data = nullptr;
+
+	_physics_interpolation_enabled = false;
+	_physics_interpolation_enabled_in_project = false;
+
+	if (MainLoop::destroy == &SceneTree::finalize) {
+		MainLoop::reset_backend();
+	}
+}
+
+void SceneTree::initialize_tree()
+{
+	if (!data || data->root) {
+		return;
+	}
+
+	data->root = memnew(Window);
+	data->root->_set_tree(true);
+
+	data->root->set_name("root");
+	data->root->set_position(Point2i());
+
+	Size2i window_size = DisplayServer::get_singleton()
+							 ? DisplayServer::get_singleton()->window_get_size()
+							 : Size2i();
+	if (window_size.width <= 0 || window_size.height <= 0) {
+		window_size = Size2i(1152, 648);
+	}
+	data->root->set_size(window_size);
+}
+
+void SceneTree::finalize_tree()
+{
+	if (!data) {
+		return;
+	}
+
+	_flush_delete_queue();
+	_flush_ugc();
+
+	if (data->root) {
+		data->root->_set_tree(false);
+		data->root->_propagate_after_exit_tree();
+		memdelete(data->root);
+		data->root = nullptr;
+
+		_flush_delete_queue();
+	}
+
+	// Cleanup timers.
+	for (Ref<SceneTreeTimer>& timer : data->timers) {
+		timer->release_connections();
+	}
+	data->timers.clear();
+
+	// Cleanup tweens.
+	for (Ref<Tween>& tween : data->tweens) {
+		tween->clear();
+	}
+	data->tweens.clear();
+}
+
 SceneTreeGroup* SceneTree::add_to_group(const String& p_group, Node* p_node)
 {
 	_THREAD_SAFE_METHOD_
+	if (!data) {
+		return nullptr;
+	}
 
-	HashMap<String, SceneTreeGroup>::Iterator E = group_map.find(p_group);
+	HashMap<String, SceneTreeGroup>::Iterator E = data->group_map.find(p_group);
 	if (!E) {
-		E = group_map.insert(p_group, SceneTreeGroup());
+		E = data->group_map.insert(p_group, SceneTreeGroup());
 	}
 
 	ERR_FAIL_COND_V_MSG(
@@ -136,20 +222,28 @@ SceneTreeGroup* SceneTree::add_to_group(const String& p_group, Node* p_node)
 void SceneTree::remove_from_group(const String& p_group, Node* p_node)
 {
 	_THREAD_SAFE_METHOD_
+	if (!data) {
+		return;
+	}
 
-	HashMap<String, SceneTreeGroup>::Iterator E = group_map.find(p_group);
+	HashMap<String, SceneTreeGroup>::Iterator E = data->group_map.find(p_group);
 	ERR_FAIL_COND(!E);
 
 	E->value.nodes.erase(p_node);
 	if (E->value.nodes.is_empty()) {
-		group_map.remove(E);
+		data->group_map.remove(E);
 	}
 }
 
-bool SceneTree::is_accessibility_enabled() const
+bool SceneTree::is_accessibility_enabled()
 {
-	if (!DisplayServer::get_singleton()->has_feature(
+	if (!DisplayServer::get_singleton() ||
+		!DisplayServer::get_singleton()->has_feature(
 			DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER)) {
+		return false;
+	}
+
+	if (!AccessibilityServer::get_singleton()) {
 		return false;
 	}
 
@@ -165,10 +259,15 @@ bool SceneTree::is_accessibility_enabled() const
 	return true;
 }
 
-bool SceneTree::is_accessibility_supported() const
+bool SceneTree::is_accessibility_supported()
 {
-	if (!DisplayServer::get_singleton()->has_feature(
+	if (!DisplayServer::get_singleton() ||
+		!DisplayServer::get_singleton()->has_feature(
 			DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER)) {
+		return false;
+	}
+
+	if (!AccessibilityServer::get_singleton()) {
 		return false;
 	}
 
@@ -180,7 +279,12 @@ bool SceneTree::is_accessibility_supported() const
 	return true;
 }
 
-void SceneTree::_accessibility_force_update() { accessibility_force_update = true; }
+void SceneTree::_accessibility_force_update()
+{
+	if (data) {
+		data->accessibility_force_update = true;
+	}
+}
 
 void SceneTree::_update_group_order(SceneTreeGroup& g)
 {
@@ -200,7 +304,7 @@ void SceneTree::_update_group_order(SceneTreeGroup& g)
 	g.changed = false;
 }
 
-Window* SceneTree::get_root() const { return root; }
+Window* SceneTree::get_root() { return data ? data->root : nullptr; }
 
 void SceneTree::notify_group(const String& p_group, int p_notification)
 {
@@ -209,10 +313,8 @@ void SceneTree::notify_group(const String& p_group, int p_notification)
 
 void SceneTree::set_physics_interpolation_enabled(bool p_enabled)
 {
-	// This version is for use in editor.
 	_physics_interpolation_enabled_in_project = p_enabled;
 
-	// We never want interpolation in the editor.
 	if (Engine::is_editor_hint()) {
 		p_enabled = false;
 	}
@@ -224,67 +326,47 @@ void SceneTree::set_physics_interpolation_enabled(bool p_enabled)
 	_physics_interpolation_enabled = p_enabled;
 	Renderer::set_physics_interpolation_enabled(p_enabled);
 
-	get_scene_tree_fti().set_enabled(get_root(), p_enabled);
+	SceneTreeFTI::set_enabled(get_root(), p_enabled);
 
-	// Perform an auto reset on the root node for convenience for the user.
-	if (root) {
-		root->reset_physics_interpolation();
+	if (data && data->root) {
+		data->root->reset_physics_interpolation();
 	}
 }
 
 #ifndef _3D_DISABLED
 void SceneTree::client_physics_interpolation_add_node_3d(SelfList<Node3D>* p_elem)
 {
-	// This ensures that _update_physics_interpolation_data() will be called at least once every
-	// physics tick, to ensure the previous and current transforms are kept up to date.
-	_client_physics_interpolation._node_3d_list.add(p_elem);
+	if (data) {
+		data->_client_physics_interpolation._node_3d_list.add(p_elem);
+	}
 }
 
 void SceneTree::client_physics_interpolation_remove_node_3d(SelfList<Node3D>* p_elem)
 {
-	_client_physics_interpolation._node_3d_list.remove(p_elem);
+	if (data) {
+		data->_client_physics_interpolation._node_3d_list.remove(p_elem);
+	}
 }
 #endif
-
-SceneTree::SceneTree()
-{
-	singleton = this;
-}
-
-SceneTree::~SceneTree()
-{
-	if (root) {
-		memdelete(root);
-		root = nullptr;
-	}
-	if (singleton == this) {
-		singleton = nullptr;
-	}
-}
 
 void SceneTree::iteration_prepare()
 {
 	if (_physics_interpolation_enabled) {
-		// Make sure any pending transforms from the last tick / frame
-		// are flushed before pumping the interpolation prev and currents.
 		flush_transform_notifications();
-		get_scene_tree_fti().tick_update();
+		SceneTreeFTI::tick_update();
 		Renderer::tick();
 	}
 }
 
 void SceneTree::iteration_end()
 {
-	// When physics interpolation is active, we want all pending transforms
-	// to be flushed to the Renderer before finishing a physics tick.
 	if (_physics_interpolation_enabled) {
 		flush_transform_notifications();
 
 #ifndef _3D_DISABLED
-		// Any objects performing client physics interpolation
-		// should be given an opportunity to keep their previous transforms
-		// up to date.
-		_client_physics_interpolation.physics_process();
+		if (data) {
+			data->_client_physics_interpolation.physics_process();
+		}
 #endif
 	}
 }
@@ -292,16 +374,18 @@ void SceneTree::iteration_end()
 void SceneTree::process_tweens(double p_delta, bool p_physics)
 {
 	_THREAD_SAFE_METHOD_
-	// This methods works similarly to how SceneTreeTimers are handled.
-	const List<Ref<Tween>>::Element* L = tweens.back();
+	if (!data) {
+		return;
+	}
+
+	const List<Ref<Tween>>::Element* L = data->tweens.back();
 	const double unscaled_delta = Engine::get_process_step();
 
-	for (List<Ref<Tween>>::Element* E = tweens.front(); E;) {
+	for (List<Ref<Tween>>::Element* E = data->tweens.front(); E;) {
 		List<Ref<Tween>>::Element* N = E->next();
 		Ref<Tween>& tween = E->get();
 
-		// Don't process if paused or process mode doesn't match.
-		if (!tween->can_process(paused) ||
+		if (!tween->can_process(data->paused) ||
 			(p_physics == (tween->get_process_mode() == Tween::TWEEN_PROCESS_IDLE))) {
 			if (E == L) {
 				break;
@@ -312,7 +396,7 @@ void SceneTree::process_tweens(double p_delta, bool p_physics)
 
 		if (!tween->step(tween->is_ignoring_time_scale() ? unscaled_delta : p_delta)) {
 			tween->clear();
-			tweens.erase(E);
+			data->tweens.erase(E);
 		}
 		if (E == L) {
 			break;
@@ -321,58 +405,28 @@ void SceneTree::process_tweens(double p_delta, bool p_physics)
 	}
 }
 
-void SceneTree::finalize()
-{
-	_flush_delete_queue();
-
-	_flush_ugc();
-
-	if (root) {
-		root->_set_tree(nullptr);
-		root->_propagate_after_exit_tree();
-		memdelete(root); // delete root
-		root = nullptr;
-
-		// In case deletion of some objects was queued when destructing the `root`.
-		// E.g. if `queue_free()` was called for some node outside the tree when handling
-		// NOTIFICATION_PREDELETE for some node in the tree.
-		_flush_delete_queue();
-	}
-
-	MainLoop::finalize();
-
-	// Cleanup timers.
-	for (Ref<SceneTreeTimer>& timer : timers) {
-		timer->release_connections();
-	}
-	timers.clear();
-
-	// Cleanup tweens.
-	for (Ref<Tween>& tween : tweens) {
-		tween->clear();
-	}
-	tweens.clear();
-}
-
 void SceneTree::quit(int p_exit_code)
 {
 	_THREAD_SAFE_METHOD_
+	if (!data) {
+		return;
+	}
 
 	OS::set_exit_code(p_exit_code);
-	_quit = true;
+	data->_quit = true;
 }
 
 void SceneTree::_main_window_close()
 {
-	if (accept_quit) {
-		_quit = true;
+	if (data && data->accept_quit) {
+		data->_quit = true;
 	}
 }
 
 void SceneTree::_main_window_go_back()
 {
-	if (quit_on_go_back) {
-		_quit = true;
+	if (data && data->quit_on_go_back) {
+		data->_quit = true;
 	}
 }
 
@@ -383,15 +437,16 @@ void SceneTree::_main_window_focus_in()
 	}
 }
 
-void SceneTree::_notification(int p_notification)
+void SceneTree::notification(int p_notification)
 {
-	if (!get_root()) {
+	Window* root_win = get_root();
+	if (!root_win) {
 		return;
 	}
 
 	switch (p_notification) {
 	case NOTIFICATION_TRANSLATION_CHANGED: {
-		get_root()->propagate_notification(p_notification);
+		root_win->propagate_notification(p_notification);
 	} break;
 
 	case NOTIFICATION_OS_MEMORY_WARNING:
@@ -402,95 +457,145 @@ void SceneTree::_notification(int p_notification)
 	case NOTIFICATION_APPLICATION_PAUSED:
 	case NOTIFICATION_APPLICATION_PIP_MODE_ENTERED:
 	case NOTIFICATION_APPLICATION_PIP_MODE_EXITED: {
-		// Pass these to nodes, since they are mirrored.
-		get_root()->propagate_notification(p_notification);
+		root_win->propagate_notification(p_notification);
 	} break;
 
 	case NOTIFICATION_APPLICATION_FOCUS_IN:
 	case NOTIFICATION_APPLICATION_FOCUS_OUT: {
 		if (Input::is_initialized()) {
-			Input::set_application_focused(
-				p_notification == NOTIFICATION_APPLICATION_FOCUS_IN);
-
-			// `release_pressed_events()` already preserves joypad state when the
-			// unfocused joypad setting is disabled, but keyboard state still needs
-			// to be released after focus loss.
+			Input::set_application_focused(p_notification == NOTIFICATION_APPLICATION_FOCUS_IN);
 			Input::release_pressed_events();
 		}
 
-		// Pass these to nodes, since they are mirrored.
-		get_root()->propagate_notification(p_notification);
+		root_win->propagate_notification(p_notification);
 	} break;
 	}
 }
 
-bool SceneTree::is_auto_accept_quit() const { return accept_quit; }
+bool SceneTree::is_auto_accept_quit() { return data ? data->accept_quit : true; }
 
-void SceneTree::set_auto_accept_quit(bool p_enable) { accept_quit = p_enable; }
+void SceneTree::set_auto_accept_quit(bool p_enable)
+{
+	if (data) {
+		data->accept_quit = p_enable;
+	}
+}
 
-bool SceneTree::is_quit_on_go_back() const { return quit_on_go_back; }
+bool SceneTree::is_quit_on_go_back() { return data ? data->quit_on_go_back : true; }
 
-void SceneTree::set_quit_on_go_back(bool p_enable) { quit_on_go_back = p_enable; }
+void SceneTree::set_quit_on_go_back(bool p_enable)
+{
+	if (data) {
+		data->quit_on_go_back = p_enable;
+	}
+}
 
 #ifdef DEBUG_ENABLED
-void SceneTree::set_debug_collisions_hint(bool p_enabled) { debug_collisions_hint = p_enabled; }
+void SceneTree::set_debug_collisions_hint(bool p_enabled)
+{
+	if (data) {
+		data->debug_collisions_hint = p_enabled;
+	}
+}
 
-bool SceneTree::is_debugging_collisions_hint() const { return debug_collisions_hint; }
+bool SceneTree::is_debugging_collisions_hint()
+{
+	return data ? data->debug_collisions_hint : false;
+}
 
-void SceneTree::set_debug_paths_hint(bool p_enabled) { debug_paths_hint = p_enabled; }
+void SceneTree::set_debug_paths_hint(bool p_enabled)
+{
+	if (data) {
+		data->debug_paths_hint = p_enabled;
+	}
+}
 
-bool SceneTree::is_debugging_paths_hint() const { return debug_paths_hint; }
+bool SceneTree::is_debugging_paths_hint() { return data ? data->debug_paths_hint : false; }
 
-void SceneTree::set_debug_navigation_hint(bool p_enabled) { debug_navigation_hint = p_enabled; }
+void SceneTree::set_debug_navigation_hint(bool p_enabled)
+{
+	if (data) {
+		data->debug_navigation_hint = p_enabled;
+	}
+}
 
-bool SceneTree::is_debugging_navigation_hint() const { return debug_navigation_hint; }
+bool SceneTree::is_debugging_navigation_hint()
+{
+	return data ? data->debug_navigation_hint : false;
+}
 #endif
 
 void SceneTree::set_debug_collisions_color(const Color& p_color)
 {
-	debug_collisions_color = p_color;
+	if (data) {
+		data->debug_collisions_color = p_color;
+	}
 }
 
-Color SceneTree::get_debug_collisions_color() const { return debug_collisions_color; }
+Color SceneTree::get_debug_collisions_color()
+{
+	return data ? data->debug_collisions_color : Color(0.0, 0.0, 0.0, 0.0);
+}
 
 void SceneTree::set_debug_collision_contact_color(const Color& p_color)
 {
-	debug_collision_contact_color = p_color;
+	if (data) {
+		data->debug_collision_contact_color = p_color;
+	}
 }
 
-Color SceneTree::get_debug_collision_contact_color() const { return debug_collision_contact_color; }
+Color SceneTree::get_debug_collision_contact_color()
+{
+	return data ? data->debug_collision_contact_color : Color();
+}
 
-void SceneTree::set_debug_paths_color(const Color& p_color) { debug_paths_color = p_color; }
+void SceneTree::set_debug_paths_color(const Color& p_color)
+{
+	if (data) {
+		data->debug_paths_color = p_color;
+	}
+}
 
-Color SceneTree::get_debug_paths_color() const { return debug_paths_color; }
+Color SceneTree::get_debug_paths_color() { return data ? data->debug_paths_color : Color(); }
 
-void SceneTree::set_debug_paths_width(float p_width) { debug_paths_width = p_width; }
+void SceneTree::set_debug_paths_width(float p_width)
+{
+	if (data) {
+		data->debug_paths_width = p_width;
+	}
+}
 
-float SceneTree::get_debug_paths_width() const { return debug_paths_width; }
+float SceneTree::get_debug_paths_width() { return data ? data->debug_paths_width : 1.0f; }
 
 Ref<Material> SceneTree::get_debug_paths_material()
 {
 	_THREAD_SAFE_METHOD_
+	if (!data) {
+		return Ref<Material>();
+	}
 
-	if (debug_paths_material.is_valid()) {
-		return debug_paths_material;
+	if (data->debug_paths_material.is_valid()) {
+		return data->debug_paths_material;
 	}
 
 	Ref<StandardMaterial3D> _debug_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	_debug_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 	_debug_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 
-	debug_paths_material = _debug_material;
+	data->debug_paths_material = _debug_material;
 
-	return debug_paths_material;
+	return data->debug_paths_material;
 }
 
 Ref<Material> SceneTree::get_debug_collision_material()
 {
 	_THREAD_SAFE_METHOD_
+	if (!data) {
+		return Ref<Material>();
+	}
 
-	if (collision_material.is_valid()) {
-		return collision_material;
+	if (data->collision_material.is_valid()) {
+		return data->collision_material;
 	}
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
@@ -498,64 +603,77 @@ Ref<Material> SceneTree::get_debug_collision_material()
 	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 1);
 	material->set_cull_mode(StandardMaterial3D::CULL_BACK);
-	collision_material = material;
+	data->collision_material = material;
 
-	return collision_material;
+	return data->collision_material;
 }
 
 void SceneTree::set_pause(bool p_enabled)
 {
 	ERR_FAIL_COND_MSG(!Thread::is_main_thread(), "Pause can only be set from the main thread.");
-	ERR_FAIL_COND_MSG(suspended, "Pause state cannot be modified while suspended.");
+	if (!data) {
+		return;
+	}
+	ERR_FAIL_COND_MSG(data->suspended, "Pause state cannot be modified while suspended.");
 
-	if (p_enabled == paused) {
+	if (p_enabled == data->paused) {
 		return;
 	}
 
-	paused = p_enabled;
+	data->paused = p_enabled;
 
 #ifndef PHYSICS_3D_DISABLED
-	PhysicsServer3D::get_singleton()->set_active(!p_enabled);
+	if (PhysicsServer3D::get_singleton()) {
+		PhysicsServer3D::get_singleton()->set_active(!p_enabled);
+	}
 #endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
-	PhysicsServer2D::get_singleton()->set_active(!p_enabled);
+	if (PhysicsServer2D::get_singleton()) {
+		PhysicsServer2D::get_singleton()->set_active(!p_enabled);
+	}
 #endif // PHYSICS_2D_DISABLED
-	if (get_root()) {
-		get_root()->_propagate_pause_notification(p_enabled);
+	if (data->root) {
+		data->root->_propagate_pause_notification(p_enabled);
 	}
 }
 
-bool SceneTree::is_paused() const { return paused; }
+bool SceneTree::is_paused() { return data ? data->paused : false; }
 
 void SceneTree::set_suspend(bool p_enabled)
 {
 	ERR_FAIL_COND_MSG(!Thread::is_main_thread(), "Suspend can only be set from the main thread.");
-
-	if (p_enabled == suspended) {
+	if (!data || p_enabled == data->suspended) {
 		return;
 	}
 
-	suspended = p_enabled;
+	data->suspended = p_enabled;
 
 	Engine::set_freeze_time_scale(p_enabled);
 
 #ifndef PHYSICS_3D_DISABLED
-	PhysicsServer3D::get_singleton()->set_active(!p_enabled && !paused);
+	if (PhysicsServer3D::get_singleton()) {
+		PhysicsServer3D::get_singleton()->set_active(!p_enabled && !data->paused);
+	}
 #endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
-	PhysicsServer2D::get_singleton()->set_active(!p_enabled && !paused);
+	if (PhysicsServer2D::get_singleton()) {
+		PhysicsServer2D::get_singleton()->set_active(!p_enabled && !data->paused);
+	}
 #endif // PHYSICS_2D_DISABLED
-	if (get_root()) {
-		get_root()->_propagate_suspend_notification(p_enabled);
+	if (data->root) {
+		data->root->_propagate_suspend_notification(p_enabled);
 	}
 }
 
-bool SceneTree::is_suspended() const { return suspended; }
+bool SceneTree::is_suspended() { return data ? data->suspended : false; }
 
 void SceneTree::_process_groups_thread(uint32_t p_index, bool p_physics)
 {
-	Node::current_process_thread_group = local_process_group_cache[p_index]->owner;
-	_process_group(local_process_group_cache[p_index], p_physics);
+	if (!data) {
+		return;
+	}
+	Node::current_process_thread_group = data->local_process_group_cache[p_index]->owner;
+	_process_group(data->local_process_group_cache[p_index], p_physics);
 	Node::current_process_thread_group = nullptr;
 }
 
@@ -585,18 +703,24 @@ bool SceneTree::ProcessGroupSort::operator()(
 void SceneTree::_remove_process_group(Node* p_node)
 {
 	_THREAD_SAFE_METHOD_
+	if (!data || !p_node) {
+		return;
+	}
 	ProcessGroup* pg = (ProcessGroup*)p_node->data.process_group;
 	ERR_FAIL_NULL(pg);
 	ERR_FAIL_COND(pg->removed);
 	pg->removed = true;
 	pg->owner = nullptr;
 	p_node->data.process_group = nullptr;
-	process_groups_dirty = true;
+	data->process_groups_dirty = true;
 }
 
 void SceneTree::_add_process_group(Node* p_node)
 {
 	_THREAD_SAFE_METHOD_
+	if (!data) {
+		return;
+	}
 	ERR_FAIL_NULL(p_node);
 
 	ProcessGroup* pg = memnew(ProcessGroup);
@@ -604,16 +728,20 @@ void SceneTree::_add_process_group(Node* p_node)
 	pg->owner = p_node;
 	p_node->data.process_group = pg;
 
-	process_groups.push_back(pg);
+	data->process_groups.push_back(pg);
 
-	process_groups_dirty = true;
+	data->process_groups_dirty = true;
 }
 
 void SceneTree::_remove_node_from_process_group(Node* p_node, Node* p_owner)
 {
 	_THREAD_SAFE_METHOD_
+	if (!data || !p_node) {
+		return;
+	}
 	ProcessGroup* pg =
-		p_owner ? (ProcessGroup*)p_owner->data.process_group : &default_process_group;
+		p_owner ? (ProcessGroup*)p_owner->data.process_group : &data->default_process_group;
+	ERR_FAIL_NULL(pg);
 
 	if (p_node->is_processing() || p_node->is_processing_internal()) {
 		bool found = pg->nodes.erase(p_node);
@@ -629,8 +757,12 @@ void SceneTree::_remove_node_from_process_group(Node* p_node, Node* p_owner)
 void SceneTree::_add_node_to_process_group(Node* p_node, Node* p_owner)
 {
 	_THREAD_SAFE_METHOD_
+	if (!data || !p_node) {
+		return;
+	}
 	ProcessGroup* pg =
-		p_owner ? (ProcessGroup*)p_owner->data.process_group : &default_process_group;
+		p_owner ? (ProcessGroup*)p_owner->data.process_group : &data->default_process_group;
+	ERR_FAIL_NULL(pg);
 
 	if (p_node->is_processing() || p_node->is_processing_internal()) {
 		pg->nodes.push_back(p_node);
@@ -643,18 +775,21 @@ void SceneTree::_add_node_to_process_group(Node* p_node, Node* p_owner)
 	}
 }
 
-int64_t SceneTree::get_frame() const { return current_frame; }
+int64_t SceneTree::get_frame() { return data ? data->current_frame : 0; }
 
-bool SceneTree::has_group(const String& p_identifier) const
+bool SceneTree::has_group(const String& p_identifier)
 {
 	_THREAD_SAFE_METHOD_
-	return group_map.has(p_identifier);
+	return data ? data->group_map.has(p_identifier) : false;
 }
 
-int SceneTree::get_node_count_in_group(const String& p_group) const
+int SceneTree::get_node_count_in_group(const String& p_group)
 {
 	_THREAD_SAFE_METHOD_
-	HashMap<String, SceneTreeGroup>::ConstIterator E = group_map.find(p_group);
+	if (!data) {
+		return 0;
+	}
+	HashMap<String, SceneTreeGroup>::ConstIterator E = data->group_map.find(p_group);
 	if (!E) {
 		return 0;
 	}
@@ -665,12 +800,15 @@ int SceneTree::get_node_count_in_group(const String& p_group) const
 Node* SceneTree::get_first_node_in_group(const String& p_group)
 {
 	_THREAD_SAFE_METHOD_
-	HashMap<String, SceneTreeGroup>::Iterator E = group_map.find(p_group);
+	if (!data) {
+		return nullptr;
+	}
+	HashMap<String, SceneTreeGroup>::Iterator E = data->group_map.find(p_group);
 	if (!E) {
-		return nullptr; // No group.
+		return nullptr;
 	}
 
-	_update_group_order(E->value); // Update order just in case.
+	_update_group_order(E->value);
 
 	if (E->value.nodes.is_empty()) {
 		return nullptr;
@@ -682,12 +820,15 @@ Node* SceneTree::get_first_node_in_group(const String& p_group)
 Vector<Node*> SceneTree::get_nodes_in_group(const String& p_group)
 {
 	_THREAD_SAFE_METHOD_
-	HashMap<String, SceneTreeGroup>::Iterator E = group_map.find(p_group);
+	if (!data) {
+		return {};
+	}
+	HashMap<String, SceneTreeGroup>::Iterator E = data->group_map.find(p_group);
 	if (!E) {
 		return {};
 	}
 
-	_update_group_order(E->value); // update order just in case
+	_update_group_order(E->value);
 	int nc = E->value.nodes.size();
 	if (nc == 0) {
 		return {};
@@ -696,19 +837,23 @@ Vector<Node*> SceneTree::get_nodes_in_group(const String& p_group)
 	return E->value.nodes;
 }
 
-int SceneTree::get_node_count() const { return nodes_in_tree_count; }
+int SceneTree::get_node_count() { return data ? data->nodes_in_tree_count : 0; }
 
 void SceneTree::set_edited_scene_root(Node* p_node)
 {
 #ifdef TOOLS_ENABLED
-	edited_scene_root = p_node;
+	if (data) {
+		data->edited_scene_root = p_node;
+	}
+#else
+	(void)p_node;
 #endif
 }
 
-Node* SceneTree::get_edited_scene_root() const
+Node* SceneTree::get_edited_scene_root()
 {
 #ifdef TOOLS_ENABLED
-	return edited_scene_root;
+	return data ? data->edited_scene_root : nullptr;
 #else
 	return nullptr;
 #endif
@@ -718,11 +863,14 @@ void SceneTree::set_current_scene(Node* p_scene)
 {
 	ERR_FAIL_COND_MSG(
 		!Thread::is_main_thread(), "Changing scene can only be done from the main thread.");
-	ERR_FAIL_COND(p_scene && p_scene->get_parent() != root);
-	current_scene = p_scene;
+	if (!data) {
+		return;
+	}
+	ERR_FAIL_COND(p_scene && p_scene->get_parent() != data->root);
+	data->current_scene = p_scene;
 }
 
-Node* SceneTree::get_current_scene() const { return current_scene; }
+Node* SceneTree::get_current_scene() { return data ? data->current_scene : nullptr; }
 
 Error SceneTree::change_scene_to_file(const String& p_path)
 {
@@ -738,6 +886,7 @@ Error SceneTree::change_scene_to_file(const String& p_path)
 
 Error SceneTree::change_scene_to_packed(PackedScene* rp_scene)
 {
+	ERR_FAIL_NULL_V(rp_scene, ERR_INVALID_PARAMETER);
 	Node* new_scene = rp_scene->instantiate();
 	ERR_FAIL_NULL_V(new_scene, ERR_CANT_CREATE);
 	return change_scene_to_node(new_scene);
@@ -747,8 +896,8 @@ Error SceneTree::reload_current_scene()
 {
 	ERR_FAIL_COND_V_MSG(!Thread::is_main_thread(), ERR_INVALID_PARAMETER,
 		"Reloading scene can only be done from the main thread.");
-	ERR_FAIL_NULL_V(current_scene, ERR_UNCONFIGURED);
-	String fname = current_scene->get_scene_file_path();
+	ERR_FAIL_COND_V(!data || !data->current_scene, ERR_UNCONFIGURED);
+	String fname = data->current_scene->get_scene_file_path();
 	return change_scene_to_file(fname);
 }
 
@@ -756,9 +905,9 @@ void SceneTree::unload_current_scene()
 {
 	ERR_FAIL_COND_MSG(!Thread::is_main_thread(),
 		"Unloading the current scene can only be done from the main thread.");
-	if (current_scene) {
-		memdelete(current_scene);
-		current_scene = nullptr;
+	if (data && data->current_scene) {
+		memdelete(data->current_scene);
+		data->current_scene = nullptr;
 	}
 }
 
@@ -766,37 +915,49 @@ void SceneTree::add_current_scene(Node* p_current)
 {
 	ERR_FAIL_COND_MSG(
 		!Thread::is_main_thread(), "Adding a current scene can only be done from the main thread.");
-	current_scene = p_current;
-	root->add_child(p_current);
+	if (!data || !data->root) {
+		return;
+	}
+	data->current_scene = p_current;
+	data->root->add_child(p_current);
 }
 
 SceneTreeTimer* SceneTree::create_timer(
 	double p_delay_sec, bool p_process_always, bool p_process_in_physics, bool p_ignore_time_scale)
 {
 	_THREAD_SAFE_METHOD_
+	if (!data) {
+		return nullptr;
+	}
 	Ref<SceneTreeTimer> stt;
 	stt.instantiate();
 	stt->set_process_always(p_process_always);
 	stt->set_time_left(p_delay_sec);
 	stt->set_process_in_physics(p_process_in_physics);
 	stt->set_ignore_time_scale(p_ignore_time_scale);
-	timers.push_back(stt);
+	data->timers.push_back(stt);
 	return stt.ptr();
 }
 
 Tween* SceneTree::create_tween()
 {
 	_THREAD_SAFE_METHOD_
+	if (!data) {
+		return nullptr;
+	}
 	Ref<Tween> tween;
-	tween.instantiate(this);
-	tweens.push_back(tween);
+	tween.instantiate(true);
+	data->tweens.push_back(tween);
 	return tween.ptr();
 }
 
 void SceneTree::remove_tween(const Ref<Tween>& p_tween)
 {
 	_THREAD_SAFE_METHOD_
-	for (List<Ref<Tween>>::Element* E = tweens.back(); E; E = E->prev()) {
+	if (!data) {
+		return;
+	}
+	for (List<Ref<Tween>>::Element* E = data->tweens.back(); E; E = E->prev()) {
 		if (E->get() == p_tween) {
 			E->erase();
 			break;
@@ -804,17 +965,20 @@ void SceneTree::remove_tween(const Ref<Tween>& p_tween)
 	}
 }
 
-MultiplayerAPI* SceneTree::get_multiplayer(const NodePath& p_for_path) const
+MultiplayerAPI* SceneTree::get_multiplayer(const NodePath& p_for_path)
 {
 	ERR_FAIL_COND_V_MSG(!Thread::is_main_thread(), Ref<MultiplayerAPI>().ptr(),
 		"Multiplayer can only be manipulated from the main thread.");
+	if (!data) {
+		return nullptr;
+	}
 	if (p_for_path.is_empty()) {
-		return multiplayer.ptr();
+		return data->multiplayer.ptr();
 	}
 
 	const Vector<String> tnames = p_for_path.get_names();
 	const String* nptr = tnames.ptr();
-	for (const KeyValue<NodePath, Ref<MultiplayerAPI>>& E : custom_multiplayers) {
+	for (const KeyValue<NodePath, Ref<MultiplayerAPI>>& E : data->custom_multiplayers) {
 		const Vector<String> snames = E.key.get_names();
 		if (tnames.size() < snames.size()) {
 			continue;
@@ -832,23 +996,41 @@ MultiplayerAPI* SceneTree::get_multiplayer(const NodePath& p_for_path) const
 		}
 	}
 
-	return multiplayer.ptr();
+	return data->multiplayer.ptr();
+}
+
+void SceneTree::set_multiplayer(Ref<MultiplayerAPI> p_multiplayer, const NodePath& p_root_path)
+{
+	ERR_FAIL_COND_MSG(
+		!Thread::is_main_thread(), "Multiplayer can only be manipulated from the main thread.");
+	if (!data) {
+		return;
+	}
+	if (p_root_path.is_empty()) {
+		ERR_FAIL_COND(p_multiplayer.is_null());
+		data->multiplayer = p_multiplayer;
+	}
+	else if (p_multiplayer.is_valid()) {
+		data->custom_multiplayers[p_root_path] = p_multiplayer;
+	}
+	else {
+		data->custom_multiplayers.erase(p_root_path);
+	}
 }
 
 void SceneTree::set_multiplayer_poll_enabled(bool p_enabled)
 {
 	ERR_FAIL_COND_MSG(
 		!Thread::is_main_thread(), "Multiplayer can only be manipulated from the main thread.");
-	multiplayer_poll = p_enabled;
+	if (data) {
+		data->multiplayer_poll = p_enabled;
+	}
 }
 
-bool SceneTree::is_multiplayer_poll_enabled() const { return multiplayer_poll; }
-
-SceneTree* SceneTree::singleton = nullptr;
+bool SceneTree::is_multiplayer_poll_enabled() { return data ? data->multiplayer_poll : true; }
 
 SceneTree::IdleCallback SceneTree::idle_callbacks[SceneTree::MAX_IDLE_CALLBACKS];
-int SceneTree::idle_callback_count = 0
-;
+int SceneTree::idle_callback_count = 0;
 
 void SceneTree::_call_idle_callbacks()
 {
@@ -863,11 +1045,12 @@ void SceneTree::add_idle_callback(IdleCallback p_callback)
 	idle_callbacks[idle_callback_count++] = p_callback;
 }
 
-#ifdef TOOLS_ENABLED
-
-#endif
-
-void SceneTree::set_disable_node_threading(bool p_disable) { node_threading_disabled = p_disable; }
+void SceneTree::set_disable_node_threading(bool p_disable)
+{
+	if (data) {
+		data->node_threading_disabled = p_disable;
+	}
+}
 
 void SceneTree::tree_changed() {}
 
@@ -887,24 +1070,14 @@ void SceneTree::_flush_ugc() {}
 
 void SceneTree::_accessibility_notify_change(Node const*, bool) {}
 
-void SceneTree::initialize()
+bool SceneTree::physics_process(double p_time)
 {
-	root = memnew(Window);
-	root->_set_tree(this);
-
-	root->set_name("root");
-	root->set_position(Point2i());
-
-	Size2i window_size = DisplayServer::get_singleton()->window_get_size();
-	if (window_size.width <= 0 || window_size.height <= 0) {
-		window_size = Size2i(1152, 648);
-	}
-	root->set_size(window_size);
-	MainLoop::initialize();
+	(void)p_time;
+	return false;
 }
 
-bool SceneTree::physics_process(double p_time) { return false; }
-
-bool SceneTree::process(double p_time) { return _quit; }
-
-
+bool SceneTree::process(double p_time)
+{
+	(void)p_time;
+	return data ? data->_quit : true;
+}

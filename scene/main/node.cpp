@@ -78,7 +78,7 @@ void Node::_propagate_physics_interpolation_reset_requested(bool p_requested)
 
 void Node::move_child(Node* rp_child, int p_index)
 {
-	ERR_FAIL_COND_MSG(data.tree && !Thread::is_main_thread(),
+	ERR_FAIL_COND_MSG(data.inside_tree && !Thread::is_main_thread(),
 		"Moving child node positions inside the SceneTree is only allowed from the main thread. "
 		"Use call_deferred(\"move_child\",child,index).");
 
@@ -224,7 +224,7 @@ Ref<MultiplayerAPI> Node::get_multiplayer() const
 	if (!is_inside_tree()) {
 		return Ref<MultiplayerAPI>();
 	}
-	return data.tree->get_multiplayer(get_path());
+	return SceneTree::get_multiplayer(get_path());
 }
 
 bool Node::can_process_notification(int p_what) const
@@ -245,7 +245,7 @@ bool Node::can_process_notification(int p_what) const
 
 bool Node::can_process() const
 {
-	return is_inside_tree() && !data.tree->is_suspended() && _can_process(data.tree->is_paused());
+	return is_inside_tree() && !SceneTree::is_suspended() && _can_process(SceneTree::is_paused());
 }
 
 bool Node::_can_process(bool p_paused) const
@@ -327,8 +327,8 @@ bool Node::is_enabled() const
 
 double Node::get_physics_process_delta_time() const
 {
-	if (data.tree) {
-		return data.tree->get_physics_process_time();
+	if (data.inside_tree) {
+		return SceneTree::get_physics_process_time();
 	}
 	else {
 		return 0;
@@ -337,8 +337,8 @@ double Node::get_physics_process_delta_time() const
 
 double Node::get_process_delta_time() const
 {
-	if (data.tree) {
-		return data.tree->get_process_time();
+	if (data.inside_tree) {
+		return SceneTree::get_process_time();
 	}
 	else {
 		return 0;
@@ -393,18 +393,18 @@ void Node::set_process_internal(bool p_process_internal)
 	}
 }
 
-void Node::_add_process_group() { data.tree->_add_process_group(this); }
+void Node::_add_process_group() { SceneTree::_add_process_group(this); }
 
-void Node::_remove_process_group() { data.tree->_remove_process_group(this); }
+void Node::_remove_process_group() { SceneTree::_remove_process_group(this); }
 
 void Node::_remove_from_process_thread_group()
 {
-	data.tree->_remove_node_from_process_group(this, data.process_thread_group_owner);
+	SceneTree::_remove_node_from_process_group(this, data.process_thread_group_owner);
 }
 
 void Node::_add_to_process_thread_group()
 {
-	data.tree->_add_node_to_process_group(this, data.process_thread_group_owner);
+	SceneTree::_add_node_to_process_group(this, data.process_thread_group_owner);
 }
 
 void Node::_remove_tree_from_process_thread_group()
@@ -433,7 +433,7 @@ void Node::_add_tree_to_process_thread_group(Node* p_owner)
 		data.process_group = p_owner->data.process_group;
 	}
 	else {
-		data.process_group = &data.tree->default_process_group;
+		data.process_group = SceneTree::data ? &SceneTree::data->default_process_group : nullptr;
 	}
 
 	if (_is_any_processing()) {
@@ -466,7 +466,9 @@ void Node::set_process_thread_group_order(int p_order)
 		return;
 	}
 
-	data.tree->process_groups_dirty = true;
+	if (SceneTree::data) {
+		SceneTree::data->process_groups_dirty = true;
+	}
 }
 
 int Node::get_process_thread_group_order() const { return data.process_thread_group_order; }
@@ -553,7 +555,7 @@ void Node::set_auto_translate_mode(AutoTranslateMode p_mode)
 		return;
 	}
 
-	if (p_mode == AUTO_TRANSLATE_MODE_INHERIT && data.tree && !data.parent) {
+	if (p_mode == AUTO_TRANSLATE_MODE_INHERIT && data.inside_tree && !data.parent) {
 		ERR_FAIL_MSG("The root node can't be set to Inherit auto translate mode.");
 	}
 
@@ -657,7 +659,7 @@ Node::InternalMode Node::get_internal_mode() const { return data.internal_mode; 
 
 void Node::add_child(Node* rp_child, bool p_force_readable_name, InternalMode p_internal)
 {
-	ERR_FAIL_COND_MSG(data.tree && !Thread::is_main_thread(),
+	ERR_FAIL_COND_MSG(data.inside_tree && !Thread::is_main_thread(),
 		"Adding children to a node inside the SceneTree is only allowed from the main thread. Use "
 		"call_deferred(\"add_child\",node).");
 
@@ -693,7 +695,7 @@ void Node::remove_child(Node* rp_child) {}
 
 void Node::add_sibling(Node* rp_sibling, bool p_force_readable_name)
 {
-	ERR_FAIL_COND_MSG(data.tree && !Thread::is_main_thread(),
+	ERR_FAIL_COND_MSG(data.inside_tree && !Thread::is_main_thread(),
 		"Adding a sibling to a node inside the SceneTree is only allowed from the main thread. Use "
 		"call_deferred(\"add_sibling\",node).");
 	data.parent->add_child(rp_sibling, p_force_readable_name, data.internal_mode);
@@ -840,7 +842,7 @@ Node* Node::get_node_or_null(const NodePath& p_path) const
 		return nullptr;
 	}
 
-	ERR_FAIL_COND_V_MSG(!data.tree && p_path.is_absolute(), nullptr,
+	ERR_FAIL_COND_V_MSG(!data.inside_tree && p_path.is_absolute(), nullptr,
 		"Can't use get_node() with absolute paths from outside the active scene tree.");
 
 	Node* current = nullptr;
@@ -1055,7 +1057,7 @@ bool Node::is_ancestor_of(const Node* rp_node) const
 {
 	const Node* n = rp_node;
 
-	if (is_inside_tree() && rp_node->data.tree == data.tree) {
+	if (is_inside_tree() && rp_node->data.inside_tree) {
 		const int depth = data.depth;
 		while (n->data.depth > depth) {
 			n = n->data.parent;
@@ -1078,7 +1080,7 @@ bool Node::is_greater_than(const Node* rp_node) const
 {
 	// parent->get_child(1) > parent->get_child(0) > parent
 
-	ERR_FAIL_COND_V(!data.tree, false);
+	ERR_FAIL_COND_V(!data.inside_tree, false);
 	ERR_FAIL_COND_V(data.depth < 0, false);
 
 	_update_children_cache();
@@ -1369,8 +1371,8 @@ void Node::add_to_group(const String& p_identifier, bool p_persistent)
 
 	GroupData gd;
 
-	if (data.tree) {
-		gd.group = data.tree->add_to_group(p_identifier, this);
+	if (data.inside_tree) {
+		gd.group = SceneTree::add_to_group(p_identifier, this);
 	}
 	else {
 		gd.group = nullptr;
@@ -1397,8 +1399,8 @@ void Node::remove_from_group(const String& p_identifier)
 	bool persistent = E->value.persistent;
 #endif
 
-	if (data.tree) {
-		data.tree->remove_from_group(E->key, this);
+	if (data.inside_tree) {
+		SceneTree::remove_from_group(E->key, this);
 	}
 
 	data.grouped.remove(E);
@@ -1479,13 +1481,10 @@ Tween* Node::create_tween()
 {
 	ERR_THREAD_GUARD_V(Ref<Tween>().ptr());
 
-	SceneTree* tree = data.tree;
-	if (!tree) {
-		tree = SceneTree::get_singleton();
-	}
-	ERR_FAIL_NULL_V_MSG(tree, Ref<Tween>().ptr(), "No available SceneTree to create the Tween.");
+	ERR_FAIL_COND_V_MSG(!SceneTree::is_initialized(), Ref<Tween>().ptr(),
+		"No available SceneTree to create the Tween.");
 
-	Ref<Tween> tween = tree->create_tween();
+	Ref<Tween> tween = SceneTree::create_tween();
 	tween->bind_node(this);
 	return tween.ptr();
 }
@@ -1553,11 +1552,11 @@ String Node::get_property_store_alias(const String& p_property) const { return p
 
 bool Node::is_part_of_edited_scene() const
 {
-	return Engine::is_editor_hint() && is_inside_tree() && data.tree->get_edited_scene_root() &&
-		   data.tree->get_edited_scene_root()
-			   ->get_parent() && // Defend against edge cases when creating new scenes and they are
-								 // not fully added to the tree yet.
-		   data.tree->get_edited_scene_root()->get_parent()->is_ancestor_of(this);
+	Node* edited_root = SceneTree::get_edited_scene_root();
+	return Engine::is_editor_hint() && is_inside_tree() && edited_root &&
+		   edited_root->get_parent() && // Defend against edge cases when creating new scenes and
+										// they are not fully added to the tree yet.
+		   edited_root->get_parent()->is_ancestor_of(this);
 }
 #endif
 
@@ -1664,35 +1663,29 @@ bool Node::has_node_and_resource(const NodePath& p_path) const
 	return node;
 }
 
-void Node::_set_tree(SceneTree* p_tree)
+void Node::_set_tree(bool p_in_tree)
 {
-	SceneTree* tree_changed_a = nullptr;
-	SceneTree* tree_changed_b = nullptr;
+	bool tree_changed_a = false;
+	bool tree_changed_b = false;
 
-	// ERR_FAIL_COND(p_scene && data.parent && !data.parent->data.scene); //nobug if both are null
-
-	if (data.tree) {
+	if (data.inside_tree) {
 		_propagate_exit_tree();
-
-		tree_changed_a = data.tree;
+		tree_changed_a = true;
 	}
 
-	data.tree = p_tree;
-
-	if (data.tree) {
+	if (p_in_tree) {
 		_propagate_enter_tree();
 		if (!data.parent || data.parent->data.ready_notified) { // No parent (root) or parent ready
 			_propagate_ready(); // reverse_notification(NOTIFICATION_READY);
 		}
-
-		tree_changed_b = data.tree;
+		tree_changed_b = true;
 	}
 
-	if (tree_changed_a) {
-		tree_changed_a->tree_changed();
+	if (tree_changed_a && SceneTree::is_initialized()) {
+		SceneTree::tree_changed();
 	}
-	if (tree_changed_b) {
-		tree_changed_b->tree_changed();
+	if (tree_changed_b && SceneTree::is_initialized()) {
+		SceneTree::tree_changed();
 	}
 }
 
@@ -1787,7 +1780,7 @@ Transform2D Node::get_accessibility_transform() const
 void Node::queue_accessibility_update()
 {
 	if (is_inside_tree() && !is_part_of_edited_scene()) {
-		data.tree->_accessibility_notify_change(this);
+		SceneTree::_accessibility_notify_change(this);
 	}
 }
 
@@ -1828,7 +1821,7 @@ Node::Node()
 	data.name = String();
 	data.parent = nullptr;
 	data.owner = nullptr;
-	data.tree = SceneTree::get_singleton(); // Fallback so standalone nodes have tree context
+	data.inside_tree = false;
 	data.viewport = nullptr;
 	data.depth = -1;
 	data.index = -1;
@@ -1904,8 +1897,10 @@ void Node::_propagate_pause_notification(bool) {}
 void Node::_propagate_enter_tree()
 {
 	if (data.parent) {
-		data.tree = data.parent->data.tree;
 		data.depth = data.parent->data.depth + 1;
+	}
+	else {
+		data.depth = 1;
 	}
 
 	data.inside_tree = true;
@@ -1955,7 +1950,6 @@ void Node::_propagate_exit_tree()
 
     data.inside_tree = false;
     data.ready_notified = false;
-    data.tree = nullptr;
     data.depth = -1;
 }
 
@@ -2010,10 +2004,10 @@ void Node::_notification(int p_what)
 		// Virtual process hook if used
 	} break;
 	case NOTIFICATION_ENTER_TREE: {
-		ERR_FAIL_NULL(data.tree);
+		ERR_FAIL_COND(!data.inside_tree);
 	} break;
 	case NOTIFICATION_EXIT_TREE: {
-		ERR_FAIL_NULL(data.tree);
+		ERR_FAIL_COND(!data.inside_tree);
 	} break;
 	case NOTIFICATION_READY: {
 		// Ready hook
@@ -2044,8 +2038,8 @@ void Node::_add_child_nocheck(Node* p_child, const String& p_name, InternalMode 
 	data.children_cache_dirty = true;
 
 	// If parent is already in the tree, bring the new child (and its subtree) into the tree!
-	if (data.tree) {
-		p_child->_set_tree(data.tree);
+	if (data.inside_tree) {
+		p_child->_set_tree(true);
 	}
 
 	notification(NOTIFICATION_CHILD_ORDER_CHANGED);

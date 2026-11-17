@@ -33,12 +33,24 @@
 
 bool s_quit_requested = false;
 
-void MainLoop::finalize() {}
+void MainLoop::reset_backend()
+{
+	initialize = &_default_initialize;
+	iteration_prepare = &_default_iteration_prepare;
+	physics_process = &_default_physics_process;
+	iteration_end = &_default_iteration_end;
+	process = &_default_process;
+	finalize = &_default_finalize;
+	notification = &_default_notification;
+	destroy = &_default_destroy;
+	_active = false;
+}
 
-void MainLoop::initialize() {}
-
-bool MainLoop::physics_process(double p_time) { return false; }
-
-bool MainLoop::process(double p_time) { return false; }
-
-
+void MainLoop::clear()
+{
+	void (*destroy_fn)() = destroy;
+	reset_backend();
+	if (destroy_fn) {
+		destroy_fn();
+	}
+}

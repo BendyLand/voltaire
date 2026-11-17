@@ -274,8 +274,6 @@ Error ResourceFormatLoaderText::rename_dependencies(
 	return err;
 }
 
-ResourceFormatLoaderText* ResourceFormatLoaderText::singleton = nullptr;
-
 String ResourceFormatSaverTextInstance::_write_resources(void* ud, const Ref<Resource>& p_resource)
 {
 	ResourceFormatSaverTextInstance* rsi = static_cast<ResourceFormatSaverTextInstance*>(ud);
@@ -377,10 +375,6 @@ void ResourceFormatSaverText::get_recognized_extensions(
 		p_extensions->push_back("tres"); // Text resource.
 	}
 }
-
-ResourceFormatSaverText* ResourceFormatSaverText::singleton = nullptr;
-
-ResourceFormatSaverText::ResourceFormatSaverText() { singleton = this; }
 
 void ResourceLoaderText::open(Ref<FileAccess>, bool) {}
 

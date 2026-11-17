@@ -170,7 +170,7 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 
 	// Update those quadrants.
 	bool needs_set_not_interpolated = is_inside_tree() &&
-									  get_tree()->is_physics_interpolation_enabled() &&
+									  SceneTree::is_physics_interpolation_enabled() &&
 									  !is_physics_interpolated();
 	for (const Vector2i& quadrant_coords : quadrants_to_updates) {
 		Ref<DebugQuadrant> debug_quadrant = debug_quadrant_map[quadrant_coords];

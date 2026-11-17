@@ -65,7 +65,6 @@ protected:
 #ifdef SDL_ENABLED
 	JoypadSDL *joypad_sdl = nullptr;
 #endif
-	MainLoop *main_loop = nullptr;
 	CFRunLoopTimerRef wait_timer = nil;
 
 	virtual void initialize_core() override;
@@ -74,8 +73,7 @@ protected:
 
 	virtual void initialize_joypads() override;
 
-	virtual void set_main_loop(MainLoop *p_main_loop) override;
-	virtual void delete_main_loop() override;
+	void delete_main_loop();
 
 public:
 	static inline const char *headless_args[] = {
@@ -110,8 +108,6 @@ public:
 	virtual void alert(const String &p_alert, const String &p_title = "ALERT!") override;
 
 	virtual Error open_dynamic_library(const String &p_path, void *&p_library_handle, GDExtensionData *p_data = nullptr) override;
-
-	virtual MainLoop *get_main_loop() const override;
 
 	virtual String get_config_path() const override;
 	virtual String get_data_path() const override;

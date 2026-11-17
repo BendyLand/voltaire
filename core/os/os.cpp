@@ -35,6 +35,7 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/json.h"
+#include "core/os/main_loop.h"
 #include "core/os/midi_driver.h"
 #include "core/version_generated.gen.h"
 #include "os.h"
@@ -58,6 +59,8 @@ bool OS::prefer_meta_over_ctrl()
 	return false;
 #endif
 }
+
+void OS::delete_main_loop() { MainLoop::clear(); }
 
 uint64_t OS::get_ticks_msec() { return get_ticks_usec() / 1000ULL; }
 

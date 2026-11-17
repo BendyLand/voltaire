@@ -146,15 +146,8 @@ void OS_Android::initialize_joypads() {
 	godot_java->init_input_devices();
 }
 
-void OS_Android::set_main_loop(MainLoop *p_main_loop) {
-	main_loop = p_main_loop;
-}
-
 void OS_Android::delete_main_loop() {
-	if (main_loop) {
-		memdelete(main_loop);
-		main_loop = nullptr;
-	}
+	MainLoop::clear();
 }
 
 void OS_Android::finalize() {
@@ -353,13 +346,9 @@ String OS_Android::get_version_alias() const {
 	return vformat("%s (SDK %s build %s)", release, sdk_version, build);
 }
 
-MainLoop *OS_Android::get_main_loop() const {
-	return main_loop;
-}
-
 void OS_Android::main_loop_begin() {
-	if (main_loop) {
-		main_loop->initialize();
+	if (MainLoop::is_active()) {
+		MainLoop::initialize();
 	}
 
 #ifdef TOOLS_ENABLED
@@ -379,7 +368,7 @@ void OS_Android::main_loop_begin() {
 bool OS_Android::main_loop_iterate(bool *r_should_swap_buffers) {
 	GodotProfileFrameMark;
 	GodotProfileZone("OS_Android::main_loop_iterate");
-	if (!main_loop) {
+	if (!MainLoop::is_active()) {
 		return false;
 	}
 	DisplayServerAndroid::get_singleton()->reset_swap_buffers_flag();
@@ -411,12 +400,11 @@ void OS_Android::main_loop_end() {
 	}
 #endif
 
-	if (main_loop) {
-		SceneTree *scene_tree = Object::cast_to<SceneTree>(main_loop);
-		if (scene_tree) {
-			scene_tree->quit();
+	if (MainLoop::is_active()) {
+		if (SceneTree::is_initialized()) {
+			SceneTree::quit();
 		}
-		main_loop->finalize();
+		MainLoop::finalize();
 	}
 }
 
@@ -436,8 +424,8 @@ void OS_Android::_on_distraction_free_mode_changed(bool p_enable) {
 
 void OS_Android::main_loop_focusout() {
 	DisplayServerAndroid::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
-	if (OS::get_main_loop()) {
-		OS::get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
 	}
 
 	// Only pause when we are not in PiP mode.
@@ -446,8 +434,8 @@ void OS_Android::main_loop_focusout() {
 
 void OS_Android::main_loop_focusin() {
 	DisplayServerAndroid::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
-	if (OS::get_main_loop()) {
-		OS::get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
 	}
 	audio_driver_android.set_pause(false);
 }
@@ -919,7 +907,6 @@ OS_Android::OS_Android(GodotJavaWrapper *p_godot_java, GodotIOJavaWrapper *p_god
 
 	use_apk_expansion = p_use_apk_expansion;
 
-	main_loop = nullptr;
 
 #if defined(GLES3_ENABLED)
 	gl_extensions = nullptr;

@@ -83,8 +83,7 @@ Vector2 CollisionShape2D::get_one_way_collision_direction() const
 
 Color CollisionShape2D::_get_default_debug_color() const
 {
-	const SceneTree* st = SceneTree::get_singleton();
-	return st ? st->get_debug_collisions_color() : Color(0.0, 0.0, 0.0, 0.0);
+	return SceneTree::get_debug_collisions_color();
 }
 
 Color CollisionShape2D::get_debug_color() const { return debug_color; }

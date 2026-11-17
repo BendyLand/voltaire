@@ -85,9 +85,9 @@ TEST_CASE("[SceneTree][SpinBox] Prefix and suffix in line edit text") {
 	spin->set_suffix("deg");
 	spin->set_value(42.0);
 
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(spin);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	LineEdit *le = spin->get_line_edit();
 	const String t = le->get_text();
@@ -122,7 +122,7 @@ TEST_CASE("[SceneTree][SpinBox] update_on_text_changed toggle") {
 	CHECK_FALSE(spin->get_update_on_text_changed());
 	spin->set_update_on_text_changed(true);
 	CHECK(spin->get_update_on_text_changed());
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 	spin->set_update_on_text_changed(false);
 	CHECK_FALSE(spin->get_update_on_text_changed());
 
@@ -162,9 +162,9 @@ TEST_CASE("[SceneTree][SpinBox] Custom arrow step and round getters") {
 
 TEST_CASE("[SceneTree][SpinBox] Combined minimum size in tree") {
 	SpinBox *spin = memnew(SpinBox);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(spin);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	const Size2 cms = spin->get_combined_minimum_size();
 	CHECK(cms.width > 0);

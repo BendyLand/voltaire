@@ -425,7 +425,7 @@ HashMap<String, bool> ThemeTypeEditor::_get_type_items(
 		if (default_type.is_empty()) {
 			// If variation base was not found in the edited theme, look in the default theme.
 			const String variation_base =
-				ThemeDB::get_singleton()->get_default_theme()->get_type_variation_base(p_type_name);
+				ThemeDB::get_default_theme()->get_type_variation_base(p_type_name);
 			if (variation_base != String()) {
 				default_type = variation_base;
 			}
@@ -436,7 +436,7 @@ HashMap<String, bool> ThemeTypeEditor::_get_type_items(
 		}
 
 		List<ThemeDB::ThemeItemBind> theme_binds;
-		ThemeDB::get_singleton()->get_class_items(default_type, &theme_binds, true, p_type);
+		ThemeDB::get_class_items(default_type, &theme_binds, true, p_type);
 		for (const ThemeDB::ThemeItemBind& E : theme_binds) {
 			names.push_back(E.item_name);
 		}

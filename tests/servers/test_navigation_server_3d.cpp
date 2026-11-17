@@ -620,7 +620,7 @@ TEST_SUITE("[Navigation3D]")
 
 		// Prepare scene tree with simple mesh to serve as an input geometry.
 		Node3D* node_3d = memnew(Node3D);
-		SceneTree::get_singleton()->get_root()->add_child(node_3d);
+		SceneTree::get_root()->add_child(node_3d);
 		Ref<PlaneMesh> plane_mesh = memnew(PlaneMesh);
 		plane_mesh->set_size(Size2(10.0, 10.0));
 		MeshInstance3D* mesh_instance = memnew(MeshInstance3D);
@@ -674,7 +674,7 @@ TEST_SUITE("[Navigation3D]")
 
 		// Prepare scene tree with simple mesh to serve as an input geometry.
 		Node3D* node_3d = memnew(Node3D);
-		SceneTree::get_singleton()->get_root()->add_child(node_3d);
+		SceneTree::get_root()->add_child(node_3d);
 		Ref<PlaneMesh> plane_mesh = memnew(PlaneMesh);
 		plane_mesh->set_size(Size2(10.0, 10.0));
 		MeshInstance3D* mesh_instance = memnew(MeshInstance3D);
@@ -726,7 +726,7 @@ TEST_SUITE("[Navigation3D]")
 
 		// Prepare scene tree with simple mesh to serve as an input geometry.
 		Node3D* node_3d = memnew(Node3D);
-		SceneTree::get_singleton()->get_root()->add_child(node_3d);
+		SceneTree::get_root()->add_child(node_3d);
 		Ref<PlaneMesh> plane_mesh = memnew(PlaneMesh);
 		plane_mesh->set_size(Size2(10.0, 10.0));
 		MeshInstance3D* mesh_instance = memnew(MeshInstance3D);

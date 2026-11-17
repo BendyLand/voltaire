@@ -106,7 +106,7 @@ void EditorAssetLibraryZoomMode::input(const Ref<InputEvent>& p_event)
 	}
 
 	// Block inputs from going elsewhere.
-	get_tree()->get_root()->set_input_as_handled();
+	SceneTree::get_root()->set_input_as_handled();
 }
 
 void EditorAssetLibraryItemDescription::_store_pressed()
@@ -124,7 +124,7 @@ void EditorAssetLibraryItemDescription::_zoom_toggled(bool p_pressed)
 	if (p_pressed) {
 		root->remove_child(previews_vbox);
 		zoom_mode = memnew(EditorAssetLibraryZoomMode(previews_vbox));
-		get_tree()->get_root()->add_child(zoom_mode);
+		SceneTree::get_root()->add_child(zoom_mode);
 		hide();
 	}
 	else {

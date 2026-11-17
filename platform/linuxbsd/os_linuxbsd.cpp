@@ -179,8 +179,6 @@ void OS_LinuxBSD::initialize()
 {
 	OS_Unix::initialize();
 
-	main_loop = nullptr;
-
 #ifdef PULSEAUDIO_ENABLED
 	AudioDriverManager::add_driver(&driver_pulseaudio);
 #endif
@@ -343,8 +341,7 @@ bool OS_LinuxBSD::is_sandboxed()
 
 void OS_LinuxBSD::finalize_core()
 {
-	memdelete(main_loop);
-	main_loop = nullptr;
+	MainLoop::clear();
 
 #ifdef ALSAMIDI_ENABLED
 	MIDIDriver::finalize();
@@ -356,15 +353,7 @@ void OS_LinuxBSD::finalize_core()
 #endif
 }
 
-MainLoop* OS_LinuxBSD::get_main_loop() { return main_loop; }
-
-void OS_LinuxBSD::delete_main_loop()
-{
-	memdelete(main_loop);
-	main_loop = nullptr;
-}
-
-void OS_LinuxBSD::set_main_loop(MainLoop* p_main_loop) { main_loop = p_main_loop; }
+void OS_LinuxBSD::delete_main_loop() { MainLoop::clear(); }
 
 String OS_LinuxBSD::get_identifier() { return "linuxbsd"; }
 
@@ -1439,7 +1428,7 @@ bool OS_LinuxBSD::_test_create_rendering_device(const String& p_display_driver)
 
 void OS_LinuxBSD::run()
 {
-	if (!main_loop) {
+	if (!MainLoop::is_active()) {
 		return;
 	}
 
@@ -1453,7 +1442,7 @@ void OS_LinuxBSD::run()
 		}
 	}
 
-	main_loop->finalize();
+	MainLoop::finalize();
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1556,22 +1545,6 @@ List<String> OS::get_cmdline_platform_args()
 bool OS::_check_internal_feature_support(const String& p_feature)
 {
 	return OS_LinuxBSD::_check_internal_feature_support(p_feature);
-}
-
-// Main Loop & Lifecycle
-void OS::set_main_loop(MainLoop* p_main_loop)
-{
-	OS_LinuxBSD::set_main_loop(p_main_loop);
-}
-
-MainLoop* OS::get_main_loop()
-{
-	return OS_LinuxBSD::get_main_loop();
-}
-
-void OS::delete_main_loop()
-{
-	OS_LinuxBSD::delete_main_loop();
 }
 
 void OS::finalize_core()

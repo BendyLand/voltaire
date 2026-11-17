@@ -165,12 +165,14 @@ extern EMSCRIPTEN_KEEPALIVE int godot_web_main(int argc, char *argv[]) {
 
 	int ret = Main::start();
 	os->set_exit_code(ret);
-	os->get_main_loop()->initialize();
+	MainLoop::initialize();
 #ifdef TOOLS_ENABLED
 	if (Engine::is_project_manager_hint() && FileAccess::exists("/tmp/preload.zip")) {
 		PackedStringArray ps;
 		ps.push_back("/tmp/preload.zip");
-		SceneTree::get_singleton()->get_root()->emit_signal(SNAME("files_dropped"), ps);
+		if (SceneTree::get_root()) {
+			SceneTree::get_root()->emit_signal(SNAME("files_dropped"), ps);
+		}
 	}
 #endif
 	emscripten_set_main_loop(main_loop_callback, -1, false);

@@ -107,7 +107,7 @@ void CreditsRoll::_visibility_changed()
 void CreditsRoll::input(const Ref<InputEvent>& p_event)
 {
 	// Block inputs from going elsewhere while the credits roll.
-	get_tree()->get_root()->set_input_as_handled();
+	SceneTree::get_root()->set_input_as_handled();
 }
 
 CreditsRoll::CreditsRoll()

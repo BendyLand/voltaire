@@ -173,7 +173,7 @@ TEST_CASE("[SceneTree][Camera2D] Camera positioning") {
 	Camera2D *test_camera = memnew(Camera2D);
 
 	mock_viewport->set_size(Vector2(400, 200));
-	SceneTree::get_singleton()->get_root()->add_child(mock_viewport);
+	SceneTree::get_root()->add_child(mock_viewport);
 	mock_viewport->add_child(test_camera);
 
 	SUBCASE("Anchor mode") {
@@ -260,7 +260,7 @@ TEST_CASE("[SceneTree][Camera2D] Transforms") {
 	Camera2D *test_camera = memnew(Camera2D);
 
 	mock_viewport->set_size(Vector2(400, 200));
-	SceneTree::get_singleton()->get_root()->add_child(mock_viewport);
+	SceneTree::get_root()->add_child(mock_viewport);
 	mock_viewport->add_child(test_camera);
 
 	SUBCASE("Default camera") {

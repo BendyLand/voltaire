@@ -800,7 +800,7 @@ void Window::set_force_native(bool p_force_native)
 	}
 	force_native = p_force_native;
 	if (!is_in_edited_scene_root() && is_inside_tree() &&
-		get_tree()->get_root()->is_embedding_subwindows()) {
+		SceneTree::get_root()->is_embedding_subwindows()) {
 		set_embedding_subwindows(force_native);
 	}
 }
@@ -1680,7 +1680,7 @@ Viewport* Window::get_section_root_viewport() const
 	}
 	if (is_inside_tree()) {
 		// Native window.
-		return SceneTree::get_singleton()->get_root();
+		return SceneTree::get_root();
 	}
 	Window* vp = const_cast<Window*>(this);
 	return vp;

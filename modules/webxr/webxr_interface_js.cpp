@@ -862,12 +862,14 @@ void WebXRInterfaceJS::_on_input_event(int p_event_type, int p_input_source_id) 
 }
 
 Vector2 WebXRInterfaceJS::_get_screen_position_from_joy_vector(const Vector2 &p_joy_vector) {
-	SceneTree *scene_tree = Object::cast_to<SceneTree>(OS::get_main_loop());
-	if (!scene_tree) {
+	if (!SceneTree::is_initialized()) {
 		return Vector2();
 	}
 
-	Window *viewport = scene_tree->get_root();
+	Window *viewport = SceneTree::get_root();
+	if (!viewport) {
+		return Vector2();
+	}
 
 	Vector2 position_percentage((p_joy_vector.x + 1.0f) / 2.0f, ((p_joy_vector.y) + 1.0f) / 2.0f);
 	Vector2 position = (Size2)viewport->get_size() * position_percentage;

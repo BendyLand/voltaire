@@ -40,7 +40,6 @@
 
 class OS_Web : public OS_Unix
 {
-	MainLoop* main_loop = nullptr;
 	List<AudioDriverWeb*> audio_drivers;
 
 	bool idb_is_syncing = false;
@@ -58,8 +57,7 @@ class OS_Web : public OS_Unix
 protected:
 	void initialize() override;
 
-	void set_main_loop(MainLoop* p_main_loop) override;
-	void delete_main_loop() override;
+	void delete_main_loop();
 
 	void finalize() override;
 
@@ -76,7 +74,6 @@ public:
 
 	void initialize_joypads() override;
 
-	MainLoop* get_main_loop() const override;
 	bool main_loop_iterate();
 
 	Error execute(const String& p_path, const List<String>& p_arguments, String* r_pipe = nullptr,

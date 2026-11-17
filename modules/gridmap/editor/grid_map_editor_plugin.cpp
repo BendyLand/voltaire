@@ -234,7 +234,7 @@ void GridMapEditor::_set_clipboard_data()
 
 	Ref<MeshLibrary> meshLibrary = node->get_mesh_library();
 
-	const RID scenario = get_tree()->get_root()->get_world_3d()->get_scenario();
+	const RID scenario = SceneTree::get_root()->get_world_3d()->get_scenario();
 
 	for (int i = selection.begin.x; i <= selection.end.x; i++) {
 		for (int j = selection.begin.y; j <= selection.end.y; j++) {

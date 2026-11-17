@@ -45,7 +45,7 @@ namespace TestTabBar {
 
 TEST_CASE("[SceneTree][TabBar] tab operations") {
 	TabBar *tab_bar = memnew(TabBar);
-	SceneTree::get_singleton()->get_root()->add_child(tab_bar);
+	SceneTree::get_root()->add_child(tab_bar);
 	tab_bar->set_clip_tabs(false);
 	MessageQueue::get_singleton()->flush();
 
@@ -703,7 +703,7 @@ TEST_CASE("[SceneTree][TabBar] initialization") {
 		SIGNAL_CHECK_FALSE("tab_selected");
 		SIGNAL_CHECK_FALSE("tab_changed");
 
-		SceneTree::get_singleton()->get_root()->add_child(tab_bar);
+		SceneTree::get_root()->add_child(tab_bar);
 		MessageQueue::get_singleton()->flush();
 		CHECK(tab_bar->get_tab_count() == 0);
 		CHECK(tab_bar->get_current_tab() == -1);
@@ -728,7 +728,7 @@ TEST_CASE("[SceneTree][TabBar] initialization") {
 
 TEST_CASE("[SceneTree][TabBar] layout and offset") {
 	TabBar *tab_bar = memnew(TabBar);
-	SceneTree::get_singleton()->get_root()->add_child(tab_bar);
+	SceneTree::get_root()->add_child(tab_bar);
 
 	tab_bar->set_clip_tabs(false);
 	tab_bar->add_tab("tab0");
@@ -874,7 +874,7 @@ TEST_CASE("[SceneTree][TabBar] layout and offset") {
 
 TEST_CASE("[SceneTree][TabBar] Mouse interaction") {
 	TabBar *tab_bar = memnew(TabBar);
-	SceneTree::get_singleton()->get_root()->add_child(tab_bar);
+	SceneTree::get_root()->add_child(tab_bar);
 
 	tab_bar->set_clip_tabs(false);
 	tab_bar->add_tab("tab0");
@@ -1039,7 +1039,7 @@ TEST_CASE("[SceneTree][TabBar] Mouse interaction") {
 
 	SUBCASE("[TabBar] Drag and drop to different TabBar") {
 		TabBar *target_tab_bar = memnew(TabBar);
-		SceneTree::get_singleton()->get_root()->add_child(target_tab_bar);
+		SceneTree::get_root()->add_child(target_tab_bar);
 
 		target_tab_bar->set_clip_tabs(false);
 		target_tab_bar->add_tab("other_tab0");

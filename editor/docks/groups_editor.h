@@ -54,7 +54,6 @@ class GroupsEditor : public VBoxContainer
 
 	LocalVector<Node*> selection;
 	Node* scene_root_node = nullptr;
-	SceneTree* scene_tree = nullptr;
 
 	ConfirmationDialog* add_group_dialog = nullptr;
 	LineEdit* add_group_name = nullptr;

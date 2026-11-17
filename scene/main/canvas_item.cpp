@@ -783,8 +783,8 @@ void CanvasItem::draw_char_outline(Font* rp_font, const Point2& p_pos, const Str
 
 void CanvasItem::_notify_transform_deferred()
 {
-	if (is_inside_tree() && notify_transform && !xform_change.in_list()) {
-		get_tree()->xform_change_list.add(&xform_change);
+	if (is_inside_tree() && notify_transform && !xform_change.in_list() && SceneTree::data) {
+		SceneTree::data->xform_change_list.add(&xform_change);
 	}
 }
 

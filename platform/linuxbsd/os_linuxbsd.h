@@ -77,7 +77,6 @@ private:
 #endif
 
 	static inline CrashHandler crash_handler;
-	static inline MainLoop* main_loop = nullptr;
 
 	static String get_systemd_os_release_info_value(const String& key);
 
@@ -96,9 +95,7 @@ public:
 
 	static void initialize_joypads();
 
-	static void set_main_loop(MainLoop* p_main_loop);
 	static void delete_main_loop();
-	static MainLoop* get_main_loop();
 
 	static String get_identifier();
 	static String get_name();

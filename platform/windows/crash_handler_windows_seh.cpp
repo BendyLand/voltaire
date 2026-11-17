@@ -137,8 +137,8 @@ DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
 	}
 
 	// Tell MainLoop about the crash. This can be handled by users too in Node.
-	if (OS::get_main_loop()) {
-		OS::get_main_loop()->notification(MainLoop::NOTIFICATION_CRASH);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_CRASH);
 	}
 
 	print_error("\n================================================================");

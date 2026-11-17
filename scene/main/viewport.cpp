@@ -673,7 +673,7 @@ Viewport::PositionalShadowAtlasQuadrantSubdiv Viewport::get_positional_shadow_at
 Vector2 Viewport::get_mouse_position() const
 {
 	ERR_READ_THREAD_GUARD_V(Vector2());
-	if (get_section_root_viewport() != SceneTree::get_singleton()->get_root()) {
+	if (get_section_root_viewport() != SceneTree::get_root()) {
 		// Rely on the most recent mouse coordinate from an InputEventMouse in push_input.
 		// In this case get_screen_transform is not applicable, because it is ambiguous.
 		return gui.last_mouse_pos;
@@ -1277,13 +1277,13 @@ void Viewport::_update_mouse_over(const Ref<InputEventMouse>& p_mm)
 		return;
 	}
 
-	if (get_tree()->get_root()->is_embedding_subwindows() || is_sub_viewport()) {
+	if (SceneTree::get_root()->is_embedding_subwindows() || is_sub_viewport()) {
 		// Use embedder logic for calculating mouse position.
 		_update_mouse_over(p_mm->get_position());
 	}
 	else {
 		// Native Window: Use DisplayServer logic for calculating mouse position.
-		Window* receiving_window = get_tree()->get_root()->gui.windowmanager_window_over;
+		Window* receiving_window = SceneTree::get_root()->gui.windowmanager_window_over;
 		if (!receiving_window) {
 			return;
 		}
@@ -1313,8 +1313,8 @@ void Viewport::push_unhandled_input(InputEvent* rp_event, bool p_local_coords)
 		return;
 	}
 
-	if (Engine::is_editor_hint() && get_tree()->get_edited_scene_root() &&
-		get_tree()->get_edited_scene_root()->is_ancestor_of(this)) {
+	if (Engine::is_editor_hint() && SceneTree::get_edited_scene_root() &&
+		SceneTree::get_edited_scene_root()->is_ancestor_of(this)) {
 		return;
 	}
 

@@ -86,7 +86,7 @@ PackedStringArray CanvasModulate::get_configuration_warnings() const
 
 	if (is_in_canvas && is_visible_in_tree()) {
 		Vector<Node*> nodes =
-			get_tree()->get_nodes_in_group("_canvas_modulate_" + itos(get_canvas().get_id()));
+			SceneTree::get_nodes_in_group("_canvas_modulate_" + itos(get_canvas().get_id()));
 
 		if (nodes.size() > 1) {
 			warnings.push_back(

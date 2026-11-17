@@ -78,7 +78,6 @@ Transform3D make_random_transform_3d(int p_seed) {
 }
 
 TEST_CASE("[SceneTree][ConvertTransformModifier3D]") {
-	SceneTree *tree = SceneTree::get_singleton();
 	int seed = 12345;
 	Skeleton3D *skeleton = memnew(Skeleton3D);
 	ConvertTransformModifier3D *mod = memnew(ConvertTransformModifier3D);
@@ -87,7 +86,7 @@ TEST_CASE("[SceneTree][ConvertTransformModifier3D]") {
 	// force notify NOTIFICATION_UPDATE_SKELETON and get the modified pose from the BoneAttachment's transform.
 	BoneAttachment3D *modified = memnew(BoneAttachment3D);
 
-	tree->get_root()->add_child(skeleton);
+	SceneTree::get_root()->add_child(skeleton);
 
 	int root = skeleton->add_bone("root");
 	skeleton->set_bone_rest(root, make_random_transform_3d(++seed));

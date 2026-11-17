@@ -142,7 +142,7 @@ void CPUParticles2D::_refresh_interpolation_state()
 	// If project setting interpolation is ON and this particle system is in global mode,
 	// we will follow the INTERPOLATED position rather than the actual position.
 	// This is so that particles aren't generated AHEAD of the interpolated parent.
-	bool follow = !local_coords && get_tree()->is_physics_interpolation_enabled();
+	bool follow = !local_coords && SceneTree::is_physics_interpolation_enabled();
 
 	if (follow == _interpolation_data.interpolated_follow) {
 		return;

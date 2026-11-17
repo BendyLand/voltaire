@@ -61,7 +61,7 @@ Node* SceneTreeEditor::get_scene_node() const
 {
 	ERR_FAIL_COND_V(!is_inside_tree(), nullptr);
 
-	return get_tree()->get_edited_scene_root();
+	return SceneTree::get_edited_scene_root();
 }
 
 void SceneTreeEditor::_node_script_changed(Node* p_node)

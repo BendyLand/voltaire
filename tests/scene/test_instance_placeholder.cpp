@@ -108,7 +108,7 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instantiate from placeholder with no
 		InstancePlaceholder *ip = memnew(InstancePlaceholder);
 		ip->set_name("TestScene");
 		Node *root = memnew(Node);
-		SceneTree::get_singleton()->get_root()->add_child(root);
+		SceneTree::get_root()->add_child(root);
 
 		root->add_child(ip);
 		// Create a scene to instance.
@@ -134,7 +134,7 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instantiate from placeholder with no
 		InstancePlaceholder *ip = memnew(InstancePlaceholder);
 		ip->set_name("TestScene");
 		Node *root = memnew(Node);
-		SceneTree::get_singleton()->get_root()->add_child(root);
+		SceneTree::get_root()->add_child(root);
 
 		root->add_child(ip);
 		// Create a scene to instance.
@@ -164,7 +164,7 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instantiate from placeholder with no
 		InstancePlaceholder *ip = memnew(InstancePlaceholder);
 		ip->set_name("TestScene");
 		Node *root = memnew(Node);
-		SceneTree::get_singleton()->get_root()->add_child(root);
+		SceneTree::get_root()->add_child(root);
 
 		root->add_child(ip);
 		// Create a scene to instance.
@@ -215,7 +215,7 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instantiate from placeholder with ov
 	SUBCASE("with non-node values") {
 		InstancePlaceholder *ip = memnew(InstancePlaceholder);
 		Node *root = memnew(Node);
-		SceneTree::get_singleton()->get_root()->add_child(root);
+		SceneTree::get_root()->add_child(root);
 
 		root->add_child(ip);
 		ip->set_name("TestScene");
@@ -242,7 +242,7 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instantiate from placeholder with ov
 		ip->set_name("TestScene");
 		Node *root = memnew(Node);
 		Node *overriding = memnew(Node);
-		SceneTree::get_singleton()->get_root()->add_child(root);
+		SceneTree::get_root()->add_child(root);
 
 		root->add_child(ip);
 		root->add_child(overriding);
@@ -274,7 +274,7 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instantiate from placeholder with ov
 		InstancePlaceholder *ip = memnew(InstancePlaceholder);
 		ip->set_name("TestScene");
 		Node *root = memnew(Node);
-		SceneTree::get_singleton()->get_root()->add_child(root);
+		SceneTree::get_root()->add_child(root);
 
 		Node *override1 = memnew(Node);
 		Node *override2 = memnew(Node);
@@ -395,7 +395,7 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instance a PackedScene containing an
 
 	Node *instanced_main_node = main_scene_loaded->instantiate();
 	REQUIRE(instanced_main_node != nullptr);
-	SceneTree::get_singleton()->get_root()->add_child(instanced_main_node);
+	SceneTree::get_root()->add_child(instanced_main_node);
 	CHECK(instanced_main_node->get_name() == "MainNode");
 	REQUIRE(instanced_main_node->get_child_count() == 2);
 	InstancePlaceholder *instanced_placeholder = Object::cast_to<InstancePlaceholder>(instanced_main_node->get_child(0, true));
@@ -496,7 +496,7 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instance a PackedScene containing an
 
 	Node *instanced_main_node = main_scene_loaded->instantiate();
 	REQUIRE(instanced_main_node != nullptr);
-	SceneTree::get_singleton()->get_root()->add_child(instanced_main_node);
+	SceneTree::get_root()->add_child(instanced_main_node);
 	CHECK(instanced_main_node->get_name() == "MainNode");
 	REQUIRE(instanced_main_node->get_child_count() == 3);
 	InstancePlaceholder *instanced_placeholder = Object::cast_to<InstancePlaceholder>(instanced_main_node->get_child(0, true));

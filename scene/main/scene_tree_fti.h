@@ -46,16 +46,35 @@ class SceneTreeFTITests;
 
 #ifdef _3D_DISABLED
 // Stubs
-class SceneTreeFTI {
+class SceneTreeFTI final
+{
 public:
-	void frame_update(Node *p_root, bool p_frame_start) {}
-	void tick_update() {}
-	void set_enabled(Node *p_root, bool p_enabled) {}
-	bool is_enabled() const { return false; }
+	SceneTreeFTI() = delete;
 
-	void node_3d_notify_changed(Node3D &r_node, bool p_transform_changed) {}
-	void node_3d_notify_delete(Node3D *p_node) {}
-	void node_3d_request_reset(Node3D *p_node) {}
+	static void initialize() {}
+	static void finalize() {}
+	_FORCE_INLINE_ static bool is_initialized() { return true; }
+
+	static void frame_update(Node* p_root, bool p_frame_start)
+	{
+		(void)p_root;
+		(void)p_frame_start;
+	}
+	static void tick_update() {}
+	static void set_enabled(Node* p_root, bool p_enabled)
+	{
+		(void)p_root;
+		(void)p_enabled;
+	}
+	static bool is_enabled() { return false; }
+
+	static void node_3d_notify_changed(Node3D& r_node, bool p_transform_changed)
+	{
+		(void)r_node;
+		(void)p_transform_changed;
+	}
+	static void node_3d_notify_delete(Node3D* p_node) { (void)p_node; }
+	static void node_3d_request_reset(Node3D* p_node) { (void)p_node; }
 };
 #else
 
@@ -63,37 +82,36 @@ public:
 // This class uses raw pointers, so it is essential that on deletion, this class is notified
 // so that any references can be cleared up to prevent dangling pointer access.
 
-// This class can be used from a custom SceneTree.
-
-// Note we could potentially make SceneTreeFTI static / global to avoid the lookup through scene tree,
-// but this covers the custom case of multiple scene trees.
-
-class SceneTreeFTI {
+class SceneTreeFTI final
+{
 	friend class SceneTreeFTITests;
 
-	enum TraversalMode : unsigned {
+public:
+	enum TraversalMode : unsigned
+	{
 		TM_DEFAULT,
 		TM_LEGACY,
 		TM_DEBUG,
 	};
 
-	struct Data {
+	struct Data
+	{
 		static const uint32_t scene_tree_depth_limit = 48;
 
 		// Prev / Curr lists of Node3Ds having local xforms pumped.
-		LocalVector<Node3D *> tick_xform_list[2];
+		LocalVector<Node3D*> tick_xform_list[2];
 
 		// The frame lists are changed nodes that need to start traversal,
 		// either longterm (on the tick list) or single frame forced.
-		LocalVector<Node3D *> frame_xform_list;
-		LocalVector<Node3D *> frame_xform_list_forced;
+		LocalVector<Node3D*> frame_xform_list;
+		LocalVector<Node3D*> frame_xform_list_forced;
 
 		// Prev / Curr lists of Node3Ds having actively interpolated properties.
-		LocalVector<Node3D *> tick_property_list[2];
+		LocalVector<Node3D*> tick_property_list[2];
 
-		LocalVector<Node3D *> frame_property_list;
-		LocalVector<Node3D *> request_reset_list;
-		LocalVector<Node3D *> dirty_node_depth_lists[scene_tree_depth_limit];
+		LocalVector<Node3D*> frame_property_list;
+		LocalVector<Node3D*> request_reset_list;
+		LocalVector<Node3D*> dirty_node_depth_lists[scene_tree_depth_limit];
 
 		// When we are using two alternating lists,
 		// which one is current.
@@ -118,59 +136,71 @@ class SceneTreeFTI {
 		uint32_t debug_node_count = 0;
 		uint32_t debug_nodes_processed = 0;
 
-	} data;
-
 #ifdef GODOT_SCENE_TREE_FTI_VERIFY
-	SceneTreeFTITests *_tests = nullptr;
+		SceneTreeFTITests* _tests = nullptr;
 #endif
+	};
 
-	void _update_dirty_nodes(Node *p_node, uint32_t p_current_half_frame, float p_interpolation_fraction, bool p_active, const Transform3D *p_parent_global_xform = nullptr, int p_depth = 0);
-	void _update_request_resets();
+	static inline Data* data = nullptr;
 
-	void _reset_flags(Node *p_node);
-	void _reset_node3d_flags(Node3D &r_node);
-	void _node_3d_notify_set_xform(Node3D &r_node);
-	void _node_3d_notify_set_property(Node3D &r_node);
+private:
+	static void _update_dirty_nodes(Node* p_node, uint32_t p_current_half_frame,
+		float p_interpolation_fraction, bool p_active,
+		const Transform3D* p_parent_global_xform = nullptr, int p_depth = 0);
+	static void _update_request_resets();
 
-	void _node_add_to_frame_list(Node3D &r_node, bool p_forced);
-	void _node_remove_from_frame_list(Node3D &r_node, bool p_forced);
+	static void _reset_flags(Node* p_node);
+	static void _reset_node3d_flags(Node3D& r_node);
+	static void _node_3d_notify_set_xform(Node3D& r_node);
+	static void _node_3d_notify_set_property(Node3D& r_node);
 
-	void _create_depth_lists();
-	void _clear_depth_lists();
+	static void _node_add_to_frame_list(Node3D& r_node, bool p_forced);
+	static void _node_remove_from_frame_list(Node3D& r_node, bool p_forced);
+
+	static void _create_depth_lists();
+	static void _clear_depth_lists();
 
 public:
-	// Hottest function, allow inlining the data.enabled check.
-	void node_3d_notify_changed(Node3D &r_node, bool p_transform_changed) {
-		if (!data.enabled) {
+	SceneTreeFTI() = delete;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	// Hottest function, allow inlining the data->enabled check.
+	static void node_3d_notify_changed(Node3D& r_node, bool p_transform_changed)
+	{
+		if (!data || !data->enabled) {
 			return;
 		}
-		MutexLock lock(data.mutex);
+		MutexLock lock(data->mutex);
 
 		if (p_transform_changed) {
 			_node_3d_notify_set_xform(r_node);
-		} else {
+		}
+		else {
 			_node_3d_notify_set_property(r_node);
 		}
 	}
 
-	void node_3d_request_reset(Node3D *p_node);
-	void node_3d_notify_delete(Node3D *p_node);
+	static void node_3d_request_reset(Node3D* p_node);
+	static void node_3d_notify_delete(Node3D* p_node);
 
 	// Calculate interpolated xforms, send to visual server.
-	void frame_update(Node *p_root, bool p_frame_start);
+	static void frame_update(Node* p_root, bool p_frame_start);
 
 	// Update local xform pumps.
-	void tick_update();
+	static void tick_update();
 
-	void set_enabled(Node *p_root, bool p_enabled);
-	bool is_enabled() const { return data.enabled; }
+	static void set_enabled(Node* p_root, bool p_enabled);
+	static bool is_enabled() { return data ? data->enabled : false; }
 
-	void set_debug_next_frame() { data.periodic_debug_log = true; }
-
-	SceneTreeFTI() = default;
-	~SceneTreeFTI();
+	static void set_debug_next_frame()
+	{
+		if (data) {
+			data->periodic_debug_log = true;
+		}
+	}
 };
 
 #endif // ndef _3D_DISABLED
-
-

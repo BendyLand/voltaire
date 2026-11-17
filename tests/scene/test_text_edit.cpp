@@ -54,10 +54,10 @@ static inline Array reverse_nested(Array array) {
 
 TEST_CASE("[SceneTree][TextEdit] text entry") {
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
-	SceneTree::get_singleton()->get_root()->set_physics_object_picking(false);
+	SceneTree::get_root()->set_physics_object_picking(false);
 #endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 	text_edit->grab_focus();
 
 	Array empty_signal_args = { {} };
@@ -2638,7 +2638,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 
 		SUBCASE("[TextEdit] text drag to another text edit") {
 			TextEdit *target_text_edit = memnew(TextEdit);
-			SceneTree::get_singleton()->get_root()->add_child(target_text_edit);
+			SceneTree::get_root()->add_child(target_text_edit);
 
 			target_text_edit->set_size(Size2(200, 200));
 			target_text_edit->set_position(Point2(400, 0));
@@ -6456,7 +6456,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 
 TEST_CASE("[SceneTree][TextEdit] context menu") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	text_edit->set_size(Size2(800, 200));
 	text_edit->set_line(0, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec vasius mattis leo, sed porta ex lacinia bibendum. Nunc bibendum pellentesque.");
@@ -6481,7 +6481,7 @@ TEST_CASE("[SceneTree][TextEdit] context menu") {
 
 TEST_CASE("[SceneTree][TextEdit] versioning") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	// Action undo / redo states are tested in the action test e.g selection_delete.
 	CHECK_FALSE(text_edit->has_undo());
@@ -6603,7 +6603,7 @@ TEST_CASE("[SceneTree][TextEdit] versioning") {
 
 TEST_CASE("[SceneTree][TextEdit] search") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	text_edit->set_text("hay needle, hay\nHAY NEEDLE, HAY\nwordword.word.word");
 	int length = text_edit->get_line(1).length();
@@ -6655,7 +6655,7 @@ TEST_CASE("[SceneTree][TextEdit] search") {
 
 TEST_CASE("[SceneTree][TextEdit] mouse") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	text_edit->set_size(Size2(800, 200));
 
@@ -6712,7 +6712,7 @@ TEST_CASE("[SceneTree][TextEdit] mouse") {
 TEST_CASE("[SceneTree][TextEdit] caret") {
 	TextEdit *text_edit = memnew(TextEdit);
 	text_edit->set_context_menu_enabled(false); // Prohibit sending InputEvents to the context menu.
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	text_edit->set_size(Size2(800, 200));
 	text_edit->grab_focus();
@@ -6817,7 +6817,7 @@ TEST_CASE("[SceneTree][TextEdit] caret") {
 
 TEST_CASE("[SceneTree][TextEdit] multicaret") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 	text_edit->set_multiple_carets_enabled(true);
 
 	Array empty_signal_args = { {} };
@@ -7490,7 +7490,7 @@ TEST_CASE("[SceneTree][TextEdit] multicaret") {
 
 TEST_CASE("[SceneTree][TextEdit] line wrapping") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 	text_edit->grab_focus();
 
 	// Set size for boundary.
@@ -7540,7 +7540,7 @@ TEST_CASE("[SceneTree][TextEdit] line wrapping") {
 
 TEST_CASE("[SceneTree][TextEdit] viewport") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	// No subcases here for performance.
 	text_edit->set_size(Size2(800, 600));
@@ -8032,7 +8032,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 
 TEST_CASE("[SceneTree][TextEdit] small height value") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	text_edit->set_size(Size2(800, 32));
 	text_edit->set_text("0\n1\n2");
@@ -8046,7 +8046,7 @@ TEST_CASE("[SceneTree][TextEdit] small height value") {
 
 TEST_CASE("[SceneTree][TextEdit] fit content scrollbar behavior") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	text_edit->set_line_wrapping_mode(TextEdit::LineWrappingMode::LINE_WRAPPING_NONE);
 	text_edit->set_fit_content_width_enabled(true);
@@ -8086,7 +8086,7 @@ TEST_CASE("[SceneTree][TextEdit] fit content scrollbar behavior") {
 
 TEST_CASE("[SceneTree][TextEdit] setter getters") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	SUBCASE("[TextEdit] set and get placeholder") {
 		text_edit->set_placeholder("test\nplaceholder");
@@ -8166,7 +8166,7 @@ TEST_CASE("[SceneTree][TextEdit] setter getters") {
 
 TEST_CASE("[SceneTree][TextEdit] gutters") {
 	TextEdit *text_edit = memnew(TextEdit);
-	SceneTree::get_singleton()->get_root()->add_child(text_edit);
+	SceneTree::get_root()->add_child(text_edit);
 
 	Array empty_signal_args = { {} };
 

@@ -54,8 +54,7 @@ bool CollisionPolygon3D::is_disabled() const { return disabled; }
 
 Color CollisionPolygon3D::_get_default_debug_color() const
 {
-	const SceneTree* st = SceneTree::get_singleton();
-	return st ? st->get_debug_collisions_color() : Color(0.0, 0.0, 0.0, 0.0);
+	return SceneTree::get_debug_collisions_color();
 }
 
 Color CollisionPolygon3D::get_debug_color() const { return debug_color; }

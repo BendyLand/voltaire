@@ -618,7 +618,7 @@ TEST_SUITE("[Navigation2D]")
 
 		// Prepare scene tree with simple mesh to serve as an input geometry.
 		Node2D* node_2d = memnew(Node2D);
-		SceneTree::get_singleton()->get_root()->add_child(node_2d);
+		SceneTree::get_root()->add_child(node_2d);
 		Polygon2D* polygon = memnew(Polygon2D);
 		polygon->set_polygon(PackedVector2Array({Vector2(200.0, 200.0), Vector2(400.0, 200.0),
 			Vector2(400.0, 400.0), Vector2(200.0, 400.0)}));
@@ -676,7 +676,7 @@ TEST_SUITE("[Navigation2D]")
 
 		// Prepare scene tree with simple mesh to serve as an input geometry.
 		Node2D* node_2d = memnew(Node2D);
-		SceneTree::get_singleton()->get_root()->add_child(node_2d);
+		SceneTree::get_root()->add_child(node_2d);
 		Polygon2D* polygon = memnew(Polygon2D);
 		polygon->set_polygon(PackedVector2Array({Vector2(-200.0, -200.0), Vector2(200.0, -200.0),
 			Vector2(200.0, 200.0), Vector2(-200.0, 200.0)}));

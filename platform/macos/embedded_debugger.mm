@@ -167,8 +167,8 @@ Error EmbeddedDebugger::_msg_ime_update(const Array &p_args) {
 Error EmbeddedDebugger::_msg_notification(const Array &p_args) {
 	ERR_FAIL_COND_V_MSG(p_args.size() != 1, ERR_INVALID_PARAMETER, "Invalid number of arguments for 'notification' message.");
 	int notification = p_args[0];
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(notification);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(notification);
 	}
 	return OK;
 }
