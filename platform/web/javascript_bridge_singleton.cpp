@@ -399,16 +399,16 @@ void JavaScriptBridge::download_buffer(Vector<uint8_t> p_arr, const String &p_na
 	godot_js_os_download_buffer(p_arr.ptr(), p_arr.size(), p_name.utf8().get_data(), p_mime.utf8().get_data());
 }
 
-bool JavaScriptBridge::pwa_needs_update() const {
-	return OS_Web::get_singleton()->pwa_needs_update();
+bool JavaScriptBridge::pwa_needs_update() {
+	return OS_Web::pwa_needs_update();
 }
 
 Error JavaScriptBridge::pwa_update() {
-	return OS_Web::get_singleton()->pwa_update();
+	return OS_Web::pwa_update();
 }
 
 void JavaScriptBridge::force_fs_sync() {
-	OS_Web::get_singleton()->force_fs_sync();
+	OS_Web::force_fs_sync();
 }
 
 void register_web_api() {}

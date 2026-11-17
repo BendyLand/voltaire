@@ -58,7 +58,7 @@ RenderingServerTypes::ShaderNativeSourceCode
 SceneShaderForwardClustered::ShaderData::get_native_source_code() const
 {
 	if (version.is_valid()) {
-		return SceneShaderForwardClustered::singleton->shader.version_get_native_source_code(
+		return SceneShaderForwardClustered::data->shader.version_get_native_source_code(
 			version);
 	}
 	else {
@@ -69,7 +69,7 @@ SceneShaderForwardClustered::ShaderData::get_native_source_code() const
 Pair<ShaderRD*, RID> SceneShaderForwardClustered::ShaderData::get_native_shader_and_version() const
 {
 	if (version.is_valid()) {
-		return {&SceneShaderForwardClustered::singleton->shader, version};
+		return {&SceneShaderForwardClustered::data->shader, version};
 	}
 	else {
 		return {};
@@ -227,7 +227,7 @@ void SceneShaderForwardClustered::ShaderData::_create_pipeline(PipelineKey p_pip
 	};
 
 	bool emulate_point_size_flag =
-		uses_point_size && SceneShaderForwardClustered::singleton->emulate_point_size;
+		uses_point_size && SceneShaderForwardClustered::data->emulate_point_size;
 
 	RDC::RenderPrimitive primitive_rd;
 	if (uses_point_size) {
@@ -379,8 +379,8 @@ uint64_t SceneShaderForwardClustered::ShaderData::get_vertex_input_mask(
 bool SceneShaderForwardClustered::ShaderData::is_valid() const
 {
 	if (version.is_valid()) {
-		ERR_FAIL_NULL_V(SceneShaderForwardClustered::singleton, false);
-		return SceneShaderForwardClustered::singleton->shader.version_is_valid(version);
+		ERR_FAIL_NULL_V(SceneShaderForwardClustered::data, false);
+		return SceneShaderForwardClustered::data->shader.version_is_valid(version);
 	}
 	else {
 		return false;
@@ -391,15 +391,15 @@ SceneShaderForwardClustered::ShaderData::ShaderData() : shader_list_element(this
 {
 	pipeline_hash_map.set_creation_object_and_function(this, &ShaderData::_create_pipeline);
 	pipeline_hash_map.set_compilations(
-		SceneShaderForwardClustered::singleton->pipeline_compilations,
-		&SceneShaderForwardClustered::singleton_mutex);
+		SceneShaderForwardClustered::data->pipeline_compilations,
+		&SceneShaderForwardClustered::shader_mutex);
 }
 
 RendererRD::MaterialStorage::ShaderData* SceneShaderForwardClustered::_create_shader_func()
 {
-	MutexLock lock(SceneShaderForwardClustered::singleton_mutex);
+	MutexLock lock(SceneShaderForwardClustered::shader_mutex);
 	ShaderData* shader_data = memnew(ShaderData);
-	singleton->shader_list.add(&shader_data->shader_list_element);
+	data->shader_list.add(&shader_data->shader_list_element);
 	return shader_data;
 }
 
@@ -424,32 +424,42 @@ RendererRD::MaterialStorage::MaterialData* SceneShaderForwardClustered::_create_
 	return material_data;
 }
 
-SceneShaderForwardClustered* SceneShaderForwardClustered::singleton = nullptr;
-Mutex SceneShaderForwardClustered::singleton_mutex;
-
-SceneShaderForwardClustered::SceneShaderForwardClustered()
+void SceneShaderForwardClustered::initialize(const String& p_defines)
 {
-	// there should be only one of these, contained within our RenderFM singleton.
-	singleton = this;
+	if (!data) {
+		data = memnew(Data);
+	}
+	if (!p_defines.is_empty()) {
+		init(p_defines);
+	}
 }
 
-SceneShaderForwardClustered::~SceneShaderForwardClustered()
+void SceneShaderForwardClustered::finalize()
 {
-	RD::free_rid(default_vec4_xform_buffer);
-	RD::free_rid(shadow_sampler);
+	if (!data) {
+		return;
+	}
+	RD::free_rid(data->default_vec4_xform_buffer);
+	RD::free_rid(data->shadow_sampler);
 
-	RendererRD::MaterialStorage::shader_free(overdraw_material_shader);
-	RendererRD::MaterialStorage::shader_free(default_shader);
-	RendererRD::MaterialStorage::shader_free(debug_shadow_splits_material_shader);
+	RendererRD::MaterialStorage::shader_free(data->overdraw_material_shader);
+	RendererRD::MaterialStorage::shader_free(data->default_shader);
+	RendererRD::MaterialStorage::shader_free(data->debug_shadow_splits_material_shader);
 
-	RendererRD::MaterialStorage::material_free(overdraw_material);
-	RendererRD::MaterialStorage::material_free(default_material);
-	RendererRD::MaterialStorage::material_free(debug_shadow_splits_material);
+	RendererRD::MaterialStorage::material_free(data->overdraw_material);
+	RendererRD::MaterialStorage::material_free(data->default_material);
+	RendererRD::MaterialStorage::material_free(data->debug_shadow_splits_material);
+
+	memdelete(data);
+	data = nullptr;
 }
 
 void SceneShaderForwardClustered::init(const String p_defines)
 {
-	emulate_point_size = !RD::has_feature(RDC::SUPPORTS_POINT_SIZE);
+	if (!data) {
+		data = memnew(Data);
+	}
+	data->emulate_point_size = !RD::has_feature(RDC::SUPPORTS_POINT_SIZE);
 
 	{
 		Vector<ShaderRD::VariantDefine> shader_versions;
@@ -524,11 +534,11 @@ void SceneShaderForwardClustered::init(const String p_defines)
 		Vector<uint64_t> dynamic_buffers;
 		dynamic_buffers.push_back(
 			ShaderRD::DynamicBuffer::encode(RenderForwardClustered::RENDER_PASS_UNIFORM_SET, 2));
-		shader.initialize(
+		data->shader.initialize(
 			shader_versions, p_defines, Vector<RD::PipelineImmutableSampler>(), dynamic_buffers);
 
 		if (RendererCompositorRD::is_xr_enabled()) {
-			shader.enable_group(SHADER_GROUP_MULTIVIEW);
+			data->shader.enable_group(SHADER_GROUP_MULTIVIEW);
 		}
 	}
 
@@ -740,14 +750,14 @@ void SceneShaderForwardClustered::init(const String p_defines)
 
 		actions.check_multiview_samplers = true;
 
-		compiler.initialize(actions);
+		data->compiler.initialize(actions);
 	}
 
 	{
 		// default material and shader
-		default_shader = RendererRD::MaterialStorage::shader_allocate();
-		RendererRD::MaterialStorage::shader_initialize(default_shader);
-		RendererRD::MaterialStorage::shader_set_code(default_shader, R"(
+		data->default_shader = RendererRD::MaterialStorage::shader_allocate();
+		RendererRD::MaterialStorage::shader_initialize(data->default_shader);
+		RendererRD::MaterialStorage::shader_set_code(data->default_shader, R"(
 // Default 3D material shader (Forward+).
 
 shader_type spatial;
@@ -762,25 +772,25 @@ void fragment() {
 	METALLIC = 0.2;
 }
 )");
-		default_material = RendererRD::MaterialStorage::material_allocate();
-		RendererRD::MaterialStorage::material_initialize(default_material);
-		RendererRD::MaterialStorage::material_set_shader(default_material, default_shader);
+		data->default_material = RendererRD::MaterialStorage::material_allocate();
+		RendererRD::MaterialStorage::material_initialize(data->default_material);
+		RendererRD::MaterialStorage::material_set_shader(data->default_material, data->default_shader);
 
 		MaterialData* md = static_cast<MaterialData*>(RendererRD::MaterialStorage::material_get_data(
-			default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
-		default_shader_rd =
+			data->default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		data->default_shader_rd =
 			md->shader_data->get_shader_variant(PIPELINE_VERSION_COLOR_PASS, 0, false);
 
-		default_material_shader_ptr = md->shader_data;
-		default_material_uniform_set = md->uniform_set;
+		data->default_material_shader_ptr = md->shader_data;
+		data->default_material_uniform_set = md->uniform_set;
 	}
 
 	{
-		overdraw_material_shader = RendererRD::MaterialStorage::shader_allocate();
-		RendererRD::MaterialStorage::shader_initialize(overdraw_material_shader);
+		data->overdraw_material_shader = RendererRD::MaterialStorage::shader_allocate();
+		RendererRD::MaterialStorage::shader_initialize(data->overdraw_material_shader);
 		// Use relatively low opacity so that more "layers" of overlapping objects can be
 		// distinguished.
-		RendererRD::MaterialStorage::shader_set_code(overdraw_material_shader, R"(
+		RendererRD::MaterialStorage::shader_set_code(data->overdraw_material_shader, R"(
 // 3D editor Overdraw debug draw mode shader (Forward+).
 
 shader_type spatial;
@@ -792,20 +802,20 @@ void fragment() {
 	ALPHA = 0.1;
 }
 )");
-		overdraw_material = RendererRD::MaterialStorage::material_allocate();
-		RendererRD::MaterialStorage::material_initialize(overdraw_material);
-		RendererRD::MaterialStorage::material_set_shader(overdraw_material, overdraw_material_shader);
+		data->overdraw_material = RendererRD::MaterialStorage::material_allocate();
+		RendererRD::MaterialStorage::material_initialize(data->overdraw_material);
+		RendererRD::MaterialStorage::material_set_shader(data->overdraw_material, data->overdraw_material_shader);
 
 		MaterialData* md = static_cast<MaterialData*>(RendererRD::MaterialStorage::material_get_data(
-			overdraw_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
-		overdraw_material_shader_ptr = md->shader_data;
-		overdraw_material_uniform_set = md->uniform_set;
+			data->overdraw_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		data->overdraw_material_shader_ptr = md->shader_data;
+		data->overdraw_material_uniform_set = md->uniform_set;
 	}
 
 	{
-		debug_shadow_splits_material_shader = RendererRD::MaterialStorage::shader_allocate();
-		RendererRD::MaterialStorage::shader_initialize(debug_shadow_splits_material_shader);
-		RendererRD::MaterialStorage::shader_set_code(debug_shadow_splits_material_shader, R"(
+		data->debug_shadow_splits_material_shader = RendererRD::MaterialStorage::shader_allocate();
+		RendererRD::MaterialStorage::shader_initialize(data->debug_shadow_splits_material_shader);
+		RendererRD::MaterialStorage::shader_set_code(data->debug_shadow_splits_material_shader, R"(
 // 3D debug shadow splits mode shader (Forward+).
 
 shader_type spatial;
@@ -816,28 +826,28 @@ void fragment() {
 	ALBEDO = vec3(1.0, 1.0, 1.0);
 }
 )");
-		debug_shadow_splits_material = RendererRD::MaterialStorage::material_allocate();
-		RendererRD::MaterialStorage::material_initialize(debug_shadow_splits_material);
+		data->debug_shadow_splits_material = RendererRD::MaterialStorage::material_allocate();
+		RendererRD::MaterialStorage::material_initialize(data->debug_shadow_splits_material);
 		RendererRD::MaterialStorage::material_set_shader(
-			debug_shadow_splits_material, debug_shadow_splits_material_shader);
+			data->debug_shadow_splits_material, data->debug_shadow_splits_material_shader);
 
 		MaterialData* md = static_cast<MaterialData*>(RendererRD::MaterialStorage::material_get_data(
-			debug_shadow_splits_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
-		debug_shadow_splits_material_shader_ptr = md->shader_data;
-		debug_shadow_splits_material_uniform_set = md->uniform_set;
+			data->debug_shadow_splits_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		data->debug_shadow_splits_material_shader_ptr = md->shader_data;
+		data->debug_shadow_splits_material_uniform_set = md->uniform_set;
 	}
 
 	{
-		default_vec4_xform_buffer = RD::storage_buffer_create(256);
+		data->default_vec4_xform_buffer = RD::storage_buffer_create(256);
 		Vector<RD::Uniform> uniforms;
 		RD::Uniform u;
 		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
-		u.append_id(default_vec4_xform_buffer);
+		u.append_id(data->default_vec4_xform_buffer);
 		u.binding = 0;
 		uniforms.push_back(u);
 
-		default_vec4_xform_uniform_set = RD::uniform_set_create(
-			uniforms, default_shader_rd, RenderForwardClustered::TRANSFORMS_UNIFORM_SET);
+		data->default_vec4_xform_uniform_set = RD::uniform_set_create(
+			uniforms, data->default_shader_rd, RenderForwardClustered::TRANSFORMS_UNIFORM_SET);
 	}
 
 	{
@@ -846,50 +856,50 @@ void fragment() {
 		sampler.min_filter = RDC::SAMPLER_FILTER_LINEAR;
 		sampler.enable_compare = true;
 		sampler.compare_op = RDC::COMPARE_OP_GREATER;
-		shadow_sampler = RD::sampler_create(sampler);
+		data->shadow_sampler = RD::sampler_create(sampler);
 	}
 }
 
 void SceneShaderForwardClustered::enable_multiview_shader_group()
 {
-	shader.enable_group(SHADER_GROUP_MULTIVIEW);
+	data->shader.enable_group(SHADER_GROUP_MULTIVIEW);
 }
 
 void SceneShaderForwardClustered::enable_advanced_shader_group(bool p_needs_multiview)
 {
 	if (p_needs_multiview || RendererCompositorRD::is_xr_enabled()) {
-		shader.enable_group(SHADER_GROUP_ADVANCED_MULTIVIEW);
+		data->shader.enable_group(SHADER_GROUP_ADVANCED_MULTIVIEW);
 	}
-	shader.enable_group(SHADER_GROUP_ADVANCED);
+	data->shader.enable_group(SHADER_GROUP_ADVANCED);
 }
 
-bool SceneShaderForwardClustered::is_multiview_shader_group_enabled() const
+bool SceneShaderForwardClustered::is_multiview_shader_group_enabled()
 {
-	return shader.is_group_enabled(SHADER_GROUP_MULTIVIEW);
+	return data->shader.is_group_enabled(SHADER_GROUP_MULTIVIEW);
 }
 
-bool SceneShaderForwardClustered::is_advanced_shader_group_enabled(bool p_multiview) const
+bool SceneShaderForwardClustered::is_advanced_shader_group_enabled(bool p_multiview)
 {
 	if (p_multiview) {
-		return shader.is_group_enabled(SHADER_GROUP_ADVANCED_MULTIVIEW);
+		return data->shader.is_group_enabled(SHADER_GROUP_ADVANCED_MULTIVIEW);
 	}
 	else {
-		return shader.is_group_enabled(SHADER_GROUP_ADVANCED);
+		return data->shader.is_group_enabled(SHADER_GROUP_ADVANCED);
 	}
 }
 
 uint32_t SceneShaderForwardClustered::get_pipeline_compilations(RSE::PipelineSource p_source)
 {
-	MutexLock lock(SceneShaderForwardClustered::singleton_mutex);
-	return pipeline_compilations[p_source];
+	MutexLock lock(SceneShaderForwardClustered::shader_mutex);
+	return data->pipeline_compilations[p_source];
 }
 
 RID SceneShaderForwardClustered::get_default_shader_rd(bool p_is_multiview)
 {
-	RID& shader_rd = p_is_multiview ? default_multiview_shader_rd : default_shader_rd;
+	RID& shader_rd = p_is_multiview ? data->default_multiview_shader_rd : data->default_shader_rd;
 
 	if (shader_rd.is_null()) {
-		ERR_FAIL_COND_V(!default_material.is_valid(), RID());
+		ERR_FAIL_COND_V(!data->default_material.is_valid(), RID());
 
 		uint32_t flags = 0;
 		if (p_is_multiview) {
@@ -897,7 +907,7 @@ RID SceneShaderForwardClustered::get_default_shader_rd(bool p_is_multiview)
 		}
 
 		MaterialData* md = static_cast<MaterialData*>(RendererRD::MaterialStorage::material_get_data(
-			default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+			data->default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
 		shader_rd = md->shader_data->get_shader_variant(PIPELINE_VERSION_COLOR_PASS, flags, false);
 	}
 

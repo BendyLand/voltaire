@@ -55,14 +55,13 @@
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/storage/ltc_lut.gen.h"
 
-RasterizerSceneGLES3* RasterizerSceneGLES3::singleton = nullptr;
-
 RenderGeometryInstance* RasterizerSceneGLES3::geometry_instance_create(RID p_base)
 {
 	RSE::InstanceType type = RendererUtilities::get_base_type(p_base);
 	ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
 
 	GeometryInstanceGLES3* ginstance = geometry_instance_alloc.alloc();
+	ginstance->scene_owner = this;
 	ginstance->data = memnew(GeometryInstanceGLES3::Data);
 
 	ginstance->data->base = p_base;
@@ -168,19 +167,20 @@ void RasterizerSceneGLES3::GeometryInstanceGLES3::_mark_dirty()
 	if (dirty_list_element.in_list()) {
 		return;
 	}
+	ERR_FAIL_NULL(scene_owner);
 
 	// clear surface caches
 	GeometryInstanceSurface* surf = surface_caches;
 
 	while (surf) {
 		GeometryInstanceSurface* next = surf->next;
-		RasterizerSceneGLES3::get_singleton()->geometry_instance_surface_alloc.free(surf);
+		scene_owner->geometry_instance_surface_alloc.free(surf);
 		surf = next;
 	}
 
 	surface_caches = nullptr;
 
-	RasterizerSceneGLES3::get_singleton()->geometry_instance_dirty_list.add(&dirty_list_element);
+	scene_owner->geometry_instance_dirty_list.add(&dirty_list_element);
 }
 
 void RasterizerSceneGLES3::GeometryInstanceGLES3::set_use_lightmap(
@@ -5222,7 +5222,7 @@ void RasterizerSceneGLES3::material_set_use_debanding(bool p_enable)
 RasterizerSceneGLES3::RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_storage,
     GLES3::MaterialStorage* p_material_storage, GLES3::LightStorage* p_light_storage)
 {
-    singleton = this;
+    scene_pass = 0;
 
     cull_argument.set_page_pool(&cull_argument_pool);
 
@@ -5555,7 +5555,7 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
 		GLES3::Utilities::buffer_free_data(scene_state.tonemap_buffer);
 	}
 
-	singleton = nullptr;
+	scene_pass = 0;
 }
 
 #endif // GLES3_ENABLED

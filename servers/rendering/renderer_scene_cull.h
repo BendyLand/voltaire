@@ -37,7 +37,6 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/paged_allocator.h"
 #include "core/templates/paged_array.h"
-#include "core/templates/pass_func.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "servers/rendering/instance_uniforms.h"
@@ -50,11 +49,9 @@
 
 class RenderingLightCuller;
 
-class RendererSceneCull
+class RendererSceneCull final
 {
 public:
-	RendererSceneRender* scene_render = nullptr;
-
 	enum
 	{
 		SDFGI_MAX_CASCADES = 8,
@@ -63,14 +60,10 @@ public:
 		MAX_UPDATE_SHADOWS = 512
 	};
 
-	uint64_t render_pass;
-
-	static RendererSceneCull* singleton;
-
 	/* EVENT QUEUING */
 
-	void tick();
-	void pre_draw(bool p_will_draw);
+	static void tick();
+	static void pre_draw(bool p_will_draw);
 
 	/* CAMERA API */
 
@@ -109,28 +102,27 @@ public:
 		}
 	};
 
-	mutable RID_Owner<Camera, true> camera_owner;
 
-	RID camera_allocate();
-	void camera_initialize(RID p_rid);
+	static RID camera_allocate();
+	static void camera_initialize(RID p_rid);
 
-	void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far);
-	void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far);
-	void camera_set_frustum(
+	static void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far);
+	static void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far);
+	static void camera_set_frustum(
 		RID p_camera, float p_size, Vector2 p_offset, float p_z_near, float p_z_far);
-	void camera_set_transform(RID p_camera, const Transform3D& p_transform);
-	void camera_set_cull_mask(RID p_camera, uint32_t p_layers);
-	void camera_set_environment(RID p_camera, RID p_env);
-	void camera_set_camera_attributes(RID p_camera, RID p_attributes);
-	void camera_set_compositor(RID p_camera, RID p_compositor);
-	void camera_set_use_vertical_aspect(RID p_camera, bool p_enable);
-	bool is_camera(RID p_camera) const;
+	static void camera_set_transform(RID p_camera, const Transform3D& p_transform);
+	static void camera_set_cull_mask(RID p_camera, uint32_t p_layers);
+	static void camera_set_environment(RID p_camera, RID p_env);
+	static void camera_set_camera_attributes(RID p_camera, RID p_attributes);
+	static void camera_set_compositor(RID p_camera, RID p_compositor);
+	static void camera_set_use_vertical_aspect(RID p_camera, bool p_enable);
+	static bool is_camera(RID p_camera);
 
 	/* OCCLUDER API */
 
-	RID occluder_allocate();
-	void occluder_initialize(RID p_occluder);
-	void occluder_set_mesh(
+	static RID occluder_allocate();
+	static void occluder_initialize(RID p_occluder);
+	static void occluder_set_mesh(
 		RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices);
 
 	/* SCENARIO API */
@@ -354,9 +346,6 @@ public:
 		}
 	};
 
-	PagedArrayPool<InstanceBounds> instance_aabb_page_pool;
-	PagedArrayPool<InstanceData> instance_data_page_pool;
-	PagedArrayPool<InstanceVisibilityData> instance_visibility_data_page_pool;
 
 	struct Scenario
 	{
@@ -397,28 +386,25 @@ public:
 		}
 	};
 
-	int indexer_update_iterations = 0;
-
-	mutable RID_Owner<Scenario, true> scenario_owner;
 
 	static void _instance_pair(Instance* p_A, Instance* p_B);
 	static void _instance_unpair(Instance* p_A, Instance* p_B);
 
-	void _instance_update_mesh_instance(Instance* p_instance) const;
+	static void _instance_update_mesh_instance(Instance* p_instance);
 
-	RID scenario_allocate();
-	void scenario_initialize(RID p_rid);
+	static RID scenario_allocate();
+	static void scenario_initialize(RID p_rid);
 
-	void scenario_set_environment(RID p_scenario, RID p_environment);
-	void scenario_set_camera_attributes(RID p_scenario, RID p_attributes);
-	void scenario_set_fallback_environment(RID p_scenario, RID p_environment);
-	void scenario_set_compositor(RID p_scenario, RID p_compositor);
-	void scenario_set_reflection_atlas_size(
+	static void scenario_set_environment(RID p_scenario, RID p_environment);
+	static void scenario_set_camera_attributes(RID p_scenario, RID p_attributes);
+	static void scenario_set_fallback_environment(RID p_scenario, RID p_environment);
+	static void scenario_set_compositor(RID p_scenario, RID p_compositor);
+	static void scenario_set_reflection_atlas_size(
 		RID p_scenario, int p_reflection_size, int p_reflection_count);
-	bool is_scenario(RID p_scenario) const;
-	RID scenario_get_environment(RID p_scenario);
-	void scenario_add_viewport_visibility_mask(RID p_scenario, RID p_viewport);
-	void scenario_remove_viewport_visibility_mask(RID p_scenario, RID p_viewport);
+	static bool is_scenario(RID p_scenario);
+	static RID scenario_get_environment(RID p_scenario);
+	static void scenario_add_viewport_visibility_mask(RID p_scenario, RID p_viewport);
+	static void scenario_remove_viewport_visibility_mask(RID p_scenario, RID p_viewport);
 
 	/* INSTANCING API */
 
@@ -432,7 +418,6 @@ public:
 		InstancePair() : list_a(this), list_b(this) {}
 	};
 
-	mutable PagedAllocator<InstancePair> pair_allocator;
 
 	struct InstanceBaseData
 	{
@@ -539,27 +524,27 @@ public:
 			case Dependency::DEPENDENCY_CHANGED_SKELETON_DATA:
 			case Dependency::DEPENDENCY_CHANGED_SKELETON_BONES:
 			case Dependency::DEPENDENCY_CHANGED_AABB: {
-				singleton->_instance_queue_update(instance, true, false);
+				RendererSceneCull::_instance_queue_update(instance, true, false);
 
 			} break;
 			case Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES:
 			case Dependency::DEPENDENCY_CHANGED_MATERIAL: {
-				singleton->_instance_queue_update(instance, false, true);
+				RendererSceneCull::_instance_queue_update(instance, false, true);
 			} break;
 			case Dependency::DEPENDENCY_CHANGED_MESH:
 			case Dependency::DEPENDENCY_CHANGED_PARTICLES:
 			case Dependency::DEPENDENCY_CHANGED_MULTIMESH:
 			case Dependency::DEPENDENCY_CHANGED_DECAL:
 			case Dependency::DEPENDENCY_CHANGED_LIGHT: {
-				singleton->_instance_queue_update(instance, true, true);
+				RendererSceneCull::_instance_queue_update(instance, true, true);
 			} break;
 			case Dependency::DEPENDENCY_CHANGED_REFLECTION_PROBE:
 			case Dependency::DEPENDENCY_CHANGED_LIGHT_SOFT_SHADOW_AND_PROJECTOR:
 			case Dependency::DEPENDENCY_CHANGED_CULL_MASK: {
 				// requires repairing
 				if (instance->indexer_id.is_valid()) {
-					singleton->_unpair_instance(instance);
-					singleton->_instance_queue_update(instance, true, true);
+					RendererSceneCull::_unpair_instance(instance);
+					RendererSceneCull::_instance_queue_update(instance, true, true);
 				}
 
 			} break;
@@ -574,23 +559,23 @@ public:
 			Instance* instance = (Instance*)tracker->userdata;
 
 			if (p_dependency == instance->base) {
-				singleton->instance_set_base(instance->self, RID());
+				RendererSceneCull::instance_set_base(instance->self, RID());
 			}
 			else if (p_dependency == instance->skeleton) {
-				singleton->instance_attach_skeleton(instance->self, RID());
+				RendererSceneCull::instance_attach_skeleton(instance->self, RID());
 			}
 			else {
 				// It's possible the same material is used in multiple slots,
 				// so we check whether we need to clear them all.
 				if (p_dependency == instance->material_override) {
-					singleton->instance_geometry_set_material_override(instance->self, RID());
+					RendererSceneCull::instance_geometry_set_material_override(instance->self, RID());
 				}
 				if (p_dependency == instance->material_overlay) {
-					singleton->instance_geometry_set_material_overlay(instance->self, RID());
+					RendererSceneCull::instance_geometry_set_material_overlay(instance->self, RID());
 				}
 				for (int i = 0; i < instance->materials.size(); i++) {
 					if (p_dependency == instance->materials[i]) {
-						singleton->instance_set_surface_override_material(instance->self, i, RID());
+						RendererSceneCull::instance_set_surface_override_material(instance->self, i, RID());
 					}
 				}
 				if (instance->base_type == RSE::INSTANCE_PARTICLES) {
@@ -605,7 +590,7 @@ public:
 				// Even if no change is made we still need to call `_instance_queue_update`.
 				// This dependency could also be a result of the freed material being used
 				// by the mesh this mesh instance uses.
-				singleton->_instance_queue_update(instance, false, true);
+				RendererSceneCull::_instance_queue_update(instance, false, true);
 			}
 		}
 
@@ -662,9 +647,8 @@ public:
 		}
 	};
 
-	mutable SelfList<Instance>::List _instance_update_list;
-	void _instance_queue_update(
-		Instance* p_instance, bool p_update_aabb, bool p_update_dependencies = false) const;
+	static void _instance_queue_update(
+		Instance* p_instance, bool p_update_aabb, bool p_update_dependencies = false);
 
 	struct InstanceGeometryData : public InstanceBaseData
 	{
@@ -712,7 +696,6 @@ public:
 		InstanceDecalData() {}
 	};
 
-	SelfList<InstanceReflectionProbeData>::List reflection_probe_render_list;
 
 	struct InstanceParticlesCollisionData : public InstanceBaseData
 	{
@@ -736,8 +719,6 @@ public:
 		InstanceVisibilityNotifierData() : list_element(this) {}
 	};
 
-	SpinLock visible_notifier_list_lock;
-	SelfList<InstanceVisibilityNotifierData>::List visible_notifier_list;
 
 	struct InstanceLightData : public InstanceBaseData
 	{
@@ -864,7 +845,6 @@ public:
 		}
 	};
 
-	SelfList<InstanceVoxelGIData>::List voxel_gi_update_list;
 
 	struct InstanceLightmapData : public InstanceBaseData
 	{
@@ -875,7 +855,6 @@ public:
 		InstanceLightmapData() {}
 	};
 
-	mutable uint64_t pair_pass = 1;
 
 	struct PairInstances
 	{
@@ -941,14 +920,6 @@ public:
 		}
 	};
 
-	mutable HashSet<Instance*> heightfield_particle_colliders_update_list;
-
-	PagedArrayPool<Instance*> instance_cull_page_pool;
-	PagedArrayPool<RenderGeometryInstance*> geometry_instance_cull_page_pool;
-	PagedArrayPool<RID> rid_cull_page_pool;
-
-	PagedArray<Instance*> instance_cull_result;
-	PagedArray<Instance*> instance_shadow_cull_result;
 
 	struct InstanceCullResult
 	{
@@ -1083,86 +1054,67 @@ public:
 		}
 	};
 
-	InstanceCullResult scene_cull_result;
-	LocalVector<InstanceCullResult> scene_cull_result_threads;
 
-	RendererSceneRender::RenderShadowData render_shadow_data[MAX_UPDATE_SHADOWS];
-	uint32_t max_shadows_used = 0;
+	static RID instance_allocate();
+	static void instance_initialize(RID p_rid);
 
-	RendererSceneRender::RenderSDFGIData
-		render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
-	RendererSceneRender::RenderSDFGIUpdateData sdfgi_update_data;
+	static void instance_set_base(RID p_instance, RID p_base);
+	static void instance_set_scenario(RID p_instance, RID p_scenario);
+	static void instance_set_layer_mask(RID p_instance, uint32_t p_mask);
+	static void instance_set_pivot_data(RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
+	static void instance_set_transform(RID p_instance, const Transform3D& p_transform);
+	static void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight);
+	static void instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material);
+	static void instance_set_visible(RID p_instance, bool p_visible);
+	static void instance_geometry_set_transparency(RID p_instance, float p_transparency);
 
-	uint32_t thread_cull_threshold = 200;
+	static void instance_teleport(RID p_instance);
 
-	mutable RID_Owner<Instance, true> instance_owner{65536, 4194304};
+	static void instance_set_custom_aabb(RID p_instance, AABB p_aabb);
 
-	uint32_t geometry_instance_pair_mask =
-		0; // used in traditional forward, unnecessary on clustered
+	static void instance_attach_skeleton(RID p_instance, RID p_skeleton);
 
-	LocalVector<Vector2> camera_jitter_array;
-	RenderingLightCuller* light_culler = nullptr;
+	static void instance_set_extra_visibility_margin(RID p_instance, real_t p_margin);
 
-	RID instance_allocate();
-	void instance_initialize(RID p_rid);
+	static void instance_set_visibility_parent(RID p_instance, RID p_parent_instance);
 
-	void instance_set_base(RID p_instance, RID p_base);
-	void instance_set_scenario(RID p_instance, RID p_scenario);
-	void instance_set_layer_mask(RID p_instance, uint32_t p_mask);
-	void instance_set_pivot_data(RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
-	void instance_set_transform(RID p_instance, const Transform3D& p_transform);
-	void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight);
-	void instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material);
-	void instance_set_visible(RID p_instance, bool p_visible);
-	void instance_geometry_set_transparency(RID p_instance, float p_transparency);
+	static void instance_set_ignore_culling(RID p_instance, bool p_enabled);
 
-	void instance_teleport(RID p_instance);
+	static bool _update_instance_visibility_depth(Instance* p_instance);
+	static void _update_instance_visibility_dependencies(Instance* p_instance);
 
-	void instance_set_custom_aabb(RID p_instance, AABB p_aabb);
-
-	void instance_attach_skeleton(RID p_instance, RID p_skeleton);
-
-	void instance_set_extra_visibility_margin(RID p_instance, real_t p_margin);
-
-	void instance_set_visibility_parent(RID p_instance, RID p_parent_instance);
-
-	void instance_set_ignore_culling(RID p_instance, bool p_enabled);
-
-	bool _update_instance_visibility_depth(Instance* p_instance);
-	void _update_instance_visibility_dependencies(Instance* p_instance) const;
-
-	void instance_geometry_set_flag(RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled);
-	void instance_geometry_set_cast_shadows_setting(
+	static void instance_geometry_set_flag(RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled);
+	static void instance_geometry_set_cast_shadows_setting(
 		RID p_instance, RSE::ShadowCastingSetting p_shadow_casting_setting);
-	void instance_geometry_set_material_override(RID p_instance, RID p_material);
-	void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
+	static void instance_geometry_set_material_override(RID p_instance, RID p_material);
+	static void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
 
-	void instance_geometry_set_visibility_range(RID p_instance, float p_min, float p_max,
+	static void instance_geometry_set_visibility_range(RID p_instance, float p_min, float p_max,
 		float p_min_margin, float p_max_margin, RSE::VisibilityRangeFadeMode p_fade_mode);
 
-	void instance_geometry_set_lightmap(
+	static void instance_geometry_set_lightmap(
 		RID p_instance, RID p_lightmap, const Rect2& p_lightmap_uv_scale, int p_slice_index);
-	void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
+	static void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
 
-	void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation);
-	uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
+	static void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation);
+	static uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
 
-	_FORCE_INLINE_ void _update_instance(Instance* p_instance) const;
-	_FORCE_INLINE_ void _update_instance_aabb(Instance* p_instance) const;
-	_FORCE_INLINE_ void _update_instance_lightmap_captures(Instance* p_instance) const;
-	void _unpair_instance(Instance* p_instance);
+	static _FORCE_INLINE_ void _update_instance(Instance* p_instance);
+	static _FORCE_INLINE_ void _update_instance_aabb(Instance* p_instance);
+	static _FORCE_INLINE_ void _update_instance_lightmap_captures(Instance* p_instance);
+	static void _unpair_instance(Instance* p_instance);
 
-	void _light_instance_setup_directional_shadow(int p_shadow_index, Instance* p_instance,
+	static void _light_instance_setup_directional_shadow(int p_shadow_index, Instance* p_instance,
 		const Transform3D p_cam_transform, const Projection& p_cam_projection,
 		bool p_cam_orthogonal, bool p_cam_vaspect);
 
-	_FORCE_INLINE_ bool _light_instance_update_shadow(Instance* p_instance,
+	static _FORCE_INLINE_ bool _light_instance_update_shadow(Instance* p_instance,
 		const Transform3D p_cam_transform, const Projection& p_cam_projection,
 		bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario* p_scenario,
 		float p_screen_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
 
-	RID _render_get_environment(RID p_camera, RID p_scenario);
-	RID _render_get_compositor(RID p_camera, RID p_scenario);
+	static RID _render_get_environment(RID p_camera, RID p_scenario);
+	static RID _render_get_compositor(RID p_camera, RID p_scenario);
 
 	struct Cull
 	{
@@ -1209,7 +1161,7 @@ public:
 		SpinLock lock;
 
 		Frustum frustum;
-	} cull;
+	};
 
 	struct VisibilityCullData
 	{
@@ -1220,10 +1172,10 @@ public:
 		uint32_t cull_count;
 	};
 
-	void _visibility_cull_threaded(uint32_t p_thread, VisibilityCullData* cull_data);
-	void _visibility_cull(const VisibilityCullData& cull_data, uint64_t p_from, uint64_t p_to);
+	static void _visibility_cull_threaded(uint32_t p_thread, VisibilityCullData* cull_data);
+	static void _visibility_cull(const VisibilityCullData& cull_data, uint64_t p_from, uint64_t p_to);
 	template <bool p_fade_check>
-	_FORCE_INLINE_ int _visibility_range_check(
+	static _FORCE_INLINE_ int _visibility_range_check(
 		InstanceVisibilityData& r_vis_data, const Vector3& p_camera_pos, uint64_t p_viewport_mask);
 
 	struct CullData
@@ -1239,277 +1191,333 @@ public:
 		uint64_t visibility_viewport_mask;
 	};
 
-	void _scene_cull_threaded(uint32_t p_thread, CullData* cull_data);
-	void _scene_cull(
+	static void _scene_cull_threaded(uint32_t p_thread, CullData* cull_data);
+	static void _scene_cull(
 		CullData& cull_data, InstanceCullResult& cull_result, uint64_t p_from, uint64_t p_to);
 	static void _scene_particles_set_view_axis(
 		RID p_particles, const Vector3& p_axis, const Vector3& p_up_axis);
-	_FORCE_INLINE_ bool _visibility_parent_check(
+	static _FORCE_INLINE_ bool _visibility_parent_check(
 		const CullData& p_cull_data, const InstanceData& p_instance_data);
 
-	bool _render_reflection_probe_step(Instance* p_instance, int p_step);
+	static bool _render_reflection_probe_step(Instance* p_instance, int p_step);
 
-	void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario,
+	static void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario,
 		RID p_shadow_atlas, float p_window_output_max_value);
 
-	void render_camera(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_camera,
+	static void render_camera(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_camera,
 		RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count,
 		float p_screen_mesh_lod_threshold, RID p_shadow_atlas, Ref<XRInterface>& p_xr_interface,
 		float p_window_output_max_value, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
 
-	void render_particle_colliders();
-	void render_probes();
-
-#ifdef PASSBASE
-#undef PASSBASE
-#endif
-
-#define PASSBASE scene_render
-
-	PASS1(voxel_gi_set_quality, RSE::VoxelGIQuality)
-
-	/* SKY API */
-
-	PASS0R(RID, sky_allocate)
-	PASS1(sky_initialize, RID)
-
-	PASS2(sky_set_radiance_size, RID, int)
-	PASS2(sky_set_mode, RID, RSE::SkyMode)
-	PASS2(sky_set_material, RID, RID)
-	PASS4R(Ref<Image>, sky_bake_panorama, RID, float, bool, const Size2i&)
-
-	// Compositor effect
-
-	PASS0R(RID, compositor_effect_allocate)
-	PASS1(compositor_effect_initialize, RID)
-
-	PASS1RC(bool, is_compositor_effect, RID)
-
-	PASS2(compositor_effect_set_enabled, RID, bool)
-	PASS3(compositor_effect_set_flag, RID, RSE::CompositorEffectFlags, bool)
-
-	// Compositor
-
-	PASS0R(RID, compositor_allocate)
-	PASS1(compositor_initialize, RID)
-
-	PASS1RC(bool, is_compositor, RID)
-
-	// Environment
-
-	PASS0R(RID, environment_allocate)
-	PASS1(environment_initialize, RID)
-
-	PASS1RC(bool, is_environment, RID)
-
-	// Background
-	PASS2(environment_set_background, RID, RSE::EnvironmentBG)
-	PASS2(environment_set_sky, RID, RID)
-	PASS2(environment_set_sky_custom_fov, RID, float)
-	PASS2(environment_set_sky_orientation, RID, const Basis&)
-	PASS2(environment_set_bg_color, RID, const Color&)
-	PASS3(environment_set_bg_energy, RID, float, float)
-	PASS2(environment_set_canvas_max_layer, RID, int)
-	PASS6(environment_set_ambient_light, RID, const Color&, RSE::EnvironmentAmbientSource, float,
-		float, RSE::EnvironmentReflectionSource)
-	PASS2(environment_set_camera_feed_id, RID, int)
-
-	PASS1RC(RSE::EnvironmentBG, environment_get_background, RID)
-	PASS1RC(RID, environment_get_sky, RID)
-	PASS1RC(float, environment_get_sky_custom_fov, RID)
-	PASS1RC(Basis, environment_get_sky_orientation, RID)
-	PASS1RC(Color, environment_get_bg_color, RID)
-	PASS1RC(float, environment_get_bg_energy_multiplier, RID)
-	PASS1RC(float, environment_get_bg_intensity, RID)
-	PASS1RC(int, environment_get_canvas_max_layer, RID)
-	PASS1RC(RSE::EnvironmentAmbientSource, environment_get_ambient_source, RID)
-	PASS1RC(Color, environment_get_ambient_light, RID)
-	PASS1RC(float, environment_get_ambient_light_energy, RID)
-	PASS1RC(float, environment_get_ambient_sky_contribution, RID)
-	PASS1RC(RSE::EnvironmentReflectionSource, environment_get_reflection_source, RID)
-
-	// Tonemap
-	PASS4(environment_set_tonemap, RID, RSE::EnvironmentToneMapper, float, float)
-	PASS2(environment_set_tonemap_agx_contrast, RID, float)
-	PASS1RC(RSE::EnvironmentToneMapper, environment_get_tone_mapper, RID)
-	PASS1RC(float, environment_get_exposure, RID)
-	PASS3RC(float, environment_get_white, RID, bool, float)
-
-	// Fog
-	PASS11(environment_set_fog, RID, bool, const Color&, float, float, float, float, float, float,
-		float, RSE::EnvironmentFogMode)
-
-	PASS1RC(bool, environment_get_fog_enabled, RID)
-	PASS1RC(Color, environment_get_fog_light_color, RID)
-	PASS1RC(float, environment_get_fog_light_energy, RID)
-	PASS1RC(float, environment_get_fog_sun_scatter, RID)
-	PASS1RC(float, environment_get_fog_density, RID)
-	PASS1RC(float, environment_get_fog_sky_affect, RID)
-	PASS1RC(float, environment_get_fog_height, RID)
-	PASS1RC(float, environment_get_fog_height_density, RID)
-	PASS1RC(float, environment_get_fog_aerial_perspective, RID)
-	PASS1RC(RSE::EnvironmentFogMode, environment_get_fog_mode, RID)
-
-	PASS2(environment_set_volumetric_fog_volume_size, int, int)
-	PASS1(environment_set_volumetric_fog_filter_active, bool)
-
-	// Depth Fog
-	PASS4(environment_set_fog_depth, RID, float, float, float)
-	PASS1RC(float, environment_get_fog_depth_curve, RID)
-	PASS1RC(float, environment_get_fog_depth_begin, RID)
-	PASS1RC(float, environment_get_fog_depth_end, RID)
-
-	// Volumentric Fog
-	PASS14(environment_set_volumetric_fog, RID, bool, float, const Color&, const Color&, float,
-		float, float, float, float, bool, float, float, float)
-
-	PASS1RC(bool, environment_get_volumetric_fog_enabled, RID)
-	PASS1RC(float, environment_get_volumetric_fog_density, RID)
-	PASS1RC(Color, environment_get_volumetric_fog_scattering, RID)
-	PASS1RC(Color, environment_get_volumetric_fog_emission, RID)
-	PASS1RC(float, environment_get_volumetric_fog_emission_energy, RID)
-	PASS1RC(float, environment_get_volumetric_fog_anisotropy, RID)
-	PASS1RC(float, environment_get_volumetric_fog_length, RID)
-	PASS1RC(float, environment_get_volumetric_fog_detail_spread, RID)
-	PASS1RC(float, environment_get_volumetric_fog_gi_inject, RID)
-	PASS1RC(float, environment_get_volumetric_fog_sky_affect, RID)
-	PASS1RC(bool, environment_get_volumetric_fog_temporal_reprojection, RID)
-	PASS1RC(float, environment_get_volumetric_fog_temporal_reprojection_amount, RID)
-	PASS1RC(float, environment_get_volumetric_fog_ambient_inject, RID)
-
-	// Glow
-	PASS13(environment_set_glow, RID, bool, Vector<float>, float, float, float, float,
-		RSE::EnvironmentGlowBlendMode, float, float, float, float, RID)
-
-	PASS1RC(bool, environment_get_glow_enabled, RID)
-	PASS1RC(Vector<float>, environment_get_glow_levels, RID)
-	PASS1RC(float, environment_get_glow_intensity, RID)
-	PASS1RC(float, environment_get_glow_strength, RID)
-	PASS1RC(float, environment_get_glow_bloom, RID)
-	PASS1RC(float, environment_get_glow_mix, RID)
-	PASS1RC(RSE::EnvironmentGlowBlendMode, environment_get_glow_blend_mode, RID)
-	PASS1RC(float, environment_get_glow_hdr_bleed_threshold, RID)
-	PASS1RC(float, environment_get_glow_hdr_luminance_cap, RID)
-	PASS1RC(float, environment_get_glow_hdr_bleed_scale, RID)
-	PASS1RC(float, environment_get_glow_map_strength, RID)
-	PASS1RC(RID, environment_get_glow_map, RID)
-
-	PASS1(environment_glow_set_use_bicubic_upscale, bool)
-
-	// SSR
-	PASS6(environment_set_ssr, RID, bool, int, float, float, float)
-
-	PASS1RC(bool, environment_get_ssr_enabled, RID)
-	PASS1RC(int, environment_get_ssr_max_steps, RID)
-	PASS1RC(float, environment_get_ssr_fade_in, RID)
-	PASS1RC(float, environment_get_ssr_fade_out, RID)
-	PASS1RC(float, environment_get_ssr_depth_tolerance, RID)
-
-	PASS1(environment_set_ssr_half_size, bool)
-	PASS1(environment_set_ssr_roughness_quality, RSE::EnvironmentSSRRoughnessQuality)
-
-	// SSAO
-	PASS10(environment_set_ssao, RID, bool, float, float, float, float, float, float, float, float)
-
-	PASS1RC(bool, environment_get_ssao_enabled, RID)
-	PASS1RC(float, environment_get_ssao_radius, RID)
-	PASS1RC(float, environment_get_ssao_intensity, RID)
-	PASS1RC(float, environment_get_ssao_power, RID)
-	PASS1RC(float, environment_get_ssao_detail, RID)
-	PASS1RC(float, environment_get_ssao_horizon, RID)
-	PASS1RC(float, environment_get_ssao_sharpness, RID)
-	PASS1RC(float, environment_get_ssao_direct_light_affect, RID)
-	PASS1RC(float, environment_get_ssao_ao_channel_affect, RID)
-
-	PASS6(environment_set_ssao_quality, RSE::EnvironmentSSAOQuality, bool, float, int, float, float)
-
-	// SSIL
-	PASS6(environment_set_ssil, RID, bool, float, float, float, float)
-
-	PASS1RC(bool, environment_get_ssil_enabled, RID)
-	PASS1RC(float, environment_get_ssil_radius, RID)
-	PASS1RC(float, environment_get_ssil_intensity, RID)
-	PASS1RC(float, environment_get_ssil_sharpness, RID)
-	PASS1RC(float, environment_get_ssil_normal_rejection, RID)
-
-	PASS6(environment_set_ssil_quality, RSE::EnvironmentSSILQuality, bool, float, int, float, float)
-
-	// SDFGI
-
-	PASS11(environment_set_sdfgi, RID, bool, int, float, RSE::EnvironmentSDFGIYScale, bool, float,
-		bool, float, float, float)
-
-	PASS1RC(bool, environment_get_sdfgi_enabled, RID)
-	PASS1RC(int, environment_get_sdfgi_cascades, RID)
-	PASS1RC(float, environment_get_sdfgi_min_cell_size, RID)
-	PASS1RC(bool, environment_get_sdfgi_use_occlusion, RID)
-	PASS1RC(float, environment_get_sdfgi_bounce_feedback, RID)
-	PASS1RC(bool, environment_get_sdfgi_read_sky_light, RID)
-	PASS1RC(float, environment_get_sdfgi_energy, RID)
-	PASS1RC(float, environment_get_sdfgi_normal_bias, RID)
-	PASS1RC(float, environment_get_sdfgi_probe_bias, RID)
-	PASS1RC(RSE::EnvironmentSDFGIYScale, environment_get_sdfgi_y_scale, RID)
-
-	PASS1(environment_set_sdfgi_ray_count, RSE::EnvironmentSDFGIRayCount)
-	PASS1(environment_set_sdfgi_frames_to_converge, RSE::EnvironmentSDFGIFramesToConverge)
-	PASS1(environment_set_sdfgi_frames_to_update_light, RSE::EnvironmentSDFGIFramesToUpdateLight)
-
-	// Adjustment
-	PASS7(environment_set_adjustment, RID, bool, float, float, float, bool, RID)
-
-	PASS1RC(bool, environment_get_adjustments_enabled, RID)
-	PASS1RC(float, environment_get_adjustments_brightness, RID)
-
-	PASS1RC(float, environment_get_adjustments_contrast, RID)
-	PASS1RC(float, environment_get_adjustments_saturation, RID)
-	PASS1RC(bool, environment_get_use_1d_color_correction, RID)
-	PASS1RC(RID, environment_get_color_correction, RID)
-
-	PASS3R(Ref<Image>, environment_bake_panorama, RID, bool, const Size2i&)
-
-	PASS3(screen_space_roughness_limiter_set_active, bool, float, float)
-	PASS1(sub_surface_scattering_set_quality, RSE::SubSurfaceScatteringQuality)
-	PASS2(sub_surface_scattering_set_scale, float, float)
-
-	PASS1(positional_soft_shadow_filter_set_quality, RSE::ShadowQuality)
-	PASS1(directional_soft_shadow_filter_set_quality, RSE::ShadowQuality)
-
-	PASS2(sdfgi_set_debug_probe_select, const Vector3&, const Vector3&)
-
-	/* Render Buffers */
-
-	PASS0R(Ref<RenderSceneBuffers>, render_buffers_create)
-	PASS1(gi_set_use_half_resolution, bool)
-
-	/* Misc */
-	PASS1(set_debug_draw_mode, RSE::ViewportDebugDraw)
-
-	PASS1(decals_set_filter, RSE::DecalFilter)
-	PASS1(light_projectors_set_filter, RSE::LightProjectorFilter)
-	PASS1(lightmaps_set_bicubic_filter, bool)
-	PASS1(material_set_use_debanding, bool)
-
-	void update();
-
-	bool free(RID p_rid);
-
-	void set_scene_render(RendererSceneRender* p_scene_render);
-
-	void update_visibility_notifiers();
-
-	/* INTERPOLATION */
-
-	void update_interpolation_tick(bool p_process = true);
-	void update_interpolation_frame(bool p_process = true);
-	void set_physics_interpolation_enabled(bool p_enabled);
+	static void render_particle_colliders();
+	static void render_probes();
 
 	struct InterpolationData
 	{
 		bool interpolation_enabled = false;
-	} _interpolation_data;
+	};
 
-	RendererSceneCull() = default;
-	~RendererSceneCull();
+	struct Data
+	{
+		RendererSceneRender* scene_render = nullptr;
+		uint64_t render_pass = 0;
+
+		RID_Owner<Camera, true> camera_owner;
+
+		PagedArrayPool<InstanceBounds> instance_aabb_page_pool;
+		PagedArrayPool<InstanceData> instance_data_page_pool;
+		PagedArrayPool<InstanceVisibilityData> instance_visibility_data_page_pool;
+
+		int indexer_update_iterations = 0;
+		RID_Owner<Scenario, true> scenario_owner;
+
+		PagedAllocator<InstancePair> pair_allocator;
+		SelfList<Instance>::List _instance_update_list;
+		SelfList<InstanceReflectionProbeData>::List reflection_probe_render_list;
+
+		SpinLock visible_notifier_list_lock;
+		SelfList<InstanceVisibilityNotifierData>::List visible_notifier_list;
+		SelfList<InstanceVoxelGIData>::List voxel_gi_update_list;
+
+		uint64_t pair_pass = 1;
+		HashSet<Instance*> heightfield_particle_colliders_update_list;
+
+		PagedArrayPool<Instance*> instance_cull_page_pool;
+		PagedArrayPool<RenderGeometryInstance*> geometry_instance_cull_page_pool;
+		PagedArrayPool<RID> rid_cull_page_pool;
+
+		PagedArray<Instance*> instance_cull_result;
+		PagedArray<Instance*> instance_shadow_cull_result;
+
+		InstanceCullResult scene_cull_result;
+		LocalVector<InstanceCullResult> scene_cull_result_threads;
+
+		RendererSceneRender::RenderShadowData render_shadow_data[MAX_UPDATE_SHADOWS];
+		uint32_t max_shadows_used = 0;
+
+		RendererSceneRender::RenderSDFGIData
+			render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
+		RendererSceneRender::RenderSDFGIUpdateData sdfgi_update_data;
+
+		uint32_t thread_cull_threshold = 200;
+
+		RID_Owner<Instance, true> instance_owner{65536, 4194304};
+
+		uint32_t geometry_instance_pair_mask = 0;
+
+		LocalVector<Vector2> camera_jitter_array;
+		RenderingLightCuller* light_culler = nullptr;
+
+		Cull cull;
+		InterpolationData _interpolation_data;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
+	static _FORCE_INLINE_ RendererSceneRender* get_scene_render()
+	{
+		return data ? data->scene_render : nullptr;
+	}
+
+	static void voxel_gi_set_quality(RSE::VoxelGIQuality p_arg1) { if (data && data->scene_render) { data->scene_render->voxel_gi_set_quality(p_arg1); } }
+
+	/* SKY API */
+
+	static RID sky_allocate() { ERR_FAIL_COND_V(!data || !data->scene_render, RID()); return data->scene_render->sky_allocate(); }
+	static void sky_initialize(RID p_arg1) { if (data && data->scene_render) { data->scene_render->sky_initialize(p_arg1); } }
+
+	static void sky_set_radiance_size(RID p_arg1, int p_arg2) { if (data && data->scene_render) { data->scene_render->sky_set_radiance_size(p_arg1, p_arg2); } }
+	static void sky_set_mode(RID p_arg1, RSE::SkyMode p_arg2) { if (data && data->scene_render) { data->scene_render->sky_set_mode(p_arg1, p_arg2); } }
+	static void sky_set_material(RID p_arg1, RID p_arg2) { if (data && data->scene_render) { data->scene_render->sky_set_material(p_arg1, p_arg2); } }
+	static Ref<Image> sky_bake_panorama(RID p_arg1, float p_arg2, bool p_arg3, const Size2i& p_arg4) { ERR_FAIL_COND_V(!data || !data->scene_render, Ref<Image>()); return data->scene_render->sky_bake_panorama(p_arg1, p_arg2, p_arg3, p_arg4); }
+
+	// Compositor effect
+
+	static RID compositor_effect_allocate() { return RendererSceneRender::compositor_effect_allocate(); }
+	static void compositor_effect_initialize(RID p_arg1) { RendererSceneRender::compositor_effect_initialize(p_arg1); }
+
+	static bool is_compositor_effect(RID p_arg1) { return RendererSceneRender::is_compositor_effect(p_arg1); }
+
+	static void compositor_effect_set_enabled(RID p_arg1, bool p_arg2) { RendererSceneRender::compositor_effect_set_enabled(p_arg1, p_arg2); }
+	static void compositor_effect_set_flag(RID p_arg1, RSE::CompositorEffectFlags p_arg2, bool p_arg3) { RendererSceneRender::compositor_effect_set_flag(p_arg1, p_arg2, p_arg3); }
+
+	// Compositor
+
+	static RID compositor_allocate() { return RendererSceneRender::compositor_allocate(); }
+	static void compositor_initialize(RID p_arg1) { RendererSceneRender::compositor_initialize(p_arg1); }
+
+	static bool is_compositor(RID p_arg1) { return RendererSceneRender::is_compositor(p_arg1); }
+
+	// Environment
+
+	static RID environment_allocate() { return RendererSceneRender::environment_allocate(); }
+	static void environment_initialize(RID p_arg1) { RendererSceneRender::environment_initialize(p_arg1); }
+
+	static bool is_environment(RID p_arg1) { return RendererSceneRender::is_environment(p_arg1); }
+
+	// Background
+	static void environment_set_background(RID p_arg1, RSE::EnvironmentBG p_arg2) { RendererSceneRender::environment_set_background(p_arg1, p_arg2); }
+	static void environment_set_sky(RID p_arg1, RID p_arg2) { RendererSceneRender::environment_set_sky(p_arg1, p_arg2); }
+	static void environment_set_sky_custom_fov(RID p_arg1, float p_arg2) { RendererSceneRender::environment_set_sky_custom_fov(p_arg1, p_arg2); }
+	static void environment_set_sky_orientation(RID p_arg1, const Basis& p_arg2) { RendererSceneRender::environment_set_sky_orientation(p_arg1, p_arg2); }
+	static void environment_set_bg_color(RID p_arg1, const Color& p_arg2) { RendererSceneRender::environment_set_bg_color(p_arg1, p_arg2); }
+	static void environment_set_bg_energy(RID p_arg1, float p_arg2, float p_arg3) { RendererSceneRender::environment_set_bg_energy(p_arg1, p_arg2, p_arg3); }
+	static void environment_set_canvas_max_layer(RID p_arg1, int p_arg2) { RendererSceneRender::environment_set_canvas_max_layer(p_arg1, p_arg2); }
+	static void environment_set_ambient_light(RID p_arg1, const Color& p_arg2, RSE::EnvironmentAmbientSource p_arg3, float p_arg4, float p_arg5, RSE::EnvironmentReflectionSource p_arg6) { RendererSceneRender::environment_set_ambient_light(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); }
+	static void environment_set_camera_feed_id(RID p_arg1, int p_arg2) { RendererSceneRender::environment_set_camera_feed_id(p_arg1, p_arg2); }
+
+	static RSE::EnvironmentBG environment_get_background(RID p_arg1) { return RendererSceneRender::environment_get_background(p_arg1); }
+	static RID environment_get_sky(RID p_arg1) { return RendererSceneRender::environment_get_sky(p_arg1); }
+	static float environment_get_sky_custom_fov(RID p_arg1) { return RendererSceneRender::environment_get_sky_custom_fov(p_arg1); }
+	static Basis environment_get_sky_orientation(RID p_arg1) { return RendererSceneRender::environment_get_sky_orientation(p_arg1); }
+	static Color environment_get_bg_color(RID p_arg1) { return RendererSceneRender::environment_get_bg_color(p_arg1); }
+	static float environment_get_bg_energy_multiplier(RID p_arg1) { return RendererSceneRender::environment_get_bg_energy_multiplier(p_arg1); }
+	static float environment_get_bg_intensity(RID p_arg1) { return RendererSceneRender::environment_get_bg_intensity(p_arg1); }
+	static int environment_get_canvas_max_layer(RID p_arg1) { return RendererSceneRender::environment_get_canvas_max_layer(p_arg1); }
+	static RSE::EnvironmentAmbientSource environment_get_ambient_source(RID p_arg1) { return RendererSceneRender::environment_get_ambient_source(p_arg1); }
+	static Color environment_get_ambient_light(RID p_arg1) { return RendererSceneRender::environment_get_ambient_light(p_arg1); }
+	static float environment_get_ambient_light_energy(RID p_arg1) { return RendererSceneRender::environment_get_ambient_light_energy(p_arg1); }
+	static float environment_get_ambient_sky_contribution(RID p_arg1) { return RendererSceneRender::environment_get_ambient_sky_contribution(p_arg1); }
+	static RSE::EnvironmentReflectionSource environment_get_reflection_source(RID p_arg1) { return RendererSceneRender::environment_get_reflection_source(p_arg1); }
+
+	// Tonemap
+	static void environment_set_tonemap(RID p_arg1, RSE::EnvironmentToneMapper p_arg2, float p_arg3, float p_arg4) { RendererSceneRender::environment_set_tonemap(p_arg1, p_arg2, p_arg3, p_arg4); }
+	static void environment_set_tonemap_agx_contrast(RID p_arg1, float p_arg2) { RendererSceneRender::environment_set_tonemap_agx_contrast(p_arg1, p_arg2); }
+	static RSE::EnvironmentToneMapper environment_get_tone_mapper(RID p_arg1) { return RendererSceneRender::environment_get_tone_mapper(p_arg1); }
+	static float environment_get_exposure(RID p_arg1) { return RendererSceneRender::environment_get_exposure(p_arg1); }
+	static float environment_get_white(RID p_arg1, bool p_arg2, float p_arg3) { return RendererSceneRender::environment_get_white(p_arg1, p_arg2, p_arg3); }
+
+	// Fog
+	static void environment_set_fog(RID p_arg1, bool p_arg2, const Color& p_arg3, float p_arg4, float p_arg5, float p_arg6, float p_arg7, float p_arg8, float p_arg9, float p_arg10, RSE::EnvironmentFogMode p_arg11) { RendererSceneRender::environment_set_fog(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11); }
+
+	static bool environment_get_fog_enabled(RID p_arg1) { return RendererSceneRender::environment_get_fog_enabled(p_arg1); }
+	static Color environment_get_fog_light_color(RID p_arg1) { return RendererSceneRender::environment_get_fog_light_color(p_arg1); }
+	static float environment_get_fog_light_energy(RID p_arg1) { return RendererSceneRender::environment_get_fog_light_energy(p_arg1); }
+	static float environment_get_fog_sun_scatter(RID p_arg1) { return RendererSceneRender::environment_get_fog_sun_scatter(p_arg1); }
+	static float environment_get_fog_density(RID p_arg1) { return RendererSceneRender::environment_get_fog_density(p_arg1); }
+	static float environment_get_fog_sky_affect(RID p_arg1) { return RendererSceneRender::environment_get_fog_sky_affect(p_arg1); }
+	static float environment_get_fog_height(RID p_arg1) { return RendererSceneRender::environment_get_fog_height(p_arg1); }
+	static float environment_get_fog_height_density(RID p_arg1) { return RendererSceneRender::environment_get_fog_height_density(p_arg1); }
+	static float environment_get_fog_aerial_perspective(RID p_arg1) { return RendererSceneRender::environment_get_fog_aerial_perspective(p_arg1); }
+	static RSE::EnvironmentFogMode environment_get_fog_mode(RID p_arg1) { return RendererSceneRender::environment_get_fog_mode(p_arg1); }
+
+	static void environment_set_volumetric_fog_volume_size(int p_arg1, int p_arg2) { if (data && data->scene_render) { data->scene_render->environment_set_volumetric_fog_volume_size(p_arg1, p_arg2); } }
+	static void environment_set_volumetric_fog_filter_active(bool p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_volumetric_fog_filter_active(p_arg1); } }
+
+	// Depth Fog
+	static void environment_set_fog_depth(RID p_arg1, float p_arg2, float p_arg3, float p_arg4) { RendererSceneRender::environment_set_fog_depth(p_arg1, p_arg2, p_arg3, p_arg4); }
+	static float environment_get_fog_depth_curve(RID p_arg1) { return RendererSceneRender::environment_get_fog_depth_curve(p_arg1); }
+	static float environment_get_fog_depth_begin(RID p_arg1) { return RendererSceneRender::environment_get_fog_depth_begin(p_arg1); }
+	static float environment_get_fog_depth_end(RID p_arg1) { return RendererSceneRender::environment_get_fog_depth_end(p_arg1); }
+
+	// Volumentric Fog
+	static void environment_set_volumetric_fog(RID p_arg1, bool p_arg2, float p_arg3, const Color& p_arg4, const Color& p_arg5, float p_arg6, float p_arg7, float p_arg8, float p_arg9, float p_arg10, bool p_arg11, float p_arg12, float p_arg13, float p_arg14) { RendererSceneRender::environment_set_volumetric_fog(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11, p_arg12, p_arg13, p_arg14); }
+
+	static bool environment_get_volumetric_fog_enabled(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_enabled(p_arg1); }
+	static float environment_get_volumetric_fog_density(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_density(p_arg1); }
+	static Color environment_get_volumetric_fog_scattering(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_scattering(p_arg1); }
+	static Color environment_get_volumetric_fog_emission(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_emission(p_arg1); }
+	static float environment_get_volumetric_fog_emission_energy(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_emission_energy(p_arg1); }
+	static float environment_get_volumetric_fog_anisotropy(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_anisotropy(p_arg1); }
+	static float environment_get_volumetric_fog_length(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_length(p_arg1); }
+	static float environment_get_volumetric_fog_detail_spread(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_detail_spread(p_arg1); }
+	static float environment_get_volumetric_fog_gi_inject(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_gi_inject(p_arg1); }
+	static float environment_get_volumetric_fog_sky_affect(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_sky_affect(p_arg1); }
+	static bool environment_get_volumetric_fog_temporal_reprojection(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_temporal_reprojection(p_arg1); }
+	static float environment_get_volumetric_fog_temporal_reprojection_amount(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_temporal_reprojection_amount(p_arg1); }
+	static float environment_get_volumetric_fog_ambient_inject(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_ambient_inject(p_arg1); }
+
+	// Glow
+	static void environment_set_glow(RID p_arg1, bool p_arg2, Vector<float> p_arg3, float p_arg4, float p_arg5, float p_arg6, float p_arg7, RSE::EnvironmentGlowBlendMode p_arg8, float p_arg9, float p_arg10, float p_arg11, float p_arg12, RID p_arg13) { RendererSceneRender::environment_set_glow(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11, p_arg12, p_arg13); }
+
+	static bool environment_get_glow_enabled(RID p_arg1) { return RendererSceneRender::environment_get_glow_enabled(p_arg1); }
+	static Vector<float> environment_get_glow_levels(RID p_arg1) { return RendererSceneRender::environment_get_glow_levels(p_arg1); }
+	static float environment_get_glow_intensity(RID p_arg1) { return RendererSceneRender::environment_get_glow_intensity(p_arg1); }
+	static float environment_get_glow_strength(RID p_arg1) { return RendererSceneRender::environment_get_glow_strength(p_arg1); }
+	static float environment_get_glow_bloom(RID p_arg1) { return RendererSceneRender::environment_get_glow_bloom(p_arg1); }
+	static float environment_get_glow_mix(RID p_arg1) { return RendererSceneRender::environment_get_glow_mix(p_arg1); }
+	static RSE::EnvironmentGlowBlendMode environment_get_glow_blend_mode(RID p_arg1) { return RendererSceneRender::environment_get_glow_blend_mode(p_arg1); }
+	static float environment_get_glow_hdr_bleed_threshold(RID p_arg1) { return RendererSceneRender::environment_get_glow_hdr_bleed_threshold(p_arg1); }
+	static float environment_get_glow_hdr_luminance_cap(RID p_arg1) { return RendererSceneRender::environment_get_glow_hdr_luminance_cap(p_arg1); }
+	static float environment_get_glow_hdr_bleed_scale(RID p_arg1) { return RendererSceneRender::environment_get_glow_hdr_bleed_scale(p_arg1); }
+	static float environment_get_glow_map_strength(RID p_arg1) { return RendererSceneRender::environment_get_glow_map_strength(p_arg1); }
+	static RID environment_get_glow_map(RID p_arg1) { return RendererSceneRender::environment_get_glow_map(p_arg1); }
+
+	static void environment_glow_set_use_bicubic_upscale(bool p_arg1) { if (data && data->scene_render) { data->scene_render->environment_glow_set_use_bicubic_upscale(p_arg1); } }
+
+	// SSR
+	static void environment_set_ssr(RID p_arg1, bool p_arg2, int p_arg3, float p_arg4, float p_arg5, float p_arg6) { RendererSceneRender::environment_set_ssr(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); }
+
+	static bool environment_get_ssr_enabled(RID p_arg1) { return RendererSceneRender::environment_get_ssr_enabled(p_arg1); }
+	static int environment_get_ssr_max_steps(RID p_arg1) { return RendererSceneRender::environment_get_ssr_max_steps(p_arg1); }
+	static float environment_get_ssr_fade_in(RID p_arg1) { return RendererSceneRender::environment_get_ssr_fade_in(p_arg1); }
+	static float environment_get_ssr_fade_out(RID p_arg1) { return RendererSceneRender::environment_get_ssr_fade_out(p_arg1); }
+	static float environment_get_ssr_depth_tolerance(RID p_arg1) { return RendererSceneRender::environment_get_ssr_depth_tolerance(p_arg1); }
+
+	static void environment_set_ssr_half_size(bool p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_ssr_half_size(p_arg1); } }
+	static void environment_set_ssr_roughness_quality(RSE::EnvironmentSSRRoughnessQuality p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_ssr_roughness_quality(p_arg1); } }
+
+	// SSAO
+	static void environment_set_ssao(RID p_arg1, bool p_arg2, float p_arg3, float p_arg4, float p_arg5, float p_arg6, float p_arg7, float p_arg8, float p_arg9, float p_arg10) { RendererSceneRender::environment_set_ssao(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10); }
+
+	static bool environment_get_ssao_enabled(RID p_arg1) { return RendererSceneRender::environment_get_ssao_enabled(p_arg1); }
+	static float environment_get_ssao_radius(RID p_arg1) { return RendererSceneRender::environment_get_ssao_radius(p_arg1); }
+	static float environment_get_ssao_intensity(RID p_arg1) { return RendererSceneRender::environment_get_ssao_intensity(p_arg1); }
+	static float environment_get_ssao_power(RID p_arg1) { return RendererSceneRender::environment_get_ssao_power(p_arg1); }
+	static float environment_get_ssao_detail(RID p_arg1) { return RendererSceneRender::environment_get_ssao_detail(p_arg1); }
+	static float environment_get_ssao_horizon(RID p_arg1) { return RendererSceneRender::environment_get_ssao_horizon(p_arg1); }
+	static float environment_get_ssao_sharpness(RID p_arg1) { return RendererSceneRender::environment_get_ssao_sharpness(p_arg1); }
+	static float environment_get_ssao_direct_light_affect(RID p_arg1) { return RendererSceneRender::environment_get_ssao_direct_light_affect(p_arg1); }
+	static float environment_get_ssao_ao_channel_affect(RID p_arg1) { return RendererSceneRender::environment_get_ssao_ao_channel_affect(p_arg1); }
+
+	static void environment_set_ssao_quality(RSE::EnvironmentSSAOQuality p_arg1, bool p_arg2, float p_arg3, int p_arg4, float p_arg5, float p_arg6) { if (data && data->scene_render) { data->scene_render->environment_set_ssao_quality(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); } }
+
+	// SSIL
+	static void environment_set_ssil(RID p_arg1, bool p_arg2, float p_arg3, float p_arg4, float p_arg5, float p_arg6) { RendererSceneRender::environment_set_ssil(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); }
+
+	static bool environment_get_ssil_enabled(RID p_arg1) { return RendererSceneRender::environment_get_ssil_enabled(p_arg1); }
+	static float environment_get_ssil_radius(RID p_arg1) { return RendererSceneRender::environment_get_ssil_radius(p_arg1); }
+	static float environment_get_ssil_intensity(RID p_arg1) { return RendererSceneRender::environment_get_ssil_intensity(p_arg1); }
+	static float environment_get_ssil_sharpness(RID p_arg1) { return RendererSceneRender::environment_get_ssil_sharpness(p_arg1); }
+	static float environment_get_ssil_normal_rejection(RID p_arg1) { return RendererSceneRender::environment_get_ssil_normal_rejection(p_arg1); }
+
+	static void environment_set_ssil_quality(RSE::EnvironmentSSILQuality p_arg1, bool p_arg2, float p_arg3, int p_arg4, float p_arg5, float p_arg6) { if (data && data->scene_render) { data->scene_render->environment_set_ssil_quality(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); } }
+
+	// SDFGI
+
+	static void environment_set_sdfgi(RID p_arg1, bool p_arg2, int p_arg3, float p_arg4, RSE::EnvironmentSDFGIYScale p_arg5, bool p_arg6, float p_arg7, bool p_arg8, float p_arg9, float p_arg10, float p_arg11) { RendererSceneRender::environment_set_sdfgi(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11); }
+
+	static bool environment_get_sdfgi_enabled(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_enabled(p_arg1); }
+	static int environment_get_sdfgi_cascades(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_cascades(p_arg1); }
+	static float environment_get_sdfgi_min_cell_size(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_min_cell_size(p_arg1); }
+	static bool environment_get_sdfgi_use_occlusion(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_use_occlusion(p_arg1); }
+	static float environment_get_sdfgi_bounce_feedback(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_bounce_feedback(p_arg1); }
+	static bool environment_get_sdfgi_read_sky_light(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_read_sky_light(p_arg1); }
+	static float environment_get_sdfgi_energy(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_energy(p_arg1); }
+	static float environment_get_sdfgi_normal_bias(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_normal_bias(p_arg1); }
+	static float environment_get_sdfgi_probe_bias(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_probe_bias(p_arg1); }
+	static RSE::EnvironmentSDFGIYScale environment_get_sdfgi_y_scale(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_y_scale(p_arg1); }
+
+	static void environment_set_sdfgi_ray_count(RSE::EnvironmentSDFGIRayCount p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_sdfgi_ray_count(p_arg1); } }
+	static void environment_set_sdfgi_frames_to_converge(RSE::EnvironmentSDFGIFramesToConverge p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_sdfgi_frames_to_converge(p_arg1); } }
+	static void environment_set_sdfgi_frames_to_update_light(RSE::EnvironmentSDFGIFramesToUpdateLight p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_sdfgi_frames_to_update_light(p_arg1); } }
+
+	// Adjustment
+	static void environment_set_adjustment(RID p_arg1, bool p_arg2, float p_arg3, float p_arg4, float p_arg5, bool p_arg6, RID p_arg7) { RendererSceneRender::environment_set_adjustment(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7); }
+
+	static bool environment_get_adjustments_enabled(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_enabled(p_arg1); }
+	static float environment_get_adjustments_brightness(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_brightness(p_arg1); }
+
+	static float environment_get_adjustments_contrast(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_contrast(p_arg1); }
+	static float environment_get_adjustments_saturation(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_saturation(p_arg1); }
+	static bool environment_get_use_1d_color_correction(RID p_arg1) { return RendererSceneRender::environment_get_use_1d_color_correction(p_arg1); }
+	static RID environment_get_color_correction(RID p_arg1) { return RendererSceneRender::environment_get_color_correction(p_arg1); }
+
+	static Ref<Image> environment_bake_panorama(RID p_arg1, bool p_arg2, const Size2i& p_arg3) { ERR_FAIL_COND_V(!data || !data->scene_render, Ref<Image>()); return data->scene_render->environment_bake_panorama(p_arg1, p_arg2, p_arg3); }
+
+	static void screen_space_roughness_limiter_set_active(bool p_arg1, float p_arg2, float p_arg3) { if (data && data->scene_render) { data->scene_render->screen_space_roughness_limiter_set_active(p_arg1, p_arg2, p_arg3); } }
+	static void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_arg1) { if (data && data->scene_render) { data->scene_render->sub_surface_scattering_set_quality(p_arg1); } }
+	static void sub_surface_scattering_set_scale(float p_arg1, float p_arg2) { if (data && data->scene_render) { data->scene_render->sub_surface_scattering_set_scale(p_arg1, p_arg2); } }
+
+	static void positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_arg1) { if (data && data->scene_render) { data->scene_render->positional_soft_shadow_filter_set_quality(p_arg1); } }
+	static void directional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_arg1) { if (data && data->scene_render) { data->scene_render->directional_soft_shadow_filter_set_quality(p_arg1); } }
+
+	static void sdfgi_set_debug_probe_select(const Vector3& p_arg1, const Vector3& p_arg2) { if (data && data->scene_render) { data->scene_render->sdfgi_set_debug_probe_select(p_arg1, p_arg2); } }
+
+	/* Render Buffers */
+
+	static Ref<RenderSceneBuffers> render_buffers_create() { ERR_FAIL_COND_V(!data || !data->scene_render, Ref<RenderSceneBuffers>()); return data->scene_render->render_buffers_create(); }
+	static void gi_set_use_half_resolution(bool p_arg1) { if (data && data->scene_render) { data->scene_render->gi_set_use_half_resolution(p_arg1); } }
+
+	/* Misc */
+	static void set_debug_draw_mode(RSE::ViewportDebugDraw p_arg1) { if (data && data->scene_render) { data->scene_render->set_debug_draw_mode(p_arg1); } }
+
+	static void decals_set_filter(RSE::DecalFilter p_arg1) { if (data && data->scene_render) { data->scene_render->decals_set_filter(p_arg1); } }
+	static void light_projectors_set_filter(RSE::LightProjectorFilter p_arg1) { if (data && data->scene_render) { data->scene_render->light_projectors_set_filter(p_arg1); } }
+	static void lightmaps_set_bicubic_filter(bool p_arg1) { if (data && data->scene_render) { data->scene_render->lightmaps_set_bicubic_filter(p_arg1); } }
+	static void material_set_use_debanding(bool p_arg1) { if (data && data->scene_render) { data->scene_render->material_set_use_debanding(p_arg1); } }
+
+	static void update();
+
+	static bool free(RID p_rid);
+
+	static void set_scene_render(RendererSceneRender* p_scene_render);
+
+	static void update_visibility_notifiers();
+
+	/* INTERPOLATION */
+
+	static void update_interpolation_tick(bool p_process = true);
+	static void update_interpolation_frame(bool p_process = true);
+	static void set_physics_interpolation_enabled(bool p_enabled);
+
+	RendererSceneCull() = delete;
+	RendererSceneCull(const RendererSceneCull&) = delete;
+	RendererSceneCull& operator=(const RendererSceneCull&) = delete;
+	~RendererSceneCull() = delete;
 };
 
 

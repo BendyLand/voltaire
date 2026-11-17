@@ -378,16 +378,16 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		}
 	}
 
-	if (Renderer::scene->is_scenario(p_viewport->scenario)) {
-		RID environment = Renderer::scene->scenario_get_environment(p_viewport->scenario);
-		if (Renderer::scene->is_environment(environment)) {
+	if (RendererSceneCull::is_scenario(p_viewport->scenario)) {
+		RID environment = RendererSceneCull::scenario_get_environment(p_viewport->scenario);
+		if (RendererSceneCull::is_environment(environment)) {
 			if (can_draw_2d && !viewport_is_environment_disabled(p_viewport)) {
 				scenario_draw_canvas_bg =
-					Renderer::scene->environment_get_background(environment) == RSE::ENV_BG_CANVAS;
+					RendererSceneCull::environment_get_background(environment) == RSE::ENV_BG_CANVAS;
 				scenario_canvas_max_layer =
-					Renderer::scene->environment_get_canvas_max_layer(environment);
+					RendererSceneCull::environment_get_canvas_max_layer(environment);
 			}
-			else if (Renderer::scene->environment_get_background(environment) ==
+			else if (RendererSceneCull::environment_get_background(environment) ==
 					   RSE::ENV_BG_CANVAS) {
 				// The scene renderer will still copy over the last frame, so we need to clear the
 				// render target.
@@ -406,11 +406,11 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 		}
 	}
 
-	bool can_draw_3d = Renderer::scene->is_camera(p_viewport->camera) && !p_viewport->disable_3d;
+	bool can_draw_3d = RendererSceneCull::is_camera(p_viewport->camera) && !p_viewport->disable_3d;
 
 	if ((scenario_draw_canvas_bg || can_draw_3d) && !p_viewport->render_buffers.is_valid()) {
 		// wants to draw 3D but there is no render buffer, create
-		p_viewport->render_buffers = Renderer::scene->render_buffers_create();
+		p_viewport->render_buffers = RendererSceneCull::render_buffers_create();
 
 		_configure_3d_render_buffers(p_viewport);
 	}
@@ -742,7 +742,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			// elements were drawn. Clear now otherwise we copy over garbage from the render target.
 			RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 			if (!can_draw_3d) {
-				Renderer::scene->render_empty_scene(p_viewport->render_buffers,
+				RendererSceneCull::render_empty_scene(p_viewport->render_buffers,
 					p_viewport->scenario, p_viewport->shadow_atlas,
 					p_viewport->window_output_max_value);
 			}
@@ -800,7 +800,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				// target.
 				RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 				if (!can_draw_3d) {
-					Renderer::scene->render_empty_scene(p_viewport->render_buffers,
+					RendererSceneCull::render_empty_scene(p_viewport->render_buffers,
 						p_viewport->scenario, p_viewport->shadow_atlas,
 						p_viewport->window_output_max_value);
 				}
@@ -819,7 +819,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 			// elements were drawn. Clear now otherwise we copy over garbage from the render target.
 			RendererTextureStorage::render_target_do_clear_request(p_viewport->render_target);
 			if (!can_draw_3d) {
-				Renderer::scene->render_empty_scene(p_viewport->render_buffers,
+				RendererSceneCull::render_empty_scene(p_viewport->render_buffers,
 					p_viewport->scenario, p_viewport->shadow_atlas,
 					p_viewport->window_output_max_value);
 			}
@@ -1236,7 +1236,7 @@ void RendererViewport::viewport_set_scenario(RID p_viewport, RID p_scenario)
 	ERR_FAIL_NULL(viewport);
 
 	if (viewport->scenario.is_valid()) {
-		Renderer::scene->scenario_remove_viewport_visibility_mask(viewport->scenario, p_viewport);
+		RendererSceneCull::scenario_remove_viewport_visibility_mask(viewport->scenario, p_viewport);
 	}
 
 	viewport->scenario = p_scenario;

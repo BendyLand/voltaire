@@ -50,7 +50,6 @@
 
 #include <cstdlib>
 
-static OS_Web *os = nullptr;
 #ifndef PROXY_TO_PTHREAD_ENABLED
 static uint64_t target_ticks = 0;
 #endif
@@ -66,9 +65,9 @@ void exit_callback() {
 		Main::cleanup();
 		main_started = false;
 	}
-	int exit_code = OS_Web::get_singleton()->get_exit_code();
-	delete os; // We used a normal new, so it needs a normal delete.
-	os = nullptr;
+	int exit_code = OS::get_exit_code();
+	OS::finalize();
+	OS::finalize_core();
 	godot_cleanup_profiler();
 	emscripten_cancel_main_loop(); // We are exiting in this iteration.
 	emscripten_force_exit(exit_code); // Exit runtime.
@@ -80,7 +79,7 @@ void cleanup_after_sync() {
 
 void main_loop_callback() {
 #ifndef PROXY_TO_PTHREAD_ENABLED
-	uint64_t current_ticks = os->get_ticks_usec();
+	uint64_t current_ticks = OS::get_ticks_usec();
 #endif
 
 	bool force_draw = DisplayServer::driver_as<DisplayServerWeb>()->check_size_force_redraw();
@@ -104,7 +103,7 @@ void main_loop_callback() {
 	}
 #endif
 
-	if (os->main_loop_iterate()) {
+	if (OS_Web::main_loop_iterate()) {
 		emscripten_cancel_main_loop(); // Cancel current loop and set the cleanup one.
 		emscripten_set_main_loop(exit_callback, -1, false);
 		godot_js_os_finish_async(cleanup_after_sync);
@@ -134,7 +133,8 @@ void print_web_header() {
 extern EMSCRIPTEN_KEEPALIVE int godot_web_main(int argc, char *argv[]) {
 	godot_init_profiler();
 
-	os = new OS_Web();
+	OS::initialize_core();
+	OS::initialize();
 
 #ifdef TOOLS_ENABLED
 	WebToolsEditorPlugin::initialize();
@@ -164,7 +164,7 @@ extern EMSCRIPTEN_KEEPALIVE int godot_web_main(int argc, char *argv[]) {
 	ResourceLoader::set_abort_on_missing_resources(false);
 
 	int ret = Main::start();
-	os->set_exit_code(ret);
+	OS::set_exit_code(ret);
 	MainLoop::initialize();
 #ifdef TOOLS_ENABLED
 	if (Engine::is_project_manager_hint() && FileAccess::exists("/tmp/preload.zip")) {
@@ -180,5 +180,5 @@ extern EMSCRIPTEN_KEEPALIVE int godot_web_main(int argc, char *argv[]) {
 	// We are inside an animation frame, we want to immediately draw on the newly setup canvas.
 	main_loop_callback();
 
-	return os->get_exit_code();
+	return OS::get_exit_code();
 }

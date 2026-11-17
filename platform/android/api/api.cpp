@@ -30,18 +30,13 @@
 /**************************************************************************/
 
 #include "api.h"
-#include "core/config/engine.h"
 #include "java_class_wrapper.h"
 #include "jni_singleton.h"
-
-#if !defined(ANDROID_ENABLED)
-static JavaClassWrapper* java_class_wrapper = nullptr;
-#endif
 
 void unregister_android_api()
 {
 #if !defined(ANDROID_ENABLED)
-	memdelete(java_class_wrapper);
+	JavaClassWrapper::finalize();
 #endif
 }
 
@@ -61,13 +56,12 @@ Ref<JavaClass> JavaObject::get_java_class() const { return Ref<JavaClass>(); }
 
 bool JavaObject::has_java_method(const String&) const { return false; }
 
-JavaClassWrapper* JavaClassWrapper::singleton = nullptr;
+void JavaClassWrapper::initialize() {}
+
+void JavaClassWrapper::finalize() {}
 
 Ref<JavaClass> JavaClassWrapper::_wrap(const String&, bool) { return Ref<JavaClass>(); }
-
-JavaClassWrapper::JavaClassWrapper() { singleton = this; }
 
 void register_android_api() {}
 
 #endif
-

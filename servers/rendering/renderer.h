@@ -67,7 +67,6 @@ struct MeshData;
 class RenderingDevice;
 class RendererCanvasRender;
 class RendererCanvasCull;
-class RendererSceneCull;
 class RendererViewport;
 class RenderingMethod;
 
@@ -137,7 +136,6 @@ public:
 
 	static inline RendererCanvasCull* canvas = nullptr;
 	static inline RendererViewport* viewport = nullptr;
-	static inline RendererSceneCull* scene = nullptr;
 
 	static void fix_surface_compatibility(
 		RenderingServerTypes::SurfaceData& p_surface, const String& p_path = String());

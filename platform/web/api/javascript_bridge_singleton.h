@@ -33,21 +33,17 @@
 
 #include "core/types.h"
 
-class JavaScriptBridge
+class JavaScriptBridge final
 {
-private:
-	static JavaScriptBridge* singleton;
-
 public:
-	void download_buffer(Vector<uint8_t> p_arr, const String& p_name,
+	static void download_buffer(Vector<uint8_t> p_arr, const String& p_name,
 		const String& p_mime = "application/octet-stream");
-	bool pwa_needs_update() const;
-	Error pwa_update();
-	void force_fs_sync();
+	static bool pwa_needs_update();
+	static Error pwa_update();
+	static void force_fs_sync();
 
-	static JavaScriptBridge* get_singleton();
-	JavaScriptBridge();
-	~JavaScriptBridge();
+	JavaScriptBridge() = delete;
+	JavaScriptBridge(const JavaScriptBridge&) = delete;
+	JavaScriptBridge& operator=(const JavaScriptBridge&) = delete;
+	~JavaScriptBridge() = delete;
 };
-
-

@@ -50,6 +50,7 @@
 #include "drivers/gles3/rasterizer_util_gles3.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer_scene_cull.h"
 #include "servers/rendering/rendering_server_types.h"
 
 #define _EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB 0x8242
@@ -496,6 +497,9 @@ void RasterizerGLES3::initialize()
 
 	RasterizerCanvasGLES3::initialize();
 	scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
+	if (RendererSceneCull::is_initialized()) {
+		RendererSceneCull::set_scene_render(scene);
+	}
 	printf("[LIFECYCLE 1] Scene allocated: scene=%p, vptr=%p\n", (void*)scene, *(void**)scene);
 	fflush(stdout);
 	RendererTextureStorage::bind<GLES3::TextureStorage>();
@@ -523,6 +527,9 @@ void RasterizerGLES3::finalize()
 	printf("[LIFECYCLE 4] About to memdelete(scene): scene=%p, vptr=%p\n", (void*)scene,
 		scene ? *(void**)scene : nullptr);
 	fflush(stdout);
+	if (RendererSceneCull::is_initialized() && RendererSceneCull::get_scene_render() == scene) {
+		RendererSceneCull::set_scene_render(nullptr);
+	}
 	if (scene) {
 		memdelete(scene);
 		scene = nullptr;

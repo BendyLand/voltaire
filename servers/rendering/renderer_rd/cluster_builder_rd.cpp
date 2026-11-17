@@ -33,6 +33,8 @@
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep. RENDER_TIMESTAMP macro uses RSG.
 
+ClusterBuilderSharedDataRD::ClusterBuilderSharedDataRD() {}
+
 ClusterBuilderSharedDataRD::~ClusterBuilderSharedDataRD()
 {
 	RD::free_rid(sphere_vertex_buffer);

@@ -780,7 +780,7 @@ void OpenXRCompositionLayerExtension::CompositionLayer::create_android_surface()
 
 	if (surface) {
 		android_surface.surface.instantiate(
-			JavaClassWrapper::get_singleton()->wrap("android.view.Surface"), surface);
+			JavaClassWrapper::wrap("android.view.Surface"), surface);
 	}
 }
 #endif

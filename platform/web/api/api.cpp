@@ -30,30 +30,15 @@
 /**************************************************************************/
 
 #include "api.h"
-#include "core/config/engine.h"
 #include "javascript_bridge_singleton.h"
 
-static JavaScriptBridge* javascript_bridge_singleton;
-
-void unregister_web_api() { memdelete(javascript_bridge_singleton); }
-
-JavaScriptBridge* JavaScriptBridge::singleton = nullptr;
+void unregister_web_api() {}
 
 void register_web_api() {}
 
-JavaScriptBridge* JavaScriptBridge::get_singleton() { return singleton; }
-
-JavaScriptBridge::JavaScriptBridge()
-{
-	ERR_FAIL_COND_MSG(singleton != nullptr, "JavaScriptBridge singleton already exists.");
-	singleton = this;
-}
-
-JavaScriptBridge::~JavaScriptBridge() {}
-
 #if !defined(WEB_ENABLED)
 
-bool JavaScriptBridge::pwa_needs_update() const { return false; }
+bool JavaScriptBridge::pwa_needs_update() { return false; }
 
 Error JavaScriptBridge::pwa_update() { return ERR_UNAVAILABLE; }
 
@@ -65,5 +50,3 @@ void JavaScriptBridge::download_buffer(
 }
 
 #endif
-
-

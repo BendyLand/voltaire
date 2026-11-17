@@ -136,11 +136,10 @@ Rect2 fit_keep_aspect_covered(const Vector2 &p_container, const Vector2 &p_rect)
 	return result;
 }
 
-OS_AppleEmbedded *OS_AppleEmbedded::get_singleton() {
-	return (OS_AppleEmbedded *)OS::get_singleton();
-}
-
-OS_AppleEmbedded::OS_AppleEmbedded() {
+void OS_AppleEmbedded::setup() {
+	if (!data) {
+		data = memnew(Data);
+	}
 	for (int i = 0; i < apple_embedded_platform_init_callbacks_count; ++i) {
 		apple_init_callbacks[i]();
 	}
@@ -149,15 +148,12 @@ OS_AppleEmbedded::OS_AppleEmbedded() {
 	apple_embedded_platform_init_callbacks_count = 0;
 	apple_embedded_platform_init_callbacks_capacity = 0;
 
-
 	Vector<Logger *> loggers;
 	loggers.push_back(memnew(OsLogLogger(NSBundle.mainBundle.bundleIdentifier.UTF8String)));
-	_set_logger(memnew(CompositeLogger(loggers)));
+	OS::_set_logger(memnew(CompositeLogger(loggers)));
 
-	AudioDriverManager::add_driver(&audio_driver);
+	AudioDriverManager::add_driver(&data->audio_driver);
 }
-
-OS_AppleEmbedded::~OS_AppleEmbedded() {}
 
 void OS_AppleEmbedded::alert(const String &p_alert, const String &p_title) {
 	const CharString utf8_alert = p_alert.utf8();
@@ -166,6 +162,9 @@ void OS_AppleEmbedded::alert(const String &p_alert, const String &p_title) {
 }
 
 void OS_AppleEmbedded::initialize_core() {
+	if (!data) {
+		data = memnew(Data);
+	}
 	OS_Unix::initialize_core();
 }
 
@@ -175,25 +174,39 @@ void OS_AppleEmbedded::initialize() {
 
 void OS_AppleEmbedded::initialize_joypads() {
 #ifdef SDL_ENABLED
-	joypad_sdl = memnew(JoypadSDL());
-	if (joypad_sdl->initialize() != OK) {
+	if (!data) {
+		return;
+	}
+	data->joypad_sdl = memnew(JoypadSDL());
+	if (data->joypad_sdl->initialize() != OK) {
 		ERR_PRINT("Couldn't initialize SDL joypad input driver.");
-		memdelete(joypad_sdl);
-		joypad_sdl = nullptr;
+		memdelete(data->joypad_sdl);
+		data->joypad_sdl = nullptr;
 	}
 #endif
 }
 
 void OS_AppleEmbedded::initialize_modules() {
-	apple_embedded = memnew(AppleEmbedded);
-	Engine::get_singleton()->add_singleton(Engine::Singleton("AppleEmbedded", apple_embedded));
+	if (!data) {
+		data = memnew(Data);
+	}
+	data->apple_embedded = memnew(AppleEmbedded);
 }
 
 void OS_AppleEmbedded::deinitialize_modules() {
+	if (!data) {
+		return;
+	}
 #ifdef SDL_ENABLED
-	memdelete(joypad_sdl);
+	if (data->joypad_sdl) {
+		memdelete(data->joypad_sdl);
+		data->joypad_sdl = nullptr;
+	}
 #endif
-	memdelete(apple_embedded);
+	if (data->apple_embedded) {
+		memdelete(data->apple_embedded);
+		data->apple_embedded = nullptr;
+	}
 }
 
 void OS_AppleEmbedded::delete_main_loop() {
@@ -213,8 +226,8 @@ bool OS_AppleEmbedded::iterate() {
 	}
 
 #ifdef SDL_ENABLED
-	if (joypad_sdl) {
-		joypad_sdl->process_events();
+	if (data && data->joypad_sdl) {
+		data->joypad_sdl->process_events();
 	}
 #endif
 
@@ -229,9 +242,14 @@ void OS_AppleEmbedded::start() {
 
 void OS_AppleEmbedded::finalize() {
 	deinitialize_modules();
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
 
-	// Already gets called
-	//delete_main_loop();
+void OS_AppleEmbedded::finalize_core() {
+	OS_Unix::finalize_core();
 }
 
 // MARK: Dynamic Libraries
@@ -274,32 +292,32 @@ Error OS_AppleEmbedded::open_dynamic_library(const String &p_path, void *&p_libr
 
 	if (!FileAccess::exists(path)) {
 		// Load .dylib or framework from within the executable path.
-		path = get_framework_executable(get_executable_path().get_base_dir().path_join(p_path.get_file()));
+		path = get_framework_executable(OS::get_executable_path().get_base_dir().path_join(p_path.get_file()));
 	}
 
 	if (!FileAccess::exists(path)) {
 		// Load .dylib converted to framework from within the executable path.
-		path = get_framework_executable(get_executable_path().get_base_dir().path_join(p_path.get_file().get_basename() + ".framework"));
+		path = get_framework_executable(OS::get_executable_path().get_base_dir().path_join(p_path.get_file().get_basename() + ".framework"));
 	}
 
 	if (!FileAccess::exists(path)) {
 		// Load .dylib from within the executable path.
-		path = get_framework_executable(get_executable_path().get_base_dir().path_join(p_path.get_file().get_basename() + ".dylib"));
+		path = get_framework_executable(OS::get_executable_path().get_base_dir().path_join(p_path.get_file().get_basename() + ".dylib"));
 	}
 
 	if (!FileAccess::exists(path)) {
 		// Load .dylib or framework from a standard iOS location.
-		path = get_framework_executable(get_executable_path().get_base_dir().path_join("Frameworks").path_join(p_path.get_file()));
+		path = get_framework_executable(OS::get_executable_path().get_base_dir().path_join("Frameworks").path_join(p_path.get_file()));
 	}
 
 	if (!FileAccess::exists(path)) {
 		// Load .dylib converted to framework from a standard iOS location.
-		path = get_framework_executable(get_executable_path().get_base_dir().path_join("Frameworks").path_join(p_path.get_file().get_basename() + ".framework"));
+		path = get_framework_executable(OS::get_executable_path().get_base_dir().path_join("Frameworks").path_join(p_path.get_file().get_basename() + ".framework"));
 	}
 
 	if (!FileAccess::exists(path)) {
 		// Load .dylib from a standard iOS location.
-		path = get_framework_executable(get_executable_path().get_base_dir().path_join("Frameworks").path_join(p_path.get_file().get_basename() + ".dylib"));
+		path = get_framework_executable(OS::get_executable_path().get_base_dir().path_join("Frameworks").path_join(p_path.get_file().get_basename() + ".dylib"));
 	}
 
 	if (!FileAccess::exists(path) && (p_path.ends_with(".a") || p_path.ends_with(".xcframework"))) {
@@ -342,19 +360,21 @@ Error OS_AppleEmbedded::get_dynamic_library_symbol_handle(void *p_library_handle
 	return OS_Unix::get_dynamic_library_symbol_handle(p_library_handle, p_name, p_symbol_handle, p_optional);
 }
 
-String OS_AppleEmbedded::get_distribution_name() const {
-	return get_name();
+String OS_AppleEmbedded::get_distribution_name() {
+	return OS::get_name();
 }
 
-String OS_AppleEmbedded::get_version() const {
+String OS_AppleEmbedded::get_version() {
 	NSOperatingSystemVersion ver = [NSProcessInfo processInfo].operatingSystemVersion;
 	return vformat("%d.%d.%d", (int64_t)ver.majorVersion, (int64_t)ver.minorVersion, (int64_t)ver.patchVersion);
 }
 
-String OS_AppleEmbedded::get_model_name() const {
-	String model = apple_embedded->get_model();
-	if (model != "") {
-		return model;
+String OS_AppleEmbedded::get_model_name() {
+	if (data && data->apple_embedded) {
+		String model = data->apple_embedded->get_model();
+		if (model != "") {
+			return model;
+		}
 	}
 
 	return OS_Unix::get_model_name();
@@ -375,7 +395,7 @@ Error OS_AppleEmbedded::shell_open(const String &p_uri) {
 	return OK;
 }
 
-String OS_AppleEmbedded::get_user_data_dir(const String &p_user_dir) const {
+String OS_AppleEmbedded::get_user_data_dir(const String &p_user_dir) {
 	static String ret;
 	if (ret.is_empty()) {
 		NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -386,7 +406,7 @@ String OS_AppleEmbedded::get_user_data_dir(const String &p_user_dir) const {
 	return ret;
 }
 
-String OS_AppleEmbedded::get_cache_path() const {
+String OS_AppleEmbedded::get_cache_path() {
 	static String ret;
 	if (ret.is_empty()) {
 		NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
@@ -397,7 +417,7 @@ String OS_AppleEmbedded::get_cache_path() const {
 	return ret;
 }
 
-String OS_AppleEmbedded::get_temp_path() const {
+String OS_AppleEmbedded::get_temp_path() {
 	static String ret;
 	if (ret.is_empty()) {
 		NSURL *url = [NSURL fileURLWithPath:NSTemporaryDirectory()
@@ -410,19 +430,19 @@ String OS_AppleEmbedded::get_temp_path() const {
 	return ret;
 }
 
-String OS_AppleEmbedded::get_resource_dir() const {
+String OS_AppleEmbedded::get_resource_dir() {
 #ifdef TOOLS_ENABLED
 	return OS_Unix::get_resource_dir();
 #else
-	if (remote_fs_dir.is_empty()) {
+	if (!data || data->remote_fs_dir.is_empty()) {
 		return OS_Unix::get_resource_dir();
 	} else {
-		return remote_fs_dir;
+		return data->remote_fs_dir;
 	}
 #endif
 }
 
-String OS_AppleEmbedded::get_bundle_resource_dir() const {
+String OS_AppleEmbedded::get_bundle_resource_dir() {
 	NSString *str = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"godot_path"];
 	if (!str) {
 		return OS_Unix::get_bundle_resource_dir();
@@ -435,7 +455,7 @@ String OS_AppleEmbedded::get_bundle_resource_dir() const {
 	}
 }
 
-String OS_AppleEmbedded::get_locale() const {
+String OS_AppleEmbedded::get_locale() {
 	NSString *preferredLanguage = [NSLocale preferredLanguages].firstObject;
 
 	if (preferredLanguage) {
@@ -446,7 +466,7 @@ String OS_AppleEmbedded::get_locale() const {
 	return String::utf8([localeIdentifier UTF8String]).replace_char('-', '_');
 }
 
-Vector<String> OS_AppleEmbedded::get_preferred_locales() const {
+Vector<String> OS_AppleEmbedded::get_preferred_locales() {
 	Vector<String> out;
 	for (NSString *locale_code in [NSLocale preferredLanguages]) {
 		out.push_back(String([locale_code UTF8String]).replace_char('-', '_'));
@@ -458,7 +478,7 @@ Vector<String> OS_AppleEmbedded::get_preferred_locales() const {
 	return out;
 }
 
-String OS_AppleEmbedded::get_unique_id() const {
+String OS_AppleEmbedded::get_unique_id() {
 	NSString *uuid = [UIDevice currentDevice].identifierForVendor.UUIDString;
 	return String::utf8([uuid UTF8String]);
 }
@@ -505,12 +525,12 @@ static const _ModelInfo _models[] = {
 	{ { "iPhone18,1", "iPhone18,2", "iPhone18,4" }, "Apple A19 Pro" },
 };
 
-String OS_AppleEmbedded::get_processor_name() const {
+String OS_AppleEmbedded::get_processor_name() {
 #if defined(IOS_SIMULATOR) || defined(VISIONOS_SIMULATOR)
 	return "Simulator";
 #else
-	if (apple_embedded) {
-		String model = apple_embedded->get_model();
+	if (data && data->apple_embedded) {
+		String model = data->apple_embedded->get_model();
 		for (unsigned int i = 0; i < std::size(_models); i++) {
 			for (const String &m : _models[i].model) {
 				if (model.contains(m)) {
@@ -523,7 +543,7 @@ String OS_AppleEmbedded::get_processor_name() const {
 	return OS::get_processor_name();
 }
 
-Vector<String> OS_AppleEmbedded::get_system_fonts() const {
+Vector<String> OS_AppleEmbedded::get_system_fonts() {
 	HashSet<String> font_names;
 	CFArrayRef fonts = CTFontManagerCopyAvailableFontFamilyNames();
 	if (fonts) {
@@ -544,7 +564,7 @@ Vector<String> OS_AppleEmbedded::get_system_fonts() const {
 	return ret;
 }
 
-String OS_AppleEmbedded::_get_default_fontname(const String &p_font_name) const {
+String OS_AppleEmbedded::_get_default_fontname(const String &p_font_name) {
 	String font_name = p_font_name;
 	if (font_name.to_lower() == "sans-serif") {
 		font_name = "Helvetica";
@@ -560,7 +580,7 @@ String OS_AppleEmbedded::_get_default_fontname(const String &p_font_name) const 
 	return font_name;
 }
 
-CGFloat OS_AppleEmbedded::_weight_to_ct(int p_weight) const {
+CGFloat OS_AppleEmbedded::_weight_to_ct(int p_weight) {
 	if (p_weight < 150) {
 		return -0.80;
 	} else if (p_weight < 250) {
@@ -584,7 +604,7 @@ CGFloat OS_AppleEmbedded::_weight_to_ct(int p_weight) const {
 	}
 }
 
-CGFloat OS_AppleEmbedded::_stretch_to_ct(int p_stretch) const {
+CGFloat OS_AppleEmbedded::_stretch_to_ct(int p_stretch) {
 	if (p_stretch < 56) {
 		return -0.5;
 	} else if (p_stretch < 69) {
@@ -606,7 +626,7 @@ CGFloat OS_AppleEmbedded::_stretch_to_ct(int p_stretch) const {
 	}
 }
 
-Vector<String> OS_AppleEmbedded::get_system_font_path_for_text(const String &p_font_name, const String &p_text, const String &p_locale, const String &p_script, int p_weight, int p_stretch, bool p_italic) const {
+Vector<String> OS_AppleEmbedded::get_system_font_path_for_text(const String &p_font_name, const String &p_text, const String &p_locale, const String &p_script, int p_weight, int p_stretch, bool p_italic) {
 	Vector<String> ret;
 	String font_name = _get_default_fontname(p_font_name);
 
@@ -676,7 +696,7 @@ Vector<String> OS_AppleEmbedded::get_system_font_path_for_text(const String &p_f
 	return ret;
 }
 
-String OS_AppleEmbedded::get_system_font_path(const String &p_font_name, int p_weight, int p_stretch, bool p_italic) const {
+String OS_AppleEmbedded::get_system_font_path(const String &p_font_name, int p_weight, int p_stretch, bool p_italic) {
 	String ret;
 	String font_name = _get_default_fontname(p_font_name);
 
@@ -733,12 +753,12 @@ String OS_AppleEmbedded::get_system_font_path(const String &p_font_name, int p_w
 }
 
 void OS_AppleEmbedded::vibrate_handheld(int p_duration_ms, float p_amplitude) {
-	if (apple_embedded->supports_haptic_engine()) {
+	if (data && data->apple_embedded && data->apple_embedded->supports_haptic_engine()) {
 		if (p_amplitude > 0.0) {
 			p_amplitude = CLAMP(p_amplitude, 0.0, 1.0);
 		}
 
-		apple_embedded->vibrate_haptic_engine((float)p_duration_ms / 1000.f, p_amplitude);
+		data->apple_embedded->vibrate_haptic_engine((float)p_duration_ms / 1000.f, p_amplitude);
 	} else {
 		// iOS <13 does not support duration for vibration
 		AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
@@ -759,15 +779,15 @@ bool OS_AppleEmbedded::_check_internal_feature_support(const String &p_feature) 
 Error OS_AppleEmbedded::setup_remote_filesystem(const String &p_server_host, int p_port, const String &p_password, String &r_project_path) {
 	r_project_path = OS::get_user_data_dir();
 	Error err = OS_Unix::setup_remote_filesystem(p_server_host, p_port, p_password, r_project_path);
-	if (err == OK) {
-		remote_fs_dir = r_project_path;
+	if (err == OK && data) {
+		data->remote_fs_dir = r_project_path;
 	}
 	return err;
 }
 
 void OS_AppleEmbedded::on_focus_out() {
-	if (is_focused) {
-		is_focused = false;
+	if (data && data->is_focused) {
+		data->is_focused = false;
 
 		if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
 			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
@@ -779,13 +799,13 @@ void OS_AppleEmbedded::on_focus_out() {
 
 		[GDTAppDelegateService.viewController.godotView stopRendering];
 
-		audio_driver.stop();
+		data->audio_driver.stop();
 	}
 }
 
 void OS_AppleEmbedded::on_focus_in() {
-	if (!is_focused) {
-		is_focused = true;
+	if (data && !data->is_focused) {
+		data->is_focused = true;
 
 		if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
 			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
@@ -797,7 +817,7 @@ void OS_AppleEmbedded::on_focus_in() {
 
 		[GDTAppDelegateService.viewController.godotView startRendering];
 
-		audio_driver.start();
+		data->audio_driver.start();
 	}
 }
 
@@ -816,7 +836,7 @@ void OS_AppleEmbedded::on_enter_background() {
 }
 
 void OS_AppleEmbedded::on_exit_background() {
-	if (!is_focused) {
+	if (data && !data->is_focused) {
 		on_focus_in();
 
 		if (MainLoop::is_active()) {
@@ -829,7 +849,7 @@ void OS_AppleEmbedded::on_exit_background() {
 	}
 }
 
-Rect2 OS_AppleEmbedded::calculate_boot_screen_rect(const Size2 &p_window_size, const Size2 &p_imgrect_size) const {
+Rect2 OS_AppleEmbedded::calculate_boot_screen_rect(const Size2 &p_window_size, const Size2 &p_imgrect_size) {
 	String scalemodestr = GLOBAL_GET("ios/launch_screen_image_mode");
 
 	if (scalemodestr == "scaleAspectFit") {
@@ -839,10 +859,10 @@ Rect2 OS_AppleEmbedded::calculate_boot_screen_rect(const Size2 &p_window_size, c
 	} else if (scalemodestr == "scaleToFill") {
 		return Rect2(Point2(), p_window_size);
 	} else if (scalemodestr == "center") {
-		return OS_Unix::calculate_boot_screen_rect(p_window_size, p_imgrect_size);
+		return OS::calculate_boot_screen_rect(p_window_size, p_imgrect_size);
 	} else {
 		WARN_PRINT(vformat("Boot screen scale mode mismatch between iOS and Godot: %s not supported", scalemodestr));
-		return OS_Unix::calculate_boot_screen_rect(p_window_size, p_imgrect_size);
+		return OS::calculate_boot_screen_rect(p_window_size, p_imgrect_size);
 	}
 }
 
@@ -866,7 +886,7 @@ bool OS_AppleEmbedded::request_permission(const String &p_name) {
 	return false;
 }
 
-Vector<String> OS_AppleEmbedded::get_granted_permissions() const {
+Vector<String> OS_AppleEmbedded::get_granted_permissions() {
 	Vector<String> ret;
 
 	if (@available(iOS 17.0, *)) {
@@ -876,4 +896,124 @@ Vector<String> OS_AppleEmbedded::get_granted_permissions() const {
 	}
 	return ret;
 }
+
+/* -------------------------------------------------------------------------- */
+/*                        OS Static Platform Dispatch                         */
+/* -------------------------------------------------------------------------- */
+
+void OS::initialize_core() {
+	OS_AppleEmbedded::initialize_core();
+	_initialized = true;
+}
+
+void OS::initialize() {
+	OS_AppleEmbedded::initialize();
+	_initialized = true;
+}
+
+void OS::finalize() {
+	_initialized = false;
+	OS_AppleEmbedded::finalize();
+	if (_logger) {
+		memdelete(_logger);
+		_logger = nullptr;
+	}
+}
+
+void OS::finalize_core() {
+	OS_AppleEmbedded::finalize_core();
+}
+
+void OS::initialize_joypads() {
+	OS_AppleEmbedded::initialize_joypads();
+}
+
+uint64_t OS::get_ticks_usec() {
+	return OS_Unix::get_ticks_usec();
+}
+
+void OS::delay_usec(uint32_t p_usec) {
+	OS_Unix::delay_usec(p_usec);
+}
+
+String OS::get_environment(const String &p_var) {
+	return OS_Unix::get_environment(p_var);
+}
+
+bool OS::has_environment(const String &p_var) {
+	return OS_Unix::has_environment(p_var);
+}
+
+void OS::set_environment(const String &p_var, const String &p_value) {
+	OS_Unix::set_environment(p_var, p_value);
+}
+
+void OS::unset_environment(const String &p_var) {
+	OS_Unix::unset_environment(p_var);
+}
+
+void OS::load_shell_environment() {
+}
+
+OS::DateTime OS::get_datetime(bool p_utc) {
+	return OS_Unix::get_datetime(p_utc);
+}
+
+OS::TimeZoneInfo OS::get_time_zone_info() {
+	return OS_Unix::get_time_zone_info();
+}
+
+Error OS::execute(const String &p_path, const List<String> &p_arguments, String *r_pipe, int *r_exitcode, bool p_read_stderr, Mutex *p_pipe_mutex, bool p_open_console) {
+	return OS_Unix::execute(p_path, p_arguments, r_pipe, r_exitcode, p_read_stderr, p_pipe_mutex, p_open_console);
+}
+
+Error OS::create_process(const String &p_path, const List<String> &p_arguments, ProcessID *r_child_id, bool p_open_console) {
+	return OS_Unix::create_process(p_path, p_arguments, r_child_id, p_open_console);
+}
+
+Error OS::kill(const ProcessID &p_pid) {
+	return OS_Unix::kill(p_pid);
+}
+
+bool OS::is_process_running(const ProcessID &p_pid) {
+	return OS_Unix::is_process_running(p_pid);
+}
+
+Error OS::get_entropy(uint8_t *r_buffer, int p_bytes) {
+	return OS_Unix::get_entropy(r_buffer, p_bytes);
+}
+
+String OS::get_system_ca_certificates() {
+	return String();
+}
+
+List<String> OS::get_cmdline_platform_args() {
+	return List<String>();
+}
+
+bool OS::_check_internal_feature_support(const String &p_feature) {
+	return OS_AppleEmbedded::_check_internal_feature_support(p_feature);
+}
+
+void OS::disable_crash_handler() {
+}
+
+void OS::vibrate_handheld(int p_duration_ms, float p_amplitude) {
+	OS_AppleEmbedded::vibrate_handheld(p_duration_ms, p_amplitude);
+}
+
+Error OS::move_to_trash(const String &p_path) {
+	return FAILED;
+}
+
+#ifdef TOOLS_ENABLED
+bool OS::_test_create_rendering_device(const String &p_display_driver) {
+	return false;
+}
+
+bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
+	return false;
+}
+#endif
+
 #endif // APPLE_EMBEDDED_ENABLED

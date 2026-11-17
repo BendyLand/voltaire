@@ -57,8 +57,8 @@ void RasterizerDummy::initialize()
 	if (!scene) {
 		scene = memnew(RasterizerSceneDummy);
 	}
-	if (Renderer::scene) {
-		Renderer::scene->set_scene_render(scene);
+	if (RendererSceneCull::is_initialized()) {
+		RendererSceneCull::set_scene_render(scene);
 	}
 }
 
@@ -85,8 +85,8 @@ void RasterizerDummy::end_frame(bool p_present)
 
 void RasterizerDummy::finalize()
 {
-	if (Renderer::scene && Renderer::scene->scene_render == scene) {
-		Renderer::scene->scene_render = nullptr;
+	if (RendererSceneCull::is_initialized() && RendererSceneCull::get_scene_render() == scene) {
+		RendererSceneCull::set_scene_render(nullptr);
 	}
 	if (scene) {
 		memdelete(scene);

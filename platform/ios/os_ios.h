@@ -35,14 +35,16 @@
 
 #import "drivers/apple_embedded/os_apple_embedded.h"
 
-class OS_IOS : public OS_AppleEmbedded {
+class OS_IOS final
+{
 public:
-	static OS_IOS *get_singleton();
+	OS_IOS() = delete;
+	~OS_IOS() = delete;
+	OS_IOS(const OS_IOS&) = delete;
+	OS_IOS& operator=(const OS_IOS&) = delete;
 
-	OS_IOS();
-	~OS_IOS();
-
-	virtual String get_name() const override;
+	static void setup();
+	static String get_name();
 };
 
 #endif // IOS_ENABLED

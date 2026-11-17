@@ -39,11 +39,10 @@
 namespace RendererSceneRenderImplementation
 {
 
-class SceneShaderForwardMobile
+class SceneShaderForwardMobile final
 {
 private:
-	static SceneShaderForwardMobile* singleton;
-	static Mutex singleton_mutex;
+	static inline Mutex shader_mutex;
 
 public:
 	enum ShaderVersion
@@ -356,11 +355,11 @@ public:
 		virtual ~ShaderData() = default;
 	};
 
-	RendererRD::MaterialStorage::ShaderData* _create_shader_func();
+	static RendererRD::MaterialStorage::ShaderData* _create_shader_func();
 
 	static RendererRD::MaterialStorage::ShaderData* _create_shader_funcs()
 	{
-		return static_cast<SceneShaderForwardMobile*>(singleton)->_create_shader_func();
+		return _create_shader_func();
 	}
 
 	struct MaterialData : public RendererRD::MaterialStorage::MaterialData
@@ -376,61 +375,70 @@ public:
 		virtual ~MaterialData();
 	};
 
-	SelfList<ShaderData>::List shader_list;
-
-	RendererRD::MaterialStorage::MaterialData* _create_material_func(ShaderData* p_shader);
+	static RendererRD::MaterialStorage::MaterialData* _create_material_func(ShaderData* p_shader);
 
 	static RendererRD::MaterialStorage::MaterialData* _create_material_funcs(
 		RendererRD::MaterialStorage::ShaderData* p_shader)
 	{
-		return static_cast<SceneShaderForwardMobile*>(singleton)->_create_material_func(
-			static_cast<ShaderData*>(p_shader));
+		return _create_material_func(static_cast<ShaderData*>(p_shader));
 	}
 
-	SceneForwardMobileShaderRD shader;
-	ShaderCompiler compiler;
-	bool use_fp16 = false;
-	bool emulate_point_size = false;
+	struct Data
+	{
+		SelfList<ShaderData>::List shader_list;
+		SceneForwardMobileShaderRD shader;
+		ShaderCompiler compiler;
+		bool use_fp16 = false;
+		bool emulate_point_size = false;
 
-	RID default_shader;
-	RID default_material;
-	RID overdraw_material_shader;
-	RID overdraw_material;
-	RID debug_shadow_splits_material_shader;
-	RID debug_shadow_splits_material;
-	RID default_shader_rd;
-	RID default_multiview_shader_rd; // This is lazily initialized, use "get_default_shader_rd"
-									 // instead.
+		RID default_shader;
+		RID default_material;
+		RID overdraw_material_shader;
+		RID overdraw_material;
+		RID debug_shadow_splits_material_shader;
+		RID debug_shadow_splits_material;
+		RID default_shader_rd;
+		RID default_multiview_shader_rd; // This is lazily initialized, use "get_default_shader_rd"
+										 // instead.
 
-	RID default_vec4_xform_buffer;
-	RID default_vec4_xform_uniform_set;
+		RID default_vec4_xform_buffer;
+		RID default_vec4_xform_uniform_set;
 
-	RID shadow_sampler;
+		RID shadow_sampler;
 
-	RID default_material_uniform_set;
-	ShaderData* default_material_shader_ptr = nullptr;
+		RID default_material_uniform_set;
+		ShaderData* default_material_shader_ptr = nullptr;
 
-	RID overdraw_material_uniform_set;
-	ShaderData* overdraw_material_shader_ptr = nullptr;
+		RID overdraw_material_uniform_set;
+		ShaderData* overdraw_material_shader_ptr = nullptr;
 
-	RID debug_shadow_splits_material_uniform_set;
-	ShaderData* debug_shadow_splits_material_shader_ptr = nullptr;
+		RID debug_shadow_splits_material_uniform_set;
+		ShaderData* debug_shadow_splits_material_shader_ptr = nullptr;
 
-	SceneShaderForwardMobile();
-	~SceneShaderForwardMobile();
+		ShaderSpecialization default_specialization = {};
 
-	ShaderSpecialization default_specialization = {};
+		uint32_t pipeline_compilations[RSE::PIPELINE_SOURCE_MAX] = {};
+	};
 
-	uint32_t pipeline_compilations[RSE::PIPELINE_SOURCE_MAX] = {};
+	static inline Data* data = nullptr;
 
-	void init(const String p_defines);
-	void set_default_specialization(const ShaderSpecialization& p_specialization);
-	uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
-	void enable_fp32_shader_group();
-	void enable_fp16_shader_group();
-	void enable_multiview_shader_group();
-	bool is_multiview_shader_group_enabled() const;
-	RID get_default_shader_rd(bool p_is_multiview = false);
+	static void initialize(const String& p_defines = String());
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
+
+	static void init(const String p_defines);
+	static void set_default_specialization(const ShaderSpecialization& p_specialization);
+	static uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
+	static void enable_fp32_shader_group();
+	static void enable_fp16_shader_group();
+	static void enable_multiview_shader_group();
+	static bool is_multiview_shader_group_enabled();
+	static RID get_default_shader_rd(bool p_is_multiview = false);
+
+	SceneShaderForwardMobile() = delete;
+	SceneShaderForwardMobile(const SceneShaderForwardMobile&) = delete;
+	SceneShaderForwardMobile& operator=(const SceneShaderForwardMobile&) = delete;
+	~SceneShaderForwardMobile() = delete;
 };
 
 } // namespace RendererSceneRenderImplementation

@@ -58,8 +58,8 @@ RenderingServerTypes::ShaderNativeSourceCode
 SceneShaderForwardMobile::ShaderData::get_native_source_code() const
 {
 	if (version.is_valid()) {
-		MutexLock lock(SceneShaderForwardMobile::singleton_mutex);
-		return SceneShaderForwardMobile::singleton->shader.version_get_native_source_code(version);
+		MutexLock lock(SceneShaderForwardMobile::shader_mutex);
+		return SceneShaderForwardMobile::data->shader.version_get_native_source_code(version);
 	}
 	else {
 		return RenderingServerTypes::ShaderNativeSourceCode();
@@ -69,8 +69,8 @@ SceneShaderForwardMobile::ShaderData::get_native_source_code() const
 Pair<ShaderRD*, RID> SceneShaderForwardMobile::ShaderData::get_native_shader_and_version() const
 {
 	if (version.is_valid()) {
-		MutexLock lock(SceneShaderForwardMobile::singleton_mutex);
-		return {&SceneShaderForwardMobile::singleton->shader, version};
+		MutexLock lock(SceneShaderForwardMobile::shader_mutex);
+		return {&SceneShaderForwardMobile::data->shader, version};
 	}
 	else {
 		return {};
@@ -167,7 +167,7 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 	}
 
 	bool emulate_point_size_flag =
-		uses_point_size && SceneShaderForwardMobile::singleton->emulate_point_size;
+		uses_point_size && SceneShaderForwardMobile::data->emulate_point_size;
 
 	RDC::RenderPrimitive primitive_rd;
 	if (uses_point_size) {
@@ -327,9 +327,9 @@ uint64_t SceneShaderForwardMobile::ShaderData::get_vertex_input_mask(
 bool SceneShaderForwardMobile::ShaderData::is_valid() const
 {
 	if (version.is_valid()) {
-		MutexLock lock(SceneShaderForwardMobile::singleton_mutex);
-		ERR_FAIL_NULL_V(SceneShaderForwardMobile::singleton, false);
-		return SceneShaderForwardMobile::singleton->shader.version_is_valid(version);
+		MutexLock lock(SceneShaderForwardMobile::shader_mutex);
+		ERR_FAIL_NULL_V(SceneShaderForwardMobile::data, false);
+		return SceneShaderForwardMobile::data->shader.version_is_valid(version);
 	}
 	else {
 		return false;
@@ -339,15 +339,15 @@ bool SceneShaderForwardMobile::ShaderData::is_valid() const
 SceneShaderForwardMobile::ShaderData::ShaderData() : shader_list_element(this)
 {
 	pipeline_hash_map.set_creation_object_and_function(this, &ShaderData::_create_pipeline);
-	pipeline_hash_map.set_compilations(SceneShaderForwardMobile::singleton->pipeline_compilations,
-		&SceneShaderForwardMobile::singleton_mutex);
+	pipeline_hash_map.set_compilations(SceneShaderForwardMobile::data->pipeline_compilations,
+		&SceneShaderForwardMobile::shader_mutex);
 }
 
 RendererRD::MaterialStorage::ShaderData* SceneShaderForwardMobile::_create_shader_func()
 {
-	MutexLock lock(SceneShaderForwardMobile::singleton_mutex);
+	MutexLock lock(SceneShaderForwardMobile::shader_mutex);
 	ShaderData* shader_data = memnew(ShaderData);
-	singleton->shader_list.add(&shader_data->shader_list_element);
+	data->shader_list.add(&shader_data->shader_list_element);
 	return shader_data;
 }
 
@@ -374,24 +374,25 @@ RendererRD::MaterialStorage::MaterialData* SceneShaderForwardMobile::_create_mat
 
 /* Scene Shader */
 
-SceneShaderForwardMobile* SceneShaderForwardMobile::singleton = nullptr;
-Mutex SceneShaderForwardMobile::singleton_mutex;
-
-SceneShaderForwardMobile::SceneShaderForwardMobile()
+void SceneShaderForwardMobile::initialize(const String& p_defines)
 {
-	// there should be only one of these, contained within our RenderForwardMobile singleton.
-	singleton = this;
+	if (!data) {
+		data = memnew(Data);
+	}
+	if (!p_defines.is_empty()) {
+		init(p_defines);
+	}
 }
 
 uint32_t SceneShaderForwardMobile::get_pipeline_compilations(RSE::PipelineSource p_source)
 {
-	MutexLock lock(SceneShaderForwardMobile::singleton_mutex);
-	return pipeline_compilations[p_source];
+	MutexLock lock(SceneShaderForwardMobile::shader_mutex);
+	return data->pipeline_compilations[p_source];
 }
 
 void SceneShaderForwardMobile::enable_fp32_shader_group()
 {
-	shader.enable_group(SHADER_GROUP_FP32);
+	data->shader.enable_group(SHADER_GROUP_FP32);
 
 	if (is_multiview_shader_group_enabled()) {
 		enable_multiview_shader_group();
@@ -400,7 +401,7 @@ void SceneShaderForwardMobile::enable_fp32_shader_group()
 
 void SceneShaderForwardMobile::enable_fp16_shader_group()
 {
-	shader.enable_group(SHADER_GROUP_FP16);
+	data->shader.enable_group(SHADER_GROUP_FP16);
 
 	if (is_multiview_shader_group_enabled()) {
 		enable_multiview_shader_group();
@@ -409,33 +410,39 @@ void SceneShaderForwardMobile::enable_fp16_shader_group()
 
 void SceneShaderForwardMobile::enable_multiview_shader_group()
 {
-	if (shader.is_group_enabled(SHADER_GROUP_FP32)) {
-		shader.enable_group(SHADER_GROUP_FP32_MULTIVIEW);
+	if (data->shader.is_group_enabled(SHADER_GROUP_FP32)) {
+		data->shader.enable_group(SHADER_GROUP_FP32_MULTIVIEW);
 	}
 
-	if (shader.is_group_enabled(SHADER_GROUP_FP16)) {
-		shader.enable_group(SHADER_GROUP_FP16_MULTIVIEW);
+	if (data->shader.is_group_enabled(SHADER_GROUP_FP16)) {
+		data->shader.enable_group(SHADER_GROUP_FP16_MULTIVIEW);
 	}
 }
 
-bool SceneShaderForwardMobile::is_multiview_shader_group_enabled() const
+bool SceneShaderForwardMobile::is_multiview_shader_group_enabled()
 {
-	return shader.is_group_enabled(SHADER_GROUP_FP32_MULTIVIEW) ||
-		   shader.is_group_enabled(SHADER_GROUP_FP16_MULTIVIEW);
+	return data->shader.is_group_enabled(SHADER_GROUP_FP32_MULTIVIEW) ||
+		   data->shader.is_group_enabled(SHADER_GROUP_FP16_MULTIVIEW);
 }
 
-SceneShaderForwardMobile::~SceneShaderForwardMobile()
+void SceneShaderForwardMobile::finalize()
 {
-	RD::free_rid(default_vec4_xform_buffer);
-	RD::free_rid(shadow_sampler);
+	if (!data) {
+		return;
+	}
+	RD::free_rid(data->default_vec4_xform_buffer);
+	RD::free_rid(data->shadow_sampler);
 
-	RendererRD::MaterialStorage::shader_free(overdraw_material_shader);
-	RendererRD::MaterialStorage::shader_free(default_shader);
-	RendererRD::MaterialStorage::shader_free(debug_shadow_splits_material_shader);
+	RendererRD::MaterialStorage::shader_free(data->overdraw_material_shader);
+	RendererRD::MaterialStorage::shader_free(data->default_shader);
+	RendererRD::MaterialStorage::shader_free(data->debug_shadow_splits_material_shader);
 
-	RendererRD::MaterialStorage::material_free(overdraw_material);
-	RendererRD::MaterialStorage::material_free(default_material);
-	RendererRD::MaterialStorage::material_free(debug_shadow_splits_material);
+	RendererRD::MaterialStorage::material_free(data->overdraw_material);
+	RendererRD::MaterialStorage::material_free(data->default_material);
+	RendererRD::MaterialStorage::material_free(data->debug_shadow_splits_material);
+
+	memdelete(data);
+	data = nullptr;
 }
 
 RID RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::get_shader_variant(
@@ -455,6 +462,10 @@ RID RendererSceneRenderImplementation::SceneShaderForwardMobile::get_default_sha
 	bool p_wireframe)
 {
 	return RID();
+}
+
+void RendererSceneRenderImplementation::SceneShaderForwardMobile::init(const String p_defines)
+{
 }
 
 void RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::set_code(

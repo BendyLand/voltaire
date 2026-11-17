@@ -163,9 +163,8 @@ class RasterizerCanvasGLES3;
 class RasterizerSceneGLES3 : public RendererSceneRender
 {
 private:
-	static RasterizerSceneGLES3* singleton;
 	RSE::ViewportDebugDraw debug_draw = RSE::VIEWPORT_DEBUG_DRAW_DISABLED;
-	uint64_t scene_pass = 0;
+	static inline uint64_t scene_pass = 0;
 
 	template <typename T> struct InstanceSort
 	{
@@ -383,6 +382,7 @@ private:
 		GeometryInstanceLightmapSH* lightmap_sh = nullptr;
 
 		// Used during setup.
+		RasterizerSceneGLES3* scene_owner = nullptr;
 		GeometryInstanceSurface* surface_caches = nullptr;
 		SelfList<GeometryInstanceGLES3> dirty_list_element;
 
@@ -998,8 +998,6 @@ protected:
 	PagedArray<RenderGeometryInstance*> cull_argument;
 
 public:
-	static RasterizerSceneGLES3* get_singleton() { return singleton; }
-
 	RasterizerCanvasGLES3* canvas = nullptr;
 
 	RenderGeometryInstance* geometry_instance_create(RID p_base) override;
@@ -1118,7 +1116,7 @@ public:
 
 	void set_scene_pass(uint64_t p_pass) override { scene_pass = p_pass; }
 
-	_FORCE_INLINE_ uint64_t get_scene_pass() { return scene_pass; }
+	static _FORCE_INLINE_ uint64_t get_scene_pass() { return scene_pass; }
 
 	void set_time(double p_time, double p_step) override;
 	void set_debug_draw_mode(RSE::ViewportDebugDraw p_debug_draw) override;

@@ -34,19 +34,31 @@
 #include <emscripten/html5.h>
 #include "audio_driver_web.h"
 #include "core/input/input_event.h"
+#include "core/os/os.h"
 #include "drivers/unix/os_unix.h"
 #include "godot_js.h"
 #include "webmidi_driver.h"
 
-class OS_Web : public OS_Unix
+class OS_Web final
 {
-	List<AudioDriverWeb*> audio_drivers;
+public:
+	OS_Web() = delete;
+	~OS_Web() = delete;
+	OS_Web(const OS_Web&) = delete;
+	OS_Web& operator=(const OS_Web&) = delete;
 
-	bool idb_is_syncing = false;
-	bool idb_available = false;
-	bool idb_needs_sync = false;
-	bool pwa_is_waiting = false;
+	struct Data
+	{
+		List<AudioDriverWeb*> audio_drivers;
+		bool idb_is_syncing = false;
+		bool idb_available = false;
+		bool idb_needs_sync = false;
+		bool pwa_is_waiting = false;
+	};
 
+	static inline Data* data = nullptr;
+
+private:
 	WASM_EXPORT static void main_loop_callback();
 
 	WASM_EXPORT static void file_access_close_callback(const String& p_file, int p_flags);
@@ -54,66 +66,58 @@ class OS_Web : public OS_Unix
 	WASM_EXPORT static void fs_sync_callback();
 	WASM_EXPORT static void update_pwa_state_callback();
 
-protected:
-	void initialize() override;
-
-	void delete_main_loop();
-
-	void finalize() override;
-
-	bool _check_internal_feature_support(const String& p_feature) override;
-
 public:
-	// Override return type to make writing static callbacks less tedious.
-	static OS_Web* get_singleton();
+	static void initialize_core();
+	static void initialize();
+	static void finalize();
+	static void finalize_core();
+	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-	bool pwa_needs_update() const { return pwa_is_waiting; }
+	static void delete_main_loop();
+	static bool _check_internal_feature_support(const String& p_feature);
 
-	Error pwa_update();
-	void force_fs_sync();
+	static bool pwa_needs_update() { return data && data->pwa_is_waiting; }
+	static Error pwa_update();
+	static void force_fs_sync();
 
-	void initialize_joypads() override;
+	static void initialize_joypads();
 
-	bool main_loop_iterate();
+	static bool main_loop_iterate();
 
-	Error execute(const String& p_path, const List<String>& p_arguments, String* r_pipe = nullptr,
-		int* r_exitcode = nullptr, bool read_stderr = false, Mutex* p_pipe_mutex = nullptr,
-		bool p_open_console = false);
-	Error create_process(const String& p_path, const List<String>& p_arguments,
-		ProcessID* r_child_id = nullptr, bool p_open_console = false);
-	Error kill(const ProcessID& p_pid) override;
-	int get_process_id() const override;
-	bool is_process_running(const ProcessID& p_pid) const override;
-	int get_process_exit_code(const ProcessID& p_pid) const override;
-	int get_processor_count() const override;
-	String get_unique_id() const override;
-	int get_default_thread_pool_size() const override;
+	static Error execute(const String& p_path, const List<String>& p_arguments,
+		String* r_pipe = nullptr, int* r_exitcode = nullptr, bool read_stderr = false,
+		Mutex* p_pipe_mutex = nullptr, bool p_open_console = false);
+	static Dictionary execute_with_pipe(
+		const String& p_path, const List<String>& p_arguments, bool p_blocking = true);
+	static Error create_process(const String& p_path, const List<String>& p_arguments,
+		OS::ProcessID* r_child_id = nullptr, bool p_open_console = false);
+	static Error kill(const OS::ProcessID& p_pid);
+	static int get_process_id();
+	static bool is_process_running(const OS::ProcessID& p_pid);
+	static int get_process_exit_code(const OS::ProcessID& p_pid);
+	static int get_processor_count();
+	static String get_unique_id();
+	static int get_default_thread_pool_size();
 
-	String get_executable_path() const override;
-	Error shell_open(const String& p_uri) override;
-	String get_name() const override;
+	static String get_executable_path();
+	static Error shell_open(const String& p_uri);
+	static String get_name();
 
-	// Override default OS implementation which would block the main thread with delay_usec.
-	// Implemented in web_main.cpp loop callback instead.
-	void add_frame_delay(bool p_can_draw, bool p_wake_for_events) override;
+	static void add_frame_delay(bool p_can_draw, bool p_wake_for_events);
 
-	void vibrate_handheld(int p_duration_ms, float p_amplitude) override;
+	static void vibrate_handheld(int p_duration_ms, float p_amplitude = -1.0);
 
-	String get_cache_path() const override;
-	String get_config_path() const override;
-	String get_data_path() const override;
-	String get_user_data_dir(const String& p_user_dir) const override;
+	static String get_cache_path();
+	static String get_config_path();
+	static String get_data_path();
+	static String get_user_data_dir(const String& p_user_dir);
 
-	bool is_userfs_persistent() const override;
+	static bool is_userfs_persistent();
 
-	void alert(const String& p_alert, const String& p_title = "ALERT!") override;
+	static void alert(const String& p_alert, const String& p_title = "ALERT!");
 
-	Error open_dynamic_library(
-		const String& p_path, void*& p_library_handle, GDExtensionData* p_data = nullptr) override;
+	static Error open_dynamic_library(
+		const String& p_path, void*& p_library_handle, GDExtensionData* p_data = nullptr);
 
-	void resume_audio();
-
-	OS_Web();
+	static void resume_audio();
 };
-
-

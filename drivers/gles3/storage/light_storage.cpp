@@ -523,7 +523,7 @@ void GLES3::LightStorage::light_instance_mark_visible(RID p_light_instance)
 	LightInstance* light_instance = light_instance_owner.get_or_null(p_light_instance);
 	ERR_FAIL_NULL(light_instance);
 
-	light_instance->last_scene_pass = RasterizerSceneGLES3::get_singleton()->get_scene_pass();
+	light_instance->last_scene_pass = RasterizerSceneGLES3::get_scene_pass();
 }
 
 /* PROBE API */
@@ -1812,7 +1812,7 @@ bool GLES3::LightStorage::_shadow_atlas_find_shadow(ShadowAtlas* shadow_atlas, i
 				break;
 			}
 
-			if (sli->last_scene_pass != RasterizerSceneGLES3::get_singleton()->get_scene_pass()) {
+			if (sli->last_scene_pass != RasterizerSceneGLES3::get_scene_pass()) {
 				// Was just allocated, don't kill it so soon, wait a bit.
 				if (p_tick - sarr[j].alloc_tick < shadow_atlas_realloc_tolerance_msec) {
 					continue;

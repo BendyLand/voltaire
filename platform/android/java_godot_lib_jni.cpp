@@ -70,8 +70,6 @@
 #include <android/native_window_jni.h>
 #include <unistd.h>
 
-static JavaClassWrapper *java_class_wrapper = nullptr;
-static OS_Android *os_android = nullptr;
 static AndroidInputHandler *input_handler = nullptr;
 static GodotJavaWrapper *godot_java = nullptr;
 static GodotIOJavaWrapper *godot_io_java = nullptr;
@@ -101,17 +99,18 @@ static void _terminate(JNIEnv *env, bool p_restart = false) {
 	// Unregister android plugins
 	unregister_plugins_singletons();
 
-	memdelete(java_class_wrapper);
+	JavaClassWrapper::finalize();
 	if (input_handler) {
 		delete input_handler;
 	}
 	// Whether restarting is handled by 'Main::cleanup()'
 	bool restart_on_cleanup = false;
-	if (os_android) {
-		restart_on_cleanup = os_android->is_restart_on_exit_set();
-		os_android->main_loop_end();
+	if (OS_Android::is_initialized()) {
+		restart_on_cleanup = OS::is_restart_on_exit_set();
+		OS_Android::main_loop_end();
 		Main::cleanup();
-		delete os_android;
+		OS::finalize();
+		OS::finalize_core();
 	}
 	if (godot_io_java) {
 		delete godot_io_java;
@@ -180,7 +179,9 @@ JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv
 	FileAccessFilesystemJAndroid::setup(p_file_access_handler);
 	NetSocketAndroid::setup(p_net_utils);
 
-	os_android = new OS_Android(godot_java, godot_io_java, p_use_apk_expansion);
+	OS_Android::setup(godot_java, godot_io_java, p_use_apk_expansion);
+	OS::initialize_core();
+	OS::initialize();
 
 	return true;
 }
@@ -235,19 +236,19 @@ JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_setup(JNIEnv *env
 
 	TTS_Android::setup(p_godot_tts);
 
-	java_class_wrapper = memnew(JavaClassWrapper);
+	JavaClassWrapper::initialize();
 	return true;
 }
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_resize(JNIEnv *env, jclass clazz, jobject p_surface, jint p_width, jint p_height) {
-	if (os_android) {
-		os_android->set_display_size(Size2i(p_width, p_height));
+	if (OS_Android::is_initialized()) {
+		OS_Android::set_display_size(Size2i(p_width, p_height));
 
 		// No need to reset the surface during startup
 		if (step.get() > STEP_SETUP) {
 			if (p_surface) {
 				ANativeWindow *native_window = ANativeWindow_fromSurface(env, p_surface);
-				os_android->set_native_window(native_window);
+				OS_Android::set_native_window(native_window);
 			}
 			DisplayServer::driver_as<DisplayServerAndroid>()->reset_window();
 			DisplayServer::driver_as<DisplayServerAndroid>()->notify_surface_changed(p_width, p_height);
@@ -256,12 +257,12 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_resize(JNIEnv *env, j
 }
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_newcontext(JNIEnv *env, jclass clazz, jobject p_surface) {
-	if (os_android) {
+	if (OS_Android::is_initialized()) {
 		if (step.get() == STEP_SETUP) {
 			// During startup
 			if (p_surface) {
 				ANativeWindow *native_window = ANativeWindow_fromSurface(env, p_surface);
-				os_android->set_native_window(native_window);
+				OS_Android::set_native_window(native_window);
 			}
 		} else {
 			// Rendering context recreated because it was lost; restart app to let it reload everything
@@ -323,7 +324,7 @@ JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_step(JNIEnv *env,
 		}
 
 		godot_java->on_godot_setup_completed(env);
-		os_android->main_loop_begin();
+		OS_Android::main_loop_begin();
 		godot_java->on_godot_main_loop_started(env);
 		step.increment();
 	}
@@ -334,7 +335,7 @@ JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_step(JNIEnv *env,
 	DisplayServer::driver_as<DisplayServerAndroid>()->process_gyroscope(gyroscope);
 
 	bool should_swap_buffers = false;
-	if (os_android->main_loop_iterate(&should_swap_buffers)) {
+	if (OS_Android::main_loop_iterate(&should_swap_buffers)) {
 		_terminate(env, false);
 	}
 
@@ -449,7 +450,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_joyhat(JNIEnv *env, j
 
 // Called on the UI thread
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_joyconnectionchanged(JNIEnv *env, jclass clazz, jint p_device, jboolean p_connected, jstring p_name) {
-	if (os_android) {
+	if (OS_Android::is_initialized()) {
 		String name = jstring_to_string(p_name, env);
 		(void)name;
 	}
@@ -484,7 +485,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_focusin(JNIEnv *env, 
 		return;
 	}
 
-	os_android->main_loop_focusin();
+	OS_Android::main_loop_focusin();
 }
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_focusout(JNIEnv *env, jclass clazz) {
@@ -492,7 +493,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_focusout(JNIEnv *env,
 		return;
 	}
 
-	os_android->main_loop_focusout();
+	OS_Android::main_loop_focusout();
 }
 
 JNIEXPORT jstring JNICALL Java_org_godotengine_godot_GodotLib_getGlobal(JNIEnv *env, jclass clazz, jstring path) {
@@ -702,26 +703,17 @@ JNIEXPORT jstring JNICALL Java_org_godotengine_godot_GodotLib_getProjectResource
 	return env->NewStringUTF(resource_dir.utf8().get_data());
 }
 JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_isEditorHint(JNIEnv *env, jclass clazz) {
-	Engine *engine = Engine::get_singleton();
-	if (engine) {
-		return engine->is_editor_hint();
-	}
-	return false;
+	return Engine::is_editor_hint();
 }
 
 JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_isProjectManagerHint(JNIEnv *env, jclass clazz) {
-	Engine *engine = Engine::get_singleton();
-	if (engine) {
-		return engine->is_project_manager_hint();
-	}
-	return false;
+	return Engine::is_project_manager_hint();
 }
 
 JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_hasFeature(JNIEnv *env, jclass clazz, jstring p_feature) {
-	OS *os = OS::get_singleton();
-	if (os) {
+	if (OS::is_initialized()) {
 		String feature = jstring_to_string(p_feature, env);
-		return os->has_feature(feature);
+		return OS::has_feature(feature);
 	}
 	return false;
 }

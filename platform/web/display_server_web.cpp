@@ -182,7 +182,7 @@ void DisplayServerWeb::key_callback(int p_pressed, int p_repeat, int p_modifiers
 
 void DisplayServerWeb::_key_callback(const String &p_key_event_code, const String &p_key_event_key, int p_pressed, int p_repeat, int p_modifiers) {
 	// Resume audio context after input in case autoplay was denied.
-	OS_Web::get_singleton()->resume_audio();
+	OS_Web::resume_audio();
 
 	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	if (ds->ime_started) {
@@ -299,7 +299,7 @@ int DisplayServerWeb::_mouse_button_callback(int p_pressed, int p_button, double
 
 	Input::parse_input_event(ev);
 	// Resume audio context after input in case autoplay was denied.
-	OS_Web::get_singleton()->resume_audio();
+	OS_Web::resume_audio();
 
 	// Make sure to flush all events so we can call restricted APIs inside the event.
 	Input::flush_buffered_events();
@@ -758,7 +758,7 @@ void DisplayServerWeb::_touch_callback(int p_type, int p_count) {
 			Ref<InputEventScreenTouch> ev;
 
 			// Resume audio context after input in case autoplay was denied.
-			OS_Web::get_singleton()->resume_audio();
+			OS_Web::resume_audio();
 
 			ev.instantiate();
 			ev->set_index(touch_event.identifier[i]);
@@ -881,7 +881,7 @@ void DisplayServerWeb::ime_callback(int p_type, const char *p_text) {
 void DisplayServerWeb::_ime_callback(int p_type, const String &p_text) {
 	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	// Resume audio context after input in case autoplay was denied.
-	OS_Web::get_singleton()->resume_audio();
+	OS_Web::resume_audio();
 
 	switch (p_type) {
 		case 0: {

@@ -612,8 +612,7 @@ void Renderer::initialize()
 
 	viewport = memnew(RendererViewport);
 	canvas = memnew(RendererCanvasCull);
-	RendererSceneCull* sr = memnew(RendererSceneCull);
-	Renderer::scene = sr;
+	RendererSceneCull::initialize();
 	RendererCompositor::initialize();
 }
 
@@ -622,12 +621,12 @@ void Renderer::finalize()
 	RendererCompositor::finalize();
 	memdelete(canvas);
 	canvas = nullptr;
+	RendererSceneCull::finalize();
 	memdelete(viewport);
 	viewport = nullptr;
 	particles_storage = nullptr;
 	fog = nullptr;
 	canvas_render = nullptr;
-	scene = nullptr;
 	RendererEnvironmentStorage::finalize();
 	RendererCompositorStorage::finalize();
 	RendererCameraAttributes::finalize();
@@ -644,15 +643,15 @@ void Renderer::tick()
 	if (Renderer::canvas) {
 		Renderer::canvas->tick();
 	}
-	if (Renderer::scene) {
-		Renderer::scene->tick();
+	if (RendererSceneCull::is_initialized()) {
+		RendererSceneCull::tick();
 	}
 }
 
 void Renderer::pre_draw(bool p_will_draw)
 {
-	if (Renderer::scene) {
-		Renderer::scene->pre_draw(p_will_draw);
+	if (RendererSceneCull::is_initialized()) {
+		RendererSceneCull::pre_draw(p_will_draw);
 	}
 }
 
@@ -674,7 +673,7 @@ void Renderer::set_default_clear_color(const Color& p_color)
 
 uint64_t Renderer::get_rendering_info(RSE::RenderingInfo p_info)
 {
-	if (!Renderer::viewport || !Renderer::canvas_render || !Renderer::scene) {
+	if (!Renderer::viewport || !Renderer::canvas_render || !RendererSceneCull::is_initialized()) {
 		return 0;
 	}
 
@@ -692,18 +691,18 @@ uint64_t Renderer::get_rendering_info(RSE::RenderingInfo p_info)
 	}
 	else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_MESH) {
 		return Renderer::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_MESH) +
-			   Renderer::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_MESH);
+			   RendererSceneCull::get_pipeline_compilations(RSE::PIPELINE_SOURCE_MESH);
 	}
 	else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SURFACE) {
-		return Renderer::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SURFACE);
+		return RendererSceneCull::get_pipeline_compilations(RSE::PIPELINE_SOURCE_SURFACE);
 	}
 	else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW) {
 		return Renderer::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_DRAW) +
-			   Renderer::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_DRAW);
+			   RendererSceneCull::get_pipeline_compilations(RSE::PIPELINE_SOURCE_DRAW);
 	}
 	else if (p_info == RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION) {
 		return Renderer::canvas_render->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SPECIALIZATION) +
-			   Renderer::scene->get_pipeline_compilations(RSE::PIPELINE_SOURCE_SPECIALIZATION);
+			   RendererSceneCull::get_pipeline_compilations(RSE::PIPELINE_SOURCE_SPECIALIZATION);
 	}
 	return RendererUtilities::get_rendering_info(p_info);
 }
@@ -730,8 +729,8 @@ Vector<RenderingServerTypes::FrameProfileArea> Renderer::get_frame_profile()
 
 void Renderer::sdfgi_set_debug_probe_select(const Vector3& p_position, const Vector3& p_dir)
 {
-	if (Renderer::scene) {
-		Renderer::scene->sdfgi_set_debug_probe_select(p_position, p_dir);
+	if (RendererSceneCull::is_initialized()) {
+		RendererSceneCull::sdfgi_set_debug_probe_select(p_position, p_dir);
 	}
 }
 
@@ -776,8 +775,8 @@ void Renderer::set_physics_interpolation_enabled(bool p_enabled)
 	if (Renderer::canvas) {
 		Renderer::canvas->set_physics_interpolation_enabled(p_enabled);
 	}
-	if (Renderer::scene) {
-		Renderer::scene->set_physics_interpolation_enabled(p_enabled);
+	if (RendererSceneCull::is_initialized()) {
+		RendererSceneCull::set_physics_interpolation_enabled(p_enabled);
 	}
 }
 
@@ -1426,124 +1425,124 @@ void Renderer::viewport_set_vrs_texture(RID p_viewport, RID p_texture)
 
 void Renderer::scenario_set_environment(RID p_scenario, RID p_environment)
 {
-	Renderer::scene->scenario_set_environment(p_scenario, p_environment);
+	RendererSceneCull::scenario_set_environment(p_scenario, p_environment);
 }
 
 void Renderer::scenario_set_fallback_environment(RID p_scenario, RID p_environment)
 {
-	Renderer::scene->scenario_set_fallback_environment(p_scenario, p_environment);
+	RendererSceneCull::scenario_set_fallback_environment(p_scenario, p_environment);
 }
 
 void Renderer::scenario_set_camera_attributes(RID p_scenario, RID p_camera_attributes)
 {
-	Renderer::scene->scenario_set_camera_attributes(p_scenario, p_camera_attributes);
+	RendererSceneCull::scenario_set_camera_attributes(p_scenario, p_camera_attributes);
 }
 
 void Renderer::scenario_set_compositor(RID p_scenario, RID p_compositor)
 {
-	Renderer::scene->scenario_set_compositor(p_scenario, p_compositor);
+	RendererSceneCull::scenario_set_compositor(p_scenario, p_compositor);
 }
 
 void Renderer::instance_set_base(RID p_instance, RID p_base)
 {
-	Renderer::scene->instance_set_base(p_instance, p_base);
+	RendererSceneCull::instance_set_base(p_instance, p_base);
 }
 
 void Renderer::instance_set_scenario(RID p_instance, RID p_scenario)
 {
-	Renderer::scene->instance_set_scenario(p_instance, p_scenario);
+	RendererSceneCull::instance_set_scenario(p_instance, p_scenario);
 }
 
 void Renderer::instance_set_layer_mask(RID p_instance, uint32_t p_mask)
 {
-	Renderer::scene->instance_set_layer_mask(p_instance, p_mask);
+	RendererSceneCull::instance_set_layer_mask(p_instance, p_mask);
 }
 
 void Renderer::instance_set_pivot_data(
 	RID p_instance, float p_sorting_offset, bool p_use_aabb_center)
 {
-	Renderer::scene->instance_set_pivot_data(p_instance, p_sorting_offset, p_use_aabb_center);
+	RendererSceneCull::instance_set_pivot_data(p_instance, p_sorting_offset, p_use_aabb_center);
 }
 
 void Renderer::instance_set_transform(RID p_instance, const Transform3D& p_transform)
 {
-	Renderer::scene->instance_set_transform(p_instance, p_transform);
+	RendererSceneCull::instance_set_transform(p_instance, p_transform);
 }
 
 void Renderer::instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight)
 {
-	Renderer::scene->instance_set_blend_shape_weight(p_instance, p_shape, p_weight);
+	RendererSceneCull::instance_set_blend_shape_weight(p_instance, p_shape, p_weight);
 }
 
 void Renderer::instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material)
 {
-	Renderer::scene->instance_set_surface_override_material(p_instance, p_surface, p_material);
+	RendererSceneCull::instance_set_surface_override_material(p_instance, p_surface, p_material);
 }
 
 void Renderer::instance_set_visible(RID p_instance, bool p_visible)
 {
-	Renderer::scene->instance_set_visible(p_instance, p_visible);
+	RendererSceneCull::instance_set_visible(p_instance, p_visible);
 }
 
-void Renderer::instance_teleport(RID p_instance) { Renderer::scene->instance_teleport(p_instance); }
+void Renderer::instance_teleport(RID p_instance) { RendererSceneCull::instance_teleport(p_instance); }
 
 void Renderer::instance_attach_skeleton(RID p_instance, RID p_skeleton)
 {
-	Renderer::scene->instance_attach_skeleton(p_instance, p_skeleton);
+	RendererSceneCull::instance_attach_skeleton(p_instance, p_skeleton);
 }
 
 void Renderer::instance_set_extra_visibility_margin(RID p_instance, real_t p_margin)
 {
-	Renderer::scene->instance_set_extra_visibility_margin(p_instance, p_margin);
+	RendererSceneCull::instance_set_extra_visibility_margin(p_instance, p_margin);
 }
 
 void Renderer::instance_geometry_set_flag(
 	RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled)
 {
-	Renderer::scene->instance_geometry_set_flag(p_instance, p_flags, p_enabled);
+	RendererSceneCull::instance_geometry_set_flag(p_instance, p_flags, p_enabled);
 }
 
 void Renderer::instance_geometry_set_cast_shadows_setting(
 	RID p_instance, RSE::ShadowCastingSetting p_shadow_casting_setting)
 {
-	Renderer::scene->instance_geometry_set_cast_shadows_setting(p_instance, p_shadow_casting_setting);
+	RendererSceneCull::instance_geometry_set_cast_shadows_setting(p_instance, p_shadow_casting_setting);
 }
 
 void Renderer::instance_geometry_set_material_override(RID p_instance, RID p_material)
 {
-	Renderer::scene->instance_geometry_set_material_override(p_instance, p_material);
+	RendererSceneCull::instance_geometry_set_material_override(p_instance, p_material);
 }
 
 void Renderer::instance_geometry_set_material_overlay(RID p_instance, RID p_material)
 {
-	Renderer::scene->instance_geometry_set_material_overlay(p_instance, p_material);
+	RendererSceneCull::instance_geometry_set_material_overlay(p_instance, p_material);
 }
 
 void Renderer::instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias)
 {
-	Renderer::scene->instance_geometry_set_lod_bias(p_instance, p_lod_bias);
+	RendererSceneCull::instance_geometry_set_lod_bias(p_instance, p_lod_bias);
 }
 
 void Renderer::camera_set_perspective(
 	RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far)
 {
-	Renderer::scene->camera_set_perspective(p_camera, p_fovy_degrees, p_z_near, p_z_far);
+	RendererSceneCull::camera_set_perspective(p_camera, p_fovy_degrees, p_z_near, p_z_far);
 }
 
 void Renderer::camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far)
 {
-	Renderer::scene->camera_set_orthogonal(p_camera, p_size, p_z_near, p_z_far);
+	RendererSceneCull::camera_set_orthogonal(p_camera, p_size, p_z_near, p_z_far);
 }
 
 void Renderer::camera_set_frustum(
 	RID p_camera, float p_size, Vector2 p_offset, float p_z_near, float p_z_far)
 {
-	Renderer::scene->camera_set_frustum(p_camera, p_size, p_offset, p_z_near, p_z_far);
+	RendererSceneCull::camera_set_frustum(p_camera, p_size, p_offset, p_z_near, p_z_far);
 }
 
 void Renderer::camera_set_transform(RID p_camera, const Transform3D& p_transform)
 {
-	Renderer::scene->camera_set_transform(p_camera, p_transform);
+	RendererSceneCull::camera_set_transform(p_camera, p_transform);
 }
 
 RID Renderer::mesh_create() { return RendererMeshStorage::mesh_allocate(); }
@@ -1665,8 +1664,8 @@ void Renderer::material_set_next_pass(RID p_material, RID p_next_material)
 
 void Renderer::material_set_use_debanding(bool p_enable)
 {
-	if (Renderer::scene) {
-		Renderer::scene->material_set_use_debanding(p_enable);
+	if (RendererSceneCull::is_initialized()) {
+		RendererSceneCull::material_set_use_debanding(p_enable);
 	}
 }
 
@@ -1679,7 +1678,7 @@ void Renderer::free_rid(RID p_rid)
 	if (Renderer::viewport && Renderer::viewport->free(p_rid)) {
 		return;
 	}
-	if (Renderer::scene && Renderer::scene->free(p_rid)) {
+	if (RendererSceneCull::is_initialized() && RendererSceneCull::free(p_rid)) {
 		return;
 	}
 	if (RendererUtilities::free(p_rid)) {
@@ -1738,22 +1737,22 @@ RID Renderer::viewport_create()
 
 RID Renderer::scenario_create()
 {
-	RID ret = Renderer::scene->scenario_allocate();
-	Renderer::scene->scenario_initialize(ret);
+	RID ret = RendererSceneCull::scenario_allocate();
+	RendererSceneCull::scenario_initialize(ret);
 	return ret;
 }
 
 RID Renderer::instance_create()
 {
-	RID ret = Renderer::scene->instance_allocate();
-	Renderer::scene->instance_initialize(ret);
+	RID ret = RendererSceneCull::instance_allocate();
+	RendererSceneCull::instance_initialize(ret);
 	return ret;
 }
 
 RID Renderer::camera_create()
 {
-	RID ret = Renderer::scene->camera_allocate();
-	Renderer::scene->camera_initialize(ret);
+	RID ret = RendererSceneCull::camera_allocate();
+	RendererSceneCull::camera_initialize(ret);
 	return ret;
 }
 
@@ -2082,12 +2081,12 @@ void Renderer::camera_attributes_set_exposure(
 
 void Renderer::environment_set_sky_orientation(RID p_env, const Basis& p_orientation)
 {
-	Renderer::scene->environment_set_sky_orientation(p_env, p_orientation);
+	RendererSceneCull::environment_set_sky_orientation(p_env, p_orientation);
 }
 
 void Renderer::environment_set_fog_depth(RID p_env, float p_curve, float p_begin, float p_end)
 {
-	Renderer::scene->environment_set_fog_depth(p_env, p_curve, p_begin, p_end);
+	RendererSceneCull::environment_set_fog_depth(p_env, p_curve, p_begin, p_end);
 }
 
 void Renderer::environment_set_volumetric_fog(RID p_env, bool p_enable, float p_density,
@@ -2095,7 +2094,7 @@ void Renderer::environment_set_volumetric_fog(RID p_env, bool p_enable, float p_
 	float p_length, float p_detail_spread, float p_gi_inject, bool p_temporal_reprojection,
 	float p_temporal_reprojection_amount, float p_ambient_inject, float p_sky_affect)
 {
-	Renderer::scene->environment_set_volumetric_fog(p_env, p_enable, p_density, p_albedo, p_emission,
+	RendererSceneCull::environment_set_volumetric_fog(p_env, p_enable, p_density, p_albedo, p_emission,
 		p_emission_energy, p_anisotropy, p_length, p_detail_spread, p_gi_inject,
 		p_temporal_reprojection, p_temporal_reprojection_amount, p_ambient_inject, p_sky_affect);
 }
@@ -2105,64 +2104,64 @@ void Renderer::environment_set_glow(RID p_env, bool p_enable, Vector<float> p_le
 	RSE::EnvironmentGlowBlendMode p_blend_mode, float p_hdr_bleed_threshold,
 	float p_hdr_bleed_scale, float p_hdr_luminance_cap, float p_glow_map_strength, RID p_glow_map)
 {
-	Renderer::scene->environment_set_glow(p_env, p_enable, p_levels, p_intensity, p_strength, p_mix,
+	RendererSceneCull::environment_set_glow(p_env, p_enable, p_levels, p_intensity, p_strength, p_mix,
 		p_bloom_threshold, p_blend_mode, p_hdr_bleed_threshold, p_hdr_bleed_scale,
 		p_hdr_luminance_cap, p_glow_map_strength, p_glow_map);
 }
 
 void Renderer::environment_set_sky(RID p_env, RID p_sky)
 {
-	Renderer::scene->environment_set_sky(p_env, p_sky);
+	RendererSceneCull::environment_set_sky(p_env, p_sky);
 }
 
 void Renderer::environment_set_sky_custom_fov(RID p_env, float p_scale)
 {
-	Renderer::scene->environment_set_sky_custom_fov(p_env, p_scale);
+	RendererSceneCull::environment_set_sky_custom_fov(p_env, p_scale);
 }
 
 void Renderer::environment_set_bg_color(RID p_env, const Color& p_color)
 {
-	Renderer::scene->environment_set_bg_color(p_env, p_color);
+	RendererSceneCull::environment_set_bg_color(p_env, p_color);
 }
 
 void Renderer::environment_set_bg_energy(RID p_env, float p_energy, float p_multiplier)
 {
-	Renderer::scene->environment_set_bg_energy(p_env, p_energy, p_multiplier);
+	RendererSceneCull::environment_set_bg_energy(p_env, p_energy, p_multiplier);
 }
 
 void Renderer::environment_set_canvas_max_layer(RID p_env, int p_max_layer)
 {
-	Renderer::scene->environment_set_canvas_max_layer(p_env, p_max_layer);
+	RendererSceneCull::environment_set_canvas_max_layer(p_env, p_max_layer);
 }
 
 void Renderer::environment_set_camera_feed_id(RID p_env, int p_camera_feed_id)
 {
-	Renderer::scene->environment_set_camera_feed_id(p_env, p_camera_feed_id);
+	RendererSceneCull::environment_set_camera_feed_id(p_env, p_camera_feed_id);
 }
 
 void Renderer::environment_set_ambient_light(RID p_env, const Color& p_color,
 	RSE::EnvironmentAmbientSource p_ambient, float p_energy, float p_sky_contribution,
 	RSE::EnvironmentReflectionSource p_reflection_source)
 {
-	Renderer::scene->environment_set_ambient_light(
+	RendererSceneCull::environment_set_ambient_light(
 		p_env, p_color, p_ambient, p_energy, p_sky_contribution, p_reflection_source);
 }
 
 void Renderer::environment_set_tonemap(
 	RID p_env, RSE::EnvironmentToneMapper p_tone_mapper, float p_exposure, float p_white)
 {
-	Renderer::scene->environment_set_tonemap(p_env, p_tone_mapper, p_exposure, p_white);
+	RendererSceneCull::environment_set_tonemap(p_env, p_tone_mapper, p_exposure, p_white);
 }
 
 void Renderer::environment_set_tonemap_agx_contrast(RID p_env, float p_contrast)
 {
-	Renderer::scene->environment_set_tonemap_agx_contrast(p_env, p_contrast);
+	RendererSceneCull::environment_set_tonemap_agx_contrast(p_env, p_contrast);
 }
 
 void Renderer::environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_in,
 	float p_fade_out, float p_depth_tolerance)
 {
-	Renderer::scene->environment_set_ssr(
+	RendererSceneCull::environment_set_ssr(
 		p_env, p_enable, p_max_steps, p_fade_in, p_fade_out, p_depth_tolerance);
 }
 
@@ -2170,14 +2169,14 @@ void Renderer::environment_set_ssao(RID p_env, bool p_enable, float p_radius, fl
 	float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect,
 	float p_ao_channel_affect)
 {
-	Renderer::scene->environment_set_ssao(p_env, p_enable, p_radius, p_intensity, p_power, p_detail,
+	RendererSceneCull::environment_set_ssao(p_env, p_enable, p_radius, p_intensity, p_power, p_detail,
 		p_horizon, p_sharpness, p_light_affect, p_ao_channel_affect);
 }
 
 void Renderer::environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity,
 	float p_sharpness, float p_normal_rejection)
 {
-	Renderer::scene->environment_set_ssil(
+	RendererSceneCull::environment_set_ssil(
 		p_env, p_enable, p_radius, p_intensity, p_sharpness, p_normal_rejection);
 }
 
@@ -2186,7 +2185,7 @@ void Renderer::environment_set_sdfgi(RID p_env, bool p_enable, int p_cascades,
 	float p_bounce_feedback, bool p_read_sky, float p_energy, float p_normal_bias,
 	float p_probe_bias)
 {
-	Renderer::scene->environment_set_sdfgi(p_env, p_enable, p_cascades, p_min_cell_size, p_y_scale,
+	RendererSceneCull::environment_set_sdfgi(p_env, p_enable, p_cascades, p_min_cell_size, p_y_scale,
 		p_use_occlusion, p_bounce_feedback, p_read_sky, p_energy, p_normal_bias, p_probe_bias);
 }
 
@@ -2195,68 +2194,68 @@ void Renderer::environment_set_fog(RID p_env, bool p_enable, const Color& p_ligh
 	float p_height_density, float p_aerial_perspective, float p_sky_affect,
 	RSE::EnvironmentFogMode p_mode)
 {
-	Renderer::scene->environment_set_fog(p_env, p_enable, p_light_color, p_light_energy, p_sun_scatter,
+	RendererSceneCull::environment_set_fog(p_env, p_enable, p_light_color, p_light_energy, p_sun_scatter,
 		p_density, p_height, p_height_density, p_aerial_perspective, p_sky_affect, p_mode);
 }
 
 void Renderer::environment_set_adjustment(RID p_env, bool p_enable, float p_brightness,
 	float p_contrast, float p_saturation, bool p_use_1d_color_correction, RID p_color_correction)
 {
-	Renderer::scene->environment_set_adjustment(p_env, p_enable, p_brightness, p_contrast, p_saturation,
+	RendererSceneCull::environment_set_adjustment(p_env, p_enable, p_brightness, p_contrast, p_saturation,
 		p_use_1d_color_correction, p_color_correction);
 }
 
 RID Renderer::compositor_create()
 {
-	RID ret = Renderer::scene->compositor_allocate();
-	Renderer::scene->compositor_initialize(ret);
+	RID ret = RendererSceneCull::compositor_allocate();
+	RendererSceneCull::compositor_initialize(ret);
 	return ret;
 }
 
 void Renderer::compositor_effect_set_enabled(RID p_effect, bool p_enabled)
 {
-	Renderer::scene->compositor_effect_set_enabled(p_effect, p_enabled);
+	RendererSceneCull::compositor_effect_set_enabled(p_effect, p_enabled);
 }
 
 void Renderer::compositor_effect_set_flag(
 	RID p_effect, RSE::CompositorEffectFlags p_flag, bool p_set)
 {
-	Renderer::scene->compositor_effect_set_flag(p_effect, p_flag, p_set);
+	RendererSceneCull::compositor_effect_set_flag(p_effect, p_flag, p_set);
 }
 
 RID Renderer::sky_create()
 {
-	RID ret = Renderer::scene->sky_allocate();
-	Renderer::scene->sky_initialize(ret);
+	RID ret = RendererSceneCull::sky_allocate();
+	RendererSceneCull::sky_initialize(ret);
 	return ret;
 }
 
 void Renderer::sky_set_radiance_size(RID p_sky, int p_radiance_size)
 {
-	Renderer::scene->sky_set_radiance_size(p_sky, p_radiance_size);
+	RendererSceneCull::sky_set_radiance_size(p_sky, p_radiance_size);
 }
 
 void Renderer::sky_set_mode(RID p_sky, RSE::SkyMode p_mode)
 {
-	Renderer::scene->sky_set_mode(p_sky, p_mode);
+	RendererSceneCull::sky_set_mode(p_sky, p_mode);
 }
 
 void Renderer::sky_set_material(RID p_sky, RID p_material)
 {
-	Renderer::scene->sky_set_material(p_sky, p_material);
+	RendererSceneCull::sky_set_material(p_sky, p_material);
 }
 
 RID Renderer::occluder_create()
 {
-	RID ret = Renderer::scene->occluder_allocate();
-	Renderer::scene->occluder_initialize(ret);
+	RID ret = RendererSceneCull::occluder_allocate();
+	RendererSceneCull::occluder_initialize(ret);
 	return ret;
 }
 
 void Renderer::occluder_set_mesh(
 	RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices)
 {
-	Renderer::scene->occluder_set_mesh(p_occluder, p_vertices, p_indices);
+	RendererSceneCull::occluder_set_mesh(p_occluder, p_vertices, p_indices);
 }
 
 RID Renderer::multimesh_create()
