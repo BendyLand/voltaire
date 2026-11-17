@@ -375,7 +375,7 @@ void TextureProgressBar::_notification(int p_what)
 		RID ae = get_accessibility_element();
 		ERR_FAIL_COND(ae.is_null());
 
-		AccessibilityServer::get_singleton()->update_set_role(
+		AccessibilityServer::update_set_role(
 			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_PROGRESS_INDICATOR);
 	} break;
 

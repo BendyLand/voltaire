@@ -458,7 +458,7 @@ Rect2 Viewport::get_visible_rect() const
 	Rect2 r;
 
 	if (size == Size2()) {
-		r = Rect2(Point2(), DisplayServer::get_singleton()->window_get_size());
+		r = Rect2(Point2(), DisplayServer::window_get_size());
 	}
 	else {
 		r = Rect2(Point2(), size);
@@ -678,13 +678,13 @@ Vector2 Viewport::get_mouse_position() const
 		// In this case get_screen_transform is not applicable, because it is ambiguous.
 		return gui.last_mouse_pos;
 	}
-	else if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_MOUSE)) {
+	else if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_MOUSE)) {
 		Transform2D xform = get_screen_transform_internal(true);
 		if (xform.determinant() == 0) {
 			// Screen transform can be non-invertible when the Window is minimized.
 			return Vector2();
 		}
-		return xform.affine_inverse().xform(DisplayServer::get_singleton()->mouse_get_position());
+		return xform.affine_inverse().xform(DisplayServer::mouse_get_position());
 	}
 	else {
 		// Fallback to Input for getting mouse position in case of emulated mouse.
@@ -971,9 +971,9 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 
 				gui.currently_dragged_subwindow->_rect_changed_callback(new_rect);
 
-				if (DisplayServer::get_singleton()->has_feature(
+				if (DisplayServer::has_feature(
 						DisplayServerEnums::FEATURE_CURSOR_SHAPE)) {
-					DisplayServer::get_singleton()->cursor_set_shape(
+					DisplayServer::cursor_set_shape(
 						DisplayServerEnums::CURSOR_MOVE);
 				}
 			}
@@ -1175,9 +1175,9 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 					DisplayServerEnums::CURSOR_BDIAGSIZE, DisplayServerEnums::CURSOR_VSIZE,
 					DisplayServerEnums::CURSOR_FDIAGSIZE};
 
-				if (DisplayServer::get_singleton()->has_feature(
+				if (DisplayServer::has_feature(
 						DisplayServerEnums::FEATURE_CURSOR_SHAPE)) {
-					DisplayServer::get_singleton()->cursor_set_shape(shapes[resize]);
+					DisplayServer::cursor_set_shape(shapes[resize]);
 				}
 
 				return true; // Reserved for showing the resize cursor.
@@ -1288,7 +1288,7 @@ void Viewport::_update_mouse_over(const Ref<InputEventMouse>& p_mm)
 			return;
 		}
 		if (receiving_window->get_window_id() != p_mm->get_window_id()) {
-			Vector2 pos = DisplayServer::get_singleton()->mouse_get_position() -
+			Vector2 pos = DisplayServer::mouse_get_position() -
 						  receiving_window->get_position();
 			pos = receiving_window->get_final_transform().affine_inverse().xform(pos);
 			receiving_window->_update_mouse_over(pos);
@@ -1833,7 +1833,7 @@ void Viewport::set_embedding_subwindows(bool p_embed)
 
 		if (allow_change) {
 			Vector<DisplayServerEnums::WindowID> wl =
-				DisplayServer::get_singleton()->get_window_list();
+				DisplayServer::get_window_list();
 			for (const DisplayServerEnums::WindowID& window_id : wl) {
 				const Window* w = Window::get_from_id(window_id);
 				if (w && is_ancestor_of(w)) {

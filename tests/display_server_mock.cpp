@@ -75,7 +75,7 @@ bool DisplayServerMock::has_feature(DisplayServerEnums::Feature p_feature) const
 	return false;
 }
 
-DisplayServer *DisplayServerMock::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
+DisplayServerDriver *DisplayServerMock::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
 	r_error = OK;
 	RasterizerDummy::make_current();
 	return memnew(DisplayServerMock());

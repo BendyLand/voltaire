@@ -359,7 +359,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 
 	if (OS::get_current_rendering_method() == "gl_compatibility") {
 		// This is currently needed for GLES to keep the current window being rendered to up to date
-		DisplayServer::get_singleton()->gl_window_make_current(p_viewport->viewport_to_screen);
+		DisplayServer::gl_window_make_current(p_viewport->viewport_to_screen);
 	}
 
 	/* Camera should always be BEFORE any other 3D */
@@ -1726,7 +1726,7 @@ void RendererViewport::viewport_set_canvas_cull_mask(RID p_viewport, uint32_t p_
 void RendererViewport::call_set_vsync_mode(
 	DisplayServerEnums::VSyncMode p_mode, DisplayServerEnums::WindowID p_window)
 {
-	DisplayServer::get_singleton()->window_set_vsync_mode(p_mode, p_window);
+	DisplayServer::window_set_vsync_mode(p_mode, p_window);
 }
 
 int RendererViewport::get_total_objects_drawn() const { return total_objects_drawn; }
@@ -1751,7 +1751,7 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 
 	if (rid_count == 0) {
 		if (p_swap_buffers) {
-			DisplayServer::get_singleton()->swap_buffers();
+			DisplayServer::swap_buffers();
 		}
 		return;
 	}
@@ -1812,6 +1812,6 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 	}
 
 	if (p_swap_buffers) {
-		DisplayServer::get_singleton()->swap_buffers();
+		DisplayServer::swap_buffers();
 	}
 }

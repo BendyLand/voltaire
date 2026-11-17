@@ -250,7 +250,7 @@ void TextEdit::Text::update_accessibility(int p_line, RID p_root)
 		for (int i = 0; i < l.data_buf->get_line_count(); i++) {
 			bool is_last_line =
 				(p_line == text.size() - 1) && (i == l.data_buf->get_line_count() - 1);
-			RID rid = AccessibilityServer::get_singleton()->create_sub_text_edit_elements(
+			RID rid = AccessibilityServer::create_sub_text_edit_elements(
 				p_root, l.data_buf->get_line_rid(i), max_line_height, p_line, is_last_line);
 			l.accessibility_text_root_element.push_back(rid);
 		}
@@ -906,11 +906,11 @@ void TextEdit::_close_ime_window()
 	DisplayServerEnums::WindowID wid =
 		get_window() ? get_window()->get_window_id() : DisplayServerEnums::INVALID_WINDOW_ID;
 	if (wid == DisplayServerEnums::INVALID_WINDOW_ID ||
-		!DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_IME)) {
+		!DisplayServer::has_feature(DisplayServerEnums::FEATURE_IME)) {
 		return;
 	}
-	DisplayServer::get_singleton()->window_set_ime_position(Point2(), wid);
-	DisplayServer::get_singleton()->window_set_ime_active(false, wid);
+	DisplayServer::window_set_ime_position(Point2(), wid);
+	DisplayServer::window_set_ime_active(false, wid);
 }
 
 void TextEdit::_update_ime_window_position()
@@ -918,14 +918,14 @@ void TextEdit::_update_ime_window_position()
 	DisplayServerEnums::WindowID wid =
 		get_window() ? get_window()->get_window_id() : DisplayServerEnums::INVALID_WINDOW_ID;
 	if (wid == DisplayServerEnums::INVALID_WINDOW_ID ||
-		!DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_IME)) {
+		!DisplayServer::has_feature(DisplayServerEnums::FEATURE_IME)) {
 		return;
 	}
 	if (!editable) {
-		DisplayServer::get_singleton()->window_set_ime_active(false, wid);
+		DisplayServer::window_set_ime_active(false, wid);
 		return;
 	}
-	DisplayServer::get_singleton()->window_set_ime_active(true, wid);
+	DisplayServer::window_set_ime_active(true, wid);
 	Point2 pos = get_global_position() + get_caret_draw_pos();
 	if (get_window()->get_embedder()) {
 		pos += get_viewport()->get_popup_base_transform().get_origin();
@@ -934,7 +934,7 @@ void TextEdit::_update_ime_window_position()
 	pos = get_window()->get_screen_transform().xform(pos);
 	// The window will move to the updated position the next time the IME is updated, not
 	// immediately.
-	DisplayServer::get_singleton()->window_set_ime_position(pos, wid);
+	DisplayServer::window_set_ime_position(pos, wid);
 }
 
 void TextEdit::_caret_changed(int p_caret) {}
@@ -944,7 +944,7 @@ void TextEdit::_show_virtual_keyboard()
 	_update_ime_window_position();
 
 	if (virtual_keyboard_enabled &&
-		DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_VIRTUAL_KEYBOARD)) {
+		DisplayServer::has_feature(DisplayServerEnums::FEATURE_VIRTUAL_KEYBOARD)) {
 		int caret_start = -1;
 		int caret_end = -1;
 
@@ -962,7 +962,7 @@ void TextEdit::_show_virtual_keyboard()
 			caret_end = caret_start + post_text.length();
 		}
 
-		DisplayServer::get_singleton()->virtual_keyboard_show(get_text(), get_global_rect(),
+		DisplayServer::virtual_keyboard_show(get_text(), get_global_rect(),
 			DisplayServerEnums::KEYBOARD_TYPE_MULTILINE, -1, caret_start, caret_end);
 	}
 }
@@ -1025,7 +1025,7 @@ bool TextEdit::is_context_menu_enabled() const { return context_menu_enabled; }
 void TextEdit::show_emoji_and_symbol_picker()
 {
 	_update_ime_window_position();
-	DisplayServer::get_singleton()->show_emoji_and_symbol_picker();
+	DisplayServer::show_emoji_and_symbol_picker();
 }
 
 void TextEdit::set_emoji_menu_enabled(bool p_enabled)
@@ -3636,7 +3636,7 @@ void TextEdit::_copy_internal(int p_caret)
 {
 	ERR_FAIL_COND(p_caret >= get_caret_count() || p_caret < -1);
 	if (has_selection(p_caret)) {
-		DisplayServer::get_singleton()->clipboard_set(get_selected_text(p_caret));
+		DisplayServer::clipboard_set(get_selected_text(p_caret));
 		cut_copy_line = "";
 		return;
 	}
@@ -3665,7 +3665,7 @@ void TextEdit::_copy_internal(int p_caret)
 	}
 
 	String clipboard_string = clipboard.as_string();
-	DisplayServer::get_singleton()->clipboard_set(clipboard_string);
+	DisplayServer::clipboard_set(clipboard_string);
 	// Set the cut copy line so we know to paste as a line.
 	if (get_caret_count() == 1) {
 		cut_copy_line = clipboard_string;

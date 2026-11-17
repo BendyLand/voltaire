@@ -249,8 +249,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_resize(JNIEnv *env, j
 				ANativeWindow *native_window = ANativeWindow_fromSurface(env, p_surface);
 				os_android->set_native_window(native_window);
 			}
-			DisplayServerAndroid::get_singleton()->reset_window();
-			DisplayServerAndroid::get_singleton()->notify_surface_changed(p_width, p_height);
+			DisplayServer::driver_as<DisplayServerAndroid>()->reset_window();
+			DisplayServer::driver_as<DisplayServerAndroid>()->notify_surface_changed(p_width, p_height);
 		}
 	}
 }
@@ -275,7 +275,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_back(JNIEnv *env, jcl
 		return;
 	}
 
-	if (DisplayServerAndroid *dsa = Object::cast_to<DisplayServerAndroid>(DisplayServer::get_singleton())) {
+	if (DisplayServerAndroid *dsa = DisplayServer::driver_as<DisplayServerAndroid>()) {
 		dsa->send_window_event(DisplayServerEnums::WINDOW_EVENT_GO_BACK_REQUEST);
 	}
 }
@@ -328,10 +328,10 @@ JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_step(JNIEnv *env,
 		step.increment();
 	}
 
-	DisplayServerAndroid::get_singleton()->process_accelerometer(accelerometer);
-	DisplayServerAndroid::get_singleton()->process_gravity(gravity);
-	DisplayServerAndroid::get_singleton()->process_magnetometer(magnetometer);
-	DisplayServerAndroid::get_singleton()->process_gyroscope(gyroscope);
+	DisplayServer::driver_as<DisplayServerAndroid>()->process_accelerometer(accelerometer);
+	DisplayServer::driver_as<DisplayServerAndroid>()->process_gravity(gravity);
+	DisplayServer::driver_as<DisplayServerAndroid>()->process_magnetometer(magnetometer);
+	DisplayServer::driver_as<DisplayServerAndroid>()->process_gyroscope(gyroscope);
 
 	bool should_swap_buffers = false;
 	if (os_android->main_loop_iterate(&should_swap_buffers)) {
@@ -610,21 +610,21 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_setEditorProjectMetad
 }
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onNightModeChanged(JNIEnv *env, jclass clazz) {
-	DisplayServerAndroid *ds = (DisplayServerAndroid *)DisplayServer::get_singleton();
+	DisplayServerAndroid *ds = DisplayServer::driver_as<DisplayServerAndroid>();
 	if (ds) {
 		ds->emit_system_theme_changed();
 	}
 }
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_hardwareKeyboardConnected(JNIEnv *env, jclass clazz, jboolean p_connected) {
-	DisplayServerAndroid *ds = (DisplayServerAndroid *)DisplayServer::get_singleton();
+	DisplayServerAndroid *ds = DisplayServer::driver_as<DisplayServerAndroid>();
 	if (ds) {
 		ds->emit_hardware_keyboard_connection_changed(p_connected);
 	}
 }
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_filePickerCallback(JNIEnv *env, jclass clazz, jboolean p_ok, jobjectArray p_selected_paths) {
-	DisplayServerAndroid *ds = (DisplayServerAndroid *)DisplayServer::get_singleton();
+	DisplayServerAndroid *ds = DisplayServer::driver_as<DisplayServerAndroid>();
 	if (ds) {
 		Vector<String> selected_paths;
 
@@ -675,7 +675,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onRendererPaused(JNIE
 		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_PAUSED);
 	}
 
-	if (DisplayServerAndroid *dsa = Object::cast_to<DisplayServerAndroid>(DisplayServer::get_singleton())) {
+	if (DisplayServerAndroid *dsa = DisplayServer::driver_as<DisplayServerAndroid>()) {
 		dsa->notify_application_paused();
 	}
 }
@@ -687,11 +687,6 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onOrientationChange(J
 
 	if (CameraServer::is_initialized()) {
 		CameraServer::handle_display_rotation_change(p_orientation);
-	}
-
-	DisplayServer *display_server = DisplayServer::get_singleton();
-	if (display_server) {
-		display_server->emit_signal("orientation_changed", p_orientation);
 	}
 }
 

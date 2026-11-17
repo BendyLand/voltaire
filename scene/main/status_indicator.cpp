@@ -38,7 +38,7 @@ void StatusIndicator::set_icon(const Ref<Texture2D>& p_icon)
 	ERR_MAIN_THREAD_GUARD;
 	icon = p_icon;
 	if (iid != DisplayServerEnums::INVALID_INDICATOR_ID) {
-		DisplayServer::get_singleton()->status_indicator_set_icon(iid, icon);
+		DisplayServer::status_indicator_set_icon(iid, icon);
 	}
 }
 
@@ -49,7 +49,7 @@ void StatusIndicator::set_tooltip(const String& p_tooltip)
 	ERR_MAIN_THREAD_GUARD;
 	tooltip = p_tooltip;
 	if (iid != DisplayServerEnums::INVALID_INDICATOR_ID) {
-		DisplayServer::get_singleton()->status_indicator_set_tooltip(iid, tooltip);
+		DisplayServer::status_indicator_set_tooltip(iid, tooltip);
 	}
 }
 
@@ -64,7 +64,7 @@ Rect2 StatusIndicator::get_rect() const
 	if (iid == DisplayServerEnums::INVALID_INDICATOR_ID) {
 		return Rect2();
 	}
-	return DisplayServer::get_singleton()->status_indicator_get_rect(iid);
+	return DisplayServer::status_indicator_get_rect(iid);
 }
 
 

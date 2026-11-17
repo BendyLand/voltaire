@@ -33,12 +33,12 @@
 
 #include "servers/display/accessibility_server.h"
 
-class AccessibilityServerDummy : public AccessibilityServer
+class AccessibilityServerDummy : public AccessibilityServerDriver
 {
 	friend class AccessibilityServer;
 
 protected:
-	static AccessibilityServer* create_func(Error& r_error)
+	static AccessibilityServerDriver* create_func(Error& r_error)
 	{
 		r_error = OK;
 		return memnew(AccessibilityServerDummy);

@@ -42,7 +42,7 @@ void ColorRect::_notification(int p_what)
 		RID ae = get_accessibility_element();
 		ERR_FAIL_COND(ae.is_null());
 
-		AccessibilityServer::get_singleton()->update_set_color_value(ae, color);
+		AccessibilityServer::update_set_color_value(ae, color);
 	} break;
 
 	case NOTIFICATION_DRAW: {

@@ -88,7 +88,7 @@
 - (void)searchForItemsWithSearchString:(NSString *)searchString resultLimit:(NSInteger)resultLimit matchedItemHandler:(void (^)(NSArray *items))handleMatchedItems {
 	NSMutableArray *found_items = [[NSMutableArray alloc] init];
 
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->_help_get_search_callback().is_valid()) {
 		Callable cb = ds->_help_get_search_callback();
 
@@ -117,7 +117,7 @@
 }
 
 - (void)performActionForItem:(id)item {
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->_help_get_action_callback().is_valid()) {
 		Callable cb = ds->_help_get_action_callback();
 
@@ -134,7 +134,7 @@
 }
 
 - (void)system_theme_changed:(NSNotification *)notification {
-	DisplayServerMacOSBase *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOSBase *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		ds->emit_system_theme_changed();
 	}
@@ -220,7 +220,7 @@ static const char *godot_ac_ctx = "gd_accessibility_observer_ctx";
 }
 
 - (void)applicationDidResignActive:(NSNotification *)notification {
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		ds->mouse_process_popups(true);
 	}
@@ -247,7 +247,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 	if (MainLoop::is_active()) {
 		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
 	}
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds) {
 		return;
 	}
@@ -296,15 +296,15 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 }
 
 - (void)globalMenuCallback:(id)sender {
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		return ds->menu_callback(sender);
 	}
 }
 
 - (NSMenu *)applicationDockMenu:(NSApplication *)sender {
-	if (NativeMenu::get_singleton()) {
-		NativeMenuMacOS *nmenu = (NativeMenuMacOS *)NativeMenu::get_singleton();
+	if (NativeMenu::is_initialized()) {
+		NativeMenuMacOS *nmenu = NativeMenu::driver_as<NativeMenuMacOS>();
 		return nmenu->_get_dock_menu();
 	} else {
 		return nullptr;
@@ -321,7 +321,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 		return NSTerminateNow;
 	}
 
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->has_window(DisplayServerEnums::MAIN_WINDOW_ID)) {
 		ds->send_window_event(ds->get_window(DisplayServerEnums::MAIN_WINDOW_ID), DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 	}

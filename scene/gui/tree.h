@@ -190,17 +190,17 @@ private:
 	_FORCE_INLINE_ void _unlink_from_tree()
 	{
 		if (accessibility_row_element.is_valid()) {
-			AccessibilityServer::get_singleton()->free_element(accessibility_row_element);
+			AccessibilityServer::free_element(accessibility_row_element);
 			accessibility_row_element = RID();
 		}
 		for (Cell& cell : cells) {
 			if (cell.accessibility_cell_element.is_valid()) {
-				AccessibilityServer::get_singleton()->free_element(cell.accessibility_cell_element);
+				AccessibilityServer::free_element(cell.accessibility_cell_element);
 				cell.accessibility_cell_element = RID();
 			}
 			for (Cell::Button& btn : cell.buttons) {
 				if (btn.accessibility_button_element.is_valid()) {
-					AccessibilityServer::get_singleton()->free_element(
+					AccessibilityServer::free_element(
 						btn.accessibility_button_element);
 					btn.accessibility_button_element = RID();
 				}

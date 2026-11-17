@@ -38,7 +38,7 @@
 
 #include <windows.h>
 
-class NativeMenuWindows : public NativeMenu {
+class NativeMenuWindows : public NativeMenuDriver {
 
 	enum GlobalMenuCheckType {
 		CHECKABLE_TYPE_NONE,

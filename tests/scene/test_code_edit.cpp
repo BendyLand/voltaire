@@ -4673,7 +4673,7 @@ TEST_CASE("[SceneTree][CodeEdit] text manipulation") {
 	}
 
 	SUBCASE("[TextEdit] cut") {
-		DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+		DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 		code_edit->set_line_folding_enabled(true);
 
 		// Cut without a selection removes the entire line.
@@ -4821,7 +4821,7 @@ TEST_CASE("[SceneTree][CodeEdit] text manipulation") {
 	}
 
 	SUBCASE("[SceneTree][CodeEdit] cut when empty selection clipboard disabled") {
-		DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+		DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 		code_edit->set_empty_selection_clipboard_enabled(false);
 		DS->clipboard_set("");
 

@@ -89,7 +89,7 @@ bool GameViewDebuggerMacOS::_msg_window_set_ime_active(const Array &p_args) {
 
 	bool active = p_args[0];
 	DisplayServerEnums::WindowID wid = embedded_process->get_window()->get_window_id();
-	DisplayServer::get_singleton()->window_set_ime_active(active, wid);
+	DisplayServer::window_set_ime_active(active, wid);
 	return true;
 }
 
@@ -99,7 +99,7 @@ bool GameViewDebuggerMacOS::_msg_window_set_ime_position(const Array &p_args) {
 	Point2i pos = p_args[0];
 	Point2i xpos = embedded_process->get_layer_host()->get_global_transform_with_canvas().xform(pos);
 	DisplayServerEnums::WindowID wid = embedded_process->get_window()->get_window_id();
-	DisplayServer::get_singleton()->window_set_ime_position(xpos, wid);
+	DisplayServer::window_set_ime_position(xpos, wid);
 	return true;
 }
 
@@ -126,7 +126,7 @@ bool GameViewDebuggerMacOS::_msg_warp_mouse(const Array &p_args) {
 
 	// Position arrives in points; convert to editor pixels.
 	Vector2i pos = p_args[0];
-	float scale = DisplayServer::get_singleton()->screen_get_max_scale();
+	float scale = DisplayServer::screen_get_max_scale();
 	embedded_process->get_layer_host()->warp_mouse(Vector2i(Vector2(pos) * scale));
 	return true;
 }

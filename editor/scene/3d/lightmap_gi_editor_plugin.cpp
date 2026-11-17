@@ -55,7 +55,7 @@ void LightmapGIEditorPlugin::bake_func_end(uint64_t p_time_started)
 	// Request attention in case the user was doing something else.
 	// Baking lightmaps is likely the editor task that can take the most time,
 	// so only request the attention for baking lightmaps.
-	DisplayServer::get_singleton()->window_request_attention();
+	DisplayServer::window_request_attention();
 }
 
 

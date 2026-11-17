@@ -29,13 +29,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "display_server_headless.h"
+
 #include "core/input/input.h"
 #include "core/input/input_event.h"
-#include "display_server_headless.h"
 #include "servers/display/native_menu.h"
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 
-DisplayServer* DisplayServerHeadless::create_func(const String& p_rendering_driver,
+DisplayServerDriver* DisplayServerHeadless::create_func(const String& p_rendering_driver,
 	DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
 	uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
 	DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
@@ -47,25 +48,22 @@ DisplayServer* DisplayServerHeadless::create_func(const String& p_rendering_driv
 
 void DisplayServerHeadless::_dispatch_input_events(const Ref<InputEvent>& p_event)
 {
-	static_cast<DisplayServerHeadless*>(get_singleton())->_dispatch_input_event(p_event);
+	if (DisplayServerHeadless* ds = DisplayServer::driver_as<DisplayServerHeadless>()) {
+		ds->_dispatch_input_event(p_event);
+	}
 }
 
 void DisplayServerHeadless::process_events() { Input::flush_buffered_events(); }
 
 DisplayServerHeadless::DisplayServerHeadless()
 {
-	native_menu = memnew(NativeMenu);
+	NativeMenu::initialize();
 	Input::set_event_dispatch_function(_dispatch_input_events);
 }
 
 DisplayServerHeadless::~DisplayServerHeadless()
 {
-	if (native_menu) {
-		memdelete(native_menu);
-		native_menu = nullptr;
-	}
+	NativeMenu::finalize();
 }
-
-
 
 void DisplayServerHeadless::_dispatch_input_event(Ref<InputEvent> const&) {}

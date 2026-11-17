@@ -143,7 +143,7 @@ void EmbeddedProcess::reset_timers()
 void EmbeddedProcess::request_close()
 {
 	if (current_process_id != 0 && embedding_completed) {
-		DisplayServer::get_singleton()->request_close_embedded_process(current_process_id);
+		DisplayServer::request_close_embedded_process(current_process_id);
 	}
 }
 
@@ -186,7 +186,7 @@ void EmbeddedProcess::_update_embedded_process()
 		last_updated_embedded_process_focused = focus;
 	}
 
-	DisplayServer::get_singleton()->embed_process(window->get_window_id(), current_process_id,
+	DisplayServer::embed_process(window->get_window_id(), current_process_id,
 		get_screen_embedded_window_rect(), is_visible_in_tree(), must_grab_focus);
 }
 
@@ -221,7 +221,7 @@ void EmbeddedProcess::_notification(int p_what)
 
 Window* EmbeddedProcess::_get_current_modal_window()
 {
-	Vector<DisplayServerEnums::WindowID> wl = DisplayServer::get_singleton()->get_window_list();
+	Vector<DisplayServerEnums::WindowID> wl = DisplayServer::get_window_list();
 	for (const DisplayServerEnums::WindowID& window_id : wl) {
 		Window* w = Window::get_from_id(window_id);
 		if (!w) {

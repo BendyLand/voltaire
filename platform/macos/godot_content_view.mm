@@ -61,7 +61,7 @@
 }
 
 - (void)displayLayer:(CALayer *)layer {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (MainLoop::is_active() && ds->get_is_resizing() && need_redraw) {
 		GodotProfileFrameMark;
 		GodotProfileZone("[GodotContentLayerDelegate displayLayer]");
@@ -83,7 +83,7 @@
 }
 
 - (void)setFrameSize:(NSSize)newSize {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->has_window(window_id)) {
 		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
 		NSRect frameRect = [wd.window_object frame];
@@ -210,7 +210,7 @@
 		return;
 	}
 
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -234,7 +234,7 @@
 	ime_input_event_in_progress = false;
 	[[marked_text mutableString] setString:@""];
 
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -258,7 +258,7 @@
 }
 
 - (NSRect)firstRectForCharacterRange:(NSRange)aRange actualRange:(NSRangePointer)actualRange {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return NSMakeRect(0, 0, 0, 0);
 	}
@@ -301,7 +301,7 @@
 		return;
 	}
 
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		[self cancelComposition];
 		return;
@@ -347,7 +347,7 @@
 }
 
 - (BOOL)performDragOperation:(id<NSDraggingInfo>)sender {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return NO;
 	}
@@ -380,7 +380,7 @@
 // MARK: Focus
 
 - (BOOL)canBecomeKeyView {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return YES;
 	}
@@ -396,7 +396,7 @@
 // MARK: Mouse
 
 - (void)cursorUpdate:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds) {
 		return;
 	}
@@ -405,7 +405,7 @@
 }
 
 - (void)processMouseEvent:(NSEvent *)event index:(MouseButton)index pressed:(bool)pressed outofstream:(bool)outofstream {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -434,7 +434,7 @@
 }
 
 - (void)mouseDown:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->has_window(window_id)) {
 		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
 		wd.edge = DisplayServerEnums::WINDOW_EDGE_MAX;
@@ -449,7 +449,7 @@
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->has_window(window_id)) {
 		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
 		if (wd.edge != DisplayServerEnums::WINDOW_EDGE_MAX) {
@@ -503,7 +503,7 @@
 }
 
 - (void)mouseUp:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->has_window(window_id)) {
 		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
 		wd.edge = DisplayServerEnums::WINDOW_EDGE_MAX;
@@ -516,7 +516,7 @@
 }
 
 - (void)mouseMoved:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -620,7 +620,7 @@
 }
 
 - (void)mouseExited:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -631,7 +631,7 @@
 }
 
 - (void)mouseEntered:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -644,7 +644,7 @@
 }
 
 - (void)magnifyWithEvent:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -677,7 +677,7 @@
 // MARK: Keyboard
 
 - (void)keyDown:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -743,7 +743,7 @@
 }
 
 - (void)flagsChanged:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -801,7 +801,7 @@
 }
 
 - (void)keyUp:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -833,7 +833,7 @@
 // MARK: Scroll and pan
 
 - (void)processScrollEvent:(NSEvent *)event button:(MouseButton)button factor:(double)factor {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -871,7 +871,7 @@
 }
 
 - (void)processPanEvent:(NSEvent *)event dx:(double)dx dy:(double)dy {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}
@@ -890,7 +890,7 @@
 }
 
 - (void)scrollWheel:(NSEvent *)event {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return;
 	}

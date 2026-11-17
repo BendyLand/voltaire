@@ -119,7 +119,7 @@ void ScriptEditor::_copy_script_path()
 {
 	if (ScriptEditorBase* seb = _get_current_editor()) {
 		Ref<Resource> scr = seb->get_edited_resource();
-		DisplayServer::get_singleton()->clipboard_set(scr->get_path());
+		DisplayServer::clipboard_set(scr->get_path());
 	}
 }
 
@@ -128,7 +128,7 @@ void ScriptEditor::_copy_script_uid()
 	if (ScriptEditorBase* seb = _get_current_editor()) {
 		Ref<Resource> scr = seb->get_edited_resource();
 		ResourceUID::ID uid = ResourceLoader::get_resource_uid(scr->get_path());
-		DisplayServer::get_singleton()->clipboard_set(
+		DisplayServer::clipboard_set(
 			ResourceUID::get_singleton()->id_to_text(uid));
 	}
 }

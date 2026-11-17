@@ -37,25 +37,32 @@ class TTSDriver;
 
 struct TTSUtterance;
 
-class TTS_Windows {
-	TTSDriver *driver = nullptr;
+class TTS_Windows final
+{
+	struct Data
+	{
+		TTSDriver* driver = nullptr;
+	};
 
-	static TTS_Windows *singleton;
+	static inline Data* data = nullptr;
 
 public:
-	static TTS_Windows *get_singleton();
+	TTS_Windows() = delete;
 
-	bool is_speaking() const;
-	bool is_paused() const;
-	Array get_voices() const;
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-	void speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0, bool p_interrupt = false);
-	void pause();
-	void resume();
-	void stop();
+	static bool is_speaking();
+	static bool is_paused();
+	static Array get_voices();
 
-	void process_events();
+	static void speak(const String& p_text, const String& p_voice, int p_volume = 50,
+		float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
+		bool p_interrupt = false);
+	static void pause();
+	static void resume();
+	static void stop();
 
-	TTS_Windows();
-	~TTS_Windows();
+	static void process_events();
 };

@@ -134,7 +134,7 @@ void AndroidInputHandler::process_key_event(int p_physical_keycode, int p_unicod
 	_set_key_modifier_state(ev, keycode);
 
 	if (p_physical_keycode == AKEYCODE_BACK && p_pressed) {
-		if (DisplayServerAndroid *dsa = Object::cast_to<DisplayServerAndroid>(DisplayServer::get_singleton())) {
+		if (DisplayServerAndroid *dsa = DisplayServer::driver_as<DisplayServerAndroid>()) {
 			dsa->send_window_event(DisplayServerEnums::WINDOW_EVENT_GO_BACK_REQUEST, true);
 		}
 	}

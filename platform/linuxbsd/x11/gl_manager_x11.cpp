@@ -361,7 +361,7 @@ void GLManager_X11::swap_buffers()
 
 	// On X11, when enabled, transparency is always active, so clear alpha manually.
 	if (OS::is_layered_allowed()) {
-		if (!DisplayServer::get_singleton()->window_get_flag(
+		if (!DisplayServer::window_get_flag(
 				DisplayServerEnums::WINDOW_FLAG_TRANSPARENT, _current_window->window_id)) {
 			glColorMask(false, false, false, true);
 			glClearColor(0, 0, 0, 1);
@@ -373,8 +373,6 @@ void GLManager_X11::swap_buffers()
 	static uint64_t swap_count = 0;
 	swap_count++;
 
-	// Check if the display pointers actually match
-	DisplayServer* ds = DisplayServer::get_singleton();
 	int pending_gl = XPending(_x_windisp.x11_display);
 
 	if (swap_count % 120 == 0) {

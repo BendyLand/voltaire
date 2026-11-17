@@ -183,7 +183,7 @@ bool AnimationPlayerEditor::_are_onion_layers_valid()
 	ERR_FAIL_COND_V(!onion.past && !onion.future, false);
 
 	Size2 capture_size =
-		DisplayServer::get_singleton()->window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
+		DisplayServer::window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
 	return onion.captures.size() == onion.get_capture_count() && onion.capture_size == capture_size;
 }
 
@@ -193,7 +193,7 @@ void AnimationPlayerEditor::_allocate_onion_layers()
 
 	int captures = onion.get_capture_count();
 	Size2 capture_size =
-		DisplayServer::get_singleton()->window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
+		DisplayServer::window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
 
 	onion.captures.resize(captures);
 	onion.captures_valid.resize(captures);

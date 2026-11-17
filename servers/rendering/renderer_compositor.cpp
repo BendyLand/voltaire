@@ -51,7 +51,7 @@
 Error RendererCompositor::create()
 {
 	String driver_name = "";
-	if (DisplayServer::get_singleton()) {
+	if (DisplayServer::is_initialized()) {
 		driver_name = OS::get_current_rendering_driver_name();
 	}
 
@@ -71,9 +71,8 @@ Error RendererCompositor::create()
 	if (!low_end) {
 		low_end = false;
 		bind_compositor<RendererCompositorRD>();
-		DisplayServer* ds = DisplayServer::get_singleton();
-		if (ds != nullptr) {
-			Error err = ds->init_rendering_device();
+		if (DisplayServer::is_initialized()) {
+			Error err = DisplayServer::init_rendering_device();
 			ERR_FAIL_COND_V_MSG(
 				err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
 		}

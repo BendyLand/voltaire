@@ -62,15 +62,11 @@ static RenderingContextDriver *rendering_context_global = nullptr;
 static bool rendering_context_global_checked = false;
 #endif
 
-DisplayServerAndroid *DisplayServerAndroid::get_singleton() {
-	return static_cast<DisplayServerAndroid *>(DisplayServer::get_singleton());
-}
-
 bool DisplayServerAndroid::has_feature(DisplayServerEnums::Feature p_feature) const {
 	switch (p_feature) {
 #ifndef DISABLE_DEPRECATED
 		case DisplayServerEnums::FEATURE_GLOBAL_MENU: {
-			return (native_menu && native_menu->has_feature(NativeMenu::FEATURE_GLOBAL_MENU));
+			return NativeMenu::is_initialized() && NativeMenu::has_feature(NativeMenu::FEATURE_GLOBAL_MENU);
 		} break;
 #endif
 		case DisplayServerEnums::FEATURE_PIP_MODE: {
@@ -178,7 +174,7 @@ void DisplayServerAndroid::clipboard_set(const String &p_text) {
 	if (godot_java->has_set_clipboard()) {
 		godot_java->set_clipboard(p_text);
 	} else {
-		DisplayServer::clipboard_set(p_text);
+		DisplayServerDriver::clipboard_set(p_text);
 	}
 }
 
@@ -189,7 +185,7 @@ String DisplayServerAndroid::clipboard_get() const {
 	if (godot_java->has_get_clipboard()) {
 		return godot_java->get_clipboard();
 	} else {
-		return DisplayServer::clipboard_get();
+		return DisplayServerDriver::clipboard_get();
 	}
 }
 
@@ -200,7 +196,7 @@ bool DisplayServerAndroid::clipboard_has() const {
 	if (godot_java->has_has_clipboard()) {
 		return godot_java->has_clipboard();
 	} else {
-		return DisplayServer::clipboard_has();
+		return DisplayServerDriver::clipboard_has();
 	}
 }
 
@@ -486,7 +482,9 @@ void DisplayServerAndroid::send_input_text(const String &p_text) const {
 }
 
 void DisplayServerAndroid::_dispatch_input_events(const Ref<InputEvent> &p_event) {
-	DisplayServerAndroid::get_singleton()->send_input_event(p_event);
+	if (DisplayServerAndroid *ds = DisplayServer::driver_as<DisplayServerAndroid>()) {
+		ds->send_input_event(p_event);
+	}
 }
 
 Vector<DisplayServerEnums::WindowID> DisplayServerAndroid::get_window_list() const {
@@ -677,8 +675,8 @@ Vector<String> DisplayServerAndroid::get_rendering_drivers_func() {
 	return drivers;
 }
 
-DisplayServer *DisplayServerAndroid::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
-	DisplayServer *ds = memnew(DisplayServerAndroid(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
+DisplayServerDriver *DisplayServerAndroid::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
+	DisplayServerDriver *ds = memnew(DisplayServerAndroid(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 	if (r_error != OK) {
 		if (p_rendering_driver == "vulkan") {
 			OS::alert(
@@ -695,7 +693,7 @@ DisplayServer *DisplayServerAndroid::create_func(const String &p_rendering_drive
 }
 
 void DisplayServerAndroid::register_android_driver() {
-	register_create_function("android", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("android", create_func, get_rendering_drivers_func);
 }
 
 #ifdef VULKAN_ENABLED
@@ -799,7 +797,7 @@ DisplayServerAndroid::DisplayServerAndroid(const String &p_rendering_driver, Dis
 
 	keep_screen_on = GLOBAL_GET("display/window/energy_saving/keep_screen_on");
 
-	native_menu = memnew(NativeMenu);
+	NativeMenu::initialize();
 
 #ifdef VULKAN_ENABLED
 	if (rendering_driver == "vulkan") {
@@ -851,10 +849,7 @@ DisplayServerAndroid::DisplayServerAndroid(const String &p_rendering_driver, Dis
 }
 
 DisplayServerAndroid::~DisplayServerAndroid() {
-	if (native_menu) {
-		memdelete(native_menu);
-		native_menu = nullptr;
-	}
+	NativeMenu::finalize();
 
 #if defined(RD_ENABLED)
 	memdelete(rendering_device);

@@ -70,10 +70,10 @@ void FileDialog::_focus_file_text()
 bool FileDialog::_can_use_native_popup() const
 {
 	if (access == ACCESS_RESOURCES || access == ACCESS_USERDATA || options.size() > 0) {
-		return DisplayServer::get_singleton()->has_feature(
+		return DisplayServer::has_feature(
 			DisplayServerEnums::FEATURE_NATIVE_DIALOG_FILE_EXTRA);
 	}
-	return DisplayServer::get_singleton()->has_feature(
+	return DisplayServer::has_feature(
 		DisplayServerEnums::FEATURE_NATIVE_DIALOG_FILE);
 }
 

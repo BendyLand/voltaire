@@ -96,7 +96,9 @@ bool AccessibilityServerAccessKit::window_create(
 void AccessibilityServerAccessKit::window_destroy(DisplayServerEnums::WindowID p_window_id)
 {
 	WindowData* wd = windows.getptr(p_window_id);
-	ERR_FAIL_NULL(wd);
+	if (!wd) {
+		return;
+	}
 
 	print_verbose(vformat("Accessibility: window %d adapter destroyed.", p_window_id));
 
@@ -116,20 +118,20 @@ void AccessibilityServerAccessKit::window_destroy(DisplayServerEnums::WindowID p
 
 void AccessibilityServerAccessKit::_accessibility_deactivation_callback(void* p_user_data)
 {
+	AccessibilityServerAccessKit* self =
+		AccessibilityServer::driver_as<AccessibilityServerAccessKit>();
+	ERR_FAIL_NULL(self);
+
 	DisplayServerEnums::WindowID window_id = (DisplayServerEnums::WindowID)(size_t)p_user_data;
-	WindowData* wd =
-		static_cast<AccessibilityServerAccessKit*>(get_singleton())->windows.getptr(window_id);
+	WindowData* wd = self->windows.getptr(window_id);
 	ERR_FAIL_NULL(wd);
 
 	print_verbose(vformat("Accessibility: window %d adapter deactivated.", window_id));
 
-	if (static_cast<AccessibilityServerAccessKit*>(get_singleton())->focus.is_valid()) {
-		AccessibilityElement* ae =
-			static_cast<AccessibilityServerAccessKit*>(get_singleton())
-				->rid_owner.get_or_null(
-					static_cast<AccessibilityServerAccessKit*>(get_singleton())->focus);
+	if (self->focus.is_valid()) {
+		AccessibilityElement* ae = self->rid_owner.get_or_null(self->focus);
 		if (ae && ae->window_id == window_id) {
-			static_cast<AccessibilityServerAccessKit*>(get_singleton())->focus = RID();
+			self->focus = RID();
 		}
 	}
 
@@ -140,22 +142,27 @@ void AccessibilityServerAccessKit::_accessibility_deactivation_callback(void* p_
 void AccessibilityServerAccessKit::_accessibility_action_callback(
 	struct accesskit_action_request* p_request, void* p_user_data)
 {
+	AccessibilityServerAccessKit* self =
+		AccessibilityServer::driver_as<AccessibilityServerAccessKit>();
+	ERR_FAIL_NULL(self);
+
 	DisplayServerEnums::WindowID window_id = (DisplayServerEnums::WindowID)(size_t)p_user_data;
-	ERR_FAIL_COND(
-		!static_cast<AccessibilityServerAccessKit*>(get_singleton())->windows.has(window_id));
+	ERR_FAIL_COND(!self->windows.has(window_id));
 
 	RID rid = RID::from_uint64(p_request->target_node);
-	AccessibilityElement* ae =
-		static_cast<AccessibilityServerAccessKit*>(get_singleton())->rid_owner.get_or_null(rid);
+	AccessibilityElement* ae = self->rid_owner.get_or_null(rid);
 	ERR_FAIL_NULL(ae);
 }
 
 accesskit_tree_update* AccessibilityServerAccessKit::_accessibility_initial_tree_update_callback(
 	void* p_user_data)
 {
+	AccessibilityServerAccessKit* self =
+		AccessibilityServer::driver_as<AccessibilityServerAccessKit>();
+	ERR_FAIL_NULL_V(self, nullptr);
+
 	DisplayServerEnums::WindowID window_id = (DisplayServerEnums::WindowID)(size_t)p_user_data;
-	WindowData* wd =
-		static_cast<AccessibilityServerAccessKit*>(get_singleton())->windows.getptr(window_id);
+	WindowData* wd = self->windows.getptr(window_id);
 	ERR_FAIL_NULL_V(wd, nullptr);
 
 	accesskit_node* win_node = accesskit_node_new(ACCESSKIT_ROLE_WINDOW);
@@ -179,8 +186,7 @@ accesskit_tree_update* AccessibilityServerAccessKit::_accessibility_initial_tree
 void AccessibilityServerAccessKit::window_activation_completed(
 	DisplayServerEnums::WindowID p_window_id)
 {
-	WindowData* wd =
-		static_cast<AccessibilityServerAccessKit*>(get_singleton())->windows.getptr(p_window_id);
+	WindowData* wd = windows.getptr(p_window_id);
 	if (!wd) {
 		return;
 	}
@@ -194,8 +200,7 @@ void AccessibilityServerAccessKit::window_activation_completed(
 void AccessibilityServerAccessKit::window_deactivation_completed(
 	DisplayServerEnums::WindowID p_window_id)
 {
-	WindowData* wd =
-		static_cast<AccessibilityServerAccessKit*>(get_singleton())->windows.getptr(p_window_id);
+	WindowData* wd = windows.getptr(p_window_id);
 	if (!wd) {
 		return;
 	}
@@ -590,33 +595,29 @@ RID AccessibilityServerAccessKit::get_window_root(DisplayServerEnums::WindowID p
 accesskit_tree_update* AccessibilityServerAccessKit::_accessibility_build_tree_update(
 	void* p_user_data)
 {
+	AccessibilityServerAccessKit* self =
+		AccessibilityServer::driver_as<AccessibilityServerAccessKit>();
+	ERR_FAIL_NULL_V(self, nullptr);
+
 	DisplayServerEnums::WindowID window_id = (DisplayServerEnums::WindowID)(size_t)p_user_data;
 
-	ERR_FAIL_COND_V(
-		!static_cast<AccessibilityServerAccessKit*>(get_singleton())->windows.has(window_id),
-		nullptr);
-	WindowData& wd =
-		static_cast<AccessibilityServerAccessKit*>(get_singleton())->windows[window_id];
+	ERR_FAIL_COND_V(!self->windows.has(window_id), nullptr);
+	WindowData& wd = self->windows[window_id];
 
-	static_cast<AccessibilityServerAccessKit*>(get_singleton())->in_accessibility_update = false;
+	self->in_accessibility_update = false;
 
-	AccessibilityElement* focus_ae =
-		static_cast<AccessibilityServerAccessKit*>(get_singleton())
-			->rid_owner.get_or_null(
-				static_cast<AccessibilityServerAccessKit*>(get_singleton())->focus);
+	AccessibilityElement* focus_ae = self->rid_owner.get_or_null(self->focus);
 	uint32_t update_size = wd.update.size();
 
 	accesskit_node_id ac_focus = (accesskit_node_id)wd.root_id.get_id();
 	if (focus_ae && focus_ae->window_id == window_id) {
-		ac_focus = (accesskit_node_id) static_cast<AccessibilityServerAccessKit*>(get_singleton())
-					   ->focus.get_id();
+		ac_focus = (accesskit_node_id)self->focus.get_id();
 	}
 	accesskit_tree_update* tree_update =
 		(update_size > 0) ? accesskit_tree_update_with_capacity_and_focus(update_size, ac_focus)
 						  : accesskit_tree_update_with_focus(ac_focus);
 	for (const RID& rid : wd.update) {
-		AccessibilityElement* ae =
-			static_cast<AccessibilityServerAccessKit*>(get_singleton())->rid_owner.get_or_null(rid);
+		AccessibilityElement* ae = self->rid_owner.get_or_null(rid);
 		if (ae && ae->node) {
 			for (const RID& child_rid : ae->children) {
 				accesskit_node_push_child(ae->node, (accesskit_node_id)child_rid.get_id());
@@ -1812,7 +1813,7 @@ void AccessibilityServerAccessKit::update_set_foreground_color(
 	accesskit_node_set_foreground_color(ae->node, color);
 }
 
-AccessibilityServer* AccessibilityServerAccessKit::create_func(Error& r_error)
+AccessibilityServerDriver* AccessibilityServerAccessKit::create_func(Error& r_error)
 {
 	print_verbose("Accessibility: AccessKit driver loaded.");
 	r_error = OK;
@@ -1950,7 +1951,7 @@ AccessibilityServerAccessKit::~AccessibilityServerAccessKit() {}
 
 void AccessibilityServerAccessKit::register_create_func()
 {
-	register_create_function("accesskit", create_func);
+	AccessibilityServer::register_create_function("accesskit", create_func);
 }
 
 #endif // ACCESSKIT_ENABLED

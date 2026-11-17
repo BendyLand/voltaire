@@ -76,7 +76,7 @@ Rect2i Popup::_popup_adjust_rect() const
 
 	Rect2i current(get_position(), get_size());
 
-	if (!is_embedded() && DisplayServer::get_singleton()->has_feature(
+	if (!is_embedded() && DisplayServer::has_feature(
 							  DisplayServerEnums::FEATURE_SELF_FITTING_WINDOWS)) {
 		// We're fine as is, the Display Server will take care of that for us.
 		return current;
@@ -144,7 +144,7 @@ PackedStringArray PopupPanel::get_configuration_warnings() const
 {
 	PackedStringArray warnings = Popup::get_configuration_warnings();
 
-	if (!DisplayServer::get_singleton()->is_window_transparency_available() &&
+	if (!DisplayServer::is_window_transparency_available() &&
 		!GLOBAL_GET_CACHED(bool, "display/window/subwindows/embed_subwindows")) {
 		Ref<StyleBoxFlat> sb = theme_cache.panel_style;
 		if (sb.is_valid() &&
@@ -219,7 +219,7 @@ Rect2i PopupPanel::_popup_adjust_rect() const
 
 void PopupPanel::_update_shadow_offsets() const
 {
-	if (!DisplayServer::get_singleton()->is_window_transparency_available() && !is_embedded()) {
+	if (!DisplayServer::is_window_transparency_available() && !is_embedded()) {
 		panel->set_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, 0);
 		return;
 	}

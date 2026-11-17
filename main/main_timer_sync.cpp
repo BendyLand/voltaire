@@ -263,7 +263,7 @@ int64_t MainTimerSync::DeltaSmoother::smooth_delta(int64_t p_delta) {
 	}
 
 	// only attempt smoothing if vsync is selected
-	DisplayServerEnums::VSyncMode vsync_mode = DisplayServer::get_singleton()->window_get_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID);
+	DisplayServerEnums::VSyncMode vsync_mode = DisplayServer::window_get_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID);
 	if (vsync_mode != DisplayServerEnums::VSYNC_ENABLED) {
 		return p_delta;
 	}

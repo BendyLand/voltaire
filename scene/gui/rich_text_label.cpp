@@ -82,7 +82,7 @@ Rect2i _merge_or_copy_rect(const Rect2i& p_a, const Rect2i& p_b)
 RichTextLabel::Line::~Line()
 {
 	if (accessibility_line_element.is_valid()) {
-		AccessibilityServer::get_singleton()->free_element(accessibility_line_element);
+		AccessibilityServer::free_element(accessibility_line_element);
 		accessibility_line_element = RID();
 		accessibility_text_element = RID();
 	}
@@ -737,7 +737,7 @@ void RichTextLabel::_invalidate_accessibility()
 			ItemFrame* fr = static_cast<ItemFrame*>(it);
 			for (size_t i = 0; i < fr->lines.size(); i++) {
 				if (fr->lines[i].accessibility_line_element.is_valid()) {
-					AccessibilityServer::get_singleton()->free_element(
+					AccessibilityServer::free_element(
 						fr->lines[i].accessibility_line_element);
 				}
 				fr->lines[i].accessibility_line_element = RID();
@@ -2441,7 +2441,7 @@ void RichTextLabel::menu_option(int p_option)
 		}
 
 		if (!txt.is_empty()) {
-			DisplayServer::get_singleton()->clipboard_set(txt);
+			DisplayServer::clipboard_set(txt);
 		}
 	} break;
 	case MENU_SELECT_ALL: {

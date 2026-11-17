@@ -2877,7 +2877,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 	}
 
 	SUBCASE("[TextEdit] overridable actions") {
-		DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+		DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 
 		SIGNAL_WATCH(text_edit, "text_set");
 		SIGNAL_WATCH(text_edit, "text_changed");
@@ -8315,7 +8315,7 @@ TEST_CASE("[SceneTree][TextEdit] gutters") {
 	}
 
 	SUBCASE("[TextEdit] gutter mouse") {
-		DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+		DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 		// Set size for mouse input.
 		text_edit->set_size(Size2(200, 200));
 

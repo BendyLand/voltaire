@@ -90,9 +90,9 @@ void ProjectManager::poll()
 		return;
 	}
 
-	if (DisplayServer::get_singleton()) {
+	if (DisplayServer::is_initialized()) {
 		Size2i ds_size =
-			DisplayServer::get_singleton()->window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
+			DisplayServer::window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
 		if (ds_size.x > 0 && ds_size.y > 0 && ds_size != data->window_size) {
 			data->window_size = ds_size;
 			Renderer::viewport_set_size(

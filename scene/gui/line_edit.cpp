@@ -65,9 +65,9 @@ void LineEdit::unedit()
 	apply_ime();
 	set_caret_column(caret_column); // Update scroll_offset.
 
-	if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_VIRTUAL_KEYBOARD) &&
+	if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_VIRTUAL_KEYBOARD) &&
 		virtual_keyboard_enabled) {
-		DisplayServer::get_singleton()->virtual_keyboard_hide();
+		DisplayServer::virtual_keyboard_hide();
 	}
 
 	if (deselect_on_focus_loss_enabled && !selection.drag_attempt) {
@@ -89,11 +89,11 @@ void LineEdit::_close_ime_window()
 	DisplayServerEnums::WindowID wid =
 		get_window() ? get_window()->get_window_id() : DisplayServerEnums::INVALID_WINDOW_ID;
 	if (wid == DisplayServerEnums::INVALID_WINDOW_ID ||
-		!DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_IME)) {
+		!DisplayServer::has_feature(DisplayServerEnums::FEATURE_IME)) {
 		return;
 	}
-	DisplayServer::get_singleton()->window_set_ime_position(Point2(), wid);
-	DisplayServer::get_singleton()->window_set_ime_active(false, wid);
+	DisplayServer::window_set_ime_position(Point2(), wid);
+	DisplayServer::window_set_ime_active(false, wid);
 }
 
 void LineEdit::_update_ime_window_position()
@@ -101,10 +101,10 @@ void LineEdit::_update_ime_window_position()
 	DisplayServerEnums::WindowID wid =
 		get_window() ? get_window()->get_window_id() : DisplayServerEnums::INVALID_WINDOW_ID;
 	if (wid == DisplayServerEnums::INVALID_WINDOW_ID ||
-		!DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_IME)) {
+		!DisplayServer::has_feature(DisplayServerEnums::FEATURE_IME)) {
 		return;
 	}
-	DisplayServer::get_singleton()->window_set_ime_active(true, wid);
+	DisplayServer::window_set_ime_active(true, wid);
 	Point2 pos = Point2(get_caret_pixel_pos().x,
 					 (get_size().y + theme_cache.font->get_height(theme_cache.font_size)) / 2) +
 				 get_global_position();
@@ -115,7 +115,7 @@ void LineEdit::_update_ime_window_position()
 	pos = get_window()->get_screen_transform().xform(pos);
 	// The window will move to the updated position the next time the IME is updated, not
 	// immediately.
-	DisplayServer::get_singleton()->window_set_ime_position(pos, wid);
+	DisplayServer::window_set_ime_position(pos, wid);
 }
 
 bool LineEdit::has_ime_text() const { return !ime_text.is_empty(); }
@@ -462,14 +462,14 @@ void LineEdit::_update_theme_item_cache()
 void LineEdit::copy_text()
 {
 	if (selection.enabled && !pass) {
-		DisplayServer::get_singleton()->clipboard_set(get_selected_text());
+		DisplayServer::clipboard_set(get_selected_text());
 	}
 }
 
 void LineEdit::cut_text()
 {
 	if (editable && selection.enabled && !pass) {
-		DisplayServer::get_singleton()->clipboard_set(get_selected_text());
+		DisplayServer::clipboard_set(get_selected_text());
 		selection_delete();
 	}
 }
@@ -821,15 +821,15 @@ void LineEdit::show_virtual_keyboard()
 {
 	_update_ime_window_position();
 
-	if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_VIRTUAL_KEYBOARD) &&
+	if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_VIRTUAL_KEYBOARD) &&
 		virtual_keyboard_enabled) {
 		if (selection.enabled) {
-			DisplayServer::get_singleton()->virtual_keyboard_show(text, get_global_rect(),
+			DisplayServer::virtual_keyboard_show(text, get_global_rect(),
 				DisplayServerEnums::VirtualKeyboardType(virtual_keyboard_type), max_length,
 				selection.begin, selection.end);
 		}
 		else {
-			DisplayServer::get_singleton()->virtual_keyboard_show(text, get_global_rect(),
+			DisplayServer::virtual_keyboard_show(text, get_global_rect(),
 				DisplayServerEnums::VirtualKeyboardType(virtual_keyboard_type), max_length,
 				caret_column);
 		}
@@ -989,7 +989,7 @@ bool LineEdit::is_context_menu_enabled() { return context_menu_enabled; }
 void LineEdit::show_emoji_and_symbol_picker()
 {
 	_update_ime_window_position();
-	DisplayServer::get_singleton()->show_emoji_and_symbol_picker();
+	DisplayServer::show_emoji_and_symbol_picker();
 }
 
 void LineEdit::set_emoji_menu_enabled(bool p_enabled)
@@ -1238,7 +1238,7 @@ void LineEdit::_update_context_menu()
 		m_menu->set_item_checked(idx, m_checked);                                                  \
 	}
 
-	if (DisplayServer::get_singleton()->has_feature(
+	if (DisplayServer::has_feature(
 			DisplayServerEnums::FEATURE_EMOJI_AND_SYMBOL_PICKER)) {
 		MENU_ITEM_DISABLED(menu, MENU_EMOJI_AND_SYMBOL, !editable || !emoji_menu_enabled)
 	}

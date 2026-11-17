@@ -283,7 +283,7 @@ void DisplayServerMacOSBase::_update_keyboard_layouts() const {
 }
 
 void DisplayServerMacOSBase::_keyboard_layout_changed(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef user_info) {
-	DisplayServerMacOSBase *ds = (DisplayServerMacOSBase *)DisplayServer::get_singleton();
+	DisplayServerMacOSBase *ds = DisplayServer::driver_as<DisplayServerMacOSBase>();
 	if (ds) {
 		ds->keyboard_layout_dirty = true;
 	}

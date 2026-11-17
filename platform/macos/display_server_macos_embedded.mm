@@ -71,7 +71,7 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 
 	r_error = OK; // default to OK
 
-	native_menu = memnew(NativeMenu);
+	NativeMenu::initialize();
 
 	Input::set_event_dispatch_function(_dispatch_input_events);
 
@@ -224,10 +224,7 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 }
 
 DisplayServerMacOSEmbedded::~DisplayServerMacOSEmbedded() {
-	if (native_menu) {
-		memdelete(native_menu);
-		native_menu = nullptr;
-	}
+	NativeMenu::finalize();
 
 	EmbeddedDebugger::deinitialize();
 
@@ -251,7 +248,7 @@ DisplayServerMacOSEmbedded::~DisplayServerMacOSEmbedded() {
 #endif
 }
 
-DisplayServer *DisplayServerMacOSEmbedded::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t /* p_parent_window */, Error &r_error) {
+DisplayServerDriver *DisplayServerMacOSEmbedded::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t /* p_parent_window */, Error &r_error) {
 	return memnew(DisplayServerMacOSEmbedded(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, r_error));
 }
 
@@ -272,7 +269,7 @@ Vector<String> DisplayServerMacOSEmbedded::get_rendering_drivers_func() {
 }
 
 void DisplayServerMacOSEmbedded::register_embedded_driver() {
-	register_create_function("embedded", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("embedded", create_func, get_rendering_drivers_func);
 }
 
 // MARK: - Mouse
@@ -362,8 +359,9 @@ void DisplayServerMacOSEmbedded::_dispatch_input_events(const Ref<InputEvent> &p
 	if (event_from_window.is_valid()) {
 		window_id = event_from_window->get_window_id();
 	}
-	DisplayServerMacOSEmbedded *ds = (DisplayServerMacOSEmbedded *)DisplayServer::get_singleton();
-	ds->send_input_event(p_event, window_id);
+	if (DisplayServerMacOSEmbedded *ds = DisplayServer::driver_as<DisplayServerMacOSEmbedded>()) {
+		ds->send_input_event(p_event, window_id);
+	}
 }
 
 void DisplayServerMacOSEmbedded::send_input_event(const Ref<InputEvent> &p_event, DisplayServerEnums::WindowID p_id) const {
@@ -405,7 +403,7 @@ bool DisplayServerMacOSEmbedded::has_feature(DisplayServerEnums::Feature p_featu
 	switch (p_feature) {
 #ifndef DISABLE_DEPRECATED
 		case DisplayServerEnums::FEATURE_GLOBAL_MENU: {
-			return (native_menu && native_menu->has_feature(NativeMenu::FEATURE_GLOBAL_MENU));
+			return NativeMenu::is_initialized() && NativeMenu::has_feature(NativeMenu::FEATURE_GLOBAL_MENU);
 		} break;
 #endif
 		case DisplayServerEnums::FEATURE_CURSOR_SHAPE:

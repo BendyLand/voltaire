@@ -158,7 +158,7 @@ DisplayServerEnums::WindowID DisplayServerMacOS::_create_window(DisplayServerEnu
 		[wd.window_object setRestorable:NO];
 		[wd.window_object setColorSpace:[NSColorSpace sRGBColorSpace]];
 
-		if (!AccessibilityServer::get_singleton()->window_create(id, (__bridge void *)wd.window_object)) {
+		if (!AccessibilityServer::window_create(id, (__bridge void *)wd.window_object)) {
 			if (OS::get_singleton()->is_stdout_verbose()) {
 				ERR_PRINT("Can't create an accessibility adapter for window, accessibility support disabled!");
 			}
@@ -207,7 +207,7 @@ DisplayServerEnums::WindowID DisplayServerMacOS::_create_window(DisplayServerEnu
 			Error err = rendering_context->window_create(window_id_counter, &wpd);
 
 			if (err != OK) {
-				AccessibilityServer::get_singleton()->window_destroy(id);
+				AccessibilityServer::window_destroy(id);
 			}
 
 			ERR_FAIL_COND_V_MSG(err != OK, DisplayServerEnums::INVALID_WINDOW_ID, vformat("Can't create a %s context", rendering_driver));
@@ -234,7 +234,7 @@ DisplayServerEnums::WindowID DisplayServerMacOS::_create_window(DisplayServerEnu
 		}
 #endif
 		if (gl_failed) {
-			AccessibilityServer::get_singleton()->window_destroy(id);
+			AccessibilityServer::window_destroy(id);
 
 			windows.erase(id);
 			ERR_FAIL_V_MSG(DisplayServerEnums::INVALID_WINDOW_ID, "Can't create an OpenGL context.");
@@ -419,7 +419,7 @@ Point2i DisplayServerMacOS::_get_native_screen_position(int p_screen) const {
 }
 
 void DisplayServerMacOS::_displays_arrangement_changed(CGDirectDisplayID display_id, CGDisplayChangeSummaryFlags flags, void *user_info) {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		ds->displays_arrangement_dirty = true;
 	}
@@ -454,7 +454,9 @@ void DisplayServerMacOS::mouse_exit_window(DisplayServerEnums::WindowID p_window
 }
 
 void DisplayServerMacOS::_dispatch_input_events(const Ref<InputEvent> &p_event) {
-	((DisplayServerMacOS *)(get_singleton()))->_dispatch_input_event(p_event);
+	if (DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>()) {
+		ds->_dispatch_input_event(p_event);
+	}
 }
 
 void DisplayServerMacOS::_dispatch_input_event(const Ref<InputEvent> &p_event) {
@@ -791,7 +793,7 @@ void DisplayServerMacOS::window_destroy(DisplayServerEnums::WindowID p_window) {
 		rendering_context->window_destroy(p_window);
 	}
 #endif
-	AccessibilityServer::get_singleton()->window_destroy(p_window);
+	AccessibilityServer::window_destroy(p_window);
 
 	windows.erase(p_window);
 
@@ -857,7 +859,7 @@ bool DisplayServerMacOS::has_feature(DisplayServerEnums::Feature p_feature) cons
 		case DisplayServerEnums::FEATURE_HDR_OUTPUT:
 			return true;
 		case DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER: {
-			return AccessibilityServer::get_singleton()->is_supported();
+			return AccessibilityServer::is_supported();
 		} break;
 		default: {
 		}
@@ -1051,7 +1053,7 @@ Error DisplayServerMacOS::_file_dialog_with_options_show(const String &p_title, 
 				}
 			}
 			if (p_window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-				callable_mp(DisplayServer::get_singleton(), &DisplayServer::window_move_to_foreground).call_deferred(p_window_id);
+				callable_mp_static(&DisplayServer::window_move_to_foreground).call_deferred(p_window_id);
 			}
 		};
 		if (nswindow) {
@@ -1172,7 +1174,7 @@ Error DisplayServerMacOS::_file_dialog_with_options_show(const String &p_title, 
 				}
 			}
 			if (p_window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-				callable_mp(DisplayServer::get_singleton(), &DisplayServer::window_move_to_foreground).call_deferred(p_window_id);
+				callable_mp_static(&DisplayServer::window_move_to_foreground).call_deferred(p_window_id);
 			}
 		};
 		if (nswindow) {
@@ -3547,8 +3549,8 @@ bool DisplayServerMacOS::is_window_transparency_available() const {
 	return OS::get_singleton()->is_layered_allowed();
 }
 
-DisplayServer *DisplayServerMacOS::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
-	DisplayServer *ds = memnew(DisplayServerMacOS(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
+DisplayServerDriver *DisplayServerMacOS::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
+	DisplayServerDriver *ds = memnew(DisplayServerMacOS(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 	if (r_error != OK) {
 		if (p_rendering_driver == "vulkan") {
 			String executable_command;
@@ -3595,7 +3597,7 @@ Vector<String> DisplayServerMacOS::get_rendering_drivers_func() {
 }
 
 void DisplayServerMacOS::register_macos_driver() {
-	register_create_function("macos", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("macos", create_func, get_rendering_drivers_func);
 }
 
 DisplayServerEnums::WindowID DisplayServerMacOS::window_get_active_popup() const {
@@ -4010,7 +4012,7 @@ DisplayServerMacOS::~DisplayServerMacOS() {
 
 	// Destroy native menu.
 	if (native_menu) {
-		memdelete(native_menu);
+		NativeMenu::finalize();
 		native_menu = nullptr;
 	}
 

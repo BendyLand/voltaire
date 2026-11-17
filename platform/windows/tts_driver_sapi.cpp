@@ -33,21 +33,22 @@
 
 #include "servers/display/display_server.h"
 
-TTSDriverSAPI *TTSDriverSAPI::singleton = nullptr;
-
 void __stdcall TTSDriverSAPI::speech_event_callback(WPARAM wParam, LPARAM lParam) {
+	TTSDriverSAPI *self = reinterpret_cast<TTSDriverSAPI *>(wParam);
+	ERR_FAIL_NULL(self);
+
 	SPEVENT event;
-	while (singleton->synth->GetEvents(1, &event, nullptr) == S_OK) {
+	while (self->synth->GetEvents(1, &event, nullptr) == S_OK) {
 		uint32_t stream_num = (uint32_t)event.ulStreamNum;
-		if (singleton->ids.has(stream_num)) {
+		if (self->ids.has(stream_num)) {
 			if (event.eEventId == SPEI_START_INPUT_STREAM) {
-				DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, singleton->ids[stream_num].id);
+				DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, self->ids[stream_num].id);
 			} else if (event.eEventId == SPEI_END_INPUT_STREAM) {
-				DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_ENDED, singleton->ids[stream_num].id);
-				singleton->ids.erase(stream_num);
-				singleton->update_requested = true;
+				DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_ENDED, self->ids[stream_num].id);
+				self->ids.erase(stream_num);
+				self->update_requested = true;
 			} else if (event.eEventId == SPEI_WORD_BOUNDARY) {
-				const Char16String &string = singleton->ids[stream_num].string;
+				const Char16String &string = self->ids[stream_num].string;
 				int pos = 0;
 				for (int i = 0; i < MIN(event.lParam, string.length()); i++) {
 					char16_t c = string[i];
@@ -56,7 +57,7 @@ void __stdcall TTSDriverSAPI::speech_event_callback(WPARAM wParam, LPARAM lParam
 					}
 					pos++;
 				}
-				DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, singleton->ids[stream_num].id, pos - singleton->ids[stream_num].offset);
+				DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, self->ids[stream_num].id, pos - self->ids[stream_num].offset);
 			}
 		}
 	}
@@ -195,7 +196,7 @@ void TTSDriverSAPI::speak(const String &p_text, const String &p_voice, int p_vol
 	}
 
 	if (p_text.is_empty()) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
 		return;
 	}
 
@@ -237,11 +238,11 @@ void TTSDriverSAPI::stop() {
 	synth->GetStatus(&status, nullptr);
 	uint32_t current_stream = (uint32_t)status.ulCurrentStream;
 	if (ids.has(current_stream)) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, ids[current_stream].id);
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, ids[current_stream].id);
 		ids.erase(current_stream);
 	}
 	for (TTSUtterance &message : queue) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
 	}
 	queue.clear();
 	synth->Speak(nullptr, SPF_PURGEBEFORESPEAK, nullptr);
@@ -263,12 +264,10 @@ bool TTSDriverSAPI::init() {
 }
 
 TTSDriverSAPI::TTSDriverSAPI() {
-	singleton = this;
 }
 
 TTSDriverSAPI::~TTSDriverSAPI() {
 	if (synth) {
 		synth->Release();
 	}
-	singleton = nullptr;
 }

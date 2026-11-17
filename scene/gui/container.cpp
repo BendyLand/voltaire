@@ -68,11 +68,11 @@ void Container::_notification(int p_what)
 		ERR_FAIL_COND(ae.is_null());
 
 		if (accessibility_region) {
-			AccessibilityServer::get_singleton()->update_set_role(
+			AccessibilityServer::update_set_role(
 				ae, AccessibilityServerEnums::AccessibilityRole::ROLE_REGION);
 		}
 		else {
-			AccessibilityServer::get_singleton()->update_set_role(
+			AccessibilityServer::update_set_role(
 				ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CONTAINER);
 		}
 	} break;

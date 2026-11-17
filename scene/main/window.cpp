@@ -84,7 +84,7 @@ void Window::set_current_screen(int p_screen)
 	if (window_id == DisplayServerEnums::INVALID_WINDOW_ID) {
 		return;
 	}
-	DisplayServer::get_singleton()->window_set_current_screen(p_screen, window_id);
+	DisplayServer::window_set_current_screen(p_screen, window_id);
 }
 
 int Window::get_current_screen() const
@@ -92,7 +92,7 @@ int Window::get_current_screen() const
 	ERR_READ_THREAD_GUARD_V(0);
 
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		current_screen = DisplayServer::get_singleton()->window_get_current_screen(window_id);
+		current_screen = DisplayServer::window_get_current_screen(window_id);
 	}
 	return current_screen;
 }
@@ -108,7 +108,7 @@ void Window::set_position(const Point2i& p_position)
 
 	}
 	else if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_set_position(p_position, window_id);
+		DisplayServer::window_set_position(p_position, window_id);
 	}
 }
 
@@ -131,9 +131,9 @@ void Window::move_to_center()
 	}
 	else {
 		int parent_screen =
-			DisplayServer::get_singleton()->window_get_current_screen(get_window_id());
-		parent_rect.position = DisplayServer::get_singleton()->screen_get_position(parent_screen);
-		parent_rect.size = DisplayServer::get_singleton()->screen_get_size(parent_screen);
+			DisplayServer::window_get_current_screen(get_window_id());
+		parent_rect.position = DisplayServer::screen_get_position(parent_screen);
+		parent_rect.size = DisplayServer::screen_get_size(parent_screen);
 	}
 
 	if (parent_rect != Rect2()) {
@@ -172,7 +172,7 @@ Point2i Window::get_position_with_decorations() const
 {
 	ERR_READ_THREAD_GUARD_V(Point2i());
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		return DisplayServer::get_singleton()->window_get_position_with_decorations(window_id);
+		return DisplayServer::window_get_position_with_decorations(window_id);
 	}
 	if (visible && is_embedded() && !get_flag(Window::FLAG_BORDERLESS)) {
 		Size2 border_offset;
@@ -191,7 +191,7 @@ Size2i Window::get_size_with_decorations() const
 {
 	ERR_READ_THREAD_GUARD_V(Size2i());
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		return DisplayServer::get_singleton()->window_get_size_with_decorations(window_id);
+		return DisplayServer::window_get_size_with_decorations(window_id);
 	}
 	if (visible && is_embedded() && !get_flag(Window::FLAG_BORDERLESS)) {
 		Size2 border_size;
@@ -288,7 +288,7 @@ void Window::set_mode(Mode p_mode)
 
 	}
 	else if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_set_mode(
+		DisplayServer::window_set_mode(
 			DisplayServerEnums::WindowMode(p_mode), window_id);
 	}
 }
@@ -297,7 +297,7 @@ Window::Mode Window::get_mode() const
 {
 	ERR_READ_THREAD_GUARD_V(MODE_WINDOWED);
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		mode = (Mode)DisplayServer::get_singleton()->window_get_mode(window_id);
+		mode = (Mode)DisplayServer::window_get_mode(window_id);
 	}
 	return mode;
 }
@@ -324,7 +324,7 @@ void Window::set_flag(Flags p_flag, bool p_enabled)
 	}
 	else if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
 		if (!is_in_edited_scene_root()) {
-			DisplayServer::get_singleton()->window_set_flag(
+			DisplayServer::window_set_flag(
 				DisplayServerEnums::WindowFlags(p_flag), p_enabled, window_id);
 		}
 	}
@@ -336,7 +336,7 @@ bool Window::get_flag(Flags p_flag) const
 	ERR_FAIL_INDEX_V(p_flag, FLAG_MAX, false);
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
 		if (!is_in_edited_scene_root()) {
-			flags[p_flag] = DisplayServer::get_singleton()->window_get_flag(
+			flags[p_flag] = DisplayServer::window_get_flag(
 				DisplayServerEnums::WindowFlags(p_flag), window_id);
 		}
 	}
@@ -356,7 +356,7 @@ void Window::set_hdr_output_requested(bool p_requested)
 	hdr_output_requested = p_requested;
 
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_request_hdr_output(hdr_output_requested, window_id);
+		DisplayServer::window_request_hdr_output(hdr_output_requested, window_id);
 	}
 
 	_update_viewport_for_hdr_output();
@@ -368,7 +368,7 @@ bool Window::is_hdr_output_requested() const
 
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
 		hdr_output_requested =
-			DisplayServer::get_singleton()->window_is_hdr_output_requested(window_id);
+			DisplayServer::window_is_hdr_output_requested(window_id);
 	}
 
 	return hdr_output_requested;
@@ -379,7 +379,7 @@ float Window::get_output_max_linear_value() const
 	ERR_READ_THREAD_GUARD_V(1.0f);
 
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		return DisplayServer::get_singleton()->window_get_output_max_linear_value(window_id);
+		return DisplayServer::window_get_output_max_linear_value(window_id);
 	}
 
 	return 1.0f;
@@ -389,7 +389,7 @@ bool Window::is_maximize_allowed() const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		return DisplayServer::get_singleton()->window_is_maximize_allowed(window_id);
+		return DisplayServer::window_is_maximize_allowed(window_id);
 	}
 	return true;
 }
@@ -398,7 +398,7 @@ void Window::request_attention()
 {
 	ERR_MAIN_THREAD_GUARD;
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_request_attention(window_id);
+		DisplayServer::window_request_attention(window_id);
 	}
 }
 
@@ -406,7 +406,7 @@ void Window::set_taskbar_progress_value(float p_value)
 {
 	ERR_MAIN_THREAD_GUARD;
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_set_taskbar_progress_value(p_value, window_id);
+		DisplayServer::window_set_taskbar_progress_value(p_value, window_id);
 	}
 }
 
@@ -414,7 +414,7 @@ void Window::set_taskbar_progress_state(DisplayServerEnums::ProgressState p_stat
 {
 	ERR_MAIN_THREAD_GUARD;
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_set_taskbar_progress_state(p_state);
+		DisplayServer::window_set_taskbar_progress_state(p_state);
 	}
 }
 
@@ -434,7 +434,7 @@ bool Window::can_draw() const
 		return false;
 	}
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		return DisplayServer::get_singleton()->window_can_draw(window_id);
+		return DisplayServer::window_can_draw(window_id);
 	}
 
 	return visible;
@@ -444,7 +444,7 @@ void Window::set_ime_active(bool p_active)
 {
 	ERR_MAIN_THREAD_GUARD;
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_set_ime_active(p_active, window_id);
+		DisplayServer::window_set_ime_active(p_active, window_id);
 	}
 }
 
@@ -452,7 +452,7 @@ void Window::set_ime_position(const Point2i& p_pos)
 {
 	ERR_MAIN_THREAD_GUARD;
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_set_ime_position(p_pos, window_id);
+		DisplayServer::window_set_ime_position(p_pos, window_id);
 	}
 }
 
@@ -475,9 +475,9 @@ bool Window::is_in_edited_scene_root() const
 void Window::_update_from_window()
 {
 	ERR_FAIL_COND(window_id == DisplayServerEnums::INVALID_WINDOW_ID);
-	mode = (Mode)DisplayServer::get_singleton()->window_get_mode(window_id);
+	mode = (Mode)DisplayServer::window_get_mode(window_id);
 	for (int i = 0; i < FLAG_MAX; i++) {
-		flags[i] = DisplayServer::get_singleton()->window_get_flag(
+		flags[i] = DisplayServer::window_get_flag(
 			DisplayServerEnums::WindowFlags(i), window_id);
 	}
 }
@@ -488,9 +488,9 @@ void Window::_clear_window()
 
 	bool had_focus = has_focus();
 
-	if (DisplayServer::get_singleton()->has_feature(
+	if (DisplayServer::has_feature(
 			DisplayServerEnums::FEATURE_SELF_FITTING_WINDOWS)) {
-		float win_scale = DisplayServer::get_singleton()->window_get_scale(window_id);
+		float win_scale = DisplayServer::window_get_scale(window_id);
 
 		Size2i adjusted_size = Size2i(size.width / win_scale, size.height / win_scale);
 		Size2i adjusted_pos = Size2i(position.x / win_scale, position.y / win_scale);
@@ -499,20 +499,20 @@ void Window::_clear_window()
 	}
 
 	if (transient_parent && transient_parent->window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_set_transient(
+		DisplayServer::window_set_transient(
 			window_id, DisplayServerEnums::INVALID_WINDOW_ID);
 	}
 
 	for (const Window* E : transient_children) {
 		if (E->window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-			DisplayServer::get_singleton()->window_set_transient(
+			DisplayServer::window_set_transient(
 				E->window_id, DisplayServerEnums::INVALID_WINDOW_ID);
 		}
 	}
 
 	_update_from_window();
 
-	DisplayServer::get_singleton()->delete_sub_window(window_id);
+	DisplayServer::delete_sub_window(window_id);
 	window_id = DisplayServerEnums::INVALID_WINDOW_ID;
 
 	// If closing window was focused and has a parent, return focus.
@@ -546,15 +546,15 @@ void Window::_rect_changed_callback(const Rect2i& p_callback)
 		_update_viewport_size();
 	}
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID &&
-		!DisplayServer::get_singleton()->has_feature(
+		!DisplayServer::has_feature(
 			DisplayServerEnums::FEATURE_SELF_FITTING_WINDOWS)) {
 		Vector2 sz_out =
-			DisplayServer::get_singleton()->window_get_size_with_decorations(window_id);
+			DisplayServer::window_get_size_with_decorations(window_id);
 		Vector2 pos_out =
-			DisplayServer::get_singleton()->window_get_position_with_decorations(window_id);
-		Vector2 sz_in = DisplayServer::get_singleton()->window_get_size(window_id);
-		Vector2 pos_in = DisplayServer::get_singleton()->window_get_position(window_id);
-		AccessibilityServer::get_singleton()->set_window_rect(
+			DisplayServer::window_get_position_with_decorations(window_id);
+		Vector2 sz_in = DisplayServer::window_get_size(window_id);
+		Vector2 pos_in = DisplayServer::window_get_position(window_id);
+		AccessibilityServer::set_window_rect(
 			window_id, Rect2(pos_out, sz_out), Rect2(pos_in, sz_in));
 	}
 	queue_accessibility_update();
@@ -594,7 +594,7 @@ void Window::_accessibility_activate()
 {
 	_accessibility_notify_enter(this);
 	if (!get_embedder()) {
-		AccessibilityServer::get_singleton()->window_activation_completed(get_window_id());
+		AccessibilityServer::window_activation_completed(get_window_id());
 	}
 }
 
@@ -602,7 +602,7 @@ void Window::_accessibility_deactivate()
 {
 	_accessibility_notify_exit(this);
 	if (!get_embedder()) {
-		AccessibilityServer::get_singleton()->window_deactivation_completed(get_window_id());
+		AccessibilityServer::window_deactivation_completed(get_window_id());
 	}
 }
 
@@ -611,7 +611,7 @@ void Window::_clear_transient()
 	if (transient_parent) {
 		if (transient_parent->window_id != DisplayServerEnums::INVALID_WINDOW_ID &&
 			window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-			DisplayServer::get_singleton()->window_set_transient(
+			DisplayServer::window_set_transient(
 				window_id, DisplayServerEnums::INVALID_WINDOW_ID);
 		}
 		transient_parent->transient_children.erase(this);
@@ -694,10 +694,10 @@ void Window::set_exclusive(bool p_exclusive)
 
 	if (!embedder && window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
 		if (is_in_edited_scene_root()) {
-			DisplayServer::get_singleton()->window_set_exclusive(window_id, false);
+			DisplayServer::window_set_exclusive(window_id, false);
 		}
 		else {
-			DisplayServer::get_singleton()->window_set_exclusive(window_id, exclusive);
+			DisplayServer::window_set_exclusive(window_id, exclusive);
 		}
 	}
 
@@ -736,7 +736,7 @@ void Window::_update_window_size()
 	Size2i size_limit = get_clamped_minimum_size();
 	if (!embedder && window_id != DisplayServerEnums::INVALID_WINDOW_ID && keep_title_visible) {
 		Size2i title_size =
-			DisplayServer::get_singleton()->window_get_title_size(displayed_title, window_id);
+			DisplayServer::window_get_title_size(displayed_title, window_id);
 		size_limit = size_limit.max(title_size);
 	}
 
@@ -770,15 +770,15 @@ void Window::_update_window_size()
 			if (reset_min_first && wrap_controls) {
 				// Avoid an error if setting max_size to a value between min_size and the previous
 				// size_limit.
-				DisplayServer::get_singleton()->window_set_min_size(Size2i(), window_id);
+				DisplayServer::window_set_min_size(Size2i(), window_id);
 			}
 
-			DisplayServer::get_singleton()->window_set_max_size(max_size_used, window_id);
-			DisplayServer::get_singleton()->window_set_min_size(size_limit, window_id);
-			DisplayServer::get_singleton()->window_set_size(size, window_id);
+			DisplayServer::window_set_max_size(max_size_used, window_id);
+			DisplayServer::window_set_min_size(size_limit, window_id);
+			DisplayServer::window_set_size(size, window_id);
 		}
 		else if (Engine::is_embedded_in_editor()) {
-			size = DisplayServer::get_singleton()->window_get_size(window_id); // Reset size.
+			size = DisplayServer::window_get_size(window_id); // Reset size.
 		}
 	}
 
@@ -811,7 +811,7 @@ Viewport* Window::get_embedder() const
 {
 	ERR_READ_THREAD_GUARD_V(nullptr);
 	if (force_native &&
-		DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS) &&
+		DisplayServer::has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS) &&
 		!is_in_edited_scene_root()) {
 		return nullptr;
 	}
@@ -842,7 +842,7 @@ RID Window::get_accessibility_element() const
 		return Node::get_accessibility_element();
 	}
 	else if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		return AccessibilityServer::get_singleton()->get_window_root(window_id);
+		return AccessibilityServer::get_window_root(window_id);
 	}
 	else {
 		return RID();
@@ -1000,7 +1000,7 @@ void Window::set_mouse_passthrough_polygon(const Vector<Vector2>& p_region)
 	if (window_id == DisplayServerEnums::INVALID_WINDOW_ID) {
 		return;
 	}
-	DisplayServer::get_singleton()->window_set_mouse_passthrough(mpath, window_id);
+	DisplayServer::window_set_mouse_passthrough(mpath, window_id);
 }
 
 Vector<Vector2> Window::get_mouse_passthrough_polygon() const { return mpath; }
@@ -1199,7 +1199,7 @@ void Window::grab_focus()
 		embedder->_sub_window_grab_focus(this);
 	}
 	else if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_move_to_foreground(window_id);
+		DisplayServer::window_move_to_foreground(window_id);
 	}
 }
 
@@ -1207,7 +1207,7 @@ bool Window::has_focus() const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		return DisplayServer::get_singleton()->window_is_focused(window_id);
+		return DisplayServer::window_is_focused(window_id);
 	}
 	return focused;
 }
@@ -1216,8 +1216,8 @@ bool Window::has_focus_or_active_popup() const
 {
 	ERR_READ_THREAD_GUARD_V(false);
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		return DisplayServer::get_singleton()->window_is_focused(window_id) ||
-			   (DisplayServer::get_singleton()->window_get_active_popup() == window_id);
+		return DisplayServer::window_is_focused(window_id) ||
+			   (DisplayServer::window_get_active_popup() == window_id);
 	}
 	return focused;
 }
@@ -1226,7 +1226,7 @@ void Window::start_drag()
 {
 	ERR_MAIN_THREAD_GUARD;
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_start_drag(window_id);
+		DisplayServer::window_start_drag(window_id);
 	}
 	else if (embedder) {
 		embedder->_window_start_drag(this);
@@ -1240,7 +1240,7 @@ void Window::start_resize(DisplayServerEnums::WindowResizeEdge p_edge)
 		return;
 	}
 	if (window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		DisplayServer::get_singleton()->window_start_resize(p_edge, window_id);
+		DisplayServer::window_start_resize(p_edge, window_id);
 	}
 	else if (embedder) {
 		switch (p_edge) {
@@ -1287,8 +1287,8 @@ Rect2i Window::get_usable_parent_rect() const
 		// find a parent that can contain us
 		ERR_FAIL_NULL_V(w, Rect2());
 
-		parent_rect = DisplayServer::get_singleton()->screen_get_usable_rect(
-			DisplayServer::get_singleton()->window_get_current_screen(w->get_window_id()));
+		parent_rect = DisplayServer::screen_get_usable_rect(
+			DisplayServer::window_get_current_screen(w->get_window_id()));
 	}
 	return parent_rect;
 }
@@ -1546,9 +1546,9 @@ Rect2i Window::get_parent_rect() const
 		int x = get_position().x;
 		int closest_dist = 0x7FFFFFFF;
 		Rect2i closest_rect;
-		for (int i = 0; i < DisplayServer::get_singleton()->get_screen_count(); i++) {
-			Rect2i s(DisplayServer::get_singleton()->screen_get_position(i),
-				DisplayServer::get_singleton()->screen_get_size(i));
+		for (int i = 0; i < DisplayServer::get_screen_count(); i++) {
+			Rect2i s(DisplayServer::screen_get_position(i),
+				DisplayServer::screen_get_size(i));
 			int d;
 			if (x >= s.position.x && x < s.size.x) {
 				// contained
@@ -1646,7 +1646,7 @@ Transform2D Window::get_screen_transform_internal(bool p_absolute_position) cons
 Transform2D Window::get_popup_base_transform_native() const
 {
 	ERR_READ_THREAD_GUARD_V(Transform2D());
-	if (!DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS)) {
+	if (!DisplayServer::has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS)) {
 		return Transform2D();
 	}
 	Transform2D popup_base_transform;

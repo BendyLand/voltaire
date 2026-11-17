@@ -967,7 +967,7 @@ void TreeItem::clear_buttons()
 		if (!cell.buttons.is_empty()) {
 			for (Cell::Button& btn : cell.buttons) {
 				if (btn.accessibility_button_element.is_valid()) {
-					AccessibilityServer::get_singleton()->free_element(
+					AccessibilityServer::free_element(
 						btn.accessibility_button_element);
 				}
 			}
@@ -1931,35 +1931,35 @@ void Tree::_accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_ro
 	if ((p_item != root || !hide_root) && p_item->is_visible()) {
 		if (p_item->accessibility_row_element.is_null()) {
 			p_item->accessibility_row_element =
-				AccessibilityServer::get_singleton()->create_sub_element(
+				AccessibilityServer::create_sub_element(
 					accessibility_scroll_element,
 					AccessibilityServerEnums::AccessibilityRole::ROLE_TREE_ITEM);
 			p_item->accessibility_row_dirty = true;
 		}
 
-		AccessibilityServer::get_singleton()->update_set_table_row_index(
+		AccessibilityServer::update_set_table_row_index(
 			p_item->accessibility_row_element, r_row);
-		AccessibilityServer::get_singleton()->update_set_list_item_level(
+		AccessibilityServer::update_set_list_item_level(
 			p_item->accessibility_row_element, p_level);
-		AccessibilityServer::get_singleton()->update_set_list_item_expanded(
+		AccessibilityServer::update_set_list_item_expanded(
 			p_item->accessibility_row_element, !p_item->collapsed);
-		AccessibilityServer::get_singleton()->update_set_flag(p_item->accessibility_row_element,
+		AccessibilityServer::update_set_flag(p_item->accessibility_row_element,
 			AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN,
 			!(p_item->visible && !p_item->parent_visible_in_tree));
 
-		AccessibilityServer::get_singleton()->update_set_list_item_selected(
+		AccessibilityServer::update_set_list_item_selected(
 			p_item->accessibility_row_element, selected_item == p_item);
 		if (p_item == root && is_root_hidden()) {
-			AccessibilityServer::get_singleton()->update_set_flag(p_item->accessibility_row_element,
+			AccessibilityServer::update_set_flag(p_item->accessibility_row_element,
 				AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, true);
 		}
 		Transform2D row_xform;
 		row_xform.set_origin(r_ofs);
-		AccessibilityServer::get_singleton()->update_set_transform(
+		AccessibilityServer::update_set_transform(
 			p_item->accessibility_row_element, row_xform);
 
 		Size2 item_size = Size2(get_size().width, compute_item_height(p_item));
-		AccessibilityServer::get_singleton()->update_set_bounds(
+		AccessibilityServer::update_set_bounds(
 			p_item->accessibility_row_element, Rect2(Vector2(), item_size));
 
 		if (p_item->accessibility_row_dirty) {
@@ -1970,57 +1970,57 @@ void Tree::_accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_ro
 
 				if (cell.accessibility_cell_element.is_null()) {
 					cell.accessibility_cell_element =
-						AccessibilityServer::get_singleton()->create_sub_element(
+						AccessibilityServer::create_sub_element(
 							p_item->accessibility_row_element,
 							AccessibilityServerEnums::AccessibilityRole::ROLE_CELL);
 				}
 
 				float cw = get_column_width(i);
 
-				AccessibilityServer::get_singleton()->update_set_table_cell_position(
+				AccessibilityServer::update_set_table_cell_position(
 					cell.accessibility_cell_element, r_row, i);
-				AccessibilityServer::get_singleton()->update_set_list_item_selected(
+				AccessibilityServer::update_set_list_item_selected(
 					cell.accessibility_cell_element, cell.selected);
 				if (cell.description.is_empty()) {
-					AccessibilityServer::get_singleton()->update_set_name(
+					AccessibilityServer::update_set_name(
 						cell.accessibility_cell_element, cell.xl_text);
 				}
 				else {
-					AccessibilityServer::get_singleton()->update_set_name(
+					AccessibilityServer::update_set_name(
 						cell.accessibility_cell_element, cell.description);
 				}
 
-				AccessibilityServer::get_singleton()->update_set_text_align(
+				AccessibilityServer::update_set_text_align(
 					cell.accessibility_cell_element, cell.text_alignment);
-				AccessibilityServer::get_singleton()->update_set_flag(
+				AccessibilityServer::update_set_flag(
 					cell.accessibility_cell_element,
 					AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN,
 					!(p_item->visible && !p_item->parent_visible_in_tree));
-				AccessibilityServer::get_singleton()->update_set_flag(
+				AccessibilityServer::update_set_flag(
 					cell.accessibility_cell_element,
 					AccessibilityServerEnums::AccessibilityFlags::FLAG_READONLY, !cell.editable);
-				AccessibilityServer::get_singleton()->update_set_tooltip(
+				AccessibilityServer::update_set_tooltip(
 					cell.accessibility_cell_element, cell.tooltip);
 				switch (cell.mode) {
 				case TreeItem::CELL_MODE_STRING: {
-					AccessibilityServer::get_singleton()->update_set_value(
+					AccessibilityServer::update_set_value(
 						cell.accessibility_cell_element, cell.xl_text);
 				} break;
 				case TreeItem::CELL_MODE_CHECK: {
-					AccessibilityServer::get_singleton()->update_set_checked(
+					AccessibilityServer::update_set_checked(
 						cell.accessibility_cell_element, cell.checked);
 				} break;
 				case TreeItem::CELL_MODE_RANGE: {
-					AccessibilityServer::get_singleton()->update_set_num_value(
+					AccessibilityServer::update_set_num_value(
 						cell.accessibility_cell_element, cell.val);
-					AccessibilityServer::get_singleton()->update_set_num_range(
+					AccessibilityServer::update_set_num_range(
 						cell.accessibility_cell_element, cell.min, cell.max);
 					if (cell.step > 0) {
-						AccessibilityServer::get_singleton()->update_set_num_step(
+						AccessibilityServer::update_set_num_step(
 							cell.accessibility_cell_element, cell.step);
 					}
 					else {
-						AccessibilityServer::get_singleton()->update_set_num_step(
+						AccessibilityServer::update_set_num_step(
 							cell.accessibility_cell_element, 1);
 					}
 				} break;
@@ -2030,12 +2030,12 @@ void Tree::_accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_ro
 				case TreeItem::CELL_MODE_CUSTOM: {
 				} break;
 				}
-				AccessibilityServer::get_singleton()->update_set_background_color(
+				AccessibilityServer::update_set_background_color(
 					cell.accessibility_cell_element, cell.color);
-				AccessibilityServer::get_singleton()->update_set_foreground_color(
+				AccessibilityServer::update_set_foreground_color(
 					cell.accessibility_cell_element, cell.bg_color);
 
-				AccessibilityServer::get_singleton()->update_set_bounds(
+				AccessibilityServer::update_set_bounds(
 					cell.accessibility_cell_element,
 					Rect2(Point2(col_offset, 0), Size2(cw, item_size.y)));
 
@@ -2043,23 +2043,23 @@ void Tree::_accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_ro
 				for (int j = cell.buttons.size() - 1; j >= 0; j--) {
 					if (cell.buttons[j].accessibility_button_element.is_null()) {
 						cell.buttons[j].accessibility_button_element =
-							AccessibilityServer::get_singleton()->create_sub_element(
+							AccessibilityServer::create_sub_element(
 								cell.accessibility_cell_element,
 								AccessibilityServerEnums::AccessibilityRole::ROLE_BUTTON);
 					}
 
-					AccessibilityServer::get_singleton()->update_set_flag(
+					AccessibilityServer::update_set_flag(
 						cell.buttons[j].accessibility_button_element,
 						AccessibilityServerEnums::AccessibilityFlags::FLAG_DISABLED,
 						cell.buttons[j].disabled);
-					AccessibilityServer::get_singleton()->update_set_tooltip(
+					AccessibilityServer::update_set_tooltip(
 						cell.buttons[j].accessibility_button_element, cell.buttons[j].tooltip);
 					if (cell.buttons[j].description.is_empty()) {
-						AccessibilityServer::get_singleton()->update_set_name(
+						AccessibilityServer::update_set_name(
 							cell.buttons[j].accessibility_button_element, cell.buttons[j].tooltip);
 					}
 					else {
-						AccessibilityServer::get_singleton()->update_set_name(
+						AccessibilityServer::update_set_name(
 							cell.buttons[j].accessibility_button_element,
 							cell.buttons[j].description);
 					}
@@ -2068,7 +2068,7 @@ void Tree::_accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_ro
 					Size2 b_size = b->get_size() + theme_cache.button_pressed->get_minimum_size();
 					ofst.x -= b_size.x;
 
-					AccessibilityServer::get_singleton()->update_set_bounds(
+					AccessibilityServer::update_set_bounds(
 						cell.buttons[j].accessibility_button_element, Rect2(ofst, b_size));
 				}
 				col_offset += cw;
@@ -2362,12 +2362,12 @@ void Tree::propagate_set_columns(TreeItem* p_item)
 	p_item->accessibility_row_dirty = true;
 	for (TreeItem::Cell& cell : p_item->cells) {
 		if (cell.accessibility_cell_element.is_valid()) {
-			AccessibilityServer::get_singleton()->free_element(cell.accessibility_cell_element);
+			AccessibilityServer::free_element(cell.accessibility_cell_element);
 			cell.accessibility_cell_element = RID();
 		}
 		for (TreeItem::Cell::Button& btn : cell.buttons) {
 			if (btn.accessibility_button_element.is_valid()) {
-				AccessibilityServer::get_singleton()->free_element(
+				AccessibilityServer::free_element(
 					btn.accessibility_button_element);
 				btn.accessibility_button_element = RID();
 			}

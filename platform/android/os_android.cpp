@@ -371,14 +371,14 @@ bool OS_Android::main_loop_iterate(bool *r_should_swap_buffers) {
 	if (!MainLoop::is_active()) {
 		return false;
 	}
-	DisplayServerAndroid::get_singleton()->reset_swap_buffers_flag();
-	DisplayServerAndroid::get_singleton()->process_events();
+	DisplayServer::driver_as<DisplayServerAndroid>()->reset_swap_buffers_flag();
+	DisplayServer::driver_as<DisplayServerAndroid>()->process_events();
 	uint64_t current_frames_drawn = Engine::get_frames_drawn();
 	bool exit = Main::iteration();
 
 	if (r_should_swap_buffers) {
 		*r_should_swap_buffers = !is_in_low_processor_usage_mode() ||
-				DisplayServerAndroid::get_singleton()->should_swap_buffers() ||
+				DisplayServer::driver_as<DisplayServerAndroid>()->should_swap_buffers() ||
 				Renderer::has_changed() ||
 				current_frames_drawn != Engine::get_frames_drawn();
 	}
@@ -423,17 +423,17 @@ void OS_Android::_on_distraction_free_mode_changed(bool p_enable) {
 #endif
 
 void OS_Android::main_loop_focusout() {
-	DisplayServerAndroid::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
+	DisplayServer::driver_as<DisplayServerAndroid>()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
 	if (MainLoop::is_active()) {
 		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
 	}
 
 	// Only pause when we are not in PiP mode.
-	audio_driver_android.set_pause(!DisplayServerAndroid::get_singleton()->is_in_pip_mode());
+	audio_driver_android.set_pause(!DisplayServer::driver_as<DisplayServerAndroid>()->is_in_pip_mode());
 }
 
 void OS_Android::main_loop_focusin() {
-	DisplayServerAndroid::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
+	DisplayServer::driver_as<DisplayServerAndroid>()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
 	if (MainLoop::is_active()) {
 		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
 	}

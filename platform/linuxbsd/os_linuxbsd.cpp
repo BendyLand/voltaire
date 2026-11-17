@@ -1434,8 +1434,8 @@ void OS_LinuxBSD::run()
 
 	extern bool s_quit_requested;
 	while (!s_quit_requested) {
-		if (DisplayServer::get_singleton()) {
-			DisplayServer::get_singleton()->process_events();
+		if (DisplayServer::is_initialized()) {
+			DisplayServer::process_events();
 		}
 		if (s_quit_requested || Main::iteration()) {
 			break;

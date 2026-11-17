@@ -51,19 +51,18 @@ HashMap<NativeMenu::SystemMenus, PopupMenu*> PopupMenu::system_menus;
 
 bool PopupMenu::_set_item_accelerator(int p_index, const Ref<InputEventKey>& p_ie)
 {
-	NativeMenu* nmenu = NativeMenu::get_singleton();
 	if (p_ie->get_physical_keycode() == Key::NONE && p_ie->get_keycode() == Key::NONE &&
 		p_ie->get_key_label() != Key::NONE) {
-		nmenu->set_item_accelerator(global_menu, p_index, p_ie->get_key_label_with_modifiers());
+		NativeMenu::set_item_accelerator(global_menu, p_index, p_ie->get_key_label_with_modifiers());
 		return true;
 	}
 	else if (p_ie->get_keycode() != Key::NONE) {
-		nmenu->set_item_accelerator(global_menu, p_index, p_ie->get_keycode_with_modifiers());
+		NativeMenu::set_item_accelerator(global_menu, p_index, p_ie->get_keycode_with_modifiers());
 		return true;
 	}
 	else if (p_ie->get_physical_keycode() != Key::NONE) {
-		nmenu->set_item_accelerator(global_menu, p_index,
-			DisplayServer::get_singleton()->keyboard_get_keycode_from_physical(
+		NativeMenu::set_item_accelerator(global_menu, p_index,
+			DisplayServer::keyboard_get_keycode_from_physical(
 				p_ie->get_physical_keycode_with_modifiers()));
 		return true;
 	}
@@ -96,10 +95,10 @@ void PopupMenu::unbind_global_menu()
 		}
 	}
 	if (system_menu != global_menu) {
-		NativeMenu::get_singleton()->free_menu(global_menu);
+		NativeMenu::free_menu(global_menu);
 	}
 	else {
-		NativeMenu::get_singleton()->clear(global_menu);
+		NativeMenu::clear(global_menu);
 	}
 
 	system_menu = RID();
@@ -733,7 +732,7 @@ void PopupMenu::_close_pressed()
 
 void PopupMenu::_update_shadow_offsets() const
 {
-	if (!DisplayServer::get_singleton()->is_window_transparency_available() && !is_embedded()) {
+	if (!DisplayServer::is_window_transparency_available() && !is_embedded()) {
 		panel->set_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, 0);
 		return;
 	}
@@ -1169,7 +1168,7 @@ PackedStringArray PopupMenu::get_configuration_warnings() const
 {
 	PackedStringArray warnings = Popup::get_configuration_warnings();
 
-	if (!DisplayServer::get_singleton()->is_window_transparency_available() &&
+	if (!DisplayServer::is_window_transparency_available() &&
 		!GLOBAL_GET_CACHED(bool, "display/window/subwindows/embed_subwindows")) {
 		Ref<StyleBoxFlat> sb = theme_cache.panel_style;
 		if (sb.is_valid() &&
@@ -1203,11 +1202,11 @@ void PopupMenu::_native_popup(const Rect2i& p_rect)
 		if (wid == DisplayServerEnums::INVALID_WINDOW_ID) {
 			wid = DisplayServerEnums::MAIN_WINDOW_ID;
 		}
-		popup_pos += DisplayServer::get_singleton()->window_get_position(wid);
+		popup_pos += DisplayServer::window_get_position(wid);
 	}
 	float win_scale = get_parent_visible_window()->get_content_scale_factor();
-	NativeMenu::get_singleton()->set_minimum_width(global_menu, p_rect.size.x * win_scale);
-	NativeMenu::get_singleton()->popup(global_menu, popup_pos);
+	NativeMenu::set_minimum_width(global_menu, p_rect.size.x * win_scale);
+	NativeMenu::popup(global_menu, popup_pos);
 }
 
 void PopupMenu::_popup_base(const Rect2i& p_bounds)

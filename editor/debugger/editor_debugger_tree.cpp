@@ -133,7 +133,7 @@ void EditorDebuggerTree::_item_menu_id_pressed(int p_option)
 		else if (text.begins_with("/root/")) {
 			text = text.substr(String("/root/").length());
 		}
-		DisplayServer::get_singleton()->clipboard_set(text);
+		DisplayServer::clipboard_set(text);
 	} break;
 	case ITEM_MENU_EXPAND_COLLAPSE: {
 		TreeItem* s_item = get_selected();

@@ -78,7 +78,7 @@ bool OS_Web::main_loop_iterate() {
 		godot_js_os_fs_sync(&fs_sync_callback);
 	}
 
-	DisplayServer::get_singleton()->process_events();
+	DisplayServer::process_events();
 
 	return Main::iteration();
 }

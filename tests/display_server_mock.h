@@ -49,7 +49,7 @@ private:
 	String primary_clipboard_text;
 
 	static Vector<String> get_rendering_drivers_func();
-	static DisplayServer *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
 
 	void _set_mouse_position(const Point2i &p_position);
 	void _set_window_over(bool p_over);
@@ -91,7 +91,7 @@ public:
 	}
 
 	static void register_mock_driver() {
-		register_create_function("mock", create_func, get_rendering_drivers_func);
+		DisplayServer::register_create_function("mock", create_func, get_rendering_drivers_func);
 	}
 };
 
@@ -105,7 +105,7 @@ public:
 // SEND_GUI_MOUSE_MOTION_EVENT - takes a position, mouse mask and modifiers e.g SEND_GUI_MOUSE_MOTION_EVENT(Vector2(50, 50), MouseButtonMask::LEFT, KeyModifierMask::META);
 // SEND_GUI_DOUBLE_CLICK - takes a position and modifiers. e.g SEND_GUI_DOUBLE_CLICK(Vector2(50, 50), KeyModifierMask::META);
 
-#define _SEND_DISPLAYSERVER_EVENT(m_event) ((DisplayServerMock *)(DisplayServer::get_singleton()))->simulate_event(m_event);
+#define _SEND_DISPLAYSERVER_EVENT(m_event) DisplayServer::driver_as<DisplayServerMock>()->simulate_event(m_event);
 
 #define SEND_GUI_ACTION(m_action) \
 	{ \

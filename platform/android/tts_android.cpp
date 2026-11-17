@@ -169,7 +169,7 @@ void TTS_Android::_java_utterance_callback(int p_event, int64_t p_id, int p_pos)
 		} else if ((DisplayServerEnums::TTSUtteranceEvent)p_event != DisplayServerEnums::TTS_UTTERANCE_STARTED) {
 			ids.erase(p_id);
 		}
-		DisplayServer::get_singleton()->tts_post_utterance_event((DisplayServerEnums::TTSUtteranceEvent)p_event, p_id, pos);
+		DisplayServer::tts_post_utterance_event((DisplayServerEnums::TTSUtteranceEvent)p_event, p_id, pos);
 	}
 }
 
@@ -244,7 +244,7 @@ void TTS_Android::speak(const String &p_text, const String &p_voice, int p_volum
 	}
 
 	if (p_text.is_empty()) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
 		return;
 	}
 
@@ -294,7 +294,7 @@ void TTS_Android::stop() {
 	}
 	ERR_FAIL_COND_MSG(!initialized || tts == nullptr, "Text to Speech not initialized.");
 	for (const KeyValue<int64_t, Char16String> &E : ids) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, E.key);
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, E.key);
 	}
 	ids.clear();
 

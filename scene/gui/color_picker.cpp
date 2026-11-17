@@ -221,7 +221,7 @@ void ColorPicker::_reset_sliders_theme()
 
 void ColorPicker::_text_copy_pressed()
 {
-	DisplayServer::get_singleton()->clipboard_set(c_text->get_text());
+	DisplayServer::clipboard_set(c_text->get_text());
 }
 
 Color ColorPicker::get_pick_color() const { return color; }
@@ -496,11 +496,11 @@ void ColorPickerButton::_notification(int p_what)
 		RID ae = get_accessibility_element();
 		ERR_FAIL_COND(ae.is_null());
 
-		AccessibilityServer::get_singleton()->update_set_role(
+		AccessibilityServer::update_set_role(
 			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_BUTTON);
-		AccessibilityServer::get_singleton()->update_set_popup_type(
+		AccessibilityServer::update_set_popup_type(
 			ae, AccessibilityServerEnums::AccessibilityPopupType::POPUP_DIALOG);
-		AccessibilityServer::get_singleton()->update_set_color_value(ae, color);
+		AccessibilityServer::update_set_color_value(ae, color);
 	} break;
 
 	case NOTIFICATION_DRAW: {
@@ -544,9 +544,9 @@ void ColorPresetButton::_notification(int p_what)
 		RID ae = get_accessibility_element();
 		ERR_FAIL_COND(ae.is_null());
 
-		AccessibilityServer::get_singleton()->update_set_role(
+		AccessibilityServer::update_set_role(
 			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_BUTTON);
-		AccessibilityServer::get_singleton()->update_set_color_value(ae, preset_color);
+		AccessibilityServer::update_set_color_value(ae, preset_color);
 	} break;
 	}
 }

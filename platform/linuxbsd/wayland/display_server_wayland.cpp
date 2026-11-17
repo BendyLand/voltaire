@@ -122,7 +122,9 @@ void DisplayServerWayland::_send_window_event(
 
 void DisplayServerWayland::dispatch_input_events(const Ref<InputEvent>& p_event)
 {
-	static_cast<DisplayServerWayland*>(get_singleton())->_dispatch_input_event(p_event);
+	if (DisplayServerWayland* ds = DisplayServer::driver_as<DisplayServerWayland>()) {
+		ds->_dispatch_input_event(p_event);
+	}
 }
 
 void DisplayServerWayland::_dispatch_input_event(const Ref<InputEvent>& p_event)
@@ -173,7 +175,7 @@ void DisplayServerWayland::_delete_window(DisplayServerEnums::WindowID p_window_
 		popup_menu_list.pop_back();
 	}
 
-	AccessibilityServer::get_singleton()->window_destroy(p_window_id);
+	AccessibilityServer::window_destroy(p_window_id);
 
 	if (wd.visible) {
 #ifdef VULKAN_ENABLED
@@ -254,7 +256,7 @@ bool DisplayServerWayland::has_feature(DisplayServerEnums::Feature p_feature) co
 	switch (p_feature) {
 #ifndef DISABLE_DEPRECATED
 	case DisplayServerEnums::FEATURE_GLOBAL_MENU: {
-		return (native_menu && native_menu->has_feature(NativeMenu::FEATURE_GLOBAL_MENU));
+		return NativeMenu::is_initialized() && NativeMenu::has_feature(NativeMenu::FEATURE_GLOBAL_MENU);
 	} break;
 #endif
 	case DisplayServerEnums::FEATURE_TOUCHSCREEN:
@@ -285,7 +287,7 @@ bool DisplayServerWayland::has_feature(DisplayServerEnums::Feature p_feature) co
 #endif
 
 	case DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER: {
-		return AccessibilityServer::get_singleton()->is_supported();
+		return AccessibilityServer::is_supported();
 	} break;
 
 	default: {
@@ -300,62 +302,62 @@ String DisplayServerWayland::get_name() const { return "Wayland"; }
 
 void DisplayServerWayland::initialize_tts() const
 {
-	const_cast<DisplayServerWayland*>(this)->tts = memnew(TTS_Linux);
+	TTS_Linux::initialize();
 }
 
 bool DisplayServerWayland::tts_is_speaking() const
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, false);
-	return tts->is_speaking();
+	ERR_FAIL_COND_V(!TTS_Linux::is_initialized(), false);
+	return TTS_Linux::is_speaking();
 }
 
 bool DisplayServerWayland::tts_is_paused() const
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, false);
-	return tts->is_paused();
+	ERR_FAIL_COND_V(!TTS_Linux::is_initialized(), false);
+	return TTS_Linux::is_paused();
 }
 
 void DisplayServerWayland::tts_speak(const String& p_text, const String& p_voice, int p_volume,
 	float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt)
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
+	ERR_FAIL_COND(!TTS_Linux::is_initialized());
+	TTS_Linux::speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
 }
 
 void DisplayServerWayland::tts_pause()
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->pause();
+	ERR_FAIL_COND(!TTS_Linux::is_initialized());
+	TTS_Linux::pause();
 }
 
 void DisplayServerWayland::tts_resume()
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->resume();
+	ERR_FAIL_COND(!TTS_Linux::is_initialized());
+	TTS_Linux::resume();
 }
 
 void DisplayServerWayland::tts_stop()
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->stop();
+	ERR_FAIL_COND(!TTS_Linux::is_initialized());
+	TTS_Linux::stop();
 }
 
 #endif
@@ -777,7 +779,7 @@ DisplayServerEnums::WindowID DisplayServerWayland::create_sub_window(
 	wd.flags = p_flags;
 	wd.vsync_mode = p_vsync_mode;
 
-	if (!AccessibilityServer::get_singleton()->window_create(wd.id, nullptr)) {
+	if (!AccessibilityServer::window_create(wd.id, nullptr)) {
 		if (OS::is_stdout_verbose()) {
 			ERR_PRINT("Can't create an accessibility adapter for window, accessibility support "
 					  "disabled!");
@@ -1885,10 +1887,10 @@ void DisplayServerWayland::process_events()
 			_send_window_event(winev_msg->event, winev_msg->id);
 
 			if (winev_msg->event == DisplayServerEnums::WINDOW_EVENT_FOCUS_IN) {
-				AccessibilityServer::get_singleton()->set_window_focused(winev_msg->id, true);
+				AccessibilityServer::set_window_focused(winev_msg->id, true);
 			}
 			else if (winev_msg->event == DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT) {
-				AccessibilityServer::get_singleton()->set_window_focused(winev_msg->id, false);
+				AccessibilityServer::set_window_focused(winev_msg->id, false);
 				Input::release_pressed_events();
 			}
 			continue;
@@ -2122,7 +2124,7 @@ Vector<String> DisplayServerWayland::get_rendering_drivers_func()
 	return drivers;
 }
 
-DisplayServer* DisplayServerWayland::create_func(const String& p_rendering_driver,
+DisplayServerDriver* DisplayServerWayland::create_func(const String& p_rendering_driver,
 	DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
 	uint32_t p_flags, const Point2i* p_position, const Size2i& p_resolution, int p_screen,
 	DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
@@ -2168,7 +2170,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 
 	Input::set_event_dispatch_function(dispatch_input_events);
 
-	native_menu = memnew(NativeMenu);
+	NativeMenu::initialize();
 
 #ifdef SPEECHD_ENABLED
 	bool tts_enabled = false;
@@ -2338,7 +2340,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 	wd.rect.size = p_resolution;
 	wd.title = "Voltaire";
 
-	if (!AccessibilityServer::get_singleton()->window_create(wd.id, nullptr)) {
+	if (!AccessibilityServer::window_create(wd.id, nullptr)) {
 		if (OS::is_stdout_verbose()) {
 			ERR_PRINT("Can't create an accessibility adapter for window, accessibility support "
 					  "disabled!");
@@ -2399,10 +2401,7 @@ DisplayServerWayland::~DisplayServerWayland()
 {
 	wayland_thread.mutex.lock();
 
-	if (native_menu) {
-		memdelete(native_menu);
-		native_menu = nullptr;
-	}
+	NativeMenu::finalize();
 
 	List<DisplayServerEnums::WindowID> toplevels;
 
@@ -2413,7 +2412,7 @@ DisplayServerWayland::~DisplayServerWayland()
 			toplevels.push_back(id);
 		}
 		else {
-			AccessibilityServer::get_singleton()->window_destroy(id);
+			AccessibilityServer::window_destroy(id);
 		}
 	}
 
@@ -2433,7 +2432,7 @@ DisplayServerWayland::~DisplayServerWayland()
 #endif
 
 #ifdef SPEECHD_ENABLED
-	memdelete(tts);
+	TTS_Linux::finalize();
 #endif
 
 #ifdef DBUS_ENABLED
@@ -2445,7 +2444,7 @@ DisplayServerWayland::~DisplayServerWayland()
 
 void DisplayServerWayland::register_wayland_driver()
 {
-	register_create_function("wayland", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("wayland", create_func, get_rendering_drivers_func);
 }
 
 #endif // WAYLAND_ENABLED

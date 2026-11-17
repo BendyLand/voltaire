@@ -993,7 +993,7 @@ void EditorNode::show_warning(const String& p_text, const String& p_title)
 
 void EditorNode::_copy_warning(const String& p_str)
 {
-	DisplayServer::get_singleton()->clipboard_set(warning->get_text());
+	DisplayServer::clipboard_set(warning->get_text());
 }
 
 void EditorNode::_immediate_dialog_confirmed() { immediate_dialog_confirmed = true; }

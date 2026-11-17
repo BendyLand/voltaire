@@ -176,7 +176,7 @@ void CameraFeedAndroid::_set_rotation() {
 	if (result.has_value()) {
 		image_rotation = static_cast<float>(result.value());
 	} else {
-		int display_rotation = DisplayServerAndroid::get_singleton()->get_display_rotation();
+		int display_rotation = DisplayServer::driver_as<DisplayServerAndroid>()->get_display_rotation();
 		switch (display_rotation) {
 			case 90:
 				display_rotation = 270;
@@ -924,7 +924,7 @@ int CameraFeedAndroid::normalize_angle(int p_angle) {
 }
 
 int CameraFeedAndroid::get_display_rotation() {
-	return DisplayServerAndroid::get_singleton()->get_display_rotation();
+	return DisplayServer::driver_as<DisplayServerAndroid>()->get_display_rotation();
 }
 
 int CameraFeedAndroid::get_app_orientation() {

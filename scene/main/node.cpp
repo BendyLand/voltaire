@@ -1793,7 +1793,7 @@ RID Node::get_accessibility_element() const
 		Window* w = get_non_popup_window();
 		if (w && w->get_window_id() != DisplayServerEnums::INVALID_WINDOW_ID &&
 			get_window()->is_visible()) {
-			data.accessibility_element = AccessibilityServer::get_singleton()->create_element(
+			data.accessibility_element = AccessibilityServer::create_element(
 				w->get_window_id(), AccessibilityServerEnums::ROLE_CONTAINER);
 		}
 	}

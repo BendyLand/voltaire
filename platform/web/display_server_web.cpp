@@ -59,10 +59,6 @@
 #define DOM_BUTTON_XBUTTON1 3
 #define DOM_BUTTON_XBUTTON2 4
 
-DisplayServerWeb *DisplayServerWeb::get_singleton() {
-	return static_cast<DisplayServerWeb *>(DisplayServer::get_singleton());
-}
-
 // Window (canvas)
 bool DisplayServerWeb::check_size_force_redraw() {
 	bool size_changed = godot_js_display_size_update() != 0;
@@ -87,7 +83,7 @@ void DisplayServerWeb::fullscreen_change_callback(int p_fullscreen) {
 }
 
 void DisplayServerWeb::_fullscreen_change_callback(int p_fullscreen) {
-	DisplayServerWeb *display = get_singleton();
+	DisplayServerWeb *display = DisplayServer::driver_as<DisplayServerWeb>();
 	if (p_fullscreen) {
 		display->window_mode = DisplayServerEnums::WINDOW_MODE_FULLSCREEN;
 	} else {
@@ -113,7 +109,7 @@ void DisplayServerWeb::drop_files_js_callback(const char **p_filev, int p_filec)
 }
 
 void DisplayServerWeb::_drop_files_js_callback(const Vector<String> &p_files) {
-	DisplayServerWeb *ds = get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	if (!ds) {
 		ERR_FAIL_MSG("Unable to drop files because the DisplayServer is not active");
 	}
@@ -143,7 +139,7 @@ void DisplayServerWeb::request_quit_callback() {
 }
 
 void DisplayServerWeb::_request_quit_callback() {
-	DisplayServerWeb *ds = get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	if (ds && ds->window_event_callback.is_valid()) {
 		Variant event = int(DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 		ds->window_event_callback.call(event);
@@ -168,7 +164,7 @@ void DisplayServerWeb::dom2godot_mod(Ref<InputEventWithModifiers> ev, int p_mod,
 }
 
 void DisplayServerWeb::key_callback(int p_pressed, int p_repeat, int p_modifiers) {
-	DisplayServerWeb *ds = get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	JSKeyEvent &key_event = ds->key_event;
 
 	const String code = String::utf8(key_event.code);
@@ -188,7 +184,7 @@ void DisplayServerWeb::_key_callback(const String &p_key_event_code, const Strin
 	// Resume audio context after input in case autoplay was denied.
 	OS_Web::get_singleton()->resume_audio();
 
-	DisplayServerWeb *ds = get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	if (ds->ime_started) {
 		return;
 	}
@@ -238,7 +234,7 @@ int DisplayServerWeb::mouse_button_callback(int p_pressed, int p_button, double 
 }
 
 int DisplayServerWeb::_mouse_button_callback(int p_pressed, int p_button, double p_x, double p_y, int p_modifiers) {
-	DisplayServerWeb *ds = get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 
 	Point2 pos(p_x, p_y);
 	Ref<InputEventMouseButton> ev;
@@ -328,7 +324,7 @@ void DisplayServerWeb::_mouse_move_callback(double p_x, double p_y, double p_rel
 	uint32_tget_mouse_button_mask();
 	// For motion outside the canvas, only read mouse movement if dragging
 	// started inside the canvas; imitating desktop app behavior.
-	if (!get_singleton()->cursor_inside_canvas && input_mask.is_empty()) {
+	if (!DisplayServer::driver_as<DisplayServerWeb>()->cursor_inside_canvas && input_mask.is_empty()) {
 		return;
 	}
 
@@ -417,7 +413,7 @@ void DisplayServerWeb::update_voices_callback(int p_size, const char **p_voice) 
 }
 
 void DisplayServerWeb::_update_voices_callback(const Vector<String> &p_voices) {
-	get_singleton()->voices.clear();
+	DisplayServer::driver_as<DisplayServerWeb>()->voices.clear();
 	for (int i = 0; i < p_voices.size(); i++) {
 		Vector<String> tokens = p_voices[i].split(";", true, 2);
 		if (tokens.size() == 2) {
@@ -425,7 +421,7 @@ void DisplayServerWeb::_update_voices_callback(const Vector<String> &p_voices) {
 			voice_d["name"] = tokens[1];
 			voice_d["id"] = tokens[1];
 			voice_d["language"] = tokens[0];
-			get_singleton()->voices.push_back(voice_d);
+			DisplayServer::driver_as<DisplayServerWeb>()->voices.push_back(voice_d);
 		}
 	}
 }
@@ -479,7 +475,7 @@ void DisplayServerWeb::js_utterance_callback(int p_event, int64_t p_id, int p_po
 }
 
 void DisplayServerWeb::_js_utterance_callback(int p_event, int64_t p_id, int p_pos) {
-	DisplayServerWeb *ds = (DisplayServerWeb *)DisplayServer::get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	if (ds->utterance_ids.has(p_id)) {
 		int pos = 0;
 		if ((DisplayServerEnums::TTSUtteranceEvent)p_event == DisplayServerEnums::TTS_UTTERANCE_BOUNDARY) {
@@ -655,7 +651,7 @@ int DisplayServerWeb::mouse_wheel_callback(int p_delta_mode, double p_delta_x, d
 
 int DisplayServerWeb::_mouse_wheel_callback(int p_delta_mode, double p_delta_x, double p_delta_y) {
 	if (!godot_js_display_canvas_is_focused() && !godot_js_is_ime_focused()) {
-		if (get_singleton()->cursor_inside_canvas) {
+		if (DisplayServer::driver_as<DisplayServerWeb>()->cursor_inside_canvas) {
 			godot_js_display_canvas_focus();
 		} else {
 			return false;
@@ -739,7 +735,7 @@ void DisplayServerWeb::touch_callback(int p_type, int p_count) {
 }
 
 void DisplayServerWeb::_touch_callback(int p_type, int p_count) {
-	DisplayServerWeb *ds = get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 
 	const JSTouchEvent &touch_event = ds->touch_event;
 	for (int i = 0; i < p_count; i++) {
@@ -797,7 +793,7 @@ void DisplayServerWeb::vk_input_text_callback(const char *p_text, int p_cursor) 
 }
 
 void DisplayServerWeb::_vk_input_text_callback(const String &p_text, int p_cursor) {
-	DisplayServerWeb *ds = DisplayServerWeb::get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	if (!ds || !ds->input_text_callback.is_valid()) {
 		return;
 	}
@@ -862,9 +858,9 @@ void DisplayServerWeb::_gamepad_callback(int p_index, int p_connected, const Str
 	(void)p_id;
 	(void)p_guid;
 	if (p_connected) {
-		DisplayServerWeb::get_singleton()->gamepad_count += 1;
+		DisplayServer::driver_as<DisplayServerWeb>()->gamepad_count += 1;
 	} else {
-		DisplayServerWeb::get_singleton()->gamepad_count -= 1;
+		DisplayServer::driver_as<DisplayServerWeb>()->gamepad_count -= 1;
 	}
 }
 
@@ -883,7 +879,7 @@ void DisplayServerWeb::ime_callback(int p_type, const char *p_text) {
 }
 
 void DisplayServerWeb::_ime_callback(int p_type, const String &p_text) {
-	DisplayServerWeb *ds = get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	// Resume audio context after input in case autoplay was denied.
 	OS_Web::get_singleton()->resume_audio();
 
@@ -1023,7 +1019,7 @@ void DisplayServerWeb::update_clipboard_callback(const char *p_text) {
 }
 
 void DisplayServerWeb::_update_clipboard_callback(const String &p_text) {
-	get_singleton()->clipboard = p_text;
+	DisplayServer::driver_as<DisplayServerWeb>()->clipboard = p_text;
 }
 
 void DisplayServerWeb::clipboard_set(const String &p_text) {
@@ -1049,7 +1045,7 @@ void DisplayServerWeb::send_window_event_callback(int p_notification) {
 }
 
 void DisplayServerWeb::_send_window_event_callback(int p_notification) {
-	DisplayServerWeb *ds = get_singleton();
+	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 	if (!ds) {
 		return;
 	}
@@ -1103,20 +1099,20 @@ void DisplayServerWeb::set_icon(const Ref<Image> &p_icon) {
 }
 
 void DisplayServerWeb::_dispatch_input_event(const Ref<InputEvent> &p_event) {
-	Callable cb = get_singleton()->input_event_callback;
+	Callable cb = DisplayServer::driver_as<DisplayServerWeb>()->input_event_callback;
 	if (cb.is_valid()) {
 		cb.call(p_event);
 	}
 }
 
-DisplayServer *DisplayServerWeb::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_window_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Point2i *p_position, const Size2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
+DisplayServerDriver *DisplayServerWeb::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_window_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Point2i *p_position, const Size2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
 	return memnew(DisplayServerWeb(p_rendering_driver, p_window_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 }
 
 DisplayServerWeb::DisplayServerWeb(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_window_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Point2i *p_position, const Size2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
 	r_error = OK; // Always succeeds for now.
 
-	native_menu = memnew(NativeMenu); // Dummy native menu.
+	NativeMenu::initialize();
 
 	// Ensure the canvas ID.
 	godot_js_config_canvas_id_get(canvas_id, 256);
@@ -1185,10 +1181,7 @@ DisplayServerWeb::DisplayServerWeb(const String &p_rendering_driver, DisplayServ
 }
 
 DisplayServerWeb::~DisplayServerWeb() {
-	if (native_menu) {
-		memdelete(native_menu);
-		native_menu = nullptr;
-	}
+	NativeMenu::finalize();
 #ifdef GLES3_ENABLED
 	if (webgl_ctx) {
 		emscripten_webgl_commit_frame();
@@ -1201,7 +1194,7 @@ bool DisplayServerWeb::has_feature(DisplayServerEnums::Feature p_feature) const 
 	switch (p_feature) {
 #ifndef DISABLE_DEPRECATED
 		case DisplayServerEnums::FEATURE_GLOBAL_MENU: {
-			return (native_menu && native_menu->has_feature(NativeMenu::FEATURE_GLOBAL_MENU));
+			return NativeMenu::is_initialized() && NativeMenu::has_feature(NativeMenu::FEATURE_GLOBAL_MENU);
 		} break;
 #endif
 		//case DisplayServerEnums::FEATURE_HIDPI:
@@ -1235,7 +1228,7 @@ bool DisplayServerWeb::has_feature(DisplayServerEnums::Feature p_feature) const 
 }
 
 void DisplayServerWeb::register_web_driver() {
-	register_create_function("web", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("web", create_func, get_rendering_drivers_func);
 }
 
 String DisplayServerWeb::get_name() const {

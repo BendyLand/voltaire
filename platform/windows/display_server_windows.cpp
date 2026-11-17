@@ -197,7 +197,7 @@ bool DisplayServerWindows::has_feature(DisplayServerEnums::Feature p_feature) co
 		case DisplayServerEnums::FEATURE_EMOJI_AND_SYMBOL_PICKER:
 			return (os_ver.dwBuildNumber >= 17134); // Windows 10 Redstone 4 (1803)+ only.
 		case DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER: {
-			return AccessibilityServer::get_singleton()->is_supported();
+			return AccessibilityServer::is_supported();
 		} break;
 		default:
 			return false;
@@ -356,63 +356,63 @@ void DisplayServerWindows::_register_raw_input_devices(DisplayServerEnums::Windo
 }
 
 void DisplayServerWindows::initialize_tts() const {
-	const_cast<DisplayServerWindows *>(this)->tts = memnew(TTS_Windows);
+	TTS_Windows::initialize();
 }
 
 bool DisplayServerWindows::tts_is_speaking() const {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, false);
-	return tts->is_speaking();
+	ERR_FAIL_COND_V(!TTS_Windows::is_initialized(), false);
+	return TTS_Windows::is_speaking();
 }
 
 bool DisplayServerWindows::tts_is_paused() const {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, false);
-	return tts->is_paused();
+	ERR_FAIL_COND_V(!TTS_Windows::is_initialized(), false);
+	return TTS_Windows::is_paused();
 }
 
 TypedArray<Dictionary> DisplayServerWindows::tts_get_voices() const {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, TypedArray<Dictionary>());
-	return tts->get_voices();
+	ERR_FAIL_COND_V(!TTS_Windows::is_initialized(), TypedArray<Dictionary>());
+	return TTS_Windows::get_voices();
 }
 
 void DisplayServerWindows::tts_speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt) {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
+	ERR_FAIL_COND(!TTS_Windows::is_initialized());
+	TTS_Windows::speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
 }
 
 void DisplayServerWindows::tts_pause() {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->pause();
+	ERR_FAIL_COND(!TTS_Windows::is_initialized());
+	TTS_Windows::pause();
 }
 
 void DisplayServerWindows::tts_resume() {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->resume();
+	ERR_FAIL_COND(!TTS_Windows::is_initialized());
+	TTS_Windows::resume();
 }
 
 void DisplayServerWindows::tts_stop() {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->stop();
+	ERR_FAIL_COND(!TTS_Windows::is_initialized());
+	TTS_Windows::stop();
 }
 
 Error DisplayServerWindows::file_dialog_show(const String &p_title, const String &p_current_directory, const String &p_filename, bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode, const Vector<String> &p_filters, const Callable &p_callback, DisplayServerEnums::WindowID p_window_id) {
@@ -545,7 +545,7 @@ public:
 VLTR_GCC_WARNING_POP
 
 LRESULT CALLBACK WndProcFileDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	DisplayServerWindows *ds_win = static_cast<DisplayServerWindows *>(DisplayServer::get_singleton());
+	DisplayServerWindows *ds_win = DisplayServer::driver_as<DisplayServerWindows>();
 	if (ds_win) {
 		return ds_win->WndProcFileDialog(hWnd, uMsg, wParam, lParam);
 	} else {
@@ -573,7 +573,7 @@ LRESULT DisplayServerWindows::WndProcFileDialog(HWND hWnd, UINT uMsg, WPARAM wPa
 }
 
 void DisplayServerWindows::_thread_fd_monitor(void *p_ud) {
-	DisplayServerWindows *ds = static_cast<DisplayServerWindows *>(get_singleton());
+	DisplayServerWindows *ds = DisplayServer::driver_as<DisplayServerWindows>();
 	FileDialogData *fd = (FileDialogData *)p_ud;
 
 	if (fd->mode < 0 && fd->mode >= DisplayServerEnums::FILE_DIALOG_MODE_SAVE_MAX) {
@@ -836,7 +836,7 @@ void DisplayServerWindows::_thread_fd_monitor(void *p_ud) {
 	fd->finished.set();
 
 	if (fd->window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		callable_mp(DisplayServer::get_singleton(), &DisplayServer::window_move_to_foreground).call_deferred(fd->window_id);
+		callable_mp_static(&DisplayServer::window_move_to_foreground).call_deferred(fd->window_id);
 	}
 }
 
@@ -3790,7 +3790,7 @@ static INT_PTR input_text_dialog_init(HWND hWnd, UINT code, WPARAM wParam, LPARA
 
 	SetWindowTextW(hWnd, (LPCWSTR)init.title);
 
-	const int dpi = DisplayServerWindows::get_singleton()->screen_get_dpi();
+	const int dpi = DisplayServer::screen_get_dpi();
 
 	const int margin = scale_with_dpi(7, dpi);
 	const SIZE dlg_size = { scale_with_dpi(300, dpi), scale_with_dpi(50, dpi) };
@@ -4240,8 +4240,8 @@ void DisplayServerWindows::process_events() {
 	}
 	_THREAD_SAFE_UNLOCK_
 
-	if (tts) {
-		tts->process_events();
+	if (TTS_Windows::is_initialized()) {
+		TTS_Windows::process_events();
 	}
 
 	if (!drop_events) {
@@ -5129,7 +5129,9 @@ void DisplayServerWindows::_send_window_event(const WindowData &wd, DisplayServe
 }
 
 void DisplayServerWindows::_dispatch_input_events(const Ref<InputEvent> &p_event) {
-	static_cast<DisplayServerWindows *>(get_singleton())->_dispatch_input_event(p_event);
+	if (DisplayServerWindows *ds = DisplayServer::driver_as<DisplayServerWindows>()) {
+		ds->_dispatch_input_event(p_event);
+	}
 }
 
 void DisplayServerWindows::_dispatch_input_event(const Ref<InputEvent> &p_event) {
@@ -5180,7 +5182,7 @@ void DisplayServerWindows::_dispatch_input_event(const Ref<InputEvent> &p_event)
 }
 
 LRESULT CALLBACK MouseProc(int code, WPARAM wParam, LPARAM lParam) {
-	DisplayServerWindows *ds_win = static_cast<DisplayServerWindows *>(DisplayServer::get_singleton());
+	DisplayServerWindows *ds_win = DisplayServer::driver_as<DisplayServerWindows>();
 	if (ds_win) {
 		return ds_win->MouseProc(code, wParam, lParam);
 	} else {
@@ -5356,7 +5358,7 @@ LRESULT DisplayServerWindows::_handle_early_window_message(HWND hWnd, UINT uMsg,
 			// Fix this up so we can recognize the remaining messages.
 			pWindowData->hWnd = hWnd;
 
-			if (!AccessibilityServer::get_singleton()->window_create(pWindowData->id, (void *)hWnd)) {
+			if (!AccessibilityServer::window_create(pWindowData->id, (void *)hWnd)) {
 				if (OS::is_stdout_verbose()) {
 					ERR_PRINT("Can't create an accessibility adapter for window, accessibility support disabled!");
 				}
@@ -6725,7 +6727,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 		} break;
 		case WM_DESTROY: {
-			AccessibilityServer::get_singleton()->window_destroy(window_id);
+			AccessibilityServer::window_destroy(window_id);
 
 			Input::flush_buffered_events();
 			if (window_mouseover_id == window_id) {
@@ -6763,7 +6765,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	DisplayServerWindows *ds_win = static_cast<DisplayServerWindows *>(DisplayServer::get_singleton());
+	DisplayServerWindows *ds_win = DisplayServer::driver_as<DisplayServerWindows>();
 	if (ds_win) {
 		return ds_win->WndProc(hWnd, uMsg, wParam, lParam);
 	} else {
@@ -6780,7 +6782,7 @@ void DisplayServerWindows::_process_activate_event(DisplayServerEnums::WindowID 
 			SetFocus(wd.hWnd);
 		}
 		wd.window_focused = true;
-		AccessibilityServer::get_singleton()->set_window_focused(p_window_id, true);
+		AccessibilityServer::set_window_focused(p_window_id, true);
 
 		_send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
 	} else { // WM_INACTIVE.
@@ -6795,7 +6797,7 @@ void DisplayServerWindows::_process_activate_event(DisplayServerEnums::WindowID 
 			ReleaseCapture();
 		}
 		wd.window_focused = false;
-		AccessibilityServer::get_singleton()->set_window_focused(p_window_id, false);
+		AccessibilityServer::set_window_focused(p_window_id, false);
 
 		_send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
 	}
@@ -8248,8 +8250,8 @@ Vector<String> DisplayServerWindows::get_rendering_drivers_func() {
 	return drivers;
 }
 
-DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
-	DisplayServer *ds = memnew(DisplayServerWindows(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
+DisplayServerDriver *DisplayServerWindows::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
+	DisplayServerDriver *ds = memnew(DisplayServerWindows(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 	if (r_error != OK) {
 		if (tested_drivers == 0) {
 			OS::alert("Failed to register the window class.", "Unable to initialize DisplayServer");
@@ -8292,7 +8294,7 @@ DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_drive
 }
 
 void DisplayServerWindows::register_windows_driver() {
-	register_create_function("windows", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("windows", create_func, get_rendering_drivers_func);
 }
 
 DisplayServerWindows::~DisplayServerWindows() {
@@ -8351,7 +8353,7 @@ DisplayServerWindows::~DisplayServerWindows() {
 	screen_set_keep_on(false);
 
 	if (native_menu) {
-		memdelete(native_menu);
+		NativeMenu::finalize();
 		native_menu = nullptr;
 	}
 
@@ -8400,7 +8402,7 @@ DisplayServerWindows::~DisplayServerWindows() {
 		gl_manager_native = nullptr;
 	}
 #endif
-	memdelete(tts);
+	TTS_Windows::finalize();
 
 	OleUninitialize();
 }

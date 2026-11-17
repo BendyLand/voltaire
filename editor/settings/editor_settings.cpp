@@ -535,11 +535,11 @@ String EditorSettings::get_editor_layouts_config()
 float EditorSettings::get_auto_display_scale()
 {
 #ifdef LINUXBSD_ENABLED
-	if (DisplayServer::get_singleton()->get_name() == "Wayland") {
-		float main_window_scale = DisplayServer::get_singleton()->screen_get_scale(
+	if (DisplayServer::get_name() == "Wayland") {
+		float main_window_scale = DisplayServer::screen_get_scale(
 			DisplayServerEnums::SCREEN_OF_MAIN_WINDOW);
 
-		if (DisplayServer::get_singleton()->get_screen_count() == 1 ||
+		if (DisplayServer::get_screen_count() == 1 ||
 			Math::fract(main_window_scale) != 0) {
 			// If we have a single screen or the screen of the window is fractional, all
 			// bets are off. At this point, let's just return the current's window scale,
@@ -551,27 +551,27 @@ float EditorSettings::get_auto_display_scale()
 		// properly anyways (we're need the ability to change the UI scale at runtime).
 		// At this point it's more convenient to "supersample" like we do with other
 		// platforms, hoping that the user is only using integer-scaled screens.
-		return DisplayServer::get_singleton()->screen_get_max_scale();
+		return DisplayServer::screen_get_max_scale();
 	}
 #endif
 
 #if defined(MACOS_ENABLED) || defined(ANDROID_ENABLED)
-	return DisplayServer::get_singleton()->screen_get_max_scale();
+	return DisplayServer::screen_get_max_scale();
 #else
-	const int screen = DisplayServer::get_singleton()->window_get_current_screen();
+	const int screen = DisplayServer::window_get_current_screen();
 
-	if (DisplayServer::get_singleton()->screen_get_size(screen) == Vector2i()) {
+	if (DisplayServer::screen_get_size(screen) == Vector2i()) {
 		// Invalid screen size, skip.
 		return 1.0;
 	}
 
 #if defined(WINDOWS_ENABLED)
-	return DisplayServer::get_singleton()->screen_get_dpi(screen) / 96.0;
+	return DisplayServer::screen_get_dpi(screen) / 96.0;
 #else
 	// Use the smallest dimension to use a correct display scale on portrait displays.
-	const int smallest_dimension = MIN(DisplayServer::get_singleton()->screen_get_size(screen).x,
-		DisplayServer::get_singleton()->screen_get_size(screen).y);
-	if (DisplayServer::get_singleton()->screen_get_dpi(screen) >= 192 &&
+	const int smallest_dimension = MIN(DisplayServer::screen_get_size(screen).x,
+		DisplayServer::screen_get_size(screen).y);
+	if (DisplayServer::screen_get_dpi(screen) >= 192 &&
 		smallest_dimension >= 1400) {
 		// hiDPI display.
 		return 2.0;

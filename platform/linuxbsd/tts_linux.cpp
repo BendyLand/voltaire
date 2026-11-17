@@ -29,71 +29,72 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "tts_linux.h"
+
 #include "core/config/project_settings.h"
 #include "servers/display/display_server.h"
 #include "servers/text/text_server.h"
-#include "tts_linux.h"
-
-TTS_Linux* TTS_Linux::singleton = nullptr;
 
 void TTS_Linux::_speech_index_mark(int p_msg_id, int p_type, const String& p_index_mark)
 {
-	_THREAD_SAFE_METHOD_
+	ERR_FAIL_NULL(data);
+	MutexLock lock(data->mutex);
 
-	if (ids.has(p_msg_id)) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(
-			DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, ids[p_msg_id], p_index_mark.to_int());
+	if (data->ids.has(p_msg_id)) {
+		DisplayServer::tts_post_utterance_event(
+			DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, data->ids[p_msg_id], p_index_mark.to_int());
 	}
 }
 
-void TTS_Linux::_load_voices() const
+void TTS_Linux::_load_voices()
 {
-	if (!voices_loaded) {
-		SPDVoice** spd_voices = spd_list_synthesis_voices(synth);
+	if (!data->voices_loaded) {
+		SPDVoice** spd_voices = spd_list_synthesis_voices(data->synth);
 		if (spd_voices != nullptr) {
 			SPDVoice** voices_ptr = spd_voices;
 			while (*voices_ptr != nullptr) {
 				VoiceInfo vi;
 				vi.language = String::utf8((*voices_ptr)->language);
 				vi.variant = String::utf8((*voices_ptr)->variant);
-				voices[String::utf8((*voices_ptr)->name)] = vi;
+				data->voices[String::utf8((*voices_ptr)->name)] = vi;
 				voices_ptr++;
 			}
 			free_spd_voices(spd_voices);
 		}
-		voices_loaded = true;
+		data->voices_loaded = true;
 	}
 }
 
 void TTS_Linux::_speech_event(int p_msg_id, int p_type)
 {
-	_THREAD_SAFE_METHOD_
+	ERR_FAIL_NULL(data);
+	MutexLock lock(data->mutex);
 
-	if (!paused && ids.has(p_msg_id)) {
+	if (!data->paused && data->ids.has(p_msg_id)) {
 		if ((SPDNotificationType)p_type == SPD_EVENT_END) {
-			DisplayServer::get_singleton()->tts_post_utterance_event(
-				DisplayServerEnums::TTS_UTTERANCE_ENDED, ids[p_msg_id]);
-			ids.erase(p_msg_id);
-			last_msg_id = -1;
-			speaking = false;
+			DisplayServer::tts_post_utterance_event(
+				DisplayServerEnums::TTS_UTTERANCE_ENDED, data->ids[p_msg_id]);
+			data->ids.erase(p_msg_id);
+			data->last_msg_id = -1;
+			data->speaking = false;
 		}
 		else if ((SPDNotificationType)p_type == SPD_EVENT_CANCEL) {
-			DisplayServer::get_singleton()->tts_post_utterance_event(
-				DisplayServerEnums::TTS_UTTERANCE_CANCELED, ids[p_msg_id]);
-			ids.erase(p_msg_id);
-			last_msg_id = -1;
-			speaking = false;
+			DisplayServer::tts_post_utterance_event(
+				DisplayServerEnums::TTS_UTTERANCE_CANCELED, data->ids[p_msg_id]);
+			data->ids.erase(p_msg_id);
+			data->last_msg_id = -1;
+			data->speaking = false;
 		}
 	}
-	if (!speaking && queue.size() > 0) {
-		TTSUtterance& message = queue.front()->get();
+	if (!data->speaking && data->queue.size() > 0) {
+		TTSUtterance& message = data->queue.front()->get();
 
 		// Inject index mark after each word.
 		String text;
 		String language;
 
 		_load_voices();
-		const VoiceInfo* voice = voices.getptr(message.voice);
+		const VoiceInfo* voice = data->voices.getptr(message.voice);
 		if (voice) {
 			language = voice->language;
 		}
@@ -111,9 +112,9 @@ void TTS_Linux::_speech_event(int p_msg_id, int p_type)
 			prev_end = end;
 		}
 
-		spd_set_synthesis_voice(synth, message.voice.utf8().get_data());
-		spd_set_volume(synth, message.volume * 2 - 100);
-		spd_set_voice_pitch(synth, (message.pitch - 1) * 100);
+		spd_set_synthesis_voice(data->synth, message.voice.utf8().get_data());
+		spd_set_volume(data->synth, message.volume * 2 - 100);
+		spd_set_voice_pitch(data->synth, (message.pitch - 1) * 100);
 		float rate = 0;
 		if (message.rate > 1.f) {
 			rate = std::log10(MIN(message.rate, 2.5f)) / std::log10(2.5f) * 100;
@@ -121,34 +122,41 @@ void TTS_Linux::_speech_event(int p_msg_id, int p_type)
 		else if (message.rate < 1.f) {
 			rate = std::log10(MAX(message.rate, 0.5f)) / std::log10(0.5f) * -100;
 		}
-		spd_set_voice_rate(synth, rate);
-		spd_set_data_mode(synth, SPD_DATA_SSML);
-		last_msg_id = spd_say(synth, SPD_TEXT, text.utf8().get_data());
-		ids[last_msg_id] = message.id;
-		DisplayServer::get_singleton()->tts_post_utterance_event(
+		spd_set_voice_rate(data->synth, rate);
+		spd_set_data_mode(data->synth, SPD_DATA_SSML);
+		data->last_msg_id = spd_say(data->synth, SPD_TEXT, text.utf8().get_data());
+		data->ids[data->last_msg_id] = message.id;
+		DisplayServer::tts_post_utterance_event(
 			DisplayServerEnums::TTS_UTTERANCE_STARTED, message.id);
 
-		queue.pop_front();
-		speaking = true;
+		data->queue.pop_front();
+		data->speaking = true;
 	}
 }
 
-bool TTS_Linux::is_speaking() const { return speaking; }
+bool TTS_Linux::is_speaking()
+{
+	return data ? data->speaking : false;
+}
 
-bool TTS_Linux::is_paused() const { return paused; }
+bool TTS_Linux::is_paused()
+{
+	return data ? data->paused : false;
+}
 
 void TTS_Linux::speak(const String& p_text, const String& p_voice, int p_volume, float p_pitch,
 	float p_rate, int64_t p_utterance_id, bool p_interrupt)
 {
-	_THREAD_SAFE_METHOD_
+	ERR_FAIL_NULL(data);
+	MutexLock lock(data->mutex);
 
-	ERR_FAIL_NULL(synth);
+	ERR_FAIL_NULL(data->synth);
 	if (p_interrupt) {
 		stop();
 	}
 
 	if (p_text.is_empty()) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(
+		DisplayServer::tts_post_utterance_event(
 			DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
 		return;
 	}
@@ -160,7 +168,7 @@ void TTS_Linux::speak(const String& p_text, const String& p_voice, int p_volume,
 	message.pitch = CLAMP(p_pitch, 0.f, 2.f);
 	message.rate = CLAMP(p_rate, 0.1f, 10.f);
 	message.id = p_utterance_id;
-	queue.push_back(message);
+	data->queue.push_back(message);
 
 	if (is_paused()) {
 		resume();
@@ -172,65 +180,70 @@ void TTS_Linux::speak(const String& p_text, const String& p_voice, int p_volume,
 
 void TTS_Linux::pause()
 {
-	_THREAD_SAFE_METHOD_
+	ERR_FAIL_NULL(data);
+	MutexLock lock(data->mutex);
 
-	ERR_FAIL_NULL(synth);
-	if (spd_pause(synth) == 0) {
-		paused = true;
+	ERR_FAIL_NULL(data->synth);
+	if (spd_pause(data->synth) == 0) {
+		data->paused = true;
 	}
 }
 
 void TTS_Linux::resume()
 {
-	_THREAD_SAFE_METHOD_
+	ERR_FAIL_NULL(data);
+	MutexLock lock(data->mutex);
 
-	ERR_FAIL_NULL(synth);
-	spd_resume(synth);
-	paused = false;
+	ERR_FAIL_NULL(data->synth);
+	spd_resume(data->synth);
+	data->paused = false;
 }
 
 void TTS_Linux::stop()
 {
-	_THREAD_SAFE_METHOD_
+	ERR_FAIL_NULL(data);
+	MutexLock lock(data->mutex);
 
-	ERR_FAIL_NULL(synth);
-	for (TTSUtterance& message : queue) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(
+	ERR_FAIL_NULL(data->synth);
+	for (TTSUtterance& message : data->queue) {
+		DisplayServer::tts_post_utterance_event(
 			DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
 	}
-	if ((last_msg_id != -1) && ids.has(last_msg_id)) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(
-			DisplayServerEnums::TTS_UTTERANCE_CANCELED, ids[last_msg_id]);
+	if ((data->last_msg_id != -1) && data->ids.has(data->last_msg_id)) {
+		DisplayServer::tts_post_utterance_event(
+			DisplayServerEnums::TTS_UTTERANCE_CANCELED, data->ids[data->last_msg_id]);
 	}
-	queue.clear();
-	ids.clear();
-	last_msg_id = -1;
-	spd_cancel(synth);
-	spd_resume(synth);
-	speaking = false;
-	paused = false;
+	data->queue.clear();
+	data->ids.clear();
+	data->last_msg_id = -1;
+	spd_cancel(data->synth);
+	spd_resume(data->synth);
+	data->speaking = false;
+	data->paused = false;
 }
 
-TTS_Linux* TTS_Linux::get_singleton() { return singleton; }
-
-TTS_Linux::TTS_Linux()
+void TTS_Linux::initialize()
 {
-	singleton = this;
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
 	// Speech Dispatcher init can be slow, it might wait for helper process to start on background,
 	// so run it in the thread.
-	init_thread.start(speech_init_thread_func, this);
+	data->init_thread.start(speech_init_thread_func, nullptr);
 }
 
-TTS_Linux::~TTS_Linux()
+void TTS_Linux::finalize()
 {
-	init_thread.wait_to_finish();
-	if (synth) {
-		spd_close(synth);
+	if (!data) {
+		return;
 	}
-
-	singleton = nullptr;
+	data->init_thread.wait_to_finish();
+	if (data->synth) {
+		spd_close(data->synth);
+	}
+	memdelete(data);
+	data = nullptr;
 }
 
 void TTS_Linux::speech_init_thread_func(void* p_userdata) {}
-
-

@@ -87,8 +87,6 @@ class TTSDriverOneCore : public TTSDriver {
 	void _speech_end(int p_msg_id);
 	void _speech_index_mark(int p_msg_id, int p_index_mark);
 
-	static TTSDriverOneCore *singleton;
-
 public:
 	virtual bool is_speaking() const override;
 	virtual bool is_paused() const override;

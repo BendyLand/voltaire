@@ -34,9 +34,8 @@
 #include "servers/display/display_server.h"
 
 class InputEvent;
-class NativeMenu;
 
-class DisplayServerHeadless : public DisplayServer
+class DisplayServerHeadless : public DisplayServerDriver
 {
 private:
 	friend class DisplayServer;
@@ -48,15 +47,13 @@ private:
 		return drivers;
 	}
 
-	static DisplayServer* create_func(const String& p_rendering_driver,
+	static DisplayServerDriver* create_func(const String& p_rendering_driver,
 		DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
 		uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
 		DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error);
 
 	static void _dispatch_input_events(const Ref<InputEvent>& p_event);
 	void _dispatch_input_event(const Ref<InputEvent>& p_event);
-
-	NativeMenu* native_menu = nullptr;
 
 public:
 	bool has_feature(DisplayServerEnums::Feature p_feature) const override { return false; }

@@ -35,44 +35,9 @@
 #include "servers/display/accessibility_server_enums.h"
 #include "servers/display/display_server_enums.h"
 
-class AccessibilityServer
+class AccessibilityServerDriver
 {
 public:
-	typedef AccessibilityServer* (*CreateFunction)(Error& r_error);
-
-protected:
-	static inline AccessibilityServer* singleton = nullptr;
-	static inline AccessibilityServerEnums::AccessibilityMode accessibility_mode =
-		AccessibilityServerEnums::AccessibilityMode::ACCESSIBILITY_AUTO;
-
-
-	enum
-	{
-		MAX_SERVERS = 64
-	};
-
-	struct AccessibilityServerCreate
-	{
-		const char* name;
-		CreateFunction create_function;
-	};
-
-	static AccessibilityServerCreate server_create_functions[MAX_SERVERS];
-	static int server_create_count;
-
-public:
-	_FORCE_INLINE_ static AccessibilityServerEnums::AccessibilityMode get_mode()
-	{
-		return accessibility_mode;
-	}
-
-	static void set_mode(AccessibilityServerEnums::AccessibilityMode p_mode)
-	{
-		accessibility_mode = p_mode;
-	}
-
-	_FORCE_INLINE_ static AccessibilityServer* get_singleton() { return singleton; }
-
 	virtual bool is_supported() const { return false; }
 
 	virtual bool window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle) = 0;
@@ -168,12 +133,166 @@ public:
 	virtual void update_set_background_color(const RID& p_id, const Color& p_color) = 0;
 	virtual void update_set_foreground_color(const RID& p_id, const Color& p_color) = 0;
 
+	AccessibilityServerDriver();
+	virtual ~AccessibilityServerDriver();
+};
+
+class AccessibilityServer final
+{
+	friend class AccessibilityServerDriver;
+
+	static void _bind_driver(AccessibilityServerDriver* p_driver);
+	static void _unbind_driver(AccessibilityServerDriver* p_driver);
+
+public:
+	AccessibilityServer() = delete;
+
+	typedef AccessibilityServerDriver* (*CreateFunction)(Error& r_error);
+
+	struct Data
+	{
+		AccessibilityServerDriver* driver = nullptr;
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+	static inline AccessibilityServerEnums::AccessibilityMode accessibility_mode =
+		AccessibilityServerEnums::AccessibilityMode::ACCESSIBILITY_AUTO;
+
+	enum
+	{
+		MAX_SERVERS = 64
+	};
+
+	struct AccessibilityServerCreate
+	{
+		const char* name;
+		CreateFunction create_function;
+	};
+
+	static AccessibilityServerCreate server_create_functions[MAX_SERVERS];
+	static int server_create_count;
+
+public:
 	static void register_create_function(const char* p_name, CreateFunction p_function);
 	static int get_create_function_count();
 	static const char* get_create_function_name(int p_index);
-	static AccessibilityServer* create(int p_index, Error& r_error);
+	static AccessibilityServerDriver* create(int p_index, Error& r_error);
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized()
+	{
+		return data != nullptr && data->driver != nullptr;
+	}
+	_FORCE_INLINE_ static AccessibilityServerDriver* get_driver()
+	{
+		return data ? data->driver : nullptr;
+	}
+	template <typename T> _FORCE_INLINE_ static T* driver_as()
+	{
+		return data ? dynamic_cast<T*>(data->driver) : nullptr;
+	}
 
-	AccessibilityServer();
-	virtual ~AccessibilityServer();
+	_FORCE_INLINE_ static AccessibilityServerEnums::AccessibilityMode get_mode()
+	{
+		return accessibility_mode;
+	}
+
+	static void set_mode(AccessibilityServerEnums::AccessibilityMode p_mode)
+	{
+		accessibility_mode = p_mode;
+	}
+
+	static bool is_supported();
+
+	static bool window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle);
+	static void window_destroy(DisplayServerEnums::WindowID p_window_id);
+
+	static RID create_element(
+		DisplayServerEnums::WindowID p_window_id, AccessibilityServerEnums::AccessibilityRole p_role);
+	static RID create_sub_element(const RID& p_parent_rid,
+		AccessibilityServerEnums::AccessibilityRole p_role, int p_insert_pos = -1);
+	static RID create_sub_text_edit_elements(const RID& p_parent_rid, const RID& p_shaped_text,
+		float p_min_height, int p_insert_pos = -1, bool p_is_last_line = false);
+	static bool has_element(const RID& p_id);
+	static void free_element(const RID& p_id);
+
+	static RID get_window_root(DisplayServerEnums::WindowID p_window_id);
+	static void update_set_focus(const RID& p_id);
+
+	static void set_window_rect(
+		DisplayServerEnums::WindowID p_window_id, const Rect2& p_rect_out, const Rect2& p_rect_in);
+	static void set_window_focused(DisplayServerEnums::WindowID p_window_id, bool p_focused);
+	static void window_activation_completed(DisplayServerEnums::WindowID p_window_id);
+	static void window_deactivation_completed(DisplayServerEnums::WindowID p_window_id);
+
+	static void update_set_role(
+		const RID& p_id, AccessibilityServerEnums::AccessibilityRole p_role);
+	static void update_set_name(const RID& p_id, const String& p_name);
+	static void update_set_braille_label(const RID& p_id, const String& p_name);
+	static void update_set_braille_role_description(const RID& p_id, const String& p_description);
+	static void update_set_extra_info(const RID& p_id, const String& p_name_extra_info);
+	static void update_set_description(const RID& p_id, const String& p_description);
+	static void update_set_value(const RID& p_id, const String& p_value);
+	static void update_set_tooltip(const RID& p_id, const String& p_tooltip);
+	static void update_set_bounds(const RID& p_id, const Rect2& p_rect);
+	static void update_set_transform(const RID& p_id, const Transform2D& p_transform);
+	static void update_add_child(const RID& p_id, const RID& p_child_id);
+	static void update_add_related_controls(const RID& p_id, const RID& p_related_id);
+	static void update_add_related_details(const RID& p_id, const RID& p_related_id);
+	static void update_add_related_described_by(const RID& p_id, const RID& p_related_id);
+	static void update_add_related_flow_to(const RID& p_id, const RID& p_related_id);
+	static void update_add_related_labeled_by(const RID& p_id, const RID& p_related_id);
+	static void update_add_related_radio_group(const RID& p_id, const RID& p_related_id);
+	static void update_set_active_descendant(const RID& p_id, const RID& p_other_id);
+	static void update_set_next_on_line(const RID& p_id, const RID& p_other_id);
+	static void update_set_previous_on_line(const RID& p_id, const RID& p_other_id);
+	static void update_set_member_of(const RID& p_id, const RID& p_group_id);
+	static void update_set_in_page_link_target(const RID& p_id, const RID& p_other_id);
+	static void update_set_error_message(const RID& p_id, const RID& p_other_id);
+	static void update_set_live(
+		const RID& p_id, AccessibilityServerEnums::AccessibilityLiveMode p_live);
+	static void update_add_custom_action(
+		const RID& p_id, int p_action_id, const String& p_action_description);
+	static void update_set_table_row_count(const RID& p_id, int p_count);
+	static void update_set_table_column_count(const RID& p_id, int p_count);
+	static void update_set_table_row_index(const RID& p_id, int p_index);
+	static void update_set_table_column_index(const RID& p_id, int p_index);
+	static void update_set_table_cell_position(const RID& p_id, int p_row_index, int p_column_index);
+	static void update_set_table_cell_span(const RID& p_id, int p_row_span, int p_column_span);
+	static void update_set_list_item_count(const RID& p_id, int p_size);
+	static void update_set_list_item_index(const RID& p_id, int p_index);
+	static void update_set_list_item_level(const RID& p_id, int p_level);
+	static void update_set_list_item_selected(const RID& p_id, bool p_selected);
+	static void update_set_list_item_expanded(const RID& p_id, bool p_expanded);
+	static void update_set_popup_type(
+		const RID& p_id, AccessibilityServerEnums::AccessibilityPopupType p_popup);
+	static void update_set_checked(const RID& p_id, bool p_checekd);
+	static void update_set_num_value(const RID& p_id, double p_position);
+	static void update_set_num_range(const RID& p_id, double p_min, double p_max);
+	static void update_set_num_step(const RID& p_id, double p_step);
+	static void update_set_num_jump(const RID& p_id, double p_jump);
+	static void update_set_scroll_x(const RID& p_id, double p_position);
+	static void update_set_scroll_x_range(const RID& p_id, double p_min, double p_max);
+	static void update_set_scroll_y(const RID& p_id, double p_position);
+	static void update_set_scroll_y_range(const RID& p_id, double p_min, double p_max);
+	static void update_set_text_decorations(const RID& p_id, bool p_underline, bool p_strikethrough,
+		bool p_overline, const Color& p_color);
+	static void update_set_text_align(const RID& p_id, HorizontalAlignment p_align);
+	static void update_set_text_selection(const RID& p_id, const RID& p_text_start_id,
+		int p_start_char, const RID& p_text_end_id, int p_end_char);
+	static void update_set_flag(
+		const RID& p_id, AccessibilityServerEnums::AccessibilityFlags p_flag, bool p_value);
+	static void update_set_classname(const RID& p_id, const String& p_classname);
+	static void update_set_placeholder(const RID& p_id, const String& p_placeholder);
+	static void update_set_language(const RID& p_id, const String& p_language);
+	static void update_set_text_orientation(const RID& p_id, bool p_vertical);
+	static void update_set_list_orientation(const RID& p_id, bool p_vertical);
+	static void update_set_shortcut(const RID& p_id, const String& p_shortcut);
+	static void update_set_url(const RID& p_id, const String& p_url);
+	static void update_set_role_description(const RID& p_id, const String& p_description);
+	static void update_set_state_description(const RID& p_id, const String& p_description);
+	static void update_set_color_value(const RID& p_id, const Color& p_color);
+	static void update_set_background_color(const RID& p_id, const Color& p_color);
+	static void update_set_foreground_color(const RID& p_id, const Color& p_color);
 };
-

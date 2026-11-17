@@ -2355,7 +2355,7 @@ void OS_Windows::run() {
 	while (true) {
 		GodotProfileFrameMark;
 		GodotProfileZone("OS_Windows::run");
-		DisplayServer::get_singleton()->process_events(); // get rid of pending events
+		DisplayServer::process_events(); // get rid of pending events
 		if (Main::iteration()) {
 			break;
 		}
@@ -2617,8 +2617,7 @@ void OS_Windows::add_frame_delay(bool p_can_draw, bool p_wake_for_events) {
 			return;
 		}
 
-		DisplayServer *ds = DisplayServer::get_singleton();
-		DisplayServerWindows *ds_win = Object::cast_to<DisplayServerWindows>(ds);
+		DisplayServerWindows *ds_win = DisplayServer::driver_as<DisplayServerWindows>();
 		if (ds_win) {
 			MsgWaitForMultipleObjects(0, nullptr, false, Math::floor(double(delay) / 1000.0), QS_ALLINPUT);
 			return;

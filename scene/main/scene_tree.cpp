@@ -160,8 +160,8 @@ void SceneTree::initialize_tree()
 	data->root->set_name("root");
 	data->root->set_position(Point2i());
 
-	Size2i window_size = DisplayServer::get_singleton()
-							 ? DisplayServer::get_singleton()->window_get_size()
+	Size2i window_size = DisplayServer::is_initialized()
+							 ? DisplayServer::window_get_size()
 							 : Size2i();
 	if (window_size.width <= 0 || window_size.height <= 0) {
 		window_size = Size2i(1152, 648);
@@ -237,19 +237,19 @@ void SceneTree::remove_from_group(const String& p_group, Node* p_node)
 
 bool SceneTree::is_accessibility_enabled()
 {
-	if (!DisplayServer::get_singleton() ||
-		!DisplayServer::get_singleton()->has_feature(
+	if (!DisplayServer::is_initialized() ||
+		!DisplayServer::has_feature(
 			DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER)) {
 		return false;
 	}
 
-	if (!AccessibilityServer::get_singleton()) {
+	if (!AccessibilityServer::is_initialized()) {
 		return false;
 	}
 
 	AccessibilityServerEnums::AccessibilityMode accessibility_mode =
-		AccessibilityServer::get_singleton()->get_mode();
-	int screen_reader_active = DisplayServer::get_singleton()->accessibility_screen_reader_active();
+		AccessibilityServer::get_mode();
+	int screen_reader_active = DisplayServer::accessibility_screen_reader_active();
 	if ((accessibility_mode ==
 			AccessibilityServerEnums::AccessibilityMode::ACCESSIBILITY_DISABLED) ||
 		((accessibility_mode == AccessibilityServerEnums::AccessibilityMode::ACCESSIBILITY_AUTO) &&
@@ -261,18 +261,18 @@ bool SceneTree::is_accessibility_enabled()
 
 bool SceneTree::is_accessibility_supported()
 {
-	if (!DisplayServer::get_singleton() ||
-		!DisplayServer::get_singleton()->has_feature(
+	if (!DisplayServer::is_initialized() ||
+		!DisplayServer::has_feature(
 			DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER)) {
 		return false;
 	}
 
-	if (!AccessibilityServer::get_singleton()) {
+	if (!AccessibilityServer::is_initialized()) {
 		return false;
 	}
 
 	AccessibilityServerEnums::AccessibilityMode accessibility_mode =
-		AccessibilityServer::get_singleton()->get_mode();
+		AccessibilityServer::get_mode();
 	if (accessibility_mode == AccessibilityServerEnums::AccessibilityMode::ACCESSIBILITY_DISABLED) {
 		return false;
 	}

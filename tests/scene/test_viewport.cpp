@@ -209,7 +209,7 @@ TEST_CASE("[SceneTree][Viewport] Controls and InputEvent handling") {
 	node_i->set_focus_mode(Control::FOCUS_CLICK);
 	node_j->set_focus_mode(Control::FOCUS_CLICK);
 	Window *root = SceneTree::get_root();
-	DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+	DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 
 	// Scene tree:
 	// - root
@@ -1531,7 +1531,7 @@ TEST_CASE("[SceneTree][Viewport] Control mouse cursor shape") {
 		node_a->set_default_cursor_shape(Control::CURSOR_ARROW);
 		node_c->set_default_cursor_shape(Control::CURSOR_FORBIDDEN);
 		Window *root = SceneTree::get_root();
-		DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+		DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 
 		// Scene tree:
 		// - root

@@ -183,7 +183,7 @@ bool DisplayServerX11::has_feature(DisplayServerEnums::Feature p_feature) const
 	switch (p_feature) {
 #ifndef DISABLE_DEPRECATED
 	case DisplayServerEnums::FEATURE_GLOBAL_MENU: {
-		return (native_menu && native_menu->has_feature(NativeMenu::FEATURE_GLOBAL_MENU));
+		return NativeMenu::is_initialized() && NativeMenu::has_feature(NativeMenu::FEATURE_GLOBAL_MENU);
 	} break;
 #endif
 	case DisplayServerEnums::FEATURE_SUBWINDOWS:
@@ -235,7 +235,7 @@ bool DisplayServerX11::has_feature(DisplayServerEnums::Feature p_feature) const
 #endif
 
 	case DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER: {
-		return AccessibilityServer::get_singleton()->is_supported();
+		return AccessibilityServer::is_supported();
 	} break;
 
 	default: {
@@ -428,62 +428,62 @@ void DisplayServerX11::_flush_mouse_motion()
 
 void DisplayServerX11::initialize_tts() const
 {
-	const_cast<DisplayServerX11*>(this)->tts = memnew(TTS_Linux);
+	TTS_Linux::initialize();
 }
 
 bool DisplayServerX11::tts_is_speaking() const
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, false);
-	return tts->is_speaking();
+	ERR_FAIL_COND_V(!TTS_Linux::is_initialized(), false);
+	return TTS_Linux::is_speaking();
 }
 
 bool DisplayServerX11::tts_is_paused() const
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, false);
-	return tts->is_paused();
+	ERR_FAIL_COND_V(!TTS_Linux::is_initialized(), false);
+	return TTS_Linux::is_paused();
 }
 
 void DisplayServerX11::tts_speak(const String& p_text, const String& p_voice, int p_volume,
 	float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt)
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
+	ERR_FAIL_COND(!TTS_Linux::is_initialized());
+	TTS_Linux::speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
 }
 
 void DisplayServerX11::tts_pause()
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->pause();
+	ERR_FAIL_COND(!TTS_Linux::is_initialized());
+	TTS_Linux::pause();
 }
 
 void DisplayServerX11::tts_resume()
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->resume();
+	ERR_FAIL_COND(!TTS_Linux::is_initialized());
+	TTS_Linux::resume();
 }
 
 void DisplayServerX11::tts_stop()
 {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Linux::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->stop();
+	ERR_FAIL_COND(!TTS_Linux::is_initialized());
+	TTS_Linux::stop();
 }
 
 #endif
@@ -4491,7 +4491,9 @@ DisplayServerEnums::WindowID DisplayServerX11::_get_focused_window_or_popup() co
 
 void DisplayServerX11::_dispatch_input_events(const Ref<InputEvent>& p_event)
 {
-	static_cast<DisplayServerX11*>(get_singleton())->_dispatch_input_event(p_event);
+	if (DisplayServerX11* ds = DisplayServer::driver_as<DisplayServerX11>()) {
+		ds->_dispatch_input_event(p_event);
+	}
 }
 
 void DisplayServerX11::_set_input_focus(Window p_window, int p_revert_to)
@@ -5368,13 +5370,13 @@ Vector<String> DisplayServerX11::get_rendering_drivers_func()
 	return drivers;
 }
 
-DisplayServer* DisplayServerX11::create_func(const String& p_rendering_driver,
+DisplayServerDriver* DisplayServerX11::create_func(const String& p_rendering_driver,
 	DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
 	uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
 	DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
 {
-	DisplayServer* ds = memnew(DisplayServerX11(p_rendering_driver, p_mode, p_vsync_mode, p_flags,
-		p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
+	DisplayServerDriver* ds = memnew(DisplayServerX11(p_rendering_driver, p_mode, p_vsync_mode,
+		p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 
 	return ds;
 }
@@ -5612,7 +5614,7 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 			wd.xkb_state = xkb_compose_state_new(dead_tbl, XKB_COMPOSE_STATE_NO_FLAGS);
 		}
 #endif
-		if (!AccessibilityServer::get_singleton()->window_create(id, nullptr)) {
+		if (!AccessibilityServer::window_create(id, nullptr)) {
 			if (OS::is_stdout_verbose()) {
 				ERR_PRINT("Can't create an accessibility adapter for window, accessibility support "
 						  "disabled!");
@@ -5902,17 +5904,21 @@ void DisplayServerX11::_xim_instantiate_callback(
 DisplayServerX11::~DisplayServerX11()
 {
 	// Send owned clipboard data to clipboard manager before exit.
-	Window x11_main_window = windows[DisplayServerEnums::MAIN_WINDOW_ID].x11_window;
-	_clipboard_transfer_ownership(XA_PRIMARY, x11_main_window);
-	_clipboard_transfer_ownership(XInternAtom(x11_display, "CLIPBOARD", 0), x11_main_window);
+	if (x11_display && windows.has(DisplayServerEnums::MAIN_WINDOW_ID)) {
+		Window x11_main_window = windows[DisplayServerEnums::MAIN_WINDOW_ID].x11_window;
+		if (x11_main_window) {
+			_clipboard_transfer_ownership(XA_PRIMARY, x11_main_window);
+			_clipboard_transfer_ownership(
+				XInternAtom(x11_display, "CLIPBOARD", 0), x11_main_window);
+		}
+	}
 
 	events_thread_done.set();
-	events_thread.wait_to_finish();
-
-	if (native_menu) {
-		memdelete(native_menu);
-		native_menu = nullptr;
+	if (events_thread.is_started()) {
+		events_thread.wait_to_finish();
 	}
+
+	NativeMenu::finalize();
 
 	// destroy all windows
 	for (KeyValue<DisplayServerEnums::WindowID, WindowData>& E : windows) {
@@ -5934,14 +5940,18 @@ DisplayServerX11::~DisplayServerX11()
 		}
 #endif
 
-		AccessibilityServer::get_singleton()->window_destroy(E.key);
+		AccessibilityServer::window_destroy(E.key);
 
 		WindowData& wd = E.value;
-		if (wd.xic) {
-			XDestroyIC(wd.xic);
-			wd.xic = nullptr;
+		if (x11_display) {
+			if (wd.xic) {
+				XDestroyIC(wd.xic);
+				wd.xic = nullptr;
+			}
+			if (wd.x11_xim_window) {
+				XDestroyWindow(x11_display, wd.x11_xim_window);
+			}
 		}
-		XDestroyWindow(x11_display, wd.x11_xim_window);
 #ifdef XKB_ENABLED
 		if (xkb_loaded_v05p) {
 			if (wd.xkb_state) {
@@ -5950,8 +5960,10 @@ DisplayServerX11::~DisplayServerX11()
 			}
 		}
 #endif
-		XUnmapWindow(x11_display, wd.x11_window);
-		XDestroyWindow(x11_display, wd.x11_window);
+		if (x11_display && wd.x11_window) {
+			XUnmapWindow(x11_display, wd.x11_window);
+			XDestroyWindow(x11_display, wd.x11_window);
+		}
 	}
 
 #ifdef XKB_ENABLED
@@ -5992,26 +6004,28 @@ DisplayServerX11::~DisplayServerX11()
 		dlclose(xrandr_handle);
 	}
 
-	for (int i = 0; i < DisplayServerEnums::CURSOR_MAX; i++) {
-		if (cursors[i] != None) {
-			XFreeCursor(x11_display, cursors[i]);
+	if (x11_display) {
+		for (int i = 0; i < DisplayServerEnums::CURSOR_MAX; i++) {
+			if (cursors[i] != None) {
+				XFreeCursor(x11_display, cursors[i]);
+			}
+			if (cursor_img[i] != nullptr) {
+				XcursorImageDestroy(cursor_img[i]);
+			}
 		}
-		if (cursor_img[i] != nullptr) {
-			XcursorImageDestroy(cursor_img[i]);
+
+		if (xim) {
+			XCloseIM(xim);
 		}
-	}
 
-	if (xim) {
-		XCloseIM(xim);
+		XCloseDisplay(x11_display);
 	}
-
-	XCloseDisplay(x11_display);
 	if (xmbstring) {
 		memfree(xmbstring);
 	}
 
 #ifdef SPEECHD_ENABLED
-	memdelete(tts);
+	TTS_Linux::finalize();
 #endif
 
 #ifdef DBUS_ENABLED
@@ -6023,7 +6037,7 @@ DisplayServerX11::~DisplayServerX11()
 
 void DisplayServerX11::register_x11_driver()
 {
-	register_create_function("x11", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("x11", create_func, get_rendering_drivers_func);
 }
 
 uint32_t DisplayServerX11::mouse_get_button_state() const { return 0; }
@@ -6255,6 +6269,7 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 	}
 
 	windows[DisplayServerEnums::MAIN_WINDOW_ID] = wd;
+	AccessibilityServer::window_create(DisplayServerEnums::MAIN_WINDOW_ID, nullptr);
 
 #if defined(RD_ENABLED)
 	if (rendering_context) {
@@ -6303,6 +6318,8 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 		}
 	}
 #endif
+
+	NativeMenu::initialize();
 
 	XMapWindow(x11_display, x11_win);
 	XFlush(x11_display);

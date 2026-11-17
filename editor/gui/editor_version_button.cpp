@@ -62,7 +62,7 @@ String _get_version_string(EditorVersionButton::VersionFormat p_format)
 
 void EditorVersionButton::pressed()
 {
-	DisplayServer::get_singleton()->clipboard_set(_get_version_string(FORMAT_WITH_BUILD));
+	DisplayServer::clipboard_set(_get_version_string(FORMAT_WITH_BUILD));
 	EditorToaster* toaster = EditorToaster::get_singleton();
 	if (toaster) {
 		toaster->popup_str(TTR("Copied Godot editor version."));

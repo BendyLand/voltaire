@@ -317,7 +317,7 @@ RID NativeMenuMacOS::create_menu() {
 	MenuData *md = memnew(MenuData);
 	md->menu = [[NSMenu alloc] initWithTitle:@""];
 	[md->menu setAutoenablesItems:NO];
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		ds->set_menu_delegate(md->menu);
 	}
@@ -352,14 +352,14 @@ Size2 NativeMenuMacOS::get_size(const RID &p_rid) const {
 	const MenuData *md = menus.get_or_null(p_rid);
 	ERR_FAIL_NULL_V(md, Size2());
 
-	return Size2(md->menu.size.width, md->menu.size.height) * DisplayServer::get_singleton()->screen_get_max_scale();
+	return Size2(md->menu.size.width, md->menu.size.height) * DisplayServer::screen_get_max_scale();
 }
 
 void NativeMenuMacOS::popup(const RID &p_rid, const Vector2i &p_position) {
 	const MenuData *md = menus.get_or_null(p_rid);
 	ERR_FAIL_NULL(md);
 
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		Point2i position = p_position;
 		// macOS native y-coordinate relative to _get_screens_origin() is negative,
@@ -414,14 +414,14 @@ void NativeMenuMacOS::set_minimum_width(const RID &p_rid, float p_width) {
 	MenuData *md = menus.get_or_null(p_rid);
 	ERR_FAIL_NULL(md);
 
-	md->menu.minimumWidth = p_width / DisplayServer::get_singleton()->screen_get_max_scale();
+	md->menu.minimumWidth = p_width / DisplayServer::screen_get_max_scale();
 }
 
 float NativeMenuMacOS::get_minimum_width(const RID &p_rid) const {
 	const MenuData *md = menus.get_or_null(p_rid);
 	ERR_FAIL_NULL_V(md, 0.0);
 
-	return md->menu.minimumWidth * DisplayServer::get_singleton()->screen_get_max_scale();
+	return md->menu.minimumWidth * DisplayServer::screen_get_max_scale();
 }
 
 bool NativeMenuMacOS::is_opened(const RID &p_rid) const {
@@ -531,7 +531,7 @@ int NativeMenuMacOS::add_icon_item(const RID &p_rid, const Ref<Texture2D> &p_ico
 		obj->key_callback = p_key_callback;
 		obj->meta = p_tag;
 		obj->accel = p_accel;
-		DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+		DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 		if (ds && p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
 			obj->img = p_icon->get_image();
 			obj->img = obj->img->duplicate();
@@ -562,7 +562,7 @@ int NativeMenuMacOS::add_icon_check_item(const RID &p_rid, const Ref<Texture2D> 
 		obj->meta = p_tag;
 		obj->checkable_type = CHECKABLE_TYPE_CHECK_BOX;
 		obj->accel = p_accel;
-		DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+		DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 		if (ds && p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
 			obj->img = p_icon->get_image();
 			obj->img = obj->img->duplicate();
@@ -613,7 +613,7 @@ int NativeMenuMacOS::add_icon_radio_check_item(const RID &p_rid, const Ref<Textu
 		obj->meta = p_tag;
 		obj->checkable_type = CHECKABLE_TYPE_RADIO_BUTTON;
 		obj->accel = p_accel;
-		DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+		DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 		if (ds && p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
 			obj->img = p_icon->get_image();
 			obj->img = obj->img->duplicate();
@@ -1374,7 +1374,7 @@ void NativeMenuMacOS::set_item_icon(const RID &p_rid, int p_idx, const Ref<Textu
 	if (menu_item) {
 		GodotMenuItem *obj = [menu_item representedObject];
 		ERR_FAIL_NULL(obj);
-		DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+		DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 		if (ds && p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
 			obj->img = p_icon->get_image();
 			obj->img = obj->img->duplicate();

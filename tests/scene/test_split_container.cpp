@@ -261,7 +261,7 @@ TEST_CASE("[SceneTree][SplitContainer] Dragger visibility") {
 }
 
 TEST_CASE("[SceneTree][SplitContainer] Collapsed") {
-	DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+	DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 
 	SplitContainer *split_container = memnew(SplitContainer);
 	split_container->set_size(Size2(500, 500));
@@ -363,7 +363,7 @@ TEST_CASE("[SceneTree][SplitContainer] Collapsed") {
 }
 
 TEST_CASE("[SceneTree][SplitContainer] Cursor shape") {
-	DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+	DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 
 	SplitContainer *split_container = memnew(SplitContainer);
 	split_container->set_size(Size2(500, 500));

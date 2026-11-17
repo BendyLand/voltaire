@@ -42,22 +42,22 @@
 }
 
 - (void)menuWillOpen:(NSMenu *)menu {
-	if (NativeMenu::get_singleton()) {
-		NativeMenuMacOS *nmenu = (NativeMenuMacOS *)NativeMenu::get_singleton();
+	if (NativeMenu::is_initialized()) {
+		NativeMenuMacOS *nmenu = NativeMenu::driver_as<NativeMenuMacOS>();
 		nmenu->_menu_open(menu);
 	}
 }
 
 - (void)menuNeedsUpdate:(NSMenu *)menu {
-	if (NativeMenu::get_singleton()) {
-		NativeMenuMacOS *nmenu = (NativeMenuMacOS *)NativeMenu::get_singleton();
+	if (NativeMenu::is_initialized()) {
+		NativeMenuMacOS *nmenu = NativeMenu::driver_as<NativeMenuMacOS>();
 		nmenu->_menu_need_update(menu);
 	}
 }
 
 - (void)menuDidClose:(NSMenu *)menu {
-	if (NativeMenu::get_singleton()) {
-		NativeMenuMacOS *nmenu = (NativeMenuMacOS *)NativeMenu::get_singleton();
+	if (NativeMenu::is_initialized()) {
+		NativeMenuMacOS *nmenu = NativeMenu::driver_as<NativeMenuMacOS>();
 		nmenu->_menu_close(menu);
 	}
 }
@@ -102,7 +102,7 @@
 						}
 					} else {
 						// Otherwise redirect event to the engine.
-						if (DisplayServer::get_singleton()) {
+						if (DisplayServer::is_initialized()) {
 							if ([[NSApplication sharedApplication] keyWindow].sheet) {
 								[[[[NSApplication sharedApplication] keyWindow] sheetParent] sendEvent:event];
 							} else {

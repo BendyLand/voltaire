@@ -184,7 +184,6 @@ typedef struct {
 
 class DropTargetWindows;
 class NativeMenuWindows;
-class TTS_Windows;
 class WinRTWindowData;
 
 #ifndef WDA_EXCLUDEFROMCAPTURE
@@ -193,7 +192,7 @@ class WinRTWindowData;
 
 class JoypadSDL;
 
-class DisplayServerWindows : public DisplayServer {
+class DisplayServerWindows : public DisplayServerDriver {
 
 	friend class DropTargetWindows;
 
@@ -279,7 +278,6 @@ class DisplayServerWindows : public DisplayServer {
 	bool get_object_received = false;
 	HANDLE power_request;
 
-	TTS_Windows *tts = nullptr;
 	NativeMenuWindows *native_menu = nullptr;
 	ITaskbarList3 *taskbar = nullptr;
 
@@ -784,7 +782,7 @@ public:
 
 	virtual bool is_window_transparency_available() const override;
 
-	static DisplayServer *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
 	static Vector<String> get_rendering_drivers_func();
 	static void register_windows_driver();
 

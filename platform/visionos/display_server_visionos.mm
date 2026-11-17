@@ -31,10 +31,6 @@
 
 #import "display_server_visionos.h"
 
-DisplayServerVisionOS *DisplayServerVisionOS::get_singleton() {
-	return (DisplayServerVisionOS *)DisplayServerAppleEmbedded::get_singleton();
-}
-
 DisplayServerVisionOS::DisplayServerVisionOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) :
 		DisplayServerAppleEmbedded(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error) {
 }
@@ -42,12 +38,12 @@ DisplayServerVisionOS::DisplayServerVisionOS(const String &p_rendering_driver, D
 DisplayServerVisionOS::~DisplayServerVisionOS() {
 }
 
-DisplayServer *DisplayServerVisionOS::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
+DisplayServerDriver *DisplayServerVisionOS::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
 	return memnew(DisplayServerVisionOS(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 }
 
 void DisplayServerVisionOS::register_visionos_driver() {
-	register_create_function("visionOS", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("visionOS", create_func, get_rendering_drivers_func);
 }
 
 String DisplayServerVisionOS::get_name() const {

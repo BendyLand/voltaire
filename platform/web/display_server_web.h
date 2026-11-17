@@ -42,9 +42,8 @@
 
 class InputEvent;
 class InputEventWithModifiers;
-class NativeMenu;
 
-class DisplayServerWeb : public DisplayServer {
+class DisplayServerWeb : public DisplayServerDriver {
 
 private:
 	struct JSTouchEvent {
@@ -108,7 +107,6 @@ private:
 	int key_event_pos = 0;
 
 	bool swap_cancel_ok = false;
-	NativeMenu *native_menu = nullptr;
 
 	int gamepad_count = 0;
 
@@ -159,7 +157,7 @@ private:
 	void process_keys();
 
 	static Vector<String> get_rendering_drivers_func();
-	static DisplayServer *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_window_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_window_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
 
 	static void _dispatch_input_event(const Ref<InputEvent> &p_event);
 
@@ -167,9 +165,6 @@ protected:
 	int get_current_video_driver() const;
 
 public:
-	// Override return type to make writing static callbacks less tedious.
-	static DisplayServerWeb *get_singleton();
-
 	// utilities
 	bool check_size_force_redraw();
 

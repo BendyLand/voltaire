@@ -62,7 +62,7 @@
 - (void)pressesBegan:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
 	[super pressesBegan:presses withEvent:event];
 
-	if (!DisplayServerAppleEmbedded::get_singleton() || DisplayServerAppleEmbedded::get_singleton()->is_keyboard_active()) {
+	if (!DisplayServer::driver_as<DisplayServerAppleEmbedded>() || DisplayServer::driver_as<DisplayServerAppleEmbedded>()->is_keyboard_active()) {
 		return;
 	}
 	if (@available(iOS 13.4, *)) {
@@ -85,10 +85,10 @@
 			if (!u32text.is_empty() && !u32text.begins_with("UIKey")) {
 				for (int i = 0; i < u32text.length(); i++) {
 					const char32_t c = u32text[i];
-					DisplayServerAppleEmbedded::get_singleton()->key(fix_keycode(us, key), c, fix_key_label(us, key), key, press.key.modifierFlags, true, location);
+					DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(fix_keycode(us, key), c, fix_key_label(us, key), key, press.key.modifierFlags, true, location);
 				}
 			} else {
-				DisplayServerAppleEmbedded::get_singleton()->key(fix_keycode(us, key), 0, fix_key_label(us, key), key, press.key.modifierFlags, true, location);
+				DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(fix_keycode(us, key), 0, fix_key_label(us, key), key, press.key.modifierFlags, true, location);
 			}
 		}
 	}
@@ -97,7 +97,7 @@
 - (void)pressesEnded:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
 	[super pressesEnded:presses withEvent:event];
 
-	if (!DisplayServerAppleEmbedded::get_singleton() || DisplayServerAppleEmbedded::get_singleton()->is_keyboard_active()) {
+	if (!DisplayServer::driver_as<DisplayServerAppleEmbedded>() || DisplayServer::driver_as<DisplayServerAppleEmbedded>()->is_keyboard_active()) {
 		return;
 	}
 	if (@available(iOS 13.4, *)) {
@@ -116,7 +116,7 @@
 
 			KeyLocation location = KeyMappingAppleEmbedded::key_location(press.key.keyCode);
 
-			DisplayServerAppleEmbedded::get_singleton()->key(fix_keycode(us, key), 0, fix_key_label(us, key), key, press.key.modifierFlags, false, location);
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(fix_keycode(us, key), 0, fix_key_label(us, key), key, press.key.modifierFlags, false, location);
 		}
 	}
 }
@@ -287,17 +287,6 @@
 									 if (CameraServer::is_initialized()) {
 										 CameraServer::handle_display_rotation_change((int)orientation);
 									 }
-
-									 DisplayServer *display_server = DisplayServer::get_singleton();
-									 if (display_server) {
-										 int out = 0;
-										 if (UIInterfaceOrientationIsPortrait(orientation)) {
-											 out = 1;
-										 } else if (UIInterfaceOrientationIsLandscape(orientation)) {
-											 out = 2;
-										 }
-										 display_server->emit_signal("orientation_changed", out);
-									 }
 								 }];
 }
 #endif
@@ -311,11 +300,11 @@
 }
 
 - (BOOL)shouldAutorotate {
-	if (!DisplayServerAppleEmbedded::get_singleton()) {
+	if (!DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
 		return NO;
 	}
 
-	switch (DisplayServerAppleEmbedded::get_singleton()->screen_get_orientation(DisplayServerEnums::SCREEN_OF_MAIN_WINDOW)) {
+	switch (DisplayServer::driver_as<DisplayServerAppleEmbedded>()->screen_get_orientation(DisplayServerEnums::SCREEN_OF_MAIN_WINDOW)) {
 		case DisplayServerEnums::SCREEN_SENSOR:
 		case DisplayServerEnums::SCREEN_SENSOR_LANDSCAPE:
 		case DisplayServerEnums::SCREEN_SENSOR_PORTRAIT:
@@ -326,11 +315,11 @@
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-	if (!DisplayServerAppleEmbedded::get_singleton()) {
+	if (!DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
 		return UIInterfaceOrientationMaskAll;
 	}
 
-	switch (DisplayServerAppleEmbedded::get_singleton()->screen_get_orientation(DisplayServerEnums::SCREEN_OF_MAIN_WINDOW)) {
+	switch (DisplayServer::driver_as<DisplayServerAppleEmbedded>()->screen_get_orientation(DisplayServerEnums::SCREEN_OF_MAIN_WINDOW)) {
 		case DisplayServerEnums::SCREEN_PORTRAIT:
 			return UIInterfaceOrientationMaskPortrait;
 		case DisplayServerEnums::SCREEN_REVERSE_LANDSCAPE:
@@ -381,14 +370,14 @@
 	CGRect rawFrame = [value CGRectValue];
 	CGRect keyboardFrame = [self.view convertRect:rawFrame fromView:nil];
 
-	if (DisplayServerAppleEmbedded::get_singleton()) {
-		DisplayServerAppleEmbedded::get_singleton()->virtual_keyboard_set_height(keyboardFrame.size.height);
+	if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->virtual_keyboard_set_height(keyboardFrame.size.height);
 	}
 }
 
 - (void)keyboardHidden:(NSNotification *)notification {
-	if (DisplayServerAppleEmbedded::get_singleton()) {
-		DisplayServerAppleEmbedded::get_singleton()->virtual_keyboard_set_height(0);
+	if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->virtual_keyboard_set_height(0);
 	}
 }
 

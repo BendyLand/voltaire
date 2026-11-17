@@ -231,7 +231,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 			SceneTree::initialize();
 			SceneTree::initialize_tree();
-			if (!DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS)) {
+			if (!DisplayServer::has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS)) {
 				SceneTree::get_root()->set_embedding_subwindows(true);
 			}
 
@@ -336,8 +336,8 @@ struct GodotTestCaseListener : public doctest::IReporter {
 		}
 		ThemeDB::finalize();
 
-		memdelete(AccessibilityServer::get_singleton());
-		memdelete(DisplayServer::get_singleton());
+		DisplayServer::finalize();
+		AccessibilityServer::finalize();
 		InputMap::finalize();
 
 		if (AudioServer::get_singleton()) {

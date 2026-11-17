@@ -49,10 +49,6 @@
 
 static const float kDisplayServerIOSAcceleration = 1.f;
 
-DisplayServerAppleEmbedded *DisplayServerAppleEmbedded::get_singleton() {
-	return (DisplayServerAppleEmbedded *)DisplayServer::get_singleton();
-}
-
 DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
 	KeyMappingAppleEmbedded::initialize();
 
@@ -63,7 +59,7 @@ DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering
 	if (tts_enabled) {
 		initialize_tts();
 	}
-	native_menu = memnew(NativeMenu);
+	NativeMenu::initialize();
 
 	bool has_made_render_compositor_current = false;
 
@@ -181,10 +177,7 @@ DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering
 }
 
 DisplayServerAppleEmbedded::~DisplayServerAppleEmbedded() {
-	if (native_menu) {
-		memdelete(native_menu);
-		native_menu = nullptr;
-	}
+	NativeMenu::finalize();
 
 #if defined(RD_ENABLED)
 	if (rendering_device) {
@@ -245,7 +238,9 @@ void DisplayServerAppleEmbedded::process_events() {
 }
 
 void DisplayServerAppleEmbedded::_dispatch_input_events(const Ref<InputEvent> &p_event) {
-	DisplayServerAppleEmbedded::get_singleton()->send_input_event(p_event);
+	if (DisplayServerAppleEmbedded *ds = DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+		ds->send_input_event(p_event);
+	}
 }
 
 void DisplayServerAppleEmbedded::send_input_event(const Ref<InputEvent> &p_event) const {
@@ -358,7 +353,7 @@ bool DisplayServerAppleEmbedded::has_feature(DisplayServerEnums::Feature p_featu
 	switch (p_feature) {
 #ifndef DISABLE_DEPRECATED
 		case DisplayServerEnums::FEATURE_GLOBAL_MENU: {
-			return (native_menu && native_menu->has_feature(NativeMenu::FEATURE_GLOBAL_MENU));
+			return NativeMenu::is_initialized() && NativeMenu::has_feature(NativeMenu::FEATURE_GLOBAL_MENU);
 		} break;
 #endif
 		// case DisplayServerEnums::FEATURE_CURSOR_SHAPE:

@@ -43,7 +43,7 @@ bool MenuBar::is_native_menu() const
 #endif
 
 	return (
-		NativeMenu::get_singleton()->has_feature(NativeMenu::FEATURE_GLOBAL_MENU) && prefer_native);
+		NativeMenu::has_feature(NativeMenu::FEATURE_GLOBAL_MENU) && prefer_native);
 }
 
 void MenuBar::unbind_global_menu()
@@ -52,17 +52,16 @@ void MenuBar::unbind_global_menu()
 		return;
 	}
 
-	NativeMenu* nmenu = NativeMenu::get_singleton();
-	RID main_menu = nmenu->get_system_menu(NativeMenu::MAIN_MENU_ID);
+	RID main_menu = NativeMenu::get_system_menu(NativeMenu::MAIN_MENU_ID);
 
 	Vector<PopupMenu*> popups = _get_popups();
 	for (int i = menu_cache.size() - 1; i >= 0; i--) {
 		if (!popups[i]->is_system_menu()) {
 			if (menu_cache[i].submenu_rid.is_valid()) {
 				int item_idx =
-					nmenu->find_item_index_with_submenu(main_menu, menu_cache[i].submenu_rid);
+					NativeMenu::find_item_index_with_submenu(main_menu, menu_cache[i].submenu_rid);
 				if (item_idx >= 0) {
-					nmenu->remove_item(main_menu, item_idx);
+					NativeMenu::remove_item(main_menu, item_idx);
 				}
 			}
 			popups[i]->unbind_global_menu();
@@ -322,12 +321,11 @@ void MenuBar::set_menu_disabled(int p_menu, bool p_disabled)
 	ERR_FAIL_INDEX(p_menu, menu_cache.size());
 	menu_cache.write[p_menu].disabled = p_disabled;
 	if (!global_menu_tag.is_empty() && menu_cache[p_menu].submenu_rid.is_valid()) {
-		NativeMenu* nmenu = NativeMenu::get_singleton();
-		RID main_menu = nmenu->get_system_menu(NativeMenu::MAIN_MENU_ID);
+		RID main_menu = NativeMenu::get_system_menu(NativeMenu::MAIN_MENU_ID);
 		int item_idx =
-			nmenu->find_item_index_with_submenu(main_menu, menu_cache[p_menu].submenu_rid);
+			NativeMenu::find_item_index_with_submenu(main_menu, menu_cache[p_menu].submenu_rid);
 		if (item_idx >= 0) {
-			nmenu->set_item_disabled(main_menu, item_idx, p_disabled);
+			NativeMenu::set_item_disabled(main_menu, item_idx, p_disabled);
 		}
 	}
 }

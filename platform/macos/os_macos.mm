@@ -1083,8 +1083,7 @@ void OS_MacOS_NSApp::start_main() {
 				@autoreleasepool {
 					MainLoop::initialize();
 				}
-				DisplayServer *ds = DisplayServer::get_singleton();
-				DisplayServerMacOS *ds_mac = Object::cast_to<DisplayServerMacOS>(ds);
+				DisplayServerMacOS *ds_mac = DisplayServer::driver_as<DisplayServerMacOS>();
 
 				pre_wait_observer = CFRunLoopObserverCreateWithHandler(kCFAllocatorDefault, kCFRunLoopBeforeWaiting, true, 0, ^(CFRunLoopObserverRef observer, CFRunLoopActivity activity) {
 					@autoreleasepool {
@@ -1094,8 +1093,8 @@ void OS_MacOS_NSApp::start_main() {
 
 							if (ds_mac) {
 								ds_mac->_process_events(false);
-							} else if (ds) {
-								ds->process_events();
+							} else if (DisplayServer::is_initialized()) {
+								DisplayServer::process_events();
 							}
 #ifdef SDL_ENABLED
 							if (joypad_sdl) {
@@ -1254,7 +1253,7 @@ void OS_MacOS_Embedded::run() {
 		ret = Main::start();
 	}
 
-	DisplayServerMacOSEmbedded *ds = Object::cast_to<DisplayServerMacOSEmbedded>(DisplayServer::get_singleton());
+	DisplayServerMacOSEmbedded *ds = DisplayServer::driver_as<DisplayServerMacOSEmbedded>();
 	if (!ds) {
 		ERR_FAIL_MSG("DisplayServerMacOSEmbedded is not initialized.");
 	}

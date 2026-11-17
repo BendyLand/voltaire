@@ -38,7 +38,6 @@
 #include "wayland/wayland_thread.h"
 
 class InputEvent;
-class NativeMenu;
 
 #ifdef RD_ENABLED
 class RenderingDevice;
@@ -55,11 +54,7 @@ class FreeDesktopAtSPIMonitor;
 class FreeDesktopScreenSaver;
 #endif
 
-#ifdef SPEECHD_ENABLED
-class TTS_Linux;
-#endif
-
-class DisplayServerWayland : public DisplayServer
+class DisplayServerWayland : public DisplayServerDriver
 {
 	struct WindowData
 	{
@@ -160,11 +155,6 @@ class DisplayServerWayland : public DisplayServer
 #ifdef GLES3_ENABLED
 	EGLManager* egl_manager = nullptr;
 #endif
-
-#ifdef SPEECHD_ENABLED
-	TTS_Linux* tts = nullptr;
-#endif
-	NativeMenu* native_menu = nullptr;
 
 #if DBUS_ENABLED
 	FreeDesktopPortalDesktop* portal_desktop = nullptr;
@@ -439,7 +429,7 @@ public:
 
 	virtual bool is_window_transparency_available() const override;
 
-	static DisplayServer* create_func(const String& p_rendering_driver,
+	static DisplayServerDriver* create_func(const String& p_rendering_driver,
 		DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
 		uint32_t p_flags, const Point2i* p_position, const Size2i& p_resolution, int p_screen,
 		DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error);

@@ -208,8 +208,8 @@ bool OS_AppleEmbedded::iterate() {
 	GodotProfileFrameMark;
 	GodotProfileZone("OS_AppleEmbedded::iterate");
 
-	if (DisplayServer::get_singleton()) {
-		DisplayServer::get_singleton()->process_events();
+	if (DisplayServer::is_initialized()) {
+		DisplayServer::process_events();
 	}
 
 #ifdef SDL_ENABLED
@@ -769,8 +769,8 @@ void OS_AppleEmbedded::on_focus_out() {
 	if (is_focused) {
 		is_focused = false;
 
-		if (DisplayServerAppleEmbedded::get_singleton()) {
-			DisplayServerAppleEmbedded::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
+		if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
 		}
 
 		if (MainLoop::is_active()) {
@@ -787,8 +787,8 @@ void OS_AppleEmbedded::on_focus_in() {
 	if (!is_focused) {
 		is_focused = true;
 
-		if (DisplayServerAppleEmbedded::get_singleton()) {
-			DisplayServerAppleEmbedded::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
+		if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
 		}
 
 		if (MainLoop::is_active()) {

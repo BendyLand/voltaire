@@ -90,11 +90,11 @@ void CheckBox::_notification(int p_what)
 		ERR_FAIL_COND(ae.is_null());
 
 		if (is_radio()) {
-			AccessibilityServer::get_singleton()->update_set_role(
+			AccessibilityServer::update_set_role(
 				ae, AccessibilityServerEnums::AccessibilityRole::ROLE_RADIO_BUTTON);
 		}
 		else {
-			AccessibilityServer::get_singleton()->update_set_role(
+			AccessibilityServer::update_set_role(
 				ae, AccessibilityServerEnums::AccessibilityRole::ROLE_CHECK_BOX);
 		}
 	} break;

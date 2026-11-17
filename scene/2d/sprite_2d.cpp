@@ -109,10 +109,10 @@ void Sprite2D::_notification(int p_what)
 
 		Rect2 dst_rect = get_rect();
 
-		AccessibilityServer::get_singleton()->update_set_role(
+		AccessibilityServer::update_set_role(
 			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_IMAGE);
-		AccessibilityServer::get_singleton()->update_set_transform(ae, get_transform());
-		AccessibilityServer::get_singleton()->update_set_bounds(ae, dst_rect);
+		AccessibilityServer::update_set_transform(ae, get_transform());
+		AccessibilityServer::update_set_bounds(ae, dst_rect);
 	} break;
 
 	case NOTIFICATION_DRAW: {

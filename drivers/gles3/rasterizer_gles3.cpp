@@ -245,7 +245,7 @@ void RasterizerGLES3::end_frame(bool p_swap_buffers) { GLES3::Utilities::capture
 void RasterizerGLES3::gl_end_frame(bool p_swap_buffers)
 {
 	if (p_swap_buffers) {
-		DisplayServer::get_singleton()->swap_buffers();
+		DisplayServer::swap_buffers();
 	}
 	else {
 		glFinish();
@@ -578,7 +578,7 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 	bool linear_to_srgb = false;
 
 	Rect2 screenrect = Rect2(Vector2(0.0, flip_y ? 1.0 : 0.0), Vector2(1.0, flip_y ? -1.0 : 1.0));
-	glViewport(int(p1.x), int(DisplayServer::get_singleton()->window_get_size(p_screen).y - p1.y),
+	glViewport(int(p1.x), int(DisplayServer::window_get_size(p_screen).y - p1.y),
 		int(size.x), int(-size.y));
 
 	GLenum target = (rt->view_count > 1) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
@@ -637,7 +637,7 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 		return;
 	}
 
-	Size2i win_size = DisplayServer::get_singleton()->window_get_size();
+	Size2i win_size = DisplayServer::window_get_size();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 	glViewport(0, 0, win_size.width, win_size.height);

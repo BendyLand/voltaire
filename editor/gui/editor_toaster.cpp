@@ -106,7 +106,7 @@ void EditorToaster::instant_close(Control* p_control)
 void EditorToaster::copy(Control* p_control)
 {
 	ERR_FAIL_COND(!toasts.has(p_control));
-	DisplayServer::get_singleton()->clipboard_set(toasts[p_control].message);
+	DisplayServer::clipboard_set(toasts[p_control].message);
 }
 
 EditorToaster* EditorToaster::get_singleton() { return singleton; }

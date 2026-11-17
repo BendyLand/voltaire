@@ -350,7 +350,7 @@ void RendererCompositorRD::set_boot_image_with_stretch(const Ref<Image>& p_image
 			uniforms, blit->shader.version_get_shader(blit->shader_version, BLIT_MODE_NORMAL), 0);
 	}
 
-	Size2 window_size = DisplayServer::get_singleton()->window_get_size();
+	Size2 window_size = DisplayServer::window_get_size();
 
 	Rect2 screenrect = RenderingServerTypes::get_splash_stretched_screen_rect(
 		p_image->get_size(), window_size, p_stretch_mode);

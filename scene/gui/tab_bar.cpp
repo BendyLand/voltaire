@@ -154,7 +154,7 @@ RID TabBar::get_tab_accessibility_element(int p_tab) const
 
 	const Tab& item = tabs[p_tab];
 	if (item.accessibility_item_element.is_null()) {
-		item.accessibility_item_element = AccessibilityServer::get_singleton()->create_sub_element(
+		item.accessibility_item_element = AccessibilityServer::create_sub_element(
 			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_TAB);
 		item.accessibility_item_dirty = true;
 	}

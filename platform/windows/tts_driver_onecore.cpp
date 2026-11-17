@@ -33,18 +33,16 @@
 
 #include "servers/display/display_server.h"
 
-TTSDriverOneCore *TTSDriverOneCore::singleton = nullptr;
-
 void TTSDriverOneCore::_speech_index_mark(int p_msg_id, int p_index_mark) {
-	DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, p_msg_id, p_index_mark);
+	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, p_msg_id, p_index_mark);
 }
 
 void TTSDriverOneCore::_speech_cancel(int p_msg_id) {
-	DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_msg_id);
+	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_msg_id);
 }
 
 void TTSDriverOneCore::_speech_end(int p_msg_id) {
-	DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_ENDED, p_msg_id);
+	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_ENDED, p_msg_id);
 }
 
 void TTSDriverOneCore::_dispose_current(bool p_silent, bool p_canceled) {
@@ -53,10 +51,10 @@ void TTSDriverOneCore::_dispose_current(bool p_silent, bool p_canceled) {
 			T.track.CueEntered(T.token);
 		}
 		tracks.clear();
-		media->MediaFailed(singleton->token_f);
-		media->MediaEnded(singleton->token_e);
+		media->MediaFailed(token_f);
+		media->MediaEnded(token_e);
 		if (!ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 4)) {
-			media->PlaybackMediaMarkerReached(singleton->token_s);
+			media->PlaybackMediaMarkerReached(token_s);
 		}
 		media->Close();
 		media.reset();
@@ -135,7 +133,7 @@ void TTSDriverOneCore::process_events() {
 							}
 							pos++;
 						}
-						callable_mp(singleton, &TTSDriverOneCore::_speech_index_mark).call_deferred(id, pos);
+						callable_mp(this, &TTSDriverOneCore::_speech_index_mark).call_deferred(id, pos);
 					});
 					tracks.push_back({ track, token });
 					list.SetPresentationMode(i, TimedMetadataTrackPresentationMode::ApplicationPresented);
@@ -153,7 +151,7 @@ void TTSDriverOneCore::process_events() {
 					}
 					pos++;
 				}
-				callable_mp(singleton, &TTSDriverOneCore::_speech_index_mark).call_deferred(id, pos);
+				callable_mp(this, &TTSDriverOneCore::_speech_index_mark).call_deferred(id, pos);
 			});
 		}
 		media->AutoPlay(true);
@@ -164,7 +162,7 @@ void TTSDriverOneCore::process_events() {
 
 		media->Play();
 
-		DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, message.id);
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, message.id);
 		queue.pop_front();
 	}
 }
@@ -202,7 +200,7 @@ void TTSDriverOneCore::speak(const String &p_text, const String &p_voice, int p_
 	}
 
 	if (p_text.is_empty()) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
 		return;
 	}
 
@@ -238,7 +236,7 @@ void TTSDriverOneCore::resume() {
 
 void TTSDriverOneCore::stop() {
 	for (TTSUtterance &message : queue) {
-		DisplayServer::get_singleton()->tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
 	}
 	queue.clear();
 	_dispose_current(false, true);
@@ -258,10 +256,8 @@ bool TTSDriverOneCore::init() {
 }
 
 TTSDriverOneCore::TTSDriverOneCore() {
-	singleton = this;
 }
 
 TTSDriverOneCore::~TTSDriverOneCore() {
 	_dispose_current(false, true);
-	singleton = nullptr;
 }

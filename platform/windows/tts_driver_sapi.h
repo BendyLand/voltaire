@@ -57,8 +57,6 @@ class TTSDriverSAPI : public TTSDriver {
 
 	static void __stdcall speech_event_callback(WPARAM wParam, LPARAM lParam);
 
-	static TTSDriverSAPI *singleton;
-
 public:
 	virtual bool is_speaking() const override;
 	virtual bool is_paused() const override;

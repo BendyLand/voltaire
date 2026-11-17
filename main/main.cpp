@@ -163,8 +163,6 @@ static SteamTracker* steam_tracker = nullptr;
 
 // Initialized in setup2()
 static AudioServer* audio_server = nullptr;
-static AccessibilityServer* accessibility_server = nullptr;
-static DisplayServer* display_server = nullptr;
 static TextServerManager* tsman = nullptr;
 #ifndef PHYSICS_2D_DISABLED
 static PhysicsServer2DManager* physics_server_2d_manager = nullptr;
@@ -361,8 +359,8 @@ void finalize_display()
 {
 	ShaderLanguage::finish();
 	Renderer::finalize();
-	memdelete(display_server);
-	memdelete(accessibility_server);
+	DisplayServer::finalize();
+	AccessibilityServer::finalize();
 }
 
 void initialize_theme_db() { ThemeDB::initialize(); }
@@ -3129,8 +3127,8 @@ Error Main::setup2(bool p_show_boot_logo)
 		}
 
 		Error err;
-		accessibility_server = AccessibilityServer::create(accessibility_driver_idx, err);
-		if (err != OK || accessibility_server == nullptr) {
+		AccessibilityServer::create(accessibility_driver_idx, err);
+		if (err != OK || !AccessibilityServer::is_initialized()) {
 			String last_name =
 				AccessibilityServer::get_create_function_name(accessibility_driver_idx);
 
@@ -3142,19 +3140,19 @@ Error Main::setup2(bool p_show_boot_logo)
 				WARN_VERBOSE(vformat(
 					"Accessibility driver %s failed, falling back to %s.", last_name, name));
 
-				accessibility_server = AccessibilityServer::create(i, err);
-				if (err == OK && accessibility_server != nullptr) {
+				AccessibilityServer::create(i, err);
+				if (err == OK && AccessibilityServer::is_initialized()) {
 					break;
 				}
 			}
 		}
-		accessibility_server->set_mode(accessibility_mode);
+		AccessibilityServer::set_mode(accessibility_mode);
 
 		String rendering_driver = OS::get_current_rendering_driver_name();
-		display_server = DisplayServer::create(display_driver_idx, rendering_driver, window_mode,
+		DisplayServer::create(display_driver_idx, rendering_driver, window_mode,
 			window_vsync_mode, window_flags, window_position, window_size, init_screen, context,
 			init_embed_parent_window_id, err);
-		if (err != OK || display_server == nullptr) {
+		if (err != OK || !DisplayServer::is_initialized()) {
 			String last_name = DisplayServer::get_create_function_name(display_driver_idx);
 
 			// We can't use this display server, try other ones as fallback.
@@ -3168,21 +3166,22 @@ Error Main::setup2(bool p_show_boot_logo)
 				WARN_PRINT(
 					vformat("Display driver %s failed, falling back to %s.", last_name, name));
 
-				display_server = DisplayServer::create(i, rendering_driver, window_mode,
+				DisplayServer::create(i, rendering_driver, window_mode,
 					window_vsync_mode, window_flags, window_position, window_size, init_screen,
 					context, init_embed_parent_window_id, err);
-				if (err == OK && display_server != nullptr) {
+				if (err == OK && DisplayServer::is_initialized()) {
 					break;
 				}
 			}
 		}
 
-		if (err != OK || display_server == nullptr) {
+		if (err != OK || !DisplayServer::is_initialized()) {
 			ERR_PRINT("Unable to create DisplayServer, all display drivers failed.\nUse "
 					  "\"--headless\" command line argument to run the engine in headless mode if "
 					  "this is desired (e.g. for continuous integration).");
 
-			memdelete(display_server);
+			DisplayServer::finalize();
+			AccessibilityServer::finalize();
 			unregister_server_types();
 
 			Input::finalize();
@@ -3226,25 +3225,25 @@ Error Main::setup2(bool p_show_boot_logo)
 				break;
 			}
 			if (!(force_res || use_custom_res)) {
-				display_server->window_set_size(
+				DisplayServer::window_set_size(
 					Size2(window_size) * ui_scale, DisplayServerEnums::MAIN_WINDOW_ID);
 			}
-			if (display_server->has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS) &&
-				!display_server->has_feature(DisplayServerEnums::FEATURE_SELF_FITTING_WINDOWS)) {
-				Size2 real_size = DisplayServer::get_singleton()->window_get_size();
-				Rect2i scr_rect = display_server->screen_get_usable_rect(init_screen);
-				display_server->window_set_position(
+			if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS) &&
+				!DisplayServer::has_feature(DisplayServerEnums::FEATURE_SELF_FITTING_WINDOWS)) {
+				Size2 real_size = DisplayServer::window_get_size();
+				Rect2i scr_rect = DisplayServer::screen_get_usable_rect(init_screen);
+				DisplayServer::window_set_position(
 					scr_rect.position + (scr_rect.size - real_size) / 2,
 					DisplayServerEnums::MAIN_WINDOW_ID);
 			}
 		}
 #endif
-		if (display_server->has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS)) {
-			display_server->show_window(DisplayServerEnums::MAIN_WINDOW_ID);
+		if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS)) {
+			DisplayServer::show_window(DisplayServerEnums::MAIN_WINDOW_ID);
 		}
 
-		if (display_server->has_feature(DisplayServerEnums::FEATURE_ORIENTATION)) {
-			display_server->screen_set_orientation(window_orientation);
+		if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_ORIENTATION)) {
+			DisplayServer::screen_set_orientation(window_orientation);
 		}
 
 		OS::benchmark_end_measure("Servers", "Display");
@@ -3261,21 +3260,21 @@ Error Main::setup2(bool p_show_boot_logo)
 	if (editor && init_windowed) {
 		// We still need to check we are actually in windowed mode, because
 		// certain platform might only support one fullscreen window.
-		if (DisplayServer::get_singleton()->window_get_mode() ==
+		if (DisplayServer::window_get_mode() ==
 			DisplayServerEnums::WINDOW_MODE_WINDOWED) {
-			Vector2i current_size = DisplayServer::get_singleton()->window_get_size();
-			Vector2i current_pos = DisplayServer::get_singleton()->window_get_position();
-			int screen = DisplayServer::get_singleton()->window_get_current_screen();
-			Rect2i screen_rect = DisplayServer::get_singleton()->screen_get_usable_rect(screen);
+			Vector2i current_size = DisplayServer::window_get_size();
+			Vector2i current_pos = DisplayServer::window_get_position();
+			int screen = DisplayServer::window_get_current_screen();
+			Rect2i screen_rect = DisplayServer::screen_get_usable_rect(screen);
 
 			Vector2i adjusted_end = screen_rect.get_end().min(current_pos + current_size);
 			Vector2i adjusted_pos = screen_rect.get_position().max(adjusted_end - current_size);
-			Vector2i adjusted_size = DisplayServer::get_singleton()->window_get_min_size().max(
+			Vector2i adjusted_size = DisplayServer::window_get_min_size().max(
 				adjusted_end - adjusted_pos);
 
 			if (current_pos != adjusted_end || current_size != adjusted_size) {
-				DisplayServer::get_singleton()->window_set_position(adjusted_pos);
-				DisplayServer::get_singleton()->window_set_size(adjusted_size);
+				DisplayServer::window_set_position(adjusted_pos);
+				DisplayServer::window_set_size(adjusted_size);
 			}
 		}
 	}
@@ -3379,15 +3378,15 @@ Error Main::setup2(bool p_show_boot_logo)
 				// do none..
 			}
 			else if (init_maximized) {
-				DisplayServer::get_singleton()->window_set_mode(
+				DisplayServer::window_set_mode(
 					DisplayServerEnums::WINDOW_MODE_MAXIMIZED);
 			}
 			else if (init_fullscreen) {
-				DisplayServer::get_singleton()->window_set_mode(
+				DisplayServer::window_set_mode(
 					DisplayServerEnums::WINDOW_MODE_FULLSCREEN);
 			}
 			if (init_always_on_top) {
-				DisplayServer::get_singleton()->window_set_flag(
+				DisplayServer::window_set_flag(
 					DisplayServerEnums::WINDOW_FLAG_ALWAYS_ON_TOP, true);
 			}
 		}
@@ -3937,10 +3936,10 @@ int Main::start()
 		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
 	}
 
-	if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_ICON) &&
+	if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_ICON) &&
         !has_icon && OS::get_bundle_icon_path().is_empty()) {
         Ref<Image> icon = memnew(Image(app_icon_png));
-        DisplayServer::get_singleton()->set_icon(icon);
+        DisplayServer::set_icon(icon);
     }
 
 #ifdef MACOS_ENABLED
@@ -3950,7 +3949,7 @@ int Main::start()
         int64_t minimum_time = 1000 * minimum_time_msec;
         uint64_t prev_time = OS::get_ticks_usec();
         while (minimum_time > 0) {
-            DisplayServer::get_singleton()->process_events();
+            DisplayServer::process_events();
             OS::get_singleton()->delay_usec(100);
 
             uint64_t next_time = OS::get_ticks_usec();
@@ -3959,7 +3958,7 @@ int Main::start()
         }
     }
     else {
-        DisplayServer::get_singleton()->process_events();
+        DisplayServer::process_events();
     }
 #endif
 
@@ -3973,8 +3972,8 @@ int Main::start()
     if (root) {
         root->show();
         Size2i win_size = root->get_size();
-        if ((win_size.x <= 0 || win_size.y <= 0) && DisplayServer::get_singleton()) {
-            win_size = DisplayServer::get_singleton()->window_get_size(
+        if ((win_size.x <= 0 || win_size.y <= 0) && DisplayServer::is_initialized()) {
+            win_size = DisplayServer::window_get_size(
                 DisplayServerEnums::MAIN_WINDOW_ID);
         }
         if (win_size.x <= 0 || win_size.y <= 0) {
@@ -4091,7 +4090,7 @@ bool Main::iteration()
 		ProjectManager::poll();
 	}
 
-	if (DisplayServer::get_singleton()->window_can_draw()) {
+	if (DisplayServer::window_can_draw()) {
 		Renderer::draw(true, scaled_step);
 	}
 
@@ -4168,7 +4167,7 @@ bool Main::iteration()
 	bool wake_for_events = SceneTree::is_initialized() && SceneTree::is_accessibility_enabled();
 
 	OS::add_frame_delay(
-		DisplayServer::get_singleton()->window_can_draw(), wake_for_events);
+		DisplayServer::window_can_draw(), wake_for_events);
 
 #ifdef TOOLS_ENABLED
 	if (auto_build_solutions) {

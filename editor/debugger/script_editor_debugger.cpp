@@ -77,7 +77,7 @@ void ScriptEditorDebugger::debug_copy()
 	if (msg.is_empty()) {
 		return;
 	}
-	DisplayServer::get_singleton()->clipboard_set(msg);
+	DisplayServer::clipboard_set(msg);
 }
 
 void ScriptEditorDebugger::debug_out()
@@ -110,7 +110,7 @@ void ScriptEditorDebugger::debug_continue()
 
 	// Allow focus stealing only if we actually run this client for security.
 	if (remote_pid && EditorNode::get_singleton()->has_child_process(remote_pid)) {
-		DisplayServer::get_singleton()->enable_for_stealing_focus(remote_pid);
+		DisplayServer::enable_for_stealing_focus(remote_pid);
 	}
 
 	_clear_execution();
@@ -489,7 +489,7 @@ void ScriptEditorDebugger::_item_menu_id_pressed(int p_option)
 			ci = ci->get_next();
 		}
 
-		DisplayServer::get_singleton()->clipboard_set(text);
+		DisplayServer::clipboard_set(text);
 	} break;
 
 	case ACTION_OPEN_SOURCE: {
