@@ -145,7 +145,7 @@ void DisplayServerWayland::_dispatch_input_event(const Ref<InputEvent>& p_event)
 		}
 	}
 
-	Input::get_singleton()->parse_input_event(p_event.ptr());
+	Input::parse_input_event(p_event.ptr());
 }
 
 void DisplayServerWayland::_delete_window(DisplayServerEnums::WindowID p_window_id)
@@ -704,7 +704,7 @@ bool DisplayServerWayland::is_touchscreen_available() const
 	MutexLock mutex_lock(wayland_thread.mutex);
 
 	return wayland_thread.input_has_touch() ||
-		   (Input::get_singleton() && Input::get_singleton()->is_emulating_touch_from_mouse());
+		   (Input::is_initialized() && Input::is_emulating_touch_from_mouse());
 }
 
 void DisplayServerWayland::screen_set_keep_on(bool p_enable)
@@ -1889,7 +1889,7 @@ void DisplayServerWayland::process_events()
 			}
 			else if (winev_msg->event == DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT) {
 				AccessibilityServer::get_singleton()->set_window_focused(winev_msg->id, false);
-				Input::get_singleton()->release_pressed_events();
+				Input::release_pressed_events();
 			}
 			continue;
 		}
@@ -1948,7 +1948,7 @@ void DisplayServerWayland::process_events()
 			}
 
 			if (!handled) {
-				Input::get_singleton()->parse_input_event(inputev_msg->event.ptr());
+				Input::parse_input_event(inputev_msg->event.ptr());
 			}
 
 			continue;
@@ -1974,7 +1974,7 @@ void DisplayServerWayland::process_events()
 				ke->set_key_label(Key::NONE);
 				ke->set_unicode(codepoint);
 
-				Input::get_singleton()->parse_input_event(ke.ptr());
+				Input::parse_input_event(ke.ptr());
 			}
 			ime_text = String();
 			ime_selection = Vector2i();
@@ -2055,7 +2055,7 @@ void DisplayServerWayland::process_events()
 
 	wayland_thread.mutex.unlock();
 
-	Input::get_singleton()->flush_buffered_events();
+	Input::flush_buffered_events();
 }
 
 void DisplayServerWayland::release_rendering_thread()
@@ -2166,7 +2166,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 		}
 	}
 
-	Input::get_singleton()->set_event_dispatch_function(dispatch_input_events);
+	Input::set_event_dispatch_function(dispatch_input_events);
 
 	native_menu = memnew(NativeMenu);
 

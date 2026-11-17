@@ -73,7 +73,7 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 
 	native_menu = memnew(NativeMenu);
 
-	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
+	Input::set_event_dispatch_function(_dispatch_input_events);
 
 	rendering_driver = p_rendering_driver;
 
@@ -283,7 +283,7 @@ void DisplayServerMacOSEmbedded::_mouse_apply_mode(DisplayServerEnums::MouseMode
 
 void DisplayServerMacOSEmbedded::warp_mouse(const Point2i &p_position) {
 	_THREAD_SAFE_METHOD_
-	Input::get_singleton()->set_mouse_position(p_position);
+	Input::set_mouse_position(p_position);
 	// Convert from game pixels to points for the editor.
 	float inv_scale = 1.0f / screen_get_max_scale();
 	EngineDebugger::get_singleton()->send_message("game_view:warp_mouse", { Point2i(Vector2(p_position) * inv_scale) });
@@ -353,8 +353,7 @@ void DisplayServerMacOSEmbedded::window_set_drop_files_callback(const Callable &
 }
 
 void DisplayServerMacOSEmbedded::process_events() {
-	Input *input = Input::get_singleton();
-	input->flush_buffered_events();
+	Input::flush_buffered_events();
 }
 
 void DisplayServerMacOSEmbedded::_dispatch_input_events(const Ref<InputEvent> &p_event) {

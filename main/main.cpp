@@ -154,7 +154,6 @@
 // Singletons
 
 // Initialized in setup()
-static Input* input = nullptr;
 static TranslationServer* translation_server = nullptr;
 static Performance* performance = nullptr;
 static PackedData* packed_data = nullptr;
@@ -3050,7 +3049,7 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::benchmark_begin_measure("Servers", "Input");
 
-		input = memnew(Input);
+		Input::initialize();
 		OS::initialize_joypads();
 
 		OS::benchmark_end_measure("Servers", "Input");
@@ -3199,7 +3198,7 @@ Error Main::setup2(bool p_show_boot_logo)
 			memdelete(display_server);
 			unregister_server_types();
 
-			memdelete(input);
+			Input::finalize();
 			memdelete(tsman);
 #ifndef PHYSICS_3D_DISABLED
 			memdelete(physics_server_3d_manager);
@@ -3415,8 +3414,6 @@ Error Main::setup2(bool p_show_boot_logo)
 		DisplayServer::set_early_window_clear_color_override(false);
 
 		MAIN_PRINT("Main: Touch Input");
-
-		Input* id = Input::get_singleton();
 
 		OS::benchmark_end_measure("Startup", "Setup Window and Boot");
 	}
@@ -4086,8 +4083,8 @@ bool Main::iteration()
 	XRServer::get_singleton()->_process();
 #endif // XR_DISABLED
 
-	if (Input::get_singleton()->is_agile_input_event_flushing()) {
-		Input::get_singleton()->flush_buffered_events();
+	if (Input::is_agile_input_event_flushing()) {
+		Input::flush_buffered_events();
 	}
 
 	uint64_t process_begin = OS::get_ticks_usec();
@@ -4231,8 +4228,8 @@ void Main::cleanup(bool p_force)
 	CoreGlobals::print_ready = false;
 
 #ifdef DEBUG_ENABLED
-	if (input) {
-		input->flush_frame_parsed_events();
+	if (Input::is_initialized()) {
+		Input::flush_frame_parsed_events();
 	}
 #endif
 
@@ -4323,7 +4320,7 @@ void Main::cleanup(bool p_force)
 
 	finalize_display();
 
-	memdelete(input);
+	Input::finalize();
 
 	memdelete(packed_data);
 	memdelete(performance);

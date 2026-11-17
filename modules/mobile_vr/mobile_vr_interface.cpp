@@ -139,16 +139,15 @@ void MobileVRInterface::set_position_from_sensors()
 	float delta_time = (double)ticks_elapsed / 1000000.0;
 
 	// few things we need
-	Input* input = Input::get_singleton();
 	Vector3 down(0.0, -1.0, 0.0); // Down is Y negative
 
 	// make copies of our inputs
 	bool has_grav = false;
-	Vector3 acc = input->get_accelerometer();
-	Vector3 gyro = input->get_gyroscope();
-	Vector3 grav = input->get_gravity();
+	Vector3 acc = Input::get_accelerometer();
+	Vector3 gyro = Input::get_gyroscope();
+	Vector3 grav = Input::get_gravity();
 	Vector3 magneto = scale_magneto(
-		input->get_magnetometer()); // this may be overkill on iOS because we're already getting a
+		Input::get_magnetometer()); // this may be overkill on iOS because we're already getting a
 									// calibrated magnetometer reading
 
 	if (sensor_first) {

@@ -109,7 +109,7 @@ bool GameViewDebuggerMacOS::_msg_joy_start(const Array &p_args) {
 	int joy_id = p_args[0];
 	float duration = p_args[1];
 	Vector2 strength = p_args[2];
-	Input::get_singleton()->start_joy_vibration(joy_id, strength.x, strength.y, duration);
+	Input::start_joy_vibration(joy_id, strength.x, strength.y, duration);
 	return true;
 }
 
@@ -117,7 +117,7 @@ bool GameViewDebuggerMacOS::_msg_joy_stop(const Array &p_args) {
 	ERR_FAIL_COND_V_MSG(p_args.size() != 1, false, "joy_stop: invalid number of arguments.");
 
 	int joy_id = p_args[0];
-	Input::get_singleton()->stop_joy_vibration(joy_id);
+	Input::stop_joy_vibration(joy_id);
 	return true;
 }
 

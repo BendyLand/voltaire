@@ -260,7 +260,7 @@ void DisplayServerX11::_update_real_mouse_position(const WindowData& wd)
 			last_mouse_pos.x = win_x;
 			last_mouse_pos.y = win_y;
 			last_mouse_pos_valid = true;
-			Input::get_singleton()->set_mouse_position(last_mouse_pos);
+			Input::set_mouse_position(last_mouse_pos);
 		}
 	}
 }
@@ -597,7 +597,7 @@ void DisplayServerX11::_mouse_update_mode()
 			XWarpPointer(
 				x11_display, None, window.x11_window, 0, 0, 0, 0, (int)center.x, (int)center.y);
 
-			Input::get_singleton()->set_mouse_position(center);
+			Input::set_mouse_position(center);
 		}
 	}
 	else {
@@ -4076,7 +4076,7 @@ void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, 
 					k->set_shift_pressed(true);
 				}
 
-				Input::get_singleton()->parse_input_event(k.ptr());
+				Input::parse_input_event(k.ptr());
 			}
 			memfree(utf8string);
 			return;
@@ -4161,7 +4161,7 @@ void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, 
 						k->set_shift_pressed(true);
 					}
 
-					Input::get_singleton()->parse_input_event(k.ptr());
+					Input::parse_input_event(k.ptr());
 				}
 				return;
 			}
@@ -4321,14 +4321,14 @@ void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, 
 		}
 	}
 
-	bool last_is_pressed = Input::get_singleton()->is_key_pressed(k->get_keycode());
+	bool last_is_pressed = Input::is_key_pressed(k->get_keycode());
 	if (k->is_pressed()) {
 		if (last_is_pressed) {
 			k->set_echo(true);
 		}
 	}
 
-	Input::get_singleton()->parse_input_event(k.ptr());
+	Input::parse_input_event(k.ptr());
 }
 
 Atom DisplayServerX11::_process_selection_request_target(

@@ -1220,8 +1220,8 @@ void OS_MacOS_Headless::run() {
 		while (true) {
 			@autoreleasepool {
 				@try {
-					if (Input::get_singleton()) {
-						Input::get_singleton()->flush_buffered_events();
+					if (Input::is_initialized()) {
+						Input::flush_buffered_events();
 					}
 
 					if (Main::iteration()) {

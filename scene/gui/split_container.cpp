@@ -42,13 +42,13 @@ void SplitContainerMultiDragger::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_MOUSE_ENTER: {
-		if (!dragging && !Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT)) {
+		if (!dragging && !Input::is_mouse_button_pressed(MouseButton::LEFT)) {
 			split_container->show_grabber_icon(dragger_index);
 		}
 	} break;
 
 	case NOTIFICATION_MOUSE_EXIT: {
-		if (!dragging && !Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT)) {
+		if (!dragging && !Input::is_mouse_button_pressed(MouseButton::LEFT)) {
 			split_container->show_grabber_icon(-1);
 		}
 	} break;

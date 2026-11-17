@@ -225,8 +225,6 @@ void encode_input_event_mouse_motion(
 void decode_input_event_mouse_motion(
 	const Vector<uint8_t>& p_data, Ref<InputEventMouseMotion>& r_event)
 {
-	Input* input = Input::get_singleton();
-
 	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MOUSE_MOTION);
 	data++; // Skip event type.
@@ -249,8 +247,8 @@ void decode_input_event_mouse_motion(
 		data = decode_vector2(tilt, data);
 		r_event->set_tilt(tilt);
 	}
-	r_event->set_velocity(input->get_last_mouse_velocity());
-	r_event->set_screen_velocity(input->get_last_mouse_screen_velocity());
+	r_event->set_velocity(Input::get_last_mouse_velocity());
+	r_event->set_screen_velocity(Input::get_last_mouse_screen_velocity());
 	{
 		Vector2 relative;
 		data = decode_vector2(relative, data);

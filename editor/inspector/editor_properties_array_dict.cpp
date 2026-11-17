@@ -141,7 +141,7 @@ void EditorPropertyArray::_reorder_button_down(int p_slot_index)
 	reorder_to_index = reorder_slot.index;
 	// Ideally it'd to be able to show the mouse but I had issues with
 	// Control's `mouse_exit()`/`mouse_entered()` signals not getting called.
-	Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_CAPTURED);
+	Input::set_mouse_mode(Input::MouseMode::MOUSE_MODE_CAPTURED);
 }
 
 bool EditorPropertyArray::is_colored(ColorationMode p_mode)

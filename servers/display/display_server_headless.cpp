@@ -50,12 +50,12 @@ void DisplayServerHeadless::_dispatch_input_events(const Ref<InputEvent>& p_even
 	static_cast<DisplayServerHeadless*>(get_singleton())->_dispatch_input_event(p_event);
 }
 
-void DisplayServerHeadless::process_events() { Input::get_singleton()->flush_buffered_events(); }
+void DisplayServerHeadless::process_events() { Input::flush_buffered_events(); }
 
 DisplayServerHeadless::DisplayServerHeadless()
 {
 	native_menu = memnew(NativeMenu);
-	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
+	Input::set_event_dispatch_function(_dispatch_input_events);
 }
 
 DisplayServerHeadless::~DisplayServerHeadless()

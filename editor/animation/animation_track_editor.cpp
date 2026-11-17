@@ -579,12 +579,12 @@ bool AnimationTrackEditor::is_key_clipboard_active() const { return key_clipboar
 
 bool AnimationTrackEditor::is_snap_timeline_enabled() const
 {
-	return snap_timeline->is_pressed() ^ Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL);
+	return snap_timeline->is_pressed() ^ Input::is_key_pressed(Key::CMD_OR_CTRL);
 }
 
 bool AnimationTrackEditor::is_snap_keys_enabled() const
 {
-	return snap_keys->is_pressed() ^ Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL);
+	return snap_keys->is_pressed() ^ Input::is_key_pressed(Key::CMD_OR_CTRL);
 }
 
 bool AnimationTrackEditor::is_insert_at_current_time_enabled() const
@@ -795,7 +795,7 @@ float AnimationTrackEditor::snap_time(float p_value, bool p_relative)
 {
 	if (is_snap_keys_enabled()) {
 		double current_snap = snap_unit;
-		if (Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
+		if (Input::is_key_pressed(Key::SHIFT)) {
 			// Use more precise snapping when holding Shift.
 			current_snap *= 0.25;
 		}

@@ -75,7 +75,7 @@ bool InputEvent::is_action_just_pressed_or_echo(
 	const String& p_action, bool p_exact_match) const
 {
 	return is_action(p_action, p_exact_match) &&
-		   (is_echo() || Input::get_singleton()->is_action_just_pressed_by_event(
+		   (is_echo() || Input::is_action_just_pressed_by_event(
 							 p_action, const_cast<InputEvent*>(this)));
 }
 

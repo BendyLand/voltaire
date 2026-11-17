@@ -153,8 +153,8 @@ void TextureLayeredEditor::gui_input(const Ref<InputEvent>& p_event)
 
 	Ref<InputEventMouseMotion> mm = p_event;
 	if (mm.is_valid() && (mm->get_button_mask() & 2) != 0) {
-		if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_VISIBLE) {
-			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_CAPTURED);
+		if (Input::get_mouse_mode() == Input::MouseMode::MOUSE_MODE_VISIBLE) {
+			Input::set_mouse_mode(Input::MouseMode::MOUSE_MODE_CAPTURED);
 		}
 
 		y_rot += mm->get_relative().x * 0.01;
@@ -165,11 +165,11 @@ void TextureLayeredEditor::gui_input(const Ref<InputEvent>& p_event)
 
 	Ref<InputEventMouseButton> mb = p_event;
 	if (mb.is_valid() && mb->get_button_index() == MouseButton::RIGHT) {
-		if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED) {
-			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
-			Input::get_singleton()->warp_mouse(original_mouse_pos);
+		if (Input::get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED) {
+			Input::set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
+			Input::warp_mouse(original_mouse_pos);
 		}
-		else if (Input::get_singleton()->get_mouse_mode() ==
+		else if (Input::get_mouse_mode() ==
 				   Input::MouseMode::MOUSE_MODE_VISIBLE) {
 			original_mouse_pos = mb->get_global_position();
 		}

@@ -743,7 +743,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 					event->set_position(position);
 					event->set_relative(delta);
 					event->set_relative_screen_position(delta);
-					Input::get_singleton()->parse_input_event(event);
+					Input::parse_input_event(event);
 				}
 			}
 
@@ -831,7 +831,7 @@ void WebXRInterfaceJS::_on_input_event(int p_event_type, int p_input_source_id) 
 				event->set_position(touches[touch_index].position);
 				event->set_pressed(p_event_type == WEBXR_INPUT_EVENT_SELECTSTART);
 
-				Input::get_singleton()->parse_input_event(event);
+				Input::parse_input_event(event);
 			}
 		}
 	}

@@ -252,7 +252,7 @@ void CodeEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2&
 	RID ci = get_text_canvas_item();
 	if (draw_breakpoints && theme_cache.breakpoint_icon.is_valid()) {
 		bool breakpointed = is_line_breakpointed(p_line);
-		bool shift_pressed = Input::get_singleton()->is_key_pressed(Key::SHIFT);
+		bool shift_pressed = Input::is_key_pressed(Key::SHIFT);
 
 		if (breakpointed || (hovering && !is_dragging_cursor() && !shift_pressed)) {
 			int padding = p_region.size.x / 6;
@@ -270,7 +270,7 @@ void CodeEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2&
 
 	if (draw_bookmarks && theme_cache.bookmark_icon.is_valid()) {
 		bool bookmarked = is_line_bookmarked(p_line);
-		bool shift_pressed = Input::get_singleton()->is_key_pressed(Key::SHIFT);
+		bool shift_pressed = Input::is_key_pressed(Key::SHIFT);
 
 		if (bookmarked || (hovering && !is_dragging_cursor() && shift_pressed)) {
 			int horizontal_padding = p_region.size.x / (_is_bookmark_only() ? 8 : 2);
@@ -1081,7 +1081,7 @@ int CodeEdit::_get_auto_brace_pair_close_at_pos(int p_line, int p_col)
 
 void CodeEdit::_gutter_clicked(int p_line, int p_gutter)
 {
-	bool shift_pressed = Input::get_singleton()->is_key_pressed(Key::SHIFT);
+	bool shift_pressed = Input::is_key_pressed(Key::SHIFT);
 
 	if (p_gutter == main_gutter) {
 		if (draw_breakpoints && !shift_pressed) {

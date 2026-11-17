@@ -52,11 +52,9 @@ void Slider::_notification(int p_what)
 {
 	switch (p_what) {
 	case NOTIFICATION_INTERNAL_PROCESS: {
-		Input* input = Input::get_singleton();
-
-		if (input->is_action_just_released("ui_left") ||
-			input->is_action_just_released("ui_right") || input->is_action_just_released("ui_up") ||
-			input->is_action_just_released("ui_down")) {
+		if (Input::is_action_just_released("ui_left") ||
+			Input::is_action_just_released("ui_right") || Input::is_action_just_released("ui_up") ||
+			Input::is_action_just_released("ui_down")) {
 			gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
 			set_process_internal(false);
 			return;
@@ -66,7 +64,7 @@ void Slider::_notification(int p_what)
 		if (gamepad_event_delay_ms <= 0) {
 			gamepad_event_delay_ms = GAMEPAD_EVENT_REPEAT_RATE_MS + gamepad_event_delay_ms;
 			if (orientation == HORIZONTAL) {
-				if (input->is_action_pressed("ui_left")) {
+				if (Input::is_action_pressed("ui_left")) {
 					if (is_layout_rtl()) {
 						set_value(get_value() + (custom_step >= 0 ? custom_step : get_step()));
 					}
@@ -75,7 +73,7 @@ void Slider::_notification(int p_what)
 					}
 				}
 
-				if (input->is_action_pressed("ui_right")) {
+				if (Input::is_action_pressed("ui_right")) {
 					if (is_layout_rtl()) {
 						set_value(get_value() - (custom_step >= 0 ? custom_step : get_step()));
 					}
@@ -85,11 +83,11 @@ void Slider::_notification(int p_what)
 				}
 			}
 			else if (orientation == VERTICAL) {
-				if (input->is_action_pressed("ui_down")) {
+				if (Input::is_action_pressed("ui_down")) {
 					set_value(get_value() - (custom_step >= 0 ? custom_step : get_step()));
 				}
 
-				if (input->is_action_pressed("ui_up")) {
+				if (Input::is_action_pressed("ui_up")) {
 					set_value(get_value() + (custom_step >= 0 ? custom_step : get_step()));
 				}
 			}

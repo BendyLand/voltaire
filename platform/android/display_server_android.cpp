@@ -661,7 +661,7 @@ void DisplayServerAndroid::window_set_color(const Color &p_color) {
 }
 
 void DisplayServerAndroid::process_events() {
-	Input::get_singleton()->flush_buffered_events();
+	Input::flush_buffered_events();
 }
 
 Vector<String> DisplayServerAndroid::get_rendering_drivers_func() {
@@ -845,7 +845,7 @@ DisplayServerAndroid::DisplayServerAndroid(const String &p_rendering_driver, Dis
 	}
 #endif
 
-	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
+	Input::set_event_dispatch_function(_dispatch_input_events);
 
 	r_error = OK;
 }
@@ -864,19 +864,19 @@ DisplayServerAndroid::~DisplayServerAndroid() {
 }
 
 void DisplayServerAndroid::process_accelerometer(const Vector3 &p_accelerometer) {
-	Input::get_singleton()->set_accelerometer(p_accelerometer);
+	Input::set_accelerometer(p_accelerometer);
 }
 
 void DisplayServerAndroid::process_gravity(const Vector3 &p_gravity) {
-	Input::get_singleton()->set_gravity(p_gravity);
+	Input::set_gravity(p_gravity);
 }
 
 void DisplayServerAndroid::process_magnetometer(const Vector3 &p_magnetometer) {
-	Input::get_singleton()->set_magnetometer(p_magnetometer);
+	Input::set_magnetometer(p_magnetometer);
 }
 
 void DisplayServerAndroid::process_gyroscope(const Vector3 &p_gyroscope) {
-	Input::get_singleton()->set_gyroscope(p_gyroscope);
+	Input::set_gyroscope(p_gyroscope);
 }
 
 void DisplayServerAndroid::_mouse_update_mode() {
@@ -942,11 +942,11 @@ bool DisplayServerAndroid::mouse_is_mode_override_enabled() const {
 }
 
 Point2i DisplayServerAndroid::mouse_get_position() const {
-	return Input::get_singleton()->get_mouse_position();
+	return Input::get_mouse_position();
 }
 
 uint32_t DisplayServerAndroid::mouse_get_button_state() const {
-	return Input::get_singleton()->get_mouse_button_mask();
+	return Input::get_mouse_button_mask();
 }
 
 void DisplayServerAndroid::_cursor_set_shape_helper(DisplayServerEnums::CursorShape p_shape, bool force) {

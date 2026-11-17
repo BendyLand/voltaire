@@ -2311,7 +2311,7 @@ void DisplayServerWindows::_update_real_mouse_position(DisplayServerEnums::Windo
 			old_x = mouse_pos.x;
 			old_y = mouse_pos.y;
 			old_invalid = false;
-			Input::get_singleton()->set_mouse_position(Point2i(mouse_pos.x, mouse_pos.y));
+			Input::set_mouse_position(Point2i(mouse_pos.x, mouse_pos.y));
 		}
 	}
 }
@@ -4246,7 +4246,7 @@ void DisplayServerWindows::process_events() {
 
 	if (!drop_events) {
 		_process_key_events();
-		Input::get_singleton()->flush_buffered_events();
+		Input::flush_buffered_events();
 	}
 
 	// Poll HDR output state for windows that have requested it.
@@ -4981,7 +4981,7 @@ void DisplayServerWindows::window_start_drag(DisplayServerEnums::WindowID p_wind
 	SendMessage(wd.hWnd, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, MAKELPARAM(coords.x, coords.y));
 
 	for (int btn = (int)MouseButton::LEFT; btn <= (int)MouseButton::MB_XBUTTON2; btn++) {
-		if (Input::get_singleton()->is_mouse_button_pressed(MouseButton(btn))) {
+		if (Input::is_mouse_button_pressed(MouseButton(btn))) {
 			Ref<InputEventMouseButton> mb;
 			mb.instantiate();
 			mb->set_window_id(p_window);
@@ -4989,7 +4989,7 @@ void DisplayServerWindows::window_start_drag(DisplayServerEnums::WindowID p_wind
 			mb->set_button_index(MouseButton::LEFT);
 			mb->set_position(Vector2(coords.x, coords.y));
 			mb->set_global_position(mb->get_position());
-			Input::get_singleton()->parse_input_event(mb);
+			Input::parse_input_event(mb);
 		}
 	}
 }
@@ -5044,7 +5044,7 @@ void DisplayServerWindows::window_start_resize(DisplayServerEnums::WindowResizeE
 	SendMessage(wd.hWnd, WM_SYSCOMMAND, SC_SIZE | op, MAKELPARAM(coords.x, coords.y));
 
 	for (int btn = (int)MouseButton::LEFT; btn <= (int)MouseButton::MB_XBUTTON2; btn++) {
-		if (Input::get_singleton()->is_mouse_button_pressed(MouseButton(btn))) {
+		if (Input::is_mouse_button_pressed(MouseButton(btn))) {
 			Ref<InputEventMouseButton> mb;
 			mb.instantiate();
 			mb->set_window_id(p_window);
@@ -5052,7 +5052,7 @@ void DisplayServerWindows::window_start_resize(DisplayServerEnums::WindowResizeE
 			mb->set_button_index(MouseButton::LEFT);
 			mb->set_position(Vector2(coords.x, coords.y));
 			mb->set_global_position(mb->get_position());
-			Input::get_singleton()->parse_input_event(mb);
+			Input::parse_input_event(mb);
 		}
 	}
 }
@@ -5095,7 +5095,7 @@ void DisplayServerWindows::_touch_event(DisplayServerEnums::WindowID p_window, b
 	event->set_pressed(p_pressed);
 	event->set_position(Vector2(p_x, p_y));
 
-	Input::get_singleton()->parse_input_event(event);
+	Input::parse_input_event(event);
 }
 
 void DisplayServerWindows::_drag_event(DisplayServerEnums::WindowID p_window, float p_x, float p_y, int idx) {
@@ -5116,7 +5116,7 @@ void DisplayServerWindows::_drag_event(DisplayServerEnums::WindowID p_window, fl
 	event->set_relative(Vector2(p_x, p_y) - curr->get());
 	event->set_relative_screen_position(event->get_relative());
 
-	Input::get_singleton()->parse_input_event(event);
+	Input::parse_input_event(event);
 
 	curr->get() = Vector2(p_x, p_y);
 }
@@ -5720,7 +5720,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				mm->set_relative_screen_position(mm->get_relative());
 
 				if ((windows[window_id].window_focused || windows[window_id].is_popup) && mm->get_relative() != Vector2()) {
-					Input::get_singleton()->parse_input_event(mm);
+					Input::parse_input_event(mm);
 				}
 			}
 			delete[] lpb;
@@ -5806,7 +5806,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 						SetCursorPos(pos.x, pos.y);
 					}
 
-					mm->set_velocity(Input::get_singleton()->get_last_mouse_velocity());
+					mm->set_velocity(Input::get_last_mouse_velocity());
 					mm->set_screen_velocity(mm->get_velocity());
 
 					if (old_invalid) {
@@ -5821,7 +5821,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 					old_y = mm->get_position().y;
 
 					if (windows[window_id].window_focused || window_get_active_popup() == window_id) {
-						Input::get_singleton()->parse_input_event(mm);
+						Input::parse_input_event(mm);
 					}
 				}
 				return 0;
@@ -5964,7 +5964,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			mb->set_position(Vector2(coords.x, coords.y));
 			mb->set_global_position(Vector2(coords.x, coords.y));
 
-			Input::get_singleton()->parse_input_event(mb);
+			Input::parse_input_event(mb);
 
 			return 0;
 		} break;
@@ -5992,7 +5992,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				break;
 			}
 
-			if (Input::get_singleton()->is_emulating_mouse_from_touch()) {
+			if (Input::is_emulating_mouse_from_touch()) {
 				// Universal translation enabled; ignore OS translation.
 				LPARAM extra = GetMessageExtraInfo();
 				if (IsTouchEvent(extra)) {
@@ -6089,7 +6089,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				SetCursorPos(pos.x, pos.y);
 			}
 
-			mm->set_velocity(Input::get_singleton()->get_last_mouse_velocity());
+			mm->set_velocity(Input::get_last_mouse_velocity());
 			mm->set_screen_velocity(mm->get_velocity());
 
 			if (old_invalid) {
@@ -6103,7 +6103,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			old_x = mm->get_position().x;
 			old_y = mm->get_position().y;
 			if (windows[window_id].window_focused || window_get_active_popup() == window_id) {
-				Input::get_singleton()->parse_input_event(mm);
+				Input::parse_input_event(mm);
 			}
 
 			return 0; // Pointer event handled return 0 to avoid duplicate WM_MOUSEMOVE event.
@@ -6117,7 +6117,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				break;
 			}
 
-			if (Input::get_singleton()->is_emulating_mouse_from_touch()) {
+			if (Input::is_emulating_mouse_from_touch()) {
 				// Universal translation enabled; ignore OS translation.
 				LPARAM extra = GetMessageExtraInfo();
 				if (IsTouchEvent(extra)) {
@@ -6216,7 +6216,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				SetCursorPos(pos.x, pos.y);
 			}
 
-			mm->set_velocity(Input::get_singleton()->get_last_mouse_velocity());
+			mm->set_velocity(Input::get_last_mouse_velocity());
 			mm->set_screen_velocity(mm->get_velocity());
 
 			if (old_invalid) {
@@ -6236,12 +6236,12 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				mm->set_global_position(mm->get_position());
 			}
 
-			Input::get_singleton()->parse_input_event(mm);
+			Input::parse_input_event(mm);
 
 		} break;
 		case WM_LBUTTONDOWN:
 		case WM_LBUTTONUP:
-			if (Input::get_singleton()->is_emulating_mouse_from_touch()) {
+			if (Input::is_emulating_mouse_from_touch()) {
 				// Universal translation enabled; ignore OS translations for left button.
 				LPARAM extra = GetMessageExtraInfo();
 				if (IsTouchEvent(extra)) {
@@ -6410,14 +6410,14 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 			mb->set_global_position(mb->get_position());
 
-			Input::get_singleton()->parse_input_event(mb);
+			Input::parse_input_event(mb);
 			if (mb->is_pressed() && mb->get_button_index() >= MouseButton::WHEEL_UP && mb->get_button_index() <= MouseButton::WHEEL_RIGHT) {
 				// Send release for mouse wheel.
 				Ref<InputEventMouseButton> mbd = mb->duplicate();
 				mbd->set_window_id(window_id);
 				mbd->set_button_mask(mouse_get_button_state());
 				mbd->set_pressed(false);
-				Input::get_singleton()->parse_input_event(mbd);
+				Input::parse_input_event(mbd);
 			}
 
 			// Propagate the button up event to the window on which the button down
@@ -6583,7 +6583,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		} break;
 
 		case WM_ENTERSIZEMOVE: {
-			Input::get_singleton()->release_pressed_events();
+			Input::release_pressed_events();
 			windows[window_id].move_timer_id = SetTimer(windows[window_id].hWnd, DisplayServerWindows::TIMER_ID_MOVE_REDRAW, USER_TIMER_MINIMUM, (TIMERPROC) nullptr);
 		} break;
 		case WM_EXITSIZEMOVE: {
@@ -6725,7 +6725,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		case WM_DESTROY: {
 			AccessibilityServer::get_singleton()->window_destroy(window_id);
 
-			Input::get_singleton()->flush_buffered_events();
+			Input::flush_buffered_events();
 			if (window_mouseover_id == window_id) {
 				window_mouseover_id = DisplayServerEnums::INVALID_WINDOW_ID;
 				_send_window_event(windows[window_id], DisplayServerEnums::WINDOW_EVENT_MOUSE_EXIT);
@@ -6782,7 +6782,7 @@ void DisplayServerWindows::_process_activate_event(DisplayServerEnums::WindowID 
 
 		_send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
 	} else { // WM_INACTIVE.
-		Input::get_singleton()->release_pressed_events();
+		Input::release_pressed_events();
 		track_mouse_leave_event(wd.hWnd);
 		// Release capture unconditionally because it can be set due to dragging, in addition to captured mode.
 		// When the user is moving a window, it's important to not ReleaseCapture because it will cause
@@ -6876,7 +6876,7 @@ void DisplayServerWindows::_process_key_events() {
 						k->set_ctrl_pressed(false);
 					}
 
-					Input::get_singleton()->parse_input_event(k);
+					Input::parse_input_event(k);
 				} else {
 					// Do nothing.
 				}
@@ -6960,7 +6960,7 @@ void DisplayServerWindows::_process_key_events() {
 
 				k->set_echo((ke.uMsg == WM_KEYDOWN && (ke.lParam & (1 << 30))));
 
-				Input::get_singleton()->parse_input_event(k);
+				Input::parse_input_event(k);
 
 			} break;
 		}
@@ -8223,7 +8223,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 	r_error = OK;
 
 	static_cast<OS_Windows *>(OS::get_singleton())->set_main_window(windows[DisplayServerEnums::MAIN_WINDOW_ID].hWnd);
-	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
+	Input::set_event_dispatch_function(_dispatch_input_events);
 }
 
 Vector<String> DisplayServerWindows::get_rendering_drivers_func() {

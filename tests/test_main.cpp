@@ -174,8 +174,8 @@ struct GodotTestCaseListener : public doctest::IReporter {
 		String suite_name = String(p_in.m_test_suite);
 
 		if (name.contains("[SceneTree]") || name.contains("[Editor]")) {
-			memnew(Input);
-			Input::get_singleton()->set_use_accumulated_input(false);
+			Input::initialize();
+			Input::set_use_accumulated_input(false);
 
 			Error err = OK;
 			OS::set_has_server_feature_callback(nullptr);
@@ -328,7 +328,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 		}
 #endif // PHYSICS_2D_DISABLED
 
-		memdelete(Input::get_singleton());
+		Input::finalize();
 
 		if (Renderer::get_singleton()) {
 			ThemeDB::get_singleton()->finalize_theme();

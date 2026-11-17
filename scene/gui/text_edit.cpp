@@ -3959,7 +3959,7 @@ void TextEdit::_click_selection_held()
 {
 	// Update the selection mode on a timer so it is updated when the view scrolls even if the mouse
 	// isn't moving.
-	if (!Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT)) {
+	if (!Input::is_mouse_button_pressed(MouseButton::LEFT)) {
 		click_select_held->stop();
 		return;
 	}

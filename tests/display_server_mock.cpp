@@ -92,5 +92,5 @@ void DisplayServerMock::simulate_event(Ref<InputEvent> p_event) {
 		}
 		_set_mouse_position(me->get_position());
 	}
-	Input::get_singleton()->parse_input_event(event);
+	Input::parse_input_event(event);
 }

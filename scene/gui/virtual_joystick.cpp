@@ -69,32 +69,30 @@ void VirtualJoystick::_reset() {}
 
 void VirtualJoystick::_handle_input_actions()
 {
-	Input* input = Input::get_singleton();
-
-	if (input_vector.x >= 0.0f && input->is_action_pressed(action_left)) {
-		input->action_release(action_left);
+	if (input_vector.x >= 0.0f && Input::is_action_pressed(action_left)) {
+		Input::action_release(action_left);
 	}
-	if (input_vector.x <= 0.0f && input->is_action_pressed(action_right)) {
-		input->action_release(action_right);
+	if (input_vector.x <= 0.0f && Input::is_action_pressed(action_right)) {
+		Input::action_release(action_right);
 	}
-	if (input_vector.y >= 0.0f && input->is_action_pressed(action_up)) {
-		input->action_release(action_up);
+	if (input_vector.y >= 0.0f && Input::is_action_pressed(action_up)) {
+		Input::action_release(action_up);
 	}
-	if (input_vector.y <= 0.0f && input->is_action_pressed(action_down)) {
-		input->action_release(action_down);
+	if (input_vector.y <= 0.0f && Input::is_action_pressed(action_down)) {
+		Input::action_release(action_down);
 	}
 
 	if (input_vector.x < 0.0f) {
-		input->action_press(action_left, -input_vector.x);
+		Input::action_press(action_left, -input_vector.x);
 	}
 	else if (input_vector.x > 0.0f) {
-		input->action_press(action_right, input_vector.x);
+		Input::action_press(action_right, input_vector.x);
 	}
 	if (input_vector.y < 0.0f) {
-		input->action_press(action_up, -input_vector.y);
+		Input::action_press(action_up, -input_vector.y);
 	}
 	else if (input_vector.y > 0.0f) {
-		input->action_press(action_down, input_vector.y);
+		Input::action_press(action_down, input_vector.y);
 	}
 }
 

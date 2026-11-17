@@ -56,10 +56,10 @@
 
 void EditorResourcePicker::_on_unique_button_pressed()
 {
-	if (Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT)) {
+	if (Input::is_mouse_button_pressed(MouseButton::LEFT)) {
 		_edit_menu_cbk(OBJ_MENU_MAKE_UNIQUE);
 	}
-	else if (Input::get_singleton()->is_mouse_button_pressed(MouseButton::RIGHT) &&
+	else if (Input::is_mouse_button_pressed(MouseButton::RIGHT) &&
 			   _is_uniqueness_enabled(true)) {
 		_edit_menu_cbk(OBJ_MENU_MAKE_UNIQUE_RECURSIVE);
 	}

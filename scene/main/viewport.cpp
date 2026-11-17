@@ -689,7 +689,7 @@ Vector2 Viewport::get_mouse_position() const
 	else {
 		// Fallback to Input for getting mouse position in case of emulated mouse.
 		return get_screen_transform_internal().affine_inverse().xform(
-			Input::get_singleton()->get_mouse_position());
+			Input::get_mouse_position());
 	}
 }
 
@@ -698,7 +698,7 @@ void Viewport::warp_mouse(const Vector2& p_position)
 	ERR_MAIN_THREAD_GUARD;
 	Transform2D xform = get_screen_transform_internal();
 	Vector2 gpos = xform.xform(p_position);
-	Input::get_singleton()->warp_mouse(gpos);
+	Input::warp_mouse(gpos);
 }
 
 Point2 Viewport::wrap_mouse_in_rect(const Vector2& p_relative, const Rect2& p_rect)

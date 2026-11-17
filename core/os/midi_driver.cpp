@@ -170,7 +170,7 @@ void MIDIDriver::send_event(
 	default:
 		break;
 	}
-	Input::get_singleton()->parse_input_event(event.ptr());
+	Input::parse_input_event(event.ptr());
 }
 
 void MIDIDriver::Parser::parse_fragment(uint8_t p_fragment)

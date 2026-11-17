@@ -451,10 +451,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_joyhat(JNIEnv *env, j
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_joyconnectionchanged(JNIEnv *env, jclass clazz, jint p_device, jboolean p_connected, jstring p_name) {
 	if (os_android) {
 		String name = jstring_to_string(p_name, env);
-		Input *input = Input::get_singleton();
-		if (input) {
-			input->joy_connection_changed(p_device, p_connected, name);
-		}
+		(void)name;
 	}
 }
 
@@ -702,9 +699,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onOrientationChange(J
 }
 
 JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_shouldDispatchInputToRenderThread(JNIEnv *env, jclass clazz) {
-	Input *input = Input::get_singleton();
-	if (input) {
-		return !input->is_agile_input_event_flushing();
+	if (Input::is_initialized()) {
+		return !Input::is_agile_input_event_flushing();
 	}
 	return false;
 }

@@ -212,8 +212,8 @@ void InputMap::action_erase_event(const String& p_action, InputEvent* rp_event)
 	if (E) {
 		data->input_map[p_action].inputs.erase(E);
 
-		if (Input::get_singleton()->is_action_pressed(p_action)) {
-			Input::get_singleton()->action_release(p_action);
+		if (Input::is_action_pressed(p_action)) {
+			Input::action_release(p_action);
 		}
 	}
 }
@@ -223,8 +223,8 @@ void InputMap::action_erase_events(const String& p_action)
 	ERR_FAIL_NULL(data);
 	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
 
-	if (Input::get_singleton()->is_action_pressed(p_action)) {
-		Input::get_singleton()->action_release(p_action);
+	if (Input::is_action_pressed(p_action)) {
+		Input::action_release(p_action);
 	}
 
 	data->input_map[p_action].inputs.clear();

@@ -429,7 +429,7 @@
 		mb->set_double_click([event clickCount] == 2);
 	}
 
-	Input::get_singleton()->parse_input_event(mb);
+	Input::parse_input_event(mb);
 }
 
 - (void)mouseDown:(NSEvent *)event {
@@ -548,7 +548,7 @@
 		mm->set_pen_inverted(last_pen_inverted);
 	}
 	mm->set_global_position(wd.mouse_pos);
-	mm->set_velocity(Input::get_singleton()->get_last_mouse_velocity());
+	mm->set_velocity(Input::get_last_mouse_velocity());
 	mm->set_screen_velocity(mm->get_velocity());
 	const Vector2i relativeMotion = Vector2i(delta.x, delta.y) * ds->screen_get_max_scale();
 	mm->set_relative(relativeMotion);
@@ -560,7 +560,7 @@
 		ds->mouse_enter_window(window_id);
 	}
 
-	Input::get_singleton()->parse_input_event(mm);
+	Input::parse_input_event(mm);
 }
 
 - (void)rightMouseDown:(NSEvent *)event {
@@ -658,7 +658,7 @@
 	ev->set_position(wd.mouse_pos);
 	ev->set_factor([event magnification] + 1.0);
 
-	Input::get_singleton()->parse_input_event(ev);
+	Input::parse_input_event(ev);
 }
 
 - (void)updateTrackingAreas {
@@ -854,7 +854,7 @@
 	scroll_mask.set_flag(mask);
 	sc->set_button_mask(scroll_mask);
 
-	Input::get_singleton()->parse_input_event(sc);
+	Input::parse_input_event(sc);
 
 	sc.instantiate();
 	sc->set_window_id(window_id);
@@ -866,7 +866,7 @@
 	scroll_mask.clear_flag(mask);
 	sc->set_button_mask(scroll_mask);
 
-	Input::get_singleton()->parse_input_event(sc);
+	Input::parse_input_event(sc);
 }
 
 - (void)processPanEvent:(NSEvent *)event dx:(double)dx dy:(double)dy {
@@ -885,7 +885,7 @@
 	pg->set_position(wd.mouse_pos);
 	pg->set_delta(Vector2(-dx, -dy));
 
-	Input::get_singleton()->parse_input_event(pg);
+	Input::parse_input_event(pg);
 }
 
 - (void)scrollWheel:(NSEvent *)event {

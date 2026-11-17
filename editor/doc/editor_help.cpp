@@ -1380,7 +1380,7 @@ void FindBar::_search_text_changed(const String& p_text) { search_next(); }
 
 void FindBar::_search_text_submitted(const String& p_text)
 {
-	if (Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
+	if (Input::is_key_pressed(Key::SHIFT)) {
 		search_prev();
 	}
 	else {

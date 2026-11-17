@@ -162,7 +162,7 @@ void CanvasItemEditor::_snap_if_closer_point(Point2 p_value, Point2& r_current_s
 real_t CanvasItemEditor::snap_angle(real_t p_target, real_t p_start) const
 {
 	if (((smart_snap_active || snap_rotation) ^
-			Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL)) &&
+			Input::is_key_pressed(Key::CMD_OR_CTRL)) &&
 		snap_rotation_step != 0) {
 		if (snap_relative) {
 			return Math::snapped(p_target - snap_rotation_offset, snap_rotation_step) +

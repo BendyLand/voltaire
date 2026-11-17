@@ -203,7 +203,7 @@ float DisplayServer::screen_get_scale(int p_screen) const { return 1.0f; }
 
 bool DisplayServer::is_touchscreen_available() const
 {
-	return Input::get_singleton() && Input::get_singleton()->is_emulating_touch_from_mouse();
+	return Input::is_initialized() && Input::is_emulating_touch_from_mouse();
 }
 
 void DisplayServer::screen_set_keep_on(bool p_enable)

@@ -56,9 +56,9 @@ void SpinBox::_release_mouse_from_drag_mode()
 {
 	if (drag.enabled) {
 		drag.enabled = false;
-		Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_HIDDEN);
+		Input::set_mouse_mode(Input::MouseMode::MOUSE_MODE_HIDDEN);
 		warp_mouse(drag.capture_pos);
-		Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
+		Input::set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
 	}
 }
 
@@ -90,14 +90,14 @@ void SpinBox::_line_edit_editing_toggled(bool p_toggled_on)
 
 		// LineEdit text might change and it clears any selection. Have to re-select here.
 		if (line_edit->is_select_all_on_focus() &&
-			!Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT)) {
+			!Input::is_mouse_button_pressed(MouseButton::LEFT)) {
 			line_edit->select_all();
 		}
 	}
 	else {
 		accepted = true;
 
-		if (Input::get_singleton()->is_action_pressed("ui_cancel") ||
+		if (Input::is_action_pressed("ui_cancel") ||
 			line_edit->get_text().is_empty()) {
 			_update_text(); // Revert text if editing was canceled.
 		}

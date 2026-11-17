@@ -251,8 +251,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 	if (!ds) {
 		return;
 	}
-	Input *input = Input::get_singleton();
-	if (!input) {
+	if (!Input::is_initialized()) {
 		return;
 	}
 
@@ -282,7 +281,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 		ke->set_physical_keycode(KeyMappingMacOS::translate_key(key));
 		ke->set_key_label(KeyMappingMacOS::remap_key(key, mod, true));
 		ke->set_location(KeyMappingMacOS::translate_location(key));
-		input->parse_input_event(ke);
+		Input::parse_input_event(ke.ptr());
 	}
 }
 

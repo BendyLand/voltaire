@@ -378,9 +378,8 @@ void SceneTree::_main_window_go_back()
 
 void SceneTree::_main_window_focus_in()
 {
-	Input* id = Input::get_singleton();
-	if (id) {
-		id->ensure_touch_mouse_raised();
+	if (Input::is_initialized()) {
+		Input::ensure_touch_mouse_raised();
 	}
 }
 
@@ -409,14 +408,14 @@ void SceneTree::_notification(int p_notification)
 
 	case NOTIFICATION_APPLICATION_FOCUS_IN:
 	case NOTIFICATION_APPLICATION_FOCUS_OUT: {
-		if (Input::get_singleton()) {
-			Input::get_singleton()->application_focused =
-				p_notification == NOTIFICATION_APPLICATION_FOCUS_IN;
+		if (Input::is_initialized()) {
+			Input::set_application_focused(
+				p_notification == NOTIFICATION_APPLICATION_FOCUS_IN);
 
 			// `release_pressed_events()` already preserves joypad state when the
 			// unfocused joypad setting is disabled, but keyboard state still needs
 			// to be released after focus loss.
-			Input::get_singleton()->release_pressed_events();
+			Input::release_pressed_events();
 		}
 
 		// Pass these to nodes, since they are mirrored.

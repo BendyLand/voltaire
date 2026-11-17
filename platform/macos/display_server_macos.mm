@@ -504,7 +504,7 @@ void DisplayServerMacOS::_dispatch_input_event(const Ref<InputEvent> &p_event) {
 
 void DisplayServerMacOS::_push_input(const Ref<InputEvent> &p_event) {
 	Ref<InputEvent> ev = p_event;
-	Input::get_singleton()->parse_input_event(ev);
+	Input::parse_input_event(ev);
 }
 
 void DisplayServerMacOS::_process_key_events() {
@@ -657,7 +657,7 @@ void DisplayServerMacOS::send_event(NSEvent *p_event) {
 			k->set_key_label(Key::PERIOD);
 			k->set_echo([p_event isARepeat]);
 
-			Input::get_singleton()->parse_input_event(k);
+			Input::parse_input_event(k);
 			return;
 		}
 
@@ -674,7 +674,7 @@ void DisplayServerMacOS::send_event(NSEvent *p_event) {
 			k->set_key_label(Key::TAB);
 			k->set_echo([p_event isARepeat]);
 
-			Input::get_singleton()->parse_input_event(k);
+			Input::parse_input_event(k);
 			return;
 		}
 	}
@@ -696,16 +696,16 @@ void DisplayServerMacOS::send_window_event_by_id(DisplayServerEnums::WindowEvent
 
 void DisplayServerMacOS::release_pressed_events() {
 	_THREAD_SAFE_METHOD_
-	if (Input::get_singleton()) {
-		Input::get_singleton()->release_pressed_events();
+	if (Input::is_initialized()) {
+		Input::release_pressed_events();
 	}
 }
 
 void DisplayServerMacOS::sync_mouse_state() {
 	_THREAD_SAFE_METHOD_
-	if (Input::get_singleton()) {
-		Vector2i pos = Input::get_singleton()->get_mouse_position();
-		BitField<MouseButtonMask> in_mask = Input::get_singleton()->get_mouse_button_mask();
+	if (Input::is_initialized()) {
+		Vector2i pos = Input::get_mouse_position();
+		BitField<MouseButtonMask> in_mask = Input::get_mouse_button_mask();
 		BitField<MouseButtonMask> ds_mask = mouse_get_button_state();
 		for (int btn = (int)MouseButton::LEFT; btn <= (int)MouseButton::MB_XBUTTON2; btn++) {
 			MouseButtonMask mbm = mouse_button_to_mask(MouseButton(btn));
@@ -717,7 +717,7 @@ void DisplayServerMacOS::sync_mouse_state() {
 				mb->set_position(pos);
 				mb->set_global_position(pos);
 				mb->set_button_mask(ds_mask);
-				Input::get_singleton()->parse_input_event(mb);
+				Input::parse_input_event(mb);
 			}
 			if (!in_mask.has_flag(mbm) && ds_mask.has_flag(mbm)) {
 				Ref<InputEventMouseButton> mb;
@@ -727,7 +727,7 @@ void DisplayServerMacOS::sync_mouse_state() {
 				mb->set_position(pos);
 				mb->set_global_position(pos);
 				mb->set_button_mask(ds_mask);
-				Input::get_singleton()->parse_input_event(mb);
+				Input::parse_input_event(mb);
 			}
 		}
 	}
@@ -745,7 +745,7 @@ void DisplayServerMacOS::update_mouse_pos(DisplayServerMacOS::WindowData &p_wd, 
 	const float scale = screen_get_max_scale();
 	p_wd.mouse_pos.x = p_location_in_window.x * scale;
 	p_wd.mouse_pos.y = (content_rect.size.height - p_location_in_window.y) * scale;
-	Input::get_singleton()->set_mouse_position(p_wd.mouse_pos);
+	Input::set_mouse_position(p_wd.mouse_pos);
 }
 
 void DisplayServerMacOS::pop_last_key_event() {
@@ -3291,7 +3291,7 @@ void DisplayServerMacOS::_process_events(bool p_pump) {
 
 	if (!drop_events) {
 		_process_key_events();
-		Input::get_singleton()->flush_buffered_events();
+		Input::flush_buffered_events();
 	}
 
 	_THREAD_SAFE_LOCK_
@@ -3746,7 +3746,7 @@ bool DisplayServerMacOS::mouse_process_popups(bool p_close) {
 }
 
 DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
-	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
+	Input::set_event_dispatch_function(_dispatch_input_events);
 
 	r_error = OK;
 

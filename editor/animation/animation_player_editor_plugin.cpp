@@ -76,7 +76,7 @@ float AnimationPlayerEditor::_get_editor_step() const
 	float step = track_editor->get_snap_unit();
 
 	// Use more precise snapping when holding Shift
-	return Input::get_singleton()->is_key_pressed(Key::SHIFT) ? step * 0.25 : step;
+	return Input::is_key_pressed(Key::SHIFT) ? step * 0.25 : step;
 }
 
 void AnimationPlayerEditor::_scale_changed(const String& p_scale)

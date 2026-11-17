@@ -97,8 +97,7 @@ Error EmbeddedDebugger::_msg_mouse_set_mode(const Array &p_args) {
 
 Error EmbeddedDebugger::_msg_event(const Array &p_args) {
 	ERR_FAIL_COND_V_MSG(p_args.size() != 1, ERR_INVALID_PARAMETER, "Invalid number of arguments for 'event' message.");
-	Input *input = Input::get_singleton();
-	if (!input) {
+	if (!Input::is_initialized()) {
 		// Ignore if we've received an event before the process has initialized.
 		return OK;
 	}
@@ -120,7 +119,7 @@ Error EmbeddedDebugger::_msg_event(const Array &p_args) {
 			if (mm.is_valid()) {
 				mm->set_relative(mm->get_relative() * scale);
 			}
-			input->set_mouse_position(e->get_position());
+			Input::set_mouse_position(e->get_position());
 		}
 	}
 
@@ -128,7 +127,7 @@ Error EmbeddedDebugger::_msg_event(const Array &p_args) {
 		Ref<InputEventMagnifyGesture> e = event;
 		if (e.is_valid()) {
 			e->set_position(e->get_position() * scale);
-			input->set_mouse_position(e->get_position());
+			Input::set_mouse_position(e->get_position());
 		}
 	}
 
@@ -136,12 +135,12 @@ Error EmbeddedDebugger::_msg_event(const Array &p_args) {
 		Ref<InputEventPanGesture> e = event;
 		if (e.is_valid()) {
 			e->set_position(e->get_position() * scale);
-			input->set_mouse_position(e->get_position());
+			Input::set_mouse_position(e->get_position());
 		}
 	}
 
 	if (event.is_valid()) {
-		input->parse_input_event(event);
+		Input::parse_input_event(event.ptr());
 	}
 
 	return OK;
@@ -152,7 +151,7 @@ Error EmbeddedDebugger::_msg_win_event(const Array &p_args) {
 	DisplayServerEnums::WindowEvent win_event = p_args[0];
 	ds->send_window_event_by_id(win_event, DisplayServerEnums::MAIN_WINDOW_ID);
 	if (win_event == DisplayServerEnums::WindowEvent::WINDOW_EVENT_MOUSE_EXIT) {
-		Input::get_singleton()->release_pressed_events();
+		Input::release_pressed_events();
 	}
 	return OK;
 }

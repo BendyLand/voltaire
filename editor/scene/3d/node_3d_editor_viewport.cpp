@@ -220,9 +220,9 @@ void ViewportRotationControl::_process_click(int p_index, Vector2 p_position, bo
 			_update_focus();
 		}
 		orbiting_index = -1;
-		if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED) {
-			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
-			Input::get_singleton()->warp_mouse(orbiting_mouse_start);
+		if (Input::get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED) {
+			Input::set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
+			Input::warp_mouse(orbiting_mouse_start);
 		}
 	}
 }
@@ -796,7 +796,7 @@ Transform3D Node3DEditorViewport::_compute_transform(TransformMode p_mode,
 
 void Node3DEditorViewport::_surface_mouse_enter()
 {
-	if (Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED) {
+	if (Input::get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED) {
 		return;
 	}
 
@@ -836,7 +836,7 @@ void Node3DEditorViewport::_pilot_tick_undo_session(real_t p_delta)
 
 bool Node3DEditorViewport::_is_nav_modifier_pressed(const String& p_name)
 {
-	return _is_shortcut_empty(p_name) || Input::get_singleton()->is_action_pressed(p_name);
+	return _is_shortcut_empty(p_name) || Input::is_action_pressed(p_name);
 }
 
 bool Node3DEditorViewport::_is_shortcut_empty(const String& p_name)

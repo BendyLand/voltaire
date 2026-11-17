@@ -47,7 +47,7 @@ void TouchActionsPanel::_simulate_editor_shortcut(const String& p_shortcut_name)
 		Ref<InputEventKey> event = shortcut->get_events()[0];
 		if (event.is_valid()) {
 			event->set_pressed(true);
-			Input::get_singleton()->parse_input_event(event.ptr());
+			Input::parse_input_event(event.ptr());
 		}
 	}
 }
@@ -58,7 +58,7 @@ void TouchActionsPanel::_simulate_key_press(Key p_keycode)
 	event.instantiate();
 	event->set_keycode(p_keycode);
 	event->set_pressed(true);
-	Input::get_singleton()->parse_input_event(event.ptr());
+	Input::parse_input_event(event.ptr());
 }
 
 void TouchActionsPanel::_on_modifier_button_toggled(bool p_pressed, int p_modifier)

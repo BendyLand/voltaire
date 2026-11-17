@@ -266,13 +266,13 @@ bool Node3DEditor::is_preserve_children_transform_enabled() const
 
 bool Node3DEditor::is_vertex_snap_use_collision() const
 {
-	return vertex_snap_use_collision != Input::get_singleton()->is_key_pressed(Key::SHIFT);
+	return vertex_snap_use_collision != Input::is_key_pressed(Key::SHIFT);
 }
 
 real_t Node3DEditor::get_translate_snap() const
 {
 	real_t snap_value = snap_translate_value;
-	if (Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
+	if (Input::is_key_pressed(Key::SHIFT)) {
 		snap_value /= 10.0f;
 	}
 	return snap_value;
@@ -281,7 +281,7 @@ real_t Node3DEditor::get_translate_snap() const
 real_t Node3DEditor::get_rotate_snap() const
 {
 	real_t snap_value = snap_rotate_value;
-	if (Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
+	if (Input::is_key_pressed(Key::SHIFT)) {
 		snap_value /= 3.0f;
 	}
 	return snap_value;
@@ -290,7 +290,7 @@ real_t Node3DEditor::get_rotate_snap() const
 real_t Node3DEditor::get_scale_snap() const
 {
 	real_t snap_value = snap_scale_value;
-	if (Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
+	if (Input::is_key_pressed(Key::SHIFT)) {
 		snap_value /= 2.0f;
 	}
 	return snap_value;

@@ -279,9 +279,8 @@ void ColorPickerShape::draw_circle_cursor(Control* p_control, float p_hue, float
 
 void ColorPickerShape::shape_focus_entered()
 {
-	Input* input = Input::get_singleton();
-	if (!(input->is_action_pressed("ui_up") || input->is_action_pressed("ui_down") ||
-			input->is_action_pressed("ui_left") || input->is_action_pressed("ui_right"))) {
+	if (!(Input::is_action_pressed("ui_up") || Input::is_action_pressed("ui_down") ||
+			Input::is_action_pressed("ui_left") || Input::is_action_pressed("ui_right"))) {
 		cursor_editing = true;
 	}
 }

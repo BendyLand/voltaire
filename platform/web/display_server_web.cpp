@@ -221,7 +221,7 @@ void DisplayServerWeb::_key_callback(const String &p_key_event_code, const Strin
 	ds->key_event_buffer.write[ds->key_event_pos++] = ke;
 
 	// Make sure to flush all events so we can call restricted APIs inside the event.
-	Input::get_singleton()->flush_buffered_events();
+	Input::flush_buffered_events();
 }
 
 // Mouse
@@ -301,12 +301,12 @@ int DisplayServerWeb::_mouse_button_callback(int p_pressed, int p_button, double
 	}
 	ev->set_button_mask(mask);
 
-	Input::get_singleton()->parse_input_event(ev);
+	Input::parse_input_event(ev);
 	// Resume audio context after input in case autoplay was denied.
 	OS_Web::get_singleton()->resume_audio();
 
 	// Make sure to flush all events so we can call restricted APIs inside the event.
-	Input::get_singleton()->flush_buffered_events();
+	Input::flush_buffered_events();
 
 	// Prevent multi-click text selection and wheel-click scrolling anchor.
 	// Context menu is prevented through contextmenu event.
@@ -344,10 +344,10 @@ void DisplayServerWeb::_mouse_move_callback(double p_x, double p_y, double p_rel
 
 	ev->set_relative(Vector2(p_rel_x, p_rel_y));
 	ev->set_relative_screen_position(ev->get_relative());
-	ev->set_velocity(Input::get_singleton()->get_last_mouse_velocity());
+	ev->set_velocity(Input::get_last_mouse_velocity());
 	ev->set_screen_velocity(ev->get_velocity());
 
-	Input::get_singleton()->parse_input_event(ev);
+	Input::parse_input_event(ev);
 }
 
 // Cursor
@@ -638,7 +638,7 @@ bool DisplayServerWeb::mouse_is_mode_override_enabled() const {
 }
 
 Point2i DisplayServerWeb::mouse_get_position() const {
-	return Input::get_singleton()->get_mouse_position();
+	return Input::get_mouse_position();
 }
 
 // Wheel
@@ -662,16 +662,15 @@ int DisplayServerWeb::_mouse_wheel_callback(int p_delta_mode, double p_delta_x, 
 		}
 	}
 
-	Input *input = Input::get_singleton();
 	Ref<InputEventMouseButton> ev;
 	ev.instantiate();
-	ev->set_position(input->get_mouse_position());
+	ev->set_position(Input::get_mouse_position());
 	ev->set_global_position(ev->get_position());
 
-	ev->set_shift_pressed(input->is_key_pressed(Key::SHIFT));
-	ev->set_alt_pressed(input->is_key_pressed(Key::ALT));
-	ev->set_ctrl_pressed(input->is_key_pressed(Key::CTRL));
-	ev->set_meta_pressed(input->is_key_pressed(Key::META));
+	ev->set_shift_pressed(Input::is_key_pressed(Key::SHIFT));
+	ev->set_alt_pressed(Input::is_key_pressed(Key::ALT));
+	ev->set_ctrl_pressed(Input::is_key_pressed(Key::CTRL));
+	ev->set_meta_pressed(Input::is_key_pressed(Key::META));
 
 	enum DeltaMode {
 		DELTA_MODE_PIXEL = 0,
@@ -717,12 +716,12 @@ int DisplayServerWeb::_mouse_wheel_callback(int p_delta_mode, double p_delta_x, 
 
 	ev->set_pressed(true);
 	ev->set_button_mask(button_mask);
-	input->parse_input_event(ev);
+	Input::parse_input_event(ev.ptr());
 
 	Ref<InputEventMouseButton> release = ev->duplicate();
 	release->set_pressed(false);
-	release->set_button_mask(input->get_mouse_button_mask());
-	input->parse_input_event(release);
+	release->set_button_mask(Input::get_mouse_button_mask());
+	Input::parse_input_event(release.ptr());
 
 	return true;
 }
@@ -757,7 +756,7 @@ void DisplayServerWeb::_touch_callback(int p_type, int p_count) {
 			ev->set_relative_screen_position(ev->get_relative());
 			prev = ev->get_position();
 
-			Input::get_singleton()->parse_input_event(ev);
+			Input::parse_input_event(ev);
 		} else {
 			// touchstart/touchend
 			Ref<InputEventScreenTouch> ev;
@@ -771,16 +770,16 @@ void DisplayServerWeb::_touch_callback(int p_type, int p_count) {
 			ev->set_pressed(p_type == 0);
 			ds->touches[i] = point;
 
-			Input::get_singleton()->parse_input_event(ev);
+			Input::parse_input_event(ev);
 
 			// Make sure to flush all events so we can call restricted APIs inside the event.
-			Input::get_singleton()->flush_buffered_events();
+			Input::flush_buffered_events();
 		}
 	}
 }
 
 bool DisplayServerWeb::is_touchscreen_available() const {
-	return godot_js_display_touchscreen_is_available() || (Input::get_singleton() && Input::get_singleton()->is_emulating_touch_from_mouse());
+	return godot_js_display_touchscreen_is_available() || (Input::is_initialized() && Input::is_emulating_touch_from_mouse());
 }
 
 // Virtual Keyboard
@@ -805,19 +804,18 @@ void DisplayServerWeb::_vk_input_text_callback(const String &p_text, int p_curso
 	// Call input_text
 	ds->input_text_callback.call(p_text, true);
 	// Insert key right to reach position.
-	Input *input = Input::get_singleton();
 	Ref<InputEventKey> k;
 	for (int i = 0; i < p_cursor; i++) {
 		k.instantiate();
 		k->set_pressed(true);
 		k->set_echo(false);
 		k->set_keycode(Key::RIGHT);
-		input->parse_input_event(k);
+		Input::parse_input_event(k.ptr());
 		k.instantiate();
 		k->set_pressed(false);
 		k->set_echo(false);
 		k->set_keycode(Key::RIGHT);
-		input->parse_input_event(k);
+		Input::parse_input_event(k.ptr());
 	}
 }
 
@@ -841,7 +839,7 @@ void DisplayServerWeb::window_blur_callback() {
 }
 
 void DisplayServerWeb::_window_blur_callback() {
-	Input::get_singleton()->release_pressed_events();
+	Input::release_pressed_events();
 }
 
 // Gamepad
@@ -860,17 +858,13 @@ void DisplayServerWeb::gamepad_callback(int p_index, int p_connected, const char
 }
 
 void DisplayServerWeb::_gamepad_callback(int p_index, int p_connected, const String &p_id, const String &p_guid) {
+	(void)p_index;
+	(void)p_id;
+	(void)p_guid;
 	if (p_connected) {
 		DisplayServerWeb::get_singleton()->gamepad_count += 1;
 	} else {
 		DisplayServerWeb::get_singleton()->gamepad_count -= 1;
-	}
-
-	Input *input = Input::get_singleton();
-	if (p_connected) {
-		input->joy_connection_changed(p_index, true, p_id, p_guid);
-	} else {
-		input->joy_connection_changed(p_index, false, "");
 	}
 }
 
@@ -951,7 +945,7 @@ void DisplayServerWeb::_ime_callback(int p_type, const String &p_text) {
 	}
 
 	ds->process_keys();
-	Input::get_singleton()->flush_buffered_events();
+	Input::flush_buffered_events();
 }
 
 void DisplayServerWeb::window_set_ime_active(const bool p_active, DisplayServerEnums::WindowID p_window) {
@@ -972,7 +966,6 @@ String DisplayServerWeb::ime_get_text() const {
 }
 
 void DisplayServerWeb::process_joypads() {
-	Input *input = Input::get_singleton();
 	int32_t pads = godot_js_input_gamepad_sample_count();
 	int32_t s_btns_num = 0;
 	int32_t s_axes_num = 0;
@@ -988,15 +981,15 @@ void DisplayServerWeb::process_joypads() {
 			// Buttons 6 and 7 in the standard mapping need to be
 			// axis to be handled as JoyAxis::TRIGGER by Godot.
 			if (s_standard && (b == 6)) {
-				input->joy_axis(idx, JoyAxis::TRIGGER_LEFT, s_btns[b]);
+				Input::joy_axis(idx, JoyAxis::TRIGGER_LEFT, s_btns[b]);
 			} else if (s_standard && (b == 7)) {
-				input->joy_axis(idx, JoyAxis::TRIGGER_RIGHT, s_btns[b]);
+				Input::joy_axis(idx, JoyAxis::TRIGGER_RIGHT, s_btns[b]);
 			} else {
-				input->joy_button(idx, (JoyButton)b, s_btns[b]);
+				Input::joy_button(idx, (JoyButton)b, s_btns[b]);
 			}
 		}
 		for (int a = 0; a < s_axes_num; a++) {
-			input->joy_axis(idx, (JoyAxis)a, s_axes[a]);
+			Input::joy_axis(idx, (JoyAxis)a, s_axes[a]);
 		}
 	}
 }
@@ -1182,7 +1175,7 @@ DisplayServerWeb::DisplayServerWeb(const String &p_rendering_driver, DisplayServ
 			DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
 	godot_js_display_vk_cb(&DisplayServerWeb::vk_input_text_callback);
 
-	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_event);
+	Input::set_event_dispatch_function(_dispatch_input_event);
 }
 
 DisplayServerWeb::~DisplayServerWeb() {
@@ -1468,7 +1461,7 @@ DisplayServerEnums::VSyncMode DisplayServerWeb::window_get_vsync_mode(DisplaySer
 
 void DisplayServerWeb::process_events() {
 	process_keys();
-	Input::get_singleton()->flush_buffered_events();
+	Input::flush_buffered_events();
 
 	if (gamepad_count > 0) {
 		if (godot_js_input_gamepad_sample() == OK) {
@@ -1494,7 +1487,7 @@ void DisplayServerWeb::process_keys() {
 			dom2godot_mod(ev, ke.mod, ke.keycode);
 		}
 
-		Input::get_singleton()->parse_input_event(ev);
+		Input::parse_input_event(ev);
 	}
 	key_event_pos = 0;
 }
