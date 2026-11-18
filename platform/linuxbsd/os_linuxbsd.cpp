@@ -1578,6 +1578,16 @@ Error OS::shell_open(const String& p_uri)
 	return OS_LinuxBSD::shell_open(p_uri);
 }
 
+Error OS::set_cwd(const String& p_cwd)
+{
+	return OS_Unix::set_cwd(p_cwd);
+}
+
+String OS::get_cwd()
+{
+	return OS_Unix::get_cwd();
+}
+
 #ifdef TOOLS_ENABLED
 bool OS::_test_create_rendering_device(const String& p_display_driver)
 {

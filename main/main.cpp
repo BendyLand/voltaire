@@ -116,6 +116,7 @@
 #include "editor/doc/doc_tools.h"
 #include "editor/doc/editor_help.h"
 #include "editor/editor_node.h"
+#include "editor/editor_ui.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/gui/progress_dialog.h"
@@ -2530,7 +2531,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 	if (main_args.is_empty()) {
 #ifdef TOOLS_ENABLED
-		if (!editor && !project_manager) {
+		if (!editor && !project_manager && !found_project) {
 #endif
 			const String error_msg =
 				"Error: Can't run project: no main scene defined in the project.\n";
@@ -3881,7 +3882,8 @@ int Main::start()
 #endif // defined(OVERRIDE_PATH_ENABLED)
 
 #ifdef TOOLS_ENABLED
-	if (!editor && !project_manager && !cmdline_tool && script.is_empty() && game_path.is_empty()) {
+	if (!editor && !project_manager && !found_project && !cmdline_tool && script.is_empty() &&
+		game_path.is_empty()) {
 		// If we end up here, it means we didn't manage to detect what we want to run.
 		// Let's throw an error gently. The code leading to this is pretty brittle so
 		// this might end up triggered by valid usage, in which case we'll have to
@@ -3946,7 +3948,21 @@ int Main::start()
         if (win_size.x <= 0 || win_size.y <= 0) {
             win_size = Size2i(1152, 648);
         }
+#ifdef TOOLS_ENABLED
+        if (editor) {
+            EditorUI::initialize(
+                RID(), win_size, ProjectSettings::get_resource_path(), String(), false);
+        }
+        else if (found_project && !project_manager) {
+            EditorUI::initialize(
+                RID(), win_size, ProjectSettings::get_resource_path(), String(), true);
+        }
+        else {
+            ProjectManager::initialize(RID(), win_size);
+        }
+#else
         ProjectManager::initialize(RID(), win_size);
+#endif
     }
     else {
         __print_line("Window root failed to be created");
@@ -4056,6 +4072,11 @@ bool Main::iteration()
 	if (ProjectManager::is_initialized()) {
 		ProjectManager::poll();
 	}
+#ifdef TOOLS_ENABLED
+	if (EditorUI::is_initialized()) {
+		EditorUI::poll(scaled_step);
+	}
+#endif
 
 	if (DisplayServer::window_can_draw()) {
 		Renderer::draw(true, scaled_step);
@@ -4226,6 +4247,11 @@ void Main::cleanup(bool p_force)
 	// finalization
 	Renderer::sync();
 
+#ifdef TOOLS_ENABLED
+	if (EditorUI::is_initialized()) {
+		EditorUI::finalize();
+	}
+#endif
 	if (ProjectManager::is_initialized()) {
 		ProjectManager::finalize();
 	}

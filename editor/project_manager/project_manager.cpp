@@ -35,6 +35,7 @@
 #include "core/io/file_access.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
+#include "editor/editor_ui.h"
 #include "editor/file_system/editor_paths.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/display_server.h"
@@ -782,6 +783,16 @@ void ProjectManager::poll()
 		Input::flush_buffered_events();
 	}
 
+	if (!data->pending_open_path.is_empty()) {
+		Size2i win_size = data->window_size;
+		String open_path = data->pending_open_path;
+		String open_name = data->pending_open_name;
+		bool open_play = data->pending_open_play;
+		finalize();
+		EditorUI::initialize(RID(), win_size, open_path, open_name, open_play);
+		return;
+	}
+
 	if (DisplayServer::is_initialized()) {
 		Size2i ds_size = DisplayServer::window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
 		if (ds_size.x > 0 && ds_size.y > 0 && ds_size != data->window_size) {
@@ -1170,30 +1181,32 @@ void ProjectManager::process_and_draw()
 		}
 
 		// Modal error or target preview hint
+		const float mbtn_w = 108.0f;
+		const float mbtn_h = 34.0f;
+		const float mbtn_gap = 8.0f;
+		const float total_mbtns_w =
+			data->modal_buttons.size() * (mbtn_w + mbtn_gap) - mbtn_gap;
+
 		if (data->ui_font.is_valid() && inner_w > 20.0f) {
+			float hint_max_w = MAX(20.0f, inner_w - total_mbtns_w - 14.0f);
 			if (!data->modal_error_text.is_empty()) {
 				data->ui_font->draw_string(ci, Point2(mx + 18.0f, my + mh - 24.0f),
-					data->modal_error_text, HORIZONTAL_ALIGNMENT_LEFT,
-					MAX(20.0f, inner_w - 240.0f), 12, col_warn);
+					data->modal_error_text, HORIZONTAL_ALIGNMENT_LEFT, hint_max_w, 12, col_warn);
 			}
 			else if (data->modal_mode == MODAL_NEW_PROJECT) {
 				String folder_slug = data->modal_field_primary.strip_edges();
 				String preview = data->modal_field_secondary.strip_edges().path_join(folder_slug);
 				data->ui_font->draw_string(ci, Point2(mx + 18.0f, my + mh - 24.0f), preview,
-					HORIZONTAL_ALIGNMENT_LEFT, MAX(20.0f, inner_w - 240.0f), 12, col_subtext);
+					HORIZONTAL_ALIGNMENT_LEFT, hint_max_w, 12, col_subtext);
 			}
 		}
 
 		// Modal Action Buttons (bottom-right)
-		const float mbtn_w = 104.0f;
-		const float mbtn_h = 34.0f;
-		const float mbtn_gap = 10.0f;
-		float mbtn_x = mx + mw - 18.0f -
-					   (data->modal_buttons.size() * (mbtn_w + mbtn_gap) - mbtn_gap);
+		float mbtn_x = mx + mw - 18.0f - total_mbtns_w;
 		float mbtn_y = my + mh - 16.0f - mbtn_h;
 		for (uint32_t i = 0; i < data->modal_buttons.size(); i++) {
 			data->modal_buttons[i].rect = Rect2(mbtn_x, mbtn_y, mbtn_w, mbtn_h);
-			_draw_ui_button(ci, data->ui_font, data->modal_buttons[i], 14);
+			_draw_ui_button(ci, data->ui_font, data->modal_buttons[i], 13);
 			mbtn_x += mbtn_w + mbtn_gap;
 		}
 	}
@@ -1236,7 +1249,9 @@ void ProjectManager::_new_project()
 	data->modal_buttons.push_back(
 		{"Cancel", Rect2(), &ProjectManager::_cancel_modal, nullptr, false, false, false});
 	data->modal_buttons.push_back(
-		{"Create", Rect2(), &ProjectManager::_confirm_modal, nullptr, false, false, true});
+		{"Create", Rect2(), &ProjectManager::_confirm_modal, nullptr, false, false, false});
+	data->modal_buttons.push_back({"Create & Edit", Rect2(),
+		&ProjectManager::_confirm_modal_and_edit, nullptr, false, false, true});
 	data->needs_redraw = true;
 }
 
@@ -1292,18 +1307,9 @@ void ProjectManager::_edit_selected_project()
 		return;
 	}
 	const ProjectEntry& proj = data->projects[data->selected_project_idx];
-	List<String> args;
-	args.push_back("--path");
-	args.push_back(proj.path);
-	args.push_back("--editor");
-	Error err = OS::create_process(OS::get_executable_path(), args);
-	if (err == OK) {
-		data->status_text = vformat("Launched editor for '%s'.", proj.name);
-	}
-	else {
-		data->status_text = vformat("Failed to launch editor for '%s'.", proj.name);
-	}
-	data->needs_redraw = true;
+	data->pending_open_path = proj.path;
+	data->pending_open_name = proj.name;
+	data->pending_open_play = false;
 }
 
 void ProjectManager::_run_selected_project()
@@ -1312,17 +1318,9 @@ void ProjectManager::_run_selected_project()
 		return;
 	}
 	const ProjectEntry& proj = data->projects[data->selected_project_idx];
-	List<String> args;
-	args.push_back("--path");
-	args.push_back(proj.path);
-	Error err = OS::create_process(OS::get_executable_path(), args);
-	if (err == OK) {
-		data->status_text = vformat("Running project '%s'.", proj.name);
-	}
-	else {
-		data->status_text = vformat("Failed to run project '%s'.", proj.name);
-	}
-	data->needs_redraw = true;
+	data->pending_open_path = proj.path;
+	data->pending_open_name = proj.name;
+	data->pending_open_play = true;
 }
 
 void ProjectManager::_open_selected_folder()
@@ -1393,6 +1391,17 @@ void ProjectManager::_cancel_modal()
 	data->modal_error_text = String();
 	data->modal_buttons.clear();
 	data->needs_redraw = true;
+}
+
+void ProjectManager::_confirm_modal_and_edit()
+{
+	if (!data) {
+		return;
+	}
+	_confirm_modal();
+	if (data && data->modal_mode == MODAL_NONE && _has_valid_selected_project()) {
+		_edit_selected_project();
+	}
 }
 
 void ProjectManager::_confirm_modal()

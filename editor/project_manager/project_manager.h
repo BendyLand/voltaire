@@ -127,6 +127,9 @@ public:
 		Rect2 modal_secondary_rect;
 
 		Input::EventDispatchFunc prev_input_dispatch = nullptr;
+		String pending_open_path;
+		String pending_open_name;
+		bool pending_open_play = false;
 		bool owns_viewport = false;
 		bool needs_redraw = true;
 	};
@@ -163,6 +166,7 @@ public:
 
 	// Modal Actions
 	static void _confirm_modal();
+	static void _confirm_modal_and_edit();
 	static void _cancel_modal();
 
 	// Predicates

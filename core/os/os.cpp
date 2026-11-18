@@ -336,9 +336,11 @@ uint64_t OS::get_static_memory_usage() { return Memory::get_mem_usage(); }
 
 uint64_t OS::get_static_memory_peak_usage() { return Memory::get_mem_max_usage(); }
 
+#if !defined(LINUXBSD_ENABLED)
 Error OS::set_cwd(const String& p_cwd) { return ERR_CANT_OPEN; }
 
 String OS::get_cwd() { return "."; }
+#endif
 
 void OS::yield() {}
 
