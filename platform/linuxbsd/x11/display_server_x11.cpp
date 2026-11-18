@@ -6049,7 +6049,62 @@ void DisplayServerX11::cursor_set_custom_image(const Ref<Resource>& p_cursor,
 
 void DisplayServerX11::delete_sub_window(int p_window) {}
 
-void DisplayServerX11::_window_changed(_XEvent*) {}
+void DisplayServerX11::_window_changed(_XEvent* event)
+{
+	if (!x11_display || !event) {
+		return;
+	}
+
+	DisplayServerEnums::WindowID window_id = DisplayServerEnums::INVALID_WINDOW_ID;
+	for (const KeyValue<DisplayServerEnums::WindowID, WindowData>& E : windows) {
+		if (event->xconfigure.window == E.value.x11_window) {
+			window_id = E.key;
+			break;
+		}
+	}
+
+	if (window_id == DisplayServerEnums::INVALID_WINDOW_ID) {
+		return;
+	}
+
+	WindowData& wd = windows[window_id];
+
+	Rect2i new_rect;
+	{
+		int x = 0, y = 0;
+		::Window child;
+		XTranslateCoordinates(
+			x11_display, wd.x11_window, DefaultRootWindow(x11_display), 0, 0, &x, &y, &child);
+		new_rect.position.x = x;
+		new_rect.position.y = y;
+		new_rect.size.width = MAX(1, event->xconfigure.width);
+		new_rect.size.height = MAX(1, event->xconfigure.height);
+	}
+
+	if (new_rect == Rect2i(wd.position, wd.size)) {
+		return;
+	}
+
+	const bool size_changed = (new_rect.size != wd.size);
+	wd.position = new_rect.position;
+	wd.size = new_rect.size;
+
+	if (size_changed) {
+#if defined(RD_ENABLED)
+		if (rendering_context) {
+			rendering_context->window_set_size(window_id, wd.size.width, wd.size.height);
+		}
+#endif
+#if defined(GLES3_ENABLED)
+		if (gl_manager) {
+			gl_manager->window_resize(window_id, wd.size.width, wd.size.height);
+		}
+		if (gl_manager_egl) {
+			gl_manager_egl->window_resize(window_id, wd.size.width, wd.size.height);
+		}
+#endif
+	}
+}
 
 void DisplayServerX11::_update_context(DisplayServerX11::WindowData&) {}
 
@@ -6194,7 +6249,7 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 	XSetWindowAttributes wa = {};
 	wa.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | PointerMotionMask |
 					ButtonPressMask | ButtonReleaseMask | ExposureMask | FocusChangeMask |
-					EnterWindowMask | LeaveWindowMask;
+					EnterWindowMask | LeaveWindowMask | PropertyChangeMask;
 	wa.background_pixel = BlackPixel(x11_display, DefaultScreen(x11_display));
 	wa.border_pixel = 0;
 
@@ -6323,6 +6378,11 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 
 	XMapWindow(x11_display, x11_win);
 	XFlush(x11_display);
+
+	XEvent config_event;
+	while (XCheckTypedWindowEvent(x11_display, x11_win, ConfigureNotify, &config_event)) {
+		_window_changed(&config_event);
+	}
 }
 
 void DisplayServerX11::_dispatch_input_event(Ref<InputEvent> const&) {}
@@ -6343,7 +6403,7 @@ void DisplayServerX11::process_events()
 	}
 
 	// Force reading pending packets from the X11 connection socket into Xlib's queue
-	int _count = XEventsQueued(x11_display, QueuedAfterReading);
+	XEventsQueued(x11_display, QueuedAfterReading);
 	while (XPending(x11_display) > 0) {
 		XEvent ev;
 		XNextEvent(x11_display, &ev);
@@ -6356,7 +6416,28 @@ void DisplayServerX11::process_events()
 			continue;
 		}
 
-		if (ev.type == ClientMessage) {
+		switch (ev.type) {
+		case ConfigureNotify: {
+			// Coalesce consecutive ConfigureNotify events for this window so drag-resizing
+			// applies the latest dimensions once per frame.
+			while (XCheckTypedWindowEvent(x11_display, ev.xconfigure.window, ConfigureNotify, &ev)) {
+			}
+			_window_changed(&ev);
+		} break;
+		case PropertyNotify: {
+			if (ev.xproperty.atom == XInternAtom(x11_display, "_NET_WM_STATE", False)) {
+				for (const KeyValue<DisplayServerEnums::WindowID, WindowData>& E : windows) {
+					if (ev.xproperty.window == E.value.x11_window) {
+						_update_wm_state_hints(E.key);
+						break;
+					}
+				}
+			}
+		} break;
+		case Expose: {
+			Main::force_redraw();
+		} break;
+		case ClientMessage: {
 			Atom wm_protocols = XInternAtom(x11_display, "WM_PROTOCOLS", False);
 			Atom wm_delete = XInternAtom(x11_display, "WM_DELETE_WINDOW", False);
 			if (ev.xclient.message_type == wm_protocols &&
@@ -6365,14 +6446,17 @@ void DisplayServerX11::process_events()
 				s_quit_requested = true;
 				return;
 			}
-		}
-		else if (ev.type == DestroyNotify) {
+		} break;
+		case DestroyNotify: {
 			if (windows.has(DisplayServerEnums::MAIN_WINDOW_ID) &&
 				ev.xdestroywindow.window == windows[DisplayServerEnums::MAIN_WINDOW_ID].x11_window) {
 				extern bool s_quit_requested;
 				s_quit_requested = true;
 				return;
 			}
+		} break;
+		default:
+			break;
 		}
 	}
 }

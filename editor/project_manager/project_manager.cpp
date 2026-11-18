@@ -136,36 +136,55 @@ void ProjectManager::process_and_draw()
 	// 1. Full-window background
 	Renderer::canvas_item_add_rect(ci, Rect2(0, 0, W, H), col_bg);
 
+	const float content_w = MAX(0.0f, W - pad * 2.0f);
+	if (content_w <= 0.0f || H <= 0.0f) {
+		return;
+	}
+
 	// 2. Top Header Bar (y = 20, height = 48)
 	float y = 20.0f;
 	const float header_h = 48.0f;
-	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, W - pad * 2.0f, header_h), col_header);
+	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, content_w, header_h), col_header);
 	// Left cyan accent strip on header
-	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, 4.0f, header_h), col_accent);
-
-	if (data->ui_font.is_valid()) {
-		data->ui_font->draw_string(ci, Point2(pad + 18.0f, y + 30.0f),
-			"VOLTAIRE // PROJECT MANAGER", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, col_text);
-	}
+	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, MIN(4.0f, content_w), header_h), col_accent);
 
 	// 3. Toolbar Buttons aligned to the right of the header bar
+	const uint32_t btn_count = data->buttons.size();
 	float btn_w = 120.0f;
-	float btn_h = 34.0f;
-	float btn_gap = 10.0f;
-	float btn_x = (W - pad - 10.0f) - (data->buttons.size() * (btn_w + btn_gap)) + btn_gap;
-	float btn_y = y + (header_h - btn_h) * 0.5f;
+	const float btn_h = 34.0f;
+	const float btn_gap = 10.0f;
+	if (btn_count > 0) {
+		const float avail_btn_w = MAX(0.0f, content_w - 20.0f);
+		const float total_gaps = btn_gap * (btn_count - 1);
+		if (avail_btn_w < btn_count * btn_w + total_gaps) {
+			btn_w = MAX(0.0f, (avail_btn_w - total_gaps) / (float)btn_count);
+		}
+	}
+	float btn_x = (W - pad - 10.0f) - (btn_count * (btn_w + btn_gap)) + btn_gap;
+	const float btn_y = y + (header_h - btn_h) * 0.5f;
 
-	for (uint32_t i = 0; i < data->buttons.size(); i++) {
+	if (data->ui_font.is_valid()) {
+		const float title_max_w = MAX(0.0f, btn_x - (pad + 28.0f));
+		if (title_max_w > 0.0f) {
+			data->ui_font->draw_string(ci, Point2(pad + 18.0f, y + 30.0f),
+				"VOLTAIRE // PROJECT MANAGER", HORIZONTAL_ALIGNMENT_LEFT, title_max_w, 16,
+				col_text);
+		}
+	}
+
+	for (uint32_t i = 0; i < btn_count; i++) {
 		UIButton& btn = data->buttons[i];
 		btn.rect = Rect2(btn_x, btn_y, btn_w, btn_h);
-		Renderer::canvas_item_add_rect(ci, btn.rect, btn.hovered ? col_btn_hover : col_btn);
-		// Bottom button border highlight
-		Renderer::canvas_item_add_rect(
-			ci, Rect2(btn_x, btn_y + btn_h - 2.0f, btn_w, 2.0f), col_accent);
+		if (btn_w > 0.0f) {
+			Renderer::canvas_item_add_rect(ci, btn.rect, btn.hovered ? col_btn_hover : col_btn);
+			// Bottom button border highlight
+			Renderer::canvas_item_add_rect(
+				ci, Rect2(btn_x, btn_y + btn_h - 2.0f, btn_w, 2.0f), col_accent);
 
-		if (data->ui_font.is_valid()) {
-			data->ui_font->draw_string(ci, Point2(btn_x + 12.0f, btn_y + 22.0f), btn.label,
-				HORIZONTAL_ALIGNMENT_LEFT, btn_w - 24.0f, 14, col_text);
+			if (data->ui_font.is_valid() && btn_w > 24.0f) {
+				data->ui_font->draw_string(ci, Point2(btn_x + 12.0f, btn_y + 22.0f), btn.label,
+					HORIZONTAL_ALIGNMENT_LEFT, btn_w - 24.0f, 14, col_text);
+			}
 		}
 		btn_x += btn_w + btn_gap;
 	}
@@ -174,33 +193,39 @@ void ProjectManager::process_and_draw()
 
 	// 4. Horizontal Separator (height = 2)
 	Renderer::canvas_item_add_rect(
-		ci, Rect2(pad, y, W - pad * 2.0f, 2.0f), Color(0.22f, 0.25f, 0.30f, 1.0f));
+		ci, Rect2(pad, y, content_w, 2.0f), Color(0.22f, 0.25f, 0.30f, 1.0f));
 	y += 14.0f;
 
 	// 5. Search Bar Box (height = 38)
 	const float search_h = 38.0f;
-	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, W - pad * 2.0f, search_h), col_search_bg);
-	if (data->ui_font.is_valid()) {
+	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, content_w, search_h), col_search_bg);
+	if (data->ui_font.is_valid() && content_w > 24.0f) {
 		String display_search =
 			data->search_text.is_empty() ? "Filter projects..." : data->search_text;
 		data->ui_font->draw_string(ci, Point2(pad + 12.0f, y + 24.0f), display_search,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.55f, 0.60f, 0.68f, 1.0f));
+			HORIZONTAL_ALIGNMENT_LEFT, content_w - 24.0f, 14, Color(0.55f, 0.60f, 0.68f, 1.0f));
 	}
 	y += search_h + 14.0f;
 
 	// 6. Main Workspace Panel (fills remaining height)
-	const float workspace_h = MAX(100.0f, H - y - pad);
-	Renderer::canvas_item_add_rect(ci, Rect2(pad, y, W - pad * 2.0f, workspace_h), col_workspace);
+	const float workspace_h = MAX(0.0f, H - y - pad);
+	if (workspace_h > 0.0f) {
+		Renderer::canvas_item_add_rect(ci, Rect2(pad, y, content_w, workspace_h), col_workspace);
 
-	// Inner project card preview row inside workspace
-	Renderer::canvas_item_add_rect(ci,
-		Rect2(pad + 16.0f, y + 16.0f, W - (pad + 16.0f) * 2.0f, 64.0f),
-		Color(0.16f, 0.19f, 0.24f, 1.0f));
-	Renderer::canvas_item_add_rect(ci, Rect2(pad + 16.0f, y + 16.0f, 4.0f, 64.0f), col_accent);
+		// Inner project card preview row inside workspace
+		const float card_w = MAX(0.0f, content_w - 32.0f);
+		const float card_h = MIN(64.0f, MAX(0.0f, workspace_h - 32.0f));
+		if (card_w > 0.0f && card_h > 0.0f) {
+			Renderer::canvas_item_add_rect(
+				ci, Rect2(pad + 16.0f, y + 16.0f, card_w, card_h), Color(0.16f, 0.19f, 0.24f, 1.0f));
+			Renderer::canvas_item_add_rect(
+				ci, Rect2(pad + 16.0f, y + 16.0f, MIN(4.0f, card_w), card_h), col_accent);
 
-	if (data->ui_font.is_valid()) {
-		data->ui_font->draw_string(ci, Point2(pad + 32.0f, y + 54.0f), data->status_text,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 15, col_text);
+			if (data->ui_font.is_valid() && card_w > 32.0f && card_h >= 40.0f) {
+				data->ui_font->draw_string(ci, Point2(pad + 32.0f, y + 54.0f), data->status_text,
+					HORIZONTAL_ALIGNMENT_LEFT, card_w - 32.0f, 15, col_text);
+			}
+		}
 	}
 }
 

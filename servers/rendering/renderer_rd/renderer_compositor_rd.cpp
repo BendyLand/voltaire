@@ -105,6 +105,15 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
         }
 
         if (!it) {
+            for (HashMap<RID, RID>::Iterator E = render_target_descriptors.begin(); E;) {
+                HashMap<RID, RID>::Iterator next = E;
+                ++next;
+                if (!RD::uniform_set_is_valid(E->value)) {
+                    render_target_descriptors.remove(E);
+                }
+                E = next;
+            }
+
             Vector<RD::Uniform> uniforms;
             RD::Uniform u;
             u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
