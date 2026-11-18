@@ -137,6 +137,9 @@
 #endif
 
 #include "modules/modules_enabled.gen.h" // For mono.
+#ifdef MODULE_TEXT_SERVER_ADV_ENABLED
+#include "modules/text_server_adv/register_types.h"
+#endif
 
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 #include "modules/mono/editor/bindings_generator.h"
@@ -2987,6 +2990,9 @@ Error Main::setup2(bool p_show_boot_logo)
 	register_server_types();
 	{
 		OS::benchmark_begin_measure("Servers", "Modules and Extensions");
+#ifdef MODULE_TEXT_SERVER_ADV_ENABLED
+		initialize_text_server_adv_module(MODULE_INITIALIZATION_LEVEL_SERVERS);
+#endif
 		OS::benchmark_end_measure("Servers", "Modules and Extensions");
 	}
 
@@ -4222,6 +4228,10 @@ void Main::cleanup(bool p_force)
 
 	if (ProjectManager::is_initialized()) {
 		ProjectManager::finalize();
+	}
+
+	if (ThemeDB::is_initialized()) {
+		ThemeDB::finalize_theme();
 	}
 
 	// clear global shader variables before scene and other graphics stuff are deinitialized.

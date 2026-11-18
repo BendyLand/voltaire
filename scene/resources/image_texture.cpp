@@ -51,7 +51,24 @@ Ref<ImageTexture> ImageTexture::create_from_image(const Ref<Image>& p_image)
 
 Image::Format ImageTexture::get_format() const { return format; }
 
-void ImageTexture::update(const Ref<Image>& p_image) {}
+void ImageTexture::update(const Ref<Image>& p_image)
+{
+	ERR_FAIL_COND_MSG(p_image.is_null(), "Invalid image");
+	ERR_FAIL_COND_MSG(texture.is_null(), "Texture is not initialized.");
+	ERR_FAIL_COND_MSG(p_image->get_width() != w || p_image->get_height() != h,
+		"The new image dimensions must match the texture size.");
+	ERR_FAIL_COND_MSG(p_image->get_format() != format,
+		"The new image format must match the texture's image format.");
+	ERR_FAIL_COND_MSG(mipmaps != p_image->has_mipmaps(),
+		"The new image mipmaps configuration must match the texture's image mipmaps configuration");
+
+	Renderer::texture_2d_update(texture, p_image);
+
+	emit_changed();
+
+	alpha_cache.unref();
+	image_stored = true;
+}
 
 Ref<Image> ImageTexture::get_image() const
 {
@@ -404,4 +421,29 @@ Ref<Resource> CubemapArray::create_placeholder() const
 
 
 
-void ImageTexture::set_image(Ref<Image> const&) {}
+void ImageTexture::set_image(const Ref<Image>& p_image)
+{
+	if (p_image.is_null() || p_image->is_empty()) {
+		if (image_stored) {
+			ERR_PRINT("Invalid image");
+		}
+		return;
+	}
+
+	w = p_image->get_width();
+	h = p_image->get_height();
+	format = p_image->get_format();
+	mipmaps = p_image->has_mipmaps();
+
+	if (texture.is_null()) {
+		texture = Renderer::texture_2d_create(p_image);
+	}
+	else {
+		RID new_texture = Renderer::texture_2d_create(p_image);
+		Renderer::texture_replace(texture, new_texture);
+	}
+	emit_changed();
+
+	alpha_cache.unref();
+	image_stored = true;
+}

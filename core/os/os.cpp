@@ -313,7 +313,9 @@ void OS::remove_lock_file()
 	DirAccess::remove_absolute(lock_file_path);
 }
 
+#if !defined(LINUXBSD_ENABLED)
 Error OS::shell_open(const String& p_uri) { return ERR_UNAVAILABLE; }
+#endif
 
 Error OS::shell_show_in_file_manager(String p_path, bool p_open_folder)
 {

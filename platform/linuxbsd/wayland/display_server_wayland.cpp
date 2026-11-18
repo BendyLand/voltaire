@@ -146,8 +146,6 @@ void DisplayServerWayland::_dispatch_input_event(const Ref<InputEvent>& p_event)
 			}
 		}
 	}
-
-	Input::parse_input_event(p_event.ptr());
 }
 
 void DisplayServerWayland::_delete_window(DisplayServerEnums::WindowID p_window_id)

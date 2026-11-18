@@ -65,7 +65,16 @@ void ThemeDB::finalize()
 	data = nullptr;
 }
 
-void ThemeDB::initialize_theme() {}
+void ThemeDB::initialize_theme()
+{
+	if (!data) {
+		return;
+	}
+	if (Renderer::data) {
+		make_default_theme(1.0, Ref<Font>());
+	}
+	_init_default_theme_context();
+}
 
 void ThemeDB::initialize_theme_noproject()
 {
@@ -114,26 +123,51 @@ void ThemeDB::set_project_theme(const Ref<Theme>& p_project_default)
 
 Ref<Theme> ThemeDB::get_project_theme() { return data ? data->project_theme : Ref<Theme>(); }
 
-void ThemeDB::set_fallback_base_scale(float p_base_scale) { (void)p_base_scale; }
+void ThemeDB::set_fallback_base_scale(float p_base_scale)
+{
+	if (data) {
+		data->fallback_base_scale = p_base_scale;
+	}
+}
 
 float ThemeDB::get_fallback_base_scale() { return data ? data->fallback_base_scale : 1.0f; }
 
-void ThemeDB::set_fallback_font(const Ref<Font>& p_font) { (void)p_font; }
+void ThemeDB::set_fallback_font(const Ref<Font>& p_font)
+{
+	if (data) {
+		data->fallback_font = p_font;
+	}
+}
 
 Ref<Font> ThemeDB::get_fallback_font() { return data ? data->fallback_font : Ref<Font>(); }
 
-void ThemeDB::set_fallback_font_size(int p_font_size) { (void)p_font_size; }
+void ThemeDB::set_fallback_font_size(int p_font_size)
+{
+	if (data) {
+		data->fallback_font_size = p_font_size;
+	}
+}
 
 int ThemeDB::get_fallback_font_size() { return data ? data->fallback_font_size : 16; }
 
-void ThemeDB::set_fallback_icon(const Ref<Texture2D>& p_icon) { (void)p_icon; }
+void ThemeDB::set_fallback_icon(const Ref<Texture2D>& p_icon)
+{
+	if (data) {
+		data->fallback_icon = p_icon;
+	}
+}
 
 Ref<Texture2D> ThemeDB::get_fallback_icon()
 {
 	return data ? data->fallback_icon : Ref<Texture2D>();
 }
 
-void ThemeDB::set_fallback_stylebox(const Ref<StyleBox>& p_stylebox) { (void)p_stylebox; }
+void ThemeDB::set_fallback_stylebox(const Ref<StyleBox>& p_stylebox)
+{
+	if (data) {
+		data->fallback_stylebox = p_stylebox;
+	}
+}
 
 Ref<StyleBox> ThemeDB::get_fallback_stylebox()
 {

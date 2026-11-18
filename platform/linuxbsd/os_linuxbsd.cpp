@@ -1573,6 +1573,11 @@ Error OS::move_to_trash(const String& p_path)
 	return OS_LinuxBSD::move_to_trash(p_path);
 }
 
+Error OS::shell_open(const String& p_uri)
+{
+	return OS_LinuxBSD::shell_open(p_uri);
+}
+
 #ifdef TOOLS_ENABLED
 bool OS::_test_create_rendering_device(const String& p_display_driver)
 {

@@ -6040,7 +6040,33 @@ void DisplayServerX11::register_x11_driver()
 	DisplayServer::register_create_function("x11", create_func, get_rendering_drivers_func);
 }
 
-uint32_t DisplayServerX11::mouse_get_button_state() const { return 0; }
+uint32_t DisplayServerX11::mouse_get_button_state() const
+{
+	if (!x11_display) {
+		return 0;
+	}
+	int number_of_screens = XScreenCount(x11_display);
+	for (int i = 0; i < number_of_screens; i++) {
+		Window root, child;
+		int root_x, root_y, win_x, win_y;
+		unsigned int mask = 0;
+		if (XQueryPointer(x11_display, XRootWindow(x11_display, i), &root, &child, &root_x, &root_y,
+				&win_x, &win_y, &mask)) {
+			uint32_t state = 0;
+			if (mask & Button1Mask) {
+				state |= (uint32_t)MouseButtonMask::LEFT;
+			}
+			if (mask & Button2Mask) {
+				state |= (uint32_t)MouseButtonMask::MIDDLE;
+			}
+			if (mask & Button3Mask) {
+				state |= (uint32_t)MouseButtonMask::RIGHT;
+			}
+			return state;
+		}
+	}
+	return 0;
+}
 
 void DisplayServerX11::cursor_set_custom_image(const Ref<Resource>& p_cursor,
 	DisplayServerEnums::CursorShape p_shape, const Vector2& p_hotspot)
@@ -6375,6 +6401,7 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 #endif
 
 	NativeMenu::initialize();
+	Input::set_event_dispatch_function(_dispatch_input_events);
 
 	XMapWindow(x11_display, x11_win);
 	XFlush(x11_display);
@@ -6404,23 +6431,34 @@ void DisplayServerX11::process_events()
 
 	// Force reading pending packets from the X11 connection socket into Xlib's queue
 	XEventsQueued(x11_display, QueuedAfterReading);
+	LocalVector<XEvent> events;
 	while (XPending(x11_display) > 0) {
 		XEvent ev;
 		XNextEvent(x11_display, &ev);
-
-		// Uncomment to enable logging of window events
-		// printf("[EVENT DUMP] type=%d, win=%lu\n", ev.type, (unsigned long)ev.xany.window);
-		// fflush(stdout);
-
 		if (XFilterEvent(&ev, None)) {
 			continue;
+		}
+		events.push_back(ev);
+	}
+
+	for (uint32_t event_index = 0; event_index < events.size(); ++event_index) {
+		XEvent& ev = events[event_index];
+
+		DisplayServerEnums::WindowID window_id = DisplayServerEnums::MAIN_WINDOW_ID;
+		for (const KeyValue<DisplayServerEnums::WindowID, WindowData>& E : windows) {
+			if (ev.xany.window == E.value.x11_window) {
+				window_id = E.key;
+				break;
+			}
 		}
 
 		switch (ev.type) {
 		case ConfigureNotify: {
-			// Coalesce consecutive ConfigureNotify events for this window so drag-resizing
-			// applies the latest dimensions once per frame.
-			while (XCheckTypedWindowEvent(x11_display, ev.xconfigure.window, ConfigureNotify, &ev)) {
+			while (event_index + 1 < events.size() &&
+				   events[event_index + 1].type == ConfigureNotify &&
+				   events[event_index + 1].xconfigure.window == ev.xconfigure.window) {
+				++event_index;
+				ev = events[event_index];
 			}
 			_window_changed(&ev);
 		} break;
@@ -6436,6 +6474,108 @@ void DisplayServerX11::process_events()
 		} break;
 		case Expose: {
 			Main::force_redraw();
+		} break;
+		case MotionNotify: {
+			while (event_index + 1 < events.size() &&
+				   events[event_index + 1].type == MotionNotify &&
+				   events[event_index + 1].xmotion.window == ev.xmotion.window) {
+				++event_index;
+				ev = events[event_index];
+			}
+			Point2i pos(ev.xmotion.x, ev.xmotion.y);
+			Vector2 rel = last_mouse_pos_valid ? Vector2(pos - last_mouse_pos) : Vector2();
+			last_mouse_pos = pos;
+			last_mouse_pos_valid = true;
+
+			Ref<InputEventMouseMotion> mm;
+			mm.instantiate();
+			mm->set_window_id(window_id);
+			_get_key_modifier_state(ev.xmotion.state, mm);
+			uint32_t mask = 0;
+			if (ev.xmotion.state & Button1Mask) {
+				mask |= (uint32_t)MouseButtonMask::LEFT;
+			}
+			if (ev.xmotion.state & Button2Mask) {
+				mask |= (uint32_t)MouseButtonMask::MIDDLE;
+			}
+			if (ev.xmotion.state & Button3Mask) {
+				mask |= (uint32_t)MouseButtonMask::RIGHT;
+			}
+			mm->set_button_mask(mask);
+			mm->set_position(Vector2(pos));
+			mm->set_global_position(Vector2(pos));
+			mm->set_relative(rel);
+			mm->set_relative_screen_position(rel);
+			Input::parse_input_event(mm.ptr());
+		} break;
+		case ButtonPress:
+		case ButtonRelease: {
+			const bool pressed = (ev.type == ButtonPress);
+			Point2i pos(ev.xbutton.x, ev.xbutton.y);
+			last_mouse_pos = pos;
+			last_mouse_pos_valid = true;
+
+			Ref<InputEventMouseButton> mb;
+			mb.instantiate();
+			mb->set_window_id(window_id);
+			_get_key_modifier_state(ev.xbutton.state, mb);
+
+			MouseButton btn_idx = (MouseButton)ev.xbutton.button;
+			if (btn_idx == MouseButton::RIGHT) {
+				btn_idx = MouseButton::MIDDLE;
+			}
+			else if (btn_idx == MouseButton::MIDDLE) {
+				btn_idx = MouseButton::RIGHT;
+			}
+			mb->set_button_index(btn_idx);
+			mb->set_position(Vector2(pos));
+			mb->set_global_position(Vector2(pos));
+			mb->set_pressed(pressed);
+			mb->set_factor(1.0f);
+
+			uint32_t mask = 0;
+			if (ev.xbutton.state & Button1Mask) {
+				mask |= (uint32_t)MouseButtonMask::LEFT;
+			}
+			if (ev.xbutton.state & Button2Mask) {
+				mask |= (uint32_t)MouseButtonMask::MIDDLE;
+			}
+			if (ev.xbutton.state & Button3Mask) {
+				mask |= (uint32_t)MouseButtonMask::RIGHT;
+			}
+			uint32_t btn_bit = (uint32_t)mouse_button_to_mask(btn_idx);
+			if (pressed) {
+				mask |= btn_bit;
+			}
+			else {
+				mask &= ~btn_bit;
+			}
+			mb->set_button_mask(mask);
+
+			if (pressed && (btn_idx < MouseButton::WHEEL_UP || btn_idx > MouseButton::WHEEL_RIGHT)) {
+				uint64_t now_ms = OS::get_ticks_usec() / 1000;
+				uint64_t diff = now_ms - last_click_ms;
+				if (btn_idx == last_click_button_index && diff < 400 &&
+					Vector2(last_click_pos).distance_to(Vector2(pos)) < 5.0f) {
+					last_click_ms = 0;
+					last_click_pos = Point2i(-100, -100);
+					last_click_button_index = MouseButton::NONE;
+					mb->set_double_click(true);
+				}
+				else {
+					last_click_button_index = btn_idx;
+					last_click_ms = now_ms;
+					last_click_pos = pos;
+				}
+			}
+
+			Input::parse_input_event(mb.ptr());
+		} break;
+		case KeyPress:
+		case KeyRelease: {
+			if (windows.has(window_id)) {
+				_handle_key_event(window_id, &ev.xkey, events, event_index, false);
+			}
 		} break;
 		case ClientMessage: {
 			Atom wm_protocols = XInternAtom(x11_display, "WM_PROTOCOLS", False);
@@ -6459,6 +6599,8 @@ void DisplayServerX11::process_events()
 			break;
 		}
 	}
+
+	Input::flush_buffered_events();
 }
 
 #endif // X11 enabled

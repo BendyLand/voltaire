@@ -67,16 +67,52 @@ bool Font::_is_base_cyclic(const Ref<Font>& p_f, int p_depth) const
 	return false;
 }
 
+static float _measure_glyph_run(
+	const RID& p_font_rid, const String& p_text, int p_font_size, int p_len)
+{
+	float total_w = 0.0f;
+	int64_t prev_glyph = 0;
+	for (int i = 0; i < p_len; i++) {
+		char32_t c = p_text[i];
+		if (c == '\r' || c == '\n') {
+			continue;
+		}
+		int64_t glyph = TS->font_get_glyph_index(p_font_rid, p_font_size, c, 0);
+		if (prev_glyph != 0 && glyph != 0) {
+			total_w += TS->font_get_kerning(
+							 p_font_rid, p_font_size, Vector2i((int32_t)prev_glyph, (int32_t)glyph))
+						   .x;
+		}
+		total_w += TS->font_get_glyph_advance(p_font_rid, p_font_size, glyph).x;
+		prev_glyph = glyph;
+	}
+	return total_w;
+}
+
 real_t Font::draw_char_outline(RID p_canvas_item, const Point2& p_pos, char32_t p_char,
 	int p_font_size, int p_size, const Color& p_modulate, float p_oversampling) const
 {
-	return 0.0;
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return 0.0;
+	}
+	int64_t glyph = TS->font_get_glyph_index(font_rid, p_font_size, p_char, 0);
+	TS->font_draw_glyph_outline(
+		font_rid, p_canvas_item, p_font_size, p_size, p_pos, glyph, p_modulate, p_oversampling);
+	return TS->font_get_glyph_advance(font_rid, p_font_size, glyph).x;
 }
 
 real_t Font::draw_char(RID p_canvas_item, const Point2& p_pos, char32_t p_char, int p_font_size,
 	const Color& p_modulate, float p_oversampling) const
 {
-	return 0.0;
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return 0.0;
+	}
+	int64_t glyph = TS->font_get_glyph_index(font_rid, p_font_size, p_char, 0);
+	TS->font_draw_glyph(
+		font_rid, p_canvas_item, p_font_size, p_pos, glyph, p_modulate, p_oversampling);
+	return TS->font_get_glyph_advance(font_rid, p_font_size, glyph).x;
 }
 
 void Font::draw_multiline_string(RID p_canvas_item, const Point2& p_pos, const String& p_text,
@@ -85,6 +121,18 @@ void Font::draw_multiline_string(RID p_canvas_item, const Point2& p_pos, const S
 	TextServer::Direction p_direction, TextServer::Orientation p_orientation,
 	float p_oversampling) const
 {
+	Vector<String> lines = p_text.split("\n");
+	float line_h = MAX(1.0f, get_height(p_font_size));
+	Point2 cur_pos = p_pos;
+	int count = lines.size();
+	if (p_max_lines > 0 && count > p_max_lines) {
+		count = p_max_lines;
+	}
+	for (int i = 0; i < count; i++) {
+		draw_string(p_canvas_item, cur_pos, lines[i], p_alignment, p_width, p_font_size, p_modulate,
+			p_jst_flags, p_direction, p_orientation, p_oversampling);
+		cur_pos.y += line_h;
+	}
 }
 
 void Font::draw_multiline_string_outline(RID p_canvas_item, const Point2& p_pos,
@@ -93,6 +141,18 @@ void Font::draw_multiline_string_outline(RID p_canvas_item, const Point2& p_pos,
 	uint32_t p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation,
 	float p_oversampling) const
 {
+	Vector<String> lines = p_text.split("\n");
+	float line_h = MAX(1.0f, get_height(p_font_size));
+	Point2 cur_pos = p_pos;
+	int count = lines.size();
+	if (p_max_lines > 0 && count > p_max_lines) {
+		count = p_max_lines;
+	}
+	for (int i = 0; i < count; i++) {
+		draw_string_outline(p_canvas_item, cur_pos, lines[i], p_alignment, p_width, p_font_size,
+			p_size, p_modulate, p_jst_flags, p_direction, p_orientation, p_oversampling);
+		cur_pos.y += line_h;
+	}
 }
 
 void Font::draw_string_outline(RID p_canvas_item, const Point2& p_pos, const String& p_text,
@@ -100,6 +160,69 @@ void Font::draw_string_outline(RID p_canvas_item, const Point2& p_pos, const Str
 	const Color& p_modulate, uint32_t p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation, float p_oversampling) const
 {
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null() || p_text.is_empty() || p_font_size <= 0) {
+		return;
+	}
+	if (p_width == 0.0f) {
+		return;
+	}
+
+	String draw_text = p_text;
+	float text_w = _measure_glyph_run(font_rid, draw_text, p_font_size, draw_text.length());
+	if (p_width > 0.0f && text_w > p_width) {
+		const String ellipsis = "...";
+		const float ellipsis_w = _measure_glyph_run(font_rid, ellipsis, p_font_size, 3);
+		if (ellipsis_w <= p_width) {
+			int keep = draw_text.length();
+			while (keep > 0 &&
+				   _measure_glyph_run(font_rid, draw_text, p_font_size, keep) + ellipsis_w >
+					   p_width) {
+				keep--;
+			}
+			draw_text = draw_text.substr(0, keep) + ellipsis;
+			text_w = _measure_glyph_run(font_rid, draw_text, p_font_size, draw_text.length());
+		}
+		else {
+			int keep = draw_text.length();
+			while (keep > 0 &&
+				   _measure_glyph_run(font_rid, draw_text, p_font_size, keep) > p_width) {
+				keep--;
+			}
+			draw_text = draw_text.substr(0, keep);
+			text_w = _measure_glyph_run(font_rid, draw_text, p_font_size, draw_text.length());
+		}
+	}
+
+	Point2 ofs = p_pos;
+	if (p_width > 0.0f && text_w < p_width) {
+		if (p_alignment == HORIZONTAL_ALIGNMENT_CENTER) {
+			ofs.x += Math::floor((p_width - text_w) * 0.5f);
+		}
+		else if (p_alignment == HORIZONTAL_ALIGNMENT_RIGHT) {
+			ofs.x += Math::floor(p_width - text_w);
+		}
+	}
+
+	int64_t prev_glyph = 0;
+	for (int i = 0; i < draw_text.length(); i++) {
+		char32_t c = draw_text[i];
+		if (c == '\r' || c == '\n') {
+			continue;
+		}
+		int64_t glyph = TS->font_get_glyph_index(font_rid, p_font_size, c, 0);
+		if (prev_glyph != 0 && glyph != 0) {
+			ofs.x += TS->font_get_kerning(
+						   font_rid, p_font_size, Vector2i((int32_t)prev_glyph, (int32_t)glyph))
+						 .x;
+		}
+		if (glyph != 0) {
+			TS->font_draw_glyph_outline(font_rid, p_canvas_item, p_font_size, p_size, ofs, glyph,
+				p_modulate, p_oversampling);
+		}
+		ofs.x += TS->font_get_glyph_advance(font_rid, p_font_size, glyph).x;
+		prev_glyph = glyph;
+	}
 }
 
 void Font::draw_string(RID p_canvas_item, const Point2& p_pos, const String& p_text,
@@ -107,37 +230,179 @@ void Font::draw_string(RID p_canvas_item, const Point2& p_pos, const String& p_t
 	uint32_t p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation,
 	float p_oversampling) const
 {
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null() || p_text.is_empty() || p_font_size <= 0) {
+		return;
+	}
+	if (p_width == 0.0f) {
+		return;
+	}
+
+	String draw_text = p_text;
+	float text_w = _measure_glyph_run(font_rid, draw_text, p_font_size, draw_text.length());
+	if (p_width > 0.0f && text_w > p_width) {
+		const String ellipsis = "...";
+		const float ellipsis_w = _measure_glyph_run(font_rid, ellipsis, p_font_size, 3);
+		if (ellipsis_w <= p_width) {
+			int keep = draw_text.length();
+			while (keep > 0 &&
+				   _measure_glyph_run(font_rid, draw_text, p_font_size, keep) + ellipsis_w >
+					   p_width) {
+				keep--;
+			}
+			draw_text = draw_text.substr(0, keep) + ellipsis;
+			text_w = _measure_glyph_run(font_rid, draw_text, p_font_size, draw_text.length());
+		}
+		else {
+			int keep = draw_text.length();
+			while (keep > 0 &&
+				   _measure_glyph_run(font_rid, draw_text, p_font_size, keep) > p_width) {
+				keep--;
+			}
+			draw_text = draw_text.substr(0, keep);
+			text_w = _measure_glyph_run(font_rid, draw_text, p_font_size, draw_text.length());
+		}
+	}
+
+	Point2 ofs = p_pos;
+	if (p_width > 0.0f && text_w < p_width) {
+		if (p_alignment == HORIZONTAL_ALIGNMENT_CENTER) {
+			ofs.x += Math::floor((p_width - text_w) * 0.5f);
+		}
+		else if (p_alignment == HORIZONTAL_ALIGNMENT_RIGHT) {
+			ofs.x += Math::floor(p_width - text_w);
+		}
+	}
+
+	int64_t prev_glyph = 0;
+	for (int i = 0; i < draw_text.length(); i++) {
+		char32_t c = draw_text[i];
+		if (c == '\r' || c == '\n') {
+			continue;
+		}
+		int64_t glyph = TS->font_get_glyph_index(font_rid, p_font_size, c, 0);
+		if (prev_glyph != 0 && glyph != 0) {
+			ofs.x += TS->font_get_kerning(
+						   font_rid, p_font_size, Vector2i((int32_t)prev_glyph, (int32_t)glyph))
+						 .x;
+		}
+		if (glyph != 0) {
+			TS->font_draw_glyph(
+				font_rid, p_canvas_item, p_font_size, ofs, glyph, p_modulate, p_oversampling);
+		}
+		ofs.x += TS->font_get_glyph_advance(font_rid, p_font_size, glyph).x;
+		prev_glyph = glyph;
+	}
 }
 
-real_t Font::get_ascent(int p_font_size) const { return 0.0; }
+real_t Font::get_ascent(int p_font_size) const
+{
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return 0.0;
+	}
+	return TS->font_get_ascent(font_rid, p_font_size) + get_spacing(TextServer::SPACING_TOP);
+}
 
-Size2 Font::get_char_size(char32_t p_char, int p_font_size) const { return Size2(); }
+Size2 Font::get_char_size(char32_t p_char, int p_font_size) const
+{
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return Size2();
+	}
+	int64_t glyph = TS->font_get_glyph_index(font_rid, p_font_size, p_char, 0);
+	return Size2(
+		TS->font_get_glyph_advance(font_rid, p_font_size, glyph).x, get_height(p_font_size));
+}
 
-real_t Font::get_descent(int p_font_size) const { return 0.0; }
+real_t Font::get_descent(int p_font_size) const
+{
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return 0.0;
+	}
+	return TS->font_get_descent(font_rid, p_font_size) + get_spacing(TextServer::SPACING_BOTTOM);
+}
 
-real_t Font::get_height(int p_font_size) const { return 0.0; }
+real_t Font::get_height(int p_font_size) const
+{
+	return get_ascent(p_font_size) + get_descent(p_font_size);
+}
 
 Size2 Font::get_multiline_string_size(const String& p_text, HorizontalAlignment p_alignment,
 	float p_width, int p_font_size, int p_max_lines, uint32_t p_brk_flags, uint32_t p_jst_flags,
 	TextServer::Direction p_direction, TextServer::Orientation p_orientation) const
 {
-	return Size2();
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null() || p_text.is_empty()) {
+		return Size2();
+	}
+	Vector<String> lines = p_text.split("\n");
+	int count = lines.size();
+	if (p_max_lines > 0 && count > p_max_lines) {
+		count = p_max_lines;
+	}
+	float max_w = 0.0f;
+	for (int i = 0; i < count; i++) {
+		max_w = MAX(max_w, _measure_glyph_run(font_rid, lines[i], p_font_size, lines[i].length()));
+	}
+	if (p_width > 0.0f) {
+		max_w = MIN(max_w, p_width);
+	}
+	return Size2(max_w, get_height(p_font_size) * count);
 }
 
 Size2 Font::get_string_size(const String& p_text, HorizontalAlignment p_alignment, float p_width,
 	int p_font_size, uint32_t p_jst_flags, TextServer::Direction p_direction,
 	TextServer::Orientation p_orientation) const
 {
-	return Size2();
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return Size2();
+	}
+	float w = _measure_glyph_run(font_rid, p_text, p_font_size, p_text.length());
+	if (p_width > 0.0f) {
+		w = MIN(w, p_width);
+	}
+	return Size2(w, get_height(p_font_size));
 }
 
-String Font::get_supported_chars() const { return String(); }
+String Font::get_supported_chars() const
+{
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return String();
+	}
+	return TS->font_get_supported_chars(font_rid);
+}
 
-real_t Font::get_underline_position(int p_font_size) const { return 0.0; }
+real_t Font::get_underline_position(int p_font_size) const
+{
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return 0.0;
+	}
+	return TS->font_get_underline_position(font_rid, p_font_size) +
+		   get_spacing(TextServer::SPACING_TOP);
+}
 
-real_t Font::get_underline_thickness(int p_font_size) const { return 0.0; }
+real_t Font::get_underline_thickness(int p_font_size) const
+{
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return 0.0;
+	}
+	return TS->font_get_underline_thickness(font_rid, p_font_size);
+}
 
-bool Font::has_char(char32_t p_char) const { return true; }
+bool Font::has_char(char32_t p_char) const
+{
+	RID font_rid = _get_rid();
+	if (!font_rid.is_valid() || TS.is_null()) {
+		return false;
+	}
+	return TS->font_has_char(font_rid, p_char);
+}
 
 void Font::_invalidate_rids() {}
 
@@ -206,7 +471,9 @@ _FORCE_INLINE_ void FontFile::_clear_cache()
 {
 	for (int i = 0; i < cache.size(); i++) {
 		if (cache[i].is_valid()) {
-			TS->free_rid(cache[i]);
+			if (TS.is_valid()) {
+				TS->free_rid(cache[i]);
+			}
 			cache.write[i] = RID();
 		}
 	}
@@ -1093,19 +1360,79 @@ void FontFile::set_texture_image(
 {
 }
 
-void FontFile::set_subpixel_positioning(TextServer::SubpixelPositioning p_subpixel) {}
+void FontFile::set_subpixel_positioning(TextServer::SubpixelPositioning p_subpixel)
+{
+	if (subpixel_positioning != p_subpixel) {
+		subpixel_positioning = p_subpixel;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_subpixel_positioning(cache[i], subpixel_positioning);
+			}
+		}
+	}
+}
 
 void FontFile::set_script_support_override(const String& p_script, bool p_supported) {}
 
-void FontFile::set_oversampling(real_t p_oversampling) {}
+void FontFile::set_oversampling(real_t p_oversampling)
+{
+	if (oversampling_override != p_oversampling) {
+		oversampling_override = p_oversampling;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_oversampling(cache[i], oversampling_override);
+			}
+		}
+	}
+}
 
-void FontFile::set_multichannel_signed_distance_field(bool p_msdf) {}
+void FontFile::set_multichannel_signed_distance_field(bool p_msdf)
+{
+	if (msdf != p_msdf) {
+		msdf = p_msdf;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_multichannel_signed_distance_field(cache[i], msdf);
+			}
+		}
+	}
+}
 
-void FontFile::set_msdf_size(int p_msdf_size) {}
+void FontFile::set_msdf_size(int p_msdf_size)
+{
+	if (msdf_size != p_msdf_size) {
+		msdf_size = p_msdf_size;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_msdf_size(cache[i], msdf_size);
+			}
+		}
+	}
+}
 
-void FontFile::set_msdf_pixel_range(int p_msdf_pixel_range) {}
+void FontFile::set_msdf_pixel_range(int p_msdf_pixel_range)
+{
+	if (msdf_pixel_range != p_msdf_pixel_range) {
+		msdf_pixel_range = p_msdf_pixel_range;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_msdf_pixel_range(cache[i], msdf_pixel_range);
+			}
+		}
+	}
+}
 
-void FontFile::set_modulate_color_glyphs(bool p_modulate) {}
+void FontFile::set_modulate_color_glyphs(bool p_modulate)
+{
+	if (modulate_color_glyphs != p_modulate) {
+		modulate_color_glyphs = p_modulate;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_modulate_color_glyphs(cache[i], modulate_color_glyphs);
+			}
+		}
+	}
+}
 
 void FontFile::set_language_support_override(const String& p_language, bool p_supported) {}
 
@@ -1114,9 +1441,29 @@ void FontFile::set_kerning(
 {
 }
 
-void FontFile::set_keep_rounding_remainders(bool p_keep_rounding_remainders) {}
+void FontFile::set_keep_rounding_remainders(bool p_keep_rounding_remainders)
+{
+	if (keep_rounding_remainders != p_keep_rounding_remainders) {
+		keep_rounding_remainders = p_keep_rounding_remainders;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_keep_rounding_remainders(cache[i], keep_rounding_remainders);
+			}
+		}
+	}
+}
 
-void FontFile::set_hinting(TextServer::Hinting p_hinting) {}
+void FontFile::set_hinting(TextServer::Hinting p_hinting)
+{
+	if (hinting != p_hinting) {
+		hinting = p_hinting;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_hinting(cache[i], hinting);
+			}
+		}
+	}
+}
 
 void FontFile::set_glyph_uv_rect(
 	int p_cache_index, const Vector2i& p_size, int32_t p_glyph, const Rect2& p_uv_rect)
@@ -1143,9 +1490,29 @@ void FontFile::set_glyph_advance(
 {
 }
 
-void FontFile::set_generate_mipmaps(bool p_generate_mipmaps) {}
+void FontFile::set_generate_mipmaps(bool p_generate_mipmaps)
+{
+	if (mipmaps != p_generate_mipmaps) {
+		mipmaps = p_generate_mipmaps;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_generate_mipmaps(cache[i], mipmaps);
+			}
+		}
+	}
+}
 
-void FontFile::set_force_autohinter(bool p_force_autohinter) {}
+void FontFile::set_force_autohinter(bool p_force_autohinter)
+{
+	if (force_autohinter != p_force_autohinter) {
+		force_autohinter = p_force_autohinter;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_force_autohinter(cache[i], force_autohinter);
+			}
+		}
+	}
+}
 
 void FontFile::set_font_weight(int p_weight) {}
 
@@ -1157,9 +1524,29 @@ void FontFile::set_font_stretch(int p_stretch) {}
 
 void FontFile::set_font_name(const String& p_name) {}
 
-void FontFile::set_fixed_size_scale_mode(TextServer::FixedSizeScaleMode p_fixed_size_scale_mode) {}
+void FontFile::set_fixed_size_scale_mode(TextServer::FixedSizeScaleMode p_fixed_size_scale_mode)
+{
+	if (fixed_size_scale_mode != p_fixed_size_scale_mode) {
+		fixed_size_scale_mode = p_fixed_size_scale_mode;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_fixed_size_scale_mode(cache[i], fixed_size_scale_mode);
+			}
+		}
+	}
+}
 
-void FontFile::set_fixed_size(int p_fixed_size) {}
+void FontFile::set_fixed_size(int p_fixed_size)
+{
+	if (fixed_size != p_fixed_size) {
+		fixed_size = p_fixed_size;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_fixed_size(cache[i], fixed_size);
+			}
+		}
+	}
+}
 
 void FontFile::set_face_index(int p_cache_index, int64_t p_index) {}
 
@@ -1172,7 +1559,17 @@ void FontFile::set_extra_baseline_offset(int p_cache_index, float p_baseline_off
 
 void FontFile::set_embolden(int p_cache_index, float p_strength) {}
 
-void FontFile::set_disable_embedded_bitmaps(bool p_disable_embedded_bitmaps) {}
+void FontFile::set_disable_embedded_bitmaps(bool p_disable_embedded_bitmaps)
+{
+	if (disable_embedded_bitmaps != p_disable_embedded_bitmaps) {
+		disable_embedded_bitmaps = p_disable_embedded_bitmaps;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_disable_embedded_bitmaps(cache[i], disable_embedded_bitmaps);
+			}
+		}
+	}
+}
 
 void FontFile::set_cache_underline_thickness(
 	int p_cache_index, int p_size, real_t p_underline_thickness)
@@ -1190,9 +1587,29 @@ void FontFile::set_cache_descent(int p_cache_index, int p_size, real_t p_descent
 
 void FontFile::set_cache_ascent(int p_cache_index, int p_size, real_t p_ascent) {}
 
-void FontFile::set_antialiasing(TextServer::FontAntialiasing p_antialiasing) {}
+void FontFile::set_antialiasing(TextServer::FontAntialiasing p_antialiasing)
+{
+	if (antialiasing != p_antialiasing) {
+		antialiasing = p_antialiasing;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_antialiasing(cache[i], antialiasing);
+			}
+		}
+	}
+}
 
-void FontFile::set_allow_system_fallback(bool p_allow_system_fallback) {}
+void FontFile::set_allow_system_fallback(bool p_allow_system_fallback)
+{
+	if (allow_system_fallback != p_allow_system_fallback) {
+		allow_system_fallback = p_allow_system_fallback;
+		for (int i = 0; i < cache.size(); i++) {
+			if (cache[i].is_valid() && TS.is_valid()) {
+				TS->font_set_allow_system_fallback(cache[i], allow_system_fallback);
+			}
+		}
+	}
+}
 
 void FontFile::render_range(
 	int p_cache_index, const Vector2i& p_size, char32_t p_start, char32_t p_end)
@@ -1305,28 +1722,75 @@ void FontFile::clear_kerning_map(int p_cache_index, int p_size) {}
 
 void FontFile::clear_glyphs(int p_cache_index, const Vector2i& p_size) {}
 
-RID FontFile::_get_rid() const { return RID(); }
+RID FontFile::_get_rid() const
+{
+	if (TS.is_null() || data_ptr == nullptr || data_size == 0) {
+		return RID();
+	}
+	if (unlikely(cache.is_empty())) {
+		cache.resize(1);
+	}
+	if (unlikely(!cache[0].is_valid())) {
+		RID rid = TS->create_font();
+		if (rid.is_valid()) {
+			TS->font_set_data_ptr(rid, data_ptr, data_size);
+			TS->font_set_antialiasing(rid, antialiasing);
+			TS->font_set_generate_mipmaps(rid, mipmaps);
+			TS->font_set_disable_embedded_bitmaps(rid, disable_embedded_bitmaps);
+			TS->font_set_multichannel_signed_distance_field(rid, msdf);
+			TS->font_set_msdf_pixel_range(rid, msdf_pixel_range);
+			TS->font_set_msdf_size(rid, msdf_size);
+			TS->font_set_fixed_size(rid, fixed_size);
+			TS->font_set_fixed_size_scale_mode(rid, fixed_size_scale_mode);
+			TS->font_set_force_autohinter(rid, force_autohinter);
+			TS->font_set_modulate_color_glyphs(rid, modulate_color_glyphs);
+			TS->font_set_allow_system_fallback(rid, allow_system_fallback);
+			TS->font_set_hinting(rid, hinting);
+			TS->font_set_subpixel_positioning(rid, subpixel_positioning);
+			TS->font_set_keep_rounding_remainders(rid, keep_rounding_remainders);
+			TS->font_set_oversampling(rid, oversampling_override);
+			cache.write[0] = rid;
+		}
+	}
+	return cache[0];
+}
 
 void SystemFont::reset_state() {}
 
 void SystemFont::_update_rids() const {}
 
-RID SystemFont::_get_rid() const { return RID(); }
+RID SystemFont::_get_rid() const
+{
+	return base_font.is_valid() ? base_font->_get_rid() : RID();
+}
 
 Ref<Font> SystemFont::_get_base_font_or_default() const
 {
-	Ref<Font> f = memnew(Font);
-	return f;
+	if (base_font.is_valid()) {
+		return base_font;
+	}
+	return ThemeDB::get_fallback_font();
 }
 
-RID FontVariation::_get_rid() const { return RID(); }
+RID FontVariation::_get_rid() const
+{
+	Ref<Font> f = _get_base_font_or_default();
+	return f.is_valid() ? f->_get_rid() : RID();
+}
 
-void FontVariation::set_base_font(const Ref<Font>& p_font) {}
+void FontVariation::set_base_font(const Ref<Font>& p_font)
+{
+	ERR_FAIL_COND_MSG(_is_base_cyclic(p_font, 0), "Cyclic font reference.");
+	base_font = p_font;
+	_invalidate_rids();
+}
 
 Ref<Font> FontVariation::_get_base_font_or_default() const
 {
-	Ref<Font> f = memnew(Font);
-	return f;
+	if (base_font.is_valid()) {
+		return base_font;
+	}
+	return ThemeDB::get_fallback_font();
 }
 
 

@@ -1289,6 +1289,11 @@ bool TextServer::is_valid_identifier(const String& p_string) const
 
 bool TextServer::is_valid_letter(uint64_t p_unicode) const { return is_unicode_letter(p_unicode); }
 
-void TextServerManager::set_primary_interface(const Ref<TextServer>& p_interface) {}
+void TextServerManager::set_primary_interface(const Ref<TextServer>& p_interface)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(p_interface.is_null());
+	data->primary_interface = p_interface;
+}
 
 

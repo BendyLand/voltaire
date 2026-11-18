@@ -5739,6 +5739,181 @@ int TextServerAdvanced::ft_cubic_to(
 bool TextServerAdvanced::_ensure_cache_for_size(FontAdvanced* p_font_data, const Vector2i& p_size,
 	FontForSizeAdvanced*& r_cache_for_size, bool p_silent, uint32_t p_oversampling) const
 {
+	ERR_FAIL_NULL_V(p_font_data, false);
+	ERR_FAIL_COND_V(p_size.x <= 0, false);
+
+	HashMap<Vector2i, FontForSizeAdvanced*>::Iterator E = p_font_data->cache.find(p_size);
+	if (E) {
+#ifdef MODULE_FREETYPE_ENABLED
+		if (E->value->fsize != nullptr) {
+			FT_Activate_Size(E->value->fsize);
+		}
+#endif
+		r_cache_for_size = E->value;
+		if (p_oversampling == 0 && E->value->viewport_oversampling != 0) {
+			OversamplingLevel* ol = oversampling_levels.getptr(E->value->viewport_oversampling);
+			if (ol) {
+				ol->fonts.erase(E->value);
+			}
+		}
+		return true;
+	}
+
+	FontForSizeAdvanced* fd = memnew(FontForSizeAdvanced);
+	fd->size = p_size;
+	if (p_font_data->data_ptr && (p_font_data->data_size > 0)) {
+#ifdef MODULE_FREETYPE_ENABLED
+		int error = 0;
+		{
+			MutexLock ftlock(ft_mutex);
+			if (!ft_library) {
+				error = FT_Init_FreeType(&ft_library);
+				if (error != 0) {
+					memdelete(fd);
+					if (p_silent) {
+						return false;
+					}
+					ERR_FAIL_V_MSG(false,
+						"FreeType: Error initializing library: '" + String(FT_Error_String(error)) +
+							"'.");
+				}
+#ifdef MODULE_SVG_ENABLED
+				FT_Property_Set(ft_library, "ot-svg", "svg-hooks", get_tvg_svg_in_ot_hooks());
+#endif
+			}
+
+			if (p_font_data->face == nullptr) {
+				memset(&p_font_data->stream, 0, sizeof(FT_StreamRec));
+				p_font_data->stream.base = (unsigned char*)p_font_data->data_ptr;
+				p_font_data->stream.size = p_font_data->data_size;
+				p_font_data->stream.pos = 0;
+
+				FT_Open_Args fargs;
+				memset(&fargs, 0, sizeof(FT_Open_Args));
+				fargs.memory_base = (unsigned char*)p_font_data->data_ptr;
+				fargs.memory_size = p_font_data->data_size;
+				fargs.flags = FT_OPEN_MEMORY;
+				fargs.stream = &p_font_data->stream;
+
+				error = FT_Open_Face(
+					ft_library, &fargs, p_font_data->face_index, &p_font_data->face);
+				if (error) {
+					if (p_font_data->face) {
+						FT_Done_Face(p_font_data->face);
+						p_font_data->face = nullptr;
+					}
+					memdelete(fd);
+					if (p_silent) {
+						return false;
+					}
+					ERR_FAIL_V_MSG(false,
+						"FreeType: Error loading font: '" + String(FT_Error_String(error)) +
+							"' (face_index=" + String::num_int64(p_font_data->face_index) + ").");
+				}
+			}
+
+			FT_New_Size(p_font_data->face, &fd->fsize);
+			FT_Activate_Size(fd->fsize);
+		}
+
+		double sz = double(fd->size.x) / 64.0;
+		if (p_font_data->msdf) {
+			sz = p_font_data->msdf_source_size;
+		}
+
+		if (FT_HAS_COLOR(p_font_data->face) && p_font_data->face->num_fixed_sizes > 0) {
+			int best_match = 0;
+			int diff = Math::abs(sz - ((int64_t)p_font_data->face->available_sizes[0].width));
+			fd->scale = sz / p_font_data->face->available_sizes[0].width;
+			for (int i = 1; i < p_font_data->face->num_fixed_sizes; i++) {
+				int ndiff = Math::abs(sz - ((int64_t)p_font_data->face->available_sizes[i].width));
+				if (ndiff < diff) {
+					best_match = i;
+					diff = ndiff;
+					fd->scale = sz / p_font_data->face->available_sizes[i].width;
+				}
+			}
+			FT_Select_Size(p_font_data->face, best_match);
+		}
+		else {
+			FT_Size_RequestRec req;
+			req.type = FT_SIZE_REQUEST_TYPE_NOMINAL;
+			req.width = MIN(2048.0, sz) * 64.0;
+			req.height = MIN(2048.0, sz) * 64.0;
+			req.horiResolution = 0;
+			req.vertResolution = 0;
+
+			FT_Request_Size(p_font_data->face, &req);
+			if (p_font_data->face->size->metrics.y_ppem != 0) {
+				fd->scale = sz / (double)p_font_data->face->size->metrics.y_ppem;
+			}
+		}
+
+		fd->hb_handle = hb_ft_font_create(p_font_data->face, nullptr);
+
+		fd->ascent = (p_font_data->face->size->metrics.ascender / 64.0) * fd->scale;
+		fd->descent = (-p_font_data->face->size->metrics.descender / 64.0) * fd->scale;
+		fd->underline_position =
+			(-FT_MulFix(p_font_data->face->underline_position,
+				 p_font_data->face->size->metrics.y_scale) /
+				64.0) *
+			fd->scale;
+		fd->underline_thickness =
+			(FT_MulFix(p_font_data->face->underline_thickness,
+				 p_font_data->face->size->metrics.y_scale) /
+				64.0) *
+			fd->scale;
+
+#if HB_VERSION_ATLEAST(3, 3, 0)
+		hb_font_set_synthetic_slant(fd->hb_handle, p_font_data->transform[0][1]);
+#endif
+
+		if (!p_font_data->face_init) {
+			if (p_font_data->font_name.is_empty() && p_font_data->face->family_name != nullptr) {
+				p_font_data->font_name = String::utf8((const char*)p_font_data->face->family_name);
+			}
+			if (p_font_data->face->style_name != nullptr) {
+				p_font_data->style_name = String::utf8((const char*)p_font_data->face->style_name);
+			}
+			p_font_data->weight = _font_get_weight_by_name(p_font_data->style_name.to_lower());
+			p_font_data->stretch = _font_get_stretch_by_name(p_font_data->style_name.to_lower());
+			p_font_data->style_flags = 0;
+			if ((p_font_data->face->style_flags & FT_STYLE_FLAG_BOLD) ||
+				p_font_data->weight >= 700) {
+				p_font_data->style_flags |= FONT_BOLD;
+			}
+			if ((p_font_data->face->style_flags & FT_STYLE_FLAG_ITALIC) ||
+				_is_ital_style(p_font_data->style_name.to_lower())) {
+				p_font_data->style_flags |= FONT_ITALIC;
+			}
+			if (p_font_data->face->face_flags & FT_FACE_FLAG_FIXED_WIDTH) {
+				p_font_data->style_flags |= FONT_FIXED_WIDTH;
+			}
+			p_font_data->face_init = true;
+		}
+#else
+		memdelete(fd);
+		if (p_silent) {
+			return false;
+		}
+		ERR_FAIL_V_MSG(false,
+			"FreeType: Can't load dynamic font, engine is compiled without FreeType support!");
+#endif
+	}
+	else {
+		fd->hb_handle = _bmp_font_create(fd, nullptr);
+	}
+
+	fd->owner = p_font_data;
+	p_font_data->cache.insert(p_size, fd);
+	r_cache_for_size = fd;
+	if (p_oversampling != 0) {
+		OversamplingLevel* ol = oversampling_levels.getptr(p_oversampling);
+		if (ol) {
+			fd->viewport_oversampling = p_oversampling;
+			ol->fonts.insert(fd);
+		}
+	}
 	return true;
 }
 

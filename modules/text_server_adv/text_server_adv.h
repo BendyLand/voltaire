@@ -1157,6 +1157,473 @@ public:
 	void _font_clear_system_fallback_cache();
 	String _font_get_name(const RID& p_font_rid) const;
 	void _cleanup();
+
+	// Virtual TextServer overrides forwarding to TextServerAdvanced implementations
+	bool has_feature(Feature p_feature) const override { return _has_feature(p_feature); }
+	String get_name() const override { return _get_name(); }
+	String get_short_name() const override { return _get_short_name(); }
+	int64_t get_features() const override { return _get_features(); }
+	void free_rid(const RID& p_rid) override { _free_rid(p_rid); }
+	bool has(const RID& p_rid) override { return _has(p_rid); }
+	bool load_support_data(const String& p_filename) override
+	{
+		return _load_support_data(p_filename);
+	}
+	String get_support_data_filename() const override { return _get_support_data_filename(); }
+	String get_support_data_info() const override { return _get_support_data_info(); }
+	bool save_support_data(const String& p_filename) const override
+	{
+		return _save_support_data(p_filename);
+	}
+	PackedByteArray get_support_data() const override { return _get_support_data(); }
+	bool is_locale_using_support_data(const String& p_locale) const override
+	{
+		return _is_locale_using_support_data(p_locale);
+	}
+	bool is_locale_right_to_left(const String& p_locale) const override
+	{
+		return _is_locale_right_to_left(p_locale);
+	}
+	int64_t name_to_tag(const String& p_name) const override { return _name_to_tag(p_name); }
+	String tag_to_name(int64_t p_tag) const override { return _tag_to_name(p_tag); }
+
+	void reference_oversampling_level(double p_oversampling) override
+	{
+		_reference_oversampling_level(p_oversampling);
+	}
+	void unreference_oversampling_level(double p_oversampling) override
+	{
+		_unreference_oversampling_level(p_oversampling);
+	}
+
+	RID create_font() override { return _create_font(); }
+	RID create_font_linked_variation(const RID& p_font_rid) override
+	{
+		return _create_font_linked_variation(p_font_rid);
+	}
+	void font_set_data(const RID& p_font_rid, const PackedByteArray& p_data) override
+	{
+		_font_set_data(p_font_rid, p_data);
+	}
+	void font_set_data_ptr(
+		const RID& p_font_rid, const uint8_t* p_data_ptr, int64_t p_data_size) override
+	{
+		_font_set_data_ptr(p_font_rid, p_data_ptr, p_data_size);
+	}
+	void font_set_face_index(const RID& p_font_rid, int64_t p_index) override
+	{
+		_font_set_face_index(p_font_rid, p_index);
+	}
+	int64_t font_get_face_index(const RID& p_font_rid) const override
+	{
+		return _font_get_face_index(p_font_rid);
+	}
+	int64_t font_get_face_count(const RID& p_font_rid) const override
+	{
+		return _font_get_face_count(p_font_rid);
+	}
+	void font_set_style(const RID& p_font_rid, uint32_t p_style) override
+	{
+		_font_set_style(p_font_rid, p_style);
+	}
+	uint32_t font_get_style(const RID& p_font_rid) const override
+	{
+		return _font_get_style(p_font_rid);
+	}
+	void font_set_name(const RID& p_font_rid, const String& p_name) override
+	{
+		_font_set_name(p_font_rid, p_name);
+	}
+	String font_get_name(const RID& p_font_rid) const override
+	{
+		return _font_get_name(p_font_rid);
+	}
+	void font_set_style_name(const RID& p_font_rid, const String& p_name) override
+	{
+		_font_set_style_name(p_font_rid, p_name);
+	}
+	String font_get_style_name(const RID& p_font_rid) const override
+	{
+		return _font_get_style_name(p_font_rid);
+	}
+	void font_set_weight(const RID& p_font_rid, int64_t p_weight) override
+	{
+		_font_set_weight(p_font_rid, p_weight);
+	}
+	int64_t font_get_weight(const RID& p_font_rid) const override
+	{
+		return _font_get_weight(p_font_rid);
+	}
+	void font_set_stretch(const RID& p_font_rid, int64_t p_stretch) override
+	{
+		_font_set_stretch(p_font_rid, p_stretch);
+	}
+	int64_t font_get_stretch(const RID& p_font_rid) const override
+	{
+		return _font_get_stretch(p_font_rid);
+	}
+	void font_set_antialiasing(const RID& p_font_rid, FontAntialiasing p_antialiasing) override
+	{
+		_font_set_antialiasing(p_font_rid, p_antialiasing);
+	}
+	FontAntialiasing font_get_antialiasing(const RID& p_font_rid) const override
+	{
+		return _font_get_antialiasing(p_font_rid);
+	}
+	void font_set_disable_embedded_bitmaps(
+		const RID& p_font_rid, bool p_disable_embedded_bitmaps) override
+	{
+		_font_set_disable_embedded_bitmaps(p_font_rid, p_disable_embedded_bitmaps);
+	}
+	bool font_get_disable_embedded_bitmaps(const RID& p_font_rid) const override
+	{
+		return _font_get_disable_embedded_bitmaps(p_font_rid);
+	}
+	void font_set_generate_mipmaps(const RID& p_font_rid, bool p_generate_mipmaps) override
+	{
+		_font_set_generate_mipmaps(p_font_rid, p_generate_mipmaps);
+	}
+	bool font_get_generate_mipmaps(const RID& p_font_rid) const override
+	{
+		return _font_get_generate_mipmaps(p_font_rid);
+	}
+	void font_set_multichannel_signed_distance_field(const RID& p_font_rid, bool p_msdf) override
+	{
+		_font_set_multichannel_signed_distance_field(p_font_rid, p_msdf);
+	}
+	bool font_is_multichannel_signed_distance_field(const RID& p_font_rid) const override
+	{
+		return _font_is_multichannel_signed_distance_field(p_font_rid);
+	}
+	void font_set_msdf_pixel_range(const RID& p_font_rid, int64_t p_msdf_pixel_range) override
+	{
+		_font_set_msdf_pixel_range(p_font_rid, p_msdf_pixel_range);
+	}
+	int64_t font_get_msdf_pixel_range(const RID& p_font_rid) const override
+	{
+		return _font_get_msdf_pixel_range(p_font_rid);
+	}
+	void font_set_msdf_size(const RID& p_font_rid, int64_t p_msdf_size) override
+	{
+		_font_set_msdf_size(p_font_rid, p_msdf_size);
+	}
+	int64_t font_get_msdf_size(const RID& p_font_rid) const override
+	{
+		return _font_get_msdf_size(p_font_rid);
+	}
+	void font_set_fixed_size(const RID& p_font_rid, int64_t p_fixed_size) override
+	{
+		_font_set_fixed_size(p_font_rid, p_fixed_size);
+	}
+	int64_t font_get_fixed_size(const RID& p_font_rid) const override
+	{
+		return _font_get_fixed_size(p_font_rid);
+	}
+	void font_set_fixed_size_scale_mode(
+		const RID& p_font_rid, FixedSizeScaleMode p_fixed_size_scale) override
+	{
+		_font_set_fixed_size_scale_mode(p_font_rid, p_fixed_size_scale);
+	}
+	FixedSizeScaleMode font_get_fixed_size_scale_mode(const RID& p_font_rid) const override
+	{
+		return _font_get_fixed_size_scale_mode(p_font_rid);
+	}
+	void font_set_allow_system_fallback(
+		const RID& p_font_rid, bool p_allow_system_fallback) override
+	{
+		_font_set_allow_system_fallback(p_font_rid, p_allow_system_fallback);
+	}
+	bool font_is_allow_system_fallback(const RID& p_font_rid) const override
+	{
+		return _font_is_allow_system_fallback(p_font_rid);
+	}
+	void font_clear_system_fallback_cache() override { _font_clear_system_fallback_cache(); }
+	void font_set_force_autohinter(const RID& p_font_rid, bool p_force_autohinter) override
+	{
+		_font_set_force_autohinter(p_font_rid, p_force_autohinter);
+	}
+	bool font_is_force_autohinter(const RID& p_font_rid) const override
+	{
+		return _font_is_force_autohinter(p_font_rid);
+	}
+	void font_set_modulate_color_glyphs(const RID& p_font_rid, bool p_modulate) override
+	{
+		_font_set_modulate_color_glyphs(p_font_rid, p_modulate);
+	}
+	bool font_is_modulate_color_glyphs(const RID& p_font_rid) const override
+	{
+		return _font_is_modulate_color_glyphs(p_font_rid);
+	}
+	void font_set_hinting(const RID& p_font_rid, Hinting p_hinting) override
+	{
+		_font_set_hinting(p_font_rid, p_hinting);
+	}
+	Hinting font_get_hinting(const RID& p_font_rid) const override
+	{
+		return _font_get_hinting(p_font_rid);
+	}
+	void font_set_subpixel_positioning(
+		const RID& p_font_rid, SubpixelPositioning p_subpixel) override
+	{
+		_font_set_subpixel_positioning(p_font_rid, p_subpixel);
+	}
+	SubpixelPositioning font_get_subpixel_positioning(const RID& p_font_rid) const override
+	{
+		return _font_get_subpixel_positioning(p_font_rid);
+	}
+	void font_set_keep_rounding_remainders(
+		const RID& p_font_rid, bool p_keep_rounding_remainders) override
+	{
+		_font_set_keep_rounding_remainders(p_font_rid, p_keep_rounding_remainders);
+	}
+	bool font_get_keep_rounding_remainders(const RID& p_font_rid) const override
+	{
+		return _font_get_keep_rounding_remainders(p_font_rid);
+	}
+	void font_set_embolden(const RID& p_font_rid, double p_strength) override
+	{
+		_font_set_embolden(p_font_rid, p_strength);
+	}
+	double font_get_embolden(const RID& p_font_rid) const override
+	{
+		return _font_get_embolden(p_font_rid);
+	}
+	void font_set_spacing(const RID& p_font_rid, SpacingType p_spacing, int64_t p_value) override
+	{
+		_font_set_spacing(p_font_rid, p_spacing, p_value);
+	}
+	int64_t font_get_spacing(const RID& p_font_rid, SpacingType p_spacing) const override
+	{
+		return _font_get_spacing(p_font_rid, p_spacing);
+	}
+	void font_set_baseline_offset(const RID& p_font_rid, double p_baseline_offset) override
+	{
+		_font_set_baseline_offset(p_font_rid, p_baseline_offset);
+	}
+	double font_get_baseline_offset(const RID& p_font_rid) const override
+	{
+		return _font_get_baseline_offset(p_font_rid);
+	}
+	Transform2D font_get_transform(const RID& p_font_rid) const override
+	{
+		return _font_get_transform(p_font_rid);
+	}
+	void font_set_oversampling(const RID& p_font_rid, double p_oversampling) override
+	{
+		_font_set_oversampling(p_font_rid, p_oversampling);
+	}
+	double font_get_oversampling(const RID& p_font_rid) const override
+	{
+		return _font_get_oversampling(p_font_rid);
+	}
+	void font_clear_size_cache(const RID& p_font_rid) override
+	{
+		_font_clear_size_cache(p_font_rid);
+	}
+	void font_remove_size_cache(const RID& p_font_rid, const Vector2i& p_size) override
+	{
+		_font_remove_size_cache(p_font_rid, p_size);
+	}
+	void font_set_ascent(const RID& p_font_rid, int64_t p_size, double p_ascent) override
+	{
+		_font_set_ascent(p_font_rid, p_size, p_ascent);
+	}
+	double font_get_ascent(const RID& p_font_rid, int64_t p_size) const override
+	{
+		return _font_get_ascent(p_font_rid, p_size);
+	}
+	void font_set_descent(const RID& p_font_rid, int64_t p_size, double p_descent) override
+	{
+		_font_set_descent(p_font_rid, p_size, p_descent);
+	}
+	double font_get_descent(const RID& p_font_rid, int64_t p_size) const override
+	{
+		return _font_get_descent(p_font_rid, p_size);
+	}
+	void font_set_underline_position(
+		const RID& p_font_rid, int64_t p_size, double p_underline_position) override
+	{
+		_font_set_underline_position(p_font_rid, p_size, p_underline_position);
+	}
+	double font_get_underline_position(const RID& p_font_rid, int64_t p_size) const override
+	{
+		return _font_get_underline_position(p_font_rid, p_size);
+	}
+	void font_set_underline_thickness(
+		const RID& p_font_rid, int64_t p_size, double p_underline_thickness) override
+	{
+		_font_set_underline_thickness(p_font_rid, p_size, p_underline_thickness);
+	}
+	double font_get_underline_thickness(const RID& p_font_rid, int64_t p_size) const override
+	{
+		return _font_get_underline_thickness(p_font_rid, p_size);
+	}
+	void font_set_scale(const RID& p_font_rid, int64_t p_size, double p_scale) override
+	{
+		_font_set_scale(p_font_rid, p_size, p_scale);
+	}
+	double font_get_scale(const RID& p_font_rid, int64_t p_size) const override
+	{
+		return _font_get_scale(p_font_rid, p_size);
+	}
+	int64_t font_get_texture_count(const RID& p_font_rid, const Vector2i& p_size) const override
+	{
+		return _font_get_texture_count(p_font_rid, p_size);
+	}
+	void font_clear_textures(const RID& p_font_rid, const Vector2i& p_size) override
+	{
+		_font_clear_textures(p_font_rid, p_size);
+	}
+	void font_remove_texture(
+		const RID& p_font_rid, const Vector2i& p_size, int64_t p_texture_index) override
+	{
+		_font_remove_texture(p_font_rid, p_size, p_texture_index);
+	}
+	void font_set_texture_image(const RID& p_font_rid, const Vector2i& p_size,
+		int64_t p_texture_index, const Ref<Image>& p_image) override
+	{
+		_font_set_texture_image(p_font_rid, p_size, p_texture_index, p_image);
+	}
+	Ref<Image> font_get_texture_image(
+		const RID& p_font_rid, const Vector2i& p_size, int64_t p_texture_index) const override
+	{
+		return _font_get_texture_image(p_font_rid, p_size, p_texture_index);
+	}
+	Vector2 font_get_glyph_advance(
+		const RID& p_font_rid, int64_t p_size, int64_t p_glyph) const override
+	{
+		return _font_get_glyph_advance(p_font_rid, p_size, p_glyph);
+	}
+	void font_set_glyph_advance(const RID& p_font_rid, int64_t p_size, int64_t p_glyph,
+		const Vector2& p_advance) override
+	{
+		_font_set_glyph_advance(p_font_rid, p_size, p_glyph, p_advance);
+	}
+	Vector2 font_get_glyph_offset(
+		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
+	{
+		return _font_get_glyph_offset(p_font_rid, p_size, p_glyph);
+	}
+	void font_set_glyph_offset(const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph,
+		const Vector2& p_offset) override
+	{
+		_font_set_glyph_offset(p_font_rid, p_size, p_glyph, p_offset);
+	}
+	Vector2 font_get_glyph_size(
+		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
+	{
+		return _font_get_glyph_size(p_font_rid, p_size, p_glyph);
+	}
+	void font_set_glyph_size(const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph,
+		const Vector2& p_gl_size) override
+	{
+		_font_set_glyph_size(p_font_rid, p_size, p_glyph, p_gl_size);
+	}
+	Rect2 font_get_glyph_uv_rect(
+		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
+	{
+		return _font_get_glyph_uv_rect(p_font_rid, p_size, p_glyph);
+	}
+	void font_set_glyph_uv_rect(const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph,
+		const Rect2& p_uv_rect) override
+	{
+		_font_set_glyph_uv_rect(p_font_rid, p_size, p_glyph, p_uv_rect);
+	}
+	int64_t font_get_glyph_texture_idx(
+		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
+	{
+		return _font_get_glyph_texture_idx(p_font_rid, p_size, p_glyph);
+	}
+	void font_set_glyph_texture_idx(const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph,
+		int64_t p_texture_idx) override
+	{
+		_font_set_glyph_texture_idx(p_font_rid, p_size, p_glyph, p_texture_idx);
+	}
+	RID font_get_glyph_texture_rid(
+		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
+	{
+		return _font_get_glyph_texture_rid(p_font_rid, p_size, p_glyph);
+	}
+	Size2 font_get_glyph_texture_size(
+		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
+	{
+		return _font_get_glyph_texture_size(p_font_rid, p_size, p_glyph);
+	}
+	void font_clear_kerning_map(const RID& p_font_rid, int64_t p_size) override
+	{
+		_font_clear_kerning_map(p_font_rid, p_size);
+	}
+	void font_remove_kerning(
+		const RID& p_font_rid, int64_t p_size, const Vector2i& p_glyph_pair) override
+	{
+		_font_remove_kerning(p_font_rid, p_size, p_glyph_pair);
+	}
+	void font_set_kerning(const RID& p_font_rid, int64_t p_size, const Vector2i& p_glyph_pair,
+		const Vector2& p_kerning) override
+	{
+		_font_set_kerning(p_font_rid, p_size, p_glyph_pair, p_kerning);
+	}
+	Vector2 font_get_kerning(
+		const RID& p_font_rid, int64_t p_size, const Vector2i& p_glyph_pair) const override
+	{
+		return _font_get_kerning(p_font_rid, p_size, p_glyph_pair);
+	}
+	int64_t font_get_glyph_index(const RID& p_font_rid, int64_t p_size, int64_t p_char,
+		int64_t p_variation_selector) const override
+	{
+		return _font_get_glyph_index(p_font_rid, p_size, p_char, p_variation_selector);
+	}
+	int64_t font_get_char_from_glyph_index(
+		const RID& p_font_rid, int64_t p_size, int64_t p_glyph_index) const override
+	{
+		return _font_get_char_from_glyph_index(p_font_rid, p_size, p_glyph_index);
+	}
+	bool font_has_char(const RID& p_font_rid, int64_t p_char) const override
+	{
+		return _font_has_char(p_font_rid, p_char);
+	}
+	String font_get_supported_chars(const RID& p_font_rid) const override
+	{
+		return _font_get_supported_chars(p_font_rid);
+	}
+	PackedInt32Array font_get_supported_glyphs(const RID& p_font_rid) const override
+	{
+		return _font_get_supported_glyphs(p_font_rid);
+	}
+	void font_render_range(
+		const RID& p_font, const Vector2i& p_size, int64_t p_start, int64_t p_end) override
+	{
+		_font_render_range(p_font, p_size, p_start, p_end);
+	}
+	void font_render_glyph(
+		const RID& p_font_rid, const Vector2i& p_size, int64_t p_index) override
+	{
+		_font_render_glyph(p_font_rid, p_size, p_index);
+	}
+	void font_draw_glyph(const RID& p_font, const RID& p_canvas, int64_t p_size,
+		const Vector2& p_pos, int64_t p_index, const Color& p_color = Color(1, 1, 1),
+		float p_oversampling = 0.0) const override
+	{
+		_font_draw_glyph(p_font, p_canvas, p_size, p_pos, p_index, p_color, p_oversampling);
+	}
+	void font_draw_glyph_outline(const RID& p_font, const RID& p_canvas, int64_t p_size,
+		int64_t p_outline_size, const Vector2& p_pos, int64_t p_index,
+		const Color& p_color = Color(1, 1, 1), float p_oversampling = 0.0) const override
+	{
+		_font_draw_glyph_outline(
+			p_font, p_canvas, p_size, p_outline_size, p_pos, p_index, p_color, p_oversampling);
+	}
+	bool font_is_language_supported(
+		const RID& p_font_rid, const String& p_language) const override
+	{
+		return _font_is_language_supported(p_font_rid, p_language);
+	}
+	bool font_is_script_supported(const RID& p_font_rid, const String& p_script) const override
+	{
+		return _font_is_script_supported(p_font_rid, p_script);
+	}
+	void cleanup() override { _cleanup(); }
+
 	~TextServerAdvanced();
 };
 
