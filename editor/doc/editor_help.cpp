@@ -321,7 +321,7 @@ void EditorHelp::_class_desc_select(const String& p_select)
 	}
 	else if (p_select.begins_with("^")) { // Copy button.
 		DisplayServer::clipboard_set(p_select.substr(1));
-		EditorToaster::get_singleton()->popup_str(
+		EditorToaster::popup_str(
 			TTR("Code snippet copied to clipboard."), EditorToaster::SEVERITY_INFO);
 	}
 }
@@ -498,7 +498,7 @@ void EditorHelp::load_script_doc_cache()
 		return;
 	}
 
-	if (EditorFileSystem::get_singleton()->is_scanning()) {
+	if (EditorFileSystem::is_scanning()) {
 		// This is assuming EditorFileSystem is performing first scan. We must wait until it is
 		// done.
 		return;
@@ -555,7 +555,7 @@ static void _regenerate_script_doc_cache(bool p_changes)
 
 void EditorHelp::regenerate_script_doc_cache()
 {
-	if (EditorFileSystem::get_singleton()->is_scanning()) {
+	if (EditorFileSystem::is_scanning()) {
 		// Wait until EditorFileSystem scanning is complete to use updated filesystem structure.
 		return;
 	}
@@ -563,7 +563,7 @@ void EditorHelp::regenerate_script_doc_cache()
 	_wait_for_thread(worker_thread);
 	_wait_for_thread(loader_thread);
 	loader_thread.start(
-		_regen_script_doc_thread, EditorFileSystem::get_singleton()->get_filesystem());
+		_regen_script_doc_thread, EditorFileSystem::get_filesystem());
 }
 
 // Runs on worker_thread since it writes to DocData.
@@ -642,7 +642,7 @@ void EditorHelp::generate_doc(bool p_use_cache, bool p_use_script_cache)
 
 void EditorHelp::_toggle_files_pressed()
 {
-	ScriptEditor::get_singleton()->toggle_files_panel();
+	ScriptEditor::toggle_files_panel();
 	update_toggle_files_button();
 }
 
@@ -801,10 +801,10 @@ void EditorHelpBit::_go_to_url(const String& p_what)
 
 void EditorHelpBit::_go_to_help(const String& p_what)
 {
-	if (ScriptEditor::get_singleton()) {
-		EditorNode::get_singleton()->get_editor_main_screen()->select(
+	if (ScriptEditor::is_initialized()) {
+		EditorNode::get_editor_main_screen()->select(
 			EditorMainScreen::EDITOR_SCRIPT);
-		ScriptEditor::get_singleton()->goto_help(p_what);
+		ScriptEditor::goto_help(p_what);
 	}
 	else {
 		_go_to_url(p_what);
@@ -908,7 +908,7 @@ void EditorHelpBit::_meta_clicked(const String& p_select)
 	}
 	else if (p_select.begins_with("^")) { // Copy button.
 		DisplayServer::clipboard_set(p_select.substr(1));
-		EditorToaster::get_singleton()->popup_str(
+		EditorToaster::popup_str(
 			TTR("Code snippet copied to clipboard."), EditorToaster::SEVERITY_INFO);
 	}
 }

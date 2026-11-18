@@ -236,7 +236,7 @@ void AnimationPlayerEditor::_free_onion_layers()
 
 void AnimationPlayerEditor::_pin_pressed()
 {
-	SceneTreeDock::get_singleton()->get_tree_editor()->update_tree();
+	SceneTreeDock::get_tree_editor()->update_tree();
 }
 
 bool AnimationPlayerEditor::_validate_tracks(const Ref<Animation> p_anim)
@@ -271,9 +271,13 @@ bool AnimationPlayerEditor::_validate_tracks(const Ref<Animation> p_anim)
 }
 
 
-AnimationPlayerEditor* AnimationPlayerEditor::singleton = nullptr;
+AnimationPlayer* AnimationPlayerEditor::get_player()
+{
+	return AnimationPlayerEditor::instance->_impl_get_player();
+}
 
-AnimationPlayer* AnimationPlayerEditor::get_player() const { return player; }
+AnimationPlayer* AnimationPlayerEditor::_impl_get_player() const
+{ return player; }
 
 AnimationMixer* AnimationPlayerEditor::get_editing_node() const { return original_node; }
 

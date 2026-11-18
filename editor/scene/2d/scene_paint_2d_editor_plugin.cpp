@@ -47,15 +47,14 @@
 
 bool ScenePaint2DEditor::_is_node_valid() { return node && node->is_inside_tree(); }
 
-bool ScenePaint2DEditor::_is_instance_valid() { return instance && instance->is_inside_tree(); }
+bool ScenePaint2DEditor::_is_instance_valid() { return paint_instance && paint_instance->is_inside_tree(); }
 
 Vector2 ScenePaint2DEditor::_get_mouse_grid_cell()
 {
 	if (!_is_node_valid()) {
 		return Vector2();
 	}
-	CanvasItemEditor* canvas_item_editor = CanvasItemEditor::get_singleton();
-	Vector2 pos = canvas_item_editor->get_canvas_transform().affine_inverse().xform(
+	Vector2 pos = CanvasItemEditor::get_canvas_transform().affine_inverse().xform(
 		viewport->get_local_mouse_position());
 	Vector2 local = node->get_global_transform().affine_inverse().xform(pos);
 	Vector2 snapped;
@@ -80,7 +79,7 @@ void ScenePaint2DEditor::_scene_picker_toggled(bool p_pressed)
 
 bool ScenePaint2DEditor::_is_selected_scene_valid(Node2D* p_node) const
 {
-	Node* scene = EditorNode::get_singleton()->get_edited_scene();
+	Node* scene = EditorNode::get_edited_scene();
 	return p_node && p_node->is_instance() && p_node != scene;
 }
 
@@ -108,8 +107,8 @@ void ScenePaint2DEditor::_grid_toggled(bool p_toggled)
 
 void ScenePaint2DEditor::_grid_step_changed()
 {
-	grid_step = CanvasItemEditor::get_singleton()->get_grid_step();
-	grid_offset = CanvasItemEditor::get_singleton()->get_grid_offset();
+	grid_step = CanvasItemEditor::get_grid_step();
+	grid_offset = CanvasItemEditor::get_grid_offset();
 }
 
 void ScenePaint2DEditor::set_painted_scene(Node2D* p_scene)
@@ -122,7 +121,7 @@ void ScenePaint2DEditor::set_painted_scene(Node2D* p_scene)
 	}
 }
 
-Node2D* ScenePaint2DEditor::get_painted_scene() const { return instance; }
+Node2D* ScenePaint2DEditor::get_painted_scene() const { return paint_instance; }
 
 void ScenePaint2DEditorPlugin::forward_canvas_draw_over_viewport(Control* p_overlay)
 {

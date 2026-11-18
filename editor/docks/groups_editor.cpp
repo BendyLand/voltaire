@@ -51,7 +51,7 @@ static bool can_edit(Node* p_node, const String& p_group)
 	Node* n = p_node;
 	bool can_edit = true;
 	while (n) {
-		Ref<SceneState> ss = (n == EditorNode::get_singleton()->get_edited_scene())
+		Ref<SceneState> ss = (n == EditorNode::get_edited_scene())
 								 ? n->get_scene_inherited_state()
 								 : n->get_scene_instance_state();
 		if (ss.is_valid()) {
@@ -81,7 +81,7 @@ void GroupsEditor::_add_scene_group(const String& p_name) { scene_groups[p_name]
 void GroupsEditor::_remove_scene_group(const String& p_name)
 {
 	scene_groups.erase(p_name);
-	ProjectSettingsEditor::get_singleton()->get_group_settings()->remove_node_references(
+	ProjectSettingsEditor::get_group_settings()->remove_node_references(
 		scene_root_node, p_name);
 }
 
@@ -89,7 +89,7 @@ void GroupsEditor::_rename_scene_group(const String& p_old_name, const String& p
 {
 	scene_groups[p_new_name] = scene_groups[p_old_name];
 	scene_groups.erase(p_old_name);
-	ProjectSettingsEditor::get_singleton()->get_group_settings()->rename_node_references(
+	ProjectSettingsEditor::get_group_settings()->rename_node_references(
 		scene_root_node, p_old_name, p_new_name);
 }
 

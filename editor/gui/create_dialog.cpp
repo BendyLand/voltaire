@@ -50,7 +50,7 @@ void CreateDialog::for_inherit() { allow_abstract_scripts = true; }
 bool CreateDialog::_is_class_disabled_by_feature_profile(const String& p_class) const
 {
 	Ref<EditorFeatureProfile> profile =
-		EditorFeatureProfileManager::get_singleton()->get_current_profile();
+		EditorFeatureProfileManager::get_current_profile();
 
 	return profile.is_valid() && profile->is_class_disabled(p_class);
 }

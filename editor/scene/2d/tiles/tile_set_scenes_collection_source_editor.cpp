@@ -105,7 +105,7 @@ void TileSetScenesCollectionSourceEditor::_notification(int p_what)
 			read_only = false;
 			// Add the listener again and check for read-only status.
 			if (tile_set.is_valid()) {
-				read_only = EditorNode::get_singleton()->is_resource_read_only(tile_set);
+				read_only = EditorNode::is_resource_read_only(tile_set);
 			}
 
 			// Update everything.

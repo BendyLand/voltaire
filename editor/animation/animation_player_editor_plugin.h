@@ -140,7 +140,7 @@ class AnimationPlayerEditor : public EditorDock
 	bool updating_blends = false;
 
 	AnimationTrackEditor* track_editor = nullptr;
-	static AnimationPlayerEditor* singleton;
+
 
 	// Onion skinning.
 	struct
@@ -207,9 +207,11 @@ class AnimationPlayerEditor : public EditorDock
 
 public:
 	AnimationMixer* get_editing_node() const;
-	AnimationPlayer* get_player() const;
+	AnimationPlayer* _impl_get_player() const;
+	static AnimationPlayer* get_player();
 
-	static AnimationPlayerEditor* get_singleton() { return singleton; }
+	static inline AnimationPlayerEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	bool is_pinned() const { return pin->is_pressed(); }
 

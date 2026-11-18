@@ -49,7 +49,7 @@ Vector2i EditorFileDialog::_get_list_mode_icon_size() const { return Vector2i();
 
 void EditorFileDialog::_dir_contents_changed()
 {
-	if (!EditorFileSystem::get_singleton()) {
+	if (!EditorFileSystem::is_initialized()) {
 		return;
 	}
 

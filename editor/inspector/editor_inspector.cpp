@@ -85,7 +85,7 @@ bool EditorInspector::_property_path_matches(const String& p_property_path, cons
 
 	const Vector<String> prop_sections = p_property_path.split("/");
 	for (int i = 0; i < prop_sections.size(); i++) {
-		if (p_filter.is_subsequence_ofn(EditorPropertyNameProcessor::get_singleton()->process_name(
+		if (p_filter.is_subsequence_ofn(EditorPropertyNameProcessor::process_name(
 				prop_sections[i], p_style, p_property_path))) {
 			return true;
 		}
@@ -497,7 +497,7 @@ void EditorInspector::cleanup_plugins()
 
 bool EditorInspector::is_main_editor_inspector() const
 {
-	return InspectorDock::get_singleton() && InspectorDock::get_inspector_singleton() == this;
+	return InspectorDock::is_initialized() && InspectorDock::get_inspector_singleton() == this;
 }
 
 String EditorInspector::get_selected_path() const { return property_selected; }
@@ -577,7 +577,7 @@ void EditorInspector::set_use_settings_name_style(bool p_enable)
 	}
 	use_settings_name_style = p_enable;
 	if (use_settings_name_style) {
-		set_property_name_style(EditorPropertyNameProcessor::get_singleton()->get_settings_style());
+		set_property_name_style(EditorPropertyNameProcessor::get_settings_style());
 	}
 }
 

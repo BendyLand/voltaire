@@ -62,7 +62,7 @@ void AudioStreamInteractiveTransitionEditor::_notification(int p_what)
 EditorInspectorPluginAudioStreamInteractive::EditorInspectorPluginAudioStreamInteractive()
 {
 	audio_stream_interactive_transition_editor = memnew(AudioStreamInteractiveTransitionEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(
+	EditorNode::get_gui_base()->add_child(
 		audio_stream_interactive_transition_editor);
 }
 

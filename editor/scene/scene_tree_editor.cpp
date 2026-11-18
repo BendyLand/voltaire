@@ -205,11 +205,11 @@ void SceneTreeEditor::_node_added(Node* p_node)
 
 void SceneTreeEditor::_node_removed(Node* p_node)
 {
-	if (EditorNode::get_singleton()->is_exiting()) {
+	if (EditorNode::is_exiting()) {
 		return; // Speed up exit.
 	}
 
-	if (EditorNode::get_singleton()->is_changing_scene()) {
+	if (EditorNode::is_changing_scene()) {
 		return; // Switching tabs we will be destroying node cache anyway.
 	}
 

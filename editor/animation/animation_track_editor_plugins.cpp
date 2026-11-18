@@ -187,7 +187,7 @@ Rect2 AnimationTrackEditTypeAudio::get_key_rect(int p_index, float p_pixels_sec)
 
 	if (len == 0) {
 		Ref<AudioStreamPreview> preview =
-			AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
+			AudioStreamPreviewGenerator::generate_preview(stream);
 		len = preview->get_length();
 	}
 

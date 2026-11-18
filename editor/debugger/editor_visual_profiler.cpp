@@ -55,7 +55,7 @@ void EditorVisualProfiler::_item_selected()
 
 void EditorVisualProfiler::_autostart_toggled(bool p_toggled_on)
 {
-	EditorRunBar::get_singleton()->update_profiler_autostart_indicator();
+	EditorRunBar::update_profiler_autostart_indicator();
 }
 
 int EditorVisualProfiler::_get_cursor_index() const

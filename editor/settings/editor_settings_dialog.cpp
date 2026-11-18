@@ -113,7 +113,7 @@ void EditorSettingsDialog::_focus_current_search_box()
 	}
 }
 
-EditorSettingsDialog::~EditorSettingsDialog() { singleton = nullptr; }
+EditorSettingsDialog::~EditorSettingsDialog() { EditorSettingsDialog::instance = nullptr; }
 
 void EditorSettingsPropertyWrapper::update_property() { editor_property->update_property(); }
 

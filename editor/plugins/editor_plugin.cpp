@@ -67,7 +67,7 @@ void EditorPlugin::remove_custom_type(const String& p_type)
 
 void EditorPlugin::remove_autoload_singleton(const String& p_name)
 {
-	EditorNode::get_singleton()->get_project_settings()->get_autoload_settings()->autoload_remove(
+	EditorNode::get_project_settings()->get_autoload_settings()->autoload_remove(
 		p_name);
 }
 
@@ -125,30 +125,30 @@ void EditorPlugin::add_control_to_container(CustomControlContainer p_location, C
 		EditorNode::get_title_bar()->add_child(p_control);
 	} break;
 	case CONTAINER_SPATIAL_EDITOR_BOTTOM: {
-		Node3DEditor::get_singleton()->get_shader_split()->add_child(p_control);
+		Node3DEditor::get_shader_split()->add_child(p_control);
 	} break;
 	case CONTAINER_CANVAS_EDITOR_MENU: {
-		CanvasItemEditor::get_singleton()->add_control_to_menu_panel(p_control);
+		CanvasItemEditor::add_control_to_menu_panel(p_control);
 	} break;
 	case CONTAINER_CANVAS_EDITOR_SIDE_LEFT: {
-		CanvasItemEditor::get_singleton()->add_control_to_left_panel(p_control);
+		CanvasItemEditor::add_control_to_left_panel(p_control);
 	} break;
 	case CONTAINER_CANVAS_EDITOR_SIDE_RIGHT: {
-		CanvasItemEditor::get_singleton()->add_control_to_right_panel(p_control);
+		CanvasItemEditor::add_control_to_right_panel(p_control);
 	} break;
 	case CONTAINER_CANVAS_EDITOR_BOTTOM: {
-		CanvasItemEditor::get_singleton()->get_bottom_split()->add_child(p_control);
+		CanvasItemEditor::get_bottom_split()->add_child(p_control);
 	} break;
 	case CONTAINER_INSPECTOR_BOTTOM: {
-		InspectorDock::get_singleton()->get_addon_area()->add_child(p_control);
+		InspectorDock::get_addon_area()->add_child(p_control);
 	} break;
 	case CONTAINER_PROJECT_SETTING_TAB_LEFT: {
-		ProjectSettingsEditor::get_singleton()->get_tabs()->add_child(p_control);
-		ProjectSettingsEditor::get_singleton()->get_tabs()->move_child(p_control, 0);
+		ProjectSettingsEditor::get_tabs()->add_child(p_control);
+		ProjectSettingsEditor::get_tabs()->move_child(p_control, 0);
 
 	} break;
 	case CONTAINER_PROJECT_SETTING_TAB_RIGHT: {
-		ProjectSettingsEditor::get_singleton()->get_tabs()->add_child(p_control);
+		ProjectSettingsEditor::get_tabs()->add_child(p_control);
 
 	} break;
 	}
@@ -164,30 +164,30 @@ void EditorPlugin::remove_control_from_container(
 		EditorNode::get_title_bar()->remove_child(p_control);
 	} break;
 	case CONTAINER_SPATIAL_EDITOR_BOTTOM: {
-		Node3DEditor::get_singleton()->get_shader_split()->remove_child(p_control);
+		Node3DEditor::get_shader_split()->remove_child(p_control);
 
 	} break;
 	case CONTAINER_CANVAS_EDITOR_MENU: {
-		CanvasItemEditor::get_singleton()->remove_control_from_menu_panel(p_control);
+		CanvasItemEditor::remove_control_from_menu_panel(p_control);
 
 	} break;
 	case CONTAINER_CANVAS_EDITOR_SIDE_LEFT: {
-		CanvasItemEditor::get_singleton()->remove_control_from_left_panel(p_control);
+		CanvasItemEditor::remove_control_from_left_panel(p_control);
 	} break;
 	case CONTAINER_CANVAS_EDITOR_SIDE_RIGHT: {
-		CanvasItemEditor::get_singleton()->remove_control_from_right_panel(p_control);
+		CanvasItemEditor::remove_control_from_right_panel(p_control);
 	} break;
 	case CONTAINER_CANVAS_EDITOR_BOTTOM: {
-		CanvasItemEditor::get_singleton()->get_bottom_split()->remove_child(p_control);
+		CanvasItemEditor::get_bottom_split()->remove_child(p_control);
 
 	} break;
 	case CONTAINER_INSPECTOR_BOTTOM: {
-		InspectorDock::get_singleton()->get_addon_area()->remove_child(p_control);
+		InspectorDock::get_addon_area()->remove_child(p_control);
 
 	} break;
 	case CONTAINER_PROJECT_SETTING_TAB_LEFT:
 	case CONTAINER_PROJECT_SETTING_TAB_RIGHT: {
-		ProjectSettingsEditor::get_singleton()->get_tabs()->remove_child(p_control);
+		ProjectSettingsEditor::get_tabs()->remove_child(p_control);
 
 	} break;
 	}
@@ -202,19 +202,19 @@ void EditorPlugin::remove_tool_menu_item(const String& p_name) {}
 
 PopupMenu* EditorPlugin::get_export_as_menu()
 {
-	return EditorNode::get_singleton()->get_export_as_menu();
+	return EditorNode::get_export_as_menu();
 }
 
 void EditorPlugin::set_input_event_forwarding_always_enabled()
 {
 	input_event_forwarding_always_enabled = true;
-	EditorNode::get_singleton()->get_editor_plugins_force_input_forwarding()->add_plugin(this);
+	EditorNode::get_editor_plugins_force_input_forwarding()->add_plugin(this);
 }
 
 void EditorPlugin::set_force_draw_over_forwarding_enabled()
 {
 	force_draw_over_forwarding_enabled = true;
-	EditorNode::get_singleton()->get_editor_plugins_force_over()->add_plugin(this);
+	EditorNode::get_editor_plugins_force_over()->add_plugin(this);
 }
 
 EditorPlugin::AfterGUIInput EditorPlugin::forward_3d_gui_input(
@@ -256,25 +256,25 @@ void EditorPlugin::remove_translation_parser_plugin(
 void EditorPlugin::add_export_plugin(const Ref<EditorExportPlugin>& p_exporter)
 {
 	ERR_FAIL_COND(p_exporter.is_null());
-	EditorExport::get_singleton()->add_export_plugin(p_exporter);
+	EditorExport::add_export_plugin(p_exporter);
 }
 
 void EditorPlugin::remove_export_plugin(const Ref<EditorExportPlugin>& p_exporter)
 {
 	ERR_FAIL_COND(p_exporter.is_null());
-	EditorExport::get_singleton()->remove_export_plugin(p_exporter);
+	EditorExport::remove_export_plugin(p_exporter);
 }
 
 void EditorPlugin::add_export_platform(const Ref<EditorExportPlatform>& p_platform)
 {
 	ERR_FAIL_COND(p_platform.is_null());
-	EditorExport::get_singleton()->add_export_platform(p_platform);
+	EditorExport::add_export_platform(p_platform);
 }
 
 void EditorPlugin::remove_export_platform(const Ref<EditorExportPlatform>& p_platform)
 {
 	ERR_FAIL_COND(p_platform.is_null());
-	EditorExport::get_singleton()->remove_export_platform(p_platform);
+	EditorExport::remove_export_platform(p_platform);
 }
 
 void EditorPlugin::add_scene_format_importer_plugin(
@@ -351,29 +351,29 @@ void EditorPlugin::hide_bottom_panel() { EditorNode::get_bottom_panel()->hide_bo
 
 ScriptCreateDialog* EditorPlugin::get_script_create_dialog()
 {
-	return SceneTreeDock::get_singleton()->get_script_create_dialog();
+	return SceneTreeDock::get_script_create_dialog();
 }
 
 void EditorPlugin::add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin)
 {
-	EditorDebuggerNode::get_singleton()->add_debugger_plugin(p_plugin);
+	EditorDebuggerNode::add_debugger_plugin(p_plugin);
 }
 
 void EditorPlugin::remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin)
 {
-	EditorDebuggerNode::get_singleton()->remove_debugger_plugin(p_plugin);
+	EditorDebuggerNode::remove_debugger_plugin(p_plugin);
 }
 
 void EditorPlugin::add_resource_conversion_plugin(
 	const Ref<EditorResourceConversionPlugin>& p_plugin)
 {
-	EditorNode::get_singleton()->add_resource_conversion_plugin(p_plugin);
+	EditorNode::add_resource_conversion_plugin(p_plugin);
 }
 
 void EditorPlugin::remove_resource_conversion_plugin(
 	const Ref<EditorResourceConversionPlugin>& p_plugin)
 {
-	EditorNode::get_singleton()->remove_resource_conversion_plugin(p_plugin);
+	EditorNode::remove_resource_conversion_plugin(p_plugin);
 }
 
 void EditorPlugin::enable_plugin() {}

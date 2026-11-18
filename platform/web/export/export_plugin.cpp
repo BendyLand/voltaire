@@ -156,7 +156,7 @@ List<String> EditorExportPlatformWeb::get_binary_extensions(
 bool EditorExportPlatformWeb::poll_export()
 {
 	Ref<EditorExportPreset> preset =
-		EditorExport::get_singleton()->get_runnable_preset_for_platform(this);
+		EditorExport::get_runnable_preset_for_platform(this);
 
 	RemoteDebugState prev_remote_debug_state = remote_debug_state;
 	remote_debug_state = REMOTE_DEBUG_STATE_UNAVAILABLE;

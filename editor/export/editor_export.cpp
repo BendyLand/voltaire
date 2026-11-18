@@ -34,9 +34,13 @@
 #include "editor_export.h"
 #include "scene/main/timer.h"
 
-EditorExport* EditorExport::singleton = nullptr;
-
 void EditorExport::add_export_platform(const Ref<EditorExportPlatform>& p_platform)
+{
+	ERR_FAIL_NULL(EditorExport::instance);
+	EditorExport::instance->_impl_add_export_platform(p_platform);
+}
+
+void EditorExport::_impl_add_export_platform(const Ref<EditorExportPlatform>& p_platform)
 {
 	p_platform->initialize();
 	export_platforms.push_back(p_platform);
@@ -47,6 +51,12 @@ void EditorExport::add_export_platform(const Ref<EditorExportPlatform>& p_platfo
 
 void EditorExport::remove_export_platform(const Ref<EditorExportPlatform>& p_platform)
 {
+	ERR_FAIL_NULL(EditorExport::instance);
+	EditorExport::instance->_impl_remove_export_platform(p_platform);
+}
+
+void EditorExport::_impl_remove_export_platform(const Ref<EditorExportPlatform>& p_platform)
+{
 	export_platforms.erase(p_platform);
 	p_platform->cleanup();
 
@@ -54,7 +64,13 @@ void EditorExport::remove_export_platform(const Ref<EditorExportPlatform>& p_pla
 	should_reload_presets = true;
 }
 
-int EditorExport::get_export_platform_count() const { return export_platforms.size(); }
+int EditorExport::get_export_platform_count()
+{
+	return EditorExport::instance->_impl_get_export_platform_count();
+}
+
+int EditorExport::_impl_get_export_platform_count() const
+{ return export_platforms.size(); }
 
 int EditorExport::get_export_platform_index_by_name(const String& p_name)
 {
@@ -83,6 +99,11 @@ bool EditorExport::has_preset_with_name(const String& p_name, int p_exclude_inde
 
 Ref<EditorExportPlatform> EditorExport::get_export_platform(int p_idx)
 {
+	return EditorExport::instance->_impl_get_export_platform(p_idx);
+}
+
+Ref<EditorExportPlatform> EditorExport::_impl_get_export_platform(int p_idx)
+{
 	ERR_FAIL_INDEX_V(p_idx, export_platforms.size(), Ref<EditorExportPlatform>());
 
 	return export_platforms[p_idx];
@@ -99,15 +120,32 @@ void EditorExport::add_export_preset(const Ref<EditorExportPreset>& p_preset, in
 	emit_presets_runnable_changed();
 }
 
-int EditorExport::get_export_preset_count() const { return export_presets.size(); }
+int EditorExport::get_export_preset_count()
+{
+	return EditorExport::instance->_impl_get_export_preset_count();
+}
+
+int EditorExport::_impl_get_export_preset_count() const
+{ return export_presets.size(); }
 
 Ref<EditorExportPreset> EditorExport::get_export_preset(int p_idx)
+{
+	return EditorExport::instance->_impl_get_export_preset(p_idx);
+}
+
+Ref<EditorExportPreset> EditorExport::_impl_get_export_preset(int p_idx)
 {
 	ERR_FAIL_INDEX_V(p_idx, export_presets.size(), Ref<EditorExportPreset>());
 	return export_presets[p_idx];
 }
 
 void EditorExport::add_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
+{
+	ERR_FAIL_NULL(EditorExport::instance);
+	EditorExport::instance->_impl_add_export_plugin(p_plugin);
+}
+
+void EditorExport::_impl_add_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
 {
 	if (!export_plugins.has(p_plugin)) {
 		export_plugins.push_back(p_plugin);
@@ -117,14 +155,30 @@ void EditorExport::add_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
 
 void EditorExport::remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
 {
+	ERR_FAIL_NULL(EditorExport::instance);
+	EditorExport::instance->_impl_remove_export_plugin(p_plugin);
+}
+
+void EditorExport::_impl_remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
+{
 	export_plugins.erase(p_plugin);
 	should_update_presets = true;
 }
 
-Vector<Ref<EditorExportPlugin>> EditorExport::get_export_plugins() { return export_plugins; }
+Vector<Ref<EditorExportPlugin>> EditorExport::get_export_plugins()
+{
+	return EditorExport::instance->_impl_get_export_plugins();
+}
 
-Ref<EditorExportPreset> EditorExport::get_runnable_preset_for_platform(
-	const Ref<EditorExportPlatform>& p_for_platform) const
+Vector<Ref<EditorExportPlugin>> EditorExport::_impl_get_export_plugins()
+{ return export_plugins; }
+
+Ref<EditorExportPreset> EditorExport::get_runnable_preset_for_platform(const Ref<EditorExportPlatform>& p_for_platform)
+{
+	return EditorExport::instance->_impl_get_runnable_preset_for_platform(p_for_platform);
+}
+
+Ref<EditorExportPreset> EditorExport::_impl_get_runnable_preset_for_platform(const Ref<EditorExportPlatform>& p_for_platform) const
 {
 	const Ref<EditorExportPreset>* preset = runnable_presets.getptr(p_for_platform);
 	return preset ? *preset : Ref<EditorExportPreset>();

@@ -55,8 +55,6 @@ public:
 	String base_options_path;
 };
 
-ImportDock* ImportDock::singleton = nullptr;
-
 void ImportDock::reimport_resources(const Vector<String>& p_paths)
 {
 	switch (p_paths.size()) {
@@ -114,7 +112,7 @@ void ImportDock::_property_toggled(const String& p_prop, bool p_checked)
 
 ImportDock::~ImportDock()
 {
-	singleton = nullptr;
+	ImportDock::instance = nullptr;
 	memdelete(params);
 }
 

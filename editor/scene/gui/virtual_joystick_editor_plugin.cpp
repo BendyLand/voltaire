@@ -40,7 +40,7 @@ void VirtualJoystickEditorPlugin::forward_canvas_draw_over_viewport(Control* p_v
 		return;
 	}
 
-	Transform2D xform = CanvasItemEditor::get_singleton()->get_canvas_transform() *
+	Transform2D xform = CanvasItemEditor::get_canvas_transform() *
 						virtual_joystick->get_screen_transform();
 
 	Vector2 center = virtual_joystick->get_joystick_position();

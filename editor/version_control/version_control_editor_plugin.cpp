@@ -57,8 +57,6 @@
 	ERR_FAIL_COND_MSG(!EditorVCSInterface::is_initialized(),                                       \
 		"No VCS plugin is initialized. Select a Version Control Plugin from Project menu.");
 
-VersionControlEditorPlugin* VersionControlEditorPlugin::singleton = nullptr;
-
 void VersionControlEditorPlugin::_create_vcs_metadata_files()
 {
 	String dir = "res://";
@@ -74,12 +72,15 @@ void VersionControlEditorPlugin::_populate_available_vcs_names()
 	}
 }
 
-VersionControlEditorPlugin* VersionControlEditorPlugin::get_singleton()
+void VersionControlEditorPlugin::popup_vcs_set_up_dialog(const Control* p_gui_base)
 {
-	return singleton ? singleton : memnew(VersionControlEditorPlugin);
+	if (VersionControlEditorPlugin::instance == nullptr) {
+		VersionControlEditorPlugin::instance = memnew(VersionControlEditorPlugin);
+	}
+	VersionControlEditorPlugin::instance->_impl_popup_vcs_set_up_dialog(p_gui_base);
 }
 
-void VersionControlEditorPlugin::popup_vcs_set_up_dialog(const Control* p_gui_base)
+void VersionControlEditorPlugin::_impl_popup_vcs_set_up_dialog(const Control* p_gui_base)
 {
 	fetch_available_vcs_plugin_names();
 	if (!available_plugins.is_empty()) {
@@ -93,7 +94,7 @@ void VersionControlEditorPlugin::popup_vcs_set_up_dialog(const Control* p_gui_ba
 	}
 	else {
 		// TODO: Give info to user on how to fix this error.
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			TTR("No VCS plugins are available in the project. Install a VCS plugin to use VCS "
 				"integration features."),
 			TTR("Error"));

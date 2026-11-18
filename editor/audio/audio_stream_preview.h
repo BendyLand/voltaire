@@ -56,7 +56,7 @@ public:
 
 class AudioStreamPreviewGenerator : public Node
 {
-	static AudioStreamPreviewGenerator* singleton;
+
 
 	struct Preview
 	{
@@ -91,9 +91,11 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static AudioStreamPreviewGenerator* get_singleton() { return singleton; }
+	static inline AudioStreamPreviewGenerator* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	Ref<AudioStreamPreview> generate_preview(const Ref<AudioStream>& p_stream);
+	Ref<AudioStreamPreview> _impl_generate_preview(const Ref<AudioStream>& p_stream);
+	static Ref<AudioStreamPreview> generate_preview(const Ref<AudioStream>& p_stream);
 
 	AudioStreamPreviewGenerator();
 	~AudioStreamPreviewGenerator();

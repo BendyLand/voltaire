@@ -425,7 +425,7 @@ void EditorExportPlatform::_export_find_dependencies(const String& p_path, HashS
 
 	EditorFileSystemDirectory* dir;
 	int file_idx;
-	dir = EditorFileSystem::get_singleton()->find_file(p_path, &file_idx);
+	dir = EditorFileSystem::find_file(p_path, &file_idx);
 	if (!dir) {
 		return;
 	}
@@ -563,7 +563,7 @@ EditorExportPlatform::ExportNotifier::ExportNotifier(EditorExportPlatform& p_pla
 	}
 	HashSet<String> features = p_platform.get_features(p_preset, p_debug);
 	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_singleton()->get_export_plugins();
+		EditorExport::get_export_plugins();
 	// initial export plugin callback
 	for (int i = 0; i < export_plugins.size(); i++) {
 		export_plugins.write[i]->set_export_preset(p_preset);
@@ -577,7 +577,7 @@ EditorExportPlatform::ExportNotifier::~ExportNotifier()
 		return;
 	}
 	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_singleton()->get_export_plugins();
+		EditorExport::get_export_plugins();
 	for (int i = 0; i < export_plugins.size(); i++) {
 		export_plugins.write[i]->_export_end();
 		export_plugins.write[i]->_export_end_clear();

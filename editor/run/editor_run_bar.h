@@ -45,7 +45,7 @@ class PanelContainer;
 
 class EditorRunBar : public MarginContainer
 {
-	static EditorRunBar* singleton;
+
 
 	enum RunMode
 	{
@@ -119,16 +119,20 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static EditorRunBar* get_singleton() { return singleton; }
+	static inline EditorRunBar* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	void play_main_scene(
-		bool p_from_native = false, const Vector<String>& p_play_args = Vector<String>());
-	void play_custom_scene(
-		const String& p_custom, const Vector<String>& p_play_args = Vector<String>());
+	void _impl_play_main_scene(bool p_from_native, const Vector<String>& p_play_args);
+	static void play_main_scene(bool p_from_native = false, const Vector<String>& p_play_args = Vector<String>());
+	void _impl_play_custom_scene(const String& p_custom, const Vector<String>& p_play_args);
+	static void play_custom_scene(const String& p_custom, const Vector<String>& p_play_args = Vector<String>());
 
-	void stop_playing();
-	bool is_playing() const;
-	String get_playing_scene() const;
+	void _impl_stop_playing();
+	static void stop_playing();
+	bool _impl_is_playing() const;
+	static bool is_playing();
+	String _impl_get_playing_scene() const;
+	static String get_playing_scene();
 
 	Error start_native_device(int p_device_id) const;
 
@@ -136,12 +140,16 @@ public:
 	void stop_child_process(ProcessID p_pid);
 	ProcessID get_current_process() const;
 
-	void set_movie_maker_enabled(bool p_enabled);
-	bool is_movie_maker_enabled() const;
+	void _impl_set_movie_maker_enabled(bool p_enabled);
+	static void set_movie_maker_enabled(bool p_enabled);
+	bool _impl_is_movie_maker_enabled() const;
+	static bool is_movie_maker_enabled();
 
-	void update_profiler_autostart_indicator();
+	void _impl_update_profiler_autostart_indicator();
+	static void update_profiler_autostart_indicator();
 
-	Button* get_pause_button() { return pause_button; }
+	Button* _impl_get_pause_button() { return pause_button; }
+	static Button* get_pause_button() { return instance->_impl_get_pause_button(); }
 
 	HBoxContainer* get_buttons_container();
 

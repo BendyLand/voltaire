@@ -207,8 +207,6 @@
 #include <cstdlib>
 #include "modules/modules_enabled.gen.h" // For gdscript, mono.
 
-EditorNode* EditorNode::singleton = nullptr;
-
 static const String EDITOR_NODE_CONFIG_SECTION = "EditorNode";
 
 static const String REMOVE_ANDROID_BUILD_TEMPLATE_MESSAGE = TTRC(
@@ -339,7 +337,7 @@ void EditorNode::_version_control_menu_option(int p_idx)
 {
 	switch (vcs_actions_menu->get_item_id(p_idx)) {
 	case VCS_SETTINGS: {
-		VersionControlEditorPlugin::get_singleton()->popup_vcs_set_up_dialog(gui_base);
+		VersionControlEditorPlugin::popup_vcs_set_up_dialog(gui_base);
 	} break;
 	}
 }
@@ -350,7 +348,7 @@ void EditorNode::_gdextensions_reloaded()
 	InspectorDock::get_inspector_singleton()->update_tree();
 
 	// Reload script editor to revalidate GDScript if classes are added or removed.
-	ScriptEditor::get_singleton()->reload_scripts(true);
+	ScriptEditor::reload_scripts(true);
 
 	// Regenerate documentation without using script documentation cache since that would
 	// revert doc changes during this session.
@@ -503,6 +501,11 @@ bool EditorNode::_validate_scene_recursive(const String& p_filename, Node* p_nod
 
 bool EditorNode::is_scene_unsaved(int p_idx)
 {
+	return EditorNode::instance->_impl_is_scene_unsaved(p_idx);
+}
+
+bool EditorNode::_impl_is_scene_unsaved(int p_idx)
+{
 	const Node* scene = editor_data.get_edited_scene_root(p_idx);
 	if (!scene) {
 		return false;
@@ -528,7 +531,7 @@ bool EditorNode::is_scene_unsaved(int p_idx)
 bool EditorNode::_is_class_editor_disabled_by_feature_profile(const String& p_class)
 {
 	Ref<EditorFeatureProfile> profile =
-		EditorFeatureProfileManager::get_singleton()->get_current_profile();
+		EditorFeatureProfileManager::get_current_profile();
 	if (profile.is_null()) {
 		return false;
 	}
@@ -549,7 +552,7 @@ bool EditorNode::_is_class_editor_disabled_by_feature_profile(const String& p_cl
 void EditorNode::_android_export_preset_selected(int p_index)
 {
 	if (p_index >= 0) {
-		android_export_preset = EditorExport::get_singleton()->get_export_preset(
+		android_export_preset = EditorExport::get_export_preset(
 			choose_android_export_profile->get_item_id(p_index));
 	}
 	else {
@@ -642,7 +645,12 @@ int EditorNode::_next_unsaved_scene(bool p_valid_filename, int p_start)
 
 void EditorNode::add_extension_editor_plugin(const String& p_class_name) {}
 
-bool EditorNode::is_addon_plugin_enabled(const String& p_addon) const
+bool EditorNode::is_addon_plugin_enabled(const String& p_addon)
+{
+	return EditorNode::instance->_impl_is_addon_plugin_enabled(p_addon);
+}
+
+bool EditorNode::_impl_is_addon_plugin_enabled(const String& p_addon) const
 {
 	if (p_addon.begins_with("res://")) {
 		return addon_name_to_plugin.has(p_addon);
@@ -677,7 +685,13 @@ Ref<ConfigFile> EditorNode::_load_scene_config(const String& p_scene_path)
 	return editor_state_cf;
 }
 
-bool EditorNode::is_changing_scene() const { return changing_scene; }
+bool EditorNode::is_changing_scene()
+{
+	return EditorNode::instance->_impl_is_changing_scene();
+}
+
+bool EditorNode::_impl_is_changing_scene() const
+{ return changing_scene; }
 
 bool EditorNode::is_scene_open(const String& p_path)
 {
@@ -761,8 +775,12 @@ void EditorNode::get_children_nodes(Node* p_node, List<Node*>& p_nodes)
 
 bool EditorNode::has_previous_closed_scenes() const { return !prev_closed_scenes.is_empty(); }
 
-bool EditorNode::is_resource_read_only(
-	Ref<Resource> p_resource, bool p_foreign_resources_are_writable)
+bool EditorNode::is_resource_read_only(Ref<Resource> p_resource, bool p_foreign_resources_are_writable)
+{
+	return EditorNode::instance->_impl_is_resource_read_only(p_resource, p_foreign_resources_are_writable);
+}
+
+bool EditorNode::_impl_is_resource_read_only(Ref<Resource> p_resource, bool p_foreign_resources_are_writable)
 {
 	ERR_FAIL_COND_V(p_resource.is_null(), false);
 
@@ -837,7 +855,12 @@ bool EditorNode::is_scene_in_use(const String& p_path)
 	return false;
 }
 
-ProcessID EditorNode::has_child_process(ProcessID p_pid) const
+ProcessID EditorNode::has_child_process(ProcessID p_pid)
+{
+	return EditorNode::instance->_impl_has_child_process(p_pid);
+}
+
+ProcessID EditorNode::_impl_has_child_process(ProcessID p_pid) const
 {
 	return project_run_bar->has_child_process(p_pid);
 }
@@ -855,24 +878,24 @@ static double last_progress_time = 0;
 
 void EditorNode::progress_add_task_bg(const String& p_task, const String& p_label, int p_steps)
 {
-	singleton->progress_hb->add_task(p_task, p_label, p_steps);
+	EditorNode::instance->progress_hb->add_task(p_task, p_label, p_steps);
 }
 
 void EditorNode::progress_task_step_bg(const String& p_task, int p_step)
 {
-	singleton->progress_hb->task_step(p_task, p_step);
+	EditorNode::instance->progress_hb->task_step(p_task, p_step);
 }
 
 void EditorNode::progress_end_task_bg(const String& p_task)
 {
-	singleton->progress_hb->end_task(p_task);
+	EditorNode::instance->progress_hb->end_task(p_task);
 }
 
 void EditorNode::_progress_dialog_visibility_changed()
 {
 	// Open the io errors after the progress dialog is closed.
 	if (load_errors_queued_to_display && !progress_dialog->is_visible()) {
-		EditorInterface::popup_dialog_centered_ratio(singleton->load_error_dialog, 0.5);
+		EditorInterface::popup_dialog_centered_ratio(EditorNode::instance->load_error_dialog, 0.5);
 		load_errors_queued_to_display = false;
 	}
 }
@@ -887,24 +910,24 @@ void EditorNode::_load_error_dialog_visibility_changed()
 Ref<Texture2D> EditorNode::_file_dialog_get_icon(const String& p_path)
 {
 	EditorFileSystemDirectory* efsd =
-		EditorFileSystem::get_singleton()->get_filesystem_path(p_path.get_base_dir());
+		EditorFileSystem::get_filesystem_path(p_path.get_base_dir());
 	if (efsd) {
 		String file = p_path.get_file();
 		for (int i = 0; i < efsd->get_file_count(); i++) {
 			if (efsd->get_file(i) == file) {
 				String type = efsd->get_file_type(i);
 
-				if (singleton->icon_type_cache.has(type)) {
-					return singleton->icon_type_cache[type];
+				if (EditorNode::instance->icon_type_cache.has(type)) {
+					return EditorNode::instance->icon_type_cache[type];
 				}
 				else {
-					return singleton->icon_type_cache["Object"];
+					return EditorNode::instance->icon_type_cache["Object"];
 				}
 			}
 		}
 	}
 
-	return singleton->icon_type_cache["Object"];
+	return EditorNode::instance->icon_type_cache["Object"];
 }
 
 void EditorNode::_file_dialog_thumbnail_callback(const String& p_path,
@@ -928,12 +951,12 @@ void EditorNode::_build_icon_type_cache()
 
 void EditorNode::_file_dialog_register(FileDialog* p_dialog)
 {
-	singleton->file_dialogs.insert(p_dialog);
+	EditorNode::instance->file_dialogs.insert(p_dialog);
 }
 
 void EditorNode::_file_dialog_unregister(FileDialog* p_dialog)
 {
-	singleton->file_dialogs.erase(p_dialog);
+	EditorNode::instance->file_dialogs.erase(p_dialog);
 }
 
 Vector<EditorNodeInitCallback> EditorNode::_init_callbacks;
@@ -979,6 +1002,12 @@ void EditorNode::show_save_accept(const String& p_text, const String& p_ok_text)
 
 void EditorNode::show_warning(const String& p_text, const String& p_title)
 {
+	ERR_FAIL_NULL(EditorNode::instance);
+	EditorNode::instance->_impl_show_warning(p_text, p_title);
+}
+
+void EditorNode::_impl_show_warning(const String& p_text, const String& p_title)
+{
 	if (warning) {
 		_close_save_scene_progress();
 		warning->set_text(p_text);
@@ -1000,8 +1029,8 @@ void EditorNode::_immediate_dialog_confirmed() { immediate_dialog_confirmed = tr
 
 bool EditorNode::is_cmdline_mode()
 {
-	ERR_FAIL_NULL_V(singleton, false);
-	return singleton->cmdline_mode;
+	ERR_FAIL_NULL_V(EditorNode::instance, false);
+	return EditorNode::instance->cmdline_mode;
 }
 
 void EditorNode::cleanup() { _init_callbacks.clear(); }
@@ -1035,11 +1064,23 @@ void EditorNode::_prepare_save_confirmation_popup()
 	}
 }
 
-bool EditorNode::is_distraction_free_mode_enabled() const { return distraction_free->is_pressed(); }
+bool EditorNode::is_distraction_free_mode_enabled()
+{
+	return EditorNode::instance->_impl_is_distraction_free_mode_enabled();
+}
+
+bool EditorNode::_impl_is_distraction_free_mode_enabled() const
+{ return distraction_free->is_pressed(); }
 
 void EditorNode::set_center_split_offset(int p_offset) { center_split->set_split_offset(p_offset); }
 
-PopupMenu* EditorNode::get_export_as_menu() { return export_as_menu; }
+PopupMenu* EditorNode::get_export_as_menu()
+{
+	return EditorNode::instance->_impl_get_export_as_menu();
+}
+
+PopupMenu* EditorNode::_impl_get_export_as_menu()
+{ return export_as_menu; }
 
 void EditorNode::_add_dropped_files_recursive(const Vector<String>& p_files, String to_path)
 {
@@ -1165,6 +1206,11 @@ EditorBuildCallback EditorNode::build_callbacks[EditorNode::MAX_BUILD_CALLBACKS]
 
 bool EditorNode::call_build()
 {
+	return EditorNode::instance->_impl_call_build();
+}
+
+bool EditorNode::_impl_call_build()
+{
 	bool builds_successful = true;
 
 	for (int i = 0; i < build_callback_count && builds_successful; i++) {
@@ -1200,11 +1246,22 @@ bool EditorNode::is_editor_dimmed() const { return dimmed; }
 
 void EditorNode::add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin)
 {
+	ERR_FAIL_NULL(EditorNode::instance);
+	EditorNode::instance->_impl_add_resource_conversion_plugin(p_plugin);
+}
+
+void EditorNode::_impl_add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin)
+{
 	resource_conversion_plugins.push_back(p_plugin);
 }
 
-void EditorNode::remove_resource_conversion_plugin(
-	const Ref<EditorResourceConversionPlugin>& p_plugin)
+void EditorNode::remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin)
+{
+	ERR_FAIL_NULL(EditorNode::instance);
+	EditorNode::instance->_impl_remove_resource_conversion_plugin(p_plugin);
+}
+
+void EditorNode::_impl_remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin)
 {
 	resource_conversion_plugins.erase(p_plugin);
 }
@@ -1228,8 +1285,12 @@ EditorNode::find_resource_conversion_plugin_for_resource(const Ref<Resource>& p_
 	return ret;
 }
 
-Vector<Ref<EditorResourceConversionPlugin>>
-EditorNode::find_resource_conversion_plugin_for_type_name(const String& p_type)
+Vector<Ref<EditorResourceConversionPlugin>> EditorNode::find_resource_conversion_plugin_for_type_name(const String& p_type)
+{
+	return EditorNode::instance->_impl_find_resource_conversion_plugin_for_type_name(p_type);
+}
+
+Vector<Ref<EditorResourceConversionPlugin>> EditorNode::_impl_find_resource_conversion_plugin_for_type_name(const String& p_type)
 {
 	Vector<Ref<EditorResourceConversionPlugin>> ret;
 	return ret;
@@ -1251,12 +1312,12 @@ String EditorNode::_to_rendering_method_display_name(const String& p_rendering_m
 
 void EditorNode::_resource_loaded(Ref<Resource> p_resource, const String& p_path)
 {
-	singleton->editor_folding.load_resource_folding(p_resource, p_path);
+	EditorNode::instance->editor_folding.load_resource_folding(p_resource, p_path);
 }
 
 static Node* _resource_get_edited_scene()
 {
-	return EditorNode::get_singleton()->get_edited_scene();
+	return EditorNode::get_edited_scene();
 }
 
 static void _execute_thread(void* p_ud)
@@ -1323,7 +1384,14 @@ extern "C" GameViewPluginBase* get_game_view_plugin();
 GameViewPluginBase* get_game_view_plugin() { return memnew(GameViewPlugin); }
 #endif
 
-void EditorNode::notify_settings_overrides_changed() { settings_overrides_changed = true; }
+void EditorNode::notify_settings_overrides_changed()
+{
+	ERR_FAIL_NULL(EditorNode::instance);
+	EditorNode::instance->_impl_notify_settings_overrides_changed();
+}
+
+void EditorNode::_impl_notify_settings_overrides_changed()
+{ settings_overrides_changed = true; }
 
 EditorNode::~EditorNode()
 {
@@ -1357,7 +1425,7 @@ EditorNode::~EditorNode()
 
 	file_dialogs.clear();
 
-	singleton = nullptr;
+	EditorNode::instance = nullptr;
 }
 
 String StandardMaterial3DConversionPlugin::converts_to() const { return ""; }

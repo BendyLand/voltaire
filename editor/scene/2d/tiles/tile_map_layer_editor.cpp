@@ -168,7 +168,7 @@ void TileMapLayerEditorTilesPlugin::_scenes_list_lmb_empty_clicked(
 void TileMapLayerEditorTilesPlugin::_mouse_exited_viewport()
 {
 	has_mouse = false;
-	CanvasItemEditor::get_singleton()->update_viewport();
+	CanvasItemEditor::update_viewport();
 }
 
 void TileMapLayerEditorTilesPlugin::_apply_transform(TileTransformType p_type)
@@ -211,7 +211,7 @@ void TileMapLayerEditorTilesPlugin::_apply_transform(TileTransformType p_type)
 		}
 	}
 	selection_pattern = transformed_pattern;
-	CanvasItemEditor::get_singleton()->update_viewport();
+	CanvasItemEditor::update_viewport();
 }
 
 int TileMapLayerEditorTilesPlugin::_get_transformed_alternative(
@@ -298,7 +298,7 @@ Vector<TileMapLayerSubEditorPlugin::TabData> TileMapLayerEditorTerrainsPlugin::g
 void TileMapLayerEditorTerrainsPlugin::_mouse_exited_viewport()
 {
 	has_mouse = false;
-	CanvasItemEditor::get_singleton()->update_viewport();
+	CanvasItemEditor::update_viewport();
 }
 
 void TileMapLayerEditorTerrainsPlugin::_update_terrains_cache()
@@ -384,8 +384,7 @@ void TileMapLayerEditor::_update_tile_map_layers_in_scene_list_cache()
 	if (!layers_in_scene_list_cache_needs_update) {
 		return;
 	}
-	EditorNode* en = EditorNode::get_singleton();
-	Node* edited_scene_root = en->get_edited_scene();
+	Node* edited_scene_root = EditorNode::get_edited_scene();
 	if (!edited_scene_root) {
 		return;
 	}

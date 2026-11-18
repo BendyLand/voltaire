@@ -167,12 +167,14 @@ class ControlEditorToolbar : public HBoxContainer
 	Vector2 _position_to_anchor(const Control* p_control, Vector2 position);
 
 protected:
-	static ControlEditorToolbar* singleton;
+
 
 public:
-	bool is_anchors_mode_enabled() { return anchors_mode; }
+	bool _impl_is_anchors_mode_enabled() { return anchors_mode; }
+	static bool is_anchors_mode_enabled() { return instance->_impl_is_anchors_mode_enabled(); }
 
-	static ControlEditorToolbar* get_singleton() { return singleton; }
+	static inline ControlEditorToolbar* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	ControlEditorToolbar() = default;
 };

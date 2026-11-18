@@ -54,7 +54,7 @@ class Timer;
 
 class SceneImportSettingsDialog : public ConfirmationDialog
 {
-	static SceneImportSettingsDialog* singleton;
+
 
 	enum Actions
 	{
@@ -245,8 +245,10 @@ public:
 	}
 
 	void request_generate_collider();
-	void open_settings(const String& p_path, const String& p_scene_import_type = "PackedScene");
-	static SceneImportSettingsDialog* get_singleton();
+	void _impl_open_settings(const String& p_path, const String& p_scene_import_type);
+	static void open_settings(const String& p_path, const String& p_scene_import_type = "PackedScene");
+	static inline SceneImportSettingsDialog* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 	Node* get_selected_node();
 	SceneImportSettingsDialog();
 	~SceneImportSettingsDialog();

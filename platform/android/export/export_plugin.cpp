@@ -185,7 +185,7 @@ static const int DEFAULT_TARGET_SDK_VERSION =
 void EditorExportPlatformAndroid::_update_preset_status()
 {
 	bool has_runnable =
-		EditorExport::get_singleton()->get_runnable_preset_for_platform(this).is_valid();
+		EditorExport::get_runnable_preset_for_platform(this).is_valid();
 	if (has_runnable) {
 		has_runnable_preset.set();
 		_start_check_for_changes_poll_thread();
@@ -618,7 +618,7 @@ void EditorExportPlatformAndroid::_write_tmp_manifest(
 	}
 
 	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_singleton()->get_export_plugins();
+		EditorExport::get_export_plugins();
 	for (int i = 0; i < export_plugins.size(); i++) {
 		if (export_plugins[i]->supports_platform(Ref<EditorExportPlatform>(this))) {
 			const String contents = export_plugins[i]->get_android_manifest_element_contents(

@@ -83,9 +83,9 @@ String _remove_symlink(const String &dir) {
 
 #ifdef TOOLS_ENABLED
 _FORCE_INLINE_ static GameViewPlugin *_get_game_view_plugin() {
-	ERR_FAIL_NULL_V(EditorNode::get_singleton(), nullptr);
-	ERR_FAIL_NULL_V(EditorNode::get_singleton()->get_editor_main_screen(), nullptr);
-	return Object::cast_to<GameViewPlugin>(EditorNode::get_singleton()->get_editor_main_screen()->get_plugin_by_name("Game"));
+	ERR_FAIL_COND_V(!EditorNode::is_initialized(), nullptr);
+	ERR_FAIL_NULL_V(EditorNode::get_editor_main_screen(), nullptr);
+	return Object::cast_to<GameViewPlugin>(EditorNode::get_editor_main_screen()->get_plugin_by_name("Game"));
 }
 #endif
 
@@ -362,9 +362,6 @@ void OS_Android::main_loop_begin() {
 			game_view_plugin->connect("main_screen_changed", callable_mp_static(&OS_Android::_on_main_screen_changed));
 		}
 
-		if (EditorNode::get_singleton() != nullptr) {
-			EditorNode::get_singleton()->connect("distraction_free_mode_changed", callable_mp_static(&OS_Android::_on_distraction_free_mode_changed));
-		}
 	}
 #endif
 }
@@ -398,9 +395,6 @@ void OS_Android::main_loop_end() {
 			game_view_plugin->disconnect("main_screen_changed", callable_mp_static(&OS_Android::_on_main_screen_changed));
 		}
 
-		if (EditorNode::get_singleton() != nullptr) {
-			EditorNode::get_singleton()->disconnect("distraction_free_mode_changed", callable_mp_static(&OS_Android::_on_distraction_free_mode_changed));
-		}
 	}
 #endif
 

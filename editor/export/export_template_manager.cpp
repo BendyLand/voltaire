@@ -342,8 +342,8 @@ String ExportTemplateManager::_get_template_folder_path(const String& p_version)
 
 Ref<Texture2D> ExportTemplateManager::_get_platform_icon(const String& p_platform_name)
 {
-	for (int i = 0; i < EditorExport::get_singleton()->get_export_platform_count(); i++) {
-		Ref<EditorExportPlatform> platform = EditorExport::get_singleton()->get_export_platform(i);
+	for (int i = 0; i < EditorExport::get_export_platform_count(); i++) {
+		Ref<EditorExportPlatform> platform = EditorExport::get_export_platform(i);
 		if (platform->get_name() == p_platform_name) {
 			return platform->get_logo();
 		}
@@ -364,7 +364,7 @@ void ExportTemplateManager::_tree_button_clicked(
 	switch ((ButtonID)p_id) {
 	case ButtonID::FAIL: {
 		FileMetadata* meta = _get_file_metadata(p_item);
-		EditorNode::get_singleton()->show_warning(meta->fail_reason + ".", TTR("Download Failed"));
+		EditorNode::show_warning(meta->fail_reason + ".", TTR("Download Failed"));
 	} break;
 
 	case ButtonID::NONE: {

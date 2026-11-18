@@ -150,15 +150,18 @@ void AudioStreamPreviewGenerator::_preview_thread(void* p_preview)
 	preview->generating.clear();
 }
 
-AudioStreamPreviewGenerator* AudioStreamPreviewGenerator::singleton = nullptr;
-
 AudioStreamPreviewGenerator::AudioStreamPreviewGenerator()
 {
-	singleton = this;
+	AudioStreamPreviewGenerator::instance = this;
 	set_process(true);
 }
 
-Ref<AudioStreamPreview> AudioStreamPreviewGenerator::generate_preview(Ref<AudioStream> const&)
+Ref<AudioStreamPreview> AudioStreamPreviewGenerator::generate_preview(Ref<AudioStream> const& p_arg0)
+{
+	return AudioStreamPreviewGenerator::instance->_impl_generate_preview(p_arg0);
+}
+
+Ref<AudioStreamPreview> AudioStreamPreviewGenerator::_impl_generate_preview(Ref<AudioStream> const& p_arg0)
 {
 	Ref<AudioStreamPreview> asp = memnew(AudioStreamPreview);
 	return asp;

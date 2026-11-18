@@ -88,7 +88,7 @@ class AudioStreamImportSettingsDialog : public ConfirmationDialog
 
 	void _audio_changed();
 
-	static AudioStreamImportSettingsDialog* singleton;
+
 
 	void _settings_changed();
 
@@ -112,9 +112,11 @@ protected:
 	int _get_beat_at_pos(real_t p_x);
 
 public:
-	void edit(const String& p_path, const String& p_importer, const Ref<AudioStream>& p_stream);
+	void _impl_edit(const String& p_path, const String& p_importer, const Ref<AudioStream>& p_stream);
+	static void edit(const String& p_path, const String& p_importer, const Ref<AudioStream>& p_stream);
 
-	static AudioStreamImportSettingsDialog* get_singleton() { return singleton; }
+	static inline AudioStreamImportSettingsDialog* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	AudioStreamImportSettingsDialog();
 };

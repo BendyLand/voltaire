@@ -39,7 +39,7 @@ class Tree;
 
 class EditorCommandPalette : public ConfirmationDialog
 {
-	static EditorCommandPalette* singleton;
+
 	FilterLineEdit* command_search_box = nullptr;
 	Tree* search_options = nullptr;
 
@@ -99,10 +99,12 @@ public:
 	void get_actions_list(List<String>* p_list) const;
 	void execute_command(const String& p_command_name);
 	void register_shortcuts_as_command();
-	Ref<Shortcut> add_shortcut_command(
-		const String& p_command, const String& p_key, Ref<Shortcut> p_shortcut);
+	Ref<Shortcut> _impl_add_shortcut_command(const String& p_command, const String& p_key, Ref<Shortcut> p_shortcut);
+	static Ref<Shortcut> add_shortcut_command(const String& p_command, const String& p_key, Ref<Shortcut> p_shortcut);
 	void remove_command(String p_key_name);
-	static EditorCommandPalette* get_singleton();
+	static inline EditorCommandPalette* instance = nullptr;
+	static EditorCommandPalette* get_or_create();
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 };
 
 Ref<Shortcut> ED_SHORTCUT_AND_COMMAND(

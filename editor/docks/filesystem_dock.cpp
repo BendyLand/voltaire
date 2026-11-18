@@ -185,9 +185,20 @@ Ref<Texture2D> FileSystemDock::_get_tree_item_icon(
 	}
 }
 
-String FileSystemDock::get_current_path() const { return current_path; }
+String FileSystemDock::get_current_path()
+{
+	return FileSystemDock::instance->_impl_get_current_path();
+}
 
-String FileSystemDock::get_current_directory() const
+String FileSystemDock::_impl_get_current_path() const
+{ return current_path; }
+
+String FileSystemDock::get_current_directory()
+{
+	return FileSystemDock::instance->_impl_get_current_directory();
+}
+
+String FileSystemDock::_impl_get_current_directory() const
 {
 	if (current_path.ends_with("/")) {
 		return current_path;
@@ -267,7 +278,7 @@ Ref<Texture2D> FileSystemDock::_apply_thumbnail_filter(
 	if (!p_file_path.is_empty()) {
 		int index;
 		EditorFileSystemDirectory* dir =
-			EditorFileSystem::get_singleton()->find_file(p_file_path, &index);
+			EditorFileSystem::find_file(p_file_path, &index);
 
 		if (dir) {
 			if (dir->get_file_import_is_valid(index)) {
@@ -295,7 +306,7 @@ Ref<Texture2D> FileSystemDock::_apply_thumbnail_filter(
 bool FileSystemDock::_is_file_type_disabled_by_feature_profile(const String& p_class)
 {
 	Ref<EditorFeatureProfile> profile =
-		EditorFeatureProfileManager::get_singleton()->get_current_profile();
+		EditorFeatureProfileManager::get_current_profile();
 	if (profile.is_null()) {
 		return false;
 	}
@@ -355,8 +366,8 @@ HashSet<String> FileSystemDock::_get_valid_conversions_for_file_paths(const Vect
 		}
 
 		Vector<Ref<EditorResourceConversionPlugin>> conversions =
-			EditorNode::get_singleton()->find_resource_conversion_plugin_for_type_name(
-				EditorFileSystem::get_singleton()->get_file_type(fpath));
+			EditorNode::find_resource_conversion_plugin_for_type_name(
+				EditorFileSystem::get_file_type(fpath));
 
 		if (conversions.is_empty()) {
 			// This resource can't convert to anything, so return an empty list.
@@ -749,5 +760,5 @@ bool FileSystemDock::_get_imported_files(
 // TODO: Could use a unit test.
 const HashMap<String, Color>& FileSystemDock::get_folder_colors() const { return folder_colors; }
 
-FileSystemDock::~FileSystemDock() { singleton = nullptr; }
+FileSystemDock::~FileSystemDock() { FileSystemDock::instance = nullptr; }
 

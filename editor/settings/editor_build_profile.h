@@ -201,7 +201,7 @@ class EditorBuildProfileManager : public AcceptDialog
 		Vector<String> build_deps;
 	};
 
-	static EditorBuildProfileManager* singleton;
+
 
 protected:
 	void _notification(int p_what);
@@ -209,7 +209,8 @@ protected:
 public:
 	Ref<EditorBuildProfile> get_current_profile();
 
-	static EditorBuildProfileManager* get_singleton() { return singleton; }
+	static inline EditorBuildProfileManager* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	EditorBuildProfileManager();
 };

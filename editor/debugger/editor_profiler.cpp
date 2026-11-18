@@ -66,7 +66,7 @@ int EditorProfiler::_get_zoom_left_border() const
 
 void EditorProfiler::_autostart_toggled(bool p_toggled_on)
 {
-	EditorRunBar::get_singleton()->update_profiler_autostart_indicator();
+	EditorRunBar::update_profiler_autostart_indicator();
 }
 
 void EditorProfiler::_graph_tex_draw()

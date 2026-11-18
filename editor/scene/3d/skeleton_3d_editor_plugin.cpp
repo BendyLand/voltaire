@@ -65,8 +65,6 @@ void BonePropertiesEditor::set_keyable(const bool p_keyable)
 	scale_property->set_keying(p_keyable);
 }
 
-Skeleton3DEditor* Skeleton3DEditor::singleton = nullptr;
-
 void Skeleton3DEditor::_on_click_skeleton_option(int p_skeleton_option)
 {
 	ERR_FAIL_COND(!skeleton);
@@ -102,7 +100,7 @@ void Skeleton3DEditor::_on_click_skeleton_option(int p_skeleton_option)
 void Skeleton3DEditor::export_skeleton_profile()
 {
 	if (!skeleton->get_bone_count()) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			vformat(TTR("Cannot export a SkeletonProfile for a Skeleton3D node with no bones.")));
 		return;
 	}
@@ -170,7 +168,7 @@ void Skeleton3DEditor::_file_selected(const String& p_file)
 	Error err = ResourceSaver::save(sp.ptr(), p_file);
 
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving file: %s"), p_file));
+		EditorNode::show_warning(vformat(TTR("Error saving file: %s"), p_file));
 		return;
 	}
 }
@@ -209,6 +207,12 @@ void Skeleton3DEditor::edit_mode_toggled(const bool pressed)
 }
 
 void Skeleton3DEditor::update_bone_original()
+{
+	ERR_FAIL_NULL(Skeleton3DEditor::instance);
+	Skeleton3DEditor::instance->_impl_update_bone_original();
+}
+
+void Skeleton3DEditor::_impl_update_bone_original()
 {
 	if (!skeleton) {
 		return;
@@ -287,9 +291,8 @@ void Skeleton3DEditor::_subgizmo_selection_change()
 	}
 
 	int selected = -1;
-	Skeleton3DEditor* se = Skeleton3DEditor::get_singleton();
-	if (se) {
-		selected = se->get_selected_bone();
+	if (Skeleton3DEditor::is_initialized()) {
+		selected = Skeleton3DEditor::get_selected_bone();
 	}
 
 	if (selected >= 0) {
@@ -316,11 +319,10 @@ void Skeleton3DEditor::_subgizmo_selection_change()
 EditorPlugin::AfterGUIInput Skeleton3DEditorPlugin::forward_3d_gui_input(
 	Camera3D* p_camera, const Ref<InputEvent>& p_event)
 {
-	Skeleton3DEditor* se = Skeleton3DEditor::get_singleton();
-	if (se && se->is_edit_mode()) {
+	if (Skeleton3DEditor::is_initialized() && Skeleton3DEditor::is_edit_mode()) {
 		const Ref<InputEventMouseButton> mb = p_event;
 		if (mb.is_valid() && mb->get_button_index() == MouseButton::LEFT && mb->is_pressed()) {
-			se->update_bone_original();
+			Skeleton3DEditor::update_bone_original();
 		}
 		return EditorPlugin::AFTER_GUI_INPUT_CUSTOM;
 	}
@@ -355,7 +357,13 @@ void Skeleton3DEditor::_update_gizmo_visible()
 	_draw_gizmo();
 }
 
-int Skeleton3DEditor::get_selected_bone() const { return selected_bone; }
+int Skeleton3DEditor::get_selected_bone()
+{
+	return Skeleton3DEditor::instance->_impl_get_selected_bone();
+}
+
+int Skeleton3DEditor::_impl_get_selected_bone() const
+{ return selected_bone; }
 
 Skeleton3DGizmoPlugin::SelectionMaterials Skeleton3DGizmoPlugin::selection_materials;
 

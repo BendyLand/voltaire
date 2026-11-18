@@ -313,10 +313,10 @@ enum
 void OrphanResourcesDialog::refresh()
 {
 	HashMap<String, int> refs;
-	_fill_owners(EditorFileSystem::get_singleton()->get_filesystem(), refs, nullptr);
+	_fill_owners(EditorFileSystem::get_filesystem(), refs, nullptr);
 	files->clear();
 	TreeItem* root = files->create_item();
-	_fill_owners(EditorFileSystem::get_singleton()->get_filesystem(), refs, root);
+	_fill_owners(EditorFileSystem::get_filesystem(), refs, root);
 }
 
 void OrphanResourcesDialog::show()

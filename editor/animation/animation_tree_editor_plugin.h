@@ -78,20 +78,24 @@ class AnimationTreeEditor : public EditorDock
 protected:
 	void _notification(int p_what);
 
-	static AnimationTreeEditor* singleton;
+
 
 public:
-	AnimationTree* get_animation_tree() { return tree; }
+	AnimationTree* _impl_get_animation_tree() { return tree; }
+	static AnimationTree* get_animation_tree() { return instance->_impl_get_animation_tree(); }
 
 	void remove_plugin(AnimationTreeNodeEditorPlugin* p_editor);
 
-	String get_base_path();
+	String _impl_get_base_path();
+	static String get_base_path();
 
 	bool can_edit(const Ref<AnimationNode>& p_node) const;
 
-	Vector<String> get_edited_path() const;
+	Vector<String> _impl_get_edited_path() const;
+	static Vector<String> get_edited_path();
 
-	static AnimationTreeEditor* get_singleton() { return singleton; }
+	static inline AnimationTreeEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	void edit(AnimationTree* p_tree);
 };

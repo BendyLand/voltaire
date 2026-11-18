@@ -129,7 +129,7 @@ private:
 
 	friend class DebuggerEditorPlugin;
 	friend class DebugAdapterParser;
-	static EditorDebuggerNode* singleton;
+
 	EditorDebuggerNode() = default;
 
 protected:
@@ -151,14 +151,17 @@ protected:
 	virtual void update_layout(EditorDock::DockLayout p_layout, int p_slot) override;
 
 public:
-	static EditorDebuggerNode* get_singleton() { return singleton; }
+	static inline EditorDebuggerNode* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	void register_undo_redo(UndoRedo* p_undo_redo);
 
 	ScriptEditorDebugger* get_previous_debugger() const;
 	ScriptEditorDebugger* get_current_debugger() const;
-	ScriptEditorDebugger* get_default_debugger() const;
-	ScriptEditorDebugger* get_debugger(int p_debugger) const;
+	ScriptEditorDebugger* _impl_get_default_debugger() const;
+	static ScriptEditorDebugger* get_default_debugger();
+	ScriptEditorDebugger* _impl_get_debugger(int p_debugger) const;
+	static ScriptEditorDebugger* get_debugger(int p_debugger);
 
 	void debug_next();
 	void debug_step();
@@ -172,10 +175,12 @@ public:
 	bool is_skip_breakpoints() const;
 	bool is_ignore_error_breaks() const;
 	void reload_all_scripts();
-	void reload_scripts(const Vector<String>& p_script_paths);
+	void _impl_reload_scripts(const Vector<String>& p_script_paths);
+	static void reload_scripts(const Vector<String>& p_script_paths);
 
 	// Remote inspector/edit.
-	void request_remote_tree();
+	void _impl_request_remote_tree();
+	static void request_remote_tree();
 	void set_remote_selection(const TypedArray<int64_t>& p_ids);
 	void clear_remote_tree_selection();
 	void stop_waiting_inspection();
@@ -193,18 +198,23 @@ public:
 	void live_debug_reparent_node(
 		const NodePath& p_at, const NodePath& p_new_place, const String& p_new_name, int p_at_pos);
 
-	void set_debug_mute_audio(bool p_mute);
+	void _impl_set_debug_mute_audio(bool p_mute);
+	static void set_debug_mute_audio(bool p_mute);
 	bool get_debug_mute_audio() const;
 
-	void set_camera_override(CameraOverride p_override);
-	CameraOverride get_camera_override();
+	void _impl_set_camera_override(CameraOverride p_override);
+	static void set_camera_override(CameraOverride p_override);
+	CameraOverride _impl_get_camera_override();
+	static CameraOverride get_camera_override();
 
 	String get_server_uri() const;
 
 	void set_keep_open(bool p_keep_open);
 
-	void add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
-	void remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
+	void _impl_add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
+	static void add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
+	void _impl_remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
+	static void remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin);
 };
 
 

@@ -108,8 +108,6 @@ void ScriptEditorQuickOpen::_confirmed()
 	hide();
 }
 
-ScriptEditor* ScriptEditor::script_editor = nullptr;
-
 void ScriptEditor::_close_current_tab(bool p_save)
 {
 	_close_tab(tab_container->get_current_tab(), p_save);
@@ -171,7 +169,7 @@ void ScriptEditor::_scene_saved_callback(const String& p_path)
 void ScriptEditor::_live_auto_reload_running_scripts()
 {
 	pending_auto_reload = false;
-	EditorDebuggerNode::get_singleton()->reload_scripts(script_paths_to_reload);
+	EditorDebuggerNode::reload_scripts(script_paths_to_reload);
 	script_paths_to_reload.clear();
 }
 
@@ -236,14 +234,20 @@ Vector<String> ScriptEditor::_get_breakpoints()
 	return ret;
 }
 
-bool ScriptEditor::is_editor_floating() { return is_floating; }
+bool ScriptEditor::is_editor_floating()
+{
+	return ScriptEditor::instance->_impl_is_editor_floating();
+}
+
+bool ScriptEditor::_impl_is_editor_floating()
+{ return is_floating; }
 
 void ScriptEditor::_connect_to_scene()
 {
 	if (!highlight_scene_scripts) {
 		return;
 	}
-	Node* edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node* edited_scene = EditorNode::get_edited_scene();
 	if (!edited_scene) {
 		return;
 	}
@@ -303,7 +307,7 @@ Ref<Resource> ScriptEditor::open_file(const String& p_file)
 	if (_get_recognized_extensions().find(p_file.get_extension())) {
 		Ref<Resource> scr = ResourceLoader::load(p_file);
 		if (scr.is_null()) {
-			EditorNode::get_singleton()->show_warning(
+			EditorNode::show_warning(
 				TTR("Could not load file at:") + "\n\n" + p_file, TTR("Error!"));
 			return Ref<Resource>();
 		}
@@ -315,7 +319,7 @@ Ref<Resource> ScriptEditor::open_file(const String& p_file)
 	Error error;
 	Ref<TextFile> text_file = _load_text_file(p_file, &error);
 	if (error != OK) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			TTR("Could not load file at:") + "\n\n" + p_file, TTR("Error!"));
 		return Ref<Resource>();
 	}
@@ -440,7 +444,7 @@ void ScriptEditor::register_create_script_editor_function(CreateScriptEditorFunc
 	script_editor_funcs[script_editor_func_count++] = p_func;
 }
 
-void ScriptEditor::_script_changed() { SignalsDock::get_singleton()->update_lists(); }
+void ScriptEditor::_script_changed() { SignalsDock::update_lists(); }
 
 void ScriptEditor::_set_script_zoom_factor(float p_zoom_factor)
 {
@@ -552,7 +556,7 @@ String ScriptEditorPlugin::get_unsaved_status(const String& p_for_scene) const
 
 void ScriptEditorPlugin::save_external_data()
 {
-	if (!EditorNode::get_singleton()->is_exiting()) {
+	if (!EditorNode::is_exiting()) {
 		script_editor->save_all_scripts();
 	}
 }
@@ -582,19 +586,39 @@ void ScriptEditor::save_all_scripts() {}
 
 ScriptEditorBase* ScriptEditor::_get_current_editor() const {}
 
-void ScriptEditor::get_breakpoints(List<String, DefaultAllocator>*) {}
+void ScriptEditor::get_breakpoints(List<String, DefaultAllocator>* p_arg0)
+{
+	ERR_FAIL_NULL(ScriptEditor::instance);
+	ScriptEditor::instance->_impl_get_breakpoints(p_arg0);
+}
+
+void ScriptEditor::_impl_get_breakpoints(List<String, DefaultAllocator>* p_arg0)
+{}
 
 void ScriptEditor::ensure_select_current() {}
 
 bool ScriptEditor::edit(Ref<Resource> const&, int, int, bool) { return true; }
 
-bool ScriptEditor::toggle_files_panel() { return true; }
+bool ScriptEditor::toggle_files_panel()
+{
+	return ScriptEditor::instance->_impl_toggle_files_panel();
+}
+
+bool ScriptEditor::_impl_toggle_files_panel()
+{ return true; }
 
 void ScriptEditor::_show_save_theme_as_dialog() {}
 
 void ScriptEditor::_script_selected(int) {}
 
-void ScriptEditor::reload_scripts(bool) {}
+void ScriptEditor::reload_scripts(bool p_arg0)
+{
+	ERR_FAIL_NULL(ScriptEditor::instance);
+	ScriptEditor::instance->_impl_reload_scripts(p_arg0);
+}
+
+void ScriptEditor::_impl_reload_scripts(bool p_arg0)
+{}
 
 void ScriptEditor::_mark_built_in_scripts_as_saved(String const&) {}
 

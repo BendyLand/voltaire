@@ -125,16 +125,17 @@ public:
 
 class MeshLibraryEditorPlugin : public EditorPlugin
 {
-	static inline MeshLibraryEditorPlugin* singleton = nullptr;
+
 
 	MeshLibraryEditor* mesh_library_editor = nullptr;
 
 public:
-	_FORCE_INLINE_ static MeshLibraryEditorPlugin* get_singleton() { return singleton; }
+	static inline MeshLibraryEditorPlugin* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	MeshLibraryEditorPlugin() = default;
 
-	~MeshLibraryEditorPlugin() { singleton = nullptr; }
+	~MeshLibraryEditorPlugin() { instance = nullptr; }
 };
 
 

@@ -80,10 +80,6 @@ void SceneImportSettingsDialog::_update_scene()
 
 void SceneImportSettingsDialog::request_generate_collider() { generate_collider = true; }
 
-SceneImportSettingsDialog* SceneImportSettingsDialog::singleton = nullptr;
-
-SceneImportSettingsDialog* SceneImportSettingsDialog::get_singleton() { return singleton; }
-
 Node* SceneImportSettingsDialog::get_selected_node()
 {
 	if (selected_id == "") {
@@ -168,6 +164,13 @@ SceneImportSettingsDialog::~SceneImportSettingsDialog() { memdelete(scene_import
 
 
 
-void SceneImportSettingsDialog::open_settings(String const&, String const&) {}
+void SceneImportSettingsDialog::open_settings(String const& p_arg0, String const& p_arg1)
+{
+	ERR_FAIL_NULL(SceneImportSettingsDialog::instance);
+	SceneImportSettingsDialog::instance->_impl_open_settings(p_arg0, p_arg1);
+}
+
+void SceneImportSettingsDialog::_impl_open_settings(String const& p_arg0, String const& p_arg1)
+{}
 
 void SceneImportSettingsDialog::_fill_scene(Node*, TreeItem*) {}

@@ -89,7 +89,7 @@ void EditorDebuggerTree::clear_selection()
 {
 	if (!updating_scene_tree) {
 		// Request a tree refresh.
-		EditorDebuggerNode::get_singleton()->request_remote_tree();
+		EditorDebuggerNode::request_remote_tree();
 	}
 	// Set the value immediately, so no update flooding happens and causes a crash.
 	updating_scene_tree = true;

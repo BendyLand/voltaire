@@ -56,8 +56,6 @@
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
-EditorRunBar* EditorRunBar::singleton = nullptr;
-
 void EditorRunBar::_write_movie_toggled(bool p_enabled)
 {
 	if (p_enabled) {
@@ -100,8 +98,14 @@ void EditorRunBar::_quick_run_selected(const String& p_file_path, int p_menu_ite
 
 void EditorRunBar::play_main_scene(bool p_from_native, const Vector<String>& p_play_args)
 {
+	ERR_FAIL_NULL(EditorRunBar::instance);
+	EditorRunBar::instance->_impl_play_main_scene(p_from_native, p_play_args);
+}
+
+void EditorRunBar::_impl_play_main_scene(bool p_from_native, const Vector<String>& p_play_args)
+{
 	if (Engine::is_recovery_mode_hint()) {
-		EditorToaster::get_singleton()->popup_str(
+		EditorToaster::popup_str(
 			TTR("Recovery Mode is enabled. Disable it to run the project."),
 			EditorToaster::SEVERITY_WARNING);
 		return;
@@ -120,8 +124,14 @@ void EditorRunBar::play_main_scene(bool p_from_native, const Vector<String>& p_p
 
 void EditorRunBar::play_custom_scene(const String& p_custom, const Vector<String>& p_play_args)
 {
+	ERR_FAIL_NULL(EditorRunBar::instance);
+	EditorRunBar::instance->_impl_play_custom_scene(p_custom, p_play_args);
+}
+
+void EditorRunBar::_impl_play_custom_scene(const String& p_custom, const Vector<String>& p_play_args)
+{
 	if (Engine::is_recovery_mode_hint()) {
-		EditorToaster::get_singleton()->popup_str(
+		EditorToaster::popup_str(
 			TTR("Recovery Mode is enabled. Disable it to run the project."),
 			EditorToaster::SEVERITY_WARNING);
 		return;
@@ -133,7 +143,12 @@ void EditorRunBar::play_custom_scene(const String& p_custom, const Vector<String
 	_run_scene(p_custom, p_play_args);
 }
 
-bool EditorRunBar::is_playing() const
+bool EditorRunBar::is_playing()
+{
+	return EditorRunBar::instance->_impl_is_playing();
+}
+
+bool EditorRunBar::_impl_is_playing() const
 {
 	EditorRun::Status status = editor_run.get_status();
 	return (status == EditorRun::STATUS_PLAY || status == EditorRun::STATUS_PAUSED);
@@ -165,18 +180,50 @@ ProcessID EditorRunBar::get_current_process() const { return editor_run.get_curr
 
 void EditorRunBar::set_movie_maker_enabled(bool p_enabled)
 {
+	ERR_FAIL_NULL(EditorRunBar::instance);
+	EditorRunBar::instance->_impl_set_movie_maker_enabled(p_enabled);
+}
+
+void EditorRunBar::_impl_set_movie_maker_enabled(bool p_enabled)
+{
 	movie_maker_enabled = p_enabled;
 }
 
-bool EditorRunBar::is_movie_maker_enabled() const { return movie_maker_enabled; }
+bool EditorRunBar::is_movie_maker_enabled()
+{
+	return EditorRunBar::instance->_impl_is_movie_maker_enabled();
+}
+
+bool EditorRunBar::_impl_is_movie_maker_enabled() const
+{ return movie_maker_enabled; }
 
 HBoxContainer* EditorRunBar::get_buttons_container() { return main_hbox; }
 
-void EditorRunBar::stop_playing() {}
+void EditorRunBar::stop_playing()
+{
+	ERR_FAIL_NULL(EditorRunBar::instance);
+	EditorRunBar::instance->_impl_stop_playing();
+}
+
+void EditorRunBar::_impl_stop_playing()
+{}
 
 
-void EditorRunBar::update_profiler_autostart_indicator() {}
+void EditorRunBar::update_profiler_autostart_indicator()
+{
+	ERR_FAIL_NULL(EditorRunBar::instance);
+	EditorRunBar::instance->_impl_update_profiler_autostart_indicator();
+}
+
+void EditorRunBar::_impl_update_profiler_autostart_indicator()
+{}
 
 void EditorRunBar::_run_scene(String const&, Vector<String> const&) {}
 
-String EditorRunBar::get_playing_scene() const {}
+String EditorRunBar::get_playing_scene()
+{
+	return EditorRunBar::instance->_impl_get_playing_scene();
+}
+
+String EditorRunBar::_impl_get_playing_scene() const
+{}

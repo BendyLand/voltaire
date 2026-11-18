@@ -38,7 +38,7 @@ Vector<String> EditorExportPlatformVisionOS::device_types({"realityDevice"});
 
 void EditorExportPlatformVisionOS::initialize()
 {
-	if (EditorNode::get_singleton()) {
+	if (EditorNode::is_initialized()) {
 		EditorExportPlatformAppleEmbedded::_initialize(_visionos_logo_svg, _visionos_run_icon_svg);
 #ifdef MACOS_ENABLED
 		_start_remote_device_poller_thread();

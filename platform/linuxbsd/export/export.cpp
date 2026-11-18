@@ -43,7 +43,7 @@ void register_linuxbsd_exporter()
 	platform->set_os_name("Linux");
 	platform->set_chmod_flags(0755);
 
-	EditorExport::get_singleton()->add_export_platform(platform);
+	EditorExport::add_export_platform(platform);
 }
 
 

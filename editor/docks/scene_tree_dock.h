@@ -223,10 +223,11 @@ class SceneTreeDock : public EditorDock
 		Node* p_root_node, NodePath& r_node_path, HashMap<Node*, NodePath>* p_renames) const;
 
 private:
-	static SceneTreeDock* singleton;
+
 
 public:
-	static SceneTreeDock* get_singleton() { return singleton; }
+	static inline SceneTreeDock* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	String get_filter();
 	void set_filter(const String& p_filter);
@@ -234,13 +235,15 @@ public:
 	void set_selected(Node* p_node, bool p_emit_selected = false);
 	void fill_path_renames(Node* p_node, Node* p_new_parent, HashMap<Node*, NodePath>* p_renames);
 
-	SceneTreeEditor* get_tree_editor() { return scene_tree; }
+	SceneTreeEditor* _impl_get_tree_editor() { return scene_tree; }
+	static SceneTreeEditor* get_tree_editor() { return instance->_impl_get_tree_editor(); }
 
 	EditorData* get_editor_data() { return editor_data; }
 
 	List<Node*> get_node_clipboard() const;
 
-	ScriptCreateDialog* get_script_create_dialog() { return script_create_dialog; }
+	ScriptCreateDialog* _impl_get_script_create_dialog() { return script_create_dialog; }
+	static ScriptCreateDialog* get_script_create_dialog() { return instance->_impl_get_script_create_dialog(); }
 
 	SceneTreeDock(
 		Node* p_scene_root, EditorSelection* p_editor_selection, EditorData& p_editor_data) : scene_root(p_scene_root), editor_selection(p_editor_selection), editor_data(&p_editor_data) {}

@@ -329,7 +329,7 @@ bool Node3DEditorViewport::_is_vertex_occluded(
 {
 	Vector3 ray_pos = get_ray_pos(p_screen_pos);
 	float vertex_dist = ray_pos.distance_to(p_world_pos);
-	Vector<Node3D*> hits = Node3DEditor::get_singleton()->gizmo_bvh_ray_query(
+	Vector<Node3D*> hits = Node3DEditor::gizmo_bvh_ray_query(
 		ray_pos, ray_pos + get_ray(p_screen_pos) * camera->get_far());
 	for (Node3D* spat : hits) {
 		if (!spat) {
@@ -359,7 +359,7 @@ void Node3DEditorViewport::_find_items_at_pos(
 	Vector3 pos = get_ray_pos(p_pos);
 
 	Vector<Node3D*> nodes_with_gizmos =
-		Node3DEditor::get_singleton()->gizmo_bvh_ray_query(pos, pos + ray * camera->get_far());
+		Node3DEditor::gizmo_bvh_ray_query(pos, pos + ray * camera->get_far());
 
 	HashSet<Node3D*> found_nodes;
 

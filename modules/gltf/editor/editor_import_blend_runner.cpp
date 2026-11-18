@@ -169,6 +169,3 @@ void EditorImportBlendRunner::_kill_blender()
 	blender_pid = 0;
 }
 
-EditorImportBlendRunner* EditorImportBlendRunner::singleton = nullptr;
-
-

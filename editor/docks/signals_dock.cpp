@@ -33,11 +33,18 @@
 #include "editor/settings/editor_command_palette.h"
 #include "signals_dock.h"
 
-void SignalsDock::update_lists() { connections->update_tree(); }
+void SignalsDock::update_lists()
+{
+	ERR_FAIL_NULL(SignalsDock::instance);
+	SignalsDock::instance->_impl_update_lists();
+}
+
+void SignalsDock::_impl_update_lists()
+{ connections->update_tree(); }
 
 SignalsDock::SignalsDock()
 {
-	singleton = this;
+	SignalsDock::instance = this;
 	set_name(TTRC("Signals"));
 	set_icon_name("Signals");
 	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("docks/open_signals", TTRC("Open Signals Dock")));
@@ -48,6 +55,6 @@ SignalsDock::SignalsDock()
 	add_child(connections);
 }
 
-SignalsDock::~SignalsDock() { singleton = nullptr; }
+SignalsDock::~SignalsDock() { SignalsDock::instance = nullptr; }
 
 

@@ -4115,8 +4115,8 @@ bool Main::iteration()
 	}
 
 #ifdef TOOLS_ENABLED
-	if (wait_for_import && EditorFileSystem::get_singleton() &&
-		EditorFileSystem::get_singleton()->doing_first_scan()) {
+	if (wait_for_import && EditorFileSystem::is_initialized() &&
+		EditorFileSystem::doing_first_scan()) {
 		exit = false;
 	}
 #endif
@@ -4140,7 +4140,7 @@ bool Main::iteration()
 , "Command line option --build-solutions was passed, but no project "
 								 "is being edited. Aborting.");
 		}
-		if (!EditorNode::get_singleton()->call_build()) {
+		if (!EditorNode::call_build()) {
 			OS::set_exit_code(EXIT_FAILURE);
 			ERR_FAIL_V_MSG(true, "Command line option --build-solutions was passed, but the build "
 								 "callback failed. Aborting.");

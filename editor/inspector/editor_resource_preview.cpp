@@ -50,7 +50,7 @@
 
 void EditorResourcePreviewGenerator::DrawRequester::abort()
 {
-	if (EditorResourcePreview::get_singleton()->is_threaded()) {
+	if (EditorResourcePreview::is_threaded()) {
 		semaphore.post();
 	}
 }
@@ -63,7 +63,12 @@ void EditorResourcePreviewGenerator::request_draw_and_wait(RID viewport) const
 
 void EditorResourcePreviewGenerator::DrawRequester::_post_semaphore() { semaphore.post(); }
 
-bool EditorResourcePreview::is_threaded() const
+bool EditorResourcePreview::is_threaded()
+{
+	return EditorResourcePreview::instance->_impl_is_threaded();
+}
+
+bool EditorResourcePreview::_impl_is_threaded() const
 {
 	return RendererCompositor::can_create_resources_async();
 }
@@ -86,7 +91,7 @@ void EditorResourcePreview::_thread()
 
 void EditorResourcePreview::_idle_callback()
 {
-	if (!singleton) {
+	if (!EditorResourcePreview::instance) {
 		// Just in case the shutdown of the editor involves the deletion of the singleton
 		// happening while additional idle callbacks can happen.
 		return;
@@ -94,13 +99,17 @@ void EditorResourcePreview::_idle_callback()
 
 	// Process preview tasks, trying to leave a little bit of responsiveness worst case.
 	uint64_t start = OS::get_ticks_msec();
-	while (!singleton->queue.is_empty() && OS::get_ticks_msec() - start < 100) {
-		singleton->_iterate();
+	while (!EditorResourcePreview::instance->queue.is_empty() && OS::get_ticks_msec() - start < 100) {
+		EditorResourcePreview::instance->_iterate();
 	}
 }
 
-EditorResourcePreview::PreviewItem EditorResourcePreview::get_resource_preview_if_available(
-	const String& p_path)
+EditorResourcePreview::PreviewItem EditorResourcePreview::get_resource_preview_if_available(const String& p_path)
+{
+	return EditorResourcePreview::instance->_impl_get_resource_preview_if_available(p_path);
+}
+
+EditorResourcePreview::PreviewItem EditorResourcePreview::_impl_get_resource_preview_if_available(const String& p_path)
 {
 	PreviewItem item;
 	{
@@ -131,9 +140,6 @@ void EditorResourcePreview::remove_preview_generator(
 	preview_generators.erase(p_generator);
 }
 
-EditorResourcePreview* EditorResourcePreview::get_singleton() { return singleton; }
-
-
 void EditorResourcePreview::_notification(int p_what)
 {
 	switch (p_what) {
@@ -143,7 +149,7 @@ void EditorResourcePreview::_notification(int p_what)
 	}
 }
 
-EditorResourcePreview::EditorResourcePreview() { singleton = this; }
+EditorResourcePreview::EditorResourcePreview() { EditorResourcePreview::instance = this; }
 
 EditorResourcePreview::~EditorResourcePreview() { stop(); }
 

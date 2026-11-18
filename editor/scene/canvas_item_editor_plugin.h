@@ -554,7 +554,7 @@ protected:
 	void _notification(int p_what);
 
 
-	static CanvasItemEditor* singleton;
+
 
 public:
 	enum SnapMode
@@ -578,24 +578,34 @@ public:
 		const List<CanvasItem*>& p_other_nodes_exceptions = List<CanvasItem*>());
 	real_t snap_angle(real_t p_target, real_t p_start = 0) const;
 
-	Transform2D get_canvas_transform() const { return transform; }
+	Transform2D _impl_get_canvas_transform() const { return transform; }
+	static Transform2D get_canvas_transform() { return instance->_impl_get_canvas_transform(); }
 
-	static CanvasItemEditor* get_singleton() { return singleton; }
+	static inline CanvasItemEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	void clear();
 
-	void add_control_to_menu_panel(Control* p_control);
-	void remove_control_from_menu_panel(Control* p_control);
+	void _impl_add_control_to_menu_panel(Control* p_control);
+	static void add_control_to_menu_panel(Control* p_control);
+	void _impl_remove_control_from_menu_panel(Control* p_control);
+	static void remove_control_from_menu_panel(Control* p_control);
 
-	void add_control_to_left_panel(Control* p_control);
-	void remove_control_from_left_panel(Control* p_control);
+	void _impl_add_control_to_left_panel(Control* p_control);
+	static void add_control_to_left_panel(Control* p_control);
+	void _impl_remove_control_from_left_panel(Control* p_control);
+	static void remove_control_from_left_panel(Control* p_control);
 
-	void add_control_to_right_panel(Control* p_control);
-	void remove_control_from_right_panel(Control* p_control);
+	void _impl_add_control_to_right_panel(Control* p_control);
+	static void add_control_to_right_panel(Control* p_control);
+	void _impl_remove_control_from_right_panel(Control* p_control);
+	static void remove_control_from_right_panel(Control* p_control);
 
-	VSplitContainer* get_bottom_split();
+	VSplitContainer* _impl_get_bottom_split();
+	static VSplitContainer* get_bottom_split();
 
-	CanvasItemEditorViewport* get_viewport_control() { return viewport; }
+	CanvasItemEditorViewport* _impl_get_viewport_control() { return viewport; }
+	static CanvasItemEditorViewport* get_viewport_control() { return instance->_impl_get_viewport_control(); }
 
 	Control* get_controls_container() { return controls_vb; }
 
@@ -603,22 +613,27 @@ public:
 		const Transform2D& p_parent_xform = Transform2D(),
 		const Transform2D& p_canvas_xform = Transform2D());
 
-	void update_viewport();
+	void _impl_update_viewport();
+	static void update_viewport();
 
-	Tool get_current_tool() { return tool; }
+	Tool _impl_get_current_tool() { return tool; }
+	static Tool get_current_tool() { return instance->_impl_get_current_tool(); }
 
 	void set_current_tool(Tool p_tool);
 
 	bool is_grid_visible() const;
 
-	Vector2 get_grid_step() const { return grid_step; }
+	Vector2 _impl_get_grid_step() const { return grid_step; }
+	static Vector2 get_grid_step() { return instance->_impl_get_grid_step(); }
 
-	Vector2 get_grid_offset() const { return grid_offset; }
+	Vector2 _impl_get_grid_offset() const { return grid_offset; }
+	static Vector2 get_grid_offset() { return instance->_impl_get_grid_offset(); }
 
 	void focus_selection();
 	void center_at(const Point2& p_pos);
 
-	void set_cursor_shape_override(CursorShape p_shape = CURSOR_ARROW);
+	void _impl_set_cursor_shape_override(CursorShape p_shape);
+	static void set_cursor_shape_override(CursorShape p_shape = CURSOR_ARROW);
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
 
 	ThemePreviewMode get_theme_preview() const { return theme_preview; }

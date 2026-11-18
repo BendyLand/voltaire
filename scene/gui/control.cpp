@@ -61,7 +61,7 @@ void Control::_edit_set_position(const Point2& p_position)
 	ERR_FAIL_COND_MSG(
 		!Engine::is_editor_hint(), "This function can only be used from editor plugins.");
 	set_position(p_position,
-		ControlEditorToolbar::get_singleton()->is_anchors_mode_enabled() && get_parent_control());
+		ControlEditorToolbar::is_anchors_mode_enabled() && get_parent_control());
 }
 
 Point2 Control::_edit_get_position() const { return get_position(); }
@@ -79,9 +79,9 @@ void Control::_edit_set_rect(const Rect2& p_edit_rect)
 	// equivalent to the Control's rect top-left corner) needs to be changed after `size` (which is
 	// local) and needs to account for the possibly changed internal transform.
 	Vector2 rect_new_pos_in_parent_space = get_transform().xform(p_edit_rect.position);
-	set_size(p_edit_rect.size, ControlEditorToolbar::get_singleton()->is_anchors_mode_enabled());
+	set_size(p_edit_rect.size, ControlEditorToolbar::is_anchors_mode_enabled());
 	set_position(rect_new_pos_in_parent_space - _get_internal_transform().get_origin(),
-		ControlEditorToolbar::get_singleton()->is_anchors_mode_enabled());
+		ControlEditorToolbar::is_anchors_mode_enabled());
 }
 
 void Control::_edit_set_rotation(real_t p_rotation) { set_rotation(p_rotation); }

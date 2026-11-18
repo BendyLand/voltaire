@@ -186,7 +186,7 @@ class EditorFileSystem : public Node
 
 	EditorFileSystemDirectory* filesystem = nullptr;
 
-	static EditorFileSystem* singleton;
+
 
 	using ScriptClassInfo = EditorFileSystemDirectory::FileInfo::ScriptClassInfo;
 
@@ -332,22 +332,30 @@ class EditorFileSystem : public Node
 		EditorFileSystemDirectory::FileInfo*& r_file_info);
 
 public:
-	static EditorFileSystem* get_singleton() { return singleton; }
+	static inline EditorFileSystem* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	EditorFileSystemDirectory* get_filesystem();
-	bool is_scanning() const;
+	EditorFileSystemDirectory* _impl_get_filesystem();
+	static EditorFileSystemDirectory* get_filesystem();
+	bool _impl_is_scanning() const;
+	static bool is_scanning();
 
 	bool is_importing() const { return importing; }
 
-	bool doing_first_scan() const { return first_scan; }
+	bool _impl_doing_first_scan() const { return first_scan; }
+	static bool doing_first_scan() { return instance->_impl_doing_first_scan(); }
 
 	float get_scanning_progress() const;
 	HashSet<String> get_valid_extensions() const;
 
-	EditorFileSystemDirectory* get_filesystem_path(const String& p_path);
-	String get_file_type(const String& p_file) const;
-	EditorFileSystemDirectory* find_file(const String& p_file, int* r_index) const;
-	ResourceUID::ID get_file_uid(const String& p_path) const;
+	EditorFileSystemDirectory* _impl_get_filesystem_path(const String& p_path);
+	static EditorFileSystemDirectory* get_filesystem_path(const String& p_path);
+	String _impl_get_file_type(const String& p_file) const;
+	static String get_file_type(const String& p_file);
+	EditorFileSystemDirectory* _impl_find_file(const String& p_file, int* r_index) const;
+	static EditorFileSystemDirectory* find_file(const String& p_file, int* r_index);
+	ResourceUID::ID _impl_get_file_uid(const String& p_path) const;
+	static ResourceUID::ID get_file_uid(const String& p_path);
 
 	bool is_group_file(const String& p_path) const;
 

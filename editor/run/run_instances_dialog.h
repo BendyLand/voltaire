@@ -68,7 +68,6 @@ class RunInstancesDialog : public AcceptDialog
 		CLEAR_ALL,
 	};
 
-	inline static RunInstancesDialog* singleton = nullptr;
 
 	Vector<InstanceData> instances_data;
 
@@ -98,7 +97,8 @@ public:
 	void get_argument_list_for_instance(int p_idx, List<String>& r_list) const;
 	void apply_custom_features(int p_instance_idx);
 
-	static RunInstancesDialog* get_singleton() { return singleton; }
+	static inline RunInstancesDialog* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	RunInstancesDialog();
 };

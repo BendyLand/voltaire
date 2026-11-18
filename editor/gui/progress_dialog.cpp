@@ -106,8 +106,6 @@ void BackgroundProgress::_end_task(const String& p_task)
 
 ////////////////////////////////////////////////
 
-ProgressDialog* ProgressDialog::singleton = nullptr;
-
 void ProgressDialog::_notification(int p_what)
 {
 	switch (p_what) {
@@ -162,7 +160,7 @@ bool ProgressDialog::task_step(
 
 void ProgressDialog::_cancel_pressed() { canceled = true; }
 
-ProgressDialog::~ProgressDialog() { singleton = nullptr; }
+ProgressDialog::~ProgressDialog() { ProgressDialog::instance = nullptr; }
 
 
 

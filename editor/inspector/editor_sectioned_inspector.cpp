@@ -47,7 +47,7 @@ static bool _property_path_matches(const String& p_property_path, const String& 
 
 	const Vector<String> sections = p_property_path.split("/");
 	for (int i = 0; i < sections.size(); i++) {
-		if (p_filter.is_subsequence_ofn(EditorPropertyNameProcessor::get_singleton()->process_name(
+		if (p_filter.is_subsequence_ofn(EditorPropertyNameProcessor::process_name(
 				sections[i], p_style, p_property_path))) {
 			return true;
 		}

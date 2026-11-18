@@ -86,7 +86,7 @@ bool ResourceImporterDynamicFont::has_advanced_options() const { return true; }
 
 void ResourceImporterDynamicFont::show_advanced_options(const String& p_path)
 {
-	DynamicFontImportSettingsDialog::get_singleton()->open_settings(p_path);
+	DynamicFontImportSettingsDialog::open_settings(p_path);
 }
 
 void ResourceImporterDynamicFont::get_import_options(

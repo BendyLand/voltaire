@@ -195,7 +195,7 @@ void EmbeddedProcessMacOS::mouse_set_mode(DisplayServerEnums::MouseMode p_mode) 
 	mouse_mode = p_mode;
 	// If the mouse is anything other than visible, we must ensure the Game view is active and the layer focused.
 	if (mouse_mode != DisplayServerEnums::MOUSE_MODE_VISIBLE) {
-		EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_GAME);
+		EditorNode::get_editor_main_screen()->select(EditorMainScreen::EDITOR_GAME);
 		layer_host->grab_focus();
 	}
 	DisplayServer::mouse_set_mode(p_mode);

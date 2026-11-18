@@ -35,7 +35,7 @@
 
 class EditorPropertyNameProcessor : public Node
 {
-	static EditorPropertyNameProcessor* singleton;
+
 
 	mutable HashMap<String, String> capitalize_string_cache;
 	HashMap<String, String> capitalize_string_remaps;
@@ -59,7 +59,8 @@ public:
 		STYLE_LOCALIZED,
 	};
 
-	static EditorPropertyNameProcessor* get_singleton() { return singleton; }
+	static inline EditorPropertyNameProcessor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	static Style get_default_inspector_style();
 	static Style get_settings_style();
@@ -70,8 +71,8 @@ public:
 	// Turns property path segment into the given style.
 	// `p_class` and `p_property` are only used for `STYLE_LOCALIZED`, associating the name with a
 	// translation context.
-	String process_name(const String& p_name, Style p_style, const String& p_property = "",
-		const String& p_class = "") const;
+	String _impl_process_name(const String& p_name, Style p_style, const String& p_property, const String& p_class) const;
+	static String process_name(const String& p_name, Style p_style, const String& p_property = "", const String& p_class = "");
 
 	// Translate plain text group names.
 	String translate_group_name(const String& p_name) const;

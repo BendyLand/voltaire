@@ -274,7 +274,7 @@ bool ResourceImporterScene::has_advanced_options() const { return true; }
 
 void ResourceImporterScene::show_advanced_options(const String& p_path)
 {
-	SceneImportSettingsDialog::get_singleton()->open_settings(p_path, _scene_import_type);
+	SceneImportSettingsDialog::open_settings(p_path, _scene_import_type);
 }
 
 ResourceImporterScene::ResourceImporterScene(const String& p_scene_import_type)

@@ -325,6 +325,12 @@ void CanvasItemEditor::_update_cursor()
 
 void CanvasItemEditor::set_cursor_shape_override(CursorShape p_shape)
 {
+	ERR_FAIL_NULL(CanvasItemEditor::instance);
+	CanvasItemEditor::instance->_impl_set_cursor_shape_override(p_shape);
+}
+
+void CanvasItemEditor::_impl_set_cursor_shape_override(CursorShape p_shape)
+{
 	if (cursor_shape_override == p_shape) {
 		return;
 	}
@@ -508,24 +514,23 @@ void CanvasItemEditor::_draw_viewport()
 	transform = Transform2D();
 	transform.scale_basis(Size2(zoom, zoom));
 	transform.columns[2] = -view_offset * zoom;
-	EditorNode::get_singleton()->get_scene_root()->set_global_canvas_transform(transform);
+	EditorNode::get_scene_root()->set_global_canvas_transform(transform);
 
 	_draw_grid();
 	_draw_ruler_tool();
 	_draw_axis();
-	if (EditorNode::get_singleton()->get_edited_scene()) {
-		_draw_locks_and_groups(EditorNode::get_singleton()->get_edited_scene());
-		_draw_invisible_nodes_positions(EditorNode::get_singleton()->get_edited_scene());
+	if (EditorNode::get_edited_scene()) {
+		_draw_locks_and_groups(EditorNode::get_edited_scene());
+		_draw_invisible_nodes_positions(EditorNode::get_edited_scene());
 	}
 	_draw_selection();
 
 	RID ci = viewport->get_canvas_item();
 	Renderer::canvas_item_add_set_transform(ci, Transform2D());
 
-	EditorNode::get_singleton()->get_editor_plugins_over()->forward_canvas_draw_over_viewport(
+	EditorNode::get_editor_plugins_over()->forward_canvas_draw_over_viewport(
 		viewport);
-	EditorNode::get_singleton()
-		->get_editor_plugins_force_over()
+	EditorNode::get_editor_plugins_force_over()
 		->forward_canvas_force_draw_over_viewport(viewport);
 
 	if (show_rulers) {
@@ -542,11 +547,18 @@ void CanvasItemEditor::_draw_viewport()
 
 void CanvasItemEditor::set_current_tool(Tool p_tool) { _button_tool_select(p_tool); }
 
-void CanvasItemEditor::update_viewport() {}
+void CanvasItemEditor::update_viewport()
+{
+	ERR_FAIL_NULL(CanvasItemEditor::instance);
+	CanvasItemEditor::instance->_impl_update_viewport();
+}
+
+void CanvasItemEditor::_impl_update_viewport()
+{}
 
 void CanvasItemEditor::_update_oversampling()
 {
-	EditorNode::get_singleton()->get_scene_root()->set_oversampling_override(
+	EditorNode::get_scene_root()->set_oversampling_override(
 		auto_resampling_enabled ? zoom : 0.0);
 }
 
@@ -567,11 +579,23 @@ void CanvasItemEditor::_reset_drag()
 
 void CanvasItemEditor::add_control_to_left_panel(Control* p_control)
 {
+	ERR_FAIL_NULL(CanvasItemEditor::instance);
+	CanvasItemEditor::instance->_impl_add_control_to_left_panel(p_control);
+}
+
+void CanvasItemEditor::_impl_add_control_to_left_panel(Control* p_control)
+{
 	left_panel_split->add_child(p_control);
 	left_panel_split->move_child(p_control, 0);
 }
 
 void CanvasItemEditor::add_control_to_right_panel(Control* p_control)
+{
+	ERR_FAIL_NULL(CanvasItemEditor::instance);
+	CanvasItemEditor::instance->_impl_add_control_to_right_panel(p_control);
+}
+
+void CanvasItemEditor::_impl_add_control_to_right_panel(Control* p_control)
 {
 	right_panel_split->add_child(p_control);
 	right_panel_split->move_child(p_control, 1);
@@ -579,15 +603,33 @@ void CanvasItemEditor::add_control_to_right_panel(Control* p_control)
 
 void CanvasItemEditor::remove_control_from_left_panel(Control* p_control)
 {
+	ERR_FAIL_NULL(CanvasItemEditor::instance);
+	CanvasItemEditor::instance->_impl_remove_control_from_left_panel(p_control);
+}
+
+void CanvasItemEditor::_impl_remove_control_from_left_panel(Control* p_control)
+{
 	left_panel_split->remove_child(p_control);
 }
 
 void CanvasItemEditor::remove_control_from_right_panel(Control* p_control)
 {
+	ERR_FAIL_NULL(CanvasItemEditor::instance);
+	CanvasItemEditor::instance->_impl_remove_control_from_right_panel(p_control);
+}
+
+void CanvasItemEditor::_impl_remove_control_from_right_panel(Control* p_control)
+{
 	right_panel_split->remove_child(p_control);
 }
 
-VSplitContainer* CanvasItemEditor::get_bottom_split() { return bottom_split; }
+VSplitContainer* CanvasItemEditor::get_bottom_split()
+{
+	return CanvasItemEditor::instance->_impl_get_bottom_split();
+}
+
+VSplitContainer* CanvasItemEditor::_impl_get_bottom_split()
+{ return bottom_split; }
 
 void CanvasItemEditor::focus_selection() { _focus_selection(VIEW_CENTER_TO_SELECTION); }
 
@@ -595,12 +637,10 @@ void CanvasItemEditor::center_at(const Point2& p_pos)
 {
 	Vector2 offset =
 		viewport->get_size() / 2 -
-		EditorNode::get_singleton()->get_scene_root()->get_global_canvas_transform().xform(p_pos);
+		EditorNode::get_scene_root()->get_global_canvas_transform().xform(p_pos);
 	view_offset = (view_offset - offset / zoom).round();
 	update_viewport();
 }
-
-CanvasItemEditor* CanvasItemEditor::singleton = nullptr;
 
 bool CanvasItemEditorViewport::_cyclical_dependency_exists(
 	const String& p_target_scene_path, Node* p_desired_node) const
@@ -623,7 +663,14 @@ CanvasItemEditorViewport::~CanvasItemEditorViewport() { memdelete(preview_node);
 
 bool CanvasItemEditor::_select_click_on_item(CanvasItem*, Vector2, bool) { return true; }
 
-void CanvasItemEditor::remove_control_from_menu_panel(Control*) {}
+void CanvasItemEditor::remove_control_from_menu_panel(Control* p_arg0)
+{
+	ERR_FAIL_NULL(CanvasItemEditor::instance);
+	CanvasItemEditor::instance->_impl_remove_control_from_menu_panel(p_arg0);
+}
+
+void CanvasItemEditor::_impl_remove_control_from_menu_panel(Control* p_arg0)
+{}
 
 List<CanvasItem*>
 CanvasItemEditor::_get_edited_canvas_items(bool, bool, bool*) const
@@ -663,6 +710,13 @@ void CanvasItemEditor::_draw_axis() {}
 
 void CanvasItemEditor::_button_tool_select(int) {}
 
-void CanvasItemEditor::add_control_to_menu_panel(Control*) {}
+void CanvasItemEditor::add_control_to_menu_panel(Control* p_arg0)
+{
+	ERR_FAIL_NULL(CanvasItemEditor::instance);
+	CanvasItemEditor::instance->_impl_add_control_to_menu_panel(p_arg0);
+}
+
+void CanvasItemEditor::_impl_add_control_to_menu_panel(Control* p_arg0)
+{}
 
 

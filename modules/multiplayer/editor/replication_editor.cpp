@@ -77,13 +77,13 @@ void ReplicationEditor::_pick_node_filter_text_changed(const String& p_newtext)
 void ReplicationEditor::_pick_new_property()
 {
 	if (current == nullptr) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			TTRC("Select a replicator node in order to pick a property to add to it."));
 		return;
 	}
 	Node* root = current->get_node(current->get_root_path());
 	if (!root) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			TTRC("Not possible to add a new property to synchronize without a root."));
 		return;
 	}
@@ -114,19 +114,19 @@ void ReplicationEditor::_notification(int p_what)
 void ReplicationEditor::_add_pressed()
 {
 	if (!current) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			TTRC("Please select a MultiplayerSynchronizer first."));
 		return;
 	}
 	if (current->get_root_path().is_empty()) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			TTRC("The MultiplayerSynchronizer needs a root path."));
 		return;
 	}
 	String np_text = np_line_edit->get_text();
 
 	if (np_text.is_empty()) {
-		EditorNode::get_singleton()->show_warning(TTRC("Property/path must not be empty."));
+		EditorNode::show_warning(TTRC("Property/path must not be empty."));
 		return;
 	}
 
@@ -139,7 +139,7 @@ void ReplicationEditor::_add_pressed()
 	}
 	NodePath path = NodePath(np_text);
 	if (path.is_empty()) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			vformat(TTR("Invalid property path: '%s'"), np_text));
 		return;
 	}

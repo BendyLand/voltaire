@@ -112,14 +112,16 @@ class InspectorDock : public EditorDock
 	void _menu_expand_revertable();
 
 private:
-	static inline InspectorDock* singleton = nullptr;
+
 
 public:
-	static InspectorDock* get_singleton() { return singleton; }
-	static EditorInspector* get_inspector_singleton() { return singleton->inspector; }
+	static inline InspectorDock* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
+	static EditorInspector* get_inspector_singleton() { return instance->inspector; }
 
 	void clear();
-	Container* get_addon_area();
+	Container* _impl_get_addon_area();
+	static Container* get_addon_area();
 
 	EditorInspector* get_inspector() { return inspector; }
 	EditorPropertyNameProcessor::Style get_property_name_style() const;

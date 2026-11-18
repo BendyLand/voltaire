@@ -117,4 +117,11 @@ void EditorSceneTabs::_project_settings_changed()
 
 
 
-void EditorSceneTabs::update_scene_tabs() {}
+void EditorSceneTabs::update_scene_tabs()
+{
+	ERR_FAIL_NULL(EditorSceneTabs::instance);
+	EditorSceneTabs::instance->_impl_update_scene_tabs();
+}
+
+void EditorSceneTabs::_impl_update_scene_tabs()
+{}

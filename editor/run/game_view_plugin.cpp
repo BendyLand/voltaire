@@ -60,12 +60,12 @@
 void GameViewDebugger::set_debug_mute_audio(bool p_enabled)
 {
 	mute_audio = p_enabled;
-	EditorDebuggerNode::get_singleton()->set_debug_mute_audio(p_enabled);
+	EditorDebuggerNode::set_debug_mute_audio(p_enabled);
 }
 
 void GameViewDebugger::set_camera_override(bool p_enabled)
 {
-	EditorDebuggerNode::get_singleton()->set_camera_override(
+	EditorDebuggerNode::set_camera_override(
 		p_enabled ? camera_override_mode : EditorDebuggerNode::OVERRIDE_NONE);
 }
 
@@ -73,7 +73,7 @@ void GameViewDebugger::set_camera_manipulate_mode(EditorDebuggerNode::CameraOver
 {
 	camera_override_mode = p_mode;
 
-	if (EditorDebuggerNode::get_singleton()->get_camera_override() !=
+	if (EditorDebuggerNode::get_camera_override() !=
 		EditorDebuggerNode::OVERRIDE_NONE) {
 		set_camera_override(true);
 	}
@@ -82,7 +82,7 @@ void GameViewDebugger::set_camera_manipulate_mode(EditorDebuggerNode::CameraOver
 void GameViewDebugger::_feature_profile_changed()
 {
 	Ref<EditorFeatureProfile> profile =
-		EditorFeatureProfileManager::get_singleton()->get_current_profile();
+		EditorFeatureProfileManager::get_current_profile();
 	is_feature_enabled =
 		profile.is_null() || !profile->is_feature_disabled(EditorFeatureProfile::FEATURE_GAME);
 }
@@ -100,7 +100,7 @@ void GameView::_embedding_failed()
 void GameView::_embedded_process_focused()
 {
 	if (embed_on_play && !window_wrapper->get_window_enabled()) {
-		EditorNode::get_singleton()->get_editor_main_screen()->select(
+		EditorNode::get_editor_main_screen()->select(
 			EditorMainScreen::EDITOR_GAME);
 	}
 }
@@ -184,8 +184,8 @@ void GameViewPluginBase::_focus_another_editor()
 {
 	if (_is_window_wrapper_enabled()) {
 		if (last_editor.is_empty() ||
-			(last_editor == "Script" && ScriptEditor::get_singleton()->is_editor_floating())) {
-			EditorNode::get_singleton()->get_editor_main_screen()->select(
+			(last_editor == "Script" && ScriptEditor::is_editor_floating())) {
+			EditorNode::get_editor_main_screen()->select(
 				EditorMainScreen::EDITOR_2D);
 		}
 		else {

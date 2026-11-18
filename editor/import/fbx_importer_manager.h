@@ -51,13 +51,14 @@ class FBXImporterManager : public ConfirmationDialog
 	void _browse_install();
 	void _link_clicked();
 
-	static FBXImporterManager* singleton;
+
 
 protected:
 	void _notification(int p_what);
 
 public:
-	static FBXImporterManager* get_singleton() { return singleton; }
+	static inline FBXImporterManager* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	void show_dialog(bool p_exclusive = false);
 

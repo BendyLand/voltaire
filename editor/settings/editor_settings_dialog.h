@@ -47,7 +47,7 @@ class TreeItem;
 
 class EditorSettingsDialog : public AcceptDialog
 {
-	static inline EditorSettingsDialog* singleton = nullptr;
+
 
 	TabContainer* tabs = nullptr;
 	Control* tab_general = nullptr;
@@ -115,7 +115,8 @@ public:
 	static void update_3d_navigation_preset();
 	void set_current_section(const String& p_section);
 
-	static EditorSettingsDialog* get_singleton() { return singleton; }
+	static inline EditorSettingsDialog* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	EditorSettingsDialog();
 	~EditorSettingsDialog();

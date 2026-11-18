@@ -40,7 +40,7 @@ void register_visionos_exporter()
 	Ref<EditorExportPlatformVisionOS> platform;
 	platform.instantiate();
 
-	EditorExport::get_singleton()->add_export_platform(platform);
+	EditorExport::add_export_platform(platform);
 }
 
 

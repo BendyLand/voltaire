@@ -39,8 +39,6 @@
 #include "scene/resources/style_box_flat.h"
 #include "servers/display/display_server.h"
 
-EditorToaster* EditorToaster::singleton = nullptr;
-
 // This is kind of a workaround because it's hard to keep the VBox anchored to the bottom.
 void EditorToaster::_update_vbox_position()
 {
@@ -87,8 +85,14 @@ void EditorToaster::_draw_progress(Control* panel)
 	}
 }
 
-void EditorToaster::popup_str(const String& p_message, Severity p_severity,
-	const String& p_tooltip) {}
+void EditorToaster::popup_str(const String& p_message, Severity p_severity, const String& p_tooltip)
+{
+	ERR_FAIL_NULL(EditorToaster::instance);
+	EditorToaster::instance->_impl_popup_str(p_message, p_severity, p_tooltip);
+}
+
+void EditorToaster::_impl_popup_str(const String& p_message, Severity p_severity, const String& p_tooltip)
+{}
 
 void EditorToaster::close(Control* p_control)
 {
@@ -109,11 +113,9 @@ void EditorToaster::copy(Control* p_control)
 	DisplayServer::clipboard_set(toasts[p_control].message);
 }
 
-EditorToaster* EditorToaster::get_singleton() { return singleton; }
-
 EditorToaster::~EditorToaster()
 {
-	singleton = nullptr;
+	EditorToaster::instance = nullptr;
 	remove_error_handler(&eh);
 }
 

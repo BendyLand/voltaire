@@ -172,18 +172,22 @@ class EditorFeatureProfileManager : public AcceptDialog
 	Timer* update_timer = nullptr;
 	void _emit_current_profile_changed();
 
-	static EditorFeatureProfileManager* singleton;
+
 
 protected:
 	void _notification(int p_what);
 
 public:
-	Ref<EditorFeatureProfile> get_current_profile();
-	String get_current_profile_name() const;
-	void set_current_profile(const String& p_profile_name, bool p_validate_profile);
+	Ref<EditorFeatureProfile> _impl_get_current_profile();
+	static Ref<EditorFeatureProfile> get_current_profile();
+	String _impl_get_current_profile_name() const;
+	static String get_current_profile_name();
+	void _impl_set_current_profile(const String& p_profile_name, bool p_validate_profile);
+	static void set_current_profile(const String& p_profile_name, bool p_validate_profile);
 	void notify_changed();
 
-	static EditorFeatureProfileManager* get_singleton() { return singleton; }
+	static inline EditorFeatureProfileManager* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	EditorFeatureProfileManager();
 };

@@ -69,7 +69,6 @@ public:
 class EditorResourcePreview : public Node
 {
 	static constexpr int CURRENT_METADATA_VERSION = 1; // Increment this number to invalidate all previews.
-	inline static EditorResourcePreview* singleton = nullptr;
 
 	struct QueueItem
 	{
@@ -108,7 +107,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static EditorResourcePreview* get_singleton();
+	static inline EditorResourcePreview* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	struct PreviewItem
 	{
@@ -116,7 +116,8 @@ public:
 		Ref<Texture2D> small_preview;
 	};
 
-	PreviewItem get_resource_preview_if_available(const String& p_path);
+	PreviewItem _impl_get_resource_preview_if_available(const String& p_path);
+	static PreviewItem get_resource_preview_if_available(const String& p_path);
 
 	void add_preview_generator(const Ref<EditorResourcePreviewGenerator>& p_generator);
 	void remove_preview_generator(const Ref<EditorResourcePreviewGenerator>& p_generator);
@@ -124,7 +125,8 @@ public:
 
 	void start();
 	void stop();
-	bool is_threaded() const;
+	bool _impl_is_threaded() const;
+	static bool is_threaded();
 
 	EditorResourcePreview();
 	~EditorResourcePreview();

@@ -41,8 +41,6 @@
 #include "scene/gui/margin_container.h"
 #include "scene/gui/tree.h"
 
-EditorCommandPalette* EditorCommandPalette::singleton = nullptr;
-
 static Rect2i prev_rect = Rect2i();
 static bool was_showed = false;
 
@@ -106,14 +104,6 @@ void EditorCommandPalette::remove_command(String p_key_name)
 	commands.erase(p_key_name);
 }
 
-EditorCommandPalette* EditorCommandPalette::get_singleton()
-{
-	if (singleton == nullptr) {
-		singleton = memnew(EditorCommandPalette);
-	}
-	return singleton;
-}
-
 Ref<Shortcut> ED_SHORTCUT_AND_COMMAND(
 	const String& p_path, const String& p_name, Key p_keycode, String p_command_name)
 {
@@ -122,7 +112,7 @@ Ref<Shortcut> ED_SHORTCUT_AND_COMMAND(
 	}
 
 	Ref<Shortcut> shortcut = ED_SHORTCUT(p_path, p_name, p_keycode);
-	EditorCommandPalette::get_singleton()->add_shortcut_command(p_command_name, p_path, shortcut);
+	EditorCommandPalette::add_shortcut_command(p_command_name, p_path, shortcut);
 	return shortcut;
 }
 
@@ -134,12 +124,24 @@ Ref<Shortcut> ED_SHORTCUT_ARRAY_AND_COMMAND(const String& p_path, const String& 
 	}
 
 	Ref<Shortcut> shortcut = ED_SHORTCUT_ARRAY(p_path, p_name, p_keycodes);
-	EditorCommandPalette::get_singleton()->add_shortcut_command(p_command_name, p_path, shortcut);
+	EditorCommandPalette::add_shortcut_command(p_command_name, p_path, shortcut);
 	return shortcut;
 }
 
-Ref<Shortcut> EditorCommandPalette::add_shortcut_command(
-	String const&, String const&, Ref<Shortcut>)
+EditorCommandPalette* EditorCommandPalette::get_or_create()
+{
+	if (EditorCommandPalette::instance == nullptr) {
+		EditorCommandPalette::instance = memnew(EditorCommandPalette);
+	}
+	return EditorCommandPalette::instance;
+}
+
+Ref<Shortcut> EditorCommandPalette::add_shortcut_command(String const& p_arg0, String const& p_arg1, Ref<Shortcut> p_arg2)
+{
+	return get_or_create()->_impl_add_shortcut_command(p_arg0, p_arg1, p_arg2);
+}
+
+Ref<Shortcut> EditorCommandPalette::_impl_add_shortcut_command(String const& p_arg0, String const& p_arg1, Ref<Shortcut> p_arg2)
 {
 	Ref<Shortcut> s = memnew(Shortcut);
 	return s;

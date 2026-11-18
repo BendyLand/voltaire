@@ -159,7 +159,7 @@ class Skeleton3DEditor : public VBoxContainer
 
 	bool keyable = false;
 
-	static Skeleton3DEditor* singleton;
+
 
 	void _on_click_skeleton_option(int p_skeleton_option);
 	void _file_selected(const String& p_file);
@@ -210,18 +210,22 @@ class Skeleton3DEditor : public VBoxContainer
 	int selected_bone = -1;
 
 public:
-	static Skeleton3DEditor* get_singleton() { return singleton; }
+	static inline Skeleton3DEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	int get_selected_bone() const;
+	int _impl_get_selected_bone() const;
+	static int get_selected_bone();
 
 	void move_skeleton_bone(
 		NodePath p_skeleton_path, int32_t p_selected_boneidx, int32_t p_target_boneidx);
 
 	Skeleton3D* get_skeleton() const { return skeleton; }
 
-	bool is_edit_mode() const { return edit_mode; }
+	bool _impl_is_edit_mode() const { return edit_mode; }
+	static bool is_edit_mode() { return instance->_impl_is_edit_mode(); }
 
-	void update_bone_original();
+	void _impl_update_bone_original();
+	static void update_bone_original();
 
 	Vector3 get_bone_original_position() const { return bone_original_position; }
 

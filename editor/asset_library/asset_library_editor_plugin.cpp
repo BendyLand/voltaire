@@ -310,8 +310,8 @@ void EditorAssetLibrary::_asset_open() { asset_open->popup_file_dialog(); }
 
 void EditorAssetLibrary::_manage_plugins()
 {
-	ProjectSettingsEditor::get_singleton()->popup_project_settings(true);
-	ProjectSettingsEditor::get_singleton()->set_plugins_page();
+	ProjectSettingsEditor::popup_project_settings(true);
+	ProjectSettingsEditor::set_plugins_page();
 }
 
 void EditorAssetLibrary::_update_asset_items_columns()

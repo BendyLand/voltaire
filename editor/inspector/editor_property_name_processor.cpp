@@ -33,8 +33,6 @@
 #include "editor/settings/editor_settings.h"
 #include "editor_property_name_processor.h"
 
-EditorPropertyNameProcessor* EditorPropertyNameProcessor::singleton = nullptr;
-
 EditorPropertyNameProcessor::Style EditorPropertyNameProcessor::get_tooltip_style(Style p_style)
 {
 	return p_style == STYLE_LOCALIZED ? STYLE_CAPITALIZED : STYLE_LOCALIZED;
@@ -95,8 +93,12 @@ String EditorPropertyNameProcessor::_get_context(
 	return *context;
 }
 
-String EditorPropertyNameProcessor::process_name(
-	const String& p_name, Style p_style, const String& p_property, const String& p_class) const
+String EditorPropertyNameProcessor::process_name(const String& p_name, Style p_style, const String& p_property, const String& p_class)
+{
+	return EditorPropertyNameProcessor::instance->_impl_process_name(p_name, p_style, p_property, p_class);
+}
+
+String EditorPropertyNameProcessor::_impl_process_name(const String& p_name, Style p_style, const String& p_property, const String& p_class) const
 {
 	switch (p_style) {
 	case STYLE_RAW: {
@@ -130,8 +132,8 @@ String EditorPropertyNameProcessor::translate_group_name(const String& p_name) c
 
 EditorPropertyNameProcessor::EditorPropertyNameProcessor()
 {
-	ERR_FAIL_COND(singleton != nullptr);
-	singleton = this;
+	ERR_FAIL_COND(EditorPropertyNameProcessor::instance != nullptr);
+	EditorPropertyNameProcessor::instance = this;
 
 	// The following initialization is parsed by the l10n extraction script with a regex.
 	// The map name and value definition format should be kept synced with the regex.
@@ -373,7 +375,7 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor()
 	translation_contexts["normal"]["normal"] = "Geometry";
 }
 
-EditorPropertyNameProcessor::~EditorPropertyNameProcessor() { singleton = nullptr; }
+EditorPropertyNameProcessor::~EditorPropertyNameProcessor() { EditorPropertyNameProcessor::instance = nullptr; }
 
 
 

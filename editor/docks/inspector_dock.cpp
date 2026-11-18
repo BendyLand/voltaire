@@ -57,7 +57,13 @@ void InspectorDock::_menu_expandall() { inspector->expand_all_folding(); }
 
 void InspectorDock::_menu_expand_revertable() { inspector->expand_revertable(); }
 
-Container* InspectorDock::get_addon_area() { return this; }
+Container* InspectorDock::get_addon_area()
+{
+	return InspectorDock::instance->_impl_get_addon_area();
+}
+
+Container* InspectorDock::_impl_get_addon_area()
+{ return this; }
 
 void InspectorDock::clear() {}
 
@@ -66,6 +72,6 @@ EditorPropertyNameProcessor::Style InspectorDock::get_property_name_style() cons
 	return property_name_style;
 }
 
-InspectorDock::~InspectorDock() { singleton = nullptr; }
+InspectorDock::~InspectorDock() { InspectorDock::instance = nullptr; }
 
 

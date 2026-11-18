@@ -315,12 +315,12 @@ private:
 	static Vector<String> _remove_self_included_paths(Vector<String> selected_strings);
 
 private:
-	inline static FileSystemDock* singleton = nullptr;
 
 public:
-	static FileSystemDock* get_singleton() { return singleton; }
+	static inline FileSystemDock* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	static DependencyEditorOwners* get_owners_dialog() { return singleton->owners_editor; }
+	static DependencyEditorOwners* get_owners_dialog() { return instance->owners_editor; }
 
 public:
 	static constexpr double ITEM_COLOR_SCALE = 1.75;
@@ -330,8 +330,10 @@ public:
 
 	const HashMap<String, Color>& get_folder_colors() const;
 
-	String get_current_path() const;
-	String get_current_directory() const;
+	String _impl_get_current_path() const;
+	static String get_current_path();
+	String _impl_get_current_directory() const;
+	static String get_current_directory();
 
 	void focus_on_path();
 	void focus_on_filter();

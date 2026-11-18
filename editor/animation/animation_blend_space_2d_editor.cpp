@@ -59,7 +59,7 @@ bool AnimationNodeBlendSpace2DEditor::can_edit(const Ref<AnimationNode>& p_node)
 
 String AnimationNodeBlendSpace2DEditor::get_blend_position_path() const
 {
-	String path = AnimationTreeEditor::get_singleton()->get_base_path() + "blend_position";
+	String path = AnimationTreeEditor::get_base_path() + "blend_position";
 	return path;
 }
 
@@ -127,8 +127,6 @@ void AnimationNodeBlendSpace2DEditor::_inline_editor_text_changed(const String& 
 
 	inline_editor->set_position(Vector2(editor_x, inline_editor->get_position().y));
 }
-
-AnimationNodeBlendSpace2DEditor* AnimationNodeBlendSpace2DEditor::singleton = nullptr;
 
 void AnimationNodeBlendSpace2D::_update_triangles() {}
 

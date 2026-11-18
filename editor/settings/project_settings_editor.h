@@ -51,7 +51,6 @@ class ProjectSettingsGDExtension;
 
 class ProjectSettingsEditor : public AcceptDialog
 {
-	inline static ProjectSettingsEditor* singleton = nullptr;
 
 	enum
 	{
@@ -127,11 +126,14 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static ProjectSettingsEditor* get_singleton() { return singleton; }
+	static inline ProjectSettingsEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	void popup_project_settings(bool p_clear_filter = false);
+	void _impl_popup_project_settings(bool p_clear_filter);
+	static void popup_project_settings(bool p_clear_filter = false);
 
-	void set_plugins_page();
+	void _impl_set_plugins_page();
+	static void set_plugins_page();
 	void update_plugins();
 	void init_autoloads();
 
@@ -139,9 +141,11 @@ public:
 
 	EditorAutoloadSettings* get_autoload_settings() { return autoload_settings; }
 
-	GroupSettingsEditor* get_group_settings() { return group_settings; }
+	GroupSettingsEditor* _impl_get_group_settings() { return group_settings; }
+	static GroupSettingsEditor* get_group_settings() { return instance->_impl_get_group_settings(); }
 
-	TabContainer* get_tabs() { return tab_container; }
+	TabContainer* _impl_get_tabs() { return tab_container; }
+	static TabContainer* get_tabs() { return instance->_impl_get_tabs(); }
 
 	SectionedInspector* get_inspector() { return general_settings_inspector; }
 

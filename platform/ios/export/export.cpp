@@ -44,7 +44,7 @@ void register_ios_exporter()
 	Ref<EditorExportPlatformIOS> platform;
 	platform.instantiate();
 
-	EditorExport::get_singleton()->add_export_platform(platform);
+	EditorExport::add_export_platform(platform);
 }
 
 

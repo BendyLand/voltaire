@@ -44,7 +44,6 @@ class TextureRect;
 
 class EditorSceneTabs : public MarginContainer
 {
-	inline static EditorSceneTabs* singleton = nullptr;
 
 public:
 	enum
@@ -91,7 +90,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static EditorSceneTabs* get_singleton() { return singleton; }
+	static inline EditorSceneTabs* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	void add_extra_button(Button* p_button);
 
@@ -99,7 +99,8 @@ public:
 	int get_current_tab() const;
 	int get_option_tab() const;
 
-	void update_scene_tabs();
+	void _impl_update_scene_tabs();
+	static void update_scene_tabs();
 
 	EditorSceneTabs();
 };

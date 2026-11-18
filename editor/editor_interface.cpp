@@ -67,74 +67,74 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
-bool EditorInterface::is_exiting() { return EditorNode::get_singleton()->is_exiting(); }
+bool EditorInterface::is_exiting() { return EditorNode::is_exiting(); }
 
 EditorCommandPalette* EditorInterface::get_command_palette()
 {
-	return EditorCommandPalette::get_singleton();
+	return EditorCommandPalette::get_or_create();
 }
 
 EditorFileSystem* EditorInterface::get_resource_filesystem()
 {
-	return EditorFileSystem::get_singleton();
+	return EditorFileSystem::instance;
 }
 
 EditorResourcePreview* EditorInterface::get_resource_previewer()
 {
-	return EditorResourcePreview::get_singleton();
+	return EditorResourcePreview::instance;
 }
 
 EditorSelection* EditorInterface::get_selection()
 {
-	return EditorNode::get_singleton()->get_editor_selection();
+	return EditorNode::get_editor_selection();
 }
 
 EditorToaster* EditorInterface::get_editor_toaster()
 {
-	return EditorToaster::get_singleton();
+	return EditorToaster::instance;
 }
 
 ScenePaint2DEditor* EditorInterface::get_scene_paint_2d()
 {
-	return ScenePaint2DEditor::get_singleton();
+	return ScenePaint2DEditor::instance;
 }
 
 bool EditorInterface::is_plugin_enabled(const String& p_plugin)
 {
-	return EditorNode::get_singleton()->is_addon_plugin_enabled(p_plugin);
+	return EditorNode::is_addon_plugin_enabled(p_plugin);
 }
 
 Control* EditorInterface::get_base_control()
 {
-	return EditorNode::get_singleton()->get_gui_base();
+	return EditorNode::get_gui_base();
 }
 
 VBoxContainer* EditorInterface::get_editor_main_screen()
 {
-	return EditorNode::get_singleton()->get_editor_main_screen()->get_control();
+	return EditorNode::get_editor_main_screen()->get_control();
 }
 
-ScriptEditor* EditorInterface::get_script_editor() { return ScriptEditor::get_singleton(); }
+ScriptEditor* EditorInterface::get_script_editor() { return ScriptEditor::instance; }
 
 SubViewport* EditorInterface::get_editor_viewport_2d()
 {
-	return EditorNode::get_singleton()->get_scene_root();
+	return EditorNode::get_scene_root();
 }
 
 SubViewport* EditorInterface::get_editor_viewport_3d(int p_idx)
 {
 	ERR_FAIL_INDEX_V(p_idx, static_cast<int>(Node3DEditor::VIEWPORTS_COUNT), nullptr);
-	return Node3DEditor::get_singleton()->get_editor_viewport(p_idx)->get_viewport_node();
+	return Node3DEditor::get_editor_viewport(p_idx)->get_viewport_node();
 }
 
 void EditorInterface::set_main_screen_editor(const String& p_name)
 {
-	EditorNode::get_singleton()->get_editor_main_screen()->select_by_name(p_name);
+	EditorNode::get_editor_main_screen()->select_by_name(p_name);
 }
 
 bool EditorInterface::is_distraction_free_mode_enabled()
 {
-	return EditorNode::get_singleton()->is_distraction_free_mode_enabled();
+	return EditorNode::is_distraction_free_mode_enabled();
 }
 
 float EditorInterface::get_editor_scale() { return EDSCALE; }
@@ -146,64 +146,64 @@ String EditorInterface::get_editor_language()
 
 bool EditorInterface::is_node_3d_snap_enabled()
 {
-	return Node3DEditor::get_singleton()->is_snap_enabled();
+	return Node3DEditor::is_snap_enabled();
 }
 
 real_t EditorInterface::get_node_3d_translate_snap()
 {
-	return Node3DEditor::get_singleton()->get_translate_snap();
+	return Node3DEditor::get_translate_snap();
 }
 
 real_t EditorInterface::get_node_3d_rotate_snap()
 {
-	return Node3DEditor::get_singleton()->get_rotate_snap();
+	return Node3DEditor::get_rotate_snap();
 }
 
 real_t EditorInterface::get_node_3d_scale_snap()
 {
-	return Node3DEditor::get_singleton()->get_scale_snap();
+	return Node3DEditor::get_scale_snap();
 }
 
 void EditorInterface::popup_dialog(Window* p_dialog, const Rect2i& p_screen_rect)
 {
-	p_dialog->popup_exclusive(EditorNode::get_singleton(), p_screen_rect);
+	p_dialog->popup_exclusive(EditorNode::instance, p_screen_rect);
 }
 
 void EditorInterface::popup_dialog_centered_ratio(Window* p_dialog, float p_ratio)
 {
-	p_dialog->popup_exclusive_centered_ratio(EditorNode::get_singleton(), p_ratio);
+	p_dialog->popup_exclusive_centered_ratio(EditorNode::instance, p_ratio);
 }
 
 void EditorInterface::popup_dialog_centered_clamped(
 	Window* p_dialog, const Size2i& p_size, float p_fallback_ratio)
 {
 	p_dialog->popup_exclusive_centered_clamped(
-		EditorNode::get_singleton(), p_size, p_fallback_ratio);
+		EditorNode::instance, p_size, p_fallback_ratio);
 }
 
 String EditorInterface::get_current_feature_profile()
 {
-	return EditorFeatureProfileManager::get_singleton()->get_current_profile_name();
+	return EditorFeatureProfileManager::get_current_profile_name();
 }
 
 void EditorInterface::set_current_feature_profile(const String& p_profile_name)
 {
-	EditorFeatureProfileManager::get_singleton()->set_current_profile(p_profile_name, true);
+	EditorFeatureProfileManager::set_current_profile(p_profile_name, true);
 }
 
 FileSystemDock* EditorInterface::get_file_system_dock()
 {
-	return FileSystemDock::get_singleton();
+	return FileSystemDock::instance;
 }
 
 String EditorInterface::get_current_path()
 {
-	return FileSystemDock::get_singleton()->get_current_path();
+	return FileSystemDock::get_current_path();
 }
 
 String EditorInterface::get_current_directory()
 {
-	return FileSystemDock::get_singleton()->get_current_directory();
+	return FileSystemDock::get_current_directory();
 }
 
 EditorInspector* EditorInterface::get_inspector()
@@ -213,7 +213,7 @@ EditorInspector* EditorInterface::get_inspector()
 
 Node* EditorInterface::get_edited_scene_root()
 {
-	return EditorNode::get_singleton()->get_edited_scene();
+	return EditorNode::get_edited_scene();
 }
 
 PackedStringArray EditorInterface::get_open_scenes()
@@ -233,7 +233,7 @@ PackedStringArray EditorInterface::get_unsaved_scenes()
 	Vector<EditorData::EditedScene> scenes = EditorNode::get_editor_data().get_edited_scenes();
 
 	for (int i = 0; i < scenes.size(); i++) {
-		if (EditorNode::get_singleton()->is_scene_unsaved(i)) {
+		if (EditorNode::is_scene_unsaved(i)) {
 			ret.push_back(scenes[i].path);
 		}
 	}
@@ -258,36 +258,36 @@ void EditorInterface::mark_scene_as_unsaved()
 {
 	EditorUndoRedoManager::set_history_as_unsaved(
 		EditorNode::get_editor_data().get_current_edited_scene_history_id());
-	EditorSceneTabs::get_singleton()->update_scene_tabs();
+	EditorSceneTabs::update_scene_tabs();
 }
 
-void EditorInterface::play_main_scene() { EditorRunBar::get_singleton()->play_main_scene(); }
+void EditorInterface::play_main_scene() { EditorRunBar::play_main_scene(); }
 
 void EditorInterface::play_custom_scene(const String& scene_path)
 {
-	EditorRunBar::get_singleton()->play_custom_scene(scene_path);
+	EditorRunBar::play_custom_scene(scene_path);
 }
 
-void EditorInterface::stop_playing_scene() { EditorRunBar::get_singleton()->stop_playing(); }
+void EditorInterface::stop_playing_scene() { EditorRunBar::stop_playing(); }
 
 bool EditorInterface::is_playing_scene()
 {
-	return EditorRunBar::get_singleton()->is_playing();
+	return EditorRunBar::is_playing();
 }
 
 String EditorInterface::get_playing_scene()
 {
-	return EditorRunBar::get_singleton()->get_playing_scene();
+	return EditorRunBar::get_playing_scene();
 }
 
 void EditorInterface::set_movie_maker_enabled(bool p_enabled)
 {
-	EditorRunBar::get_singleton()->set_movie_maker_enabled(p_enabled);
+	EditorRunBar::set_movie_maker_enabled(p_enabled);
 }
 
 bool EditorInterface::is_movie_maker_enabled()
 {
-	return EditorRunBar::get_singleton()->is_movie_maker_enabled();
+	return EditorRunBar::is_movie_maker_enabled();
 }
 
 void EditorInterface::get_argument_options(

@@ -60,11 +60,17 @@ void ProjectSettingsEditor::_save()
 	}
 	if (pending_override_notify) {
 		pending_override_notify = false;
-		EditorNode::get_singleton()->notify_settings_overrides_changed();
+		EditorNode::notify_settings_overrides_changed();
 	}
 }
 
 void ProjectSettingsEditor::set_plugins_page()
+{
+	ERR_FAIL_NULL(ProjectSettingsEditor::instance);
+	ProjectSettingsEditor::instance->_impl_set_plugins_page();
+}
+
+void ProjectSettingsEditor::_impl_set_plugins_page()
 {
 	tab_container->set_current_tab(tab_container->get_tab_idx_from_control(plugin_settings));
 }
@@ -141,24 +147,23 @@ void ProjectSettingsEditor::_add_feature_overrides()
 	presets.insert("64");
 	presets.insert("movie");
 
-	EditorExport* ee = EditorExport::get_singleton();
 
-	for (int i = 0; i < ee->get_export_platform_count(); i++) {
+	for (int i = 0; i < EditorExport::get_export_platform_count(); i++) {
 		List<String> p;
-		ee->get_export_platform(i)->get_platform_features(&p);
+		EditorExport::get_export_platform(i)->get_platform_features(&p);
 		for (const String& E : p) {
 			presets.insert(E);
 		}
 	}
 
-	for (int i = 0; i < ee->get_export_preset_count(); i++) {
+	for (int i = 0; i < EditorExport::get_export_preset_count(); i++) {
 		List<String> p;
-		ee->get_export_preset(i)->get_platform()->get_preset_features(ee->get_export_preset(i), &p);
+		EditorExport::get_export_preset(i)->get_platform()->get_preset_features(EditorExport::get_export_preset(i), &p);
 		for (const String& E : p) {
 			presets.insert(E);
 		}
 
-		String custom = ee->get_export_preset(i)->get_custom_features();
+		String custom = EditorExport::get_export_preset(i)->get_custom_features();
 		Vector<String> custom_list = custom.split(",");
 		for (int j = 0; j < custom_list.size(); j++) {
 			String f = custom_list[j].strip_edges();
@@ -227,4 +232,11 @@ void ProjectSettingsEditor::_focus_current_path_box()
 
 void ProjectSettingsEditor::_update_property_box() {}
 
-void ProjectSettingsEditor::popup_project_settings(bool) {}
+void ProjectSettingsEditor::popup_project_settings(bool p_arg0)
+{
+	ERR_FAIL_NULL(ProjectSettingsEditor::instance);
+	ProjectSettingsEditor::instance->_impl_popup_project_settings(p_arg0);
+}
+
+void ProjectSettingsEditor::_impl_popup_project_settings(bool p_arg0)
+{}

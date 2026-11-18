@@ -84,10 +84,11 @@ class ImportDock : public EditorDock
 	};
 
 private:
-	static ImportDock* singleton;
+
 
 public:
-	static ImportDock* get_singleton() { return singleton; }
+	static inline ImportDock* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 protected:
 	void _notification(int p_what);

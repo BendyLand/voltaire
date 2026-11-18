@@ -65,7 +65,7 @@ void ResourceImporterMP3::show_advanced_options(const String& p_path)
 {
 	Ref<AudioStreamMP3> mp3_stream = AudioStreamMP3::load_from_file(p_path);
 	if (mp3_stream.is_valid()) {
-		AudioStreamImportSettingsDialog::get_singleton()->edit(p_path, "mp3", mp3_stream);
+		AudioStreamImportSettingsDialog::edit(p_path, "mp3", mp3_stream);
 	}
 }
 #endif

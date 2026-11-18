@@ -155,20 +155,12 @@ static const String export_method_string[] = {
 
 void EditorExportPlatformAppleEmbedded::_notification(int p_what)
 {
-#ifdef MACOS_ENABLED
-	if (p_what == NOTIFICATION_POSTINITIALIZE) {
-		if (EditorExport::get_singleton()) {
-			EditorExport::get_singleton()->connect_presets_runnable_updated(
-				callable_mp(this, &EditorExportPlatformAppleEmbedded::_update_preset_status));
-		}
-	}
-#endif
 }
 
 String EditorExportPlatformAppleEmbedded::_get_additional_plist_content()
 {
 	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_singleton()->get_export_plugins();
+		EditorExport::get_export_plugins();
 	String result;
 	for (int i = 0; i < export_plugins.size(); ++i) {
 		result += export_plugins[i]->get_apple_embedded_platform_plist_content();
@@ -179,7 +171,7 @@ String EditorExportPlatformAppleEmbedded::_get_additional_plist_content()
 String EditorExportPlatformAppleEmbedded::_get_linker_flags()
 {
 	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_singleton()->get_export_plugins();
+		EditorExport::get_export_plugins();
 	String result;
 	for (int i = 0; i < export_plugins.size(); ++i) {
 		String flags = export_plugins[i]->get_apple_embedded_platform_linker_flags();
@@ -198,7 +190,7 @@ String EditorExportPlatformAppleEmbedded::_get_linker_flags()
 String EditorExportPlatformAppleEmbedded::_get_cpp_code()
 {
 	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_singleton()->get_export_plugins();
+		EditorExport::get_export_plugins();
 	String result;
 	for (int i = 0; i < export_plugins.size(); ++i) {
 		result += export_plugins[i]->get_apple_embedded_platform_cpp_code();
@@ -372,7 +364,7 @@ Error EditorExportPlatformAppleEmbedded::_export_additional_assets(
 	const Vector<SharedObject>& p_libraries, Vector<AppleEmbeddedExportAsset>& r_exported_assets)
 {
 	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_singleton()->get_export_plugins();
+		EditorExport::get_export_plugins();
 	for (int i = 0; i < export_plugins.size(); i++) {
 		Vector<String> linked_frameworks =
 			export_plugins[i]->get_apple_embedded_platform_frameworks();
@@ -670,7 +662,7 @@ void EditorExportPlatformAppleEmbedded::_check_for_changes_poll_thread(void* ud)
 void EditorExportPlatformAppleEmbedded::_update_preset_status()
 {
 	bool has_runnable =
-		EditorExport::get_singleton()->get_runnable_preset_for_platform(this).is_valid();
+		EditorExport::get_runnable_preset_for_platform(this).is_valid();
 	if (has_runnable) {
 		has_runnable_preset.set();
 	}
@@ -866,7 +858,7 @@ Error EditorExportPlatformAppleEmbedded::run(
 		cmd_args_list.push_back(get_debug_protocol() + host + ":" + String::num_int64(remote_port));
 
 		List<String> breakpoints;
-		ScriptEditor::get_singleton()->get_breakpoints(&breakpoints);
+		ScriptEditor::get_breakpoints(&breakpoints);
 
 		if (breakpoints.size()) {
 			cmd_args_list.push_back("--breakpoints");

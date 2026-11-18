@@ -142,8 +142,6 @@ Vector2 ControlEditorToolbar::_position_to_anchor(const Control* p_control, Vect
 	return output;
 }
 
-ControlEditorToolbar* ControlEditorToolbar::singleton = nullptr;
-
 void ControlOffsetTransformPreview::forward_canvas_draw_over_viewport(Control* p_overlay) const
 {
 	if (!selected_control || !selected_control->is_offset_transform_enabled() ||
@@ -164,7 +162,7 @@ void ControlOffsetTransformPreview::forward_canvas_draw_over_viewport(Control* p
 	top_right = control_transform_without_offset.xform(top_right);
 	bottom_left = control_transform_without_offset.xform(bottom_left);
 
-	Transform2D canvas_transform = CanvasItemEditor::get_singleton()->get_canvas_transform();
+	Transform2D canvas_transform = CanvasItemEditor::get_canvas_transform();
 	top_left = canvas_transform.xform(top_left);
 	bottom_right = canvas_transform.xform(bottom_right);
 	top_right = canvas_transform.xform(top_right);

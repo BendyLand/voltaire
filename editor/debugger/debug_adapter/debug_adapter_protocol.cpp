@@ -163,7 +163,7 @@ bool DebugAdapterProtocol::request_remote_evaluate(const String& p_eval, int p_s
 		return false;
 	}
 
-	EditorDebuggerNode::get_singleton()->get_default_debugger()->request_remote_evaluate(
+	EditorDebuggerNode::get_default_debugger()->request_remote_evaluate(
 		p_eval, p_stack_frame);
 	data->eval_pending_list.insert(p_eval);
 
@@ -203,7 +203,7 @@ void DebugAdapterProtocol::update_source(const String& p_path)
 
 void DebugAdapterProtocol::on_debug_paused()
 {
-	if (EditorRunBar::get_singleton()->get_pause_button()->is_pressed()) {
+	if (EditorRunBar::get_pause_button()->is_pressed()) {
 		notify_stopped_paused();
 	}
 	else {

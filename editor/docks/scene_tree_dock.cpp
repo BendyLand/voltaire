@@ -278,8 +278,8 @@ static bool _is_node_visible(Node* p_node)
 	if (!p_node->get_owner()) {
 		return false;
 	}
-	if (p_node->get_owner() != EditorNode::get_singleton()->get_edited_scene() &&
-		!EditorNode::get_singleton()->get_edited_scene()->is_editable_instance(
+	if (p_node->get_owner() != EditorNode::get_edited_scene() &&
+		!EditorNode::get_edited_scene()->is_editable_instance(
 			p_node->get_owner())) {
 		return false;
 	}
@@ -294,7 +294,7 @@ void SceneTreeDock::_normalize_drop(Node*& to_node, int& to_pos, int p_type)
 
 	if (p_type == -1) {
 		// Drop as sibling, above.
-		if (to_node == EditorNode::get_singleton()->get_edited_scene()) {
+		if (to_node == EditorNode::get_edited_scene()) {
 			to_node = nullptr;
 			ERR_FAIL_MSG("Cannot perform drop above the root node!");
 		}
@@ -304,7 +304,7 @@ void SceneTreeDock::_normalize_drop(Node*& to_node, int& to_pos, int p_type)
 	}
 	else if (p_type == 1) {
 		// Drop as child of root node if out of bounds.
-		if (to_node == EditorNode::get_singleton()->get_edited_scene()) {
+		if (to_node == EditorNode::get_edited_scene()) {
 			to_pos = -1;
 			return;
 		}
@@ -372,11 +372,9 @@ void SceneTreeDock::_clear_clipboard()
 	clipboard_resource_remap.clear();
 }
 
-SceneTreeDock* SceneTreeDock::singleton = nullptr;
-
 SceneTreeDock::~SceneTreeDock()
 {
-	singleton = nullptr;
+	SceneTreeDock::instance = nullptr;
 
 	if (!node_clipboard.is_empty()) {
 		_clear_clipboard();

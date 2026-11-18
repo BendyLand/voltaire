@@ -125,7 +125,7 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 
 	bool updating = false;
 
-	static AnimationNodeStateMachineEditor* singleton;
+
 
 	void _connection_draw(const Vector2& p_from, const Vector2& p_to,
 		AnimationNodeStateMachineTransition::SwitchMode p_mode, bool p_enabled, bool p_selected,
@@ -287,7 +287,8 @@ class AnimationNodeStateMachineEditor : public AnimationTreeNodeEditorPlugin
 protected:
 
 public:
-	static AnimationNodeStateMachineEditor* get_singleton() { return singleton; }
+	static inline AnimationNodeStateMachineEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	virtual bool can_edit(const Ref<AnimationNode>& p_node) override;
 	virtual void edit(const Ref<AnimationNode>& p_node) override;

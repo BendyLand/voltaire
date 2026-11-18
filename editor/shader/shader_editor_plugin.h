@@ -119,13 +119,14 @@ class ShaderEditorPlugin : public EditorPlugin
 	void _set_text_shader_zoom_factor(float p_zoom_factor);
 	void _update_shader_editor_zoom_factor(CodeTextEditor* p_shader_editor) const;
 
-	static inline ShaderEditorPlugin* shader_editor_plugin = nullptr;
+
 
 protected:
 	void _notification(int p_what);
 
 public:
-	static ShaderEditorPlugin* get_singleton() { return shader_editor_plugin; }
+	static inline ShaderEditorPlugin* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	virtual String get_unsaved_status(const String& p_for_scene) const override;
 

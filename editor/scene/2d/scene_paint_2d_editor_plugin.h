@@ -43,7 +43,6 @@ class OptionButton;
 
 class ScenePaint2DEditor : public Control
 {
-	inline static ScenePaint2DEditor* singleton = nullptr;
 
 	friend class ScenePaint2DEditorPlugin;
 
@@ -103,7 +102,7 @@ class ScenePaint2DEditor : public Control
 
 	Node2D* cache_node = nullptr;
 	Node2D* node = nullptr;
-	Node2D* instance = nullptr;
+	Node2D* paint_instance = nullptr;
 	Node2D* instance_container = nullptr;
 
 	HBoxContainer* toolbar = nullptr;
@@ -167,7 +166,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static ScenePaint2DEditor* get_singleton() { return singleton; }
+	static inline ScenePaint2DEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	void forward_canvas_draw_over_viewport(Control* p_overlay);
 

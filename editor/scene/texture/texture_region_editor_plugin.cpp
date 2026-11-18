@@ -379,7 +379,7 @@ Vector2 TextureRegionEditor::snap_point(Vector2 p_target) const
 EditorInspectorPluginTextureRegion::EditorInspectorPluginTextureRegion()
 {
 	texture_region_editor = memnew(TextureRegionEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(texture_region_editor);
+	EditorNode::get_gui_base()->add_child(texture_region_editor);
 }
 
 TextureRegionEditorPlugin::TextureRegionEditorPlugin()

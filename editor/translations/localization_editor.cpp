@@ -88,7 +88,7 @@ void LocalizationEditor::_template_generate_command()
 	const String current_path = template_generate_dialog->get_current_path();
 	if (!current_path.is_empty() && current_path.get_file().is_valid_filename()) {
 		_template_generate(current_path);
-		EditorToaster::get_singleton()->popup_str(TTR("Template generated."));
+		EditorToaster::popup_str(TTR("Template generated."));
 	}
 }
 

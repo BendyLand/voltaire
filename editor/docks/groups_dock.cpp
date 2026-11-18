@@ -34,7 +34,7 @@
 
 GroupsDock::GroupsDock()
 {
-	singleton = this;
+	GroupsDock::instance = this;
 	set_name(TTRC("Groups"));
 	set_icon_name("Groups");
 	set_dock_shortcut(ED_SHORTCUT_AND_COMMAND("docks/open_groups", TTRC("Open Groups Dock")));
@@ -45,6 +45,6 @@ GroupsDock::GroupsDock()
 	add_child(groups);
 }
 
-GroupsDock::~GroupsDock() { singleton = nullptr; }
+GroupsDock::~GroupsDock() { GroupsDock::instance = nullptr; }
 
 

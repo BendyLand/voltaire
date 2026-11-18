@@ -109,7 +109,7 @@ void ScriptEditorDebugger::debug_continue()
 	ERR_FAIL_COND(!is_breaked());
 
 	// Allow focus stealing only if we actually run this client for security.
-	if (remote_pid && EditorNode::get_singleton()->has_child_process(remote_pid)) {
+	if (remote_pid && EditorNode::has_child_process(remote_pid)) {
 		DisplayServer::enable_for_stealing_focus(remote_pid);
 	}
 

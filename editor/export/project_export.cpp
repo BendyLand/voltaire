@@ -123,7 +123,7 @@ String ProjectExportDialog::get_export_path()
 
 Ref<EditorExportPreset> ProjectExportDialog::get_current_preset() const
 {
-	return EditorExport::get_singleton()->get_export_preset(presets->get_current());
+	return EditorExport::get_export_preset(presets->get_current());
 }
 
 void ProjectExportDialog::_open_key_help_link()

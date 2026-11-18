@@ -109,17 +109,18 @@ private:
 	void _toast_theme_changed(Control* p_control);
 
 protected:
-	static EditorToaster* singleton;
+
 
 	void _notification(int p_what);
 
 public:
-	static EditorToaster* get_singleton();
+	static inline EditorToaster* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	Control* popup(Control* p_control, Severity p_severity = SEVERITY_INFO, double p_time = 0.0,
 		const String& p_tooltip = String());
-	void popup_str(const String& p_message, Severity p_severity = SEVERITY_INFO,
-		const String& p_tooltip = String());
+	void _impl_popup_str(const String& p_message, Severity p_severity, const String& p_tooltip);
+	static void popup_str(const String& p_message, Severity p_severity = SEVERITY_INFO, const String& p_tooltip = String());
 	void close(Control* p_control);
 	void instant_close(Control* p_control);
 	void copy(Control* p_control);

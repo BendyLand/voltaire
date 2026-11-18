@@ -45,7 +45,7 @@ void EditorVCSInterface::finalize()
 void EditorVCSInterface::popup_error(const String& p_msg)
 {
 	// TRANSLATORS: %s refers to the name of a version control system (e.g. "Git").
-	EditorNode::get_singleton()->show_warning(
+	EditorNode::show_warning(
 		p_msg.strip_edges(), vformat(TTR("%s Error"), get_vcs_name()));
 }
 

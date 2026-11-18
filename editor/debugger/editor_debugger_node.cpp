@@ -52,8 +52,6 @@
 #include "scene/resources/packed_scene.h"
 #include "servers/display/display_server.h"
 
-EditorDebuggerNode* EditorDebuggerNode::singleton = nullptr;
-
 String EditorDebuggerNode::get_server_uri() const
 {
 	return server.is_valid() ? server->get_uri() : "";
@@ -101,7 +99,14 @@ String EditorDebuggerNode::get_var_value(const String& p_var) const
 }
 
 // LiveEdit/Inspector
-void EditorDebuggerNode::request_remote_tree() { get_current_debugger()->request_remote_tree(); }
+void EditorDebuggerNode::request_remote_tree()
+{
+	ERR_FAIL_NULL(EditorDebuggerNode::instance);
+	EditorDebuggerNode::instance->_impl_request_remote_tree();
+}
+
+void EditorDebuggerNode::_impl_request_remote_tree()
+{ get_current_debugger()->request_remote_tree(); }
 
 void EditorDebuggerNode::clear_remote_tree_selection()
 {
@@ -151,10 +156,21 @@ bool EditorDebuggerNode::get_debug_mute_audio() const { return debug_mute_audio;
 
 EditorDebuggerNode::CameraOverride EditorDebuggerNode::get_camera_override()
 {
+	return EditorDebuggerNode::instance->_impl_get_camera_override();
+}
+
+EditorDebuggerNode::CameraOverride EditorDebuggerNode::_impl_get_camera_override()
+{
 	return camera_override;
 }
 
 void EditorDebuggerNode::add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin)
+{
+	ERR_FAIL_NULL(EditorDebuggerNode::instance);
+	EditorDebuggerNode::instance->_impl_add_debugger_plugin(p_plugin);
+}
+
+void EditorDebuggerNode::_impl_add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin)
 {
 	ERR_FAIL_COND_MSG(p_plugin.is_null(), "Debugger plugin is null.");
 	ERR_FAIL_COND_MSG(debugger_plugins.has(p_plugin), "Debugger plugin already exists.");
@@ -167,6 +183,12 @@ void EditorDebuggerNode::add_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_
 }
 
 void EditorDebuggerNode::remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin)
+{
+	ERR_FAIL_NULL(EditorDebuggerNode::instance);
+	EditorDebuggerNode::instance->_impl_remove_debugger_plugin(p_plugin);
+}
+
+void EditorDebuggerNode::_impl_remove_debugger_plugin(const Ref<EditorDebuggerPlugin>& p_plugin)
 {
 	ERR_FAIL_COND_MSG(p_plugin.is_null(), "Debugger plugin is null.");
 	ERR_FAIL_COND_MSG(!debugger_plugins.has(p_plugin), "Debugger plugin doesn't exists.");
@@ -182,15 +204,48 @@ ScriptEditorDebugger* EditorDebuggerNode::get_current_debugger() const
 
 void EditorDebuggerNode::stop_waiting_inspection() {}
 
-void EditorDebuggerNode::set_camera_override(EditorDebuggerNode::CameraOverride) {}
+void EditorDebuggerNode::set_camera_override(EditorDebuggerNode::CameraOverride p_arg0)
+{
+	ERR_FAIL_NULL(EditorDebuggerNode::instance);
+	EditorDebuggerNode::instance->_impl_set_camera_override(p_arg0);
+}
 
-ScriptEditorDebugger* EditorDebuggerNode::get_default_debugger() const {}
+void EditorDebuggerNode::_impl_set_camera_override(EditorDebuggerNode::CameraOverride p_arg0)
+{}
 
-ScriptEditorDebugger* EditorDebuggerNode::get_debugger(int) const {}
+ScriptEditorDebugger* EditorDebuggerNode::get_default_debugger()
+{
+	return EditorDebuggerNode::instance->_impl_get_default_debugger();
+}
 
-void EditorDebuggerNode::set_debug_mute_audio(bool) {}
+ScriptEditorDebugger* EditorDebuggerNode::_impl_get_default_debugger() const
+{}
 
-void EditorDebuggerNode::reload_scripts(Vector<String> const&) {}
+ScriptEditorDebugger* EditorDebuggerNode::get_debugger(int p_arg0)
+{
+	return EditorDebuggerNode::instance->_impl_get_debugger(p_arg0);
+}
+
+ScriptEditorDebugger* EditorDebuggerNode::_impl_get_debugger(int p_arg0) const
+{}
+
+void EditorDebuggerNode::set_debug_mute_audio(bool p_arg0)
+{
+	ERR_FAIL_NULL(EditorDebuggerNode::instance);
+	EditorDebuggerNode::instance->_impl_set_debug_mute_audio(p_arg0);
+}
+
+void EditorDebuggerNode::_impl_set_debug_mute_audio(bool p_arg0)
+{}
+
+void EditorDebuggerNode::reload_scripts(Vector<String> const& p_arg0)
+{
+	ERR_FAIL_NULL(EditorDebuggerNode::instance);
+	EditorDebuggerNode::instance->_impl_reload_scripts(p_arg0);
+}
+
+void EditorDebuggerNode::_impl_reload_scripts(Vector<String> const& p_arg0)
+{}
 
 void EditorDebuggerRemoteObjects::clear() {}
 

@@ -268,7 +268,7 @@ private:
 
 	bool gizmos_dirty = false;
 
-	static Node3DEditor* singleton;
+
 
 	Vector<Ref<EditorNode3DGizmoPlugin>> gizmo_plugins_by_priority;
 	Vector<Ref<EditorNode3DGizmoPlugin>> gizmo_plugins_by_name;
@@ -325,7 +325,8 @@ private:
 	void _sun_environ_settings_pressed();
 
 public:
-	static Node3DEditor* get_singleton() { return singleton; }
+	static inline Node3DEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	Vector3 snap_point(Vector3 p_target, Vector3 p_start = Vector3(0, 0, 0)) const;
 
@@ -342,14 +343,18 @@ public:
 	bool are_local_coords_enabled() const;
 	bool is_preserve_children_transform_enabled() const;
 
-	bool is_snap_enabled() const { return snap_enabled ^ snap_key_enabled; }
+	bool _impl_is_snap_enabled() const { return snap_enabled ^ snap_key_enabled; }
+	static bool is_snap_enabled() { return instance->_impl_is_snap_enabled(); }
 
 	bool is_vertex_snap_origin_mode() const { return vertex_snap_origin_mode; }
 
 	bool is_vertex_snap_use_collision() const;
-	real_t get_translate_snap() const;
-	real_t get_rotate_snap() const;
-	real_t get_scale_snap() const;
+	real_t _impl_get_translate_snap() const;
+	static real_t get_translate_snap();
+	real_t _impl_get_rotate_snap() const;
+	static real_t get_rotate_snap();
+	real_t _impl_get_scale_snap() const;
+	static real_t get_scale_snap();
 
 	bool is_trackball_enabled() const { return trackball_enabled; }
 
@@ -370,7 +375,8 @@ public:
 	void snap_selected_nodes_to_floor();
 	void select_gizmo_highlight_axis(int p_axis);
 
-	VSplitContainer* get_shader_split();
+	VSplitContainer* _impl_get_shader_split();
+	static VSplitContainer* get_shader_split();
 
 	Node3D* get_single_selected_node() { return selected; }
 
@@ -405,21 +411,25 @@ public:
 
 	int get_preview_material_surface() const { return preview_material_surface; }
 
-	Node3DEditorViewport* get_editor_viewport(int p_idx)
-	{
+	Node3DEditorViewport* _impl_get_editor_viewport(int p_idx) {
 		ERR_FAIL_INDEX_V(p_idx, static_cast<int>(VIEWPORTS_COUNT), nullptr);
 		return viewports[p_idx];
 	}
+	static Node3DEditorViewport* get_editor_viewport(int p_idx) { return instance->_impl_get_editor_viewport(p_idx); }
 
 	Node3DEditorViewport* get_last_used_viewport();
 
 	void set_freelook_viewport(Node3DEditorViewport* p_viewport);
 	Node3DEditorViewport* get_freelook_viewport() const;
 
-	DynamicBVH::ID insert_gizmo_bvh_node(Node3D* p_node, const AABB& p_aabb);
-	void update_gizmo_bvh_node(DynamicBVH::ID p_id, const AABB& p_aabb);
-	void remove_gizmo_bvh_node(DynamicBVH::ID p_id);
-	Vector<Node3D*> gizmo_bvh_ray_query(const Vector3& p_ray_start, const Vector3& p_ray_end);
+	DynamicBVH::ID _impl_insert_gizmo_bvh_node(Node3D* p_node, const AABB& p_aabb);
+	static DynamicBVH::ID insert_gizmo_bvh_node(Node3D* p_node, const AABB& p_aabb);
+	void _impl_update_gizmo_bvh_node(DynamicBVH::ID p_id, const AABB& p_aabb);
+	static void update_gizmo_bvh_node(DynamicBVH::ID p_id, const AABB& p_aabb);
+	void _impl_remove_gizmo_bvh_node(DynamicBVH::ID p_id);
+	static void remove_gizmo_bvh_node(DynamicBVH::ID p_id);
+	Vector<Node3D*> _impl_gizmo_bvh_ray_query(const Vector3& p_ray_start, const Vector3& p_ray_end);
+	static Vector<Node3D*> gizmo_bvh_ray_query(const Vector3& p_ray_start, const Vector3& p_ray_end);
 	Vector<Node3D*> gizmo_bvh_frustum_query(const Vector<Plane>& p_frustum);
 
 	Node3DEditor() = default;

@@ -38,7 +38,7 @@
 
 class EditorImportBlendRunner : public Node
 {
-	static EditorImportBlendRunner* singleton;
+
 
 	Timer* kill_timer;
 	void _kill_blender();
@@ -52,7 +52,8 @@ protected:
 	Error start_blender(const String& p_python_script, bool p_blocking);
 
 public:
-	static EditorImportBlendRunner* get_singleton() { return singleton; }
+	static inline EditorImportBlendRunner* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	bool is_running();
 

@@ -84,7 +84,7 @@ class ProgressDialog : public CenterContainer
 
 	Size2 main_border_size;
 
-	static ProgressDialog* singleton;
+
 	void _popup();
 
 	void _cancel_pressed();
@@ -96,7 +96,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static ProgressDialog* get_singleton() { return singleton; }
+	static inline ProgressDialog* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	void add_task(
 		const String& p_task, const String& p_label, int p_steps, bool p_can_cancel = false);

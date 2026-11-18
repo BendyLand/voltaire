@@ -38,7 +38,6 @@ class CanvasItemEditor;
 
 class NavigationLink2DEditor : public Control
 {
-	CanvasItemEditor* canvas_item_editor = nullptr;
 	NavigationLink2D* node = nullptr;
 
 	bool start_grabbed = false;

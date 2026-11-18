@@ -259,14 +259,14 @@ void EditorFeatureProfileManager::_create_new_profile()
 {
 	String name = new_profile_name->get_text().strip_edges();
 	if (!name.is_valid_filename() || name.contains_char('.')) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			TTR("Profile must be a valid filename and must not contain '.'"));
 		return;
 	}
 	String file =
 		EditorPaths::get_feature_profiles_dir().path_join(name + ".profile");
 	if (FileAccess::exists(file)) {
-		EditorNode::get_singleton()->show_warning(TTR("Profile with this name already exists."));
+		EditorNode::show_warning(TTR("Profile with this name already exists."));
 		return;
 	}
 
@@ -297,7 +297,7 @@ void EditorFeatureProfileManager::_import_profiles(const Vector<String>& p_paths
 		Error err = profile->load_from_file(p_paths[i]);
 		String basefile = p_paths[i].get_file();
 		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(
+			EditorNode::show_warning(
 				vformat(TTR("File '%s' format is invalid, import aborted."), basefile));
 			return;
 		}
@@ -306,7 +306,7 @@ void EditorFeatureProfileManager::_import_profiles(const Vector<String>& p_paths
 			EditorPaths::get_feature_profiles_dir().path_join(basefile);
 
 		if (FileAccess::exists(dst_file)) {
-			EditorNode::get_singleton()->show_warning(
+			EditorNode::show_warning(
 				vformat(TTR("Profile '%s' already exists. Remove it first before importing, import "
 							"aborted."),
 					basefile.get_basename()));
@@ -338,26 +338,41 @@ void EditorFeatureProfileManager::_export_profile(const String& p_path)
 	ERR_FAIL_COND(edited.is_null());
 	Error err = edited->save_to_file(p_path);
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			vformat(TTR("Error saving profile to path: '%s'."), p_path));
 	}
 }
 
 void EditorFeatureProfileManager::notify_changed() { _emit_current_profile_changed(); }
 
-Ref<EditorFeatureProfile> EditorFeatureProfileManager::get_current_profile() { return current; }
+Ref<EditorFeatureProfile> EditorFeatureProfileManager::get_current_profile()
+{
+	return EditorFeatureProfileManager::instance->_impl_get_current_profile();
+}
 
-String EditorFeatureProfileManager::get_current_profile_name() const { return current_profile; }
+Ref<EditorFeatureProfile> EditorFeatureProfileManager::_impl_get_current_profile()
+{ return current; }
 
-EditorFeatureProfileManager* EditorFeatureProfileManager::singleton = nullptr;
+String EditorFeatureProfileManager::get_current_profile_name()
+{
+	return EditorFeatureProfileManager::instance->_impl_get_current_profile_name();
+}
 
-
+String EditorFeatureProfileManager::_impl_get_current_profile_name() const
+{ return current_profile; }
 
 Error EditorFeatureProfile::save_to_file(String const&) {}
 
 void EditorFeatureProfileManager::_update_profile_list(String const&) {}
 
-void EditorFeatureProfileManager::set_current_profile(String const&, bool) {}
+void EditorFeatureProfileManager::set_current_profile(String const& p_arg0, bool p_arg1)
+{
+	ERR_FAIL_NULL(EditorFeatureProfileManager::instance);
+	EditorFeatureProfileManager::instance->_impl_set_current_profile(p_arg0, p_arg1);
+}
+
+void EditorFeatureProfileManager::_impl_set_current_profile(String const& p_arg0, bool p_arg1)
+{}
 
 String EditorFeatureProfileManager::_get_selected_profile() {}
 

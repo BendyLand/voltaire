@@ -64,7 +64,7 @@ void EditorHelpSearch::_confirmed()
 	}
 
 	// Activate the script editor and emit the signal with the documentation link to display.
-	EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+	EditorNode::get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 
 	hide();
 }
@@ -106,7 +106,7 @@ void EditorHelpSearch::TreeCache::clear()
 bool EditorHelpSearch::Runner::_is_class_disabled_by_feature_profile(const String& p_class)
 {
 	Ref<EditorFeatureProfile> profile =
-		EditorFeatureProfileManager::get_singleton()->get_current_profile();
+		EditorFeatureProfileManager::get_current_profile();
 	if (profile.is_null()) {
 		return false;
 	}

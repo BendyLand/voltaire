@@ -57,8 +57,8 @@ bool AnimationNodeStateMachineEditor::can_edit(const Ref<AnimationNode>& p_node)
 
 String AnimationNodeStateMachineEditor::_get_root_playback_path(String& r_node_directory)
 {
-	AnimationTree* tree = AnimationTreeEditor::get_singleton()->get_animation_tree();
-	Vector<String> edited_path = AnimationTreeEditor::get_singleton()->get_edited_path();
+	AnimationTree* tree = AnimationTreeEditor::get_animation_tree();
+	Vector<String> edited_path = AnimationTreeEditor::get_edited_path();
 
 	String base_path;
 	Vector<String> node_directory_path;
@@ -103,7 +103,7 @@ String AnimationNodeStateMachineEditor::_get_root_playback_path(String& r_node_d
 		// It will give the user the error that Root/Nested state machine should be retrieved, that
 		// would be kind :-)
 		r_node_directory = String();
-		base_path = AnimationTreeEditor::get_singleton()->get_base_path() + "playback";
+		base_path = AnimationTreeEditor::get_base_path() + "playback";
 	}
 
 	return base_path;
@@ -273,8 +273,6 @@ void AnimationNodeStateMachineEditor::_update_connected_nodes(const String& p_no
 		}
 	}
 }
-
-AnimationNodeStateMachineEditor* AnimationNodeStateMachineEditor::singleton = nullptr;
 
 void EditorAnimationMultiTransitionEdit::add_transition(const String& p_from,
 	const String& p_to, Ref<AnimationNodeStateMachineTransition> p_transition)

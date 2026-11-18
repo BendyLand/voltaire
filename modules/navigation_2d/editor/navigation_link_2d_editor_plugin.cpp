@@ -55,7 +55,7 @@ void NavigationLink2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 		return;
 	}
 
-	Transform2D gt = canvas_item_editor->get_canvas_transform() * node->get_screen_transform();
+	Transform2D gt = CanvasItemEditor::get_canvas_transform() * node->get_screen_transform();
 	Vector2 global_start_position = gt.xform(node->get_start_position());
 	Vector2 global_end_position = gt.xform(node->get_end_position());
 
@@ -67,9 +67,6 @@ void NavigationLink2DEditor::forward_canvas_draw_over_viewport(Control* p_overla
 
 void NavigationLink2DEditor::edit(NavigationLink2D* p_node)
 {
-	if (!canvas_item_editor) {
-		canvas_item_editor = CanvasItemEditor::get_singleton();
-	}
 
 	if (p_node) {
 		node = p_node;
@@ -78,13 +75,13 @@ void NavigationLink2DEditor::edit(NavigationLink2D* p_node)
 		node = nullptr;
 	}
 
-	canvas_item_editor->update_viewport();
+	CanvasItemEditor::update_viewport();
 }
 
 NavigationLink2DEditorPlugin::NavigationLink2DEditorPlugin()
 {
 	editor = memnew(NavigationLink2DEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(editor);
+	EditorNode::get_gui_base()->add_child(editor);
 }
 
 

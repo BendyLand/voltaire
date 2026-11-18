@@ -41,7 +41,7 @@ String MultiNodeEdit::_get_editor_name() const
 
 bool MultiNodeEdit::_property_can_revert(const String& p_name) const
 {
-	Node* es = EditorNode::get_singleton()->get_edited_scene();
+	Node* es = EditorNode::get_edited_scene();
 	if (!es) {
 		return false;
 	}

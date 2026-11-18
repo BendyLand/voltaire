@@ -108,8 +108,6 @@
 
 using namespace Node3DEditorConstants;
 
-Node3DEditor* Node3DEditor::singleton = nullptr;
-
 void Node3DEditor::select_gizmo_highlight_axis(int p_axis)
 {
 	for (int i = 0; i < 3; i++) {
@@ -177,7 +175,13 @@ void Node3DEditor::_sun_environ_settings_pressed()
 	sun_environ_popup->grab_focus();
 }
 
-VSplitContainer* Node3DEditor::get_shader_split() { return shader_split; }
+VSplitContainer* Node3DEditor::get_shader_split()
+{
+	return Node3DEditor::instance->_impl_get_shader_split();
+}
+
+VSplitContainer* Node3DEditor::_impl_get_shader_split()
+{ return shader_split; }
 
 Node3DEditorViewport* Node3DEditor::get_last_used_viewport()
 {
@@ -221,7 +225,7 @@ void Node3DEditor::_preview_settings_changed()
 
 Node3DEditor::~Node3DEditor()
 {
-	singleton = nullptr;
+	Node3DEditor::instance = nullptr;
 	memdelete(preview_node);
 	if (preview_sun_dangling && preview_sun) {
 		memdelete(preview_sun);
@@ -269,7 +273,12 @@ bool Node3DEditor::is_vertex_snap_use_collision() const
 	return vertex_snap_use_collision != Input::is_key_pressed(Key::SHIFT);
 }
 
-real_t Node3DEditor::get_translate_snap() const
+real_t Node3DEditor::get_translate_snap()
+{
+	return Node3DEditor::instance->_impl_get_translate_snap();
+}
+
+real_t Node3DEditor::_impl_get_translate_snap() const
 {
 	real_t snap_value = snap_translate_value;
 	if (Input::is_key_pressed(Key::SHIFT)) {
@@ -278,7 +287,12 @@ real_t Node3DEditor::get_translate_snap() const
 	return snap_value;
 }
 
-real_t Node3DEditor::get_rotate_snap() const
+real_t Node3DEditor::get_rotate_snap()
+{
+	return Node3DEditor::instance->_impl_get_rotate_snap();
+}
+
+real_t Node3DEditor::_impl_get_rotate_snap() const
 {
 	real_t snap_value = snap_rotate_value;
 	if (Input::is_key_pressed(Key::SHIFT)) {
@@ -287,7 +301,12 @@ real_t Node3DEditor::get_rotate_snap() const
 	return snap_value;
 }
 
-real_t Node3DEditor::get_scale_snap() const
+real_t Node3DEditor::get_scale_snap()
+{
+	return Node3DEditor::instance->_impl_get_scale_snap();
+}
+
+real_t Node3DEditor::_impl_get_scale_snap() const
 {
 	real_t snap_value = snap_scale_value;
 	if (Input::is_key_pressed(Key::SHIFT)) {
@@ -319,19 +338,41 @@ struct _GizmoPluginNameComparator
 
 DynamicBVH::ID Node3DEditor::insert_gizmo_bvh_node(Node3D* p_node, const AABB& p_aabb)
 {
+	return Node3DEditor::instance->_impl_insert_gizmo_bvh_node(p_node, p_aabb);
+}
+
+DynamicBVH::ID Node3DEditor::_impl_insert_gizmo_bvh_node(Node3D* p_node, const AABB& p_aabb)
+{
 	return gizmo_bvh.insert(p_aabb, p_node);
 }
 
 void Node3DEditor::update_gizmo_bvh_node(DynamicBVH::ID p_id, const AABB& p_aabb)
 {
+	ERR_FAIL_NULL(Node3DEditor::instance);
+	Node3DEditor::instance->_impl_update_gizmo_bvh_node(p_id, p_aabb);
+}
+
+void Node3DEditor::_impl_update_gizmo_bvh_node(DynamicBVH::ID p_id, const AABB& p_aabb)
+{
 	gizmo_bvh.update(p_id, p_aabb);
 	gizmo_bvh.optimize_incremental(1);
 }
 
-void Node3DEditor::remove_gizmo_bvh_node(DynamicBVH::ID p_id) { gizmo_bvh.remove(p_id); }
+void Node3DEditor::remove_gizmo_bvh_node(DynamicBVH::ID p_id)
+{
+	ERR_FAIL_NULL(Node3DEditor::instance);
+	Node3DEditor::instance->_impl_remove_gizmo_bvh_node(p_id);
+}
 
-Vector<Node3D*> Node3DEditor::gizmo_bvh_ray_query(
-	const Vector3& p_ray_start, const Vector3& p_ray_end)
+void Node3DEditor::_impl_remove_gizmo_bvh_node(DynamicBVH::ID p_id)
+{ gizmo_bvh.remove(p_id); }
+
+Vector<Node3D*> Node3DEditor::gizmo_bvh_ray_query(const Vector3& p_ray_start, const Vector3& p_ray_end)
+{
+	return Node3DEditor::instance->_impl_gizmo_bvh_ray_query(p_ray_start, p_ray_end);
+}
+
+Vector<Node3D*> Node3DEditor::_impl_gizmo_bvh_ray_query(const Vector3& p_ray_start, const Vector3& p_ray_end)
 {
 	struct Result
 	{

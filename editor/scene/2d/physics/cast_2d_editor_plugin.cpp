@@ -50,7 +50,7 @@ void Cast2DEditor::_node_removed(Node* p_node)
 Cast2DEditorPlugin::Cast2DEditorPlugin()
 {
 	cast_2d_editor = memnew(Cast2DEditor);
-	EditorNode::get_singleton()->get_gui_base()->add_child(cast_2d_editor);
+	EditorNode::get_gui_base()->add_child(cast_2d_editor);
 }
 
 

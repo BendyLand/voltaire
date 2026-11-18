@@ -43,19 +43,19 @@ void Camera2DEditor::forward_canvas_draw_over_viewport(Control* p_overlay)
 		return;
 	}
 	Rect2 limit_rect = selected_camera->get_limit_rect();
-	limit_rect = CanvasItemEditor::get_singleton()->get_canvas_transform().xform(limit_rect);
+	limit_rect = CanvasItemEditor::get_canvas_transform().xform(limit_rect);
 	p_overlay->draw_rect(limit_rect, Color(1, 1, 0.25, 0.63), false, 3);
 }
 
 void Camera2DEditor::_update_hover(const Vector2& p_mouse_pos)
 {
-	if (CanvasItemEditor::get_singleton()->get_current_tool() != CanvasItemEditor::TOOL_SELECT) {
+	if (CanvasItemEditor::get_current_tool() != CanvasItemEditor::TOOL_SELECT) {
 		hover_type = Drag::NONE;
-		CanvasItemEditor::get_singleton()->set_cursor_shape_override();
+		CanvasItemEditor::set_cursor_shape_override();
 		return;
 	}
 
-	const Rect2 limit_rect = CanvasItemEditor::get_singleton()->get_canvas_transform().xform(
+	const Rect2 limit_rect = CanvasItemEditor::get_canvas_transform().xform(
 		selected_camera->get_limit_rect());
 	const float drag_tolerance = 8.0;
 	const Vector2 tolerance_vector = Vector2(1, 1) * drag_tolerance;
@@ -98,7 +98,7 @@ void Camera2DEditor::_update_hover(const Vector2& p_mouse_pos)
 
 	if (hover_type == Drag::NONE && limit_rect.has_point(p_mouse_pos)) {
 		const Rect2 editor_rect =
-			Rect2(Vector2(), CanvasItemEditor::get_singleton()->get_viewport_control()->get_size());
+			Rect2(Vector2(), CanvasItemEditor::get_viewport_control()->get_size());
 		const Rect2 transformed_rect =
 			selected_camera->get_viewport()->get_canvas_transform().xform_inv(limit_rect);
 
@@ -128,26 +128,26 @@ void Camera2DEditor::_update_hover(const Vector2& p_mouse_pos)
 
 	switch (hover_type) {
 	case Drag::NONE: {
-		CanvasItemEditor::get_singleton()->set_cursor_shape_override();
+		CanvasItemEditor::set_cursor_shape_override();
 	} break;
 	case Drag::LEFT:
 	case Drag::RIGHT: {
-		CanvasItemEditor::get_singleton()->set_cursor_shape_override(CURSOR_HSIZE);
+		CanvasItemEditor::set_cursor_shape_override(CURSOR_HSIZE);
 	} break;
 	case Drag::TOP:
 	case Drag::BOTTOM: {
-		CanvasItemEditor::get_singleton()->set_cursor_shape_override(CURSOR_VSIZE);
+		CanvasItemEditor::set_cursor_shape_override(CURSOR_VSIZE);
 	} break;
 	case Drag::TOP_LEFT:
 	case Drag::BOTTOM_RIGHT: {
-		CanvasItemEditor::get_singleton()->set_cursor_shape_override(CURSOR_FDIAGSIZE);
+		CanvasItemEditor::set_cursor_shape_override(CURSOR_FDIAGSIZE);
 	} break;
 	case Drag::TOP_RIGHT:
 	case Drag::BOTTOM_LEFT: {
-		CanvasItemEditor::get_singleton()->set_cursor_shape_override(CURSOR_BDIAGSIZE);
+		CanvasItemEditor::set_cursor_shape_override(CURSOR_BDIAGSIZE);
 	} break;
 	case Drag::CENTER: {
-		CanvasItemEditor::get_singleton()->set_cursor_shape_override(CURSOR_MOVE);
+		CanvasItemEditor::set_cursor_shape_override(CURSOR_MOVE);
 	} break;
 	}
 }
@@ -155,7 +155,7 @@ void Camera2DEditor::_update_hover(const Vector2& p_mouse_pos)
 Camera2DEditorPlugin::Camera2DEditorPlugin()
 {
 	camera_2d_editor = memnew(Camera2DEditor(this));
-	EditorNode::get_singleton()->get_gui_base()->add_child(camera_2d_editor);
+	EditorNode::get_gui_base()->add_child(camera_2d_editor);
 }
 
 

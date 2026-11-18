@@ -91,7 +91,7 @@ class AnimationNodeBlendSpace2DEditor : public AnimationTreeNodeEditorPlugin
 
 	bool updating;
 
-	static AnimationNodeBlendSpace2DEditor* singleton;
+
 
 	void _update_space();
 
@@ -150,7 +150,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static AnimationNodeBlendSpace2DEditor* get_singleton() { return singleton; }
+	static inline AnimationNodeBlendSpace2DEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	void refresh_editor() { _update_space(); }
 

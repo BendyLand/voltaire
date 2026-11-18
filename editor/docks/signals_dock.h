@@ -39,12 +39,14 @@ class SignalsDock : public EditorDock
 {
 	ConnectionsDock* connections = nullptr;
 
-	static inline SignalsDock* singleton = nullptr;
+
 
 public:
-	static SignalsDock* get_singleton() { return singleton; }
+	static inline SignalsDock* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	void update_lists();
+	void _impl_update_lists();
+	static void update_lists();
 
 	SignalsDock();
 	~SignalsDock();

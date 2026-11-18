@@ -79,8 +79,6 @@ void DynamicFontImportSettingsDialog::_variation_changed(const String& p_edited_
 /* Common                                                                */
 /*************************************************************************/
 
-DynamicFontImportSettingsDialog* DynamicFontImportSettingsDialog::singleton = nullptr;
-
 String DynamicFontImportSettingsDialog::_pad_zeros(const String& p_hex) const
 {
 	int len = CLAMP(5 - p_hex.length(), 0, 5);
@@ -94,13 +92,13 @@ void DynamicFontImportSettingsDialog::_locale_edited()
 	item->set_checked(0, !item->is_checked(0));
 }
 
-DynamicFontImportSettingsDialog* DynamicFontImportSettingsDialog::get_singleton()
-{
-	return singleton;
-}
-
-
-
 void DynamicFontImportSettingsDialog::_variations_validate() {}
 
-void DynamicFontImportSettingsDialog::open_settings(String const&) {}
+void DynamicFontImportSettingsDialog::open_settings(String const& p_arg0)
+{
+	ERR_FAIL_NULL(DynamicFontImportSettingsDialog::instance);
+	DynamicFontImportSettingsDialog::instance->_impl_open_settings(p_arg0);
+}
+
+void DynamicFontImportSettingsDialog::_impl_open_settings(String const& p_arg0)
+{}

@@ -53,7 +53,7 @@ class EditorExport : public Node
 	bool should_update_presets = false;
 	bool should_reload_presets = false;
 
-	static EditorExport* singleton;
+
 
 	void _save();
 
@@ -64,7 +64,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	static EditorExport* get_singleton() { return singleton; }
+	static inline EditorExport* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	// Encodes a platform/device pair into a single menu/device id and decodes it back.
 	static int encode_platform_device_id(int p_platform_idx, int p_device_idx)
@@ -76,22 +77,31 @@ public:
 
 	static int decode_device_from_id(int p_id) { return p_id % 10000; }
 
-	void add_export_platform(const Ref<EditorExportPlatform>& p_platform);
-	int get_export_platform_count() const;
+	void _impl_add_export_platform(const Ref<EditorExportPlatform>& p_platform);
+	static void add_export_platform(const Ref<EditorExportPlatform>& p_platform);
+	int _impl_get_export_platform_count() const;
+	static int get_export_platform_count();
 	int get_export_platform_index_by_name(const String& p_name);
-	Ref<EditorExportPlatform> get_export_platform(int p_idx);
-	void remove_export_platform(const Ref<EditorExportPlatform>& p_platform);
+	Ref<EditorExportPlatform> _impl_get_export_platform(int p_idx);
+	static Ref<EditorExportPlatform> get_export_platform(int p_idx);
+	void _impl_remove_export_platform(const Ref<EditorExportPlatform>& p_platform);
+	static void remove_export_platform(const Ref<EditorExportPlatform>& p_platform);
 
 	void add_export_preset(const Ref<EditorExportPreset>& p_preset, int p_at_pos = -1);
-	int get_export_preset_count() const;
-	Ref<EditorExportPreset> get_export_preset(int p_idx);
+	int _impl_get_export_preset_count() const;
+	static int get_export_preset_count();
+	Ref<EditorExportPreset> _impl_get_export_preset(int p_idx);
+	static Ref<EditorExportPreset> get_export_preset(int p_idx);
 
-	void add_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
-	void remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
-	Vector<Ref<EditorExportPlugin>> get_export_plugins();
+	void _impl_add_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
+	static void add_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
+	void _impl_remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
+	static void remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
+	Vector<Ref<EditorExportPlugin>> _impl_get_export_plugins();
+	static Vector<Ref<EditorExportPlugin>> get_export_plugins();
 
-	Ref<EditorExportPreset> get_runnable_preset_for_platform(
-		const Ref<EditorExportPlatform>& p_for_platform) const;
+	Ref<EditorExportPreset> _impl_get_runnable_preset_for_platform(const Ref<EditorExportPlatform>& p_for_platform) const;
+	static Ref<EditorExportPreset> get_runnable_preset_for_platform(const Ref<EditorExportPlatform>& p_for_platform);
 
 	void load_config();
 	void update_export_presets();

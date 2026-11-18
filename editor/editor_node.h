@@ -267,7 +267,7 @@ private:
 		Vector<String> patches;
 	} export_defer;
 
-	static EditorNode* singleton;
+
 
 	EditorData editor_data;
 	EditorFolding editor_folding;
@@ -511,10 +511,10 @@ private:
 		const String& p_path, const String& p_dep, const String& p_type)
 	{
 		DEV_ASSERT(Thread::get_caller_id() == Thread::get_main_id());
-		if (!singleton->dependency_errors.has(p_path)) {
-			singleton->dependency_errors[p_path] = HashSet<String>();
+		if (!instance->dependency_errors.has(p_path)) {
+			instance->dependency_errors[p_path] = HashSet<String>();
 		}
-		singleton->dependency_errors[p_path].insert(p_dep + "::" + p_type);
+		instance->dependency_errors[p_path].insert(p_dep + "::" + p_type);
 	}
 
 	static Ref<Texture2D> _file_dialog_get_icon(const String& p_path);
@@ -600,35 +600,37 @@ protected:
 	friend class FileSystemDock;
 
 public:
-	bool call_build();
+	bool _impl_call_build();
+	static bool call_build();
 	void call_run_scene(const String& p_scene, Vector<String>& r_args);
 
 	// This is a very naive estimation, but we need something now. Will be reworked later.
 	bool is_editor_ready() const { return is_inside_tree() && !waiting_for_first_scan; }
 
-	static EditorNode* get_singleton() { return singleton; }
+	static inline EditorNode* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	static EditorLog* get_log() { return singleton->log; }
+	static EditorLog* get_log() { return instance->log; }
 
-	static EditorData& get_editor_data() { return singleton->editor_data; }
+	static EditorData& get_editor_data() { return instance->editor_data; }
 
-	static EditorFolding& get_editor_folding() { return singleton->editor_folding; }
+	static EditorFolding& get_editor_folding() { return instance->editor_folding; }
 
-	static EditorTitleBar* get_title_bar() { return singleton->title_bar; }
+	static EditorTitleBar* get_title_bar() { return instance->title_bar; }
 
-	static VSplitContainer* get_top_split() { return singleton->top_split; }
+	static VSplitContainer* get_top_split() { return instance->top_split; }
 
-	static DockSplitContainer* get_center_split() { return singleton->center_split; }
+	static DockSplitContainer* get_center_split() { return instance->center_split; }
 
-	static EditorBottomPanel* get_bottom_panel() { return singleton->bottom_panel; }
+	static EditorBottomPanel* get_bottom_panel() { return instance->bottom_panel; }
 
-	static EditorMainScreen* get_editor_main_screen() { return singleton->editor_main_screen; }
+	static EditorMainScreen* get_editor_main_screen() { return instance->editor_main_screen; }
 
-	static Button* get_distraction_free_button() { return singleton->distraction_free; }
+	static Button* get_distraction_free_button() { return instance->distraction_free; }
 
 	static String adjust_scene_name_casing(const String& p_root_name);
 
-	static bool has_unsaved_changes() { return singleton->unsaved_cache; }
+	static bool has_unsaved_changes() { return instance->unsaved_cache; }
 
 	static void disambiguate_filenames(
 		const Vector<String> p_full_paths, Vector<String>& r_filenames);
@@ -652,40 +654,49 @@ public:
 
 	static void cleanup();
 
-	EditorPluginList* get_editor_plugins_force_input_forwarding()
-	{
+	EditorPluginList* _impl_get_editor_plugins_force_input_forwarding() {
 		return editor_plugins_force_input_forwarding;
 	}
+	static EditorPluginList* get_editor_plugins_force_input_forwarding() { return instance->_impl_get_editor_plugins_force_input_forwarding(); }
 
-	EditorPluginList* get_editor_plugins_force_over() { return editor_plugins_force_over; }
+	EditorPluginList* _impl_get_editor_plugins_force_over() { return editor_plugins_force_over; }
+	static EditorPluginList* get_editor_plugins_force_over() { return instance->_impl_get_editor_plugins_force_over(); }
 
-	EditorPluginList* get_editor_plugins_over() { return editor_plugins_over; }
+	EditorPluginList* _impl_get_editor_plugins_over() { return editor_plugins_over; }
+	static EditorPluginList* get_editor_plugins_over() { return instance->_impl_get_editor_plugins_over(); }
 
-	EditorSelection* get_editor_selection() { return editor_selection; }
+	EditorSelection* _impl_get_editor_selection() { return editor_selection; }
+	static EditorSelection* get_editor_selection() { return instance->_impl_get_editor_selection(); }
 
 	EditorSelectionHistory* get_editor_selection_history() { return &editor_history; }
 
-	ProjectSettingsEditor* get_project_settings() { return project_settings_editor; }
+	ProjectSettingsEditor* _impl_get_project_settings() { return project_settings_editor; }
+	static ProjectSettingsEditor* get_project_settings() { return instance->_impl_get_project_settings(); }
 
 	bool has_previous_closed_scenes() const;
 
-	bool is_distraction_free_mode_enabled() const;
+	bool _impl_is_distraction_free_mode_enabled() const;
+	static bool is_distraction_free_mode_enabled();
 
 	void set_center_split_offset(int p_offset);
 
-	bool is_addon_plugin_enabled(const String& p_addon) const;
+	bool _impl_is_addon_plugin_enabled(const String& p_addon) const;
+	static bool is_addon_plugin_enabled(const String& p_addon);
 
 	int get_resource_count(Ref<Resource> p_res);
 	List<Node*> get_resource_node_list(Ref<Resource> p_res);
 
-	bool is_resource_read_only(
-		Ref<Resource> p_resource, bool p_foreign_resources_are_writable = false);
+	bool _impl_is_resource_read_only(Ref<Resource> p_resource, bool p_foreign_resources_are_writable);
+	static bool is_resource_read_only(Ref<Resource> p_resource, bool p_foreign_resources_are_writable = false);
 
-	bool is_changing_scene() const;
+	bool _impl_is_changing_scene() const;
+	static bool is_changing_scene();
 
-	SubViewport* get_scene_root() { return scene_root; } // Root of the scene being edited.
+	SubViewport* _impl_get_scene_root() { return scene_root; }
+	static SubViewport* get_scene_root() { return instance->_impl_get_scene_root(); } // Root of the scene being edited.
 
-	Node* get_edited_scene() { return editor_data.get_edited_scene_root(); }
+	Node* _impl_get_edited_scene() { return editor_data.get_edited_scene_root(); }
+	static Node* get_edited_scene() { return instance->_impl_get_edited_scene(); }
 
 	String get_preview_locale() const;
 	bool is_pseudolocalization_enabled() const;
@@ -749,11 +760,13 @@ public:
 
 	void notify_all_debug_sessions_exited();
 
-	ProcessID has_child_process(ProcessID p_pid) const;
+	ProcessID _impl_has_child_process(ProcessID p_pid) const;
+	static ProcessID has_child_process(ProcessID p_pid);
 	void stop_child_process(ProcessID p_pid);
 
 	void show_save_accept(const String& p_text, const String& p_ok_text = TTRC("OK"));
-	void show_warning(const String& p_text, const String& p_title = TTRC("Warning!"));
+	void _impl_show_warning(const String& p_text, const String& p_title);
+	static void show_warning(const String& p_text, const String& p_title = TTRC("Warning!"));
 
 	void _copy_warning(const String& p_str);
 
@@ -762,20 +775,24 @@ public:
 		const Vector<String>& p_patches);
 	bool is_project_exporting() const;
 
-	Control* get_gui_base() { return gui_base; }
+	Control* _impl_get_gui_base() { return gui_base; }
+	static Control* get_gui_base() { return instance->_impl_get_gui_base(); }
 
 	bool is_scene_in_use(const String& p_path);
 
 	void find_all_instances_inheriting_path_in_node(
 		Node* p_root, Node* p_node, const String& p_instance_path, HashSet<Node*>& p_instance_list);
 
-	bool is_exiting() const { return exiting; }
+	bool _impl_is_exiting() const { return exiting; }
+	static bool is_exiting() { return instance->_impl_is_exiting(); }
 
 	EditorQuickOpenDialog* get_quick_open_dialog() { return quick_open_dialog; }
 
-	PopupMenu* get_export_as_menu();
+	PopupMenu* _impl_get_export_as_menu();
+	static PopupMenu* get_export_as_menu();
 
-	void notify_settings_overrides_changed();
+	void _impl_notify_settings_overrides_changed();
+	static void notify_settings_overrides_changed();
 
 	void dim_editor(bool p_dimming);
 	bool is_editor_dimmed() const;
@@ -783,15 +800,18 @@ public:
 	EditorNode() = default;
 	~EditorNode();
 
-	void add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin);
-	void remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin);
+	void _impl_add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin);
+	static void add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin);
+	void _impl_remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin);
+	static void remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin>& p_plugin);
 	Vector<Ref<EditorResourceConversionPlugin>> find_resource_conversion_plugin_for_resource(
 		const Ref<Resource>& p_for_resource)
 ;
-	Vector<Ref<EditorResourceConversionPlugin>> find_resource_conversion_plugin_for_type_name(
-		const String& p_type);
+	Vector<Ref<EditorResourceConversionPlugin>> _impl_find_resource_conversion_plugin_for_type_name(const String& p_type);
+	static Vector<Ref<EditorResourceConversionPlugin>> find_resource_conversion_plugin_for_type_name(const String& p_type);
 
-	bool is_scene_unsaved(int p_idx);
+	bool _impl_is_scene_unsaved(int p_idx);
+	static bool is_scene_unsaved(int p_idx);
 };
 
 struct EditorProgressBG

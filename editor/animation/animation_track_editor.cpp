@@ -605,13 +605,13 @@ MenuButton* AnimationTrackEditor::get_edit_menu() { return edit; }
 
 void AnimationTrackEditor::_add_track(int p_type)
 {
-	AnimationPlayer* ap = AnimationPlayerEditor::get_singleton()->get_player();
+	AnimationPlayer* ap = AnimationPlayerEditor::get_player();
 	if (!ap) {
 		ERR_FAIL_EDMSG("No AnimationPlayer is currently being edited.");
 	}
 	Node* root_node = ap->get_node_or_null(ap->get_root_node());
 	if (!root_node) {
-		EditorNode::get_singleton()->show_warning(
+		EditorNode::show_warning(
 			TTR("Not possible to add a new track without a root"));
 		return;
 	}
@@ -835,7 +835,7 @@ void AnimationTrackEditor::_update_timeline_margins()
 void AnimationTrackEditor::_show_imported_anim_warning()
 {
 	// It looks terrible on a single line but the TTR extractor doesn't support line breaks yet.
-	EditorNode::get_singleton()->show_warning(
+	EditorNode::show_warning(
 		TTR("This animation belongs to an imported scene, so changes to imported tracks will not "
 			"be saved.\n\nTo modify this animation, navigate to the scene's Advanced Import "
 			"settings and select the animation.\nSome options, including looping, are available "
@@ -844,7 +844,7 @@ void AnimationTrackEditor::_show_imported_anim_warning()
 
 void AnimationTrackEditor::_show_dummy_player_warning()
 {
-	EditorNode::get_singleton()->show_warning(
+	EditorNode::show_warning(
 		TTR("Some AnimationPlayerEditor's options are disabled since this is the dummy "
 			"AnimationPlayer "
 			"for preview.\n\nThe dummy player is forced active, non-deterministic and doesn't "
@@ -854,7 +854,7 @@ void AnimationTrackEditor::_show_dummy_player_warning()
 
 void AnimationTrackEditor::_show_inactive_player_warning()
 {
-	EditorNode::get_singleton()->show_warning(
+	EditorNode::show_warning(
 		TTR("AnimationPlayer is inactive. The playback will not be processed."));
 }
 

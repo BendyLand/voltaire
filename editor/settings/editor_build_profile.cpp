@@ -555,7 +555,7 @@ void EditorBuildProfileManager::_profile_action(int p_action)
 		if (!profile_path->get_text().is_empty()) {
 			Error err = edited->save_to_file(profile_path->get_text());
 			if (err != OK) {
-				EditorNode::get_singleton()->show_warning(TTRC("File saving failed."));
+				EditorNode::show_warning(TTRC("File saving failed."));
 			}
 			break;
 		}
@@ -609,10 +609,6 @@ void EditorBuildProfileManager::_force_detect_classes_changed(const String& p_te
 }
 
 Ref<EditorBuildProfile> EditorBuildProfileManager::get_current_profile() { return edited; }
-
-EditorBuildProfileManager* EditorBuildProfileManager::singleton = nullptr;
-
-
 
 Error EditorBuildProfile::save_to_file(String const&) {}
 

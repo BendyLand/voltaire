@@ -38,10 +38,11 @@ class GroupsDock : public EditorDock
 {
 	GroupsEditor* groups = nullptr;
 
-	static inline GroupsDock* singleton = nullptr;
+
 
 public:
-	static GroupsDock* get_singleton() { return singleton; }
+	static inline GroupsDock* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	GroupsDock();
 	~GroupsDock();

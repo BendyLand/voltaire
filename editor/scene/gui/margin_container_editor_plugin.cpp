@@ -39,7 +39,7 @@ void MarginContainerEditorPlugin::forward_canvas_draw_over_viewport(Control* p_v
 		return;
 	}
 
-	Transform2D xform = CanvasItemEditor::get_singleton()->get_canvas_transform() *
+	Transform2D xform = CanvasItemEditor::get_canvas_transform() *
 						margin_container->get_screen_transform();
 
 	// NOTE: This color is copied from Camera2DEditor::forward_canvas_draw_over_viewport.

@@ -60,15 +60,18 @@ void AnimationTreeEditor::_path_button_pressed(int p_path)
 
 void AnimationTreeEditor::_animation_list_changed()
 {
-	AnimationNodeBlendTreeEditor* bte = AnimationNodeBlendTreeEditor::get_singleton();
-	if (bte) {
-		bte->update_graph();
+	if (AnimationNodeBlendTreeEditor::is_initialized()) {
+		AnimationNodeBlendTreeEditor::update_graph();
 	}
 }
 
-Vector<String> AnimationTreeEditor::get_edited_path() const { return button_path; }
+Vector<String> AnimationTreeEditor::get_edited_path()
+{
+	return AnimationTreeEditor::instance->_impl_get_edited_path();
+}
 
-AnimationTreeEditor* AnimationTreeEditor::singleton = nullptr;
+Vector<String> AnimationTreeEditor::_impl_get_edited_path() const
+{ return button_path; }
 
 void AnimationTreeEditor::remove_plugin(AnimationTreeNodeEditorPlugin* p_editor)
 {
@@ -78,6 +81,11 @@ void AnimationTreeEditor::remove_plugin(AnimationTreeNodeEditorPlugin* p_editor)
 }
 
 String AnimationTreeEditor::get_base_path()
+{
+	return AnimationTreeEditor::instance->_impl_get_base_path();
+}
+
+String AnimationTreeEditor::_impl_get_base_path()
 {
 	String path = Animation::PARAMETERS_BASE_PATH;
 	for (int i = 0; i < edited_path.size(); i++) {
@@ -100,12 +108,12 @@ LocalVector<String> AnimationTreeEditor::get_animation_list()
 {
 	// This can be called off the main thread due to resource preview generation. Quit early in that
 	// case.
-	if (!singleton->tree || !Thread::is_main_thread() || !singleton->is_visible()) {
+	if (!AnimationTreeEditor::instance->tree || !Thread::is_main_thread() || !AnimationTreeEditor::instance->is_visible()) {
 		// When tree is empty, singleton not in the main thread.
 		return LocalVector<String>();
 	}
 
-	AnimationTree* tree = singleton->tree;
+	AnimationTree* tree = AnimationTreeEditor::instance->tree;
 	if (!tree) {
 		return LocalVector<String>();
 	}

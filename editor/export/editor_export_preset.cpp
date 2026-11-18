@@ -91,7 +91,7 @@ String EditorExportPreset::get_name() const { return name; }
 
 bool EditorExportPreset::is_runnable() const
 {
-	return EditorExport::singleton->get_runnable_preset_for_platform(platform).ptr() == this;
+	return EditorExport::get_runnable_preset_for_platform(platform).ptr() == this;
 }
 
 bool EditorExportPreset::is_dedicated_server() const { return dedicated_server; }

@@ -79,8 +79,6 @@ void AnimationNodeBlendTreeEditor::_scroll_changed(const Vector2& p_scroll)
 	updating = false;
 }
 
-AnimationNodeBlendTreeEditor* AnimationNodeBlendTreeEditor::singleton = nullptr;
-
 // AnimationNode's "node_changed" signal means almost update_input.
 void AnimationNodeBlendTreeEditor::_node_changed(const String& p_node_name)
 {
@@ -90,7 +88,7 @@ void AnimationNodeBlendTreeEditor::_node_changed(const String& p_node_name)
 	// AnimationNodeBlendTree and update_graph(). This means that there is no place to register
 	// undo_redo actions. In order to implement undo_redo correctly, we may need to implement
 	// AnimationNodeEdit such as AnimationTrackKeyEdit and add it to _node_selected() with
-	// EditorNode::get_singleton()->push_item(AnimationNodeEdit).
+	// EditorNode::push_item(AnimationNodeEdit).
 	update_graph();
 }
 
@@ -105,7 +103,14 @@ bool AnimationNodeBlendTreeEditor::can_edit(const Ref<AnimationNode>& p_node)
 	return bt.is_valid();
 }
 
-void AnimationNodeBlendTreeEditor::update_graph() {}
+void AnimationNodeBlendTreeEditor::update_graph()
+{
+	ERR_FAIL_NULL(AnimationNodeBlendTreeEditor::instance);
+	AnimationNodeBlendTreeEditor::instance->_impl_update_graph();
+}
+
+void AnimationNodeBlendTreeEditor::_impl_update_graph()
+{}
 
 void AnimationNodeBlendTreeEditor::edit(const Ref<AnimationNode>& p_node) {}
 

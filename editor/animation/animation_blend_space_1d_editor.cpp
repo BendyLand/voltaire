@@ -50,7 +50,7 @@
 
 String AnimationNodeBlendSpace1DEditor::get_blend_position_path() const
 {
-	String path = AnimationTreeEditor::get_singleton()->get_base_path() + "blend_position";
+	String path = AnimationTreeEditor::get_base_path() + "blend_position";
 	return path;
 }
 
@@ -128,7 +128,4 @@ void AnimationNodeBlendSpace1DEditor::_inline_editor_text_changed(const String& 
 
 	inline_editor->set_position(Vector2(editor_x, inline_editor->get_position().y));
 }
-
-AnimationNodeBlendSpace1DEditor* AnimationNodeBlendSpace1DEditor::singleton = nullptr;
-
 

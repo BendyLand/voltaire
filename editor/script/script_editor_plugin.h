@@ -386,18 +386,21 @@ class ScriptEditor : public PanelContainer
 
 	void _close_builtin_scripts_from_scene(const String& p_scene);
 
-	static ScriptEditor* script_editor;
+
 
 protected:
 	void _notification(int p_what);
 
 public:
-	static ScriptEditor* get_singleton() { return script_editor; }
+	static inline ScriptEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	bool toggle_files_panel();
+	bool _impl_toggle_files_panel();
+	static bool toggle_files_panel();
 	bool is_files_panel_toggled();
 	void apply_scripts() const;
-	void reload_scripts(bool p_refresh_only = false);
+	void _impl_reload_scripts(bool p_refresh_only);
+	static void reload_scripts(bool p_refresh_only = false);
 	void open_find_in_files_dialog(const String& p_initial_text = "", bool p_replace = false);
 	void open_script_create_dialog(const String& p_base_name, const String& p_base_path);
 	void open_text_file_create_dialog(const String& p_base_path, const String& p_base_name = "");
@@ -406,7 +409,8 @@ public:
 
 	void ensure_select_current();
 
-	bool is_editor_floating();
+	bool _impl_is_editor_floating();
+	static bool is_editor_floating();
 
 	_FORCE_INLINE_ bool edit(const Ref<Resource>& p_resource, bool p_grab_focus = true)
 	{
@@ -418,7 +422,8 @@ public:
 	Control* get_active_editor() const;
 
 	Vector<String> _get_breakpoints();
-	void get_breakpoints(List<String>* p_breakpoints);
+	void _impl_get_breakpoints(List<String>* p_breakpoints);
+	static void get_breakpoints(List<String>* p_breakpoints);
 
 	void reload_open_files();
 	PackedStringArray get_unsaved_files() const;
@@ -432,11 +437,13 @@ public:
 
 	ScriptEditorBase* get_script_editor(Ref<Resource> p_script) const;
 
-	ScriptEditorBase* get_current_editor() const { return _get_current_editor(); }
+	ScriptEditorBase* _impl_get_current_editor() const { return _get_current_editor(); }
+	static ScriptEditorBase* get_current_editor() { return instance->_impl_get_current_editor(); }
 
 	virtual void edited_scene_changed();
 
-	void goto_help(const String& p_desc) { _help_class_goto(p_desc); }
+	void _impl_goto_help(const String& p_desc) { _help_class_goto(p_desc); }
+	static void goto_help(const String& p_desc) { if (instance) { instance->_impl_goto_help(p_desc); } }
 
 	void update_doc(const String& p_name);
 	void trigger_live_script_reload(const String& p_script_path);
@@ -466,13 +473,14 @@ class ScriptEditorPlugin : public EditorPlugin
 	void _save_last_editor(const String& p_editor);
 	void _window_visibility_changed(bool p_visible);
 
-	static inline ScriptEditorPlugin* script_editor_plugin = nullptr;
+
 
 protected:
 	void _notification(int p_what);
 
 public:
-	static ScriptEditorPlugin* get_singleton() { return script_editor_plugin; }
+	static inline ScriptEditorPlugin* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	static bool open_in_external_editor(
 		const String& p_path, int p_line, int p_col, bool p_ignore_project = false);

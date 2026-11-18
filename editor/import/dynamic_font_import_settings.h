@@ -70,7 +70,7 @@ class DynamicFontImportSettingsDialog : public ConfirmationDialog
 		BUTTON_REMOVE_VAR,
 	};
 
-	static DynamicFontImportSettingsDialog* singleton;
+
 
 	String base_path;
 
@@ -160,8 +160,10 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void open_settings(const String& p_path);
-	static DynamicFontImportSettingsDialog* get_singleton();
+	void _impl_open_settings(const String& p_path);
+	static void open_settings(const String& p_path);
+	static inline DynamicFontImportSettingsDialog* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	DynamicFontImportSettingsDialog();
 };

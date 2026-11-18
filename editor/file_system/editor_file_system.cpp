@@ -48,7 +48,6 @@
 #include "scene/resources/packed_scene.h"
 #include "servers/display/display_server.h"
 
-EditorFileSystem* EditorFileSystem::singleton = nullptr;
 int EditorFileSystem::nb_files_total = 0;
 EditorFileSystem::ScannedDirectory* EditorFileSystem::first_scan_root_dir = nullptr;
 
@@ -381,7 +380,7 @@ void EditorFileSystem::ScanProgress::increment()
 	if (progress) {
 		progress->step(ratio * 1000.0f);
 	}
-	EditorFileSystem::singleton->scan_total = ratio;
+	EditorFileSystem::instance->scan_total = ratio;
 }
 
 int EditorFileSystem::_scan_new_dir(ScannedDirectory* p_dir, Ref<DirAccess>& da)
@@ -513,11 +512,23 @@ String EditorFileSystem::_get_file_by_class_name(EditorFileSystemDirectory* p_di
 	return "";
 }
 
-bool EditorFileSystem::is_scanning() const { return scanning || scanning_changes || first_scan; }
+bool EditorFileSystem::is_scanning()
+{
+	return EditorFileSystem::instance->_impl_is_scanning();
+}
+
+bool EditorFileSystem::_impl_is_scanning() const
+{ return scanning || scanning_changes || first_scan; }
 
 float EditorFileSystem::get_scanning_progress() const { return scan_total; }
 
-EditorFileSystemDirectory* EditorFileSystem::get_filesystem() { return filesystem; }
+EditorFileSystemDirectory* EditorFileSystem::get_filesystem()
+{
+	return EditorFileSystem::instance->_impl_get_filesystem();
+}
+
+EditorFileSystemDirectory* EditorFileSystem::_impl_get_filesystem()
+{ return filesystem; }
 
 void EditorFileSystem::_save_filesystem_cache(
 	EditorFileSystemDirectory* p_dir, Ref<FileAccess> p_file)
@@ -663,7 +674,12 @@ bool EditorFileSystem::_find_file(
 	return cpos != -1;
 }
 
-String EditorFileSystem::get_file_type(const String& p_file) const
+String EditorFileSystem::get_file_type(const String& p_file)
+{
+	return EditorFileSystem::instance->_impl_get_file_type(p_file);
+}
+
+String EditorFileSystem::_impl_get_file_type(const String& p_file) const
 {
 	EditorFileSystemDirectory* fs = nullptr;
 	int cpos = -1;
@@ -675,7 +691,12 @@ String EditorFileSystem::get_file_type(const String& p_file) const
 	return fs->files[cpos]->type;
 }
 
-EditorFileSystemDirectory* EditorFileSystem::find_file(const String& p_file, int* r_index) const
+EditorFileSystemDirectory* EditorFileSystem::find_file(const String& p_file, int* r_index)
+{
+	return EditorFileSystem::instance->_impl_find_file(p_file, r_index);
+}
+
+EditorFileSystemDirectory* EditorFileSystem::_impl_find_file(const String& p_file, int* r_index) const
 {
 	if (!filesystem || scanning) {
 		return nullptr;
@@ -694,7 +715,12 @@ EditorFileSystemDirectory* EditorFileSystem::find_file(const String& p_file, int
 	return fs;
 }
 
-ResourceUID::ID EditorFileSystem::get_file_uid(const String& p_path) const
+ResourceUID::ID EditorFileSystem::get_file_uid(const String& p_path)
+{
+	return EditorFileSystem::instance->_impl_get_file_uid(p_path);
+}
+
+ResourceUID::ID EditorFileSystem::_impl_get_file_uid(const String& p_path) const
 {
 	int file_idx;
 	EditorFileSystemDirectory* directory = find_file(p_path, &file_idx);
@@ -706,6 +732,11 @@ ResourceUID::ID EditorFileSystem::get_file_uid(const String& p_path) const
 }
 
 EditorFileSystemDirectory* EditorFileSystem::get_filesystem_path(const String& p_path)
+{
+	return EditorFileSystem::instance->_impl_get_filesystem_path(p_path);
+}
+
+EditorFileSystemDirectory* EditorFileSystem::_impl_get_filesystem_path(const String& p_path)
 {
 	if (!filesystem || scanning) {
 		return nullptr;
@@ -856,8 +887,7 @@ bool EditorFileSystem::_should_skip_directory(const String& p_path)
 
 	if (FileAccess::exists(p_path.path_join("project.godot"))) {
 		// Skip if another project inside this.
-		if (EditorFileSystem::get_singleton() == nullptr ||
-			EditorFileSystem::get_singleton()->first_scan) {
+		if (!EditorFileSystem::is_initialized() || EditorFileSystem::doing_first_scan()) {
 			WARN_PRINT_ONCE(vformat(
 				"Detected another project.godot at %s. The folder will be ignored.", p_path));
 		}
@@ -889,7 +919,7 @@ ResourceUID::ID EditorFileSystem::_resource_saver_get_resource_id_for_path(
 	EditorFileSystemDirectory* fs = nullptr;
 	int cpos = -1;
 
-	if (!singleton->_find_file(p_path, &fs, cpos)) {
+	if (!EditorFileSystem::instance->_find_file(p_path, &fs, cpos)) {
 		// Fallback to ResourceLoader if filesystem cache fails (can happen during scanning etc.).
 		ResourceUID::ID fallback = ResourceLoader::get_resource_uid(p_path);
 		if (fallback != ResourceUID::INVALID_ID) {

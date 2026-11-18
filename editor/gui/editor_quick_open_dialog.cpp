@@ -213,7 +213,7 @@ QuickOpenResultCandidate QuickOpenResultCandidate::from_uid(
 QuickOpenResultCandidate QuickOpenResultCandidate::from_result(
 	Ref<FuzzySearchMatch> p_result, bool& r_success)
 {
-	ResourceUID::ID uid = EditorFileSystem::get_singleton()->get_file_uid(p_result->get_target());
+	ResourceUID::ID uid = EditorFileSystem::get_file_uid(p_result->get_target());
 
 	QuickOpenResultCandidate candidate = from_uid(uid, r_success);
 	if (!r_success) {
@@ -258,7 +258,7 @@ void QuickOpenResultContainer::_add_candidate(QuickOpenResultCandidate& p_candid
 	}
 
 	EditorResourcePreview::PreviewItem item =
-		EditorResourcePreview::get_singleton()->get_resource_preview_if_available(file_path);
+		EditorResourcePreview::get_resource_preview_if_available(file_path);
 	if (item.preview.is_valid()) {
 		p_candidate.thumbnail = item.preview;
 	}
@@ -463,7 +463,7 @@ QuickOpenDisplayMode QuickOpenResultContainer::get_adaptive_display_mode(
 
 String _get_uid_string(const String& p_filepath)
 {
-	ResourceUID::ID id = EditorFileSystem::get_singleton()->get_file_uid(p_filepath);
+	ResourceUID::ID id = EditorFileSystem::get_file_uid(p_filepath);
 	return id == ResourceUID::INVALID_ID ? p_filepath
 										 : ResourceUID::id_to_text(id);
 }

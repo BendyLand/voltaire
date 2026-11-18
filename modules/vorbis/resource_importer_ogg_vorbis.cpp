@@ -59,7 +59,7 @@ void ResourceImporterOggVorbis::show_advanced_options(const String& p_path)
 {
 	Ref<AudioStreamOggVorbis> ogg_stream = AudioStreamOggVorbis::load_from_file(p_path);
 	if (ogg_stream.is_valid()) {
-		AudioStreamImportSettingsDialog::get_singleton()->edit(p_path, "oggvorbisstr", ogg_stream);
+		AudioStreamImportSettingsDialog::edit(p_path, "oggvorbisstr", ogg_stream);
 	}
 }
 #endif

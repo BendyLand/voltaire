@@ -112,8 +112,8 @@ void ConnectionsDock::_handle_class_menu_option(int p_option)
 {
 	switch (p_option) {
 	case CLASS_MENU_OPEN_DOCS:
-		ScriptEditor::get_singleton()->goto_help("class:" + class_menu_doc_class_name);
-		EditorNode::get_singleton()->get_editor_main_screen()->select(
+		ScriptEditor::goto_help("class:" + class_menu_doc_class_name);
+		EditorNode::get_editor_main_screen()->select(
 			EditorMainScreen::EDITOR_SCRIPT);
 		break;
 	}

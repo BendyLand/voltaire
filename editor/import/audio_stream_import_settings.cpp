@@ -37,8 +37,6 @@
 #include "scene/gui/check_box.h"
 #include "servers/rendering/renderer.h"
 
-AudioStreamImportSettingsDialog* AudioStreamImportSettingsDialog::singleton = nullptr;
-
 void AudioStreamImportSettingsDialog::_draw_preview()
 {
 	Rect2 rect = _preview->get_rect();
@@ -46,7 +44,7 @@ void AudioStreamImportSettingsDialog::_draw_preview()
 	int width = rect_size.width;
 
 	Ref<AudioStreamPreview> preview =
-		AudioStreamPreviewGenerator::get_singleton()->generate_preview(stream);
+		AudioStreamPreviewGenerator::generate_preview(stream);
 	float preview_offset = zoom_bar->get_value();
 	float preview_len = zoom_bar->get_page();
 
@@ -213,4 +211,11 @@ int AudioStreamImportSettingsDialog::_get_beat_at_pos(real_t p_x)
 
 
 
-void AudioStreamImportSettingsDialog::edit(String const&, String const&, Ref<AudioStream> const&) {}
+void AudioStreamImportSettingsDialog::edit(String const& p_arg0, String const& p_arg1, Ref<AudioStream> const& p_arg2)
+{
+	ERR_FAIL_NULL(AudioStreamImportSettingsDialog::instance);
+	AudioStreamImportSettingsDialog::instance->_impl_edit(p_arg0, p_arg1, p_arg2);
+}
+
+void AudioStreamImportSettingsDialog::_impl_edit(String const& p_arg0, String const& p_arg1, Ref<AudioStream> const& p_arg2)
+{}

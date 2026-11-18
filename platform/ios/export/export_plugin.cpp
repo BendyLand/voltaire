@@ -39,7 +39,7 @@ Vector<String> EditorExportPlatformIOS::device_types({"iPhone", "iPad"});
 
 void EditorExportPlatformIOS::initialize()
 {
-	if (EditorNode::get_singleton()) {
+	if (EditorNode::is_initialized()) {
 		EditorExportPlatformAppleEmbedded::_initialize(_ios_logo_svg, _ios_run_icon_svg);
 #ifdef MACOS_ENABLED
 		_start_remote_device_poller_thread();

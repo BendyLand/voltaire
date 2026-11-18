@@ -90,7 +90,7 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 	Vector<AddOption> add_options;
 
 	String animation_node_name_meta = String("_animation_node_name");
-	static AnimationNodeBlendTreeEditor* singleton;
+
 
 	void _node_rename_lineedit_changed(const String& p_text);
 	void _node_changed(const String& p_node_name);
@@ -127,14 +127,16 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin
 protected:
 
 public:
-	static AnimationNodeBlendTreeEditor* get_singleton() { return singleton; }
+	static inline AnimationNodeBlendTreeEditor* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
 	virtual Size2 get_minimum_size() const override;
 
 	virtual bool can_edit(const Ref<AnimationNode>& p_node) override;
 	virtual void edit(const Ref<AnimationNode>& p_node) override;
 
-	void update_graph();
+	void _impl_update_graph();
+	static void update_graph();
 
 	AnimationNodeBlendTreeEditor() = default;
 };

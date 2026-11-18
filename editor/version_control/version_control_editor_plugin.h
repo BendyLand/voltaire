@@ -65,7 +65,7 @@ public:
 	};
 
 private:
-	static VersionControlEditorPlugin* singleton;
+
 
 	List<String> available_plugins;
 
@@ -195,9 +195,11 @@ private:
 protected:
 
 public:
-	static VersionControlEditorPlugin* get_singleton();
+	static inline VersionControlEditorPlugin* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	void popup_vcs_set_up_dialog(const Control* p_gui_base);
+	void _impl_popup_vcs_set_up_dialog(const Control* p_gui_base);
+	static void popup_vcs_set_up_dialog(const Control* p_gui_base);
 
 	PopupMenu* get_version_control_actions_panel() const { return version_control_actions; }
 

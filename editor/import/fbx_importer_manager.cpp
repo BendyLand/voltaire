@@ -53,8 +53,6 @@ void FBXImporterManager::_browse_install()
 	browse_dialog->popup_centered_ratio();
 }
 
-FBXImporterManager* FBXImporterManager::singleton = nullptr;
-
 void FBXImporterManager::_validate_path(String const&) {}
 
 
