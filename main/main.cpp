@@ -880,8 +880,6 @@ Error Main::test_setup()
 	XRServer::set_xr_mode(XRServer::XRMODE_OFF); // Skip in tests.
 #endif // XR_DISABLED
 	initialize_modules(MODULE_INITIALIZATION_LEVEL_SERVERS);
-	GDExtensionManager::get_singleton()->initialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_SERVERS);
 
 	TranslationServer::setup(); // register translations, load them, etc.
 	if (!locale.is_empty()) {
@@ -889,8 +887,6 @@ Error Main::test_setup()
 	}
 	TranslationServer::load_project_translations(TranslationServer::get_main_domain());
 	ResourceLoader::load_translation_remaps(); // load remaps for resources
-
-	message_queue = memnew(MessageQueue);
 
 	RasterizerDummy::make_current();
 	rendering_server = memnew(Renderer());
@@ -914,16 +910,12 @@ Error Main::test_setup()
 	register_scene_singletons();
 
 	initialize_modules(MODULE_INITIALIZATION_LEVEL_SCENE);
-	GDExtensionManager::get_singleton()->initialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_SCENE);
 
 #ifdef TOOLS_ENABLED
 	ClassDB::set_current_api(ClassDB::API_EDITOR);
 	register_editor_types();
 
 	initialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
-	GDExtensionManager::get_singleton()->initialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_EDITOR);
 
 	ClassDB::set_current_api(ClassDB::API_CORE);
 #endif
@@ -986,14 +978,10 @@ void Main::test_cleanup()
 	PropertyListHelper::clear_base_helpers();
 
 #ifdef TOOLS_ENABLED
-	GDExtensionManager::get_singleton()->deinitialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_EDITOR);
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
 	unregister_editor_types();
 #endif
 
-	GDExtensionManager::get_singleton()->deinitialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_SCENE);
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SCENE);
 
 	unregister_platform_apis();
@@ -1008,10 +996,6 @@ void Main::test_cleanup()
 		rendering_server->finish();
 		memdelete(rendering_server);
 	}
-	if (message_queue) {
-		message_queue->flush();
-		memdelete(message_queue);
-	}
 
 #ifndef NAVIGATION_2D_DISABLED
 	NavigationServer2D::finalize();
@@ -1020,8 +1004,6 @@ void Main::test_cleanup()
 	NavigationServer3D::finalize();
 #endif // NAVIGATION_3D_DISABLED
 
-	GDExtensionManager::get_singleton()->deinitialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_SERVERS);
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SERVERS);
 	unregister_server_types();
 
@@ -3929,7 +3911,7 @@ int Main::start()
         uint64_t prev_time = OS::get_ticks_usec();
         while (minimum_time > 0) {
             DisplayServer::process_events();
-            OS::get_singleton()->delay_usec(100);
+            OS::delay_usec(100);
 
             uint64_t next_time = OS::get_ticks_usec();
             minimum_time -= (next_time - prev_time);

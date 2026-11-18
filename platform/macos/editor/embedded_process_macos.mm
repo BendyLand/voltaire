@@ -88,7 +88,7 @@ void EmbeddedProcessMacOS::embed_process(ProcessID p_pid) {
 
 	if (current_process_id != 0) {
 		// Stop embedding the last process.
-		OS::get_singleton()->kill(current_process_id);
+		OS::kill(current_process_id);
 	}
 
 	reset();
@@ -218,7 +218,7 @@ EmbeddedProcessMacOS::EmbeddedProcessMacOS() :
 EmbeddedProcessMacOS::~EmbeddedProcessMacOS() {
 	if (current_process_id != 0) {
 		// Stop embedding the last process.
-		OS::get_singleton()->kill(current_process_id);
+		OS::kill(current_process_id);
 		reset();
 	}
 }

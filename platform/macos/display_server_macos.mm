@@ -159,7 +159,7 @@ DisplayServerEnums::WindowID DisplayServerMacOS::_create_window(DisplayServerEnu
 		[wd.window_object setColorSpace:[NSColorSpace sRGBColorSpace]];
 
 		if (!AccessibilityServer::window_create(id, (__bridge void *)wd.window_object)) {
-			if (OS::get_singleton()->is_stdout_verbose()) {
+			if (OS::is_stdout_verbose()) {
 				ERR_PRINT("Can't create an accessibility adapter for window, accessibility support disabled!");
 			}
 		}
@@ -328,7 +328,7 @@ void DisplayServerMacOS::set_window_per_pixel_transparency_enabled(bool p_enable
 	ERR_FAIL_COND(!windows.has(p_window));
 	WindowData &wd = windows[p_window];
 
-	if (!OS::get_singleton()->is_layered_allowed()) {
+	if (!OS::is_layered_allowed()) {
 		return;
 	}
 	if (p_enabled) {
@@ -968,7 +968,7 @@ Error DisplayServerMacOS::_file_dialog_with_options_show(const String &p_title, 
 		void (^completion_handler)(NSInteger ret) = ^(NSInteger ret) {
 			if (ret == NSModalResponseOK) {
 				// Save bookmark for folder.
-				if (OS::get_singleton()->is_sandboxed()) {
+				if (OS::is_sandboxed()) {
 					NSArray *bookmarks = [[NSUserDefaults standardUserDefaults] arrayForKey:@"sec_bookmarks"];
 					bool skip = false;
 					for (id bookmark in bookmarks) {
@@ -1084,7 +1084,7 @@ Error DisplayServerMacOS::_file_dialog_with_options_show(const String &p_title, 
 			if (ret == NSModalResponseOK) {
 				// Save bookmark for folder.
 				NSArray *urls = [(NSOpenPanel *)panel URLs];
-				if (OS::get_singleton()->is_sandboxed()) {
+				if (OS::is_sandboxed()) {
 					NSArray *bookmarks = [[NSUserDefaults standardUserDefaults] arrayForKey:@"sec_bookmarks"];
 					NSMutableArray *new_bookmarks = [bookmarks mutableCopy];
 					for (NSUInteger i = 0; i != [urls count]; ++i) {
@@ -1497,7 +1497,7 @@ float DisplayServerMacOS::screen_get_scale(int p_screen) const {
 	int screen_count = get_screen_count();
 	ERR_FAIL_INDEX_V(p_screen, screen_count, 1.0f);
 
-	if (OS::get_singleton()->is_hidpi_allowed()) {
+	if (OS::is_hidpi_allowed()) {
 		NSArray<NSScreen *> *screens = NSScreen.screens;
 		NSUInteger index = (NSUInteger)p_screen;
 		if (index < screens.count) {
@@ -3546,7 +3546,7 @@ bool DisplayServerMacOS::is_window_transparency_available() const {
 		return false;
 	}
 #endif
-	return OS::get_singleton()->is_layered_allowed();
+	return OS::is_layered_allowed();
 }
 
 DisplayServerDriver *DisplayServerMacOS::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
@@ -3554,12 +3554,12 @@ DisplayServerDriver *DisplayServerMacOS::create_func(const String &p_rendering_d
 	if (r_error != OK) {
 		if (p_rendering_driver == "vulkan") {
 			String executable_command;
-			if (OS::get_singleton()->get_bundle_resource_dir() == OS::get_singleton()->get_executable_path().get_base_dir()) {
-				executable_command = vformat("\"%s\" --rendering-driver opengl3", OS::get_singleton()->get_executable_path());
+			if (OS::get_bundle_resource_dir() == OS::get_executable_path().get_base_dir()) {
+				executable_command = vformat("\"%s\" --rendering-driver opengl3", OS::get_executable_path());
 			} else {
-				executable_command = vformat("open \"%s\" --args --rendering-driver opengl3", OS::get_singleton()->get_bundle_resource_dir().path_join("../..").simplify_path());
+				executable_command = vformat("open \"%s\" --args --rendering-driver opengl3", OS::get_bundle_resource_dir().path_join("../..").simplify_path());
 			}
-			OS::get_singleton()->alert(
+			OS::alert(
 					vformat("Your video card drivers seem not to support the required Vulkan version.\n\n"
 							"If possible, consider updating your macOS version or using the OpenGL 3 driver.\n\n"
 							"You can enable the OpenGL 3 driver by starting the engine from the\n"
@@ -3567,7 +3567,7 @@ DisplayServerDriver *DisplayServerMacOS::create_func(const String &p_rendering_d
 							executable_command),
 					"Unable to initialize Vulkan video driver");
 		} else {
-			OS::get_singleton()->alert(
+			OS::alert(
 					"Your video card drivers seem not to support the required OpenGL 3.3 version.\n\n"
 					"If possible, consider updating your macOS version.",
 					"Unable to initialize OpenGL video driver");
@@ -3668,7 +3668,7 @@ void DisplayServerMacOS::popup_open(DisplayServerEnums::WindowID p_window) {
 			// Inform OS that popup was opened, to close other native popups.
 			[[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.apple.HIToolbox.beginMenuTrackingNotification" object:@"org.godotengine.godot.popup_window"];
 		}
-		time_since_popup = OS::get_singleton()->get_ticks_msec();
+		time_since_popup = OS::get_ticks_msec();
 		popup_list.push_back(p_window);
 	}
 }
@@ -3712,7 +3712,7 @@ bool DisplayServerMacOS::mouse_process_popups(bool p_close) {
 			[[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.apple.HIToolbox.endMenuTrackingNotification" object:@"org.godotengine.godot.popup_window"];
 		}
 	} else {
-		uint64_t delta = OS::get_singleton()->get_ticks_msec() - time_since_popup;
+		uint64_t delta = OS::get_ticks_msec() - time_since_popup;
 		if (delta < 250) {
 			return false;
 		}
@@ -3873,7 +3873,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 	// Metal rendering driver not available on Intel.
 	if (rendering_driver == "metal") {
 		rendering_driver = "vulkan";
-		OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+		OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 	}
 #endif
 	if (rendering_driver == "vulkan") {
@@ -3895,8 +3895,8 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 			if (fallback_to_opengl3 && rendering_driver != "opengl3") {
 				WARN_PRINT("Your device does not seem to support MoltenVK or Metal, switching to OpenGL 3.");
 				rendering_driver = "opengl3";
-				OS::get_singleton()->set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
-				OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 			} else
 #endif
 			{
@@ -3909,7 +3909,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 
 #if defined(GLES3_ENABLED)
 #if defined(ANGLE_ENABLED)
-	if (rendering_driver == "opengl3" && OS::get_singleton()->get_processor_name().contains("Virtual")) {
+	if (rendering_driver == "opengl3" && OS::get_processor_name().contains("Virtual")) {
 		WARN_PRINT("Virtual Machine detected, switching to ANGLE.");
 		rendering_driver = "opengl3_angle";
 	}
@@ -3918,7 +3918,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 		if (gl_manager_angle->initialize() != OK || gl_manager_angle->open_display(nullptr) != OK) {
 			memdelete(gl_manager_angle);
 			gl_manager_angle = nullptr;
-			if (OS::get_singleton()->get_processor_name().contains("Virtual")) {
+			if (OS::get_processor_name().contains("Virtual")) {
 				r_error = ERR_UNAVAILABLE;
 				ERR_FAIL_MSG("Could not initialize ANGLE OpenGL.");
 			}
@@ -3926,7 +3926,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 			if (fallback) {
 				WARN_PRINT("Your video card drivers seem not to support GLES3 / ANGLE, switching to native OpenGL.");
 				rendering_driver = "opengl3";
-				OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 			} else {
 				r_error = ERR_UNAVAILABLE;
 				ERR_FAIL_MSG("Could not initialize ANGLE OpenGL.");
@@ -3934,7 +3934,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 		}
 	}
 #else
-	if (rendering_driver == "opengl3" && OS::get_singleton()->get_processor_name().contains("Virtual")) {
+	if (rendering_driver == "opengl3" && OS::get_processor_name().contains("Virtual")) {
 		r_error = ERR_UNAVAILABLE;
 		ERR_FAIL_MSG("Virtual Machine detected, could not initialize OpenGL.");
 	}

@@ -470,8 +470,9 @@ _FORCE_INLINE_ TextServerFallback::FontGlyph TextServerFallback::rasterize_msdf(
 		td.projection = &projection;
 		td.distancePixelConversion = &distancePixelConversion;
 
-		WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_native_group_task(&TextServerFallback::_generateMTSDF_threaded, &td, h, -1, true, String("TextServerFBRenderMSDF"));
-		WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
+		for (int i = 0; i < h; i++) {
+			TextServerFallback::_generateMTSDF_threaded(&td, i);
+		}
 
 		msdfgen::msdfErrorCorrection(image, shape, projection, p_pixel_range, config);
 

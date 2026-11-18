@@ -87,7 +87,7 @@ Dictionary detect_wgl() {
 	}
 
 	LPCWSTR class_name = L"EngineWGLDetect";
-	HINSTANCE hInstance = static_cast<OS_Windows *>(OS::get_singleton())->get_hinstance();
+	HINSTANCE hInstance = OS_Windows::get_hinstance();
 	WNDCLASSW wc = {};
 
 	wc.lpfnWndProc = DefWindowProcW;

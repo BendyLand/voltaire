@@ -250,12 +250,12 @@ void RenderSceneBuffersRD::ensure_mfx(RendererRD::MFXSpatialEffect* p_effect)
 		return;
 	}
 
-	RendererRD::TextureStorage* texture_storage = RendererRD::TextureStorage::get_singleton();
-	RenderingDevice* rd = RD::data;
+	ERR_FAIL_COND(!RendererRD::TextureStorage::is_initialized());
+	ERR_FAIL_NULL(RD::data);
 
 	// Determine the output format of the render target.
-	RID dest = texture_storage->render_target_get_rd_texture(render_target);
-	RD::TextureFormat tf = rd->texture_get_format(dest);
+	RID dest = RendererRD::TextureStorage::render_target_get_rd_texture(render_target);
+	RD::TextureFormat tf = RD::texture_get_format(dest);
 	RD::DataFormat output_format = tf.format;
 
 	RendererRD::MFXSpatialEffect::CreateParams params = {

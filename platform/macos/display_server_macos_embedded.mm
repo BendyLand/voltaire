@@ -87,7 +87,7 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 	// Metal rendering driver not available on Intel.
 	if (rendering_driver == "metal") {
 		rendering_driver = "vulkan";
-		OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+		OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 	}
 #endif
 	if (rendering_driver == "vulkan") {
@@ -109,8 +109,8 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 			if (fallback_to_opengl3 && rendering_driver != "opengl3") {
 				WARN_PRINT("Your device does not seem to support MoltenVK or Metal, switching to OpenGL 3.");
 				rendering_driver = "opengl3";
-				OS::get_singleton()->set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
-				OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 			} else
 #endif
 			{
@@ -125,7 +125,7 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 	if (rendering_driver == "opengl3_angle") {
 		WARN_PRINT("ANGLE not supported for embedded display, switching to native OpenGL.");
 		rendering_driver = "opengl3";
-		OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+		OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 	}
 
 	if (rendering_driver == "opengl3") {
@@ -206,7 +206,7 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 	layer.magnificationFilter = kCAFilterNearest;
 	layer.minificationFilter = kCAFilterNearest;
 	transparent = ((p_flags & DisplayServerEnums::WINDOW_FLAG_TRANSPARENT_BIT) == DisplayServerEnums::WINDOW_FLAG_TRANSPARENT_BIT);
-	layer.opaque = !(OS::get_singleton()->is_layered_allowed() && transparent);
+	layer.opaque = !(OS::is_layered_allowed() && transparent);
 	layer.actions = @{ @"contents" : [NSNull null] }; // Disable implicit animations for contents.
 	// AppKit frames, bounds and positions are always in points.
 	CGRect bounds = CGRectMake(0, 0, p_resolution.width, p_resolution.height);
@@ -217,10 +217,6 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 	ca_context = [CAContext contextWithCGSConnection:connection_id options:@{ kCAContextCIFilterBehavior : @"ignore" }];
 	ca_context.layer = layer;
 
-	{
-		Array arr = { ca_context.contextId };
-		EngineDebugger::get_singleton()->send_message("game_view:set_context_id", arr);
-	}
 }
 
 DisplayServerMacOSEmbedded::~DisplayServerMacOSEmbedded() {
@@ -275,7 +271,6 @@ void DisplayServerMacOSEmbedded::register_embedded_driver() {
 // MARK: - Mouse
 
 void DisplayServerMacOSEmbedded::_mouse_apply_mode(DisplayServerEnums::MouseMode p_prev_mode, DisplayServerEnums::MouseMode p_new_mode) {
-	EngineDebugger::get_singleton()->send_message("game_view:mouse_set_mode", { p_new_mode });
 }
 
 void DisplayServerMacOSEmbedded::warp_mouse(const Point2i &p_position) {
@@ -283,7 +278,6 @@ void DisplayServerMacOSEmbedded::warp_mouse(const Point2i &p_position) {
 	Input::set_mouse_position(p_position);
 	// Convert from game pixels to points for the editor.
 	float inv_scale = 1.0f / screen_get_max_scale();
-	EngineDebugger::get_singleton()->send_message("game_view:warp_mouse", { Point2i(Vector2(p_position) * inv_scale) });
 }
 
 Point2i DisplayServerMacOSEmbedded::mouse_get_position() const {
@@ -480,7 +474,7 @@ int DisplayServerMacOSEmbedded::screen_get_dpi(int p_screen) const {
 float DisplayServerMacOSEmbedded::screen_get_scale(int p_screen) const {
 	_THREAD_SAFE_METHOD_
 
-	if (!OS::get_singleton()->is_hidpi_allowed()) {
+	if (!OS::is_hidpi_allowed()) {
 		return 1.0f;
 	}
 
@@ -633,7 +627,7 @@ bool DisplayServerMacOSEmbedded::window_is_maximize_allowed(DisplayServerEnums::
 void DisplayServerMacOSEmbedded::window_set_flag(DisplayServerEnums::WindowFlags p_flag, bool p_enabled, DisplayServerEnums::WindowID p_window) {
 	if (p_flag == DisplayServerEnums::WINDOW_FLAG_TRANSPARENT && p_window == DisplayServerEnums::MAIN_WINDOW_ID) {
 		transparent = p_enabled;
-		layer.opaque = !(OS::get_singleton()->is_layered_allowed() && transparent);
+		layer.opaque = !(OS::is_layered_allowed() && transparent);
 	}
 }
 
@@ -665,7 +659,7 @@ bool DisplayServerMacOSEmbedded::window_is_focused(DisplayServerEnums::WindowID 
 }
 
 float DisplayServerMacOSEmbedded::screen_get_max_scale() const {
-	if (!OS::get_singleton()->is_hidpi_allowed()) {
+	if (!OS::is_hidpi_allowed()) {
 		return 1.0f;
 	}
 	return state.screen_max_scale;
@@ -687,14 +681,12 @@ bool DisplayServerMacOSEmbedded::can_any_window_draw() const {
 }
 
 void DisplayServerMacOSEmbedded::window_set_ime_active(const bool p_active, DisplayServerEnums::WindowID p_window) {
-	EngineDebugger::get_singleton()->send_message("game_view:window_set_ime_active", { p_active });
 }
 
 void DisplayServerMacOSEmbedded::window_set_ime_position(const Point2i &p_pos, DisplayServerEnums::WindowID p_window) {
 	if (p_pos == ime_last_position) {
 		return;
 	}
-	EngineDebugger::get_singleton()->send_message("game_view:window_set_ime_position", { p_pos });
 	ime_last_position = p_pos;
 }
 
@@ -785,7 +777,6 @@ DisplayServerEnums::VSyncMode DisplayServerMacOSEmbedded::window_get_vsync_mode(
 
 void DisplayServerMacOSEmbedded::cursor_set_shape(DisplayServerEnums::CursorShape p_shape) {
 	cursor_shape = p_shape;
-	EngineDebugger::get_singleton()->send_message("game_view:cursor_set_shape", { p_shape });
 }
 
 void DisplayServerMacOSEmbedded::cursor_set_custom_image(const Ref<Resource> &p_cursor, DisplayServerEnums::CursorShape p_shape, const Vector2 &p_hotspot) {
@@ -796,7 +787,6 @@ void DisplayServerMacOSEmbedded::cursor_set_custom_image(const Ref<Resource> &p_
 			data = image->save_png_to_buffer();
 		}
 	}
-	EngineDebugger::get_singleton()->send_message("game_view:cursor_set_custom_image", { data, p_shape, p_hotspot });
 }
 
 void DisplayServerMacOSEmbedded::swap_buffers() {

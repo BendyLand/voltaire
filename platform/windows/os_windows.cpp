@@ -819,7 +819,7 @@ Vector<String> OS_Windows::_get_video_adapter_driver_info_wmi(const String &p_na
 }
 
 Vector<String> OS_Windows::get_video_adapter_driver_info() const {
-	if (Renderer::get_singleton() == nullptr) {
+	if (!Renderer::is_initialized()) {
 		return Vector<String>();
 	}
 

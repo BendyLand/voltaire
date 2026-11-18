@@ -1209,7 +1209,6 @@ void EditorHelpHighlighter::initialize()
 	Ref<EditorStandardSyntaxHighlighter> csharp_highlighter;
 	csharp_highlighter.instantiate();
 	csharp_highlighter->set_text_edit(csharp_text_edit);
-	csharp_highlighter->_set_script_language(CSharpLanguage::get_singleton());
 
 	data->text_edits[LANGUAGE_CSHARP] = csharp_text_edit;
 	data->highlighters[LANGUAGE_CSHARP] = csharp_highlighter;

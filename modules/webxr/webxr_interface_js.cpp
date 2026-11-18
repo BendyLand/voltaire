@@ -361,14 +361,13 @@ void WebXRInterfaceJS::uninitialize() {
 
 		godot_webxr_uninitialize();
 
-		GLES3::TextureStorage *texture_storage = GLES3::TextureStorage::get_singleton();
-		if (texture_storage != nullptr) {
+		if (GLES3::TextureStorage::is_initialized()) {
 			for (KeyValue<unsigned int, RID> &E : texture_cache) {
 				// Forcibly mark as not part of a render target so we can free it.
-				GLES3::Texture *texture = texture_storage->get_texture(E.value);
+				GLES3::Texture *texture = GLES3::TextureStorage::get_texture(E.value);
 				texture->is_render_target = false;
 
-				texture_storage->texture_free(E.value);
+				GLES3::TextureStorage::texture_free(E.value);
 			}
 		}
 
@@ -490,8 +489,7 @@ Projection WebXRInterfaceJS::get_projection_for_view(uint32_t p_view, double p_a
 }
 
 bool WebXRInterfaceJS::pre_draw_viewport(RID p_render_target) {
-	GLES3::TextureStorage *texture_storage = GLES3::TextureStorage::get_singleton();
-	if (texture_storage == nullptr) {
+	if (!GLES3::TextureStorage::is_initialized()) {
 		return false;
 	}
 
@@ -509,7 +507,7 @@ bool WebXRInterfaceJS::pre_draw_viewport(RID p_render_target) {
 	//
 	// So, even if the color and depth textures have the same GLuint as the last
 	// frame, we need to re-attach them again.
-	texture_storage->render_target_set_reattach_textures(p_render_target, true);
+	GLES3::TextureStorage::render_target_set_reattach_textures(p_render_target, true);
 
 	return true;
 }
@@ -517,12 +515,11 @@ bool WebXRInterfaceJS::pre_draw_viewport(RID p_render_target) {
 Vector<RenderingServerTypes::BlitToScreen> WebXRInterfaceJS::post_draw_viewport(RID p_render_target, const Rect2 &p_screen_rect) {
 	Vector<RenderingServerTypes::BlitToScreen> blit_to_screen;
 
-	GLES3::TextureStorage *texture_storage = GLES3::TextureStorage::get_singleton();
-	if (texture_storage == nullptr) {
+	if (!GLES3::TextureStorage::is_initialized()) {
 		return blit_to_screen;
 	}
 
-	texture_storage->render_target_set_reattach_textures(p_render_target, false);
+	GLES3::TextureStorage::render_target_set_reattach_textures(p_render_target, false);
 
 	return blit_to_screen;
 }
@@ -551,15 +548,14 @@ RID WebXRInterfaceJS::_get_texture(unsigned int p_texture_id) {
 		return cache->get();
 	}
 
-	GLES3::TextureStorage *texture_storage = GLES3::TextureStorage::get_singleton();
-	if (texture_storage == nullptr) {
+	if (!GLES3::TextureStorage::is_initialized()) {
 		return RID();
 	}
 
 	uint32_t view_count = godot_webxr_get_view_count();
 	Size2 texture_size = get_render_target_size();
 
-	RID texture = texture_storage->texture_create_from_native_handle(
+	RID texture = GLES3::TextureStorage::texture_create_from_native_handle(
 			view_count == 1 ? RSE::TEXTURE_TYPE_2D : RSE::TEXTURE_TYPE_LAYERED,
 			Image::FORMAT_RGBA8,
 			p_texture_id,

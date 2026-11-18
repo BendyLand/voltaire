@@ -86,7 +86,6 @@ int test_main(int argc, char *argv[]) {
 	OS::set_cmdline("", args, List<String>());
 	DisplayServerMock::register_mock_driver();
 
-	WorkerThreadPool::get_singleton()->init();
 
 	{
 		const String test_path = TestUtils::get_temp_path("");
@@ -158,12 +157,6 @@ struct GodotTestCaseListener : public doctest::IReporter {
 	PhysicsServer3DDriver *physics_server_3d = nullptr;
 #endif // PHYSICS_3D_DISABLED
 
-#ifndef NAVIGATION_2D_DISABLED
-	NavigationServer2D *navigation_server_2d = nullptr;
-#endif // NAVIGATION_2D_DISABLED
-#ifndef NAVIGATION_3D_DISABLED
-	NavigationServer3D *navigation_server_3d = nullptr;
-#endif // NAVIGATION_3D_DISABLED
 
 	void test_case_start(const doctest::TestCaseData &p_in) override {
 		reinitialize();
@@ -217,10 +210,10 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 			ERR_PRINT_OFF;
 #ifndef NAVIGATION_3D_DISABLED
-			navigation_server_3d = NavigationServer3DManager::get_singleton()->new_default_server();
+			NavigationServer3D::initialize();
 #endif // NAVIGATION_3D_DISABLED
 #ifndef NAVIGATION_2D_DISABLED
-			navigation_server_2d = NavigationServer2DManager::get_singleton()->new_default_server();
+			NavigationServer2D::initialize();
 #endif // NAVIGATION_2D_DISABLED
 			ERR_PRINT_ON;
 
@@ -248,15 +241,15 @@ struct GodotTestCaseListener : public doctest::IReporter {
 			// The last driver index should always be the dummy driver.
 			int dummy_idx = AudioDriverManager::get_driver_count() - 1;
 			AudioDriverManager::initialize(dummy_idx);
-			AudioServer *audio_server = memnew(AudioServer);
-			audio_server->init();
+			AudioServer::initialize();
+			AudioServer::init();
 			return;
 		}
 
 #ifndef NAVIGATION_3D_DISABLED
 		if (suite_name.contains("[Navigation3D]") && navigation_server_3d == nullptr) {
 			ERR_PRINT_OFF;
-			navigation_server_3d = NavigationServer3DManager::get_singleton()->new_default_server();
+			NavigationServer3D::initialize();
 			ERR_PRINT_ON;
 			return;
 		}
@@ -265,7 +258,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #ifndef NAVIGATION_2D_DISABLED
 		if (suite_name.contains("[Navigation2D]") && navigation_server_2d == nullptr) {
 			ERR_PRINT_OFF;
-			navigation_server_2d = NavigationServer2DManager::get_singleton()->new_default_server();
+			NavigationServer2D::initialize();
 			ERR_PRINT_ON;
 			return;
 		}
@@ -291,24 +284,14 @@ struct GodotTestCaseListener : public doctest::IReporter {
 			SceneTree::finalize_tree();
 		}
 
-		if (MessageQueue::get_singleton()) {
-			MessageQueue::get_singleton()->flush();
-		}
-
 		SceneTree::finalize();
 
 #ifndef NAVIGATION_3D_DISABLED
-		if (navigation_server_3d) {
-			memdelete(navigation_server_3d);
-			navigation_server_3d = nullptr;
-		}
+		NavigationServer3D::finalize();
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef NAVIGATION_2D_DISABLED
-		if (navigation_server_2d) {
-			memdelete(navigation_server_2d);
-			navigation_server_2d = nullptr;
-		}
+		NavigationServer2D::finalize();
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef PHYSICS_3D_DISABLED

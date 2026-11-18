@@ -110,7 +110,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* breakpoint on lines that still exist are kept. */
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK(code_edit->is_line_breakpointed(0));
 			SIGNAL_CHECK_FALSE("breakpoint_toggled");
 
@@ -125,7 +124,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_breakpointed(1));
@@ -143,7 +141,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* breakpoint on lines that still exist are removed. */
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
@@ -158,7 +155,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_breakpointed(1));
@@ -330,7 +326,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
@@ -356,13 +351,11 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			args = { { 9 }, { 14 } };
 
 			code_edit->insert_text_at_caret("\n\n\n\n\n");
-			MessageQueue::get_singleton()->flush();
 			SIGNAL_DISCARD("breakpoint_toggled")
 			CHECK(code_edit->is_line_breakpointed(9));
 
 			code_edit->select(0, 0, 6, 0);
 			code_edit->insert_text_at_caret("\n\n\n\n\n\n\n\n\n\n\n");
-			MessageQueue::get_singleton()->flush();
 			CHECK(code_edit->is_line_breakpointed(14));
 			SIGNAL_CHECK("breakpoint_toggled", args);
 		}
@@ -377,7 +370,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
@@ -436,7 +428,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* bookmarks on lines that still exist are kept. */
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK(code_edit->is_line_bookmarked(0));
 
 			/* bookmarks on lines that are removed should also be removed. */
@@ -447,7 +438,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			CHECK(code_edit->is_line_bookmarked(1));
 
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_bookmarked(1));
@@ -461,7 +451,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* bookmarks on lines that still exist are removed. */
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 
 			/* bookmarks on lines that are removed should also be removed. */
@@ -472,7 +461,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			CHECK(code_edit->is_line_bookmarked(1));
 
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_bookmarked(1));
@@ -576,7 +564,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 		}
 
@@ -587,7 +574,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 
 			/* Undo does not restore bookmark. */
@@ -642,7 +628,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* executing on lines that still exist are kept. */
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK(code_edit->is_line_executing(0));
 
 			/* executing on lines that are removed should also be removed. */
@@ -653,7 +638,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			CHECK(code_edit->is_line_executing(1));
 
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_executing(1));
@@ -667,7 +651,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* executing on lines that still exist are removed. */
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 
 			/* executing on lines that are removed should also be removed. */
@@ -678,7 +661,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			CHECK(code_edit->is_line_executing(1));
 
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_executing(1));
@@ -782,7 +764,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 		}
 
@@ -793,7 +774,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 
 			/* Undo does not restore executing lines. */
@@ -4828,14 +4808,12 @@ TEST_CASE("[SceneTree][CodeEdit] text manipulation") {
 		code_edit->set_text("this is\nsome\n");
 		code_edit->set_caret_line(0);
 		code_edit->set_caret_column(6);
-		MessageQueue::get_singleton()->flush();
 		SIGNAL_DISCARD("text_set");
 		SIGNAL_DISCARD("text_changed");
 		SIGNAL_DISCARD("lines_edited_from");
 		SIGNAL_DISCARD("caret_changed");
 
 		code_edit->cut();
-		MessageQueue::get_singleton()->flush();
 		CHECK(DS->clipboard_get() == "");
 		CHECK(code_edit->get_text() == "this is\nsome\n");
 		CHECK(code_edit->get_caret_line() == 0);

@@ -277,14 +277,14 @@ void OS_MacOS::load_shell_environment() const {
 	static bool shell_env_loaded = false;
 	if (unlikely(!shell_env_loaded)) {
 		shell_env_loaded = true;
-		if (OS::get_singleton()->has_environment("TERM") || OS::get_singleton()->has_environment("__GODOT_SHELL_ENV_SET")) {
+		if (OS::has_environment("TERM") || OS::has_environment("__GODOT_SHELL_ENV_SET")) {
 			return; // Already started from terminal, or other the instance with the shell environment, do nothing.
 		}
 		String pipe;
 		List<String> args;
 		args.push_back("-c");
 		args.push_back(". /etc/zshrc;. /etc/zprofile;. ~/.zshenv;. ~/.zshrc;. ~/.zprofile;env");
-		Error err = OS::get_singleton()->execute("zsh", args, &pipe);
+		Error err = OS::execute("zsh", args, &pipe);
 		if (err == OK) {
 			Vector<String> env_vars = pipe.split("\n");
 			for (const String &E : env_vars) {
@@ -292,10 +292,10 @@ void OS_MacOS::load_shell_environment() const {
 				if (tags.size() != 2 || tags[0] == "SHELL" || tags[0] == "USER" || tags[0] == "COMMAND_MODE" || tags[0] == "TMPDIR" || tags[0] == "TERM_SESSION_ID" || tags[0] == "PWD" || tags[0] == "OLDPWD" || tags[0] == "SHLVL" || tags[0] == "HOME" || tags[0] == "DISPLAY" || tags[0] == "LOGNAME" || tags[0] == "TERM" || tags[0] == "COLORTERM" || tags[0] == "_" || tags[0].begins_with("__CF") || tags[0].begins_with("XPC_") || tags[0].begins_with("__GODOT")) {
 					continue;
 				}
-				OS::get_singleton()->set_environment(tags[0], tags[1]);
+				OS::set_environment(tags[0], tags[1]);
 			}
 		}
-		OS::get_singleton()->set_environment("__GODOT_SHELL_ENV_SET", "1");
+		OS::set_environment("__GODOT_SHELL_ENV_SET", "1");
 	}
 }
 
@@ -851,7 +851,7 @@ Error OS_MacOS::create_instance(const List<String> &p_arguments, ProcessID *r_ch
 	if (nsappname != nil) {
 		String path = String::utf8([[[NSBundle mainBundle] bundlePath] UTF8String]);
 #ifdef TOOLS_ENABLED
-		if (Engine::get_singleton() && !Engine::get_singleton()->is_project_manager_hint() && !Engine::get_singleton()->is_editor_hint()) {
+		if (!Engine::is_project_manager_hint() && !Engine::is_editor_hint()) {
 			// Project started from the editor, inject "path" argument to set instance working directory.
 			char cwd[PATH_MAX];
 			if (::getcwd(cwd, sizeof(cwd)) != nullptr) {

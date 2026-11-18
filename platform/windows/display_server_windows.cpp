@@ -5555,8 +5555,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				case SC_MONITORPOWER: // Monitor trying to enter powersave?
 					return 0; // Prevent from happening.
 				case SC_KEYMENU:
-					Engine *engine = Engine::get_singleton();
-					if (((lParam >> 16) <= 0) && !engine->is_project_manager_hint() && !engine->is_editor_hint() && !GLOBAL_GET_CACHED(bool, "application/run/enable_alt_space_menu")) {
+					if (((lParam >> 16) <= 0) && !Engine::is_project_manager_hint() && !Engine::is_editor_hint() && !GLOBAL_GET_CACHED(bool, "application/run/enable_alt_space_menu")) {
 						return 0;
 					}
 					if (!_get_mods().has_flag(WinKeyModifierMask::ALT) || !(GetAsyncKeyState(VK_SPACE) & (1 << 15))) {
@@ -7631,7 +7630,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 	drop_events = false;
 	key_event_pos = 0;
 
-	hInstance = static_cast<OS_Windows *>(OS::get_singleton())->get_hinstance();
+	hInstance = OS_Windows::get_hinstance();
 
 	pressrc = 0;
 	old_invalid = true;
@@ -8226,7 +8225,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 
 	r_error = OK;
 
-	static_cast<OS_Windows *>(OS::get_singleton())->set_main_window(windows[DisplayServerEnums::MAIN_WINDOW_ID].hWnd);
+	OS_Windows::set_main_window(windows[DisplayServerEnums::MAIN_WINDOW_ID].hWnd);
 	Input::set_event_dispatch_function(_dispatch_input_events);
 }
 

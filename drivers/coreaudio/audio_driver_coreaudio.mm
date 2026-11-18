@@ -156,7 +156,7 @@ Error AudioDriverCoreAudio::init() {
 	result = AudioUnitSetProperty(audio_unit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputBus, &strdesc, sizeof(strdesc));
 	ERR_FAIL_COND_V(result != noErr, FAILED);
 
-	uint32_t latency = Engine::get_singleton()->get_audio_output_latency();
+	uint32_t latency = Engine::get_audio_output_latency();
 	// Sample rate is independent of channels (ref: https://stackoverflow.com/questions/11048825/audio-sample-frequency-rely-on-channels)
 	buffer_frames = Math::closest_power_of_2(latency * (uint32_t)mix_rate / (uint32_t)1000);
 
@@ -462,7 +462,7 @@ Error AudioDriverCoreAudio::init_input_device() {
 	result = AudioUnitSetProperty(input_unit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, kInputBus, &strdesc, sizeof(strdesc));
 	ERR_FAIL_COND_V(result != noErr, FAILED);
 
-	uint32_t latency = Engine::get_singleton()->get_audio_output_latency();
+	uint32_t latency = Engine::get_audio_output_latency();
 	// Sample rate is independent of channels (ref: https://stackoverflow.com/questions/11048825/audio-sample-frequency-rely-on-channels)
 	capture_buffer_frames = Math::closest_power_of_2(latency * (uint32_t)capture_mix_rate / (uint32_t)1000);
 

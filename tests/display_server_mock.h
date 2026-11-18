@@ -114,7 +114,6 @@ public:
 		Ref<InputEventKey> event = first_event->get()->duplicate(); \
 		event->set_pressed(true); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define SEND_GUI_KEY_EVENT(m_input) \
@@ -122,7 +121,6 @@ public:
 		Ref<InputEventKey> event = InputEventKey::create_reference(m_input); \
 		event->set_pressed(true); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define SEND_GUI_KEY_UP_EVENT(m_input) \
@@ -130,7 +128,6 @@ public:
 		Ref<InputEventKey> event = InputEventKey::create_reference(m_input); \
 		event->set_pressed(false); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define _UPDATE_EVENT_MODIFIERS(m_event, m_modifiers) \
@@ -160,7 +157,6 @@ public:
 	{ \
 		_CREATE_GUI_MOUSE_EVENT(m_screen_pos, m_input, m_mask, m_modifiers); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define SEND_GUI_MOUSE_BUTTON_RELEASED_EVENT(m_screen_pos, m_input, m_mask, m_modifiers) \
@@ -168,7 +164,6 @@ public:
 		_CREATE_GUI_MOUSE_EVENT(m_screen_pos, m_input, m_mask, m_modifiers); \
 		event->set_pressed(false); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define SEND_GUI_DOUBLE_CLICK(m_screen_pos, m_modifiers) \
@@ -176,7 +171,6 @@ public:
 		_CREATE_GUI_MOUSE_EVENT(m_screen_pos, MouseButton::LEFT, MouseButtonMask::NONE, m_modifiers); \
 		event->set_double_click(true); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 // We toggle _print_error_enabled to prevent display server not supported warnings.
@@ -190,7 +184,6 @@ public:
 		event->set_button_mask(m_mask); \
 		_UPDATE_EVENT_MODIFIERS(event, m_modifiers); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 		CoreGlobals::print_error_enabled = errors_enabled; \
 	}
 
@@ -198,5 +191,4 @@ public:
 	{ \
 		_CREATE_GUI_TOUCH_EVENT(m_screen_pos, m_pressed, m_double) \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}

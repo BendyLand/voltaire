@@ -163,7 +163,7 @@ GameViewDebuggerMacOS::GameViewDebuggerMacOS(EmbeddedProcessMacOS *p_embedded_pr
 }
 
 GameViewPluginMacOS::GameViewPluginMacOS() {
-	if (Engine::get_singleton()->is_recovery_mode_hint()) {
+	if (Engine::is_recovery_mode_hint()) {
 		return;
 	}
 

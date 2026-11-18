@@ -212,7 +212,7 @@ int64_t get_image_base(const String &p_path) {
 extern void CrashHandlerException(int signal) {
 	CrashHandlerData data;
 
-	if (OS::get_singleton() == nullptr || OS::is_disable_crash_handler() || IsDebuggerPresent()) {
+	if (!OS::is_initialized() || OS::is_disable_crash_handler() || IsDebuggerPresent()) {
 		return;
 	}
 
@@ -221,7 +221,7 @@ extern void CrashHandlerException(int signal) {
 	}
 
 	String msg;
-	if (ProjectSettings::get_singleton()) {
+	if (ProjectSettings::is_initialized()) {
 		msg = GLOBAL_GET("debug/settings/crash_handler/message");
 	}
 

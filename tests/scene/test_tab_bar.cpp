@@ -47,7 +47,6 @@ TEST_CASE("[SceneTree][TabBar] tab operations") {
 	TabBar *tab_bar = memnew(TabBar);
 	SceneTree::get_root()->add_child(tab_bar);
 	tab_bar->set_clip_tabs(false);
-	MessageQueue::get_singleton()->flush();
 
 	SIGNAL_WATCH(tab_bar, "tab_selected");
 	SIGNAL_WATCH(tab_bar, "tab_changed");
@@ -405,7 +404,6 @@ TEST_CASE("[SceneTree][TabBar] tab operations") {
 		SIGNAL_DISCARD("tab_selected");
 		SIGNAL_DISCARD("tab_changed");
 
-		MessageQueue::get_singleton()->flush();
 		Vector<Rect2> tab_rects = {
 			tab_bar->get_tab_rect(0),
 			tab_bar->get_tab_rect(1),
@@ -421,7 +419,6 @@ TEST_CASE("[SceneTree][TabBar] tab operations") {
 		SIGNAL_CHECK_FALSE("tab_changed");
 
 		// The tabs after are moved over.
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab_bar->get_tab_rect(0) == tab_rects[0]);
 		CHECK(tab_bar->get_tab_rect(2) == tab_rects[1]);
 
@@ -434,7 +431,6 @@ TEST_CASE("[SceneTree][TabBar] tab operations") {
 		SIGNAL_CHECK_FALSE("tab_changed");
 
 		// The tabs are back where they were.
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab_bar->get_tab_rect(0) == tab_rects[0]);
 		CHECK(tab_bar->get_tab_rect(1) == tab_rects[1]);
 		CHECK(tab_bar->get_tab_rect(2) == tab_rects[2]);
@@ -704,7 +700,6 @@ TEST_CASE("[SceneTree][TabBar] initialization") {
 		SIGNAL_CHECK_FALSE("tab_changed");
 
 		SceneTree::get_root()->add_child(tab_bar);
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab_bar->get_tab_count() == 0);
 		CHECK(tab_bar->get_current_tab() == -1);
 		CHECK(tab_bar->get_previous_tab() == -1);
@@ -734,7 +729,6 @@ TEST_CASE("[SceneTree][TabBar] layout and offset") {
 	tab_bar->add_tab("tab0");
 	tab_bar->add_tab("tab1 ");
 	tab_bar->add_tab("tab2    ");
-	MessageQueue::get_singleton()->flush();
 	Size2 all_tabs_size = tab_bar->get_size();
 
 	Vector<Rect2> tab_rects = {
@@ -773,7 +767,6 @@ TEST_CASE("[SceneTree][TabBar] layout and offset") {
 
 		// Left alignment.
 		tab_bar->set_tab_alignment(TabBar::ALIGNMENT_LEFT);
-		MessageQueue::get_singleton()->flush();
 		tab_rects = {
 			tab_bar->get_tab_rect(0),
 			tab_bar->get_tab_rect(1),
@@ -786,7 +779,6 @@ TEST_CASE("[SceneTree][TabBar] layout and offset") {
 
 		// Right alignment.
 		tab_bar->set_tab_alignment(TabBar::ALIGNMENT_RIGHT);
-		MessageQueue::get_singleton()->flush();
 		tab_rects = {
 			tab_bar->get_tab_rect(0),
 			tab_bar->get_tab_rect(1),
@@ -799,7 +791,6 @@ TEST_CASE("[SceneTree][TabBar] layout and offset") {
 
 		// Center alignment.
 		tab_bar->set_tab_alignment(TabBar::ALIGNMENT_CENTER);
-		MessageQueue::get_singleton()->flush();
 		tab_rects = {
 			tab_bar->get_tab_rect(0),
 			tab_bar->get_tab_rect(1),
@@ -816,7 +807,6 @@ TEST_CASE("[SceneTree][TabBar] layout and offset") {
 		// Clip tabs disabled means all tabs are visible and the minimum size holds all of them.
 		tab_bar->set_clip_tabs(false);
 		CHECK_FALSE(tab_bar->get_clip_tabs());
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab_bar->get_tab_offset() == 0);
 		CHECK(tab_bar->get_minimum_size() == tab_bar->get_size());
 		CHECK(tab_bar->get_size().x == tab_rects[0].size.x + tab_rects[1].size.x + tab_rects[2].size.x);
@@ -824,7 +814,6 @@ TEST_CASE("[SceneTree][TabBar] layout and offset") {
 
 		tab_bar->set_clip_tabs(true);
 		CHECK(tab_bar->get_clip_tabs());
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab_bar->get_tab_offset() == 0);
 
 		// Horizontal size and minimum size get set to the widest tab plus arrow icons.
@@ -842,7 +831,6 @@ TEST_CASE("[SceneTree][TabBar] layout and offset") {
 		// Resize tab bar to only be able to fit 2 tabs.
 		const float offset_button_size = tab_bar->get_theme_icon("decrement_icon")->get_width() + tab_bar->get_theme_icon("increment_icon")->get_width();
 		tab_bar->set_size(Size2(tab_rects[2].size.x + tab_rects[1].size.x + offset_button_size, all_tabs_size.y));
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab_bar->get_tab_offset() == 0);
 		CHECK(tab_bar->get_offset_buttons_visible());
 
@@ -880,7 +868,6 @@ TEST_CASE("[SceneTree][TabBar] Mouse interaction") {
 	tab_bar->add_tab("tab0");
 	tab_bar->add_tab("tab1 ");
 	tab_bar->add_tab("tab2    ");
-	MessageQueue::get_singleton()->flush();
 
 	Vector<Rect2> tab_rects = {
 		tab_bar->get_tab_rect(0),
@@ -950,7 +937,6 @@ TEST_CASE("[SceneTree][TabBar] Mouse interaction") {
 		float margin = tab_bar->get_theme_stylebox("tab_hovered_style")->get_margin(SIDE_RIGHT);
 
 		tab_bar->set_tab_close_display_policy(TabBar::CLOSE_BUTTON_SHOW_ALWAYS);
-		MessageQueue::get_singleton()->flush();
 		tab_rects = { tab_bar->get_tab_rect(0), tab_bar->get_tab_rect(1), tab_bar->get_tab_rect(2) };
 
 		Point2 cb_pos = Size2(tab_rects[0].get_end().x - close_button_size.x - h_separation - margin + 1, tab_rects[0].position.y + (tab_rects[0].size.y - close_button_size.y) / 2 + 1);
@@ -1043,9 +1029,7 @@ TEST_CASE("[SceneTree][TabBar] Mouse interaction") {
 
 		target_tab_bar->set_clip_tabs(false);
 		target_tab_bar->add_tab("other_tab0");
-		MessageQueue::get_singleton()->flush();
 		target_tab_bar->set_position(tab_bar->get_size());
-		MessageQueue::get_singleton()->flush();
 
 		Vector<Rect2> target_tab_rects = { target_tab_bar->get_tab_rect(0) };
 		tab_bar->set_drag_to_rearrange_enabled(true);
