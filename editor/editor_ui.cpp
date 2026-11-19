@@ -329,7 +329,7 @@ void EditorUI::initialize(RID p_viewport_rid, Size2i p_size, const String& p_pro
 
 	load_scene();
 	scan_project_files();
-	String proj_godot = data->project_path.path_join("project.godot");
+	String proj_godot = data->project_path.path_join("project.vltr");
 	if (FileAccess::exists(proj_godot)) {
 		open_text_file(proj_godot);
 	}

@@ -84,9 +84,6 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
         int tex_w = tex_format.width;
         int tex_h = tex_format.height;
 		static uint64_t blit_dbg = 0;
-		if ((++blit_dbg % 60) == 1) {
-		    DUMP(i, p_amount, rd_texture.get_id(), tex_w, tex_h, RD::screen_get_width(p_screen), RD::screen_get_height(p_screen));
-		}
         if (tex_w <= 0 || tex_h <= 0) {
             continue;
         }

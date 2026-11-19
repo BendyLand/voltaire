@@ -327,7 +327,7 @@ bool ProjectSettings::_load_resource_pack(
 }
 
 /*
- * This method is responsible for loading a project.godot file and/or data file
+ * This method is responsible for loading a project.vltr file and/or data file
  * using the following merit order:
  *  - If using NetworkClient, try to lookup project file or fail.
  *  - If --main-pack was passed by the user (`p_main_pack`), load it or fail.
@@ -368,7 +368,7 @@ Error ProjectSettings::_setup(
 
 	if (!p_main_pack.is_empty()) {
 		bool ok = _load_resource_pack(p_main_pack, false, 0, true);
-		Error err = _load_settings_text_or_binary("res://project.godot", "res://project.binary");
+		Error err = _load_settings_text_or_binary("res://project.vltr", "res://project.binary");
 		return err;
 	}
 
@@ -422,7 +422,7 @@ Error ProjectSettings::_setup(
 		// If we opened our package, try and load our project.
 		if (found) {
 			Error err =
-				_load_settings_text_or_binary("res://project.godot", "res://project.binary");
+				_load_settings_text_or_binary("res://project.vltr", "res://project.binary");
 			return err;
 		}
 	}
@@ -436,7 +436,7 @@ Error ProjectSettings::_setup(
 	// (Only Android -when reading from PCK-.)
 
 	if (!OS::get_resource_dir().is_empty()) {
-		Error err = _load_settings_text_or_binary("res://project.godot", "res://project.binary");
+		Error err = _load_settings_text_or_binary("res://project.vltr", "res://project.binary");
 		return err;
 	}
 
@@ -455,7 +455,7 @@ Error ProjectSettings::_setup(
 		Error err;
 
 		err = _load_settings_text_or_binary(
-			resource_path.path_join("project.godot"), resource_path.path_join("project.binary"));
+			resource_path.path_join("project.vltr"), resource_path.path_join("project.binary"));
 		if (err == OK && !p_ignore_override) {
 			// Optional, we don't mind if it fails.
 #ifdef OVERRIDE_ENABLED
@@ -486,7 +486,7 @@ Error ProjectSettings::_setup(
 		data->resource_path =
 			data->resource_path.replace_char('\\', '/'); // Windows path to Unix path just in case.
 		err = _load_settings_text_or_binary(
-			current_dir.path_join("project.godot"), current_dir.path_join("project.binary"));
+			current_dir.path_join("project.vltr"), current_dir.path_join("project.binary"));
 		if (err == OK) {
 			found = true;
 			break;
@@ -586,11 +586,11 @@ Error ProjectSettings::_load_settings_text(const String& p_path)
 
 	while (true) {
 		if (err == ERR_FILE_EOF) {
-			// If we're loading a project.godot from source code, we can operate some
+			// If we're loading a project.vltr from source code, we can operate some
 			// ProjectSettings conversions if need be.
 			_convert_to_last_version(config_version);
 			data->last_save_time =
-				FileAccess::get_modified_time(get_resource_path().path_join("project.godot"));
+				FileAccess::get_modified_time(get_resource_path().path_join("project.vltr"));
 			return OK;
 		}
 	}
@@ -599,13 +599,13 @@ Error ProjectSettings::_load_settings_text(const String& p_path)
 Error ProjectSettings::_load_settings_text_or_binary(
 	const String& p_text_path, const String& p_bin_path)
 {
-	// Attempt first to load the binary project.godot file.
+	// Attempt first to load the binary project.vltr file.
 	Error err = _load_settings_binary(p_bin_path);
 	if (err == OK) {
 		return OK;
 	}
 
-	// Fallback to text-based project.godot file if binary was not found.
+	// Fallback to text-based project.vltr file if binary was not found.
 	err = _load_settings_text(p_text_path);
 	if (err == OK) {
 		return OK;
@@ -623,10 +623,10 @@ Error ProjectSettings::load_custom(const String& p_path)
 
 Error ProjectSettings::save()
 {
-	Error error = save_custom(get_resource_path().path_join("project.godot"));
+	Error error = save_custom(get_resource_path().path_join("project.vltr"));
 	if (error == OK) {
 		data->last_save_time =
-			FileAccess::get_modified_time(get_resource_path().path_join("project.godot"));
+			FileAccess::get_modified_time(get_resource_path().path_join("project.vltr"));
 	}
 	return error;
 }

@@ -5359,13 +5359,6 @@ VkDescriptorPool RenderingDeviceDriverVulkan::_descriptor_set_pool_create(
 	descriptor_set_pool_create_info.maxSets = max_descriptor_sets_per_pool;
 	descriptor_set_pool_create_info.poolSizeCount = vk_sizes_count;
 	descriptor_set_pool_create_info.pPoolSizes = vk_sizes;
-	// In RenderingDeviceDriverVulkan::_descriptor_set_pool_create, right before vkCreateDescriptorPool:
-	printf("[DEBUG pool_create] max_sets=%u, sizes_count=%u\n",
-	       max_descriptor_sets_per_pool, vk_sizes_count);
-	for (uint32_t i = 0; i < vk_sizes_count; i++) {
-	    printf("  size[%u]: type=%d, count=%u\n", i, vk_sizes[i].type, vk_sizes[i].descriptorCount);
-	}
-
 	VkDescriptorPool vk_pool = VK_NULL_HANDLE;
 	VkResult res = vkCreateDescriptorPool(vk_device, &descriptor_set_pool_create_info,
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_DESCRIPTOR_POOL), &vk_pool);

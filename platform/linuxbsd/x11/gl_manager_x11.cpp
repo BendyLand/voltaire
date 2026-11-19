@@ -337,8 +337,8 @@ void GLManager_X11::swap_buffers()
 			Atom wm_delete = XInternAtom(_x_windisp.x11_display, "WM_DELETE_WINDOW", True);
 			if (ev.xclient.message_type == wm_protocols &&
 				(Atom)ev.xclient.data.l[0] == wm_delete) {
-				printf("[GLX SWAP] Intercepted WM_DELETE_WINDOW before swap! Exiting.\n");
-				fflush(stdout);
+				fprintf(stderr, "[GLX SWAP] Intercepted WM_DELETE_WINDOW before swap! Exiting.\n");
+				fflush(stderr);
 				extern bool s_quit_requested;
 				s_quit_requested = true;
 				if (OS::is_initialized() && MainLoop::is_active()) {
@@ -348,8 +348,8 @@ void GLManager_X11::swap_buffers()
 			}
 		}
 		else if (ev.type == DestroyNotify || ev.type == UnmapNotify) {
-			printf("[GLX SWAP] Window unmapped or destroyed (type=%d). Exiting.\n", ev.type);
-			fflush(stdout);
+			fprintf(stderr, "[GLX SWAP] Window unmapped or destroyed (type=%d). Exiting.\n", ev.type);
+			fflush(stderr);
 			extern bool s_quit_requested;
 			s_quit_requested = true;
 			if (OS::is_initialized() && MainLoop::is_active()) {
@@ -374,12 +374,6 @@ void GLManager_X11::swap_buffers()
 	swap_count++;
 
 	int pending_gl = XPending(_x_windisp.x11_display);
-
-	if (swap_count % 120 == 0) {
-		printf("[SWAP HEARTBEAT] swap=%lu, pending=%d, win=%lu\n", swap_count, pending_gl,
-			(unsigned long)_x_windisp.x11_window);
-		fflush(stdout);
-	}
 
 	// Do the swap
 	glXSwapBuffers(_x_windisp.x11_display, _x_windisp.x11_window);

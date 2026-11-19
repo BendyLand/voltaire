@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "core/config/project_format.h"
 #include "editor/ui_widgets.h"
 
 class ProjectManager
@@ -108,6 +109,7 @@ public:
 
 	// Lifecycle & Frame Hooks
 	static bool is_initialized() { return _initialized; }
+
 	static void initialize(RID p_viewport_rid, Size2i p_size);
 	static void poll();
 	static void process_and_draw();
@@ -135,4 +137,8 @@ public:
 
 	static bool _has_valid_selected_project();
 	static bool _has_any_selected_project();
+	static bool _read_voltaire_project(const String& p_dir, VoltaireProjectFile* r_out);
+	static String _get_default_projects_dir();
+	static void _scan_dir_for_projects(
+		const String& p_dir, int p_depth, int p_max_depth, LocalVector<String>& r_found);
 };

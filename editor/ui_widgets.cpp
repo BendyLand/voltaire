@@ -520,7 +520,7 @@ void draw_clipped_line(RID p_ci, const Rect2& p_clip, Point2 p_a, Point2 p_b, co
 
 String read_project_name(const String& p_dir)
 {
-	String proj_file = p_dir.path_join("project.godot");
+	String proj_file = p_dir.path_join("project.vltr");
 	if (FileAccess::exists(proj_file)) {
 		Ref<FileAccess> fa = FileAccess::open(proj_file, FileAccess::READ);
 		if (fa.is_valid()) {

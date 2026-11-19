@@ -29,18 +29,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "project_manager.h"
-
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "editor/editor_ui.h"
 #include "editor/file_system/editor_paths.h"
+#include "project_manager.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
-static String _get_default_projects_dir()
+String ProjectManager::_get_default_projects_dir()
 {
 	String home = OS::get_environment("HOME");
 	if (home.is_empty()) {
@@ -56,7 +55,7 @@ static String _get_default_projects_dir()
 	return ".";
 }
 
-static void _scan_dir_for_projects(
+void ProjectManager::_scan_dir_for_projects(
 	const String& p_dir, int p_depth, int p_max_depth, LocalVector<String>& r_found)
 {
 	if (p_depth > p_max_depth) {
@@ -68,7 +67,8 @@ static void _scan_dir_for_projects(
 	}
 
 	String cur_dir = da->get_current_dir();
-	if (FileAccess::exists(cur_dir.path_join("project.godot"))) {
+	VoltaireProjectFile tmp;
+	if (_read_voltaire_project(cur_dir, &tmp)) {
 		r_found.push_back(cur_dir);
 		return;
 	}
@@ -124,8 +124,15 @@ void ProjectManager::load_projects()
 					ProjectEntry entry;
 					entry.path = current_section.simplify_path();
 					entry.favorite = current_fav;
-					entry.missing = !FileAccess::exists(entry.path.path_join("project.godot"));
-					entry.name = UIDraw::read_project_name(entry.path);
+					VoltaireProjectFile proj_data;
+					if (_read_voltaire_project(entry.path, &proj_data)) {
+						entry.missing = false;
+						entry.name = String::utf8(proj_data.config.project_name);
+					}
+					else {
+						entry.missing = true;
+						entry.name = entry.path.get_file();
+					}
 					data->projects.push_back(entry);
 				}
 			};
@@ -228,8 +235,8 @@ void ProjectManager::initialize(RID p_viewport_rid, Size2i p_size)
 	}
 	data = memnew(Data);
 
-	data->ui.initialize(p_viewport_rid, p_size,
-		Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), &ProjectManager::handle_input_event);
+	data->ui.initialize(p_viewport_rid, p_size, Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT),
+		&ProjectManager::handle_input_event);
 
 	data->search_field.placeholder = "Filter projects by name or path...";
 
@@ -240,10 +247,10 @@ void ProjectManager::initialize(RID p_viewport_rid, Size2i p_size)
 	data->buttons.add("Support", &ProjectManager::_open_donate_page);
 
 	// Right-hand project action sidebar buttons
-	data->sidebar_buttons.add(
-		"Edit", &ProjectManager::_edit_selected_project, &ProjectManager::_has_valid_selected_project, true);
-	data->sidebar_buttons.add(
-		"Run", &ProjectManager::_run_selected_project, &ProjectManager::_has_valid_selected_project);
+	data->sidebar_buttons.add("Edit", &ProjectManager::_edit_selected_project,
+		&ProjectManager::_has_valid_selected_project, true);
+	data->sidebar_buttons.add("Run", &ProjectManager::_run_selected_project,
+		&ProjectManager::_has_valid_selected_project);
 	data->sidebar_buttons.add("Open Folder", &ProjectManager::_open_selected_folder,
 		&ProjectManager::_has_valid_selected_project);
 	data->sidebar_buttons.add("Favorite", &ProjectManager::_toggle_favorite_selected,
@@ -338,7 +345,7 @@ void ProjectManager::handle_input_event(const InputEvent& p_event)
 						data->active_field = FIELD_MODAL_PRIMARY;
 					}
 					else if (data->modal_mode == MODAL_NEW_PROJECT &&
-							 data->modal_secondary_field.has_point(data->ui.mouse_pos)) {
+							   data->modal_secondary_field.has_point(data->ui.mouse_pos)) {
 						data->active_field = FIELD_MODAL_SECONDARY;
 					}
 					else if (!data->modal_panel_rect.has_point(data->ui.mouse_pos)) {
@@ -597,9 +604,8 @@ void ProjectManager::process_and_draw()
 		const float title_max_w = MAX(0.0f, btn_x - (pad + 28.0f));
 		if (title_max_w > 12.0f) {
 			const float title_base_y = UIDraw::centered_baseline_y(font, header_rect, 16);
-			font->draw_string(ci, Point2(pad + 18.0f, title_base_y),
-				"VOLTAIRE // PROJECT MANAGER", HORIZONTAL_ALIGNMENT_LEFT, title_max_w, 16,
-				col_text);
+			font->draw_string(ci, Point2(pad + 18.0f, title_base_y), "VOLTAIRE // PROJECT MANAGER",
+				HORIZONTAL_ALIGNMENT_LEFT, title_max_w, 16, col_text);
 		}
 	}
 
@@ -673,9 +679,10 @@ void ProjectManager::process_and_draw()
 
 		if (vis_count == 0) {
 			if (font.is_valid() && card_w > 24.0f && inner_h > 30.0f) {
-				String empty_msg = data->projects.is_empty()
-									   ? "No projects yet. Use '+ New Project', 'Import', or 'Scan'."
-									   : "No projects match the current filter.";
+				String empty_msg =
+					data->projects.is_empty()
+						? "No projects yet. Use '+ New Project', 'Import', or 'Scan'."
+						: "No projects match the current filter.";
 				font->draw_string(ci, Point2(pad + list_pad, y + workspace_h * 0.5f), empty_msg,
 					HORIZONTAL_ALIGNMENT_CENTER, card_w, 15, col_subtext);
 			}
@@ -704,11 +711,10 @@ void ProjectManager::process_and_draw()
 				const bool is_sel = (pidx == data->selected_project_idx);
 				Color cbg = is_sel ? col_card_selected : (proj.hovered ? col_card_hover : col_card);
 				Color strip_col =
-					proj.missing
-						? col_warn
-						: (is_sel ? col_accent
-								  : (proj.favorite ? Color(0.95f, 0.78f, 0.20f, 1.0f)
-												   : Color(0.26f, 0.31f, 0.38f, 1.0f)));
+					proj.missing ? col_warn
+								 : (is_sel ? col_accent
+										   : (proj.favorite ? Color(0.95f, 0.78f, 0.20f, 1.0f)
+															: Color(0.26f, 0.31f, 0.38f, 1.0f)));
 				UIDraw::draw_header_banner(ci, crect, cbg, strip_col, 4.0f);
 
 				if (font.is_valid() && draw_h >= 48.0f && card_w > 32.0f) {
@@ -810,7 +816,7 @@ void ProjectManager::process_and_draw()
 		}
 		else if (data->modal_mode == MODAL_IMPORT_PROJECT) {
 			modal_title = "IMPORT EXISTING PROJECT";
-			label_1 = "Project Folder or project.godot Path:";
+			label_1 = "Project Folder or project.vltr Path:";
 		}
 		else {
 			modal_title = "SCAN DIRECTORY FOR PROJECTS";
@@ -825,7 +831,8 @@ void ProjectManager::process_and_draw()
 		}
 		cy += 28.0f;
 		const Color modal_field_border(0.24f, 0.28f, 0.34f, 1.0f);
-		Renderer::canvas_item_add_rect(ci, Rect2(mx + 18.0f, cy, inner_w, 1.0f), modal_field_border);
+		Renderer::canvas_item_add_rect(
+			ci, Rect2(mx + 18.0f, cy, inner_w, 1.0f), modal_field_border);
 		cy += 14.0f;
 
 		// Primary Field
@@ -859,8 +866,7 @@ void ProjectManager::process_and_draw()
 		const float mbtn_w = 108.0f;
 		const float mbtn_h = 34.0f;
 		const float mbtn_gap = 8.0f;
-		const float total_mbtns_w =
-			data->modal_buttons.size() * (mbtn_w + mbtn_gap) - mbtn_gap;
+		const float total_mbtns_w = data->modal_buttons.size() * (mbtn_w + mbtn_gap) - mbtn_gap;
 
 		if (font.is_valid() && inner_w > 20.0f) {
 			float hint_max_w = MAX(20.0f, inner_w - total_mbtns_w - 14.0f);
@@ -912,7 +918,8 @@ void ProjectManager::_new_project()
 	data->modal_buttons.clear();
 	data->modal_buttons.add("Cancel", &ProjectManager::_cancel_modal);
 	data->modal_buttons.add("Create", &ProjectManager::_confirm_modal);
-	data->modal_buttons.add("Create & Edit", &ProjectManager::_confirm_modal_and_edit, nullptr, true);
+	data->modal_buttons.add(
+		"Create & Edit", &ProjectManager::_confirm_modal_and_edit, nullptr, true);
 	data->ui.needs_redraw = true;
 }
 
@@ -1071,15 +1078,29 @@ void ProjectManager::_confirm_modal()
 		String clean = p_dir.simplify_path();
 		for (uint32_t i = 0; i < data->projects.size(); i++) {
 			if (data->projects[i].path == clean) {
-				data->projects[i].missing = !FileAccess::exists(clean.path_join("project.godot"));
-				data->projects[i].name = UIDraw::read_project_name(clean);
+				VoltaireProjectFile proj_data;
+				if (_read_voltaire_project(clean, &proj_data)) {
+					data->projects[i].missing = false;
+					data->projects[i].name = String::utf8(proj_data.config.project_name);
+				}
+				else {
+					data->projects[i].missing = true;
+					data->projects[i].name = clean.get_file();
+				}
 				return (int)i;
 			}
 		}
 		ProjectEntry entry;
 		entry.path = clean;
-		entry.name = UIDraw::read_project_name(clean);
-		entry.missing = !FileAccess::exists(clean.path_join("project.godot"));
+		VoltaireProjectFile proj_data;
+		if (_read_voltaire_project(entry.path, &proj_data)) {
+			entry.missing = false;
+			entry.name = String::utf8(proj_data.config.project_name);
+		}
+		else {
+			entry.missing = true;
+			entry.name = entry.path.get_file();
+		}
 		data->projects.push_back(entry);
 		return (int)data->projects.size() - 1;
 	};
@@ -1098,7 +1119,7 @@ void ProjectManager::_confirm_modal()
 			return;
 		}
 		String target_dir = parent_dir.path_join(proj_name);
-		String proj_file = target_dir.path_join("project.godot");
+		String proj_file = target_dir.path_join("project.vltr");
 		if (FileAccess::exists(proj_file)) {
 			data->modal_error_text = "A project already exists at that path.";
 			data->ui.needs_redraw = true;
@@ -1112,17 +1133,14 @@ void ProjectManager::_confirm_modal()
 		}
 		Ref<FileAccess> fa = FileAccess::open(proj_file, FileAccess::WRITE);
 		if (fa.is_null()) {
-			data->modal_error_text = "Failed to write project.godot.";
+			data->modal_error_text = "Failed to write project.vltr.";
 			data->ui.needs_redraw = true;
 			return;
 		}
-		fa->store_line("; Engine configuration file.");
-		fa->store_line("config_version=5");
-		fa->store_line("");
-		fa->store_line("[application]");
-		fa->store_line("");
-		fa->store_line(vformat("config/name=\"%s\"", proj_name.replace("\"", "'")));
-		fa->store_line("config/features=PackedStringArray(\"4.6\")");
+
+		VoltaireProjectFile new_proj;
+		vltr_project_init(&new_proj, proj_name.utf8().get_data(), "res://MainScene.tscn");
+		fa->store_buffer((const uint8_t*)&new_proj, sizeof(new_proj));
 		fa->close();
 
 		int idx = register_project_dir(target_dir);
@@ -1130,18 +1148,17 @@ void ProjectManager::_confirm_modal()
 		rebuild_filtered_list();
 		data->selected_project_idx = idx;
 		rebuild_filtered_list();
+
 		data->status_text = vformat("Created project '%s' at %s", proj_name, target_dir);
 		_cancel_modal();
 		return;
 	}
 
 	if (data->modal_mode == MODAL_IMPORT_PROJECT) {
+		VoltaireProjectFile tmp;
 		String raw_path = data->modal_primary_field.text.strip_edges().simplify_path();
-		if (raw_path.ends_with("/project.godot")) {
-			raw_path = raw_path.get_base_dir();
-		}
-		if (raw_path.is_empty() || !FileAccess::exists(raw_path.path_join("project.godot"))) {
-			data->modal_error_text = "No project.godot found in the specified directory.";
+		if (raw_path.is_empty() || !_read_voltaire_project(raw_path, &tmp)) {
+			data->modal_error_text = "Invalid or missing project.vltr in directory.";
 			data->ui.needs_redraw = true;
 			return;
 		}
@@ -1184,4 +1201,15 @@ void ProjectManager::_confirm_modal()
 		_cancel_modal();
 		return;
 	}
+}
+
+bool ProjectManager::_read_voltaire_project(const String& p_dir, VoltaireProjectFile* r_out)
+{
+	String file_path = p_dir.path_join("project.vltr");
+	Ref<FileAccess> fa = FileAccess::open(file_path, FileAccess::READ);
+	if (fa.is_null() || fa->get_length() < (int64_t)sizeof(VoltaireProjectFile)) {
+		return false;
+	}
+	fa->get_buffer((uint8_t*)r_out, sizeof(VoltaireProjectFile));
+	return vltr_project_valid(r_out);
 }

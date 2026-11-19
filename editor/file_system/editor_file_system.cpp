@@ -877,11 +877,11 @@ bool EditorFileSystem::_should_skip_directory(const String& p_path)
 		return true;
 	}
 
-	if (FileAccess::exists(p_path.path_join("project.godot"))) {
+	if (FileAccess::exists(p_path.path_join("project.vltr"))) {
 		// Skip if another project inside this.
 		if (!EditorFileSystem::is_initialized() || EditorFileSystem::doing_first_scan()) {
 			WARN_PRINT_ONCE(vformat(
-				"Detected another project.godot at %s. The folder will be ignored.", p_path));
+				"Detected another project.vltr at %s. The folder will be ignored.", p_path));
 		}
 		return true;
 	}

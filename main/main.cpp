@@ -347,7 +347,7 @@ void finalize_theme_db() { ThemeDB::finalize(); }
 
 // #define DEBUG_INIT
 #ifdef DEBUG_INIT
-#define MAIN_PRINT(m_txt) print_line(m_txt)
+#define MAIN_PRINT(m_txt) __print_line(m_txt)
 #else
 #define MAIN_PRINT(m_txt)
 #endif
@@ -465,7 +465,7 @@ void Main::print_help(const char* p_binary)
 						 "Linietsky, Ariel Manzur.");
 
 	print_help_title("Usage");
-	OS::print("  %s \u001b[96m[options] [path to \"project.godot\" file]\u001b[0m\n", p_binary);
+	OS::print("  %s \u001b[96m[options] [path to \"project.vltr\" file]\u001b[0m\n", p_binary);
 
 #if defined(TOOLS_ENABLED)
 	print_help_title("Option legend (this build = editor)");
@@ -534,7 +534,7 @@ void Main::print_help(const char* p_binary)
 		"-l, --language <locale>", "Use a specific locale (<locale> being a two-letter code).\n");
 #if defined(OVERRIDE_PATH_ENABLED)
 	print_help_option("--path <directory>",
-		"Path to a project (<directory> must contain a \"project.godot\" file).\n",
+		"Path to a project (<directory> must contain a \"project.vltr\" file).\n",
 		CLI_OPTION_AVAILABILITY_TEMPLATE_UNSAFE);
 	print_help_option("--scene <path>",
 		"Path or UID of a scene in the project that should be started.\n",
@@ -1943,7 +1943,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				goto error;
 			}
 		}
-		else if (arg.ends_with("project.godot")) {
+		else if (arg.ends_with("project.vltr")) {
 #if defined(OVERRIDE_PATH_ENABLED)
 			String path;
 			String file = arg;
@@ -1964,7 +1964,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			editor = true;
 #endif
 #else
-			ERR_PRINT("`project.godot` path was specified on the command line, but this Godot "
+			ERR_PRINT("`project.vltr` path was specified on the command line, but this Godot "
 					  "binary was compiled without support for path overrides. Aborting.\n"
 					  "To be able to use it, use the `disable_path_overrides=no` SCons option when "
 					  "compiling Godot.\n");
@@ -2293,7 +2293,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 #if defined(DEBUG_ENABLED) || defined(TOOLS_ENABLED)
 	// Network file system needs to be configured before globals, since globals are based on the
-	// 'project.godot' file which will only be available through the network if this is enabled
+	// 'project.vltr' file which will only be available through the network if this is enabled
 	if (!remotefs.is_empty()) {
 		int port;
 		if (remotefs.contains_char(':')) {
@@ -2336,8 +2336,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 						 "project from the CWD, use the `disable_path_overrides=no` SCons option "
 						 "when compiling Godot.\n";
 		}
-		else if (FileAccess::exists(old_cwd.path_join("project.godot"))) {
-			error_msg += "\"project.godot\" was found in the current working directory. To be able "
+		else if (FileAccess::exists(old_cwd.path_join("project.vltr"))) {
+			error_msg += "\"project.vltr\" was found in the current working directory. To be able "
 						 "to load a project from the CWD, use the `disable_path_overrides=no` "
 						 "SCons option when compiling Godot.\n";
 		}
@@ -2774,7 +2774,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	// Make sure that headless is the last one, which it is assumed to be by design.
 	DEV_ASSERT(NULL_DISPLAY_DRIVER == DisplayServer::get_create_function_name(
 										  DisplayServer::get_create_function_count() - 1));
-	if (audio_driver.is_empty()) { // Specified in project.godot.
+	if (audio_driver.is_empty()) { // Specified in project.vltr.
 		if (project_manager) {
 			// The project manager doesn't need to play sound (TTS audio output is not emitted by
 			// Godot, but by the system itself). Disable audio output so it doesn't appear in the
@@ -3964,10 +3964,6 @@ static uint64_t navigation_process_max = 0;
 bool Main::iteration()
 {
 	// Inside RendererCompositorRD::begin_frame or Main::iteration:
-	static uint64_t frame_counter = 0;
-	if ((++frame_counter % 60) == 0) {
-		__print_line(vformat("Render loop alive! Frame: %d", frame_counter));
-	}
 	iterating++;
 
 	const uint64_t ticks = OS::get_ticks_usec();

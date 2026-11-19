@@ -230,7 +230,7 @@ public:
 					RegEx(String("\\b") +
 						  RenamesMap3To4::project_settings_renames[current_index][0] + "\\b")));
 			}
-			// Project Settings in project.godot.
+			// Project Settings in project.vltr.
 			for (unsigned int current_index = 0;
 				 RenamesMap3To4::project_godot_renames[current_index][0]; current_index++) {
 				project_godot_regexes.push_back(
