@@ -47,10 +47,6 @@
 #include "scene/3d/skeleton_3d.h"
 #endif // _3D_DISABLED
 
-#ifdef TOOLS_ENABLED
-#include "editor/editor_undo_redo_manager.h"
-#endif // TOOLS_ENABLED
-
 void AnimationMixer::_animation_added(const String& p_name, const String& p_library)
 {
 	_animation_set_cache_update();

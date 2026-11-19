@@ -31,7 +31,6 @@
 
 #pragma once
 
-#include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/export/editor_export_platform.h"
 #include "editor_http_server.h"

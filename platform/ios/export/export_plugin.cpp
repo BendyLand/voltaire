@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor/editor_node.h"
+#include "core/config/engine.h"
 #include "export_plugin.h"
 #include "logo_svg.gen.h"
 #include "main/splash.gen.h"
@@ -39,7 +39,7 @@ Vector<String> EditorExportPlatformIOS::device_types({"iPhone", "iPad"});
 
 void EditorExportPlatformIOS::initialize()
 {
-	if (EditorNode::is_initialized()) {
+	if (Engine::is_editor_hint()) {
 		EditorExportPlatformAppleEmbedded::_initialize(_ios_logo_svg, _ios_run_icon_svg);
 #ifdef MACOS_ENABLED
 		_start_remote_device_poller_thread();

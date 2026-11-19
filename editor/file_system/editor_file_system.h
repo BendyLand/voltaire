@@ -43,8 +43,6 @@
 class ResourceFormatImporter;
 class FileAccess;
 
-struct EditorProgressBG;
-
 class EditorFileSystemDirectory
 {
 	String name;
@@ -213,7 +211,6 @@ class EditorFileSystem : public Node
 	{
 		float hi = 0;
 		int current = 0;
-		EditorProgressBG* progress = nullptr;
 		void increment();
 	};
 

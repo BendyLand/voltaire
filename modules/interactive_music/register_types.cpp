@@ -34,18 +34,7 @@
 #include "audio_stream_synchronized.h"
 #include "register_types.h"
 
-#ifdef TOOLS_ENABLED
-#include "editor/audio_stream_interactive_editor_plugin.h"
-#endif
-
-void initialize_interactive_music_module(ModuleInitializationLevel p_level)
-{
-#ifdef TOOLS_ENABLED
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorPlugins::add_by_type<AudioStreamInteractiveEditorPlugin>();
-	}
-#endif
-}
+void initialize_interactive_music_module(ModuleInitializationLevel p_level) {}
 
 void uninitialize_interactive_music_module(ModuleInitializationLevel p_level)
 {

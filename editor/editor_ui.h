@@ -31,14 +31,7 @@
 
 #pragma once
 
-#include "core/input/input.h"
-#include "core/input/input_event.h"
-#include "core/math/color.h"
-#include "core/math/rect2.h"
-#include "core/string/ustring.h"
-#include "core/templates/local_vector.h"
-#include "core/templates/rid.h"
-#include "scene/resources/font.h"
+#include "editor/ui_widgets.h"
 
 class EditorUI
 {
@@ -63,18 +56,6 @@ public:
 		FOCUS_NONE = 0,
 		FOCUS_NODE_NAME,
 		FOCUS_SCRIPT_EDITOR,
-	};
-
-	struct UIButton
-	{
-		String label;
-		Rect2 rect;
-		void (*on_click)() = nullptr;
-		bool (*is_enabled)() = nullptr;
-		bool hovered = false;
-		bool pressed = false;
-		bool primary = false;
-		bool active_tab = false;
 	};
 
 	struct SceneEntity
@@ -108,17 +89,18 @@ public:
 
 	struct Data
 	{
-		RID viewport_rid;
-		RID canvas_rid;
-		RID canvas_item_rid;
-
-		Size2i window_size = Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
-		Point2 mouse_pos;
+		// Composed shared Canvas UI context, layout & widgets
+		UIContext ui;
+		UISplitLayout layout;
+		UIButtonGroup top_buttons;
+		UIButtonGroup dock_buttons;
+		UIButtonGroup inspector_buttons;
+		UIButtonGroup runtime_buttons;
+		UITextField inspector_name_field;
 
 		String project_path;
 		String project_name = "Untitled Project";
 
-		Ref<Font> ui_font;
 		ViewMode view_mode = VIEW_2D;
 		FocusField focus_field = FOCUS_NONE;
 
@@ -143,7 +125,6 @@ public:
 		int selected_entity_idx = 0;
 		int next_entity_serial = 1;
 		bool scene_dirty = false;
-		Rect2 inspector_name_rect;
 		LocalVector<ColorSwatch> swatches;
 
 		// FileSystem & Script editor state
@@ -159,15 +140,6 @@ public:
 		// Output log
 		Vector<String> logs;
 
-		// Buttons
-		LocalVector<UIButton> top_buttons;
-		LocalVector<UIButton> dock_buttons;
-		LocalVector<UIButton> inspector_buttons;
-		LocalVector<UIButton> runtime_buttons;
-
-		Input::EventDispatchFunc prev_input_dispatch = nullptr;
-		bool owns_viewport = false;
-		bool needs_redraw = true;
 		bool pending_return_to_pm = false;
 	};
 

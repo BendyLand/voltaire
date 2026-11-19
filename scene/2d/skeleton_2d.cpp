@@ -35,8 +35,6 @@
 #include "skeleton_2d.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/editor_data.h"
-#include "editor/scene/canvas_item_editor_plugin.h"
 #include "editor/settings/editor_settings.h"
 #endif // TOOLS_ENABLED
 

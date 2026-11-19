@@ -33,9 +33,6 @@
 #include "core/io/dir_access.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
-#include "editor/editor_interface.h"
-#include "editor/editor_node.h"
-#include "editor/import/3d/scene_import_settings.h"
 #include "editor/settings/editor_settings.h"
 #include "resource_importer_scene.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
@@ -270,12 +267,9 @@ void ResourceImporterScene::_add_shapes(Node* p_node, const Vector<Ref<Shape3D>>
 Vector<Ref<EditorSceneFormatImporter>> ResourceImporterScene::scene_importers;
 Vector<Ref<EditorScenePostImportPlugin>> ResourceImporterScene::post_importer_plugins;
 
-bool ResourceImporterScene::has_advanced_options() const { return true; }
+bool ResourceImporterScene::has_advanced_options() const { return false; }
 
-void ResourceImporterScene::show_advanced_options(const String& p_path)
-{
-	SceneImportSettingsDialog::open_settings(p_path, _scene_import_type);
-}
+void ResourceImporterScene::show_advanced_options(const String& p_path) {}
 
 ResourceImporterScene::ResourceImporterScene(const String& p_scene_import_type)
 {

@@ -36,7 +36,6 @@
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
 #include "drivers/png/png_driver_common.h"
-#include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/export/codesign.h"
 #include "editor/export/editor_export.h"

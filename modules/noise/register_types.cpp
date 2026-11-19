@@ -35,22 +35,7 @@
 #include "noise_texture_3d.h"
 #include "register_types.h"
 
-#ifdef TOOLS_ENABLED
-#include "editor/noise_editor_plugin.h"
-#endif
-
-#ifdef TOOLS_ENABLED
-#include "editor/plugins/editor_plugin.h"
-#endif
-
-void initialize_noise_module(ModuleInitializationLevel p_level)
-{
-#ifdef TOOLS_ENABLED
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorPlugins::add_by_type<NoiseEditorPlugin>();
-	}
-#endif
-}
+void initialize_noise_module(ModuleInitializationLevel p_level) {}
 
 void uninitialize_noise_module(ModuleInitializationLevel p_level)
 {

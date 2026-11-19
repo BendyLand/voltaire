@@ -35,7 +35,6 @@
 #include "core/io/zip_io.h"
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
-#include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/export/editor_export.h"
 #include "editor/themes/editor_scale.h"
@@ -49,7 +48,6 @@
 #include "core/io/json.h"
 #include "core/os/process_id.h"
 #include "editor/file_system/editor_paths.h"
-#include "editor/script/script_editor_plugin.h"
 #include "editor/settings/editor_settings.h"
 #endif
 
@@ -801,8 +799,6 @@ Error EditorExportPlatformAppleEmbedded::run(
 
 	MutexLock lock(device_lock);
 
-	EditorProgress ep("run", vformat(TTR("Running on %s"), devices[p_device].name), 3);
-
 	String id = "tmpexport." + uitos(OS::get_unix_time());
 
 	Ref<DirAccess> filesystem_da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
@@ -854,24 +850,7 @@ Error EditorExportPlatformAppleEmbedded::run(
 
 	if (p_debug_flags.has_flag(DEBUG_FLAG_REMOTE_DEBUG)) {
 		cmd_args_list.push_back("--remote-debug");
-
 		cmd_args_list.push_back(get_debug_protocol() + host + ":" + String::num_int64(remote_port));
-
-		List<String> breakpoints;
-		ScriptEditor::get_breakpoints(&breakpoints);
-
-		if (breakpoints.size()) {
-			cmd_args_list.push_back("--breakpoints");
-			String bpoints;
-			for (const List<String>::Element* E = breakpoints.front(); E; E = E->next()) {
-				bpoints += E->get().replace(" ", "%20");
-				if (E->next()) {
-					bpoints += ",";
-				}
-			}
-
-			cmd_args_list.push_back(bpoints);
-		}
 	}
 
 	if (p_debug_flags.has_flag(DEBUG_FLAG_VIEW_COLLISIONS)) {
@@ -884,10 +863,7 @@ Error EditorExportPlatformAppleEmbedded::run(
 
 	if (dev.use_ios_deploy) {
 		// Deploy and run on real device (via ios-deploy).
-		if (ep.step("Installing and running on device...", 4)) {
-			CLEANUP_AND_RETURN(ERR_SKIP);
-		}
-		else {
+		{
 			List<String> args;
 			args.push_back("-u");
 			args.push_back("-I");
@@ -928,10 +904,7 @@ Error EditorExportPlatformAppleEmbedded::run(
 	}
 	else {
 		// Deploy and run on real device (via Xcode).
-		if (ep.step("Installing to device...", 3)) {
-			CLEANUP_AND_RETURN(ERR_SKIP);
-		}
-		else {
+		{
 			List<String> args;
 			args.push_back("devicectl");
 			args.push_back("device");
@@ -953,10 +926,7 @@ Error EditorExportPlatformAppleEmbedded::run(
 			}
 		}
 
-		if (ep.step("Running on device...", 4)) {
-			CLEANUP_AND_RETURN(ERR_SKIP);
-		}
-		else {
+		{
 			List<String> args;
 			args.push_back("devicectl");
 			args.push_back("device");

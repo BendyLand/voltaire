@@ -37,21 +37,12 @@
 #include "scene_replication_interface.h"
 #include "scene_rpc_interface.h"
 
-#ifdef TOOLS_ENABLED
-#include "editor/multiplayer_editor_plugin.h"
-#endif
-
 void initialize_multiplayer_module(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		MultiplayerAPI::set_default_interface("SceneMultiplayer");
 		MultiplayerDebugger::initialize();
 	}
-#ifdef TOOLS_ENABLED
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorPlugins::add_by_type<MultiplayerEditorPlugin>();
-	}
-#endif
 }
 
 void uninitialize_multiplayer_module(ModuleInitializationLevel p_level)

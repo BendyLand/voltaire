@@ -34,7 +34,6 @@
 #include "core/io/dir_access.h"
 #include "core/string/string_builder.h"
 #include "core/version.h"
-#include "editor/editor_node.h"
 #include "scene/3d/label_3d.h"
 #include "scene/3d/sprite_3d.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"

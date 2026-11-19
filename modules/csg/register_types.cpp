@@ -32,10 +32,6 @@
 #include "csg_shape.h"
 #include "register_types.h"
 
-#ifdef TOOLS_ENABLED
-#include "editor/csg_gizmos.h"
-#endif
-
 void initialize_csg_module(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -43,11 +39,6 @@ void initialize_csg_module(ModuleInitializationLevel p_level)
 		CSGShape3D::navmesh_parse_init();
 #endif // NAVIGATION_3D_DISABLED
 	}
-#ifdef TOOLS_ENABLED
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorPlugins::add_by_type<EditorPluginCSG>();
-	}
-#endif
 }
 
 void uninitialize_csg_module(ModuleInitializationLevel p_level)

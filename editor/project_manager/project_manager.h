@@ -31,14 +31,7 @@
 
 #pragma once
 
-#include "core/input/input.h"
-#include "core/input/input_event.h"
-#include "core/math/color.h"
-#include "core/math/rect2.h"
-#include "core/string/ustring.h"
-#include "core/templates/local_vector.h"
-#include "core/templates/rid.h"
-#include "scene/resources/font.h"
+#include "editor/ui_widgets.h"
 
 class ProjectManager
 {
@@ -67,17 +60,6 @@ public:
 		FIELD_MODAL_SECONDARY,
 	};
 
-	struct UIButton
-	{
-		String label;
-		Rect2 rect;
-		void (*on_click)() = nullptr;
-		bool (*is_enabled)() = nullptr;
-		bool hovered = false;
-		bool pressed = false;
-		bool primary = false;
-	};
-
 	struct ProjectEntry
 	{
 		String name;
@@ -90,86 +72,67 @@ public:
 
 	struct Data
 	{
-		RID viewport_rid;
-		RID canvas_rid;
-		RID canvas_item_rid;
+		// Composed shared Canvas UI context, layout & widgets
+		UIContext ui;
+		UISplitLayout layout;
+		UIScrollView list_scroll;
+		UIButtonGroup buttons;
+		UIButtonGroup sidebar_buttons;
+		UIButtonGroup modal_buttons;
+		UITextField search_field;
+		UITextField modal_primary_field;
+		UITextField modal_secondary_field;
 
-		Size2i window_size = Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
-		Point2 mouse_pos;
-		String search_text;
 		String status_text = "Voltaire Project Manager ready.";
 		String config_path;
-
-		Ref<Font> ui_font;
-		LocalVector<UIButton> buttons;
-		LocalVector<UIButton> sidebar_buttons;
-		LocalVector<UIButton> modal_buttons;
 
 		LocalVector<ProjectEntry> projects;
 		LocalVector<int> filtered_indices;
 		int selected_project_idx = -1;
 		int hovered_project_idx = -1;
-		float scroll_offset = 0.0f;
-		float max_scroll = 0.0f;
 
-		Rect2 search_rect;
 		Rect2 clear_search_rect;
 		bool clear_search_hovered = false;
-		Rect2 workspace_list_rect;
 
 		ModalMode modal_mode = MODAL_NONE;
 		ActiveField active_field = FIELD_NONE;
-		String modal_field_primary;
-		String modal_field_secondary;
 		String modal_error_text;
 		Rect2 modal_panel_rect;
-		Rect2 modal_primary_rect;
-		Rect2 modal_secondary_rect;
 
-		Input::EventDispatchFunc prev_input_dispatch = nullptr;
 		String pending_open_path;
 		String pending_open_name;
 		bool pending_open_play = false;
-		bool owns_viewport = false;
-		bool needs_redraw = true;
 	};
 
 	static inline Data* data = nullptr;
 
 	// Lifecycle & Frame Hooks
 	static bool is_initialized() { return _initialized; }
-	static void initialize(RID p_viewport_rid = RID(),
-		Size2i p_size = Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT));
+	static void initialize(RID p_viewport_rid, Size2i p_size);
 	static void poll();
 	static void process_and_draw();
 	static void finalize();
 
-	// Input & Project Helpers
 	static void handle_input_event(const Ref<InputEvent>& p_event);
 	static void load_projects();
 	static void save_projects();
 	static void rebuild_filtered_list();
 
-	// Toolbar Button Actions
+	// Button callbacks
 	static void _new_project();
 	static void _import_project();
 	static void _scan_projects();
 	static void _open_donate_page();
-
-	// Sidebar Button Actions
 	static void _edit_selected_project();
 	static void _run_selected_project();
 	static void _open_selected_folder();
 	static void _toggle_favorite_selected();
 	static void _remove_selected_project();
 	static void _quit_manager();
-
-	// Modal Actions
+	static void _cancel_modal();
 	static void _confirm_modal();
 	static void _confirm_modal_and_edit();
-	static void _cancel_modal();
 
-	// Predicates
 	static bool _has_valid_selected_project();
 	static bool _has_any_selected_project();
 };

@@ -196,4 +196,7 @@ bool EditorExport::poll_export_platforms()
 	return changed;
 }
 
+void EditorExport::emit_presets_runnable_changed() {}
+
+
 

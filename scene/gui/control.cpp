@@ -52,16 +52,11 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "servers/text/text_server.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/scene/gui/control_editor_plugin.h"
-#endif // TOOLS_ENABLED
-
-#ifdef TOOLS_ENABLED
 void Control::_edit_set_position(const Point2& p_position)
 {
 	ERR_FAIL_COND_MSG(
 		!Engine::is_editor_hint(), "This function can only be used from editor plugins.");
-	set_position(p_position,
-		ControlEditorToolbar::is_anchors_mode_enabled() && get_parent_control());
+	set_position(p_position, false);
 }
 
 Point2 Control::_edit_get_position() const { return get_position(); }
@@ -74,14 +69,9 @@ void Control::_edit_set_rect(const Rect2& p_edit_rect)
 {
 	ERR_FAIL_COND_MSG(
 		!Engine::is_editor_hint(), "This function can only be used from editor plugins.");
-	// Changing the size might change the internal transform (in case of non-zero
-	// `pivot_offset_ratio`), hence `position` (which is in the parent space, and is not always
-	// equivalent to the Control's rect top-left corner) needs to be changed after `size` (which is
-	// local) and needs to account for the possibly changed internal transform.
 	Vector2 rect_new_pos_in_parent_space = get_transform().xform(p_edit_rect.position);
-	set_size(p_edit_rect.size, ControlEditorToolbar::is_anchors_mode_enabled());
-	set_position(rect_new_pos_in_parent_space - _get_internal_transform().get_origin(),
-		ControlEditorToolbar::is_anchors_mode_enabled());
+	set_size(p_edit_rect.size, false);
+	set_position(rect_new_pos_in_parent_space - _get_internal_transform().get_origin(), false);
 }
 
 void Control::_edit_set_rotation(real_t p_rotation) { set_rotation(p_rotation); }

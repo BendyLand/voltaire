@@ -35,7 +35,6 @@
 #include "../java_godot_wrapper.h"
 #include "../os_android.h"
 
-#include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/rich_text_label.h"
@@ -64,8 +63,7 @@ void AndroidEditorGradleRunner::run_gradle(const String &p_project_path, const S
 
 	output_label->clear();
 	output_dialog->get_ok_button()->set_disabled(true);
-
-	EditorInterface::popup_dialog_centered_ratio(output_dialog);
+	output_dialog->popup_centered_ratio();
 
 	state = STATE_BUILDING;
 	_android_gradle_build_connect();

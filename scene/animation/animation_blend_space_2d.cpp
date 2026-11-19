@@ -486,4 +486,9 @@ AnimationNode::NodeTimeInfo AnimationNodeBlendSpace2D::_process(
 	return AnimationNode::NodeTimeInfo();
 }
 
+void AnimationNodeBlendSpace2D::_update_triangles() {}
+
+void AnimationNodeBlendSpace2D::_queue_auto_triangles() {}
+
+
 

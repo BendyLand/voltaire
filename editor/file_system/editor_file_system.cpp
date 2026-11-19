@@ -36,13 +36,8 @@
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/os/os.h"
-#include "editor/doc/editor_help.h"
-#include "editor/editor_node.h"
 #include "editor/file_system/editor_paths.h"
-#include "editor/inspector/editor_resource_preview.h"
-#include "editor/script/script_editor_plugin.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/settings/project_settings_editor.h"
 #include "editor_file_system.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/packed_scene.h"
@@ -377,9 +372,6 @@ void EditorFileSystem::ScanProgress::increment()
 {
 	current++;
 	float ratio = current / MAX(hi, 1.0f);
-	if (progress) {
-		progress->step(ratio * 1000.0f);
-	}
 	EditorFileSystem::instance->scan_total = ratio;
 }
 

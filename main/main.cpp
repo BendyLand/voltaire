@@ -110,16 +110,11 @@
 #endif
 
 #ifdef TOOLS_ENABLED
-#include "editor/debugger/debug_adapter/debug_adapter_server.h"
-#include "editor/debugger/editor_debugger_node.h"
 #include "editor/doc/doc_data_class_path.gen.h"
 #include "editor/doc/doc_tools.h"
-#include "editor/doc/editor_help.h"
-#include "editor/editor_node.h"
 #include "editor/editor_ui.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/file_system/editor_paths.h"
-#include "editor/gui/progress_dialog.h"
 #include "editor/project_manager/project_manager.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/translations/editor_translation.h"
@@ -2263,7 +2258,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 						"<port> argument for --dap-port <port> must be between 0 and 65535.\n");
 					goto error;
 				}
-				DebugAdapterServer::port_override = port_override;
+				(void)port_override;
 				N = N->next();
 			}
 			else {
@@ -3854,8 +3849,9 @@ int Main::start()
 		ERR_FAIL_COND_V_MSG(err != OK, EXIT_FAILURE, "Error saving new docs:" + itos(err));
 
 		__print_line("Deleting docs cache...");
-		if (FileAccess::exists(EditorHelp::get_cache_full_path())) {
-			DirAccess::remove_file_or_error(EditorHelp::get_cache_full_path());
+		String doc_cache_path = EditorPaths::get_cache_dir().path_join("editor_doc_cache-4.5.res");
+		if (FileAccess::exists(doc_cache_path)) {
+			DirAccess::remove_file_or_error(doc_cache_path);
 		}
 
 		return EXIT_SUCCESS;
@@ -4167,11 +4163,8 @@ bool Main::iteration()
 , "Command line option --build-solutions was passed, but no project "
 								 "is being edited. Aborting.");
 		}
-		if (!EditorNode::call_build()) {
-			OS::set_exit_code(EXIT_FAILURE);
-			ERR_FAIL_V_MSG(true, "Command line option --build-solutions was passed, but the build "
-								 "callback failed. Aborting.");
-		}
+		OS::set_exit_code(EXIT_FAILURE);
+		ERR_FAIL_V_MSG(true, "Command line option --build-solutions is not supported without a registered build callback. Aborting.");
 	}
 #endif
 

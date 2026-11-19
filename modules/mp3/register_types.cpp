@@ -34,22 +34,16 @@
 #include "register_types.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/editor_node.h"
 #include "resource_importer_mp3.h"
-
-static void _editor_init()
-{
-	Ref<ResourceImporterMP3> mp3_import;
-	mp3_import.instantiate();
-	ResourceFormatImporter::add_importer(mp3_import);
-}
 #endif
 
 void initialize_mp3_module(ModuleInitializationLevel p_level)
 {
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorNode::add_init_callback(_editor_init);
+		Ref<ResourceImporterMP3> mp3_import;
+		mp3_import.instantiate();
+		ResourceFormatImporter::add_importer(mp3_import);
 	}
 #endif
 }

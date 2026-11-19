@@ -34,22 +34,16 @@
 #include "register_types.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/editor_node.h"
 #include "resource_importer_ogg_vorbis.h"
-
-static void _editor_init()
-{
-	Ref<ResourceImporterOggVorbis> ogg_vorbis_importer;
-	ogg_vorbis_importer.instantiate();
-	ResourceFormatImporter::add_importer(ogg_vorbis_importer);
-}
 #endif
 
 void initialize_vorbis_module(ModuleInitializationLevel p_level)
 {
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorNode::add_init_callback(_editor_init);
+		Ref<ResourceImporterOggVorbis> ogg_vorbis_importer;
+		ogg_vorbis_importer.instantiate();
+		ResourceFormatImporter::add_importer(ogg_vorbis_importer);
 	}
 #endif
 }

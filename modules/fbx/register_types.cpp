@@ -36,16 +36,6 @@
 #ifdef TOOLS_ENABLED
 #include "editor/editor_scene_importer_fbx2gltf.h"
 #include "editor/editor_scene_importer_ufbx.h"
-//
-#include "core/config/project_settings.h"
-#include "editor/editor_node.h"
-
-static void _editor_init()
-{
-	Ref<EditorSceneFormatImporterUFBX> import_fbx;
-	import_fbx.instantiate();
-	ResourceImporterScene::add_scene_importer(import_fbx);
-}
 #endif // TOOLS_ENABLED
 
 #define FBX_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class)                                           \
@@ -61,6 +51,15 @@ void uninitialize_fbx_module(ModuleInitializationLevel p_level)
 	FBXDocument::unregister_all_gltf_document_extensions();
 }
 
-void initialize_fbx_module(ModuleInitializationLevel p_level) {}
+void initialize_fbx_module(ModuleInitializationLevel p_level)
+{
+#ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		Ref<EditorSceneFormatImporterUFBX> import_fbx;
+		import_fbx.instantiate();
+		ResourceImporterScene::add_scene_importer(import_fbx);
+	}
+#endif // TOOLS_ENABLED
+}
 
 

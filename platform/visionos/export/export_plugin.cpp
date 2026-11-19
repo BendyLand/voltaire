@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor/editor_node.h"
+#include "core/config/engine.h"
 #include "export_plugin.h"
 #include "logo_svg.gen.h"
 #include "run_icon_svg.gen.h"
@@ -38,7 +38,7 @@ Vector<String> EditorExportPlatformVisionOS::device_types({"realityDevice"});
 
 void EditorExportPlatformVisionOS::initialize()
 {
-	if (EditorNode::is_initialized()) {
+	if (Engine::is_editor_hint()) {
 		EditorExportPlatformAppleEmbedded::_initialize(_visionos_logo_svg, _visionos_run_icon_svg);
 #ifdef MACOS_ENABLED
 		_start_remote_device_poller_thread();

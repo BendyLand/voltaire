@@ -33,10 +33,6 @@
 #include "core/io/resource_saver.h"
 #include "resource_importer_mp3.h"
 
-#ifdef TOOLS_ENABLED
-#include "editor/import/audio_stream_import_settings.h"
-#endif
-
 String ResourceImporterMP3::get_importer_name() const { return "mp3"; }
 
 String ResourceImporterMP3::get_visible_name() const { return "MP3"; }
@@ -59,15 +55,9 @@ int ResourceImporterMP3::get_preset_count() const { return 0; }
 String ResourceImporterMP3::get_preset_name(int p_idx) const { return String(); }
 
 #ifdef TOOLS_ENABLED
-bool ResourceImporterMP3::has_advanced_options() const { return true; }
+bool ResourceImporterMP3::has_advanced_options() const { return false; }
 
-void ResourceImporterMP3::show_advanced_options(const String& p_path)
-{
-	Ref<AudioStreamMP3> mp3_stream = AudioStreamMP3::load_from_file(p_path);
-	if (mp3_stream.is_valid()) {
-		AudioStreamImportSettingsDialog::edit(p_path, "mp3", mp3_stream);
-	}
-}
+void ResourceImporterMP3::show_advanced_options(const String& p_path) {}
 #endif
 
 void ResourceImporterMP3::get_import_options(

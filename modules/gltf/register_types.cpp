@@ -44,18 +44,6 @@
 #include "extensions/physics/gltf_physics_shape.h"
 #endif // PHYSICS_3D_DISABLED
 
-#ifdef TOOLS_ENABLED
-#include "editor/editor_import_blend_runner.h"
-#include "editor/editor_scene_exporter_gltf_plugin.h"
-#include "editor/editor_scene_importer_blend.h"
-#include "editor/editor_scene_importer_gltf.h"
-//
-#include "core/config/project_settings.h"
-#include "editor/editor_node.h"
-#include "editor/settings/editor_settings.h"
-
-#endif // TOOLS_ENABLED
-
 #define GLTF_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class)                                          \
 	Ref<m_doc_ext_class> extension_##m_doc_ext_class;                                              \
 	extension_##m_doc_ext_class.instantiate();                                                     \

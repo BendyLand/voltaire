@@ -39,10 +39,8 @@
 #include "core/os/shared_object.h"
 #include "core/string/translation_server.h"
 #include "core/version.h"
-#include "editor/editor_node.h"
 #include "editor/export/editor_export.h"
 #include "editor/export/editor_export_plugin.h"
-#include "editor/export/export_template_manager.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
@@ -63,9 +61,14 @@
 #endif
 
 #ifndef ANDROID_ENABLED
-#include "editor/editor_log.h"
 #include "editor/editor_string_names.h"
 #endif
+
+static String _get_android_build_directory(const Ref<EditorExportPreset>& p_preset)
+{
+	(void)p_preset;
+	return String();
+}
 
 static const char* ANDROID_PERMS[] = {"ACCESS_CHECKIN_PROPERTIES", "ACCESS_COARSE_LOCATION",
 	"ACCESS_FINE_LOCATION", "ACCESS_LOCATION_EXTRA_COMMANDS", "ACCESS_MEDIA_LOCATION",
@@ -226,7 +229,7 @@ String EditorExportPlatformAndroid::get_package_name(
 String EditorExportPlatformAndroid::get_assets_directory(
 	const Ref<EditorExportPreset>& p_preset, int p_export_format) const
 {
-	String gradle_build_directory = ExportTemplateManager::get_android_build_directory(p_preset);
+	String gradle_build_directory = _get_android_build_directory(p_preset);
 	return gradle_build_directory.path_join(
 		p_export_format == EXPORT_FORMAT_AAB ? AAB_ASSETS_DIRECTORY : APK_ASSETS_DIRECTORY);
 }
@@ -638,7 +641,7 @@ void EditorExportPlatformAndroid::_write_tmp_manifest(
 	manifest_text += _get_application_tag(Ref<EditorExportPlatform>(this), p_preset,
 		_has_read_write_storage_permission(perms), p_debug, manifest_metadata);
 	manifest_text += "</manifest>\n";
-	String manifest_path = ExportTemplateManager::get_android_build_directory(p_preset).path_join(
+	String manifest_path = _get_android_build_directory(p_preset).path_join(
 		vformat("src/%s/AndroidManifest.xml", (p_debug ? "debug" : "release")));
 
 	print_verbose("Storing manifest into " + manifest_path + ": " + "\n" + manifest_text);
@@ -716,7 +719,7 @@ void EditorExportPlatformAndroid::_copy_icons_to_gradle_project(
 	const Ref<Image>& p_foreground, const Ref<Image>& p_background, const Ref<Image>& p_monochrome,
 	const Ref<Image>& p_splash_icon, const Ref<Image>& p_splash_branding_image)
 {
-	String gradle_build_dir = ExportTemplateManager::get_android_build_directory(p_preset);
+	String gradle_build_dir = _get_android_build_directory(p_preset);
 
 	// Copy splash screen icon to the drawable directory.
 	// This is only for png/webp/svg file; XML file is handled in _fix_themes_xml().
@@ -974,7 +977,7 @@ bool _validate_dotnet_tfm(const String& required_tfm, String& r_error)
 void EditorExportPlatformAndroid::_clear_assets_directory(const Ref<EditorExportPreset>& p_preset)
 {
 	Ref<DirAccess> da_res = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	String gradle_build_directory = ExportTemplateManager::get_android_build_directory(p_preset);
+	String gradle_build_directory = _get_android_build_directory(p_preset);
 
 	// Clear the APK assets directory
 	String apk_assets_directory = gradle_build_directory.path_join(APK_ASSETS_DIRECTORY);
@@ -1062,7 +1065,7 @@ bool EditorExportPlatformAndroid::_is_clean_build_required(const Ref<EditorExpor
 {
 	bool first_build = last_gradle_build_time == 0;
 	bool have_plugins_changed = false;
-	String gradle_build_dir = ExportTemplateManager::get_android_build_directory(p_preset);
+	String gradle_build_dir = _get_android_build_directory(p_preset);
 	bool has_build_dir_changed = last_gradle_build_dir != gradle_build_dir;
 
 	String plugin_names = _get_plugins_names(p_preset);

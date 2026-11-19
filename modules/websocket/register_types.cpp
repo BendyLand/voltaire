@@ -40,23 +40,7 @@
 #include "wsl_peer.h"
 #endif
 
-#ifdef TOOLS_ENABLED
-#include "editor/editor_debugger_server_websocket.h"
-#endif
-
 #include "core/error/error_macros.h"
-
-#ifdef TOOLS_ENABLED
-#include "editor/debugger/editor_debugger_server.h"
-#include "editor/editor_node.h"
-#endif
-
-#ifdef TOOLS_ENABLED
-static void _editor_init_callback()
-{
-	EditorDebuggerServer::register_protocol_handler("ws://", EditorDebuggerServerWebSocket::create);
-}
-#endif
 
 void uninitialize_websocket_module(ModuleInitializationLevel p_level)
 {

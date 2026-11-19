@@ -36,12 +36,6 @@
 #include "3d/navigation_mesh_generator.h"
 #endif // DISABLE_DEPRECATED
 
-#ifdef TOOLS_ENABLED
-#include "editor/navigation_link_3d_editor_plugin.h"
-#include "editor/navigation_obstacle_3d_editor_plugin.h"
-#include "editor/navigation_region_3d_editor_plugin.h"
-#endif
-
 #include "core/config/engine.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 

@@ -42,10 +42,6 @@
 #include "scene/resources/surface_tool.h"
 #include "servers/rendering/renderer.h"
 
-#ifdef TOOLS_ENABLED
-#include "editor/editor_node.h"
-#endif
-
 RID Occluder3D::get_rid() const { return occluder; }
 
 void Occluder3D::_update()

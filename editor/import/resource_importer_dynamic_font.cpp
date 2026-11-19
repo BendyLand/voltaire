@@ -32,7 +32,6 @@
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
-#include "editor/import/dynamic_font_import_settings.h"
 #include "resource_importer_dynamic_font.h"
 #include "scene/resources/font.h"
 #include "servers/text/text_server.h"
@@ -82,12 +81,9 @@ String ResourceImporterDynamicFont::get_preset_name(int p_idx) const
 	}
 }
 
-bool ResourceImporterDynamicFont::has_advanced_options() const { return true; }
+bool ResourceImporterDynamicFont::has_advanced_options() const { return false; }
 
-void ResourceImporterDynamicFont::show_advanced_options(const String& p_path)
-{
-	DynamicFontImportSettingsDialog::open_settings(p_path);
-}
+void ResourceImporterDynamicFont::show_advanced_options(const String& p_path) {}
 
 void ResourceImporterDynamicFont::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const

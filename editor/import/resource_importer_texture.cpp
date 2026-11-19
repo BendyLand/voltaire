@@ -35,7 +35,6 @@
 #include "editor/file_system/editor_file_system.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
-#include "editor/themes/editor_theme_manager.h"
 #include "resource_importer_texture.h"
 #include "scene/resources/compressed_texture.h"
 

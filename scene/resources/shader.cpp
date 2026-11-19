@@ -39,7 +39,6 @@
 #include "shader.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/doc/editor_help.h"
 #include "modules/modules_enabled.gen.h" // For regex.
 #ifdef MODULE_REGEX_ENABLED
 #include "modules/regex/regex.h"

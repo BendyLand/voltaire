@@ -90,19 +90,8 @@
 #include "scene/openxr_render_model_manager.h"
 #endif
 
-#ifdef TOOLS_ENABLED
-#include "editor/openxr_editor_plugin.h"
-#endif
-
 #ifdef ANDROID_ENABLED
 #include "extensions/platform/openxr_android_extension.h"
-#endif
-
-#ifdef TOOLS_ENABLED
-#include "editor/openxr_binding_modifier_editor.h"
-#include "editor/openxr_interaction_profile_editor.h"
-//
-#include "editor/editor_node.h"
 #endif
 
 static Ref<OpenXRInterface> openxr_interface;

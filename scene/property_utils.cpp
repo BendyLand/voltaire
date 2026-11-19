@@ -35,10 +35,6 @@
 #include "property_utils.h"
 #include "scene/resources/packed_scene.h"
 
-#ifdef TOOLS_ENABLED
-#include "editor/editor_node.h"
-#endif // TOOLS_ENABLED
-
 // Like SceneState::PackState, but using a raw pointer to avoid the cost of
 // updating the reference count during the internal work of the functions below
 namespace

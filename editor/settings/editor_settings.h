@@ -36,8 +36,6 @@
 #include "core/io/resource.h"
 #include "core/os/thread_safe.h"
 
-class EditorPlugin;
-
 class EditorSettings final
 {
 	static inline BinaryMutex _thread_safe_mutex;
@@ -45,7 +43,6 @@ class EditorSettings final
 public:
 	struct Plugin
 	{
-		EditorPlugin* instance = nullptr;
 		String path;
 		String name;
 		String author;

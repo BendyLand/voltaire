@@ -32,10 +32,6 @@
 #include "core/io/resource_saver.h"
 #include "resource_importer_ogg_vorbis.h"
 
-#ifdef TOOLS_ENABLED
-#include "editor/import/audio_stream_import_settings.h"
-#endif
-
 #include <ogg/ogg.h>
 #include <vorbis/codec.h>
 
@@ -53,15 +49,9 @@ String ResourceImporterOggVorbis::get_save_extension() const { return "oggvorbis
 String ResourceImporterOggVorbis::get_resource_type() const { return "AudioStreamOggVorbis"; }
 
 #ifdef TOOLS_ENABLED
-bool ResourceImporterOggVorbis::has_advanced_options() const { return true; }
+bool ResourceImporterOggVorbis::has_advanced_options() const { return false; }
 
-void ResourceImporterOggVorbis::show_advanced_options(const String& p_path)
-{
-	Ref<AudioStreamOggVorbis> ogg_stream = AudioStreamOggVorbis::load_from_file(p_path);
-	if (ogg_stream.is_valid()) {
-		AudioStreamImportSettingsDialog::edit(p_path, "oggvorbisstr", ogg_stream);
-	}
-}
+void ResourceImporterOggVorbis::show_advanced_options(const String& p_path) {}
 #endif
 
 #ifndef DISABLE_DEPRECATED
