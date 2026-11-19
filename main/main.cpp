@@ -2318,6 +2318,29 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #ifdef TOOLS_ENABLED
 		found_project = true;
 #endif
+		const VoltaireProjectFile& proj = ProjectSettings::get_project();
+
+		if (!force_res && !project_manager && !editor &&
+				proj.config.window_width > 0 && proj.config.window_height > 0) {
+			window_size.width = (int)proj.config.window_width;
+			window_size.height = (int)proj.config.window_height;
+		}
+		if (!disable_vsync) {
+			window_vsync_mode = (proj.header.flags & PROJECT_FLAG_VSYNC)
+										? DisplayServerEnums::VSYNC_ENABLED
+										: DisplayServerEnums::VSYNC_DISABLED;
+		}
+		if (!editor && !project_manager) {
+			if (proj.header.flags & PROJECT_FLAG_BORDERLESS) {
+				window_flags |= DisplayServerEnums::WINDOW_FLAG_BORDERLESS_BIT;
+			}
+			if (!(proj.header.flags & PROJECT_FLAG_RESIZABLE)) {
+				window_flags |= DisplayServerEnums::WINDOW_FLAG_RESIZE_DISABLED_BIT;
+			}
+		}
+		if (proj.config.physics_ticks_per_second > 0) {
+			Engine::set_physics_ticks_per_second((int)proj.config.physics_ticks_per_second);
+		}
 	}
 	else {
 #ifdef TOOLS_ENABLED
@@ -3844,7 +3867,12 @@ int Main::start()
 	game_path = String();
 	main_loop_type = String();
 #endif // defined(OVERRIDE_PATH_ENABLED)
-
+	if (game_path.is_empty() && ProjectSettings::is_project_loaded()) {
+		const char* ms = ProjectSettings::get_project().config.main_scene;
+		if (ms[0] != '\0') {
+			game_path = String::utf8(ms);
+		}
+	}
 #ifdef TOOLS_ENABLED
 	if (!editor && !project_manager && !found_project && !cmdline_tool && script.is_empty() &&
 		game_path.is_empty()) {
@@ -3898,7 +3926,14 @@ int Main::start()
 	OS::benchmark_end_measure("Startup", "Main::Start");
 	OS::benchmark_dump();
 
-	Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
+	if (ProjectSettings::is_project_loaded()) {
+		const VoltaireProjectConfig& cfg = ProjectSettings::get_project().config;
+		Renderer::set_default_clear_color(
+				Color(cfg.clear_color[0], cfg.clear_color[1], cfg.clear_color[2], cfg.clear_color[3]));
+	}
+	else {
+		Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
+	}
 	SceneTree::initialize_tree();
 
 	Window* root = SceneTree::get_root();
@@ -4100,8 +4135,7 @@ bool Main::iteration()
 		exit = true;
 	}
 
-#ifdef TOOLS_
-ENABLED
+#ifdef TOOLS_ENABLED
 	if (wait_for_import && EditorFileSystem::is_initialized() &&
 		EditorFileSystem::doing_first_scan()) {
 		exit = false;

@@ -29,19 +29,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor/editor_ui.h"
-
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/keyboard.h"
+#include "editor/editor_ui.h"
 #include "editor/project_manager/project_manager.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 namespace
 {
-bool _project_3d(const Vector3& p_pt, float p_yaw, float p_pitch, const Rect2& p_vp,
-	Point2& r_screen)
+bool _project_3d(
+	const Vector3& p_pt, float p_yaw, float p_pitch, const Rect2& p_vp, Point2& r_screen)
 {
 	const float cy = Math::cos(p_yaw);
 	const float sy = Math::sin(p_yaw);
@@ -151,7 +150,8 @@ void EditorUI::load_scene()
 					ent.name = parts[0];
 					ent.type = parts[1];
 					ent.position = Vector2(parts[2].to_float(), parts[3].to_float());
-					ent.size = Size2(MAX(16.0f, parts[4].to_float()), MAX(16.0f, parts[5].to_float()));
+					ent.size =
+						Size2(MAX(16.0f, parts[4].to_float()), MAX(16.0f, parts[5].to_float()));
 					ent.color =
 						Color(parts[6].to_float(), parts[7].to_float(), parts[8].to_float(), 1.0f);
 					ent.runtime_vel = Vector2(130.0f + 25.0f * (data->entities.size() % 3),
@@ -209,9 +209,9 @@ void EditorUI::save_scene()
 	fa->store_line("# Voltaire Scene v1");
 	for (uint32_t i = 0; i < data->entities.size(); i++) {
 		const SceneEntity& e = data->entities[i];
-		fa->store_line(vformat("%s|%s|%.1f|%.1f|%.1f|%.1f|%.3f|%.3f|%.3f",
-			e.name.replace("|", "_"), e.type.replace("|", "_"), e.position.x, e.position.y,
-			e.size.x, e.size.y, e.color.r, e.color.g, e.color.b));
+		fa->store_line(vformat("%s|%s|%.1f|%.1f|%.1f|%.1f|%.3f|%.3f|%.3f", e.name.replace("|", "_"),
+			e.type.replace("|", "_"), e.position.x, e.position.y, e.size.x, e.size.y, e.color.r,
+			e.color.g, e.color.b));
 	}
 	fa->close();
 	data->scene_dirty = false;
@@ -276,27 +276,30 @@ void EditorUI::initialize(RID p_viewport_rid, Size2i p_size, const String& p_pro
 			data->project_path = da->get_current_dir();
 		}
 	}
-	data->project_name = p_project_name.is_empty() ? UIDraw::read_project_name(data->project_path)
-												   : p_project_name;
+	data->project_name =
+		p_project_name.is_empty() ? UIDraw::read_project_name(data->project_path) : p_project_name;
 	if (data->project_name.is_empty()) {
 		data->project_name = "Voltaire Project";
 	}
 
-	data->ui.initialize(p_viewport_rid, p_size,
-		Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), &EditorUI::handle_input_event);
+	data->ui.initialize(p_viewport_rid, p_size, Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT),
+		&EditorUI::handle_input_event);
 
 	data->inspector_name_field.placeholder = "Node";
 
-	// Top toolbar buttons: [0]=< Project List, [1]=2D, [2]=3D, [3]=Script, [4]=+ Add Node, [5]=Save, [6]=Play
+	// Top toolbar buttons: [0]=< Project List, [1]=2D, [2]=3D, [3]=Script,
+	// [4]=Project, [5]=+ Add Node, [6]=Save, [7]=Play
 	data->top_buttons.add("< Project List", &EditorUI::_back_to_project_list);
 	data->top_buttons.add("2D", &EditorUI::_switch_view_2d, nullptr, false, true);
 	data->top_buttons.add("3D", &EditorUI::_switch_view_3d);
 	data->top_buttons.add("Script", &EditorUI::_switch_view_script);
+	data->top_buttons.add("Project", &EditorUI::_open_project_settings);
 	data->top_buttons.add("+ Add Node", &EditorUI::_add_node);
 	data->top_buttons.add("Save", &EditorUI::_save_all);
 	data->top_buttons.add("Play", &EditorUI::_toggle_play, nullptr, true);
 
-	// Dock & viewport utility buttons: [0]=+ Node, [1]=+ Script, [2]=Refresh, [3]=Reset View, [4]=Clear Output
+	// Dock & viewport utility buttons: [0]=+ Node, [1]=+ Script, [2]=Refresh, [3]=Reset View,
+	// [4]=Clear Output
 	data->dock_buttons.add("+ Node", &EditorUI::_add_node);
 	data->dock_buttons.add("+ Script", &EditorUI::_new_script_file);
 	data->dock_buttons.add("Refresh", &EditorUI::_refresh_files);
@@ -304,16 +307,58 @@ void EditorUI::initialize(RID p_viewport_rid, Size2i p_size, const String& p_pro
 	data->dock_buttons.add("Clear", &EditorUI::_clear_output);
 
 	// Inspector buttons: [0..7]=pos/size nudges, [8]=Duplicate, [9]=Delete Node
-	data->inspector_buttons.add("-10", &EditorUI::_nudge_pos_x_neg, &EditorUI::_can_modify_selected_node);
-	data->inspector_buttons.add("+10", &EditorUI::_nudge_pos_x_pos, &EditorUI::_can_modify_selected_node);
-	data->inspector_buttons.add("-10", &EditorUI::_nudge_pos_y_neg, &EditorUI::_can_modify_selected_node);
-	data->inspector_buttons.add("+10", &EditorUI::_nudge_pos_y_pos, &EditorUI::_can_modify_selected_node);
-	data->inspector_buttons.add("-10", &EditorUI::_nudge_size_w_neg, &EditorUI::_can_modify_selected_node);
-	data->inspector_buttons.add("+10", &EditorUI::_nudge_size_w_pos, &EditorUI::_can_modify_selected_node);
-	data->inspector_buttons.add("-10", &EditorUI::_nudge_size_h_neg, &EditorUI::_can_modify_selected_node);
-	data->inspector_buttons.add("+10", &EditorUI::_nudge_size_h_pos, &EditorUI::_can_modify_selected_node);
-	data->inspector_buttons.add("Duplicate", &EditorUI::_duplicate_selected_node, &EditorUI::_can_delete_selected_node);
-	data->inspector_buttons.add("Delete Node", &EditorUI::_delete_selected_node, &EditorUI::_can_delete_selected_node);
+	data->inspector_buttons.add(
+		"-10", &EditorUI::_nudge_pos_x_neg, &EditorUI::_can_modify_selected_node);
+	data->inspector_buttons.add(
+		"+10", &EditorUI::_nudge_pos_x_pos, &EditorUI::_can_modify_selected_node);
+	data->inspector_buttons.add(
+		"-10", &EditorUI::_nudge_pos_y_neg, &EditorUI::_can_modify_selected_node);
+	data->inspector_buttons.add(
+		"+10", &EditorUI::_nudge_pos_y_pos, &EditorUI::_can_modify_selected_node);
+	data->inspector_buttons.add(
+		"-10", &EditorUI::_nudge_size_w_neg, &EditorUI::_can_modify_selected_node);
+	data->inspector_buttons.add(
+		"+10", &EditorUI::_nudge_size_w_pos, &EditorUI::_can_modify_selected_node);
+	data->inspector_buttons.add(
+		"-10", &EditorUI::_nudge_size_h_neg, &EditorUI::_can_modify_selected_node);
+	data->inspector_buttons.add(
+		"+10", &EditorUI::_nudge_size_h_pos, &EditorUI::_can_modify_selected_node);
+	data->inspector_buttons.add(
+		"Duplicate", &EditorUI::_duplicate_selected_node, &EditorUI::_can_delete_selected_node);
+	data->inspector_buttons.add(
+		"Delete Node", &EditorUI::_delete_selected_node, &EditorUI::_can_delete_selected_node);
+		// Project Settings modal buttons:
+	// [0..1]=Width -/+, [2..3]=Height -/+, [4..5]=Physics Ticks -/+,
+	// [6]=VSync, [7]=Resizable, [8]=Borderless, [9]=Use 3D, [10]=Cancel, [11]=Save & Close
+	data->ps_buttons.add("-80", &EditorUI::_ps_width_dec);
+	data->ps_buttons.add("+80", &EditorUI::_ps_width_inc);
+	data->ps_buttons.add("-45", &EditorUI::_ps_height_dec);
+	data->ps_buttons.add("+45", &EditorUI::_ps_height_inc);
+	data->ps_buttons.add("-10", &EditorUI::_ps_ticks_dec);
+	data->ps_buttons.add("+10", &EditorUI::_ps_ticks_inc);
+	data->ps_buttons.add("VSync: ON", &EditorUI::_ps_toggle_vsync);
+	data->ps_buttons.add("Resizable: ON", &EditorUI::_ps_toggle_resizable);
+	data->ps_buttons.add("Borderless: OFF", &EditorUI::_ps_toggle_borderless);
+	data->ps_buttons.add("3D Mode: OFF", &EditorUI::_ps_toggle_use_3d);
+	data->ps_buttons.add("Cancel", &EditorUI::_close_project_settings);
+	data->ps_buttons.add("Save & Close", &EditorUI::_save_project_settings, nullptr, true);
+
+	data->ps_name_field.placeholder = "Project Name";
+	data->ps_main_scene_field.placeholder = "res://main.vscn";
+
+	vltr_project_init(&data->project_data, data->project_name.utf8().get_data(), "res://main.vscn");
+	String proj_path = data->project_path.path_join("project.vltr");
+	Ref<FileAccess> fa = FileAccess::open(proj_path, FileAccess::READ);
+	if (fa.is_valid() && fa->get_length() >= (int64_t)sizeof(VoltaireProjectFile)) {
+		VoltaireProjectFile loaded;
+		fa->get_buffer((uint8_t*)&loaded, sizeof(VoltaireProjectFile));
+		if (vltr_project_valid(&loaded)) {
+			data->project_data = loaded;
+			if (loaded.config.project_name[0] != '\0') {
+				data->project_name = String::utf8(loaded.config.project_name);
+			}
+		}
+	}
 
 	// Inspector color swatches
 	data->swatches.push_back({Color(0.0f, 0.75f, 0.95f, 1.0f), Rect2(), false});
@@ -329,10 +374,6 @@ void EditorUI::initialize(RID p_viewport_rid, Size2i p_size, const String& p_pro
 
 	load_scene();
 	scan_project_files();
-	String proj_godot = data->project_path.path_join("project.vltr");
-	if (FileAccess::exists(proj_godot)) {
-		open_text_file(proj_godot);
-	}
 
 	add_log(vformat("Opened project '%s' (%s)", data->project_name, data->project_path));
 
@@ -409,6 +450,32 @@ void EditorUI::handle_input_event(const InputEvent& p_event)
 			return;
 		}
 
+		if (data->show_project_settings) {
+			if (data->ps_name_field.selecting) {
+				if (data->ps_name_field.handle_mouse_motion(p_event, data->ui.font, 13)) {
+					data->ui.needs_redraw = true;
+				}
+				return;
+			}
+			if (data->ps_main_scene_field.selecting) {
+				if (data->ps_main_scene_field.handle_mouse_motion(p_event, data->ui.font, 13)) {
+					data->ui.needs_redraw = true;
+				}
+				return;
+			}
+			if (data->ps_buttons.update_hover(data->ui.mouse_pos)) {
+				data->ui.needs_redraw = true;
+			}
+			return;
+		}
+
+		if (data->inspector_name_field.selecting) {
+			if (data->inspector_name_field.handle_mouse_motion(p_event, data->ui.font, 13)) {
+				data->ui.needs_redraw = true;
+			}
+			return;
+		}
+
 		if (data->dragging_node_2d && _can_modify_selected_node()) {
 			Vector2 vp_origin =
 				data->center_viewport_rect.position + Vector2(24.0f, 24.0f) + data->pan_2d;
@@ -426,7 +493,7 @@ void EditorUI::handle_input_event(const InputEvent& p_event)
 			}
 			else if (data->view_mode == VIEW_3D) {
 				data->orbit_yaw += delta.x * 0.01f;
-				data->orbit_pitch = CLAMP(data->orbit_pitch + delta.y * 0.01f, -1.35f, 1.35f);
+				data->orbit_pitch = CLAMP(data->orbit_pitch - delta.y * 0.01f, -1.35f, 1.35f);
 				data->ui.needs_redraw = true;
 			}
 			return;
@@ -469,6 +536,46 @@ void EditorUI::handle_input_event(const InputEvent& p_event)
 		const bool is_pressed = p_event.is_pressed();
 		data->ui.mouse_pos = p_event.mouse_button.position;
 
+		if (data->show_project_settings) {
+			if (btn != MouseButton::LEFT) {
+				return;
+			}
+			if (is_pressed) {
+				if (data->ps_buttons.press(data->ui.mouse_pos)) {
+					data->ui.needs_redraw = true;
+					return;
+				}
+				if (data->ps_name_field.has_point(data->ui.mouse_pos)) {
+					data->focus_field = FOCUS_PS_NAME;
+					data->ps_name_field.handle_mouse_button(p_event, data->ui.font, 13);
+					data->ui.needs_redraw = true;
+					return;
+				}
+				if (data->ps_main_scene_field.has_point(data->ui.mouse_pos)) {
+					data->focus_field = FOCUS_PS_MAIN_SCENE;
+					data->ps_main_scene_field.handle_mouse_button(p_event, data->ui.font, 13);
+					data->ui.needs_redraw = true;
+					return;
+				}
+				data->focus_field = FOCUS_NONE;
+				data->ui.needs_redraw = true;
+			}
+			else {
+				if (data->ps_name_field.selecting) {
+					data->ps_name_field.handle_mouse_button(p_event, data->ui.font, 13);
+				}
+				if (data->ps_main_scene_field.selecting) {
+					data->ps_main_scene_field.handle_mouse_button(p_event, data->ui.font, 13);
+				}
+				void (*to_call)() = data->ps_buttons.release(data->ui.mouse_pos);
+				data->ui.needs_redraw = true;
+				if (to_call) {
+					to_call();
+				}
+			}
+			return;
+		}
+
 		// Scroll wheel in Script view
 		if (is_pressed && !data->playing && data->view_mode == VIEW_SCRIPT &&
 			data->center_viewport_rect.has_point(data->ui.mouse_pos)) {
@@ -507,9 +614,9 @@ void EditorUI::handle_input_event(const InputEvent& p_event)
 				// Clicking in the runtime arena gives moving entities an interactive bounce impulse
 				if (!hit_btn && data->center_viewport_rect.has_point(data->ui.mouse_pos)) {
 					for (uint32_t i = 1; i < data->entities.size(); i++) {
-						data->entities[i].runtime_vel = Vector2(
-							-data->entities[i].runtime_vel.y * 1.05f,
-							data->entities[i].runtime_vel.x * 1.05f);
+						data->entities[i].runtime_vel =
+							Vector2(-data->entities[i].runtime_vel.y * 1.05f,
+								data->entities[i].runtime_vel.x * 1.05f);
 					}
 				}
 				data->ui.needs_redraw = true;
@@ -538,7 +645,12 @@ void EditorUI::handle_input_event(const InputEvent& p_event)
 			// Inspector node name box focus
 			if (data->inspector_name_field.has_point(data->ui.mouse_pos) &&
 				_can_modify_selected_node()) {
+				const String& nm = data->entities[data->selected_entity_idx].name;
+				if (data->focus_field != FOCUS_NODE_NAME || data->inspector_name_field.text != nm) {
+					data->inspector_name_field.set_text(nm);
+				}
 				data->focus_field = FOCUS_NODE_NAME;
+				data->inspector_name_field.handle_mouse_button(p_event, data->ui.font, 13);
 				data->ui.needs_redraw = true;
 				return;
 			}
@@ -630,6 +742,9 @@ void EditorUI::handle_input_event(const InputEvent& p_event)
 			data->ui.needs_redraw = true;
 		}
 		else {
+			if (data->inspector_name_field.selecting) {
+				data->inspector_name_field.handle_mouse_button(p_event, data->ui.font, 13);
+			}
 			data->dragging_node_2d = false;
 			data->panning_viewport = false;
 
@@ -647,7 +762,30 @@ void EditorUI::handle_input_event(const InputEvent& p_event)
 	}
 
 	if (p_event.type == InputEventType::KEY && p_event.is_pressed()) {
-		const Key code = p_event.key.keycode;
+		const Key code = (p_event.key.keycode != Key::NONE) ? p_event.key.keycode
+															: p_event.key.physical_keycode;
+
+		if (data->show_project_settings) {
+			if (code == Key::ESCAPE) {
+				_close_project_settings();
+				return;
+			}
+			if (code == Key::ENTER || code == Key::KP_ENTER) {
+				_save_project_settings();
+				return;
+			}
+			if (data->focus_field == FOCUS_PS_NAME) {
+				if (data->ps_name_field.handle_key(p_event)) {
+					data->ui.needs_redraw = true;
+				}
+			}
+			else if (data->focus_field == FOCUS_PS_MAIN_SCENE) {
+				if (data->ps_main_scene_field.handle_key(p_event)) {
+					data->ui.needs_redraw = true;
+				}
+			}
+			return;
+		}
 
 		if (code == Key::F5 && !data->playing) {
 			start_play();
@@ -979,10 +1117,10 @@ void EditorUI::process_and_draw()
 	UIDraw::draw_button(ci, font, data->top_buttons[0], 13);
 	left_cur += back_w + 14.0f;
 
-	// Right action buttons: [+ Add Node] [Save] [Play]
+	// Right action buttons: [Project] [+ Add Node] [Save] [Play]
 	float right_cur = W - pad - 10.0f;
-	const float right_widths[3] = {100.0f, 76.0f, 84.0f};
-	for (int idx = 6; idx >= 4; idx--) {
+	const float right_widths[4] = {78.0f, 96.0f, 68.0f, 76.0f};
+	for (int idx = 7; idx >= 4; idx--) {
 		float bw = right_widths[idx - 4];
 		if (right_cur - bw > left_cur + 40.0f) {
 			right_cur -= bw;
@@ -1023,9 +1161,8 @@ void EditorUI::process_and_draw()
 		if (title_w > 24.0f) {
 			String dirty_mark = (data->scene_dirty || data->script_dirty) ? " *" : "";
 			String title = "VOLTAIRE // " + data->project_name + dirty_mark;
-			font->draw_string(ci,
-				Point2(left_cur, UIDraw::centered_baseline_y(font, top_rect, 15)), title,
-				HORIZONTAL_ALIGNMENT_LEFT, title_w, 15, col_text);
+			font->draw_string(ci, Point2(left_cur, UIDraw::centered_baseline_y(font, top_rect, 15)),
+				title, HORIZONTAL_ALIGNMENT_LEFT, title_w, 15, col_text);
 		}
 	}
 
@@ -1052,9 +1189,8 @@ void EditorUI::process_and_draw()
 		Rect2 scene_rect(left_r.position.x, left_r.position.y, left_r.size.x, scene_h);
 		UIDraw::draw_dock_panel(
 			ci, font, scene_rect, "SCENE", col_dock, col_dock_hdr, col_subtext, 30.0f, 66.0f);
-		data->dock_buttons[0].rect =
-			Rect2(scene_rect.position.x + scene_rect.size.x - 62.0f, scene_rect.position.y + 4.0f,
-				56.0f, 22.0f);
+		data->dock_buttons[0].rect = Rect2(scene_rect.position.x + scene_rect.size.x - 62.0f,
+			scene_rect.position.y + 4.0f, 56.0f, 22.0f);
 		UIDraw::draw_button(ci, font, data->dock_buttons[0], 11);
 
 		float ry = scene_rect.position.y + 36.0f;
@@ -1111,8 +1247,7 @@ void EditorUI::process_and_draw()
 								  (!fe.is_dir && fe.full_path == data->open_file_path);
 				if (fsel || fe.hovered) {
 					Renderer::canvas_item_add_rect(ci, frect,
-						fsel ? Color(0.17f, 0.26f, 0.35f, 1.0f)
-							 : Color(0.15f, 0.19f, 0.24f, 1.0f));
+						fsel ? Color(0.17f, 0.26f, 0.35f, 1.0f) : Color(0.15f, 0.19f, 0.24f, 1.0f));
 				}
 				if (font.is_valid() && fs_rect.size.x > 28.0f) {
 					String disp = fe.is_dir ? ("[DIR] " + fe.name) : fe.name;
@@ -1197,7 +1332,7 @@ void EditorUI::process_and_draw()
 			UIDraw::draw_button(ci, font, data->dock_buttons[3], 11);
 			if (font.is_valid() && vp.size.x > 160.0f) {
 				font->draw_string(ci, Point2(vp.position.x + 12.0f, vp.position.y + 24.0f),
-					"2D VIEWPORT  —  Drag nodes to move, Right-drag to pan",
+					"2D VIEWPORT  --  Drag nodes to move, Right-drag to pan",
 					HORIZONTAL_ALIGNMENT_LEFT, vp.size.x - 120.0f, 12, col_subtext);
 			}
 		}
@@ -1206,15 +1341,15 @@ void EditorUI::process_and_draw()
 			const Color gcol(0.14f, 0.17f, 0.22f, 1.0f);
 			for (int g = -5; g <= 5; g++) {
 				Point2 a, b;
-				if (_project_3d(
-						Vector3((float)g, 0.0f, -5.0f), data->orbit_yaw, data->orbit_pitch, vp, a) &&
+				if (_project_3d(Vector3((float)g, 0.0f, -5.0f), data->orbit_yaw, data->orbit_pitch,
+						vp, a) &&
 					_project_3d(
 						Vector3((float)g, 0.0f, 5.0f), data->orbit_yaw, data->orbit_pitch, vp, b)) {
 					UIDraw::draw_clipped_line(ci, vp, a, b,
 						g == 0 ? Color(0.24f, 0.42f, 0.78f, 1.0f) : gcol, g == 0 ? 2.0f : 1.0f);
 				}
-				if (_project_3d(
-						Vector3(-5.0f, 0.0f, (float)g), data->orbit_yaw, data->orbit_pitch, vp, a) &&
+				if (_project_3d(Vector3(-5.0f, 0.0f, (float)g), data->orbit_yaw, data->orbit_pitch,
+						vp, a) &&
 					_project_3d(
 						Vector3(5.0f, 0.0f, (float)g), data->orbit_yaw, data->orbit_pitch, vp, b)) {
 					UIDraw::draw_clipped_line(ci, vp, a, b,
@@ -1274,7 +1409,7 @@ void EditorUI::process_and_draw()
 			UIDraw::draw_button(ci, font, data->dock_buttons[3], 11);
 			if (font.is_valid() && vp.size.x > 160.0f) {
 				font->draw_string(ci, Point2(vp.position.x + 12.0f, vp.position.y + 24.0f),
-					"3D PERSPECTIVE VIEWPORT  —  Drag anywhere to orbit camera",
+					"3D PERSPECTIVE VIEWPORT  --  Drag anywhere to orbit camera",
 					HORIZONTAL_ALIGNMENT_LEFT, vp.size.x - 120.0f, 12, col_subtext);
 			}
 		}
@@ -1394,8 +1529,8 @@ void EditorUI::process_and_draw()
 			// Color Swatches
 			if (iy + 46.0f <= body_y + main_h - 48.0f) {
 				if (font.is_valid()) {
-					font->draw_string(ci, Point2(ix + 10.0f, iy + 12.0f), "Tint Color:",
-						HORIZONTAL_ALIGNMENT_LEFT, inner_w, 12, col_subtext);
+					font->draw_string(ci, Point2(ix + 10.0f, iy + 12.0f),
+						"Tint Color:", HORIZONTAL_ALIGNMENT_LEFT, inner_w, 12, col_subtext);
 				}
 				iy += 18.0f;
 				const float sw_gap = 8.0f;
@@ -1429,11 +1564,10 @@ void EditorUI::process_and_draw()
 	// 6. Bottom OUTPUT / CONSOLE Panel
 	if (data->layout.show_bottom) {
 		UIDraw::draw_dock_panel(ci, font, bottom_r,
-			"OUTPUT   —   Shortcuts: Ctrl+S Save  |  F5 Play  |  Arrow Keys Nudge Node",
-			col_dock, col_dock_hdr, col_subtext, 26.0f, 80.0f);
-		data->dock_buttons[4].rect =
-			Rect2(bottom_r.position.x + bottom_r.size.x - 64.0f, bottom_r.position.y + 3.0f, 56.0f,
-				20.0f);
+			"OUTPUT   --   Shortcuts: Ctrl+S Save  |  F5 Play  |  Arrow Keys Nudge Node", col_dock,
+			col_dock_hdr, col_subtext, 26.0f, 80.0f);
+		data->dock_buttons[4].rect = Rect2(bottom_r.position.x + bottom_r.size.x - 64.0f,
+			bottom_r.position.y + 3.0f, 56.0f, 20.0f);
 		UIDraw::draw_button(ci, font, data->dock_buttons[4], 11);
 
 		if (font.is_valid()) {
@@ -1449,6 +1583,111 @@ void EditorUI::process_and_draw()
 				ly += line_h;
 			}
 		}
+	}
+
+	// 7. Project Settings Modal Overlay (edits project.vltr)
+	data->ps_buttons.clear_rects();
+	data->ps_name_field.rect = Rect2();
+	data->ps_main_scene_field.rect = Rect2();
+
+	if (data->show_project_settings) {
+		Renderer::canvas_item_add_rect(ci, Rect2(0, 0, W, H), Color(0.02f, 0.03f, 0.04f, 0.72f));
+
+		const float mw = MIN(520.0f, W - 40.0f);
+		const float mh = MIN(470.0f, H - 40.0f);
+		const float mx = Math::floor((W - mw) * 0.5f);
+		const float my = Math::floor((H - mh) * 0.5f);
+		Rect2 modal_r(mx, my, mw, mh);
+
+		UIDraw::draw_bordered_rect(ci, modal_r, col_dock, col_accent, 2.0f);
+		Rect2 mhdr(mx + 2.0f, my + 2.0f, mw - 4.0f, 36.0f);
+		Renderer::canvas_item_add_rect(ci, mhdr, col_dock_hdr);
+		if (font.is_valid()) {
+			font->draw_string(ci,
+				Point2(mx + 16.0f, UIDraw::centered_baseline_y(font, mhdr, 14)),
+				"PROJECT SETTINGS  (project.vltr)", HORIZONTAL_ALIGNMENT_LEFT, mw - 32.0f, 14,
+				col_text);
+		}
+
+		float cy = my + 50.0f;
+		const float inner_x = mx + 18.0f;
+		const float inner_w = mw - 36.0f;
+
+		if (font.is_valid()) {
+			font->draw_string(ci, Point2(inner_x, cy + 12.0f), "Project Name:",
+				HORIZONTAL_ALIGNMENT_LEFT, inner_w, 12, col_subtext);
+		}
+		cy += 18.0f;
+		data->ps_name_field.rect = Rect2(inner_x, cy, inner_w, 30.0f);
+		data->ps_name_field.draw(ci, font, data->focus_field == FOCUS_PS_NAME, 13, col_vp_bg,
+			col_accent, col_border);
+		cy += 40.0f;
+
+		if (font.is_valid()) {
+			font->draw_string(ci, Point2(inner_x, cy + 12.0f), "Main Scene:",
+				HORIZONTAL_ALIGNMENT_LEFT, inner_w, 12, col_subtext);
+		}
+		cy += 18.0f;
+		data->ps_main_scene_field.rect = Rect2(inner_x, cy, inner_w, 30.0f);
+		data->ps_main_scene_field.draw(ci, font, data->focus_field == FOCUS_PS_MAIN_SCENE, 13,
+			col_vp_bg, col_accent, col_border);
+		cy += 42.0f;
+
+		auto draw_modal_stepper = [&](const String& p_lbl, uint32_t p_val, int p_dec, int p_inc) {
+			if (font.is_valid()) {
+				font->draw_string(ci, Point2(inner_x, cy + 18.0f), p_lbl,
+					HORIZONTAL_ALIGNMENT_LEFT, inner_w * 0.45f, 13, col_text);
+			}
+			const float bw = 48.0f;
+			const float val_w = 78.0f;
+			const float right_edge = inner_x + inner_w;
+			data->ps_buttons[p_inc].rect = Rect2(right_edge - bw, cy, bw, 28.0f);
+			Rect2 vr(right_edge - bw - 6.0f - val_w, cy, val_w, 28.0f);
+			data->ps_buttons[p_dec].rect = Rect2(vr.position.x - 6.0f - bw, cy, bw, 28.0f);
+
+			UIDraw::draw_button(ci, font, data->ps_buttons[p_dec], 12);
+			Renderer::canvas_item_add_rect(ci, vr, col_vp_bg);
+			if (font.is_valid()) {
+				font->draw_string(ci, Point2(vr.position.x, UIDraw::centered_baseline_y(font, vr, 13)),
+					itos((int64_t)p_val), HORIZONTAL_ALIGNMENT_CENTER, vr.size.x, 13, col_text);
+			}
+			UIDraw::draw_button(ci, font, data->ps_buttons[p_inc], 12);
+			cy += 36.0f;
+		};
+
+		draw_modal_stepper("Window Width", data->ps_draft.config.window_width, 0, 1);
+		draw_modal_stepper("Window Height", data->ps_draft.config.window_height, 2, 3);
+		draw_modal_stepper(
+			"Physics Ticks / Sec", data->ps_draft.config.physics_ticks_per_second, 4, 5);
+
+		cy += 4.0f;
+		const uint32_t fl = data->ps_draft.header.flags;
+		data->ps_buttons[6].label = (fl & PROJECT_FLAG_VSYNC) ? "VSync: ON" : "VSync: OFF";
+		data->ps_buttons[7].label =
+			(fl & PROJECT_FLAG_RESIZABLE) ? "Resizable: ON" : "Resizable: OFF";
+		data->ps_buttons[8].label =
+			(fl & PROJECT_FLAG_BORDERLESS) ? "Borderless: ON" : "Borderless: OFF";
+		data->ps_buttons[9].label = (fl & PROJECT_FLAG_USE_3D) ? "3D Mode: ON" : "3D Mode: OFF";
+
+		const float half_w = (inner_w - 10.0f) * 0.5f;
+		data->ps_buttons[6].rect = Rect2(inner_x, cy, half_w, 30.0f);
+		data->ps_buttons[7].rect = Rect2(inner_x + half_w + 10.0f, cy, half_w, 30.0f);
+		UIDraw::draw_button(ci, font, data->ps_buttons[6], 12);
+		UIDraw::draw_button(ci, font, data->ps_buttons[7], 12);
+		cy += 38.0f;
+
+		data->ps_buttons[8].rect = Rect2(inner_x, cy, half_w, 30.0f);
+		data->ps_buttons[9].rect = Rect2(inner_x + half_w + 10.0f, cy, half_w, 30.0f);
+		UIDraw::draw_button(ci, font, data->ps_buttons[8], 12);
+		UIDraw::draw_button(ci, font, data->ps_buttons[9], 12);
+
+		// Footer Cancel & Save buttons
+		const float fy = my + mh - 44.0f;
+		data->ps_buttons[11].rect = Rect2(inner_x + inner_w - 122.0f, fy, 122.0f, 30.0f);
+		data->ps_buttons[10].rect =
+			Rect2(data->ps_buttons[11].rect.position.x - 94.0f, fy, 86.0f, 30.0f);
+		UIDraw::draw_button(ci, font, data->ps_buttons[10], 12);
+		UIDraw::draw_button(ci, font, data->ps_buttons[11], 12);
 	}
 }
 
@@ -1712,3 +1951,160 @@ void EditorUI::_nudge_size_h_pos()
 		data->ui.needs_redraw = true;
 	}
 }
+
+void EditorUI::_open_project_settings()
+{
+	if (!data) {
+		return;
+	}
+	data->ps_draft = data->project_data;
+	data->ps_name_field.set_text(String::utf8(data->ps_draft.config.project_name));
+	data->ps_main_scene_field.set_text(String::utf8(data->ps_draft.config.main_scene));
+	data->show_project_settings = true;
+	data->focus_field = FOCUS_PS_NAME;
+	data->ui.needs_redraw = true;
+}
+
+void EditorUI::_close_project_settings()
+{
+	if (!data) {
+		return;
+	}
+	data->show_project_settings = false;
+	data->focus_field = FOCUS_NONE;
+	data->ui.needs_redraw = true;
+}
+
+void EditorUI::_save_project_settings()
+{
+	if (!data) {
+		return;
+	}
+	String new_name = data->ps_name_field.text.strip_edges();
+	if (new_name.is_empty()) {
+		new_name = "Voltaire Project";
+	}
+	String new_scene = data->ps_main_scene_field.text.strip_edges();
+	if (new_scene.is_empty()) {
+		new_scene = "res://main.vscn";
+	}
+
+	vltr_copy_cstr(data->ps_draft.config.project_name, sizeof(data->ps_draft.config.project_name),
+		new_name.utf8().get_data());
+	vltr_copy_cstr(data->ps_draft.config.main_scene, sizeof(data->ps_draft.config.main_scene),
+		new_scene.utf8().get_data());
+
+	data->project_data = data->ps_draft;
+	data->project_name = new_name;
+
+	String proj_path = data->project_path.path_join("project.vltr");
+	Ref<FileAccess> fa = FileAccess::open(proj_path, FileAccess::WRITE);
+	if (fa.is_valid()) {
+		fa->store_buffer((const uint8_t*)&data->project_data, sizeof(VoltaireProjectFile));
+		fa->close();
+		scan_project_files();
+		add_log(vformat("Saved project.vltr (%s, %dx%d)", data->project_name,
+			data->project_data.config.window_width, data->project_data.config.window_height));
+	}
+	else {
+		add_log("ERROR: Failed to write " + proj_path);
+	}
+
+	if (DisplayServer::is_initialized()) {
+		DisplayServer::window_set_title(
+			data->project_name + " - Voltaire Editor", DisplayServerEnums::MAIN_WINDOW_ID);
+	}
+
+	data->show_project_settings = false;
+	data->focus_field = FOCUS_NONE;
+	data->ui.needs_redraw = true;
+}
+
+void EditorUI::_ps_width_dec()
+{
+	if (data) {
+		data->ps_draft.config.window_width = MAX(320u,
+			data->ps_draft.config.window_width > 80u ? data->ps_draft.config.window_width - 80u
+													: 320u);
+		data->ui.needs_redraw = true;
+	}
+}
+
+void EditorUI::_ps_width_inc()
+{
+	if (data) {
+		data->ps_draft.config.window_width = MIN(7680u, data->ps_draft.config.window_width + 80u);
+		data->ui.needs_redraw = true;
+	}
+}
+
+void EditorUI::_ps_height_dec()
+{
+	if (data) {
+		data->ps_draft.config.window_height = MAX(240u,
+			data->ps_draft.config.window_height > 45u ? data->ps_draft.config.window_height - 45u
+													 : 240u);
+		data->ui.needs_redraw = true;
+	}
+}
+
+void EditorUI::_ps_height_inc()
+{
+	if (data) {
+		data->ps_draft.config.window_height = MIN(4320u, data->ps_draft.config.window_height + 45u);
+		data->ui.needs_redraw = true;
+	}
+}
+
+void EditorUI::_ps_ticks_dec()
+{
+	if (data) {
+		data->ps_draft.config.physics_ticks_per_second =
+			MAX(10u, data->ps_draft.config.physics_ticks_per_second > 10u
+						 ? data->ps_draft.config.physics_ticks_per_second - 10u
+						 : 10u);
+		data->ui.needs_redraw = true;
+	}
+}
+
+void EditorUI::_ps_ticks_inc()
+{
+	if (data) {
+		data->ps_draft.config.physics_ticks_per_second =
+			MIN(240u, data->ps_draft.config.physics_ticks_per_second + 10u);
+		data->ui.needs_redraw = true;
+	}
+}
+
+void EditorUI::_ps_toggle_vsync()
+{
+	if (data) {
+		data->ps_draft.header.flags ^= PROJECT_FLAG_VSYNC;
+		data->ui.needs_redraw = true;
+	}
+}
+
+void EditorUI::_ps_toggle_resizable()
+{
+	if (data) {
+		data->ps_draft.header.flags ^= PROJECT_FLAG_RESIZABLE;
+		data->ui.needs_redraw = true;
+	}
+}
+
+void EditorUI::_ps_toggle_borderless()
+{
+	if (data) {
+		data->ps_draft.header.flags ^= PROJECT_FLAG_BORDERLESS;
+		data->ui.needs_redraw = true;
+	}
+}
+
+void EditorUI::_ps_toggle_use_3d()
+{
+	if (data) {
+		data->ps_draft.header.flags ^= PROJECT_FLAG_USE_3D;
+		data->ui.needs_redraw = true;
+	}
+}
+

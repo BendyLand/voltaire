@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "core/config/project_format.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/rb_map.h"
 #include "core/types.h"
@@ -102,6 +103,8 @@ private:
 private:
 	struct Data
 	{
+		VoltaireProjectFile project;
+
 		bool is_changed = false;
 
 		// Starting version from 1 ensures that all callers can reset their tested version to 0,
@@ -130,8 +133,8 @@ private:
 		Vector<String> global_class_list;
 		bool is_global_class_list_loaded = false;
 		String project_data_dir_name;
-	};
 
+	};
 
 public:
 	static const int CONFIG_VERSION = 5;
@@ -139,6 +142,9 @@ public:
 
 	static void initialize();
 	static void finalize();
+
+	static const VoltaireProjectFile &get_project() { return data->project; }
+	static VoltaireProjectFile &get_project_mut() { return data->project; }
 
 	static void refresh_global_class_list();
 	static void store_global_class_list(const Vector<String>& p_classes);

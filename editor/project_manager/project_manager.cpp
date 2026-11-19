@@ -244,7 +244,7 @@ void ProjectManager::initialize(RID p_viewport_rid, Size2i p_size)
 	data->buttons.add("+ New Project", &ProjectManager::_new_project, nullptr, true);
 	data->buttons.add("Import", &ProjectManager::_import_project);
 	data->buttons.add("Scan", &ProjectManager::_scan_projects);
-	data->buttons.add("Support", &ProjectManager::_open_donate_page);
+	data->buttons.add("Donate", &ProjectManager::_open_donate_page);
 
 	// Right-hand project action sidebar buttons
 	data->sidebar_buttons.add("Edit", &ProjectManager::_edit_selected_project,
@@ -279,8 +279,11 @@ void ProjectManager::handle_input_event(const InputEvent& p_event)
 
 		if (data->modal_mode != MODAL_NONE) {
 			changed |= data->modal_buttons.update_hover(data->ui.mouse_pos);
+			changed |= data->modal_primary_field.handle_mouse_motion(p_event, data->ui.font, 14);
+			changed |= data->modal_secondary_field.handle_mouse_motion(p_event, data->ui.font, 14);
 		}
 		else {
+			changed |= data->search_field.handle_mouse_motion(p_event, data->ui.font, 14);
 			changed |= data->buttons.update_hover(data->ui.mouse_pos);
 			changed |= data->sidebar_buttons.update_hover(data->ui.mouse_pos);
 
@@ -341,11 +344,12 @@ void ProjectManager::handle_input_event(const InputEvent& p_event)
 			if (is_pressed) {
 				bool hit_button = data->modal_buttons.press(data->ui.mouse_pos);
 				if (!hit_button) {
-					if (data->modal_primary_field.has_point(data->ui.mouse_pos)) {
+					if (data->modal_primary_field.handle_mouse_button(p_event, data->ui.font, 14)) {
 						data->active_field = FIELD_MODAL_PRIMARY;
 					}
 					else if (data->modal_mode == MODAL_NEW_PROJECT &&
-							   data->modal_secondary_field.has_point(data->ui.mouse_pos)) {
+							   data->modal_secondary_field.handle_mouse_button(
+								   p_event, data->ui.font, 14)) {
 						data->active_field = FIELD_MODAL_SECONDARY;
 					}
 					else if (!data->modal_panel_rect.has_point(data->ui.mouse_pos)) {
@@ -356,6 +360,8 @@ void ProjectManager::handle_input_event(const InputEvent& p_event)
 				data->ui.needs_redraw = true;
 			}
 			else {
+				data->modal_primary_field.handle_mouse_button(p_event, data->ui.font, 14);
+				data->modal_secondary_field.handle_mouse_button(p_event, data->ui.font, 14);
 				void (*to_invoke)() = data->modal_buttons.release(data->ui.mouse_pos);
 				data->ui.needs_redraw = true;
 				if (to_invoke) {
@@ -380,7 +386,7 @@ void ProjectManager::handle_input_event(const InputEvent& p_event)
 				return;
 			}
 
-			if (data->search_field.has_point(data->ui.mouse_pos)) {
+			if (data->search_field.handle_mouse_button(p_event, data->ui.font, 14)) {
 				data->active_field = FIELD_SEARCH;
 				data->ui.needs_redraw = true;
 				return;
@@ -412,6 +418,7 @@ void ProjectManager::handle_input_event(const InputEvent& p_event)
 			data->ui.needs_redraw = true;
 		}
 		else {
+			data->search_field.handle_mouse_button(p_event, data->ui.font, 14);
 			void (*c0)() = data->buttons.release(data->ui.mouse_pos);
 			void (*c1)() = data->sidebar_buttons.release(data->ui.mouse_pos);
 			void (*to_invoke)() = c1 ? c1 : c0;
@@ -444,8 +451,14 @@ void ProjectManager::handle_input_event(const InputEvent& p_event)
 		}
 
 		if (code == Key::TAB && data->modal_mode == MODAL_NEW_PROJECT) {
-			data->active_field = (data->active_field == FIELD_MODAL_PRIMARY) ? FIELD_MODAL_SECONDARY
-																			 : FIELD_MODAL_PRIMARY;
+			if (data->active_field == FIELD_MODAL_PRIMARY) {
+				data->active_field = FIELD_MODAL_SECONDARY;
+				data->modal_secondary_field.select_all();
+			}
+			else {
+				data->active_field = FIELD_MODAL_PRIMARY;
+				data->modal_primary_field.select_all();
+			}
 			data->ui.needs_redraw = true;
 			return;
 		}

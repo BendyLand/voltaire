@@ -6205,6 +6205,12 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 		return;
 	}
 
+	KeyMappingX11::initialize();
+	if (!x11_display) {
+		r_error = ERR_CANT_CREATE;
+		return;
+	}
+
 #if defined(GLES3_ENABLED)
 	if (rendering_driver == "opengl3_es") {
 		gl_manager_egl = memnew(GLManagerEGL_X11);

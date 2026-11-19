@@ -36,9 +36,10 @@
 #include "drivers/egl/egl_manager.h"
 #include "servers/display/display_server_enums.h"
 
-class GLManagerEGL_X11 : public EGLManager {
+class GLManagerEGL_X11 : public EGLManager
+{
 private:
-	virtual const char *_get_platform_extension_name() const override;
+	virtual const char* _get_platform_extension_name() const override;
 	virtual EGLenum _get_platform_extension_enum() const override;
 	virtual EGLenum _get_platform_api_enum() const override;
 	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
@@ -48,6 +49,7 @@ public:
 	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {}
 
 	GLManagerEGL_X11() {}
+
 	~GLManagerEGL_X11() {}
 };
 

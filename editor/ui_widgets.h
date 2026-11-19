@@ -82,11 +82,15 @@ struct UIButtonGroup
 	LocalVector<UIButton> items;
 
 	uint32_t size() const { return items.size(); }
+
 	bool is_empty() const { return items.is_empty(); }
+
 	void clear() { items.clear(); }
+
 	void clear_rects();
 
 	UIButton& operator[](uint32_t p_idx) { return items[p_idx]; }
+
 	const UIButton& operator[](uint32_t p_idx) const { return items[p_idx]; }
 
 	void add(const String& p_label, void (*p_on_click)(), bool (*p_is_enabled)() = nullptr,
@@ -99,17 +103,49 @@ struct UIButtonGroup
 
 struct UITextField
 {
-	String text;
 	Rect2 rect;
+	String text;
 	String placeholder;
 
-	bool has_point(Point2 p_pt) const { return rect.has_point(p_pt); }
+	int cursor = 0;
+	int anchor = 0;
+	float scroll_x = 0.0f;
+	bool selecting = false;
+
+	bool has_point(Point2 p_point) const { return rect.has_point(p_point); }
+
+	bool has_selection() const
+	{
+		int len = text.length();
+		return CLAMP(cursor, 0, len) != CLAMP(anchor, 0, len);
+	}
+
+	void select_all()
+	{
+		anchor = 0;
+		cursor = text.length();
+	}
+
+	void clear_selection()
+	{
+		cursor = CLAMP(cursor, 0, text.length());
+		anchor = cursor;
+	}
+
+	void set_text(const String& p_text, bool p_select_all = false)
+	{
+		text = p_text;
+		cursor = text.length();
+		anchor = p_select_all ? 0 : cursor;
+		scroll_x = 0.0f;
+	}
+
+	int hit_test_cursor(const Ref<Font>& p_font, int p_font_size, float p_mouse_x) const;
+	bool handle_mouse_button(const InputEvent& p_event, const Ref<Font>& p_font, int p_font_size);
+	bool handle_mouse_motion(const InputEvent& p_event, const Ref<Font>& p_font, int p_font_size);
 	bool handle_key(const InputEvent& p_key_event, char32_t p_disallow_char = 0);
-	void draw(RID p_ci, const Ref<Font>& p_font, bool p_focused, int p_font_size = 14,
-		const Color& p_bg = Color(0.06f, 0.07f, 0.09f, 1.0f),
-		const Color& p_accent = Color(0.0f, 0.75f, 0.95f, 1.0f),
-		const Color& p_border = Color(0.19f, 0.23f, 0.28f, 1.0f),
-		float p_right_reserve = 0.0f) const;
+	void draw(RID p_ci, const Ref<Font>& p_font, bool p_focused, int p_font_size, const Color& p_bg,
+		const Color& p_accent, const Color& p_border, float p_right_reserve = 0.0f) const;
 };
 
 struct UIScrollView
@@ -120,8 +156,8 @@ struct UIScrollView
 
 	void update_metrics(float p_content_h, float p_view_h);
 	bool handle_wheel(MouseButton p_btn, float p_step);
-	void draw_scrollbar(RID p_ci, float p_track_x, float p_top_y, float p_view_h,
-		float p_content_h, const Color& p_accent = Color(0.0f, 0.75f, 0.95f, 1.0f)) const;
+	void draw_scrollbar(RID p_ci, float p_track_x, float p_top_y, float p_view_h, float p_content_h,
+		const Color& p_accent = Color(0.0f, 0.75f, 0.95f, 1.0f)) const;
 };
 
 struct UISplitLayout
@@ -157,11 +193,10 @@ void draw_header_banner(RID p_ci, const Rect2& p_rect, const Color& p_bg, const 
 	float p_strip_w = 4.0f);
 
 void draw_dock_panel(RID p_ci, const Ref<Font>& p_font, const Rect2& p_rect, const String& p_title,
-	const Color& p_dock_bg, const Color& p_hdr_bg, const Color& p_title_col,
-	float p_hdr_h = 30.0f, float p_right_reserve = 12.0f);
+	const Color& p_dock_bg, const Color& p_hdr_bg, const Color& p_title_col, float p_hdr_h = 30.0f,
+	float p_right_reserve = 12.0f);
 
-void draw_button(
-	RID p_ci, const Ref<Font>& p_font, const UIButton& p_btn, int p_font_size = 13);
+void draw_button(RID p_ci, const Ref<Font>& p_font, const UIButton& p_btn, int p_font_size = 13);
 
 bool clip_segment(const Rect2& p_bounds, Point2& r_a, Point2& r_b);
 

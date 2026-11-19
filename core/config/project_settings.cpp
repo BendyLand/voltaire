@@ -29,6 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/config/project_format.h"
 #include "core/input/input_map.h"
 #include "core/io/compression.h"
 #include "core/io/config_file.h"
@@ -49,10 +50,7 @@
 
 String ProjectSettings::get_project_data_dir_name() { return data->project_data_dir_name; }
 
-String ProjectSettings::get_project_data_path()
-{
-	return "res://" + get_project_data_dir_name();
-}
+String ProjectSettings::get_project_data_path() { return "res://" + get_project_data_dir_name(); }
 
 String ProjectSettings::get_resource_path()
 {
@@ -158,7 +156,8 @@ String ProjectSettings::localize_path(const String& p_path)
 {
 	String path = p_path.simplify_path();
 
-	if (data->resource_path.is_empty() || (path.is_absolute_path() && !path.begins_with(data->resource_path))) {
+	if (data->resource_path.is_empty() ||
+		(path.is_absolute_path() && !path.begins_with(data->resource_path))) {
 		return path;
 	}
 
@@ -265,7 +264,10 @@ struct _VCSort
 	}
 };
 
-void ProjectSettings::_queue_changed(const String& p_name) { data->changed_settings.insert(p_name); }
+void ProjectSettings::_queue_changed(const String& p_name)
+{
+	data->changed_settings.insert(p_name);
+}
 
 void ProjectSettings::_emit_changed()
 {
@@ -359,8 +361,10 @@ Error ProjectSettings::_setup(
 		// OS will call ProjectSettings->get_resource_path which will be empty if not overridden!
 		// If the OS would rather use a specific location, then it will not be empty.
 		data->resource_path = OS::get_resource_dir().replace_char('\\', '/');
-		if (!data->resource_path.is_empty() && data->resource_path[data->resource_path.length() - 1] == '/') {
-			data->resource_path = data->resource_path.substr(0, data->resource_path.length() - 1); // Chop end.
+		if (!data->resource_path.is_empty() &&
+			data->resource_path[data->resource_path.length() - 1] == '/') {
+			data->resource_path =
+				data->resource_path.substr(0, data->resource_path.length() - 1); // Chop end.
 		}
 	}
 
@@ -395,12 +399,11 @@ Error ProjectSettings::_setup(
 #if defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
 		if (!found) {
 			// Attempt to load PCK from macOS .app bundle resources.
-			found = _load_resource_pack(OS::get_bundle_resource_dir().path_join(
-											exec_basename + ".pck"),
-						false, 0, true) ||
-					_load_resource_pack(OS::get_bundle_resource_dir().path_join(
-											exec_filename + ".pck"),
-						false, 0, true);
+			found =
+				_load_resource_pack(OS::get_bundle_resource_dir().path_join(exec_basename + ".pck"),
+					false, 0, true) ||
+				_load_resource_pack(OS::get_bundle_resource_dir().path_join(exec_filename + ".pck"),
+					false, 0, true);
 		}
 #endif
 
@@ -421,8 +424,7 @@ Error ProjectSettings::_setup(
 
 		// If we opened our package, try and load our project.
 		if (found) {
-			Error err =
-				_load_settings_text_or_binary("res://project.vltr", "res://project.binary");
+			Error err = _load_settings_text_or_binary("res://project.vltr", "res://project.binary");
 			return err;
 		}
 	}
@@ -513,8 +515,10 @@ Error ProjectSettings::_setup(
 		return err;
 	}
 
-	if (data->resource_path.length() && data->resource_path[data->resource_path.length() - 1] == '/') {
-		data->resource_path = data->resource_path.substr(0, data->resource_path.length() - 1); // Chop end.
+	if (data->resource_path.length() &&
+		data->resource_path[data->resource_path.length() - 1] == '/') {
+		data->resource_path =
+			data->resource_path.substr(0, data->resource_path.length() - 1); // Chop end.
 	}
 
 	return OK;
@@ -565,60 +569,6 @@ Error ProjectSettings::_load_settings_binary(const String& p_path)
 	}
 
 	return OK;
-}
-
-Error ProjectSettings::_load_settings_text(const String& p_path)
-{
-	Error err;
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
-
-	if (f.is_null()) {
-		// FIXME: Above 'err' error code is ERR_FILE_CANT_OPEN if the file is missing
-		// This needs to be streamlined if we want decent error reporting
-		return ERR_FILE_NOT_FOUND;
-	}
-
-	String assign;
-	int lines = 0;
-	String error_text;
-	String section;
-	int config_version = 0;
-
-	while (true) {
-		if (err == ERR_FILE_EOF) {
-			// If we're loading a project.vltr from source code, we can operate some
-			// ProjectSettings conversions if need be.
-			_convert_to_last_version(config_version);
-			data->last_save_time =
-				FileAccess::get_modified_time(get_resource_path().path_join("project.vltr"));
-			return OK;
-		}
-	}
-}
-
-Error ProjectSettings::_load_settings_text_or_binary(
-	const String& p_text_path, const String& p_bin_path)
-{
-	// Attempt first to load the binary project.vltr file.
-	Error err = _load_settings_binary(p_bin_path);
-	if (err == OK) {
-		return OK;
-	}
-
-	// Fallback to text-based project.vltr file if binary was not found.
-	err = _load_settings_text(p_text_path);
-	if (err == OK) {
-		return OK;
-	}
-	return err;
-}
-
-Error ProjectSettings::load_custom(const String& p_path)
-{
-	if (p_path.ends_with(".binary")) {
-		return _load_settings_binary(p_path);
-	}
-	return _load_settings_text(p_path);
 }
 
 Error ProjectSettings::save()
@@ -725,10 +675,7 @@ Error ProjectSettings::_save_settings_text(const String& p_file,
 	return OK;
 }
 
-Error ProjectSettings::_save_custom_bnd(const String& p_file)
-{
-	return save_custom(p_file);
-}
+Error ProjectSettings::_save_custom_bnd(const String& p_file) { return save_custom(p_file); }
 
 #ifdef TOOLS_ENABLED
 bool _csproj_exists(const String& p_root_dir)
@@ -773,24 +720,29 @@ Error ProjectSettings::save_custom(const String& p_path, const StringMap& p_cust
 		}
 		save_props[category].push_back(name);
 	}
-
 	String save_features;
-
 	for (int i = 0; i < p_custom_features.size(); i++) {
 		if (i > 0) {
 			save_features += ",";
 		}
-
 		String f = p_custom_features[i].strip_edges().remove_char('\"');
 		save_features += f;
 	}
-
-	if (p_path.ends_with(".godot") || p_path.ends_with("override.cfg")) {
+	if (p_path.ends_with(".vltr")) {
+		Error err = OK;
+		Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::WRITE, &err);
+		ERR_FAIL_COND_V_MSG(file.is_null(), err != OK ? err : ERR_CANT_OPEN,
+			vformat("Failed to open '%s' for writing.", p_path));
+		file->store_buffer((const uint8_t*)&data->project, sizeof(VoltaireProjectFile));
+		return OK;
+	}
+	else if (p_path.ends_with("override.cfg")) {
 		return _save_settings_text(p_path, save_props, p_custom, save_features);
 	}
 	else if (p_path.ends_with(".binary")) {
 		return _save_settings_binary(p_path, save_props, p_custom, save_features);
 	}
+	return ERR_FILE_UNRECOGNIZED;
 }
 
 bool ProjectSettings::is_using_datapack() { return data->using_datapack; }
@@ -883,7 +835,8 @@ void ProjectSettings::add_global_group(const String& p_name, const String& p_des
 
 void ProjectSettings::remove_global_group(const String& p_name)
 {
-	ERR_FAIL_COND_MSG(!data->global_groups.has(p_name), "Trying to remove non-existent global group.");
+	ERR_FAIL_COND_MSG(
+		!data->global_groups.has(p_name), "Trying to remove non-existent global group.");
 	data->global_groups.erase(p_name);
 }
 
@@ -897,8 +850,7 @@ void ProjectSettings::remove_scene_groups_cache(const String& p_path)
 	data->scene_groups_cache.erase(p_path);
 }
 
-void ProjectSettings::add_scene_groups_cache(
-	const String& p_path, const HashSet<String>& p_cache)
+void ProjectSettings::add_scene_groups_cache(const String& p_path, const HashSet<String>& p_cache)
 {
 	data->scene_groups_cache[p_path] = p_cache;
 }
@@ -943,15 +895,13 @@ void ProjectSettings::get_argument_options(
 {
 }
 
-bool ProjectSettings::is_initialized()
-{
-	return data != nullptr;
-}
+bool ProjectSettings::is_initialized() { return data != nullptr; }
 
 void ProjectSettings::initialize()
 {
 	if (!data) {
 		data = memnew(Data);
+		vltr_project_init(&data->project, "Voltaire Project", "");
 		_add_builtin_input_map();
 	}
 }
@@ -964,4 +914,66 @@ void ProjectSettings::finalize()
 
 void ProjectSettings::_add_builtin_input_map() {}
 
+static Error _load_settings_vltr(const String& p_path, VoltaireProjectFile& r_out)
+{
+	Error err = OK;
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
+	if (f.is_null()) {
+		return err != OK ? err : ERR_FILE_NOT_FOUND;
+	}
+	if (f->get_length() < (int64_t)
+sizeof(VoltaireProjectFile)) {
+		return ERR_FILE_CORRUPT;
+	}
+	VoltaireProjectFile loaded;
+	f->get_buffer((uint8_t*)&loaded, sizeof(VoltaireProjectFile));
+	if (!vltr_project_valid(&loaded)) {
+		return ERR_FILE_CORRUPT;
+	}
+	r_out = loaded;
+	return OK;
+}
 
+Error ProjectSettings::_load_settings_text(const String& p_path)
+{
+	if (p_path.ends_with(".vltr")) {
+		Error err = _load_settings_vltr(p_path, data->project);
+		if (err == OK) {
+			data->last_save_time = FileAccess::get_modified_time(p_path);
+		}
+		return err;
+	}
+
+	Error err;
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
+	if (f.is_null()) {
+		return ERR_FILE_NOT_FOUND;
+	}
+	data->last_save_time = FileAccess::get_modified_time(p_path);
+	return OK;
+}
+
+Error ProjectSettings::_load_settings_text_or_binary(
+	const String& p_vltr_path, const String& p_bin_path)
+{
+	// Attempt first to load the binary project.vltr file.
+	Error err = _load_settings_vltr(p_vltr_path, data->project);
+	if (err == OK) {
+		data->last_save_time = FileAccess::get_modified_time(p_vltr_path);
+		return OK;
+	}
+
+	// Fallback to legacy project.binary if present.
+	return _load_settings_binary(p_bin_path);
+}
+
+Error ProjectSettings::load_custom(const String& p_path)
+{
+	if (p_path.ends_with(".vltr")) {
+		return _load_settings_vltr(p_path, data->project);
+	}
+	if (p_path.ends_with(".binary")) {
+		return _load_settings_binary(p_path);
+	}
+	return _load_settings_text(p_path);
+}

@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "core/config/project_format.h"
 #include "editor/ui_widgets.h"
 
 class EditorUI
@@ -56,6 +57,8 @@ public:
 		FOCUS_NONE = 0,
 		FOCUS_NODE_NAME,
 		FOCUS_SCRIPT_EDITOR,
+		FOCUS_PS_NAME,
+		FOCUS_PS_MAIN_SCENE,
 	};
 
 	struct SceneEntity
@@ -97,6 +100,12 @@ public:
 		UIButtonGroup inspector_buttons;
 		UIButtonGroup runtime_buttons;
 		UITextField inspector_name_field;
+		VoltaireProjectFile project_data;
+		bool show_project_settings = false;
+		VoltaireProjectFile ps_draft;
+		UITextField ps_name_field;
+		UITextField ps_main_scene_field;
+		UIButtonGroup ps_buttons;
 
 		String project_path;
 		String project_name = "Untitled Project";
@@ -146,6 +155,7 @@ public:
 	static inline Data* data = nullptr;
 
 	static bool is_initialized() { return _initialized; }
+
 	static void initialize(RID p_viewport_rid, Size2i p_size, const String& p_project_path,
 		const String& p_project_name, bool p_start_playing = false);
 	static void poll(double p_delta = 0.016);
@@ -186,6 +196,19 @@ public:
 	static void _nudge_size_w_pos();
 	static void _nudge_size_h_neg();
 	static void _nudge_size_h_pos();
+	static void _open_project_settings();
+	static void _close_project_settings();
+	static void _save_project_settings();
+	static void _ps_width_dec();
+	static void _ps_width_inc();
+	static void _ps_height_dec();
+	static void _ps_height_inc();
+	static void _ps_ticks_dec();
+	static void _ps_ticks_inc();
+	static void _ps_toggle_vsync();
+	static void _ps_toggle_resizable();
+	static void _ps_toggle_borderless();
+	static void _ps_toggle_use_3d();
 
 	static bool _can_modify_selected_node();
 	static bool _can_delete_selected_node();
