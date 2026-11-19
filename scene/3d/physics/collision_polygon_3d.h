@@ -33,52 +33,40 @@
 
 #include "scene/3d/node_3d.h"
 
-class CollisionObject3D;
-
-class CollisionPolygon3D : public Node3D
-{
-	real_t margin = 0.04;
+class CollisionPolygon3D : public Node3D {
+	real_t margin = 0.04f;
 
 protected:
-	real_t depth = 1.0;
+	real_t depth = 1.0f;
 	AABB aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
 	Vector<Point2> polygon;
 
 	uint32_t owner_id = 0;
-	CollisionObject3D* collision_object = nullptr;
+	CollisionState3D *collision_state = nullptr;
 
 	Color debug_color;
 	bool debug_fill = true;
-
-	Color _get_default_debug_color() const;
-
 	bool disabled = false;
 
+	Color _get_default_debug_color() const;
 	void _update_in_shape_owner(bool p_xform_only = false);
-
 	bool _is_editable_3d_polygon() const;
-
-protected:
 	void _notification(int p_what);
 
 public:
 	real_t get_depth() const;
-
 	Vector<Point2> get_polygon() const;
 
+	void set_disabled(bool p_disabled);
 	bool is_disabled() const;
 
 	Color get_debug_color() const;
-
 	bool get_debug_fill_enabled() const;
 
 	virtual AABB get_item_rect() const;
-
 	real_t get_margin() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 
 	CollisionPolygon3D();
 };
-
-

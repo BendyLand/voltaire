@@ -44,8 +44,11 @@ class NavigationMeshSourceGeometryData3D;
 class Skin;
 class SkinReference;
 
-class MeshInstance3D : public GeometryInstance3D
+class MeshInstance3D : public Node3D
 {
+public:
+	RenderInstance3D render_instance;
+
 protected:
 	Ref<Mesh> mesh;
 	Ref<Skin> skin;
@@ -59,14 +62,41 @@ protected:
 
 	void _resolve_skeleton_path();
 
-protected:
 	bool surface_index_0 = false;
 
 	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 
 	bool _property_can_revert(const String& p_name) const;
 
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+	void set_layer_mask(uint32_t p_mask) { render_instance.set_layer_mask(p_mask); }
+	uint32_t get_layer_mask() const { return render_instance.get_layer_mask(); }
+	void set_cast_shadows_setting(RenderInstance3D::ShadowCastingSetting p_setting)
+	{
+		render_instance.set_cast_shadows_setting(p_setting);
+	}
+	RenderInstance3D::ShadowCastingSetting get_cast_shadows_setting() const
+	{
+		return render_instance.get_cast_shadows_setting();
+	}
+	void set_material_override(const Ref<Material>& p_material)
+	{
+		render_instance.set_material_override(p_material);
+	}
+	Ref<Material> get_material_override() const { return render_instance.get_material_override(); }
+	void set_material_overlay(const Ref<Material>& p_material)
+	{
+		render_instance.set_material_overlay(p_material);
+	}
+	Ref<Material> get_material_overlay() const { return render_instance.get_material_overlay(); }
+	void set_gi_mode(RenderInstance3D::GIMode p_mode) { render_instance.set_gi_mode(p_mode); }
+	RenderInstance3D::GIMode get_gi_mode() const { return render_instance.get_gi_mode(); }
+
 	void set_mesh(const Ref<Mesh>& p_mesh);
 	Ref<Mesh> get_mesh() const;
 
@@ -105,22 +135,20 @@ public:
 	MeshInstance3D* create_debug_tangents_node();
 	void create_debug_tangents();
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
 
 	Ref<ArrayMesh> bake_mesh_from_current_blend_shape_mix(
 		Ref<ArrayMesh> p_existing = Ref<ArrayMesh>());
 	Ref<ArrayMesh> bake_mesh_from_current_skeleton_pose(
 		Ref<ArrayMesh> p_existing = Ref<ArrayMesh>());
 
-	virtual Ref<TriangleMesh> generate_triangle_mesh() const override;
+	Ref<TriangleMesh> generate_triangle_mesh() const;
 
 #ifndef NAVIGATION_3D_DISABLED
 private:
 	static RID _navmesh_source_geometry_parser;
-#endif // NAVIGATION_3D_DISABLED
 
 public:
-#ifndef NAVIGATION_3D_DISABLED
 	static void navmesh_parse_init();
 	static void navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
 		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
@@ -130,5 +158,3 @@ public:
 
 	MeshInstance3D();
 };
-
-

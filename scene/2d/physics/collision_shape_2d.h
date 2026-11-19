@@ -34,44 +34,37 @@
 #include "scene/2d/node_2d.h"
 #include "scene/resources/2d/shape_2d.h"
 
-class CollisionObject2D;
-
-class CollisionShape2D : public Node2D
-{
+class CollisionShape2D : public Node2D {
 	Ref<Shape2D> shape;
 	Rect2 rect = Rect2(-Point2(10, 10), Point2(20, 20));
 	uint32_t owner_id = 0;
-	CollisionObject2D* collision_object = nullptr;
+	CollisionState2D *collision_state = nullptr;
 	bool disabled = false;
 	bool one_way_collision = false;
-	real_t one_way_collision_margin = 1.0;
-	Vector2 one_way_collision_direction = Vector2(0.0, 1.0);
+	real_t one_way_collision_margin = 1.0f;
+	Vector2 one_way_collision_direction = Vector2(0.0f, 1.0f);
 
 	void _shape_changed();
 	void _update_in_shape_owner(bool p_xform_only = false);
 
-	// Not wrapped in `#ifdef DEBUG_ENABLED` as it is used for rendering.
 	Color debug_color = Color(0.0, 0.0, 0.0, 0.0);
-
 	Color _get_default_debug_color() const;
 
 protected:
 	void _notification(int p_what);
 
 #ifdef DEBUG_ENABLED
-	bool _property_can_revert(const String& p_name) const;
+	bool _property_can_revert(const String &p_name) const;
 #endif // DEBUG_ENABLED
-
 
 public:
 #ifdef DEBUG_ENABLED
-	virtual bool _edit_is_selected_on_click(
-		const Point2& p_point, double p_tolerance) const override;
+	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
 #else
-	virtual bool _edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const;
+	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const;
 #endif // DEBUG_ENABLED
 
-	void set_shape(const Ref<Shape2D>& p_shape);
+	void set_shape(const Ref<Shape2D> &p_shape);
 	Ref<Shape2D> get_shape() const;
 
 	void set_disabled(bool p_disabled);
@@ -83,15 +76,13 @@ public:
 	void set_one_way_collision_margin(real_t p_margin);
 	real_t get_one_way_collision_margin() const;
 
-	void set_one_way_collision_direction(const Vector2& p_direction);
+	void set_one_way_collision_direction(const Vector2 &p_direction);
 	Vector2 get_one_way_collision_direction() const;
 
-	void set_debug_color(const Color& p_color);
+	void set_debug_color(const Color &p_color);
 	Color get_debug_color() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 
 	CollisionShape2D();
 };
-
-

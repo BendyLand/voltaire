@@ -94,9 +94,11 @@ public:
 	~VoxelGIData();
 };
 
-class VoxelGI : public VisualInstance3D
+class VoxelGI : public Node3D
 {
 public:
+	RenderInstance3D render_instance;
+
 	enum Subdiv
 	{
 		SUBDIV_64,
@@ -133,7 +135,16 @@ private:
 
 	float _get_camera_exposure_normalization();
 
+protected:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
 	static BakeBeginFunc bake_begin_function;
 	static BakeStepFunc bake_step_function;
 	static BakeEndFunc bake_end_function;
@@ -151,7 +162,7 @@ public:
 
 	void bake(Node* p_from_node = nullptr, bool p_create_visual_debug = false);
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 

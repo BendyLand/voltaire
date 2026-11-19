@@ -36,9 +36,11 @@
 #include "scene/resources/material.h"
 #include "servers/text/text_server.h"
 
-class Label3D : public GeometryInstance3D
+class Label3D : public Node3D
 {
 public:
+	RenderInstance3D render_instance;
+
 	enum DrawFlags
 	{
 		FLAG_SHADED,
@@ -164,12 +166,17 @@ private:
 
 protected:
 	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 	void _font_changed();
 	void _queue_update();
 
 	void _shape();
 
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
 	void set_horizontal_alignment(HorizontalAlignment p_alignment);
 	HorizontalAlignment get_horizontal_alignment() const;
 
@@ -258,8 +265,8 @@ public:
 	void set_texture_filter(StandardMaterial3D::TextureFilter p_filter);
 	StandardMaterial3D::TextureFilter get_texture_filter() const;
 
-	virtual AABB get_aabb() const override;
-	virtual Ref<TriangleMesh> generate_triangle_mesh() const override;
+	AABB get_aabb() const;
+	Ref<TriangleMesh> generate_triangle_mesh() const;
 
 	Label3D();
 	~Label3D();

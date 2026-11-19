@@ -1860,6 +1860,8 @@ void Node::set_process_shortcut_input(bool) {}
 
 void Node::set_process_input(bool) {}
 
+void Node::set_process_mode(ProcessMode p_mode) { data.process_mode = p_mode; }
+
 void Node::get_argument_options(String const&, int, List<String, DefaultAllocator>*) const {}
 
 void Node::notify_deferred_thread_group(int) {}

@@ -121,16 +121,22 @@ void ShapeCast2D::force_shapecast_update() { _update_shapecast_state(); }
 
 void ShapeCast2D::add_exception_rid(const RID& p_rid) { exclude.insert(p_rid); }
 
-void ShapeCast2D::add_exception(const CollisionObject2D* rp_node)
+void ShapeCast2D::add_exception(const Node2D* rp_node)
 {
-	add_exception_rid(rp_node->get_rid());
+	ERR_FAIL_NULL(rp_node);
+	const CollisionState2D* cs = rp_node->get_collision_state_2d();
+	ERR_FAIL_NULL(cs);
+	add_exception_rid(cs->rid);
 }
 
 void ShapeCast2D::remove_exception_rid(const RID& p_rid) { exclude.erase(p_rid); }
 
-void ShapeCast2D::remove_exception(const CollisionObject2D* rp_node)
+void ShapeCast2D::remove_exception(const Node2D* rp_node)
 {
-	remove_exception_rid(rp_node->get_rid());
+	ERR_FAIL_NULL(rp_node);
+	const CollisionState2D* cs = rp_node->get_collision_state_2d();
+	ERR_FAIL_NULL(cs);
+	remove_exception_rid(cs->rid);
 }
 
 void ShapeCast2D::clear_exceptions() { exclude.clear(); }

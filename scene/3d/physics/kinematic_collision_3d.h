@@ -36,7 +36,6 @@
 class KinematicCollision3D : public RefCounted
 {
 	friend class PhysicsBody3D;
-	friend class CharacterBody3D;
 	PS3DT::MotionResult result;
 
 protected:

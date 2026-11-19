@@ -121,7 +121,7 @@ AABB Decal::get_aabb() const
 
 PackedStringArray Decal::get_configuration_warnings() const
 {
-	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
 
 	if (OS::get_current_rendering_method() == "gl_compatibility" ||
 		OS::get_current_rendering_method() == "dummy") {
@@ -154,10 +154,20 @@ PackedStringArray Decal::get_configuration_warnings() const
 	return warnings;
 }
 
+void Decal::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void Decal::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
 Decal::Decal()
 {
 	decal = Renderer::decal_create();
-	Renderer::instance_set_base(get_instance(), decal);
+	set_base(decal);
 }
 
 Decal::~Decal()

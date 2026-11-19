@@ -33,8 +33,6 @@
 
 #include "scene/2d/node_2d.h"
 
-class CollisionObject2D;
-
 class RayCast2D : public Node2D
 {
 	bool enabled = true;
@@ -94,9 +92,9 @@ public:
 	Vector2 get_collision_normal() const;
 
 	void add_exception_rid(const RID& p_rid);
-	void add_exception(const CollisionObject2D* rp_node);
+	void add_exception(const Node2D* rp_node);
 	void remove_exception_rid(const RID& p_rid);
-	void remove_exception(const CollisionObject2D* rp_node);
+	void remove_exception(const Node2D* rp_node);
 	void clear_exceptions();
 
 	RayCast2D();

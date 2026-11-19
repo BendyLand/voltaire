@@ -130,9 +130,11 @@ public:
 	~LightmapGIData();
 };
 
-class LightmapGI : public VisualInstance3D
+class LightmapGI : public Node3D
 {
 public:
+	RenderInstance3D render_instance;
+
 	enum BakeQuality
 	{
 		BAKE_QUALITY_LOW,
@@ -287,8 +289,14 @@ private:
 
 protected:
 	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
 	Ref<LightmapGIData> get_light_data() const;
 
 	void set_bake_quality(BakeQuality p_quality);
@@ -353,7 +361,7 @@ public:
 	void set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes);
 	Ref<CameraAttributes> get_camera_attributes() const;
 
-	AABB get_aabb() const override;
+	AABB get_aabb() const;
 
 	BakeError bake(Node* p_from_node, String p_image_data_path = "",
 		Lightmapper::BakeStepFunc p_bake_step = nullptr, void* p_bake_userdata = nullptr);

@@ -35,8 +35,15 @@
 #include "scene/3d/xr/xr_nodes.h"
 #include "servers/rendering/renderer.h"
 
+void OpenXRVisibilityMask::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
 void OpenXRVisibilityMask::_notification(int p_what)
 {
+	render_instance.notification(this, p_what);
+
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
 		if (OpenXRVisibilityMaskExtension::is_initialized() && OpenXRVisibilityMaskExtension::is_available()) {

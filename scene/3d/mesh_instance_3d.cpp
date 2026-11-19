@@ -36,7 +36,7 @@
 
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/3d/physics/collision_shape_3d.h"
-#include "scene/3d/physics/static_body_3d.h"
+#include "scene/3d/physics/physics_body_3d.h"
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
 #include "scene/resources/3d/convex_polygon_shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
@@ -138,7 +138,7 @@ Node* MeshInstance3D::create_trimesh_collision_node()
 		return nullptr;
 	}
 
-	StaticBody3D* static_body = memnew(StaticBody3D);
+	PhysicsBody3D* static_body = memnew(PhysicsBody3D(PhysicsBody3D::MODE_STATIC));
 	CollisionShape3D* cshape = memnew(CollisionShape3D);
 	cshape->set_shape(shape);
 	static_body->add_child(cshape, true);
@@ -156,7 +156,7 @@ Node* MeshInstance3D::create_convex_collision_node(bool p_clean, bool p_simplify
 		return nullptr;
 	}
 
-	StaticBody3D* static_body = memnew(StaticBody3D);
+	PhysicsBody3D* static_body = memnew(PhysicsBody3D(PhysicsBody3D::MODE_STATIC));
 	CollisionShape3D* cshape = memnew(CollisionShape3D);
 	cshape->set_shape(shape);
 	static_body->add_child(cshape, true);
@@ -183,7 +183,7 @@ Node* MeshInstance3D::create_multiple_convex_collisions_node(
 		return nullptr;
 	}
 
-	StaticBody3D* static_body = memnew(StaticBody3D);
+	PhysicsBody3D* static_body = memnew(PhysicsBody3D(PhysicsBody3D::MODE_STATIC));
 	for (int i = 0; i < shapes.size(); i++) {
 		CollisionShape3D* cshape = memnew(CollisionShape3D);
 		cshape->set_shape(shapes[i]);
@@ -277,7 +277,8 @@ Ref<TriangleMesh> MeshInstance3D::generate_triangle_mesh() const
 
 PackedStringArray MeshInstance3D::get_configuration_warnings() const
 {
-	PackedStringArray warnings = GeometryInstance3D::get_configuration_warnings();
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+	render_instance.append_geometry_warnings(warnings);
 	if (mesh.is_null()) {
 		warnings.push_back(RTR("MeshInstance3D requires a Mesh to render anything. Please add a "
 							   "mesh resource for it!"));
@@ -285,16 +286,29 @@ PackedStringArray MeshInstance3D::get_configuration_warnings() const
 	return warnings;
 }
 
+void MeshInstance3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void MeshInstance3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
 void MeshInstance3D::_resolve_skeleton_path() {}
 
-void MeshInstance3D::set_mesh(Ref<Mesh> const&) {}
+void MeshInstance3D::set_mesh(Ref<Mesh> const& p_mesh)
+{
+	mesh = p_mesh;
+	render_instance.set_base(mesh.is_valid() ? mesh->get_rid() : RID());
+}
 
 MeshInstance3D::MeshInstance3D() {}
 
 MeshInstance3D* MeshInstance3D::create_debug_tangents_node()
 {
-	MeshInstance3D mi = MeshInstance3D();
-	return &mi;
+	return nullptr;
 }
 
 

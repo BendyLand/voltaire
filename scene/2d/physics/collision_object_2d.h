@@ -31,148 +31,124 @@
 
 #pragma once
 
+#include "core/templates/local_vector.h"
 #include "core/templates/rb_map.h"
 #include "scene/2d/node_2d.h"
-#include "scene/main/viewport.h"
 #include "scene/resources/2d/shape_2d.h"
 #include "servers/physics_2d/physics_server_2d_enums.h"
 
-class CollisionObject2D : public Node2D
-{
-public:
-	enum DisableMode
-	{
+// Plain non-virtual composed component for 2D collision state (shared by PhysicsBody2D and Area2D).
+// Supports both inline ShapeSlots directly on the body/area and child CollisionShape2D/CollisionPolygon2D owners.
+struct CollisionState2D {
+	enum DisableMode {
 		DISABLE_MODE_REMOVE,
 		DISABLE_MODE_MAKE_STATIC,
 		DISABLE_MODE_KEEP_ACTIVE,
 	};
 
-private:
-	uint32_t collision_layer = 1;
-	uint32_t collision_mask = 1;
-	real_t collision_priority = 1.0;
+	struct ShapeSlot {
+		Transform2D local_xform;
+		Ref<Shape2D> shape;
+		bool disabled = false;
+		bool one_way_collision = false;
+		real_t one_way_collision_margin = 0.0f;
+		Vector2 one_way_collision_direction = Vector2(0.0f, 1.0f);
+		uint32_t owner_id = 0;
+	};
 
-	bool area = false;
-	RID rid;
-	uint32_t callback_lock = 0;
-	bool pickable = false;
-
-	DisableMode disable_mode = DISABLE_MODE_REMOVE;
-
-	PS2DE::BodyMode body_mode = PS2DE::BODY_MODE_STATIC;
-
-	struct ShapeData
-	{
+	struct ShapeData {
 		Transform2D xform;
+		Node *owner_node = nullptr;
 
-		struct Shape
-		{
+		struct Shape {
 			Ref<Shape2D> shape;
 			int index = 0;
 		};
 
 		Vector<Shape> shapes;
-
 		bool disabled = false;
 		bool one_way_collision = false;
-		real_t one_way_collision_margin = 0.0;
-		Vector2 one_way_collision_direction = Vector2(0.0, 1.0);
+		real_t one_way_collision_margin = 0.0f;
+		Vector2 one_way_collision_direction = Vector2(0.0f, 1.0f);
 	};
 
+	RID rid;
+	bool area = false;
+	uint32_t collision_layer = 1;
+	uint32_t collision_mask = 1;
+	real_t collision_priority = 1.0f;
+	uint32_t callback_lock = 0;
+	bool pickable = false;
+	DisableMode disable_mode = DISABLE_MODE_REMOVE;
+	PS2DE::BodyMode body_mode = PS2DE::BODY_MODE_STATIC;
+	bool only_update_transform_changes = false;
+
 	int total_subshapes = 0;
-
+	uint32_t next_owner_id = 1;
 	RBMap<uint32_t, ShapeData> shapes;
-	bool only_update_transform_changes = false; // This is used for sync to physics.
+	LocalVector<ShapeSlot> inline_shapes;
 
-	void _apply_disabled();
-	void _apply_enabled();
+	void init(bool p_area, PS2DE::BodyMode p_mode = PS2DE::BODY_MODE_STATIC);
+	void free_rid();
 
-protected:
 	_FORCE_INLINE_ void lock_callback() { callback_lock++; }
-
-	_FORCE_INLINE_ void unlock_callback()
-	{
+	_FORCE_INLINE_ void unlock_callback() {
 		ERR_FAIL_COND(callback_lock == 0);
 		callback_lock--;
 	}
 
-	CollisionObject2D(RID p_rid, bool p_area);
+	void handle_notification(Node2D *p_owner, int p_what);
+	void apply_disabled(Node2D *p_owner);
+	void apply_enabled(Node2D *p_owner);
+	void update_pickable(const Node2D *p_owner);
+	void set_body_mode(const Node2D *p_owner, PS2DE::BodyMode p_mode);
 
-	void _notification(int p_what);
-
-	void _update_pickable();
-	friend class Viewport;
-	void _input_event_call(Viewport* p_viewport, const InputEvent& p_input_event, int p_shape);
-	void _mouse_enter();
-	void _mouse_exit();
-
-	void _mouse_shape_enter(int p_shape);
-	void _mouse_shape_exit(int p_shape);
-
-	void set_only_update_transform_changes(bool p_enable);
-	bool is_only_update_transform_changes_enabled() const;
-
-	void set_body_mode(PS2DE::BodyMode p_mode);
-
-	virtual void _space_changed(const RID& p_new_space);
-
-public:
 	void set_collision_layer(uint32_t p_layer);
-	uint32_t get_collision_layer() const;
-
 	void set_collision_mask(uint32_t p_mask);
-	uint32_t get_collision_mask() const;
-
 	void set_collision_layer_value(int p_layer_number, bool p_value);
 	bool get_collision_layer_value(int p_layer_number) const;
-
 	void set_collision_mask_value(int p_layer_number, bool p_value);
 	bool get_collision_mask_value(int p_layer_number) const;
-
 	void set_collision_priority(real_t p_priority);
-	real_t get_collision_priority() const;
+	void set_disable_mode(Node2D *p_owner, DisableMode p_mode);
+	void set_pickable(const Node2D *p_owner, bool p_enabled);
 
-	void set_disable_mode(DisableMode p_mode);
-	DisableMode get_disable_mode() const;
+	// Inline shape slots (no child CollisionShape2D node required).
+	int add_inline_shape(const Ref<Shape2D> &p_shape, const Transform2D &p_xform = Transform2D(), bool p_disabled = false);
+	void set_inline_shape(int p_index, const Ref<Shape2D> &p_shape);
+	Ref<Shape2D> get_inline_shape(int p_index) const;
+	void set_inline_shape_transform(int p_index, const Transform2D &p_xform);
+	Transform2D get_inline_shape_transform(int p_index) const;
+	void set_inline_shape_disabled(int p_index, bool p_disabled);
+	bool is_inline_shape_disabled(int p_index) const;
+	void remove_inline_shape(int p_index);
+	void clear_inline_shapes();
+	int get_inline_shape_count() const { return (int)inline_shapes.size(); }
 
-	void remove_shape_owner(uint32_t owner);
-	void get_shape_owners(List<uint32_t>* r_owners);
-	PackedInt32Array _get_shape_owners();
+	// Shape owner API (for inline slots & child CollisionShape2D / CollisionPolygon2D).
+	uint32_t create_shape_owner(Node *p_owner = nullptr);
+	void remove_shape_owner(uint32_t p_owner);
+	void get_shape_owners(List<uint32_t> *r_owners) const;
+	PackedInt32Array get_shape_owners_array() const;
 
-	void shape_owner_set_transform(uint32_t p_owner, const Transform2D& p_transform);
+	void shape_owner_set_transform(uint32_t p_owner, const Transform2D &p_transform);
 	Transform2D shape_owner_get_transform(uint32_t p_owner) const;
-
 	void shape_owner_set_disabled(uint32_t p_owner, bool p_disabled);
 	bool is_shape_owner_disabled(uint32_t p_owner) const;
-
 	void shape_owner_set_one_way_collision(uint32_t p_owner, bool p_enable);
 	bool is_shape_owner_one_way_collision_enabled(uint32_t p_owner) const;
-
 	void shape_owner_set_one_way_collision_margin(uint32_t p_owner, real_t p_margin);
 	real_t get_shape_owner_one_way_collision_margin(uint32_t p_owner) const;
-
-	void shape_owner_set_one_way_collision_direction(uint32_t p_owner, const Vector2& p_direction);
+	void shape_owner_set_one_way_collision_direction(uint32_t p_owner, const Vector2 &p_direction);
 	Vector2 get_shape_owner_one_way_collision_direction(uint32_t p_owner) const;
 
-	void shape_owner_add_shape(uint32_t p_owner, Shape2D* rp_shape);
+	void shape_owner_add_shape(uint32_t p_owner, Shape2D *rp_shape);
 	int shape_owner_get_shape_count(uint32_t p_owner) const;
 	Ref<Shape2D> shape_owner_get_shape(uint32_t p_owner, int p_shape) const;
 	int shape_owner_get_shape_index(uint32_t p_owner, int p_shape) const;
-
 	void shape_owner_remove_shape(uint32_t p_owner, int p_shape);
 	void shape_owner_clear_shapes(uint32_t p_owner);
-
 	uint32_t shape_find_owner(int p_shape_index) const;
 
-	void set_pickable(bool p_enabled);
-	bool is_pickable() const;
-
-	PackedStringArray get_configuration_warnings() const override;
-
-	_FORCE_INLINE_ RID get_rid() const { return rid; }
-
-	CollisionObject2D() = default;
-	~CollisionObject2D();
+	bool has_any_shapes() const { return !shapes.is_empty(); }
 };
-
-

@@ -35,8 +35,6 @@
 #include "scene/resources/2d/shape_2d.h"
 #include "servers/physics_2d/physics_server_2d_types.h"
 
-class CollisionObject2D;
-
 class ShapeCast2D : public Node2D
 {
 	bool enabled = true;
@@ -109,8 +107,8 @@ public:
 	real_t get_closest_collision_unsafe_fraction() const;
 
 	void add_exception_rid(const RID& p_rid);
-	void add_exception(const CollisionObject2D* rp_node);
-	void remove_exception(const CollisionObject2D* rp_node);
+	void add_exception(const Node2D* rp_node);
+	void remove_exception(const Node2D* rp_node);
 	void remove_exception_rid(const RID& p_rid);
 	void clear_exceptions();
 

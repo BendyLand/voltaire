@@ -29,14 +29,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/engine.h"
 #include "light_2d.h"
+
+#include "core/config/engine.h"
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 void Light2D::owner_changed_notify()
 {
-	// For cases where owner changes _after_ entering tree (as example, editor editing).
 	_update_light_visibility();
 }
 
@@ -67,6 +67,21 @@ void Light2D::_update_light_visibility()
 
 	Renderer::canvas_light_set_enabled(
 		canvas_light, enabled && is_visible_in_tree() && editor_ok);
+}
+
+void Light2D::set_light_type(LightType p_type)
+{
+	light_type = p_type;
+	if (!canvas_light.is_valid() || !Renderer::data) {
+		return;
+	}
+	if (light_type == LIGHT_POINT) {
+		Renderer::canvas_light_set_mode(canvas_light, RSE::CANVAS_LIGHT_MODE_POINT);
+	}
+	else {
+		Renderer::canvas_light_set_mode(canvas_light, RSE::CANVAS_LIGHT_MODE_DIRECTIONAL);
+		Renderer::canvas_light_set_directional_distance(canvas_light, max_distance);
+	}
 }
 
 void Light2D::set_enabled(bool p_enabled)
@@ -186,16 +201,14 @@ Color Light2D::get_shadow_color() const { return shadow_color; }
 void Light2D::set_blend_mode(BlendMode p_mode)
 {
 	blend_mode = p_mode;
-	Renderer::canvas_light_set_blend_mode(
-		_get_light(), RSE::CanvasLightBlendMode(p_mode));
+	Renderer::canvas_light_set_blend_mode(canvas_light, RSE::CanvasLightBlendMode(p_mode));
 }
 
 Light2D::BlendMode Light2D::get_blend_mode() const { return blend_mode; }
 
 void Light2D::_physics_interpolated_changed()
 {
-	Renderer::canvas_light_set_interpolated(
-		canvas_light, is_physics_interpolated());
+	Renderer::canvas_light_set_interpolated(canvas_light, is_physics_interpolated());
 }
 
 void Light2D::_notification(int p_what)
@@ -216,10 +229,6 @@ void Light2D::_notification(int p_what)
 
 	case NOTIFICATION_RESET_PHYSICS_INTERPOLATION: {
 		if (is_visible_in_tree() && is_physics_interpolated_and_enabled()) {
-			// Explicitly make sure the transform is up to date in Renderer before
-			// resetting. This is necessary because NOTIFICATION_TRANSFORM_CHANGED
-			// is normally deferred, and a client change to transform will not always be sent
-			// before the reset, so we need to guarantee this.
 			Renderer::canvas_light_set_transform(canvas_light, get_global_transform());
 			Renderer::canvas_light_reset_physics_interpolation(canvas_light);
 		}
@@ -240,74 +249,90 @@ void Light2D::set_shadow_smooth(real_t p_amount)
 
 real_t Light2D::get_shadow_smooth() const { return shadow_smooth; }
 
-
-Light2D::Light2D()
-{
-	canvas_light = Renderer::canvas_light_create();
-	set_notify_transform(true);
-}
-
-Light2D::~Light2D()
-{
-	ERR_FAIL_NULL(Renderer::data);
-	Renderer::free_rid(canvas_light);
-}
-
-//////////////////////////////
-
 #ifdef TOOLS_ENABLED
-
-void PointLight2D::_edit_set_pivot(const Point2& p_pivot)
+void Light2D::_edit_set_pivot(const Point2& p_pivot)
 {
-	set_position(get_transform().xform(p_pivot));
-	set_texture_offset(get_texture_offset() - p_pivot);
+	if (light_type == LIGHT_POINT) {
+		set_position(get_transform().xform(p_pivot));
+		set_texture_offset(get_texture_offset() - p_pivot);
+	}
 }
 
-Point2 PointLight2D::_edit_get_pivot() const { return Vector2(); }
+Point2 Light2D::_edit_get_pivot() const { return Vector2(); }
 
-bool PointLight2D::_edit_use_pivot() const { return true; }
+bool Light2D::_edit_use_pivot() const { return light_type == LIGHT_POINT; }
 #endif // TOOLS_ENABLED
 
 #ifdef DEBUG_ENABLED
-Rect2 PointLight2D::_edit_get_rect() const
+Rect2 Light2D::_edit_get_rect() const
 {
-	if (texture.is_null()) {
+	if (light_type != LIGHT_POINT || texture.is_null()) {
 		return Rect2();
 	}
-
 	Size2 s = texture->get_size() * _scale;
 	return Rect2(texture_offset - s / 2.0, s);
 }
 
-bool PointLight2D::_edit_use_rect() const { return texture.is_valid(); }
+bool Light2D::_edit_use_rect() const { return light_type == LIGHT_POINT && texture.is_valid(); }
 #endif // DEBUG_ENABLED
 
-Rect2 PointLight2D::get_anchorable_rect() const
+Rect2 Light2D::get_anchorable_rect() const
 {
-	if (texture.is_null()) {
+	if (light_type != LIGHT_POINT || texture.is_null()) {
 		return Rect2();
 	}
-
 	Size2 s = texture->get_size() * _scale;
 	return Rect2(texture_offset - s / 2.0, s);
 }
 
-Ref<Texture2D> PointLight2D::get_texture() const { return texture; }
-
-void PointLight2D::set_texture_offset(const Vector2& p_offset)
+void Light2D::set_texture(const Ref<Texture2D>& p_texture)
 {
-	texture_offset = p_offset;
-	Renderer::canvas_light_set_texture_offset(_get_light(), texture_offset);
+	texture = p_texture;
+	if (canvas_light.is_valid() && Renderer::data) {
+		Renderer::canvas_light_set_texture(
+			canvas_light, texture.is_valid() ? texture->get_rid() : RID());
+	}
 	item_rect_changed();
 }
 
-Vector2 PointLight2D::get_texture_offset() const { return texture_offset; }
+Ref<Texture2D> Light2D::get_texture() const { return texture; }
 
-PackedStringArray PointLight2D::get_configuration_warnings() const
+void Light2D::set_texture_offset(const Vector2& p_offset)
 {
-	PackedStringArray warnings = Light2D::get_configuration_warnings();
+	texture_offset = p_offset;
+	Renderer::canvas_light_set_texture_offset(canvas_light, texture_offset);
+	item_rect_changed();
+}
 
-	if (texture.is_null()) {
+Vector2 Light2D::get_texture_offset() const { return texture_offset; }
+
+void Light2D::set_texture_scale(real_t p_scale)
+{
+	_scale = p_scale;
+	if (_scale == 0) {
+		_scale = CMP_EPSILON;
+	}
+	Renderer::canvas_light_set_texture_scale(canvas_light, _scale);
+	item_rect_changed();
+}
+
+real_t Light2D::get_texture_scale() const { return _scale; }
+
+void Light2D::set_max_distance(real_t p_distance)
+{
+	max_distance = p_distance;
+	if (light_type == LIGHT_DIRECTIONAL) {
+		Renderer::canvas_light_set_directional_distance(canvas_light, max_distance);
+	}
+}
+
+real_t Light2D::get_max_distance() const { return max_distance; }
+
+PackedStringArray Light2D::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node2D::get_configuration_warnings();
+
+	if (light_type == LIGHT_POINT && texture.is_null()) {
 		warnings.push_back(RTR(
 			"A texture with the shape of the light must be supplied to the \"Texture\" property."));
 	}
@@ -315,45 +340,19 @@ PackedStringArray PointLight2D::get_configuration_warnings() const
 	return warnings;
 }
 
-void PointLight2D::set_texture_scale(real_t p_scale)
+Light2D::Light2D(LightType p_type) : light_type(p_type)
 {
-	_scale = p_scale;
-	// Avoid having 0 scale values, can lead to errors in physics and rendering.
-	if (_scale == 0) {
-		_scale = CMP_EPSILON;
+	if (Renderer::data) {
+		canvas_light = Renderer::canvas_light_create();
+		set_light_type(p_type);
 	}
-	Renderer::canvas_light_set_texture_scale(_get_light(), _scale);
-	item_rect_changed();
-}
-
-real_t PointLight2D::get_texture_scale() const { return _scale; }
-
-#ifndef DISABLE_DEPRECATED
-
-#endif // DISABLE_DEPRECATED
-
-PointLight2D::PointLight2D()
-{
-	Renderer::canvas_light_set_mode(_get_light(), RSE::CANVAS_LIGHT_MODE_POINT);
+	set_notify_transform(true);
 	set_hide_clip_children(true);
 }
 
-//////////
-
-void DirectionalLight2D::set_max_distance(real_t p_distance)
+Light2D::~Light2D()
 {
-	max_distance = p_distance;
-	Renderer::canvas_light_set_directional_distance(_get_light(), max_distance);
+	if (canvas_light.is_valid() && Renderer::data) {
+		Renderer::free_rid(canvas_light);
+	}
 }
-
-real_t DirectionalLight2D::get_max_distance() const { return max_distance; }
-
-
-DirectionalLight2D::DirectionalLight2D()
-{
-	Renderer::canvas_light_set_mode(_get_light(), RSE::CANVAS_LIGHT_MODE_DIRECTIONAL);
-	set_max_distance(max_distance); // Update Renderer.
-	set_hide_clip_children(true);
-}
-
-

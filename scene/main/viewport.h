@@ -50,7 +50,7 @@ class World2D;
 #ifndef _3D_DISABLED
 class AudioListener3D;
 class Camera3D;
-class CollisionObject3D;
+class Node3D;
 class World3D;
 #endif // _3D_DISABLED
 
@@ -865,7 +865,7 @@ private:
 	void _audio_listener_3d_make_next_current(AudioListener3D* p_exclude);
 
 #ifndef PHYSICS_3D_DISABLED
-	void _collision_object_3d_input_event(CollisionObject3D* p_object, Camera3D* p_camera,
+	void _collision_object_3d_input_event(Node3D* p_object, Camera3D* p_camera,
 		const InputEvent& p_input_event, const Vector3& p_pos, const Vector3& p_normal,
 		int p_shape);
 #endif // PHYSICS_3D_DISABLED

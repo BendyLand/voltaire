@@ -35,10 +35,8 @@
 #include "scene/resources/material.h"
 #include "scene/resources/sprite_frames.h"
 
-class SpriteBase3D : public GeometryInstance3D
+class Sprite3D : public Node3D
 {
-	mutable Ref<TriangleMesh> triangle_mesh; // cached
-
 public:
 	enum DrawFlags
 	{
@@ -48,7 +46,6 @@ public:
 		FLAG_DISABLE_DEPTH_TEST,
 		FLAG_FIXED_SIZE,
 		FLAG_MAX
-
 	};
 
 	enum AlphaCutMode
@@ -60,13 +57,17 @@ public:
 		ALPHA_CUT_MAX
 	};
 
+	RenderInstance3D render_instance;
+
 private:
+	mutable Ref<TriangleMesh> triangle_mesh;
+
 	bool color_dirty = true;
 	Color color_accum;
 
-	SpriteBase3D* parent_sprite = nullptr;
-	List<SpriteBase3D*> children;
-	List<SpriteBase3D*>::Element* pI = nullptr;
+	Sprite3D* parent_sprite = nullptr;
+	List<Sprite3D*> children;
+	List<Sprite3D*>::Element* pI = nullptr;
 
 	bool centered = true;
 	Point2 offset;
@@ -99,21 +100,6 @@ private:
 		StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
 	bool redraw_needed = false;
 	bool pending_update = false;
-	void _im_update();
-
-	void _propagate_color_changed();
-
-protected:
-	Color _get_color_accum();
-	void _notification(int p_what);
-	virtual void _draw() = 0;
-	void draw_texture_rect(Ref<Texture2D> p_texture, Rect2 p_dst_rect, Rect2 p_src_rect);
-
-	_FORCE_INLINE_ void set_aabb(const AABB& p_aabb) { aabb = p_aabb; }
-
-	_FORCE_INLINE_ RID& get_mesh() { return mesh; }
-
-	_FORCE_INLINE_ RID& get_material() { return material; }
 
 	uint32_t mesh_surface_offsets[RSE::ARRAY_MAX];
 	PackedByteArray vertex_buffer;
@@ -124,9 +110,45 @@ protected:
 	uint32_t skin_stride = 0;
 	uint32_t mesh_surface_format = 0;
 
+	// Single-texture sprite state
+	Ref<Texture2D> texture;
+	bool region = false;
+	Rect2 region_rect;
+	int frame = 0;
+	int vframes = 1;
+	int hframes = 1;
+
+	// Optional SpriteFrames animation state (used when frames.is_valid())
+	Ref<SpriteFrames> frames;
+	String autoplay;
+	bool playing = false;
+	String animation = SceneString(default_);
+	float speed_scale = 1.0;
+	float custom_speed_scale = 1.0;
+	real_t frame_speed_scale = 1.0;
+	real_t frame_progress = 0.0;
+
+	void _im_update();
+	void _propagate_color_changed();
+	Color _get_color_accum();
+	void _draw();
+	void draw_texture_rect(Ref<Texture2D> p_texture, Rect2 p_dst_rect, Rect2 p_src_rect);
 	void _queue_redraw();
 
+	double _get_frame_duration();
+	void _calc_frame_speed_scale();
+	void _stop_internal(bool p_reset);
+
+protected:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
 	void set_centered(bool p_center);
 	bool is_centered() const;
 
@@ -175,32 +197,7 @@ public:
 	void set_texture_filter(StandardMaterial3D::TextureFilter p_filter);
 	StandardMaterial3D::TextureFilter get_texture_filter() const;
 
-	virtual Rect2 get_item_rect() const = 0;
-
-	virtual AABB get_aabb() const override;
-
-	virtual Ref<TriangleMesh> generate_triangle_mesh() const override;
-
-	SpriteBase3D() = default;
-	~SpriteBase3D();
-};
-
-class Sprite3D : public SpriteBase3D
-{
-	Ref<Texture2D> texture;
-
-	bool region = false;
-	Rect2 region_rect;
-
-	int frame = 0;
-
-	int vframes = 1;
-	int hframes = 1;
-
-protected:
-	virtual void _draw() override;
-
-public:
+	// Static/sheet texture API
 	void set_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture() const;
 
@@ -222,40 +219,11 @@ public:
 	void set_hframes(int p_amount);
 	int get_hframes() const;
 
-	virtual Rect2 get_item_rect() const override;
-
-	Sprite3D();
-	//~Sprite3D();
-};
-
-class AnimatedSprite3D : public SpriteBase3D
-{
-	Ref<SpriteFrames> frames;
-	String autoplay;
-
-	bool playing = false;
-	String animation = SceneString(default_);
-	int frame = 0;
-	float speed_scale = 1.0;
-	float custom_speed_scale = 1.0;
-
-	real_t frame_speed_scale = 1.0;
-	real_t frame_progress = 0.0;
-
-	void _res_changed();
-
-	double _get_frame_duration();
-	void _calc_frame_speed_scale();
-	void _stop_internal(bool p_reset);
-
-protected:
-	virtual void _draw() override;
-	void _notification(int p_what);
-
-public:
+	// SpriteFrames animation API
 	void set_sprite_frames(const Ref<SpriteFrames>& p_frames);
 	Ref<SpriteFrames> get_sprite_frames() const;
 
+	void play(const String& p_name = String(), float p_custom_scale = 1.0f, bool p_from_end = false);
 	void play_backwards(const String& p_name = String());
 	void pause();
 	void stop();
@@ -268,9 +236,6 @@ public:
 	void set_autoplay(const String& p_name);
 	String get_autoplay() const;
 
-	void set_frame(int p_frame);
-	int get_frame() const;
-
 	void set_frame_progress(real_t p_progress);
 	real_t get_frame_progress() const;
 
@@ -278,16 +243,17 @@ public:
 	float get_speed_scale() const;
 	float get_playing_speed() const;
 
-	virtual Rect2 get_item_rect() const override;
+	Rect2 get_item_rect() const;
+	AABB get_aabb() const;
+	Ref<TriangleMesh> generate_triangle_mesh() const;
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 
 #ifdef TOOLS_ENABLED
-	virtual void get_argument_options(
+	void get_argument_options(
 		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
-	AnimatedSprite3D();
+	Sprite3D();
+	~Sprite3D();
 };
-
-

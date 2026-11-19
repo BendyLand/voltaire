@@ -49,13 +49,18 @@ void MultiMeshInstance3D::_refresh_interpolated()
 
 void MultiMeshInstance3D::_physics_interpolated_changed()
 {
-	VisualInstance3D::_physics_interpolated_changed();
+	Node3D::_physics_interpolated_changed();
 	_refresh_interpolated();
 }
 
+void MultiMeshInstance3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
 
 void MultiMeshInstance3D::_notification(int p_what)
 {
+	render_instance.notification(this, p_what);
 	if (p_what == NOTIFICATION_ENTER_TREE) {
 		_refresh_interpolated();
 	}

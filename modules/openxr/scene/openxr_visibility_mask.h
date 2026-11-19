@@ -33,21 +33,26 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class OpenXRVisibilityMask : public VisualInstance3D
+class OpenXRVisibilityMask : public Node3D
 {
+public:
+	RenderInstance3D render_instance;
+
 protected:
 	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 
 	void _on_openxr_session_begun();
 	void _on_openxr_session_stopping();
 
 public:
-	virtual PackedStringArray get_configuration_warnings() const override;
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
 
-	OpenXRVisibilityMask();
-	~OpenXRVisibilityMask();
+	OpenXRVisibilityMask() = default;
+	~OpenXRVisibilityMask() = default;
 };
-
-

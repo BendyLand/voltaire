@@ -29,13 +29,49 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "gpu_particles_collision_3d.h"
+
 #include "core/math/geometry_3d.h"
 #include "core/os/os.h"
-#include "gpu_particles_collision_3d.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/main/viewport.h"
 #include "servers/rendering/renderer.h"
+
+GPUParticlesCollision3D::BakeBeginFunc GPUParticlesCollision3D::bake_begin_function = nullptr;
+GPUParticlesCollision3D::BakeStepFunc GPUParticlesCollision3D::bake_step_function = nullptr;
+GPUParticlesCollision3D::BakeEndFunc GPUParticlesCollision3D::bake_end_function = nullptr;
+
+void GPUParticlesCollision3D::_apply_shape_type()
+{
+	if (!collision.is_valid()) {
+		return;
+	}
+	RSE::ParticlesCollisionType rs_type = RSE::PARTICLES_COLLISION_TYPE_BOX_COLLIDE;
+	switch (shape_type) {
+	case SHAPE_SPHERE:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_SPHERE_COLLIDE;
+		break;
+	case SHAPE_BOX:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_BOX_COLLIDE;
+		break;
+	case SHAPE_SDF:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_SDF_COLLIDE;
+		break;
+	case SHAPE_HEIGHT_FIELD:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_HEIGHTFIELD_COLLIDE;
+		break;
+	}
+	Renderer::particles_collision_set_collision_type(collision, rs_type);
+}
+
+void GPUParticlesCollision3D::set_shape_type(ShapeType p_type)
+{
+	shape_type = p_type;
+	_apply_shape_type();
+	set_process_internal(shape_type == SHAPE_HEIGHT_FIELD &&
+						 (follow_camera_mode || update_mode == UPDATE_MODE_ALWAYS));
+}
 
 void GPUParticlesCollision3D::set_cull_mask(uint32_t p_cull_mask)
 {
@@ -45,87 +81,21 @@ void GPUParticlesCollision3D::set_cull_mask(uint32_t p_cull_mask)
 
 uint32_t GPUParticlesCollision3D::get_cull_mask() const { return cull_mask; }
 
-GPUParticlesCollision3D::GPUParticlesCollision3D(RSE::ParticlesCollisionType p_type)
+void GPUParticlesCollision3D::set_radius(real_t p_radius)
 {
-	collision = Renderer::particles_collision_create();
-	Renderer::particles_collision_set_collision_type(collision, p_type);
-	set_base(collision);
+	radius = p_radius;
+	Renderer::particles_collision_set_sphere_radius(collision, radius);
 }
 
-GPUParticlesCollision3D::~GPUParticlesCollision3D()
+void GPUParticlesCollision3D::set_size(const Vector3& p_size)
 {
-	ERR_FAIL_NULL(Renderer::data);
-	Renderer::free_rid(collision);
+	size = p_size;
+	Renderer::particles_collision_set_box_extents(collision, size / 2);
 }
 
-real_t GPUParticlesCollisionSphere3D::get_radius() const { return radius; }
+void GPUParticlesCollision3D::set_thickness(float p_thickness) { thickness = p_thickness; }
 
-AABB GPUParticlesCollisionSphere3D::get_aabb() const
-{
-	return AABB(Vector3(-radius, -radius, -radius), Vector3(radius * 2, radius * 2, radius * 2));
-}
-
-GPUParticlesCollisionSphere3D::GPUParticlesCollisionSphere3D()
-	: GPUParticlesCollision3D(RSE::PARTICLES_COLLISION_TYPE_SPHERE_COLLIDE)
-{
-}
-
-GPUParticlesCollisionSphere3D::~GPUParticlesCollisionSphere3D() {}
-
-Vector3 GPUParticlesCollisionBox3D::get_size() const { return size; }
-
-AABB GPUParticlesCollisionBox3D::get_aabb() const { return AABB(-size / 2, size); }
-
-GPUParticlesCollisionBox3D::GPUParticlesCollisionBox3D()
-	: GPUParticlesCollision3D(RSE::PARTICLES_COLLISION_TYPE_BOX_COLLIDE)
-{
-}
-
-GPUParticlesCollisionBox3D::~GPUParticlesCollisionBox3D() {}
-
-static _FORCE_INLINE_ real_t Vector3_dot2(const Vector3& p_vec3) { return p_vec3.dot(p_vec3); }
-
-Vector3i GPUParticlesCollisionSDF3D::get_estimated_cell_size() const
-{
-	static const int subdivs[RESOLUTION_MAX] = {16, 32, 64, 128, 256, 512};
-	int subdiv = subdivs[get_resolution()];
-
-	AABB aabb(-size / 2, size);
-
-	float cell_size = aabb.get_longest_axis_size() / float(subdiv);
-
-	Vector3i sdf_size = Vector3i(aabb.size / cell_size);
-	sdf_size = sdf_size.maxi(1);
-	return sdf_size;
-}
-
-PackedStringArray GPUParticlesCollisionSDF3D::get_configuration_warnings() const
-{
-	PackedStringArray warnings = GPUParticlesCollision3D::get_configuration_warnings();
-
-	if (bake_mask == 0) {
-		warnings.push_back(RTR("The Bake Mask has no bits enabled, which means baking will not "
-							   "produce any collision for this GPUParticlesCollisionSDF3D.\nTo "
-							   "resolve this, enable at least one bit in the Bake Mask property."));
-	}
-
-	return warnings;
-}
-
-void GPUParticlesCollisionSDF3D::set_thickness(float p_thickness) { thickness = p_thickness; }
-
-float GPUParticlesCollisionSDF3D::get_thickness() const { return thickness; }
-
-Vector3 GPUParticlesCollisionSDF3D::get_size() const { return size; }
-
-GPUParticlesCollisionSDF3D::Resolution GPUParticlesCollisionSDF3D::get_resolution() const
-{
-	return resolution;
-}
-
-uint32_t GPUParticlesCollisionSDF3D::get_bake_mask() const { return bake_mask; }
-
-bool GPUParticlesCollisionSDF3D::get_bake_mask_value(int p_layer_number) const
+bool GPUParticlesCollision3D::get_bake_mask_value(int p_layer_number) const
 {
 	ERR_FAIL_COND_V_MSG(p_layer_number < 1 || p_layer_number > 20, false,
 		vformat(
@@ -133,34 +103,107 @@ bool GPUParticlesCollisionSDF3D::get_bake_mask_value(int p_layer_number) const
 	return bake_mask & (1 << (p_layer_number - 1));
 }
 
-void GPUParticlesCollisionSDF3D::set_texture(const Ref<Texture3D>& p_texture)
+void GPUParticlesCollision3D::set_texture(const Ref<Texture3D>& p_texture)
 {
 	texture = p_texture;
 	RID tex = texture.is_valid() ? texture->get_rid() : RID();
-	Renderer::particles_collision_set_field_texture(_get_collision(), tex);
+	Renderer::particles_collision_set_field_texture(collision, tex);
 }
 
-Ref<Texture3D> GPUParticlesCollisionSDF3D::get_texture() const { return texture; }
-
-AABB GPUParticlesCollisionSDF3D::get_aabb() const { return AABB(-size / 2, size); }
-
-GPUParticlesCollisionSDF3D::BakeBeginFunc GPUParticlesCollisionSDF3D::bake_begin_function = nullptr;
-GPUParticlesCollisionSDF3D::BakeStepFunc GPUParticlesCollisionSDF3D::bake_step_function = nullptr;
-GPUParticlesCollisionSDF3D::BakeEndFunc GPUParticlesCollisionSDF3D::bake_end_function = nullptr;
-
-GPUParticlesCollisionSDF3D::GPUParticlesCollisionSDF3D()
-	: GPUParticlesCollision3D(RSE::PARTICLES_COLLISION_TYPE_SDF_COLLIDE)
+Vector3i GPUParticlesCollision3D::get_estimated_cell_size() const
 {
+	static const int subdivs[SDF_RESOLUTION_MAX] = {16, 32, 64, 128, 256, 512};
+	int subdiv = subdivs[sdf_resolution];
+	AABB aabb(-size / 2, size);
+	float cell_size = aabb.get_longest_axis_size() / float(subdiv);
+	Vector3i sdf_size = Vector3i(aabb.size / cell_size);
+	return sdf_size.maxi(1);
 }
 
-GPUParticlesCollisionSDF3D::~GPUParticlesCollisionSDF3D() {}
-
-void GPUParticlesCollisionHeightField3D::_notification(int p_what)
+void GPUParticlesCollision3D::set_update_mode(UpdateMode p_update_mode)
 {
+	update_mode = p_update_mode;
+	set_process_internal(shape_type == SHAPE_HEIGHT_FIELD &&
+						 (follow_camera_mode || update_mode == UPDATE_MODE_ALWAYS));
+}
+
+void GPUParticlesCollision3D::set_heightfield_mask(uint32_t p_heightfield_mask)
+{
+	heightfield_mask = p_heightfield_mask;
+	Renderer::particles_collision_set_height_field_mask(collision, p_heightfield_mask);
+}
+
+void GPUParticlesCollision3D::set_heightfield_mask_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Render layer number must be between 1 and 20 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 20, "Render layer number must be between 1 and 20 inclusive.");
+	uint32_t mask = get_heightfield_mask();
+	if (p_value) {
+		mask |= 1 << (p_layer_number - 1);
+	}
+	else {
+		mask &= ~(1 << (p_layer_number - 1));
+	}
+	set_heightfield_mask(mask);
+}
+
+bool GPUParticlesCollision3D::get_heightfield_mask_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Render layer number must be between 1 and 20 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 20, false, "Render layer number must be between 1 and 20 inclusive.");
+	return heightfield_mask & (1 << (p_layer_number - 1));
+}
+
+void GPUParticlesCollision3D::set_follow_camera_enabled(bool p_enabled)
+{
+	follow_camera_mode = p_enabled;
+	set_process_internal(shape_type == SHAPE_HEIGHT_FIELD &&
+						 (follow_camera_mode || update_mode == UPDATE_MODE_ALWAYS));
+}
+
+AABB GPUParticlesCollision3D::get_aabb() const
+{
+	if (shape_type == SHAPE_SPHERE) {
+		return AABB(
+			Vector3(-radius, -radius, -radius), Vector3(radius * 2, radius * 2, radius * 2));
+	}
+	return AABB(-size / 2, size);
+}
+
+PackedStringArray GPUParticlesCollision3D::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+
+	if (shape_type == SHAPE_SDF && bake_mask == 0) {
+		warnings.push_back(RTR("The Bake Mask has no bits enabled, which means baking will not "
+							   "produce any collision for this GPUParticlesCollision3D.\nTo "
+							   "resolve this, enable at least one bit in the Bake Mask property."));
+	}
+
+	return warnings;
+}
+
+void GPUParticlesCollision3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+void GPUParticlesCollision3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+
+	if (shape_type != SHAPE_HEIGHT_FIELD) {
+		return;
+	}
+
 	switch (p_what) {
 	case NOTIFICATION_INTERNAL_PROCESS: {
 		if (update_mode == UPDATE_MODE_ALWAYS) {
-			Renderer::particles_collision_height_field_update(_get_collision());
+			Renderer::particles_collision_height_field_update(collision);
 		}
 
 		if (follow_camera_mode && get_viewport()) {
@@ -191,95 +234,59 @@ void GPUParticlesCollisionHeightField3D::_notification(int p_what)
 
 				if (new_xform != xform) {
 					set_global_transform(new_xform);
-					Renderer::particles_collision_height_field_update(_get_collision());
+					Renderer::particles_collision_height_field_update(collision);
 				}
 			}
 		}
 	} break;
 
 	case NOTIFICATION_TRANSFORM_CHANGED: {
-		Renderer::particles_collision_height_field_update(_get_collision());
+		Renderer::particles_collision_height_field_update(collision);
 	} break;
 	}
 }
 
-Vector3 GPUParticlesCollisionHeightField3D::get_size() const { return size; }
-
-GPUParticlesCollisionHeightField3D::Resolution
-GPUParticlesCollisionHeightField3D::get_resolution() const
+GPUParticlesCollision3D::GPUParticlesCollision3D(ShapeType p_type) : shape_type(p_type)
 {
-	return resolution;
-}
-
-void GPUParticlesCollisionHeightField3D::set_update_mode(UpdateMode p_update_mode)
-{
-	update_mode = p_update_mode;
-	set_process_internal(follow_camera_mode || update_mode == UPDATE_MODE_ALWAYS);
-}
-
-GPUParticlesCollisionHeightField3D::UpdateMode
-GPUParticlesCollisionHeightField3D::get_update_mode() const
-{
-	return update_mode;
-}
-
-void GPUParticlesCollisionHeightField3D::set_heightfield_mask(uint32_t p_heightfield_mask)
-{
-	heightfield_mask = p_heightfield_mask;
-	Renderer::particles_collision_set_height_field_mask(
-		_get_collision(), p_heightfield_mask);
-}
-
-uint32_t GPUParticlesCollisionHeightField3D::get_heightfield_mask() const
-{
-	return heightfield_mask;
-}
-
-void GPUParticlesCollisionHeightField3D::set_heightfield_mask_value(
-	int p_layer_number, bool p_value)
-{
-	ERR_FAIL_COND_MSG(
-		p_layer_number < 1, "Render layer number must be between 1 and 20 inclusive.");
-	ERR_FAIL_COND_MSG(
-		p_layer_number > 20, "Render layer number must be between 1 and 20 inclusive.");
-	uint32_t mask = get_heightfield_mask();
-	if (p_value) {
-		mask |= 1 << (p_layer_number - 1);
+	if (Renderer::data) {
+		collision = Renderer::particles_collision_create();
+		_apply_shape_type();
+		set_base(collision);
 	}
-	else {
-		mask &= ~(1 << (p_layer_number - 1));
+}
+
+GPUParticlesCollision3D::~GPUParticlesCollision3D()
+{
+	if (collision.is_valid() && Renderer::data) {
+		Renderer::free_rid(collision);
 	}
-	set_heightfield_mask(mask);
 }
 
-bool GPUParticlesCollisionHeightField3D::get_heightfield_mask_value(int p_layer_number) const
+void GPUParticlesAttractor3D::_apply_attractor_type()
 {
-	ERR_FAIL_COND_V_MSG(
-		p_layer_number < 1, false, "Render layer number must be between 1 and 20 inclusive.");
-	ERR_FAIL_COND_V_MSG(
-		p_layer_number > 20, false, "Render layer number must be between 1 and 20 inclusive.");
-	return heightfield_mask & (1 << (p_layer_number - 1));
+	if (!collision.is_valid()) {
+		return;
+	}
+	RSE::ParticlesCollisionType rs_type = RSE::PARTICLES_COLLISION_TYPE_SPHERE_ATTRACT;
+	switch (attractor_type) {
+	case ATTRACTOR_SPHERE:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_SPHERE_ATTRACT;
+		break;
+	case ATTRACTOR_BOX:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_BOX_ATTRACT;
+		break;
+	case ATTRACTOR_VECTOR_FIELD:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_VECTOR_FIELD_ATTRACT;
+		break;
+	}
+	Renderer::particles_collision_set_collision_type(collision, rs_type);
 }
 
-void GPUParticlesCollisionHeightField3D::set_follow_camera_enabled(bool p_enabled)
+void GPUParticlesAttractor3D::set_attractor_type(AttractorType p_type)
 {
-	follow_camera_mode = p_enabled;
-	set_process_internal(follow_camera_mode || update_mode == UPDATE_MODE_ALWAYS);
+	attractor_type = p_type;
+	_apply_attractor_type();
 }
-
-bool GPUParticlesCollisionHeightField3D::is_follow_camera_enabled() const
-{
-	return follow_camera_mode;
-}
-
-AABB GPUParticlesCollisionHeightField3D::get_aabb() const { return AABB(-size / 2, size); }
-
-GPUParticlesCollisionHeightField3D::GPUParticlesCollisionHeightField3D()
-	: GPUParticlesCollision3D(RSE::PARTICLES_COLLISION_TYPE_HEIGHTFIELD_COLLIDE)
-{
-}
-
-GPUParticlesCollisionHeightField3D::~GPUParticlesCollisionHeightField3D() {}
 
 void GPUParticlesAttractor3D::set_cull_mask(uint32_t p_cull_mask)
 {
@@ -307,62 +314,56 @@ real_t GPUParticlesAttractor3D::get_attenuation() const { return attenuation; }
 
 real_t GPUParticlesAttractor3D::get_directionality() const { return directionality; }
 
-GPUParticlesAttractor3D::GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_type)
+void GPUParticlesAttractor3D::set_radius(real_t p_radius)
 {
-	collision = Renderer::particles_collision_create();
-	Renderer::particles_collision_set_collision_type(collision, p_type);
-	set_base(collision);
+	radius = p_radius;
+	Renderer::particles_collision_set_sphere_radius(collision, radius);
+}
+
+void GPUParticlesAttractor3D::set_size(const Vector3& p_size)
+{
+	size = p_size;
+	Renderer::particles_collision_set_box_extents(collision, size / 2);
+}
+
+void GPUParticlesAttractor3D::set_texture(const Ref<Texture3D>& p_texture)
+{
+	texture = p_texture;
+	RID tex = texture.is_valid() ? texture->get_rid() : RID();
+	Renderer::particles_collision_set_field_texture(collision, tex);
+}
+
+AABB GPUParticlesAttractor3D::get_aabb() const
+{
+	if (attractor_type == ATTRACTOR_SPHERE) {
+		return AABB(
+			Vector3(-radius, -radius, -radius), Vector3(radius * 2, radius * 2, radius * 2));
+	}
+	return AABB(-size / 2, size);
+}
+
+void GPUParticlesAttractor3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void GPUParticlesAttractor3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+GPUParticlesAttractor3D::GPUParticlesAttractor3D(AttractorType p_type) : attractor_type(p_type)
+{
+	if (Renderer::data) {
+		collision = Renderer::particles_collision_create();
+		_apply_attractor_type();
+		set_base(collision);
+	}
 }
 
 GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 {
-	ERR_FAIL_NULL(Renderer::data);
-	Renderer::free_rid(collision);
+	if (collision.is_valid() && Renderer::data) {
+		Renderer::free_rid(collision);
+	}
 }
-
-real_t GPUParticlesAttractorSphere3D::get_radius() const { return radius; }
-
-AABB GPUParticlesAttractorSphere3D::get_aabb() const
-{
-	return AABB(Vector3(-radius, -radius, -radius), Vector3(radius * 2, radius * 2, radius * 2));
-}
-
-GPUParticlesAttractorSphere3D::GPUParticlesAttractorSphere3D()
-	: GPUParticlesAttractor3D(RSE::PARTICLES_COLLISION_TYPE_SPHERE_ATTRACT)
-{
-}
-
-GPUParticlesAttractorSphere3D::~GPUParticlesAttractorSphere3D() {}
-
-Vector3 GPUParticlesAttractorBox3D::get_size() const { return size; }
-
-AABB GPUParticlesAttractorBox3D::get_aabb() const { return AABB(-size / 2, size); }
-
-GPUParticlesAttractorBox3D::GPUParticlesAttractorBox3D()
-	: GPUParticlesAttractor3D(RSE::PARTICLES_COLLISION_TYPE_BOX_ATTRACT)
-{
-}
-
-GPUParticlesAttractorBox3D::~GPUParticlesAttractorBox3D() {}
-
-Vector3 GPUParticlesAttractorVectorField3D::get_size() const { return size; }
-
-void GPUParticlesAttractorVectorField3D::set_texture(const Ref<Texture3D>& p_texture)
-{
-	texture = p_texture;
-	RID tex = texture.is_valid() ? texture->get_rid() : RID();
-	Renderer::particles_collision_set_field_texture(_get_collision(), tex);
-}
-
-Ref<Texture3D> GPUParticlesAttractorVectorField3D::get_texture() const { return texture; }
-
-AABB GPUParticlesAttractorVectorField3D::get_aabb() const { return AABB(-size / 2, size); }
-
-GPUParticlesAttractorVectorField3D::GPUParticlesAttractorVectorField3D()
-	: GPUParticlesAttractor3D(RSE::PARTICLES_COLLISION_TYPE_VECTOR_FIELD_ATTRACT)
-{
-}
-
-GPUParticlesAttractorVectorField3D::~GPUParticlesAttractorVectorField3D() {}
-
-

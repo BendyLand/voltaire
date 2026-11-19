@@ -39,21 +39,31 @@ class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
 #endif // NAVIGATION_3D_DISABLED
 
-class MultiMeshInstance3D : public GeometryInstance3D
+class MultiMeshInstance3D : public Node3D
 {
+public:
+	RenderInstance3D render_instance;
+
+private:
 	Ref<MultiMesh> multimesh;
 
 	void _refresh_interpolated();
 
 protected:
 	virtual void _physics_interpolated_changed() override;
+	virtual void fti_update_servers_xform() override;
 	void _notification(int p_what);
 
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
 	void set_multimesh(const Ref<MultiMesh>& p_multimesh);
 	Ref<MultiMesh> get_multimesh() const;
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
 
 private:
 #ifndef NAVIGATION_3D_DISABLED
@@ -70,5 +80,3 @@ public:
 	MultiMeshInstance3D() = default;
 	~MultiMeshInstance3D() = default;
 };
-
-

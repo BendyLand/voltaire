@@ -2641,6 +2641,89 @@ void Renderer::particles_collision_set_attractor_attenuation(
 		p_particles_collision, p_attenuation);
 }
 
+void Renderer::particles_collision_set_sphere_radius(
+	RID p_particles_collision, real_t p_radius)
+{
+	Renderer::particles_storage->particles_collision_set_sphere_radius(
+		p_particles_collision, p_radius);
+}
+
+void Renderer::particles_collision_set_box_extents(
+	RID p_particles_collision, const Vector3& p_extents)
+{
+	Renderer::particles_storage->particles_collision_set_box_extents(
+		p_particles_collision, p_extents);
+}
+
+void Renderer::canvas_light_set_texture(RID p_light, RID p_texture)
+{
+	Renderer::canvas->canvas_light_set_texture(p_light, p_texture);
+}
+
+RID Renderer::directional_light_create()
+{
+	RID ret = RendererLightStorage::directional_light_allocate();
+	RendererLightStorage::directional_light_initialize(ret);
+	return ret;
+}
+
+RID Renderer::omni_light_create()
+{
+	RID ret = RendererLightStorage::omni_light_allocate();
+	RendererLightStorage::omni_light_initialize(ret);
+	return ret;
+}
+
+RID Renderer::spot_light_create()
+{
+	RID ret = RendererLightStorage::spot_light_allocate();
+	RendererLightStorage::spot_light_initialize(ret);
+	return ret;
+}
+
+RID Renderer::area_light_create()
+{
+	RID ret = RendererLightStorage::area_light_allocate();
+	RendererLightStorage::area_light_initialize(ret);
+	return ret;
+}
+
+void Renderer::light_set_color(RID p_light, const Color& p_color)
+{
+	RendererLightStorage::light_set_color(p_light, p_color);
+}
+
+void Renderer::light_set_param(RID p_light, RSE::LightParam p_param, float p_value)
+{
+	RendererLightStorage::light_set_param(p_light, p_param, p_value);
+}
+
+void Renderer::light_set_shadow(RID p_light, bool p_enabled)
+{
+	RendererLightStorage::light_set_shadow(p_light, p_enabled);
+}
+
+void Renderer::light_set_projector(RID p_light, RID p_texture)
+{
+	RendererLightStorage::light_set_projector(p_light, p_texture);
+}
+
+void Renderer::light_directional_set_shadow_mode(
+	RID p_light, RSE::LightDirectionalShadowMode p_mode)
+{
+	RendererLightStorage::light_directional_set_shadow_mode(p_light, p_mode);
+}
+
+void Renderer::light_area_set_size(RID p_light, const Vector2& p_size)
+{
+	RendererLightStorage::light_area_set_size(p_light, p_size);
+}
+
+void Renderer::light_area_set_texture(RID p_light, RID p_texture)
+{
+	RendererLightStorage::light_area_set_texture(p_light, p_texture);
+}
+
 RID Renderer::fog_volume_create()
 {
 	RID ret = Renderer::fog->fog_volume_allocate();

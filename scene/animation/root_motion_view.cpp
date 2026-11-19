@@ -78,6 +78,16 @@ AABB RootMotionView::get_aabb() const
 }
 
 
+void RootMotionView::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void RootMotionView::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
 RootMotionView::RootMotionView()
 {
 	if (Engine::is_editor_hint()) {

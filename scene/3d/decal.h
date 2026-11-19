@@ -33,9 +33,11 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class Decal : public VisualInstance3D
+class Decal : public Node3D
 {
 public:
+	RenderInstance3D render_instance;
+
 	enum DecalTexture
 	{
 		TEXTURE_ALBEDO,
@@ -60,7 +62,16 @@ private:
 	real_t distance_fade_begin = 40.0;
 	real_t distance_fade_length = 10.0;
 
+protected:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
 	virtual PackedStringArray get_configuration_warnings() const override;
 
 	Vector3 get_size() const;
@@ -97,7 +108,7 @@ public:
 
 	uint32_t get_cull_mask() const;
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
 
 	Decal();
 	~Decal();

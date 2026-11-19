@@ -36,166 +36,37 @@
 
 class Mesh;
 
-class GPUParticlesCollision3D : public VisualInstance3D
-{
-	uint32_t cull_mask = 0xFFFFFFFF;
-	RID collision;
-
-protected:
-	_FORCE_INLINE_ RID _get_collision() { return collision; }
-
-
-	GPUParticlesCollision3D(RSE::ParticlesCollisionType p_type);
-
-public:
-	void set_cull_mask(uint32_t p_cull_mask);
-	uint32_t get_cull_mask() const;
-
-	~GPUParticlesCollision3D();
-};
-
-class GPUParticlesCollisionSphere3D : public GPUParticlesCollision3D
-{
-	real_t radius = 1.0;
-
-public:
-	real_t get_radius() const;
-
-	virtual AABB get_aabb() const override;
-
-	GPUParticlesCollisionSphere3D();
-	~GPUParticlesCollisionSphere3D();
-};
-
-class GPUParticlesCollisionBox3D : public GPUParticlesCollision3D
-{
-	Vector3 size = Vector3(2, 2, 2);
-
-public:
-	Vector3 get_size() const;
-
-	virtual AABB get_aabb() const override;
-
-	GPUParticlesCollisionBox3D();
-	~GPUParticlesCollisionBox3D();
-};
-
-class GPUParticlesCollisionSDF3D : public GPUParticlesCollision3D
+class GPUParticlesCollision3D : public Node3D
 {
 public:
-	enum Resolution
+	enum ShapeType
 	{
-		RESOLUTION_16,
-		RESOLUTION_32,
-		RESOLUTION_64,
-		RESOLUTION_128,
-		RESOLUTION_256,
-		RESOLUTION_512,
-		RESOLUTION_MAX,
+		SHAPE_SPHERE,
+		SHAPE_BOX,
+		SHAPE_SDF,
+		SHAPE_HEIGHT_FIELD,
 	};
 
-	typedef void (*BakeBeginFunc)(int);
-	typedef void (*BakeStepFunc)(int, const String&);
-	typedef void (*BakeEndFunc)();
-
-private:
-	Vector3 size = Vector3(2, 2, 2);
-	Resolution resolution = RESOLUTION_64;
-	uint32_t bake_mask = 0xFFFFFFFF;
-	Ref<Texture3D> texture;
-	float thickness = 1.0;
-
-	struct PlotMesh
+	enum SDFResolution
 	{
-		Ref<Mesh> mesh;
-		Transform3D local_xform;
+		SDF_RESOLUTION_16,
+		SDF_RESOLUTION_32,
+		SDF_RESOLUTION_64,
+		SDF_RESOLUTION_128,
+		SDF_RESOLUTION_256,
+		SDF_RESOLUTION_512,
+		SDF_RESOLUTION_MAX,
 	};
 
-	void _find_meshes(const AABB& p_aabb, Node* p_at_node, List<PlotMesh>& plot_meshes);
-
-	struct BVH
+	enum HeightFieldResolution
 	{
-		enum
-		{
-			LEAF_BIT = 1 << 30,
-			LEAF_MASK = LEAF_BIT - 1
-		};
-
-		AABB bounds;
-		uint32_t children[2] = {};
-	};
-
-	struct FacePos
-	{
-		Vector3 center;
-		uint32_t index = 0;
-	};
-
-	struct FaceSort
-	{
-		uint32_t axis = 0;
-
-		bool operator()(const FacePos& p_left, const FacePos& p_right) const
-		{
-			return p_left.center[axis] < p_right.center[axis];
-		}
-	};
-
-	struct ComputeSDFParams
-	{
-		float* cells = nullptr;
-		Vector3i size;
-		float cell_size = 0.0;
-		Vector3 cell_offset;
-		const BVH* bvh = nullptr;
-		float thickness = 0.0;
-	};
-
-	void _compute_sdf_z(uint32_t p_z, ComputeSDFParams* params);
-	void _compute_sdf(ComputeSDFParams* params);
-
-public:
-	virtual PackedStringArray get_configuration_warnings() const override;
-
-	void set_thickness(float p_thickness);
-	float get_thickness() const;
-
-	Vector3 get_size() const;
-
-	Resolution get_resolution() const;
-
-	uint32_t get_bake_mask() const;
-
-	bool get_bake_mask_value(int p_layer_number) const;
-
-	void set_texture(const Ref<Texture3D>& p_texture);
-	Ref<Texture3D> get_texture() const;
-
-	Vector3i get_estimated_cell_size() const;
-	Ref<Image> bake();
-
-	virtual AABB get_aabb() const override;
-
-	static BakeBeginFunc bake_begin_function;
-	static BakeStepFunc bake_step_function;
-	static BakeEndFunc bake_end_function;
-
-	GPUParticlesCollisionSDF3D();
-	~GPUParticlesCollisionSDF3D();
-};
-
-class GPUParticlesCollisionHeightField3D : public GPUParticlesCollision3D
-{
-public:
-	enum Resolution
-	{
-		RESOLUTION_256,
-		RESOLUTION_512,
-		RESOLUTION_1024,
-		RESOLUTION_2048,
-		RESOLUTION_4096,
-		RESOLUTION_8192,
-		RESOLUTION_MAX,
+		HEIGHTFIELD_RESOLUTION_256,
+		HEIGHTFIELD_RESOLUTION_512,
+		HEIGHTFIELD_RESOLUTION_1024,
+		HEIGHTFIELD_RESOLUTION_2048,
+		HEIGHTFIELD_RESOLUTION_4096,
+		HEIGHTFIELD_RESOLUTION_8192,
+		HEIGHTFIELD_RESOLUTION_MAX,
 	};
 
 	enum UpdateMode
@@ -204,56 +75,134 @@ public:
 		UPDATE_MODE_ALWAYS,
 	};
 
-private:
-	uint32_t heightfield_mask =
-		(1 << 20) - 1; // Only the first 20 bits are set by default to ignore editor layers.
-	Vector3 size = Vector3(2, 2, 2);
-	Resolution resolution = RESOLUTION_1024;
-	bool follow_camera_mode = false;
+	typedef void (*BakeBeginFunc)(int);
+	typedef void (*BakeStepFunc)(int, const String&);
+	typedef void (*BakeEndFunc)();
 
+	RenderInstance3D render_instance;
+
+private:
+	ShapeType shape_type = SHAPE_BOX;
+	uint32_t cull_mask = 0xFFFFFFFF;
+	RID collision;
+
+	real_t radius = 1.0;
+	Vector3 size = Vector3(2, 2, 2);
+
+	// SDF parameters
+	SDFResolution sdf_resolution = SDF_RESOLUTION_64;
+	uint32_t bake_mask = 0xFFFFFFFF;
+	Ref<Texture3D> texture;
+	float thickness = 1.0f;
+
+	// HeightField parameters
+	uint32_t heightfield_mask = (1 << 20) - 1;
+	HeightFieldResolution heightfield_resolution = HEIGHTFIELD_RESOLUTION_1024;
+	bool follow_camera_mode = false;
 	UpdateMode update_mode = UPDATE_MODE_WHEN_MOVED;
 
+	void _apply_shape_type();
+
 protected:
+	_FORCE_INLINE_ RID _get_collision() const { return collision; }
 	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 
 public:
-	Vector3 get_size() const;
+	static BakeBeginFunc bake_begin_function;
+	static BakeStepFunc bake_step_function;
+	static BakeEndFunc bake_end_function;
 
-	Resolution get_resolution() const;
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	void set_shape_type(ShapeType p_type);
+	ShapeType get_shape_type() const { return shape_type; }
+
+	void set_cull_mask(uint32_t p_cull_mask);
+	uint32_t get_cull_mask() const;
+
+	void set_radius(real_t p_radius);
+	real_t get_radius() const { return radius; }
+
+	void set_size(const Vector3& p_size);
+	Vector3 get_size() const { return size; }
+
+	void set_thickness(float p_thickness);
+	float get_thickness() const { return thickness; }
+
+	SDFResolution get_sdf_resolution() const { return sdf_resolution; }
+	uint32_t get_bake_mask() const { return bake_mask; }
+	bool get_bake_mask_value(int p_layer_number) const;
+
+	void set_texture(const Ref<Texture3D>& p_texture);
+	Ref<Texture3D> get_texture() const { return texture; }
+
+	Vector3i get_estimated_cell_size() const;
+
+	HeightFieldResolution get_heightfield_resolution() const { return heightfield_resolution; }
 
 	void set_update_mode(UpdateMode p_update_mode);
-	UpdateMode get_update_mode() const;
+	UpdateMode get_update_mode() const { return update_mode; }
 
 	void set_heightfield_mask(uint32_t p_heightfield_mask);
-	uint32_t get_heightfield_mask() const;
+	uint32_t get_heightfield_mask() const { return heightfield_mask; }
 
 	void set_heightfield_mask_value(int p_layer_number, bool p_value);
 	bool get_heightfield_mask_value(int p_layer_number) const;
 
 	void set_follow_camera_enabled(bool p_enabled);
-	bool is_follow_camera_enabled() const;
+	bool is_follow_camera_enabled() const { return follow_camera_mode; }
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
+	virtual PackedStringArray get_configuration_warnings() const override;
 
-	GPUParticlesCollisionHeightField3D();
-	~GPUParticlesCollisionHeightField3D();
+	GPUParticlesCollision3D(ShapeType p_type = SHAPE_BOX);
+	~GPUParticlesCollision3D();
 };
 
-class GPUParticlesAttractor3D : public VisualInstance3D
+class GPUParticlesAttractor3D : public Node3D
 {
+public:
+	enum AttractorType
+	{
+		ATTRACTOR_SPHERE,
+		ATTRACTOR_BOX,
+		ATTRACTOR_VECTOR_FIELD,
+	};
+
+	RenderInstance3D render_instance;
+
+private:
+	AttractorType attractor_type = ATTRACTOR_SPHERE;
 	uint32_t cull_mask = 0xFFFFFFFF;
 	RID collision;
 	real_t strength = 1.0;
 	real_t attenuation = 1.0;
 	real_t directionality = 0.0;
 
+	real_t radius = 1.0;
+	Vector3 size = Vector3(2, 2, 2);
+	Ref<Texture3D> texture;
+
+	void _apply_attractor_type();
+
 protected:
-	_FORCE_INLINE_ RID _get_collision() { return collision; }
-
-
-	GPUParticlesAttractor3D(RSE::ParticlesCollisionType p_type);
+	_FORCE_INLINE_ RID _get_collision() const { return collision; }
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	void set_attractor_type(AttractorType p_type);
+	AttractorType get_attractor_type() const { return attractor_type; }
+
 	void set_cull_mask(uint32_t p_cull_mask);
 	uint32_t get_cull_mask() const;
 
@@ -265,50 +214,17 @@ public:
 
 	real_t get_directionality() const;
 
-	~GPUParticlesAttractor3D();
-};
+	void set_radius(real_t p_radius);
+	real_t get_radius() const { return radius; }
 
-class GPUParticlesAttractorSphere3D : public GPUParticlesAttractor3D
-{
-	real_t radius = 1.0;
-
-public:
-	real_t get_radius() const;
-
-	virtual AABB get_aabb() const override;
-
-	GPUParticlesAttractorSphere3D();
-	~GPUParticlesAttractorSphere3D();
-};
-
-class GPUParticlesAttractorBox3D : public GPUParticlesAttractor3D
-{
-	Vector3 size = Vector3(2, 2, 2);
-
-public:
-	Vector3 get_size() const;
-
-	virtual AABB get_aabb() const override;
-
-	GPUParticlesAttractorBox3D();
-	~GPUParticlesAttractorBox3D();
-};
-
-class GPUParticlesAttractorVectorField3D : public GPUParticlesAttractor3D
-{
-	Vector3 size = Vector3(2, 2, 2);
-	Ref<Texture3D> texture;
-
-public:
-	Vector3 get_size() const;
+	void set_size(const Vector3& p_size);
+	Vector3 get_size() const { return size; }
 
 	void set_texture(const Ref<Texture3D>& p_texture);
-	Ref<Texture3D> get_texture() const;
+	Ref<Texture3D> get_texture() const { return texture; }
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
 
-	GPUParticlesAttractorVectorField3D();
-	~GPUParticlesAttractorVectorField3D();
+	GPUParticlesAttractor3D(AttractorType p_type = ATTRACTOR_SPHERE);
+	~GPUParticlesAttractor3D();
 };
-
-

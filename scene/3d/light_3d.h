@@ -33,7 +33,7 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class Light3D : public VisualInstance3D
+class Light3D : public Node3D
 {
 public:
 	enum Param
@@ -69,44 +69,88 @@ public:
 		BAKE_DYNAMIC,
 	};
 
+	enum DirectionalShadowMode
+	{
+		DIRECTIONAL_SHADOW_ORTHOGONAL,
+		DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS,
+		DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS,
+	};
+
+	enum SkyMode
+	{
+		SKY_MODE_LIGHT_AND_SKY,
+		SKY_MODE_LIGHT_ONLY,
+		SKY_MODE_SKY_ONLY,
+	};
+
+	enum OmniShadowMode
+	{
+		OMNI_SHADOW_DUAL_PARABOLOID,
+		OMNI_SHADOW_CUBE,
+	};
+
+	RenderInstance3D render_instance;
+
 private:
-	Color color;
+	RSE::LightType type = RSE::LIGHT_DIRECTIONAL;
+	RID light;
+
+	Color color = Color(1, 1, 1);
 	real_t param[PARAM_MAX] = {};
 	bool shadow = false;
 	bool negative = false;
 	bool reverse_cull = false;
-	uint32_t cull_mask = 0;
+	uint32_t cull_mask = 0xFFFFFFFF;
 	uint32_t shadow_caster_mask = 0xFFFFFFFF;
 	bool distance_fade_enabled = false;
 	real_t distance_fade_begin = 40.0;
 	real_t distance_fade_shadow = 50.0;
 	real_t distance_fade_length = 10.0;
-	RSE::LightType type = RSE::LIGHT_DIRECTIONAL;
 	bool editor_only = false;
-	void _update_visibility();
 	BakeMode bake_mode = BAKE_DYNAMIC;
 	Ref<Texture2D> projector;
 	Color correlated_color = Color(1.0, 1.0, 1.0);
 	float temperature = 6500.0;
-	// bind helpers
+
+	// Directional-specific state
+	bool blend_splits = false;
+	DirectionalShadowMode directional_shadow_mode = DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS;
+	SkyMode sky_mode = SKY_MODE_LIGHT_AND_SKY;
+
+	// Omni-specific state
+	OmniShadowMode omni_shadow_mode = OMNI_SHADOW_CUBE;
+
+	// Area-specific state
+	Vector2 area_size = Vector2(1.0, 1.0);
+	Ref<Texture2D> area_texture;
+	bool area_normalize_energy = true;
+
+	void _create_light_rid();
+	void _free_light_rid();
+	void _update_visibility();
 
 	virtual void owner_changed_notify() override;
 
 protected:
-	RID light;
-
 	void _notification(int p_what);
-
-	Light3D(RSE::LightType p_type) : type(p_type) {}
+	virtual void fti_update_servers_xform() override;
 
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	void set_light_type(RSE::LightType p_type);
 	RSE::LightType get_light_type() const { return type; }
 
 	void set_editor_only(bool p_editor_only);
 	bool is_editor_only() const;
 
+	void set_param(Param p_param, real_t p_value);
 	real_t get_param(Param p_param) const;
 
+	void set_shadow(bool p_enable);
 	bool has_shadow() const;
 
 	void set_negative(bool p_enable);
@@ -127,6 +171,7 @@ public:
 	void set_cull_mask(uint32_t p_cull_mask);
 	uint32_t get_cull_mask() const;
 
+	void set_color(const Color& p_color);
 	Color get_color() const;
 
 	void set_shadow_reverse_cull_face(bool p_enable);
@@ -144,99 +189,33 @@ public:
 	float get_temperature() const;
 	Color get_correlated_color() const;
 
-	virtual AABB get_aabb() const override;
-	virtual PackedStringArray get_configuration_warnings() const override;
-
-	Light3D();
-	~Light3D();
-};
-
-class DirectionalLight3D : public Light3D
-{
-public:
-	enum ShadowMode
-	{
-		SHADOW_ORTHOGONAL,
-		SHADOW_PARALLEL_2_SPLITS,
-		SHADOW_PARALLEL_4_SPLITS,
-	};
-
-	enum SkyMode
-	{
-		SKY_MODE_LIGHT_AND_SKY,
-		SKY_MODE_LIGHT_ONLY,
-		SKY_MODE_SKY_ONLY,
-	};
-
-private:
-	bool blend_splits;
-	ShadowMode shadow_mode;
-	SkyMode sky_mode = SKY_MODE_LIGHT_AND_SKY;
-
-public:
-	void set_shadow_mode(ShadowMode p_mode);
-	ShadowMode get_shadow_mode() const;
+	// Directional light parameters
+	void set_directional_shadow_mode(DirectionalShadowMode p_mode);
+	DirectionalShadowMode get_directional_shadow_mode() const { return directional_shadow_mode; }
 
 	void set_blend_splits(bool p_enable);
-	bool is_blend_splits_enabled() const;
+	bool is_blend_splits_enabled() const { return blend_splits; }
 
 	void set_sky_mode(SkyMode p_mode);
-	SkyMode get_sky_mode() const;
+	SkyMode get_sky_mode() const { return sky_mode; }
 
-	DirectionalLight3D() = default;
-};
+	// Omni light parameters
+	void set_omni_shadow_mode(OmniShadowMode p_mode);
+	OmniShadowMode get_omni_shadow_mode() const { return omni_shadow_mode; }
 
-
-class OmniLight3D : public Light3D
-{
-public:
-	// omni light
-	enum ShadowMode
-	{
-		SHADOW_DUAL_PARABOLOID,
-		SHADOW_CUBE,
-	};
-
-private:
-	ShadowMode shadow_mode;
-
-public:
-	void set_shadow_mode(ShadowMode p_mode);
-	ShadowMode get_shadow_mode() const;
-
-	PackedStringArray get_configuration_warnings() const override;
-
-	OmniLight3D();
-};
-
-class SpotLight3D : public Light3D
-{
-public:
-	PackedStringArray get_configuration_warnings() const override;
-
-	SpotLight3D() : Light3D(RSE::LIGHT_SPOT) {}
-};
-
-class AreaLight3D : public Light3D
-{
-private:
-	Vector2 area_size;
-	Ref<Texture2D> area_texture;
-	bool area_normalize_energy = true;
-
-public:
-	Vector2 get_area_size() const;
+	// Area light parameters
+	void set_area_size(const Vector2& p_size);
+	Vector2 get_area_size() const { return area_size; }
 
 	void set_area_texture(const Ref<Texture2D>& p_texture);
-	Ref<Texture2D> get_area_texture() const;
+	Ref<Texture2D> get_area_texture() const { return area_texture; }
 
 	void set_area_normalize_energy(bool p_enable);
-	bool is_area_normalizing_energy() const;
+	bool is_area_normalizing_energy() const { return area_normalize_energy; }
 
-	PackedStringArray get_configuration_warnings() const override;
+	AABB get_aabb() const;
+	virtual PackedStringArray get_configuration_warnings() const override;
 
-	AreaLight3D() : Light3D(RSE::LIGHT_AREA) {}
-	~AreaLight3D();
+	Light3D(RSE::LightType p_type = RSE::LIGHT_DIRECTIONAL);
+	~Light3D();
 };
-
-

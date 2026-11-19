@@ -549,8 +549,15 @@ void CPUParticles3D::_update_render_thread()
 	}
 }
 
+void CPUParticles3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
 void CPUParticles3D::_notification(int p_what)
 {
+	render_instance.notification(this, p_what);
+
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
 		set_process_internal(emitting);

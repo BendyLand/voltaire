@@ -35,8 +35,12 @@
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/material.h"
 
-class FogVolume : public VisualInstance3D
+class FogVolume : public Node3D
 {
+public:
+	RenderInstance3D render_instance;
+
+private:
 	Vector3 size = Vector3(2, 2, 2);
 	Ref<Material> material;
 	RSE::FogVolumeShape shape = RSE::FOG_VOLUME_SHAPE_BOX;
@@ -45,8 +49,15 @@ class FogVolume : public VisualInstance3D
 
 protected:
 	_FORCE_INLINE_ RID _get_volume() { return volume; }
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
 	Vector3 get_size() const;
 
 	void set_shape(RSE::FogVolumeShape p_type);
@@ -54,11 +65,9 @@ public:
 
 	Ref<Material> get_material() const;
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
 	PackedStringArray get_configuration_warnings() const override;
 
 	FogVolume();
 	~FogVolume();
 };
-
-

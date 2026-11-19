@@ -34,13 +34,11 @@
 #include "core/types.h"
 #include "servers/physics_2d/physics_server_2d_types.h"
 
-class CharacterBody2D;
 class PhysicsBody2D;
 
 class KinematicCollision2D : public RefCounted
 {
 	friend class PhysicsBody2D;
-	friend class CharacterBody2D;
 	PS2DT::MotionResult result;
 
 protected:

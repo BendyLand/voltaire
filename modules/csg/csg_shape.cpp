@@ -707,6 +707,24 @@ Vector<Vector3> CSGShape3D::get_brush_faces()
 	return faces;
 }
 
+void CSGShape3D::set_shape_type(ShapeType p_type)
+{
+	if (shape_type == p_type) {
+		return;
+	}
+	shape_type = p_type;
+	_make_dirty();
+}
+
+void CSGShape3D::set_operation(Operation p_operation)
+{
+	if (operation == p_operation) {
+		return;
+	}
+	operation = p_operation;
+	_make_dirty();
+}
+
 CSGShape3D::Operation CSGShape3D::get_operation() const { return operation; }
 
 void CSGShape3D::set_calculate_tangents(bool p_calculate_tangents)
@@ -742,7 +760,27 @@ Ref<TriangleMesh> CSGShape3D::generate_triangle_mesh() const
 	return Ref<TriangleMesh>();
 }
 
-CSGShape3D::CSGShape3D() { set_notify_local_transform(true); }
+void CSGShape3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void CSGShape3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+CSGShape3D::CSGShape3D(ShapeType p_type) : shape_type(p_type)
+{
+	set_notify_local_transform(true);
+	if (shape_type == SHAPE_POLYGON) {
+		smooth_faces = false;
+	}
+	polygon.push_back(Vector2(0, 0));
+	polygon.push_back(Vector2(0, 1));
+	polygon.push_back(Vector2(1, 1));
+	polygon.push_back(Vector2(1, 0));
+}
 
 CSGShape3D::~CSGShape3D()
 {
@@ -752,14 +790,28 @@ CSGShape3D::~CSGShape3D()
 	}
 }
 
-CSGBrush* CSGCombiner3D::_build_brush()
+CSGBrush* CSGShape3D::_build_brush()
 {
-	return memnew(CSGBrush); // does not build anything
+	switch (shape_type) {
+	case SHAPE_COMBINER:
+		return memnew(CSGBrush);
+	case SHAPE_BOX:
+		return _build_box_brush();
+	case SHAPE_SPHERE:
+		return _build_sphere_brush();
+	case SHAPE_CYLINDER:
+		return _build_cylinder_brush();
+	case SHAPE_TORUS:
+		return _build_torus_brush();
+	case SHAPE_MESH:
+		return _build_mesh_brush();
+	case SHAPE_POLYGON:
+		return _build_polygon_brush();
+	}
+	return memnew(CSGBrush);
 }
 
-CSGCombiner3D::CSGCombiner3D() {}
-
-CSGBrush* CSGPrimitive3D::_create_brush_from_arrays(const Vector<Vector3>& p_vertices,
+CSGBrush* CSGShape3D::_create_brush_from_arrays(const Vector<Vector3>& p_vertices,
 	const Vector<Vector2>& p_uv, const Vector<bool>& p_smooth,
 	const Vector<Ref<Material>>& p_materials)
 {
@@ -779,22 +831,29 @@ CSGBrush* CSGPrimitive3D::_create_brush_from_arrays(const Vector<Vector3>& p_ver
 	return new_brush;
 }
 
-void CSGPrimitive3D::set_flip_faces(bool p_invert)
+void CSGShape3D::set_flip_faces(bool p_invert)
 {
 	if (flip_faces == p_invert) {
 		return;
 	}
-
 	flip_faces = p_invert;
-
 	_make_dirty();
 }
 
-bool CSGPrimitive3D::get_flip_faces() { return flip_faces; }
+bool CSGShape3D::get_flip_faces() const { return flip_faces; }
 
-CSGPrimitive3D::CSGPrimitive3D() { flip_faces = false; }
+void CSGShape3D::set_smooth_faces(bool p_smooth_faces)
+{
+	if (smooth_faces == p_smooth_faces) {
+		return;
+	}
+	smooth_faces = p_smooth_faces;
+	_make_dirty();
+}
 
-void CSGMesh3D::set_material(const Ref<Material>& p_material)
+bool CSGShape3D::get_smooth_faces() const { return smooth_faces; }
+
+void CSGShape3D::set_material(const Ref<Material>& p_material)
 {
 	if (material == p_material) {
 		return;
@@ -803,11 +862,48 @@ void CSGMesh3D::set_material(const Ref<Material>& p_material)
 	_make_dirty();
 }
 
-Ref<Material> CSGMesh3D::get_material() const { return material; }
+Ref<Material> CSGShape3D::get_material() const { return material; }
 
-Ref<Mesh> CSGMesh3D::get_mesh() { return mesh; }
+void CSGShape3D::set_mesh(const Ref<Mesh>& p_mesh)
+{
+	if (mesh == p_mesh) {
+		return;
+	}
+	mesh = p_mesh;
+	_make_dirty();
+}
 
-CSGBrush* CSGSphere3D::_build_brush()
+CSGBrush* CSGShape3D::_build_mesh_brush()
+{
+	if (mesh.is_null()) {
+		return memnew(CSGBrush);
+	}
+	Vector<Face3> faces = mesh->get_faces();
+	int face_count = faces.size();
+	if (face_count == 0) {
+		return memnew(CSGBrush);
+	}
+	Vector<Vector3> vertices;
+	vertices.resize(face_count * 3);
+	for (int i = 0; i < face_count; i++) {
+		vertices.write[i * 3 + 0] = faces[i].vertex[0];
+		vertices.write[i * 3 + 1] = faces[i].vertex[1];
+		vertices.write[i * 3 + 2] = faces[i].vertex[2];
+	}
+	Vector<Vector2> uvs;
+	uvs.resize(vertices.size());
+	Vector<bool> smooth;
+	smooth.resize(face_count);
+	Vector<Ref<Material>> materials;
+	materials.resize(face_count);
+	for (int i = 0; i < face_count; i++) {
+		smooth.write[i] = false;
+		materials.write[i] = material;
+	}
+	return _create_brush_from_arrays(vertices, uvs, smooth, materials);
+}
+
+CSGBrush* CSGShape3D::_build_sphere_brush()
 {
 	// set our bounding box
 
@@ -939,38 +1035,7 @@ CSGBrush* CSGSphere3D::_build_brush()
 	return new_brush;
 }
 
-float CSGSphere3D::get_radius() const { return radius; }
-
-int CSGSphere3D::get_radial_segments() const { return radial_segments; }
-
-int CSGSphere3D::get_rings() const { return rings; }
-
-void CSGSphere3D::set_smooth_faces(const bool p_smooth_faces)
-{
-	smooth_faces = p_smooth_faces;
-	_make_dirty();
-}
-
-bool CSGSphere3D::get_smooth_faces() const { return smooth_faces; }
-
-void CSGSphere3D::set_material(const Ref<Material>& p_material)
-{
-	material = p_material;
-	_make_dirty();
-}
-
-Ref<Material> CSGSphere3D::get_material() const { return material; }
-
-CSGSphere3D::CSGSphere3D()
-{
-	// defaults
-	radius = 0.5;
-	radial_segments = 12;
-	rings = 6;
-	smooth_faces = true;
-}
-
-CSGBrush* CSGBox3D::_build_brush()
+CSGBrush* CSGShape3D::_build_box_brush()
 {
 	// set our bounding box
 
@@ -1072,11 +1137,7 @@ CSGBrush* CSGBox3D::_build_brush()
 	return new_brush;
 }
 
-Vector3 CSGBox3D::get_size() const { return size; }
-
-Ref<Material> CSGBox3D::get_material() const { return material; }
-
-CSGBrush* CSGCylinder3D::_build_brush()
+CSGBrush* CSGShape3D::_build_cylinder_brush()
 {
 	// set our bounding box
 
@@ -1216,41 +1277,7 @@ CSGBrush* CSGCylinder3D::_build_brush()
 	return new_brush;
 }
 
-float CSGCylinder3D::get_radius() const { return radius; }
-
-float CSGCylinder3D::get_height() const { return height; }
-
-int CSGCylinder3D::get_sides() const { return sides; }
-
-bool CSGCylinder3D::is_cone() const { return cone; }
-
-void CSGCylinder3D::set_smooth_faces(const bool p_smooth_faces)
-{
-	smooth_faces = p_smooth_faces;
-	_make_dirty();
-}
-
-bool CSGCylinder3D::get_smooth_faces() const { return smooth_faces; }
-
-void CSGCylinder3D::set_material(const Ref<Material>& p_material)
-{
-	material = p_material;
-	_make_dirty();
-}
-
-Ref<Material> CSGCylinder3D::get_material() const { return material; }
-
-CSGCylinder3D::CSGCylinder3D()
-{
-	// defaults
-	radius = 0.5;
-	height = 2.0;
-	sides = 8;
-	cone = false;
-	smooth_faces = true;
-}
-
-CSGBrush* CSGTorus3D::_build_brush()
+CSGBrush* CSGShape3D::_build_torus_brush()
 {
 	// set our bounding box
 	float min_radius = inner_radius;
@@ -1379,139 +1406,185 @@ CSGBrush* CSGTorus3D::_build_brush()
 	return new_brush;
 }
 
-float CSGTorus3D::get_inner_radius() const { return inner_radius; }
-
-float CSGTorus3D::get_outer_radius() const { return outer_radius; }
-
-int CSGTorus3D::get_sides() const { return sides; }
-
-int CSGTorus3D::get_ring_sides() const { return ring_sides; }
-
-void CSGTorus3D::set_smooth_faces(const bool p_smooth_faces)
+void CSGShape3D::set_size(const Vector3& p_size)
 {
-	smooth_faces = p_smooth_faces;
+	size = p_size;
 	_make_dirty();
 }
 
-bool CSGTorus3D::get_smooth_faces() const { return smooth_faces; }
-
-void CSGTorus3D::set_material(const Ref<Material>& p_material)
+void CSGShape3D::set_radius(float p_radius)
 {
-	material = p_material;
+	radius = p_radius;
 	_make_dirty();
 }
 
-Ref<Material> CSGTorus3D::get_material() const { return material; }
-
-CSGTorus3D::CSGTorus3D()
+void CSGShape3D::set_height(float p_height)
 {
-	// defaults
-	inner_radius = 0.5;
-	outer_radius = 1.0;
-	sides = 8;
-	ring_sides = 6;
-	smooth_faces = true;
+	height = p_height;
+	_make_dirty();
 }
 
-void CSGPolygon3D::_path_exited() { path = nullptr; }
+void CSGShape3D::set_inner_radius(float p_radius)
+{
+	inner_radius = p_radius;
+	_make_dirty();
+}
 
-Vector<Vector2> CSGPolygon3D::get_polygon() const { return polygon; }
+void CSGShape3D::set_outer_radius(float p_radius)
+{
+	outer_radius = p_radius;
+	_make_dirty();
+}
 
-CSGPolygon3D::Mode CSGPolygon3D::get_mode() const { return mode; }
+void CSGShape3D::set_radial_segments(int p_segments)
+{
+	radial_segments = MAX(4, p_segments);
+	_make_dirty();
+}
 
-float CSGPolygon3D::get_depth() const { return depth; }
+void CSGShape3D::set_rings(int p_rings)
+{
+	rings = MAX(1, p_rings);
+	_make_dirty();
+}
 
-void CSGPolygon3D::set_path_continuous_u(bool p_enable)
+void CSGShape3D::set_sides(int p_sides)
+{
+	sides = MAX(3, p_sides);
+	_make_dirty();
+}
+
+void CSGShape3D::set_ring_sides(int p_ring_sides)
+{
+	ring_sides = MAX(3, p_ring_sides);
+	_make_dirty();
+}
+
+void CSGShape3D::set_cone(bool p_cone)
+{
+	cone = p_cone;
+	_make_dirty();
+}
+
+void CSGShape3D::set_polygon(const Vector<Vector2>& p_polygon)
+{
+	polygon = p_polygon;
+	_make_dirty();
+}
+
+void CSGShape3D::set_polygon_mode(PolygonMode p_mode)
+{
+	polygon_mode = p_mode;
+	_make_dirty();
+}
+
+void CSGShape3D::set_depth(float p_depth)
+{
+	depth = p_depth;
+	_make_dirty();
+}
+
+void CSGShape3D::set_spin_degrees(float p_degrees)
+{
+	spin_degrees = p_degrees;
+	_make_dirty();
+}
+
+void CSGShape3D::set_spin_sides(int p_sides)
+{
+	spin_sides = p_sides;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_node(const NodePath& p_path)
+{
+	path_node = p_path;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_interval_type(PathIntervalType p_type)
+{
+	path_interval_type = p_type;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_interval(float p_interval)
+{
+	path_interval = p_interval;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_simplify_angle(float p_angle)
+{
+	path_simplify_angle = p_angle;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_rotation(PathRotation p_rotation)
+{
+	path_rotation = p_rotation;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_rotation_accurate(bool p_accurate)
+{
+	path_rotation_accurate = p_accurate;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_local(bool p_local)
+{
+	path_local = p_local;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_continuous_u(bool p_enable)
 {
 	path_continuous_u = p_enable;
 	_make_dirty();
 }
 
-bool CSGPolygon3D::is_path_continuous_u() const { return path_continuous_u; }
-
-real_t CSGPolygon3D::get_path_u_distance() const { return path_u_distance; }
-
-float CSGPolygon3D::get_spin_degrees() const { return spin_degrees; }
-
-int CSGPolygon3D::get_spin_sides() const { return spin_sides; }
-
-NodePath CSGPolygon3D::get_path_node() const { return path_node; }
-
-CSGPolygon3D::PathIntervalType CSGPolygon3D::get_path_interval_type() const
+void CSGShape3D::set_path_u_distance(real_t p_distance)
 {
-	return path_interval_type;
-}
-
-float CSGPolygon3D::get_path_interval() const { return path_interval; }
-
-float CSGPolygon3D::get_path_simplify_angle() const { return path_simplify_angle; }
-
-CSGPolygon3D::PathRotation CSGPolygon3D::get_path_rotation() const { return path_rotation; }
-
-bool CSGPolygon3D::get_path_rotation_accurate() const { return path_rotation_accurate; }
-
-bool CSGPolygon3D::is_path_local() const { return path_local; }
-
-bool CSGPolygon3D::is_path_joined() const { return path_joined; }
-
-void CSGPolygon3D::set_smooth_faces(const bool p_smooth_faces)
-{
-	smooth_faces = p_smooth_faces;
+	path_u_distance = p_distance;
 	_make_dirty();
 }
 
-bool CSGPolygon3D::get_smooth_faces() const { return smooth_faces; }
-
-void CSGPolygon3D::set_material(const Ref<Material>& p_material)
+void CSGShape3D::set_path_joined(bool p_joined)
 {
-	material = p_material;
+	path_joined = p_joined;
 	_make_dirty();
 }
 
-Ref<Material> CSGPolygon3D::get_material() const { return material; }
+void CSGShape3D::_path_exited() { path = nullptr; }
 
-bool CSGPolygon3D::_is_editable_3d_polygon() const { return true; }
+bool CSGShape3D::_is_editable_3d_polygon() const { return shape_type == SHAPE_POLYGON; }
 
-bool CSGPolygon3D::_has_editable_3d_polygon_no_depth() const { return true; }
+bool CSGShape3D::_has_editable_3d_polygon_no_depth() const { return shape_type == SHAPE_POLYGON; }
 
-CSGPolygon3D::CSGPolygon3D()
+void CSGShape3D::_make_dirty(bool p_parent_removing)
 {
-	// defaults
-	mode = MODE_DEPTH;
-	polygon.push_back(Vector2(0, 0));
-	polygon.push_back(Vector2(0, 1));
-	polygon.push_back(Vector2(1, 1));
-	polygon.push_back(Vector2(1, 0));
-	depth = 1.0;
-	spin_degrees = 360;
-	spin_sides = 8;
-	smooth_faces = false;
-	path_interval_type = PATH_INTERVAL_DISTANCE;
-	path_interval = 1.0;
-	path_simplify_angle = 0.0;
-	path_rotation = PATH_ROTATION_PATH_FOLLOW;
-	path_rotation_accurate = false;
-	path_local = false;
-	path_continuous_u = true;
-	path_u_distance = 1.0;
-	path_joined = false;
-	path = nullptr;
+	(void)p_parent_removing;
+	if (brush) {
+		memdelete(brush);
+		brush = nullptr;
+	}
+	dirty = true;
 }
-
-void CSGShape3D::_make_dirty(bool p_parent_removing) {}
 
 CSGBrush* CSGShape3D::_get_brush()
 {
-	CSGBrush csgb = CSGBrush();
-	return &csgb;
+	if (!brush) {
+		brush = _build_brush();
+	}
+	return brush;
 }
 
 void CSGShape3D::navmesh_parse_init() {}
 
-CSGBrush* CSGPolygon3D::_build_brush()
+CSGBrush* CSGShape3D::_build_polygon_brush()
 {
-	CSGBrush csgb = CSGBrush();
-	return &csgb;
+	return memnew(CSGBrush);
 }
 
 

@@ -37,31 +37,37 @@ class Viewport;
 
 class VisibleOnScreenNotifier2D : public Node2D
 {
-	Rect2 rect;
-	bool show_rect = true;
+public:
+	enum EnableMode
+	{
+		ENABLE_MODE_INHERIT,
+		ENABLE_MODE_ALWAYS,
+		ENABLE_MODE_WHEN_PAUSED,
+	};
 
 private:
+	Rect2 rect;
+	bool show_rect = true;
 	bool on_screen = false;
+	bool enabler_enabled = false;
+	EnableMode enable_mode = ENABLE_MODE_INHERIT;
+	NodePath enable_node_path = NodePath("..");
+
 	void _visibility_enter();
 	void _visibility_exit();
+	void _update_enable_mode(bool p_enable);
 
 protected:
-	virtual void _screen_enter() {}
-
-	virtual void _screen_exit() {}
-
 	void _notification(int p_what);
 
 public:
 #ifdef TOOLS_ENABLED
 	virtual Vector2 _edit_get_minimum_size() const override { return Vector2(); }
-
 	virtual void _edit_set_rect(const Rect2& p_edit_rect) override;
 #endif // TOOLS_ENABLED
 
 #ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
-
 	virtual bool _edit_use_rect() const override;
 #endif // DEBUG_ENABLED
 
@@ -73,38 +79,14 @@ public:
 
 	bool is_on_screen() const;
 
-	VisibleOnScreenNotifier2D();
-};
+	void set_enabler_enabled(bool p_enabled);
+	bool is_enabler_enabled() const { return enabler_enabled; }
 
-class VisibleOnScreenEnabler2D : public VisibleOnScreenNotifier2D
-{
-public:
-	enum EnableMode
-	{
-		ENABLE_MODE_INHERIT,
-		ENABLE_MODE_ALWAYS,
-		ENABLE_MODE_WHEN_PAUSED,
-	};
-
-protected:
-	virtual void _screen_enter() override;
-	virtual void _screen_exit() override;
-
-	EnableMode enable_mode = ENABLE_MODE_INHERIT;
-	NodePath enable_node_path = NodePath("..");
-
-	void _notification(int p_what);
-
-	void _update_enable_mode(bool p_enable);
-
-public:
 	void set_enable_mode(EnableMode p_mode);
-	EnableMode get_enable_mode();
+	EnableMode get_enable_mode() const { return enable_mode; }
 
-	void set_enable_node_path(NodePath p_path);
-	NodePath get_enable_node_path();
+	void set_enable_node_path(const NodePath& p_path);
+	NodePath get_enable_node_path() const { return enable_node_path; }
 
-	VisibleOnScreenEnabler2D() = default;
+	VisibleOnScreenNotifier2D(bool p_enabler = false);
 };
-
-

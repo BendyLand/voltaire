@@ -135,8 +135,24 @@ void SoftBody3D::_update_pickable()
 	PhysicsServer3D::soft_body_set_ray_pickable(physics_rid, pickable);
 }
 
+void SoftBody3D::set_mesh(const Ref<Mesh>& p_mesh)
+{
+	mesh = p_mesh;
+	render_instance.set_base(mesh.is_valid() ? mesh->get_rid() : RID());
+	if (is_inside_tree()) {
+		_prepare_physics_server();
+	}
+}
+
+void SoftBody3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
 void SoftBody3D::_notification(int p_what)
 {
+	render_instance.notification(this, p_what);
+
 	switch (p_what) {
 	case NOTIFICATION_ENTER_WORLD: {
 		if (Engine::is_editor_hint()) {
@@ -197,7 +213,8 @@ void SoftBody3D::_notification(int p_what)
 
 PackedStringArray SoftBody3D::get_configuration_warnings() const
 {
-	PackedStringArray warnings = MeshInstance3D::get_configuration_warnings();
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+	render_instance.append_geometry_warnings(warnings);
 
 	if (mesh.is_null()) {
 		warnings.push_back(RTR("This body will be ignored until you set a mesh."));
@@ -471,11 +488,20 @@ void SoftBody3D::set_ray_pickable(bool p_ray_pickable)
 
 bool SoftBody3D::is_ray_pickable() const { return ray_pickable; }
 
+SoftBody3D::SoftBody3D()
+{
+	rendering_server_handler = memnew(SoftBodyRenderingServerHandler);
+	if (PhysicsServer3D::is_initialized()) {
+		physics_rid = PhysicsServer3D::soft_body_create();
+	}
+}
+
 SoftBody3D::~SoftBody3D()
 {
 	memdelete(rendering_server_handler);
-	ERR_FAIL_COND(!PhysicsServer3D::is_initialized());
-	PhysicsServer3D::free_rid(physics_rid);
+	if (physics_rid.is_valid() && PhysicsServer3D::is_initialized()) {
+		PhysicsServer3D::free_rid(physics_rid);
+	}
 }
 
 void SoftBody3D::_make_cache_dirty() { pinned_points_cache_dirty = true; }

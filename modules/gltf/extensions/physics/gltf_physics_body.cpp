@@ -30,11 +30,8 @@
 /**************************************************************************/
 
 #include "gltf_physics_body.h"
-#include "scene/3d/physics/animatable_body_3d.h"
 #include "scene/3d/physics/area_3d.h"
-#include "scene/3d/physics/character_body_3d.h"
-#include "scene/3d/physics/static_body_3d.h"
-#include "scene/3d/physics/vehicle_body_3d.h"
+#include "scene/3d/physics/physics_body_3d.h"
 
 
 String GLTFPhysicsBody::get_body_type() const
@@ -142,48 +139,42 @@ void GLTFPhysicsBody::set_inertia_tensor(const Basis& p_inertia_tensor)
 }
 #endif // DISABLE_DEPRECATED
 
-CollisionObject3D* GLTFPhysicsBody::to_node() const
+Node3D* GLTFPhysicsBody::to_node() const
 {
 	switch (body_type) {
 	case PhysicsBodyType::CHARACTER: {
-		CharacterBody3D* body = memnew(CharacterBody3D);
-		return body;
+		return memnew(PhysicsBody3D(PhysicsBody3D::MODE_CHARACTER));
 	}
 	case PhysicsBodyType::ANIMATABLE: {
-		AnimatableBody3D* body = memnew(AnimatableBody3D);
-		return body;
+		return memnew(PhysicsBody3D(PhysicsBody3D::MODE_ANIMATABLE));
 	}
 	case PhysicsBodyType::VEHICLE: {
-		VehicleBody3D* body = memnew(VehicleBody3D);
+		PhysicsBody3D* body = memnew(PhysicsBody3D(PhysicsBody3D::MODE_VEHICLE));
 		body->set_mass(mass);
 		body->set_linear_velocity(linear_velocity);
 		body->set_angular_velocity(angular_velocity);
 		body->set_inertia(inertia_diagonal);
-		body->set_center_of_mass_mode(RigidBody3D::CENTER_OF_MASS_MODE_CUSTOM);
+		body->set_center_of_mass_mode(PhysicsBody3D::CENTER_OF_MASS_MODE_CUSTOM);
 		body->set_center_of_mass(center_of_mass);
 		return body;
 	}
 	case PhysicsBodyType::RIGID: {
-		RigidBody3D* body = memnew(RigidBody3D);
+		PhysicsBody3D* body = memnew(PhysicsBody3D(PhysicsBody3D::MODE_RIGID));
 		body->set_mass(mass);
 		body->set_linear_velocity(linear_velocity);
 		body->set_angular_velocity(angular_velocity);
 		body->set_inertia(inertia_diagonal);
-		body->set_center_of_mass_mode(RigidBody3D::CENTER_OF_MASS_MODE_CUSTOM);
+		body->set_center_of_mass_mode(PhysicsBody3D::CENTER_OF_MASS_MODE_CUSTOM);
 		body->set_center_of_mass(center_of_mass);
 		return body;
 	}
 	case PhysicsBodyType::STATIC: {
-		StaticBody3D* body = memnew(StaticBody3D);
-		return body;
+		return memnew(PhysicsBody3D(PhysicsBody3D::MODE_STATIC));
 	}
 	case PhysicsBodyType::TRIGGER: {
-		Area3D* body = memnew(Area3D);
-		return body;
+		return memnew(Area3D);
 	}
 	}
-	// Unreachable, the switch cases handle all values the enum can take.
-	// Omitting this works on Clang but not GCC or MSVC. If reached, it's UB.
 	return nullptr;
 }
 

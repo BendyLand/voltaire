@@ -33,9 +33,11 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class ReflectionProbe : public VisualInstance3D
+class ReflectionProbe : public Node3D
 {
 public:
+	RenderInstance3D render_instance;
+
 	enum UpdateMode
 	{
 		UPDATE_ONCE,
@@ -68,7 +70,16 @@ private:
 	uint32_t reflection_mask = (1 << 20) - 1;
 	UpdateMode update_mode = UPDATE_ONCE;
 
+protected:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
 	void set_intensity(float p_intensity);
 	float get_intensity() const;
 
@@ -114,7 +125,7 @@ public:
 	void set_update_mode(UpdateMode p_mode);
 	UpdateMode get_update_mode() const;
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
 
 	ReflectionProbe();
 	~ReflectionProbe();

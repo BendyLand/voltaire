@@ -140,10 +140,20 @@ AABB ReflectionProbe::get_aabb() const
 	return aabb;
 }
 
+void ReflectionProbe::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void ReflectionProbe::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
 ReflectionProbe::ReflectionProbe()
 {
 	probe = Renderer::reflection_probe_create();
-	Renderer::instance_set_base(get_instance(), probe);
+	set_base(probe);
 	set_disable_scale(true);
 }
 

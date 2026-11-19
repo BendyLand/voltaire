@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "scene/3d/physics/collision_object_3d.h"
+#include "scene/3d/node_3d.h"
 
 // GLTFPhysicsBody is an intermediary between Godot's physics body nodes
 // and the OMI_physics_body extension.
@@ -97,8 +97,8 @@ public:
 	void set_inertia_tensor(const Basis& p_inertia_tensor);
 #endif // DISABLE_DEPRECATED
 
-	static Ref<GLTFPhysicsBody> from_node(const CollisionObject3D* p_body_node);
-	CollisionObject3D* to_node() const;
+	static Ref<GLTFPhysicsBody> from_node(const Node3D* p_body_node);
+	Node3D* to_node() const;
 };
 
 

@@ -33,61 +33,20 @@
 
 #include "scene/3d/node_3d.h"
 #include "scene/resources/environment.h"
+#include "scene/resources/material.h"
 #include "servers/rendering/rendering_server_enums.h"
 
-class Material;
 class TriangleMesh;
 
-class VisualInstance3D : public Node3D
+struct RenderInstance3D
 {
-	RID base;
-	RID instance;
-	uint32_t layers = 1;
-	float sorting_offset = 0.0;
-	bool sorting_use_aabb_center = true;
-
-protected:
-	void _update_visibility();
-
-	void set_instance_use_identity_transform(bool p_enable);
-	virtual void fti_update_servers_xform() override;
-
-	void _notification(int p_what);
-
-public:
 	enum GetFacesFlags
 	{
-		FACES_SOLID = 1, // solid geometry
+		FACES_SOLID = 1,
 		FACES_ENCLOSING = 2,
-		FACES_DYNAMIC = 4 // dynamic object geometry
-
+		FACES_DYNAMIC = 4,
 	};
 
-	RID get_instance() const;
-	virtual AABB get_aabb() const;
-
-	void set_base(const RID& p_base);
-	RID get_base() const;
-
-	void set_layer_mask(uint32_t p_mask);
-	uint32_t get_layer_mask() const;
-
-	void set_layer_mask_value(int p_layer_number, bool p_enable);
-	bool get_layer_mask_value(int p_layer_number) const;
-
-	void set_sorting_offset(float p_offset);
-	float get_sorting_offset() const;
-
-	void set_sorting_use_aabb_center(bool p_enabled);
-	bool is_sorting_use_aabb_center() const;
-
-	VisualInstance3D() = default;
-	~VisualInstance3D();
-};
-
-class GeometryInstance3D : public VisualInstance3D
-{
-public:
 	enum ShadowCastingSetting
 	{
 		SHADOW_CASTING_SETTING_OFF = RSE::SHADOW_CASTING_SETTING_OFF,
@@ -100,7 +59,7 @@ public:
 	{
 		GI_MODE_DISABLED,
 		GI_MODE_STATIC,
-		GI_MODE_DYNAMIC
+		GI_MODE_DYNAMIC,
 	};
 
 	enum LightmapScale
@@ -119,47 +78,62 @@ public:
 		VISIBILITY_RANGE_FADE_DEPENDENCIES = RSE::VISIBILITY_RANGE_FADE_DEPENDENCIES,
 	};
 
-private:
+	RID base;
+	RID instance;
+	uint32_t layers = 1;
+	float sorting_offset = 0.0f;
+	bool sorting_use_aabb_center = true;
+
 	ShadowCastingSetting shadow_casting_setting = SHADOW_CASTING_SETTING_ON;
 	Ref<Material> material_override;
 	Ref<Material> material_overlay;
 
-	float visibility_range_begin = 0.0;
-	float visibility_range_end = 0.0;
-	float visibility_range_begin_margin = 0.0;
-	float visibility_range_end_margin = 0.0;
+	float visibility_range_begin = 0.0f;
+	float visibility_range_end = 0.0f;
+	float visibility_range_begin_margin = 0.0f;
+	float visibility_range_end_margin = 0.0f;
 	VisibilityRangeFadeMode visibility_range_fade_mode = VISIBILITY_RANGE_FADE_DISABLED;
 
 	float transparency = 0.0f;
-
-	float lod_bias = 1.0;
-
+	float lod_bias = 1.0f;
 	mutable HashMap<String, String> instance_shader_parameter_property_remap;
 
-	float extra_cull_margin = 0.0;
+	float extra_cull_margin = 0.0f;
 	AABB custom_aabb;
 	float lightmap_texel_scale = 1.0f;
 	GIMode gi_mode = GI_MODE_STATIC;
 	bool ignore_occlusion_culling = false;
 
-	const String* _instance_uniform_get_remap(const String& p_name) const;
+	void update_visibility(Node3D* p_owner);
+	void set_instance_use_identity_transform(Node3D* p_owner, bool p_enable);
+	void fti_update_servers_xform(Node3D* p_owner);
+	void notification(Node3D* p_owner, int p_what);
 
-protected:
+	RID get_instance() const;
 
-public:
+	void set_base(const RID& p_base);
+	RID get_base() const;
+
+	void set_layer_mask(uint32_t p_mask);
+	uint32_t get_layer_mask() const;
+
+	void set_layer_mask_value(int p_layer_number, bool p_enable);
+	bool get_layer_mask_value(int p_layer_number) const;
+
+	void set_sorting_offset(float p_offset);
+	float get_sorting_offset() const;
+
+	void set_sorting_use_aabb_center(bool p_enabled);
+	bool is_sorting_use_aabb_center() const;
+
 	void set_cast_shadows_setting(ShadowCastingSetting p_shadow_casting_setting);
 	ShadowCastingSetting get_cast_shadows_setting() const;
 
 	float get_transparency() const;
-
 	float get_visibility_range_begin() const;
-
 	float get_visibility_range_end() const;
-
 	float get_visibility_range_begin_margin() const;
-
 	float get_visibility_range_end_margin() const;
-
 	VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
 
 	void set_material_override(const Ref<Material>& p_material);
@@ -183,13 +157,11 @@ public:
 	AABB get_custom_aabb() const;
 
 	void set_ignore_occlusion_culling(bool p_enabled);
-	bool is_ignoring_occlusion_culling();
+	bool is_ignoring_occlusion_culling() const;
 
-	virtual Ref<TriangleMesh> generate_triangle_mesh() const;
+	const String* _instance_uniform_get_remap(const String& p_name) const;
+	void append_geometry_warnings(PackedStringArray& r_warnings) const;
 
-	PackedStringArray get_configuration_warnings() const override;
-	GeometryInstance3D() = default;
-	virtual ~GeometryInstance3D();
+	RenderInstance3D() = default;
+	~RenderInstance3D();
 };
-
-

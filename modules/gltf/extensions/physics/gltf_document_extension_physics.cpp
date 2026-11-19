@@ -33,8 +33,7 @@
 #include "gltf_physics_body.h"
 #include "gltf_physics_shape.h"
 #include "scene/3d/physics/area_3d.h"
-#include "scene/3d/physics/rigid_body_3d.h"
-#include "scene/3d/physics/static_body_3d.h"
+#include "scene/3d/physics/physics_body_3d.h"
 
 using GLTFShapeIndex = int64_t;
 
@@ -73,24 +72,16 @@ void _setup_shape_mesh_resource_from_index_if_needed(
 }
 
 #ifndef DISABLE_DEPRECATED
-CollisionObject3D* _generate_shape_with_body(Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node,
+Node3D* _generate_shape_with_body(Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node,
 	Ref<GLTFPhysicsShape> p_physics_shape, Ref<GLTFPhysicsBody> p_physics_body)
 {
 	print_verbose("glTF: Creating shape with body for: " + p_gltf_node->get_name());
 	bool is_trigger = p_physics_shape->get_is_trigger();
-	// This method is used for the case where we must generate a parent body.
-	// This is can happen for multiple reasons. One possibility is that this
-	// glTF file is using OMI_collider but not OMI_physics_body, or at least
-	// this particular node is not using it. Another possibility is that the
-	// physics body information is set up on the same glTF node, not a parent.
-	CollisionObject3D* body;
+	Node3D* body;
 	if (p_physics_body.is_valid()) {
-		// This code is run when the physics body is on the same glTF node.
 		body = p_physics_body->to_node();
 		if (is_trigger && (p_physics_body->get_body_type() != "trigger")) {
-			// Edge case: If the body's trigger and the collider's trigger
-			// are in disagreement, we need to create another new body.
-			CollisionObject3D* child =
+			Node3D* child =
 				_generate_shape_with_body(p_state, p_gltf_node, p_physics_shape, nullptr);
 			child->set_name(
 				p_gltf_node->get_name() + (is_trigger ? String("Trigger") : String("Solid")));
@@ -102,7 +93,7 @@ CollisionObject3D* _generate_shape_with_body(Ref<GLTFState> p_state, Ref<GLTFNod
 		body = memnew(Area3D);
 	}
 	else {
-		body = memnew(StaticBody3D);
+		body = memnew(PhysicsBody3D(PhysicsBody3D::MODE_STATIC));
 	}
 	CollisionShape3D* shape = p_physics_shape->to_node();
 	shape->set_name(p_gltf_node->get_name() + "Shape");

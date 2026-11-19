@@ -576,8 +576,15 @@ void LightmapGI::_gen_new_positions_from_octree(const GenProbesOctree* p_cell, f
 	}
 }
 
+void LightmapGI::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
 void LightmapGI::_notification(int p_what)
 {
+	render_instance.notification(this, p_what);
+
 	switch (p_what) {
 	case NOTIFICATION_POST_ENTER_TREE: {
 		if (light_data.is_valid()) {
@@ -736,7 +743,7 @@ Ref<CameraAttributes> LightmapGI::get_camera_attributes() const { return camera_
 
 PackedStringArray LightmapGI::get_configuration_warnings() const
 {
-	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
 
 #ifdef MODULE_LIGHTMAPPER_RD_ENABLED
 	if (!DisplayServer::can_create_rendering_device()) {
@@ -771,7 +778,7 @@ LightmapGI::LightmapGI() {}
 
 
 
-bool LightmapGIData::has_shadowmask_textures() {}
+bool LightmapGIData::has_shadowmask_textures() { return false; }
 
 void LightmapGI::_clear_lightmaps() {}
 

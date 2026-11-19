@@ -51,7 +51,7 @@ AABB FogVolume::get_aabb() const
 
 PackedStringArray FogVolume::get_configuration_warnings() const
 {
-	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
 
 	Ref<Environment> environment = get_viewport()->find_world_3d()->get_environment();
 
@@ -66,6 +66,16 @@ PackedStringArray FogVolume::get_configuration_warnings() const
 	}
 
 	return warnings;
+}
+
+void FogVolume::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void FogVolume::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
 }
 
 FogVolume::FogVolume()

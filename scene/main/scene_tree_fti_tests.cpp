@@ -40,7 +40,7 @@
 void SceneTreeFTITests::debug_verify_failed(const Node3D* p_node_3d, const Transform3D& p_test)
 {
 	print_line("VERIFY FAILED\n");
-	print_line("test xform : " + String(Variant(p_test)));
+	print_line("test xform : " + String(p_test));
 
 	bool first = true;
 
@@ -54,16 +54,16 @@ void SceneTreeFTITests::debug_verify_failed(const Node3D* p_node_3d, const Trans
 		bool interp_equal = p_node_3d->_get_cached_global_transform_interpolated() == p_test;
 		bool glob_equal = p_node_3d->get_global_transform() == p_test;
 
-		String sz = tabs + p_node_3d->get_name() + " [ " + p_node_3d->get_class_name() + " ]\n";
+		String sz = tabs + p_node_3d->get_description() + "\n";
 
 		if (first) {
-			sz += tabs + "... " + String(Variant(p_test)) + "\n";
+			sz += tabs + "... " + String(p_test) + "\n";
 		}
 
 		sz += tabs + (p_node_3d->data.fti_global_xform_interp_set ? "[I] " : "[i] ") +
-			  String(Variant(p_node_3d->_get_cached_global_transform_interpolated())) +
+			  String(p_node_3d->_get_cached_global_transform_interpolated()) +
 			  (interp_equal ? " ***" : "") + "\n";
-		sz += tabs + "[g] " + String(Variant(p_node_3d->get_global_transform())) +
+		sz += tabs + "[g] " + String(p_node_3d->get_global_transform()) +
 			  (glob_equal ? " ***" : "");
 
 		print_line(sz);
@@ -86,7 +86,7 @@ void SceneTreeFTITests::update_dirty_nodes(Node* p_node, uint32_t p_current_half
 		(data.traversal_mode == SceneTreeFTI::TM_DEBUG) && data.use_optimized_traversal_method;
 	bool set_state = !should_verify;
 
-	Node3D* s = Object::cast_to<Node3D>(p_node);
+	Node3D* s = dynamic_cast<Node3D*>(p_node);
 
 	if (s && !s->is_visible()) {
 		return;
@@ -249,7 +249,7 @@ void SceneTreeFTITests::frame_update(
 					continue;
 				}
 
-				if (Object::cast_to<VisualInstance3D>(s)) {
+				if (s->has_render_instance()) {
 					if (!s->_is_vi_visible()) {
 						continue;
 					}

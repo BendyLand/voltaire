@@ -437,12 +437,22 @@ Label3D::Label3D()
 
 	// Disable shadow casting by default to improve performance and avoid unintended visual
 	// artifacts.
-	set_cast_shadows_setting(SHADOW_CASTING_SETTING_OFF);
+	render_instance.set_cast_shadows_setting(RenderInstance3D::SHADOW_CASTING_SETTING_OFF);
 
 	// Label3D can't contribute to GI in any way, so disable it to improve performance.
-	set_gi_mode(GI_MODE_DISABLED);
+	render_instance.set_gi_mode(RenderInstance3D::GI_MODE_DISABLED);
 
 	set_base(mesh);
+}
+
+void Label3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void Label3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
 }
 
 Label3D::~Label3D()
@@ -465,4 +475,4 @@ Label3D::~Label3D()
 void Label3D::_queue_update() {}
 
 
-Ref<Font> Label3D::_get_font_or_default() const {}
+Ref<Font> Label3D::_get_font_or_default() const { return Ref<Font>(); }

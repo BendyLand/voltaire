@@ -31,9 +31,12 @@
 
 #pragma once
 
-#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/node_3d.h"
+#include "scene/3d/visual_instance_3d.h"
+#include "scene/resources/mesh.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
+class MeshInstance3D;
 class PhysicsBody3D;
 
 class SoftBodyRenderingServerHandler : public PhysicsServer3DRenderingServerHandler
@@ -67,7 +70,7 @@ public:
 	void set_aabb(const AABB& p_aabb) override;
 };
 
-class SoftBody3D : public MeshInstance3D
+class SoftBody3D : public Node3D
 {
 public:
 	enum DisableMode
@@ -88,7 +91,10 @@ public:
 		void operator=(const PinnedPoint& obj);
 	};
 
+	RenderInstance3D render_instance;
+
 private:
+	Ref<Mesh> mesh;
 	SoftBodyRenderingServerHandler* rendering_server_handler = nullptr;
 
 	RID physics_rid;
@@ -104,7 +110,7 @@ private:
 	bool pinned_points_cache_dirty = true;
 
 	Ref<ArrayMesh> debug_mesh_cache;
-	class MeshInstance3D* debug_mesh = nullptr;
+	MeshInstance3D* debug_mesh = nullptr;
 
 	bool capture_input_on_drag = false;
 	bool ray_pickable = true;
@@ -119,9 +125,16 @@ private:
 
 protected:
 	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 	PackedStringArray get_configuration_warnings() const override;
 
 public:
+	virtual bool has_render_instance() const override { return true; }
+
+	void set_mesh(const Ref<Mesh>& p_mesh);
+	Ref<Mesh> get_mesh() const { return mesh; }
+	AABB get_aabb() const { return mesh.is_valid() ? mesh->get_aabb() : AABB(); }
+
 	RID get_physics_rid() const { return physics_rid; }
 
 	void set_collision_mask(uint32_t p_mask);
@@ -202,5 +215,3 @@ private:
 	int _get_pinned_point(int p_point_index, PinnedPoint*& r_point) const;
 	int _has_pinned_point(int p_point_index) const;
 };
-
-

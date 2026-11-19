@@ -71,12 +71,12 @@ void ImporterMeshInstance3D::set_layer_mask(const uint32_t p_layer_mask)
 }
 
 void ImporterMeshInstance3D::set_cast_shadows_setting(
-	GeometryInstance3D::ShadowCastingSetting p_shadow_casting_setting)
+	RenderInstance3D::ShadowCastingSetting p_shadow_casting_setting)
 {
 	shadow_casting_setting = p_shadow_casting_setting;
 }
 
-GeometryInstance3D::ShadowCastingSetting ImporterMeshInstance3D::get_cast_shadows_setting() const
+RenderInstance3D::ShadowCastingSetting ImporterMeshInstance3D::get_cast_shadows_setting() const
 {
 	return shadow_casting_setting;
 }
@@ -95,11 +95,8 @@ float ImporterMeshInstance3D::get_visibility_range_end_margin() const
 	return visibility_range_end_margin;
 }
 
-GeometryInstance3D::VisibilityRangeFadeMode
+RenderInstance3D::VisibilityRangeFadeMode
 ImporterMeshInstance3D::get_visibility_range_fade_mode() const
 {
 	return visibility_range_fade_mode;
 }
-
-
-

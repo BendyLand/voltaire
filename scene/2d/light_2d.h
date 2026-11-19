@@ -36,6 +36,12 @@
 class Light2D : public Node2D
 {
 public:
+	enum LightType
+	{
+		LIGHT_POINT,
+		LIGHT_DIRECTIONAL,
+	};
+
 	enum ShadowFilter
 	{
 		SHADOW_FILTER_NONE,
@@ -52,6 +58,7 @@ public:
 	};
 
 private:
+	LightType light_type = LIGHT_POINT;
 	RID canvas_light;
 	bool enabled = true;
 	bool editor_only = false;
@@ -67,10 +74,16 @@ private:
 	int item_mask = 1;
 	int item_shadow_mask = 1;
 	real_t shadow_smooth = 0.0;
-	Ref<Texture2D> texture;
-	Vector2 texture_offset;
 	ShadowFilter shadow_filter = SHADOW_FILTER_NONE;
 	BlendMode blend_mode = BLEND_MODE_ADD;
+
+	// Point light parameters
+	real_t _scale = 1.0;
+	Ref<Texture2D> texture;
+	Vector2 texture_offset;
+
+	// Directional light parameters
+	real_t max_distance = 10000.0;
 
 	void _update_light_visibility();
 
@@ -83,6 +96,22 @@ protected:
 	void _notification(int p_what);
 
 public:
+#ifdef TOOLS_ENABLED
+	virtual void _edit_set_pivot(const Point2& p_pivot) override;
+	virtual Point2 _edit_get_pivot() const override;
+	virtual bool _edit_use_pivot() const override;
+#endif // TOOLS_ENABLED
+
+#ifdef DEBUG_ENABLED
+	virtual Rect2 _edit_get_rect() const override;
+	virtual bool _edit_use_rect() const override;
+#endif // DEBUG_ENABLED
+
+	virtual Rect2 get_anchorable_rect() const override;
+
+	void set_light_type(LightType p_type);
+	LightType get_light_type() const { return light_type; }
+
 	void set_enabled(bool p_enabled);
 	bool is_enabled() const;
 
@@ -131,31 +160,7 @@ public:
 	void set_blend_mode(BlendMode p_mode);
 	BlendMode get_blend_mode() const;
 
-	Light2D();
-	~Light2D();
-};
-
-class PointLight2D : public Light2D
-{
-private:
-	real_t _scale = 1.0;
-	Ref<Texture2D> texture;
-	Vector2 texture_offset;
-
-public:
-#ifdef TOOLS_ENABLED
-	virtual void _edit_set_pivot(const Point2& p_pivot) override;
-	virtual Point2 _edit_get_pivot() const override;
-	virtual bool _edit_use_pivot() const override;
-#endif // TOOLS_ENABLED
-
-#ifdef DEBUG_ENABLED
-	virtual Rect2 _edit_get_rect() const override;
-	virtual bool _edit_use_rect() const override;
-#endif // DEBUG_ENABLED
-
-	virtual Rect2 get_anchorable_rect() const override;
-
+	// Point parameters
 	void set_texture(const Ref<Texture2D>& p_texture);
 	Ref<Texture2D> get_texture() const;
 
@@ -165,22 +170,12 @@ public:
 	void set_texture_scale(real_t p_scale);
 	real_t get_texture_scale() const;
 
-	PackedStringArray get_configuration_warnings() const override;
-
-	PointLight2D();
-};
-
-class DirectionalLight2D : public Light2D
-{
-	real_t max_distance = 10000.0;
-
-protected:
-
-public:
+	// Directional parameters
 	void set_max_distance(real_t p_distance);
 	real_t get_max_distance() const;
 
-	DirectionalLight2D();
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	Light2D(LightType p_type = LIGHT_POINT);
+	~Light2D();
 };
-
-

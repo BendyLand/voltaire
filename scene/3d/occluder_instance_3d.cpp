@@ -414,7 +414,7 @@ OccluderInstance3D::BakeError OccluderInstance3D::bake_scene(
 
 PackedStringArray OccluderInstance3D::get_configuration_warnings() const
 {
-	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
 
 	if (!bool(GLOBAL_GET_CACHED(bool, "rendering/occlusion_culling/use_occlusion_culling"))) {
 		warnings.push_back(RTR(
@@ -467,6 +467,16 @@ bool OccluderInstance3D::_is_editable_3d_polygon() const
 
 Ref<Resource> OccluderInstance3D::_get_editable_3d_polygon_resource() const { return occluder; }
 
+
+void OccluderInstance3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void OccluderInstance3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
 
 OccluderInstance3D::OccluderInstance3D() {}
 

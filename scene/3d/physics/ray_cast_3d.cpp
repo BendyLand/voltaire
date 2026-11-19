@@ -87,16 +87,22 @@ void RayCast3D::force_raycast_update() { _update_raycast_state(); }
 
 void RayCast3D::add_exception_rid(const RID& p_rid) { exclude.insert(p_rid); }
 
-void RayCast3D::add_exception(const CollisionObject3D* rp_node)
+void RayCast3D::add_exception(const Node3D* rp_node)
 {
-	add_exception_rid(rp_node->get_rid());
+	ERR_FAIL_NULL(rp_node);
+	const CollisionState3D* state = rp_node->get_collision_state_3d();
+	ERR_FAIL_NULL_MSG(state, "The passed Node must have a CollisionState3D (PhysicsBody3D or Area3D).");
+	add_exception_rid(state->rid);
 }
 
 void RayCast3D::remove_exception_rid(const RID& p_rid) { exclude.erase(p_rid); }
 
-void RayCast3D::remove_exception(const CollisionObject3D* rp_node)
+void RayCast3D::remove_exception(const Node3D* rp_node)
 {
-	remove_exception_rid(rp_node->get_rid());
+	ERR_FAIL_NULL(rp_node);
+	const CollisionState3D* state = rp_node->get_collision_state_3d();
+	ERR_FAIL_NULL_MSG(state, "The passed Node must have a CollisionState3D (PhysicsBody3D or Area3D).");
+	remove_exception_rid(state->rid);
 }
 
 void RayCast3D::set_collide_with_areas(bool p_enabled) { collide_with_areas = p_enabled; }

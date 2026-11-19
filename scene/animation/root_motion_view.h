@@ -33,9 +33,11 @@
 
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/immediate_mesh.h"
-class RootMotionView : public VisualInstance3D {
 
+class RootMotionView : public Node3D {
 public:
+	RenderInstance3D render_instance;
+
 	Ref<ImmediateMesh> immediate;
 	NodePath path;
 	real_t cell_size = 1.0;
@@ -49,10 +51,16 @@ public:
 
 	Transform3D accumulated;
 
-private:
+protected:
 	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID &p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
 	void set_animation_mixer(const NodePath &p_path);
 	NodePath get_animation_mixer() const;
 
@@ -68,7 +76,7 @@ public:
 	void set_zero_y(bool p_zero_y);
 	bool get_zero_y() const;
 
-	virtual AABB get_aabb() const override;
+	AABB get_aabb() const;
 
 	RootMotionView();
 	~RootMotionView();

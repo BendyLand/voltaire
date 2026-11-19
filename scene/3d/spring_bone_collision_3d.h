@@ -33,8 +33,20 @@
 
 #include "scene/3d/skeleton_3d.h"
 
-class SpringBoneCollision3D : public Node3D
-{
+class SpringBoneCollision3D : public Node3D {
+public:
+	enum ShapeType {
+		SHAPE_SPHERE,
+		SHAPE_CAPSULE,
+		SHAPE_PLANE,
+	};
+
+private:
+	ShapeType shape_type = SHAPE_SPHERE;
+	float radius = 0.1f;
+	float height = 0.5f;
+	bool inside = false;
+
 	String bone_name;
 	int bone = -1;
 
@@ -43,32 +55,45 @@ class SpringBoneCollision3D : public Node3D
 
 	void _validate_bone_name();
 
+	static Vector3 _collide_sphere(const Vector3 &p_origin, float p_radius, bool p_inside, float p_bone_radius, float p_bone_length, const Vector3 &p_current);
+
 protected:
 	PackedStringArray get_configuration_warnings() const override;
-
 	void _notification(int p_what);
 
-	virtual Vector3 _collide(const Transform3D& p_center, float p_bone_radius, float p_bone_length,
-		const Vector3& p_current) const;
-
 public:
-	Skeleton3D* get_skeleton() const;
+	SpringBoneCollision3D(ShapeType p_shape_type = SHAPE_SPHERE);
 
-	void set_bone_name(const String& p_name);
+	void set_shape_type(ShapeType p_shape_type);
+	ShapeType get_shape_type() const { return shape_type; }
+
+	void set_radius(float p_radius);
+	float get_radius() const { return radius; }
+
+	void set_height(float p_height);
+	float get_height() const { return height; }
+	void set_mid_height(real_t p_mid_height);
+	real_t get_mid_height() const { return height - radius * 2.0f; }
+
+	void set_inside(bool p_enabled);
+	bool is_inside() const { return inside; }
+
+	Pair<Vector3, Vector3> get_head_and_tail(const Transform3D &p_center) const;
+
+	Skeleton3D *get_skeleton() const;
+
+	void set_bone_name(const String &p_name);
 	String get_bone_name() const;
 	void set_bone(int p_bone);
 	int get_bone() const;
 
-	void set_position_offset(const Vector3& p_offset);
+	void set_position_offset(const Vector3 &p_offset);
 	Vector3 get_position_offset() const;
-	void set_rotation_offset(const Quaternion& p_offset);
+	void set_rotation_offset(const Quaternion &p_offset);
 	Quaternion get_rotation_offset() const;
 
 	void sync_pose();
-	Transform3D get_transform_from_skeleton(const Transform3D& p_center) const;
+	Transform3D get_transform_from_skeleton(const Transform3D &p_center) const;
 
-	Vector3 collide(const Transform3D& p_center, float p_bone_radius, float p_bone_length,
-		const Vector3& p_current) const;
+	Vector3 collide(const Transform3D &p_center, float p_bone_radius, float p_bone_length, const Vector3 &p_current) const;
 };
-
-

@@ -33,39 +33,28 @@
 
 #include "scene/3d/skeleton_modifier_3d.h"
 
-class PhysicalBone3D;
+class PhysicsBody3D;
 
-class PhysicalBoneSimulator3D : public SkeletonModifier3D
-{
+class PhysicalBoneSimulator3D : public SkeletonModifier3D {
 	bool simulating = false;
 
-	struct SimulatedBone
-	{
-		int parent;
+	struct SimulatedBone {
+		int parent = -1;
 		Vector<int> child_bones;
 		Transform3D global_pose;
-		PhysicalBone3D* physical_bone = nullptr;
-		PhysicalBone3D* cache_parent_physical_bone = nullptr;
-
-		SimulatedBone()
-		{
-			parent = -1;
-			global_pose = Transform3D();
-			physical_bone = nullptr;
-			cache_parent_physical_bone = nullptr;
-		}
+		PhysicsBody3D *physical_bone = nullptr;
+		PhysicsBody3D *cache_parent_physical_bone = nullptr;
 	};
 
 	LocalVector<SimulatedBone> bones;
 
-	/// This is a slow API, so it's cached
-	PhysicalBone3D* _get_physical_bone_parent(int p_bone);
+	PhysicsBody3D *_get_physical_bone_parent(int p_bone);
 	void _reset_physical_bones_state();
 
 protected:
 	virtual void _set_active(bool p_active) override;
-	void _bone_pose_updated(Skeleton3D* skeleton, int p_bone_id);
-	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
+	void _bone_pose_updated(Skeleton3D *skeleton, int p_bone_id);
+	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
 
 public:
 #ifndef DISABLE_DEPRECATED
@@ -74,14 +63,12 @@ public:
 	bool is_simulating_physics() const;
 	int get_bone_count() const;
 	Transform3D get_bone_global_pose(int p_bone) const;
-	void set_bone_global_pose(int p_bone, const Transform3D& p_pose);
-	PhysicalBone3D* get_physical_bone(int p_bone);
-	PhysicalBone3D* get_physical_bone_parent(int p_bone);
+	void set_bone_global_pose(int p_bone, const Transform3D &p_pose);
+	PhysicsBody3D *get_physical_bone(int p_bone);
+	PhysicsBody3D *get_physical_bone_parent(int p_bone);
 	void physical_bones_stop_simulation();
-	void physical_bones_start_simulation_on(const TypedArray<String>& p_bones);
+	void physical_bones_start_simulation_on(const TypedArray<String> &p_bones);
 	void physical_bones_add_collision_exception(RID p_exception);
 	void physical_bones_remove_collision_exception(RID p_exception);
 	PhysicalBoneSimulator3D() = default;
 };
-
-

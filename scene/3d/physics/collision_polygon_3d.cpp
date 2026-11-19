@@ -30,50 +30,99 @@
 /**************************************************************************/
 
 #include "collision_polygon_3d.h"
-#include "core/math/geometry_2d.h"
+
 #include "scene/3d/physics/collision_object_3d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/3d/convex_polygon_shape_3d.h"
 
-void CollisionPolygon3D::_update_in_shape_owner(bool p_xform_only)
-{
-	collision_object->shape_owner_set_transform(owner_id, get_transform());
+void CollisionPolygon3D::_update_in_shape_owner(bool p_xform_only) {
+	if (!collision_state) {
+		return;
+	}
+	collision_state->shape_owner_set_transform(owner_id, get_transform());
 	if (p_xform_only) {
 		return;
 	}
-	collision_object->shape_owner_set_disabled(owner_id, disabled);
+	collision_state->shape_owner_set_disabled(owner_id, disabled);
 }
 
-Vector<Point2> CollisionPolygon3D::get_polygon() const { return polygon; }
+void CollisionPolygon3D::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_PARENTED: {
+			Node3D *parent_3d = dynamic_cast<Node3D *>(get_parent());
+			collision_state = parent_3d ? parent_3d->get_collision_state_3d() : nullptr;
+			if (collision_state) {
+				owner_id = collision_state->create_shape_owner(this);
+				_update_in_shape_owner();
+			}
+		} break;
+		case NOTIFICATION_ENTER_TREE: {
+			if (collision_state) {
+				_update_in_shape_owner();
+			}
+		} break;
+		case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
+			if (collision_state) {
+				_update_in_shape_owner(true);
+			}
+		} break;
+		case NOTIFICATION_UNPARENTED: {
+			if (collision_state) {
+				collision_state->remove_shape_owner(owner_id);
+			}
+			owner_id = 0;
+			collision_state = nullptr;
+		} break;
+	}
+}
 
-AABB CollisionPolygon3D::get_item_rect() const { return aabb; }
+Vector<Point2> CollisionPolygon3D::get_polygon() const {
+	return polygon;
+}
 
-real_t CollisionPolygon3D::get_depth() const { return depth; }
+AABB CollisionPolygon3D::get_item_rect() const {
+	return aabb;
+}
 
-bool CollisionPolygon3D::is_disabled() const { return disabled; }
+real_t CollisionPolygon3D::get_depth() const {
+	return depth;
+}
 
-Color CollisionPolygon3D::_get_default_debug_color() const
-{
+void CollisionPolygon3D::set_disabled(bool p_disabled) {
+	disabled = p_disabled;
+	if (collision_state) {
+		collision_state->shape_owner_set_disabled(owner_id, p_disabled);
+	}
+}
+
+bool CollisionPolygon3D::is_disabled() const {
+	return disabled;
+}
+
+Color CollisionPolygon3D::_get_default_debug_color() const {
 	return SceneTree::get_debug_collisions_color();
 }
 
-Color CollisionPolygon3D::get_debug_color() const { return debug_color; }
+Color CollisionPolygon3D::get_debug_color() const {
+	return debug_color;
+}
 
-bool CollisionPolygon3D::get_debug_fill_enabled() const { return debug_fill; }
+bool CollisionPolygon3D::get_debug_fill_enabled() const {
+	return debug_fill;
+}
 
-real_t CollisionPolygon3D::get_margin() const { return margin; }
+real_t CollisionPolygon3D::get_margin() const {
+	return margin;
+}
 
-bool CollisionPolygon3D::_is_editable_3d_polygon() const { return true; }
+bool CollisionPolygon3D::_is_editable_3d_polygon() const {
+	return true;
+}
 
-CollisionPolygon3D::CollisionPolygon3D()
-{
+CollisionPolygon3D::CollisionPolygon3D() {
 	set_notify_local_transform(true);
 	debug_color = _get_default_debug_color();
 }
 
-PackedStringArray CollisionPolygon3D::get_configuration_warnings() const
-{
+PackedStringArray CollisionPolygon3D::get_configuration_warnings() const {
 	return PackedStringArray();
 }
-
-

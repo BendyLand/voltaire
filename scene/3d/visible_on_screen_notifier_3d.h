@@ -33,31 +33,7 @@
 
 #include "scene/3d/visual_instance_3d.h"
 
-class VisibleOnScreenNotifier3D : public VisualInstance3D
-{
-	AABB aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
-
-private:
-	bool on_screen = false;
-	void _visibility_enter();
-	void _visibility_exit();
-
-protected:
-	virtual void _screen_enter() {}
-
-	virtual void _screen_exit() {}
-
-	void _notification(int p_what);
-
-public:
-	virtual AABB get_aabb() const override;
-	bool is_on_screen() const;
-
-	VisibleOnScreenNotifier3D();
-	~VisibleOnScreenNotifier3D();
-};
-
-class VisibleOnScreenEnabler3D : public VisibleOnScreenNotifier3D
+class VisibleOnScreenNotifier3D : public Node3D
 {
 public:
 	enum EnableMode
@@ -67,25 +43,42 @@ public:
 		ENABLE_MODE_WHEN_PAUSED,
 	};
 
-protected:
-	virtual void _screen_enter() override;
-	virtual void _screen_exit() override;
+	RenderInstance3D render_instance;
 
+private:
+	AABB aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
+	bool on_screen = false;
+	bool enabler_enabled = false;
 	EnableMode enable_mode = ENABLE_MODE_INHERIT;
 	NodePath enable_node_path = NodePath("..");
 
-	void _notification(int p_what);
-
+	void _visibility_enter();
+	void _visibility_exit();
 	void _update_enable_mode(bool p_enable);
 
+protected:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	void set_aabb(const AABB& p_aabb);
+	AABB get_aabb() const;
+	bool is_on_screen() const;
+
+	void set_enabler_enabled(bool p_enabled);
+	bool is_enabler_enabled() const { return enabler_enabled; }
+
 	void set_enable_mode(EnableMode p_mode);
-	EnableMode get_enable_mode();
+	EnableMode get_enable_mode() const { return enable_mode; }
 
-	void set_enable_node_path(NodePath p_path);
-	NodePath get_enable_node_path();
+	void set_enable_node_path(const NodePath& p_path);
+	NodePath get_enable_node_path() const { return enable_node_path; }
 
-	VisibleOnScreenEnabler3D();
+	VisibleOnScreenNotifier3D(bool p_enabler = false);
+	~VisibleOnScreenNotifier3D();
 };
-
-

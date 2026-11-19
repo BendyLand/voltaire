@@ -35,8 +35,6 @@
 #include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/material.h"
 
-class CollisionObject3D;
-
 class ShapeCast3D : public Node3D
 {
 	bool enabled = true;
@@ -130,9 +128,9 @@ public:
 	bool is_colliding() const;
 
 	void add_exception_rid(const RID& p_rid);
-	void add_exception(const CollisionObject3D* rp_node);
+	void add_exception(const Node3D* rp_node);
 	void remove_exception_rid(const RID& p_rid);
-	void remove_exception(const CollisionObject3D* rp_node);
+	void remove_exception(const Node3D* rp_node);
 	void clear_exceptions();
 
 	virtual PackedStringArray get_configuration_warnings() const override;

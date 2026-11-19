@@ -38,9 +38,11 @@
 class Mesh;
 class RandomNumberGenerator;
 
-class CPUParticles3D : public GeometryInstance3D
+class CPUParticles3D : public Node3D
 {
 public:
+	RenderInstance3D render_instance;
+
 	enum DrawOrder
 	{
 		DRAW_ORDER_INDEX,
@@ -219,9 +221,15 @@ private:
 
 protected:
 	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
 
 public:
-	AABB get_aabb() const override;
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	AABB get_aabb() const;
 
 	void set_emitting(bool p_emitting);
 	void set_amount(int p_amount);

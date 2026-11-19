@@ -226,7 +226,7 @@ AABB VoxelGI::get_aabb() const { return AABB(-size / 2, size); }
 
 PackedStringArray VoxelGI::get_configuration_warnings() const
 {
-	PackedStringArray warnings = VisualInstance3D::get_configuration_warnings();
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
 
 	if (OS::get_current_rendering_method() == "gl_compatibility") {
 		warnings.push_back(RTR("VoxelGI nodes are not supported when using the Compatibility "
@@ -240,6 +240,16 @@ PackedStringArray VoxelGI::get_configuration_warnings() const
 			"No VoxelGI data set, so this node is disabled. Bake static objects to enable GI."));
 	}
 	return warnings;
+}
+
+void VoxelGI::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void VoxelGI::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
 }
 
 VoxelGI::VoxelGI()

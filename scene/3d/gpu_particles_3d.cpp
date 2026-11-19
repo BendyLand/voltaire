@@ -355,6 +355,16 @@ GPUParticles3D::GPUParticles3D()
 	set_use_fixed_seed(false);
 }
 
+void GPUParticles3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void GPUParticles3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
 GPUParticles3D::~GPUParticles3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
