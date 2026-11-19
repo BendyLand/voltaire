@@ -85,7 +85,7 @@ class ScrollBar : public Range
 	bool smooth_scroll_enabled = false;
 
 	void _drag_node_exit();
-	void _drag_node_input(const Ref<InputEvent>& p_input);
+	void _drag_node_input(const InputEvent& p_input);
 
 protected:
 	struct ThemeCache

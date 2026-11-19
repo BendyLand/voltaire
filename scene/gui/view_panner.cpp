@@ -92,4 +92,4 @@ void ViewPanner::set_force_drag(bool p_force) { force_drag = p_force; }
 
 
 
-bool ViewPanner::gui_input(Ref<InputEvent> const&, Rect2) {}
+bool ViewPanner::gui_input(const InputEvent&, Rect2) { return false; }

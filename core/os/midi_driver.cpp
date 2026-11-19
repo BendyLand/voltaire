@@ -138,39 +138,38 @@ void MIDIDriver::send_event(
 	const MIDIMessage msg = Parser::status_to_msg_enum(p_status);
 	ERR_FAIL_COND(p_data_len < Parser::expected_data(msg));
 
-	Ref<InputEventMIDI> event;
-	event.instantiate();
-	event->set_device(p_device_index);
-	event->set_channel(Parser::channel(p_status));
-	event->set_message(msg);
+	InputEvent event = InputEvent::make_midi();
+	event.device = p_device_index;
+	event.midi.channel = Parser::channel(p_status);
+	event.midi.message = msg;
 	switch (msg) {
 	case MIDIMessage::NOTE_OFF:
 	case MIDIMessage::NOTE_ON:
-		event->set_pitch(p_data[0]);
-		event->set_velocity(p_data[1]);
+		event.midi.pitch = p_data[0];
+		event.midi.velocity = p_data[1];
 		break;
 	case MIDIMessage::AFTERTOUCH:
-		event->set_pitch(p_data[0]);
-		event->set_pressure(p_data[1]);
+		event.midi.pitch = p_data[0];
+		event.midi.pressure = p_data[1];
 		break;
 	case MIDIMessage::CONTROL_CHANGE:
-		event->set_controller_number(p_data[0]);
-		event->set_controller_value(p_data[1]);
+		event.midi.controller_number = p_data[0];
+		event.midi.controller_value = p_data[1];
 		break;
 	case MIDIMessage::PROGRAM_CHANGE:
-		event->set_instrument(p_data[0]);
+		event.midi.instrument = p_data[0];
 		break;
 	case MIDIMessage::CHANNEL_PRESSURE:
-		event->set_pressure(p_data[0]);
+		event.midi.pressure = p_data[0];
 		break;
 	case MIDIMessage::PITCH_BEND:
-		event->set_pitch((p_data[1] << 7) | p_data[0]);
+		event.midi.pitch = (p_data[1] << 7) | p_data[0];
 		break;
 	// QUARTER_FRAME, SONG_POSITION_POINTER, and SONG_SELECT not yet implemented.
 	default:
 		break;
 	}
-	Input::parse_input_event(event.ptr());
+	Input::parse_input_event(event);
 }
 
 void MIDIDriver::Parser::parse_fragment(uint8_t p_fragment)

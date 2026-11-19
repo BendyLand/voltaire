@@ -79,7 +79,7 @@ private:
 	void _pressed();
 	void _toggled(bool p_pressed);
 
-	void on_action_event(Ref<InputEvent> p_event);
+	void on_action_event(const InputEvent& p_event);
 
 	Timer* shortcut_feedback_timer = nullptr;
 	bool in_shortcut_feedback = false;

@@ -150,11 +150,10 @@ void ColorPickerShape::finish_shaders()
 }
 
 bool ColorPickerShape::can_handle(
-	const Ref<InputEvent>& p_event, Vector2& r_position, bool* r_is_click)
+	const InputEvent& p_event, Vector2& r_position, bool* r_is_click)
 {
-	Ref<InputEventMouseButton> mb = p_event;
-	if (mb.is_valid()) {
-		if (mb->get_button_index() != MouseButton::LEFT) {
+	if (p_event.type == InputEventType::MOUSE_BUTTON) {
+		if (p_event.mouse_button.button_index != MouseButton::LEFT) {
 			return false;
 		}
 
@@ -162,16 +161,15 @@ bool ColorPickerShape::can_handle(
 			*r_is_click = true;
 		}
 
-		if (mb->is_pressed()) {
+		if (p_event.is_pressed()) {
 			is_dragging = true;
-			r_position = mb->get_position();
+			r_position = p_event.mouse_button.position;
 			return true;
 		}
 	}
 
-	Ref<InputEventMouseMotion> mm = p_event;
-	if (is_dragging && mm.is_valid()) {
-		r_position = mm->get_position();
+	if (is_dragging && p_event.type == InputEventType::MOUSE_MOTION) {
+		r_position = p_event.mouse_motion.position;
 		return true;
 	}
 	return false;

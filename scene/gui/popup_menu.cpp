@@ -49,21 +49,24 @@
 
 HashMap<NativeMenu::SystemMenus, PopupMenu*> PopupMenu::system_menus;
 
-bool PopupMenu::_set_item_accelerator(int p_index, const Ref<InputEventKey>& p_ie)
+bool PopupMenu::_set_item_accelerator(int p_index, const InputEvent& p_ie)
 {
-	if (p_ie->get_physical_keycode() == Key::NONE && p_ie->get_keycode() == Key::NONE &&
-		p_ie->get_key_label() != Key::NONE) {
-		NativeMenu::set_item_accelerator(global_menu, p_index, p_ie->get_key_label_with_modifiers());
+	if (p_ie.type != InputEventType::KEY) {
+		return false;
+	}
+	if (p_ie.key.physical_keycode == Key::NONE && p_ie.key.keycode == Key::NONE &&
+		p_ie.key.key_label != Key::NONE) {
+		NativeMenu::set_item_accelerator(global_menu, p_index, p_ie.get_key_label_with_modifiers());
 		return true;
 	}
-	else if (p_ie->get_keycode() != Key::NONE) {
-		NativeMenu::set_item_accelerator(global_menu, p_index, p_ie->get_keycode_with_modifiers());
+	else if (p_ie.key.keycode != Key::NONE) {
+		NativeMenu::set_item_accelerator(global_menu, p_index, p_ie.get_keycode_with_modifiers());
 		return true;
 	}
-	else if (p_ie->get_physical_keycode() != Key::NONE) {
+	else if (p_ie.key.physical_keycode != Key::NONE) {
 		NativeMenu::set_item_accelerator(global_menu, p_index,
 			DisplayServer::keyboard_get_keycode_from_physical(
-				p_ie->get_physical_keycode_with_modifiers()));
+				p_ie.get_physical_keycode_with_modifiers()));
 		return true;
 	}
 	return false;
@@ -322,7 +325,7 @@ void PopupMenu::_submenu_timeout()
 	}
 }
 
-void PopupMenu::_input_from_window(const Ref<InputEvent>& p_event)
+void PopupMenu::_input_from_window(const InputEvent& p_event)
 {
 	if (p_event.is_valid()) {
 		_input_from_window_internal(p_event);
@@ -1056,34 +1059,33 @@ bool PopupMenu::is_native_menu() const
 
 void PopupMenu::add_separator(const String& p_text, int p_id) {}
 
-bool PopupMenu::activate_item_by_event(const Ref<InputEvent>& p_event, bool p_for_global_only)
+bool PopupMenu::activate_item_by_event(const InputEvent& p_event, bool p_for_global_only)
 {
 	ERR_FAIL_COND_V(p_event.is_null(), false);
 	Key code = Key::NONE;
-	Ref<InputEventKey> k = p_event;
 
-	if (k.is_valid()) {
-		code = k->get_keycode();
+	if (p_event.type == InputEventType::KEY) {
+		code = p_event.key.keycode;
 		if (code == Key::NONE) {
-			code = (Key)k->get_unicode();
+			code = (Key)p_event.key.unicode;
 		}
-		if (k->is_ctrl_pressed()) {
+		if (p_event.is_ctrl_pressed()) {
 			code |= KeyModifierMask::CTRL;
 		}
-		if (k->is_alt_pressed()) {
+		if (p_event.is_alt_pressed()) {
 			code |= KeyModifierMask::ALT;
 		}
-		if (k->is_meta_pressed()) {
+		if (p_event.is_meta_pressed()) {
 			code |= KeyModifierMask::META;
 		}
-		if (k->is_shift_pressed()) {
+		if (p_event.is_shift_pressed()) {
 			code |= KeyModifierMask::SHIFT;
 		}
 	}
 
 	for (int i = 0; i < items.size(); i++) {
 		if (is_item_disabled(i) || items[i].shortcut_is_disabled ||
-			(!items[i].allow_echo && p_event->is_echo())) {
+			(!items[i].allow_echo && p_event.is_echo())) {
 			continue;
 		}
 
@@ -1253,7 +1255,7 @@ PopupMenu::~PopupMenu() { unbind_global_menu(); }
 
 void PopupMenu::_shape_item(int) const {}
 
-void PopupMenu::_input_from_window_internal(Ref<InputEvent> const&) {}
+void PopupMenu::_input_from_window_internal(const InputEvent&) {}
 
 void PopupMenu::_close_or_suspend() {}
 

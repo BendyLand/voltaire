@@ -76,7 +76,7 @@ class SpinBox : public Range
 	double custom_arrow_step = 0.0;
 	bool custom_arrow_round = false;
 
-	void _line_edit_input(const Ref<InputEvent>& p_event);
+	void _line_edit_input(const InputEvent& p_event);
 
 	struct Drag
 	{

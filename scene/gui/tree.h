@@ -574,13 +574,12 @@ private:
 	void select_single_item(TreeItem* p_selected, TreeItem* p_current, int p_col,
 		TreeItem* p_prev = nullptr, bool* r_in_range = nullptr, bool p_force_deselect = false);
 	int propagate_mouse_event(const Point2i& p_pos, int x_ofs, int y_ofs, int x_limit,
-		bool p_double_click, TreeItem* p_item, MouseButton p_button,
-		const Ref<InputEventWithModifiers>& p_mod, bool p_first_call = true,
-		bool p_skip_children = false);
+		bool p_double_click, TreeItem* p_item, MouseButton p_button, const InputEvent& p_mod,
+		bool p_first_call = true, bool p_skip_children = false);
 	void _line_editor_submit(String p_text);
 	void _apply_multiline_edit(bool p_hide_focus = false);
 	void _text_editor_popup_modal_close();
-	void _text_editor_gui_input(const Ref<InputEvent>& p_event);
+	void _text_editor_gui_input(const InputEvent& p_event);
 	void value_editor_changed(double p_value);
 	void _update_popup_menu(const TreeItem::Cell& p_cell);
 
@@ -733,7 +732,7 @@ private:
 	String incr_search;
 	bool cursor_can_exit_tree = true;
 	void _do_incr_search(const String& p_add);
-	void _incr_search_as_needed(const Ref<InputEventKey>& p_event_key);
+	void _incr_search_as_needed(const InputEvent& p_event_key);
 
 	TreeItem* _search_item_text(TreeItem* p_at, const String& p_find, int* r_col, bool p_selectable,
 		bool p_backwards = false);

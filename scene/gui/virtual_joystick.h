@@ -86,7 +86,7 @@ private:
 	void _reset();
 
 protected:
-	virtual void gui_input(const Ref<InputEvent>& p_event);
+	virtual void gui_input(const InputEvent& p_event);
 	void _notification(int p_what);
 
 public:

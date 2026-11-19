@@ -60,7 +60,7 @@ struct UIContext
 	void initialize(RID p_viewport_rid, Size2i p_size, Size2i p_default_size,
 		Input::EventDispatchFunc p_handler);
 	void teardown(Input::EventDispatchFunc p_handler);
-	void forward_input(const Ref<InputEvent>& p_event, Input::EventDispatchFunc p_handler) const;
+	void forward_input(const InputEvent& p_event, Input::EventDispatchFunc p_handler) const;
 	bool sync_window_size();
 	RID begin_draw() const;
 };
@@ -104,7 +104,7 @@ struct UITextField
 	String placeholder;
 
 	bool has_point(Point2 p_pt) const { return rect.has_point(p_pt); }
-	bool handle_key(const Ref<InputEventKey>& p_key, char32_t p_disallow_char = 0);
+	bool handle_key(const InputEvent& p_key_event, char32_t p_disallow_char = 0);
 	void draw(RID p_ci, const Ref<Font>& p_font, bool p_focused, int p_font_size = 14,
 		const Color& p_bg = Color(0.06f, 0.07f, 0.09f, 1.0f),
 		const Color& p_accent = Color(0.0f, 0.75f, 0.95f, 1.0f),

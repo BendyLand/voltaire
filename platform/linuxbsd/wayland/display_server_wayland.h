@@ -37,7 +37,7 @@
 #include "servers/display/display_server.h"
 #include "wayland/wayland_thread.h"
 
-class InputEvent;
+struct InputEvent;
 
 #ifdef RD_ENABLED
 class RenderingDevice;
@@ -168,8 +168,8 @@ class DisplayServerWayland : public DisplayServerDriver
 	void _send_window_event(DisplayServerEnums::WindowEvent p_event,
 		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID);
 
-	static void dispatch_input_events(const Ref<InputEvent>& p_event);
-	void _dispatch_input_event(const Ref<InputEvent>& p_event);
+	static void dispatch_input_events(const InputEvent& p_event);
+	void _dispatch_input_event(const InputEvent& p_event);
 
 	void _delete_window(
 		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID);

@@ -126,20 +126,18 @@ void ScrollBar::set_custom_step(float p_custom_step) { custom_step = p_custom_st
 
 float ScrollBar::get_custom_step() const { return custom_step; }
 
-void ScrollBar::_drag_node_input(const Ref<InputEvent>& p_input)
+void ScrollBar::_drag_node_input(const InputEvent& p_input)
 {
 	if (!drag_node_enabled) {
 		return;
 	}
 
-	Ref<InputEventMouseButton> mb = p_input;
-
-	if (mb.is_valid()) {
-		if (mb->get_button_index() != MouseButton::LEFT) {
+	if (p_input.type == InputEventType::MOUSE_BUTTON) {
+		if (p_input.mouse_button.button_index != MouseButton::LEFT) {
 			return;
 		}
 
-		if (mb->is_pressed()) {
+		if (p_input.is_pressed()) {
 			drag_node_speed = Vector2();
 			drag_node_accum = Vector2();
 			last_drag_node_accum = Vector2();
@@ -153,27 +151,22 @@ void ScrollBar::_drag_node_input(const Ref<InputEvent>& p_input)
 				set_process_internal(true);
 				time_since_motion = 0;
 			}
-
 		}
-		else {
-			if (drag_node_touching) {
-				if (drag_node_speed == Vector2()) {
-					drag_node_touching_deaccel = false;
-					drag_node_touching = false;
-					set_process_internal(false);
-				}
-				else {
-					drag_node_touching_deaccel = true;
-				}
+		else if (drag_node_touching) {
+			if (drag_node_speed == Vector2()) {
+				drag_node_touching_deaccel = false;
+				drag_node_touching = false;
+				set_process_internal(false);
+			}
+			else {
+				drag_node_touching_deaccel = true;
 			}
 		}
 	}
 
-	Ref<InputEventMouseMotion> mm = p_input;
-
-	if (mm.is_valid()) {
+	if (p_input.type == InputEventType::MOUSE_MOTION) {
 		if (drag_node_touching && !drag_node_touching_deaccel) {
-			Vector2 motion = mm->get_relative();
+			Vector2 motion = p_input.mouse_motion.relative;
 
 			drag_node_accum -= motion;
 			Vector2 diff = drag_node_from + drag_node_accum;

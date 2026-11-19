@@ -70,7 +70,7 @@ class SplitContainerDragger : public Control
 	TextureRect* touch_dragger = nullptr;
 
 	void _touch_dragger_mouse_exited();
-	void _touch_dragger_gui_input(const Ref<InputEvent>& p_event);
+	void _touch_dragger_gui_input(const InputEvent& p_event);
 
 protected:
 	void _notification(int p_what);

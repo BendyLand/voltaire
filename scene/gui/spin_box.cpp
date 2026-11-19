@@ -45,7 +45,7 @@ Size2 SpinBox::get_minimum_size() const
 
 LineEdit* SpinBox::get_line_edit() { return line_edit; }
 
-void SpinBox::_line_edit_input(const Ref<InputEvent>& p_event)
+void SpinBox::_line_edit_input(const InputEvent& p_event)
 {
 	if (drag.enabled) {
 		line_edit->accept_event();

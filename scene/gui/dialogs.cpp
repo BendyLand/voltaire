@@ -37,9 +37,9 @@
 
 Size2 AcceptDialog::_get_contents_minimum_size() const { return Size2(); }
 
-void AcceptDialog::_input_from_window(const Ref<InputEvent>& p_event)
+void AcceptDialog::_input_from_window(const InputEvent& p_event)
 {
-	if (close_on_escape && p_event->is_action_pressed(SNAME("ui_close_dialog"), false, true)) {
+	if (close_on_escape && p_event.is_action_pressed(SNAME("ui_close_dialog"), false, true)) {
 		_cancel_pressed();
 	}
 	Window::_input_from_window(p_event);

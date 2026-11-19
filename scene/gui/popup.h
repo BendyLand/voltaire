@@ -59,7 +59,7 @@ private:
 protected:
 	void _close_pressed();
 	virtual Rect2i _popup_adjust_rect() const override;
-	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
 
 	void _notification(int p_what);
 
@@ -86,7 +86,7 @@ class PopupPanel : public Popup
 	mutable Rect2i pre_popup_rect;
 
 protected:
-	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
 
 	virtual Rect2i _popup_adjust_rect() const override;
 

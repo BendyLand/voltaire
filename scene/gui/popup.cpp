@@ -40,9 +40,9 @@
 #include "core/config/project_settings.h"
 #endif
 
-void Popup::_input_from_window(const Ref<InputEvent>& p_event)
+void Popup::_input_from_window(const InputEvent& p_event)
 {
-	if (get_flag(FLAG_POPUP) && p_event->is_action_pressed(SNAME("ui_cancel"), false, true)) {
+	if (get_flag(FLAG_POPUP) && p_event.is_action_pressed(SNAME("ui_cancel"), false, true)) {
 		hide_reason = HIDE_REASON_CANCELED; // ESC pressed, mark as canceled unconditionally.
 		_close_pressed();
 	}
@@ -163,21 +163,21 @@ PackedStringArray PopupPanel::get_configuration_warnings() const
 }
 #endif
 
-void PopupPanel::_input_from_window(const Ref<InputEvent>& p_event)
+void PopupPanel::_input_from_window(const InputEvent& p_event)
 {
 	if (p_event.is_valid()) {
 		if (!get_flag(FLAG_POPUP)) {
 			return;
 		}
 
-		Ref<InputEventMouseButton> b = p_event;
 		// Hide it if the shadows have been clicked.
-		if (b.is_valid() && b->is_pressed() && b->get_button_index() == MouseButton::LEFT) {
+		if (p_event.type == InputEventType::MOUSE_BUTTON && p_event.is_pressed() &&
+			p_event.mouse_button.button_index == MouseButton::LEFT) {
 			Rect2 panel_area = panel->get_global_rect();
 			float win_scale = get_content_scale_factor();
 			panel_area.position *= win_scale;
 			panel_area.size *= win_scale;
-			if (!panel_area.has_point(b->get_position())) {
+			if (!panel_area.has_point(p_event.mouse_button.position)) {
 				_close_pressed();
 			}
 		}

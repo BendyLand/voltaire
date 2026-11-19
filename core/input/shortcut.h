@@ -36,24 +36,21 @@
 
 class Shortcut : public Resource
 {
-	Vector<Ref<InputEvent>> events;
-
-protected:
+	Vector<InputEvent> events;
 
 public:
-	void set_events(const Vector<Ref<InputEvent>>& p_events);
-	Vector<Ref<InputEvent>> get_events() const;
+	void set_events(const Vector<InputEvent>& p_events);
+	const Vector<InputEvent>& get_events() const;
 
-	void set_events_list(const List<Ref<InputEvent>>* p_events);
+	void set_events_list(const List<InputEvent>* p_events);
 
-	bool matches_event(const Ref<InputEvent>& p_event) const;
+	bool matches_event(const InputEvent& p_event) const;
 	bool has_valid_event() const;
 
 	String get_as_text() const;
 
 	static Ref<Shortcut> make_from_action(const String& p_action);
 
-	static bool is_event_array_equal(const Vector<Ref<InputEvent>>& p_event_array1, const Vector<Ref<InputEvent>>& p_event_array2);
+	static bool is_event_array_equal(
+		const Vector<InputEvent>& p_event_array1, const Vector<InputEvent>& p_event_array2);
 };
-
-

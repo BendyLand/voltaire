@@ -42,7 +42,7 @@
 #include "scene/main/scene_tree_fti.h"
 
 class ArrayMesh;
-class InputEvent;
+struct InputEvent;
 class Material;
 class MultiplayerAPI;
 class Node;
@@ -272,7 +272,7 @@ private:
 	};
 
 	static void _call_input_pause(const String& p_group, CallInputType p_call_type,
-		const Ref<InputEvent>& p_input, Viewport* p_viewport);
+		const InputEvent& p_input, Viewport* p_viewport);
 
 public:
 	SceneTree() = delete;

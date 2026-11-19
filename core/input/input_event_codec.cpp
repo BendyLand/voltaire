@@ -29,9 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "input_event_codec.h"
+
 #include "core/input/input.h"
 #include "core/io/marshalls.h"
-#include "input_event_codec.h"
 
 enum class BoolShift : uint8_t
 {
@@ -45,38 +46,37 @@ enum class BoolShift : uint8_t
 	PEN_INVERTED,
 };
 
-// cast operator for BoolShift to uint8_t
 inline uint8_t operator<<(uint8_t p_left, BoolShift p_right)
 {
 	return p_left << static_cast<uint8_t>(p_right);
 }
 
-uint8_t encode_key_modifier_state(Ref<InputEventWithModifiers> p_event)
+static uint8_t encode_key_modifier_state(const InputEvent& p_event)
 {
 	uint8_t bools = 0;
-	bools |= (uint8_t)p_event->is_shift_pressed() << BoolShift::SHIFT;
-	bools |= (uint8_t)p_event->is_ctrl_pressed() << BoolShift::CTRL;
-	bools |= (uint8_t)p_event->is_alt_pressed() << BoolShift::ALT;
-	bools |= (uint8_t)p_event->is_meta_pressed() << BoolShift::META;
+	bools |= (uint8_t)p_event.is_shift_pressed() << BoolShift::SHIFT;
+	bools |= (uint8_t)p_event.is_ctrl_pressed() << BoolShift::CTRL;
+	bools |= (uint8_t)p_event.is_alt_pressed() << BoolShift::ALT;
+	bools |= (uint8_t)p_event.is_meta_pressed() << BoolShift::META;
 	return bools;
 }
 
-void decode_key_modifier_state(uint8_t p_bools, Ref<InputEventWithModifiers> p_event)
+static void decode_key_modifier_state(uint8_t p_bools, InputEvent& r_event)
 {
-	p_event->set_shift_pressed(p_bools & (1 << BoolShift::SHIFT));
-	p_event->set_ctrl_pressed(p_bools & (1 << BoolShift::CTRL));
-	p_event->set_alt_pressed(p_bools & (1 << BoolShift::ALT));
-	p_event->set_meta_pressed(p_bools & (1 << BoolShift::META));
+	r_event.set_shift_pressed(p_bools & (1 << BoolShift::SHIFT));
+	r_event.set_ctrl_pressed(p_bools & (1 << BoolShift::CTRL));
+	r_event.set_alt_pressed(p_bools & (1 << BoolShift::ALT));
+	r_event.set_meta_pressed(p_bools & (1 << BoolShift::META));
 }
 
-int encode_vector2(const Vector2& p_vector, uint8_t* p_data)
+static int encode_vector2(const Vector2& p_vector, uint8_t* p_data)
 {
 	p_data += encode_float(p_vector.x, p_data);
 	encode_float(p_vector.y, p_data);
 	return sizeof(float) * 2;
 }
 
-const uint8_t* decode_vector2(Vector2& r_vector, const uint8_t* p_data)
+static const uint8_t* decode_vector2(Vector2& r_vector, const uint8_t* p_data)
 {
 	r_vector.x = decode_float(p_data);
 	p_data += sizeof(float);
@@ -85,7 +85,7 @@ const uint8_t* decode_vector2(Vector2& r_vector, const uint8_t* p_data)
 	return p_data;
 }
 
-void encode_input_event_key(const Ref<InputEventKey>& p_event, Vector<uint8_t>& r_data)
+void encode_input_event_key(const InputEvent& p_event, Vector<uint8_t>& r_data)
 {
 	r_data.resize(19);
 
@@ -93,54 +93,47 @@ void encode_input_event_key(const Ref<InputEventKey>& p_event, Vector<uint8_t>& 
 	*data = (uint8_t)InputEventType::KEY;
 	data++;
 	uint8_t bools = encode_key_modifier_state(p_event);
-	bools |= (uint8_t)p_event->is_echo() << BoolShift::ECHO;
-	bools |= (uint8_t)p_event->is_pressed() << BoolShift::PRESSED;
+	bools |= (uint8_t)p_event.key.echo << BoolShift::ECHO;
+	bools |= (uint8_t)p_event.is_pressed() << BoolShift::PRESSED;
 	*data = bools;
 	data++;
-	data += encode_uint32((uint32_t)p_event->get_keycode(), data);
-	data += encode_uint32((uint32_t)p_event->get_physical_keycode(), data);
-	data += encode_uint32((uint32_t)p_event->get_key_label(), data);
-	data += encode_uint32(p_event->get_unicode(), data);
-	*data = (uint8_t)p_event->get_location();
+	data += encode_uint32((uint32_t)p_event.key.keycode, data);
+	data += encode_uint32((uint32_t)p_event.key.physical_keycode, data);
+	data += encode_uint32((uint32_t)p_event.key.key_label, data);
+	data += encode_uint32(p_event.key.unicode, data);
+	*data = (uint8_t)p_event.key.location;
 	data++;
 
-	// Assert we had enough space.
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-Error decode_input_event_key(const Vector<uint8_t>& p_data, Ref<InputEventKey>& r_event)
+static Error decode_input_event_key(const Vector<uint8_t>& p_data, InputEvent& r_event)
 {
 	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::KEY);
-	data++; // Skip event type.
+	data++;
 
+	r_event = InputEvent::make_key();
 	uint8_t bools = *data;
 	data++;
 	decode_key_modifier_state(bools, r_event);
-	r_event->set_echo(bools & (1 << BoolShift::ECHO));
-	r_event->set_pressed(bools & (1 << BoolShift::PRESSED));
+	r_event.key.echo = (bools & (1 << BoolShift::ECHO)) != 0;
+	r_event.pressed = (bools & (1 << BoolShift::PRESSED)) != 0;
 
-	Key keycode = (Key)decode_uint32(data);
+	r_event.key.keycode = (Key)decode_uint32(data);
 	data += sizeof(uint32_t);
-	Key physical_keycode = (Key)decode_uint32(data);
+	r_event.key.physical_keycode = (Key)decode_uint32(data);
 	data += sizeof(uint32_t);
-	Key key_label = (Key)decode_uint32(data);
+	r_event.key.key_label = (Key)decode_uint32(data);
 	data += sizeof(uint32_t);
-	char32_t unicode = (char32_t)decode_uint32(data);
+	r_event.key.unicode = (char32_t)decode_uint32(data);
 	data += sizeof(uint32_t);
-	KeyLocation location = (KeyLocation)*data;
-
-	r_event->set_keycode(keycode);
-	r_event->set_physical_keycode(physical_keycode);
-	r_event->set_key_label(key_label);
-	r_event->set_unicode(unicode);
-	r_event->set_location(location);
+	r_event.key.location = (KeyLocation)*data;
 
 	return OK;
 }
 
-void encode_input_event_mouse_button(
-	const Ref<InputEventMouseButton>& p_event, Vector<uint8_t>& r_data)
+void encode_input_event_mouse_button(const InputEvent& p_event, Vector<uint8_t>& r_data)
 {
 	r_data.resize(12);
 
@@ -149,53 +142,47 @@ void encode_input_event_mouse_button(
 	data++;
 
 	uint8_t bools = encode_key_modifier_state(p_event);
-	bools |= (uint8_t)p_event->is_pressed() << BoolShift::PRESSED;
-	bools |= (uint8_t)p_event->is_double_click() << BoolShift::DOUBLE_CLICK;
+	bools |= (uint8_t)p_event.is_pressed() << BoolShift::PRESSED;
+	bools |= (uint8_t)p_event.mouse_button.double_click << BoolShift::DOUBLE_CLICK;
 	*data = bools;
 	data++;
 
-	*data = (uint8_t)p_event->get_button_index();
+	*data = (uint8_t)p_event.mouse_button.button_index;
 	data++;
 
-	// Rather than use encode_variant, we explicitly encode the Vector2,
-	// so decoding is easier. Specifically, we don't have to perform additional error
-	// checking for decoding the variant and then checking the variant type.
-	data += encode_vector2(p_event->get_position(), data);
-	*data = (uint8_t)p_event->get_button_mask();
+	data += encode_vector2(p_event.mouse_button.position, data);
+	*data = (uint8_t)p_event.mouse_button.button_mask;
 	data++;
 
-	// Assert we had enough space.
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-Error decode_input_event_mouse_button(
-	const Vector<uint8_t>& p_data, Ref<InputEventMouseButton>& r_event)
+static Error decode_input_event_mouse_button(const Vector<uint8_t>& p_data, InputEvent& r_event)
 {
 	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MOUSE_BUTTON);
-	data++; // Skip event type.
+	data++;
 
+	r_event = InputEvent::make_mouse_button();
 	uint8_t bools = *data;
 	data++;
 	decode_key_modifier_state(bools, r_event);
-	r_event->set_pressed(bools & (1 << BoolShift::PRESSED));
-	r_event->set_double_click(bools & (1 << BoolShift::DOUBLE_CLICK));
+	r_event.pressed = (bools & (1 << BoolShift::PRESSED)) != 0;
+	r_event.mouse_button.double_click = (bools & (1 << BoolShift::DOUBLE_CLICK)) != 0;
 
-	r_event->set_button_index((MouseButton)*data);
+	r_event.mouse_button.button_index = (MouseButton)*data;
 	data++;
 
 	Vector2 pos;
 	data = decode_vector2(pos, data);
-	r_event->set_position(pos);
-	r_event->set_global_position(pos); // these are the same
-	uint32_t button_mask = (uint32_t)*data;
-	r_event->set_button_mask(button_mask);
+	r_event.mouse_button.position = pos;
+	r_event.mouse_button.global_position = pos;
+	r_event.mouse_button.button_mask = (uint32_t)*data;
 
 	return OK;
 }
 
-void encode_input_event_mouse_motion(
-	const Ref<InputEventMouseMotion>& p_event, Vector<uint8_t>& r_data)
+void encode_input_event_mouse_motion(const InputEvent& p_event, Vector<uint8_t>& r_data)
 {
 	r_data.resize(31);
 
@@ -204,67 +191,56 @@ void encode_input_event_mouse_motion(
 	data++;
 
 	uint8_t bools = encode_key_modifier_state(p_event);
-	bools |= (uint8_t)p_event->get_pen_inverted() << BoolShift::PEN_INVERTED;
+	bools |= (uint8_t)p_event.mouse_motion.pen_inverted << BoolShift::PEN_INVERTED;
 	*data = bools;
 	data++;
 
-	// Rather than use encode_variant, we explicitly encode the Vector2,
-	// so decoding is easier. Specifically, we don't have to perform additional error
-	// checking for decoding the variant and then checking the variant type.
-	data += encode_vector2(p_event->get_position(), data);
-	data += encode_float(p_event->get_pressure(), data);
-	data += encode_vector2(p_event->get_tilt(), data);
-	data += encode_vector2(p_event->get_relative(), data);
-	*data = (uint8_t)p_event->get_button_mask();
+	data += encode_vector2(p_event.mouse_motion.position, data);
+	data += encode_float(p_event.mouse_motion.pressure, data);
+	data += encode_vector2(p_event.mouse_motion.tilt, data);
+	data += encode_vector2(p_event.mouse_motion.relative, data);
+	*data = (uint8_t)p_event.mouse_motion.button_mask;
 	data++;
 
-	// Assert we had enough space.
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_mouse_motion(
-	const Vector<uint8_t>& p_data, Ref<InputEventMouseMotion>& r_event)
+static void decode_input_event_mouse_motion(const Vector<uint8_t>& p_data, InputEvent& r_event)
 {
 	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MOUSE_MOTION);
-	data++; // Skip event type.
+	data++;
 
+	r_event = InputEvent::make_mouse_motion();
 	uint8_t bools = *data;
 	data++;
 	decode_key_modifier_state(bools, r_event);
-	r_event->set_pen_inverted(bools & (1 << BoolShift::PEN_INVERTED));
+	r_event.mouse_motion.pen_inverted = (bools & (1 << BoolShift::PEN_INVERTED)) != 0;
 
 	{
 		Vector2 pos;
 		data = decode_vector2(pos, data);
-		r_event->set_position(pos);
-		r_event->set_global_position(pos); // these are the same
+		r_event.mouse_motion.position = pos;
+		r_event.mouse_motion.global_position = pos;
 	}
-	r_event->set_pressure(decode_float(data));
+	r_event.mouse_motion.pressure = decode_float(data);
 	data += sizeof(float);
-	{
-		Vector2 tilt;
-		data = decode_vector2(tilt, data);
-		r_event->set_tilt(tilt);
-	}
-	r_event->set_velocity(Input::get_last_mouse_velocity());
-	r_event->set_screen_velocity(Input::get_last_mouse_screen_velocity());
+	data = decode_vector2(r_event.mouse_motion.tilt, data);
+	r_event.mouse_motion.velocity = Input::get_last_mouse_velocity();
+	r_event.mouse_motion.screen_velocity = Input::get_last_mouse_screen_velocity();
 	{
 		Vector2 relative;
 		data = decode_vector2(relative, data);
-		r_event->set_relative(relative);
-		r_event->set_relative_screen_position(relative);
+		r_event.mouse_motion.relative = relative;
+		r_event.mouse_motion.screen_relative = relative;
 	}
-	uint32_t button_mask = (uint32_t)*data;
-	r_event->set_button_mask(button_mask);
+	r_event.mouse_motion.button_mask = (uint32_t)*data;
 	data++;
 
-	// Assert we had enough space.
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-void encode_input_event_joypad_button(
-	const Ref<InputEventJoypadButton>& p_event, Vector<uint8_t>& r_data)
+void encode_input_event_joypad_button(const InputEvent& p_event, Vector<uint8_t>& r_data)
 {
 	r_data.resize(11);
 
@@ -273,39 +249,36 @@ void encode_input_event_joypad_button(
 	data++;
 
 	uint8_t bools = 0;
-	bools |= (uint8_t)p_event->is_pressed() << BoolShift::PRESSED;
+	bools |= (uint8_t)p_event.is_pressed() << BoolShift::PRESSED;
 	*data = bools;
 	data++;
 
-	data += encode_uint64(p_event->get_device(), data);
-	*data = (uint8_t)p_event->get_button_index();
+	data += encode_uint64(p_event.device, data);
+	*data = (uint8_t)p_event.joy_button.button_index;
 	data++;
 
-	// Assert we had enough space.
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_joypad_button(
-	const Vector<uint8_t>& p_data, Ref<InputEventJoypadButton>& r_event)
+static void decode_input_event_joypad_button(const Vector<uint8_t>& p_data, InputEvent& r_event)
 {
 	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::JOY_BUTTON);
-	data++; // Skip event type.
+	data++;
 
+	r_event = InputEvent::make_joypad_button();
 	uint8_t bools = *data;
 	data++;
-	r_event->set_pressed(bools & (1 << BoolShift::PRESSED));
-	r_event->set_device(decode_uint64(data));
+	r_event.pressed = (bools & (1 << BoolShift::PRESSED)) != 0;
+	r_event.device = decode_uint64(data);
 	data += sizeof(uint64_t);
-	r_event->set_button_index((JoyButton)*data);
+	r_event.joy_button.button_index = (JoyButton)*data;
 	data++;
 
-	// Assert we had enough space.
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-void encode_input_event_joypad_motion(
-	const Ref<InputEventJoypadMotion>& p_event, Vector<uint8_t>& r_data)
+void encode_input_event_joypad_motion(const InputEvent& p_event, Vector<uint8_t>& r_data)
 {
 	r_data.resize(14);
 
@@ -313,35 +286,33 @@ void encode_input_event_joypad_motion(
 	*data = (uint8_t)InputEventType::JOY_MOTION;
 	data++;
 
-	data += encode_uint64(p_event->get_device(), data);
-	*data = (uint8_t)p_event->get_axis();
+	data += encode_uint64(p_event.device, data);
+	*data = (uint8_t)p_event.joy_motion.axis;
 	data++;
-	data += encode_float(p_event->get_axis_value(), data);
+	data += encode_float(p_event.joy_motion.axis_value, data);
 
-	// Assert we had enough space.
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_joypad_motion(
-	const Vector<uint8_t>& p_data, Ref<InputEventJoypadMotion>& r_event)
+static void decode_input_event_joypad_motion(const Vector<uint8_t>& p_data, InputEvent& r_event)
 {
 	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::JOY_MOTION);
-	data++; // Skip event type.
-
-	r_event->set_device(decode_uint64(data));
-	data += sizeof(uint64_t);
-	r_event->set_axis((JoyAxis)*data);
 	data++;
-	r_event->set_axis_value(decode_float(data));
+
+	int dev = decode_uint64(data);
+	data += sizeof(uint64_t);
+	JoyAxis axis = (JoyAxis)*data;
+	data++;
+	float val = decode_float(data);
 	data += sizeof(float);
 
-	// Assert we had enough space.
+	r_event = InputEvent::make_joypad_motion(axis, val, dev);
+
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-void encode_input_event_gesture_pan(
-	const Ref<InputEventPanGesture>& p_event, Vector<uint8_t>& r_data)
+void encode_input_event_gesture_pan(const InputEvent& p_event, Vector<uint8_t>& r_data)
 {
 	r_data.resize(18);
 
@@ -349,40 +320,32 @@ void encode_input_event_gesture_pan(
 	*data = (uint8_t)InputEventType::PAN_GESTURE;
 	data++;
 
-	uint8_t bools = encode_key_modifier_state(p_event);
-	*data = bools;
+	*data = encode_key_modifier_state(p_event);
 	data++;
-	data += encode_vector2(p_event->get_position(), data);
-	data += encode_vector2(p_event->get_delta(), data);
+	data += encode_vector2(p_event.gesture.position, data);
+	data += encode_vector2(p_event.gesture.delta, data);
 
-	// Assert we had enough space.
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_gesture_pan(
-	const Vector<uint8_t>& p_data, Ref<InputEventPanGesture>& r_event)
+static void decode_input_event_gesture_pan(const Vector<uint8_t>& p_data, InputEvent& r_event)
 {
 	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::PAN_GESTURE);
-	data++; // Skip event type.
+	data++;
 
+	r_event = InputEvent::make_pan_gesture();
 	uint8_t bools = *data;
 	data++;
 	decode_key_modifier_state(bools, r_event);
 
-	Vector2 pos;
-	data = decode_vector2(pos, data);
-	r_event->set_position(pos);
-	Vector2 delta;
-	data = decode_vector2(delta, data);
-	r_event->set_delta(delta);
+	data = decode_vector2(r_event.gesture.position, data);
+	data = decode_vector2(r_event.gesture.delta, data);
 
-	// Assert we had enough space.
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-void encode_input_event_gesture_magnify(
-	const Ref<InputEventMagnifyGesture>& p_event, Vector<uint8_t>& r_data)
+void encode_input_event_gesture_magnify(const InputEvent& p_event, Vector<uint8_t>& r_data)
 {
 	r_data.resize(14);
 
@@ -390,40 +353,35 @@ void encode_input_event_gesture_magnify(
 	*data = (uint8_t)InputEventType::MAGNIFY_GESTURE;
 	data++;
 
-	uint8_t bools = encode_key_modifier_state(p_event);
-	*data = bools;
+	*data = encode_key_modifier_state(p_event);
 	data++;
-	data += encode_vector2(p_event->get_position(), data);
-	data += encode_float(p_event->get_factor(), data);
+	data += encode_vector2(p_event.gesture.position, data);
+	data += encode_float(p_event.gesture.factor, data);
 
-	// Assert we had enough space.
 	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
 }
 
-void decode_input_event_gesture_magnify(
-	const Vector<uint8_t>& p_data, Ref<InputEventMagnifyGesture>& r_event)
+static void decode_input_event_gesture_magnify(const Vector<uint8_t>& p_data, InputEvent& r_event)
 {
 	const uint8_t* data = p_data.ptr();
 	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MAGNIFY_GESTURE);
-	data++; // Skip event type.
+	data++;
 
+	r_event = InputEvent::make_magnify_gesture();
 	uint8_t bools = *data;
 	data++;
 	decode_key_modifier_state(bools, r_event);
 
-	Vector2 pos;
-	data = decode_vector2(pos, data);
-	r_event->set_position(pos);
-	r_event->set_factor(decode_float(data));
+	data = decode_vector2(r_event.gesture.position, data);
+	r_event.gesture.factor = decode_float(data);
 	data += sizeof(float);
 
-	// Assert we had enough space.
 	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
 }
 
-bool encode_input_event(const Ref<InputEvent>& p_event, Vector<uint8_t>& r_data)
+bool encode_input_event(const InputEvent& p_event, Vector<uint8_t>& r_data)
 {
-	switch (p_event->get_type()) {
+	switch (p_event.type) {
 	case InputEventType::KEY:
 		encode_input_event_key(p_event, r_data);
 		break;
@@ -451,57 +409,35 @@ bool encode_input_event(const Ref<InputEvent>& p_event, Vector<uint8_t>& r_data)
 	return true;
 }
 
-void decode_input_event(const Vector<uint8_t>& p_data, Ref<InputEvent>& r_event)
+void decode_input_event(const Vector<uint8_t>& p_data, InputEvent& r_event)
 {
 	const uint8_t* data = p_data.ptr();
 
 	switch (static_cast<InputEventType>(*data)) {
-	case InputEventType::KEY: {
-		Ref<InputEventKey> event;
-		event.instantiate();
-		decode_input_event_key(p_data, event);
-		r_event = event;
-	} break;
-	case InputEventType::MOUSE_BUTTON: {
-		Ref<InputEventMouseButton> event;
-		event.instantiate();
-		decode_input_event_mouse_button(p_data, event);
-		r_event = event;
-	} break;
-	case InputEventType::MOUSE_MOTION: {
-		Ref<InputEventMouseMotion> event;
-		event.instantiate();
-		decode_input_event_mouse_motion(p_data, event);
-		r_event = event;
-	} break;
-	case InputEventType::JOY_BUTTON: {
-		Ref<InputEventJoypadButton> event;
-		event.instantiate();
-		decode_input_event_joypad_button(p_data, event);
-		r_event = event;
-	} break;
-	case InputEventType::JOY_MOTION: {
-		Ref<InputEventJoypadMotion> event;
-		event.instantiate();
-		decode_input_event_joypad_motion(p_data, event);
-		r_event = event;
-	} break;
-	case InputEventType::PAN_GESTURE: {
-		Ref<InputEventPanGesture> event;
-		event.instantiate();
-		decode_input_event_gesture_pan(p_data, event);
-		r_event = event;
-	} break;
-	case InputEventType::MAGNIFY_GESTURE: {
-		Ref<InputEventMagnifyGesture> event;
-		event.instantiate();
-		decode_input_event_gesture_magnify(p_data, event);
-		r_event = event;
-	} break;
-	default: {
+	case InputEventType::KEY:
+		decode_input_event_key(p_data, r_event);
+		break;
+	case InputEventType::MOUSE_BUTTON:
+		decode_input_event_mouse_button(p_data, r_event);
+		break;
+	case InputEventType::MOUSE_MOTION:
+		decode_input_event_mouse_motion(p_data, r_event);
+		break;
+	case InputEventType::JOY_BUTTON:
+		decode_input_event_joypad_button(p_data, r_event);
+		break;
+	case InputEventType::JOY_MOTION:
+		decode_input_event_joypad_motion(p_data, r_event);
+		break;
+	case InputEventType::PAN_GESTURE:
+		decode_input_event_gesture_pan(p_data, r_event);
+		break;
+	case InputEventType::MAGNIFY_GESTURE:
+		decode_input_event_gesture_magnify(p_data, r_event);
+		break;
+	default:
+		r_event = InputEvent();
 		WARN_PRINT(vformat("Unknown event type %d.", static_cast<int>(*data)));
-	} break;
+		break;
 	}
 }
-
-

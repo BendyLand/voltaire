@@ -722,12 +722,11 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 
 				// If position has changed by at least 1 pixel, generate a drag event.
 				if (std::abs(delta.x) >= 1.0 || std::abs(delta.y) >= 1.0) {
-					Ref<InputEventScreenDrag> event;
-					event.instantiate();
-					event->set_index(touch_index);
-					event->set_position(position);
-					event->set_relative(delta);
-					event->set_relative_screen_position(delta);
+					InputEvent event = InputEvent::make_screen_drag();
+					event.screen_drag.index = touch_index;
+					event.screen_drag.position = position;
+					event.screen_drag.relative = delta;
+					event.screen_drag.screen_relative = delta;
 					Input::parse_input_event(event);
 				}
 			}
@@ -810,11 +809,10 @@ void WebXRInterfaceJS::_on_input_event(int p_event_type, int p_input_source_id) 
 			if (touch_index >= 0 && touch_index < 5) {
 				touches[touch_index].is_touching = (p_event_type == WEBXR_INPUT_EVENT_SELECTSTART);
 
-				Ref<InputEventScreenTouch> event;
-				event.instantiate();
-				event->set_index(touch_index);
-				event->set_position(touches[touch_index].position);
-				event->set_pressed(p_event_type == WEBXR_INPUT_EVENT_SELECTSTART);
+				InputEvent event = InputEvent::make_screen_touch();
+				event.touch.index = touch_index;
+				event.touch.position = touches[touch_index].position;
+				event.pressed = (p_event_type == WEBXR_INPUT_EVENT_SELECTSTART);
 
 				Input::parse_input_event(event);
 			}

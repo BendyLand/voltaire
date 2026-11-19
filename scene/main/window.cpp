@@ -568,14 +568,13 @@ void Window::update_mouse_cursor_state()
 	// These details are set in Viewport::_gui_input_event. To instantly
 	// see the changes in the viewport, we need to trigger a mouse motion event.
 	// This function should be called whenever scene tree changes affect the mouse cursor.
-	Ref<InputEventMouseMotion> mm;
+	InputEvent mm = InputEvent::make_mouse_motion();
 	Vector2 pos = get_mouse_position();
 	Transform2D xform = get_global_canvas_transform().affine_inverse();
-	mm.instantiate();
-	mm->set_position(pos);
-	mm->set_global_position(xform.xform(pos));
-	mm->set_device(InputEvent::DEVICE_ID_INTERNAL);
-	push_input(mm.ptr(), true);
+	mm.mouse_motion.position = pos;
+	mm.mouse_motion.global_position = xform.xform(pos);
+	mm.device = InputEvent::DEVICE_ID_INTERNAL;
+	push_input(mm, true);
 }
 
 void Window::show()
@@ -1731,7 +1730,7 @@ Ref<Font> Window::get_theme_font(String const&, String const&) const {}
 
 Window* Window::get_from_id(int) {}
 
-void Window::_window_input(Ref<InputEvent> const&) {}
+void Window::_window_input(const InputEvent&) {}
 
 void Window::_propagate_window_notification(Node*, int) {}
 

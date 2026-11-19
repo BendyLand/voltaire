@@ -76,7 +76,7 @@ class AcceptDialog : public Window
 	void _parent_focused();
 
 protected:
-	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
 	virtual Size2 _get_contents_minimum_size() const override;
 	virtual void _post_popup() override;
 

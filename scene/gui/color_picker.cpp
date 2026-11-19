@@ -428,10 +428,10 @@ void ColorPicker::_alpha_slider_draw()
 	alpha_slider->draw_polygon(pos, col);
 }
 
-void ColorPicker::_line_edit_input(const Ref<InputEvent>& p_event)
+void ColorPicker::_line_edit_input(const InputEvent& p_event)
 {
-	Ref<InputEventMouseButton> bev = p_event;
-	if (bev.is_valid() && !bev->is_pressed() && bev->get_button_index() == MouseButton::LEFT) {
+	if (p_event.type == InputEventType::MOUSE_BUTTON && !p_event.is_pressed() &&
+		p_event.mouse_button.button_index == MouseButton::LEFT) {
 		line_edit_mouse_release = true;
 	}
 }
@@ -481,9 +481,9 @@ ColorPicker::~ColorPicker()
 	}
 }
 
-void ColorPickerPopupPanel::_input_from_window(const Ref<InputEvent>& p_event)
+void ColorPickerPopupPanel::_input_from_window(const InputEvent& p_event)
 {
-	if (p_event->is_action_pressed(SNAME("ui_accept"), false, true)) {
+	if (p_event.is_action_pressed(SNAME("ui_accept"), false, true)) {
 		_close_pressed();
 	}
 	PopupPanel::_input_from_window(p_event);

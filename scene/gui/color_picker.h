@@ -365,7 +365,7 @@ private:
 	void _slider_draw(int p_which);
 	void _alpha_slider_draw();
 
-	void _line_edit_input(const Ref<InputEvent>& p_event);
+	void _line_edit_input(const InputEvent& p_event);
 	void _text_changed(const String& p_new_text);
 	void _block_input_on_popup_show();
 	void _enable_input_on_popup_hide();
@@ -429,7 +429,7 @@ public:
 
 class ColorPickerPopupPanel : public PopupPanel
 {
-	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
 };
 
 class ColorPickerButton : public Button

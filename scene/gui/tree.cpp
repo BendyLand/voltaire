@@ -1662,7 +1662,7 @@ void Tree::_text_editor_popup_modal_close()
 	}
 }
 
-void Tree::_text_editor_gui_input(const Ref<InputEvent>& p_event)
+void Tree::_text_editor_gui_input(const InputEvent& p_event)
 {
 	if (popup_edit_committed) {
 		return; // Already processed by `_text_editor_popup_modal_close`.
@@ -1672,10 +1672,10 @@ void Tree::_text_editor_gui_input(const Ref<InputEvent>& p_event)
 		return; // ESC pressed, app focus lost, or forced close from code.
 	}
 
-	if (p_event->is_action_pressed("ui_text_newline_blank", true)) {
+	if (p_event.is_action_pressed("ui_text_newline_blank", true)) {
 		accept_event();
 	}
-	else if (p_event->is_action_pressed("ui_text_newline")) {
+	else if (p_event.is_action_pressed("ui_text_newline")) {
 		bool hide_focus = !text_editor->has_focus(true);
 		popup_edit_committed = true; // End edit popup processing.
 		popup_editor->hide();
@@ -1763,10 +1763,10 @@ Rect2 Tree::_get_content_rect() const
 	return content_rect.grow_individual(0, 0, -offset.x, -offset.y);
 }
 
-void Tree::_incr_search_as_needed(const Ref<InputEventKey>& p_event_key)
+void Tree::_incr_search_as_needed(const InputEvent& p_event_key)
 {
-	if (!get_viewport()->is_input_handled()) {
-		_do_incr_search(String::chr(p_event_key->get_unicode()));
+	if (p_event_key.type == InputEventType::KEY && !get_viewport()->is_input_handled()) {
+		_do_incr_search(String::chr(p_event_key.key.unicode));
 	}
 }
 

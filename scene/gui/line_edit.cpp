@@ -403,23 +403,21 @@ Point2 LineEdit::_get_right_icon_size(Ref<Texture2D> p_right_icon) const
 	return icon_size;
 }
 
-void LineEdit::unhandled_key_input(const Ref<InputEvent>& p_event)
+void LineEdit::unhandled_key_input(const InputEvent& p_event)
 {
 	// Return to prevent editing if just focused.
 	if (!editing) {
 		return;
 	}
 
-	Ref<InputEventKey> k = p_event;
-
-	if (k.is_valid()) {
-		if (!k->is_pressed()) {
+	if (p_event.type == InputEventType::KEY) {
+		if (!p_event.is_pressed()) {
 			return;
 		}
 		// Handle Unicode (with modifiers active, process after shortcuts).
-		if (has_focus() && editable && (k->get_unicode() >= 32)) {
+		if (has_focus() && editable && (p_event.key.unicode >= 32)) {
 			selection_delete();
-			char32_t ucodestr[2] = {(char32_t)k->get_unicode(), 0};
+			char32_t ucodestr[2] = {p_event.key.unicode, 0};
 			int prev_len = text.length();
 			insert_text_at_caret(ucodestr);
 			if (text.length() != prev_len) {
@@ -1177,28 +1175,28 @@ void LineEdit::_create_undo_state()
 
 Key LineEdit::_get_menu_action_accelerator(const String& p_action)
 {
-	const List<Ref<InputEvent>>* events = InputMap::action_get_events(p_action);
+	const List<InputEvent>* events = InputMap::action_get_events(p_action);
 	if (!events) {
 		return Key::NONE;
 	}
 
 	// Use first event in the list for the accelerator.
-	const List<Ref<InputEvent>>::Element* first_event = events->front();
+	const List<InputEvent>::Element* first_event = events->front();
 	if (!first_event) {
 		return Key::NONE;
 	}
 
-	const Ref<InputEventKey> event = first_event->get();
-	if (event.is_null()) {
+	const InputEvent& event = first_event->get();
+	if (event.type != InputEventType::KEY) {
 		return Key::NONE;
 	}
 
 	// Use physical keycode if non-zero.
-	if (event->get_physical_keycode() != Key::NONE) {
-		return event->get_physical_keycode_with_modifiers();
+	if (event.key.physical_keycode != Key::NONE) {
+		return event.get_physical_keycode_with_modifiers();
 	}
 	else {
-		return event->get_keycode_with_modifiers();
+		return event.get_keycode_with_modifiers();
 	}
 }
 

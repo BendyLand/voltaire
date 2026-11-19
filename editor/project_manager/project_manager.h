@@ -113,7 +113,7 @@ public:
 	static void process_and_draw();
 	static void finalize();
 
-	static void handle_input_event(const Ref<InputEvent>& p_event);
+	static void handle_input_event(const InputEvent& p_event);
 	static void load_projects();
 	static void save_projects();
 	static void rebuild_filtered_list();

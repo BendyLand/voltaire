@@ -260,8 +260,8 @@ class PopupMenu : public Popup
 
 	void _close_pressed();
 	void _menu_changed();
-	void _input_from_window_internal(const Ref<InputEvent>& p_event);
-	bool _set_item_accelerator(int p_index, const Ref<InputEventKey>& p_ie);
+	void _input_from_window_internal(const InputEvent& p_event);
+	bool _set_item_accelerator(int p_index, const InputEvent& p_ie);
 	void _set_item_checkable_type(int p_index, int p_checkable_type);
 	int _get_item_checkable_type(int p_index) const;
 	void _native_popup(const Rect2i& p_rect);
@@ -277,7 +277,7 @@ protected:
 
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
-	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
 
 	virtual void _popup_base(const Rect2i& p_bounds = Rect2i()) override;
 	void _notification(int p_what);
@@ -429,7 +429,7 @@ public:
 
 	void scroll_to_item(int p_idx);
 
-	bool activate_item_by_event(const Ref<InputEvent>& p_event, bool p_for_global_only = false);
+	bool activate_item_by_event(const InputEvent& p_event, bool p_for_global_only = false);
 	void activate_item(int p_idx);
 
 	void _about_to_popup();

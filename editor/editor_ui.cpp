@@ -390,17 +390,16 @@ void EditorUI::stop_play()
 	data->ui.needs_redraw = true;
 }
 
-void EditorUI::handle_input_event(const Ref<InputEvent>& p_event)
+void EditorUI::handle_input_event(const InputEvent& p_event)
 {
 	if (!data || p_event.is_null()) {
 		return;
 	}
 	data->ui.forward_input(p_event, &EditorUI::handle_input_event);
 
-	Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid()) {
+	if (p_event.type == InputEventType::MOUSE_MOTION) {
 		Point2 prev_mouse = data->ui.mouse_pos;
-		data->ui.mouse_pos = mm->get_position();
+		data->ui.mouse_pos = p_event.mouse_motion.position;
 		Vector2 delta = data->ui.mouse_pos - prev_mouse;
 
 		if (data->playing) {
@@ -465,19 +464,20 @@ void EditorUI::handle_input_event(const Ref<InputEvent>& p_event)
 		return;
 	}
 
-	Ref<InputEventMouseButton> mb = p_event;
-	if (mb.is_valid()) {
-		data->ui.mouse_pos = mb->get_position();
+	if (p_event.type == InputEventType::MOUSE_BUTTON) {
+		const MouseButton btn = p_event.mouse_button.button_index;
+		const bool is_pressed = p_event.is_pressed();
+		data->ui.mouse_pos = p_event.mouse_button.position;
 
 		// Scroll wheel in Script view
-		if (mb->is_pressed() && !data->playing && data->view_mode == VIEW_SCRIPT &&
+		if (is_pressed && !data->playing && data->view_mode == VIEW_SCRIPT &&
 			data->center_viewport_rect.has_point(data->ui.mouse_pos)) {
-			if (mb->get_button_index() == MouseButton::WHEEL_UP && data->script_scroll_line > 0) {
+			if (btn == MouseButton::WHEEL_UP && data->script_scroll_line > 0) {
 				data->script_scroll_line = MAX(0, data->script_scroll_line - 3);
 				data->ui.needs_redraw = true;
 				return;
 			}
-			if (mb->get_button_index() == MouseButton::WHEEL_DOWN) {
+			if (btn == MouseButton::WHEEL_DOWN) {
 				int max_sc = MAX(0, (int)data->script_lines.size() - 5);
 				data->script_scroll_line = MIN(max_sc, data->script_scroll_line + 3);
 				data->ui.needs_redraw = true;
@@ -486,24 +486,23 @@ void EditorUI::handle_input_event(const Ref<InputEvent>& p_event)
 		}
 
 		// Right or middle mouse drag pans 2D / orbits 3D
-		if (mb->get_button_index() == MouseButton::RIGHT ||
-			mb->get_button_index() == MouseButton::MIDDLE) {
-			if (!data->playing && mb->is_pressed() &&
+		if (btn == MouseButton::RIGHT || btn == MouseButton::MIDDLE) {
+			if (!data->playing && is_pressed &&
 				data->center_viewport_rect.has_point(data->ui.mouse_pos)) {
 				data->panning_viewport = true;
 			}
-			else if (!mb->is_pressed()) {
+			else if (!is_pressed) {
 				data->panning_viewport = false;
 			}
 			return;
 		}
 
-		if (mb->get_button_index() != MouseButton::LEFT) {
+		if (btn != MouseButton::LEFT) {
 			return;
 		}
 
 		if (data->playing) {
-			if (mb->is_pressed()) {
+			if (is_pressed) {
 				bool hit_btn = data->runtime_buttons.press(data->ui.mouse_pos);
 				// Clicking in the runtime arena gives moving entities an interactive bounce impulse
 				if (!hit_btn && data->center_viewport_rect.has_point(data->ui.mouse_pos)) {
@@ -526,7 +525,7 @@ void EditorUI::handle_input_event(const Ref<InputEvent>& p_event)
 		}
 
 		// Editor Mode Left Click
-		if (mb->is_pressed()) {
+		if (is_pressed) {
 			bool hit_btn = false;
 			hit_btn |= data->top_buttons.press(data->ui.mouse_pos);
 			hit_btn |= data->dock_buttons.press(data->ui.mouse_pos);
@@ -647,9 +646,8 @@ void EditorUI::handle_input_event(const Ref<InputEvent>& p_event)
 		return;
 	}
 
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid() && k->is_pressed()) {
-		const Key code = k->get_keycode();
+	if (p_event.type == InputEventType::KEY && p_event.is_pressed()) {
+		const Key code = p_event.key.keycode;
 
 		if (code == Key::F5 && !data->playing) {
 			start_play();
@@ -659,7 +657,7 @@ void EditorUI::handle_input_event(const Ref<InputEvent>& p_event)
 			stop_play();
 			return;
 		}
-		if (k->is_ctrl_pressed() && code == Key::S && !data->playing) {
+		if (p_event.is_ctrl_pressed() && code == Key::S && !data->playing) {
 			_save_all();
 			return;
 		}
@@ -681,7 +679,7 @@ void EditorUI::handle_input_event(const Ref<InputEvent>& p_event)
 				return;
 			}
 			data->inspector_name_field.text = nm;
-			if (data->inspector_name_field.handle_key(k, '|')) {
+			if (data->inspector_name_field.handle_key(p_event, '|')) {
 				nm = data->inspector_name_field.text;
 				data->scene_dirty = true;
 				data->ui.needs_redraw = true;
@@ -732,8 +730,8 @@ void EditorUI::handle_input_event(const Ref<InputEvent>& p_event)
 				data->ui.needs_redraw = true;
 				return;
 			}
-			char32_t ch = k->get_unicode();
-			if (ch >= 32 && ch != 127 && !k->is_ctrl_pressed() && !k->is_meta_pressed()) {
+			char32_t ch = p_event.key.unicode;
+			if (ch >= 32 && ch != 127 && !p_event.is_ctrl_pressed() && !p_event.is_meta_pressed()) {
 				data->script_lines.write[data->caret_line] += String::chr(ch);
 				data->script_dirty = true;
 				data->ui.needs_redraw = true;
@@ -744,7 +742,7 @@ void EditorUI::handle_input_event(const Ref<InputEvent>& p_event)
 		// Arrow-key nudging in 2D view when no text field is focused
 		if (data->focus_field == FOCUS_NONE && data->view_mode == VIEW_2D &&
 			_can_modify_selected_node()) {
-			float step = k->is_shift_pressed() ? 10.0f : 2.0f;
+			float step = p_event.is_shift_pressed() ? 10.0f : 2.0f;
 			SceneEntity& ent = data->entities[data->selected_entity_idx];
 			if (code == Key::LEFT) {
 				ent.position.x -= step;

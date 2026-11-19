@@ -46,7 +46,7 @@ DisplayServerDriver* DisplayServerHeadless::create_func(const String& p_renderin
 	return memnew(DisplayServerHeadless());
 }
 
-void DisplayServerHeadless::_dispatch_input_events(const Ref<InputEvent>& p_event)
+void DisplayServerHeadless::_dispatch_input_events(const InputEvent& p_event)
 {
 	if (DisplayServerHeadless* ds = DisplayServer::driver_as<DisplayServerHeadless>()) {
 		ds->_dispatch_input_event(p_event);
@@ -66,4 +66,4 @@ DisplayServerHeadless::~DisplayServerHeadless()
 	NativeMenu::finalize();
 }
 
-void DisplayServerHeadless::_dispatch_input_event(Ref<InputEvent> const&) {}
+void DisplayServerHeadless::_dispatch_input_event(const InputEvent&) {}

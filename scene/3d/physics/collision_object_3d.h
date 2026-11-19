@@ -117,7 +117,7 @@ protected:
 
 	friend class Viewport;
 	virtual void _space_changed(const RID& p_new_space);
-	virtual void _input_event_call(Camera3D* p_camera, const Ref<InputEvent>& p_input_event,
+	virtual void _input_event_call(Camera3D* p_camera, const InputEvent& p_input_event,
 		const Vector3& p_pos, const Vector3& p_normal, int p_shape);
 	virtual void _mouse_enter();
 	virtual void _mouse_exit();

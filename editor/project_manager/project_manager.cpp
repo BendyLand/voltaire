@@ -259,16 +259,15 @@ void ProjectManager::initialize(RID p_viewport_rid, Size2i p_size)
 	process_and_draw();
 }
 
-void ProjectManager::handle_input_event(const Ref<InputEvent>& p_event)
+void ProjectManager::handle_input_event(const InputEvent& p_event)
 {
 	if (!data || p_event.is_null()) {
 		return;
 	}
 	data->ui.forward_input(p_event, &ProjectManager::handle_input_event);
 
-	Ref<InputEventMouseMotion> mm = p_event;
-	if (mm.is_valid()) {
-		data->ui.mouse_pos = mm->get_position();
+	if (p_event.type == InputEventType::MOUSE_MOTION) {
+		data->ui.mouse_pos = p_event.mouse_motion.position;
 		bool changed = false;
 
 		if (data->modal_mode != MODAL_NONE) {
@@ -314,24 +313,25 @@ void ProjectManager::handle_input_event(const Ref<InputEvent>& p_event)
 		return;
 	}
 
-	Ref<InputEventMouseButton> mb = p_event;
-	if (mb.is_valid()) {
-		data->ui.mouse_pos = mb->get_position();
+	if (p_event.type == InputEventType::MOUSE_BUTTON) {
+		const MouseButton btn = p_event.mouse_button.button_index;
+		const bool is_pressed = p_event.is_pressed();
+		data->ui.mouse_pos = p_event.mouse_button.position;
 
-		if (mb->is_pressed() && data->modal_mode == MODAL_NONE &&
+		if (is_pressed && data->modal_mode == MODAL_NONE &&
 			data->list_scroll.bounds.has_point(data->ui.mouse_pos)) {
-			if (data->list_scroll.handle_wheel(mb->get_button_index(), 40.0f)) {
+			if (data->list_scroll.handle_wheel(btn, 40.0f)) {
 				data->ui.needs_redraw = true;
 				return;
 			}
 		}
 
-		if (mb->get_button_index() != MouseButton::LEFT) {
+		if (btn != MouseButton::LEFT) {
 			return;
 		}
 
 		if (data->modal_mode != MODAL_NONE) {
-			if (mb->is_pressed()) {
+			if (is_pressed) {
 				bool hit_button = data->modal_buttons.press(data->ui.mouse_pos);
 				if (!hit_button) {
 					if (data->modal_primary_field.has_point(data->ui.mouse_pos)) {
@@ -359,7 +359,7 @@ void ProjectManager::handle_input_event(const Ref<InputEvent>& p_event)
 		}
 
 		// Normal (non-modal) left click press / release
-		if (mb->is_pressed()) {
+		if (is_pressed) {
 			bool hit_ui = false;
 			hit_ui |= data->buttons.press(data->ui.mouse_pos);
 			hit_ui |= data->sidebar_buttons.press(data->ui.mouse_pos);
@@ -394,7 +394,7 @@ void ProjectManager::handle_input_event(const Ref<InputEvent>& p_event)
 												? vformat("Selected missing project: %s", sel.path)
 												: vformat("Selected '%s' (%s)", sel.name, sel.path);
 						data->ui.needs_redraw = true;
-						if (mb->is_double_click() && !sel.missing) {
+						if (p_event.mouse_button.double_click && !sel.missing) {
 							_edit_selected_project();
 						}
 						return;
@@ -416,9 +416,8 @@ void ProjectManager::handle_input_event(const Ref<InputEvent>& p_event)
 		return;
 	}
 
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid() && k->is_pressed()) {
-		const Key code = k->get_keycode();
+	if (p_event.type == InputEventType::KEY && p_event.is_pressed()) {
+		const Key code = p_event.key.keycode;
 
 		if (code == Key::ESCAPE) {
 			if (data->modal_mode != MODAL_NONE) {
@@ -470,7 +469,7 @@ void ProjectManager::handle_input_event(const Ref<InputEvent>& p_event)
 		}
 
 		if (target_field) {
-			if (target_field->handle_key(k)) {
+			if (target_field->handle_key(p_event)) {
 				if (data->active_field == FIELD_SEARCH) {
 					data->list_scroll.offset = 0.0f;
 					rebuild_filtered_list();

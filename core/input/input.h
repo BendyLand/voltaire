@@ -32,8 +32,11 @@
 #pragma once
 
 #include "core/input/input_event.h"
+#include "core/io/resource.h"
+#include "core/math/color.h"
 #include "core/os/keyboard.h"
 #include "core/os/thread_safe.h"
+#include "core/templates/list.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
 
@@ -111,7 +114,7 @@ public:
 
 	static constexpr int32_t JOYPADS_MAX = 16;
 
-	typedef void (*EventDispatchFunc)(const Ref<InputEvent>& p_event);
+	typedef void (*EventDispatchFunc)(const InputEvent& p_event);
 
 	struct ActionState
 	{
@@ -329,11 +332,7 @@ public:
 
 		Vector<JoyDeviceMapping> map_db;
 
-		List<Ref<InputEvent>> buffered_events;
-#ifdef DEBUG_ENABLED
-		HashSet<Ref<InputEvent>> frame_parsed_events;
-		uint64_t last_parsed_frame = UINT64_MAX;
-#endif
+		List<InputEvent> buffered_events;
 
 		EventDispatchFunc event_dispatch_function = nullptr;
 	};
@@ -355,7 +354,7 @@ private:
 	static void _update_action_cache(const String& p_action_name, ActionState& r_action_state);
 	static void _update_joypad_features(int p_device);
 
-	static void _parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_emulated);
+	static void _parse_input_event_impl(const InputEvent& p_event, bool p_is_emulated);
 
 	friend class DisplayServer;
 	friend class SceneTree;
@@ -402,9 +401,9 @@ public:
 	static bool is_action_just_pressed(const String& p_action, bool p_exact = false);
 	static bool is_action_just_released(const String& p_action, bool p_exact = false);
 	static bool is_action_just_pressed_by_event(
-		const String& p_action, InputEvent* rp_event, bool p_exact = false);
+		const String& p_action, const InputEvent& p_event, bool p_exact = false);
 	static bool is_action_just_released_by_event(
-		const String& p_action, InputEvent* rp_event, bool p_exact = false);
+		const String& p_action, const InputEvent& p_event, bool p_exact = false);
 	static float get_action_strength(const String& p_action, bool p_exact = false);
 	static float get_action_raw_strength(const String& p_action, bool p_exact = false);
 
@@ -434,9 +433,9 @@ public:
 	static uint32_t get_mouse_button_mask();
 
 	static void warp_mouse(const Vector2& p_position);
-	static Point2 warp_mouse_motion(const Ref<InputEventMouseMotion>& p_motion, const Rect2& p_rect);
+	static Point2 warp_mouse_motion(const InputEvent& p_motion, const Rect2& p_rect);
 
-	static void parse_input_event(InputEvent* rp_event);
+	static void parse_input_event(const InputEvent& p_event);
 
 	static void set_gravity(const Vector3& p_gravity);
 	static void set_accelerometer(const Vector3& p_accel);
@@ -520,9 +519,6 @@ public:
 	static bool should_ignore_device(int p_vendor_id, int p_product_id);
 	static void set_fallback_mapping(const String& p_guid);
 
-#ifdef DEBUG_ENABLED
-	static void flush_frame_parsed_events();
-#endif
 	static void flush_buffered_events();
 	static bool is_agile_input_event_flushing();
 	static void set_agile_input_event_flushing(bool p_enable);

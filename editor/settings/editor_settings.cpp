@@ -605,7 +605,7 @@ void EditorSettings::remove_shortcut(const String& p_path)
 	}
 }
 
-bool EditorSettings::is_shortcut(const String& p_path, const Ref<InputEvent>& p_event)
+bool EditorSettings::is_shortcut(const String& p_path, const InputEvent& p_event)
 {
 	if (!data) {
 		return false;
@@ -636,7 +636,7 @@ Ref<Shortcut> EditorSettings::get_shortcut(const String& p_path)
 	// 1 linked event.
 
 	Ref<Shortcut> sc;
-	HashMap<String, List<Ref<InputEvent>>>::ConstIterator builtin_override =
+	HashMap<String, List<InputEvent>>::ConstIterator builtin_override =
 		data->builtin_action_overrides.find(p_path);
 	if (builtin_override) {
 		sc.instantiate();
@@ -647,7 +647,7 @@ Ref<Shortcut> EditorSettings::get_shortcut(const String& p_path)
 	// If there was no override, check the default builtins to see if it has an InputEvent for the
 	// provided name.
 	if (sc.is_null()) {
-		HashMap<String, List<Ref<InputEvent>>>::ConstIterator builtin_default =
+		HashMap<String, List<InputEvent>>::ConstIterator builtin_default =
 			InputMap::get_builtins_with_feature_overrides_applied().find(p_path);
 		if (builtin_default) {
 			sc.instantiate();

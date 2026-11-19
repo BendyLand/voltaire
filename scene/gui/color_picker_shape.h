@@ -51,7 +51,7 @@ protected:
 	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) = 0;
 
 	bool can_handle(
-		const Ref<InputEvent>& p_event, Vector2& r_position, bool* r_is_click = nullptr);
+		const InputEvent& p_event, Vector2& r_position, bool* r_is_click = nullptr);
 	void cancel_event();
 
 	void draw_focus_rect(Control* p_control, const Rect2& p_rect = Rect2());
@@ -64,7 +64,7 @@ protected:
 	void shape_focus_entered();
 	void shape_focus_exited();
 
-	void handle_cursor_editing(const Ref<InputEvent>& p_event, Control* p_control);
+	void handle_cursor_editing(const InputEvent& p_event, Control* p_control);
 	int get_edge_h_change(const Vector2& p_color_change_vector);
 	float get_h_on_circle_edge(const Vector2& p_color_change_vector);
 
@@ -198,7 +198,7 @@ class ColorPickerShapeWheel : public ColorPickerShape
 	float _get_h_on_wheel(const Vector2& p_color_change_vector);
 	void _reset_wheel_focus();
 
-	void _wheel_input(const Ref<InputEvent>& p_event);
+	void _wheel_input(const InputEvent& p_event);
 
 	void _wheel_draw();
 	void _wheel_uv_draw();
@@ -230,8 +230,8 @@ protected:
 
 	Vector2i circle_keyboard_joypad_picker_cursor_position;
 
-	virtual void _circle_input(const Ref<InputEvent>& p_event) = 0;
-	virtual void _value_slider_input(const Ref<InputEvent>& p_event) = 0;
+	virtual void _circle_input(const InputEvent& p_event) = 0;
+	virtual void _value_slider_input(const InputEvent& p_event) = 0;
 
 	virtual void _circle_draw() = 0;
 	virtual void _circle_overlay_draw() = 0;

@@ -4191,12 +4191,6 @@ void Main::cleanup(bool p_force)
 	// Printing in the usual way can become problematic during/after cleanup.
 	CoreGlobals::print_ready = false;
 
-#ifdef DEBUG_ENABLED
-	if (Input::is_initialized()) {
-		Input::flush_frame_parsed_events();
-	}
-#endif
-
 	for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
 		TextServerManager::get_interface(i)->cleanup();
 	}

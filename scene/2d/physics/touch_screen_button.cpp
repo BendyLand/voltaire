@@ -131,6 +131,6 @@ TouchScreenButton::TouchScreenButton()
 	unit_rect->set_size(Vector2(1, 1));
 }
 
-void TouchScreenButton::input(const Ref<InputEvent>& p_event) {}
+void TouchScreenButton::input(const InputEvent& p_event) {}
 
 

@@ -936,15 +936,15 @@ Viewport::SubWindowResize Viewport::_sub_window_get_resize_margin(
 	return SUB_WINDOW_RESIZE_DISABLED;
 }
 
-bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
+bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 {
 	if (gui.subwindow_drag != SUB_WINDOW_DRAG_DISABLED) {
 		ERR_FAIL_NULL_V(gui.currently_dragged_subwindow, false);
 
-		Ref<InputEventMouseButton> mb = p_event;
-		if (mb.is_valid() && !mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
+		if (p_event.type == InputEventType::MOUSE_BUTTON && !p_event.is_pressed() &&
+			p_event.mouse_button.button_index == MouseButton::LEFT) {
 			if (gui.subwindow_drag == SUB_WINDOW_DRAG_CLOSE) {
-				if (gui.subwindow_drag_close_rect.has_point(mb->get_position())) {
+				if (gui.subwindow_drag_close_rect.has_point(p_event.mouse_button.position)) {
 					// Close window.
 					gui.currently_dragged_subwindow->_event_callback(
 						DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
@@ -957,10 +957,10 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 			}
 		}
 
-		Ref<InputEventMouseMotion> mm = p_event;
-		if (mm.is_valid()) {
+		if (p_event.type == InputEventType::MOUSE_MOTION) {
+			const Vector2 mm_pos = p_event.mouse_motion.position;
 			if (gui.subwindow_drag == SUB_WINDOW_DRAG_MOVE) {
-				Vector2 diff = mm->get_position() - gui.subwindow_drag_from;
+				Vector2 diff = mm_pos - gui.subwindow_drag_from;
 				Rect2i new_rect(
 					gui.subwindow_drag_pos + diff, gui.currently_dragged_subwindow->get_size());
 
@@ -971,18 +971,15 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 
 				gui.currently_dragged_subwindow->_rect_changed_callback(new_rect);
 
-				if (DisplayServer::has_feature(
-						DisplayServerEnums::FEATURE_CURSOR_SHAPE)) {
-					DisplayServer::cursor_set_shape(
-						DisplayServerEnums::CURSOR_MOVE);
+				if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_CURSOR_SHAPE)) {
+					DisplayServer::cursor_set_shape(DisplayServerEnums::CURSOR_MOVE);
 				}
 			}
 			if (gui.subwindow_drag == SUB_WINDOW_DRAG_CLOSE) {
-				gui.subwindow_drag_close_inside =
-					gui.subwindow_drag_close_rect.has_point(mm->get_position());
+				gui.subwindow_drag_close_inside = gui.subwindow_drag_close_rect.has_point(mm_pos);
 			}
 			if (gui.subwindow_drag == SUB_WINDOW_DRAG_RESIZE) {
-				Vector2i diff = mm->get_position() - gui.subwindow_drag_from;
+				Vector2i diff = mm_pos - gui.subwindow_drag_from;
 				Size2i min_size = gui.currently_dragged_subwindow->get_min_size();
 				Size2i min_size_clamped =
 					gui.currently_dragged_subwindow->get_clamped_minimum_size();
@@ -1069,10 +1066,10 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 
 		return true; // Handled.
 	}
-	Ref<InputEventMouseButton> mb = p_event;
 	// If the event is a mouse button, we need to check whether another window was clicked.
-
-	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
+	if (p_event.type == InputEventType::MOUSE_BUTTON && p_event.is_pressed() &&
+		p_event.mouse_button.button_index == MouseButton::LEFT) {
+		const Vector2 mb_pos = p_event.mouse_button.position;
 		Window* click_on_window = nullptr;
 		for (int i = gui.sub_windows.size() - 1; i >= 0; i--) {
 			SubWindow sw = gui.sub_windows.write[i];
@@ -1088,7 +1085,7 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 				title_bar.position.y -= title_height;
 				title_bar.size.y = title_height;
 
-				if (title_bar.size.y > 0 && title_bar.has_point(mb->get_position())) {
+				if (title_bar.size.y > 0 && title_bar.has_point(mb_pos)) {
 					click_on_window = sw.window;
 
 					int close_h_ofs = sw.window->theme_cache.close_h_offset;
@@ -1109,7 +1106,7 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 						_sub_window_grab_focus(sw.window);
 					}
 
-					if (close_rect.has_point(mb->get_position())) {
+					if (close_rect.has_point(mb_pos)) {
 						gui.subwindow_drag = SUB_WINDOW_DRAG_CLOSE;
 						gui.subwindow_drag_close_inside = true; // Starts inside.
 						gui.subwindow_drag_close_rect = close_rect;
@@ -1118,14 +1115,14 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 						gui.subwindow_drag = SUB_WINDOW_DRAG_MOVE;
 					}
 
-					gui.subwindow_drag_from = mb->get_position();
+					gui.subwindow_drag_from = mb_pos;
 					gui.subwindow_drag_pos = sw.window->get_position();
 
 					_sub_window_update(sw.window);
 				}
 				else {
 					gui.subwindow_resize_mode =
-						_sub_window_get_resize_margin(sw.window, mb->get_position());
+						_sub_window_get_resize_margin(sw.window, mb_pos);
 					if (gui.subwindow_resize_mode != SUB_WINDOW_RESIZE_DISABLED) {
 						if (gui.subwindow_focused != sw.window) {
 							// Refocus.
@@ -1133,13 +1130,13 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 						}
 
 						gui.subwindow_resize_from_rect = r;
-						gui.subwindow_drag_from = mb->get_position();
+						gui.subwindow_drag_from = mb_pos;
 						gui.subwindow_drag = SUB_WINDOW_DRAG_RESIZE;
 						click_on_window = sw.window;
 					}
 				}
 			}
-			if (!click_on_window && r.has_point(mb->get_position())) {
+			if (!click_on_window && r.has_point(mb_pos)) {
 				// Clicked, see if it needs to fetch focus.
 				if (gui.subwindow_focused != sw.window) {
 					// Refocus.
@@ -1162,26 +1159,22 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 		}
 	}
 
-	if (gui.subwindow_focused) {
-		Ref<InputEventMouseMotion> mm = p_event;
-		if (mm.is_valid()) {
-			SubWindowResize resize =
-				_sub_window_get_resize_margin(gui.subwindow_focused, mm->get_position());
-			if (resize != SUB_WINDOW_RESIZE_DISABLED) {
-				DisplayServerEnums::CursorShape shapes[SUB_WINDOW_RESIZE_MAX] = {
-					DisplayServerEnums::CURSOR_ARROW, DisplayServerEnums::CURSOR_FDIAGSIZE,
-					DisplayServerEnums::CURSOR_VSIZE, DisplayServerEnums::CURSOR_BDIAGSIZE,
-					DisplayServerEnums::CURSOR_HSIZE, DisplayServerEnums::CURSOR_HSIZE,
-					DisplayServerEnums::CURSOR_BDIAGSIZE, DisplayServerEnums::CURSOR_VSIZE,
-					DisplayServerEnums::CURSOR_FDIAGSIZE};
+	if (gui.subwindow_focused && p_event.type == InputEventType::MOUSE_MOTION) {
+		SubWindowResize resize = _sub_window_get_resize_margin(
+			gui.subwindow_focused, p_event.mouse_motion.position);
+		if (resize != SUB_WINDOW_RESIZE_DISABLED) {
+			DisplayServerEnums::CursorShape shapes[SUB_WINDOW_RESIZE_MAX] = {
+				DisplayServerEnums::CURSOR_ARROW, DisplayServerEnums::CURSOR_FDIAGSIZE,
+				DisplayServerEnums::CURSOR_VSIZE, DisplayServerEnums::CURSOR_BDIAGSIZE,
+				DisplayServerEnums::CURSOR_HSIZE, DisplayServerEnums::CURSOR_HSIZE,
+				DisplayServerEnums::CURSOR_BDIAGSIZE, DisplayServerEnums::CURSOR_VSIZE,
+				DisplayServerEnums::CURSOR_FDIAGSIZE};
 
-				if (DisplayServer::has_feature(
-						DisplayServerEnums::FEATURE_CURSOR_SHAPE)) {
-					DisplayServer::cursor_set_shape(shapes[resize]);
-				}
-
-				return true; // Reserved for showing the resize cursor.
+			if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_CURSOR_SHAPE)) {
+				DisplayServer::cursor_set_shape(shapes[resize]);
 			}
+
+			return true; // Reserved for showing the resize cursor.
 		}
 	}
 
@@ -1191,8 +1184,8 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 
 	if (!gui.subwindow_focused) {
 		// No window focus, check for unfocusable windows under the cursor.
-		Ref<InputEventMouse> me = p_event;
-		if (me.is_valid()) {
+		if (p_event.is_mouse()) {
+			const Vector2 me_pos = p_event.get_mouse_position();
 			for (int i = gui.sub_windows.size() - 1; i >= 0; i--) {
 				const SubWindow& sw = gui.sub_windows[i];
 				if (!sw.window->get_flag(Window::FLAG_NO_FOCUS) ||
@@ -1200,10 +1193,10 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 					continue;
 				}
 				Rect2i r = Rect2i(sw.window->get_position(), sw.window->get_size());
-				if (r.has_point(me->get_position())) {
+				if (r.has_point(me_pos)) {
 					Transform2D window_ofs;
 					window_ofs.set_origin(-sw.window->get_position());
-					Ref<InputEvent> ev = p_event->xformed_by(window_ofs);
+					InputEvent ev = p_event.xformed_by(window_ofs);
 					sw.window->_window_input(ev);
 					return true;
 				}
@@ -1215,7 +1208,7 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent>& p_event)
 	Transform2D window_ofs;
 	window_ofs.set_origin(-gui.subwindow_focused->get_position());
 
-	Ref<InputEvent> ev = p_event->xformed_by(window_ofs);
+	InputEvent ev = p_event.xformed_by(window_ofs);
 
 	gui.subwindow_focused->_window_input(ev);
 
@@ -1265,42 +1258,34 @@ void Viewport::_window_start_resize(SubWindowResize p_edge, Window* p_window)
 	_sub_window_update(sw.window);
 }
 
-void Viewport::_update_mouse_over(const Ref<InputEventMouse>& p_mm)
+void Viewport::_update_mouse_over(const InputEvent& p_mm)
 {
-	// Update gui.mouse_over and gui.subwindow_over in all Viewports.
-	// Send necessary mouse_enter/mouse_exit signals and the MOUSE_ENTER/MOUSE_EXIT notifications
-	// for every Viewport in the SceneTree.
-
-	if (is_attached_in_viewport()) {
-		// Execute this function only, when it is processed by a native Window or a SubViewport,
-		// that has no SubViewportContainer as parent.
+	if (!p_mm.is_mouse() || is_attached_in_viewport()) {
 		return;
 	}
 
+	const Vector2 mm_pos = p_mm.get_mouse_position();
 	if (SceneTree::get_root()->is_embedding_subwindows() || is_sub_viewport()) {
-		// Use embedder logic for calculating mouse position.
-		_update_mouse_over(p_mm->get_position());
+		_update_mouse_over(mm_pos);
 	}
 	else {
-		// Native Window: Use DisplayServer logic for calculating mouse position.
 		Window* receiving_window = SceneTree::get_root()->gui.windowmanager_window_over;
 		if (!receiving_window) {
 			return;
 		}
-		if (receiving_window->get_window_id() != p_mm->get_window_id()) {
-			Vector2 pos = DisplayServer::mouse_get_position() -
-						  receiving_window->get_position();
+		if (receiving_window->get_window_id() != p_mm.window_id) {
+			Vector2 pos = DisplayServer::mouse_get_position() - receiving_window->get_position();
 			pos = receiving_window->get_final_transform().affine_inverse().xform(pos);
 			receiving_window->_update_mouse_over(pos);
 		}
 		else {
-			receiving_window->_update_mouse_over(p_mm->get_position());
+			receiving_window->_update_mouse_over(mm_pos);
 		}
 	}
 }
 
 #ifndef DISABLE_DEPRECATED
-void Viewport::push_unhandled_input(InputEvent* rp_event, bool p_local_coords)
+void Viewport::push_unhandled_input(const InputEvent& p_event, bool p_local_coords)
 {
 	ERR_MAIN_THREAD_GUARD;
 	WARN_DEPRECATED_MSG(
@@ -1318,14 +1303,7 @@ void Viewport::push_unhandled_input(InputEvent* rp_event, bool p_local_coords)
 		return;
 	}
 
-	Ref<InputEvent> ev;
-	if (!p_local_coords) {
-		ev = _make_input_local(rp_event);
-	}
-	else {
-		ev = rp_event;
-	}
-
+	InputEvent ev = p_local_coords ? p_event : _make_input_local(p_event);
 	_push_unhandled_input_internal(ev);
 }
 #endif // DISABLE_DEPRECATED
@@ -2593,9 +2571,9 @@ void Viewport::_refresh_texture_repeat_cache() const {}
 
 void Viewport::_refresh_texture_filter_cache() const {}
 
-void Viewport::_push_unhandled_input_internal(Ref<InputEvent> const&) {}
+void Viewport::_push_unhandled_input_internal(const InputEvent&) {}
 
-void Viewport::push_input(InputEvent*, bool) {}
+void Viewport::push_input(const InputEvent&, bool) {}
 
 void Viewport::_propagate_world_2d_changed(Node*) {}
 
@@ -2607,10 +2585,9 @@ void Viewport::_mouse_leave_viewport() {}
 
 void Viewport::_update_mouse_over(Vector2 p_pos) {}
 
-Ref<InputEvent> Viewport::_make_input_local(Ref<InputEvent> const&)
+InputEvent Viewport::_make_input_local(const InputEvent& p_ev)
 {
-	Ref<InputEvent> ie = memnew(InputEvent);
-	return ie;
+	return p_ev;
 }
 
 void Viewport::_gui_sort_roots() {}

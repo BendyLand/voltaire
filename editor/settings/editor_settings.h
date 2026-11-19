@@ -80,7 +80,7 @@ private:
 
 		Ref<Resource> clipboard;
 		HashMap<String, Ref<Shortcut>> shortcuts;
-		HashMap<String, List<Ref<InputEvent>>> builtin_action_overrides;
+		HashMap<String, List<InputEvent>> builtin_action_overrides;
 
 		Vector<String> favorites;
 		HashMap<String, PackedStringArray> favorite_properties;
@@ -182,7 +182,7 @@ public:
 	static void _add_shortcut_default(const String& p_path, const Ref<Shortcut>& p_shortcut);
 	static void add_shortcut(const String& p_path, const Ref<Shortcut>& p_shortcut);
 	static void remove_shortcut(const String& p_path);
-	static bool is_shortcut(const String& p_path, const Ref<InputEvent>& p_event);
+	static bool is_shortcut(const String& p_path, const InputEvent& p_event);
 	static bool has_shortcut(const String& p_path);
 	static Ref<Shortcut> get_shortcut(const String& p_path);
 	static void get_shortcut_list(List<String>* r_shortcuts);

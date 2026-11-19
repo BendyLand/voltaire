@@ -3923,13 +3923,12 @@ static Atom pick_target_from_atoms(Display* p_disp, Atom p_t1, Atom p_t2, Atom p
 }
 
 void DisplayServerX11::_get_key_modifier_state(
-	unsigned int p_x11_state, Ref<InputEventWithModifiers> state)
+	unsigned int p_x11_state, InputEvent& r_state)
 {
-	state->set_shift_pressed((p_x11_state & ShiftMask));
-	state->set_ctrl_pressed((p_x11_state & ControlMask));
-	state->set_alt_pressed(
-		(p_x11_state & Mod1Mask /*|| p_x11_state&Mod5Mask*/)); // altgr should not count as alt
-	state->set_meta_pressed((p_x11_state & Mod4Mask));
+	r_state.set_shift_pressed((p_x11_state & ShiftMask) != 0);
+	r_state.set_ctrl_pressed((p_x11_state & ControlMask) != 0);
+	r_state.set_alt_pressed((p_x11_state & Mod1Mask) != 0); // altgr should not count as alt
+	r_state.set_meta_pressed((p_x11_state & Mod4Mask) != 0);
 }
 
 void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, XKeyEvent* p_event,
@@ -4040,8 +4039,6 @@ void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, 
 
 			String tmp = String::utf8(utf8string, utf8bytes);
 			for (int i = 0; i < tmp.length(); i++) {
-				Ref<InputEventKey> k;
-				k.instantiate();
 				if (physical_keycode == Key::NONE && keycode == Key::NONE && tmp[i] == 0) {
 					continue;
 				}
@@ -4050,33 +4047,27 @@ void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, 
 					keycode = (Key)physical_keycode;
 				}
 
+				InputEvent k = InputEvent::make_key();
 				_get_key_modifier_state(xkeyevent->state, k);
 
-				k->set_window_id(p_window);
-				k->set_pressed(keypress);
+				k.window_id = p_window;
+				k.pressed = keypress;
 
-				k->set_keycode(keycode);
-				k->set_physical_keycode(physical_keycode);
-				if (!keysym.is_empty()) {
-					k->set_key_label(fix_key_label(keysym[0], keycode));
-				}
-				else {
-					k->set_key_label(keycode);
-				}
+				k.key.keycode = keycode;
+				k.key.physical_keycode = physical_keycode;
+				k.key.key_label = !keysym.is_empty() ? fix_key_label(keysym[0], keycode) : keycode;
 				if (keypress) {
-					k->set_unicode(fix_unicode(tmp[i]));
+					k.key.unicode = fix_unicode(tmp[i]);
+				}
+				k.key.echo = false;
+
+				if (k.key.keycode == Key::BACKTAB) {
+					k.key.keycode = Key::TAB;
+					k.key.physical_keycode = Key::TAB;
+					k.set_shift_pressed(true);
 				}
 
-				k->set_echo(false);
-
-				if (k->get_keycode() == Key::BACKTAB) {
-					// make it consistent across platforms.
-					k->set_keycode(Key::TAB);
-					k->set_physical_keycode(Key::TAB);
-					k->set_shift_pressed(true);
-				}
-
-				Input::parse_input_event(k.ptr());
+				Input::parse_input_event(k);
 			}
 			memfree(utf8string);
 			return;
@@ -4123,8 +4114,6 @@ void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, 
 
 				String tmp = String::utf8(str_xkb, str_xkb_size);
 				for (int i = 0; i < tmp.length(); i++) {
-					Ref<InputEventKey> k;
-					k.instantiate();
 					if (physical_keycode == Key::NONE && keycode == Key::NONE && tmp[i] == 0) {
 						continue;
 					}
@@ -4133,35 +4122,29 @@ void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, 
 						keycode = (Key)physical_keycode;
 					}
 
+					InputEvent k = InputEvent::make_key();
 					_get_key_modifier_state(xkeyevent->state, k);
 
-					k->set_window_id(p_window);
-					k->set_pressed(keypress);
+					k.window_id = p_window;
+					k.pressed = keypress;
 
-					k->set_keycode(keycode);
-					k->set_physical_keycode(physical_keycode);
-					if (!keysym.is_empty()) {
-						k->set_key_label(fix_key_label(keysym[0], keycode));
-					}
-					else {
-						k->set_key_label(keycode);
-					}
+					k.key.keycode = keycode;
+					k.key.physical_keycode = physical_keycode;
+					k.key.key_label =
+						!keysym.is_empty() ? fix_key_label(keysym[0], keycode) : keycode;
 					if (keypress) {
-						k->set_unicode(fix_unicode(tmp[i]));
+						k.key.unicode = fix_unicode(tmp[i]);
+					}
+					k.key.location = key_location;
+					k.key.echo = false;
+
+					if (k.key.keycode == Key::BACKTAB) {
+						k.key.keycode = Key::TAB;
+						k.key.physical_keycode = Key::TAB;
+						k.set_shift_pressed(true);
 					}
 
-					k->set_location(key_location);
-
-					k->set_echo(false);
-
-					if (k->get_keycode() == Key::BACKTAB) {
-						// make it consistent across platforms.
-						k->set_keycode(Key::TAB);
-						k->set_physical_keycode(Key::TAB);
-						k->set_shift_pressed(true);
-					}
-
-					Input::parse_input_event(k.ptr());
+					Input::parse_input_event(k);
 				}
 				return;
 			}
@@ -4225,9 +4208,8 @@ void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, 
 	// print_verbose("mod1: "+itos(xkeyevent->state&Mod1Mask)+" mod 5:
 	// "+itos(xkeyevent->state&Mod5Mask));
 
-	Ref<InputEventKey> k;
-	k.instantiate();
-	k->set_window_id(p_window);
+	InputEvent k = InputEvent::make_key();
+	k.window_id = p_window;
 
 	_get_key_modifier_state(xkeyevent->state, k);
 
@@ -4275,60 +4257,51 @@ void DisplayServerX11::_handle_key_event(DisplayServerEnums::WindowID p_window, 
 
 	/* Phase 7, send event to Window */
 
-	k->set_pressed(keypress);
+	k.pressed = keypress;
 
 	if (keycode >= Key::A + 32 && keycode <= Key::Z + 32) {
 		keycode -= int('a' - 'A');
 	}
 
-	k->set_keycode(keycode);
-	k->set_physical_keycode((Key)physical_keycode);
-	if (!keysym.is_empty()) {
-		k->set_key_label(fix_key_label(keysym[0], keycode));
-	}
-	else {
-		k->set_key_label(keycode);
-	}
+	k.key.keycode = keycode;
+	k.key.physical_keycode = (Key)physical_keycode;
+	k.key.key_label = !keysym.is_empty() ? fix_key_label(keysym[0], keycode) : keycode;
 	if (keypress) {
-		k->set_unicode(fix_unicode(unicode));
+		k.key.unicode = fix_unicode(unicode);
 	}
+	k.key.location = key_location;
+	k.key.echo = p_echo;
 
-	k->set_location(key_location);
-
-	k->set_echo(p_echo);
-
-	if (k->get_keycode() == Key::BACKTAB) {
+	if (k.key.keycode == Key::BACKTAB) {
 		// make it consistent across platforms.
-		k->set_keycode(Key::TAB);
-		k->set_physical_keycode(Key::TAB);
-		k->set_shift_pressed(true);
+		k.key.keycode = Key::TAB;
+		k.key.physical_keycode = Key::TAB;
+		k.set_shift_pressed(true);
 	}
 
 	// don't set mod state if modifier keys are released by themselves
 	// else event.is_action() will not work correctly here
-	if (!k->is_pressed()) {
-		if (k->get_keycode() == Key::SHIFT) {
-			k->set_shift_pressed(false);
+	if (!k.is_pressed()) {
+		if (k.key.keycode == Key::SHIFT) {
+			k.set_shift_pressed(false);
 		}
-		else if (k->get_keycode() == Key::CTRL) {
-			k->set_ctrl_pressed(false);
+		else if (k.key.keycode == Key::CTRL) {
+			k.set_ctrl_pressed(false);
 		}
-		else if (k->get_keycode() == Key::ALT) {
-			k->set_alt_pressed(false);
+		else if (k.key.keycode == Key::ALT) {
+			k.set_alt_pressed(false);
 		}
-		else if (k->get_keycode() == Key::META) {
-			k->set_meta_pressed(false);
-		}
-	}
-
-	bool last_is_pressed = Input::is_key_pressed(k->get_keycode());
-	if (k->is_pressed()) {
-		if (last_is_pressed) {
-			k->set_echo(true);
+		else if (k.key.keycode == Key::META) {
+			k.set_meta_pressed(false);
 		}
 	}
 
-	Input::parse_input_event(k.ptr());
+	bool last_is_pressed = Input::is_key_pressed(k.key.keycode);
+	if (k.is_pressed() && last_is_pressed) {
+		k.key.echo = true;
+	}
+
+	Input::parse_input_event(k);
 }
 
 Atom DisplayServerX11::_process_selection_request_target(
@@ -4489,7 +4462,7 @@ DisplayServerEnums::WindowID DisplayServerX11::_get_focused_window_or_popup() co
 	return last_focused_window;
 }
 
-void DisplayServerX11::_dispatch_input_events(const Ref<InputEvent>& p_event)
+void DisplayServerX11::_dispatch_input_events(const InputEvent& p_event)
 {
 	if (DisplayServerX11* ds = DisplayServer::driver_as<DisplayServerX11>()) {
 		ds->_dispatch_input_event(p_event);
@@ -6412,7 +6385,7 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 	}
 }
 
-void DisplayServerX11::_dispatch_input_event(Ref<InputEvent> const&) {}
+void DisplayServerX11::_dispatch_input_event(const InputEvent&) {}
 
 void DisplayServerX11::_send_window_event(
 	const WindowData& wd, DisplayServerEnums::WindowEvent p_event)
@@ -6487,9 +6460,8 @@ void DisplayServerX11::process_events()
 			last_mouse_pos = pos;
 			last_mouse_pos_valid = true;
 
-			Ref<InputEventMouseMotion> mm;
-			mm.instantiate();
-			mm->set_window_id(window_id);
+			InputEvent mm = InputEvent::make_mouse_motion();
+			mm.window_id = window_id;
 			_get_key_modifier_state(ev.xmotion.state, mm);
 			uint32_t mask = 0;
 			if (ev.xmotion.state & Button1Mask) {
@@ -6501,12 +6473,12 @@ void DisplayServerX11::process_events()
 			if (ev.xmotion.state & Button3Mask) {
 				mask |= (uint32_t)MouseButtonMask::RIGHT;
 			}
-			mm->set_button_mask(mask);
-			mm->set_position(Vector2(pos));
-			mm->set_global_position(Vector2(pos));
-			mm->set_relative(rel);
-			mm->set_relative_screen_position(rel);
-			Input::parse_input_event(mm.ptr());
+			mm.mouse_motion.button_mask = mask;
+			mm.mouse_motion.position = Vector2(pos);
+			mm.mouse_motion.global_position = Vector2(pos);
+			mm.mouse_motion.relative = rel;
+			mm.mouse_motion.screen_relative = rel;
+			Input::parse_input_event(mm);
 		} break;
 		case ButtonPress:
 		case ButtonRelease: {
@@ -6515,9 +6487,8 @@ void DisplayServerX11::process_events()
 			last_mouse_pos = pos;
 			last_mouse_pos_valid = true;
 
-			Ref<InputEventMouseButton> mb;
-			mb.instantiate();
-			mb->set_window_id(window_id);
+			InputEvent mb = InputEvent::make_mouse_button();
+			mb.window_id = window_id;
 			_get_key_modifier_state(ev.xbutton.state, mb);
 
 			MouseButton btn_idx = (MouseButton)ev.xbutton.button;
@@ -6527,11 +6498,11 @@ void DisplayServerX11::process_events()
 			else if (btn_idx == MouseButton::MIDDLE) {
 				btn_idx = MouseButton::RIGHT;
 			}
-			mb->set_button_index(btn_idx);
-			mb->set_position(Vector2(pos));
-			mb->set_global_position(Vector2(pos));
-			mb->set_pressed(pressed);
-			mb->set_factor(1.0f);
+			mb.mouse_button.button_index = btn_idx;
+			mb.mouse_button.position = Vector2(pos);
+			mb.mouse_button.global_position = Vector2(pos);
+			mb.pressed = pressed;
+			mb.mouse_button.factor = 1.0f;
 
 			uint32_t mask = 0;
 			if (ev.xbutton.state & Button1Mask) {
@@ -6550,7 +6521,7 @@ void DisplayServerX11::process_events()
 			else {
 				mask &= ~btn_bit;
 			}
-			mb->set_button_mask(mask);
+			mb.mouse_button.button_mask = mask;
 
 			if (pressed && (btn_idx < MouseButton::WHEEL_UP || btn_idx > MouseButton::WHEEL_RIGHT)) {
 				uint64_t now_ms = OS::get_ticks_usec() / 1000;
@@ -6560,7 +6531,7 @@ void DisplayServerX11::process_events()
 					last_click_ms = 0;
 					last_click_pos = Point2i(-100, -100);
 					last_click_button_index = MouseButton::NONE;
-					mb->set_double_click(true);
+					mb.mouse_button.double_click = true;
 				}
 				else {
 					last_click_button_index = btn_idx;
@@ -6569,7 +6540,7 @@ void DisplayServerX11::process_events()
 				}
 			}
 
-			Input::parse_input_event(mb.ptr());
+			Input::parse_input_event(mb);
 		} break;
 		case KeyPress:
 		case KeyRelease: {

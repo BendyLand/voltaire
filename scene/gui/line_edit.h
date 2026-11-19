@@ -300,7 +300,7 @@ protected:
 	static void _bind_compatibility_methods();
 #endif
 
-	virtual void unhandled_key_input(const Ref<InputEvent>& p_event) override;
+	virtual void unhandled_key_input(const InputEvent& p_event) override;
 	virtual String _get_accessibility_name() const override;
 
 public:

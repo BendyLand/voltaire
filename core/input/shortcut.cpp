@@ -31,30 +31,34 @@
 
 #include "shortcut.h"
 
-void Shortcut::set_events_list(const List<Ref<InputEvent>>* p_events)
+void Shortcut::set_events(const Vector<InputEvent>& p_events)
+{
+	events = p_events;
+	emit_changed();
+}
+
+const Vector<InputEvent>& Shortcut::get_events() const { return events; }
+
+void Shortcut::set_events_list(const List<InputEvent>* p_events)
 {
 	events.clear();
-
-	for (const Ref<InputEvent>& ie : *p_events) {
+	if (!p_events) {
+		return;
+	}
+	for (const InputEvent& ie : *p_events) {
 		events.push_back(ie);
 	}
 }
 
-bool Shortcut::matches_event(const Ref<InputEvent>& p_event) const
+bool Shortcut::matches_event(const InputEvent& p_event) const
 {
-	Ref<InputEventShortcut> ies = p_event;
-	if (ies.is_valid()) {
-		if (ies->get_shortcut().ptr() == this) {
-			return true;
-		}
+	if (p_event.type == InputEventType::SHORTCUT && p_event.shortcut.shortcut == this) {
+		return true;
 	}
 
 	for (int i = 0; i < events.size(); i++) {
-		Ref<InputEvent> ie = events[i];
-		bool valid = ie.is_valid() && ie->is_match(p_event);
-
-		// Stop on first valid event - don't need to check further.
-		if (valid) {
+		const InputEvent& ie = events[i];
+		if (ie.is_valid() && ie.is_match(p_event)) {
 			return true;
 		}
 	}
@@ -65,10 +69,9 @@ bool Shortcut::matches_event(const Ref<InputEvent>& p_event) const
 String Shortcut::get_as_text() const
 {
 	for (int i = 0; i < events.size(); i++) {
-		Ref<InputEvent> ie = events[i];
-		// Return first shortcut which is valid
+		const InputEvent& ie = events[i];
 		if (ie.is_valid()) {
-			return ie->as_text();
+			return ie.as_text();
 		}
 	}
 
@@ -77,9 +80,7 @@ String Shortcut::get_as_text() const
 
 Ref<Shortcut> Shortcut::make_from_action(const String& p_action)
 {
-	Ref<InputEventAction> event;
-	event.instantiate();
-	event->set_action(p_action);
+	InputEvent event = InputEvent::make_action(p_action);
 
 	Ref<Shortcut> shortcut;
 	shortcut.instantiate();
@@ -89,10 +90,8 @@ Ref<Shortcut> Shortcut::make_from_action(const String& p_action)
 
 bool Shortcut::has_valid_event() const
 {
-	// Tests if there is ANY input event which is valid.
 	for (int i = 0; i < events.size(); i++) {
-		Ref<InputEvent> ie = events[i];
-		if (ie.is_valid()) {
+		if (events[i].is_valid()) {
 			return true;
 		}
 	}
@@ -100,8 +99,16 @@ bool Shortcut::has_valid_event() const
 	return false;
 }
 
-
-
-Vector<Ref<InputEvent>> Shortcut::get_events() const {}
-
-void Shortcut::set_events(Vector<Ref<InputEvent>> const&) {}
+bool Shortcut::is_event_array_equal(
+	const Vector<InputEvent>& p_event_array1, const Vector<InputEvent>& p_event_array2)
+{
+	if (p_event_array1.size() != p_event_array2.size()) {
+		return false;
+	}
+	for (int i = 0; i < p_event_array1.size(); i++) {
+		if (!p_event_array1[i].is_match(p_event_array2[i], true)) {
+			return false;
+		}
+	}
+	return true;
+}

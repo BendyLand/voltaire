@@ -518,7 +518,7 @@ public:
 	virtual void set_use_parent_material(bool p_use_parent_material);
 	bool get_use_parent_material() const;
 
-	InputEvent* make_input_local(InputEvent* rp_event) const;
+	InputEvent make_input_local(const InputEvent& p_event) const;
 	Vector2 make_canvas_position_local(const Vector2& screen_point) const;
 
 	Vector2 get_global_mouse_position() const;

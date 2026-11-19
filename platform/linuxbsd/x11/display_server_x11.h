@@ -64,8 +64,7 @@
 
 #undef CursorShape // Xlib macro conflicting with our type.
 
-class InputEvent;
-class InputEventWithModifiers;
+struct InputEvent;
 class NativeMenu;
 
 #ifdef RD_ENABLED
@@ -270,7 +269,7 @@ class DisplayServerX11 : public DisplayServerDriver
 
 	Rect2i _screen_get_rect(int p_screen) const;
 
-	void _get_key_modifier_state(unsigned int p_x11_state, Ref<InputEventWithModifiers> state);
+	void _get_key_modifier_state(unsigned int p_x11_state, InputEvent& r_state);
 	void _flush_mouse_motion();
 
 	DisplayServerEnums::MouseMode mouse_mode = DisplayServerEnums::MOUSE_MODE_VISIBLE;
@@ -351,8 +350,8 @@ class DisplayServerX11 : public DisplayServerDriver
 	bool _window_focus_check();
 
 	void _send_window_event(const WindowData& wd, DisplayServerEnums::WindowEvent p_event);
-	static void _dispatch_input_events(const Ref<InputEvent>& p_event);
-	void _dispatch_input_event(const Ref<InputEvent>& p_event);
+	static void _dispatch_input_events(const InputEvent& p_event);
+	void _dispatch_input_event(const InputEvent& p_event);
 	void _set_input_focus(Window p_window, int p_revert_to);
 
 	mutable Mutex events_mutex;

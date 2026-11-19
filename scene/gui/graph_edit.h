@@ -316,8 +316,8 @@ private:
 	HashMap<String, HashSet<String>> frame_attached_nodes;
 	HashMap<String, String> linked_parent_map;
 
-	void _pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event);
-	void _zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event);
+	void _pan_callback(Vector2 p_scroll_vec, const InputEvent& p_event);
+	void _zoom_callback(float p_zoom_factor, Vector2 p_origin, const InputEvent& p_event);
 
 	void _zoom_minus();
 	void _zoom_reset();
@@ -339,7 +339,7 @@ private:
 	void _update_scrollbars();
 	void _update_scroll_offset();
 	void _scrollbar_moved(double);
-	void _top_connection_layer_input(const Ref<InputEvent>& p_ev);
+	void _top_connection_layer_input(const InputEvent& p_ev);
 
 	float _get_shader_line_width();
 	void _draw_minimap_connection_line(const Vector2& p_from_graph_position,
@@ -401,7 +401,7 @@ public:
 
 	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
 
-	void key_input(const Ref<InputEvent>& p_ev);
+	void key_input(const InputEvent& p_ev);
 
 	// This method has to be public (for undo redo).
 	// TODO: Find a better way to do this.

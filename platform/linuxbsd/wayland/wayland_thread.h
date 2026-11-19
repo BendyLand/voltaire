@@ -155,7 +155,7 @@ public:
 	class InputEventMessage : public Message
 	{
 	public:
-		Ref<InputEvent> event;
+		InputEvent event;
 	};
 
 	class DropFilesEventMessage : public WindowMessage
@@ -1403,9 +1403,9 @@ private:
 	static void _wl_display_check_error(struct wl_display* wl_display);
 
 	static void _seat_state_set_current(WaylandThread::SeatState& p_ss);
-	static Ref<InputEventKey> _seat_state_get_key_event(
+	static InputEvent _seat_state_get_key_event(
 		SeatState* p_ss, xkb_keycode_t p_keycode, bool p_pressed);
-	static Ref<InputEventKey> _seat_state_get_unstuck_key_event(
+	static InputEvent _seat_state_get_unstuck_key_event(
 		SeatState* p_ss, xkb_keycode_t p_keycode, bool p_pressed, Key p_key);
 
 	static void _seat_state_handle_xkb_keycode(

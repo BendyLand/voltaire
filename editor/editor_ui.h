@@ -152,7 +152,7 @@ public:
 	static void process_and_draw();
 	static void finalize();
 
-	static void handle_input_event(const Ref<InputEvent>& p_event);
+	static void handle_input_event(const InputEvent& p_event);
 	static void add_log(const String& p_msg);
 	static void scan_project_files();
 	static void load_scene();

@@ -353,7 +353,7 @@ Size2 FoldableContainer::get_minimum_size() const { return Size2(); }
 
 Size2 FoldableContainer::get_desired_size() const { return Size2(); }
 
-void FoldableContainer::gui_input(const Ref<InputEvent>& p_event) {}
+void FoldableContainer::gui_input(const InputEvent& p_event) {}
 
 String FoldableContainer::get_tooltip(const Vector2& p_pos) const { return String(); }
 

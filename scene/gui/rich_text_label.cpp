@@ -2406,28 +2406,28 @@ Size2 RichTextLabel::get_minimum_size() const
 
 Key RichTextLabel::_get_menu_action_accelerator(const String& p_action)
 {
-	const List<Ref<InputEvent>>* events = InputMap::action_get_events(p_action);
+	const List<InputEvent>* events = InputMap::action_get_events(p_action);
 	if (!events) {
 		return Key::NONE;
 	}
 
 	// Use first event in the list for the accelerator.
-	const List<Ref<InputEvent>>::Element* first_event = events->front();
+	const List<InputEvent>::Element* first_event = events->front();
 	if (!first_event) {
 		return Key::NONE;
 	}
 
-	const Ref<InputEventKey> event = first_event->get();
-	if (event.is_null()) {
+	const InputEvent& event = first_event->get();
+	if (event.type != InputEventType::KEY) {
 		return Key::NONE;
 	}
 
 	// Use physical keycode if non-zero
-	if (event->get_physical_keycode() != Key::NONE) {
-		return event->get_physical_keycode_with_modifiers();
+	if (event.key.physical_keycode != Key::NONE) {
+		return event.get_physical_keycode_with_modifiers();
 	}
 	else {
-		return event->get_keycode_with_modifiers();
+		return event.get_keycode_with_modifiers();
 	}
 }
 

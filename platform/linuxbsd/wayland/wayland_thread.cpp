@@ -226,19 +226,15 @@ void WaylandThread::_wl_display_check_error(struct wl_display* wl_display)
 	}
 }
 
-Ref<InputEventKey> WaylandThread::_seat_state_get_key_event(
+InputEvent WaylandThread::_seat_state_get_key_event(
 	SeatState* p_ss, xkb_keycode_t p_keycode, bool p_pressed)
 {
-	Ref<InputEventKey> event;
-
-	ERR_FAIL_NULL_V(p_ss, event);
+	ERR_FAIL_NULL_V(p_ss, InputEvent());
 
 	Key shifted_key =
 		KeyMappingXKB::get_keycode(xkb_state_key_get_one_sym(p_ss->xkb_state, p_keycode));
 
 	Key plain_key = Key::NONE;
-	// NOTE: xkbcommon's API really encourages to apply the modifier state but we
-	// only want a "plain" symbol so that we can convert it into a godot keycode.
 	const xkb_keysym_t* syms = nullptr;
 	int num_sys = xkb_keymap_key_get_syms_by_level(
 		p_ss->xkb_keymap, p_keycode, p_ss->current_layout_index, 0, &syms);
@@ -269,57 +265,40 @@ Ref<InputEventKey> WaylandThread::_seat_state_get_key_event(
 	}
 
 	if (physical_keycode == Key::NONE && keycode == Key::NONE && unicode == 0) {
-		return event;
+		return InputEvent();
 	}
 
-	event.instantiate();
+	InputEvent event = InputEvent::make_key();
+	event.window_id = p_ss->focused_id;
 
-	event->set_window_id(p_ss->focused_id);
+	event.set_shift_pressed(p_ss->shift_pressed);
+	event.set_ctrl_pressed(p_ss->ctrl_pressed);
+	event.set_alt_pressed(p_ss->alt_pressed);
+	event.set_meta_pressed(p_ss->meta_pressed);
 
-	// Set all pressed modifiers.
-	event->set_shift_pressed(p_ss->shift_pressed);
-	event->set_ctrl_pressed(p_ss->ctrl_pressed);
-	event->set_alt_pressed(p_ss->alt_pressed);
-	event->set_meta_pressed(p_ss->meta_pressed);
-
-	event->set_pressed(p_pressed);
-	event->set_keycode(keycode);
-	event->set_physical_keycode(physical_keycode);
-	event->set_location(key_location);
-
-	if (unicode != 0) {
-		event->set_key_label(fix_key_label(unicode, keycode));
-	}
-	else {
-		event->set_key_label(keycode);
-	}
+	event.pressed = p_pressed;
+	event.key.keycode = keycode;
+	event.key.physical_keycode = physical_keycode;
+	event.key.location = key_location;
+	event.key.key_label = (unicode != 0) ? fix_key_label(unicode, keycode) : keycode;
 
 	if (p_pressed) {
-		event->set_unicode(fix_unicode(unicode));
+		event.key.unicode = fix_unicode(unicode);
 	}
 
-	// Taken from DisplayServerX11.
-	if (event->get_keycode() == Key::BACKTAB) {
-		// Make it consistent across platforms.
-		event->set_keycode(Key::TAB);
-		event->set_physical_keycode(Key::TAB);
-		event->set_shift_pressed(true);
+	if (event.key.keycode == Key::BACKTAB) {
+		event.key.keycode = Key::TAB;
+		event.key.physical_keycode = Key::TAB;
+		event.set_shift_pressed(true);
 	}
 
 	return event;
 }
 
-// NOTE: Due to the nature of the way keys are encoded, there's an ambiguity
-// regarding "special" keys. In other words: there's no reliable way of
-// switching between a special key and a character key if not marking a
-// different Godot keycode, even if we're actually using the same XKB raw
-// keycode. This means that, during this switch, the old key will get "stuck",
-// as it will never receive a release event. This method returns the necessary
-// event to fix this if needed.
-Ref<InputEventKey> WaylandThread::_seat_state_get_unstuck_key_event(
+InputEvent WaylandThread::_seat_state_get_unstuck_key_event(
 	SeatState* p_ss, xkb_keycode_t p_keycode, bool p_pressed, Key p_key)
 {
-	Ref<InputEventKey> event;
+	InputEvent event;
 
 	if (p_pressed) {
 		Key* old_key = p_ss->pressed_keycodes.getptr(p_keycode);
@@ -329,7 +308,7 @@ Ref<InputEventKey> WaylandThread::_seat_state_get_unstuck_key_event(
 				keycode_get_string(*old_key)));
 			event = _seat_state_get_key_event(p_ss, p_keycode, false);
 			if (event.is_valid()) {
-				event->set_keycode(*old_key);
+				event.key.keycode = *old_key;
 			}
 		}
 		p_ss->pressed_keycodes[p_keycode] = p_key;
@@ -359,50 +338,45 @@ void WaylandThread::_seat_state_handle_xkb_keycode(
 		compose_status = xkb_compose_state_get_status(p_ss->xkb_compose_state);
 
 		if (compose_result == XKB_COMPOSE_FEED_ACCEPTED && compose_status == XKB_COMPOSE_COMPOSED) {
-			// We need to generate multiple key events to report the composed result, One
-			// per character.
 			char str_xkb[256] = {};
 			int str_xkb_size = xkb_compose_state_get_utf8(p_ss->xkb_compose_state, str_xkb, 255);
 
 			String decoded_str = String::utf8(str_xkb, str_xkb_size);
 			for (int i = 0; i < decoded_str.length(); ++i) {
-				Ref<InputEventKey> k = _seat_state_get_key_event(p_ss, p_xkb_keycode, p_pressed);
+				InputEvent k = _seat_state_get_key_event(p_ss, p_xkb_keycode, p_pressed);
 				if (k.is_null()) {
 					continue;
 				}
 
-				k->set_unicode(decoded_str[i]);
-				k->set_echo(p_echo);
+				k.key.unicode = decoded_str[i];
+				k.key.echo = p_echo;
 
 				Ref<InputEventMessage> msg;
 				msg.instantiate();
 				msg->event = k;
 				wayland_thread->push_message(msg);
 
-				last_key = k->get_keycode();
+				last_key = k.key.keycode;
 			}
 		}
 	}
 
 	if (last_key == Key::NONE && compose_status == XKB_COMPOSE_NOTHING) {
-		// If we continued with other compose status (e.g. XKB_COMPOSE_COMPOSING) we
-		// would get the composing keys _and_ the result.
-		Ref<InputEventKey> k = _seat_state_get_key_event(p_ss, p_xkb_keycode, p_pressed);
+		InputEvent k = _seat_state_get_key_event(p_ss, p_xkb_keycode, p_pressed);
 		if (k.is_valid()) {
-			k->set_echo(p_echo);
+			k.key.echo = p_echo;
 
 			Ref<InputEventMessage> msg;
 			msg.instantiate();
 			msg->event = k;
 			wayland_thread->push_message(msg);
 
-			last_key = k->get_keycode();
+			last_key = k.key.keycode;
 		}
 	}
 
 	if (last_key != Key::NONE) {
-		Ref<InputEventKey> uk =
-			_seat_state_get_unstuck_key_event(p_ss, p_xkb_keycode, p_pressed, last_key);
+		InputEvent uk = _seat_state_get_unstuck_key_event(p_ss, p_xkb_keycode, p_pressed, last_key);
 		if (uk.is_valid()) {
 			Ref<InputEventMessage> u_msg;
 			u_msg.instantiate();
@@ -2462,12 +2436,11 @@ void WaylandThread::_wl_touch_on_frame(void* data, struct wl_touch* wl_touch)
 		if (!ss->touch_points_buffer.has(id)) {
 			hover_changed = true;
 
-			Ref<InputEventScreenTouch> st;
-			st.instantiate();
-			st->set_index(id);
-			st->set_position(tp.position * scale);
-			st->set_window_id(tp.touched_id);
-			st->set_pressed(false);
+			InputEvent st = InputEvent::make_screen_touch();
+			st.touch.index = id;
+			st.touch.position = tp.position * scale;
+			st.window_id = tp.touched_id;
+			st.pressed = false;
 
 			Ref<InputEventMessage> iev_msg;
 			iev_msg.instantiate();
@@ -2492,12 +2465,11 @@ void WaylandThread::_wl_touch_on_frame(void* data, struct wl_touch* wl_touch)
 		if (!ss->touch_points.has(id)) {
 			hover_changed = true;
 
-			Ref<InputEventScreenTouch> st;
-			st.instantiate();
-			st->set_index(id);
-			st->set_position(tp.position * scale);
-			st->set_window_id(tp.touched_id);
-			st->set_pressed(true);
+			InputEvent st = InputEvent::make_screen_touch();
+			st.touch.index = id;
+			st.touch.position = tp.position * scale;
+			st.window_id = tp.touched_id;
+			st.pressed = true;
 
 			Ref<InputEventMessage> iev_msg;
 			iev_msg.instantiate();
@@ -2519,13 +2491,12 @@ void WaylandThread::_wl_touch_on_frame(void* data, struct wl_touch* wl_touch)
 		}
 
 		if (tp.position != tp_old.position) {
-			Ref<InputEventScreenDrag> sd;
-			sd.instantiate();
-			sd->set_index(id);
-			sd->set_window_id(tp.touched_id);
-			sd->set_position(tp.position * scale);
-			sd->set_relative((tp.position - tp_old.position) * scale);
-			sd->set_relative_screen_position(sd->get_relative());
+			InputEvent sd = InputEvent::make_screen_drag();
+			sd.screen_drag.index = id;
+			sd.window_id = tp.touched_id;
+			sd.screen_drag.position = tp.position * scale;
+			sd.screen_drag.relative = (tp.position - tp_old.position) * scale;
+			sd.screen_drag.screen_relative = sd.screen_drag.relative;
 
 			Ref<InputEventMessage> iev_msg;
 			iev_msg.instantiate();
@@ -2559,13 +2530,12 @@ void WaylandThread::_wl_touch_on_cancel(void* data, struct wl_touch* wl_touch)
 		WindowState* ws = wayland_thread->window_get_state(tp.touched_id);
 		double scale = window_state_get_scale_factor(ws);
 
-		Ref<InputEventScreenTouch> st;
-		st.instantiate();
-		st->set_index(id);
-		st->set_position(tp.position * scale);
-		st->set_window_id(tp.touched_id);
-		st->set_pressed(false);
-		st->set_canceled(true);
+		InputEvent st = InputEvent::make_screen_touch();
+		st.touch.index = id;
+		st.touch.position = tp.position * scale;
+		st.window_id = tp.touched_id;
+		st.pressed = false;
+		st.canceled = true;
 
 		Ref<InputEventMessage> cancel_msg;
 		cancel_msg.instantiate();
@@ -3043,45 +3013,29 @@ void WaylandThread::_wp_pointer_gesture_pinch_on_update(void* data,
 	double win_scale = window_state_get_scale_factor(ws);
 
 	if (ss->active_gesture == Gesture::MAGNIFY) {
-		Ref<InputEventMagnifyGesture> mg;
-		mg.instantiate();
-
-		mg->set_window_id(pd.pointed_id);
-
-		if (ws) {
-			mg->set_window_id(ws->id);
-		}
-
-		// Set all pressed modifiers.
-		mg->set_shift_pressed(ss->shift_pressed);
-		mg->set_ctrl_pressed(ss->ctrl_pressed);
-		mg->set_alt_pressed(ss->alt_pressed);
-		mg->set_meta_pressed(ss->meta_pressed);
-
-		mg->set_position(pd.position * win_scale);
+		InputEvent mg = InputEvent::make_magnify_gesture();
+		mg.window_id = ws ? ws->id : pd.pointed_id;
+		mg.set_shift_pressed(ss->shift_pressed);
+		mg.set_ctrl_pressed(ss->ctrl_pressed);
+		mg.set_alt_pressed(ss->alt_pressed);
+		mg.set_meta_pressed(ss->meta_pressed);
+		mg.gesture.position = pd.position * win_scale;
 
 		wl_fixed_t scale_delta = scale - ss->old_pinch_scale;
-		mg->set_factor(1 + wl_fixed_to_double(scale_delta));
+		mg.gesture.factor = 1 + wl_fixed_to_double(scale_delta);
 
 		Ref<InputEventMessage> magnify_msg;
 		magnify_msg.instantiate();
 		magnify_msg->event = mg;
 
-		// Since Wayland allows only one gesture at a time and godot instead expects
-		// both of them, we'll have to create two separate input events: one for
-		// magnification and one for panning.
-
-		Ref<InputEventPanGesture> pg;
-		pg.instantiate();
-
-		// Set all pressed modifiers.
-		pg->set_shift_pressed(ss->shift_pressed);
-		pg->set_ctrl_pressed(ss->ctrl_pressed);
-		pg->set_alt_pressed(ss->alt_pressed);
-		pg->set_meta_pressed(ss->meta_pressed);
-
-		pg->set_position(pd.position * win_scale);
-		pg->set_delta(Vector2(wl_fixed_to_double(dx), wl_fixed_to_double(dy)));
+		InputEvent pg = InputEvent::make_pan_gesture();
+		pg.window_id = ws ? ws->id : pd.pointed_id;
+		pg.set_shift_pressed(ss->shift_pressed);
+		pg.set_ctrl_pressed(ss->ctrl_pressed);
+		pg.set_alt_pressed(ss->alt_pressed);
+		pg.set_meta_pressed(ss->meta_pressed);
+		pg.gesture.position = pd.position * win_scale;
+		pg.gesture.delta = Vector2(wl_fixed_to_double(dx), wl_fixed_to_double(dy));
 
 		Ref<InputEventMessage> pan_msg;
 		pan_msg.instantiate();

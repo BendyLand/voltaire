@@ -224,7 +224,7 @@ void CollisionObject3D::set_body_mode(PS3DE::BodyMode p_mode)
 	PhysicsServer3D::body_set_mode(rid, p_mode);
 }
 
-void CollisionObject3D::_input_event_call(Camera3D* p_camera, const Ref<InputEvent>& p_input_event,
+void CollisionObject3D::_input_event_call(Camera3D* p_camera, const InputEvent& p_input_event,
 	const Vector3& p_pos, const Vector3& p_normal, int p_shape)
 {
 }

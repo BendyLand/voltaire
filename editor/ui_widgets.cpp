@@ -99,7 +99,7 @@ void UIContext::teardown(Input::EventDispatchFunc p_handler)
 }
 
 void UIContext::forward_input(
-	const Ref<InputEvent>& p_event, Input::EventDispatchFunc p_handler) const
+	const InputEvent& p_event, Input::EventDispatchFunc p_handler) const
 {
 	if (prev_input_dispatch && prev_input_dispatch != p_handler) {
 		prev_input_dispatch(p_event);
@@ -188,12 +188,12 @@ void (*UIButtonGroup::release(Point2 p_mouse))()
 	return to_invoke;
 }
 
-bool UITextField::handle_key(const Ref<InputEventKey>& p_key, char32_t p_disallow_char)
+bool UITextField::handle_key(const InputEvent& p_key_event, char32_t p_disallow_char)
 {
-	if (p_key.is_null() || !p_key->is_pressed()) {
+	if (p_key_event.type != InputEventType::KEY || !p_key_event.is_pressed()) {
 		return false;
 	}
-	const Key code = p_key->get_keycode();
+	const Key code = p_key_event.key.keycode;
 	if (code == Key::BACKSPACE) {
 		if (!text.is_empty()) {
 			text = text.substr(0, text.length() - 1);
@@ -201,7 +201,7 @@ bool UITextField::handle_key(const Ref<InputEventKey>& p_key, char32_t p_disallo
 		}
 		return false;
 	}
-	if (p_key->is_ctrl_pressed() && code == Key::V && DisplayServer::is_initialized()) {
+	if (p_key_event.is_ctrl_pressed() && code == Key::V && DisplayServer::is_initialized()) {
 		String clip = DisplayServer::clipboard_get().replace("\r", "").replace("\n", "");
 		if (p_disallow_char != 0) {
 			clip = clip.replace(String::chr(p_disallow_char), "_");
@@ -212,9 +212,9 @@ bool UITextField::handle_key(const Ref<InputEventKey>& p_key, char32_t p_disallo
 		}
 		return false;
 	}
-	char32_t ch = p_key->get_unicode();
-	if (ch >= 32 && ch != 127 && ch != p_disallow_char && !p_key->is_ctrl_pressed() &&
-		!p_key->is_meta_pressed()) {
+	char32_t ch = p_key_event.key.unicode;
+	if (ch >= 32 && ch != 127 && ch != p_disallow_char && !p_key_event.is_ctrl_pressed() &&
+		!p_key_event.is_meta_pressed()) {
 		text += String::chr(ch);
 		return true;
 	}

@@ -105,7 +105,7 @@ private:
 
 protected:
 	virtual bool has_point(const Point2& p_point) const override;
-	virtual void gui_input(const Ref<InputEvent>& p_event);
+	virtual void gui_input(const InputEvent& p_event);
 	virtual String get_tooltip(const Point2& p_pos) const;
 	void _notification(int p_what);
 

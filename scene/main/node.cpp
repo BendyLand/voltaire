@@ -1733,7 +1733,7 @@ void Node::request_ready()
 	data.ready_first = true;
 }
 
-void Node::_call_input(const Ref<InputEvent>& p_event)
+void Node::_call_input(const InputEvent& p_event)
 {
 	if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
 		return;
@@ -1741,7 +1741,7 @@ void Node::_call_input(const Ref<InputEvent>& p_event)
 	input(p_event);
 }
 
-void Node::_call_unhandled_input(const Ref<InputEvent>& p_event)
+void Node::_call_unhandled_input(const InputEvent& p_event)
 {
 	if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
 		return;
@@ -1751,7 +1751,7 @@ void Node::_call_unhandled_input(const Ref<InputEvent>& p_event)
 
 String Node::_to_string() { return String(); }
 
-void Node::_call_unhandled_key_input(const Ref<InputEvent>& p_event)
+void Node::_call_unhandled_key_input(const InputEvent& p_event)
 {
 	if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
 		return;
@@ -1759,11 +1759,11 @@ void Node::_call_unhandled_key_input(const Ref<InputEvent>& p_event)
 	unhandled_key_input(p_event);
 }
 
-void Node::input(const Ref<InputEvent>& p_event) {}
+void Node::input(const InputEvent& p_event) {}
 
-void Node::unhandled_input(const Ref<InputEvent>& p_event) {}
+void Node::unhandled_input(const InputEvent& p_event) {}
 
-void Node::unhandled_key_input(const Ref<InputEvent>& p_key_event) {}
+void Node::unhandled_key_input(const InputEvent& p_key_event) {}
 
 RID Node::get_focused_accessibility_element() const { return get_accessibility_element(); }
 

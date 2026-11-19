@@ -920,10 +920,10 @@ Vector2 CanvasItem::make_canvas_position_local(const Vector2& screen_point) cons
 	return local_matrix.xform(screen_point);
 }
 
-InputEvent* CanvasItem::make_input_local(InputEvent* rp_event) const
+InputEvent CanvasItem::make_input_local(const InputEvent& p_event) const
 {
-	ERR_FAIL_COND_V(!is_inside_tree(), rp_event);
-	return rp_event->xformed_by((get_canvas_transform() * get_global_transform()).affine_inverse());
+	ERR_FAIL_COND_V(!is_inside_tree(), p_event);
+	return p_event.xformed_by((get_canvas_transform() * get_global_transform()).affine_inverse());
 }
 
 Vector2 CanvasItem::get_global_mouse_position() const

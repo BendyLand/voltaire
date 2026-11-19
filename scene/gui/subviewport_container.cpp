@@ -45,19 +45,19 @@ Vector<int> SubViewportContainer::get_allowed_size_flags_horizontal() const
 
 Vector<int> SubViewportContainer::get_allowed_size_flags_vertical() const { return Vector<int>(); }
 
-void SubViewportContainer::input(const Ref<InputEvent>& p_event)
+void SubViewportContainer::input(const InputEvent& p_event)
 {
 	_propagate_nonpositional_event(p_event);
 }
 
-void SubViewportContainer::unhandled_input(const Ref<InputEvent>& p_event)
+void SubViewportContainer::unhandled_input(const InputEvent& p_event)
 {
 	_propagate_nonpositional_event(p_event);
 }
 
 void SubViewportContainer::add_child_notify(Node* p_child) {}
 
-void SubViewportContainer::_propagate_nonpositional_event(const Ref<InputEvent>& p_event)
+void SubViewportContainer::_propagate_nonpositional_event(const InputEvent& p_event)
 {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -72,7 +72,7 @@ void SubViewportContainer::_propagate_nonpositional_event(const Ref<InputEvent>&
 	_send_event_to_viewports(p_event);
 }
 
-void SubViewportContainer::gui_input(const Ref<InputEvent>& p_event)
+void SubViewportContainer::gui_input(const InputEvent& p_event)
 {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -87,7 +87,7 @@ void SubViewportContainer::gui_input(const Ref<InputEvent>& p_event)
 	if (stretch && shrink > 1) {
 		Transform2D xform;
 		xform.scale(Vector2(1, 1) / shrink);
-		_send_event_to_viewports(p_event->xformed_by(xform));
+		_send_event_to_viewports(p_event.xformed_by(xform));
 	}
 	else {
 		_send_event_to_viewports(p_event);
@@ -104,11 +104,11 @@ SubViewportContainer::SubViewportContainer()
 	set_focus_mode(FOCUS_CLICK);
 }
 
-void SubViewportContainer::_send_event_to_viewports(const Ref<InputEvent>& p_event) {}
+void SubViewportContainer::_send_event_to_viewports(const InputEvent& p_event) {}
 
 void SubViewportContainer::remove_child_notify(Node* p_child) {}
 
-bool SubViewportContainer::_is_propagated_in_gui_input(Ref<InputEvent> const&) {}
+bool SubViewportContainer::_is_propagated_in_gui_input(const InputEvent&) { return false; }
 
 Size2 SubViewportContainer::get_minimum_size() const { return Size2(); }
 

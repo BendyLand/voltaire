@@ -461,10 +461,10 @@ protected:
 	int32_t _get_scene_tree_depth() const { return data.depth; }
 
 	// call from SceneTree
-	void _call_input(const Ref<InputEvent>& p_event);
-	void _call_shortcut_input(const Ref<InputEvent>& p_event);
-	void _call_unhandled_input(const Ref<InputEvent>& p_event);
-	void _call_unhandled_key_input(const Ref<InputEvent>& p_event);
+	void _call_input(const InputEvent& p_event);
+	void _call_shortcut_input(const InputEvent& p_event);
+	void _call_unhandled_input(const InputEvent& p_event);
+	void _call_unhandled_key_input(const InputEvent& p_event);
 
 	virtual String _to_string();
 
@@ -478,9 +478,9 @@ protected:
 protected:
 	virtual bool _uses_signal_mutex() const { return false; } // Node uses thread guards instead.
 
-	virtual void input(const Ref<InputEvent>& p_event);
-	virtual void unhandled_input(const Ref<InputEvent>& p_event);
-	virtual void unhandled_key_input(const Ref<InputEvent>& p_key_event);
+	virtual void input(const InputEvent& p_event);
+	virtual void unhandled_input(const InputEvent& p_event);
+	virtual void unhandled_key_input(const InputEvent& p_key_event);
 
 public:
 	enum

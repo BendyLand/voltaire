@@ -120,30 +120,24 @@ void DisplayServerWayland::_send_window_event(
 	}
 }
 
-void DisplayServerWayland::dispatch_input_events(const Ref<InputEvent>& p_event)
+void DisplayServerWayland::dispatch_input_events(const InputEvent& p_event)
 {
 	if (DisplayServerWayland* ds = DisplayServer::driver_as<DisplayServerWayland>()) {
 		ds->_dispatch_input_event(p_event);
 	}
 }
 
-void DisplayServerWayland::_dispatch_input_event(const Ref<InputEvent>& p_event)
+void DisplayServerWayland::_dispatch_input_event(const InputEvent& p_event)
 {
-	Ref<InputEventFromWindow> event_from_window = p_event;
+	if (p_event.is_from_window()) {
+		DisplayServerEnums::WindowID window_id = p_event.window_id;
 
-	if (event_from_window.is_valid()) {
-		DisplayServerEnums::WindowID window_id = event_from_window->get_window_id();
-
-		Ref<InputEventKey> key_event = p_event;
-		if (!popup_menu_list.is_empty() && key_event.is_valid()) {
+		if (!popup_menu_list.is_empty() && p_event.type == InputEventType::KEY) {
 			window_id = popup_menu_list.back()->get();
 		}
 
-		if (windows.has(window_id)) {
-			Ref<InputEventMouse> iev_mouse = p_event;
-			if (iev_mouse.is_valid()) {
-				mouse_pos = iev_mouse->get_position() + windows[window_id].rect.position;
-			}
+		if (windows.has(window_id) && p_event.is_mouse()) {
+			mouse_pos = p_event.get_mouse_position() + windows[window_id].rect.position;
 		}
 	}
 }
@@ -1896,28 +1890,25 @@ void DisplayServerWayland::process_events()
 
 		Ref<WaylandThread::InputEventMessage> inputev_msg = msg;
 		if (inputev_msg.is_valid()) {
+			const InputEvent& ev = inputev_msg->event;
 			bool process_popups = false;
 			Point2 position;
 			DisplayServerEnums::WindowID window_id = DisplayServerEnums::INVALID_WINDOW_ID;
 
-			Ref<InputEventMouseButton> mb = inputev_msg->event;
-			if (mb.is_valid()) {
-				process_popups =
-					(mb->is_pressed() && mb->get_button_mask() != last_mouse_monitor_mask);
-				position = mb->get_position();
-				window_id = mb->get_window_id();
+			if (ev.type == InputEventType::MOUSE_BUTTON) {
+				process_popups = (ev.is_pressed() &&
+								  ev.mouse_button.button_mask != last_mouse_monitor_mask);
+				position = ev.mouse_button.position;
+				window_id = ev.window_id;
 
-				last_mouse_monitor_mask = mb->get_button_mask();
+				last_mouse_monitor_mask = ev.mouse_button.button_mask;
 			}
+			else if (ev.type == InputEventType::SCREEN_TOUCH) {
+				process_popups = ev.is_pressed() && (ev.is_pressed() != last_touch_monitor_pressed);
+				position = ev.touch.position;
+				window_id = ev.window_id;
 
-			Ref<InputEventScreenTouch> st = inputev_msg->event;
-			if (st.is_valid()) {
-				process_popups =
-					st->is_pressed() && (st->is_pressed() != last_touch_monitor_pressed);
-				position = st->get_position();
-				window_id = st->get_window_id();
-
-				last_touch_monitor_pressed = st->is_pressed();
+				last_touch_monitor_pressed = ev.is_pressed();
 			}
 
 			bool handled = false;
@@ -1948,7 +1939,7 @@ void DisplayServerWayland::process_events()
 			}
 
 			if (!handled) {
-				Input::parse_input_event(inputev_msg->event.ptr());
+				Input::parse_input_event(ev);
 			}
 
 			continue;
@@ -1964,17 +1955,16 @@ void DisplayServerWayland::process_events()
 			for (int i = 0; i < ime_commit_msg->text.length(); i++) {
 				const char32_t codepoint = ime_commit_msg->text[i];
 
-				Ref<InputEventKey> ke;
-				ke.instantiate();
-				ke->set_window_id(ime_commit_msg->id);
-				ke->set_pressed(true);
-				ke->set_echo(false);
-				ke->set_keycode(Key::NONE);
-				ke->set_physical_keycode(Key::NONE);
-				ke->set_key_label(Key::NONE);
-				ke->set_unicode(codepoint);
+				InputEvent ke = InputEvent::make_key();
+				ke.window_id = ime_commit_msg->id;
+				ke.pressed = true;
+				ke.key.echo = false;
+				ke.key.keycode = Key::NONE;
+				ke.key.physical_keycode = Key::NONE;
+				ke.key.key_label = Key::NONE;
+				ke.key.unicode = codepoint;
 
-				Input::parse_input_event(ke.ptr());
+				Input::parse_input_event(ke);
 			}
 			ime_text = String();
 			ime_selection = Vector2i();

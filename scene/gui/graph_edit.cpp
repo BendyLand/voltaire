@@ -463,7 +463,7 @@ void GraphEdit::_draw_grid()
 	}
 }
 
-void GraphEdit::_zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event)
+void GraphEdit::_zoom_callback(float p_zoom_factor, Vector2 p_origin, const InputEvent& p_event)
 {
 	// We need to invalidate all connections since we don't know whether
 	// the user is zooming/panning at the same time.

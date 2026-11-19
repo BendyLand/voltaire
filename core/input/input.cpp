@@ -358,7 +358,7 @@ bool Input::is_action_just_pressed(const String& p_action, bool p_exact)
 }
 
 bool Input::is_action_just_pressed_by_event(
-	const String& p_action, InputEvent* rp_event, bool p_exact)
+	const String& p_action, const InputEvent& p_event, bool p_exact)
 {
 	if (!data) {
 		return false;
@@ -424,7 +424,7 @@ bool Input::is_action_just_released(const String& p_action, bool p_exact)
 }
 
 bool Input::is_action_just_released_by_event(
-	const String& p_action, InputEvent* rp_event, bool p_exact)
+	const String& p_action, const InputEvent& p_event, bool p_exact)
 {
 	if (!data) {
 		return false;
@@ -800,225 +800,209 @@ int Input::get_joy_num_touchpads(int p_device)
 	return touch->num_touchpads;
 }
 
-void Input::_parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_emulated)
+void Input::_parse_input_event_impl(const InputEvent& p_event, bool p_is_emulated)
 {
 	// This function does the final delivery of the input event to user land.
 	// Regardless where the event came from originally, this has to happen on the main thread.
 	DEV_ASSERT(Thread::get_caller_id() == Thread::get_main_id());
 
-	// Notes on mouse-touch emulation:
-	// - Emulated mouse events are parsed, that is, re-routed to this method, so they make the same
-	// effects
-	//   as true mouse events. The only difference is the situation is flagged as emulated so they
-	//   are not emulated back to touch events in an endless loop.
-	// - Emulated touch events are handed right to the main loop (i.e., the SceneTree) because they
-	// don't
-	//   require additional handling by this class.
+	InputEvent dispatched_event = p_event;
 
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid() && !k->is_echo() && k->get_keycode() != Key::NONE) {
-		if (k->is_pressed()) {
-			data->keys_pressed.insert(k->get_keycode());
+	switch (dispatched_event.type) {
+	case InputEventType::KEY: {
+		if (!dispatched_event.key.echo) {
+			if (dispatched_event.key.keycode != Key::NONE) {
+				if (dispatched_event.is_pressed()) {
+					data->keys_pressed.insert(dispatched_event.key.keycode);
+				}
+				else {
+					data->keys_pressed.erase(dispatched_event.key.keycode);
+				}
+			}
+			if (dispatched_event.key.physical_keycode != Key::NONE) {
+				if (dispatched_event.is_pressed()) {
+					data->physical_keys_pressed.insert(dispatched_event.key.physical_keycode);
+				}
+				else {
+					data->physical_keys_pressed.erase(dispatched_event.key.physical_keycode);
+				}
+			}
+			if (dispatched_event.key.key_label != Key::NONE) {
+				if (dispatched_event.is_pressed()) {
+					data->key_label_pressed.insert(dispatched_event.key.key_label);
+				}
+				else {
+					data->key_label_pressed.erase(dispatched_event.key.key_label);
+				}
+			}
+		}
+	} break;
+
+	case InputEventType::MOUSE_BUTTON: {
+		if (dispatched_event.is_pressed()) {
+			data->mouse_button_mask |=
+				(uint32_t)mouse_button_to_mask(dispatched_event.mouse_button.button_index);
 		}
 		else {
-			data->keys_pressed.erase(k->get_keycode());
-		}
-	}
-	if (k.is_valid() && !k->is_echo() && k->get_physical_keycode() != Key::NONE) {
-		if (k->is_pressed()) {
-			data->physical_keys_pressed.insert(k->get_physical_keycode());
-		}
-		else {
-			data->physical_keys_pressed.erase(k->get_physical_keycode());
-		}
-	}
-	if (k.is_valid() && !k->is_echo() && k->get_key_label() != Key::NONE) {
-		if (k->is_pressed()) {
-			data->key_label_pressed.insert(k->get_key_label());
-		}
-		else {
-			data->key_label_pressed.erase(k->get_key_label());
-		}
-	}
-
-	Ref<InputEventMouseButton> mb = p_event;
-
-	if (mb.is_valid()) {
-		if (mb->is_pressed()) {
-			data->mouse_button_mask |= (uint32_t)mouse_button_to_mask(mb->get_button_index());
-		}
-		else {
-			data->mouse_button_mask &= ~(uint32_t)(mouse_button_to_mask(mb->get_button_index()));
+			data->mouse_button_mask &=
+				~(uint32_t)mouse_button_to_mask(dispatched_event.mouse_button.button_index);
 		}
 
-		Point2 pos = mb->get_global_position();
+		Point2 pos = dispatched_event.mouse_button.global_position;
 		if (data->mouse_pos != pos) {
 			set_mouse_position(pos);
 		}
 
 		if (data->event_dispatch_function && data->emulate_touch_from_mouse && !p_is_emulated &&
-			mb->get_button_index() == MouseButton::LEFT) {
-			Ref<InputEventScreenTouch> touch_event;
-			touch_event.instantiate();
-			touch_event->set_pressed(mb->is_pressed());
-			touch_event->set_canceled(mb->is_canceled());
-			touch_event->set_position(mb->get_position());
-			touch_event->set_double_tap(mb->is_double_click());
-			touch_event->set_window_id(mb->get_window_id());
-			touch_event->set_device(InputEvent::DEVICE_ID_EMULATION);
+			dispatched_event.mouse_button.button_index == MouseButton::LEFT) {
+			InputEvent touch_event = InputEvent::make_screen_touch();
+			touch_event.pressed = dispatched_event.is_pressed();
+			touch_event.canceled = dispatched_event.is_canceled();
+			touch_event.touch.position = dispatched_event.mouse_button.position;
+			touch_event.touch.double_tap = dispatched_event.mouse_button.double_click;
+			touch_event.window_id = dispatched_event.window_id;
+			touch_event.device = InputEvent::DEVICE_ID_EMULATION;
 			_THREAD_SAFE_UNLOCK_
 			data->event_dispatch_function(touch_event);
 			_THREAD_SAFE_LOCK_
 		}
-	}
+	} break;
 
-	Ref<InputEventMouseMotion> mm = p_event;
-
-	if (mm.is_valid()) {
-		Point2 position = mm->get_global_position();
+	case InputEventType::MOUSE_MOTION: {
+		Point2 position = dispatched_event.mouse_motion.global_position;
 		if (data->mouse_pos != position) {
 			set_mouse_position(position);
 		}
-		Vector2 relative = mm->get_relative();
-		Vector2 screen_relative = mm->get_relative_screen_position();
+		Vector2 relative = dispatched_event.mouse_motion.relative;
+		Vector2 screen_relative = dispatched_event.mouse_motion.screen_relative;
 		data->mouse_velocity_track.update(relative, screen_relative);
 
 		if (data->event_dispatch_function && data->emulate_touch_from_mouse && !p_is_emulated &&
-			(mm->get_button_mask() & (uint32_t)(MouseButtonMask::LEFT)) != 0) {
-			Ref<InputEventScreenDrag> drag_event;
-			drag_event.instantiate();
-
-			drag_event->set_position(position);
-			drag_event->set_relative(relative);
-			drag_event->set_relative_screen_position(screen_relative);
-			drag_event->set_tilt(mm->get_tilt());
-			drag_event->set_pen_inverted(mm->get_pen_inverted());
-			drag_event->set_pressure(mm->get_pressure());
-			drag_event->set_velocity(get_last_mouse_velocity());
-			drag_event->set_screen_velocity(get_last_mouse_screen_velocity());
-			drag_event->set_device(InputEvent::DEVICE_ID_EMULATION);
+			(dispatched_event.mouse_motion.button_mask & (uint32_t)MouseButtonMask::LEFT) != 0) {
+			InputEvent drag_event = InputEvent::make_screen_drag();
+			drag_event.screen_drag.position = position;
+			drag_event.screen_drag.relative = relative;
+			drag_event.screen_drag.screen_relative = screen_relative;
+			drag_event.screen_drag.tilt = dispatched_event.mouse_motion.tilt;
+			drag_event.screen_drag.pen_inverted = dispatched_event.mouse_motion.pen_inverted;
+			drag_event.screen_drag.pressure = dispatched_event.mouse_motion.pressure;
+			drag_event.screen_drag.velocity = get_last_mouse_velocity();
+			drag_event.screen_drag.screen_velocity = get_last_mouse_screen_velocity();
+			drag_event.device = InputEvent::DEVICE_ID_EMULATION;
 
 			_THREAD_SAFE_UNLOCK_
 			data->event_dispatch_function(drag_event);
 			_THREAD_SAFE_LOCK_
 		}
-	}
+	} break;
 
-	Ref<InputEventScreenTouch> st = p_event;
-
-	if (st.is_valid()) {
-		if (st->is_pressed()) {
-			VelocityTrack& track = data->touch_velocity_track[st->get_index()];
+	case InputEventType::SCREEN_TOUCH: {
+		if (dispatched_event.is_pressed()) {
+			VelocityTrack& track = data->touch_velocity_track[dispatched_event.touch.index];
 			track.reset();
 		}
 		else {
-			// Since a pointer index may not occur again (OSs may or may not reuse them),
-			// imperatively remove it from the map to keep no fossil entries in it
-			data->touch_velocity_track.erase(st->get_index());
+			data->touch_velocity_track.erase(dispatched_event.touch.index);
 		}
 
 		if (data->emulate_mouse_from_touch) {
 			bool translate = false;
-			if (st->is_pressed()) {
+			if (dispatched_event.is_pressed()) {
 				if (data->mouse_from_touch_index == -1) {
 					translate = true;
-					data->mouse_from_touch_index = st->get_index();
+					data->mouse_from_touch_index = dispatched_event.touch.index;
 				}
 			}
-			else {
-				if (st->get_index() == data->mouse_from_touch_index) {
-					translate = true;
-					data->mouse_from_touch_index = -1;
-				}
+			else if (dispatched_event.touch.index == data->mouse_from_touch_index) {
+				translate = true;
+				data->mouse_from_touch_index = -1;
 			}
 
 			if (translate) {
-				Ref<InputEventMouseButton> button_event;
-				button_event.instantiate();
-
-				button_event->set_device(InputEvent::DEVICE_ID_EMULATION);
-				button_event->set_position(st->get_position());
-				button_event->set_global_position(st->get_position());
-				button_event->set_pressed(st->is_pressed());
-				button_event->set_canceled(st->is_canceled());
-				button_event->set_button_index(MouseButton::LEFT);
-				button_event->set_double_click(st->is_double_tap());
-				button_event->set_window_id(st->get_window_id());
+				InputEvent button_event = InputEvent::make_mouse_button();
+				button_event.device = InputEvent::DEVICE_ID_EMULATION;
+				button_event.mouse_button.position = dispatched_event.touch.position;
+				button_event.mouse_button.global_position = dispatched_event.touch.position;
+				button_event.pressed = dispatched_event.is_pressed();
+				button_event.canceled = dispatched_event.is_canceled();
+				button_event.mouse_button.button_index = MouseButton::LEFT;
+				button_event.mouse_button.double_click = dispatched_event.touch.double_tap;
+				button_event.window_id = dispatched_event.window_id;
 
 				uint32_t ev_bm = data->mouse_button_mask;
-				if (st->is_pressed()) {
-					ev_bm |= (uint32_t)(MouseButtonMask::LEFT);
+				if (dispatched_event.is_pressed()) {
+					ev_bm |= (uint32_t)MouseButtonMask::LEFT;
 				}
 				else {
-					ev_bm &= ~(uint32_t)(MouseButtonMask::LEFT);
+					ev_bm &= ~(uint32_t)MouseButtonMask::LEFT;
 				}
-				button_event->set_button_mask(ev_bm);
+				button_event.mouse_button.button_mask = ev_bm;
 
 				_parse_input_event_impl(button_event, true);
 			}
 		}
-	}
+	} break;
 
-	Ref<InputEventScreenDrag> sd = p_event;
+	case InputEventType::SCREEN_DRAG: {
+		VelocityTrack& track = data->touch_velocity_track[dispatched_event.screen_drag.index];
+		track.update(
+			dispatched_event.screen_drag.relative, dispatched_event.screen_drag.screen_relative);
+		dispatched_event.screen_drag.velocity = track.velocity;
+		dispatched_event.screen_drag.screen_velocity = track.screen_velocity;
 
-	if (sd.is_valid()) {
-		VelocityTrack& track = data->touch_velocity_track[sd->get_index()];
-		track.update(sd->get_relative(), sd->get_relative_screen_position());
-		sd->set_velocity(track.velocity);
-		sd->set_screen_velocity(track.screen_velocity);
-
-		if (data->emulate_mouse_from_touch && sd->get_index() == data->mouse_from_touch_index) {
-			Ref<InputEventMouseMotion> motion_event;
-			motion_event.instantiate();
-
-			motion_event->set_device(InputEvent::DEVICE_ID_EMULATION);
-			motion_event->set_tilt(sd->get_tilt());
-			motion_event->set_pen_inverted(sd->get_pen_inverted());
-			motion_event->set_pressure(sd->get_pressure());
-			motion_event->set_position(sd->get_position());
-			motion_event->set_global_position(sd->get_position());
-			motion_event->set_relative(sd->get_relative());
-			motion_event->set_relative_screen_position(sd->get_relative_screen_position());
-			motion_event->set_velocity(sd->get_velocity());
-			motion_event->set_screen_velocity(sd->get_screen_velocity());
-			motion_event->set_button_mask(data->mouse_button_mask);
-			motion_event->set_window_id(sd->get_window_id());
+		if (data->emulate_mouse_from_touch &&
+			dispatched_event.screen_drag.index == data->mouse_from_touch_index) {
+			InputEvent motion_event = InputEvent::make_mouse_motion();
+			motion_event.device = InputEvent::DEVICE_ID_EMULATION;
+			motion_event.mouse_motion.tilt = dispatched_event.screen_drag.tilt;
+			motion_event.mouse_motion.pen_inverted = dispatched_event.screen_drag.pen_inverted;
+			motion_event.mouse_motion.pressure = dispatched_event.screen_drag.pressure;
+			motion_event.mouse_motion.position = dispatched_event.screen_drag.position;
+			motion_event.mouse_motion.global_position = dispatched_event.screen_drag.position;
+			motion_event.mouse_motion.relative = dispatched_event.screen_drag.relative;
+			motion_event.mouse_motion.screen_relative =
+				dispatched_event.screen_drag.screen_relative;
+			motion_event.mouse_motion.velocity = dispatched_event.screen_drag.velocity;
+			motion_event.mouse_motion.screen_velocity =
+				dispatched_event.screen_drag.screen_velocity;
+			motion_event.mouse_motion.button_mask = data->mouse_button_mask;
+			motion_event.window_id = dispatched_event.window_id;
 
 			_parse_input_event_impl(motion_event, true);
 		}
-	}
+	} break;
 
-	Ref<InputEventJoypadButton> jb = p_event;
-
-	if (jb.is_valid()) {
-		JoyButton c = _combine_device(jb->get_button_index(), jb->get_device());
-
-		if (jb->is_pressed()) {
+	case InputEventType::JOY_BUTTON: {
+		JoyButton c =
+			_combine_device(dispatched_event.joy_button.button_index, dispatched_event.device);
+		if (dispatched_event.is_pressed()) {
 			data->joy_buttons_pressed.insert(c);
 		}
 		else {
 			data->joy_buttons_pressed.erase(c);
 		}
-	}
+	} break;
 
-	Ref<InputEventJoypadMotion> jm = p_event;
+	case InputEventType::JOY_MOTION: {
+		set_joy_axis(dispatched_event.device, dispatched_event.joy_motion.axis,
+			dispatched_event.joy_motion.axis_value);
+	} break;
 
-	if (jm.is_valid()) {
-		set_joy_axis(jm->get_device(), jm->get_axis(), jm->get_axis_value());
-	}
-
-	Ref<InputEventGesture> ge = p_event;
-
-	if (ge.is_valid()) {
+	case InputEventType::MAGNIFY_GESTURE:
+	case InputEventType::PAN_GESTURE: {
 		if (data->event_dispatch_function) {
 			_THREAD_SAFE_UNLOCK_
-			data->event_dispatch_function(ge);
+			data->event_dispatch_function(dispatched_event);
 			_THREAD_SAFE_LOCK_
 		}
+	} break;
+
+	default:
+		break;
 	}
 
 	for (const KeyValue<String, InputMap::Action>& E : InputMap::get_action_map()) {
-		const int event_index = InputMap::event_get_index(p_event, E.key);
+		const int event_index = InputMap::event_get_index(dispatched_event, E.key);
 		if (event_index == -1) {
 			continue;
 		}
@@ -1026,16 +1010,16 @@ void Input::_parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_em
 			vformat("Input singleton does not support more than %d events assigned to an action.",
 				MAX_EVENT));
 
-		int device_id = p_event->get_device();
-		bool is_pressed = p_event->is_action_pressed(E.key, true);
+		int device_id = dispatched_event.device;
+		bool is_pressed = dispatched_event.is_action_pressed(E.key, true);
 		ActionState& action_state = data->action_states[E.key];
 
 		// Update the action's per-device state.
 		ActionState::DeviceState& device_state = action_state.device_states[device_id];
 		device_state.pressed[event_index] = is_pressed;
-		device_state.strength[event_index] = p_event->get_action_strength(E.key);
-		device_state.raw_strength[event_index] = p_event->get_action_raw_strength(E.key);
-		device_state.event_type[event_index] = p_event->get_type();
+		device_state.strength[event_index] = dispatched_event.get_action_strength(E.key);
+		device_state.raw_strength[event_index] = dispatched_event.get_action_raw_strength(E.key);
+		device_state.event_type[event_index] = dispatched_event.type;
 
 		// Update the action's global state and cache.
 		if (!is_pressed) {
@@ -1043,7 +1027,7 @@ void Input::_parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_em
 				false; // Always release the event from action_press() method.
 			action_state.api_strength = 0.0;
 		}
-		action_state.exact = InputMap::event_is_action(p_event.ptr(), E.key, true);
+		action_state.exact = InputMap::event_is_action(dispatched_event, E.key, true);
 
 		bool was_pressed = action_state.cache.pressed;
 		_update_action_cache(E.key, action_state);
@@ -1061,7 +1045,7 @@ void Input::_parse_input_event_impl(const Ref<InputEvent>& p_event, bool p_is_em
 
 	if (data->event_dispatch_function) {
 		_THREAD_SAFE_UNLOCK_
-		data->event_dispatch_function(p_event);
+		data->event_dispatch_function(dispatched_event);
 		_THREAD_SAFE_LOCK_
 	}
 }
@@ -1491,27 +1475,20 @@ void Input::warp_mouse(const Vector2& p_position)
 	}
 }
 
-Point2 Input::warp_mouse_motion(const Ref<InputEventMouseMotion>& p_motion, const Rect2& p_rect)
+Point2 Input::warp_mouse_motion(const InputEvent& p_motion, const Rect2& p_rect)
 {
-	// The relative distance reported for the next event after a warp is in the boundaries of the
-	// size of the rect on that axis, but it may be greater, in which case there's no problem as
-	// fmod() will warp it, but if the pointer has moved in the opposite direction between the
-	// pointer relocation and the subsequent event, the reported relative distance will be less than
-	// the size of the rect and thus fmod() will be disabled for handling the situation. And due to
-	// this mouse warping mechanism being stateless, we need to apply some heuristics to detect the
-	// warp: if the relative distance is greater than the half of the size of the relevant rect
-	// (checked per each axis), it will be considered as the consequence of a former pointer warp.
+	ERR_FAIL_COND_V(p_motion.type != InputEventType::MOUSE_MOTION, Point2());
 
-	const Point2 rel_sign(
-		p_motion->get_relative().x >= 0.0f ? 1 : -1, p_motion->get_relative().y >= 0.0 ? 1 : -1);
+	const Point2 rel_sign(p_motion.mouse_motion.relative.x >= 0.0f ? 1 : -1,
+		p_motion.mouse_motion.relative.y >= 0.0 ? 1 : -1);
 	const Size2 warp_margin = p_rect.size * 0.5f;
 	const Point2 rel_warped(
-		Math::fmod(p_motion->get_relative().x + rel_sign.x * warp_margin.x, p_rect.size.x) -
+		Math::fmod(p_motion.mouse_motion.relative.x + rel_sign.x * warp_margin.x, p_rect.size.x) -
 			rel_sign.x * warp_margin.x,
-		Math::fmod(p_motion->get_relative().y + rel_sign.y * warp_margin.y, p_rect.size.y) -
+		Math::fmod(p_motion.mouse_motion.relative.y + rel_sign.y * warp_margin.y, p_rect.size.y) -
 			rel_sign.y * warp_margin.y);
 
-	const Point2 pos_local = p_motion->get_global_position() - p_rect.position;
+	const Point2 pos_local = p_motion.mouse_motion.global_position - p_rect.position;
 	const Point2 pos_warped(
 		Math::fposmod(pos_local.x, p_rect.size.x), Math::fposmod(pos_local.y, p_rect.size.y));
 	if (pos_warped != pos_local) {
@@ -1585,17 +1562,15 @@ void Input::ensure_touch_mouse_raised()
 	if (data->mouse_from_touch_index != -1) {
 		data->mouse_from_touch_index = -1;
 
-		Ref<InputEventMouseButton> button_event;
-		button_event.instantiate();
-
-		button_event->set_device(InputEvent::DEVICE_ID_EMULATION);
-		button_event->set_position(data->mouse_pos);
-		button_event->set_global_position(data->mouse_pos);
-		button_event->set_pressed(false);
-		button_event->set_button_index(MouseButton::LEFT);
+		InputEvent button_event = InputEvent::make_mouse_button();
+		button_event.device = InputEvent::DEVICE_ID_EMULATION;
+		button_event.mouse_button.position = data->mouse_pos;
+		button_event.mouse_button.global_position = data->mouse_pos;
+		button_event.pressed = false;
+		button_event.mouse_button.button_index = MouseButton::LEFT;
 		uint32_t ev_bm = data->mouse_button_mask;
-		ev_bm &= ~(uint32_t)(MouseButtonMask::LEFT);
-		button_event->set_button_mask(ev_bm);
+		ev_bm &= ~(uint32_t)MouseButtonMask::LEFT;
+		button_event.mouse_button.button_mask = ev_bm;
 
 		_parse_input_event_impl(button_event, true);
 	}
@@ -1624,12 +1599,11 @@ void Input::set_default_cursor_shape(CursorShape p_shape)
 	data->default_shape = p_shape;
 	// The default shape is set in Viewport::_gui_input_event. To instantly
 	// see the shape in the viewport we need to trigger a mouse motion event.
-	Ref<InputEventMouseMotion> mm;
-	mm.instantiate();
-	mm->set_position(data->mouse_pos);
-	mm->set_global_position(data->mouse_pos);
-	mm->set_device(InputEvent::DEVICE_ID_INTERNAL);
-	parse_input_event(mm.ptr());
+	InputEvent mm = InputEvent::make_mouse_motion();
+	mm.mouse_motion.position = data->mouse_pos;
+	mm.mouse_motion.global_position = data->mouse_pos;
+	mm.device = InputEvent::DEVICE_ID_INTERNAL;
+	parse_input_event(mm);
 }
 
 Input::CursorShape Input::get_current_cursor_shape()
@@ -1652,67 +1626,26 @@ void Input::set_custom_mouse_cursor(
 	}
 }
 
-void Input::parse_input_event(InputEvent* rp_event)
+void Input::parse_input_event(const InputEvent& p_event)
 {
-	if (!data) {
+	if (!data || p_event.is_null()) {
 		return;
 	}
 	_THREAD_SAFE_METHOD_
-#ifdef DEBUG_ENABLED
-	uint64_t curr_frame = Engine::get_process_frames();
-	if (curr_frame != data->last_parsed_frame) {
-		data->frame_parsed_events.clear();
-		data->last_parsed_frame = curr_frame;
-		data->frame_parsed_events.insert(rp_event);
-	}
-	else if (data->frame_parsed_events.has(rp_event)) {
-		// It would be technically safe to send the same event in cases such as:
-		// - After an explicit flush.
-		// - In platforms using buffering when agile flushing is enabled, after one of the mid-frame
-		// flushes.
-		// - If platform doesn't use buffering and event accumulation is disabled.
-		// - If platform doesn't use buffering and the event type is not accumulable.
-		// However, it wouldn't be reasonable to ask users to remember the full ruleset and be aware
-		// at all times of the possibilities of the target platform, project settings and engine
-		// internals, which may change without prior notice. Therefore, the guideline is, "don't
-		// send the same event object more than once per frame".
-		WARN_PRINT_ONCE(
-			"An input event object is being parsed more than once in the same frame, which is "
-			"unsafe.\n"
-			"If you are generating events in a script, you have to instantiate a new event instead "
-			"of sending the same one more than once, unless the original one was sent on an "
-			"earlier frame.\n"
-			"You can call duplicate() on the event to get a new instance with identical values.");
-	}
-	else {
-		data->frame_parsed_events.insert(rp_event);
-	}
-#endif
 
 	if (data->use_accumulated_input) {
-		if (data->buffered_events.is_empty() || !data->buffered_events.back()->get()->accumulate(rp_event)) {
-			data->buffered_events.push_back(rp_event);
+		if (data->buffered_events.is_empty() ||
+			!data->buffered_events.back()->get().accumulate(p_event)) {
+			data->buffered_events.push_back(p_event);
 		}
 	}
 	else if (data->agile_input_event_flushing) {
-		data->buffered_events.push_back(rp_event);
+		data->buffered_events.push_back(p_event);
 	}
 	else {
-		_parse_input_event_impl(rp_event, false);
+		_parse_input_event_impl(p_event, false);
 	}
 }
-
-#ifdef DEBUG_ENABLED
-void Input::flush_frame_parsed_events()
-{
-	if (!data) {
-		return;
-	}
-	_THREAD_SAFE_METHOD_
-
-	data->frame_parsed_events.clear();
-}
-#endif
 
 void Input::flush_buffered_events()
 {
@@ -1722,12 +1655,8 @@ void Input::flush_buffered_events()
 	_THREAD_SAFE_METHOD_
 
 	while (data->buffered_events.front()) {
-		// The final delivery of the input event involves releasing the lock.
-		// While the lock is released, another thread may lock it and add new events to the back.
-		// Therefore, we get each event and pop it while we still have the lock,
-		// to ensure the list is in a consistent state.
-		List<Ref<InputEvent>>::Element* E = data->buffered_events.front();
-		Ref<InputEvent> e = E->get();
+		List<InputEvent>::Element* E = data->buffered_events.front();
+		InputEvent e = E->get();
 		data->buffered_events.pop_front();
 
 		_parse_input_event_impl(e, false);
@@ -2032,24 +1961,15 @@ void Input::joy_touchpad(int p_device, int p_touchpad, int p_finger, const Vecto
 
 void Input::_button_event(int p_device, JoyButton p_index, bool p_pressed)
 {
-	Ref<InputEventJoypadButton> ievent;
-	ievent.instantiate();
-	ievent->set_device(p_device);
-	ievent->set_button_index(p_index);
-	ievent->set_pressed(p_pressed);
-
-	parse_input_event(ievent.ptr());
+	InputEvent ievent = InputEvent::make_joypad_button(p_index, p_device);
+	ievent.pressed = p_pressed;
+	parse_input_event(ievent);
 }
 
 void Input::_axis_event(int p_device, JoyAxis p_axis, float p_value)
 {
-	Ref<InputEventJoypadMotion> ievent;
-	ievent.instantiate();
-	ievent->set_device(p_device);
-	ievent->set_axis(p_axis);
-	ievent->set_axis_value(p_value);
-
-	parse_input_event(ievent.ptr());
+	InputEvent ievent = InputEvent::make_joypad_motion(p_axis, p_value, p_device);
+	parse_input_event(ievent);
 }
 
 void Input::_update_action_cache(const String& p_action_name, ActionState& r_action_state)
