@@ -36,18 +36,14 @@
 #include "scene/property_list_helper.h"
 
 class DirAccess;
-class FlowContainer;
-class GridContainer;
-class HBoxContainer;
 class ItemList;
 class LineEdit;
 class MenuButton;
 class OptionButton;
 class PopupMenu;
-class VBoxContainer;
-class VSeparator;
+class Separator;
 
-class FileDialog : public ConfirmationDialog
+class FileDialog : public Dialog
 {
 	inline static constexpr int MAX_RECENTS = 20;
 
@@ -223,59 +219,59 @@ private:
 	bool is_invalidating = false;
 	bool ensure_visible_after_invalidating = false;
 
-	VBoxContainer* main_vbox = nullptr;
+	Control* main_vbox = nullptr;
 
 	Button* dir_prev = nullptr;
 	Button* dir_next = nullptr;
 	Button* dir_up = nullptr;
 
-	HBoxContainer* drives_container = nullptr;
+	Control* drives_container = nullptr;
 	MenuButton* drives = nullptr;
 	int selected_drive = 0;
 	LineEdit* directory_edit = nullptr;
-	HBoxContainer* shortcuts_container = nullptr;
+	Control* shortcuts_container = nullptr;
 
 	Button* refresh_button = nullptr;
 	Button* favorite_button = nullptr;
-	HBoxContainer* make_dir_container = nullptr;
+	Control* make_dir_container = nullptr;
 	Button* make_dir_button = nullptr;
 
 	Button* show_hidden = nullptr;
-	VSeparator* show_hidden_separator = nullptr;
-	HBoxContainer* layout_container = nullptr;
-	VSeparator* layout_separator = nullptr;
+	Separator* show_hidden_separator = nullptr;
+	Control* layout_container = nullptr;
+	Separator* layout_separator = nullptr;
 	Button* thumbnail_mode_button = nullptr;
 	Button* list_mode_button = nullptr;
 	Button* show_filename_filter_button = nullptr;
 	MenuButton* file_sort_button = nullptr;
 
-	VBoxContainer* favorite_vbox = nullptr;
+	Control* favorite_vbox = nullptr;
 	Button* fav_up_button = nullptr;
 	Button* fav_down_button = nullptr;
 	ItemList* favorite_list = nullptr;
-	VBoxContainer* recent_vbox = nullptr;
+	Control* recent_vbox = nullptr;
 	ItemList* recent_list = nullptr;
 
 	ItemList* file_list = nullptr;
 	Label* message = nullptr;
 	PopupMenu* item_menu = nullptr;
 
-	HBoxContainer* filename_filter_box = nullptr;
+	Control* filename_filter_box = nullptr;
 	LineEdit* filename_filter = nullptr;
 
-	HBoxContainer* file_box = nullptr;
+	Control* file_box = nullptr;
 	LineEdit* filename_edit = nullptr;
 	OptionButton* filter = nullptr;
 
-	FlowContainer* flow_checkbox_options = nullptr;
-	GridContainer* grid_select_options = nullptr;
+	Control* flow_checkbox_options = nullptr;
+	Control* grid_select_options = nullptr;
 
-	ConfirmationDialog* delete_dialog = nullptr;
-	ConfirmationDialog* make_dir_dialog = nullptr;
+	Dialog* delete_dialog = nullptr;
+	Dialog* make_dir_dialog = nullptr;
 	LineEdit* new_dir_name = nullptr;
-	AcceptDialog* mkdirerr = nullptr;
-	AcceptDialog* exterr = nullptr;
-	ConfirmationDialog* confirm_save = nullptr;
+	Dialog* mkdirerr = nullptr;
+	Dialog* exterr = nullptr;
+	Dialog* confirm_save = nullptr;
 
 	struct ThemeCache
 	{
@@ -473,7 +469,7 @@ public:
 
 	bool is_customization_flag_enabled(Customization p_flag) const;
 
-	VBoxContainer* get_vbox() { return main_vbox; }
+	Control* get_vbox() { return main_vbox; }
 
 	LineEdit* get_line_edit() { return filename_edit; }
 
@@ -493,7 +489,7 @@ public:
 
 	void deselect_all();
 
-	FileDialog() = default;
+	FileDialog() : Dialog(true) {}
 	~FileDialog();
 };
 

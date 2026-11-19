@@ -357,18 +357,17 @@ void Main::print_header(bool p_rich)
 	if (VLTR_VERSION_TIMESTAMP > 0) {
 		// Version timestamp available.
 		if (p_rich) {
-			Engine::print_header_rich("\u001b[38;5;39m" + String(VLTR_VERSION_NAME) +
-									  "\u001b[0m v" + get_full_version_string() + " (" +
-									  Time::get_datetime_string_from_unix_time(
-										  VLTR_VERSION_TIMESTAMP, true) +
-									  " UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header_rich(
+				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
+				get_full_version_string() + " (" +
+				Time::get_datetime_string_from_unix_time(VLTR_VERSION_TIMESTAMP, true) +
+				" UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::print_header(String(VLTR_VERSION_NAME) + " v" + get_full_version_string() +
-								 " (" +
-								 Time::get_datetime_string_from_unix_time(
-									 VLTR_VERSION_TIMESTAMP, true) +
-								 " UTC) - " + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header(
+				String(VLTR_VERSION_NAME) + " v" + get_full_version_string() + " (" +
+				Time::get_datetime_string_from_unix_time(VLTR_VERSION_TIMESTAMP, true) +
+				" UTC) - " + String(VLTR_VERSION_WEBSITE));
 		}
 	}
 	else {
@@ -448,8 +447,8 @@ void Main::print_help_option(
 			availability_badge = " ";
 			break;
 		}
-		OS::print("  \u001b[92m%s  %s\u001b[0m  %s",
-			format_help_option(p_option).utf8().ptr(), availability_badge, p_description);
+		OS::print("  \u001b[92m%s  %s\u001b[0m  %s", format_help_option(p_option).utf8().ptr(),
+			availability_badge, p_description);
 	}
 	else {
 		// Make continuation lines for descriptions faint if the option name is empty.
@@ -466,8 +465,7 @@ void Main::print_help(const char* p_binary)
 						 "Linietsky, Ariel Manzur.");
 
 	print_help_title("Usage");
-	OS::print(
-		"  %s \u001b[96m[options] [path to \"project.godot\" file]\u001b[0m\n", p_binary);
+	OS::print("  %s \u001b[96m[options] [path to \"project.godot\" file]\u001b[0m\n", p_binary);
 
 #if defined(TOOLS_ENABLED)
 	print_help_title("Option legend (this build = editor)");
@@ -478,14 +476,14 @@ void Main::print_help(const char* p_binary)
 #endif
 
 	OS::print("  \u001b[1;92mR\u001b[0m  Available in editor builds, debug export "
-							   "templates and release export templates.\n");
+			  "templates and release export templates.\n");
 #ifdef DEBUG_ENABLED
 	OS::print(
 		"  \u001b[1;94mD\u001b[0m  Available in editor builds and debug export templates only.\n");
 #endif
 #if defined(OVERRIDE_PATH_ENABLED)
 	OS::print("  \u001b[1;93mX\u001b[0m  Only available in editor builds, and "
-							   "export templates compiled with `disable_path_overrides=false`.\n");
+			  "export templates compiled with `disable_path_overrides=false`.\n");
 #endif
 #ifdef TOOLS_ENABLED
 	OS::print("  \u001b[1;91mE\u001b[0m  Only available in editor builds.\n");
@@ -923,8 +921,7 @@ Error Main::test_setup()
 	// Theme needs modules to be initialized so that sub-resources can be loaded.
 	ThemeDB::initialize_theme_noproject();
 
-	ERR_FAIL_COND_V(
-		TextServerManager::get_interface_count() == 0, ERR_CANT_CREATE);
+	ERR_FAIL_COND_V(TextServerManager::get_interface_count() == 0, ERR_CANT_CREATE);
 
 	/* Use one with the most features available. */
 	int max_features = 0;
@@ -1291,8 +1288,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				}
 
 				if (!found) {
-					OS::print(
-						"Unknown audio driver '%s', aborting.\nValid options are ",
+					OS::print("Unknown audio driver '%s', aborting.\nValid options are ",
 						audio_driver.utf8().get_data());
 
 					for (int i = 0; i < AudioDriverManager::get_driver_count(); i++) {
@@ -1303,8 +1299,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 							OS::print(", ");
 						}
 
-						OS::print(
-							"'%s'", AudioDriverManager::get_driver(i)->get_name());
+						OS::print("'%s'", AudioDriverManager::get_driver(i)->get_name());
 					}
 
 					OS::print(".\n");
@@ -1353,8 +1348,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				}
 
 				if (!found) {
-					OS::print(
-						"Unknown display driver '%s', aborting.\nValid options are ",
+					OS::print("Unknown display driver '%s', aborting.\nValid options are ",
 						display_driver.utf8().get_data());
 
 					for (int i = 0; i < DisplayServer::get_create_function_count(); i++) {
@@ -1365,8 +1359,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 							OS::print(", ");
 						}
 
-						OS::print(
-							"'%s'", DisplayServer::get_create_function_name(i));
+						OS::print("'%s'", DisplayServer::get_create_function_name(i));
 					}
 
 					OS::print(".\n");
@@ -1468,8 +1461,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 					recognized = true;
 				}
 				if (!recognized) {
-					OS::print(
-						"Delta-smoothing argument not recognized, aborting.\n");
+					OS::print("Delta-smoothing argument not recognized, aborting.\n");
 					goto error;
 				}
 				N = N->next();
@@ -1502,8 +1494,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 					accessibility_mode_set = true;
 				}
 				else {
-					OS::print(
-						"Accessibility mode argument not recognized, aborting.\n");
+					OS::print("Accessibility mode argument not recognized, aborting.\n");
 					goto error;
 				}
 				N = N->next();
@@ -1535,8 +1526,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 				if (!vm.contains_char('x')) { // invalid parameter format
 
-					OS::print(
-						"Invalid resolution '%s', it should be e.g. '1280x720'.\n",
+					OS::print("Invalid resolution '%s', it should be e.g. '1280x720'.\n",
 						vm.utf8().get_data());
 					goto error;
 				}
@@ -1545,8 +1535,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				int h = vm.get_slicec('x', 1).to_int();
 
 				if (w <= 0 || h <= 0) {
-					OS::print(
-						"Invalid resolution '%s', width and height must be above 0.\n",
+					OS::print("Invalid resolution '%s', width and height must be above 0.\n",
 						vm.utf8().get_data());
 					goto error;
 				}
@@ -1584,8 +1573,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 				if (!vm.contains_char(',')) { // invalid parameter format
 
-					OS::print(
-						"Invalid position '%s', it should be e.g. '80,128'.\n",
+					OS::print("Invalid position '%s', it should be e.g. '80,128'.\n",
 						vm.utf8().get_data());
 					goto error;
 				}
@@ -1691,7 +1679,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				}
 				else if (N->get() == "unsafe") {
 					OS::print("The --render-thread unsafe option is unsupported "
-											   "in Godot 4 and will be removed.\n");
+							  "in Godot 4 and will be removed.\n");
 					separate_thread_render = 0;
 #endif
 				}
@@ -1703,8 +1691,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #ifdef DISABLE_DEPRECATED
 					OS::print("Valid options are 'safe' and 'separate'.\n");
 #else
-					OS::print(
-						"Valid options are 'unsafe', 'safe' and 'separate'.\n");
+					OS::print("Valid options are 'unsafe', 'safe' and 'separate'.\n");
 #endif
 					goto error;
 				}
@@ -1732,7 +1719,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				debug_server_uri = N->get();
 				if (!debug_server_uri.contains("://")) { // wrong address
 					OS::print("Invalid debug server uri. It should be of the form "
-											   "<protocol>://<bind_address>:<port>.\n");
+							  "<protocol>://<bind_address>:<port>.\n");
 					goto error;
 				}
 				N = N->next();
@@ -1811,7 +1798,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 				N = N->next();
 			}
- else {
+			else {
 				OS::print(
 					"Missing file to load argument after --validate-extension-api, aborting.");
 				goto error;
@@ -1840,8 +1827,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				N = N->next();
 			}
 			else {
-				OS::print(
-					"Missing comma-separated list of patches after --patches, aborting.\n");
+				OS::print("Missing comma-separated list of patches after --patches, aborting.\n");
 				goto error;
 			}
 #ifndef DISABLE_DEPRECATED
@@ -1910,7 +1896,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			}
 			else {
 				OS::print("Missing relative or absolute path to project for "
-										   "--gdscript-docs, aborting.\n");
+						  "--gdscript-docs, aborting.\n");
 				goto error;
 			}
 #endif // MODULE_GDSCRIPT_ENABLED
@@ -1948,6 +1934,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		}
 		else if (arg == "--quit-after") { // Quit after the given number of iterations
 			if (N) {
+
 				quit_after = N->get().to_int();
 				N = N->next();
 			}
@@ -2111,7 +2098,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				debug_uri = N->get();
 				if (!debug_uri.contains("://")) { // wrong address
 					OS::print("Invalid debug host address, it should be of the "
-											   "form <protocol>://<host/IP>:<port>.\n");
+							  "form <protocol>://<host/IP>:<port>.\n");
 					goto error;
 				}
 				N = N->next();
@@ -2226,8 +2213,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				N = N->next();
 			}
 			else {
-				OS::print(
-					"Missing <path> argument for --benchmark-file <path>.\n");
+				OS::print("Missing <path> argument for --benchmark-file <path>.\n");
 				goto error;
 			}
 #if defined(TOOLS_ENABLED) && defined(MODULE_GDSCRIPT_ENABLED) && !defined(GDSCRIPT_NO_LSP)
@@ -2300,7 +2286,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #ifdef TOOLS_ENABLED
 	if (editor && project_manager) {
 		OS::print("Error: Command line arguments implied opening both editor and "
-								   "project manager, which is not possible. Aborting.\n");
+				  "project manager, which is not possible. Aborting.\n");
 		goto error;
 	}
 #endif
@@ -2317,8 +2303,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		else {
 			port = 6010;
 		}
-		Error err = OS::setup_remote_filesystem(
-			remotefs, port, remotefs_pass, project_path);
+		Error err = OS::setup_remote_filesystem(remotefs, port, remotefs_pass, project_path);
 
 		if (err) {
 			OS::printerr(
@@ -2466,8 +2451,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 	if (recovery_mode) {
 		if (project_manager || !editor) {
-			OS::print(
-				"Error: Recovery mode can only be used in the editor. Aborting.\n");
+			OS::print("Error: Recovery mode can only be used in the editor. Aborting.\n");
 			goto error;
 		}
 
@@ -2491,8 +2475,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (!editor) {
 		ResourceUID::enable_reverse_cache();
 	}
-	ResourceUID::load_from_cache(true); // Load UUIDs from cache.
-	ProjectSettings::fix_autoload_paths();				 // Handles autoloads saved as UID.
+	ResourceUID::load_from_cache(true);	   // Load UUIDs from cache.
+	ProjectSettings::fix_autoload_paths(); // Handles autoloads saved as UID.
 
 	if (ProjectSettings::has_custom_feature("dedicated_server")) {
 		audio_driver = NULL_AUDIO_DRIVER;
@@ -2592,8 +2576,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #endif
 
 		if (rendering_driver.is_empty()) {
-			OS::print(
-				"FATAL: No supported rendering backend detected on this system.\n");
+			OS::print("FATAL: No supported rendering backend detected on this system.\n");
 			exit_err = ERR_UNAVAILABLE;
 			goto error;
 		}
@@ -2602,8 +2585,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (!rendering_method.is_empty()) {
 		if (rendering_method != "forward_plus" && rendering_method != "mobile" &&
 			rendering_method != "gl_compatibility" && rendering_method != "dummy") {
-			OS::print(
-				"Unknown rendering method '%s', aborting.\nValid options are ",
+			OS::print("Unknown rendering method '%s', aborting.\nValid options are ",
 				rendering_method.utf8().get_data());
 
 			Vector<String> rendering_method_hints = renderer_hints.split(",");
@@ -2644,8 +2626,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 		}
 
 		if (!found) {
-			OS::print(
-				"Unknown rendering driver '%s', aborting.\nValid options are ",
+			OS::print("Unknown rendering driver '%s', aborting.\nValid options are ",
 				rendering_driver.utf8().get_data());
 
 			// Deduplicate driver entries, as a rendering driver may be supported by several display
@@ -2729,7 +2710,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 		if (!valid_combination) {
 			OS::print("Invalid renderer/driver combination '%s' and '%s', "
-									   "aborting. %s only supports the following drivers ",
+					  "aborting. %s only supports the following drivers ",
 				rendering_method.utf8().get_data(), rendering_driver.utf8().get_data(),
 				rendering_method.utf8().get_data());
 
@@ -2754,8 +2735,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	// always convert to lower case for consistency in the code
 	rendering_driver = rendering_driver.to_lower();
 
-	OS::set_current_rendering_driver_name(
-		rendering_driver, rendering_driver_source);
+	OS::set_current_rendering_driver_name(rendering_driver, rendering_driver_source);
 	OS::set_current_rendering_method(rendering_method, rendering_method_source);
 
 #ifdef TOOLS_ENABLED
@@ -2926,9 +2906,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		// Editor setting class is not available, load config directly.
 		if (!init_use_custom_screen && (editor || project_manager) &&
 			EditorPaths::are_paths_valid()) {
-			ERR_FAIL_COND_V(
-				!DirAccess::dir_exists_absolute(EditorPaths::get_config_dir()),
-				FAILED);
+			ERR_FAIL_COND_V(!DirAccess::dir_exists_absolute(EditorPaths::get_config_dir()), FAILED);
 
 			String config_file_path = EditorSettings::get_existing_settings_path();
 			if (FileAccess::exists(config_file_path)) {
@@ -2938,8 +2916,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		}
 
 		if (found_project && EditorPaths::is_self_contained()) {
-			if (ProjectSettings::get_resource_path() ==
-				OS::get_executable_path().get_base_dir()) {
+			if (ProjectSettings::get_resource_path() == OS::get_executable_path().get_base_dir()) {
 				ERR_PRINT("You are trying to run a self-contained editor at the same location as a "
 						  "project. This is not allowed, since editor files will mix with project "
 						  "files.");
@@ -2954,9 +2931,8 @@ Error Main::setup2(bool p_show_boot_logo)
 			Ref<ConfigFile> config;
 			config.instantiate();
 			// Load and amend existing config if it exists.
-			Error err =
-				config->load(EditorPaths::get_project_settings_dir().path_join(
-					"editor_layout.cfg"));
+			Error err = config->load(
+				EditorPaths::get_project_settings_dir().path_join("editor_layout.cfg"));
 		}
 
 		if (init_screen == EditorSettings::InitialScreen::INITIAL_SCREEN_AUTO) {
@@ -3112,8 +3088,8 @@ Error Main::setup2(bool p_show_boot_logo)
 		AccessibilityServer::set_mode(accessibility_mode);
 
 		String rendering_driver = OS::get_current_rendering_driver_name();
-		DisplayServer::create(display_driver_idx, rendering_driver, window_mode,
-			window_vsync_mode, window_flags, window_position, window_size, init_screen, context,
+		DisplayServer::create(display_driver_idx, rendering_driver, window_mode, window_vsync_mode,
+			window_flags, window_position, window_size, init_screen, context,
 			init_embed_parent_window_id, err);
 		if (err != OK || !DisplayServer::is_initialized()) {
 			String last_name = DisplayServer::get_create_function_name(display_driver_idx);
@@ -3129,9 +3105,9 @@ Error Main::setup2(bool p_show_boot_logo)
 				WARN_PRINT(
 					vformat("Display driver %s failed, falling back to %s.", last_name, name));
 
-				DisplayServer::create(i, rendering_driver, window_mode,
-					window_vsync_mode, window_flags, window_position, window_size, init_screen,
-					context, init_embed_parent_window_id, err);
+				DisplayServer::create(i, rendering_driver, window_mode, window_vsync_mode,
+					window_flags, window_position, window_size, init_screen, context,
+					init_embed_parent_window_id, err);
 				if (err == OK && DisplayServer::is_initialized()) {
 					break;
 				}
@@ -3223,8 +3199,7 @@ Error Main::setup2(bool p_show_boot_logo)
 	if (editor && init_windowed) {
 		// We still need to check we are actually in windowed mode, because
 		// certain platform might only support one fullscreen window.
-		if (DisplayServer::window_get_mode() ==
-			DisplayServerEnums::WINDOW_MODE_WINDOWED) {
+		if (DisplayServer::window_get_mode() == DisplayServerEnums::WINDOW_MODE_WINDOWED) {
 			Vector2i current_size = DisplayServer::window_get_size();
 			Vector2i current_pos = DisplayServer::window_get_position();
 			int screen = DisplayServer::window_get_current_screen();
@@ -3232,8 +3207,8 @@ Error Main::setup2(bool p_show_boot_logo)
 
 			Vector2i adjusted_end = screen_rect.get_end().min(current_pos + current_size);
 			Vector2i adjusted_pos = screen_rect.get_position().max(adjusted_end - current_size);
-			Vector2i adjusted_size = DisplayServer::window_get_min_size().max(
-				adjusted_end - adjusted_pos);
+			Vector2i adjusted_size =
+				DisplayServer::window_get_min_size().max(adjusted_end - adjusted_pos);
 
 			if (current_pos != adjusted_end || current_size != adjusted_size) {
 				DisplayServer::window_set_position(adjusted_pos);
@@ -3341,16 +3316,13 @@ Error Main::setup2(bool p_show_boot_logo)
 				// do none..
 			}
 			else if (init_maximized) {
-				DisplayServer::window_set_mode(
-					DisplayServerEnums::WINDOW_MODE_MAXIMIZED);
+				DisplayServer::window_set_mode(DisplayServerEnums::WINDOW_MODE_MAXIMIZED);
 			}
 			else if (init_fullscreen) {
-				DisplayServer::window_set_mode(
-					DisplayServerEnums::WINDOW_MODE_FULLSCREEN);
+				DisplayServer::window_set_mode(DisplayServerEnums::WINDOW_MODE_FULLSCREEN);
 			}
 			if (init_always_on_top) {
-				DisplayServer::window_set_flag(
-					DisplayServerEnums::WINDOW_FLAG_ALWAYS_ON_TOP, true);
+				DisplayServer::window_set_flag(DisplayServerEnums::WINDOW_FLAG_ALWAYS_ON_TOP, true);
 			}
 		}
 
@@ -3394,8 +3366,7 @@ Error Main::setup2(bool p_show_boot_logo)
 		/* Enum text drivers */
 		String text_driver_options;
 		for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
-			const String driver_name =
-				TextServerManager::get_interface(i)->get_name();
+			const String driver_name = TextServerManager::get_interface(i)->get_name();
 			if (driver_name == "Dummy") {
 				// Dummy text driver cannot draw any text, making the editor unusable if selected.
 				continue;
@@ -3410,10 +3381,8 @@ Error Main::setup2(bool p_show_boot_logo)
 		if (!text_driver.is_empty()) {
 			/* Load user selected text server. */
 			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
-				if (TextServerManager::get_interface(i)->get_short_name() ==
-						text_driver ||
-					TextServerManager::get_interface(i)->get_name() ==
-						text_driver) {
+				if (TextServerManager::get_interface(i)->get_short_name() == text_driver ||
+					TextServerManager::get_interface(i)->get_name() == text_driver) {
 					text_driver_idx = i;
 					break;
 				}
@@ -3424,8 +3393,7 @@ Error Main::setup2(bool p_show_boot_logo)
 			/* If not selected, use one with the most features available. */
 			int max_features = 0;
 			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
-				uint32_t features =
-					TextServerManager::get_interface(i)->get_features();
+				uint32_t features = TextServerManager::get_interface(i)->get_features();
 				int feature_number = 0;
 				while (features) {
 					feature_number += features & 1;
@@ -3885,7 +3853,7 @@ int Main::start()
 		// this might end up triggered by valid usage, in which case we'll have to
 		// fine-tune further.
 		OS::alert("Couldn't detect whether to run the editor, the project manager "
-								   "or a specific project. Aborting.");
+				  "or a specific project. Aborting.");
 		ERR_FAIL_V_MSG(EXIT_FAILURE, "Couldn't detect whether to run the editor, the project "
 									 "manager or a specific project. Aborting.");
 	}
@@ -3901,70 +3869,69 @@ int Main::start()
 		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
 	}
 
-	if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_ICON) &&
-        !has_icon && OS::get_bundle_icon_path().is_empty()) {
-        Ref<Image> icon = memnew(Image(app_icon_png));
-        DisplayServer::set_icon(icon);
-    }
+	if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_ICON) && !has_icon &&
+		OS::get_bundle_icon_path().is_empty()) {
+		Ref<Image> icon = memnew(Image(app_icon_png));
+		DisplayServer::set_icon(icon);
+	}
 
 #ifdef MACOS_ENABLED
-    // TODO: Used to fix full-screen splash drawing on macOS, processing events before main loop is
-    // fully initialized cause issues on Wayland, and has no effect on other platforms.
-    if (minimum_time_msec) {
-        int64_t minimum_time = 1000 * minimum_time_msec;
-        uint64_t prev_time = OS::get_ticks_usec();
-        while (minimum_time > 0) {
-            DisplayServer::process_events();
-            OS::delay_usec(100);
+	// TODO: Used to fix full-screen splash drawing on macOS, processing events before main loop is
+	// fully initialized cause issues on Wayland, and has no effect on other platforms.
+	if (minimum_time_msec) {
+		int64_t minimum_time = 1000 * minimum_time_msec;
+		uint64_t prev_time = OS::get_ticks_usec();
+		while (minimum_time > 0) {
+			DisplayServer::process_events();
+			OS::delay_usec(100);
 
-            uint64_t next_time = OS::get_ticks_usec();
-            minimum_time -= (next_time - prev_time);
-            prev_time = next_time;
-        }
-    }
-    else {
-        DisplayServer::process_events();
-    }
+			uint64_t next_time = OS::get_ticks_usec();
+			minimum_time -= (next_time - prev_time);
+			prev_time = next_time;
+		}
+	}
+	else {
+		DisplayServer::process_events();
+	}
 #endif
 
-    OS::benchmark_end_measure("Startup", "Main::Start");
-    OS::benchmark_dump();
+	OS::benchmark_end_measure("Startup", "Main::Start");
+	OS::benchmark_dump();
 
-    Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
-    SceneTree::initialize_tree();
+	Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
+	SceneTree::initialize_tree();
 
-    Window* root = SceneTree::get_root();
-    if (root) {
-        root->show();
-        Size2i win_size = root->get_size();
-        if ((win_size.x <= 0 || win_size.y <= 0) && DisplayServer::is_initialized()) {
-            win_size = DisplayServer::window_get_size(
-                DisplayServerEnums::MAIN_WINDOW_ID);
-        }
-        if (win_size.x <= 0 || win_size.y <= 0) {
-            win_size = Size2i(1152, 648);
-        }
+	Window* root = SceneTree::get_root();
+	if (root) {
+		root->show();
+		Size2i win_size = root->get_size();
+		if ((win_size.x <= 0 || win_size.y <= 0) && DisplayServer::is_initialized()) {
+			win_size = DisplayServer::window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
+		}
+		if (win_size.x <= 0 || win_size.y <= 0) {
+			win_size = Size2i(1152, 648);
+		}
 #ifdef TOOLS_ENABLED
-        if (editor) {
-            EditorUI::initialize(
-                RID(), win_size, ProjectSettings::get_resource_path(), String(), false);
-        }
-        else if (found_project && !project_manager) {
-            EditorUI::initialize(
-                RID(), win_size, ProjectSettings::get_resource_path(), String(), true);
-        }
-        else {
-            ProjectManager::initialize(RID(), win_size);
-        }
+		if (editor) {
+			EditorUI::initialize(
+				RID(), win_size, ProjectSettings::get_resource_path(), String(), false);
+		}
+		else if (found_project && !project_manager) {
+			EditorUI::initialize(
+				RID(), win_size, ProjectSettings::get_resource_path(), String(), true);
+		}
+		else {
+			ProjectManager::initialize(RID(), win_size);
+		}
 #else
-        ProjectManager::initialize(RID(), win_size);
+		ProjectManager::initialize(RID(), win_size);
 #endif
-    }
-    else {
-        __print_line("Window root failed to be created");
-        return EXIT_FAILURE;
-    }
-    return EXIT_SUCCESS;
+	}
+	else {
+		__print_line("Window root failed to be created");
+		return EXIT_FAILURE;
+	}
+	return EXIT_SUCCESS;
 }
 
 /* Main iteration
@@ -4137,7 +4104,8 @@ bool Main::iteration()
 		exit = true;
 	}
 
-#ifdef TOOLS_ENABLED
+#ifdef TOOLS_
+ENABLED
 	if (wait_for_import && EditorFileSystem::is_initialized() &&
 		EditorFileSystem::doing_first_scan()) {
 		exit = false;
@@ -4150,8 +4118,7 @@ bool Main::iteration()
 
 	bool wake_for_events = SceneTree::is_initialized() && SceneTree::is_accessibility_enabled();
 
-	OS::add_frame_delay(
-		DisplayServer::window_can_draw(), wake_for_events);
+	OS::add_frame_delay(DisplayServer::window_can_draw(), wake_for_events);
 
 #ifdef TOOLS_ENABLED
 	if (auto_build_solutions) {
@@ -4159,12 +4126,12 @@ bool Main::iteration()
 		// Only relevant when running the editor.
 		if (!editor) {
 			OS::set_exit_code(EXIT_FAILURE);
-			ERR_FAIL_V_MSG(true
-, "Command line option --build-solutions was passed, but no project "
+			ERR_FAIL_V_MSG(true, "Command line option --build-solutions was passed, but no project "
 								 "is being edited. Aborting.");
 		}
 		OS::set_exit_code(EXIT_FAILURE);
-		ERR_FAIL_V_MSG(true, "Command line option --build-solutions is not supported without a registered build callback. Aborting.");
+		ERR_FAIL_V_MSG(true, "Command line option --build-solutions is not supported without a "
+							 "registered build callback. Aborting.");
 	}
 #endif
 

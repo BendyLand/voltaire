@@ -30,7 +30,6 @@
 /**************************************************************************/
 
 #include "graph_node.h"
-#include "scene/gui/box_container.h"
 #include "scene/gui/graph_edit.h"
 #include "scene/gui/label.h"
 #include "scene/main/scene_tree.h"
@@ -236,7 +235,7 @@ int GraphNode::get_output_port_slot(int p_port_idx)
 
 String GraphNode::get_title() const { return title; }
 
-HBoxContainer* GraphNode::get_titlebar_hbox() { return titlebar_hbox; }
+Control* GraphNode::get_titlebar_hbox() { return titlebar_hbox; }
 
 Control::CursorShape GraphNode::get_cursor_shape(const Point2& p_pos) const
 {
@@ -275,7 +274,7 @@ Control::FocusMode GraphNode::get_slots_focus_mode() const { return slots_focus_
 
 GraphNode::GraphNode()
 {
-	titlebar_hbox = memnew(HBoxContainer);
+	titlebar_hbox = Control::create_hbox();
 	titlebar_hbox->set_h_size_flags(SIZE_EXPAND_FILL);
 	titlebar_hbox->set_use_parent_material(true);
 	add_child(titlebar_hbox, false, INTERNAL_MODE_FRONT);
@@ -292,7 +291,7 @@ GraphNode::GraphNode()
 
 void GraphNode::_port_pos_update() {}
 
-Size2 GraphNode::_get_minimum_size(bool) const {}
+Size2 GraphNode::_get_minimum_size(bool) const { return Size2(); }
 
 String GraphNode::get_accessibility_container_name(const Node* p_child) const { return String(); }
 

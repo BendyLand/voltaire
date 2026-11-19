@@ -263,6 +263,12 @@ bool Slider::is_scrollable() const { return scrollable; }
 Slider::Slider(Orientation p_orientation)
 {
 	orientation = p_orientation;
+	if (orientation == HORIZONTAL) {
+		set_v_size_flags(0);
+	}
+	else {
+		set_h_size_flags(0);
+	}
 	set_focus_mode(FOCUS_ALL);
 }
 

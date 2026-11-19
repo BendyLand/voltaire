@@ -31,9 +31,9 @@
 
 #pragma once
 
-#include "scene/gui/container.h"
+#include "scene/gui/control.h"
 
-class GraphElement : public Container
+class GraphElement : public Control
 {
 protected:
 	bool selected = false;

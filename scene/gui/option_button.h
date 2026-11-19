@@ -32,12 +32,14 @@
 #pragma once
 
 #include "scene/gui/button.h"
+#include "scene/gui/control.h"
 #include "scene/gui/popup_menu.h"
 #include "scene/property_list_helper.h"
 
-class OptionButton : public Button
+class OptionButton : public Control
 {
 	bool disable_shortcuts = false;
+	Button* button = nullptr;
 	PopupMenu* popup = nullptr;
 	int current = -1;
 	bool fit_to_longest_item = true;
@@ -76,14 +78,14 @@ class OptionButton : public Button
 	void _select_int(int p_which);
 	void _refresh_size_cache();
 
-	void _dummy_setter() {} // Stub for PropertyListHelper (_set() doesn't use it).
+	void _dummy_setter() {}
 
-	virtual void pressed();
+	void pressed();
 
 protected:
 	Size2 get_minimum_size() const override;
-	virtual void _queue_update_size_cache() override;
-	virtual String _get_translated_text(const String& p_text) const override;
+	void _queue_update_size_cache();
+	String _get_translated_text(const String& p_text) const;
 
 	void _notification(int p_what);
 
@@ -92,12 +94,24 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-
 public:
-	// ATTENTION: This is used by the POT generator's scene parser. If the number of properties
-	// returned by `_get_items()` ever changes, this value should be updated to reflect the new
-	// size.
 	static const int ITEM_PROPERTY_SIZE = 5;
+
+	Button* get_button() const { return button; }
+	void set_text(const String& p_text)
+	{
+		if (button) {
+			button->set_text(p_text);
+		}
+	}
+	String get_text() const { return button ? button->get_text() : String(); }
+	void set_disabled(bool p_disabled)
+	{
+		if (button) {
+			button->set_disabled(p_disabled);
+		}
+	}
+	bool is_disabled() const { return button ? button->is_disabled() : false; }
 
 	void add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1);
 	void add_item(const String& p_label, int p_id = -1);
@@ -157,8 +171,6 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 #endif
 
-	OptionButton(const String& p_text = String()) : Button(p_text) {}
+	OptionButton(const String& p_text = String());
 	~OptionButton();
 };
-
-

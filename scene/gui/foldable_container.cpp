@@ -35,7 +35,7 @@
 
 Size2 FoldableContainer::get_inner_combined_maximum_size() const
 {
-	Size2 ms = Container::get_inner_combined_maximum_size();
+	Size2 ms = Control::get_inner_combined_maximum_size();
 
 	if (theme_cache.panel_style.is_valid()) {
 		ms -= theme_cache.panel_style->get_minimum_size();

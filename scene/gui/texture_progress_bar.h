@@ -31,9 +31,10 @@
 
 #pragma once
 
+#include "scene/gui/control.h"
 #include "scene/gui/range.h"
 
-class TextureProgressBar : public Range
+class TextureProgressBar : public Control
 {
 	Ref<Texture2D> under;
 	Ref<Texture2D> progress;
@@ -56,6 +57,69 @@ public:
 		FILL_CLOCKWISE_AND_COUNTER_CLOCKWISE,
 		FILL_MODE_MAX,
 	};
+
+	NumericRange range;
+
+	double get_value() const { return range.value; }
+	double get_min() const { return range.min; }
+	double get_max() const { return range.max; }
+	double get_step() const { return range.step; }
+	double get_page() const { return range.page; }
+	double get_as_ratio() const { return range.get_as_ratio(); }
+
+	void set_value(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_value_no_signal(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+	}
+
+	void set_min(double p_min)
+	{
+		if (range.set_min(p_min)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_max(double p_max)
+	{
+		if (range.set_max(p_max)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_step(double p_step)
+	{
+		if (range.set_step(p_step)) {
+			queue_accessibility_update();
+		}
+	}
+
+	void set_page(double p_page)
+	{
+		if (range.set_page(p_page)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_as_ratio(double p_value)
+	{
+		if (range.set_as_ratio(p_value)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
 
 	void set_fill_mode(int p_fill);
 	int get_fill_mode();
@@ -97,6 +161,12 @@ public:
 	Color get_tint_over() const;
 
 	Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override
+	{
+		PackedStringArray warnings = Control::get_configuration_warnings();
+		range.append_configuration_warnings(warnings);
+		return warnings;
+	}
 
 	TextureProgressBar();
 
@@ -119,5 +189,3 @@ private:
 	void draw_nine_patch_stretched(
 		const Ref<Texture2D>& p_texture, FillMode p_mode, double p_ratio, const Color& p_modulate);
 };
-
-

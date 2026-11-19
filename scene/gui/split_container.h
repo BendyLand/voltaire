@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "scene/gui/container.h"
+#include "scene/gui/control.h"
 
 class TextureRect;
 class SplitContainer;
@@ -88,7 +88,7 @@ public:
 	SplitContainerDragger();
 };
 
-class SplitContainer : public Container
+class SplitContainer : public Control
 {
 	friend class SplitContainerDragger;
 	friend class SplitContainerMultiDragger;
@@ -236,18 +236,6 @@ public:
 #endif
 
 	SplitContainer(bool p_vertical = false);
-};
-
-class HSplitContainer : public SplitContainer
-{
-public:
-	HSplitContainer() : SplitContainer(false) { is_fixed = true; }
-};
-
-class VSplitContainer : public SplitContainer
-{
-public:
-	VSplitContainer() : SplitContainer(true) { is_fixed = true; }
 };
 
 

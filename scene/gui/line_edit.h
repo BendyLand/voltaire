@@ -169,6 +169,7 @@ private:
 
 	Ref<Texture2D> right_icon;
 	bool flat = false;
+	bool spin_box_mode = false;
 	float right_icon_scale = 1.0;
 
 	struct Selection
@@ -448,6 +449,9 @@ public:
 
 	void set_flat(bool p_enabled);
 	bool is_flat() const;
+
+	void set_spin_box_mode(bool p_enabled) { spin_box_mode = p_enabled; }
+	bool is_spin_box_mode() const { return spin_box_mode; }
 
 	void set_select_all_on_focus(bool p_enabled);
 	bool is_select_all_on_focus() const;

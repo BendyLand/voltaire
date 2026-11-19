@@ -6485,7 +6485,6 @@ void RenderingDeviceDriverVulkan::command_begin_render_pass(CommandBufferID p_cm
 	ERR_FAIL_COND(command_buffer->vk_command_buffer == VK_NULL_HANDLE);
 	ERR_FAIL_NULL(render_pass);
 	ERR_FAIL_COND(render_pass->vk_render_pass == VK_NULL_HANDLE);
-	DUMP(framebuffer);
 	ERR_FAIL_NULL(framebuffer);
 	ERR_FAIL_COND(framebuffer->vk_framebuffer == VK_NULL_HANDLE);
 

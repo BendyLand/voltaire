@@ -31,12 +31,12 @@
 
 #pragma once
 
-#include "scene/gui/container.h"
+#include "scene/gui/control.h"
 
 class FoldableGroup;
 class TextLine;
 
-class FoldableContainer : public Container
+class FoldableContainer : public Control
 {
 public:
 	enum TitlePosition

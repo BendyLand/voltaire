@@ -35,16 +35,14 @@
 #include "scene/resources/text_paragraph.h"
 #include "servers/display/accessibility_server.h"
 
-class VBoxContainer;
-class HScrollBar;
-class HSlider;
 class LineEdit;
 class Popup;
 class PopupMenu;
+class ScrollBar;
+class Slider;
 class TextEdit;
 class Timer;
 class Tree;
-class VScrollBar;
 
 class TreeItem
 {
@@ -542,11 +540,11 @@ private:
 						// partially hide underneath other sticky items.
 	RID drop_indicator_ci;
 
-	VBoxContainer* popup_editor_vb = nullptr;
+	Control* popup_editor_vb = nullptr;
 	Popup* popup_editor = nullptr;
 	LineEdit* line_editor = nullptr;
 	TextEdit* text_editor = nullptr;
-	HSlider* value_editor = nullptr;
+	Slider* value_editor = nullptr;
 	bool updating_value_editor = false;
 	uint64_t focus_in_id = 0;
 	PopupMenu* popup_menu = nullptr;
@@ -719,8 +717,8 @@ private:
 	Size2 _get_cell_icon_size(const TreeItem::Cell& p_cell) const;
 
 	void _scroll_moved(float p_value);
-	HScrollBar* h_scroll = nullptr;
-	VScrollBar* v_scroll = nullptr;
+	ScrollBar* h_scroll = nullptr;
+	ScrollBar* v_scroll = nullptr;
 
 	bool h_scroll_enabled = true;
 	bool v_scroll_enabled = true;
@@ -913,7 +911,7 @@ public:
 
 	void set_cursor_can_exit_tree(bool p_enable);
 
-	VScrollBar* get_vscroll_bar() { return v_scroll; }
+	ScrollBar* get_vscroll_bar() { return v_scroll; }
 
 	void set_hide_folding(bool p_hide);
 	bool is_folding_hidden() const;

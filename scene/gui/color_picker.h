@@ -31,61 +31,26 @@
 
 #pragma once
 
-#include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
+#include "scene/gui/control.h"
 #include "scene/gui/popup.h"
 #include "scene/resources/shader.h"
 
-class AspectRatioContainer;
 class ColorMode;
 class ColorPickerShape;
 class FileDialog;
-class GridContainer;
-class HSlider;
 class Label;
 class LineEdit;
-class MarginContainer;
 class MenuButton;
 class OptionButton;
 class PopupMenu;
+class Slider;
 class SpinBox;
 class StyleBoxFlat;
 class TextureRect;
 
-class ColorPresetButton : public BaseButton
+class ColorPicker : public Control
 {
-	Color preset_color;
-	bool recent = false;
-
-	struct ThemeCache
-	{
-		Ref<StyleBox> foreground_style;
-		Ref<StyleBox> focus_style;
-
-		Ref<Texture2D> background_icon;
-		Ref<Texture2D> overbright_indicator;
-	};
-
-	ThemeCache theme_cache;
-
-protected:
-	void _notification(int);
-
-public:
-	void set_preset_color(const Color& p_color);
-	Color get_preset_color() const;
-
-	ColorPresetButton(Color p_color, int p_size, bool p_recent)
-		: preset_color(p_color), recent(p_recent)
-	{
-	}
-
-	~ColorPresetButton() = default;
-};
-
-class ColorPicker : public VBoxContainer
-{
-	// These classes poke into theme items for their internal logic.
 	friend class ColorPickerShape;
 	friend class ColorPickerShapeRectangle;
 	friend class ColorPickerShapeWheel;
@@ -128,8 +93,6 @@ public:
 	};
 
 private:
-	// Ideally, `SHAPE_NONE` should be -1 so that we don't need to convert shape type to index.
-	// In order to avoid breaking compatibility, we have to use these methods for conversion.
 	inline int get_current_shape_index() { return shape_to_index(current_shape); }
 
 	static inline int shape_to_index(PickerShapeType p_shape)
@@ -198,19 +161,18 @@ private:
 	Ref<StyleBoxFlat> picker_preview_style_box;
 	Ref<StyleBoxFlat> picker_preview_style_box_color;
 
-	// Legacy color picking.
 	TextureRect* picker_texture_rect = nullptr;
 	Color picker_color;
 	FileDialog* file_dialog = nullptr;
 	MenuButton* menu_btn = nullptr;
 	PopupMenu* options_menu = nullptr;
 
-	MarginContainer* internal_margin = nullptr;
-	HBoxContainer* shape_container = nullptr;
+	Control* internal_margin = nullptr;
+	Control* shape_container = nullptr;
 	TextureRect* sample = nullptr;
-	VBoxContainer* swatches_vbc = nullptr;
-	GridContainer* preset_container = nullptr;
-	HBoxContainer* recent_preset_hbc = nullptr;
+	Control* swatches_vbc = nullptr;
+	Control* preset_container = nullptr;
+	Control* recent_preset_hbc = nullptr;
 	Button* btn_add_preset = nullptr;
 	Button* btn_pick = nullptr;
 	Label* palette_name = nullptr;
@@ -221,24 +183,24 @@ private:
 	PopupMenu* shape_popup = nullptr;
 	PopupMenu* mode_popup = nullptr;
 	MenuButton* btn_shape = nullptr;
-	HBoxContainer* mode_hbc = nullptr;
-	HBoxContainer* sample_hbc = nullptr;
-	GridContainer* slider_gc = nullptr;
-	HBoxContainer* hex_hbc = nullptr;
+	Control* mode_hbc = nullptr;
+	Control* sample_hbc = nullptr;
+	Control* slider_gc = nullptr;
+	Control* hex_hbc = nullptr;
 	Label* hex_label = nullptr;
 	MenuButton* btn_mode = nullptr;
 	Button* mode_btns[MODE_BUTTON_COUNT];
 	Ref<ButtonGroup> mode_group;
-	ColorPresetButton* selected_recent_preset = nullptr;
+	Button* selected_recent_preset = nullptr;
 	Ref<ButtonGroup> preset_group;
 	Ref<ButtonGroup> recent_preset_group;
 
-	HBoxContainer* perm_hb = nullptr;
+	Control* perm_hb = nullptr;
 	void _req_permission();
 
 	OptionButton* mode_option_button = nullptr;
 
-	HSlider* sliders[SLIDER_MAX];
+	Slider* sliders[SLIDER_MAX];
 	SpinBox* values[SLIDER_MAX];
 	Label* labels[SLIDER_MAX];
 
@@ -246,13 +208,13 @@ private:
 	LineEdit* c_text = nullptr;
 	Button* text_copy = nullptr;
 
-	HSlider* alpha_slider = nullptr;
+	Slider* alpha_slider = nullptr;
 	SpinBox* alpha_value = nullptr;
 	Label* alpha_label = nullptr;
 
 	bool edit_alpha = true;
 
-	HSlider* intensity_slider = nullptr;
+	Slider* intensity_slider = nullptr;
 	SpinBox* intensity_value = nullptr;
 	Label* intensity_label = nullptr;
 
@@ -342,7 +304,6 @@ private:
 		Ref<Texture2D> color_script;
 		Ref<Texture2D> color_copy;
 
-		/* Mode buttons */
 		Ref<StyleBox> mode_button_normal;
 		Ref<StyleBox> mode_button_pressed;
 		Ref<StyleBox> mode_button_hover;
@@ -377,8 +338,8 @@ protected:
 	virtual void _update_theme_item_cache() override;
 
 public:
-	GridContainer* get_slider_container();
-	HSlider* get_slider(int idx);
+	Control* get_slider_container();
+	Slider* get_slider(int idx);
 	Vector<float> get_active_slider_values();
 
 	void add_mode(ColorMode* p_mode);
@@ -423,21 +384,13 @@ public:
 
 	void set_focus_on_picker_shape();
 
-	ColorPicker() = default;
+	ColorPicker();
 	~ColorPicker();
 };
 
-class ColorPickerPopupPanel : public PopupPanel
+class ColorPickerButton : public Control
 {
-	virtual void _input_from_window(const InputEvent& p_event) override;
-};
-
-class ColorPickerButton : public Button
-{
-	// Initialization is now done deferred,
-	// this improves performance in the inspector as the color picker
-	// can be expensive to initialize.
-
+	Button* button = nullptr;
 	PopupPanel* popup = nullptr;
 	ColorPicker* picker = nullptr;
 	Color color;
@@ -449,7 +402,6 @@ class ColorPickerButton : public Button
 	{
 		Ref<StyleBox> normal_style;
 		Ref<Texture2D> background_icon;
-
 		Ref<Texture2D> overbright_indicator;
 	};
 
@@ -459,13 +411,20 @@ protected:
 	void _notification(int);
 
 public:
+	Button* get_button() const { return button; }
+	PopupPanel* get_popup() const { return popup; }
+	ColorPicker* get_picker() const { return picker; }
+
 	Color get_pick_color() const;
 
 	bool is_editing_alpha() const;
 
 	bool is_editing_intensity() const;
 
-	ColorPickerButton(const String& p_text = String()) : Button(p_text) {}
+	virtual Size2 get_minimum_size() const override
+	{
+		return button ? button->get_minimum_size() : Size2();
+	}
+
+	ColorPickerButton(const String& p_text = String());
 };
-
-

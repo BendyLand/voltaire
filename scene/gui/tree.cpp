@@ -35,7 +35,6 @@
 #include "core/math/math_funcs.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
-#include "scene/gui/box_container.h"
 #include "scene/gui/line_edit.h"
 #include "scene/gui/popup_menu.h"
 #include "scene/gui/scroll_bar.h"

@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
+#include "scene/gui/control.h"
 #include "scene/gui/label.h"
 #include "scene/gui/panel.h"
 #include "scene/gui/popup.h"
@@ -40,15 +40,17 @@
 
 class LineEdit;
 
-class AcceptDialog : public Window
+class Dialog : public Window
 {
 	Window* parent_visible = nullptr;
 
 	Panel* bg_panel = nullptr;
 	Label* message_label = nullptr;
-	HBoxContainer* buttons_hbox = nullptr;
+	Control* buttons_hbox = nullptr;
 	Button* ok_button = nullptr;
+	Button* cancel = nullptr;
 
+	bool has_cancel_button = false;
 	bool popped_up = false;
 	String ok_text;
 	String default_ok_text;
@@ -90,7 +92,6 @@ protected:
 
 	void set_default_ok_text(const String& p_text);
 
-	// Not private since used by derived classes signal.
 	void _text_submitted(const String& p_text);
 	void _ok_pressed();
 	void _cancel_pressed();
@@ -106,6 +107,13 @@ public:
 	Label* get_label() { return message_label; }
 
 	Button* get_ok_button() { return ok_button; }
+	Button* get_cancel_button() { return cancel; }
+
+	void set_cancel_button_enabled(bool p_enabled) { has_cancel_button = p_enabled; }
+	bool is_cancel_button_enabled() const { return has_cancel_button; }
+
+	void set_cancel_button_text(String p_cancel_button_text);
+	String get_cancel_button_text() const;
 
 	static void set_swap_cancel_ok(bool p_swap);
 
@@ -124,21 +132,6 @@ public:
 	void set_ok_button_text(String p_ok_button_text);
 	String get_ok_button_text() const;
 
-	AcceptDialog() = default;
-	~AcceptDialog() = default;
+	Dialog(bool p_with_cancel = false) : has_cancel_button(p_with_cancel) {}
+	~Dialog() = default;
 };
-
-class ConfirmationDialog : public AcceptDialog
-{
-	Button* cancel = nullptr;
-
-public:
-	Button* get_cancel_button();
-
-	void set_cancel_button_text(String p_cancel_button_text);
-	String get_cancel_button_text() const;
-
-	ConfirmationDialog() = default;
-};
-
-

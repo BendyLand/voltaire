@@ -195,6 +195,12 @@ bool ScrollBar::is_smooth_scroll_enabled() const { return smooth_scroll_enabled;
 ScrollBar::ScrollBar(Orientation p_orientation)
 {
 	orientation = p_orientation;
+	if (orientation == HORIZONTAL) {
+		set_v_size_flags(0);
+	}
+	else {
+		set_h_size_flags(0);
+	}
 
 	if (focus_by_default) {
 		set_focus_mode(FOCUS_ALL);

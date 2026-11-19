@@ -33,6 +33,15 @@
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
+Size2 Panel::get_inner_combined_maximum_size() const
+{
+	Size2 ms = Control::get_inner_combined_maximum_size();
+	if (fit_children && theme_cache.panel_style.is_valid()) {
+		ms -= theme_cache.panel_style->get_minimum_size();
+	}
+	return ms;
+}
+
 void Panel::_notification(int p_what)
 {
 	switch (p_what) {
@@ -46,16 +55,14 @@ void Panel::_notification(int p_what)
 
 	case NOTIFICATION_DRAW: {
 		RID ci = get_canvas_item();
-		theme_cache.panel_style->draw(ci, Rect2(Point2(), get_size()));
+		if (theme_cache.panel_style.is_valid()) {
+			theme_cache.panel_style->draw(ci, Rect2(Point2(), get_size()));
+		}
 	} break;
 	}
 }
 
-
-Panel::Panel()
+Panel::Panel(bool p_fit_children) : fit_children(p_fit_children)
 {
-	// Has visible stylebox, so stop by default.
 	set_mouse_filter(MOUSE_FILTER_STOP);
 }
-
-

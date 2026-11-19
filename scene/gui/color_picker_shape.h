@@ -117,7 +117,7 @@ public:
 
 class ColorPickerShapeOKHSRectangle : public ColorPickerShape
 {
-	MarginContainer* rectangle_margin = nullptr;
+	Control* rectangle_margin = nullptr;
 
 protected:
 	Control* square = nullptr;

@@ -53,7 +53,7 @@ void AndroidEditorGradleRunner::run_gradle(const String &p_project_path, const S
 		output_label->set_context_menu_enabled(true);
 		output_label->set_scroll_follow(true);
 
-		output_dialog = memnew(ConfirmationDialog);
+		output_dialog = memnew(Dialog(true));
 		output_dialog->set_unparent_when_invisible(true);
 		output_dialog->set_title(TTR("Building Android Project (gradle)"));
 		output_dialog->add_child(output_label);

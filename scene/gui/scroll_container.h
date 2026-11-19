@@ -31,13 +31,13 @@
 
 #pragma once
 
-#include "scene/gui/container.h"
+#include "scene/gui/control.h"
 #include "scene/gui/scroll_bar.h"
 
-class PanelContainer;
+class Panel;
 class TextureRect;
 
-class ScrollContainer : public Container
+class ScrollContainer : public Control
 {
 public:
 	enum ScrollMode
@@ -59,9 +59,9 @@ public:
 	};
 
 private:
-	HScrollBar* h_scroll = nullptr;
-	VScrollBar* v_scroll = nullptr;
-	PanelContainer* focus_panel = nullptr;
+	ScrollBar* h_scroll = nullptr;
+	ScrollBar* v_scroll = nullptr;
+	Panel* focus_panel = nullptr;
 
 	mutable Size2 largest_child_min_size; // The largest one among the min sizes of all available
 										  // child controls.
@@ -175,8 +175,8 @@ public:
 
 	void set_scroll_on_drag_hover(bool p_scroll);
 
-	HScrollBar* get_h_scroll_bar();
-	VScrollBar* get_v_scroll_bar();
+	ScrollBar* get_h_scroll_bar();
+	ScrollBar* get_v_scroll_bar();
 	void ensure_control_visible(Control* p_control);
 
 	PackedStringArray get_configuration_warnings() const override;

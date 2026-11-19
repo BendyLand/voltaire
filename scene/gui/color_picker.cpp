@@ -39,11 +39,8 @@
 #include "scene/gui/color_mode.h"
 #include "scene/gui/color_picker_shape.h"
 #include "scene/gui/file_dialog.h"
-#include "scene/gui/grid_container.h"
 #include "scene/gui/label.h"
 #include "scene/gui/line_edit.h"
-#include "scene/gui/link_button.h"
-#include "scene/gui/margin_container.h"
 #include "scene/gui/menu_button.h"
 #include "scene/gui/panel.h"
 #include "scene/gui/popup_menu.h"
@@ -93,7 +90,7 @@ static inline String color_to_string(
 
 void ColorPicker::_update_theme_item_cache()
 {
-	VBoxContainer::_update_theme_item_cache();
+	Control::_update_theme_item_cache();
 
 	theme_cache.base_scale = get_theme_default_base_scale();
 }
@@ -116,7 +113,7 @@ void ColorPicker::add_mode(ColorMode* p_mode) { modes.push_back(p_mode); }
 
 void ColorPicker::add_shape(ColorPickerShape* p_shape) { shapes.push_back(p_shape); }
 
-HSlider* ColorPicker::get_slider(int p_idx)
+Slider* ColorPicker::get_slider(int p_idx)
 {
 	ERR_FAIL_INDEX_V(p_idx, MODE_MAX, nullptr);
 	return sliders[p_idx];
@@ -232,8 +229,8 @@ ColorPicker::PickerShapeType ColorPicker::get_picker_shape() const { return curr
 
 inline int ColorPicker::_get_preset_size()
 {
-	return (int(get_minimum_size().width) -
-			   (preset_container->get_h_separation() * (PRESET_COLUMN_COUNT - 1))) /
+	int sep = preset_container ? preset_container->layout.h_separation : 0;
+	return (int(get_minimum_size().width) - (sep * (PRESET_COLUMN_COUNT - 1))) /
 		   PRESET_COLUMN_COUNT;
 }
 
@@ -253,11 +250,7 @@ void ColorPicker::_load_palette()
 	file_dialog->popup_centered_ratio();
 }
 
-#ifdef TOOLS_ENABLED
-
-GridContainer* ColorPicker::get_slider_container() { return slider_gc; }
-
-#endif // ifdef TOOLS_ENABLED
+Control* ColorPicker::get_slider_container() { return slider_gc; }
 
 PackedColorArray ColorPicker::get_presets() const
 {
@@ -322,8 +315,6 @@ bool ColorPicker::is_deferred_mode() const { return deferred_mode_enabled; }
 
 void ColorPicker::_sample_draw()
 {
-	// Covers the right half of the sample if the old color is being displayed,
-	// or the whole sample if it's not being displayed.
 	Rect2 rect_new;
 	Rect2 rect_old;
 
@@ -331,8 +322,6 @@ void ColorPicker::_sample_draw()
 		rect_new = Rect2(Point2(sample->get_size().width * 0.5, 0),
 			Size2(sample->get_size().width * 0.5, sample->get_size().height * 0.95));
 
-		// Draw both old and new colors for easier comparison (only if spawned from a
-		// ColorPickerButton).
 		rect_old = Rect2(
 			Point2(), Size2(sample->get_size().width * 0.5, sample->get_size().height * 0.95));
 
@@ -343,9 +332,6 @@ void ColorPicker::_sample_draw()
 		sample->draw_rect(rect_old, old_color);
 
 		if (!old_color.is_equal_approx(color)) {
-			// Draw a revert indicator to indicate that the old sample can be clicked to revert to
-			// this old color. Adapt icon color to the background color (taking alpha checkerboard
-			// into account) so that it's always visible.
 			sample->draw_texture(theme_cache.sample_revert.ptr(),
 				rect_old.size * 0.5 - theme_cache.sample_revert->get_size() * 0.5,
 				Math::lerp(0.75f, old_color.get_luminance(), old_color.a) < 0.455
@@ -359,8 +345,6 @@ void ColorPicker::_sample_draw()
 		}
 
 		if (is_color_overbright(color)) {
-			// Draw an indicator to denote that the old color is "overbright" and can't be displayed
-			// accurately in the preview.
 			sample->draw_texture(theme_cache.overbright_indicator.ptr(), Point2());
 		}
 	}
@@ -381,8 +365,6 @@ void ColorPicker::_sample_draw()
 	}
 
 	if (is_color_overbright(color)) {
-		// Draw an indicator to denote that the new color is "overbright" and can't be displayed
-		// accurately in the preview.
 		sample->draw_texture(
 			theme_cache.overbright_indicator.ptr(), Point2(sample->get_size().width * 0.5, 0));
 	}
@@ -471,6 +453,12 @@ void ColorPicker::_req_permission()
 #endif
 }
 
+ColorPicker::ColorPicker()
+{
+	layout.type = LayoutConfig::LAYOUT_BOX;
+	layout.orientation = VERTICAL;
+}
+
 ColorPicker::~ColorPicker()
 {
 	for (ColorMode* mode : modes) {
@@ -479,14 +467,6 @@ ColorPicker::~ColorPicker()
 	for (ColorPickerShape* shape : shapes) {
 		memdelete(shape);
 	}
-}
-
-void ColorPickerPopupPanel::_input_from_window(const InputEvent& p_event)
-{
-	if (p_event.is_action_pressed(SNAME("ui_accept"), false, true)) {
-		_close_pressed();
-	}
-	PopupPanel::_input_from_window(p_event);
 }
 
 void ColorPickerButton::_notification(int p_what)
@@ -504,16 +484,19 @@ void ColorPickerButton::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_DRAW: {
-		const Rect2 r = Rect2(theme_cache.normal_style->get_offset(),
-			get_size() - theme_cache.normal_style->get_minimum_size());
-		draw_texture_rect(theme_cache.background_icon.ptr(), r, true);
-		draw_rect(r, color);
+		if (theme_cache.normal_style.is_valid()) {
+			const Rect2 r = Rect2(theme_cache.normal_style->get_offset(),
+				get_size() - theme_cache.normal_style->get_minimum_size());
+			if (theme_cache.background_icon.is_valid()) {
+				draw_texture_rect(theme_cache.background_icon.ptr(), r, true);
+			}
+			draw_rect(r, color);
 
-		if (color.r > 1 || color.g > 1 || color.b > 1) {
-			// Draw an indicator to denote that the color is "overbright" and can't be displayed
-			// accurately in the preview
-			draw_texture(
-				theme_cache.overbright_indicator.ptr(), theme_cache.normal_style->get_offset());
+			if ((color.r > 1 || color.g > 1 || color.b > 1) &&
+				theme_cache.overbright_indicator.is_valid()) {
+				draw_texture(theme_cache.overbright_indicator.ptr(),
+					theme_cache.normal_style->get_offset());
+			}
 		}
 	} break;
 
@@ -537,26 +520,9 @@ bool ColorPickerButton::is_editing_alpha() const { return edit_alpha; }
 
 bool ColorPickerButton::is_editing_intensity() const { return edit_intensity; }
 
-void ColorPresetButton::_notification(int p_what)
+ColorPickerButton::ColorPickerButton(const String& p_text)
 {
-	switch (p_what) {
-	case NOTIFICATION_ACCESSIBILITY_UPDATE: {
-		RID ae = get_accessibility_element();
-		ERR_FAIL_COND(ae.is_null());
-
-		AccessibilityServer::update_set_role(
-			ae, AccessibilityServerEnums::AccessibilityRole::ROLE_BUTTON);
-		AccessibilityServer::update_set_color_value(ae, preset_color);
-	} break;
-	}
+	button = memnew(Button(p_text));
+	button->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
+	add_child(button, false, INTERNAL_MODE_FRONT);
 }
-
-void ColorPresetButton::set_preset_color(const Color& p_color)
-{
-	preset_color = p_color;
-	queue_accessibility_update();
-}
-
-Color ColorPresetButton::get_preset_color() const { return preset_color; }
-
-

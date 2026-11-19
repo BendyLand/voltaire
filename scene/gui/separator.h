@@ -47,22 +47,18 @@ protected:
 	void _notification(int p_what);
 
 public:
+	Orientation get_orientation() const { return orientation; }
+	void set_orientation(Orientation p_orientation)
+	{
+		if (orientation != p_orientation) {
+			orientation = p_orientation;
+			update_minimum_size();
+			queue_redraw();
+		}
+	}
+
 	virtual Size2 get_minimum_size() const override;
 
-	Separator();
+	Separator(Orientation p_orientation = HORIZONTAL);
 	~Separator();
 };
-
-class VSeparator : public Separator
-{
-public:
-	VSeparator();
-};
-
-class HSeparator : public Separator
-{
-public:
-	HSeparator();
-};
-
-

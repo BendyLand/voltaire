@@ -29,7 +29,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/popup.h"
 #include "scene/theme/theme_db.h"
@@ -297,7 +296,7 @@ Size2 TabContainer::get_desired_size() const { return _get_minimum_size(true); }
 
 Size2 TabContainer::get_inner_combined_maximum_size() const
 {
-	Size2 ms = Container::get_inner_combined_maximum_size();
+	Size2 ms = Control::get_inner_combined_maximum_size();
 
 	if (tabs_visible && tab_bar) {
 		Size2 tab_bar_ms = tab_bar->get_minimum_size();

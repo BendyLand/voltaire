@@ -31,9 +31,9 @@
 
 #pragma once
 
-#include "scene/gui/container.h"
+#include "scene/gui/control.h"
 
-class SubViewportContainer : public Container
+class SubViewportContainer : public Control
 {
 	bool stretch = false;
 	int shrink = 1;

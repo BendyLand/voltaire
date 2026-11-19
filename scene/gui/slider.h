@@ -31,9 +31,10 @@
 
 #pragma once
 
+#include "scene/gui/control.h"
 #include "scene/gui/range.h"
 
-class Slider : public Range
+class Slider : public Control
 {
 public:
 	enum TickPosition
@@ -48,7 +49,7 @@ private:
 	struct Grab
 	{
 		int pos = 0;
-		double uvalue = 0.0; // Value at `pos`.
+		double uvalue = 0.0;
 		double value_before_dragging = 0.0;
 		bool active = false;
 	} grab;
@@ -88,7 +89,86 @@ protected:
 	void _notification(int p_what);
 
 public:
+	NumericRange range;
+
+	Orientation get_orientation() const { return orientation; }
+
+	double get_value() const { return range.value; }
+	double get_min() const { return range.min; }
+	double get_max() const { return range.max; }
+	double get_step() const { return range.step; }
+	double get_page() const { return range.page; }
+	double get_as_ratio() const { return range.get_as_ratio(); }
+
+	void set_value(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_value_no_signal(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+	}
+
+	void set_min(double p_min)
+	{
+		if (range.set_min(p_min)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_max(double p_max)
+	{
+		if (range.set_max(p_max)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_step(double p_step)
+	{
+		if (range.set_step(p_step)) {
+			queue_accessibility_update();
+		}
+	}
+
+	void set_page(double p_page)
+	{
+		if (range.set_page(p_page)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_as_ratio(double p_value)
+	{
+		if (range.set_as_ratio(p_value)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_allow_greater(bool p_allow) { range.allow_greater = p_allow; }
+	bool is_greater_allowed() const { return range.allow_greater; }
+	void set_allow_lesser(bool p_allow) { range.allow_lesser = p_allow; }
+	bool is_lesser_allowed() const { return range.allow_lesser; }
+	void set_use_rounded_values(bool p_enable) { range.rounded_values = p_enable; }
+	bool is_using_rounded_values() const { return range.rounded_values; }
+	bool is_ratio_exp() const { return range.exp_ratio; }
+
 	virtual Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override
+	{
+		PackedStringArray warnings = Control::get_configuration_warnings();
+		range.append_configuration_warnings(warnings);
+		return warnings;
+	}
 
 	void set_custom_step(double p_custom_step);
 	double get_custom_step() const;
@@ -108,19 +188,5 @@ public:
 	void set_scrollable(bool p_scrollable);
 	bool is_scrollable() const;
 
-	Slider(Orientation p_orientation = VERTICAL);
+	Slider(Orientation p_orientation = HORIZONTAL);
 };
-
-class HSlider : public Slider
-{
-public:
-	HSlider() : Slider(HORIZONTAL) { set_v_size_flags(0); }
-};
-
-class VSlider : public Slider
-{
-public:
-	VSlider() : Slider(VERTICAL) { set_h_size_flags(0); }
-};
-
-

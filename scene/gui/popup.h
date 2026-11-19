@@ -77,6 +77,7 @@ public:
 class PopupPanel : public Popup
 {
 	Panel* panel = nullptr;
+	bool close_on_accept = false;
 
 	struct ThemeCache
 	{
@@ -98,6 +99,9 @@ protected:
 	virtual Size2 _get_contents_minimum_size() const override;
 
 public:
+	void set_close_on_accept(bool p_enable) { close_on_accept = p_enable; }
+	bool is_closing_on_accept() const { return close_on_accept; }
+
 #ifdef TOOLS_ENABLED
 	PackedStringArray get_configuration_warnings() const override;
 #endif

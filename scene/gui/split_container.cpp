@@ -63,31 +63,25 @@ SplitContainerDragger::SplitContainerDragger() { set_focus_mode(FOCUS_ACCESSIBIL
 
 Ref<Texture2D> SplitContainer::_get_grabber_icon() const
 {
-	if (is_fixed) {
-		return theme_cache.grabber_icon;
+	if (vertical) {
+		return theme_cache.grabber_icon_v.is_valid() ? theme_cache.grabber_icon_v
+													 : theme_cache.grabber_icon;
 	}
 	else {
-		if (vertical) {
-			return theme_cache.grabber_icon_v;
-		}
-		else {
-			return theme_cache.grabber_icon_h;
-		}
+		return theme_cache.grabber_icon_h.is_valid() ? theme_cache.grabber_icon_h
+													 : theme_cache.grabber_icon;
 	}
 }
 
 Ref<Texture2D> SplitContainer::_get_touch_dragger_icon() const
 {
-	if (is_fixed) {
-		return theme_cache.touch_dragger_icon;
+	if (vertical) {
+		return theme_cache.touch_dragger_icon_v.is_valid() ? theme_cache.touch_dragger_icon_v
+														   : theme_cache.touch_dragger_icon;
 	}
 	else {
-		if (vertical) {
-			return theme_cache.touch_dragger_icon_v;
-		}
-		else {
-			return theme_cache.touch_dragger_icon_h;
-		}
+		return theme_cache.touch_dragger_icon_h.is_valid() ? theme_cache.touch_dragger_icon_h
+														   : theme_cache.touch_dragger_icon;
 	}
 }
 

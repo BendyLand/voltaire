@@ -35,9 +35,9 @@
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 
-Size2 AcceptDialog::_get_contents_minimum_size() const { return Size2(); }
+Size2 Dialog::_get_contents_minimum_size() const { return Size2(); }
 
-void AcceptDialog::_input_from_window(const InputEvent& p_event)
+void Dialog::_input_from_window(const InputEvent& p_event)
 {
 	if (close_on_escape && p_event.is_action_pressed(SNAME("ui_close_dialog"), false, true)) {
 		_cancel_pressed();
@@ -45,30 +45,30 @@ void AcceptDialog::_input_from_window(const InputEvent& p_event)
 	Window::_input_from_window(p_event);
 }
 
-void AcceptDialog::_parent_focused()
+void Dialog::_parent_focused()
 {
 	if (popped_up && !is_exclusive() && get_flag(FLAG_POPUP)) {
 		_cancel_pressed();
 	}
 }
 
-void AcceptDialog::_text_submitted(const String& p_text)
+void Dialog::_text_submitted(const String& p_text)
 {
 	if (get_ok_button() && get_ok_button()->is_disabled()) {
-		return; // Do not allow submission if OK button is disabled.
+		return;
 	}
 	_ok_pressed();
 }
 
-void AcceptDialog::_post_popup()
+void Dialog::_post_popup()
 {
 	Window::_post_popup();
 	popped_up = true;
 }
 
-String AcceptDialog::get_text() const { return message_label->get_text(); }
+String Dialog::get_text() const { return message_label->get_text(); }
 
-void AcceptDialog::set_text(String p_text)
+void Dialog::set_text(String p_text)
 {
 	if (message_label->get_text() == p_text) {
 		return;
@@ -82,34 +82,34 @@ void AcceptDialog::set_text(String p_text)
 	}
 }
 
-void AcceptDialog::set_hide_on_ok(bool p_hide) { hide_on_ok = p_hide; }
+void Dialog::set_hide_on_ok(bool p_hide) { hide_on_ok = p_hide; }
 
-bool AcceptDialog::get_hide_on_ok() const { return hide_on_ok; }
+bool Dialog::get_hide_on_ok() const { return hide_on_ok; }
 
-void AcceptDialog::set_close_on_escape(bool p_hide) { close_on_escape = p_hide; }
+void Dialog::set_close_on_escape(bool p_hide) { close_on_escape = p_hide; }
 
-bool AcceptDialog::get_close_on_escape() const { return close_on_escape; }
+bool Dialog::get_close_on_escape() const { return close_on_escape; }
 
-void AcceptDialog::set_autowrap(bool p_autowrap)
+void Dialog::set_autowrap(bool p_autowrap)
 {
 	message_label->set_autowrap_mode(
 		p_autowrap ? TextServer::AUTOWRAP_WORD : TextServer::AUTOWRAP_OFF);
 }
 
-bool AcceptDialog::has_autowrap()
+bool Dialog::has_autowrap()
 {
 	return message_label->get_autowrap_mode() != TextServer::AUTOWRAP_OFF;
 }
 
-void AcceptDialog::set_ok_button_text(String p_ok_button_text)
+void Dialog::set_ok_button_text(String p_ok_button_text)
 {
 	ok_text = p_ok_button_text;
 	_update_ok_text();
 }
 
-String AcceptDialog::get_ok_button_text() const { return ok_text; }
+String Dialog::get_ok_button_text() const { return ok_text; }
 
-void AcceptDialog::_update_ok_text()
+void Dialog::_update_ok_text()
 {
 	String prev_text = ok_button->get_text();
 	String new_text = default_ok_text;
@@ -129,20 +129,22 @@ void AcceptDialog::_update_ok_text()
 	}
 }
 
-void AcceptDialog::set_swap_cancel_ok(bool p_swap) { swap_cancel_ok = p_swap; }
+void Dialog::set_swap_cancel_ok(bool p_swap) { swap_cancel_ok = p_swap; }
 
-void ConfirmationDialog::set_cancel_button_text(String p_cancel_button_text)
+void Dialog::set_cancel_button_text(String p_cancel_button_text)
 {
-	cancel->set_text(p_cancel_button_text);
+	if (cancel) {
+		cancel->set_text(p_cancel_button_text);
+	}
 }
 
-String ConfirmationDialog::get_cancel_button_text() const { return cancel->get_text(); }
+String Dialog::get_cancel_button_text() const
+{
+	return cancel ? cancel->get_text() : String();
+}
 
-Button* ConfirmationDialog::get_cancel_button() { return cancel; }
+void Dialog::_cancel_pressed() {}
 
-void AcceptDialog::_cancel_pressed() {}
+void Dialog::_ok_pressed() {}
 
-
-void AcceptDialog::_ok_pressed() {}
-
-void AcceptDialog::_update_child_rects() {}
+void Dialog::_update_child_rects() {}

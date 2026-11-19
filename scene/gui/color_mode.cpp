@@ -60,7 +60,7 @@ Color ColorModeRGB::get_color() const
 
 void ColorModeRGB::_greater_value_inputted()
 {
-	HSlider** sliders = color_picker->sliders;
+	Slider** sliders = color_picker->sliders;
 	Color color_prev = color_picker->color;
 	for (int i = 0; i < 3; i++) {
 		if (sliders[i]->get_value() > 255) {
@@ -86,7 +86,7 @@ void ColorModeRGB::slider_draw(int p_which)
 	pos.resize(4);
 	Vector<Color> col;
 	col.resize(4);
-	HSlider* slider = color_picker->get_slider(p_which);
+	Slider* slider = color_picker->get_slider(p_which);
 	Size2 size = slider->get_size();
 	Color left_color;
 	Color right_color;
@@ -193,7 +193,7 @@ void ColorModeHSV::slider_draw(int p_which)
 	pos.resize(4);
 	Vector<Color> col;
 	col.resize(4);
-	HSlider* slider = color_picker->get_slider(p_which);
+	Slider* slider = color_picker->get_slider(p_which);
 	Size2 size = slider->get_size();
 	Color left_color;
 	Color right_color;
@@ -270,7 +270,7 @@ Color ColorModeLinear::get_color() const
 
 void ColorModeLinear::_greater_value_inputted()
 {
-	HSlider** sliders = color_picker->sliders;
+	Slider** sliders = color_picker->sliders;
 	Color color_prev = color_picker->color;
 	Color linear_color = color_prev.srgb_to_linear();
 	for (int i = 0; i < 3; i++) {
@@ -295,7 +295,7 @@ void ColorModeLinear::slider_draw(int p_which)
 	pos.resize(4);
 	Vector<Color> col;
 	col.resize(4);
-	HSlider* slider = color_picker->get_slider(p_which);
+	Slider* slider = color_picker->get_slider(p_which);
 	Size2 size = slider->get_size();
 	Color left_color;
 	Color right_color;
@@ -399,7 +399,7 @@ Color ColorModeOKHSL::get_color() const
 
 void ColorModeOKHSL::slider_draw(int p_which)
 {
-	HSlider* slider = color_picker->get_slider(p_which);
+	Slider* slider = color_picker->get_slider(p_which);
 	Size2 size = slider->get_size();
 	const real_t margin = 16 * color_picker->theme_cache.base_scale;
 

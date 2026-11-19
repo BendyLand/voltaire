@@ -29,30 +29,23 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <cmath>
 #include <thirdparty/misc/r128.h>
+#include "core/string/translation_server.h"
 #include "range.h"
-#include "servers/display/accessibility_server.h"
 
-double Range::_snapped_r128(double p_value, double p_step)
+double NumericRange::snapped_r128(double p_value, double p_step)
 {
 	if (p_step == 0.0) {
 		return p_value;
 	}
 	if (p_value > (1e18 * p_step) || p_value < -(1e18 * p_step)) {
-		// If the value goes outside of the range R128 supports, fallback to normal snapping.
 		return Math::snapped(p_value, p_step);
 	}
-	// Rescale values to better utilize R128's range before snapping.
-	// R128 is fixed-precision with 64 bits after the decimal point, but double already uses 53 of
-	// those, so a step size finer than 2^-11 will lose precision, and in practice even 1e-3 can be
-	// problematic. By rescaling the value and step, we can shift precision into the higher bits
-	// (effectively turning R128 into a makeshift float).
 	const int decimals = MIN(18, 14 - Math::floor(std::log10(MAX(Math::abs(p_value), p_step))));
 	const double scale = Math::pow(10.0, decimals);
 	p_value *= scale;
 	p_step *= scale;
-	// All these lines are the equivalent of: p_value = Math::floor(p_value / p_step + 0.5) *
-	// p_step; Convert to String to force rounding to a decimal value (not a binary one).
 	String step_str = String::num(p_step);
 	String value_str = String::num(p_value);
 	R128 step_r128;
@@ -68,274 +61,134 @@ double Range::_snapped_r128(double p_value, double p_step)
 		const R128 scale_r128 = R128(scale);
 		r128Div(&value_r128, &value_r128, &scale_r128);
 	}
-	p_value = (double)value_r128;
-	return p_value;
+	return (double)value_r128;
 }
 
-PackedStringArray Range::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Control::get_configuration_warnings();
-
-	if (shared->exp_ratio && shared->min < 0) {
-		warnings.push_back(
-			RTR("If \"Exp Edit\" is enabled, \"Min Value\" must be greater or equal to 0."));
-	}
-
-	return warnings;
-}
-
-void Range::Shared::emit_value_changed()
-{
-	for (Range* E : owners) {
-		Range* r = E;
-		if (!r->is_inside_tree()) {
-			continue;
-		}
-		r->_value_changed_notify();
-	}
-}
-
-void Range::Shared::emit_changed()
-{
-	for (Range* E : owners) {
-		Range* r = E;
-		if (!r->is_inside_tree()) {
-			continue;
-		}
-		r->_changed_notify();
-	}
-}
-
-void Range::set_value(double p_val)
-{
-	double prev_val = shared->val;
-	_set_value_no_signal(p_val);
-
-	if (shared->val != prev_val && !(Math::is_nan(shared->val) && Math::is_nan(prev_val))) {
-		shared->emit_value_changed();
-	}
-	queue_accessibility_update();
-}
-
-void Range::_set_value_no_signal(double p_val) { shared->val = _calc_value(p_val, shared->step); }
-
-double Range::_calc_value(double p_val, double p_step) const
+double NumericRange::calc_value(double p_val, double p_step) const
 {
 	if (Math::is_nan(p_val)) {
 		return p_val;
 	}
 
 	if (p_step > 0) {
-		if (Math::abs(shared->min) > p_step * 1e14) {
-			// Min is too big to use for snapping offset, so snap without it.
-			p_val = _snapped_r128(p_val, p_step);
+		if (Math::abs(min) > p_step * 1e14) {
+			p_val = snapped_r128(p_val, p_step);
 		}
 		else {
-			// Subtract min to support cases like min = 0.1, step = 0.2, snaps to 0.1, 0.3, 0.5,
-			// etc.
-			p_val = _snapped_r128(p_val - shared->min, p_step) + shared->min;
+			p_val = snapped_r128(p_val - min, p_step) + min;
 		}
 	}
 
-	if (_rounded_values) {
+	if (rounded_values) {
 		p_val = Math::round(p_val);
 	}
 
-	if (!shared->allow_greater && p_val > shared->max - shared->page) {
-		p_val = shared->max - shared->page;
+	if (!allow_greater && p_val > max - page) {
+		p_val = max - page;
 	}
 
-	if (!shared->allow_lesser && p_val < shared->min) {
-		p_val = shared->min;
+	if (!allow_lesser && p_val < min) {
+		p_val = min;
 	}
 	return p_val;
 }
 
-void Range::set_value_no_signal(double p_val)
+bool NumericRange::set_value(double p_val)
 {
-	double prev_val = shared->val;
-	_set_value_no_signal(p_val);
-
-	if (shared->val != prev_val) {
-		shared->redraw_owners();
-	}
+	double prev_val = value;
+	value = calc_value(p_val, step);
+	return value != prev_val && !(Math::is_nan(value) && Math::is_nan(prev_val));
 }
 
-void Range::set_max(double p_max)
+bool NumericRange::set_min(double p_min)
 {
-	double max_validated = MAX(p_max, shared->min);
-	if (shared->max == max_validated) {
-		return;
+	if (min == p_min) {
+		return false;
 	}
-
-	shared->max = max_validated;
-	shared->page = CLAMP(shared->page, 0, shared->max - shared->min);
-	set_value(shared->val);
-
-	shared->emit_changed();
-
-	queue_accessibility_update();
+	min = p_min;
+	max = MAX(max, min);
+	page = CLAMP(page, 0.0, max - min);
+	value = calc_value(value, step);
+	return true;
 }
 
-void Range::set_step(double p_step)
+bool NumericRange::set_max(double p_max)
 {
-	if (shared->step == p_step) {
-		return;
+	double max_validated = MAX(p_max, min);
+	if (max == max_validated) {
+		return false;
 	}
-
-	shared->step = p_step;
-	shared->emit_changed();
-
-	queue_accessibility_update();
+	max = max_validated;
+	page = CLAMP(page, 0.0, max - min);
+	value = calc_value(value, step);
+	return true;
 }
 
-void Range::set_page(double p_page)
+bool NumericRange::set_step(double p_step)
 {
-	double page_validated = CLAMP(p_page, 0, shared->max - shared->min);
-	if (shared->page == page_validated) {
-		return;
+	if (step == p_step) {
+		return false;
 	}
-
-	shared->page = page_validated;
-	set_value(shared->val);
-
-	shared->emit_changed();
-
-	queue_accessibility_update();
+	step = p_step;
+	return true;
 }
 
-double Range::get_value() const { return shared->val; }
+bool NumericRange::set_page(double p_page)
+{
+	double page_validated = CLAMP(p_page, 0.0, max - min);
+	if (page == page_validated) {
+		return false;
+	}
+	page = page_validated;
+	value = calc_value(value, step);
+	return true;
+}
 
-double Range::get_min() const { return shared->min; }
-
-double Range::get_max() const { return shared->max; }
-
-double Range::get_step() const { return shared->step; }
-
-double Range::get_page() const { return shared->page; }
-
-void Range::set_as_ratio(double p_value)
+bool NumericRange::set_as_ratio(double p_ratio)
 {
 	double v;
-
-	if (shared->exp_ratio && get_min() >= 0) {
-		double exp_min = get_min() == 0 ? 0.0 : Math::log(get_min()) / Math::log((double)2);
-		double exp_max = Math::log(get_max()) / Math::log((double)2);
-		v = Math::pow(2, exp_min + (exp_max - exp_min) * p_value);
+	if (exp_ratio && min >= 0) {
+		double exp_min = min == 0 ? 0.0 : Math::log(min) / Math::log(2.0);
+		double exp_max = Math::log(max) / Math::log(2.0);
+		v = Math::pow(2.0, exp_min + (exp_max - exp_min) * p_ratio);
 	}
 	else {
-		double percent = (get_max() - get_min()) * p_value;
-		if (get_step() > 0) {
-			double steps = std::round(percent / get_step());
-			v = steps * get_step() + get_min();
+		double percent = (max - min) * p_ratio;
+		if (step > 0) {
+			double steps = std::round(percent / step);
+			v = steps * step + min;
 		}
 		else {
-			v = percent + get_min();
+			v = percent + min;
 		}
 	}
-	v = CLAMP(v, get_min(), get_max());
-	set_value(v);
+	v = CLAMP(v, min, max);
+	return set_value(v);
 }
 
-double Range::get_as_ratio() const
+double NumericRange::get_as_ratio() const
 {
-	if (Math::is_equal_approx(get_max(), get_min())) {
-		// Avoid division by zero.
+	if (Math::is_equal_approx(max, min)) {
 		return 1.0;
 	}
 
-	if (shared->exp_ratio && get_min() >= 0) {
-		double exp_min = get_min() == 0 ? 0.0 : Math::log(get_min()) / Math::log((double)2);
-		double exp_max = Math::log(get_max()) / Math::log((double)2);
-		double value = CLAMP(get_value(), shared->min, shared->max);
-		double v = Math::log(value) / Math::log((double)2);
-
-		return CLAMP((v - exp_min) / (exp_max - exp_min), 0, 1);
+	if (exp_ratio && min >= 0) {
+		double exp_min = min == 0 ? 0.0 : Math::log(min) / Math::log(2.0);
+		double exp_max = Math::log(max) / Math::log(2.0);
+		double clamped = CLAMP(value, min, max);
+		double v = Math::log(clamped) / Math::log(2.0);
+		return CLAMP((v - exp_min) / (exp_max - exp_min), 0.0, 1.0);
 	}
 	else {
-		double value = CLAMP(get_value(), shared->min, shared->max);
-		return CLAMP((value - get_min()) / (get_max() - get_min()), 0, 1);
+		double clamped = CLAMP(value, min, max);
+		return CLAMP((clamped - min) / (max - min), 0.0, 1.0);
 	}
 }
 
-void Range::share(Range* p_range)
+void NumericRange::append_configuration_warnings(PackedStringArray& r_warnings) const
 {
-	ERR_FAIL_NULL(p_range);
-
-	p_range->_ref_shared(shared);
-	p_range->_changed_notify();
-	p_range->_value_changed_notify();
-}
-
-void Range::unshare()
-{
-	Shared* nshared = memnew(Shared);
-	nshared->min = shared->min;
-	nshared->max = shared->max;
-	nshared->val = shared->val;
-	nshared->step = shared->step;
-	nshared->page = shared->page;
-	nshared->exp_ratio = shared->exp_ratio;
-	nshared->allow_greater = shared->allow_greater;
-	nshared->allow_lesser = shared->allow_lesser;
-	_unref_shared();
-	_ref_shared(nshared);
-	queue_accessibility_update();
-}
-
-void Range::_ref_shared(Shared* p_shared)
-{
-	if (shared && p_shared == shared) {
-		return;
-	}
-
-	_unref_shared();
-	shared = p_shared;
-	shared->owners.insert(this);
-}
-
-void Range::_unref_shared()
-{
-	if (shared) {
-		shared->owners.erase(this);
-		if (shared->owners.is_empty()) {
-			memdelete(shared);
-			shared = nullptr;
-		}
+	if (exp_ratio && min < 0) {
+		r_warnings.push_back(
+			RTR("If \"Exp Edit\" is enabled, \"Min Value\" must be greater or equal to 0."));
 	}
 }
-
-void Range::set_use_rounded_values(bool p_enable) { _rounded_values = p_enable; }
-
-bool Range::is_using_rounded_values() const { return _rounded_values; }
-
-bool Range::is_ratio_exp() const { return shared->exp_ratio; }
-
-void Range::set_allow_greater(bool p_allow) { shared->allow_greater = p_allow; }
-
-bool Range::is_greater_allowed() const { return shared->allow_greater; }
-
-void Range::set_allow_lesser(bool p_allow) { shared->allow_lesser = p_allow; }
-
-bool Range::is_lesser_allowed() const { return shared->allow_lesser; }
-
-Range::Range()
-{
-	shared = memnew(Shared);
-	shared->owners.insert(this);
-}
-
-Range::~Range() { _unref_shared(); }
-
-void Range::_value_changed(double p_value)
-{
-	// stub
-}
-
-
-
-void Range::_value_changed_notify() {}
-
-void Range::_changed_notify() {}
-
-void Range::Shared::redraw_owners() {}

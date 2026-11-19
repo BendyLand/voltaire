@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "scene/gui/box_container.h"
+#include "scene/gui/control.h"
 #include "scene/gui/graph_frame.h"
 #include "scene/gui/graph_node.h"
 #include "scene/resources/shader.h"
@@ -39,13 +39,12 @@
 class Button;
 class GraphEdit;
 class GraphEditArranger;
-class HScrollBar;
 class Label;
 class Line2D;
-class PanelContainer;
+class Panel;
+class ScrollBar;
 class SpinBox;
 class ViewPanner;
-class VScrollBar;
 
 class GraphEditFilter : public Control
 {
@@ -183,8 +182,8 @@ private:
 	Button* minimap_button = nullptr;
 	Button* arrange_button = nullptr;
 
-	HScrollBar* h_scrollbar = nullptr;
-	VScrollBar* v_scrollbar = nullptr;
+	ScrollBar* h_scrollbar = nullptr;
+	ScrollBar* v_scrollbar = nullptr;
 
 	Ref<ViewPanner> panner;
 	bool warped_panning = true;
@@ -254,8 +253,8 @@ private:
 	float lines_curvature = 0.5f;
 	bool lines_antialiased = true;
 
-	PanelContainer* menu_panel = nullptr;
-	HBoxContainer* menu_hbox = nullptr;
+	Panel* menu_panel = nullptr;
+	Control* menu_hbox = nullptr;
 	Control* connections_layer = nullptr;
 
 	GraphEditFilter* top_connection_layer =
@@ -523,7 +522,7 @@ public:
 	void set_connection_lines_antialiased(bool p_antialiased);
 	bool is_connection_lines_antialiased() const;
 
-	HBoxContainer* get_menu_hbox();
+	Control* get_menu_hbox();
 	Ref<ViewPanner> get_panner();
 	void set_warped_panning(bool p_warped);
 	void update_warped_panning();

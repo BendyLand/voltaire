@@ -34,13 +34,13 @@
 #ifdef ANDROID_ENABLED
 
 
-class ConfirmationDialog;
+class Dialog;
 class RichTextLabel;
 
 class AndroidEditorGradleRunner
 {
 	RichTextLabel* output_label = nullptr;
-	ConfirmationDialog* output_dialog = nullptr;
+	Dialog* output_dialog = nullptr;
 
 	enum State
 	{

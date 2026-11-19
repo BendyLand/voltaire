@@ -32,13 +32,15 @@
 #pragma once
 
 #include "scene/gui/button.h"
+#include "scene/gui/control.h"
 #include "scene/gui/popup_menu.h"
 #include "scene/property_list_helper.h"
 
-class MenuButton : public Button
+class MenuButton : public Control
 {
 	bool switch_on_hover = false;
 	bool disable_shortcuts = false;
+	Button* button = nullptr;
 	PopupMenu* popup = nullptr;
 
 	static inline PropertyListHelper base_property_helper;
@@ -53,10 +55,33 @@ protected:
 	}
 
 public:
-	virtual void pressed();
+	void pressed();
 
+	Button* get_button() const { return button; }
 	PopupMenu* get_popup() const;
 	void show_popup();
+
+	void set_text(const String& p_text)
+	{
+		if (button) {
+			button->set_text(p_text);
+		}
+	}
+	String get_text() const { return button ? button->get_text() : String(); }
+	void set_flat(bool p_flat)
+	{
+		if (button) {
+			button->set_flat(p_flat);
+		}
+	}
+	bool is_flat() const { return button ? button->is_flat() : true; }
+	void set_disabled(bool p_disabled)
+	{
+		if (button) {
+			button->set_disabled(p_disabled);
+		}
+	}
+	bool is_disabled() const { return button ? button->is_disabled() : false; }
 
 	void set_switch_on_hover(bool p_enabled);
 	bool is_switch_on_hover();
@@ -65,6 +90,11 @@ public:
 	void set_item_count(int p_count);
 	int get_item_count() const;
 
+	virtual Size2 get_minimum_size() const override
+	{
+		return button ? button->get_minimum_size() : Size2();
+	}
+
 #ifdef TOOLS_ENABLED
 	PackedStringArray get_configuration_warnings() const override;
 #endif
@@ -72,5 +102,3 @@ public:
 	MenuButton(const String& p_text = String());
 	~MenuButton();
 };
-
-

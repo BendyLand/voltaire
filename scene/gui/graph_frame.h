@@ -33,8 +33,6 @@
 
 #include "scene/gui/graph_element.h"
 
-class HBoxContainer;
-
 class GraphFrame : public GraphElement
 {
 	struct ThemeCache
@@ -51,7 +49,7 @@ class GraphFrame : public GraphElement
 private:
 	String title;
 
-	HBoxContainer* titlebar_hbox = nullptr;
+	Control* titlebar_hbox = nullptr;
 	Label* title_label = nullptr;
 
 	bool autoshrink_enabled = true;
@@ -80,7 +78,7 @@ public:
 	void set_autoshrink_margin(const int& p_margin);
 	int get_autoshrink_margin() const;
 
-	HBoxContainer* get_titlebar_hbox();
+	Control* get_titlebar_hbox();
 	Size2 get_titlebar_size() const;
 
 	void set_drag_margin(int p_margin);

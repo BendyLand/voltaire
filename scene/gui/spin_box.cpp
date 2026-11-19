@@ -70,9 +70,9 @@ void SpinBox::_arrow_clicked(bool p_up)
 		// `arrow_step` should be a multiple of `step`, otherwise it may not be able to
 		// increase/decrease the value.
 		arrow_step = Math::snapped(arrow_step, get_step());
-		double new_value = _calc_value(get_value(), arrow_step);
+		double new_value = range.calc_value(get_value(), arrow_step);
 		if ((p_up && new_value <= get_value()) || (!p_up && new_value >= get_value())) {
-			new_value = _calc_value(get_value() + (p_up ? arrow_step : -arrow_step), arrow_step);
+			new_value = range.calc_value(get_value() + (p_up ? arrow_step : -arrow_step), arrow_step);
 		}
 		set_value(new_value);
 	}
@@ -229,7 +229,6 @@ bool SpinBox::is_custom_arrow_rounding() const { return custom_arrow_round; }
 void SpinBox::_value_changed(double p_value)
 {
 	_update_buttons_state_for_current_value();
-	Range::_value_changed(p_value);
 }
 
 void SpinBox::_update_text(bool p_only_update_if_value_changed) {}

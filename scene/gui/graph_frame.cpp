@@ -31,7 +31,6 @@
 
 #include "core/config/engine.h"
 #include "graph_frame.h"
-#include "scene/gui/box_container.h"
 #include "scene/gui/label.h"
 #include "scene/resources/style_box_flat.h"
 #include "scene/resources/style_box_texture.h"
@@ -118,7 +117,7 @@ bool GraphFrame::is_autoshrink_enabled() const { return autoshrink_enabled; }
 
 int GraphFrame::get_autoshrink_margin() const { return autoshrink_margin; }
 
-HBoxContainer* GraphFrame::get_titlebar_hbox() { return titlebar_hbox; }
+Control* GraphFrame::get_titlebar_hbox() { return titlebar_hbox; }
 
 Size2 GraphFrame::get_titlebar_size() const
 {
@@ -167,7 +166,7 @@ Size2 GraphFrame::get_desired_size() const { return _get_minimum_size(true); }
 
 GraphFrame::GraphFrame()
 {
-	titlebar_hbox = memnew(HBoxContainer);
+	titlebar_hbox = Control::create_hbox();
 	titlebar_hbox->set_h_size_flags(SIZE_EXPAND_FILL);
 	titlebar_hbox->set_use_parent_material(true);
 	add_child(titlebar_hbox, false, INTERNAL_MODE_FRONT);
@@ -184,4 +183,4 @@ GraphFrame::GraphFrame()
 
 
 
-Size2 GraphFrame::_get_minimum_size(bool) const {}
+Size2 GraphFrame::_get_minimum_size(bool) const { return Size2(); }

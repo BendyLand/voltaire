@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "scene/gui/panel_container.h"
+#include "scene/gui/panel.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/main/window.h"
 #include "scene/theme/theme_db.h"
@@ -44,7 +44,7 @@ Size2 ScrollContainer::get_desired_size() const { return _get_minimum_size(true)
 
 Size2 ScrollContainer::get_inner_combined_maximum_size() const
 {
-	Size2 ms = Container::get_inner_combined_maximum_size();
+	Size2 ms = Control::get_inner_combined_maximum_size();
 
 	if (theme_cache.panel_style.is_valid()) {
 		ms -= theme_cache.panel_style->get_minimum_size();
@@ -220,9 +220,9 @@ void ScrollContainer::set_follow_focus(bool p_follow) { follow_focus = p_follow;
 
 void ScrollContainer::set_scroll_on_drag_hover(bool p_scroll) { scroll_on_drag_hover = p_scroll; }
 
-HScrollBar* ScrollContainer::get_h_scroll_bar() { return h_scroll; }
+ScrollBar* ScrollContainer::get_h_scroll_bar() { return h_scroll; }
 
-VScrollBar* ScrollContainer::get_v_scroll_bar() { return v_scroll; }
+ScrollBar* ScrollContainer::get_v_scroll_bar() { return v_scroll; }
 
 PackedStringArray ScrollContainer::get_configuration_warnings() const { return PackedStringArray(); }
 
@@ -247,7 +247,7 @@ bool ScrollContainer::child_has_focus()
 
 
 
-Size2 ScrollContainer::_get_minimum_size(bool) const {}
+Size2 ScrollContainer::_get_minimum_size(bool) const { return Size2(); }
 
 void ScrollContainer::_cancel_drag() {}
 

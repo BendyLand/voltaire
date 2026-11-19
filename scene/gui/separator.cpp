@@ -63,12 +63,8 @@ void Separator::_notification(int p_what)
 	}
 }
 
-Separator::Separator() {}
+Separator::Separator(Orientation p_orientation) : orientation(p_orientation) {}
 
 Separator::~Separator() {}
-
-HSeparator::HSeparator() { orientation = HORIZONTAL; }
-
-VSeparator::VSeparator() { orientation = VERTICAL; }
 
 

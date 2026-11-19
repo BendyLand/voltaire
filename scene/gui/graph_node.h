@@ -33,8 +33,6 @@
 
 #include "scene/gui/graph_element.h"
 
-class HBoxContainer;
-
 class GraphNode : public GraphElement
 {
 	friend class GraphEdit;
@@ -78,7 +76,7 @@ class GraphNode : public GraphElement
 		ACTION_FOLLOW_OUTPUT,
 	};
 
-	HBoxContainer* titlebar_hbox = nullptr;
+	Control* titlebar_hbox = nullptr;
 	Label* title_label = nullptr;
 
 	String title;
@@ -134,7 +132,7 @@ public:
 	void set_title(const String& p_title);
 	String get_title() const;
 
-	HBoxContainer* get_titlebar_hbox();
+	Control* get_titlebar_hbox();
 
 	void set_slot(int p_slot_index, bool p_enable_left, int p_type_left, const Color& p_color_left,
 		bool p_enable_right, int p_type_right, const Color& p_color_right,

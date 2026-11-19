@@ -36,10 +36,7 @@
 #include "core/os/os.h"
 #include "file_dialog.compat.inc"
 #include "file_dialog.h"
-#include "scene/gui/box_container.h"
-#include "scene/gui/check_box.h"
-#include "scene/gui/flow_container.h"
-#include "scene/gui/grid_container.h"
+#include "scene/gui/button.h"
 #include "scene/gui/item_list.h"
 #include "scene/gui/label.h"
 #include "scene/gui/line_edit.h"
@@ -83,7 +80,7 @@ void FileDialog::_popup_base(const Rect2i& p_screen_rect)
 {
 #ifdef TOOLS_ENABLED
 	if (is_part_of_edited_scene()) {
-		ConfirmationDialog::_popup_base(p_screen_rect);
+		Dialog::_popup_base(p_screen_rect);
 		return;
 	}
 #endif
@@ -92,7 +89,7 @@ void FileDialog::_popup_base(const Rect2i& p_screen_rect)
 		_native_popup();
 	}
 	else {
-		ConfirmationDialog::_popup_base(p_screen_rect);
+		Dialog::_popup_base(p_screen_rect);
 	}
 }
 
@@ -110,7 +107,7 @@ void FileDialog::set_visible(bool p_visible)
 
 #ifdef TOOLS_ENABLED
 	if (is_part_of_edited_scene()) {
-		ConfirmationDialog::set_visible(p_visible);
+		Dialog::set_visible(p_visible);
 		return;
 	}
 #endif
@@ -121,7 +118,7 @@ void FileDialog::set_visible(bool p_visible)
 		}
 	}
 	else {
-		ConfirmationDialog::set_visible(p_visible);
+		Dialog::set_visible(p_visible);
 	}
 }
 
@@ -716,7 +713,7 @@ void FileDialog::set_use_native_dialog(bool p_native)
 
 	// Replace the built-in dialog with the native one if it's currently visible.
 	if (is_inside_tree() && is_visible() && _should_use_native_popup()) {
-		ConfirmationDialog::set_visible(false);
+		Dialog::set_visible(false);
 		_native_popup();
 	}
 }
@@ -754,7 +751,7 @@ void FileDialog::_popup_menu(Vector2 const&, int) {}
 
 void FileDialog::set_filename_filter(String const&) {}
 
-String FileDialog::_get_item_path(int) const {}
+String FileDialog::_get_item_path(int) const { return String(); }
 
 void FileDialog::_file_list_selected(int) {}
 

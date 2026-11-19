@@ -128,8 +128,8 @@ private:
 
 	SelectMode select_mode = SELECT_SINGLE;
 	IconMode icon_mode = ICON_MODE_LEFT;
-	VScrollBar* scroll_bar_v = nullptr;
-	HScrollBar* scroll_bar_h = nullptr;
+	ScrollBar* scroll_bar_v = nullptr;
+	ScrollBar* scroll_bar_h = nullptr;
 	TextServer::OverrunBehavior text_overrun_behavior = TextServer::OVERRUN_TRIM_ELLIPSIS;
 
 	ScrollHintMode scroll_hint_mode = SCROLL_HINT_MODE_DISABLED;
@@ -336,9 +336,9 @@ public:
 
 	void force_update_list_size();
 
-	VScrollBar* get_v_scroll_bar() { return scroll_bar_v; }
+	ScrollBar* get_v_scroll_bar() { return scroll_bar_v; }
 
-	HScrollBar* get_h_scroll_bar() { return scroll_bar_h; }
+	ScrollBar* get_h_scroll_bar() { return scroll_bar_h; }
 
 	void set_scroll_hint_mode(ScrollHintMode p_mode);
 	ScrollHintMode get_scroll_hint_mode() const;

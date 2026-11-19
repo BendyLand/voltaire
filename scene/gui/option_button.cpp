@@ -37,16 +37,14 @@ static const int NONE_SELECTED = -1;
 
 Size2 OptionButton::get_minimum_size() const
 {
-	Size2 minsize;
-	if (fit_to_longest_item) {
-		minsize = _cached_size;
-	}
-	else {
-		minsize = Button::get_minimum_size();
-	}
+	Size2 minsize = fit_to_longest_item
+						? _cached_size
+						: (button ? button->get_minimum_size() : Size2());
 
-	if (has_theme_icon(SNAME("arrow"))) {
-		const Size2 padding = _get_largest_stylebox_size();
+	if (has_theme_icon(SNAME("arrow")) && theme_cache.arrow_icon.is_valid()) {
+		const Size2 padding = theme_cache.normal.is_valid()
+								  ? theme_cache.normal->get_minimum_size()
+								  : Size2();
 		const Size2 arrow_size = theme_cache.arrow_icon->get_size();
 
 		Size2 content_size = minsize - padding;
@@ -56,8 +54,7 @@ Size2 OptionButton::get_minimum_size() const
 		minsize = content_size + padding;
 	}
 
-	if (fit_to_longest_item) {
-		// Make the width at least the width of the popup.
+	if (fit_to_longest_item && popup) {
 		minsize.width = MAX(minsize.width, popup->get_contents_minimum_size().width);
 	}
 
@@ -68,7 +65,7 @@ void OptionButton::_selected(int p_which) { _select(p_which, true); }
 
 void OptionButton::pressed()
 {
-	if (popup->is_visible()) {
+	if (popup && popup->is_visible()) {
 		popup->hide();
 		return;
 	}
@@ -108,6 +105,9 @@ void OptionButton::set_item_tooltip(int p_idx, const String& p_tooltip) {}
 
 void OptionButton::set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode)
 {
+	if (!popup) {
+		return;
+	}
 	if (p_idx < 0) {
 		p_idx += get_item_count();
 	}
@@ -120,31 +120,49 @@ void OptionButton::set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_m
 	_queue_update_size_cache();
 }
 
-String OptionButton::get_item_text(int p_idx) const { return popup->get_item_text(p_idx); }
+String OptionButton::get_item_text(int p_idx) const
+{
+	return popup ? popup->get_item_text(p_idx) : String();
+}
 
-Ref<Texture2D> OptionButton::get_item_icon(int p_idx) const { return popup->get_item_icon(p_idx); }
+Ref<Texture2D> OptionButton::get_item_icon(int p_idx) const
+{
+	return popup ? popup->get_item_icon(p_idx) : Ref<Texture2D>();
+}
 
 int OptionButton::get_item_id(int p_idx) const
 {
-	if (p_idx == NONE_SELECTED) {
+	if (p_idx == NONE_SELECTED || !popup) {
 		return NONE_SELECTED;
 	}
 
 	return popup->get_item_id(p_idx);
 }
 
-int OptionButton::get_item_index(int p_id) const { return popup->get_item_index(p_id); }
+int OptionButton::get_item_index(int p_id) const
+{
+	return popup ? popup->get_item_index(p_id) : -1;
+}
 
-String OptionButton::get_item_tooltip(int p_idx) const { return popup->get_item_tooltip(p_idx); }
+String OptionButton::get_item_tooltip(int p_idx) const
+{
+	return popup ? popup->get_item_tooltip(p_idx) : String();
+}
 
 Node::AutoTranslateMode OptionButton::get_item_auto_translate_mode(int p_idx) const
 {
-	return popup->get_item_auto_translate_mode(p_idx);
+	return popup ? popup->get_item_auto_translate_mode(p_idx) : AUTO_TRANSLATE_MODE_INHERIT;
 }
 
-bool OptionButton::is_item_disabled(int p_idx) const { return popup->is_item_disabled(p_idx); }
+bool OptionButton::is_item_disabled(int p_idx) const
+{
+	return popup ? popup->is_item_disabled(p_idx) : false;
+}
 
-bool OptionButton::is_item_separator(int p_idx) const { return popup->is_item_separator(p_idx); }
+bool OptionButton::is_item_separator(int p_idx) const
+{
+	return popup ? popup->is_item_separator(p_idx) : false;
+}
 
 bool OptionButton::has_selectable_items() const
 {
@@ -175,7 +193,7 @@ int OptionButton::get_selectable_item(bool p_from_last) const
 	return -1;
 }
 
-int OptionButton::get_item_count() const { return popup->get_item_count(); }
+int OptionButton::get_item_count() const { return popup ? popup->get_item_count() : 0; }
 
 void OptionButton::set_fit_to_longest_item(bool p_fit)
 {
@@ -193,38 +211,45 @@ void OptionButton::set_allow_reselect(bool p_allow) { allow_reselect = p_allow; 
 
 bool OptionButton::get_allow_reselect() const { return allow_reselect; }
 
-bool OptionButton::is_search_bar_enabled() const { return popup->is_search_bar_enabled(); }
+bool OptionButton::is_search_bar_enabled() const
+{
+	return popup ? popup->is_search_bar_enabled() : false;
+}
 
 int OptionButton::get_search_bar_min_item_count() const
 {
-	return popup->get_search_bar_min_item_count();
+	return popup ? popup->get_search_bar_min_item_count() : 0;
 }
 
 void OptionButton::set_search_bar_fuzzy_search_enabled(bool p_enabled)
 {
-	popup->set_search_bar_fuzzy_search_enabled(p_enabled);
+	if (popup) {
+		popup->set_search_bar_fuzzy_search_enabled(p_enabled);
+	}
 }
 
 bool OptionButton::is_search_bar_fuzzy_search_enabled() const
 {
-	return popup->is_search_bar_fuzzy_search_enabled();
+	return popup ? popup->is_search_bar_fuzzy_search_enabled() : false;
 }
 
 void OptionButton::set_search_bar_fuzzy_search_max_misses(int p_max_misses)
 {
-	popup->set_search_bar_fuzzy_search_max_misses(p_max_misses);
+	if (popup) {
+		popup->set_search_bar_fuzzy_search_max_misses(p_max_misses);
+	}
 }
 
 int OptionButton::get_search_bar_fuzzy_search_max_misses() const
 {
-	return popup->get_search_bar_fuzzy_search_max_misses();
+	return popup ? popup->get_search_bar_fuzzy_search_max_misses() : 0;
 }
 
 void OptionButton::add_separator(const String& p_text) {}
 
 void OptionButton::_select_int(int p_which)
 {
-	if (p_which < NONE_SELECTED) {
+	if (p_which < NONE_SELECTED || !popup) {
 		return;
 	}
 	if (p_which >= popup->get_item_count()) {
@@ -254,12 +279,10 @@ PopupMenu* OptionButton::get_popup() const { return popup; }
 
 void OptionButton::show_popup()
 {
-	if (!get_viewport()) {
+	if (!get_viewport() || !popup) {
 		return;
 	}
 
-	// If not triggered by the mouse, start the popup with the checked item (or the first enabled
-	// one) focused.
 	if (current != NONE_SELECTED && !popup->is_item_disabled(current)) {
 		popup->scroll_to_item(current);
 	}
@@ -288,11 +311,26 @@ void OptionButton::set_disable_shortcuts(bool p_disabled) { disable_shortcuts = 
 #ifdef TOOLS_ENABLED
 PackedStringArray OptionButton::get_configuration_warnings() const
 {
-	PackedStringArray warnings = Button::get_configuration_warnings();
-	warnings.append_array(popup->get_configuration_warnings());
+	PackedStringArray warnings = Control::get_configuration_warnings();
+	if (popup) {
+		warnings.append_array(popup->get_configuration_warnings());
+	}
 	return warnings;
 }
 #endif
+
+OptionButton::OptionButton(const String& p_text)
+{
+	button = memnew(Button(p_text));
+	button->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
+	add_child(button, false, INTERNAL_MODE_FRONT);
+
+	popup = memnew(PopupMenu);
+	popup->hide();
+	add_child(popup, false, INTERNAL_MODE_FRONT);
+}
+
+OptionButton::~OptionButton() {}
 
 void OptionButton::_select(int p_which, bool p_emit) {}
 
@@ -305,5 +343,3 @@ void OptionButton::_refresh_size_cache() {}
 void OptionButton::_queue_update_size_cache() {}
 
 String OptionButton::_get_translated_text(const String& p_text) const { return p_text; }
-
-

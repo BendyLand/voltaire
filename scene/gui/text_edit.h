@@ -596,8 +596,8 @@ private:
 	void _update_wrap_at_column(bool p_force = false);
 
 	/* Viewport. */
-	HScrollBar* h_scroll = nullptr;
-	VScrollBar* v_scroll = nullptr;
+	ScrollBar* h_scroll = nullptr;
+	ScrollBar* v_scroll = nullptr;
 
 	Vector2i content_size_cache;
 	bool fit_content_height = false;
@@ -1086,8 +1086,8 @@ public:
 	void set_scroll_past_end_of_file_enabled(bool p_enabled);
 	bool is_scroll_past_end_of_file_enabled() const;
 
-	VScrollBar* get_v_scroll_bar() const;
-	HScrollBar* get_h_scroll_bar() const;
+	ScrollBar* get_v_scroll_bar() const;
+	ScrollBar* get_h_scroll_bar() const;
 
 	void set_v_scroll(double p_scroll);
 	double get_v_scroll() const;

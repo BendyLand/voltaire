@@ -183,6 +183,70 @@ public:
 		TEXT_DIRECTION_INHERITED = TextServer::DIRECTION_INHERITED,
 	};
 
+	struct LayoutConfig
+	{
+		enum Type
+		{
+			LAYOUT_NONE,
+			LAYOUT_BOX,
+			LAYOUT_GRID,
+			LAYOUT_FLOW,
+			LAYOUT_MARGIN,
+			LAYOUT_CENTER,
+			LAYOUT_ASPECT_RATIO,
+			LAYOUT_SPLIT,
+		};
+
+		enum AlignmentMode
+		{
+			ALIGNMENT_BEGIN,
+			ALIGNMENT_CENTER,
+			ALIGNMENT_END,
+		};
+
+		enum LastWrapAlignmentMode
+		{
+			LAST_WRAP_ALIGNMENT_INHERIT,
+			LAST_WRAP_ALIGNMENT_BEGIN,
+			LAST_WRAP_ALIGNMENT_CENTER,
+			LAST_WRAP_ALIGNMENT_END,
+		};
+
+		enum StretchMode
+		{
+			STRETCH_WIDTH_CONTROLS_HEIGHT,
+			STRETCH_HEIGHT_CONTROLS_WIDTH,
+			STRETCH_FIT,
+			STRETCH_COVER,
+		};
+
+		enum SortableVisibilityMode
+		{
+			SORTABLE_VISIBILITY_VISIBLE,
+			SORTABLE_VISIBILITY_VISIBLE_IN_TREE,
+			SORTABLE_VISIBILITY_IGNORE,
+		};
+
+		Type type = LAYOUT_NONE;
+		Orientation orientation = HORIZONTAL;
+		AlignmentMode alignment = ALIGNMENT_BEGIN;
+		AlignmentMode v_alignment = ALIGNMENT_CENTER;
+		LastWrapAlignmentMode last_wrap_alignment = LAST_WRAP_ALIGNMENT_INHERIT;
+		StretchMode stretch_mode = STRETCH_FIT;
+		int columns = 1;
+		int separation = 0;
+		int h_separation = 0;
+		int v_separation = 0;
+		int margins[4] = {0, 0, 0, 0};
+		float ratio = 1.0f;
+		bool reverse_fill = false;
+		bool use_top_left = false;
+		bool accessibility_region = false;
+		bool pending_sort = false;
+	};
+
+	LayoutConfig layout;
+
 private:
 	// This Data struct is to avoid namespace pollution in derived classes.
 	struct Data
@@ -463,6 +527,8 @@ public:
 		NOTIFICATION_SCROLL_BEGIN = 47,
 		NOTIFICATION_SCROLL_END = 48,
 		NOTIFICATION_LAYOUT_DIRECTION_CHANGED = 49,
+		NOTIFICATION_PRE_SORT_CHILDREN = 50,
+		NOTIFICATION_SORT_CHILDREN = 51,
 		NOTIFICATION_MOUSE_ENTER_SELF = 60,
 		NOTIFICATION_MOUSE_EXIT_SELF = 61,
 	};
@@ -617,7 +683,7 @@ public:
 	void layout_pending_finish();
 	Control* get_layout_pending_control_in_tree() const;
 
-	// Container sizing.
+	// Container sizing & composed layout.
 
 	void set_h_size_flags(uint32_t p_flags);
 	uint32_t get_h_size_flags() const;
@@ -625,6 +691,35 @@ public:
 	uint32_t get_v_size_flags() const;
 	void set_stretch_ratio(real_t p_ratio);
 	real_t get_stretch_ratio() const;
+
+	void set_layout_type(LayoutConfig::Type p_type);
+	LayoutConfig::Type get_layout_type() const { return layout.type; }
+	void queue_sort();
+	void fit_child_in_rect(Control* p_child, const Rect2& p_rect);
+	Control* as_sortable_control(Node* p_node,
+		LayoutConfig::SortableVisibilityMode p_visibility_mode =
+			LayoutConfig::SORTABLE_VISIBILITY_VISIBLE_IN_TREE) const;
+	Control* add_spacer(bool p_begin = false);
+
+	static Control* create_box(Orientation p_orientation,
+		LayoutConfig::AlignmentMode p_alignment = LayoutConfig::ALIGNMENT_BEGIN);
+	static Control* create_hbox(
+		LayoutConfig::AlignmentMode p_alignment = LayoutConfig::ALIGNMENT_BEGIN)
+	{
+		return create_box(HORIZONTAL, p_alignment);
+	}
+	static Control* create_vbox(
+		LayoutConfig::AlignmentMode p_alignment = LayoutConfig::ALIGNMENT_BEGIN)
+	{
+		return create_box(VERTICAL, p_alignment);
+	}
+	static Control* create_grid(int p_columns = 1);
+	static Control* create_flow(Orientation p_orientation = HORIZONTAL);
+	static Control* create_margin(
+		int p_left = 0, int p_top = 0, int p_right = 0, int p_bottom = 0);
+
+	virtual Vector<int> get_allowed_size_flags_horizontal() const;
+	virtual Vector<int> get_allowed_size_flags_vertical() const;
 
 	// Offset transform.
 

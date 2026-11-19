@@ -31,15 +31,14 @@
 
 #pragma once
 
-#include "scene/gui/container.h"
+#include "scene/gui/control.h"
 #include "scene/gui/tab_bar.h"
 #include "scene/property_list_helper.h"
 
 class Button;
-class HBoxContainer;
 class Popup;
 
-class TabContainer : public Container
+class TabContainer : public Control
 {
 public:
 	enum TabPosition
@@ -50,7 +49,7 @@ public:
 	};
 
 private:
-	HBoxContainer* internal_container = nullptr;
+	Control* internal_container = nullptr;
 	TabBar* tab_bar = nullptr;
 	Button* popup_button = nullptr;
 
@@ -164,7 +163,7 @@ protected:
 public:
 	virtual bool accessibility_override_tree_hierarchy() const override { return true; }
 
-	HBoxContainer* get_internal_container() { return internal_container; }
+	Control* get_internal_container() { return internal_container; }
 
 	TabBar* get_tab_bar() const;
 

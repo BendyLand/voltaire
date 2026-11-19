@@ -37,11 +37,10 @@
 #include "graph_edit.compat.inc"
 #include "graph_edit.h"
 #include "scene/2d/line_2d.h"
-#include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/graph_edit_arranger.h"
 #include "scene/gui/label.h"
-#include "scene/gui/panel_container.h"
+#include "scene/gui/panel.h"
 #include "scene/gui/scroll_bar.h"
 #include "scene/gui/spin_box.h"
 #include "scene/gui/view_panner.h"
@@ -630,7 +629,7 @@ float GraphEdit::get_connection_lines_thickness() const { return lines_thickness
 
 bool GraphEdit::is_connection_lines_antialiased() const { return lines_antialiased; }
 
-HBoxContainer* GraphEdit::get_menu_hbox() { return menu_hbox; }
+Control* GraphEdit::get_menu_hbox() { return menu_hbox; }
 
 Ref<ViewPanner> GraphEdit::get_panner() { return panner; }
 

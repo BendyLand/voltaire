@@ -31,9 +31,10 @@
 
 #pragma once
 
+#include "scene/gui/control.h"
 #include "scene/gui/range.h"
 
-class ProgressBar : public Range
+class ProgressBar : public Control
 {
 	bool show_percentage = true;
 	bool indeterminate = false;
@@ -54,7 +55,6 @@ class ProgressBar : public Range
 protected:
 	void _notification(int p_what);
 
-
 	double indeterminate_min_speed = 200.0;
 
 public:
@@ -66,6 +66,69 @@ public:
 		FILL_BOTTOM_TO_TOP,
 		FILL_MODE_MAX
 	};
+
+	NumericRange range;
+
+	double get_value() const { return range.value; }
+	double get_min() const { return range.min; }
+	double get_max() const { return range.max; }
+	double get_step() const { return range.step; }
+	double get_page() const { return range.page; }
+	double get_as_ratio() const { return range.get_as_ratio(); }
+
+	void set_value(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_value_no_signal(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+	}
+
+	void set_min(double p_min)
+	{
+		if (range.set_min(p_min)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_max(double p_max)
+	{
+		if (range.set_max(p_max)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_step(double p_step)
+	{
+		if (range.set_step(p_step)) {
+			queue_accessibility_update();
+		}
+	}
+
+	void set_page(double p_page)
+	{
+		if (range.set_page(p_page)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_as_ratio(double p_value)
+	{
+		if (range.set_as_ratio(p_value)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
 
 	void set_fill_mode(int p_fill);
 	int get_fill_mode();
@@ -80,6 +143,13 @@ public:
 	bool is_editor_preview_indeterminate_enabled() const;
 
 	Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override
+	{
+		PackedStringArray warnings = Control::get_configuration_warnings();
+		range.append_configuration_warnings(warnings);
+		return warnings;
+	}
+
 	ProgressBar();
 
 private:
@@ -87,5 +157,3 @@ private:
 
 	FillMode mode = FILL_BEGIN_TO_END;
 };
-
-

@@ -38,8 +38,7 @@
 #include "scene/resources/text_line.h"
 #include "servers/display/native_menu.h"
 
-class PanelContainer;
-class VBoxContainer;
+class Panel;
 class LineEdit;
 class Timer;
 class PopupMenuItems;
@@ -190,8 +189,8 @@ class PopupMenu : public Popup
 	int search_bar_min_item_count = 0;
 	bool search_bar_fuzzy_search_enabled = true;
 	int search_bar_fuzzy_search_max_misses = 2;
-	PanelContainer* panel = nullptr;
-	VBoxContainer* vbox_container = nullptr;
+	Panel* panel = nullptr;
+	Control* vbox_container = nullptr;
 	LineEdit* search_bar = nullptr;
 	ScrollContainer* scroll_container = nullptr;
 	PopupMenuItems* control = nullptr;

@@ -37,7 +37,7 @@
 
 void MenuButton::pressed()
 {
-	if (popup->is_visible()) {
+	if (popup && popup->is_visible()) {
 		popup->hide();
 		return;
 	}
@@ -51,21 +51,33 @@ void MenuButton::set_switch_on_hover(bool p_enabled) { switch_on_hover = p_enabl
 
 bool MenuButton::is_switch_on_hover() { return switch_on_hover; }
 
-int MenuButton::get_item_count() const { return popup->get_item_count(); }
+int MenuButton::get_item_count() const { return popup ? popup->get_item_count() : 0; }
 
 void MenuButton::set_disable_shortcuts(bool p_disabled) { disable_shortcuts = p_disabled; }
 
 #ifdef TOOLS_ENABLED
 PackedStringArray MenuButton::get_configuration_warnings() const
 {
-	PackedStringArray warnings = Button::get_configuration_warnings();
-	warnings.append_array(popup->get_configuration_warnings());
+	PackedStringArray warnings = Control::get_configuration_warnings();
+	if (popup) {
+		warnings.append_array(popup->get_configuration_warnings());
+	}
 	return warnings;
 }
 #endif
 
+MenuButton::MenuButton(const String& p_text)
+{
+	button = memnew(Button(p_text));
+	button->set_flat(true);
+	button->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
+	add_child(button, false, INTERNAL_MODE_FRONT);
+
+	popup = memnew(PopupMenu);
+	popup->hide();
+	add_child(popup, false, INTERNAL_MODE_FRONT);
+}
+
 MenuButton::~MenuButton() {}
-
-
 
 void MenuButton::show_popup() {}

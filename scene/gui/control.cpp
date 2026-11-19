@@ -40,7 +40,6 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "core/math/transform_2d.h"
 #include "core/os/os.h"
 #include "core/string/string_builder.h"
-#include "scene/gui/container.h"
 #include "scene/gui/scroll_container.h"
 #include "scene/main/canvas_layer.h"
 #include "scene/main/scene_tree.h"
@@ -2202,5 +2201,123 @@ Control::LayoutMode Control::_get_layout_mode() const
 }
 
 Control* Control::_get_focus_neighbor(Side, int) { return nullptr; }
+
+void Control::update_minimum_size()
+{
+	data.minimum_size_valid = false;
+}
+
+void Control::set_layout_type(LayoutConfig::Type p_type)
+{
+	if (layout.type == p_type) {
+		return;
+	}
+	layout.type = p_type;
+	if (p_type != LayoutConfig::LAYOUT_NONE) {
+		set_mouse_filter(MOUSE_FILTER_PASS);
+	}
+	queue_sort();
+	update_minimum_size();
+}
+
+void Control::queue_sort()
+{
+	if (!is_inside_tree() || layout.pending_sort) {
+		return;
+	}
+	layout.pending_sort = true;
+}
+
+void Control::fit_child_in_rect(Control* p_child, const Rect2& p_rect)
+{
+	ERR_FAIL_NULL(p_child);
+	ERR_FAIL_COND(p_child->get_parent() != this);
+	p_child->set_rect(p_rect);
+}
+
+Control* Control::as_sortable_control(
+	Node* p_node, LayoutConfig::SortableVisibilityMode p_visibility_mode) const
+{
+	Control* c = dynamic_cast<Control*>(p_node);
+	if (!c || c->is_set_as_top_level()) {
+		return nullptr;
+	}
+	if (p_visibility_mode == LayoutConfig::SORTABLE_VISIBILITY_VISIBLE && !c->is_visible()) {
+		return nullptr;
+	}
+	if (p_visibility_mode == LayoutConfig::SORTABLE_VISIBILITY_VISIBLE_IN_TREE &&
+		!c->is_visible_in_tree()) {
+		return nullptr;
+	}
+	return c;
+}
+
+Control* Control::add_spacer(bool p_begin)
+{
+	Control* c = memnew(Control);
+	c->set_mouse_filter(MOUSE_FILTER_PASS);
+	if (layout.orientation == VERTICAL) {
+		c->set_v_size_flags(SIZE_EXPAND_FILL);
+	}
+	else {
+		c->set_h_size_flags(SIZE_EXPAND_FILL);
+	}
+	add_child(c);
+	if (p_begin) {
+		move_child(c, 0);
+	}
+	return c;
+}
+
+Control* Control::create_box(Orientation p_orientation, LayoutConfig::AlignmentMode p_alignment)
+{
+	Control* c = memnew(Control);
+	c->layout.type = LayoutConfig::LAYOUT_BOX;
+	c->layout.orientation = p_orientation;
+	c->layout.alignment = p_alignment;
+	c->set_mouse_filter(MOUSE_FILTER_PASS);
+	return c;
+}
+
+Control* Control::create_grid(int p_columns)
+{
+	Control* c = memnew(Control);
+	c->layout.type = LayoutConfig::LAYOUT_GRID;
+	c->layout.columns = MAX(1, p_columns);
+	c->set_mouse_filter(MOUSE_FILTER_PASS);
+	return c;
+}
+
+Control* Control::create_flow(Orientation p_orientation)
+{
+	Control* c = memnew(Control);
+	c->layout.type = LayoutConfig::LAYOUT_FLOW;
+	c->layout.orientation = p_orientation;
+	c->set_mouse_filter(MOUSE_FILTER_PASS);
+	return c;
+}
+
+Control* Control::create_margin(int p_left, int p_top, int p_right, int p_bottom)
+{
+	Control* c = memnew(Control);
+	c->layout.type = LayoutConfig::LAYOUT_MARGIN;
+	c->layout.margins[SIDE_LEFT] = p_left;
+	c->layout.margins[SIDE_TOP] = p_top;
+	c->layout.margins[SIDE_RIGHT] = p_right;
+	c->layout.margins[SIDE_BOTTOM] = p_bottom;
+	c->set_mouse_filter(MOUSE_FILTER_PASS);
+	return c;
+}
+
+Vector<int> Control::get_allowed_size_flags_horizontal() const
+{
+	return {SIZE_FILL, SIZE_EXPAND, SIZE_SHRINK_BEGIN, SIZE_SHRINK_CENTER, SIZE_SHRINK_END};
+}
+
+Vector<int> Control::get_allowed_size_flags_vertical() const
+{
+	return {SIZE_FILL, SIZE_EXPAND, SIZE_SHRINK_BEGIN, SIZE_SHRINK_CENTER, SIZE_SHRINK_END};
+}
+
 
 

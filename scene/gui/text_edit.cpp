@@ -3212,9 +3212,9 @@ bool TextEdit::is_scroll_past_end_of_file_enabled() const
 
 RID TextEdit::get_text_canvas_item() const { return text_ci; }
 
-VScrollBar* TextEdit::get_v_scroll_bar() const { return v_scroll; }
+ScrollBar* TextEdit::get_v_scroll_bar() const { return v_scroll; }
 
-HScrollBar* TextEdit::get_h_scroll_bar() const { return h_scroll; }
+ScrollBar* TextEdit::get_h_scroll_bar() const { return h_scroll; }
 
 void TextEdit::set_v_scroll(double p_scroll)
 {

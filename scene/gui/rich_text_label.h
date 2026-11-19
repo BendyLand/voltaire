@@ -41,9 +41,9 @@
 #endif
 
 class PopupMenu;
+class ScrollBar;
 class Texture2D;
 class Timer;
-class VScrollBar;
 
 class CharFXTransform;
 class RichTextEffect;
@@ -562,7 +562,7 @@ private:
 	uint64_t loading_started = 0;
 	int progress_delay = 1000;
 
-	VScrollBar* vscroll = nullptr;
+	ScrollBar* vscroll = nullptr;
 
 	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_WORD_SMART;
 	uint32_t autowrap_flags_trim =
@@ -930,7 +930,7 @@ public:
 
 	void scroll_to_selection();
 
-	VScrollBar* get_v_scroll_bar() { return vscroll; }
+	ScrollBar* get_v_scroll_bar() { return vscroll; }
 
 	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
 

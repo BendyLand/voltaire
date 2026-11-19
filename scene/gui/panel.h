@@ -40,11 +40,16 @@ class Panel : public Control
 		Ref<StyleBox> panel_style;
 	} theme_cache;
 
+	bool fit_children = false;
+
 protected:
 	void _notification(int p_what);
 
 public:
-	Panel();
+	void set_fit_children(bool p_fit) { fit_children = p_fit; }
+	bool is_fitting_children() const { return fit_children; }
+
+	virtual Size2 get_inner_combined_maximum_size() const override;
+
+	Panel(bool p_fit_children = false);
 };
-
-

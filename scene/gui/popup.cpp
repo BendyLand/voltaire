@@ -165,6 +165,9 @@ PackedStringArray PopupPanel::get_configuration_warnings() const
 
 void PopupPanel::_input_from_window(const InputEvent& p_event)
 {
+	if (close_on_accept && p_event.is_action_pressed(SNAME("ui_accept"), false, true)) {
+		_close_pressed();
+	}
 	if (p_event.is_valid()) {
 		if (!get_flag(FLAG_POPUP)) {
 			return;

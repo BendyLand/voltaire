@@ -31,22 +31,141 @@
 
 #pragma once
 
-#include "scene/gui/base_button.h"
+#include "core/input/shortcut.h"
+#include "scene/gui/control.h"
+#include "scene/resources/bit_map.h"
+#include "scene/resources/text_line.h"
 #include "scene/resources/text_paragraph.h"
 
-class Button : public BaseButton
+class Button;
+class ButtonGroup;
+
+struct ButtonBehavior
 {
+	enum ActionMode
+	{
+		ACTION_MODE_BUTTON_PRESS,
+		ACTION_MODE_BUTTON_RELEASE,
+	};
+
+	enum DrawMode
+	{
+		DRAW_NORMAL,
+		DRAW_PRESSED,
+		DRAW_HOVER,
+		DRAW_DISABLED,
+		DRAW_HOVER_PRESSED,
+	};
+
+	uint32_t button_mask = 0;
+	int click_margin = 0;
+	int touch_index = -1;
+	ActionMode action_mode = ACTION_MODE_BUTTON_RELEASE;
+
+	bool toggle_mode = false;
+	bool shortcut_in_tooltip = true;
+	bool was_mouse_pressed = false;
+	bool keep_pressed_outside = false;
+	bool shortcut_feedback = true;
+	bool in_shortcut_feedback = false;
+
+	bool pressed = false;
+	bool hovering = false;
+	bool press_attempt = false;
+	bool pressing_inside = false;
+	bool pressed_down_with_focus = false;
+	bool disabled = false;
+
+	Ref<Shortcut> shortcut;
+	Ref<ButtonGroup> button_group;
+
+	bool is_disabled() const { return disabled; }
+	bool is_pressing() const { return press_attempt; }
+	bool is_pressed() const { return toggle_mode ? pressed : press_attempt; }
+	bool is_hovered() const { return hovering; }
+
+	DrawMode get_draw_mode() const;
+};
+
+class Button : public Control
+{
+public:
+	using ActionMode = ButtonBehavior::ActionMode;
+	using DrawMode = ButtonBehavior::DrawMode;
+
+	static constexpr ActionMode ACTION_MODE_BUTTON_PRESS = ButtonBehavior::ACTION_MODE_BUTTON_PRESS;
+	static constexpr ActionMode ACTION_MODE_BUTTON_RELEASE = ButtonBehavior::ACTION_MODE_BUTTON_RELEASE;
+
+	static constexpr DrawMode DRAW_NORMAL = ButtonBehavior::DRAW_NORMAL;
+	static constexpr DrawMode DRAW_PRESSED = ButtonBehavior::DRAW_PRESSED;
+	static constexpr DrawMode DRAW_HOVER = ButtonBehavior::DRAW_HOVER;
+	static constexpr DrawMode DRAW_DISABLED = ButtonBehavior::DRAW_DISABLED;
+	static constexpr DrawMode DRAW_HOVER_PRESSED = ButtonBehavior::DRAW_HOVER_PRESSED;
+
+	enum Style
+	{
+		STYLE_STANDARD,
+		STYLE_CHECK_BOX,
+		STYLE_CHECK_BUTTON,
+		STYLE_LINK,
+		STYLE_TEXTURE,
+		STYLE_COLOR_SWATCH,
+	};
+
+	enum UnderlineMode
+	{
+		UNDERLINE_MODE_ALWAYS,
+		UNDERLINE_MODE_ON_HOVER,
+		UNDERLINE_MODE_NEVER,
+	};
+
+	enum StretchMode
+	{
+		STRETCH_SCALE,
+		STRETCH_TILE,
+		STRETCH_KEEP,
+		STRETCH_KEEP_CENTERED,
+		STRETCH_KEEP_ASPECT,
+		STRETCH_KEEP_ASPECT_CENTERED,
+		STRETCH_KEEP_ASPECT_COVERED,
+	};
+
+	struct TextureSet
+	{
+		Ref<Texture2D> normal;
+		Ref<Texture2D> pressed;
+		Ref<Texture2D> hover;
+		Ref<Texture2D> disabled;
+		Ref<Texture2D> focused;
+		Ref<BitMap> click_mask;
+		StretchMode stretch_mode = STRETCH_KEEP;
+		Rect2 texture_region;
+		Rect2 position_rect;
+		bool ignore_texture_size = false;
+		bool tile = false;
+		bool hflip = false;
+		bool vflip = false;
+	};
+
+	ButtonBehavior behavior;
+	TextureSet textures;
+
 private:
+	Style style = STYLE_STANDARD;
 	bool flat = false;
 	String text;
 	String xl_text;
 	Ref<TextParagraph> text_buf;
+	Ref<TextLine> link_text_buf;
+
+	UnderlineMode underline_mode = UNDERLINE_MODE_ALWAYS;
+	String uri;
+	Color swatch_color;
 
 	String language;
 	TextDirection text_direction = TEXT_DIRECTION_AUTO;
 	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
-	uint32_t autowrap_flags_trim =
-		TextServer::BREAK_TRIM_END_EDGE_SPACES;
+	uint32_t autowrap_flags_trim = TextServer::BREAK_TRIM_END_EDGE_SPACES;
 	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
 
 	Ref<Texture2D> icon;
@@ -100,14 +219,32 @@ private:
 
 		Ref<Texture2D> icon;
 
+		Ref<Texture2D> checked;
+		Ref<Texture2D> unchecked;
+		Ref<Texture2D> checked_disabled;
+		Ref<Texture2D> unchecked_disabled;
+		Ref<Texture2D> checked_mirrored;
+		Ref<Texture2D> unchecked_mirrored;
+		Ref<Texture2D> checked_disabled_mirrored;
+		Ref<Texture2D> unchecked_disabled_mirrored;
+		Ref<Texture2D> radio_checked;
+		Ref<Texture2D> radio_unchecked;
+		Ref<Texture2D> radio_checked_disabled;
+		Ref<Texture2D> radio_unchecked_disabled;
+
+		Color check_checked_color = Color(1, 1, 1);
+		Color check_unchecked_color = Color(1, 1, 1);
+
 		int h_separation = 0;
+		int check_v_offset = 0;
+		int underline_spacing = 0;
 		int icon_max_width = 0;
 		int line_spacing = 0;
 	} theme_cache;
 
 	void _shape(Ref<TextParagraph> p_paragraph = Ref<TextParagraph>(), String p_text = "") const;
-	void _texture_changed();
 	void _update_style_margins(const Ref<StyleBox>& p_stylebox);
+	Size2 _get_check_icon_size() const;
 
 protected:
 	virtual void _update_theme_item_cache() override;
@@ -124,12 +261,86 @@ protected:
 	virtual String _get_accessibility_name() const override;
 
 public:
+	Style get_style() const { return style; }
+	void set_style(Style p_style);
+
+	DrawMode get_draw_mode() const { return behavior.get_draw_mode(); }
+	bool is_pressed() const { return behavior.is_pressed(); }
+	bool is_pressing() const { return behavior.is_pressing(); }
+	bool is_hovered() const { return behavior.is_hovered(); }
+	bool is_disabled() const { return behavior.is_disabled(); }
+	bool is_radio() const { return behavior.button_group.is_valid(); }
+
+	void set_pressed(bool p_pressed);
+	void set_pressed_no_signal(bool p_pressed);
+	void set_toggle_mode(bool p_on);
+	bool is_toggle_mode() const { return behavior.toggle_mode; }
+	void set_disabled(bool p_disabled);
+
+	void set_shortcut_in_tooltip(bool p_on);
+	bool is_shortcut_in_tooltip_enabled() const { return behavior.shortcut_in_tooltip; }
+
+	void set_action_mode(ActionMode p_mode) { behavior.action_mode = p_mode; }
+	ActionMode get_action_mode() const { return behavior.action_mode; }
+
+	void set_keep_pressed_outside(bool p_on) { behavior.keep_pressed_outside = p_on; }
+	bool is_keep_pressed_outside() const { return behavior.keep_pressed_outside; }
+
+	void set_shortcut_feedback(bool p_enable) { behavior.shortcut_feedback = p_enable; }
+	bool is_shortcut_feedback() const { return behavior.shortcut_feedback; }
+
+	void set_button_mask(uint32_t p_mask) { behavior.button_mask = p_mask; }
+	uint32_t get_button_mask() const { return behavior.button_mask; }
+
+	void set_shortcut(const Ref<Shortcut>& p_shortcut);
+	Ref<Shortcut> get_shortcut() const { return behavior.shortcut; }
+
+	void set_button_group(const Ref<ButtonGroup>& p_group);
+	Ref<ButtonGroup> get_button_group() const { return behavior.button_group; }
+
+	virtual void pressed();
+	virtual void toggled(bool p_pressed);
+
+	virtual bool has_point(const Point2& p_point) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2()) const override;
 	virtual Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override;
 
 	Size2 get_minimum_size_for_text_and_icon(const String& p_text, Ref<Texture2D> p_icon) const;
 
 	void set_text(const String& p_text);
 	String get_text() const;
+
+	void set_uri(const String& p_uri);
+	String get_uri() const { return uri; }
+	void set_underline_mode(UnderlineMode p_mode) { underline_mode = p_mode; }
+	UnderlineMode get_underline_mode() const { return underline_mode; }
+
+	void set_swatch_color(const Color& p_color);
+	Color get_swatch_color() const { return swatch_color; }
+
+	void set_texture_normal(const Ref<Texture2D>& p_normal) { textures.normal = p_normal; }
+	void set_texture_pressed(const Ref<Texture2D>& p_pressed) { textures.pressed = p_pressed; }
+	void set_texture_hover(const Ref<Texture2D>& p_hover) { textures.hover = p_hover; }
+	void set_texture_disabled(const Ref<Texture2D>& p_disabled) { textures.disabled = p_disabled; }
+	void set_texture_focused(const Ref<Texture2D>& p_focused) { textures.focused = p_focused; }
+	void set_click_mask(const Ref<BitMap>& p_click_mask) { textures.click_mask = p_click_mask; }
+
+	Ref<Texture2D> get_texture_normal() const { return textures.normal; }
+	Ref<Texture2D> get_texture_pressed() const { return textures.pressed; }
+	Ref<Texture2D> get_texture_hover() const { return textures.hover; }
+	Ref<Texture2D> get_texture_disabled() const { return textures.disabled; }
+	Ref<Texture2D> get_texture_focused() const { return textures.focused; }
+	Ref<BitMap> get_click_mask() const { return textures.click_mask; }
+
+	void set_ignore_texture_size(bool p_ignore) { textures.ignore_texture_size = p_ignore; }
+	bool get_ignore_texture_size() const { return textures.ignore_texture_size; }
+	void set_stretch_mode(StretchMode p_mode) { textures.stretch_mode = p_mode; }
+	StretchMode get_stretch_mode() const { return textures.stretch_mode; }
+	void set_flip_h(bool p_flip) { textures.hflip = p_flip; }
+	bool is_flipped_h() const { return textures.hflip; }
+	void set_flip_v(bool p_flip) { textures.vflip = p_flip; }
+	bool is_flipped_v() const { return textures.vflip; }
 
 	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
 	TextServer::OverrunBehavior get_text_overrun_behavior() const;
@@ -146,6 +357,7 @@ public:
 	void set_language(const String& p_language);
 	String get_language() const;
 
+	void set_button_icon(const Ref<Texture2D>& p_icon) { icon = p_icon; }
 	Ref<Texture2D> get_button_icon() const;
 
 	void set_expand_icon(bool p_enabled);
@@ -165,8 +377,20 @@ public:
 	HorizontalAlignment get_icon_alignment() const;
 	VerticalAlignment get_vertical_icon_alignment() const;
 
-	Button(const String& p_text = String());
-	~Button() = default;
+	Button(const String& p_text = String(), Style p_style = STYLE_STANDARD);
+	~Button();
 };
 
+class ButtonGroup : public Resource
+{
+	friend class Button;
+	HashSet<Button*> buttons;
+	bool allow_unpress = false;
 
+public:
+	Button* get_pressed_button();
+	void get_buttons(List<Button*>* r_buttons);
+	void set_allow_unpress(bool p_enabled) { allow_unpress = p_enabled; }
+	bool is_allow_unpress() const { return allow_unpress; }
+	ButtonGroup();
+};

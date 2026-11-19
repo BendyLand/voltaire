@@ -50,7 +50,6 @@
 #include "editor_settings.h"
 #include "main/main.h"
 #include "modules/regex/regex.h"
-#include "scene/gui/color_picker.h"
 #include "scene/gui/file_dialog.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
