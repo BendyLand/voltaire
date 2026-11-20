@@ -79,7 +79,7 @@ private:
 
 	/* Render Buffer */
 
-	class RenderBufferDataForwardMobile : public RenderBufferCustomDataRD
+	class RenderBufferDataForwardMobile final : public RefCounted
 	{
 
 	public:
@@ -92,8 +92,8 @@ private:
 		};
 
 		RID get_color_fbs(FramebufferConfigType p_config_type, bool p_resolve_depth = false);
-		virtual void free_data() override;
-		virtual void configure(RenderSceneBuffersRD* p_render_buffers) override;
+		void free_data();
+		void configure(RenderSceneBuffersRD* p_render_buffers);
 
 		RID get_motion_vectors_fb();
 

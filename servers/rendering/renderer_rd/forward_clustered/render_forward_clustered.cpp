@@ -1505,7 +1505,7 @@ void RenderForwardClustered::_update_volumetric_fog(Ref<RenderSceneBuffersRD> p_
 			!RendererSceneRender::environment_get_volumetric_fog_enabled(p_environment) ||
 			fog->width != target_width || fog->height != target_height ||
 			fog->depth != RendererSceneRenderRD::get_volumetric_fog_depth()) {
-			p_render_buffers->set_custom_data(RB_SCOPE_FOG, Ref<RenderBufferCustomDataRD>());
+			p_render_buffers->set_custom_data(RB_SCOPE_FOG, Ref<RendererRD::Fog::VolumetricFog>());
 		}
 	}
 

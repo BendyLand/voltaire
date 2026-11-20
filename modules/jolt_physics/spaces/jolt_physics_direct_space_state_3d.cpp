@@ -37,7 +37,7 @@
 #include "../objects/jolt_area_3d.h"
 #include "../objects/jolt_body_3d.h"
 #include "../objects/jolt_object_3d.h"
-#include "../shapes/jolt_custom_motion_shape.h"
+#include "../shapes/jolt_custom_shapes.h"
 #include "../shapes/jolt_shape_3d.h"
 #include "jolt_motion_filter_3d.h"
 #include "jolt_query_collectors.h"

@@ -39,7 +39,6 @@
 #include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog_process.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_buffer_custom_data_rd.h"
 #include "servers/rendering/shader_compiler.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -250,7 +249,7 @@ public:
 	};
 
 	/* Volumetric FOG Render Buffer Data */
-	class VolumetricFog : public RenderBufferCustomDataRD
+	class VolumetricFog final : public RefCounted
 	{
 	public:
 		enum
@@ -289,9 +288,9 @@ public:
 
 		RDC::UniformType atomic_type = RDC::UNIFORM_TYPE_IMAGE;
 
-		virtual void configure(RenderSceneBuffersRD* p_render_buffers) override {}
+		void configure(RenderSceneBuffersRD* p_render_buffers) {}
 
-		virtual void free_data() override {}
+		void free_data() {}
 
 		bool sync_gi_dependent_sets_validity(bool p_ensure_freed = false);
 

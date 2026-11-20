@@ -765,8 +765,8 @@ void GLES3::MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
 
 		shader->mode = new_mode;
 
-		if (new_mode < RSE::SHADER_MAX && shader_data_request_func[new_mode]) {
-			shader->data = shader_data_request_func[new_mode]();
+		if (new_mode < RSE::SHADER_MAX) {
+			shader->data = memnew(ShaderData(new_mode));
 		}
 		else {
 			shader->mode = RSE::SHADER_MAX; // invalid
@@ -775,7 +775,7 @@ void GLES3::MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
 		for (Material* E : shader->owners) {
 			Material* material = E;
 			if (shader->data) {
-				material->data = material_data_request_func[new_mode](shader->data);
+				material->data = memnew(MaterialData(shader->data));
 				material->data->self = material->self;
 				material->data->set_next_pass(material->next_pass);
 				material->data->set_render_priority(material->priority);
@@ -946,7 +946,7 @@ void GLES3::MaterialStorage::material_set_shader(RID p_material, RID p_shader)
 
 	ERR_FAIL_NULL(shader->data);
 
-	material->data = material_data_request_func[shader->mode](shader->data);
+	material->data = memnew(MaterialData(shader->data));
 	material->data->self = p_material;
 	material->data->set_next_pass(material->next_pass);
 	material->data->set_render_priority(material->priority);
@@ -1021,11 +1021,8 @@ RSE::CullMode GLES3::MaterialStorage::material_get_cull_mode(RID p_material)
 	const GLES3::Material* material = material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL_V(material, RSE::CULL_MODE_DISABLED);
 	ERR_FAIL_NULL_V(material->shader, RSE::CULL_MODE_DISABLED);
-	if (material->shader->data) {
-		SceneShaderData* data = dynamic_cast<SceneShaderData*>(material->shader->data);
-		if (data) {
-			return (RSE::CullMode)data->cull_mode;
-		}
+	if (material->shader->data && material->shader->data->mode == RSE::SHADER_SPATIAL) {
+		return material->shader->data->cull_mode;
 	}
 	return RSE::CULL_MODE_DISABLED;
 }
@@ -1068,7 +1065,7 @@ LocalVector<ShaderGLES3::TextureUniformData> get_texture_uniform_data(
 	return texture_uniform_data;
 }
 
-void CanvasShaderData::set_code(const String& p_code)
+void ShaderData::_set_code_canvas(const String& p_code)
 {
 	// Initialize and compile the shader.
 
@@ -1166,36 +1163,6 @@ void CanvasShaderData::set_code(const String& p_code)
 	valid = true;
 }
 
-bool CanvasShaderData::is_animated() const { return false; }
-
-bool CanvasShaderData::casts_shadows() const { return false; }
-
-RenderingServerTypes::ShaderNativeSourceCode CanvasShaderData::get_native_source_code() const
-{
-	return MaterialStorage::shaders->canvas_shader.version_get_native_source_code(
-		version);
-}
-
-CanvasShaderData::CanvasShaderData()
-{
-	valid = false;
-	uses_screen_texture = false;
-	uses_sdf = false;
-}
-
-CanvasShaderData::~CanvasShaderData()
-{
-	if (version.is_valid()) {
-		MaterialStorage::shaders->canvas_shader.version_free(version);
-	}
-}
-
-GLES3::ShaderData* GLES3::_create_canvas_shader_func()
-{
-	CanvasShaderData* shader_data = memnew(CanvasShaderData);
-	return shader_data;
-}
-
 static void bind_uniforms_generic(const Vector<RID>& p_textures,
 	const Vector<ShaderCompiler::GeneratedCode::Texture>& p_texture_uniforms,
 	int texture_offset = 0,
@@ -1234,29 +1201,7 @@ static void bind_uniforms_generic(const Vector<RID>& p_textures,
 	}
 }
 
-void CanvasMaterialData::bind_uniforms()
-{
-	// Bind Material Uniforms
-	glBindBufferBase(
-		GL_UNIFORM_BUFFER, RasterizerCanvasGLES3::MATERIAL_UNIFORM_LOCATION, uniform_buffer);
-
-	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms, 1,
-		filter_from_uniform_canvas,
-		repeat_from_uniform_canvas); // Start at GL_TEXTURE1 because texture slot 0 is used by the
-									 // base texture
-}
-
-CanvasMaterialData::~CanvasMaterialData() {}
-
-GLES3::MaterialData* GLES3::_create_canvas_material_func(ShaderData* p_shader)
-{
-	CanvasMaterialData* material_data = memnew(CanvasMaterialData);
-	material_data->shader_data = static_cast<CanvasShaderData*>(p_shader);
-	// update will happen later anyway so do nothing.
-	return material_data;
-}
-
-void SkyShaderData::set_code(const String& p_code)
+void ShaderData::_set_code_sky(const String& p_code)
 {
 	// Initialize and compile the shader.
 
@@ -1351,50 +1296,7 @@ void SkyShaderData::set_code(const String& p_code)
 	valid = true;
 }
 
-bool SkyShaderData::is_animated() const { return false; }
-
-bool SkyShaderData::casts_shadows() const { return false; }
-
-RenderingServerTypes::ShaderNativeSourceCode SkyShaderData::get_native_source_code() const
-{
-	return MaterialStorage::shaders->sky_shader.version_get_native_source_code(
-		version);
-}
-
-SkyShaderData::SkyShaderData() { valid = false; }
-
-SkyShaderData::~SkyShaderData()
-{
-	if (version.is_valid()) {
-		MaterialStorage::shaders->sky_shader.version_free(version);
-	}
-}
-
-GLES3::ShaderData* GLES3::_create_sky_shader_func()
-{
-	SkyShaderData* shader_data = memnew(SkyShaderData);
-	return shader_data;
-}
-
-SkyMaterialData::~SkyMaterialData() {}
-
-GLES3::MaterialData* GLES3::_create_sky_material_func(ShaderData* p_shader)
-{
-	SkyMaterialData* material_data = memnew(SkyMaterialData);
-	material_data->shader_data = static_cast<SkyShaderData*>(p_shader);
-	// update will happen later anyway so do nothing.
-	return material_data;
-}
-
-void SkyMaterialData::bind_uniforms()
-{
-	// Bind Material Uniforms
-	glBindBufferBase(GL_UNIFORM_BUFFER, SKY_MATERIAL_UNIFORM_LOCATION, uniform_buffer);
-
-	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms);
-}
-
-void SceneShaderData::set_code(const String& p_code)
+void ShaderData::_set_code_scene(const String& p_code)
 {
 	// Initialize and compile the shader.
 
@@ -1677,72 +1579,7 @@ void SceneShaderData::set_code(const String& p_code)
 	valid = true;
 }
 
-bool SceneShaderData::is_animated() const
-{
-	return (uses_fragment_time && uses_discard) || (uses_vertex_time && uses_vertex);
-}
-
-bool SceneShaderData::casts_shadows() const
-{
-	bool has_read_screen_alpha = uses_screen_texture || uses_depth_texture || uses_normal_texture;
-	bool has_base_alpha = (uses_alpha && !uses_alpha) || has_read_screen_alpha;
-	bool has_alpha = has_base_alpha || uses_blend_alpha;
-
-	return !has_alpha || (uses_depth_prepass_alpha && !(depth_draw == DEPTH_DRAW_DISABLED ||
-														  depth_test != DEPTH_TEST_ENABLED));
-}
-
-RenderingServerTypes::ShaderNativeSourceCode SceneShaderData::get_native_source_code() const
-{
-	return MaterialStorage::shaders->scene_shader.version_get_native_source_code(
-		version);
-}
-
-SceneShaderData::SceneShaderData()
-{
-	valid = false;
-	uses_screen_texture = false;
-}
-
-SceneShaderData::~SceneShaderData()
-{
-	if (version.is_valid()) {
-		MaterialStorage::shaders->scene_shader.version_free(version);
-	}
-}
-
-GLES3::ShaderData* GLES3::_create_scene_shader_func()
-{
-	SceneShaderData* shader_data = memnew(SceneShaderData);
-	return shader_data;
-}
-
-void SceneMaterialData::set_render_priority(int p_priority)
-{
-	priority = p_priority - RSE::MATERIAL_RENDER_PRIORITY_MIN; // 8 bits
-}
-
-void SceneMaterialData::set_next_pass(RID p_pass) { next_pass = p_pass; }
-
-SceneMaterialData::~SceneMaterialData() {}
-
-GLES3::MaterialData* GLES3::_create_scene_material_func(ShaderData* p_shader)
-{
-	SceneMaterialData* material_data = memnew(SceneMaterialData);
-	material_data->shader_data = static_cast<SceneShaderData*>(p_shader);
-	// update will happen later anyway so do nothing.
-	return material_data;
-}
-
-void SceneMaterialData::bind_uniforms()
-{
-	// Bind Material Uniforms
-	glBindBufferBase(GL_UNIFORM_BUFFER, SCENE_MATERIAL_UNIFORM_LOCATION, uniform_buffer);
-
-	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms);
-}
-
-void ParticlesShaderData::set_code(const String& p_code)
+void ShaderData::_set_code_particles(const String& p_code)
 {
 	// Initialize and compile the shader.
 
@@ -1807,48 +1644,7 @@ void ParticlesShaderData::set_code(const String& p_code)
 	valid = true;
 }
 
-bool ParticlesShaderData::is_animated() const { return false; }
-
-bool ParticlesShaderData::casts_shadows() const { return false; }
-
-RenderingServerTypes::ShaderNativeSourceCode ParticlesShaderData::get_native_source_code() const
-{
-	return MaterialStorage::shaders->particles_process_shader.version_get_native_source_code(version);
-}
-
-ParticlesShaderData::~ParticlesShaderData()
-{
-	if (version.is_valid()) {
-		MaterialStorage::shaders->particles_process_shader.version_free(version);
-	}
-}
-
-GLES3::ShaderData* GLES3::_create_particles_shader_func()
-{
-	ParticlesShaderData* shader_data = memnew(ParticlesShaderData);
-	return shader_data;
-}
-
-ParticleProcessMaterialData::~ParticleProcessMaterialData() {}
-
-GLES3::MaterialData* GLES3::_create_particles_material_func(ShaderData* p_shader)
-{
-	ParticleProcessMaterialData* material_data = memnew(ParticleProcessMaterialData);
-	material_data->shader_data = static_cast<ParticlesShaderData*>(p_shader);
-	// update will happen later anyway so do nothing.
-	return material_data;
-}
-
-void ParticleProcessMaterialData::bind_uniforms()
-{
-	// Bind Material Uniforms
-	glBindBufferBase(GL_UNIFORM_BUFFER, GLES3::PARTICLES_MATERIAL_UNIFORM_LOCATION, uniform_buffer);
-
-	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms,
-		1); // Start at GL_TEXTURE1 because texture slot 0 is reserved for the heightmap texture.
-}
-
-void TexBlitShaderData::set_code(const String& p_code)
+void ShaderData::_set_code_tex_blit(const String& p_code)
 {
 	// Initialize and compile the shader.
 
@@ -1921,46 +1717,140 @@ void TexBlitShaderData::set_code(const String& p_code)
 	valid = true;
 }
 
-bool TexBlitShaderData::is_animated() const { return false; }
-
-bool TexBlitShaderData::casts_shadows() const { return false; }
-
-RenderingServerTypes::ShaderNativeSourceCode TexBlitShaderData::get_native_source_code() const
+void ShaderData::set_code(const String& p_code)
 {
-	return MaterialStorage::shaders->tex_blit_shader.version_get_native_source_code(
-		version);
-}
-
-TexBlitShaderData::TexBlitShaderData() { valid = false; }
-
-TexBlitShaderData::~TexBlitShaderData()
-{
-	if (version.is_valid()) {
-		MaterialStorage::shaders->tex_blit_shader.version_free(version);
+	switch (mode) {
+	case RSE::SHADER_CANVAS_ITEM:
+		_set_code_canvas(p_code);
+		break;
+	case RSE::SHADER_SKY:
+		_set_code_sky(p_code);
+		break;
+	case RSE::SHADER_SPATIAL:
+		_set_code_scene(p_code);
+		break;
+	case RSE::SHADER_PARTICLES:
+		_set_code_particles(p_code);
+		break;
+	case RSE::SHADER_TEXTURE_BLIT:
+		_set_code_tex_blit(p_code);
+		break;
+	default:
+		break;
 	}
 }
 
-GLES3::ShaderData* GLES3::_create_tex_blit_shader_func()
+bool ShaderData::is_animated() const
 {
-	TexBlitShaderData* shader_data = memnew(TexBlitShaderData);
-	return shader_data;
+	if (mode == RSE::SHADER_SPATIAL) {
+		return (uses_fragment_time && uses_discard) || (uses_vertex_time && uses_vertex);
+	}
+	return false;
 }
 
-void TexBlitMaterialData::bind_uniforms()
+bool ShaderData::casts_shadows() const
 {
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer);
+	if (mode != RSE::SHADER_SPATIAL) {
+		return false;
+	}
+	bool has_read_screen_alpha = uses_screen_texture || uses_depth_texture || uses_normal_texture;
+	bool has_base_alpha = (uses_alpha && !uses_alpha) || has_read_screen_alpha;
+	bool has_alpha = has_base_alpha || uses_blend_alpha;
 
-	bind_uniforms_generic(texture_cache, shader_data->texture_uniforms, 1);
+	return !has_alpha || (uses_depth_prepass_alpha && !(depth_draw == DEPTH_DRAW_DISABLED ||
+														  depth_test != DEPTH_TEST_ENABLED));
 }
 
-TexBlitMaterialData::~TexBlitMaterialData() {}
-
-GLES3::MaterialData* GLES3::_create_tex_blit_material_func(ShaderData* p_shader)
+RenderingServerTypes::ShaderNativeSourceCode ShaderData::get_native_source_code() const
 {
-	TexBlitMaterialData* material_data = memnew(TexBlitMaterialData);
-	material_data->shader_data = static_cast<TexBlitShaderData*>(p_shader);
-	// update will happen later anyway so do nothing.
-	return material_data;
+	switch (mode) {
+	case RSE::SHADER_CANVAS_ITEM:
+		return MaterialStorage::shaders->canvas_shader.version_get_native_source_code(version);
+	case RSE::SHADER_SKY:
+		return MaterialStorage::shaders->sky_shader.version_get_native_source_code(version);
+	case RSE::SHADER_SPATIAL:
+		return MaterialStorage::shaders->scene_shader.version_get_native_source_code(version);
+	case RSE::SHADER_PARTICLES:
+		return MaterialStorage::shaders->particles_process_shader.version_get_native_source_code(version);
+	case RSE::SHADER_TEXTURE_BLIT:
+		return MaterialStorage::shaders->tex_blit_shader.version_get_native_source_code(version);
+	default:
+		return RenderingServerTypes::ShaderNativeSourceCode();
+	}
+}
+
+ShaderData::~ShaderData()
+{
+	if (!version.is_valid()) {
+		return;
+	}
+	switch (mode) {
+	case RSE::SHADER_CANVAS_ITEM:
+		MaterialStorage::shaders->canvas_shader.version_free(version);
+		break;
+	case RSE::SHADER_SKY:
+		MaterialStorage::shaders->sky_shader.version_free(version);
+		break;
+	case RSE::SHADER_SPATIAL:
+		MaterialStorage::shaders->scene_shader.version_free(version);
+		break;
+	case RSE::SHADER_PARTICLES:
+		MaterialStorage::shaders->particles_process_shader.version_free(version);
+		break;
+	case RSE::SHADER_TEXTURE_BLIT:
+		MaterialStorage::shaders->tex_blit_shader.version_free(version);
+		break;
+	default:
+		break;
+	}
+}
+
+void MaterialData::set_render_priority(int p_priority)
+{
+	if (shader_data && shader_data->mode == RSE::SHADER_SPATIAL) {
+		priority = p_priority - RSE::MATERIAL_RENDER_PRIORITY_MIN; // 8 bits
+	}
+}
+
+void MaterialData::set_next_pass(RID p_pass)
+{
+	if (shader_data && shader_data->mode == RSE::SHADER_SPATIAL) {
+		next_pass = p_pass;
+	}
+}
+
+void MaterialData::bind_uniforms()
+{
+	if (!shader_data) {
+		return;
+	}
+	switch (shader_data->mode) {
+	case RSE::SHADER_CANVAS_ITEM:
+		glBindBufferBase(
+			GL_UNIFORM_BUFFER, RasterizerCanvasGLES3::MATERIAL_UNIFORM_LOCATION, uniform_buffer);
+		bind_uniforms_generic(texture_cache, shader_data->texture_uniforms, 1,
+			filter_from_uniform_canvas, repeat_from_uniform_canvas);
+		break;
+	case RSE::SHADER_SKY:
+		glBindBufferBase(GL_UNIFORM_BUFFER, SKY_MATERIAL_UNIFORM_LOCATION, uniform_buffer);
+		bind_uniforms_generic(texture_cache, shader_data->texture_uniforms);
+		break;
+	case RSE::SHADER_SPATIAL:
+		glBindBufferBase(GL_UNIFORM_BUFFER, SCENE_MATERIAL_UNIFORM_LOCATION, uniform_buffer);
+		bind_uniforms_generic(texture_cache, shader_data->texture_uniforms);
+		break;
+	case RSE::SHADER_PARTICLES:
+		glBindBufferBase(
+			GL_UNIFORM_BUFFER, GLES3::PARTICLES_MATERIAL_UNIFORM_LOCATION, uniform_buffer);
+		bind_uniforms_generic(texture_cache, shader_data->texture_uniforms, 1);
+		break;
+	case RSE::SHADER_TEXTURE_BLIT:
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer);
+		bind_uniforms_generic(texture_cache, shader_data->texture_uniforms, 1);
+		break;
+	default:
+		break;
+	}
 }
 
 void GLES3::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
@@ -1984,20 +1874,6 @@ void GLES3::MaterialStorage::material_free(RID p_rid)
 void GLES3::MaterialStorage::initialize()
 {
 	shaders = memnew(Shaders);
-
-	shader_data_request_func[RSE::SHADER_SPATIAL] = _create_scene_shader_func;
-	shader_data_request_func[RSE::SHADER_CANVAS_ITEM] = _create_canvas_shader_func;
-	shader_data_request_func[RSE::SHADER_PARTICLES] = _create_particles_shader_func;
-	shader_data_request_func[RSE::SHADER_SKY] = _create_sky_shader_func;
-	shader_data_request_func[RSE::SHADER_TEXTURE_BLIT] = _create_tex_blit_shader_func;
-	shader_data_request_func[RSE::SHADER_FOG] = nullptr;
-
-	material_data_request_func[RSE::SHADER_SPATIAL] = _create_scene_material_func;
-	material_data_request_func[RSE::SHADER_CANVAS_ITEM] = _create_canvas_material_func;
-	material_data_request_func[RSE::SHADER_PARTICLES] = _create_particles_material_func;
-	material_data_request_func[RSE::SHADER_SKY] = _create_sky_material_func;
-	material_data_request_func[RSE::SHADER_TEXTURE_BLIT] = _create_tex_blit_material_func;
-	material_data_request_func[RSE::SHADER_FOG] = nullptr;
 
 	static_assert(sizeof(GlobalShaderUniforms::Value) == 16);
 

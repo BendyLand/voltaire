@@ -31,9 +31,7 @@
 
 #include "../objects/jolt_body_3d.h"
 #include "../objects/jolt_object_3d.h"
-#include "../shapes/jolt_custom_motion_shape.h"
-#include "../shapes/jolt_custom_ray_shape.h"
-#include "../shapes/jolt_custom_shape_type.h"
+#include "../shapes/jolt_custom_shapes.h"
 #include "jolt_broad_phase_layer.h"
 #include "jolt_motion_filter_3d.h"
 #include "jolt_space_3d.h"

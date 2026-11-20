@@ -32,11 +32,11 @@
 #include "core/io/file_access.h"
 #include "core/io/resource_saver.h"
 #include "resource_importer_svg.h"
-#include "scene/resources/dpi_texture.h"
+#include "scene/resources/image_texture.h"
 
 String ResourceImporterSVG::get_importer_name() const { return "svg"; }
 
-String ResourceImporterSVG::get_visible_name() const { return "DPITexture"; }
+String ResourceImporterSVG::get_visible_name() const { return "ImageTexture"; }
 
 void ResourceImporterSVG::get_recognized_extensions(List<String>* p_extensions) const
 {
@@ -45,7 +45,7 @@ void ResourceImporterSVG::get_recognized_extensions(List<String>* p_extensions) 
 
 String ResourceImporterSVG::get_save_extension() const { return "dpitex"; }
 
-String ResourceImporterSVG::get_resource_type() const { return "DPITexture"; }
+String ResourceImporterSVG::get_resource_type() const { return "ImageTexture"; }
 
 int ResourceImporterSVG::get_preset_count() const { return 0; }
 

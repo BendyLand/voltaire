@@ -30,11 +30,27 @@
 /**************************************************************************/
 
 #include "external_texture.h"
+
+#include "servers/camera/camera_feed.h"
 #include "servers/rendering/renderer.h"
 
+void ExternalTexture::set_source_mode(SourceMode p_mode)
+{
+	if (source_mode == p_mode) {
+		return;
+	}
+	source_mode = p_mode;
+	if (source_mode == SOURCE_CAMERA_FEED) {
+		CameraServer::set_monitoring_feeds(true);
+	}
+	emit_changed();
+}
 
 uint64_t ExternalTexture::get_external_texture_id() const
 {
+	if (source_mode == SOURCE_CAMERA_FEED) {
+		return Renderer::texture_get_native_handle(get_rid());
+	}
 	_ensure_created();
 	return Renderer::texture_get_native_handle(texture);
 }
@@ -43,38 +59,135 @@ void ExternalTexture::set_size(const Size2& p_size)
 {
 	if (p_size.width > 0 && p_size.height > 0 && p_size != size) {
 		size = p_size;
-		_ensure_created();
-		Renderer::texture_external_update(
-			texture, size.width, size.height, external_buffer);
+		if (source_mode == SOURCE_EXTERNAL_BUFFER) {
+			_ensure_created();
+			Renderer::texture_external_update(texture, size.width, size.height, external_buffer);
+		}
 		emit_changed();
 	}
 }
 
-Size2 ExternalTexture::get_size() const { return size; }
+Size2 ExternalTexture::get_size() const
+{
+	if (source_mode == SOURCE_CAMERA_FEED) {
+		return Size2(get_width(), get_height());
+	}
+	return size;
+}
 
 void ExternalTexture::set_external_buffer_id(uint64_t p_external_buffer)
 {
+	source_mode = SOURCE_EXTERNAL_BUFFER;
 	if (p_external_buffer != external_buffer) {
 		external_buffer = p_external_buffer;
 		_ensure_created();
-		Renderer::texture_external_update(
-			texture, size.width, size.height, external_buffer);
+		Renderer::texture_external_update(texture, size.width, size.height, external_buffer);
 	}
 }
 
-int ExternalTexture::get_width() const { return size.width; }
+void ExternalTexture::set_camera_feed_id(int p_new_id)
+{
+	if (source_mode != SOURCE_CAMERA_FEED) {
+		source_mode = SOURCE_CAMERA_FEED;
+		CameraServer::set_monitoring_feeds(true);
+	}
+	if (camera_feed_id != p_new_id) {
+		camera_feed_id = p_new_id;
+		emit_changed();
+	}
+}
 
-int ExternalTexture::get_height() const { return size.height; }
+int ExternalTexture::get_camera_feed_id() const { return camera_feed_id; }
+
+void ExternalTexture::set_which_feed(CameraServer::FeedImage p_which)
+{
+	if (source_mode != SOURCE_CAMERA_FEED) {
+		source_mode = SOURCE_CAMERA_FEED;
+		CameraServer::set_monitoring_feeds(true);
+	}
+	if (which_feed != p_which) {
+		which_feed = p_which;
+		emit_changed();
+	}
+}
+
+CameraServer::FeedImage ExternalTexture::get_which_feed() const { return which_feed; }
+
+void ExternalTexture::set_camera_active(bool p_active)
+{
+	if (source_mode != SOURCE_CAMERA_FEED) {
+		source_mode = SOURCE_CAMERA_FEED;
+		CameraServer::set_monitoring_feeds(true);
+	}
+	Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
+	if (feed.is_valid()) {
+		feed->set_active(p_active);
+		emit_changed();
+	}
+}
+
+bool ExternalTexture::get_camera_active() const
+{
+	Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
+	if (feed.is_valid()) {
+		return feed->is_active();
+	}
+	return false;
+}
+
+int ExternalTexture::get_width() const
+{
+	if (source_mode == SOURCE_CAMERA_FEED) {
+		Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
+		if (feed.is_valid()) {
+			return feed->get_base_width();
+		}
+		return 0;
+	}
+	return size.width;
+}
+
+int ExternalTexture::get_height() const
+{
+	if (source_mode == SOURCE_CAMERA_FEED) {
+		Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
+		if (feed.is_valid()) {
+			return feed->get_base_height();
+		}
+		return 0;
+	}
+	return size.height;
+}
 
 bool ExternalTexture::has_alpha() const { return false; }
 
 RID ExternalTexture::get_rid() const
 {
+	if (source_mode == SOURCE_CAMERA_FEED) {
+		Ref<CameraFeed> feed = CameraServer::get_feed_by_id(camera_feed_id);
+		if (feed.is_valid()) {
+			return feed->get_texture(which_feed);
+		}
+		if (!texture.is_valid()) {
+			texture = Renderer::texture_2d_placeholder_create();
+			using_placeholder = true;
+		}
+		return texture;
+	}
+
 	if (!texture.is_valid()) {
 		texture = Renderer::texture_2d_placeholder_create();
 		using_placeholder = true;
 	}
 	return texture;
+}
+
+Ref<Image> ExternalTexture::get_image() const
+{
+	if (source_mode == SOURCE_CAMERA_FEED) {
+		return Renderer::texture_2d_get(get_rid());
+	}
+	return Texture2D::get_image();
 }
 
 void ExternalTexture::_ensure_created() const
@@ -83,8 +196,7 @@ void ExternalTexture::_ensure_created() const
 		return;
 	}
 
-	RID new_texture =
-		Renderer::texture_external_create(size.width, size.height);
+	RID new_texture = Renderer::texture_external_create(size.width, size.height);
 	if (using_placeholder) {
 		DEV_ASSERT(texture.is_valid());
 		Renderer::texture_replace(texture, new_texture);
@@ -95,7 +207,12 @@ void ExternalTexture::_ensure_created() const
 	}
 }
 
-ExternalTexture::ExternalTexture() {}
+ExternalTexture::ExternalTexture(SourceMode p_mode) : source_mode(p_mode)
+{
+	if (source_mode == SOURCE_CAMERA_FEED) {
+		CameraServer::set_monitoring_feeds(true);
+	}
+}
 
 ExternalTexture::~ExternalTexture()
 {
@@ -104,5 +221,3 @@ ExternalTexture::~ExternalTexture()
 		Renderer::free_rid(texture);
 	}
 }
-
-

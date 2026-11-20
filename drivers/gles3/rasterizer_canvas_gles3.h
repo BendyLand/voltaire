@@ -146,13 +146,13 @@ struct Batch
 	RSE::CanvasItemTextureFilter filter = RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX;
 	RSE::CanvasItemTextureRepeat repeat = RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX;
 
-	GLES3::CanvasShaderData::BlendMode blend_mode = GLES3::CanvasShaderData::BLEND_MODE_MIX;
+	GLES3::ShaderData::BlendMode blend_mode = GLES3::ShaderData::BLEND_MODE_MIX;
 	Color blend_color = Color(1.0, 1.0, 1.0, 1.0);
 
 	RCR::Item* clip = nullptr;
 
 	RID material;
-	GLES3::CanvasMaterialData* material_data = nullptr;
+	GLES3::MaterialData* material_data = nullptr;
 	uint64_t vertex_input_mask =
 		RSE::ARRAY_FORMAT_VERTEX | RSE::ARRAY_FORMAT_COLOR | RSE::ARRAY_FORMAT_TEX_UV;
 	uint64_t specialization = 0;
@@ -427,11 +427,11 @@ public:
 		bool p_backbuffer_has_mipmaps = false);
 	static void _record_item_commands(const RCR::Item* p_item, RID p_render_target,
 		const Transform2D& p_canvas_transform_inverse, RCR::Item*& current_clip,
-		GLES3::CanvasShaderData::BlendMode p_blend_mode, Light* p_lights, uint32_t& r_index,
+		GLES3::ShaderData::BlendMode p_blend_mode, Light* p_lights, uint32_t& r_index,
 		bool& r_break_batch, bool& r_sdf_used, const Point2& p_repeat_offset);
 	static void _render_batch(Light* p_lights, uint32_t p_index,
 		RenderingServerTypes::RenderInfo* r_render_info = nullptr);
-	static bool _bind_material(GLES3::CanvasMaterialData* p_material_data,
+	static bool _bind_material(GLES3::MaterialData* p_material_data,
 		CanvasShaderGLES3::ShaderVariant p_variant, uint64_t p_specialization);
 	static void _new_batch(bool& r_batch_broken);
 	static void _add_to_batch(uint32_t& r_index, bool& r_batch_broken);

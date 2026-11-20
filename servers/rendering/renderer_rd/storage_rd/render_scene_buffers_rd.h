@@ -34,7 +34,6 @@
 #include "core/templates/hash_map.h"
 #include "servers/rendering/renderer_rd/effects/vrs.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_buffer_custom_data_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
 #include "servers/rendering/storage/render_scene_buffers.h"
@@ -185,8 +184,15 @@ private:
 	void update_sizes(NamedTexture& p_named_texture);
 	void free_named_texture(NamedTexture& p_named_texture);
 
+	struct CustomDataEntry
+	{
+		Ref<RefCounted> data;
+		void (*configure_fn)(RefCounted*, RenderSceneBuffersRD*) = nullptr;
+		void (*free_fn)(RefCounted*) = nullptr;
+	};
+
 	// Data buffers
-	mutable HashMap<String, Ref<RenderBufferCustomDataRD>> data_buffers;
+	mutable HashMap<String, CustomDataEntry> data_buffers;
 
 	// Samplers.
 	RendererRD::Samplers samplers;
@@ -278,9 +284,26 @@ public:
 	void allocate_blur_textures();
 
 	// Custom data
-	bool has_custom_data(const String& p_name);
-	void set_custom_data(const String& p_name, Ref<RenderBufferCustomDataRD> p_data);
-	Ref<RenderBufferCustomDataRD> get_custom_data(const String& p_name) const;
+	bool has_custom_data(const String& p_name) const;
+
+	template <typename T>
+	void set_custom_data(const String& p_name, const Ref<T>& p_data)
+	{
+		static_assert(std::is_base_of_v<RefCounted, T>, "Custom data must inherit RefCounted.");
+		if (p_data.is_valid()) {
+			data_buffers[p_name] = {
+				p_data,
+				+[](RefCounted* p_obj, RenderSceneBuffersRD* p_rb) {
+					static_cast<T*>(p_obj)->configure(p_rb);
+				},
+				+[](RefCounted* p_obj) { static_cast<T*>(p_obj)->free_data(); }};
+		}
+		else if (data_buffers.has(p_name)) {
+			data_buffers.erase(p_name);
+		}
+	}
+
+	Ref<RefCounted> get_custom_data(const String& p_name) const;
 
 	// Getters
 

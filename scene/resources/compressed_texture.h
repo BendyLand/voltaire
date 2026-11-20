@@ -31,13 +31,13 @@
 
 #pragma once
 
-#include "scene/resources/texture.h"
 #include "scene/resources/bit_map.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 class BitMap;
 
-class CompressedTexture2D : public Texture2D
+class CompressedTexture2D final : public Texture2D
 {
 public:
 	enum DataFormat
@@ -46,6 +46,26 @@ public:
 		DATA_FORMAT_PNG,
 		DATA_FORMAT_WEBP,
 		DATA_FORMAT_BASIS_UNIVERSAL,
+	};
+
+	enum PortableDataFormat
+	{
+		PORTABLE_DATA_FORMAT_UNDEFINED,
+		PORTABLE_DATA_FORMAT_IMAGE,
+		PORTABLE_DATA_FORMAT_PNG,
+		PORTABLE_DATA_FORMAT_WEBP,
+		PORTABLE_DATA_FORMAT_BASIS_UNIVERSAL,
+	};
+
+	enum CompressionMode
+	{
+		COMPRESSION_MODE_LOSSLESS,
+		COMPRESSION_MODE_LOSSY,
+		COMPRESSION_MODE_BASIS_UNIVERSAL,
+		COMPRESSION_MODE_S3TC,
+		COMPRESSION_MODE_ETC2,
+		COMPRESSION_MODE_BPTC,
+		COMPRESSION_MODE_ASTC,
 	};
 
 	enum
@@ -71,6 +91,17 @@ private:
 	int h = 0;
 	mutable Ref<BitMap> alpha_cache;
 
+	// Portable inline compressed buffer fields (folded from PortableCompressedTexture2D).
+	bool is_portable = false;
+	CompressionMode compression_mode = COMPRESSION_MODE_LOSSLESS;
+	static bool keep_all_compressed_buffers;
+	bool keep_compressed_buffer = false;
+	Vector<uint8_t> compressed_buffer;
+	Size2 size_override;
+	bool mipmaps = false;
+	bool image_stored = false;
+	Image::BasisUniversalPackerParams basisu_params;
+
 	Error _load_data(const String& p_path, int& r_width, int& r_height, Ref<Image>& image,
 		bool& r_request_3d, bool& r_request_normal, bool& r_request_roughness, int& mipmap_limit,
 		int p_size_limit = 0);
@@ -81,7 +112,8 @@ private:
 		RSE::TextureDetectRoughnessChannel p_roughness_channel);
 	static void _requested_normal(void* p_ud);
 
-protected:
+	Vector<uint8_t> _get_data() const;
+	void _set_data(const Vector<uint8_t>& p_data);
 
 public:
 	static Ref<Image> load_image_from_file(Ref<FileAccess> p_file, int p_size_limit);
@@ -98,11 +130,29 @@ public:
 	Error load(const String& p_path);
 	String get_load_path() const;
 
+	// Portable compressed mode API (folded from PortableCompressedTexture2D).
+	bool is_portable_texture() const { return is_portable; }
+	CompressionMode get_compression_mode() const;
+	void create_from_image(const Ref<Image>& p_image, CompressionMode p_compression_mode,
+		bool p_normal_map = false, float p_lossy_quality = 0.8f);
+	void update(const Ref<Image>& p_image);
+
+	void set_size_override(const Size2& p_size);
+	Size2 get_size_override() const;
+
+	void set_keep_compressed_buffer(bool p_keep);
+	bool is_keeping_compressed_buffer() const;
+
+	void set_basisu_compressor_params(int p_uastc_level, float p_rdo_quality_loss);
+
+	static void set_keep_all_compressed_buffers(bool p_keep);
+	static bool is_keeping_all_compressed_buffers();
+
 	int get_width() const override;
 	int get_height() const override;
 	virtual RID get_rid() const override;
 
-	virtual void set_path(const String& p_path, bool p_take_over) override;
+	virtual void set_path(const String& p_path, bool p_take_over = false) override;
 
 	virtual void draw(RID p_canvas_item, const Point2& p_pos,
 		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
@@ -112,14 +162,16 @@ public:
 		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false,
 		bool p_clip_uv = true) const override;
 
+	virtual bool is_pixel_opaque(int p_x, int p_y) const override;
 	virtual bool has_alpha() const override;
 
 	virtual Ref<Image> get_image() const override;
 
+	CompressedTexture2D() = default;
 	~CompressedTexture2D();
 };
 
-class CompressedTextureLayered : public TextureLayered
+class CompressedTextureLayered final : public TextureLayered
 {
 public:
 	enum DataFormat
@@ -155,8 +207,6 @@ private:
 
 	virtual void reload_from_file() override;
 
-protected:
-
 public:
 	Image::Format get_format() const override;
 	Error load(const String& p_path);
@@ -169,7 +219,7 @@ public:
 	virtual bool has_mipmaps() const override;
 	virtual RID get_rid() const override;
 
-	virtual void set_path(const String& p_path, bool p_take_over) override;
+	virtual void set_path(const String& p_path, bool p_take_over = false) override;
 
 	virtual Ref<Image> get_layer_data(int p_layer) const override;
 
@@ -177,7 +227,7 @@ public:
 	~CompressedTextureLayered();
 };
 
-class CompressedTexture3D : public Texture3D
+class CompressedTexture3D final : public Texture3D
 {
 public:
 	enum DataFormat
@@ -212,8 +262,6 @@ private:
 
 	virtual void reload_from_file() override;
 
-protected:
-
 public:
 	Image::Format get_format() const override;
 	Error load(const String& p_path);
@@ -225,11 +273,9 @@ public:
 	virtual bool has_mipmaps() const override;
 	virtual RID get_rid() const override;
 
-	virtual void set_path(const String& p_path, bool p_take_over) override;
+	virtual void set_path(const String& p_path, bool p_take_over = false) override;
 
 	virtual Vector<Ref<Image>> get_data() const override;
 
 	~CompressedTexture3D();
 };
-
-

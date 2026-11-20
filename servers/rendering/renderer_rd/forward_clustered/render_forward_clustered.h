@@ -93,7 +93,7 @@ class RenderForwardClustered final
 public:
 	/* Framebuffer */
 
-	class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD
+	class RenderBufferDataForwardClustered final : public RefCounted
 	{
 
 	private:
@@ -225,8 +225,8 @@ public:
 		RID get_specular_only_fb();
 		RID get_velocity_only_fb();
 
-		virtual void configure(RenderSceneBuffersRD* p_render_buffers);
-		virtual void free_data();
+		void configure(RenderSceneBuffersRD* p_render_buffers);
+		void free_data();
 
 		static RDC::DataFormat get_specular_format();
 		static uint32_t get_specular_usage_bits(bool p_resolve, bool p_msaa, bool p_storage);

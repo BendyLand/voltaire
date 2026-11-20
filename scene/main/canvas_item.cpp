@@ -39,7 +39,6 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/atlas_texture.h"
-#include "scene/resources/dpi_texture.h"
 #include "scene/resources/font.h"
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
@@ -668,7 +667,7 @@ void CanvasItem::draw_polygon(const Vector<Point2>& p_points, const Vector<Color
 	ERR_DRAW_GUARD;
 
 	const Ref<AtlasTexture> atlas = p_texture;
-	if (atlas.is_valid() && atlas->get_atlas().is_valid()) {
+	if (atlas.is_valid() && !atlas->is_animated() && atlas->get_atlas().is_valid()) {
 		const Ref<Texture2D>& texture = atlas->get_atlas();
 		const Vector2 atlas_size = texture->get_size();
 
@@ -1118,58 +1117,6 @@ CanvasItem::~CanvasItem()
 	Renderer::free_rid(canvas_item);
 }
 
-Ref<Texture2D> CanvasTexture::get_diffuse_texture() const { return diffuse_texture; }
-
-Ref<Texture2D> CanvasTexture::get_normal_texture() const { return normal_texture; }
-
-Ref<Texture2D> CanvasTexture::get_specular_texture() const { return specular_texture; }
-
-void CanvasTexture::set_specular_color(const Color& p_color)
-{
-	if (specular == p_color) {
-		return;
-	}
-	specular = p_color;
-	Renderer::canvas_texture_set_shading_parameters(canvas_texture, specular, shininess);
-	emit_changed();
-}
-
-Color CanvasTexture::get_specular_color() const { return specular; }
-
-void CanvasTexture::set_specular_shininess(real_t p_shininess)
-{
-	if (shininess == p_shininess) {
-		return;
-	}
-	shininess = p_shininess;
-	Renderer::canvas_texture_set_shading_parameters(canvas_texture, specular, shininess);
-	emit_changed();
-}
-
-real_t CanvasTexture::get_specular_shininess() const { return shininess; }
-
-void CanvasTexture::set_texture_filter(CanvasItem::TextureFilter p_filter)
-{
-	if (texture_filter == p_filter) {
-		return;
-	}
-	texture_filter = p_filter;
-	Renderer::canvas_texture_set_texture_filter(canvas_texture, RSE::CanvasItemTextureFilter(p_filter));
-	emit_changed();
-}
-
-CanvasItem::TextureFilter CanvasTexture::get_texture_filter() const { return texture_filter; }
-
-void CanvasTexture::set_texture_repeat(CanvasItem::TextureRepeat p_repeat)
-{
-	if (texture_repeat == p_repeat) {
-		return;
-	}
-	texture_repeat = p_repeat;
-	Renderer::canvas_texture_set_texture_repeat(canvas_texture, RSE::CanvasItemTextureRepeat(p_repeat));
-	emit_changed();
-}
-
 void CanvasItem::queue_redraw()
 {
     if (!is_inside_tree() || !canvas_item.is_valid()) {
@@ -1184,68 +1131,6 @@ void CanvasItem::queue_redraw()
         }
         drawing = false;
     }
-}
-
-CanvasItem::TextureRepeat CanvasTexture::get_texture_repeat() const { return texture_repeat; }
-
-int CanvasTexture::get_width() const
-{
-	if (diffuse_texture.is_valid()) {
-		return diffuse_texture->get_width();
-	}
-	else {
-		return 1;
-	}
-}
-
-int CanvasTexture::get_height() const
-{
-	if (diffuse_texture.is_valid()) {
-		return diffuse_texture->get_height();
-	}
-	else {
-		return 1;
-	}
-}
-
-bool CanvasTexture::is_pixel_opaque(int p_x, int p_y) const
-{
-	if (diffuse_texture.is_valid()) {
-		return diffuse_texture->is_pixel_opaque(p_x, p_y);
-	}
-	else {
-		return false;
-	}
-}
-
-bool CanvasTexture::has_alpha() const
-{
-	if (diffuse_texture.is_valid()) {
-		return diffuse_texture->has_alpha();
-	}
-	else {
-		return false;
-	}
-}
-
-Ref<Image> CanvasTexture::get_image() const
-{
-	if (diffuse_texture.is_valid()) {
-		return diffuse_texture->get_image();
-	}
-	else {
-		return Ref<Image>();
-	}
-}
-
-RID CanvasTexture::get_rid() const { return canvas_texture; }
-
-CanvasTexture::CanvasTexture() { canvas_texture = Renderer::canvas_texture_create(); }
-
-CanvasTexture::~CanvasTexture()
-{
-	ERR_FAIL_NULL(Renderer::data);
-	Renderer::free_rid(canvas_texture);
 }
 
 void CanvasItem::_top_level_changed() {}
@@ -1271,8 +1156,6 @@ CanvasItem* CanvasItem::get_top_level() const
 	CanvasItem ci = CanvasItem();
 	return &ci;
 }
-
-void CanvasTexture::set_diffuse_texture(const Ref<Texture2D>& p_diffuse) {}
 
 void CanvasItem::_edit_set_scale(const Size2& p_scale) {}
 

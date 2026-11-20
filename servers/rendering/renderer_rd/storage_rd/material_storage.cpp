@@ -406,6 +406,10 @@ RendererRD::MaterialStorage::MaterialData::~MaterialData()
 			RD::free_rid(uniform_buffer[i]);
 		}
 	}
+
+	if (is_tex_blit) {
+		free_parameters_uniform_set(tex_blit_uniform_set);
+	}
 }
 
 RID RendererRD::MaterialStorage::MaterialData::get_default_texture_id(
@@ -539,47 +543,48 @@ void RendererRD::MaterialStorage::MaterialData::set_as_used()
 	}
 }
 
-bool RendererRD::MaterialStorage::TexBlitShaderData::is_animated() const { return false; }
+bool RendererRD::MaterialStorage::ShaderData::is_animated() const { return false; }
 
-bool RendererRD::MaterialStorage::TexBlitShaderData::casts_shadows() const { return false; }
+bool RendererRD::MaterialStorage::ShaderData::casts_shadows() const { return false; }
 
 RenderingServerTypes::ShaderNativeSourceCode
-RendererRD::MaterialStorage::TexBlitShaderData::get_native_source_code() const
+RendererRD::MaterialStorage::ShaderData::get_native_source_code() const
 {
-	return TextureStorage::tex_blit_shader.shader.version_get_native_source_code(
-		version);
+	if (is_tex_blit) {
+		return TextureStorage::tex_blit_shader.shader.version_get_native_source_code(
+			tex_blit_version);
+	}
+	return RenderingServerTypes::ShaderNativeSourceCode();
 }
 
-Pair<ShaderRD*, RID> RendererRD::MaterialStorage::TexBlitShaderData::get_native_shader_and_version() const
+Pair<ShaderRD*, RID> RendererRD::MaterialStorage::ShaderData::get_native_shader_and_version() const
 {
-	return {&TextureStorage::tex_blit_shader.shader, version};
+	if (is_tex_blit) {
+		return {&TextureStorage::tex_blit_shader.shader, tex_blit_version};
+	}
+	return {nullptr, RID()};
 }
 
-RendererRD::MaterialStorage::TexBlitShaderData::TexBlitShaderData() { valid = false; }
-
-RendererRD::MaterialStorage::TexBlitShaderData::~TexBlitShaderData()
+RendererRD::MaterialStorage::ShaderData::~ShaderData()
 {
-	if (version.is_valid()) {
-		TextureStorage::tex_blit_shader.shader.version_free(version);
+	if (is_tex_blit && tex_blit_version.is_valid()) {
+		TextureStorage::tex_blit_shader.shader.version_free(tex_blit_version);
 	}
 }
 
 RendererRD::MaterialStorage::ShaderData* RendererRD::MaterialStorage::_create_tex_blit_shader_func()
 {
-	MaterialStorage::TexBlitShaderData* shader_data = memnew(MaterialStorage::TexBlitShaderData);
+	MaterialStorage::ShaderData* shader_data = memnew(MaterialStorage::ShaderData);
+	shader_data->is_tex_blit = true;
 	return shader_data;
-}
-
-RendererRD::MaterialStorage::TexBlitMaterialData::~TexBlitMaterialData()
-{
-	free_parameters_uniform_set(uniform_set);
 }
 
 RendererRD::MaterialStorage::MaterialData* RendererRD::MaterialStorage::_create_tex_blit_material_func(
 	MaterialStorage::ShaderData* p_shader)
 {
-	MaterialStorage::TexBlitMaterialData* material_data = memnew(TexBlitMaterialData);
-	material_data->shader_data = static_cast<TexBlitShaderData*>(p_shader);
+	MaterialStorage::MaterialData* material_data = memnew(MaterialStorage::MaterialData);
+	material_data->is_tex_blit = true;
+	material_data->tex_blit_shader_data = p_shader;
 	// update will happen later anyway so do nothing.
 	return material_data;
 }
@@ -1400,7 +1405,7 @@ void RendererRD::MaterialStorage::_update_queued_materials()
 	}
 }
 
-void RendererRD::MaterialStorage::TexBlitShaderData::set_code(const String& p_code) {}
+void RendererRD::MaterialStorage::ShaderData::set_code(const String& p_code) {}
 
 void RendererRD::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
 

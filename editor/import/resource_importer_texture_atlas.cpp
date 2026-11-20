@@ -40,7 +40,6 @@
 #include "scene/resources/bit_map.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/mesh.h"
-#include "scene/resources/mesh_texture.h"
 
 String ResourceImporterTextureAtlas::get_importer_name() const { return "texture_atlas"; }
 

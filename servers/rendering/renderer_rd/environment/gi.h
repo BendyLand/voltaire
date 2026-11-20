@@ -45,7 +45,6 @@
 #include "servers/rendering/renderer_rd/shaders/environment/sdfgi_preprocess.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/environment/voxel_gi.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/environment/voxel_gi_debug.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_buffer_custom_data_rd.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/storage/utilities.h"
@@ -57,6 +56,7 @@
 #define RB_TEX_REFLECTION SNAME("reflection")
 
 class RenderDataRD;
+class RenderSceneBuffersRD;
 class RendererSceneRenderRD;
 
 namespace RendererRD
@@ -493,7 +493,7 @@ public:
 		MAX_VOXEL_GI_INSTANCES = 8
 	};
 
-	class RenderBuffersGI : public RenderBufferCustomDataRD
+	class RenderBuffersGI final : public RefCounted
 	{
 	private:
 		RID voxel_gi_buffer;
@@ -512,9 +512,9 @@ public:
 
 		RID get_voxel_gi_buffer();
 
-		virtual void configure(RenderSceneBuffersRD* p_render_buffers) override {}
+		void configure(RenderSceneBuffersRD* p_render_buffers) {}
 
-		virtual void free_data() override;
+		void free_data();
 	};
 
 	/* VOXEL GI API */
@@ -598,7 +598,7 @@ public:
 
 	/* SDFGI */
 
-	class SDFGI : public RenderBufferCustomDataRD
+	class SDFGI final : public RefCounted
 	{
 	public:
 		enum
@@ -726,9 +726,9 @@ public:
 		int32_t cascade_dynamic_light_count[SDFGI::MAX_CASCADES];
 		RID integrate_sky_uniform_set;
 
-		virtual void configure(RenderSceneBuffersRD* p_render_buffers) override {}
+		void configure(RenderSceneBuffersRD* p_render_buffers) {}
 
-		virtual void free_data() override;
+		void free_data();
 		~SDFGI();
 
 		void create(RID p_env, const Vector3& p_world_position, uint32_t p_requested_history_size);

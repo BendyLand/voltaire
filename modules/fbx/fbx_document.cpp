@@ -48,9 +48,9 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
 #include "scene/3d/light_3d.h"
+#include "scene/resources/compressed_texture.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
-#include "scene/resources/portable_compressed_texture.h"
 #include "scene/resources/surface_tool.h"
 
 #ifdef TOOLS_ENABLED

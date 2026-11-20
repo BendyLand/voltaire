@@ -31,19 +31,51 @@
 
 #pragma once
 
+#include "core/os/rw_lock.h"
+#include "core/templates/local_vector.h"
 #include "scene/resources/texture.h"
 
-class AtlasTexture : public Texture2D
+class AtlasTexture final : public Texture2D
 {
-	Rect2 _get_region_rect() const;
+public:
+	enum
+	{
+		MAX_FRAMES = 256
+	};
 
-protected:
+private:
+	struct Frame
+	{
+		Ref<Texture2D> texture;
+		float duration = 1.0f;
+	};
+
+	struct AnimData
+	{
+		RWLock rw_lock;
+		RID proxy_ph;
+		RID proxy;
+		LocalVector<Frame> frames;
+		int frame_count = 1;
+		int current_frame = 0;
+		bool pause = false;
+		bool one_shot = false;
+		float speed_scale = 1.0f;
+		float time = 0.0f;
+		uint64_t prev_ticks = 0;
+	};
+
 	Ref<Texture2D> atlas;
 	Rect2 region;		  // Only for property value.
 	Rect2 rounded_region; // Region with rounded size (image size is always integer).
 	Rect2 margin;
 	bool filter_clip = false;
 
+	mutable AnimData* anim = nullptr;
+
+	Rect2 _get_region_rect() const;
+	AnimData* _ensure_anim();
+	void _update_proxy() const;
 
 public:
 	virtual int get_width() const override;
@@ -64,6 +96,30 @@ public:
 	void set_filter_clip(const bool p_enable);
 	bool has_filter_clip() const;
 
+	// Animated frame sequence mode (folded from AnimatedTexture).
+	bool is_animated() const { return anim != nullptr; }
+
+	void set_frames(int p_frames);
+	int get_frames() const;
+
+	void set_current_frame(int p_frame);
+	int get_current_frame() const;
+
+	void set_pause(bool p_pause);
+	bool get_pause() const;
+
+	void set_one_shot(bool p_one_shot);
+	bool get_one_shot() const;
+
+	void set_frame_texture(int p_frame, const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_frame_texture(int p_frame) const;
+
+	void set_frame_duration(int p_frame, float p_duration);
+	float get_frame_duration(int p_frame) const;
+
+	void set_speed_scale(float p_scale);
+	float get_speed_scale() const;
+
 	virtual void draw(RID p_canvas_item, const Point2& p_pos,
 		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
 	virtual void draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile = false,
@@ -77,6 +133,7 @@ public:
 	bool is_pixel_opaque(int p_x, int p_y) const override;
 
 	virtual Ref<Image> get_image() const override;
+
+	AtlasTexture() = default;
+	~AtlasTexture();
 };
-
-

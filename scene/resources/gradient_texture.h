@@ -34,7 +34,7 @@
 #include "scene/resources/gradient.h"
 #include "scene/resources/texture.h"
 
-class GradientTexture2D : public Texture2D
+class GradientTexture2D final : public Texture2D
 {
 public:
 	enum Fill

@@ -928,6 +928,12 @@ void Renderer::canvas_set_item_repeat(RID p_item, const Point2& p_repeat_size, i
 	Renderer::canvas->canvas_set_item_repeat(p_item, p_repeat_size, p_repeat_times);
 }
 
+void Renderer::canvas_texture_set_channel(
+	RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
+{
+	Renderer::canvas->canvas_texture_set_channel(p_canvas_texture, p_channel, p_texture);
+}
+
 void Renderer::canvas_texture_set_shading_parameters(
 	RID p_texture, const Color& p_color, float p_shininess)
 {

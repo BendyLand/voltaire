@@ -183,8 +183,8 @@ private:
 		RID overdraw_shader;
 	} scene_globals;
 
-	GLES3::SceneMaterialData* default_material_data_ptr = nullptr;
-	GLES3::SceneMaterialData* overdraw_material_data_ptr = nullptr;
+	GLES3::MaterialData* default_material_data_ptr = nullptr;
+	GLES3::MaterialData* overdraw_material_data_ptr = nullptr;
 
 	struct LTC
 	{
@@ -320,12 +320,12 @@ private:
 		bool finished_base_pass = false;
 
 		void* surface = nullptr;
-		GLES3::SceneShaderData* shader = nullptr;
-		GLES3::SceneMaterialData* material = nullptr;
+		GLES3::ShaderData* shader = nullptr;
+		GLES3::MaterialData* material = nullptr;
 
 		void* surface_shadow = nullptr;
-		GLES3::SceneShaderData* shader_shadow = nullptr;
-		GLES3::SceneMaterialData* material_shadow = nullptr;
+		GLES3::ShaderData* shader_shadow = nullptr;
+		GLES3::MaterialData* material_shadow = nullptr;
 
 		GeometryInstanceSurface* next = nullptr;
 		GeometryInstanceGLES3* owner = nullptr;
@@ -445,10 +445,10 @@ private:
 	PagedAllocator<GeometryInstanceSurface> geometry_instance_surface_alloc;
 
 	void _geometry_instance_add_surface_with_material(GeometryInstanceGLES3* ginstance,
-		uint32_t p_surface, GLES3::SceneMaterialData* p_material, uint32_t p_material_id,
+		uint32_t p_surface, GLES3::MaterialData* p_material, uint32_t p_material_id,
 		uint32_t p_shader_id, RID p_mesh);
 	void _geometry_instance_add_surface_with_material_chain(GeometryInstanceGLES3* ginstance,
-		uint32_t p_surface, GLES3::SceneMaterialData* p_material, RID p_mat_src, RID p_mesh);
+		uint32_t p_surface, GLES3::MaterialData* p_material, RID p_mat_src, RID p_mesh);
 	void _geometry_instance_add_surface(
 		GeometryInstanceGLES3* ginstance, uint32_t p_surface, RID p_material, RID p_mesh);
 	void _geometry_instance_update(RenderGeometryInstance* p_geometry_instance);
@@ -552,8 +552,8 @@ private:
 
 		bool used_depth_prepass = false;
 
-		GLES3::SceneShaderData::BlendMode current_blend_mode =
-			GLES3::SceneShaderData::BLEND_MODE_MIX;
+		GLES3::ShaderData::BlendMode current_blend_mode =
+			GLES3::ShaderData::BLEND_MODE_MIX;
 		RSE::CullMode cull_mode = RSE::CULL_MODE_BACK;
 		GLenum current_depth_function = GL_GEQUAL;
 
@@ -966,7 +966,7 @@ protected:
 		float baked_exposure = 1.0;
 
 		// State to track when radiance cubemap needs updating
-		GLES3::SkyMaterialData* prev_material = nullptr;
+		GLES3::MaterialData* prev_material = nullptr;
 		Vector3 prev_position = Vector3(0.0, 0.0, 0.0);
 		float prev_time = 0.0f;
 		float prev_fog_aerial_perspective = 0.0;
@@ -981,7 +981,7 @@ protected:
 	Sky* dirty_sky_list = nullptr;
 	mutable RID_Owner<Sky, true> sky_owner;
 
-	GLES3::SkyMaterialData* _get_sky_material_data(RID p_env);
+	GLES3::MaterialData* _get_sky_material_data(RID p_env);
 	void _setup_sky(const RenderDataGLES3* p_render_data, const PagedArray<RID>& p_lights,
 		const Projection& p_projection, const Transform3D& p_transform, const Size2i p_screen_size);
 	void _invalidate_sky(Sky* p_sky);

@@ -477,8 +477,8 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 		// Check material for something that may change flow of rendering, but do not bind for now.
 		RID material = ci->material_owner == nullptr ? ci->material : ci->material_owner->material;
 		if (material.is_valid()) {
-			GLES3::CanvasMaterialData* md = static_cast<GLES3::CanvasMaterialData*>(
-				GLES3::MaterialStorage::material_get_data(material, RSE::SHADER_CANVAS_ITEM));
+			GLES3::MaterialData* md =
+				GLES3::MaterialStorage::material_get_data(material, RSE::SHADER_CANVAS_ITEM);
 			if (md && md->shader_data->valid) {
 				if (md->shader_data->uses_screen_texture && canvas_group_owner == nullptr) {
 					if (!material_screen_texture_cached) {
@@ -663,7 +663,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 
 	uint32_t index = 0;
 	RCR::Item* current_clip = nullptr;
-	GLES3::CanvasShaderData* shader_data_cache = nullptr;
+	GLES3::ShaderData* shader_data_cache = nullptr;
 
 	// Record Batches.
 	// First item always forms its own batch.
@@ -704,10 +704,10 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 		if (material != state.canvas_instance_batches[state.current_batch_index].material) {
 			_new_batch(batch_broken);
 
-			GLES3::CanvasMaterialData* material_data = nullptr;
+			GLES3::MaterialData* material_data = nullptr;
 			if (material.is_valid()) {
-				material_data = static_cast<GLES3::CanvasMaterialData*>(
-					GLES3::MaterialStorage::material_get_data(material, RSE::SHADER_CANVAS_ITEM));
+				material_data =
+					GLES3::MaterialStorage::material_get_data(material, RSE::SHADER_CANVAS_ITEM);
 			}
 			shader_data_cache = nullptr;
 			if (material_data) {
@@ -725,9 +725,9 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 			}
 		}
 
-		GLES3::CanvasShaderData::BlendMode blend_mode =
+		GLES3::ShaderData::BlendMode blend_mode =
 			shader_data_cache ? shader_data_cache->blend_mode
-							  : GLES3::CanvasShaderData::BLEND_MODE_MIX;
+							  : GLES3::ShaderData::BLEND_MODE_MIX;
 
 		if (!ci->repeat_size.x && !ci->repeat_size.y) {
 			_record_item_commands(ci, p_to_render_target, p_canvas_transform_inverse, current_clip,
@@ -774,7 +774,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 	glDisable(GL_SCISSOR_TEST);
 	current_clip = nullptr;
 
-	GLES3::CanvasShaderData::BlendMode last_blend_mode = GLES3::CanvasShaderData::BLEND_MODE_MIX;
+	GLES3::ShaderData::BlendMode last_blend_mode = GLES3::ShaderData::BLEND_MODE_MIX;
 	Color last_blend_color;
 
 	state.current_tex = RID();
@@ -802,7 +802,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 			}
 		}
 
-		GLES3::CanvasMaterialData* material_data = state.canvas_instance_batches[i].material_data;
+		GLES3::MaterialData* material_data = state.canvas_instance_batches[i].material_data;
 		CanvasShaderGLES3::ShaderVariant variant = CanvasShaderGLES3::MODE_DEFAULT;
 		uint64_t specialization = state.canvas_instance_batches[i].specialization;
 		specialization |= base_specialization;
@@ -831,24 +831,24 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 			state.canvas_instance_batches[i].specular_shininess, shader_version, variant,
 			specialization);
 
-		GLES3::CanvasShaderData::BlendMode blend_mode = state.canvas_instance_batches[i].blend_mode;
+		GLES3::ShaderData::BlendMode blend_mode = state.canvas_instance_batches[i].blend_mode;
 		Color blend_color = state.canvas_instance_batches[i].blend_color;
 
 		if (last_blend_mode != blend_mode || last_blend_color != blend_color) {
-			if (last_blend_mode == GLES3::CanvasShaderData::BLEND_MODE_DISABLED) {
+			if (last_blend_mode == GLES3::ShaderData::BLEND_MODE_DISABLED) {
 				// re-enable it
 				glEnable(GL_BLEND);
 			}
-			else if (blend_mode == GLES3::CanvasShaderData::BLEND_MODE_DISABLED) {
+			else if (blend_mode == GLES3::ShaderData::BLEND_MODE_DISABLED) {
 				// disable it
 				glDisable(GL_BLEND);
 			}
 
 			switch (blend_mode) {
-			case GLES3::CanvasShaderData::BLEND_MODE_DISABLED: {
+			case GLES3::ShaderData::BLEND_MODE_DISABLED: {
 				// Nothing to do here.
 			} break;
-			case GLES3::CanvasShaderData::BLEND_MODE_LCD: {
+			case GLES3::ShaderData::BLEND_MODE_LCD: {
 				glBlendEquation(GL_FUNC_ADD);
 				if (state.transparent_render_target) {
 					glBlendFuncSeparate(
@@ -860,7 +860,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 				glBlendColor(blend_color.r, blend_color.g, blend_color.b, blend_color.a);
 
 			} break;
-			case GLES3::CanvasShaderData::BLEND_MODE_MIX: {
+			case GLES3::ShaderData::BLEND_MODE_MIX: {
 				glBlendEquation(GL_FUNC_ADD);
 				if (state.transparent_render_target) {
 					glBlendFuncSeparate(
@@ -871,7 +871,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 				}
 
 			} break;
-			case GLES3::CanvasShaderData::BLEND_MODE_ADD: {
+			case GLES3::ShaderData::BLEND_MODE_ADD: {
 				glBlendEquation(GL_FUNC_ADD);
 				if (state.transparent_render_target) {
 					glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA, GL_ONE);
@@ -881,7 +881,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 				}
 
 			} break;
-			case GLES3::CanvasShaderData::BLEND_MODE_SUB: {
+			case GLES3::ShaderData::BLEND_MODE_SUB: {
 				glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
 				if (state.transparent_render_target) {
 					glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA, GL_ONE);
@@ -890,7 +890,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 					glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ZERO, GL_ONE);
 				}
 			} break;
-			case GLES3::CanvasShaderData::BLEND_MODE_MUL: {
+			case GLES3::ShaderData::BLEND_MODE_MUL: {
 				glBlendEquation(GL_FUNC_ADD);
 				if (state.transparent_render_target) {
 					glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_DST_ALPHA, GL_ZERO);
@@ -900,7 +900,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 				}
 
 			} break;
-			case GLES3::CanvasShaderData::BLEND_MODE_PMALPHA: {
+			case GLES3::ShaderData::BLEND_MODE_PMALPHA: {
 				glBlendEquation(GL_FUNC_ADD);
 				if (state.transparent_render_target) {
 					glBlendFuncSeparate(
@@ -910,6 +910,8 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 					glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
 				}
 
+			} break;
+			default: {
 			} break;
 			}
 			last_blend_mode = blend_mode;
@@ -927,7 +929,7 @@ void RasterizerCanvasGLES3::_render_items(RID p_to_render_target, int p_item_cou
 
 void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p_render_target,
 	const Transform2D& p_canvas_transform_inverse, RCR::Item*& current_clip,
-	GLES3::CanvasShaderData::BlendMode p_blend_mode, Light* p_lights, uint32_t& r_index,
+	GLES3::ShaderData::BlendMode p_blend_mode, Light* p_lights, uint32_t& r_index,
 	bool& r_batch_broken, bool& r_sdf_used, const Point2& p_repeat_offset)
 {
 	RSE::CanvasItemTextureFilter texture_filter =
@@ -1041,12 +1043,12 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 			p_item->instance_allocated_shader_uniforms_offset;
 
 		Color blend_color = base_color;
-		GLES3::CanvasShaderData::BlendMode blend_mode = p_blend_mode;
+		GLES3::ShaderData::BlendMode blend_mode = p_blend_mode;
 		RSE::CanvasItemTextureRepeat texture_repeat = base_texture_repeat;
 		if (c->type == RCR::Item::Command::TYPE_RECT) {
 			const RCR::Item::CommandRect* rect = reinterpret_cast<const RCR::Item::CommandRect*>(c);
 			if (rect->flags & CANVAS_RECT_LCD) {
-				blend_mode = GLES3::CanvasShaderData::BLEND_MODE_LCD;
+				blend_mode = GLES3::ShaderData::BLEND_MODE_LCD;
 				blend_color = rect->modulate * base_color;
 			}
 

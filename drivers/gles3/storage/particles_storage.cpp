@@ -822,11 +822,11 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	}
 
 	// Get shader and set shader uniforms;
-	ParticleProcessMaterialData* m = static_cast<ParticleProcessMaterialData*>(
-		MaterialStorage::material_get_data(p_particles->process_material, RSE::SHADER_PARTICLES));
+	MaterialData* m =
+		MaterialStorage::material_get_data(p_particles->process_material, RSE::SHADER_PARTICLES);
 	if (!m) {
-		m = static_cast<ParticleProcessMaterialData*>(MaterialStorage::material_get_data(
-			particles_shader.default_material, RSE::SHADER_PARTICLES));
+		m = MaterialStorage::material_get_data(
+			particles_shader.default_material, RSE::SHADER_PARTICLES);
 	}
 
 	ERR_FAIL_NULL(m);
@@ -953,9 +953,8 @@ void ParticlesStorage::_particles_update_buffers(Particles* particles)
 	uint32_t userdata_count = 0;
 
 	if (particles->process_material.is_valid()) {
-		GLES3::ParticleProcessMaterialData* material_data =
-			static_cast<GLES3::ParticleProcessMaterialData*>(MaterialStorage::material_get_data(
-				particles->process_material, RSE::SHADER_PARTICLES));
+		GLES3::MaterialData* material_data = MaterialStorage::material_get_data(
+			particles->process_material, RSE::SHADER_PARTICLES);
 		if (material_data && material_data->shader_data->version.is_valid() &&
 			material_data->shader_data->valid) {
 			userdata_count = material_data->shader_data->userdata_count;

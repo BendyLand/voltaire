@@ -35,7 +35,7 @@
 #include "scene/resources/gradient.h"
 #include "scene/resources/texture.h"
 
-class NoiseTexture2D : public Texture2D
+class NoiseTexture2D final : public Texture2D
 {
 private:
 	Ref<Image> image;

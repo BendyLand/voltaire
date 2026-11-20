@@ -31,7 +31,6 @@
 
 #include "core/io/image.h"
 #include "default_theme.h"
-#include "scene/resources/dpi_texture.h"
 #include "scene/resources/font.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/image_texture.h"

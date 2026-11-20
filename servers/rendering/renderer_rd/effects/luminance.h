@@ -96,7 +96,7 @@ private:
 	} luminance_reduce_raster;
 
 public:
-	class LuminanceBuffers : public RenderBufferCustomDataRD
+	class LuminanceBuffers final : public RefCounted
 	{
 	private:
 		bool prefer_raster_effects;
@@ -105,8 +105,8 @@ public:
 		Vector<RID> reduce;
 		RID current;
 
-		virtual void configure(RenderSceneBuffersRD* p_render_buffers) override;
-		virtual void free_data() override;
+		void configure(RenderSceneBuffersRD* p_render_buffers);
+		void free_data();
 
 		void set_prefer_raster_effects(bool p_prefer_raster_effects);
 	};

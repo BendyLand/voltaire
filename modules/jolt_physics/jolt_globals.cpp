@@ -32,9 +32,7 @@
 #include "jolt_globals.h"
 
 #include "objects/jolt_group_filter.h"
-#include "shapes/jolt_custom_double_sided_shape.h"
-#include "shapes/jolt_custom_ray_shape.h"
-#include "shapes/jolt_custom_user_data_shape.h"
+#include "shapes/jolt_custom_shapes.h"
 
 #include "core/os/memory.h"
 

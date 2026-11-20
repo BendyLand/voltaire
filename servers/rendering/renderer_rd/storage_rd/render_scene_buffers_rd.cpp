@@ -96,8 +96,8 @@ void RenderSceneBuffersRD::update_samplers()
 void RenderSceneBuffersRD::cleanup()
 {
 	// Free our data buffers (but don't destroy them)
-	for (KeyValue<String, Ref<RenderBufferCustomDataRD>>& E : data_buffers) {
-		E.value->free_data();
+	for (KeyValue<String, CustomDataEntry>& E : data_buffers) {
+		E.value.free_fn(E.value.data.ptr());
 	}
 
 	// Clear our named textures
@@ -187,8 +187,8 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration* p_co
 	}
 
 	// (re-)configure any named buffers
-	for (KeyValue<String, Ref<RenderBufferCustomDataRD>>& E : data_buffers) {
-		E.value->configure(this);
+	for (KeyValue<String, CustomDataEntry>& E : data_buffers) {
+		E.value.configure_fn(E.value.data.ptr(), this);
 	}
 }
 
@@ -213,8 +213,8 @@ void RenderSceneBuffersRD::configure_for_reflections(const Size2i p_reflection_s
 	cleanup();
 
 	// (re-)configure any named buffers
-	for (KeyValue<String, Ref<RenderBufferCustomDataRD>>& E : data_buffers) {
-		E.value->configure(this);
+	for (KeyValue<String, CustomDataEntry>& E : data_buffers) {
+		E.value.configure_fn(E.value.data.ptr(), this);
 	}
 }
 
@@ -505,29 +505,16 @@ void RenderSceneBuffersRD::allocate_blur_textures()
 	}
 }
 
-bool RenderSceneBuffersRD::has_custom_data(const String& p_name)
+bool RenderSceneBuffersRD::has_custom_data(const String& p_name) const
 {
 	return data_buffers.has(p_name);
 }
 
-void RenderSceneBuffersRD::set_custom_data(
-	const String& p_name, Ref<RenderBufferCustomDataRD> p_data)
+Ref<RefCounted> RenderSceneBuffersRD::get_custom_data(const String& p_name) const
 {
-	if (p_data.is_valid()) {
-		data_buffers[p_name] = p_data;
-	}
-	else if (has_custom_data(p_name)) {
-		data_buffers.erase(p_name);
-	}
-}
+	ERR_FAIL_COND_V(!data_buffers.has(p_name), Ref<RefCounted>());
 
-Ref<RenderBufferCustomDataRD> RenderSceneBuffersRD::get_custom_data(const String& p_name) const
-{
-	ERR_FAIL_COND_V(!data_buffers.has(p_name), Ref<RenderBufferCustomDataRD>());
-
-	Ref<RenderBufferCustomDataRD> ret = data_buffers[p_name];
-
-	return ret;
+	return data_buffers[p_name].data;
 }
 
 bool RenderSceneBuffersRD::has_depth_texture()

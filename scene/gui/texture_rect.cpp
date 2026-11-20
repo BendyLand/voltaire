@@ -68,7 +68,7 @@ PackedStringArray TextureRect::get_configuration_warnings() const
 
 	if (stretch_mode == STRETCH_TILE) {
 		Ref<AtlasTexture> at = texture;
-		while (at.is_valid()) {
+		while (at.is_valid() && !at->is_animated()) {
 			if (at->get_margin() != Rect2()) {
 				warnings.push_back(vformat(RTR("STRETCH_TILE mode is not supported for an "
 											   "AtlasTexture with non-zero margin.")));

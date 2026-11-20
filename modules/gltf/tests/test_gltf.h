@@ -65,7 +65,7 @@ static Node *gltf_import(const String &p_file) {
 	ResourceFormatImporter::add_importer(import_texture);
 
 	// Once editor import convert pngs to ctex, we will need to load it as ctex resource.
-	Ref<ResourceFormatLoaderCompressedTexture2D> resource_loader_stream_texture;
+	Ref<ResourceFormatLoaderCompressedTexture> resource_loader_stream_texture;
 	if constexpr (GD_IS_CLASS_ENABLED(CompressedTexture2D)) {
 		resource_loader_stream_texture.instantiate();
 		ResourceLoader::add_resource_format_loader(resource_loader_stream_texture);

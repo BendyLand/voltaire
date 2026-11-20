@@ -51,8 +51,8 @@
 #include "scene/3d/multimesh_instance_3d.h"
 #include "scene/animation/animation_player.h"
 #include "scene/resources/3d/skin.h"
+#include "scene/resources/compressed_texture.h"
 #include "scene/resources/image_texture.h"
-#include "scene/resources/portable_compressed_texture.h"
 #include "scene/resources/surface_tool.h"
 #include "skin_tool.h"
 

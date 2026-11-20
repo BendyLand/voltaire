@@ -40,9 +40,7 @@
 static Ref<ResourceFormatSaverText> resource_saver_text;
 static Ref<ResourceFormatLoaderText> resource_loader_text;
 
-static Ref<ResourceFormatLoaderCompressedTexture2D> resource_loader_stream_texture;
-static Ref<ResourceFormatLoaderCompressedTextureLayered> resource_loader_texture_layered;
-static Ref<ResourceFormatLoaderCompressedTexture3D> resource_loader_texture_3d;
+static Ref<ResourceFormatLoaderCompressedTexture> resource_loader_compressed_texture;
 
 static Ref<ResourceFormatSaverShader> resource_saver_shader;
 static Ref<ResourceFormatLoaderShader> resource_loader_shader;

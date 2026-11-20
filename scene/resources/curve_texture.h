@@ -34,7 +34,7 @@
 #include "scene/resources/curve.h"
 #include "scene/resources/texture.h"
 
-class CurveTexture : public Texture2D
+class CurveTexture final : public Texture2D
 {
 public:
 	enum TextureMode

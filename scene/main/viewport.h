@@ -54,7 +54,7 @@ class Node3D;
 class World3D;
 #endif // _3D_DISABLED
 
-class ViewportTexture : public Texture2D
+class ViewportTexture final : public Texture2D
 {
 	NodePath path;
 

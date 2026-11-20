@@ -31,13 +31,39 @@
 
 #pragma once
 
-#include "scene/resources/texture.h"
+#include "core/os/mutex.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/hash_set.h"
 #include "scene/resources/bit_map.h"
+#include "scene/resources/texture.h"
 
 class BitMap;
 
-class ImageTexture : public Texture2D
+class ImageTexture final : public Texture2D
 {
+	struct SVGData
+	{
+		String source;
+		float base_scale = 1.0f;
+		float saturation = 1.0f;
+		bool fix_alpha_border = false;
+		bool premult_alpha = false;
+		mutable RID base_texture;
+		mutable HashMap<double, RID> texture_cache;
+		mutable HashMap<Color, Color> cmap;
+		mutable Size2 base_size;
+		mutable Size2 size;
+	};
+
+	struct ScalingLevel
+	{
+		HashSet<ImageTexture*> textures;
+		int32_t refcount = 1;
+	};
+
+	static Mutex svg_mutex;
+	static HashMap<double, ScalingLevel> scaling_levels;
+
 	mutable RID texture;
 	Image::Format format = Image::FORMAT_L8;
 	bool mipmaps = false;
@@ -46,6 +72,15 @@ class ImageTexture : public Texture2D
 	Size2 size_override;
 	mutable Ref<BitMap> alpha_cache;
 	bool image_stored = false;
+	SVGData* svg_data = nullptr;
+
+	SVGData* _ensure_svg_data();
+	void _svg_remove_scale(double p_scale);
+	RID _svg_ensure_scale(double p_scale) const;
+	RID _svg_load_at_scale(double p_scale, bool p_set_size) const;
+	void _svg_update_texture();
+	void _svg_clear();
+	void _svg_destroy();
 
 protected:
 	virtual void reload_from_file() override;
@@ -53,6 +88,32 @@ protected:
 public:
 	void set_image(const Ref<Image>& p_image);
 	static Ref<ImageTexture> create_from_image(const Ref<Image>& p_image);
+	static Ref<ImageTexture> create_from_string(const String& p_source, float p_scale = 1.0f,
+		float p_saturation = 1.0f, const HashMap<Color, Color>& p_color_map = HashMap<Color, Color>());
+
+	// SVG / DPI-aware scalable source mode (folded from DPITexture).
+	bool is_svg() const { return svg_data != nullptr; }
+
+	void set_source(const String& p_source);
+	String get_source() const;
+
+	void set_fix_alpha_border(bool p_enabled);
+	bool get_fix_alpha_border() const;
+
+	void set_premult_alpha(bool p_enabled);
+	bool get_premult_alpha() const;
+
+	void set_base_scale(float p_scale);
+	float get_base_scale() const;
+
+	void set_saturation(float p_saturation);
+	float get_saturation() const;
+
+	void set_color_map(const HashMap<Color, Color>& p_color_map);
+	HashMap<Color, Color> get_color_map() const;
+
+	static void reference_scaling_level(double p_scale);
+	static void unreference_scaling_level(double p_scale);
 
 	virtual Image::Format get_format() const override;
 
@@ -63,6 +124,7 @@ public:
 	int get_height() const override;
 
 	virtual RID get_rid() const override;
+	virtual RID get_scaled_rid() const override;
 
 	bool has_alpha() const override;
 	virtual void draw(RID p_canvas_item, const Point2& p_pos,
@@ -85,10 +147,11 @@ public:
 
 	virtual void set_path(const String& p_path, bool p_take_over = false) override;
 
+	ImageTexture() = default;
 	~ImageTexture();
 };
 
-class ImageTextureLayered : public TextureLayered
+class ImageTextureLayered final : public TextureLayered
 {
 	LayeredType layered_type = LAYERED_TYPE_2D_ARRAY;
 
@@ -99,8 +162,6 @@ class ImageTextureLayered : public TextureLayered
 	int height = 0;
 	int layers = 0;
 	bool mipmaps = false;
-
-protected:
 
 public:
 	void set_layered_type(LayeredType p_type);
@@ -123,7 +184,7 @@ public:
 	~ImageTextureLayered();
 };
 
-class ImageTexture3D : public Texture3D
+class ImageTexture3D final : public Texture3D
 {
 	mutable RID texture;
 
@@ -133,8 +194,6 @@ class ImageTexture3D : public Texture3D
 	int depth = 1;
 	bool mipmaps = false;
 	bool images_stored = false;
-
-protected:
 
 public:
 	virtual Image::Format get_format() const override;
@@ -154,5 +213,3 @@ public:
 	ImageTexture3D();
 	~ImageTexture3D();
 };
-
-

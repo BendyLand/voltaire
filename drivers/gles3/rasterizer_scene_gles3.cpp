@@ -251,7 +251,7 @@ void RasterizerSceneGLES3::_geometry_instance_dependency_deleted(
 }
 
 void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
-	GeometryInstanceGLES3* ginstance, uint32_t p_surface, GLES3::SceneMaterialData* p_material,
+	GeometryInstanceGLES3* ginstance, uint32_t p_surface, GLES3::MaterialData* p_material,
 	uint32_t p_material_id, uint32_t p_shader_id, RID p_mesh)
 {
 	bool has_read_screen_alpha = p_material->shader_data->uses_screen_texture ||
@@ -286,14 +286,14 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 	}
 
 	if (has_alpha || has_read_screen_alpha ||
-		p_material->shader_data->depth_draw == GLES3::SceneShaderData::DEPTH_DRAW_DISABLED ||
-		p_material->shader_data->depth_test != GLES3::SceneShaderData::DEPTH_TEST_ENABLED) {
+		p_material->shader_data->depth_draw == GLES3::ShaderData::DEPTH_DRAW_DISABLED ||
+		p_material->shader_data->depth_test != GLES3::ShaderData::DEPTH_TEST_ENABLED) {
 		// material is only meant for alpha pass
 		flags |= GeometryInstanceSurface::FLAG_PASS_ALPHA;
 		if (p_material->shader_data->uses_depth_prepass_alpha &&
-			!(p_material->shader_data->depth_draw == GLES3::SceneShaderData::DEPTH_DRAW_DISABLED ||
+			!(p_material->shader_data->depth_draw == GLES3::ShaderData::DEPTH_DRAW_DISABLED ||
 				p_material->shader_data->depth_test !=
-					GLES3::SceneShaderData::DEPTH_TEST_ENABLED)) {
+					GLES3::ShaderData::DEPTH_TEST_ENABLED)) {
 			flags |= GeometryInstanceSurface::FLAG_PASS_DEPTH;
 			flags |= GeometryInstanceSurface::FLAG_PASS_SHADOW;
 		}
@@ -305,7 +305,7 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 	}
 
 	if (p_material->shader_data->stencil_enabled) {
-		if (p_material->shader_data->stencil_flags & GLES3::SceneShaderData::STENCIL_FLAG_READ) {
+		if (p_material->shader_data->stencil_flags & GLES3::ShaderData::STENCIL_FLAG_READ) {
 			// Stencil materials which read from the stencil buffer must be in the alpha pass.
 			// This is critical to preserve compatibility once we'll have the compositor.
 			if (!(flags & GeometryInstanceSurface::FLAG_PASS_ALPHA)) {
@@ -320,7 +320,7 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 		}
 	}
 
-	GLES3::SceneMaterialData* material_shadow = nullptr;
+	GLES3::MaterialData* material_shadow = nullptr;
 	void* surface_shadow = nullptr;
 	if (!p_material->shader_data->uses_particle_trails &&
 		!p_material->shader_data->writes_modelview_or_projection &&
@@ -329,9 +329,8 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 		!p_material->shader_data->uses_alpha && !p_material->shader_data->uses_world_coordinates &&
 		!p_material->shader_data->wireframe) {
 		flags |= GeometryInstanceSurface::FLAG_USES_SHARED_SHADOW_MATERIAL;
-		material_shadow =
-			static_cast<GLES3::SceneMaterialData*>(GLES3::MaterialStorage::material_get_data(
-				scene_globals.default_material, RSE::SHADER_SPATIAL));
+		material_shadow = GLES3::MaterialStorage::material_get_data(
+			scene_globals.default_material, RSE::SHADER_SPATIAL);
 
 		RID shadow_mesh = GLES3::MeshStorage::mesh_get_shadow_mesh(p_mesh);
 
@@ -400,10 +399,10 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 }
 
 void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material_chain(
-	GeometryInstanceGLES3* ginstance, uint32_t p_surface, GLES3::SceneMaterialData* p_material_data,
+	GeometryInstanceGLES3* ginstance, uint32_t p_surface, GLES3::MaterialData* p_material_data,
 	RID p_mat_src, RID p_mesh)
 {
-	GLES3::SceneMaterialData* material_data = p_material_data;
+	GLES3::MaterialData* material_data = p_material_data;
 
 	_geometry_instance_add_surface_with_material(ginstance, p_surface, material_data,
 		p_mat_src.get_local_index(), GLES3::MaterialStorage::material_get_shader_id(p_mat_src),
@@ -411,8 +410,8 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material_chain(
 
 	while (material_data->next_pass.is_valid()) {
 		RID next_pass = material_data->next_pass;
-		material_data = static_cast<GLES3::SceneMaterialData*>(
-			GLES3::MaterialStorage::material_get_data(next_pass, RSE::SHADER_SPATIAL));
+		material_data =
+			GLES3::MaterialStorage::material_get_data(next_pass, RSE::SHADER_SPATIAL);
 		if (!material_data || !material_data->shader_data->valid) {
 			break;
 		}
@@ -434,11 +433,11 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface(
 	m_src = ginstance->data->material_override.is_valid() ? ginstance->data->material_override
 														  : p_material;
 
-	GLES3::SceneMaterialData* material_data = nullptr;
+	GLES3::MaterialData* material_data = nullptr;
 
 	if (m_src.is_valid()) {
-		material_data = static_cast<GLES3::SceneMaterialData*>(
-			GLES3::MaterialStorage::material_get_data(m_src, RSE::SHADER_SPATIAL));
+		material_data =
+			GLES3::MaterialStorage::material_get_data(m_src, RSE::SHADER_SPATIAL);
 		if (!material_data || !material_data->shader_data->valid) {
 			material_data = nullptr;
 		}
@@ -451,9 +450,8 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface(
 		}
 	}
 	else {
-		material_data =
-			static_cast<GLES3::SceneMaterialData*>(GLES3::MaterialStorage::material_get_data(
-				scene_globals.default_material, RSE::SHADER_SPATIAL));
+		material_data = GLES3::MaterialStorage::material_get_data(
+			scene_globals.default_material, RSE::SHADER_SPATIAL);
 		m_src = scene_globals.default_material;
 	}
 
@@ -465,8 +463,8 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface(
 	if (ginstance->data->material_overlay.is_valid()) {
 		m_src = ginstance->data->material_overlay;
 
-		material_data = static_cast<GLES3::SceneMaterialData*>(
-			GLES3::MaterialStorage::material_get_data(m_src, RSE::SHADER_SPATIAL));
+		material_data =
+			GLES3::MaterialStorage::material_get_data(m_src, RSE::SHADER_SPATIAL);
 		if (material_data && material_data->shader_data->valid) {
 			if (ginstance->data->dirty_dependencies) {
 				GLES3::MaterialStorage::material_update_dependency(
@@ -749,27 +747,27 @@ void RasterizerSceneGLES3::_update_dirty_skys()
 	dirty_sky_list = nullptr;
 }
 
-GLES3::SkyMaterialData* RasterizerSceneGLES3::_get_sky_material_data(RID p_env)
+GLES3::MaterialData* RasterizerSceneGLES3::_get_sky_material_data(RID p_env)
 {
 	ERR_FAIL_COND_V(p_env.is_null(), nullptr);
 
 	Sky* sky = sky_owner.get_or_null(environment_get_sky(p_env));
 	RSE::EnvironmentBG background = environment_get_background(p_env);
 
-	GLES3::SkyMaterialData* material_data = nullptr;
+	GLES3::MaterialData* material_data = nullptr;
 	RID sky_material;
 
 	if (background == RSE::ENV_BG_CLEAR_COLOR || background == RSE::ENV_BG_COLOR) {
 		sky_material = sky_globals.fog_material;
-		material_data = static_cast<GLES3::SkyMaterialData*>(
-			GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY));
+		material_data =
+			GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY);
 	}
 	else if (sky) {
 		sky_material = sky->material;
 
 		if (sky_material.is_valid()) {
-			material_data = static_cast<GLES3::SkyMaterialData*>(
-				GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY));
+			material_data =
+				GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY);
 			if (!material_data || !material_data->shader_data->valid) {
 				material_data = nullptr;
 			}
@@ -778,8 +776,8 @@ GLES3::SkyMaterialData* RasterizerSceneGLES3::_get_sky_material_data(RID p_env)
 
 	if (!material_data) {
 		sky_material = sky_globals.default_material;
-		material_data = static_cast<GLES3::SkyMaterialData*>(
-			GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY));
+		material_data =
+			GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY);
 	}
 
 	return material_data;
@@ -791,10 +789,10 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 {
 	ERR_FAIL_COND(p_render_data->environment.is_null());
 
-	GLES3::SkyMaterialData* material_data = _get_sky_material_data(p_render_data->environment);
+	GLES3::MaterialData* material_data = _get_sky_material_data(p_render_data->environment);
 	ERR_FAIL_NULL(material_data);
 
-	GLES3::SkyShaderData* shader_data = material_data->shader_data;
+	GLES3::ShaderData* shader_data = material_data->shader_data;
 	ERR_FAIL_NULL(shader_data);
 
 	Sky* sky = sky_owner.get_or_null(environment_get_sky(p_render_data->environment));
@@ -1025,11 +1023,11 @@ void RasterizerSceneGLES3::_draw_sky(RID p_env, const Projection& p_projection,
 {
 	ERR_FAIL_COND(p_env.is_null());
 
-	GLES3::SkyMaterialData* material_data = _get_sky_material_data(p_env);
+	GLES3::MaterialData* material_data = _get_sky_material_data(p_env);
 	ERR_FAIL_NULL(material_data);
 	material_data->bind_uniforms();
 
-	GLES3::SkyShaderData* shader_data = material_data->shader_data;
+	GLES3::ShaderData* shader_data = material_data->shader_data;
 	ERR_FAIL_NULL(shader_data);
 
 	uint64_t spec_constants = p_use_multiview ? SkyShaderGLES3::USE_MULTIVIEW : 0;
@@ -1123,11 +1121,11 @@ void RasterizerSceneGLES3::_update_sky_radiance(RID p_env, const Projection& p_p
 {
 	ERR_FAIL_COND(p_env.is_null());
 
-	GLES3::SkyMaterialData* material_data = _get_sky_material_data(p_env);
+	GLES3::MaterialData* material_data = _get_sky_material_data(p_env);
 	ERR_FAIL_NULL(material_data);
 	material_data->bind_uniforms();
 
-	GLES3::SkyShaderData* shader_data = material_data->shader_data;
+	GLES3::ShaderData* shader_data = material_data->shader_data;
 	ERR_FAIL_NULL(shader_data);
 
 	Sky* sky = sky_owner.get_or_null(environment_get_sky(p_env));
@@ -3266,7 +3264,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
 		scene_state.enable_gl_blend(false);
 	}
-	scene_state.current_blend_mode = GLES3::SceneShaderData::BLEND_MODE_MIX;
+	scene_state.current_blend_mode = GLES3::ShaderData::BLEND_MODE_MIX;
 
 	scene_state.enable_gl_scissor_test(false);
 	scene_state.enable_gl_depth_test(true);
@@ -3718,8 +3716,8 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 	GLuint prev_vertex_array_gl = 0;
 	GLuint prev_index_array_gl = 0;
 
-	GLES3::SceneMaterialData* prev_material_data = nullptr;
-	GLES3::SceneShaderData* prev_shader = nullptr;
+	GLES3::MaterialData* prev_material_data = nullptr;
+	GLES3::ShaderData* prev_shader = nullptr;
 	GeometryInstanceGLES3* prev_inst = nullptr;
 	SceneShaderGLES3::ShaderVariant prev_variant = SceneShaderGLES3::ShaderVariant::MODE_COLOR;
 	SceneShaderGLES3::ShaderVariant shader_variant =
@@ -3822,8 +3820,8 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 			continue;
 		}
 
-		GLES3::SceneShaderData* shader;
-		GLES3::SceneMaterialData* material_data;
+		GLES3::ShaderData* shader;
+		GLES3::MaterialData* material_data;
 		void* mesh_surface;
 
 		if constexpr (p_pass_mode == PASS_MODE_SHADOW) {
@@ -3858,10 +3856,10 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 		if constexpr (p_pass_mode == PASS_MODE_COLOR_TRANSPARENT) {
 			scene_state.enable_gl_depth_test(
-				shader->depth_test != GLES3::SceneShaderData::DEPTH_TEST_DISABLED);
+				shader->depth_test != GLES3::ShaderData::DEPTH_TEST_DISABLED);
 		}
 
-		if (shader->depth_test == GLES3::SceneShaderData::DEPTH_TEST_ENABLED_INVERTED) {
+		if (shader->depth_test == GLES3::ShaderData::DEPTH_TEST_ENABLED_INVERTED) {
 			scene_state.set_gl_depth_func(GL_LESS);
 		}
 		else {
@@ -3869,14 +3867,14 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 		}
 
 		if constexpr (p_pass_mode != PASS_MODE_SHADOW) {
-			if (shader->depth_draw == GLES3::SceneShaderData::DEPTH_DRAW_OPAQUE) {
+			if (shader->depth_draw == GLES3::ShaderData::DEPTH_DRAW_OPAQUE) {
 				scene_state.enable_gl_depth_draw(
 					(p_pass_mode == PASS_MODE_COLOR && !GLES3::Config::use_depth_prepass) ||
 					p_pass_mode == PASS_MODE_DEPTH || p_pass_mode == PASS_MODE_MOTION_VECTORS);
 			}
 			else {
 				scene_state.enable_gl_depth_draw(
-					shader->depth_draw == GLES3::SceneShaderData::DEPTH_DRAW_ALWAYS);
+					shader->depth_draw == GLES3::ShaderData::DEPTH_DRAW_ALWAYS);
 			}
 		}
 
@@ -3905,7 +3903,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 			// Stencil.
 			if (p_pass_mode != PASS_MODE_DEPTH && shader->stencil_enabled) {
 				static const GLenum
-					stencil_compare_table[GLES3::SceneShaderData::STENCIL_COMPARE_MAX] = {
+					stencil_compare_table[GLES3::ShaderData::STENCIL_COMPARE_MAX] = {
 						GL_LESS,
 						GL_EQUAL,
 						GL_LEQUAL,
@@ -3921,16 +3919,16 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 				GLenum stencil_op_dpfail = GL_KEEP;
 				GLenum stencil_op_dppass = GL_KEEP;
 
-				if (shader->stencil_flags & GLES3::SceneShaderData::STENCIL_FLAG_READ) {
+				if (shader->stencil_flags & GLES3::ShaderData::STENCIL_FLAG_READ) {
 					stencil_compare_mask = 255;
 				}
 
-				if (shader->stencil_flags & GLES3::SceneShaderData::STENCIL_FLAG_WRITE) {
+				if (shader->stencil_flags & GLES3::ShaderData::STENCIL_FLAG_WRITE) {
 					stencil_op_dppass = GL_REPLACE;
 					stencil_write_mask = 255;
 				}
 
-				if (shader->stencil_flags & GLES3::SceneShaderData::STENCIL_FLAG_WRITE_DEPTH_FAIL) {
+				if (shader->stencil_flags & GLES3::ShaderData::STENCIL_FLAG_WRITE_DEPTH_FAIL) {
 					stencil_op_dpfail = GL_REPLACE;
 					stencil_write_mask = 255;
 				}
@@ -3977,9 +3975,9 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 			if constexpr (p_pass_mode == PASS_MODE_COLOR ||
 						  p_pass_mode == PASS_MODE_COLOR_TRANSPARENT) {
-				GLES3::SceneShaderData::BlendMode desired_blend_mode;
+				GLES3::ShaderData::BlendMode desired_blend_mode;
 				if (pass > 0) {
-					desired_blend_mode = GLES3::SceneShaderData::BLEND_MODE_ADD;
+					desired_blend_mode = GLES3::ShaderData::BLEND_MODE_ADD;
 				}
 				else {
 					desired_blend_mode = shader->blend_mode;
@@ -3987,7 +3985,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 				if (desired_blend_mode != scene_state.current_blend_mode) {
 					switch (desired_blend_mode) {
-					case GLES3::SceneShaderData::BLEND_MODE_MIX: {
+					case GLES3::ShaderData::BLEND_MODE_MIX: {
 						glBlendEquation(GL_FUNC_ADD);
 						if (p_render_data->transparent_bg) {
 							glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE,
@@ -3999,19 +3997,19 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 						}
 
 					} break;
-					case GLES3::SceneShaderData::BLEND_MODE_ADD: {
+					case GLES3::ShaderData::BLEND_MODE_ADD: {
 						glBlendEquation(GL_FUNC_ADD);
 						glBlendFunc(
 							p_pass_mode == PASS_MODE_COLOR_TRANSPARENT ? GL_SRC_ALPHA : GL_ONE,
 							GL_ONE);
 
 					} break;
-					case GLES3::SceneShaderData::BLEND_MODE_SUB: {
+					case GLES3::ShaderData::BLEND_MODE_SUB: {
 						glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
 						glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 					} break;
-					case GLES3::SceneShaderData::BLEND_MODE_MUL: {
+					case GLES3::ShaderData::BLEND_MODE_MUL: {
 						glBlendEquation(GL_FUNC_ADD);
 						if (p_render_data->transparent_bg) {
 							glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_DST_ALPHA, GL_ZERO);
@@ -4021,12 +4019,13 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 						}
 
 					} break;
-					case GLES3::SceneShaderData::BLEND_MODE_PREMULT_ALPHA: {
+					case GLES3::ShaderData::BLEND_MODE_PREMULT_ALPHA: {
 						glBlendEquation(GL_FUNC_ADD);
 						glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 					} break;
-					case GLES3::SceneShaderData::BLEND_MODE_ALPHA_TO_COVERAGE: {
+					case GLES3::ShaderData::BLEND_MODE_ALPHA_TO_COVERAGE:
+					default: {
 						// Do nothing for now.
 					} break;
 					}
@@ -5366,9 +5365,8 @@ void fragment() {
         GLES3::MaterialStorage::material_initialize(scene_globals.default_material);
         GLES3::MaterialStorage::material_set_shader(
             scene_globals.default_material, scene_globals.default_shader);
-        default_material_data_ptr =
-            static_cast<GLES3::SceneMaterialData*>(GLES3::MaterialStorage::material_get_data(
-                scene_globals.default_material, RSE::SHADER_SPATIAL));
+        default_material_data_ptr = GLES3::MaterialStorage::material_get_data(
+            scene_globals.default_material, RSE::SHADER_SPATIAL);
     }
 
     {
@@ -5391,9 +5389,8 @@ void fragment() {
         GLES3::MaterialStorage::material_initialize(scene_globals.overdraw_material);
         GLES3::MaterialStorage::material_set_shader(
             scene_globals.overdraw_material, scene_globals.overdraw_shader);
-        overdraw_material_data_ptr =
-            static_cast<GLES3::SceneMaterialData*>(GLES3::MaterialStorage::material_get_data(
-                scene_globals.overdraw_material, RSE::SHADER_SPATIAL));
+        overdraw_material_data_ptr = GLES3::MaterialStorage::material_get_data(
+            scene_globals.overdraw_material, RSE::SHADER_SPATIAL);
     }
 
     {

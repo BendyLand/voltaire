@@ -35,7 +35,7 @@
 
 class Material;
 
-class DrawableTexture2D : public Texture2D
+class DrawableTexture2D final : public Texture2D
 {
 public:
 	enum DrawableFormat

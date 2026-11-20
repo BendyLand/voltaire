@@ -30,10 +30,35 @@
 /**************************************************************************/
 
 #include "compressed_texture.h"
+
+#include "core/config/project_settings.h"
 #include "core/io/file_access.h"
+#include "core/io/marshalls.h"
 #include "core/io/resource_loader.h"
 #include "scene/resources/bit_map.h"
 #include "servers/rendering/renderer.h"
+
+static const char* compression_mode_names[7] = {
+	"Lossless", "Lossy", "Basis Universal", "S3TC", "ETC2", "BPTC", "ASTC"};
+
+static CompressedTexture2D::CompressionMode get_expected_compression_mode(Image::Format format)
+{
+	if ((format >= Image::FORMAT_DXT1 && format <= Image::FORMAT_RGTC_RG) ||
+		format == Image::FORMAT_DXT5_RA_AS_RG) {
+		return CompressedTexture2D::COMPRESSION_MODE_S3TC;
+	}
+	else if (format >= Image::FORMAT_ETC && format <= Image::FORMAT_ETC2_RA_AS_RG) {
+		return CompressedTexture2D::COMPRESSION_MODE_ETC2;
+	}
+	else if (format >= Image::FORMAT_BPTC_RGBA && format <= Image::FORMAT_BPTC_RGBFU) {
+		return CompressedTexture2D::COMPRESSION_MODE_BPTC;
+	}
+	else if ((format >= Image::FORMAT_ASTC_4x4 && format <= Image::FORMAT_ASTC_8x8_HDR) ||
+			 (format >= Image::FORMAT_ASTC_6x6 && format <= Image::FORMAT_ASTC_6x6_HDR)) {
+		return CompressedTexture2D::COMPRESSION_MODE_ASTC;
+	}
+	ERR_FAIL_V(CompressedTexture2D::COMPRESSION_MODE_LOSSLESS);
+}
 
 Error CompressedTexture2D::_load_data(const String& p_path, int& r_width, int& r_height,
 	Ref<Image>& image, bool& r_request_3d, bool& r_request_normal, bool& r_request_roughness,
@@ -69,17 +94,13 @@ Error CompressedTexture2D::_load_data(const String& p_path, int& r_width, int& r
 	f->get_32();
 
 #ifdef TOOLS_ENABLED
-
 	r_request_3d = request_3d_callback && df & FORMAT_BIT_DETECT_3D;
 	r_request_roughness = request_roughness_callback && df & FORMAT_BIT_DETECT_ROUGNESS;
 	r_request_normal = request_normal_callback && df & FORMAT_BIT_DETECT_NORMAL;
-
 #else
-
 	r_request_3d = false;
 	r_request_roughness = false;
 	r_request_normal = false;
-
 #endif
 	if (!(df & FORMAT_BIT_STREAM)) {
 		p_size_limit = 0;
@@ -135,6 +156,254 @@ CompressedTexture2D::TextureFormatRoughnessRequestCallback
 CompressedTexture2D::TextureFormatRequestCallback CompressedTexture2D::request_normal_callback =
 	nullptr;
 
+bool CompressedTexture2D::keep_all_compressed_buffers = false;
+
+void CompressedTexture2D::_set_data(const Vector<uint8_t>& p_data)
+{
+	if (p_data.is_empty()) {
+		return; // nothing to do
+	}
+
+	const uint8_t* data = p_data.ptr();
+	uint32_t data_size = p_data.size();
+	ERR_FAIL_COND(data_size < 20);
+	is_portable = true;
+	compression_mode = CompressionMode(decode_uint16(data));
+	PortableDataFormat data_format = PortableDataFormat(decode_uint16(data + 2));
+	format = Image::Format(decode_uint32(data + 4));
+	uint32_t mipmap_count = decode_uint32(data + 8);
+	w = int(decode_uint32(data + 12));
+	h = int(decode_uint32(data + 16));
+	mipmaps = mipmap_count > 1;
+
+	data += 20;
+	data_size -= 20;
+
+	Ref<Image> image;
+
+	switch (compression_mode) {
+	case COMPRESSION_MODE_LOSSLESS:
+	case COMPRESSION_MODE_LOSSY: {
+		ImageMemLoadFunc loader_func;
+		if (data_format == PORTABLE_DATA_FORMAT_UNDEFINED) {
+			loader_func = nullptr;
+		}
+		else if (data_format == PORTABLE_DATA_FORMAT_PNG) {
+			loader_func = Image::_png_mem_unpacker_func;
+		}
+		else if (data_format == PORTABLE_DATA_FORMAT_WEBP) {
+			loader_func = Image::_webp_mem_loader_func;
+		}
+		else {
+			ERR_FAIL();
+		}
+		Vector<uint8_t> image_data;
+
+		ERR_FAIL_COND(data_size < 4);
+		for (uint32_t i = 0; i < mipmap_count; i++) {
+			uint32_t mipsize = decode_uint32(data);
+			data += 4;
+			data_size -= 4;
+			ERR_FAIL_COND(mipsize > data_size);
+			Ref<Image> img = loader_func == nullptr ? memnew(Image(data, data_size))
+													: Ref<Image>(loader_func(data, data_size));
+			ERR_FAIL_COND(img->is_empty());
+			if (img->get_format() != format) { // May happen due to webp/png in the tiny mipmaps.
+				img->convert(format);
+			}
+			image_data.append_array(img->get_data());
+
+			data += mipsize;
+			data_size -= mipsize;
+		}
+
+		image.instantiate(w, h, mipmaps, format, image_data);
+	} break;
+	case COMPRESSION_MODE_BASIS_UNIVERSAL: {
+		ERR_FAIL_NULL(Image::basis_universal_unpacker_ptr);
+		image = Image::basis_universal_unpacker_ptr(data, data_size);
+		format = image->get_format();
+	} break;
+	case COMPRESSION_MODE_S3TC:
+	case COMPRESSION_MODE_ETC2:
+	case COMPRESSION_MODE_BPTC:
+	case COMPRESSION_MODE_ASTC: {
+		image.instantiate(w, h, mipmaps, format, p_data.slice(20));
+	} break;
+	}
+	ERR_FAIL_COND(image.is_null());
+
+	if (texture.is_null()) {
+		texture = Renderer::texture_2d_create(image);
+	}
+	else {
+		RID new_texture = Renderer::texture_2d_create(image);
+		Renderer::texture_replace(texture, new_texture);
+	}
+
+	image_stored = true;
+	size_override = Size2(w, h);
+	Renderer::texture_set_size_override(texture, size_override.width, size_override.height);
+	alpha_cache.unref();
+
+	if (keep_all_compressed_buffers || keep_compressed_buffer) {
+		compressed_buffer = p_data;
+	}
+	else {
+		compressed_buffer.clear();
+	}
+}
+
+Vector<uint8_t> CompressedTexture2D::_get_data() const { return compressed_buffer; }
+
+CompressedTexture2D::CompressionMode CompressedTexture2D::get_compression_mode() const
+{
+	return compression_mode;
+}
+
+void CompressedTexture2D::create_from_image(const Ref<Image>& p_image,
+	CompressionMode p_compression_mode, bool p_normal_map, float p_lossy_quality)
+{
+	ERR_FAIL_COND(p_image.is_null() || p_image->is_empty());
+
+	Vector<uint8_t> buffer;
+
+	buffer.resize(20);
+	encode_uint16(p_compression_mode, buffer.ptrw());
+	encode_uint16(PORTABLE_DATA_FORMAT_UNDEFINED, buffer.ptrw() + 2);
+	encode_uint32(p_image->get_format(), buffer.ptrw() + 4);
+	encode_uint32(p_image->get_mipmap_count() + 1, buffer.ptrw() + 8);
+	encode_uint32(p_image->get_width(), buffer.ptrw() + 12);
+	encode_uint32(p_image->get_height(), buffer.ptrw() + 16);
+
+	switch (p_compression_mode) {
+	case COMPRESSION_MODE_LOSSLESS:
+	case COMPRESSION_MODE_LOSSY: {
+		bool lossless_force_png =
+			GLOBAL_GET_CACHED(bool, "rendering/textures/lossless_compression/force_png") ||
+			!Image::_webp_mem_loader_func; // WebP module disabled.
+		bool use_webp = !lossless_force_png && p_image->get_width() <= 16383 &&
+						p_image->get_height() <= 16383; // WebP has a size limit.
+		for (int i = 0; i < p_image->get_mipmap_count() + 1; i++) {
+			Vector<uint8_t> data;
+			if (p_compression_mode == COMPRESSION_MODE_LOSSY) {
+				data = Image::webp_lossy_packer(
+					i ? p_image->get_image_from_mipmap(i) : p_image, p_lossy_quality);
+				encode_uint16(PORTABLE_DATA_FORMAT_WEBP, buffer.ptrw() + 2);
+			}
+			else {
+				if (use_webp) {
+					data = Image::webp_lossless_packer(
+						i ? p_image->get_image_from_mipmap(i) : p_image);
+					encode_uint16(PORTABLE_DATA_FORMAT_WEBP, buffer.ptrw() + 2);
+				}
+				else {
+					data = Image::png_packer(i ? p_image->get_image_from_mipmap(i) : p_image);
+					encode_uint16(PORTABLE_DATA_FORMAT_PNG, buffer.ptrw() + 2);
+				}
+			}
+			int data_len = data.size();
+			buffer.resize(buffer.size() + 4);
+			encode_uint32(data_len, buffer.ptrw() + buffer.size() - 4);
+			buffer.append_array(data);
+		}
+	} break;
+	case COMPRESSION_MODE_BASIS_UNIVERSAL: {
+#ifdef TOOLS_ENABLED
+		ERR_FAIL_COND(p_image->is_compressed());
+		encode_uint16(PORTABLE_DATA_FORMAT_BASIS_UNIVERSAL, buffer.ptrw() + 2);
+		Image::UsedChannels uc = p_image->detect_used_channels(
+			p_normal_map ? Image::COMPRESS_SOURCE_NORMAL : Image::COMPRESS_SOURCE_GENERIC);
+		Vector<uint8_t> budata = Image::basis_universal_packer(p_image, uc, basisu_params);
+		buffer.append_array(budata);
+#else
+		ERR_FAIL_MSG("Basis Universal compression can only run in editor build.");
+#endif
+	} break;
+	case COMPRESSION_MODE_S3TC:
+	case COMPRESSION_MODE_ETC2:
+	case COMPRESSION_MODE_BPTC:
+	case COMPRESSION_MODE_ASTC: {
+		encode_uint16(PORTABLE_DATA_FORMAT_IMAGE, buffer.ptrw() + 2);
+		Ref<Image> copy = p_image;
+		if (p_image->is_compressed()) {
+			CompressionMode expected_compression_mode =
+				get_expected_compression_mode(p_image->get_format());
+			ERR_FAIL_COND_MSG(expected_compression_mode != p_compression_mode,
+				vformat("Mismatched compression mode for image format %s, expected %s, got %s.",
+					Image::get_format_name(p_image->get_format()),
+					compression_mode_names[expected_compression_mode],
+					compression_mode_names[p_compression_mode]));
+		}
+		encode_uint32(copy->get_format(), buffer.ptrw() + 4);
+		buffer.append_array(copy->get_data());
+	} break;
+	}
+
+	_set_data(buffer);
+}
+
+void CompressedTexture2D::update(const Ref<Image>& p_image)
+{
+	ERR_FAIL_COND_MSG(p_image.is_null(), "Invalid image");
+	ERR_FAIL_COND_MSG(texture.is_null(), "Texture is not initialized.");
+	ERR_FAIL_COND_MSG(p_image->get_width() != w || p_image->get_height() != h,
+		"The new image dimensions must match the texture size.");
+	ERR_FAIL_COND_MSG(p_image->get_format() != format,
+		"The new image format must match the texture's image format.");
+	ERR_FAIL_COND_MSG(mipmaps != p_image->has_mipmaps(),
+		"The new image mipmaps configuration must match the texture's image mipmaps configuration");
+
+	Renderer::texture_2d_update(texture, p_image);
+	alpha_cache.unref();
+	image_stored = true;
+	emit_changed();
+}
+
+void CompressedTexture2D::set_size_override(const Size2& p_size)
+{
+	size_override = p_size;
+	if (p_size.width > 0) {
+		w = int(p_size.width);
+	}
+	if (p_size.height > 0) {
+		h = int(p_size.height);
+	}
+	Renderer::texture_set_size_override(texture, size_override.width, size_override.height);
+}
+
+Size2 CompressedTexture2D::get_size_override() const { return size_override; }
+
+void CompressedTexture2D::set_keep_all_compressed_buffers(bool p_keep)
+{
+	keep_all_compressed_buffers = p_keep;
+}
+
+bool CompressedTexture2D::is_keeping_all_compressed_buffers()
+{
+	return keep_all_compressed_buffers;
+}
+
+void CompressedTexture2D::set_keep_compressed_buffer(bool p_keep)
+{
+	keep_compressed_buffer = p_keep;
+	if (!p_keep) {
+		compressed_buffer.clear();
+	}
+}
+
+bool CompressedTexture2D::is_keeping_compressed_buffer() const
+{
+	return keep_compressed_buffer;
+}
+
+void CompressedTexture2D::set_basisu_compressor_params(
+	int p_uastc_level, float p_rdo_quality_loss)
+{
+	basisu_params.uastc_level = p_uastc_level;
+	basisu_params.rdo_quality_loss = p_rdo_quality_loss;
+}
+
 Image::Format CompressedTexture2D::get_format() const { return format; }
 
 String CompressedTexture2D::get_load_path() const { return path_to_file; }
@@ -181,10 +450,40 @@ void CompressedTexture2D::draw_rect_region(RID p_canvas_item, const Rect2& p_rec
 		p_canvas_item, p_rect, texture, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 }
 
-bool CompressedTexture2D::has_alpha() const { return false; }
+bool CompressedTexture2D::is_pixel_opaque(int p_x, int p_y) const
+{
+	if (alpha_cache.is_valid()) {
+		int aw = int(alpha_cache->get_size().width);
+		int ah = int(alpha_cache->get_size().height);
+		if (aw == 0 || ah == 0 || w == 0 || h == 0) {
+			return true;
+		}
+
+		int x = p_x * aw / w;
+		int y = p_y * ah / h;
+
+		x = CLAMP(x, 0, aw - 1);
+		y = CLAMP(y, 0, ah - 1);
+
+		return alpha_cache->get_bit(x, y);
+	}
+
+	return true;
+}
+
+bool CompressedTexture2D::has_alpha() const
+{
+	if (is_portable) {
+		return (format == Image::FORMAT_LA8 || format == Image::FORMAT_RGBA8);
+	}
+	return false;
+}
 
 Ref<Image> CompressedTexture2D::get_image() const
 {
+	if (is_portable && !image_stored) {
+		return Ref<Image>();
+	}
 	if (texture.is_valid()) {
 		return Renderer::texture_2d_get(texture);
 	}
@@ -207,6 +506,55 @@ void CompressedTexture2D::reload_from_file()
 	}
 
 	load(path);
+}
+
+Error CompressedTexture2D::load(const String& p_path)
+{
+	int lw, lh;
+	Ref<Image> image;
+	image.instantiate();
+
+	bool request_3d = false;
+	bool request_normal = false;
+	bool request_roughness = false;
+	int mipmap_limit = 0;
+
+	Error err = _load_data(p_path, lw, lh, image, request_3d, request_normal, request_roughness,
+		mipmap_limit);
+	if (err != OK) {
+		return err;
+	}
+
+	path_to_file = p_path;
+
+	if (texture.is_valid()) {
+		RID new_texture = Renderer::texture_2d_create(image);
+		Renderer::texture_replace(texture, new_texture);
+	}
+	else {
+		texture = Renderer::texture_2d_create(image);
+	}
+	if (lw || lh) {
+		Renderer::texture_set_size_override(texture, lw, lh);
+	}
+
+	w = lw;
+	h = lh;
+	format = image->get_format();
+	mipmaps = image->has_mipmaps();
+	is_portable = false;
+	image_stored = true;
+	alpha_cache.unref();
+
+	if (get_path().is_empty()) {
+		Renderer::texture_set_path(texture, p_path);
+	}
+	else {
+		Renderer::texture_set_path(texture, get_path());
+	}
+
+	emit_changed();
+	return OK;
 }
 
 Ref<Image> CompressedTexture2D::load_image_from_file(Ref<FileAccess> f, int p_size_limit)
@@ -278,8 +626,6 @@ Ref<Image> CompressedTexture2D::load_image_from_file(Ref<FileAccess> f, int p_si
 			sh = MAX(sh >> 1, 1);
 		}
 
-		// print_line("mipmap read total: " + itos(mipmap_images.size()));
-
 		Ref<Image> image;
 		image.instantiate();
 
@@ -287,7 +633,6 @@ Ref<Image> CompressedTexture2D::load_image_from_file(Ref<FileAccess> f, int p_si
 			// only one image (which will most likely be the case anyway for this format)
 			image = mipmap_images[0];
 			return image;
-
 		}
 		else {
 			// rarer use case, but needs to be supported
@@ -310,7 +655,6 @@ Ref<Image> CompressedTexture2D::load_image_from_file(Ref<FileAccess> f, int p_si
 			image->set_data(w, h, true, mipmap_images[0]->get_format(), img_data);
 			return image;
 		}
-
 	}
 	else if (data_format == DATA_FORMAT_BASIS_UNIVERSAL) {
 		int sw = w;
@@ -370,7 +714,6 @@ Ref<Image> CompressedTexture2D::load_image_from_file(Ref<FileAccess> f, int p_si
 
 	return Ref<Image>();
 }
-
 
 CompressedTexture2D::~CompressedTexture2D()
 {
@@ -436,6 +779,47 @@ Error CompressedTexture3D::_load_data(const String& p_path, Vector<Ref<Image>>& 
 	return OK;
 }
 
+Error CompressedTexture3D::load(const String& p_path)
+{
+	Vector<Ref<Image>> data;
+	Image::Format r_format;
+	int r_width, r_height, r_depth;
+	bool r_mipmaps;
+
+	Error err = _load_data(p_path, data, r_format, r_width, r_height, r_depth, r_mipmaps);
+	if (err != OK) {
+		return err;
+	}
+
+	path_to_file = p_path;
+
+	RID new_tex = Renderer::texture_3d_create(r_format, r_width, r_height, r_depth, r_mipmaps, data);
+	ERR_FAIL_COND_V(new_tex.is_null(), ERR_CANT_CREATE);
+
+	if (texture.is_valid()) {
+		Renderer::texture_replace(texture, new_tex);
+	}
+	else {
+		texture = new_tex;
+	}
+
+	format = r_format;
+	w = r_width;
+	h = r_height;
+	d = r_depth;
+	mipmaps = r_mipmaps;
+
+	if (get_path().is_empty()) {
+		Renderer::texture_set_path(texture, p_path);
+	}
+	else {
+		Renderer::texture_set_path(texture, get_path());
+	}
+
+	emit_changed();
+	return OK;
+}
+
 String CompressedTexture3D::get_load_path() const { return path_to_file; }
 
 int CompressedTexture3D::get_width() const { return w; }
@@ -480,7 +864,6 @@ void CompressedTexture3D::reload_from_file()
 	load(path);
 }
 
-
 CompressedTexture3D::~CompressedTexture3D()
 {
 	if (texture.is_valid()) {
@@ -522,7 +905,7 @@ Error CompressedTextureLayered::_load_data(
 	}
 
 	uint32_t layer_count = f->get_32(); // layer count
-	uint32_t type = f->get_32();		// layer count
+	uint32_t type = f->get_32();		// layer type
 	ERR_FAIL_COND_V((int)type != layered_type, ERR_INVALID_DATA);
 
 	uint32_t df = f->get_32(); // data format
@@ -544,6 +927,46 @@ Error CompressedTextureLayered::_load_data(
 		images.write[i] = image;
 	}
 
+	return OK;
+}
+
+Error CompressedTextureLayered::load(const String& p_path)
+{
+	Vector<Ref<Image>> images;
+	int mipmap_limit = 0;
+
+	Error err = _load_data(p_path, images, mipmap_limit);
+	if (err != OK) {
+		return err;
+	}
+
+	path_to_file = p_path;
+
+	RID new_tex =
+		Renderer::texture_2d_layered_create(images, RSE::TextureLayeredType(layered_type));
+	ERR_FAIL_COND_V(new_tex.is_null(), ERR_CANT_CREATE);
+
+	if (texture.is_valid()) {
+		Renderer::texture_replace(texture, new_tex);
+	}
+	else {
+		texture = new_tex;
+	}
+
+	w = images[0]->get_width();
+	h = images[0]->get_height();
+	mipmaps = images[0]->has_mipmaps();
+	format = images[0]->get_format();
+	layers = images.size();
+
+	if (get_path().is_empty()) {
+		Renderer::texture_set_path(texture, p_path);
+	}
+	else {
+		Renderer::texture_set_path(texture, get_path());
+	}
+
+	emit_changed();
 	return OK;
 }
 
@@ -596,7 +1019,6 @@ void CompressedTextureLayered::reload_from_file()
 	load(path);
 }
 
-
 CompressedTextureLayered::CompressedTextureLayered(LayeredType p_type) { layered_type = p_type; }
 
 CompressedTextureLayered::~CompressedTextureLayered()
@@ -606,11 +1028,3 @@ CompressedTextureLayered::~CompressedTextureLayered()
 		Renderer::free_rid(texture);
 	}
 }
-
-
-
-Error CompressedTextureLayered::load(String const&) {}
-
-Error CompressedTexture3D::load(String const&) {}
-
-Error CompressedTexture2D::load(String const&) {}
