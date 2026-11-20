@@ -30,8 +30,6 @@
 /**************************************************************************/
 
 #include "audio_stream_interactive.h"
-#include "audio_stream_playlist.h"
-#include "audio_stream_synchronized.h"
 #include "register_types.h"
 
 void initialize_interactive_music_module(ModuleInitializationLevel p_level) {}

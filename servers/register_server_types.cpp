@@ -36,7 +36,6 @@
 #include "servers/audio/audio_effect.h"
 #include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
-#include "servers/audio/effects/audio_stream_generator.h"
 #include "servers/camera/camera_feed.h"
 #include "servers/camera/camera_server.h"
 #include "servers/display/accessibility_server.h"

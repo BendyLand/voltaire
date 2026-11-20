@@ -31,13 +31,21 @@
 
 #pragma once
 
+#include "core/templates/local_vector.h"
 #include "servers/audio/audio_stream.h"
 
 class AudioStreamPlaybackInteractive;
 
-class AudioStreamInteractive : public AudioStream
+class AudioStreamInteractive final : public AudioStream
 {
 public:
+	enum Mode
+	{
+		MODE_CLIPS,
+		MODE_PLAYLIST,
+		MODE_SYNCHRONIZED,
+	};
+
 	enum TransitionFromTime
 	{
 		TRANSITION_FROM_TIME_IMMEDIATE,
@@ -79,16 +87,13 @@ public:
 
 private:
 	friend class AudioStreamPlaybackInteractive;
-	int sample_rate = 44100;
-	bool stereo = true;
-	int initial_clip = 0;
-
-	double time = 0;
 
 	enum
 	{
 		MAX_CLIPS = 63, // Because we use bitmasks for transition matching.
 		MAX_TRANSITIONS = 63,
+		MAX_STREAMS = 64,
+		MAX_SYNC_STREAMS = 32,
 	};
 
 	struct Clip
@@ -99,8 +104,6 @@ private:
 		AutoAdvanceMode auto_advance = AUTO_ADVANCE_DISABLED;
 		int auto_advance_next_clip = 0;
 	};
-
-	Clip clips[MAX_CLIPS];
 
 	struct Transition
 	{
@@ -139,23 +142,38 @@ private:
 		}
 	};
 
+	Mode mode = MODE_CLIPS;
+
+	// Clips / transitions state (MODE_CLIPS)
+	int sample_rate = 44100;
+	bool stereo = true;
+	int initial_clip = 0;
+	int clip_count = 0;
+	double time = 0;
+	uint64_t version = 1; // Used to stop playback instances for incompatibility.
+	LocalVector<Clip> clips;
 	HashMap<TransitionKey, Transition, TransitionKeyHasher> transition_map;
 
-	uint64_t version = 1; // Used to stop playback instances for incompatibility.
-	int clip_count = 0;
+	// Playlist & Synchronized state (MODE_PLAYLIST / MODE_SYNCHRONIZED)
+	bool shuffle = false;
+	bool loop = true;
+	double fade_time = 0.3;
+	int stream_count = 0;
+	LocalVector<Ref<AudioStream>> audio_streams;
+	LocalVector<float> audio_stream_volume_db;
 
 	HashSet<AudioStreamPlaybackInteractive*> playbacks;
 
 #ifdef TOOLS_ENABLED
-
 	mutable String stream_name_cache;
 	String _get_streams_hint() const;
-	void _inspector_array_swap_clip(uint32_t p_item_a, uint32_t p_item_b);
-
 #endif
 
 public:
-	// CLIPS
+	void set_mode(Mode p_mode);
+	Mode get_mode() const;
+
+	// CLIPS (MODE_CLIPS)
 	void set_clip_count(int p_count);
 	int get_clip_count() const;
 
@@ -174,8 +192,7 @@ public:
 	void set_clip_auto_advance_next_clip(int p_clip, int p_index);
 	int get_clip_auto_advance_next_clip(int p_clip) const;
 
-	// TRANSITIONS
-
+	// TRANSITIONS (MODE_CLIPS)
 	void add_transition(int p_from_clip, int p_to_clip, TransitionFromTime p_from_time,
 		TransitionToTime p_to_time, FadeMode p_fade_mode, float p_fade_beats,
 		bool p_use_filler_flip = false, int p_filler_clip = -1, bool p_hold_previous = false);
@@ -192,32 +209,49 @@ public:
 
 	PackedInt32Array get_transition_list() const;
 
+	// PLAYLIST & SYNCHRONIZED STREAMS
+	void set_stream_count(int p_count);
+	int get_stream_count() const;
+
+	// PLAYLIST (MODE_PLAYLIST)
+	void set_fade_time(float p_time);
+	float get_fade_time() const;
+	void set_shuffle(bool p_shuffle);
+	bool get_shuffle() const;
+	void set_loop(bool p_loop);
+	void set_list_stream(int p_stream_index, Ref<AudioStream> p_stream);
+	Ref<AudioStream> get_list_stream(int p_stream_index) const;
+
+	// SYNCHRONIZED (MODE_SYNCHRONIZED)
+	void set_sync_stream(int p_stream_index, Ref<AudioStream> p_stream);
+	Ref<AudioStream> get_sync_stream(int p_stream_index) const;
+	void set_sync_stream_volume(int p_stream_index, float p_db);
+	float get_sync_stream_volume(int p_stream_index) const;
+
+	// AudioStream overrides
+	virtual double get_bpm() const override;
+	virtual int get_beat_count() const override;
+	virtual int get_bar_beats() const override;
+	virtual bool has_loop() const override;
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
-
-	virtual double get_length() const override { return 0; }
-
+	virtual double get_length() const override;
 	virtual bool is_meta_stream() const override { return true; }
 
 	AudioStreamInteractive();
 };
 
-class AudioStreamPlaybackInteractive : public AudioStreamPlayback
+class AudioStreamPlaybackInteractive final : public AudioStreamPlayback
 {
 	friend class AudioStreamInteractive;
 
 private:
-	Ref<AudioStreamInteractive> stream;
-	uint64_t version = 0;
-
 	enum
 	{
-		BUFFER_SIZE = 1024
+		BUFFER_SIZE = 1024,
+		MIX_BUFFER_SIZE = 128,
 	};
 
-	AudioFrame mix_buffer[BUFFER_SIZE];
-	AudioFrame temp_buffer[BUFFER_SIZE];
-
-	struct State
+	struct ClipState
 	{
 		Ref<AudioStream> stream;
 		Ref<AudioStreamPlayback> playback;
@@ -237,26 +271,60 @@ private:
 		}
 	};
 
-	State states[AudioStreamInteractive::MAX_CLIPS];
-	int playback_current = -1;
+	struct ClipsPlayback
+	{
+		uint64_t version = 0;
+		LocalVector<ClipState> states;
+		int playback_current = -1;
+		int return_memory = -1;
+		int switch_request = -1;
+	};
 
+	struct PlaylistPlayback
+	{
+		LocalVector<Ref<AudioStreamPlayback>> playback;
+		LocalVector<int> play_order;
+		double stream_todo = 0.0;
+		int fade_index = -1;
+		double fade_volume = 1.0;
+		int play_index = 0;
+		double offset = 0.0;
+		int loop_count = 0;
+	};
+
+	struct SyncPlayback
+	{
+		LocalVector<Ref<AudioStreamPlayback>> playback;
+	};
+
+	Ref<AudioStreamInteractive> stream;
 	bool active = false;
-	int return_memory = -1;
 
+	AudioFrame mix_buffer[BUFFER_SIZE];
+	AudioFrame temp_buffer[BUFFER_SIZE];
+
+	ClipsPlayback clips;
+	PlaylistPlayback playlist;
+	SyncPlayback sync;
+
+	// Clips helpers
 	void _mix_internal(int p_frames);
 	void _mix_internal_state(int p_state_idx, int p_frames);
-
 	void _queue(int p_to_clip_index, bool p_is_auto_advance);
 
-	int switch_request = -1;
+	// Playlist / Synchronized helpers
+	void _update_order();
+	void _update_playback_instances();
 
-protected:
+	int _mix_clips(AudioFrame* p_buffer, float p_rate_scale, int p_frames);
+	int _mix_playlist(AudioFrame* p_buffer, float p_rate_scale, int p_frames);
+	int _mix_sync(AudioFrame* p_buffer, float p_rate_scale, int p_frames);
 
 public:
 	virtual void start(double p_from_pos = 0.0) override;
 	virtual void stop() override;
 	virtual bool is_playing() const override;
-	virtual int get_loop_count() const override; // times it looped
+	virtual int get_loop_count() const override;
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
 	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
@@ -268,7 +336,5 @@ public:
 	int get_current_clip_index() const;
 
 	AudioStreamPlaybackInteractive() = default;
-	~AudioStreamPlaybackInteractive() = default;
+	~AudioStreamPlaybackInteractive();
 };
-
-

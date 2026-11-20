@@ -32,7 +32,6 @@
 #include "../../openxr_api.h"
 #include "../../openxr_util.h"
 #include "core/config/project_settings.h"
-#include "openxr_spatial_anchor.compat.inc"
 #include "openxr_spatial_anchor.h"
 #include "openxr_spatial_entity_extension.h"
 #include "servers/xr/xr_server.h"
@@ -51,143 +50,6 @@ void OpenXRSpatialAnchorCapability::finalize()
 	}
 	memdelete(data);
 	data = nullptr;
-}
-
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialCapabilityConfigurationAnchor
-
-bool OpenXRSpatialCapabilityConfigurationAnchor::has_valid_configuration() const
-{
-	ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
-
-	return OpenXRSpatialAnchorCapability::is_spatial_anchor_supported();
-}
-
-XrSpatialCapabilityConfigurationBaseHeaderEXT*
-OpenXRSpatialCapabilityConfigurationAnchor::get_configuration()
-{
-	ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
-
-	if (OpenXRSpatialAnchorCapability::is_spatial_anchor_supported()) {
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
-
-		anchor_enabled_components.clear();
-
-		// Guaranteed components:
-		anchor_enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT);
-
-		// enable optional components
-		if (OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
-			anchor_enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT);
-		}
-
-		anchor_config.enabledComponentCount = anchor_enabled_components.size();
-		anchor_config.enabledComponents = anchor_enabled_components.ptr();
-
-		// and return this.
-		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&anchor_config;
-	}
-
-	return nullptr;
-}
-
-PackedInt64Array OpenXRSpatialCapabilityConfigurationAnchor::_get_enabled_components() const
-{
-	PackedInt64Array components;
-
-	for (const XrSpatialComponentTypeEXT& component_type : anchor_enabled_components) {
-		components.push_back((int64_t)component_type);
-	}
-
-	return components;
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialComponentAnchorList
-
-void OpenXRSpatialComponentAnchorList::set_capacity(uint32_t p_capacity)
-{
-	entity_poses.resize(p_capacity);
-
-	anchor_list.locationCount = uint32_t(entity_poses.size());
-	anchor_list.locations = entity_poses.ptrw();
-}
-
-XrSpatialComponentTypeEXT OpenXRSpatialComponentAnchorList::get_component_type() const
-{
-	return XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT;
-}
-
-void* OpenXRSpatialComponentAnchorList::get_structure_data(void* p_next)
-{
-	anchor_list.next = p_next;
-	return &anchor_list;
-}
-
-Transform3D OpenXRSpatialComponentAnchorList::get_entity_pose(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, entity_poses.size(), Transform3D());
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	return OpenXRAPI::transform_from_pose(entity_poses[p_index]);
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialComponentPersistenceList
-
-void OpenXRSpatialComponentPersistenceList::set_capacity(uint32_t p_capacity)
-{
-	persist_data.resize(p_capacity);
-
-	persistence_list.persistDataCount = uint32_t(persist_data.size());
-	persistence_list.persistData = persist_data.ptrw();
-}
-
-XrSpatialComponentTypeEXT OpenXRSpatialComponentPersistenceList::get_component_type() const
-{
-	return XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT;
-}
-
-void* OpenXRSpatialComponentPersistenceList::get_structure_data(void* p_next)
-{
-	persistence_list.next = p_next;
-	return &persistence_list;
-}
-
-XrUuid OpenXRSpatialComponentPersistenceList::get_persistent_uuid(int64_t p_index) const
-{
-	XrUuid null_uuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-	ERR_FAIL_INDEX_V(p_index, persist_data.size(), null_uuid);
-
-	return persist_data[p_index].persistUuid;
-}
-
-String OpenXRSpatialComponentPersistenceList::_get_persistent_uuid(int64_t p_index) const
-{
-	return OpenXRUtil::string_from_xruuid(get_persistent_uuid(p_index));
-}
-
-XrSpatialPersistenceStateEXT OpenXRSpatialComponentPersistenceList::get_persistent_state(
-	int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, persist_data.size(), XR_SPATIAL_PERSISTENCE_STATE_MAX_ENUM_EXT);
-
-	return persist_data[p_index].persistState;
-}
-
-uint64_t OpenXRSpatialComponentPersistenceList::_get_persistent_state(int64_t p_index) const
-{
-	// TODO make a Godot constant that mirrors XrSpatialPersistenceStateEXT and return that
-	return (uint64_t)get_persistent_state(p_index);
-}
-
-String OpenXRSpatialComponentPersistenceList::get_persistence_state_name(
-	XrSpatialPersistenceStateEXT p_state)
-{
-	XR_ENUM_SWITCH(XrSpatialPersistenceStateEXT, p_state)
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -263,7 +125,9 @@ void OpenXRSpatialAnchorCapability::on_instance_destroyed()
 }
 
 bool OpenXRSpatialAnchorCapability::is_spatial_anchor_supported()
-{ return data != nullptr && data->spatial_anchor_supported; }
+{
+	return data != nullptr && data->spatial_anchor_supported;
+}
 
 bool OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()
 {
@@ -301,7 +165,8 @@ bool OpenXRSpatialAnchorCapability::_load_supported_persistence_scopes()
 		if (size > 0) {
 			data->supported_persistence_scopes.resize(size);
 			result = xrEnumerateSpatialPersistenceScopesEXT(instance, system_id,
-				data->supported_persistence_scopes.size(), &size, data->supported_persistence_scopes.ptrw());
+				data->supported_persistence_scopes.size(), &size,
+				data->supported_persistence_scopes.ptrw());
 			if (XR_FAILED(result)) {
 				ERR_FAIL_V_MSG(false, "OpenXR: Failed to query persistence scopes [" +
 										  OpenXRAPI::get_error_string(result) + "]");
@@ -311,7 +176,8 @@ bool OpenXRSpatialAnchorCapability::_load_supported_persistence_scopes()
 		if (is_print_verbose_enabled()) {
 			if (!data->supported_persistence_scopes.is_empty()) {
 				print_verbose("OpenXR: Supported spatial persistence scopes:");
-				for (const XrSpatialPersistenceScopeEXT& scope : data->supported_persistence_scopes) {
+				for (const XrSpatialPersistenceScopeEXT& scope :
+					data->supported_persistence_scopes) {
 					print_verbose(" - " + get_spatial_persistence_scope_name(scope));
 				}
 			}
@@ -353,8 +219,7 @@ XrSpatialPersistenceContextEXT OpenXRSpatialAnchorCapability::get_persistence_co
 	return persistence_context_data->persistence_context;
 }
 
-uint64_t OpenXRSpatialAnchorCapability::_get_persistence_context_handle(
-	RID p_persistence_context)
+uint64_t OpenXRSpatialAnchorCapability::_get_persistence_context_handle(RID p_persistence_context)
 {
 	return (uint64_t)get_persistence_context_handle(p_persistence_context);
 }
@@ -434,16 +299,17 @@ Ref<OpenXRAnchorTracker> OpenXRSpatialAnchorCapability::create_new_anchor(
 	}
 
 	XrSpatialAnchorCreateInfoEXT create_info = {
-		XR_TYPE_SPATIAL_ANCHOR_CREATE_INFO_EXT,	  // type
-		next,									  // next
-		OpenXRAPI::get_play_space(),			  // baseSpace
+		XR_TYPE_SPATIAL_ANCHOR_CREATE_INFO_EXT,  // type
+		next,                                    // next
+		OpenXRAPI::get_play_space(),             // baseSpace
 		OpenXRAPI::get_predicted_display_time(), // time
-		pose									  // pose
+		pose                                     // pose
 	};
 	XrSpatialEntityIdEXT entity_id;
 	XrSpatialEntityEXT entity;
 	XrResult result = xrCreateSpatialAnchorEXT(
-		OpenXRSpatialEntityExtension::get_spatial_context_handle(sc), &create_info, &entity_id, &entity);
+		OpenXRSpatialEntityExtension::get_spatial_context_handle(sc), &create_info, &entity_id,
+		&entity);
 	if (XR_FAILED(result)) { // Did our xrCreateSpatialContextCompleteEXT call fail?
 		ERR_FAIL_V_MSG(tracker,
 			"OpenXR: Failed to create anchor [" + OpenXRAPI::get_error_string(result) + "]");
@@ -502,11 +368,16 @@ void OpenXRSpatialAnchorCapability::remove_anchor(Ref<OpenXRAnchorTracker> p_anc
 }
 
 String OpenXRSpatialAnchorCapability::get_spatial_persistence_scope_name(
-	XrSpatialPersistenceScopeEXT p_scope){XR_ENUM_SWITCH(XrSpatialPersistenceScopeEXT, p_scope)}
+	XrSpatialPersistenceScopeEXT p_scope)
+{
+	XR_ENUM_SWITCH(XrSpatialPersistenceScopeEXT, p_scope)
+}
 
 String OpenXRSpatialAnchorCapability::get_spatial_persistence_context_result_name(
-	XrSpatialPersistenceContextResultEXT p_result){
-	XR_ENUM_SWITCH(XrSpatialPersistenceContextResultEXT, p_result)}
+	XrSpatialPersistenceContextResultEXT p_result)
+{
+	XR_ENUM_SWITCH(XrSpatialPersistenceContextResultEXT, p_result)
+}
 
 Ref<OpenXRFutureResult> OpenXRSpatialAnchorCapability::_create_spatial_context()
 {
@@ -519,5 +390,3 @@ void OpenXRSpatialAnchorCapability::on_session_created(XrSession_T* p_session) {
 void OpenXRSpatialAnchorCapability::on_session_destroyed() {}
 
 void OpenXRSpatialAnchorCapability::on_process() {}
-
-

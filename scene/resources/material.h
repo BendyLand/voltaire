@@ -41,6 +41,7 @@ class Material : public Resource
 	mutable RID material;
 	Ref<Material> next_pass;
 	int render_priority;
+	bool is_placeholder = false;
 
 	enum
 	{
@@ -82,12 +83,13 @@ public:
 	virtual Shader::Mode get_shader_mode() const;
 
 	virtual Ref<Resource> create_placeholder() const;
+	bool is_placeholder_material() const { return is_placeholder; }
 
 	Material();
 	virtual ~Material();
 };
 
-class ShaderMaterial : public Material
+class ShaderMaterial final : public Material
 {
 	Ref<Shader> shader;
 
@@ -123,7 +125,7 @@ public:
 	~ShaderMaterial();
 };
 
-class StandardMaterial3D : public Material
+class StandardMaterial3D final : public Material
 {
 private:
 	mutable Mutex material_rid_mutex;
@@ -905,14 +907,6 @@ public:
 
 	StandardMaterial3D(bool p_orm = false);
 	virtual ~StandardMaterial3D();
-};
-
-class PlaceholderMaterial : public Material
-{
-public:
-	virtual RID get_shader_rid() const override { return RID(); }
-
-	virtual Shader::Mode get_shader_mode() const override { return Shader::MODE_CANVAS_ITEM; }
 };
 
 //////////////////////

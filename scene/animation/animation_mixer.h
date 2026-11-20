@@ -36,7 +36,7 @@
 #include "scene/main/node.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/animation_library.h"
-#include "scene/resources/audio_stream_polyphonic.h"
+#include "servers/audio/audio_stream.h"
 
 class AnimatedValuesBackup;
 

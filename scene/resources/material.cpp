@@ -86,14 +86,17 @@ void Material::_mark_ready() { init_state = INIT_STATE_READY; }
 
 Shader::Mode Material::get_shader_mode() const
 {
-	Shader::Mode ret = Shader::MODE_MAX;
-	return ret;
+	if (is_placeholder) {
+		return Shader::MODE_CANVAS_ITEM;
+	}
+	return Shader::MODE_MAX;
 }
 
 Ref<Resource> Material::create_placeholder() const
 {
-	Ref<PlaceholderMaterial> placeholder;
+	Ref<Material> placeholder;
 	placeholder.instantiate();
+	placeholder->is_placeholder = true;
 	return placeholder;
 }
 

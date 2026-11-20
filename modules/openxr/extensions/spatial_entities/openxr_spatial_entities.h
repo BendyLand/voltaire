@@ -42,28 +42,143 @@
 
 #define XR_NULL_ENTITY 0x7FFFFFFF
 
-// Wrapper class for XrSpatialCapabilityConfigurationBaseHeaderEXT
-class OpenXRSpatialCapabilityConfigurationBaseHeader : public RefCounted
+// Consolidated capability configuration wrapper for XrSpatialCapabilityConfigurationBaseHeaderEXT
+class OpenXRSpatialCapabilityConfigurationBaseHeader final : public RefCounted
 {
 public:
-	virtual bool has_valid_configuration() const;
-	uint64_t _get_configurationgd();
-	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration();
+	enum CapabilityType
+	{
+		CAPABILITY_NONE,
+		CAPABILITY_ANCHOR,
+		CAPABILITY_PLANE_TRACKING,
+		CAPABILITY_QR_CODE,
+		CAPABILITY_MICRO_QR_CODE,
+		CAPABILITY_ARUCO,
+		CAPABILITY_APRIL_TAG,
+	};
 
-	OpenXRSpatialCapabilityConfigurationBaseHeader();
+	enum ArucoDict
+	{
+		ARUCO_DICT_4X4_50 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_50_EXT,
+		ARUCO_DICT_4X4_100 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_100_EXT,
+		ARUCO_DICT_4X4_250 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_250_EXT,
+		ARUCO_DICT_4X4_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_1000_EXT,
+		ARUCO_DICT_5X5_50 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_50_EXT,
+		ARUCO_DICT_5X5_100 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_100_EXT,
+		ARUCO_DICT_5X5_250 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_250_EXT,
+		ARUCO_DICT_5X5_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_1000_EXT,
+		ARUCO_DICT_6X6_50 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_50_EXT,
+		ARUCO_DICT_6X6_100 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_100_EXT,
+		ARUCO_DICT_6X6_250 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_250_EXT,
+		ARUCO_DICT_6X6_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_1000_EXT,
+		ARUCO_DICT_7X7_50 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_50_EXT,
+		ARUCO_DICT_7X7_100 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_100_EXT,
+		ARUCO_DICT_7X7_250 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_250_EXT,
+		ARUCO_DICT_7X7_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_1000_EXT,
+	};
+
+	enum AprilTagDict
+	{
+		APRIL_TAG_DICT_16H5 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_16H5_EXT,
+		APRIL_TAG_DICT_25H9 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_25H9_EXT,
+		APRIL_TAG_DICT_36H10 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H10_EXT,
+		APRIL_TAG_DICT_36H11 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT,
+	};
+
+	OpenXRSpatialCapabilityConfigurationBaseHeader(CapabilityType p_capability_type = CAPABILITY_NONE);
 	~OpenXRSpatialCapabilityConfigurationBaseHeader();
+
+	void set_capability_type(CapabilityType p_capability_type);
+	CapabilityType get_capability_type() const { return capability_type; }
+
+	bool has_valid_configuration() const;
+	uint64_t _get_configurationgd();
+	XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration();
+
+	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
+
+	// Plane tracking configuration queries
+	bool get_supports_mesh_2d();
+	bool get_supports_polygons();
+	bool get_supports_labels();
+
+	// ArUco dictionary configuration
+	void set_aruco_dict(XrSpatialMarkerArucoDictEXT p_dict);
+	XrSpatialMarkerArucoDictEXT get_aruco_dict() const;
+
+	// AprilTag dictionary configuration
+	void set_april_dict(XrSpatialMarkerAprilTagDictEXT p_dict);
+	XrSpatialMarkerAprilTagDictEXT get_april_dict() const;
+
+private:
+	CapabilityType capability_type = CAPABILITY_NONE;
+	int supports_mesh_2d = -1;
+	int supports_polygons = -1;
+	int supports_labels = -1;
+	XrSpatialMarkerArucoDictEXT aruco_dict = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_1000_EXT;
+	XrSpatialMarkerAprilTagDictEXT april_dict = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT;
+
+	Vector<XrSpatialComponentTypeEXT> enabled_components;
+
+	union ConfigPayload
+	{
+		XrSpatialCapabilityConfigurationBaseHeaderEXT base;
+		XrSpatialCapabilityConfigurationAnchorEXT anchor;
+		XrSpatialCapabilityConfigurationPlaneTrackingEXT plane;
+		XrSpatialCapabilityConfigurationQrCodeEXT qrcode;
+		XrSpatialCapabilityConfigurationMicroQrCodeEXT micro_qrcode;
+		XrSpatialCapabilityConfigurationArucoMarkerEXT aruco;
+		XrSpatialCapabilityConfigurationAprilTagEXT april_tag;
+
+		ConfigPayload()
+			: base{XR_TYPE_UNKNOWN, nullptr, XR_SPATIAL_CAPABILITY_MAX_ENUM_EXT, 0, nullptr}
+		{
+		}
+	} config;
+
+	PackedInt64Array _get_enabled_components() const;
+	void _set_aruco_dict(ArucoDict p_dict);
+	ArucoDict _get_aruco_dict() const;
+	void _set_april_dict(AprilTagDict p_dict);
+	AprilTagDict _get_april_dict() const;
 };
 
-// Wrapper class for our spatial component data returned by discovery queries
-class OpenXRSpatialComponentData : public RefCounted
+// Consolidated wrapper class for spatial component data returned by discovery and update queries
+class OpenXRSpatialComponentData final : public RefCounted
 {
 public:
+	enum ComponentKind
+	{
+		COMPONENT_NONE,
+		COMPONENT_QUERY_RESULT,
+		COMPONENT_BOUNDED_2D,
+		COMPONENT_BOUNDED_3D,
+		COMPONENT_PARENT,
+		COMPONENT_MESH_2D,
+		COMPONENT_MESH_3D,
+		COMPONENT_ANCHOR,
+		COMPONENT_PERSISTENCE,
+		COMPONENT_PLANE_ALIGNMENT,
+		COMPONENT_POLYGON_2D,
+		COMPONENT_PLANE_SEMANTIC_LABEL,
+		COMPONENT_MARKER,
+	};
+
 	enum PlaneAlignment
 	{
 		PLANE_ALIGNMENT_HORIZONTAL_UPWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_UPWARD_EXT,
 		PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD_EXT,
 		PLANE_ALIGNMENT_VERTICAL = XR_SPATIAL_PLANE_ALIGNMENT_VERTICAL_EXT,
 		PLANE_ALIGNMENT_ARBITRARY = XR_SPATIAL_PLANE_ALIGNMENT_ARBITRARY_EXT,
+	};
+
+	enum PlaneSemanticLabel
+	{
+		PLANE_SEMANTIC_LABEL_UNCATEGORIZED = XR_SPATIAL_PLANE_SEMANTIC_LABEL_UNCATEGORIZED_EXT,
+		PLANE_SEMANTIC_LABEL_FLOOR = XR_SPATIAL_PLANE_SEMANTIC_LABEL_FLOOR_EXT,
+		PLANE_SEMANTIC_LABEL_WALL = XR_SPATIAL_PLANE_SEMANTIC_LABEL_WALL_EXT,
+		PLANE_SEMANTIC_LABEL_CEILING = XR_SPATIAL_PLANE_SEMANTIC_LABEL_CEILING_EXT,
+		PLANE_SEMANTIC_LABEL_TABLE = XR_SPATIAL_PLANE_SEMANTIC_LABEL_TABLE_EXT,
 	};
 
 	enum MarkerType
@@ -76,12 +191,98 @@ public:
 		MARKER_TYPE_MAX
 	};
 
-	virtual void set_capacity(uint32_t p_capacity);
-	int64_t _get_component_typegd() const;
-	virtual XrSpatialComponentTypeEXT get_component_type() const;
-	virtual void* get_structure_data(void* p_next);
-	OpenXRSpatialComponentData();
+	OpenXRSpatialComponentData(ComponentKind p_kind = COMPONENT_NONE);
 	~OpenXRSpatialComponentData();
+
+	OpenXRSpatialComponentData(const OpenXRSpatialComponentData&) = delete;
+	OpenXRSpatialComponentData& operator=(const OpenXRSpatialComponentData&) = delete;
+
+	void set_component_kind(ComponentKind p_kind);
+	ComponentKind get_component_kind() const { return component_kind; }
+
+	void set_capacity(uint32_t p_capacity);
+	int64_t get_capacity() const { return capacity; }
+
+	int64_t _get_component_typegd() const;
+	XrSpatialComponentTypeEXT get_component_type() const;
+	void* get_structure_data(void* p_next);
+
+	// COMPONENT_QUERY_RESULT accessors
+	XrSpatialEntityIdEXT get_entity_id(int64_t p_index) const;
+	XrSpatialEntityTrackingStateEXT get_entity_state(int64_t p_index) const;
+	static String get_entity_tracking_state_name(XrSpatialEntityTrackingStateEXT p_tracking_state);
+
+	// COMPONENT_BOUNDED_2D / COMPONENT_BOUNDED_3D accessors
+	Transform3D get_center_pose(int64_t p_index) const;
+	Transform3D get_center_pose_2d(int64_t p_index) const;
+	Transform3D get_center_pose_3d(int64_t p_index) const;
+	Vector2 get_size_2d(int64_t p_index) const;
+	Vector3 get_size_3d(int64_t p_index) const;
+
+	// COMPONENT_PARENT accessors
+	RID get_parent(int64_t p_index) const;
+
+	// COMPONENT_MESH_2D / COMPONENT_MESH_3D / COMPONENT_POLYGON_2D accessors
+	Transform3D get_transform(int64_t p_index) const;
+	PackedVector2Array get_vertices(RID p_snapshot, int64_t p_index) const;
+	PackedInt32Array get_indices(RID p_snapshot, int64_t p_index) const;
+	Ref<Mesh> get_mesh(int64_t p_index) const;
+
+	// COMPONENT_ANCHOR accessors
+	Transform3D get_entity_pose(int64_t p_index) const;
+
+	// COMPONENT_PERSISTENCE accessors
+	XrUuid get_persistent_uuid(int64_t p_index) const;
+	XrSpatialPersistenceStateEXT get_persistent_state(int64_t p_index) const;
+	static String get_persistence_state_name(XrSpatialPersistenceStateEXT p_state);
+
+	// COMPONENT_PLANE_ALIGNMENT accessors
+	XrSpatialPlaneAlignmentEXT get_plane_alignment(int64_t p_index) const;
+
+	// COMPONENT_PLANE_SEMANTIC_LABEL accessors
+	XrSpatialPlaneSemanticLabelEXT get_plane_semantic_label(int64_t p_index) const;
+
+	// COMPONENT_MARKER accessors
+	MarkerType get_marker_type(int64_t p_index) const;
+	uint32_t get_marker_id(int64_t p_index) const;
+	XrSpatialBufferEXT get_marker_data(int64_t p_index) const;
+
+private:
+	ComponentKind component_kind = COMPONENT_NONE;
+	uint32_t capacity = 0;
+	void* data_ptr = nullptr;
+	XrSpatialEntityTrackingStateEXT* entity_states_ptr = nullptr;
+
+	union StructurePayload
+	{
+		XrSpatialComponentDataQueryResultEXT query_result;
+		XrSpatialComponentBounded2DListEXT bounded2d_list;
+		XrSpatialComponentBounded3DListEXT bounded3d_list;
+		XrSpatialComponentParentListEXT parent_list;
+		XrSpatialComponentMesh2DListEXT mesh2d_list;
+		XrSpatialComponentMesh3DListEXT mesh3d_list;
+		XrSpatialComponentAnchorListEXT anchor_list;
+		XrSpatialComponentPersistenceListEXT persistence_list;
+		XrSpatialComponentPlaneAlignmentListEXT plane_alignment_list;
+		XrSpatialComponentPolygon2DListEXT polygon2d_list;
+		XrSpatialComponentPlaneSemanticLabelListEXT plane_semantic_label_list;
+		XrSpatialComponentMarkerListEXT marker_list;
+
+		StructurePayload()
+			: query_result{XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT, nullptr, 0, 0, nullptr,
+				  0, 0, nullptr}
+		{
+		}
+	} structure;
+
+	void _free_buffers();
+	void _init_structure_header();
+
+	uint64_t _get_entity_id(int64_t p_index) const;
+	String _get_persistent_uuid(int64_t p_index) const;
+	uint64_t _get_persistent_state(int64_t p_index) const;
+	PlaneAlignment _get_plane_alignment(int64_t p_index) const;
+	PlaneSemanticLabel _get_plane_semantic_label(int64_t p_index) const;
 };
 
 // Unified tracker for spatial entities (generic, anchor, plane, marker)
@@ -219,115 +420,3 @@ private:
 	void _set_uuid(const String& p_uuid);
 	static bool uuid_is_equal(const XrUuid& p_a, const XrUuid& p_b);
 };
-
-class OpenXRSpatialComponentBounded2DList : public OpenXRSpatialComponentData
-{
-public:
-	virtual void set_capacity(uint32_t p_capacity) override;
-	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void* get_structure_data(void* p_next) override;
-
-	Transform3D get_center_pose(int64_t p_index) const;
-	Vector2 get_size(int64_t p_index) const;
-
-private:
-	Vector<XrSpatialBounded2DDataEXT> bounded2d_data;
-
-	XrSpatialComponentBounded2DListEXT bounded2d_list = {
-		XR_TYPE_SPATIAL_COMPONENT_BOUNDED_2D_LIST_EXT, nullptr, 0, nullptr};
-};
-
-class OpenXRSpatialComponentBounded3DList : public OpenXRSpatialComponentData
-{
-public:
-	virtual void set_capacity(uint32_t p_capacity) override;
-	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void* get_structure_data(void* p_next) override;
-
-	Transform3D get_center_pose(int64_t p_index) const;
-	Vector3 get_size(int64_t p_index) const;
-
-private:
-	Vector<XrBoxf> bounded3d_data;
-
-	XrSpatialComponentBounded3DListEXT bounded3d_list = {
-		XR_TYPE_SPATIAL_COMPONENT_BOUNDED_3D_LIST_EXT, nullptr, 0, nullptr};
-};
-
-class OpenXRSpatialComponentParentList : public OpenXRSpatialComponentData
-{
-public:
-	virtual void set_capacity(uint32_t p_capacity) override;
-	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void* get_structure_data(void* p_next) override;
-
-	RID get_parent(int64_t p_index) const;
-
-private:
-	Vector<XrSpatialEntityIdEXT> parent_data;
-
-	XrSpatialComponentParentListEXT parent_list = {
-		XR_TYPE_SPATIAL_COMPONENT_PARENT_LIST_EXT, nullptr, 0, nullptr};
-};
-
-class OpenXRSpatialComponentMesh2DList : public OpenXRSpatialComponentData
-{
-public:
-	virtual void set_capacity(uint32_t p_capacity) override;
-	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void* get_structure_data(void* p_next) override;
-
-	Transform3D get_transform(int64_t p_index) const;
-	PackedVector2Array get_vertices(RID p_snapshot, int64_t p_index) const;
-	PackedInt32Array get_indices(RID p_snapshot, int64_t p_index) const;
-
-private:
-	Vector<XrSpatialMeshDataEXT> mesh2d_data;
-
-	XrSpatialComponentMesh2DListEXT mesh2d_list = {
-		XR_TYPE_SPATIAL_COMPONENT_MESH_2D_LIST_EXT, nullptr, 0, nullptr};
-};
-
-class OpenXRSpatialComponentMesh3DList : public OpenXRSpatialComponentData
-{
-public:
-	virtual void set_capacity(uint32_t p_capacity) override;
-	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void* get_structure_data(void* p_next) override;
-
-	Transform3D get_transform(int64_t p_index) const;
-	Ref<Mesh> get_mesh(int64_t p_index) const;
-
-private:
-	Vector<XrSpatialMeshDataEXT> mesh3d_data;
-
-	XrSpatialComponentMesh3DListEXT mesh3d_list = {
-		XR_TYPE_SPATIAL_COMPONENT_MESH_3D_LIST_EXT, nullptr, 0, nullptr};
-};
-
-class OpenXRSpatialQueryResultData : public OpenXRSpatialComponentData
-{
-public:
-	virtual void set_capacity(uint32_t p_capacity) override;
-	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void* get_structure_data(void* p_next) override;
-
-	int64_t get_capacity() const { return entity_ids.size(); }
-
-	XrSpatialEntityIdEXT get_entity_id(int64_t p_index) const;
-	XrSpatialEntityTrackingStateEXT get_entity_state(int64_t p_index) const;
-
-	static String get_entity_tracking_state_name(XrSpatialEntityTrackingStateEXT p_tracking_state);
-
-private:
-	Vector<XrSpatialEntityIdEXT> entity_ids;
-	Vector<XrSpatialEntityTrackingStateEXT> entity_states;
-
-	XrSpatialComponentDataQueryResultEXT query_result = {
-		XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT, nullptr, 0, 0, nullptr, 0, 0, nullptr};
-
-	uint64_t _get_entity_id(int64_t p_index) const;
-	OpenXRSpatialEntityTracker::EntityTrackingState _get_entity_state(int64_t p_index) const;
-};
-
-

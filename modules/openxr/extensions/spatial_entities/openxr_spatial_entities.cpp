@@ -29,12 +29,949 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <cstring>
 #include <openxr/openxr.h>
 #include "../../openxr_api.h"
 #include "../../openxr_util.h"
+#include "core/config/project_settings.h"
+#include "openxr_spatial_anchor.h"
 #include "openxr_spatial_entities.h"
 #include "openxr_spatial_entity_extension.h"
+#include "openxr_spatial_marker_tracking.h"
+#include "openxr_spatial_plane_tracking.h"
 #include "servers/xr/xr_server.h"
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialCapabilityConfigurationBaseHeader
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::OpenXRSpatialCapabilityConfigurationBaseHeader(
+	CapabilityType p_capability_type)
+{
+	set_capability_type(p_capability_type);
+}
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::~OpenXRSpatialCapabilityConfigurationBaseHeader() {}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::set_capability_type(
+	CapabilityType p_capability_type)
+{
+	capability_type = p_capability_type;
+	enabled_components.clear();
+
+	if (capability_type == CAPABILITY_ARUCO) {
+		int dict = GLOBAL_GET_CACHED(int, "xr/openxr/extensions/spatial_entity/aruco_dict");
+		aruco_dict = (XrSpatialMarkerArucoDictEXT)(XR_SPATIAL_MARKER_ARUCO_DICT_4X4_50_EXT + dict);
+	}
+	else if (capability_type == CAPABILITY_APRIL_TAG) {
+		int dict = GLOBAL_GET_CACHED(int, "xr/openxr/extensions/spatial_entity/april_tag_dict");
+		april_dict =
+			(XrSpatialMarkerAprilTagDictEXT)(XR_SPATIAL_MARKER_APRIL_TAG_DICT_16H5_EXT + dict);
+	}
+}
+
+bool OpenXRSpatialCapabilityConfigurationBaseHeader::has_valid_configuration() const
+{
+	switch (capability_type) {
+	case CAPABILITY_ANCHOR: {
+		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
+		return OpenXRSpatialAnchorCapability::is_spatial_anchor_supported();
+	}
+	case CAPABILITY_PLANE_TRACKING: {
+		ERR_FAIL_COND_V(!OpenXRSpatialPlaneTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialPlaneTrackingCapability::is_supported();
+	}
+	case CAPABILITY_QR_CODE: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported();
+	}
+	case CAPABILITY_MICRO_QR_CODE: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported();
+	}
+	case CAPABILITY_ARUCO: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialMarkerTrackingCapability::is_aruco_supported();
+	}
+	case CAPABILITY_APRIL_TAG: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported();
+	}
+	case CAPABILITY_NONE:
+	default:
+		return false;
+	}
+}
+
+uint64_t OpenXRSpatialCapabilityConfigurationBaseHeader::_get_configurationgd()
+{
+	return (uint64_t)get_configuration();
+}
+
+XrSpatialCapabilityConfigurationBaseHeaderEXT*
+OpenXRSpatialCapabilityConfigurationBaseHeader::get_configuration()
+{
+	switch (capability_type) {
+	case CAPABILITY_ANCHOR: {
+		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialAnchorCapability::is_spatial_anchor_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT);
+		if (OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
+			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT);
+		}
+
+		config.anchor = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ANCHOR_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_ANCHOR_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.anchor;
+	}
+	case CAPABILITY_PLANE_TRACKING: {
+		ERR_FAIL_COND_V(!OpenXRSpatialPlaneTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialPlaneTrackingCapability::is_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PLANE_ALIGNMENT_EXT);
+
+		if (get_supports_mesh_2d()) {
+			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT);
+		}
+		else if (get_supports_polygons()) {
+			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT);
+		}
+		if (get_supports_labels()) {
+			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT);
+		}
+
+		config.plane = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_PLANE_TRACKING_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.plane;
+	}
+	case CAPABILITY_QR_CODE: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+
+		config.qrcode = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_QR_CODE_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.qrcode;
+	}
+	case CAPABILITY_MICRO_QR_CODE: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+
+		config.micro_qrcode = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_MICRO_QR_CODE_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.micro_qrcode;
+	}
+	case CAPABILITY_ARUCO: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialMarkerTrackingCapability::is_aruco_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+
+		config.aruco = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ARUCO_MARKER_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+			aruco_dict,
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.aruco;
+	}
+	case CAPABILITY_APRIL_TAG: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+
+		config.april_tag = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_APRIL_TAG_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+			april_dict,
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.april_tag;
+	}
+	case CAPABILITY_NONE:
+	default:
+		return nullptr;
+	}
+}
+
+bool OpenXRSpatialCapabilityConfigurationBaseHeader::get_supports_mesh_2d()
+{
+	if (supports_mesh_2d == -1) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+		supports_mesh_2d =
+			OpenXRSpatialEntityExtension::supports_component_type(
+				XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT, XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT)
+				? 1
+				: 0;
+	}
+
+	return supports_mesh_2d == 1;
+}
+
+bool OpenXRSpatialCapabilityConfigurationBaseHeader::get_supports_polygons()
+{
+	if (supports_polygons == -1) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+		supports_polygons =
+			OpenXRSpatialEntityExtension::supports_component_type(
+				XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT, XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT)
+				? 1
+				: 0;
+	}
+
+	return supports_polygons == 1;
+}
+
+bool OpenXRSpatialCapabilityConfigurationBaseHeader::get_supports_labels()
+{
+	if (supports_labels == -1) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+		supports_labels =
+			OpenXRSpatialEntityExtension::supports_component_type(
+				XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,
+				XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT)
+				? 1
+				: 0;
+	}
+
+	return supports_labels == 1;
+}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::set_aruco_dict(
+	XrSpatialMarkerArucoDictEXT p_dict)
+{
+	aruco_dict = p_dict;
+}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::_set_aruco_dict(ArucoDict p_dict)
+{
+	set_aruco_dict((XrSpatialMarkerArucoDictEXT)p_dict);
+}
+
+XrSpatialMarkerArucoDictEXT OpenXRSpatialCapabilityConfigurationBaseHeader::get_aruco_dict() const
+{
+	return aruco_dict;
+}
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::ArucoDict
+OpenXRSpatialCapabilityConfigurationBaseHeader::_get_aruco_dict() const
+{
+	return (ArucoDict)get_aruco_dict();
+}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::set_april_dict(
+	XrSpatialMarkerAprilTagDictEXT p_dict)
+{
+	april_dict = p_dict;
+}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::_set_april_dict(AprilTagDict p_dict)
+{
+	set_april_dict((XrSpatialMarkerAprilTagDictEXT)p_dict);
+}
+
+XrSpatialMarkerAprilTagDictEXT
+OpenXRSpatialCapabilityConfigurationBaseHeader::get_april_dict() const
+{
+	return april_dict;
+}
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::AprilTagDict
+OpenXRSpatialCapabilityConfigurationBaseHeader::_get_april_dict() const
+{
+	return (AprilTagDict)get_april_dict();
+}
+
+PackedInt64Array OpenXRSpatialCapabilityConfigurationBaseHeader::_get_enabled_components() const
+{
+	PackedInt64Array components;
+
+	for (const XrSpatialComponentTypeEXT& component_type : enabled_components) {
+		components.push_back((int64_t)component_type);
+	}
+
+	return components;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialComponentData
+
+OpenXRSpatialComponentData::OpenXRSpatialComponentData(ComponentKind p_kind)
+	: component_kind(p_kind)
+{
+	_init_structure_header();
+}
+
+OpenXRSpatialComponentData::~OpenXRSpatialComponentData() { _free_buffers(); }
+
+void OpenXRSpatialComponentData::_free_buffers()
+{
+	if (data_ptr != nullptr) {
+		memfree(data_ptr);
+		data_ptr = nullptr;
+	}
+	if (entity_states_ptr != nullptr) {
+		memfree(entity_states_ptr);
+		entity_states_ptr = nullptr;
+	}
+	capacity = 0;
+}
+
+void OpenXRSpatialComponentData::_init_structure_header()
+{
+	switch (component_kind) {
+	case COMPONENT_QUERY_RESULT:
+		structure.query_result = {
+			XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT,
+			nullptr,
+			capacity,
+			0,
+			static_cast<XrSpatialEntityIdEXT*>(data_ptr),
+			capacity,
+			0,
+			entity_states_ptr,
+		};
+		break;
+	case COMPONENT_BOUNDED_2D:
+		structure.bounded2d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_BOUNDED_2D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialBounded2DDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_BOUNDED_3D:
+		structure.bounded3d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_BOUNDED_3D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrBoxf*>(data_ptr),
+		};
+		break;
+	case COMPONENT_PARENT:
+		structure.parent_list = {
+			XR_TYPE_SPATIAL_COMPONENT_PARENT_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialEntityIdEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_MESH_2D:
+		structure.mesh2d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_MESH_2D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialMeshDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_MESH_3D:
+		structure.mesh3d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_MESH_3D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialMeshDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_ANCHOR:
+		structure.anchor_list = {
+			XR_TYPE_SPATIAL_COMPONENT_ANCHOR_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrPosef*>(data_ptr),
+		};
+		break;
+	case COMPONENT_PERSISTENCE:
+		structure.persistence_list = {
+			XR_TYPE_SPATIAL_COMPONENT_PERSISTENCE_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialPersistenceDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_PLANE_ALIGNMENT:
+		structure.plane_alignment_list = {
+			XR_TYPE_SPATIAL_COMPONENT_PLANE_ALIGNMENT_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialPlaneAlignmentEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_POLYGON_2D:
+		structure.polygon2d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_POLYGON_2D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialPolygon2DDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_PLANE_SEMANTIC_LABEL:
+		structure.plane_semantic_label_list = {
+			XR_TYPE_SPATIAL_COMPONENT_PLANE_SEMANTIC_LABEL_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialPlaneSemanticLabelEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_MARKER:
+		structure.marker_list = {
+			XR_TYPE_SPATIAL_COMPONENT_MARKER_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialMarkerDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_NONE:
+	default:
+		break;
+	}
+}
+
+void OpenXRSpatialComponentData::set_component_kind(ComponentKind p_kind)
+{
+	if (component_kind == p_kind) {
+		return;
+	}
+	_free_buffers();
+	component_kind = p_kind;
+	_init_structure_header();
+}
+
+void OpenXRSpatialComponentData::set_capacity(uint32_t p_capacity)
+{
+	if (component_kind == COMPONENT_NONE) {
+		_free_buffers();
+		return;
+	}
+
+	if (p_capacity == 0) {
+		_free_buffers();
+		_init_structure_header();
+		return;
+	}
+
+	size_t elem_size = 0;
+	switch (component_kind) {
+	case COMPONENT_QUERY_RESULT:
+		elem_size = sizeof(XrSpatialEntityIdEXT);
+		break;
+	case COMPONENT_BOUNDED_2D:
+		elem_size = sizeof(XrSpatialBounded2DDataEXT);
+		break;
+	case COMPONENT_BOUNDED_3D:
+		elem_size = sizeof(XrBoxf);
+		break;
+	case COMPONENT_PARENT:
+		elem_size = sizeof(XrSpatialEntityIdEXT);
+		break;
+	case COMPONENT_MESH_2D:
+	case COMPONENT_MESH_3D:
+		elem_size = sizeof(XrSpatialMeshDataEXT);
+		break;
+	case COMPONENT_ANCHOR:
+		elem_size = sizeof(XrPosef);
+		break;
+	case COMPONENT_PERSISTENCE:
+		elem_size = sizeof(XrSpatialPersistenceDataEXT);
+		break;
+	case COMPONENT_PLANE_ALIGNMENT:
+		elem_size = sizeof(XrSpatialPlaneAlignmentEXT);
+		break;
+	case COMPONENT_POLYGON_2D:
+		elem_size = sizeof(XrSpatialPolygon2DDataEXT);
+		break;
+	case COMPONENT_PLANE_SEMANTIC_LABEL:
+		elem_size = sizeof(XrSpatialPlaneSemanticLabelEXT);
+		break;
+	case COMPONENT_MARKER:
+		elem_size = sizeof(XrSpatialMarkerDataEXT);
+		break;
+	case COMPONENT_NONE:
+	default:
+		return;
+	}
+
+	uint32_t old_capacity = capacity;
+	data_ptr = memrealloc(data_ptr, elem_size * p_capacity);
+	ERR_FAIL_NULL(data_ptr);
+	if (p_capacity > old_capacity) {
+		memset(static_cast<uint8_t*>(data_ptr) + elem_size * old_capacity, 0,
+			elem_size * (p_capacity - old_capacity));
+	}
+
+	if (component_kind == COMPONENT_QUERY_RESULT) {
+		entity_states_ptr = static_cast<XrSpatialEntityTrackingStateEXT*>(memrealloc(
+			entity_states_ptr, sizeof(XrSpatialEntityTrackingStateEXT) * p_capacity));
+		ERR_FAIL_NULL(entity_states_ptr);
+		if (p_capacity > old_capacity) {
+			memset(entity_states_ptr + old_capacity, 0,
+				sizeof(XrSpatialEntityTrackingStateEXT) * (p_capacity - old_capacity));
+		}
+	}
+
+	capacity = p_capacity;
+	_init_structure_header();
+}
+
+int64_t OpenXRSpatialComponentData::_get_component_typegd() const
+{
+	return (int64_t)get_component_type();
+}
+
+XrSpatialComponentTypeEXT OpenXRSpatialComponentData::get_component_type() const
+{
+	switch (component_kind) {
+	case COMPONENT_BOUNDED_2D:
+		return XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT;
+	case COMPONENT_BOUNDED_3D:
+		return XR_SPATIAL_COMPONENT_TYPE_BOUNDED_3D_EXT;
+	case COMPONENT_PARENT:
+		return XR_SPATIAL_COMPONENT_TYPE_PARENT_EXT;
+	case COMPONENT_MESH_2D:
+		return XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT;
+	case COMPONENT_MESH_3D:
+		return XR_SPATIAL_COMPONENT_TYPE_MESH_3D_EXT;
+	case COMPONENT_ANCHOR:
+		return XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT;
+	case COMPONENT_PERSISTENCE:
+		return XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT;
+	case COMPONENT_PLANE_ALIGNMENT:
+		return XR_SPATIAL_COMPONENT_TYPE_PLANE_ALIGNMENT_EXT;
+	case COMPONENT_POLYGON_2D:
+		return XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT;
+	case COMPONENT_PLANE_SEMANTIC_LABEL:
+		return XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT;
+	case COMPONENT_MARKER:
+		return XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT;
+	case COMPONENT_QUERY_RESULT:
+	case COMPONENT_NONE:
+	default:
+		return XR_SPATIAL_COMPONENT_TYPE_MAX_ENUM_EXT;
+	}
+}
+
+void* OpenXRSpatialComponentData::get_structure_data(void* p_next)
+{
+	switch (component_kind) {
+	case COMPONENT_QUERY_RESULT:
+		structure.query_result.next = p_next;
+		structure.query_result.entityIdCountOutput = 0;
+		structure.query_result.entityStateCountOutput = 0;
+		return &structure.query_result;
+	case COMPONENT_BOUNDED_2D:
+		structure.bounded2d_list.next = p_next;
+		return &structure.bounded2d_list;
+	case COMPONENT_BOUNDED_3D:
+		structure.bounded3d_list.next = p_next;
+		return &structure.bounded3d_list;
+	case COMPONENT_PARENT:
+		structure.parent_list.next = p_next;
+		return &structure.parent_list;
+	case COMPONENT_MESH_2D:
+		structure.mesh2d_list.next = p_next;
+		return &structure.mesh2d_list;
+	case COMPONENT_MESH_3D:
+		structure.mesh3d_list.next = p_next;
+		return &structure.mesh3d_list;
+	case COMPONENT_ANCHOR:
+		structure.anchor_list.next = p_next;
+		return &structure.anchor_list;
+	case COMPONENT_PERSISTENCE:
+		structure.persistence_list.next = p_next;
+		return &structure.persistence_list;
+	case COMPONENT_PLANE_ALIGNMENT:
+		structure.plane_alignment_list.next = p_next;
+		return &structure.plane_alignment_list;
+	case COMPONENT_POLYGON_2D:
+		structure.polygon2d_list.next = p_next;
+		return &structure.polygon2d_list;
+	case COMPONENT_PLANE_SEMANTIC_LABEL:
+		structure.plane_semantic_label_list.next = p_next;
+		return &structure.plane_semantic_label_list;
+	case COMPONENT_MARKER:
+		structure.marker_list.next = p_next;
+		return &structure.marker_list;
+	case COMPONENT_NONE:
+	default:
+		return nullptr;
+	}
+}
+
+XrSpatialEntityIdEXT OpenXRSpatialComponentData::get_entity_id(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_QUERY_RESULT, XR_NULL_ENTITY);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_NULL_ENTITY);
+
+	return static_cast<const XrSpatialEntityIdEXT*>(data_ptr)[p_index];
+}
+
+uint64_t OpenXRSpatialComponentData::_get_entity_id(int64_t p_index) const
+{
+	return (uint64_t)get_entity_id(p_index);
+}
+
+XrSpatialEntityTrackingStateEXT OpenXRSpatialComponentData::get_entity_state(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(
+		component_kind != COMPONENT_QUERY_RESULT, XR_SPATIAL_ENTITY_TRACKING_STATE_MAX_ENUM_EXT);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_ENTITY_TRACKING_STATE_MAX_ENUM_EXT);
+
+	return entity_states_ptr[p_index];
+}
+
+String OpenXRSpatialComponentData::get_entity_tracking_state_name(
+	XrSpatialEntityTrackingStateEXT p_tracking_state)
+{
+	XR_ENUM_SWITCH(XrSpatialEntityTrackingStateEXT, p_tracking_state)
+}
+
+Transform3D OpenXRSpatialComponentData::get_center_pose(int64_t p_index) const
+{
+	if (component_kind == COMPONENT_BOUNDED_2D) {
+		return get_center_pose_2d(p_index);
+	}
+	if (component_kind == COMPONENT_BOUNDED_3D) {
+		return get_center_pose_3d(p_index);
+	}
+	ERR_FAIL_V(Transform3D());
+}
+
+Transform3D OpenXRSpatialComponentData::get_center_pose_2d(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_2D, Transform3D());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
+
+	const XrSpatialBounded2DDataEXT* arr =
+		static_cast<const XrSpatialBounded2DDataEXT*>(data_ptr);
+	return OpenXRAPI::transform_from_pose(arr[p_index].center);
+}
+
+Transform3D OpenXRSpatialComponentData::get_center_pose_3d(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_3D, Transform3D());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
+
+	const XrBoxf* arr = static_cast<const XrBoxf*>(data_ptr);
+	return OpenXRAPI::transform_from_pose(arr[p_index].center);
+}
+
+Vector2 OpenXRSpatialComponentData::get_size_2d(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_2D, Vector2());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Vector2());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector2());
+
+	const XrExtent2Df& extents =
+		static_cast<const XrSpatialBounded2DDataEXT*>(data_ptr)[p_index].extents;
+	return Vector2(extents.width, extents.height);
+}
+
+Vector3 OpenXRSpatialComponentData::get_size_3d(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_3D, Vector3());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Vector3());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector3());
+
+	const XrExtent3Df& extents = static_cast<const XrBoxf*>(data_ptr)[p_index].extents;
+	return Vector3(extents.width, extents.height, extents.depth);
+}
+
+RID OpenXRSpatialComponentData::get_parent(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_PARENT, RID());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, RID());
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), RID());
+
+	const XrSpatialEntityIdEXT* arr = static_cast<const XrSpatialEntityIdEXT*>(data_ptr);
+	return OpenXRSpatialEntityExtension::find_spatial_entity(arr[p_index]);
+}
+
+Transform3D OpenXRSpatialComponentData::get_transform(int64_t p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
+
+	switch (component_kind) {
+	case COMPONENT_MESH_2D:
+	case COMPONENT_MESH_3D:
+		return OpenXRAPI::transform_from_pose(
+			static_cast<const XrSpatialMeshDataEXT*>(data_ptr)[p_index].origin);
+	case COMPONENT_POLYGON_2D:
+		return OpenXRAPI::transform_from_pose(
+			static_cast<const XrSpatialPolygon2DDataEXT*>(data_ptr)[p_index].origin);
+	default:
+		ERR_FAIL_V(Transform3D());
+	}
+}
+
+PackedVector2Array OpenXRSpatialComponentData::get_vertices(RID p_snapshot, int64_t p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, PackedVector2Array());
+
+	const XrSpatialBufferEXT* buffer = nullptr;
+	if (component_kind == COMPONENT_MESH_2D) {
+		buffer = &static_cast<const XrSpatialMeshDataEXT*>(data_ptr)[p_index].vertexBuffer;
+	}
+	else if (component_kind == COMPONENT_POLYGON_2D) {
+		buffer = &static_cast<const XrSpatialPolygon2DDataEXT*>(data_ptr)[p_index].vertexBuffer;
+	}
+	else {
+		ERR_FAIL_V(PackedVector2Array());
+	}
+
+	if (buffer->bufferId == XR_NULL_SPATIAL_BUFFER_ID_EXT) {
+		return PackedVector2Array();
+	}
+
+	ERR_FAIL_COND_V(
+		buffer->bufferType != XR_SPATIAL_BUFFER_TYPE_VECTOR2F_EXT, PackedVector2Array());
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedVector2Array());
+
+	return OpenXRSpatialEntityExtension::get_vector2_buffer(p_snapshot, buffer->bufferId);
+}
+
+PackedInt32Array OpenXRSpatialComponentData::get_indices(RID p_snapshot, int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MESH_2D, PackedInt32Array());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, PackedInt32Array());
+
+	const XrSpatialBufferEXT& buffer =
+		static_cast<const XrSpatialMeshDataEXT*>(data_ptr)[p_index].indexBuffer;
+	if (buffer.bufferId == XR_NULL_SPATIAL_BUFFER_ID_EXT) {
+		return PackedInt32Array();
+	}
+
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedInt32Array());
+
+	PackedInt32Array ret;
+
+	switch (buffer.bufferType) {
+	case XR_SPATIAL_BUFFER_TYPE_UINT8_EXT: {
+		PackedByteArray data =
+			OpenXRSpatialEntityExtension::get_uint8_buffer(p_snapshot, buffer.bufferId);
+
+		ret.resize(data.size());
+		int count = ret.size();
+		int32_t* ptr = ret.ptrw();
+		for (int i = 0; i < count; i++) {
+			ptr[i] = data[i];
+		}
+	} break;
+	case XR_SPATIAL_BUFFER_TYPE_UINT16_EXT: {
+		Vector<uint16_t> data =
+			OpenXRSpatialEntityExtension::get_uint16_buffer(p_snapshot, buffer.bufferId);
+
+		ret.resize(data.size());
+		int count = ret.size();
+		int32_t* ptr = ret.ptrw();
+		for (int i = 0; i < count; i++) {
+			ptr[i] = data[i];
+		}
+	} break;
+	case XR_SPATIAL_BUFFER_TYPE_UINT32_EXT: {
+		Vector<uint32_t> data =
+			OpenXRSpatialEntityExtension::get_uint32_buffer(p_snapshot, buffer.bufferId);
+
+		ret.resize(data.size());
+		int count = ret.size();
+		int32_t* ptr = ret.ptrw();
+		for (int i = 0; i < count; i++) {
+			ptr[i] = data[i];
+		}
+	} break;
+	default: {
+		ERR_FAIL_V_MSG(PackedInt32Array(), "OpenXR: Unsupported buffer type for indices.");
+	} break;
+	}
+
+	return ret;
+}
+
+Ref<Mesh> OpenXRSpatialComponentData::get_mesh(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MESH_3D, nullptr);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, nullptr);
+
+	// TODO implement, need to convert mesh data to Godot mesh resource
+	return nullptr;
+}
+
+Transform3D OpenXRSpatialComponentData::get_entity_pose(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_ANCHOR, Transform3D());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
+
+	return OpenXRAPI::transform_from_pose(static_cast<const XrPosef*>(data_ptr)[p_index]);
+}
+
+XrUuid OpenXRSpatialComponentData::get_persistent_uuid(int64_t p_index) const
+{
+	XrUuid null_uuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+	ERR_FAIL_COND_V(component_kind != COMPONENT_PERSISTENCE, null_uuid);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, null_uuid);
+
+	return static_cast<const XrSpatialPersistenceDataEXT*>(data_ptr)[p_index].persistUuid;
+}
+
+String OpenXRSpatialComponentData::_get_persistent_uuid(int64_t p_index) const
+{
+	return OpenXRUtil::string_from_xruuid(get_persistent_uuid(p_index));
+}
+
+XrSpatialPersistenceStateEXT OpenXRSpatialComponentData::get_persistent_state(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(
+		component_kind != COMPONENT_PERSISTENCE, XR_SPATIAL_PERSISTENCE_STATE_MAX_ENUM_EXT);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_PERSISTENCE_STATE_MAX_ENUM_EXT);
+
+	return static_cast<const XrSpatialPersistenceDataEXT*>(data_ptr)[p_index].persistState;
+}
+
+uint64_t OpenXRSpatialComponentData::_get_persistent_state(int64_t p_index) const
+{
+	return (uint64_t)get_persistent_state(p_index);
+}
+
+String OpenXRSpatialComponentData::get_persistence_state_name(XrSpatialPersistenceStateEXT p_state)
+{
+	XR_ENUM_SWITCH(XrSpatialPersistenceStateEXT, p_state)
+}
+
+XrSpatialPlaneAlignmentEXT OpenXRSpatialComponentData::get_plane_alignment(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(
+		component_kind != COMPONENT_PLANE_ALIGNMENT, XR_SPATIAL_PLANE_ALIGNMENT_MAX_ENUM_EXT);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_PLANE_ALIGNMENT_MAX_ENUM_EXT);
+
+	return static_cast<const XrSpatialPlaneAlignmentEXT*>(data_ptr)[p_index];
+}
+
+OpenXRSpatialComponentData::PlaneAlignment OpenXRSpatialComponentData::_get_plane_alignment(
+	int64_t p_index) const
+{
+	return (PlaneAlignment)get_plane_alignment(p_index);
+}
+
+XrSpatialPlaneSemanticLabelEXT OpenXRSpatialComponentData::get_plane_semantic_label(
+	int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_PLANE_SEMANTIC_LABEL,
+		XR_SPATIAL_PLANE_SEMANTIC_LABEL_MAX_ENUM_EXT);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_PLANE_SEMANTIC_LABEL_MAX_ENUM_EXT);
+
+	return static_cast<const XrSpatialPlaneSemanticLabelEXT*>(data_ptr)[p_index];
+}
+
+OpenXRSpatialComponentData::PlaneSemanticLabel
+OpenXRSpatialComponentData::_get_plane_semantic_label(int64_t p_index) const
+{
+	return (PlaneSemanticLabel)get_plane_semantic_label(p_index);
+}
+
+OpenXRSpatialComponentData::MarkerType OpenXRSpatialComponentData::get_marker_type(
+	int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MARKER, MARKER_TYPE_UNKNOWN);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, MARKER_TYPE_UNKNOWN);
+
+	switch (static_cast<const XrSpatialMarkerDataEXT*>(data_ptr)[p_index].capability) {
+	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT:
+		return MARKER_TYPE_QRCODE;
+	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT:
+		return MARKER_TYPE_MICRO_QRCODE;
+	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT:
+		return MARKER_TYPE_ARUCO;
+	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT:
+		return MARKER_TYPE_APRIL_TAG;
+	default:
+		return MARKER_TYPE_UNKNOWN;
+	}
+}
+
+uint32_t OpenXRSpatialComponentData::get_marker_id(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MARKER, 0);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, 0);
+
+	return static_cast<const XrSpatialMarkerDataEXT*>(data_ptr)[p_index].markerId;
+}
+
+XrSpatialBufferEXT OpenXRSpatialComponentData::get_marker_data(int64_t p_index) const
+{
+	XrSpatialBufferEXT null_buffer = {
+		XR_NULL_SPATIAL_BUFFER_ID_EXT, XR_SPATIAL_BUFFER_TYPE_UNKNOWN_EXT};
+
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MARKER, null_buffer);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, null_buffer);
+
+	return static_cast<const XrSpatialMarkerDataEXT*>(data_ptr)[p_index].data;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialEntityTracker
 
 OpenXRSpatialEntityTracker::OpenXRSpatialEntityTracker(EntityType p_entity_type)
 	: entity_type(p_entity_type)
@@ -440,331 +1377,3 @@ OpenXRSpatialComponentData::MarkerType OpenXRSpatialEntityTracker::get_marker_ty
 void OpenXRSpatialEntityTracker::set_marker_id(uint32_t p_id) { marker_id = p_id; }
 
 uint32_t OpenXRSpatialEntityTracker::get_marker_id() const { return marker_id; }
-
-XrSpatialComponentTypeEXT OpenXRSpatialComponentData::get_component_type() const
-{
-	return XR_SPATIAL_COMPONENT_TYPE_MAX_ENUM_EXT;
-}
-
-void OpenXRSpatialComponentBounded2DList::set_capacity(uint32_t p_capacity)
-{
-	bounded2d_data.resize(p_capacity);
-
-	bounded2d_list.boundCount = uint32_t(bounded2d_data.size());
-	bounded2d_list.bounds = bounded2d_data.ptrw();
-}
-
-XrSpatialComponentTypeEXT OpenXRSpatialComponentBounded2DList::get_component_type() const
-{
-	return XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT;
-}
-
-void* OpenXRSpatialComponentBounded2DList::get_structure_data(void* p_next)
-{
-	bounded2d_list.next = p_next;
-	return &bounded2d_list;
-}
-
-Transform3D OpenXRSpatialComponentBounded2DList::get_center_pose(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, bounded2d_data.size(), Transform3D());
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	return OpenXRAPI::transform_from_pose(bounded2d_data[p_index].center);
-}
-
-Vector2 OpenXRSpatialComponentBounded2DList::get_size(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, bounded2d_data.size(), Vector2());
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector2());
-
-	const XrExtent2Df& extents = bounded2d_data[p_index].extents;
-	return Vector2(extents.width, extents.height);
-}
-
-void OpenXRSpatialComponentBounded3DList::set_capacity(uint32_t p_capacity)
-{
-	bounded3d_data.resize(p_capacity);
-
-	bounded3d_list.boundCount = uint32_t(bounded3d_data.size());
-	bounded3d_list.bounds = bounded3d_data.ptrw();
-}
-
-XrSpatialComponentTypeEXT OpenXRSpatialComponentBounded3DList::get_component_type() const
-{
-	return XR_SPATIAL_COMPONENT_TYPE_BOUNDED_3D_EXT;
-}
-
-void* OpenXRSpatialComponentBounded3DList::get_structure_data(void* p_next)
-{
-	bounded3d_list.next = p_next;
-	return &bounded3d_list;
-}
-
-Transform3D OpenXRSpatialComponentBounded3DList::get_center_pose(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, bounded3d_data.size(), Transform3D());
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	return OpenXRAPI::transform_from_pose(bounded3d_data[p_index].center);
-}
-
-Vector3 OpenXRSpatialComponentBounded3DList::get_size(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, bounded3d_data.size(), Vector3());
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector3());
-
-	const XrExtent3Df& extents = bounded3d_data[p_index].extents;
-	return Vector3(extents.width, extents.height, extents.depth);
-}
-
-void OpenXRSpatialComponentParentList::set_capacity(uint32_t p_capacity)
-{
-	parent_data.resize(p_capacity);
-
-	parent_list.parentCount = uint32_t(parent_data.size());
-	parent_list.parents = parent_data.ptrw();
-}
-
-XrSpatialComponentTypeEXT OpenXRSpatialComponentParentList::get_component_type() const
-{
-	return XR_SPATIAL_COMPONENT_TYPE_PARENT_EXT;
-}
-
-void* OpenXRSpatialComponentParentList::get_structure_data(void* p_next)
-{
-	parent_list.next = p_next;
-	return &parent_list;
-}
-
-RID OpenXRSpatialComponentParentList::get_parent(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, parent_data.size(), RID());
-
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), RID());
-
-	return OpenXRSpatialEntityExtension::find_spatial_entity(parent_data[p_index]);
-}
-
-void OpenXRSpatialComponentMesh2DList::set_capacity(uint32_t p_capacity)
-{
-	mesh2d_data.resize(p_capacity);
-
-	mesh2d_list.meshCount = uint32_t(mesh2d_data.size());
-	mesh2d_list.meshes = mesh2d_data.ptrw();
-}
-
-XrSpatialComponentTypeEXT OpenXRSpatialComponentMesh2DList::get_component_type() const
-{
-	return XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT;
-}
-
-void* OpenXRSpatialComponentMesh2DList::get_structure_data(void* p_next)
-{
-	mesh2d_list.next = p_next;
-	return &mesh2d_list;
-}
-
-Transform3D OpenXRSpatialComponentMesh2DList::get_transform(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, mesh2d_data.size(), Transform3D());
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	return OpenXRAPI::transform_from_pose(mesh2d_data[p_index].origin);
-}
-
-PackedVector2Array OpenXRSpatialComponentMesh2DList::get_vertices(
-	RID p_snapshot, int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, mesh2d_data.size(), PackedVector2Array());
-
-	const XrSpatialBufferEXT& buffer = mesh2d_data[p_index].vertexBuffer;
-	if (buffer.bufferId == XR_NULL_SPATIAL_BUFFER_ID_EXT) {
-		// We don't have data (yet).
-		return PackedVector2Array();
-	}
-
-	ERR_FAIL_COND_V(buffer.bufferType != XR_SPATIAL_BUFFER_TYPE_VECTOR2F_EXT, PackedVector2Array());
-
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedVector2Array());
-
-	return OpenXRSpatialEntityExtension::get_vector2_buffer(p_snapshot, buffer.bufferId);
-}
-
-PackedInt32Array OpenXRSpatialComponentMesh2DList::get_indices(
-	RID p_snapshot, int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, mesh2d_data.size(), PackedInt32Array());
-
-	const XrSpatialBufferEXT& buffer = mesh2d_data[p_index].indexBuffer;
-	if (buffer.bufferId == XR_NULL_SPATIAL_BUFFER_ID_EXT) {
-		// We don't have data (yet).
-		return PackedInt32Array();
-	}
-
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedInt32Array());
-
-	PackedInt32Array ret;
-
-	switch (buffer.bufferType) {
-	case XR_SPATIAL_BUFFER_TYPE_UINT8_EXT: {
-		PackedByteArray data = OpenXRSpatialEntityExtension::get_uint8_buffer(p_snapshot, buffer.bufferId);
-
-		ret.resize(data.size());
-		int count = ret.size();
-		int32_t* ptr = ret.ptrw();
-		for (int i = 0; i < count; i++) {
-			ptr[i] = data[i];
-		}
-	} break;
-	case XR_SPATIAL_BUFFER_TYPE_UINT16_EXT: {
-		Vector<uint16_t> data = OpenXRSpatialEntityExtension::get_uint16_buffer(p_snapshot, buffer.bufferId);
-
-		ret.resize(data.size());
-		int count = ret.size();
-		int32_t* ptr = ret.ptrw();
-		for (int i = 0; i < count; i++) {
-			ptr[i] = data[i];
-		}
-	} break;
-	case XR_SPATIAL_BUFFER_TYPE_UINT32_EXT: {
-		Vector<uint32_t> data = OpenXRSpatialEntityExtension::get_uint32_buffer(p_snapshot, buffer.bufferId);
-
-		ret.resize(data.size());
-		int count = ret.size();
-		int32_t* ptr = ret.ptrw();
-		for (int i = 0; i < count; i++) {
-			ptr[i] = data[i];
-		}
-	} break;
-	default: {
-		ERR_FAIL_V_MSG(PackedInt32Array(), "OpenXR: Unsupported buffer type for indices.");
-	} break;
-	}
-
-	return ret;
-}
-
-void OpenXRSpatialComponentMesh3DList::set_capacity(uint32_t p_capacity)
-{
-	mesh3d_data.resize(p_capacity);
-
-	mesh3d_list.meshCount = uint32_t(mesh3d_data.size());
-	mesh3d_list.meshes = mesh3d_data.ptrw();
-}
-
-XrSpatialComponentTypeEXT OpenXRSpatialComponentMesh3DList::get_component_type() const
-{
-	return XR_SPATIAL_COMPONENT_TYPE_MESH_3D_EXT;
-}
-
-void* OpenXRSpatialComponentMesh3DList::get_structure_data(void* p_next)
-{
-	mesh3d_list.next = p_next;
-	return &mesh3d_list;
-}
-
-Transform3D OpenXRSpatialComponentMesh3DList::get_transform(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, mesh3d_data.size(), Transform3D());
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	return OpenXRAPI::transform_from_pose(mesh3d_data[p_index].origin);
-}
-
-Ref<Mesh> OpenXRSpatialComponentMesh3DList::get_mesh(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, mesh3d_data.size(), nullptr);
-
-	// TODO implement, need to convert mesh data to Godot mesh resource
-
-	return nullptr;
-}
-
-void OpenXRSpatialQueryResultData::set_capacity(uint32_t p_capacity)
-{
-	entity_ids.resize(p_capacity);
-	entity_states.resize(p_capacity);
-
-	query_result.entityIdCapacityInput = entity_ids.size();
-	query_result.entityIds = entity_ids.ptrw();
-	query_result.entityStateCapacityInput = entity_states.size();
-	query_result.entityStates = entity_states.ptrw();
-}
-
-XrSpatialComponentTypeEXT OpenXRSpatialQueryResultData::get_component_type() const
-{
-	// This component is always included and has no type.
-	return XR_SPATIAL_COMPONENT_TYPE_MAX_ENUM_EXT;
-}
-
-void* OpenXRSpatialQueryResultData::get_structure_data(void* p_next)
-{
-	query_result.next = p_next;
-	query_result.entityIdCountOutput = 0;
-	query_result.entityStateCountOutput = 0;
-	return &query_result;
-}
-
-XrSpatialEntityIdEXT OpenXRSpatialQueryResultData::get_entity_id(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, entity_ids.size(), XR_NULL_ENTITY);
-
-	return entity_ids[p_index];
-}
-
-uint64_t OpenXRSpatialQueryResultData::_get_entity_id(int64_t p_index) const
-{
-	return (uint64_t)get_entity_id(p_index);
-}
-
-XrSpatialEntityTrackingStateEXT OpenXRSpatialQueryResultData::get_entity_state(
-	int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, entity_states.size(), XR_SPATIAL_ENTITY_TRACKING_STATE_MAX_ENUM_EXT);
-
-	return entity_states[p_index];
-}
-
-OpenXRSpatialEntityTracker::EntityTrackingState OpenXRSpatialQueryResultData::_get_entity_state(
-	int64_t p_index) const
-{
-	return (OpenXRSpatialEntityTracker::EntityTrackingState)get_entity_state(p_index);
-}
-
-String OpenXRSpatialQueryResultData::get_entity_tracking_state_name(
-	XrSpatialEntityTrackingStateEXT p_tracking_state){
-	XR_ENUM_SWITCH(XrSpatialEntityTrackingStateEXT, p_tracking_state)}
-
-OpenXRSpatialCapabilityConfigurationBaseHeader::OpenXRSpatialCapabilityConfigurationBaseHeader()
-{
-}
-
-OpenXRSpatialCapabilityConfigurationBaseHeader::~OpenXRSpatialCapabilityConfigurationBaseHeader() {}
-
-OpenXRSpatialComponentData::OpenXRSpatialComponentData() {}
-
-OpenXRSpatialComponentData::~OpenXRSpatialComponentData() {}
-
-bool OpenXRSpatialCapabilityConfigurationBaseHeader::has_valid_configuration() const
-{
-	return false;
-}
-
-XrSpatialCapabilityConfigurationBaseHeaderEXT*
-OpenXRSpatialCapabilityConfigurationBaseHeader::get_configuration()
-{
-	return nullptr;
-}
-
-void OpenXRSpatialComponentData::set_capacity(uint32_t p_capacity) {}
-
-void* OpenXRSpatialComponentData::get_structure_data(void* p_next) { return nullptr; }
-
-

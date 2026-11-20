@@ -36,71 +36,8 @@
 #include "core/templates/rid_owner.h"
 #include "openxr_spatial_entities.h"
 
-// Anchor capability configuration
-class OpenXRSpatialCapabilityConfigurationAnchor
-	: public OpenXRSpatialCapabilityConfigurationBaseHeader
-{
-public:
-	virtual bool has_valid_configuration() const override;
-	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
-
-protected:
-
-private:
-	Vector<XrSpatialComponentTypeEXT> anchor_enabled_components;
-	XrSpatialCapabilityConfigurationAnchorEXT anchor_config = {
-		XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ANCHOR_EXT, nullptr,
-		XR_SPATIAL_CAPABILITY_ANCHOR_EXT, 0, nullptr};
-
-	PackedInt64Array _get_enabled_components() const;
-};
-
-// Anchor component anchor list
-class OpenXRSpatialComponentAnchorList : public OpenXRSpatialComponentData
-{
-protected:
-
-public:
-	virtual void set_capacity(uint32_t p_capacity) override;
-	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void* get_structure_data(void* p_next) override;
-
-	Transform3D get_entity_pose(int64_t p_index) const;
-
-private:
-	Vector<XrPosef> entity_poses;
-
-	XrSpatialComponentAnchorListEXT anchor_list = {
-		XR_TYPE_SPATIAL_COMPONENT_ANCHOR_LIST_EXT, nullptr, 0, nullptr};
-};
-
 // Persistence configuration (folded into OpenXRStructureBase)
 using OpenXRSpatialContextPersistenceConfig = OpenXRStructureBase;
-
-// Component persistence list
-class OpenXRSpatialComponentPersistenceList : public OpenXRSpatialComponentData
-{
-protected:
-
-public:
-	virtual void set_capacity(uint32_t p_capacity) override;
-	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void* get_structure_data(void* p_next) override;
-
-	XrUuid get_persistent_uuid(int64_t p_index) const;
-	XrSpatialPersistenceStateEXT get_persistent_state(int64_t p_index) const;
-
-	static String get_persistence_state_name(XrSpatialPersistenceStateEXT p_state);
-
-private:
-	Vector<XrSpatialPersistenceDataEXT> persist_data;
-
-	XrSpatialComponentPersistenceListEXT persistence_list = {
-		XR_TYPE_SPATIAL_COMPONENT_PERSISTENCE_LIST_EXT, nullptr, 0, nullptr};
-
-	String _get_persistent_uuid(int64_t p_index) const;
-	uint64_t _get_persistent_state(int64_t p_index) const;
-};
 
 // Anchor tracker (folded into OpenXRSpatialEntityTracker)
 using OpenXRAnchorTracker = OpenXRSpatialEntityTracker;
@@ -114,7 +51,6 @@ public:
 		PERSISTENCE_SCOPE_SYSTEM_MANAGED = XR_SPATIAL_PERSISTENCE_SCOPE_SYSTEM_MANAGED_EXT,
 		PERSISTENCE_SCOPE_LOCAL_ANCHORS = XR_SPATIAL_PERSISTENCE_SCOPE_LOCAL_ANCHORS_EXT,
 	};
-
 
 	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
@@ -142,13 +78,6 @@ public:
 	static String get_spatial_persistence_scope_name(XrSpatialPersistenceScopeEXT p_scope);
 	static String get_spatial_persistence_context_result_name(
 		XrSpatialPersistenceContextResultEXT p_result);
-
-protected:
-#ifndef DISABLE_DEPRECATED
-	static void _bind_compatibility_methods();
-	static Ref<OpenXRAnchorTracker> _create_new_anchor_bind_compat_118128(
-		const Transform3D& p_transform, RID p_spatial_context);
-#endif
 
 private:
 	static bool _load_supported_persistence_scopes();
@@ -212,7 +141,7 @@ public:
 		bool need_discovery = false;
 		int discovery_cooldown = 0;
 		Ref<OpenXRFutureResult> discovery_query_result;
-		Ref<OpenXRSpatialCapabilityConfigurationAnchor> anchor_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> anchor_configuration;
 		Ref<OpenXRSpatialContextPersistenceConfig> persistence_configuration;
 		Vector<XrSpatialPersistenceScopeEXT> supported_persistence_scopes;
 		RID_Owner<PersistenceContextData> persistence_context_owner;
@@ -230,5 +159,3 @@ public:
 	OpenXRSpatialAnchorCapability& operator=(const OpenXRSpatialAnchorCapability&) = delete;
 	~OpenXRSpatialAnchorCapability() = delete;
 };
-
-

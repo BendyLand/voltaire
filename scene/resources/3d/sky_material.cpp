@@ -29,103 +29,324 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "sky_material.h"
+
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/version.h"
-#include "scene/resources/texture.h"
 #include "servers/rendering/renderer.h"
-#include "sky_material.h"
 
-Mutex ProceduralSkyMaterial::shader_mutex;
-RID ProceduralSkyMaterial::shader_cache[4];
+Mutex SkyMaterial::shader_mutex;
+RID SkyMaterial::procedural_shader_cache[4];
+RID SkyMaterial::panorama_shader_cache[2];
+RID SkyMaterial::physical_shader_cache[4];
+RID SkyMaterial::fog_shader;
 
-Color ProceduralSkyMaterial::get_sky_top_color() const { return sky_top_color; }
-
-Color ProceduralSkyMaterial::get_sky_horizon_color() const { return sky_horizon_color; }
-
-float ProceduralSkyMaterial::get_sky_curve() const { return sky_curve; }
-
-float ProceduralSkyMaterial::get_sky_energy_multiplier() const { return sky_energy_multiplier; }
-
-Ref<Texture2D> ProceduralSkyMaterial::get_sky_cover() const { return sky_cover; }
-
-Color ProceduralSkyMaterial::get_sky_cover_modulate() const { return sky_cover_modulate; }
-
-Color ProceduralSkyMaterial::get_ground_bottom_color() const { return ground_bottom_color; }
-
-Color ProceduralSkyMaterial::get_ground_horizon_color() const { return ground_horizon_color; }
-
-float ProceduralSkyMaterial::get_ground_curve() const { return ground_curve; }
-
-float ProceduralSkyMaterial::get_ground_energy_multiplier() const
+void SkyMaterial::set_mode(Mode p_mode)
 {
-	return ground_energy_multiplier;
-}
-
-float ProceduralSkyMaterial::get_sun_angle_max() const { return sun_angle_max; }
-
-float ProceduralSkyMaterial::get_sun_curve() const { return sun_curve; }
-
-void ProceduralSkyMaterial::set_use_debanding(bool p_use_debanding)
-{
-	use_debanding = p_use_debanding;
-	_update_shader(use_debanding, sky_cover.is_valid());
-	// Only set if shader already compiled
+	if (mode == p_mode) {
+		return;
+	}
+	mode = p_mode;
 	if (shader_set) {
-		Renderer::material_set_shader(_get_material(), get_shader_cache());
+		shader_set = false;
+		Renderer::material_set_shader(_get_material(), get_shader_rid());
+		shader_set = true;
 	}
 }
 
-bool ProceduralSkyMaterial::get_use_debanding() const { return use_debanding; }
+// Procedural sky
 
-float ProceduralSkyMaterial::get_energy_multiplier() const { return global_energy_multiplier; }
+void SkyMaterial::set_sky_top_color(const Color& p_sky_top) { sky_top_color = p_sky_top; }
 
-Shader::Mode ProceduralSkyMaterial::get_shader_mode() const { return Shader::MODE_SKY; }
+Color SkyMaterial::get_sky_top_color() const { return sky_top_color; }
 
-// Internal function to grab the current shader RID.
-// Must only be called if the shader is initialized.
-RID ProceduralSkyMaterial::get_shader_cache() const
+void SkyMaterial::set_sky_horizon_color(const Color& p_sky_horizon)
 {
-	return shader_cache[int(use_debanding) + (sky_cover.is_valid() ? 2 : 0)];
+	sky_horizon_color = p_sky_horizon;
 }
 
-RID ProceduralSkyMaterial::get_rid() const
+Color SkyMaterial::get_sky_horizon_color() const { return sky_horizon_color; }
+
+void SkyMaterial::set_sky_curve(float p_curve) { sky_curve = p_curve; }
+
+float SkyMaterial::get_sky_curve() const { return sky_curve; }
+
+void SkyMaterial::set_sky_energy_multiplier(float p_multiplier)
 {
-	_update_shader(use_debanding, sky_cover.is_valid());
+	sky_energy_multiplier = p_multiplier;
+}
+
+float SkyMaterial::get_sky_energy_multiplier() const { return sky_energy_multiplier; }
+
+void SkyMaterial::set_sky_cover(const Ref<Texture2D>& p_sky_cover)
+{
+	sky_cover = p_sky_cover;
+	if (mode == MODE_PROCEDURAL) {
+		_update_procedural_shader(use_debanding, sky_cover.is_valid());
+		if (shader_set) {
+			Renderer::material_set_shader(_get_material(), _get_procedural_shader_cache());
+		}
+	}
+}
+
+Ref<Texture2D> SkyMaterial::get_sky_cover() const { return sky_cover; }
+
+void SkyMaterial::set_sky_cover_modulate(const Color& p_sky_cover_modulate)
+{
+	sky_cover_modulate = p_sky_cover_modulate;
+}
+
+Color SkyMaterial::get_sky_cover_modulate() const { return sky_cover_modulate; }
+
+void SkyMaterial::set_ground_bottom_color(const Color& p_ground_bottom)
+{
+	ground_bottom_color = p_ground_bottom;
+}
+
+Color SkyMaterial::get_ground_bottom_color() const { return ground_bottom_color; }
+
+void SkyMaterial::set_ground_horizon_color(const Color& p_ground_horizon)
+{
+	ground_horizon_color = p_ground_horizon;
+}
+
+Color SkyMaterial::get_ground_horizon_color() const { return ground_horizon_color; }
+
+void SkyMaterial::set_ground_curve(float p_curve) { ground_curve = p_curve; }
+
+float SkyMaterial::get_ground_curve() const { return ground_curve; }
+
+void SkyMaterial::set_ground_energy_multiplier(float p_energy)
+{
+	ground_energy_multiplier = p_energy;
+}
+
+float SkyMaterial::get_ground_energy_multiplier() const { return ground_energy_multiplier; }
+
+void SkyMaterial::set_sun_angle_max(float p_angle) { sun_angle_max = p_angle; }
+
+float SkyMaterial::get_sun_angle_max() const { return sun_angle_max; }
+
+void SkyMaterial::set_sun_curve(float p_curve) { sun_curve = p_curve; }
+
+float SkyMaterial::get_sun_curve() const { return sun_curve; }
+
+// Shared sky
+
+void SkyMaterial::set_use_debanding(bool p_use_debanding)
+{
+	use_debanding = p_use_debanding;
+	if (mode == MODE_PROCEDURAL) {
+		_update_procedural_shader(use_debanding, sky_cover.is_valid());
+		if (shader_set) {
+			Renderer::material_set_shader(_get_material(), _get_procedural_shader_cache());
+		}
+	}
+	else if (mode == MODE_PHYSICAL) {
+		_update_physical_shader(use_debanding, night_sky.is_valid());
+		if (shader_set) {
+			Renderer::material_set_shader(_get_material(), _get_physical_shader_cache());
+		}
+	}
+}
+
+bool SkyMaterial::get_use_debanding() const { return use_debanding; }
+
+void SkyMaterial::set_energy_multiplier(float p_multiplier) { energy_multiplier = p_multiplier; }
+
+float SkyMaterial::get_energy_multiplier() const { return energy_multiplier; }
+
+void SkyMaterial::set_exposure_value(float p_exposure)
+{
+	set_energy_multiplier(Math::pow(2.0f, p_exposure));
+}
+
+float SkyMaterial::get_exposure_value() const
+{
+	return Math::log(get_energy_multiplier()) / Math::log(2.0f);
+}
+
+// Panorama sky
+
+void SkyMaterial::set_panorama(const Ref<Texture2D>& p_panorama) { panorama = p_panorama; }
+
+Ref<Texture2D> SkyMaterial::get_panorama() const { return panorama; }
+
+void SkyMaterial::set_filtering_enabled(bool p_enabled)
+{
+	filter = p_enabled;
+	if (mode == MODE_PANORAMA) {
+		_update_panorama_shader(filter);
+		if (shader_set) {
+			Renderer::material_set_shader(_get_material(), panorama_shader_cache[int(filter)]);
+		}
+	}
+}
+
+bool SkyMaterial::is_filtering_enabled() const { return filter; }
+
+// Physical sky
+
+void SkyMaterial::set_rayleigh_coefficient(float p_rayleigh) { rayleigh = p_rayleigh; }
+
+float SkyMaterial::get_rayleigh_coefficient() const { return rayleigh; }
+
+void SkyMaterial::set_rayleigh_color(Color p_rayleigh_color) { rayleigh_color = p_rayleigh_color; }
+
+Color SkyMaterial::get_rayleigh_color() const { return rayleigh_color; }
+
+void SkyMaterial::set_turbidity(float p_turbidity) { turbidity = p_turbidity; }
+
+float SkyMaterial::get_turbidity() const { return turbidity; }
+
+void SkyMaterial::set_mie_coefficient(float p_mie) { mie = p_mie; }
+
+float SkyMaterial::get_mie_coefficient() const { return mie; }
+
+void SkyMaterial::set_mie_eccentricity(float p_eccentricity) { mie_eccentricity = p_eccentricity; }
+
+float SkyMaterial::get_mie_eccentricity() const { return mie_eccentricity; }
+
+void SkyMaterial::set_mie_color(Color p_mie_color) { mie_color = p_mie_color; }
+
+Color SkyMaterial::get_mie_color() const { return mie_color; }
+
+void SkyMaterial::set_sun_disk_scale(float p_sun_disk_scale) { sun_disk_scale = p_sun_disk_scale; }
+
+float SkyMaterial::get_sun_disk_scale() const { return sun_disk_scale; }
+
+void SkyMaterial::set_ground_color(Color p_ground_color) { ground_color = p_ground_color; }
+
+Color SkyMaterial::get_ground_color() const { return ground_color; }
+
+void SkyMaterial::set_night_sky(const Ref<Texture2D>& p_night_sky)
+{
+	night_sky = p_night_sky;
+	if (mode == MODE_PHYSICAL) {
+		_update_physical_shader(use_debanding, night_sky.is_valid());
+		if (shader_set) {
+			Renderer::material_set_shader(_get_material(), _get_physical_shader_cache());
+		}
+	}
+}
+
+Ref<Texture2D> SkyMaterial::get_night_sky() const { return night_sky; }
+
+// Fog
+
+void SkyMaterial::set_density(float p_density) { density = p_density; }
+
+float SkyMaterial::get_density() const { return density; }
+
+void SkyMaterial::set_albedo(Color p_color) { albedo = p_color; }
+
+Color SkyMaterial::get_albedo() const { return albedo; }
+
+void SkyMaterial::set_emission(Color p_color) { emission = p_color; }
+
+Color SkyMaterial::get_emission() const { return emission; }
+
+void SkyMaterial::set_height_falloff(float p_falloff) { height_falloff = p_falloff; }
+
+float SkyMaterial::get_height_falloff() const { return height_falloff; }
+
+void SkyMaterial::set_edge_fade(float p_edge_fade) { edge_fade = p_edge_fade; }
+
+float SkyMaterial::get_edge_fade() const { return edge_fade; }
+
+void SkyMaterial::set_density_texture(const Ref<Texture3D>& p_texture)
+{
+	density_texture = p_texture;
+}
+
+Ref<Texture3D> SkyMaterial::get_density_texture() const { return density_texture; }
+
+// Shader management
+
+Shader::Mode SkyMaterial::get_shader_mode() const
+{
+	return mode == MODE_FOG ? Shader::MODE_FOG : Shader::MODE_SKY;
+}
+
+RID SkyMaterial::_get_procedural_shader_cache() const
+{
+	return procedural_shader_cache[int(use_debanding) + (sky_cover.is_valid() ? 2 : 0)];
+}
+
+RID SkyMaterial::_get_physical_shader_cache() const
+{
+	return physical_shader_cache[int(use_debanding) + (night_sky.is_valid() ? 2 : 0)];
+}
+
+RID SkyMaterial::get_shader_rid() const
+{
+	switch (mode) {
+	case MODE_PROCEDURAL:
+		_update_procedural_shader(use_debanding, sky_cover.is_valid());
+		return _get_procedural_shader_cache();
+	case MODE_PANORAMA:
+		_update_panorama_shader(filter);
+		return panorama_shader_cache[int(filter)];
+	case MODE_PHYSICAL:
+		_update_physical_shader(use_debanding, night_sky.is_valid());
+		return _get_physical_shader_cache();
+	case MODE_FOG:
+		_update_fog_shader();
+		return fog_shader;
+	}
+	return RID();
+}
+
+RID SkyMaterial::get_rid() const
+{
+	RID shader_rid = get_shader_rid();
 	if (!shader_set) {
-		Renderer::material_set_shader(_get_material(), get_shader_cache());
+		Renderer::material_set_shader(_get_material(), shader_rid);
 		shader_set = true;
 	}
 	return _get_material();
 }
 
-RID ProceduralSkyMaterial::get_shader_rid() const
-{
-	_update_shader(use_debanding, sky_cover.is_valid());
-	return get_shader_cache();
-}
-
-void ProceduralSkyMaterial::cleanup_shader()
+void SkyMaterial::cleanup_shader()
 {
 	for (int i = 0; i < 4; i++) {
-		if (shader_cache[i].is_valid()) {
-			Renderer::free_rid(shader_cache[i]);
+		if (procedural_shader_cache[i].is_valid()) {
+			Renderer::free_rid(procedural_shader_cache[i]);
+			procedural_shader_cache[i] = RID();
 		}
+	}
+	for (int i = 0; i < 2; i++) {
+		if (panorama_shader_cache[i].is_valid()) {
+			Renderer::free_rid(panorama_shader_cache[i]);
+			panorama_shader_cache[i] = RID();
+		}
+	}
+	for (int i = 0; i < 4; i++) {
+		if (physical_shader_cache[i].is_valid()) {
+			Renderer::free_rid(physical_shader_cache[i]);
+			physical_shader_cache[i] = RID();
+		}
+	}
+	if (fog_shader.is_valid()) {
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(fog_shader);
+		fog_shader = RID();
 	}
 }
 
-void ProceduralSkyMaterial::_update_shader(bool p_use_debanding, bool p_use_sky_cover)
+void SkyMaterial::_update_procedural_shader(bool p_use_debanding, bool p_use_sky_cover)
 {
 	MutexLock shader_lock(shader_mutex);
 	int index = int(p_use_debanding) + int(p_use_sky_cover) * 2;
-	if (shader_cache[index].is_null()) {
-		shader_cache[index] = Renderer::shader_create();
+	if (procedural_shader_cache[index].is_null()) {
+		procedural_shader_cache[index] = Renderer::shader_create();
 
 		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
-		Renderer::shader_set_code(shader_cache[index],
+		Renderer::shader_set_code(procedural_shader_cache[index],
 			vformat(R"(
 // NOTE: Shader automatically converted from )" VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG
-					R"('s ProceduralSkyMaterial.
+					R"('s SkyMaterial (Procedural).
 
 shader_type sky;
 %s
@@ -210,76 +431,18 @@ void sky() {
 	}
 }
 
-ProceduralSkyMaterial::ProceduralSkyMaterial()
-{
-	_set_material(Renderer::material_create());
-	set_sky_top_color(Color(0.385, 0.454, 0.55));
-	set_sky_horizon_color(Color(0.6463, 0.6558, 0.6708));
-	set_sky_curve(0.15);
-	set_sky_energy_multiplier(1.0);
-	set_sky_cover_modulate(Color(1, 1, 1));
-
-	set_ground_bottom_color(Color(0.2, 0.169, 0.133));
-	set_ground_horizon_color(Color(0.6463, 0.6558, 0.6708));
-	set_ground_curve(0.02);
-	set_ground_energy_multiplier(1.0);
-
-	set_sun_angle_max(30.0);
-	set_sun_curve(0.15);
-	set_use_debanding(true);
-	set_energy_multiplier(1.0);
-}
-
-ProceduralSkyMaterial::~ProceduralSkyMaterial() {}
-
-Ref<Texture2D> PanoramaSkyMaterial::get_panorama() const { return panorama; }
-
-bool PanoramaSkyMaterial::is_filtering_enabled() const { return filter; }
-
-float PanoramaSkyMaterial::get_energy_multiplier() const { return energy_multiplier; }
-
-Shader::Mode PanoramaSkyMaterial::get_shader_mode() const { return Shader::MODE_SKY; }
-
-RID PanoramaSkyMaterial::get_rid() const
-{
-	_update_shader(filter);
-	if (!shader_set) {
-		Renderer::material_set_shader(_get_material(), shader_cache[int(filter)]);
-		shader_set = true;
-	}
-	return _get_material();
-}
-
-RID PanoramaSkyMaterial::get_shader_rid() const
-{
-	_update_shader(filter);
-	return shader_cache[int(filter)];
-}
-
-Mutex PanoramaSkyMaterial::shader_mutex;
-RID PanoramaSkyMaterial::shader_cache[2];
-
-void PanoramaSkyMaterial::cleanup_shader()
-{
-	for (int i = 0; i < 2; i++) {
-		if (shader_cache[i].is_valid()) {
-			Renderer::free_rid(shader_cache[i]);
-		}
-	}
-}
-
-void PanoramaSkyMaterial::_update_shader(bool p_filter)
+void SkyMaterial::_update_panorama_shader(bool p_filter)
 {
 	MutexLock shader_lock(shader_mutex);
 	int index = int(p_filter);
-	if (shader_cache[index].is_null()) {
-		shader_cache[index] = Renderer::shader_create();
+	if (panorama_shader_cache[index].is_null()) {
+		panorama_shader_cache[index] = Renderer::shader_create();
 
 		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
 		Renderer::shader_set_code(
-			shader_cache[index], vformat(R"(
+			panorama_shader_cache[index], vformat(R"(
 // NOTE: Shader automatically converted from )" VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG
-										 R"('s PanoramaSkyMaterial.
+												  R"('s SkyMaterial (Panorama).
 
 shader_type sky;
 
@@ -290,99 +453,22 @@ void sky() {
 	COLOR = texture(source_panorama, SKY_COORDS).rgb * exposure;
 }
 )",
-									 p_filter ? "filter_linear" : "filter_nearest"));
+											  p_filter ? "filter_linear" : "filter_nearest"));
 	}
 }
 
-PanoramaSkyMaterial::PanoramaSkyMaterial()
-{
-	_set_material(Renderer::material_create());
-	set_energy_multiplier(1.0);
-}
-
-PanoramaSkyMaterial::~PanoramaSkyMaterial() {}
-
-float PhysicalSkyMaterial::get_rayleigh_coefficient() const { return rayleigh; }
-
-Color PhysicalSkyMaterial::get_rayleigh_color() const { return rayleigh_color; }
-
-float PhysicalSkyMaterial::get_mie_coefficient() const { return mie; }
-
-float PhysicalSkyMaterial::get_mie_eccentricity() const { return mie_eccentricity; }
-
-Color PhysicalSkyMaterial::get_mie_color() const { return mie_color; }
-
-float PhysicalSkyMaterial::get_turbidity() const { return turbidity; }
-
-float PhysicalSkyMaterial::get_sun_disk_scale() const { return sun_disk_scale; }
-
-Color PhysicalSkyMaterial::get_ground_color() const { return ground_color; }
-
-float PhysicalSkyMaterial::get_energy_multiplier() const { return energy_multiplier; }
-
-void PhysicalSkyMaterial::set_use_debanding(bool p_use_debanding)
-{
-	use_debanding = p_use_debanding;
-	_update_shader(use_debanding, night_sky.is_valid());
-	// Only set if shader already compiled
-	if (shader_set) {
-		Renderer::material_set_shader(_get_material(), get_shader_cache());
-	}
-}
-
-bool PhysicalSkyMaterial::get_use_debanding() const { return use_debanding; }
-
-Ref<Texture2D> PhysicalSkyMaterial::get_night_sky() const { return night_sky; }
-
-Shader::Mode PhysicalSkyMaterial::get_shader_mode() const { return Shader::MODE_SKY; }
-
-// Internal function to grab the current shader RID.
-// Must only be called if the shader is initialized.
-RID PhysicalSkyMaterial::get_shader_cache() const
-{
-	return shader_cache[int(use_debanding) + (night_sky.is_valid() ? 2 : 0)];
-}
-
-RID PhysicalSkyMaterial::get_rid() const
-{
-	_update_shader(use_debanding, night_sky.is_valid());
-	if (!shader_set) {
-		Renderer::material_set_shader(_get_material(), get_shader_cache());
-		shader_set = true;
-	}
-	return _get_material();
-}
-
-RID PhysicalSkyMaterial::get_shader_rid() const
-{
-	_update_shader(use_debanding, night_sky.is_valid());
-	return get_shader_cache();
-}
-
-Mutex PhysicalSkyMaterial::shader_mutex;
-RID PhysicalSkyMaterial::shader_cache[4];
-
-void PhysicalSkyMaterial::cleanup_shader()
-{
-	for (int i = 0; i < 4; i++) {
-		if (shader_cache[i].is_valid()) {
-			Renderer::free_rid(shader_cache[i]);
-		}
-	}
-}
-
-void PhysicalSkyMaterial::_update_shader(bool p_use_debanding, bool p_use_night_sky)
+void SkyMaterial::_update_physical_shader(bool p_use_debanding, bool p_use_night_sky)
 {
 	MutexLock shader_lock(shader_mutex);
 	int index = int(p_use_debanding) + int(p_use_night_sky) * 2;
-	if (shader_cache[index].is_null()) {
-		shader_cache[index] = Renderer::shader_create();
+	if (physical_shader_cache[index].is_null()) {
+		physical_shader_cache[index] = Renderer::shader_create();
 
 		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
-		Renderer::shader_set_code(shader_cache[index],
+		Renderer::shader_set_code(physical_shader_cache[index],
 			vformat(R"(
 // NOTE: Shader automatically converted from )" VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG
-					R"('s PhysicalSkyMaterial.
+					R"('s SkyMaterial (Physical).
 
 shader_type sky;
 %s
@@ -472,9 +558,56 @@ void sky() {
 	}
 }
 
-PhysicalSkyMaterial::PhysicalSkyMaterial()
+void SkyMaterial::_update_fog_shader()
+{
+	MutexLock shader_lock(shader_mutex);
+	if (fog_shader.is_null()) {
+		fog_shader = Renderer::shader_create();
+
+		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
+		Renderer::shader_set_code(fog_shader, R"(
+// NOTE: Shader automatically converted from )" VLTR_VERSION_NAME " " VLTR_VERSION_FULL_CONFIG
+											  R"('s SkyMaterial (Fog).
+
+shader_type fog;
+
+uniform float density : hint_range(0, 1, 0.0001) = 1.0;
+uniform vec4 albedo : source_color = vec4(1.0);
+uniform vec4 emission : source_color = vec4(0, 0, 0, 1);
+uniform float height_falloff = 0.0;
+uniform float edge_fade = 0.1;
+uniform sampler3D density_texture: hint_default_white;
+
+
+void fog() {
+    DENSITY = density * clamp(exp2(-height_falloff * (WORLD_POSITION.y - OBJECT_POSITION.y)), 0.0, 1.0);
+    DENSITY *= texture(density_texture, UVW).r;
+    DENSITY *= pow(clamp(-2.0 * SDF / min(min(SIZE.x, SIZE.y), SIZE.z), 0.0, 1.0), edge_fade);
+    ALBEDO = albedo.rgb;
+    EMISSION = emission.rgb;
+}
+)");
+	}
+}
+
+SkyMaterial::SkyMaterial(Mode p_mode) : mode(p_mode)
 {
 	_set_material(Renderer::material_create());
+
+	set_sky_top_color(Color(0.385, 0.454, 0.55));
+	set_sky_horizon_color(Color(0.6463, 0.6558, 0.6708));
+	set_sky_curve(0.15);
+	set_sky_energy_multiplier(1.0);
+	set_sky_cover_modulate(Color(1, 1, 1));
+
+	set_ground_bottom_color(Color(0.2, 0.169, 0.133));
+	set_ground_horizon_color(Color(0.6463, 0.6558, 0.6708));
+	set_ground_curve(0.02);
+	set_ground_energy_multiplier(1.0);
+
+	set_sun_angle_max(30.0);
+	set_sun_curve(0.15);
+
 	set_rayleigh_coefficient(2.0);
 	set_rayleigh_color(Color(0.3, 0.405, 0.6));
 	set_mie_coefficient(0.005);
@@ -483,54 +616,22 @@ PhysicalSkyMaterial::PhysicalSkyMaterial()
 	set_turbidity(10.0);
 	set_sun_disk_scale(1.0);
 	set_ground_color(Color(0.1, 0.07, 0.034));
+
+	set_density(1.0);
+	set_albedo(Color(1, 1, 1, 1));
+	set_emission(Color(0, 0, 0, 1));
+	set_height_falloff(0.0);
+	set_edge_fade(0.1);
+
 	set_energy_multiplier(1.0);
-	set_use_debanding(true);
+	if (mode == MODE_PROCEDURAL || mode == MODE_PHYSICAL) {
+		set_use_debanding(true);
+	}
 }
 
-PhysicalSkyMaterial::~PhysicalSkyMaterial() {}
-
-
-
-void ProceduralSkyMaterial::set_sky_top_color(Color const&) {}
-
-void ProceduralSkyMaterial::set_sky_horizon_color(Color const&) {}
-
-void ProceduralSkyMaterial::set_ground_horizon_color(Color const&) {}
-
-void ProceduralSkyMaterial::set_ground_bottom_color(Color const&) {}
-
-void ProceduralSkyMaterial::set_energy_multiplier(float) {}
-
-void ProceduralSkyMaterial::set_sun_curve(float) {}
-
-void ProceduralSkyMaterial::set_sun_angle_max(float) {}
-
-void ProceduralSkyMaterial::set_sky_energy_multiplier(float) {}
-
-void ProceduralSkyMaterial::set_sky_curve(float) {}
-
-void ProceduralSkyMaterial::set_sky_cover_modulate(Color const&) {}
-
-void ProceduralSkyMaterial::set_ground_energy_multiplier(float) {}
-
-void ProceduralSkyMaterial::set_ground_curve(float) {}
-
-void PhysicalSkyMaterial::set_turbidity(float) {}
-
-void PhysicalSkyMaterial::set_sun_disk_scale(float) {}
-
-void PhysicalSkyMaterial::set_rayleigh_color(Color) {}
-
-void PhysicalSkyMaterial::set_rayleigh_coefficient(float) {}
-
-void PhysicalSkyMaterial::set_mie_eccentricity(float) {}
-
-void PhysicalSkyMaterial::set_mie_color(Color) {}
-
-void PhysicalSkyMaterial::set_mie_coefficient(float) {}
-
-void PhysicalSkyMaterial::set_ground_color(Color) {}
-
-void PhysicalSkyMaterial::set_energy_multiplier(float) {}
-
-void PanoramaSkyMaterial::set_energy_multiplier(float) {}
+SkyMaterial::~SkyMaterial()
+{
+	if (mode == MODE_FOG) {
+		Renderer::material_set_shader(_get_material(), RID());
+	}
+}

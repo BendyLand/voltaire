@@ -32,7 +32,8 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "scene/property_list_helper.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/ring_buffer.h"
 #include "servers/audio/audio_server.h"
 
 class AudioStream;
@@ -128,7 +129,6 @@ protected:
 	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames);
 	virtual float get_stream_sampling_rate();
 
-
 public:
 	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
 	virtual float get_stream_sampling_rate() const;
@@ -146,8 +146,6 @@ class AudioStream : public Resource
 	uint64_t tagged_frame = 0;
 	uint64_t offset_count = 0;
 	float tagged_offsets[MAX_TAGGED_OFFSETS];
-
-protected:
 
 public:
 	virtual Ref<AudioStreamPlayback> instantiate_playback();
@@ -173,37 +171,74 @@ public:
 	virtual bool is_meta_stream() const { return false; }
 };
 
-// Microphone
+// Generator / Microphone
 
-class AudioStreamPlaybackMicrophone;
+class AudioStreamGeneratorPlayback;
 
-class AudioStreamMicrophone : public AudioStream
+class AudioStreamGenerator final : public AudioStream
 {
-	friend class AudioStreamPlaybackMicrophone;
+public:
+	enum SourceMode
+	{
+		SOURCE_BUFFER,
+		SOURCE_MICROPHONE,
+	};
 
-	HashSet<AudioStreamPlaybackMicrophone*> playbacks;
+	enum AudioStreamGeneratorMixRate
+	{
+		MIX_RATE_OUTPUT,
+		MIX_RATE_INPUT,
+		MIX_RATE_CUSTOM,
+		MIX_RATE_MAX,
+	};
+
+private:
+	friend class AudioStreamGeneratorPlayback;
+
+	SourceMode source_mode = SOURCE_BUFFER;
+	AudioStreamGeneratorMixRate mix_rate_mode = MIX_RATE_CUSTOM;
+	float mix_rate = 44100;
+	float buffer_len = 0.5;
+	HashSet<AudioStreamGeneratorPlayback*> playbacks;
 
 public:
+	void set_source_mode(SourceMode p_mode);
+	SourceMode get_source_mode() const;
+
+	float _get_target_rate() const;
+
+	void set_mix_rate(float p_mix_rate);
+	float get_mix_rate() const;
+
+	void set_mix_rate_mode(AudioStreamGeneratorMixRate p_mix_rate_mode);
+	AudioStreamGeneratorMixRate get_mix_rate_mode() const;
+
+	void set_buffer_length(float p_seconds);
+	float get_buffer_length() const;
+
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 
-	virtual double get_length() const override; // if supported, otherwise return 0
-
+	virtual double get_length() const override;
 	virtual bool is_monophonic() const override;
+
+	AudioStreamGenerator() = default;
 };
 
-class AudioStreamPlaybackMicrophone : public AudioStreamPlaybackResampled
+class AudioStreamGeneratorPlayback final : public AudioStreamPlaybackResampled
 {
-	friend class AudioStreamMicrophone;
+	friend class AudioStreamGenerator;
 
+	Ref<AudioStreamGenerator> generator;
+	RingBuffer<AudioFrame> buffer;
+	int skips = 0;
 	bool active = false;
+	bool using_microphone = false;
+	float mixed = 0;
 	unsigned int input_ofs = 0;
 
-	Ref<AudioStreamMicrophone> microphone;
-
 protected:
-	virtual float get_stream_sampling_rate() override;
 	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
-	virtual double get_playback_position() const override;
+	virtual float get_stream_sampling_rate() override;
 
 public:
 	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
@@ -212,23 +247,38 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; // times it looped
+	virtual int get_loop_count() const override;
 
+	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
+
+	bool push_frame(const Vector2& p_frame);
+	bool can_push_buffer(int p_frames) const;
+	bool push_buffer(const PackedVector2Array& p_frames);
+	int get_frames_available() const;
+	int get_skips() const;
 
 	virtual void tag_used_streams() override;
 
-	~AudioStreamPlaybackMicrophone();
-	AudioStreamPlaybackMicrophone();
+	void clear_buffer();
+
+	AudioStreamGeneratorPlayback();
+	~AudioStreamGeneratorPlayback();
 };
 
-//
+// Polyphonic / Randomizer
 
-class AudioStreamPlaybackRandomizer;
+class AudioStreamPlaybackPolyphonic;
 
-class AudioStreamRandomizer : public AudioStream
+class AudioStreamPolyphonic final : public AudioStream
 {
 public:
+	enum Mode
+	{
+		MODE_POLYPHONIC,
+		MODE_RANDOMIZER,
+	};
+
 	enum PlaybackMode
 	{
 		PLAYBACK_RANDOM_NO_REPEATS,
@@ -237,37 +287,41 @@ public:
 	};
 
 private:
-	friend class AudioStreamPlaybackRandomizer;
+	friend class AudioStreamPlaybackPolyphonic;
 
 	struct PoolEntry
 	{
 		Ref<AudioStream> stream;
-		float weight = 1.0;
+		float weight = 1.0f;
 	};
 
-	static inline PropertyListHelper base_property_helper;
-	PropertyListHelper property_helper;
+	Mode mode = MODE_POLYPHONIC;
 
-	HashSet<AudioStreamPlaybackRandomizer*> playbacks;
+	// Polyphonic state
+	int polyphony = 32;
+	AudioServer::PlaybackType playback_type = AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT;
+
+	// Randomizer state
+	HashSet<AudioStreamPlaybackPolyphonic*> playbacks;
 	Vector<PoolEntry> audio_stream_pool;
 	float random_pitch_scale = 1.0f;
 	float random_volume_offset_db = 0.0f;
+	Ref<AudioStream> last_playback;
+	PlaybackMode playback_mode = PLAYBACK_RANDOM_NO_REPEATS;
 
 	Ref<AudioStreamPlayback> instance_playback_random();
 	Ref<AudioStreamPlayback> instance_playback_no_repeats();
 	Ref<AudioStreamPlayback> instance_playback_sequential();
 
-	Ref<AudioStream> last_playback = nullptr;
-	PlaybackMode playback_mode = PLAYBACK_RANDOM_NO_REPEATS;
-
-protected:
-
-	bool _property_can_revert(const String& p_name) const
-	{
-		return property_helper.property_can_revert(p_name);
-	}
-
 public:
+	void set_mode(Mode p_mode);
+	Mode get_mode() const;
+
+	// Polyphonic API
+	void set_polyphony(int p_voices);
+	int get_polyphony() const;
+
+	// Randomizer API
 	void add_stream(int p_index, Ref<AudioStream> p_stream, float p_weight = 1.0);
 	void move_stream(int p_index_from, int p_index_to);
 	void remove_stream(int p_index);
@@ -292,42 +346,93 @@ public:
 	void set_playback_mode(PlaybackMode p_playback_mode);
 	PlaybackMode get_playback_mode() const;
 
+	// AudioStream overrides
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
-
-	virtual double get_length() const override; // if supported, otherwise return 0
+	virtual double get_length() const override;
 	virtual bool is_monophonic() const override;
-
 	virtual bool is_meta_stream() const override { return true; }
 
-	AudioStreamRandomizer();
+	AudioStreamPolyphonic();
 };
 
-class AudioStreamPlaybackRandomizer : public AudioStreamPlayback
+class AudioStreamPlaybackPolyphonic final : public AudioStreamPlayback
 {
-	friend class AudioStreamRandomizer;
+	friend class AudioStreamPolyphonic;
 
-	Ref<AudioStreamRandomizer> randomizer;
-	Ref<AudioStreamPlayback> playback;
-	Ref<AudioStreamPlayback> playing;
+	constexpr static uint32_t INTERNAL_BUFFER_LEN = 128;
 
-	float pitch_scale;
-	float volume_scale;
+	struct Stream
+	{
+		SafeFlag active;
+		SafeFlag pending_play;
+		SafeFlag finish_request;
+		float play_offset = 0;
+		float pitch_scale = 1.0;
+		Ref<AudioStream> stream;
+		Ref<AudioStreamPlayback> stream_playback;
+		float prev_volume_db = 0;
+		float volume_db = 0;
+		uint32_t id = 0;
+
+		Stream() : active(false), pending_play(false), finish_request(false) {}
+	};
+
+	AudioStreamPolyphonic::Mode mode = AudioStreamPolyphonic::MODE_POLYPHONIC;
+	Ref<AudioStreamPolyphonic> parent_stream;
+
+	// Polyphonic state
+	LocalVector<Stream> streams;
+	AudioFrame internal_buffer[INTERNAL_BUFFER_LEN];
+	bool active = false;
+	uint32_t id_counter = 1;
+	bool _is_sample = false;
+	Ref<AudioSamplePlayback> sample_playback;
+
+	// Randomizer state
+	Ref<AudioStreamPlayback> randomizer_playback;
+	Ref<AudioStreamPlayback> randomizer_playing;
+	float pitch_scale = 1.0f;
+	float volume_scale = 1.0f;
+
+	_FORCE_INLINE_ Stream* _find_stream(int64_t p_id);
+	_FORCE_INLINE_ const Stream* _find_stream(int64_t p_id) const;
 
 public:
+	typedef int64_t ID;
+
+	enum
+	{
+		INVALID_ID = -1
+	};
+
 	virtual void start(double p_from_pos = 0.0) override;
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; // times it looped
+	virtual int get_loop_count() const override;
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
 
-	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
-
 	virtual void tag_used_streams() override;
 
-	~AudioStreamPlaybackRandomizer();
+	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
+
+	ID play_stream(const Ref<AudioStream>& p_stream, float p_from_offset = 0, float p_volume_db = 0,
+		float p_pitch_scale = 1.0,
+		AudioServer::PlaybackType p_playback_type =
+			AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT,
+		const String& p_bus = "Master");
+	void set_stream_volume(ID p_stream_id, float p_volume_db);
+	void set_stream_pitch_scale(ID p_stream_id, float p_pitch_scale);
+	bool is_stream_playing(ID p_stream_id) const;
+	void stop_stream(ID p_stream_id);
+
+	virtual void set_is_sample(bool p_is_sample) override;
+	virtual bool get_is_sample() const override;
+	virtual Ref<AudioSamplePlayback> get_sample_playback() const override;
+	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override;
+
+	AudioStreamPlaybackPolyphonic();
+	~AudioStreamPlaybackPolyphonic();
 };
-
-

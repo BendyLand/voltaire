@@ -33,7 +33,7 @@
 
 #include "scene/resources/material.h"
 
-class CanvasItemMaterial : public Material
+class CanvasItemMaterial final : public Material
 {
 public:
 	enum BlendMode
@@ -107,6 +107,12 @@ private:
 	void _update_shader();
 	_FORCE_INLINE_ void _queue_shader_change();
 
+	static Mutex blit_shader_mutex;
+	static RID blit_shader_cache[6];
+	static void _update_blit_shader(BlendMode p_blend);
+	mutable bool blit_shader_set = false;
+	bool texture_blit = false;
+
 	BlendMode blend_mode = BLEND_MODE_MIX;
 	LightMode light_mode = LIGHT_MODE_NORMAL;
 	bool particles_animation = false;
@@ -117,6 +123,9 @@ private:
 	bool particles_anim_loop = false;
 
 public:
+	void set_texture_blit(bool p_enable);
+	bool is_texture_blit() const { return texture_blit; }
+
 	void set_blend_mode(BlendMode p_blend_mode);
 	BlendMode get_blend_mode() const;
 
@@ -136,14 +145,14 @@ public:
 
 	static void init_shaders();
 	static void finish_shaders();
+	static void cleanup_blit_shaders();
 	static void flush_changes();
 
+	virtual RID get_rid() const override;
 	virtual RID get_shader_rid() const override;
 
 	virtual Shader::Mode get_shader_mode() const override;
 
-	CanvasItemMaterial();
+	CanvasItemMaterial(bool p_texture_blit = false);
 	virtual ~CanvasItemMaterial();
 };
-
-

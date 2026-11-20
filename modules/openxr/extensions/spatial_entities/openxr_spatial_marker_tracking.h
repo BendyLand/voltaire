@@ -34,158 +34,6 @@
 #include "../openxr_future_extension.h"
 #include "openxr_spatial_entities.h"
 
-// QrCode marker tracking capability configuration
-class OpenXRSpatialCapabilityConfigurationQrCode
-	: public OpenXRSpatialCapabilityConfigurationBaseHeader
-{
-public:
-	virtual bool has_valid_configuration() const override;
-	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
-
-	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
-
-protected:
-
-private:
-	Vector<XrSpatialComponentTypeEXT> enabled_components;
-	XrSpatialCapabilityConfigurationQrCodeEXT marker_config = {
-		XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_QR_CODE_EXT, nullptr,
-		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT, 0, nullptr};
-
-	PackedInt64Array _get_enabled_components() const;
-};
-
-// Micro QrCode marker tracking capability configuration
-class OpenXRSpatialCapabilityConfigurationMicroQrCode
-	: public OpenXRSpatialCapabilityConfigurationBaseHeader
-{
-public:
-	virtual bool has_valid_configuration() const override;
-	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
-
-	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
-
-protected:
-
-private:
-	Vector<XrSpatialComponentTypeEXT> enabled_components;
-	XrSpatialCapabilityConfigurationMicroQrCodeEXT marker_config = {
-		XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_MICRO_QR_CODE_EXT, nullptr,
-		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT, 0, nullptr};
-
-	PackedInt64Array _get_enabled_components() const;
-};
-
-// Aruco marker tracking capability configuration
-class OpenXRSpatialCapabilityConfigurationAruco
-	: public OpenXRSpatialCapabilityConfigurationBaseHeader
-{
-public:
-	enum ArucoDict
-	{
-		ARUCO_DICT_4X4_50 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_50_EXT,
-		ARUCO_DICT_4X4_100 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_100_EXT,
-		ARUCO_DICT_4X4_250 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_250_EXT,
-		ARUCO_DICT_4X4_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_1000_EXT,
-		ARUCO_DICT_5X5_50 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_50_EXT,
-		ARUCO_DICT_5X5_100 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_100_EXT,
-		ARUCO_DICT_5X5_250 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_250_EXT,
-		ARUCO_DICT_5X5_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_1000_EXT,
-		ARUCO_DICT_6X6_50 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_50_EXT,
-		ARUCO_DICT_6X6_100 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_100_EXT,
-		ARUCO_DICT_6X6_250 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_250_EXT,
-		ARUCO_DICT_6X6_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_1000_EXT,
-		ARUCO_DICT_7X7_50 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_50_EXT,
-		ARUCO_DICT_7X7_100 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_100_EXT,
-		ARUCO_DICT_7X7_250 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_250_EXT,
-		ARUCO_DICT_7X7_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_1000_EXT,
-	};
-
-	OpenXRSpatialCapabilityConfigurationAruco();
-	virtual ~OpenXRSpatialCapabilityConfigurationAruco();
-
-	virtual bool has_valid_configuration() const override;
-	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
-
-	void set_aruco_dict(XrSpatialMarkerArucoDictEXT p_dict);
-	XrSpatialMarkerArucoDictEXT get_aruco_dict() const;
-
-	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
-
-protected:
-
-private:
-	Vector<XrSpatialComponentTypeEXT> enabled_components;
-	XrSpatialCapabilityConfigurationArucoMarkerEXT marker_config = {
-		XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ARUCO_MARKER_EXT, nullptr,
-		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT, 0, nullptr,
-		XR_SPATIAL_MARKER_ARUCO_DICT_7X7_1000_EXT};
-
-	PackedInt64Array _get_enabled_components() const;
-
-	void _set_aruco_dict(ArucoDict p_dict);
-	ArucoDict _get_aruco_dict() const;
-};
-
-// April tag marker tracking capability configuration
-class OpenXRSpatialCapabilityConfigurationAprilTag
-	: public OpenXRSpatialCapabilityConfigurationBaseHeader
-{
-public:
-	enum AprilTagDict
-	{
-		APRIL_TAG_DICT_16H5 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_16H5_EXT,
-		APRIL_TAG_DICT_25H9 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_25H9_EXT,
-		APRIL_TAG_DICT_36H10 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H10_EXT,
-		APRIL_TAG_DICT_36H11 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT,
-	};
-
-	OpenXRSpatialCapabilityConfigurationAprilTag();
-	virtual ~OpenXRSpatialCapabilityConfigurationAprilTag();
-
-	virtual bool has_valid_configuration() const override;
-	virtual XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration() override;
-
-	void set_april_dict(XrSpatialMarkerAprilTagDictEXT p_dict);
-	XrSpatialMarkerAprilTagDictEXT get_april_dict() const;
-
-	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
-
-protected:
-
-private:
-	Vector<XrSpatialComponentTypeEXT> enabled_components;
-	XrSpatialCapabilityConfigurationAprilTagEXT marker_config = {
-		XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_APRIL_TAG_EXT, nullptr,
-		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT, 0, nullptr,
-		XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT};
-
-	PackedInt64Array _get_enabled_components() const;
-
-	void _set_april_dict(AprilTagDict p_dict);
-	AprilTagDict _get_april_dict() const;
-};
-
-// Marker component data
-class OpenXRSpatialComponentMarkerList : public OpenXRSpatialComponentData
-{
-public:
-	virtual void set_capacity(uint32_t p_capacity) override;
-	virtual XrSpatialComponentTypeEXT get_component_type() const override;
-	virtual void* get_structure_data(void* p_next) override;
-
-	MarkerType get_marker_type(int64_t p_index) const;
-	uint32_t get_marker_id(int64_t p_index) const;
-
-protected:
-
-private:
-	Vector<XrSpatialMarkerDataEXT> marker_data;
-
-	XrSpatialComponentMarkerListEXT marker_list = {
-		XR_TYPE_SPATIAL_COMPONENT_MARKER_LIST_EXT, nullptr, 0, nullptr};
-};
-
 // Marker tracker (folded into OpenXRSpatialEntityTracker)
 using OpenXRMarkerTracker = OpenXRSpatialEntityTracker;
 
@@ -193,7 +41,6 @@ using OpenXRMarkerTracker = OpenXRSpatialEntityTracker;
 class OpenXRSpatialMarkerTrackingCapability final
 {
 public:
-
 	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
 	static void on_session_created(const XrSession p_session);
@@ -207,7 +54,6 @@ public:
 	static bool is_april_tag_supported();
 
 private:
-
 	// Discovery logic
 	static Ref<OpenXRFutureResult> _create_spatial_context();
 	static void _on_spatial_context_created(RID p_spatial_context);
@@ -222,10 +68,10 @@ public:
 		bool need_discovery = false;
 		int discovery_cooldown = 0;
 		Ref<OpenXRFutureResult> discovery_query_result;
-		Ref<OpenXRSpatialCapabilityConfigurationQrCode> qrcode_configuration;
-		Ref<OpenXRSpatialCapabilityConfigurationMicroQrCode> micro_qrcode_configuration;
-		Ref<OpenXRSpatialCapabilityConfigurationAruco> aruco_configuration;
-		Ref<OpenXRSpatialCapabilityConfigurationAprilTag> april_tag_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> qrcode_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> micro_qrcode_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> aruco_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> april_tag_configuration;
 		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRMarkerTracker>>> marker_trackers;
 	};
 
@@ -240,5 +86,3 @@ public:
 	OpenXRSpatialMarkerTrackingCapability& operator=(const OpenXRSpatialMarkerTrackingCapability&) = delete;
 	~OpenXRSpatialMarkerTrackingCapability() = delete;
 };
-
-

@@ -44,7 +44,7 @@
 -Proper trails
 */
 
-class ParticleProcessMaterial : public Material
+class ParticleProcessMaterial final : public Material
 {
 public:
 	enum Parameter
