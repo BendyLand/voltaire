@@ -31,13 +31,14 @@
 
 #include "core/math/geometry_2d.h"
 #include "core/templates/sort_array.h"
+#include "godot_collision_object_2d.h"
 #include "godot_shape_2d.h"
 
 void GodotShape2D::configure(const Rect2& p_aabb)
 {
 	aabb = p_aabb;
 	configured = true;
-	for (const KeyValue<GodotShapeOwner2D*, int>& E : owners) {
+	for (const KeyValue<GodotCollisionObject2D*, int>& E : owners) {
 		E.key->_shape_changed();
 	}
 }
@@ -50,9 +51,9 @@ Vector2 GodotShape2D::get_support(const Vector2& p_normal) const
 	return res[0];
 }
 
-void GodotShape2D::add_owner(GodotShapeOwner2D* p_owner)
+void GodotShape2D::add_owner(GodotCollisionObject2D* p_owner)
 {
-	HashMap<GodotShapeOwner2D*, int>::Iterator E = owners.find(p_owner);
+	HashMap<GodotCollisionObject2D*, int>::Iterator E = owners.find(p_owner);
 	if (E) {
 		E->value++;
 	}
@@ -61,9 +62,9 @@ void GodotShape2D::add_owner(GodotShapeOwner2D* p_owner)
 	}
 }
 
-void GodotShape2D::remove_owner(GodotShapeOwner2D* p_owner)
+void GodotShape2D::remove_owner(GodotCollisionObject2D* p_owner)
 {
-	HashMap<GodotShapeOwner2D*, int>::Iterator E = owners.find(p_owner);
+	HashMap<GodotCollisionObject2D*, int>::Iterator E = owners.find(p_owner);
 	ERR_FAIL_COND(!E);
 	E->value--;
 	if (E->value == 0) {
@@ -71,9 +72,9 @@ void GodotShape2D::remove_owner(GodotShapeOwner2D* p_owner)
 	}
 }
 
-bool GodotShape2D::is_owner(GodotShapeOwner2D* p_owner) const { return owners.has(p_owner); }
+bool GodotShape2D::is_owner(GodotCollisionObject2D* p_owner) const { return owners.has(p_owner); }
 
-const HashMap<GodotShapeOwner2D*, int>& GodotShape2D::get_owners() const { return owners; }
+const HashMap<GodotCollisionObject2D*, int>& GodotShape2D::get_owners() const { return owners; }
 
 GodotShape2D::~GodotShape2D() { ERR_FAIL_COND(owners.size()); }
 

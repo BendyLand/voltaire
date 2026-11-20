@@ -29,11 +29,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "scene/2d/skeleton_2d.h"
 #include "skeleton_modification_stack_2d.h"
 
-void SkeletonModificationStack2D::setup()
-{
+#include "scene/2d/skeleton_2d.h"
+#include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
+
+void SkeletonModificationStack2D::setup() {
 	if (is_setup) {
 		return;
 	}
@@ -50,16 +51,28 @@ void SkeletonModificationStack2D::setup()
 #ifdef TOOLS_ENABLED
 		set_editor_gizmos_dirty(true);
 #endif // TOOLS_ENABLED
-
-	}
-	else {
+	} else {
 		WARN_PRINT("Cannot setup SkeletonModificationStack2D: no Skeleton2D set!");
 	}
 }
 
-void SkeletonModificationStack2D::draw_editor_gizmos()
-{
-	if (!is_setup) {
+void SkeletonModificationStack2D::execute(float p_delta, int p_execution_mode) {
+	if (!is_setup || !enabled || skeleton == nullptr) {
+		return;
+	}
+
+	for (int i = 0; i < modifications.size(); i++) {
+		if (modifications[i].is_null()) {
+			continue;
+		}
+		if (modifications[i]->get_enabled() && modifications[i]->get_execution_mode() == p_execution_mode) {
+			modifications.get(i)->_execute(p_delta);
+		}
+	}
+}
+
+void SkeletonModificationStack2D::draw_editor_gizmos() {
+	if (!is_setup || !skeleton) {
 		return;
 	}
 
@@ -68,7 +81,6 @@ void SkeletonModificationStack2D::draw_editor_gizmos()
 			if (modifications[i].is_null()) {
 				continue;
 			}
-
 			if (modifications[i]->editor_draw_gizmo) {
 				modifications.get(i)->_draw_editor_gizmo();
 			}
@@ -78,8 +90,7 @@ void SkeletonModificationStack2D::draw_editor_gizmos()
 	}
 }
 
-void SkeletonModificationStack2D::enable_all_modifications(bool p_enabled)
-{
+void SkeletonModificationStack2D::enable_all_modifications(bool p_enabled) {
 	for (int i = 0; i < modifications.size(); i++) {
 		if (modifications[i].is_null()) {
 			continue;
@@ -88,14 +99,12 @@ void SkeletonModificationStack2D::enable_all_modifications(bool p_enabled)
 	}
 }
 
-Ref<SkeletonModification2D> SkeletonModificationStack2D::get_modification(int p_mod_idx) const
-{
+Ref<SkeletonModification2D> SkeletonModificationStack2D::get_modification(int p_mod_idx) const {
 	ERR_FAIL_INDEX_V(p_mod_idx, modifications.size(), nullptr);
 	return modifications[p_mod_idx];
 }
 
-void SkeletonModificationStack2D::add_modification(Ref<SkeletonModification2D> p_mod)
-{
+void SkeletonModificationStack2D::add_modification(Ref<SkeletonModification2D> p_mod) {
 	ERR_FAIL_COND(p_mod.is_null());
 
 	p_mod->_setup_modification(this);
@@ -106,8 +115,7 @@ void SkeletonModificationStack2D::add_modification(Ref<SkeletonModification2D> p
 #endif // TOOLS_ENABLED
 }
 
-void SkeletonModificationStack2D::delete_modification(int p_mod_idx)
-{
+void SkeletonModificationStack2D::delete_modification(int p_mod_idx) {
 	ERR_FAIL_INDEX(p_mod_idx, modifications.size());
 	modifications.remove_at(p_mod_idx);
 
@@ -116,14 +124,12 @@ void SkeletonModificationStack2D::delete_modification(int p_mod_idx)
 #endif // TOOLS_ENABLED
 }
 
-void SkeletonModificationStack2D::set_modification(int p_mod_idx, Ref<SkeletonModification2D> p_mod)
-{
+void SkeletonModificationStack2D::set_modification(int p_mod_idx, Ref<SkeletonModification2D> p_mod) {
 	ERR_FAIL_INDEX(p_mod_idx, modifications.size());
 
 	if (p_mod.is_null()) {
 		modifications.write[p_mod_idx] = Ref<SkeletonModification2D>();
-	}
-	else {
+	} else {
 		modifications.write[p_mod_idx] = p_mod;
 		p_mod->_setup_modification(this);
 	}
@@ -133,33 +139,66 @@ void SkeletonModificationStack2D::set_modification(int p_mod_idx, Ref<SkeletonMo
 #endif // TOOLS_ENABLED
 }
 
-int SkeletonModificationStack2D::get_modification_count() const { return modifications.size(); }
+void SkeletonModificationStack2D::set_modification_count(int p_count) {
+	ERR_FAIL_COND_MSG(p_count < 0, "SkeletonModificationStack2D modification count cannot be less than zero.");
+	modifications.resize(p_count);
+#ifdef TOOLS_ENABLED
+	set_editor_gizmos_dirty(true);
+#endif // TOOLS_ENABLED
+}
 
-void SkeletonModificationStack2D::set_skeleton(Skeleton2D* p_skeleton) { skeleton = p_skeleton; }
+int SkeletonModificationStack2D::get_modification_count() const {
+	return modifications.size();
+}
 
-Skeleton2D* SkeletonModificationStack2D::get_skeleton() const { return skeleton; }
+void SkeletonModificationStack2D::set_skeleton(Skeleton2D *p_skeleton) {
+	skeleton = p_skeleton;
+}
 
-bool SkeletonModificationStack2D::get_is_setup() const { return is_setup; }
+Skeleton2D *SkeletonModificationStack2D::get_skeleton() const {
+	return skeleton;
+}
 
-void SkeletonModificationStack2D::set_enabled(bool p_enabled) { enabled = p_enabled; }
+bool SkeletonModificationStack2D::get_is_setup() const {
+	return is_setup;
+}
 
-bool SkeletonModificationStack2D::get_enabled() const { return enabled; }
+void SkeletonModificationStack2D::set_enabled(bool p_enabled) {
+	enabled = p_enabled;
+}
 
-void SkeletonModificationStack2D::set_editor_gizmos_dirty(bool p_dirty) {}
+bool SkeletonModificationStack2D::get_enabled() const {
+	return enabled;
+}
 
-void SkeletonModificationStack2D::set_strength(float p_strength)
-{
+void SkeletonModificationStack2D::set_editor_gizmos_dirty(bool p_dirty) {
+	if (!is_setup) {
+		return;
+	}
+	editor_gizmo_dirty = p_dirty;
+	if (skeleton && editor_gizmo_dirty) {
+		skeleton->queue_redraw();
+	}
+}
+
+void SkeletonModificationStack2D::set_strength(float p_strength) {
 	ERR_FAIL_COND_MSG(p_strength < 0, "Strength cannot be less than zero!");
 	ERR_FAIL_COND_MSG(p_strength > 1, "Strength cannot be more than one!");
 	strength = p_strength;
 }
 
-float SkeletonModificationStack2D::get_strength() const { return strength; }
+float SkeletonModificationStack2D::get_strength() const {
+	return strength;
+}
 
 SkeletonModificationStack2D::SkeletonModificationStack2D() {}
 
-
-
-void SkeletonModificationStack2D::execute(float, int) {}
-
-void Skeleton2D::execute_modifications(float, int) {}
+void Skeleton2D::execute_modifications(real_t p_delta, int p_execution_mode) {
+	if (modification_stack.is_null()) {
+		return;
+	}
+	if (bone_setup_dirty) {
+		_update_bone_setup();
+	}
+	modification_stack->execute(p_delta, p_execution_mode);
+}

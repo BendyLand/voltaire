@@ -38,27 +38,6 @@
 #include "godot_collision_object_2d.h"
 #include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
 
-class GodotPhysicsDirectSpaceState2D : public PhysicsDirectSpaceState2D
-{
-public:
-	GodotSpace2D* space = nullptr;
-
-	virtual int intersect_point(const PS2DT::PointParameters& p_parameters,
-		PS2DT::ShapeResult* r_results, int p_result_max) override;
-	virtual bool intersect_ray(
-		const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result) override;
-	virtual int intersect_shape(const PS2DT::ShapeParameters& p_parameters,
-		PS2DT::ShapeResult* r_results, int p_result_max) override;
-	virtual bool cast_motion(const PS2DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
-		real_t& p_closest_unsafe) override;
-	virtual bool collide_shape(const PS2DT::ShapeParameters& p_parameters, Vector2* r_results,
-		int p_result_max, int& r_result_count) override;
-	virtual bool rest_info(
-		const PS2DT::ShapeParameters& p_parameters, PS2DT::ShapeRestInfo* r_info) override;
-
-	GodotPhysicsDirectSpaceState2D() {}
-};
-
 class GodotSpace2D
 {
 public:
@@ -83,7 +62,7 @@ private:
 
 	uint64_t elapsed_time[ELAPSED_TIME_MAX] = {};
 
-	GodotPhysicsDirectSpaceState2D* direct_access = nullptr;
+	PhysicsDirectSpaceState2D* direct_access = nullptr;
 	RID self;
 
 	GodotBroadPhase2D* broadphase = nullptr;
@@ -135,7 +114,7 @@ private:
 	Vector<Vector2> contact_debug;
 	int contact_debug_count = 0;
 
-	friend class GodotPhysicsDirectSpaceState2D;
+	friend class PhysicsDirectSpaceState2D;
 
 public:
 	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
@@ -237,13 +216,13 @@ public:
 
 	_FORCE_INLINE_ int get_debug_contact_count() { return contact_debug_count; }
 
-	GodotPhysicsDirectSpaceState2D* get_direct_state();
+	PhysicsDirectSpaceState2D* get_direct_state();
 
 	void set_elapsed_time(ElapsedTime p_time, uint64_t p_msec) { elapsed_time[p_time] = p_msec; }
 
 	uint64_t get_elapsed_time(ElapsedTime p_time) const { return elapsed_time[p_time]; }
 
-	GodotSpace2D() = default;
+	GodotSpace2D();
 	~GodotSpace2D();
 };
 

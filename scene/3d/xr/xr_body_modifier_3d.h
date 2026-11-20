@@ -33,33 +33,47 @@
 
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "servers/xr/xr_body_tracker.h"
+#include "servers/xr/xr_hand_tracker.h"
 
 class Skeleton3D;
 
 /**
-	The XRBodyModifier3D node drives a body skeleton using body tracking
-	data from an XRBodyTracker instance.
+	The XRBodyModifier3D node drives a body or hand skeleton using tracking
+	data from an XRBodyTracker or XRHandTracker instance.
  */
 
-class XRBodyModifier3D : public SkeletonModifier3D
-{
+class XRBodyModifier3D : public SkeletonModifier3D {
 public:
-	enum BodyUpdate
-	{
+	enum TargetMode {
+		TARGET_BODY,
+		TARGET_HAND,
+	};
+
+	enum BodyUpdate {
 		BODY_UPDATE_UPPER_BODY = 1,
 		BODY_UPDATE_LOWER_BODY = 2,
 		BODY_UPDATE_HANDS = 4,
 	};
 
-	enum BoneUpdate
-	{
+	enum BoneUpdate {
 		BONE_UPDATE_FULL,
 		BONE_UPDATE_ROTATION_ONLY,
-		BONE_UPDATE_MAX
+		BONE_UPDATE_MAX,
 	};
 
-	void set_body_tracker(const String& p_tracker_name);
+	XRBodyModifier3D(TargetMode p_mode = TARGET_BODY);
+
+	void set_target_mode(TargetMode p_mode);
+	TargetMode get_target_mode() const { return target_mode; }
+
+	void set_tracker_name(const String &p_tracker_name);
+	String get_tracker_name() const;
+
+	void set_body_tracker(const String &p_tracker_name);
 	String get_body_tracker() const;
+
+	void set_hand_tracker(const String &p_tracker_name);
+	String get_hand_tracker() const;
 
 	void set_body_update(uint32_t p_body_update);
 	uint32_t get_body_update() const;
@@ -67,27 +81,34 @@ public:
 	void set_bone_update(BoneUpdate p_bone_update);
 	BoneUpdate get_bone_update() const;
 
+	virtual PackedStringArray get_configuration_warnings() const override;
+
 	void _notification(int p_what);
 
 protected:
-
-	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
+	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
 	virtual void _process_modification(double p_delta) override;
 
 private:
-	struct JointData
-	{
+	struct JointData {
 		int bone = -1;
 		int parent_joint = -1;
 	};
 
+	TargetMode target_mode = TARGET_BODY;
 	String tracker_name = "/user/body_tracker";
 	uint32_t body_update = BODY_UPDATE_UPPER_BODY | BODY_UPDATE_LOWER_BODY | BODY_UPDATE_HANDS;
 	BoneUpdate bone_update = BONE_UPDATE_FULL;
-	JointData joints[XRBodyTracker::JOINT_MAX];
+	JointData body_joints[XRBodyTracker::JOINT_MAX];
+	JointData hand_joints[XRHandTracker::HAND_JOINT_MAX];
+
+	bool has_stored_previous_transforms = false;
+	Vector<Transform3D> previous_relative_transforms;
 
 	void _get_joint_data();
-	void _tracker_changed(const String& p_tracker_name, XRServer::TrackerType p_tracker_type);
+	void _get_body_joint_data();
+	void _get_hand_joint_data();
+	void _process_body_modification(Skeleton3D *p_skeleton);
+	void _process_hand_modification(Skeleton3D *p_skeleton);
+	void _tracker_changed(const String &p_tracker_name, XRServer::TrackerType p_tracker_type);
 };
-
-

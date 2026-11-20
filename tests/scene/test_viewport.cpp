@@ -46,7 +46,7 @@ TEST_FORCE_LINK(test_viewport)
 #include "scene/2d/physics/area_2d.h"
 #include "scene/2d/physics/collision_shape_2d.h"
 #include "scene/resources/2d/shape_2d.h"
-#include "servers/physics_2d/physics_server_2d_dummy.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #endif // PHYSICS_2D_DISABLED
 
 namespace TestViewport {
@@ -1594,8 +1594,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 	// FIXME: MOUSE_MODE_CAPTURED if-conditions are not testable, because DisplayServerMock doesn't support it.
 
 	// NOTE: This test requires a real physics server.
-	PhysicsServer2DDummy *physics_server_2d_dummy = PhysicsServer2D::driver_as<PhysicsServer2DDummy>();
-	if (physics_server_2d_dummy) {
+	if (!PhysicsServer2D::is_initialized()) {
 		return;
 	}
 

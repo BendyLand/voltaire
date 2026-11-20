@@ -40,7 +40,7 @@
 #include "servers/physics_2d/physics_server_2d_constants.h"
 
 class GodotConstraint2D;
-class GodotPhysicsDirectBodyState2D;
+class PhysicsDirectBodyState2D;
 
 class GodotBody2D : public GodotCollisionObject2D
 {
@@ -153,13 +153,13 @@ class GodotBody2D : public GodotCollisionObject2D
 	Vector<Contact> contacts; // no contacts by default
 	int contact_count = 0;
 
-	GodotPhysicsDirectBodyState2D* direct_state = nullptr;
+	PhysicsDirectBodyState2D* direct_state = nullptr;
 
 	uint64_t island_step = 0;
 
 	void _update_transform_dependent();
 
-	friend class GodotPhysicsDirectBodyState2D; // i give up, too many functions to expose
+	friend class PhysicsDirectBodyState2D; // i give up, too many functions to expose
 
 public:
 	void add_contact(const Vector2& p_local_pos, const Vector2& p_local_normal, real_t p_depth,
@@ -167,7 +167,7 @@ public:
 		int p_collider_shape, const RID& p_collider, const Vector2& p_collider_velocity_at_pos,
 		const Vector2& p_impulse);
 
-	GodotPhysicsDirectBodyState2D* get_direct_state();
+	PhysicsDirectBodyState2D* get_direct_state();
 
 	_FORCE_INLINE_ void add_area(GodotArea2D* p_area)
 	{

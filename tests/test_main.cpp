@@ -63,7 +63,6 @@
 
 #ifndef PHYSICS_2D_DISABLED
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/physics_2d/physics_server_2d_dummy.h"
 #endif // PHYSICS_2D_DISABLED
 #ifndef PHYSICS_3D_DISABLED
 #include "servers/physics_3d/physics_server_3d.h"
@@ -149,11 +148,6 @@ int test_main(int argc, char *argv[]) {
 struct GodotTestCaseListener : public doctest::IReporter {
 	GodotTestCaseListener(const doctest::ContextOptions &p_in) {}
 
-#ifndef PHYSICS_2D_DISABLED
-	PhysicsServer2DDriver *physics_server_2d = nullptr;
-#endif // PHYSICS_2D_DISABLED
-
-
 	void test_case_start(const doctest::TestCaseData &p_in) override {
 		reinitialize();
 
@@ -193,11 +187,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-			physics_server_2d = PhysicsServer2DManager::new_default_server();
-			if (!physics_server_2d) {
-				physics_server_2d = memnew(PhysicsServer2DDummy);
-			}
-			physics_server_2d->init();
+			PhysicsServer2D::initialize();
 #endif // PHYSICS_2D_DISABLED
 
 			ERR_PRINT_OFF;
@@ -294,10 +284,9 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-		if (physics_server_2d) {
-			physics_server_2d->finish();
-			memdelete(physics_server_2d);
-			physics_server_2d = nullptr;
+		if (PhysicsServer2D::is_initialized()) {
+			PhysicsServer2D::finish();
+			PhysicsServer2D::finalize();
 		}
 #endif // PHYSICS_2D_DISABLED
 

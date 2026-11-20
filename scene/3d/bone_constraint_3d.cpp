@@ -31,6 +31,7 @@
 
 #include "bone_constraint_3d.h"
 
+#include "scene/3d/ik_modifier_3d.h"
 #include "scene/3d/look_at_modifier_3d.h"
 
 BoneConstraint3D::BoneConstraint3D(ConstraintType p_type) :
@@ -41,11 +42,37 @@ BoneConstraint3D::~BoneConstraint3D() {
 	clear_settings();
 }
 
+void BoneConstraint3D::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			_make_velocity_joints_dirty();
+			_make_all_twist_joints_dirty();
+		} break;
+		default:
+			break;
+	}
+}
+
+void BoneConstraint3D::_set_active(bool p_active) {
+	if (p_active) {
+		reset();
+		_make_all_twist_joints_dirty();
+	}
+}
+
+void BoneConstraint3D::_skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) {
+	_make_velocity_joints_dirty();
+	_make_all_twist_joints_dirty();
+}
+
 void BoneConstraint3D::set_constraint_type(ConstraintType p_type) {
 	if (constraint_type == p_type) {
 		return;
 	}
 	constraint_type = p_type;
+	reset();
+	_make_velocity_joints_dirty();
+	_make_all_twist_joints_dirty();
 	update_configuration_warnings();
 }
 
@@ -64,6 +91,8 @@ PackedStringArray BoneConstraint3D::get_configuration_warnings() const {
 void BoneConstraint3D::set_setting_count(int p_count) {
 	ERR_FAIL_COND(p_count < 0);
 	settings.resize(p_count);
+	_make_velocity_joints_dirty();
+	_make_all_twist_joints_dirty();
 }
 
 int BoneConstraint3D::get_setting_count() const {
@@ -72,12 +101,17 @@ int BoneConstraint3D::get_setting_count() const {
 
 void BoneConstraint3D::clear_settings() {
 	settings.clear();
+	velocity_joints.clear();
+	velocity_bones.clear();
 }
 
 void BoneConstraint3D::_validate_bone_names() {
 	Skeleton3D *sk = get_skeleton();
 	if (!sk) {
 		return;
+	}
+	if (!target_bone_name.is_empty()) {
+		target_bone = sk->find_bone(target_bone_name);
 	}
 	for (uint32_t i = 0; i < settings.size(); i++) {
 		if (!settings[i].apply_bone_name.is_empty()) {
@@ -86,7 +120,15 @@ void BoneConstraint3D::_validate_bone_names() {
 		if (!settings[i].reference_bone_name.is_empty()) {
 			settings[i].reference_bone = sk->find_bone(settings[i].reference_bone_name);
 		}
+		if (!settings[i].root_bone.name.is_empty()) {
+			settings[i].root_bone.bone = sk->find_bone(settings[i].root_bone.name);
+		}
+		if (!settings[i].end_bone.name.is_empty()) {
+			settings[i].end_bone.bone = sk->find_bone(settings[i].end_bone.name);
+		}
 	}
+	_make_velocity_joints_dirty();
+	_make_all_twist_joints_dirty();
 }
 
 void BoneConstraint3D::set_amount(int p_index, float p_amount) {
@@ -480,13 +522,472 @@ bool BoneConstraint3D::is_axis_z_inverted(int p_index) const {
 	return (settings[p_index].invert_flags & AXIS_FLAG_Z) != 0;
 }
 
-// Processing.
+// --- BoneTarget properties ---
+
+void BoneConstraint3D::set_bone_name(const String &p_bone_name) {
+	target_bone_name = p_bone_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		target_bone = sk->find_bone(target_bone_name);
+	}
+}
+
+String BoneConstraint3D::get_bone_name() const {
+	return target_bone_name;
+}
+
+void BoneConstraint3D::set_bone(int p_bone) {
+	target_bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		target_bone_name = sk->get_bone_name(p_bone);
+	}
+}
+
+int BoneConstraint3D::get_bone() const {
+	return target_bone;
+}
+
+// --- Chain root/end properties (LimitAngularVelocity & TwistDisperser) ---
+
+void BoneConstraint3D::set_root_bone_name(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].root_bone.name = p_bone_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		settings[p_index].root_bone.bone = sk->find_bone(p_bone_name);
+	}
+	_make_velocity_joints_dirty();
+	_make_twist_joints_dirty(p_index);
+}
+
+String BoneConstraint3D::get_root_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	return settings[p_index].root_bone.name;
+}
+
+void BoneConstraint3D::set_root_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].root_bone.bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		settings[p_index].root_bone.name = sk->get_bone_name(p_bone);
+	}
+	_make_velocity_joints_dirty();
+	_make_twist_joints_dirty(p_index);
+}
+
+int BoneConstraint3D::get_root_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index].root_bone.bone;
+}
+
+void BoneConstraint3D::set_end_bone_name(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].end_bone.name = p_bone_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		settings[p_index].end_bone.bone = sk->find_bone(p_bone_name);
+	}
+	_make_velocity_joints_dirty();
+	_make_twist_joints_dirty(p_index);
+}
+
+String BoneConstraint3D::get_end_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	return settings[p_index].end_bone.name;
+}
+
+void BoneConstraint3D::set_end_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].end_bone.bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		settings[p_index].end_bone.name = sk->get_bone_name(p_bone);
+	}
+	_make_velocity_joints_dirty();
+	_make_twist_joints_dirty(p_index);
+}
+
+int BoneConstraint3D::get_end_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index].end_bone.bone;
+}
+
+// --- LimitAngularVelocity properties & helpers ---
+
+void BoneConstraint3D::set_chain_count(int p_count) {
+	set_setting_count(p_count);
+}
+
+int BoneConstraint3D::get_chain_count() const {
+	return get_setting_count();
+}
+
+void BoneConstraint3D::clear_chains() {
+	set_chain_count(0);
+}
+
+String BoneConstraint3D::get_joint_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)velocity_joints.size(), String());
+	return velocity_joints[p_index].name;
+}
+
+int BoneConstraint3D::get_joint_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)velocity_joints.size(), -1);
+	return velocity_joints[p_index].bone;
+}
+
+int BoneConstraint3D::get_velocity_joint_count() const {
+	return (int)velocity_joints.size();
+}
+
+void BoneConstraint3D::set_max_angular_velocity(double p_angular_velocity) {
+	max_angular_velocity = p_angular_velocity;
+}
+
+double BoneConstraint3D::get_max_angular_velocity() const {
+	return max_angular_velocity;
+}
+
+void BoneConstraint3D::set_exclude(bool p_exclude) {
+	exclude = p_exclude;
+	reset();
+}
+
+bool BoneConstraint3D::is_exclude() const {
+	return exclude;
+}
+
+void BoneConstraint3D::reset() {
+	velocity_init_needed = true;
+}
+
+void BoneConstraint3D::_make_velocity_joints_dirty() {
+	velocity_joints_dirty = true;
+	velocity_init_needed = true;
+}
+
+bool BoneConstraint3D::_is_velocity_joint_contained(int p_bone) const {
+	for (const BoneJoint &joint : velocity_joints) {
+		if (joint.bone == p_bone) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void BoneConstraint3D::_update_velocity_joints() {
+	velocity_joints.clear();
+	Skeleton3D *sk = get_skeleton();
+	if (!sk) {
+		velocity_joints_dirty = false;
+		return;
+	}
+
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		int root = settings[i].root_bone.bone;
+		int end = settings[i].end_bone.bone;
+		if (root < 0 || end < 0 || root >= sk->get_bone_count() || end >= sk->get_bone_count()) {
+			continue;
+		}
+		if (root != end && !sk->is_bone_parent_of(end, root)) {
+			continue;
+		}
+		Vector<int> chain_bones;
+		int cur = end;
+		while (cur != -1) {
+			chain_bones.push_back(cur);
+			if (cur == root) {
+				break;
+			}
+			cur = sk->get_bone_parent(cur);
+		}
+		for (int j = chain_bones.size() - 1; j >= 0; j--) {
+			int b = chain_bones[j];
+			if (!_is_velocity_joint_contained(b)) {
+				BoneJoint bj;
+				bj.bone = b;
+				bj.name = sk->get_bone_name(b);
+				velocity_joints.push_back(bj);
+			}
+		}
+	}
+
+	velocity_bones.clear();
+	if (exclude) {
+		for (int b = 0; b < sk->get_bone_count(); b++) {
+			if (!_is_velocity_joint_contained(b)) {
+				velocity_bones.push_back(BoneRot(b, Quaternion()));
+			}
+		}
+	} else {
+		for (const BoneJoint &joint : velocity_joints) {
+			velocity_bones.push_back(BoneRot(joint.bone, Quaternion()));
+		}
+	}
+
+	velocity_joints_dirty = false;
+	velocity_init_needed = true;
+}
+
+// --- TwistDisperser properties & helpers ---
+
+void BoneConstraint3D::set_mutable_bone_axes(bool p_enabled) {
+	mutable_bone_axes = p_enabled;
+	_make_all_twist_joints_dirty();
+}
+
+bool BoneConstraint3D::are_bone_axes_mutable() const {
+	return mutable_bone_axes;
+}
+
+void BoneConstraint3D::set_extend_end_bone(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].extend_end_bone = p_enabled;
+	_make_twist_joints_dirty(p_index);
+}
+
+bool BoneConstraint3D::is_end_bone_extended(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return settings[p_index].extend_end_bone;
+}
+
+void BoneConstraint3D::set_end_bone_direction(int p_index, BoneDirection p_bone_direction) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].end_bone_direction = p_bone_direction;
+	_make_twist_joints_dirty(p_index);
+}
+
+SkeletonModifier3D::BoneDirection BoneConstraint3D::get_end_bone_direction(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), BONE_DIRECTION_FROM_PARENT);
+	return settings[p_index].end_bone_direction;
+}
+
+void BoneConstraint3D::set_twist_from_rest(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].twist_from_rest = p_enabled;
+}
+
+bool BoneConstraint3D::is_twist_from_rest(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), true);
+	return settings[p_index].twist_from_rest;
+}
+
+void BoneConstraint3D::set_twist_from(int p_index, const Quaternion &p_from) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].twist_from = p_from;
+}
+
+Quaternion BoneConstraint3D::get_twist_from(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Quaternion());
+	return settings[p_index].twist_from;
+}
+
+void BoneConstraint3D::set_disperse_mode(int p_index, DisperseMode p_disperse_mode) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].disperse_mode = p_disperse_mode;
+	_make_twist_joints_dirty(p_index);
+}
+
+BoneConstraint3D::DisperseMode BoneConstraint3D::get_disperse_mode(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), DISPERSE_MODE_EVEN);
+	return settings[p_index].disperse_mode;
+}
+
+void BoneConstraint3D::set_weight_position(int p_index, float p_position) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].weight_position = p_position;
+	_make_twist_joints_dirty(p_index);
+}
+
+float BoneConstraint3D::get_weight_position(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	return settings[p_index].weight_position;
+}
+
+void BoneConstraint3D::set_damping_curve(int p_index, const Ref<Curve> &p_damping_curve) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].damping_curve = p_damping_curve;
+	_update_twist_curve(p_index);
+}
+
+Ref<Curve> BoneConstraint3D::get_damping_curve(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Ref<Curve>());
+	return settings[p_index].damping_curve;
+}
+
+String BoneConstraint3D::get_joint_bone_name(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	const LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), String());
+	return joints[p_joint].joint.name;
+}
+
+int BoneConstraint3D::get_joint_bone(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	const LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), -1);
+	return joints[p_joint].joint.bone;
+}
+
+void BoneConstraint3D::set_joint_twist_amount(int p_index, int p_joint, float p_amount) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	ERR_FAIL_INDEX(p_joint, (int)joints.size());
+	joints[p_joint].custom_amount = p_amount;
+}
+
+float BoneConstraint3D::get_joint_twist_amount(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	const LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), 0.0f);
+	return (float)joints[p_joint].custom_amount;
+}
+
+void BoneConstraint3D::set_joint_count(int p_index, int p_count) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ERR_FAIL_COND(p_count < 0);
+	settings[p_index].joints.resize(p_count);
+}
+
+int BoneConstraint3D::get_joint_count(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
+	return (int)settings[p_index].joints.size();
+}
+
+void BoneConstraint3D::_make_all_twist_joints_dirty() {
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		_make_twist_joints_dirty((int)i);
+	}
+}
+
+void BoneConstraint3D::_make_twist_joints_dirty(int p_index) {
+	if (p_index >= 0 && p_index < (int)settings.size()) {
+		settings[p_index].joints_dirty = true;
+	}
+}
+
+void BoneConstraint3D::_update_twist_curve(int p_index) {
+	Ref<Curve> curve = settings[p_index].damping_curve;
+	if (curve.is_null()) {
+		return;
+	}
+	LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	float unit = (int)joints.size() > 1 ? (1.0f / float((int)joints.size() - 1)) : 0.0f;
+	for (uint32_t i = 0; i < joints.size(); i++) {
+		joints[i].custom_amount = curve->sample(i * unit);
+	}
+}
+
+void BoneConstraint3D::_update_twist_joints(int p_index) {
+	ConstraintSetting &s = settings[p_index];
+	s.joints_dirty = false;
+
+	Skeleton3D *sk = get_skeleton();
+	if (!sk) {
+		return;
+	}
+
+	int root = s.root_bone.bone;
+	int end = s.end_bone.bone;
+	if (root < 0 || end < 0 || root >= sk->get_bone_count() || end >= sk->get_bone_count()) {
+		s.joints.clear();
+		return;
+	}
+	if (root != end && !sk->is_bone_parent_of(end, root)) {
+		s.joints.clear();
+		return;
+	}
+
+	Vector<int> chain_bones;
+	int cur = end;
+	while (cur != -1) {
+		chain_bones.push_back(cur);
+		if (cur == root) {
+			break;
+		}
+		cur = sk->get_bone_parent(cur);
+	}
+
+	// If not extending end bone, the end bone itself is the reference bone and not twisted as an intermediate joint.
+	int ref_bone = end;
+	if (s.extend_end_bone) {
+		Vector<int> children = sk->get_bone_children(end);
+		if (children.size() == 1) {
+			ref_bone = children[0];
+		}
+	} else if (chain_bones.size() > 1) {
+		chain_bones.remove_at(0);
+	}
+
+	s.reference_bone = ref_bone;
+	s.reference_bone_name = (ref_bone >= 0 && ref_bone < sk->get_bone_count()) ? sk->get_bone_name(ref_bone) : String();
+
+	LocalVector<DisperseJointSetting> old_joints = std::move(s.joints);
+	s.joints.resize(chain_bones.size());
+
+	for (int i = 0; i < chain_bones.size(); i++) {
+		int b = chain_bones[chain_bones.size() - 1 - i];
+		s.joints[i].joint.bone = b;
+		s.joints[i].joint.name = sk->get_bone_name(b);
+		if ((uint32_t)i < old_joints.size()) {
+			s.joints[i].custom_amount = old_joints[i].custom_amount;
+		} else {
+			s.joints[i].custom_amount = float(i + 1) / float(chain_bones.size());
+		}
+	}
+
+	const uint32_t j_count = s.joints.size();
+	if (j_count == 0) {
+		return;
+	}
+
+	if (s.disperse_mode == DISPERSE_MODE_EVEN) {
+		for (uint32_t i = 0; i < j_count; i++) {
+			s.joints[i].amount = double(i + 1) / double(j_count + (s.extend_end_bone ? 0 : 1));
+		}
+	} else if (s.disperse_mode == DISPERSE_MODE_WEIGHTED) {
+		double total_len = 0.0;
+		LocalVector<double> accum;
+		accum.resize(j_count);
+		for (uint32_t i = 0; i < j_count; i++) {
+			double seg = (i + 1 < j_count) ? (double)sk->get_bone_rest(s.joints[i + 1].joint.bone).origin.length() : (double)sk->get_bone_rest(ref_bone).origin.length();
+			accum[i] = total_len + seg * s.weight_position;
+			total_len += seg;
+		}
+		for (uint32_t i = 0; i < j_count; i++) {
+			s.joints[i].amount = total_len > CMP_EPSILON ? CLAMP(accum[i] / total_len, 0.0, 1.0) : double(i + 1) / double(j_count);
+		}
+	} else {
+		_update_twist_curve(p_index);
+		for (uint32_t i = 0; i < j_count; i++) {
+			s.joints[i].amount = s.joints[i].custom_amount;
+		}
+	}
+}
+
+// --- Processing ---
 
 void BoneConstraint3D::_process_modification(double p_delta) {
 	Skeleton3D *sk = get_skeleton();
 	if (!sk) {
 		return;
 	}
+
+	if (constraint_type == CONSTRAINT_BONE_TARGET) {
+		_process_bone_target(sk);
+		return;
+	}
+	if (constraint_type == CONSTRAINT_LIMIT_ANGULAR_VELOCITY) {
+		_process_limit_angular_velocity(sk, p_delta);
+		return;
+	}
+	if (constraint_type == CONSTRAINT_TWIST_DISPERSER) {
+		_process_twist_disperser(sk);
+		return;
+	}
+
 	Transform3D skel_inv = sk->get_global_transform_interpolated().affine_inverse();
 
 	for (uint32_t i = 0; i < settings.size(); i++) {
@@ -532,6 +1033,98 @@ void BoneConstraint3D::_process_modification(double p_delta) {
 			} else {
 				_process_copy(i, sk, s.apply_bone, ref_local, s.amount);
 			}
+		}
+	}
+}
+
+void BoneConstraint3D::_process_bone_target(Skeleton3D *p_skeleton) {
+	if (target_bone < 0 || target_bone >= p_skeleton->get_bone_count()) {
+		return;
+	}
+	set_global_transform(p_skeleton->get_global_transform_interpolated() * p_skeleton->get_bone_global_pose(target_bone));
+}
+
+void BoneConstraint3D::_process_limit_angular_velocity(Skeleton3D *p_skeleton, double p_delta) {
+	if (velocity_joints_dirty) {
+		_update_velocity_joints();
+	}
+	if (velocity_bones.is_empty()) {
+		return;
+	}
+	if (velocity_init_needed || p_delta <= 0.0) {
+		for (uint32_t i = 0; i < velocity_bones.size(); i++) {
+			int b = velocity_bones[i].first;
+			if (b >= 0 && b < p_skeleton->get_bone_count()) {
+				velocity_bones[i].second = p_skeleton->get_bone_pose_rotation(b);
+			}
+		}
+		velocity_init_needed = false;
+		return;
+	}
+
+	double limit_angle = max_angular_velocity * p_delta;
+	for (uint32_t i = 0; i < velocity_bones.size(); i++) {
+		int b = velocity_bones[i].first;
+		if (b < 0 || b >= p_skeleton->get_bone_count()) {
+			continue;
+		}
+		Quaternion prev_rot = velocity_bones[i].second;
+		Quaternion curr_rot = p_skeleton->get_bone_pose_rotation(b);
+		double angle_diff = prev_rot.angle_to(curr_rot);
+		if (angle_diff > limit_angle && angle_diff > CMP_EPSILON) {
+			curr_rot = prev_rot.slerp(curr_rot, real_t(limit_angle / angle_diff));
+			p_skeleton->set_bone_pose_rotation(b, curr_rot);
+		}
+		velocity_bones[i].second = curr_rot;
+	}
+}
+
+void BoneConstraint3D::_process_twist_disperser(Skeleton3D *p_skeleton) {
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		if (settings[i].joints_dirty) {
+			_update_twist_joints((int)i);
+		}
+		ConstraintSetting &s = settings[i];
+		if (s.joints.is_empty() || s.reference_bone < 0 || s.reference_bone >= p_skeleton->get_bone_count()) {
+			continue;
+		}
+
+		Vector3 ref_axis = IKModifier3D::get_bone_axis(p_skeleton, s.end_bone.bone, s.end_bone_direction, mutable_bone_axes);
+		if (ref_axis.is_zero_approx()) {
+			continue;
+		}
+		ref_axis.normalize();
+
+		Quaternion base_rot = s.twist_from_rest ? p_skeleton->get_bone_rest(s.reference_bone).basis.get_rotation_quaternion() : s.twist_from;
+		Quaternion ref_delta = base_rot.inverse() * p_skeleton->get_bone_pose_rotation(s.reference_bone);
+		double total_twist = get_roll_angle(ref_delta, ref_axis);
+
+		for (uint32_t j = 0; j < s.joints.size(); j++) {
+			int b = s.joints[j].joint.bone;
+			if (b < 0 || b >= p_skeleton->get_bone_count()) {
+				continue;
+			}
+			int next_b = (j + 1 < s.joints.size()) ? s.joints[j + 1].joint.bone : s.reference_bone;
+			Vector3 joint_axis = (next_b != b) ? (mutable_bone_axes ? p_skeleton->get_bone_pose_position(next_b) : p_skeleton->get_bone_rest(next_b).origin) : ref_axis;
+			if (joint_axis.is_zero_approx()) {
+				joint_axis = ref_axis;
+			} else {
+				joint_axis.normalize();
+			}
+			s.joints[j].axis = joint_axis;
+
+			double prev_amount = j > 0 ? s.joints[j - 1].amount : 0.0;
+			double delta_twist = total_twist * ((s.disperse_mode == DISPERSE_MODE_CUSTOM ? s.joints[j].custom_amount : s.joints[j].amount) - prev_amount);
+			Quaternion swing = get_swing(p_skeleton->get_bone_pose_rotation(b), joint_axis);
+			Quaternion twist_rot(joint_axis, real_t(delta_twist));
+			p_skeleton->set_bone_pose_rotation(b, swing * twist_rot);
+		}
+
+		if (!s.extend_end_bone && s.reference_bone == s.end_bone.bone) {
+			double last_amount = s.disperse_mode == DISPERSE_MODE_CUSTOM ? s.joints[s.joints.size() - 1].custom_amount : s.joints[s.joints.size() - 1].amount;
+			double remaining_twist = total_twist * (1.0 - last_amount);
+			Quaternion end_swing = get_swing(p_skeleton->get_bone_pose_rotation(s.end_bone.bone), ref_axis);
+			p_skeleton->set_bone_pose_rotation(s.end_bone.bone, end_swing * Quaternion(ref_axis, real_t(remaining_twist)));
 		}
 	}
 }

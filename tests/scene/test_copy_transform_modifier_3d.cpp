@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_copy_transform_modifier_3d)
 
 #include "core/math/random_number_generator.h"
 #include "scene/3d/bone_attachment_3d.h"
-#include "scene/3d/copy_transform_modifier_3d.h"
+#include "scene/3d/bone_constraint_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 
@@ -118,7 +118,7 @@ Vector3 inv_all(Vector3 p_scl) {
 TEST_CASE("[SceneTree][CopyTransformModifier3D]") {
 	int seed = 12345;
 	Skeleton3D *skeleton = memnew(Skeleton3D);
-	CopyTransformModifier3D *mod = memnew(CopyTransformModifier3D);
+	BoneConstraint3D *mod = memnew(BoneConstraint3D(BoneConstraint3D::CONSTRAINT_COPY_TRANSFORM));
 
 	// Instead of awaiting the process to wait to finish deferred process and watch "skeleton_updated" signal,
 	// force notify NOTIFICATION_UPDATE_SKELETON and get the modified pose from the BoneAttachment's transform.

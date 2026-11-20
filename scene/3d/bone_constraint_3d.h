@@ -32,6 +32,7 @@
 #pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
+#include "scene/resources/curve.h"
 
 class BoneConstraint3D : public SkeletonModifier3D {
 public:
@@ -39,6 +40,16 @@ public:
 		CONSTRAINT_AIM,
 		CONSTRAINT_CONVERT_TRANSFORM,
 		CONSTRAINT_COPY_TRANSFORM,
+		CONSTRAINT_BONE_TARGET,
+		CONSTRAINT_LIMIT_ANGULAR_VELOCITY,
+		CONSTRAINT_TWIST_DISPERSER,
+
+		TYPE_AIM = CONSTRAINT_AIM,
+		TYPE_CONVERT_TRANSFORM = CONSTRAINT_CONVERT_TRANSFORM,
+		TYPE_COPY_TRANSFORM = CONSTRAINT_COPY_TRANSFORM,
+		TYPE_BONE_TARGET = CONSTRAINT_BONE_TARGET,
+		TYPE_LIMIT_ANGULAR_VELOCITY = CONSTRAINT_LIMIT_ANGULAR_VELOCITY,
+		TYPE_TWIST_DISPERSER = CONSTRAINT_TWIST_DISPERSER,
 	};
 
 	enum ReferenceType {
@@ -65,6 +76,26 @@ public:
 		AXIS_FLAG_Z = 4,
 		AXIS_FLAG_ALL = AXIS_FLAG_X | AXIS_FLAG_Y | AXIS_FLAG_Z,
 	};
+
+	enum DisperseMode {
+		DISPERSE_MODE_EVEN,
+		DISPERSE_MODE_WEIGHTED,
+		DISPERSE_MODE_CUSTOM,
+	};
+
+	struct BoneJoint {
+		String name;
+		int bone = -1;
+	};
+
+	struct DisperseJointSetting {
+		BoneJoint joint;
+		double custom_amount = 1.0;
+		double amount = 1.0;
+		Vector3 axis;
+	};
+
+	typedef Pair<int, Quaternion> BoneRot;
 
 	struct ConstraintSetting {
 		float amount = 1.0f;
@@ -101,6 +132,19 @@ public:
 		uint32_t axis_flags = AXIS_FLAG_ALL;
 		uint32_t invert_flags = 0;
 
+		// Chain & Twist Disperser settings (shared by LIMIT_ANGULAR_VELOCITY and TWIST_DISPERSER).
+		BoneJoint root_bone;
+		BoneJoint end_bone;
+		bool joints_dirty = false;
+		DisperseMode disperse_mode = DISPERSE_MODE_EVEN;
+		bool twist_from_rest = true;
+		Quaternion twist_from;
+		LocalVector<DisperseJointSetting> joints;
+		bool extend_end_bone = false;
+		BoneDirection end_bone_direction = BONE_DIRECTION_FROM_PARENT;
+		float weight_position = 0.5f;
+		Ref<Curve> damping_curve;
+
 		bool is_relative_effective(ConstraintType p_type) const {
 			if (p_type != CONSTRAINT_AIM && reference_type == REFERENCE_TYPE_NODE) {
 				return false;
@@ -113,13 +157,43 @@ protected:
 	ConstraintType constraint_type = CONSTRAINT_COPY_TRANSFORM;
 	LocalVector<ConstraintSetting> settings;
 
+	// BoneTarget state.
+	String target_bone_name;
+	int target_bone = -1;
+
+	// LimitAngularVelocity state.
+	bool exclude = false;
+	double max_angular_velocity = Math::TAU;
+	LocalVector<BoneJoint> velocity_joints;
+	LocalVector<BoneRot> velocity_bones;
+	bool velocity_joints_dirty = false;
+	bool velocity_init_needed = true;
+
+	// TwistDisperser state.
+	bool mutable_bone_axes = true;
+
+	void _notification(int p_what);
 	virtual PackedStringArray get_configuration_warnings() const override;
+	virtual void _set_active(bool p_active) override;
+	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
 	virtual void _validate_bone_names() override;
 	virtual void _process_modification(double p_delta) override;
 
 	void _process_aim(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, const Vector3 &p_target, float p_amount);
 	void _process_convert(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, const Transform3D &p_destination, float p_amount);
 	void _process_copy(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, const Transform3D &p_destination, float p_amount);
+	void _process_bone_target(Skeleton3D *p_skeleton);
+	void _process_limit_angular_velocity(Skeleton3D *p_skeleton, double p_delta);
+	void _process_twist_disperser(Skeleton3D *p_skeleton);
+
+	void _make_velocity_joints_dirty();
+	void _update_velocity_joints();
+	bool _is_velocity_joint_contained(int p_bone) const;
+
+	void _make_all_twist_joints_dirty();
+	void _make_twist_joints_dirty(int p_index);
+	void _update_twist_joints(int p_index);
+	void _update_twist_curve(int p_index);
 
 public:
 	BoneConstraint3D(ConstraintType p_type = CONSTRAINT_COPY_TRANSFORM);
@@ -127,6 +201,12 @@ public:
 
 	void set_constraint_type(ConstraintType p_type);
 	ConstraintType get_constraint_type() const { return constraint_type; }
+
+#ifdef TOOLS_ENABLED
+	virtual bool is_processed_on_saving() const override { return constraint_type == CONSTRAINT_BONE_TARGET; }
+#endif // TOOLS_ENABLED
+
+	virtual bool has_process() const override { return constraint_type == CONSTRAINT_LIMIT_ANGULAR_VELOCITY; }
 
 	void set_setting_count(int p_count);
 	int get_setting_count() const;
@@ -213,4 +293,58 @@ public:
 	bool is_axis_y_inverted(int p_index) const;
 	void set_axis_z_inverted(int p_index, bool p_enabled);
 	bool is_axis_z_inverted(int p_index) const;
+
+	// BoneTarget properties (CONSTRAINT_BONE_TARGET / TYPE_BONE_TARGET).
+	void set_bone_name(const String &p_bone_name);
+	String get_bone_name() const;
+	void set_bone(int p_bone);
+	int get_bone() const;
+
+	// Chain root/end properties (shared by LIMIT_ANGULAR_VELOCITY and TWIST_DISPERSER).
+	void set_root_bone_name(int p_index, const String &p_bone_name);
+	String get_root_bone_name(int p_index) const;
+	void set_root_bone(int p_index, int p_bone);
+	int get_root_bone(int p_index) const;
+
+	void set_end_bone_name(int p_index, const String &p_bone_name);
+	String get_end_bone_name(int p_index) const;
+	void set_end_bone(int p_index, int p_bone);
+	int get_end_bone(int p_index) const;
+
+	// LimitAngularVelocity properties (CONSTRAINT_LIMIT_ANGULAR_VELOCITY / TYPE_LIMIT_ANGULAR_VELOCITY).
+	void set_chain_count(int p_count);
+	int get_chain_count() const;
+	void clear_chains();
+	String get_joint_bone_name(int p_index) const;
+	int get_joint_bone(int p_index) const;
+	int get_velocity_joint_count() const;
+	void set_max_angular_velocity(double p_angular_velocity);
+	double get_max_angular_velocity() const;
+	void set_exclude(bool p_exclude);
+	bool is_exclude() const;
+	void reset();
+
+	// TwistDisperser properties (CONSTRAINT_TWIST_DISPERSER / TYPE_TWIST_DISPERSER).
+	void set_mutable_bone_axes(bool p_enabled);
+	bool are_bone_axes_mutable() const;
+	void set_extend_end_bone(int p_index, bool p_enabled);
+	bool is_end_bone_extended(int p_index) const;
+	void set_end_bone_direction(int p_index, BoneDirection p_bone_direction);
+	BoneDirection get_end_bone_direction(int p_index) const;
+	void set_twist_from_rest(int p_index, bool p_enabled);
+	bool is_twist_from_rest(int p_index) const;
+	void set_twist_from(int p_index, const Quaternion &p_from);
+	Quaternion get_twist_from(int p_index) const;
+	void set_disperse_mode(int p_index, DisperseMode p_disperse_mode);
+	DisperseMode get_disperse_mode(int p_index) const;
+	void set_weight_position(int p_index, float p_position);
+	float get_weight_position(int p_index) const;
+	void set_damping_curve(int p_index, const Ref<Curve> &p_damping_curve);
+	Ref<Curve> get_damping_curve(int p_index) const;
+	String get_joint_bone_name(int p_index, int p_joint) const;
+	int get_joint_bone(int p_index, int p_joint) const;
+	void set_joint_twist_amount(int p_index, int p_joint, float p_amount);
+	float get_joint_twist_amount(int p_index, int p_joint) const;
+	void set_joint_count(int p_index, int p_count);
+	int get_joint_count(int p_index) const;
 };

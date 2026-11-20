@@ -170,7 +170,7 @@ bool GodotCollisionSolver2D::concave_callback(void *p_userdata, GodotShape2D *p_
 }
 
 bool GodotCollisionSolver2D::solve_concave(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const Vector2 &p_motion_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, Vector2 *r_sep_axis, real_t p_margin_A, real_t p_margin_B) {
-	const GodotConcaveShape2D *concave_B = static_cast<const GodotConcaveShape2D *>(p_shape_B);
+	const GodotConcavePolygonShape2D *concave_B = static_cast<const GodotConcavePolygonShape2D *>(p_shape_B);
 
 	_ConcaveCollisionInfo2D cinfo;
 	cinfo.transform_A = &p_transform_A;

@@ -31,38 +31,83 @@
 
 #pragma once
 
+#include "core/math/bvh.h"
 #include "core/math/rect2.h"
+#include "core/math/vector2.h"
 
 class GodotCollisionObject2D;
 
-class GodotBroadPhase2D {
+class GodotBroadPhase2D final
+{
 public:
-	typedef GodotBroadPhase2D *(*CreateFunction)();
-
-	static inline CreateFunction create_func = nullptr;
-
 	typedef uint32_t ID;
 
-	typedef void *(*PairCallback)(GodotCollisionObject2D *A, int p_subindex_A, GodotCollisionObject2D *B, int p_subindex_B, void *p_userdata);
-	typedef void (*UnpairCallback)(GodotCollisionObject2D *A, int p_subindex_A, GodotCollisionObject2D *B, int p_subindex_B, void *p_data, void *p_userdata);
+	typedef void* (*PairCallback)(GodotCollisionObject2D* A, int p_subindex_A, GodotCollisionObject2D* B, int p_subindex_B, void* p_userdata);
+	typedef void (*UnpairCallback)(GodotCollisionObject2D* A, int p_subindex_A, GodotCollisionObject2D* B, int p_subindex_B, void* p_data, void* p_userdata);
 
+private:
+	template <typename T>
+	class UserPairTestFunction
+	{
+	public:
+		static bool user_pair_check(const T* p_a, const T* p_b)
+		{
+			// return false if no collision, decided by masks etc
+			return p_a->interacts_with(p_b);
+		}
+	};
+
+	template <typename T>
+	class UserCullTestFunction
+	{
+	public:
+		static bool user_cull_check(const T* p_a, const T* p_b)
+		{
+			return true;
+		}
+	};
+
+	enum Tree
+	{
+		TREE_STATIC = 0,
+		TREE_DYNAMIC = 1,
+	};
+
+	enum TreeFlag
+	{
+		TREE_FLAG_STATIC = 1 << TREE_STATIC,
+		TREE_FLAG_DYNAMIC = 1 << TREE_DYNAMIC,
+	};
+
+	BVH_Manager<GodotCollisionObject2D, 2, true, 128, UserPairTestFunction<GodotCollisionObject2D>, UserCullTestFunction<GodotCollisionObject2D>, Rect2, Vector2> bvh;
+
+	static void* _pair_callback(void*, uint32_t, GodotCollisionObject2D*, int, uint32_t, GodotCollisionObject2D*, int);
+	static void _unpair_callback(void*, uint32_t, GodotCollisionObject2D*, int, uint32_t, GodotCollisionObject2D*, int, void*);
+
+	PairCallback pair_callback = nullptr;
+	void* pair_userdata = nullptr;
+	UnpairCallback unpair_callback = nullptr;
+	void* unpair_userdata = nullptr;
+
+public:
 	// 0 is an invalid ID
-	virtual ID create(GodotCollisionObject2D *p_object_, int p_subindex = 0, const Rect2 &p_aabb = Rect2(), bool p_static = false) = 0;
-	virtual void move(ID p_id, const Rect2 &p_aabb) = 0;
-	virtual void set_static(ID p_id, bool p_static) = 0;
-	virtual void remove(ID p_id) = 0;
+	ID create(GodotCollisionObject2D* p_object, int p_subindex = 0, const Rect2& p_aabb = Rect2(), bool p_static = false);
+	void move(ID p_id, const Rect2& p_aabb);
+	void set_static(ID p_id, bool p_static);
+	void remove(ID p_id);
 
-	virtual GodotCollisionObject2D *get_object(ID p_id) const = 0;
-	virtual bool is_static(ID p_id) const = 0;
-	virtual int get_subindex(ID p_id) const = 0;
+	GodotCollisionObject2D* get_object(ID p_id) const;
+	bool is_static(ID p_id) const;
+	int get_subindex(ID p_id) const;
 
-	virtual int cull_segment(const Vector2 &p_from, const Vector2 &p_to, GodotCollisionObject2D **p_results, int p_max_results, int *p_result_indices = nullptr) = 0;
-	virtual int cull_aabb(const Rect2 &p_aabb, GodotCollisionObject2D **p_results, int p_max_results, int *p_result_indices = nullptr) = 0;
+	int cull_segment(const Vector2& p_from, const Vector2& p_to, GodotCollisionObject2D** p_results, int p_max_results, int* p_result_indices = nullptr);
+	int cull_aabb(const Rect2& p_aabb, GodotCollisionObject2D** p_results, int p_max_results, int* p_result_indices = nullptr);
 
-	virtual void set_pair_callback(PairCallback p_pair_callback, void *p_userdata) = 0;
-	virtual void set_unpair_callback(UnpairCallback p_unpair_callback, void *p_userdata) = 0;
+	void set_pair_callback(PairCallback p_pair_callback, void* p_userdata);
+	void set_unpair_callback(UnpairCallback p_unpair_callback, void* p_userdata);
 
-	virtual void update() = 0;
+	void update();
 
-	virtual ~GodotBroadPhase2D() {}
+	GodotBroadPhase2D();
+	~GodotBroadPhase2D() = default;
 };

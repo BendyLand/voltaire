@@ -37,16 +37,8 @@
 #include "core/templates/rid.h"
 #include "servers/physics_2d/physics_server_2d_enums.h"
 
+class GodotCollisionObject2D;
 class GodotShape2D;
-
-class GodotShapeOwner2D
-{
-public:
-	virtual void _shape_changed() = 0;
-	virtual void remove_shape(GodotShape2D* p_shape) = 0;
-
-	virtual ~GodotShapeOwner2D() {}
-};
 
 class GodotShape2D
 {
@@ -55,7 +47,7 @@ class GodotShape2D
 	bool configured = false;
 	real_t custom_bias = 0.0;
 
-	HashMap<GodotShapeOwner2D*, int> owners;
+	HashMap<GodotCollisionObject2D*, int> owners;
 
 protected:
 	const double segment_is_valid_support_threshold = 0.99998;
@@ -97,10 +89,10 @@ public:
 
 	_FORCE_INLINE_ real_t get_custom_bias() const { return custom_bias; }
 
-	void add_owner(GodotShapeOwner2D* p_owner);
-	void remove_owner(GodotShapeOwner2D* p_owner);
-	bool is_owner(GodotShapeOwner2D* p_owner) const;
-	const HashMap<GodotShapeOwner2D*, int>& get_owners() const;
+	void add_owner(GodotCollisionObject2D* p_owner);
+	void remove_owner(GodotCollisionObject2D* p_owner);
+	bool is_owner(GodotCollisionObject2D* p_owner) const;
+	const HashMap<GodotCollisionObject2D*, int>& get_owners() const;
 
 	_FORCE_INLINE_ void get_supports_transformed_cast(const Vector2& p_cast,
 		const Vector2& p_normal, const Transform2D& p_xform, Vector2* r_supports,
@@ -565,19 +557,7 @@ public:
 	~GodotConvexPolygonShape2D();
 };
 
-class GodotConcaveShape2D : public GodotShape2D
-{
-public:
-	virtual bool is_concave() const override { return true; }
-
-	// Returns true to stop the query.
-	typedef bool (*QueryCallback)(void* p_userdata, GodotShape2D* p_convex);
-
-	virtual void cull(
-		const Rect2& p_local_aabb, QueryCallback p_callback, void* p_userdata) const = 0;
-};
-
-class GodotConcavePolygonShape2D : public GodotConcaveShape2D
+class GodotConcavePolygonShape2D : public GodotShape2D
 {
 	struct Segment
 	{
@@ -617,6 +597,11 @@ class GodotConcavePolygonShape2D : public GodotConcaveShape2D
 	int _generate_bvh(BVH* p_bvh, int p_len, int p_depth);
 
 public:
+	// Returns true to stop the query.
+	typedef bool (*QueryCallback)(void* p_userdata, GodotShape2D* p_convex);
+
+	virtual bool is_concave() const override { return true; }
+
 	virtual PS2DE::ShapeType get_type() const override { return PS2DE::SHAPE_CONCAVE_POLYGON; }
 
 	virtual void project_rangev(const Vector2& p_normal, const Transform2D& p_transform,
@@ -647,8 +632,8 @@ public:
 		return 0;
 	}
 
-	virtual void cull(
-		const Rect2& p_local_aabb, QueryCallback p_callback, void* p_userdata) const override;
+	void cull(
+		const Rect2& p_local_aabb, QueryCallback p_callback, void* p_userdata) const;
 
 	DEFAULT_PROJECT_RANGE_CAST
 };

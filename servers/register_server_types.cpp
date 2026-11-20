@@ -64,7 +64,6 @@
 #endif // NAVIGATION_2D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/physics_2d/physics_server_2d_dummy.h"
 #endif // PHYSICS_2D_DISABLED
 
 // 3D physics and navigation.
@@ -86,10 +85,6 @@
 #include "servers/xr/xr_server.h"
 #include "servers/xr/xr_vrs.h"
 #endif // XR_DISABLED
-
-#ifndef PHYSICS_2D_DISABLED
-static PhysicsServer2DDriver* _create_dummy_physics_server_2d() { return memnew(PhysicsServer2DDummy); }
-#endif // PHYSICS_2D_DISABLED
 
 static bool has_server_feature_callback(const String& p_feature)
 {

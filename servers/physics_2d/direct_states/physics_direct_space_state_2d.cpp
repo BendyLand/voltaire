@@ -31,10 +31,12 @@
 
 #include "physics_direct_space_state_2d.h"
 
+#include "modules/modules_enabled.gen.h"
+
 Vector<real_t> PhysicsDirectSpaceState2D::_cast_motion(
 	PhysicsShapeQueryParameters2D* rp_shape_query)
 {
-	real_t closest_safe, closest_unsafe;
+	real_t closest_safe = 1.0f, closest_unsafe = 1.0f;
 	bool res = cast_motion(rp_shape_query->get_parameters(), closest_safe, closest_unsafe);
 	if (!res) {
 		return Vector<real_t>();
@@ -46,6 +48,50 @@ Vector<real_t> PhysicsDirectSpaceState2D::_cast_motion(
 	return ret;
 }
 
-PhysicsDirectSpaceState2D::PhysicsDirectSpaceState2D() {}
+#ifndef MODULE_GODOT_PHYSICS_2D_ENABLED
 
+PhysicsDirectSpaceState2D::PhysicsDirectSpaceState2D(GodotSpace2D* p_space) : space(p_space) {}
 
+bool PhysicsDirectSpaceState2D::intersect_ray(
+	const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result)
+{
+	return false;
+}
+
+int PhysicsDirectSpaceState2D::intersect_point(
+	const PS2DT::PointParameters& p_parameters,
+	PS2DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+int PhysicsDirectSpaceState2D::intersect_shape(
+	const PS2DT::ShapeParameters& p_parameters,
+	PS2DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+bool PhysicsDirectSpaceState2D::cast_motion(
+	const PS2DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
+	real_t& p_closest_unsafe)
+{
+	return false;
+}
+
+bool PhysicsDirectSpaceState2D::collide_shape(
+	const PS2DT::ShapeParameters& p_parameters, Vector2* r_results,
+	int p_result_max, int& r_result_count)
+{
+	r_result_count = 0;
+	return false;
+}
+
+bool PhysicsDirectSpaceState2D::rest_info(
+	const PS2DT::ShapeParameters& p_parameters,
+	PS2DT::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+#endif // !MODULE_GODOT_PHYSICS_2D_ENABLED

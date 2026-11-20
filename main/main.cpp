@@ -86,7 +86,6 @@
 
 #ifndef PHYSICS_2D_DISABLED
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/physics_2d/physics_server_2d_dummy.h"
 #endif // PHYSICS_2D_DISABLED
 
 // 3D
@@ -856,10 +855,6 @@ Error Main::test_setup()
 		TextServerManager::add_interface(ts);
 	}
 
-#ifndef PHYSICS_2D_DISABLED
-	PhysicsServer2DManager::initialize();
-#endif // PHYSICS_2D_DISABLED
-
 	// From `Main::setup2()`.
 	register_early_core_singletons();
 	initialize_modules(MODULE_INITIALIZATION_LEVEL_CORE);
@@ -899,6 +894,9 @@ Error Main::test_setup()
 #ifndef PHYSICS_3D_DISABLED
 	PhysicsServer3D::initialize();
 #endif // PHYSICS_3D_DISABLED
+#ifndef PHYSICS_2D_DISABLED
+	PhysicsServer2D::initialize();
+#endif // PHYSICS_2D_DISABLED
 
 	register_scene_types();
 	register_driver_types();
@@ -1013,9 +1011,6 @@ void Main::test_cleanup()
 	PackedData::finalize();
 	TranslationServer::finalize();
 	TextServerManager::finalize();
-#ifndef PHYSICS_2D_DISABLED
-	PhysicsServer2DManager::finalize();
-#endif // PHYSICS_2D_DISABLED
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
@@ -2973,10 +2968,6 @@ Error Main::setup2(bool p_show_boot_logo)
 		TextServerManager::add_interface(ts);
 	}
 
-#ifndef PHYSICS_2D_DISABLED
-	PhysicsServer2DManager::initialize();
-#endif // PHYSICS_2D_DISABLED
-
 	register_server_types();
 	{
 		OS::benchmark_begin_measure("Servers", "Modules and Extensions");
@@ -3143,9 +3134,6 @@ Error Main::setup2(bool p_show_boot_logo)
 
 			Input::finalize();
 			TextServerManager::finalize();
-#ifndef PHYSICS_2D_DISABLED
-			PhysicsServer2DManager::finalize();
-#endif // PHYSICS_2D_DISABLED
 
 			return err;
 		}
@@ -3503,6 +3491,9 @@ Error Main::setup2(bool p_show_boot_logo)
 #ifndef PHYSICS_3D_DISABLED
 	PhysicsServer3D::initialize();
 #endif // PHYSICS_3D_DISABLED
+#ifndef PHYSICS_2D_DISABLED
+	PhysicsServer2D::initialize();
+#endif // PHYSICS_2D_DISABLED
 
 #if TOOLS_ENABLED
 
@@ -4290,9 +4281,6 @@ void Main::cleanup(bool p_force)
 	InputMap::finalize();
 	TranslationServer::finalize();
 	TextServerManager::finalize();
-#ifndef PHYSICS_2D_DISABLED
-	PhysicsServer2DManager::finalize();
-#endif // PHYSICS_2D_DISABLED
 
 	if (OS::is_restart_on_exit_set()) {
 		// attempt to restart with arguments

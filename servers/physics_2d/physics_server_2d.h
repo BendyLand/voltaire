@@ -39,266 +39,32 @@
 #include "servers/physics_2d/queries/physics_testmotion_query_parameters_2d.h"
 #include "servers/physics_2d/queries/physics_testmotion_query_result_2d.h"
 
-class PhysicsServer2DDriver
-{
-	virtual bool _body_test_motion(RID p_body, PhysicsTestMotionParameters2D* rp_parameters,
-		const Ref<PhysicsTestMotionResult2D>& p_result = Ref<PhysicsTestMotionResult2D>());
+class GodotPhysicsServer2D;
+class PhysicsDirectSpaceState2D;
+template <typename T> class TypedArray;
 
-protected:
+template <typename T> class Ref;
 
-#ifndef DISABLE_DEPRECATED
-	void _body_set_shape_as_one_way_collision_bind_compat_104736(
-		RID p_body, int p_shape_idx, bool p_enable, real_t p_margin);
-	static void _bind_compatibility_methods();
-#endif
-
-public:
-	virtual RID world_boundary_shape_create() = 0;
-	virtual RID separation_ray_shape_create() = 0;
-	virtual RID segment_shape_create() = 0;
-	virtual RID circle_shape_create() = 0;
-	virtual RID rectangle_shape_create() = 0;
-	virtual RID capsule_shape_create() = 0;
-	virtual RID convex_polygon_shape_create() = 0;
-	virtual RID concave_polygon_shape_create() = 0;
-
-	virtual void shape_set_custom_solver_bias(RID p_shape, real_t p_bias) = 0;
-
-	virtual PS2DE::ShapeType shape_get_type(RID p_shape) const = 0;
-	virtual real_t shape_get_custom_solver_bias(RID p_shape) const = 0;
-
-	// these work well, but should be used from the main thread only
-	virtual bool shape_collide(RID p_shape_A, const Transform2D& p_xform_A,
-		const Vector2& p_motion_A, RID p_shape_B, const Transform2D& p_xform_B,
-		const Vector2& p_motion_B, Vector2* r_results, int p_result_max, int& r_result_count) = 0;
-
-	/* SPACE API */
-
-	virtual RID space_create() = 0;
-	virtual void space_set_active(RID p_space, bool p_active) = 0;
-	virtual bool space_is_active(RID p_space) const = 0;
-
-	virtual void space_set_param(RID p_space, PS2DE::SpaceParameter p_param, real_t p_value) = 0;
-	virtual real_t space_get_param(RID p_space, PS2DE::SpaceParameter p_param) const = 0;
-
-	// this function only works on physics process, errors and returns null otherwise
-	virtual PhysicsDirectSpaceState2D* space_get_direct_state(RID p_space) = 0;
-
-	virtual void space_set_debug_contacts(RID p_space, int p_max_contacts) = 0;
-	virtual Vector<Vector2> space_get_contacts(RID p_space) const = 0;
-	virtual int space_get_contact_count(RID p_space) const = 0;
-
-	// missing space parameters
-
-	/* AREA API */
-
-	// missing attenuation? missing better override?
-
-	virtual RID area_create() = 0;
-
-	virtual void area_set_space(RID p_area, RID p_space) = 0;
-	virtual RID area_get_space(RID p_area) const = 0;
-
-	virtual void area_add_shape(RID p_area, RID p_shape,
-		const Transform2D& p_transform = Transform2D(), bool p_disabled = false) = 0;
-	virtual void area_set_shape(RID p_area, int p_shape_idx, RID p_shape) = 0;
-	virtual void area_set_shape_transform(
-		RID p_area, int p_shape_idx, const Transform2D& p_transform) = 0;
-
-	virtual int area_get_shape_count(RID p_area) const = 0;
-	virtual RID area_get_shape(RID p_area, int p_shape_idx) const = 0;
-	virtual Transform2D area_get_shape_transform(RID p_area, int p_shape_idx) const = 0;
-
-	virtual void area_remove_shape(RID p_area, int p_shape_idx) = 0;
-	virtual void area_clear_shapes(RID p_area) = 0;
-
-	virtual void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled) = 0;
-
-	virtual void area_set_transform(RID p_area, const Transform2D& p_transform) = 0;
-
-	virtual Transform2D area_get_transform(RID p_area) const = 0;
-
-	virtual void area_set_collision_layer(RID p_area, uint32_t p_layer) = 0;
-	virtual uint32_t area_get_collision_layer(RID p_area) const = 0;
-
-	virtual void area_set_collision_mask(RID p_area, uint32_t p_mask) = 0;
-	virtual uint32_t area_get_collision_mask(RID p_area) const = 0;
-
-	virtual void area_set_monitorable(RID p_area, bool p_monitorable) = 0;
-	virtual void area_set_pickable(RID p_area, bool p_pickable) = 0;
-
-	/* BODY API */
-
-	// missing ccd?
-
-	virtual RID body_create() = 0;
-
-	virtual void body_set_space(RID p_body, RID p_space) = 0;
-	virtual RID body_get_space(RID p_body) const = 0;
-
-	virtual void body_set_mode(RID p_body, PS2DE::BodyMode p_mode) = 0;
-	virtual PS2DE::BodyMode body_get_mode(RID p_body) const = 0;
-
-	virtual void body_add_shape(RID p_body, RID p_shape,
-		const Transform2D& p_transform = Transform2D(), bool p_disabled = false) = 0;
-	virtual void body_set_shape(RID p_body, int p_shape_idx, RID p_shape) = 0;
-	virtual void body_set_shape_transform(
-		RID p_body, int p_shape_idx, const Transform2D& p_transform) = 0;
-
-	virtual int body_get_shape_count(RID p_body) const = 0;
-	virtual RID body_get_shape(RID p_body, int p_shape_idx) const = 0;
-	virtual Transform2D body_get_shape_transform(RID p_body, int p_shape_idx) const = 0;
-
-	virtual void body_set_shape_disabled(RID p_body, int p_shape, bool p_disabled) = 0;
-	virtual void body_set_shape_as_one_way_collision(RID p_body, int p_shape, bool p_enabled,
-		real_t p_margin = 0, const Vector2& p_direction = Vector2(0, 1)) = 0;
-
-	virtual void body_remove_shape(RID p_body, int p_shape_idx) = 0;
-	virtual void body_clear_shapes(RID p_body) = 0;
-
-	virtual void body_set_continuous_collision_detection_mode(
-		RID p_body, PS2DE::CCDMode p_mode) = 0;
-	virtual PS2DE::CCDMode body_get_continuous_collision_detection_mode(RID p_body) const = 0;
-
-	virtual void body_set_collision_layer(RID p_body, uint32_t p_layer) = 0;
-	virtual uint32_t body_get_collision_layer(RID p_body) const = 0;
-
-	virtual void body_set_collision_mask(RID p_body, uint32_t p_mask) = 0;
-	virtual uint32_t body_get_collision_mask(RID p_body) const = 0;
-
-	virtual void body_set_collision_priority(RID p_body, real_t p_priority) = 0;
-	virtual real_t body_get_collision_priority(RID p_body) const = 0;
-
-	virtual void body_reset_mass_properties(RID p_body) = 0;
-
-	// state
-	virtual void body_apply_central_impulse(RID p_body, const Vector2& p_impulse) = 0;
-	virtual void body_apply_torque_impulse(RID p_body, real_t p_torque) = 0;
-	virtual void body_apply_impulse(
-		RID p_body, const Vector2& p_impulse, const Vector2& p_position = Vector2()) = 0;
-
-	virtual void body_apply_central_force(RID p_body, const Vector2& p_force) = 0;
-	virtual void body_apply_force(
-		RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2()) = 0;
-	virtual void body_apply_torque(RID p_body, real_t p_torque) = 0;
-
-	virtual void body_add_constant_central_force(RID p_body, const Vector2& p_force) = 0;
-	virtual void body_add_constant_force(
-		RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2()) = 0;
-	virtual void body_add_constant_torque(RID p_body, real_t p_torque) = 0;
-
-	virtual void body_set_constant_force(RID p_body, const Vector2& p_force) = 0;
-	virtual Vector2 body_get_constant_force(RID p_body) const = 0;
-
-	virtual void body_set_constant_torque(RID p_body, real_t p_torque) = 0;
-	virtual real_t body_get_constant_torque(RID p_body) const = 0;
-
-	virtual void body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity) = 0;
-
-	// fix
-	virtual void body_add_collision_exception(RID p_body, RID p_body_b) = 0;
-	virtual void body_remove_collision_exception(RID p_body, RID p_body_b) = 0;
-	virtual void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) = 0;
-
-	virtual void body_set_max_contacts_reported(RID p_body, int p_contacts) = 0;
-	virtual int body_get_max_contacts_reported(RID p_body) const = 0;
-
-	// missing remove
-	virtual void body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold) = 0;
-	virtual real_t body_get_contacts_reported_depth_threshold(RID p_body) const = 0;
-
-	virtual void body_set_omit_force_integration(RID p_body, bool p_omit) = 0;
-	virtual bool body_is_omitting_force_integration(RID p_body) const = 0;
-
-	virtual bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape,
-		const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results,
-		int p_result_max, int& r_result_count) = 0;
-
-	virtual void body_set_pickable(RID p_body, bool p_pickable) = 0;
-
-	// this function only works on physics process, errors and returns null otherwise
-	virtual PhysicsDirectBodyState2D* body_get_direct_state(RID p_body) = 0;
-
-	virtual bool body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters,
-		PS2DT::MotionResult* r_result = nullptr) = 0;
-
-	/* JOINT API */
-
-	virtual RID joint_create() = 0;
-
-	virtual void joint_clear(RID p_joint) = 0;
-
-	virtual void joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value) = 0;
-	virtual real_t joint_get_param(RID p_joint, PS2DE::JointParam p_param) const = 0;
-
-	virtual void joint_disable_collisions_between_bodies(RID p_joint, const bool p_disable) = 0;
-	virtual bool joint_is_disabled_collisions_between_bodies(RID p_joint) const = 0;
-
-	virtual void joint_make_pin(
-		RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b = RID()) = 0;
-	virtual void joint_make_groove(RID p_joint, const Vector2& p_a_groove1,
-		const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b) = 0;
-	virtual void joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a,
-		const Vector2& p_anchor_b, RID p_body_a, RID p_body_b = RID()) = 0;
-
-	virtual void pin_joint_set_param(RID p_joint, PS2DE::PinJointParam p_param, real_t p_value) = 0;
-	virtual real_t pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param) const = 0;
-
-	virtual void pin_joint_set_flag(RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled) = 0;
-	virtual bool pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag) const = 0;
-
-	virtual void damped_spring_joint_set_param(
-		RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value) = 0;
-	virtual real_t damped_spring_joint_get_param(
-		RID p_joint, PS2DE::DampedSpringParam p_param) const = 0;
-
-	virtual PS2DE::JointType joint_get_type(RID p_joint) const = 0;
-
-	/* MISC */
-
-	virtual void free_rid(RID p_rid) = 0;
-#ifndef DISABLE_DEPRECATED
-	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
-#endif // DISABLE_DEPRECATED
-
-	virtual void set_active(bool p_active) = 0;
-	virtual void init() = 0;
-	virtual void step(real_t p_step) = 0;
-	virtual void sync() = 0;
-	virtual void flush_queries() = 0;
-	virtual void end_sync() = 0;
-	virtual void finish() = 0;
-
-	virtual bool is_flushing_queries() const = 0;
-
-	virtual int get_process_info(PS2DE::ProcessInfo p_info) = 0;
-
-	PhysicsServer2DDriver() = default;
-	virtual ~PhysicsServer2DDriver() = default;
-};
-
+class PhysicsTestMotionParameters2D;
+class PhysicsTestMotionResult2D;
 
 class PhysicsServer2D final
 {
 public:
 	struct Data
 	{
-		PhysicsServer2DDriver* driver = nullptr;
+		GodotPhysicsServer2D* server = nullptr;
 	};
 
 	static inline Data* data = nullptr;
 
-	static void initialize(PhysicsServer2DDriver* p_driver);
+	static void initialize(bool p_using_threads = false);
 	static void finalize();
 	_FORCE_INLINE_ static bool is_initialized()
 	{
-		return data != nullptr && data->driver != nullptr;
+		return data != nullptr && data->server != nullptr;
 	}
-	_FORCE_INLINE_ static PhysicsServer2DDriver* get_driver() { return data ? data->driver : nullptr; }
-	template <typename T> _FORCE_INLINE_ static T* driver_as()
-	{
-		return data ? dynamic_cast<T*>(data->driver) : nullptr;
-	}
+	_FORCE_INLINE_ static GodotPhysicsServer2D* get_driver() { return data ? data->server : nullptr; }
 
 	static RID world_boundary_shape_create();
 	static RID separation_ray_shape_create();
@@ -426,36 +192,4 @@ public:
 	PhysicsServer2D(const PhysicsServer2D&) = delete;
 	PhysicsServer2D& operator=(const PhysicsServer2D&) = delete;
 	~PhysicsServer2D() = delete;
-};
-
-class PhysicsServer2DManager final
-{
-	struct Data
-	{
-		int default_server_id = -1;
-		int default_server_priority = -1;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void on_servers_changed();
-
-public:
-	static const String setting_property_name;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	static void set_default_server(const String& p_name, int p_priority = 0);
-	static int find_server_id(const String& p_name);
-	static int get_servers_count();
-	static String get_server_name(int p_id);
-	static PhysicsServer2DDriver* new_default_server();
-	static PhysicsServer2DDriver* new_server(const String& p_name);
-
-	PhysicsServer2DManager() = delete;
-	PhysicsServer2DManager(const PhysicsServer2DManager&) = delete;
-	PhysicsServer2DManager& operator=(const PhysicsServer2DManager&) = delete;
-	~PhysicsServer2DManager() = delete;
 };

@@ -31,34 +31,76 @@
 
 #include "physics_direct_body_state_2d.h"
 
-void PhysicsDirectBodyState2D::integrate_forces()
-{
-	real_t step = get_step();
-	Vector2 lv = get_linear_velocity();
-	lv += get_total_gravity() * step;
+#include "modules/modules_enabled.gen.h"
 
-	real_t av = get_angular_velocity();
+#ifndef MODULE_GODOT_PHYSICS_2D_ENABLED
 
-	real_t damp = 1.0 - step * get_total_linear_damp();
+PhysicsDirectBodyState2D::PhysicsDirectBodyState2D(GodotBody2D* p_body) : body(p_body) {}
 
-	if (damp < 0) { // reached zero in the given time
-		damp = 0;
-	}
+Vector2 PhysicsDirectBodyState2D::get_total_gravity() const { return Vector2(); }
+real_t PhysicsDirectBodyState2D::get_total_linear_damp() const { return 0.0; }
+real_t PhysicsDirectBodyState2D::get_total_angular_damp() const { return 0.0; }
 
-	lv *= damp;
+Vector2 PhysicsDirectBodyState2D::get_center_of_mass() const { return Vector2(); }
+Vector2 PhysicsDirectBodyState2D::get_center_of_mass_local() const { return Vector2(); }
+real_t PhysicsDirectBodyState2D::get_inverse_mass() const { return 0.0; }
+real_t PhysicsDirectBodyState2D::get_inverse_inertia() const { return 0.0; }
 
-	damp = 1.0 - step * get_total_angular_damp();
+void PhysicsDirectBodyState2D::set_linear_velocity(const Vector2& p_velocity) {}
+Vector2 PhysicsDirectBodyState2D::get_linear_velocity() const { return Vector2(); }
 
-	if (damp < 0) { // reached zero in the given time
-		damp = 0;
-	}
+void PhysicsDirectBodyState2D::set_angular_velocity(real_t p_velocity) {}
+real_t PhysicsDirectBodyState2D::get_angular_velocity() const { return 0.0; }
 
-	av *= damp;
+void PhysicsDirectBodyState2D::set_transform(const Transform2D& p_transform) {}
+Transform2D PhysicsDirectBodyState2D::get_transform() const { return Transform2D(); }
 
-	set_linear_velocity(lv);
-	set_angular_velocity(av);
-}
+Vector2 PhysicsDirectBodyState2D::get_velocity_at_local_position(const Vector2& p_position) const { return Vector2(); }
 
-PhysicsDirectBodyState2D::PhysicsDirectBodyState2D() {}
+void PhysicsDirectBodyState2D::apply_central_impulse(const Vector2& p_impulse) {}
+void PhysicsDirectBodyState2D::apply_torque_impulse(real_t p_torque) {}
+void PhysicsDirectBodyState2D::apply_impulse(const Vector2& p_impulse, const Vector2& p_position) {}
 
+void PhysicsDirectBodyState2D::apply_central_force(const Vector2& p_force) {}
+void PhysicsDirectBodyState2D::apply_force(const Vector2& p_force, const Vector2& p_position) {}
+void PhysicsDirectBodyState2D::apply_torque(real_t p_torque) {}
 
+void PhysicsDirectBodyState2D::add_constant_central_force(const Vector2& p_force) {}
+void PhysicsDirectBodyState2D::add_constant_force(const Vector2& p_force, const Vector2& p_position) {}
+void PhysicsDirectBodyState2D::add_constant_torque(real_t p_torque) {}
+
+void PhysicsDirectBodyState2D::set_constant_force(const Vector2& p_force) {}
+Vector2 PhysicsDirectBodyState2D::get_constant_force() const { return Vector2(); }
+
+void PhysicsDirectBodyState2D::set_constant_torque(real_t p_torque) {}
+real_t PhysicsDirectBodyState2D::get_constant_torque() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::set_sleep_state(bool p_enable) {}
+bool PhysicsDirectBodyState2D::is_sleeping() const { return false; }
+
+void PhysicsDirectBodyState2D::set_collision_layer(uint32_t p_layer) {}
+uint32_t PhysicsDirectBodyState2D::get_collision_layer() const { return 0; }
+
+void PhysicsDirectBodyState2D::set_collision_mask(uint32_t p_mask) {}
+uint32_t PhysicsDirectBodyState2D::get_collision_mask() const { return 0; }
+
+int PhysicsDirectBodyState2D::get_contact_count() const { return 0; }
+
+Vector2 PhysicsDirectBodyState2D::get_contact_local_position(int p_contact_idx) const { return Vector2(); }
+Vector2 PhysicsDirectBodyState2D::get_contact_local_normal(int p_contact_idx) const { return Vector2(); }
+int PhysicsDirectBodyState2D::get_contact_local_shape(int p_contact_idx) const { return 0; }
+Vector2 PhysicsDirectBodyState2D::get_contact_local_velocity_at_position(int p_contact_idx) const { return Vector2(); }
+
+RID PhysicsDirectBodyState2D::get_contact_collider(int p_contact_idx) const { return RID(); }
+Vector2 PhysicsDirectBodyState2D::get_contact_collider_position(int p_contact_idx) const { return Vector2(); }
+int PhysicsDirectBodyState2D::get_contact_collider_shape(int p_contact_idx) const { return 0; }
+Vector2 PhysicsDirectBodyState2D::get_contact_collider_velocity_at_position(int p_contact_idx) const { return Vector2(); }
+Vector2 PhysicsDirectBodyState2D::get_contact_impulse(int p_contact_idx) const { return Vector2(); }
+
+real_t PhysicsDirectBodyState2D::get_step() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::integrate_forces() {}
+
+PhysicsDirectSpaceState2D* PhysicsDirectBodyState2D::get_space_state() { return nullptr; }
+
+#endif // !MODULE_GODOT_PHYSICS_2D_ENABLED

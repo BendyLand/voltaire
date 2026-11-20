@@ -38,10 +38,10 @@
 #include "godot_step_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
-class GodotPhysicsServer2D : public PhysicsServer2DDriver
+class GodotPhysicsServer2D final
 {
-	friend class GodotPhysicsDirectSpaceState2D;
-	friend class GodotPhysicsDirectBodyState2D;
+	friend class PhysicsDirectSpaceState2D;
+	friend class PhysicsDirectBodyState2D;
 	bool active = true;
 	bool doing_sync = false;
 
@@ -62,7 +62,6 @@ class GodotPhysicsServer2D : public PhysicsServer2DDriver
 	mutable RID_PtrOwner<GodotBody2D, true> body_owner{65536, 1048576};
 	mutable RID_PtrOwner<GodotJoint2D, true> joint_owner;
 
-
 	friend class GodotCollisionObject2D;
 	SelfList<GodotCollisionObject2D>::List pending_shape_update_list;
 	void _update_shapes();
@@ -81,224 +80,229 @@ public:
 		Vector2* ptr = nullptr;
 	};
 
-	virtual RID world_boundary_shape_create() override;
-	virtual RID separation_ray_shape_create() override;
-	virtual RID segment_shape_create() override;
-	virtual RID circle_shape_create() override;
-	virtual RID rectangle_shape_create() override;
-	virtual RID capsule_shape_create() override;
-	virtual RID convex_polygon_shape_create() override;
-	virtual RID concave_polygon_shape_create() override;
+	RID world_boundary_shape_create();
+	RID separation_ray_shape_create();
+	RID segment_shape_create();
+	RID circle_shape_create();
+	RID rectangle_shape_create();
+	RID capsule_shape_create();
+	RID convex_polygon_shape_create();
+	RID concave_polygon_shape_create();
 
 	static void _shape_col_cbk(
 		const Vector2& p_point_A, const Vector2& p_point_B, void* p_userdata);
 
-	virtual void shape_set_custom_solver_bias(RID p_shape, real_t p_bias) override;
+	void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
 
-	virtual PS2DE::ShapeType shape_get_type(RID p_shape) const override;
-	virtual real_t shape_get_custom_solver_bias(RID p_shape) const override;
+	PS2DE::ShapeType shape_get_type(RID p_shape) const;
+	real_t shape_get_custom_solver_bias(RID p_shape) const;
 
-	virtual bool shape_collide(RID p_shape_A, const Transform2D& p_xform_A,
+	bool shape_collide(RID p_shape_A, const Transform2D& p_xform_A,
 		const Vector2& p_motion_A, RID p_shape_B, const Transform2D& p_xform_B,
 		const Vector2& p_motion_B, Vector2* r_results, int p_result_max,
-		int& r_result_count) override;
+		int& r_result_count);
 
 	/* SPACE API */
 
-	virtual RID space_create() override;
-	virtual void space_set_active(RID p_space, bool p_active) override;
-	virtual bool space_is_active(RID p_space) const override;
+	RID space_create();
+	void space_set_active(RID p_space, bool p_active);
+	bool space_is_active(RID p_space) const;
 
-	virtual void space_set_param(
-		RID p_space, PS2DE::SpaceParameter p_param, real_t p_value) override;
-	virtual real_t space_get_param(RID p_space, PS2DE::SpaceParameter p_param) const override;
+	void space_set_param(
+		RID p_space, PS2DE::SpaceParameter p_param, real_t p_value);
+	real_t space_get_param(RID p_space, PS2DE::SpaceParameter p_param) const;
 
-	virtual void space_set_debug_contacts(RID p_space, int p_max_contacts) override;
-	virtual Vector<Vector2> space_get_contacts(RID p_space) const override;
-	virtual int space_get_contact_count(RID p_space) const override;
+	void space_set_debug_contacts(RID p_space, int p_max_contacts);
+	Vector<Vector2> space_get_contacts(RID p_space) const;
+	int space_get_contact_count(RID p_space) const;
 
 	// this function only works on physics process, errors and returns null otherwise
-	virtual PhysicsDirectSpaceState2D* space_get_direct_state(RID p_space) override;
+	PhysicsDirectSpaceState2D* space_get_direct_state(RID p_space);
 
 	/* AREA API */
 
-	virtual RID area_create() override;
+	RID area_create();
 
-	virtual void area_set_space(RID p_area, RID p_space) override;
-	virtual RID area_get_space(RID p_area) const override;
+	void area_set_space(RID p_area, RID p_space);
+	RID area_get_space(RID p_area) const;
 
-	virtual void area_add_shape(RID p_area, RID p_shape,
-		const Transform2D& p_transform = Transform2D(), bool p_disabled = false) override;
-	virtual void area_set_shape(RID p_area, int p_shape_idx, RID p_shape) override;
-	virtual void area_set_shape_transform(
-		RID p_area, int p_shape_idx, const Transform2D& p_transform) override;
+	void area_add_shape(RID p_area, RID p_shape,
+		const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
+	void area_set_shape_transform(
+		RID p_area, int p_shape_idx, const Transform2D& p_transform);
 
-	virtual int area_get_shape_count(RID p_area) const override;
-	virtual RID area_get_shape(RID p_area, int p_shape_idx) const override;
-	virtual Transform2D area_get_shape_transform(RID p_area, int p_shape_idx) const override;
+	int area_get_shape_count(RID p_area) const;
+	RID area_get_shape(RID p_area, int p_shape_idx) const;
+	Transform2D area_get_shape_transform(RID p_area, int p_shape_idx) const;
 
-	virtual void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled) override;
+	void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled);
 
-	virtual void area_remove_shape(RID p_area, int p_shape_idx) override;
-	virtual void area_clear_shapes(RID p_area) override;
+	void area_remove_shape(RID p_area, int p_shape_idx);
+	void area_clear_shapes(RID p_area);
 
-	virtual void area_set_transform(RID p_area, const Transform2D& p_transform) override;
+	void area_set_transform(RID p_area, const Transform2D& p_transform);
 
-	virtual Transform2D area_get_transform(RID p_area) const override;
-	virtual void area_set_monitorable(RID p_area, bool p_monitorable) override;
+	Transform2D area_get_transform(RID p_area) const;
+	void area_set_monitorable(RID p_area, bool p_monitorable);
 
-	virtual void area_set_collision_layer(RID p_area, uint32_t p_layer) override;
-	virtual uint32_t area_get_collision_layer(RID p_area) const override;
+	void area_set_collision_layer(RID p_area, uint32_t p_layer);
+	uint32_t area_get_collision_layer(RID p_area) const;
 
-	virtual void area_set_collision_mask(RID p_area, uint32_t p_mask) override;
-	virtual uint32_t area_get_collision_mask(RID p_area) const override;
+	void area_set_collision_mask(RID p_area, uint32_t p_mask);
+	uint32_t area_get_collision_mask(RID p_area) const;
 
-	virtual void area_set_pickable(RID p_area, bool p_pickable) override;
+	void area_set_pickable(RID p_area, bool p_pickable);
 
 	/* BODY API */
 
-	// create a body of a given type
-	virtual RID body_create() override;
+	RID body_create();
 
-	virtual void body_set_space(RID p_body, RID p_space) override;
-	virtual RID body_get_space(RID p_body) const override;
+	void body_set_space(RID p_body, RID p_space);
+	RID body_get_space(RID p_body) const;
 
-	virtual void body_set_mode(RID p_body, PS2DE::BodyMode p_mode) override;
-	virtual PS2DE::BodyMode body_get_mode(RID p_body) const override;
+	void body_set_mode(RID p_body, PS2DE::BodyMode p_mode);
+	PS2DE::BodyMode body_get_mode(RID p_body) const;
 
-	virtual void body_add_shape(RID p_body, RID p_shape,
-		const Transform2D& p_transform = Transform2D(), bool p_disabled = false) override;
-	virtual void body_set_shape(RID p_body, int p_shape_idx, RID p_shape) override;
-	virtual void body_set_shape_transform(
-		RID p_body, int p_shape_idx, const Transform2D& p_transform) override;
+	void body_add_shape(RID p_body, RID p_shape,
+		const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
+	void body_set_shape_transform(
+		RID p_body, int p_shape_idx, const Transform2D& p_transform);
 
-	virtual int body_get_shape_count(RID p_body) const override;
-	virtual RID body_get_shape(RID p_body, int p_shape_idx) const override;
-	virtual Transform2D body_get_shape_transform(RID p_body, int p_shape_idx) const override;
+	int body_get_shape_count(RID p_body) const;
+	RID body_get_shape(RID p_body, int p_shape_idx) const;
+	Transform2D body_get_shape_transform(RID p_body, int p_shape_idx) const;
 
-	virtual void body_remove_shape(RID p_body, int p_shape_idx) override;
-	virtual void body_clear_shapes(RID p_body) override;
+	void body_remove_shape(RID p_body, int p_shape_idx);
+	void body_clear_shapes(RID p_body);
 
-	virtual void body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled) override;
-	virtual void body_set_shape_as_one_way_collision(RID p_body, int p_shape_idx, bool p_enable,
-		real_t p_margin, const Vector2& p_direction) override;
+	void body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled);
+	void body_set_shape_as_one_way_collision(RID p_body, int p_shape_idx, bool p_enable,
+		real_t p_margin = 0, const Vector2& p_direction = Vector2(0, 1));
 
-	virtual void body_set_continuous_collision_detection_mode(
-		RID p_body, PS2DE::CCDMode p_mode) override;
-	virtual PS2DE::CCDMode body_get_continuous_collision_detection_mode(RID p_body) const override;
+	void body_set_continuous_collision_detection_mode(
+		RID p_body, PS2DE::CCDMode p_mode);
+	PS2DE::CCDMode body_get_continuous_collision_detection_mode(RID p_body) const;
 
-	virtual void body_set_collision_layer(RID p_body, uint32_t p_layer) override;
-	virtual uint32_t body_get_collision_layer(RID p_body) const override;
+	void body_set_collision_layer(RID p_body, uint32_t p_layer);
+	uint32_t body_get_collision_layer(RID p_body) const;
 
-	virtual void body_set_collision_mask(RID p_body, uint32_t p_mask) override;
-	virtual uint32_t body_get_collision_mask(RID p_body) const override;
+	void body_set_collision_mask(RID p_body, uint32_t p_mask);
+	uint32_t body_get_collision_mask(RID p_body) const;
 
-	virtual void body_set_collision_priority(RID p_body, real_t p_priority) override;
-	virtual real_t body_get_collision_priority(RID p_body) const override;
+	void body_set_collision_priority(RID p_body, real_t p_priority);
+	real_t body_get_collision_priority(RID p_body) const;
 
-	virtual void body_reset_mass_properties(RID p_body) override;
+	void body_reset_mass_properties(RID p_body);
 
-	virtual void body_apply_central_impulse(RID p_body, const Vector2& p_impulse) override;
-	virtual void body_apply_torque_impulse(RID p_body, real_t p_torque) override;
-	virtual void body_apply_impulse(
-		RID p_body, const Vector2& p_impulse, const Vector2& p_position = Vector2()) override;
+	void body_apply_central_impulse(RID p_body, const Vector2& p_impulse);
+	void body_apply_torque_impulse(RID p_body, real_t p_torque);
+	void body_apply_impulse(
+		RID p_body, const Vector2& p_impulse, const Vector2& p_position = Vector2());
 
-	virtual void body_apply_central_force(RID p_body, const Vector2& p_force) override;
-	virtual void body_apply_force(
-		RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2()) override;
-	virtual void body_apply_torque(RID p_body, real_t p_torque) override;
+	void body_apply_central_force(RID p_body, const Vector2& p_force);
+	void body_apply_force(
+		RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	void body_apply_torque(RID p_body, real_t p_torque);
 
-	virtual void body_add_constant_central_force(RID p_body, const Vector2& p_force) override;
-	virtual void body_add_constant_force(
-		RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2()) override;
-	virtual void body_add_constant_torque(RID p_body, real_t p_torque) override;
+	void body_add_constant_central_force(RID p_body, const Vector2& p_force);
+	void body_add_constant_force(
+		RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	void body_add_constant_torque(RID p_body, real_t p_torque);
 
-	virtual void body_set_constant_force(RID p_body, const Vector2& p_force) override;
-	virtual Vector2 body_get_constant_force(RID p_body) const override;
+	void body_set_constant_force(RID p_body, const Vector2& p_force);
+	Vector2 body_get_constant_force(RID p_body) const;
 
-	virtual void body_set_constant_torque(RID p_body, real_t p_torque) override;
-	virtual real_t body_get_constant_torque(RID p_body) const override;
+	void body_set_constant_torque(RID p_body, real_t p_torque);
+	real_t body_get_constant_torque(RID p_body) const;
 
-	virtual void body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity) override;
+	void body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity);
 
-	virtual void body_add_collision_exception(RID p_body, RID p_body_b) override;
-	virtual void body_remove_collision_exception(RID p_body, RID p_body_b) override;
-	virtual void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) override;
+	void body_add_collision_exception(RID p_body, RID p_body_b);
+	void body_remove_collision_exception(RID p_body, RID p_body_b);
+	void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
 
-	virtual void body_set_contacts_reported_depth_threshold(
-		RID p_body, real_t p_threshold) override;
-	virtual real_t body_get_contacts_reported_depth_threshold(RID p_body) const override;
+	void body_set_contacts_reported_depth_threshold(
+		RID p_body, real_t p_threshold);
+	real_t body_get_contacts_reported_depth_threshold(RID p_body) const;
 
-	virtual void body_set_omit_force_integration(RID p_body, bool p_omit) override;
-	virtual bool body_is_omitting_force_integration(RID p_body) const override;
+	void body_set_omit_force_integration(RID p_body, bool p_omit);
+	bool body_is_omitting_force_integration(RID p_body) const;
 
-	virtual void body_set_max_contacts_reported(RID p_body, int p_contacts) override;
-	virtual int body_get_max_contacts_reported(RID p_body) const override;
+	void body_set_max_contacts_reported(RID p_body, int p_contacts);
+	int body_get_max_contacts_reported(RID p_body) const;
 
-	virtual bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape,
+	bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape,
 		const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results,
-		int p_result_max, int& r_result_count) override;
+		int p_result_max, int& r_result_count);
 
-	virtual void body_set_pickable(RID p_body, bool p_pickable) override;
+	void body_set_pickable(RID p_body, bool p_pickable);
 
-	virtual bool body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters,
-		PS2DT::MotionResult* r_result = nullptr) override;
+	bool _body_test_motion(RID p_body, PhysicsTestMotionParameters2D* rp_parameters,
+		const Ref<PhysicsTestMotionResult2D>& p_result = Ref<PhysicsTestMotionResult2D>());
+	bool body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters,
+		PS2DT::MotionResult* r_result = nullptr);
 
 	// this function only works on physics process, errors and returns null otherwise
-	virtual PhysicsDirectBodyState2D* body_get_direct_state(RID p_body) override;
+	PhysicsDirectBodyState2D* body_get_direct_state(RID p_body);
 
 	/* JOINT API */
 
-	virtual RID joint_create() override;
+	RID joint_create();
 
-	virtual void joint_clear(RID p_joint) override;
+	void joint_clear(RID p_joint);
 
-	virtual void joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value) override;
-	virtual real_t joint_get_param(RID p_joint, PS2DE::JointParam p_param) const override;
+	void joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value);
+	real_t joint_get_param(RID p_joint, PS2DE::JointParam p_param) const;
 
-	virtual void joint_disable_collisions_between_bodies(
-		RID p_joint, const bool p_disabled) override;
-	virtual bool joint_is_disabled_collisions_between_bodies(RID p_joint) const override;
+	void joint_disable_collisions_between_bodies(
+		RID p_joint, const bool p_disabled);
+	bool joint_is_disabled_collisions_between_bodies(RID p_joint) const;
 
-	virtual void joint_make_pin(
-		RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b = RID()) override;
-	virtual void joint_make_groove(RID p_joint, const Vector2& p_a_groove1,
-		const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b) override;
-	virtual void joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a,
-		const Vector2& p_anchor_b, RID p_body_a, RID p_body_b = RID()) override;
+	void joint_make_pin(
+		RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b = RID());
+	void joint_make_groove(RID p_joint, const Vector2& p_a_groove1,
+		const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b);
+	void joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a,
+		const Vector2& p_anchor_b, RID p_body_a, RID p_body_b = RID());
 
-	virtual void pin_joint_set_flag(
-		RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled) override;
-	virtual bool pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag) const override;
-	virtual void pin_joint_set_param(
-		RID p_joint, PS2DE::PinJointParam p_param, real_t p_value) override;
-	virtual real_t pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param) const override;
-	virtual void damped_spring_joint_set_param(
-		RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value) override;
-	virtual real_t damped_spring_joint_get_param(
-		RID p_joint, PS2DE::DampedSpringParam p_param) const override;
+	void pin_joint_set_flag(
+		RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled);
+	bool pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag) const;
+	void pin_joint_set_param(
+		RID p_joint, PS2DE::PinJointParam p_param, real_t p_value);
+	real_t pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param) const;
+	void damped_spring_joint_set_param(
+		RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value);
+	real_t damped_spring_joint_get_param(
+		RID p_joint, PS2DE::DampedSpringParam p_param) const;
 
-	virtual PS2DE::JointType joint_get_type(RID p_joint) const override;
+	PS2DE::JointType joint_get_type(RID p_joint) const;
 
 	/* MISC */
 
-	virtual void free_rid(RID p_rid) override;
+	void free_rid(RID p_rid);
+#ifndef DISABLE_DEPRECATED
+	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
+#endif // DISABLE_DEPRECATED
 
-	virtual void set_active(bool p_active) override;
-	virtual void init() override;
-	virtual void step(real_t p_step) override;
-	virtual void sync() override;
-	virtual void flush_queries() override;
-	virtual void end_sync() override;
-	virtual void finish() override;
+	void set_active(bool p_active);
+	void init();
+	void step(real_t p_step);
+	void sync();
+	void flush_queries();
+	void end_sync();
+	void finish();
 
-	virtual bool is_flushing_queries() const override { return flushing_queries; }
+	bool is_flushing_queries() const { return flushing_queries; }
 
-	int get_process_info(PS2DE::ProcessInfo p_info) override;
+	int get_process_info(PS2DE::ProcessInfo p_info);
 
-	GodotPhysicsServer2D(bool p_using_threads = false);
+	explicit GodotPhysicsServer2D(bool p_using_threads = false);
 
-	~GodotPhysicsServer2D() {}
+	~GodotPhysicsServer2D()
+	{
+		finish();
+	}
 };
-
-

@@ -30,8 +30,6 @@
 /**************************************************************************/
 
 #include "core/os/os.h"
-#include "godot_body_direct_state_2d.h"
-#include "godot_broad_phase_2d_bvh.h"
 #include "godot_collision_solver_2d.h"
 #include "godot_physics_server_2d.h"
 
@@ -940,6 +938,18 @@ void GodotPhysicsServer2D::body_set_pickable(RID p_body, bool p_pickable)
 	body->set_pickable(p_pickable);
 }
 
+bool GodotPhysicsServer2D::_body_test_motion(RID p_body,
+	PhysicsTestMotionParameters2D* rp_parameters,
+	const Ref<PhysicsTestMotionResult2D>& p_result)
+{
+	PS2DT::MotionResult* result_ptr = nullptr;
+	if (p_result.is_valid()) {
+		result_ptr = p_result->get_result_ptr();
+	}
+
+	return body_test_motion(p_body, rp_parameters->get_parameters(), result_ptr);
+}
+
 bool GodotPhysicsServer2D::body_test_motion(
 	RID p_body, const PS2DT::MotionParameters& p_parameters, PS2DT::MotionResult* r_result)
 {
@@ -1208,7 +1218,7 @@ void GodotPhysicsServer2D::free_rid(RID p_rid)
 		GodotShape2D* shape = shape_owner.get_or_null(p_rid);
 
 		while (shape->get_owners().size()) {
-			GodotShapeOwner2D* so = shape->get_owners().begin()->key;
+			GodotCollisionObject2D* so = shape->get_owners().begin()->key;
 			so->remove_shape(shape);
 		}
 
@@ -1271,12 +1281,14 @@ void GodotPhysicsServer2D::set_active(bool p_active) { active = p_active; }
 void GodotPhysicsServer2D::init()
 {
 	doing_sync = false;
-	stepper = memnew(GodotStep2D);
+	if (!stepper) {
+		stepper = memnew(GodotStep2D);
+	}
 }
 
 void GodotPhysicsServer2D::step(real_t p_step)
 {
-	if (!active) {
+	if (!active || !stepper) {
 		return;
 	}
 
@@ -1297,7 +1309,13 @@ void GodotPhysicsServer2D::sync() { doing_sync = true; }
 
 void GodotPhysicsServer2D::end_sync() { doing_sync = false; }
 
-void GodotPhysicsServer2D::finish() { memdelete(stepper); }
+void GodotPhysicsServer2D::finish()
+{
+	if (stepper) {
+		memdelete(stepper);
+		stepper = nullptr;
+	}
+}
 
 void GodotPhysicsServer2D::_update_shapes()
 {
@@ -1326,8 +1344,6 @@ int GodotPhysicsServer2D::get_process_info(PS2DE::ProcessInfo p_info)
 
 GodotPhysicsServer2D::GodotPhysicsServer2D(bool p_using_threads)
 {
-	GodotBroadPhase2D::create_func = GodotBroadPhase2DBVH::_create;
-
 	using_threads = p_using_threads;
 }
 

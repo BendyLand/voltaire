@@ -589,11 +589,15 @@ bool Expression::has_execute_failed() const { return execution_error; }
 
 String Expression::get_error_text() const { return error_str; }
 
-Expression::~Expression() { memdelete(nodes); }
+Expression::~Expression()
+{
+	if (nodes) {
+		memdelete(nodes);
+	}
+}
 
 Expression::ENode* Expression::_parse_expression()
 {
-	ENode en = ENode();
-	return &en;
+	return nullptr;
 }
 

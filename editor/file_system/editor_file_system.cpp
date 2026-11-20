@@ -341,33 +341,6 @@ bool EditorFileSystem::_is_test_for_reimport_needed(const String& p_path,
 	return false;
 }
 
-bool EditorFileSystem::_scan_import_support(const Vector<String>& reimports)
-{
-	if (import_support_queries.is_empty()) {
-		return false;
-	}
-	HashMap<String, int> import_support_test;
-	Vector<bool> import_support_tested;
-	import_support_tested.resize(import_support_queries.size());
-	for (int i = 0; i < import_support_queries.size(); i++) {
-		import_support_tested.write[i] = false;
-	}
-
-	if (import_support_test.is_empty()) {
-		return false; // well nothing to do
-	}
-
-	for (int i = 0; i < reimports.size(); i++) {
-		HashMap<String, int>::Iterator E =
-			import_support_test.find(reimports[i].get_extension().to_lower());
-		if (E) {
-			import_support_tested.write[E->value] = true;
-		}
-	}
-
-	return false;
-}
-
 void EditorFileSystem::ScanProgress::increment()
 {
 	current++;
@@ -949,19 +922,6 @@ bool EditorFileSystem::_can_import_file(const String& p_file)
 	}
 
 	return false;
-}
-
-void EditorFileSystem::add_import_format_support_query(
-	Ref<EditorFileSystemImportFormatSupportQuery> p_query)
-{
-	ERR_FAIL_COND(import_support_queries.has(p_query));
-	import_support_queries.push_back(p_query);
-}
-
-void EditorFileSystem::remove_import_format_support_query(
-	Ref<EditorFileSystemImportFormatSupportQuery> p_query)
-{
-	import_support_queries.erase(p_query);
 }
 
 EditorFileSystem::~EditorFileSystem()

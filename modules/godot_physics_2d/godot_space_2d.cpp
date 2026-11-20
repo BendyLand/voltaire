@@ -57,7 +57,9 @@ _FORCE_INLINE_ static bool _can_collide_with(GodotCollisionObject2D* p_object,
 	return true;
 }
 
-int GodotPhysicsDirectSpaceState2D::intersect_point(
+PhysicsDirectSpaceState2D::PhysicsDirectSpaceState2D(GodotSpace2D* p_space) : space(p_space) {}
+
+int PhysicsDirectSpaceState2D::intersect_point(
 	const PS2DT::PointParameters& p_parameters, PS2DT::ShapeResult* r_results, int p_result_max)
 {
 	if (p_result_max <= 0) {
@@ -114,7 +116,7 @@ int GodotPhysicsDirectSpaceState2D::intersect_point(
 	return cc;
 }
 
-bool GodotPhysicsDirectSpaceState2D::intersect_ray(
+bool PhysicsDirectSpaceState2D::intersect_ray(
 	const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result)
 {
 	ERR_FAIL_COND_V(space->locked, false);
@@ -517,7 +519,26 @@ void GodotSpace2D::unlock() { locked = false; }
 
 bool GodotSpace2D::is_locked() const { return locked; }
 
-GodotPhysicsDirectSpaceState2D* GodotSpace2D::get_direct_state() { return direct_access; }
+PhysicsDirectSpaceState2D* GodotSpace2D::get_direct_state() { return direct_access; }
+
+GodotSpace2D::GodotSpace2D()
+{
+	body_linear_velocity_sleep_threshold = 2.0;
+	body_angular_velocity_sleep_threshold = Math::deg_to_rad(8.0);
+	body_time_to_sleep = 0.5;
+	solver_iterations = 16;
+	contact_recycle_radius = 1.0;
+	contact_max_separation = 1.5;
+	contact_max_allowed_penetration = 0.3;
+	contact_bias = 0.8;
+	constraint_bias = 0.2;
+
+	broadphase = memnew(GodotBroadPhase2D);
+	broadphase->set_pair_callback(_broadphase_pair, this);
+	broadphase->set_unpair_callback(_broadphase_unpair, this);
+
+	direct_access = memnew(PhysicsDirectSpaceState2D(this));
+}
 
 GodotSpace2D::~GodotSpace2D()
 {
@@ -526,36 +547,37 @@ GodotSpace2D::~GodotSpace2D()
 }
 
 bool GodotSpace2D::test_body_motion(GodotBody2D* p_body,
-	const PhysicsServer2DTypes::MotionParameters& p_parameters,
-	PhysicsServer2DTypes::MotionResult* r_result)
+	const PS2DT::MotionParameters& p_parameters,
+	PS2DT::MotionResult* r_result)
 {
 	return false;
 }
 
-int GodotPhysicsDirectSpaceState2D::intersect_shape(
-	const PhysicsServer2DTypes::ShapeParameters& p_shape_params,
-	PhysicsServer2DTypes::ShapeResult* r_results, int p_result_max)
+int PhysicsDirectSpaceState2D::intersect_shape(
+	const PS2DT::ShapeParameters& p_parameters,
+	PS2DT::ShapeResult* r_results, int p_result_max)
 {
 	return 0;
 }
 
-bool GodotPhysicsDirectSpaceState2D::cast_motion(
-	const PhysicsServer2DTypes::ShapeParameters& p_shape_params, float& r_closest_safe,
-	float& r_closest_unsafe)
+bool PhysicsDirectSpaceState2D::cast_motion(
+	const PS2DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
+	real_t& p_closest_unsafe)
 {
 	return false;
 }
 
-bool GodotPhysicsDirectSpaceState2D::collide_shape(
-	const PhysicsServer2DTypes::ShapeParameters& p_shape_params, Vector2* r_results,
+bool PhysicsDirectSpaceState2D::collide_shape(
+	const PS2DT::ShapeParameters& p_parameters, Vector2* r_results,
 	int p_result_max, int& r_result_count)
 {
+	r_result_count = 0;
 	return false;
 }
 
-bool GodotPhysicsDirectSpaceState2D::rest_info(
-	const PhysicsServer2DTypes::ShapeParameters& p_shape_params,
-	PhysicsServer2DTypes::ShapeRestInfo* r_info)
+bool PhysicsDirectSpaceState2D::rest_info(
+	const PS2DT::ShapeParameters& p_parameters,
+	PS2DT::ShapeRestInfo* r_info)
 {
 	return false;
 }

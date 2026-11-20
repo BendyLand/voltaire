@@ -37,7 +37,7 @@
 
 class GodotSpace2D;
 
-class GodotCollisionObject2D : public GodotShapeOwner2D
+class GodotCollisionObject2D
 {
 public:
 	enum Type
@@ -106,7 +106,7 @@ public:
 
 	_FORCE_INLINE_ RID get_self() const { return self; }
 
-	void _shape_changed() override;
+	void _shape_changed();
 
 	_FORCE_INLINE_ Type get_type() const { return type; }
 
@@ -207,7 +207,7 @@ public:
 
 	_FORCE_INLINE_ real_t get_collision_priority() const { return collision_priority; }
 
-	void remove_shape(GodotShape2D* p_shape) override;
+	void remove_shape(GodotShape2D* p_shape);
 	void remove_shape(int p_index);
 
 	virtual void set_space(GodotSpace2D* p_space) = 0;

@@ -31,7 +31,6 @@
 
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "servers/rendering/shader_expression.h"
 #include "shader_preprocessor.h"
 
 const char32_t CURSOR = 0xFFFF;

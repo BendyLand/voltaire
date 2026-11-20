@@ -31,9 +31,9 @@
 
 #include "godot_area_2d.h"
 #include "godot_body_2d.h"
-#include "godot_body_direct_state_2d.h"
 #include "godot_constraint_2d.h"
 #include "godot_space_2d.h"
+#include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"
 
 void GodotBody2D::_mass_properties_changed()
 {
@@ -286,11 +286,10 @@ bool GodotBody2D::sleep_test(real_t p_step)
 	}
 }
 
-GodotPhysicsDirectBodyState2D* GodotBody2D::get_direct_state()
+PhysicsDirectBodyState2D* GodotBody2D::get_direct_state()
 {
 	if (!direct_state) {
-		direct_state = memnew(GodotPhysicsDirectBodyState2D);
-		direct_state->body = this;
+		direct_state = memnew(PhysicsDirectBodyState2D(this));
 	}
 	return direct_state;
 }

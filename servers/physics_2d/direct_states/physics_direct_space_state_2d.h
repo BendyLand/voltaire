@@ -35,30 +35,32 @@
 #include "servers/physics_2d/queries/physics_ray_query_parameters_2d.h"
 #include "servers/physics_2d/queries/physics_shape_query_parameters_2d.h"
 
-class PhysicsDirectSpaceState2D
+class GodotSpace2D;
+
+class PhysicsDirectSpaceState2D final
 {
+	GodotSpace2D* space = nullptr;
+
 	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters2D* rp_shape_query);
 
-protected:
-
 public:
-	virtual bool intersect_ray(
-		const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result) = 0;
+	PhysicsDirectSpaceState2D() = default;
+	explicit PhysicsDirectSpaceState2D(GodotSpace2D* p_space);
 
-	virtual int intersect_point(const PS2DT::PointParameters& p_parameters,
-		PS2DT::ShapeResult* r_results, int p_result_max) = 0;
+	bool intersect_ray(
+		const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result);
 
-	virtual int intersect_shape(const PS2DT::ShapeParameters& p_parameters,
-		PS2DT::ShapeResult* r_results, int p_result_max) = 0;
-	virtual bool cast_motion(const PS2DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
-		real_t& p_closest_unsafe) = 0;
-	virtual bool collide_shape(const PS2DT::ShapeParameters& p_parameters, Vector2* r_results,
-		int p_result_max, int& r_result_count) = 0;
-	virtual bool rest_info(
-		const PS2DT::ShapeParameters& p_parameters, PS2DT::ShapeRestInfo* r_info) = 0;
+	int intersect_point(const PS2DT::PointParameters& p_parameters,
+		PS2DT::ShapeResult* r_results, int p_result_max);
 
+	int intersect_shape(const PS2DT::ShapeParameters& p_parameters,
+		PS2DT::ShapeResult* r_results, int p_result_max);
+	bool cast_motion(const PS2DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
+		real_t& p_closest_unsafe);
+	bool collide_shape(const PS2DT::ShapeParameters& p_parameters, Vector2* r_results,
+		int p_result_max, int& r_result_count);
+	bool rest_info(
+		const PS2DT::ShapeParameters& p_parameters, PS2DT::ShapeRestInfo* r_info);
 
-	PhysicsDirectSpaceState2D();
+	GodotSpace2D& get_space() const { return *space; }
 };
-
-

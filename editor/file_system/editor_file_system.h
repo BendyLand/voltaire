@@ -118,10 +118,6 @@ public:
 	~EditorFileSystemDirectory();
 };
 
-class EditorFileSystemImportFormatSupportQuery : public RefCounted
-{
-};
-
 class EditorFileSystem : public Node
 {
 	_THREAD_SAFE_CLASS_
@@ -267,22 +263,18 @@ class EditorFileSystem : public Node
 		}
 	};
 
-	struct ScriptClassInfoUpdate : public ScriptClassInfo
+	struct ScriptClassInfoUpdate
 	{
+		ScriptClassInfo class_info;
 		String type;
 		ScriptClassInfoUpdate() = default;
 
-		explicit ScriptClassInfoUpdate(const ScriptClassInfo& p_info) : ScriptClassInfo(p_info) {}
+		explicit ScriptClassInfoUpdate(const ScriptClassInfo& p_info) : class_info(p_info) {}
 
 		static ScriptClassInfoUpdate from_file_info(const EditorFileSystemDirectory::FileInfo* p_fi)
 		{
-			ScriptClassInfoUpdate update;
+			ScriptClassInfoUpdate update(p_fi->class_info);
 			update.type = p_fi->type;
-			update.name = p_fi->class_info.name;
-			update.extends = p_fi->class_info.extends;
-			update.icon_path = p_fi->class_info.icon_path;
-			update.is_abstract = p_fi->class_info.is_abstract;
-			update.is_tool = p_fi->class_info.is_tool;
 			return update;
 		}
 	};
@@ -321,9 +313,6 @@ class EditorFileSystem : public Node
 		const String& p_path, bool p_generate);
 
 	bool _scan_extensions();
-	bool _scan_import_support(const Vector<String>& reimports);
-
-	Vector<Ref<EditorFileSystemImportFormatSupportQuery>> import_support_queries;
 
 	String _get_file_by_class_name(EditorFileSystemDirectory* p_dir, const String& p_class_name,
 		EditorFileSystemDirectory::FileInfo*& r_file_info);
@@ -360,8 +349,6 @@ public:
 
 	static void scan_for_uid();
 
-	void add_import_format_support_query(Ref<EditorFileSystemImportFormatSupportQuery> p_query);
-	void remove_import_format_support_query(Ref<EditorFileSystemImportFormatSupportQuery> p_query);
 	EditorFileSystem() = default;
 	~EditorFileSystem();
 };
