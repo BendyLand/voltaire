@@ -239,8 +239,8 @@ bool RenderingDeviceGraph::_check_command_intersection(ResourceTracker* p_resour
 	const RecordedDrawListCommand& current_draw_list_command =
 		*reinterpret_cast<const RecordedDrawListCommand*>(
 			&command_data[current_command_data_offset]);
-	if (previous_draw_list_command.type != RecordedCommand::TYPE_DRAW_LIST ||
-		current_draw_list_command.type != RecordedCommand::TYPE_DRAW_LIST) {
+	if (previous_draw_list_command.header.type != RecordedCommand::TYPE_DRAW_LIST ||
+		current_draw_list_command.header.type != RecordedCommand::TYPE_DRAW_LIST) {
 		// We don't check possible intersections if both commands aren't draw lists.
 		return true;
 	}
@@ -261,7 +261,7 @@ bool RenderingDeviceGraph::_check_command_partial_coverage(
 	const uint32_t command_data_offset = command_data_offsets[p_command_index];
 	const RecordedDrawListCommand& draw_list_command =
 		*reinterpret_cast<const RecordedDrawListCommand*>(&command_data[command_data_offset]);
-	if (draw_list_command.type != RecordedCommand::TYPE_DRAW_LIST) {
+	if (draw_list_command.header.type != RecordedCommand::TYPE_DRAW_LIST) {
 		// We don't check for partial coverage on commands that aren't draw lists.
 		return false;
 	}
@@ -349,21 +349,21 @@ RenderingDeviceGraph::RecordedCommand* RenderingDeviceGraph::_allocate_command(
 RenderingDeviceGraph::DrawListInstruction* RenderingDeviceGraph::_allocate_draw_list_instruction(
 	uint32_t p_instruction_size)
 {
-	uint32_t draw_list_data_offset = draw_instruction_list.data.size();
+	uint32_t draw_list_data_offset = draw_instruction_list.list.data.size();
 	draw_list_data_offset = GRAPH_ALIGN(draw_list_data_offset);
-	draw_instruction_list.data.resize(draw_list_data_offset + p_instruction_size);
+	draw_instruction_list.list.data.resize(draw_list_data_offset + p_instruction_size);
 	return reinterpret_cast<DrawListInstruction*>(
-		&draw_instruction_list.data[draw_list_data_offset]);
+		&draw_instruction_list.list.data[draw_list_data_offset]);
 }
 
 RenderingDeviceGraph::ComputeListInstruction*
 RenderingDeviceGraph::_allocate_compute_list_instruction(uint32_t p_instruction_size)
 {
-	uint32_t compute_list_data_offset = compute_instruction_list.data.size();
+	uint32_t compute_list_data_offset = compute_instruction_list.list.data.size();
 	compute_list_data_offset = GRAPH_ALIGN(compute_list_data_offset);
-	compute_instruction_list.data.resize(compute_list_data_offset + p_instruction_size);
+	compute_instruction_list.list.data.resize(compute_list_data_offset + p_instruction_size);
 	return reinterpret_cast<ComputeListInstruction*>(
-		&compute_instruction_list.data[compute_list_data_offset]);
+		&compute_instruction_list.list.data[compute_list_data_offset]);
 }
 
 void RenderingDeviceGraph::_check_discardable_attachment_dependency(
@@ -378,7 +378,7 @@ void RenderingDeviceGraph::_check_discardable_attachment_dependency(
 	uint32_t command_offset = command_data_offsets[p_command_index];
 	RecordedDrawListCommand* draw_list_command =
 		reinterpret_cast<RecordedDrawListCommand*>(&command_data[command_offset]);
-	if (draw_list_command->type == RecordedCommand::TYPE_DRAW_LIST) {
+	if (draw_list_command->header.type == RecordedCommand::TYPE_DRAW_LIST) {
 		ResourceTracker** trackers = draw_list_command->trackers();
 		for (uint32_t i = 0; i < draw_list_command->trackers_count; i++) {
 			if (trackers[i] == p_resource_tracker &&
@@ -392,7 +392,7 @@ void RenderingDeviceGraph::_check_discardable_attachment_dependency(
 	uint32_t previous_command_offset = command_data_offsets[p_previous_command_index];
 	RecordedDrawListCommand* previous_draw_list_command =
 		reinterpret_cast<RecordedDrawListCommand*>(&command_data[previous_command_offset]);
-	if (previous_draw_list_command->type != RecordedCommand::TYPE_DRAW_LIST) {
+	if (previous_draw_list_command->header.type != RecordedCommand::TYPE_DRAW_LIST) {
 		return;
 	}
 
@@ -410,10 +410,10 @@ void RenderingDeviceGraph::_check_discardable_attachment_dependency(
 RenderingDeviceGraph::RaytracingListInstruction*
 RenderingDeviceGraph::_allocate_raytracing_list_instruction(uint32_t p_instruction_size)
 {
-	uint32_t raytracing_list_data_offset = raytracing_instruction_list.data.size();
-	raytracing_instruction_list.data.resize(raytracing_list_data_offset + p_instruction_size);
+	uint32_t raytracing_list_data_offset = raytracing_instruction_list.list.data.size();
+	raytracing_instruction_list.list.data.resize(raytracing_list_data_offset + p_instruction_size);
 	return reinterpret_cast<RaytracingListInstruction*>(
-		&raytracing_instruction_list.data[raytracing_list_data_offset]);
+		&raytracing_instruction_list.list.data[raytracing_list_data_offset]);
 }
 
 void RenderingDeviceGraph::_run_raytracing_list_command(RDD::CommandBufferID p_command_buffer,
@@ -789,13 +789,13 @@ void RenderingDeviceGraph::_add_draw_list_begin(FramebufferCache* p_framebuffer_
 {
 	DEV_ASSERT(p_attachment_operations.size() == p_attachment_clear_values.size());
 
-	draw_instruction_list.clear();
-	draw_instruction_list.index++;
+	draw_instruction_list.list.clear();
+	draw_instruction_list.list.index++;
 	draw_instruction_list.framebuffer_cache = p_framebuffer_cache;
 	draw_instruction_list.render_pass = p_render_pass;
 	draw_instruction_list.framebuffer = p_framebuffer;
 	draw_instruction_list.region = p_region;
-	draw_instruction_list.stages = p_stages;
+	draw_instruction_list.list.stages = p_stages;
 	draw_instruction_list.attachment_operations.resize(p_attachment_operations.size());
 	draw_instruction_list.attachment_clear_values.resize(p_attachment_clear_values.size());
 
@@ -1223,8 +1223,9 @@ void RenderingDeviceGraph::begin()
 	command_synchronization_pending = false;
 	command_label_index = -1;
 	frames[frame].secondary_command_buffers_used = 0;
-	draw_instruction_list.index = 0;
-	compute_instruction_list.index = 0;
+	draw_instruction_list.list.index = 0;
+	compute_instruction_list.list.index = 0;
+	raytracing_instruction_list.list.index = 0;
 	tracking_frame++;
 
 #ifdef DEV_ENABLED
@@ -1238,10 +1239,10 @@ void RenderingDeviceGraph::add_blas_build(RDD::AccelerationStructureID p_acceler
 {
 	int32_t command_index;
 	RecordedBottomLevelAccelerationStructureBuildCommand* command =
-		static_cast<RecordedBottomLevelAccelerationStructureBuildCommand*>(_allocate_command(
+		reinterpret_cast<RecordedBottomLevelAccelerationStructureBuildCommand*>(_allocate_command(
 			sizeof(RecordedBottomLevelAccelerationStructureBuildCommand), command_index));
-	command->type = RecordedCommand::TYPE_BOTTOM_LEVEL_ACCELERATION_STRUCTURE_BUILD;
-	command->self_stages = RDD::PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT;
+	command->header.type = RecordedCommand::TYPE_BOTTOM_LEVEL_ACCELERATION_STRUCTURE_BUILD;
+	command->header.self_stages = RDD::PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT;
 	command->acceleration_structure = p_acceleration_structure;
 	command->scratch_buffer = p_scratch_buffer;
 
@@ -1261,7 +1262,8 @@ void RenderingDeviceGraph::add_blas_build(RDD::AccelerationStructureID p_acceler
 	trackers[resource_count - 1] = p_dst_tracker;
 	usages[resource_count - 1] = RESOURCE_USAGE_ACCELERATION_STRUCTURE_READ_WRITE;
 
-	_add_command_to_graph(trackers.ptr(), usages.ptr(), usages.size(), command_index, command);
+	_add_command_to_graph(
+		trackers.ptr(), usages.ptr(), usages.size(), command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_tlas_build(RDD::AccelerationStructureID p_acceleration_structure,
@@ -1271,10 +1273,10 @@ void RenderingDeviceGraph::add_tlas_build(RDD::AccelerationStructureID p_acceler
 {
 	int32_t command_index;
 	RecordedTopLevelAccelerationStructureBuildCommand* command =
-		static_cast<RecordedTopLevelAccelerationStructureBuildCommand*>(_allocate_command(
+		reinterpret_cast<RecordedTopLevelAccelerationStructureBuildCommand*>(_allocate_command(
 			sizeof(RecordedTopLevelAccelerationStructureBuildCommand), command_index));
-	command->type = RecordedCommand::TYPE_TOP_LEVEL_ACCELERATION_STRUCTURE_BUILD;
-	command->self_stages = RDD::PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT;
+	command->header.type = RecordedCommand::TYPE_TOP_LEVEL_ACCELERATION_STRUCTURE_BUILD;
+	command->header.self_stages = RDD::PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT;
 	command->acceleration_structure = p_acceleration_structure;
 	command->scratch_buffer = p_scratch_buffer;
 	command->instance_buffer = p_instance_buffer;
@@ -1297,7 +1299,8 @@ void RenderingDeviceGraph::add_tlas_build(RDD::AccelerationStructureID p_acceler
 	trackers[resource_count - 1] = p_dst_tracker;
 	usages[resource_count - 1] = RESOURCE_USAGE_ACCELERATION_STRUCTURE_READ_WRITE;
 
-	_add_command_to_graph(trackers.ptr(), usages.ptr(), usages.size(), command_index, command);
+	_add_command_to_graph(
+		trackers.ptr(), usages.ptr(), usages.size(), command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_buffer_clear(
@@ -1306,26 +1309,26 @@ void RenderingDeviceGraph::add_buffer_clear(
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	RecordedBufferClearCommand* command = static_cast<RecordedBufferClearCommand*>(
+	RecordedBufferClearCommand* command = reinterpret_cast<RecordedBufferClearCommand*>(
 		_allocate_command(sizeof(RecordedBufferClearCommand), command_index));
-	command->type = RecordedCommand::TYPE_BUFFER_CLEAR;
+	command->header.type = RecordedCommand::TYPE_BUFFER_CLEAR;
 	command->buffer = p_dst;
 	command->offset = p_offset;
 	command->size = p_size;
 
 	ResourceUsage usage;
 	if (driver_clears_with_copy_engine) {
-		command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+		command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 		usage = RESOURCE_USAGE_COPY_TO;
 	}
 	else {
 		// If the driver is uncapable of using the copy engine for clearing the buffer (e.g. D3D12),
 		// we must transition it to storage buffer read/write usage.
-		command->self_stages = RDD::PIPELINE_STAGE_CLEAR_STORAGE_BIT;
+		command->header.self_stages = RDD::PIPELINE_STAGE_CLEAR_STORAGE_BIT;
 		usage = RESOURCE_USAGE_STORAGE_BUFFER_READ_WRITE;
 	}
 
-	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, command);
+	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_buffer_copy(RDD::BufferID p_src, ResourceTracker* p_src_tracker,
@@ -1335,10 +1338,10 @@ void RenderingDeviceGraph::add_buffer_copy(RDD::BufferID p_src, ResourceTracker*
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	RecordedBufferCopyCommand* command = static_cast<RecordedBufferCopyCommand*>(
+	RecordedBufferCopyCommand* command = reinterpret_cast<RecordedBufferCopyCommand*>(
 		_allocate_command(sizeof(RecordedBufferCopyCommand), command_index));
-	command->type = RecordedCommand::TYPE_BUFFER_COPY;
-	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	command->header.type = RecordedCommand::TYPE_BUFFER_COPY;
+	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->source = p_src;
 	command->destination = p_dst;
 	command->region = p_region;
@@ -1346,7 +1349,7 @@ void RenderingDeviceGraph::add_buffer_copy(RDD::BufferID p_src, ResourceTracker*
 	ResourceTracker* trackers[2] = {p_dst_tracker, p_src_tracker};
 	ResourceUsage usages[2] = {RESOURCE_USAGE_COPY_TO, RESOURCE_USAGE_COPY_FROM};
 	_add_command_to_graph(
-		trackers, usages, p_src_tracker != nullptr ? 2 : 1, command_index, command);
+		trackers, usages, p_src_tracker != nullptr ? 2 : 1, command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_buffer_get_data(RDD::BufferID p_src, ResourceTracker* p_src_tracker,
@@ -1354,20 +1357,20 @@ void RenderingDeviceGraph::add_buffer_get_data(RDD::BufferID p_src, ResourceTrac
 {
 	// Source tracker is allowed to be null as it could be a read-only buffer.
 	int32_t command_index;
-	RecordedBufferGetDataCommand* command = static_cast<RecordedBufferGetDataCommand*>(
+	RecordedBufferGetDataCommand* command = reinterpret_cast<RecordedBufferGetDataCommand*>(
 		_allocate_command(sizeof(RecordedBufferGetDataCommand), command_index));
-	command->type = RecordedCommand::TYPE_BUFFER_GET_DATA;
-	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	command->header.type = RecordedCommand::TYPE_BUFFER_GET_DATA;
+	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->source = p_src;
 	command->destination = p_dst;
 	command->region = p_region;
 
 	if (p_src_tracker != nullptr) {
 		ResourceUsage usage = RESOURCE_USAGE_COPY_FROM;
-		_add_command_to_graph(&p_src_tracker, &usage, 1, command_index, command);
+		_add_command_to_graph(&p_src_tracker, &usage, 1, command_index, &command->header);
 	}
 	else {
-		_add_command_to_graph(nullptr, nullptr, 0, command_index, command);
+		_add_command_to_graph(nullptr, nullptr, 0, command_index, &command->header);
 	}
 }
 
@@ -1379,10 +1382,10 @@ void RenderingDeviceGraph::add_buffer_update(RDD::BufferID p_dst, ResourceTracke
 	size_t buffer_copies_size = p_buffer_copies.size() * sizeof(RecordedBufferCopy);
 	uint64_t command_size = sizeof(RecordedBufferUpdateCommand) + buffer_copies_size;
 	int32_t command_index;
-	RecordedBufferUpdateCommand* command =
-		static_cast<RecordedBufferUpdateCommand*>(_allocate_command(command_size, command_index));
-	command->type = RecordedCommand::TYPE_BUFFER_UPDATE;
-	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	RecordedBufferUpdateCommand* command = reinterpret_cast<RecordedBufferUpdateCommand*>(
+		_allocate_command(command_size, command_index));
+	command->header.type = RecordedCommand::TYPE_BUFFER_UPDATE;
+	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->destination = p_dst;
 	command->buffer_copies_count = p_buffer_copies.size();
 
@@ -1392,7 +1395,7 @@ void RenderingDeviceGraph::add_buffer_update(RDD::BufferID p_dst, ResourceTracke
 	}
 
 	ResourceUsage buffer_usage = RESOURCE_USAGE_COPY_TO;
-	_add_command_to_graph(&p_dst_tracker, &buffer_usage, 1, command_index, command);
+	_add_command_to_graph(&p_dst_tracker, &buffer_usage, 1, command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_driver_callback(RDD::DriverCallback p_callback, void* p_userdata,
@@ -1402,19 +1405,19 @@ void RenderingDeviceGraph::add_driver_callback(RDD::DriverCallback p_callback, v
 	DEV_ASSERT(p_trackers.size() == p_usages.size());
 
 	int32_t command_index;
-	RecordedDriverCallbackCommand* command = static_cast<RecordedDriverCallbackCommand*>(
+	RecordedDriverCallbackCommand* command = reinterpret_cast<RecordedDriverCallbackCommand*>(
 		_allocate_command(sizeof(RecordedDriverCallbackCommand), command_index));
-	command->type = RecordedCommand::TYPE_DRIVER_CALLBACK;
+	command->header.type = RecordedCommand::TYPE_DRIVER_CALLBACK;
 	command->callback = p_callback;
 	command->userdata = p_userdata;
 	_add_command_to_graph((ResourceTracker**)p_trackers.ptr(), (ResourceUsage*)p_usages.ptr(),
-		p_trackers.size(), command_index, command);
+		p_trackers.size(), command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_raytracing_list_begin()
 {
-	raytracing_instruction_list.clear();
-	raytracing_instruction_list.index++;
+	raytracing_instruction_list.list.clear();
+	raytracing_instruction_list.list.index++;
 }
 
 void RenderingDeviceGraph::add_raytracing_list_bind_pipeline(RDD::RaytracingPipelineID p_pipeline)
@@ -1422,9 +1425,9 @@ void RenderingDeviceGraph::add_raytracing_list_bind_pipeline(RDD::RaytracingPipe
 	RaytracingListBindPipelineInstruction* instruction =
 		reinterpret_cast<RaytracingListBindPipelineInstruction*>(
 			_allocate_raytracing_list_instruction(sizeof(RaytracingListBindPipelineInstruction)));
-	instruction->type = RaytracingListInstruction::TYPE_BIND_PIPELINE;
+	instruction->header.type = RaytracingListInstruction::TYPE_BIND_PIPELINE;
 	instruction->pipeline = p_pipeline;
-	raytracing_instruction_list.stages |= RDD::PIPELINE_STAGE_RAY_TRACING_SHADER_BIT;
+	raytracing_instruction_list.list.stages |= RDD::PIPELINE_STAGE_RAY_TRACING_SHADER_BIT;
 }
 
 void RenderingDeviceGraph::add_raytracing_list_bind_uniform_set(
@@ -1433,7 +1436,7 @@ void RenderingDeviceGraph::add_raytracing_list_bind_uniform_set(
 	RaytracingListBindUniformSetInstruction* instruction =
 		reinterpret_cast<RaytracingListBindUniformSetInstruction*>(
 			_allocate_raytracing_list_instruction(sizeof(RaytracingListBindUniformSetInstruction)));
-	instruction->type = RaytracingListInstruction::TYPE_BIND_UNIFORM_SET;
+	instruction->header.type = RaytracingListInstruction::TYPE_BIND_UNIFORM_SET;
 	instruction->shader = p_shader;
 	instruction->uniform_set = p_uniform_set;
 	instruction->set_index = set_index;
@@ -1446,7 +1449,7 @@ void RenderingDeviceGraph::add_raytracing_list_set_push_constant(
 	RaytracingListSetPushConstantInstruction* instruction =
 		reinterpret_cast<RaytracingListSetPushConstantInstruction*>(
 			_allocate_raytracing_list_instruction(instruction_size));
-	instruction->type = RaytracingListInstruction::TYPE_SET_PUSH_CONSTANT;
+	instruction->header.type = RaytracingListInstruction::TYPE_SET_PUSH_CONSTANT;
 	instruction->size = p_data_size;
 	instruction->shader = p_shader;
 	memcpy(instruction->data(), p_data, p_data_size);
@@ -1459,7 +1462,7 @@ void RenderingDeviceGraph::add_raytracing_list_trace_rays(
 	RaytracingListTraceRaysInstruction* instruction =
 		reinterpret_cast<RaytracingListTraceRaysInstruction*>(
 			_allocate_raytracing_list_instruction(sizeof(RaytracingListTraceRaysInstruction)));
-	instruction->type = RaytracingListInstruction::TYPE_TRACE_RAYS;
+	instruction->header.type = RaytracingListInstruction::TYPE_TRACE_RAYS;
 	instruction->raygen_sbt = p_raygen_sbt;
 	instruction->miss_sbt = p_miss_sbt;
 	instruction->hit_sbt = p_hit_sbt;
@@ -1475,7 +1478,7 @@ void RenderingDeviceGraph::add_raytracing_list_uniform_set_prepare_for_use(
 		reinterpret_cast<RaytracingListUniformSetPrepareForUseInstruction*>(
 			_allocate_raytracing_list_instruction(
 				sizeof(RaytracingListUniformSetPrepareForUseInstruction)));
-	instruction->type = RaytracingListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
+	instruction->header.type = RaytracingListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
 	instruction->shader = p_shader;
 	instruction->uniform_set = p_uniform_set;
 	instruction->set_index = set_index;
@@ -1488,10 +1491,10 @@ void RenderingDeviceGraph::add_raytracing_list_usage(
 
 	p_tracker->reset_if_outdated(tracking_frame);
 
-	if (p_tracker->raytracing_list_index != raytracing_instruction_list.index) {
-		raytracing_instruction_list.command_trackers.push_back(p_tracker);
-		raytracing_instruction_list.command_tracker_usages.push_back(p_usage);
-		p_tracker->raytracing_list_index = raytracing_instruction_list.index;
+	if (p_tracker->raytracing_list_index != raytracing_instruction_list.list.index) {
+		raytracing_instruction_list.list.command_trackers.push_back(p_tracker);
+		raytracing_instruction_list.list.command_tracker_usages.push_back(p_usage);
+		p_tracker->raytracing_list_index = raytracing_instruction_list.list.index;
 		p_tracker->raytracing_list_usage = p_usage;
 	}
 #ifdef DEV_ENABLED
@@ -1517,28 +1520,28 @@ void RenderingDeviceGraph::add_raytracing_list_usages(
 void RenderingDeviceGraph::add_raytracing_list_end()
 {
 	int32_t command_index;
-	uint32_t instruction_data_size = raytracing_instruction_list.data.size();
+	uint32_t instruction_data_size = raytracing_instruction_list.list.data.size();
 	uint32_t command_size = sizeof(RecordedRaytracingListCommand) + instruction_data_size;
-	RecordedRaytracingListCommand* command =
-		static_cast<RecordedRaytracingListCommand*>(_allocate_command(command_size, command_index));
-	command->type = RecordedCommand::TYPE_RAYTRACING_LIST;
-	command->self_stages = raytracing_instruction_list.stages;
+	RecordedRaytracingListCommand* command = reinterpret_cast<RecordedRaytracingListCommand*>(
+		_allocate_command(command_size, command_index));
+	command->header.type = RecordedCommand::TYPE_RAYTRACING_LIST;
+	command->header.self_stages = raytracing_instruction_list.list.stages;
 	command->instruction_data_size = instruction_data_size;
-	memcpy(
-		command->instruction_data(), raytracing_instruction_list.data.ptr(), instruction_data_size);
-	_add_command_to_graph(raytracing_instruction_list.command_trackers.ptr(),
-		raytracing_instruction_list.command_tracker_usages.ptr(),
-		raytracing_instruction_list.command_trackers.size(), command_index, command);
+	memcpy(command->instruction_data(), raytracing_instruction_list.list.data.ptr(),
+		instruction_data_size);
+	_add_command_to_graph(raytracing_instruction_list.list.command_trackers.ptr(),
+		raytracing_instruction_list.list.command_tracker_usages.ptr(),
+		raytracing_instruction_list.list.command_trackers.size(), command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_compute_list_begin(
 	RDC::BreadcrumbMarker p_phase, uint32_t p_breadcrumb_data)
 {
-	compute_instruction_list.clear();
+	compute_instruction_list.list.clear();
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
 	compute_instruction_list.breadcrumb = p_breadcrumb_data | (p_phase & ((1 << 16) - 1));
 #endif
-	compute_instruction_list.index++;
+	compute_instruction_list.list.index++;
 }
 
 void RenderingDeviceGraph::add_compute_list_bind_pipeline(RDD::PipelineID p_pipeline)
@@ -1546,9 +1549,9 @@ void RenderingDeviceGraph::add_compute_list_bind_pipeline(RDD::PipelineID p_pipe
 	ComputeListBindPipelineInstruction* instruction =
 		reinterpret_cast<ComputeListBindPipelineInstruction*>(
 			_allocate_compute_list_instruction(sizeof(ComputeListBindPipelineInstruction)));
-	instruction->type = ComputeListInstruction::TYPE_BIND_PIPELINE;
+	instruction->header.type = ComputeListInstruction::TYPE_BIND_PIPELINE;
 	instruction->pipeline = p_pipeline;
-	compute_instruction_list.stages |= RDD::PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	compute_instruction_list.list.stages |= RDD::PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 }
 
 void RenderingDeviceGraph::add_compute_list_bind_uniform_set(
@@ -1567,7 +1570,7 @@ void RenderingDeviceGraph::add_compute_list_bind_uniform_sets(RDD::ShaderID p_sh
 	ComputeListBindUniformSetsInstruction* instruction =
 		reinterpret_cast<ComputeListBindUniformSetsInstruction*>(
 			_allocate_compute_list_instruction(instruction_size));
-	instruction->type = ComputeListInstruction::TYPE_BIND_UNIFORM_SETS;
+	instruction->header.type = ComputeListInstruction::TYPE_BIND_UNIFORM_SETS;
 	instruction->shader = p_shader;
 	instruction->first_set_index = p_first_set_index;
 	instruction->set_count = p_set_count;
@@ -1585,7 +1588,7 @@ void RenderingDeviceGraph::add_compute_list_dispatch(
 {
 	ComputeListDispatchInstruction* instruction = reinterpret_cast<ComputeListDispatchInstruction*>(
 		_allocate_compute_list_instruction(sizeof(ComputeListDispatchInstruction)));
-	instruction->type = ComputeListInstruction::TYPE_DISPATCH;
+	instruction->header.type = ComputeListInstruction::TYPE_DISPATCH;
 	instruction->x_groups = p_x_groups;
 	instruction->y_groups = p_y_groups;
 	instruction->z_groups = p_z_groups;
@@ -1597,10 +1600,10 @@ void RenderingDeviceGraph::add_compute_list_dispatch_indirect(
 	ComputeListDispatchIndirectInstruction* instruction =
 		reinterpret_cast<ComputeListDispatchIndirectInstruction*>(
 			_allocate_compute_list_instruction(sizeof(ComputeListDispatchIndirectInstruction)));
-	instruction->type = ComputeListInstruction::TYPE_DISPATCH_INDIRECT;
+	instruction->header.type = ComputeListInstruction::TYPE_DISPATCH_INDIRECT;
 	instruction->buffer = p_buffer;
 	instruction->offset = p_offset;
-	compute_instruction_list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+	compute_instruction_list.list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 }
 
 void RenderingDeviceGraph::add_compute_list_set_push_constant(
@@ -1610,7 +1613,7 @@ void RenderingDeviceGraph::add_compute_list_set_push_constant(
 	ComputeListSetPushConstantInstruction* instruction =
 		reinterpret_cast<ComputeListSetPushConstantInstruction*>(
 			_allocate_compute_list_instruction(instruction_size));
-	instruction->type = ComputeListInstruction::TYPE_SET_PUSH_CONSTANT;
+	instruction->header.type = ComputeListInstruction::TYPE_SET_PUSH_CONSTANT;
 	instruction->size = p_data_size;
 	instruction->shader = p_shader;
 	memcpy(instruction->data(), p_data, p_data_size);
@@ -1623,7 +1626,7 @@ void RenderingDeviceGraph::add_compute_list_uniform_set_prepare_for_use(
 		reinterpret_cast<ComputeListUniformSetPrepareForUseInstruction*>(
 			_allocate_compute_list_instruction(
 				sizeof(ComputeListUniformSetPrepareForUseInstruction)));
-	instruction->type = ComputeListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
+	instruction->header.type = ComputeListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
 	instruction->shader = p_shader;
 	instruction->uniform_set = p_uniform_set;
 	instruction->set_index = set_index;
@@ -1635,10 +1638,10 @@ void RenderingDeviceGraph::add_compute_list_usage(ResourceTracker* p_tracker, Re
 
 	p_tracker->reset_if_outdated(tracking_frame);
 
-	if (p_tracker->compute_list_index != compute_instruction_list.index) {
-		compute_instruction_list.command_trackers.push_back(p_tracker);
-		compute_instruction_list.command_tracker_usages.push_back(p_usage);
-		p_tracker->compute_list_index = compute_instruction_list.index;
+	if (p_tracker->compute_list_index != compute_instruction_list.list.index) {
+		compute_instruction_list.list.command_trackers.push_back(p_tracker);
+		compute_instruction_list.list.command_tracker_usages.push_back(p_usage);
+		p_tracker->compute_list_index = compute_instruction_list.list.index;
 		p_tracker->compute_list_usage = p_usage;
 	}
 #ifdef DEV_ENABLED
@@ -1663,17 +1666,18 @@ void RenderingDeviceGraph::add_compute_list_usages(
 void RenderingDeviceGraph::add_compute_list_end()
 {
 	int32_t command_index;
-	uint32_t instruction_data_size = compute_instruction_list.data.size();
+	uint32_t instruction_data_size = compute_instruction_list.list.data.size();
 	uint32_t command_size = sizeof(RecordedComputeListCommand) + instruction_data_size;
-	RecordedComputeListCommand* command =
-		static_cast<RecordedComputeListCommand*>(_allocate_command(command_size, command_index));
-	command->type = RecordedCommand::TYPE_COMPUTE_LIST;
-	command->self_stages = compute_instruction_list.stages;
+	RecordedComputeListCommand* command = reinterpret_cast<RecordedComputeListCommand*>(
+		_allocate_command(command_size, command_index));
+	command->header.type = RecordedCommand::TYPE_COMPUTE_LIST;
+	command->header.self_stages = compute_instruction_list.list.stages;
 	command->instruction_data_size = instruction_data_size;
-	memcpy(command->instruction_data(), compute_instruction_list.data.ptr(), instruction_data_size);
-	_add_command_to_graph(compute_instruction_list.command_trackers.ptr(),
-		compute_instruction_list.command_tracker_usages.ptr(),
-		compute_instruction_list.command_trackers.size(), command_index, command);
+	memcpy(command->instruction_data(), compute_instruction_list.list.data.ptr(),
+		instruction_data_size);
+	_add_command_to_graph(compute_instruction_list.list.command_trackers.ptr(),
+		compute_instruction_list.list.command_tracker_usages.ptr(),
+		compute_instruction_list.list.command_trackers.size(), command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_draw_list_begin(FramebufferCache* p_framebuffer_cache,
@@ -1702,11 +1706,11 @@ void RenderingDeviceGraph::add_draw_list_bind_index_buffer(RDD::BufferID p_buffe
     DrawListBindIndexBufferInstruction* instruction =
         reinterpret_cast<DrawListBindIndexBufferInstruction*>(
             _allocate_draw_list_instruction(sizeof(DrawListBindIndexBufferInstruction)));
-    instruction->type = DrawListInstruction::TYPE_BIND_INDEX_BUFFER;
+    instruction->header.type = DrawListInstruction::TYPE_BIND_INDEX_BUFFER;
     instruction->buffer = p_buffer;
     instruction->format = p_format;
     instruction->offset = p_offset;
-    draw_instruction_list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
+    draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
 }
 
 void RenderingDeviceGraph::add_draw_list_bind_pipeline(
@@ -1715,9 +1719,9 @@ void RenderingDeviceGraph::add_draw_list_bind_pipeline(
 	DrawListBindPipelineInstruction* instruction =
 		reinterpret_cast<DrawListBindPipelineInstruction*>(
 			_allocate_draw_list_instruction(sizeof(DrawListBindPipelineInstruction)));
-	instruction->type = DrawListInstruction::TYPE_BIND_PIPELINE;
+	instruction->header.type = DrawListInstruction::TYPE_BIND_PIPELINE;
 	instruction->pipeline = p_pipeline;
-	draw_instruction_list.stages = draw_instruction_list.stages | p_pipeline_stage_bits;
+	draw_instruction_list.list.stages = draw_instruction_list.list.stages | p_pipeline_stage_bits;
 }
 
 void RenderingDeviceGraph::add_draw_list_bind_uniform_set(
@@ -1736,7 +1740,7 @@ void RenderingDeviceGraph::add_draw_list_bind_uniform_sets(RDD::ShaderID p_shade
 	DrawListBindUniformSetsInstruction* instruction =
 		reinterpret_cast<DrawListBindUniformSetsInstruction*>(
 			_allocate_draw_list_instruction(instruction_size));
-	instruction->type = DrawListInstruction::TYPE_BIND_UNIFORM_SETS;
+	instruction->header.type = DrawListInstruction::TYPE_BIND_UNIFORM_SETS;
 	instruction->shader = p_shader;
 	instruction->first_set_index = p_first_index;
 	instruction->set_count = p_set_count;
@@ -1759,7 +1763,7 @@ void RenderingDeviceGraph::add_draw_list_bind_vertex_buffers(
 	DrawListBindVertexBuffersInstruction* instruction =
 		reinterpret_cast<DrawListBindVertexBuffersInstruction*>(
 			_allocate_draw_list_instruction(instruction_size));
-	instruction->type = DrawListInstruction::TYPE_BIND_VERTEX_BUFFERS;
+	instruction->header.type = DrawListInstruction::TYPE_BIND_VERTEX_BUFFERS;
 	instruction->vertex_buffers_count = p_vertex_buffers.size();
 	instruction->dynamic_offsets_mask = driver->buffer_get_dynamic_offsets(p_vertex_buffers);
 
@@ -1771,7 +1775,7 @@ void RenderingDeviceGraph::add_draw_list_bind_vertex_buffers(
 	}
 
 	if (instruction->vertex_buffers_count > 0) {
-		draw_instruction_list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
+		draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
 	}
 }
 
@@ -1785,7 +1789,7 @@ void RenderingDeviceGraph::add_draw_list_clear_attachments(
 	DrawListClearAttachmentsInstruction* instruction =
 		reinterpret_cast<DrawListClearAttachmentsInstruction*>(
 			_allocate_draw_list_instruction(instruction_size));
-	instruction->type = DrawListInstruction::TYPE_CLEAR_ATTACHMENTS;
+	instruction->header.type = DrawListInstruction::TYPE_CLEAR_ATTACHMENTS;
 	instruction->attachments_clear_count = p_attachments_clear.size();
 	instruction->attachments_clear_rect_count = p_attachments_clear_rect.size();
 
@@ -1804,7 +1808,7 @@ void RenderingDeviceGraph::add_draw_list_draw(uint32_t p_vertex_count, uint32_t 
 {
 	DrawListDrawInstruction* instruction = reinterpret_cast<DrawListDrawInstruction*>(
 		_allocate_draw_list_instruction(sizeof(DrawListDrawInstruction)));
-	instruction->type = DrawListInstruction::TYPE_DRAW;
+	instruction->header.type = DrawListInstruction::TYPE_DRAW;
 	instruction->vertex_count = p_vertex_count;
 	instruction->instance_count = p_instance_count;
 }
@@ -1814,7 +1818,7 @@ void RenderingDeviceGraph::add_draw_list_draw_indexed(
 {
 	DrawListDrawIndexedInstruction* instruction = reinterpret_cast<DrawListDrawIndexedInstruction*>(
 		_allocate_draw_list_instruction(sizeof(DrawListDrawIndexedInstruction)));
-	instruction->type = DrawListInstruction::TYPE_DRAW_INDEXED;
+	instruction->header.type = DrawListInstruction::TYPE_DRAW_INDEXED;
 	instruction->index_count = p_index_count;
 	instruction->instance_count = p_instance_count;
 	instruction->first_index = p_first_index;
@@ -1826,12 +1830,12 @@ void RenderingDeviceGraph::add_draw_list_draw_indirect(
 	DrawListDrawIndirectInstruction* instruction =
 		reinterpret_cast<DrawListDrawIndirectInstruction*>(
 			_allocate_draw_list_instruction(sizeof(DrawListDrawIndirectInstruction)));
-	instruction->type = DrawListInstruction::TYPE_DRAW_INDIRECT;
+	instruction->header.type = DrawListInstruction::TYPE_DRAW_INDIRECT;
 	instruction->buffer = p_buffer;
 	instruction->offset = p_offset;
 	instruction->draw_count = p_draw_count;
 	instruction->stride = p_stride;
-	draw_instruction_list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+	draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 }
 
 void RenderingDeviceGraph::add_draw_list_draw_indexed_indirect(
@@ -1840,12 +1844,12 @@ void RenderingDeviceGraph::add_draw_list_draw_indexed_indirect(
 	DrawListDrawIndexedIndirectInstruction* instruction =
 		reinterpret_cast<DrawListDrawIndexedIndirectInstruction*>(
 			_allocate_draw_list_instruction(sizeof(DrawListDrawIndexedIndirectInstruction)));
-	instruction->type = DrawListInstruction::TYPE_DRAW_INDEXED_INDIRECT;
+	instruction->header.type = DrawListInstruction::TYPE_DRAW_INDEXED_INDIRECT;
 	instruction->buffer = p_buffer;
 	instruction->offset = p_offset;
 	instruction->draw_count = p_draw_count;
 	instruction->stride = p_stride;
-	draw_instruction_list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+	draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 }
 
 void RenderingDeviceGraph::add_draw_list_execute_commands(RDD::CommandBufferID p_command_buffer)
@@ -1853,7 +1857,7 @@ void RenderingDeviceGraph::add_draw_list_execute_commands(RDD::CommandBufferID p
 	DrawListExecuteCommandsInstruction* instruction =
 		reinterpret_cast<DrawListExecuteCommandsInstruction*>(
 			_allocate_draw_list_instruction(sizeof(DrawListExecuteCommandsInstruction)));
-	instruction->type = DrawListInstruction::TYPE_EXECUTE_COMMANDS;
+	instruction->header.type = DrawListInstruction::TYPE_EXECUTE_COMMANDS;
 	instruction->command_buffer = p_command_buffer;
 }
 
@@ -1861,7 +1865,7 @@ void RenderingDeviceGraph::add_draw_list_next_subpass(RDD::CommandBufferType p_c
 {
 	DrawListNextSubpassInstruction* instruction = reinterpret_cast<DrawListNextSubpassInstruction*>(
 		_allocate_draw_list_instruction(sizeof(DrawListNextSubpassInstruction)));
-	instruction->type = DrawListInstruction::TYPE_NEXT_SUBPASS;
+	instruction->header.type = DrawListInstruction::TYPE_NEXT_SUBPASS;
 	instruction->command_buffer_type = p_command_buffer_type;
 }
 
@@ -1870,7 +1874,7 @@ void RenderingDeviceGraph::add_draw_list_set_blend_constants(const Color& p_colo
 	DrawListSetBlendConstantsInstruction* instruction =
 		reinterpret_cast<DrawListSetBlendConstantsInstruction*>(
 			_allocate_draw_list_instruction(sizeof(DrawListSetBlendConstantsInstruction)));
-	instruction->type = DrawListInstruction::TYPE_SET_BLEND_CONSTANTS;
+	instruction->header.type = DrawListInstruction::TYPE_SET_BLEND_CONSTANTS;
 	instruction->color = p_color;
 }
 
@@ -1879,7 +1883,7 @@ void RenderingDeviceGraph::add_draw_list_set_line_width(float p_width)
 	DrawListSetLineWidthInstruction* instruction =
 		reinterpret_cast<DrawListSetLineWidthInstruction*>(
 			_allocate_draw_list_instruction(sizeof(DrawListSetLineWidthInstruction)));
-	instruction->type = DrawListInstruction::TYPE_SET_LINE_WIDTH;
+	instruction->header.type = DrawListInstruction::TYPE_SET_LINE_WIDTH;
 	instruction->width = p_width;
 }
 
@@ -1890,7 +1894,7 @@ void RenderingDeviceGraph::add_draw_list_set_push_constant(
 	DrawListSetPushConstantInstruction* instruction =
 		reinterpret_cast<DrawListSetPushConstantInstruction*>(
 			_allocate_draw_list_instruction(instruction_size));
-	instruction->type = DrawListInstruction::TYPE_SET_PUSH_CONSTANT;
+	instruction->header.type = DrawListInstruction::TYPE_SET_PUSH_CONSTANT;
 	instruction->size = p_data_size;
 	instruction->shader = p_shader;
 	memcpy(instruction->data(), p_data, p_data_size);
@@ -1900,7 +1904,7 @@ void RenderingDeviceGraph::add_draw_list_set_scissor(Rect2i p_rect)
 {
 	DrawListSetScissorInstruction* instruction = reinterpret_cast<DrawListSetScissorInstruction*>(
 		_allocate_draw_list_instruction(sizeof(DrawListSetScissorInstruction)));
-	instruction->type = DrawListInstruction::TYPE_SET_SCISSOR;
+	instruction->header.type = DrawListInstruction::TYPE_SET_SCISSOR;
 	instruction->rect = p_rect;
 }
 
@@ -1908,7 +1912,7 @@ void RenderingDeviceGraph::add_draw_list_set_viewport(Rect2i p_rect)
 {
 	DrawListSetViewportInstruction* instruction = reinterpret_cast<DrawListSetViewportInstruction*>(
 		_allocate_draw_list_instruction(sizeof(DrawListSetViewportInstruction)));
-	instruction->type = DrawListInstruction::TYPE_SET_VIEWPORT;
+	instruction->header.type = DrawListInstruction::TYPE_SET_VIEWPORT;
 	instruction->rect = p_rect;
 }
 
@@ -1918,7 +1922,7 @@ void RenderingDeviceGraph::add_draw_list_uniform_set_prepare_for_use(
 	DrawListUniformSetPrepareForUseInstruction* instruction =
 		reinterpret_cast<DrawListUniformSetPrepareForUseInstruction*>(
 			_allocate_draw_list_instruction(sizeof(DrawListUniformSetPrepareForUseInstruction)));
-	instruction->type = DrawListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
+	instruction->header.type = DrawListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
 	instruction->shader = p_shader;
 	instruction->uniform_set = p_uniform_set;
 	instruction->set_index = set_index;
@@ -1928,10 +1932,10 @@ void RenderingDeviceGraph::add_draw_list_usage(ResourceTracker* p_tracker, Resou
 {
 	p_tracker->reset_if_outdated(tracking_frame);
 
-	if (p_tracker->draw_list_index != draw_instruction_list.index) {
-		draw_instruction_list.command_trackers.push_back(p_tracker);
-		draw_instruction_list.command_tracker_usages.push_back(p_usage);
-		p_tracker->draw_list_index = draw_instruction_list.index;
+	if (p_tracker->draw_list_index != draw_instruction_list.list.index) {
+		draw_instruction_list.list.command_trackers.push_back(p_tracker);
+		draw_instruction_list.list.command_tracker_usages.push_back(p_usage);
+		p_tracker->draw_list_index = draw_instruction_list.list.index;
 		p_tracker->draw_list_usage = p_usage;
 	}
 #ifdef DEV_ENABLED
@@ -1963,13 +1967,13 @@ void RenderingDeviceGraph::add_draw_list_end()
 	uint32_t trackers_and_ops_size = (sizeof(ResourceTracker*) + sizeof(RDD::AttachmentLoadOp) +
 										 sizeof(RDD::AttachmentStoreOp)) *
 									 trackers_count;
-	uint32_t instruction_data_size = draw_instruction_list.data.size();
+	uint32_t instruction_data_size = draw_instruction_list.list.data.size();
 	uint32_t command_size = sizeof(RecordedDrawListCommand) + clear_values_size +
 							trackers_and_ops_size + instruction_data_size;
 	RecordedDrawListCommand* command =
-		static_cast<RecordedDrawListCommand*>(_allocate_command(command_size, command_index));
-	command->type = RecordedCommand::TYPE_DRAW_LIST;
-	command->self_stages = draw_instruction_list.stages;
+		reinterpret_cast<RecordedDrawListCommand*>(_allocate_command(command_size, command_index));
+	command->header.type = RecordedCommand::TYPE_DRAW_LIST;
+	command->header.self_stages = draw_instruction_list.list.stages;
 	command->framebuffer_cache = framebuffer_cache;
 	command->render_pass = draw_instruction_list.render_pass;
 	command->framebuffer = draw_instruction_list.framebuffer;
@@ -2030,10 +2034,11 @@ void RenderingDeviceGraph::add_draw_list_end()
 		clear_values[i] = draw_instruction_list.attachment_clear_values[i];
 	}
 
-	memcpy(command->instruction_data(), draw_instruction_list.data.ptr(), instruction_data_size);
-	_add_command_to_graph(draw_instruction_list.command_trackers.ptr(),
-		draw_instruction_list.command_tracker_usages.ptr(),
-		draw_instruction_list.command_trackers.size(), command_index, command);
+	memcpy(
+		command->instruction_data(), draw_instruction_list.list.data.ptr(), instruction_data_size);
+	_add_command_to_graph(draw_instruction_list.list.command_trackers.ptr(),
+		draw_instruction_list.list.command_tracker_usages.ptr(),
+		draw_instruction_list.list.command_trackers.size(), command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_texture_clear_color(RDD::TextureID p_dst,
@@ -2043,16 +2048,16 @@ void RenderingDeviceGraph::add_texture_clear_color(RDD::TextureID p_dst,
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	RecordedTextureClearColorCommand* command = static_cast<RecordedTextureClearColorCommand*>(
+	RecordedTextureClearColorCommand* command = reinterpret_cast<RecordedTextureClearColorCommand*>(
 		_allocate_command(sizeof(RecordedTextureClearColorCommand), command_index));
-	command->type = RecordedCommand::TYPE_TEXTURE_CLEAR_COLOR;
+	command->header.type = RecordedCommand::TYPE_TEXTURE_CLEAR_COLOR;
 	command->texture = p_dst;
 	command->color = p_color;
 	command->range = p_range;
 
 	ResourceUsage usage;
 	if (driver_clears_with_copy_engine) {
-		command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+		command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 		usage = RESOURCE_USAGE_COPY_TO;
 	}
 	else {
@@ -2060,16 +2065,16 @@ void RenderingDeviceGraph::add_texture_clear_color(RDD::TextureID p_dst,
 		// we must either transition the resource to a render target or a storage image as that's
 		// the only two ways it can perform the operation.
 		if (p_dst_tracker->texture_usage & RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
-			command->self_stages = RDD::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			command->header.self_stages = RDD::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 			usage = RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE;
 		}
 		else {
-			command->self_stages = RDD::PIPELINE_STAGE_CLEAR_STORAGE_BIT;
+			command->header.self_stages = RDD::PIPELINE_STAGE_CLEAR_STORAGE_BIT;
 			usage = RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE;
 		}
 	}
 
-	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, command);
+	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_texture_clear_depth_stencil(RDD::TextureID p_dst,
@@ -2080,9 +2085,9 @@ void RenderingDeviceGraph::add_texture_clear_depth_stencil(RDD::TextureID p_dst,
 
 	int32_t command_index;
 	RecordedTextureClearDepthStencilCommand* command =
-		static_cast<RecordedTextureClearDepthStencilCommand*>(
+		reinterpret_cast<RecordedTextureClearDepthStencilCommand*>(
 			_allocate_command(sizeof(RecordedTextureClearDepthStencilCommand), command_index));
-	command->type = RecordedCommand::TYPE_TEXTURE_CLEAR_DEPTH_STENCIL;
+	command->header.type = RecordedCommand::TYPE_TEXTURE_CLEAR_DEPTH_STENCIL;
 	command->texture = p_dst;
 	command->depth = p_depth;
 	command->stencil = p_stencil;
@@ -2090,19 +2095,19 @@ void RenderingDeviceGraph::add_texture_clear_depth_stencil(RDD::TextureID p_dst,
 
 	ResourceUsage usage;
 	if (driver_clears_with_copy_engine) {
-		command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+		command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 		usage = RESOURCE_USAGE_COPY_TO;
 	}
 	else {
 		// If the driver is uncapable of using the copy engine for clearing the image (e.g. D3D12),
 		// we must transition the resource to a depth stencil as that's the only way it can perform
 		// the operation.
-		command->self_stages = RDD::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-							   RDD::PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		command->header.self_stages = RDD::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+									  RDD::PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		usage = RESOURCE_USAGE_ATTACHMENT_DEPTH_STENCIL_READ_WRITE;
 	}
 
-	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, command);
+	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_texture_copy(RDD::TextureID p_src, ResourceTracker* p_src_tracker,
@@ -2115,10 +2120,10 @@ void RenderingDeviceGraph::add_texture_copy(RDD::TextureID p_src, ResourceTracke
 	int32_t command_index;
 	uint64_t command_size = sizeof(RecordedTextureCopyCommand) +
 							p_texture_copy_regions.size() * sizeof(RDD::TextureCopyRegion);
-	RecordedTextureCopyCommand* command =
-		static_cast<RecordedTextureCopyCommand*>(_allocate_command(command_size, command_index));
-	command->type = RecordedCommand::TYPE_TEXTURE_COPY;
-	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	RecordedTextureCopyCommand* command = reinterpret_cast<RecordedTextureCopyCommand*>(
+		_allocate_command(command_size, command_index));
+	command->header.type = RecordedCommand::TYPE_TEXTURE_COPY;
+	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->from_texture = p_src;
 	command->to_texture = p_dst;
 	command->texture_copy_regions_count = p_texture_copy_regions.size();
@@ -2130,7 +2135,7 @@ void RenderingDeviceGraph::add_texture_copy(RDD::TextureID p_src, ResourceTracke
 
 	ResourceTracker* trackers[2] = {p_dst_tracker, p_src_tracker};
 	ResourceUsage usages[2] = {RESOURCE_USAGE_COPY_TO, RESOURCE_USAGE_COPY_FROM};
-	_add_command_to_graph(trackers, usages, 2, command_index, command);
+	_add_command_to_graph(trackers, usages, 2, command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_texture_get_data(RDD::TextureID p_src,
@@ -2144,10 +2149,10 @@ void RenderingDeviceGraph::add_texture_get_data(RDD::TextureID p_src,
 	uint64_t command_size =
 		sizeof(RecordedTextureGetDataCommand) +
 		p_buffer_texture_copy_regions.size() * sizeof(RDD::BufferTextureCopyRegion);
-	RecordedTextureGetDataCommand* command =
-		static_cast<RecordedTextureGetDataCommand*>(_allocate_command(command_size, command_index));
-	command->type = RecordedCommand::TYPE_TEXTURE_GET_DATA;
-	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	RecordedTextureGetDataCommand* command = reinterpret_cast<RecordedTextureGetDataCommand*>(
+		_allocate_command(command_size, command_index));
+	command->header.type = RecordedCommand::TYPE_TEXTURE_GET_DATA;
+	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->from_texture = p_src;
 	command->to_buffer = p_dst;
 	command->buffer_texture_copy_regions_count = p_buffer_texture_copy_regions.size();
@@ -2162,11 +2167,11 @@ void RenderingDeviceGraph::add_texture_get_data(RDD::TextureID p_src,
 		// Add the optional destination tracker if it was provided.
 		ResourceTracker* trackers[2] = {p_dst_tracker, p_src_tracker};
 		ResourceUsage usages[2] = {RESOURCE_USAGE_COPY_TO, RESOURCE_USAGE_COPY_FROM};
-		_add_command_to_graph(trackers, usages, 2, command_index, command);
+		_add_command_to_graph(trackers, usages, 2, command_index, &command->header);
 	}
 	else {
 		ResourceUsage usage = RESOURCE_USAGE_COPY_FROM;
-		_add_command_to_graph(&p_src_tracker, &usage, 1, command_index, command);
+		_add_command_to_graph(&p_src_tracker, &usage, 1, command_index, &command->header);
 	}
 }
 
@@ -2178,10 +2183,10 @@ void RenderingDeviceGraph::add_texture_resolve(RDD::TextureID p_src, ResourceTra
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	RecordedTextureResolveCommand* command = static_cast<RecordedTextureResolveCommand*>(
+	RecordedTextureResolveCommand* command = reinterpret_cast<RecordedTextureResolveCommand*>(
 		_allocate_command(sizeof(RecordedTextureResolveCommand), command_index));
-	command->type = RecordedCommand::TYPE_TEXTURE_RESOLVE;
-	command->self_stages = RDD::PIPELINE_STAGE_RESOLVE_BIT;
+	command->header.type = RecordedCommand::TYPE_TEXTURE_RESOLVE;
+	command->header.self_stages = RDD::PIPELINE_STAGE_RESOLVE_BIT;
 	command->from_texture = p_src;
 	command->to_texture = p_dst;
 	command->src_layer = p_src_layer;
@@ -2191,7 +2196,7 @@ void RenderingDeviceGraph::add_texture_resolve(RDD::TextureID p_src, ResourceTra
 
 	ResourceTracker* trackers[2] = {p_dst_tracker, p_src_tracker};
 	ResourceUsage usages[2] = {RESOURCE_USAGE_RESOLVE_TO, RESOURCE_USAGE_RESOLVE_FROM};
-	_add_command_to_graph(trackers, usages, 2, command_index, command);
+	_add_command_to_graph(trackers, usages, 2, command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_texture_update(RDD::TextureID p_dst, ResourceTracker* p_dst_tracker,
@@ -2203,10 +2208,10 @@ void RenderingDeviceGraph::add_texture_update(RDD::TextureID p_dst, ResourceTrac
 	int32_t command_index;
 	uint64_t command_size = sizeof(RecordedTextureUpdateCommand) +
 							p_buffer_copies.size() * sizeof(RecordedBufferToTextureCopy);
-	RecordedTextureUpdateCommand* command =
-		static_cast<RecordedTextureUpdateCommand*>(_allocate_command(command_size, command_index));
-	command->type = RecordedCommand::TYPE_TEXTURE_UPDATE;
-	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	RecordedTextureUpdateCommand* command = reinterpret_cast<RecordedTextureUpdateCommand*>(
+		_allocate_command(command_size, command_index));
+	command->header.type = RecordedCommand::TYPE_TEXTURE_UPDATE;
+	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->to_texture = p_dst;
 	command->buffer_to_texture_copies_count = p_buffer_copies.size();
 
@@ -2230,24 +2235,24 @@ void RenderingDeviceGraph::add_texture_update(RDD::TextureID p_dst, ResourceTrac
 		usages.push_back(RESOURCE_USAGE_COPY_TO);
 
 		_add_command_to_graph(
-			trackers.ptr(), usages.ptr(), trackers.size(), command_index, command);
+			trackers.ptr(), usages.ptr(), trackers.size(), command_index, &command->header);
 	}
 	else {
 		ResourceUsage usage = RESOURCE_USAGE_COPY_TO;
-		_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, command);
+		_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, &command->header);
 	}
 }
 
 void RenderingDeviceGraph::add_capture_timestamp(RDD::QueryPoolID p_query_pool, uint32_t p_index)
 {
 	int32_t command_index;
-	RecordedCaptureTimestampCommand* command = static_cast<RecordedCaptureTimestampCommand*>(
+	RecordedCaptureTimestampCommand* command = reinterpret_cast<RecordedCaptureTimestampCommand*>(
 		_allocate_command(sizeof(RecordedCaptureTimestampCommand), command_index));
-	command->type = RecordedCommand::TYPE_CAPTURE_TIMESTAMP;
-	command->self_stages = 0;
+	command->header.type = RecordedCommand::TYPE_CAPTURE_TIMESTAMP;
+	command->header.self_stages = 0;
 	command->pool = p_query_pool;
 	command->index = p_index;
-	_add_command_to_graph(nullptr, nullptr, 0, command_index, command);
+	_add_command_to_graph(nullptr, nullptr, 0, command_index, &command->header);
 }
 
 void RenderingDeviceGraph::add_synchronization()

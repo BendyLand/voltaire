@@ -252,7 +252,7 @@ private:
 
 	struct BestFitNormal
 	{
-		BestFitNormalShaderRD shader;
+		ShaderRD shader{BestFitNormalShaderRD()};
 		RID shader_version;
 		RID pipeline;
 		RID texture;
@@ -260,7 +260,7 @@ private:
 
 	struct IntegrateDFG
 	{
-		IntegrateDfgShaderRD shader;
+		ShaderRD shader{IntegrateDfgShaderRD()};
 		RID shader_version;
 		RID pipeline;
 		RID texture;
@@ -692,7 +692,7 @@ private:
 		}
 	};
 
-	class GeometryInstanceForwardClustered : public RenderGeometryInstanceBase
+	class GeometryInstanceForwardClustered : public RenderGeometryInstance
 	{
 	public:
 		// lightmap
@@ -729,36 +729,19 @@ private:
 
 		GeometryInstanceForwardClustered() : dirty_list_element(this) {}
 
-		virtual void _mark_dirty();
+		virtual void _mark_dirty() override;
 
 		virtual void set_transform(const Transform3D& p_transform, const AABB& p_aabb,
-			const AABB& p_transformed_aabb);
-		virtual void reset_motion_vectors();
+			const AABB& p_transformed_aabb) override;
+		virtual void reset_motion_vectors() override;
 		virtual void set_use_lightmap(RID p_lightmap_instance, const Rect2& p_lightmap_uv_scale,
-			int p_lightmap_slice_index);
-		virtual void set_lightmap_capture(const Color* p_sh9);
-
-		virtual void clear_light_instances() {}
-
-		virtual void pair_light_instance(
-			const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx)
-		{
-		}
-
-		virtual void pair_reflection_probe_instances(const RID* p_reflection_probe_instances,
-			uint32_t p_reflection_probe_instance_count)
-		{
-		}
-
-		virtual void pair_decal_instances(
-			const RID* p_decal_instances, uint32_t p_decal_instance_count)
-		{
-		}
+			int p_lightmap_slice_index) override;
+		virtual void set_lightmap_capture(const Color* p_sh9) override;
 
 		virtual void pair_voxel_gi_instances(
-			const RID* p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count);
+			const RID* p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) override;
 
-		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector);
+		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) override;
 	};
 
 	// These are not used in the Forward+ path, it has different light clustering tech.

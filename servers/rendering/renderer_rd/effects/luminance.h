@@ -65,7 +65,7 @@ private:
 
 	struct LuminanceReduce
 	{
-		LuminanceReduceShaderRD shader;
+		ShaderRD shader{LuminanceReduceShaderRD()};
 		RID shader_version;
 		RID pipelines[LUMINANCE_REDUCE_MAX];
 	} luminance_reduce;
@@ -90,7 +90,7 @@ private:
 
 	struct LuminanceReduceFragment
 	{
-		LuminanceReduceRasterShaderRD shader;
+		ShaderRD shader{LuminanceReduceRasterShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipelines[LUMINANCE_REDUCE_FRAGMENT_MAX];
 	} luminance_reduce_raster;

@@ -111,7 +111,7 @@ private:
 	struct BlurRaster
 	{
 		BlurRasterPushConstant push_constant;
-		BlurRasterShaderRD shader;
+		ShaderRD shader{BlurRasterShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipelines[BLUR_MODE_MAX];
 		RID glow_sampler;
@@ -180,7 +180,7 @@ private:
 	struct Copy
 	{
 		CopyPushConstant push_constant;
-		CopyShaderRD shader;
+		ShaderRD shader{CopyShaderRD()};
 		RID shader_version;
 		PipelineDeferredRD pipelines[COPY_MODE_MAX];
 	};
@@ -228,7 +228,7 @@ private:
 	struct CopyToFb
 	{
 		CopyToFbPushConstant push_constant;
-		CopyToFbShaderRD shader;
+		ShaderRD shader{CopyToFbShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipelines[COPY_TO_FB_MAX];
 	};
@@ -244,7 +244,7 @@ private:
 
 	struct CopyToDP
 	{
-		CubeToDpShaderRD shader;
+		ShaderRD shader{CubeToDpShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipeline;
 	};
@@ -260,7 +260,7 @@ private:
 	struct CopyToOctmap
 	{
 		CopyToOctmapPushConstant push_constant;
-		CubeToOctmapShaderRD shader;
+		ShaderRD shader{CubeToOctmapShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipeline;
 	};
@@ -285,8 +285,8 @@ private:
 	struct OctmapDownsampler
 	{
 		OctmapDownsamplerPushConstant push_constant;
-		OctmapDownsamplerShaderRD compute_shader;
-		OctmapDownsamplerRasterShaderRD raster_shader;
+		ShaderRD compute_shader{OctmapDownsamplerShaderRD()};
+		ShaderRD raster_shader{OctmapDownsamplerRasterShaderRD()};
 		RID shader_version;
 		PipelineDeferredRD compute_pipelines[DOWNSAMPLER_MODE_COMPUTE_MAX];
 		PipelineCacheRD raster_pipeline;
@@ -320,8 +320,8 @@ private:
 
 	struct OctmapFilter
 	{
-		OctmapFilterShaderRD compute_shader;
-		OctmapFilterRasterShaderRD raster_shader;
+		ShaderRD compute_shader{OctmapFilterShaderRD()};
+		ShaderRD raster_shader{OctmapFilterRasterShaderRD()};
 		RID shader_version;
 		PipelineDeferredRD compute_pipelines[FILTER_MODE_COMPUTE_MAX];
 		PipelineCacheRD raster_pipelines[FILTER_MODE_RASTER_MAX];
@@ -353,8 +353,8 @@ private:
 	struct OctmapRoughness
 	{
 		OctmapRoughnessPushConstant push_constant;
-		OctmapRoughnessShaderRD compute_shader;
-		OctmapRoughnessRasterShaderRD raster_shader;
+		ShaderRD compute_shader{OctmapRoughnessShaderRD()};
+		ShaderRD raster_shader{OctmapRoughnessRasterShaderRD()};
 		RID shader_version;
 		PipelineDeferredRD compute_pipelines[ROUGHNESS_MODE_MAX];
 		PipelineCacheRD raster_pipeline;
@@ -383,7 +383,7 @@ private:
 
 	struct SpecularMerge
 	{
-		SpecularMergeShaderRD shader;
+		ShaderRD shader{SpecularMergeShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipelines[SPECULAR_MERGE_MAX];
 	};

@@ -88,15 +88,15 @@ private:
 	struct SMAAEffect
 	{
 		SMAAEdgePushConstant edge_push_constant;
-		SmaaEdgeDetectionShaderRD edge_shader;
+		ShaderRD edge_shader{SmaaEdgeDetectionShaderRD()};
 		RID edge_shader_version;
 
 		SMAAWeightPushConstant weight_push_constant;
-		SmaaWeightCalculationShaderRD weight_shader;
+		ShaderRD weight_shader{SmaaWeightCalculationShaderRD()};
 		RID weight_shader_version;
 
 		SMAABlendPushConstant blend_push_constant;
-		SmaaBlendingShaderRD blend_shader;
+		ShaderRD blend_shader{SmaaBlendingShaderRD()};
 		RID blend_shader_version;
 
 		RID search_tex;

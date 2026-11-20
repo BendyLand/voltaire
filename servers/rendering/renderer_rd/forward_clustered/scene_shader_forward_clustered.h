@@ -390,7 +390,7 @@ public:
 	struct Data
 	{
 		SelfList<ShaderData>::List shader_list;
-		SceneForwardClusteredShaderRD shader;
+		ShaderRD shader{SceneForwardClusteredShaderRD()};
 		ShaderCompiler compiler;
 		bool emulate_point_size = false;
 

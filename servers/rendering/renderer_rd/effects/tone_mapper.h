@@ -159,7 +159,7 @@ private:
 	struct Tonemap
 	{
 		TonemapPushConstant push_constant;
-		TonemapShaderRD shader;
+		ShaderRD shader{TonemapShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipelines[TONEMAP_MODE_MAX];
 	} tonemap;
@@ -167,7 +167,7 @@ private:
 	struct TonemapMobile
 	{
 		TonemapPushConstantMobile push_constant;
-		TonemapMobileShaderRD shader;
+		ShaderRD shader{TonemapMobileShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipelines[TONEMAP_MOBILE_MODE_MAX];
 	} tonemap_mobile;

@@ -336,7 +336,7 @@ private:
 		Color sh[9];
 	};
 
-	class GeometryInstanceGLES3 : public RenderGeometryInstanceBase
+	class GeometryInstanceGLES3 : public RenderGeometryInstance
 	{
 	public:
 		// used during rendering

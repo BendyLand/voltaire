@@ -180,15 +180,15 @@ public:
 
 private:
 	struct {
-		Fsr2DepthClipPassShaderRD depth_clip;
-		Fsr2ReconstructPreviousDepthPassShaderRD reconstruct_previous_depth;
-		Fsr2LockPassShaderRD lock;
-		Fsr2AccumulatePassShaderRD accumulate;
-		Fsr2AccumulatePassShaderRD accumulate_sharpen;
-		Fsr2RcasPassShaderRD rcas;
-		Fsr2ComputeLuminancePyramidPassShaderRD compute_luminance_pyramid;
-		Fsr2AutogenReactivePassShaderRD autogen_reactive;
-		Fsr2TcrAutogenPassShaderRD tcr_autogen;
+		ShaderRD depth_clip{Fsr2DepthClipPassShaderRD()};
+		ShaderRD reconstruct_previous_depth{Fsr2ReconstructPreviousDepthPassShaderRD()};
+		ShaderRD lock{Fsr2LockPassShaderRD()};
+		ShaderRD accumulate{Fsr2AccumulatePassShaderRD()};
+		ShaderRD accumulate_sharpen{Fsr2AccumulatePassShaderRD()};
+		ShaderRD rcas{Fsr2RcasPassShaderRD()};
+		ShaderRD compute_luminance_pyramid{Fsr2ComputeLuminancePyramidPassShaderRD()};
+		ShaderRD autogen_reactive{Fsr2AutogenReactivePassShaderRD()};
+		ShaderRD tcr_autogen{Fsr2TcrAutogenPassShaderRD()};
 	} shaders;
 
 	Device device;

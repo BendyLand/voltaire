@@ -55,7 +55,7 @@ private:
 		float variance_dynamic;
 	};
 
-	TaaResolveShaderRD taa_shader;
+	ShaderRD taa_shader{TaaResolveShaderRD()};
 	RID shader_version;
 	RID pipeline;
 

@@ -60,7 +60,7 @@ private:
 	struct VRSShader
 	{
 		// VRSPushConstant push_constant;
-		VrsShaderRD shader;
+		ShaderRD shader{VrsShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipelines[VRS_MAX];
 	} vrs_shader;

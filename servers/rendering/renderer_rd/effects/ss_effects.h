@@ -215,7 +215,7 @@ private:
 	struct SSEffectsShader
 	{
 		SSEffectsDownsamplePushConstant downsample_push_constant;
-		SsEffectsDownsampleShaderRD downsample_shader;
+		ShaderRD downsample_shader{SsEffectsDownsampleShaderRD()};
 		RID downsample_shader_version;
 		bool used_half_size_last_frame = false;
 		bool used_mips_last_frame = false;
@@ -311,22 +311,22 @@ private:
 	struct SSIL
 	{
 		SSILGatherPushConstant gather_push_constant;
-		SsilShaderRD gather_shader;
+		ShaderRD gather_shader{SsilShaderRD()};
 		RID gather_shader_version;
 		RID projection_uniform_buffer;
 
 		SSILImportanceMapPushConstant importance_map_push_constant;
-		SsilImportanceMapShaderRD importance_map_shader;
+		ShaderRD importance_map_shader{SsilImportanceMapShaderRD()};
 		RID importance_map_shader_version;
 		RID importance_map_load_counter;
 		RID counter_uniform_set;
 
 		SSILBlurPushConstant blur_push_constant;
-		SsilBlurShaderRD blur_shader;
+		ShaderRD blur_shader{SsilBlurShaderRD()};
 		RID blur_shader_version;
 
 		SSILInterleavePushConstant interleave_push_constant;
-		SsilInterleaveShaderRD interleave_shader;
+		ShaderRD interleave_shader{SsilInterleaveShaderRD()};
 		RID interleave_shader_version;
 
 		PipelineDeferredRD pipelines[SSIL_MAX];
@@ -414,21 +414,21 @@ private:
 	struct SSAO
 	{
 		SSAOGatherPushConstant gather_push_constant;
-		SsaoShaderRD gather_shader;
+		ShaderRD gather_shader{SsaoShaderRD()};
 		RID gather_shader_version;
 
 		SSAOImportanceMapPushConstant importance_map_push_constant;
-		SsaoImportanceMapShaderRD importance_map_shader;
+		ShaderRD importance_map_shader{SsaoImportanceMapShaderRD()};
 		RID importance_map_shader_version;
 		RID importance_map_load_counter;
 		RID counter_uniform_set;
 
 		SSAOBlurPushConstant blur_push_constant;
-		SsaoBlurShaderRD blur_shader;
+		ShaderRD blur_shader{SsaoBlurShaderRD()};
 		RID blur_shader_version;
 
 		SSAOInterleavePushConstant interleave_push_constant;
-		SsaoInterleaveShaderRD interleave_shader;
+		ShaderRD interleave_shader{SsaoInterleaveShaderRD()};
 		RID interleave_shader_version;
 
 		PipelineDeferredRD pipelines[SSAO_MAX];
@@ -506,24 +506,24 @@ private:
 
 	struct ScreenSpaceReflection
 	{
-		ScreenSpaceReflectionDownsampleShaderRD downsample_shader;
+		ShaderRD downsample_shader{ScreenSpaceReflectionDownsampleShaderRD()};
 		RID downsample_shader_version;
 		PipelineDeferredRD downsample_pipelines[SCREEN_SPACE_REFLECTION_DOWNSAMPLE_MAX];
 
-		ScreenSpaceReflectionHizShaderRD hiz_shader;
+		ShaderRD hiz_shader{ScreenSpaceReflectionHizShaderRD()};
 		RID hiz_shader_version;
 		PipelineDeferredRD hiz_pipelines[SCREEN_SPACE_REFLECTION_HIZ_MAX];
 
-		ScreenSpaceReflectionShaderRD ssr_shader;
+		ShaderRD ssr_shader{ScreenSpaceReflectionShaderRD()};
 		RID ssr_shader_version;
 		PipelineDeferredRD ssr_pipeline;
 		RID ubo;
 
-		ScreenSpaceReflectionFilterShaderRD filter_shader;
+		ShaderRD filter_shader{ScreenSpaceReflectionFilterShaderRD()};
 		RID filter_shader_version;
 		PipelineDeferredRD filter_pipeline;
 
-		ScreenSpaceReflectionResolveShaderRD resolve_shader;
+		ShaderRD resolve_shader{ScreenSpaceReflectionResolveShaderRD()};
 		RID resolve_shader_version;
 		PipelineDeferredRD resolve_pipeline;
 	};
@@ -556,7 +556,7 @@ private:
 	struct SubSurfaceScattering
 	{
 		SubSurfaceScatteringPushConstant push_constant;
-		SubsurfaceScatteringShaderRD shader;
+		ShaderRD shader{SubsurfaceScatteringShaderRD()};
 		RID shader_version;
 		PipelineDeferredRD pipelines[SUBSURFACE_SCATTERING_MODE_MAX];
 	};

@@ -69,7 +69,7 @@ private:
 
 	struct
 	{
-		ShadowFrustumShaderRD shader;
+		ShaderRD shader{ShadowFrustumShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipelines[SFP_MAX];
 	} shadow_frustum;
@@ -84,7 +84,7 @@ private:
 
 	struct
 	{
-		MotionVectorsShaderRD shader;
+		ShaderRD shader{MotionVectorsShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipeline;
 		MotionVectorsPushConstant push_constant;

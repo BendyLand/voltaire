@@ -70,7 +70,7 @@ class ClusterBuilderSharedDataRD {
 			uint32_t pad2;
 		};
 
-		ClusterRenderShaderRD cluster_render_shader;
+		ShaderRD cluster_render_shader{ClusterRenderShaderRD()};
 		RID shader_version;
 		RID shader;
 
@@ -100,7 +100,7 @@ class ClusterBuilderSharedDataRD {
 			uint32_t pad2;
 		};
 
-		ClusterStoreShaderRD cluster_store_shader;
+		ShaderRD cluster_store_shader{ClusterStoreShaderRD()};
 		RID shader_version;
 		RID shader;
 		RID shader_pipeline;
@@ -123,7 +123,7 @@ class ClusterBuilderSharedDataRD {
 			uint32_t pad2;
 		};
 
-		ClusterDebugShaderRD cluster_debug_shader;
+		ShaderRD cluster_debug_shader{ClusterDebugShaderRD()};
 		RID shader_version;
 		RID shader;
 		RID shader_pipeline;

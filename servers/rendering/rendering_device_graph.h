@@ -310,20 +310,22 @@ private:
 		}
 	};
 
-	struct ComputeInstructionList : InstructionList
+	struct ComputeInstructionList
 	{
+		InstructionList list;
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
 		uint32_t breadcrumb;
 #endif
 	};
 
-	struct RaytracingInstructionList : InstructionList
+	struct RaytracingInstructionList
 	{
-		// No extra contents.
+		InstructionList list;
 	};
 
-	struct DrawInstructionList : InstructionList
+	struct DrawInstructionList
 	{
+		InstructionList list;
 		FramebufferCache* framebuffer_cache = nullptr;
 		RDD::RenderPassID render_pass;
 		RDD::FramebufferID framebuffer;
@@ -379,14 +381,16 @@ private:
 		bool partial_coverage = false;
 	};
 
-	struct RecordedBottomLevelAccelerationStructureBuildCommand : RecordedCommand
+	struct RecordedBottomLevelAccelerationStructureBuildCommand
 	{
+		RecordedCommand header;
 		RDD::AccelerationStructureID acceleration_structure;
 		RDD::BufferID scratch_buffer;
 	};
 
-	struct RecordedTopLevelAccelerationStructureBuildCommand : RecordedCommand
+	struct RecordedTopLevelAccelerationStructureBuildCommand
 	{
+		RecordedCommand header;
 		RDD::AccelerationStructureID acceleration_structure;
 		RDD::BufferID scratch_buffer;
 		RDD::BufferID instance_buffer;
@@ -394,29 +398,33 @@ private:
 		uint32_t instance_count = 0;
 	};
 
-	struct RecordedBufferClearCommand : RecordedCommand
+	struct RecordedBufferClearCommand
 	{
+		RecordedCommand header;
 		RDD::BufferID buffer;
 		uint32_t offset = 0;
 		uint32_t size = 0;
 	};
 
-	struct RecordedBufferCopyCommand : RecordedCommand
+	struct RecordedBufferCopyCommand
 	{
+		RecordedCommand header;
 		RDD::BufferID source;
 		RDD::BufferID destination;
 		RDD::BufferCopyRegion region;
 	};
 
-	struct RecordedBufferGetDataCommand : RecordedCommand
+	struct RecordedBufferGetDataCommand
 	{
+		RecordedCommand header;
 		RDD::BufferID source;
 		RDD::BufferID destination;
 		RDD::BufferCopyRegion region;
 	};
 
-	struct RecordedBufferUpdateCommand : RecordedCommand
+	struct RecordedBufferUpdateCommand
 	{
+		RecordedCommand header;
 		RDD::BufferID destination;
 		uint32_t buffer_copies_count = 0;
 
@@ -431,14 +439,16 @@ private:
 		}
 	};
 
-	struct RecordedDriverCallbackCommand : RecordedCommand
+	struct RecordedDriverCallbackCommand
 	{
+		RecordedCommand header;
 		RDD::DriverCallback callback;
 		void* userdata = nullptr;
 	};
 
-	struct RecordedRaytracingListCommand : RecordedCommand
+	struct RecordedRaytracingListCommand
 	{
+		RecordedCommand header;
 		uint32_t instruction_data_size = 0;
 
 		_FORCE_INLINE_ uint8_t* instruction_data() { return reinterpret_cast<uint8_t*>(&this[1]); }
@@ -449,8 +459,9 @@ private:
 		}
 	};
 
-	struct RecordedComputeListCommand : RecordedCommand
+	struct RecordedComputeListCommand
 	{
+		RecordedCommand header;
 		uint32_t instruction_data_size = 0;
 		uint32_t breadcrumb = 0;
 
@@ -462,8 +473,9 @@ private:
 		}
 	};
 
-	struct RecordedDrawListCommand : RecordedCommand
+	struct RecordedDrawListCommand
 	{
+		RecordedCommand header;
 		FramebufferCache* framebuffer_cache = nullptr;
 		RDD::FramebufferID framebuffer;
 		RDD::RenderPassID render_pass;
@@ -529,23 +541,26 @@ private:
 		}
 	};
 
-	struct RecordedTextureClearColorCommand : RecordedCommand
+	struct RecordedTextureClearColorCommand
 	{
+		RecordedCommand header;
 		RDD::TextureID texture;
 		RDD::TextureSubresourceRange range;
 		Color color;
 	};
 
-	struct RecordedTextureClearDepthStencilCommand : RecordedCommand
+	struct RecordedTextureClearDepthStencilCommand
 	{
+		RecordedCommand header;
 		RDD::TextureID texture;
 		RDD::TextureSubresourceRange range;
 		float depth;
 		uint8_t stencil;
 	};
 
-	struct RecordedTextureCopyCommand : RecordedCommand
+	struct RecordedTextureCopyCommand
 	{
+		RecordedCommand header;
 		RDD::TextureID from_texture;
 		RDD::TextureID to_texture;
 		uint32_t texture_copy_regions_count = 0;
@@ -561,8 +576,9 @@ private:
 		}
 	};
 
-	struct RecordedTextureGetDataCommand : RecordedCommand
+	struct RecordedTextureGetDataCommand
 	{
+		RecordedCommand header;
 		RDD::TextureID from_texture;
 		RDD::BufferID to_buffer;
 		uint32_t buffer_texture_copy_regions_count = 0;
@@ -578,8 +594,9 @@ private:
 		}
 	};
 
-	struct RecordedTextureResolveCommand : RecordedCommand
+	struct RecordedTextureResolveCommand
 	{
+		RecordedCommand header;
 		RDD::TextureID from_texture;
 		RDD::TextureID to_texture;
 		uint32_t src_layer = 0;
@@ -588,8 +605,9 @@ private:
 		uint32_t dst_mipmap = 0;
 	};
 
-	struct RecordedTextureUpdateCommand : RecordedCommand
+	struct RecordedTextureUpdateCommand
 	{
+		RecordedCommand header;
 		RDD::TextureID to_texture;
 		uint32_t buffer_to_texture_copies_count = 0;
 
@@ -604,26 +622,30 @@ private:
 		}
 	};
 
-	struct RecordedCaptureTimestampCommand : RecordedCommand
+	struct RecordedCaptureTimestampCommand
 	{
+		RecordedCommand header;
 		RDD::QueryPoolID pool;
 		uint32_t index = 0;
 	};
 
-	struct DrawListBindIndexBufferInstruction : DrawListInstruction
+	struct DrawListBindIndexBufferInstruction
 	{
+		DrawListInstruction header;
 		RDD::BufferID buffer;
 		RenderingDeviceCommons::IndexBufferFormat format;
 		uint32_t offset = 0;
 	};
 
-	struct DrawListBindPipelineInstruction : DrawListInstruction
+	struct DrawListBindPipelineInstruction
 	{
+		DrawListInstruction header;
 		RDD::PipelineID pipeline;
 	};
 
-	struct DrawListBindUniformSetsInstruction : DrawListInstruction
+	struct DrawListBindUniformSetsInstruction
 	{
+		DrawListInstruction header;
 		RDD::ShaderID shader;
 		uint32_t first_set_index = 0;
 		uint32_t set_count = 0;
@@ -640,8 +662,9 @@ private:
 		}
 	};
 
-	struct DrawListBindVertexBuffersInstruction : DrawListInstruction
+	struct DrawListBindVertexBuffersInstruction
 	{
+		DrawListInstruction header;
 		uint32_t vertex_buffers_count = 0;
 		uint64_t dynamic_offsets_mask = 0;
 
@@ -666,8 +689,9 @@ private:
 		}
 	};
 
-	struct DrawListClearAttachmentsInstruction : DrawListInstruction
+	struct DrawListClearAttachmentsInstruction
 	{
+		DrawListInstruction header;
 		uint32_t attachments_clear_count = 0;
 		uint32_t attachments_clear_rect_count = 0;
 
@@ -692,47 +716,53 @@ private:
 		}
 	};
 
-	struct DrawListDrawInstruction : DrawListInstruction
+	struct DrawListDrawInstruction
 	{
+		DrawListInstruction header;
 		uint32_t vertex_count = 0;
 		uint32_t instance_count = 0;
 	};
 
-	struct DrawListDrawIndexedInstruction : DrawListInstruction
+	struct DrawListDrawIndexedInstruction
 	{
+		DrawListInstruction header;
 		uint32_t index_count = 0;
 		uint32_t instance_count = 0;
 		uint32_t first_index = 0;
 	};
 
-	struct DrawListDrawIndirectInstruction : DrawListInstruction
+	struct DrawListDrawIndirectInstruction
 	{
+		DrawListInstruction header;
 		RDD::BufferID buffer;
 		uint32_t offset = 0;
 		uint32_t draw_count = 0;
 		uint32_t stride = 0;
 	};
 
-	struct DrawListDrawIndexedIndirectInstruction : DrawListInstruction
+	struct DrawListDrawIndexedIndirectInstruction
 	{
+		DrawListInstruction header;
 		RDD::BufferID buffer;
 		uint32_t offset = 0;
 		uint32_t draw_count = 0;
 		uint32_t stride = 0;
 	};
 
-	struct DrawListEndRenderPassInstruction : DrawListInstruction
+	struct DrawListEndRenderPassInstruction
 	{
-		// No contents.
+		DrawListInstruction header;
 	};
 
-	struct DrawListExecuteCommandsInstruction : DrawListInstruction
+	struct DrawListExecuteCommandsInstruction
 	{
+		DrawListInstruction header;
 		RDD::CommandBufferID command_buffer;
 	};
 
-	struct DrawListSetPushConstantInstruction : DrawListInstruction
+	struct DrawListSetPushConstantInstruction
 	{
+		DrawListInstruction header;
 		uint32_t size = 0;
 		RDD::ShaderID shader;
 
@@ -744,58 +774,68 @@ private:
 		}
 	};
 
-	struct DrawListNextSubpassInstruction : DrawListInstruction
+	struct DrawListNextSubpassInstruction
 	{
+		DrawListInstruction header;
 		RDD::CommandBufferType command_buffer_type;
 	};
 
-	struct DrawListSetBlendConstantsInstruction : DrawListInstruction
+	struct DrawListSetBlendConstantsInstruction
 	{
+		DrawListInstruction header;
 		Color color;
 	};
 
-	struct DrawListSetLineWidthInstruction : DrawListInstruction
+	struct DrawListSetLineWidthInstruction
 	{
+		DrawListInstruction header;
 		float width;
 	};
 
-	struct DrawListSetScissorInstruction : DrawListInstruction
+	struct DrawListSetScissorInstruction
 	{
+		DrawListInstruction header;
 		Rect2i rect;
 	};
 
-	struct DrawListSetViewportInstruction : DrawListInstruction
+	struct DrawListSetViewportInstruction
 	{
+		DrawListInstruction header;
 		Rect2i rect;
 	};
 
-	struct DrawListUniformSetPrepareForUseInstruction : DrawListInstruction
+	struct DrawListUniformSetPrepareForUseInstruction
 	{
+		DrawListInstruction header;
 		RDD::UniformSetID uniform_set;
 		RDD::ShaderID shader;
 		uint32_t set_index = 0;
 	};
 
-	struct RaytracingListBuildAccelerationStructureInstruction : RaytracingListInstruction
+	struct RaytracingListBuildAccelerationStructureInstruction
 	{
+		RaytracingListInstruction header;
 		RDD::AccelerationStructureID acceleration_structure;
 		RDC::AccelerationStructureType acceleration_structure_type;
 	};
 
-	struct RaytracingListBindPipelineInstruction : RaytracingListInstruction
+	struct RaytracingListBindPipelineInstruction
 	{
+		RaytracingListInstruction header;
 		RDD::RaytracingPipelineID pipeline;
 	};
 
-	struct RaytracingListBindUniformSetInstruction : RaytracingListInstruction
+	struct RaytracingListBindUniformSetInstruction
 	{
+		RaytracingListInstruction header;
 		RDD::UniformSetID uniform_set;
 		RDD::ShaderID shader;
 		uint32_t set_index = 0;
 	};
 
-	struct RaytracingListSetPushConstantInstruction : RaytracingListInstruction
+	struct RaytracingListSetPushConstantInstruction
 	{
+		RaytracingListInstruction header;
 		uint32_t size = 0;
 		RDD::ShaderID shader;
 
@@ -807,8 +847,9 @@ private:
 		}
 	};
 
-	struct RaytracingListTraceRaysInstruction : RaytracingListInstruction
+	struct RaytracingListTraceRaysInstruction
 	{
+		RaytracingListInstruction header;
 		RDD::ShaderBindingTable raygen_sbt;
 		RDD::ShaderBindingTable miss_sbt;
 		RDD::ShaderBindingTable hit_sbt;
@@ -817,20 +858,23 @@ private:
 		uint32_t depth = 0;
 	};
 
-	struct RaytracingListUniformSetPrepareForUseInstruction : RaytracingListInstruction
+	struct RaytracingListUniformSetPrepareForUseInstruction
 	{
+		RaytracingListInstruction header;
 		RDD::UniformSetID uniform_set;
 		RDD::ShaderID shader;
 		uint32_t set_index = 0;
 	};
 
-	struct ComputeListBindPipelineInstruction : ComputeListInstruction
+	struct ComputeListBindPipelineInstruction
 	{
+		ComputeListInstruction header;
 		RDD::PipelineID pipeline;
 	};
 
-	struct ComputeListBindUniformSetsInstruction : ComputeListInstruction
+	struct ComputeListBindUniformSetsInstruction
 	{
+		ComputeListInstruction header;
 		RDD::ShaderID shader;
 		uint32_t first_set_index = 0;
 		uint32_t set_count = 0;
@@ -847,21 +891,24 @@ private:
 		}
 	};
 
-	struct ComputeListDispatchInstruction : ComputeListInstruction
+	struct ComputeListDispatchInstruction
 	{
+		ComputeListInstruction header;
 		uint32_t x_groups = 0;
 		uint32_t y_groups = 0;
 		uint32_t z_groups = 0;
 	};
 
-	struct ComputeListDispatchIndirectInstruction : ComputeListInstruction
+	struct ComputeListDispatchIndirectInstruction
 	{
+		ComputeListInstruction header;
 		RDD::BufferID buffer;
 		uint32_t offset = 0;
 	};
 
-	struct ComputeListSetPushConstantInstruction : ComputeListInstruction
+	struct ComputeListSetPushConstantInstruction
 	{
+		ComputeListInstruction header;
 		uint32_t size = 0;
 		RDD::ShaderID shader;
 
@@ -873,8 +920,9 @@ private:
 		}
 	};
 
-	struct ComputeListUniformSetPrepareForUseInstruction : ComputeListInstruction
+	struct ComputeListUniformSetPrepareForUseInstruction
 	{
+		ComputeListInstruction header;
 		RDD::UniformSetID uniform_set;
 		RDD::ShaderID shader;
 		uint32_t set_index = 0;

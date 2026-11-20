@@ -31,44 +31,58 @@
 
 #include "servers/rendering/renderer_geometry_instance.h"
 
-void RenderGeometryInstanceBase::set_skeleton(RID p_skeleton) {
+void RenderGeometryInstance::set_skeleton(RID p_skeleton) {
+	if (!data) {
+		return;
+	}
 	data->skeleton = p_skeleton;
 
 	_mark_dirty();
 	data->dirty_dependencies = true;
 }
 
-void RenderGeometryInstanceBase::set_material_override(RID p_override) {
+void RenderGeometryInstance::set_material_override(RID p_override) {
+	if (!data) {
+		return;
+	}
 	data->material_override = p_override;
 
 	_mark_dirty();
 	data->dirty_dependencies = true;
 }
 
-void RenderGeometryInstanceBase::set_material_overlay(RID p_overlay) {
+void RenderGeometryInstance::set_material_overlay(RID p_overlay) {
+	if (!data) {
+		return;
+	}
 	data->material_overlay = p_overlay;
 
 	_mark_dirty();
 	data->dirty_dependencies = true;
 }
 
-void RenderGeometryInstanceBase::set_surface_materials(const Vector<RID> &p_materials) {
+void RenderGeometryInstance::set_surface_materials(const Vector<RID> &p_materials) {
+	if (!data) {
+		return;
+	}
 	data->surface_materials = p_materials;
 
 	_mark_dirty();
 	data->dirty_dependencies = true;
 }
 
-void RenderGeometryInstanceBase::set_mesh_instance(RID p_mesh_instance) {
+void RenderGeometryInstance::set_mesh_instance(RID p_mesh_instance) {
 	mesh_instance = p_mesh_instance;
 
 	_mark_dirty();
 }
 
-void RenderGeometryInstanceBase::set_transform(const Transform3D &p_transform, const AABB &p_aabb, const AABB &p_transformed_aabb) {
+void RenderGeometryInstance::set_transform(const Transform3D &p_transform, const AABB &p_aabb, const AABB &p_transformed_aabb) {
 	transform = p_transform;
 	mirror = p_transform.basis.determinant() < 0;
-	data->aabb = p_aabb;
+	if (data) {
+		data->aabb = p_aabb;
+	}
 	transformed_aabb = p_transformed_aabb;
 
 	Vector3 model_scale_vec = p_transform.basis.get_scale_abs();
@@ -81,20 +95,20 @@ void RenderGeometryInstanceBase::set_transform(const Transform3D &p_transform, c
 	lod_model_scale = max_scale;
 }
 
-void RenderGeometryInstanceBase::set_pivot_data(float p_sorting_offset, bool p_use_aabb_center) {
+void RenderGeometryInstance::set_pivot_data(float p_sorting_offset, bool p_use_aabb_center) {
 	sorting_offset = p_sorting_offset;
 	use_aabb_center = p_use_aabb_center;
 }
 
-void RenderGeometryInstanceBase::set_lod_bias(float p_lod_bias) {
+void RenderGeometryInstance::set_lod_bias(float p_lod_bias) {
 	lod_bias = p_lod_bias;
 }
 
-void RenderGeometryInstanceBase::set_layer_mask(uint32_t p_layer_mask) {
+void RenderGeometryInstance::set_layer_mask(uint32_t p_layer_mask) {
 	layer_mask = p_layer_mask;
 }
 
-void RenderGeometryInstanceBase::set_fade_range(bool p_enable_near, float p_near_begin, float p_near_end, bool p_enable_far, float p_far_begin, float p_far_end) {
+void RenderGeometryInstance::set_fade_range(bool p_enable_near, float p_near_begin, float p_near_end, bool p_enable_far, float p_far_begin, float p_far_end) {
 	fade_near = p_enable_near;
 	fade_near_begin = p_near_begin;
 	fade_near_end = p_near_end;
@@ -103,45 +117,54 @@ void RenderGeometryInstanceBase::set_fade_range(bool p_enable_near, float p_near
 	fade_far_end = p_far_end;
 }
 
-void RenderGeometryInstanceBase::set_parent_fade_alpha(float p_alpha) {
+void RenderGeometryInstance::set_parent_fade_alpha(float p_alpha) {
 	parent_fade_alpha = p_alpha;
 }
 
-void RenderGeometryInstanceBase::set_transparency(float p_transparency) {
+void RenderGeometryInstance::set_transparency(float p_transparency) {
 	force_alpha = CLAMP(1.0 - p_transparency, 0, 1);
 }
 
-void RenderGeometryInstanceBase::set_use_baked_light(bool p_enable) {
+void RenderGeometryInstance::set_use_baked_light(bool p_enable) {
+	if (!data) {
+		return;
+	}
 	data->use_baked_light = p_enable;
 
 	_mark_dirty();
 }
 
-void RenderGeometryInstanceBase::set_use_dynamic_gi(bool p_enable) {
+void RenderGeometryInstance::set_use_dynamic_gi(bool p_enable) {
+	if (!data) {
+		return;
+	}
 	data->use_dynamic_gi = p_enable;
 
 	_mark_dirty();
 }
 
-void RenderGeometryInstanceBase::set_instance_shader_uniforms_offset(int32_t p_offset) {
+void RenderGeometryInstance::set_instance_shader_uniforms_offset(int32_t p_offset) {
 	shader_uniforms_offset = p_offset;
 
 	_mark_dirty();
 }
 
-void RenderGeometryInstanceBase::set_cast_double_sided_shadows(bool p_enable) {
+void RenderGeometryInstance::set_cast_double_sided_shadows(bool p_enable) {
+	if (!data) {
+		return;
+	}
 	data->cast_double_sided_shadows = p_enable;
 
 	_mark_dirty();
 }
 
-void RenderGeometryInstanceBase::reset_motion_vectors() {
+void RenderGeometryInstance::reset_motion_vectors() {
 }
 
-Transform3D RenderGeometryInstanceBase::get_transform() {
+Transform3D RenderGeometryInstance::get_transform() {
 	return transform;
 }
 
-AABB RenderGeometryInstanceBase::get_aabb() {
-	return data->aabb;
+AABB RenderGeometryInstance::get_aabb() {
+	return data ? data->aabb : AABB();
 }

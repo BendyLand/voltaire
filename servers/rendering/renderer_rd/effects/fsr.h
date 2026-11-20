@@ -76,7 +76,7 @@ private:
 		int pad[2];
 	};
 
-	FsrUpscaleShaderRD fsr_shader;
+	ShaderRD fsr_shader{FsrUpscaleShaderRD()};
 	RID shader_version;
 	PipelineDeferredRD pipeline;
 };

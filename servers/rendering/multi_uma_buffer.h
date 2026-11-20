@@ -33,87 +33,6 @@
 
 #include "servers/rendering/rendering_device.h"
 
-class MultiUmaBufferBase
-{
-protected:
-	LocalVector<RID> buffers;
-	uint32_t curr_idx = UINT32_MAX;
-	uint64_t last_frame_mapped = UINT64_MAX;
-	const uint32_t max_extra_buffers;
-#ifdef DEBUG_ENABLED
-	const char* debug_name;
-#endif
-
-	MultiUmaBufferBase(uint32_t p_max_extra_buffers, const char* p_debug_name)
-		: max_extra_buffers(p_max_extra_buffers)
-#ifdef DEBUG_ENABLED
-		  ,
-		  debug_name(p_debug_name)
-#endif
-	{
-	}
-
-#ifdef DEV_ENABLED
-	~MultiUmaBufferBase() { DEV_ASSERT(buffers.is_empty() && "Forgot to call uninit()!"); }
-#endif
-
-public:
-	void uninit()
-	{
-		if (is_print_verbose_enabled()) {
-			// 			print_line("MultiUmaBuffer '"
-			// #ifdef DEBUG_ENABLED
-			// 					+ String(debug_name) +
-			// #else
-			// 					   "{DEBUG_ENABLED unavailable}"
-			// #endif
-			// 					"' used a total of " + itos(buffers.size()) +
-			// 					" buffers. A large number may indicate a waste of VRAM and can be brought
-			// down by tweaking MAX_EXTRA_BUFFERS for this buffer.");
-		}
-
-
-		for (RID buffer : buffers) {
-			if (buffer.is_valid()) {
-				RD::free_rid(buffer);
-			}
-		}
-
-		buffers.clear();
-	}
-
-	void shrink_to_max_extra_buffers()
-	{
-		DEV_ASSERT(curr_idx == 0u && "This function can only be called after reset and before "
-									 "being upload_and_advance again!");
-
-		uint32_t elem_count = buffers.size();
-
-		if (elem_count > max_extra_buffers) {
-			if (is_print_verbose_enabled()) {
-				// 				print_line("MultiUmaBuffer '"
-				// #ifdef DEBUG_ENABLED
-				// 						+ String(debug_name) +
-				// #else
-				// 						   "{DEBUG_ENABLED unavailable}"
-				// #endif
-				// 						"' peaked to " + itos(elem_count) + " elements and shrinking it to "
-				// + itos(max_extra_buffers) +
-				// 						". If you see this message often, then something is wrong with rendering
-				// or MAX_EXTRA_BUFFERS needs to be increased.");
-			}
-		}
-
-		while (elem_count > max_extra_buffers) {
-			--elem_count;
-			if (buffers[elem_count].is_valid()) {
-				RD::free_rid(buffers[elem_count]);
-			}
-			buffers.remove_at(elem_count);
-		}
-	}
-};
-
 enum class MultiUmaBufferType : uint8_t
 {
 	UNIFORM,
@@ -287,13 +206,21 @@ enum class MultiUmaBufferType : uint8_t
 ///	After the frame is done, those extra 18 buffers will be deleted.
 /// Launching godot with --verbose will print diagnostic information.
 template <uint32_t NUM_BUFFERS, uint32_t MAX_EXTRA_BUFFERS = UINT32_MAX>
-class MultiUmaBuffer : public MultiUmaBufferBase
+class MultiUmaBuffer
 {
 	struct BufferInfo
 	{
 		uint32_t size_bytes = 0;
 		MultiUmaBufferType type = MultiUmaBufferType::UNIFORM;
 	};
+
+	LocalVector<RID> buffers;
+	uint32_t curr_idx = UINT32_MAX;
+	uint64_t last_frame_mapped = UINT64_MAX;
+	const uint32_t max_extra_buffers = MAX_EXTRA_BUFFERS;
+#ifdef DEBUG_ENABLED
+	const char* debug_name;
+#endif
 
 	BufferInfo buffer_info[NUM_BUFFERS];
 #ifdef DEV_ENABLED
@@ -325,8 +252,71 @@ class MultiUmaBuffer : public MultiUmaBufferBase
 	}
 
 public:
-	MultiUmaBuffer(const char* p_debug_name) : MultiUmaBufferBase(MAX_EXTRA_BUFFERS, p_debug_name)
+	MultiUmaBuffer(const char* p_debug_name)
+		: max_extra_buffers(MAX_EXTRA_BUFFERS)
+#ifdef DEBUG_ENABLED
+		  ,
+		  debug_name(p_debug_name)
+#endif
 	{
+	}
+
+#ifdef DEV_ENABLED
+	~MultiUmaBuffer() { DEV_ASSERT(buffers.is_empty() && "Forgot to call uninit()!"); }
+#endif
+
+	void uninit()
+	{
+		if (is_print_verbose_enabled()) {
+			// 			print_line("MultiUmaBuffer '"
+			// #ifdef DEBUG_ENABLED
+			// 					+ String(debug_name) +
+			// #else
+			// 					   "{DEBUG_ENABLED unavailable}"
+			// #endif
+			// 					"' used a total of " + itos(buffers.size()) +
+			// 					" buffers. A large number may indicate a waste of VRAM and can be brought
+			// down by tweaking MAX_EXTRA_BUFFERS for this buffer.");
+		}
+
+		for (RID buffer : buffers) {
+			if (buffer.is_valid()) {
+				RD::free_rid(buffer);
+			}
+		}
+
+		buffers.clear();
+	}
+
+	void shrink_to_max_extra_buffers()
+	{
+		DEV_ASSERT(curr_idx == 0u && "This function can only be called after reset and before "
+									 "being upload_and_advance again!");
+
+		uint32_t elem_count = buffers.size();
+
+		if (elem_count > max_extra_buffers) {
+			if (is_print_verbose_enabled()) {
+				// 				print_line("MultiUmaBuffer '"
+				// #ifdef DEBUG_ENABLED
+				// 						+ String(debug_name) +
+				// #else
+				// 						   "{DEBUG_ENABLED unavailable}"
+				// #endif
+				// 						"' peaked to " + itos(elem_count) + " elements and shrinking it to "
+				// + itos(max_extra_buffers) +
+				// 						". If you see this message often, then something is wrong with rendering
+				// or MAX_EXTRA_BUFFERS needs to be increased.");
+			}
+		}
+
+		while (elem_count > max_extra_buffers) {
+			--elem_count;
+			if (buffers[elem_count].is_valid()) {
+				RD::free_rid(buffers[elem_count]);
+			}
+			buffers.remove_at(elem_count);
+		}
 	}
 
 	uint32_t get_curr_idx() const { return curr_idx; }

@@ -57,21 +57,21 @@ const Rect2& RCR::Item::get_rect() const
 
 		switch (c->type) {
 		case Item::Command::TYPE_RECT: {
-			const Item::CommandRect* crect = static_cast<const Item::CommandRect*>(c);
+			const Item::CommandRect* crect = reinterpret_cast<const Item::CommandRect*>(c);
 			r = crect->rect;
 
 		} break;
 		case Item::Command::TYPE_NINEPATCH: {
-			const Item::CommandNinePatch* style = static_cast<const Item::CommandNinePatch*>(c);
+			const Item::CommandNinePatch* style = reinterpret_cast<const Item::CommandNinePatch*>(c);
 			r = style->rect;
 		} break;
 
 		case Item::Command::TYPE_POLYGON: {
-			const Item::CommandPolygon* polygon = static_cast<const Item::CommandPolygon*>(c);
+			const Item::CommandPolygon* polygon = reinterpret_cast<const Item::CommandPolygon*>(c);
 			r = polygon->polygon.rect_cache;
 		} break;
 		case Item::Command::TYPE_PRIMITIVE: {
-			const Item::CommandPrimitive* primitive = static_cast<const Item::CommandPrimitive*>(c);
+			const Item::CommandPrimitive* primitive = reinterpret_cast<const Item::CommandPrimitive*>(c);
 			for (uint32_t j = 0; j < primitive->point_count; j++) {
 				if (j == 0) {
 					r.position = primitive->points[0];
@@ -82,23 +82,22 @@ const Rect2& RCR::Item::get_rect() const
 			}
 		} break;
 		case Item::Command::TYPE_MESH: {
-			const Item::CommandMesh* mesh = static_cast<const Item::CommandMesh*>(c);
+			const Item::CommandMesh* mesh = reinterpret_cast<const Item::CommandMesh*>(c);
 			AABB aabb = RendererMeshStorage::mesh_get_aabb(mesh->mesh, skeleton);
 
 			r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 
 		} break;
 		case Item::Command::TYPE_MULTIMESH: {
-			const Item::CommandMultiMesh* multimesh = static_cast<const Item::CommandMultiMesh*>(c);
+			const Item::CommandMultiMesh* multimesh = reinterpret_cast<const Item::CommandMultiMesh*>(c);
 			AABB aabb = RendererMeshStorage::multimesh_get_aabb(multimesh->multimesh);
 
 			r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
 
-		} break
-;
+		} break;
 		case Item::Command::TYPE_PARTICLES: {
 			const Item::CommandParticles* particles_cmd =
-				static_cast<const Item::CommandParticles*>(c);
+				reinterpret_cast<const Item::CommandParticles*>(c);
 			if (particles_cmd->particles.is_valid()) {
 				AABB aabb = Renderer::particles_storage->particles_get_aabb(particles_cmd->particles);
 				r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
@@ -106,7 +105,7 @@ const Rect2& RCR::Item::get_rect() const
 
 		} break;
 		case Item::Command::TYPE_TRANSFORM: {
-			const Item::CommandTransform* transform = static_cast<const Item::CommandTransform*>(c);
+			const Item::CommandTransform* transform = reinterpret_cast<const Item::CommandTransform*>(c);
 			xf = transform->xform;
 			found_xform = true;
 			[[fallthrough]];

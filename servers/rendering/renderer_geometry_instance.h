@@ -37,48 +37,8 @@
 #include "core/templates/rid.h"
 #include "servers/rendering/storage/utilities.h"
 
-// API definition for our RenderGeometryInstance class so we can expose this through GDExtension in the near future
-class RenderGeometryInstance {
-public:
-	virtual ~RenderGeometryInstance() {}
-
-	virtual void _mark_dirty() = 0;
-
-	virtual void set_skeleton(RID p_skeleton) = 0;
-	virtual void set_material_override(RID p_override) = 0;
-	virtual void set_material_overlay(RID p_overlay) = 0;
-	virtual void set_surface_materials(const Vector<RID> &p_materials) = 0;
-	virtual void set_mesh_instance(RID p_mesh_instance) = 0;
-	virtual void set_transform(const Transform3D &p_transform, const AABB &p_aabb, const AABB &p_transformed_aabb) = 0;
-	virtual void set_pivot_data(float p_sorting_offset, bool p_use_aabb_center) = 0;
-	virtual void set_lod_bias(float p_lod_bias) = 0;
-	virtual void set_layer_mask(uint32_t p_layer_mask) = 0;
-	virtual void set_fade_range(bool p_enable_near, float p_near_begin, float p_near_end, bool p_enable_far, float p_far_begin, float p_far_end) = 0;
-	virtual void set_parent_fade_alpha(float p_alpha) = 0;
-	virtual void set_transparency(float p_transparency) = 0;
-	virtual void set_use_baked_light(bool p_enable) = 0;
-	virtual void set_use_dynamic_gi(bool p_enable) = 0;
-	virtual void set_use_lightmap(RID p_lightmap_instance, const Rect2 &p_lightmap_uv_scale, int p_lightmap_slice_index) = 0;
-	virtual void set_lightmap_capture(const Color *p_sh9) = 0;
-	virtual void set_instance_shader_uniforms_offset(int32_t p_offset) = 0;
-	virtual void set_cast_double_sided_shadows(bool p_enable) = 0;
-
-	virtual void reset_motion_vectors() = 0;
-
-	virtual Transform3D get_transform() = 0;
-	virtual AABB get_aabb() = 0;
-
-	virtual void clear_light_instances() = 0;
-	virtual void pair_light_instance(const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx) = 0;
-	virtual void pair_reflection_probe_instances(const RID *p_reflection_probe_instances, uint32_t p_reflection_probe_instance_count) = 0;
-	virtual void pair_decal_instances(const RID *p_decal_instances, uint32_t p_decal_instance_count) = 0;
-	virtual void pair_voxel_gi_instances(const RID *p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) = 0;
-
-	virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) = 0;
-};
-
 // Base implementation of RenderGeometryInstance shared by internal renderers.
-class RenderGeometryInstanceBase : public RenderGeometryInstance {
+class RenderGeometryInstance {
 public:
 	// setup
 	uint32_t base_flags = 0;
@@ -133,25 +93,39 @@ public:
 
 	Data *data = nullptr;
 
-	virtual void set_skeleton(RID p_skeleton) override;
-	virtual void set_material_override(RID p_override) override;
-	virtual void set_material_overlay(RID p_overlay) override;
-	virtual void set_surface_materials(const Vector<RID> &p_materials) override;
-	virtual void set_mesh_instance(RID p_mesh_instance) override;
-	virtual void set_transform(const Transform3D &p_transform, const AABB &p_aabb, const AABB &p_transformed_aabb) override;
-	virtual void set_pivot_data(float p_sorting_offset, bool p_use_aabb_center) override;
-	virtual void set_lod_bias(float p_lod_bias) override;
-	virtual void set_layer_mask(uint32_t p_layer_mask) override;
-	virtual void set_fade_range(bool p_enable_near, float p_near_begin, float p_near_end, bool p_enable_far, float p_far_begin, float p_far_end) override;
-	virtual void set_parent_fade_alpha(float p_alpha) override;
-	virtual void set_transparency(float p_transparency) override;
-	virtual void set_use_baked_light(bool p_enable) override;
-	virtual void set_use_dynamic_gi(bool p_enable) override;
-	virtual void set_instance_shader_uniforms_offset(int32_t p_offset) override;
-	virtual void set_cast_double_sided_shadows(bool p_enable) override;
+	virtual ~RenderGeometryInstance() {}
 
-	virtual void reset_motion_vectors() override;
+	virtual void _mark_dirty() {}
 
-	virtual Transform3D get_transform() override;
-	virtual AABB get_aabb() override;
+	void set_skeleton(RID p_skeleton);
+	void set_material_override(RID p_override);
+	void set_material_overlay(RID p_overlay);
+	void set_surface_materials(const Vector<RID> &p_materials);
+	void set_mesh_instance(RID p_mesh_instance);
+	virtual void set_transform(const Transform3D &p_transform, const AABB &p_aabb, const AABB &p_transformed_aabb);
+	void set_pivot_data(float p_sorting_offset, bool p_use_aabb_center);
+	void set_lod_bias(float p_lod_bias);
+	void set_layer_mask(uint32_t p_layer_mask);
+	void set_fade_range(bool p_enable_near, float p_near_begin, float p_near_end, bool p_enable_far, float p_far_begin, float p_far_end);
+	void set_parent_fade_alpha(float p_alpha);
+	void set_transparency(float p_transparency);
+	void set_use_baked_light(bool p_enable);
+	void set_use_dynamic_gi(bool p_enable);
+	virtual void set_use_lightmap(RID p_lightmap_instance, const Rect2 &p_lightmap_uv_scale, int p_lightmap_slice_index) {}
+	virtual void set_lightmap_capture(const Color *p_sh9) {}
+	void set_instance_shader_uniforms_offset(int32_t p_offset);
+	void set_cast_double_sided_shadows(bool p_enable);
+
+	virtual void reset_motion_vectors();
+
+	Transform3D get_transform();
+	AABB get_aabb();
+
+	virtual void clear_light_instances() {}
+	virtual void pair_light_instance(const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx) {}
+	virtual void pair_reflection_probe_instances(const RID *p_reflection_probe_instances, uint32_t p_reflection_probe_instance_count) {}
+	virtual void pair_decal_instances(const RID *p_decal_instances, uint32_t p_decal_instance_count) {}
+	virtual void pair_voxel_gi_instances(const RID *p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) {}
+
+	virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) {}
 };

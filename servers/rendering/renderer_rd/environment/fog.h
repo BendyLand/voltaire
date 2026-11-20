@@ -133,7 +133,7 @@ public:
 		};
 
 		ShaderCompiler compiler;
-		VolumetricFogShaderRD shader;
+		ShaderRD shader;
 		RID volume_ubo;
 
 		RID default_shader;
@@ -198,10 +198,15 @@ public:
 			float radiance_inverse_xform[12];
 		};
 
-		VolumetricFogProcessShaderRD process_shader;
+		ShaderRD process_shader;
 
 		RID process_shader_version;
 		PipelineDeferredRD process_pipelines[VOLUMETRIC_FOG_PROCESS_SHADER_MAX];
+
+		VolumetricFogShader()
+			: shader(VolumetricFogShaderRD()), process_shader(VolumetricFogProcessShaderRD())
+		{
+		}
 	};
 
 	struct FogShaderData : public RendererRD::MaterialStorage::ShaderData

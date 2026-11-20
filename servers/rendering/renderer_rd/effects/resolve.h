@@ -61,7 +61,7 @@ private:
 	struct ResolveShader
 	{
 		ResolvePushConstant push_constant;
-		ResolveShaderRD shader;
+		ShaderRD shader{ResolveShaderRD()};
 		RID shader_version;
 		RID pipelines[RESOLVE_MODE_MAX]; // 3 quality levels
 	} resolve;
@@ -69,7 +69,7 @@ private:
 	struct ResolveRasterShader
 	{
 		ResolvePushConstant push_constant;
-		ResolveRasterShaderRD shader;
+		ShaderRD shader{ResolveRasterShaderRD()};
 		RID shader_version;
 		PipelineCacheRD pipeline;
 	} resolve_raster;

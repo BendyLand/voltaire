@@ -138,7 +138,7 @@ Compositor::~Compositor()
 }
 
 void CompositorEffect::_call_render_callback(
-	int p_effect_callback_type, const RenderData* p_render_data)
+	int p_effect_callback_type, const RenderDataRD* p_render_data)
 {
 }
 

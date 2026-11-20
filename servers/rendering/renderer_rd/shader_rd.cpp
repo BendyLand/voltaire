@@ -157,6 +157,17 @@ void ShaderRD::_add_stage(const char* p_code, StageType p_stage_type)
 	}
 }
 
+void ShaderRD::setup(const StageData& p_data)
+{
+	if (p_data.is_raytracing) {
+		setup_raytracing(p_data.raygen_code, p_data.any_hit_code, p_data.closest_hit_code,
+			p_data.miss_code, p_data.intersection_code, p_data.name);
+	}
+	else {
+		setup(p_data.vertex_code, p_data.fragment_code, p_data.compute_code, p_data.name);
+	}
+}
+
 void ShaderRD::setup(const char* p_vertex_code, const char* p_fragment_code,
 	const char* p_compute_code, const char* p_name)
 {
@@ -868,6 +879,11 @@ ShaderRD::ShaderRD()
 	}
 
 	base_compute_defines = base_compute_define_text.ascii();
+}
+
+ShaderRD::ShaderRD(const StageData& p_data) : ShaderRD()
+{
+	setup(p_data);
 }
 
 void ShaderRD::initialize(const Vector<String>& p_variant_defines, const String& p_general_defines,

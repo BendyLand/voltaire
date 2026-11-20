@@ -32,12 +32,11 @@
 #pragma once
 
 #include "servers/rendering/renderer_scene_render.h"
-#include "servers/rendering/storage/render_scene_data.h"
 
 // This is a container for data related to rendering a single frame of a viewport where we load this
 // data into a UBO that can be used by the main scene shader but also by various effects.
 
-class RenderSceneDataRD : public RenderSceneData
+class RenderSceneDataRD
 {
 public:
 	bool calculate_motion_vectors = false;
@@ -86,19 +85,19 @@ public:
 	float time;
 	float time_step;
 
-	virtual Transform3D get_cam_transform() const override;
-	virtual Projection get_cam_projection() const override;
+	Transform3D get_cam_transform() const;
+	Projection get_cam_projection() const;
 
-	virtual uint32_t get_view_count() const override;
-	virtual Vector3 get_view_eye_offset(uint32_t p_view) const override;
-	virtual Projection get_view_projection(uint32_t p_view) const override;
+	uint32_t get_view_count() const;
+	Vector3 get_view_eye_offset(uint32_t p_view) const;
+	Projection get_view_projection(uint32_t p_view) const;
 
 	RID create_uniform_buffer();
 	void update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw p_debug_mode, RID p_env,
 		RID p_reflection_probe_instance, RID p_camera_attributes, bool p_pancake_shadows,
 		const Size2i& p_screen_size, const Size2& p_viewport_size, const Color& p_default_bg_color,
 		float p_luminance_multiplier, bool p_opaque_render_buffers, bool p_apply_alpha_multiplier);
-	virtual RID get_uniform_buffer() const override;
+	RID get_uniform_buffer() const;
 
 	static uint32_t get_uniform_buffer_size_bytes() { return sizeof(UBODATA); }
 

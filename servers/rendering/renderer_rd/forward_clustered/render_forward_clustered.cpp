@@ -5758,7 +5758,7 @@ void RenderForwardClustered::GeometryInstanceForwardClustered::set_transform(
 		prev_transform = transform;
 	}
 
-	RenderGeometryInstanceBase::set_transform(p_transform, p_aabb, p_transformed_aabb);
+	RenderGeometryInstance::set_transform(p_transform, p_aabb, p_transformed_aabb);
 }
 
 void RenderForwardClustered::GeometryInstanceForwardClustered::reset_motion_vectors()

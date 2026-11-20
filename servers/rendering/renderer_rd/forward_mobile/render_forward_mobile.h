@@ -642,7 +642,7 @@ protected:
 		}
 	};
 
-	class GeometryInstanceForwardMobile : public RenderGeometryInstanceBase
+	class GeometryInstanceForwardMobile : public RenderGeometryInstance
 	{
 	public:
 		// used during rendering
@@ -686,28 +686,23 @@ protected:
 
 		GeometryInstanceForwardMobile() : dirty_list_element(this) {}
 
-		virtual void _mark_dirty();
+		virtual void _mark_dirty() override;
 
 		virtual void set_transform(const Transform3D& p_transform, const AABB& p_aabb,
-			const AABB& p_transformed_aabb);
+			const AABB& p_transformed_aabb) override;
 		virtual void set_use_lightmap(RID p_lightmap_instance, const Rect2& p_lightmap_uv_scale,
-			int p_lightmap_slice_index);
-		virtual void set_lightmap_capture(const Color* p_sh9);
+			int p_lightmap_slice_index) override;
+		virtual void set_lightmap_capture(const Color* p_sh9) override;
 
-		virtual void clear_light_instances();
+		virtual void clear_light_instances() override;
 		virtual void pair_light_instance(
-			const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx);
+			const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx) override;
 		virtual void pair_reflection_probe_instances(const RID* p_reflection_probe_instances,
-			uint32_t p_reflection_probe_instance_count);
+			uint32_t p_reflection_probe_instance_count) override;
 		virtual void pair_decal_instances(
-			const RID* p_decal_instances, uint32_t p_decal_instance_count);
+			const RID* p_decal_instances, uint32_t p_decal_instance_count) override;
 
-		virtual void pair_voxel_gi_instances(
-			const RID* p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count)
-		{
-		}
-
-		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector);
+		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) override;
 	};
 
 	static uint32_t get_max_lights_total();

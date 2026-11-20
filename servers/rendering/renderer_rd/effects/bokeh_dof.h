@@ -90,8 +90,8 @@ private:
 	struct Bokeh
 	{
 		BokehPushConstant push_constant;
-		BokehDofShaderRD compute_shader;
-		BokehDofRasterShaderRD raster_shader;
+		ShaderRD compute_shader{BokehDofShaderRD()};
+		ShaderRD raster_shader{BokehDofRasterShaderRD()};
 		RID shader_version;
 		PipelineDeferredRD compute_pipelines[BOKEH_MAX];
 		PipelineCacheRD raster_pipelines[BOKEH_MAX];

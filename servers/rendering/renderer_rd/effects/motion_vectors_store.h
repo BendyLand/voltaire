@@ -42,7 +42,7 @@ class MotionVectorsStore {
 		uint32_t pad[2];
 	};
 
-	MotionVectorsStoreShaderRD motion_shader;
+	ShaderRD motion_shader{MotionVectorsStoreShaderRD()};
 	RID shader_version;
 	RID pipeline;
 

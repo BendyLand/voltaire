@@ -505,7 +505,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 
 			while (c) {
 				if (c->type == RCR::Item::Command::TYPE_MESH) {
-					const RCR::Item::CommandMesh* cm = static_cast<const RCR::Item::CommandMesh*>(c);
+					const RCR::Item::CommandMesh* cm = reinterpret_cast<const RCR::Item::CommandMesh*>(c);
 					if (cm->mesh_instance.is_valid()) {
 						GLES3::MeshStorage::mesh_instance_check_for_update(cm->mesh_instance);
 						GLES3::MeshStorage::mesh_instance_set_canvas_item_transform(
@@ -1044,7 +1044,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 		GLES3::CanvasShaderData::BlendMode blend_mode = p_blend_mode;
 		RSE::CanvasItemTextureRepeat texture_repeat = base_texture_repeat;
 		if (c->type == RCR::Item::Command::TYPE_RECT) {
-			const RCR::Item::CommandRect* rect = static_cast<const RCR::Item::CommandRect*>(c);
+			const RCR::Item::CommandRect* rect = reinterpret_cast<const RCR::Item::CommandRect*>(c);
 			if (rect->flags & CANVAS_RECT_LCD) {
 				blend_mode = GLES3::CanvasShaderData::BLEND_MODE_LCD;
 				blend_color = rect->modulate * base_color;
@@ -1068,7 +1068,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 
 		switch (c->type) {
 		case RCR::Item::Command::TYPE_RECT: {
-			const RCR::Item::CommandRect* rect = static_cast<const RCR::Item::CommandRect*>(c);
+			const RCR::Item::CommandRect* rect = reinterpret_cast<const RCR::Item::CommandRect*>(c);
 			if (rect->texture != state.canvas_instance_batches[state.current_batch_index].tex ||
 				state.canvas_instance_batches[state.current_batch_index].command_type !=
 					RCR::Item::Command::TYPE_RECT) {
@@ -1168,7 +1168,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 		} break;
 
 		case RCR::Item::Command::TYPE_NINEPATCH: {
-			const RCR::Item::CommandNinePatch* np = static_cast<const RCR::Item::CommandNinePatch*>(c);
+			const RCR::Item::CommandNinePatch* np = reinterpret_cast<const RCR::Item::CommandNinePatch*>(c);
 
 			if (np->texture != state.canvas_instance_batches[state.current_batch_index].tex ||
 				state.canvas_instance_batches[state.current_batch_index].command_type !=
@@ -1253,7 +1253,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 		} break;
 
 		case RCR::Item::Command::TYPE_POLYGON: {
-			const RCR::Item::CommandPolygon* polygon = static_cast<const RCR::Item::CommandPolygon*>(c);
+			const RCR::Item::CommandPolygon* polygon = reinterpret_cast<const RCR::Item::CommandPolygon*>(c);
 
 			// Polygon's can't be batched, so always create a new batch
 			_new_batch(r_batch_broken);
@@ -1288,7 +1288,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 		} break;
 
 		case RCR::Item::Command::TYPE_PRIMITIVE: {
-			const RCR::Item::CommandPrimitive* primitive = static_cast<const RCR::Item::CommandPrimitive*>(c);
+			const RCR::Item::CommandPrimitive* primitive = reinterpret_cast<const RCR::Item::CommandPrimitive*>(c);
 
 			if (primitive->point_count !=
 					state.canvas_instance_batches[state.current_batch_index].primitive_points ||
@@ -1383,7 +1383,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 				CanvasShaderGLES3::USE_ATTRIBUTES;
 			state.canvas_instance_batches[state.current_batch_index].flags = 0;
 			if (c->type == RCR::Item::Command::TYPE_MESH) {
-				const RCR::Item::CommandMesh* m = static_cast<const RCR::Item::CommandMesh*>(c);
+				const RCR::Item::CommandMesh* m = reinterpret_cast<const RCR::Item::CommandMesh*>(c);
 				state.canvas_instance_batches[state.current_batch_index].tex = m->texture;
 				_update_transform_2d_to_mat2x3(base_transform * draw_transform * m->transform,
 					state.instance_data_array[r_index].world);
@@ -1391,7 +1391,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 
 			}
 			else if (c->type == RCR::Item::Command::TYPE_MULTIMESH) {
-				const RCR::Item::CommandMultiMesh* mm = static_cast<const RCR::Item::CommandMultiMesh*>(c);
+				const RCR::Item::CommandMultiMesh* mm = reinterpret_cast<const RCR::Item::CommandMultiMesh*>(c);
 				state.canvas_instance_batches[state.current_batch_index].tex = mm->texture;
 				state.canvas_instance_batches[state.current_batch_index].specialization |=
 					CanvasShaderGLES3::USE_INSTANCING;
@@ -1406,7 +1406,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 				}
 			}
 			else if (c->type == RCR::Item::Command::TYPE_PARTICLES) {
-				const RCR::Item::CommandParticles* pt = static_cast<const RCR::Item::CommandParticles*>(c);
+				const RCR::Item::CommandParticles* pt = reinterpret_cast<const RCR::Item::CommandParticles*>(c);
 				RID particles = pt->particles;
 				state.canvas_instance_batches[state.current_batch_index].tex = pt->texture;
 				state.canvas_instance_batches[state.current_batch_index].specialization |=
@@ -1466,12 +1466,12 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 		} break;
 
 		case RCR::Item::Command::TYPE_TRANSFORM: {
-			const RCR::Item::CommandTransform* transform = static_cast<const RCR::Item::CommandTransform*>(c);
+			const RCR::Item::CommandTransform* transform = reinterpret_cast<const RCR::Item::CommandTransform*>(c);
 			draw_transform = transform->xform;
 		} break;
 
 		case RCR::Item::Command::TYPE_CLIP_IGNORE: {
-			const RCR::Item::CommandClipIgnore* ci = static_cast<const RCR::Item::CommandClipIgnore*>(c);
+			const RCR::Item::CommandClipIgnore* ci = reinterpret_cast<const RCR::Item::CommandClipIgnore*>(c);
 			if (current_clip) {
 				if (ci->ignore != reclip) {
 					_new_batch(r_batch_broken);
@@ -1490,7 +1490,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const RCR::Item* p_item, RID p
 
 		case RCR::Item::Command::TYPE_ANIMATION_SLICE: {
 			const RCR::Item::CommandAnimationSlice* as =
-				static_cast<const RCR::Item::CommandAnimationSlice*>(c);
+				reinterpret_cast<const RCR::Item::CommandAnimationSlice*>(c);
 			double current_time = RendererCompositor::get_total_time();
 			double local_time = Math::fposmod(current_time - as->offset, as->animation_length);
 			skipping = !(local_time >= as->slice_begin && local_time < as->slice_end);
@@ -1558,7 +1558,7 @@ void RasterizerCanvasGLES3::_render_batch(
 	} break;
 
 	case RCR::Item::Command::TYPE_POLYGON: {
-		const RCR::Item::CommandPolygon* polygon = static_cast<const RCR::Item::CommandPolygon*>(
+		const RCR::Item::CommandPolygon* polygon = reinterpret_cast<const RCR::Item::CommandPolygon*>(
 			state.canvas_instance_batches[p_index].command);
 
 		GLES3::PolygonBuffers* pb = polygon_buffers.polygons.getptr(polygon->polygon.polygon_id);
@@ -1649,7 +1649,7 @@ void RasterizerCanvasGLES3::_render_batch(
 		bool use_instancing = false;
 
 		if (state.canvas_instance_batches[p_index].command_type == RCR::Item::Command::TYPE_MESH) {
-			const RCR::Item::CommandMesh* m = static_cast<const RCR::Item::CommandMesh*>(
+			const RCR::Item::CommandMesh* m = reinterpret_cast<const RCR::Item::CommandMesh*>(
 				state.canvas_instance_batches[p_index].command);
 			mesh = m->mesh;
 			mesh_instance = m->mesh_instance;
@@ -1657,7 +1657,7 @@ void RasterizerCanvasGLES3::_render_batch(
 		}
 		else if (state.canvas_instance_batches[p_index].command_type ==
 				   RCR::Item::Command::TYPE_MULTIMESH) {
-			const RCR::Item::CommandMultiMesh* mm = static_cast<const RCR::Item::CommandMultiMesh*>(
+			const RCR::Item::CommandMultiMesh* mm = reinterpret_cast<const RCR::Item::CommandMultiMesh*>(
 				state.canvas_instance_batches[p_index].command);
 			RID multimesh = mm->multimesh;
 			mesh = GLES3::MeshStorage::multimesh_get_mesh(multimesh);
@@ -1683,7 +1683,7 @@ void RasterizerCanvasGLES3::_render_batch(
 		}
 		else if (state.canvas_instance_batches[p_index].command_type ==
 				   RCR::Item::Command::TYPE_PARTICLES) {
-			const RCR::Item::CommandParticles* pt = static_cast<const RCR::Item::CommandParticles*>(
+			const RCR::Item::CommandParticles* pt = reinterpret_cast<const RCR::Item::CommandParticles*>(
 				state.canvas_instance_batches[p_index].command);
 			RID particles = pt->particles;
 			mesh = GLES3::ParticlesStorage::particles_get_draw_pass_mesh(particles, 0);

@@ -94,7 +94,7 @@ public:
 	struct Blit
 	{
 		BlitPushConstant push_constant;
-		BlitShaderRD shader;
+		ShaderRD shader{BlitShaderRD()};
 		RID shader_version;
 		HashMap<RenderingDevice::FramebufferFormatID, BlitPipelines> pipelines_by_format;
 		RID index_buffer;

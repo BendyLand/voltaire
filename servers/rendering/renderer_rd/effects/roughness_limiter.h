@@ -46,7 +46,7 @@ private:
 	};
 
 	RoughnessLimiterPushConstant push_constant;
-	RoughnessLimiterShaderRD shader;
+	ShaderRD shader{RoughnessLimiterShaderRD()};
 	RID shader_version;
 	RID pipeline;
 

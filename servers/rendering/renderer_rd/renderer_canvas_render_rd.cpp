@@ -824,7 +824,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 
 			while (c) {
 				if (c->type == RCR::Item::Command::TYPE_MESH) {
-					const RCR::Item::CommandMesh* cm = static_cast<const RCR::Item::CommandMesh*>(c);
+					const RCR::Item::CommandMesh* cm = reinterpret_cast<const RCR::Item::CommandMesh*>(c);
 					if (cm->mesh_instance.is_valid()) {
 						RendererRD::MeshStorage::mesh_instance_check_for_update(cm->mesh_instance);
 						RendererRD::MeshStorage::mesh_instance_set_canvas_item_transform(
@@ -1692,7 +1692,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 
 		switch (c->type) {
 		case RCR::Item::Command::TYPE_RECT: {
-			const RCR::Item::CommandRect* rect = static_cast<const RCR::Item::CommandRect*>(c);
+			const RCR::Item::CommandRect* rect = reinterpret_cast<const RCR::Item::CommandRect*>(c);
 
 			// 1: If commands are different, start a new batch.
 			if (r_current_batch->command_type != RCR::Item::Command::TYPE_RECT) {
@@ -1827,7 +1827,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 		} break;
 
 		case RCR::Item::Command::TYPE_NINEPATCH: {
-			const RCR::Item::CommandNinePatch* np = static_cast<const RCR::Item::CommandNinePatch*>(c);
+			const RCR::Item::CommandNinePatch* np = reinterpret_cast<const RCR::Item::CommandNinePatch*>(c);
 
 			if (r_current_batch->command_type != RCR::Item::Command::TYPE_NINEPATCH) {
 				r_current_batch = _new_batch(r_batch_broken);
@@ -1911,7 +1911,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 		} break;
 
 		case RCR::Item::Command::TYPE_POLYGON: {
-			const RCR::Item::CommandPolygon* polygon = static_cast<const RCR::Item::CommandPolygon*>(c);
+			const RCR::Item::CommandPolygon* polygon = reinterpret_cast<const RCR::Item::CommandPolygon*>(c);
 
 			// Polygon's can't be batched, so always create a new batch
 			r_current_batch = _new_batch(r_batch_broken);
@@ -1961,7 +1961,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 		} break;
 
 		case RCR::Item::Command::TYPE_PRIMITIVE: {
-			const RCR::Item::CommandPrimitive* primitive = static_cast<const RCR::Item::CommandPrimitive*>(c);
+			const RCR::Item::CommandPrimitive* primitive = reinterpret_cast<const RCR::Item::CommandPrimitive*>(c);
 
 			if (primitive->point_count != r_current_batch->primitive_points ||
 				r_current_batch->command_type != RCR::Item::Command::TYPE_PRIMITIVE) {
@@ -2068,7 +2068,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 
 			Color modulate(1, 1, 1, 1);
 			if (c->type == RCR::Item::Command::TYPE_MESH) {
-				const RCR::Item::CommandMesh* m = static_cast<const RCR::Item::CommandMesh*>(c);
+				const RCR::Item::CommandMesh* m = reinterpret_cast<const RCR::Item::CommandMesh*>(c);
 				RendererRD::TextureState tex_state(
 					m->texture, texture_filter, texture_repeat, false, use_linear_colors);
 				RendererRD::TextureInfo* tex_info = texture_info_map.getptr(tex_state);
@@ -2085,7 +2085,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 				modulate = m->modulate;
 			}
 			else if (c->type == RCR::Item::Command::TYPE_MULTIMESH) {
-				const RCR::Item::CommandMultiMesh* mm = static_cast<const RCR::Item::CommandMultiMesh*>(c);
+				const RCR::Item::CommandMultiMesh* mm = reinterpret_cast<const RCR::Item::CommandMultiMesh*>(c);
 				RID multimesh = mm->multimesh;
 
 				if (RendererRD::MeshStorage::multimesh_get_transform_format(multimesh) !=
@@ -2119,7 +2119,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 				}
 			}
 			else if (c->type == RCR::Item::Command::TYPE_PARTICLES) {
-				const RCR::Item::CommandParticles* pt = static_cast<const RCR::Item::CommandParticles*>(c);
+				const RCR::Item::CommandParticles* pt = reinterpret_cast<const RCR::Item::CommandParticles*>(c);
 				RendererRD::TextureState tex_state(
 					pt->texture, texture_filter, texture_repeat, false, use_linear_colors);
 				RendererRD::TextureInfo* tex_info = texture_info_map.getptr(tex_state);
@@ -2182,14 +2182,14 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 		} break;
 
 		case RCR::Item::Command::TYPE_TRANSFORM: {
-			const RCR::Item::CommandTransform* transform = static_cast<const RCR::Item::CommandTransform*>(c);
+			const RCR::Item::CommandTransform* transform = reinterpret_cast<const RCR::Item::CommandTransform*>(c);
 			draw_transform = transform->xform;
 			_update_transform_2d_to_mat2x3(
 				base_transform * transform->xform, template_instance.world);
 		} break;
 
 		case RCR::Item::Command::TYPE_CLIP_IGNORE: {
-			const RCR::Item::CommandClipIgnore* ci = static_cast<const RCR::Item::CommandClipIgnore*>(c);
+			const RCR::Item::CommandClipIgnore* ci = reinterpret_cast<const RCR::Item::CommandClipIgnore*>(c);
 			if (r_current_clip) {
 				if (ci->ignore != reclip) {
 					r_current_batch = _new_batch(r_batch_broken);
@@ -2207,7 +2207,7 @@ void RendererCanvasRenderRD::_record_item_commands(const RCR::Item* p_item, Rend
 
 		case RCR::Item::Command::TYPE_ANIMATION_SLICE: {
 			const RCR::Item::CommandAnimationSlice* as =
-				static_cast<const RCR::Item::CommandAnimationSlice*>(c);
+				reinterpret_cast<const RCR::Item::CommandAnimationSlice*>(c);
 			double current_time = RendererCompositor::get_total_time();
 			double local_time = Math::fposmod(current_time - as->offset, as->animation_length);
 			skipping = !(local_time >= as->slice_begin && local_time < as->slice_end);
@@ -2437,7 +2437,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 		RendererRD::PushConstantAttributes push_constant = p_batch->push_constant_attributes();
 
 		const RCR::Item::CommandPolygon* polygon =
-			static_cast<const RCR::Item::CommandPolygon*>(p_batch->command);
+			reinterpret_cast<const RCR::Item::CommandPolygon*>(p_batch->command);
 
 		RendererRD::PolygonBuffers* pb = RendererRD::polygon_buffers.polygons.getptr(polygon->polygon.polygon_id);
 		ERR_FAIL_NULL(pb);
@@ -2469,7 +2469,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 		ERR_FAIL_NULL(p_batch->command);
 
 		const RCR::Item::CommandPrimitive* primitive =
-			static_cast<const RCR::Item::CommandPrimitive*>(p_batch->command);
+			reinterpret_cast<const RCR::Item::CommandPrimitive*>(p_batch->command);
 
 		RendererRD::PushConstant push_constant = p_batch->push_constant();
 		pipeline_key.vertex_format_id = RendererRD::shader.primitive_vertex_format_id;
@@ -2515,13 +2515,13 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 		RID mesh_instance;
 
 		if (p_batch->command_type == RCR::Item::Command::TYPE_MESH) {
-			const RCR::Item::CommandMesh* m = static_cast<const RCR::Item::CommandMesh*>(p_batch->command);
+			const RCR::Item::CommandMesh* m = reinterpret_cast<const RCR::Item::CommandMesh*>(p_batch->command);
 			mesh = m->mesh;
 			mesh_instance = m->mesh_instance;
 		}
 		else if (p_batch->command_type == RCR::Item::Command::TYPE_MULTIMESH) {
 			const RCR::Item::CommandMultiMesh* mm =
-				static_cast<const RCR::Item::CommandMultiMesh*>(p_batch->command);
+				reinterpret_cast<const RCR::Item::CommandMultiMesh*>(p_batch->command);
 			RID multimesh = mm->multimesh;
 			mesh = RendererRD::MeshStorage::_multimesh_get_mesh(multimesh);
 
@@ -2531,7 +2531,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 		}
 		else if (p_batch->command_type == RCR::Item::Command::TYPE_PARTICLES) {
 			const RCR::Item::CommandParticles* pt =
-				static_cast<const RCR::Item::CommandParticles*>(p_batch->command);
+				reinterpret_cast<const RCR::Item::CommandParticles*>(p_batch->command);
 			RID particles = pt->particles;
 			mesh = RendererRD::ParticlesStorage::particles_get_draw_pass_mesh(particles, 0);
 

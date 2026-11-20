@@ -305,7 +305,7 @@ private:
 			uint32_t trail_pass;
 		};
 
-		ParticlesShaderRD shader;
+		ShaderRD shader;
 		ShaderCompiler compiler;
 
 		RID default_shader;
@@ -358,11 +358,13 @@ private:
 			COPY_MODE_MAX,
 		};
 
-		ParticlesCopyShaderRD copy_shader;
+		ShaderRD copy_shader;
 		RID copy_shader_version;
 		PipelineDeferredRD copy_pipelines[MAX_USERDATAS + 1][COPY_MODE_MAX];
 
 		LocalVector<float> pose_update_buffer;
+
+		ParticlesShader() : shader(ParticlesShaderRD()), copy_shader(ParticlesCopyShaderRD()) {}
 	};
 
 	static inline ParticlesShader particles_shader;

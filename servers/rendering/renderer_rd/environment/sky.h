@@ -257,7 +257,7 @@ public:
 
 	struct SkyShader
 	{
-		SkyShaderRD shader;
+		ShaderRD shader{SkyShaderRD()};
 		ShaderCompiler compiler;
 
 		RID default_shader;

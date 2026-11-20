@@ -50,13 +50,12 @@
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/rendering_shader_library.h"
 
 #ifdef METAL_ENABLED
 #include "servers/rendering/renderer_rd/effects/metal_fx.h"
 #endif
 
-class RendererSceneRenderRD final : public RenderingShaderLibrary
+class RendererSceneRenderRD final
 {
 	static inline BinaryMutex _thread_safe_mutex;
 
@@ -64,6 +63,14 @@ class RendererSceneRenderRD final : public RenderingShaderLibrary
 	friend class RendererRD::GI;
 
 public:
+	enum FeatureBits
+	{
+		FEATURE_ADVANCED_BIT = 1U << 0U,
+		FEATURE_MULTIVIEW_BIT = 1U << 1U,
+		FEATURE_VRS_BIT = 1U << 2U,
+		FEATURE_FP16_BIT = 1U << 3U,
+		FEATURE_FP32_BIT = 1U << 4U,
+	};
 	using CameraData = RendererSceneRender::CameraData;
 	using RenderShadowData = RendererSceneRender::RenderShadowData;
 	using RenderSDFGIData = RendererSceneRender::RenderSDFGIData;

@@ -461,7 +461,7 @@ static inline struct
 {
 	// Data must be guaranteed to be erased before the rest on the destructor.
 	CanvasShaderData* default_version_data = nullptr;
-	CanvasShaderRD canvas_shader;
+	ShaderRD canvas_shader{CanvasShaderRD()};
 	RID default_version_rd_shader;
 	RID quad_index_buffer;
 	RID quad_index_array;
@@ -648,9 +648,9 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 		SHADOW_RENDER_SDF_LINES,
 	};
 
-	static inline struct
+	struct ShadowRender
 	{
-		CanvasOcclusionShaderRD shader;
+		ShaderRD shader;
 		RID shader_version;
 		RID render_pipelines[2];
 		RID sdf_render_pipelines[2];
@@ -658,7 +658,10 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 		RD::VertexFormatID sdf_vertex_format;
 		RD::FramebufferFormatID framebuffer_format;
 		RD::FramebufferFormatID sdf_framebuffer_format;
-	} shadow_render;
+
+		ShadowRender() : shader(CanvasOcclusionShaderRD()) {}
+	};
+	static inline ShadowRender shadow_render;
 
 	// state that does not vary across rendering all items
 

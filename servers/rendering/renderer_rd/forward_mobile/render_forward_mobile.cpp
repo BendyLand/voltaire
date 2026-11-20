@@ -1971,7 +1971,7 @@ void RendererSceneRenderImplementation::RenderForwardMobile::GeometryInstanceFor
 		prev_transform_dirty = true;
 	}
 
-	RenderGeometryInstanceBase::set_transform(p_transform, p_aabb, p_transformed_aabb);
+	RenderGeometryInstance::set_transform(p_transform, p_aabb, p_transformed_aabb);
 }
 
 void RenderForwardMobile::GeometryInstanceForwardMobile::set_use_lightmap(

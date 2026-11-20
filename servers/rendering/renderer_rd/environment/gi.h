@@ -247,7 +247,7 @@ private:
 		VOXEL_GI_SHADER_VERSION_MAX
 	};
 
-	static inline VoxelGiShaderRD voxel_gi_shader;
+	static inline ShaderRD voxel_gi_shader{VoxelGiShaderRD()};
 	static inline RID voxel_gi_lighting_shader_version;
 	static inline RID voxel_gi_lighting_shader_version_shaders[VOXEL_GI_SHADER_VERSION_MAX];
 	static inline PipelineDeferredRD
@@ -273,7 +273,7 @@ private:
 		uint32_t pad;
 	};
 
-	static inline VoxelGiDebugShaderRD voxel_gi_debug_shader;
+	static inline ShaderRD voxel_gi_debug_shader{VoxelGiDebugShaderRD()};
 	static inline RID voxel_gi_debug_shader_version;
 	static inline RID voxel_gi_debug_shader_version_shaders[VOXEL_GI_DEBUG_MAX];
 	static inline PipelineCacheRD voxel_gi_debug_shader_version_pipelines[VOXEL_GI_DEBUG_MAX];
@@ -311,7 +311,7 @@ private:
 			uint32_t pad;
 		};
 
-		SdfgiPreprocessShaderRD preprocess;
+		ShaderRD preprocess;
 		RID preprocess_shader;
 		PipelineDeferredRD preprocess_pipeline[PRE_PROCESS_MAX];
 
@@ -330,7 +330,7 @@ private:
 			float cam_origin[3];
 		};
 
-		SdfgiDebugShaderRD debug;
+		ShaderRD debug;
 		RID debug_shader;
 		RID debug_shader_version;
 		PipelineDeferredRD debug_pipeline;
@@ -365,7 +365,7 @@ private:
 			int32_t probe_axis_size;
 		};
 
-		SdfgiDebugProbesShaderRD debug_probes;
+		ShaderRD debug_probes;
 		RID debug_probes_shader;
 		RID debug_probes_shader_version;
 
@@ -415,7 +415,7 @@ private:
 			DIRECT_LIGHT_MODE_MAX
 		};
 
-		SdfgiDirectLightShaderRD direct_light;
+		ShaderRD direct_light;
 		RID direct_light_shader;
 		PipelineDeferredRD direct_light_pipeline[DIRECT_LIGHT_MODE_MAX];
 
@@ -463,11 +463,20 @@ private:
 			uint32_t pad;
 		};
 
-		SdfgiIntegrateShaderRD integrate;
+		ShaderRD integrate;
 		RID integrate_shader;
 		PipelineDeferredRD integrate_pipeline[INTEGRATE_MODE_MAX];
 
 		RID integrate_default_sky_uniform_set;
+
+		SDFGIShader()
+			: preprocess(SdfgiPreprocessShaderRD()),
+			  debug(SdfgiDebugShaderRD()),
+			  debug_probes(SdfgiDebugProbesShaderRD()),
+			  direct_light(SdfgiDirectLightShaderRD()),
+			  integrate(SdfgiIntegrateShaderRD())
+		{
+		}
 	};
 
 	static inline SDFGIShader sdfgi_shader;
@@ -874,7 +883,7 @@ static void sdfgi_reset();
 	static inline RID default_voxel_gi_buffer;
 
 	static inline bool half_resolution = false;
-	static inline GiShaderRD shader;
+	static inline ShaderRD shader{GiShaderRD()};
 	static inline RID shader_version;
 	static inline PipelineDeferredRD pipelines[SHADER_SPECIALIZATION_VARIATIONS][MODE_MAX];
 

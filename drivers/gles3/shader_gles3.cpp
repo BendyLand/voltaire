@@ -831,8 +831,6 @@ void ShaderGLES3::initialize(const String& p_general_defines, int p_base_texture
 	general_defines = p_general_defines.utf8();
 	base_texture_index = p_base_texture_index;
 
-	_init();
-
 	if (shader_cache_dir != String()) {
 		StringBuilder hash_build;
 

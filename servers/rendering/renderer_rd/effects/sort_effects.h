@@ -50,7 +50,7 @@ private:
 		int32_t job_params[4];
 	};
 
-	SortShaderRD shader;
+	ShaderRD shader{SortShaderRD()};
 	RID shader_version;
 	RID pipelines[SORT_MODE_MAX];
 

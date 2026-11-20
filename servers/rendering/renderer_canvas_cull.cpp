@@ -269,7 +269,7 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 				(ci->commands == nullptr ||
 					(ci->commands->next == nullptr &&
 						ci->commands->type == RendererCanvasCull::Item::Command::TYPE_RECT &&
-						(static_cast<RendererCanvasCull::Item::CommandRect*>(ci->commands)->flags &
+						(reinterpret_cast<RendererCanvasCull::Item::CommandRect*>(ci->commands)->flags &
 							RendererCanvasRender::CANVAS_RECT_IS_GROUP)))) {
 				// No commands, or sole command is the one used to draw, so we (re)create the draw
 				// command.
@@ -2128,7 +2128,7 @@ void RendererCanvasCull::canvas_item_attach_skeleton(RID p_item, RID p_skeleton)
 
 	while (c) {
 		if (c->type == Item::Command::TYPE_MESH) {
-			Item::CommandMesh* cm = static_cast<Item::CommandMesh*>(c);
+			Item::CommandMesh* cm = reinterpret_cast<Item::CommandMesh*>(c);
 			if (canvas_item->skeleton.is_valid()) {
 				if (cm->mesh_instance.is_null()) {
 					cm->mesh_instance = RendererMeshStorage::mesh_instance_create(cm->mesh);

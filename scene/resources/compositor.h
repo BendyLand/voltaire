@@ -32,7 +32,8 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "servers/rendering/storage/render_data.h"
+
+class RenderDataRD;
 
 /* Compositor Effect */
 
@@ -62,7 +63,7 @@ private:
 
 protected:
 
-	void _call_render_callback(int p_effect_callback_type, const RenderData* p_render_data);
+	void _call_render_callback(int p_effect_callback_type, const RenderDataRD* p_render_data);
 
 public:
 	virtual RID get_rid() const override { return rid; }

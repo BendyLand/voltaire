@@ -386,7 +386,7 @@ public:
 	struct Data
 	{
 		SelfList<ShaderData>::List shader_list;
-		SceneForwardMobileShaderRD shader;
+		ShaderRD shader{SceneForwardMobileShaderRD()};
 		ShaderCompiler compiler;
 		bool use_fp16 = false;
 		bool emulate_point_size = false;

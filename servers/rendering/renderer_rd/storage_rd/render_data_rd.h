@@ -34,22 +34,21 @@
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/storage/render_data.h"
 
-class RenderDataRD : public RenderData
+class RenderDataRD
 {
 public:
 	// Access methods to expose data externally
-	virtual Ref<RenderSceneBuffers> get_render_scene_buffers() const override
+	Ref<RenderSceneBuffers> get_render_scene_buffers() const
 	{
 		return render_buffers;
 	}
 
-	virtual RenderSceneData* get_render_scene_data() const override { return scene_data; }
+	RenderSceneDataRD* get_render_scene_data() const { return scene_data; }
 
-	virtual RID get_environment() const override { return environment; }
+	RID get_environment() const { return environment; }
 
-	virtual RID get_camera_attributes() const override { return camera_attributes; }
+	RID get_camera_attributes() const { return camera_attributes; }
 
 	// Members are publicly accessible within the render engine.
 	Ref<RenderSceneBuffersRD> render_buffers;
