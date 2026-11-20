@@ -31,12 +31,16 @@
 
 #pragma once
 
+#include "core/templates/hash_set.h"
 #include "core/types.h"
 
 class StaticRaycaster : public RefCounted
 {
-protected:
-	static Ref<StaticRaycaster> (*create_function)();
+public:
+	struct EmbreeState;
+
+private:
+	EmbreeState* embree_state = nullptr;
 
 public:
 	// Compatible with embree4 rays.
@@ -78,17 +82,19 @@ public:
 		unsigned int instID; //!< instance ID
 	};
 
-	virtual bool intersect(Ray& p_ray) = 0;
-	virtual void intersect(Vector<Ray>& r_rays) = 0;
+	bool intersect(Ray& p_ray);
+	void intersect(Vector<Ray>& r_rays);
 
-	virtual void add_mesh(const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices,
-		unsigned int p_id) = 0;
-	virtual void commit() = 0;
+	void add_mesh(
+		const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices, unsigned int p_id);
+	void commit();
 
-	virtual void set_mesh_filter(const HashSet<int>& p_mesh_ids) = 0;
-	virtual void clear_mesh_filter() = 0;
+	void set_mesh_filter(const HashSet<int>& p_mesh_ids);
+	void clear_mesh_filter();
 
 	static Ref<StaticRaycaster> create();
+	static void free();
+
+	StaticRaycaster();
+	~StaticRaycaster();
 };
-
-

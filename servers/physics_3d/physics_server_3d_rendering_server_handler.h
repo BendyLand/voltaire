@@ -31,19 +31,36 @@
 
 #pragma once
 
-struct AABB;
-struct Vector3;
+#include "core/math/aabb.h"
+#include "core/math/vector3.h"
+#include "core/templates/rid.h"
+#include "core/templates/vector.h"
 
-class PhysicsServer3DRenderingServerHandler
+class PhysicsServer3DRenderingServerHandler final
 {
-protected:
+	RID mesh;
+	int surface = 0;
+	Vector<uint8_t> buffer;
+	uint32_t stride = 0;
+	uint32_t normal_stride = 0;
+	uint32_t offset_vertices = 0;
+	uint32_t offset_normal = 0;
+
+	uint8_t* write_buffer = nullptr;
 
 public:
-	virtual void set_vertex(int p_vertex_id, const Vector3& p_vertex);
-	virtual void set_normal(int p_vertex_id, const Vector3& p_normal);
-	virtual void set_aabb(const AABB& p_aabb);
+	PhysicsServer3DRenderingServerHandler() = default;
+	~PhysicsServer3DRenderingServerHandler() = default;
 
-	virtual ~PhysicsServer3DRenderingServerHandler() {}
+	bool is_ready(RID p_mesh_rid) const { return mesh.is_valid() && mesh == p_mesh_rid; }
+
+	void prepare(RID p_mesh_rid, int p_surface);
+	void clear();
+	void open();
+	void close();
+	void commit_changes();
+
+	void set_vertex(int p_vertex_id, const Vector3& p_vertex);
+	void set_normal(int p_vertex_id, const Vector3& p_normal);
+	void set_aabb(const AABB& p_aabb);
 };
-
-

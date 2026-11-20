@@ -55,9 +55,9 @@ class JoltContactListener3D;
 class JoltJoint3D;
 class JoltLayers;
 class JoltObject3D;
-class JoltPhysicsDirectSpaceState3D;
 class JoltShapedObject3D;
 class JoltSoftBody3D;
+class PhysicsDirectSpaceState3D;
 
 class JoltSpace3D
 {
@@ -80,7 +80,7 @@ class JoltSpace3D
 	JoltContactListener3D* contact_listener = nullptr;
 	JoltBodyActivationListener3D* body_activation_listener = nullptr;
 	JPH::PhysicsSystem* physics_system = nullptr;
-	JoltPhysicsDirectSpaceState3D* direct_state = nullptr;
+	PhysicsDirectSpaceState3D* direct_state = nullptr;
 	JoltArea3D* default_area = nullptr;
 
 	float last_step = 0.0f;
@@ -138,7 +138,7 @@ public:
 	JoltArea3D* try_get_area(const JPH::BodyID& p_body_id) const;
 	JoltSoftBody3D* try_get_soft_body(const JPH::BodyID& p_body_id) const;
 
-	JoltPhysicsDirectSpaceState3D* get_direct_state();
+	PhysicsDirectSpaceState3D* get_direct_state();
 
 	JoltArea3D* get_default_area() const { return default_area; }
 

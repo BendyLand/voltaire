@@ -31,12 +31,7 @@
 
 #include "video_stream.h"
 
-// VideoStreamPlayback starts here.
-
-
-VideoStreamPlayback::VideoStreamPlayback() {}
-
-VideoStreamPlayback::~VideoStreamPlayback() {}
+#include "modules/modules_enabled.gen.h"
 
 void VideoStreamPlayback::set_mix_callback(AudioMixCallback p_callback, void* p_userdata)
 {
@@ -58,16 +53,6 @@ int VideoStreamPlayback::mix_audio(int num_frames, PackedFloat32Array buffer, in
 	return mix_callback(mix_udata, buffer.ptr() + offset, num_frames);
 }
 
-/* --- NOTE VideoStream starts here. ----- */
-
-Ref<VideoStreamPlayback> VideoStream::instantiate_playback()
-{
-	Ref<VideoStreamPlayback> ret;
-	ERR_FAIL_COND_V_MSG(ret.is_null(), nullptr, "Plugin returned null playback");
-	ret->set_audio_track(audio_track);
-	return ret;
-}
-
 void VideoStream::set_file(const String& p_file)
 {
 	file = p_file;
@@ -81,6 +66,17 @@ VideoStream::VideoStream() {}
 VideoStream::~VideoStream() {}
 
 void VideoStream::set_audio_track(int p_track) { audio_track = p_track; }
+
+#ifndef MODULE_THEORA_ENABLED
+
+VideoStreamPlayback::VideoStreamPlayback() {}
+
+VideoStreamPlayback::~VideoStreamPlayback() {}
+
+Ref<VideoStreamPlayback> VideoStream::instantiate_playback()
+{
+	ERR_FAIL_V_MSG(Ref<VideoStreamPlayback>(), "Theora module is disabled.");
+}
 
 void VideoStreamPlayback::stop() {}
 
@@ -98,6 +94,8 @@ double VideoStreamPlayback::get_playback_position() const { return 0.0; }
 
 void VideoStreamPlayback::seek(double p_time) {}
 
+void VideoStreamPlayback::set_file(const String& p_file) {}
+
 void VideoStreamPlayback::set_audio_track(int p_idx) {}
 
 Ref<Texture2D> VideoStreamPlayback::get_texture() const { return Ref<Texture2D>(); }
@@ -108,4 +106,4 @@ int VideoStreamPlayback::get_channels() const { return 0; }
 
 int VideoStreamPlayback::get_mix_rate() const { return 0; }
 
-
+#endif // MODULE_THEORA_ENABLED

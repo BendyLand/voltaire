@@ -29,8 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/marshalls.h"
 #include "multiplayer_api.h"
+
+#include "core/io/marshalls.h"
+#include "modules/modules_enabled.gen.h"
 
 String MultiplayerAPI::default_interface;
 
@@ -46,22 +48,17 @@ Ref<MultiplayerAPI> MultiplayerAPI::create_default_interface()
 	return Ref<MultiplayerAPI>(memnew(MultiplayerAPI));
 }
 
-// The variant is compressed and encoded; The first byte contains all the meta
-// information and the format is:
-// - The first LSB 6 bits are used for the variant type.
-// - The next two bits are used to store the encoding mode.
-// - Boolean values uses the encoding mode to store the value.
-#define VARIANT_META_TYPE_MASK 0x3F
-#define VARIANT_META_EMODE_MASK 0xC0
-#define VARIANT_META_BOOL_MASK 0x80
-#define ENCODE_8 0 << 6
-#define ENCODE_16 1 << 6
-#define ENCODE_32 2 << 6
-#define ENCODE_64 3 << 6
+#ifndef MODULE_MULTIPLAYER_ENABLED
+
+MultiplayerAPI::MultiplayerAPI() {}
+
+MultiplayerAPI::~MultiplayerAPI() {}
 
 int MultiplayerAPI::get_unique_id() { return 0; }
 
 Vector<int> MultiplayerAPI::get_peer_ids() { return Vector<int>(); }
+
+int MultiplayerAPI::get_remote_sender_id() const { return 0; }
 
 Error MultiplayerAPI::poll() { return OK; }
 
@@ -69,4 +66,57 @@ void MultiplayerAPI::set_multiplayer_peer(const Ref<MultiplayerPeer>& p_peer) {}
 
 Ref<MultiplayerPeer> MultiplayerAPI::get_multiplayer_peer() { return Ref<MultiplayerPeer>(); }
 
+void MultiplayerAPI::clear() {}
 
+void MultiplayerAPI::set_root_path(const NodePath& p_path) {}
+
+NodePath MultiplayerAPI::get_root_path() const { return NodePath(); }
+
+void MultiplayerAPI::disconnect_peer(int p_id) {}
+
+Error MultiplayerAPI::send_auth(int p_to, Vector<uint8_t> p_bytes) { return ERR_UNCONFIGURED; }
+
+Error MultiplayerAPI::complete_auth(int p_peer) { return ERR_UNCONFIGURED; }
+
+void MultiplayerAPI::set_auth_timeout(double p_timeout) {}
+
+double MultiplayerAPI::get_auth_timeout() const { return 0.0; }
+
+Vector<int> MultiplayerAPI::get_authenticating_peer_ids() { return Vector<int>(); }
+
+Error MultiplayerAPI::send_command(int p_to, const uint8_t* p_packet, int p_packet_len)
+{
+	return ERR_UNCONFIGURED;
+}
+
+Error MultiplayerAPI::send_bytes(
+	Vector<uint8_t> p_data, int p_to, MultiplayerPeer::TransferMode p_mode, int p_channel)
+{
+	return ERR_UNCONFIGURED;
+}
+
+HashSet<int> MultiplayerAPI::get_connected_peers() const { return HashSet<int>(); }
+
+void MultiplayerAPI::set_remote_sender_override(int p_id) {}
+
+void MultiplayerAPI::set_refuse_new_connections(bool p_refuse) {}
+
+bool MultiplayerAPI::is_refusing_new_connections() const { return false; }
+
+void MultiplayerAPI::set_allow_object_decoding(bool p_enable) {}
+
+bool MultiplayerAPI::is_object_decoding_allowed() const { return false; }
+
+void MultiplayerAPI::set_server_relay_enabled(bool p_enabled) {}
+
+bool MultiplayerAPI::is_server_relay_enabled() const { return false; }
+
+void MultiplayerAPI::set_max_sync_packet_size(int p_size) {}
+
+int MultiplayerAPI::get_max_sync_packet_size() const { return 0; }
+
+void MultiplayerAPI::set_max_delta_packet_size(int p_size) {}
+
+int MultiplayerAPI::get_max_delta_packet_size() const { return 0; }
+
+#endif // MODULE_MULTIPLAYER_ENABLED

@@ -43,9 +43,9 @@
 // - `NetworkNodeIdCompression` in the next 2 bits.
 // - `NetworkNameIdCompression` in the next 1 bit.
 // - `byte_only_or_no_args` in the next 1 bit.
-#define NODE_ID_COMPRESSION_SHIFT SceneMultiplayer::CMD_FLAG_0_SHIFT
-#define NAME_ID_COMPRESSION_SHIFT SceneMultiplayer::CMD_FLAG_2_SHIFT
-#define BYTE_ONLY_OR_NO_ARGS_SHIFT SceneMultiplayer::CMD_FLAG_3_SHIFT
+#define NODE_ID_COMPRESSION_SHIFT MultiplayerAPI::CMD_FLAG_0_SHIFT
+#define NAME_ID_COMPRESSION_SHIFT MultiplayerAPI::CMD_FLAG_2_SHIFT
+#define BYTE_ONLY_OR_NO_ARGS_SHIFT MultiplayerAPI::CMD_FLAG_3_SHIFT
 
 #define NODE_ID_COMPRESSION_FLAG                                                                   \
 	((1 << NODE_ID_COMPRESSION_SHIFT) | (1 << (NODE_ID_COMPRESSION_SHIFT + 1)))

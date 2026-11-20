@@ -31,8 +31,9 @@
 
 #pragma once
 
-#include "core/types.h"
 #include "core/io/image.h"
+#include "core/templates/hash_set.h"
+#include "core/types.h"
 
 class Image;
 
@@ -48,8 +49,11 @@ public:
 
 class LightmapRaycaster : public RefCounted
 {
-protected:
-	static Ref<LightmapRaycaster> (*create_function)();
+public:
+	struct EmbreeState;
+
+private:
+	EmbreeState* embree_state = nullptr;
 
 public:
 	// Compatible with embree4 rays.
@@ -91,23 +95,31 @@ public:
 		unsigned int instID; //!< instance ID
 	};
 
-	virtual bool intersect(Ray& p_ray) = 0;
+	bool intersect(Ray& p_ray);
+	void intersect(Vector<Ray>& r_rays);
 
-	virtual void intersect(Vector<Ray>& r_rays) = 0;
+	void add_mesh(const Vector<Vector3>& p_vertices, const Vector<Vector3>& p_normals,
+		const Vector<Vector2>& p_uv2s, unsigned int p_id);
+	void set_mesh_alpha_texture(Ref<Image> p_alpha_texture, unsigned int p_id);
+	void commit();
 
-	virtual void add_mesh(const Vector<Vector3>& p_vertices, const Vector<Vector3>& p_normals,
-		const Vector<Vector2>& p_uv2s, unsigned int p_id) = 0;
-	virtual void set_mesh_alpha_texture(Ref<Image> p_alpha_texture, unsigned int p_id) = 0;
-	virtual void commit() = 0;
-
-	virtual void set_mesh_filter(const HashSet<int>& p_mesh_ids) = 0;
-	virtual void clear_mesh_filter() = 0;
+	void set_mesh_filter(const HashSet<int>& p_mesh_ids);
+	void clear_mesh_filter();
 
 	static Ref<LightmapRaycaster> create();
+
+	LightmapRaycaster();
+	~LightmapRaycaster();
 };
 
 class Lightmapper : public RefCounted
 {
+public:
+	struct RDState;
+
+private:
+	RDState* rd_state = nullptr;
+
 public:
 	enum GenerateProbes
 	{
@@ -143,14 +155,6 @@ public:
 		BAKE_QUALITY_ULTRA,
 	};
 
-	typedef Ref<Lightmapper> (*CreateFunc)();
-
-	static CreateFunc create_custom;
-	static CreateFunc create_gpu;
-	static CreateFunc create_cpu;
-
-protected:
-public:
 	typedef bool (*BakeStepFunc)(
 		float, const String&, void*, bool); // step index, step total, step description, userdata
 
@@ -165,47 +169,47 @@ public:
 		Ref<Image> emission_on_uv2;
 	};
 
-	virtual void add_mesh(const MeshData& p_mesh) = 0;
-	virtual void add_directional_light(const String& p_name, bool p_static,
-		const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
-		float p_angular_distance, float p_shadow_blur) = 0;
-	virtual void add_omni_light(const String& p_name, bool p_static, const Vector3& p_position,
+	void add_mesh(const MeshData& p_mesh);
+	void add_directional_light(const String& p_name, bool p_static, const Vector3& p_direction,
+		const Color& p_color, float p_energy, float p_indirect_energy, float p_angular_distance,
+		float p_shadow_blur);
+	void add_omni_light(const String& p_name, bool p_static, const Vector3& p_position,
 		const Color& p_color, float p_energy, float p_indirect_energy, float p_range,
-		float p_attenuation, float p_size, float p_shadow_blur) = 0;
-	virtual void add_spot_light(const String& p_name, bool p_static, const Vector3& p_position,
+		float p_attenuation, float p_size, float p_shadow_blur);
+	void add_spot_light(const String& p_name, bool p_static, const Vector3& p_position,
 		const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
 		float p_range, float p_attenuation, float p_spot_angle, float p_spot_attenuation,
-		float p_size, float p_shadow_blur) = 0;
-	virtual void add_area_light(const String& p_name, bool p_static, const Vector3& p_position,
+		float p_size, float p_shadow_blur);
+	void add_area_light(const String& p_name, bool p_static, const Vector3& p_position,
 		const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
 		float p_range, float p_attenuation, const Vector3& p_area_width,
 		const Vector3& p_area_height, float p_size, float p_shadow_blur,
-		const Rect2& p_texture_rect, float p_max_mipmap) = 0;
-	virtual void add_area_light_atlas(
-		const Vector2i& p_size, int p_mipmap_count, const PackedByteArray& p_atlas_data) = 0;
-	virtual void add_probe(const Vector3& p_position) = 0;
-	virtual BakeError bake(BakeQuality p_quality, bool p_use_denoiser, float p_denoiser_strength,
+		const Rect2& p_texture_rect, float p_max_mipmap);
+	void add_area_light_atlas(
+		const Vector2i& p_size, int p_mipmap_count, const PackedByteArray& p_atlas_data);
+	void add_probe(const Vector3& p_position);
+	BakeError bake(BakeQuality p_quality, bool p_use_denoiser, float p_denoiser_strength,
 		int p_denoiser_range, int p_bounces, float p_bounce_indirect_energy, float p_bias,
 		int p_max_texture_size, bool p_bake_sh, bool p_bake_shadowmask, bool p_texture_for_bounces,
 		GenerateProbes p_generate_probes, const Ref<Image>& p_environment_panorama,
 		const Basis& p_environment_transform, BakeStepFunc p_step_function = nullptr,
 		void* p_step_userdata = nullptr, float p_exposure_normalization = 1.0,
-		float p_supersampling_factor = 1.0) = 0;
+		float p_supersampling_factor = 1.0);
 
-	virtual int get_bake_texture_count() const = 0;
-	virtual Ref<Image> get_bake_texture(int p_index) const = 0;
-	virtual int get_shadowmask_texture_count() const = 0;
-	virtual Ref<Image> get_shadowmask_texture(int p_index) const = 0;
-	virtual int get_bake_mesh_count() const = 0;
-	virtual Rect2 get_bake_mesh_uv_scale(int p_index) const = 0;
-	virtual int get_bake_mesh_texture_slice(int p_index) const = 0;
+	int get_bake_texture_count() const;
+	Ref<Image> get_bake_texture(int p_index) const;
+	int get_shadowmask_texture_count() const;
+	Ref<Image> get_shadowmask_texture(int p_index) const;
+	int get_bake_mesh_count() const;
+	Rect2 get_bake_mesh_uv_scale(int p_index) const;
+	int get_bake_mesh_texture_slice(int p_index) const;
 
-	virtual int get_bake_probe_count() const = 0;
-	virtual Vector3 get_bake_probe_point(int p_probe) const = 0;
-	virtual Vector<Color> get_bake_probe_sh(int p_probe) const = 0;
+	int get_bake_probe_count() const;
+	Vector3 get_bake_probe_point(int p_probe) const;
+	Vector<Color> get_bake_probe_sh(int p_probe) const;
 
 	static Ref<Lightmapper> create();
 
 	Lightmapper();
+	~Lightmapper();
 };
-

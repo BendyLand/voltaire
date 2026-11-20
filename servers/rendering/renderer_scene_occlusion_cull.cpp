@@ -32,11 +32,13 @@
 #include "renderer_scene_occlusion_cull.h"
 
 #include "core/config/engine.h"
+#include "modules/modules_enabled.gen.h"
 #include "servers/rendering/renderer.h"
 
 bool RendererSceneOcclusionCull::HZBuffer::occlusion_jitter_enabled = false;
 
-void RendererSceneOcclusionCull::HZBuffer::clear() {
+void RendererSceneOcclusionCull::HZBuffer::_clear_mips()
+{
 	if (sizes.is_empty()) {
 		return; // Already cleared
 	}
@@ -54,11 +56,12 @@ void RendererSceneOcclusionCull::HZBuffer::clear() {
 	Renderer::free_rid(debug_texture);
 }
 
-void RendererSceneOcclusionCull::HZBuffer::resize(const Size2i &p_size) {
+void RendererSceneOcclusionCull::HZBuffer::_resize_mips(const Size2i& p_size)
+{
 	occlusion_buffer_size = p_size;
 
 	if (p_size == Size2i()) {
-		clear();
+		_clear_mips();
 		return;
 	}
 
@@ -92,7 +95,7 @@ void RendererSceneOcclusionCull::HZBuffer::resize(const Size2i &p_size) {
 
 	w = p_size.x;
 	h = p_size.y;
-	float *ptr = data.ptr();
+	float* ptr = data.ptr();
 
 	for (int i = 0; i < mip_count; i++) {
 		sizes[i] = Size2i(w, h);
@@ -114,7 +117,8 @@ void RendererSceneOcclusionCull::HZBuffer::resize(const Size2i &p_size) {
 	}
 }
 
-void RendererSceneOcclusionCull::HZBuffer::update_mips() {
+void RendererSceneOcclusionCull::HZBuffer::update_mips()
+{
 	// Keep this up to date as a local to be used for occlusion timers.
 	occlusion_frame = Engine::get_frames_drawn();
 
@@ -134,7 +138,10 @@ void RendererSceneOcclusionCull::HZBuffer::update_mips() {
 				bool odd_w = (prev_w % 2) != 0;
 				bool odd_h = (prev_h % 2) != 0;
 
-#define CHECK_OFFSET(xx, yy) max_depth = MAX(max_depth, mips[mip - 1][MIN(prev_h - 1, prev_y + (yy)) * prev_w + MIN(prev_w - 1, prev_x + (xx))])
+#define CHECK_OFFSET(xx, yy)                                                                       \
+	max_depth =                                                                                    \
+		MAX(max_depth, mips[mip - 1][MIN(prev_h - 1, prev_y + (yy)) * prev_w +                     \
+									 MIN(prev_w - 1, prev_x + (xx))])
 
 				float max_depth = mips[mip - 1][prev_y * sizes[mip - 1].x + prev_x];
 				CHECK_OFFSET(0, 1);
@@ -162,7 +169,8 @@ void RendererSceneOcclusionCull::HZBuffer::update_mips() {
 	}
 }
 
-RID RendererSceneOcclusionCull::HZBuffer::get_debug_texture() {
+RID RendererSceneOcclusionCull::HZBuffer::get_debug_texture()
+{
 	if (sizes.is_empty() || sizes[0] == Size2i()) {
 		return RID();
 	}
@@ -171,7 +179,7 @@ RID RendererSceneOcclusionCull::HZBuffer::get_debug_texture() {
 		debug_image.instantiate();
 	}
 
-	unsigned char *ptrw = debug_data.ptrw();
+	unsigned char* ptrw = debug_data.ptrw();
 	for (int i = 0; i < debug_data.size(); i++) {
 		ptrw[i] = MIN(Math::log(1.0 + mips[0][i]) / Math::log(1.0 + debug_tex_range), 1.0) * 255;
 	}
@@ -180,9 +188,27 @@ RID RendererSceneOcclusionCull::HZBuffer::get_debug_texture() {
 
 	if (debug_texture.is_null()) {
 		debug_texture = Renderer::texture_2d_create(debug_image);
-	} else {
+	}
+	else {
 		Renderer::texture_2d_update(debug_texture, debug_image);
 	}
 
 	return debug_texture;
 }
+
+#ifndef MODULE_RAYCAST_ENABLED
+
+void RendererSceneOcclusionCull::HZBuffer::clear() { _clear_mips(); }
+
+void RendererSceneOcclusionCull::HZBuffer::resize(const Size2i& p_size) { _resize_mips(p_size); }
+
+void RendererSceneOcclusionCull::HZBuffer::sort_rays(const Vector3&, bool) {}
+
+void RendererSceneOcclusionCull::HZBuffer::update_camera_rays(
+	const Transform3D&, const Vector3&, const Vector2&, real_t, bool)
+{
+}
+
+RendererSceneOcclusionCull::HZBuffer::~HZBuffer() {}
+
+#endif // MODULE_RAYCAST_ENABLED

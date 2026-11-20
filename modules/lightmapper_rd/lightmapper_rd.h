@@ -37,7 +37,7 @@
 class RenderingDevice;
 class RDShaderFile;
 
-class LightmapperRD : public Lightmapper
+struct Lightmapper::RDState
 {
 	struct BakeParameters
 	{
@@ -356,47 +356,6 @@ class LightmapperRD : public Lightmapper
 	BakeError _denoise_oidn(RenderingDevice* p_rd, RID p_source_light_tex, RID p_source_normal_tex,
 		RID p_dest_light_tex, const Size2i& p_atlas_size, int p_atlas_slices, bool p_bake_sh,
 		bool p_shadowmask, const String& p_exe);
-
-public:
-	virtual void add_mesh(const MeshData& p_mesh) override;
-	virtual void add_directional_light(const String& p_name, bool p_static,
-		const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
-		float p_angular_distance, float p_shadow_blur) override;
-	virtual void add_omni_light(const String& p_name, bool p_static, const Vector3& p_position,
-		const Color& p_color, float p_energy, float p_indirect_energy, float p_range,
-		float p_attenuation, float p_size, float p_shadow_blur) override;
-	virtual void add_spot_light(const String& p_name, bool p_static, const Vector3& p_position,
-		const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
-		float p_range, float p_attenuation, float p_spot_angle, float p_spot_attenuation,
-		float p_size, float p_shadow_blur) override;
-	virtual void add_area_light(const String& p_name, bool p_static, const Vector3& p_position,
-		const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
-		float p_range, float p_attenuation, const Vector3& p_area_width,
-		const Vector3& p_area_height, float p_size, float p_shadow_blur,
-		const Rect2& p_texture_rect, float p_max_mipmap) override;
-	virtual void add_area_light_atlas(
-		const Vector2i& p_size, int p_mipmap_count, const PackedByteArray& p_atlas_data) override;
-	virtual void add_probe(const Vector3& p_position) override;
-	virtual BakeError bake(BakeQuality p_quality, bool p_use_denoiser, float p_denoiser_strength,
-		int p_denoiser_range, int p_bounces, float p_bounce_indirect_energy, float p_bias,
-		int p_max_texture_size, bool p_bake_sh, bool p_bake_shadowmask, bool p_texture_for_bounces,
-		GenerateProbes p_generate_probes, const Ref<Image>& p_environment_panorama,
-		const Basis& p_environment_transform, BakeStepFunc p_step_function = nullptr,
-		void* p_bake_userdata = nullptr, float p_exposure_normalization = 1.0,
-		float p_supersampling_factor = 1.0f) override;
-
-	int get_bake_texture_count() const override;
-	Ref<Image> get_bake_texture(int p_index) const override;
-	int get_shadowmask_texture_count() const override;
-	Ref<Image> get_shadowmask_texture(int p_index) const override;
-	int get_bake_mesh_count() const override;
-	Rect2 get_bake_mesh_uv_scale(int p_index) const override;
-	int get_bake_mesh_texture_slice(int p_index) const override;
-	int get_bake_probe_count() const override;
-	Vector3 get_bake_probe_point(int p_probe) const override;
-	Vector<Color> get_bake_probe_sh(int p_probe) const override;
-
-	LightmapperRD() = default;
 };
 
 

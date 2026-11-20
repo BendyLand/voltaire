@@ -30,13 +30,13 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "noise.h"
+#include "fastnoise_lite.h"
 #include "noise_texture_3d.h"
 #include "servers/rendering/renderer.h"
 
 NoiseTexture3D::NoiseTexture3D()
 {
-	noise = Ref<Noise>();
+	noise = Ref<FastNoiseLite>();
 
 	_queue_update();
 }
@@ -59,7 +59,16 @@ Ref<Image> NoiseTexture3D::_modulate_with_gradient(Ref<Image> p_image, Ref<Gradi
 	return new_image;
 }
 
-Ref<Noise> NoiseTexture3D::get_noise() { return noise; }
+void NoiseTexture3D::set_noise(Ref<FastNoiseLite> p_noise)
+{
+	if (noise == p_noise) {
+		return;
+	}
+	noise = p_noise;
+	_queue_update();
+}
+
+Ref<FastNoiseLite> NoiseTexture3D::get_noise() { return noise; }
 
 void NoiseTexture3D::set_width(int p_width)
 {
@@ -136,6 +145,15 @@ void NoiseTexture3D::set_normalize(bool p_normalize)
 }
 
 bool NoiseTexture3D::is_normalized() const { return normalize; }
+
+void NoiseTexture3D::set_color_ramp(const Ref<Gradient>& p_gradient)
+{
+	if (color_ramp == p_gradient) {
+		return;
+	}
+	color_ramp = p_gradient;
+	_queue_update();
+}
 
 Ref<Gradient> NoiseTexture3D::get_color_ramp() const { return color_ramp; }
 

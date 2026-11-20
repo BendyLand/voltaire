@@ -34,6 +34,7 @@
 #include <theora/theoraenc.h>
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
+#include "core/io/file_access.h"
 #include "servers/audio/audio_server.h"
 #include "servers/movie_writer/movie_writer.h"
 

@@ -31,6 +31,7 @@
 
 #include "fbx_state.h"
 
+FBXState::FBXState() { gltf_state.instantiate(); }
 
 bool FBXState::get_allow_geometry_helper_nodes() { return allow_geometry_helper_nodes; }
 
@@ -38,5 +39,3 @@ void FBXState::set_allow_geometry_helper_nodes(bool p_allow_geometry_helper_node
 {
 	allow_geometry_helper_nodes = p_allow_geometry_helper_nodes;
 }
-
-

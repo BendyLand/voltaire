@@ -29,14 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <mbedtls/debug.h>
 #include <psa/crypto.h>
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "crypto_mbedtls.h"
-#include "dtls_server_mbedtls.h"
-#include "packet_peer_mbed_dtls.h"
 #include "register_types.h"
-#include "stream_peer_mbedtls.h"
 
 static bool godot_mbedtls_initialized = false;
 
@@ -54,10 +51,7 @@ void initialize_mbedtls_module(ModuleInitializationLevel p_level)
 
 	godot_mbedtls_initialized = true;
 
-	CryptoMbedTLS::initialize_crypto();
-	StreamPeerMbedTLS::initialize_tls();
-	PacketPeerMbedDTLS::initialize_dtls();
-	DTLSServerMbedTLS::initialize();
+	MbedTLSModule::initialize_crypto();
 }
 
 void uninitialize_mbedtls_module(ModuleInitializationLevel p_level)
@@ -70,10 +64,6 @@ void uninitialize_mbedtls_module(ModuleInitializationLevel p_level)
 		return;
 	}
 
-	DTLSServerMbedTLS::finalize();
-	PacketPeerMbedDTLS::finalize_dtls();
-	StreamPeerMbedTLS::finalize_tls();
-	CryptoMbedTLS::finalize_crypto();
+	MbedTLSModule::finalize_crypto();
+	godot_mbedtls_initialized = false;
 }
-
-

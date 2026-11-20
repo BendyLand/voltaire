@@ -30,13 +30,13 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "noise.h"
+#include "fastnoise_lite.h"
 #include "noise_texture_2d.h"
 #include "servers/rendering/renderer.h"
 
 NoiseTexture2D::NoiseTexture2D()
 {
-	noise = Ref<Noise>();
+	noise = Ref<FastNoiseLite>();
 
 	_queue_update();
 }
@@ -60,7 +60,7 @@ void NoiseTexture2D::_set_texture_image(const Ref<Image>& p_image)
 Ref<Image> NoiseTexture2D::_generate_texture()
 {
 	// Prevent memdelete due to unref() on other thread.
-	Ref<Noise> ref_noise = noise;
+	Ref<FastNoiseLite> ref_noise = noise;
 
 	if (ref_noise.is_null()) {
 		return Ref<Image>();
@@ -106,7 +106,16 @@ Ref<Image> NoiseTexture2D::_modulate_with_gradient(Ref<Image> p_image, Ref<Gradi
 	return new_image;
 }
 
-Ref<Noise> NoiseTexture2D::get_noise() { return noise; }
+void NoiseTexture2D::set_noise(Ref<FastNoiseLite> p_noise)
+{
+	if (noise == p_noise) {
+		return;
+	}
+	noise = p_noise;
+	_queue_update();
+}
+
+Ref<FastNoiseLite> NoiseTexture2D::get_noise() { return noise; }
 
 void NoiseTexture2D::set_width(int p_width)
 {
@@ -219,6 +228,15 @@ void NoiseTexture2D::set_normalize(bool p_normalize)
 }
 
 bool NoiseTexture2D::is_normalized() const { return normalize; }
+
+void NoiseTexture2D::set_color_ramp(const Ref<Gradient>& p_gradient)
+{
+	if (color_ramp == p_gradient) {
+		return;
+	}
+	color_ramp = p_gradient;
+	_queue_update();
+}
 
 Ref<Gradient> NoiseTexture2D::get_color_ramp() const { return color_ramp; }
 

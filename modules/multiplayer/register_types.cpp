@@ -40,7 +40,7 @@
 void initialize_multiplayer_module(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		MultiplayerAPI::set_default_interface("SceneMultiplayer");
+		MultiplayerAPI::set_default_interface("MultiplayerAPI");
 		MultiplayerDebugger::initialize();
 	}
 }

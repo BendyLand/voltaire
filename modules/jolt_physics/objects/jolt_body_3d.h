@@ -31,8 +31,9 @@
 
 #pragma once
 
-#include "jolt_physics_direct_body_state_3d.h"
 #include "jolt_shaped_object_3d.h"
+#include "servers/physics_3d/direct_states/physics_direct_body_state_3d.h"
+#include "servers/physics_3d/physics_server_3d_enums.h"
 
 class JoltArea3D;
 class JoltJoint3D;
@@ -77,7 +78,7 @@ private:
 	Vector3 angular_surface_velocity;
 	Vector3 total_gravity;
 
-	JoltPhysicsDirectBodyState3D* direct_state = nullptr;
+	PhysicsDirectBodyState3D* direct_state = nullptr;
 
 	PS3DE::BodyMode mode = PS3DE::BODY_MODE_RIGID;
 
@@ -245,7 +246,7 @@ public:
 
 	virtual void pre_step(float p_step) override;
 
-	JoltPhysicsDirectBodyState3D* get_direct_state();
+	PhysicsDirectBodyState3D* get_direct_state();
 
 	PS3DE::BodyMode get_mode() const { return mode; }
 

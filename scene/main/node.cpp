@@ -282,6 +282,21 @@ bool Node::_can_process(bool p_paused) const
 	}
 }
 
+void Node::set_physics_interpolation_mode(PhysicsInterpolationMode p_mode)
+{
+	ERR_THREAD_GUARD
+	if (data.physics_interpolation_mode == p_mode) {
+		return;
+	}
+	data.physics_interpolation_mode = p_mode;
+	if (p_mode == PHYSICS_INTERPOLATION_MODE_OFF) {
+		data.physics_interpolated = false;
+	} else if (p_mode == PHYSICS_INTERPOLATION_MODE_ON) {
+		data.physics_interpolated = true;
+	}
+	_physics_interpolated_changed();
+}
+
 bool Node::is_physics_interpolated_and_enabled() const
 {
 	return SceneTree::is_fti_enabled() && is_physics_interpolated();

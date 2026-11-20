@@ -30,7 +30,6 @@
 /**************************************************************************/
 
 #include "fastnoise_lite.h"
-#include "noise.h"
 #include "noise_texture_2d.h"
 #include "noise_texture_3d.h"
 #include "register_types.h"

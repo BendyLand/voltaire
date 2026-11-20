@@ -33,21 +33,11 @@
 #include "upnp.h"
 #include "upnp_device.h"
 
-#ifndef WEB_ENABLED
-#include "upnp_device_miniupnp.h"
-#include "upnp_miniupnp.h"
-#endif
-
-
 void initialize_upnp_module(ModuleInitializationLevel p_level)
 {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-#ifndef WEB_ENABLED
-	UPNPMiniUPNP::make_default();
-	UPNPDeviceMiniUPNP::make_default();
-#endif
 }
 
 void uninitialize_upnp_module(ModuleInitializationLevel p_level)
@@ -56,5 +46,3 @@ void uninitialize_upnp_module(ModuleInitializationLevel p_level)
 		return;
 	}
 }
-
-

@@ -31,11 +31,31 @@
 
 #include "static_raycaster.h"
 
-Ref<StaticRaycaster> (*StaticRaycaster::create_function)() = nullptr;
+#include "modules/modules_enabled.gen.h"
 
-Ref<StaticRaycaster> StaticRaycaster::create() {
-	if (create_function) {
-		return Ref<StaticRaycaster>(create_function());
-	}
-	return Ref<StaticRaycaster>();
+#if !defined(MODULE_RAYCAST_ENABLED) || !defined(TOOLS_ENABLED)
+
+Ref<StaticRaycaster> StaticRaycaster::create() { return Ref<StaticRaycaster>(); }
+
+void StaticRaycaster::free() {}
+
+bool StaticRaycaster::intersect(Ray& p_ray) { return false; }
+
+void StaticRaycaster::intersect(Vector<Ray>& r_rays) {}
+
+void StaticRaycaster::add_mesh(
+	const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices, unsigned int p_id)
+{
 }
+
+void StaticRaycaster::commit() {}
+
+void StaticRaycaster::set_mesh_filter(const HashSet<int>& p_mesh_ids) {}
+
+void StaticRaycaster::clear_mesh_filter() {}
+
+StaticRaycaster::StaticRaycaster() {}
+
+StaticRaycaster::~StaticRaycaster() {}
+
+#endif // !defined(MODULE_RAYCAST_ENABLED) || !defined(TOOLS_ENABLED)

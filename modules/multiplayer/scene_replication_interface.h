@@ -35,7 +35,7 @@
 #include "multiplayer_spawner.h"
 #include "multiplayer_synchronizer.h"
 
-class SceneMultiplayer;
+class MultiplayerAPI;
 class SceneCacheInterface;
 
 class SceneReplicationInterface : public RefCounted
@@ -58,7 +58,7 @@ private:
 	List<uint32_t> pending_sync_net_ids;
 
 	// Replicator config.
-	SceneMultiplayer* multiplayer = nullptr;
+	MultiplayerAPI* multiplayer = nullptr;
 	SceneCacheInterface* multiplayer_cache = nullptr;
 	PackedByteArray packet_cache;
 	int sync_mtu = 1350; // Highly dependent on underlying protocol.
@@ -93,7 +93,7 @@ public:
 	void set_max_delta_packet_size(int p_size);
 	int get_max_delta_packet_size() const;
 
-	SceneReplicationInterface(SceneMultiplayer* p_multiplayer, SceneCacheInterface* p_cache)
+	SceneReplicationInterface(MultiplayerAPI* p_multiplayer, SceneCacheInterface* p_cache)
 	{
 		multiplayer = p_multiplayer;
 		multiplayer_cache = p_cache;

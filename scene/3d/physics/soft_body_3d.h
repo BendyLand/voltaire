@@ -39,37 +39,6 @@
 class MeshInstance3D;
 class PhysicsBody3D;
 
-class SoftBodyRenderingServerHandler : public PhysicsServer3DRenderingServerHandler
-{
-	friend class SoftBody3D;
-
-	RID mesh;
-	int surface = 0;
-	Vector<uint8_t> buffer;
-	uint32_t stride = 0;
-	uint32_t normal_stride = 0;
-	uint32_t offset_vertices = 0;
-	uint32_t offset_normal = 0;
-
-	uint8_t* write_buffer = nullptr;
-
-private:
-	SoftBodyRenderingServerHandler();
-
-	bool is_ready(RID p_mesh_rid) const { return mesh.is_valid() && mesh == p_mesh_rid; }
-
-	void prepare(RID p_mesh_rid, int p_surface);
-	void clear();
-	void open();
-	void close();
-	void commit_changes();
-
-public:
-	void set_vertex(int p_vertex_id, const Vector3& p_vertex) override;
-	void set_normal(int p_vertex_id, const Vector3& p_normal) override;
-	void set_aabb(const AABB& p_aabb) override;
-};
-
 class SoftBody3D : public Node3D
 {
 public:
@@ -95,7 +64,7 @@ public:
 
 private:
 	Ref<Mesh> mesh;
-	SoftBodyRenderingServerHandler* rendering_server_handler = nullptr;
+	PhysicsServer3DRenderingServerHandler* rendering_server_handler = nullptr;
 
 	RID physics_rid;
 

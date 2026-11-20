@@ -34,7 +34,6 @@
 TEST_FORCE_LINK(test_translation)
 
 #include "core/io/resource_loader.h"
-#include "core/string/optimized_translation.h"
 #include "core/string/plural_rules.h"
 #include "core/string/translation.h"
 #include "core/string/translation_server.h"
@@ -196,14 +195,14 @@ TEST_CASE("[Translation] Plural rules parsing") {
 }
 
 #ifdef TOOLS_ENABLED
-TEST_CASE("[OptimizedTranslation] Generate from Translation and read messages") {
+TEST_CASE("[Translation] Generate optimized from Translation and read messages") {
 	Ref<Translation> translation = memnew(Translation);
 	translation->set_locale("fr");
 	translation->add_message("Hello", "Bonjour");
 	translation->add_message("Hello2", "Bonjour2");
 	translation->add_message("Hello3", "Bonjour3");
 
-	Ref<OptimizedTranslation> optimized_translation = memnew(OptimizedTranslation);
+	Ref<Translation> optimized_translation = memnew(Translation);
 	optimized_translation->generate(translation);
 	CHECK(optimized_translation->get_message("Hello") == "Bonjour");
 	CHECK(optimized_translation->get_message("Hello2") == "Bonjour2");
@@ -211,7 +210,7 @@ TEST_CASE("[OptimizedTranslation] Generate from Translation and read messages") 
 	CHECK(optimized_translation->get_message("DoesNotExist") == "");
 
 	List<String> messages;
-	// `get_message_list()` can't return the list of messages stored in an OptimizedTranslation.
+	// `get_message_list()` can't return the list of messages stored in an optimized Translation.
 	optimized_translation->get_message_list(&messages);
 	CHECK(optimized_translation->get_message_count() == 0);
 	CHECK(messages.size() == 0);

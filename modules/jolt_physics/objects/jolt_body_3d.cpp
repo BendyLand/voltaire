@@ -38,7 +38,6 @@
 #include "jolt_area_3d.h"
 #include "jolt_body_3d.h"
 #include "jolt_group_filter.h"
-#include "jolt_physics_direct_body_state_3d.h"
 #include "jolt_soft_body_3d.h"
 #include "servers/physics_3d/physics_server_3d_constants.h"
 
@@ -1011,10 +1010,10 @@ void JoltBody3D::remove_joint(JoltJoint3D* p_joint)
 	_joints_changed();
 }
 
-JoltPhysicsDirectBodyState3D* JoltBody3D::get_direct_state()
+PhysicsDirectBodyState3D* JoltBody3D::get_direct_state()
 {
 	if (direct_state == nullptr) {
-		direct_state = memnew(JoltPhysicsDirectBodyState3D(this));
+		direct_state = memnew(PhysicsDirectBodyState3D(this));
 	}
 
 	return direct_state;

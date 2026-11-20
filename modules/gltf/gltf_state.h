@@ -50,6 +50,8 @@ class GLTFState : public Resource
 {
 	friend class GLTFDocument;
 	friend class GLTFNode;
+	friend class FBXDocument;
+	friend class FBXState;
 
 public:
 	enum HandleBinaryImageMode

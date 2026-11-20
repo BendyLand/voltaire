@@ -41,8 +41,9 @@
 #include "jolt_body_activation_listener_3d.h"
 #include "jolt_contact_listener_3d.h"
 #include "jolt_layers.h"
-#include "jolt_physics_direct_space_state_3d.h"
 #include "jolt_space_3d.h"
+#include "servers/physics_3d/direct_states/physics_direct_space_state_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 // must stay last
 #include <Jolt/Physics/Collision/CollideShapeVsShapePerLeaf.h>
 #include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
@@ -326,10 +327,10 @@ JoltSoftBody3D* JoltSpace3D::try_get_soft_body(const JPH::BodyID& p_body_id) con
 	return object->as_soft_body();
 }
 
-JoltPhysicsDirectSpaceState3D* JoltSpace3D::get_direct_state()
+PhysicsDirectSpaceState3D* JoltSpace3D::get_direct_state()
 {
 	if (direct_state == nullptr) {
-		direct_state = memnew(JoltPhysicsDirectSpaceState3D(this));
+		direct_state = memnew(PhysicsDirectSpaceState3D(this));
 	}
 
 	return direct_state;
@@ -350,7 +351,7 @@ void JoltSpace3D::remove_object(const JPH::BodyID& p_jolt_id)
 	// clean up Jolt's broad phase instead, otherwise performance can degrade when doing things like
 	// switching scenes. We'll never actually have zero bodies in any space though, since we always
 	// have the default area, so we check if there's one or fewer left instead.
-	if (!PhysicsServer3D::driver_as<JoltPhysicsServer3D>()->is_active() && physics_system->GetNumBodies() <= 1) {
+	if (PhysicsServer3D::get_driver() && !PhysicsServer3D::get_driver()->is_active() && physics_system->GetNumBodies() <= 1) {
 		physics_system->OptimizeBroadPhase();
 	}
 }

@@ -31,6 +31,8 @@
 
 #include "physics_direct_space_state_3d.h"
 
+#include "modules/modules_enabled.gen.h"
+
 Vector<real_t> PhysicsDirectSpaceState3D::_cast_motion(
 	PhysicsShapeQueryParameters3D* rp_shape_query)
 {
@@ -46,46 +48,48 @@ Vector<real_t> PhysicsDirectSpaceState3D::_cast_motion(
 	return ret;
 }
 
-PhysicsDirectSpaceState3D::PhysicsDirectSpaceState3D() {}
+#ifndef MODULE_JOLT_PHYSICS_ENABLED
+
+PhysicsDirectSpaceState3D::PhysicsDirectSpaceState3D(JoltSpace3D* p_space) : space(p_space) {}
 
 bool PhysicsDirectSpaceState3D::intersect_ray(
 	const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result)
 {
-	return true;
+	return false;
 }
 
-// servers/physics_3d/direct_states/physics_direct_space_state_3d.h / .cpp
 int PhysicsDirectSpaceState3D::intersect_point(
-	const PhysicsServer3DTypes::PointParameters& p_point_params,
-	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+	const PS3DT::PointParameters& p_point_params,
+	PS3DT::ShapeResult* r_results, int p_result_max)
 {
 	return 0;
 }
 
 int PhysicsDirectSpaceState3D::intersect_shape(
-	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
-	PhysicsServer3DTypes::ShapeResult* r_results, int p_result_max)
+	const PS3DT::ShapeParameters& p_shape_params,
+	PS3DT::ShapeResult* r_results, int p_result_max)
 {
 	return 0;
 }
 
 bool PhysicsDirectSpaceState3D::cast_motion(
-	const PhysicsServer3DTypes::ShapeParameters& p_shape_params, float& r_closest_safe,
-	float& r_closest_unsafe, PhysicsServer3DTypes::ShapeRestInfo* r_info)
+	const PS3DT::ShapeParameters& p_shape_params, real_t& r_closest_safe,
+	real_t& r_closest_unsafe, PS3DT::ShapeRestInfo* r_info)
 {
 	return false;
 }
 
 bool PhysicsDirectSpaceState3D::collide_shape(
-	const PhysicsServer3DTypes::ShapeParameters& p_shape_params, Vector3* r_results,
+	const PS3DT::ShapeParameters& p_shape_params, Vector3* r_results,
 	int p_result_max, int& r_result_count)
 {
+	r_result_count = 0;
 	return false;
 }
 
 bool PhysicsDirectSpaceState3D::rest_info(
-	const PhysicsServer3DTypes::ShapeParameters& p_shape_params,
-	PhysicsServer3DTypes::ShapeRestInfo* r_info)
+	const PS3DT::ShapeParameters& p_shape_params,
+	PS3DT::ShapeRestInfo* r_info)
 {
 	return false;
 }
@@ -96,4 +100,10 @@ Vector3 PhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
 	return Vector3();
 }
 
+bool PhysicsDirectSpaceState3D::body_test_motion(const JoltBody3D& p_body,
+	const PS3DT::MotionParameters& p_parameters, PS3DT::MotionResult* r_result) const
+{
+	return false;
+}
 
+#endif // !MODULE_JOLT_PHYSICS_ENABLED

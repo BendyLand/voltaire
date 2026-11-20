@@ -31,14 +31,21 @@
 
 #include "dtls_server.h"
 
-DTLSServer* DTLSServer::create(bool p_notify_postinitialize)
+#include "modules/modules_enabled.gen.h"
+
+#ifndef MODULE_MBEDTLS_ENABLED
+
+bool DTLSServer::is_available() { return false; }
+DTLSServer* DTLSServer::create(bool p_notify_postinitialize) { return nullptr; }
+
+Error DTLSServer::setup(Ref<TLSOptions> p_options) { return ERR_UNAVAILABLE; }
+void DTLSServer::stop() {}
+Ref<PacketPeerDTLS> DTLSServer::take_connection(Ref<PacketPeerUDP> p_peer)
 {
-	if (_create) {
-		return _create(p_notify_postinitialize);
-	}
-	return nullptr;
+	return Ref<PacketPeerDTLS>();
 }
 
-bool DTLSServer::is_available() { return available; }
+DTLSServer::DTLSServer() {}
+DTLSServer::~DTLSServer() {}
 
-
+#endif // !MODULE_MBEDTLS_ENABLED

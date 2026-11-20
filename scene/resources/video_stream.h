@@ -37,6 +37,10 @@ class VideoStreamPlayback : public Resource
 {
 public:
 	typedef int (*AudioMixCallback)(void* p_udata, const float* p_data, int p_frames);
+	struct TheoraData;
+
+private:
+	TheoraData* data = nullptr;
 
 protected:
 	AudioMixCallback mix_callback = nullptr;
@@ -47,29 +51,30 @@ protected:
 
 public:
 	VideoStreamPlayback();
-	virtual ~VideoStreamPlayback();
+	~VideoStreamPlayback();
 
-	virtual void stop();
-	virtual void play();
+	void stop();
+	void play();
 
-	virtual bool is_playing() const;
+	bool is_playing() const;
 
-	virtual void set_paused(bool p_paused);
-	virtual bool is_paused() const;
+	void set_paused(bool p_paused);
+	bool is_paused() const;
 
-	virtual double get_length() const;
+	double get_length() const;
 
-	virtual double get_playback_position() const;
-	virtual void seek(double p_time);
+	double get_playback_position() const;
+	void seek(double p_time);
 
-	virtual void set_audio_track(int p_idx);
+	void set_file(const String& p_file);
+	void set_audio_track(int p_idx);
 
-	virtual Ref<Texture2D> get_texture() const;
-	virtual void update(double p_delta);
+	Ref<Texture2D> get_texture() const;
+	void update(double p_delta);
 
-	virtual void set_mix_callback(AudioMixCallback p_callback, void* p_userdata);
-	virtual int get_channels() const;
-	virtual int get_mix_rate() const;
+	void set_mix_callback(AudioMixCallback p_callback, void* p_userdata);
+	int get_channels() const;
+	int get_mix_rate() const;
 };
 
 class VideoStream : public Resource
@@ -82,11 +87,9 @@ public:
 	void set_file(const String& p_file);
 	String get_file();
 
-	virtual void set_audio_track(int p_track);
-	virtual Ref<VideoStreamPlayback> instantiate_playback();
+	void set_audio_track(int p_track);
+	Ref<VideoStreamPlayback> instantiate_playback();
 
 	VideoStream();
 	~VideoStream();
 };
-
-

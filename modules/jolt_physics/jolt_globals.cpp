@@ -92,7 +92,17 @@ bool jolt_assert(const char *p_expr, const char *p_msg, const char *p_file, uint
 
 #endif
 
+static bool jolt_initialized = false;
+
+bool jolt_is_initialized() {
+	return jolt_initialized;
+}
+
 void jolt_initialize() {
+	if (jolt_initialized) {
+		return;
+	}
+
 	JPH::Allocate = &jolt_alloc;
 	JPH::Reallocate = &jolt_realloc;
 	JPH::Free = &jolt_free;
@@ -114,9 +124,15 @@ void jolt_initialize() {
 
 	JoltGroupFilter::instance = new JoltGroupFilter();
 	JoltGroupFilter::instance->SetEmbedded();
+
+	jolt_initialized = true;
 }
 
 void jolt_deinitialize() {
+	if (!jolt_initialized) {
+		return;
+	}
+
 	if (JoltGroupFilter::instance != nullptr) {
 		delete JoltGroupFilter::instance;
 		JoltGroupFilter::instance = nullptr;
@@ -128,4 +144,6 @@ void jolt_deinitialize() {
 		delete JPH::Factory::sInstance;
 		JPH::Factory::sInstance = nullptr;
 	}
+
+	jolt_initialized = false;
 }

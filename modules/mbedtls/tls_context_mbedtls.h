@@ -59,7 +59,7 @@ class TLSContextMbedTLS : public RefCounted
 private:
 	bool inited = false;
 	mbedtls_pk_context pk;
-	Ref<X509CertificateMbedTLS> certs;
+	Ref<X509Certificate> certs;
 	Ref<CookieContextMbedTLS> cookies;
 	mbedtls_ssl_context tls;
 	mbedtls_ssl_config conf;
@@ -79,5 +79,3 @@ public:
 	TLSContextMbedTLS();
 	~TLSContextMbedTLS();
 };
-
-

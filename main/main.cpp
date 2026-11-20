@@ -96,7 +96,6 @@
 
 #ifndef PHYSICS_3D_DISABLED
 #include "servers/physics_3d/physics_server_3d.h"
-#include "servers/physics_3d/physics_server_3d_dummy.h"
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
@@ -857,9 +856,6 @@ Error Main::test_setup()
 		TextServerManager::add_interface(ts);
 	}
 
-#ifndef PHYSICS_3D_DISABLED
-	PhysicsServer3DManager::initialize();
-#endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
 	PhysicsServer2DManager::initialize();
 #endif // PHYSICS_2D_DISABLED
@@ -900,6 +896,9 @@ Error Main::test_setup()
 #ifndef NAVIGATION_2D_DISABLED
 	NavigationServer2D::initialize();
 #endif // NAVIGATION_2D_DISABLED
+#ifndef PHYSICS_3D_DISABLED
+	PhysicsServer3D::initialize();
+#endif // PHYSICS_3D_DISABLED
 
 	register_scene_types();
 	register_driver_types();
@@ -1000,6 +999,8 @@ void Main::test_cleanup()
 	NavigationServer3D::finalize();
 #endif // NAVIGATION_3D_DISABLED
 
+	finalize_physics();
+
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SERVERS);
 	unregister_server_types();
 
@@ -1012,9 +1013,6 @@ void Main::test_cleanup()
 	PackedData::finalize();
 	TranslationServer::finalize();
 	TextServerManager::finalize();
-#ifndef PHYSICS_3D_DISABLED
-	PhysicsServer3DManager::finalize();
-#endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
 	PhysicsServer2DManager::finalize();
 #endif // PHYSICS_2D_DISABLED
@@ -2975,9 +2973,6 @@ Error Main::setup2(bool p_show_boot_logo)
 		TextServerManager::add_interface(ts);
 	}
 
-#ifndef PHYSICS_3D_DISABLED
-	PhysicsServer3DManager::initialize();
-#endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
 	PhysicsServer2DManager::initialize();
 #endif // PHYSICS_2D_DISABLED
@@ -3148,9 +3143,6 @@ Error Main::setup2(bool p_show_boot_logo)
 
 			Input::finalize();
 			TextServerManager::finalize();
-#ifndef PHYSICS_3D_DISABLED
-			PhysicsServer3DManager::finalize();
-#endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
 			PhysicsServer2DManager::finalize();
 #endif // PHYSICS_2D_DISABLED
@@ -3507,6 +3499,10 @@ Error Main::setup2(bool p_show_boot_logo)
 	CameraServer::initialize();
 
 	MAIN_PRINT("Main: Load Physics");
+
+#ifndef PHYSICS_3D_DISABLED
+	PhysicsServer3D::initialize();
+#endif // PHYSICS_3D_DISABLED
 
 #if TOOLS_ENABLED
 
@@ -4294,9 +4290,6 @@ void Main::cleanup(bool p_force)
 	InputMap::finalize();
 	TranslationServer::finalize();
 	TextServerManager::finalize();
-#ifndef PHYSICS_3D_DISABLED
-	PhysicsServer3DManager::finalize();
-#endif // PHYSICS_3D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
 	PhysicsServer2DManager::finalize();
 #endif // PHYSICS_2D_DISABLED

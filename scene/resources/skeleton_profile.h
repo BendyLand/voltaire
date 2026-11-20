@@ -44,8 +44,6 @@ public:
 	};
 
 protected:
-	// Note: SkeletonProfileHumanoid which extends SkeletonProfile exists to unify standard bone
-	// names. That is what is_read_only is for, so don't make it public.
 	bool is_read_only = false;
 
 	struct SkeletonProfileGroup
@@ -119,16 +117,12 @@ public:
 	void set_required(int p_bone_idx, bool p_required);
 
 	bool has_bone(const String& p_bone_name);
+	bool is_humanoid() const { return is_read_only; }
 
-	SkeletonProfile();
+	static Ref<SkeletonProfile> create_humanoid();
+
+	SkeletonProfile(bool p_humanoid = false);
 	~SkeletonProfile();
-};
-
-class SkeletonProfileHumanoid : public SkeletonProfile
-{
-public:
-	SkeletonProfileHumanoid();
-	~SkeletonProfileHumanoid();
 };
 
 

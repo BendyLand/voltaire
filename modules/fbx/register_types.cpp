@@ -41,14 +41,14 @@
 #define FBX_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class)                                           \
 	Ref<m_doc_ext_class> extension_##m_doc_ext_class;                                              \
 	extension_##m_doc_ext_class.instantiate();                                                     \
-	FBXDocument::register_gltf_document_extension(extension_##m_doc_ext_class);
+	GLTFDocument::register_gltf_document_extension(extension_##m_doc_ext_class);
 
 void uninitialize_fbx_module(ModuleInitializationLevel p_level)
 {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	FBXDocument::unregister_all_gltf_document_extensions();
+	GLTFDocument::unregister_all_gltf_document_extensions();
 }
 
 void initialize_fbx_module(ModuleInitializationLevel p_level)

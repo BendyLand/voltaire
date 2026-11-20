@@ -31,144 +31,15 @@
 
 #pragma once
 
-#include "core/templates/hash_set.h"
-#include "core/templates/local_vector.h"
-#include "core/templates/rid_owner.h"
 #include "servers/rendering/renderer_scene_occlusion_cull.h"
-
-#include <embree4/rtcore.h>
 
 struct Projection;
 
 class RaycastOcclusionCull final
 {
-	typedef RTCRayHit16 CameraRayTile;
-
 public:
 	using HZBuffer = RendererSceneOcclusionCull::HZBuffer;
-
-	class RaycastHZBuffer : public HZBuffer
-	{
-	private:
-		Size2i tile_grid_size;
-
-		struct CameraRayThreadData {
-			int thread_count;
-			float z_near;
-			float z_far;
-			Vector3 camera_dir;
-			Vector3 camera_pos;
-			Vector3 pixel_corner;
-			Vector3 pixel_u_interp;
-			Vector3 pixel_v_interp;
-			bool camera_orthogonal;
-			Size2i buffer_size;
-		};
-
-		void _camera_rays_threaded(uint32_t p_thread, const CameraRayThreadData *p_data);
-		void _generate_camera_rays(const CameraRayThreadData *p_data, int p_from, int p_to);
-
-	public:
-		unsigned int camera_rays_tile_count = 0;
-		uint8_t *camera_rays_unaligned_buffer = nullptr;
-		CameraRayTile *camera_rays = nullptr;
-		LocalVector<uint32_t> camera_ray_masks;
-		RID scenario_rid;
-
-		virtual void clear() override;
-		virtual void resize(const Size2i &p_size) override;
-		void sort_rays(const Vector3 &p_camera_dir, bool p_orthogonal);
-		void update_camera_rays(const Transform3D &p_cam_transform, const Vector3 &p_near_bottom_left, const Vector2 &p_near_extents, real_t p_z_far, bool p_cam_orthogonal);
-
-		~RaycastHZBuffer();
-	};
-
-private:
-	struct InstanceID {
-		RID scenario;
-		RID instance;
-
-		static uint32_t hash(const InstanceID &p_ins) {
-			uint32_t h = hash_murmur3_one_64(p_ins.scenario.get_id());
-			return hash_fmix32(hash_murmur3_one_64(p_ins.instance.get_id(), h));
-		}
-		bool operator==(const InstanceID &rhs) const {
-			return instance == rhs.instance && rhs.scenario == scenario;
-			;
-		}
-
-		InstanceID() {}
-		InstanceID(RID s, RID i) :
-				scenario(s), instance(i) {}
-	};
-
-	struct Occluder {
-		PackedVector3Array vertices;
-		PackedInt32Array indices;
-		HashSet<InstanceID, InstanceID> users;
-	};
-
-	struct OccluderInstance {
-		RID occluder;
-		LocalVector<uint32_t> indices;
-		LocalVector<float> xformed_vertices;
-		Transform3D xform;
-		bool enabled = true;
-		bool removed = false;
-	};
-
-	struct Scenario {
-		struct RaycastThreadData {
-			CameraRayTile *rays = nullptr;
-			const uint32_t *masks;
-		};
-
-		struct TransformThreadData {
-			uint32_t thread_count;
-			uint32_t vertex_count;
-			Transform3D xform;
-			const Vector3 *read;
-			float *write = nullptr;
-		};
-
-		Thread *commit_thread = nullptr;
-		bool commit_done = true;
-		bool dirty = false;
-
-		RTCScene ebr_scene[2] = { nullptr, nullptr };
-		int current_scene_idx = 0;
-
-		HashMap<RID, OccluderInstance> instances;
-		HashSet<RID> dirty_instances; // To avoid duplicates
-		LocalVector<RID> dirty_instances_array; // To iterate and split into threads
-		LocalVector<RID> removed_instances;
-
-		void _update_dirty_instance_thread(int p_idx, RID *p_instances);
-		void _update_dirty_instance(int p_idx, RID *p_instances);
-		void _transform_vertices_thread(uint32_t p_thread, TransformThreadData *p_data);
-		void _transform_vertices_range(const Vector3 *p_read, float *p_write, const Transform3D &p_xform, int p_from, int p_to);
-		static void _commit_scene(void *p_ud);
-		void free();
-		void update();
-
-		void _raycast(uint32_t p_thread, const RaycastThreadData *p_raycast_data) const;
-		void raycast(CameraRayTile *r_rays, const uint32_t *p_valid_masks, uint32_t p_tile_count) const;
-	};
-
-	static const int TILE_SIZE = 4;
-	static const int TILE_RAYS = TILE_SIZE * TILE_SIZE;
-
-public:
-	struct Data
-	{
-		RTCDevice ebr_device = nullptr;
-		RID_PtrOwner<Occluder> occluder_owner;
-		HashMap<RID, Scenario> scenarios;
-		HashMap<RID, RaycastHZBuffer> buffers;
-		RSE::ViewportOcclusionCullingBuildQuality build_quality =
-			RSE::VIEWPORT_OCCLUSION_BUILD_QUALITY_MEDIUM;
-		bool _jitter_enabled = false;
-	};
+	struct Data;
 
 	static inline Data* data = nullptr;
 

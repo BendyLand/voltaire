@@ -32,142 +32,11 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/types.h"
+#include "scene/3d/camera_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "servers/xr/xr_interface.h"
 #include "xr_nodes.h"
-
-void XRCamera3D::_changed_tracker(const String& p_tracker_name, int p_tracker_type)
-{
-	if (p_tracker_name == tracker_name) {
-		_bind_tracker();
-	}
-}
-
-void XRCamera3D::_removed_tracker(const String& p_tracker_name, int p_tracker_type)
-{
-	if (p_tracker_name == tracker_name) {
-		_unbind_tracker();
-	}
-}
-
-void XRCamera3D::_pose_changed(const Ref<XRPose>& p_pose)
-{
-	if (p_pose->get_name() == pose_name) {
-		set_transform(p_pose->get_adjusted_transform());
-	}
-}
-
-Vector3 XRCamera3D::project_local_ray_normal(const Point2& p_pos) const
-{
-	// get our XRServer
-	ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector3());
-
-	Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
-	if (xr_interface.is_null()) {
-		// we might be in the editor or have VR turned off, just call superclass
-		return Camera3D::project_local_ray_normal(p_pos);
-	}
-
-	ERR_FAIL_COND_V_MSG(!is_inside_tree(), Vector3(), "Camera is not inside scene.");
-
-	Size2 viewport_size = get_viewport()->get_camera_rect_size();
-	Vector2 cpos = get_viewport()->get_camera_coords(p_pos);
-	Vector3 ray;
-
-	// Just use the first view, if multiple views are supported this function has no good result
-	Projection cm =
-		xr_interface->get_projection_for_view(0, viewport_size.aspect(), get_near(), get_far());
-	Vector2 screen_he = cm.get_viewport_half_extents();
-	ray = Vector3(((cpos.x / viewport_size.width) * 2.0 - 1.0) * screen_he.x,
-		((1.0 - (cpos.y / viewport_size.height)) * 2.0 - 1.0) * screen_he.y, -get_near())
-			  .normalized();
-
-	return ray;
-}
-
-Point2 XRCamera3D::unproject_position(const Vector3& p_pos) const
-{
-	// get our XRServer
-	ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector2());
-
-	Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
-	if (xr_interface.is_null()) {
-		// we might be in the editor or have VR turned off, just call superclass
-		return Camera3D::unproject_position(p_pos);
-	}
-
-	ERR_FAIL_COND_V_MSG(!is_inside_tree(), Vector2(), "Camera is not inside scene.");
-
-	Size2 viewport_size = get_viewport()->get_visible_rect().size;
-
-	// Just use the first view, if multiple views are supported this function has no good result
-	Projection cm =
-		xr_interface->get_projection_for_view(0, viewport_size.aspect(), get_near(), get_far());
-
-	Plane p(get_camera_transform().xform_inv(p_pos), 1.0);
-
-	p = cm.xform4(p);
-	p.normal /= p.d;
-
-	Point2 res;
-	res.x = (p.normal.x * 0.5 + 0.5) * viewport_size.x;
-	res.y = (-p.normal.y * 0.5 + 0.5) * viewport_size.y;
-
-	return res;
-}
-
-Vector3 XRCamera3D::project_position(const Point2& p_point, real_t p_z_depth) const
-{
-	// get our XRServer
-	ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector3());
-
-	Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
-	if (xr_interface.is_null()) {
-		// we might be in the editor or have VR turned off, just call superclass
-		return Camera3D::project_position(p_point, p_z_depth);
-	}
-
-	ERR_FAIL_COND_V_MSG(!is_inside_tree(), Vector3(), "Camera is not inside scene.");
-
-	Size2 viewport_size = get_viewport()->get_visible_rect().size;
-
-	// Just use the first view, if multiple views are supported this function has no good result
-	Projection cm =
-		xr_interface->get_projection_for_view(0, viewport_size.aspect(), get_near(), get_far());
-
-	Vector2 vp_he = cm.get_viewport_half_extents();
-
-	Vector2 point;
-	point.x = (p_point.x / viewport_size.x) * 2.0 - 1.0;
-	point.y = (1.0 - (p_point.y / viewport_size.y)) * 2.0 - 1.0;
-	point *= vp_he;
-
-	Vector3 p(point.x, point.y, -p_z_depth);
-
-	return get_camera_transform().xform(p);
-}
-
-Vector<Plane> XRCamera3D::get_frustum() const
-{
-	// get our XRServer
-	ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector<Plane>());
-
-	Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
-	if (xr_interface.is_null()) {
-		// we might be in the editor or have VR turned off, just call superclass
-		return Camera3D::get_frustum();
-	}
-
-	ERR_FAIL_COND_V(!is_inside_world(), Vector<Plane>());
-
-	Size2 viewport_size = get_viewport()->get_visible_rect().size;
-	// TODO Just use the first view for now, this is mostly for debugging so we may look into using
-	// our combined projection here.
-	Projection cm =
-		xr_interface->get_projection_for_view(0, viewport_size.aspect(), get_near(), get_far());
-	return cm.get_projection_planes(get_camera_transform());
-}
 
 // XRNode3D is a node that has it's transform updated by an XRPositionalTracker.
 // Note that trackers are only available in runtime and only after an XRInterface registers one.
@@ -395,10 +264,23 @@ void XROrigin3D::_physics_interpolated_changed()
 	}
 }
 
-PackedStringArray XROrigin3D::get_configuration_warnings() const { return PackedStringArray(); }
+PackedStringArray XROrigin3D::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+	if (is_visible() && is_inside_tree()) {
+		bool has_xr_camera = false;
+		for (int i = 0; i < get_child_count(); i++) {
+			const Camera3D* camera = dynamic_cast<const Camera3D*>(get_child(i));
+			if (camera && camera->is_xr_enabled()) {
+				has_xr_camera = true;
+				break;
+			}
+		}
+		if (!has_xr_camera) {
+			warnings.push_back(RTR("XROrigin3D requires an XR-enabled Camera3D child node."));
+		}
+	}
+	return warnings;
+}
 
 void XRNode3D::_set_has_tracking_data(bool) {}
-
-void XRCamera3D::_unbind_tracker() {}
-
-void XRCamera3D::_bind_tracker() {}

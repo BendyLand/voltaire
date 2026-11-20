@@ -32,13 +32,13 @@
 #include "core/io/stream_peer_tcp.h"
 #include "stream_peer_mbedtls.h"
 
-int StreamPeerMbedTLS::bio_send(void* ctx, const unsigned char* buf, size_t len)
+int StreamPeerTLS::Data::bio_send(void* ctx, const unsigned char* buf, size_t len)
 {
 	if (buf == nullptr || len == 0) {
 		return 0;
 	}
 
-	StreamPeerMbedTLS* sp = static_cast<StreamPeerMbedTLS*>(ctx);
+	StreamPeerTLS::Data* sp = static_cast<StreamPeerTLS::Data*>(ctx);
 
 	ERR_FAIL_NULL_V(sp, 0);
 
@@ -53,13 +53,13 @@ int StreamPeerMbedTLS::bio_send(void* ctx, const unsigned char* buf, size_t len)
 	return sent;
 }
 
-int StreamPeerMbedTLS::bio_recv(void* ctx, unsigned char* buf, size_t len)
+int StreamPeerTLS::Data::bio_recv(void* ctx, unsigned char* buf, size_t len)
 {
 	if (buf == nullptr || len == 0) {
 		return 0;
 	}
 
-	StreamPeerMbedTLS* sp = static_cast<StreamPeerMbedTLS*>(ctx);
+	StreamPeerTLS::Data* sp = static_cast<StreamPeerTLS::Data*>(ctx);
 
 	ERR_FAIL_NULL_V(sp, 0);
 
@@ -74,14 +74,14 @@ int StreamPeerMbedTLS::bio_recv(void* ctx, unsigned char* buf, size_t len)
 	return got;
 }
 
-void StreamPeerMbedTLS::_cleanup()
+void StreamPeerTLS::Data::cleanup()
 {
 	tls_ctx->clear();
 	base = Ref<StreamPeer>();
 	status = STATUS_DISCONNECTED;
 }
 
-Error StreamPeerMbedTLS::_do_handshake()
+Error StreamPeerTLS::Data::do_handshake(StreamPeerTLS* p_owner)
 {
 	int ret = mbedtls_ssl_handshake(tls_ctx->get_context());
 	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
@@ -92,7 +92,7 @@ Error StreamPeerMbedTLS::_do_handshake()
 		// An error occurred.
 		ERR_PRINT("TLS handshake error: " + itos(ret));
 		TLSContextMbedTLS::print_mbedtls_error(ret);
-		disconnect_from_stream();
+		p_owner->disconnect_from_stream();
 		status = STATUS_ERROR;
 		return FAILED;
 	}
@@ -101,53 +101,53 @@ Error StreamPeerMbedTLS::_do_handshake()
 	return OK;
 }
 
-Error StreamPeerMbedTLS::connect_to_stream(
+Error StreamPeerTLS::connect_to_stream(
 	Ref<StreamPeer> p_base, const String& p_common_name, Ref<TLSOptions> p_options)
 {
 	ERR_FAIL_COND_V(p_base.is_null(), ERR_INVALID_PARAMETER);
 
-	Error err = tls_ctx->init_client(MBEDTLS_SSL_TRANSPORT_STREAM, p_common_name,
+	Error err = data->tls_ctx->init_client(MBEDTLS_SSL_TRANSPORT_STREAM, p_common_name,
 		p_options.is_valid() ? p_options : TLSOptions::client());
 	ERR_FAIL_COND_V(err != OK, err);
 
-	base = p_base;
-	mbedtls_ssl_set_bio(tls_ctx->get_context(), this, bio_send, bio_recv, nullptr);
+	data->base = p_base;
+	mbedtls_ssl_set_bio(data->tls_ctx->get_context(), data, Data::bio_send, Data::bio_recv, nullptr);
 
-	status = STATUS_HANDSHAKING;
+	data->status = STATUS_HANDSHAKING;
 
-	if (_do_handshake() != OK) {
-		status = STATUS_ERROR_HOSTNAME_MISMATCH;
+	if (data->do_handshake(this) != OK) {
+		data->status = STATUS_ERROR_HOSTNAME_MISMATCH;
 		return FAILED;
 	}
 
 	return OK;
 }
 
-Error StreamPeerMbedTLS::accept_stream(Ref<StreamPeer> p_base, Ref<TLSOptions> p_options)
+Error StreamPeerTLS::accept_stream(Ref<StreamPeer> p_base, Ref<TLSOptions> p_options)
 {
 	ERR_FAIL_COND_V(p_base.is_null(), ERR_INVALID_PARAMETER);
 	ERR_FAIL_COND_V(p_options.is_null() || !p_options->is_server(), ERR_INVALID_PARAMETER);
 
-	Error err = tls_ctx->init_server(MBEDTLS_SSL_TRANSPORT_STREAM, p_options);
+	Error err = data->tls_ctx->init_server(MBEDTLS_SSL_TRANSPORT_STREAM, p_options);
 	ERR_FAIL_COND_V(err != OK, err);
 
-	base = p_base;
+	data->base = p_base;
 
-	mbedtls_ssl_set_bio(tls_ctx->get_context(), this, bio_send, bio_recv, nullptr);
+	mbedtls_ssl_set_bio(data->tls_ctx->get_context(), data, Data::bio_send, Data::bio_recv, nullptr);
 
-	status = STATUS_HANDSHAKING;
+	data->status = STATUS_HANDSHAKING;
 
-	if (_do_handshake() != OK) {
+	if (data->do_handshake(this) != OK) {
 		return FAILED;
 	}
 
-	status = STATUS_CONNECTED;
+	data->status = STATUS_CONNECTED;
 	return OK;
 }
 
-Error StreamPeerMbedTLS::put_data(const uint8_t* p_data, int p_bytes)
+Error StreamPeerTLS::put_data(const uint8_t* p_data, int p_bytes)
 {
-	ERR_FAIL_COND_V(status != STATUS_CONNECTED, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V(data->status != STATUS_CONNECTED, ERR_UNCONFIGURED);
 
 	Error err;
 	int sent = 0;
@@ -166,9 +166,9 @@ Error StreamPeerMbedTLS::put_data(const uint8_t* p_data, int p_bytes)
 	return OK;
 }
 
-Error StreamPeerMbedTLS::put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent)
+Error StreamPeerTLS::put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent)
 {
-	ERR_FAIL_COND_V(status != STATUS_CONNECTED, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V(data->status != STATUS_CONNECTED, ERR_UNCONFIGURED);
 
 	r_sent = 0;
 
@@ -177,7 +177,8 @@ Error StreamPeerMbedTLS::put_partial_data(const uint8_t* p_data, int p_bytes, in
 	}
 
 	do {
-		int ret = mbedtls_ssl_write(tls_ctx->get_context(), &p_data[r_sent], p_bytes - r_sent);
+		int ret =
+			mbedtls_ssl_write(data->tls_ctx->get_context(), &p_data[r_sent], p_bytes - r_sent);
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 			// Non blocking IO.
 			break;
@@ -199,9 +200,9 @@ Error StreamPeerMbedTLS::put_partial_data(const uint8_t* p_data, int p_bytes, in
 	return OK;
 }
 
-Error StreamPeerMbedTLS::get_data(uint8_t* p_buffer, int p_bytes)
+Error StreamPeerTLS::get_data(uint8_t* p_buffer, int p_bytes)
 {
-	ERR_FAIL_COND_V(status != STATUS_CONNECTED, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V(data->status != STATUS_CONNECTED, ERR_UNCONFIGURED);
 
 	Error err;
 
@@ -220,15 +221,15 @@ Error StreamPeerMbedTLS::get_data(uint8_t* p_buffer, int p_bytes)
 	return OK;
 }
 
-Error StreamPeerMbedTLS::get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received)
+Error StreamPeerTLS::get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received)
 {
-	ERR_FAIL_COND_V(status != STATUS_CONNECTED, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V(data->status != STATUS_CONNECTED, ERR_UNCONFIGURED);
 
 	r_received = 0;
 
 	do {
-		int ret =
-			mbedtls_ssl_read(tls_ctx->get_context(), &p_buffer[r_received], p_bytes - r_received);
+		int ret = mbedtls_ssl_read(
+			data->tls_ctx->get_context(), &p_buffer[r_received], p_bytes - r_received);
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 			// Non blocking IO.
 			break;
@@ -254,20 +255,20 @@ Error StreamPeerMbedTLS::get_partial_data(uint8_t* p_buffer, int p_bytes, int& r
 	return OK;
 }
 
-void StreamPeerMbedTLS::poll()
+void StreamPeerTLS::poll()
 {
-	ERR_FAIL_COND(status != STATUS_CONNECTED && status != STATUS_HANDSHAKING);
-	ERR_FAIL_COND(base.is_null());
+	ERR_FAIL_COND(data->status != STATUS_CONNECTED && data->status != STATUS_HANDSHAKING);
+	ERR_FAIL_COND(data->base.is_null());
 
-	if (status == STATUS_HANDSHAKING) {
-		_do_handshake();
+	if (data->status == STATUS_HANDSHAKING) {
+		data->do_handshake(this);
 		return;
 	}
 
 	// We could pass nullptr as second parameter, but some behavior sanitizers don't seem to like
 	// that. Passing a 1 byte buffer to workaround it.
 	uint8_t byte;
-	int ret = mbedtls_ssl_read(tls_ctx->get_context(), &byte, 0);
+	int ret = mbedtls_ssl_read(data->tls_ctx->get_context(), &byte, 0);
 
 	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 		// Nothing to read/write (non blocking IO)
@@ -283,47 +284,65 @@ void StreamPeerMbedTLS::poll()
 		return;
 	}
 
-	Ref<StreamPeerTCP> tcp = base;
+	Ref<StreamPeerTCP> tcp = data->base;
 	if (tcp.is_valid() && tcp->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
 		disconnect_from_stream();
 		return;
 	}
 }
 
-int StreamPeerMbedTLS::get_available_bytes() const
+int StreamPeerTLS::get_available_bytes() const
 {
-	ERR_FAIL_COND_V(status != STATUS_CONNECTED, 0);
+	ERR_FAIL_COND_V(data->status != STATUS_CONNECTED, 0);
 
-	return mbedtls_ssl_get_bytes_avail(tls_ctx->get_context());
+	return mbedtls_ssl_get_bytes_avail(data->tls_ctx->get_context());
 }
 
-StreamPeerMbedTLS::StreamPeerMbedTLS() { tls_ctx.instantiate(); }
-
-StreamPeerMbedTLS::~StreamPeerMbedTLS() { disconnect_from_stream(); }
-
-void StreamPeerMbedTLS::disconnect_from_stream()
+StreamPeerTLS::StreamPeerTLS()
 {
-	if (status != STATUS_CONNECTED && status != STATUS_HANDSHAKING) {
+	data = memnew(Data);
+}
+
+StreamPeerTLS::~StreamPeerTLS()
+{
+	if (data) {
+		disconnect_from_stream();
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
+void StreamPeerTLS::disconnect_from_stream()
+{
+	if (data->status != STATUS_CONNECTED && data->status != STATUS_HANDSHAKING) {
 		return;
 	}
 
-	Ref<StreamPeerTCP> tcp = base;
+	Ref<StreamPeerTCP> tcp = data->base;
 	if (tcp.is_valid() && tcp->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
 		// We are still connected on the socket, try to send close notify.
-		mbedtls_ssl_close_notify(tls_ctx->get_context());
+		mbedtls_ssl_close_notify(data->tls_ctx->get_context());
 	}
 
-	_cleanup();
+	data->cleanup();
 }
 
-StreamPeerMbedTLS::Status StreamPeerMbedTLS::get_status() const { return status; }
+StreamPeerTLS::Status StreamPeerTLS::get_status() const
+{
+	return data->status;
+}
 
-Ref<StreamPeer> StreamPeerMbedTLS::get_stream() const { return base; }
+Ref<StreamPeer> StreamPeerTLS::get_stream() const
+{
+	return data->base;
+}
 
-StreamPeerTLS* StreamPeerMbedTLS::_create_func(bool p_notify_postinitialize) {}
+StreamPeerTLS* StreamPeerTLS::create(bool p_notify_postinitialize)
+{
+	return memnew(StreamPeerTLS);
+}
 
-void StreamPeerMbedTLS::initialize_tls() { _create = _create_func; }
-
-void StreamPeerMbedTLS::finalize_tls() { _create = nullptr; }
-
-
+bool StreamPeerTLS::is_available()
+{
+	return true;
+}

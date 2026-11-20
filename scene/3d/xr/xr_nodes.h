@@ -31,40 +31,8 @@
 
 #pragma once
 
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/node_3d.h"
 #include "servers/xr/xr_positional_tracker.h"
-
-/*
-	XRCamera is a subclass of camera which will register itself with its parent XROrigin and as a
-   result is automatically positioned
-*/
-
-class XRCamera3D : public Camera3D
-{
-protected:
-	// The name and pose for our HMD tracker is currently the only hardcoded bit.
-	// If we ever are able to support multiple HMDs we may need to make this settable.
-	String tracker_name = "head";
-	String pose_name = SceneString(default_);
-	Ref<XRPositionalTracker> tracker;
-
-	void _bind_tracker();
-	void _unbind_tracker();
-	void _changed_tracker(const String& p_tracker_name, int p_tracker_type);
-	void _removed_tracker(const String& p_tracker_name, int p_tracker_type);
-	void _pose_changed(const Ref<XRPose>& p_pose);
-
-public:
-	PackedStringArray get_configuration_warnings() const override;
-
-	virtual Vector3 project_local_ray_normal(const Point2& p_pos) const override;
-	virtual Point2 unproject_position(const Vector3& p_pos) const override;
-	virtual Vector3 project_position(const Point2& p_point, real_t p_z_depth) const override;
-	virtual Vector<Plane> get_frustum() const override;
-
-	XRCamera3D();
-	~XRCamera3D();
-};
 
 /*
 	XRNode3D is a helper node that implements binding to a tracker.

@@ -35,18 +35,20 @@
 
 class DTLSServer : public RefCounted
 {
-protected:
-	static inline DTLSServer* (*_create)(bool p_notify_postinitialize) = nullptr;
+public:
+	struct Data;
 
-	static inline bool available = false;
+private:
+	Data* data = nullptr;
 
 public:
 	static bool is_available();
 	static DTLSServer* create(bool p_notify_postinitialize = true);
 
-	virtual Error setup(Ref<TLSOptions> p_options) = 0;
-	virtual void stop() = 0;
-	virtual Ref<PacketPeerDTLS> take_connection(Ref<PacketPeerUDP> p_peer) = 0;
+	Error setup(Ref<TLSOptions> p_options);
+	void stop();
+	Ref<PacketPeerDTLS> take_connection(Ref<PacketPeerUDP> p_peer);
+
+	DTLSServer();
+	~DTLSServer();
 };
-
-

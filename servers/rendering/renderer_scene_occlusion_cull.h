@@ -43,6 +43,11 @@ class RendererSceneOcclusionCull final
 public:
 	class HZBuffer
 	{
+	public:
+		static const int TILE_SIZE = 4;
+		static const int TILE_RAYS = TILE_SIZE * TILE_SIZE;
+		struct CameraRayThreadData;
+
 	protected:
 		LocalVector<float> data;
 		LocalVector<Size2i> sizes;
@@ -55,6 +60,13 @@ public:
 
 		uint64_t occlusion_frame = 0;
 		Size2i occlusion_buffer_size;
+
+		Size2i tile_grid_size;
+
+		void _clear_mips();
+		void _resize_mips(const Size2i &p_size);
+		void _camera_rays_threaded(uint32_t p_thread, const CameraRayThreadData *p_data);
+		void _generate_camera_rays(const CameraRayThreadData *p_data, int p_from, int p_to);
 
 		_FORCE_INLINE_ bool _is_occluded(const real_t p_bounds[6], const Vector3 &p_cam_position, const Transform3D &p_cam_inv_transform, const Projection &p_cam_projection, real_t p_near, bool p_is_orthogonal) const {
 			if (is_empty()) {
@@ -160,12 +172,20 @@ public:
 	public:
 		static bool occlusion_jitter_enabled;
 
+		unsigned int camera_rays_tile_count = 0;
+		uint8_t *camera_rays_unaligned_buffer = nullptr;
+		void *camera_rays = nullptr;
+		LocalVector<uint32_t> camera_ray_masks;
+		RID scenario_rid;
+
 		_FORCE_INLINE_ bool is_empty() const {
 			return sizes.is_empty();
 		}
 
-		virtual void clear();
-		virtual void resize(const Size2i &p_size);
+		void clear();
+		void resize(const Size2i &p_size);
+		void sort_rays(const Vector3 &p_camera_dir, bool p_orthogonal);
+		void update_camera_rays(const Transform3D &p_cam_transform, const Vector3 &p_near_bottom_left, const Vector2 &p_near_extents, real_t p_z_far, bool p_cam_orthogonal);
 
 		void update_mips();
 
@@ -202,7 +222,7 @@ public:
 		RID get_debug_texture();
 		const Size2i &get_occlusion_buffer_size() const { return occlusion_buffer_size; }
 
-		virtual ~HZBuffer() {}
+		~HZBuffer();
 	};
 
 private:

@@ -107,7 +107,7 @@ Error TLSContextMbedTLS::init_server(
 	ERR_FAIL_COND_V(p_options.is_null() || !p_options->is_server(), ERR_INVALID_PARAMETER);
 
 	// Check key and certificate(s)
-	Ref<CryptoKeyMbedTLS> pkey = p_options->get_private_key();
+	Ref<CryptoKey> pkey = p_options->get_private_key();
 	certs = p_options->get_own_certificate();
 	ERR_FAIL_COND_V(pkey.is_null() || certs.is_null(), ERR_INVALID_PARAMETER);
 
@@ -116,22 +116,22 @@ Error TLSContextMbedTLS::init_server(
 	ERR_FAIL_COND_V(err != OK, err);
 
 	// Locking key and certificate(s)
-	certs->lock();
+	certs->get_data()->lock();
 
 	// Adding key and certificate
-	int ret = mbedtls_pk_copy_from_psa(pkey->get_key_id(), &pk);
+	int ret = mbedtls_pk_copy_from_psa(pkey->get_data()->pk_slot, &pk);
 	if (ret != 0) {
 		clear();
 		ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, "Failed to import key " + itos(ret));
 	}
-	ret = mbedtls_ssl_conf_own_cert(&conf, certs->get_context(), &pk);
+	ret = mbedtls_ssl_conf_own_cert(&conf, &certs->get_data()->cert, &pk);
 	if (ret != 0) {
 		clear();
 		ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, "Invalid cert/key combination " + itos(ret));
 	}
 	// Adding CA chain if available.
-	if (certs->get_context()->next) {
-		mbedtls_ssl_conf_ca_chain(&conf, certs->get_context()->next, nullptr);
+	if (certs->get_data()->cert.next) {
+		mbedtls_ssl_conf_ca_chain(&conf, certs->get_data()->cert.next, nullptr);
 	}
 	// DTLS Cookies
 	if (p_transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
@@ -174,17 +174,17 @@ Error TLSContextMbedTLS::init_client(
 		mbedtls_ssl_set_hostname(&tls, cn.utf8().get_data());
 	}
 
-	Ref<X509CertificateMbedTLS> cas;
+	Ref<X509Certificate> cas;
 
 	if (p_options->get_trusted_ca_chain().is_valid()) {
 		// Locking CA certificates
 		certs = p_options->get_trusted_ca_chain();
-		certs->lock();
+		certs->get_data()->lock();
 		cas = certs;
 	}
 	else {
 		// Fall back to default certificates (no need to lock those).
-		cas = CryptoMbedTLS::get_default_certificates();
+		cas = MbedTLSModule::get_default_certificates();
 		if (cas.is_null()) {
 			clear();
 			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "SSL module failed to initialize!");
@@ -192,7 +192,7 @@ Error TLSContextMbedTLS::init_client(
 	}
 
 	// Set valid CAs
-	mbedtls_ssl_conf_ca_chain(&conf, cas->get_context(), nullptr);
+	mbedtls_ssl_conf_ca_chain(&conf, &cas->get_data()->cert, nullptr);
 	mbedtls_ssl_setup(&tls, &conf);
 	return OK;
 }
@@ -207,7 +207,7 @@ void TLSContextMbedTLS::clear()
 	mbedtls_pk_free(&pk);
 	// Unlock certificates
 	if (certs.is_valid()) {
-		certs->unlock();
+		certs->get_data()->unlock();
 	}
 	certs = Ref<X509Certificate>();
 	cookies = Ref<CookieContextMbedTLS>();
@@ -223,5 +223,3 @@ mbedtls_ssl_context* TLSContextMbedTLS::get_context()
 TLSContextMbedTLS::TLSContextMbedTLS() {}
 
 TLSContextMbedTLS::~TLSContextMbedTLS() { clear(); }
-
-

@@ -32,47 +32,51 @@
 #include "dtls_server_mbedtls.h"
 #include "packet_peer_mbed_dtls.h"
 
-Error DTLSServerMbedTLS::setup(Ref<TLSOptions> p_options)
+Error DTLSServer::setup(Ref<TLSOptions> p_options)
 {
 	ERR_FAIL_COND_V(p_options.is_null() || !p_options->is_server(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(cookies->setup() != OK, ERR_ALREADY_IN_USE);
-	tls_options = p_options;
+	ERR_FAIL_COND_V(data->cookies->setup() != OK, ERR_ALREADY_IN_USE);
+	data->tls_options = p_options;
 	return OK;
 }
 
-void DTLSServerMbedTLS::stop() { cookies->clear(); }
-
-Ref<PacketPeerDTLS> DTLSServerMbedTLS::take_connection(Ref<PacketPeerUDP> p_udp_peer)
+void DTLSServer::stop()
 {
-	Ref<PacketPeerMbedDTLS> out;
+	data->cookies->clear();
+}
 
-	ERR_FAIL_COND_V(tls_options.is_null(), out);
+Ref<PacketPeerDTLS> DTLSServer::take_connection(Ref<PacketPeerUDP> p_udp_peer)
+{
+	Ref<PacketPeerDTLS> out;
+
+	ERR_FAIL_COND_V(data->tls_options.is_null(), out);
 	ERR_FAIL_COND_V(p_udp_peer.is_null(), out);
 
 	out.instantiate();
-	out->accept_peer(p_udp_peer, tls_options, cookies);
+	out->get_data()->accept_peer(p_udp_peer, data->tls_options, data->cookies);
 	return out;
 }
 
-DTLSServer* DTLSServerMbedTLS::_create_func(bool p_notify_postinitialize)
+DTLSServer* DTLSServer::create(bool p_notify_postinitialize)
 {
-	return static_cast<DTLSServer*>(memnew(DTLSServerMbedTLS));
+	return memnew(DTLSServer);
 }
 
-void DTLSServerMbedTLS::initialize()
+bool DTLSServer::is_available()
 {
-	_create = _create_func;
-	available = true;
+	return true;
 }
 
-void DTLSServerMbedTLS::finalize()
+DTLSServer::DTLSServer()
 {
-	_create = nullptr;
-	available = false;
+	data = memnew(Data);
 }
 
-DTLSServerMbedTLS::DTLSServerMbedTLS() { cookies.instantiate(); }
-
-DTLSServerMbedTLS::~DTLSServerMbedTLS() { stop(); }
-
-
+DTLSServer::~DTLSServer()
+{
+	if (data) {
+		stop();
+		memdelete(data);
+		data = nullptr;
+	}
+}

@@ -31,10 +31,32 @@
 
 #include "core/config/engine.h"
 #include "parallax_layer.h"
-#include "scene/2d/parallax_background.h"
+#include "scene/main/canvas_layer.h"
 #include "servers/rendering/renderer.h"
 
+void ParallaxLayer::set_motion_scale(const Size2& p_scale)
+{
+	motion_scale = p_scale;
+	CanvasLayer* pb = dynamic_cast<CanvasLayer*>(get_parent());
+	if (pb && pb->is_parallax_enabled() && is_inside_tree()) {
+		Vector2 ofs = pb->get_final_offset();
+		real_t scale = pb->get_scroll_scale();
+		set_base_offset_and_scale(ofs, scale);
+	}
+}
+
 Size2 ParallaxLayer::get_motion_scale() const { return motion_scale; }
+
+void ParallaxLayer::set_motion_offset(const Size2& p_offset)
+{
+	motion_offset = p_offset;
+	CanvasLayer* pb = dynamic_cast<CanvasLayer*>(get_parent());
+	if (pb && pb->is_parallax_enabled() && is_inside_tree()) {
+		Vector2 ofs = pb->get_final_offset();
+		real_t scale = pb->get_scroll_scale();
+		set_base_offset_and_scale(ofs, scale);
+	}
+}
 
 Size2 ParallaxLayer::get_motion_offset() const { return motion_offset; }
 
@@ -94,6 +116,17 @@ void ParallaxLayer::set_base_offset_and_scale(const Point2& p_offset, real_t p_s
 	_update_mirroring();
 }
 
+PackedStringArray ParallaxLayer::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node2D::get_configuration_warnings();
 
+	const CanvasLayer* pb = dynamic_cast<const CanvasLayer*>(get_parent());
+	if (!pb || !pb->is_parallax_enabled()) {
+		warnings.push_back(
+			RTR("ParallaxLayer node only works when set as child of a parallax CanvasLayer node."));
+	}
+
+	return warnings;
+}
 
 void ParallaxLayer::_update_mirroring() {}

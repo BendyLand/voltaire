@@ -33,7 +33,6 @@
 
 #include "scene/main/multiplayer_api.h"
 
-class SceneMultiplayer;
 class SceneCacheInterface;
 class SceneReplicationInterface;
 class Node;
@@ -79,7 +78,7 @@ private:
 		NETWORK_NAME_ID_COMPRESSION_16,
 	};
 
-	SceneMultiplayer* multiplayer = nullptr;
+	MultiplayerAPI* multiplayer = nullptr;
 	SceneCacheInterface* multiplayer_cache = nullptr;
 	SceneReplicationInterface* multiplayer_replicator = nullptr;
 
@@ -97,7 +96,7 @@ protected:
 public:
 	void process_rpc(int p_from, const uint8_t* p_packet, int p_packet_len);
 
-	SceneRPCInterface(SceneMultiplayer* p_multiplayer, SceneCacheInterface* p_cache,
+	SceneRPCInterface(MultiplayerAPI* p_multiplayer, SceneCacheInterface* p_cache,
 		SceneReplicationInterface* p_replicator)
 	{
 		multiplayer = p_multiplayer;

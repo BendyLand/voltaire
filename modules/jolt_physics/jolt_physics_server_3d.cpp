@@ -49,7 +49,6 @@
 #include "shapes/jolt_sphere_shape_3d.h"
 #include "shapes/jolt_world_boundary_shape_3d.h"
 #include "spaces/jolt_job_system.h"
-#include "spaces/jolt_physics_direct_space_state_3d.h"
 #include "spaces/jolt_space_3d.h"
 #include "spaces/jolt_temp_allocator.h"
 
@@ -59,6 +58,45 @@ JoltPhysicsServer3D::JoltPhysicsServer3D(bool p_on_separate_thread)
 }
 
 JoltPhysicsServer3D::~JoltPhysicsServer3D() = default;
+
+RID JoltPhysicsServer3D::shape_create(PS3DE::ShapeType p_shape)
+{
+	switch (p_shape) {
+	case PS3DE::SHAPE_WORLD_BOUNDARY:
+		return world_boundary_shape_create();
+	case PS3DE::SHAPE_SEPARATION_RAY:
+		return separation_ray_shape_create();
+	case PS3DE::SHAPE_SPHERE:
+		return sphere_shape_create();
+	case PS3DE::SHAPE_BOX:
+		return box_shape_create();
+	case PS3DE::SHAPE_CAPSULE:
+		return capsule_shape_create();
+	case PS3DE::SHAPE_CYLINDER:
+		return cylinder_shape_create();
+	case PS3DE::SHAPE_CONVEX_POLYGON:
+		return convex_polygon_shape_create();
+	case PS3DE::SHAPE_CONCAVE_POLYGON:
+		return concave_polygon_shape_create();
+	case PS3DE::SHAPE_HEIGHTMAP:
+		return heightmap_shape_create();
+	case PS3DE::SHAPE_CUSTOM:
+		return custom_shape_create();
+	default:
+		return RID();
+	}
+}
+
+bool JoltPhysicsServer3D::_body_test_motion(RID p_body, PhysicsTestMotionParameters3D* rp_parameters,
+	const Ref<PhysicsTestMotionResult3D>& p_result)
+{
+	PS3DT::MotionResult* result_ptr = nullptr;
+	if (p_result.is_valid()) {
+		result_ptr = p_result->get_result_ptr();
+	}
+
+	return body_test_motion(p_body, rp_parameters->get_parameters(), result_ptr);
+}
 
 RID JoltPhysicsServer3D::world_boundary_shape_create()
 {

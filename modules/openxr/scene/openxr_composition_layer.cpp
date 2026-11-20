@@ -35,6 +35,7 @@
 #include "core/config/engine.h"
 #include "openxr_composition_layer.h"
 #include "platform/android/api/java_class_wrapper.h"
+#include "scene/3d/camera_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/xr/xr_nodes.h"
 #include "scene/main/viewport.h"
@@ -508,6 +509,19 @@ PackedStringArray OpenXRCompositionLayer::get_configuration_warnings() const
 	}
 
 	return warnings;
+}
+
+Camera3D* OpenXRCompositionLayer::_get_xrcamera3d_ancestor() const
+{
+	Node* parent = get_parent();
+	while (parent != nullptr) {
+		Camera3D* camera = dynamic_cast<Camera3D*>(parent);
+		if (camera != nullptr && camera->is_xr_enabled()) {
+			return camera;
+		}
+		parent = parent->get_parent();
+	}
+	return nullptr;
 }
 
 void OpenXRCompositionLayer::set_layer_viewport(SubViewport* p_viewport) {}

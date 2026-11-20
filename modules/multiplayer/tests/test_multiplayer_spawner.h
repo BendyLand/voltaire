@@ -41,7 +41,6 @@ namespace TestMultiplayerSpawner
 {
 class Wasp : public Node
 {
-
 	int _size = 0;
 
 public:
@@ -58,10 +57,6 @@ public:
 
 class SpawnWasps
 {
-protected:
-	{
-	}
-
 public:
 	Wasp* create_wasps(int p_size)
 	{
@@ -70,15 +65,7 @@ public:
 		return wasp;
 	}
 
-	Wasp* create_wasps_error(const Variant** p_args, int p_argcount, Callable::CallError& r_error)
-	{
-		r_error.error = Callable::CallError::CALL_ERROR_INVALID_ARGUMENT;
-		return nullptr;
-	}
-
 	int echo_size(int p_size) { return p_size; }
 };
 
 } // namespace TestMultiplayerSpawner
-
-

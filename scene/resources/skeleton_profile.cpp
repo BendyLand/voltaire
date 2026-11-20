@@ -150,12 +150,17 @@ bool SkeletonProfile::has_bone(const String& p_bone_name)
 	return is_found;
 }
 
-SkeletonProfile::SkeletonProfile() {}
-
-SkeletonProfile::~SkeletonProfile() {}
-
-SkeletonProfileHumanoid::SkeletonProfileHumanoid()
+Ref<SkeletonProfile> SkeletonProfile::create_humanoid()
 {
+	return Ref<SkeletonProfile>(memnew(SkeletonProfile(true)));
+}
+
+SkeletonProfile::SkeletonProfile(bool p_humanoid)
+{
+	if (!p_humanoid) {
+		return;
+	}
+
 	is_read_only = true;
 
 	root_bone = "Root";
@@ -535,7 +540,7 @@ SkeletonProfileHumanoid::SkeletonProfileHumanoid()
 	bones.write[55].group = "Body";
 }
 
-SkeletonProfileHumanoid::~SkeletonProfileHumanoid() {}
+SkeletonProfile::~SkeletonProfile() {}
 
 //////////////////////////////////////
 

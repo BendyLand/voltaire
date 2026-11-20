@@ -41,10 +41,6 @@ void initialize_raycast_module(ModuleInitializationLevel p_level)
 		return;
 	}
 
-#ifdef TOOLS_ENABLED
-	LightmapRaycasterEmbree::make_default_raycaster();
-	StaticRaycasterEmbree::make_default_raycaster();
-#endif
 	RaycastOcclusionCull::initialize();
 }
 
@@ -56,6 +52,6 @@ void uninitialize_raycast_module(ModuleInitializationLevel p_level)
 
 	RaycastOcclusionCull::finalize();
 #ifdef TOOLS_ENABLED
-	StaticRaycasterEmbree::free();
+	StaticRaycaster::free();
 #endif
 }

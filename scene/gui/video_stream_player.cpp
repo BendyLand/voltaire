@@ -57,7 +57,7 @@ bool VideoStreamPlayer::mix(AudioFrame* p_buffer, int p_frames)
 	return false;
 }
 
-// Called from main thread (e.g. VideoStreamPlaybackTheora::update).
+// Called from main thread (e.g. VideoStreamPlayback::update).
 int VideoStreamPlayer::_audio_mix_callback(void* p_udata, const float* p_data, int p_frames)
 {
 	ERR_FAIL_NULL_V(p_udata, 0);

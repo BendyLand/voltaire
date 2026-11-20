@@ -73,7 +73,6 @@
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "core/string/fuzzy_search.h"
-#include "core/string/optimized_translation.h"
 #include "core/string/translation.h"
 #include "core/string/translation_server.h"
 #include "register_core_types.h"

@@ -57,23 +57,39 @@
 // uncomment this if you want to see textures from all the process saved
 // #define DEBUG_TEXTURES
 
-void LightmapperRD::add_mesh(const MeshData& p_mesh)
+Ref<Lightmapper> Lightmapper::create()
+{
+	return Ref<Lightmapper>(memnew(Lightmapper));
+}
+
+Lightmapper::Lightmapper()
+{
+	rd_state = memnew(RDState);
+}
+
+Lightmapper::~Lightmapper()
+{
+	memdelete(rd_state);
+	rd_state = nullptr;
+}
+
+void Lightmapper::add_mesh(const MeshData& p_mesh)
 {
 	ERR_FAIL_COND(p_mesh.albedo_on_uv2.is_null() || p_mesh.albedo_on_uv2->is_empty());
 	ERR_FAIL_COND(p_mesh.emission_on_uv2.is_null() || p_mesh.emission_on_uv2->is_empty());
 	ERR_FAIL_COND(p_mesh.albedo_on_uv2->get_width() != p_mesh.emission_on_uv2->get_width());
 	ERR_FAIL_COND(p_mesh.albedo_on_uv2->get_height() != p_mesh.emission_on_uv2->get_height());
 	ERR_FAIL_COND(p_mesh.points.is_empty());
-	MeshInstance mi;
+	RDState::MeshInstance mi;
 	mi.data = p_mesh;
-	mesh_instances.push_back(mi);
+	rd_state->mesh_instances.push_back(mi);
 }
 
-void LightmapperRD::add_directional_light(const String& p_name, bool p_static,
+void Lightmapper::add_directional_light(const String& p_name, bool p_static,
 	const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
 	float p_angular_distance, float p_shadow_blur)
 {
-	Light l;
+	RDState::Light l;
 	l.type = LIGHT_TYPE_DIRECTIONAL;
 	l.direction[0] = p_direction.x;
 	l.direction[1] = p_direction.y;
@@ -86,19 +102,19 @@ void LightmapperRD::add_directional_light(const String& p_name, bool p_static,
 	l.static_bake = p_static;
 	l.size = Math::tan(Math::deg_to_rad(p_angular_distance));
 	l.shadow_blur = p_shadow_blur;
-	lights.push_back(l);
+	rd_state->lights.push_back(l);
 
-	LightMetadata md;
+	RDState::LightMetadata md;
 	md.name = p_name;
 	md.type = LIGHT_TYPE_DIRECTIONAL;
-	light_metadata.push_back(md);
+	rd_state->light_metadata.push_back(md);
 }
 
-void LightmapperRD::add_omni_light(const String& p_name, bool p_static, const Vector3& p_position,
+void Lightmapper::add_omni_light(const String& p_name, bool p_static, const Vector3& p_position,
 	const Color& p_color, float p_energy, float p_indirect_energy, float p_range,
 	float p_attenuation, float p_size, float p_shadow_blur)
 {
-	Light l;
+	RDState::Light l;
 	l.type = LIGHT_TYPE_OMNI;
 	l.position[0] = p_position.x;
 	l.position[1] = p_position.y;
@@ -113,20 +129,20 @@ void LightmapperRD::add_omni_light(const String& p_name, bool p_static, const Ve
 	l.static_bake = p_static;
 	l.size = p_size;
 	l.shadow_blur = p_shadow_blur;
-	lights.push_back(l);
+	rd_state->lights.push_back(l);
 
-	LightMetadata md;
+	RDState::LightMetadata md;
 	md.name = p_name;
 	md.type = LIGHT_TYPE_OMNI;
-	light_metadata.push_back(md);
+	rd_state->light_metadata.push_back(md);
 }
 
-void LightmapperRD::add_spot_light(const String& p_name, bool p_static, const Vector3& p_position,
+void Lightmapper::add_spot_light(const String& p_name, bool p_static, const Vector3& p_position,
 	const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
 	float p_range, float p_attenuation, float p_spot_angle, float p_spot_attenuation, float p_size,
 	float p_shadow_blur)
 {
-	Light l;
+	RDState::Light l;
 	l.type = LIGHT_TYPE_SPOT;
 	l.position[0] = p_position.x;
 	l.position[1] = p_position.y;
@@ -146,20 +162,20 @@ void LightmapperRD::add_spot_light(const String& p_name, bool p_static, const Ve
 	l.static_bake = p_static;
 	l.size = p_size;
 	l.shadow_blur = p_shadow_blur;
-	lights.push_back(l);
+	rd_state->lights.push_back(l);
 
-	LightMetadata md;
+	RDState::LightMetadata md;
 	md.name = p_name;
 	md.type = LIGHT_TYPE_SPOT;
-	light_metadata.push_back(md);
+	rd_state->light_metadata.push_back(md);
 }
 
-void LightmapperRD::add_area_light(const String& p_name, bool p_static, const Vector3& p_position,
+void Lightmapper::add_area_light(const String& p_name, bool p_static, const Vector3& p_position,
 	const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
 	float p_range, float p_attenuation, const Vector3& p_area_width, const Vector3& p_area_height,
 	float p_size, float p_shadow_blur, const Rect2& p_texture_rect, float p_max_mipmap)
 {
-	Light l;
+	RDState::Light l;
 	l.type = LIGHT_TYPE_AREA;
 	l.position[0] = p_position.x;
 	l.position[1] = p_position.y;
@@ -185,7 +201,6 @@ void LightmapperRD::add_area_light(const String& p_name, bool p_static, const Ve
 	l.shadow_blur = p_shadow_blur;
 
 	if (Renderer::get_current_rendering_method() == "gl_compatibility") {
-		// area light textures unsupported in compat
 		l.area_texture_rect[0] = 0.0;
 		l.area_texture_rect[1] = 0.0;
 		l.area_texture_rect[2] = 0.0;
@@ -198,33 +213,33 @@ void LightmapperRD::add_area_light(const String& p_name, bool p_static, const Ve
 		l.area_texture_rect[3] = p_texture_rect.size.y;
 	}
 	l.cos_spot_angle = p_max_mipmap;
-	lights.push_back(l);
+	rd_state->lights.push_back(l);
 
-	LightMetadata md;
+	RDState::LightMetadata md;
 	md.name = p_name;
 	md.type = LIGHT_TYPE_AREA;
-	light_metadata.push_back(md);
+	rd_state->light_metadata.push_back(md);
 }
 
-void LightmapperRD::add_area_light_atlas(
+void Lightmapper::add_area_light_atlas(
 	const Vector2i& p_size, int p_mipmap_count, const PackedByteArray& p_atlas_data)
 {
-	area_light_atlas.mipmap_count = p_mipmap_count;
-	area_light_atlas.size = p_size;
-	area_light_atlas.atlas_data = p_atlas_data;
+	rd_state->area_light_atlas.mipmap_count = p_mipmap_count;
+	rd_state->area_light_atlas.size = p_size;
+	rd_state->area_light_atlas.atlas_data = p_atlas_data;
 }
 
-void LightmapperRD::add_probe(const Vector3& p_position)
+void Lightmapper::add_probe(const Vector3& p_position)
 {
-	Probe probe;
+	RDState::Probe probe;
 	probe.position[0] = p_position.x;
 	probe.position[1] = p_position.y;
 	probe.position[2] = p_position.z;
 	probe.position[3] = 0;
-	probe_positions.push_back(probe);
+	rd_state->probe_positions.push_back(probe);
 }
 
-void LightmapperRD::_plot_triangle_into_triangle_index_list(int p_size, const Vector3i& p_ofs,
+void Lightmapper::RDState::_plot_triangle_into_triangle_index_list(int p_size, const Vector3i& p_ofs,
 	const AABB& p_bounds, const Vector3 p_points[3], uint32_t p_triangle_index,
 	LocalVector<TriangleSort>& p_triangles_sort, uint32_t p_grid_size)
 {
@@ -275,7 +290,7 @@ void LightmapperRD::_plot_triangle_into_triangle_index_list(int p_size, const Ve
 	}
 }
 
-void LightmapperRD::_sort_triangle_clusters(uint32_t p_cluster_size, uint32_t p_cluster_index,
+void Lightmapper::RDState::_sort_triangle_clusters(uint32_t p_cluster_size, uint32_t p_cluster_index,
 	uint32_t p_index_start, uint32_t p_count, LocalVector<TriangleSort>& p_triangle_sort,
 	LocalVector<ClusterAABB>& p_cluster_aabb)
 {
@@ -334,7 +349,7 @@ void LightmapperRD::_sort_triangle_clusters(uint32_t p_cluster_size, uint32_t p_
 	}
 }
 
-Lightmapper::BakeError LightmapperRD::_blit_meshes_into_atlas(int p_max_texture_size,
+Lightmapper::BakeError Lightmapper::RDState::_blit_meshes_into_atlas(int p_max_texture_size,
 	int p_denoiser_range, Vector<Ref<Image>>& albedo_images, Vector<Ref<Image>>& emission_images,
 	AABB& bounds, Size2i& atlas_size, int& atlas_slices, float p_supersampling_factor,
 	BakeStepFunc p_step_function, void* p_bake_userdata)
@@ -476,7 +491,7 @@ Lightmapper::BakeError LightmapperRD::_blit_meshes_into_atlas(int p_max_texture_
 	return BAKE_OK;
 }
 
-void LightmapperRD::_create_acceleration_structures(RenderingDevice* rd, Size2i atlas_size,
+void Lightmapper::RDState::_create_acceleration_structures(RenderingDevice* rd, Size2i atlas_size,
 	int atlas_slices, AABB& bounds, int grid_size, uint32_t p_cluster_size,
 	Vector<Probe>& p_probe_positions, GenerateProbes p_generate_probes,
 	Vector<int>& slice_triangle_count, Vector<int>& slice_seam_count, RID& vertex_buffer,
@@ -851,7 +866,7 @@ static Vector<RD::Uniform> dilate_or_denoise_common_uniforms(
 	return uniforms;
 }
 
-Error LightmapperRD::_store_pfm(RenderingDevice* p_rd, RID p_atlas_tex, int p_index,
+Error Lightmapper::RDState::_store_pfm(RenderingDevice* p_rd, RID p_atlas_tex, int p_index,
 	const Size2i& p_atlas_size, const String& p_name, bool p_shadowmask)
 {
 	Vector<uint8_t> data = p_rd->texture_get_data(p_atlas_tex, p_index);
@@ -872,7 +887,7 @@ Error LightmapperRD::_store_pfm(RenderingDevice* p_rd, RID p_atlas_tex, int p_in
 	return OK;
 }
 
-Ref<Image> LightmapperRD::_read_pfm(const String& p_name, bool p_shadowmask)
+Ref<Image> Lightmapper::RDState::_read_pfm(const String& p_name, bool p_shadowmask)
 {
 	Error err = OK;
 	Ref<FileAccess> file = FileAccess::open(p_name, FileAccess::READ, &err);
@@ -901,9 +916,10 @@ Ref<Image> LightmapperRD::_read_pfm(const String& p_name, bool p_shadowmask)
 	return img;
 }
 
-LightmapperRD::BakeError LightmapperRD::_denoise_oidn(RenderingDevice* p_rd, RID p_source_light_tex,
-	RID p_source_normal_tex, RID p_dest_light_tex, const Size2i& p_atlas_size, int p_atlas_slices,
-	bool p_bake_sh, bool p_shadowmask, const String& p_exe)
+Lightmapper::BakeError Lightmapper::RDState::_denoise_oidn(RenderingDevice* p_rd,
+	RID p_source_light_tex, RID p_source_normal_tex, RID p_dest_light_tex,
+	const Size2i& p_atlas_size, int p_atlas_slices, bool p_bake_sh, bool p_shadowmask,
+	const String& p_exe)
 {
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 
@@ -964,8 +980,7 @@ LightmapperRD::BakeError LightmapperRD::_denoise_oidn(RenderingDevice* p_rd, RID
 			const uint16_t* src = (const uint16_t*)old_data.ptr();
 			uint16_t* dst = (uint16_t*)new_data.ptrw();
 			for (uint32_t k = 0; k < count; k += 4) {
-				dst[k + 3] = src[k +
-3];
+				dst[k + 3] = src[k + 3];
 			}
 
 			p_rd->texture_update(p_dest_light_tex, index, new_data);
@@ -975,49 +990,52 @@ LightmapperRD::BakeError LightmapperRD::_denoise_oidn(RenderingDevice* p_rd, RID
 	return BAKE_OK;
 }
 
-int LightmapperRD::get_bake_texture_count() const { return lightmap_textures.size(); }
+int Lightmapper::get_bake_texture_count() const { return rd_state->lightmap_textures.size(); }
 
-Ref<Image> LightmapperRD::get_bake_texture(int p_index) const
+Ref<Image> Lightmapper::get_bake_texture(int p_index) const
 {
-	ERR_FAIL_INDEX_V(p_index, lightmap_textures.size(), Ref<Image>());
-	return lightmap_textures[p_index];
+	ERR_FAIL_INDEX_V(p_index, rd_state->lightmap_textures.size(), Ref<Image>());
+	return rd_state->lightmap_textures[p_index];
 }
 
-int LightmapperRD::get_shadowmask_texture_count() const { return shadowmask_textures.size(); }
-
-Ref<Image> LightmapperRD::get_shadowmask_texture(int p_index) const
+int Lightmapper::get_shadowmask_texture_count() const
 {
-	ERR_FAIL_INDEX_V(p_index, shadowmask_textures.size(), Ref<Image>());
-	return shadowmask_textures[p_index];
+	return rd_state->shadowmask_textures.size();
 }
 
-int LightmapperRD::get_bake_mesh_count() const { return mesh_instances.size(); }
-
-Rect2 LightmapperRD::get_bake_mesh_uv_scale(int p_index) const
+Ref<Image> Lightmapper::get_shadowmask_texture(int p_index) const
 {
-	ERR_FAIL_COND_V(lightmap_textures.is_empty(), Rect2());
+	ERR_FAIL_INDEX_V(p_index, rd_state->shadowmask_textures.size(), Ref<Image>());
+	return rd_state->shadowmask_textures[p_index];
+}
+
+int Lightmapper::get_bake_mesh_count() const { return rd_state->mesh_instances.size(); }
+
+Rect2 Lightmapper::get_bake_mesh_uv_scale(int p_index) const
+{
+	ERR_FAIL_COND_V(rd_state->lightmap_textures.is_empty(), Rect2());
 	Rect2 uv_ofs;
-	Vector2 atlas_size =
-		Vector2(lightmap_textures[0]->get_width(), lightmap_textures[0]->get_height());
-	uv_ofs.position = Vector2(mesh_instances[p_index].offset) / atlas_size;
-	uv_ofs.size = Vector2(mesh_instances[p_index].data.albedo_on_uv2->get_width(),
-					  mesh_instances[p_index].data.albedo_on_uv2->get_height()) /
+	Vector2 atlas_size = Vector2(
+		rd_state->lightmap_textures[0]->get_width(), rd_state->lightmap_textures[0]->get_height());
+	uv_ofs.position = Vector2(rd_state->mesh_instances[p_index].offset) / atlas_size;
+	uv_ofs.size = Vector2(rd_state->mesh_instances[p_index].data.albedo_on_uv2->get_width(),
+					  rd_state->mesh_instances[p_index].data.albedo_on_uv2->get_height()) /
 				  atlas_size;
 	return uv_ofs;
 }
 
-int LightmapperRD::get_bake_probe_count() const { return probe_positions.size(); }
+int Lightmapper::get_bake_probe_count() const { return rd_state->probe_positions.size(); }
 
-Vector<Color> LightmapperRD::get_bake_probe_sh(int p_probe) const
+Vector<Color> Lightmapper::get_bake_probe_sh(int p_probe) const
 {
-	ERR_FAIL_INDEX_V(p_probe, probe_positions.size(), Vector<Color>());
+	ERR_FAIL_INDEX_V(p_probe, rd_state->probe_positions.size(), Vector<Color>());
 	Vector<Color> ret;
 	ret.resize(9);
-	memcpy(ret.ptrw(), &probe_values[p_probe * 9], sizeof(Color) * 9);
+	memcpy(ret.ptrw(), &rd_state->probe_values[p_probe * 9], sizeof(Color) * 9);
 	return ret;
 }
 
-Lightmapper::BakeError LightmapperRD::bake(Lightmapper::BakeQuality p_quality, bool p_use_denoiser,
+Lightmapper::BakeError Lightmapper::bake(Lightmapper::BakeQuality p_quality, bool p_use_denoiser,
 	float p_denoiser_strength, int p_denoiser_range, int p_bounces, float p_bounce_indirect_energy,
 	float p_bias, int p_max_texture_size, bool p_bake_sh, bool p_texture_based,
 	bool p_generate_atlas, Lightmapper::GenerateProbes p_generate_probes,
@@ -1028,8 +1046,8 @@ Lightmapper::BakeError LightmapperRD::bake(Lightmapper::BakeQuality p_quality, b
 	return Lightmapper::BAKE_OK;
 }
 
-int LightmapperRD::get_bake_mesh_texture_slice(int p_slice) const { return 0; }
+int Lightmapper::get_bake_mesh_texture_slice(int p_slice) const { return 0; }
 
-Vector3 LightmapperRD::get_bake_probe_point(int p_probe) const { return Vector3(); }
+Vector3 Lightmapper::get_bake_probe_point(int p_probe) const { return Vector3(); }
 
 

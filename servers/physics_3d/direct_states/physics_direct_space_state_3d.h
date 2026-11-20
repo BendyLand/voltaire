@@ -36,29 +36,36 @@
 #include "servers/physics_3d/queries/physics_ray_query_parameters_3d.h"
 #include "servers/physics_3d/queries/physics_shape_query_parameters_3d.h"
 
-class PhysicsDirectSpaceState3D
+class JoltBody3D;
+class JoltSpace3D;
+
+class PhysicsDirectSpaceState3D final
 {
-private:
+	JoltSpace3D* space = nullptr;
+
 	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters3D* rp_shape_query);
 
-protected:
-
 public:
-	virtual bool intersect_ray(
+	PhysicsDirectSpaceState3D() = default;
+	explicit PhysicsDirectSpaceState3D(JoltSpace3D* p_space);
+
+	bool intersect_ray(
 		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result);
-	virtual int intersect_point(const PS3DT::PointParameters& p_parameters,
+	int intersect_point(const PS3DT::PointParameters& p_parameters,
 		PS3DT::ShapeResult* r_results, int p_result_max);
-	virtual int intersect_shape(const PS3DT::ShapeParameters& p_parameters,
+	int intersect_shape(const PS3DT::ShapeParameters& p_parameters,
 		PS3DT::ShapeResult* r_results, int p_result_max);
-	virtual bool cast_motion(const PS3DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
-		real_t& p_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr);
-	virtual bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
+	bool cast_motion(const PS3DT::ShapeParameters& p_parameters, real_t& r_closest_safe,
+		real_t& r_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr);
+	bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
 		int p_result_max, int& r_result_count);
-	virtual bool rest_info(
+	bool rest_info(
 		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info);
-	virtual Vector3 get_closest_point_to_object_volume(
-		RID p_object, const Vector3 p_point) const;
-	PhysicsDirectSpaceState3D();
+	Vector3 get_closest_point_to_object_volume(
+		RID p_object, Vector3 p_point) const;
+
+	bool body_test_motion(const JoltBody3D& p_body, const PS3DT::MotionParameters& p_parameters,
+		PS3DT::MotionResult* r_result) const;
+
+	JoltSpace3D& get_space() const { return *space; }
 };
-
-

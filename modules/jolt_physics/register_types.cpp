@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
-#include "jolt_globals.h"
-#include "jolt_physics_server_3d.h"
 #include "register_types.h"
+
+#include "jolt_globals.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 void uninitialize_jolt_physics_module(ModuleInitializationLevel p_level)
 {
@@ -40,6 +40,9 @@ void uninitialize_jolt_physics_module(ModuleInitializationLevel p_level)
 		return;
 	}
 
+	if (PhysicsServer3D::is_initialized()) {
+		PhysicsServer3D::finalize();
+	}
 	jolt_deinitialize();
 }
 

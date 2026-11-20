@@ -43,6 +43,8 @@ class GridMap;
 
 class GLTFDocument : public Resource
 {
+	friend class FBXDocument;
+
 public:
 	const int32_t JOINT_GROUP_SIZE = 4;
 
@@ -256,16 +258,16 @@ private:
 	static float get_max_component(const Color& p_color);
 
 public:
-	virtual Error append_from_file(const String& p_path, Ref<GLTFState> p_state,
+	Error append_from_file(const String& p_path, Ref<GLTFState> p_state,
 		uint32_t p_flags = 0, const String& p_base_path = String());
-	virtual Error append_from_buffer(const PackedByteArray& p_bytes, const String& p_base_path,
+	Error append_from_buffer(const PackedByteArray& p_bytes, const String& p_base_path,
 		Ref<GLTFState> p_state, uint32_t p_flags = 0);
-	virtual Error append_from_scene(Node* p_node, Ref<GLTFState> p_state, uint32_t p_flags = 0);
+	Error append_from_scene(Node* p_node, Ref<GLTFState> p_state, uint32_t p_flags = 0);
 
-	virtual Node* generate_scene(Ref<GLTFState> p_state, float p_bake_fps = 30.0f,
+	Node* generate_scene(Ref<GLTFState> p_state, float p_bake_fps = 30.0f,
 		bool p_trimming = false, bool p_remove_immutable_tracks = true);
-	virtual PackedByteArray generate_buffer(Ref<GLTFState> p_state);
-	virtual Error write_to_filesystem(Ref<GLTFState> p_state, const String& p_path);
+	PackedByteArray generate_buffer(Ref<GLTFState> p_state);
+	Error write_to_filesystem(Ref<GLTFState> p_state, const String& p_path);
 
 public:
 	Error _parse_gltf_state(Ref<GLTFState> p_state, const String& p_search_path);

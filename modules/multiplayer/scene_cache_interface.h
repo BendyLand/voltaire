@@ -34,12 +34,12 @@
 #include "core/types.h"
 
 class Node;
-class SceneMultiplayer;
+class MultiplayerAPI;
 
 class SceneCacheInterface : public RefCounted
 {
 private:
-	SceneMultiplayer* multiplayer = nullptr;
+	MultiplayerAPI* multiplayer = nullptr;
 
 	// path sent caches
 	struct NodeCache
@@ -65,7 +65,7 @@ private:
 	NodeCache& _track(Node* p_node);
 
 public:
-	SceneCacheInterface(SceneMultiplayer* p_multiplayer) { multiplayer = p_multiplayer; }
+	SceneCacheInterface(MultiplayerAPI* p_multiplayer) { multiplayer = p_multiplayer; }
 };
 
 

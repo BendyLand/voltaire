@@ -29,19 +29,196 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "raycast_occlusion_cull.h"
+
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/math/projection.h"
 #include "core/os/os.h"
-#include "raycast_occlusion_cull.h"
+#include "core/os/thread.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/hash_set.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/rid_owner.h"
+
+#include <embree4/rtcore.h>
 
 #ifdef __SSE2__
 #include <pmmintrin.h>
 #endif
 
-void RaycastOcclusionCull::RaycastHZBuffer::clear()
+using CameraRayTile = RTCRayHit16;
+
+struct RendererSceneOcclusionCull::HZBuffer::CameraRayThreadData
 {
-	HZBuffer::clear();
+	int thread_count;
+	float z_near;
+	float z_far;
+	Vector3 camera_dir;
+	Vector3 camera_pos;
+	Vector3 pixel_corner;
+	Vector3 pixel_u_interp;
+	Vector3 pixel_v_interp;
+	bool camera_orthogonal;
+	Size2i buffer_size;
+};
+
+namespace
+{
+struct InstanceID
+{
+	RID scenario;
+	RID instance;
+
+	static uint32_t hash(const InstanceID& p_ins)
+	{
+		uint32_t h = hash_murmur3_one_64(p_ins.scenario.get_id());
+		return hash_fmix32(hash_murmur3_one_64(p_ins.instance.get_id(), h));
+	}
+	bool operator==(const InstanceID& rhs) const
+	{
+		return instance == rhs.instance && rhs.scenario == scenario;
+	}
+
+	InstanceID() {}
+	InstanceID(RID s, RID i) : scenario(s), instance(i) {}
+};
+
+struct Occluder
+{
+	PackedVector3Array vertices;
+	PackedInt32Array indices;
+	HashSet<InstanceID, InstanceID> users;
+};
+
+struct OccluderInstance
+{
+	RID occluder;
+	LocalVector<uint32_t> indices;
+	LocalVector<float> xformed_vertices;
+	Transform3D xform;
+	bool enabled = true;
+	bool removed = false;
+};
+
+struct Scenario
+{
+	struct RaycastThreadData
+	{
+		CameraRayTile* rays = nullptr;
+		const uint32_t* masks;
+	};
+
+	struct TransformThreadData
+	{
+		uint32_t thread_count;
+		uint32_t vertex_count;
+		Transform3D xform;
+		const Vector3* read;
+		float* write = nullptr;
+	};
+
+	Thread* commit_thread = nullptr;
+	bool commit_done = true;
+	bool dirty = false;
+
+	RTCScene ebr_scene[2] = {nullptr, nullptr};
+	int current_scene_idx = 0;
+
+	HashMap<RID, OccluderInstance> instances;
+	HashSet<RID> dirty_instances;
+	LocalVector<RID> dirty_instances_array;
+	LocalVector<RID> removed_instances;
+
+	void _update_dirty_instance(int p_idx, RID* p_instances) {}
+
+	void _update_dirty_instance_thread(int p_idx, RID* p_instances)
+	{
+		_update_dirty_instance(p_idx, p_instances);
+	}
+
+	void _transform_vertices_range(
+		const Vector3* p_read, float* p_write, const Transform3D& p_xform, int p_from, int p_to)
+	{
+		float* floats_w = p_write + 3 * p_from;
+		for (int i = p_from; i < p_to; i++) {
+			const Vector3 p = p_xform.xform(p_read[i]);
+			floats_w[0] = p.x;
+			floats_w[1] = p.y;
+			floats_w[2] = p.z;
+			floats_w += 3;
+		}
+	}
+
+	void _transform_vertices_thread(uint32_t p_thread, TransformThreadData* p_data)
+	{
+		uint32_t vertex_total = p_data->vertex_count;
+		uint32_t total_threads = p_data->thread_count;
+		uint32_t from = p_thread * vertex_total / total_threads;
+		uint32_t to = (p_thread + 1 == total_threads)
+			? vertex_total
+			: ((p_thread + 1) * vertex_total / total_threads);
+		_transform_vertices_range(p_data->read, p_data->write, p_data->xform, from, to);
+	}
+
+	static void _commit_scene(void* p_ud)
+	{
+		Scenario* scenario = (Scenario*)p_ud;
+		int commit_idx = 1 - (scenario->current_scene_idx);
+		rtcCommitScene(scenario->ebr_scene[commit_idx]);
+		scenario->commit_done = true;
+	}
+
+	void free()
+	{
+		if (commit_thread) {
+			if (commit_thread->is_started()) {
+				commit_thread->wait_to_finish();
+			}
+			memdelete(commit_thread);
+			commit_thread = nullptr;
+		}
+
+		for (int i = 0; i < 2; i++) {
+			if (ebr_scene[i]) {
+				rtcReleaseScene(ebr_scene[i]);
+				ebr_scene[i] = nullptr;
+			}
+		}
+	}
+
+	void update() {}
+
+	void _raycast(uint32_t p_idx, const RaycastThreadData* p_raycast_data) const
+	{
+		RTCRayQueryContext context;
+		rtcInitRayQueryContext(&context);
+		RTCIntersectArguments args;
+		rtcInitIntersectArguments(&args);
+		args.flags = RTC_RAY_QUERY_FLAG_COHERENT;
+		args.context = &context;
+		rtcIntersect16((const int*)&p_raycast_data->masks[p_idx * RendererSceneOcclusionCull::HZBuffer::TILE_RAYS],
+			ebr_scene[current_scene_idx], &p_raycast_data->rays[p_idx], &args);
+	}
+
+	void raycast(CameraRayTile*, unsigned int const*, unsigned int) const {}
+};
+} // namespace
+
+struct RaycastOcclusionCull::Data
+{
+	RTCDevice ebr_device = nullptr;
+	RID_PtrOwner<Occluder> occluder_owner;
+	HashMap<RID, Scenario> scenarios;
+	HashMap<RID, HZBuffer> buffers;
+	RSE::ViewportOcclusionCullingBuildQuality build_quality =
+		RSE::VIEWPORT_OCCLUSION_BUILD_QUALITY_MEDIUM;
+	bool _jitter_enabled = false;
+};
+
+void RendererSceneOcclusionCull::HZBuffer::clear()
+{
+	_clear_mips();
 
 	if (camera_rays_unaligned_buffer) {
 		memfree(camera_rays_unaligned_buffer);
@@ -53,7 +230,7 @@ void RaycastOcclusionCull::RaycastHZBuffer::clear()
 	tile_grid_size = Size2i();
 }
 
-void RaycastOcclusionCull::RaycastHZBuffer::resize(const Size2i& p_size)
+void RendererSceneOcclusionCull::HZBuffer::resize(const Size2i& p_size)
 {
 	if (p_size == Size2i()) {
 		clear();
@@ -64,7 +241,7 @@ void RaycastOcclusionCull::RaycastHZBuffer::resize(const Size2i& p_size)
 		return; // Size didn't change
 	}
 
-	HZBuffer::resize(p_size);
+	_resize_mips(p_size);
 
 	tile_grid_size =
 		Size2i(Math::ceil(p_size.x / (float)TILE_SIZE), Math::ceil(p_size.y / (float)TILE_SIZE));
@@ -77,14 +254,14 @@ void RaycastOcclusionCull::RaycastHZBuffer::resize(const Size2i& p_size)
 	const int alignment = 64; // Embree requires ray packets to be 64-aligned
 	camera_rays_unaligned_buffer =
 		(uint8_t*)memalloc(camera_rays_tile_count * sizeof(CameraRayTile) + alignment);
-	camera_rays = (CameraRayTile*)(camera_rays_unaligned_buffer + alignment -
-								   (((uint64_t)camera_rays_unaligned_buffer) % alignment));
+	camera_rays = (void*)(camera_rays_unaligned_buffer + alignment -
+						  (((uint64_t)camera_rays_unaligned_buffer) % alignment));
 
 	camera_ray_masks.resize(camera_rays_tile_count * TILE_RAYS);
 	memset(camera_ray_masks.ptr(), ~0, camera_rays_tile_count * TILE_RAYS * sizeof(uint32_t));
 }
 
-void RaycastOcclusionCull::RaycastHZBuffer::_camera_rays_threaded(
+void RendererSceneOcclusionCull::HZBuffer::_camera_rays_threaded(
 	uint32_t p_thread, const CameraRayThreadData* p_data)
 {
 	uint32_t total_tiles = camera_rays_tile_count;
@@ -95,13 +272,14 @@ void RaycastOcclusionCull::RaycastHZBuffer::_camera_rays_threaded(
 	_generate_camera_rays(p_data, from, to);
 }
 
-void RaycastOcclusionCull::RaycastHZBuffer::_generate_camera_rays(
+void RendererSceneOcclusionCull::HZBuffer::_generate_camera_rays(
 	const CameraRayThreadData* p_data, int p_from, int p_to)
 {
 	const Size2i& buffer_size = sizes[0];
+	CameraRayTile* tiles = static_cast<CameraRayTile*>(camera_rays);
 
 	for (int i = p_from; i < p_to; i++) {
-		CameraRayTile& tile = camera_rays[i];
+		CameraRayTile& tile = tiles[i];
 		int tile_x = (i % tile_grid_size.x) * TILE_SIZE;
 		int tile_y = (i / tile_grid_size.x) * TILE_SIZE;
 
@@ -145,11 +323,11 @@ void RaycastOcclusionCull::RaycastHZBuffer::_generate_camera_rays(
 	}
 }
 
-void RaycastOcclusionCull::RaycastHZBuffer::sort_rays(
-	const Vector3& p_camera_dir, bool p_orthogonal)
+void RendererSceneOcclusionCull::HZBuffer::sort_rays(const Vector3& p_camera_dir, bool p_orthogonal)
 {
 	ERR_FAIL_COND(is_empty());
 
+	const CameraRayTile* tiles = static_cast<const CameraRayTile*>(camera_rays);
 	Size2i buffer_size = sizes[0];
 	for (int i = 0; i < tile_grid_size.y; i++) {
 		for (int j = 0; j < tile_grid_size.x; j++) {
@@ -163,14 +341,19 @@ void RaycastOcclusionCull::RaycastHZBuffer::sort_rays(
 					int k = tile_i * TILE_SIZE + tile_j;
 					int tile_index = i * tile_grid_size.x + j;
 
-					mips[0][y * buffer_size.x + x] = camera_rays[tile_index].ray.tfar[k];
+					mips[0][y * buffer_size.x + x] = tiles[tile_index].ray.tfar[k];
 				}
 			}
 		}
 	}
 }
 
-RaycastOcclusionCull::RaycastHZBuffer::~RaycastHZBuffer()
+void RendererSceneOcclusionCull::HZBuffer::update_camera_rays(
+	const Transform3D&, const Vector3&, const Vector2&, real_t, bool)
+{
+}
+
+RendererSceneOcclusionCull::HZBuffer::~HZBuffer()
 {
 	if (camera_rays_unaligned_buffer) {
 		memfree(camera_rays_unaligned_buffer);
@@ -263,7 +446,7 @@ void RaycastOcclusionCull::scenario_set_instance(
 	if (instance.removed) {
 		instance.removed = false;
 		scenario.removed_instances.erase(p_instance);
-		changed = true; // It was removed and re-added, we might have missed some changes
+		changed = true;
 	}
 
 	if (instance.occluder != p_occluder) {
@@ -289,8 +472,7 @@ void RaycastOcclusionCull::scenario_set_instance(
 
 	if (instance.enabled != p_enabled) {
 		instance.enabled = p_enabled;
-		scenario.dirty =
-			true; // The scenario needs a scene re-build, but the instance doesn't need update
+		scenario.dirty = true;
 	}
 
 	if (changed && !scenario.dirty_instances.has(p_instance)) {
@@ -321,79 +503,11 @@ void RaycastOcclusionCull::scenario_remove_instance(RID p_scenario, RID p_instan
 	}
 }
 
-void RaycastOcclusionCull::Scenario::_update_dirty_instance_thread(int p_idx, RID* p_instances)
-{
-	_update_dirty_instance(p_idx, p_instances);
-}
-
-void RaycastOcclusionCull::Scenario::_transform_vertices_thread(
-	uint32_t p_thread, TransformThreadData* p_data)
-{
-	uint32_t vertex_total = p_data->vertex_count;
-	uint32_t total_threads = p_data->thread_count;
-	uint32_t from = p_thread * vertex_total / total_threads;
-	uint32_t to = (p_thread + 1 == total_threads) ? vertex_total
-												  : ((p_thread + 1) * vertex_total / total_threads);
-	_transform_vertices_range(p_data->read, p_data->write, p_data->xform, from, to);
-}
-
-void RaycastOcclusionCull::Scenario::_transform_vertices_range(
-	const Vector3* p_read, float* p_write, const Transform3D& p_xform, int p_from, int p_to)
-{
-	float* floats_w = p_write + 3 * p_from;
-	for (int i = p_from; i < p_to; i++) {
-		const Vector3 p = p_xform.xform(p_read[i]);
-		floats_w[0] = p.x;
-		floats_w[1] = p.y;
-		floats_w[2] = p.z;
-		floats_w += 3;
-	}
-}
-
-void RaycastOcclusionCull::Scenario::free()
-{
-	if (commit_thread) {
-		if (commit_thread->is_started()) {
-			commit_thread->wait_to_finish();
-		}
-		memdelete(commit_thread);
-		commit_thread = nullptr;
-	}
-
-	for (int i = 0; i < 2; i++) {
-		if (ebr_scene[i]) {
-			rtcReleaseScene(ebr_scene[i]);
-			ebr_scene[i] = nullptr;
-		}
-	}
-}
-
-void RaycastOcclusionCull::Scenario::_commit_scene(void* p_ud)
-{
-	Scenario* scenario = (Scenario*)p_ud;
-	int commit_idx = 1 - (scenario->current_scene_idx);
-	rtcCommitScene(scenario->ebr_scene[commit_idx]);
-	scenario->commit_done = true;
-}
-
-void RaycastOcclusionCull::Scenario::_raycast(
-	uint32_t p_idx, const RaycastThreadData* p_raycast_data) const
-{
-	RTCRayQueryContext context;
-	rtcInitRayQueryContext(&context);
-	RTCIntersectArguments args;
-	rtcInitIntersectArguments(&args);
-	args.flags = RTC_RAY_QUERY_FLAG_COHERENT;
-	args.context = &context;
-	rtcIntersect16((const int*)&p_raycast_data->masks[p_idx * TILE_RAYS],
-		ebr_scene[current_scene_idx], &p_raycast_data->rays[p_idx], &args);
-}
-
 void RaycastOcclusionCull::add_buffer(RID p_buffer)
 {
 	ERR_FAIL_NULL(data);
 	ERR_FAIL_COND(data->buffers.has(p_buffer));
-	data->buffers[p_buffer] = RaycastHZBuffer();
+	data->buffers[p_buffer];
 }
 
 void RaycastOcclusionCull::remove_buffer(RID p_buffer)
@@ -424,7 +538,6 @@ Vector2 RaycastOcclusionCull::_get_jitter(const Rect2& p_viewport_rect, const Si
 		return Vector2();
 	}
 
-	// Prevent divide by zero when using NULL viewport.
 	if ((p_buffer_size.x <= 0) || (p_buffer_size.y <= 0)) {
 		return Vector2();
 	}
@@ -465,24 +578,13 @@ Vector2 RaycastOcclusionCull::_get_jitter(const Rect2& p_viewport_rect, const Si
 	Vector2 half_extents = p_viewport_rect.get_size() * 0.5;
 	jitter *=
 		Vector2(half_extents.x / (float)p_buffer_size.x, half_extents.y / (float)p_buffer_size.y);
-
-	// The multiplier here determines the jitter magnitude in pixels.
-	// It seems like a value of 0.66 matches well the above jittering pattern as it generates
-	// subpixel samples at 0, 1/3 and 2/3 Higher magnitude gives fewer false hidden, but more false
-	// shown. False hidden is obvious to viewer, false shown is not. False shown can lower
-	// percentage that are occluded, and therefore performance.
 	jitter *= 0.66f;
 
 	return jitter;
 }
 
-Rect2 _get_viewport_rect(const Projection& p_cam_projection)
+static Rect2 _get_viewport_rect(const Projection& p_cam_projection)
 {
-	// NOTE: This assumes a rectangular projection plane, i.e. that:
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3],
-	// [1][0] and [1][3] == 0)
-	// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] !=
-	// 0)
 	Size2 half_extents = p_cam_projection.get_viewport_half_extents();
 	Point2 bottom_left =
 		-half_extents *
@@ -501,7 +603,7 @@ void RaycastOcclusionCull::buffer_update(RID p_buffer, const Transform3D& p_cam_
 		return;
 	}
 
-	RaycastHZBuffer& buffer = data->buffers[p_buffer];
+	HZBuffer& buffer = data->buffers[p_buffer];
 
 	if (buffer.is_empty() || !data->scenarios.has(buffer.scenario_rid)) {
 		return;
@@ -519,8 +621,8 @@ void RaycastOcclusionCull::buffer_update(RID p_buffer, const Transform3D& p_cam_
 	buffer.update_camera_rays(p_cam_transform, near_bottom_left, vp_rect.get_size(),
 		p_cam_projection.get_z_far(), p_cam_orthogonal);
 
-	scenario.raycast(
-		buffer.camera_rays, buffer.camera_ray_masks.ptr(), buffer.camera_rays_tile_count);
+	scenario.raycast(static_cast<CameraRayTile*>(buffer.camera_rays),
+		buffer.camera_ray_masks.ptr(), buffer.camera_rays_tile_count);
 	buffer.sort_rays(-p_cam_transform.basis.get_column(2), p_cam_orthogonal);
 	buffer.update_mips();
 }
@@ -595,18 +697,4 @@ void RaycastOcclusionCull::finalize()
 
 	memdelete(data);
 	data = nullptr;
-}
-
-void RaycastOcclusionCull::Scenario::_update_dirty_instance(int, RID*) {}
-
-void RaycastOcclusionCull::Scenario::update() {}
-
-void RaycastOcclusionCull::Scenario::raycast(
-	RTCRayHit16*, unsigned int const*, unsigned int) const
-{
-}
-
-void RaycastOcclusionCull::RaycastHZBuffer::update_camera_rays(
-	Transform3D const&, Vector3 const&, Vector2 const&, float, bool)
-{
 }

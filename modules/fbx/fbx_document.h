@@ -32,13 +32,15 @@
 #pragma once
 
 #include <ufbx.h>
+#include "core/io/resource.h"
 #include "fbx_state.h"
 #include "modules/gltf/gltf_defines.h"
 #include "modules/gltf/gltf_document.h"
 
-class FBXDocument : public GLTFDocument
+class FBXDocument : public Resource
 {
 	int _naming_version = 2;
+	Ref<GLTFDocument> gltf_document;
 
 public:
 	enum
@@ -47,25 +49,28 @@ public:
 		TEXTURE_TYPE_NORMAL = 1,
 	};
 
+	Ref<GLTFDocument> get_gltf_document() const { return gltf_document; }
+
 	static Transform3D _as_xform(const ufbx_matrix& p_mat);
 	static String _as_string(const ufbx_string& p_string);
 	static Vector3 _as_vec3(const ufbx_vec3& p_vector);
 	static String _gen_unique_name(HashSet<String>& unique_names, const String& p_name);
 
-public:
-	Error append_from_file(const String& p_path, Ref<GLTFState> p_state, uint32_t p_flags = 0,
-		const String& p_base_path = String()) override;
+	Error append_from_file(const String& p_path, Ref<FBXState> p_state, uint32_t p_flags = 0,
+		const String& p_base_path = String());
 	Error append_from_buffer(const PackedByteArray& p_bytes, const String& p_base_path,
-		Ref<GLTFState> p_state, uint32_t p_flags = 0) override;
-	Error append_from_scene(Node* p_node, Ref<GLTFState> p_state, uint32_t p_flags = 0) override;
+		Ref<FBXState> p_state, uint32_t p_flags = 0);
+	Error append_from_scene(Node* p_node, Ref<FBXState> p_state, uint32_t p_flags = 0);
 
-	Node* generate_scene(Ref<GLTFState> p_state, float p_bake_fps = 30.0f, bool p_trimming = false,
-		bool p_remove_immutable_tracks = true) override;
-	PackedByteArray generate_buffer(Ref<GLTFState> p_state) override;
-	Error write_to_filesystem(Ref<GLTFState> p_state, const String& p_path) override;
+	Node* generate_scene(Ref<FBXState> p_state, float p_bake_fps = 30.0f, bool p_trimming = false,
+		bool p_remove_immutable_tracks = true);
+	PackedByteArray generate_buffer(Ref<FBXState> p_state);
+	Error write_to_filesystem(Ref<FBXState> p_state, const String& p_path);
 
 	void set_naming_version(int p_version);
 	int get_naming_version() const;
+
+	FBXDocument();
 
 private:
 	String _get_texture_path(
@@ -106,5 +111,3 @@ public:
 		const bool p_remove_immutable_tracks);
 	Error _parse(Ref<FBXState> p_state, const String& p_path, Ref<FileAccess> p_file);
 };
-
-

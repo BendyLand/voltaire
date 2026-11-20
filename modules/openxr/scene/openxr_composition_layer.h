@@ -40,7 +40,7 @@ class Mesh;
 class OpenXRAPI;
 class OpenXRCompositionLayerExtension;
 class SubViewport;
-class XRCamera3D;
+class Camera3D;
 
 class OpenXRCompositionLayer : public Node3D
 {
@@ -129,7 +129,7 @@ private:
 
 	void _viewport_size_changed();
 
-	XRCamera3D* _get_xrcamera3d_ancestor() const;
+	Camera3D* _get_xrcamera3d_ancestor() const;
 
 protected:
 

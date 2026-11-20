@@ -41,8 +41,8 @@
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 
-class JoltPhysicsDirectSpaceState3D;
 class JoltSpace3D;
+class PhysicsDirectSpaceState3D;
 
 class JoltQueryFilter3D final
 		: public JPH::BroadPhaseLayerFilter,
@@ -56,7 +56,7 @@ class JoltQueryFilter3D final
 	bool picking = false;
 
 public:
-	JoltQueryFilter3D(const JoltPhysicsDirectSpaceState3D &p_space_state, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas, const HashSet<RID> &p_excluded, bool p_picking = false);
+	JoltQueryFilter3D(const PhysicsDirectSpaceState3D &p_space_state, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas, const HashSet<RID> &p_excluded, bool p_picking = false);
 
 	virtual bool ShouldCollide(JPH::BroadPhaseLayer p_broad_phase_layer) const override;
 	virtual bool ShouldCollide(JPH::ObjectLayer p_object_layer) const override;

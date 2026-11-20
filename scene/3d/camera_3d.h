@@ -37,6 +37,7 @@
 #include "scene/resources/camera_attributes.h"
 #include "scene/resources/compositor.h"
 #include "scene/resources/environment.h"
+#include "servers/xr/xr_positional_tracker.h"
 
 class Camera3D : public Node3D
 {
@@ -81,8 +82,6 @@ private:
 	RID camera;
 	RID scenario_id;
 
-	// String camera_group;
-
 	uint32_t layers = 0xfffff;
 
 	Ref<Environment> environment;
@@ -90,10 +89,8 @@ private:
 	Ref<Compositor> compositor;
 	void _attributes_changed();
 
-	// void _camera_make_current(Node *p_camera);
 	friend class Viewport;
 	void _update_audio_listener_state();
-	TypedArray<Plane> _get_frustum() const;
 
 	DopplerTracking doppler_tracking = DOPPLER_TRACKING_DISABLED;
 	Ref<VelocityTracker3D> velocity_tracker;
@@ -103,30 +100,36 @@ private:
 	Vector<Vector3> pyramid_shape_points;
 #endif // PHYSICS_3D_DISABLED
 
-	// These can be set by derived Cameras.
 	bool _desired_process_internal = false;
 	bool _desired_physics_process_internal = false;
+
+	bool xr_enabled = false;
+	String tracker_name = "head";
+	String pose_name = "default";
+	Ref<XRPositionalTracker> tracker;
+
+	void _bind_tracker();
+	void _unbind_tracker();
+	void _changed_tracker(const String& p_tracker_name, int p_tracker_type);
+	void _removed_tracker(const String& p_tracker_name, int p_tracker_type);
+	void _pose_changed(const Ref<XRPose>& p_pose);
 
 	void _update_process_mode();
 
 protected:
-	// Use from derived classes to set process modes instead of setting directly.
-	// This is because physics interpolation may need to request process modes additionally.
 	void set_desired_process_modes(bool p_process_internal, bool p_physics_process_internal);
 
 	virtual void _physics_interpolated_changed() override;
-	virtual Transform3D _get_adjusted_camera_transform(const Transform3D& p_xform) const;
-	///////////////////////////////////////////////////////
+	Transform3D _get_adjusted_camera_transform(const Transform3D& p_xform) const;
 
 	void _update_camera();
-	virtual void _request_camera_update();
+	void _request_camera_update();
 
 	virtual void fti_pump_property() override;
 	virtual void fti_update_servers_property() override;
 	virtual void fti_update_servers_xform() override;
 
 	void _notification(int p_what);
-
 
 	Projection _get_camera_projection(real_t p_near) const;
 
@@ -136,6 +139,11 @@ public:
 		NOTIFICATION_BECAME_CURRENT = 50,
 		NOTIFICATION_LOST_CURRENT = 51
 	};
+
+	void set_xr_enabled(bool p_enabled);
+	bool is_xr_enabled() const { return xr_enabled; }
+
+	PackedStringArray get_configuration_warnings() const override;
 
 	void set_projection(Camera3D::ProjectionType p_mode);
 
@@ -154,15 +162,15 @@ public:
 
 	ProjectionType get_projection() const;
 
-	virtual Transform3D get_camera_transform() const;
-	virtual Projection get_camera_projection() const;
+	Transform3D get_camera_transform() const;
+	Projection get_camera_projection() const;
 
-	virtual Vector3 project_ray_normal(const Point2& p_pos) const;
-	virtual Vector3 project_ray_origin(const Point2& p_pos) const;
-	virtual Vector3 project_local_ray_normal(const Point2& p_pos) const;
-	virtual Point2 unproject_position(const Vector3& p_pos) const;
+	Vector3 project_ray_normal(const Point2& p_pos) const;
+	Vector3 project_ray_origin(const Point2& p_pos) const;
+	Vector3 project_local_ray_normal(const Point2& p_pos) const;
+	Point2 unproject_position(const Vector3& p_pos) const;
 	bool is_position_behind(const Vector3& p_pos) const;
-	virtual Vector3 project_position(const Point2& p_point, real_t p_z_depth) const;
+	Vector3 project_position(const Point2& p_point, real_t p_z_depth) const;
 
 	Vector<Vector3> get_near_plane_points() const;
 
@@ -170,7 +178,7 @@ public:
 
 	bool get_cull_mask_value(int p_layer_number) const;
 
-	virtual Vector<Plane> get_frustum() const;
+	Vector<Plane> get_frustum() const;
 	bool is_position_in_frustum(const Vector3& p_position) const;
 
 	Ref<Environment> get_environment() const;
@@ -197,8 +205,6 @@ public:
 	RID get_pyramid_shape_rid();
 #endif // PHYSICS_3D_DISABLED
 
-	Camera3D() = default;
+	Camera3D(bool p_xr = false);
 	~Camera3D();
 };
-
-

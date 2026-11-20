@@ -67,7 +67,6 @@
 #endif // PHYSICS_2D_DISABLED
 #ifndef PHYSICS_3D_DISABLED
 #include "servers/physics_3d/physics_server_3d.h"
-#include "servers/physics_3d/physics_server_3d_dummy.h"
 #endif // PHYSICS_3D_DISABLED
 
 #include "modules/modules_tests.gen.h" // IWYU pragma: keep // TODO: Migrate module tests to compilation files.
@@ -153,9 +152,6 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #ifndef PHYSICS_2D_DISABLED
 	PhysicsServer2DDriver *physics_server_2d = nullptr;
 #endif // PHYSICS_2D_DISABLED
-#ifndef PHYSICS_3D_DISABLED
-	PhysicsServer3DDriver *physics_server_3d = nullptr;
-#endif // PHYSICS_3D_DISABLED
 
 
 	void test_case_start(const doctest::TestCaseData &p_in) override {
@@ -193,11 +189,7 @@ struct GodotTestCaseListener : public doctest::IReporter {
 			ThemeDB::initialize_theme();
 
 #ifndef PHYSICS_3D_DISABLED
-			physics_server_3d = PhysicsServer3DManager::new_default_server();
-			if (!physics_server_3d) {
-				physics_server_3d = memnew(PhysicsServer3DDummy);
-			}
-			physics_server_3d->init();
+			PhysicsServer3D::initialize();
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
@@ -295,10 +287,9 @@ struct GodotTestCaseListener : public doctest::IReporter {
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef PHYSICS_3D_DISABLED
-		if (physics_server_3d) {
-			physics_server_3d->finish();
-			memdelete(physics_server_3d);
-			physics_server_3d = nullptr;
+		if (PhysicsServer3D::is_initialized()) {
+			PhysicsServer3D::finish();
+			PhysicsServer3D::finalize();
 		}
 #endif // PHYSICS_3D_DISABLED
 

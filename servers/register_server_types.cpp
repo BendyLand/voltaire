@@ -93,7 +93,6 @@
 #endif // NAVIGATION_3D_DISABLED
 #ifndef PHYSICS_3D_DISABLED
 #include "servers/physics_3d/physics_server_3d.h"
-#include "servers/physics_3d/physics_server_3d_dummy.h"
 #endif // PHYSICS_3D_DISABLED
 
 // XR
@@ -111,10 +110,6 @@
 #ifndef PHYSICS_2D_DISABLED
 static PhysicsServer2DDriver* _create_dummy_physics_server_2d() { return memnew(PhysicsServer2DDummy); }
 #endif // PHYSICS_2D_DISABLED
-
-#ifndef PHYSICS_3D_DISABLED
-static PhysicsServer3DDriver* _create_dummy_physics_server_3d() { return memnew(PhysicsServer3DDummy); }
-#endif // PHYSICS_3D_DISABLED
 
 static bool has_server_feature_callback(const String& p_feature)
 {

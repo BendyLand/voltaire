@@ -33,12 +33,115 @@
 #include "core/config/engine.h"
 #include "core/math/projection.h"
 #include "core/math/transform_interpolator.h"
+#include "scene/3d/xr/xr_nodes.h"
 #include "scene/main/viewport.h"
 #include "servers/rendering/renderer.h"
+#include "servers/xr/xr_interface.h"
 
 void Camera3D::_update_audio_listener_state() {}
 
 void Camera3D::_request_camera_update() { _update_camera(); }
+
+void Camera3D::set_xr_enabled(bool p_enabled)
+{
+	if (xr_enabled == p_enabled) {
+		return;
+	}
+
+	if (xr_enabled && is_inside_tree()) {
+		_unbind_tracker();
+	}
+
+	xr_enabled = p_enabled;
+	if (xr_enabled) {
+		set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
+		if (is_inside_tree()) {
+			_bind_tracker();
+		}
+	}
+
+	update_configuration_warnings();
+}
+
+void Camera3D::_bind_tracker()
+{
+	ERR_FAIL_COND(tracker.is_valid());
+	if (XRServer::is_initialized()) {
+		tracker = dynamic_cast<XRPositionalTracker*>(XRServer::get_tracker(tracker_name).ptr());
+		if (tracker.is_valid()) {
+			Ref<XRPose> pose = tracker->get_pose(pose_name);
+			if (pose.is_valid()) {
+				set_transform(pose->get_adjusted_transform());
+			}
+		}
+	}
+}
+
+void Camera3D::_unbind_tracker()
+{
+	if (tracker.is_valid()) {
+		tracker.unref();
+	}
+}
+
+void Camera3D::_changed_tracker(const String& p_tracker_name, int p_tracker_type)
+{
+	if (xr_enabled && p_tracker_name == tracker_name) {
+		_unbind_tracker();
+		_bind_tracker();
+	}
+}
+
+void Camera3D::_removed_tracker(const String& p_tracker_name, int p_tracker_type)
+{
+	if (xr_enabled && p_tracker_name == tracker_name) {
+		_unbind_tracker();
+	}
+}
+
+void Camera3D::_pose_changed(const Ref<XRPose>& p_pose)
+{
+	if (xr_enabled && p_pose.is_valid() && p_pose->get_name() == pose_name) {
+		set_transform(p_pose->get_adjusted_transform());
+	}
+}
+
+void Camera3D::_notification(int p_what)
+{
+	if (!xr_enabled) {
+		return;
+	}
+
+	switch (p_what) {
+	case NOTIFICATION_ENTER_TREE: {
+		_bind_tracker();
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		_unbind_tracker();
+	} break;
+	}
+}
+
+PackedStringArray Camera3D::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+
+	if (xr_enabled) {
+		if (is_visible() && is_inside_tree()) {
+			const XROrigin3D* origin = dynamic_cast<const XROrigin3D*>(get_parent());
+			if (origin == nullptr) {
+				warnings.push_back(RTR("XR Camera3D may not function as expected without an "
+									   "XROrigin3D node as its parent."));
+			}
+		}
+		if (get_physics_interpolation_mode() != Node::PHYSICS_INTERPOLATION_MODE_OFF) {
+			warnings.push_back(RTR("XR Camera3D should have physics_interpolation_mode set to OFF "
+								   "in order to avoid jitter."));
+		}
+	}
+
+	return warnings;
+}
 
 void Camera3D::fti_pump_property()
 {
@@ -248,6 +351,22 @@ Vector3 Camera3D::project_ray_normal(const Point2& p_pos) const
 
 Vector3 Camera3D::project_local_ray_normal(const Point2& p_pos) const
 {
+	if (xr_enabled) {
+		ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector3());
+		Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
+		if (xr_interface.is_valid()) {
+			ERR_FAIL_COND_V_MSG(!is_inside_tree(), Vector3(), "Camera is not inside scene.");
+			Size2 viewport_size = get_viewport()->get_camera_rect_size();
+			Vector2 cpos = get_viewport()->get_camera_coords(p_pos);
+			Projection cm = xr_interface->get_projection_for_view(
+				0, viewport_size.aspect(), get_near(), get_far());
+			Vector2 screen_he = cm.get_viewport_half_extents();
+			return Vector3(((cpos.x / viewport_size.width) * 2.0 - 1.0) * screen_he.x,
+				((1.0 - (cpos.y / viewport_size.height)) * 2.0 - 1.0) * screen_he.y, -get_near())
+				.normalized();
+		}
+	}
+
 	ERR_FAIL_COND_V_MSG(!is_inside_tree(), Vector3(), "Camera is not inside scene.");
 
 	Size2 viewport_size = get_viewport()->get_camera_rect_size();
@@ -322,6 +441,25 @@ Vector<Vector3> Camera3D::get_near_plane_points() const
 
 Point2 Camera3D::unproject_position(const Vector3& p_pos) const
 {
+	if (xr_enabled) {
+		ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector2());
+		Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
+		if (xr_interface.is_valid()) {
+			ERR_FAIL_COND_V_MSG(!is_inside_tree(), Vector2(), "Camera is not inside scene.");
+			Size2 viewport_size = get_viewport()->get_visible_rect().size;
+			Projection cm = xr_interface->get_projection_for_view(
+				0, viewport_size.aspect(), get_near(), get_far());
+			Plane p(get_camera_transform().xform_inv(p_pos), 1.0);
+			p = cm.xform4(p);
+			ERR_FAIL_COND_V(p.d == 0, Point2());
+			p.normal /= p.d;
+			Point2 res;
+			res.x = (p.normal.x * 0.5 + 0.5) * viewport_size.x;
+			res.y = (-p.normal.y * 0.5 + 0.5) * viewport_size.y;
+			return res;
+		}
+	}
+
 	ERR_FAIL_COND_V_MSG(!is_inside_tree(), Vector2(), "Camera is not inside scene.");
 
 	Size2 viewport_size = get_viewport()->get_visible_rect().size;
@@ -333,7 +471,6 @@ Point2 Camera3D::unproject_position(const Vector3& p_pos) const
 	p = cm.xform4(p);
 
 	// Prevent divide by zero.
-	// TODO: Investigate, this was causing NaNs.
 	ERR_FAIL_COND_V(p.d == 0, Point2());
 
 	p.normal /= p.d;
@@ -347,6 +484,24 @@ Point2 Camera3D::unproject_position(const Vector3& p_pos) const
 
 Vector3 Camera3D::project_position(const Point2& p_point, real_t p_z_depth) const
 {
+	if (xr_enabled) {
+		ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector3());
+		Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
+		if (xr_interface.is_valid()) {
+			ERR_FAIL_COND_V_MSG(!is_inside_tree(), Vector3(), "Camera is not inside scene.");
+			Size2 viewport_size = get_viewport()->get_visible_rect().size;
+			Projection cm = xr_interface->get_projection_for_view(
+				0, viewport_size.aspect(), get_near(), get_far());
+			Vector2 vp_he = cm.get_viewport_half_extents();
+			Vector2 point;
+			point.x = (p_point.x / viewport_size.x) * 2.0 - 1.0;
+			point.y = (1.0 - (p_point.y / viewport_size.y)) * 2.0 - 1.0;
+			point *= vp_he;
+			Vector3 p(point.x, point.y, -p_z_depth);
+			return get_camera_transform().xform(p);
+		}
+	}
+
 	ERR_FAIL_COND_V_MSG(!is_inside_tree(), Vector3(), "Camera is not inside scene.");
 
 	if (p_z_depth == 0 && mode != PROJECTION_ORTHOGONAL) {
@@ -407,8 +562,19 @@ bool Camera3D::get_cull_mask_value(int p_layer_number) const
 
 Vector<Plane> Camera3D::get_frustum() const
 {
-	ERR_FAIL_COND_V(!
-is_inside_world(), Vector<Plane>());
+	if (xr_enabled) {
+		ERR_FAIL_COND_V(!XRServer::is_initialized(), Vector<Plane>());
+		Ref<XRInterface> xr_interface = XRServer::get_primary_interface();
+		if (xr_interface.is_valid()) {
+			ERR_FAIL_COND_V(!is_inside_world(), Vector<Plane>());
+			Size2 viewport_size = get_viewport()->get_visible_rect().size;
+			Projection cm = xr_interface->get_projection_for_view(
+				0, viewport_size.aspect(), get_near(), get_far());
+			return cm.get_projection_planes(get_camera_transform());
+		}
+	}
+
+	ERR_FAIL_COND_V(!is_inside_world(), Vector<Plane>());
 
 	Projection cm = _get_camera_projection(_near);
 
@@ -452,6 +618,14 @@ Vector3 Camera3D::get_doppler_tracked_velocity() const
 	}
 }
 
+Camera3D::Camera3D(bool p_xr)
+{
+	pose_name = SceneString(default_);
+	if (p_xr) {
+		set_xr_enabled(true);
+	}
+}
+
 Camera3D::~Camera3D()
 {
 	ERR_FAIL_NULL(Renderer::data);
@@ -463,5 +637,3 @@ Camera3D::~Camera3D()
 	}
 #endif // PHYSICS_3D_DISABLED
 }
-
-

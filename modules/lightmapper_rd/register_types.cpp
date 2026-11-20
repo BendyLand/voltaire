@@ -29,14 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
-#include "lightmapper_rd.h"
 #include "register_types.h"
-#include "scene/3d/lightmapper.h"
-
-#ifndef _3D_DISABLED
-static Ref<Lightmapper> create_lightmapper_rd() { return memnew(LightmapperRD); }
-#endif
 
 void uninitialize_lightmapper_rd_module(ModuleInitializationLevel p_level)
 {
@@ -46,5 +39,3 @@ void uninitialize_lightmapper_rd_module(ModuleInitializationLevel p_level)
 }
 
 void initialize_lightmapper_rd_module(ModuleInitializationLevel p_level) {}
-
-

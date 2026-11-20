@@ -33,3 +33,4 @@
 
 void jolt_initialize();
 void jolt_deinitialize();
+bool jolt_is_initialized();

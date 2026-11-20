@@ -31,16 +31,42 @@
 
 #include "stream_peer_tls.h"
 
-StreamPeerTLS* (*StreamPeerTLS::_create)(bool p_notify_postinitialize) = nullptr;
+#include "modules/modules_enabled.gen.h"
 
-StreamPeerTLS* StreamPeerTLS::create(bool p_notify_postinitialize)
+#ifndef MODULE_MBEDTLS_ENABLED
+
+void StreamPeerTLS::poll() {}
+Error StreamPeerTLS::accept_stream(Ref<StreamPeer> p_base, Ref<TLSOptions> p_options)
 {
-	if (_create) {
-		return _create(p_notify_postinitialize);
-	}
-	return nullptr;
+	return ERR_UNAVAILABLE;
 }
+Error StreamPeerTLS::connect_to_stream(
+	Ref<StreamPeer> p_base, const String& p_common_name, Ref<TLSOptions> p_options)
+{
+	return ERR_UNAVAILABLE;
+}
+StreamPeerTLS::Status StreamPeerTLS::get_status() const { return STATUS_DISCONNECTED; }
+Ref<StreamPeer> StreamPeerTLS::get_stream() const { return Ref<StreamPeer>(); }
+void StreamPeerTLS::disconnect_from_stream() {}
 
-bool StreamPeerTLS::is_available() { return _create != nullptr; }
+Error StreamPeerTLS::put_data(const uint8_t* p_data, int p_bytes) { return ERR_UNAVAILABLE; }
+Error StreamPeerTLS::put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent)
+{
+	r_sent = 0;
+	return ERR_UNAVAILABLE;
+}
+Error StreamPeerTLS::get_data(uint8_t* p_buffer, int p_bytes) { return ERR_UNAVAILABLE; }
+Error StreamPeerTLS::get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received)
+{
+	r_received = 0;
+	return ERR_UNAVAILABLE;
+}
+int StreamPeerTLS::get_available_bytes() const { return 0; }
 
+StreamPeerTLS* StreamPeerTLS::create(bool p_notify_postinitialize) { return nullptr; }
+bool StreamPeerTLS::is_available() { return false; }
 
+StreamPeerTLS::StreamPeerTLS() {}
+StreamPeerTLS::~StreamPeerTLS() {}
+
+#endif // !MODULE_MBEDTLS_ENABLED

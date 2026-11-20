@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "noise.h"
+#include "fastnoise_lite.h"
 #include "scene/resources/gradient.h"
 #include "scene/resources/texture.h"
 
@@ -58,7 +58,7 @@ private:
 	bool normalize = true;
 
 	Ref<Gradient> color_ramp;
-	Ref<Noise> noise;
+	Ref<FastNoiseLite> noise;
 
 	void _thread_done(const Ref<Image>& p_image);
 	void _thread_function();
@@ -71,8 +71,8 @@ private:
 	Ref<Image> _modulate_with_gradient(Ref<Image> p_image, Ref<Gradient> p_gradient);
 
 public:
-	void set_noise(Ref<Noise> p_noise);
-	Ref<Noise> get_noise();
+	void set_noise(Ref<FastNoiseLite> p_noise);
+	Ref<FastNoiseLite> get_noise();
 
 	void set_width(int p_width);
 	void set_height(int p_height);
