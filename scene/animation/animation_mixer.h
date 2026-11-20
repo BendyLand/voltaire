@@ -167,13 +167,7 @@ protected:
 		real_t total_weight = 0.0;
 		uint64_t animation_instance_weight_applied_at = 0;
 
-		TrackCache() = default;
-
-		virtual ~TrackCache() {}
-	};
-
-	struct TrackCacheTransform : public TrackCache
-	{
+		// Transform (TYPE_POSITION_3D, TYPE_ROTATION_3D, TYPE_SCALE_3D)
 		int bone_idx = -1;
 		bool loc_used = false;
 		bool rot_used = false;
@@ -185,16 +179,33 @@ protected:
 		Quaternion rot;
 		Vector3 scale;
 
-		TrackCacheTransform(const TrackCacheTransform& p_other)
-			: TrackCache(p_other),
-			  bone_idx(p_other.bone_idx), loc_used(p_other.loc_used), rot_used(p_other.rot_used),
-			  scale_used(p_other.scale_used), init_loc(p_other.init_loc),
-			  init_rot(p_other.init_rot), init_scale(p_other.init_scale), loc(p_other.loc),
-			  rot(p_other.rot), scale(p_other.scale)
-		{
-		}
+		// BlendShape (TYPE_BLEND_SHAPE)
+		float init_value = 0.0f;
+		float value = 0.0f;
+		int shape_index = -1;
 
-		TrackCacheTransform() { type = Animation::TYPE_POSITION_3D; }
+		// Value / Bezier (TYPE_VALUE, TYPE_BEZIER)
+		Vector<String> subpath;
+		bool is_init = false;
+		bool use_continuous = false;
+		bool use_discrete = false;
+		bool is_using_angle = false;
+		bool is_variant_interpolatable = true;
+
+		// Audio (TYPE_AUDIO)
+		Ref<AudioStreamPolyphonic> audio_stream;
+		Ref<AudioStreamPlaybackPolyphonic> audio_stream_playback;
+		AudioServer::PlaybackType playback_type = {};
+		String bus;
+
+		// Animation (TYPE_ANIMATION)
+		bool playing = false;
+
+		TrackCache() = default;
+		explicit TrackCache(Animation::TrackType p_type) : type(p_type) {}
+		TrackCache(const TrackCache&) = default;
+		TrackCache& operator=(const TrackCache&) = default;
+		~TrackCache() = default;
 	};
 
 	struct RootMotionCache
@@ -202,40 +213,6 @@ protected:
 		Vector3 loc = Vector3(0, 0, 0);
 		Quaternion rot = Quaternion(0, 0, 0, 1);
 		Vector3 scale = Vector3(1, 1, 1);
-	};
-
-	struct TrackCacheBlendShape : public TrackCache
-	{
-		float init_value = 0;
-		float value = 0;
-		int shape_index = -1;
-
-		TrackCacheBlendShape(const TrackCacheBlendShape& p_other)
-			: TrackCache(p_other), init_value(p_other.init_value), value(p_other.value),
-			  shape_index(p_other.shape_index)
-		{
-		}
-
-		TrackCacheBlendShape() { type = Animation::TYPE_BLEND_SHAPE; }
-	};
-
-	struct TrackCacheValue : public TrackCache
-	{
-		Vector<String> subpath;
-
-		// TODO: There are many boolean, can be packed into one integer.
-		bool is_init = false;
-		bool use_continuous = false;
-		bool use_discrete = false;
-		bool is_using_angle = false;
-		bool is_variant_interpolatable = true;
-
-		TrackCacheValue() { type = Animation::TYPE_VALUE; }
-	};
-
-	struct TrackCacheMethod : public TrackCache
-	{
-		TrackCacheMethod() { type = Animation::TYPE_METHOD; }
 	};
 
 	// Audio stream information for each audio stream placed on the track.
@@ -257,23 +234,6 @@ protected:
 		bool loop = false;
 		bool backward = false;
 		bool use_blend = false;
-	};
-
-	struct TrackCacheAudio : public TrackCache
-	{
-		Ref<AudioStreamPolyphonic> audio_stream;
-		Ref<AudioStreamPlaybackPolyphonic> audio_stream_playback;
-		AudioServer::PlaybackType playback_type;
-		String bus;
-
-		TrackCacheAudio() { type = Animation::TYPE_AUDIO; }
-	};
-
-	struct TrackCacheAnimation : public TrackCache
-	{
-		bool playing = false;
-
-		TrackCacheAnimation() { type = Animation::TYPE_ANIMATION; }
 	};
 
 	RootMotionCache root_motion_cache;

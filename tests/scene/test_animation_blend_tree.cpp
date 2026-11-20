@@ -47,8 +47,8 @@ TEST_CASE("[SceneTree][AnimationBlendTree] Create AnimationBlendTree and add Ani
 	CHECK_EQ(blend_tree->get_node_list().size(), 1);
 
 	// Test adding animation node.
-	Ref<AnimationNodeAnimation> anim_node;
-	anim_node.instantiate();
+	Ref<AnimationNodeBlendNode> anim_node;
+	anim_node.instantiate(AnimationNodeBlendNode::NODE_ANIMATION);
 	anim_node->set_animation(String("test_animation"));
 	Vector2 position(100, 100);
 	blend_tree->add_node("test_node", anim_node, position);

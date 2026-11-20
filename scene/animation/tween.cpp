@@ -29,11 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "tween.h"
 #include "scene/animation/easing_equations.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/animation.h"
-#include "tween.h"
 
 #define CHECK_VALID()                                                                              \
 	ERR_FAIL_COND_V_MSG(                                                                           \
@@ -55,12 +55,6 @@ Tween::interpolater Tween::interpolaters[Tween::TRANS_MAX][Tween::EASE_MAX] = {
 	{&Back::in, &Back::out, &Back::in_out, &Back::out_in},
 	{&Spring::in, &Spring::out, &Spring::in_out, &Spring::out_in},
 };
-
-void Tweener::start()
-{
-	elapsed_time = 0;
-	finished = false;
-}
 
 void Tween::_start_tweeners()
 {
@@ -84,22 +78,22 @@ void Tween::_stop_internal(bool p_reset)
 	}
 }
 
-IntervalTweener* Tween::tween_interval(double p_time)
+Ref<Tweener> Tween::tween_interval(double p_time)
 {
 	CHECK_VALID();
-	Ref<IntervalTweener> tweener;
-	tweener.instantiate(p_time);
+	Ref<Tweener> tweener;
+	tweener.instantiate(Tweener::TWEENER_INTERVAL, p_time);
 	append(tweener);
-	return tweener.ptr();
+	return tweener;
 }
 
-SubtweenTweener* Tween::tween_subtween(Tween* rp_subtween)
+Ref<Tweener> Tween::tween_subtween(Tween* rp_subtween)
 {
 	CHECK_VALID();
+	ERR_FAIL_NULL_V(rp_subtween, nullptr);
 
-	// Ensure that the subtween being added is not null.
-	Ref<SubtweenTweener> tweener;
-	tweener.instantiate(rp_subtween);
+	Ref<Tweener> tweener;
+	tweener.instantiate(Ref<Tween>(rp_subtween));
 
 	// Remove the tween from its parent tree, if it has one.
 	// If the user created this tween without a parent tree attached,
@@ -110,7 +104,36 @@ SubtweenTweener* Tween::tween_subtween(Tween* rp_subtween)
 	}
 	subtweens.push_back(rp_subtween);
 	append(tweener);
-	return tweener.ptr();
+	return tweener;
+}
+
+Ref<Tweener> Tween::tween_callback(void (*p_callback)())
+{
+	CHECK_VALID();
+	Ref<Tweener> tweener;
+	tweener.instantiate(Tweener::TWEENER_CALLBACK);
+	tweener->callback = p_callback;
+	append(tweener);
+	return tweener;
+}
+
+Ref<Tweener> Tween::tween_property(const Vector<String>& p_property, double p_duration)
+{
+	CHECK_VALID();
+	Ref<Tweener> tweener;
+	tweener.instantiate(Tweener::TWEENER_PROPERTY, p_duration);
+	tweener->property = p_property;
+	append(tweener);
+	return tweener;
+}
+
+Ref<Tweener> Tween::tween_method(double p_duration)
+{
+	CHECK_VALID();
+	Ref<Tweener> tweener;
+	tweener.instantiate(Tweener::TWEENER_METHOD, p_duration);
+	append(tweener);
+	return tweener;
 }
 
 void Tween::append(Ref<Tweener> p_tweener)
@@ -284,6 +307,18 @@ real_t Tween::run_equation(TransitionType p_trans_type, EaseType p_ease_type, re
 	return func(p_time, p_initial, p_delta, p_duration);
 }
 
+Tween* Tween::bind_node(const Node* rp_node)
+{
+	ERR_FAIL_NULL_V(rp_node, this);
+	bound_node = const_cast<Node*>(rp_node);
+	is_bound = true;
+	return this;
+}
+
+Node* Tween::get_bound_node() const { return bound_node; }
+
+String Tween::_to_string() { return String(); }
+
 Tween::Tween() { ERR_FAIL_MSG("Tween can't be created directly. Use create_tween() method."); }
 
 Tween::Tween(bool p_in_tree)
@@ -292,224 +327,183 @@ Tween::Tween(bool p_in_tree)
 	valid = true;
 }
 
-PropertyTweener* PropertyTweener::from_current()
+Tween::~Tween() = default;
+
+Ref<Tweener> Tweener::from(double p_value)
+{
+	initial_val = p_value;
+	do_continue = false;
+	return this;
+}
+
+Ref<Tweener> Tweener::from_current()
 {
 	do_continue = false;
 	return this;
 }
 
-PropertyTweener* PropertyTweener::as_relative()
+Ref<Tweener> Tweener::as_relative()
 {
 	relative = true;
 	return this;
 }
 
-PropertyTweener* PropertyTweener::set_trans(Tween::TransitionType p_trans)
+Ref<Tweener> Tweener::set_trans(Tween::TransitionType p_trans)
 {
 	trans_type = p_trans;
 	return this;
 }
 
-PropertyTweener* PropertyTweener::set_ease(Tween::EaseType p_ease)
+Ref<Tweener> Tweener::set_ease(Tween::EaseType p_ease)
 {
 	ease_type = p_ease;
 	return this;
 }
 
-PropertyTweener* PropertyTweener::set_delay(double p_delay)
+Ref<Tweener> Tweener::set_custom_interpolator(real_t (*p_interpolator)(real_t))
+{
+	custom_interpolator = p_interpolator;
+	return this;
+}
+
+Ref<Tweener> Tweener::set_delay(double p_delay)
 {
 	delay = p_delay;
 	return this;
 }
 
-void PropertyTweener::set_tween(const Ref<Tween>& p_tween)
-{
-	Tweener::set_tween(p_tween);
-	if (trans_type == Tween::TRANS_MAX) {
-		trans_type = p_tween->get_trans();
-	}
-	if (ease_type == Tween::EASE_MAX) {
-		ease_type = p_tween->get_ease();
-	}
-}
-
-PropertyTweener::PropertyTweener()
-{
-	ERR_FAIL_MSG(
-		"PropertyTweener can't be created directly. Use the tween_property() method in Tween.");
-}
-
-bool IntervalTweener::step(double& r_delta)
-{
-	if (finished) {
-		return false;
-	}
-
-	elapsed_time += r_delta;
-
-	if (elapsed_time < duration) {
-		r_delta = 0;
-		return true;
-	}
-	else {
-		r_delta = elapsed_time - duration;
-		_finish();
-		return false;
-	}
-}
-
-IntervalTweener::IntervalTweener(double p_time) { duration = p_time; }
-
-IntervalTweener::IntervalTweener()
-{
-	ERR_FAIL_MSG(
-		"IntervalTweener can't be created directly. Use the tween_interval() method in Tween.");
-}
-
-CallbackTweener* CallbackTweener::set_delay(double p_delay)
-{
-	delay = p_delay;
-	return this;
-}
-
-CallbackTweener::CallbackTweener()
-{
-	ERR_FAIL_MSG(
-		"CallbackTweener can't be created directly. Use the tween_callback() method in Tween.");
-}
-
-MethodTweener* MethodTweener::set_delay(double p_delay)
-{
-	delay = p_delay;
-	return this;
-}
-
-MethodTweener* MethodTweener::set_trans(Tween::TransitionType p_trans)
-{
-	trans_type = p_trans;
-	return this;
-}
-
-MethodTweener* MethodTweener::set_ease(Tween::EaseType p_ease)
-{
-	ease_type = p_ease;
-	return this;
-}
-
-void MethodTweener::set_tween(const Ref<Tween>& p_tween)
-{
-	Tweener::set_tween(p_tween);
-	if (trans_type == Tween::TRANS_MAX) {
-		trans_type = p_tween->get_trans();
-	}
-	if (ease_type == Tween::EASE_MAX) {
-		ease_type = p_tween->get_ease();
-	}
-}
-
-MethodTweener::MethodTweener()
-{
-	ERR_FAIL_MSG(
-		"MethodTweener can't be created directly. Use the tween_method() method in Tween.");
-}
-
-void SubtweenTweener::start()
-{
-	Tweener::start();
-
-	// Reset the subtween.
-	subtween->stop();
-
-	// It's possible that a subtween could be killed before it is started;
-	// if so, we just want to skip it entirely.
-	if (subtween->is_valid()) {
-		subtween->play();
-	}
-	else {
-		_finish();
-	}
-}
-
-bool SubtweenTweener::step(double& r_delta)
-{
-	if (finished) {
-		return false;
-	}
-
-	elapsed_time += r_delta;
-
-	if (elapsed_time < delay) {
-		r_delta = 0;
-		return true;
-	}
-
-	if (!subtween->step(r_delta)) {
-		r_delta = elapsed_time - delay - subtween->get_total_time();
-		_finish();
-		return false;
-	}
-
-	r_delta = 0;
-	return true;
-}
-
-SubtweenTweener* SubtweenTweener::set_delay(double p_delay)
-{
-	delay = p_delay;
-	return this;
-}
-
-SubtweenTweener::SubtweenTweener(const Ref<Tween>& p_subtween) { subtween = p_subtween; }
-
-SubtweenTweener::SubtweenTweener()
-{
-	ERR_FAIL_MSG(
-		"SubtweenTweener can't be created directly. Use the tween_subtween() method in Tween.");
-}
-
-Ref<AwaitTweener> AwaitTweener::set_timeout(double p_timeout)
+Ref<Tweener> Tweener::set_timeout(double p_timeout)
 {
 	timeout = p_timeout;
 	return this;
 }
 
-void AwaitTweener::start()
+void Tweener::set_tween(const Ref<Tween>& p_tween)
 {
-	Tweener::start();
-	received = false;
+	tween = p_tween.ptr();
+	if (type == TWEENER_PROPERTY || type == TWEENER_METHOD) {
+		if (trans_type == Tween::TRANS_MAX && p_tween.is_valid()) {
+			trans_type = p_tween->get_trans();
+		}
+		if (ease_type == Tween::EASE_MAX && p_tween.is_valid()) {
+			ease_type = p_tween->get_ease();
+		}
+	}
 }
 
-AwaitTweener::AwaitTweener()
+Ref<Tween> Tweener::_get_tween() { return Ref<Tween>(tween); }
+
+void Tweener::_finish() { finished = true; }
+
+void Tweener::start()
 {
-	ERR_FAIL_MSG("AwaitTweener can't be created directly. Use the tween_await() method in Tween.");
+	elapsed_time = 0;
+	finished = false;
+
+	switch (type) {
+	case TWEENER_SUBTWEEN: {
+		if (subtween.is_null()) {
+			_finish();
+			return;
+		}
+		// Reset the subtween.
+		subtween->stop();
+
+		// It's possible that a subtween could be killed before it is started;
+		// if so, we just want to skip it entirely.
+		if (subtween->is_valid()) {
+			subtween->play();
+		}
+		else {
+			_finish();
+		}
+	} break;
+	case TWEENER_AWAIT: {
+		received = false;
+	} break;
+	case TWEENER_INTERVAL:
+	case TWEENER_CALLBACK:
+	case TWEENER_PROPERTY:
+	case TWEENER_METHOD:
+		break;
+	}
 }
 
-void Tweener::set_tween(Ref<Tween> const&) {}
-
-void Tweener::_finish() {}
-
-Tween* Tween::bind_node(Node const*)
+bool Tweener::step(double& r_delta)
 {
-	Tween t = Tween();
-	return &t;
+	switch (type) {
+	case TWEENER_INTERVAL: {
+		if (finished) {
+			return false;
+		}
+
+		elapsed_time += r_delta;
+
+		if (elapsed_time < duration) {
+			r_delta = 0;
+			return true;
+		}
+		else {
+			r_delta = elapsed_time - duration;
+			_finish();
+			return false;
+		}
+	}
+	case TWEENER_SUBTWEEN: {
+		if (finished) {
+			return false;
+		}
+
+		elapsed_time += r_delta;
+
+		if (elapsed_time < delay) {
+			r_delta = 0;
+			return true;
+		}
+
+		if (subtween.is_null() || !subtween->step(r_delta)) {
+			r_delta = elapsed_time - delay - (subtween.is_valid() ? subtween->get_total_time() : 0.0);
+			_finish();
+			return false;
+		}
+
+		r_delta = 0;
+		return true;
+	}
+	case TWEENER_CALLBACK: {
+		if (finished) {
+			return false;
+		}
+
+		elapsed_time += r_delta;
+		if (elapsed_time < delay) {
+			r_delta = 0;
+			return true;
+		}
+
+		if (callback) {
+			callback();
+		}
+		r_delta = elapsed_time - delay;
+		_finish();
+		return false;
+	}
+	case TWEENER_PROPERTY:
+	case TWEENER_METHOD:
+	case TWEENER_AWAIT: {
+		return true;
+	}
+	}
+	return false;
 }
 
-Node* Tween::get_bound_node() const
+Tweener::Tweener()
 {
-	Node n = Node();
-	return &n;
+	ERR_FAIL_MSG("Tweener can't be created directly. Use the tween_*() methods in Tween.");
 }
 
-String Tween::_to_string() { return String(); }
+Tweener::Tweener(Type p_type) : type(p_type) {}
 
-bool CallbackTweener::step(double& r_delta) { return true; }
+Tweener::Tweener(Type p_type, double p_duration) : type(p_type), duration(p_duration) {}
 
-void PropertyTweener::start() {}
-
-bool PropertyTweener::step(double& r_delta) { return true; }
-
-bool MethodTweener::step(double& r_delta) { return true; }
-
-bool AwaitTweener::step(double& r_delta) { return true; }
-
-
+Tweener::Tweener(const Ref<Tween>& p_subtween) : subtween(p_subtween), type(TWEENER_SUBTWEEN) {}

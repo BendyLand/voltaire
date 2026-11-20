@@ -267,7 +267,7 @@ public:
 		}
 	};
 
-	struct InstanceVisibilityNotifierData;
+	struct InstanceBaseData;
 
 	struct InstanceData
 	{
@@ -305,7 +305,7 @@ public:
 		{
 			uint64_t instance_data_rid;
 			RenderGeometryInstance* instance_geometry;
-			InstanceVisibilityNotifierData* visibility_notifier = nullptr;
+			InstanceBaseData* visibility_notifier = nullptr;
 		};
 
 		Instance* instance = nullptr;
@@ -421,6 +421,119 @@ public:
 
 	struct InstanceBaseData
 	{
+		struct LightCache
+		{
+			RSE::LightType type;
+			Transform3D transform;
+			Color color;
+			float energy;
+			float intensity;
+			float bake_energy;
+			float radius;
+			float attenuation;
+			float spot_angle;
+			float spot_attenuation;
+			bool has_shadow;
+			RSE::LightDirectionalSkyMode sky_mode;
+			Vector2 area_size;
+			bool area_normalize_energy;
+			RID area_texture;
+		};
+
+		// Shared fields across instance base types
+		Instance* owner = nullptr;
+		RID instance;
+		uint32_t cull_mask = 0xFFFFFFFF;
+		HashSet<Instance*> geometries;
+		HashSet<Instance*> lights;
+
+		// Geometry data
+		RenderGeometryInstance* geometry_instance = nullptr;
+		bool can_cast_shadows = true;
+		bool material_is_animated = true;
+		uint32_t projector_count = 0;
+		uint32_t softshadow_count = 0;
+		HashSet<Instance*> decals;
+		HashSet<Instance*> reflection_probes;
+		HashSet<Instance*> voxel_gi_instances;
+		HashSet<Instance*> lightmap_captures;
+
+		// Reflection probe data
+		SelfList<InstanceBaseData> update_list;
+		int render_step = -1;
+
+		// Fog volume data
+		bool is_global = false;
+
+		// Visibility notifier data
+		bool just_visible = false;
+		uint64_t visible_in_frame = 0;
+		RID base;
+		SelfList<InstanceBaseData> list_element;
+
+		// Light data
+		uint64_t last_version = 0;
+		List<Instance*>::Element* D = nullptr; // directional light in scenario
+		bool uses_projector = false;
+		bool uses_softshadow = false;
+		Instance* baked_light = nullptr;
+		RSE::LightBakeMode bake_mode = RSE::LIGHT_BAKE_DISABLED;
+		uint32_t max_sdfgi_cascade = 2;
+
+		// VoxelGI data
+		HashSet<Instance*> dynamic_geometries;
+		Vector<LightCache> light_cache;
+		Vector<RID> light_instances;
+		RID probe_instance;
+		bool invalid = true;
+		uint32_t base_version = 0;
+		SelfList<InstanceBaseData> update_element;
+
+		// Lightmap data
+		HashSet<Instance*> users;
+
+	private:
+		// Instead of a single dirty flag, we maintain a count
+		// so that we can detect lights that are being made dirty
+		// each frame, and switch on tighter caster culling.
+		int32_t shadow_dirty_count = 1;
+
+		uint32_t light_update_frame_id = UINT32_MAX;
+		bool light_intersects_multiple_cameras = false;
+		uint32_t light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
+
+	public:
+		bool is_shadow_dirty() const { return shadow_dirty_count != 0; }
+
+		void make_shadow_dirty() { shadow_dirty_count = light_intersects_multiple_cameras ? 1 : 2; }
+
+		void detect_light_intersects_multiple_cameras(uint32_t p_frame_id)
+		{
+			if (p_frame_id == light_update_frame_id) {
+				light_intersects_multiple_cameras = true;
+				light_intersects_multiple_cameras_timeout_frame_id = p_frame_id + 60;
+			}
+			else {
+				if (light_intersects_multiple_cameras &&
+					(p_frame_id >= light_intersects_multiple_cameras_timeout_frame_id)) {
+					light_intersects_multiple_cameras = false;
+					light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
+				}
+			}
+			light_update_frame_id = p_frame_id;
+		}
+
+		void decrement_shadow_dirty()
+		{
+			shadow_dirty_count--;
+			DEV_ASSERT(shadow_dirty_count >= 0);
+		}
+
+		// Shadow updates can either full (everything in the shadow volume)
+		// or closely culled to the camera frustum.
+		bool is_shadow_update_full() const { return shadow_dirty_count == 0; }
+
+		InstanceBaseData() : update_list(this), list_element(this), update_element(this) {}
 		~InstanceBaseData() = default;
 	};
 
@@ -642,218 +755,17 @@ public:
 
 		~Instance()
 		{
-			memdelete(base_data);
-			memdelete(custom_aabb);
+			if (base_data) {
+				memdelete(base_data);
+			}
+			if (custom_aabb) {
+				memdelete(custom_aabb);
+			}
 		}
 	};
 
 	static void _instance_queue_update(
 		Instance* p_instance, bool p_update_aabb, bool p_update_dependencies = false);
-
-	struct InstanceGeometryData : public InstanceBaseData
-	{
-		RenderGeometryInstance* geometry_instance = nullptr;
-		HashSet<Instance*> lights;
-		bool can_cast_shadows;
-		bool material_is_animated;
-		uint32_t projector_count = 0;
-		uint32_t softshadow_count = 0;
-
-		HashSet<Instance*> decals;
-		HashSet<Instance*> reflection_probes;
-		HashSet<Instance*> voxel_gi_instances;
-		HashSet<Instance*> lightmap_captures;
-
-		InstanceGeometryData()
-		{
-			can_cast_shadows = true;
-			material_is_animated = true;
-		}
-	};
-
-	struct InstanceReflectionProbeData : public InstanceBaseData
-	{
-		Instance* owner = nullptr;
-
-		HashSet<Instance*> geometries;
-
-		RID instance;
-		SelfList<InstanceReflectionProbeData> update_list;
-
-		int render_step;
-
-		InstanceReflectionProbeData() : update_list(this) { render_step = -1; }
-	};
-
-	struct InstanceDecalData : public InstanceBaseData
-	{
-		Instance* owner = nullptr;
-		RID instance;
-		uint32_t cull_mask = 0xFFFFFFFF;
-
-		HashSet<Instance*> geometries;
-
-		InstanceDecalData() {}
-	};
-
-
-	struct InstanceParticlesCollisionData : public InstanceBaseData
-	{
-		RID instance;
-		uint32_t cull_mask = 0xFFFFFFFF;
-	};
-
-	struct InstanceFogVolumeData : public InstanceBaseData
-	{
-		RID instance;
-		bool is_global;
-	};
-
-	struct InstanceVisibilityNotifierData : public InstanceBaseData
-	{
-		bool just_visible = false;
-		uint64_t visible_in_frame = 0;
-		RID base;
-		SelfList<InstanceVisibilityNotifierData> list_element;
-
-		InstanceVisibilityNotifierData() : list_element(this) {}
-	};
-
-
-	struct InstanceLightData : public InstanceBaseData
-	{
-		RID instance;
-		uint64_t last_version;
-		List<Instance*>::Element* D; // directional light in scenario
-
-		bool uses_projector = false;
-		bool uses_softshadow = false;
-
-		HashSet<Instance*> geometries;
-
-		Instance* baked_light = nullptr;
-
-		RSE::LightBakeMode bake_mode;
-		uint32_t max_sdfgi_cascade = 2;
-		uint32_t cull_mask = 0xFFFFFFFF;
-
-	private:
-		// Instead of a single dirty flag, we maintain a count
-		// so that we can detect lights that are being made dirty
-		// each frame, and switch on tighter caster culling.
-		int32_t shadow_dirty_count;
-
-		uint32_t light_update_frame_id;
-		bool light_intersects_multiple_cameras;
-		uint32_t light_intersects_multiple_cameras_timeout_frame_id;
-
-	public:
-		bool is_shadow_dirty() const { return shadow_dirty_count != 0; }
-
-		void make_shadow_dirty() { shadow_dirty_count = light_intersects_multiple_cameras ? 1 : 2; }
-
-		void detect_light_intersects_multiple_cameras(uint32_t p_frame_id)
-		{
-			// We need to detect the case where shadow updates are occurring
-			// more than once per frame. In this case, we need to turn off
-			// tighter caster culling, so situation reverts to one full shadow update
-			// per frame (light_intersects_multiple_cameras is set).
-			if (p_frame_id == light_update_frame_id) {
-				light_intersects_multiple_cameras = true;
-				light_intersects_multiple_cameras_timeout_frame_id = p_frame_id + 60;
-			}
-			else {
-				// When shadow_volume_intersects_multiple_cameras is set, we
-				// want to detect the situation this is no longer the case, via a timeout.
-				// The system can go back to tighter caster culling in this situation.
-				// Having a long-ish timeout prevents rapid cycling.
-				if (light_intersects_multiple_cameras &&
-					(p_frame_id >= light_intersects_multiple_cameras_timeout_frame_id)) {
-					light_intersects_multiple_cameras = false;
-					light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
-				}
-			}
-			light_update_frame_id = p_frame_id;
-		}
-
-		void decrement_shadow_dirty()
-		{
-			shadow_dirty_count--;
-			DEV_ASSERT(shadow_dirty_count >= 0);
-		}
-
-		// Shadow updates can either full (everything in the shadow volume)
-		// or closely culled to the camera frustum.
-		bool is_shadow_update_full() const { return shadow_dirty_count == 0; }
-
-		InstanceLightData()
-		{
-			bake_mode = RSE::LIGHT_BAKE_DISABLED;
-			D = nullptr;
-			last_version = 0;
-			baked_light = nullptr;
-
-			shadow_dirty_count = 1;
-			light_update_frame_id = UINT32_MAX;
-			light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
-			light_intersects_multiple_cameras = false;
-		}
-	};
-
-	struct InstanceVoxelGIData : public InstanceBaseData
-	{
-		Instance* owner = nullptr;
-
-		HashSet<Instance*> geometries;
-		HashSet<Instance*> dynamic_geometries;
-
-		HashSet<Instance*> lights;
-
-		struct LightCache
-		{
-			RSE::LightType type;
-			Transform3D transform;
-			Color color;
-			float energy;
-			float intensity;
-			float bake_energy;
-			float radius;
-			float attenuation;
-			float spot_angle;
-			float spot_attenuation;
-			bool has_shadow;
-			RSE::LightDirectionalSkyMode sky_mode;
-			Vector2 area_size;
-			bool area_normalize_energy;
-			RID area_texture;
-		};
-
-		Vector<LightCache> light_cache;
-		Vector<RID> light_instances;
-
-		RID probe_instance;
-
-		bool invalid;
-		uint32_t base_version;
-
-		SelfList<InstanceVoxelGIData> update_element;
-
-		InstanceVoxelGIData() : update_element(this)
-		{
-			invalid = true;
-			base_version = 0;
-		}
-	};
-
-
-	struct InstanceLightmapData : public InstanceBaseData
-	{
-		RID instance;
-		HashSet<Instance*> geometries;
-		HashSet<Instance*> users;
-
-		InstanceLightmapData() {}
-	};
 
 
 	struct PairInstances
@@ -1233,11 +1145,11 @@ public:
 
 		PagedAllocator<InstancePair> pair_allocator;
 		SelfList<Instance>::List _instance_update_list;
-		SelfList<InstanceReflectionProbeData>::List reflection_probe_render_list;
+		SelfList<InstanceBaseData>::List reflection_probe_render_list;
 
 		SpinLock visible_notifier_list_lock;
-		SelfList<InstanceVisibilityNotifierData>::List visible_notifier_list;
-		SelfList<InstanceVoxelGIData>::List voxel_gi_update_list;
+		SelfList<InstanceBaseData>::List visible_notifier_list;
+		SelfList<InstanceBaseData>::List voxel_gi_update_list;
 
 		uint64_t pair_pass = 1;
 		HashSet<Instance*> heightfield_particle_colliders_update_list;

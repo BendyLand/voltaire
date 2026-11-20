@@ -172,10 +172,10 @@ static void _generate_contacts_from_supports(const Vector2 *p_points_A, int p_po
 	contacts_func(points_A, pointcount_A, points_B, pointcount_B, p_collector);
 }
 
-template <typename ShapeA, typename ShapeB, bool castA = false, bool castB = false, bool withMargin = false>
+template <PS2DE::ShapeType typeA, PS2DE::ShapeType typeB, bool castA = false, bool castB = false, bool withMargin = false>
 class SeparatorAxisTest2D {
-	const ShapeA *shape_A = nullptr;
-	const ShapeB *shape_B = nullptr;
+	const GodotShape2D *shape_A = nullptr;
+	const GodotShape2D *shape_B = nullptr;
 	const Transform2D *transform_A = nullptr;
 	const Transform2D *transform_B = nullptr;
 	real_t best_depth = 1e15;
@@ -237,16 +237,16 @@ public:
 
 		real_t min_A = 0.0, max_A = 0.0, min_B = 0.0, max_B = 0.0;
 
-		if (castA) {
-			shape_A->project_range_cast(motion_A, axis, *transform_A, min_A, max_A);
+		if constexpr (castA) {
+			shape_A->project_range_cast_t<typeA>(motion_A, axis, *transform_A, min_A, max_A);
 		} else {
-			shape_A->project_range(axis, *transform_A, min_A, max_A);
+			shape_A->project_range_t<typeA>(axis, *transform_A, min_A, max_A);
 		}
 
-		if (castB) {
-			shape_B->project_range_cast(motion_B, axis, *transform_B, min_B, max_B);
+		if constexpr (castB) {
+			shape_B->project_range_cast_t<typeB>(motion_B, axis, *transform_B, min_B, max_B);
 		} else {
-			shape_B->project_range(axis, *transform_B, min_B, max_B);
+			shape_B->project_range_t<typeB>(axis, *transform_B, min_B, max_B);
 		}
 
 		if (withMargin) {
@@ -360,7 +360,7 @@ public:
 		}
 	}
 
-	_FORCE_INLINE_ SeparatorAxisTest2D(const ShapeA *p_shape_A, const Transform2D &p_transform_a, const ShapeB *p_shape_B, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_A = Vector2(), const Vector2 &p_motion_B = Vector2(), real_t p_margin_A = 0, real_t p_margin_B = 0) {
+	_FORCE_INLINE_ SeparatorAxisTest2D(const GodotShape2D *p_shape_A, const Transform2D &p_transform_a, const GodotShape2D *p_shape_B, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_A = Vector2(), const Vector2 &p_motion_B = Vector2(), real_t p_margin_A = 0, real_t p_margin_B = 0) {
 		margin_A = p_margin_A;
 		margin_B = p_margin_B;
 		shape_A = p_shape_A;
@@ -385,10 +385,10 @@ typedef void (*CollisionFunc)(const GodotShape2D *, const Transform2D &, const G
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_segment_segment(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotSegmentShape2D *segment_A = static_cast<const GodotSegmentShape2D *>(p_a);
-	const GodotSegmentShape2D *segment_B = static_cast<const GodotSegmentShape2D *>(p_b);
+	const GodotShape2D *segment_A = p_a;
+	const GodotShape2D *segment_B = p_b;
 
-	SeparatorAxisTest2D<GodotSegmentShape2D, GodotSegmentShape2D, castA, castB, withMargin> separator(segment_A, p_transform_a, segment_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_SEGMENT, PS2DE::SHAPE_SEGMENT, castA, castB, withMargin> separator(segment_A, p_transform_a, segment_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -428,10 +428,10 @@ static void _collision_segment_segment(const GodotShape2D *p_a, const Transform2
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_segment_circle(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotSegmentShape2D *segment_A = static_cast<const GodotSegmentShape2D *>(p_a);
-	const GodotCircleShape2D *circle_B = static_cast<const GodotCircleShape2D *>(p_b);
+	const GodotShape2D *segment_A = p_a;
+	const GodotShape2D *circle_B = p_b;
 
-	SeparatorAxisTest2D<GodotSegmentShape2D, GodotCircleShape2D, castA, castB, withMargin> separator(segment_A, p_transform_a, circle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_SEGMENT, PS2DE::SHAPE_CIRCLE, castA, castB, withMargin> separator(segment_A, p_transform_a, circle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -461,10 +461,10 @@ static void _collision_segment_circle(const GodotShape2D *p_a, const Transform2D
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_segment_rectangle(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotSegmentShape2D *segment_A = static_cast<const GodotSegmentShape2D *>(p_a);
-	const GodotRectangleShape2D *rectangle_B = static_cast<const GodotRectangleShape2D *>(p_b);
+	const GodotShape2D *segment_A = p_a;
+	const GodotShape2D *rectangle_B = p_b;
 
-	SeparatorAxisTest2D<GodotSegmentShape2D, GodotRectangleShape2D, castA, castB, withMargin> separator(segment_A, p_transform_a, rectangle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_SEGMENT, PS2DE::SHAPE_RECTANGLE, castA, castB, withMargin> separator(segment_A, p_transform_a, rectangle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -532,10 +532,10 @@ static void _collision_segment_rectangle(const GodotShape2D *p_a, const Transfor
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_segment_capsule(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotSegmentShape2D *segment_A = static_cast<const GodotSegmentShape2D *>(p_a);
-	const GodotCapsuleShape2D *capsule_B = static_cast<const GodotCapsuleShape2D *>(p_b);
+	const GodotShape2D *segment_A = p_a;
+	const GodotShape2D *capsule_B = p_b;
 
-	SeparatorAxisTest2D<GodotSegmentShape2D, GodotCapsuleShape2D, castA, castB, withMargin> separator(segment_A, p_transform_a, capsule_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_SEGMENT, PS2DE::SHAPE_CAPSULE, castA, castB, withMargin> separator(segment_A, p_transform_a, capsule_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -573,10 +573,10 @@ static void _collision_segment_capsule(const GodotShape2D *p_a, const Transform2
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_segment_convex_polygon(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotSegmentShape2D *segment_A = static_cast<const GodotSegmentShape2D *>(p_a);
-	const GodotConvexPolygonShape2D *convex_B = static_cast<const GodotConvexPolygonShape2D *>(p_b);
+	const GodotShape2D *segment_A = p_a;
+	const GodotShape2D *convex_B = p_b;
 
-	SeparatorAxisTest2D<GodotSegmentShape2D, GodotConvexPolygonShape2D, castA, castB, withMargin> separator(segment_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_SEGMENT, PS2DE::SHAPE_CONVEX_POLYGON, castA, castB, withMargin> separator(segment_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -612,10 +612,10 @@ static void _collision_segment_convex_polygon(const GodotShape2D *p_a, const Tra
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_circle_circle(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotCircleShape2D *circle_A = static_cast<const GodotCircleShape2D *>(p_a);
-	const GodotCircleShape2D *circle_B = static_cast<const GodotCircleShape2D *>(p_b);
+	const GodotShape2D *circle_A = p_a;
+	const GodotShape2D *circle_B = p_b;
 
-	SeparatorAxisTest2D<GodotCircleShape2D, GodotCircleShape2D, castA, castB, withMargin> separator(circle_A, p_transform_a, circle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_CIRCLE, PS2DE::SHAPE_CIRCLE, castA, castB, withMargin> separator(circle_A, p_transform_a, circle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -634,10 +634,10 @@ static void _collision_circle_circle(const GodotShape2D *p_a, const Transform2D 
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_circle_rectangle(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotCircleShape2D *circle_A = static_cast<const GodotCircleShape2D *>(p_a);
-	const GodotRectangleShape2D *rectangle_B = static_cast<const GodotRectangleShape2D *>(p_b);
+	const GodotShape2D *circle_A = p_a;
+	const GodotShape2D *rectangle_B = p_b;
 
-	SeparatorAxisTest2D<GodotCircleShape2D, GodotRectangleShape2D, castA, castB, withMargin> separator(circle_A, p_transform_a, rectangle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_CIRCLE, PS2DE::SHAPE_RECTANGLE, castA, castB, withMargin> separator(circle_A, p_transform_a, rectangle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -692,10 +692,10 @@ static void _collision_circle_rectangle(const GodotShape2D *p_a, const Transform
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_circle_capsule(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotCircleShape2D *circle_A = static_cast<const GodotCircleShape2D *>(p_a);
-	const GodotCapsuleShape2D *capsule_B = static_cast<const GodotCapsuleShape2D *>(p_b);
+	const GodotShape2D *circle_A = p_a;
+	const GodotShape2D *capsule_B = p_b;
 
-	SeparatorAxisTest2D<GodotCircleShape2D, GodotCapsuleShape2D, castA, castB, withMargin> separator(circle_A, p_transform_a, capsule_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_CIRCLE, PS2DE::SHAPE_CAPSULE, castA, castB, withMargin> separator(circle_A, p_transform_a, capsule_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -725,10 +725,10 @@ static void _collision_circle_capsule(const GodotShape2D *p_a, const Transform2D
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_circle_convex_polygon(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotCircleShape2D *circle_A = static_cast<const GodotCircleShape2D *>(p_a);
-	const GodotConvexPolygonShape2D *convex_B = static_cast<const GodotConvexPolygonShape2D *>(p_b);
+	const GodotShape2D *circle_A = p_a;
+	const GodotShape2D *convex_B = p_b;
 
-	SeparatorAxisTest2D<GodotCircleShape2D, GodotConvexPolygonShape2D, castA, castB, withMargin> separator(circle_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_CIRCLE, PS2DE::SHAPE_CONVEX_POLYGON, castA, castB, withMargin> separator(circle_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -756,10 +756,10 @@ static void _collision_circle_convex_polygon(const GodotShape2D *p_a, const Tran
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_rectangle_rectangle(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotRectangleShape2D *rectangle_A = static_cast<const GodotRectangleShape2D *>(p_a);
-	const GodotRectangleShape2D *rectangle_B = static_cast<const GodotRectangleShape2D *>(p_b);
+	const GodotShape2D *rectangle_A = p_a;
+	const GodotShape2D *rectangle_B = p_b;
 
-	SeparatorAxisTest2D<GodotRectangleShape2D, GodotRectangleShape2D, castA, castB, withMargin> separator(rectangle_A, p_transform_a, rectangle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_RECTANGLE, PS2DE::SHAPE_RECTANGLE, castA, castB, withMargin> separator(rectangle_A, p_transform_a, rectangle_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -830,10 +830,10 @@ static void _collision_rectangle_rectangle(const GodotShape2D *p_a, const Transf
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_rectangle_capsule(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotRectangleShape2D *rectangle_A = static_cast<const GodotRectangleShape2D *>(p_a);
-	const GodotCapsuleShape2D *capsule_B = static_cast<const GodotCapsuleShape2D *>(p_b);
+	const GodotShape2D *rectangle_A = p_a;
+	const GodotShape2D *capsule_B = p_b;
 
-	SeparatorAxisTest2D<GodotRectangleShape2D, GodotCapsuleShape2D, castA, castB, withMargin> separator(rectangle_A, p_transform_a, capsule_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_RECTANGLE, PS2DE::SHAPE_CAPSULE, castA, castB, withMargin> separator(rectangle_A, p_transform_a, capsule_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -908,10 +908,10 @@ static void _collision_rectangle_capsule(const GodotShape2D *p_a, const Transfor
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_rectangle_convex_polygon(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotRectangleShape2D *rectangle_A = static_cast<const GodotRectangleShape2D *>(p_a);
-	const GodotConvexPolygonShape2D *convex_B = static_cast<const GodotConvexPolygonShape2D *>(p_b);
+	const GodotShape2D *rectangle_A = p_a;
+	const GodotShape2D *convex_B = p_b;
 
-	SeparatorAxisTest2D<GodotRectangleShape2D, GodotConvexPolygonShape2D, castA, castB, withMargin> separator(rectangle_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_RECTANGLE, PS2DE::SHAPE_CONVEX_POLYGON, castA, castB, withMargin> separator(rectangle_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -970,10 +970,10 @@ static void _collision_rectangle_convex_polygon(const GodotShape2D *p_a, const T
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_capsule_capsule(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotCapsuleShape2D *capsule_A = static_cast<const GodotCapsuleShape2D *>(p_a);
-	const GodotCapsuleShape2D *capsule_B = static_cast<const GodotCapsuleShape2D *>(p_b);
+	const GodotShape2D *capsule_A = p_a;
+	const GodotShape2D *capsule_B = p_b;
 
-	SeparatorAxisTest2D<GodotCapsuleShape2D, GodotCapsuleShape2D, castA, castB, withMargin> separator(capsule_A, p_transform_a, capsule_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_CAPSULE, PS2DE::SHAPE_CAPSULE, castA, castB, withMargin> separator(capsule_A, p_transform_a, capsule_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -1018,10 +1018,10 @@ static void _collision_capsule_capsule(const GodotShape2D *p_a, const Transform2
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_capsule_convex_polygon(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotCapsuleShape2D *capsule_A = static_cast<const GodotCapsuleShape2D *>(p_a);
-	const GodotConvexPolygonShape2D *convex_B = static_cast<const GodotConvexPolygonShape2D *>(p_b);
+	const GodotShape2D *capsule_A = p_a;
+	const GodotShape2D *convex_B = p_b;
 
-	SeparatorAxisTest2D<GodotCapsuleShape2D, GodotConvexPolygonShape2D, castA, castB, withMargin> separator(capsule_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_CAPSULE, PS2DE::SHAPE_CONVEX_POLYGON, castA, castB, withMargin> separator(capsule_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;
@@ -1064,10 +1064,10 @@ static void _collision_capsule_convex_polygon(const GodotShape2D *p_a, const Tra
 
 template <bool castA, bool castB, bool withMargin>
 static void _collision_convex_polygon_convex_polygon(const GodotShape2D *p_a, const Transform2D &p_transform_a, const GodotShape2D *p_b, const Transform2D &p_transform_b, _CollectorCallback2D *p_collector, const Vector2 &p_motion_a, const Vector2 &p_motion_b, real_t p_margin_A, real_t p_margin_B) {
-	const GodotConvexPolygonShape2D *convex_A = static_cast<const GodotConvexPolygonShape2D *>(p_a);
-	const GodotConvexPolygonShape2D *convex_B = static_cast<const GodotConvexPolygonShape2D *>(p_b);
+	const GodotShape2D *convex_A = p_a;
+	const GodotShape2D *convex_B = p_b;
 
-	SeparatorAxisTest2D<GodotConvexPolygonShape2D, GodotConvexPolygonShape2D, castA, castB, withMargin> separator(convex_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
+	SeparatorAxisTest2D<PS2DE::SHAPE_CONVEX_POLYGON, PS2DE::SHAPE_CONVEX_POLYGON, castA, castB, withMargin> separator(convex_A, p_transform_a, convex_B, p_transform_b, p_collector, p_motion_a, p_motion_b, p_margin_A, p_margin_B);
 
 	if (!separator.test_previous_axis()) {
 		return;

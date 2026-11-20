@@ -393,7 +393,7 @@ void AnimationMixer::_blend_calc_total_weight()
 				continue;
 			}
 
-			// In some cases (e.g. TrackCacheTransform),
+			// In some cases (e.g. transform TrackCache),
 			// multiple Animation::Tracks (e.g. TYPE_POSITION_3D, TYPE_ROTATION_3D and
 			// TYPE_SCALE_3D) can point to the same TrackCache instance. So we need to make sure
 			// that the weight is added only once per AnimationInstance.
@@ -569,35 +569,13 @@ AnimationMixer::TrackCache* AnimatedValuesBackup::get_cache_copy(
 {
 	switch (p_cache->type) {
 	case Animation::TYPE_BEZIER:
-	case Animation::TYPE_VALUE: {
-		AnimationMixer::TrackCacheValue* src =
-			static_cast<AnimationMixer::TrackCacheValue*>(p_cache);
-		AnimationMixer::TrackCacheValue* tc = memnew(AnimationMixer::TrackCacheValue(*src));
-		return tc;
-	}
-
+	case Animation::TYPE_VALUE:
 	case Animation::TYPE_POSITION_3D:
 	case Animation::TYPE_ROTATION_3D:
-	case Animation::TYPE_SCALE_3D: {
-		AnimationMixer::TrackCacheTransform* src =
-			static_cast<AnimationMixer::TrackCacheTransform*>(p_cache);
-		AnimationMixer::TrackCacheTransform* tc = memnew(AnimationMixer::TrackCacheTransform(*src));
-		return tc;
-	}
-
-	case Animation::TYPE_BLEND_SHAPE: {
-		AnimationMixer::TrackCacheBlendShape* src =
-			static_cast<AnimationMixer::TrackCacheBlendShape*>(p_cache);
-		AnimationMixer::TrackCacheBlendShape* tc =
-			memnew(AnimationMixer::TrackCacheBlendShape(*src));
-		return tc;
-	}
-
+	case Animation::TYPE_SCALE_3D:
+	case Animation::TYPE_BLEND_SHAPE:
 	case Animation::TYPE_AUDIO: {
-		AnimationMixer::TrackCacheAudio* src =
-			static_cast<AnimationMixer::TrackCacheAudio*>(p_cache);
-		AnimationMixer::TrackCacheAudio* tc = memnew(AnimationMixer::TrackCacheAudio(*src));
-		return tc;
+		return memnew(AnimationMixer::TrackCache(*p_cache));
 	}
 
 	case Animation::TYPE_METHOD:

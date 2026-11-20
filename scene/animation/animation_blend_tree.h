@@ -34,44 +34,129 @@
 #include "scene/animation/animation_tree.h"
 #include "scene/resources/curve.h"
 
-class AnimationNodeAnimation : public AnimationNode
+class AnimationNodeBlendNode final : public AnimationNode
 {
-	String backward = "backward"; // Only used by pingpong animation.
+public:
+	enum NodeType
+	{
+		NODE_ANIMATION,
+		NODE_ONESHOT,
+		NODE_ADD,
+		NODE_BLEND,
+		NODE_SUB,
+		NODE_TIME_SCALE,
+		NODE_TIME_SEEK,
+		NODE_TRANSITION,
+		NODE_OUTPUT,
+	};
 
+	enum PlayMode
+	{
+		PLAY_MODE_FORWARD,
+		PLAY_MODE_BACKWARD,
+	};
+
+	enum OneShotRequest
+	{
+		ONE_SHOT_REQUEST_NONE,
+		ONE_SHOT_REQUEST_FIRE,
+		ONE_SHOT_REQUEST_ABORT,
+		ONE_SHOT_REQUEST_FADE_OUT,
+	};
+
+	enum MixMode
+	{
+		MIX_MODE_BLEND,
+		MIX_MODE_ADD,
+	};
+
+	struct InputData
+	{
+		bool auto_advance = false;
+		bool break_loop_at_end = false;
+		bool reset = true;
+	};
+
+	static LocalVector<String> (*get_editable_animation_list)();
+
+private:
+	NodeType node_type = NODE_ANIMATION;
+
+	// NODE_ANIMATION
+	String backward = "backward"; // Only used by pingpong animation.
 	String animation;
 	mutable uint32_t animation_version = 1;
-
+	PlayMode play_mode = PLAY_MODE_FORWARD;
 	bool advance_on_start = false;
-
 	bool use_custom_timeline = false;
 	double timeline_length = 1.0;
 	Animation::LoopMode loop_mode = Animation::LOOP_NONE;
 	bool stretch_time_scale = true;
 	double start_offset = 0.0;
 
+	// NODE_ONESHOT
+	double fade_in = 0.0;
+	Ref<Curve> fade_in_curve;
+	double fade_out = 0.0;
+	Ref<Curve> fade_out_curve;
+	bool auto_restart = false;
+	double auto_restart_delay = 1.0;
+	double auto_restart_random_delay = 0.0;
+	MixMode mix = MIX_MODE_BLEND;
+	bool break_loop_at_end = false;
+	bool abort_on_reset = false;
+	String request = PNAME("request");
+	String active = PNAME("active");
+	String internal_active = PNAME("internal_active");
+	String fade_in_remaining = "fade_in_remaining";
+	String fade_out_remaining = "fade_out_remaining";
+	String time_to_restart = "time_to_restart";
+
+	// NODE_ADD / NODE_BLEND / NODE_SUB
+	String add_amount = PNAME("add_amount");
+	String blend_amount = PNAME("blend_amount");
+	String sub_amount = PNAME("sub_amount");
+	bool three_way = false;
+
+	// NODE_TIME_SCALE / NODE_TIME_SEEK
+	String scale = PNAME("scale");
+	String seek_request = PNAME("seek_request");
+	bool explicit_elapse = true;
+
+	// NODE_TRANSITION
+	LocalVector<InputData> input_data;
+	String prev_xfading = "prev_xfading";
+	String prev_index = "prev_index";
+	String current_index = PNAME("current_index");
+	String current_state = PNAME("current_state");
+	String transition_request = PNAME("transition_request");
+	double xfade_time = 0.0;
+	Ref<Curve> xfade_curve;
+	bool allow_transition_to_self = false;
+	bool pending_update = false;
+
+	void _update_animation_cache(AnimationTree* p_tree, AnimationNodeInstance& p_instance) const;
+
 public:
-	enum PlayMode
-	{
-		PLAY_MODE_FORWARD,
-		PLAY_MODE_BACKWARD
-	};
+	NodeType get_node_type() const { return node_type; }
+	bool is_three_way() const { return three_way; }
 
 	virtual void validate_node(
 		const AnimationTree* p_tree, const String& p_path) const override;
-
-	static LocalVector<String> (*get_editable_animation_list)();
-
+	virtual bool is_parameter_read_only(const String& p_parameter) const override;
 	virtual String get_caption() const override;
+	virtual bool has_filter() const override;
 
 	_FORCE_INLINE_ virtual double get_process_delta(AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info) const override final
+		const AnimationMixer::PlaybackInfo& p_playback_info) const override
 	{
-		return (p_playback_info.delta);
+		return p_playback_info.delta;
 	}
 
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
+	// NODE_ANIMATION API
 	void set_animation(const String& p_name);
 	String get_animation() const;
 
@@ -100,60 +185,7 @@ public:
 	void set_loop_mode(Animation::LoopMode p_loop_mode);
 	Animation::LoopMode get_loop_mode() const;
 
-	AnimationNodeAnimation();
-
-protected:
-
-private:
-	PlayMode play_mode = PLAY_MODE_FORWARD;
-
-	void _update_animation_cache(AnimationTree* p_tree, AnimationNodeInstance& p_instance) const;
-};
-
-class AnimationNodeOneShot : public AnimationNode
-{
-public:
-	enum OneShotRequest
-	{
-		ONE_SHOT_REQUEST_NONE,
-		ONE_SHOT_REQUEST_FIRE,
-		ONE_SHOT_REQUEST_ABORT,
-		ONE_SHOT_REQUEST_FADE_OUT,
-	};
-
-	enum MixMode
-	{
-		MIX_MODE_BLEND,
-		MIX_MODE_ADD
-	};
-
-private:
-	double fade_in = 0.0;
-	Ref<Curve> fade_in_curve;
-	double fade_out = 0.0;
-	Ref<Curve> fade_out_curve;
-
-	bool auto_restart = false;
-	double auto_restart_delay = 1.0;
-	double auto_restart_random_delay = 0.0;
-	MixMode mix = MIX_MODE_BLEND;
-	bool break_loop_at_end = false;
-	bool abort_on_reset = false;
-
-	String request = PNAME("request");
-	String active = PNAME("active");
-	String internal_active = PNAME("internal_active");
-	String fade_in_remaining = "fade_in_remaining";
-	String fade_out_remaining = "fade_out_remaining";
-	String time_to_restart = "time_to_restart";
-
-protected:
-
-public:
-	virtual bool is_parameter_read_only(const String& p_parameter) const override;
-
-	virtual String get_caption() const override;
-
+	// NODE_ONESHOT API
 	void set_fade_in_time(double p_time);
 	double get_fade_in_time() const;
 
@@ -183,122 +215,12 @@ public:
 	void set_abort_on_reset(bool p_enable);
 	bool is_aborted_on_reset() const;
 
-	virtual bool has_filter() const override;
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-
-	AnimationNodeOneShot();
-};
-
-class AnimationNodeAdd2 : public AnimationNode
-{
-	String add_amount = PNAME("add_amount");
-	bool three_way = false;
-
-public:
-	bool is_three_way() const { return three_way; }
-	virtual String get_caption() const override;
-
-	virtual bool has_filter() const override;
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-
-	AnimationNodeAdd2(bool p_three_way = false);
-};
-
-class AnimationNodeBlend2 : public AnimationNode
-{
-	String blend_amount = PNAME("blend_amount");
-	bool three_way = false;
-
-public:
-	bool is_three_way() const { return three_way; }
-	virtual String get_caption() const override;
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-
-	virtual bool has_filter() const override;
-	AnimationNodeBlend2(bool p_three_way = false);
-};
-
-class AnimationNodeSub2 : public AnimationNode
-{
-	String sub_amount = PNAME("sub_amount");
-
-public:
-	virtual String get_caption() const override;
-
-	virtual bool has_filter() const override;
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-
-	AnimationNodeSub2();
-};
-
-class AnimationNodeTimeScale : public AnimationNode
-{
-	String scale = PNAME("scale");
-
-public:
-	virtual String get_caption() const override;
-
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-
-	AnimationNodeTimeScale();
-};
-
-class AnimationNodeTimeSeek : public AnimationNode
-{
-	String seek_request = PNAME("seek_request");
-	bool explicit_elapse = true;
-
-protected:
-
-public:
-	virtual String get_caption() const override;
-
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-
+	// NODE_TIME_SEEK API
 	void set_explicit_elapse(bool p_enable);
 	bool is_explicit_elapse() const;
 
-	AnimationNodeTimeSeek();
-};
-
-class AnimationNodeTransition : public AnimationNode
-{
-	struct InputData
-	{
-		bool auto_advance = false;
-		bool break_loop_at_end = false;
-		bool reset = true;
-	};
-
-	LocalVector<InputData> input_data;
-
-	String prev_xfading = "prev_xfading";
-	String prev_index = "prev_index";
-	String current_index = PNAME("current_index");
-	String current_state = PNAME("current_state");
-	String transition_request = PNAME("transition_request");
-
-	double xfade_time = 0.0;
-	Ref<Curve> xfade_curve;
-	bool allow_transition_to_self = false;
-
-	bool pending_update = false;
-
-protected:
-
-public:
-	virtual bool is_parameter_read_only(const String& p_parameter) const override;
-
-	virtual String get_caption() const override;
-
+	// NODE_TRANSITION API
 	void set_input_count(int p_inputs);
-
 	virtual bool add_input(const String& p_name) override;
 	virtual void remove_input(int p_index) override;
 	virtual bool set_input_name(int p_input, const String& p_name) override;
@@ -321,24 +243,10 @@ public:
 	void set_allow_transition_to_self(bool p_enable);
 	bool is_allow_transition_to_self() const;
 
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-
-	AnimationNodeTransition();
+	AnimationNodeBlendNode(NodeType p_type = NODE_ANIMATION, bool p_three_way = false);
 };
 
-class AnimationNodeOutput : public AnimationNode
-{
-public:
-	virtual String get_caption() const override;
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-	AnimationNodeOutput();
-};
-
-/////
-
-class AnimationNodeBlendTree : public AnimationNode
+class AnimationNodeBlendTree final : public AnimationNode
 {
 	struct Node
 	{
@@ -356,7 +264,6 @@ class AnimationNodeBlendTree : public AnimationNode
 	void _initialize_node_tree();
 
 protected:
-
 	virtual void _tree_changed() override;
 
 	virtual void reset_state() override;
@@ -423,5 +330,3 @@ public:
 	AnimationNodeBlendTree();
 	~AnimationNodeBlendTree() = default;
 };
-
-

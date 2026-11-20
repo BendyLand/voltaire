@@ -37,13 +37,12 @@
 //#define collision_solver gjk_epa_calculate_penetration
 
 bool GodotCollisionSolver2D::solve_static_world_boundary(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, real_t p_margin) {
-	const GodotWorldBoundaryShape2D *world_boundary = static_cast<const GodotWorldBoundaryShape2D *>(p_shape_A);
 	if (p_shape_B->get_type() == PS2DE::SHAPE_WORLD_BOUNDARY) {
 		return false;
 	}
 
-	Vector2 n = p_transform_A.basis_xform(world_boundary->get_normal()).normalized();
-	Vector2 p = p_transform_A.xform(world_boundary->get_normal() * world_boundary->get_d());
+	Vector2 n = p_transform_A.basis_xform(p_shape_A->get_world_boundary_normal()).normalized();
+	Vector2 p = p_transform_A.xform(p_shape_A->get_world_boundary_normal() * p_shape_A->get_world_boundary_d());
 	real_t d = n.dot(p);
 
 	Vector2 supports[2];
@@ -78,13 +77,12 @@ bool GodotCollisionSolver2D::solve_static_world_boundary(const GodotShape2D *p_s
 }
 
 bool GodotCollisionSolver2D::solve_separation_ray(const GodotShape2D *p_shape_A, const Vector2 &p_motion_A, const Transform2D &p_transform_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, Vector2 *r_sep_axis, real_t p_margin) {
-	const GodotSeparationRayShape2D *ray = static_cast<const GodotSeparationRayShape2D *>(p_shape_A);
 	if (p_shape_B->get_type() == PS2DE::SHAPE_SEPARATION_RAY) {
 		return false;
 	}
 
 	Vector2 from = p_transform_A.get_origin();
-	Vector2 to = from + p_transform_A[1] * (ray->get_length() + p_margin);
+	Vector2 to = from + p_transform_A[1] * (p_shape_A->get_length() + p_margin);
 	if (p_motion_A != Vector2()) {
 		//not the best but should be enough
 		Vector2 normal = (to - from).normalized();
@@ -121,7 +119,7 @@ bool GodotCollisionSolver2D::solve_separation_ray(const GodotShape2D *p_shape_A,
 	}
 
 	Vector2 support_B = p_transform_B.xform(p);
-	if (ray->get_slide_on_slope()) {
+	if (p_shape_A->get_slide_on_slope()) {
 		Vector2 global_n = invb.basis_xform_inv(n).normalized();
 		support_B = support_A + (support_B - support_A).length() * global_n;
 	}
@@ -170,8 +168,6 @@ bool GodotCollisionSolver2D::concave_callback(void *p_userdata, GodotShape2D *p_
 }
 
 bool GodotCollisionSolver2D::solve_concave(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const Vector2 &p_motion_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, Vector2 *r_sep_axis, real_t p_margin_A, real_t p_margin_B) {
-	const GodotConcavePolygonShape2D *concave_B = static_cast<const GodotConcavePolygonShape2D *>(p_shape_B);
-
 	_ConcaveCollisionInfo2D cinfo;
 	cinfo.transform_A = &p_transform_A;
 	cinfo.shape_A = p_shape_A;
@@ -213,7 +209,7 @@ bool GodotCollisionSolver2D::solve_concave(const GodotShape2D *p_shape_A, const 
 		local_aabb = local_aabb.merge(moved_aabb);
 	}
 
-	concave_B->cull(local_aabb, concave_callback, &cinfo);
+	p_shape_B->cull(local_aabb, concave_callback, &cinfo);
 
 	return cinfo.collided;
 }

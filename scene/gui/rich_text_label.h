@@ -196,40 +196,7 @@ private:
 		}
 	};
 
-	struct Item
-	{
-		int index = 0;
-		int char_ofs = 0;
-		Item* parent = nullptr; // "parent" means "enclosing item tag", if any. It is an interval
-								// predecessor, not a hierarchical parent.
-		ItemType type = ITEM_FRAME;
-		List<Item*> subitems;
-		List<Item*>::Element* E = nullptr;
-		int line = 0; // `line` is the index number of the paragraph (Line) this item is inside of
-					  // (zero if the first paragraph).
-		RID rid;
-
-		RID accessibility_item_element;
-
-		void _clear_children()
-		{ // Only ever called on main or a paragraph (Line).
-			while (subitems.size()) {
-				Item* subitem = subitems.front()->get();
-				memdelete(subitem);
-				subitems.pop_front();
-			}
-		}
-
-		virtual ~Item()
-		{
-			_clear_children();
-			if (rid.is_valid()) {
-				items.free(rid);
-			}
-		}
-	};
-
-	struct ItemFrame : public Item
+	struct FrameData
 	{
 		bool cell = false;
 
@@ -238,7 +205,7 @@ private:
 		std::atomic<int> first_invalid_font_line;
 		std::atomic<int> first_resized_line;
 
-		ItemFrame* parent_frame = nullptr;
+		Item* parent_frame = nullptr;
 
 		Color odd_row_bg = Color(0, 0, 0, 0);
 		Color even_row_bg = Color(0, 0, 0, 0);
@@ -247,23 +214,15 @@ private:
 		Size2 max_size_over = Size2(-1, -1);
 		Rect2 padding;
 
-		ItemFrame()
+		FrameData()
 		{
-			type = ITEM_FRAME;
 			first_invalid_line.store(0);
 			first_invalid_font_line.store(0);
 			first_resized_line.store(0);
 		}
 	};
 
-	struct ItemText : public Item
-	{
-		String text;
-
-		ItemText() { type = ITEM_TEXT; }
-	};
-
-	struct ItemDropcap : public Item
+	struct DropcapData
 	{
 		String text;
 		Ref<Font> font;
@@ -272,13 +231,9 @@ private:
 		int ol_size = 0;
 		Color ol_color;
 		Rect2 dropcap_margins;
-
-		ItemDropcap() { type = ITEM_DROPCAP; }
-
-		~ItemDropcap();
 	};
 
-	struct ItemImage : public Item
+	struct ImageData
 	{
 		Ref<Texture2D> image;
 		String alt_text;
@@ -292,89 +247,10 @@ private:
 		Color color;
 		String tooltip;
 
-		ItemImage() { type = ITEM_IMAGE; }
-
-		~ItemImage();
+		~ImageData();
 	};
 
-	struct ItemFont : public Item
-	{
-		DefaultFont def_font = RTL_CUSTOM_FONT;
-		Ref<Font> font;
-		bool variation = false;
-		bool def_size = false;
-		int font_size = 0;
-
-		ItemFont() { type = ITEM_FONT; }
-
-		~ItemFont();
-	};
-
-	struct ItemFontSize : public Item
-	{
-		int font_size = 16;
-
-		ItemFontSize() { type = ITEM_FONT_SIZE; }
-	};
-
-	struct ItemColor : public Item
-	{
-		Color color;
-
-		ItemColor() { type = ITEM_COLOR; }
-	};
-
-	struct ItemOutlineSize : public Item
-	{
-		int outline_size = 0;
-
-		ItemOutlineSize() { type = ITEM_OUTLINE_SIZE; }
-	};
-
-	struct ItemOutlineColor : public Item
-	{
-		Color color;
-
-		ItemOutlineColor() { type = ITEM_OUTLINE_COLOR; }
-	};
-
-	struct ItemUnderline : public Item
-	{
-		Color color;
-
-		ItemUnderline() { type = ITEM_UNDERLINE; }
-	};
-
-	struct ItemStrikethrough : public Item
-	{
-		Color color;
-
-		ItemStrikethrough() { type = ITEM_STRIKETHROUGH; }
-	};
-
-	struct ItemMeta : public Item
-	{
-		MetaUnderline underline = META_UNDERLINE_ALWAYS;
-		String tooltip;
-
-		ItemMeta() { type = ITEM_META; }
-	};
-
-	struct ItemHint : public Item
-	{
-		String description;
-
-		ItemHint() { type = ITEM_HINT; }
-	};
-
-	struct ItemLanguage : public Item
-	{
-		String language;
-
-		ItemLanguage() { type = ITEM_LANGUAGE; }
-	};
-
-	struct ItemParagraph : public Item
+	struct ParagraphData
 	{
 		HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_LEFT;
 		String language;
@@ -385,34 +261,9 @@ private:
 			TextServer::JUSTIFICATION_SKIP_LAST_LINE |
 			TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
 		PackedFloat32Array tab_stops;
-
-		ItemParagraph() { type = ITEM_PARAGRAPH; }
 	};
 
-	struct ItemIndent : public Item
-	{
-		int level = 0;
-
-		ItemIndent() { type = ITEM_INDENT; }
-	};
-
-	struct ItemList : public Item
-	{
-		ListType list_type = LIST_DOTS;
-		bool capitalize = false;
-		int level = 0;
-		String bullet = U"•";
-		float max_width = 0;
-
-		ItemList() { type = ITEM_LIST; }
-	};
-
-	struct ItemNewline : public Item
-	{
-		ItemNewline() { type = ITEM_NEWLINE; }
-	};
-
-	struct ItemTable : public Item
+	struct TableData
 	{
 		struct Column
 		{
@@ -435,33 +286,33 @@ private:
 		int total_height = 0;
 		int char_count = 0;
 		InlineAlignment inline_align = INLINE_ALIGNMENT_TOP;
-
-		ItemTable() { type = ITEM_TABLE; }
 	};
 
-	struct ItemFade : public Item
+	struct FXData
 	{
-		int starting_index = 0;
-		int length = 0;
-
-		ItemFade() { type = ITEM_FADE; }
-	};
-
-	struct ItemFX : public Item
-	{
-		double elapsed_time = 0.f;
+		double elapsed_time = 0.0;
 		bool connected = true;
-	};
 
-	struct ItemShake : public ItemFX
-	{
 		int strength = 0;
 		float rate = 0.0f;
 		uint64_t _current_rng = 0;
 		uint64_t _previous_rng = 0;
 		Vector2 prev_off;
 
-		ItemShake() { type = ITEM_SHAKE; }
+		float frequency = 1.0f;
+		float amplitude = 1.0f;
+		float radius = 1.0f;
+		float saturation = 0.9f;
+		float value = 1.0f;
+		float speed = 1.0f;
+		Color color = Color(1.0, 1.0, 1.0, 0.25);
+		float ease = -2.0f;
+
+		Ref<CharFXTransform> char_fx_transform;
+		Ref<RichTextEffect> custom_effect;
+
+		explicit FXData(ItemType p_type);
+		~FXData();
 
 		void reroll_random()
 		{
@@ -480,76 +331,70 @@ private:
 		}
 	};
 
-	struct ItemWave : public ItemFX
+	struct Item
 	{
-		float frequency = 1.0f;
-		float amplitude = 1.0f;
-		Vector2 prev_off;
+		int index = 0;
+		int char_ofs = 0;
+		Item* parent = nullptr; // "parent" means "enclosing item tag", if any. It is an interval
+								// predecessor, not a hierarchical parent.
+		ItemType type = ITEM_FRAME;
+		int line = 0; // `line` is the index number of the paragraph (Line) this item is inside of
+					  // (zero if the first paragraph).
+		List<Item*> subitems;
+		List<Item*>::Element* E = nullptr;
+		RID rid;
+		RID accessibility_item_element;
 
-		ItemWave() { type = ITEM_WAVE; }
-	};
+		union
+		{
+			void* extra = nullptr;
+			FrameData* frame;
+			DropcapData* dropcap;
+			ImageData* image;
+			ParagraphData* paragraph;
+			TableData* table;
+			FXData* fx;
+		};
 
-	struct ItemTornado : public ItemFX
-	{
-		float radius = 1.0f;
-		float frequency = 1.0f;
-		Vector2 prev_off;
-
-		ItemTornado() { type = ITEM_TORNADO; }
-	};
-
-	struct ItemRainbow : public ItemFX
-	{
-		float saturation = 0.9f;
-		float value = 1.0f;
-		float frequency = 1.0f;
-		float speed = 1.0f;
-
-		ItemRainbow() { type = ITEM_RAINBOW; }
-	};
-
-	struct ItemPulse : public ItemFX
-	{
-		Color color = Color(1.0, 1.0, 1.0, 0.25);
-		float frequency = 1.0f;
-		float ease = -2.0f;
-
-		ItemPulse() { type = ITEM_PULSE; }
-	};
-
-	struct ItemBGColor : public Item
-	{
+		// Lightweight inline fields for frequent leaf/style tags:
+		// `text` holds text (ITEM_TEXT), tooltip (ITEM_META), description (ITEM_HINT),
+		// language (ITEM_LANGUAGE), or bullet (ITEM_LIST).
+		String text;
+		Ref<Font> font;
 		Color color;
 
-		ItemBGColor() { type = ITEM_BGCOLOR; }
+		int font_size = 0;
+		int outline_size = 0;
+		int level = 0;
+		float max_width = 0.0f;
+		int starting_index = 0;
+		int fade_length = 0;
+
+		DefaultFont def_font = RTL_CUSTOM_FONT;
+		MetaUnderline meta_underline = META_UNDERLINE_ALWAYS;
+		ListType list_type = LIST_DOTS;
+		bool variation = false;
+		bool def_size = false;
+		bool capitalize = false;
+
+		_FORCE_INLINE_ bool is_fx() const
+		{
+			return type == ITEM_CUSTOMFX || type == ITEM_SHAKE || type == ITEM_WAVE ||
+				   type == ITEM_TORNADO || type == ITEM_RAINBOW || type == ITEM_PULSE;
+		}
+
+		void _clear_children();
+
+		explicit Item(ItemType p_type = ITEM_FRAME);
+		~Item();
+
+		Item(const Item&) = delete;
+		Item& operator=(const Item&) = delete;
 	};
 
-	struct ItemFGColor : public Item
-	{
-		Color color;
-
-		ItemFGColor() { type = ITEM_FGCOLOR; }
-	};
-
-	struct ItemCustomFX : public ItemFX
-	{
-		Ref<CharFXTransform> char_fx_transform;
-		Ref<RichTextEffect> custom_effect;
-
-		ItemCustomFX();
-
-		virtual ~ItemCustomFX();
-	};
-
-	struct ItemContext : public Item
-	{
-		ItemContext() { type = ITEM_CONTEXT; }
-	};
-
-
-	ItemFrame* main = nullptr;
+	Item* main = nullptr;
 	Item* current = nullptr;
-	ItemFrame* current_frame = nullptr;
+	Item* current_frame = nullptr;
 
 	Mutex data_mutex;
 	bool threaded = false;
@@ -596,13 +441,13 @@ private:
 		TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
 	PackedFloat32Array default_tab_stops;
 
-	ItemMeta* meta_hovering = nullptr;
+	Item* meta_hovering = nullptr;
 
 	HashMap<RID, Rect2> ac_element_bounds_cache;
 
 	void _update_follow_vc();
 	void _invalidate_accessibility();
-	void _invalidate_current_line(ItemFrame* p_frame);
+	void _invalidate_current_line(Item* p_frame);
 
 	void _prepare_scroll_anchor();
 
@@ -612,7 +457,7 @@ private:
 	void _process_line_caches();
 
 	void _add_item(Item* p_item, bool p_enter = false, bool p_ensure_newline = false);
-	void _remove_frame(HashSet<Item*>& r_erase_list, ItemFrame* p_frame, int p_line, bool p_erase,
+	void _remove_frame(HashSet<Item*>& r_erase_list, Item* p_frame, int p_line, bool p_erase,
 		int p_char_offset, int p_line_offset);
 
 	void _texture_changed(RID p_item);
@@ -626,18 +471,18 @@ private:
 	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
 	struct Selection
 	{
-		ItemFrame* click_frame = nullptr;
+		Item* click_frame = nullptr;
 		int click_line = 0;
 		Item* click_item = nullptr;
 		int click_char = 0;
 
-		ItemFrame* from_frame = nullptr;
+		Item* from_frame = nullptr;
 		int from_line = 0;
 		Item* from_item = nullptr;
 		int from_char = 0;
 		mutable bool from_line_found = false;
 
-		ItemFrame* to_frame = nullptr;
+		Item* to_frame = nullptr;
 		int to_line = 0;
 		Item* to_item = nullptr;
 		int to_char = 0;
@@ -662,7 +507,7 @@ private:
 	bool deselect_on_focus_loss_enabled = true;
 	bool drag_and_drop_selection_enabled = true;
 
-	ItemFrame* keyboard_focus_frame = nullptr;
+	Item* keyboard_focus_frame = nullptr;
 	int keyboard_focus_line = 0;
 	Item* keyboard_focus_item = nullptr;
 	bool keyboard_focus_on_text = true;
@@ -681,54 +526,54 @@ private:
 		TextServer::VC_CHARS_BEFORE_SHAPING;
 
 	bool _is_click_inside_selection() const;
-	void _find_click(ItemFrame* p_frame, const Point2i& p_click,
-		ItemFrame** r_click_frame = nullptr, int* r_click_line = nullptr,
+	void _find_click(Item* p_frame, const Point2i& p_click,
+		Item** r_click_frame = nullptr, int* r_click_line = nullptr,
 		Item** r_click_item = nullptr, int* r_click_char = nullptr, bool* r_outside = nullptr,
 		bool p_meta = false);
 
-	String _get_line_text(ItemFrame* p_frame, int p_line) const;
-	bool _search_table_cell(ItemTable* p_table, List<Item*>::Element* p_cell,
+	String _get_line_text(Item* p_frame, int p_line) const;
+	bool _search_table_cell(Item* p_table, List<Item*>::Element* p_cell,
 		const String& p_string, bool p_reverse_search, int p_from_line);
-	bool _search_table(ItemTable* p_table, List<Item*>::Element* p_from, const String& p_string,
+	bool _search_table(Item* p_table, List<Item*>::Element* p_from, const String& p_string,
 		bool p_reverse_search);
-	bool _search_line(ItemFrame* p_frame, int p_line, const String& p_string, int p_char_idx,
+	bool _search_line(Item* p_frame, int p_line, const String& p_string, int p_char_idx,
 		bool p_reverse_search);
 
-	float _shape_line(ItemFrame* p_frame, int p_line, const Ref<Font>& p_base_font,
+	float _shape_line(Item* p_frame, int p_line, const Ref<Font>& p_base_font,
 		int p_base_font_size, int p_width, float p_h, int* r_char_offset);
-	float _resize_line(ItemFrame* p_frame, int p_line, const Ref<Font>& p_base_font,
+	float _resize_line(Item* p_frame, int p_line, const Ref<Font>& p_base_font,
 		int p_base_font_size, int p_width, float p_h);
 
-	int _get_line_max_width(ItemFrame* p_frame, int p_line) const;
-	void _update_table_column_width(ItemTable* p_table, int p_available_width);
-	void _update_table_size(ItemTable* p_table);
+	int _get_line_max_width(Item* p_frame, int p_line) const;
+	void _update_table_column_width(Item* p_table, int p_available_width);
+	void _update_table_size(Item* p_table);
 
 	void _update_line_font(
-		ItemFrame* p_frame, int p_line, const Ref<Font>& p_base_font, int p_base_font_size);
-	int _draw_line(ItemFrame* p_frame, int p_line, const Vector2& p_ofs, int p_width, float p_vsep,
+		Item* p_frame, int p_line, const Ref<Font>& p_base_font, int p_base_font_size);
+	int _draw_line(Item* p_frame, int p_line, const Vector2& p_ofs, int p_width, float p_vsep,
 		const Color& p_base_color, int p_outline_size, const Color& p_outline_color,
 		const Color& p_font_shadow_color, int p_shadow_outline_size, const Point2& p_shadow_ofs,
 		int& r_processed_glyphs);
-	float _find_click_in_line(ItemFrame* p_frame, int p_line, const Vector2& p_ofs, int p_width,
-		float p_vsep, const Point2i& p_click, ItemFrame** r_click_frame = nullptr,
+	float _find_click_in_line(Item* p_frame, int p_line, const Vector2& p_ofs, int p_width,
+		float p_vsep, const Point2i& p_click, Item** r_click_frame = nullptr,
 		int* r_click_line = nullptr, Item** r_click_item = nullptr, int* r_click_char = nullptr,
 		bool p_table = false, bool p_meta = false);
 	void _accessibility_update_line(
-		RID p_id, ItemFrame* p_frame, int p_line, const Vector2& p_ofs, int p_width, float p_vsep);
+		RID p_id, Item* p_frame, int p_line, const Vector2& p_ofs, int p_width, float p_vsep);
 
 	String _roman(int p_num, bool p_capitalize) const;
 	String _letters(int p_num, bool p_capitalize) const;
 
 	Item* _find_indentable(Item* p_item);
 	Item* _get_item_at_pos(Item* p_item_from, Item* p_item_to, int p_position);
-	void _find_frame(Item* p_item, ItemFrame** r_frame, int* r_line);
-	ItemFontSize* _find_font_size(Item* p_item);
-	ItemFont* _find_font(Item* p_item);
+	void _find_frame(Item* p_item, Item** r_frame, int* r_line);
+	Item* _find_font_size(Item* p_item);
+	Item* _find_font(Item* p_item);
 	int _find_outline_size(Item* p_item, int p_default);
-	ItemList* _find_list_item(Item* p_item);
-	ItemDropcap* _find_dc_item(Item* p_item);
+	Item* _find_list_item(Item* p_item);
+	Item* _find_dc_item(Item* p_item);
 	int _find_list(
-		Item* p_item, Vector<int>& r_index, Vector<int>& r_count, Vector<ItemList*>& r_list);
+		Item* p_item, Vector<int>& r_index, Vector<int>& r_count, Vector<Item*>& r_list);
 	int _find_margin(Item* p_item, const Ref<Font>& p_base_font, int p_base_font_size);
 	PackedFloat32Array _find_tab_stops(Item* p_item);
 	HorizontalAlignment _find_alignment(Item* p_item);
@@ -744,10 +589,10 @@ private:
 	Color _find_bgcolor(Item* p_item);
 	Color _find_fgcolor(Item* p_item);
 	bool _find_layout_subitem(Item* from, Item* to);
-	void _fetch_item_fx_stack(Item* p_item, Vector<ItemFX*>& r_stack);
+	void _fetch_item_fx_stack(Item* p_item, Vector<Item*>& r_stack);
 	void _normalize_subtags(Vector<String>& subtags);
 
-	void _update_fx(ItemFrame* p_frame, double p_delta_time);
+	void _update_fx(Item* p_frame, double p_delta_time);
 	void _scroll_changed(double);
 	int _find_first_line(int p_from, int p_to, int p_vofs) const;
 
@@ -778,11 +623,11 @@ private:
 
 	Size2 _get_image_size(const Ref<Texture2D>& p_image, float p_width = 0, float p_height = 0,
 		const Rect2& p_region = Rect2());
-	Size2 _get_item_image_final_size(ItemImage* p_img, float p_orig_width, float p_base_font_size);
+	Size2 _get_item_image_final_size(Item* p_img, float p_orig_width, float p_base_font_size);
 
 	String _get_prefix(
-		Item* p_item, const Vector<int>& p_list_index, const Vector<ItemList*>& p_list_items);
-	void _add_list_prefixes(ItemFrame* p_frame, int p_line, Line& r_l);
+		Item* p_item, const Vector<int>& p_list_index, const Vector<Item*>& p_list_items);
+	void _add_list_prefixes(Item* p_frame, int p_line, Line& r_l);
 
 	static int _find_unquoted(const String& p_src, char32_t p_chr, int p_from);
 	static Vector<String> _split_unquoted(const String& p_src, char32_t p_splitter);

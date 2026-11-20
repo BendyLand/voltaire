@@ -40,37 +40,9 @@
 
 RID GodotPhysicsServer2D::_shape_create(PS2DE::ShapeType p_shape)
 {
-	GodotShape2D* shape = nullptr;
-	switch (p_shape) {
-	case PS2DE::SHAPE_WORLD_BOUNDARY: {
-		shape = memnew(GodotWorldBoundaryShape2D);
-	} break;
-	case PS2DE::SHAPE_SEPARATION_RAY: {
-		shape = memnew(GodotSeparationRayShape2D);
-	} break;
-	case PS2DE::SHAPE_SEGMENT: {
-		shape = memnew(GodotSegmentShape2D);
-	} break;
-	case PS2DE::SHAPE_CIRCLE: {
-		shape = memnew(GodotCircleShape2D);
-	} break;
-	case PS2DE::SHAPE_RECTANGLE: {
-		shape = memnew(GodotRectangleShape2D);
-	} break;
-	case PS2DE::SHAPE_CAPSULE: {
-		shape = memnew(GodotCapsuleShape2D);
-	} break;
-	case PS2DE::SHAPE_CONVEX_POLYGON: {
-		shape = memnew(GodotConvexPolygonShape2D);
-	} break;
-	case PS2DE::SHAPE_CONCAVE_POLYGON: {
-		shape = memnew(GodotConcavePolygonShape2D);
-	} break;
-	case PS2DE::SHAPE_CUSTOM: {
-		ERR_FAIL_V(RID());
+	ERR_FAIL_COND_V(p_shape == PS2DE::SHAPE_CUSTOM, RID());
 
-	} break;
-	}
+	GodotShape2D* shape = memnew(GodotShape2D(p_shape));
 
 	RID id = shape_owner.make_rid(shape);
 	shape->set_self(id);

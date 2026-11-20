@@ -113,107 +113,19 @@ public:
 	};
 #endif // TOOLS_ENABLED
 
-	struct Track
-	{
-		TrackType type = TrackType::TYPE_ANIMATION;
-		InterpolationType interpolation = INTERPOLATION_LINEAR;
-		bool loop_wrap = true;
-		NodePath path; // Path to something.
-		String concatenated_path;
-		bool imported = false;
-		bool enabled = true;
-
-		TrackCacheID get_unique_id() const
-		{
-			uint64_t h = concatenated_path.hash();
-			return (TrackCacheID)((h << 8) | (uint8_t)type);
-		}
-
-		virtual ~Track() {}
-	};
-
-private:
-	struct Key
+	template <typename T> struct TKey
 	{
 		real_t transition = 1.0;
 		double time = 0.0; // Time in secs.
-	};
-
-	// Transform key holds either Vector3 or Quaternion.
-	template <typename T> struct TKey : public Key
-	{
 		T value;
 	};
 
-	const int32_t POSITION_TRACK_SIZE = 5;
-	const int32_t ROTATION_TRACK_SIZE = 6;
-	const int32_t SCALE_TRACK_SIZE = 5;
-	const int32_t BLEND_SHAPE_TRACK_SIZE = 3;
-
-	/* POSITION TRACK */
-
-	struct PositionTrack : public Track
+	struct MethodKey
 	{
-		LocalVector<TKey<Vector3>> positions;
-		int32_t compressed_track = -1;
-
-		PositionTrack() { type = TYPE_POSITION_3D; }
-	};
-
-	/* ROTATION TRACK */
-
-	struct RotationTrack : public Track
-	{
-		LocalVector<TKey<Quaternion>> rotations;
-		int32_t compressed_track = -1;
-
-		RotationTrack() { type = TYPE_ROTATION_3D; }
-	};
-
-	/* SCALE TRACK */
-
-	struct ScaleTrack : public Track
-	{
-		LocalVector<TKey<Vector3>> scales;
-		int32_t compressed_track = -1;
-
-		ScaleTrack() { type = TYPE_SCALE_3D; }
-	};
-
-	/* BLEND SHAPE TRACK */
-
-	struct BlendShapeTrack : public Track
-	{
-		LocalVector<TKey<float>> blend_shapes;
-		int32_t compressed_track = -1;
-
-		BlendShapeTrack() { type = TYPE_BLEND_SHAPE; }
-	};
-
-	/* PROPERTY VALUE TRACK */
-
-	struct ValueTrack : public Track
-	{
-		UpdateMode update_mode = UPDATE_CONTINUOUS;
-
-		ValueTrack() { type = TYPE_VALUE; }
-	};
-
-	/* METHOD TRACK */
-
-	struct MethodKey : public Key
-	{
+		real_t transition = 1.0;
+		double time = 0.0; // Time in secs.
 		String method;
 	};
-
-	struct MethodTrack : public Track
-	{
-		LocalVector<MethodKey> methods;
-
-		MethodTrack() { type = TYPE_METHOD; }
-	};
-
-	/* BEZIER TRACK */
 
 	struct BezierKey
 	{
@@ -225,40 +137,53 @@ private:
 #endif // TOOLS_ENABLED
 	};
 
-	struct BezierTrack : public Track
-	{
-		LocalVector<TKey<BezierKey>> values;
-
-		BezierTrack() { type = TYPE_BEZIER; }
-	};
-
-	/* AUDIO TRACK */
-
 	struct AudioKey
 	{
 		Ref<Resource> stream;
 		real_t start_offset = 0.0; // Offset from start.
 		real_t end_offset = 0.0;   // Offset from end, if 0 then full length or infinite.
 
-		AudioKey() {}
+		AudioKey() = default;
 	};
 
-	struct AudioTrack : public Track
+	struct Track
 	{
-		LocalVector<TKey<AudioKey>> values;
+		TrackType type = TrackType::TYPE_ANIMATION;
+		InterpolationType interpolation = INTERPOLATION_LINEAR;
+		UpdateMode update_mode = UPDATE_CONTINUOUS;
+		bool loop_wrap = true;
+		NodePath path; // Path to something.
+		String concatenated_path;
+		bool imported = false;
+		bool enabled = true;
 		bool use_blend = true;
+		int32_t compressed_track = -1;
 
-		AudioTrack() { type = TYPE_AUDIO; }
+		LocalVector<TKey<Vector3>> positions;
+		LocalVector<TKey<Quaternion>> rotations;
+		LocalVector<TKey<Vector3>> scales;
+		LocalVector<TKey<float>> blend_shapes;
+		LocalVector<MethodKey> methods;
+		LocalVector<TKey<BezierKey>> bezier_values;
+		LocalVector<TKey<AudioKey>> audio_values;
+		LocalVector<TKey<String>> animation_values;
+
+		TrackCacheID get_unique_id() const
+		{
+			uint64_t h = concatenated_path.hash();
+			return (TrackCacheID)((h << 8) | (uint8_t)type);
+		}
+
+		Track() = default;
+		explicit Track(TrackType p_type) : type(p_type) {}
+		~Track() = default;
 	};
 
-	/* ANIMATION TRACK */
-
-	struct AnimationTrack : public Track
-	{
-		LocalVector<TKey<String>> values;
-
-		AnimationTrack() { type = TYPE_ANIMATION; }
-	};
+private:
+	const int32_t POSITION_TRACK_SIZE = 5;
+	const int32_t ROTATION_TRACK_SIZE = 6;
+	const int32_t SCALE_TRACK_SIZE = 5;
+	const int32_t BLEND_SHAPE_TRACK_SIZE = 3;
 
 	/* Marker */
 
@@ -288,7 +213,6 @@ private:
 	int _marker_insert(double p_time, LocalVector<MarkerKey>& p_keys, const MarkerKey& p_value);
 
 	template <typename K>
-
 	inline int _find(const LocalVector<K>& p_keys, double p_time, bool p_backward = false,
 		bool p_limit = false) const;
 
@@ -319,61 +243,6 @@ private:
 	LoopMode loop_mode = LOOP_NONE;
 	bool capture_included = false;
 	void _check_capture_included();
-
-	/* Animation compression page format (version 1):
-	 *
-	 * Animation uses bitwidth based compression separated into small pages. The intention is that
-	 * pages fit easily in the cache, so decoding is cache efficient. The page-based nature also
-	 * makes future animation streaming from disk possible.
-	 *
-	 * Actual format:
-	 *
-	 * num_compressed_tracks = bounds.size()
-	 * header : (x num_compressed_tracks)
-	 * -------
-	 * timeline_keys_offset : uint32_t - offset to time keys
-	 * timeline_size : uint32_t - amount of time keys
-	 * data_keys_offset : uint32_t offset to key data
-	 *
-	 * time key (uint32_t):
-	 * ------------------
-	 * frame : bits 0-15 - time offset of key, computed as: page.time_offset + frame * (1.0/fps)
-	 * data_key_offset : bits 16-27 - offset to key data, computed as: data_keys_offset * 4 +
-	 * data_key_offset data_key_count : bits 28-31 - amount of data keys pointed to, computed as:
-	 * data_key_count+1 (max 16)
-	 *
-	 * data key:
-	 * ---------
-	 * X / Blend Shape : uint16_t - X coordinate of XYZ vector key, or Blend Shape value. If Blend
-	 * shape, Y and Z are not present and can be ignored. Y : uint16_t Z : uint16_t If
-	 * data_key_count+1 > 1 (if more than 1 key is stored): data_bitwidth : uint16_t - This is only
-	 * present if data_key_count > 1. Contains delta bitwidth information. X / Blend Shape delta
-	 * bitwidth: bits 0-3 - if 0, nothing is present for X (use the first key-value for subsequent
-	 * keys),
-	 else assume the number of bits present for each element (+ 1 for sign). Assumed always
-	 * 16 bits, delta max signed 15 bits, with underflow and overflow supported. Y delta bitwidth :
-	 * bits 4-7 Z delta bitwidth : bits 8-11 FRAME delta bitwidth : 12-15 bits - always present
-	 * (obviously), actual bitwidth is FRAME+1 Data key is 4 bytes long for Blend Shapes, 8 bytes
-	 * long for pos/rot/scale.
-	 *
-	 * delta keys:
-	 * -----------
-	 * Compressed format is packed in the following format after the data key, containing delta keys
-	 * one after the next in a tightly bit packed fashion. FRAME bits -> X / Blend Shape Bits (if
-	 * bitwidth > 0) -> Y Bits (if not Blend Shape and Y Bitwidth > 0) -> Z Bits (if not Blend Shape
-	 * and Z Bitwidth > 0)
-	 *
-	 * data key format:
-	 * ----------------
-	 * Decoding keys means starting from the base key and going key by key applying deltas until the
-	 * proper position is reached needed for interpolation. Resulting values are uint32_t data for X
-	 * / Blend Shape, Y and Z must be normalized first: unorm = float(data) / 65535.0
-	 * **Blend Shape**: (unorm * 2.0 - 1.0) * Compression::BLEND_SHAPE_RANGE
-	 * **Pos/Scale**: unorm_vec3 * bounds[track].size + bounds[track].position
-	 * **Rotation**: Quaternion(Vector3::octahedron_decode(unorm_vec3.xy),unorm_vec3.z * Math::PI
-	 * * 2.0)
-	 * **Frame**: page.time_offset + frame * (1.0/fps)
-	 */
 
 	struct Compression
 	{
@@ -421,7 +290,6 @@ private:
 		uint32_t p_compressed_track, const Vector3i& p_value) const;
 	_FORCE_INLINE_ float _uncompress_blend_shape(const Vector3i& p_value) const;
 
-	// bind helpers
 private:
 	bool _float_track_optimize_key(const TKey<float> t0, const TKey<float> t1, const TKey<float> t2,
 		real_t p_allowed_velocity_err, real_t p_allowed_precision_error, bool p_is_nearest);
@@ -676,5 +544,3 @@ public:
 	Animation() = default;
 	~Animation();
 };
-
-

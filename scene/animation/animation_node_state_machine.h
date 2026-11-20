@@ -104,7 +104,7 @@ public:
 
 class AnimationNodeStateMachinePlayback;
 
-class AnimationNodeStateMachine : public AnimationNode
+class AnimationNodeStateMachine final : public AnimationNode
 {
 public:
 	enum StateMachineType

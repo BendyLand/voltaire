@@ -33,54 +33,160 @@
 #include "core/config/engine.h"
 #include "scene/resources/animation.h"
 
-String AnimationNodeAnimation::get_animation() const { return animation; }
+LocalVector<String> (*AnimationNodeBlendNode::get_editable_animation_list)() = nullptr;
 
-LocalVector<String> (*AnimationNodeAnimation::get_editable_animation_list)() = nullptr;
-
-void AnimationNodeAnimation::validate_node(
+void AnimationNodeBlendNode::validate_node(
 	const AnimationTree* p_tree, const String& p_path) const
 {
 	AnimationNode::validate_node(p_tree, p_path);
 
-	const Ref<Animation>& animation_resource = p_tree->get_animation_or_null(animation);
-	if (animation_resource.is_null()) {
-		add_validation_error(p_tree, p_path, vformat(RTR("Animation '%s' not found."), animation));
+	if (node_type == NODE_ANIMATION) {
+		const Ref<Animation>& animation_resource = p_tree->get_animation_or_null(animation);
+		if (animation_resource.is_null()) {
+			add_validation_error(
+				p_tree, p_path, vformat(RTR("Animation '%s' not found."), animation));
+		}
 	}
 }
 
-String AnimationNodeAnimation::get_caption() const { return "Animation"; }
+bool AnimationNodeBlendNode::is_parameter_read_only(const String& p_parameter) const
+{
+	if (AnimationNode::is_parameter_read_only(p_parameter)) {
+		return true;
+	}
 
-void AnimationNodeAnimation::set_play_mode(PlayMode p_play_mode) { play_mode = p_play_mode; }
+	if (node_type == NODE_ONESHOT) {
+		return p_parameter == active || p_parameter == internal_active;
+	}
+	if (node_type == NODE_TRANSITION) {
+		return p_parameter == current_state || p_parameter == current_index;
+	}
+	return false;
+}
 
-AnimationNodeAnimation::PlayMode AnimationNodeAnimation::get_play_mode() const { return play_mode; }
+String AnimationNodeBlendNode::get_caption() const
+{
+	switch (node_type) {
+	case NODE_ANIMATION:
+		return "Animation";
+	case NODE_ONESHOT:
+		return "OneShot";
+	case NODE_ADD:
+		return three_way ? "Add3" : "Add2";
+	case NODE_BLEND:
+		return three_way ? "Blend3" : "Blend2";
+	case NODE_SUB:
+		return "Sub2";
+	case NODE_TIME_SCALE:
+		return "TimeScale";
+	case NODE_TIME_SEEK:
+		return "TimeSeek";
+	case NODE_TRANSITION:
+		return "Transition";
+	case NODE_OUTPUT:
+		return "Output";
+	}
+	return "Node";
+}
 
-void AnimationNodeAnimation::set_advance_on_start(bool p_advance_on_start)
+bool AnimationNodeBlendNode::has_filter() const
+{
+	switch (node_type) {
+	case NODE_ONESHOT:
+	case NODE_ADD:
+	case NODE_SUB:
+		return true;
+	case NODE_BLEND:
+		return !three_way;
+	case NODE_ANIMATION:
+	case NODE_TIME_SCALE:
+	case NODE_TIME_SEEK:
+	case NODE_TRANSITION:
+	case NODE_OUTPUT:
+		return false;
+	}
+	return false;
+}
+
+AnimationNode::NodeTimeInfo AnimationNodeBlendNode::_process(ProcessState& p_process_state,
+	AnimationNodeInstance& p_instance, const AnimationMixer::PlaybackInfo& p_playback_info,
+	bool p_test_only)
+{
+	if (node_type == NODE_OUTPUT) {
+		AnimationMixer::PlaybackInfo pi = p_playback_info;
+		pi.weight = 1.0;
+		return blend_input(p_process_state, p_instance, 0, pi, FILTER_IGNORE, true, p_test_only);
+	}
+	return AnimationNode::NodeTimeInfo();
+}
+
+void AnimationNodeBlendNode::set_animation(const String& p_name)
+{
+	animation = p_name;
+	animation_version++;
+	if (unlikely(animation_version == 0)) {
+		animation_version = 1;
+	}
+	emit_changed();
+}
+
+String AnimationNodeBlendNode::get_animation() const { return animation; }
+
+void AnimationNodeBlendNode::set_play_mode(PlayMode p_play_mode) { play_mode = p_play_mode; }
+
+AnimationNodeBlendNode::PlayMode AnimationNodeBlendNode::get_play_mode() const
+{
+	return play_mode;
+}
+
+void AnimationNodeBlendNode::set_backward(
+	AnimationNodeInstance& p_instance, ProcessState& p_process_state, bool p_backward)
+{
+}
+
+bool AnimationNodeBlendNode::is_backward(
+	AnimationNodeInstance& p_instance, ProcessState& p_process_state) const
+{
+	return false;
+}
+
+void AnimationNodeBlendNode::set_advance_on_start(bool p_advance_on_start)
 {
 	advance_on_start = p_advance_on_start;
 }
 
-bool AnimationNodeAnimation::is_advance_on_start() const { return advance_on_start; }
+bool AnimationNodeBlendNode::is_advance_on_start() const { return advance_on_start; }
 
-bool AnimationNodeAnimation::is_using_custom_timeline() const { return use_custom_timeline; }
+void AnimationNodeBlendNode::set_use_custom_timeline(bool p_use_custom_timeline)
+{
+	use_custom_timeline = p_use_custom_timeline;
+}
 
-void AnimationNodeAnimation::set_timeline_length(double p_length) { timeline_length = p_length; }
+bool AnimationNodeBlendNode::is_using_custom_timeline() const { return use_custom_timeline; }
 
-double AnimationNodeAnimation::get_timeline_length() const { return timeline_length; }
+void AnimationNodeBlendNode::set_timeline_length(double p_length) { timeline_length = p_length; }
 
-bool AnimationNodeAnimation::is_stretching_time_scale() const { return stretch_time_scale; }
+double AnimationNodeBlendNode::get_timeline_length() const { return timeline_length; }
 
-void AnimationNodeAnimation::set_start_offset(double p_offset) { start_offset = p_offset; }
+void AnimationNodeBlendNode::set_stretch_time_scale(bool p_stretch_time_scale)
+{
+	stretch_time_scale = p_stretch_time_scale;
+}
 
-double AnimationNodeAnimation::get_start_offset() const { return start_offset; }
+bool AnimationNodeBlendNode::is_stretching_time_scale() const { return stretch_time_scale; }
 
-void AnimationNodeAnimation::set_loop_mode(Animation::LoopMode p_loop_mode)
+void AnimationNodeBlendNode::set_start_offset(double p_offset) { start_offset = p_offset; }
+
+double AnimationNodeBlendNode::get_start_offset() const { return start_offset; }
+
+void AnimationNodeBlendNode::set_loop_mode(Animation::LoopMode p_loop_mode)
 {
 	loop_mode = p_loop_mode;
 }
 
-Animation::LoopMode AnimationNodeAnimation::get_loop_mode() const { return loop_mode; }
+Animation::LoopMode AnimationNodeBlendNode::get_loop_mode() const { return loop_mode; }
 
-void AnimationNodeAnimation::_update_animation_cache(
+void AnimationNodeBlendNode::_update_animation_cache(
 	AnimationTree* p_tree, AnimationNodeInstance& p_instance) const
 {
 	if (p_instance.cached_animation_version == animation_version) {
@@ -89,7 +195,6 @@ void AnimationNodeAnimation::_update_animation_cache(
 
 	const Ref<Animation>& anim = p_tree->get_animation_or_null(animation);
 	if (anim.is_null()) {
-		// I don't think this can even occur with validation now.
 		return;
 	}
 
@@ -97,232 +202,201 @@ void AnimationNodeAnimation::_update_animation_cache(
 	p_instance.cached_animation_version = animation_version;
 }
 
-AnimationNodeAnimation::AnimationNodeAnimation() { root_node = true; }
+void AnimationNodeBlendNode::set_fade_in_time(double p_time) { fade_in = p_time; }
 
-bool AnimationNodeOneShot::is_parameter_read_only(const String& p_parameter) const
+double AnimationNodeBlendNode::get_fade_in_time() const { return fade_in; }
+
+void AnimationNodeBlendNode::set_fade_out_time(double p_time) { fade_out = p_time; }
+
+double AnimationNodeBlendNode::get_fade_out_time() const { return fade_out; }
+
+void AnimationNodeBlendNode::set_fade_in_curve(const Ref<Curve>& p_curve)
 {
-	if (AnimationNode::is_parameter_read_only(p_parameter)) {
-		return true;
-	}
-
-	if (p_parameter == active || p_parameter == internal_active) {
-		return true;
-	}
-	return false;
+	fade_in_curve = p_curve;
 }
 
-void AnimationNodeOneShot::set_fade_in_time(double p_time) { fade_in = p_time; }
+Ref<Curve> AnimationNodeBlendNode::get_fade_in_curve() const { return fade_in_curve; }
 
-double AnimationNodeOneShot::get_fade_in_time() const { return fade_in; }
-
-void AnimationNodeOneShot::set_fade_out_time(double p_time) { fade_out = p_time; }
-
-double AnimationNodeOneShot::get_fade_out_time() const { return fade_out; }
-
-void AnimationNodeOneShot::set_fade_in_curve(const Ref<Curve>& p_curve) { fade_in_curve = p_curve; }
-
-Ref<Curve> AnimationNodeOneShot::get_fade_in_curve() const { return fade_in_curve; }
-
-void AnimationNodeOneShot::set_fade_out_curve(const Ref<Curve>& p_curve)
+void AnimationNodeBlendNode::set_fade_out_curve(const Ref<Curve>& p_curve)
 {
 	fade_out_curve = p_curve;
 }
 
-Ref<Curve> AnimationNodeOneShot::get_fade_out_curve() const { return fade_out_curve; }
+Ref<Curve> AnimationNodeBlendNode::get_fade_out_curve() const { return fade_out_curve; }
 
-void AnimationNodeOneShot::set_auto_restart_enabled(bool p_enabled) { auto_restart = p_enabled; }
+void AnimationNodeBlendNode::set_auto_restart_enabled(bool p_enabled) { auto_restart = p_enabled; }
 
-void AnimationNodeOneShot::set_auto_restart_delay(double p_time) { auto_restart_delay = p_time; }
+void AnimationNodeBlendNode::set_auto_restart_delay(double p_time) { auto_restart_delay = p_time; }
 
-void AnimationNodeOneShot::set_auto_restart_random_delay(double p_time)
+void AnimationNodeBlendNode::set_auto_restart_random_delay(double p_time)
 {
 	auto_restart_random_delay = p_time;
 }
 
-bool AnimationNodeOneShot::is_auto_restart_enabled() const { return auto_restart; }
+bool AnimationNodeBlendNode::is_auto_restart_enabled() const { return auto_restart; }
 
-double AnimationNodeOneShot::get_auto_restart_delay() const { return auto_restart_delay; }
+double AnimationNodeBlendNode::get_auto_restart_delay() const { return auto_restart_delay; }
 
-double AnimationNodeOneShot::get_auto_restart_random_delay() const
+double AnimationNodeBlendNode::get_auto_restart_random_delay() const
 {
 	return auto_restart_random_delay;
 }
 
-void AnimationNodeOneShot::set_mix_mode(MixMode p_mix) { mix = p_mix; }
+void AnimationNodeBlendNode::set_mix_mode(MixMode p_mix) { mix = p_mix; }
 
-AnimationNodeOneShot::MixMode AnimationNodeOneShot::get_mix_mode() const { return mix; }
+AnimationNodeBlendNode::MixMode AnimationNodeBlendNode::get_mix_mode() const { return mix; }
 
-void AnimationNodeOneShot::set_break_loop_at_end(bool p_enable) { break_loop_at_end = p_enable; }
+void AnimationNodeBlendNode::set_break_loop_at_end(bool p_enable) { break_loop_at_end = p_enable; }
 
-bool AnimationNodeOneShot::is_loop_broken_at_end() const { return break_loop_at_end; }
+bool AnimationNodeBlendNode::is_loop_broken_at_end() const { return break_loop_at_end; }
 
-void AnimationNodeOneShot::set_abort_on_reset(bool p_enable) { abort_on_reset = p_enable; }
+void AnimationNodeBlendNode::set_abort_on_reset(bool p_enable) { abort_on_reset = p_enable; }
 
-bool AnimationNodeOneShot::is_aborted_on_reset() const { return abort_on_reset; }
+bool AnimationNodeBlendNode::is_aborted_on_reset() const { return abort_on_reset; }
 
-String AnimationNodeOneShot::get_caption() const { return "OneShot"; }
+void AnimationNodeBlendNode::set_explicit_elapse(bool p_enable) { explicit_elapse = p_enable; }
 
-bool AnimationNodeOneShot::has_filter() const { return true; }
+bool AnimationNodeBlendNode::is_explicit_elapse() const { return explicit_elapse; }
 
-AnimationNodeOneShot::AnimationNodeOneShot()
+void AnimationNodeBlendNode::set_input_count(int p_inputs)
 {
-	add_input("in");
-	add_input("shot");
-}
-
-String AnimationNodeAdd2::get_caption() const { return three_way ? "Add3" : "Add2"; }
-
-bool AnimationNodeAdd2::has_filter() const { return true; }
-
-AnimationNodeAdd2::AnimationNodeAdd2(bool p_three_way) : three_way(p_three_way)
-{
-	if (three_way) {
-		add_input("-add");
-		add_input("in");
-		add_input("+add");
+	while (get_input_count() < p_inputs) {
+		add_input("state_" + itos(get_input_count()));
 	}
-	else {
-		add_input("in");
-		add_input("add");
+	while (get_input_count() > p_inputs) {
+		remove_input(get_input_count() - 1);
 	}
 }
 
-String AnimationNodeBlend2::get_caption() const { return three_way ? "Blend3" : "Blend2"; }
-
-bool AnimationNodeBlend2::has_filter() const { return !three_way; }
-
-AnimationNodeBlend2::AnimationNodeBlend2(bool p_three_way) : three_way(p_three_way)
-{
-	if (three_way) {
-		add_input("-blend");
-		add_input("in");
-		add_input("+blend");
-	}
-	else {
-		add_input("in");
-		add_input("blend");
-	}
-}
-
-String AnimationNodeSub2::get_caption() const { return "Sub2"; }
-
-bool AnimationNodeSub2::has_filter() const { return true; }
-
-AnimationNodeSub2::AnimationNodeSub2()
-{
-	add_input("in");
-	add_input("sub");
-}
-
-String AnimationNodeTimeScale::get_caption() const { return "TimeScale"; }
-
-AnimationNodeTimeScale::AnimationNodeTimeScale() { add_input("in"); }
-
-String AnimationNodeTimeSeek::get_caption() const { return "TimeSeek"; }
-
-void AnimationNodeTimeSeek::set_explicit_elapse(bool p_enable) { explicit_elapse = p_enable; }
-
-bool AnimationNodeTimeSeek::is_explicit_elapse() const { return explicit_elapse; }
-
-AnimationNodeTimeSeek::AnimationNodeTimeSeek() { add_input("in"); }
-
-bool AnimationNodeTransition::is_parameter_read_only(const String& p_parameter) const
-{
-	if (AnimationNode::is_parameter_read_only(p_parameter)) {
-		return true;
-	}
-
-	if (p_parameter == current_state || p_parameter == current_index) {
-		return true;
-	}
-	return false;
-}
-
-String AnimationNodeTransition::get_caption() const { return "Transition"; }
-
-bool AnimationNodeTransition::add_input(const String& p_name)
+bool AnimationNodeBlendNode::add_input(const String& p_name)
 {
 	if (AnimationNode::add_input(p_name)) {
-		input_data.push_back(InputData());
+		if (node_type == NODE_TRANSITION) {
+			input_data.push_back(InputData());
+		}
 		return true;
 	}
 	return false;
 }
 
-void AnimationNodeTransition::remove_input(int p_index)
+void AnimationNodeBlendNode::remove_input(int p_index)
 {
-	input_data.remove_at(p_index);
+	if (node_type == NODE_TRANSITION) {
+		input_data.remove_at(p_index);
+	}
 	AnimationNode::remove_input(p_index);
 }
 
-void AnimationNodeTransition::set_input_as_auto_advance(int p_input, bool p_enable)
+bool AnimationNodeBlendNode::set_input_name(int p_input, const String& p_name)
 {
-	ERR_FAIL_INDEX(p_input, get_input_count());
+	if (node_type == NODE_TRANSITION) {
+		return false;
+	}
+	return AnimationNode::set_input_name(p_input, p_name);
+}
+
+void AnimationNodeBlendNode::set_input_as_auto_advance(int p_input, bool p_enable)
+{
+	ERR_FAIL_INDEX(p_input, (int)input_data.size());
 	input_data[p_input].auto_advance = p_enable;
 }
 
-bool AnimationNodeTransition::is_input_set_as_auto_advance(int p_input) const
+bool AnimationNodeBlendNode::is_input_set_as_auto_advance(int p_input) const
 {
-	ERR_FAIL_INDEX_V(p_input, get_input_count(), false);
+	ERR_FAIL_INDEX_V(p_input, (int)input_data.size(), false);
 	return input_data[p_input].auto_advance;
 }
 
-void AnimationNodeTransition::set_input_break_loop_at_end(int p_input, bool p_enable)
+void AnimationNodeBlendNode::set_input_break_loop_at_end(int p_input, bool p_enable)
 {
-	ERR_FAIL_INDEX(p_input, get_input_count());
+	ERR_FAIL_INDEX(p_input, (int)input_data.size());
 	input_data[p_input].break_loop_at_end = p_enable;
 }
 
-bool AnimationNodeTransition::is_input_loop_broken_at_end(int p_input) const
+bool AnimationNodeBlendNode::is_input_loop_broken_at_end(int p_input) const
 {
-	ERR_FAIL_INDEX_V(p_input, get_input_count(), false);
+	ERR_FAIL_INDEX_V(p_input, (int)input_data.size(), false);
 	return input_data[p_input].break_loop_at_end;
 }
 
-void AnimationNodeTransition::set_input_reset(int p_input, bool p_enable)
+void AnimationNodeBlendNode::set_input_reset(int p_input, bool p_enable)
 {
-	ERR_FAIL_INDEX(p_input, get_input_count());
+	ERR_FAIL_INDEX(p_input, (int)input_data.size());
 	input_data[p_input].reset = p_enable;
 }
 
-bool AnimationNodeTransition::is_input_reset(int p_input) const
+bool AnimationNodeBlendNode::is_input_reset(int p_input) const
 {
-	ERR_FAIL_INDEX_V(p_input, get_input_count(), true);
+	ERR_FAIL_INDEX_V(p_input, (int)input_data.size(), true);
 	return input_data[p_input].reset;
 }
 
-void AnimationNodeTransition::set_xfade_time(double p_fade) { xfade_time = p_fade; }
+void AnimationNodeBlendNode::set_xfade_time(double p_fade) { xfade_time = p_fade; }
 
-double AnimationNodeTransition::get_xfade_time() const { return xfade_time; }
+double AnimationNodeBlendNode::get_xfade_time() const { return xfade_time; }
 
-void AnimationNodeTransition::set_xfade_curve(const Ref<Curve>& p_curve) { xfade_curve = p_curve; }
+void AnimationNodeBlendNode::set_xfade_curve(const Ref<Curve>& p_curve) { xfade_curve = p_curve; }
 
-Ref<Curve> AnimationNodeTransition::get_xfade_curve() const { return xfade_curve; }
+Ref<Curve> AnimationNodeBlendNode::get_xfade_curve() const { return xfade_curve; }
 
-void AnimationNodeTransition::set_allow_transition_to_self(bool p_enable)
+void AnimationNodeBlendNode::set_allow_transition_to_self(bool p_enable)
 {
 	allow_transition_to_self = p_enable;
 }
 
-bool AnimationNodeTransition::is_allow_transition_to_self() const
+bool AnimationNodeBlendNode::is_allow_transition_to_self() const
 {
 	return allow_transition_to_self;
 }
 
-AnimationNodeTransition::AnimationNodeTransition() {}
-
-String AnimationNodeOutput::get_caption() const { return "Output"; }
-
-AnimationNode::NodeTimeInfo AnimationNodeOutput::_process(ProcessState& p_process_state,
-	AnimationNodeInstance& p_instance, const AnimationMixer::PlaybackInfo& p_playback_info,
-	bool p_test_only)
+AnimationNodeBlendNode::AnimationNodeBlendNode(NodeType p_type, bool p_three_way)
+	: node_type(p_type), three_way(p_three_way)
 {
-	AnimationMixer::PlaybackInfo pi = p_playback_info;
-	pi.weight = 1.0;
-	return blend_input(p_process_state, p_instance, 0, pi, FILTER_IGNORE, true, p_test_only);
+	switch (node_type) {
+	case NODE_ANIMATION: {
+		root_node = true;
+	} break;
+	case NODE_ONESHOT: {
+		add_input("in");
+		add_input("shot");
+	} break;
+	case NODE_ADD: {
+		if (three_way) {
+			add_input("-add");
+			add_input("in");
+			add_input("+add");
+		}
+		else {
+			add_input("in");
+			add_input("add");
+		}
+	} break;
+	case NODE_BLEND: {
+		if (three_way) {
+			add_input("-blend");
+			add_input("in");
+			add_input("+blend");
+		}
+		else {
+			add_input("in");
+			add_input("blend");
+		}
+	} break;
+	case NODE_SUB: {
+		add_input("in");
+		add_input("sub");
+	} break;
+	case NODE_TIME_SCALE:
+	case NODE_TIME_SEEK: {
+		add_input("in");
+	} break;
+	case NODE_TRANSITION:
+		break;
+	case NODE_OUTPUT: {
+		add_input("output");
+	} break;
+	}
 }
-
-AnimationNodeOutput::AnimationNodeOutput() { add_input("output"); }
 
 Ref<AnimationNode> AnimationNodeBlendTree::get_node(const String& p_name) const
 {
@@ -421,8 +495,10 @@ AnimationNode::NodeTimeInfo AnimationNodeBlendTree::_process(ProcessState& p_pro
 	AnimationNodeInstance& p_instance, const AnimationMixer::PlaybackInfo& p_playback_info,
 	bool p_test_only)
 {
-	const Ref<AnimationNodeOutput> output = nodes[SceneString(output)].node;
-	ERR_FAIL_COND_V(output.is_null(), NodeTimeInfo());
+	const Ref<AnimationNodeBlendNode> output = nodes[SceneString(output)].node;
+	ERR_FAIL_COND_V(
+		output.is_null() || output->get_node_type() != AnimationNodeBlendNode::NODE_OUTPUT,
+		NodeTimeInfo());
 
 	AnimationMixer::PlaybackInfo pi = p_playback_info;
 	pi.weight = 1.0;
@@ -520,13 +596,13 @@ void AnimationNodeBlendTree::get_argument_options(
 
 void AnimationNodeBlendTree::_initialize_node_tree()
 {
-	Ref<AnimationNodeOutput> output;
-	output.instantiate();
+	Ref<AnimationNodeBlendNode> output;
+	output.instantiate(AnimationNodeBlendNode::NODE_OUTPUT);
 	Node n;
 	n.node = output;
 	n.position = Vector2(300, 150);
 	n.connections.resize(1);
-	nodes[SceneString(output)] = n;
+	nodes[SceneString(output)] = std::move(n);
 }
 
 AnimationNodeBlendTree::AnimationNodeBlendTree()
@@ -535,64 +611,4 @@ AnimationNodeBlendTree::AnimationNodeBlendTree()
 	_initialize_node_tree();
 }
 
-AnimationNode::NodeTimeInfo AnimationNodeAnimation::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
-AnimationNode::NodeTimeInfo AnimationNodeOneShot::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
-AnimationNode::NodeTimeInfo AnimationNodeAdd2::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
-AnimationNode::NodeTimeInfo AnimationNodeBlend2::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
-AnimationNode::NodeTimeInfo AnimationNodeSub2::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
-AnimationNode::NodeTimeInfo AnimationNodeTimeScale::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
-AnimationNode::NodeTimeInfo AnimationNodeTimeSeek::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
-AnimationNode::NodeTimeInfo AnimationNodeTransition::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
-bool AnimationNodeTransition::set_input_name(int p_input, const String& p_name) { return false; }
-
 void AnimationNodeBlendTree::reset_state() {}
-
-
