@@ -34,8 +34,10 @@
 #include "../../openxr_util.h"
 #include "openxr_spatial_entities.h"
 #include "openxr_spatial_entity_extension.h"
+#include "servers/xr/xr_server.h"
 
-OpenXRSpatialEntityTracker::OpenXRSpatialEntityTracker()
+OpenXRSpatialEntityTracker::OpenXRSpatialEntityTracker(EntityType p_entity_type)
+	: entity_type(p_entity_type)
 {
 	set_tracker_type(XRServer::TrackerType::TRACKER_ANCHOR);
 }
@@ -151,6 +153,293 @@ void OpenXRSpatialEntityTracker::remove_next(Ref<OpenXRStructureBase> p_next)
 }
 
 Ref<OpenXRStructureBase> OpenXRSpatialEntityTracker::get_next() const { return next; }
+
+bool OpenXRSpatialEntityTracker::has_uuid() const
+{
+	for (int i = 0; i < XR_UUID_SIZE; i++) {
+		if (uuid.data[i] != 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+XrUuid OpenXRSpatialEntityTracker::get_uuid() const { return uuid; }
+
+void OpenXRSpatialEntityTracker::set_uuid(const XrUuid& p_uuid)
+{
+	if (uuid_is_equal(uuid, p_uuid)) {
+		return;
+	}
+
+	uuid = p_uuid;
+}
+
+String OpenXRSpatialEntityTracker::_get_uuid() const { return OpenXRUtil::string_from_xruuid(uuid); }
+
+void OpenXRSpatialEntityTracker::_set_uuid(const String& p_uuid)
+{
+	set_uuid(OpenXRUtil::xruuid_from_string(p_uuid));
+}
+
+bool OpenXRSpatialEntityTracker::uuid_is_equal(const XrUuid& p_a, const XrUuid& p_b)
+{
+	for (int i = 0; i < XR_UUID_SIZE; i++) {
+		if (p_a.data[i] != p_b.data[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void OpenXRSpatialEntityTracker::set_bounds_size(const Vector2& p_bounds_size)
+{
+	if (entity_type == ENTITY_PLANE) {
+		if (Math::abs(bounds_size.x - p_bounds_size.x) > 0.001 ||
+			Math::abs(bounds_size.y - p_bounds_size.y) > 0.001) {
+			bounds_size = p_bounds_size;
+
+			if (!mesh.has_mesh_data) {
+				// Bounds changing only effects mesh data if we don't have polygon data.
+				clear_mesh_data();
+			}
+		}
+	}
+	else {
+		bounds_size = p_bounds_size;
+	}
+}
+
+Vector2 OpenXRSpatialEntityTracker::get_bounds_size() const { return bounds_size; }
+
+void OpenXRSpatialEntityTracker::set_plane_alignment(
+	OpenXRSpatialComponentData::PlaneAlignment p_plane_alignment)
+{
+	if (plane_alignment != p_plane_alignment) {
+		plane_alignment = p_plane_alignment;
+	}
+}
+
+OpenXRSpatialComponentData::PlaneAlignment OpenXRSpatialEntityTracker::get_plane_alignment() const
+{
+	return plane_alignment;
+}
+
+void OpenXRSpatialEntityTracker::set_plane_label(const String& p_plane_label)
+{
+	if (plane_label != p_plane_label) {
+		plane_label = p_plane_label;
+
+		// Also copy to description, should do something nicer here.
+		set_tracker_desc(plane_label);
+	}
+}
+
+String OpenXRSpatialEntityTracker::get_plane_label() const { return plane_label; }
+
+void OpenXRSpatialEntityTracker::set_mesh_data(const Transform3D& p_origin,
+	const PackedVector2Array& p_vertices, const PackedInt32Array& p_indices)
+{
+	if (p_vertices.size() < 3) {
+		if (mesh.has_mesh_data) {
+			clear_mesh_data();
+		}
+	}
+	else {
+		bool has_changed = !mesh.has_mesh_data;
+
+		mesh.has_mesh_data = true;
+		mesh.origin = p_origin;
+
+		if (mesh.vertices.size() != p_vertices.size()) {
+			has_changed = true;
+		}
+		else {
+			// Compare the vertices with a bit of margin, we ignore small jittering on vertices.
+			for (uint32_t i = 0; i < p_vertices.size() && !has_changed; i++) {
+				const Vector2& a = p_vertices[i];
+				const Vector2& b = mesh.vertices[i];
+				has_changed = (Math::abs(a.x - b.x) > 0.001) || (Math::abs(a.y - b.y) > 0.001);
+			}
+		}
+		if (has_changed) {
+			mesh.vertices = p_vertices;
+		}
+
+		if (p_indices.is_empty()) {
+			// Assume polygon, turn into triangle strip...
+			int count = (p_vertices.size() - 2) * 3;
+
+			if (has_changed || mesh.indices.size() != count) {
+				has_changed = true;
+
+				int offset = 1;
+				mesh.indices.resize(count);
+				int32_t* idx = mesh.indices.ptrw();
+				for (int i = 0; i < count; i += 3) {
+					idx[i + 0] = 0;
+					idx[i + 2] = offset++;
+					idx[i + 1] = offset;
+				}
+			}
+		}
+		else {
+			if (mesh.indices.size() != p_indices.size()) {
+				has_changed = true;
+			}
+			else {
+				for (uint32_t i = 0; i < p_indices.size() && !has_changed; i++) {
+					has_changed = mesh.indices[i] != p_indices[i];
+				}
+			}
+			if (has_changed) {
+				mesh.indices = p_indices;
+			}
+		}
+
+		if (has_changed) {
+			mesh.mesh.unref();
+#ifndef PHYSICS_3D_DISABLED
+			mesh.shape3d.unref();
+#endif
+		}
+	}
+}
+
+void OpenXRSpatialEntityTracker::clear_mesh_data()
+{
+	mesh.mesh.unref();
+#ifndef PHYSICS_3D_DISABLED
+	mesh.shape3d.unref();
+#endif
+
+	if (mesh.has_mesh_data) {
+		mesh.has_mesh_data = false;
+		mesh.origin = Transform3D();
+		mesh.vertices.clear();
+		mesh.indices.clear();
+	}
+}
+
+Transform3D OpenXRSpatialEntityTracker::get_mesh_offset() const
+{
+	Transform3D offset;
+
+	if (mesh.has_mesh_data) {
+		offset = mesh.origin;
+
+		Ref<XRPose> pose = get_pose(SNAME("default"));
+		if (pose.is_valid()) {
+			offset = pose->get_transform().inverse() * offset;
+		}
+
+		if (XRServer::is_initialized()) {
+			offset.origin *= XRServer::get_world_scale();
+		}
+	}
+
+	return offset;
+}
+
+#ifndef PHYSICS_3D_DISABLED
+Ref<Shape3D> OpenXRSpatialEntityTracker::get_shape(real_t p_thickness)
+{
+	if (mesh.shape3d.is_valid()) {
+		return mesh.shape3d;
+	}
+
+	if (mesh.has_mesh_data) {
+		Ref<Shape3D> shape;
+		Vector<Vector3> faces;
+
+		int isize = mesh.indices.size();
+		const Vector2* vr = mesh.vertices.ptr();
+		const int32_t* ir = mesh.indices.ptr();
+
+		HashMap<Edge, int, Edge> edge_counts;
+		for (int i = 0; i < isize; i += 3) {
+			for (int j = 0; j < 3; j++) {
+				Edge e(ir[i + j], ir[i + ((j + 1) % 3)]);
+				edge_counts[e]++;
+			}
+		}
+
+		thread_local LocalVector<Edge> outer_edges;
+		outer_edges.clear();
+		for (const KeyValue<Edge, int>& e : edge_counts) {
+			if (e.value > 1) {
+				outer_edges.push_back(e.key);
+			}
+		}
+
+		faces.resize(2 * isize + 6 * outer_edges.size());
+		Vector3* write = faces.ptrw();
+
+		for (int i = 0; i < isize; i += 3) {
+			Vector3 a = Vector3(vr[ir[i]].x, vr[ir[i]].y, 0.0);
+			Vector3 b = Vector3(vr[ir[i + 1]].x, vr[ir[i + 1]].y, 0.0);
+			Vector3 c = Vector3(vr[ir[i + 2]].x, vr[ir[i + 2]].y, 0.0);
+
+			*write++ = a;
+			*write++ = b;
+			*write++ = c;
+
+			a.z = -p_thickness;
+			b.z = -p_thickness;
+			c.z = -p_thickness;
+
+			*write++ = a;
+			*write++ = c;
+			*write++ = b;
+		}
+
+		for (const Edge& edge : outer_edges) {
+			Vector3 a = Vector3(vr[edge.a].x, vr[edge.a].y, 0.0);
+			Vector3 b = Vector3(vr[edge.b].x, vr[edge.b].y, 0.0);
+			Vector3 c = b + Vector3(0.0, 0.0, -p_thickness);
+			Vector3 d = a + Vector3(0.0, 0.0, -p_thickness);
+
+			*write++ = a;
+			*write++ = b;
+			*write++ = c;
+
+			*write++ = a;
+			*write++ = c;
+			*write++ = d;
+		}
+
+		shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
+		shape->set_faces(faces);
+
+		mesh.shape3d = shape;
+	}
+	else if (bounds_size.x > 0.0 && bounds_size.y > 0.0) {
+		Ref<Shape3D> box_shape = memnew(Shape3D(Shape3D::SHAPE_BOX));
+		box_shape->set_size(Vector3(bounds_size.x, bounds_size.y, p_thickness));
+
+		mesh.shape3d = box_shape;
+	}
+
+	return mesh.shape3d;
+}
+#endif // PHYSICS_3D_DISABLED
+
+void OpenXRSpatialEntityTracker::set_marker_type(
+	OpenXRSpatialComponentData::MarkerType p_marker_type)
+{
+	marker_type = p_marker_type;
+}
+
+OpenXRSpatialComponentData::MarkerType OpenXRSpatialEntityTracker::get_marker_type() const
+{
+	return marker_type;
+}
+
+void OpenXRSpatialEntityTracker::set_marker_id(uint32_t p_id) { marker_id = p_id; }
+
+uint32_t OpenXRSpatialEntityTracker::get_marker_id() const { return marker_id; }
 
 XrSpatialComponentTypeEXT OpenXRSpatialComponentData::get_component_type() const
 {

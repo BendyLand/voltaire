@@ -34,41 +34,36 @@
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRHapticBase
 
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRHapticVibration
-
-
-void OpenXRHapticVibration::set_duration(int64_t p_duration)
+void OpenXRHapticBase::set_duration(int64_t p_duration)
 {
 	haptic_vibration.duration = p_duration;
 	emit_changed();
 }
 
-int64_t OpenXRHapticVibration::get_duration() const { return haptic_vibration.duration; }
+int64_t OpenXRHapticBase::get_duration() const { return haptic_vibration.duration; }
 
-void OpenXRHapticVibration::set_frequency(float p_frequency)
+void OpenXRHapticBase::set_frequency(float p_frequency)
 {
 	haptic_vibration.frequency = p_frequency;
 	emit_changed();
 }
 
-float OpenXRHapticVibration::get_frequency() const { return haptic_vibration.frequency; }
+float OpenXRHapticBase::get_frequency() const { return haptic_vibration.frequency; }
 
-void OpenXRHapticVibration::set_amplitude(float p_amplitude)
+void OpenXRHapticBase::set_amplitude(float p_amplitude)
 {
 	haptic_vibration.amplitude = p_amplitude;
 	emit_changed();
 }
 
-float OpenXRHapticVibration::get_amplitude() const { return haptic_vibration.amplitude; }
+float OpenXRHapticBase::get_amplitude() const { return haptic_vibration.amplitude; }
 
-const XrHapticBaseHeader* OpenXRHapticVibration::get_xr_structure()
+const XrHapticBaseHeader* OpenXRHapticBase::get_xr_structure()
 {
 	return (XrHapticBaseHeader*)&haptic_vibration;
 }
 
-OpenXRHapticVibration::OpenXRHapticVibration()
+OpenXRHapticBase::OpenXRHapticBase()
 {
 	haptic_vibration.type = XR_TYPE_HAPTIC_VIBRATION;
 	haptic_vibration.next = nullptr;

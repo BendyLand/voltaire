@@ -35,12 +35,11 @@
 #include "scene/gui/control.h"
 #include "scene/gui/label.h"
 #include "scene/gui/panel.h"
-#include "scene/gui/popup.h"
 #include "scene/main/window.h"
 
 class LineEdit;
 
-class Dialog : public Window
+struct DialogChrome
 {
 	Window* parent_visible = nullptr;
 
@@ -53,7 +52,7 @@ class Dialog : public Window
 	bool has_cancel_button = false;
 	bool popped_up = false;
 	String ok_text;
-	String default_ok_text;
+	String default_ok_text = "OK";
 
 	bool hide_on_ok = true;
 	bool close_on_escape = true;
@@ -64,18 +63,55 @@ class Dialog : public Window
 		int buttons_separation = 0;
 		int buttons_min_width = 0;
 		int buttons_min_height = 0;
-	};
-
-	ThemeCache theme_cache;
-
-	void _custom_action(const String& p_action);
-	void _button_visibility_changed(Button* button);
-	void _update_child_rects();
-	void _update_ok_text();
+	} theme_cache;
 
 	inline static bool swap_cancel_ok = false;
 
+	DialogChrome(bool p_with_cancel = false) : has_cancel_button(p_with_cancel) {}
+
+	void init_controls(Window* p_owner);
+	bool handle_escape_input(const InputEvent& p_event) const;
+	bool should_cancel_on_parent_focus(const Window* p_owner) const;
+	void post_popup() { popped_up = true; }
+	void update_child_rects(Window* p_owner);
+	void update_ok_text(Window* p_owner);
+	void set_default_ok_text(Window* p_owner, const String& p_text);
+
+	Label* get_label() const { return message_label; }
+	Button* get_ok_button() const { return ok_button; }
+	Button* get_cancel_button() const { return cancel; }
+
+	void set_cancel_button_enabled(bool p_enabled) { has_cancel_button = p_enabled; }
+	bool is_cancel_button_enabled() const { return has_cancel_button; }
+
+	void set_cancel_button_text(const String& p_cancel_button_text);
+	String get_cancel_button_text() const;
+
+	void set_hide_on_ok(bool p_hide) { hide_on_ok = p_hide; }
+	bool get_hide_on_ok() const { return hide_on_ok; }
+
+	void set_close_on_escape(bool p_enable) { close_on_escape = p_enable; }
+	bool get_close_on_escape() const { return close_on_escape; }
+
+	void set_text(Window* p_owner, const String& p_text);
+	String get_text() const;
+
+	void set_autowrap(bool p_autowrap);
+	bool has_autowrap() const;
+
+	void set_ok_button_text(Window* p_owner, const String& p_ok_button_text);
+	String get_ok_button_text() const { return ok_text; }
+};
+
+class Dialog : public Window
+{
+	DialogChrome chrome;
+
 	void _parent_focused();
+	void _text_submitted(const String& p_text);
+	void _ok_pressed();
+	void _cancel_pressed();
+	void _update_child_rects() { chrome.update_child_rects(this); }
 
 protected:
 	virtual void _input_from_window(const InputEvent& p_event) override;
@@ -84,54 +120,41 @@ protected:
 
 	void _notification(int p_what);
 
-	virtual void ok_pressed() {}
-
-	virtual void cancel_pressed() {}
-
-	virtual void custom_action(const String&) {}
-
-	void set_default_ok_text(const String& p_text);
-
-	void _text_submitted(const String& p_text);
-	void _ok_pressed();
-	void _cancel_pressed();
-
-#ifndef DISABLE_DEPRECATED
-	void _register_text_enter_bind_compat_89419(Control* p_line_edit);
-	void _remove_button_bind_compat_89419(Control* p_button);
-
-	static void _bind_compatibility_methods();
-#endif
-
 public:
-	Label* get_label() { return message_label; }
+	Label* get_label() { return chrome.get_label(); }
 
-	Button* get_ok_button() { return ok_button; }
-	Button* get_cancel_button() { return cancel; }
+	Button* get_ok_button() { return chrome.get_ok_button(); }
+	Button* get_cancel_button() { return chrome.get_cancel_button(); }
 
-	void set_cancel_button_enabled(bool p_enabled) { has_cancel_button = p_enabled; }
-	bool is_cancel_button_enabled() const { return has_cancel_button; }
+	void set_cancel_button_enabled(bool p_enabled) { chrome.set_cancel_button_enabled(p_enabled); }
+	bool is_cancel_button_enabled() const { return chrome.is_cancel_button_enabled(); }
 
-	void set_cancel_button_text(String p_cancel_button_text);
-	String get_cancel_button_text() const;
+	void set_cancel_button_text(String p_cancel_button_text)
+	{
+		chrome.set_cancel_button_text(p_cancel_button_text);
+	}
+	String get_cancel_button_text() const { return chrome.get_cancel_button_text(); }
 
 	static void set_swap_cancel_ok(bool p_swap);
 
-	void set_hide_on_ok(bool p_hide);
-	bool get_hide_on_ok() const;
+	void set_hide_on_ok(bool p_hide) { chrome.set_hide_on_ok(p_hide); }
+	bool get_hide_on_ok() const { return chrome.get_hide_on_ok(); }
 
-	void set_close_on_escape(bool p_enable);
-	bool get_close_on_escape() const;
+	void set_close_on_escape(bool p_enable) { chrome.set_close_on_escape(p_enable); }
+	bool get_close_on_escape() const { return chrome.get_close_on_escape(); }
 
-	void set_text(String p_text);
-	String get_text() const;
+	void set_text(String p_text) { chrome.set_text(this, p_text); }
+	String get_text() const { return chrome.get_text(); }
 
-	void set_autowrap(bool p_autowrap);
-	bool has_autowrap();
+	void set_autowrap(bool p_autowrap) { chrome.set_autowrap(p_autowrap); }
+	bool has_autowrap() const { return chrome.has_autowrap(); }
 
-	void set_ok_button_text(String p_ok_button_text);
-	String get_ok_button_text() const;
+	void set_ok_button_text(String p_ok_button_text)
+	{
+		chrome.set_ok_button_text(this, p_ok_button_text);
+	}
+	String get_ok_button_text() const { return chrome.get_ok_button_text(); }
 
-	Dialog(bool p_with_cancel = false) : has_cancel_button(p_with_cancel) {}
+	Dialog(bool p_with_cancel = false);
 	~Dialog() = default;
 };

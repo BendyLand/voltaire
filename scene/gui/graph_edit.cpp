@@ -237,7 +237,7 @@ int GraphEdit::get_connection_count(const String& p_node, int p_port)
 
 Vector2 GraphEdit::get_scroll_offset() const { return scroll_offset; }
 
-void GraphEdit::_graph_element_visibility_changed(GraphElement* p_graph_element)
+void GraphEdit::_graph_element_visibility_changed(GraphNode* p_graph_element)
 {
 	if (p_graph_element->is_selected() && !p_graph_element->is_visible()) {
 		p_graph_element->set_selected(false);
@@ -663,5 +663,27 @@ Error GraphEdit::connect_node(String const&, int, String const&, int, bool) { re
 void GraphEdit::add_child_notify(Node* p_child) {}
 
 void GraphEdit::remove_child_notify(Node* p_child) {}
+
+GraphNode* GraphEdit::get_element_frame(const String& p_attached_graph_element)
+{
+	if (!linked_parent_map.has(p_attached_graph_element)) {
+		return nullptr;
+	}
+	Node* parent = get_node_or_null(NodePath(linked_parent_map[p_attached_graph_element]));
+	GraphNode* frame = dynamic_cast<GraphNode*>(parent);
+	return (frame && frame->is_frame()) ? frame : nullptr;
+}
+
+Vector<String> GraphEdit::get_attached_nodes_of_frame(const String& p_graph_frame) const
+{
+	Vector<String> attached_nodes;
+	if (!frame_attached_nodes.has(p_graph_frame)) {
+		return attached_nodes;
+	}
+	for (const String& elem : frame_attached_nodes[p_graph_frame]) {
+		attached_nodes.push_back(elem);
+	}
+	return attached_nodes;
+}
 
 

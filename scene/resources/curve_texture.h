@@ -41,19 +41,21 @@ public:
 	{
 		TEXTURE_MODE_RGB,
 		TEXTURE_MODE_RED,
+		TEXTURE_MODE_XYZ,
 	};
 
 private:
 	mutable RID _texture;
 	Ref<Curve> _curve;
+	Ref<Curve> _curve_x;
+	Ref<Curve> _curve_y;
+	Ref<Curve> _curve_z;
 	int _width = 256;
 	int _current_width = 0;
 	TextureMode texture_mode = TEXTURE_MODE_RGB;
 	TextureMode _current_texture_mode = TEXTURE_MODE_RGB;
 
 	void _update();
-
-protected:
 
 public:
 	void set_width(int p_width);
@@ -66,35 +68,6 @@ public:
 
 	void set_curve(Ref<Curve> p_curve);
 	Ref<Curve> get_curve() const;
-
-	virtual RID get_rid() const override;
-
-	virtual int get_height() const override { return 1; }
-
-	virtual bool has_alpha() const override { return false; }
-
-	~CurveTexture();
-};
-
-class CurveXYZTexture : public Texture2D
-{
-private:
-	mutable RID _texture;
-	Ref<Curve> _curve_x;
-	Ref<Curve> _curve_y;
-	Ref<Curve> _curve_z;
-	int _width = 256;
-	int _current_width = 0;
-
-	void _update();
-
-protected:
-
-public:
-	void set_width(int p_width);
-	int get_width() const override;
-
-	void ensure_default_setup(float p_min = 0, float p_max = 1);
 
 	void set_curve_x(Ref<Curve> p_curve);
 	Ref<Curve> get_curve_x() const;
@@ -111,7 +84,6 @@ public:
 
 	virtual bool has_alpha() const override { return false; }
 
-	~CurveXYZTexture();
+	explicit CurveTexture(TextureMode p_mode = TEXTURE_MODE_RGB);
+	~CurveTexture();
 };
-
-

@@ -43,9 +43,11 @@ class OptionButton;
 class PopupMenu;
 class Separator;
 
-class FileDialog : public Dialog
+class FileDialog : public Window
 {
 	inline static constexpr int MAX_RECENTS = 20;
+
+	DialogChrome chrome{true};
 
 	struct Option
 	{
@@ -396,8 +398,10 @@ protected:
 		return theme_cache.folder_icon_color;
 	}
 
-	virtual Vector2i _get_list_mode_icon_size() const;
+	Vector2i _get_list_mode_icon_size() const;
 
+	virtual void _input_from_window(const InputEvent& p_event) override;
+	virtual void _post_popup() override;
 	virtual void _popup_base(const Rect2i& p_screen_rect = Rect2i()) override;
 	void _clear_changed_status();
 
@@ -415,6 +419,34 @@ protected:
 #endif
 
 public:
+	Label* get_label() { return chrome.get_label(); }
+	Button* get_ok_button() { return chrome.get_ok_button(); }
+	Button* get_cancel_button() { return chrome.get_cancel_button(); }
+
+	void set_ok_button_text(String p_ok_button_text)
+	{
+		chrome.set_ok_button_text(this, p_ok_button_text);
+	}
+	String get_ok_button_text() const { return chrome.get_ok_button_text(); }
+
+	void set_cancel_button_text(String p_cancel_button_text)
+	{
+		chrome.set_cancel_button_text(p_cancel_button_text);
+	}
+	String get_cancel_button_text() const { return chrome.get_cancel_button_text(); }
+
+	void set_hide_on_ok(bool p_hide) { chrome.set_hide_on_ok(p_hide); }
+	bool get_hide_on_ok() const { return chrome.get_hide_on_ok(); }
+
+	void set_close_on_escape(bool p_enable) { chrome.set_close_on_escape(p_enable); }
+	bool get_close_on_escape() const { return chrome.get_close_on_escape(); }
+
+	void set_text(String p_text) { chrome.set_text(this, p_text); }
+	String get_text() const { return chrome.get_text(); }
+
+	void set_autowrap(bool p_autowrap) { chrome.set_autowrap(p_autowrap); }
+	bool has_autowrap() const { return chrome.has_autowrap(); }
+
 	virtual void set_visible(bool p_visible) override;
 
 	void popup_file_dialog();
@@ -489,7 +521,7 @@ public:
 
 	void deselect_all();
 
-	FileDialog() : Dialog(true) {}
+	FileDialog();
 	~FileDialog();
 };
 

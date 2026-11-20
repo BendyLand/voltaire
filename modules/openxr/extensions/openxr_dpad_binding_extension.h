@@ -67,7 +67,7 @@ public:
 	~OpenXRDPadBindingExtension() = delete;
 };
 
-class OpenXRDpadBindingModifier : public OpenXRIPBindingModifier
+class OpenXRDpadBindingModifier : public OpenXRBindingModifier
 {
 private:
 	PackedByteArray dpad_bindings_data;

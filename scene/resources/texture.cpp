@@ -29,11 +29,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "scene/resources/placeholder_textures.h"
-#include "servers/rendering/renderer.h"
 #include "texture.h"
 
+#include "servers/rendering/renderer.h"
+
 Size2 Texture2D::get_size() const { return Size2(get_width(), get_height()); }
+
+RID Texture2D::get_rid() const
+{
+	if (is_placeholder) {
+		if (placeholder_rid.is_null() && Renderer::is_initialized()) {
+			placeholder_rid = Renderer::texture_2d_placeholder_create();
+		}
+		return placeholder_rid;
+	}
+	return RID();
+}
 
 void Texture2D::draw(
 	RID p_canvas_item, const Point2& p_pos, const Color& p_modulate, bool p_transpose) const
@@ -64,40 +75,28 @@ bool Texture2D::get_rect_region(
 	return true;
 }
 
+Ref<Texture2D> Texture2D::create_placeholder_2d(Size2 p_size)
+{
+	Ref<Texture2D> placeholder;
+	placeholder.instantiate();
+	placeholder->is_placeholder = true;
+	placeholder->placeholder_size = p_size;
+	return placeholder;
+}
+
 Ref<Resource> Texture2D::create_placeholder() const
 {
-	Ref<PlaceholderTexture2D> placeholder;
-	placeholder.instantiate();
-	placeholder->set_size(get_size());
-	return placeholder;
+	return create_placeholder_2d(get_size());
 }
 
 Texture2D::Texture2D() {}
 
-Image::Format Texture3D::get_format() const
+Texture2D::~Texture2D()
 {
-	Image::Format ret = Image::FORMAT_MAX;
-	return ret;
-}
-
-Ref<Resource> Texture3D::create_placeholder() const
-{
-	Ref<PlaceholderTexture3D> placeholder;
-	placeholder.instantiate();
-	placeholder->set_size(Vector3i(get_width(), get_height(), get_depth()));
-	return placeholder;
-}
-
-Image::Format TextureLayered::get_format() const
-{
-	Image::Format ret = Image::FORMAT_MAX;
-	return ret;
-}
-
-TextureLayered::LayeredType TextureLayered::get_layered_type() const
-{
-	uint32_t ret = LAYERED_TYPE_2D_ARRAY;
-	return (LayeredType)ret;
+	if (placeholder_rid.is_valid()) {
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(placeholder_rid);
+	}
 }
 
 Image::Format Texture2D::get_format() const { return Image::FORMAT_L8; }
@@ -112,28 +111,116 @@ bool Texture2D::has_alpha() const { return false; }
 
 Ref<Image> Texture2D::get_image() const { return Ref<Image>(); }
 
-int Texture2D::get_width() const { return 0; }
+int Texture2D::get_width() const { return is_placeholder ? int(placeholder_size.width) : 0; }
 
-int Texture2D::get_height() const { return 0; }
+int Texture2D::get_height() const { return is_placeholder ? int(placeholder_size.height) : 0; }
 
-int Texture3D::get_width() const { return 0; }
+///////////////////////////////////////////////
 
-int Texture3D::get_height() const { return 0; }
+Image::Format TextureLayered::get_format() const
+{
+	return is_placeholder ? Image::FORMAT_RGB8 : Image::FORMAT_MAX;
+}
 
-int Texture3D::get_depth() const { return 0; }
+TextureLayered::LayeredType TextureLayered::get_layered_type() const
+{
+	return is_placeholder ? placeholder_layered_type : LAYERED_TYPE_2D_ARRAY;
+}
 
-bool Texture3D::has_mipmaps() const { return false; }
+int TextureLayered::get_width() const { return is_placeholder ? placeholder_size.x : 0; }
 
-int TextureLayered::get_width() const { return 0; }
+int TextureLayered::get_height() const { return is_placeholder ? placeholder_size.y : 0; }
 
-int TextureLayered::get_height() const { return 0; }
-
-int TextureLayered::get_layers() const { return 0; }
+int TextureLayered::get_layers() const { return is_placeholder ? placeholder_layers : 0; }
 
 bool TextureLayered::has_mipmaps() const { return false; }
 
 Ref<Image> TextureLayered::get_layer_data(int p_layer) const { return Ref<Image>(); }
 
+RID TextureLayered::get_rid() const
+{
+	if (is_placeholder) {
+		if (placeholder_rid.is_null() && Renderer::is_initialized()) {
+			placeholder_rid = Renderer::texture_2d_layered_placeholder_create(
+				static_cast<RSE::TextureLayeredType>(placeholder_layered_type));
+		}
+		return placeholder_rid;
+	}
+	return RID();
+}
+
+Ref<TextureLayered> TextureLayered::create_placeholder_layered(
+	LayeredType p_type, const Size2i& p_size, int p_layers)
+{
+	Ref<TextureLayered> placeholder;
+	placeholder.instantiate();
+	placeholder->is_placeholder = true;
+	placeholder->placeholder_layered_type = p_type;
+	placeholder->placeholder_size = p_size;
+	placeholder->placeholder_layers = p_layers;
+	return placeholder;
+}
+
+Ref<Resource> TextureLayered::create_placeholder() const
+{
+	return create_placeholder_layered(
+		get_layered_type(), Size2i(get_width(), get_height()), get_layers());
+}
+
+TextureLayered::~TextureLayered()
+{
+	if (placeholder_rid.is_valid()) {
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(placeholder_rid);
+	}
+}
+
+///////////////////////////////////////////////
+
+Image::Format Texture3D::get_format() const
+{
+	return is_placeholder ? Image::FORMAT_RGB8 : Image::FORMAT_MAX;
+}
+
+int Texture3D::get_width() const { return is_placeholder ? placeholder_size.x : 0; }
+
+int Texture3D::get_height() const { return is_placeholder ? placeholder_size.y : 0; }
+
+int Texture3D::get_depth() const { return is_placeholder ? placeholder_size.z : 0; }
+
+bool Texture3D::has_mipmaps() const { return false; }
+
 Vector<Ref<Image>> Texture3D::get_data() const { return Vector<Ref<Image>>(); }
 
+RID Texture3D::get_rid() const
+{
+	if (is_placeholder) {
+		if (placeholder_rid.is_null() && Renderer::is_initialized()) {
+			placeholder_rid = Renderer::texture_3d_placeholder_create();
+		}
+		return placeholder_rid;
+	}
+	return RID();
+}
 
+Ref<Texture3D> Texture3D::create_placeholder_3d(const Vector3i& p_size)
+{
+	Ref<Texture3D> placeholder;
+	placeholder.instantiate();
+	placeholder->is_placeholder = true;
+	placeholder->placeholder_size = p_size;
+	return placeholder;
+}
+
+Ref<Resource> Texture3D::create_placeholder() const
+{
+	return create_placeholder_3d(Vector3i(get_width(), get_height(), get_depth()));
+}
+
+Texture3D::~Texture3D()
+{
+	if (placeholder_rid.is_valid()) {
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(placeholder_rid);
+	}
+}

@@ -34,36 +34,26 @@
 #include <openxr/openxr.h>
 #include "core/types.h"
 
-// Base class for XrStructureType based headers
+// Base class for XrStructureType based headers (with persistence config folded in)
 class OpenXRStructureBase : public RefCounted
 {
 public:
-	/*
-	 * get_header should return a pointer to a proper XrStructureType structure.
-	 * The pointer should remain valid as long as this object is not destructed.
-	 *
-	 * This function should be implemented based on the following template:
-	 * void *get_header(void *p_next = nullptr) {
-	 *     my_xr_struct.type = XR_TYPE_XYZ;
-	 *     if (get_next().is_valid()) {
-	 *         my_xr_struct.next = get_next()->get_header(p_next);
-	 *     } else {
-	 *         my_xr_struct.next = p_next
-	 *     }
-	 *
-	 *     // add further setup of the struct here
-	 *
-	 *     return &my_xr_struct;
-	 * }
-	 */
-	virtual void* get_header(void* p_next = nullptr);
-	virtual XrStructureType get_structure_type();
+	bool has_valid_configuration() const;
+	void* get_header(void* p_next = nullptr);
+	XrStructureType get_structure_type();
 
 	void set_next(const Ref<OpenXRStructureBase> p_next);
 	Ref<OpenXRStructureBase> get_next() const;
 
+	void add_persistence_context(RID p_persistence_context);
+	void remove_persistence_context(RID p_persistence_context);
+
 private:
 	Ref<OpenXRStructureBase> next;
+	Vector<RID> persistence_contexts;
+	Vector<XrSpatialPersistenceContextEXT> context_handles;
+	XrSpatialContextPersistenceConfigEXT persistence_config = {
+		XR_TYPE_SPATIAL_CONTEXT_PERSISTENCE_CONFIG_EXT, nullptr, 0, nullptr};
 
 	uint64_t _get_structure_type();
 };

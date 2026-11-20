@@ -40,7 +40,6 @@
 #include "scene/scene_string_names.h"
 #include "servers/audio/audio_driver_dummy.h"
 #include "servers/audio/audio_stream.h"
-#include "servers/audio/effects/audio_effect_compressor.h"
 
 #ifdef TOOLS_ENABLED
 #define MARK_EDITED this->obj->set_edited(true);

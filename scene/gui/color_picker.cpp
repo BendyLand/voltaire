@@ -94,7 +94,13 @@ void ColorPicker::_update_theme_item_cache()
 	theme_cache.base_scale = get_theme_default_base_scale();
 }
 
-void ColorPicker::set_focus_on_picker_shape() { shapes[get_current_shape_index()]->grab_focus(); }
+void ColorPicker::set_focus_on_picker_shape()
+{
+	int idx = get_current_shape_index();
+	if (idx >= 0 && idx < (int)shapes.size()) {
+		shapes[idx]->grab_focus();
+	}
+}
 
 void ColorPicker::set_old_color(const Color& p_color) { old_color = p_color; }
 
@@ -146,7 +152,9 @@ void ColorPicker::_copy_normalized_to_hsv_okhsl()
 
 void ColorPicker::_copy_hsv_okhsl_to_normalized()
 {
-	if (current_shape != SHAPE_NONE && shapes[get_current_shape_index()]->is_ok_hsl()) {
+	int idx = get_current_shape_index();
+	if (current_shape != SHAPE_NONE && idx >= 0 && idx < (int)shapes.size() &&
+		shapes[idx]->is_ok_hsl()) {
 		color_normalized.set_ok_hsl(ok_hsl_h, ok_hsl_s, ok_hsl_l, color_normalized.a);
 	}
 	else {
@@ -511,6 +519,28 @@ void ColorPickerButton::_notification(int p_what)
 		}
 	} break;
 	}
+}
+
+void ColorPickerButton::_update_picker()
+{
+	if (!popup) {
+		popup = memnew(Popup(true));
+		picker = memnew(ColorPicker);
+		popup->add_child(picker);
+		add_child(popup, false, INTERNAL_MODE_FRONT);
+	}
+}
+
+Popup* ColorPickerButton::get_popup()
+{
+	_update_picker();
+	return popup;
+}
+
+ColorPicker* ColorPickerButton::get_picker()
+{
+	_update_picker();
+	return picker;
 }
 
 Color ColorPickerButton::get_pick_color() const { return color; }

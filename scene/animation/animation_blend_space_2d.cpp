@@ -44,7 +44,7 @@ void AnimationNodeBlendSpace2D::get_child_nodes(LocalVector<ChildNode>* r_child_
 	}
 }
 
-void AnimationNodeBlendSpace2D::add_blend_point(const Ref<AnimationRootNode>& p_node,
+void AnimationNodeBlendSpace2D::add_blend_point(const Ref<AnimationNode>& p_node,
 	const Vector2& p_position, int p_at_index, const String& p_name)
 {
 	ERR_FAIL_COND(blend_points_used >= MAX_BLEND_POINTS);
@@ -98,7 +98,7 @@ void AnimationNodeBlendSpace2D::set_blend_point_position(int p_point, const Vect
 }
 
 void AnimationNodeBlendSpace2D::set_blend_point_node(
-	int p_point, const Ref<AnimationRootNode>& p_node)
+	int p_point, const Ref<AnimationNode>& p_node)
 {
 	ERR_FAIL_INDEX(p_point, blend_points_used);
 	ERR_FAIL_COND(p_node.is_null());
@@ -119,9 +119,9 @@ Vector2 AnimationNodeBlendSpace2D::get_blend_point_position(int p_point) const
 	return blend_points[p_point].position;
 }
 
-Ref<AnimationRootNode> AnimationNodeBlendSpace2D::get_blend_point_node(int p_point) const
+Ref<AnimationNode> AnimationNodeBlendSpace2D::get_blend_point_node(int p_point) const
 {
-	ERR_FAIL_INDEX_V(p_point, MAX_BLEND_POINTS, Ref<AnimationRootNode>());
+	ERR_FAIL_INDEX_V(p_point, MAX_BLEND_POINTS, Ref<AnimationNode>());
 	return blend_points[p_point].node;
 }
 
@@ -416,7 +416,7 @@ Ref<AnimationNode> AnimationNodeBlendSpace2D::get_child_by_name(const String& p_
 	if (point_index != -1) {
 		return get_blend_point_node(point_index);
 	}
-	return Ref<AnimationRootNode>();
+	return Ref<AnimationNode>();
 }
 
 void AnimationNodeBlendSpace2D::set_blend_mode(BlendMode p_blend_mode)
@@ -459,14 +459,14 @@ double AnimationNodeBlendSpace2D::get_cyclic_length() const { return cyclic_leng
 
 void AnimationNodeBlendSpace2D::_tree_changed()
 {
-	AnimationRootNode::_tree_changed();
+	AnimationNode::_tree_changed();
 	_check_can_sync();
 }
 
 void AnimationNodeBlendSpace2D::validate_node(
 	const AnimationTree* p_tree, const String& p_path) const
 {
-	AnimationRootNode::validate_node(p_tree, p_path);
+	AnimationNode::validate_node(p_tree, p_path);
 
 	const_cast<AnimationNodeBlendSpace2D*>(this)->_update_triangles();
 	if (get_triangle_count() == 0) {

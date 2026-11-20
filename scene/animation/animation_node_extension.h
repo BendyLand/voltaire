@@ -43,6 +43,8 @@ public:
 	static double get_remaining_time(
 		const PackedFloat32Array& p_node_info, bool p_break_loop = false);
 
+	AnimationNodeExtension() { root_node = true; }
+
 private:
 	static AnimationNode::NodeTimeInfo _array_to_node_time_info(const PackedFloat32Array& p_array);
 	static PackedFloat64Array _playback_info_to_array(

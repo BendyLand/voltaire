@@ -34,13 +34,13 @@
 #include "core/io/image.h"
 #include "core/io/resource.h"
 
-class Texture : public Resource
-{
-};
+using Texture = Resource;
 
-class Texture2D : public Texture
+class Texture2D : public Resource
 {
-protected:
+	mutable RID placeholder_rid;
+	Size2 placeholder_size = Size2(1, 1);
+	bool is_placeholder = false;
 
 public:
 	virtual Image::Format get_format() const;
@@ -54,6 +54,7 @@ public:
 	virtual bool has_alpha() const;
 	virtual bool has_mipmaps() const;
 
+	virtual RID get_rid() const override;
 	virtual RID get_scaled_rid() const { return get_rid(); }
 
 	virtual void draw(RID p_canvas_item, const Point2& p_pos,
@@ -68,15 +69,15 @@ public:
 
 	virtual Ref<Image> get_image() const;
 
+	static Ref<Texture2D> create_placeholder_2d(Size2 p_size = Size2(1, 1));
 	virtual Ref<Resource> create_placeholder() const;
 
 	Texture2D();
+	virtual ~Texture2D();
 };
 
-class TextureLayered : public Texture
+class TextureLayered : public Resource
 {
-protected:
-
 public:
 	enum LayeredType
 	{
@@ -85,6 +86,14 @@ public:
 		LAYERED_TYPE_CUBEMAP_ARRAY
 	};
 
+private:
+	mutable RID placeholder_rid;
+	Size2i placeholder_size = Size2i(1, 1);
+	int placeholder_layers = 1;
+	LayeredType placeholder_layered_type = LAYERED_TYPE_2D_ARRAY;
+	bool is_placeholder = false;
+
+public:
 	virtual Image::Format get_format() const;
 	virtual LayeredType get_layered_type() const;
 	virtual int get_width() const;
@@ -92,11 +101,22 @@ public:
 	virtual int get_layers() const;
 	virtual bool has_mipmaps() const;
 	virtual Ref<Image> get_layer_data(int p_layer) const;
+	virtual RID get_rid() const override;
+
+	static Ref<TextureLayered> create_placeholder_layered(
+		LayeredType p_type = LAYERED_TYPE_2D_ARRAY, const Size2i& p_size = Size2i(1, 1),
+		int p_layers = 1);
+	virtual Ref<Resource> create_placeholder() const;
+
+	TextureLayered() = default;
+	virtual ~TextureLayered();
 };
 
-class Texture3D : public Texture
+class Texture3D : public Resource
 {
-protected:
+	mutable RID placeholder_rid;
+	Vector3i placeholder_size = Vector3i(1, 1, 1);
+	bool is_placeholder = false;
 
 public:
 	virtual Image::Format get_format() const;
@@ -105,7 +125,11 @@ public:
 	virtual int get_depth() const;
 	virtual bool has_mipmaps() const;
 	virtual Vector<Ref<Image>> get_data() const;
+	virtual RID get_rid() const override;
+
+	static Ref<Texture3D> create_placeholder_3d(const Vector3i& p_size = Vector3i(1, 1, 1));
 	virtual Ref<Resource> create_placeholder() const;
+
+	Texture3D() = default;
+	virtual ~Texture3D();
 };
-
-

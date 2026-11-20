@@ -44,6 +44,9 @@ TEST_CASE("[GraphNode][SceneTree]") {
 		// Setup.
 		GraphNode *test_node = memnew(GraphNode);
 		test_node->set_name("Graph Node");
+		CHECK(test_node->get_mode() == GraphNode::MODE_NODE);
+		CHECK(!test_node->is_frame());
+
 		Control *test_child = memnew(Control);
 		test_child->set_name("child");
 		test_node->add_child(test_child);
@@ -54,6 +57,24 @@ TEST_CASE("[GraphNode][SceneTree]") {
 
 		memdelete(test_child);
 		memdelete(test_node);
+	}
+
+	SUBCASE("[GraphNode] Frame and Element modes.") {
+		GraphNode *frame_node = memnew(GraphNode(GraphNode::MODE_FRAME));
+		CHECK(frame_node->get_mode() == GraphNode::MODE_FRAME);
+		CHECK(frame_node->is_frame());
+		CHECK(frame_node->is_autoshrink_enabled());
+		frame_node->set_autoshrink_enabled(false);
+		CHECK(!frame_node->is_autoshrink_enabled());
+		frame_node->set_tint_color_enabled(true);
+		CHECK(frame_node->is_tint_color_enabled());
+		memdelete(frame_node);
+
+		GraphNode *elem_node = memnew(GraphNode(GraphNode::MODE_ELEMENT));
+		CHECK(elem_node->get_mode() == GraphNode::MODE_ELEMENT);
+		CHECK(elem_node->is_element_only());
+		CHECK(elem_node->get_titlebar_hbox() == nullptr);
+		memdelete(elem_node);
 	}
 }
 

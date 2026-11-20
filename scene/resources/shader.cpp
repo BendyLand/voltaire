@@ -135,7 +135,7 @@ Ref<Texture> Shader::get_default_texture_parameter(const String& p_name, int p_i
 	if (default_textures.has(p_name) && default_textures[p_name].has(p_index)) {
 		return default_textures[p_name][p_index];
 	}
-	return Ref<Texture2D>();
+	return Ref<Texture>();
 }
 
 void Shader::get_default_texture_parameter_list(List<String>* r_textures) const

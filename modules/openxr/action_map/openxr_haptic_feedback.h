@@ -37,18 +37,7 @@
 class OpenXRHapticBase : public Resource
 {
 private:
-protected:
-
-public:
-	virtual const XrHapticBaseHeader* get_xr_structure() = 0;
-};
-
-class OpenXRHapticVibration : public OpenXRHapticBase
-{
-private:
 	XrHapticVibration haptic_vibration;
-
-protected:
 
 public:
 	void set_duration(int64_t p_duration);
@@ -60,9 +49,11 @@ public:
 	void set_amplitude(float p_amplitude);
 	float get_amplitude() const;
 
-	virtual const XrHapticBaseHeader* get_xr_structure() override;
+	const XrHapticBaseHeader* get_xr_structure();
 
-	OpenXRHapticVibration();
+	OpenXRHapticBase();
 };
+
+using OpenXRHapticVibration = OpenXRHapticBase;
 
 

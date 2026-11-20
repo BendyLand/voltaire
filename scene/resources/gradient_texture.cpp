@@ -29,73 +29,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/math/geometry_2d.h"
 #include "gradient_texture.h"
+
+#include "core/math/geometry_2d.h"
 #include "servers/rendering/renderer.h"
 
-GradientTexture1D::GradientTexture1D() { _queue_update(); }
-
-GradientTexture1D::~GradientTexture1D()
+GradientTexture2D::GradientTexture2D(bool p_1d) : is_1d(p_1d)
 {
-	if (texture.is_valid()) {
-		ERR_FAIL_NULL(Renderer::data);
-		Renderer::free_rid(texture);
+	if (is_1d) {
+		width = 256;
+		height = 1;
 	}
-}
-
-Ref<Gradient> GradientTexture1D::get_gradient() const { return gradient; }
-
-void GradientTexture1D::set_width(int p_width)
-{
-	ERR_FAIL_COND_MSG(
-		p_width <= 0 || p_width > 16384, "Texture dimensions have to be within 1 to 16384 range.");
-	width = p_width;
 	_queue_update();
-	emit_changed();
 }
-
-int GradientTexture1D::get_width() const { return width; }
-
-void GradientTexture1D::set_use_hdr(bool p_enabled)
-{
-	if (p_enabled == use_hdr) {
-		return;
-	}
-
-	use_hdr = p_enabled;
-	_queue_update();
-	emit_changed();
-}
-
-bool GradientTexture1D::is_using_hdr() const { return use_hdr; }
-
-RID GradientTexture1D::get_rid() const
-{
-	if (!texture.is_valid()) {
-		texture = Renderer::texture_2d_placeholder_create();
-	}
-	return texture;
-}
-
-Ref<Image> GradientTexture1D::get_image() const
-{
-	update_now();
-	if (!texture.is_valid()) {
-		return Ref<Image>();
-	}
-	return Renderer::texture_2d_get(texture);
-}
-
-void GradientTexture1D::update_now() const
-{
-	if (update_pending) {
-		_update();
-	}
-}
-
-//////////////////
-
-GradientTexture2D::GradientTexture2D() { _queue_update(); }
 
 GradientTexture2D::~GradientTexture2D()
 {
@@ -105,7 +51,105 @@ GradientTexture2D::~GradientTexture2D()
 	}
 }
 
+void GradientTexture2D::set_gradient(Ref<Gradient> p_gradient)
+{
+	if (gradient == p_gradient) {
+		return;
+	}
+	gradient = p_gradient;
+	_queue_update();
+	emit_changed();
+}
+
 Ref<Gradient> GradientTexture2D::get_gradient() const { return gradient; }
+
+void GradientTexture2D::_queue_update() { update_pending = true; }
+
+void GradientTexture2D::_update() const
+{
+	update_pending = false;
+
+	if (gradient.is_null() || !Renderer::is_initialized()) {
+		return;
+	}
+
+	Ref<Image> image;
+	if (is_1d) {
+		if (use_hdr) {
+			image.instantiate(width, 1, false, Image::FORMAT_RGBAF);
+			Gradient& g = *gradient;
+			for (int i = 0; i < width; i++) {
+				float ofs = (width > 1) ? float(i) / (width - 1) : 0.0f;
+				image->set_pixel(i, 0, g.get_color_at_offset(ofs));
+			}
+		}
+		else {
+			Vector<uint8_t> data;
+			data.resize(width * 4);
+			{
+				uint8_t* wd8 = data.ptrw();
+				Gradient& g = *gradient;
+				for (int i = 0; i < width; i++) {
+					float ofs = (width > 1) ? float(i) / (width - 1) : 0.0f;
+					Color c = g.get_color_at_offset(ofs);
+					wd8[i * 4 + 0] = uint8_t(c.get_r8());
+					wd8[i * 4 + 1] = uint8_t(c.get_g8());
+					wd8[i * 4 + 2] = uint8_t(c.get_b8());
+					wd8[i * 4 + 3] = uint8_t(c.get_a8());
+				}
+			}
+			image.instantiate(width, 1, false, Image::FORMAT_RGBA8, data);
+		}
+	}
+	else {
+		image.instantiate();
+		if (gradient->get_point_count() <= 1) {
+			image->initialize_data(
+				width, height, false, use_hdr ? Image::FORMAT_RGBAF : Image::FORMAT_RGBA8);
+			image->fill(
+				(gradient->get_point_count() == 1) ? gradient->get_color(0) : Color(0, 0, 0, 1));
+		}
+		else if (use_hdr) {
+			image->initialize_data(width, height, false, Image::FORMAT_RGBAF);
+			Gradient& g = *gradient;
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
+					float ofs = _get_gradient_offset_at(x, y);
+					image->set_pixel(x, y, g.get_color_at_offset(ofs));
+				}
+			}
+		}
+		else {
+			Vector<uint8_t> data;
+			data.resize(width * height * 4);
+			{
+				uint8_t* wd8 = data.ptrw();
+				Gradient& g = *gradient;
+				for (int y = 0; y < height; y++) {
+					for (int x = 0; x < width; x++) {
+						float ofs = _get_gradient_offset_at(x, y);
+						const Color& c = g.get_color_at_offset(ofs);
+
+						wd8[(x + (y * width)) * 4 + 0] = uint8_t(c.get_r8());
+						wd8[(x + (y * width)) * 4 + 1] = uint8_t(c.get_g8());
+						wd8[(x + (y * width)) * 4 + 2] = uint8_t(c.get_b8());
+						wd8[(x + (y * width)) * 4 + 3] = uint8_t(c.get_a8());
+					}
+				}
+			}
+			image->set_data(width, height, false, Image::FORMAT_RGBA8, data);
+		}
+	}
+
+	if (texture.is_valid()) {
+		RID new_texture = Renderer::texture_2d_create(image);
+		Renderer::texture_replace(texture, new_texture);
+	}
+	else {
+		texture = Renderer::texture_2d_create(image);
+	}
+	Renderer::texture_set_path(texture, get_path());
+}
 
 float GradientTexture2D::_get_gradient_offset_at(int x, int y) const
 {
@@ -173,12 +217,16 @@ void GradientTexture2D::set_height(int p_height)
 {
 	ERR_FAIL_COND_MSG(p_height <= 0 || p_height > 16384,
 		"Texture dimensions have to be within 1 to 16384 range.");
+	if (is_1d) {
+		height = 1;
+		return;
+	}
 	height = p_height;
 	_queue_update();
 	emit_changed();
 }
 
-int GradientTexture2D::get_height() const { return height; }
+int GradientTexture2D::get_height() const { return is_1d ? 1 : height; }
 
 void GradientTexture2D::set_use_hdr(bool p_enabled)
 {
@@ -231,7 +279,10 @@ GradientTexture2D::Repeat GradientTexture2D::get_repeat() const { return repeat;
 
 RID GradientTexture2D::get_rid() const
 {
-	if (!texture.is_valid()) {
+	if (update_pending) {
+		_update();
+	}
+	if (!texture.is_valid() && Renderer::is_initialized()) {
 		texture = Renderer::texture_2d_placeholder_create();
 	}
 	return texture;
@@ -252,15 +303,3 @@ void GradientTexture2D::update_now() const
 		_update();
 	}
 }
-
-void GradientTexture2D::_queue_update() {}
-
-
-
-void GradientTexture2D::set_gradient(Ref<Gradient>) {}
-
-void GradientTexture1D::_queue_update() {}
-
-void GradientTexture2D::_update() const {}
-
-void GradientTexture1D::_update() const {}

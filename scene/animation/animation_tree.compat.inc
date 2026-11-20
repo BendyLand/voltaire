@@ -48,8 +48,7 @@ AnimationTree::_get_process_callback_bind_compat_80813() const
 
 Ref<AnimationNode> AnimationTree::_get_tree_root_bind_compat_80813() const
 {
-	const Ref<AnimationRootNode> rn = Ref<AnimationNode>(get_root_animation_node().ptr());
-	return rn;
+	return get_root_animation_node();
 }
 
 void AnimationTree::_bind_compatibility_methods() {}

@@ -70,7 +70,7 @@ String OpenXRIPBinding::get_binding_path() const { return binding_path; }
 
 int OpenXRIPBinding::get_binding_modifier_count() const { return binding_modifiers.size(); }
 
-Ref<OpenXRActionBindingModifier> OpenXRIPBinding::get_binding_modifier(int p_index) const
+Ref<OpenXRBindingModifier> OpenXRIPBinding::get_binding_modifier(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, binding_modifiers.size(), nullptr);
 
@@ -86,7 +86,7 @@ void OpenXRIPBinding::clear_binding_modifiers()
 	}
 
 	for (int i = 0; i < binding_modifiers.size(); i++) {
-		Ref<OpenXRActionBindingModifier> binding_modifier = binding_modifiers[i];
+		Ref<OpenXRBindingModifier> binding_modifier = binding_modifiers[i];
 		binding_modifier->ip_binding = nullptr;
 	}
 	binding_modifiers.clear();
@@ -94,7 +94,7 @@ void OpenXRIPBinding::clear_binding_modifiers()
 }
 
 void OpenXRIPBinding::add_binding_modifier(
-	const Ref<OpenXRActionBindingModifier>& p_binding_modifier)
+	const Ref<OpenXRBindingModifier>& p_binding_modifier)
 {
 	ERR_FAIL_COND(p_binding_modifier.is_null());
 
@@ -111,7 +111,7 @@ void OpenXRIPBinding::add_binding_modifier(
 }
 
 void OpenXRIPBinding::remove_binding_modifier(
-	const Ref<OpenXRActionBindingModifier>& p_binding_modifier)
+	const Ref<OpenXRBindingModifier>& p_binding_modifier)
 {
 	int idx = binding_modifiers.find(p_binding_modifier);
 	if (idx != -1) {
@@ -236,7 +236,7 @@ int OpenXRInteractionProfile::get_binding_modifier_count() const
 	return binding_modifiers.size();
 }
 
-Ref<OpenXRIPBindingModifier> OpenXRInteractionProfile::get_binding_modifier(int p_index) const
+Ref<OpenXRBindingModifier> OpenXRInteractionProfile::get_binding_modifier(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, binding_modifiers.size(), nullptr);
 
@@ -252,7 +252,7 @@ void OpenXRInteractionProfile::clear_binding_modifiers()
 	}
 
 	for (int i = 0; i < binding_modifiers.size(); i++) {
-		Ref<OpenXRIPBindingModifier> binding_modifier = binding_modifiers[i];
+		Ref<OpenXRBindingModifier> binding_modifier = binding_modifiers[i];
 		binding_modifier->interaction_profile = nullptr;
 	}
 	binding_modifiers.clear();
@@ -260,7 +260,7 @@ void OpenXRInteractionProfile::clear_binding_modifiers()
 }
 
 void OpenXRInteractionProfile::add_binding_modifier(
-	const Ref<OpenXRIPBindingModifier>& p_binding_modifier)
+	const Ref<OpenXRBindingModifier>& p_binding_modifier)
 {
 	ERR_FAIL_COND(p_binding_modifier.is_null());
 
@@ -278,7 +278,7 @@ void OpenXRInteractionProfile::add_binding_modifier(
 }
 
 void OpenXRInteractionProfile::remove_binding_modifier(
-	const Ref<OpenXRIPBindingModifier>& p_binding_modifier)
+	const Ref<OpenXRBindingModifier>& p_binding_modifier)
 {
 	int idx = binding_modifiers.find(p_binding_modifier);
 	if (idx != -1) {

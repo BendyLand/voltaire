@@ -33,8 +33,6 @@
 
 PackedByteArray OpenXRBindingModifier::get_ip_modification() { return PackedByteArray(); }
 
-#include "openxr_binding_modifier.h"
-
 String OpenXRBindingModifier::get_description() const { return ""; }
 
 OpenXRBindingModifier::OpenXRBindingModifier() {}

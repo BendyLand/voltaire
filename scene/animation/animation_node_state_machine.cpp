@@ -1176,15 +1176,17 @@ void AnimationNodeStateMachine::reset_state()
 	playback = "playback";
 	graph_offset = Vector2();
 
-	Ref<AnimationNodeStartState> s;
+	Ref<AnimationNode> s;
 	s.instantiate();
+	s->set_endpoint_type(AnimationNode::ENDPOINT_START);
 	State start;
 	start.node = s;
 	start.position = Vector2(200, 100);
 	states[SceneString(Start)] = start;
 
-	Ref<AnimationNodeEndState> e;
+	Ref<AnimationNode> e;
 	e.instantiate();
+	e->set_endpoint_type(AnimationNode::ENDPOINT_END);
 	State end;
 	end.node = e;
 	end.position = Vector2(900, 100);
@@ -1210,7 +1212,7 @@ Vector2 AnimationNodeStateMachine::get_node_position(const String& p_name) const
 void AnimationNodeStateMachine::_tree_changed()
 {
 	emit_changed();
-	AnimationRootNode::_tree_changed();
+	AnimationNode::_tree_changed();
 }
 
 #ifdef TOOLS_ENABLED
@@ -1233,7 +1235,7 @@ void AnimationNodeStateMachine::get_argument_options(
 			r_options->push_back(String(E.key).quote());
 		}
 	}
-	AnimationRootNode::get_argument_options(p_function, p_idx, r_options);
+	AnimationNode::get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 
@@ -1263,15 +1265,19 @@ Vector<String> AnimationNodeStateMachine::get_nodes_with_transitions_to(
 
 AnimationNodeStateMachine::AnimationNodeStateMachine()
 {
-	Ref<AnimationNodeStartState> s;
+	root_node = true;
+
+	Ref<AnimationNode> s;
 	s.instantiate();
+	s->set_endpoint_type(AnimationNode::ENDPOINT_START);
 	State start;
 	start.node = s;
 	start.position = Vector2(200, 100);
 	states[SceneString(Start)] = start;
 
-	Ref<AnimationNodeEndState> e;
+	Ref<AnimationNode> e;
 	e.instantiate();
+	e->set_endpoint_type(AnimationNode::ENDPOINT_END);
 	State end;
 	end.node = e;
 	end.position = Vector2(900, 100);

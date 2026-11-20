@@ -74,14 +74,6 @@ private:
 class OpenXRSpatialComponentPlaneAlignmentList : public OpenXRSpatialComponentData
 {
 public:
-	enum PlaneAlignment
-	{
-		PLANE_ALIGNMENT_HORIZONTAL_UPWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_UPWARD_EXT,
-		PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD_EXT,
-		PLANE_ALIGNMENT_VERTICAL = XR_SPATIAL_PLANE_ALIGNMENT_VERTICAL_EXT,
-		PLANE_ALIGNMENT_ARBITRARY = XR_SPATIAL_PLANE_ALIGNMENT_ARBITRARY_EXT,
-	};
-
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
 	virtual void* get_structure_data(void* p_next) override;
@@ -148,75 +140,8 @@ private:
 	PlaneSemanticLabel _get_plane_semantic_label(int64_t p_index) const;
 };
 
-// Plane tracker
-class OpenXRPlaneTracker : public OpenXRSpatialEntityTracker
-{
-public:
-	void set_bounds_size(const Vector2& p_bounds_size);
-	Vector2 get_bounds_size() const;
-
-	void set_plane_alignment(
-		OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment p_plane_alignment);
-	OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment get_plane_alignment() const;
-
-	void set_plane_label(const String& p_plane_label);
-	String get_plane_label() const;
-
-	void set_mesh_data(const Transform3D& p_origin, const PackedVector2Array& p_vertices,
-		const PackedInt32Array& p_indices = PackedInt32Array());
-	void clear_mesh_data();
-
-	Transform3D get_mesh_offset() const;
-	Ref<Mesh> get_mesh();
-#ifndef PHYSICS_3D_DISABLED
-	Ref<Shape3D> get_shape(real_t p_thickness = 0.01);
-#endif
-
-protected:
-
-private:
-	Vector2 bounds_size;
-	OpenXRSpatialComponentPlaneAlignmentList::PlaneAlignment plane_alignment =
-		OpenXRSpatialComponentPlaneAlignmentList::PLANE_ALIGNMENT_HORIZONTAL_UPWARD;
-	String plane_label;
-
-	// Mesh data (if we have this)
-	struct MeshData
-	{
-		bool has_mesh_data = false;
-		Transform3D origin;
-		PackedVector2Array vertices;
-		PackedInt32Array indices;
-
-		Ref<Mesh> mesh;
-#ifndef PHYSICS_3D_DISABLED
-		Ref<Shape3D> shape3d;
-#endif
-	} mesh;
-
-	struct Edge
-	{
-		int32_t a;
-		int32_t b;
-
-		static _FORCE_INLINE_ uint32_t hash(const Edge& p_edge)
-		{
-			uint32_t h = hash_murmur3_one_32(p_edge.a);
-			return hash_murmur3_one_32(p_edge.b, h);
-		}
-
-		bool operator==(const Edge& p_edge) const { return (a == p_edge.a && b == p_edge.b); }
-
-		Edge(int32_t p_a = 0, int32_t p_b = 0)
-		{
-			a = p_a;
-			b = p_b;
-			if (a < b) {
-				SWAP(a, b);
-			}
-		}
-	};
-};
+// Plane tracker (folded into OpenXRSpatialEntityTracker)
+using OpenXRPlaneTracker = OpenXRSpatialEntityTracker;
 
 // Plane tracking logic
 class OpenXRSpatialPlaneTrackingCapability final

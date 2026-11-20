@@ -74,26 +74,8 @@ private:
 		XR_TYPE_SPATIAL_COMPONENT_ANCHOR_LIST_EXT, nullptr, 0, nullptr};
 };
 
-// Persistence configuration
-class OpenXRSpatialContextPersistenceConfig : public OpenXRStructureBase
-{
-public:
-	bool has_valid_configuration() const;
-	virtual void* get_header(void* p_next) override;
-	virtual XrStructureType get_structure_type() override;
-
-	void add_persistence_context(RID p_persistence_context);
-	void remove_persistence_context(RID p_persistence_context);
-
-protected:
-
-private:
-	Vector<RID> persistence_contexts;
-	Vector<XrSpatialPersistenceContextEXT> context_handles;
-
-	XrSpatialContextPersistenceConfigEXT persistence_config = {
-		XR_TYPE_SPATIAL_CONTEXT_PERSISTENCE_CONFIG_EXT, nullptr, 0, nullptr};
-};
+// Persistence configuration (folded into OpenXRStructureBase)
+using OpenXRSpatialContextPersistenceConfig = OpenXRStructureBase;
 
 // Component persistence list
 class OpenXRSpatialComponentPersistenceList : public OpenXRSpatialComponentData
@@ -120,24 +102,8 @@ private:
 	uint64_t _get_persistent_state(int64_t p_index) const;
 };
 
-// Anchor tracker, this adds no new logic, it's purely for typing!
-class OpenXRAnchorTracker : public OpenXRSpatialEntityTracker
-{
-protected:
-
-public:
-	bool has_uuid() const;
-	XrUuid get_uuid() const;
-	void set_uuid(const XrUuid& p_uuid);
-
-private:
-	XrUuid uuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-	String _get_uuid() const;
-	void _set_uuid(const String& p_uuid);
-
-	bool uuid_is_equal(const XrUuid& p_a, const XrUuid& p_b);
-};
+// Anchor tracker (folded into OpenXRSpatialEntityTracker)
+using OpenXRAnchorTracker = OpenXRSpatialEntityTracker;
 
 // (Persistent) anchor logic
 class OpenXRSpatialAnchorCapability final

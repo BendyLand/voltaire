@@ -135,73 +135,7 @@ Transform3D OpenXRSpatialComponentAnchorList::get_entity_pose(int64_t p_index) c
 }
 
 ////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialContextPersistenceConfig
-
-bool OpenXRSpatialContextPersistenceConfig::has_valid_configuration() const
-{
-	ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
-
-	if (!OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
-		return false;
-	}
-
-	// Check if we have a valid config.
-	if (persistence_contexts.is_empty()) {
-		return false;
-	}
-
-	return true;
-}
-
-void* OpenXRSpatialContextPersistenceConfig::get_header(void* p_next)
-{
-	void* n = p_next;
-	if (get_next().is_valid()) {
-		n = get_next()->get_header(n);
-	}
-
-	if (has_valid_configuration()) {
-		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
-
-		// Prepare our buffer.
-		context_handles.resize(persistence_contexts.size());
-
-		// Copy our handles.
-		XrSpatialPersistenceContextEXT* ptr = context_handles.ptrw();
-		int i = 0;
-		for (const RID& rid : persistence_contexts) {
-			ptr[i++] = OpenXRSpatialAnchorCapability::get_persistence_context_handle(rid);
-		}
-
-		persistence_config.next = n;
-		persistence_config.persistenceContextCount = (uint32_t)context_handles.size();
-		persistence_config.persistenceContexts = context_handles.ptr();
-
-		// and return this.
-		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&persistence_config;
-	}
-
-	return n;
-}
-
-XrStructureType OpenXRSpatialContextPersistenceConfig::get_structure_type()
-{
-	return XR_TYPE_SPATIAL_CONTEXT_PERSISTENCE_CONFIG_EXT;
-}
-
-void OpenXRSpatialContextPersistenceConfig::add_persistence_context(RID p_persistence_context)
-{
-	ERR_FAIL_COND(persistence_contexts.has(p_persistence_context));
-
-	persistence_contexts.push_back(p_persistence_context);
-}
-
-void OpenXRSpatialContextPersistenceConfig::remove_persistence_context(RID p_persistence_context)
-{
-	ERR_FAIL_COND(!persistence_contexts.has(p_persistence_context));
-
-	persistence_contexts.erase(p_persistence_context);
-}
+// OpenXRSpatialComponentPersistenceList
 
 void OpenXRSpatialComponentPersistenceList::set_capacity(uint32_t p_capacity)
 {
@@ -254,49 +188,6 @@ String OpenXRSpatialComponentPersistenceList::get_persistence_state_name(
 	XrSpatialPersistenceStateEXT p_state)
 {
 	XR_ENUM_SWITCH(XrSpatialPersistenceStateEXT, p_state)
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRAnchorTracker
-
-bool OpenXRAnchorTracker::has_uuid() const
-{
-	for (int i = 0; i < XR_UUID_SIZE; i++) {
-		if (uuid.data[i] != 0) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-XrUuid OpenXRAnchorTracker::get_uuid() const { return uuid; }
-
-void OpenXRAnchorTracker::set_uuid(const XrUuid& p_uuid)
-{
-	if (uuid_is_equal(uuid, p_uuid)) {
-		return;
-	}
-
-	uuid = p_uuid;
-}
-
-String OpenXRAnchorTracker::_get_uuid() const { return OpenXRUtil::string_from_xruuid(uuid); }
-
-void OpenXRAnchorTracker::_set_uuid(const String& p_uuid)
-{
-	set_uuid(OpenXRUtil::xruuid_from_string(p_uuid));
-}
-
-bool OpenXRAnchorTracker::uuid_is_equal(const XrUuid& p_a, const XrUuid& p_b)
-{
-	for (int i = 0; i < XR_UUID_SIZE; i++) {
-		if (p_a.data[i] != p_b.data[i]) {
-			return false;
-		}
-	}
-
-	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -559,6 +450,7 @@ Ref<OpenXRAnchorTracker> OpenXRSpatialAnchorCapability::create_new_anchor(
 	}
 
 	tracker.instantiate();
+	tracker->set_entity_type(OpenXRSpatialEntityTracker::ENTITY_ANCHOR);
 	tracker->set_spatial_context(sc);
 	tracker->set_entity(OpenXRSpatialEntityExtension::add_spatial_entity(sc, entity_id, entity));
 	tracker->set_tracker_desc("Anchor");

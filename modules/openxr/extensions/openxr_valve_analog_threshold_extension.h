@@ -64,7 +64,7 @@ public:
 	~OpenXRValveAnalogThresholdExtension() = delete;
 };
 
-class OpenXRAnalogThresholdModifier : public OpenXRActionBindingModifier
+class OpenXRAnalogThresholdModifier : public OpenXRBindingModifier
 {
 private:
 	XrInteractionProfileAnalogThresholdVALVE analog_threshold;

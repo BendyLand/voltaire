@@ -134,9 +134,134 @@ public:
 	}
 };
 
-class AudioEffect : public Resource
+struct AudioEffectAmplifyConfig;
+struct AudioEffectCaptureConfig;
+struct AudioEffectChorusConfig;
+struct AudioEffectCompressorConfig;
+struct AudioEffectDelayConfig;
+struct AudioEffectDistortionConfig;
+struct AudioEffectEQConfig;
+struct AudioEffectFilterConfig;
+struct AudioEffectHardLimiterConfig;
+struct AudioEffectLimiterConfig;
+struct AudioEffectPannerConfig;
+struct AudioEffectPhaserConfig;
+struct AudioEffectPitchShiftConfig;
+struct AudioEffectRecordConfig;
+struct AudioEffectReverbConfig;
+struct AudioEffectSpectrumAnalyzerConfig;
+struct AudioEffectStereoEnhanceConfig;
+
+class AudioEffect final : public Resource
 {
 public:
-	virtual Ref<AudioEffectInstance> instantiate();
-	AudioEffect();
+	enum Type
+	{
+		EFFECT_AMPLIFY,
+		EFFECT_CAPTURE,
+		EFFECT_CHORUS,
+		EFFECT_COMPRESSOR,
+		EFFECT_DELAY,
+		EFFECT_DISTORTION,
+		EFFECT_EQ,
+		EFFECT_FILTER,
+		EFFECT_HARD_LIMITER,
+		EFFECT_LIMITER,
+		EFFECT_PANNER,
+		EFFECT_PHASER,
+		EFFECT_PITCH_SHIFT,
+		EFFECT_RECORD,
+		EFFECT_REVERB,
+		EFFECT_SPECTRUM_ANALYZER,
+		EFFECT_STEREO_ENHANCE,
+	};
+
+private:
+	Type effect_type = EFFECT_AMPLIFY;
+	void* config = nullptr;
+
+	void _init_config(Type p_type);
+	void _free_config();
+
+public:
+	Type get_effect_type() const { return effect_type; }
+	void set_effect_type(Type p_type);
+
+	void* get_config_ptr() const { return config; }
+
+	AudioEffectAmplifyConfig* get_amplify_config() const
+	{
+		return effect_type == EFFECT_AMPLIFY ? static_cast<AudioEffectAmplifyConfig*>(config) : nullptr;
+	}
+	AudioEffectCaptureConfig* get_capture_config() const
+	{
+		return effect_type == EFFECT_CAPTURE ? static_cast<AudioEffectCaptureConfig*>(config) : nullptr;
+	}
+	AudioEffectChorusConfig* get_chorus_config() const
+	{
+		return effect_type == EFFECT_CHORUS ? static_cast<AudioEffectChorusConfig*>(config) : nullptr;
+	}
+	AudioEffectCompressorConfig* get_compressor_config() const
+	{
+		return effect_type == EFFECT_COMPRESSOR ? static_cast<AudioEffectCompressorConfig*>(config) : nullptr;
+	}
+	AudioEffectDelayConfig* get_delay_config() const
+	{
+		return effect_type == EFFECT_DELAY ? static_cast<AudioEffectDelayConfig*>(config) : nullptr;
+	}
+	AudioEffectDistortionConfig* get_distortion_config() const
+	{
+		return effect_type == EFFECT_DISTORTION ? static_cast<AudioEffectDistortionConfig*>(config) : nullptr;
+	}
+	AudioEffectEQConfig* get_eq_config() const
+	{
+		return effect_type == EFFECT_EQ ? static_cast<AudioEffectEQConfig*>(config) : nullptr;
+	}
+	AudioEffectFilterConfig* get_filter_config() const
+	{
+		return effect_type == EFFECT_FILTER ? static_cast<AudioEffectFilterConfig*>(config) : nullptr;
+	}
+	AudioEffectHardLimiterConfig* get_hard_limiter_config() const
+	{
+		return effect_type == EFFECT_HARD_LIMITER ? static_cast<AudioEffectHardLimiterConfig*>(config) : nullptr;
+	}
+	AudioEffectLimiterConfig* get_limiter_config() const
+	{
+		return effect_type == EFFECT_LIMITER ? static_cast<AudioEffectLimiterConfig*>(config) : nullptr;
+	}
+	AudioEffectPannerConfig* get_panner_config() const
+	{
+		return effect_type == EFFECT_PANNER ? static_cast<AudioEffectPannerConfig*>(config) : nullptr;
+	}
+	AudioEffectPhaserConfig* get_phaser_config() const
+	{
+		return effect_type == EFFECT_PHASER ? static_cast<AudioEffectPhaserConfig*>(config) : nullptr;
+	}
+	AudioEffectPitchShiftConfig* get_pitch_shift_config() const
+	{
+		return effect_type == EFFECT_PITCH_SHIFT ? static_cast<AudioEffectPitchShiftConfig*>(config) : nullptr;
+	}
+	AudioEffectRecordConfig* get_record_config() const
+	{
+		return effect_type == EFFECT_RECORD ? static_cast<AudioEffectRecordConfig*>(config) : nullptr;
+	}
+	AudioEffectReverbConfig* get_reverb_config() const
+	{
+		return effect_type == EFFECT_REVERB ? static_cast<AudioEffectReverbConfig*>(config) : nullptr;
+	}
+	AudioEffectSpectrumAnalyzerConfig* get_spectrum_analyzer_config() const
+	{
+		return effect_type == EFFECT_SPECTRUM_ANALYZER ? static_cast<AudioEffectSpectrumAnalyzerConfig*>(config) : nullptr;
+	}
+	AudioEffectStereoEnhanceConfig* get_stereo_enhance_config() const
+	{
+		return effect_type == EFFECT_STEREO_ENHANCE ? static_cast<AudioEffectStereoEnhanceConfig*>(config) : nullptr;
+	}
+
+	Ref<AudioEffectInstance> instantiate();
+
+	AudioEffect(Type p_type = EFFECT_AMPLIFY);
+	AudioEffect(const AudioEffect&) = delete;
+	AudioEffect& operator=(const AudioEffect&) = delete;
+	~AudioEffect();
 };

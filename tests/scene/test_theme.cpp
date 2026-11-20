@@ -50,7 +50,7 @@ public:
 		{ Theme::DATA_TYPE_CONSTANT, 42 },
 		{ Theme::DATA_TYPE_FONT, Ref<FontFile>(memnew(FontFile)) },
 		{ Theme::DATA_TYPE_FONT_SIZE, 42 },
-		{ Theme::DATA_TYPE_ICON, Ref<Texture>(memnew(ImageTexture)) },
+		{ Theme::DATA_TYPE_ICON, Ref<Texture2D>(memnew(ImageTexture)) },
 		{ Theme::DATA_TYPE_STYLEBOX, Ref<StyleBox>(memnew(StyleBox(StyleBox::STYLE_FLAT))) },
 	};
 

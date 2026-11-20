@@ -36,22 +36,6 @@
 #include "servers/audio/audio_effect.h"
 #include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
-#include "servers/audio/effects/audio_effect_amplify.h"
-#include "servers/audio/effects/audio_effect_capture.h"
-#include "servers/audio/effects/audio_effect_chorus.h"
-#include "servers/audio/effects/audio_effect_compressor.h"
-#include "servers/audio/effects/audio_effect_delay.h"
-#include "servers/audio/effects/audio_effect_distortion.h"
-#include "servers/audio/effects/audio_effect_eq.h"
-#include "servers/audio/effects/audio_effect_filter.h"
-#include "servers/audio/effects/audio_effect_hard_limiter.h"
-#include "servers/audio/effects/audio_effect_panner.h"
-#include "servers/audio/effects/audio_effect_phaser.h"
-#include "servers/audio/effects/audio_effect_pitch_shift.h"
-#include "servers/audio/effects/audio_effect_record.h"
-#include "servers/audio/effects/audio_effect_reverb.h"
-#include "servers/audio/effects/audio_effect_spectrum_analyzer.h"
-#include "servers/audio/effects/audio_effect_stereo_enhance.h"
 #include "servers/audio/effects/audio_stream_generator.h"
 #include "servers/camera/camera_feed.h"
 #include "servers/camera/camera_server.h"
@@ -73,10 +57,6 @@
 #include "servers/rendering/storage/render_scene_buffers.h"
 #include "servers/text/text_server.h"
 #include "servers/text/text_server_dummy.h"
-
-#ifndef DISABLE_DEPRECATED
-#include "servers/audio/effects/audio_effect_limiter.h"
-#endif
 
 // 2D physics and navigation.
 #ifndef NAVIGATION_2D_DISABLED

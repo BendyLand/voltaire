@@ -119,8 +119,6 @@ public:
 	virtual RID get_rid() const override;
 	virtual void set_path(const String& p_path, bool p_take_over = false) override;
 
-	virtual Ref<Resource> create_placeholder() const;
-
 	ImageTextureLayered(LayeredType p_layered_type = LAYERED_TYPE_2D_ARRAY);
 	~ImageTextureLayered();
 };

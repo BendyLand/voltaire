@@ -29,8 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include <thirdparty/misc/ok_color_shader.h>
 #include "color_picker_shape.h"
+
+#include <thirdparty/misc/ok_color_shader.h>
+
 #include "core/input/input.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
@@ -148,6 +150,79 @@ void ColorPickerShape::finish_shaders()
 	rectangle_ok_color_hl_shader.unref();
 }
 
+ColorPickerShape::ColorPickerShape(
+	ColorPicker* p_color_picker, ColorPicker::PickerShapeType p_type)
+	: color_picker(p_color_picker), shape_type(p_type)
+{
+}
+
+String ColorPickerShape::get_name() const
+{
+	switch (shape_type) {
+	case ColorPicker::SHAPE_HSV_RECTANGLE:
+		return ETR("HSV Rectangle");
+	case ColorPicker::SHAPE_HSV_WHEEL:
+		return ETR("HSV Wheel");
+	case ColorPicker::SHAPE_VHS_CIRCLE:
+		return ETR("VHS Circle");
+	case ColorPicker::SHAPE_OKHSL_CIRCLE:
+		return ETR("OKHSL Circle");
+	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
+		return ETR("OK HS Rectangle");
+	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
+		return ETR("OK HL Rectangle");
+	default:
+		return String();
+	}
+}
+
+Ref<Texture2D> ColorPickerShape::get_icon() const
+{
+	switch (shape_type) {
+	case ColorPicker::SHAPE_HSV_RECTANGLE:
+	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
+	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
+		return color_picker->theme_cache.shape_rect;
+	case ColorPicker::SHAPE_HSV_WHEEL:
+		return color_picker->theme_cache.shape_rect_wheel;
+	case ColorPicker::SHAPE_VHS_CIRCLE:
+	case ColorPicker::SHAPE_OKHSL_CIRCLE:
+		return color_picker->theme_cache.shape_circle;
+	default:
+		return Ref<Texture2D>();
+	}
+}
+
+bool ColorPickerShape::is_ok_hsl() const
+{
+	switch (shape_type) {
+	case ColorPicker::SHAPE_OKHSL_CIRCLE:
+	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
+	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
+		return true;
+	default:
+		return false;
+	}
+}
+
+Ref<Shader> ColorPickerShape::_get_shader() const
+{
+	switch (shape_type) {
+	case ColorPicker::SHAPE_HSV_WHEEL:
+		return wheel_shader;
+	case ColorPicker::SHAPE_VHS_CIRCLE:
+		return circle_shader;
+	case ColorPicker::SHAPE_OKHSL_CIRCLE:
+		return circle_ok_color_shader;
+	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
+		return rectangle_ok_color_hs_shader;
+	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
+		return rectangle_ok_color_hl_shader;
+	default:
+		return Ref<Shader>();
+	}
+}
+
 bool ColorPickerShape::can_handle(
 	const InputEvent& p_event, Vector2& r_position, bool* r_is_click)
 {
@@ -175,6 +250,12 @@ bool ColorPickerShape::can_handle(
 }
 
 void ColorPickerShape::cancel_event() { is_dragging = false; }
+
+void ColorPickerShape::_emit_color_changed() {}
+
+void ColorPickerShape::connect_shape_focus(Control*) {}
+
+void ColorPickerShape::handle_cursor_editing(const InputEvent&, Control*) {}
 
 void ColorPickerShape::draw_focus_rect(Control* p_control, const Rect2& p_rect)
 {
@@ -330,194 +411,7 @@ float ColorPickerShape::get_h_on_circle_edge(const Vector2& p_color_change_vecto
 	return target_h;
 }
 
-void ColorPickerShape::initialize_controls()
-{
-	_initialize_controls();
-	update_theme();
-	is_initialized = true;
-}
-
-ColorPickerShape::ColorPickerShape(ColorPicker* p_color_picker) { color_picker = p_color_picker; }
-
-void ColorPickerShapeRectangle::_sv_square_draw()
-{
-	draw_sv_square(sv_square, Rect2(Vector2(), sv_square->get_size()));
-}
-
-void ColorPickerShapeRectangle::_hue_slider_draw()
-{
-	const Vector2 size = hue_slider->get_size();
-	hue_slider->draw_texture_rect(color_picker->theme_cache.color_hue.ptr(),
-		Rect2(0, 0, -size.y, size.x), false, Color(1, 1, 1), true);
-
-	draw_focus_rect(hue_slider);
-
-	int y = size.y * color_picker->h;
-	const Color color = Color::from_hsv(color_picker->h, 1, 1);
-	hue_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
-}
-
-void ColorPickerShapeRectangle::_update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
-{
-	if (sv_square->has_focus()) {
-		color_picker->s = CLAMP(color_picker->s + p_color_change_vector.x / 100.0, 0, 1);
-		color_picker->v = CLAMP(color_picker->v - p_color_change_vector.y / 100.0, 0, 1);
-	}
-	else if (hue_slider->has_focus()) {
-		color_picker->h =
-			CLAMP(color_picker->h + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
-	}
-}
-
-void ColorPickerShapeRectangle::update_theme()
-{
-	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
-	sv_square->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
-	hue_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
-}
-
-void ColorPickerShapeRectangle::grab_focus() { hue_slider->grab_focus(); }
-
-void ColorPickerShapeOKHSRectangle::update_theme()
-{
-	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
-	rectangle_margin->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
-	value_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
-}
-
-void ColorPickerShapeOKHSRectangle::grab_focus() { square_overlay->grab_focus(); }
-
-void ColorPickerShapeOKHSRectangle::_update_cursor(
-	const Vector2& p_color_change_vector, bool p_is_echo)
-{
-	if (square_overlay->has_focus()) {
-		color_picker->ok_hsl_h =
-			CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
-		color_picker->ok_hsl_s =
-			CLAMP(color_picker->ok_hsl_s - p_color_change_vector.y / 100.0, 0, 1);
-	}
-	else if (value_slider->has_focus()) {
-		color_picker->ok_hsl_l =
-			CLAMP(color_picker->ok_hsl_l + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
-	}
-}
-
-void ColorPickerShapeOKHSRectangle::_square_draw() {}
-
-void ColorPickerShapeOKHSRectangle::_square_overlay_draw()
-{
-	const Rect2 rect = Rect2(Vector2(), square_overlay->get_size());
-	const Vector2 end = rect.get_end();
-	Vector2 cursor_pos;
-	cursor_pos.x =
-		CLAMP(rect.position.x + rect.size.x * color_picker->ok_hsl_h, rect.position.x, end.x);
-	cursor_pos.y = CLAMP(
-		rect.position.y + rect.size.y * (1.0 - color_picker->ok_hsl_s), rect.position.y, end.y);
-
-	draw_focus_rect(square_overlay);
-	draw_cursor(square_overlay, cursor_pos);
-}
-
-void ColorPickerShapeOKHSRectangle::_value_slider_draw()
-{
-	const float ok_hsl_h = color_picker->ok_hsl_h;
-	const float ok_hsl_s = color_picker->ok_hsl_s;
-
-	const Vector2 size = value_slider->get_size();
-	PackedVector2Array points{
-		Vector2(size.x, 0),
-		Vector2(size.x, size.y * 0.5),
-		size,
-		Vector2(0, size.y),
-		Vector2(0, size.y * 0.5),
-		Vector2(),
-	};
-
-	Color color1 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 1);
-	Color color2 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 0.5);
-	Color color3 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 0);
-	PackedColorArray colors = {
-		color1,
-		color2,
-		color3,
-		color3,
-		color2,
-		color1,
-	};
-	value_slider->draw_polygon(points, colors);
-
-	draw_focus_rect(value_slider);
-
-	int y = size.y * (1 - CLAMP(color_picker->ok_hsl_l, 0, 1));
-	const Color color = Color::from_ok_hsl(ok_hsl_h, 1, color_picker->ok_hsl_l);
-	value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
-}
-
-void ColorPickerShapeOKHLRectangle::_update_cursor(
-	const Vector2& p_color_change_vector, bool p_is_echo)
-{
-	if (square_overlay->has_focus()) {
-		color_picker->ok_hsl_h =
-			CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
-		color_picker->ok_hsl_l =
-			CLAMP(color_picker->ok_hsl_l - p_color_change_vector.y / 100.0, 0, 1);
-	}
-	else if (value_slider->has_focus()) {
-		color_picker->ok_hsl_s =
-			CLAMP(color_picker->ok_hsl_s + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
-	}
-}
-
-void ColorPickerShapeOKHLRectangle::_square_overlay_draw()
-{
-	const Rect2 rect = Rect2(Vector2(), square_overlay->get_size());
-	const Vector2 end = rect.get_end();
-	Vector2 cursor_pos;
-	cursor_pos.x =
-		CLAMP(rect.position.x + rect.size.x * color_picker->ok_hsl_h, rect.position.x, end.x);
-	cursor_pos.y = CLAMP(
-		rect.position.y + rect.size.y * (1.0 - color_picker->ok_hsl_l), rect.position.y, end.y);
-
-	draw_focus_rect(square_overlay);
-	draw_cursor(square_overlay, cursor_pos);
-}
-
-void ColorPickerShapeOKHLRectangle::_value_slider_draw()
-{
-	const float ok_hsl_h = color_picker->ok_hsl_h;
-	const float ok_hsl_l = color_picker->ok_hsl_l;
-
-	const Vector2 size = value_slider->get_size();
-	PackedVector2Array points{
-		Vector2(size.x, 0),
-		Vector2(size.x, size.y * 0.5),
-		size,
-		Vector2(0, size.y),
-		Vector2(0, size.y * 0.5),
-		Vector2(),
-	};
-
-	Color color1 = Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l);
-	Color color2 = Color::from_ok_hsl(ok_hsl_h, 0.5, ok_hsl_l);
-	Color color3 = Color::from_ok_hsl(ok_hsl_h, 0, ok_hsl_l);
-	PackedColorArray colors = {
-		color1,
-		color2,
-		color3,
-		color3,
-		color2,
-		color1,
-	};
-	value_slider->draw_polygon(points, colors);
-
-	draw_focus_rect(value_slider);
-
-	int y = size.y * (1 - CLAMP(color_picker->ok_hsl_s, 0, 1));
-	const Color color = Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l);
-	value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
-}
-
-float ColorPickerShapeWheel::_get_h_on_wheel(const Vector2& p_color_change_vector)
+float ColorPickerShape::_get_h_on_wheel(const Vector2& p_color_change_vector)
 {
 	int h_change = get_edge_h_change(p_color_change_vector);
 
@@ -545,59 +439,9 @@ float ColorPickerShapeWheel::_get_h_on_wheel(const Vector2& p_color_change_vecto
 	return target_h;
 }
 
-void ColorPickerShapeWheel::_reset_wheel_focus() { wheel_focused = true; }
+void ColorPickerShape::_reset_wheel_focus() { wheel_focused = true; }
 
-void ColorPickerShapeWheel::_wheel_draw()
-{
-	wheel->draw_rect(Rect2(Point2(), wheel->get_size()), Color(1, 1, 1));
-}
-
-void ColorPickerShapeWheel::_wheel_uv_draw()
-{
-	const Vector2 uv_size = wheel_uv->get_size();
-	const Vector2 ring_radius = uv_size * Math::SQRT12 * WHEEL_RADIUS;
-	const Vector2 center = uv_size * 0.5;
-
-	const Rect2 uv_rect(center - ring_radius, ring_radius * 2.0);
-	draw_sv_square(wheel_uv, uv_rect, !wheel_focused);
-	if (wheel_focused) {
-		draw_focus_circle(wheel_uv);
-	}
-
-	float radius = WHEEL_RADIUS * 2.0;
-	radius += (1.0 - radius) * 0.5;
-	const Vector2 cursor_pos =
-		center + Vector2(center.x * Math::cos(color_picker->h * Math::TAU) * radius,
-					 center.y * Math::sin(color_picker->h * Math::TAU) * radius);
-	draw_cursor(wheel_uv, cursor_pos, false);
-}
-
-void ColorPickerShapeWheel::_update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
-{
-	if (wheel_focused) {
-		if (p_is_echo && rotate_next_echo_event) {
-			color_picker->h = _get_h_on_wheel(-p_color_change_vector);
-		}
-		else {
-			rotate_next_echo_event = false;
-			color_picker->h = _get_h_on_wheel(p_color_change_vector);
-		}
-	}
-	else {
-		color_picker->s = CLAMP(color_picker->s + p_color_change_vector.x / 100.0, 0, 1);
-		color_picker->v = CLAMP(color_picker->v - p_color_change_vector.y / 100.0, 0, 1);
-	}
-}
-
-void ColorPickerShapeWheel::update_theme()
-{
-	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
-	wheel->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
-}
-
-void ColorPickerShapeWheel::grab_focus() { wheel_uv->grab_focus(); }
-
-void ColorPickerShapeCircle::update_circle_cursor(
+void ColorPickerShape::update_circle_cursor(
 	const Vector2& p_color_change_vector, const Vector2& p_center, const Vector2& p_hue_offset)
 {
 	if (circle_keyboard_joypad_picker_cursor_position == Vector2i()) {
@@ -621,115 +465,398 @@ void ColorPickerShapeCircle::update_circle_cursor(
 	}
 }
 
-void ColorPickerShapeCircle::update_theme()
+void ColorPickerShape::initialize_controls()
+{
+	_initialize_controls();
+	update_theme();
+	is_initialized = true;
+}
+
+void ColorPickerShape::_initialize_controls()
+{
+	switch (shape_type) {
+	case ColorPicker::SHAPE_HSV_RECTANGLE: {
+		sv_square = memnew(Control);
+		hue_slider = memnew(Control);
+		controls.push_back(sv_square);
+		controls.push_back(hue_slider);
+	} break;
+	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
+	case ColorPicker::SHAPE_OK_HL_RECTANGLE: {
+		rectangle_margin = memnew(Control);
+		square = memnew(Control);
+		square_overlay = memnew(Control);
+		value_slider = memnew(Control);
+		rectangle_margin->add_child(square);
+		square->add_child(square_overlay);
+		controls.push_back(rectangle_margin);
+		controls.push_back(value_slider);
+	} break;
+	case ColorPicker::SHAPE_HSV_WHEEL: {
+		wheel = memnew(Control);
+		wheel_uv = memnew(Control);
+		wheel->add_child(wheel_uv);
+		controls.push_back(wheel);
+	} break;
+	case ColorPicker::SHAPE_VHS_CIRCLE:
+	case ColorPicker::SHAPE_OKHSL_CIRCLE: {
+		circle = memnew(Control);
+		circle_overlay = memnew(Control);
+		value_slider = memnew(Control);
+		circle->add_child(circle_overlay);
+		controls.push_back(circle);
+		controls.push_back(value_slider);
+	} break;
+	default:
+		break;
+	}
+}
+
+void ColorPickerShape::update_theme()
 {
 	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
-	circle->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
-	value_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
-}
-
-void ColorPickerShapeCircle::grab_focus() { circle_overlay->grab_focus(); }
-
-void ColorPickerShapeVHSCircle::_circle_overlay_draw()
-{
-	draw_focus_circle(circle_overlay);
-	draw_circle_cursor(circle_overlay, color_picker->h, color_picker->s);
-}
-
-void ColorPickerShapeVHSCircle::_value_slider_draw()
-{
-	const Vector2 size = value_slider->get_size();
-	PackedVector2Array points{
-		Vector2(),
-		Vector2(size.x, 0),
-		size,
-		Vector2(0, size.y),
-	};
-
-	Color color = Color::from_hsv(color_picker->h, color_picker->s, 1);
-	PackedColorArray colors = {
-		color,
-		color,
-		Color(),
-		Color(),
-	};
-
-	value_slider->draw_polygon(points, colors);
-
-	draw_focus_rect(value_slider);
-
-	int y = size.y * (1 - CLAMP(color_picker->v, 0, 1));
-	color.set_hsv(color_picker->h, 1, color_picker->v);
-	value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
-}
-
-void ColorPickerShapeOKHSLCircle::_circle_overlay_draw()
-{
-	draw_focus_circle(circle_overlay);
-	draw_circle_cursor(circle_overlay, color_picker->ok_hsl_h, color_picker->ok_hsl_s);
-}
-
-void ColorPickerShapeOKHSLCircle::_value_slider_draw()
-{
-	const float ok_hsl_h = color_picker->ok_hsl_h;
-	const float ok_hsl_s = color_picker->ok_hsl_s;
-	const float ok_hsl_l = color_picker->ok_hsl_l;
-
-	const Vector2 size = value_slider->get_size();
-	PackedVector2Array points{
-		Vector2(size.x, 0),
-		Vector2(size.x, size.y * 0.5),
-		size,
-		Vector2(0, size.y),
-		Vector2(0, size.y * 0.5),
-		Vector2(),
-	};
-
-	Color color1 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 1);
-	Color color2 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 0.5);
-	Color color3 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 0);
-	PackedColorArray colors = {
-		color1,
-		color2,
-		color3,
-		color3,
-		color2,
-		color1,
-	};
-	value_slider->draw_polygon(points, colors);
-
-	draw_focus_rect(value_slider);
-
-	int y = size.y * (1 - CLAMP(ok_hsl_l, 0, 1));
-	value_slider->draw_line(
-		Vector2(0, y), Vector2(size.x, y), Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l).inverted());
-}
-
-void ColorPickerShapeOKHSLCircle::_update_cursor(
-	const Vector2& p_color_change_vector, bool p_is_echo)
-{
-	if (circle_overlay->has_focus()) {
-		const Vector2 center = circle_overlay->get_size() / 2.0;
-		const Vector2 hue_offset = center *
-								   Vector2(Math::cos(color_picker->ok_hsl_h * Math::TAU),
-									   Math::sin(color_picker->ok_hsl_h * Math::TAU)) *
-								   color_picker->ok_hsl_s;
-		update_circle_cursor(p_color_change_vector, center, hue_offset);
-		color_picker->ok_hsl_h = color_picker->h;
-		color_picker->ok_hsl_s = color_picker->s;
-	}
-	else if (value_slider->has_focus()) {
-		color_picker->ok_hsl_l =
-			CLAMP(color_picker->ok_hsl_l - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
+	switch (shape_type) {
+	case ColorPicker::SHAPE_HSV_RECTANGLE: {
+		if (sv_square) {
+			sv_square->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
+		}
+		if (hue_slider) {
+			hue_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
+		}
+	} break;
+	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
+	case ColorPicker::SHAPE_OK_HL_RECTANGLE: {
+		if (rectangle_margin) {
+			rectangle_margin->set_custom_minimum_size(
+				Size2(theme_cache.sv_width, theme_cache.sv_height));
+		}
+		if (value_slider) {
+			value_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
+		}
+	} break;
+	case ColorPicker::SHAPE_HSV_WHEEL: {
+		if (wheel) {
+			wheel->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
+		}
+	} break;
+	case ColorPicker::SHAPE_VHS_CIRCLE:
+	case ColorPicker::SHAPE_OKHSL_CIRCLE: {
+		if (circle) {
+			circle->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
+		}
+		if (value_slider) {
+			value_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
+		}
+	} break;
+	default:
+		break;
 	}
 }
 
-void ColorPickerShapeOKHSRectangle::_initialize_controls() {}
+void ColorPickerShape::grab_focus()
+{
+	switch (shape_type) {
+	case ColorPicker::SHAPE_HSV_RECTANGLE:
+		if (hue_slider) {
+			hue_slider->grab_focus();
+		}
+		break;
+	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
+	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
+		if (square_overlay) {
+			square_overlay->grab_focus();
+		}
+		break;
+	case ColorPicker::SHAPE_HSV_WHEEL:
+		if (wheel_uv) {
+			wheel_uv->grab_focus();
+		}
+		break;
+	case ColorPicker::SHAPE_VHS_CIRCLE:
+	case ColorPicker::SHAPE_OKHSL_CIRCLE:
+		if (circle_overlay) {
+			circle_overlay->grab_focus();
+		}
+		break;
+	default:
+		break;
+	}
+}
 
-void ColorPickerShapeOKHLRectangle::_square_draw() {}
+void ColorPickerShape::_update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
+{
+	switch (shape_type) {
+	case ColorPicker::SHAPE_HSV_RECTANGLE: {
+		if (sv_square && sv_square->has_focus()) {
+			color_picker->s = CLAMP(color_picker->s + p_color_change_vector.x / 100.0, 0, 1);
+			color_picker->v = CLAMP(color_picker->v - p_color_change_vector.y / 100.0, 0, 1);
+		}
+		else if (hue_slider && hue_slider->has_focus()) {
+			color_picker->h =
+				CLAMP(color_picker->h + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
+		}
+	} break;
+	case ColorPicker::SHAPE_OK_HS_RECTANGLE: {
+		if (square_overlay && square_overlay->has_focus()) {
+			color_picker->ok_hsl_h =
+				CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
+			color_picker->ok_hsl_s =
+				CLAMP(color_picker->ok_hsl_s - p_color_change_vector.y / 100.0, 0, 1);
+		}
+		else if (value_slider && value_slider->has_focus()) {
+			color_picker->ok_hsl_l = CLAMP(
+				color_picker->ok_hsl_l + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
+		}
+	} break;
+	case ColorPicker::SHAPE_OK_HL_RECTANGLE: {
+		if (square_overlay && square_overlay->has_focus()) {
+			color_picker->ok_hsl_h =
+				CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
+			color_picker->ok_hsl_l =
+				CLAMP(color_picker->ok_hsl_l - p_color_change_vector.y / 100.0, 0, 1);
+		}
+		else if (value_slider && value_slider->has_focus()) {
+			color_picker->ok_hsl_s = CLAMP(
+				color_picker->ok_hsl_s + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
+		}
+	} break;
+	case ColorPicker::SHAPE_HSV_WHEEL: {
+		if (wheel_focused) {
+			if (p_is_echo && rotate_next_echo_event) {
+				color_picker->h = _get_h_on_wheel(-p_color_change_vector);
+			}
+			else {
+				rotate_next_echo_event = false;
+				color_picker->h = _get_h_on_wheel(p_color_change_vector);
+			}
+		}
+		else {
+			color_picker->s = CLAMP(color_picker->s + p_color_change_vector.x / 100.0, 0, 1);
+			color_picker->v = CLAMP(color_picker->v - p_color_change_vector.y / 100.0, 0, 1);
+		}
+	} break;
+	case ColorPicker::SHAPE_VHS_CIRCLE: {
+		if (circle_overlay && circle_overlay->has_focus()) {
+			const Vector2 center = circle_overlay->get_size() / 2.0;
+			const Vector2 hue_offset = center *
+									   Vector2(Math::cos(color_picker->h * Math::TAU),
+										   Math::sin(color_picker->h * Math::TAU)) *
+									   color_picker->s;
+			update_circle_cursor(p_color_change_vector, center, hue_offset);
+		}
+		else if (value_slider && value_slider->has_focus()) {
+			color_picker->v =
+				CLAMP(color_picker->v - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
+		}
+	} break;
+	case ColorPicker::SHAPE_OKHSL_CIRCLE: {
+		if (circle_overlay && circle_overlay->has_focus()) {
+			const Vector2 center = circle_overlay->get_size() / 2.0;
+			const Vector2 hue_offset = center *
+									   Vector2(Math::cos(color_picker->ok_hsl_h * Math::TAU),
+										   Math::sin(color_picker->ok_hsl_h * Math::TAU)) *
+									   color_picker->ok_hsl_s;
+			update_circle_cursor(p_color_change_vector, center, hue_offset);
+			color_picker->ok_hsl_h = color_picker->h;
+			color_picker->ok_hsl_s = color_picker->s;
+		}
+		else if (value_slider && value_slider->has_focus()) {
+			color_picker->ok_hsl_l = CLAMP(
+				color_picker->ok_hsl_l - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
+		}
+	} break;
+	default:
+		break;
+	}
+}
 
-void ColorPickerShapeCircle::_initialize_controls() {}
+void ColorPickerShape::_sv_square_draw()
+{
+	draw_sv_square(sv_square, Rect2(Vector2(), sv_square->get_size()));
+}
 
-void ColorPickerShapeOKHSLCircle::_circle_draw() {}
+void ColorPickerShape::_hue_slider_draw()
+{
+	const Vector2 size = hue_slider->get_size();
+	hue_slider->draw_texture_rect(color_picker->theme_cache.color_hue.ptr(),
+		Rect2(0, 0, -size.y, size.x), false, Color(1, 1, 1), true);
 
+	draw_focus_rect(hue_slider);
 
+	int y = size.y * color_picker->h;
+	const Color color = Color::from_hsv(color_picker->h, 1, 1);
+	hue_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
+}
+
+void ColorPickerShape::_square_draw() {}
+
+void ColorPickerShape::_square_overlay_draw()
+{
+	if (!square_overlay) {
+		return;
+	}
+	const Rect2 rect = Rect2(Vector2(), square_overlay->get_size());
+	const Vector2 end = rect.get_end();
+	const float y_channel =
+		(shape_type == ColorPicker::SHAPE_OK_HL_RECTANGLE) ? color_picker->ok_hsl_l
+														   : color_picker->ok_hsl_s;
+
+	Vector2 cursor_pos;
+	cursor_pos.x =
+		CLAMP(rect.position.x + rect.size.x * color_picker->ok_hsl_h, rect.position.x, end.x);
+	cursor_pos.y = CLAMP(rect.position.y + rect.size.y * (1.0 - y_channel), rect.position.y, end.y);
+
+	draw_focus_rect(square_overlay);
+	draw_cursor(square_overlay, cursor_pos);
+}
+
+void ColorPickerShape::_value_slider_draw()
+{
+	if (!value_slider) {
+		return;
+	}
+
+	const Vector2 size = value_slider->get_size();
+
+	switch (shape_type) {
+	case ColorPicker::SHAPE_VHS_CIRCLE: {
+		PackedVector2Array points{
+			Vector2(),
+			Vector2(size.x, 0),
+			size,
+			Vector2(0, size.y),
+		};
+
+		Color color = Color::from_hsv(color_picker->h, color_picker->s, 1);
+		PackedColorArray colors = {
+			color,
+			color,
+			Color(),
+			Color(),
+		};
+
+		value_slider->draw_polygon(points, colors);
+		draw_focus_rect(value_slider);
+
+		int y = size.y * (1 - CLAMP(color_picker->v, 0, 1));
+		color.set_hsv(color_picker->h, 1, color_picker->v);
+		value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
+	} break;
+
+	case ColorPicker::SHAPE_OK_HL_RECTANGLE: {
+		const float ok_hsl_h = color_picker->ok_hsl_h;
+		const float ok_hsl_l = color_picker->ok_hsl_l;
+
+		PackedVector2Array points{
+			Vector2(size.x, 0),
+			Vector2(size.x, size.y * 0.5),
+			size,
+			Vector2(0, size.y),
+			Vector2(0, size.y * 0.5),
+			Vector2(),
+		};
+
+		Color color1 = Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l);
+		Color color2 = Color::from_ok_hsl(ok_hsl_h, 0.5, ok_hsl_l);
+		Color color3 = Color::from_ok_hsl(ok_hsl_h, 0, ok_hsl_l);
+		PackedColorArray colors = {
+			color1,
+			color2,
+			color3,
+			color3,
+			color2,
+			color1,
+		};
+		value_slider->draw_polygon(points, colors);
+		draw_focus_rect(value_slider);
+
+		int y = size.y * (1 - CLAMP(color_picker->ok_hsl_s, 0, 1));
+		const Color color = Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l);
+		value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
+	} break;
+
+	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
+	case ColorPicker::SHAPE_OKHSL_CIRCLE: {
+		const float ok_hsl_h = color_picker->ok_hsl_h;
+		const float ok_hsl_s = color_picker->ok_hsl_s;
+		const float ok_hsl_l = color_picker->ok_hsl_l;
+
+		PackedVector2Array points{
+			Vector2(size.x, 0),
+			Vector2(size.x, size.y * 0.5),
+			size,
+			Vector2(0, size.y),
+			Vector2(0, size.y * 0.5),
+			Vector2(),
+		};
+
+		Color color1 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 1);
+		Color color2 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 0.5);
+		Color color3 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 0);
+		PackedColorArray colors = {
+			color1,
+			color2,
+			color3,
+			color3,
+			color2,
+			color1,
+		};
+		value_slider->draw_polygon(points, colors);
+		draw_focus_rect(value_slider);
+
+		int y = size.y * (1 - CLAMP(ok_hsl_l, 0, 1));
+		const Color color = Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l);
+		value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
+	} break;
+
+	default:
+		break;
+	}
+}
+
+void ColorPickerShape::_wheel_input(const InputEvent&) {}
+
+void ColorPickerShape::_wheel_draw()
+{
+	wheel->draw_rect(Rect2(Point2(), wheel->get_size()), Color(1, 1, 1));
+}
+
+void ColorPickerShape::_wheel_uv_draw()
+{
+	const Vector2 uv_size = wheel_uv->get_size();
+	const Vector2 ring_radius = uv_size * Math::SQRT12 * WHEEL_RADIUS;
+	const Vector2 center = uv_size * 0.5;
+
+	const Rect2 uv_rect(center - ring_radius, ring_radius * 2.0);
+	draw_sv_square(wheel_uv, uv_rect, !wheel_focused);
+	if (wheel_focused) {
+		draw_focus_circle(wheel_uv);
+	}
+
+	float radius = WHEEL_RADIUS * 2.0;
+	radius += (1.0 - radius) * 0.5;
+	const Vector2 cursor_pos =
+		center + Vector2(center.x * Math::cos(color_picker->h * Math::TAU) * radius,
+					 center.y * Math::sin(color_picker->h * Math::TAU) * radius);
+	draw_cursor(wheel_uv, cursor_pos, false);
+}
+
+void ColorPickerShape::_circle_input(const InputEvent&) {}
+
+void ColorPickerShape::_value_slider_input(const InputEvent&) {}
+
+void ColorPickerShape::_circle_draw() {}
+
+void ColorPickerShape::_circle_overlay_draw()
+{
+	if (!circle_overlay) {
+		return;
+	}
+	draw_focus_circle(circle_overlay);
+	if (shape_type == ColorPicker::SHAPE_OKHSL_CIRCLE) {
+		draw_circle_cursor(circle_overlay, color_picker->ok_hsl_h, color_picker->ok_hsl_s);
+	}
+	else {
+		draw_circle_cursor(circle_overlay, color_picker->h, color_picker->s);
+	}
+}

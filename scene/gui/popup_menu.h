@@ -43,9 +43,18 @@ class LineEdit;
 class Timer;
 class PopupMenuItems;
 
-class PopupMenu : public Popup
+class PopupMenu : public Window
 {
 	friend class PopupMenuItems;
+
+public:
+	using HideReason = PopupTracker::HideReason;
+	static constexpr HideReason HIDE_REASON_NONE = PopupTracker::HIDE_REASON_NONE;
+	static constexpr HideReason HIDE_REASON_CANCELED = PopupTracker::HIDE_REASON_CANCELED;
+	static constexpr HideReason HIDE_REASON_UNFOCUSED = PopupTracker::HIDE_REASON_UNFOCUSED;
+
+private:
+	PopupTracker tracker;
 
 	static HashMap<NativeMenu::SystemMenus, PopupMenu*> system_menus;
 
@@ -272,6 +281,7 @@ class PopupMenu : public Popup
 
 protected:
 	virtual void _pre_popup(const Size2i& p_size) override;
+	virtual void _post_popup() override;
 	virtual Rect2i _popup_adjust_rect() const override;
 
 	virtual void add_child_notify(Node* p_child) override;
@@ -309,7 +319,9 @@ public:
 
 	virtual RID get_focused_accessibility_element() const override;
 
-	virtual void _parent_focused() override;
+	HideReason get_hide_reason() const { return tracker.hide_reason; }
+
+	void _parent_focused();
 
 	RID bind_global_menu();
 	void unbind_global_menu();
@@ -470,7 +482,7 @@ public:
 
 	virtual void set_visible(bool p_visible) override;
 
-	PopupMenu() = default;
+	PopupMenu();
 	~PopupMenu();
 };
 

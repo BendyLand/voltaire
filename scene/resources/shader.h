@@ -34,7 +34,7 @@
 #include "core/io/resource.h"
 #include "scene/resources/shader_include.h"
 
-class Texture;
+using Texture = Resource;
 class Texture2D;
 
 class Shader : public Resource

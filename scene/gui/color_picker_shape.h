@@ -35,9 +35,8 @@
 
 class ColorPickerShape
 {
-	void _emit_color_changed();
+	static constexpr float WHEEL_RADIUS = 0.42f;
 
-protected:
 	static inline Ref<Shader> wheel_shader;
 	static inline Ref<Shader> circle_shader;
 	static inline Ref<Shader> circle_ok_color_shader;
@@ -45,10 +44,36 @@ protected:
 	static inline Ref<Shader> rectangle_ok_color_hl_shader;
 
 	ColorPicker* color_picker = nullptr;
+	ColorPicker::PickerShapeType shape_type = ColorPicker::SHAPE_NONE;
 	bool is_dragging = false;
 
-	virtual void _initialize_controls() = 0;
-	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) = 0;
+	// HSV Rectangle controls.
+	Control* sv_square = nullptr;
+	Control* hue_slider = nullptr;
+
+	// OK HS / HL Rectangle controls.
+	Control* rectangle_margin = nullptr;
+	Control* square = nullptr;
+	Control* square_overlay = nullptr;
+
+	// HSV Wheel controls & state.
+	Control* wheel = nullptr;
+	Control* wheel_uv = nullptr;
+	bool wheel_focused = true;
+	bool spinning = false;
+	bool rotate_next_echo_event = false;
+
+	// VHS / OKHSL Circle controls & state (value_slider shared with OK rectangles).
+	Control* circle = nullptr;
+	Control* circle_overlay = nullptr;
+	Control* value_slider = nullptr;
+	Vector2i circle_keyboard_joypad_picker_cursor_position;
+
+	void _emit_color_changed();
+
+	Ref<Shader> _get_shader() const;
+	void _initialize_controls();
+	void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo);
 
 	bool can_handle(
 		const InputEvent& p_event, Vector2& r_position, bool* r_is_click = nullptr);
@@ -67,236 +92,42 @@ protected:
 	void handle_cursor_editing(const InputEvent& p_event, Control* p_control);
 	int get_edge_h_change(const Vector2& p_color_change_vector);
 	float get_h_on_circle_edge(const Vector2& p_color_change_vector);
+	float _get_h_on_wheel(const Vector2& p_color_change_vector);
+	void _reset_wheel_focus();
+	void update_circle_cursor(
+		const Vector2& p_color_change_vector, const Vector2& p_center, const Vector2& p_hue_offset);
+
+	// Draw & input callbacks dispatched by shape_type.
+	void _sv_square_draw();
+	void _hue_slider_draw();
+	void _square_draw();
+	void _square_overlay_draw();
+	void _value_slider_draw();
+	void _wheel_input(const InputEvent& p_event);
+	void _wheel_draw();
+	void _wheel_uv_draw();
+	void _circle_input(const InputEvent& p_event);
+	void _value_slider_input(const InputEvent& p_event);
+	void _circle_draw();
+	void _circle_overlay_draw();
 
 public:
 	Vector<Control*> controls;
 	bool is_initialized = false;
 	bool cursor_editing = false;
-	float echo_multiplier = 1;
+	float echo_multiplier = 1.0f;
 
 	static void init_shaders();
 	static void finish_shaders();
 
-	virtual String get_name() const = 0;
-	virtual Ref<Texture2D> get_icon() const = 0;
-
-	virtual bool is_ok_hsl() const { return false; }
+	ColorPicker::PickerShapeType get_shape_type() const { return shape_type; }
+	String get_name() const;
+	Ref<Texture2D> get_icon() const;
+	bool is_ok_hsl() const;
 
 	void initialize_controls();
-	virtual void update_theme() = 0;
-	virtual void grab_focus() = 0;
+	void update_theme();
+	void grab_focus();
 
-	ColorPickerShape(ColorPicker* p_color_picker);
+	ColorPickerShape(ColorPicker* p_color_picker, ColorPicker::PickerShapeType p_type);
 };
-
-class ColorPickerShapeRectangle : public ColorPickerShape
-{
-	Control* sv_square = nullptr;
-	Control* hue_slider = nullptr;
-
-	void _sv_square_draw();
-	void _hue_slider_draw();
-
-protected:
-	virtual void _initialize_controls() override;
-	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) override;
-
-public:
-	virtual String get_name() const override { return ETR("HSV Rectangle"); }
-
-	virtual Ref<Texture2D> get_icon() const override
-	{
-		return color_picker->theme_cache.shape_rect;
-	}
-
-	virtual void update_theme() override;
-	virtual void grab_focus() override;
-
-	ColorPickerShapeRectangle(ColorPicker* p_color_picker) : ColorPickerShape(p_color_picker) {}
-};
-
-class ColorPickerShapeOKHSRectangle : public ColorPickerShape
-{
-	Control* rectangle_margin = nullptr;
-
-protected:
-	Control* square = nullptr;
-	Control* square_overlay = nullptr;
-	Control* value_slider = nullptr;
-
-	virtual Ref<Shader> _get_shader() const
-	{
-		return ColorPickerShape::rectangle_ok_color_hs_shader;
-	}
-
-	virtual void _initialize_controls() override;
-	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) override;
-
-	virtual void _square_draw();
-	virtual void _square_overlay_draw();
-
-	virtual void _value_slider_draw();
-
-public:
-	virtual String get_name() const override { return ETR("OK HS Rectangle"); }
-
-	virtual bool is_ok_hsl() const override { return true; }
-
-	virtual Ref<Texture2D> get_icon() const override
-	{
-		return color_picker->theme_cache.shape_rect;
-	}
-
-	virtual void update_theme() override;
-	virtual void grab_focus() override;
-
-	ColorPickerShapeOKHSRectangle(ColorPicker* p_color_picker) : ColorPickerShape(p_color_picker) {}
-};
-
-class ColorPickerShapeOKHLRectangle : public ColorPickerShapeOKHSRectangle
-{
-protected:
-	virtual Ref<Shader> _get_shader() const override
-	{
-		return ColorPickerShape::rectangle_ok_color_hl_shader;
-	}
-
-	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) override;
-
-	virtual void _square_draw() override;
-	virtual void _square_overlay_draw() override;
-
-	virtual void _value_slider_draw() override;
-
-public:
-	virtual String get_name() const override { return ETR("OK HL Rectangle"); }
-
-	virtual bool is_ok_hsl() const override { return true; }
-
-	virtual Ref<Texture2D> get_icon() const override
-	{
-		return color_picker->theme_cache.shape_rect;
-	}
-
-	ColorPickerShapeOKHLRectangle(ColorPicker* p_color_picker)
-		: ColorPickerShapeOKHSRectangle(p_color_picker)
-	{
-	}
-};
-
-class ColorPickerShapeWheel : public ColorPickerShape
-{
-	static constexpr float WHEEL_RADIUS = 0.42;
-
-	Control* wheel = nullptr;
-	Control* wheel_uv = nullptr;
-
-	bool wheel_focused = true;
-	bool spinning = false;
-	bool rotate_next_echo_event = false;
-
-	float _get_h_on_wheel(const Vector2& p_color_change_vector);
-	void _reset_wheel_focus();
-
-	void _wheel_input(const InputEvent& p_event);
-
-	void _wheel_draw();
-	void _wheel_uv_draw();
-
-protected:
-	virtual void _initialize_controls() override;
-	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) override;
-
-public:
-	virtual String get_name() const override { return ETR("HSV Wheel"); }
-
-	virtual Ref<Texture2D> get_icon() const override
-	{
-		return color_picker->theme_cache.shape_rect_wheel;
-	}
-
-	virtual void update_theme() override;
-	virtual void grab_focus() override;
-
-	ColorPickerShapeWheel(ColorPicker* p_color_picker) : ColorPickerShape(p_color_picker) {}
-};
-
-class ColorPickerShapeCircle : public ColorPickerShape
-{
-protected:
-	Control* circle = nullptr;
-	Control* circle_overlay = nullptr;
-	Control* value_slider = nullptr;
-
-	Vector2i circle_keyboard_joypad_picker_cursor_position;
-
-	virtual void _circle_input(const InputEvent& p_event) = 0;
-	virtual void _value_slider_input(const InputEvent& p_event) = 0;
-
-	virtual void _circle_draw() = 0;
-	virtual void _circle_overlay_draw() = 0;
-	virtual void _value_slider_draw() = 0;
-
-	void update_circle_cursor(
-		const Vector2& p_color_change_vector, const Vector2& p_center, const Vector2& p_hue_offset);
-
-public:
-	virtual Ref<Shader> _get_shader() const = 0;
-	virtual void _initialize_controls() override;
-
-	virtual Ref<Texture2D> get_icon() const override
-	{
-		return color_picker->theme_cache.shape_circle;
-	}
-
-	virtual void update_theme() override;
-	virtual void grab_focus() override;
-
-	ColorPickerShapeCircle(ColorPicker* p_color_picker) : ColorPickerShape(p_color_picker) {}
-};
-
-class ColorPickerShapeVHSCircle : public ColorPickerShapeCircle
-{
-protected:
-	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) override;
-
-	virtual Ref<Shader> _get_shader() const override { return ColorPickerShape::circle_shader; }
-
-	virtual void _circle_draw() override;
-	virtual void _circle_overlay_draw() override;
-	virtual void _value_slider_draw() override;
-
-public:
-	virtual String get_name() const override { return ETR("VHS Circle"); }
-
-	ColorPickerShapeVHSCircle(ColorPicker* p_color_picker) : ColorPickerShapeCircle(p_color_picker)
-	{
-	}
-};
-
-class ColorPickerShapeOKHSLCircle : public ColorPickerShapeCircle
-{
-protected:
-	virtual void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo) override;
-
-	virtual Ref<Shader> _get_shader() const override
-	{
-		return ColorPickerShape::circle_ok_color_shader;
-	}
-
-	virtual void _circle_draw() override;
-	virtual void _circle_overlay_draw() override;
-	virtual void _value_slider_draw() override;
-
-public:
-	virtual String get_name() const override { return ETR("OKHSL Circle"); }
-
-	virtual bool is_ok_hsl() const override { return true; }
-
-	ColorPickerShapeOKHSLCircle(ColorPicker* p_color_picker)
-		: ColorPickerShapeCircle(p_color_picker)
-	{
-	}
-};
-
-

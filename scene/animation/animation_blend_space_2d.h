@@ -33,7 +33,7 @@
 
 #include "scene/animation/animation_tree.h"
 
-class AnimationNodeBlendSpace2D : public AnimationRootNode
+class AnimationNodeBlendSpace2D : public AnimationNode
 {
 	const String ERR_NO_TRIANGLE = "No triangles exist, so blending cannot take place.";
 	const String ERR_INVALID_POINT =
@@ -67,13 +67,13 @@ protected:
 	struct BlendPoint
 	{
 		String name;
-		Ref<AnimationRootNode> node;
+		Ref<AnimationNode> node;
 		Vector2 position;
 
 		void reset()
 		{
 			name = String();
-			node = Ref<AnimationRootNode>();
+			node = Ref<AnimationNode>();
 			position = Vector2();
 		}
 	};
@@ -127,7 +127,7 @@ protected:
 
 #ifndef DISABLE_DEPRECATED
 	void _add_blend_point_bind_compat_110369(
-		const Ref<AnimationRootNode>& p_node, const Vector2& p_position, int p_at_index = -1);
+		const Ref<AnimationNode>& p_node, const Vector2& p_position, int p_at_index = -1);
 	static void _bind_compatibility_methods();
 #endif
 
@@ -137,15 +137,15 @@ public:
 
 	virtual void get_child_nodes(LocalVector<ChildNode>* r_child_nodes) override;
 
-	void add_blend_point(const Ref<AnimationRootNode>& p_node, const Vector2& p_position,
+	void add_blend_point(const Ref<AnimationNode>& p_node, const Vector2& p_position,
 		int p_at_index = -1, const String& p_name = String());
 	void set_blend_point_position(int p_point, const Vector2& p_position);
-	void set_blend_point_node(int p_point, const Ref<AnimationRootNode>& p_node);
+	void set_blend_point_node(int p_point, const Ref<AnimationNode>& p_node);
 	void set_blend_point_name(int p_point, const String& p_name);
 	const String& get_blend_point_name(int p_point) const;
 	int find_blend_point_by_name(const String& p_name) const;
 	Vector2 get_blend_point_position(int p_point) const;
-	Ref<AnimationRootNode> get_blend_point_node(int p_point) const;
+	Ref<AnimationNode> get_blend_point_node(int p_point) const;
 	void remove_blend_point(int p_point);
 	int get_blend_point_count() const;
 
@@ -188,14 +188,16 @@ public:
 	double get_cyclic_length() const;
 
 #ifndef DISABLE_DEPRECATED
-	void set_use_sync(bool p_sync); // Compat: maps to SYNC_MODE_INDEPENDENT or SYNC_MODE_NONE.
-	bool is_using_sync() const;		// Compat: returns sync_mode != SYNC_MODE_NONE.
+	virtual void set_use_sync(bool p_sync) override; // Compat: maps to SYNC_MODE_INDEPENDENT or SYNC_MODE_NONE.
+	virtual bool is_using_sync() const override;	 // Compat: returns sync_mode != SYNC_MODE_NONE.
 #endif								// DISABLE_DEPRECATED
 
 	void set_sync_mode(SyncMode p_sync_mode);
 	SyncMode get_sync_mode() const;
 
 	virtual Ref<AnimationNode> get_child_by_name(const String& p_name) const override;
+
+	AnimationNodeBlendSpace2D() { root_node = true; }
 };
 
 

@@ -32,7 +32,6 @@
 #pragma once
 
 #include "scene/gui/control.h"
-#include "scene/gui/graph_frame.h"
 #include "scene/gui/graph_node.h"
 #include "scene/resources/shader.h"
 
@@ -238,7 +237,7 @@ private:
 	Point2 box_selecting_from;
 	Point2 box_selecting_to;
 	Rect2 box_selecting_rect;
-	List<GraphElement*> prev_selected;
+	List<GraphNode*> prev_selected;
 
 	bool setting_scroll_offset = false;
 	bool right_disconnects = false;
@@ -325,9 +324,9 @@ private:
 
 	void _graph_element_selected(Node* p_node);
 	void _graph_element_deselected(Node* p_node);
-	void _graph_element_visibility_changed(GraphElement* p_graph_element);
+	void _graph_element_visibility_changed(GraphNode* p_graph_element);
 	void _graph_element_resize_request(const Vector2& p_new_minsize, Node* p_node);
-	void _graph_frame_autoshrink_changed(const Vector2& p_new_minsize, GraphFrame* p_frame);
+	void _graph_frame_autoshrink_changed(const Vector2& p_new_minsize, GraphNode* p_frame);
 	void _graph_element_moved(Node* p_node);
 	void _graph_node_slot_updated(int p_index, Node* p_node);
 	void _graph_node_rect_changed(GraphNode* p_node);
@@ -354,9 +353,9 @@ private:
 	bool is_in_port_hotzone(
 		const Vector2& p_pos, const Vector2& p_mouse_pos, const Vector2i& p_port_size, bool p_left);
 
-	Rect2 _compute_shrinked_frame_rect(const GraphFrame* p_frame);
-	void _set_drag_frame_attached_nodes(GraphFrame* p_frame, bool p_drag);
-	void _set_position_of_frame_attached_nodes(GraphFrame* p_frame, const Vector2& p_pos);
+	Rect2 _compute_shrinked_frame_rect(const GraphNode* p_frame);
+	void _set_drag_frame_attached_nodes(GraphNode* p_frame, bool p_drag);
+	void _set_position_of_frame_attached_nodes(GraphNode* p_frame, const Vector2& p_pos);
 
 	friend class GraphEditFilter;
 	bool _filter_input(const Point2& p_point);
@@ -404,7 +403,7 @@ public:
 
 	// This method has to be public (for undo redo).
 	// TODO: Find a better way to do this.
-	void _update_graph_frame(GraphFrame* p_frame);
+	void _update_graph_frame(GraphNode* p_frame);
 
 	// Connection related methods.
 	Error connect_node(const String& p_from, int p_from_port, const String& p_to,
@@ -443,12 +442,12 @@ public:
 	void remove_valid_connection_type(int p_type, int p_with_type);
 	bool is_valid_connection_type(int p_type, int p_with_type) const;
 
-	// GraphFrame related methods.
+	// Frame related methods (GraphNode in MODE_FRAME).
 	void attach_graph_element_to_frame(
 		const String& p_graph_element, const String& p_parent_frame);
 	void detach_graph_element_from_frame(const String& p_graph_element);
-	GraphFrame* get_element_frame(const String& p_attached_graph_element);
-	TypedArray<String> get_attached_nodes_of_frame(const String& p_graph_frame);
+	GraphNode* get_element_frame(const String& p_attached_graph_element);
+	Vector<String> get_attached_nodes_of_frame(const String& p_graph_frame) const;
 
 	void set_panning_scheme(PanningScheme p_scheme);
 	PanningScheme get_panning_scheme() const;

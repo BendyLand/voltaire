@@ -34,7 +34,7 @@
 #include "animation_blend_space_2d.h"
 
 void AnimationNodeBlendSpace2D::_add_blend_point_bind_compat_110369(
-	const Ref<AnimationRootNode>& p_node, const Vector2& p_position, int p_at_index)
+	const Ref<AnimationNode>& p_node, const Vector2& p_position, int p_at_index)
 {
 	int n = p_at_index == -1 ? blend_points_used : p_at_index;
 	while (find_blend_point_by_name(itos(n)) != -1) {

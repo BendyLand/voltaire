@@ -82,8 +82,6 @@ PackedFloat64Array AnimationNodeExtension::_playback_info_to_array(
 	return playback_info_array;
 }
 
-void AnimationRootNode::_remove_node(Ref<AnimationNode> const&) {}
-
 AnimationNode::NodeTimeInfo AnimationNode::_pre_process(
 	AnimationNode::ProcessState&, AnimationNodeInstance&, AnimationMixer::PlaybackInfo const&, bool)
 {

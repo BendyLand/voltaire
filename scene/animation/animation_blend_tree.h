@@ -34,7 +34,7 @@
 #include "scene/animation/animation_tree.h"
 #include "scene/resources/curve.h"
 
-class AnimationNodeAnimation : public AnimationRootNode
+class AnimationNodeAnimation : public AnimationNode
 {
 	String backward = "backward"; // Only used by pingpong animation.
 
@@ -110,20 +110,7 @@ private:
 	void _update_animation_cache(AnimationTree* p_tree, AnimationNodeInstance& p_instance) const;
 };
 
-class AnimationNodeSync : public AnimationNode
-{
-protected:
-	bool sync = false;
-
-
-public:
-	void set_use_sync(bool p_sync);
-	bool is_using_sync() const;
-
-	AnimationNodeSync();
-};
-
-class AnimationNodeOneShot : public AnimationNodeSync
+class AnimationNodeOneShot : public AnimationNode
 {
 public:
 	enum OneShotRequest
@@ -203,60 +190,38 @@ public:
 	AnimationNodeOneShot();
 };
 
-class AnimationNodeAdd2 : public AnimationNodeSync
+class AnimationNodeAdd2 : public AnimationNode
 {
 	String add_amount = PNAME("add_amount");
+	bool three_way = false;
 
 public:
+	bool is_three_way() const { return three_way; }
 	virtual String get_caption() const override;
 
 	virtual bool has_filter() const override;
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
-	AnimationNodeAdd2();
+	AnimationNodeAdd2(bool p_three_way = false);
 };
 
-class AnimationNodeAdd3 : public AnimationNodeSync
-{
-	String add_amount = PNAME("add_amount");
-
-public:
-	virtual String get_caption() const override;
-
-	virtual bool has_filter() const override;
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-
-	AnimationNodeAdd3();
-};
-
-class AnimationNodeBlend2 : public AnimationNodeSync
+class AnimationNodeBlend2 : public AnimationNode
 {
 	String blend_amount = PNAME("blend_amount");
+	bool three_way = false;
 
 public:
+	bool is_three_way() const { return three_way; }
 	virtual String get_caption() const override;
 	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
 
 	virtual bool has_filter() const override;
-	AnimationNodeBlend2();
+	AnimationNodeBlend2(bool p_three_way = false);
 };
 
-class AnimationNodeBlend3 : public AnimationNodeSync
-{
-	String blend_amount = PNAME("blend_amount");
-
-public:
-	virtual String get_caption() const override;
-
-	virtual NodeTimeInfo _process(ProcessState& p_process_state, AnimationNodeInstance& p_instance,
-		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false) override;
-	AnimationNodeBlend3();
-};
-
-class AnimationNodeSub2 : public AnimationNodeSync
+class AnimationNodeSub2 : public AnimationNode
 {
 	String sub_amount = PNAME("sub_amount");
 
@@ -302,7 +267,7 @@ public:
 	AnimationNodeTimeSeek();
 };
 
-class AnimationNodeTransition : public AnimationNodeSync
+class AnimationNodeTransition : public AnimationNode
 {
 	struct InputData
 	{
@@ -373,7 +338,7 @@ public:
 
 /////
 
-class AnimationNodeBlendTree : public AnimationRootNode
+class AnimationNodeBlendTree : public AnimationNode
 {
 	struct Node
 	{

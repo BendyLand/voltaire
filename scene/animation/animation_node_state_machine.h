@@ -104,7 +104,7 @@ public:
 
 class AnimationNodeStateMachinePlayback;
 
-class AnimationNodeStateMachine : public AnimationRootNode
+class AnimationNodeStateMachine : public AnimationNode
 {
 public:
 	enum StateMachineType
@@ -121,7 +121,7 @@ private:
 
 	struct State
 	{
-		Ref<AnimationRootNode> node;
+		Ref<AnimationNode> node;
 		Vector2 position;
 	};
 

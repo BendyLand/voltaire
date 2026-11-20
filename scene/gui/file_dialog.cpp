@@ -76,11 +76,32 @@ bool FileDialog::_can_use_native_popup() const
 
 Vector2i FileDialog::_get_list_mode_icon_size() const { return theme_cache.file->get_size(); }
 
+void FileDialog::_input_from_window(const InputEvent& p_event)
+{
+	if (chrome.handle_escape_input(p_event)) {
+		_cancel_pressed();
+	}
+	Window::_input_from_window(p_event);
+}
+
+void FileDialog::_post_popup()
+{
+	Window::_post_popup();
+	chrome.post_popup();
+}
+
+void FileDialog::_notification(int p_what)
+{
+	if (p_what == NOTIFICATION_VISIBILITY_CHANGED && !is_visible()) {
+		chrome.popped_up = false;
+	}
+}
+
 void FileDialog::_popup_base(const Rect2i& p_screen_rect)
 {
 #ifdef TOOLS_ENABLED
 	if (is_part_of_edited_scene()) {
-		Dialog::_popup_base(p_screen_rect);
+		Window::_popup_base(p_screen_rect);
 		return;
 	}
 #endif
@@ -89,7 +110,7 @@ void FileDialog::_popup_base(const Rect2i& p_screen_rect)
 		_native_popup();
 	}
 	else {
-		Dialog::_popup_base(p_screen_rect);
+		Window::_popup_base(p_screen_rect);
 	}
 }
 
@@ -107,7 +128,7 @@ void FileDialog::set_visible(bool p_visible)
 
 #ifdef TOOLS_ENABLED
 	if (is_part_of_edited_scene()) {
-		Dialog::set_visible(p_visible);
+		Window::set_visible(p_visible);
 		return;
 	}
 #endif
@@ -118,7 +139,7 @@ void FileDialog::set_visible(bool p_visible)
 		}
 	}
 	else {
-		Dialog::set_visible(p_visible);
+		Window::set_visible(p_visible);
 	}
 }
 
@@ -713,12 +734,20 @@ void FileDialog::set_use_native_dialog(bool p_native)
 
 	// Replace the built-in dialog with the native one if it's currently visible.
 	if (is_inside_tree() && is_visible() && _should_use_native_popup()) {
-		Dialog::set_visible(false);
+		Window::set_visible(false);
 		_native_popup();
 	}
 }
 
 bool FileDialog::get_use_native_dialog() const { return use_native_dialog; }
+
+FileDialog::FileDialog()
+{
+	for (int i = 0; i < CUSTOMIZATION_MAX; i++) {
+		customization_flags[i] = true;
+	}
+	chrome.init_controls(this);
+}
 
 FileDialog::~FileDialog()
 {

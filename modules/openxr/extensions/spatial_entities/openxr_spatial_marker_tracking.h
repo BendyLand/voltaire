@@ -170,16 +170,6 @@ private:
 class OpenXRSpatialComponentMarkerList : public OpenXRSpatialComponentData
 {
 public:
-	enum MarkerType
-	{
-		MARKER_TYPE_UNKNOWN,
-		MARKER_TYPE_QRCODE,
-		MARKER_TYPE_MICRO_QRCODE,
-		MARKER_TYPE_ARUCO,
-		MARKER_TYPE_APRIL_TAG,
-		MARKER_TYPE_MAX
-	};
-
 	virtual void set_capacity(uint32_t p_capacity) override;
 	virtual XrSpatialComponentTypeEXT get_component_type() const override;
 	virtual void* get_structure_data(void* p_next) override;
@@ -196,26 +186,8 @@ private:
 		XR_TYPE_SPATIAL_COMPONENT_MARKER_LIST_EXT, nullptr, 0, nullptr};
 };
 
-// Marker tracker
-class OpenXRMarkerTracker : public OpenXRSpatialEntityTracker
-{
-public:
-	void set_bounds_size(const Vector2& p_bounds_size);
-	Vector2 get_bounds_size() const;
-
-	void set_marker_type(OpenXRSpatialComponentMarkerList::MarkerType p_marker_type);
-	OpenXRSpatialComponentMarkerList::MarkerType get_marker_type() const;
-
-	void set_marker_id(uint32_t p_id);
-	uint32_t get_marker_id() const;
-
-private:
-	Vector2 bounds_size;
-
-	OpenXRSpatialComponentMarkerList::MarkerType marker_type =
-		OpenXRSpatialComponentMarkerList::MarkerType::MARKER_TYPE_UNKNOWN;
-	uint32_t marker_id = 0;
-};
+// Marker tracker (folded into OpenXRSpatialEntityTracker)
+using OpenXRMarkerTracker = OpenXRSpatialEntityTracker;
 
 // Marker tracking logic
 class OpenXRSpatialMarkerTrackingCapability final

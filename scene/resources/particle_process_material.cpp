@@ -226,12 +226,6 @@ static void _adjust_curve_range(const Ref<Texture2D>& p_texture, float p_min, fl
 	Ref<CurveTexture> curve_tex = p_texture;
 	if (curve_tex.is_valid()) {
 		curve_tex->ensure_default_setup(p_min, p_max);
-		return;
-	}
-	Ref<CurveXYZTexture> curve_xyz_tex = p_texture;
-	if (curve_xyz_tex.is_valid()) {
-		curve_xyz_tex->ensure_default_setup(p_min, p_max);
-		return;
 	}
 }
 

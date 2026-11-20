@@ -333,7 +333,10 @@ void PopupMenu::_input_from_window(const InputEvent& p_event)
 		WARN_PRINT_ONCE(
 			"PopupMenu has received an invalid InputEvent. Consider filtering out invalid events.");
 	}
-	Popup::_input_from_window(p_event);
+	if (tracker.handle_cancel_input(this, p_event)) {
+		_close_pressed();
+	}
+	Window::_input_from_window(p_event);
 }
 
 bool PopupMenu::_is_mouse_moving_toward_submenu(const Vector2& p_relative, bool p_is_submenu_left,
@@ -729,7 +732,7 @@ void PopupMenu::_close_pressed()
 				"Invalid active_submenu_index index %d in _close_pressed.", active_submenu_index));
 		items[active_submenu_index].submenu->_close_pressed();
 	}
-	Popup::_close_pressed();
+	tracker.close_pressed(this);
 }
 
 void PopupMenu::_update_shadow_offsets() const
@@ -767,7 +770,7 @@ void PopupMenu::_update_shadow_offsets() const
 
 Rect2i PopupMenu::_popup_adjust_rect() const
 {
-	Rect2i current = Popup::_popup_adjust_rect();
+	Rect2i current = PopupTracker::adjust_popup_rect(this);
 	if (current == Rect2i()) {
 		return current;
 	}
@@ -1167,7 +1170,7 @@ void PopupMenu::clear(bool p_free_submenus) {}
 #ifdef TOOLS_ENABLED
 PackedStringArray PopupMenu::get_configuration_warnings() const
 {
-	PackedStringArray warnings = Popup::get_configuration_warnings();
+	PackedStringArray warnings = Window::get_configuration_warnings();
 
 	if (!DisplayServer::is_window_transparency_available() &&
 		!GLOBAL_GET_CACHED(bool, "display/window/subwindows/embed_subwindows")) {
@@ -1231,7 +1234,7 @@ void PopupMenu::_popup_base(const Rect2i& p_bounds)
 		moved = Vector2();
 		popup_time_msec = OS::get_ticks_msec();
 
-		Popup::_popup_base(p_bounds);
+		Window::_popup_base(p_bounds);
 	}
 }
 
@@ -1250,7 +1253,37 @@ RID PopupMenuItems::get_focused_accessibility_element() const
 
 void PopupMenu::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
 
+PopupMenu::PopupMenu()
+{
+	tracker.configure_window(this);
+}
+
 PopupMenu::~PopupMenu() { unbind_global_menu(); }
+
+void PopupMenu::_notification(int p_what)
+{
+	switch (p_what) {
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		if (is_visible()) {
+			tracker.hide_reason = HIDE_REASON_NONE;
+			tracker.initialize_visible_parents(this);
+		}
+		else {
+			tracker.deinitialize_visible_parents(this);
+			tracker.popped_up = false;
+		}
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		tracker.deinitialize_visible_parents(this);
+	} break;
+	}
+}
+
+void PopupMenu::_post_popup()
+{
+	Window::_post_popup();
+	tracker.post_popup();
+}
 
 void PopupMenu::_shape_item(int) const {}
 
@@ -1260,13 +1293,18 @@ void PopupMenu::_close_or_suspend() {}
 
 void PopupMenu::_activate_submenu(int, bool) {}
 
-void PopupMenu::set_visible(bool p_visible) {}
+void PopupMenu::set_visible(bool p_visible) { Window::set_visible(p_visible); }
 
 void PopupMenu::remove_child_notify(Node* p_child) {}
 
 void PopupMenu::_pre_popup(const Size2i& p_size) {}
 
-void PopupMenu::_parent_focused() {}
+void PopupMenu::_parent_focused()
+{
+	if (tracker.handle_parent_focused(this)) {
+		_close_pressed();
+	}
+}
 
 String PopupMenu::_get_accessibility_name() const { return String(); }
 

@@ -34,43 +34,6 @@
 #include "scene/resources/gradient.h"
 #include "scene/resources/texture.h"
 
-class GradientTexture1D : public Texture2D
-{
-private:
-	Ref<Gradient> gradient;
-	mutable bool update_pending = false;
-	mutable RID texture;
-	int width = 256;
-	bool use_hdr = false;
-
-	void _queue_update();
-	void _update() const;
-
-protected:
-
-public:
-	void set_gradient(Ref<Gradient> p_gradient);
-	Ref<Gradient> get_gradient() const;
-
-	void set_width(int p_width);
-	int get_width() const override;
-
-	void set_use_hdr(bool p_enabled);
-	bool is_using_hdr() const;
-
-	virtual RID get_rid() const override;
-
-	virtual int get_height() const override { return 1; }
-
-	virtual bool has_alpha() const override { return true; }
-
-	virtual Ref<Image> get_image() const override;
-	void update_now() const;
-
-	GradientTexture1D();
-	virtual ~GradientTexture1D();
-};
-
 class GradientTexture2D : public Texture2D
 {
 public:
@@ -96,6 +59,7 @@ private:
 	int width = 64;
 	int height = 64;
 
+	bool is_1d = false;
 	bool use_hdr = false;
 
 	Vector2 fill_from;
@@ -110,8 +74,6 @@ private:
 	void _queue_update();
 	void _update() const;
 
-protected:
-
 public:
 	void set_gradient(Ref<Gradient> p_gradient);
 	Ref<Gradient> get_gradient() const;
@@ -120,6 +82,8 @@ public:
 	virtual int get_width() const override;
 	void set_height(int p_height);
 	virtual int get_height() const override;
+
+	bool is_1d_texture() const { return is_1d; }
 
 	void set_use_hdr(bool p_enabled);
 	bool is_using_hdr() const;
@@ -141,8 +105,6 @@ public:
 	virtual Ref<Image> get_image() const override;
 	void update_now() const;
 
-	GradientTexture2D();
+	explicit GradientTexture2D(bool p_1d = false);
 	virtual ~GradientTexture2D();
 };
-
-

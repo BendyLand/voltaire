@@ -31,12 +31,23 @@
 
 #pragma once
 
-#include "scene/gui/graph_element.h"
+#include "scene/gui/control.h"
 
-class GraphNode : public GraphElement
+class Label;
+
+class GraphNode : public Control
 {
 	friend class GraphEdit;
 
+public:
+	enum Mode
+	{
+		MODE_ELEMENT,
+		MODE_NODE,
+		MODE_FRAME,
+	};
+
+private:
 	struct Slot
 	{
 		bool enable_left = false;
@@ -55,7 +66,7 @@ class GraphNode : public GraphElement
 	struct PortCache
 	{
 		Vector2 pos;
-		int slot_index;
+		int slot_index = 0;
 		int type = 0;
 		Color color;
 	};
@@ -76,20 +87,45 @@ class GraphNode : public GraphElement
 		ACTION_FOLLOW_OUTPUT,
 	};
 
+	Mode mode = MODE_NODE;
+
+	// Shared graph element state.
+	bool selected = false;
+	bool resizable = false;
+	bool resizing = false;
+	bool draggable = true;
+	bool selectable = true;
+
+	Vector2 drag_from;
+	Vector2 resizing_from;
+	Vector2 resizing_from_size;
+	Vector2 position_offset;
+
+	bool scaling_menus = false;
+
+	// Shared titlebar state (used in MODE_NODE and MODE_FRAME).
 	Control* titlebar_hbox = nullptr;
 	Label* title_label = nullptr;
-
 	String title;
 
+	// Slot/port state (active in MODE_NODE).
 	Vector<PortCache> left_port_cache;
 	Vector<PortCache> right_port_cache;
-
 	HashMap<int, Slot> slot_table;
 	Vector<int> slot_y_cache;
 
 	Control::FocusMode slots_focus_mode = Control::FOCUS_ACCESSIBILITY;
 	int slot_count = 0;
 	int selected_slot = -1;
+	bool port_pos_dirty = true;
+	bool ignore_invalid_connection_type = false;
+
+	// Frame autoshrink/tint state (active in MODE_FRAME).
+	bool autoshrink_enabled = true;
+	int autoshrink_margin = 40;
+	int drag_margin = 16;
+	bool tint_color_enabled = false;
+	Color tint_color = Color(0.3, 0.3, 0.3, 0.75);
 
 	struct ThemeCache
 	{
@@ -109,30 +145,76 @@ class GraphNode : public GraphElement
 		Color resizer_color;
 	} theme_cache;
 
-	bool port_pos_dirty = true;
-
-	bool ignore_invalid_connection_type = false;
+#ifdef TOOLS_ENABLED
+	void _edit_set_position(const Point2& p_position) override;
+#endif
 
 	void _port_pos_update();
-
 	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
 
 protected:
 	void _notification(int p_what);
-
-	virtual void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color& p_color);
-
-	virtual void _resort() override;
+	void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color& p_color);
+	void _resort();
 
 	virtual String _get_accessibility_name() const override;
 
 public:
-	virtual String get_accessibility_container_name(const Node* p_node) const override;
+	Mode get_mode() const { return mode; }
+	void set_mode(Mode p_mode);
+	bool is_frame() const { return mode == MODE_FRAME; }
+	bool is_node() const { return mode == MODE_NODE; }
+	bool is_element_only() const { return mode == MODE_ELEMENT; }
 
+	// GraphElement API.
+	void set_position_offset(const Vector2& p_offset);
+	Vector2 get_position_offset() const { return position_offset; }
+
+	void set_selected(bool p_selected);
+	bool is_selected() const { return selected; }
+
+	void set_drag(bool p_drag);
+	Vector2 get_drag_from() const { return drag_from; }
+
+	void set_resizable(bool p_enable);
+	bool is_resizable() const { return resizable; }
+
+	void set_draggable(bool p_draggable) { draggable = p_draggable; }
+	bool is_draggable() const { return draggable; }
+
+	void set_selectable(bool p_selectable);
+	bool is_selectable() const { return selectable; }
+
+	void set_scaling_menus(bool p_scaling_menus) { scaling_menus = p_scaling_menus; }
+	bool is_scaling_menus() const { return scaling_menus; }
+
+	bool is_resizing() const { return resizing; }
+
+	// Shared titlebar API.
 	void set_title(const String& p_title);
-	String get_title() const;
+	String get_title() const { return title; }
 
-	Control* get_titlebar_hbox();
+	Control* get_titlebar_hbox() { return titlebar_hbox; }
+	Size2 get_titlebar_size() const;
+
+	// MODE_FRAME API.
+	void set_autoshrink_enabled(bool p_enable);
+	bool is_autoshrink_enabled() const { return autoshrink_enabled; }
+
+	void set_autoshrink_margin(const int& p_margin);
+	int get_autoshrink_margin() const { return autoshrink_margin; }
+
+	void set_drag_margin(int p_margin) { drag_margin = p_margin; }
+	int get_drag_margin() const { return drag_margin; }
+
+	void set_tint_color_enabled(bool p_enable);
+	bool is_tint_color_enabled() const { return tint_color_enabled; }
+
+	void set_tint_color(const Color& p_tint_color);
+	Color get_tint_color() const { return tint_color; }
+
+	// MODE_NODE slot/port API.
+	virtual String get_accessibility_container_name(const Node* p_node) const override;
 
 	void set_slot(int p_slot_index, bool p_enable_left, int p_type_left, const Color& p_color_left,
 		bool p_enable_right, int p_type_right, const Color& p_color_right,
@@ -186,6 +268,7 @@ public:
 	void set_slots_focus_mode(Control::FocusMode p_focus_mode);
 	Control::FocusMode get_slots_focus_mode() const;
 
+	virtual bool has_point(const Point2& p_point) const override;
 	virtual Size2 get_minimum_size() const override;
 	virtual Size2 get_desired_size() const override;
 
@@ -194,7 +277,5 @@ public:
 	virtual Vector<int> get_allowed_size_flags_horizontal() const override;
 	virtual Vector<int> get_allowed_size_flags_vertical() const override;
 
-	GraphNode();
+	GraphNode(Mode p_mode = MODE_NODE);
 };
-
-

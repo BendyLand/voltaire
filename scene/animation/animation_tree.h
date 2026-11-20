@@ -45,8 +45,6 @@
 #endif
 
 class AnimationNodeBlendTree;
-class AnimationNodeStartState;
-class AnimationNodeEndState;
 class AnimationTree;
 struct AnimationNodeInstance;
 
@@ -61,6 +59,13 @@ public:
 		FILTER_PASS,
 		FILTER_STOP,
 		FILTER_BLEND
+	};
+
+	enum StateEndpoint
+	{
+		ENDPOINT_NONE,
+		ENDPOINT_START,
+		ENDPOINT_END,
 	};
 
 	struct Input
@@ -163,6 +168,14 @@ public:
 		const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only = false);
 
 protected:
+	bool root_node = false;
+	bool sync = false;
+	StateEndpoint endpoint_type = ENDPOINT_NONE;
+
+	void _add_node(const Ref<AnimationNode>& p_node);
+	void _remove_node(const Ref<AnimationNode>& p_node);
+	virtual void _tree_changed();
+
 	String current_length = "current_length";
 	String current_position = "current_position";
 	String current_delta = "current_delta";
@@ -246,31 +259,28 @@ public:
 		const String& p_function, int p_idx, List<String>* r_options) const;
 #endif
 
+	bool is_root_node() const { return root_node; }
+
+	virtual void set_use_sync(bool p_sync);
+	virtual bool is_using_sync() const;
+
+	void set_endpoint_type(StateEndpoint p_endpoint)
+	{
+		endpoint_type = p_endpoint;
+		if (p_endpoint != ENDPOINT_NONE) {
+			root_node = true;
+		}
+	}
+	StateEndpoint get_endpoint_type() const { return endpoint_type; }
+
 	virtual Ref<AnimationNode> get_child_by_name(const String& p_name) const;
 	Ref<AnimationNode> find_node_by_path(const String& p_name) const;
 
 	AnimationNode();
 };
 
-// Root node does not allow inputs.
-class AnimationRootNode : public AnimationNode
-{
-protected:
-	void _add_node(const Ref<AnimationNode>& p_node);
-	void _remove_node(const Ref<AnimationNode>& p_node);
-	virtual void _tree_changed();
-};
-
-class AnimationNodeStartState : public AnimationRootNode
-{
-};
-
-class AnimationNodeEndState : public AnimationRootNode
-{
-};
-
 // Per instance data, for a node.
-// These get created/destroyed when the AnimationRootNode is updated, so you cannot use it to store
+// These get created/destroyed when the root AnimationNode is updated, so you cannot use it to store
 // persistent data.
 struct AnimationNodeInstance
 {
@@ -415,7 +425,7 @@ public:
 #endif // DISABLE_DEPRECATED
 
 private:
-	Ref<AnimationRootNode> root_animation_node;
+	Ref<AnimationNode> root_animation_node;
 	NodePath advance_expression_base_node = NodePath(String("."));
 
 	AnimationNode::ProcessState process_state;
@@ -498,8 +508,14 @@ public:
 	void set_animation_player(const NodePath& p_path);
 	NodePath get_animation_player() const;
 
-	void set_root_animation_node(const Ref<AnimationRootNode>& p_animation_node);
-	Ref<AnimationRootNode> get_root_animation_node() const;
+	void set_root_animation_node(const Ref<AnimationNode>& p_animation_node);
+	Ref<AnimationNode> get_root_animation_node() const;
+
+	void set_tree_root(const Ref<AnimationNode>& p_animation_node)
+	{
+		set_root_animation_node(p_animation_node);
+	}
+	Ref<AnimationNode> get_tree_root() const { return get_root_animation_node(); }
 
 	void set_advance_expression_base_node(const NodePath& p_path);
 	NodePath get_advance_expression_base_node() const;

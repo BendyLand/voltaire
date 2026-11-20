@@ -33,7 +33,6 @@
 #include "core/io/resource_loader.h"
 #include "image_texture.h"
 #include "scene/resources/bit_map.h"
-#include "scene/resources/placeholder_textures.h"
 #include "servers/rendering/renderer.h"
 
 void ImageTexture::reload_from_file() {}
@@ -393,17 +392,6 @@ ImageTexture3D::~ImageTexture3D()
 		Renderer::free_rid(texture);
 	}
 }
-
-
-Ref<Resource> ImageTextureLayered::create_placeholder() const
-{
-	Ref<PlaceholderTextureLayered> placeholder = memnew(PlaceholderTextureLayered(layered_type));
-	placeholder->set_size(Size2i(get_width(), get_height()));
-	placeholder->set_layers(get_layers());
-	return placeholder;
-}
-
-
 
 void ImageTexture::set_image(const Ref<Image>& p_image)
 {

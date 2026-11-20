@@ -40,7 +40,7 @@ LocalVector<String> (*AnimationNodeAnimation::get_editable_animation_list)() = n
 void AnimationNodeAnimation::validate_node(
 	const AnimationTree* p_tree, const String& p_path) const
 {
-	AnimationRootNode::validate_node(p_tree, p_path);
+	AnimationNode::validate_node(p_tree, p_path);
 
 	const Ref<Animation>& animation_resource = p_tree->get_animation_or_null(animation);
 	if (animation_resource.is_null()) {
@@ -97,13 +97,7 @@ void AnimationNodeAnimation::_update_animation_cache(
 	p_instance.cached_animation_version = animation_version;
 }
 
-AnimationNodeAnimation::AnimationNodeAnimation() {}
-
-void AnimationNodeSync::set_use_sync(bool p_sync) { sync = p_sync; }
-
-bool AnimationNodeSync::is_using_sync() const { return sync; }
-
-AnimationNodeSync::AnimationNodeSync() {}
+AnimationNodeAnimation::AnimationNodeAnimation() { root_node = true; }
 
 bool AnimationNodeOneShot::is_parameter_read_only(const String& p_parameter) const
 {
@@ -176,44 +170,38 @@ AnimationNodeOneShot::AnimationNodeOneShot()
 	add_input("shot");
 }
 
-String AnimationNodeAdd2::get_caption() const { return "Add2"; }
+String AnimationNodeAdd2::get_caption() const { return three_way ? "Add3" : "Add2"; }
 
 bool AnimationNodeAdd2::has_filter() const { return true; }
 
-AnimationNodeAdd2::AnimationNodeAdd2()
+AnimationNodeAdd2::AnimationNodeAdd2(bool p_three_way) : three_way(p_three_way)
 {
-	add_input("in");
-	add_input("add");
+	if (three_way) {
+		add_input("-add");
+		add_input("in");
+		add_input("+add");
+	}
+	else {
+		add_input("in");
+		add_input("add");
+	}
 }
 
-String AnimationNodeAdd3::get_caption() const { return "Add3"; }
+String AnimationNodeBlend2::get_caption() const { return three_way ? "Blend3" : "Blend2"; }
 
-bool AnimationNodeAdd3::has_filter() const { return true; }
+bool AnimationNodeBlend2::has_filter() const { return !three_way; }
 
-AnimationNodeAdd3::AnimationNodeAdd3()
+AnimationNodeBlend2::AnimationNodeBlend2(bool p_three_way) : three_way(p_three_way)
 {
-	add_input("-add");
-	add_input("in");
-	add_input("+add");
-}
-
-String AnimationNodeBlend2::get_caption() const { return "Blend2"; }
-
-bool AnimationNodeBlend2::has_filter() const { return true; }
-
-AnimationNodeBlend2::AnimationNodeBlend2()
-{
-	add_input("in");
-	add_input("blend");
-}
-
-String AnimationNodeBlend3::get_caption() const { return "Blend3"; }
-
-AnimationNodeBlend3::AnimationNodeBlend3()
-{
-	add_input("-blend");
-	add_input("in");
-	add_input("+blend");
+	if (three_way) {
+		add_input("-blend");
+		add_input("in");
+		add_input("+blend");
+	}
+	else {
+		add_input("in");
+		add_input("blend");
+	}
 }
 
 String AnimationNodeSub2::get_caption() const { return "Sub2"; }
@@ -468,12 +456,12 @@ Ref<AnimationNode> AnimationNodeBlendTree::get_child_by_name(const String& p_nam
 	return get_node(p_name);
 }
 
-void AnimationNodeBlendTree::_tree_changed() { AnimationRootNode::_tree_changed(); }
+void AnimationNodeBlendTree::_tree_changed() { AnimationNode::_tree_changed(); }
 
 void AnimationNodeBlendTree::validate_node(
 	const AnimationTree* p_tree, const String& p_path) const
 {
-	AnimationRootNode::validate_node(p_tree, p_path);
+	AnimationNode::validate_node(p_tree, p_path);
 
 	// Validate output connection.
 	{
@@ -526,7 +514,7 @@ void AnimationNodeBlendTree::get_argument_options(
 			r_options->push_back(String(E.key).quote());
 		}
 	}
-	AnimationRootNode::get_argument_options(p_function, p_idx, r_options);
+	AnimationNode::get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 
@@ -541,7 +529,11 @@ void AnimationNodeBlendTree::_initialize_node_tree()
 	nodes[SceneString(output)] = n;
 }
 
-AnimationNodeBlendTree::AnimationNodeBlendTree() { _initialize_node_tree(); }
+AnimationNodeBlendTree::AnimationNodeBlendTree()
+{
+	root_node = true;
+	_initialize_node_tree();
+}
 
 AnimationNode::NodeTimeInfo AnimationNodeAnimation::_process(
 	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
@@ -564,21 +556,7 @@ AnimationNode::NodeTimeInfo AnimationNodeAdd2::_process(
 	return AnimationNode::NodeTimeInfo();
 }
 
-AnimationNode::NodeTimeInfo AnimationNodeAdd3::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
 AnimationNode::NodeTimeInfo AnimationNodeBlend2::_process(
-	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
-	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
-{
-	return AnimationNode::NodeTimeInfo();
-}
-
-AnimationNode::NodeTimeInfo AnimationNodeBlend3::_process(
 	AnimationNode::ProcessState& r_process_state, AnimationNodeInstance& p_instance,
 	const AnimationMixer::PlaybackInfo& p_playback_info, bool p_test_only)
 {

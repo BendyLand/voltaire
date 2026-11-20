@@ -51,13 +51,6 @@ class TextureRect;
 class ColorPicker : public Control
 {
 	friend class ColorPickerShape;
-	friend class ColorPickerShapeRectangle;
-	friend class ColorPickerShapeWheel;
-	friend class ColorPickerShapeCircle;
-	friend class ColorPickerShapeVHSCircle;
-	friend class ColorPickerShapeOKHSLCircle;
-	friend class ColorPickerShapeOKHSRectangle;
-	friend class ColorPickerShapeOKHLRectangle;
 
 	friend class ColorModeRGB;
 	friend class ColorModeHSV;
@@ -390,7 +383,7 @@ public:
 class ColorPickerButton : public Control
 {
 	Button* button = nullptr;
-	PopupPanel* popup = nullptr;
+	Popup* popup = nullptr;
 	ColorPicker* picker = nullptr;
 	Color color;
 	bool edit_alpha = true;
@@ -406,13 +399,15 @@ class ColorPickerButton : public Control
 
 	ThemeCache theme_cache;
 
+	void _update_picker();
+
 protected:
 	void _notification(int);
 
 public:
 	Button* get_button() const { return button; }
-	PopupPanel* get_popup() const { return popup; }
-	ColorPicker* get_picker() const { return picker; }
+	Popup* get_popup();
+	ColorPicker* get_picker();
 
 	Color get_pick_color() const;
 

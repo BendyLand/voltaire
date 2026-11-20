@@ -217,7 +217,7 @@ AnimationNode::NodeTimeInfo AnimationNode::_blend_node(ProcessState& p_process_s
 	}
 
 	// This process, which depends on p_sync is needed to process sync correctly in the case of
-	// that a synced AnimationNodeSync exists under the un-synced AnimationNodeSync.
+	// that a synced AnimationNode exists under an un-synced AnimationNode.
 	if (!p_playback_info.seeked && !p_sync && !any_valid) {
 		p_playback_info.delta = 0.0;
 	}
@@ -229,9 +229,18 @@ void AnimationNode::get_child_nodes(LocalVector<ChildNode>* r_child_nodes) {}
 
 String AnimationNode::get_caption() const
 {
-	String ret = "Node";
-	return ret;
+	if (endpoint_type == ENDPOINT_START) {
+		return "Start";
+	}
+	if (endpoint_type == ENDPOINT_END) {
+		return "End";
+	}
+	return "Node";
 }
+
+void AnimationNode::set_use_sync(bool p_sync) { sync = p_sync; }
+
+bool AnimationNode::is_using_sync() const { return sync; }
 
 void AnimationNode::remove_input(int p_index)
 {
@@ -418,7 +427,14 @@ double AnimationNode::blend_input_ex(int p_input, double p_time, bool p_seek,
 
 AnimationNode::AnimationNode() {}
 
-Ref<AnimationRootNode> AnimationTree::get_root_animation_node() const
+void AnimationTree::set_root_animation_node(const Ref<AnimationNode>& p_animation_node)
+{
+	root_animation_node = p_animation_node;
+	validation_dirty = true;
+	properties_dirty = true;
+}
+
+Ref<AnimationNode> AnimationTree::get_root_animation_node() const
 {
 	return root_animation_node;
 }
@@ -611,9 +627,11 @@ Ref<AnimationNode> AnimationNode::get_child_by_name(const String& p_name) const
 	return Ref<AnimationNode>();
 }
 
-void AnimationRootNode::_tree_changed() {}
+void AnimationNode::_tree_changed() {}
 
-void AnimationRootNode::_add_node(const Ref<AnimationNode>& p_node) {}
+void AnimationNode::_add_node(const Ref<AnimationNode>& p_node) {}
+
+void AnimationNode::_remove_node(const Ref<AnimationNode>& p_node) {}
 
 bool AnimationNode::add_input(const String& p_name) { return true; }
 

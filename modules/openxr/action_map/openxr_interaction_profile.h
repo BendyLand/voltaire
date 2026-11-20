@@ -42,7 +42,7 @@ class OpenXRIPBinding : public Resource
 private:
 	Ref<OpenXRAction> action;
 	String binding_path;
-	Vector<Ref<OpenXRActionBindingModifier>> binding_modifiers;
+	Vector<Ref<OpenXRBindingModifier>> binding_modifiers;
 
 protected:
 	friend class OpenXRActionMap;
@@ -67,12 +67,12 @@ public:
 
 	int get_binding_modifier_count()
 		const; // Retrieve the number of binding modifiers in this profile path
-	Ref<OpenXRActionBindingModifier> get_binding_modifier(int p_index) const;
+	Ref<OpenXRBindingModifier> get_binding_modifier(int p_index) const;
 	void clear_binding_modifiers(); // Remove all binding modifiers
 
-	void add_binding_modifier(const Ref<OpenXRActionBindingModifier>&
+	void add_binding_modifier(const Ref<OpenXRBindingModifier>&
 			p_binding_modifier); // Add a binding modifier object
-	void remove_binding_modifier(const Ref<OpenXRActionBindingModifier>&
+	void remove_binding_modifier(const Ref<OpenXRBindingModifier>&
 			p_binding_modifier); // Remove a binding modifier object
 
 	// Deprecated.
@@ -97,7 +97,7 @@ class OpenXRInteractionProfile : public Resource
 {
 private:
 	String interaction_profile_path;
-	Vector<Ref<OpenXRIPBindingModifier>> binding_modifiers;
+	Vector<Ref<OpenXRBindingModifier>> binding_modifiers;
 
 protected:
 	friend class OpenXRActionMap;
@@ -133,13 +133,13 @@ public:
 
 	int get_binding_modifier_count()
 		const; // Retrieve the number of binding modifiers in this profile path
-	Ref<OpenXRIPBindingModifier> get_binding_modifier(int p_index) const;
+	Ref<OpenXRBindingModifier> get_binding_modifier(int p_index) const;
 	void clear_binding_modifiers(); // Remove all binding modifiers
 
 	void add_binding_modifier(
-		const Ref<OpenXRIPBindingModifier>& p_binding_modifier); // Add a binding modifier object
+		const Ref<OpenXRBindingModifier>& p_binding_modifier); // Add a binding modifier object
 	void remove_binding_modifier(
-		const Ref<OpenXRIPBindingModifier>& p_binding_modifier); // Remove a binding modifier object
+		const Ref<OpenXRBindingModifier>& p_binding_modifier); // Remove a binding modifier object
 
 	~OpenXRInteractionProfile() = default;
 };

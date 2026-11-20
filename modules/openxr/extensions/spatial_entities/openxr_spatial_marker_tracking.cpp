@@ -330,29 +330,6 @@ uint32_t OpenXRSpatialComponentMarkerList::get_marker_id(int64_t p_index) const
 	return marker_data[p_index].markerId;
 }
 
-void OpenXRMarkerTracker::set_bounds_size(const Vector2& p_bounds_size)
-{
-	bounds_size = p_bounds_size;
-}
-
-Vector2 OpenXRMarkerTracker::get_bounds_size() const { return bounds_size; }
-
-void OpenXRMarkerTracker::set_marker_type(
-	OpenXRSpatialComponentMarkerList::MarkerType p_marker_type)
-{
-	marker_type = p_marker_type;
-}
-
-OpenXRSpatialComponentMarkerList::MarkerType OpenXRMarkerTracker::get_marker_type() const
-{
-	return marker_type;
-}
-
-void OpenXRMarkerTracker::set_marker_id(uint32_t p_id) { marker_id = p_id; }
-
-
-uint32_t OpenXRMarkerTracker::get_marker_id() const { return marker_id; }
-
 HashMap<String, bool*> OpenXRSpatialMarkerTrackingCapability::get_requested_extensions(
 	XrVersion p_version)
 {
