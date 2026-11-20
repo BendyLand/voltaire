@@ -35,31 +35,31 @@
 
 class AudioEffectDelay;
 
-class AudioEffectDelayInstance : public AudioEffectInstance {
-
-	friend class AudioEffectDelay;
+struct AudioEffectDelayState
+{
 	Ref<AudioEffectDelay> base;
 
 	Vector<AudioFrame> ring_buffer;
 
-	unsigned int ring_buffer_pos;
-	unsigned int ring_buffer_mask;
+	unsigned int ring_buffer_pos = 0;
+	unsigned int ring_buffer_mask = 0;
 
 	/* feedback buffer */
 	Vector<AudioFrame> feedback_buffer;
 
-	unsigned int feedback_buffer_pos;
+	unsigned int feedback_buffer_pos = 0;
 
 	AudioFrame h;
-	void _process_chunk(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count);
 
-public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+	void _process_chunk(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 };
 
-class AudioEffectDelay : public AudioEffect {
+using AudioEffectDelayInstance = AudioEffectDelayState;
 
-	friend class AudioEffectDelayInstance;
+class AudioEffectDelay : public AudioEffect
+{
+	friend struct AudioEffectDelayState;
 	enum {
 		MAX_DELAY_MS = 3000,
 		MAX_TAPS = 2
@@ -81,8 +81,6 @@ class AudioEffectDelay : public AudioEffect {
 	float feedback_delay_ms = 340.0f;
 	float feedback_level = -6.0f;
 	float feedback_lowpass = 16000.0f;
-
-protected:
 
 public:
 	void set_dry(float p_dry);

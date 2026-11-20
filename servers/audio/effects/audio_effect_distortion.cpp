@@ -33,13 +33,12 @@
 #include "core/math/math_funcs.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectDistortionInstance::process(
+void AudioEffectDistortionState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const float* src = (const float*)p_src_frames;
 	float* dst = (float*)p_dst_frames;
 
-	// float lpf_c=std::exp(-Math::TAU*keep_hf_hz.get()/(mix_rate*(float)OVERSAMPLE));
 	float lpf_c =
 		std::exp(-Math::TAU * base->keep_hf_hz / (AudioServer::get_mix_rate()));
 	float lpf_ic = 1.0 - lpf_c;
@@ -100,13 +99,9 @@ void AudioEffectDistortionInstance::process(
 
 Ref<AudioEffectInstance> AudioEffectDistortion::instantiate()
 {
-	Ref<AudioEffectDistortionInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectDistortion>(this);
-	ins->h[0] = 0;
-	ins->h[1] = 0;
-
-	return ins;
+	AudioEffectDistortionState* state = memnew(AudioEffectDistortionState);
+	state->base = Ref<AudioEffectDistortion>(this);
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectDistortion::set_mode(Mode p_mode) { mode = p_mode; }
@@ -132,7 +127,6 @@ void AudioEffectDistortion::set_post_gain(float p_post_gain) { post_gain = p_pos
 
 float AudioEffectDistortion::get_post_gain() const { return post_gain; }
 
-
 AudioEffectDistortion::AudioEffectDistortion()
 {
 	mode = MODE_CLIP;
@@ -141,5 +135,3 @@ AudioEffectDistortion::AudioEffectDistortion()
 	keep_hf_hz = 16000;
 	drive = 0;
 }
-
-

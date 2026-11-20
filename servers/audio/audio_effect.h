@@ -35,23 +35,108 @@
 #include "core/math/audio_frame.h"
 #include "core/types.h"
 
-class AudioEffectInstance : public RefCounted
+#include <type_traits>
+#include <utility>
+
+class AudioEffectInstance final : public RefCounted
 {
-protected:
+public:
+	using ProcessFn = void (*)(void* p_state, const AudioFrame* p_src, AudioFrame* p_dst, int p_frames);
+	using ProcessSilenceFn = bool (*)(const void* p_state);
+	using FreeFn = void (*)(void* p_state);
+
+	void* state = nullptr;
+	ProcessFn process_fn = nullptr;
+	ProcessSilenceFn process_silence_fn = nullptr;
+	FreeFn free_fn = nullptr;
+
+private:
+	const void* state_type_tag = nullptr;
+
+	template <typename T, typename = void>
+	struct HasProcessSilence : std::false_type {};
+
+	template <typename T>
+	struct HasProcessSilence<T, std::void_t<decltype(std::declval<const T&>().process_silence())>> : std::true_type {};
+
+	template <typename T>
+	static const void* _state_type_id()
+	{
+		static const char tag = 0;
+		return &tag;
+	}
+
+	template <typename StateT>
+	static void _default_process(void* p_state, const AudioFrame* p_src, AudioFrame* p_dst, int p_frames)
+	{
+		static_cast<StateT*>(p_state)->process(p_src, p_dst, p_frames);
+	}
+
+	template <typename StateT>
+	static bool _default_process_silence(const void* p_state)
+	{
+		return static_cast<const StateT*>(p_state)->process_silence();
+	}
+
+	template <typename StateT>
+	static void _default_free(void* p_state)
+	{
+		memdelete(static_cast<StateT*>(p_state));
+	}
 
 public:
-	virtual void process(
-		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-	virtual bool process_silence() const;
+	_ALWAYS_INLINE_ void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
+	{
+		if (process_fn && state) {
+			process_fn(state, p_src_frames, p_dst_frames, p_frame_count);
+		}
+	}
+
+	_ALWAYS_INLINE_ bool process_silence() const
+	{
+		return (process_silence_fn && state) ? process_silence_fn(state) : false;
+	}
+
+	template <typename T>
+	_ALWAYS_INLINE_ T* get_state() const
+	{
+		return (state_type_tag == _state_type_id<T>()) ? static_cast<T*>(state) : nullptr;
+	}
+
+	template <typename StateT>
+	static Ref<AudioEffectInstance> create(
+		StateT* p_state,
+		ProcessFn p_process_fn = &_default_process<StateT>,
+		ProcessSilenceFn p_process_silence_fn = nullptr,
+		FreeFn p_free_fn = &_default_free<StateT>)
+	{
+		Ref<AudioEffectInstance> ins;
+		ins.instantiate();
+		ins->state = p_state;
+		ins->state_type_tag = _state_type_id<StateT>();
+		ins->process_fn = p_process_fn;
+		if (p_process_silence_fn) {
+			ins->process_silence_fn = p_process_silence_fn;
+		}
+		else if constexpr (HasProcessSilence<StateT>::value) {
+			ins->process_silence_fn = &_default_process_silence<StateT>;
+		}
+		ins->free_fn = p_free_fn;
+		return ins;
+	}
+
+	~AudioEffectInstance()
+	{
+		if (free_fn && state) {
+			free_fn(state);
+		}
+	}
 };
 
 class AudioEffect : public Resource
 {
-protected:
-
 public:
 	virtual Ref<AudioEffectInstance> instantiate();
 	AudioEffect();
 };
-
-

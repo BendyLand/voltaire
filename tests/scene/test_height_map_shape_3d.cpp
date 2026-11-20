@@ -36,12 +36,12 @@ TEST_FORCE_LINK(test_height_map_shape_3d)
 #ifndef PHYSICS_3D_DISABLED
 
 #include "core/io/image.h"
-#include "scene/resources/3d/height_map_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 
 namespace TestHeightMapShape3D {
 
 TEST_CASE("[SceneTree][HeightMapShape3D] Constructor") {
-	Ref<HeightMapShape3D> height_map_shape = memnew(HeightMapShape3D);
+	Ref<Shape3D> height_map_shape = memnew(Shape3D(Shape3D::SHAPE_HEIGHTMAP));
 	CHECK(height_map_shape->get_map_width() == 2);
 	CHECK(height_map_shape->get_map_depth() == 2);
 	CHECK(height_map_shape->get_map_data().size() == 4);
@@ -50,19 +50,19 @@ TEST_CASE("[SceneTree][HeightMapShape3D] Constructor") {
 }
 
 TEST_CASE("[SceneTree][HeightMapShape3D] set_map_width and get_map_width") {
-	Ref<HeightMapShape3D> height_map_shape = memnew(HeightMapShape3D);
+	Ref<Shape3D> height_map_shape = memnew(Shape3D(Shape3D::SHAPE_HEIGHTMAP));
 	height_map_shape->set_map_width(10);
 	CHECK(height_map_shape->get_map_width() == 10);
 }
 
 TEST_CASE("[SceneTree][HeightMapShape3D] set_map_depth and get_map_depth") {
-	Ref<HeightMapShape3D> height_map_shape = memnew(HeightMapShape3D);
+	Ref<Shape3D> height_map_shape = memnew(Shape3D(Shape3D::SHAPE_HEIGHTMAP));
 	height_map_shape->set_map_depth(15);
 	CHECK(height_map_shape->get_map_depth() == 15);
 }
 
 TEST_CASE("[SceneTree][HeightMapShape3D] set_map_data and get_map_data") {
-	Ref<HeightMapShape3D> height_map_shape = memnew(HeightMapShape3D);
+	Ref<Shape3D> height_map_shape = memnew(Shape3D(Shape3D::SHAPE_HEIGHTMAP));
 	Vector<real_t> map_data;
 	map_data.push_back(1.0);
 	map_data.push_back(2.0);
@@ -73,7 +73,7 @@ TEST_CASE("[SceneTree][HeightMapShape3D] set_map_data and get_map_data") {
 }
 
 TEST_CASE("[SceneTree][HeightMapShape3D] get_min_height") {
-	Ref<HeightMapShape3D> height_map_shape = memnew(HeightMapShape3D);
+	Ref<Shape3D> height_map_shape = memnew(Shape3D(Shape3D::SHAPE_HEIGHTMAP));
 	height_map_shape->set_map_width(3);
 	height_map_shape->set_map_depth(1);
 	height_map_shape->set_map_data(Vector<real_t>{ 1.0, 2.0, 0.5 });
@@ -81,7 +81,7 @@ TEST_CASE("[SceneTree][HeightMapShape3D] get_min_height") {
 }
 
 TEST_CASE("[SceneTree][HeightMapShape3D] get_max_height") {
-	Ref<HeightMapShape3D> height_map_shape = memnew(HeightMapShape3D);
+	Ref<Shape3D> height_map_shape = memnew(Shape3D(Shape3D::SHAPE_HEIGHTMAP));
 	height_map_shape->set_map_width(3);
 	height_map_shape->set_map_depth(1);
 	height_map_shape->set_map_data(Vector<real_t>{ 1.0, 2.0, 0.5 });
@@ -90,7 +90,7 @@ TEST_CASE("[SceneTree][HeightMapShape3D] get_max_height") {
 
 TEST_CASE("[SceneTree][HeightMapShape3D] update_map_data_from_image") {
 	// Create a HeightMapShape3D instance.
-	Ref<HeightMapShape3D> height_map_shape = memnew(HeightMapShape3D);
+	Ref<Shape3D> height_map_shape = memnew(Shape3D(Shape3D::SHAPE_HEIGHTMAP));
 
 	// Create a mock image with FORMAT_R8 and set its data.
 	Vector<uint8_t> image_data;

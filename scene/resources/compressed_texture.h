@@ -173,26 +173,8 @@ public:
 
 	virtual Ref<Image> get_layer_data(int p_layer) const override;
 
-	CompressedTextureLayered(LayeredType p_layered_type);
+	CompressedTextureLayered(LayeredType p_layered_type = LAYERED_TYPE_2D_ARRAY);
 	~CompressedTextureLayered();
-};
-
-class CompressedTexture2DArray : public CompressedTextureLayered
-{
-public:
-	CompressedTexture2DArray() : CompressedTextureLayered(LAYERED_TYPE_2D_ARRAY) {}
-};
-
-class CompressedCubemap : public CompressedTextureLayered
-{
-public:
-	CompressedCubemap() : CompressedTextureLayered(LAYERED_TYPE_CUBEMAP) {}
-};
-
-class CompressedCubemapArray : public CompressedTextureLayered
-{
-public:
-	CompressedCubemapArray() : CompressedTextureLayered(LAYERED_TYPE_CUBEMAP_ARRAY) {}
 };
 
 class CompressedTexture3D : public Texture3D

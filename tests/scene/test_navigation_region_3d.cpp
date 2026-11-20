@@ -59,8 +59,8 @@ TEST_SUITE("[Navigation3D]") {
 		NavigationRegion3D *navigation_region = memnew(NavigationRegion3D);
 		navigation_region->set_navigation_mesh(navigation_mesh);
 		node_3d->add_child(navigation_region);
-		Ref<PlaneMesh> plane_mesh = memnew(PlaneMesh);
-		plane_mesh->set_size(Size2(10.0, 10.0));
+		Ref<PrimitiveMesh> plane_mesh = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
+		plane_mesh->set_plane_size(Size2(10.0, 10.0));
 		MeshInstance3D *mesh_instance = memnew(MeshInstance3D);
 		mesh_instance->set_mesh(plane_mesh);
 		navigation_region->add_child(mesh_instance);

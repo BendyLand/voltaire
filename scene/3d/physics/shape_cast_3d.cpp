@@ -32,7 +32,7 @@
 #include "core/config/engine.h"
 #include "scene/3d/physics/collision_object_3d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/3d/concave_polygon_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
 #include "shape_cast_3d.h"
@@ -274,8 +274,8 @@ void ShapeCast3D::_update_debug_shape_material(bool p_check_collision)
 
 		material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
 		// Use double-sided rendering so that the RayCast can be seen if the camera is inside.
-		material->set_cull_mode(BaseMaterial3D::CULL_DISABLED);
-		material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
+		material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
+		material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 	}
 
 	Color color = debug_shape_custom_color;

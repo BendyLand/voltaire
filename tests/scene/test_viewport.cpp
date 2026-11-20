@@ -45,7 +45,7 @@ TEST_FORCE_LINK(test_viewport)
 #ifndef PHYSICS_2D_DISABLED
 #include "scene/2d/physics/area_2d.h"
 #include "scene/2d/physics/collision_shape_2d.h"
-#include "scene/resources/2d/rectangle_shape_2d.h"
+#include "scene/resources/2d/shape_2d.h"
 #include "servers/physics_2d/physics_server_2d_dummy.h"
 #endif // PHYSICS_2D_DISABLED
 
@@ -1602,7 +1602,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 	struct PickingCollider {
 		TestArea2D *a;
 		CollisionShape2D *c;
-		Ref<RectangleShape2D> r;
+		Ref<Shape2D> r;
 	};
 
 	Window *root = SceneTree::get_root();
@@ -1618,7 +1618,7 @@ TEST_CASE("[SceneTree][Viewport] Physics Picking 2D") {
 		PickingCollider pc;
 		pc.a = memnew(TestArea2D);
 		pc.c = memnew(CollisionShape2D);
-		pc.r.instantiate();
+		pc.r = memnew(Shape2D(Shape2D::SHAPE_RECTANGLE));
 		pc.r->set_size(Size2(150, 150));
 		pc.c->set_shape(pc.r);
 		pc.a->add_child(pc.c);

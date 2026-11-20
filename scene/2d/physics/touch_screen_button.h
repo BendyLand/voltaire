@@ -32,7 +32,7 @@
 #pragma once
 
 #include "scene/2d/node_2d.h"
-#include "scene/resources/2d/rectangle_shape_2d.h"
+#include "scene/resources/2d/shape_2d.h"
 #include "scene/resources/bit_map.h"
 #include "scene/resources/texture.h"
 
@@ -53,7 +53,7 @@ private:
 	bool shape_centered = true;
 	bool shape_visible = true;
 
-	Ref<RectangleShape2D> unit_rect;
+	Ref<Shape2D> unit_rect;
 
 	String action;
 	bool passby_press = false;

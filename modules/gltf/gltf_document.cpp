@@ -593,7 +593,7 @@ static inline void _set_material_texture_name(const Ref<Texture2D>& p_texture, c
 }
 
 void GLTFDocument::spec_gloss_to_rough_metal(
-	Ref<GLTFSpecGloss> r_spec_gloss, Ref<BaseMaterial3D> p_material)
+	Ref<GLTFSpecGloss> r_spec_gloss, Ref<StandardMaterial3D> p_material)
 {
 	if (r_spec_gloss.is_null()) {
 		return;
@@ -652,16 +652,16 @@ void GLTFDocument::spec_gloss_to_rough_metal(
 	rm_img->generate_mipmaps();
 	r_spec_gloss->diffuse_img->generate_mipmaps();
 	p_material->set_texture(
-		BaseMaterial3D::TEXTURE_ALBEDO, ImageTexture::create_from_image(r_spec_gloss->diffuse_img));
+		StandardMaterial3D::TEXTURE_ALBEDO, ImageTexture::create_from_image(r_spec_gloss->diffuse_img));
 	Ref<ImageTexture> rm_image_texture = ImageTexture::create_from_image(rm_img);
 	if (has_roughness) {
-		p_material->set_texture(BaseMaterial3D::TEXTURE_ROUGHNESS, rm_image_texture);
-		p_material->set_roughness_texture_channel(BaseMaterial3D::TEXTURE_CHANNEL_GREEN);
+		p_material->set_texture(StandardMaterial3D::TEXTURE_ROUGHNESS, rm_image_texture);
+		p_material->set_roughness_texture_channel(StandardMaterial3D::TEXTURE_CHANNEL_GREEN);
 	}
 
 	if (has_metal) {
-		p_material->set_texture(BaseMaterial3D::TEXTURE_METALLIC, rm_image_texture);
-		p_material->set_metallic_texture_channel(BaseMaterial3D::TEXTURE_CHANNEL_BLUE);
+		p_material->set_texture(StandardMaterial3D::TEXTURE_METALLIC, rm_image_texture);
+		p_material->set_metallic_texture_channel(StandardMaterial3D::TEXTURE_CHANNEL_BLUE);
 	}
 }
 

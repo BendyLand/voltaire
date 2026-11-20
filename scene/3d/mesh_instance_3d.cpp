@@ -37,8 +37,7 @@
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/3d/physics/collision_shape_3d.h"
 #include "scene/3d/physics/physics_body_3d.h"
-#include "scene/resources/3d/concave_polygon_shape_3d.h"
-#include "scene/resources/3d/convex_polygon_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef NAVIGATION_3D_DISABLED
@@ -133,7 +132,7 @@ Node* MeshInstance3D::create_trimesh_collision_node()
 		return nullptr;
 	}
 
-	Ref<ConcavePolygonShape3D> shape = mesh->create_trimesh_shape();
+	Ref<Shape3D> shape = mesh->create_trimesh_shape();
 	if (shape.is_null()) {
 		return nullptr;
 	}
@@ -151,7 +150,7 @@ Node* MeshInstance3D::create_convex_collision_node(bool p_clean, bool p_simplify
 		return nullptr;
 	}
 
-	Ref<ConvexPolygonShape3D> shape = mesh->create_convex_shape(p_clean, p_simplify);
+	Ref<Shape3D> shape = mesh->create_convex_shape(p_clean, p_simplify);
 	if (shape.is_null()) {
 		return nullptr;
 	}

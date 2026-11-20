@@ -33,7 +33,7 @@
 #include "core/io/marshalls.h"
 #include "core/os/os.h"
 
-void AudioEffectRecordInstance::process(
+void AudioEffectRecordState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	if (!is_recording) {
@@ -53,7 +53,7 @@ void AudioEffectRecordInstance::process(
 	}
 }
 
-void AudioEffectRecordInstance::_update_buffer()
+void AudioEffectRecordState::_update_buffer()
 {
 	// Case: Frames are remaining in the buffer
 	while (ring_buffer_read_pos < ring_buffer_pos) {
@@ -62,15 +62,15 @@ void AudioEffectRecordInstance::_update_buffer()
 	}
 }
 
-void AudioEffectRecordInstance::_update(void* userdata)
+void AudioEffectRecordState::_update(void* userdata)
 {
-	AudioEffectRecordInstance* ins = static_cast<AudioEffectRecordInstance*>(userdata);
+	AudioEffectRecordState* ins = static_cast<AudioEffectRecordState*>(userdata);
 	ins->_update_buffer();
 }
 
-bool AudioEffectRecordInstance::process_silence() const { return true; }
+bool AudioEffectRecordState::process_silence() const { return true; }
 
-void AudioEffectRecordInstance::_io_thread_process()
+void AudioEffectRecordState::_io_thread_process()
 {
 	while (is_recording) {
 		_update_buffer();
@@ -81,7 +81,7 @@ void AudioEffectRecordInstance::_io_thread_process()
 	}
 }
 
-void AudioEffectRecordInstance::_io_store_buffer()
+void AudioEffectRecordState::_io_store_buffer()
 {
 	int to_read = ring_buffer_pos - ring_buffer_read_pos;
 
@@ -97,14 +97,14 @@ void AudioEffectRecordInstance::_io_store_buffer()
 	}
 }
 
-void AudioEffectRecordInstance::_thread_callback(void* _instance)
+void AudioEffectRecordState::_thread_callback(void* _instance)
 {
-	AudioEffectRecordInstance* aeri = reinterpret_cast<AudioEffectRecordInstance*>(_instance);
+	AudioEffectRecordState* aeri = reinterpret_cast<AudioEffectRecordState*>(_instance);
 
 	aeri->_io_thread_process();
 }
 
-void AudioEffectRecordInstance::init()
+void AudioEffectRecordState::init()
 {
 	// Reset recorder status
 	ring_buffer_pos = 0;
@@ -117,7 +117,7 @@ void AudioEffectRecordInstance::init()
 	io_thread.start(_thread_callback, this);
 }
 
-void AudioEffectRecordInstance::finish()
+void AudioEffectRecordState::finish()
 {
 	is_recording = false;
 	if (io_thread.is_started()) {
@@ -127,9 +127,8 @@ void AudioEffectRecordInstance::finish()
 
 Ref<AudioEffectInstance> AudioEffectRecord::instantiate()
 {
-	Ref<AudioEffectRecordInstance> ins;
-	ins.instantiate();
-	ins->is_recording = false;
+	AudioEffectRecordState* state = memnew(AudioEffectRecordState);
+	state->is_recording = false;
 
 	// Reusing the buffer size calculations from audio_effect_delay.cpp.
 	float ring_buffer_max_size = IO_BUFFER_SIZE_MS;
@@ -146,21 +145,24 @@ Ref<AudioEffectInstance> AudioEffectRecord::instantiate()
 	}
 
 	ringbuff_size = 1 << bits;
-	ins->ring_buffer_mask = ringbuff_size - 1;
-	ins->ring_buffer_pos = 0;
+	state->ring_buffer_mask = ringbuff_size - 1;
+	state->ring_buffer_pos = 0;
 
-	ins->ring_buffer.resize(ringbuff_size);
+	state->ring_buffer.resize(ringbuff_size);
 
-	ins->ring_buffer_read_pos = 0;
+	state->ring_buffer_read_pos = 0;
 
 	ensure_thread_stopped();
 	bool is_currently_recording = false;
 	if (current_instance.is_valid()) {
-		is_currently_recording = current_instance->is_recording;
+		if (const AudioEffectRecordState* prev = current_instance->get_state<AudioEffectRecordState>()) {
+			is_currently_recording = prev->is_recording;
+		}
 	}
 	if (is_currently_recording) {
-		ins->init();
+		state->init();
 	}
+	Ref<AudioEffectInstance> ins = AudioEffectInstance::create(state);
 	current_instance = ins;
 
 	return ins;
@@ -169,7 +171,9 @@ Ref<AudioEffectInstance> AudioEffectRecord::instantiate()
 void AudioEffectRecord::ensure_thread_stopped()
 {
 	if (current_instance.is_valid()) {
-		current_instance->finish();
+		if (AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>()) {
+			state->finish();
+		}
 	}
 }
 
@@ -181,11 +185,15 @@ void AudioEffectRecord::set_recording_active(bool p_record)
 			return;
 		}
 		ensure_thread_stopped();
-		current_instance->init();
+		if (AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>()) {
+			state->init();
+		}
 	}
 	else {
 		if (current_instance.is_valid()) {
-			current_instance->is_recording = false;
+			if (AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>()) {
+				state->is_recording = false;
+			}
 		}
 	}
 }
@@ -195,9 +203,8 @@ bool AudioEffectRecord::is_recording_active() const
 	if (current_instance.is_null()) {
 		return false;
 	}
-	else {
-		return current_instance->is_recording;
-	}
+	const AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>();
+	return state ? state->is_recording : false;
 }
 
 void AudioEffectRecord::set_format(AudioStreamWAV::Format p_format) { format = p_format; }
@@ -212,25 +219,26 @@ Ref<AudioStreamWAV> AudioEffectRecord::get_recording() const
 	Vector<uint8_t> dst_data;
 
 	ERR_FAIL_COND_V(current_instance.is_null(), nullptr);
-	ERR_FAIL_COND_V(current_instance->recording_data.is_empty(), nullptr);
+	const AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>();
+	ERR_FAIL_COND_V(!state || state->recording_data.is_empty(), nullptr);
 
 	if (dst_format == AudioStreamWAV::FORMAT_8_BITS) {
-		int data_size = current_instance->recording_data.size();
+		int data_size = state->recording_data.size();
 		dst_data.resize(data_size);
 		uint8_t* w = dst_data.ptrw();
 
 		for (int i = 0; i < data_size; i++) {
-			int8_t v = CLAMP(current_instance->recording_data[i] * 128, -128, 127);
+			int8_t v = CLAMP(state->recording_data[i] * 128, -128, 127);
 			w[i] = v;
 		}
 	}
 	else if (dst_format == AudioStreamWAV::FORMAT_16_BITS) {
-		int data_size = current_instance->recording_data.size();
+		int data_size = state->recording_data.size();
 		dst_data.resize(data_size * 2);
 		uint8_t* w = dst_data.ptrw();
 
 		for (int i = 0; i < data_size; i++) {
-			int16_t v = CLAMP(current_instance->recording_data[i] * 32768, -32768, 32767);
+			int16_t v = CLAMP(state->recording_data[i] * 32768, -32768, 32767);
 			encode_uint16(v, &w[i * 2]);
 		}
 	}
@@ -239,13 +247,13 @@ Ref<AudioStreamWAV> AudioEffectRecord::get_recording() const
 		Vector<float> left;
 		Vector<float> right;
 
-		int tframes = current_instance->recording_data.size() / 2;
+		int tframes = state->recording_data.size() / 2;
 		left.resize(tframes);
 		right.resize(tframes);
 
 		for (int i = 0; i < tframes; i++) {
-			left.set(i, current_instance->recording_data[i * 2 + 0]);
-			right.set(i, current_instance->recording_data[i * 2 + 1]);
+			left.set(i, state->recording_data[i * 2 + 0]);
+			right.set(i, state->recording_data[i * 2 + 1]);
 		}
 
 		Vector<uint8_t> bleft;
@@ -268,10 +276,10 @@ Ref<AudioStreamWAV> AudioEffectRecord::get_recording() const
 	}
 	else if (dst_format == AudioStreamWAV::FORMAT_QOA) {
 		qoa_desc desc = {};
-		desc.samples = current_instance->recording_data.size() / 2;
+		desc.samples = state->recording_data.size() / 2;
 		desc.samplerate = AudioServer::get_mix_rate();
 		desc.channels = 2;
-		AudioStreamWAV::_compress_qoa(current_instance->recording_data, dst_data, &desc);
+		AudioStreamWAV::_compress_qoa(state->recording_data, dst_data, &desc);
 	}
 	else {
 		ERR_PRINT("Format not implemented.");
@@ -290,9 +298,6 @@ Ref<AudioStreamWAV> AudioEffectRecord::get_recording() const
 	return sample;
 }
 
-
 AudioEffectRecord::AudioEffectRecord() { format = AudioStreamWAV::FORMAT_16_BITS; }
 
 AudioEffectRecord::~AudioEffectRecord() { ensure_thread_stopped(); }
-
-

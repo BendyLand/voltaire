@@ -207,12 +207,10 @@ Vector<Ref<Shape3D>> ImporterMesh::convex_decompose(
 	Vector<Vector<Vector3>> decomposed = Mesh::convex_decomposition_function(
 		(real_t*)vertices.ptr(), vertex_count, indices.ptr(), face_count, p_settings, nullptr);
 
-	Vector
-<Ref<Shape3D>> ret;
+	Vector<Ref<Shape3D>> ret;
 
 	for (int i = 0; i < decomposed.size(); i++) {
-		Ref<ConvexPolygonShape3D> shape;
-		shape.instantiate();
+		Ref<Shape3D> shape = memnew(Shape3D(Shape3D::SHAPE_CONVEX_POLYGON));
 		shape->set_points(decomposed[i]);
 		ret.push_back(shape);
 	}
@@ -220,11 +218,11 @@ Vector<Ref<Shape3D>> ImporterMesh::convex_decompose(
 	return ret;
 }
 
-Ref<ConcavePolygonShape3D> ImporterMesh::create_trimesh_shape() const
+Ref<Shape3D> ImporterMesh::create_trimesh_shape() const
 {
 	Vector<Face3> faces = get_faces();
 	if (faces.is_empty()) {
-		return Ref<ConcavePolygonShape3D>();
+		return Ref<Shape3D>();
 	}
 
 	Vector<Vector3> face_points;
@@ -237,7 +235,7 @@ Ref<ConcavePolygonShape3D> ImporterMesh::create_trimesh_shape() const
 		face_points.set(i + 2, f.vertex[2]);
 	}
 
-	Ref<ConcavePolygonShape3D> shape = memnew(ConcavePolygonShape3D);
+	Ref<Shape3D> shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
 	shape->set_faces(face_points);
 	return shape;
 }

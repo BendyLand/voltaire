@@ -36,10 +36,8 @@
 
 class AudioEffectFilter;
 
-class AudioEffectFilterInstance : public AudioEffectInstance
+struct AudioEffectFilterState
 {
-	friend class AudioEffectFilter;
-
 	Ref<AudioEffectFilter> base;
 
 	AudioFilterSW filter;
@@ -49,12 +47,13 @@ class AudioEffectFilterInstance : public AudioEffectInstance
 	void _process_filter(
 		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 
-public:
-	virtual void process(
-		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
+	void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 
-	AudioEffectFilterInstance();
+	AudioEffectFilterState();
 };
+
+using AudioEffectFilterInstance = AudioEffectFilterState;
 
 class AudioEffectFilter : public AudioEffect
 {
@@ -66,7 +65,7 @@ public:
 		FILTER_18DB,
 		FILTER_24DB,
 	};
-	friend class AudioEffectFilterInstance;
+	friend struct AudioEffectFilterState;
 
 	AudioFilterSW::Mode mode;
 	float cutoff;
@@ -75,6 +74,9 @@ public:
 	FilterDB db;
 
 public:
+	void set_filter_mode(AudioFilterSW::Mode p_mode);
+	AudioFilterSW::Mode get_filter_mode() const;
+
 	void set_cutoff(float p_freq);
 	float get_cutoff() const;
 
@@ -91,47 +93,3 @@ public:
 
 	AudioEffectFilter(AudioFilterSW::Mode p_mode = AudioFilterSW::LOWPASS);
 };
-
-class AudioEffectLowPassFilter : public AudioEffectFilter
-{
-public:
-	AudioEffectLowPassFilter() : AudioEffectFilter(AudioFilterSW::LOWPASS) {}
-};
-
-class AudioEffectHighPassFilter : public AudioEffectFilter
-{
-public:
-	AudioEffectHighPassFilter() : AudioEffectFilter(AudioFilterSW::HIGHPASS) {}
-};
-
-class AudioEffectBandPassFilter : public AudioEffectFilter
-{
-public:
-	AudioEffectBandPassFilter() : AudioEffectFilter(AudioFilterSW::BANDPASS) {}
-};
-
-class AudioEffectNotchFilter : public AudioEffectFilter
-{
-public:
-	AudioEffectNotchFilter() : AudioEffectFilter(AudioFilterSW::NOTCH) {}
-};
-
-class AudioEffectBandLimitFilter : public AudioEffectFilter
-{
-public:
-	AudioEffectBandLimitFilter() : AudioEffectFilter(AudioFilterSW::BANDLIMIT) {}
-};
-
-class AudioEffectLowShelfFilter : public AudioEffectFilter
-{
-public:
-	AudioEffectLowShelfFilter() : AudioEffectFilter(AudioFilterSW::LOWSHELF) {}
-};
-
-class AudioEffectHighShelfFilter : public AudioEffectFilter
-{
-public:
-	AudioEffectHighShelfFilter() : AudioEffectFilter(AudioFilterSW::HIGHSHELF) {}
-};
-
-

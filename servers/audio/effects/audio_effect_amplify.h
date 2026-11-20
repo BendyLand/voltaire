@@ -35,22 +35,20 @@
 
 class AudioEffectAmplify;
 
-class AudioEffectAmplifyInstance : public AudioEffectInstance {
-	friend class AudioEffectAmplify;
+struct AudioEffectAmplifyState
+{
 	Ref<AudioEffectAmplify> base;
+	float mix_volume_db = 0.0f;
 
-	float mix_volume_db;
-
-public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 };
 
-class AudioEffectAmplify : public AudioEffect {
+using AudioEffectAmplifyInstance = AudioEffectAmplifyState;
 
-	friend class AudioEffectAmplifyInstance;
+class AudioEffectAmplify : public AudioEffect
+{
+	friend struct AudioEffectAmplifyState;
 	float volume_db;
-
-protected:
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;

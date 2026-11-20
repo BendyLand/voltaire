@@ -31,7 +31,7 @@
 
 #include "audio_effect_panner.h"
 
-void AudioEffectPannerInstance::process(
+void AudioEffectPannerState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	float lvol = CLAMP(1.0 - base->pan, 0, 1);
@@ -45,17 +45,13 @@ void AudioEffectPannerInstance::process(
 
 Ref<AudioEffectInstance> AudioEffectPanner::instantiate()
 {
-	Ref<AudioEffectPannerInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectPanner>(this);
-	return ins;
+	AudioEffectPannerState* state = memnew(AudioEffectPannerState);
+	state->base = Ref<AudioEffectPanner>(this);
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectPanner::set_pan(float p_cpanume) { pan = p_cpanume; }
 
 float AudioEffectPanner::get_pan() const { return pan; }
 
-
 AudioEffectPanner::AudioEffectPanner() { pan = 0; }
-
-

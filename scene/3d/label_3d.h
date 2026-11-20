@@ -253,8 +253,8 @@ public:
 	void set_alpha_hash_scale(float p_hash_scale);
 	float get_alpha_hash_scale() const;
 
-	void set_alpha_antialiasing(BaseMaterial3D::AlphaAntiAliasing p_alpha_aa);
-	BaseMaterial3D::AlphaAntiAliasing get_alpha_antialiasing() const;
+	void set_alpha_antialiasing(StandardMaterial3D::AlphaAntiAliasing p_alpha_aa);
+	StandardMaterial3D::AlphaAntiAliasing get_alpha_antialiasing() const;
 
 	void set_alpha_antialiasing_edge(float p_edge);
 	float get_alpha_antialiasing_edge() const;

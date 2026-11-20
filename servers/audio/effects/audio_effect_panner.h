@@ -35,20 +35,19 @@
 
 class AudioEffectPanner;
 
-class AudioEffectPannerInstance : public AudioEffectInstance {
-	friend class AudioEffectPanner;
+struct AudioEffectPannerState
+{
 	Ref<AudioEffectPanner> base;
 
-public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 };
 
-class AudioEffectPanner : public AudioEffect {
+using AudioEffectPannerInstance = AudioEffectPannerState;
 
-	friend class AudioEffectPannerInstance;
+class AudioEffectPanner : public AudioEffect
+{
+	friend struct AudioEffectPannerState;
 	float pan;
-
-protected:
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;

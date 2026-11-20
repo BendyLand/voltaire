@@ -56,9 +56,9 @@ OpenXRCompositionLayerQuad::~OpenXRCompositionLayerQuad() {}
 
 Ref<Mesh> OpenXRCompositionLayerQuad::_create_fallback_mesh()
 {
-	Ref<QuadMesh> mesh;
-	mesh.instantiate();
-	mesh->set_size(quad_size);
+	Ref<PrimitiveMesh> mesh;
+	mesh.instantiate(PrimitiveMesh::MESH_QUAD);
+	mesh->set_plane_size(quad_size);
 	return mesh;
 }
 

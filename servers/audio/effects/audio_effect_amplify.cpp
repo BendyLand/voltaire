@@ -31,7 +31,7 @@
 
 #include "audio_effect_amplify.h"
 
-void AudioEffectAmplifyInstance::process(
+void AudioEffectAmplifyState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	// multiply volume interpolating to avoid clicks if this changes
@@ -49,11 +49,10 @@ void AudioEffectAmplifyInstance::process(
 
 Ref<AudioEffectInstance> AudioEffectAmplify::instantiate()
 {
-	Ref<AudioEffectAmplifyInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectAmplify>(this);
-	ins->mix_volume_db = volume_db;
-	return ins;
+	AudioEffectAmplifyState* state = memnew(AudioEffectAmplifyState);
+	state->base = Ref<AudioEffectAmplify>(this);
+	state->mix_volume_db = volume_db;
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectAmplify::set_volume_db(float p_volume) { volume_db = p_volume; }
@@ -67,7 +66,4 @@ void AudioEffectAmplify::set_volume_linear(float p_volume)
 
 float AudioEffectAmplify::get_volume_linear() const { return Math::db_to_linear(get_volume_db()); }
 
-
 AudioEffectAmplify::AudioEffectAmplify() { volume_db = 0; }
-
-

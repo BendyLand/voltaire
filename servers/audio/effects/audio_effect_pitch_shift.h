@@ -61,24 +61,24 @@ public:
 
 class AudioEffectPitchShift;
 
-class AudioEffectPitchShiftInstance : public AudioEffectInstance
+struct AudioEffectPitchShiftState
 {
-	friend class AudioEffectPitchShift;
 	Ref<AudioEffectPitchShift> base;
 
 	int fft_size = 0;
 	SMBPitchShift shift_l;
 	SMBPitchShift shift_r;
 
-public:
-	virtual void process(
-		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
+	void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 };
+
+using AudioEffectPitchShiftInstance = AudioEffectPitchShiftState;
 
 class AudioEffectPitchShift : public AudioEffect
 {
 public:
-	friend class AudioEffectPitchShiftInstance;
+	friend struct AudioEffectPitchShiftState;
 
 	enum FFTSize : unsigned int
 	{
@@ -97,8 +97,6 @@ public:
 	float dry = 0.0;
 	bool filter = false;
 
-protected:
-
 public:
 	Ref<AudioEffectInstance> instantiate() override;
 
@@ -111,5 +109,3 @@ public:
 	void set_fft_size(FFTSize);
 	FFTSize get_fft_size() const;
 };
-
-

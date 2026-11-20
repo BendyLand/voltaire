@@ -59,7 +59,7 @@ TEST_CASE("[SceneTree][PanelContainer] StyleBox affects layout and minimum size"
 	Window *root = SceneTree::get_root();
 	root->add_child(panel_container);
 
-	Ref<StyleBoxEmpty> panel_style = memnew(StyleBoxEmpty);
+	Ref<StyleBox> panel_style = memnew(StyleBox(StyleBox::STYLE_EMPTY));
 	panel_style->set_content_margin_individual(5, 6, 7, 8);
 	panel_container->add_theme_style_override("panel", panel_style);
 
@@ -91,7 +91,7 @@ TEST_CASE("[SceneTree][PanelContainer] Multiple children use maximum minimum siz
 	Window *root = SceneTree::get_root();
 	root->add_child(panel_container);
 
-	Ref<StyleBoxEmpty> panel_style = memnew(StyleBoxEmpty);
+	Ref<StyleBox> panel_style = memnew(StyleBox(StyleBox::STYLE_EMPTY));
 	panel_style->set_content_margin_individual(2, 3, 4, 5);
 	panel_container->add_theme_style_override("panel", panel_style);
 

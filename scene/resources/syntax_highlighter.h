@@ -36,30 +36,7 @@
 
 class TextEdit;
 
-class SyntaxHighlighter : public Resource
-{
-private:
-	void _lines_edited_from(int p_from_line, int p_to_line);
-
-protected:
-	TextEdit* text_edit = nullptr;
-
-public:
-	void clear_highlighting_cache() {}
-
-	virtual void _clear_highlighting_cache() {}
-
-	void update_cache();
-
-	virtual void _update_cache() {}
-
-	void set_text_edit(TextEdit* p_text_edit);
-	TextEdit* get_text_edit() const;
-
-	virtual ~SyntaxHighlighter() {}
-};
-
-class CodeHighlighter : public SyntaxHighlighter
+class CodeHighlighter : public Resource
 {
 private:
 	struct ColorRegion
@@ -69,6 +46,8 @@ private:
 		String end_key;
 		bool line_only = false;
 	};
+
+	TextEdit* text_edit = nullptr;
 
 	Vector<ColorRegion> color_regions;
 	HashMap<int, int> color_region_cache;
@@ -81,10 +60,17 @@ private:
 
 	bool uint_suffix_enabled = false;
 
-protected:
+	void _lines_edited_from(int p_from_line, int p_to_line);
+
 public:
-	virtual void _clear_highlighting_cache() override;
-	virtual void _update_cache() override;
+	void clear_highlighting_cache();
+	void _clear_highlighting_cache();
+
+	void update_cache();
+	void _update_cache();
+
+	void set_text_edit(TextEdit* p_text_edit);
+	TextEdit* get_text_edit() const;
 
 	void add_keyword_color(const String& p_keyword, const Color& p_color);
 	void remove_keyword_color(const String& p_keyword);
@@ -121,5 +107,3 @@ public:
 
 	void set_uint_suffix_enabled(bool p_enabled);
 };
-
-

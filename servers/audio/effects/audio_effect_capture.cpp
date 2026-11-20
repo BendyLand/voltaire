@@ -64,7 +64,6 @@ void AudioEffectCapture::clear_buffer()
 	buffer.advance_read(data_left);
 }
 
-
 Ref<AudioEffectInstance> AudioEffectCapture::instantiate()
 {
 	if (!buffer_initialized) {
@@ -78,11 +77,10 @@ Ref<AudioEffectInstance> AudioEffectCapture::instantiate()
 
 	clear_buffer();
 
-	Ref<AudioEffectCaptureInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectCapture>(this);
+	AudioEffectCaptureState* state = memnew(AudioEffectCaptureState);
+	state->base = Ref<AudioEffectCapture>(this);
 
-	return ins;
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectCapture::set_buffer_length(float p_buffer_length_seconds)
@@ -108,7 +106,7 @@ int AudioEffectCapture::get_buffer_length_frames() const
 
 int64_t AudioEffectCapture::get_pushed_frames() const { return pushed_frames.get(); }
 
-void AudioEffectCaptureInstance::process(
+void AudioEffectCaptureState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	RingBuffer<AudioFrame>& buffer = base->buffer;
@@ -129,6 +127,4 @@ void AudioEffectCaptureInstance::process(
 	}
 }
 
-bool AudioEffectCaptureInstance::process_silence() const { return true; }
-
-
+bool AudioEffectCaptureState::process_silence() const { return true; }

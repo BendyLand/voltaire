@@ -32,7 +32,7 @@
 #include "audio_effect_reverb.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectReverbInstance::process(
+void AudioEffectReverbState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	for (int i = 0; i < 2; i++) {
@@ -76,7 +76,7 @@ void AudioEffectReverbInstance::process(
 	}
 }
 
-AudioEffectReverbInstance::AudioEffectReverbInstance()
+AudioEffectReverbState::AudioEffectReverbState()
 {
 	reverb[0].set_mix_rate(AudioServer::get_mix_rate());
 	reverb[0].set_extra_spread_base(0);
@@ -86,10 +86,9 @@ AudioEffectReverbInstance::AudioEffectReverbInstance()
 
 Ref<AudioEffectInstance> AudioEffectReverb::instantiate()
 {
-	Ref<AudioEffectReverbInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectReverb>(this);
-	return ins;
+	AudioEffectReverbState* state = memnew(AudioEffectReverbState);
+	state->base = Ref<AudioEffectReverb>(this);
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectReverb::set_predelay_msec(float p_msec) { predelay = p_msec; }
@@ -127,7 +126,6 @@ float AudioEffectReverb::get_wet() const { return wet; }
 
 float AudioEffectReverb::get_hpf() const { return hpf; }
 
-
 AudioEffectReverb::AudioEffectReverb()
 {
 	predelay = 150;
@@ -139,5 +137,3 @@ AudioEffectReverb::AudioEffectReverb()
 	dry = 1.0;
 	wet = 0.5;
 }
-
-

@@ -43,12 +43,9 @@
 #include "scene/3d/physics/collision_shape_3d.h"
 #include "scene/3d/physics/physics_body_3d.h"
 #include "scene/animation/animation_player.h"
-#include "scene/resources/3d/box_shape_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
 #include "scene/resources/3d/mesh_library.h"
-#include "scene/resources/3d/separation_ray_shape_3d.h"
-#include "scene/resources/3d/sphere_shape_3d.h"
-#include "scene/resources/3d/world_boundary_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/bone_map.h"
 #include "scene/resources/packed_scene.h"
@@ -186,7 +183,7 @@ static void _pre_gen_shape_list(
 {
 	ERR_FAIL_COND_MSG(mesh.is_null(), "Cannot generate shape list with null mesh value.");
 	if (!p_convex) {
-		Ref<ConcavePolygonShape3D> shape = mesh->create_trimesh_shape();
+		Ref<Shape3D> shape = mesh->create_trimesh_shape();
 		r_shape_list.push_back(shape);
 	}
 	else {

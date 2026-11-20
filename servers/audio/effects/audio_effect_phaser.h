@@ -35,28 +35,32 @@
 
 class AudioEffectPhaser;
 
-class AudioEffectPhaserInstance : public AudioEffectInstance {
-	friend class AudioEffectPhaser;
+struct AudioEffectPhaserState
+{
 	Ref<AudioEffectPhaser> base;
 
-	float phase;
+	float phase = 0.0f;
 	AudioFrame h;
 
-	class AllpassDelay {
+	class AllpassDelay
+	{
 		float a, h;
 
 	public:
-		_ALWAYS_INLINE_ void delay(float d) {
+		_ALWAYS_INLINE_ void delay(float d)
+		{
 			a = (1.f - d) / (1.f + d);
 		}
 
-		_ALWAYS_INLINE_ float update(float s) {
+		_ALWAYS_INLINE_ float update(float s)
+		{
 			float y = s * -a + h;
 			h = y * a + s;
 			return y;
 		}
 
-		AllpassDelay() {
+		AllpassDelay()
+		{
 			a = 0;
 			h = 0;
 		}
@@ -64,20 +68,19 @@ class AudioEffectPhaserInstance : public AudioEffectInstance {
 
 	AllpassDelay allpass[2][6];
 
-public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 };
 
-class AudioEffectPhaser : public AudioEffect {
+using AudioEffectPhaserInstance = AudioEffectPhaserState;
 
-	friend class AudioEffectPhaserInstance;
+class AudioEffectPhaser : public AudioEffect
+{
+	friend struct AudioEffectPhaserState;
 	float range_min;
 	float range_max;
 	float rate;
 	float feedback;
 	float depth;
-
-protected:
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;

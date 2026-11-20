@@ -31,7 +31,7 @@
 
 #include "audio_effect_limiter.h"
 
-void AudioEffectLimiterInstance::process(
+void AudioEffectLimiterState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	float threshdb = base->threshold;
@@ -72,11 +72,9 @@ void AudioEffectLimiterInstance::process(
 
 Ref<AudioEffectInstance> AudioEffectLimiter::instantiate()
 {
-	Ref<AudioEffectLimiterInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectLimiter>(this);
-
-	return ins;
+	AudioEffectLimiterState* state = memnew(AudioEffectLimiterState);
+	state->base = Ref<AudioEffectLimiter>(this);
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectLimiter::set_threshold_db(float p_threshold) { threshold = p_threshold; }
@@ -95,7 +93,6 @@ void AudioEffectLimiter::set_soft_clip_ratio(float p_soft_clip) { soft_clip_rati
 
 float AudioEffectLimiter::get_soft_clip_ratio() const { return soft_clip_ratio; }
 
-
 AudioEffectLimiter::AudioEffectLimiter()
 {
 	threshold = 0;
@@ -103,5 +100,3 @@ AudioEffectLimiter::AudioEffectLimiter()
 	soft_clip = 2;
 	soft_clip_ratio = 10;
 }
-
-

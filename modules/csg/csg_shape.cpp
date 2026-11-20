@@ -622,15 +622,15 @@ void CSGShape3D::_update_collision_faces()
 	}
 }
 
-Ref<ConcavePolygonShape3D> CSGShape3D::bake_collision_shape()
+Ref<Shape3D> CSGShape3D::bake_collision_shape()
 {
-	Ref<ConcavePolygonShape3D> baked_collision_shape;
+	Ref<Shape3D> baked_collision_shape;
 	if (is_root_shape() && root_collision_shape.is_valid()) {
-		baked_collision_shape.instantiate();
+		baked_collision_shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
 		baked_collision_shape->set_faces(root_collision_shape->get_faces());
 	}
 	else if (is_root_shape()) {
-		baked_collision_shape.instantiate();
+		baked_collision_shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
 		baked_collision_shape->set_faces(_get_brush_collision_faces());
 	}
 	return baked_collision_shape;

@@ -35,24 +35,29 @@
 
 class AudioEffectCompressor;
 
-class AudioEffectCompressorInstance : public AudioEffectInstance
+struct AudioEffectCompressorState
 {
-	friend class AudioEffectCompressor;
 	Ref<AudioEffectCompressor> base;
 
-	float rundb, averatio, runratio, runmax, maxover, gr_meter;
-	int current_channel;
+	float rundb = 0.0f;
+	float averatio = 0.0f;
+	float runratio = 0.0f;
+	float runmax = 0.0f;
+	float maxover = 0.0f;
+	float gr_meter = 1.0f;
+	int current_channel = -1;
 
-public:
 	void set_current_channel(int p_channel) { current_channel = p_channel; }
 
-	virtual void process(
-		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
+	void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 };
+
+using AudioEffectCompressorInstance = AudioEffectCompressorState;
 
 class AudioEffectCompressor : public AudioEffect
 {
-	friend class AudioEffectCompressorInstance;
+	friend struct AudioEffectCompressorState;
 	float threshold;
 	float ratio;
 	float gain;
@@ -87,5 +92,3 @@ public:
 
 	AudioEffectCompressor();
 };
-
-

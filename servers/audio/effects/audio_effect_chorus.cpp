@@ -33,7 +33,7 @@
 #include "core/math/math_funcs.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectChorusInstance::process(
+void AudioEffectChorusState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	int todo = p_frame_count;
@@ -50,7 +50,7 @@ void AudioEffectChorusInstance::process(
 	}
 }
 
-void AudioEffectChorusInstance::_process_chunk(
+void AudioEffectChorusState::_process_chunk(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	// fill ringbuffer
@@ -152,12 +152,11 @@ void AudioEffectChorusInstance::_process_chunk(
 
 Ref<AudioEffectInstance> AudioEffectChorus::instantiate()
 {
-	Ref<AudioEffectChorusInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectChorus>(this);
+	AudioEffectChorusState* state = memnew(AudioEffectChorusState);
+	state->base = Ref<AudioEffectChorus>(this);
 	for (int i = 0; i < 4; i++) {
-		ins->filter_h[i] = AudioFrame(0, 0);
-		ins->cycles[i] = 0;
+		state->filter_h[i] = AudioFrame(0, 0);
+		state->cycles[i] = 0;
 	}
 
 	float ring_buffer_max_size = AudioEffectChorus::MAX_DELAY_MS + AudioEffectChorus::MAX_DEPTH_MS +
@@ -177,14 +176,14 @@ Ref<AudioEffectInstance> AudioEffectChorus::instantiate()
 	}
 
 	ringbuff_size = 1 << bits;
-	ins->buffer_mask = ringbuff_size - 1;
-	ins->buffer_pos = 0;
-	ins->audio_buffer.resize(ringbuff_size);
+	state->buffer_mask = ringbuff_size - 1;
+	state->buffer_pos = 0;
+	state->audio_buffer.resize(ringbuff_size);
 	for (int i = 0; i < ringbuff_size; i++) {
-		ins->audio_buffer.write[i] = AudioFrame(0, 0);
+		state->audio_buffer.write[i] = AudioFrame(0, 0);
 	}
 
-	return ins;
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectChorus::set_voice_count(int p_voices)
@@ -303,5 +302,3 @@ AudioEffectChorus::AudioEffectChorus()
 	wet = 0.5;
 	dry = 1.0;
 }
-
-

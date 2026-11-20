@@ -32,13 +32,8 @@
 #include "core/math/convex_hull.h"
 #include "gltf_physics_shape.h"
 #include "scene/3d/physics/area_3d.h"
-#include "scene/resources/3d/box_shape_3d.h"
-#include "scene/resources/3d/capsule_shape_3d.h"
-#include "scene/resources/3d/concave_polygon_shape_3d.h"
-#include "scene/resources/3d/convex_polygon_shape_3d.h"
-#include "scene/resources/3d/cylinder_shape_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
-#include "scene/resources/3d/sphere_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 
 
 String GLTFPhysicsShape::get_shape_type() const { return shape_type; }
@@ -84,28 +79,24 @@ Ref<Shape3D> GLTFPhysicsShape::to_resource(bool p_cache_shapes)
 {
 	if (!p_cache_shapes || _shape_cache.is_null()) {
 		if (shape_type == "box") {
-			Ref<BoxShape3D> box;
-			box.instantiate();
+			Ref<Shape3D> box = memnew(Shape3D(Shape3D::SHAPE_BOX));
 			box->set_size(size);
 			_shape_cache = box;
 		}
 		else if (shape_type == "capsule") {
-			Ref<CapsuleShape3D> capsule;
-			capsule.instantiate();
+			Ref<Shape3D> capsule = memnew(Shape3D(Shape3D::SHAPE_CAPSULE));
 			capsule->set_radius(radius);
 			capsule->set_height(height);
 			_shape_cache = capsule;
 		}
 		else if (shape_type == "cylinder") {
-			Ref<CylinderShape3D> cylinder;
-			cylinder.instantiate();
+			Ref<Shape3D> cylinder = memnew(Shape3D(Shape3D::SHAPE_CYLINDER));
 			cylinder->set_radius(radius);
 			cylinder->set_height(height);
 			_shape_cache = cylinder;
 		}
 		else if (shape_type == "sphere") {
-			Ref<SphereShape3D> sphere;
-			sphere.instantiate();
+			Ref<Shape3D> sphere = memnew(Shape3D(Shape3D::SHAPE_SPHERE));
 			sphere->set_radius(radius);
 			_shape_cache = sphere;
 		}
@@ -113,14 +104,14 @@ Ref<Shape3D> GLTFPhysicsShape::to_resource(bool p_cache_shapes)
 			ERR_FAIL_COND_V_MSG(importer_mesh.is_null(), _shape_cache,
 				"GLTFPhysicsShape: Error converting convex hull shape to a shape resource: The "
 				"mesh resource is null.");
-			Ref<ConvexPolygonShape3D> convex = importer_mesh->get_mesh()->create_convex_shape();
+			Ref<Shape3D> convex = importer_mesh->get_mesh()->create_convex_shape();
 			_shape_cache = convex;
 		}
 		else if (shape_type == "trimesh") {
 			ERR_FAIL_COND_V_MSG(importer_mesh.is_null(), _shape_cache,
 				"GLTFPhysicsShape: Error converting concave mesh shape to a shape resource: The "
 				"mesh resource is null.");
-			Ref<ConcavePolygonShape3D> concave = importer_mesh->create_trimesh_shape();
+			Ref<Shape3D> concave = importer_mesh->create_trimesh_shape();
 			_shape_cache = concave;
 		}
 		else {

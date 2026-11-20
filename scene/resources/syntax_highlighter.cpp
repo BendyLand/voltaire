@@ -32,7 +32,13 @@
 #include "scene/gui/text_edit.h"
 #include "syntax_highlighter.h"
 
-void SyntaxHighlighter::update_cache()
+void CodeHighlighter::_clear_highlighting_cache() { color_region_cache.clear(); }
+
+void CodeHighlighter::clear_highlighting_cache() { _clear_highlighting_cache(); }
+
+void CodeHighlighter::_update_cache() { font_color = text_edit->get_font_color(); }
+
+void CodeHighlighter::update_cache()
 {
 	clear_highlighting_cache();
 
@@ -42,11 +48,9 @@ void SyntaxHighlighter::update_cache()
 	_update_cache();
 }
 
-TextEdit* SyntaxHighlighter::get_text_edit() const { return text_edit; }
+void CodeHighlighter::set_text_edit(TextEdit* p_text_edit) { text_edit = p_text_edit; }
 
-void CodeHighlighter::_clear_highlighting_cache() { color_region_cache.clear(); }
-
-void CodeHighlighter::_update_cache() { font_color = text_edit->get_font_color(); }
+TextEdit* CodeHighlighter::get_text_edit() const { return text_edit; }
 
 void CodeHighlighter::add_color_region(
 	const String& p_start_key, const String& p_end_key, const Color& p_color, bool p_line_only)
@@ -139,5 +143,3 @@ void CodeHighlighter::set_member_variable_color(Color p_color)
 }
 
 Color CodeHighlighter::get_member_variable_color() const { return member_color; }
-
-

@@ -34,10 +34,50 @@
 #include "core/io/resource.h"
 
 class ArrayMesh;
+class Image;
 class Material;
 
 class Shape3D : public Resource
 {
+public:
+	enum ShapeType
+	{
+		SHAPE_WORLD_BOUNDARY,
+		SHAPE_SEPARATION_RAY,
+		SHAPE_SPHERE,
+		SHAPE_BOX,
+		SHAPE_CAPSULE,
+		SHAPE_CYLINDER,
+		SHAPE_CONVEX_POLYGON,
+		SHAPE_CONCAVE_POLYGON,
+		SHAPE_HEIGHTMAP,
+	};
+
+private:
+	struct DrawEdge
+	{
+		Vector3 a;
+		Vector3 b;
+
+		static uint32_t hash(const DrawEdge& p_edge)
+		{
+			uint32_t h = hash_murmur3_one_32(HashMapHasherDefault::hash(p_edge.a));
+			return hash_murmur3_one_32(HashMapHasherDefault::hash(p_edge.b), h);
+		}
+
+		bool operator==(const DrawEdge& p_edge) const { return (a == p_edge.a && b == p_edge.b); }
+
+		DrawEdge(const Vector3& p_a = Vector3(), const Vector3& p_b = Vector3())
+		{
+			a = p_a;
+			b = p_b;
+			if (a < b) {
+				SWAP(a, b);
+			}
+		}
+	};
+
+	ShapeType shape_type = SHAPE_BOX;
 	RID shape;
 	real_t custom_bias = 0.0;
 	real_t margin = 0.04;
@@ -51,22 +91,93 @@ class Shape3D : public Resource
 	bool debug_properties_edited = false;
 #endif // DEBUG_ENABLED
 
-protected:
+	// World boundary parameters
+	Plane plane = Plane(0, 1, 0, 0);
 
-	_FORCE_INLINE_ RID get_shape() const { return shape; }
+	// Separation ray parameters
+	float length = 1.0f;
+	bool slide_on_slope = false;
 
-	Shape3D(RID p_shape);
+	// Sphere / Capsule / Cylinder parameters
+	float radius = 0.5f;
+	float height = 2.0f;
 
-	virtual void _update_shape();
+	// Box parameters
+	Vector3 size = Vector3(1, 1, 1);
+
+	// Convex polygon parameters
+	Vector<Vector3> points;
+
+	// Concave polygon parameters
+	Vector<Vector3> faces;
+	bool backface_collision = false;
+
+	// Heightmap parameters
+	int map_width = 2;
+	int map_depth = 2;
+	Vector<real_t> map_data;
+	real_t min_height = 0.0;
+	real_t max_height = 0.0;
+
+	static RID _create_shape_rid(ShapeType p_type);
+	void _ensure_heightmap_initialized();
+	void _update_shape();
 
 public:
+	ShapeType get_shape_type() const { return shape_type; }
+	void set_shape_type(ShapeType p_type);
+
 	virtual RID get_rid() const override { return shape; }
 
+	// World boundary
+	void set_plane(const Plane& p_plane);
+	const Plane& get_plane() const;
+
+	// Separation ray
+	void set_length(float p_length);
+	float get_length() const;
+	void set_slide_on_slope(bool p_active);
+	bool get_slide_on_slope() const;
+
+	// Sphere / Capsule / Cylinder
+	void set_radius(float p_radius);
+	float get_radius() const;
+	void set_height(float p_height);
+	float get_height() const;
+	void set_mid_height(real_t p_mid_height);
+	real_t get_mid_height() const;
+
+	// Box
+	void set_size(const Vector3& p_size);
+	Vector3 get_size() const;
+
+	// Convex polygon
+	void set_points(const Vector<Vector3>& p_points);
+	Vector<Vector3> get_points() const;
+
+	// Concave polygon
+	void set_faces(const Vector<Vector3>& p_faces);
+	Vector<Vector3> get_faces() const;
+	void set_backface_collision_enabled(bool p_enabled);
+	bool is_backface_collision_enabled() const;
+
+	// Heightmap
+	void set_map_width(int p_new);
+	int get_map_width() const;
+	void set_map_depth(int p_new);
+	int get_map_depth() const;
+	void set_map_data(Vector<real_t> p_new);
+	Vector<real_t> get_map_data() const;
+	real_t get_min_height() const;
+	real_t get_max_height() const;
+	void update_map_data_from_image(
+		const Ref<Image>& p_image, real_t p_height_min, real_t p_height_max);
+
 	Ref<ArrayMesh> get_debug_mesh();
-	virtual Vector<Vector3> get_debug_mesh_lines() const = 0; // { return Vector<Vector3>(); }
-	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color& p_modulate) const = 0;
-	/// Returns the radius of a sphere that fully enclose this shape
-	virtual real_t get_enclosing_radius() const = 0;
+	Vector<Vector3> get_debug_mesh_lines() const;
+	Ref<ArrayMesh> get_debug_arraymesh_faces(const Color& p_modulate) const;
+	/// Returns the radius of a sphere that fully encloses this shape.
+	real_t get_enclosing_radius() const;
 
 	void add_vertices_to_array(Vector<Vector3>& array, const Transform3D& p_xform);
 
@@ -86,8 +197,6 @@ public:
 	_FORCE_INLINE_ bool are_debug_properties_edited() const { return debug_properties_edited; }
 #endif // DEBUG_ENABLED
 
-	Shape3D();
+	Shape3D(ShapeType p_type = SHAPE_BOX);
 	~Shape3D();
 };
-
-

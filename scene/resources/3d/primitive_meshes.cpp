@@ -29,18 +29,149 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "primitive_meshes.h"
+
 #include <thirdparty/misc/polypartition.h>
+
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/math/math_funcs.h"
 #include "core/os/main_loop.h"
-#include "primitive_meshes.h"
 #include "scene/resources/theme.h"
 #include "scene/theme/theme_db.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 #define PADDING_REF_SIZE 1024.0
+
+RID PrimitiveMesh::TextMeshState::ensure_shaped_text() const
+{
+	if (!text_rid.is_valid() && TS.is_valid()) {
+		text_rid = TS->create_shaped_text();
+	}
+	return text_rid;
+}
+
+PrimitiveMesh::TextMeshState::~TextMeshState()
+{
+	if ((lines_rid.size() > 0 || text_rid.is_valid()) && TS.is_valid()) {
+		for (int i = 0; i < lines_rid.size(); i++) {
+			TS->free_rid(lines_rid[i]);
+		}
+		if (text_rid.is_valid()) {
+			TS->free_rid(text_rid);
+		}
+	}
+	lines_rid.clear();
+}
+
+PrimitiveMesh::PrimitiveMesh(MeshType p_type)
+{
+	_apply_mesh_type_defaults(p_type);
+}
+
+PrimitiveMesh::~PrimitiveMesh() = default;
+
+void PrimitiveMesh::_apply_mesh_type_defaults(MeshType p_type)
+{
+	mesh_type = p_type;
+	primitive_type = Mesh::PRIMITIVE_TRIANGLES;
+
+	switch (p_type) {
+		case MESH_BOX: {
+			box_prism.size = Vector3(1.0f, 1.0f, 1.0f);
+		} break;
+		case MESH_CAPSULE: {
+			radial.radius = 0.5f;
+			radial.height = 2.0f;
+			radial.radial_segments = 64;
+			radial.rings = 8;
+		} break;
+		case MESH_CYLINDER: {
+			radial.top_radius = 0.5f;
+			radial.bottom_radius = 0.5f;
+			radial.height = 2.0f;
+			radial.radial_segments = 64;
+			radial.rings = 4;
+			radial.cap_top = true;
+			radial.cap_bottom = true;
+		} break;
+		case MESH_PLANE: {
+			plane.size = Size2(2.0f, 2.0f);
+			plane.orientation = FACE_Y;
+		} break;
+		case MESH_QUAD: {
+			plane.size = Size2(1.0f, 1.0f);
+			plane.orientation = FACE_Z;
+		} break;
+		case MESH_PRISM: {
+			box_prism.left_to_right = 0.5f;
+			box_prism.size = Vector3(1.0f, 1.0f, 1.0f);
+		} break;
+		case MESH_SPHERE: {
+			radial.radius = 0.5f;
+			radial.height = 1.0f;
+			radial.radial_segments = 64;
+			radial.rings = 32;
+			radial.is_hemisphere = false;
+		} break;
+		case MESH_TORUS: {
+			radial.inner_radius = 0.5f;
+			radial.outer_radius = 1.0f;
+			radial.rings = 64;
+			radial.ring_segments = 32;
+		} break;
+		case MESH_POINT: {
+			primitive_type = Mesh::PRIMITIVE_POINTS;
+		} break;
+		case MESH_TUBE_TRAIL: {
+			radial.radius = 0.5f;
+			radial.cap_top = true;
+			radial.cap_bottom = true;
+			trail.radial_steps = 8;
+			trail.sections = 5;
+			trail.section_length = 0.2f;
+			trail.section_rings = 3;
+		} break;
+		case MESH_RIBBON_TRAIL: {
+			trail.ribbon_size = 1.0f;
+			trail.sections = 5;
+			trail.section_length = 0.2f;
+			trail.section_segments = 3;
+			trail.ribbon_shape = SHAPE_CROSS;
+		} break;
+		case MESH_TEXT: {
+			_ensure_text_state();
+		} break;
+	}
+}
+
+void PrimitiveMesh::set_mesh_type(MeshType p_type)
+{
+	if (mesh_type == p_type) {
+		return;
+	}
+	_apply_mesh_type_defaults(p_type);
+	_update_lightmap_size();
+	request_update();
+}
+
+PrimitiveMesh::TextMeshState& PrimitiveMesh::_ensure_text_state()
+{
+	if (!text_state) {
+		text_state = std::make_unique<TextMeshState>();
+	}
+	return *text_state;
+}
+
+const PrimitiveMesh::TextMeshState& PrimitiveMesh::_get_text_state() const
+{
+	if (text_state) {
+		return *text_state;
+	}
+	static const TextMeshState default_state;
+	return default_state;
+}
 
 void PrimitiveMesh::request_update()
 {
@@ -134,6 +265,19 @@ RID PrimitiveMesh::get_rid() const
 	return mesh;
 }
 
+void PrimitiveMesh::set_material(const Ref<Material>& p_material)
+{
+	if (material == p_material) {
+		return;
+	}
+	material = p_material;
+	if (!pending_request && mesh.is_valid()) {
+		Renderer::mesh_surface_set_material(
+			mesh, 0, material.is_null() ? RID() : material->get_rid());
+	}
+	emit_changed();
+}
+
 Ref<Material> PrimitiveMesh::get_material() const { return material; }
 
 void PrimitiveMesh::set_custom_aabb(const AABB& p_custom)
@@ -142,7 +286,9 @@ void PrimitiveMesh::set_custom_aabb(const AABB& p_custom)
 		return;
 	}
 	custom_aabb = p_custom;
-	Renderer::mesh_set_custom_aabb(mesh, custom_aabb);
+	if (mesh.is_valid()) {
+		Renderer::mesh_set_custom_aabb(mesh, custom_aabb);
+	}
 	emit_changed();
 }
 
@@ -191,7 +337,7 @@ Vector2 PrimitiveMesh::get_uv2_scale(Vector2 p_margin_scale) const
 	uv2_scale.y = p_margin_scale.y * uv2_padding /
 				  (lightmap_size.y == 0.0 ? PADDING_REF_SIZE : lightmap_size.y);
 
-	// Inverse it to turn our margin into a scale
+	// Inverse it to turn our margin into a scale.
 	uv2_scale = Vector2(1.0, 1.0) - uv2_scale;
 
 	return uv2_scale;
@@ -199,951 +345,803 @@ Vector2 PrimitiveMesh::get_uv2_scale(Vector2 p_margin_scale) const
 
 float PrimitiveMesh::get_lightmap_texel_size() const { return texel_size; }
 
-void CapsuleMesh::_update_lightmap_size()
+void PrimitiveMesh::_on_settings_changed()
 {
-	if (get_add_uv2()) {
-		// size must have changed, update lightmap size hint
-		Size2i _lightmap_size_hint;
-		float padding = get_uv2_padding();
-
-		float radial_length = radius * Math::PI * 0.5; // circumference of 90 degree bend
-		float vertical_length =
-			radial_length * 2 + (height - 2.0 * radius); // total vertical length
-
-		_lightmap_size_hint.x = MAX(1.0, 4.0 * radial_length / texel_size) + padding;
-		_lightmap_size_hint.y = MAX(1.0, vertical_length / texel_size) + padding;
-
-		set_lightmap_size_hint(_lightmap_size_hint);
-	}
-}
-
-void CapsuleMesh::set_radius(const float p_radius)
-{
-	if (Math::is_equal_approx(radius, p_radius)) {
-		return;
-	}
-
-	radius = p_radius;
-	if (radius > height * 0.5) {
-		height = radius * 2.0;
-	}
 	_update_lightmap_size();
 	request_update();
 }
 
-float CapsuleMesh::get_radius() const { return radius; }
-
-void CapsuleMesh::set_height(const float p_height)
+void PrimitiveMesh::_update_lightmap_size()
 {
-	if (Math::is_equal_approx(height, p_height)) {
+	if (!get_add_uv2()) {
 		return;
 	}
 
-	height = p_height;
-	if (radius > height * 0.5) {
-		radius = height * 0.5;
-	}
-	_update_lightmap_size();
-	request_update();
-}
+	Size2i lightmap_hint;
+	float padding = get_uv2_padding();
 
-float CapsuleMesh::get_height() const { return height; }
+	switch (mesh_type) {
+		case MESH_BOX: {
+			float width = (box_prism.size.x + box_prism.size.z) / texel_size;
+			float length =
+				(box_prism.size.y + box_prism.size.y + MAX(box_prism.size.x, box_prism.size.z)) /
+				texel_size;
 
-void CapsuleMesh::set_radial_segments(const int p_segments)
-{
-	if (radial_segments == p_segments) {
-		return;
-	}
+			lightmap_hint.x = MAX(1.0, width) + 2.0 * padding;
+			lightmap_hint.y = MAX(1.0, length) + 3.0 * padding;
+			set_lightmap_size_hint(lightmap_hint);
+		} break;
+		case MESH_CAPSULE: {
+			float radial_length = radial.radius * Math::PI * 0.5;
+			float vertical_length =
+				radial_length * 2 + (radial.height - 2.0 * radial.radius);
 
-	radial_segments = p_segments > 4 ? p_segments : 4;
-	request_update();
-}
+			lightmap_hint.x = MAX(1.0, 4.0 * radial_length / texel_size) + padding;
+			lightmap_hint.y = MAX(1.0, vertical_length / texel_size) + padding;
+			set_lightmap_size_hint(lightmap_hint);
+		} break;
+		case MESH_CYLINDER: {
+			float top_circumference = radial.top_radius * Math::PI * 2.0;
+			float bottom_circumference = radial.bottom_radius * Math::PI * 2.0;
 
-int CapsuleMesh::get_radial_segments() const { return radial_segments; }
+			float width = MAX(top_circumference, bottom_circumference) / texel_size + padding;
+			width = MAX(
+				width, (((radial.top_radius + radial.bottom_radius) / texel_size) + padding) * 2.0);
+			lightmap_hint.x = MAX(1.0, width);
 
-void CapsuleMesh::set_rings(const int p_rings)
-{
-	if (rings == p_rings) {
-		return;
-	}
+			float height =
+				((radial.height + (MAX(radial.top_radius, radial.bottom_radius) * 2.0)) /
+					texel_size) +
+				(2.0 * padding);
+			lightmap_hint.y = MAX(1.0, height);
+			set_lightmap_size_hint(lightmap_hint);
+		} break;
+		case MESH_PLANE:
+		case MESH_QUAD: {
+			lightmap_hint.x = MAX(1.0, (plane.size.x / texel_size) + padding);
+			lightmap_hint.y = MAX(1.0, (plane.size.y / texel_size) + padding);
+			set_lightmap_size_hint(lightmap_hint);
+		} break;
+		case MESH_PRISM: {
+			float width = (box_prism.size.x + box_prism.size.z) / texel_size;
+			float length = (box_prism.size.y + box_prism.size.y + box_prism.size.z) / texel_size;
 
-	ERR_FAIL_COND(p_rings < 0);
-	rings = p_rings;
-	request_update();
-}
-
-int CapsuleMesh::get_rings() const { return rings; }
-
-/**
-  BoxMesh
-*/
-
-void BoxMesh::_update_lightmap_size()
-{
-	if (get_add_uv2()) {
-		// size must have changed, update lightmap size hint
-		Size2i _lightmap_size_hint;
-		float padding = get_uv2_padding();
-
-		float width = (size.x + size.z) / texel_size;
-		float length = (size.y + size.y + MAX(size.x, size.z)) / texel_size;
-
-		_lightmap_size_hint.x = MAX(1.0, width) + 2.0 * padding;
-		_lightmap_size_hint.y = MAX(1.0, length) + 3.0 * padding;
-
-		set_lightmap_size_hint(_lightmap_size_hint);
-	}
-}
-
-void BoxMesh::set_size(const Vector3& p_size)
-{
-	if (p_size.is_equal_approx(size)) {
-		return;
-	}
-
-	size = p_size;
-	_update_lightmap_size();
-	request_update();
-}
-
-Vector3 BoxMesh::get_size() const { return size; }
-
-void BoxMesh::set_subdivide_width(const int p_divisions)
-{
-	if (p_divisions == subdivide_w) {
-		return;
-	}
-
-	subdivide_w = p_divisions > 0 ? p_divisions : 0;
-	request_update();
-}
-
-int BoxMesh::get_subdivide_width() const { return subdivide_w; }
-
-void BoxMesh::set_subdivide_height(const int p_divisions)
-{
-	if (p_divisions == subdivide_h) {
-		return;
-	}
-
-	subdivide_h = p_divisions > 0 ? p_divisions : 0;
-	request_update();
-}
-
-int BoxMesh::get_subdivide_height() const { return subdivide_h; }
-
-void BoxMesh::set_subdivide_depth(const int p_divisions)
-{
-	if (p_divisions == subdivide_d) {
-		return;
-	}
-
-	subdivide_d = p_divisions > 0 ? p_divisions : 0;
-	request_update();
-}
-
-int BoxMesh::get_subdivide_depth() const { return subdivide_d; }
-
-/**
-	CylinderMesh
-*/
-
-void CylinderMesh::_update_lightmap_size()
-{
-	if (get_add_uv2()) {
-		// size must have changed, update lightmap size hint
-		Size2i _lightmap_size_hint;
-		float padding = get_uv2_padding();
-
-		float top_circumference = top_radius * Math::PI * 2.0;
-		float bottom_circumference = bottom_radius * Math::PI * 2.0;
-
-		float _width = MAX(top_circumference, bottom_circumference) / texel_size + padding;
-		_width = MAX(_width, (((top_radius + bottom_radius) / texel_size) + padding) *
-								 2.0); // this is extremely unlikely to be larger, will only happen
-									   // if padding is larger then our diameter.
-		_lightmap_size_hint.x = MAX(1.0, _width);
-
-		float _height =
-			((height + (MAX(top_radius, bottom_radius) * 2.0)) / texel_size) + (2.0 * padding);
-
-		_lightmap_size_hint.y = MAX(1.0, _height);
-
-		set_lightmap_size_hint(_lightmap_size_hint);
+			lightmap_hint.x = MAX(1.0, width) + 2.0 * padding;
+			lightmap_hint.y = MAX(1.0, length) + 3.0 * padding;
+			set_lightmap_size_hint(lightmap_hint);
+		} break;
+		case MESH_SPHERE: {
+			float width = radial.radius * Math::TAU;
+			lightmap_hint.x = MAX(1.0, (width / texel_size) + padding);
+			float height = (radial.is_hemisphere ? 1.0 : 0.5) * radial.height * Math::PI;
+			lightmap_hint.y = MAX(1.0, (height / texel_size) + padding);
+			set_lightmap_size_hint(lightmap_hint);
+		} break;
+		case MESH_TORUS: {
+			float min_radius = radial.inner_radius;
+			float max_radius = radial.outer_radius;
+			if (min_radius > max_radius) {
+				SWAP(min_radius, max_radius);
+			}
+			float torus_radius = (max_radius - min_radius) * 0.5;
+			float width = max_radius * Math::TAU;
+			lightmap_hint.x = MAX(1.0, (width / texel_size) + padding);
+			float height = torus_radius * Math::TAU;
+			lightmap_hint.y = MAX(1.0, (height / texel_size) + padding);
+			set_lightmap_size_hint(lightmap_hint);
+		} break;
+		case MESH_POINT:
+		case MESH_TUBE_TRAIL:
+		case MESH_RIBBON_TRAIL:
+		case MESH_TEXT:
+			break;
 	}
 }
 
-void CylinderMesh::set_top_radius(const float p_radius)
+void PrimitiveMesh::_update() const
 {
-	if (Math::is_equal_approx(p_radius, top_radius)) {
-		return;
-	}
+	pending_request = false;
 
-	top_radius = p_radius;
-	_update_lightmap_size();
-	request_update();
-}
-
-float CylinderMesh::get_top_radius() const { return top_radius; }
-
-void CylinderMesh::set_bottom_radius(const float p_radius)
-{
-	if (Math::is_equal_approx(p_radius, bottom_radius)) {
-		return;
-	}
-
-	bottom_radius = p_radius;
-	_update_lightmap_size();
-	request_update();
-}
-
-float CylinderMesh::get_bottom_radius() const { return bottom_radius; }
-
-void CylinderMesh::set_height(const float p_height)
-{
-	if (Math::is_equal_approx(p_height, height)) {
-		return;
-	}
-
-	height = p_height;
-	_update_lightmap_size();
-	request_update();
-}
-
-float CylinderMesh::get_height() const { return height; }
-
-void CylinderMesh::set_radial_segments(const int p_segments)
-{
-	if (p_segments == radial_segments) {
-		return;
-	}
-
-	radial_segments = p_segments > 4 ? p_segments : 4;
-	request_update();
-}
-
-int CylinderMesh::get_radial_segments() const { return radial_segments; }
-
-void CylinderMesh::set_rings(const int p_rings)
-{
-	if (p_rings == rings) {
-		return;
-	}
-
-	ERR_FAIL_COND(p_rings < 0);
-	rings = p_rings;
-	request_update();
-}
-
-int CylinderMesh::get_rings() const { return rings; }
-
-void CylinderMesh::set_cap_top(bool p_cap_top)
-{
-	if (p_cap_top == cap_top) {
-		return;
-	}
-
-	cap_top = p_cap_top;
-	request_update();
-}
-
-bool CylinderMesh::is_cap_top() const { return cap_top; }
-
-void CylinderMesh::set_cap_bottom(bool p_cap_bottom)
-{
-	if (p_cap_bottom == cap_bottom) {
-		return;
-	}
-
-	cap_bottom = p_cap_bottom;
-	request_update();
-}
-
-bool CylinderMesh::is_cap_bottom() const { return cap_bottom; }
-
-/**
-  PlaneMesh
-*/
-
-void PlaneMesh::_update_lightmap_size()
-{
-	if (get_add_uv2()) {
-		// size must have changed, update lightmap size hint
-		Size2i _lightmap_size_hint;
-		float padding = get_uv2_padding();
-
-		_lightmap_size_hint.x = MAX(1.0, (size.x / texel_size) + padding);
-		_lightmap_size_hint.y = MAX(1.0, (size.y / texel_size) + padding);
-
-		set_lightmap_size_hint(_lightmap_size_hint);
+	switch (mesh_type) {
+		case MESH_BOX:
+		case MESH_PRISM: {
+			aabb = AABB(-box_prism.size * 0.5f, box_prism.size);
+		} break;
+		case MESH_CAPSULE: {
+			aabb = AABB(
+				Vector3(-radial.radius, -radial.height * 0.5f, -radial.radius),
+				Vector3(radial.radius * 2.0f, radial.height, radial.radius * 2.0f));
+		} break;
+		case MESH_CYLINDER: {
+			float max_r = MAX(radial.top_radius, radial.bottom_radius);
+			aabb = AABB(
+				Vector3(-max_r, -radial.height * 0.5f, -max_r),
+				Vector3(max_r * 2.0f, radial.height, max_r * 2.0f));
+		} break;
+		case MESH_PLANE:
+		case MESH_QUAD: {
+			switch (plane.orientation) {
+				case FACE_X:
+					aabb = AABB(
+						Vector3(0.0f, -plane.size.y * 0.5f, -plane.size.x * 0.5f) +
+							plane.center_offset,
+						Vector3(0.0f, plane.size.y, plane.size.x));
+					break;
+				case FACE_Y:
+					aabb = AABB(
+						Vector3(-plane.size.x * 0.5f, 0.0f, -plane.size.y * 0.5f) +
+							plane.center_offset,
+						Vector3(plane.size.x, 0.0f, plane.size.y));
+					break;
+				case FACE_Z:
+					aabb = AABB(
+						Vector3(-plane.size.x * 0.5f, -plane.size.y * 0.5f, 0.0f) +
+							plane.center_offset,
+						Vector3(plane.size.x, plane.size.y, 0.0f));
+					break;
+			}
+		} break;
+		case MESH_SPHERE: {
+			if (radial.is_hemisphere) {
+				aabb = AABB(
+					Vector3(-radial.radius, 0.0f, -radial.radius),
+					Vector3(radial.radius * 2.0f, radial.height, radial.radius * 2.0f));
+			} else {
+				aabb = AABB(
+					Vector3(-radial.radius, -radial.height * 0.5f, -radial.radius),
+					Vector3(radial.radius * 2.0f, radial.height, radial.radius * 2.0f));
+			}
+		} break;
+		case MESH_TORUS: {
+			float max_r = MAX(radial.inner_radius, radial.outer_radius);
+			float min_r = MIN(radial.inner_radius, radial.outer_radius);
+			float h = (max_r - min_r) * 0.5f;
+			aabb = AABB(Vector3(-max_r, -h, -max_r), Vector3(max_r * 2.0f, h * 2.0f, max_r * 2.0f));
+		} break;
+		case MESH_POINT: {
+			aabb = AABB();
+		} break;
+		case MESH_TUBE_TRAIL: {
+			float total_depth = trail.section_length * trail.sections;
+			aabb = AABB(
+				Vector3(-radial.radius, -total_depth * 0.5f, -radial.radius),
+				Vector3(radial.radius * 2.0f, total_depth, radial.radius * 2.0f));
+		} break;
+		case MESH_RIBBON_TRAIL: {
+			float total_depth = trail.section_length * trail.sections;
+			float half_s = trail.ribbon_size * 0.5f;
+			if (trail.ribbon_shape == SHAPE_CROSS) {
+				aabb = AABB(
+					Vector3(-half_s, -total_depth * 0.5f, -half_s),
+					Vector3(trail.ribbon_size, total_depth, trail.ribbon_size));
+			} else {
+				aabb = AABB(
+					Vector3(-half_s, -total_depth * 0.5f, 0.0f),
+					Vector3(trail.ribbon_size, total_depth, 0.0f));
+			}
+		} break;
+		case MESH_TEXT: {
+			aabb = AABB();
+		} break;
 	}
 }
 
-void PlaneMesh::set_size(const Size2& p_size)
+int PrimitiveMesh::get_builtin_bind_pose_count() const
 {
-	if (p_size == size) {
-		return;
-	}
-	size = p_size;
-	_update_lightmap_size();
-	request_update();
-}
-
-Size2 PlaneMesh::get_size() const { return size; }
-
-void PlaneMesh::set_subdivide_width(const int p_divisions)
-{
-	if (p_divisions == subdivide_w || (subdivide_w == 0 && p_divisions < 0)) {
-		return;
-	}
-	subdivide_w = p_divisions > 0 ? p_divisions : 0;
-	request_update();
-}
-
-int PlaneMesh::get_subdivide_width() const { return subdivide_w; }
-
-void PlaneMesh::set_subdivide_depth(const int p_divisions)
-{
-	if (p_divisions == subdivide_d || (subdivide_d == 0 && p_divisions < 0)) {
-		return;
-	}
-	subdivide_d = p_divisions > 0 ? p_divisions : 0;
-	request_update();
-}
-
-int PlaneMesh::get_subdivide_depth() const { return subdivide_d; }
-
-void PlaneMesh::set_center_offset(const Vector3 p_offset)
-{
-	if (p_offset.is_equal_approx(center_offset)) {
-		return;
-	}
-	center_offset = p_offset;
-	request_update();
-}
-
-Vector3 PlaneMesh::get_center_offset() const { return center_offset; }
-
-void PlaneMesh::set_orientation(const Orientation p_orientation)
-{
-	if (p_orientation == orientation) {
-		return;
-	}
-	orientation = p_orientation;
-	request_update();
-}
-
-PlaneMesh::Orientation PlaneMesh::get_orientation() const { return orientation; }
-
-/**
-  PrismMesh
-*/
-
-void PrismMesh::_update_lightmap_size()
-{
-	if (get_add_uv2()) {
-		// size must have changed, update lightmap size hint
-		Size2i _lightmap_size_hint;
-		float padding = get_uv2_padding();
-
-		// left_to_right does not effect the surface area of the prism so we ignore that.
-		// TODO we could combine the two triangles and save some space but we need to re-align the
-		// uv1 and adjust the tangent.
-
-		float width = (size.x + size.z) / texel_size;
-		float length = (size.y + size.y + size.z) / texel_size;
-
-		_lightmap_size_hint.x = MAX(1.0, width) + 2.0 * padding;
-		_lightmap_size_hint.y = MAX(1.0, length) + 3.0 * padding;
-
-		set_lightmap_size_hint(_lightmap_size_hint);
+	switch (mesh_type) {
+		case MESH_TUBE_TRAIL:
+		case MESH_RIBBON_TRAIL:
+			return trail.sections + 1;
+		default:
+			return 0;
 	}
 }
 
-void PrismMesh::set_left_to_right(const float p_left_to_right)
+Transform3D PrimitiveMesh::get_builtin_bind_pose(int p_index) const
 {
-	if (Math::is_equal_approx(p_left_to_right, left_to_right)) {
-		return;
-	}
-	left_to_right = p_left_to_right;
-	request_update();
-}
+	switch (mesh_type) {
+		case MESH_TUBE_TRAIL:
+		case MESH_RIBBON_TRAIL: {
+			float depth = trail.section_length * trail.sections;
 
-float PrismMesh::get_left_to_right() const { return left_to_right; }
+			Transform3D xform;
+			xform.origin.y = depth / 2.0f - trail.section_length * float(p_index);
+			xform.origin.y = -xform.origin.y; // bind is an inverse transform, so negate y
 
-void PrismMesh::set_size(const Vector3& p_size)
-{
-	if (p_size.is_equal_approx(size)) {
-		return;
-	}
-	size = p_size;
-	_update_lightmap_size();
-	request_update();
-}
-
-Vector3 PrismMesh::get_size() const { return size; }
-
-void PrismMesh::set_subdivide_width(const int p_divisions)
-{
-	if (p_divisions == subdivide_w || (p_divisions < 0 && subdivide_w == 0)) {
-		return;
-	}
-	subdivide_w = p_divisions > 0 ? p_divisions : 0;
-	request_update();
-}
-
-int PrismMesh::get_subdivide_width() const { return subdivide_w; }
-
-void PrismMesh::set_subdivide_height(const int p_divisions)
-{
-	if (p_divisions == subdivide_h || (p_divisions < 0 && subdivide_h == 0)) {
-		return;
-	}
-	subdivide_h = p_divisions > 0 ? p_divisions : 0;
-	request_update();
-}
-
-int PrismMesh::get_subdivide_height() const { return subdivide_h; }
-
-void PrismMesh::set_subdivide_depth(const int p_divisions)
-{
-	if (p_divisions == subdivide_d || (p_divisions < 0 && subdivide_d == 0)) {
-		return;
-	}
-	subdivide_d = p_divisions > 0 ? p_divisions : 0;
-	request_update();
-}
-
-int PrismMesh::get_subdivide_depth() const { return subdivide_d; }
-
-/**
-  SphereMesh
-*/
-
-void SphereMesh::_update_lightmap_size()
-{
-	if (get_add_uv2()) {
-		// size must have changed, update lightmap size hint
-		Size2i _lightmap_size_hint;
-		float padding = get_uv2_padding();
-
-		float _width = radius * Math::TAU;
-		_lightmap_size_hint.x = MAX(1.0, (_width / texel_size) + padding);
-		float _height = (is_hemisphere ? 1.0 : 0.5) * height *
-						Math::PI; // note, with hemisphere height is our radius, while with a full
-								  // sphere it is the diameter..
-		_lightmap_size_hint.y = MAX(1.0, (_height / texel_size) + padding);
-
-		set_lightmap_size_hint(_lightmap_size_hint);
-	}
-}
-
-void SphereMesh::set_radius(const float p_radius)
-{
-	if (Math::is_equal_approx(p_radius, radius)) {
-		return;
-	}
-	radius = p_radius;
-	_update_lightmap_size();
-	request_update();
-}
-
-float SphereMesh::get_radius() const { return radius; }
-
-void SphereMesh::set_height(const float p_height)
-{
-	if (Math::is_equal_approx(height, p_height)) {
-		return;
-	}
-	height = p_height;
-	_update_lightmap_size();
-	request_update();
-}
-
-float SphereMesh::get_height() const { return height; }
-
-void SphereMesh::set_radial_segments(const int p_radial_segments)
-{
-	if (p_radial_segments == radial_segments || (radial_segments == 4 && p_radial_segments < 4)) {
-		return;
-	}
-	radial_segments = p_radial_segments > 4 ? p_radial_segments : 4;
-	request_update();
-}
-
-int SphereMesh::get_radial_segments() const { return radial_segments; }
-
-void SphereMesh::set_rings(const int p_rings)
-{
-	if (p_rings == rings) {
-		return;
-	}
-	ERR_FAIL_COND(p_rings < 1);
-	rings = p_rings;
-	request_update();
-}
-
-int SphereMesh::get_rings() const { return rings; }
-
-void SphereMesh::set_is_hemisphere(const bool p_is_hemisphere)
-{
-	if (p_is_hemisphere == is_hemisphere) {
-		return;
-	}
-	is_hemisphere = p_is_hemisphere;
-	_update_lightmap_size();
-	request_update();
-}
-
-bool SphereMesh::get_is_hemisphere() const { return is_hemisphere; }
-
-/**
-  TorusMesh
-*/
-
-void TorusMesh::_update_lightmap_size()
-{
-	if (get_add_uv2()) {
-		// size must have changed, update lightmap size hint
-		Size2i _lightmap_size_hint;
-		float padding = get_uv2_padding();
-
-		float min_radius = inner_radius;
-		float max_radius = outer_radius;
-
-		if (min_radius > max_radius) {
-			SWAP(min_radius, max_radius);
+			return xform;
 		}
-
-		float radius = (max_radius - min_radius) * 0.5;
-
-		float _width = max_radius * Math::TAU;
-		_lightmap_size_hint.x = MAX(1.0, (_width / texel_size) + padding);
-		float _height = radius * Math::TAU;
-		_lightmap_size_hint.y = MAX(1.0, (_height / texel_size) + padding);
-
-		set_lightmap_size_hint(_lightmap_size_hint);
+		default:
+			return Transform3D();
 	}
 }
 
-void TorusMesh::set_inner_radius(const float p_inner_radius)
+// Box / Prism / Plane / Quad parameters.
+
+void PrimitiveMesh::set_size(const Vector3& p_size)
 {
-	if (Math::is_equal_approx(p_inner_radius, inner_radius)) {
+	if (p_size.is_equal_approx(box_prism.size)) {
 		return;
 	}
-	inner_radius = p_inner_radius;
+
+	box_prism.size = p_size;
+	_update_lightmap_size();
 	request_update();
 }
 
-float TorusMesh::get_inner_radius() const { return inner_radius; }
+Vector3 PrimitiveMesh::get_size() const { return box_prism.size; }
 
-void TorusMesh::set_outer_radius(const float p_outer_radius)
+void PrimitiveMesh::set_plane_size(const Size2& p_size)
 {
-	if (Math::is_equal_approx(p_outer_radius, outer_radius)) {
+	if (p_size == plane.size) {
 		return;
 	}
-	outer_radius = p_outer_radius;
+	plane.size = p_size;
+	_update_lightmap_size();
 	request_update();
 }
 
-float TorusMesh::get_outer_radius() const { return outer_radius; }
+Size2 PrimitiveMesh::get_plane_size() const { return plane.size; }
 
-void TorusMesh::set_rings(const int p_rings)
+void PrimitiveMesh::set_subdivide_width(int p_divisions)
 {
-	if (p_rings == rings) {
+	if (p_divisions == box_prism.subdivide_w || (box_prism.subdivide_w == 0 && p_divisions < 0)) {
 		return;
 	}
-	ERR_FAIL_COND(p_rings < 3);
-	rings = p_rings;
+	box_prism.subdivide_w = p_divisions > 0 ? p_divisions : 0;
 	request_update();
 }
 
-int TorusMesh::get_rings() const { return rings; }
+int PrimitiveMesh::get_subdivide_width() const { return box_prism.subdivide_w; }
 
-void TorusMesh::set_ring_segments(const int p_ring_segments)
+void PrimitiveMesh::set_subdivide_height(int p_divisions)
 {
-	if (p_ring_segments == ring_segments) {
+	if (p_divisions == box_prism.subdivide_h || (box_prism.subdivide_h == 0 && p_divisions < 0)) {
+		return;
+	}
+	box_prism.subdivide_h = p_divisions > 0 ? p_divisions : 0;
+	request_update();
+}
+
+int PrimitiveMesh::get_subdivide_height() const { return box_prism.subdivide_h; }
+
+void PrimitiveMesh::set_subdivide_depth(int p_divisions)
+{
+	if (p_divisions == box_prism.subdivide_d || (box_prism.subdivide_d == 0 && p_divisions < 0)) {
+		return;
+	}
+	box_prism.subdivide_d = p_divisions > 0 ? p_divisions : 0;
+	request_update();
+}
+
+int PrimitiveMesh::get_subdivide_depth() const { return box_prism.subdivide_d; }
+
+void PrimitiveMesh::set_center_offset(const Vector3& p_offset)
+{
+	if (p_offset.is_equal_approx(plane.center_offset)) {
+		return;
+	}
+	plane.center_offset = p_offset;
+	request_update();
+}
+
+Vector3 PrimitiveMesh::get_center_offset() const { return plane.center_offset; }
+
+void PrimitiveMesh::set_orientation(Orientation p_orientation)
+{
+	if (p_orientation == plane.orientation) {
+		return;
+	}
+	plane.orientation = p_orientation;
+	request_update();
+}
+
+PrimitiveMesh::Orientation PrimitiveMesh::get_orientation() const { return plane.orientation; }
+
+void PrimitiveMesh::set_left_to_right(float p_left_to_right)
+{
+	if (Math::is_equal_approx(p_left_to_right, box_prism.left_to_right)) {
+		return;
+	}
+	box_prism.left_to_right = p_left_to_right;
+	request_update();
+}
+
+float PrimitiveMesh::get_left_to_right() const { return box_prism.left_to_right; }
+
+// Capsule / Cylinder / Sphere / Torus parameters.
+
+void PrimitiveMesh::set_radius(float p_radius)
+{
+	if (Math::is_equal_approx(radial.radius, p_radius)) {
+		return;
+	}
+
+	radial.radius = p_radius;
+	if (mesh_type == MESH_CAPSULE && radial.radius > radial.height * 0.5f) {
+		radial.height = radial.radius * 2.0f;
+	}
+	_update_lightmap_size();
+	request_update();
+}
+
+float PrimitiveMesh::get_radius() const { return radial.radius; }
+
+void PrimitiveMesh::set_top_radius(float p_radius)
+{
+	if (Math::is_equal_approx(p_radius, radial.top_radius)) {
+		return;
+	}
+
+	radial.top_radius = p_radius;
+	_update_lightmap_size();
+	request_update();
+}
+
+float PrimitiveMesh::get_top_radius() const { return radial.top_radius; }
+
+void PrimitiveMesh::set_bottom_radius(float p_radius)
+{
+	if (Math::is_equal_approx(p_radius, radial.bottom_radius)) {
+		return;
+	}
+
+	radial.bottom_radius = p_radius;
+	_update_lightmap_size();
+	request_update();
+}
+
+float PrimitiveMesh::get_bottom_radius() const { return radial.bottom_radius; }
+
+void PrimitiveMesh::set_inner_radius(float p_inner_radius)
+{
+	if (Math::is_equal_approx(p_inner_radius, radial.inner_radius)) {
+		return;
+	}
+	radial.inner_radius = p_inner_radius;
+	_update_lightmap_size();
+	request_update();
+}
+
+float PrimitiveMesh::get_inner_radius() const { return radial.inner_radius; }
+
+void PrimitiveMesh::set_outer_radius(float p_outer_radius)
+{
+	if (Math::is_equal_approx(p_outer_radius, radial.outer_radius)) {
+		return;
+	}
+	radial.outer_radius = p_outer_radius;
+	_update_lightmap_size();
+	request_update();
+}
+
+float PrimitiveMesh::get_outer_radius() const { return radial.outer_radius; }
+
+void PrimitiveMesh::set_height(float p_height)
+{
+	if (Math::is_equal_approx(radial.height, p_height)) {
+		return;
+	}
+
+	radial.height = p_height;
+	if (mesh_type == MESH_CAPSULE && radial.radius > radial.height * 0.5f) {
+		radial.radius = radial.height * 0.5f;
+	}
+	_update_lightmap_size();
+	request_update();
+}
+
+float PrimitiveMesh::get_height() const { return radial.height; }
+
+void PrimitiveMesh::set_radial_segments(int p_segments)
+{
+	if (p_segments == radial.radial_segments || (radial.radial_segments == 4 && p_segments < 4)) {
+		return;
+	}
+	radial.radial_segments = p_segments > 4 ? p_segments : 4;
+	request_update();
+}
+
+int PrimitiveMesh::get_radial_segments() const { return radial.radial_segments; }
+
+void PrimitiveMesh::set_rings(int p_rings)
+{
+	if (p_rings == radial.rings) {
+		return;
+	}
+	if (mesh_type == MESH_TORUS) {
+		ERR_FAIL_COND(p_rings < 3);
+	} else if (mesh_type == MESH_SPHERE) {
+		ERR_FAIL_COND(p_rings < 1);
+	} else {
+		ERR_FAIL_COND(p_rings < 0);
+	}
+	radial.rings = p_rings;
+	request_update();
+}
+
+int PrimitiveMesh::get_rings() const { return radial.rings; }
+
+void PrimitiveMesh::set_ring_segments(int p_ring_segments)
+{
+	if (p_ring_segments == radial.ring_segments) {
 		return;
 	}
 	ERR_FAIL_COND(p_ring_segments < 3);
-	ring_segments = p_ring_segments;
+	radial.ring_segments = p_ring_segments;
 	request_update();
 }
 
-int TorusMesh::get_ring_segments() const { return ring_segments; }
+int PrimitiveMesh::get_ring_segments() const { return radial.ring_segments; }
 
-PointMesh::PointMesh() { primitive_type = PRIMITIVE_POINTS; }
-
-void TubeTrailMesh::set_radius(const float p_radius)
+void PrimitiveMesh::set_cap_top(bool p_cap_top)
 {
-	if (Math::is_equal_approx(p_radius, radius)) {
+	if (p_cap_top == radial.cap_top) {
 		return;
 	}
-	radius = p_radius;
+	radial.cap_top = p_cap_top;
 	request_update();
 }
 
-float TubeTrailMesh::get_radius() const { return radius; }
+bool PrimitiveMesh::is_cap_top() const { return radial.cap_top; }
 
-void TubeTrailMesh::set_radial_steps(const int p_radial_steps)
+void PrimitiveMesh::set_cap_bottom(bool p_cap_bottom)
 {
-	if (p_radial_steps == radial_steps) {
+	if (p_cap_bottom == radial.cap_bottom) {
+		return;
+	}
+	radial.cap_bottom = p_cap_bottom;
+	request_update();
+}
+
+bool PrimitiveMesh::is_cap_bottom() const { return radial.cap_bottom; }
+
+void PrimitiveMesh::set_is_hemisphere(bool p_is_hemisphere)
+{
+	if (p_is_hemisphere == radial.is_hemisphere) {
+		return;
+	}
+	radial.is_hemisphere = p_is_hemisphere;
+	_update_lightmap_size();
+	request_update();
+}
+
+bool PrimitiveMesh::get_is_hemisphere() const { return radial.is_hemisphere; }
+
+// TubeTrail / RibbonTrail parameters.
+
+void PrimitiveMesh::set_radial_steps(int p_radial_steps)
+{
+	if (p_radial_steps == trail.radial_steps) {
 		return;
 	}
 	ERR_FAIL_COND(p_radial_steps < 3 || p_radial_steps > 128);
-	radial_steps = p_radial_steps;
+	trail.radial_steps = p_radial_steps;
 	request_update();
 }
 
-int TubeTrailMesh::get_radial_steps() const { return radial_steps; }
+int PrimitiveMesh::get_radial_steps() const { return trail.radial_steps; }
 
-void TubeTrailMesh::set_sections(const int p_sections)
+void PrimitiveMesh::set_sections(int p_sections)
 {
-	if (p_sections == sections) {
+	if (p_sections == trail.sections) {
 		return;
 	}
 	ERR_FAIL_COND(p_sections < 2 || p_sections > 128);
-	sections = p_sections;
+	trail.sections = p_sections;
 	request_update();
 }
 
-int TubeTrailMesh::get_sections() const { return sections; }
+int PrimitiveMesh::get_sections() const { return trail.sections; }
 
-void TubeTrailMesh::set_section_length(float p_section_length)
+void PrimitiveMesh::set_section_length(float p_section_length)
 {
-	if (p_section_length == section_length) {
+	if (p_section_length == trail.section_length) {
 		return;
 	}
-	section_length = p_section_length;
+	trail.section_length = p_section_length;
 	request_update();
 }
 
-float TubeTrailMesh::get_section_length() const { return section_length; }
+float PrimitiveMesh::get_section_length() const { return trail.section_length; }
 
-void TubeTrailMesh::set_section_rings(const int p_section_rings)
+void PrimitiveMesh::set_section_rings(int p_section_rings)
 {
-	if (p_section_rings == section_rings) {
+	if (p_section_rings == trail.section_rings) {
 		return;
 	}
 	ERR_FAIL_COND(p_section_rings < 1 || p_section_rings > 1024);
-	section_rings = p_section_rings;
+	trail.section_rings = p_section_rings;
 	request_update();
 }
 
-int TubeTrailMesh::get_section_rings() const { return section_rings; }
+int PrimitiveMesh::get_section_rings() const { return trail.section_rings; }
 
-void TubeTrailMesh::set_cap_top(bool p_cap_top)
+void PrimitiveMesh::set_section_segments(int p_section_segments)
 {
-	if (p_cap_top == cap_top) {
-		return;
-	}
-	cap_top = p_cap_top;
-	request_update();
-}
-
-bool TubeTrailMesh::is_cap_top() const { return cap_top; }
-
-void TubeTrailMesh::set_cap_bottom(bool p_cap_bottom)
-{
-	if (p_cap_bottom == cap_bottom) {
-		return;
-	}
-	cap_bottom = p_cap_bottom;
-	request_update();
-}
-
-bool TubeTrailMesh::is_cap_bottom() const { return cap_bottom; }
-
-Ref<Curve> TubeTrailMesh::get_curve() const { return curve; }
-
-void TubeTrailMesh::_curve_changed() { request_update(); }
-
-int TubeTrailMesh::get_builtin_bind_pose_count() const { return sections + 1; }
-
-Transform3D TubeTrailMesh::get_builtin_bind_pose(int p_index) const
-{
-	float depth = section_length * sections;
-
-	Transform3D xform;
-	xform.origin.y = depth / 2.0 - section_length * float(p_index);
-	xform.origin.y = -xform.origin.y; // bind is an inverse transform, so negate y
-
-	return xform;
-}
-
-TubeTrailMesh::TubeTrailMesh() {}
-
-// RIBBON TRAIL
-
-void RibbonTrailMesh::set_shape(Shape p_shape)
-{
-	if (p_shape == shape) {
-		return;
-	}
-	shape = p_shape;
-	request_update();
-}
-
-RibbonTrailMesh::Shape RibbonTrailMesh::get_shape() const { return shape; }
-
-void RibbonTrailMesh::set_size(const float p_size)
-{
-	if (Math::is_equal_approx(p_size, size)) {
-		return;
-	}
-	size = p_size;
-	request_update();
-}
-
-float RibbonTrailMesh::get_size() const { return size; }
-
-void RibbonTrailMesh::set_sections(const int p_sections)
-{
-	if (p_sections == sections) {
-		return;
-	}
-	ERR_FAIL_COND(p_sections < 2 || p_sections > 128);
-	sections = p_sections;
-	request_update();
-}
-
-int RibbonTrailMesh::get_sections() const { return sections; }
-
-void RibbonTrailMesh::set_section_length(float p_section_length)
-{
-	if (p_section_length == section_length) {
-		return;
-	}
-	section_length = p_section_length;
-	request_update();
-}
-
-float RibbonTrailMesh::get_section_length() const { return section_length; }
-
-void RibbonTrailMesh::set_section_segments(const int p_section_segments)
-{
-	if (p_section_segments == section_segments) {
+	if (p_section_segments == trail.section_segments) {
 		return;
 	}
 	ERR_FAIL_COND(p_section_segments < 1 || p_section_segments > 1024);
-	section_segments = p_section_segments;
+	trail.section_segments = p_section_segments;
 	request_update();
 }
 
-int RibbonTrailMesh::get_section_segments() const { return section_segments; }
+int PrimitiveMesh::get_section_segments() const { return trail.section_segments; }
 
-Ref<Curve> RibbonTrailMesh::get_curve() const { return curve; }
-
-void RibbonTrailMesh::_curve_changed() { request_update(); }
-
-int RibbonTrailMesh::get_builtin_bind_pose_count() const { return sections + 1; }
-
-Transform3D RibbonTrailMesh::get_builtin_bind_pose(int p_index) const
+void PrimitiveMesh::set_ribbon_size(float p_size)
 {
-	float depth = section_length * sections;
-
-	Transform3D xform;
-	xform.origin.y = depth / 2.0 - section_length * float(p_index);
-	xform.origin.y = -xform.origin.y; // bind is an inverse transform, so negate y
-
-	return xform;
-}
-
-RibbonTrailMesh::RibbonTrailMesh() {}
-
-TextMesh::TextMesh()
-{
-	primitive_type = PRIMITIVE_TRIANGLES;
-	text_rid = TS->create_shaped_text();
-}
-
-TextMesh::~TextMesh()
-{
-	for (int i = 0; i < lines_rid.size(); i++) {
-		TS->free_rid(lines_rid[i]);
+	if (Math::is_equal_approx(p_size, trail.ribbon_size)) {
+		return;
 	}
-	lines_rid.clear();
-
-	TS->free_rid(text_rid);
+	trail.ribbon_size = p_size;
+	request_update();
 }
 
-void TextMesh::set_horizontal_alignment(HorizontalAlignment p_alignment)
+float PrimitiveMesh::get_ribbon_size() const { return trail.ribbon_size; }
+
+void PrimitiveMesh::set_ribbon_shape(RibbonShape p_shape)
+{
+	if (p_shape == trail.ribbon_shape) {
+		return;
+	}
+	trail.ribbon_shape = p_shape;
+	request_update();
+}
+
+PrimitiveMesh::RibbonShape PrimitiveMesh::get_ribbon_shape() const { return trail.ribbon_shape; }
+
+void PrimitiveMesh::set_curve(const Ref<Curve>& p_curve)
+{
+	if (trail.curve == p_curve) {
+		return;
+	}
+	trail.curve = p_curve;
+	request_update();
+}
+
+Ref<Curve> PrimitiveMesh::get_curve() const { return trail.curve; }
+
+void PrimitiveMesh::_curve_changed() { request_update(); }
+
+// Text parameters.
+
+void PrimitiveMesh::_font_changed()
+{
+	if (text_state) {
+		text_state->dirty_font = true;
+		text_state->dirty_cache = true;
+	}
+	request_update();
+}
+
+void PrimitiveMesh::set_horizontal_alignment(HorizontalAlignment p_alignment)
 {
 	ERR_FAIL_INDEX((int)p_alignment, 4);
-	if (horizontal_alignment != p_alignment) {
-		if (horizontal_alignment == HORIZONTAL_ALIGNMENT_FILL ||
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.horizontal_alignment != p_alignment) {
+		if (ts.horizontal_alignment == HORIZONTAL_ALIGNMENT_FILL ||
 			p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
-			dirty_lines = true;
+			ts.dirty_lines = true;
 		}
-		horizontal_alignment = p_alignment;
+		ts.horizontal_alignment = p_alignment;
 		request_update();
 	}
 }
 
-HorizontalAlignment TextMesh::get_horizontal_alignment() const { return horizontal_alignment; }
+HorizontalAlignment PrimitiveMesh::get_horizontal_alignment() const
+{
+	return _get_text_state().horizontal_alignment;
+}
 
-void TextMesh::set_vertical_alignment(VerticalAlignment p_alignment)
+void PrimitiveMesh::set_vertical_alignment(VerticalAlignment p_alignment)
 {
 	ERR_FAIL_INDEX((int)p_alignment, 4);
-	if (vertical_alignment != p_alignment) {
-		vertical_alignment = p_alignment;
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.vertical_alignment != p_alignment) {
+		ts.vertical_alignment = p_alignment;
 		request_update();
 	}
 }
 
-VerticalAlignment TextMesh::get_vertical_alignment() const { return vertical_alignment; }
-
-String TextMesh::get_text() const { return text; }
-
-Ref<Font> TextMesh::get_font() const { return font_override; }
-
-void TextMesh::set_font_size(int p_size)
+VerticalAlignment PrimitiveMesh::get_vertical_alignment() const
 {
-	if (font_size != p_size) {
-		font_size = CLAMP(p_size, 1, 127);
-		dirty_font = true;
-		dirty_cache = true;
-		request_update();
-	}
+	return _get_text_state().vertical_alignment;
 }
 
-int TextMesh::get_font_size() const { return font_size; }
-
-void TextMesh::set_line_spacing(float p_line_spacing)
+void PrimitiveMesh::set_text(const String& p_string)
 {
-	if (line_spacing != p_line_spacing) {
-		line_spacing = p_line_spacing;
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.text != p_string) {
+		ts.text = p_string;
+		ts.xl_text = p_string;
+		ts.dirty_text = true;
 		request_update();
 	}
 }
 
-float TextMesh::get_line_spacing() const { return line_spacing; }
+String PrimitiveMesh::get_text() const { return _get_text_state().text; }
 
-void TextMesh::set_autowrap_mode(TextServer::AutowrapMode p_mode)
+void PrimitiveMesh::set_font(const Ref<Font>& p_font)
 {
-	if (autowrap_mode != p_mode) {
-		autowrap_mode = p_mode;
-		dirty_lines = true;
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.font_override != p_font) {
+		ts.font_override = p_font;
+		ts.dirty_font = true;
+		ts.dirty_cache = true;
 		request_update();
 	}
 }
 
-TextServer::AutowrapMode TextMesh::get_autowrap_mode() const { return autowrap_mode; }
+Ref<Font> PrimitiveMesh::get_font() const { return _get_text_state().font_override; }
 
-void TextMesh::set_justification_flags(uint32_t p_flags)
+Ref<Font> PrimitiveMesh::_get_font_or_default() const
 {
-	if (jst_flags != p_flags) {
-		jst_flags = p_flags;
-		dirty_lines = true;
-		request_update();
+	if (text_state && text_state->font_override.is_valid()) {
+		return text_state->font_override;
 	}
+	return ThemeDB::get_fallback_font();
 }
 
-uint32_t TextMesh::get_justification_flags() const { return jst_flags; }
-
-void TextMesh::set_depth(real_t p_depth)
+void PrimitiveMesh::set_font_size(int p_size)
 {
-	if (depth != p_depth) {
-		depth = MAX(p_depth, 0.0);
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.font_size != p_size) {
+		ts.font_size = CLAMP(p_size, 1, 127);
+		ts.dirty_font = true;
+		ts.dirty_cache = true;
 		request_update();
 	}
 }
 
-real_t TextMesh::get_depth() const { return depth; }
+int PrimitiveMesh::get_font_size() const { return _get_text_state().font_size; }
 
-void TextMesh::set_width(real_t p_width)
+void PrimitiveMesh::set_line_spacing(float p_line_spacing)
 {
-	if (width != p_width) {
-		width = p_width;
-		dirty_lines = true;
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.line_spacing != p_line_spacing) {
+		ts.line_spacing = p_line_spacing;
 		request_update();
 	}
 }
 
-real_t TextMesh::get_width() const { return width; }
+float PrimitiveMesh::get_line_spacing() const { return _get_text_state().line_spacing; }
 
-void TextMesh::set_pixel_size(real_t p_amount)
+void PrimitiveMesh::set_autowrap_mode(TextServer::AutowrapMode p_mode)
 {
-	if (pixel_size != p_amount) {
-		pixel_size = CLAMP(p_amount, 0.0001, 128.0);
-		dirty_cache = true;
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.autowrap_mode != p_mode) {
+		ts.autowrap_mode = p_mode;
+		ts.dirty_lines = true;
 		request_update();
 	}
 }
 
-real_t TextMesh::get_pixel_size() const { return pixel_size; }
-
-void TextMesh::set_offset(const Point2& p_offset)
+TextServer::AutowrapMode PrimitiveMesh::get_autowrap_mode() const
 {
-	if (lbl_offset != p_offset) {
-		lbl_offset = p_offset;
-		request_update();
-	}
+	return _get_text_state().autowrap_mode;
 }
 
-Point2 TextMesh::get_offset() const { return lbl_offset; }
-
-void TextMesh::set_curve_step(real_t p_step)
+void PrimitiveMesh::set_justification_flags(uint32_t p_flags)
 {
-	if (curve_step != p_step) {
-		curve_step = CLAMP(p_step, 0.1, 10.0);
-		dirty_cache = true;
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.jst_flags != p_flags) {
+		ts.jst_flags = p_flags;
+		ts.dirty_lines = true;
 		request_update();
 	}
 }
 
-real_t TextMesh::get_curve_step() const { return curve_step; }
+uint32_t PrimitiveMesh::get_justification_flags() const { return _get_text_state().jst_flags; }
 
-void TextMesh::set_text_direction(TextServer::Direction p_text_direction)
+void PrimitiveMesh::set_depth(real_t p_depth)
+{
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.depth != p_depth) {
+		ts.depth = MAX(p_depth, 0.0);
+		request_update();
+	}
+}
+
+real_t PrimitiveMesh::get_depth() const { return _get_text_state().depth; }
+
+void PrimitiveMesh::set_width(real_t p_width)
+{
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.width != p_width) {
+		ts.width = p_width;
+		ts.dirty_lines = true;
+		request_update();
+	}
+}
+
+real_t PrimitiveMesh::get_width() const { return _get_text_state().width; }
+
+void PrimitiveMesh::set_pixel_size(real_t p_amount)
+{
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.pixel_size != p_amount) {
+		ts.pixel_size = CLAMP(p_amount, 0.0001, 128.0);
+		ts.dirty_cache = true;
+		request_update();
+	}
+}
+
+real_t PrimitiveMesh::get_pixel_size() const { return _get_text_state().pixel_size; }
+
+void PrimitiveMesh::set_offset(const Point2& p_offset)
+{
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.lbl_offset != p_offset) {
+		ts.lbl_offset = p_offset;
+		request_update();
+	}
+}
+
+Point2 PrimitiveMesh::get_offset() const { return _get_text_state().lbl_offset; }
+
+void PrimitiveMesh::set_curve_step(real_t p_step)
+{
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.curve_step != p_step) {
+		ts.curve_step = CLAMP(p_step, 0.1, 10.0);
+		ts.dirty_cache = true;
+		request_update();
+	}
+}
+
+real_t PrimitiveMesh::get_curve_step() const { return _get_text_state().curve_step; }
+
+void PrimitiveMesh::set_text_direction(TextServer::Direction p_text_direction)
 {
 	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
-	if (text_direction != p_text_direction) {
-		text_direction = p_text_direction;
-		dirty_text = true;
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.text_direction != p_text_direction) {
+		ts.text_direction = p_text_direction;
+		ts.dirty_text = true;
 		request_update();
 	}
 }
 
-TextServer::Direction TextMesh::get_text_direction() const { return text_direction; }
-
-void TextMesh::set_language(const String& p_language)
+TextServer::Direction PrimitiveMesh::get_text_direction() const
 {
-	if (language != p_language) {
-		language = p_language;
-		dirty_text = true;
+	return _get_text_state().text_direction;
+}
+
+void PrimitiveMesh::set_language(const String& p_language)
+{
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.language != p_language) {
+		ts.language = p_language;
+		ts.dirty_text = true;
 		request_update();
 	}
 }
 
-String TextMesh::get_language() const { return language; }
+String PrimitiveMesh::get_language() const { return _get_text_state().language; }
 
-void TextMesh::set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser)
+void PrimitiveMesh::set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser)
 {
-	if (st_parser != p_parser) {
-		st_parser = p_parser;
-		dirty_text = true;
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.st_parser != p_parser) {
+		ts.st_parser = p_parser;
+		ts.dirty_text = true;
 		request_update();
 	}
 }
 
-TextServer::StructuredTextParser TextMesh::get_structured_text_bidi_override() const
+TextServer::StructuredTextParser PrimitiveMesh::get_structured_text_bidi_override() const
 {
-	return st_parser;
+	return _get_text_state().st_parser;
 }
 
-void TextMesh::set_uppercase(bool p_uppercase)
+void PrimitiveMesh::set_uppercase(bool p_uppercase)
 {
-	if (uppercase != p_uppercase) {
-		uppercase = p_uppercase;
-		dirty_text = true;
+	TextMeshState& ts = _ensure_text_state();
+	if (ts.uppercase != p_uppercase) {
+		ts.uppercase = p_uppercase;
+		ts.dirty_text = true;
 		request_update();
 	}
 }
 
-bool TextMesh::is_uppercase() const { return uppercase; }
-
-void PrimitiveMesh::_update() const {}
-
-
-
-void PrimitiveMesh::set_material(Ref<Material> const&) {}
+bool PrimitiveMesh::is_uppercase() const { return _get_text_state().uppercase; }

@@ -33,7 +33,7 @@
 #include "core/math/math_funcs.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectDelayInstance::process(
+void AudioEffectDelayState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	int todo = p_frame_count;
@@ -50,7 +50,7 @@ void AudioEffectDelayInstance::process(
 	}
 }
 
-void AudioEffectDelayInstance::_process_chunk(
+void AudioEffectDelayState::_process_chunk(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	float main_level_f = base->dry;
@@ -117,9 +117,8 @@ void AudioEffectDelayInstance::_process_chunk(
 
 Ref<AudioEffectInstance> AudioEffectDelay::instantiate()
 {
-	Ref<AudioEffectDelayInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectDelay>(this);
+	AudioEffectDelayState* state = memnew(AudioEffectDelayState);
+	state->base = Ref<AudioEffectDelay>(this);
 
 	float ring_buffer_max_size = MAX_DELAY_MS + 100; // add 100ms of extra room, just in case
 	ring_buffer_max_size /= 1000.0;					 // convert to seconds
@@ -135,17 +134,17 @@ Ref<AudioEffectInstance> AudioEffectDelay::instantiate()
 	}
 
 	ringbuff_size = 1 << bits;
-	ins->ring_buffer_mask = ringbuff_size - 1;
-	ins->ring_buffer_pos = 0;
+	state->ring_buffer_mask = ringbuff_size - 1;
+	state->ring_buffer_pos = 0;
 
-	ins->ring_buffer.resize(ringbuff_size);
-	ins->feedback_buffer.resize(ringbuff_size);
+	state->ring_buffer.resize(ringbuff_size);
+	state->feedback_buffer.resize(ringbuff_size);
 
-	ins->feedback_buffer_pos = 0;
+	state->feedback_buffer_pos = 0;
 
-	ins->h = AudioFrame(0, 0);
+	state->h = AudioFrame(0, 0);
 
-	return ins;
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectDelay::set_dry(float p_dry) { dry = p_dry; }
@@ -202,6 +201,3 @@ void AudioEffectDelay::set_feedback_lowpass(float p_lowpass)
 }
 
 float AudioEffectDelay::get_feedback_lowpass() const { return feedback_lowpass; }
-
-
-

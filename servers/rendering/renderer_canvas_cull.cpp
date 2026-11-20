@@ -38,7 +38,7 @@
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/storage/texture_storage.h"
 
-// Use the same antialiasing feather size as StyleBoxFlat's default
+// Use the same antialiasing feather size as flat StyleBox's default
 // (but doubled, as it's specified for both sides here).
 // This value is empirically determined to provide good antialiasing quality
 // while not making lines appear too soft.

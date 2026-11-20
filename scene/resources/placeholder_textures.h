@@ -98,24 +98,6 @@ public:
 	virtual Ref<Image> get_layer_data(int p_layer) const override;
 	virtual RID get_rid() const override;
 
-	PlaceholderTextureLayered(LayeredType p_type);
+	PlaceholderTextureLayered(LayeredType p_type = LAYERED_TYPE_2D_ARRAY);
 	~PlaceholderTextureLayered();
-};
-
-class PlaceholderTexture2DArray : public PlaceholderTextureLayered {
-public:
-	PlaceholderTexture2DArray() :
-			PlaceholderTextureLayered(LAYERED_TYPE_2D_ARRAY) {}
-};
-
-class PlaceholderCubemap : public PlaceholderTextureLayered {
-public:
-	PlaceholderCubemap() :
-			PlaceholderTextureLayered(LAYERED_TYPE_CUBEMAP) {}
-};
-
-class PlaceholderCubemapArray : public PlaceholderTextureLayered {
-public:
-	PlaceholderCubemapArray() :
-			PlaceholderTextureLayered(LAYERED_TYPE_CUBEMAP_ARRAY) {}
 };

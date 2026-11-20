@@ -33,7 +33,7 @@
 #include "servers/audio/audio_server.h"
 
 template <int S>
-void AudioEffectFilterInstance::_process_filter(
+void AudioEffectFilterState::_process_filter(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	for (int i = 0; i < p_frame_count; i++) {
@@ -69,7 +69,7 @@ void AudioEffectFilterInstance::_process_filter(
 	}
 }
 
-void AudioEffectFilterInstance::process(
+void AudioEffectFilterState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	filter.set_cutoff(base->cutoff);
@@ -100,7 +100,7 @@ void AudioEffectFilterInstance::process(
 	}
 }
 
-AudioEffectFilterInstance::AudioEffectFilterInstance()
+AudioEffectFilterState::AudioEffectFilterState()
 {
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 4; j++) {
@@ -111,12 +111,14 @@ AudioEffectFilterInstance::AudioEffectFilterInstance()
 
 Ref<AudioEffectInstance> AudioEffectFilter::instantiate()
 {
-	Ref<AudioEffectFilterInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectFilter>(this);
-
-	return ins;
+	AudioEffectFilterState* state = memnew(AudioEffectFilterState);
+	state->base = Ref<AudioEffectFilter>(this);
+	return AudioEffectInstance::create(state);
 }
+
+void AudioEffectFilter::set_filter_mode(AudioFilterSW::Mode p_mode) { mode = p_mode; }
+
+AudioFilterSW::Mode AudioEffectFilter::get_filter_mode() const { return mode; }
 
 void AudioEffectFilter::set_cutoff(float p_freq) { cutoff = MAX(p_freq, 1.0); }
 
@@ -142,5 +144,3 @@ AudioEffectFilter::AudioEffectFilter(AudioFilterSW::Mode p_mode)
 	gain = 1.0;
 	db = FILTER_6DB;
 }
-
-

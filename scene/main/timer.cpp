@@ -32,6 +32,13 @@
 #include "core/config/engine.h"
 #include "timer.h"
 
+void Timer::set_wait_time(double p_time)
+{
+	ERR_FAIL_COND_MSG(p_time <= 0, "Time should be greater than zero.");
+	wait_time = p_time;
+	update_configuration_warnings();
+}
+
 double Timer::get_wait_time() const { return wait_time; }
 
 void Timer::set_one_shot(bool p_one_shot) { one_shot = p_one_shot; }

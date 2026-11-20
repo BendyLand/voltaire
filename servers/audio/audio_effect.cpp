@@ -33,13 +33,4 @@
 
 AudioEffect::AudioEffect() {}
 
-bool AudioEffectInstance::process_silence() const { return true; }
-
 Ref<AudioEffectInstance> AudioEffect::instantiate() { return Ref<AudioEffectInstance>(); }
-
-void AudioEffectInstance::process(
-	const AudioFrame* p_src_buffer, AudioFrame* p_dst_buffer, int p_frame_count)
-{
-}
-
-

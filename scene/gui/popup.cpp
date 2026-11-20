@@ -32,7 +32,7 @@
 #include "core/config/engine.h"
 #include "popup.h"
 #include "scene/gui/panel.h"
-#include "scene/resources/style_box_flat.h"
+#include "scene/resources/style_box.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/display_server.h"
 
@@ -146,8 +146,8 @@ PackedStringArray PopupPanel::get_configuration_warnings() const
 
 	if (!DisplayServer::is_window_transparency_available() &&
 		!GLOBAL_GET_CACHED(bool, "display/window/subwindows/embed_subwindows")) {
-		Ref<StyleBoxFlat> sb = theme_cache.panel_style;
-		if (sb.is_valid() &&
+		Ref<StyleBox> sb = theme_cache.panel_style;
+		if (sb.is_valid() && sb->get_style_type() == StyleBox::STYLE_FLAT &&
 			(sb->get_shadow_size() > 0 || sb->get_corner_radius(CORNER_TOP_LEFT) > 0 ||
 				sb->get_corner_radius(CORNER_TOP_RIGHT) > 0 ||
 				sb->get_corner_radius(CORNER_BOTTOM_LEFT) > 0 ||
@@ -227,8 +227,8 @@ void PopupPanel::_update_shadow_offsets() const
 		return;
 	}
 
-	const Ref<StyleBoxFlat> sb = theme_cache.panel_style;
-	if (sb.is_null()) {
+	const Ref<StyleBox> sb = theme_cache.panel_style;
+	if (sb.is_null() || sb->get_style_type() != StyleBox::STYLE_FLAT) {
 		panel->set_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, 0);
 		return;
 	}

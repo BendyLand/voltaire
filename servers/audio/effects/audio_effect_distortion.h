@@ -35,16 +35,16 @@
 
 class AudioEffectDistortion;
 
-class AudioEffectDistortionInstance : public AudioEffectInstance
+struct AudioEffectDistortionState
 {
-	friend class AudioEffectDistortion;
 	Ref<AudioEffectDistortion> base;
-	float h[2];
+	float h[2] = {};
 
-public:
-	virtual void process(
-		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
+	void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 };
+
+using AudioEffectDistortionInstance = AudioEffectDistortionState;
 
 class AudioEffectDistortion : public AudioEffect
 {
@@ -58,14 +58,12 @@ public:
 		MODE_WAVESHAPE,
 	};
 
-	friend class AudioEffectDistortionInstance;
+	friend struct AudioEffectDistortionState;
 	Mode mode;
 	float pre_gain;
 	float post_gain;
 	float keep_hf_hz;
 	float drive;
-
-protected:
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;
@@ -87,5 +85,3 @@ public:
 
 	AudioEffectDistortion();
 };
-
-

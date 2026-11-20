@@ -210,6 +210,11 @@ int ImageTextureLayered::get_layers() const { return layers; }
 
 bool ImageTextureLayered::has_mipmaps() const { return mipmaps; }
 
+void ImageTextureLayered::set_layered_type(LayeredType p_type)
+{
+	layered_type = p_type;
+}
+
 ImageTextureLayered::LayeredType ImageTextureLayered::get_layered_type() const
 {
 	return layered_type;
@@ -390,30 +395,9 @@ ImageTexture3D::~ImageTexture3D()
 }
 
 
-Ref<Resource> Texture2DArray::create_placeholder() const
+Ref<Resource> ImageTextureLayered::create_placeholder() const
 {
-	Ref<PlaceholderTexture2DArray> placeholder;
-	placeholder.instantiate();
-	placeholder->set_size(Size2i(get_width(), get_height()));
-	placeholder->set_layers(get_layers());
-	return placeholder;
-}
-
-
-Ref<Resource> Cubemap::create_placeholder() const
-{
-	Ref<PlaceholderCubemap> placeholder;
-	placeholder.instantiate();
-	placeholder->set_size(Size2i(get_width(), get_height()));
-	placeholder->set_layers(get_layers());
-	return placeholder;
-}
-
-
-Ref<Resource> CubemapArray::create_placeholder() const
-{
-	Ref<PlaceholderCubemapArray> placeholder;
-	placeholder.instantiate();
+	Ref<PlaceholderTextureLayered> placeholder = memnew(PlaceholderTextureLayered(layered_type));
 	placeholder->set_size(Size2i(get_width(), get_height()));
 	placeholder->set_layers(get_layers());
 	return placeholder;

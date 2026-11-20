@@ -33,7 +33,7 @@
 #include "core/config/engine.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectCompressorInstance::process(
+void AudioEffectCompressorState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	float threshold = Math::db_to_linear(base->threshold);
@@ -122,17 +122,9 @@ void AudioEffectCompressorInstance::process(
 
 Ref<AudioEffectInstance> AudioEffectCompressor::instantiate()
 {
-	Ref<AudioEffectCompressorInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectCompressor>(this);
-	ins->rundb = 0;
-	ins->runratio = 0;
-	ins->averatio = 0;
-	ins->runmax = 0;
-	ins->maxover = 0;
-	ins->gr_meter = 1.0;
-	ins->current_channel = -1;
-	return ins;
+	AudioEffectCompressorState* state = memnew(AudioEffectCompressorState);
+	state->base = Ref<AudioEffectCompressor>(this);
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectCompressor::set_threshold(float p_threshold) { threshold = p_threshold; }
@@ -177,5 +169,3 @@ AudioEffectCompressor::AudioEffectCompressor()
 	release_ms = 250;
 	mix = 1;
 }
-
-

@@ -610,8 +610,8 @@ TEST_SUITE("[Navigation3D]")
 		// Prepare scene tree with simple mesh to serve as an input geometry.
 		Node3D* node_3d = memnew(Node3D);
 		SceneTree::get_root()->add_child(node_3d);
-		Ref<PlaneMesh> plane_mesh = memnew(PlaneMesh);
-		plane_mesh->set_size(Size2(10.0, 10.0));
+		Ref<PrimitiveMesh> plane_mesh = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
+		plane_mesh->set_plane_size(Size2(10.0, 10.0));
 		MeshInstance3D* mesh_instance = memnew(MeshInstance3D);
 		mesh_instance->set_mesh(plane_mesh);
 		node_3d->add_child(mesh_instance);
@@ -659,8 +659,8 @@ TEST_SUITE("[Navigation3D]")
 		// Prepare scene tree with simple mesh to serve as an input geometry.
 		Node3D* node_3d = memnew(Node3D);
 		SceneTree::get_root()->add_child(node_3d);
-		Ref<PlaneMesh> plane_mesh = memnew(PlaneMesh);
-		plane_mesh->set_size(Size2(10.0, 10.0));
+		Ref<PrimitiveMesh> plane_mesh = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
+		plane_mesh->set_plane_size(Size2(10.0, 10.0));
 		MeshInstance3D* mesh_instance = memnew(MeshInstance3D);
 		mesh_instance->set_mesh(plane_mesh);
 		node_3d->add_child(mesh_instance);
@@ -710,8 +710,8 @@ TEST_SUITE("[Navigation3D]")
 		// Prepare scene tree with simple mesh to serve as an input geometry.
 		Node3D* node_3d = memnew(Node3D);
 		SceneTree::get_root()->add_child(node_3d);
-		Ref<PlaneMesh> plane_mesh = memnew(PlaneMesh);
-		plane_mesh->set_size(Size2(10.0, 10.0));
+		Ref<PrimitiveMesh> plane_mesh = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
+		plane_mesh->set_plane_size(Size2(10.0, 10.0));
 		MeshInstance3D* mesh_instance = memnew(MeshInstance3D);
 		mesh_instance->set_mesh(plane_mesh);
 		node_3d->add_child(mesh_instance);
@@ -761,10 +761,9 @@ TEST_SUITE("[Navigation3D]")
 		Ref<NavigationMeshSourceGeometryData3D> source_geometry =
 			memnew(NavigationMeshSourceGeometryData3D);
 
-		Array arr;
-		arr.resize(RSE::ARRAY_MAX);
-		BoxMesh::create_mesh_array(arr, Vector3(10.0, 0.001, 10.0));
-		source_geometry->add_mesh_array(arr, Transform3D());
+		Ref<PrimitiveMesh> box_mesh = memnew(PrimitiveMesh(PrimitiveMesh::MESH_BOX));
+		box_mesh->set_size(Vector3(10.0, 0.001, 10.0));
+		source_geometry->add_mesh(box_mesh, Transform3D());
 		NavigationServer3D::bake_from_source_geometry_data(
 			navigation_mesh, source_geometry, Callable());
 		CHECK_NE(navigation_mesh->get_polygon_count(), 0);
@@ -933,10 +932,9 @@ TEST_SUITE("[Navigation3D]")
 		Ref<NavigationMeshSourceGeometryData3D> source_geometry =
 	memnew(NavigationMeshSourceGeometryData3D);
 
-		Array arr;
-		arr.resize(RSE::ARRAY_MAX);
-		BoxMesh::create_mesh_array(arr, Vector3(10.0, 0.001, 10.0));
-		source_geometry->add_mesh_array(arr, Transform3D());
+		Ref<PrimitiveMesh> box_mesh = memnew(PrimitiveMesh(PrimitiveMesh::MESH_BOX));
+		box_mesh->set_size(Vector3(10.0, 0.001, 10.0));
+		source_geometry->add_mesh(box_mesh, Transform3D());
 
 		// Race condition is present below, but baking should take many orders of magnitude
 		// longer than basic checks on the main thread, so it's fine.

@@ -316,7 +316,7 @@ public:
 	SelfList<CellData>::List cells;
 
 	HashMap<PhysicsBodyKey, PhysicsBodyValue, PhysicsBodyKeyHasher> bodies;
-	LocalVector<Ref<ConvexPolygonShape2D>> shapes;
+	LocalVector<Ref<Shape2D>> shapes;
 
 	SelfList<PhysicsQuadrant> dirty_quadrant_list_element;
 

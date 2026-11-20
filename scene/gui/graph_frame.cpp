@@ -32,8 +32,7 @@
 #include "core/config/engine.h"
 #include "graph_frame.h"
 #include "scene/gui/label.h"
-#include "scene/resources/style_box_flat.h"
-#include "scene/resources/style_box_texture.h"
+#include "scene/resources/style_box.h"
 #include "scene/theme/theme_db.h"
 
 Control::CursorShape GraphFrame::get_cursor_shape(const Point2& p_pos) const
@@ -59,8 +58,6 @@ void GraphFrame::_notification(int p_what)
 		// Used for drawing.
 		Ref<StyleBox> sb_to_draw_panel = selected ? theme_cache.panel_selected : sb_panel;
 		Ref<StyleBox> sb_to_draw_titlebar = selected ? theme_cache.titlebar_selected : sb_titlebar;
-		Ref<StyleBoxFlat> sb_panel_flat = sb_to_draw_panel;
-		Ref<StyleBoxTexture> sb_panel_texture = sb_to_draw_panel;
 
 		Rect2 titlebar_rect(
 			Point2(), titlebar_hbox->get_bound_minimum_size() + sb_titlebar->get_minimum_size());
@@ -70,7 +67,7 @@ void GraphFrame::_notification(int p_what)
 		Rect2 body_rect(Point2(0, titlebar_rect.size.height), body_size);
 
 		// Draw body stylebox.
-		draw_style_box(sb_panel_flat.ptr(), body_rect);
+		draw_style_box(sb_to_draw_panel.ptr(), body_rect);
 
 		// Draw title bar stylebox above.
 		draw_style_box(sb_to_draw_titlebar.ptr(), titlebar_rect);

@@ -196,7 +196,7 @@ private:
 	Error _parse_textures(Ref<GLTFState> p_state);
 	Error _parse_texture_samplers(Ref<GLTFState> p_state);
 	Error _parse_materials(Ref<GLTFState> p_state);
-	void spec_gloss_to_rough_metal(Ref<GLTFSpecGloss> r_spec_gloss, Ref<BaseMaterial3D> p_material);
+	void spec_gloss_to_rough_metal(Ref<GLTFSpecGloss> r_spec_gloss, Ref<StandardMaterial3D> p_material);
 	static void spec_gloss_to_metal_base_color(const Color& p_specular_factor,
 		const Color& p_diffuse, Color& r_base_color, float& r_metallic);
 	Error _parse_skins(Ref<GLTFState> p_state);

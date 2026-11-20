@@ -90,7 +90,7 @@ public:
 
 class ImageTextureLayered : public TextureLayered
 {
-	LayeredType layered_type;
+	LayeredType layered_type = LAYERED_TYPE_2D_ARRAY;
 
 	mutable RID texture;
 	Image::Format format = Image::FORMAT_L8;
@@ -103,6 +103,8 @@ class ImageTextureLayered : public TextureLayered
 protected:
 
 public:
+	void set_layered_type(LayeredType p_type);
+
 	virtual Image::Format get_format() const override;
 	virtual int get_width() const override;
 	virtual int get_height() const override;
@@ -117,7 +119,9 @@ public:
 	virtual RID get_rid() const override;
 	virtual void set_path(const String& p_path, bool p_take_over = false) override;
 
-	ImageTextureLayered(LayeredType p_layered_type);
+	virtual Ref<Resource> create_placeholder() const;
+
+	ImageTextureLayered(LayeredType p_layered_type = LAYERED_TYPE_2D_ARRAY);
 	~ImageTextureLayered();
 };
 
@@ -151,36 +155,6 @@ public:
 
 	ImageTexture3D();
 	~ImageTexture3D();
-};
-
-class Texture2DArray : public ImageTextureLayered
-{
-protected:
-
-public:
-	Texture2DArray() : ImageTextureLayered(LAYERED_TYPE_2D_ARRAY) {}
-
-	virtual Ref<Resource> create_placeholder() const;
-};
-
-class Cubemap : public ImageTextureLayered
-{
-protected:
-
-public:
-	Cubemap() : ImageTextureLayered(LAYERED_TYPE_CUBEMAP) {}
-
-	virtual Ref<Resource> create_placeholder() const;
-};
-
-class CubemapArray : public ImageTextureLayered
-{
-protected:
-
-public:
-	CubemapArray() : ImageTextureLayered(LAYERED_TYPE_CUBEMAP_ARRAY) {}
-
-	virtual Ref<Resource> create_placeholder() const;
 };
 
 

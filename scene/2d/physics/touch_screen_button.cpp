@@ -127,7 +127,7 @@ bool TouchScreenButton::is_passby_press_enabled() const { return passby_press; }
 
 TouchScreenButton::TouchScreenButton()
 {
-	unit_rect.instantiate();
+	unit_rect = memnew(Shape2D(Shape2D::SHAPE_RECTANGLE));
 	unit_rect->set_size(Vector2(1, 1));
 }
 

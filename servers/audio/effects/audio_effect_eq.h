@@ -36,22 +36,22 @@
 
 class AudioEffectEQ;
 
-class AudioEffectEQInstance : public AudioEffectInstance
+struct AudioEffectEQState
 {
-	friend class AudioEffectEQ;
 	Ref<AudioEffectEQ> base;
 
 	Vector<EQ::BandProcess> bands[2];
 	Vector<float> gains;
 
-public:
-	virtual void process(
-		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
+	void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 };
+
+using AudioEffectEQInstance = AudioEffectEQState;
 
 class AudioEffectEQ : public AudioEffect
 {
-	friend class AudioEffectEQInstance;
+	friend struct AudioEffectEQState;
 
 	EQ eq;
 	Vector<float> gain;
@@ -60,29 +60,10 @@ class AudioEffectEQ : public AudioEffect
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;
+	void set_preset(EQ::Preset p_preset);
 	void set_band_gain_db(int p_band, float p_volume);
 	float get_band_gain_db(int p_band) const;
 	int get_band_count() const;
 
 	AudioEffectEQ(EQ::Preset p_preset = EQ::PRESET_6_BANDS);
 };
-
-class AudioEffectEQ6 : public AudioEffectEQ
-{
-public:
-	AudioEffectEQ6() : AudioEffectEQ(EQ::PRESET_6_BANDS) {}
-};
-
-class AudioEffectEQ10 : public AudioEffectEQ
-{
-public:
-	AudioEffectEQ10() : AudioEffectEQ(EQ::PRESET_10_BANDS) {}
-};
-
-class AudioEffectEQ21 : public AudioEffectEQ
-{
-public:
-	AudioEffectEQ21() : AudioEffectEQ(EQ::PRESET_21_BANDS) {}
-};
-
-

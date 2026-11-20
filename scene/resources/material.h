@@ -123,9 +123,7 @@ public:
 	~ShaderMaterial();
 };
 
-class StandardMaterial3D;
-
-class BaseMaterial3D : public Material
+class StandardMaterial3D : public Material
 {
 private:
 	mutable Mutex material_rid_mutex;
@@ -535,16 +533,16 @@ private:
 	};
 
 	static Mutex material_mutex;
-	static SelfList<BaseMaterial3D>::List dirty_materials;
+	static SelfList<StandardMaterial3D>::List dirty_materials;
 	static ShaderNames* shader_names;
 
-	SelfList<BaseMaterial3D> element;
+	SelfList<StandardMaterial3D> element;
 
 	void _update_shader();
 	_FORCE_INLINE_ void _queue_shader_change();
 	void _check_material_rid();
 
-	bool orm;
+	bool orm = false;
 	RID shader_rid;
 
 	Color albedo;
@@ -643,7 +641,7 @@ private:
 	Ref<Texture2D> textures[TEXTURE_MAX];
 
 	void _prepare_stencil_effect();
-	Ref<BaseMaterial3D> _get_stencil_next_pass() const;
+	Ref<StandardMaterial3D> _get_stencil_next_pass() const;
 
 	static HashMap<uint64_t, Ref<StandardMaterial3D>>
 		materials_for_2d; // used by Sprite3D, Label3D and other stuff
@@ -897,26 +895,16 @@ public:
 		AlphaAntiAliasing p_alpha_antialiasing_mode = ALPHA_ANTIALIASING_OFF,
 		bool p_texture_repeat = false, RID* r_shader_rid = nullptr);
 
+	void set_orm_mode(bool p_orm);
+	bool is_orm_mode() const { return orm; }
+
 	virtual RID get_rid() const override;
 	virtual RID get_shader_rid() const override;
 
 	virtual Shader::Mode get_shader_mode() const override;
 
-	BaseMaterial3D() = default;
-	BaseMaterial3D(bool p_orm);
-	virtual ~BaseMaterial3D();
-};
-
-class StandardMaterial3D : public BaseMaterial3D
-{
-public:
-	StandardMaterial3D() : BaseMaterial3D(false) {}
-};
-
-class ORMMaterial3D : public BaseMaterial3D
-{
-public:
-	ORMMaterial3D() : BaseMaterial3D(true) {}
+	StandardMaterial3D(bool p_orm = false);
+	virtual ~StandardMaterial3D();
 };
 
 class PlaceholderMaterial : public Material

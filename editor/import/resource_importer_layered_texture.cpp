@@ -105,14 +105,10 @@ String ResourceImporterLayeredTexture::get_save_extension() const
 String ResourceImporterLayeredTexture::get_resource_type() const
 {
 	switch (mode) {
-	case MODE_CUBEMAP: {
-		return "CompressedCubemap";
-	} break;
-	case MODE_2D_ARRAY: {
-		return "CompressedTexture2DArray";
-	} break;
+	case MODE_CUBEMAP:
+	case MODE_2D_ARRAY:
 	case MODE_CUBEMAP_ARRAY: {
-		return "CompressedCubemapArray";
+		return "CompressedTextureLayered";
 	} break;
 	case MODE_3D: {
 		return "CompressedTexture3D";

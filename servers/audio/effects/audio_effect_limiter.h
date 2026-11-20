@@ -35,25 +35,23 @@
 
 class AudioEffectLimiter;
 
-class AudioEffectLimiterInstance : public AudioEffectInstance {
-	friend class AudioEffectLimiter;
+struct AudioEffectLimiterState
+{
 	Ref<AudioEffectLimiter> base;
+	float mix_volume_db = 0.0f;
 
-	float mix_volume_db;
-
-public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
+	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 };
 
-class AudioEffectLimiter : public AudioEffect {
+using AudioEffectLimiterInstance = AudioEffectLimiterState;
 
-	friend class AudioEffectLimiterInstance;
+class AudioEffectLimiter : public AudioEffect
+{
+	friend struct AudioEffectLimiterState;
 	float threshold;
 	float ceiling;
 	float soft_clip;
 	float soft_clip_ratio;
-
-protected:
 
 public:
 	void set_threshold_db(float p_threshold);

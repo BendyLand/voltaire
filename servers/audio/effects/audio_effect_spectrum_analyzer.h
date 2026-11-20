@@ -35,34 +35,31 @@
 
 class AudioEffectSpectrumAnalyzer;
 
-class AudioEffectSpectrumAnalyzerInstance : public AudioEffectInstance
+struct AudioEffectSpectrumAnalyzerState
 {
-public:
 	enum MagnitudeMode
 	{
 		MAGNITUDE_AVERAGE,
 		MAGNITUDE_MAX,
 	};
 
-private:
-	friend class AudioEffectSpectrumAnalyzer;
 	Ref<AudioEffectSpectrumAnalyzer> base;
 
 	Vector<Vector<AudioFrame>> fft_history;
 	Vector<float> temporal_fft;
-	int temporal_fft_pos;
-	int fft_size;
-	int fft_count;
-	int fft_pos;
-	float mix_rate;
+	int temporal_fft_pos = 0;
+	int fft_size = 0;
+	int fft_count = 0;
+	int fft_pos = 0;
+	float mix_rate = 0.0f;
 
-
-public:
-	virtual void process(
-		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count) override;
+	void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 	Vector2 get_magnitude_for_frequency_range(
 		float p_begin, float p_end, MagnitudeMode p_mode = MAGNITUDE_MAX) const;
 };
+
+using AudioEffectSpectrumAnalyzerInstance = AudioEffectSpectrumAnalyzerState;
 
 class AudioEffectSpectrumAnalyzer : public AudioEffect
 {
@@ -77,8 +74,7 @@ public:
 		FFT_SIZE_MAX
 	};
 
-public:
-	friend class AudioEffectSpectrumAnalyzerInstance;
+	friend struct AudioEffectSpectrumAnalyzerState;
 	float buffer_length;
 	FFTSize fft_size;
 
@@ -99,5 +95,3 @@ public:
 
 	AudioEffectSpectrumAnalyzer();
 };
-
-

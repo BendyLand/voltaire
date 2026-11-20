@@ -74,19 +74,13 @@ Ref<Resource> ResourceFormatLoaderCompressedTextureLayered::load(const String& p
 {
 	Ref<CompressedTextureLayered> ct;
 	if (p_path.has_extension("ctexarray")) {
-		Ref<CompressedTexture2DArray> c;
-		c.instantiate();
-		ct = c;
+		ct = memnew(CompressedTextureLayered(TextureLayered::LAYERED_TYPE_2D_ARRAY));
 	}
 	else if (p_path.has_extension("ccube")) {
-		Ref<CompressedCubemap> c;
-		c.instantiate();
-		ct = c;
+		ct = memnew(CompressedTextureLayered(TextureLayered::LAYERED_TYPE_CUBEMAP));
 	}
 	else if (p_path.has_extension("ccubearray")) {
-		Ref<CompressedCubemapArray> c;
-		c.instantiate();
-		ct = c;
+		ct = memnew(CompressedTextureLayered(TextureLayered::LAYERED_TYPE_CUBEMAP_ARRAY));
 	}
 	else {
 		if (r_error) {
@@ -115,20 +109,14 @@ void ResourceFormatLoaderCompressedTextureLayered::get_recognized_extensions(
 
 bool ResourceFormatLoaderCompressedTextureLayered::handles_type(const String& p_type) const
 {
-	return p_type == "CompressedTexture2DArray" || p_type == "CompressedCubemap" ||
-		   p_type == "CompressedCubemapArray";
+	return p_type == "CompressedTextureLayered";
 }
 
 String ResourceFormatLoaderCompressedTextureLayered::get_resource_type(const String& p_path) const
 {
-	if (p_path.has_extension("ctexarray")) {
-		return "CompressedTexture2DArray";
-	}
-	if (p_path.has_extension("ccube")) {
-		return "CompressedCubemap";
-	}
-	if (p_path.has_extension("ccubearray")) {
-		return "CompressedCubemapArray";
+	if (p_path.has_extension("ctexarray") || p_path.has_extension("ccube") ||
+		p_path.has_extension("ccubearray")) {
+		return "CompressedTextureLayered";
 	}
 	return "";
 }

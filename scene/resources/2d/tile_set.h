@@ -42,7 +42,7 @@
 #include "scene/resources/physics_material.h"
 
 #ifndef PHYSICS_2D_DISABLED
-#include "scene/resources/2d/convex_polygon_shape_2d.h"
+#include "scene/resources/2d/shape_2d.h"
 #endif // PHYSICS_2D_DISABLED
 
 #ifndef NAVIGATION_2D_DISABLED
@@ -923,8 +923,8 @@ private:
 		struct PolygonShapeTileData
 		{
 			LocalVector<Vector2> polygon;
-			LocalVector<Ref<ConvexPolygonShape2D>> shapes;
-			mutable HashMap<int, LocalVector<Ref<ConvexPolygonShape2D>>> transformed_shapes;
+			LocalVector<Ref<Shape2D>> shapes;
+			mutable HashMap<int, LocalVector<Ref<Shape2D>>> transformed_shapes;
 			bool one_way = false;
 			float one_way_margin = 1.0;
 		};
@@ -1049,7 +1049,7 @@ public:
 		int p_layer_id, int p_polygon_index, float p_one_way_margin);
 	float get_collision_polygon_one_way_margin(int p_layer_id, int p_polygon_index) const;
 	int get_collision_polygon_shapes_count(int p_layer_id, int p_polygon_index) const;
-	Ref<ConvexPolygonShape2D> get_collision_polygon_shape(int p_layer_id, int p_polygon_index,
+	Ref<Shape2D> get_collision_polygon_shape(int p_layer_id, int p_polygon_index,
 		int shape_index, bool p_flip_h = false, bool p_flip_v = false,
 		bool p_transpose = false) const;
 #endif // PHYSICS_2D_DISABLED

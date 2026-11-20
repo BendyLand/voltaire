@@ -34,7 +34,7 @@
 #include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/resources/3d/box_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
 bool MeshLibrary::_validate_index(int p_idx)

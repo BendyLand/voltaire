@@ -36,8 +36,7 @@
 #include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/resources/3d/concave_polygon_shape_3d.h"
-#include "scene/resources/3d/convex_polygon_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
 void MeshConvexDecompositionSettings::set_max_concavity(real_t p_max_concavity)
@@ -248,11 +247,11 @@ Vector<Face3> Mesh::get_surface_faces(int p_surface) const
 
 #ifndef PHYSICS_3D_DISABLED
 
-Ref<ConcavePolygonShape3D> Mesh::create_trimesh_shape() const
+Ref<Shape3D> Mesh::create_trimesh_shape() const
 {
 	Vector<Face3> faces = get_faces();
 	if (faces.is_empty()) {
-		return Ref<ConcavePolygonShape3D>();
+		return Ref<Shape3D>();
 	}
 
 	Vector<Vector3> face_points;
@@ -265,7 +264,7 @@ Ref<ConcavePolygonShape3D> Mesh::create_trimesh_shape() const
 		face_points.set(i + 2, f.vertex[2]);
 	}
 
-	Ref<ConcavePolygonShape3D> shape = memnew(ConcavePolygonShape3D);
+	Ref<Shape3D> shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
 	shape->set_faces(face_points);
 	return shape;
 }
@@ -321,8 +320,7 @@ Vector<Ref<Shape3D>> Mesh::convex_decompose(
 	Vector<Ref<Shape3D>> ret;
 
 	for (int i = 0; i < decomposed.size(); i++) {
-		Ref<ConvexPolygonShape3D> shape;
-		shape.instantiate();
+		Ref<Shape3D> shape = memnew(Shape3D(Shape3D::SHAPE_CONVEX_POLYGON));
 		shape->set_points(decomposed[i]);
 		ret.push_back(shape);
 	}
@@ -1115,11 +1113,13 @@ Ref<TriangleMesh> Mesh::generate_triangle_mesh() const
 	return tm;
 }
 
-Ref<ConvexPolygonShape3D> Mesh::create_convex_shape(bool, bool) const
+#ifndef PHYSICS_3D_DISABLED
+Ref<Shape3D> Mesh::create_convex_shape(bool, bool) const
 {
-	Ref<ConvexPolygonShape3D> cps = memnew(ConvexPolygonShape3D);
+	Ref<Shape3D> cps = memnew(Shape3D(Shape3D::SHAPE_CONVEX_POLYGON));
 	return cps;
 }
+#endif // PHYSICS_3D_DISABLED
 
 Ref<TriangleMesh> Mesh::generate_surface_triangle_mesh(int) const
 {

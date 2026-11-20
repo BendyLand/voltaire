@@ -67,7 +67,7 @@ public:
 
 class TextureLayeredRD : public TextureLayered
 {
-	LayeredType layer_type;
+	LayeredType layer_type = LAYERED_TYPE_2D_ARRAY;
 
 	mutable RID texture_rid;
 	RID texture_rd_rid;
@@ -96,26 +96,8 @@ public:
 	// Internal function that should only be called from the rendering thread.
 	void _set_texture_rd_rid(RID p_texture_rd_rid);
 
-	TextureLayeredRD(LayeredType p_layer_type);
+	TextureLayeredRD(LayeredType p_layer_type = LAYERED_TYPE_2D_ARRAY);
 	~TextureLayeredRD();
-};
-
-class Texture2DArrayRD : public TextureLayeredRD
-{
-public:
-	Texture2DArrayRD() : TextureLayeredRD(LAYERED_TYPE_2D_ARRAY) {}
-};
-
-class TextureCubemapRD : public TextureLayeredRD
-{
-public:
-	TextureCubemapRD() : TextureLayeredRD(LAYERED_TYPE_CUBEMAP) {}
-};
-
-class TextureCubemapArrayRD : public TextureLayeredRD
-{
-public:
-	TextureCubemapArrayRD() : TextureLayeredRD(LAYERED_TYPE_CUBEMAP_ARRAY) {}
 };
 
 class Texture3DRD : public Texture3D

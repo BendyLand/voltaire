@@ -38,48 +38,47 @@
 
 class AudioEffectRecord;
 
-class AudioEffectRecordInstance : public AudioEffectInstance {
-	friend class AudioEffectRecord;
-
-	bool is_recording;
+struct AudioEffectRecordState
+{
+	bool is_recording = false;
 	Thread io_thread;
 
 	Vector<AudioFrame> ring_buffer;
 	Vector<float> recording_data;
 
-	unsigned int ring_buffer_pos;
-	unsigned int ring_buffer_mask;
-	unsigned int ring_buffer_read_pos;
+	unsigned int ring_buffer_pos = 0;
+	unsigned int ring_buffer_mask = 0;
+	unsigned int ring_buffer_read_pos = 0;
 
 	void _io_thread_process();
 	void _io_store_buffer();
-	static void _thread_callback(void *_instance);
-	void _init_recording();
+	static void _thread_callback(void* _instance);
 	void _update_buffer();
-	static void _update(void *userdata);
+	static void _update(void* userdata);
 
-public:
 	void init();
 	void finish();
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
-	virtual bool process_silence() const override;
+	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	bool process_silence() const;
+
+	~AudioEffectRecordState() { finish(); }
 };
 
-class AudioEffectRecord : public AudioEffect {
+using AudioEffectRecordInstance = AudioEffectRecordState;
 
-	friend class AudioEffectRecordInstance;
+class AudioEffectRecord : public AudioEffect
+{
+	friend struct AudioEffectRecordState;
 
 	enum {
 		IO_BUFFER_SIZE_MS = 1500
 	};
 
-	Ref<AudioEffectRecordInstance> current_instance;
+	Ref<AudioEffectInstance> current_instance;
 
 	AudioStreamWAV::Format format;
 
 	void ensure_thread_stopped();
-
-protected:
 
 public:
 	Ref<AudioEffectInstance> instantiate() override;

@@ -37,121 +37,73 @@ class ArrayMesh;
 
 class Occluder3D : public Resource
 {
+public:
+	enum OccluderType
+	{
+		OCCLUDER_ARRAY,
+		OCCLUDER_QUAD,
+		OCCLUDER_BOX,
+		OCCLUDER_SPHERE,
+		OCCLUDER_POLYGON,
+	};
+
+private:
+	static constexpr int RINGS = 7;
+	static constexpr int RADIAL_SEGMENTS = 7;
+
+	OccluderType occluder_type = OCCLUDER_ARRAY;
+
 	RID occluder;
 	PackedVector3Array vertices;
 	PackedInt32Array indices;
 	AABB aabb;
 
+	PackedVector3Array array_vertices;
+	PackedInt32Array array_indices;
+	Size2 quad_size = Vector2(1.0f, 1.0f);
+	Vector3 box_size = Vector3(1.0f, 1.0f, 1.0f);
+	float radius = 1.0f;
+	Vector<Vector2> polygon;
+
 	mutable Ref<ArrayMesh> debug_mesh;
 	mutable Vector<Vector3> debug_lines;
 
+	bool _has_editable_3d_polygon_no_depth() const;
+
 protected:
 	void _update();
-	virtual void _update_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices) = 0;
-
-	void _notification(int p_what);
+	void _update_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices);
 
 public:
+	void set_occluder_type(OccluderType p_type);
+	OccluderType get_occluder_type() const;
+
+	void set_arrays(PackedVector3Array p_vertices, PackedInt32Array p_indices);
+	void set_vertices(PackedVector3Array p_vertices);
+	void set_indices(PackedInt32Array p_indices);
+
 	PackedVector3Array get_vertices() const;
 	PackedInt32Array get_indices() const;
+
+	void set_quad_size(const Size2& p_size);
+	Size2 get_quad_size() const;
+
+	void set_box_size(const Vector3& p_size);
+	Vector3 get_box_size() const;
+
+	void set_radius(float p_radius);
+	float get_radius() const;
+
+	void set_polygon(const Vector<Vector2>& p_polygon);
+	Vector<Vector2> get_polygon() const;
 
 	Vector<Vector3> get_debug_lines() const;
 	Ref<ArrayMesh> get_debug_mesh() const;
 	AABB get_aabb() const;
 
 	virtual RID get_rid() const override;
-	Occluder3D();
+	Occluder3D(OccluderType p_type = OCCLUDER_ARRAY);
 	virtual ~Occluder3D();
-};
-
-class ArrayOccluder3D : public Occluder3D
-{
-	PackedVector3Array vertices;
-	PackedInt32Array indices;
-
-protected:
-	virtual void _update_arrays(
-		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-
-public:
-	void set_arrays(PackedVector3Array p_vertices, PackedInt32Array p_indices);
-	void set_vertices(PackedVector3Array p_vertices);
-	void set_indices(PackedInt32Array p_indices);
-
-	ArrayOccluder3D();
-	~ArrayOccluder3D();
-};
-
-class QuadOccluder3D : public Occluder3D
-{
-private:
-	Size2 size = Vector2(1.0f, 1.0f);
-
-protected:
-	virtual void _update_arrays(
-		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-
-public:
-	Size2 get_size() const;
-	void set_size(const Size2& p_size);
-
-	QuadOccluder3D();
-	~QuadOccluder3D();
-};
-
-class BoxOccluder3D : public Occluder3D
-{
-private:
-	Vector3 size = Vector3(1.0f, 1.0f, 1.0f);
-
-protected:
-	virtual void _update_arrays(
-		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-
-public:
-	Vector3 get_size() const;
-	void set_size(const Vector3& p_size);
-
-	BoxOccluder3D();
-	~BoxOccluder3D();
-};
-
-class SphereOccluder3D : public Occluder3D
-{
-private:
-	static constexpr int RINGS = 7;
-	static constexpr int RADIAL_SEGMENTS = 7;
-	float radius = 1.0f;
-
-protected:
-	virtual void _update_arrays(
-		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-
-public:
-	float get_radius() const;
-	void set_radius(float p_radius);
-
-	SphereOccluder3D();
-	~SphereOccluder3D();
-};
-
-class PolygonOccluder3D : public Occluder3D
-{
-private:
-	Vector<Vector2> polygon;
-
-	bool _has_editable_3d_polygon_no_depth() const;
-
-protected:
-	virtual void _update_arrays(
-		PackedVector3Array& r_vertices, PackedInt32Array& r_indices) override;
-
-public:
-	void set_polygon(const Vector<Vector2>& p_polygon);
-	Vector<Vector2> get_polygon() const;
-
-	PolygonOccluder3D();
-	~PolygonOccluder3D();
 };
 
 class OccluderInstance3D : public Node3D

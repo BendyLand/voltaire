@@ -32,7 +32,7 @@
 #include "audio_effect_hard_limiter.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectHardLimiterInstance::process(
+void AudioEffectHardLimiterState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	float sample_rate = AudioServer::get_mix_rate();
@@ -103,25 +103,24 @@ void AudioEffectHardLimiterInstance::process(
 
 Ref<AudioEffectInstance> AudioEffectHardLimiter::instantiate()
 {
-	Ref<AudioEffectHardLimiterInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectHardLimiter>(this);
+	AudioEffectHardLimiterState* state = memnew(AudioEffectHardLimiterState);
+	state->base = Ref<AudioEffectHardLimiter>(this);
 
 	float mix_rate = AudioServer::get_mix_rate();
 
 	for (int i = 0; i < (int)Math::ceil(mix_rate * attack) + 1; i++) {
-		ins->sample_buffer_left.push_back(0.0f);
-		ins->sample_buffer_right.push_back(0.0f);
+		state->sample_buffer_left.push_back(0.0f);
+		state->sample_buffer_right.push_back(0.0f);
 	}
 
-	ins->gain_samples_to_store = (int)Math::ceil(mix_rate * (attack + sustain) + 1);
-	ins->gain_bucket_size = (int)(mix_rate * attack);
+	state->gain_samples_to_store = (int)Math::ceil(mix_rate * (attack + sustain) + 1);
+	state->gain_bucket_size = (int)(mix_rate * attack);
 
-	for (int i = 0; i < ins->gain_samples_to_store; i += ins->gain_bucket_size) {
-		ins->gain_buckets.push_back(1.0f);
+	for (int i = 0; i < state->gain_samples_to_store; i += state->gain_bucket_size) {
+		state->gain_buckets.push_back(1.0f);
 	}
 
-	return ins;
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectHardLimiter::set_ceiling_db(float p_ceiling) { ceiling = p_ceiling; }
@@ -135,6 +134,3 @@ void AudioEffectHardLimiter::set_pre_gain_db(const float p_pre_gain) { pre_gain 
 float AudioEffectHardLimiter::get_release() const { return release; }
 
 void AudioEffectHardLimiter::set_release(const float p_release) { release = p_release; }
-
-
-

@@ -3459,6 +3459,20 @@ void TextEdit::set_gutter_name(int p_gutter, const String& p_name)
 	gutters.write[p_gutter].name = p_name;
 }
 
+void TextEdit::add_gutter(int p_at)
+{
+	ERR_FAIL_COND(p_at < -1 || p_at > gutters.size());
+	if (p_at < 0 || p_at > gutters.size()) {
+		gutters.push_back(GutterInfo());
+	}
+	else {
+		gutters.insert(p_at, GutterInfo());
+	}
+	text.add_gutter(p_at);
+	_update_gutter_width();
+	queue_redraw();
+}
+
 String TextEdit::get_gutter_name(int p_gutter) const
 {
 	ERR_FAIL_INDEX_V(p_gutter, gutters.size(), "");
@@ -3564,7 +3578,7 @@ Color TextEdit::get_line_background_color(int p_line) const
 	return text.get_line_background_color(p_line);
 }
 
-Ref<SyntaxHighlighter> TextEdit::get_syntax_highlighter() const { return syntax_highlighter; }
+Ref<CodeHighlighter> TextEdit::get_syntax_highlighter() const { return syntax_highlighter; }
 
 bool TextEdit::is_highlight_current_line_enabled() const { return highlight_current_line; }
 
@@ -3629,7 +3643,17 @@ bool TextEdit::_is_line_hidden(int p_line) const
 
 void TextEdit::_unhide_carets()
 {
-	// Override for functionality.
+	if (!code_mode && !hiding_enabled) {
+		return;
+	}
+	for (int i = 0; i < get_caret_count(); i++) {
+		if (_is_line_hidden(get_caret_line(i))) {
+			unfold_line(get_caret_line(i));
+		}
+		if (has_selection(i) && _is_line_hidden(get_selection_origin_line(i))) {
+			unfold_line(get_selection_origin_line(i));
+		}
+	}
 }
 
 void TextEdit::_copy_internal(int p_caret)
@@ -4346,7 +4370,93 @@ void TextEdit::_draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const
 	}
 }
 
-TextEdit::~TextEdit() { Renderer::free_rid(text_ci); }
+TextEdit::TextEdit(const String& p_placeholder)
+{
+	v_scroll = memnew(ScrollBar(VERTICAL));
+	add_child(v_scroll, false, INTERNAL_MODE_FRONT);
+	h_scroll = memnew(ScrollBar(HORIZONTAL));
+	add_child(h_scroll, false, INTERNAL_MODE_FRONT);
+
+	caret_blink_timer = memnew(Timer);
+	caret_blink_timer->set_wait_time(0.65);
+	add_child(caret_blink_timer, false, INTERNAL_MODE_FRONT);
+
+	idle_detect = memnew(Timer);
+	idle_detect->set_wait_time(3);
+	idle_detect->set_one_shot(true);
+	add_child(idle_detect, false, INTERNAL_MODE_FRONT);
+
+	click_select_held = memnew(Timer);
+	click_select_held->set_wait_time(0.05);
+	add_child(click_select_held, false, INTERNAL_MODE_FRONT);
+
+	carets.resize(1);
+	text.clear();
+	placeholder_data_buf.instantiate();
+	placeholder_text = p_placeholder;
+	editable = true;
+	set_focus_mode(FOCUS_ALL);
+}
+
+TextEdit::~TextEdit()
+{
+	_clear_line_number_text_cache();
+	if (text_ci.is_valid()) {
+		Renderer::free_rid(text_ci);
+	}
+}
+
+void TextEdit::set_code_mode(bool p_enabled)
+{
+	if (code_mode == p_enabled) {
+		return;
+	}
+	code_mode = p_enabled;
+	if (code_mode) {
+		_ensure_code_gutters();
+		if (!code.symbol_tooltip_timer) {
+			code.symbol_tooltip_timer = memnew(Timer);
+			code.symbol_tooltip_timer->set_wait_time(0.5);
+			code.symbol_tooltip_timer->set_one_shot(true);
+			add_child(code.symbol_tooltip_timer, false, INTERNAL_MODE_FRONT);
+		}
+		if (code.delimiters.is_empty()) {
+			add_string_delimiter("\"", "\"", false);
+			add_string_delimiter("'", "'", false);
+		}
+		if (code.auto_brace_completion_pairs.is_empty()) {
+			add_auto_brace_completion_pair("(", ")");
+			add_auto_brace_completion_pair("{", "}");
+			add_auto_brace_completion_pair("[", "]");
+			add_auto_brace_completion_pair("\"", "\"");
+			add_auto_brace_completion_pair("'", "'");
+		}
+	}
+}
+
+void TextEdit::_ensure_code_gutters()
+{
+	if (code.main_gutter != -1) {
+		return;
+	}
+	add_gutter(0);
+	set_gutter_name(0, "main_gutter");
+	set_gutter_draw(0, false);
+	set_gutter_type(0, GUTTER_TYPE_CUSTOM);
+
+	add_gutter(1);
+	set_gutter_name(1, "line_numbers");
+	set_gutter_draw(1, false);
+	set_gutter_type(1, GUTTER_TYPE_CUSTOM);
+	set_gutter_clickable(1, true);
+
+	add_gutter(2);
+	set_gutter_name(2, "fold_gutter");
+	set_gutter_draw(2, false);
+	set_gutter_type(2, GUTTER_TYPE_CUSTOM);
+
+	_update_gutter_indexes();
+}
 
 void TextEdit::_update_scrollbars() {}
 
@@ -4354,9 +4464,17 @@ void TextEdit::_update_placeholder() {}
 
 void TextEdit::_update_gutter_width() {}
 
-void TextEdit::set_line_background_color(int, Color const&) {}
+void TextEdit::set_line_background_color(int p_line, Color const& p_color)
+{
+	ERR_FAIL_INDEX(p_line, text.size());
+	text.set_line_background_color(p_line, p_color);
+}
 
-void TextEdit::_set_line_as_hidden(int, bool) {}
+void TextEdit::_set_line_as_hidden(int p_line, bool p_hidden)
+{
+	ERR_FAIL_INDEX(p_line, text.size());
+	text.set_hidden(p_line, p_hidden);
+}
 
 void TextEdit::_adjust_viewport_to_caret_horizontally(int, bool) {}
 
@@ -4364,21 +4482,88 @@ void TextEdit::_update_ime_text() {}
 
 void TextEdit::_set_text(String const&, bool) {}
 
-void TextEdit::set_tab_size(int) {}
+void TextEdit::set_tab_size(int p_size)
+{
+	ERR_FAIL_COND_MSG(p_size <= 0, "Tab size must be greater than 0.");
+	text.set_tab_size(p_size);
+}
 
-void TextEdit::set_syntax_highlighter(Ref<SyntaxHighlighter>) {}
+void TextEdit::set_syntax_highlighter(Ref<CodeHighlighter> p_syntax_highlighter)
+{
+	if (syntax_highlighter == p_syntax_highlighter) {
+		return;
+	}
+	if (syntax_highlighter.is_valid()) {
+		syntax_highlighter->set_text_edit(nullptr);
+	}
+	syntax_highlighter = p_syntax_highlighter;
+	if (syntax_highlighter.is_valid()) {
+		syntax_highlighter->set_text_edit(this);
+	}
+	_clear_syntax_highlighting_cache();
+}
 
-void TextEdit::_set_symbol_lookup_word(String const&) {}
+void TextEdit::_set_symbol_lookup_word(String const& p_symbol) { lookup_symbol_word = p_symbol; }
 
-void TextEdit::_set_hiding_enabled(bool) {}
+void TextEdit::_set_hiding_enabled(bool p_enabled) { hiding_enabled = p_enabled; }
 
-void TextEdit::set_gutter_clickable(int, bool) {}
+void TextEdit::set_gutter_type(int p_gutter, GutterType p_type)
+{
+	ERR_FAIL_INDEX(p_gutter, gutters.size());
+	gutters.write[p_gutter].type = p_type;
+}
 
-void TextEdit::set_draw_control_chars(bool) {}
+void TextEdit::set_gutter_clickable(int p_gutter, bool p_clickable)
+{
+	ERR_FAIL_INDEX(p_gutter, gutters.size());
+	gutters.write[p_gutter].clickable = p_clickable;
+}
+
+void TextEdit::set_draw_control_chars(bool p_enabled)
+{
+	draw_control_chars = p_enabled;
+	text.set_draw_control_chars(p_enabled);
+}
 
 void TextEdit::_scroll_moved(double) {}
 
-Control::CursorShape TextEdit::get_cursor_shape(Vector2 const&) const { return Control::CursorShape(); }
+Control::CursorShape TextEdit::get_cursor_shape(Vector2 const& p_pos) const
+{
+	if (code_mode) {
+		if (!code.symbol_lookup_word.is_empty()) {
+			return CURSOR_POINTING_HAND;
+		}
+
+		if (!is_dragging_cursor()) {
+			if ((code.code_completion_active && code.code_completion_rect.has_point(p_pos)) ||
+				(!is_editable() && (!is_selecting_enabled() || get_line_count() == 0))) {
+				return CURSOR_ARROW;
+			}
+
+			if (code.code_completion_active && code.code_completion_scroll_rect.has_point(p_pos)) {
+				return CURSOR_ARROW;
+			}
+
+			Point2i pos = get_line_column_at_pos(p_pos, false);
+			int line = pos.y;
+			int col = pos.x;
+
+			if (line != -1 && is_line_folded(line)) {
+				int wrap_index = get_line_wrap_index_at_column(line, col);
+				if (wrap_index == get_line_wrap_count(line) &&
+					theme_cache.folded_eol_icon.is_valid()) {
+					int eol_icon_width = theme_cache.folded_eol_icon->get_width();
+					int left_margin = get_total_gutter_width() + eol_icon_width +
+									  get_line_width(line, wrap_index) - get_h_scroll();
+					if (p_pos.x > left_margin && p_pos.x <= left_margin + eol_icon_width + 3) {
+						return CURSOR_POINTING_HAND;
+					}
+				}
+			}
+		}
+	}
+	return Control::get_cursor_shape(p_pos);
+}
 
 void TextEdit::_generate_context_menu() {}
 
@@ -4389,5 +4574,1705 @@ void TextEdit::_base_remove_text(int, int, int, int) {}
 void TextEdit::_base_insert_text(int, int, String const&, int&, int&) {}
 
 String TextEdit::_get_accessibility_name() const { return String(); }
+
+void TextEdit::_draw_guidelines() {}
+
+/* Code Mode / CodeFeatures implementation */
+
+void TextEdit::set_indent_size(const int p_size)
+{
+	ERR_FAIL_COND_MSG(p_size <= 0, "Indend size must be greater than 0.");
+	if (code.indent_size == p_size) {
+		return;
+	}
+
+	code.indent_size = p_size;
+	if (code.indent_using_spaces) {
+		code.indent_text = String(" ").repeat(p_size);
+	}
+	else {
+		code.indent_text = "\t";
+	}
+	set_tab_size(p_size);
+}
+
+int TextEdit::get_indent_size() const { return code.indent_size; }
+
+void TextEdit::set_indent_using_spaces(const bool p_use_spaces)
+{
+	code.indent_using_spaces = p_use_spaces;
+	if (code.indent_using_spaces) {
+		code.indent_text = String(" ").repeat(code.indent_size);
+	}
+	else {
+		code.indent_text = "\t";
+	}
+}
+
+bool TextEdit::is_indent_using_spaces() const { return code.indent_using_spaces; }
+
+void TextEdit::set_auto_indent_enabled(bool p_enabled) { code.auto_indent = p_enabled; }
+
+bool TextEdit::is_auto_indent_enabled() const { return code.auto_indent; }
+
+void TextEdit::set_auto_indent_prefixes(const Vector<String>& p_prefixes)
+{
+	code.auto_indent_prefixes.clear();
+	for (int i = 0; i < p_prefixes.size(); i++) {
+		const String prefix = p_prefixes[i];
+		if (!prefix.is_empty()) {
+			code.auto_indent_prefixes.insert(prefix[0]);
+		}
+	}
+}
+
+Vector<String> TextEdit::get_auto_indent_prefixes() const
+{
+	Vector<String> prefixes;
+	for (const char32_t& E : code.auto_indent_prefixes) {
+		prefixes.push_back(String::chr(E));
+	}
+	return prefixes;
+}
+
+int TextEdit::_calculate_spaces_till_next_left_indent(int p_column) const
+{
+	int spaces_till_indent = p_column % code.indent_size;
+	if (spaces_till_indent == 0) {
+		spaces_till_indent = code.indent_size;
+	}
+	return spaces_till_indent;
+}
+
+int TextEdit::_calculate_spaces_till_next_right_indent(int p_column) const
+{
+	return code.indent_size - p_column % code.indent_size;
+}
+
+void TextEdit::set_auto_brace_completion_enabled(bool p_enabled)
+{
+	code.auto_brace_completion_enabled = p_enabled;
+}
+
+bool TextEdit::is_auto_brace_completion_enabled() const
+{
+	return code.auto_brace_completion_enabled;
+}
+
+void TextEdit::set_highlight_matching_braces_enabled(bool p_enabled)
+{
+	highlight_matching_braces_enabled = p_enabled;
+	queue_redraw();
+}
+
+bool TextEdit::is_highlight_matching_braces_enabled() const
+{
+	return highlight_matching_braces_enabled;
+}
+
+void TextEdit::add_auto_brace_completion_pair(const String& p_open_key, const String& p_close_key)
+{
+	ERR_FAIL_COND_MSG(p_open_key.is_empty(), "auto brace completion open key cannot be empty");
+	ERR_FAIL_COND_MSG(p_close_key.is_empty(), "auto brace completion close key cannot be empty");
+
+	for (int i = 0; i < p_open_key.length(); i++) {
+		ERR_FAIL_COND_MSG(
+			!is_symbol(p_open_key[i]), "auto brace completion open key must be a symbol");
+	}
+	for (int i = 0; i < p_close_key.length(); i++) {
+		ERR_FAIL_COND_MSG(
+			!is_symbol(p_close_key[i]), "auto brace completion close key must be a symbol");
+	}
+
+	int at = 0;
+	for (int i = 0; i < code.auto_brace_completion_pairs.size(); i++) {
+		ERR_FAIL_COND_MSG(code.auto_brace_completion_pairs[i].open_key == p_open_key,
+			"auto brace completion open key '" + p_open_key + "' already exists.");
+		if (p_open_key.length() < code.auto_brace_completion_pairs[i].open_key.length()) {
+			at++;
+		}
+	}
+
+	BracePair brace_pair;
+	brace_pair.open_key = p_open_key;
+	brace_pair.close_key = p_close_key;
+	code.auto_brace_completion_pairs.insert(at, brace_pair);
+}
+
+bool TextEdit::has_auto_brace_completion_open_key(const String& p_open_key) const
+{
+	for (int i = 0; i < code.auto_brace_completion_pairs.size(); i++) {
+		if (code.auto_brace_completion_pairs[i].open_key == p_open_key) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool TextEdit::has_auto_brace_completion_close_key(const String& p_close_key) const
+{
+	for (int i = 0; i < code.auto_brace_completion_pairs.size(); i++) {
+		if (code.auto_brace_completion_pairs[i].close_key == p_close_key) {
+			return true;
+		}
+	}
+	return false;
+}
+
+String TextEdit::get_auto_brace_completion_close_key(const String& p_open_key) const
+{
+	for (int i = 0; i < code.auto_brace_completion_pairs.size(); i++) {
+		if (code.auto_brace_completion_pairs[i].open_key == p_open_key) {
+			return code.auto_brace_completion_pairs[i].close_key;
+		}
+	}
+	return String();
+}
+
+void TextEdit::_update_draw_main_gutter()
+{
+	_ensure_code_gutters();
+	set_gutter_draw(
+		code.main_gutter, code.draw_breakpoints || code.draw_bookmarks || code.draw_executing_lines);
+	int main_gutter_width = get_line_height() / (_is_bookmark_only() ? 2 : 1);
+	set_gutter_width(code.main_gutter, main_gutter_width);
+}
+
+void TextEdit::set_draw_breakpoints_gutter(bool p_draw)
+{
+	_ensure_code_gutters();
+	code.draw_breakpoints = p_draw;
+	set_gutter_clickable(code.main_gutter, p_draw);
+	_update_draw_main_gutter();
+}
+
+bool TextEdit::is_drawing_breakpoints_gutter() const { return code.draw_breakpoints; }
+
+void TextEdit::set_draw_bookmarks_gutter(bool p_draw)
+{
+	_ensure_code_gutters();
+	code.draw_bookmarks = p_draw;
+	_update_draw_main_gutter();
+}
+
+bool TextEdit::is_drawing_bookmarks_gutter() const { return code.draw_bookmarks; }
+
+void TextEdit::set_draw_executing_lines_gutter(bool p_draw)
+{
+	_ensure_code_gutters();
+	code.draw_executing_lines = p_draw;
+	_update_draw_main_gutter();
+}
+
+bool TextEdit::is_drawing_executing_lines_gutter() const { return code.draw_executing_lines; }
+
+void TextEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2& p_region)
+{
+	bool hovering = get_hovered_gutter() == Vector2i(code.main_gutter, p_line);
+	RID ci = get_text_canvas_item();
+	if (code.draw_breakpoints && theme_cache.breakpoint_icon.is_valid()) {
+		bool breakpointed = is_line_breakpointed(p_line);
+		bool shift_pressed = Input::is_key_pressed(Key::SHIFT);
+
+		if (breakpointed || (hovering && !is_dragging_cursor() && !shift_pressed)) {
+			int padding = p_region.size.x / 6;
+
+			Color use_color = theme_cache.breakpoint_color;
+			if (hovering && !shift_pressed) {
+				use_color = breakpointed ? use_color.lightened(0.3) : use_color.darkened(0.5);
+			}
+			Rect2 icon_region = p_region;
+			icon_region.position += Point2(padding, padding);
+			icon_region.size -= Point2(padding, padding) * 2;
+			theme_cache.breakpoint_icon->draw_rect(ci, icon_region, false, use_color);
+		}
+	}
+
+	if (code.draw_bookmarks && theme_cache.bookmark_icon.is_valid()) {
+		bool bookmarked = is_line_bookmarked(p_line);
+		bool shift_pressed = Input::is_key_pressed(Key::SHIFT);
+
+		if (bookmarked || (hovering && !is_dragging_cursor() && shift_pressed)) {
+			int horizontal_padding = p_region.size.x / (_is_bookmark_only() ? 8 : 2);
+			int vertical_padding = p_region.size.y / 4;
+
+			Color use_color = theme_cache.bookmark_color;
+			if (hovering && shift_pressed) {
+				use_color = bookmarked ? use_color.lightened(0.3) : use_color.darkened(0.5);
+			}
+			Rect2 icon_region = p_region;
+			icon_region.position += Point2(horizontal_padding, 0);
+			icon_region.size -= Point2(horizontal_padding * 1.1, vertical_padding);
+			theme_cache.bookmark_icon->draw_rect(ci, icon_region, false, use_color);
+		}
+	}
+
+	if (code.draw_executing_lines && is_line_executing(p_line) &&
+		theme_cache.executing_line_icon.is_valid()) {
+		int horizontal_padding = p_region.size.x / 10;
+		int vertical_padding = p_region.size.y / 4;
+
+		Rect2 icon_region = p_region;
+		icon_region.position += Point2(horizontal_padding, vertical_padding);
+		icon_region.size -= Point2(horizontal_padding, vertical_padding) * 2;
+		theme_cache.executing_line_icon->draw_rect(
+			ci, icon_region, false, theme_cache.executing_line_color);
+	}
+}
+
+void TextEdit::set_line_as_breakpoint(int p_line, bool p_breakpointed)
+{
+	ERR_FAIL_INDEX(p_line, get_line_count());
+	if (p_breakpointed) {
+		code.breakpointed_lines[p_line] = true;
+	}
+	else {
+		code.breakpointed_lines.erase(p_line);
+	}
+	queue_redraw();
+}
+
+bool TextEdit::is_line_breakpointed(int p_line) const
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
+	return code.breakpointed_lines.has(p_line) && code.breakpointed_lines[p_line];
+}
+
+void TextEdit::clear_breakpointed_lines()
+{
+	for (int i = 0; i < get_line_count(); i++) {
+		if (is_line_breakpointed(i)) {
+			set_line_as_breakpoint(i, false);
+		}
+	}
+}
+
+PackedInt32Array TextEdit::get_breakpointed_lines() const
+{
+	PackedInt32Array ret;
+	for (int i = 0; i < get_line_count(); i++) {
+		if (is_line_breakpointed(i)) {
+			ret.append(i);
+		}
+	}
+	return ret;
+}
+
+void TextEdit::set_line_as_bookmarked(int p_line, bool p_bookmarked)
+{
+	ERR_FAIL_INDEX(p_line, get_line_count());
+	if (p_bookmarked) {
+		code.bookmarked_lines[p_line] = true;
+	}
+	else {
+		code.bookmarked_lines.erase(p_line);
+	}
+	queue_redraw();
+}
+
+bool TextEdit::is_line_bookmarked(int p_line) const
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
+	return code.bookmarked_lines.has(p_line) && code.bookmarked_lines[p_line];
+}
+
+void TextEdit::clear_bookmarked_lines()
+{
+	for (int i = 0; i < get_line_count(); i++) {
+		if (is_line_bookmarked(i)) {
+			set_line_as_bookmarked(i, false);
+		}
+	}
+}
+
+PackedInt32Array TextEdit::get_bookmarked_lines() const
+{
+	PackedInt32Array ret;
+	for (int i = 0; i < get_line_count(); i++) {
+		if (is_line_bookmarked(i)) {
+			ret.append(i);
+		}
+	}
+	return ret;
+}
+
+void TextEdit::set_line_as_executing(int p_line, bool p_executing)
+{
+	ERR_FAIL_INDEX(p_line, get_line_count());
+	if (p_executing) {
+		code.executing_lines[p_line] = true;
+	}
+	else {
+		code.executing_lines.erase(p_line);
+	}
+	queue_redraw();
+}
+
+bool TextEdit::is_line_executing(int p_line) const
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
+	return code.executing_lines.has(p_line) && code.executing_lines[p_line];
+}
+
+void TextEdit::clear_executing_lines()
+{
+	for (int i = 0; i < get_line_count(); i++) {
+		if (is_line_executing(i)) {
+			set_line_as_executing(i, false);
+		}
+	}
+}
+
+PackedInt32Array TextEdit::get_executing_lines() const
+{
+	PackedInt32Array ret;
+	for (int i = 0; i < get_line_count(); i++) {
+		if (is_line_executing(i)) {
+			ret.append(i);
+		}
+	}
+	return ret;
+}
+
+void TextEdit::set_draw_line_numbers(bool p_draw)
+{
+	_ensure_code_gutters();
+	set_gutter_draw(code.line_number_gutter, p_draw);
+}
+
+bool TextEdit::is_draw_line_numbers_enabled() const
+{
+	return code.line_number_gutter != -1 && is_gutter_drawn(code.line_number_gutter);
+}
+
+void TextEdit::set_line_numbers_zero_padded(bool p_zero_padded)
+{
+	String new_line_number_padding = p_zero_padded ? "0" : " ";
+	if (code.line_number_padding == new_line_number_padding) {
+		return;
+	}
+	code.line_number_padding = new_line_number_padding;
+	_clear_line_number_text_cache();
+	queue_redraw();
+}
+
+bool TextEdit::is_line_numbers_zero_padded() const { return code.line_number_padding == "0"; }
+
+void TextEdit::set_line_numbers_min_digits(int p_count)
+{
+	int new_min = MAX(1, p_count);
+	if (code.line_numbers_min_digits == new_min) {
+		return;
+	}
+	code.line_numbers_min_digits = new_min;
+	code.line_number_digits = MAX(code.line_number_digits, code.line_numbers_min_digits);
+	_clear_line_number_text_cache();
+	_update_line_number_gutter_width();
+}
+
+int TextEdit::get_line_numbers_min_digits() const { return code.line_numbers_min_digits; }
+
+void TextEdit::_clear_line_number_text_cache()
+{
+	for (const KeyValue<int, RID>& KV : code.line_number_text_cache) {
+		TS->free_rid(KV.value);
+	}
+	code.line_number_text_cache.clear();
+}
+
+void TextEdit::_update_line_number_gutter_width()
+{
+	if (code.line_number_gutter == -1 || theme_cache.font.is_null()) {
+		return;
+	}
+	int width_in_chars =
+		code.line_number_digits +
+		(!is_drawing_fold_gutter() ? 1 : 0); // Extra padding if there is no fold gutter.
+	set_gutter_width(code.line_number_gutter,
+		width_in_chars * theme_cache.font->get_char_size('0', theme_cache.font_size).width);
+}
+
+void TextEdit::set_draw_fold_gutter(bool p_draw)
+{
+	_ensure_code_gutters();
+	set_gutter_draw(code.fold_gutter, p_draw);
+	_update_line_number_gutter_width();
+}
+
+bool TextEdit::is_drawing_fold_gutter() const
+{
+	return code.fold_gutter != -1 && is_gutter_drawn(code.fold_gutter);
+}
+
+void TextEdit::_fold_gutter_draw_callback(int p_line, int p_gutter, Rect2 p_region)
+{
+	if (!can_fold_line(p_line) && !is_line_folded(p_line)) {
+		set_line_gutter_clickable(p_line, code.fold_gutter, false);
+		return;
+	}
+	set_line_gutter_clickable(p_line, code.fold_gutter, true);
+	RID ci = get_text_canvas_item();
+
+	int horizontal_padding = p_region.size.x / 10;
+	int vertical_padding = p_region.size.y / 6;
+
+	p_region.position += Point2(horizontal_padding, vertical_padding);
+	p_region.size -= Point2(horizontal_padding, vertical_padding) * 2;
+
+	bool can_fold = can_fold_line(p_line);
+
+	if (is_line_code_region_start(p_line)) {
+		Color region_icon_color = theme_cache.folded_code_region_color;
+		region_icon_color.a = MAX(region_icon_color.a, 0.4f);
+		if (can_fold) {
+			theme_cache.can_fold_code_region_icon->draw_rect(
+				ci, p_region, false, region_icon_color);
+		}
+		else {
+			theme_cache.folded_code_region_icon->draw_rect(ci, p_region, false, region_icon_color);
+		}
+		return;
+	}
+	if (can_fold) {
+		theme_cache.can_fold_icon->draw_rect(ci, p_region, false, theme_cache.code_folding_color);
+		return;
+	}
+	theme_cache.folded_icon->draw_rect(ci, p_region, false, theme_cache.code_folding_color);
+}
+
+void TextEdit::set_line_folding_enabled(bool p_enabled)
+{
+	code.line_folding_enabled = p_enabled;
+	_set_hiding_enabled(p_enabled);
+}
+
+bool TextEdit::is_line_folding_enabled() const { return code.line_folding_enabled; }
+
+bool TextEdit::can_fold_line(int p_line) const
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
+	if (!code.line_folding_enabled) {
+		return false;
+	}
+
+	if (p_line + 1 >= get_line_count() || get_line(p_line).strip_edges().is_empty()) {
+		return false;
+	}
+
+	if (_is_line_hidden(p_line) || is_line_folded(p_line)) {
+		return false;
+	}
+
+	// Check for code region.
+	if (is_line_code_region_end(p_line)) {
+		return false;
+	}
+	if (is_line_code_region_start(p_line)) {
+		int region_level = 0;
+		// Check if there is a valid end region tag.
+		for (int next_line = p_line + 1; next_line < get_line_count(); next_line++) {
+			if (is_line_code_region_end(next_line)) {
+				region_level -= 1;
+				if (region_level == -1) {
+					return true;
+				}
+			}
+			if (is_line_code_region_start(next_line)) {
+				region_level += 1;
+			}
+		}
+		return false;
+	}
+
+	/* Check for full multiline line or block strings / comments. */
+	int in_comment = is_in_comment(p_line);
+	int in_string = (in_comment == -1) ? is_in_string(p_line) : -1;
+	if (in_string != -1 || in_comment != -1) {
+		if (get_delimiter_start_position(p_line, get_line(p_line).size() - 1).y != p_line) {
+			return false;
+		}
+
+		int delimiter_end_line = get_delimiter_end_position(p_line, get_line(p_line).size() - 1).y;
+		/* No end line, therefore we have a multiline region over the rest of the file. */
+		if (delimiter_end_line == -1) {
+			return true;
+		}
+		/* End line is the same therefore we have a block. */
+		if (delimiter_end_line == p_line) {
+			/* Check we are the start of the block. */
+			if (p_line - 1 >= 0) {
+				if ((in_string != -1 && is_in_string(p_line - 1) != -1) ||
+					(in_comment != -1 && is_in_comment(p_line - 1) != -1 &&
+						!is_line_code_region_start(p_line - 1) &&
+						!is_line_code_region_end(p_line - 1))) {
+					return false;
+				}
+			}
+			/* Check it continues for at least one line. */
+			return ((in_string != -1 && is_in_string(p_line + 1) != -1) ||
+					(in_comment != -1 && is_in_comment(p_line + 1) != -1 &&
+						!is_line_code_region_start(p_line + 1) &&
+						!is_line_code_region_end(p_line + 1)));
+		}
+		return ((in_string != -1 && is_in_string(delimiter_end_line) != -1) ||
+				(in_comment != -1 && is_in_comment(delimiter_end_line) != -1));
+	}
+
+	/* Otherwise check indent levels. */
+	int start_indent = get_indent_level(p_line);
+	for (int i = p_line + 1; i < get_line_count(); i++) {
+		if (is_in_string(i) != -1 || is_in_comment(i) != -1 ||
+			get_line(i).strip_edges().is_empty()) {
+			continue;
+		}
+		return (get_indent_level(i) > start_indent);
+	}
+	return false;
+}
+
+bool TextEdit::_fold_line(int p_line)
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
+	if (!is_line_folding_enabled() || !can_fold_line(p_line)) {
+		return false;
+	}
+
+	/* Find the last line to be hidden. */
+	const int line_count = get_line_count() - 1;
+	int end_line = line_count;
+
+	// Fold code region.
+	if (is_line_code_region_start(p_line)) {
+		int region_level = 0;
+		for (int endregion_line = p_line + 1; endregion_line < get_line_count(); endregion_line++) {
+			if (is_line_code_region_start(endregion_line)) {
+				region_level += 1;
+			}
+			if (is_line_code_region_end(endregion_line)) {
+				region_level -= 1;
+				if (region_level == -1) {
+					end_line = endregion_line;
+					break;
+				}
+			}
+		}
+		set_line_background_color(p_line, theme_cache.folded_code_region_color);
+	}
+
+	int in_comment = is_in_comment(p_line);
+	int in_string = (in_comment == -1) ? is_in_string(p_line) : -1;
+	if (!is_line_code_region_start(p_line)) {
+		if (in_string != -1 || in_comment != -1) {
+			end_line = get_delimiter_end_position(p_line, get_line(p_line).size() - 1).y;
+			// End line is the same therefore we have a block of single line delimiters.
+			if (end_line == p_line) {
+				for (int i = p_line + 1; i <= line_count; i++) {
+					if ((in_string != -1 && is_in_string(i) == -1) ||
+						(in_comment != -1 && is_in_comment(i) == -1)) {
+						break;
+					}
+					if (in_comment != -1 &&
+						(is_line_code_region_start(i) || is_line_code_region_end(i))) {
+						// A code region tag should split a comment block, ending it early.
+						break;
+					}
+					end_line = i;
+				}
+			}
+		}
+		else {
+			int start_indent = get_indent_level(p_line);
+			for (int i = p_line + 1; i <= line_count; i++) {
+				if (get_line(i).strip_edges().is_empty()) {
+					continue;
+				}
+				if (get_indent_level(i) > start_indent) {
+					end_line = i;
+					continue;
+				}
+				if (is_in_string(i) == -1 && is_in_comment(i) == -1) {
+					break;
+				}
+			}
+		}
+	}
+
+	for (int i = p_line + 1; i <= end_line; i++) {
+		_set_line_as_hidden(i, true);
+	}
+
+	// Collapse any carets in the hidden area.
+	collapse_carets(p_line, get_line(p_line).length(), end_line, get_line(end_line).length(), true);
+
+	return true;
+}
+
+bool TextEdit::_unfold_line(int p_line)
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
+	if (!is_line_folded(p_line) && !_is_line_hidden(p_line)) {
+		return false;
+	}
+
+	int fold_start = p_line;
+	for (; fold_start > 0; fold_start--) {
+		if (is_line_folded(fold_start)) {
+			break;
+		}
+	}
+	fold_start = is_line_folded(fold_start) ? fold_start : p_line;
+
+	for (int i = fold_start + 1; i < get_line_count(); i++) {
+		if (!_is_line_hidden(i)) {
+			break;
+		}
+		_set_line_as_hidden(i, false);
+		if (is_line_code_region_start(i - 1)) {
+			set_line_background_color(i - 1, Color(0.0, 0.0, 0.0, 0.0));
+		}
+	}
+	return true;
+}
+
+void TextEdit::fold_line(int p_line)
+{
+	if (_fold_line(p_line)) {
+		queue_redraw();
+	}
+}
+
+void TextEdit::unfold_line(int p_line)
+{
+	if (_unfold_line(p_line)) {
+		queue_redraw();
+	}
+}
+
+void TextEdit::fold_all_lines()
+{
+	bool any_folded = false;
+	for (int i = 0; i < get_line_count(); i++) {
+		any_folded |= _fold_line(i);
+	}
+	if (any_folded) {
+		queue_redraw();
+	}
+}
+
+void TextEdit::unfold_all_lines()
+{
+	bool any_unfolded = false;
+	for (int i = 0; i < get_line_count(); i++) {
+		any_unfolded |= _unfold_line(i);
+	}
+	if (any_unfolded) {
+		queue_redraw();
+	}
+}
+
+void TextEdit::toggle_foldable_line(int p_line)
+{
+	ERR_FAIL_INDEX(p_line, get_line_count());
+	if (is_line_folded(p_line)) {
+		unfold_line(p_line);
+		return;
+	}
+	fold_line(p_line);
+}
+
+void TextEdit::toggle_foldable_lines_at_carets()
+{
+	begin_multicaret_edit();
+	int previous_line = -1;
+	Vector<int> sorted = get_sorted_carets();
+	for (int caret_idx : sorted) {
+		if (multicaret_edit_ignore_caret(caret_idx)) {
+			continue;
+		}
+		int line_idx = get_caret_line(caret_idx);
+		if (line_idx != previous_line) {
+			toggle_foldable_line(line_idx);
+			previous_line = line_idx;
+		}
+	}
+	end_multicaret_edit();
+}
+
+int TextEdit::get_folded_line_header(int p_line) const
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), 0);
+	// Search for the first non hidden line.
+	while (p_line > 0) {
+		if (!_is_line_hidden(p_line)) {
+			break;
+		}
+		p_line--;
+	}
+	return p_line;
+}
+
+bool TextEdit::is_line_folded(int p_line) const
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
+	return p_line + 1 < get_line_count() && !_is_line_hidden(p_line) && _is_line_hidden(p_line + 1);
+}
+
+Vector<int> TextEdit::get_folded_lines_bind() const
+{
+	Vector<int> folded_lines;
+	for (int i = 0; i < get_line_count(); i++) {
+		if (is_line_folded(i)) {
+			folded_lines.push_back(i);
+		}
+	}
+	return folded_lines;
+}
+
+PackedInt32Array TextEdit::get_folded_lines() const
+{
+	PackedInt32Array folded_lines;
+	for (int i = 0; i < get_line_count(); i++) {
+		if (is_line_folded(i)) {
+			folded_lines.push_back(i);
+		}
+	}
+	return folded_lines;
+}
+
+void TextEdit::create_code_region() {}
+
+String TextEdit::get_code_region_start_tag() const { return code.code_region_start_tag; }
+
+String TextEdit::get_code_region_end_tag() const { return code.code_region_end_tag; }
+
+void TextEdit::set_code_region_tags(const String& p_start, const String& p_end)
+{
+	ERR_FAIL_COND_MSG(p_start == p_end, "Starting and ending region tags cannot be identical.");
+	ERR_FAIL_COND_MSG(p_start.is_empty(), "Starting region tag cannot be empty.");
+	ERR_FAIL_COND_MSG(p_end.is_empty(), "Ending region tag cannot be empty.");
+	code.code_region_start_tag = p_start;
+	code.code_region_end_tag = p_end;
+	_update_code_region_tags();
+}
+
+bool TextEdit::is_line_code_region_start(int p_line) const
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
+	if (code.code_region_start_string.is_empty()) {
+		return false;
+	}
+	if (is_in_string(p_line) != -1) {
+		return false;
+	}
+	Vector<String> split = get_line(p_line).strip_edges().split_spaces(1);
+	return split.size() > 0 && split[0] == code.code_region_start_string;
+}
+
+bool TextEdit::is_line_code_region_end(int p_line) const
+{
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), false);
+	if (code.code_region_start_string.is_empty()) {
+		return false;
+	}
+	if (is_in_string(p_line) != -1) {
+		return false;
+	}
+	Vector<String> split = get_line(p_line).strip_edges().split_spaces(1);
+	return split.size() > 0 && split[0] == code.code_region_end_string;
+}
+
+void TextEdit::add_string_delimiter(
+	const String& p_start_key, const String& p_end_key, bool p_line_only)
+{
+	_add_delimiter(p_start_key, p_end_key, p_line_only, TYPE_STRING);
+}
+
+void TextEdit::remove_string_delimiter(const String& p_start_key)
+{
+	_remove_delimiter(p_start_key, TYPE_STRING);
+}
+
+bool TextEdit::has_string_delimiter(const String& p_start_key) const
+{
+	return _has_delimiter(p_start_key, TYPE_STRING);
+}
+
+void TextEdit::set_string_delimiters(const Vector<String>& p_string_delimiters)
+{
+	_set_delimiters(p_string_delimiters, TYPE_STRING);
+}
+
+void TextEdit::clear_string_delimiters() { _clear_delimiters(TYPE_STRING); }
+
+Vector<String> TextEdit::get_string_delimiters() const
+{
+	return _get_delimiters(TYPE_STRING);
+}
+
+int TextEdit::is_in_string(int p_line, int p_column) const
+{
+	return _is_in_delimiter(p_line, p_column, TYPE_STRING);
+}
+
+void TextEdit::add_comment_delimiter(
+	const String& p_start_key, const String& p_end_key, bool p_line_only)
+{
+	_add_delimiter(p_start_key, p_end_key, p_line_only, TYPE_COMMENT);
+}
+
+void TextEdit::remove_comment_delimiter(const String& p_start_key)
+{
+	_remove_delimiter(p_start_key, TYPE_COMMENT);
+}
+
+bool TextEdit::has_comment_delimiter(const String& p_start_key) const
+{
+	return _has_delimiter(p_start_key, TYPE_COMMENT);
+}
+
+void TextEdit::set_comment_delimiters(const Vector<String>& p_comment_delimiters)
+{
+	_set_delimiters(p_comment_delimiters, TYPE_COMMENT);
+}
+
+void TextEdit::clear_comment_delimiters() { _clear_delimiters(TYPE_COMMENT); }
+
+Vector<String> TextEdit::get_comment_delimiters() const
+{
+	return _get_delimiters(TYPE_COMMENT);
+}
+
+int TextEdit::is_in_comment(int p_line, int p_column) const
+{
+	return _is_in_delimiter(p_line, p_column, TYPE_COMMENT);
+}
+
+String TextEdit::get_delimiter_start_key(int p_delimiter_idx) const
+{
+	ERR_FAIL_INDEX_V(p_delimiter_idx, code.delimiters.size(), "");
+	return code.delimiters[p_delimiter_idx].start_key;
+}
+
+String TextEdit::get_delimiter_end_key(int p_delimiter_idx) const
+{
+	ERR_FAIL_INDEX_V(p_delimiter_idx, code.delimiters.size(), "");
+	return code.delimiters[p_delimiter_idx].end_key;
+}
+
+Point2 TextEdit::get_delimiter_start_position(int p_line, int p_column) const
+{
+	if (code.delimiters.is_empty()) {
+		return Point2(-1, -1);
+	}
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), Point2(-1, -1));
+	ERR_FAIL_COND_V(p_column - 1 > get_line(p_line).size(), Point2(-1, -1));
+
+	Point2 start_position;
+	start_position.y = -1;
+	start_position.x = -1;
+
+	bool in_region = ((p_line <= 0 || code.delimiter_cache[p_line - 1].size() < 1)
+							 ? -1
+							 : code.delimiter_cache[p_line - 1].back()->get()) != -1;
+
+	/* Check the keys for this line. */
+	for (const KeyValue<int, int>& E : code.delimiter_cache[p_line]) {
+		if (E.key > p_column) {
+			break;
+		}
+		in_region = E.value != -1;
+		start_position.x = in_region ? E.key : -1;
+	}
+
+	/* Region was found on this line and is not a multiline continuation. */
+	int line_length = get_line(p_line).length();
+	if (start_position.x != -1 && line_length > 0 && start_position.x != line_length + 1) {
+		start_position.y = p_line;
+		return start_position;
+	}
+
+	/* Not in a region */
+	if (!in_region) {
+		return start_position;
+	}
+
+	/* Region starts on a previous line */
+	for (int i = p_line - 1; i >= 0; i--) {
+		if (code.delimiter_cache[i].size() < 1) {
+			continue;
+		}
+		start_position.y = i;
+		start_position.x = code.delimiter_cache[i].back()->key();
+
+		/* Make sure it's not a multiline continuation. */
+		line_length = get_line(i).length();
+		if (line_length > 0 && start_position.x != line_length + 1) {
+			break;
+		}
+	}
+	return start_position;
+}
+
+Point2 TextEdit::get_delimiter_end_position(int p_line, int p_column) const
+{
+	if (code.delimiters.is_empty()) {
+		return Point2(-1, -1);
+	}
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), Point2(-1, -1));
+	ERR_FAIL_COND_V(p_column - 1 > get_line(p_line).size(), Point2(-1, -1));
+
+	Point2 end_position;
+	end_position.y = -1;
+	end_position.x = -1;
+
+	int region = (p_line <= 0 || code.delimiter_cache[p_line - 1].size() < 1)
+					 ? -1
+					 : code.delimiter_cache[p_line - 1].back()->value();
+
+	/* Check the keys for this line. */
+	for (const KeyValue<int, int>& E : code.delimiter_cache[p_line]) {
+		end_position.x = (E.value == -1) ? E.key : -1;
+		if (E.key > p_column) {
+			break;
+		}
+		region = E.value;
+	}
+
+	/* Region was found on this line and is not a multiline continuation. */
+	if (region != -1 && end_position.x != -1 &&
+		(code.delimiters[region].line_only || end_position.x != get_line(p_line).length() + 1)) {
+		end_position.y = p_line;
+		return end_position;
+	}
+
+	/* Not in a region */
+	if (region == -1) {
+		end_position.x = -1;
+		return end_position;
+	}
+
+	/* Region ends on a later line */
+	for (int i = p_line + 1; i < get_line_count(); i++) {
+		if (code.delimiter_cache[i].size() < 1 || code.delimiter_cache[i].front()->value() != -1) {
+			continue;
+		}
+		end_position.x = code.delimiter_cache[i].front()->key();
+
+		/* Make sure it's not a multiline continuation. */
+		if (get_line(i).length() > 0 && end_position.x != get_line(i).length() + 1) {
+			end_position.y = i;
+			break;
+		}
+		end_position.x = -1;
+	}
+	return end_position;
+}
+
+void TextEdit::set_code_hint(const String& p_hint)
+{
+	if (code.code_hint == p_hint) {
+		return;
+	}
+	code.code_hint = p_hint;
+	code.code_hint_xpos = -0xFFFF;
+	queue_redraw();
+}
+
+void TextEdit::set_code_hint_draw_below(bool p_below)
+{
+	if (code.code_hint_draw_below == p_below) {
+		return;
+	}
+	code.code_hint_draw_below = p_below;
+	queue_redraw();
+}
+
+void TextEdit::set_code_completion_enabled(bool p_enable)
+{
+	code.code_completion_enabled = p_enable;
+}
+
+bool TextEdit::is_code_completion_enabled() const { return code.code_completion_enabled; }
+
+void TextEdit::set_code_completion_prefixes(const Vector<String>& p_prefixes)
+{
+	code.code_completion_prefixes.clear();
+	for (int i = 0; i < p_prefixes.size(); i++) {
+		const String prefix = p_prefixes[i];
+		if (!prefix.is_empty()) {
+			code.code_completion_prefixes.insert(prefix[0]);
+		}
+	}
+}
+
+Vector<String> TextEdit::get_code_completion_prefixes() const
+{
+	Vector<String> prefixes;
+	for (const char32_t& E : code.code_completion_prefixes) {
+		prefixes.push_back(String::chr(E));
+	}
+	return prefixes;
+}
+
+String TextEdit::get_text_for_code_completion() const
+{
+	StringBuilder completion_text;
+	const int text_size = get_line_count();
+	for (int i = 0; i < text_size; i++) {
+		String line = get_line(i);
+
+		if (i == get_caret_line()) {
+			completion_text += line.substr(0, get_caret_column());
+			/* Not unicode, represents the caret. */
+			completion_text += String::chr(0xFFFF);
+			completion_text += line.substr(get_caret_column());
+		}
+		else {
+			completion_text += line;
+		}
+
+		if (i != text_size - 1) {
+			completion_text += "\n";
+		}
+	}
+	return completion_text.as_string();
+}
+
+void TextEdit::request_code_completion(bool) {}
+
+void TextEdit::update_code_completion_options(bool) {}
+
+int TextEdit::get_code_completion_selected_index() const
+{
+	return (code.code_completion_active) ? code.code_completion_current_selected : -1;
+}
+
+void TextEdit::set_code_completion_selected_index(int p_index)
+{
+	if (!code.code_completion_active) {
+		return;
+	}
+	code.code_completion_current_selected = p_index;
+}
+
+void TextEdit::confirm_code_completion(bool) {}
+
+void TextEdit::cancel_code_completion() { code.code_completion_active = false; }
+
+void TextEdit::set_line_length_guidelines(Vector<int> p_guideline_columns)
+{
+	code.line_length_guideline_columns = p_guideline_columns;
+	queue_redraw();
+}
+
+Vector<int> TextEdit::get_line_length_guidelines() const
+{
+	return code.line_length_guideline_columns;
+}
+
+void TextEdit::set_symbol_lookup_on_click_enabled(bool p_enabled)
+{
+	code.symbol_lookup_on_click_enabled = p_enabled;
+	set_symbol_lookup_word_as_valid(false);
+}
+
+bool TextEdit::is_symbol_lookup_on_click_enabled() const
+{
+	return code.symbol_lookup_on_click_enabled;
+}
+
+String TextEdit::get_text_for_symbol_lookup() const
+{
+	Point2i mp = get_local_mouse_pos();
+	Point2i pos = get_line_column_at_pos(mp, false, false);
+	int line = pos.y;
+	int col = pos.x;
+
+	if (line == -1) {
+		return String();
+	}
+
+	return get_text_with_cursor_char(line, col);
+}
+
+String TextEdit::get_text_with_cursor_char(int p_line, int p_column) const
+{
+	const int text_size = get_line_count();
+	StringBuilder result;
+	for (int i = 0; i < text_size; i++) {
+		String line_text = get_line(i);
+		if (i == p_line && p_column >= 0 && p_column <= line_text.size()) {
+			result += line_text.substr(0, p_column);
+			/* Not unicode, represents the cursor. */
+			result += String::chr(0xFFFF);
+			result += line_text.substr(p_column);
+		}
+		else {
+			result += line_text;
+		}
+
+		if (i != text_size - 1) {
+			result += "\n";
+		}
+	}
+
+	return result.as_string();
+}
+
+String TextEdit::get_lookup_word(int p_line, int p_column) const
+{
+	if (p_line < 0 || p_column < 0) {
+		return String();
+	}
+	if (is_in_string(p_line, p_column) != -1) {
+		// Return the string in case it is a path.
+		Point2 start_pos = get_delimiter_start_position(p_line, p_column);
+		Point2 end_pos = get_delimiter_end_position(p_line, p_column);
+		int start_line = start_pos.y;
+		int start_column = start_pos.x;
+		int end_line = end_pos.y;
+		int end_column = end_pos.x;
+		if (start_line == end_line && start_column >= 0 && end_column >= 0) {
+			return get_line(start_line).substr(start_column, end_column - start_column - 1);
+		}
+	}
+	return get_word(p_line, p_column);
+}
+
+void TextEdit::set_symbol_lookup_word_as_valid(bool p_valid)
+{
+	code.symbol_lookup_word = p_valid ? code.symbol_lookup_new_word : "";
+	code.symbol_lookup_new_word = "";
+	if (lookup_symbol_word != code.symbol_lookup_word) {
+		_set_symbol_lookup_word(code.symbol_lookup_word);
+	}
+}
+
+void TextEdit::set_symbol_tooltip_on_hover_enabled(bool p_enabled)
+{
+	code.symbol_tooltip_on_hover_enabled = p_enabled;
+	if (!p_enabled && code.symbol_tooltip_timer) {
+		code.symbol_tooltip_timer->stop();
+	}
+}
+
+bool TextEdit::is_symbol_tooltip_on_hover_enabled() const
+{
+	return code.symbol_tooltip_on_hover_enabled;
+}
+
+int TextEdit::_get_auto_brace_pair_open_at_pos(int p_line, int p_col)
+{
+	const String& line = get_line(p_line);
+	int caret_col = MIN(p_col, line.length());
+
+	for (int i = 0; i < code.auto_brace_completion_pairs.size(); i++) {
+		const String& open_key = code.auto_brace_completion_pairs[i].open_key;
+		if (caret_col < open_key.length()) {
+			continue;
+		}
+
+		bool is_match = true;
+		for (int j = 0; j < open_key.length(); j++) {
+			if (line[(caret_col - 1) - j] != open_key[(open_key.length() - 1) - j]) {
+				is_match = false;
+				break;
+			}
+		}
+
+		if (is_match) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+int TextEdit::_get_auto_brace_pair_close_at_pos(int p_line, int p_col)
+{
+	const String& line = get_line(p_line);
+
+	for (int i = 0; i < code.auto_brace_completion_pairs.size(); i++) {
+		if (p_col + code.auto_brace_completion_pairs[i].close_key.length() > line.length()) {
+			continue;
+		}
+
+		bool is_match = true;
+		for (int j = 0; j < code.auto_brace_completion_pairs[i].close_key.length(); j++) {
+			if (line[p_col + j] != code.auto_brace_completion_pairs[i].close_key[j]) {
+				is_match = false;
+				break;
+			}
+		}
+
+		if (is_match) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+void TextEdit::_gutter_clicked(int p_line, int p_gutter)
+{
+	if (!code_mode) {
+		return;
+	}
+	bool shift_pressed = Input::is_key_pressed(Key::SHIFT);
+
+	if (p_gutter == code.main_gutter) {
+		if (code.draw_breakpoints && !shift_pressed) {
+			set_line_as_breakpoint(p_line, !is_line_breakpointed(p_line));
+		}
+		else if (code.draw_bookmarks && shift_pressed) {
+			set_line_as_bookmarked(p_line, !is_line_bookmarked(p_line));
+		}
+		return;
+	}
+
+	if (p_gutter == code.line_number_gutter) {
+		remove_secondary_carets();
+		set_selection_mode(TextEdit::SelectionMode::SELECTION_MODE_LINE);
+		if (p_line == get_line_count() - 1) {
+			select(p_line, 0, p_line, INT_MAX);
+		}
+		else {
+			select(p_line, 0, p_line + 1, 0);
+		}
+		return;
+	}
+
+	if (p_gutter == code.fold_gutter) {
+		if (is_line_folded(p_line)) {
+			unfold_line(p_line);
+		}
+		else if (can_fold_line(p_line)) {
+			fold_line(p_line);
+		}
+		return;
+	}
+}
+
+void TextEdit::_update_gutter_indexes()
+{
+	for (int i = 0; i < get_gutter_count(); i++) {
+		if (get_gutter_name(i) == "main_gutter") {
+			code.main_gutter = i;
+			continue;
+		}
+
+		if (get_gutter_name(i) == "line_numbers") {
+			code.line_number_gutter = i;
+			continue;
+		}
+
+		if (get_gutter_name(i) == "fold_gutter") {
+			code.fold_gutter = i;
+			continue;
+		}
+	}
+}
+
+void TextEdit::_update_code_region_tags()
+{
+	code.code_region_start_string = "";
+	code.code_region_end_string = "";
+
+	if (code.code_region_start_tag.is_empty() || code.code_region_end_tag.is_empty()) {
+		return;
+	}
+
+	// A shorter delimiter has higher priority.
+	for (int i = code.delimiters.size() - 1; i >= 0; i--) {
+		if (code.delimiters[i].type != DelimiterType::TYPE_COMMENT) {
+			continue;
+		}
+		if (code.delimiters[i].end_key.is_empty() && code.delimiters[i].line_only == true) {
+			code.code_region_start_string =
+				code.delimiters[i].start_key + code.code_region_start_tag;
+			code.code_region_end_string = code.delimiters[i].start_key + code.code_region_end_tag;
+			return;
+		}
+	}
+}
+
+void TextEdit::_update_delimiter_cache(int p_from_line, int p_to_line)
+{
+	if (code.delimiters.is_empty()) {
+		return;
+	}
+
+	int line_count = get_line_count();
+	if (p_to_line == -1) {
+		p_to_line = line_count;
+	}
+
+	int start_line = MIN(p_from_line, p_to_line);
+	int end_line = MAX(p_from_line, p_to_line);
+
+	/* Make sure delimiter_cache has all the lines. */
+	if (start_line != end_line) {
+		if (p_to_line < p_from_line) {
+			for (int i = end_line; i > start_line; i--) {
+				code.delimiter_cache.remove_at(i);
+			}
+		}
+		else {
+			for (int i = start_line; i < end_line; i++) {
+				code.delimiter_cache.insert(i, RBMap<int, int>());
+			}
+		}
+	}
+	if (code.delimiter_cache.size() < line_count) {
+		code.delimiter_cache.resize(line_count);
+	}
+
+	int in_region = -1;
+	for (int i = start_line; i < MIN(end_line + 1, line_count); i++) {
+		int current_end_region = (i < 0 || code.delimiter_cache[i].size() < 1)
+									 ? -1
+									 : code.delimiter_cache[i].back()->value();
+		in_region = (i <= 0 || code.delimiter_cache[i - 1].size() < 1)
+						? -1
+						: code.delimiter_cache[i - 1].back()->value();
+
+		const String& str = get_line(i);
+		const int line_length = str.length();
+		code.delimiter_cache.write[i].clear();
+
+		if (str.length() == 0) {
+			if (in_region != -1) {
+				code.delimiter_cache.write[i][0] = in_region;
+			}
+			if (i == end_line && current_end_region != in_region) {
+				end_line++;
+				end_line = MIN(end_line, line_count);
+			}
+			continue;
+		}
+
+		int end_region = -1;
+		for (int j = 0; j < line_length; j++) {
+			int from = j;
+			for (; from < line_length; from++) {
+				if (str[from] == '\\') {
+					from++;
+					continue;
+				}
+				break;
+			}
+
+			/* check if we are in entering a region */
+			bool same_line = false;
+			if (in_region == -1) {
+				for (int d = 0; d < code.delimiters.size(); d++) {
+					/* check there is enough room */
+					int chars_left = line_length - from;
+					int start_key_length = code.delimiters[d].start_key.length();
+					int end_key_length = code.delimiters[d].end_key.length();
+					if (chars_left < start_key_length) {
+						continue;
+					}
+
+					/* search the line */
+					bool match = true;
+					const char32_t* start_key = code.delimiters[d].start_key.get_data();
+					for (int k = 0; k < start_key_length; k++) {
+						if (start_key[k] != str[from + k]) {
+							match = false;
+							break;
+						}
+					}
+					if (!match) {
+						continue;
+					}
+					same_line = true;
+					in_region = d;
+					code.delimiter_cache.write[i][from + 1] = d;
+					from += start_key_length;
+
+					/* check if it's the whole line */
+					if (end_key_length == 0 || code.delimiters[d].line_only ||
+						from + end_key_length > line_length) {
+						j = line_length;
+						if (code.delimiters[d].line_only) {
+							code.delimiter_cache.write[i][line_length + 1] = -1;
+						}
+						else {
+							end_region = in_region;
+						}
+					}
+					break;
+				}
+
+				if (j == line_length || in_region == -1) {
+					continue;
+				}
+			}
+
+			/* if we are in one find the end key */
+			/* search the line */
+			int region_end_index = -1;
+			int end_key_length = code.delimiters[in_region].end_key.length();
+			const char32_t* end_key = code.delimiters[in_region].end_key.get_data();
+			for (; from < line_length; from++) {
+				if (line_length - from < end_key_length) {
+					break;
+				}
+				if (!is_symbol(str[from])) {
+					continue;
+				}
+				if (str[from] == '\\') {
+					from++;
+					continue;
+				}
+				region_end_index = from;
+				for (int k = 0; k < end_key_length; k++) {
+					if (end_key[k] != str[from + k]) {
+						region_end_index = -1;
+						break;
+					}
+				}
+
+				if (region_end_index != -1) {
+					break;
+				}
+			}
+
+			j = from + (end_key_length - 1);
+			end_region = (region_end_index == -1) ? in_region : -1;
+			if (!same_line || region_end_index != -1) {
+				code.delimiter_cache.write[i][j + 1] = end_region;
+			}
+			in_region = -1;
+		}
+
+		if (i == end_line && current_end_region != end_region) {
+			end_line++;
+			end_line = MIN(end_line, line_count);
+		}
+	}
+}
+
+int TextEdit::_is_in_delimiter(int p_line, int p_column, DelimiterType p_type) const
+{
+	if (code.delimiters.is_empty() || p_line >= code.delimiter_cache.size()) {
+		return -1;
+	}
+	ERR_FAIL_INDEX_V(p_line, get_line_count(), 0);
+
+	int region = (p_line <= 0 || code.delimiter_cache[p_line - 1].size() < 1)
+					 ? -1
+					 : code.delimiter_cache[p_line - 1].back()->value();
+	bool in_region = region != -1 && code.delimiters[region].type == p_type;
+	for (RBMap<int, int>::Element* E = code.delimiter_cache[p_line].front(); E; E = E->next()) {
+		/* If column is specified, loop until the key is larger then the column. */
+		if (p_column != -1) {
+			if (E->key() > p_column) {
+				break;
+			}
+			in_region = E->value() != -1 && code.delimiters[E->value()].type == p_type;
+			region = in_region ? E->value() : -1;
+			continue;
+		}
+
+		/* If no column, calculate if the entire line is a region       */
+		/* excluding whitespace.                                       */
+		const String line = get_line(p_line);
+		if (!in_region) {
+			if (E->value() == -1 || code.delimiters[E->value()].type != p_type) {
+				break;
+			}
+
+			region = E->value();
+			in_region = true;
+			for (int i = E->key() - 2; i >= 0; i--) {
+				if (!is_whitespace(line[i])) {
+					return -1;
+				}
+			}
+		}
+
+		if (code.delimiters[region].line_only) {
+			return region;
+		}
+
+		int end_col = E->key();
+		if (E->value() != -1) {
+			if (!E->next()) {
+				return region;
+			}
+			end_col = E->next()->key();
+		}
+
+		for (int i = end_col; i < line.length(); i++) {
+			if (!is_whitespace(line[i])) {
+				return -1;
+			}
+		}
+		return region;
+	}
+	return in_region ? region : -1;
+}
+
+void TextEdit::_add_delimiter(
+	const String& p_start_key, const String& p_end_key, bool p_line_only, DelimiterType p_type)
+{
+	if (!(Engine::is_editor_hint() && p_start_key == "null")) {
+		ERR_FAIL_COND_MSG(p_start_key.is_empty(), "delimiter start key cannot be empty");
+
+		for (int i = 0; i < p_start_key.length(); i++) {
+			ERR_FAIL_COND_MSG(!is_symbol(p_start_key[i]), "delimiter must start with a symbol");
+		}
+	}
+
+	if (p_end_key.length() > 0) {
+		for (int i = 0; i < p_end_key.length(); i++) {
+			ERR_FAIL_COND_MSG(!is_symbol(p_end_key[i]), "delimiter must end with a symbol");
+		}
+	}
+
+	int at = 0;
+	for (int i = 0; i < code.delimiters.size(); i++) {
+		ERR_FAIL_COND_MSG(code.delimiters[i].start_key == p_start_key,
+			"delimiter with start key '" + p_start_key + "' already exists.");
+		if (p_start_key.length() < code.delimiters[i].start_key.length()) {
+			at++;
+		}
+		else {
+			break;
+		}
+	}
+
+	Delimiter delimiter;
+	delimiter.type = p_type;
+	delimiter.start_key = p_start_key;
+	delimiter.end_key = p_end_key;
+	delimiter.line_only = p_line_only || p_end_key.is_empty();
+	code.delimiters.insert(at, delimiter);
+	if (!code.setting_delimiters) {
+		code.delimiter_cache.clear();
+		_update_delimiter_cache();
+	}
+	if (p_type == DelimiterType::TYPE_COMMENT) {
+		_update_code_region_tags();
+	}
+}
+
+void TextEdit::_remove_delimiter(const String& p_start_key, DelimiterType p_type)
+{
+	for (int i = 0; i < code.delimiters.size(); i++) {
+		if (code.delimiters[i].start_key != p_start_key) {
+			continue;
+		}
+
+		if (code.delimiters[i].type != p_type) {
+			break;
+		}
+
+		code.delimiters.remove_at(i);
+		if (!code.setting_delimiters) {
+			code.delimiter_cache.clear();
+			_update_delimiter_cache();
+		}
+		if (p_type == DelimiterType::TYPE_COMMENT) {
+			_update_code_region_tags();
+		}
+
+		break;
+	}
+}
+
+bool TextEdit::_has_delimiter(const String& p_start_key, DelimiterType p_type) const
+{
+	for (int i = 0; i < code.delimiters.size(); i++) {
+		if (code.delimiters[i].start_key == p_start_key) {
+			return code.delimiters[i].type == p_type;
+		}
+	}
+	return false;
+}
+
+void TextEdit::_set_delimiters(const Vector<String>& p_delimiters, DelimiterType p_type)
+{
+	code.setting_delimiters = true;
+	_clear_delimiters(p_type);
+	for (int i = 0; i < p_delimiters.size(); i++) {
+		String key = p_delimiters[i];
+		if (key.is_empty()) {
+			continue;
+		}
+		const String start_key = key.get_slicec(' ', 0);
+		const String end_key = key.get_slice_count(" ") > 1 ? key.get_slicec(' ', 1) : String();
+		_add_delimiter(start_key, end_key, end_key.is_empty(), p_type);
+	}
+	code.setting_delimiters = false;
+	_update_delimiter_cache();
+}
+
+Vector<String> TextEdit::_get_delimiters(DelimiterType p_type) const
+{
+	Vector<String> ret;
+	for (int i = 0; i < code.delimiters.size(); i++) {
+		if (code.delimiters[i].type != p_type) {
+			continue;
+		}
+		ret.push_back(code.delimiters[i].start_key +
+					  (code.delimiters[i].end_key.is_empty() ? "" : " " + code.delimiters[i].end_key));
+	}
+	return ret;
+}
+
+void TextEdit::_clear_delimiters(DelimiterType p_type)
+{
+	for (int i = code.delimiters.size() - 1; i >= 0; i--) {
+		if (code.delimiters[i].type == p_type) {
+			code.delimiters.remove_at(i);
+		}
+	}
+	code.delimiter_cache.clear();
+	if (!code.setting_delimiters) {
+		_update_delimiter_cache();
+	}
+	if (p_type == DelimiterType::TYPE_COMMENT) {
+		_update_code_region_tags();
+	}
+}
+
+void TextEdit::_code_lines_edited_from(int p_from_line, int p_to_line)
+{
+	_update_delimiter_cache(p_from_line, p_to_line);
+
+	if (p_from_line == p_to_line) {
+		return;
+	}
+
+	code.lines_edited_changed += p_to_line - p_from_line;
+	code.lines_edited_from = (code.lines_edited_from == -1)
+								 ? MIN(p_from_line, p_to_line)
+								 : MIN(code.lines_edited_from, MIN(p_from_line, p_to_line));
+	code.lines_edited_to = (code.lines_edited_to == -1)
+							   ? MAX(p_from_line, p_to_line)
+							   : MAX(code.lines_edited_from, MAX(p_from_line, p_to_line));
+}
+
+void TextEdit::_code_text_set()
+{
+	code.lines_edited_from = 0;
+	code.lines_edited_to = 9999;
+	_code_text_changed();
+}
+
+void TextEdit::_code_line_col_changed()
+{
+	if (!code.code_completion_active) {
+		return;
+	}
+
+	if (get_caret_line() != code.code_completion_caret_line ||
+		get_caret_column() != code.code_completion_caret_column) {
+		cancel_code_completion();
+	}
+}
+
+void TextEdit::_code_text_changed() {}
 
 

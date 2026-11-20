@@ -101,7 +101,7 @@ static void smbFft(float* fftBuffer, long fftFrameSize, long sign)
 	}
 }
 
-void AudioEffectSpectrumAnalyzerInstance::process(
+void AudioEffectSpectrumAnalyzerState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	// copy everything over first, since this only really does capture
@@ -150,7 +150,7 @@ void AudioEffectSpectrumAnalyzerInstance::process(
 	}
 }
 
-Vector2 AudioEffectSpectrumAnalyzerInstance::get_magnitude_for_frequency_range(
+Vector2 AudioEffectSpectrumAnalyzerState::get_magnitude_for_frequency_range(
 	float p_begin, float p_end, MagnitudeMode p_mode) const
 {
 	int fft_index = fft_pos;
@@ -191,25 +191,24 @@ Vector2 AudioEffectSpectrumAnalyzerInstance::get_magnitude_for_frequency_range(
 
 Ref<AudioEffectInstance> AudioEffectSpectrumAnalyzer::instantiate()
 {
-	Ref<AudioEffectSpectrumAnalyzerInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectSpectrumAnalyzer>(this);
+	AudioEffectSpectrumAnalyzerState* state = memnew(AudioEffectSpectrumAnalyzerState);
+	state->base = Ref<AudioEffectSpectrumAnalyzer>(this);
 	static const int fft_sizes[FFT_SIZE_MAX] = {256, 512, 1024, 2048, 4096};
-	ins->fft_size = fft_sizes[fft_size];
-	ins->mix_rate = AudioServer::get_mix_rate();
-	ins->fft_count = (buffer_length / (float(ins->fft_size) / ins->mix_rate)) + 1;
-	ins->fft_pos = 0;
-	ins->fft_history.resize(ins->fft_count);
-	ins->temporal_fft.resize(
-		ins->fft_size * 8); // x2 stereo, x2 amount of samples for freqs, x2 for input
-	ins->temporal_fft_pos = 0;
-	for (int i = 0; i < ins->fft_count; i++) {
-		ins->fft_history.write[i].resize(ins->fft_size); // only magnitude matters
-		for (int j = 0; j < ins->fft_size; j++) {
-			ins->fft_history.write[i].write[j] = AudioFrame(0, 0);
+	state->fft_size = fft_sizes[fft_size];
+	state->mix_rate = AudioServer::get_mix_rate();
+	state->fft_count = (buffer_length / (float(state->fft_size) / state->mix_rate)) + 1;
+	state->fft_pos = 0;
+	state->fft_history.resize(state->fft_count);
+	state->temporal_fft.resize(
+		state->fft_size * 8); // x2 stereo, x2 amount of samples for freqs, x2 for input
+	state->temporal_fft_pos = 0;
+	for (int i = 0; i < state->fft_count; i++) {
+		state->fft_history.write[i].resize(state->fft_size); // only magnitude matters
+		for (int j = 0; j < state->fft_size; j++) {
+			state->fft_history.write[i].write[j] = AudioFrame(0, 0);
 		}
 	}
-	return ins;
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectSpectrumAnalyzer::set_buffer_length(float p_seconds) { buffer_length = p_seconds; }
@@ -232,5 +231,3 @@ AudioEffectSpectrumAnalyzer::AudioEffectSpectrumAnalyzer()
 	buffer_length = 2;
 	fft_size = FFT_SIZE_1024;
 }
-
-

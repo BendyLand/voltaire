@@ -308,7 +308,7 @@ void Sprite3D::set_alpha_scissor_threshold(float p_threshold)
 
 float Sprite3D::get_alpha_scissor_threshold() const { return alpha_scissor_threshold; }
 
-void Sprite3D::set_alpha_antialiasing(BaseMaterial3D::AlphaAntiAliasing p_alpha_aa)
+void Sprite3D::set_alpha_antialiasing(StandardMaterial3D::AlphaAntiAliasing p_alpha_aa)
 {
 	if (alpha_antialiasing_mode == p_alpha_aa) {
 		return;
@@ -317,7 +317,7 @@ void Sprite3D::set_alpha_antialiasing(BaseMaterial3D::AlphaAntiAliasing p_alpha_
 	_queue_redraw();
 }
 
-BaseMaterial3D::AlphaAntiAliasing Sprite3D::get_alpha_antialiasing() const
+StandardMaterial3D::AlphaAntiAliasing Sprite3D::get_alpha_antialiasing() const
 {
 	return alpha_antialiasing_mode;
 }

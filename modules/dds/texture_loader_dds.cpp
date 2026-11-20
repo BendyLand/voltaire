@@ -445,8 +445,8 @@ static Ref<Resource> _dds_create_texture(const Vector<Ref<Image>>& p_images, uin
 
 	if ((p_dds_type & DDST_TYPE_MASK) == DDST_2D) {
 		if (p_dds_type & DDST_ARRAY) {
-			Ref<Texture2DArray> texture;
-			texture.instantiate();
+			Ref<ImageTextureLayered> texture =
+				memnew(ImageTextureLayered(TextureLayered::LAYERED_TYPE_2D_ARRAY));
 			texture->create_from_images(p_images);
 
 			if (r_error) {
@@ -469,8 +469,8 @@ static Ref<Resource> _dds_create_texture(const Vector<Ref<Image>>& p_images, uin
 		ERR_FAIL_COND_V(p_layer_count % 6 != 0, Ref<Resource>());
 
 		if (p_dds_type & DDST_ARRAY) {
-			Ref<CubemapArray> texture;
-			texture.instantiate();
+			Ref<ImageTextureLayered> texture =
+				memnew(ImageTextureLayered(TextureLayered::LAYERED_TYPE_CUBEMAP_ARRAY));
 			texture->create_from_images(p_images);
 
 			if (r_error) {
@@ -481,8 +481,8 @@ static Ref<Resource> _dds_create_texture(const Vector<Ref<Image>>& p_images, uin
 
 		}
 		else {
-			Ref<Cubemap> texture;
-			texture.instantiate();
+			Ref<ImageTextureLayered> texture =
+				memnew(ImageTextureLayered(TextureLayered::LAYERED_TYPE_CUBEMAP));
 			texture->create_from_images(p_images);
 
 			if (r_error) {

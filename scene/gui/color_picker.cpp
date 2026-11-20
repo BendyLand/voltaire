@@ -51,8 +51,7 @@
 #include "scene/resources/atlas_texture.h"
 #include "scene/resources/color_palette.h"
 #include "scene/resources/image_texture.h"
-#include "scene/resources/style_box_flat.h"
-#include "scene/resources/style_box_texture.h"
+#include "scene/resources/style_box.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
@@ -189,7 +188,7 @@ void ColorPicker::_copy_color_to_normalized_and_intensity()
 
 void ColorPicker::_reset_sliders_theme()
 {
-	Ref<StyleBoxFlat> style_box_flat(memnew(StyleBoxFlat));
+	Ref<StyleBox> style_box_flat(memnew(StyleBox(StyleBox::STYLE_FLAT)));
 	style_box_flat->set_content_margin(SIDE_TOP, 16 * theme_cache.base_scale);
 	style_box_flat->set_bg_color(Color(0.2, 0.23, 0.31).lerp(Color(0, 0, 0, 1), 0.3).clamp());
 
@@ -286,7 +285,7 @@ void ColorPicker::set_colorize_sliders(bool p_colorize_sliders)
 	colorize_sliders = p_colorize_sliders;
 
 	if (colorize_sliders) {
-		Ref<StyleBoxEmpty> style_box_empty(memnew(StyleBoxEmpty));
+		Ref<StyleBox> style_box_empty(memnew(StyleBox(StyleBox::STYLE_EMPTY)));
 
 		for (int i = 0; i < MODE_SLIDER_COUNT; i++) {
 			sliders[i]->add_theme_style_override("slider", style_box_empty.ptr());
@@ -295,7 +294,7 @@ void ColorPicker::set_colorize_sliders(bool p_colorize_sliders)
 		alpha_slider->add_theme_style_override("slider", style_box_empty.ptr());
 	}
 	else {
-		Ref<StyleBoxFlat> style_box_flat(memnew(StyleBoxFlat));
+		Ref<StyleBox> style_box_flat(memnew(StyleBox(StyleBox::STYLE_FLAT)));
 		style_box_flat->set_content_margin(SIDE_TOP, 16 * theme_cache.base_scale);
 		style_box_flat->set_bg_color(Color(0.2, 0.23, 0.31).lerp(Color(0, 0, 0, 1), 0.3).clamp());
 

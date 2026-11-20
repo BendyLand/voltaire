@@ -46,7 +46,6 @@ class OptionButton;
 class PopupMenu;
 class Slider;
 class SpinBox;
-class StyleBoxFlat;
 class TextureRect;
 
 class ColorPicker : public Control
@@ -158,8 +157,8 @@ private:
 	TextureRect* picker_texture_zoom = nullptr;
 	Panel* picker_preview = nullptr;
 	Panel* picker_preview_color = nullptr;
-	Ref<StyleBoxFlat> picker_preview_style_box;
-	Ref<StyleBoxFlat> picker_preview_style_box_color;
+	Ref<StyleBox> picker_preview_style_box;
+	Ref<StyleBox> picker_preview_style_box_color;
 
 	TextureRect* picker_texture_rect = nullptr;
 	Color picker_color;

@@ -97,7 +97,225 @@ Vector<Vector3> Occluder3D::get_debug_lines() const
 
 AABB Occluder3D::get_aabb() const { return aabb; }
 
-Occluder3D::Occluder3D() { occluder = Renderer::occluder_create(); }
+void Occluder3D::set_occluder_type(OccluderType p_type)
+{
+	if (occluder_type == p_type) {
+		return;
+	}
+	occluder_type = p_type;
+	_update();
+}
+
+Occluder3D::OccluderType Occluder3D::get_occluder_type() const { return occluder_type; }
+
+void Occluder3D::set_arrays(PackedVector3Array p_vertices, PackedInt32Array p_indices)
+{
+	array_vertices = p_vertices;
+	array_indices = p_indices;
+	if (occluder_type == OCCLUDER_ARRAY) {
+		_update();
+	}
+}
+
+void Occluder3D::set_vertices(PackedVector3Array p_vertices)
+{
+	array_vertices = p_vertices;
+	if (occluder_type == OCCLUDER_ARRAY) {
+		_update();
+	}
+}
+
+void Occluder3D::set_indices(PackedInt32Array p_indices)
+{
+	array_indices = p_indices;
+	if (occluder_type == OCCLUDER_ARRAY) {
+		_update();
+	}
+}
+
+void Occluder3D::set_quad_size(const Size2& p_size)
+{
+	if (quad_size == p_size) {
+		return;
+	}
+
+	quad_size = p_size.maxf(0);
+	if (occluder_type == OCCLUDER_QUAD) {
+		_update();
+	}
+}
+
+Size2 Occluder3D::get_quad_size() const { return quad_size; }
+
+void Occluder3D::set_box_size(const Vector3& p_size)
+{
+	if (box_size == p_size) {
+		return;
+	}
+
+	box_size = p_size.maxf(0);
+	if (occluder_type == OCCLUDER_BOX) {
+		_update();
+	}
+}
+
+Vector3 Occluder3D::get_box_size() const { return box_size; }
+
+void Occluder3D::set_radius(float p_radius)
+{
+	if (radius == p_radius) {
+		return;
+	}
+
+	radius = MAX(p_radius, 0.0f);
+	if (occluder_type == OCCLUDER_SPHERE) {
+		_update();
+	}
+}
+
+float Occluder3D::get_radius() const { return radius; }
+
+void Occluder3D::set_polygon(const Vector<Vector2>& p_polygon)
+{
+	polygon = p_polygon;
+	if (occluder_type == OCCLUDER_POLYGON) {
+		_update();
+	}
+}
+
+Vector<Vector2> Occluder3D::get_polygon() const { return polygon; }
+
+bool Occluder3D::_has_editable_3d_polygon_no_depth() const { return false; }
+
+void Occluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices)
+{
+	switch (occluder_type) {
+	case OCCLUDER_ARRAY: {
+		r_vertices = array_vertices;
+		r_indices = array_indices;
+	} break;
+	case OCCLUDER_QUAD: {
+		Size2 _size = Size2(quad_size.x / 2.0f, quad_size.y / 2.0f);
+
+		r_vertices = {
+			Vector3(-_size.x, -_size.y, 0),
+			Vector3(-_size.x, _size.y, 0),
+			Vector3(_size.x, _size.y, 0),
+			Vector3(_size.x, -_size.y, 0),
+		};
+
+		r_indices = {0, 1, 2, 0, 2, 3};
+	} break;
+	case OCCLUDER_BOX: {
+		Vector3 _size = Vector3(box_size.x / 2.0f, box_size.y / 2.0f, box_size.z / 2.0f);
+
+		r_vertices = {
+			// front
+			Vector3(-_size.x, -_size.y, _size.z),
+			Vector3(_size.x, -_size.y, _size.z),
+			Vector3(_size.x, _size.y, _size.z),
+			Vector3(-_size.x, _size.y, _size.z),
+			// back
+			Vector3(-_size.x, -_size.y, -_size.z),
+			Vector3(_size.x, -_size.y, -_size.z),
+			Vector3(_size.x, _size.y, -_size.z),
+			Vector3(-_size.x, _size.y, -_size.z),
+		};
+
+		r_indices = {// front
+			0, 1, 2, 2, 3, 0,
+			// right
+			1, 5, 6, 6, 2, 1,
+			// back
+			7, 6, 5, 5, 4, 7,
+			// left
+			4, 0, 3, 3, 7, 4,
+			// bottom
+			4, 5, 1, 1, 0, 4,
+			// top
+			3, 2, 6, 6, 7, 3};
+	} break;
+	case OCCLUDER_SPHERE: {
+		r_vertices.resize((RINGS + 2) * (RADIAL_SEGMENTS + 1));
+		int vertex_i = 0;
+		Vector3* vertex_ptr = r_vertices.ptrw();
+
+		r_indices.resize((RINGS + 1) * RADIAL_SEGMENTS * 6);
+		int idx_i = 0;
+		int* idx_ptr = r_indices.ptrw();
+
+		int current_row = 0;
+		int previous_row = 0;
+		int point = 0;
+		for (int j = 0; j <= (RINGS + 1); j++) {
+			float v = j / float(RINGS + 1);
+			float w = Math::sin(Math::PI * v);
+			float y = Math::cos(Math::PI * v);
+			for (int i = 0; i <= RADIAL_SEGMENTS; i++) {
+				float u = i / float(RADIAL_SEGMENTS);
+
+				float x = Math::cos(u * Math::TAU);
+				float z = Math::sin(u * Math::TAU);
+				vertex_ptr[vertex_i++] = Vector3(x * w, y, z * w) * radius;
+
+				if (i > 0 && j > 0) {
+					idx_ptr[idx_i++] = previous_row + i - 1;
+					idx_ptr[idx_i++] = previous_row + i;
+					idx_ptr[idx_i++] = current_row + i - 1;
+
+					idx_ptr[idx_i++] = previous_row + i;
+					idx_ptr[idx_i++] = current_row + i;
+					idx_ptr[idx_i++] = current_row + i - 1;
+				}
+
+				point++;
+			}
+
+			previous_row = current_row;
+			current_row = point;
+		}
+	} break;
+	case OCCLUDER_POLYGON: {
+		if (polygon.size() < 3) {
+			r_vertices.clear();
+			r_indices.clear();
+			return;
+		}
+
+		Vector<Point2> occluder_polygon = polygon;
+		if (Triangulate::get_area(occluder_polygon) > 0) {
+			occluder_polygon.reverse();
+		}
+
+		Vector<int> occluder_indices = Geometry2D::triangulate_polygon(occluder_polygon);
+
+		if (occluder_indices.size() < 3) {
+			r_vertices.clear();
+			r_indices.clear();
+			ERR_FAIL_MSG("Failed to triangulate Occluder3D. Make sure the polygon doesn't have "
+						 "any intersecting edges.");
+		}
+
+		r_vertices.resize(occluder_polygon.size());
+		Vector3* vertex_ptr = r_vertices.ptrw();
+		const Vector2* polygon_ptr = occluder_polygon.ptr();
+		for (int i = 0; i < occluder_polygon.size(); i++) {
+			vertex_ptr[i] = Vector3(polygon_ptr[i].x, polygon_ptr[i].y, 0.0);
+		}
+
+		r_indices.resize(occluder_indices.size());
+		memcpy(r_indices.ptrw(), occluder_indices.ptr(), occluder_indices.size() * sizeof(int));
+	} break;
+	}
+}
+
+Occluder3D::Occluder3D(OccluderType p_type) : occluder_type(p_type)
+{
+	occluder = Renderer::occluder_create();
+	if (occluder_type != OCCLUDER_ARRAY && occluder_type != OCCLUDER_POLYGON) {
+		_update();
+	}
+}
 
 Occluder3D::~Occluder3D()
 {
@@ -106,232 +324,6 @@ Occluder3D::~Occluder3D()
 		Renderer::free_rid(occluder);
 	}
 }
-
-/////////////////////////////////////////////////
-
-void ArrayOccluder3D::set_arrays(PackedVector3Array p_vertices, PackedInt32Array p_indices)
-{
-	vertices = p_vertices;
-	indices = p_indices;
-	_update();
-}
-
-void ArrayOccluder3D::set_vertices(PackedVector3Array p_vertices)
-{
-	vertices = p_vertices;
-	_update();
-}
-
-void ArrayOccluder3D::set_indices(PackedInt32Array p_indices)
-{
-	indices = p_indices;
-	_update();
-}
-
-void ArrayOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices)
-{
-	r_vertices = vertices;
-	r_indices = indices;
-}
-
-
-ArrayOccluder3D::ArrayOccluder3D() {}
-
-ArrayOccluder3D::~ArrayOccluder3D() {}
-
-/////////////////////////////////////////////////
-
-void QuadOccluder3D::set_size(const Size2& p_size)
-{
-	if (size == p_size) {
-		return;
-	}
-
-	size = p_size.maxf(0);
-	_update();
-}
-
-Size2 QuadOccluder3D::get_size() const { return size; }
-
-void QuadOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices)
-{
-	Size2 _size = Size2(size.x / 2.0f, size.y / 2.0f);
-
-	r_vertices = {
-		Vector3(-_size.x, -_size.y, 0),
-		Vector3(-_size.x, _size.y, 0),
-		Vector3(_size.x, _size.y, 0),
-		Vector3(_size.x, -_size.y, 0),
-	};
-
-	r_indices = {0, 1, 2, 0, 2, 3};
-}
-
-
-QuadOccluder3D::QuadOccluder3D() {}
-
-QuadOccluder3D::~QuadOccluder3D() {}
-
-/////////////////////////////////////////////////
-
-void BoxOccluder3D::set_size(const Vector3& p_size)
-{
-	if (size == p_size) {
-		return;
-	}
-
-	size = p_size.maxf(0);
-	_update();
-}
-
-Vector3 BoxOccluder3D::get_size() const { return size; }
-
-void BoxOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices)
-{
-	Vector3 _size = Vector3(size.x / 2.0f, size.y / 2.0f, size.z / 2.0f);
-
-	r_vertices = {
-		// front
-		Vector3(-_size.x, -_size.y, _size.z),
-		Vector3(_size.x, -_size.y, _size.z),
-		Vector3(_size.x, _size.y, _size.z),
-		Vector3(-_size.x, _size.y, _size.z),
-		// back
-		Vector3(-_size.x, -_size.y, -_size.z),
-		Vector3(_size.x, -_size.y, -_size.z),
-		Vector3(_size.x, _size.y, -_size.z),
-		Vector3(-_size.x, _size.y, -_size.z),
-	};
-
-	r_indices = {// front
-		0, 1, 2, 2, 3, 0,
-		// right
-		1, 5, 6, 6, 2, 1,
-		// back
-		7, 6, 5, 5, 4, 7,
-		// left
-		4, 0, 3, 3, 7, 4,
-		// bottom
-		4, 5, 1, 1, 0, 4,
-		// top
-		3, 2, 6, 6, 7, 3};
-}
-
-
-BoxOccluder3D::BoxOccluder3D() {}
-
-BoxOccluder3D::~BoxOccluder3D() {}
-
-/////////////////////////////////////////////////
-
-void SphereOccluder3D::set_radius(float p_radius)
-{
-	if (radius == p_radius) {
-		return;
-	}
-
-	radius = MAX(p_radius, 0.0f);
-	_update();
-}
-
-float SphereOccluder3D::get_radius() const { return radius; }
-
-void SphereOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices)
-{
-	r_vertices.resize((RINGS + 2) * (RADIAL_SEGMENTS + 1));
-	int vertex_i = 0;
-	Vector3* vertex_ptr = r_vertices.ptrw();
-
-	r_indices.resize((RINGS + 1) * RADIAL_SEGMENTS * 6);
-	int idx_i = 0;
-	int* idx_ptr = r_indices.ptrw();
-
-	int current_row = 0;
-	int previous_row = 0;
-	int point = 0;
-	for (int j = 0; j <= (RINGS + 1); j++) {
-		float v = j / float(RINGS + 1);
-		float w = Math::sin(Math::PI * v);
-		float y = Math::cos(Math::PI * v);
-		for (int i = 0; i <= RADIAL_SEGMENTS; i++) {
-			float u = i / float(RADIAL_SEGMENTS);
-
-			float x = Math::cos(u * Math::TAU);
-			float z = Math::sin(u * Math::TAU);
-			vertex_ptr[vertex_i++] = Vector3(x * w, y, z * w) * radius;
-
-			if (i > 0 && j > 0) {
-				idx_ptr[idx_i++] = previous_row + i - 1;
-				idx_ptr[idx_i++] = previous_row + i;
-				idx_ptr[idx_i++] = current_row + i - 1;
-
-				idx_ptr[idx_i++] = previous_row + i;
-				idx_ptr[idx_i++] = current_row + i;
-				idx_ptr[idx_i++] = current_row + i - 1;
-			}
-
-			point++;
-		}
-
-		previous_row = current_row;
-		current_row = point;
-	}
-}
-
-
-SphereOccluder3D::SphereOccluder3D() {}
-
-SphereOccluder3D::~SphereOccluder3D() {}
-
-/////////////////////////////////////////////////
-
-void PolygonOccluder3D::set_polygon(const Vector<Vector2>& p_polygon)
-{
-	polygon = p_polygon;
-	_update();
-}
-
-Vector<Vector2> PolygonOccluder3D::get_polygon() const { return polygon; }
-
-void PolygonOccluder3D::_update_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices)
-{
-	if (polygon.size() < 3) {
-		r_vertices.clear();
-		r_indices.clear();
-		return;
-	}
-
-	Vector<Point2> occluder_polygon = polygon;
-	if (Triangulate::get_area(occluder_polygon) > 0) {
-		occluder_polygon.reverse();
-	}
-
-	Vector<int> occluder_indices = Geometry2D::triangulate_polygon(occluder_polygon);
-
-	if (occluder_indices.size() < 3) {
-		r_vertices.clear();
-		r_indices.clear();
-		ERR_FAIL_MSG("Failed to triangulate PolygonOccluder3D. Make sure the polygon doesn't have "
-					 "any intersecting edges.");
-	}
-
-	r_vertices.resize(occluder_polygon.size());
-	Vector3* vertex_ptr = r_vertices.ptrw();
-	const Vector2* polygon_ptr = occluder_polygon.ptr();
-	for (int i = 0; i < occluder_polygon.size(); i++) {
-		vertex_ptr[i] = Vector3(polygon_ptr[i].x, polygon_ptr[i].y, 0.0);
-	}
-
-	r_indices.resize(occluder_indices.size());
-	memcpy(r_indices.ptrw(), occluder_indices.ptr(), occluder_indices.size() * sizeof(int));
-}
-
-bool PolygonOccluder3D::_has_editable_3d_polygon_no_depth() const { return false; }
-
-
-PolygonOccluder3D::PolygonOccluder3D() {}
-
-PolygonOccluder3D::~PolygonOccluder3D() {}
 
 /////////////////////////////////////////////////
 
@@ -388,14 +380,16 @@ OccluderInstance3D::BakeError OccluderInstance3D::bake_scene(
 		return BAKE_ERROR_NO_MESHES;
 	}
 
-	Ref<ArrayOccluder3D> occ;
+	Ref<Occluder3D> occ;
 	if (get_occluder().is_valid()) {
-		occ = get_occluder();
+		if (get_occluder()->get_occluder_type() == Occluder3D::OCCLUDER_ARRAY) {
+			occ = get_occluder();
+		}
 		set_occluder(Ref<Occluder3D>()); // clear
 	}
 
 	if (occ.is_null()) {
-		occ.instantiate();
+		occ = memnew(Occluder3D(Occluder3D::OCCLUDER_ARRAY));
 	}
 
 	occ->set_arrays(vertices, indices);
@@ -438,9 +432,9 @@ PackedStringArray OccluderInstance3D::get_configuration_warnings() const
 				"top of the 3D editor viewport."));
 	}
 	else {
-		Ref<ArrayOccluder3D> arr_occluder = occluder;
-		if (arr_occluder.is_valid() && arr_occluder->get_indices().size() < 3) {
-			// Setting a new ArrayOccluder3D from the inspector will create an empty occluder,
+		if (occluder->get_occluder_type() == Occluder3D::OCCLUDER_ARRAY &&
+			occluder->get_indices().size() < 3) {
+			// Setting a new array Occluder3D from the inspector will create an empty occluder,
 			// so warn the user about this.
 			warnings.push_back(
 				RTR("The occluder mesh has less than 3 vertices, so no occlusion culling will be "
@@ -448,8 +442,8 @@ PackedStringArray OccluderInstance3D::get_configuration_warnings() const
 					"select the OccluderInstance3D then use the Bake Occluders button at the top "
 					"of the 3D editor viewport."));
 		}
-		Ref<PolygonOccluder3D> poly_occluder = occluder;
-		if (poly_occluder.is_valid() && poly_occluder->get_polygon().size() < 3) {
+		if (occluder->get_occluder_type() == Occluder3D::OCCLUDER_POLYGON &&
+			occluder->get_polygon().size() < 3) {
 			warnings.push_back(RTR(
 				"The polygon occluder has less than 3 vertices, so no occlusion culling will be "
 				"performed using this OccluderInstance3D.\nVertices can be added in the inspector "
@@ -462,7 +456,7 @@ PackedStringArray OccluderInstance3D::get_configuration_warnings() const
 
 bool OccluderInstance3D::_is_editable_3d_polygon() const
 {
-	return Ref<PolygonOccluder3D>(occluder).is_valid();
+	return occluder.is_valid() && occluder->get_occluder_type() == Occluder3D::OCCLUDER_POLYGON;
 }
 
 Ref<Resource> OccluderInstance3D::_get_editable_3d_polygon_resource() const { return occluder; }

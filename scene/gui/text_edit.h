@@ -31,6 +31,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include "scene/gui/control.h"
 #include "scene/gui/popup_menu.h"
 #include "scene/gui/scroll_bar.h"
@@ -126,6 +128,30 @@ public:
 		SEARCH_MATCH_CASE = 1,
 		SEARCH_WHOLE_WORDS = 2,
 		SEARCH_BACKWARDS = 4
+	};
+
+	/* Code Completion. */
+	enum CodeCompletionKind
+	{
+		KIND_CLASS,
+		KIND_FUNCTION,
+		KIND_SIGNAL,
+		KIND_VARIABLE,
+		KIND_MEMBER,
+		KIND_ENUM,
+		KIND_CONSTANT,
+		KIND_NODE_PATH,
+		KIND_FILE_PATH,
+		KIND_PLAIN_TEXT,
+		KIND_KEYWORD,
+	};
+
+	enum CodeCompletionLocation
+	{
+		LOCATION_LOCAL = 0,
+		LOCATION_PARENT_MASK = 1 << 8,
+		LOCATION_OTHER_USER_CODE = 1 << 9,
+		LOCATION_OTHER = 1 << 10,
 	};
 
 private:
@@ -664,12 +690,180 @@ private:
 	Vector2i _get_hovered_gutter(const Point2& p_mouse_pos) const;
 
 	/* Syntax highlighting. */
-	Ref<SyntaxHighlighter> syntax_highlighter;
+	Ref<CodeHighlighter> syntax_highlighter;
 	HashMap<int, Vector<Pair<int64_t, Color>>> syntax_highlighting_cache;
 
 	Vector<Pair<int64_t, Color>> _get_line_syntax_highlighting(int p_line);
 	void _clear_syntax_highlighting_cache();
 	void _syntax_highlighter_changed();
+
+	/* Code editing features (composed). */
+	enum MainGutterType
+	{
+		MAIN_GUTTER_BREAKPOINT = 0x01,
+		MAIN_GUTTER_BOOKMARK = 0x02,
+		MAIN_GUTTER_EXECUTING = 0x04
+	};
+
+	enum DelimiterType
+	{
+		TYPE_STRING,
+		TYPE_COMMENT,
+	};
+
+	struct BracePair
+	{
+		String open_key = "";
+		String close_key = "";
+	};
+
+	struct Delimiter
+	{
+		DelimiterType type;
+		String start_key = "";
+		String end_key = "";
+		bool line_only = true;
+	};
+
+	struct CodeFeatures
+	{
+		/* Indent management */
+		int indent_size = 4;
+		String indent_text = "\t";
+		bool auto_indent = false;
+		HashSet<char32_t> auto_indent_prefixes;
+		bool indent_using_spaces = false;
+
+		/* Auto brace completion */
+		bool auto_brace_completion_enabled = false;
+		Vector<BracePair> auto_brace_completion_pairs;
+
+		/* Main Gutter */
+		int main_gutter = -1;
+		HashMap<int, bool> breakpointed_lines;
+		HashMap<int, bool> bookmarked_lines;
+		HashMap<int, bool> executing_lines;
+		bool draw_breakpoints = false;
+		bool draw_bookmarks = false;
+		bool draw_executing_lines = false;
+
+		/* Line numbers */
+		int line_number_gutter = -1;
+		int line_number_digits = 1;
+		int line_numbers_min_digits = 3;
+		String line_number_padding = " ";
+		HashMap<int, RID> line_number_text_cache;
+
+		/* Fold Gutter */
+		int fold_gutter = -1;
+		bool draw_fold_gutter = false;
+
+		/* Line Folding */
+		bool line_folding_enabled = false;
+		String code_region_start_string;
+		String code_region_end_string;
+		String code_region_start_tag = "region";
+		String code_region_end_tag = "endregion";
+
+		/* Delimiters */
+		bool setting_delimiters = false;
+		Vector<Delimiter> delimiters;
+		Vector<RBMap<int, int>> delimiter_cache;
+
+		/* Code Hint */
+		String code_hint = "";
+		bool code_hint_draw_below = true;
+		int code_hint_xpos = -0xFFFF;
+
+		/* Code Completion */
+		bool code_completion_enabled = false;
+		bool code_completion_forced = false;
+		Vector2 completion_touch_drag_accum;
+		bool code_completion_active = false;
+		bool is_code_completion_scroll_hovered = false;
+		bool is_code_completion_scroll_pressed = false;
+		bool is_code_completion_drag_started = false;
+		Vector<RID> code_completion_ac_items;
+		RID code_completion_ac_scroll_element;
+		RID code_completion_ac_root_element;
+		int code_completion_line_ofs = 0;
+		int code_completion_current_selected = 0;
+		int code_completion_force_item_center = -1;
+		int code_completion_longest_line = 0;
+		Rect2i code_completion_rect;
+		Rect2i code_completion_scroll_rect;
+		float code_completion_pan_offset = 0.0f;
+		HashSet<char32_t> code_completion_prefixes;
+		String code_completion_base;
+		String code_completion_line;
+		int code_completion_caret_line = 0;
+		int code_completion_caret_column = 0;
+
+		/* Line length guidelines */
+		Vector<int> line_length_guideline_columns;
+
+		/* Symbol lookup */
+		bool symbol_lookup_on_click_enabled = false;
+		Point2i symbol_lookup_pos;
+		String symbol_lookup_new_word;
+		String symbol_lookup_word;
+
+		/* Symbol tooltip */
+		bool symbol_tooltip_on_hover_enabled = false;
+		Point2i symbol_tooltip_pos;
+		String symbol_tooltip_word;
+		Timer* symbol_tooltip_timer = nullptr;
+
+		/* Callbacks */
+		int lines_edited_changed = 0;
+		int lines_edited_from = -1;
+		int lines_edited_to = -1;
+	};
+
+	bool code_mode = false;
+	CodeFeatures code;
+
+	int _calculate_spaces_till_next_left_indent(int p_column) const;
+	int _calculate_spaces_till_next_right_indent(int p_column) const;
+	int _get_auto_brace_pair_open_at_pos(int p_line, int p_col);
+	int _get_auto_brace_pair_close_at_pos(int p_line, int p_col);
+
+	_FORCE_INLINE_ bool _is_bookmark_only() const
+	{
+		return code.draw_bookmarks && !code.draw_executing_lines && !code.draw_breakpoints;
+	}
+
+	void _ensure_code_gutters();
+	void _update_draw_main_gutter();
+	void _main_gutter_draw_callback(int p_line, int p_gutter, const Rect2& p_region);
+	void _clear_line_number_text_cache();
+	void _update_line_number_gutter_width();
+	void _line_number_draw_callback(int p_line, int p_gutter, const Rect2& p_region);
+	void _fold_gutter_draw_callback(int p_line, int p_gutter, Rect2 p_region);
+	void _gutter_clicked(int p_line, int p_gutter);
+	void _update_gutter_indexes();
+	void _update_code_region_tags();
+	bool _fold_line(int p_line);
+	bool _unfold_line(int p_line);
+
+	void _update_delimiter_cache(int p_from_line = 0, int p_to_line = -1);
+	int _is_in_delimiter(int p_line, int p_column, DelimiterType p_type) const;
+	void _add_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only, DelimiterType p_type);
+	void _remove_delimiter(const String& p_start_key, DelimiterType p_type);
+	bool _has_delimiter(const String& p_start_key, DelimiterType p_type) const;
+	void _set_delimiters(const Vector<String>& p_delimiters, DelimiterType p_type);
+	void _clear_delimiters(DelimiterType p_type);
+	Vector<String> _get_delimiters(DelimiterType p_type) const;
+
+	void _update_scroll_selected_line(float p_mouse_y);
+	void _filter_code_completion_candidates_impl();
+	void _on_symbol_tooltip_timer_timeout();
+
+	void _code_lines_edited_from(int p_from_line, int p_to_line);
+	void _code_text_set();
+	void _code_line_col_changed();
+	void _code_text_changed();
 
 	/* Visual. */
 	struct ThemeCache
@@ -711,6 +905,48 @@ private:
 
 		Color current_line_color = Color(1, 1, 1);
 		Color word_highlighted_color = Color(1, 1, 1);
+
+		/* Code mode gutters */
+		Color code_folding_color = Color(1, 1, 1);
+		Color folded_code_region_color = Color(1, 1, 1);
+		Ref<Texture2D> can_fold_icon;
+		Ref<Texture2D> folded_icon;
+		Ref<Texture2D> can_fold_code_region_icon;
+		Ref<Texture2D> folded_code_region_icon;
+		Ref<Texture2D> folded_eol_icon;
+		Ref<Texture2D> completion_color_bg;
+
+		Color breakpoint_color = Color(1, 1, 1);
+		Ref<Texture2D> breakpoint_icon;
+
+		Color bookmark_color = Color(1, 1, 1);
+		Ref<Texture2D> bookmark_icon;
+
+		Color executing_line_color = Color(1, 1, 1);
+		Ref<Texture2D> executing_line_icon;
+
+		Color line_number_color = Color(1, 1, 1);
+
+		/* Code Completion */
+		Ref<StyleBox> code_completion_style;
+		int code_completion_icon_separation = 0;
+
+		int code_completion_max_width = 0;
+		int code_completion_max_lines = 7;
+		int code_completion_scroll_width = 0;
+		Color code_completion_scroll_color = Color(0, 0, 0, 0);
+		Color code_completion_scroll_hovered_color = Color(0, 0, 0, 0);
+		Color code_completion_background_color = Color(0, 0, 0, 0);
+		Color code_completion_selected_color = Color(0, 0, 0, 0);
+		Color code_completion_existing_color = Color(0, 0, 0, 0);
+
+		/* Code hint */
+		Ref<StyleBox> code_hint_style;
+		Color code_hint_color;
+
+		/* Line length guideline & brace mismatch */
+		Color line_length_guideline_color;
+		Color brace_mismatch_color;
 
 #ifndef DISABLE_DEPRECATED
 		Color background_color = Color(1, 1, 1);
@@ -768,13 +1004,12 @@ protected:
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
-	virtual void _draw_guidelines() {}
+	void _draw_guidelines();
 
 	virtual void _update_theme_item_cache() override;
 
 	virtual String _get_accessibility_name() const override;
 
-	/* Internal API for CodeEdit, pending public API. */
 	// Brace matching.
 	struct BraceMatchingData
 	{
@@ -800,7 +1035,7 @@ protected:
 	bool _is_line_hidden(int p_line) const;
 
 	void _unhide_all_lines();
-	virtual void _unhide_carets();
+	void _unhide_carets();
 
 	int _get_wrapped_indent_level(int p_line, int& r_first_wrap) const;
 	float _get_wrap_indent_offset(int p_line, int p_wrap_index, bool p_rtl) const;
@@ -809,15 +1044,8 @@ protected:
 	String lookup_symbol_word;
 	void _set_symbol_lookup_word(const String& p_symbol);
 
-	// Theme items.
-	virtual Color _get_brace_mismatch_color() const { return Color(); }
-
-	virtual Color _get_code_folding_color() const { return Color(); }
-
-	virtual Ref<Texture2D> _get_folded_eol_icon() const { return Ref<Texture2D>(); }
-
 	/* Text manipulation */
-	virtual void _copy_internal(int p_caret);
+	void _copy_internal(int p_caret);
 
 public:
 	/* General overrides. */
@@ -1044,8 +1272,6 @@ public:
 		int p_line, int p_column, bool p_include_edges = true, bool p_only_selections = true) const;
 	Vector<Point2i> get_line_ranges_from_carets(
 		bool p_only_selections = false, bool p_merge_adjacent = true) const;
-	TypedArray<Vector2i> get_line_ranges_from_carets_typed_array(
-		bool p_only_selections = false, bool p_merge_adjacent = true) const;
 
 	void set_selection_origin_line(
 		int p_line, bool p_can_be_hidden = true, int p_wrap_index = -1, int p_caret = 0);
@@ -1179,8 +1405,171 @@ public:
 	Color get_line_background_color(int p_line) const;
 
 	/* Syntax Highlighting. */
-	void set_syntax_highlighter(Ref<SyntaxHighlighter> p_syntax_highlighter);
-	Ref<SyntaxHighlighter> get_syntax_highlighter() const;
+	void set_syntax_highlighter(Ref<CodeHighlighter> p_syntax_highlighter);
+	Ref<CodeHighlighter> get_syntax_highlighter() const;
+
+	/* Code Mode & Code Features. */
+	void set_code_mode(bool p_enabled);
+	bool is_code_mode() const { return code_mode; }
+
+	// Indent management
+	void set_indent_size(const int p_size);
+	int get_indent_size() const;
+
+	void set_indent_using_spaces(const bool p_use_spaces);
+	bool is_indent_using_spaces() const;
+
+	void set_auto_indent_enabled(bool p_enabled);
+	bool is_auto_indent_enabled() const;
+
+	void set_auto_indent_prefixes(const Vector<String>& p_prefixes);
+	Vector<String> get_auto_indent_prefixes() const;
+
+	// Auto brace completion
+	void set_auto_brace_completion_enabled(bool p_enabled);
+	bool is_auto_brace_completion_enabled() const;
+
+	void set_highlight_matching_braces_enabled(bool p_enabled);
+	bool is_highlight_matching_braces_enabled() const;
+
+	void add_auto_brace_completion_pair(const String& p_open_key, const String& p_close_key);
+
+	bool has_auto_brace_completion_open_key(const String& p_open_key) const;
+	bool has_auto_brace_completion_close_key(const String& p_close_key) const;
+
+	String get_auto_brace_completion_close_key(const String& p_open_key) const;
+
+	// Main Gutter
+	void set_draw_breakpoints_gutter(bool p_draw);
+	bool is_drawing_breakpoints_gutter() const;
+
+	void set_draw_bookmarks_gutter(bool p_draw);
+	bool is_drawing_bookmarks_gutter() const;
+
+	void set_draw_executing_lines_gutter(bool p_draw);
+	bool is_drawing_executing_lines_gutter() const;
+
+	void set_line_as_breakpoint(int p_line, bool p_breakpointed);
+	bool is_line_breakpointed(int p_line) const;
+	void clear_breakpointed_lines();
+	PackedInt32Array get_breakpointed_lines() const;
+
+	void set_line_as_bookmarked(int p_line, bool p_bookmarked);
+	bool is_line_bookmarked(int p_line) const;
+	void clear_bookmarked_lines();
+	PackedInt32Array get_bookmarked_lines() const;
+
+	void set_line_as_executing(int p_line, bool p_executing);
+	bool is_line_executing(int p_line) const;
+	void clear_executing_lines();
+	PackedInt32Array get_executing_lines() const;
+
+	// Line numbers
+	void set_draw_line_numbers(bool p_draw);
+	bool is_draw_line_numbers_enabled() const;
+	void set_line_numbers_zero_padded(bool p_zero_padded);
+	bool is_line_numbers_zero_padded() const;
+	void set_line_numbers_min_digits(int p_count);
+	int get_line_numbers_min_digits() const;
+
+	// Fold gutter
+	void set_draw_fold_gutter(bool p_draw);
+	bool is_drawing_fold_gutter() const;
+
+	// Line Folding
+	void set_line_folding_enabled(bool p_enabled);
+	bool is_line_folding_enabled() const;
+
+	bool can_fold_line(int p_line) const;
+
+	void fold_line(int p_line);
+	void unfold_line(int p_line);
+	void fold_all_lines();
+	void unfold_all_lines();
+	void toggle_foldable_line(int p_line);
+	void toggle_foldable_lines_at_carets();
+
+	int get_folded_line_header(int p_line) const;
+	bool is_line_folded(int p_line) const;
+	Vector<int> get_folded_lines_bind() const;
+	PackedInt32Array get_folded_lines() const;
+
+	// Code region
+	void create_code_region();
+	String get_code_region_start_tag() const;
+	String get_code_region_end_tag() const;
+	void set_code_region_tags(const String& p_start = "region", const String& p_end = "endregion");
+	bool is_line_code_region_start(int p_line) const;
+	bool is_line_code_region_end(int p_line) const;
+
+	// Delimiters
+	void add_string_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only = false);
+	void remove_string_delimiter(const String& p_start_key);
+	bool has_string_delimiter(const String& p_start_key) const;
+
+	void set_string_delimiters(const Vector<String>& p_string_delimiters);
+	void clear_string_delimiters();
+	Vector<String> get_string_delimiters() const;
+
+	int is_in_string(int p_line, int p_column = -1) const;
+
+	void add_comment_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only = false);
+	void remove_comment_delimiter(const String& p_start_key);
+	bool has_comment_delimiter(const String& p_start_key) const;
+
+	void set_comment_delimiters(const Vector<String>& p_comment_delimiters);
+	void clear_comment_delimiters();
+	Vector<String> get_comment_delimiters() const;
+
+	int is_in_comment(int p_line, int p_column = -1) const;
+
+	String get_delimiter_start_key(int p_delimiter_idx) const;
+	String get_delimiter_end_key(int p_delimiter_idx) const;
+
+	Point2 get_delimiter_start_position(int p_line, int p_column) const;
+	Point2 get_delimiter_end_position(int p_line, int p_column) const;
+
+	// Code hint
+	void set_code_hint(const String& p_hint);
+	void set_code_hint_draw_below(bool p_below);
+
+	// Code Completion
+	void set_code_completion_enabled(bool p_enable);
+	bool is_code_completion_enabled() const;
+
+	void set_code_completion_prefixes(const Vector<String>& p_prefixes);
+	Vector<String> get_code_completion_prefixes() const;
+
+	String get_text_for_code_completion() const;
+
+	void request_code_completion(bool p_force = false);
+	void update_code_completion_options(bool p_forced = false);
+
+	int get_code_completion_selected_index() const;
+	void set_code_completion_selected_index(int p_index);
+
+	void confirm_code_completion(bool p_replace = false);
+	void cancel_code_completion();
+
+	// Line length guidelines
+	void set_line_length_guidelines(Vector<int> p_guideline_columns);
+	Vector<int> get_line_length_guidelines() const;
+
+	// Symbol lookup
+	void set_symbol_lookup_on_click_enabled(bool p_enabled);
+	bool is_symbol_lookup_on_click_enabled() const;
+
+	String get_text_for_symbol_lookup() const;
+	String get_text_with_cursor_char(int p_line, int p_column) const;
+	String get_lookup_word(int p_line, int p_column) const;
+
+	void set_symbol_lookup_word_as_valid(bool p_valid);
+
+	// Symbol tooltip
+	void set_symbol_tooltip_on_hover_enabled(bool p_enabled);
+	bool is_symbol_tooltip_on_hover_enabled() const;
 
 	/* Visual. */
 	void set_highlight_current_line(bool p_enabled);
@@ -1224,6 +1613,13 @@ public:
 #endif
 
 	TextEdit(const String& p_placeholder = String());
+	template <typename T, typename = std::enable_if_t<std::is_same_v<T, bool>>>
+	explicit TextEdit(T p_code_mode) : TextEdit(String())
+	{
+		if (p_code_mode) {
+			set_code_mode(true);
+		}
+	}
 	~TextEdit();
 };
 

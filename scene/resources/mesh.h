@@ -41,8 +41,6 @@
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/resources/3d/shape_3d.h"
 
-class ConcavePolygonShape3D;
-class ConvexPolygonShape3D;
 class Shape3D;
 #endif // PHYSICS_3D_DISABLED
 class MeshConvexDecompositionSettings;
@@ -193,9 +191,9 @@ public:
 
 	Vector<Ref<Shape3D>> convex_decompose(
 		const Ref<MeshConvexDecompositionSettings>& p_settings) const;
-	Ref<ConvexPolygonShape3D> create_convex_shape(
+	Ref<Shape3D> create_convex_shape(
 		bool p_clean = true, bool p_simplify = false) const;
-	Ref<ConcavePolygonShape3D> create_trimesh_shape() const;
+	Ref<Shape3D> create_trimesh_shape() const;
 #endif // PHYSICS_3D_DISABLED
 
 	virtual int get_builtin_bind_pose_count() const;

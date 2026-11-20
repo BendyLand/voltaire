@@ -32,7 +32,7 @@
 #include "audio_effect_phaser.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectPhaserInstance::process(
+void AudioEffectPhaserState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	float sampling_rate = AudioServer::get_mix_rate();
@@ -76,13 +76,12 @@ void AudioEffectPhaserInstance::process(
 
 Ref<AudioEffectInstance> AudioEffectPhaser::instantiate()
 {
-	Ref<AudioEffectPhaserInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectPhaser>(this);
-	ins->phase = 0;
-	ins->h = AudioFrame(0, 0);
+	AudioEffectPhaserState* state = memnew(AudioEffectPhaserState);
+	state->base = Ref<AudioEffectPhaser>(this);
+	state->phase = 0;
+	state->h = AudioFrame(0, 0);
 
-	return ins;
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectPhaser::set_range_min_hz(float p_hz) { range_min = p_hz; }
@@ -105,7 +104,6 @@ void AudioEffectPhaser::set_depth(float p_depth) { depth = p_depth; }
 
 float AudioEffectPhaser::get_depth() const { return depth; }
 
-
 AudioEffectPhaser::AudioEffectPhaser()
 {
 	range_min = 440;
@@ -114,5 +112,3 @@ AudioEffectPhaser::AudioEffectPhaser()
 	feedback = 0.7;
 	depth = 1;
 }
-
-

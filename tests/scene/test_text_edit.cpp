@@ -7958,7 +7958,7 @@ TEST_CASE("[SceneTree][TextEdit] gutters") {
 		CHECK(text_edit->is_line_gutter_clickable(-1, 0) == false);
 		ERR_PRINT_ON;
 
-		// Merging tested via CodeEdit gutters.
+		// Merging tested via TextEdit code mode gutters.
 	}
 
 	SUBCASE("[TextEdit] gutter mouse") {

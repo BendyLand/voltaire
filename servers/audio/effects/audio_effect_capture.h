@@ -37,25 +37,25 @@
 
 class AudioEffectCapture;
 
-class AudioEffectCaptureInstance : public AudioEffectInstance {
-	friend class AudioEffectCapture;
+struct AudioEffectCaptureState
+{
 	Ref<AudioEffectCapture> base;
 
-public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
-	virtual bool process_silence() const override;
+	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	bool process_silence() const;
 };
 
-class AudioEffectCapture : public AudioEffect {
-	friend class AudioEffectCaptureInstance;
+using AudioEffectCaptureInstance = AudioEffectCaptureState;
+
+class AudioEffectCapture : public AudioEffect
+{
+	friend struct AudioEffectCaptureState;
 
 	RingBuffer<AudioFrame> buffer;
 	SafeNumeric<uint64_t> discarded_frames;
 	SafeNumeric<uint64_t> pushed_frames;
 	float buffer_length_seconds = 0.1f;
 	bool buffer_initialized = false;
-
-protected:
 
 public:
 	virtual Ref<AudioEffectInstance> instantiate() override;

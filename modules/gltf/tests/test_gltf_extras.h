@@ -58,7 +58,7 @@ TEST_CASE("[SceneTree][Node] GLTF test mesh and material meta export and import"
 	material_dict["node_type"] = "material";
 	original_material->set_meta("extras", material_dict);
 
-	Ref<PlaneMesh> original_meshdata = memnew(PlaneMesh);
+	Ref<PrimitiveMesh> original_meshdata = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
 	original_meshdata->set_name("planemesh");
 	Dictionary meshdata_dict;
 	meshdata_dict["node_type"] = "planemesh";
@@ -133,7 +133,7 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 	skeleton->set_bone_meta(1, "extras", child_bone_extras);
 
 	// We have to have a mesh to link with skeleton or it will not get imported.
-	Ref<PlaneMesh> meshdata = memnew(PlaneMesh);
+	Ref<PrimitiveMesh> meshdata = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
 	meshdata->set_name("planemesh");
 
 	MeshInstance3D *mesh = memnew(MeshInstance3D);

@@ -291,7 +291,7 @@ void SMBPitchShift::smbFft(float *fftBuffer, long fftFrameSize, long sign)
 /* Godot code again */
 /* clang-format on */
 
-void AudioEffectPitchShiftInstance::process(
+void AudioEffectPitchShiftState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	// Avoid distortion by skipping processing if pitch_scale is 1.0.
@@ -318,13 +318,12 @@ void AudioEffectPitchShiftInstance::process(
 
 Ref<AudioEffectInstance> AudioEffectPitchShift::instantiate()
 {
-	Ref<AudioEffectPitchShiftInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectPitchShift>(this);
+	AudioEffectPitchShiftState* state = memnew(AudioEffectPitchShiftState);
+	state->base = Ref<AudioEffectPitchShift>(this);
 	static const int fft_sizes[FFT_SIZE_MAX] = {256, 512, 1024, 2048, 4096};
-	ins->fft_size = fft_sizes[fft_size];
+	state->fft_size = fft_sizes[fft_size];
 
-	return ins;
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectPitchShift::set_pitch_scale(float p_pitch_scale)
@@ -350,6 +349,3 @@ void AudioEffectPitchShift::set_fft_size(FFTSize p_fft_size)
 }
 
 AudioEffectPitchShift::FFTSize AudioEffectPitchShift::get_fft_size() const { return fft_size; }
-
-
-

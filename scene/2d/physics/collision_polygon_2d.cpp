@@ -35,8 +35,7 @@
 #include "core/math/geometry_2d.h"
 #include "scene/2d/physics/collision_object_2d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/2d/concave_polygon_shape_2d.h"
-#include "scene/resources/2d/convex_polygon_shape_2d.h"
+#include "scene/resources/2d/shape_2d.h"
 
 void CollisionPolygon2D::_build_polygon() {
 	if (!collision_state) {
@@ -50,7 +49,7 @@ void CollisionPolygon2D::_build_polygon() {
 		}
 		Vector<Vector<Vector2>> decomp = _decompose_in_convex();
 		for (int i = 0; i < decomp.size(); i++) {
-			Ref<ConvexPolygonShape2D> convex = memnew(ConvexPolygonShape2D);
+			Ref<Shape2D> convex = memnew(Shape2D(Shape2D::SHAPE_CONVEX_POLYGON));
 			convex->set_points(decomp[i]);
 			collision_state->shape_owner_add_shape(owner_id, convex.ptr());
 		}
@@ -58,7 +57,7 @@ void CollisionPolygon2D::_build_polygon() {
 		if (polygon.size() < 2) {
 			return;
 		}
-		Ref<ConcavePolygonShape2D> concave = memnew(ConcavePolygonShape2D);
+		Ref<Shape2D> concave = memnew(Shape2D(Shape2D::SHAPE_CONCAVE_POLYGON));
 		Vector<Vector2> segments;
 		segments.resize(polygon.size() * 2);
 		Vector2 *w = segments.ptrw();

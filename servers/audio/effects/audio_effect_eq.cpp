@@ -32,7 +32,7 @@
 #include "audio_effect_eq.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectEQInstance::process(
+void AudioEffectEQState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	int band_count = bands[0].size();
@@ -64,18 +64,34 @@ void AudioEffectEQInstance::process(
 
 Ref<AudioEffectInstance> AudioEffectEQ::instantiate()
 {
-	Ref<AudioEffectEQInstance> ins;
-	ins.instantiate();
-	ins->base = Ref<AudioEffectEQ>(this);
-	ins->gains.resize(eq.get_band_count());
+	AudioEffectEQState* state = memnew(AudioEffectEQState);
+	state->base = Ref<AudioEffectEQ>(this);
+	state->gains.resize(eq.get_band_count());
 	for (int i = 0; i < 2; i++) {
-		ins->bands[i].resize(eq.get_band_count());
-		for (int j = 0; j < ins->bands[i].size(); j++) {
-			ins->bands[i].write[j] = eq.get_band_processor(j);
+		state->bands[i].resize(eq.get_band_count());
+		for (int j = 0; j < state->bands[i].size(); j++) {
+			state->bands[i].write[j] = eq.get_band_processor(j);
 		}
 	}
 
-	return ins;
+	return AudioEffectInstance::create(state);
+}
+
+void AudioEffectEQ::set_preset(EQ::Preset p_preset)
+{
+	eq = EQ();
+	eq.set_mix_rate(AudioServer::get_mix_rate());
+	eq.set_preset_band_mode(p_preset);
+	gain.clear();
+	prop_band_map.clear();
+	band_names.clear();
+	gain.resize(eq.get_band_count());
+	for (int i = 0; i < gain.size(); i++) {
+		gain.write[i] = 0.0;
+		String band_name = "band_db/" + itos(eq.get_band_frequency(i)) + "_hz";
+		prop_band_map[band_name] = i;
+		band_names.push_back(band_name);
+	}
 }
 
 void AudioEffectEQ::set_band_gain_db(int p_band, float p_volume)
@@ -95,15 +111,5 @@ int AudioEffectEQ::get_band_count() const { return gain.size(); }
 
 AudioEffectEQ::AudioEffectEQ(EQ::Preset p_preset)
 {
-	eq.set_mix_rate(AudioServer::get_mix_rate());
-	eq.set_preset_band_mode(p_preset);
-	gain.resize(eq.get_band_count());
-	for (int i = 0; i < gain.size(); i++) {
-		gain.write[i] = 0.0;
-		String band_name = "band_db/" + itos(eq.get_band_frequency(i)) + "_hz";
-		prop_band_map[band_name] = i;
-		band_names.push_back(band_name);
-	}
+	set_preset(p_preset);
 }
-
-

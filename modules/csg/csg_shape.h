@@ -37,7 +37,7 @@
 #include "scene/resources/mesh.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/resources/3d/concave_polygon_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
 class NavigationMesh;
@@ -106,7 +106,7 @@ private:
 	uint32_t collision_layer = 1;
 	uint32_t collision_mask = 1;
 	real_t collision_priority = 1.0;
-	Ref<ConcavePolygonShape3D> root_collision_shape;
+	Ref<Shape3D> root_collision_shape;
 	RID root_collision_body;
 	RID root_collision_debug_instance;
 	Transform3D debug_shape_old_transform;
@@ -261,7 +261,7 @@ public:
 
 	Ref<ArrayMesh> bake_static_mesh();
 #ifndef PHYSICS_3D_DISABLED
-	Ref<ConcavePolygonShape3D> bake_collision_shape();
+	Ref<Shape3D> bake_collision_shape();
 #endif // PHYSICS_3D_DISABLED
 
 	Ref<TriangleMesh> generate_triangle_mesh() const;

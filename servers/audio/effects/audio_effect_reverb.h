@@ -36,25 +36,24 @@
 
 class AudioEffectReverb;
 
-class AudioEffectReverbInstance : public AudioEffectInstance {
-
+struct AudioEffectReverbState
+{
 	Ref<AudioEffectReverb> base;
 
-	float tmp_src[Reverb::INPUT_BUFFER_MAX_SIZE];
-	float tmp_dst[Reverb::INPUT_BUFFER_MAX_SIZE];
-
-	friend class AudioEffectReverb;
+	float tmp_src[Reverb::INPUT_BUFFER_MAX_SIZE] = {};
+	float tmp_dst[Reverb::INPUT_BUFFER_MAX_SIZE] = {};
 
 	Reverb reverb[2];
 
-public:
-	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
-	AudioEffectReverbInstance();
+	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	AudioEffectReverbState();
 };
 
-class AudioEffectReverb : public AudioEffect {
+using AudioEffectReverbInstance = AudioEffectReverbState;
 
-	friend class AudioEffectReverbInstance;
+class AudioEffectReverb : public AudioEffect
+{
+	friend struct AudioEffectReverbState;
 
 	float predelay;
 	float predelay_fb;
@@ -64,8 +63,6 @@ class AudioEffectReverb : public AudioEffect {
 	float spread;
 	float dry;
 	float wet;
-
-protected:
 
 public:
 	void set_predelay_msec(float p_msec);

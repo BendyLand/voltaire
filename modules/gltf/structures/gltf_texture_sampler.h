@@ -118,7 +118,7 @@ public:
 
 	bool get_wrap_mode() const
 	{
-		// BaseMaterial3D presents wrapping as a boolean property. Either the texture is repeated
+		// StandardMaterial3D presents wrapping as a boolean property. Either the texture is repeated
 		// in both dimensions, non-mirrored, or it isn't repeated at all. This will cause oddities
 		// when people import models having other wrapping mode combinations.
 		return (wrap_s == WrapMode::REPEAT) && (wrap_t == WrapMode::REPEAT);

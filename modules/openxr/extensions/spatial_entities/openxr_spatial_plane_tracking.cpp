@@ -37,8 +37,7 @@
 #include "servers/xr/xr_server.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/resources/3d/box_shape_3d.h"
-#include "scene/resources/3d/concave_polygon_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 
 void OpenXRSpatialPlaneTrackingCapability::initialize()
 {
@@ -431,7 +430,7 @@ Ref<Shape3D> OpenXRPlaneTracker::get_shape(real_t p_thickness)
 	}
 
 	if (mesh.has_mesh_data) {
-		Ref<ConcavePolygonShape3D> shape;
+		Ref<Shape3D> shape;
 		Vector<Vector3> faces;
 
 		// Get some direct access to our data.
@@ -497,15 +496,14 @@ Ref<Shape3D> OpenXRPlaneTracker::get_shape(real_t p_thickness)
 		}
 
 		// Create our shape.
-		shape.instantiate();
+		shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
 		shape->set_faces(faces);
 
 		mesh.shape3d = shape;
 	}
 	else if (bounds_size.x > 0.0 && bounds_size.y > 0.0) {
 		// We can use a box shape here
-		Ref<BoxShape3D> box_shape;
-		box_shape.instantiate();
+		Ref<Shape3D> box_shape = memnew(Shape3D(Shape3D::SHAPE_BOX));
 		box_shape->set_size(Vector3(bounds_size.x, bounds_size.y, p_thickness));
 
 		mesh.shape3d = box_shape;

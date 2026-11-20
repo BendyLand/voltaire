@@ -32,7 +32,7 @@
 #include "audio_effect_stereo_enhance.h"
 #include "servers/audio/audio_server.h"
 
-void AudioEffectStereoEnhanceInstance::process(
+void AudioEffectStereoEnhanceState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	float intensity = base->pan_pullout;
@@ -76,19 +76,17 @@ void AudioEffectStereoEnhanceInstance::process(
 	}
 }
 
-AudioEffectStereoEnhanceInstance::~AudioEffectStereoEnhanceInstance()
+AudioEffectStereoEnhanceState::~AudioEffectStereoEnhanceState()
 {
 	memdelete_arr(delay_ringbuff);
 }
 
 Ref<AudioEffectInstance> AudioEffectStereoEnhance::instantiate()
 {
-	Ref<AudioEffectStereoEnhanceInstance> ins;
-	ins.instantiate();
+	AudioEffectStereoEnhanceState* state = memnew(AudioEffectStereoEnhanceState);
+	state->base = Ref<AudioEffectStereoEnhance>(this);
 
-	ins->base = Ref<AudioEffectStereoEnhance>(this);
-
-	float ring_buffer_max_size = AudioEffectStereoEnhanceInstance::MAX_DELAY_MS + 2;
+	float ring_buffer_max_size = AudioEffectStereoEnhanceState::MAX_DELAY_MS + 2;
 	ring_buffer_max_size /= 1000.0; // convert to seconds
 	ring_buffer_max_size *= AudioServer::get_mix_rate();
 
@@ -102,12 +100,12 @@ Ref<AudioEffectInstance> AudioEffectStereoEnhance::instantiate()
 	}
 
 	ringbuff_size = 1 << bits;
-	ins->ringbuff_mask = ringbuff_size - 1;
-	ins->ringbuff_pos = 0;
+	state->ringbuff_mask = ringbuff_size - 1;
+	state->ringbuff_pos = 0;
 
-	ins->delay_ringbuff = memnew_arr(float, ringbuff_size);
+	state->delay_ringbuff = memnew_arr(float, ringbuff_size);
 
-	return ins;
+	return AudioEffectInstance::create(state);
 }
 
 void AudioEffectStereoEnhance::set_pan_pullout(float p_amount) { pan_pullout = p_amount; }
@@ -122,7 +120,4 @@ void AudioEffectStereoEnhance::set_surround(float p_amount) { surround = p_amoun
 
 float AudioEffectStereoEnhance::get_surround() const { return surround; }
 
-
 AudioEffectStereoEnhance::AudioEffectStereoEnhance() {}
-
-

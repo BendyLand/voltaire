@@ -61,8 +61,8 @@ TEST_CASE("[SceneTree][GridMap][MeshLibrary] Octant querying") {
 	mesh_library->set_item_name(item1, "Item1");
 	mesh_library->set_item_name(item2, "Item2");
 
-	Ref<BoxMesh> box_mesh;
-	box_mesh.instantiate();
+	Ref<PrimitiveMesh> box_mesh;
+	box_mesh.instantiate(PrimitiveMesh::MESH_BOX);
 	box_mesh->set_size(Vector3(1.0, 1.0, 1.0));
 
 	mesh_library->set_item_mesh(item1, box_mesh);

@@ -35,8 +35,7 @@
 #include "scene/resources/font.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/image_texture.h"
-#include "scene/resources/style_box_flat.h"
-#include "scene/resources/style_box_line.h"
+#include "scene/resources/style_box.h"
 #include "scene/resources/theme.h"
 #include "scene/scene_string_names.h"
 #include "scene/theme/default_theme_icons.gen.h"
@@ -54,12 +53,12 @@ static float scale = 1.0;
 static const int default_margin = 4;
 static const int default_corner_radius = 3;
 
-static Ref<StyleBoxFlat> make_flat_stylebox(Color p_color, float p_margin_left = default_margin,
+static Ref<StyleBox> make_flat_stylebox(Color p_color, float p_margin_left = default_margin,
 	float p_margin_top = default_margin, float p_margin_right = default_margin,
 	float p_margin_bottom = default_margin, int p_corner_radius = default_corner_radius,
 	bool p_draw_center = true, int p_border_width = 0)
 {
-	Ref<StyleBoxFlat> style(memnew(StyleBoxFlat));
+	Ref<StyleBox> style(memnew(StyleBox(StyleBox::STYLE_FLAT)));
 	style->set_bg_color(p_color);
 	style->set_content_margin_individual(Math::round(p_margin_left * scale),
 		Math::round(p_margin_top * scale), Math::round(p_margin_right * scale),
@@ -76,8 +75,8 @@ static Ref<StyleBoxFlat> make_flat_stylebox(Color p_color, float p_margin_left =
 	return style;
 }
 
-static Ref<StyleBoxFlat> sb_expand(
-	Ref<StyleBoxFlat> p_sbox, float p_left, float p_top, float p_right, float p_bottom)
+static Ref<StyleBox> sb_expand(
+	Ref<StyleBox> p_sbox, float p_left, float p_top, float p_right, float p_bottom)
 {
 	p_sbox->set_expand_margin(SIDE_LEFT, Math::round(p_left * scale));
 	p_sbox->set_expand_margin(SIDE_TOP, Math::round(p_top * scale));
@@ -89,7 +88,7 @@ static Ref<StyleBoxFlat> sb_expand(
 static Ref<StyleBox> make_empty_stylebox(float p_margin_left = -1, float p_margin_top = -1,
 	float p_margin_right = -1, float p_margin_bottom = -1)
 {
-	Ref<StyleBox> style(memnew(StyleBoxEmpty));
+	Ref<StyleBox> style(memnew(StyleBox(StyleBox::STYLE_EMPTY)));
 	style->set_content_margin_individual(Math::round(p_margin_left * scale),
 		Math::round(p_margin_top * scale), Math::round(p_margin_right * scale),
 		Math::round(p_margin_bottom * scale));

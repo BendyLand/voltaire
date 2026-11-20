@@ -4206,14 +4206,14 @@ int TileData::get_collision_polygon_shapes_count(int p_layer_id, int p_polygon_i
 	return physics[p_layer_id].polygons[p_polygon_index].shapes.size();
 }
 
-Ref<ConvexPolygonShape2D> TileData::get_collision_polygon_shape(int p_layer_id, int p_polygon_index,
+Ref<Shape2D> TileData::get_collision_polygon_shape(int p_layer_id, int p_polygon_index,
 	int shape_index, bool p_flip_h, bool p_flip_v, bool p_transpose) const
 {
-	ERR_FAIL_INDEX_V(p_layer_id, physics.size(), Ref<ConvexPolygonShape2D>());
+	ERR_FAIL_INDEX_V(p_layer_id, physics.size(), Ref<Shape2D>());
 	ERR_FAIL_INDEX_V(
-		p_polygon_index, physics[p_layer_id].polygons.size(), Ref<ConvexPolygonShape2D>());
+		p_polygon_index, physics[p_layer_id].polygons.size(), Ref<Shape2D>());
 	ERR_FAIL_INDEX_V(shape_index, (int)physics[p_layer_id].polygons[p_polygon_index].shapes.size(),
-		Ref<ConvexPolygonShape2D>());
+		Ref<Shape2D>());
 
 	const PhysicsLayerTileData& layer_tile_data = physics[p_layer_id];
 	const PhysicsLayerTileData::PolygonShapeTileData& shapes_data =
@@ -4224,18 +4224,17 @@ Ref<ConvexPolygonShape2D> TileData::get_collision_polygon_shape(int p_layer_id, 
 		return shapes_data.shapes[shape_index];
 	}
 	if (shapes_data.shapes[shape_index].is_null()) {
-		return Ref<ConvexPolygonShape2D>();
+		return Ref<Shape2D>();
 	}
 
-	HashMap<int, LocalVector<Ref<ConvexPolygonShape2D>>>::Iterator I =
+	HashMap<int, LocalVector<Ref<Shape2D>>>::Iterator I =
 
 		shapes_data.transformed_shapes.find(key);
 	if (!I) {
 		int size = shapes_data.shapes.size();
 		shapes_data.transformed_shapes[key].resize(size);
 		for (int i = 0; i < size; i++) {
-			Ref<ConvexPolygonShape2D> transformed_polygon;
-			transformed_polygon.instantiate();
+			Ref<Shape2D> transformed_polygon = memnew(Shape2D(Shape2D::SHAPE_CONVEX_POLYGON));
 			transformed_polygon->set_points(get_transformed_vertices(
 				shapes_data.shapes[i]->get_points(), p_flip_h, p_flip_v, p_transpose));
 			shapes_data.transformed_shapes[key][i] = transformed_polygon;
