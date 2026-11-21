@@ -31,7 +31,7 @@
 
 #ifdef WASAPI_ENABLED
 
-#include "audio_driver_wasapi.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/config/engine.h"
 #include "core/os/os.h"

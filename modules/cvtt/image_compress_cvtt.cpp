@@ -34,7 +34,13 @@
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/templates/safe_refcount.h"
-#include "image_compress_cvtt.h"
+// --- Inlined from modules/cvtt/image_compress_cvtt.h ---
+#include "core/io/image.h"
+
+void image_compress_cvtt(Image *p_image, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format);
+void image_decompress_cvtt(Image *p_image);
+
+// --- End modules/cvtt/image_compress_cvtt.h ---
 
 struct CVTTCompressionJobParams
 {

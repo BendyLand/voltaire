@@ -254,4 +254,26 @@ public:
 		return _ggc_temp2;                                                                         \
 	})(m_setting_name)
 
+// --- Folded from core/core_constants.h ---
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/list.h"
 
+class CoreConstants {
+public:
+	static int get_global_constant_count();
+	static String get_global_constant_enum(int p_idx);
+	static bool is_global_constant_bitfield(int p_idx);
+	static bool get_ignore_value_in_docs(int p_idx);
+	static const char *get_global_constant_name(int p_idx);
+	static int64_t get_global_constant_value(int p_idx);
+	static bool is_global_constant(const String &p_name);
+	static int get_global_constant_index(const String &p_name);
+	static bool is_global_enum(const String &p_enum);
+	static void get_enum_values(const String &p_enum, HashMap<String, int64_t> *r_values);
+#ifdef TOOLS_ENABLED
+	static void get_global_enums(List<String> *r_values);
+#endif
+};
+
+// --- End core/core_constants.h ---

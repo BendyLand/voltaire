@@ -40,7 +40,7 @@
 #include "core/templates/rid_owner.h"
 #include "core/types.h"
 #include "servers/rendering/environment/renderer_fog.h"
-#include "servers/rendering/environment/renderer_gi.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_scene_render.h"

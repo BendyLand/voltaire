@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_graph_node)
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/graph_edit.h"
+#include "scene/gui/dialogs.h"
 
 namespace TestGraphNode {
 

@@ -149,7 +149,7 @@ public:
 
 
 // --- End scene/3d/velocity_tracker_3d.h ---
-#include "scene/resources/camera_attributes.h"
+#include "scene/resources/material.h"
 #include "scene/resources/environment.h"
 #include "servers/xr/xr_tracker.h"
 
@@ -568,7 +568,7 @@ public:
 
 // --- Folded from scene/3d/world_environment.h ---
 #include "scene/main/node.h"
-#include "scene/resources/camera_attributes.h"
+#include "scene/resources/material.h"
 #include "scene/resources/environment.h"
 
 class WorldEnvironment : public Node

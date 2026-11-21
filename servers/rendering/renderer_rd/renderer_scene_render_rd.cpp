@@ -41,7 +41,7 @@
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/storage/camera_attributes_storage.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep. RENDER_TIMESTAMP macro uses RSG.
 
@@ -2307,7 +2307,7 @@ void ClusterBuilderRD::bake_cluster() {}
 #include "core/os/os.h"
 #include "core/string/string_builder.h"
 #include "core/version.h"
-#include "servers/rendering/shader_include_db.h"
+#include "servers/rendering/shader_compiler.h"
 #include "shader_rd.h"
 
 #define ENABLE_SHADER_CACHE 1
@@ -3509,8 +3509,7 @@ void ShaderRD::_compile_variant(uint32_t p_variant, CompileData p_data)
 #include "core/math/projection.h"
 #include "core/templates/local_vector.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h"
-#include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/storage/material_storage.h"
 #include "servers/rendering/storage/variant_converters.h"

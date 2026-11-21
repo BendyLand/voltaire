@@ -638,7 +638,107 @@ public:
 // --- Folded from scene/3d/sprite_3d.h ---
 
 #include "scene/resources/material.h"
-#include "scene/resources/sprite_frames.h"
+// --- Folded from scene/resources/sprite_frames.h ---
+#include "scene/resources/texture.h"
+
+static const float SPRITE_FRAME_MINIMUM_DURATION = 0.01;
+
+class SpriteFrames : public Resource
+{
+public:
+	enum LoopMode
+	{
+		LOOP_NONE,
+		LOOP_LINEAR,
+		LOOP_PINGPONG,
+	};
+
+private:
+	struct Frame
+	{
+		Ref<Texture2D> texture;
+		float duration = 1.0;
+	};
+
+	struct Anim
+	{
+		double speed = 5.0;
+		LoopMode loop = LoopMode::LOOP_LINEAR;
+		Vector<Frame> frames;
+	};
+
+	HashMap<String, Anim> animations;
+
+protected:
+
+public:
+	void add_animation(const String& p_anim);
+	bool has_animation(const String& p_anim) const;
+	void duplicate_animation(const String& p_from, const String& p_to);
+	void remove_animation(const String& p_anim);
+	void rename_animation(const String& p_prev, const String& p_next);
+
+	void get_animation_list(List<String>* r_animations) const;
+	Vector<String> get_animation_names() const;
+
+	void set_animation_speed(const String& p_anim, double p_fps);
+	double get_animation_speed(const String& p_anim) const;
+
+#ifndef DISABLE_DEPRECATED
+	void set_animation_loop(const String& p_anim, bool p_loop);
+	bool get_animation_loop(const String& p_anim) const;
+#endif
+
+	void set_animation_loop_mode(const String& p_anim, LoopMode p_loop_mode);
+	LoopMode get_animation_loop_mode(const String& p_anim) const;
+
+	void add_frame(const String& p_anim, const Ref<Texture2D>& p_texture,
+		float p_duration = 1.0, int p_at_pos = -1);
+	void set_frame(const String& p_anim, int p_idx, const Ref<Texture2D>& p_texture,
+		float p_duration = 1.0);
+	void remove_frame(const String& p_anim, int p_idx);
+
+	int get_frame_count(const String& p_anim) const;
+
+	_FORCE_INLINE_ Ref<Texture2D> get_frame_texture(const String& p_anim, int p_idx) const
+	{
+		HashMap<String, Anim>::ConstIterator E = animations.find(p_anim);
+		ERR_FAIL_COND_V_MSG(
+			!E, Ref<Texture2D>(), "Animation '" + String(p_anim) + "' doesn't exist.");
+		ERR_FAIL_COND_V(p_idx < 0, Ref<Texture2D>());
+		if (p_idx >= E->value.frames.size()) {
+			return Ref<Texture2D>();
+		}
+
+		return E->value.frames[p_idx].texture;
+	}
+
+	_FORCE_INLINE_ float get_frame_duration(const String& p_anim, int p_idx) const
+	{
+		HashMap<String, Anim>::ConstIterator E = animations.find(p_anim);
+		ERR_FAIL_COND_V_MSG(!E, 1.0, "Animation '" + String(p_anim) + "' doesn't exist.");
+		ERR_FAIL_COND_V(p_idx < 0, 1.0);
+		if (p_idx >= E->value.frames.size()) {
+			return 1.0;
+		}
+
+		return E->value.frames[p_idx].duration;
+	}
+
+	void clear(const String& p_anim);
+	void clear_all();
+
+#ifdef TOOLS_ENABLED
+	virtual void get_argument_options(
+		const String& p_function, int p_idx, List<String>* r_options) const;
+#endif
+
+	SpriteFrames();
+};
+
+
+
+// --- End scene/resources/sprite_frames.h ---
 
 class Sprite3D : public Node3D
 {
@@ -864,3 +964,434 @@ public:
 };
 
 // --- End scene/3d/sprite_3d.h ---
+
+// --- Folded from scene/3d/light_3d.h ---
+
+
+class Light3D : public Node3D
+{
+public:
+	enum Param
+	{
+		PARAM_ENERGY = RSE::LIGHT_PARAM_ENERGY,
+		PARAM_INDIRECT_ENERGY = RSE::LIGHT_PARAM_INDIRECT_ENERGY,
+		PARAM_VOLUMETRIC_FOG_ENERGY = RSE::LIGHT_PARAM_VOLUMETRIC_FOG_ENERGY,
+		PARAM_SPECULAR = RSE::LIGHT_PARAM_SPECULAR,
+		PARAM_RANGE = RSE::LIGHT_PARAM_RANGE,
+		PARAM_SIZE = RSE::LIGHT_PARAM_SIZE,
+		PARAM_ATTENUATION = RSE::LIGHT_PARAM_ATTENUATION,
+		PARAM_SPOT_ANGLE = RSE::LIGHT_PARAM_SPOT_ANGLE,
+		PARAM_SPOT_ATTENUATION = RSE::LIGHT_PARAM_SPOT_ATTENUATION,
+		PARAM_SHADOW_MAX_DISTANCE = RSE::LIGHT_PARAM_SHADOW_MAX_DISTANCE,
+		PARAM_SHADOW_SPLIT_1_OFFSET = RSE::LIGHT_PARAM_SHADOW_SPLIT_1_OFFSET,
+		PARAM_SHADOW_SPLIT_2_OFFSET = RSE::LIGHT_PARAM_SHADOW_SPLIT_2_OFFSET,
+		PARAM_SHADOW_SPLIT_3_OFFSET = RSE::LIGHT_PARAM_SHADOW_SPLIT_3_OFFSET,
+		PARAM_SHADOW_FADE_START = RSE::LIGHT_PARAM_SHADOW_FADE_START,
+		PARAM_SHADOW_NORMAL_BIAS = RSE::LIGHT_PARAM_SHADOW_NORMAL_BIAS,
+		PARAM_SHADOW_BIAS = RSE::LIGHT_PARAM_SHADOW_BIAS,
+		PARAM_SHADOW_PANCAKE_SIZE = RSE::LIGHT_PARAM_SHADOW_PANCAKE_SIZE,
+		PARAM_SHADOW_OPACITY = RSE::LIGHT_PARAM_SHADOW_OPACITY,
+		PARAM_SHADOW_BLUR = RSE::LIGHT_PARAM_SHADOW_BLUR,
+		PARAM_TRANSMITTANCE_BIAS = RSE::LIGHT_PARAM_TRANSMITTANCE_BIAS,
+		PARAM_INTENSITY = RSE::LIGHT_PARAM_INTENSITY,
+		PARAM_MAX = RSE::LIGHT_PARAM_MAX
+	};
+
+	enum BakeMode
+	{
+		BAKE_DISABLED,
+		BAKE_STATIC,
+		BAKE_DYNAMIC,
+	};
+
+	enum DirectionalShadowMode
+	{
+		DIRECTIONAL_SHADOW_ORTHOGONAL,
+		DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS,
+		DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS,
+	};
+
+	enum SkyMode
+	{
+		SKY_MODE_LIGHT_AND_SKY,
+		SKY_MODE_LIGHT_ONLY,
+		SKY_MODE_SKY_ONLY,
+	};
+
+	enum OmniShadowMode
+	{
+		OMNI_SHADOW_DUAL_PARABOLOID,
+		OMNI_SHADOW_CUBE,
+	};
+
+	RenderInstance3D render_instance;
+
+private:
+	RSE::LightType type = RSE::LIGHT_DIRECTIONAL;
+	RID light;
+
+	Color color = Color(1, 1, 1);
+	real_t param[PARAM_MAX] = {};
+	bool shadow = false;
+	bool negative = false;
+	bool reverse_cull = false;
+	uint32_t cull_mask = 0xFFFFFFFF;
+	uint32_t shadow_caster_mask = 0xFFFFFFFF;
+	bool distance_fade_enabled = false;
+	real_t distance_fade_begin = 40.0;
+	real_t distance_fade_shadow = 50.0;
+	real_t distance_fade_length = 10.0;
+	bool editor_only = false;
+	BakeMode bake_mode = BAKE_DYNAMIC;
+	Ref<Texture2D> projector;
+	Color correlated_color = Color(1.0, 1.0, 1.0);
+	float temperature = 6500.0;
+
+	// Directional-specific state
+	bool blend_splits = false;
+	DirectionalShadowMode directional_shadow_mode = DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS;
+	SkyMode sky_mode = SKY_MODE_LIGHT_AND_SKY;
+
+	// Omni-specific state
+	OmniShadowMode omni_shadow_mode = OMNI_SHADOW_CUBE;
+
+	// Area-specific state
+	Vector2 area_size = Vector2(1.0, 1.0);
+	Ref<Texture2D> area_texture;
+	bool area_normalize_energy = true;
+
+	void _create_light_rid();
+	void _free_light_rid();
+	void _update_visibility();
+
+	virtual void owner_changed_notify() override;
+
+protected:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+
+public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	void set_light_type(RSE::LightType p_type);
+	RSE::LightType get_light_type() const { return type; }
+
+	void set_editor_only(bool p_editor_only);
+	bool is_editor_only() const;
+
+	void set_param(Param p_param, real_t p_value);
+	real_t get_param(Param p_param) const;
+
+	void set_shadow(bool p_enable);
+	bool has_shadow() const;
+
+	void set_negative(bool p_enable);
+	bool is_negative() const;
+
+	void set_enable_distance_fade(bool p_enable);
+	bool is_distance_fade_enabled() const;
+
+	void set_distance_fade_begin(real_t p_distance);
+	real_t get_distance_fade_begin() const;
+
+	void set_distance_fade_shadow(real_t p_distance);
+	real_t get_distance_fade_shadow() const;
+
+	void set_distance_fade_length(real_t p_length);
+	real_t get_distance_fade_length() const;
+
+	void set_cull_mask(uint32_t p_cull_mask);
+	uint32_t get_cull_mask() const;
+
+	void set_color(const Color& p_color);
+	Color get_color() const;
+
+	void set_shadow_reverse_cull_face(bool p_enable);
+	bool get_shadow_reverse_cull_face() const;
+
+	void set_shadow_caster_mask(uint32_t p_caster_mask);
+	uint32_t get_shadow_caster_mask() const;
+
+	void set_bake_mode(BakeMode p_mode);
+	BakeMode get_bake_mode() const;
+
+	void set_projector(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_projector() const;
+
+	float get_temperature() const;
+	Color get_correlated_color() const;
+
+	// Directional light parameters
+	void set_directional_shadow_mode(DirectionalShadowMode p_mode);
+	DirectionalShadowMode get_directional_shadow_mode() const { return directional_shadow_mode; }
+
+	void set_blend_splits(bool p_enable);
+	bool is_blend_splits_enabled() const { return blend_splits; }
+
+	void set_sky_mode(SkyMode p_mode);
+	SkyMode get_sky_mode() const { return sky_mode; }
+
+	// Omni light parameters
+	void set_omni_shadow_mode(OmniShadowMode p_mode);
+	OmniShadowMode get_omni_shadow_mode() const { return omni_shadow_mode; }
+
+	// Area light parameters
+	void set_area_size(const Vector2& p_size);
+	Vector2 get_area_size() const { return area_size; }
+
+	void set_area_texture(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_area_texture() const { return area_texture; }
+
+	void set_area_normalize_energy(bool p_enable);
+	bool is_area_normalizing_energy() const { return area_normalize_energy; }
+
+	AABB get_aabb() const;
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	Light3D(RSE::LightType p_type = RSE::LIGHT_DIRECTIONAL);
+	~Light3D();
+};
+
+// --- End scene/3d/light_3d.h ---
+
+// --- Folded from scene/3d/lightmapper.h ---
+#include "core/io/image.h"
+#include "core/templates/hash_set.h"
+#include "core/types.h"
+
+class Image;
+
+class LightmapDenoiser : public RefCounted
+{
+protected:
+	static Ref<LightmapDenoiser> (*create_function)();
+
+public:
+	virtual Ref<Image> denoise_image(const Ref<Image>& p_image) = 0;
+	static Ref<LightmapDenoiser> create();
+};
+
+class LightmapRaycaster : public RefCounted
+{
+public:
+	struct EmbreeState;
+
+private:
+	EmbreeState* embree_state = nullptr;
+
+public:
+	// Compatible with embree4 rays.
+	struct alignas(16) Ray
+	{
+		const static unsigned int INVALID_GEOMETRY_ID = ((unsigned int)-1); // from rtcore_common.h
+
+		/*! Default construction does nothing. */
+		_FORCE_INLINE_ Ray() : geomID(INVALID_GEOMETRY_ID) {}
+
+		/*! Constructs a ray from origin, direction, and ray segment. Near
+		 *  has to be smaller than far. */
+		_FORCE_INLINE_ Ray(const Vector3& p_org, const Vector3& p_dir, float p_tnear = 0.0f,
+			float p_tfar = Math::INF)
+			: org(p_org), tnear(p_tnear), dir(p_dir), time(0.0f), tfar(p_tfar), mask(-1), u(0.0),
+			  v(0.0), primID(INVALID_GEOMETRY_ID), geomID(INVALID_GEOMETRY_ID),
+			  instID(INVALID_GEOMETRY_ID)
+		{
+		}
+
+		/*! Tests if we hit something. */
+		_FORCE_INLINE_ explicit operator bool() const { return geomID != INVALID_GEOMETRY_ID; }
+
+	public:
+		Vector3 org;		//!< Ray origin + tnear
+		float tnear;		//!< Start of ray segment
+		Vector3 dir;		//!< Ray direction + tfar
+		float time;			//!< Time of this ray for motion blur.
+		float tfar;			//!< End of ray segment
+		unsigned int mask;	//!< used to mask out objects during traversal
+		unsigned int id;	//!< ray ID
+		unsigned int flags; //!< ray flags
+
+		Vector3 normal;		 //!< Not normalized geometry normal
+		float u;			 //!< Barycentric u coordinate of hit
+		float v;			 //!< Barycentric v coordinate of hit
+		unsigned int primID; //!< primitive ID
+		unsigned int geomID; //!< geometry ID
+		unsigned int instID; //!< instance ID
+	};
+
+	bool intersect(Ray& p_ray);
+	void intersect(Vector<Ray>& r_rays);
+
+	void add_mesh(const Vector<Vector3>& p_vertices, const Vector<Vector3>& p_normals,
+		const Vector<Vector2>& p_uv2s, unsigned int p_id);
+	void set_mesh_alpha_texture(Ref<Image> p_alpha_texture, unsigned int p_id);
+	void commit();
+
+	void set_mesh_filter(const HashSet<int>& p_mesh_ids);
+	void clear_mesh_filter();
+
+	static Ref<LightmapRaycaster> create();
+
+	LightmapRaycaster();
+	~LightmapRaycaster();
+};
+
+class Lightmapper : public RefCounted
+{
+public:
+	struct RDState;
+
+private:
+	RDState* rd_state = nullptr;
+
+public:
+	enum GenerateProbes
+	{
+		GENERATE_PROBES_DISABLED,
+		GENERATE_PROBES_SUBDIV_4,
+		GENERATE_PROBES_SUBDIV_8,
+		GENERATE_PROBES_SUBDIV_16,
+		GENERATE_PROBES_SUBDIV_32,
+	};
+
+	enum LightType
+	{
+		LIGHT_TYPE_DIRECTIONAL,
+		LIGHT_TYPE_OMNI,
+		LIGHT_TYPE_SPOT,
+		LIGHT_TYPE_AREA,
+	};
+
+	enum BakeError
+	{
+		BAKE_OK,
+		BAKE_ERROR_TEXTURE_EXCEEDS_MAX_SIZE,
+		BAKE_ERROR_LIGHTMAP_CANT_PRE_BAKE_MESHES,
+		BAKE_ERROR_ATLAS_TOO_SMALL,
+		BAKE_ERROR_USER_ABORTED,
+	};
+
+	enum BakeQuality
+	{
+		BAKE_QUALITY_LOW,
+		BAKE_QUALITY_MEDIUM,
+		BAKE_QUALITY_HIGH,
+		BAKE_QUALITY_ULTRA,
+	};
+
+	typedef bool (*BakeStepFunc)(
+		float, const String&, void*, bool); // step index, step total, step description, userdata
+
+	struct MeshData
+	{
+		// triangle data
+		Vector<Vector3> points;
+		Vector<Vector2> uv2;
+		Vector<Vector3> normal;
+		Vector<RID> material;
+		Ref<Image> albedo_on_uv2;
+		Ref<Image> emission_on_uv2;
+	};
+
+	void add_mesh(const MeshData& p_mesh);
+	void add_directional_light(const String& p_name, bool p_static, const Vector3& p_direction,
+		const Color& p_color, float p_energy, float p_indirect_energy, float p_angular_distance,
+		float p_shadow_blur);
+	void add_omni_light(const String& p_name, bool p_static, const Vector3& p_position,
+		const Color& p_color, float p_energy, float p_indirect_energy, float p_range,
+		float p_attenuation, float p_size, float p_shadow_blur);
+	void add_spot_light(const String& p_name, bool p_static, const Vector3& p_position,
+		const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
+		float p_range, float p_attenuation, float p_spot_angle, float p_spot_attenuation,
+		float p_size, float p_shadow_blur);
+	void add_area_light(const String& p_name, bool p_static, const Vector3& p_position,
+		const Vector3& p_direction, const Color& p_color, float p_energy, float p_indirect_energy,
+		float p_range, float p_attenuation, const Vector3& p_area_width,
+		const Vector3& p_area_height, float p_size, float p_shadow_blur,
+		const Rect2& p_texture_rect, float p_max_mipmap);
+	void add_area_light_atlas(
+		const Vector2i& p_size, int p_mipmap_count, const PackedByteArray& p_atlas_data);
+	void add_probe(const Vector3& p_position);
+	BakeError bake(BakeQuality p_quality, bool p_use_denoiser, float p_denoiser_strength,
+		int p_denoiser_range, int p_bounces, float p_bounce_indirect_energy, float p_bias,
+		int p_max_texture_size, bool p_bake_sh, bool p_bake_shadowmask, bool p_texture_for_bounces,
+		GenerateProbes p_generate_probes, const Ref<Image>& p_environment_panorama,
+		const Basis& p_environment_transform, BakeStepFunc p_step_function = nullptr,
+		void* p_step_userdata = nullptr, float p_exposure_normalization = 1.0,
+		float p_supersampling_factor = 1.0);
+
+	int get_bake_texture_count() const;
+	Ref<Image> get_bake_texture(int p_index) const;
+	int get_shadowmask_texture_count() const;
+	Ref<Image> get_shadowmask_texture(int p_index) const;
+	int get_bake_mesh_count() const;
+	Rect2 get_bake_mesh_uv_scale(int p_index) const;
+	int get_bake_mesh_texture_slice(int p_index) const;
+
+	int get_bake_probe_count() const;
+	Vector3 get_bake_probe_point(int p_probe) const;
+	Vector<Color> get_bake_probe_sh(int p_probe) const;
+
+	static Ref<Lightmapper> create();
+
+	Lightmapper();
+	~Lightmapper();
+};
+
+// --- End scene/3d/lightmapper.h ---
+
+// --- Folded from scene/3d/multimesh_instance_3d.h ---
+
+#include "scene/resources/multimesh.h"
+
+#ifndef NAVIGATION_3D_DISABLED
+class NavigationMesh;
+class NavigationMeshSourceGeometryData3D;
+#endif // NAVIGATION_3D_DISABLED
+
+class MultiMeshInstance3D : public Node3D
+{
+public:
+	RenderInstance3D render_instance;
+
+private:
+	Ref<MultiMesh> multimesh;
+
+	void _refresh_interpolated();
+
+protected:
+	virtual void _physics_interpolated_changed() override;
+	virtual void fti_update_servers_xform() override;
+	void _notification(int p_what);
+
+public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	void set_multimesh(const Ref<MultiMesh>& p_multimesh);
+	Ref<MultiMesh> get_multimesh() const;
+
+	AABB get_aabb() const;
+
+private:
+#ifndef NAVIGATION_3D_DISABLED
+	static RID _navmesh_source_geometry_parser;
+#endif // NAVIGATION_3D_DISABLED
+
+public:
+#ifndef NAVIGATION_3D_DISABLED
+	static void navmesh_parse_init();
+	static void navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
+#endif // NAVIGATION_3D_DISABLED
+
+	MultiMeshInstance3D() = default;
+	~MultiMeshInstance3D() = default;
+};
+
+// --- End scene/3d/multimesh_instance_3d.h ---

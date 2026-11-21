@@ -155,7 +155,7 @@ static bool _collect_inheritance_chain(const Ref<SceneState>& p_state, const Nod
 // Merged from scene/audio/audio_stream_player.cpp
 // ============================================================================
 
-#include "scene/audio/audio_stream_player.h"
+#include "scene/animation/animation_mixer.h"
 #include "servers/audio/audio_stream.h"
 #include "servers/display/accessibility_server.h"
 

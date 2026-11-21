@@ -34,7 +34,7 @@
 #include "java_godot_io_wrapper.h"
 #include "java_godot_wrapper.h"
 #include "os_android.h"
-#include "tts_android.h"
+#include "platform/android/os_android.h"
 
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
@@ -47,7 +47,7 @@
 #include "servers/rendering/rendering_device.h"
 
 #if defined(VULKAN_ENABLED)
-#include "rendering_context_driver_vulkan_android.h"
+#include "platform/android/os_android.h"
 #endif
 #endif
 

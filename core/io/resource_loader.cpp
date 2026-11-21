@@ -1930,7 +1930,7 @@ void ResourceUID::finalize()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "missing_resource.h"
+#include "core/io/resource_loader.h"
 
 void MissingResource::set_original_class(const String& p_class) { original_class = p_class; }
 
@@ -2560,7 +2560,7 @@ void Resource::setup_local_to_scene() {}
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access_wrappers.h"
-#include "core/io/missing_resource.h"
+#include "core/io/resource_loader.h"
 #include "core/version.h"
 #include "core/io/resource_loader.h"
 #include "scene/property_utils.h"

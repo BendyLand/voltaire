@@ -45,7 +45,7 @@
 #include "core/io/json.h"
 #include "core/io/config_file.h"
 #include "core/io/marshalls.h"
-#include "core/io/missing_resource.h"
+#include "core/io/resource_loader.h"
 #include "core/io/packet_peer.h"
 #include "core/io/packet_peer_dtls.h"
 #include "core/io/packet_peer_udp.h"
@@ -56,7 +56,7 @@
 #include "core/io/resource_saver.h"
 #include "core/io/resource_uid.h"
 #include "core/io/socket_server.h"
-#include "core/io/stream_peer_gzip.h"
+#include "core/io/stream_peer.h"
 #include "core/io/stream_peer_tls.h"
 #include "core/io/config_file.h"
 #include "core/io/packet_peer_udp.h"
@@ -68,7 +68,7 @@
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
-#include "core/string/fuzzy_search.h"
+#include "core/string/translation_server.h"
 #include "core/string/translation.h"
 #include "core/string/translation_server.h"
 #include "register_core_types.h"
@@ -183,7 +183,7 @@ void unregister_core_types()
 
 #include "core/input/input_enums.h"
 #include "core/os/keyboard.h"
-#include "core_constants.h"
+#include "core/config/project_settings.h"
 
 struct _CoreConstant
 {

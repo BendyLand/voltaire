@@ -38,13 +38,226 @@
 #include "core/templates/rid_owner.h"
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/environment/renderer_fog.h"
-#include "servers/rendering/environment/renderer_gi.h"
+// --- Folded from servers/rendering/environment/renderer_gi.h ---
+#include "core/math/projection.h"
+#include "core/math/transform_3d.h"
+#include "core/templates/rid.h"
+#include "servers/rendering/rendering_server_enums.h"
+
+class RendererGI
+{
+public:
+	/* VOXEL GI FUNCTION POINTERS */
+	inline static bool (*owns_voxel_gi)(RID p_rid) = nullptr;
+	inline static RID (*voxel_gi_allocate)() = nullptr;
+	inline static void (*voxel_gi_free)(RID p_voxel_gi) = nullptr;
+	inline static void (*voxel_gi_initialize)(RID p_voxel_gi) = nullptr;
+
+	inline static void (*voxel_gi_allocate_data)(RID p_voxel_gi, const Transform3D& p_to_cell_xform,
+		const AABB& p_aabb, const Vector3i& p_octree_size, const Vector<uint8_t>& p_octree_cells,
+		const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
+		const Vector<int>& p_level_counts) = nullptr;
+
+	inline static AABB (*voxel_gi_get_bounds)(RID p_voxel_gi) = nullptr;
+	inline static Vector3i (*voxel_gi_get_octree_size)(RID p_voxel_gi) = nullptr;
+	inline static Vector<uint8_t> (*voxel_gi_get_octree_cells)(RID p_voxel_gi) = nullptr;
+	inline static Vector<uint8_t> (*voxel_gi_get_data_cells)(RID p_voxel_gi) = nullptr;
+	inline static Vector<uint8_t> (*voxel_gi_get_distance_field)(RID p_voxel_gi) = nullptr;
+	inline static Vector<int> (*voxel_gi_get_level_counts)(RID p_voxel_gi) = nullptr;
+	inline static Transform3D (*voxel_gi_get_to_cell_xform)(RID p_voxel_gi) = nullptr;
+
+	inline static void (*voxel_gi_set_dynamic_range)(RID p_voxel_gi, float p_range) = nullptr;
+	inline static float (*voxel_gi_get_dynamic_range)(RID p_voxel_gi) = nullptr;
+
+	inline static void (*voxel_gi_set_propagation)(RID p_voxel_gi, float p_range) = nullptr;
+	inline static float (*voxel_gi_get_propagation)(RID p_voxel_gi) = nullptr;
+
+	inline static void (*voxel_gi_set_energy)(RID p_voxel_gi, float p_energy) = nullptr;
+	inline static float (*voxel_gi_get_energy)(RID p_voxel_gi) = nullptr;
+
+	inline static void (*voxel_gi_set_baked_exposure_normalization)(
+		RID p_voxel_gi, float p_baked_exposure) = nullptr;
+	inline static float (*voxel_gi_get_baked_exposure_normalization)(RID p_voxel_gi) = nullptr;
+
+	inline static void (*voxel_gi_set_bias)(RID p_voxel_gi, float p_bias) = nullptr;
+	inline static float (*voxel_gi_get_bias)(RID p_voxel_gi) = nullptr;
+
+	inline static void (*voxel_gi_set_normal_bias)(RID p_voxel_gi, float p_range) = nullptr;
+	inline static float (*voxel_gi_get_normal_bias)(RID p_voxel_gi) = nullptr;
+
+	inline static void (*voxel_gi_set_interior)(RID p_voxel_gi, bool p_enable) = nullptr;
+	inline static bool (*voxel_gi_is_interior)(RID p_voxel_gi) = nullptr;
+
+	inline static void (*voxel_gi_set_use_two_bounces)(RID p_voxel_gi, bool p_enable) = nullptr;
+	inline static bool (*voxel_gi_is_using_two_bounces)(RID p_voxel_gi) = nullptr;
+
+	inline static uint32_t (*voxel_gi_get_version)(RID p_probe) = nullptr;
+
+	/* SDFGI FUNCTION POINTERS */
+	inline static void (*sdfgi_reset)() = nullptr;
+
+	/* BIND TEMPLATE */
+	template <typename T> static void bind()
+	{
+		owns_voxel_gi = T::owns_voxel_gi;
+		voxel_gi_allocate = T::voxel_gi_allocate;
+		voxel_gi_free = T::voxel_gi_free;
+		voxel_gi_initialize = T::voxel_gi_initialize;
+		voxel_gi_allocate_data = T::voxel_gi_allocate_data;
+		voxel_gi_get_bounds = T::voxel_gi_get_bounds;
+		voxel_gi_get_octree_size = T::voxel_gi_get_octree_size;
+		voxel_gi_get_octree_cells = T::voxel_gi_get_octree_cells;
+		voxel_gi_get_data_cells = T::voxel_gi_get_data_cells;
+		voxel_gi_get_distance_field = T::voxel_gi_get_distance_field;
+		voxel_gi_get_level_counts = T::voxel_gi_get_level_counts;
+		voxel_gi_get_to_cell_xform = T::voxel_gi_get_to_cell_xform;
+		voxel_gi_set_dynamic_range = T::voxel_gi_set_dynamic_range;
+		voxel_gi_get_dynamic_range = T::voxel_gi_get_dynamic_range;
+		voxel_gi_set_propagation = T::voxel_gi_set_propagation;
+		voxel_gi_get_propagation = T::voxel_gi_get_propagation;
+		voxel_gi_set_energy = T::voxel_gi_set_energy;
+		voxel_gi_get_energy = T::voxel_gi_get_energy;
+		voxel_gi_set_baked_exposure_normalization = T::voxel_gi_set_baked_exposure_normalization;
+		voxel_gi_get_baked_exposure_normalization = T::voxel_gi_get_baked_exposure_normalization;
+		voxel_gi_set_bias = T::voxel_gi_set_bias;
+		voxel_gi_get_bias = T::voxel_gi_get_bias;
+		voxel_gi_set_normal_bias = T::voxel_gi_set_normal_bias;
+		voxel_gi_get_normal_bias = T::voxel_gi_get_normal_bias;
+		voxel_gi_set_interior = T::voxel_gi_set_interior;
+		voxel_gi_is_interior = T::voxel_gi_is_interior;
+		voxel_gi_set_use_two_bounces = T::voxel_gi_set_use_two_bounces;
+		voxel_gi_is_using_two_bounces = T::voxel_gi_is_using_two_bounces;
+		voxel_gi_get_version = T::voxel_gi_get_version;
+		sdfgi_reset = T::sdfgi_reset;
+	}
+};
+
+// --- End servers/rendering/environment/renderer_gi.h ---
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_enums.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/storage/camera_attributes_storage.h"
+// --- Folded from servers/rendering/storage/camera_attributes_storage.h ---
+#include "core/templates/rid_owner.h"
+#include "servers/rendering/rendering_server_enums.h"
+
+class RendererCameraAttributes final
+{
+public:
+	RendererCameraAttributes() = delete;
+	~RendererCameraAttributes() = delete;
+	RendererCameraAttributes(const RendererCameraAttributes&) = delete;
+	RendererCameraAttributes& operator=(const RendererCameraAttributes&) = delete;
+
+	struct CameraAttributes
+	{
+		float exposure_multiplier = 1.0;
+		float exposure_normalization = 1.0;
+		float exposure_sensitivity = 100.0; // In ISO.
+
+		bool use_auto_exposure = false;
+		float auto_exposure_min_sensitivity = 50.0;
+		float auto_exposure_max_sensitivity = 800.0;
+		float auto_exposure_adjust_speed = 1.0;
+		float auto_exposure_scale = 1.0;
+		uint64_t auto_exposure_version = 0;
+
+		bool dof_blur_far_enabled = false;
+		float dof_blur_far_distance = 10;
+		float dof_blur_far_transition = 5;
+		bool dof_blur_near_enabled = false;
+		float dof_blur_near_distance = 2;
+		float dof_blur_near_transition = 1;
+		float dof_blur_amount = 0.1;
+	};
+
+private:
+	static inline bool _initialized = false;
+
+	static inline RSE::DOFBlurQuality dof_blur_quality = RSE::DOF_BLUR_QUALITY_MEDIUM;
+	static inline RSE::DOFBokehShape dof_blur_bokeh_shape = RSE::DOF_BOKEH_HEXAGON;
+	static inline bool dof_blur_use_jitter = false;
+	static inline uint64_t auto_exposure_counter = 2;
+
+	static inline RID_Owner<CameraAttributes, true> camera_attributes_owner;
+
+public:
+	static void initialize();
+	static void finalize();
+
+	static bool is_initialized() { return _initialized; }
+
+	static CameraAttributes* get_camera_attributes(RID p_rid)
+	{
+		return camera_attributes_owner.get_or_null(p_rid);
+	}
+	static bool owns_camera_attributes(RID p_rid) { return camera_attributes_owner.owns(p_rid); }
+
+	static RID camera_attributes_allocate();
+	static void camera_attributes_initialize(RID p_rid);
+	static void camera_attributes_free(RID p_rid);
+
+	static void camera_attributes_set_dof_blur_quality(
+		RSE::DOFBlurQuality p_quality, bool p_use_jitter);
+	static void camera_attributes_set_dof_blur_bokeh_shape(RSE::DOFBokehShape p_shape);
+
+	static void camera_attributes_set_dof_blur(RID p_camera_attributes, bool p_far_enable,
+		float p_far_distance, float p_far_transition, bool p_near_enable, float p_near_distance,
+		float p_near_transition, float p_amount);
+	static bool camera_attributes_get_dof_far_enabled(RID p_camera_attributes);
+	static float camera_attributes_get_dof_far_distance(RID p_camera_attributes);
+	static float camera_attributes_get_dof_far_transition(RID p_camera_attributes);
+	static bool camera_attributes_get_dof_near_enabled(RID p_camera_attributes);
+	static float camera_attributes_get_dof_near_distance(RID p_camera_attributes);
+	static float camera_attributes_get_dof_near_transition(RID p_camera_attributes);
+	static float camera_attributes_get_dof_blur_amount(RID p_camera_attributes);
+
+	_FORCE_INLINE_ static bool camera_attributes_uses_dof(RID p_camera_attributes)
+	{
+		CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+
+		return cam_attributes &&
+			   (cam_attributes->dof_blur_near_enabled || cam_attributes->dof_blur_far_enabled) &&
+			   cam_attributes->dof_blur_amount > 0.0;
+	}
+
+	static void camera_attributes_set_exposure(
+		RID p_camera_attributes, float p_multiplier, float p_exposure_normalization);
+	static float camera_attributes_get_exposure_normalization_factor(RID p_camera_attributes);
+
+	static void camera_attributes_set_auto_exposure(RID p_camera_attributes, bool p_enable,
+		float p_min_sensitivity, float p_max_sensitivity, float p_speed, float p_scale);
+	static float camera_attributes_get_auto_exposure_min_sensitivity(RID p_camera_attributes);
+	static float camera_attributes_get_auto_exposure_max_sensitivity(RID p_camera_attributes);
+	static float camera_attributes_get_auto_exposure_adjust_speed(RID p_camera_attributes);
+	static float camera_attributes_get_auto_exposure_scale(RID p_camera_attributes);
+	static uint64_t camera_attributes_get_auto_exposure_version(RID p_camera_attributes);
+
+	_FORCE_INLINE_ static bool camera_attributes_uses_auto_exposure(RID p_camera_attributes)
+	{
+		CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+
+		return cam_attributes && cam_attributes->use_auto_exposure;
+	}
+
+	_FORCE_INLINE_ static RSE::DOFBlurQuality camera_attributes_get_dof_blur_quality()
+	{
+		return dof_blur_quality;
+	}
+
+	_FORCE_INLINE_ static RSE::DOFBokehShape camera_attributes_get_dof_blur_bokeh_shape()
+	{
+		return dof_blur_bokeh_shape;
+	}
+
+	_FORCE_INLINE_ static bool camera_attributes_get_dof_blur_use_jitter()
+	{
+		return dof_blur_use_jitter;
+	}
+};
+
+// --- End servers/rendering/storage/camera_attributes_storage.h ---
 #include "servers/rendering/storage/light_storage.h"
 #include "servers/rendering/storage/material_storage.h"
 #include "servers/rendering/storage/mesh_storage.h"

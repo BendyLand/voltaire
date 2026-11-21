@@ -32,7 +32,7 @@
 #include "servers/rendering/renderer_rd/environment/rd_environment.h"
 #include "servers/rendering/renderer_rd/rd_caches.h"
 #include "core/config/project_settings.h"
-#include "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"

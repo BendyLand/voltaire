@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "d3d12_hooks.h"
+#include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
 void D3D12Hooks::reset()
 {

@@ -29,9 +29,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "android_input_handler.h"
+#include "platform/android/os_android.h"
 
-#include "android_keys_utils.h"
+#include "platform/android/os_android.h"
 #include "display_server_android.h"
 
 #include "core/input/input.h"

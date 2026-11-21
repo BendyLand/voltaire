@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "audio_driver_opensl.h"
+#include "platform/android/os_android.h"
 
 #include "core/os/os.h"
 

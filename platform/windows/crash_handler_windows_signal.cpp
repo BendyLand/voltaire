@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "crash_handler_windows.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"

@@ -49,7 +49,7 @@
 /* permissions and limitations under the License.                         */
 /**************************************************************************/
 
-#include "metal_device_properties.h"
+#include "drivers/metal/pixel_formats.h"
 
 #include "core/os/os.h"
 #include "drivers/metal/metal_utils.h"

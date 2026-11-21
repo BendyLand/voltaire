@@ -445,7 +445,7 @@ void EditorExportPlatform::_bind_compatibility_methods() {}
 
 
 #include "editor_export_platform.h"
-#include "scene/gui/rich_text_label.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/node.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/texture.h"
@@ -2016,7 +2016,7 @@ public:
 #endif
 
 #ifdef D3D12_ENABLED
-#include "drivers/d3d12/rendering_shader_container_d3d12.h"
+#include "drivers/d3d12/rendering_context_driver_d3d12.h"
 #include <windows.h>
 #endif
 
@@ -2274,7 +2274,7 @@ void ShaderBakerExportPlugin::_customize_shader_version(ShaderRD* p_shader, RID 
 // Merged from editor/export/apple_export_utils.cpp
 // ============================================================================
 
-#include "apple_export_utils.h"
+#include "editor/export/editor_export_platform.h"
 
 #include "core/config/project_settings.h"
 #include "core/crypto/crypto_core.h"
@@ -4688,7 +4688,7 @@ uint64_t PluginConfigAppleEmbedded::get_plugin_modification_time(
 #include "editor/editor_string_names.h"
 #include "editor/export/editor_export.h"
 #include "editor/themes/editor_scale.h"
-#include "editor/export/apple_export_utils.h"
+#include "editor/export/editor_export_platform.h"
 #include "main/main.h"
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For mono.
 #include "modules/svg/image_loader_svg.h"

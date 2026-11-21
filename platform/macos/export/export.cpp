@@ -213,7 +213,7 @@ void register_macos_exporter() {}
 #include "core/string/translation_server.h"
 #include "drivers/png/png_driver_common.h"
 #include "editor/editor_string_names.h"
-#include "editor/export/apple_export_utils.h"
+#include "editor/export/editor_export_platform.h"
 #include "editor/export/editor_export.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"

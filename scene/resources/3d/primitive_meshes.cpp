@@ -1447,7 +1447,7 @@ Ref<ImporterMesh> ImporterMesh::from_mesh(Ref<Mesh> const&)
 
 // --- mesh_library.cpp ---
 
-#include "mesh_library.h"
+#include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/texture.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
 
@@ -2691,7 +2691,7 @@ void JointLimitation3D::draw_shape(Ref<SurfaceTool>& p_surface_tool, const Trans
 
 #include "core/config/project_settings.h"
 #include "scene/3d/camera_3d.h"
-#include "scene/resources/camera_attributes.h"
+#include "scene/resources/material.h"
 #include "scene/resources/environment.h"
 #include "servers/rendering/renderer.h"
 #include "world_3d.h"

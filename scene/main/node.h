@@ -33,8 +33,54 @@
 
 #include "core/input/input_event.h"
 #include "core/os/thread_safe.h"
-#include "core/templates/iterable.h"
-#include "core/templates/mem_unique_ptr.h"
+// --- Folded from core/templates/iterable.h ---
+#include <utility>
+
+template <typename I>
+class Iterable {
+	I _begin;
+	I _end;
+
+public:
+	I begin() { return _begin; }
+	I end() { return _end; }
+
+	Iterable(I &&p_begin, I &&p_end) :
+			_begin(std::move(p_begin)), _end(std::move(p_end)) {}
+	Iterable(const I &p_begin, const I &p_end) :
+			_begin(p_begin), _end(p_end) {}
+};
+
+// --- End core/templates/iterable.h ---
+// --- Folded from core/templates/mem_unique_ptr.h ---
+#ifndef MEM_UNIQUE_PTR_H
+#define MEM_UNIQUE_PTR_H
+
+#include <memory>
+#include <utility>
+#include "core/os/memory.h"
+
+template <typename T> struct MemDeleter
+{
+	void operator()(T* p) const
+	{
+		if (p) {
+			memdelete(p);
+		}
+	}
+};
+
+template <typename T> using mem_unique_ptr = std::unique_ptr<T, MemDeleter<T>>;
+
+template <typename T, typename... Args> mem_unique_ptr<T> mem_make_unique(Args&&... p_args)
+{
+	return mem_unique_ptr<T>(memnew(T(std::forward<Args>(p_args)...)));
+}
+
+#endif // MEM_UNIQUE_PTR_H
+
+
+// --- End core/templates/mem_unique_ptr.h ---
 #include "scene/resources/packed_scene.h"
 #include "scene/scene_string_names.h" // IWYU pragma: export. Make available to all Nodes.
 

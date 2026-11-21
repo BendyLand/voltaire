@@ -34,7 +34,40 @@
 #include "core/io/image.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
-#include "image_compress_basisu.h"
+// --- Inlined from modules/basis_universal/image_compress_basisu.h ---
+#include "core/io/image.h"
+
+enum BasisDecompressFormat
+{
+	BASIS_DECOMPRESS_RG,
+	BASIS_DECOMPRESS_RGB,
+	BASIS_DECOMPRESS_RGBA,
+	BASIS_DECOMPRESS_RG_AS_RA,
+	BASIS_DECOMPRESS_R,
+	BASIS_DECOMPRESS_HDR_RGB,
+	BASIS_DECOMPRESS_MAX
+};
+
+constexpr uint32_t BASIS_DECOMPRESS_FLAG_KTX2 = 1 << 31;
+
+void basis_universal_init();
+
+#ifdef TOOLS_ENABLED
+struct BasisRGBAF
+{
+	uint32_t r;
+	uint32_t g;
+	uint32_t b;
+	uint32_t a;
+};
+#endif
+
+Ref<Image> basis_universal_unpacker_ptr(const uint8_t* p_data, int p_size);
+Ref<Image> basis_universal_unpacker(const Vector<uint8_t>& p_buffer);
+
+
+
+// --- End modules/basis_universal/image_compress_basisu.h ---
 #include "servers/rendering/renderer.h"
 
 VLTR_GCC_WARNING_PUSH

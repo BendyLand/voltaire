@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_stream_peer_gzip)
 
-#include "core/io/stream_peer_gzip.h"
+#include "core/io/stream_peer.h"
 
 namespace TestStreamPeerGZIP {
 

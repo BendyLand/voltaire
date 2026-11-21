@@ -11572,7 +11572,6 @@ void RendererRD::ParticlesStorage::ParticlesShaderData::set_code(const String& p
 #include "servers/rendering/rendering_device_binds.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_data_rd.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer.h"

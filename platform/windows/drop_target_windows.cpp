@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drop_target_windows.h"
+#include "platform/windows/display_server_windows.h"
 
 #include "core/io/dir_access.h"
 #include "core/math/random_pcg.h"

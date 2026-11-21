@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "gl_manager_windows_native.h"
+#include "platform/windows/display_server_windows.h"
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 

@@ -409,7 +409,6 @@ RenderInstance3D::~RenderInstance3D()
 #include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/3d/physics/collision_shape_3d.h"
 #include "scene/3d/physics/collision_object_3d.h"
 #include "scene/resources/3d/shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
@@ -688,7 +687,7 @@ MeshInstance3D* MeshInstance3D::create_debug_tangents_node()
 // Merged from scene/3d/multimesh_instance_3d.cpp
 // ==========================================================================
 
-#include "multimesh_instance_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 
 #ifndef NAVIGATION_3D_DISABLED
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
@@ -3310,7 +3309,7 @@ public:
 
 // --- End scene/3d/gpu_particles_3d.h ---
 #include "scene/main/viewport.h"
-#include "scene/resources/curve_texture.h"
+#include "scene/resources/material.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/material.h"
@@ -3922,7 +3921,7 @@ PackedStringArray CPUParticles3D::get_configuration_warnings() const { return Pa
 #include "core/os/os.h"
 
 
-#include "scene/resources/curve_texture.h"
+#include "scene/resources/material.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/material.h"
@@ -4813,7 +4812,7 @@ GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 // Merged from scene/3d/light_3d.cpp
 // ============================================================================
 
-#include "light_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -6217,7 +6216,6 @@ Voxelizer::Voxelizer() {}
 // --- Inlined from scene/3d/lightmap_gi.h ---
 #include "core/io/resource.h"
 #include "core/templates/local_vector.h"
-#include "scene/3d/lightmapper.h"
 #include "scene/3d/visual_instance_3d.h"
 
 class CameraAttributes;
@@ -6559,7 +6557,7 @@ public:
 
 // --- End scene/3d/lightmap_gi.h ---
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For lightmapper_rd.
-#include "scene/3d/light_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 // --- Inlined from scene/3d/lightmap_probe.h ---
 #include "scene/3d/node_3d.h"
 
@@ -6573,7 +6571,7 @@ public:
 
 // --- End scene/3d/lightmap_probe.h ---
 #include "scene/3d/mesh_instance_3d.h"
-#include "scene/resources/camera_attributes.h"
+#include "scene/resources/material.h"
 #include "scene/resources/environment.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/environment.h"
@@ -7328,7 +7326,7 @@ LightmapProbe::LightmapProbe() {
 // Merged from scene/3d/lightmapper.cpp
 // ==========================================================================
 
-#include "lightmapper.h"
+#include "scene/3d/visual_instance_3d.h"
 
 #include "modules/modules_enabled.gen.h"
 
@@ -7693,9 +7691,9 @@ ReflectionProbe::~ReflectionProbe()
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "scene/3d/mesh_instance_3d.h"
-#include "scene/3d/multimesh_instance_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/camera_attributes.h"
+#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 // --- Inlined from scene/3d/voxel_gi.h ---
 #include "scene/3d/visual_instance_3d.h"

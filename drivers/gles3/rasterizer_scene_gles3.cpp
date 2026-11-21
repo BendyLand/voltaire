@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "drivers/gles3/storage/material_storage.h"
-#include "rasterizer_scene_gles3.h"
+#include "drivers/gles3/rasterizer_gles3.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/storage/utilities.h"
 

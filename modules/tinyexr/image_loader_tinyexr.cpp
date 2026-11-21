@@ -28,8 +28,20 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
+// --- Inlined from modules/tinyexr/image_loader_tinyexr.h ---
+#include "core/io/image_loader.h"
 
-#include "image_loader_tinyexr.h"
+class ImageLoaderTinyEXR final : public ImageFormatLoader {
+public:
+	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
+	virtual void get_recognized_extensions(List<String> *p_extensions) const;
+	ImageLoaderTinyEXR();
+};
+
+Error save_exr(const String &p_path, const Ref<Image> &p_img, bool p_grayscale, bool p_color_image, float p_max_value);
+Vector<uint8_t> save_exr_buffer(const Ref<Image> &p_img, bool p_grayscale, bool p_color_image, float p_max_value);
+
+// --- End modules/tinyexr/image_loader_tinyexr.h ---
 #include "core/io/file_access.h"
 #include "core/math/math_funcs.h"
 #include "register_types.h"

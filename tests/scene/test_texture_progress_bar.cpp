@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_texture_progress_bar)
 
-#include "scene/gui/slider.h"
+#include "scene/gui/range.h"
 
 namespace TestTextureProgressBar {
 

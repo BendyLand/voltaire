@@ -33,7 +33,6 @@
 #include "core/io/file_access.h"
 #include "core/os/keyboard.h"
 #include "editor/editor_ui.h"
-#include "editor/project_manager/project_manager.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -2904,7 +2903,6 @@ String read_project_name(const String& p_dir)
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/core_constants.h"
 #include "core/io/compression.h"
 #include "core/io/dir_access.h"
 #include "core/io/resource_importer.h"
@@ -6276,3 +6274,3424 @@ void ProjectConverter3To4::rename_input_map_scancode(Vector<SourceLine>&, Projec
 bool ProjectConverter3To4::validate_conversion() {}
 
 bool ProjectConverter3To4::convert() {}
+
+// ============================================================================
+// Merged from editor/project_manager/project_manager.cpp
+// ============================================================================
+
+#include "core/io/dir_access.h"
+#include "core/io/file_access.h"
+#include "core/os/keyboard.h"
+#include "core/os/os.h"
+#include "editor/editor_ui.h"
+#include "editor/file_system/editor_paths.h"
+#include "editor/editor_ui.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
+
+String ProjectManager::_get_default_projects_dir()
+{
+	String home = OS::get_environment("HOME");
+	if (home.is_empty()) {
+		home = OS::get_environment("USERPROFILE");
+	}
+	if (!home.is_empty()) {
+		return home.simplify_path();
+	}
+	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+	if (da.is_valid()) {
+		return da->get_current_dir();
+	}
+	return ".";
+}
+
+void ProjectManager::_scan_dir_for_projects(
+	const String& p_dir, int p_depth, int p_max_depth, LocalVector<String>& r_found)
+{
+	if (p_depth > p_max_depth) {
+		return;
+	}
+	Ref<DirAccess> da = DirAccess::open(p_dir);
+	if (da.is_null()) {
+		return;
+	}
+
+	String cur_dir = da->get_current_dir();
+	VoltaireProjectFile tmp;
+	if (_read_voltaire_project(cur_dir, &tmp)) {
+		r_found.push_back(cur_dir);
+		return;
+	}
+
+	da->list_dir_begin();
+	String item = da->get_next();
+	while (!item.is_empty()) {
+		if (item != "." && item != ".." && !item.begins_with(".")) {
+			if (da->current_is_dir()) {
+				_scan_dir_for_projects(cur_dir.path_join(item), p_depth + 1, p_max_depth, r_found);
+			}
+		}
+		item = da->get_next();
+	}
+	da->list_dir_end();
+}
+
+bool ProjectManager::_has_valid_selected_project()
+{
+	if (!data || data->selected_project_idx < 0 ||
+		data->selected_project_idx >= (int)data->projects.size()) {
+		return false;
+	}
+	return !data->projects[data->selected_project_idx].missing;
+}
+
+bool ProjectManager::_has_any_selected_project()
+{
+	return data && data->selected_project_idx >= 0 &&
+		   data->selected_project_idx < (int)data->projects.size();
+}
+
+void ProjectManager::load_projects()
+{
+	if (!data) {
+		return;
+	}
+	data->projects.clear();
+
+	String data_dir = EditorPaths::get_data_dir();
+	if (data_dir.is_empty()) {
+		data_dir = _get_default_projects_dir().path_join(".local/share/voltaire");
+	}
+	data->config_path = data_dir.path_join("projects.cfg");
+
+	if (FileAccess::exists(data->config_path)) {
+		Ref<FileAccess> fa = FileAccess::open(data->config_path, FileAccess::READ);
+		if (fa.is_valid()) {
+			String current_section;
+			bool current_fav = false;
+			auto flush_section = [&]() {
+				if (!current_section.is_empty()) {
+					ProjectEntry entry;
+					entry.path = current_section.simplify_path();
+					entry.favorite = current_fav;
+					VoltaireProjectFile proj_data;
+					if (_read_voltaire_project(entry.path, &proj_data)) {
+						entry.missing = false;
+						entry.name = String::utf8(proj_data.config.project_name);
+					}
+					else {
+						entry.missing = true;
+						entry.name = entry.path.get_file();
+					}
+					data->projects.push_back(entry);
+				}
+			};
+
+			while (!fa->eof_reached()) {
+				String line = fa->get_line().strip_edges();
+				if (line.is_empty() || line.begins_with(";") || line.begins_with("#")) {
+					continue;
+				}
+				if (line.begins_with("[") && line.ends_with("]")) {
+					flush_section();
+					current_section = line.substr(1, line.length() - 2).strip_edges();
+					current_fav = false;
+				}
+				else if (line.begins_with("favorite=")) {
+					String val = line.substr(9).strip_edges().to_lower();
+					current_fav = (val == "true" || val == "1");
+				}
+			}
+			flush_section();
+		}
+	}
+
+	rebuild_filtered_list();
+	if (!data->filtered_indices.is_empty()) {
+		data->selected_project_idx = data->filtered_indices[0];
+		data->status_text = vformat("Loaded %d project(s).", data->projects.size());
+	}
+	else {
+		data->selected_project_idx = -1;
+		data->status_text =
+			"No projects registered yet. Click '+ New Project', 'Import', or 'Scan' to begin.";
+	}
+}
+
+void ProjectManager::save_projects()
+{
+	if (!data || data->config_path.is_empty()) {
+		return;
+	}
+	String base_dir = data->config_path.get_base_dir();
+	if (!DirAccess::dir_exists_absolute(base_dir)) {
+		DirAccess::make_dir_recursive_absolute(base_dir);
+	}
+	Ref<FileAccess> fa = FileAccess::open(data->config_path, FileAccess::WRITE);
+	if (fa.is_null()) {
+		return;
+	}
+	for (uint32_t i = 0; i < data->projects.size(); i++) {
+		const ProjectEntry& p = data->projects[i];
+		fa->store_line("[" + p.path + "]");
+		fa->store_line(String("favorite=") + (p.favorite ? "true" : "false"));
+		fa->store_line("");
+	}
+}
+
+void ProjectManager::rebuild_filtered_list()
+{
+	if (!data) {
+		return;
+	}
+	data->filtered_indices.clear();
+	String needle = data->search_field.text.strip_edges().to_lower();
+
+	// Pass 1: favorites first, Pass 2: non-favorites
+	for (int pass = 0; pass < 2; pass++) {
+		const bool want_fav = (pass == 0);
+		for (uint32_t i = 0; i < data->projects.size(); i++) {
+			const ProjectEntry& p = data->projects[i];
+			if (p.favorite != want_fav) {
+				continue;
+			}
+			if (!needle.is_empty()) {
+				if (!p.name.to_lower().contains(needle) && !p.path.to_lower().contains(needle)) {
+					continue;
+				}
+			}
+			data->filtered_indices.push_back((int)i);
+		}
+	}
+
+	// Update Favorite button label dynamically based on current selection
+	for (uint32_t i = 0; i < data->sidebar_buttons.size(); i++) {
+		if (data->sidebar_buttons[i].on_click == &ProjectManager::_toggle_favorite_selected) {
+			if (_has_any_selected_project() &&
+				data->projects[data->selected_project_idx].favorite) {
+				data->sidebar_buttons[i].label = "Unfavorite";
+			}
+			else {
+				data->sidebar_buttons[i].label = "Favorite";
+			}
+		}
+	}
+}
+
+void ProjectManager::initialize(RID p_viewport_rid, Size2i p_size)
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+
+	data->ui.initialize(p_viewport_rid, p_size, Size2i(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT),
+		&ProjectManager::handle_input_event);
+
+	data->search_field.placeholder = "Filter projects by name or path...";
+
+	// Top toolbar buttons
+	data->buttons.add("+ New Project", &ProjectManager::_new_project, nullptr, true);
+	data->buttons.add("Import", &ProjectManager::_import_project);
+	data->buttons.add("Scan", &ProjectManager::_scan_projects);
+	data->buttons.add("Donate", &ProjectManager::_open_donate_page);
+
+	// Right-hand project action sidebar buttons
+	data->sidebar_buttons.add("Edit", &ProjectManager::_edit_selected_project,
+		&ProjectManager::_has_valid_selected_project, true);
+	data->sidebar_buttons.add("Run", &ProjectManager::_run_selected_project,
+		&ProjectManager::_has_valid_selected_project);
+	data->sidebar_buttons.add("Open Folder", &ProjectManager::_open_selected_folder,
+		&ProjectManager::_has_valid_selected_project);
+	data->sidebar_buttons.add("Favorite", &ProjectManager::_toggle_favorite_selected,
+		&ProjectManager::_has_any_selected_project);
+	data->sidebar_buttons.add("Remove", &ProjectManager::_remove_selected_project,
+		&ProjectManager::_has_any_selected_project);
+	data->sidebar_buttons.add("Quit", &ProjectManager::_quit_manager);
+
+	load_projects();
+
+	_initialized = true;
+	data->ui.needs_redraw = false;
+	process_and_draw();
+}
+
+void ProjectManager::handle_input_event(const InputEvent& p_event)
+{
+	if (!data || p_event.is_null()) {
+		return;
+	}
+	data->ui.forward_input(p_event, &ProjectManager::handle_input_event);
+
+	if (p_event.type == InputEventType::MOUSE_MOTION) {
+		data->ui.mouse_pos = p_event.mouse_motion.position;
+		bool changed = false;
+
+		if (data->modal_mode != MODAL_NONE) {
+			changed |= data->modal_buttons.update_hover(data->ui.mouse_pos);
+			changed |= data->modal_primary_field.handle_mouse_motion(p_event, data->ui.font, 14);
+			changed |= data->modal_secondary_field.handle_mouse_motion(p_event, data->ui.font, 14);
+		}
+		else {
+			changed |= data->search_field.handle_mouse_motion(p_event, data->ui.font, 14);
+			changed |= data->buttons.update_hover(data->ui.mouse_pos);
+			changed |= data->sidebar_buttons.update_hover(data->ui.mouse_pos);
+
+			bool clear_h = !data->search_field.text.is_empty() &&
+						   data->clear_search_rect.has_point(data->ui.mouse_pos);
+			if (data->clear_search_hovered != clear_h) {
+				data->clear_search_hovered = clear_h;
+				changed = true;
+			}
+
+			int new_hover_proj = -1;
+			if (data->list_scroll.bounds.has_point(data->ui.mouse_pos)) {
+				for (uint32_t i = 0; i < data->filtered_indices.size(); i++) {
+					int pidx = data->filtered_indices[i];
+					if (data->projects[pidx].card_rect.has_point(data->ui.mouse_pos)) {
+						new_hover_proj = pidx;
+						break;
+					}
+				}
+			}
+			if (data->hovered_project_idx != new_hover_proj) {
+				if (data->hovered_project_idx >= 0 &&
+					data->hovered_project_idx < (int)data->projects.size()) {
+					data->projects[data->hovered_project_idx].hovered = false;
+				}
+				data->hovered_project_idx = new_hover_proj;
+				if (new_hover_proj >= 0) {
+					data->projects[new_hover_proj].hovered = true;
+				}
+				changed = true;
+			}
+		}
+
+		if (changed) {
+			data->ui.needs_redraw = true;
+		}
+		return;
+	}
+
+	if (p_event.type == InputEventType::MOUSE_BUTTON) {
+		const MouseButton btn = p_event.mouse_button.button_index;
+		const bool is_pressed = p_event.is_pressed();
+		data->ui.mouse_pos = p_event.mouse_button.position;
+
+		if (is_pressed && data->modal_mode == MODAL_NONE &&
+			data->list_scroll.bounds.has_point(data->ui.mouse_pos)) {
+			if (data->list_scroll.handle_wheel(btn, 40.0f)) {
+				data->ui.needs_redraw = true;
+				return;
+			}
+		}
+
+		if (btn != MouseButton::LEFT) {
+			return;
+		}
+
+		if (data->modal_mode != MODAL_NONE) {
+			if (is_pressed) {
+				bool hit_button = data->modal_buttons.press(data->ui.mouse_pos);
+				if (!hit_button) {
+					if (data->modal_primary_field.handle_mouse_button(p_event, data->ui.font, 14)) {
+						data->active_field = FIELD_MODAL_PRIMARY;
+					}
+					else if (data->modal_mode == MODAL_NEW_PROJECT &&
+							   data->modal_secondary_field.handle_mouse_button(
+								   p_event, data->ui.font, 14)) {
+						data->active_field = FIELD_MODAL_SECONDARY;
+					}
+					else if (!data->modal_panel_rect.has_point(data->ui.mouse_pos)) {
+						_cancel_modal();
+						return;
+					}
+				}
+				data->ui.needs_redraw = true;
+			}
+			else {
+				data->modal_primary_field.handle_mouse_button(p_event, data->ui.font, 14);
+				data->modal_secondary_field.handle_mouse_button(p_event, data->ui.font, 14);
+				void (*to_invoke)() = data->modal_buttons.release(data->ui.mouse_pos);
+				data->ui.needs_redraw = true;
+				if (to_invoke) {
+					to_invoke();
+				}
+			}
+			return;
+		}
+
+		// Normal (non-modal) left click press / release
+		if (is_pressed) {
+			bool hit_ui = false;
+			hit_ui |= data->buttons.press(data->ui.mouse_pos);
+			hit_ui |= data->sidebar_buttons.press(data->ui.mouse_pos);
+
+			if (!data->search_field.text.is_empty() &&
+				data->clear_search_rect.has_point(data->ui.mouse_pos)) {
+				data->search_field.text = String();
+				rebuild_filtered_list();
+				data->active_field = FIELD_SEARCH;
+				data->ui.needs_redraw = true;
+				return;
+			}
+
+			if (data->search_field.handle_mouse_button(p_event, data->ui.font, 14)) {
+				data->active_field = FIELD_SEARCH;
+				data->ui.needs_redraw = true;
+				return;
+			}
+
+			if (!hit_ui) {
+				data->active_field = FIELD_NONE;
+			}
+
+			if (data->list_scroll.bounds.has_point(data->ui.mouse_pos)) {
+				for (uint32_t i = 0; i < data->filtered_indices.size(); i++) {
+					int pidx = data->filtered_indices[i];
+					if (data->projects[pidx].card_rect.has_point(data->ui.mouse_pos)) {
+						data->selected_project_idx = pidx;
+						rebuild_filtered_list();
+						const ProjectEntry& sel = data->projects[pidx];
+						data->status_text = sel.missing
+												? vformat("Selected missing project: %s", sel.path)
+												: vformat("Selected '%s' (%s)", sel.name, sel.path);
+						data->ui.needs_redraw = true;
+						if (p_event.mouse_button.double_click && !sel.missing) {
+							_edit_selected_project();
+						}
+						return;
+					}
+				}
+			}
+
+			data->ui.needs_redraw = true;
+		}
+		else {
+			data->search_field.handle_mouse_button(p_event, data->ui.font, 14);
+			void (*c0)() = data->buttons.release(data->ui.mouse_pos);
+			void (*c1)() = data->sidebar_buttons.release(data->ui.mouse_pos);
+			void (*to_invoke)() = c1 ? c1 : c0;
+			data->ui.needs_redraw = true;
+			if (to_invoke) {
+				to_invoke();
+			}
+		}
+		return;
+	}
+
+	if (p_event.type == InputEventType::KEY && p_event.is_pressed()) {
+		const Key code = p_event.key.keycode;
+
+		if (code == Key::ESCAPE) {
+			if (data->modal_mode != MODAL_NONE) {
+				_cancel_modal();
+			}
+			else if (data->active_field == FIELD_SEARCH) {
+				if (!data->search_field.text.is_empty()) {
+					data->search_field.text = String();
+					rebuild_filtered_list();
+				}
+				else {
+					data->active_field = FIELD_NONE;
+				}
+				data->ui.needs_redraw = true;
+			}
+			return;
+		}
+
+		if (code == Key::TAB && data->modal_mode == MODAL_NEW_PROJECT) {
+			if (data->active_field == FIELD_MODAL_PRIMARY) {
+				data->active_field = FIELD_MODAL_SECONDARY;
+				data->modal_secondary_field.select_all();
+			}
+			else {
+				data->active_field = FIELD_MODAL_PRIMARY;
+				data->modal_primary_field.select_all();
+			}
+			data->ui.needs_redraw = true;
+			return;
+		}
+
+		if (code == Key::ENTER || code == Key::KP_ENTER) {
+			if (data->modal_mode != MODAL_NONE) {
+				_confirm_modal();
+			}
+			else if (data->active_field == FIELD_SEARCH) {
+				data->active_field = FIELD_NONE;
+				data->ui.needs_redraw = true;
+			}
+			else if (_has_valid_selected_project()) {
+				_edit_selected_project();
+			}
+			return;
+		}
+
+		UITextField* target_field = nullptr;
+		if (data->active_field == FIELD_SEARCH) {
+			target_field = &data->search_field;
+		}
+		else if (data->active_field == FIELD_MODAL_PRIMARY) {
+			target_field = &data->modal_primary_field;
+		}
+		else if (data->active_field == FIELD_MODAL_SECONDARY) {
+			target_field = &data->modal_secondary_field;
+		}
+
+		if (target_field) {
+			if (target_field->handle_key(p_event)) {
+				if (data->active_field == FIELD_SEARCH) {
+					data->list_scroll.offset = 0.0f;
+					rebuild_filtered_list();
+				}
+				data->modal_error_text = String();
+				data->ui.needs_redraw = true;
+			}
+			return;
+		}
+
+		if (data->modal_mode == MODAL_NONE && !data->filtered_indices.is_empty() &&
+			(code == Key::UP || code == Key::DOWN)) {
+			int cur_pos = -1;
+			for (uint32_t i = 0; i < data->filtered_indices.size(); i++) {
+				if (data->filtered_indices[i] == data->selected_project_idx) {
+					cur_pos = (int)i;
+					break;
+				}
+			}
+			if (cur_pos < 0) {
+				cur_pos = 0;
+			}
+			else if (code == Key::UP && cur_pos > 0) {
+				cur_pos--;
+			}
+			else if (code == Key::DOWN && cur_pos + 1 < (int)data->filtered_indices.size()) {
+				cur_pos++;
+			}
+			data->selected_project_idx = data->filtered_indices[cur_pos];
+			rebuild_filtered_list();
+			data->ui.needs_redraw = true;
+		}
+	}
+}
+
+void ProjectManager::poll()
+{
+	if (!data) {
+		return;
+	}
+
+	if (Input::is_initialized()) {
+		Input::flush_buffered_events();
+	}
+
+	if (!data->pending_open_path.is_empty()) {
+		Size2i win_size = data->ui.window_size;
+		String open_path = data->pending_open_path;
+		String open_name = data->pending_open_name;
+		bool open_play = data->pending_open_play;
+		finalize();
+		EditorUI::initialize(RID(), win_size, open_path, open_name, open_play);
+		return;
+	}
+
+	data->ui.sync_window_size();
+
+	if (data->ui.needs_redraw) {
+		data->ui.needs_redraw = false;
+		process_and_draw();
+	}
+}
+
+void ProjectManager::process_and_draw()
+{
+	if (!data) {
+		return;
+	}
+
+	RID ci = data->ui.begin_draw();
+	if (!ci.is_valid()) {
+		return;
+	}
+
+	const float W = (float)data->ui.window_size.x;
+	const float H = (float)data->ui.window_size.y;
+	const float pad = 24.0f;
+	const Ref<Font>& font = data->ui.font;
+
+	// Palette
+	const Color col_bg(0.09f, 0.10f, 0.12f, 1.0f);
+	const Color col_header(0.13f, 0.15f, 0.18f, 1.0f);
+	const Color col_accent(0.0f, 0.75f, 0.95f, 1.0f);
+	const Color col_search_bg(0.06f, 0.07f, 0.09f, 1.0f);
+	const Color col_workspace(0.12f, 0.14f, 0.17f, 1.0f);
+	const Color col_sidebar(0.11f, 0.13f, 0.16f, 1.0f);
+	const Color col_card(0.16f, 0.19f, 0.24f, 1.0f);
+	const Color col_card_hover(0.20f, 0.24f, 0.31f, 1.0f);
+	const Color col_card_selected(0.18f, 0.27f, 0.36f, 1.0f);
+	const Color col_text(0.92f, 0.94f, 0.96f, 1.0f);
+	const Color col_subtext(0.58f, 0.64f, 0.72f, 1.0f);
+	const Color col_warn(0.95f, 0.45f, 0.40f, 1.0f);
+	const Color col_border(0.18f, 0.21f, 0.26f, 1.0f);
+
+	// 1. Full-window background
+	Renderer::canvas_item_add_rect(ci, Rect2(0, 0, W, H), col_bg);
+
+	const float content_w = MAX(0.0f, W - pad * 2.0f);
+	if (content_w <= 0.0f || H <= 0.0f) {
+		return;
+	}
+
+	// 2. Top Header Bar
+	float y = 20.0f;
+	const float header_h = 48.0f;
+	Rect2 header_rect(pad, y, content_w, header_h);
+	UIDraw::draw_header_banner(ci, header_rect, col_header, col_accent, 4.0f);
+
+	// 3. Toolbar Buttons aligned to the right of the header bar
+	const uint32_t btn_count = data->buttons.size();
+	float btn_w = 126.0f;
+	const float btn_h = 34.0f;
+	const float btn_gap = 10.0f;
+	if (btn_count > 0) {
+		const float avail_btn_w = MAX(0.0f, content_w - 20.0f);
+		const float total_gaps = btn_gap * (btn_count - 1);
+		if (avail_btn_w < btn_count * btn_w + total_gaps) {
+			btn_w = MAX(0.0f, (avail_btn_w - total_gaps) / (float)btn_count);
+		}
+	}
+	float btn_x = (W - pad - 10.0f) - (btn_count * (btn_w + btn_gap)) + btn_gap;
+	const float btn_y = y + (header_h - btn_h) * 0.5f;
+
+	if (font.is_valid()) {
+		const float title_max_w = MAX(0.0f, btn_x - (pad + 28.0f));
+		if (title_max_w > 12.0f) {
+			const float title_base_y = UIDraw::centered_baseline_y(font, header_rect, 16);
+			font->draw_string(ci, Point2(pad + 18.0f, title_base_y), "VOLTAIRE // PROJECT MANAGER",
+				HORIZONTAL_ALIGNMENT_LEFT, title_max_w, 16, col_text);
+		}
+	}
+
+	for (uint32_t i = 0; i < btn_count; i++) {
+		UIButton& btn = data->buttons[i];
+		btn.rect = Rect2(btn_x, btn_y, btn_w, btn_h);
+		UIDraw::draw_button(ci, font, btn, 14);
+		btn_x += btn_w + btn_gap;
+	}
+
+	y += header_h + 12.0f;
+
+	// 4. Horizontal Separator
+	Renderer::canvas_item_add_rect(
+		ci, Rect2(pad, y, content_w, 2.0f), Color(0.22f, 0.25f, 0.30f, 1.0f));
+	y += 14.0f;
+
+	// 5. Search Bar Box via composed UITextField
+	const float search_h = 38.0f;
+	data->search_field.rect = Rect2(pad, y, content_w, search_h);
+	const bool has_clear = !data->search_field.text.is_empty() && content_w > 64.0f;
+	const float clear_reserve = has_clear ? 36.0f : 0.0f;
+	data->search_field.draw(ci, font, data->active_field == FIELD_SEARCH, 14, col_search_bg,
+		col_accent, col_border, clear_reserve);
+
+	data->clear_search_rect = Rect2();
+	if (has_clear) {
+		const float clr_sz = 24.0f;
+		data->clear_search_rect =
+			Rect2(pad + content_w - clr_sz - 8.0f, y + (search_h - clr_sz) * 0.5f, clr_sz, clr_sz);
+		Renderer::canvas_item_add_rect(ci, data->clear_search_rect,
+			data->clear_search_hovered ? Color(0.30f, 0.36f, 0.45f, 1.0f)
+									   : Color(0.16f, 0.19f, 0.24f, 1.0f));
+		if (font.is_valid()) {
+			font->draw_string(ci,
+				Point2(data->clear_search_rect.position.x,
+					UIDraw::centered_baseline_y(font, data->clear_search_rect, 13)),
+				"X", HORIZONTAL_ALIGNMENT_CENTER, clr_sz, 13, col_text);
+		}
+	}
+	y += search_h + 14.0f;
+
+	// 6. Bottom Status Bar reservation & Main Workspace Split via composed UISplitLayout
+	const float status_h = 30.0f;
+	const float workspace_h = MAX(0.0f, H - y - pad - status_h - 10.0f);
+
+	for (uint32_t i = 0; i < data->projects.size(); i++) {
+		data->projects[i].card_rect = Rect2();
+	}
+
+	if (workspace_h > 0.0f) {
+		data->layout.compute_sidebar_split(
+			Rect2(pad, y, content_w, workspace_h), 420.0f, 180.0f, 0.28f, 14.0f);
+		const Rect2 list_rect = data->layout.primary_rect;
+		const Rect2 sidebar_rect = data->layout.secondary_rect;
+
+		data->list_scroll.bounds = list_rect;
+		Renderer::canvas_item_add_rect(ci, list_rect, col_workspace);
+
+		// Project cards inside list_scroll.bounds
+		const float list_pad = 12.0f;
+		const float card_h = 66.0f;
+		const float card_gap = 8.0f;
+		const float inner_h = MAX(0.0f, workspace_h - list_pad * 2.0f);
+		const float card_w = MAX(0.0f, list_rect.size.x - list_pad * 2.0f - 8.0f);
+		const uint32_t vis_count = data->filtered_indices.size();
+		const float total_list_h =
+			vis_count > 0 ? vis_count * card_h + (vis_count - 1) * card_gap : 0.0f;
+
+		data->list_scroll.update_metrics(total_list_h, inner_h);
+
+		if (vis_count == 0) {
+			if (font.is_valid() && card_w > 24.0f && inner_h > 30.0f) {
+				String empty_msg =
+					data->projects.is_empty()
+						? "No projects yet. Use '+ New Project', 'Import', or 'Scan'."
+						: "No projects match the current filter.";
+				font->draw_string(ci, Point2(pad + list_pad, y + workspace_h * 0.5f), empty_msg,
+					HORIZONTAL_ALIGNMENT_CENTER, card_w, 15, col_subtext);
+			}
+		}
+		else if (card_w > 16.0f && inner_h > 16.0f) {
+			const float top_clip = y + list_pad;
+			const float bot_clip = y + workspace_h - list_pad;
+
+			for (uint32_t i = 0; i < vis_count; i++) {
+				int pidx = data->filtered_indices[i];
+				ProjectEntry& proj = data->projects[pidx];
+				float cy = top_clip + i * (card_h + card_gap) - data->list_scroll.offset;
+				if (cy + card_h <= top_clip || cy >= bot_clip) {
+					continue;
+				}
+				float draw_y = MAX(cy, top_clip);
+				float draw_end = MIN(cy + card_h, bot_clip);
+				float draw_h = draw_end - draw_y;
+				if (draw_h <= 4.0f) {
+					continue;
+				}
+
+				Rect2 crect(pad + list_pad, draw_y, card_w, draw_h);
+				proj.card_rect = crect;
+
+				const bool is_sel = (pidx == data->selected_project_idx);
+				Color cbg = is_sel ? col_card_selected : (proj.hovered ? col_card_hover : col_card);
+				Color strip_col =
+					proj.missing ? col_warn
+								 : (is_sel ? col_accent
+										   : (proj.favorite ? Color(0.95f, 0.78f, 0.20f, 1.0f)
+															: Color(0.26f, 0.31f, 0.38f, 1.0f)));
+				UIDraw::draw_header_banner(ci, crect, cbg, strip_col, 4.0f);
+
+				if (font.is_valid() && draw_h >= 48.0f && card_w > 32.0f) {
+					String title = proj.favorite ? ("[★] " + proj.name) : proj.name;
+					if (proj.missing) {
+						title += "  [Missing]";
+					}
+					font->draw_string(ci, Point2(crect.position.x + 16.0f, cy + 27.0f), title,
+						HORIZONTAL_ALIGNMENT_LEFT, card_w - 28.0f, 15,
+						proj.missing ? col_warn : col_text);
+					font->draw_string(ci, Point2(crect.position.x + 16.0f, cy + 50.0f), proj.path,
+						HORIZONTAL_ALIGNMENT_LEFT, card_w - 28.0f, 12, col_subtext);
+				}
+			}
+
+			data->list_scroll.draw_scrollbar(
+				ci, pad + list_rect.size.x - 8.0f, top_clip, inner_h, total_list_h, col_accent);
+		}
+
+		// Right Action Sidebar
+		if (data->layout.show_secondary) {
+			const float sx = sidebar_rect.position.x;
+			const float sidebar_w = sidebar_rect.size.x;
+			Renderer::canvas_item_add_rect(ci, sidebar_rect, col_sidebar);
+
+			float sy = y + 12.0f;
+			if (font.is_valid() && sidebar_w > 24.0f) {
+				font->draw_string(ci, Point2(sx + 12.0f, sy + 14.0f), "ACTIONS",
+					HORIZONTAL_ALIGNMENT_LEFT, sidebar_w - 24.0f, 12, col_subtext);
+				sy += 24.0f;
+			}
+
+			const float sbtn_h = 34.0f;
+			const float sbtn_gap = 8.0f;
+			const float sbtn_w = MAX(0.0f, sidebar_w - 24.0f);
+			for (uint32_t i = 0; i < data->sidebar_buttons.size(); i++) {
+				UIButton& sbtn = data->sidebar_buttons[i];
+				if (i + 1 == data->sidebar_buttons.size()) {
+					float bottom_y = y + workspace_h - 12.0f - sbtn_h;
+					if (bottom_y > sy + 8.0f) {
+						sy = bottom_y;
+					}
+				}
+				if (sy + sbtn_h <= y + workspace_h - 6.0f) {
+					sbtn.rect = Rect2(sx + 12.0f, sy, sbtn_w, sbtn_h);
+					UIDraw::draw_button(ci, font, sbtn, 14);
+				}
+				else {
+					sbtn.rect = Rect2();
+				}
+				sy += sbtn_h + sbtn_gap;
+			}
+		}
+		else {
+			data->sidebar_buttons.clear_rects();
+		}
+	}
+
+	// 8. Bottom Status Bar
+	const float status_y = H - pad - status_h;
+	if (status_y > y) {
+		Rect2 status_rect(pad, status_y, content_w, status_h);
+		UIDraw::draw_header_banner(ci, status_rect, col_header, col_accent, 3.0f);
+		if (font.is_valid() && content_w > 24.0f) {
+			String count_badge =
+				vformat("%d / %d projects", data->filtered_indices.size(), data->projects.size());
+			float badge_w = MIN(160.0f, content_w * 0.3f);
+			float msg_w = MAX(0.0f, content_w - badge_w - 32.0f);
+			float sbase_y = UIDraw::centered_baseline_y(font, status_rect, 13);
+			if (msg_w > 16.0f) {
+				font->draw_string(ci, Point2(pad + 14.0f, sbase_y), data->status_text,
+					HORIZONTAL_ALIGNMENT_LEFT, msg_w, 13, col_text);
+			}
+			font->draw_string(ci, Point2(pad + content_w - badge_w - 12.0f, sbase_y), count_badge,
+				HORIZONTAL_ALIGNMENT_RIGHT, badge_w, 13, col_subtext);
+		}
+	}
+
+	// 9. Inline Modal Dialog Overlay (New Project / Import / Scan)
+	if (data->modal_mode != MODAL_NONE) {
+		Renderer::canvas_item_add_rect(ci, Rect2(0, 0, W, H), Color(0.03f, 0.04f, 0.06f, 0.72f));
+
+		const float mw = MIN(540.0f, MAX(240.0f, content_w - 24.0f));
+		const float mh = (data->modal_mode == MODAL_NEW_PROJECT) ? 268.0f : 204.0f;
+		const float mx = (W - mw) * 0.5f;
+		const float my = MAX(20.0f, (H - mh) * 0.5f);
+		data->modal_panel_rect = Rect2(mx, my, mw, mh);
+
+		UIDraw::draw_bordered_rect(
+			ci, data->modal_panel_rect, Color(0.13f, 0.15f, 0.19f, 1.0f), col_accent, 2.0f);
+
+		String modal_title;
+		String label_1;
+		String label_2;
+		if (data->modal_mode == MODAL_NEW_PROJECT) {
+			modal_title = "CREATE NEW VOLTAIRE PROJECT";
+			label_1 = "Project Name:";
+			label_2 = "Parent Directory:";
+		}
+		else if (data->modal_mode == MODAL_IMPORT_PROJECT) {
+			modal_title = "IMPORT EXISTING PROJECT";
+			label_1 = "Project Folder or project.vltr Path:";
+		}
+		else {
+			modal_title = "SCAN DIRECTORY FOR PROJECTS";
+			label_1 = "Directory to Scan Recursively:";
+		}
+
+		float cy = my + 16.0f;
+		const float inner_w = MAX(0.0f, mw - 36.0f);
+		if (font.is_valid() && inner_w > 20.0f) {
+			font->draw_string(ci, Point2(mx + 18.0f, cy + 16.0f), modal_title,
+				HORIZONTAL_ALIGNMENT_LEFT, inner_w, 15, col_text);
+		}
+		cy += 28.0f;
+		const Color modal_field_border(0.24f, 0.28f, 0.34f, 1.0f);
+		Renderer::canvas_item_add_rect(
+			ci, Rect2(mx + 18.0f, cy, inner_w, 1.0f), modal_field_border);
+		cy += 14.0f;
+
+		// Primary Field
+		if (font.is_valid() && inner_w > 20.0f) {
+			font->draw_string(ci, Point2(mx + 18.0f, cy + 12.0f), label_1,
+				HORIZONTAL_ALIGNMENT_LEFT, inner_w, 13, col_subtext);
+		}
+		cy += 18.0f;
+		data->modal_primary_field.rect = Rect2(mx + 18.0f, cy, inner_w, 34.0f);
+		data->modal_primary_field.draw(ci, font, data->active_field == FIELD_MODAL_PRIMARY, 14,
+			col_search_bg, col_accent, modal_field_border);
+		cy += 44.0f;
+
+		// Secondary Field (New Project parent directory)
+		if (data->modal_mode == MODAL_NEW_PROJECT) {
+			if (font.is_valid() && inner_w > 20.0f) {
+				font->draw_string(ci, Point2(mx + 18.0f, cy + 12.0f), label_2,
+					HORIZONTAL_ALIGNMENT_LEFT, inner_w, 13, col_subtext);
+			}
+			cy += 18.0f;
+			data->modal_secondary_field.rect = Rect2(mx + 18.0f, cy, inner_w, 34.0f);
+			data->modal_secondary_field.draw(ci, font, data->active_field == FIELD_MODAL_SECONDARY,
+				14, col_search_bg, col_accent, modal_field_border);
+			cy += 42.0f;
+		}
+		else {
+			data->modal_secondary_field.rect = Rect2();
+		}
+
+		// Modal error or target preview hint
+		const float mbtn_w = 108.0f;
+		const float mbtn_h = 34.0f;
+		const float mbtn_gap = 8.0f;
+		const float total_mbtns_w = data->modal_buttons.size() * (mbtn_w + mbtn_gap) - mbtn_gap;
+
+		if (font.is_valid() && inner_w > 20.0f) {
+			float hint_max_w = MAX(20.0f, inner_w - total_mbtns_w - 14.0f);
+			if (!data->modal_error_text.is_empty()) {
+				font->draw_string(ci, Point2(mx + 18.0f, my + mh - 24.0f), data->modal_error_text,
+					HORIZONTAL_ALIGNMENT_LEFT, hint_max_w, 12, col_warn);
+			}
+			else if (data->modal_mode == MODAL_NEW_PROJECT) {
+				String folder_slug = data->modal_primary_field.text.strip_edges();
+				String preview =
+					data->modal_secondary_field.text.strip_edges().path_join(folder_slug);
+				font->draw_string(ci, Point2(mx + 18.0f, my + mh - 24.0f), preview,
+					HORIZONTAL_ALIGNMENT_LEFT, hint_max_w, 12, col_subtext);
+			}
+		}
+
+		// Modal Action Buttons (bottom-right)
+		float mbtn_x = mx + mw - 18.0f - total_mbtns_w;
+		float mbtn_y = my + mh - 16.0f - mbtn_h;
+		for (uint32_t i = 0; i < data->modal_buttons.size(); i++) {
+			data->modal_buttons[i].rect = Rect2(mbtn_x, mbtn_y, mbtn_w, mbtn_h);
+			UIDraw::draw_button(ci, font, data->modal_buttons[i], 13);
+			mbtn_x += mbtn_w + mbtn_gap;
+		}
+	}
+}
+
+void ProjectManager::finalize()
+{
+	if (!data) {
+		return;
+	}
+	data->ui.teardown(&ProjectManager::handle_input_event);
+	memdelete(data);
+	data = nullptr;
+	_initialized = false;
+}
+
+void ProjectManager::_new_project()
+{
+	if (!data) {
+		return;
+	}
+	data->modal_mode = MODAL_NEW_PROJECT;
+	data->modal_primary_field.text = "New Voltaire Project";
+	data->modal_secondary_field.text = _get_default_projects_dir();
+	data->modal_error_text = String();
+	data->active_field = FIELD_MODAL_PRIMARY;
+	data->modal_buttons.clear();
+	data->modal_buttons.add("Cancel", &ProjectManager::_cancel_modal);
+	data->modal_buttons.add("Create", &ProjectManager::_confirm_modal);
+	data->modal_buttons.add(
+		"Create & Edit", &ProjectManager::_confirm_modal_and_edit, nullptr, true);
+	data->ui.needs_redraw = true;
+}
+
+void ProjectManager::_import_project()
+{
+	if (!data) {
+		return;
+	}
+	data->modal_mode = MODAL_IMPORT_PROJECT;
+	data->modal_primary_field.text = _get_default_projects_dir();
+	data->modal_secondary_field.text = String();
+	data->modal_error_text = String();
+	data->active_field = FIELD_MODAL_PRIMARY;
+	data->modal_buttons.clear();
+	data->modal_buttons.add("Cancel", &ProjectManager::_cancel_modal);
+	data->modal_buttons.add("Import", &ProjectManager::_confirm_modal, nullptr, true);
+	data->ui.needs_redraw = true;
+}
+
+void ProjectManager::_scan_projects()
+{
+	if (!data) {
+		return;
+	}
+	data->modal_mode = MODAL_SCAN_PROJECTS;
+	data->modal_primary_field.text = _get_default_projects_dir();
+	data->modal_secondary_field.text = String();
+	data->modal_error_text = String();
+	data->active_field = FIELD_MODAL_PRIMARY;
+	data->modal_buttons.clear();
+	data->modal_buttons.add("Cancel", &ProjectManager::_cancel_modal);
+	data->modal_buttons.add("Scan Folder", &ProjectManager::_confirm_modal, nullptr, true);
+	data->ui.needs_redraw = true;
+}
+
+void ProjectManager::_open_donate_page()
+{
+	Error err = OS::shell_open("https://ko-fi.com/bendyland");
+	if (data) {
+		data->status_text = (err == OK) ? "Opened support page in browser."
+										: "Support URL: https://ko-fi.com/bendyland";
+		data->ui.needs_redraw = true;
+	}
+}
+
+void ProjectManager::_edit_selected_project()
+{
+	if (!_has_valid_selected_project()) {
+		return;
+	}
+	const ProjectEntry& proj = data->projects[data->selected_project_idx];
+	data->pending_open_path = proj.path;
+	data->pending_open_name = proj.name;
+	data->pending_open_play = false;
+}
+
+void ProjectManager::_run_selected_project()
+{
+	if (!_has_valid_selected_project()) {
+		return;
+	}
+	const ProjectEntry& proj = data->projects[data->selected_project_idx];
+	data->pending_open_path = proj.path;
+	data->pending_open_name = proj.name;
+	data->pending_open_play = true;
+}
+
+void ProjectManager::_open_selected_folder()
+{
+	if (!_has_valid_selected_project()) {
+		return;
+	}
+	const ProjectEntry& proj = data->projects[data->selected_project_idx];
+	Error err = OS::shell_show_in_file_manager(proj.path, true);
+	data->status_text = (err == OK) ? vformat("Opened folder: %s", proj.path)
+									: vformat("Could not open folder: %s", proj.path);
+	data->ui.needs_redraw = true;
+}
+
+void ProjectManager::_toggle_favorite_selected()
+{
+	if (!_has_any_selected_project()) {
+		return;
+	}
+	ProjectEntry& proj = data->projects[data->selected_project_idx];
+	proj.favorite = !proj.favorite;
+	String target_path = proj.path;
+	save_projects();
+	rebuild_filtered_list();
+	for (uint32_t i = 0; i < data->projects.size(); i++) {
+		if (data->projects[i].path == target_path) {
+			data->selected_project_idx = (int)i;
+			break;
+		}
+	}
+	data->status_text = proj.favorite ? vformat("Pinned '%s' to favorites.", proj.name)
+									  : vformat("Unpinned '%s' from favorites.", proj.name);
+	data->ui.needs_redraw = true;
+}
+
+void ProjectManager::_remove_selected_project()
+{
+	if (!_has_any_selected_project()) {
+		return;
+	}
+	String removed_name = data->projects[data->selected_project_idx].name;
+	data->projects.remove_at(data->selected_project_idx);
+	save_projects();
+	rebuild_filtered_list();
+	if (!data->filtered_indices.is_empty()) {
+		data->selected_project_idx = data->filtered_indices[0];
+	}
+	else {
+		data->selected_project_idx = -1;
+	}
+	data->status_text = vformat("Removed '%s' from project list.", removed_name);
+	data->ui.needs_redraw = true;
+}
+
+void ProjectManager::_quit_manager()
+{
+	extern bool s_quit_requested;
+	s_quit_requested = true;
+}
+
+void ProjectManager::_cancel_modal()
+{
+	if (!data) {
+		return;
+	}
+	data->modal_mode = MODAL_NONE;
+	data->active_field = FIELD_NONE;
+	data->modal_error_text = String();
+	data->modal_buttons.clear();
+	data->ui.needs_redraw = true;
+}
+
+void ProjectManager::_confirm_modal_and_edit()
+{
+	if (!data) {
+		return;
+	}
+	_confirm_modal();
+	if (data && data->modal_mode == MODAL_NONE && _has_valid_selected_project()) {
+		_edit_selected_project();
+	}
+}
+
+void ProjectManager::_confirm_modal()
+{
+	if (!data) {
+		return;
+	}
+
+	auto register_project_dir = [&](const String& p_dir) -> int {
+		String clean = p_dir.simplify_path();
+		for (uint32_t i = 0; i < data->projects.size(); i++) {
+			if (data->projects[i].path == clean) {
+				VoltaireProjectFile proj_data;
+				if (_read_voltaire_project(clean, &proj_data)) {
+					data->projects[i].missing = false;
+					data->projects[i].name = String::utf8(proj_data.config.project_name);
+				}
+				else {
+					data->projects[i].missing = true;
+					data->projects[i].name = clean.get_file();
+				}
+				return (int)i;
+			}
+		}
+		ProjectEntry entry;
+		entry.path = clean;
+		VoltaireProjectFile proj_data;
+		if (_read_voltaire_project(entry.path, &proj_data)) {
+			entry.missing = false;
+			entry.name = String::utf8(proj_data.config.project_name);
+		}
+		else {
+			entry.missing = true;
+			entry.name = entry.path.get_file();
+		}
+		data->projects.push_back(entry);
+		return (int)data->projects.size() - 1;
+	};
+
+	if (data->modal_mode == MODAL_NEW_PROJECT) {
+		String proj_name = data->modal_primary_field.text.strip_edges();
+		String parent_dir = data->modal_secondary_field.text.strip_edges().simplify_path();
+		if (proj_name.is_empty()) {
+			data->modal_error_text = "Project name cannot be empty.";
+			data->ui.needs_redraw = true;
+			return;
+		}
+		if (parent_dir.is_empty()) {
+			data->modal_error_text = "Parent directory cannot be empty.";
+			data->ui.needs_redraw = true;
+			return;
+		}
+		String target_dir = parent_dir.path_join(proj_name);
+		String proj_file = target_dir.path_join("project.vltr");
+		if (FileAccess::exists(proj_file)) {
+			data->modal_error_text = "A project already exists at that path.";
+			data->ui.needs_redraw = true;
+			return;
+		}
+		Error dir_err = DirAccess::make_dir_recursive_absolute(target_dir);
+		if (dir_err != OK && !DirAccess::dir_exists_absolute(target_dir)) {
+			data->modal_error_text = "Failed to create project directory.";
+			data->ui.needs_redraw = true;
+			return;
+		}
+		Ref<FileAccess> fa = FileAccess::open(proj_file, FileAccess::WRITE);
+		if (fa.is_null()) {
+			data->modal_error_text = "Failed to write project.vltr.";
+			data->ui.needs_redraw = true;
+			return;
+		}
+
+		VoltaireProjectFile new_proj;
+		vltr_project_init(&new_proj, proj_name.utf8().get_data(), "res://MainScene.tscn");
+		fa->store_buffer((const uint8_t*)&new_proj, sizeof(new_proj));
+		fa->close();
+
+		int idx = register_project_dir(target_dir);
+		save_projects();
+		rebuild_filtered_list();
+		data->selected_project_idx = idx;
+		rebuild_filtered_list();
+
+		data->status_text = vformat("Created project '%s' at %s", proj_name, target_dir);
+		_cancel_modal();
+		return;
+	}
+
+	if (data->modal_mode == MODAL_IMPORT_PROJECT) {
+		VoltaireProjectFile tmp;
+		String raw_path = data->modal_primary_field.text.strip_edges().simplify_path();
+		if (raw_path.is_empty() || !_read_voltaire_project(raw_path, &tmp)) {
+			data->modal_error_text = "Invalid or missing project.vltr in directory.";
+			data->ui.needs_redraw = true;
+			return;
+		}
+		int idx = register_project_dir(raw_path);
+		save_projects();
+		rebuild_filtered_list();
+		data->selected_project_idx = idx;
+		rebuild_filtered_list();
+		data->status_text = vformat("Imported project '%s'.", data->projects[idx].name);
+		_cancel_modal();
+		return;
+	}
+
+	if (data->modal_mode == MODAL_SCAN_PROJECTS) {
+		String scan_dir = data->modal_primary_field.text.strip_edges().simplify_path();
+		if (scan_dir.is_empty() || !DirAccess::dir_exists_absolute(scan_dir)) {
+			data->modal_error_text = "Directory does not exist.";
+			data->ui.needs_redraw = true;
+			return;
+		}
+		LocalVector<String> found;
+		_scan_dir_for_projects(scan_dir, 0, 3, found);
+		int added = 0;
+		int last_idx = data->selected_project_idx;
+		for (uint32_t i = 0; i < found.size(); i++) {
+			uint32_t before = data->projects.size();
+			last_idx = register_project_dir(found[i]);
+			if (data->projects.size() > before) {
+				added++;
+			}
+		}
+		save_projects();
+		rebuild_filtered_list();
+		if (last_idx >= 0) {
+			data->selected_project_idx = last_idx;
+			rebuild_filtered_list();
+		}
+		data->status_text =
+			vformat("Scanned %s: %d project(s) found (%d new).", scan_dir, found.size(), added);
+		_cancel_modal();
+		return;
+	}
+}
+
+bool ProjectManager::_read_voltaire_project(const String& p_dir, VoltaireProjectFile* r_out)
+{
+	String file_path = p_dir.path_join("project.vltr");
+	Ref<FileAccess> fa = FileAccess::open(file_path, FileAccess::READ);
+	if (fa.is_null() || fa->get_length() < (int64_t)sizeof(VoltaireProjectFile)) {
+		return false;
+	}
+	fa->get_buffer((uint8_t*)r_out, sizeof(VoltaireProjectFile));
+	return vltr_project_valid(r_out);
+}
+
+// ============================================================================
+// Merged from editor/settings/editor_settings.cpp
+// ============================================================================
+
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "core/input/input_event.h"
+#include "core/input/input_map.h"
+#include "core/input/shortcut.h"
+#include "core/io/certs_compressed.gen.h"
+#include "core/io/dir_access.h"
+#include "core/io/file_access.h"
+#include "core/io/ip.h"
+#include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
+#include "core/os/keyboard.h"
+#include "core/os/os.h"
+#include "core/string/translation_server.h"
+#include "core/templates/rb_set.h"
+#include "core/version.h"
+#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
+#include "main/main.h"
+#include "modules/regex/regex.h"
+#include "scene/gui/dialogs.h"
+#include "scene/main/node.h"
+#include "scene/main/scene_tree.h"
+#include "scene/resources/animation.h"
+#include "servers/display/display_server.h"
+
+// PRIVATE METHODS
+
+// Properties
+
+struct _EVCSort
+{
+	String name;
+	int order = 0;
+	bool basic = false;
+	bool save = false;
+	bool restart_if_changed = false;
+
+	bool operator<(const _EVCSort& p_vcs) const { return order < p_vcs.order; }
+};
+
+// Default configs
+
+void EditorSettings::_set_initialized()
+{
+	if (data) {
+		data->initialized = true;
+	}
+}
+
+static LocalVector<String> _get_skipped_locales()
+{
+	// Skip locales if Text server lack required features.
+	LocalVector<String> locales_to_skip;
+	if (!TS->has_feature(TextServer::FEATURE_BIDI_LAYOUT) ||
+		!TS->has_feature(TextServer::FEATURE_SHAPING)) {
+		locales_to_skip.push_back("ar"); // Arabic.
+		locales_to_skip.push_back("fa"); // Persian.
+		locales_to_skip.push_back("ur"); // Urdu.
+	}
+	if (!TS->has_feature(TextServer::FEATURE_BIDI_LAYOUT)) {
+		locales_to_skip.push_back("he"); // Hebrew.
+	}
+	if (!TS->has_feature(TextServer::FEATURE_SHAPING)) {
+		locales_to_skip.push_back("bn"); // Bengali.
+		locales_to_skip.push_back("hi"); // Hindi.
+		locales_to_skip.push_back("ml"); // Malayalam.
+		locales_to_skip.push_back("si"); // Sinhala.
+		locales_to_skip.push_back("ta"); // Tamil.
+		locales_to_skip.push_back("te"); // Telugu.
+	}
+	return locales_to_skip;
+}
+
+String EditorSettings::_get_project_metadata_path()
+{
+	return EditorPaths::get_project_settings_dir().path_join(
+		"project_metadata.cfg");
+}
+
+#ifndef DISABLE_DEPRECATED
+void EditorSettings::_handle_setting_compatibility()
+{
+	// Remove deprecated settings.
+	erase("interface/theme/preset");
+	erase("network/connection/engine_version_update_mode");
+	erase("run/output/always_open_output_on_play");
+	erase("run/output/always_close_output_on_stop");
+	erase("text_editor/theme/line_spacing"); // See GH-106137.
+	erase("interface/editors/show_scene_tree_root_selection");
+	erase("asset_library/available_urls"); // Workaround bugged settings treating the previous
+										   // default as a modified value (see GH-118755).
+
+	// Handle renamed settings.
+	_rename_setting(
+		"interface/editor/editor_language", "interface/editor/localization/editor_language");
+	_rename_setting(
+		"interface/editor/localize_settings", "interface/editor/localization/localize_settings");
+	_rename_setting("interface/editor/dock_tab_style", "interface/editor/docks/dock_tab_style");
+	_rename_setting(
+		"interface/editor/bottom_dock_tab_style", "interface/editor/docks/bottom_dock_tab_style");
+	_rename_setting("interface/editor/ui_layout_direction",
+		"interface/editor/localization/ui_layout_direction");
+	_rename_setting("interface/editor/display_scale", "interface/editor/appearance/display_scale");
+	_rename_setting("interface/editor/custom_display_scale",
+		"interface/editor/appearance/custom_display_scale");
+	_rename_setting("interface/editor/editor_screen", "interface/editor/appearance/editor_screen");
+	_rename_setting("interface/editor/tablet_driver", "interface/editor/input/tablet_driver");
+	_rename_setting("interface/editor/project_manager_screen",
+		"interface/editor/appearance/project_manager_screen");
+	_rename_setting(
+		"interface/editor/use_embedded_menu", "interface/editor/appearance/use_embedded_menu");
+	_rename_setting("interface/editor/use_native_file_dialogs",
+		"interface/editor/appearance/use_native_file_dialogs");
+	_rename_setting(
+		"interface/editor/expand_to_title", "interface/editor/appearance/expand_to_title");
+	_rename_setting("interface/editor/main_font_size", "interface/editor/fonts/main_font_size");
+	_rename_setting("interface/editor/code_font_size", "interface/editor/fonts/code_font_size");
+	_rename_setting("interface/editor/main_font_custom_opentype_features",
+		"interface/editor/fonts/main_font_custom_opentype_features");
+	_rename_setting("interface/editor/code_font_contextual_ligatures",
+		"interface/editor/fonts/code_font_contextual_ligatures");
+	_rename_setting("interface/editor/code_font_custom_opentype_features",
+		"interface/editor/fonts/code_font_custom_opentype_features");
+	_rename_setting("interface/editor/code_font_custom_variations",
+		"interface/editor/fonts/code_font_custom_variations");
+	_rename_setting(
+		"interface/editor/font_antialiasing", "interface/editor/fonts/font_antialiasing");
+	_rename_setting("interface/editor/font_hinting", "interface/editor/fonts/font_hinting");
+	_rename_setting("interface/editor/font_subpixel_positioning",
+		"interface/editor/fonts/font_subpixel_positioning");
+	_rename_setting("interface/editor/font_disable_embedded_bitmaps",
+		"interface/editor/fonts/font_disable_embedded_bitmaps");
+	_rename_setting("interface/editor/font_allow_msdf", "interface/editor/fonts/font_allow_msdf");
+	_rename_setting("interface/editor/main_font", "interface/editor/fonts/main_font");
+	_rename_setting("interface/editor/main_font_bold", "interface/editor/fonts/main_font_bold");
+	_rename_setting("interface/editor/code_font", "interface/editor/fonts/code_font");
+	_rename_setting("interface/editor/dragging_hover_wait_seconds",
+		"interface/editor/timers/dragging_hover_wait_seconds");
+	_rename_setting("interface/editor/separate_distraction_mode",
+		"interface/editor/behavior/separate_distraction_mode");
+	_rename_setting("interface/editor/automatically_open_screenshots",
+		"interface/editor/behavior/automatically_open_screenshots");
+	_rename_setting(
+		"interface/editor/single_window_mode", "interface/editor/display/single_window_mode");
+	_rename_setting("interface/editor/mouse_extra_buttons_navigate_history",
+		"interface/editor/input/mouse_extra_buttons_navigate_history");
+	_rename_setting("interface/editor/save_each_scene_on_quit",
+		"interface/editor/behavior/save_each_scene_on_quit");
+	_rename_setting(
+		"interface/editor/save_on_focus_loss", "interface/editor/behavior/save_on_focus_loss");
+	_rename_setting("interface/editor/accept_dialog_cancel_ok_buttons",
+		"interface/editor/appearance/accept_dialog_cancel_ok_buttons");
+	_rename_setting("interface/editor/show_internal_errors_in_toast_notifications",
+		"interface/editor/behavior/show_internal_errors_in_toast_notifications");
+	_rename_setting(
+		"interface/editor/show_update_spinner", "interface/editor/appearance/show_update_spinner");
+	_rename_setting("interface/editor/keep_screen_on", "interface/editor/display/keep_screen_on");
+	_rename_setting("interface/editor/low_processor_mode_sleep_usec",
+		"interface/editor/timers/low_processor_mode_sleep_usec");
+	_rename_setting("interface/editor/unfocused_low_processor_mode_sleep_usec",
+		"interface/editor/timers/unfocused_low_processor_mode_sleep_usec");
+	_rename_setting("interface/editor/import_resources_when_unfocused",
+		"interface/editor/behavior/import_resources_when_unfocused");
+	_rename_setting("interface/editor/vsync_mode", "interface/editor/display/vsync_mode");
+	_rename_setting(
+		"interface/editor/update_continuously", "interface/editor/display/update_continuously");
+	_rename_setting(
+		"interface/editor/collapse_main_menu", "interface/editor/appearance/collapse_main_menu");
+	_rename_setting("asset_library/use_threads", "asset_store/use_threads");
+	_rename_setting("interface/editors/derive_script_globals_by_name",
+		"docks/scene_tree/derive_script_globals_by_name");
+
+	// Handle renamed shortcuts.
+	_rename_shortcut("editor/editor_assetlib", "editor/editor_asset_store");
+}
+
+void EditorSettings::_rename_shortcut(const String& p_old_path, const String& p_new_path)
+{
+	if (!data || !data->shortcuts.has(p_old_path)) {
+		return;
+	}
+	if (!data->shortcuts.has(p_new_path)) {
+		data->shortcuts[p_new_path] = data->shortcuts[p_old_path];
+	}
+	data->shortcuts.erase(p_old_path);
+}
+#endif
+
+// PUBLIC METHODS
+
+void EditorSettings::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+		data->project_metadata.instantiate();
+		data->initialized = true;
+	}
+}
+
+void EditorSettings::finalize()
+{
+	if (!data) {
+		return;
+	}
+	save();
+	memdelete(data);
+	data = nullptr;
+}
+
+String EditorSettings::get_existing_settings_path()
+{
+	const String config_dir = EditorPaths::get_config_dir();
+	int minor = VLTR_VERSION_MINOR;
+	String filename;
+
+	do {
+		if (VLTR_VERSION_MAJOR == 4 && minor < 3) {
+			// Minor version is used since 4.3, so special case to load older settings.
+			filename = vformat("editor_settings-%d.tres", VLTR_VERSION_MAJOR);
+			minor = -1;
+		}
+		else {
+			filename = vformat("editor_settings-%d.%d.tres", VLTR_VERSION_MAJOR, minor);
+			minor--;
+		}
+	} while (minor >= 0 && !FileAccess::exists(config_dir.path_join(filename)));
+	return config_dir.path_join(filename);
+}
+
+String EditorSettings::get_newest_settings_path()
+{
+	const String config_file_name =
+		vformat("editor_settings-%d.%d.tres", VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR);
+	return EditorPaths::get_config_dir().path_join(config_file_name);
+}
+
+void EditorSettings::init_shortcuts()
+{
+	ED_SHORTCUT("editor/open_search", TTRC("Focus Search/Filter Bar"),
+		KeyModifierMask::CMD_OR_CTRL | Key::F);
+}
+
+void EditorSettings::save()
+{
+	if (!data) {
+		return;
+	}
+
+	data->changed_settings.clear();
+	print_verbose("EditorSettings: Save OK!");
+}
+
+PackedStringArray EditorSettings::get_changed_settings()
+{
+	PackedStringArray arr;
+	if (!data) {
+		return arr;
+	}
+	for (const String& setting : data->changed_settings) {
+		arr.push_back(setting);
+	}
+
+	return arr;
+}
+
+bool EditorSettings::check_changed_settings_in_group(const String& p_setting_prefix)
+{
+	if (!data) {
+		return false;
+	}
+	for (const String& setting : data->changed_settings) {
+		if (setting.begins_with(p_setting_prefix)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void EditorSettings::mark_setting_changed(const String& p_setting)
+{
+	if (!data) {
+		return;
+	}
+	data->changed_settings.insert(p_setting);
+}
+
+void EditorSettings::set_optimize_save(bool p_optimize)
+{
+	if (data) {
+		data->optimize_save = p_optimize;
+	}
+}
+
+// Properties
+
+// Metadata
+
+void EditorSettings::save_project_metadata()
+{
+	if (!data || !data->project_metadata_dirty) {
+		return;
+	}
+	const String path = _get_project_metadata_path();
+	Error err = data->project_metadata->save(path);
+	ERR_FAIL_COND_MSG(err != OK, "Cannot save project metadata to file '" + path + "'.");
+	data->project_metadata_dirty = false;
+}
+
+void EditorSettings::set_favorites_bind(const Vector<String>& p_favorites)
+{
+	if (!data) {
+		return;
+	}
+	data->favorites = p_favorites;
+	String favorites_file;
+	if (Engine::is_project_manager_hint()) {
+		favorites_file = EditorPaths::get_config_dir().path_join("favorite_dirs");
+	}
+	else {
+		favorites_file =
+			EditorPaths::get_project_settings_dir().path_join("favorites");
+	}
+	Ref<FileAccess> f = FileAccess::open(favorites_file, FileAccess::WRITE);
+	if (f.is_valid()) {
+		for (int i = 0; i < data->favorites.size(); i++) {
+			f->store_line(data->favorites[i]);
+		}
+	}
+}
+
+Vector<String> EditorSettings::get_favorites()
+{
+	return data ? data->favorites : Vector<String>();
+}
+
+Vector<String> EditorSettings::get_favorite_folders()
+{
+	Vector<String> folder_favorites;
+	if (!data) {
+		return folder_favorites;
+	}
+	folder_favorites.resize(data->favorites.size());
+	String* folder_write = folder_favorites.ptrw();
+
+	int i = 0;
+	for (const String& fav : data->favorites) {
+		if (fav.ends_with("/")) {
+			folder_write[i] = fav;
+			i++;
+		}
+	}
+	folder_favorites.resize(i);
+	return folder_favorites;
+}
+
+HashMap<String, PackedStringArray> EditorSettings::get_favorite_properties()
+{
+	return data ? HashMap<String, PackedStringArray>(data->favorite_properties)
+				: HashMap<String, PackedStringArray>();
+}
+
+void EditorSettings::set_recent_dirs(const Vector<String>& p_recent_dirs, bool p_update_file_dialog)
+{
+	if (p_update_file_dialog) {
+		FileDialog::set_recent_list(p_recent_dirs);
+	}
+	set_recent_dirs_bind(p_recent_dirs);
+}
+
+void EditorSettings::set_recent_dirs_bind(const Vector<String>& p_recent_dirs)
+{
+	if (!data) {
+		return;
+	}
+	data->recent_dirs = p_recent_dirs;
+	String recent_dirs_file;
+	if (Engine::is_project_manager_hint()) {
+		recent_dirs_file = EditorPaths::get_config_dir().path_join("recent_dirs");
+	}
+	else {
+		recent_dirs_file =
+			EditorPaths::get_project_settings_dir().path_join("recent_dirs");
+	}
+	Ref<FileAccess> f = FileAccess::open(recent_dirs_file, FileAccess::WRITE);
+	if (f.is_valid()) {
+		for (int i = 0; i < data->recent_dirs.size(); i++) {
+			f->store_line(data->recent_dirs[i]);
+		}
+	}
+}
+
+Vector<String> EditorSettings::get_recent_dirs()
+{
+	return data ? data->recent_dirs : Vector<String>();
+}
+
+HashMap<String, Color> EditorSettings::get_godot2_text_editor_theme()
+{
+	// Godot 2 is only a dark theme; it doesn't have a light theme counterpart.
+	HashMap<String, Color> colors;
+	colors["text_editor/theme/highlighting/symbol_color"] = Color(0.73, 0.87, 1.0);
+	colors["text_editor/theme/highlighting/keyword_color"] = Color(1.0, 1.0, 0.7);
+	colors["text_editor/theme/highlighting/control_flow_keyword_color"] = Color(1.0, 0.85, 0.7);
+	colors["text_editor/theme/highlighting/base_type_color"] = Color(0.64, 1.0, 0.83);
+	colors["text_editor/theme/highlighting/engine_type_color"] = Color(0.51, 0.83, 1.0);
+	colors["text_editor/theme/highlighting/user_type_color"] = Color(0.42, 0.67, 0.93);
+	colors["text_editor/theme/highlighting/comment_color"] = Color(0.4, 0.4, 0.4);
+	colors["text_editor/theme/highlighting/doc_comment_color"] = Color(0.5, 0.6, 0.7);
+	colors["text_editor/theme/highlighting/string_color"] = Color(0.94, 0.43, 0.75);
+	colors["text_editor/theme/highlighting/string_placeholder_color"] = Color(1, 0.75, 0.4);
+	colors["text_editor/theme/highlighting/background_color"] = Color(0.13, 0.12, 0.15);
+	colors["text_editor/theme/highlighting/completion_background_color"] = Color(0.17, 0.16, 0.2);
+	colors["text_editor/theme/highlighting/completion_selected_color"] = Color(0.26, 0.26, 0.27);
+	colors["text_editor/theme/highlighting/completion_existing_color"] =
+		Color(0.87, 0.87, 0.87, 0.13);
+	colors["text_editor/theme/highlighting/completion_scroll_color"] = Color(1, 1, 1, 0.29);
+	colors["text_editor/theme/highlighting/completion_scroll_hovered_color"] = Color(1, 1, 1, 0.4);
+	colors["text_editor/theme/highlighting/completion_font_color"] = Color(0.67, 0.67, 0.67);
+	colors["text_editor/theme/highlighting/text_color"] = Color(0.67, 0.67, 0.67);
+	colors["text_editor/theme/highlighting/line_number_color"] = Color(0.67, 0.67, 0.67, 0.4);
+	colors["text_editor/theme/highlighting/safe_line_number_color"] = Color(0.67, 0.78, 0.67, 0.6);
+	colors["text_editor/theme/highlighting/caret_color"] = Color(0.67, 0.67, 0.67);
+	colors["text_editor/theme/highlighting/caret_background_color"] = Color(0, 0, 0);
+	colors["text_editor/theme/highlighting/text_selected_color"] = Color(0, 0, 0, 0);
+	colors["text_editor/theme/highlighting/selection_color"] = Color(0.41, 0.61, 0.91, 0.35);
+	colors["text_editor/theme/highlighting/brace_mismatch_color"] = Color(1, 0.2, 0.2);
+	colors["text_editor/theme/highlighting/current_line_color"] = Color(0.3, 0.5, 0.8, 0.15);
+	colors["text_editor/theme/highlighting/line_length_guideline_color"] =
+		Color(0.3, 0.5, 0.8, 0.1);
+	colors["text_editor/theme/highlighting/word_highlighted_color"] = Color(0.8, 0.9, 0.9, 0.15);
+	colors["text_editor/theme/highlighting/number_color"] = Color(0.92, 0.58, 0.2);
+	colors["text_editor/theme/highlighting/function_color"] = Color(0.4, 0.64, 0.81);
+	colors["text_editor/theme/highlighting/member_variable_color"] = Color(0.9, 0.31, 0.35);
+	colors["text_editor/theme/highlighting/mark_color"] = Color(1.0, 0.4, 0.4, 0.4);
+	colors["text_editor/theme/highlighting/warning_color"] = Color(1.0, 0.8, 0.4, 0.1);
+	colors["text_editor/theme/highlighting/bookmark_color"] = Color(0.08, 0.49, 0.98);
+	colors["text_editor/theme/highlighting/breakpoint_color"] = Color(0.9, 0.29, 0.3);
+	colors["text_editor/theme/highlighting/executing_line_color"] = Color(0.98, 0.89, 0.27);
+	colors["text_editor/theme/highlighting/code_folding_color"] = Color(0.8, 0.8, 0.8, 0.8);
+	colors["text_editor/theme/highlighting/folded_code_region_color"] =
+		Color(0.68, 0.46, 0.77, 0.2);
+	colors["text_editor/theme/highlighting/search_result_color"] = Color(0.05, 0.25, 0.05, 1);
+	colors["text_editor/theme/highlighting/search_result_border_color"] =
+		Color(0.41, 0.61, 0.91, 0.38);
+	colors["text_editor/theme/highlighting/gdscript/function_definition_color"] =
+		Color(0.4, 0.9, 1.0);
+
+	colors["text_editor/theme/highlighting/gdscript/global_function_color"] =
+		Color(0.64, 0.64, 0.96);
+	colors["text_editor/theme/highlighting/gdscript/node_path_color"] = Color(0.72, 0.77, 0.49);
+	colors["text_editor/theme/highlighting/gdscript/node_reference_color"] =
+		Color(0.39, 0.76, 0.35);
+	colors["text_editor/theme/highlighting/gdscript/annotation_color"] = Color(1.0, 0.7, 0.45);
+	colors["text_editor/theme/highlighting/gdscript/string_name_color"] = Color(1.0, 0.76, 0.65);
+	colors["text_editor/theme/highlighting/comment_markers/critical_color"] =
+		Color(0.77, 0.35, 0.35);
+	colors["text_editor/theme/highlighting/comment_markers/warning_color"] =
+		Color(0.72, 0.61, 0.48);
+	colors["text_editor/theme/highlighting/comment_markers/notice_color"] = Color(0.56, 0.67, 0.51);
+	return colors;
+}
+
+bool EditorSettings::is_default_text_editor_theme(const String& p_theme_name)
+{
+	return p_theme_name == "default" || p_theme_name == "godot 2" || p_theme_name == "custom";
+}
+
+Vector<String> EditorSettings::get_script_templates(
+	const String& p_extension, const String& p_custom_path)
+{
+	Vector<String> templates;
+	String template_dir = EditorPaths::get_script_templates_dir();
+	if (!p_custom_path.is_empty()) {
+		template_dir = p_custom_path;
+	}
+	Ref<DirAccess> d = DirAccess::open(template_dir);
+	if (d.is_valid()) {
+		d->list_dir_begin();
+		String file = d->get_next();
+		while (!file.is_empty()) {
+			if (file.get_extension() == p_extension) {
+				templates.push_back(file.get_basename());
+			}
+			file = d->get_next();
+		}
+		d->list_dir_end();
+	}
+	return templates;
+}
+
+String EditorSettings::get_editor_layouts_config()
+{
+	return EditorPaths::get_config_dir().path_join("editor_layouts.cfg");
+}
+
+float EditorSettings::get_auto_display_scale()
+{
+#ifdef LINUXBSD_ENABLED
+	if (DisplayServer::get_name() == "Wayland") {
+		float main_window_scale = DisplayServer::screen_get_scale(
+			DisplayServerEnums::SCREEN_OF_MAIN_WINDOW);
+
+		if (DisplayServer::get_screen_count() == 1 ||
+			Math::fract(main_window_scale) != 0) {
+			// If we have a single screen or the screen of the window is fractional, all
+			// bets are off. At this point, let's just return the current's window scale,
+			// which is special-cased to the scale of `DisplayServerEnums::SCREEN_OF_MAIN_WINDOW`.
+			return main_window_scale;
+		}
+
+		// If the above branch didn't fire, fractional scaling isn't going to work
+		// properly anyways (we're need the ability to change the UI scale at runtime).
+		// At this point it's more convenient to "supersample" like we do with other
+		// platforms, hoping that the user is only using integer-scaled screens.
+		return DisplayServer::screen_get_max_scale();
+	}
+#endif
+
+#if defined(MACOS_ENABLED) || defined(ANDROID_ENABLED)
+	return DisplayServer::screen_get_max_scale();
+#else
+	const int screen = DisplayServer::window_get_current_screen();
+
+	if (DisplayServer::screen_get_size(screen) == Vector2i()) {
+		// Invalid screen size, skip.
+		return 1.0;
+	}
+
+#if defined(WINDOWS_ENABLED)
+	return DisplayServer::screen_get_dpi(screen) / 96.0;
+#else
+	// Use the smallest dimension to use a correct display scale on portrait displays.
+	const int smallest_dimension = MIN(DisplayServer::screen_get_size(screen).x,
+		DisplayServer::screen_get_size(screen).y);
+	if (DisplayServer::screen_get_dpi(screen) >= 192 &&
+		smallest_dimension >= 1400) {
+		// hiDPI display.
+		return 2.0;
+	}
+	else if (smallest_dimension >= 1700) {
+		// Likely a hiDPI display, but we aren't certain due to the returned DPI.
+		// Use an intermediate scale to handle this situation.
+		return 1.5;
+	}
+	else if (smallest_dimension <= 800) {
+		// Small loDPI display. Use a smaller display scale so that editor elements fit more easily.
+		// Icons won't look great, but this is better than having editor elements overflow from its
+		// window.
+		return 0.75;
+	}
+	return 1.0;
+#endif // defined(WINDOWS_ENABLED)
+
+#endif // defined(MACOS_ENABLED) || defined(ANDROID_ENABLED)
+}
+
+// Shortcuts
+
+void EditorSettings::_add_shortcut_default(const String& p_path, const Ref<Shortcut>& p_shortcut)
+{
+	if (data) {
+		data->shortcuts[p_path] = p_shortcut;
+	}
+}
+
+void EditorSettings::remove_shortcut(const String& p_path)
+{
+	if (data) {
+		data->shortcuts.erase(p_path);
+	}
+}
+
+bool EditorSettings::is_shortcut(const String& p_path, const InputEvent& p_event)
+{
+	if (!data) {
+		return false;
+	}
+	HashMap<String, Ref<Shortcut>>::ConstIterator E = data->shortcuts.find(p_path);
+	ERR_FAIL_COND_V_MSG(!E, false, "Unknown Shortcut: " + p_path + ".");
+
+	return E->value->matches_event(p_event);
+}
+
+bool EditorSettings::has_shortcut(const String& p_path)
+{
+	return get_shortcut(p_path).is_valid();
+}
+
+Ref<Shortcut> EditorSettings::get_shortcut(const String& p_path)
+{
+	if (!data) {
+		return Ref<Shortcut>();
+	}
+	HashMap<String, Ref<Shortcut>>::ConstIterator SC = data->shortcuts.find(p_path);
+	if (SC) {
+		return SC->value;
+	}
+
+	// If no shortcut with the provided name is found in the list, check the built-in shortcuts.
+	// Use the first item in the action list for the shortcut event, since a shortcut can only have
+	// 1 linked event.
+
+	Ref<Shortcut> sc;
+	HashMap<String, List<InputEvent>>::ConstIterator builtin_override =
+		data->builtin_action_overrides.find(p_path);
+	if (builtin_override) {
+		sc.instantiate();
+		sc->set_events_list(&builtin_override->value);
+		sc->set_name(InputMap::get_builtin_display_name(p_path));
+	}
+
+	// If there was no override, check the default builtins to see if it has an InputEvent for the
+	// provided name.
+	if (sc.is_null()) {
+		HashMap<String, List<InputEvent>>::ConstIterator builtin_default =
+			InputMap::get_builtins_with_feature_overrides_applied().find(p_path);
+		if (builtin_default) {
+			sc.instantiate();
+			sc->set_events_list(&builtin_default->value);
+			sc->set_name(InputMap::get_builtin_display_name(p_path));
+		}
+	}
+
+	if (sc.is_valid()) {
+		// Add the shortcut to the list.
+		data->shortcuts[p_path] = sc;
+		return sc;
+	}
+
+	return Ref<Shortcut>();
+}
+
+Vector<String> EditorSettings::_get_shortcut_list()
+{
+	List<String> shortcut_list;
+	get_shortcut_list(&shortcut_list);
+	Vector<String> ret;
+	for (const String& shortcut : shortcut_list) {
+		ret.push_back(shortcut);
+	}
+	return ret;
+}
+
+void EditorSettings::get_shortcut_list(List<String>* r_shortcuts)
+{
+	if (!data) {
+		return;
+	}
+	for (const KeyValue<String, Ref<Shortcut>>& E : data->shortcuts) {
+		r_shortcuts->push_back(E.key);
+	}
+}
+
+Ref<Shortcut> ED_GET_SHORTCUT(const String& p_path)
+{
+	ERR_FAIL_COND_V_MSG(
+		!EditorSettings::is_initialized(), nullptr, "EditorSettings not instantiated yet.");
+
+	Ref<Shortcut> sc = EditorSettings::get_shortcut(p_path);
+
+	ERR_FAIL_COND_V_MSG(sc.is_null(), sc, "Used ED_GET_SHORTCUT with invalid shortcut: " + p_path);
+
+	return sc;
+}
+
+void ED_SHORTCUT_OVERRIDE(
+	const String& p_path, const String& p_feature, Key p_keycode, bool p_physical)
+{
+	if (!EditorSettings::is_initialized()) {
+		return;
+	}
+
+	Ref<Shortcut> sc = EditorSettings::get_shortcut(p_path);
+	ERR_FAIL_COND_MSG(sc.is_null(), "Used ED_SHORTCUT_OVERRIDE with invalid shortcut: " + p_path);
+
+	PackedInt32Array arr;
+	arr.push_back((int32_t)p_keycode);
+
+	ED_SHORTCUT_OVERRIDE_ARRAY(p_path, p_feature, arr, p_physical);
+}
+
+Ref<Shortcut> ED_SHORTCUT(
+	const String& p_path, const String& p_name, Key p_keycode, bool p_physical)
+{
+	PackedInt32Array arr;
+	arr.push_back((int32_t)p_keycode);
+	return ED_SHORTCUT_ARRAY(p_path, p_name, arr, p_physical);
+}
+
+void EditorSettings::_rename_setting(const String& p_old_name, const String& p_new_name) {}
+
+void EditorSettings::erase(const String& p_setting) {}
+
+bool EditorSettings::has_setting(const String& p_setting) { return false; }
+
+String EditorSettings::get_language() { return String(); }
+
+void EditorSettings::set_favorites(const Vector<String>& p_favorites, bool p_update_file_dialog) {}
+
+void EditorSettings::set_favorite_properties(
+	const HashMap<String, PackedStringArray>& p_favorite_properties)
+{
+}
+
+void EditorSettings::notify_changes() {}
+
+void ED_SHORTCUT_OVERRIDE_ARRAY(const String& p_path, const String& p_feature,
+	const PackedInt32Array& p_keycodes, bool p_physical)
+{
+}
+
+Ref<Shortcut> ED_SHORTCUT_ARRAY(
+	const String& p_path, const String& p_name, const PackedInt32Array& p_keycodes, bool p_physical)
+{
+	Ref<Shortcut> s = memnew(Shortcut);
+	return s;
+}
+
+
+
+// ============================================================================
+// Merged from editor/themes/editor_scale.cpp
+// ============================================================================
+
+#include "editor/themes/editor_scale.h"
+
+float EditorScale::_scale = 1.0f;
+
+void EditorScale::set_scale(float p_scale) {
+	_scale = p_scale;
+}
+
+float EditorScale::get_scale() {
+	return _scale;
+}
+
+// ============================================================================
+// Merged from editor/translations/editor_translation.cpp
+// ============================================================================
+
+#include "editor/settings/editor_settings.h"
+
+#include "core/io/compression.h"
+#include "core/io/file_access_wrappers.h"
+#include "core/io/config_file.h"
+#include "core/string/translation_server.h"
+#include "editor/translations/doc_translations.gen.h"
+#include "editor/translations/editor_translations.gen.h"
+#include "editor/translations/extractable_translations.gen.h"
+#include "editor/translations/property_translations.gen.h"
+
+Vector<String> get_editor_locales() {
+	Vector<String> locales;
+
+	for (const EditorTranslationList *etl = _editor_translations; etl->data; etl++) {
+		const String &locale = etl->lang;
+		locales.push_back(locale);
+	}
+
+	return locales;
+}
+
+static void _load(const Ref<TranslationDomain> p_domain, const String &p_locale, const EditorTranslationList *p_etl) {
+	for (const EditorTranslationList *etl = p_etl; etl->data; etl++) {
+		if (etl->lang == p_locale) {
+			LocalVector<uint8_t> data;
+			data.resize_uninitialized(etl->uncomp_size);
+			const int64_t ret = Compression::decompress(data.ptr(), etl->uncomp_size, etl->data, etl->comp_size, Compression::MODE_DEFLATE);
+			ERR_FAIL_COND_MSG(ret == -1, "Compressed file is corrupt.");
+
+			Ref<FileAccessMemory> fa;
+			fa.instantiate();
+			fa->open_custom(data.ptr(), data.size());
+
+			Ref<Translation> tr = TranslationLoaderPO::load_translation(fa);
+			if (tr.is_valid()) {
+				tr->set_locale(etl->lang);
+				p_domain->add_translation(tr);
+				break;
+			}
+		}
+	}
+}
+
+void load_editor_translations(const String &p_locale) {
+	Ref<TranslationDomain> domain;
+
+	domain = TranslationServer::get_editor_domain();
+	domain->clear();
+	_load(domain, p_locale, _editor_translations);
+	_load(domain, p_locale, _extractable_translations);
+
+	domain = TranslationServer::get_property_domain();
+	domain->clear();
+	_load(domain, p_locale, _property_translations);
+}
+
+void load_doc_translations(const String &p_locale) {
+	const Ref<TranslationDomain> domain = TranslationServer::get_doc_domain();
+	domain->clear();
+	_load(domain, p_locale, _doc_translations);
+}
+
+Vector<Vector<String>> get_extractable_message_list() {
+	Vector<Vector<String>> list;
+
+	for (const EditorTranslationList *etl = _extractable_translations; etl->data; etl++) {
+		if (strcmp(etl->lang, "source")) {
+			continue;
+		}
+
+		LocalVector<uint8_t> data;
+		data.resize_uninitialized(etl->uncomp_size);
+		const int64_t ret = Compression::decompress(data.ptr(), etl->uncomp_size, etl->data, etl->comp_size, Compression::MODE_DEFLATE);
+		ERR_FAIL_COND_V_MSG(ret == -1, list, "Compressed file is corrupt.");
+
+		Ref<FileAccessMemory> fa;
+		fa.instantiate();
+		fa->open_custom(data.ptr(), data.size());
+
+		// Taken from TranslationLoaderPO, modified to work specifically with POTs.
+		{
+			const String path = fa->get_path();
+
+			fa->seek(0);
+
+			enum Status {
+				STATUS_NONE,
+				STATUS_READING_ID,
+				STATUS_READING_STRING,
+				STATUS_READING_CONTEXT,
+				STATUS_READING_PLURAL,
+			};
+
+			Status status = STATUS_NONE;
+
+			String msg_id;
+			String msg_id_plural;
+			String msg_context;
+
+			int line = 1;
+			bool entered_context = false;
+			bool is_eof = false;
+
+			while (!is_eof) {
+				String l = fa->get_line().strip_edges();
+				is_eof = fa->eof_reached();
+
+				// If we reached last line and it's not a content line, break, otherwise let processing that last loop.
+				if (is_eof && l.is_empty()) {
+					if (status == STATUS_READING_ID || status == STATUS_READING_CONTEXT || status == STATUS_READING_PLURAL) {
+						ERR_FAIL_V_MSG(Vector<Vector<String>>(), "Unexpected EOF while reading POT file at: " + path + ":" + itos(line));
+					} else {
+						break;
+					}
+				}
+
+				if (l.begins_with("msgctxt")) {
+					ERR_FAIL_COND_V_MSG(status != STATUS_READING_STRING && status != STATUS_READING_PLURAL, Vector<Vector<String>>(),
+							"Unexpected 'msgctxt', was expecting 'msgid_plural' or 'msgstr' before 'msgctxt' while parsing: " + path + ":" + itos(line));
+
+					// In POT files, "msgctxt" appears before "msgid". If we encounter a "msgctxt", we add what we have read
+					// and set "entered_context" to true to prevent adding twice.
+					if (!msg_id.is_empty()) {
+						Vector<String> msgs;
+						msgs.push_back(msg_id);
+						msgs.push_back(msg_context);
+						msgs.push_back(msg_id_plural);
+						list.push_back(msgs);
+					}
+					msg_context = "";
+					l = l.substr(7).strip_edges();
+					status = STATUS_READING_CONTEXT;
+					entered_context = true;
+				}
+
+				if (l.begins_with("msgid_plural")) {
+					if (status != STATUS_READING_ID) {
+						ERR_FAIL_V_MSG(Vector<Vector<String>>(), "Unexpected 'msgid_plural', was expecting 'msgid' before 'msgid_plural' while parsing: " + path + ":" + itos(line));
+					}
+					l = l.substr(12).strip_edges();
+					status = STATUS_READING_PLURAL;
+				} else if (l.begins_with("msgid")) {
+					ERR_FAIL_COND_V_MSG(status == STATUS_READING_ID, Vector<Vector<String>>(), "Unexpected 'msgid', was expecting 'msgstr' while parsing: " + path + ":" + itos(line));
+
+					if (!msg_id.is_empty() && !entered_context) {
+						Vector<String> msgs;
+						msgs.push_back(msg_id);
+						msgs.push_back(msg_context);
+						msgs.push_back(msg_id_plural);
+						list.push_back(msgs);
+					}
+
+					l = l.substr(5).strip_edges();
+					status = STATUS_READING_ID;
+					// If we did not encounter msgctxt, we reset context to empty to reset it.
+					if (!entered_context) {
+						msg_context = "";
+					}
+					msg_id = "";
+					msg_id_plural = "";
+					entered_context = false;
+				}
+
+				if (l.begins_with("msgstr[")) {
+					ERR_FAIL_COND_V_MSG(status != STATUS_READING_PLURAL, Vector<Vector<String>>(),
+							"Unexpected 'msgstr[]', was expecting 'msgid_plural' before 'msgstr[]' while parsing: " + path + ":" + itos(line));
+					l = l.substr(9).strip_edges();
+				} else if (l.begins_with("msgstr")) {
+					ERR_FAIL_COND_V_MSG(status != STATUS_READING_ID, Vector<Vector<String>>(),
+							"Unexpected 'msgstr', was expecting 'msgid' before 'msgstr' while parsing: " + path + ":" + itos(line));
+					l = l.substr(6).strip_edges();
+					status = STATUS_READING_STRING;
+				}
+
+				if (l.is_empty() || l.begins_with("#")) {
+					line++;
+					continue; // Nothing to read or comment.
+				}
+
+				ERR_FAIL_COND_V_MSG(!l.begins_with("\"") || status == STATUS_NONE, Vector<Vector<String>>(), "Invalid line '" + l + "' while parsing: " + path + ":" + itos(line));
+
+				l = l.substr(1);
+				// Find final quote, ignoring escaped ones (\").
+				// The escape_next logic is necessary to properly parse things like \\"
+				// where the backslash is the one being escaped, not the quote.
+				int end_pos = -1;
+				bool escape_next = false;
+				for (int i = 0; i < l.length(); i++) {
+					if (l[i] == '\\' && !escape_next) {
+						escape_next = true;
+						continue;
+					}
+
+					if (l[i] == '"' && !escape_next) {
+						end_pos = i;
+						break;
+					}
+
+					escape_next = false;
+				}
+
+				ERR_FAIL_COND_V_MSG(end_pos == -1, Vector<Vector<String>>(), "Expected '\"' at end of message while parsing: " + path + ":" + itos(line));
+
+				l = l.substr(0, end_pos);
+				l = l.c_unescape();
+
+				if (status == STATUS_READING_ID) {
+					msg_id += l;
+				} else if (status == STATUS_READING_CONTEXT) {
+					msg_context += l;
+				} else if (status == STATUS_READING_PLURAL) {
+					msg_id_plural += l;
+				}
+
+				line++;
+			}
+		}
+	}
+
+	return list;
+}
+
+// ============================================================================
+// Merged from editor/file_system/editor_file_system.cpp
+// ============================================================================
+
+#include "core/config/project_settings.h"
+#include "core/io/dir_access.h"
+#include "core/io/file_access.h"
+#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
+#include "core/os/os.h"
+#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
+#include "editor/file_system/editor_file_system.h"
+#include "scene/main/scene_tree.h"
+#include "scene/resources/packed_scene.h"
+#include "servers/display/display_server.h"
+
+int EditorFileSystem::nb_files_total = 0;
+EditorFileSystem::ScannedDirectory* EditorFileSystem::first_scan_root_dir = nullptr;
+
+// the name is the version, to keep compatibility with different versions of Godot
+#define CACHE_FILE_NAME "filesystem_cache10"
+
+int EditorFileSystemDirectory::find_file_index(const String& p_file) const
+{
+	for (int i = 0; i < files.size(); i++) {
+		if (files[i]->file == p_file) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+int EditorFileSystemDirectory::find_dir_index(const String& p_dir) const
+{
+	for (int i = 0; i < subdirs.size(); i++) {
+		if (subdirs[i]->name == p_dir) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+void EditorFileSystemDirectory::force_update()
+{
+	// We set modified_time to 0 to force `EditorFileSystem::_scan_fs_changes` to search changes in
+	// the directory
+	modified_time = 0;
+}
+
+int EditorFileSystemDirectory::get_subdir_count() const { return subdirs.size(); }
+
+EditorFileSystemDirectory* EditorFileSystemDirectory::get_subdir(int p_idx)
+{
+	ERR_FAIL_INDEX_V(p_idx, subdirs.size(), nullptr);
+	return subdirs[p_idx];
+}
+
+int EditorFileSystemDirectory::get_file_count() const { return files.size(); }
+
+String EditorFileSystemDirectory::get_file(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, files.size(), "");
+
+	return files[p_idx]->file;
+}
+
+String EditorFileSystemDirectory::get_path() const
+{
+	int parents = 0;
+	const EditorFileSystemDirectory* efd = this;
+	// Determine the level of nesting.
+	while (efd->parent) {
+		parents++;
+		efd = efd->parent;
+	}
+
+	if (parents == 0) {
+		return "res://";
+	}
+
+	// Using PackedStringArray, because the path is built in reverse order.
+	PackedStringArray path_bits;
+	// Allocate an array based on nesting. It will store path bits.
+	path_bits.resize(parents + 2); // Last String is empty, so paths end with /.
+	String* path_write = path_bits.ptrw();
+	path_write[0] = "res:/";
+
+	efd = this;
+	for (int i = parents; i > 0; i--) {
+		path_write[i] = efd->name;
+		efd = efd->parent;
+	}
+	return String("/").join(path_bits);
+}
+
+String EditorFileSystemDirectory::get_file_path(int p_idx) const
+{
+	return get_path().path_join(get_file(p_idx));
+}
+
+ResourceUID::ID EditorFileSystemDirectory::get_file_uid(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, files.size(), ResourceUID::INVALID_ID);
+	return files[p_idx]->uid;
+}
+
+Vector<String> EditorFileSystemDirectory::get_file_deps(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, files.size(), Vector<String>());
+	Vector<String> deps;
+
+	for (int i = 0; i < files[p_idx]->deps.size(); i++) {
+		String dep = files[p_idx]->deps[i];
+		int sep_idx = dep.find("::"); // may contain type information, unwanted
+		if (sep_idx != -1) {
+			dep = dep.substr(0, sep_idx);
+		}
+		ResourceUID::ID uid = ResourceUID::text_to_id(dep);
+		if (uid != ResourceUID::INVALID_ID) {
+			// return proper dependency resource from uid
+			if (ResourceUID::has_id(uid)) {
+				dep = ResourceUID::get_id_path(uid);
+			}
+			else {
+				continue;
+			}
+		}
+		deps.push_back(dep);
+	}
+	return deps;
+}
+
+bool EditorFileSystemDirectory::get_file_import_is_valid(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, files.size(), false);
+	return files[p_idx]->import_valid;
+}
+
+uint64_t EditorFileSystemDirectory::get_file_modified_time(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, files.size(), 0);
+	return files[p_idx]->modified_time;
+}
+
+uint64_t EditorFileSystemDirectory::get_file_import_modified_time(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, files.size(), 0);
+	return files[p_idx]->import_modified_time;
+}
+
+String EditorFileSystemDirectory::get_file_script_class_name(int p_idx) const
+{
+	return files[p_idx]->class_info.name;
+}
+
+String EditorFileSystemDirectory::get_file_script_class_extends(int p_idx) const
+{
+	return files[p_idx]->class_info.extends;
+}
+
+String EditorFileSystemDirectory::get_file_script_class_icon_path(int p_idx) const
+{
+	return files[p_idx]->class_info.icon_path;
+}
+
+String EditorFileSystemDirectory::get_file_icon_path(int p_idx) const
+{
+	return files[p_idx]->class_info.icon_path;
+}
+
+String EditorFileSystemDirectory::get_file_type(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, files.size(), "");
+	return files[p_idx]->type;
+}
+
+String EditorFileSystemDirectory::get_file_resource_script_class(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, files.size(), "");
+	return files[p_idx]->resource_script_class;
+}
+
+String EditorFileSystemDirectory::get_name() { return name; }
+
+EditorFileSystemDirectory* EditorFileSystemDirectory::get_parent() { return parent; }
+
+
+EditorFileSystemDirectory::EditorFileSystemDirectory()
+{
+	modified_time = 0;
+	parent = nullptr;
+}
+
+EditorFileSystemDirectory::~EditorFileSystemDirectory()
+{
+	for (EditorFileSystemDirectory::FileInfo* fi : files) {
+		memdelete(fi);
+	}
+
+	for (EditorFileSystemDirectory* dir : subdirs) {
+		memdelete(dir);
+	}
+}
+
+EditorFileSystem::ScannedDirectory::~ScannedDirectory()
+{
+	for (ScannedDirectory* dir : subdirs) {
+		memdelete(dir);
+	}
+}
+
+void EditorFileSystem::_load_first_scan_root_dir()
+{
+	Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+	first_scan_root_dir = memnew(ScannedDirectory);
+	first_scan_root_dir->full_path = "res://";
+
+	nb_files_total = _scan_new_dir(first_scan_root_dir, d);
+}
+
+void EditorFileSystem::scan_for_uid()
+{
+	// Load file structure into memory.
+	_load_first_scan_root_dir();
+
+	// Load extensions for which an .import should exists.
+	List<String> extensionsl;
+	HashSet<String> import_extensions;
+	ResourceFormatImporter::get_recognized_extensions(&extensionsl);
+	for (const String& E : extensionsl) {
+		import_extensions.insert(E);
+	}
+
+	// Scan the file system to load uid.
+	_scan_for_uid_directory(first_scan_root_dir, import_extensions);
+
+	// It's done, resetting the callback method to prevent a second scan.
+	ResourceUID::scan_for_uid_on_startup = nullptr;
+}
+
+void EditorFileSystem::_scan_for_uid_directory(
+	const ScannedDirectory* p_scan_dir, const HashSet<String>& p_import_extensions)
+{
+	for (ScannedDirectory* scan_sub_dir : p_scan_dir->subdirs) {
+		_scan_for_uid_directory(scan_sub_dir, p_import_extensions);
+	}
+
+	for (const String& scan_file : p_scan_dir->files) {
+		const String ext = scan_file.get_extension().to_lower();
+
+		if (ext == "uid" || ext == "import") {
+			continue;
+		}
+
+		const String path = p_scan_dir->full_path.path_join(scan_file);
+		ResourceUID::ID uid = ResourceUID::INVALID_ID;
+		if (p_import_extensions.has(ext)) {
+			if (FileAccess::exists(path + ".import")) {
+				uid = ResourceFormatImporter::get_resource_uid(path);
+			}
+		}
+		else {
+			uid = ResourceLoader::get_resource_uid(path);
+		}
+
+		if (uid != ResourceUID::INVALID_ID) {
+			if (!ResourceUID::has_id(uid)) {
+				ResourceUID::add_id(uid, path);
+			}
+		}
+	}
+}
+
+void EditorFileSystem::_save_filesystem_cache()
+{
+	group_file_cache.clear();
+
+	String fscache =
+		EditorPaths::get_project_settings_dir().path_join(CACHE_FILE_NAME);
+
+	Ref<FileAccess> f = FileAccess::open(fscache, FileAccess::WRITE);
+	ERR_FAIL_COND_MSG(
+		f.is_null(), "Cannot create file '" + fscache + "'. Check user write permissions.");
+
+	f->store_line(filesystem_settings_version_for_import);
+	_save_filesystem_cache(filesystem, f);
+}
+
+bool EditorFileSystem::_is_test_for_reimport_needed(const String& p_path,
+	uint64_t p_last_modification_time, uint64_t p_modification_time,
+	uint64_t p_last_import_modification_time, uint64_t p_import_modification_time,
+	const Vector<String>& p_import_dest_paths)
+{
+	// The idea here is to trust the cache. If the last modification times in the cache correspond
+	// to the last modification times of the files on disk, it means the files have not changed
+	// since the last import, and the files in .godot/imported (p_import_dest_paths) should all be
+	// valid.
+	if (p_last_modification_time != p_modification_time) {
+		return true;
+	}
+	if (p_last_import_modification_time != p_import_modification_time) {
+		return true;
+	}
+	if (reimport_on_missing_imported_files) {
+		for (const String& path : p_import_dest_paths) {
+			if (!FileAccess::exists(path)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void EditorFileSystem::ScanProgress::increment()
+{
+	current++;
+	float ratio = current / MAX(hi, 1.0f);
+	EditorFileSystem::instance->scan_total = ratio;
+}
+
+int EditorFileSystem::_scan_new_dir(ScannedDirectory* p_dir, Ref<DirAccess>& da)
+{
+	List<String> dirs;
+	List<String> files;
+
+	String cd = da->get_current_dir();
+
+	da->list_dir_begin();
+	while (true) {
+		String f = da->get_next();
+		if (f.is_empty()) {
+			break;
+		}
+
+		if (da->current_is_hidden()) {
+			continue;
+		}
+
+		if (da->current_is_dir()) {
+			if (f.begins_with(".")) { // Ignore special and . / ..
+				continue;
+			}
+
+			if (_should_skip_directory(cd.path_join(f))) {
+				continue;
+			}
+
+			dirs.push_back(f);
+
+		}
+		else {
+			files.push_back(f);
+		}
+	}
+
+	da->list_dir_end();
+
+	dirs.sort_custom<FileNoCaseComparator>();
+	files.sort_custom<FileNoCaseComparator>();
+
+	int nb_files_total_scan = 0;
+
+	for (const String& dir : dirs) {
+		if (da->change_dir(dir) == OK) {
+			String d = da->get_current_dir();
+
+			if (d == cd || !d.begins_with(cd)) {
+				da->change_dir(cd); // avoid recursion
+			}
+			else {
+				ScannedDirectory* sd = memnew(ScannedDirectory);
+				sd->name = dir;
+				sd->full_path = p_dir->full_path.path_join(sd->name);
+
+				nb_files_total_scan += _scan_new_dir(sd, da);
+
+				p_dir->subdirs.push_back(sd);
+
+				da->change_dir("..");
+			}
+		}
+		else {
+			ERR_PRINT("Cannot go into subdir '" + dir + "'.");
+		}
+	}
+
+	p_dir->files = files;
+	nb_files_total_scan += files.size();
+
+	return nb_files_total_scan;
+}
+
+void EditorFileSystem::_process_removed_files(const HashSet<String>& p_processed_files) {}
+
+void EditorFileSystem::_delete_internal_files(const String& p_file)
+{
+	if (FileAccess::exists(p_file + ".import")) {
+		List<String> paths;
+		ResourceFormatImporter::get_internal_resource_path_list(p_file, &paths);
+		Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+		for (const String& E : paths) {
+			da->remove(E);
+		}
+		da->remove(p_file + ".import");
+	}
+	if (FileAccess::exists(p_file + ".uid")) {
+		DirAccess::remove_absolute(p_file + ".uid");
+	}
+}
+
+int EditorFileSystem::_insert_actions_delete_files_directory(EditorFileSystemDirectory* p_dir)
+{
+	int nb_files = 0;
+	for (EditorFileSystemDirectory::FileInfo* fi : p_dir->files) {
+		ItemAction ia;
+		ia.action = ItemAction::ACTION_FILE_REMOVE;
+		ia.dir = p_dir;
+		ia.file = fi->file;
+		scan_actions.push_back(ia);
+		nb_files++;
+	}
+
+	for (EditorFileSystemDirectory* sub_dir : p_dir->subdirs) {
+		nb_files += _insert_actions_delete_files_directory(sub_dir);
+	}
+
+	return nb_files;
+}
+
+String EditorFileSystem::_get_file_by_class_name(EditorFileSystemDirectory* p_dir,
+	const String& p_class_name, EditorFileSystemDirectory::FileInfo*& r_file_info)
+{
+	for (EditorFileSystemDirectory::FileInfo* fi : p_dir->files) {
+		if (fi->class_info.name == p_class_name) {
+			r_file_info = fi;
+			return p_dir->get_path().path_join(fi->file);
+		}
+	}
+
+	for (EditorFileSystemDirectory* sub_dir : p_dir->subdirs) {
+		String file = _get_file_by_class_name(sub_dir, p_class_name, r_file_info);
+		if (!file.is_empty()) {
+			return file;
+		}
+	}
+	r_file_info = nullptr;
+	return "";
+}
+
+bool EditorFileSystem::is_scanning()
+{
+	return EditorFileSystem::instance->_impl_is_scanning();
+}
+
+bool EditorFileSystem::_impl_is_scanning() const
+{ return scanning || scanning_changes || first_scan; }
+
+float EditorFileSystem::get_scanning_progress() const { return scan_total; }
+
+EditorFileSystemDirectory* EditorFileSystem::get_filesystem()
+{
+	return EditorFileSystem::instance->_impl_get_filesystem();
+}
+
+EditorFileSystemDirectory* EditorFileSystem::_impl_get_filesystem()
+{ return filesystem; }
+
+void EditorFileSystem::_save_filesystem_cache(
+	EditorFileSystemDirectory* p_dir, Ref<FileAccess> p_file)
+{
+	if (!p_dir) {
+		return; // none
+	}
+	p_file->store_line("::" + p_dir->get_path() + "::" + String::num_int64(p_dir->modified_time));
+
+	for (int i = 0; i < p_dir->files.size(); i++) {
+		const EditorFileSystemDirectory::FileInfo* file_info = p_dir->files[i];
+		if (!file_info->import_group_file.is_empty()) {
+			group_file_cache.insert(file_info->import_group_file);
+		}
+
+		String type = file_info->type;
+		if (!file_info->resource_script_class.is_empty()) {
+			type += "/" + String(file_info->resource_script_class);
+		}
+
+		PackedStringArray cache_string;
+		cache_string.append(file_info->file);
+		cache_string.append(type);
+		cache_string.append(itos(file_info->uid));
+		cache_string.append(itos(file_info->modified_time));
+		cache_string.append(itos(file_info->import_modified_time));
+		cache_string.append(itos(file_info->import_valid));
+		cache_string.append(file_info->import_group_file);
+		cache_string.append(String("<>").join({file_info->class_info.name,
+			file_info->class_info.extends, file_info->class_info.icon_path,
+			itos(file_info->class_info.is_abstract), itos(file_info->class_info.is_tool),
+			file_info->import_md5, String("<*>").join(file_info->import_dest_paths)}));
+		cache_string.append(String("<>").join(file_info->deps));
+
+		p_file->store_line(String("::").join(cache_string));
+	}
+
+	for (int i = 0; i < p_dir->subdirs.size(); i++) {
+		_save_filesystem_cache(p_dir->subdirs[i], p_file);
+	}
+}
+
+bool EditorFileSystem::_find_file(
+	const String& p_file, EditorFileSystemDirectory** r_d, int& r_file_pos) const
+{
+	// todo make faster
+
+	if (!filesystem || scanning) {
+		return false;
+	}
+
+	String f = ProjectSettings::localize_path(p_file);
+	if (!f.begins_with("res://")) {
+		return false;
+	}
+	f = f.substr(6);
+	f = f.replace_char('\\', '/');
+
+	Vector<String> path = f.split("/");
+
+	if (path.is_empty()) {
+		return false;
+	}
+	const String file = path[path.size() - 1];
+	const String file_lower = file.to_lower();
+	path.resize(path.size() - 1);
+
+	Ref<DirAccess> dir = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+	EditorFileSystemDirectory* fs = filesystem;
+
+	for (const String& path_bit : path) {
+		if (path_bit.begins_with(".")) {
+			return false;
+		}
+		const String path_bit_lower = path_bit.to_lower();
+
+		int idx = -1;
+		for (int j = 0; j < fs->get_subdir_count(); j++) {
+			if (is_case_sensitive) {
+				if (fs->get_subdir(j)->get_name() == path_bit) {
+					idx = j;
+					break;
+				}
+			}
+			else {
+				if (fs->get_subdir(j)->get_name().to_lower() == path_bit_lower) {
+					idx = j;
+					break;
+				}
+			}
+		}
+
+		if (idx == -1) {
+			// Only create a missing directory in memory when it exists on disk.
+			if (!dir->dir_exists(fs->get_path().path_join(path_bit))) {
+				return false;
+			}
+			EditorFileSystemDirectory* efsd = memnew(EditorFileSystemDirectory);
+
+			efsd->name = path_bit;
+			efsd->parent = fs;
+
+			int idx2 = 0;
+			for (int j = 0; j < fs->get_subdir_count(); j++) {
+				if (efsd->name.filenocasecmp_to(fs->get_subdir(j)->get_name()) < 0) {
+					break;
+				}
+				idx2++;
+			}
+
+			if (idx2 == fs->get_subdir_count()) {
+				fs->subdirs.push_back(efsd);
+			}
+			else {
+				fs->subdirs.insert(idx2, efsd);
+			}
+			fs = efsd;
+		}
+		else {
+			fs = fs->get_subdir(idx);
+		}
+	}
+
+	int cpos = -1;
+	for (int i = 0; i < fs->files.size(); i++) {
+		if (is_case_sensitive) {
+			if (fs->files[i]->file == file) {
+				cpos = i;
+				break;
+			}
+		}
+		else {
+			if (fs->files[i]->file.to_lower() == file_lower) {
+				cpos = i;
+				break;
+			}
+		}
+	}
+
+	r_file_pos = cpos;
+	*r_d = fs;
+
+	return cpos != -1;
+}
+
+String EditorFileSystem::get_file_type(const String& p_file)
+{
+	return EditorFileSystem::instance->_impl_get_file_type(p_file);
+}
+
+String EditorFileSystem::_impl_get_file_type(const String& p_file) const
+{
+	EditorFileSystemDirectory* fs = nullptr;
+	int cpos = -1;
+
+	if (!_find_file(p_file, &fs, cpos)) {
+		return "";
+	}
+
+	return fs->files[cpos]->type;
+}
+
+EditorFileSystemDirectory* EditorFileSystem::find_file(const String& p_file, int* r_index)
+{
+	return EditorFileSystem::instance->_impl_find_file(p_file, r_index);
+}
+
+EditorFileSystemDirectory* EditorFileSystem::_impl_find_file(const String& p_file, int* r_index) const
+{
+	if (!filesystem || scanning) {
+		return nullptr;
+	}
+
+	EditorFileSystemDirectory* fs = nullptr;
+	int cpos = -1;
+	if (!_find_file(p_file, &fs, cpos)) {
+		return nullptr;
+	}
+
+	if (r_index) {
+		*r_index = cpos;
+	}
+
+	return fs;
+}
+
+ResourceUID::ID EditorFileSystem::get_file_uid(const String& p_path)
+{
+	return EditorFileSystem::instance->_impl_get_file_uid(p_path);
+}
+
+ResourceUID::ID EditorFileSystem::_impl_get_file_uid(const String& p_path) const
+{
+	int file_idx;
+	EditorFileSystemDirectory* directory = find_file(p_path, &file_idx);
+
+	if (!directory) {
+		return ResourceUID::INVALID_ID;
+	}
+	return directory->files[file_idx]->uid;
+}
+
+EditorFileSystemDirectory* EditorFileSystem::get_filesystem_path(const String& p_path)
+{
+	return EditorFileSystem::instance->_impl_get_filesystem_path(p_path);
+}
+
+EditorFileSystemDirectory* EditorFileSystem::_impl_get_filesystem_path(const String& p_path)
+{
+	if (!filesystem || scanning) {
+		return nullptr;
+	}
+
+	String f = ProjectSettings::localize_path(p_path);
+
+	if (!f.begins_with("res://")) {
+		return nullptr;
+	}
+
+	f = f.substr(6);
+	f = f.replace_char('\\', '/');
+	if (f.is_empty()) {
+		return filesystem;
+	}
+
+	if (f.ends_with("/")) {
+		f = f.substr(0, f.length() - 1);
+	}
+
+	Vector<String> path = f.split("/");
+
+	if (path.is_empty()) {
+		return nullptr;
+	}
+
+	EditorFileSystemDirectory* fs = filesystem;
+
+	for (int i = 0; i < path.size(); i++) {
+		int idx = -1;
+		for (int j = 0; j < fs->get_subdir_count(); j++) {
+			if (fs->get_subdir(j)->get_name() == path[i]) {
+				idx = j;
+				break;
+			}
+		}
+
+		if (idx == -1) {
+			return nullptr;
+		}
+		else {
+			fs = fs->get_subdir(idx);
+		}
+	}
+
+	return fs;
+}
+
+void EditorFileSystem::_save_late_updated_files()
+{
+	// files that already existed, and were modified, need re-scanning for dependencies upon project
+	// restart. This is done via saving this special file
+	String fscache =
+		EditorPaths::get_project_settings_dir().path_join("filesystem_update4");
+	Ref<FileAccess> f = FileAccess::open(fscache, FileAccess::WRITE);
+	ERR_FAIL_COND_MSG(
+		f.is_null(), "Cannot create file '" + fscache + "'. Check user write permissions.");
+	for (const String& E : late_update_files) {
+		f->store_line(E);
+	}
+}
+
+Vector<String> EditorFileSystem::_get_dependencies(const String& p_path)
+{
+	// Avoid error spam on first opening of a not yet imported project by treating the following
+	// situation as a benign one, not letting the file open error happen: the resource is of an
+	// importable type but it has not been imported yet.
+	if (ResourceFormatImporter::recognize_path(p_path)) {
+		const String& internal_path =
+			ResourceFormatImporter::get_internal_resource_path(p_path);
+		if (!internal_path.is_empty() &&
+			!FileAccess::exists(
+				internal_path)) { // If path is empty (error), keep the code flow to the error.
+			return Vector<String>();
+		}
+	}
+
+	List<String> deps;
+	ResourceLoader::get_dependencies(p_path, &deps);
+
+	Vector<String> ret;
+	for (const String& E : deps) {
+		ret.push_back(E);
+	}
+
+	return ret;
+}
+
+void EditorFileSystem::_queue_update_script_class(
+	const String& p_path, const ScriptClassInfoUpdate& p_script_update)
+{
+	MutexLock update_script_lock(update_script_mutex);
+
+	update_script_paths.insert(p_path, p_script_update);
+	update_script_paths_documentation.insert(p_path);
+}
+
+void EditorFileSystem::_queue_update_scene_groups(const String& p_path)
+{
+	MutexLock update_scene_lock(update_scene_mutex);
+	update_scene_paths.insert(p_path);
+}
+
+void EditorFileSystem::_get_all_scenes(EditorFileSystemDirectory* p_dir, HashSet<String>& r_list)
+{
+	for (int i = 0; i < p_dir->get_file_count(); i++) {
+		if (p_dir->get_file_type(i) == SNAME("PackedScene")) {
+			r_list.insert(p_dir->get_file_path(i));
+		}
+	}
+
+	for (int i = 0; i < p_dir->get_subdir_count(); i++) {
+		_get_all_scenes(p_dir->get_subdir(i), r_list);
+	}
+}
+
+HashSet<String> EditorFileSystem::get_valid_extensions() const
+{
+	return HashSet<String>(valid_extensions);
+}
+
+void EditorFileSystem::_find_group_files(EditorFileSystemDirectory* efd,
+	HashMap<String, Vector<String>>& group_files, HashSet<String>& groups_to_reimport)
+{
+	int fc = efd->files.size();
+	const EditorFileSystemDirectory::FileInfo* const* files = efd->files.ptr();
+	for (int i = 0; i < fc; i++) {
+		if (groups_to_reimport.has(files[i]->import_group_file)) {
+			if (!group_files.has(files[i]->import_group_file)) {
+				group_files[files[i]->import_group_file] = Vector<String>();
+			}
+			group_files[files[i]->import_group_file].push_back(efd->get_file_path(i));
+		}
+	}
+
+	for (int i = 0; i < efd->get_subdir_count(); i++) {
+		_find_group_files(efd->get_subdir(i), group_files, groups_to_reimport);
+	}
+}
+
+bool EditorFileSystem::_should_skip_directory(const String& p_path)
+{
+	String project_data_path = ProjectSettings::get_project_data_path();
+	if (p_path == project_data_path || p_path.begins_with(project_data_path + "/")) {
+		return true;
+	}
+
+	if (FileAccess::exists(p_path.path_join("project.vltr"))) {
+		// Skip if another project inside this.
+		if (!EditorFileSystem::is_initialized() || EditorFileSystem::doing_first_scan()) {
+			WARN_PRINT_ONCE(vformat(
+				"Detected another project.vltr at %s. The folder will be ignored.", p_path));
+		}
+		return true;
+	}
+
+	if (FileAccess::exists(p_path.path_join(".gdignore"))) {
+		// Skip if a `.gdignore` file is inside this.
+		return true;
+	}
+
+	return false;
+}
+
+bool EditorFileSystem::is_group_file(const String& p_path) const
+{
+	return group_file_cache.has(p_path);
+}
+
+ResourceUID::ID EditorFileSystem::_resource_saver_get_resource_id_for_path(
+	const String& p_path, bool p_generate)
+{
+	if (!p_path.is_resource_file() ||
+		p_path.begins_with(ProjectSettings::get_project_data_path())) {
+		// Saved externally (configuration file) or internal file, do not assign an ID.
+		return ResourceUID::INVALID_ID;
+	}
+
+	EditorFileSystemDirectory* fs = nullptr;
+	int cpos = -1;
+
+	if (!EditorFileSystem::instance->_find_file(p_path, &fs, cpos)) {
+		// Fallback to ResourceLoader if filesystem cache fails (can happen during scanning etc.).
+		ResourceUID::ID fallback = ResourceLoader::get_resource_uid(p_path);
+		if (fallback != ResourceUID::INVALID_ID) {
+			return fallback;
+		}
+
+		if (p_generate) {
+			return ResourceUID::create_id_for_path(
+				p_path); // Just create a new one, we will be notified of save anyway and fetch the
+						 // right UID at that time, to keep things simple.
+		}
+		else {
+			return ResourceUID::INVALID_ID;
+		}
+	}
+	else if (fs->files[cpos]->uid != ResourceUID::INVALID_ID) {
+		return fs->files[cpos]->uid;
+	}
+	else if (p_generate) {
+		return ResourceUID::create_id_for_path(
+			p_path); // Just create a new one, we will be notified of save anyway and fetch the
+					 // right UID at that time, to keep things simple.
+	}
+	else {
+		return ResourceUID::INVALID_ID;
+	}
+}
+
+bool EditorFileSystem::_can_import_file(const String& p_file)
+{
+	for (const String& F : import_extensions) {
+		if (p_file.right(F.length()).nocasecmp_to(F) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+EditorFileSystem::~EditorFileSystem()
+{
+	memdelete(filesystem);
+	filesystem = nullptr;
+	ResourceSaver::set_get_resource_id_for_path(nullptr);
+}
+
+
+bool EditorFileSystem::_scan_extensions() { return true; }
+
+#ifdef CACHE_FILE_NAME
+#undef CACHE_FILE_NAME
+#endif
+
+// ============================================================================
+// Merged from editor/file_system/editor_paths.cpp
+// ============================================================================
+
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "core/io/dir_access.h"
+#include "core/io/file_access.h"
+#include "core/os/os.h"
+#include "editor/file_system/editor_paths.h"
+#include "main/main.h"
+
+bool EditorPaths::are_paths_valid() { return data ? data->paths_valid : false; }
+
+String EditorPaths::get_data_dir() { return data ? data->data_dir : String(); }
+
+String EditorPaths::get_config_dir() { return data ? data->config_dir : String(); }
+
+String EditorPaths::get_cache_dir() { return data ? data->cache_dir : String(); }
+
+String EditorPaths::get_temp_dir() { return data ? data->temp_dir : String(); }
+
+String EditorPaths::get_project_data_dir() { return data ? data->project_data_dir : String(); }
+
+bool EditorPaths::is_self_contained() { return data ? data->self_contained : false; }
+
+String EditorPaths::get_self_contained_file()
+{
+	return data ? data->self_contained_file : String();
+}
+
+String EditorPaths::get_export_templates_dir()
+{
+	ERR_FAIL_NULL_V(data, String());
+	return get_data_dir().path_join(data->export_templates_folder);
+}
+
+String EditorPaths::get_debug_keystore_path()
+{
+#ifdef ANDROID_ENABLED
+	return "assets://keystores/debug.keystore";
+#else
+	return get_data_dir().path_join("keystores/debug.keystore");
+#endif
+}
+
+// This returns paths like "res://.godot/editor".
+String EditorPaths::get_project_settings_dir()
+{
+	return get_project_data_dir().path_join("editor");
+}
+
+String EditorPaths::get_text_editor_themes_dir()
+{
+	ERR_FAIL_NULL_V(data, String());
+	return get_config_dir().path_join(data->text_editor_themes_folder);
+}
+
+String EditorPaths::get_script_templates_dir()
+{
+	ERR_FAIL_NULL_V(data, String());
+	return get_config_dir().path_join(data->script_templates_folder);
+}
+
+String EditorPaths::get_feature_profiles_dir()
+{
+	ERR_FAIL_NULL_V(data, String());
+	return get_config_dir().path_join(data->feature_profiles_folder);
+}
+
+void EditorPaths::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void EditorPaths::initialize()
+{
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+
+	data->project_data_dir = ProjectSettings::get_project_data_path();
+
+	// Self-contained mode if a `._sc_` or `_sc_` file is present in executable dir.
+	String exe_path = OS::get_executable_path().get_base_dir();
+	Ref<DirAccess> d = DirAccess::create_for_path(exe_path);
+	if (d->file_exists(exe_path + "/._sc_")) {
+		data->self_contained = true;
+		data->self_contained_file = exe_path + "/._sc_";
+	}
+	else if (d->file_exists(exe_path + "/_sc_")) {
+		data->self_contained = true;
+		data->self_contained_file = exe_path + "/_sc_";
+	}
+
+	// On macOS, look outside .app bundle, since .app bundle is read-only.
+	// Note: This will not work if Gatekeeper path randomization is active.
+	if (OS::has_feature("macos") && exe_path.ends_with("MacOS") &&
+		exe_path.path_join("..").simplify_path().ends_with("Contents")) {
+		exe_path = exe_path.path_join("../../..").simplify_path();
+		d = DirAccess::create_for_path(exe_path);
+		if (d->file_exists(exe_path + "/._sc_")) {
+			data->self_contained = true;
+			data->self_contained_file = exe_path + "/._sc_";
+		}
+		else if (d->file_exists(exe_path + "/_sc_")) {
+			data->self_contained = true;
+			data->self_contained_file = exe_path + "/_sc_";
+		}
+	}
+
+	String data_path;
+	String config_path;
+	String cache_path;
+
+	if (data->self_contained) {
+		// editor is self contained, all in same folder
+		data_path = exe_path;
+		data->data_dir = data_path.path_join("editor_data");
+		config_path = exe_path;
+		data->config_dir = data->data_dir;
+		cache_path = exe_path;
+		data->cache_dir = data->data_dir.path_join("cache");
+		data->temp_dir = data->data_dir.path_join("temp");
+	}
+	else {
+		// Typically XDG_DATA_HOME or %APPDATA%.
+		data_path = OS::get_data_path();
+		data->data_dir = data_path.path_join(OS::get_godot_dir_name());
+		// Can be different from data_path e.g. on Linux or macOS.
+		config_path = OS::get_config_path();
+		data->config_dir = config_path.path_join(OS::get_godot_dir_name());
+		// Can be different from above paths, otherwise a subfolder of data_dir.
+		cache_path = OS::get_cache_path();
+		if (cache_path == data_path) {
+			data->cache_dir = data->data_dir.path_join("cache");
+		}
+		else {
+			data->cache_dir = cache_path.path_join(OS::get_godot_dir_name());
+		}
+		data->temp_dir = OS::get_temp_path();
+	}
+
+	data->paths_valid =
+		(!data_path.is_empty() && !config_path.is_empty() && !cache_path.is_empty());
+	ERR_FAIL_COND_MSG(!data->paths_valid, "Editor data, config, or cache paths are invalid.");
+
+	// Validate or create each dir and its relevant subdirectories.
+
+	Ref<DirAccess> dir = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+
+	// Data dir.
+	{
+		if (dir->change_dir(data->data_dir) != OK) {
+			dir->make_dir_recursive(data->data_dir);
+			if (dir->change_dir(data->data_dir) != OK) {
+				ERR_PRINT("Could not create editor data directory: " + data->data_dir);
+				data->paths_valid = false;
+			}
+		}
+
+		if (!dir->dir_exists(data->export_templates_folder)) {
+			dir->make_dir(data->export_templates_folder);
+		}
+	}
+
+	// Config dir.
+	{
+		if (dir->change_dir(data->config_dir) != OK) {
+			dir->make_dir_recursive(data->config_dir);
+			if (dir->change_dir(data->config_dir) != OK) {
+				ERR_PRINT("Could not create editor config directory: " + data->config_dir);
+				data->paths_valid = false;
+			}
+		}
+
+		if (!dir->dir_exists(data->text_editor_themes_folder)) {
+			dir->make_dir(data->text_editor_themes_folder);
+		}
+		if (!dir->dir_exists(data->script_templates_folder)) {
+			dir->make_dir(data->script_templates_folder);
+		}
+		if (!dir->dir_exists(data->feature_profiles_folder)) {
+			dir->make_dir(data->feature_profiles_folder);
+		}
+	}
+
+	// Cache dir.
+	{
+		if (dir->change_dir(data->cache_dir) != OK) {
+			dir->make_dir_recursive(data->cache_dir);
+			if (dir->change_dir(data->cache_dir) != OK) {
+				ERR_PRINT("Could not create editor cache directory: " + data->cache_dir);
+				data->paths_valid = false;
+			}
+		}
+	}
+
+	// Temporary dir.
+	{
+		if (dir->change_dir(data->temp_dir) != OK) {
+			dir->make_dir_recursive(data->temp_dir);
+			if (dir->change_dir(data->temp_dir) != OK) {
+				ERR_PRINT("Could not create editor temporary directory: " + data->temp_dir);
+				data->paths_valid = false;
+			}
+		}
+	}
+
+	// Validate or create project-specific editor data dir,
+	// including shader cache subdir.
+	if (Engine::is_project_manager_hint() ||
+		(Main::is_cmdline_tool() && !ProjectSettings::is_project_loaded())) {
+		// Nothing to create, use shared editor data dir for shader cache.
+		Engine::set_shader_cache_path(data->data_dir);
+	}
+	else {
+		Ref<DirAccess> dir_res = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+		if (dir_res->change_dir(data->project_data_dir) != OK) {
+			dir_res->make_dir_recursive(data->project_data_dir);
+			if (dir_res->change_dir(data->project_data_dir) != OK) {
+				ERR_PRINT("Could not create project data directory (" + data->project_data_dir +
+						  ") in: " + dir_res->get_current_dir());
+				data->paths_valid = false;
+			}
+		}
+
+		// Check that the project data directory `.gdignore` file exists.
+		String project_data_gdignore_file_path = data->project_data_dir.path_join(".gdignore");
+		if (!FileAccess::exists(project_data_gdignore_file_path)) {
+			// Add an empty .gdignore file to avoid scan.
+			Ref<FileAccess> f =
+				FileAccess::open(project_data_gdignore_file_path, FileAccess::WRITE);
+			if (f.is_valid()) {
+				f->store_line("");
+			}
+			else {
+				ERR_PRINT("Failed to create file " + project_data_gdignore_file_path.quote() + ".");
+			}
+		}
+
+		Engine::set_shader_cache_path(data->project_data_dir);
+
+		// Editor metadata dir.
+		if (!dir_res->dir_exists("editor")) {
+			dir_res->make_dir("editor");
+		}
+		// Imported assets dir.
+		String imported_files_path = ProjectSettings::get_imported_files_path();
+		if (!dir_res->dir_exists(imported_files_path)) {
+			dir_res->make_dir(imported_files_path);
+		}
+	}
+}
+
+
+
+// ============================================================================
+// Merged from editor/file_system/file_info.cpp
+// ============================================================================
+// --- Inlined from editor/file_system/file_info.h ---
+#include "core/string/ustring.h"
+#include "core/templates/list.h"
+
+enum class FileSortOption {
+	FILE_SORT_NAME = 0,
+	FILE_SORT_NAME_REVERSE = 1,
+	FILE_SORT_TYPE = 2,
+	FILE_SORT_TYPE_REVERSE = 3,
+	FILE_SORT_MODIFIED_TIME = 4,
+	FILE_SORT_MODIFIED_TIME_REVERSE = 5,
+	FILE_SORT_MAX = 6,
+};
+
+struct FileInfo {
+	String name;
+	String path;
+	String icon_path;
+	String type;
+	Vector<String> sources;
+	bool import_broken = false;
+	uint64_t modified_time = 0;
+
+	bool operator<(const FileInfo &p_fi) const {
+		return FileNoCaseComparator()(name, p_fi.name);
+	}
+};
+
+struct FileInfoTypeComparator {
+	bool operator()(const FileInfo &p_a, const FileInfo &p_b) const {
+		return FileNoCaseComparator()(p_a.name.get_extension() + p_a.type + p_a.name.get_basename(), p_b.name.get_extension() + p_b.type + p_b.name.get_basename());
+	}
+};
+
+struct FileInfoModifiedTimeComparator {
+	bool operator()(const FileInfo &p_a, const FileInfo &p_b) const {
+		return p_a.modified_time > p_b.modified_time;
+	}
+};
+
+void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort_option);
+
+// --- End editor/file_system/file_info.h ---
+
+void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort_option) {
+	// Sort the file list if needed.
+	switch (p_file_sort_option) {
+		case FileSortOption::FILE_SORT_TYPE:
+			r_file_list.sort_custom<FileInfoTypeComparator>();
+			break;
+		case FileSortOption::FILE_SORT_TYPE_REVERSE:
+			r_file_list.sort_custom<FileInfoTypeComparator>();
+			r_file_list.reverse();
+			break;
+		case FileSortOption::FILE_SORT_MODIFIED_TIME:
+			r_file_list.sort_custom<FileInfoModifiedTimeComparator>();
+			break;
+		case FileSortOption::FILE_SORT_MODIFIED_TIME_REVERSE:
+			r_file_list.sort_custom<FileInfoModifiedTimeComparator>();
+			r_file_list.reverse();
+			break;
+		case FileSortOption::FILE_SORT_NAME_REVERSE:
+			r_file_list.sort();
+			r_file_list.reverse();
+			break;
+		case FileSortOption::FILE_SORT_NAME:
+			r_file_list.sort();
+			break;
+		default:
+			ERR_FAIL_MSG("Invalid file sort option.");
+			break;
+	}
+}

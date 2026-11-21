@@ -31,7 +31,7 @@
 
 #include "api.h"
 #include "java_class_wrapper.h"
-#include "jni_singleton.h"
+#include "platform/android/os_android.h"
 
 void unregister_android_api()
 {
@@ -63,5 +63,77 @@ void JavaClassWrapper::finalize() {}
 Ref<JavaClass> JavaClassWrapper::_wrap(const String&, bool) { return Ref<JavaClass>(); }
 
 void register_android_api() {}
+
+#endif
+
+// ============================================================================
+// Merged from platform/ios/api/api.cpp
+// ============================================================================
+
+#include "platform/ios/api/api.h"
+
+#if defined(IOS_ENABLED)
+
+void register_ios_api() {
+	godot_apple_embedded_plugins_initialize();
+}
+
+void unregister_ios_api() {
+	godot_apple_embedded_plugins_deinitialize();
+}
+
+#else
+
+void register_ios_api() {}
+void unregister_ios_api() {}
+
+#endif // IOS_ENABLED
+
+// ============================================================================
+// Merged from platform/visionos/api/api.cpp
+// ============================================================================
+
+#include "platform/visionos/api/api.h"
+
+#if defined(VISIONOS_ENABLED)
+
+void register_visionos_api() {
+	godot_apple_embedded_plugins_initialize();
+}
+
+void unregister_visionos_api() {
+	godot_apple_embedded_plugins_deinitialize();
+}
+
+#else
+
+void register_visionos_api() {}
+void unregister_visionos_api() {}
+
+#endif // VISIONOS_ENABLED
+
+// ============================================================================
+// Merged from platform/web/api/api.cpp
+// ============================================================================
+
+#include "platform/web/api/api.h"
+#include "platform/web/os_web.h"
+
+void unregister_web_api() {}
+
+void register_web_api() {}
+
+#if !defined(WEB_ENABLED)
+
+bool JavaScriptBridge::pwa_needs_update() { return false; }
+
+Error JavaScriptBridge::pwa_update() { return ERR_UNAVAILABLE; }
+
+void JavaScriptBridge::force_fs_sync() {}
+
+void JavaScriptBridge::download_buffer(
+	Vector<uint8_t> p_arr, const String& p_name, const String& p_mime)
+{
+}
 
 #endif

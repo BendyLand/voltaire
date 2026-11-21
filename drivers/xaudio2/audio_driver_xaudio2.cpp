@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "audio_driver_xaudio2.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/config/engine.h"
 #include "core/math/math_funcs_binary.h"

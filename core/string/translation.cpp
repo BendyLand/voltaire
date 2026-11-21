@@ -4884,7 +4884,7 @@ String StringBuilder::as_string() const {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "fuzzy_search.h"
+#include "core/string/translation_server.h"
 
 static const String boundary_chars = "/\\-_. ";
 

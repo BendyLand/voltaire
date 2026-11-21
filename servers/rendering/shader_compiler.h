@@ -405,3 +405,26 @@ public:
 
 
 // --- End servers/rendering/shader_types.h ---
+
+// --- Folded from servers/rendering/shader_include_db.h ---
+#include "core/types.h"
+
+class ShaderIncludeDB
+{
+private:
+	static HashMap<String, String> built_in_includes;
+
+protected:
+
+public:
+	static void register_built_in_include_file(
+		const String& p_filename, const String& p_shader_code);
+	static PackedStringArray list_built_in_include_files();
+	static bool has_built_in_include_file(const String& p_filename);
+	static String get_built_in_include_file(const String& p_filename);
+	static String parse_include_files(const String& p_code);
+};
+
+
+
+// --- End servers/rendering/shader_include_db.h ---

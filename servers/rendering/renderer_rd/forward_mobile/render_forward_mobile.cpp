@@ -31,7 +31,7 @@
 
 #include "servers/rendering/renderer_rd/rd_caches.h"
 #include "core/config/project_settings.h"
-#include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"

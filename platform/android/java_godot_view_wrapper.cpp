@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "java_godot_view_wrapper.h"
+#include "platform/android/java_godot_wrapper.h"
 
 #include "thread_jandroid.h"
 

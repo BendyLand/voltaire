@@ -54,9 +54,273 @@
 #include "core/typedefs.h"
 
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
+// --- Folded from drivers/metal/inflection_map.h ---
+#include "core/templates/hash_map.h"
+#include "core/templates/local_vector.h"
 
-#include "drivers/metal/inflection_map.h"
-#include "drivers/metal/metal_device_properties.h"
+#include <iterator>
+
+/// An unordered map that splits elements between a fast-access vector of LinearCount consecutively
+/// indexed elements, and a slower-access map holding sparse indexes larger than LinearCount.
+///
+/// \tparam KeyType is used to lookup values, and must be a type that is convertible to an unsigned integer.
+/// \tparam ValueType must have an empty constructor (default or otherwise).
+/// \tparam LinearCount
+/// \tparam IndexType must be a type that is convertible to an unsigned integer (eg. uint8_t...uint64_t), and which is large enough to represent the number of values in this map.
+template <typename KeyType, typename ValueType, size_t LinearCount, typename IndexType = uint16_t>
+class InflectionMap {
+public:
+	using value_type = ValueType;
+	class Iterator {
+		InflectionMap *map;
+		IndexType index;
+
+	public:
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = ValueType;
+		using pointer = value_type *;
+		using reference = value_type &;
+
+		Iterator() :
+				map(nullptr), index(0) {}
+		Iterator(InflectionMap &p_m, const IndexType p_i) :
+				map(&p_m), index(p_i) {}
+
+		Iterator &operator=(const Iterator &p_it) {
+			map = p_it.map;
+			index = p_it.index;
+			return *this;
+		}
+
+		ValueType *operator->() { return &map->_values[index]; }
+		ValueType &operator*() { return map->_values[index]; }
+		operator ValueType *() { return &map->_values[index]; }
+
+		bool operator==(const Iterator &p_it) const { return map == p_it.map && index == p_it.index; }
+		bool operator!=(const Iterator &p_it) const { return map != p_it.map || index != p_it.index; }
+
+		Iterator &operator++() {
+			index++;
+			return *this;
+		}
+		Iterator operator++(int) {
+			Iterator t = *this;
+			index++;
+			return t;
+		}
+
+		bool is_valid() const { return index < map->_values.size(); }
+	};
+
+	const ValueType &operator[](const KeyType p_idx) const { return get_value(p_idx); }
+	ValueType &operator[](const KeyType p_idx) { return get_value(p_idx); }
+
+	Iterator begin() { return Iterator(*this, 0); }
+	Iterator end() { return Iterator(*this, _values.size()); }
+
+	bool is_empty() { return _values.is_empty(); }
+	size_t size() { return _values.size(); }
+	void reserve(size_t p_new_cap) { _values.reserve(p_new_cap); }
+
+protected:
+	static constexpr IndexType INVALID = std::numeric_limits<IndexType>::max();
+	typedef struct IndexValue {
+		IndexType value = INVALID;
+	} IndexValue;
+
+	// Returns a reference to the value at the index.
+	// If the index has not been initialized, add an empty element at
+	// the end of the values array, and set the index to its position.
+	ValueType &get_value(KeyType p_idx) {
+		IndexValue *val_idx = p_idx < LinearCount ? &_linear_indexes[p_idx] : _inflection_indexes.getptr(p_idx);
+		if (val_idx == nullptr || val_idx->value == INVALID) {
+			_values.push_back({});
+			if (val_idx == nullptr) {
+				val_idx = &_inflection_indexes.insert(p_idx, {})->value;
+			}
+			val_idx->value = _values.size() - 1;
+		}
+		return _values[val_idx->value];
+	}
+
+	TightLocalVector<ValueType> _values;
+	HashMap<KeyType, IndexValue> _inflection_indexes;
+	IndexValue _linear_indexes[LinearCount];
+};
+
+// --- End drivers/metal/inflection_map.h ---
+// --- Folded from drivers/metal/metal_device_properties.h ---
+/**************************************************************************/
+/*                                                                        */
+/* Portions of this code were derived from MoltenVK.                      */
+/*                                                                        */
+/* Copyright (c) 2015-2023 The Brenwill Workshop Ltd.                     */
+/* (http://www.brenwill.com)                                              */
+/*                                                                        */
+/* Licensed under the Apache License, Version 2.0 (the "License");        */
+/* you may not use this file except in compliance with the License.       */
+/* You may obtain a copy of the License at                                */
+/*                                                                        */
+/*     http://www.apache.org/licenses/LICENSE-2.0                         */
+/*                                                                        */
+/* Unless required by applicable law or agreed to in writing, software    */
+/* distributed under the License is distributed on an "AS IS" BASIS,      */
+/* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or        */
+/* implied. See the License for the specific language governing           */
+/* permissions and limitations under the License.                         */
+/**************************************************************************/
+
+#include "servers/rendering/rendering_device_driver.h"
+
+#include <Metal/Metal.hpp>
+
+#include <cstddef>
+
+/** The buffer index to use for vertex content. */
+const static uint32_t VERT_CONTENT_BUFFER_INDEX = 0;
+const static uint32_t MAX_COLOR_ATTACHMENT_COUNT = 8;
+
+enum SampleCount : NS::UInteger {
+	SampleCount1 = (1UL << 0),
+	SampleCount2 = (1UL << 1),
+	SampleCount4 = (1UL << 2),
+	SampleCount8 = (1UL << 3),
+	SampleCount16 = (1UL << 4),
+	SampleCount32 = (1UL << 5),
+	SampleCount64 = (1UL << 6),
+};
+
+_FORCE_INLINE_ SampleCount operator|(SampleCount a, SampleCount b) {
+	return static_cast<SampleCount>(static_cast<NS::UInteger>(a) | static_cast<NS::UInteger>(b));
+}
+
+_FORCE_INLINE_ SampleCount &operator|=(SampleCount &a, SampleCount b) {
+	return a = a | b;
+}
+
+_FORCE_INLINE_ SampleCount operator<<(SampleCount a, int shift) {
+	return static_cast<SampleCount>(static_cast<NS::UInteger>(a) << shift);
+}
+
+_FORCE_INLINE_ SampleCount &operator<<=(SampleCount &a, int shift) {
+	return a = a << shift;
+}
+
+struct API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0)) MetalFeatures {
+	/// Maximum version of the Metal Shading Language version available.
+	uint32_t msl_max_version = 0;
+	/*! @brief Target version of the Metal Shading Language used to translate shaders.
+	 *
+	 * This can be used to override the features used to generate shaders. Primarily
+	 * for engine developers for testing.
+	 */
+	uint32_t msl_target_version = 0;
+	MTL::GPUFamily highestFamily = MTL::GPUFamilyApple4;
+	bool supportsBCTextureCompression = false;
+	bool supportsDepth24Stencil8 = false;
+	bool supports32BitFloatFiltering = false;
+	bool supports32BitMSAA = false;
+	bool supportsMac = TARGET_OS_OSX;
+	SampleCount supportedSampleCounts = SampleCount1;
+	long hostMemoryPageSize = 0;
+	bool layeredRendering = false;
+	bool multisampleLayeredRendering = false;
+	bool quadPermute = false; /**< If true, quadgroup permutation functions (vote, ballot, shuffle) are supported in shaders. */
+	bool simdPermute = false; /**< If true, SIMD-group permutation functions (vote, ballot, shuffle) are supported in shaders. */
+	bool simdReduction = false; /**< If true, SIMD-group reduction functions (arithmetic) are supported in shaders. */
+	bool tessellationShader = false; /**< If true, tessellation shaders are supported. */
+	bool imageCubeArray = false; /**< If true, image cube arrays are supported. */
+	MTL::ArgumentBuffersTier argument_buffers_tier = MTL::ArgumentBuffersTier1;
+	bool needs_arg_encoders = true; /**< If true, argument encoders are required to encode arguments into an argument buffer. */
+	bool use_argument_buffers = true; /**< If true, argument buffers are can be used instead of slot binding, if available. */
+	bool metal_fx_spatial = false; /**< If true, Metal FX spatial functions are supported. */
+	bool metal_fx_temporal = false; /**< If true, Metal FX temporal functions are supported. */
+	bool supports_gpu_address = false; /**< If true, referencing a GPU address in a shader is supported. */
+	bool supports_image_atomic_32_bit = false; /**< If true, 32-bit atomic operations on images are supported by the GPU. */
+	bool supports_image_atomic_64_bit = false; /**< If true, 64-bit atomic operations on images are supported by the GPU. */
+	bool supports_native_image_atomics = false; /**< If true, native image atomic operations are supported by the OS. */
+	bool supports_border_color = false; /**< If true, sampler border color (clamp-to-border) is supported. Requires Apple7+. */
+	bool supports_residency_sets = false; /**< If true, residency sets (MTLResidencySet) are supported by the OS. */
+	bool supports_msaa_depth_resolve = false;
+
+	/*!
+	 * Check if argument buffers are fully supported, which requires tier 2 support and no need for argument encoders.
+	 */
+	_FORCE_INLINE_ bool argument_buffers_supported() const {
+		return argument_buffers_tier == MTL::ArgumentBuffersTier2 && needs_arg_encoders == false;
+	}
+
+	/*!
+	 * Check if argument buffers can be used, which requires that they are supported and that the user has enabled their use.
+	 */
+	_FORCE_INLINE_ bool argument_buffers_enabled() const {
+		return use_argument_buffers && argument_buffers_supported();
+	}
+};
+
+struct MetalLimits {
+	uint64_t maxImageArrayLayers;
+	uint64_t maxFramebufferHeight;
+	uint64_t maxFramebufferWidth;
+	uint64_t maxImageDimension1D;
+	uint64_t maxImageDimension2D;
+	uint64_t maxImageDimension3D;
+	uint64_t maxImageDimensionCube;
+	uint64_t maxViewportDimensionX;
+	uint64_t maxViewportDimensionY;
+	MTL::Size maxThreadsPerThreadGroup;
+	MTL::Size maxComputeWorkGroupCount;
+	uint64_t maxBoundDescriptorSets;
+	uint64_t maxColorAttachments;
+	uint64_t maxTexturesPerArgumentBuffer;
+	uint64_t maxSamplersPerArgumentBuffer;
+	uint64_t maxBuffersPerArgumentBuffer;
+	uint64_t maxBufferLength;
+	uint64_t minUniformBufferOffsetAlignment;
+	uint64_t maxVertexDescriptorLayoutStride;
+	uint16_t maxViewports;
+	uint32_t maxPerStageBufferCount; /**< The total number of per-stage Metal buffers available for shader uniform content and attributes. */
+	uint32_t maxPerStageTextureCount; /**< The total number of per-stage Metal textures available for shader uniform content. */
+	uint32_t maxPerStageSamplerCount; /**< The total number of per-stage Metal samplers available for shader uniform content. */
+	uint32_t maxVertexInputAttributes;
+	uint32_t maxVertexInputBindings;
+	uint32_t maxVertexInputBindingStride;
+	uint32_t maxDrawIndexedIndexValue;
+	uint32_t maxShaderVaryings;
+	uint32_t maxThreadGroupMemoryAllocation;
+
+	double temporalScalerInputContentMinScale;
+	double temporalScalerInputContentMaxScale;
+
+	uint32_t minSubgroupSize; /**< The minimum number of threads in a SIMD-group. */
+	uint32_t maxSubgroupSize; /**< The maximum number of threads in a SIMD-group. */
+	uint32_t subgroupSupportedShaderStages;
+	uint32_t subgroupSupportedOperations; /**< The subgroup operations supported by the device. */
+};
+
+class API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0)) MetalDeviceProperties {
+private:
+	void init_features(MTL::Device *p_device);
+	void init_limits(MTL::Device *p_device);
+	void init_os_props();
+
+public:
+	MetalFeatures features;
+	MetalLimits limits;
+
+	// maj * 10000 + min * 100 + patch
+	uint32_t os_version;
+
+	SampleCount find_nearest_supported_sample_count(RDD::TextureSamples p_samples) const;
+
+	MetalDeviceProperties(MTL::Device *p_device);
+	~MetalDeviceProperties();
+
+private:
+	static const SampleCount sample_count[RDD::TextureSamples::TEXTURE_SAMPLES_MAX];
+};
+
+// --- End drivers/metal/metal_device_properties.h ---
 #include "servers/rendering/rendering_device_commons.h"
 
 #ifdef __OBJC__

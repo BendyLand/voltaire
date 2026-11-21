@@ -574,7 +574,6 @@ public:
 
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/dialogs.h"
-#include "scene/gui/rich_text_label.h"
 
 void AndroidEditorGradleRunner::run_gradle(const String &p_project_path, const String &p_build_path, const String &p_output_path, const String &p_export_format, const List<String> &p_gradle_build_args, const List<String> &p_gradle_copy_args) {
 	project_path = p_project_path;

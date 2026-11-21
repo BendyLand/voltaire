@@ -52,11 +52,8 @@ if env.editor_build:
     env.add_source_files(env.editor_sources, translation_targets.keys())
 
     SConscript("export/SCsub")
-    SConscript("file_system/SCsub")
     SConscript("import/SCsub")
-    SConscript("project_manager/SCsub")
     SConscript("project_upgrade/SCsub")
-    SConscript("settings/SCsub")
     SConscript("shader/SCsub")
     SConscript("themes/SCsub")
 

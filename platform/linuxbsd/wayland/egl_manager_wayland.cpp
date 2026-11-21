@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "egl_manager_wayland.h"
+#include "platform/linuxbsd/wayland/display_server_wayland.h"
 
 #ifdef WAYLAND_ENABLED
 #ifdef EGL_ENABLED
@@ -119,7 +119,7 @@ Vector<EGLint> EGLManagerWayland::_get_platform_context_attribs() const {
 // Merged from platform/linuxbsd/wayland/egl_manager_wayland_gles.cpp
 // ============================================================================
 
-#include "platform/linuxbsd/wayland/egl_manager_wayland.h"
+#include "platform/linuxbsd/wayland/display_server_wayland.h"
 
 #ifdef WAYLAND_ENABLED
 #ifdef EGL_ENABLED

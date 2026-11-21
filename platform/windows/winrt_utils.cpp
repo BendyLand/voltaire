@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "winrt_utils.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/typedefs.h"
 

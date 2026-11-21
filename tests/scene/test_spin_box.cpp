@@ -36,7 +36,7 @@ TEST_FORCE_LINK(test_spin_box)
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "core/math/math_defs.h"
-#include "scene/gui/spin_box.h"
+#include "scene/gui/line_edit.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 

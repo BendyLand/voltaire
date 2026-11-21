@@ -35,7 +35,7 @@
 #include "gltf_extensions.h"
 #include "gltf_state.h"
 #include "scene/3d/mesh_instance_3d.h"
-#include "scene/3d/multimesh_instance_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 
 class CSGShape3D;
 class GridMap;

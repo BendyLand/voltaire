@@ -31,13 +31,10 @@
 
 #include "display_server_windows.h"
 
-#include "drop_target_windows.h"
-#include "key_mapping_windows.h"
-#include "native_menu_windows.h"
+#include "platform/windows/display_server_windows.h"
 #include "os_windows.h"
-#include "tts_windows.h"
-#include "wgl_detect_version.h"
-#include "winrt_utils.h"
+#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -61,7 +58,7 @@
 #endif
 
 #if defined(VULKAN_ENABLED)
-#include "rendering_context_driver_vulkan_windows.h"
+#include "platform/windows/display_server_windows.h"
 #endif
 #if defined(D3D12_ENABLED)
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"

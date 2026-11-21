@@ -46,12 +46,12 @@
 #include "scene/gui/scroll_container.h"
 #include "servers/display/display_server.h"
 #include "popup.h"
-#include "scene/gui/panel.h"
+#include "scene/gui/dialogs.h"
 #include "scene/resources/style_box.h"
 #include "core/input/input.h"
-#include "core/string/fuzzy_search.h"
+#include "core/string/translation_server.h"
 #include "popup_menu.h"
-#include "scene/gui/graph_edit.h"
+#include "scene/gui/dialogs.h"
 #include "scene/gui/button.h"
 #include "scene/main/timer.h"
 
@@ -2696,7 +2696,7 @@ void PopupMenu::_bind_compatibility_methods() {}
 // Merged from scene/gui/color_picker.cpp
 // ============================================================================
 
-#include "color_picker.h"
+#include "scene/gui/dialogs.h"
 #include "core/config/engine.h"
 #include "core/input/input.h"
 #include "core/io/image.h"
@@ -2707,14 +2707,14 @@ void PopupMenu::_bind_compatibility_methods() {}
 #include "scene/gui/label.h"
 #include "scene/gui/line_edit.h"
 #include "scene/gui/button.h"
-#include "scene/gui/panel.h"
+#include "scene/gui/dialogs.h"
 #include "scene/gui/popup_menu.h"
-#include "scene/gui/slider.h"
-#include "scene/gui/spin_box.h"
-#include "scene/gui/texture_rect.h"
+#include "scene/gui/range.h"
+#include "scene/gui/line_edit.h"
+#include "scene/gui/button.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/atlas_texture.h"
-#include "scene/gui/color_picker.h"
+#include "scene/gui/dialogs.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/style_box.h"
 #include "scene/theme/theme_db.h"
@@ -2725,7 +2725,7 @@ void PopupMenu::_bind_compatibility_methods() {}
 #include <thirdparty/misc/ok_color_shader.h>
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
-#include "scene/gui/color_picker.h"
+#include "scene/gui/dialogs.h"
 
 #ifdef MACOS_ENABLED
 #include "core/os/os.h"
@@ -4643,20 +4643,20 @@ void ColorRect::set_color(const Color& p_color)
 #include "core/math/geometry_2d.h"
 #include "core/math/math_funcs.h"
 #include "core/os/keyboard.h"
-#include "graph_edit.h"
+#include "scene/gui/dialogs.h"
 #include "scene/2d/line_2d.h"
 #include "scene/gui/button.h"
 #include "scene/gui/label.h"
-#include "scene/gui/panel.h"
+#include "scene/gui/dialogs.h"
 #include "scene/gui/scroll_bar.h"
-#include "scene/gui/spin_box.h"
+#include "scene/gui/line_edit.h"
 #include "scene/resources/material.h"
 #include "scene/resources/style_box.h"
 #include "scene/theme/theme_db.h"
 #include <cfloat>
 #include "core/input/shortcut.h"
 #include "scene/main/viewport.h"
-#include "scene/gui/graph_edit.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "servers/display/accessibility_server.h"
 
@@ -6158,3 +6158,9170 @@ void GraphNode::_resort()
 		fit_child_in_rect(titlebar_hbox, titlebar_rect);
 	}
 }
+
+// ============================================================================
+// Merged from scene/gui/tree.cpp
+// ============================================================================
+
+#include <climits>
+#include "core/config/project_settings.h"
+#include "core/input/input.h"
+#include "core/math/math_funcs.h"
+#include "core/os/keyboard.h"
+#include "core/os/os.h"
+#include "scene/gui/line_edit.h"
+#include "scene/gui/popup_menu.h"
+#include "scene/gui/scroll_bar.h"
+#include "scene/gui/range.h"
+#include "scene/gui/text_edit.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/timer.h"
+#include "scene/main/window.h"
+#include "scene/theme/theme_db.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
+#include "tree.h"
+
+Size2 TreeItem::Cell::get_icon_size() const
+{
+	if (icon.is_null()) {
+		return Size2();
+	}
+	if (icon_region == Rect2i()) {
+		return icon->get_size();
+	}
+	else {
+		return icon_region.size;
+	}
+}
+
+void TreeItem::Cell::draw_icon(const RID& p_where, const Point2& p_pos, const Size2& p_size,
+	const Rect2i& p_region, const Color& p_color) const
+{
+	if (icon.is_null()) {
+		return;
+	}
+
+	Size2i dsize = (p_size == Size2()) ? icon->get_size() : p_size;
+
+	if (p_region == Rect2i()) {
+		icon->draw_rect_region(
+			p_where, Rect2(p_pos, dsize), Rect2(Point2(), icon->get_size()), p_color);
+		if (icon_overlay.is_valid()) {
+			Vector2 offset = icon->get_size() - icon_overlay->get_size();
+			icon_overlay->draw_rect_region(p_where, Rect2(p_pos + offset, dsize),
+				Rect2(Point2(), icon_overlay->get_size()), p_color);
+		}
+	}
+	else {
+		icon->draw_rect_region(p_where, Rect2(p_pos, dsize), p_region, p_color);
+		if (icon_overlay.is_valid()) {
+			icon_overlay->draw_rect_region(p_where, Rect2(p_pos, dsize), p_region, p_color);
+		}
+	}
+}
+
+void TreeItem::_changed_notify(int p_cell)
+{
+	if (tree) {
+		tree->item_changed(p_cell, this);
+	}
+}
+
+void TreeItem::_changed_notify()
+{
+	if (tree) {
+		tree->item_changed(-1, this);
+	}
+}
+
+void TreeItem::_cell_selected(int p_cell, bool p_set_as_cursor)
+{
+	if (tree) {
+		tree->item_selected(p_cell, this, p_set_as_cursor);
+	}
+}
+
+void TreeItem::_cell_deselected(int p_cell)
+{
+	if (tree) {
+		tree->item_deselected(p_cell, this);
+	}
+}
+
+void TreeItem::set_cell_mode(int p_column, TreeCellMode p_mode)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].mode == p_mode) {
+		return;
+	}
+
+	Cell& c = cells.write[p_column];
+	c.mode = p_mode;
+	c.min = 0;
+	c.max = 100;
+	c.step = 1;
+	c.val = 0;
+	c.checked = false;
+	c.icon = Ref<Texture2D>();
+	c.text = "";
+	c.dirty = true;
+	c.icon_max_w = 0;
+	c.cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+TreeItem::TreeCellMode TreeItem::get_cell_mode(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), TreeItem::CELL_MODE_STRING);
+	return cells[p_column].mode;
+}
+
+void TreeItem::set_auto_translate_mode(int p_column, Node::AutoTranslateMode p_mode)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].auto_translate_mode == p_mode) {
+		return;
+	}
+
+	cells.write[p_column].auto_translate_mode = p_mode;
+	cells.write[p_column].dirty = true;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+Node::AutoTranslateMode TreeItem::get_auto_translate_mode(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Node::AUTO_TRANSLATE_MODE_INHERIT);
+	return cells[p_column].auto_translate_mode;
+}
+
+void TreeItem::set_edit_multiline(int p_column, bool p_multiline)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	cells.write[p_column].edit_multiline = p_multiline;
+	_changed_notify(p_column);
+}
+
+bool TreeItem::is_edit_multiline(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	return cells[p_column].edit_multiline;
+}
+
+void TreeItem::set_checked(int p_column, bool p_checked)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].checked == p_checked) {
+		return;
+	}
+
+	cells.write[p_column].checked = p_checked;
+	cells.write[p_column].indeterminate = false;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+void TreeItem::set_indeterminate(int p_column, bool p_indeterminate)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	// Prevent uncheck if indeterminate set to false twice.
+	if (p_indeterminate == cells[p_column].indeterminate) {
+		return;
+	}
+
+	cells.write[p_column].indeterminate = p_indeterminate;
+	cells.write[p_column].checked = false;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+bool TreeItem::is_checked(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	return cells[p_column].checked;
+}
+
+bool TreeItem::is_indeterminate(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	return cells[p_column].indeterminate;
+}
+
+String TreeItem::get_text(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), "");
+	return cells[p_column].text;
+}
+
+String TreeItem::get_description(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), "");
+	return cells[p_column].description;
+}
+
+void TreeItem::set_text_direction(int p_column, Control::TextDirection p_text_direction)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
+
+	if (cells[p_column].text_direction == p_text_direction) {
+		return;
+	}
+
+	cells.write[p_column].text_direction = p_text_direction;
+	cells.write[p_column].dirty = true;
+	_changed_notify(p_column);
+	cells.write[p_column].cached_minimum_size_dirty = true;
+}
+
+Control::TextDirection TreeItem::get_text_direction(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Control::TEXT_DIRECTION_INHERITED);
+	return cells[p_column].text_direction;
+}
+
+void TreeItem::set_autowrap_mode(int p_column, TextServer::AutowrapMode p_mode)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	ERR_FAIL_COND(p_mode < TextServer::AUTOWRAP_OFF || p_mode > TextServer::AUTOWRAP_WORD_SMART);
+
+	if (cells[p_column].autowrap_mode == p_mode) {
+		return;
+	}
+
+	cells.write[p_column].autowrap_mode = p_mode;
+	cells.write[p_column].dirty = true;
+	_changed_notify(p_column);
+	cells.write[p_column].cached_minimum_size_dirty = true;
+}
+
+TextServer::AutowrapMode TreeItem::get_autowrap_mode(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), TextServer::AUTOWRAP_OFF);
+	return cells[p_column].autowrap_mode;
+}
+
+void TreeItem::set_autowrap_trim_flags(int p_column, uint32_t p_flags)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	// Only trim-related flags are valid for this property.
+	uint32_t masked_flags = p_flags & TextServer::BREAK_TRIM_MASK;
+	if (cells[p_column].autowrap_trim_flags == masked_flags) {
+		return;
+	}
+
+	cells.write[p_column].autowrap_trim_flags = masked_flags;
+	cells.write[p_column].dirty = true;
+	_changed_notify(p_column);
+	cells.write[p_column].cached_minimum_size_dirty = true;
+}
+
+uint32_t TreeItem::get_autowrap_trim_flags(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(),
+		TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES);
+	return cells[p_column].autowrap_trim_flags;
+}
+
+void TreeItem::set_text_overrun_behavior(int p_column, TextServer::OverrunBehavior p_behavior)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].text_buf->get_text_overrun_behavior() == p_behavior) {
+		return;
+	}
+
+	cells.write[p_column].text_buf->set_text_overrun_behavior(p_behavior);
+	cells.write[p_column].dirty = true;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+	_changed_notify(p_column);
+}
+
+TextServer::OverrunBehavior TreeItem::get_text_overrun_behavior(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), TextServer::OVERRUN_TRIM_ELLIPSIS);
+	return cells[p_column].text_buf->get_text_overrun_behavior();
+}
+
+void TreeItem::set_structured_text_bidi_override(
+	int p_column, TextServer::StructuredTextParser p_parser)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].st_parser != p_parser) {
+		cells.write[p_column].st_parser = p_parser;
+		cells.write[p_column].dirty = true;
+		cells.write[p_column].cached_minimum_size_dirty = true;
+
+		_changed_notify(p_column);
+	}
+}
+
+TextServer::StructuredTextParser TreeItem::get_structured_text_bidi_override(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), TextServer::STRUCTURED_TEXT_DEFAULT);
+	return cells[p_column].st_parser;
+}
+
+void TreeItem::set_language(int p_column, const String& p_language)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].language != p_language) {
+		cells.write[p_column].language = p_language;
+		cells.write[p_column].dirty = true;
+		cells.write[p_column].cached_minimum_size_dirty = true;
+
+		_changed_notify(p_column);
+	}
+}
+
+String TreeItem::get_language(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), "");
+	return cells[p_column].language;
+}
+
+void TreeItem::set_suffix(int p_column, String p_suffix)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].suffix == p_suffix) {
+		return;
+	}
+
+	cells.write[p_column].suffix = p_suffix;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+String TreeItem::get_suffix(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), "");
+	return cells[p_column].suffix;
+}
+
+void TreeItem::set_icon(int p_column, const Ref<Texture2D>& p_icon)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].icon == p_icon) {
+		return;
+	}
+
+	cells.write[p_column].icon = p_icon;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+Ref<Texture2D> TreeItem::get_icon(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Ref<Texture2D>());
+	return cells[p_column].icon;
+}
+
+void TreeItem::set_icon_overlay(int p_column, const Ref<Texture2D>& p_icon_overlay)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].icon_overlay == p_icon_overlay) {
+		return;
+	}
+
+	cells.write[p_column].icon_overlay = p_icon_overlay;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+Ref<Texture2D> TreeItem::get_icon_overlay(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Ref<Texture2D>());
+	return cells[p_column].icon_overlay;
+}
+
+void TreeItem::set_icon_region(int p_column, const Rect2& p_icon_region)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].icon_region == p_icon_region) {
+		return;
+	}
+
+	cells.write[p_column].icon_region = p_icon_region;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+Rect2 TreeItem::get_icon_region(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Rect2());
+	return cells[p_column].icon_region;
+}
+
+void TreeItem::set_icon_modulate(int p_column, const Color& p_modulate)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].icon_color == p_modulate) {
+		return;
+	}
+
+	cells.write[p_column].icon_color = p_modulate;
+	_changed_notify(p_column);
+}
+
+Color TreeItem::get_icon_modulate(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Color());
+	return cells[p_column].icon_color;
+}
+
+void TreeItem::set_icon_max_width(int p_column, int p_max)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].icon_max_w == p_max) {
+		return;
+	}
+
+	cells.write[p_column].icon_max_w = p_max;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+int TreeItem::get_icon_max_width(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), 0);
+	return cells[p_column].icon_max_w;
+}
+
+void TreeItem::set_range(int p_column, double p_value)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	if (cells[p_column].step > 0) {
+		p_value = Math::snapped(p_value, cells[p_column].step);
+	}
+	if (p_value < cells[p_column].min) {
+		p_value = cells[p_column].min;
+	}
+	if (p_value > cells[p_column].max) {
+		p_value = cells[p_column].max;
+	}
+
+	if (cells[p_column].val == p_value) {
+		return;
+	}
+
+	cells.write[p_column].val = p_value;
+	cells.write[p_column].dirty = true;
+	_changed_notify(p_column);
+}
+
+double TreeItem::get_range(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), 0);
+	return cells[p_column].val;
+}
+
+bool TreeItem::is_range_exponential(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	return cells[p_column].expr;
+}
+
+void TreeItem::set_range_config(int p_column, double p_min, double p_max, double p_step, bool p_exp)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].min == p_min && cells[p_column].max == p_max &&
+		cells[p_column].step == p_step && cells[p_column].expr == p_exp) {
+		return;
+	}
+
+	cells.write[p_column].min = p_min;
+	cells.write[p_column].max = p_max;
+	cells.write[p_column].step = p_step;
+	cells.write[p_column].expr = p_exp;
+	_changed_notify(p_column);
+}
+
+void TreeItem::get_range_config(int p_column, double& r_min, double& r_max, double& r_step) const
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	r_min = cells[p_column].min;
+	r_max = cells[p_column].max;
+	r_step = cells[p_column].step;
+}
+
+void TreeItem::set_collapsed(bool p_collapsed) {}
+
+bool TreeItem::is_collapsed() { return collapsed; }
+
+void TreeItem::set_collapsed_recursive(bool p_collapsed)
+{
+	if (!tree) {
+		return;
+	}
+
+	set_collapsed(p_collapsed);
+
+	TreeItem* child = get_first_child();
+	while (child) {
+		child->set_collapsed_recursive(p_collapsed);
+		child = child->get_next();
+	}
+}
+
+bool TreeItem::_is_any_collapsed(bool p_only_visible)
+{
+	TreeItem* child = get_first_child();
+
+	// Check on children directly first (avoid recursing if possible).
+	while (child) {
+		if (child->get_first_child() && child->is_collapsed() &&
+			(!p_only_visible || (child->is_visible() && child->get_visible_child_count()))) {
+			return true;
+		}
+		child = child->get_next();
+	}
+
+	child = get_first_child();
+
+	// Otherwise recurse on children.
+	while (child) {
+		if (child->get_first_child() &&
+			(!p_only_visible || (child->is_visible() && child->get_visible_child_count())) &&
+			child->_is_any_collapsed(p_only_visible)) {
+			return true;
+		}
+		child = child->get_next();
+	}
+
+	return false;
+}
+
+bool TreeItem::is_any_collapsed(bool p_only_visible)
+{
+	if (p_only_visible && !is_visible_in_tree()) {
+		return false;
+	}
+
+	// Collapsed if this is collapsed and it has children (only considers visible if only visible is
+	// set).
+	if (is_collapsed() && get_first_child() && (!p_only_visible || get_visible_child_count())) {
+		return true;
+	}
+
+	return _is_any_collapsed(p_only_visible);
+}
+
+void TreeItem::set_visible(bool p_visible) {}
+
+bool TreeItem::is_visible() { return visible; }
+
+bool TreeItem::is_visible_in_tree() const { return visible && parent_visible_in_tree; }
+
+void TreeItem::_handle_visibility_changed(bool p_visible)
+{
+	TreeItem* child = get_first_child();
+	while (child) {
+		child->_propagate_visibility_changed(p_visible);
+		child = child->get_next();
+	}
+}
+
+void TreeItem::_propagate_visibility_changed(bool p_parent_visible_in_tree)
+{
+	parent_visible_in_tree = p_parent_visible_in_tree;
+	_handle_visibility_changed(p_parent_visible_in_tree);
+}
+
+void TreeItem::uncollapse_tree()
+{
+	TreeItem* t = this;
+	while (t) {
+		t->set_collapsed(false);
+		t = t->parent;
+	}
+}
+
+void TreeItem::set_custom_minimum_height(int p_height)
+{
+	if (custom_min_height == p_height) {
+		return;
+	}
+
+	custom_min_height = p_height;
+
+	for (Cell& c : cells) {
+		c.cached_minimum_size_dirty = true;
+	}
+
+	_changed_notify();
+}
+
+int TreeItem::get_custom_minimum_height() const { return custom_min_height; }
+
+void TreeItem::set_custom_stylebox(int p_column, const Ref<StyleBox>& p_stylebox)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	cells.write[p_column].custom_stylebox = p_stylebox;
+	_changed_notify(p_column);
+}
+
+Ref<StyleBox> TreeItem::get_custom_stylebox(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Ref<StyleBox>());
+	return cells[p_column].custom_stylebox;
+}
+
+void TreeItem::add_child(TreeItem* p_item)
+{
+	ERR_FAIL_NULL(p_item);
+	ERR_FAIL_COND(p_item->tree);
+	ERR_FAIL_COND(p_item->parent);
+
+	p_item->_change_tree(tree);
+	p_item->parent = this;
+	p_item->parent_visible_in_tree = is_visible_in_tree();
+	p_item->_handle_visibility_changed(p_item->parent_visible_in_tree);
+
+	if (last_child) {
+		last_child->next = p_item;
+		p_item->prev = last_child;
+	}
+	else {
+		first_child = p_item;
+	}
+	last_child = p_item;
+
+	if (!children_cache.is_empty()) {
+		children_cache.push_back(p_item);
+	}
+
+	validate_cache();
+}
+
+void TreeItem::remove_child(TreeItem* p_item)
+{
+	ERR_FAIL_NULL(p_item);
+	ERR_FAIL_COND(p_item->parent != this);
+
+	p_item->_unlink_from_tree();
+	p_item->_change_tree(nullptr);
+	p_item->prev = nullptr;
+	p_item->next = nullptr;
+	p_item->parent = nullptr;
+
+	validate_cache();
+}
+
+Tree* TreeItem::get_tree() const { return tree; }
+
+TreeItem* TreeItem::get_next() const { return next; }
+
+TreeItem* TreeItem::get_prev()
+{
+	if (prev) {
+		return prev;
+	}
+
+	if (!parent || parent->first_child == this) {
+		return nullptr;
+	}
+	// This is an edge case.
+	TreeItem* l_prev = parent->first_child;
+	while (l_prev && l_prev->next != this) {
+		l_prev = l_prev->next;
+	}
+
+	prev = l_prev;
+
+	return prev;
+}
+
+TreeItem* TreeItem::get_parent() const { return parent; }
+
+TreeItem* TreeItem::get_first_child() const { return first_child; }
+
+TreeItem* TreeItem::get_last_child() const { return last_child; }
+
+TreeItem* TreeItem::_get_prev_in_tree(bool p_wrap, bool p_include_invisible)
+{
+	TreeItem* current = this;
+
+	TreeItem* prev_item = current->get_prev();
+
+	if (!prev_item) {
+		current = current->parent;
+		if (!current || (current == tree->root && tree->hide_root)) {
+			if (!p_wrap) {
+				return nullptr;
+			}
+			// Wrap around to the last visible item.
+			current = this;
+			TreeItem* temp = get_next_visible();
+			while (temp) {
+				current = temp;
+				temp = temp->get_next_visible();
+			}
+		}
+	}
+	else {
+		current = prev_item;
+		while ((!current->collapsed || p_include_invisible) && current->last_child) {
+			current = current->last_child;
+		}
+	}
+
+	return current;
+}
+
+TreeItem* TreeItem::get_prev_visible(bool p_wrap)
+{
+	TreeItem* loop = this;
+	TreeItem* prev_item = _get_prev_in_tree(p_wrap);
+	while (prev_item && !prev_item->is_visible_in_tree()) {
+		prev_item = prev_item->_get_prev_in_tree(p_wrap);
+		if (prev_item == loop) {
+			// Check that we haven't looped all the way around to the start.
+			prev_item = nullptr;
+			break;
+		}
+	}
+	return prev_item;
+}
+
+TreeItem* TreeItem::_get_next_in_tree(bool p_wrap, bool p_include_invisible)
+{
+	TreeItem* current = this;
+
+	if ((!current->collapsed || p_include_invisible) && current->first_child) {
+		current = current->first_child;
+
+	}
+	else if (current->next) {
+		current = current->next;
+	}
+	else {
+		while (current && !current->next) {
+			current = current->parent;
+		}
+
+		if (!current) {
+			if (p_wrap) {
+				return tree->root;
+			}
+			else {
+				return nullptr;
+			}
+		}
+		else {
+			current = current->next;
+		}
+	}
+
+	return current;
+}
+
+TreeItem* TreeItem::get_next_visible(bool p_wrap)
+{
+	TreeItem* loop = this;
+	TreeItem* next_item = _get_next_in_tree(p_wrap);
+	while (next_item && !next_item->is_visible_in_tree()) {
+		next_item = next_item->_get_next_in_tree(p_wrap);
+		if (next_item == loop) {
+			// Check that we haven't looped all the way around to the start.
+			next_item = nullptr;
+			break;
+		}
+	}
+	return next_item;
+}
+
+TreeItem* TreeItem::get_prev_in_tree(bool p_wrap)
+{
+	TreeItem* prev_item = _get_prev_in_tree(p_wrap, true);
+	return prev_item;
+}
+
+TreeItem* TreeItem::get_next_in_tree(bool p_wrap)
+{
+	TreeItem* next_item = _get_next_in_tree(p_wrap, true);
+	return next_item;
+}
+
+TreeItem* TreeItem::get_child(int p_index)
+{
+	_create_children_cache();
+
+	if (p_index < 0) {
+		p_index += children_cache.size();
+	}
+	ERR_FAIL_INDEX_V(p_index, (int)children_cache.size(), nullptr);
+
+	return children_cache[p_index];
+}
+
+int TreeItem::get_visible_child_count()
+{
+	_create_children_cache();
+	int visible_count = 0;
+	for (uint32_t i = 0; i < children_cache.size(); i++) {
+		if (children_cache[i]->is_visible()) {
+			visible_count += 1;
+		}
+	}
+	return visible_count;
+}
+
+int TreeItem::get_child_count()
+{
+	_create_children_cache();
+	return children_cache.size();
+}
+
+Vector<TreeItem*> TreeItem::get_children()
+{
+	// Don't need to explicitly create children cache, because get_child_count creates it.
+	int size = get_child_count();
+	Vector<TreeItem*> vec;
+	vec.resize(size);
+	for (int i = 0; i < size; i++) {
+		vec.write[i] = children_cache[i];
+	}
+	return vec;
+}
+
+void TreeItem::clear_children()
+{
+	TreeItem* c = first_child;
+	while (c) {
+		TreeItem* aux = c;
+		c = c->get_next();
+		aux->parent = nullptr; // So it won't try to recursively auto-remove from me in here.
+		memdelete(aux);
+	}
+
+	first_child = nullptr;
+	last_child = nullptr;
+	children_cache.clear();
+}
+
+int TreeItem::get_index()
+{
+	int idx = 0;
+	TreeItem* c = this;
+
+	while (c) {
+		c = c->get_prev();
+		idx++;
+	}
+	return idx - 1;
+}
+
+#ifdef DEV_ENABLED
+void TreeItem::validate_cache() const
+{
+	if (!parent || parent->children_cache.is_empty()) {
+		return;
+	}
+	TreeItem* scan = parent->first_child;
+	uint32_t index = 0;
+	while (scan) {
+		DEV_ASSERT(parent->children_cache[index] == scan);
+		++index;
+		scan = scan->get_next();
+	}
+	DEV_ASSERT(index == parent->children_cache.size());
+}
+#endif
+
+void TreeItem::set_selectable(int p_column, bool p_selectable)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	cells.write[p_column].selectable = p_selectable;
+}
+
+bool TreeItem::is_selectable(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	return cells[p_column].selectable;
+}
+
+bool TreeItem::is_selected(int p_column)
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	return cells[p_column].selectable && cells[p_column].selected;
+}
+
+bool TreeItem::is_any_column_selected() const
+{
+	for (const Cell& cell : cells) {
+		if (cell.selectable && cell.selected) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void TreeItem::select(int p_column, bool p_set_as_cursor)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	_cell_selected(p_column, p_set_as_cursor);
+}
+
+void TreeItem::deselect(int p_column)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	_cell_deselected(p_column);
+}
+
+void TreeItem::clear_buttons()
+{
+	int i = 0;
+	for (Cell& cell : cells) {
+		if (!cell.buttons.is_empty()) {
+			for (Cell::Button& btn : cell.buttons) {
+				if (btn.accessibility_button_element.is_valid()) {
+					AccessibilityServer::free_element(
+						btn.accessibility_button_element);
+				}
+			}
+			cell.buttons.clear();
+			cell.cached_minimum_size_dirty = true;
+			_changed_notify(i);
+		}
+		++i;
+	}
+}
+
+int TreeItem::get_button_count(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), -1);
+	return cells[p_column].buttons.size();
+}
+
+Ref<Texture2D> TreeItem::get_button(int p_column, int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Ref<Texture2D>());
+	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), Ref<Texture2D>());
+	return cells[p_column].buttons[p_index].texture;
+}
+
+String TreeItem::get_button_tooltip_text(int p_column, int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), String());
+	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), String());
+	return cells[p_column].buttons[p_index].tooltip;
+}
+
+int TreeItem::get_button_id(int p_column, int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), -1);
+	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), -1);
+	return cells[p_column].buttons[p_index].id;
+}
+
+int TreeItem::get_button_by_id(int p_column, int p_id) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), -1);
+	for (int i = 0; i < cells[p_column].buttons.size(); i++) {
+		if (cells[p_column].buttons[i].id == p_id) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+Color TreeItem::get_button_color(int p_column, int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Color());
+	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), Color());
+	return cells[p_column].buttons[p_index].color;
+}
+
+void TreeItem::set_button_tooltip_text(int p_column, int p_index, const String& p_tooltip)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	if (p_index < 0) {
+		p_index += cells[p_column].buttons.size();
+	}
+
+	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
+	cells.write[p_column].buttons.write[p_index].tooltip = p_tooltip;
+
+	_changed_notify(p_column);
+}
+
+void TreeItem::set_button(int p_column, int p_index, const Ref<Texture2D>& p_button)
+{
+	ERR_FAIL_COND(p_button.is_null());
+	ERR_FAIL_INDEX(p_column, cells.size());
+	if (p_index < 0) {
+		p_index += cells[p_column].buttons.size();
+	}
+	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
+
+	if (cells[p_column].buttons[p_index].texture == p_button) {
+		return;
+	}
+
+	cells.write[p_column].buttons.write[p_index].texture = p_button;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+void TreeItem::set_button_color(int p_column, int p_index, const Color& p_color)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	if (p_index < 0) {
+		p_index += cells[p_column].buttons.size();
+	}
+	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
+
+	if (cells[p_column].buttons[p_index].color == p_color) {
+		return;
+	}
+
+	cells.write[p_column].buttons.write[p_index].color = p_color;
+	_changed_notify(p_column);
+}
+
+void TreeItem::set_button_disabled(int p_column, int p_index, bool p_disabled)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	if (p_index < 0) {
+		p_index += cells[p_column].buttons.size();
+	}
+	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
+
+	if (cells[p_column].buttons[p_index].disabled == p_disabled) {
+		return;
+	}
+
+	cells.write[p_column].buttons.write[p_index].disabled = p_disabled;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+bool TreeItem::is_button_disabled(int p_column, int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), false);
+
+	return cells[p_column].buttons[p_index].disabled;
+}
+
+void TreeItem::set_editable(int p_column, bool p_editable)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].editable == p_editable) {
+		return;
+	}
+
+	cells.write[p_column].editable = p_editable;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+bool TreeItem::is_editable(int p_column)
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	return cells[p_column].editable;
+}
+
+void TreeItem::set_custom_color(int p_column, const Color& p_color)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].custom_color && cells[p_column].color == p_color) {
+		return;
+	}
+
+	cells.write[p_column].custom_color = true;
+	cells.write[p_column].color = p_color;
+	_changed_notify(p_column);
+}
+
+Color TreeItem::get_custom_color(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Color());
+	if (!cells[p_column].custom_color) {
+		return Color();
+	}
+	return cells[p_column].color;
+}
+
+void TreeItem::clear_custom_color(int p_column)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	cells.write[p_column].custom_color = false;
+	cells.write[p_column].color = Color();
+	_changed_notify(p_column);
+}
+
+void TreeItem::set_custom_font(int p_column, const Ref<Font>& p_font)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].custom_font == p_font) {
+		return;
+	}
+
+	cells.write[p_column].custom_font = p_font;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+Ref<Font> TreeItem::get_custom_font(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Ref<Font>());
+	return cells[p_column].custom_font;
+}
+
+void TreeItem::set_custom_font_size(int p_column, int p_font_size)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].custom_font_size == p_font_size) {
+		return;
+	}
+
+	cells.write[p_column].custom_font_size = p_font_size;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+int TreeItem::get_custom_font_size(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), -1);
+	return cells[p_column].custom_font_size;
+}
+
+void TreeItem::set_tooltip_text(int p_column, const String& p_tooltip)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	cells.write[p_column].tooltip = p_tooltip;
+}
+
+String TreeItem::get_tooltip_text(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), "");
+	return cells[p_column].tooltip;
+}
+
+void TreeItem::set_custom_bg_color(int p_column, const Color& p_color, bool p_bg_outline)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].custom_bg_color && cells[p_column].custom_bg_outline == p_bg_outline &&
+		cells[p_column].bg_color == p_color) {
+		return;
+	}
+
+	cells.write[p_column].custom_bg_color = true;
+	cells.write[p_column].custom_bg_outline = p_bg_outline;
+	cells.write[p_column].bg_color = p_color;
+	_changed_notify(p_column);
+}
+
+void TreeItem::clear_custom_bg_color(int p_column)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+	cells.write[p_column].custom_bg_color = false;
+	cells.write[p_column].bg_color = Color();
+	_changed_notify(p_column);
+}
+
+Color TreeItem::get_custom_bg_color(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Color());
+	if (!cells[p_column].custom_bg_color) {
+		return Color();
+	}
+	return cells[p_column].bg_color;
+}
+
+void TreeItem::set_custom_as_button(int p_column, bool p_button)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].custom_button == p_button) {
+		return;
+	}
+
+	cells.write[p_column].custom_button = p_button;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+bool TreeItem::is_custom_set_as_button(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	return cells[p_column].custom_button;
+}
+
+void TreeItem::set_text_alignment(int p_column, HorizontalAlignment p_alignment)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].text_alignment == p_alignment) {
+		return;
+	}
+
+	cells.write[p_column].text_alignment = p_alignment;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+HorizontalAlignment TreeItem::get_text_alignment(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), HORIZONTAL_ALIGNMENT_LEFT);
+	return cells[p_column].text_alignment;
+}
+
+void TreeItem::set_expand_right(int p_column, bool p_enable)
+{
+	ERR_FAIL_INDEX(p_column, cells.size());
+
+	if (cells[p_column].expand_right == p_enable) {
+		return;
+	}
+
+	cells.write[p_column].expand_right = p_enable;
+	cells.write[p_column].cached_minimum_size_dirty = true;
+
+	_changed_notify(p_column);
+}
+
+bool TreeItem::get_expand_right(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
+	return cells[p_column].expand_right;
+}
+
+void TreeItem::set_disable_folding(bool p_disable)
+{
+	if (disable_folding == p_disable) {
+		return;
+	}
+
+	disable_folding = p_disable;
+
+	for (Cell& c : cells) {
+		c.cached_minimum_size_dirty = true;
+	}
+
+	_changed_notify(0);
+}
+
+bool TreeItem::is_folding_disabled() const { return disable_folding; }
+
+void TreeItem::set_accept_children(bool p_allowed) { accepts_children = p_allowed; }
+
+bool TreeItem::is_accepting_children() const { return accepts_children; }
+
+Size2 TreeItem::get_minimum_size(int p_column)
+{
+	ERR_FAIL_INDEX_V(p_column, cells.size(), Size2());
+	Tree* parent_tree = get_tree();
+	ERR_FAIL_NULL_V(parent_tree, Size2());
+
+	const TreeItem::Cell& cell = cells[p_column];
+
+	if (cell.cached_minimum_size_dirty || cell.text_buf->is_dirty() || cell.dirty) {
+		Size2 size = Size2(parent_tree->theme_cache.inner_item_margin_left +
+							   parent_tree->theme_cache.inner_item_margin_right,
+			parent_tree->theme_cache.inner_item_margin_top +
+				parent_tree->theme_cache.inner_item_margin_bottom);
+		int content_height = size.height;
+
+		// Text.
+		if (!cell.text.is_empty()) {
+			if (cell.dirty) {
+				parent_tree->update_item_cell(this, p_column);
+			}
+			Size2 text_size = cell.text_buf->get_size();
+			if (get_text_overrun_behavior(p_column) == TextServer::OVERRUN_NO_TRIMMING) {
+				size.width += text_size.width;
+			}
+			content_height = MAX(content_height, text_size.height);
+		}
+
+		// Icon.
+		if (cell.mode == CELL_MODE_CHECK) {
+			Size2i check_size = parent_tree->theme_cache.checked->get_size();
+			size.width += check_size.width + parent_tree->theme_cache.h_separation;
+			content_height = MAX(content_height, check_size.height);
+		}
+		else if (cell.mode == CELL_MODE_RANGE) {
+			Ref<Texture2D> icon = cell.text.is_empty() ? parent_tree->theme_cache.updown
+													   : parent_tree->theme_cache.select_arrow;
+			Size2i icon_size = icon->get_size();
+			size.width += icon_size.width + parent_tree->theme_cache.h_separation;
+			content_height = MAX(content_height, icon_size.height);
+		}
+		if (cell.icon.is_valid()) {
+			Size2i icon_size = parent_tree->_get_cell_icon_size(cell);
+			size.width += icon_size.width + parent_tree->theme_cache.icon_h_separation;
+			content_height = MAX(content_height, icon_size.height);
+		}
+
+		// Buttons.
+		for (int i = 0; i < cell.buttons.size(); i++) {
+			Ref<Texture2D> texture = cell.buttons[i].texture;
+			if (texture.is_valid()) {
+				Size2 button_size = texture->get_size();
+				button_size.width +=
+					parent_tree->theme_cache.button_pressed->get_minimum_size().width;
+				size.width += button_size.width + parent_tree->theme_cache.button_margin;
+				content_height = MAX(content_height, button_size.height);
+			}
+		}
+
+		size.height += content_height;
+		cells.write[p_column].cached_minimum_size = size;
+		cells.write[p_column].cached_minimum_size_dirty = false;
+	}
+
+	return cell.cached_minimum_size;
+}
+
+TreeItem::TreeItem(Tree* p_tree) { tree = p_tree; }
+
+TreeItem::~TreeItem()
+{
+	_unlink_from_tree();
+	_change_tree(nullptr);
+
+	validate_cache();
+	prev = nullptr;
+	clear_children();
+}
+
+/*************************** END of TreeItem ***************************/
+
+void Tree::_update_theme_item_cache()
+{
+	Control::_update_theme_item_cache();
+
+	theme_cache.base_scale = get_theme_default_base_scale();
+}
+
+Size2 Tree::_get_cell_icon_size(const TreeItem::Cell& p_cell) const
+{
+	Size2i icon_size = p_cell.get_icon_size();
+
+	int max_width = 0;
+	if (theme_cache.icon_max_width > 0) {
+		max_width = theme_cache.icon_max_width;
+	}
+	if (p_cell.icon_max_w > 0 && (max_width == 0 || p_cell.icon_max_w < max_width)) {
+		max_width = p_cell.icon_max_w;
+	}
+
+	if (max_width > 0 && icon_size.width > max_width) {
+		icon_size.height = icon_size.height * max_width / icon_size.width;
+		icon_size.width = max_width;
+	}
+
+	return icon_size;
+}
+
+int Tree::compute_item_height(TreeItem* p_item) const
+{
+	if ((p_item == root && hide_root) || !p_item->is_visible_in_tree()) {
+		return 0;
+	}
+
+	ERR_FAIL_COND_V(theme_cache.font.is_null(), 0);
+	int height = 0;
+
+	for (int i = 0; i < columns.size(); i++) {
+		height = MAX(height, p_item->get_minimum_size(i).y);
+	}
+	int font_height = cache.font_height != -1 ? cache.font_height
+											  : theme_cache.font->get_height(theme_cache.font_size);
+	int item_min_height = MAX(font_height, p_item->get_custom_minimum_height());
+	if (height < item_min_height) {
+		height = item_min_height;
+	}
+
+	height += theme_cache.v_separation;
+
+	return height;
+}
+
+int Tree::get_item_height(TreeItem* p_item) const
+{
+	if (!p_item->is_visible_in_tree()) {
+		return 0;
+	}
+	int height = compute_item_height(p_item);
+	height += theme_cache.v_separation;
+
+	if (!p_item->collapsed) { // If not collapsed, check the children.
+
+		TreeItem* c = p_item->first_child;
+
+		while (c) {
+			height += get_item_height(c);
+
+			c = c->next;
+		}
+	}
+
+	return height;
+}
+
+Point2i Tree::convert_rtl_position(const Point2i& p_pos, int p_width) const
+{
+	if (cache.rtl) {
+		return Point2i(get_size().width - p_pos.x - p_width, p_pos.y);
+	}
+	return p_pos;
+}
+
+Point2 Tree::convert_rtl_position(const Point2& p_pos, int p_width) const
+{
+	if (cache.rtl) {
+		return Point2(get_size().width - p_pos.x - p_width, p_pos.y);
+	}
+	return p_pos;
+}
+
+Rect2i Tree::convert_rtl_rect(const Rect2i& p_rect) const
+{
+	if (cache.rtl) {
+		return Rect2i(
+			Point2i(get_size().width - p_rect.position.x - p_rect.size.x, p_rect.position.y),
+			p_rect.size);
+	}
+	return p_rect;
+}
+
+void Tree::draw_item_rect(const TreeItem::Cell& p_cell, const Rect2i& p_rect, const Color& p_color,
+	const Color& p_icon_color, int p_ol_size, const Color& p_ol_color, const RID& p_ci) const
+{
+	ERR_FAIL_COND(theme_cache.font.is_null());
+
+	Rect2i rect = p_rect;
+	Size2 ts = p_cell.text_buf->get_size();
+	bool rtl = is_layout_rtl();
+
+	Size2i icon_size;
+	if (p_cell.icon.is_valid()) {
+		icon_size = _get_cell_icon_size(p_cell);
+	}
+
+	int displayed_width = 0;
+	if (p_cell.icon.is_valid()) {
+		displayed_width =
+			MIN(displayed_width + icon_size.width + theme_cache.icon_h_separation, rect.size.width);
+	}
+	if (displayed_width + ts.width > rect.size.width) {
+		ts.width = rect.size.width - displayed_width;
+	}
+	displayed_width += ts.width;
+
+	int empty_width = rect.size.width - displayed_width;
+
+	switch (p_cell.text_alignment) {
+	case HORIZONTAL_ALIGNMENT_FILL:
+	case HORIZONTAL_ALIGNMENT_LEFT: {
+		if (rtl) {
+			rect.position.x += empty_width;
+		}
+	} break;
+	case HORIZONTAL_ALIGNMENT_CENTER:
+		rect.position.x += empty_width / 2;
+		break;
+	case HORIZONTAL_ALIGNMENT_RIGHT:
+		if (!rtl) {
+			rect.position.x += empty_width;
+		}
+		break;
+	}
+
+	RID ci = p_ci;
+
+	if (rtl) {
+		if (ts.width > 0) {
+			Point2 draw_pos = rect.position;
+			draw_pos.y += Math::floor((rect.size.y - p_cell.text_buf->get_size().y) * 0.5);
+			if (p_ol_size > 0 && p_ol_color.a > 0) {
+				p_cell.text_buf->draw_outline(ci, draw_pos, p_ol_size, p_ol_color);
+			}
+			p_cell.text_buf->draw(ci, draw_pos, p_color);
+		}
+		rect.position.x += ts.width + theme_cache.icon_h_separation;
+	}
+
+	if (p_cell.icon.is_valid()) {
+		Point2 icon_pos =
+			rect.position + Size2i(0, Math::floor((real_t)(rect.size.y - icon_size.y) / 2));
+		Rect2i icon_region = (p_cell.icon_region == Rect2i())
+								 ? Rect2i(Point2(), p_cell.icon->get_size())
+								 : p_cell.icon_region;
+		if (icon_size.width > rect.size.width) {
+			icon_region.size.width = icon_region.size.width * rect.size.width / icon_size.width;
+			icon_size.width = rect.size.width;
+		}
+		p_cell.draw_icon(ci, icon_pos, icon_size, icon_region, p_icon_color);
+		rect.position.x += icon_size.x + theme_cache.icon_h_separation;
+	}
+
+	if (!rtl && ts.width > 0) {
+		Point2 draw_pos = rect.position;
+		draw_pos.y += Math::floor((rect.size.y - p_cell.text_buf->get_size().y) * 0.5);
+		if (p_ol_size > 0 && p_ol_color.a > 0) {
+			p_cell.text_buf->draw_outline(ci, draw_pos, p_ol_size, p_ol_color);
+		}
+		p_cell.text_buf->draw(ci, draw_pos, p_color);
+	}
+}
+
+void Tree::update_item_cache(TreeItem* p_item) const
+{
+	for (int i = 0; i < p_item->cells.size(); i++) {
+		update_item_cell(p_item, i);
+	}
+
+	TreeItem* c = p_item->first_child;
+	while (c) {
+		update_item_cache(c);
+		c = c->next;
+	}
+}
+
+int Tree::_count_selected_items(TreeItem* p_from) const
+{
+	int count = 0;
+	for (int i = 0; i < columns.size(); i++) {
+		if (p_from->is_selected(i)) {
+			count++;
+		}
+	}
+
+	for (TreeItem* c = p_from->get_first_child(); c; c = c->get_next()) {
+		count += _count_selected_items(c);
+	}
+
+	return count;
+}
+
+bool Tree::_is_branch_selected(TreeItem* p_from) const
+{
+	if (p_from->is_any_column_selected()) {
+		return true;
+	}
+
+	TreeItem* child_item = p_from->get_first_child();
+	while (child_item) {
+		if (_is_branch_selected(child_item)) {
+			return true;
+		}
+		child_item = child_item->get_next();
+	}
+
+	return false;
+}
+
+bool Tree::_is_sibling_branch_selected(TreeItem* p_from) const
+{
+	TreeItem* sibling_item = p_from->get_next();
+	while (sibling_item) {
+		if (_is_branch_selected(sibling_item)) {
+			return true;
+		}
+		sibling_item = sibling_item->get_next();
+	}
+
+	return false;
+}
+
+Rect2 Tree::search_item_rect(TreeItem* p_from, TreeItem* p_item) { return Rect2(); }
+
+void Tree::_text_editor_popup_modal_close()
+{
+	if (popup_edit_committed) {
+		return; // Already processed by `LineEdit` / `TextEdit` commit.
+	}
+
+	if (popup_editor->get_hide_reason() == Popup::HIDE_REASON_CANCELED) {
+		return; // ESC pressed, app focus lost, or forced close from code.
+	}
+
+	if (value_editor && value_editor->has_point(value_editor->get_local_mouse_position())) {
+		return;
+	}
+
+	if (!popup_edited_item) {
+		return;
+	}
+
+	if (popup_edited_item->is_edit_multiline(popup_edited_item_col) &&
+		popup_edited_item->get_cell_mode(popup_edited_item_col) == TreeItem::CELL_MODE_STRING) {
+		_apply_multiline_edit();
+	}
+	else {
+		_line_editor_submit(line_editor->get_text());
+	}
+}
+
+void Tree::_text_editor_gui_input(const InputEvent& p_event)
+{
+	if (popup_edit_committed) {
+		return; // Already processed by `_text_editor_popup_modal_close`.
+	}
+
+	if (popup_editor->get_hide_reason() == Popup::HIDE_REASON_CANCELED) {
+		return; // ESC pressed, app focus lost, or forced close from code.
+	}
+
+	if (p_event.is_action_pressed("ui_text_newline_blank", true)) {
+		accept_event();
+	}
+	else if (p_event.is_action_pressed("ui_text_newline")) {
+		bool hide_focus = !text_editor->has_focus(true);
+		popup_edit_committed = true; // End edit popup processing.
+		popup_editor->hide();
+		_apply_multiline_edit(hide_focus);
+		accept_event();
+	}
+}
+
+void Tree::_update_popup_menu(const TreeItem::Cell& p_cell)
+{
+	if (popup_menu == nullptr) {
+		popup_menu = memnew(PopupMenu);
+		popup_menu->set_shrink_width(false);
+		popup_menu->hide();
+		add_child(popup_menu, false, INTERNAL_MODE_FRONT);
+	}
+}
+
+bool Tree::_scroll(bool p_horizontal, float p_pages)
+{
+	ScrollBar* scroll = p_horizontal ? (ScrollBar*)h_scroll : (ScrollBar*)v_scroll;
+
+	double prev_value = scroll->get_value();
+	scroll->set_value(scroll->get_value() + scroll->get_page() * p_pages);
+
+	bool scroll_happened = scroll->get_value() != prev_value;
+	if (scroll_happened) {
+		_determine_hovered_item();
+	}
+	return scroll_happened;
+}
+
+Rect2 Tree::_get_scrollbar_layout_rect() const
+{
+	const Size2 control_size = get_size();
+	const Ref<StyleBox> background = theme_cache.panel_style;
+
+	// This is the background stylebox's content rect.
+	const real_t width =
+		control_size.x - background->get_margin(SIDE_LEFT) - background->get_margin(SIDE_RIGHT);
+	const real_t height =
+		control_size.y - background->get_margin(SIDE_TOP) - background->get_margin(SIDE_BOTTOM);
+	const Rect2 content_rect = Rect2(background->get_offset(), Size2(width, height));
+
+	// Use the stylebox's margins by default. Can be overridden by `scrollbar_margin_*`.
+	const real_t top = theme_cache.scrollbar_margin_top < 0 ? content_rect.get_position().y
+															: theme_cache.scrollbar_margin_top;
+	const real_t right = theme_cache.scrollbar_margin_right < 0
+							 ? content_rect.get_end().x
+							 : (control_size.x - theme_cache.scrollbar_margin_right);
+	const real_t bottom = theme_cache.scrollbar_margin_bottom < 0
+							  ? content_rect.get_end().y
+							  : (control_size.y - theme_cache.scrollbar_margin_bottom);
+	const real_t left = theme_cache.scrollbar_margin_left < 0 ? content_rect.get_position().x
+															  : theme_cache.scrollbar_margin_left;
+
+	return Rect2(left, top, right - left, bottom - top);
+}
+
+Rect2 Tree::_get_content_rect() const
+{
+	const Size2 control_size = get_size();
+	const Ref<StyleBox> background = theme_cache.panel_style;
+
+	// This is the background stylebox's content rect.
+	const real_t width =
+		control_size.x - background->get_margin(SIDE_LEFT) - background->get_margin(SIDE_RIGHT);
+	const real_t height =
+		control_size.y - background->get_margin(SIDE_TOP) - background->get_margin(SIDE_BOTTOM);
+	const Rect2 content_rect = Rect2(background->get_offset(), Size2(width, height));
+
+	// Scrollbars won't affect Tree's content rect if they're not visible or placed inside the
+	// stylebox margin area.
+	const real_t v_size =
+		v_scroll->is_visible()
+			? (v_scroll->get_bound_minimum_size().x + theme_cache.scrollbar_h_separation)
+			: 0;
+	const real_t h_size =
+		h_scroll->is_visible()
+			? (h_scroll->get_bound_minimum_size().y + theme_cache.scrollbar_v_separation)
+			: 0;
+	const Point2 scroll_begin = _get_scrollbar_layout_rect().get_end() - Vector2(v_size, h_size);
+	const Size2 offset = (content_rect.get_end() - scroll_begin).maxf(0);
+
+	return content_rect.grow_individual(0, 0, -offset.x, -offset.y);
+}
+
+void Tree::_incr_search_as_needed(const InputEvent& p_event_key)
+{
+	if (p_event_key.type == InputEventType::KEY && !get_viewport()->is_input_handled()) {
+		_do_incr_search(String::chr(p_event_key.key.unicode));
+	}
+}
+
+void Tree::_on_dropping_unfold_timer_timeout()
+{
+	if (enable_drag_unfolding && drop_mode_over &&
+		(drop_mode_section == 0 || drop_mode_section == 2)) {
+		drop_mode_over->set_collapsed(false);
+	}
+}
+
+void Tree::_reset_drop_mode_over()
+{
+	drop_mode_over = nullptr;
+	if (!dropping_unfold_timer->is_stopped()) {
+		dropping_unfold_timer->stop();
+	}
+}
+
+void Tree::_queue_update_hovered_item()
+{
+	if (hovered_update_queued) {
+		return;
+	}
+	hovered_update_queued = true;
+}
+
+Rect2 Tree::_get_item_focus_rect(const TreeItem* p_item) const
+{
+	Rect2 rect;
+	if (select_mode == SELECT_ROW) {
+		rect = p_item->cells[selected_col].focus_rect;
+	}
+	else {
+		rect = p_item->focus_rect;
+	}
+	return rect;
+}
+
+bool Tree::is_editing() { return popup_editor->is_visible(); }
+
+void Tree::set_editor_selection(
+	int p_from_line, int p_to_line, int p_from_column, int p_to_column, int p_caret)
+{
+	if (p_from_column == -1 || p_to_column == -1) {
+		line_editor->select(p_from_line, p_to_line);
+	}
+	else {
+		text_editor->select(p_from_line, p_from_column, p_to_line, p_to_column, p_caret);
+	}
+}
+
+Size2 Tree::get_internal_min_size() const
+{
+	Size2i size;
+	if (root) {
+		size.height += get_item_height(root);
+	}
+	for (int i = 0; i < columns.size(); i++) {
+		size.width += get_column_minimum_width(i);
+	}
+
+	return size;
+}
+
+int Tree::_get_title_button_height() const
+{
+	ERR_FAIL_COND_V(theme_cache.tb_font.is_null() || theme_cache.title_button.is_null(), 0);
+	int h = 0;
+	if (show_column_titles) {
+		for (int i = 0; i < columns.size(); i++) {
+			h = MAX(h, columns[i].text_buf->get_size().y +
+						   theme_cache.title_button->get_minimum_size().height);
+		}
+	}
+	return h;
+}
+
+void Tree::_check_item_accessibility(
+	TreeItem* p_item, PackedStringArray& r_warnings, int& r_row) const
+{
+	for (int i = 0; i < p_item->cells.size(); i++) {
+		const TreeItem::Cell& cell = p_item->cells[i];
+		if (cell.description.strip_edges().is_empty() && cell.text.strip_edges().is_empty()) {
+			r_warnings.push_back(vformat(
+				RTR("Cell %d x %d: either text or alternative text must not be empty."), r_row, i));
+		}
+		for (int j = 0; j < cell.buttons.size(); j++) {
+			if (cell.buttons[j].description.strip_edges().is_empty()) {
+				r_warnings.push_back(vformat(
+					RTR("Button %d in %d x %d: alternative text must not be empty."), j, r_row, i));
+			}
+		}
+	}
+	r_row++;
+
+	// Children.
+	if (!p_item->collapsed) {
+		TreeItem* c = p_item->first_child;
+		while (c) {
+			_check_item_accessibility(c, r_warnings, r_row);
+			c = c->next;
+		}
+	}
+}
+
+PackedStringArray Tree::get_accessibility_configuration_warnings() const
+{
+	PackedStringArray warnings = Control::get_accessibility_configuration_warnings();
+
+	if (root) {
+		int row = 1;
+		_check_item_accessibility(root, warnings, row);
+	}
+
+	return warnings;
+}
+
+RID Tree::get_focused_accessibility_element() const
+{
+	if (selected_item) {
+		if (selected_col >= 0) {
+			if (selected_button >= 0) {
+				return selected_item->cells[selected_col]
+					.buttons[selected_button]
+					.accessibility_button_element;
+			}
+			else {
+				return selected_item->cells[selected_col].accessibility_cell_element;
+			}
+		}
+		else {
+			return selected_item->accessibility_row_element;
+		}
+	}
+	else {
+		return get_accessibility_element();
+	}
+}
+
+void Tree::_accessibility_clean_info(TreeItem* p_item)
+{
+	p_item->accessibility_row_element = RID();
+	for (TreeItem::Cell& cell : p_item->cells) {
+		cell.accessibility_cell_element = RID();
+		for (TreeItem::Cell::Button& btn : cell.buttons) {
+			btn.accessibility_button_element = RID();
+		}
+	}
+
+	// Children.
+	TreeItem* c = p_item->first_child;
+	while (c) {
+		_accessibility_clean_info(c);
+		c = c->next;
+	}
+}
+
+void Tree::_accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_row, int p_level)
+{
+	// Row.
+	if ((p_item != root || !hide_root) && p_item->is_visible()) {
+		if (p_item->accessibility_row_element.is_null()) {
+			p_item->accessibility_row_element =
+				AccessibilityServer::create_sub_element(
+					accessibility_scroll_element,
+					AccessibilityServerEnums::AccessibilityRole::ROLE_TREE_ITEM);
+			p_item->accessibility_row_dirty = true;
+		}
+
+		AccessibilityServer::update_set_table_row_index(
+			p_item->accessibility_row_element, r_row);
+		AccessibilityServer::update_set_list_item_level(
+			p_item->accessibility_row_element, p_level);
+		AccessibilityServer::update_set_list_item_expanded(
+			p_item->accessibility_row_element, !p_item->collapsed);
+		AccessibilityServer::update_set_flag(p_item->accessibility_row_element,
+			AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN,
+			!(p_item->visible && !p_item->parent_visible_in_tree));
+
+		AccessibilityServer::update_set_list_item_selected(
+			p_item->accessibility_row_element, selected_item == p_item);
+		if (p_item == root && is_root_hidden()) {
+			AccessibilityServer::update_set_flag(p_item->accessibility_row_element,
+				AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN, true);
+		}
+		Transform2D row_xform;
+		row_xform.set_origin(r_ofs);
+		AccessibilityServer::update_set_transform(
+			p_item->accessibility_row_element, row_xform);
+
+		Size2 item_size = Size2(get_size().width, compute_item_height(p_item));
+		AccessibilityServer::update_set_bounds(
+			p_item->accessibility_row_element, Rect2(Vector2(), item_size));
+
+		if (p_item->accessibility_row_dirty) {
+			// Cells.
+			int col_offset = 0;
+			for (int i = 0; i < p_item->cells.size(); i++) {
+				TreeItem::Cell& cell = p_item->cells.write[i];
+
+				if (cell.accessibility_cell_element.is_null()) {
+					cell.accessibility_cell_element =
+						AccessibilityServer::create_sub_element(
+							p_item->accessibility_row_element,
+							AccessibilityServerEnums::AccessibilityRole::ROLE_CELL);
+				}
+
+				float cw = get_column_width(i);
+
+				AccessibilityServer::update_set_table_cell_position(
+					cell.accessibility_cell_element, r_row, i);
+				AccessibilityServer::update_set_list_item_selected(
+					cell.accessibility_cell_element, cell.selected);
+				if (cell.description.is_empty()) {
+					AccessibilityServer::update_set_name(
+						cell.accessibility_cell_element, cell.xl_text);
+				}
+				else {
+					AccessibilityServer::update_set_name(
+						cell.accessibility_cell_element, cell.description);
+				}
+
+				AccessibilityServer::update_set_text_align(
+					cell.accessibility_cell_element, cell.text_alignment);
+				AccessibilityServer::update_set_flag(
+					cell.accessibility_cell_element,
+					AccessibilityServerEnums::AccessibilityFlags::FLAG_HIDDEN,
+					!(p_item->visible && !p_item->parent_visible_in_tree));
+				AccessibilityServer::update_set_flag(
+					cell.accessibility_cell_element,
+					AccessibilityServerEnums::AccessibilityFlags::FLAG_READONLY, !cell.editable);
+				AccessibilityServer::update_set_tooltip(
+					cell.accessibility_cell_element, cell.tooltip);
+				switch (cell.mode) {
+				case TreeItem::CELL_MODE_STRING: {
+					AccessibilityServer::update_set_value(
+						cell.accessibility_cell_element, cell.xl_text);
+				} break;
+				case TreeItem::CELL_MODE_CHECK: {
+					AccessibilityServer::update_set_checked(
+						cell.accessibility_cell_element, cell.checked);
+				} break;
+				case TreeItem::CELL_MODE_RANGE: {
+					AccessibilityServer::update_set_num_value(
+						cell.accessibility_cell_element, cell.val);
+					AccessibilityServer::update_set_num_range(
+						cell.accessibility_cell_element, cell.min, cell.max);
+					if (cell.step > 0) {
+						AccessibilityServer::update_set_num_step(
+							cell.accessibility_cell_element, cell.step);
+					}
+					else {
+						AccessibilityServer::update_set_num_step(
+							cell.accessibility_cell_element, 1);
+					}
+				} break;
+				case TreeItem::CELL_MODE_ICON: {
+					// NOP
+				} break;
+				case TreeItem::CELL_MODE_CUSTOM: {
+				} break;
+				}
+				AccessibilityServer::update_set_background_color(
+					cell.accessibility_cell_element, cell.color);
+				AccessibilityServer::update_set_foreground_color(
+					cell.accessibility_cell_element, cell.bg_color);
+
+				AccessibilityServer::update_set_bounds(
+					cell.accessibility_cell_element,
+					Rect2(Point2(col_offset, 0), Size2(cw, item_size.y)));
+
+				Vector2 ofst = Vector2(col_offset + cw, 0);
+				for (int j = cell.buttons.size() - 1; j >= 0; j--) {
+					if (cell.buttons[j].accessibility_button_element.is_null()) {
+						cell.buttons[j].accessibility_button_element =
+							AccessibilityServer::create_sub_element(
+								cell.accessibility_cell_element,
+								AccessibilityServerEnums::AccessibilityRole::ROLE_BUTTON);
+					}
+
+					AccessibilityServer::update_set_flag(
+						cell.buttons[j].accessibility_button_element,
+						AccessibilityServerEnums::AccessibilityFlags::FLAG_DISABLED,
+						cell.buttons[j].disabled);
+					AccessibilityServer::update_set_tooltip(
+						cell.buttons[j].accessibility_button_element, cell.buttons[j].tooltip);
+					if (cell.buttons[j].description.is_empty()) {
+						AccessibilityServer::update_set_name(
+							cell.buttons[j].accessibility_button_element, cell.buttons[j].tooltip);
+					}
+					else {
+						AccessibilityServer::update_set_name(
+							cell.buttons[j].accessibility_button_element,
+							cell.buttons[j].description);
+					}
+
+					Ref<Texture2D> b = cell.buttons[j].texture;
+					Size2 b_size = b->get_size() + theme_cache.button_pressed->get_minimum_size();
+					ofst.x -= b_size.x;
+
+					AccessibilityServer::update_set_bounds(
+						cell.buttons[j].accessibility_button_element, Rect2(ofst, b_size));
+				}
+				col_offset += cw;
+			}
+		}
+
+		r_ofs.y += item_size.y;
+		r_ofs.y += theme_cache.v_separation;
+
+		p_item->accessibility_row_dirty = false;
+		r_row++;
+	}
+
+	// Children.
+	if (!p_item->collapsed) {
+		TreeItem* c = p_item->first_child;
+		while (c) {
+			_accessibility_update_item(r_ofs, c, r_row, p_level + 1);
+			c = c->next;
+		}
+	}
+}
+
+void Tree::set_self_modulate(const Color& p_self_modulate)
+{
+	if (get_self_modulate() == p_self_modulate) {
+		return;
+	}
+
+	CanvasItem::set_self_modulate(p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(header_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(last_sticky_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(content_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(custom_ci, p_self_modulate);
+	Renderer::canvas_item_set_self_modulate(stylebox_ci, p_self_modulate);
+}
+
+void Tree::_update_all()
+{
+	cache.font_height = theme_cache.font->get_height(theme_cache.font_size);
+	for (int i = 0; i < columns.size(); i++) {
+		update_column(i);
+	}
+	if (root) {
+		update_item_cache(root);
+	}
+}
+
+Size2 Tree::get_minimum_size() const
+{
+	Vector2 min_size = Vector2(0, _get_title_button_height());
+
+	if (theme_cache.panel_style.is_valid()) {
+		min_size += theme_cache.panel_style->get_minimum_size();
+	}
+
+	Vector2 content_min_size = get_internal_min_size();
+	if (h_scroll_enabled) {
+		content_min_size.x = 0;
+		min_size.y += h_scroll->get_bound_minimum_size().height;
+	}
+	if (v_scroll_enabled) {
+		min_size.x += v_scroll->get_bound_minimum_size().width;
+		content_min_size.y = 0;
+	}
+
+	return min_size + content_min_size;
+}
+
+TreeItem* Tree::create_item(TreeItem* p_parent, int p_index)
+{
+	ERR_FAIL_COND_V_MSG(
+		blocked > 0, nullptr, "The tree cannot create items during mouse selection events.");
+
+	TreeItem* ti = nullptr;
+
+	if (p_parent) {
+		ERR_FAIL_COND_V_MSG(
+			p_parent->tree != this, nullptr, "A different tree owns the given parent");
+		ti = p_parent->create_child(p_index);
+	}
+	else {
+		if (!root) {
+			// No root exists, make the given item the new root.
+			ti = memnew(TreeItem(this));
+			ERR_FAIL_NULL_V(ti, nullptr);
+			ti->cells.resize(columns.size());
+			ti->is_root = true;
+			root = ti;
+		}
+		else {
+			// Root exists, append or insert to root.
+			ti = create_item(root, p_index);
+		}
+	}
+	_queue_update_hovered_item();
+	queue_accessibility_update();
+	return ti;
+}
+
+TreeItem* Tree::get_root() const { return root; }
+
+TreeItem* Tree::get_last_item() const
+{
+	TreeItem* last = root;
+	while (last && last->last_child && !last->collapsed) {
+		last = last->last_child;
+	}
+
+	return last;
+}
+
+void Tree::set_select_mode(SelectMode p_mode) { select_mode = p_mode; }
+
+Tree::SelectMode Tree::get_select_mode() const { return select_mode; }
+
+bool Tree::is_anything_selected() { return (selected_item != nullptr); }
+
+bool Tree::is_root_hidden() const { return hide_root; }
+
+bool Tree::is_column_expanding(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), false);
+
+	return columns[p_column].expand;
+}
+
+int Tree::get_column_expand_ratio(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), 1);
+
+	return columns[p_column].expand_ratio;
+}
+
+bool Tree::is_column_clipping_content(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), false);
+
+	return columns[p_column].clip_content;
+}
+
+TreeItem* Tree::get_selected() const { return selected_item; }
+
+void Tree::set_selected(TreeItem* p_item, int p_column)
+{
+	ERR_FAIL_INDEX(p_column, columns.size());
+	ERR_FAIL_NULL(p_item);
+	ERR_FAIL_COND_MSG(p_item->get_tree() != this,
+		"The provided TreeItem does not belong to this Tree. Ensure that the TreeItem is a part of "
+		"the Tree before setting it as selected.");
+
+	select_single_item(p_item, get_root(), p_column);
+}
+
+int Tree::get_selected_column() const { return selected_col; }
+
+TreeItem* Tree::get_edited() const { return edited_item; }
+
+int Tree::get_edited_column() const { return edited_col; }
+
+TreeItem* Tree::get_next_selected(TreeItem* p_item)
+{
+	if (!root) {
+		return nullptr;
+	}
+
+	while (true) {
+		if (!p_item) {
+			p_item = root;
+		}
+		else {
+			if (p_item->first_child) {
+				p_item = p_item->first_child;
+
+			}
+			else if (p_item->next) {
+				p_item = p_item->next;
+			}
+			else {
+				while (!p_item->next) {
+					p_item = p_item->parent;
+					if (p_item == nullptr) {
+						return nullptr;
+					}
+				}
+
+				p_item = p_item->next;
+			}
+		}
+
+		for (int i = 0; i < columns.size(); i++) {
+			if (p_item->cells[i].selected) {
+				return p_item;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+int Tree::get_column_minimum_width(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), -1);
+
+	if (columns[p_column].cached_minimum_width_dirty) {
+		// Use the custom minimum width.
+		int min_width = columns[p_column].custom_min_width;
+
+		// Check if the visible title of the column is wider.
+		if (show_column_titles) {
+			const float padding = theme_cache.title_button->get_margin(SIDE_LEFT) +
+								  theme_cache.title_button->get_margin(SIDE_RIGHT);
+			min_width = MAX(theme_cache.font
+									->get_string_size(columns[p_column].xl_title,
+										HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+									.width +
+								padding,
+				min_width);
+		}
+
+		if (root && !columns[p_column].clip_content) {
+			int depth = 1;
+
+			TreeItem* last = nullptr;
+			TreeItem* first = hide_root ? root->get_next_visible() : root;
+			for (TreeItem* item = first; item; last = item, item = item->get_next_visible()) {
+				// Get column indentation.
+				int indent;
+				if (p_column == 0) {
+					if (last) {
+						if (item->parent == last) {
+							depth += 1;
+						}
+						else if (item->parent != last->parent) {
+							depth = hide_root ? 0 : 1;
+							for (TreeItem* iter = item->parent; iter; iter = iter->parent) {
+								depth += 1;
+							}
+						}
+					}
+					indent = theme_cache.item_margin * depth;
+				}
+				else {
+					indent = theme_cache.h_separation;
+				}
+
+				// Get the item minimum size.
+				Size2 item_size = item->get_minimum_size(p_column);
+				item_size.width += indent;
+
+				// Check if the item is wider.
+				min_width = MAX(min_width, item_size.width);
+			}
+		}
+
+		columns.get(p_column).cached_minimum_width = min_width;
+		columns.get(p_column).cached_minimum_width_dirty = false;
+	}
+
+	return columns[p_column].cached_minimum_width;
+}
+
+int Tree::get_column_width(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), -1);
+
+	int column_width = get_column_minimum_width(p_column);
+
+	if (columns[p_column].expand) {
+		int expand_area = _get_content_rect().size.width;
+		int expanding_total = 0;
+
+		for (int i = 0; i < columns.size(); i++) {
+			expand_area -= get_column_minimum_width(i);
+			if (columns[i].expand) {
+				expanding_total += columns[i].expand_ratio;
+			}
+		}
+
+		if (expand_area >= expanding_total && expanding_total > 0) {
+			column_width += expand_area * columns[p_column].expand_ratio / expanding_total;
+		}
+	}
+
+	return column_width;
+}
+
+void Tree::propagate_set_columns(TreeItem* p_item)
+{
+	p_item->cells.resize(columns.size());
+	p_item->accessibility_row_dirty = true;
+	for (TreeItem::Cell& cell : p_item->cells) {
+		if (cell.accessibility_cell_element.is_valid()) {
+			AccessibilityServer::free_element(cell.accessibility_cell_element);
+			cell.accessibility_cell_element = RID();
+		}
+		for (TreeItem::Cell::Button& btn : cell.buttons) {
+			if (btn.accessibility_button_element.is_valid()) {
+				AccessibilityServer::free_element(
+					btn.accessibility_button_element);
+				btn.accessibility_button_element = RID();
+			}
+		}
+	}
+
+	TreeItem* c = p_item->get_first_child();
+	while (c) {
+		propagate_set_columns(c);
+		c = c->next;
+	}
+}
+
+int Tree::get_columns() const { return columns.size(); }
+
+Rect2 Tree::get_custom_popup_rect() const { return custom_popup_rect; }
+
+int Tree::get_item_offset(TreeItem* p_item) const
+{
+	TreeItem* it = root;
+	int ofs = _get_title_button_height();
+	if (!it) {
+		return 0;
+	}
+
+	while (true) {
+		if (it == p_item) {
+			return ofs;
+		}
+
+		if ((it != root || !hide_root) && it->is_visible_in_tree()) {
+			ofs += compute_item_height(it);
+			ofs += theme_cache.v_separation;
+		}
+
+		if (it->first_child && !it->collapsed) {
+			it = it->first_child;
+
+		}
+		else if (it->next) {
+			it = it->next;
+		}
+		else {
+			while (!it->next) {
+				it = it->parent;
+				if (it == nullptr) {
+					return 0;
+				}
+			}
+
+			it = it->next;
+		}
+	}
+
+	return -1; // Not found.
+}
+
+void Tree::ensure_cursor_is_visible()
+{
+	if (!is_inside_tree()) {
+		return;
+	}
+	if (!selected_item || (selected_col == -1)) {
+		return; // Nothing under cursor.
+	}
+
+	// Note: Code below similar to `Tree::scroll_to_item()`, in case of bug fix both.
+	const Size2 area_size = _get_content_rect().size;
+
+	double delta_v = 0;
+	int y_offset = get_item_offset(selected_item);
+	if (y_offset != -1) {
+		const int tbh = _get_title_button_height();
+		y_offset -= tbh;
+
+		bool selected_is_sticky = false;
+		for (TreeItem* item : sticky_list) {
+			if (selected_item == item) {
+				y_offset -= item->sticky_offset.y;
+				selected_is_sticky = true;
+				break;
+			}
+		}
+
+		if (!selected_is_sticky) {
+			y_offset -= sticky_stack_end;
+		}
+
+		const int cell_h = compute_item_height(selected_item) + theme_cache.v_separation;
+		int screen_h = area_size.height - tbh - sticky_stack_end;
+
+		if (cell_h > screen_h) { // Screen size is too small, maybe it was not resized yet.
+			delta_v = y_offset - v_scroll->get_value();
+			v_scroll->set_value(y_offset);
+		}
+		else if (y_offset + cell_h > v_scroll->get_value() + screen_h) {
+			delta_v = y_offset - screen_h + cell_h - v_scroll->get_value();
+			scroll_pending++;
+		}
+		else if (y_offset < v_scroll->get_value()) {
+			delta_v = y_offset - v_scroll->get_value();
+			v_scroll->set_value(y_offset);
+		}
+	}
+
+	double delta_h = 0;
+	if (select_mode != SELECT_ROW) { // Cursor always at column 0 in this mode.
+		int x_offset = 0;
+		for (int i = 0; i < selected_col; i++) {
+			x_offset += get_column_width(i);
+		}
+
+		const int cell_w = get_column_width(selected_col);
+		const int screen_w = area_size.width;
+
+		if (cell_w > screen_w) {
+			delta_h = x_offset - h_scroll->get_value();
+			scroll_pending++;
+			h_scroll->set_value(x_offset);
+		}
+		else if (x_offset + cell_w > h_scroll->get_value() + screen_w) {
+			delta_h = x_offset - screen_w + cell_w - h_scroll->get_value();
+			scroll_pending++;
+		}
+		else if (x_offset < h_scroll->get_value()) {
+			delta_h = x_offset - h_scroll->get_value();
+			h_scroll->set_value(x_offset);
+		}
+	}
+
+	// Move focus_rect.
+	if (select_mode == SELECT_ROW) {
+		Rect2 r = selected_item->cells[selected_col].focus_rect;
+		r.position -= Vector2(delta_h, delta_v);
+		selected_item->cells.write[selected_col].focus_rect = r;
+	}
+	else {
+		Rect2 r = selected_item->focus_rect;
+		r.position -= Vector2(delta_h, delta_v);
+		selected_item->focus_rect = r;
+	}
+
+	queue_accessibility_update();
+}
+
+int Tree::get_pressed_button() const { return pressed_button; }
+
+Rect2 Tree::get_item_rect(TreeItem* p_item, int p_column, int p_button) const
+{
+	ERR_FAIL_NULL_V(p_item, Rect2());
+	ERR_FAIL_COND_V(p_item->tree != this, Rect2());
+	if (p_column != -1) {
+		ERR_FAIL_INDEX_V(p_column, columns.size(), Rect2());
+	}
+	if (p_button != -1) {
+		ERR_FAIL_COND_V(p_column == -1, Rect2()); // Pass a column if you want to pass a button.
+		ERR_FAIL_INDEX_V(p_button, p_item->cells[p_column].buttons.size(), Rect2());
+	}
+
+	int ofs = get_item_offset(p_item);
+	int height = compute_item_height(p_item) + theme_cache.v_separation;
+	Rect2 r;
+	r.position.y = ofs - theme_cache.offset.y + theme_cache.panel_style->get_offset().y;
+	r.size.height = height;
+	bool rtl = is_layout_rtl();
+	const Rect2 content_rect = _get_content_rect();
+
+	if (p_column == -1) {
+		r.position.x = 0;
+		r.size.x = get_size().width;
+	}
+	else {
+		int accum = 0;
+		for (int i = 0; i < p_column; i++) {
+			accum += get_column_width(i);
+		}
+		r.position.x =
+			(rtl) ? get_size().x - (accum - theme_cache.offset.x) - get_column_width(p_column) -
+						theme_cache.panel_style->get_margin(SIDE_LEFT)
+				  : accum - theme_cache.offset.x + theme_cache.panel_style->get_margin(SIDE_LEFT);
+		r.size.x = get_column_width(p_column);
+		if (p_button != -1) {
+			// RTL direction support for button rect is different due to buttons not
+			// having same behavior as they do in LTR when tree is scrolled.
+			const TreeItem::Cell& c = p_item->cells[p_column];
+			Vector2 ofst =
+				Vector2(r.position.x + r.size.x + theme_cache.button_margin, r.position.y);
+
+			// Compute total width of buttons block including spacings.
+			int buttons_width = 0;
+			for (int j = c.buttons.size() - 1; j >= 0; j--) {
+				Ref<Texture2D> b = c.buttons[j].texture;
+				Size2 size = b->get_size() + theme_cache.button_pressed->get_minimum_size();
+				buttons_width += size.width + theme_cache.button_margin;
+			}
+			for (int j = c.buttons.size() - 1; j >= 0; j--) {
+				Ref<Texture2D> b = c.buttons[j].texture;
+				Size2 size = b->get_size() + theme_cache.button_pressed->get_minimum_size();
+				ofst.x -= size.x + theme_cache.button_margin;
+
+				if (rtl) {
+					if (j == p_button) {
+						return Rect2(r.position, Size2(size.x, r.size.y));
+					}
+					r.position.x += size.x + theme_cache.button_margin;
+					continue;
+				}
+
+				if (j == p_button) {
+					float content_rect_end_x = content_rect.position.x + content_rect.size.width;
+					if (r.position.x + r.size.x < content_rect_end_x) {
+						return Rect2(ofst, Size2(size.x, r.size.y));
+					}
+					// Button block can be outside of `content_rect`.
+					if (content_rect_end_x - (r.position.x + theme_cache.h_separation) <
+						buttons_width) {
+						return Rect2(
+							r.position +
+								Point2(theme_cache.h_separation +
+										   (buttons_width - ((r.position.x + r.size.x) - ofst.x)),
+									0),
+							Size2(size.x, r.size.y));
+					}
+
+					return Rect2(ofst - Vector2((r.position.x + r.size.x) - content_rect_end_x, 0),
+						Size2(size.x, r.size.y));
+				}
+			}
+		}
+	}
+
+	return r;
+}
+
+bool Tree::are_column_titles_visible() const { return show_column_titles; }
+
+String Tree::get_column_title(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), "");
+	return columns[p_column].title;
+}
+
+void Tree::set_column_title_tooltip_text(int p_column, const String& p_tooltip)
+{
+	ERR_FAIL_INDEX(p_column, columns.size());
+	columns.write[p_column].title_tooltip = p_tooltip;
+}
+
+String Tree::get_column_title_tooltip_text(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), "");
+	return columns[p_column].title_tooltip;
+}
+
+HorizontalAlignment Tree::get_column_title_alignment(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
+	return columns[p_column].title_alignment;
+}
+
+Control::TextDirection Tree::get_column_title_direction(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), TEXT_DIRECTION_INHERITED);
+	return columns[p_column].text_direction;
+}
+
+String Tree::get_column_title_language(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, columns.size(), "");
+	return columns[p_column].language;
+}
+
+Point2 Tree::get_scroll() const
+{
+	Point2 ofs;
+	if (h_scroll->is_visible_in_tree()) {
+		ofs.x = h_scroll->get_value();
+	}
+	if (v_scroll->is_visible_in_tree()) {
+		ofs.y = v_scroll->get_value();
+	}
+	return ofs;
+}
+
+bool Tree::is_h_scroll_enabled() const { return h_scroll_enabled; }
+
+bool Tree::is_v_scroll_enabled() const { return v_scroll_enabled; }
+
+Tree::ScrollHintMode Tree::get_scroll_hint_mode() const { return scroll_hint_mode; }
+
+bool Tree::is_scroll_hint_tiled() { return tile_scroll_hint; }
+
+TreeItem* Tree::_search_item_text(
+	TreeItem* p_at, const String& p_find, int* r_col, bool p_selectable, bool p_backwards)
+{
+	TreeItem* from = p_at;
+	TreeItem* loop = nullptr; // Safe-guard against infinite loop.
+
+	while (p_at) {
+		for (int i = 0; i < columns.size(); i++) {
+			if (p_at->get_text(i).findn(p_find) == 0 && (!p_selectable || p_at->is_selectable(i))) {
+				if (r_col) {
+					*r_col = i;
+				}
+				return p_at;
+			}
+		}
+
+		if (p_backwards) {
+			p_at = p_at->get_prev_visible(true);
+		}
+		else {
+			p_at = p_at->get_next_visible(true);
+		}
+
+		if ((p_at) == from) {
+			break;
+		}
+
+		if (!loop) {
+			loop = p_at;
+		}
+		else if (loop == p_at) {
+			break;
+		}
+	}
+
+	return nullptr;
+}
+
+TreeItem* Tree::search_item_text(const String& p_find, int* r_col, bool p_selectable)
+{
+	TreeItem* from = get_selected();
+
+	if (!from) {
+		from = root;
+	}
+	if (!from) {
+		return nullptr;
+	}
+
+	return _search_item_text(from->get_next_visible(true), p_find, r_col, p_selectable);
+}
+
+TreeItem* Tree::get_item_with_text(const String& p_find) const
+{
+	for (TreeItem* current = root; current; current = current->get_next_visible()) {
+		for (int i = 0; i < columns.size(); i++) {
+			if (current->get_text(i) == p_find) {
+				return current;
+			}
+		}
+	}
+	return nullptr;
+}
+
+void Tree::_do_incr_search(const String& p_add)
+{
+	uint64_t time = OS::get_ticks_usec() / 1000; // Convert to msec.
+	uint64_t diff = time - last_keypress;
+	if (diff >
+		uint64_t(GLOBAL_GET_CACHED(uint64_t, "gui/timers/incremental_search_max_interval_msec"))) {
+		incr_search = p_add;
+	}
+	else if (incr_search != p_add) {
+		incr_search += p_add;
+	}
+
+	last_keypress = time;
+	int col;
+	TreeItem* item = search_item_text(incr_search, &col, true);
+	if (!item) {
+		return;
+	}
+
+	if (select_mode == SELECT_MULTI) {
+		item->set_as_cursor(col);
+	}
+	else {
+		item->select(col);
+	}
+	ensure_cursor_is_visible();
+}
+
+TreeItem* Tree::_find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_column,
+	int& r_height, int& r_section, bool p_sticky_check) const
+{
+	r_column = -1;
+	r_height = 0;
+	r_section = COLUMN_NOT_FOUND;
+
+	if (!root) {
+		return nullptr;
+	}
+
+	if (p_sticky_check) {
+		Point2 relative_pos = p_pos - theme_cache.offset;
+		for (TreeItem* item : sticky_list) {
+			if (item && relative_pos.y >= item->sticky_offset.y &&
+				relative_pos.y < item->sticky_offset.y + item->cached_label_height) {
+				item = _find_item_at_pos(item, relative_pos - Point2(0, item->cached_start),
+					r_column, r_height, r_section, false);
+				return item;
+			}
+		}
+	}
+
+	Point2 pos = p_pos;
+
+	// Calculate target parent based on horizontal mouse position.
+	int indent_width = theme_cache.item_margin;
+	int target_depth =
+		MAX(0, (p_pos.x / indent_width) + 1); // +1 to overlap with relationship lines.
+	int current_item_depth = 0;
+	for (TreeItem* depth_parent = p_item->get_parent(); depth_parent;
+		 depth_parent = depth_parent->get_parent()) {
+		if (depth_parent == root && hide_root) {
+			break;
+		}
+		current_item_depth++;
+	}
+
+	if (drop_mode_flags && drop_mode_flags != DROP_MODE_ON_ITEM) {
+		// Clamp maximum depth to current item's depth.
+		target_depth = MIN(target_depth, current_item_depth);
+	}
+	else if (drop_mode_flags == DROP_MODE_ON_ITEM) {
+		// Ignore indent space and always target items directly.
+		target_depth = current_item_depth;
+	}
+
+	bool is_at_target_depth = (drop_mode_flags && current_item_depth == target_depth);
+
+	if ((root != p_item || !hide_root) && p_item->is_visible_in_tree()) {
+		r_height = compute_item_height(p_item) + theme_cache.v_separation;
+
+		bool within_vertical_bounds = (pos.y < r_height);
+
+		if (within_vertical_bounds) {
+			bool skip_item = false;
+			if (drop_mode_flags && current_item_depth != target_depth) {
+				// Skip items not at target depth.
+				skip_item = true;
+			}
+
+			if (!skip_item) {
+				int item_content_start_x = current_item_depth * theme_cache.item_margin;
+				if (!p_item->first_child) {
+					item_content_start_x +=
+						((p_item->disable_folding || hide_folding) ? theme_cache.h_separation
+																   : theme_cache.item_margin);
+				}
+				bool over_content_area = (p_pos.x >= item_content_start_x);
+
+				bool item_allows_drop = p_item->is_accepting_children();
+				bool parent_allows_drop =
+					p_item->get_parent() && p_item->get_parent()->is_accepting_children();
+
+				if (drop_mode_flags == DROP_MODE_ON_ITEM) {
+					// When only on item drops are allowed.
+					r_section = item_allows_drop ? 0 : COLUMN_NOT_FOUND;
+				}
+				else if (drop_mode_flags == DROP_MODE_INBETWEEN) {
+					// When only sibling drops are allowed.
+					if (parent_allows_drop) {					   // Parent must accept children.
+						r_section = pos.y < r_height / 2 ? -1 : 1; // Above or below.
+					}
+					else {
+						r_section = COLUMN_NOT_FOUND;
+					}
+				}
+				else if (drop_mode_flags) {
+					// When either are allowed, section is determined by cursor position.
+					if (!over_content_area) {
+						// In indent space.
+						if (pos.y < r_height / 2 && current_item_depth > 0) {
+							r_section =
+								parent_allows_drop ? -1 : COLUMN_NOT_FOUND; // Sibling above.
+						}
+						else {
+							r_section = parent_allows_drop ? 1 : COLUMN_NOT_FOUND; // Sibling below.
+						}
+					}
+					else if (pos.y < r_height / 4) {
+						// Near top edge.
+						bool item_can_have_siblings =
+							(p_item != root) &&
+							(current_item_depth > 0 || hide_root); // Disqualify root.
+						if (item_can_have_siblings) {
+							r_section =
+								parent_allows_drop ? -1 : COLUMN_NOT_FOUND; // Sibling above.
+						}
+						else {
+							r_section =
+								item_allows_drop
+									? 0
+									: COLUMN_NOT_FOUND; // On root, or as last child of root.
+						}
+					}
+					else if (pos.y >= r_height * 3 / 4) {
+						// Near bottom edge.
+						if (p_item->first_child && item_allows_drop) {
+							r_section = 2; // As first child.
+						}
+						else {
+							r_section = parent_allows_drop ? 1 : COLUMN_NOT_FOUND; // Sibling below.
+						}
+					}
+					else {
+						// Middle zone.
+						if (item_allows_drop) {
+							r_section = 0; // On item, or as last child.
+						}
+						else if (parent_allows_drop) {
+							r_section = pos.y < r_height / 2 ? -1 : 1; // Above or below as sibling.
+						}
+						else {
+							r_section = COLUMN_NOT_FOUND;
+						}
+					}
+				}
+				else {
+					r_section = 0;
+				}
+
+				for (int i = 0; i < columns.size(); i++) {
+					int col_width = get_column_width(i);
+
+					if (p_item->cells[i].expand_right) {
+						int plus = 1;
+						while (i + plus < columns.size() && !p_item->cells[i + plus].editable &&
+							   p_item->cells[i + plus].mode == TreeItem::CELL_MODE_STRING &&
+							   p_item->cells[i + plus].text.is_empty() &&
+							   p_item->cells[i + plus].icon.is_null() &&
+							   p_item->cells[i + plus].buttons.is_empty()) {
+							col_width += theme_cache.h_separation;
+							col_width += get_column_width(i + plus);
+							plus++;
+						}
+					}
+
+					if (pos.x < col_width) {
+						r_column = i;
+						return p_item;
+					}
+					pos.x -= col_width;
+				}
+				return nullptr;
+			}
+		}
+		else {
+			pos.y -= r_height;
+		}
+	}
+	else {
+		r_height = 0;
+	}
+
+	if (p_item->is_collapsed() || !p_item->is_visible_in_tree()) {
+		return nullptr; // Do not try children, it's collapsed.
+	}
+
+	TreeItem* n = p_item->get_first_child();
+	while (n) {
+		int ch;
+		TreeItem* r = _find_item_at_pos(n, pos, r_column, ch, r_section, false);
+		pos.y -= ch;
+		r_height += ch;
+		if (r) {
+			return r;
+		}
+		n = n->get_next();
+	}
+
+	// Fallback: if in drop mode, at target depth, and mouse is below all nodes (pos.y is now
+	// negative after subtracting all children).
+	if (drop_mode_flags && is_at_target_depth && (root != p_item || !hide_root) &&
+		p_item->is_visible_in_tree() && pos.y < 0) {
+		// Dropping below the last item at specified depth level.
+		if (!p_item->get_parent() || !p_item->get_parent()->is_accepting_children()) {
+			return nullptr;
+		}
+		r_section = 1;
+
+		Point2 col_pos = p_pos;
+		for (int i = 0; i < columns.size(); i++) {
+			int col_width = get_column_width(i);
+
+			if (p_item->cells[i].expand_right) {
+				int plus = 1;
+				while (i + plus < columns.size() && !p_item->cells[i + plus].editable &&
+					   p_item->cells[i + plus].mode == TreeItem::CELL_MODE_STRING &&
+					   p_item->cells[i + plus].text.is_empty() &&
+					   p_item->cells[i + plus].icon.is_null() &&
+					   p_item->cells[i + plus].buttons.is_empty()) {
+					col_width += theme_cache.h_separation;
+					col_width += get_column_width(i + plus);
+					plus++;
+				}
+			}
+
+			if (col_pos.x < col_width) {
+				r_column = i;
+				return p_item;
+			}
+			col_pos.x -= col_width;
+		}
+	}
+
+	return nullptr;
+}
+
+void Tree::_find_button_at_pos(
+	const Point2& p_pos, TreeItem*& r_item, int& r_column, int& r_index, int& r_section) const
+{
+	// When on a button, `r_index` is valid.
+	// When on an item, both `r_item` and `r_column` are valid.
+	// Otherwise, all output arguments are invalid.
+	r_item = nullptr;
+	r_column = -1;
+	r_index = -1;
+	r_section = -1;
+
+	if (!root) {
+		return;
+	}
+
+	Point2 pos = p_pos;
+	if (cache.rtl) {
+		pos.x = get_size().width - pos.x - 1;
+	}
+	Point2 margin_offset = theme_cache.panel_style->get_offset();
+	pos -= margin_offset;
+	pos.y -= _get_title_button_height();
+	if (pos.y + margin_offset.y < 0) {
+		return;
+	}
+	pos += theme_cache.offset; // Scrolling.
+
+	int x_limit = _get_content_rect().size.x + theme_cache.offset.width;
+
+	if (pos.x > x_limit) {
+		// Inside the scroll area.
+		return;
+	}
+
+	int col, h, section;
+	TreeItem* it = _find_item_at_pos(root, pos, col, h, section);
+	if (!it) {
+		return;
+	}
+
+	r_item = it;
+	r_column = col;
+	r_section = section;
+
+	const TreeItem::Cell& c = it->cells[col];
+	if (c.buttons.is_empty()) {
+		return;
+	}
+
+	// Search the button index.
+	FindColumnButtonResult result = _find_column_and_button_at_pos(pos.x, it, 0, x_limit);
+	r_index = result.button_index;
+}
+
+Tree::FindColumnButtonResult Tree::_find_column_and_button_at_pos(
+	int p_x, const TreeItem* p_item, int p_x_ofs, int p_x_limit) const
+{
+	int x = p_x;
+
+	int col = -1;
+	int col_ofs = 0;
+	int col_width = 0;
+
+	int limit_w = p_x_limit;
+
+	FindColumnButtonResult result;
+
+	for (int i = 0; i < columns.size(); i++) {
+		col_width = get_column_width(i);
+
+		if (p_item->cells[i].expand_right) {
+			int plus = 1;
+			while (i + plus < columns.size() && !p_item->cells[i + plus].editable &&
+				   p_item->cells[i + plus].mode == TreeItem::CELL_MODE_STRING &&
+				   p_item->cells[i + plus].text.is_empty() &&
+				   p_item->cells[i + plus].icon.is_null()) {
+				col_width += theme_cache.h_separation;
+				col_width += get_column_width(i + plus);
+				plus++;
+			}
+		}
+
+		if (x < col_width) {
+			col = i;
+			break;
+		}
+
+		col_ofs += col_width;
+		x -= col_width;
+		limit_w -= col_width;
+	}
+
+	if (col >= 0) {
+		if (col == 0) {
+			int margin = p_x_ofs + theme_cache.item_margin;
+			col_width -= margin;
+			limit_w -= margin;
+			col_ofs += margin;
+			x -= margin;
+		}
+		else {
+			col_width -= theme_cache.h_separation;
+			limit_w -= theme_cache.h_separation;
+			x -= theme_cache.h_separation;
+		}
+
+		if (!cache.rtl && !p_item->cells[col].buttons.is_empty()) {
+			int button_w = 0;
+			for (int j = p_item->cells[col].buttons.size() - 1; j >= 0; j--) {
+				const Ref<Texture2D>& b = p_item->cells[col].buttons[j].texture;
+				button_w += b->get_size().width +
+							theme_cache.button_pressed->get_minimum_size().width +
+							theme_cache.button_margin;
+			}
+
+			col_width = MAX(button_w, MIN(limit_w, col_width));
+		}
+
+		// Cell button detection code.
+		// The first half of the button margin will be applied to the left button,
+		// and the other half to the right button.
+		const int offset_button_width = theme_cache.button_margin / 2;
+		const TreeItem::Cell& c = p_item->cells[col];
+		for (int j = c.buttons.size() - 1; j >= 0; j--) {
+			const Ref<Texture2D>& b = c.buttons[j].texture;
+			int w = b->get_size().width + theme_cache.button_pressed->get_minimum_size().width;
+
+			if (x >= col_width - w - offset_button_width - 1) {
+				result.button_index = j;
+				break;
+			}
+
+			col_width -= w + theme_cache.button_margin;
+		}
+	}
+
+	result.column_index = col;
+	result.column_offset = col_ofs;
+	result.column_width = col_width;
+	result.pos_x = x;
+
+	return result;
+}
+
+int Tree::get_column_at_position(const Point2& p_pos) const
+{
+	if (!root || !Rect2(Vector2(), get_size()).has_point(p_pos)) {
+		return -1;
+	}
+
+	Point2 pos = p_pos;
+	if (is_layout_rtl()) {
+		pos.x = get_size().width - pos.x - 1;
+	}
+	Point2 margin_offset = theme_cache.panel_style->get_offset();
+	pos -= margin_offset;
+	pos.y -= _get_title_button_height();
+	if (pos.y + margin_offset.y < 0) {
+		return -1;
+	}
+
+	if (h_scroll->is_visible_in_tree()) {
+		pos.x += h_scroll->get_value();
+	}
+	if (v_scroll->is_visible_in_tree()) {
+		pos.y += v_scroll->get_value();
+	}
+
+	int col, h, section;
+	TreeItem* it = _find_item_at_pos(root, pos, col, h, section);
+
+	if (it) {
+		return col;
+	}
+	return -1;
+}
+
+int Tree::get_drop_section_at_position(const Point2& p_pos) const
+{
+	if (!root || !Rect2(Vector2(), get_size()).has_point(p_pos) || !drop_mode_flags) {
+		return COLUMN_NOT_FOUND;
+	}
+
+	Point2 pos = p_pos;
+	if (is_layout_rtl()) {
+		pos.x = get_size().width - pos.x - 1;
+	}
+	Point2 margin_offset = theme_cache.panel_style->get_offset();
+	pos -= margin_offset;
+	pos.y -= _get_title_button_height();
+	if (pos.y + margin_offset.y < 0) {
+		return COLUMN_NOT_FOUND;
+	}
+
+	if (h_scroll->is_visible_in_tree()) {
+		pos.x += h_scroll->get_value();
+	}
+	if (v_scroll->is_visible_in_tree()) {
+		pos.y += v_scroll->get_value();
+	}
+
+	int col, h, section;
+	TreeItem* it = _find_item_at_pos(root, pos, col, h, section);
+
+	if (it) {
+		if (dragging_within_self) {
+			TreeItem* check = it->get_parent();
+			while (check) {
+				if (check->is_any_column_selected()) {
+					return COLUMN_NOT_FOUND;
+				}
+				check = check->get_parent();
+			}
+		}
+		return section;
+	}
+	return COLUMN_NOT_FOUND;
+}
+
+TreeItem* Tree::get_item_at_position(const Point2& p_pos) const
+{
+	if (!root || !Rect2(Vector2(), get_size()).has_point(p_pos)) {
+		return nullptr;
+	}
+
+	Point2 pos = p_pos;
+	if (is_layout_rtl()) {
+		pos.x = get_size().width - pos.x - 1;
+	}
+	Point2 margin_offset = theme_cache.panel_style->get_offset();
+	pos -= margin_offset;
+	pos.y -= _get_title_button_height();
+	if (pos.y + margin_offset.y < 0) {
+		return nullptr;
+	}
+
+	if (h_scroll->is_visible_in_tree()) {
+		pos.x += h_scroll->get_value();
+	}
+	if (v_scroll->is_visible_in_tree()) {
+		pos.y += v_scroll->get_value();
+	}
+
+	int col, h, section;
+	TreeItem* it = _find_item_at_pos(root, pos, col, h, section);
+
+	if (it) {
+		return it;
+	}
+	return nullptr;
+}
+
+int Tree::get_button_id_at_position(const Point2& p_pos) const
+{
+	if (!root) {
+		return -1;
+	}
+
+	if (p_pos == Vector2(Math::INF, Math::INF)) {
+		if (selected_item && selected_button >= 0) {
+			return selected_item->cells[selected_col].buttons[selected_button].id;
+		}
+	}
+	else {
+		if (!Rect2(Vector2(), get_size()).has_point(p_pos)) {
+			return -1;
+		}
+
+		TreeItem* it;
+		int col, index, section;
+		_find_button_at_pos(p_pos, it, col, index, section);
+
+		if (index == -1) {
+			return -1;
+		}
+		return it->cells[col].buttons[index].id;
+	}
+	return -1;
+}
+
+Node::AutoTranslateMode Tree::get_tooltip_auto_translate_mode_at(const Point2& p_at) const
+{
+	Point2 pos = p_at - theme_cache.panel_style->get_offset();
+	pos.y -= _get_title_button_height();
+
+	// `pos.y` less than 0 indicates we're in the header.
+	if (pos.y < 0) {
+		// Columns don't have auto-translate mode, so return the default.
+		return Control::get_tooltip_auto_translate_mode_at(p_at);
+	}
+
+	TreeItem* it;
+	int col, index, section;
+	_find_button_at_pos(p_at, it, col, index, section);
+
+	if (it) {
+		return it->get_auto_translate_mode(col);
+	}
+	return Control::get_tooltip_auto_translate_mode_at(p_at);
+}
+
+void Tree::set_cursor_can_exit_tree(bool p_enable) { cursor_can_exit_tree = p_enable; }
+
+bool Tree::is_folding_hidden() const { return hide_folding; }
+
+void Tree::set_enable_recursive_folding(bool p_enable) { enable_recursive_folding = p_enable; }
+
+bool Tree::is_recursive_folding_enabled() const { return enable_recursive_folding; }
+
+void Tree::set_enable_drag_unfolding(bool p_enable)
+{
+	if (enable_drag_unfolding == p_enable) {
+		return;
+	}
+
+	enable_drag_unfolding = p_enable;
+	if (!enable_drag_unfolding && !dropping_unfold_timer->is_stopped()) {
+		dropping_unfold_timer->stop();
+	}
+}
+
+bool Tree::is_drag_unfolding_enabled() const { return enable_drag_unfolding; }
+
+int Tree::get_drop_mode_flags() const { return drop_mode_flags; }
+
+void Tree::set_edit_checkbox_cell_only_when_checkbox_is_pressed(bool p_enable)
+{
+	force_edit_checkbox_only_on_checkbox = p_enable;
+}
+
+bool Tree::get_edit_checkbox_cell_only_when_checkbox_is_pressed() const
+{
+	return force_edit_checkbox_only_on_checkbox;
+}
+
+void Tree::set_allow_rmb_select(bool p_allow) { allow_rmb_select = p_allow; }
+
+bool Tree::get_allow_rmb_select() const { return allow_rmb_select; }
+
+void Tree::set_allow_reselect(bool p_allow) { allow_reselect = p_allow; }
+
+bool Tree::get_allow_reselect() const { return allow_reselect; }
+
+void Tree::set_allow_search(bool p_allow) { allow_search = p_allow; }
+
+bool Tree::get_allow_search() const { return allow_search; }
+
+void Tree::set_auto_tooltip(bool p_enable) { enable_auto_tooltip = p_enable; }
+
+bool Tree::is_auto_tooltip_enabled() const { return enable_auto_tooltip; }
+
+void Tree::item_changed(int p_column, TreeItem* p_item) {}
+
+Tree::~Tree()
+{
+	memdelete(root);
+	Renderer::free_rid(drop_indicator_ci);
+	Renderer::free_rid(content_ci);
+	Renderer::free_rid(custom_ci);
+	Renderer::free_rid(header_ci);
+	Renderer::free_rid(stylebox_ci);
+	Renderer::free_rid(last_sticky_ci);
+}
+
+void TreeItem::propagate_check(int p_column, bool p_emit_signal) {}
+
+void Tree::set_scroll_hint_mode(ScrollHintMode p_mode) {}
+
+void Tree::update_item_cell(TreeItem* p_item, int p_col) const {}
+
+void Tree::clear() {}
+
+
+
+void Tree::set_column_title(int, String const&) {}
+
+void Tree::item_selected(int, TreeItem*, bool) {}
+
+void TreeItem::_change_tree(Tree*) {}
+
+void Tree::deselect_all() {}
+
+void Tree::item_deselected(int, TreeItem*) {}
+
+void Tree::_apply_multiline_edit(bool) {}
+
+void Tree::update_column(int) {}
+
+void Tree::set_hide_root(bool) {}
+
+void Tree::set_hide_folding(bool) {}
+
+void Tree::set_column_titles_visible(bool) {}
+
+void Tree::set_columns(int) {}
+
+void Tree::select_single_item(TreeItem*, TreeItem*, int, TreeItem*, bool*, bool) {}
+
+void Tree::_line_editor_submit(String) {}
+
+void TreeItem::set_as_cursor(int) {}
+
+void TreeItem::move_before(TreeItem*) {}
+
+void TreeItem::move_after(TreeItem*) {}
+
+TreeItem* TreeItem::create_child(int) {}
+
+void Tree::_determine_hovered_item() {}
+
+// --- tree.compat.inc ---
+
+#ifndef DISABLE_DEPRECATED
+
+
+void TreeItem::_select_bind_compat_119367(int p_column) { select(p_column, true); }
+
+void TreeItem::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
+
+// ============================================================================
+// Merged from scene/gui/label.cpp
+// ============================================================================
+
+#include "label.h"
+#include "scene/main/scene_tree.h"
+#include "scene/theme/theme_db.h"
+#include "servers/display/accessibility_server.h"
+#include "servers/rendering/renderer.h"
+#include "servers/text/text_server.h"
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "core/input/input.h"
+#include "core/input/input_map.h"
+#include "core/os/keyboard.h"
+#include "core/os/main_loop.h"
+#include "core/os/os.h"
+#include "core/string/ustring.h"
+#include "line_edit.h"
+#include "scene/main/window.h"
+#include "servers/display/display_server.h"
+#include "scene/gui/label.h"
+#include "scene/resources/atlas_texture.h"
+#include "scene/gui/button.h"
+#include "scene/gui/label.h"
+#include "servers/audio/audio_server.h"
+// --- Inlined from scene/gui/video_stream_player.h ---
+#include "scene/gui/control.h"
+#include "scene/resources/packed_scene.h"
+#include "servers/audio/audio_server.h"
+
+class VideoStreamPlayer : public Control
+{
+	Ref<VideoStreamPlayback> playback;
+	Ref<VideoStream> stream;
+
+	int sp_get_channel_count() const;
+	bool mix(AudioFrame* p_buffer, int p_frames);
+
+	Ref<Texture2D> texture;
+	Size2 texture_size;
+	void texture_changed(const Ref<Texture2D>& p_texture);
+
+	AudioRBResampler resampler;
+	Vector<AudioFrame> mix_buffer;
+	int wait_resampler = 0;
+	int wait_resampler_limit = 2;
+
+	bool paused = false;
+	bool paused_from_tree = false;
+	bool autoplay = false;
+	float volume = 1.0;
+	float speed_scale = 1.0;
+	bool expand = false;
+	bool loop = false;
+	bool first_frame = false;
+	int buffering_ms = 500;
+	int audio_track = 0;
+	int bus_index = 0;
+
+	String bus;
+
+	void _mix_audio();
+	static int _audio_mix_callback(void* p_udata, const float* p_data, int p_frames);
+	static void _mix_audios(void* p_self);
+
+protected:
+	void _notification(int p_notification);
+
+public:
+	Size2 get_minimum_size() const override;
+	void set_expand(bool p_expand);
+	bool has_expand() const;
+
+	Ref<Texture2D> get_video_texture() const;
+
+	void set_stream(const Ref<VideoStream>& p_stream);
+	Ref<VideoStream> get_stream() const;
+
+	void play();
+	void stop();
+	bool is_playing() const;
+
+	void set_loop(bool p_loop);
+	bool has_loop() const;
+
+	void set_paused(bool p_paused);
+	bool is_paused() const;
+
+	void set_volume(float p_vol);
+	float get_volume() const;
+
+	void set_volume_db(float p_db);
+	float get_volume_db() const;
+
+	void set_speed_scale(float p_speed_scale);
+	float get_speed_scale() const;
+
+	String get_stream_name() const;
+	double get_stream_length() const;
+	double get_stream_position() const;
+	void set_stream_position(double p_position);
+
+	void set_autoplay(bool p_enable);
+	bool has_autoplay() const;
+
+	void set_audio_track(int p_track);
+	int get_audio_track() const;
+
+	void set_buffering_msec(int p_msec);
+	int get_buffering_msec() const;
+
+	void set_bus(const String& p_bus);
+	String get_bus() const;
+
+	~VideoStreamPlayer();
+};
+
+
+
+// --- End scene/gui/video_stream_player.h ---
+// --- Inlined from scene/gui/virtual_joystick.h ---
+#include "scene/gui/control.h"
+
+class VirtualJoystick : public Control
+{
+public:
+	enum JoystickMode
+	{
+		JOYSTICK_FIXED,
+		JOYSTICK_DYNAMIC,
+		JOYSTICK_FOLLOWING,
+	};
+
+	enum VisibilityMode
+	{
+		VISIBILITY_ALWAYS,
+		VISIBILITY_WHEN_TOUCHED,
+	};
+
+private:
+	JoystickMode joystick_mode = JOYSTICK_FIXED;
+	float joystick_size = 100.0f;
+	float tip_size = 50.0f;
+	float deadzone_ratio = 0.0f;
+	float clampzone_ratio = 1.0f;
+	Vector2 initial_offset_ratio = Vector2(0.5, 0.5);
+	String action_left = "ui_left";
+	String action_right = "ui_right";
+	String action_up = "ui_up";
+	String action_down = "ui_down";
+	VisibilityMode visibility = VISIBILITY_ALWAYS;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal_joystick;
+		Ref<StyleBox> normal_tip;
+		Ref<StyleBox> pressed_joystick;
+		Ref<StyleBox> pressed_tip;
+	} theme_cache;
+
+	bool is_pressed = false;
+	bool has_input = false;
+	bool has_moved = false;
+	Vector2 raw_input_vector;
+	Vector2 input_vector;
+	bool is_flick_canceled = false;
+	int touch_index = -1;
+
+	Vector2 joystick_pos;
+	Vector2 tip_pos;
+
+	void _update_joystick(const Vector2& p_pos);
+	void _handle_input_actions();
+	void _reset();
+
+protected:
+	virtual void gui_input(const InputEvent& p_event);
+	void _notification(int p_what);
+
+public:
+	Vector2 get_joystick_position() const;
+
+	void set_joystick_mode(JoystickMode p_mode);
+	JoystickMode get_joystick_mode() const;
+
+	void set_joystick_size(float p_size);
+	float get_joystick_size() const;
+
+	void set_tip_size(float p_size);
+	float get_tip_size() const;
+
+	void set_deadzone_ratio(float p_ratio);
+	float get_deadzone_ratio() const;
+
+	void set_clampzone_ratio(float p_ratio);
+	float get_clampzone_ratio() const;
+
+	void set_initial_offset_ratio(const Vector2& p_ratio);
+	Vector2 get_initial_offset_ratio() const;
+
+	void set_action_left(const String& p_action);
+	String get_action_left() const;
+	void set_action_right(const String& p_action);
+	String get_action_right() const;
+	void set_action_up(const String& p_action);
+	String get_action_up() const;
+	void set_action_down(const String& p_action);
+	String get_action_down() const;
+
+	void set_visibility_mode(VisibilityMode p_mode);
+	VisibilityMode get_visibility_mode() const;
+};
+
+
+
+// --- End scene/gui/virtual_joystick.h ---
+
+#ifdef TOOLS_ENABLED
+#include "editor/settings/editor_settings.h"
+#endif
+
+TextServer::AutowrapMode Label::get_autowrap_mode() const { return autowrap_mode; }
+
+uint32_t Label::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
+
+uint32_t Label::get_justification_flags() const { return jst_flags; }
+
+bool Label::is_uppercase() const { return uppercase; }
+
+int Label::get_line_height(int p_line) const
+{
+	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
+																			  : theme_cache.font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_h = font->get_height(font_size);
+	if (p_line >= 0 && p_line < total_line_count) {
+		RID rid = get_line_rid(p_line);
+		double asc = TS->shaped_text_get_ascent(rid);
+		double dsc = TS->shaped_text_get_descent(rid);
+		if (asc + dsc < font_h) {
+			double diff = font_h - (asc + dsc);
+			asc += diff / 2;
+			dsc += diff - (diff / 2);
+		}
+		return asc + dsc;
+	}
+	else if (total_line_count > 0) {
+		int h = font_h;
+		for (const Paragraph& para : paragraphs) {
+			for (const RID& line_rid : para.lines_rid) {
+				h = MAX(h, TS->shaped_text_get_size(line_rid).y);
+			}
+		}
+		return h;
+	}
+	else {
+		return font->get_height(font_size);
+	}
+}
+
+void Label::_update_visible() const
+{
+	int line_spacing =
+		settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
+	int paragraph_spacing =
+		settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
+	Ref<StyleBox> style = theme_cache.normal_style;
+	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
+																			  : theme_cache.font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_h = font->get_height(font_size);
+	int lines_visible = total_line_count;
+
+	if (max_lines_visible >= 0 && lines_visible > max_lines_visible) {
+		lines_visible = max_lines_visible;
+	}
+
+	minsize.height = 0;
+	int last_line = MIN(total_line_count, lines_visible + lines_skipped);
+
+	int line_index = 0;
+	for (const Paragraph& para : paragraphs) {
+		if (line_index + para.lines_rid.size() <= lines_skipped) {
+			line_index += para.lines_rid.size();
+		}
+		else {
+			int start = (line_index < lines_skipped) ? lines_skipped - line_index : 0;
+			int end = (line_index + para.lines_rid.size() < last_line) ? para.lines_rid.size()
+																	   : last_line - line_index;
+			if (end <= 0) {
+				break;
+			}
+			for (int i = start; i < end; i++) {
+				double asc = TS->shaped_text_get_ascent(para.lines_rid[i]);
+				double dsc = TS->shaped_text_get_descent(para.lines_rid[i]);
+				if (asc + dsc < font_h) {
+					double diff = font_h - (asc + dsc);
+					asc += diff / 2;
+					dsc += diff - (diff / 2);
+				}
+				minsize.height += asc + dsc + line_spacing;
+			}
+			minsize.height += paragraph_spacing;
+			line_index += para.lines_rid.size();
+		}
+	}
+
+	if (minsize.height > 0) {
+		minsize.height -= (line_spacing + paragraph_spacing);
+	}
+}
+
+inline void draw_glyph(
+	const Glyph& p_gl, const RID& p_canvas, const Color& p_font_color, const Vector2& p_ofs)
+{
+	if (p_gl.font_rid != RID()) {
+		TS->font_draw_glyph(p_gl.font_rid, p_canvas, p_gl.font_size,
+			p_ofs + Vector2(p_gl.x_off, p_gl.y_off), p_gl.index, p_font_color);
+	}
+	else if (((p_gl.flags & TextServer::GRAPHEME_IS_VIRTUAL) !=
+				   TextServer::GRAPHEME_IS_VIRTUAL) &&
+			   ((p_gl.flags & TextServer::GRAPHEME_IS_EMBEDDED_OBJECT) !=
+				   TextServer::GRAPHEME_IS_EMBEDDED_OBJECT)) {
+		TS->draw_hex_code_box(p_canvas, p_gl.font_size, p_ofs + Vector2(p_gl.x_off, p_gl.y_off),
+			p_gl.index, p_font_color);
+	}
+}
+
+inline void draw_glyph_shadow(const Glyph& p_gl, const RID& p_canvas,
+	const Color& p_font_shadow_color, const Vector2& p_ofs, const Vector2& shadow_ofs)
+{
+	if (p_gl.font_rid != RID()) {
+		TS->font_draw_glyph(p_gl.font_rid, p_canvas, p_gl.font_size,
+			p_ofs + Vector2(p_gl.x_off, p_gl.y_off) + shadow_ofs, p_gl.index, p_font_shadow_color);
+	}
+}
+
+inline void draw_glyph_shadow_outline(const Glyph& p_gl, const RID& p_canvas,
+	const Color& p_font_shadow_color, const Vector2& p_ofs, int p_shadow_outline_size,
+	const Vector2& shadow_ofs)
+{
+	if (p_gl.font_rid != RID()) {
+		TS->font_draw_glyph_outline(p_gl.font_rid, p_canvas, p_gl.font_size, p_shadow_outline_size,
+			p_ofs + Vector2(p_gl.x_off, p_gl.y_off) + shadow_ofs, p_gl.index, p_font_shadow_color);
+	}
+}
+
+inline void draw_glyph_outline(const Glyph& p_gl, const RID& p_canvas,
+	const Color& p_font_outline_color, const Vector2& p_ofs, int p_outline_size)
+{
+	if (p_gl.font_rid != RID()) {
+		if (p_font_outline_color.a != 0.0 && p_outline_size > 0) {
+			TS->font_draw_glyph_outline(p_gl.font_rid, p_canvas, p_gl.font_size, p_outline_size,
+				p_ofs + Vector2(p_gl.x_off, p_gl.y_off), p_gl.index, p_font_outline_color);
+		}
+	}
+}
+
+void Label::_ensure_shaped() const
+{
+	if (dirty || font_dirty || text_dirty) {
+		_shape();
+	}
+	else {
+		for (const Paragraph& para : paragraphs) {
+			if (para.lines_dirty || para.dirty) {
+				_shape();
+				return;
+			}
+		}
+	}
+}
+
+RID Label::get_line_rid(int p_line) const
+{
+	if (p_line < 0 || p_line >= total_line_count) {
+		return RID();
+	}
+
+	int line_index = 0;
+	for (const Paragraph& para : paragraphs) {
+		if (line_index + para.lines_rid.size() <= p_line) {
+			line_index += para.lines_rid.size();
+		}
+		else {
+			return para.lines_rid[p_line - line_index];
+		}
+	}
+
+	return RID();
+}
+
+Rect2 Label::get_line_rect(int p_line) const
+{
+	if (p_line < 0 || p_line >= total_line_count) {
+		return Rect2();
+	}
+
+	int line_index = 0;
+	for (int p = 0; p < paragraphs.size(); p++) {
+		const Paragraph& para = paragraphs[p];
+		if (line_index + para.lines_rid.size() <= p_line) {
+			line_index += para.lines_rid.size();
+		}
+		else {
+			return _get_line_rect(p, p_line - line_index);
+		}
+	}
+
+	return Rect2();
+}
+
+Rect2 Label::_get_line_rect(int p_para, int p_line) const
+{
+	// Returns a rect providing the line's horizontal offset and total size. To determine the
+	// vertical offset, use r_offset and r_line_spacing from get_layout_data.
+	bool rtl = TS->shaped_text_get_inferred_direction(paragraphs[p_para].text_rid) ==
+			   TextServer::DIRECTION_RTL;
+	bool rtl_layout = is_layout_rtl();
+	Ref<StyleBox> style = theme_cache.normal_style;
+	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
+																			  : theme_cache.font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_h = font->get_height(font_size);
+	Size2 size = get_size();
+	RID rid = paragraphs[p_para].lines_rid[p_line];
+	Size2 line_size = TS->shaped_text_get_size(rid);
+	double asc = TS->shaped_text_get_ascent(rid);
+	double dsc = TS->shaped_text_get_descent(rid);
+	if (asc + dsc < font_h) {
+		double diff = font_h - (asc + dsc);
+		asc += diff / 2;
+		dsc += diff - (diff / 2);
+	}
+	line_size.y = asc + dsc;
+	Vector2 offset;
+	switch (horizontal_alignment) {
+	case HORIZONTAL_ALIGNMENT_FILL:
+		if (rtl && autowrap_mode != TextServer::AUTOWRAP_OFF) {
+			offset.x = int(size.width - style->get_margin(SIDE_RIGHT) - line_size.width);
+		}
+		else {
+			offset.x = style->get_offset().x;
+		}
+		break;
+	case HORIZONTAL_ALIGNMENT_LEFT: {
+		if (rtl_layout) {
+			offset.x = int(size.width - style->get_margin(SIDE_RIGHT) - line_size.width);
+		}
+		else {
+			offset.x = style->get_offset().x;
+		}
+	} break;
+	case HORIZONTAL_ALIGNMENT_CENTER: {
+		offset.x = int(size.width - line_size.width) / 2;
+	} break;
+	case HORIZONTAL_ALIGNMENT_RIGHT: {
+		if (rtl_layout) {
+			offset.x = style->get_offset().x;
+		}
+		else {
+			offset.x = int(size.width - style->get_margin(SIDE_RIGHT) - line_size.width);
+		}
+	} break;
+	}
+	return Rect2(offset, line_size);
+}
+
+int Label::get_layout_data(Vector2& r_offset, int& r_last_line, int& r_line_spacing) const
+{
+	// Computes several common parameters involved in laying out and rendering text set to this
+	// label. Only vertical margin is considered in r_offset: use get_line_rect to get the
+	// horizontal offset for a given line of text.
+	Size2 size = get_size();
+	Ref<StyleBox> style = theme_cache.normal_style;
+	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
+																			  : theme_cache.font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_h = font->get_height(font_size);
+	int line_spacing =
+		settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
+	int paragraph_spacing =
+		settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
+	float total_h = 0.0;
+	int lines_visible = 0;
+
+	// Get number of lines to fit to the height.
+	int line_index = 0;
+	for (const Paragraph& para : paragraphs) {
+		if (line_index + para.lines_rid.size() <= lines_skipped) {
+			line_index += para.lines_rid.size();
+		}
+		else {
+			int start = (line_index < lines_skipped) ? lines_skipped - line_index : 0;
+			for (int i = start; i < para.lines_rid.size(); i++) {
+				double asc = TS->shaped_text_get_ascent(para.lines_rid[i]);
+				double dsc = TS->shaped_text_get_descent(para.lines_rid[i]);
+				if (asc + dsc < font_h) {
+					double diff = font_h - (asc + dsc);
+					asc += diff / 2;
+					dsc += diff - (diff / 2);
+				}
+				total_h += asc + dsc + line_spacing;
+				if (total_h > Math::ceil(get_size().height - style->get_minimum_size().height +
+										 line_spacing)) {
+					break;
+				}
+				lines_visible++;
+			}
+			total_h += paragraph_spacing;
+			line_index += para.lines_rid.size();
+		}
+	}
+
+	if (max_lines_visible >= 0 && lines_visible > max_lines_visible) {
+		lines_visible = max_lines_visible;
+	}
+
+	r_last_line = MIN(total_line_count, lines_visible + lines_skipped);
+
+	// Get real total height.
+	int total_glyphs = 0;
+	total_h = 0;
+	line_index = 0;
+	for (const Paragraph& para : paragraphs) {
+		if (line_index + para.lines_rid.size() <= lines_skipped) {
+			line_index += para.lines_rid.size();
+		}
+		else {
+			int start = (line_index < lines_skipped) ? lines_skipped - line_index : 0;
+			int end = (line_index + para.lines_rid.size() < r_last_line) ? para.lines_rid.size()
+																		 : r_last_line - line_index;
+			if (end <= 0) {
+				break;
+			}
+			for (int i = start; i < end; i++) {
+				double asc = TS->shaped_text_get_ascent(para.lines_rid[i]);
+				double dsc = TS->shaped_text_get_descent(para.lines_rid[i]);
+				if (asc + dsc < font_h) {
+					double diff = font_h - (asc + dsc);
+					asc += diff / 2;
+					dsc += diff - (diff / 2);
+				}
+				total_h += asc + dsc + line_spacing;
+				total_glyphs += TS->shaped_text_get_glyph_count(para.lines_rid[i]) +
+								TS->shaped_text_get_ellipsis_glyph_count(para.lines_rid[i]);
+			}
+			total_h += paragraph_spacing;
+			line_index += para.lines_rid.size();
+		}
+	}
+	total_h += style->get_margin(SIDE_TOP) + style->get_margin(SIDE_BOTTOM);
+	int vbegin = 0, vsep = 0;
+	if (lines_visible > 0) {
+		switch (vertical_alignment) {
+		case VERTICAL_ALIGNMENT_TOP: {
+			// Nothing.
+		} break;
+		case VERTICAL_ALIGNMENT_CENTER: {
+			vbegin = (size.y - (total_h - line_spacing - paragraph_spacing)) / 2;
+			vsep = 0;
+		} break;
+		case VERTICAL_ALIGNMENT_BOTTOM: {
+			vbegin = size.y - (total_h - line_spacing - paragraph_spacing);
+			vsep = 0;
+		} break;
+		case VERTICAL_ALIGNMENT_FILL: {
+			vbegin = 0;
+			if (lines_visible > 1) {
+				vsep =
+					(size.y - (total_h - line_spacing - paragraph_spacing)) / (lines_visible - 1);
+			}
+			else {
+				vsep = 0;
+			}
+		} break;
+		}
+	}
+	r_offset = {0, style->get_offset().y + vbegin};
+	r_line_spacing = line_spacing + vsep;
+
+	return total_glyphs;
+}
+
+PackedStringArray Label::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Control::get_configuration_warnings();
+
+	// FIXME: This is not ideal and the sizing model should be fixed,
+	// but for now we have to warn about this impossible to resolve combination.
+	// See GH-83546.
+	if (is_inside_tree() && SceneTree::get_edited_scene_root() != this) {
+		if (autowrap_mode != TextServer::AUTOWRAP_OFF && get_combined_maximum_size().width <= 0 &&
+			get_custom_minimum_size().width <= 0) {
+			warnings.push_back(RTR("Labels with autowrapping enabled must have a positive custom "
+								   "minimum or maximum width configured to work correctly."));
+		}
+	}
+
+	// Ensure that the font can render all of the required glyphs.
+	Ref<Font> font;
+	if (settings.is_valid()) {
+		font = settings->get_font();
+	}
+	if (font.is_null()) {
+		font = theme_cache.font;
+	}
+
+	if (font.is_valid()) {
+		_ensure_shaped();
+
+		for (const Paragraph& para : paragraphs) {
+			const Glyph* glyph = TS->shaped_text_get_glyphs(para.text_rid);
+			int64_t glyph_count = TS->shaped_text_get_glyph_count(para.text_rid);
+			for (int64_t i = 0; i < glyph_count; i++) {
+				if (glyph[i].font_rid == RID() && glyph[i].index != 0) {
+					warnings.push_back(RTR("The current font does not support rendering one or "
+										   "more characters used in this Label's text."));
+					break;
+				}
+			}
+		}
+	}
+
+	Ref<FontFile> ff = font;
+	if (ff.is_valid() && ff->is_multichannel_signed_distance_field()) {
+		bool has_settings = settings.is_valid();
+		int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+		int outline_size =
+			has_settings ? settings->get_outline_size() : theme_cache.font_outline_size;
+		Vector<LabelSettings::StackedOutlineData> stacked_outline_datas =
+			has_settings ? settings->get_stacked_outline_data()
+						 : Vector<LabelSettings::StackedOutlineData>();
+		Vector<LabelSettings::StackedShadowData> stacked_shadow_datas =
+			has_settings ? settings->get_stacked_shadow_data()
+						 : Vector<LabelSettings::StackedShadowData>();
+		int max_outline_draw_size = outline_size;
+		if (stacked_outline_datas.size() != 0) {
+			int draw_iterations = stacked_outline_datas.size();
+			for (int j = 0; j < draw_iterations; j++) {
+				int stacked_outline_size = stacked_outline_datas[j].size;
+				if (stacked_outline_size <= 0) {
+					continue;
+				}
+				max_outline_draw_size += stacked_outline_size;
+			}
+		}
+		if (stacked_shadow_datas.size() != 0) {
+			int draw_iterations = stacked_shadow_datas.size();
+			for (int j = 0; j < draw_iterations; j++) {
+				LabelSettings::StackedShadowData stacked_shadow_data = stacked_shadow_datas[j];
+				if (stacked_shadow_data.outline_size > 0) {
+					max_outline_draw_size =
+						MAX(max_outline_draw_size, stacked_shadow_data.outline_size);
+				}
+			}
+		}
+		float scale = (float)font_size / (float)ff->get_msdf_size();
+		float ol = (float)max_outline_draw_size / scale / 4.0;
+		float pxr = (float)ff->get_msdf_pixel_range() / 2.0 - 1.0;
+		float r_pxr = (ol + 1.0) * 2.0;
+
+		if (ol > pxr) {
+			warnings.push_back(vformat(
+				RTR("MSDF font pixel range is too small, some outlines/shadows will not render. "
+					"Set MSDF pixel range to be at least %d to render all outlines/shadows."),
+				Math::ceil(r_pxr)));
+		}
+	}
+
+	return warnings;
+}
+
+Rect2 Label::get_character_bounds(int p_pos) const
+{
+	_ensure_shaped();
+
+	int paragraph_spacing =
+		settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
+	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
+																			  : theme_cache.font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_h = font->get_height(font_size);
+
+	Vector2 ofs;
+	int line_spacing;
+	int last_line;
+	get_layout_data(ofs, last_line, line_spacing);
+
+	int line_index = 0;
+	for (int p = 0; p < paragraphs.size(); p++) {
+		const Paragraph& para = paragraphs[p];
+		if (line_index + para.lines_rid.size() <= lines_skipped) {
+			line_index += para.lines_rid.size();
+		}
+		else {
+			int start = (line_index < lines_skipped) ? lines_skipped - line_index : 0;
+			int end = (line_index + para.lines_rid.size() < last_line) ? para.lines_rid.size()
+																	   : last_line - line_index;
+			if (end <= 0) {
+				break;
+			}
+			for (int i = start; i < end; i++) {
+				RID line_rid = para.lines_rid[i];
+				Rect2 line_rect = _get_line_rect(p, i);
+				ofs.x = line_rect.position.x;
+
+				int v_size = TS->shaped_text_get_glyph_count(line_rid);
+				const Glyph* glyphs = TS->shaped_text_get_glyphs(line_rid);
+
+				float gl_off = 0.0f;
+				for (int j = 0; j < v_size; j++) {
+					if ((glyphs[j].count > 0) &&
+						((glyphs[j].index != 0) ||
+							((glyphs[j].flags & TextServer::GRAPHEME_IS_SPACE) ==
+								TextServer::GRAPHEME_IS_SPACE))) {
+						if (p_pos >= glyphs[j].start + para.start &&
+							p_pos < glyphs[j].end + para.start) {
+							float advance = 0.f;
+							for (int k = 0; k < glyphs[j].count; k++) {
+								advance += glyphs[j + k].advance;
+							}
+							Rect2 rect;
+							rect.position = ofs + Vector2(gl_off, 0);
+							rect.size = Vector2(advance, line_rect.size.y);
+							return rect;
+						}
+					}
+					gl_off += glyphs[j].advance * glyphs[j].repeat;
+				}
+				double asc = TS->shaped_text_get_ascent(line_rid);
+				double dsc = TS->shaped_text_get_descent(line_rid);
+				if (asc + dsc < font_h) {
+					double diff = font_h - (asc + dsc);
+					asc += diff / 2;
+					dsc += diff - (diff / 2);
+				}
+				ofs.y += asc + dsc + line_spacing;
+			}
+			ofs.y += paragraph_spacing;
+			line_index += para.lines_rid.size();
+		}
+	}
+	return Rect2();
+}
+
+Size2 Label::get_minimum_size() const
+{
+	_ensure_shaped();
+
+	Size2 min_size = minsize;
+
+	const Ref<Font>& font = (settings.is_valid() && settings->get_font().is_valid())
+								? settings->get_font()
+								: theme_cache.font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+
+	min_size.height = MAX(min_size.height, font->get_height(font_size));
+
+	Size2 min_style = theme_cache.normal_style->get_minimum_size();
+	if (autowrap_mode != TextServer::AUTOWRAP_OFF) {
+		if (!clip && overrun_behavior != TextServer::OVERRUN_NO_TRIMMING && max_lines_visible > 0) {
+			int line_spacing =
+				settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
+			min_size.height = MIN(
+				min_size.height, (font->get_height(font_size) + line_spacing) * max_lines_visible);
+
+		}
+		else if (clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
+			min_size.height = 1;
+		}
+		return Size2(1, min_size.height) + min_style;
+	}
+	else {
+		if (clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
+			min_size.width = 1;
+		}
+		return min_size + min_style;
+	}
+}
+
+Size2 Label::get_desired_size() const
+{
+	Size2 combined_max = get_combined_maximum_size();
+	if (combined_max.width < 0) {
+		return Size2();
+	}
+
+	_ensure_shaped();
+	Size2 min_style = theme_cache.normal_style->get_minimum_size();
+	Size2 content_size = minsize + min_style;
+	content_size.width = MIN(content_size.width, int(combined_max.width));
+
+	return content_size;
+}
+
+int Label::get_line_count() const
+{
+	if (!is_inside_tree()) {
+		return 1;
+	}
+	_ensure_shaped();
+
+	return total_line_count;
+}
+
+int Label::get_visible_line_count() const
+{
+	Ref<StyleBox> style = theme_cache.normal_style;
+	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
+																			  : theme_cache.font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_h = font->get_height(font_size);
+	int line_spacing =
+		settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
+	int paragraph_spacing =
+		settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
+	int lines_visible = 0;
+	float total_h = 0.0;
+
+	int line_index = 0;
+	for (const Paragraph& para : paragraphs) {
+		if (line_index + para.lines_rid.size() <= lines_skipped) {
+			line_index += para.lines_rid.size();
+		}
+		else {
+			int start = (line_index < lines_skipped) ? lines_skipped - line_index : 0;
+			for (int i = start; i < para.lines_rid.size(); i++) {
+				double asc = TS->shaped_text_get_ascent(para.lines_rid[i]);
+				double dsc = TS->shaped_text_get_descent(para.lines_rid[i]);
+				if (asc + dsc < font_h) {
+					double diff = font_h - (asc + dsc);
+					asc += diff / 2;
+					dsc += diff - (diff / 2);
+				}
+				total_h += asc + dsc + line_spacing;
+				if (total_h > Math::ceil(get_size().height - style->get_minimum_size().height +
+										 line_spacing)) {
+					break;
+				}
+				lines_visible++;
+			}
+			total_h += paragraph_spacing;
+			line_index += para.lines_rid.size();
+		}
+	}
+
+	if (max_lines_visible >= 0 && lines_visible > max_lines_visible) {
+		lines_visible = max_lines_visible;
+	}
+
+	return lines_visible;
+}
+
+HorizontalAlignment Label::get_horizontal_alignment() const { return horizontal_alignment; }
+
+VerticalAlignment Label::get_vertical_alignment() const { return vertical_alignment; }
+
+Ref<LabelSettings> Label::get_label_settings() const { return settings; }
+
+TextServer::StructuredTextParser Label::get_structured_text_bidi_override() const
+{
+	return st_parser;
+}
+
+Control::TextDirection Label::get_text_direction() const { return text_direction; }
+
+String Label::get_language() const { return language; }
+
+String Label::get_paragraph_separator() const { return paragraph_separator; }
+
+bool Label::is_clipping_text() const { return clip; }
+
+PackedFloat32Array Label::get_tab_stops() const { return tab_stops; }
+
+void Label::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior) {}
+
+TextServer::OverrunBehavior Label::get_text_overrun_behavior() const { return overrun_behavior; }
+
+String Label::get_ellipsis_char() const { return el_char; }
+
+String Label::get_text() const { return text; }
+
+void Label::set_text(const String& p_string) { text = p_string; }
+
+int Label::get_visible_characters() const { return visible_chars; }
+
+float Label::get_visible_ratio() const { return visible_ratio; }
+
+TextServer::VisibleCharactersBehavior Label::get_visible_characters_behavior() const
+{
+	return visible_chars_behavior;
+}
+
+int Label::get_lines_skipped() const { return lines_skipped; }
+
+int Label::get_max_lines_visible() const { return max_lines_visible; }
+
+int Label::get_total_character_count() const { return xl_text.length(); }
+
+Label::~Label()
+{
+	for (Paragraph& para : paragraphs) {
+		for (const RID& line_rid : para.lines_rid) {
+			TS->free_rid(line_rid);
+		}
+		para.lines_rid.clear();
+		TS->free_rid(para.text_rid);
+	}
+	paragraphs.clear();
+}
+
+void Label::set_horizontal_alignment(HorizontalAlignment p_alignment) {}
+
+void Label::set_autowrap_mode(TextServer::AutowrapMode) {}
+
+void Label::_shape() const {}
+
+void Label::set_vertical_alignment(VerticalAlignment) {}
+
+// --- line_edit.cpp ---
+
+void LineEdit::edit(bool p_hide_focus) { _edit(true, p_hide_focus); }
+
+void LineEdit::unedit()
+{
+	if (!editing) {
+		return;
+	}
+
+	editing = false;
+	_validate_caret_can_draw();
+
+	apply_ime();
+	set_caret_column(caret_column); // Update scroll_offset.
+
+	if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_VIRTUAL_KEYBOARD) &&
+		virtual_keyboard_enabled) {
+		DisplayServer::virtual_keyboard_hide();
+	}
+
+	if (deselect_on_focus_loss_enabled && !selection.drag_attempt) {
+		deselect();
+	}
+}
+
+bool LineEdit::is_editing() const { return editing; }
+
+void LineEdit::set_keep_editing_on_text_submit(bool p_enabled)
+{
+	keep_editing_on_text_submit = p_enabled;
+}
+
+bool LineEdit::is_editing_kept_on_text_submit() const { return keep_editing_on_text_submit; }
+
+void LineEdit::_close_ime_window()
+{
+	DisplayServerEnums::WindowID wid =
+		get_window() ? get_window()->get_window_id() : DisplayServerEnums::INVALID_WINDOW_ID;
+	if (wid == DisplayServerEnums::INVALID_WINDOW_ID ||
+		!DisplayServer::has_feature(DisplayServerEnums::FEATURE_IME)) {
+		return;
+	}
+	DisplayServer::window_set_ime_position(Point2(), wid);
+	DisplayServer::window_set_ime_active(false, wid);
+}
+
+void LineEdit::_update_ime_window_position()
+{
+	DisplayServerEnums::WindowID wid =
+		get_window() ? get_window()->get_window_id() : DisplayServerEnums::INVALID_WINDOW_ID;
+	if (wid == DisplayServerEnums::INVALID_WINDOW_ID ||
+		!DisplayServer::has_feature(DisplayServerEnums::FEATURE_IME)) {
+		return;
+	}
+	DisplayServer::window_set_ime_active(true, wid);
+	Point2 pos = Point2(get_caret_pixel_pos().x,
+					 (get_size().y + theme_cache.font->get_height(theme_cache.font_size)) / 2) +
+				 get_global_position();
+	if (get_window()->get_embedder()) {
+		pos += get_viewport()->get_popup_base_transform().get_origin();
+	}
+	// Take into account the window's transform.
+	pos = get_window()->get_screen_transform().xform(pos);
+	// The window will move to the updated position the next time the IME is updated, not
+	// immediately.
+	DisplayServer::window_set_ime_position(pos, wid);
+}
+
+bool LineEdit::has_ime_text() const { return !ime_text.is_empty(); }
+
+void LineEdit::cancel_ime()
+{
+	if (!has_ime_text()) {
+		_close_ime_window();
+		return;
+	}
+	ime_text = String();
+	ime_selection = Vector2i();
+	alt_start = false;
+	alt_start_no_hold = false;
+	_close_ime_window();
+	_shape();
+}
+
+void LineEdit::apply_ime()
+{
+	if (!has_ime_text()) {
+		_close_ime_window();
+		return;
+	}
+
+	// Force apply the current IME text.
+	if (alt_start || alt_start_no_hold) {
+		cancel_ime();
+		if ((alt_code > 0x31 && alt_code < 0xd800) || (alt_code > 0xdfff && alt_code <= 0x10ffff)) {
+			char32_t ucodestr[2] = {(char32_t)alt_code, 0};
+			insert_text_at_caret(ucodestr);
+		}
+	}
+	else {
+		String insert_ime_text = ime_text;
+		cancel_ime();
+		insert_text_at_caret(insert_ime_text);
+	}
+}
+
+void LineEdit::_swap_current_input_direction()
+{
+	if (input_direction == TEXT_DIRECTION_LTR) {
+		input_direction = TEXT_DIRECTION_RTL;
+	}
+	else {
+		input_direction = TEXT_DIRECTION_LTR;
+	}
+	set_caret_column(get_caret_column());
+}
+
+void LineEdit::_move_caret_left(bool p_select, bool p_move_by_word)
+{
+	if (selection.enabled && !p_select) {
+		set_caret_column(selection.begin);
+		deselect();
+		return;
+	}
+
+	shift_selection_check_pre(p_select);
+
+	if (p_move_by_word) {
+		int cc = caret_column;
+
+		PackedInt32Array words = TS->shaped_text_get_word_breaks(text_rid);
+		if (words.is_empty() || cc <= words[0]) {
+			// Move to the start when there are no more words.
+			cc = 0;
+		}
+		else {
+			for (int i = words.size() - 2; i >= 0; i = i - 2) {
+				if (words[i] < cc) {
+					cc = words[i];
+					break;
+				}
+			}
+		}
+
+		set_caret_column(cc);
+	}
+	else {
+		if (caret_mid_grapheme_enabled) {
+			set_caret_column(get_caret_column() - 1);
+		}
+		else {
+			set_caret_column(TS->shaped_text_prev_character_pos(text_rid, get_caret_column()));
+		}
+	}
+
+	shift_selection_check_post(p_select);
+	_reset_caret_blink_timer();
+}
+
+void LineEdit::_move_caret_right(bool p_select, bool p_move_by_word)
+{
+	if (selection.enabled && !p_select) {
+		set_caret_column(selection.end);
+		deselect();
+		return;
+	}
+
+	shift_selection_check_pre(p_select);
+
+	if (p_move_by_word) {
+		int cc = caret_column;
+
+		PackedInt32Array words = TS->shaped_text_get_word_breaks(text_rid);
+		if (words.is_empty() || cc >= words[words.size() - 1]) {
+			// Move to the end when there are no more words.
+			cc = text.length();
+		}
+		else {
+			for (int i = 1; i < words.size(); i = i + 2) {
+				if (words[i] > cc) {
+					cc = words[i];
+					break;
+				}
+			}
+		}
+
+		set_caret_column(cc);
+	}
+	else {
+		if (caret_mid_grapheme_enabled) {
+			set_caret_column(get_caret_column() + 1);
+		}
+		else {
+			set_caret_column(TS->shaped_text_next_character_pos(text_rid, get_caret_column()));
+		}
+	}
+
+	shift_selection_check_post(p_select);
+	_reset_caret_blink_timer();
+}
+
+void LineEdit::_move_caret_start(bool p_select)
+{
+	shift_selection_check_pre(p_select);
+	set_caret_column(0);
+	shift_selection_check_post(p_select);
+}
+
+void LineEdit::_move_caret_end(bool p_select)
+{
+	shift_selection_check_pre(p_select);
+	set_caret_column(text.length());
+	shift_selection_check_post(p_select);
+}
+
+void LineEdit::_backspace(bool p_word, bool p_all_to_left)
+{
+	if (!editable) {
+		return;
+	}
+
+	if (selection.enabled) {
+		selection_delete();
+		return;
+	}
+
+	if (caret_column == 0) {
+		return; // Nothing to do.
+	}
+
+	if (p_all_to_left) {
+		text = text.substr(caret_column);
+		_shape();
+		set_caret_column(0);
+		_text_changed();
+		return;
+	}
+
+	if (p_word) {
+		int cc = caret_column;
+
+		PackedInt32Array words = TS->shaped_text_get_word_breaks(text_rid);
+		if (words.is_empty() || cc <= words[0]) {
+			// Delete to the start when there are no more words.
+			cc = 0;
+		}
+		else {
+			for (int i = words.size() - 2; i >= 0; i = i - 2) {
+				if (words[i] < cc) {
+					cc = words[i];
+					break;
+				}
+			}
+		}
+
+		delete_text(cc, caret_column);
+
+		set_caret_column(cc);
+	}
+	else {
+		delete_char();
+	}
+}
+
+void LineEdit::_delete(bool p_word, bool p_all_to_right)
+{
+	if (!editable) {
+		return;
+	}
+
+	if (selection.enabled) {
+		selection_delete();
+		return;
+	}
+
+	if (caret_column == text.length()) {
+		return; // Nothing to do.
+	}
+
+	if (p_all_to_right) {
+		text = text.substr(0, caret_column);
+		_shape();
+		_text_changed();
+		return;
+	}
+
+	if (p_word) {
+		int cc = caret_column;
+		PackedInt32Array words = TS->shaped_text_get_word_breaks(text_rid);
+		if (words.is_empty() || cc >= words[words.size() - 1]) {
+			// Delete to the end when there are no more words.
+			cc = text.length();
+		}
+		else {
+			for (int i = 1; i < words.size(); i = i + 2) {
+				if (words[i] > cc) {
+					cc = words[i];
+					break;
+				}
+			}
+		}
+
+		delete_text(caret_column, cc);
+		set_caret_column(caret_column);
+	}
+	else {
+		if (caret_mid_grapheme_enabled) {
+			set_caret_column(caret_column + 1);
+			delete_char();
+		}
+		else {
+			int cc = caret_column;
+			set_caret_column(TS->shaped_text_next_character_pos(text_rid, caret_column));
+			delete_text(cc, caret_column);
+		}
+	}
+}
+
+Point2 LineEdit::_get_right_icon_size(Ref<Texture2D> p_right_icon) const
+{
+	Size2 icon_size;
+
+	if (p_right_icon.is_null()) {
+		return icon_size;
+	}
+
+	switch (icon_expand_mode) {
+	default:
+	case LineEdit::EXPAND_MODE_ORIGINAL_SIZE:
+		icon_size = p_right_icon->get_size();
+		break;
+	case LineEdit::EXPAND_MODE_FIT_TO_TEXT: {
+		real_t height = theme_cache.font->get_height(theme_cache.font_size);
+		icon_size = Size2(height, height);
+	} break;
+	case LineEdit::EXPAND_MODE_FIT_TO_LINE_EDIT: {
+		icon_size = p_right_icon->get_size();
+		Point2 size = get_size();
+		float icon_width = icon_size.width * size.height / icon_size.height;
+		float icon_height = size.height;
+
+		if (icon_width > size.width) {
+			icon_width = size.width;
+			icon_height = icon_size.height * icon_width / icon_size.width;
+		}
+
+		icon_size = Size2(icon_width, icon_height) * right_icon_scale;
+	} break;
+	}
+
+	return icon_size;
+}
+
+void LineEdit::unhandled_key_input(const InputEvent& p_event)
+{
+	// Return to prevent editing if just focused.
+	if (!editing) {
+		return;
+	}
+
+	if (p_event.type == InputEventType::KEY) {
+		if (!p_event.is_pressed()) {
+			return;
+		}
+		// Handle Unicode (with modifiers active, process after shortcuts).
+		if (has_focus() && editable && (p_event.key.unicode >= 32)) {
+			selection_delete();
+			char32_t ucodestr[2] = {p_event.key.unicode, 0};
+			int prev_len = text.length();
+			insert_text_at_caret(ucodestr);
+			if (text.length() != prev_len) {
+				_text_changed();
+			}
+			accept_event();
+		}
+	}
+}
+
+HorizontalAlignment LineEdit::get_horizontal_alignment() const { return alignment; }
+
+Control::CursorShape LineEdit::get_cursor_shape(const Point2& p_pos) const
+{
+	if ((!text.is_empty() && is_editable() && _is_over_clear_button(p_pos)) ||
+		(!is_editable() && (!is_selecting_enabled() || text.is_empty()))) {
+		return CURSOR_ARROW;
+	}
+	return Control::get_cursor_shape(p_pos);
+}
+
+bool LineEdit::_is_over_clear_button(const Point2& p_pos) const
+{
+	if (!clear_button_enabled || !has_point(p_pos)) {
+		return false;
+	}
+	Ref<Texture2D> icon = theme_cache.clear_icon;
+	return is_layout_rtl() ? p_pos.x < theme_cache.normal->get_margin(SIDE_LEFT) + icon->get_width()
+						   : p_pos.x > get_size().width - icon->get_width() -
+										   theme_cache.normal->get_margin(SIDE_RIGHT);
+}
+
+void LineEdit::_update_theme_item_cache()
+{
+	Control::_update_theme_item_cache();
+
+	theme_cache.base_scale = get_theme_default_base_scale();
+}
+
+void LineEdit::copy_text()
+{
+	if (selection.enabled && !pass) {
+		DisplayServer::clipboard_set(get_selected_text());
+	}
+}
+
+void LineEdit::cut_text()
+{
+	if (editable && selection.enabled && !pass) {
+		DisplayServer::clipboard_set(get_selected_text());
+		selection_delete();
+	}
+}
+
+bool LineEdit::has_undo() const
+{
+	if (undo_stack_pos == nullptr) {
+		return undo_stack.size() > 1;
+	}
+	return undo_stack_pos != undo_stack.front();
+}
+
+bool LineEdit::has_redo() const
+{
+	return undo_stack_pos != nullptr && undo_stack_pos != undo_stack.back();
+}
+
+void LineEdit::deselect() {}
+
+void LineEdit::undo()
+{
+	if (!editable) {
+		return;
+	}
+
+	if (!has_undo()) {
+		return;
+	}
+
+	if (undo_stack_pos == nullptr) {
+		undo_stack_pos = undo_stack.back();
+	}
+
+	deselect();
+
+	undo_stack_pos = undo_stack_pos->prev();
+	TextOperation op = undo_stack_pos->get();
+	text = op.text;
+	scroll_offset = op.scroll_offset;
+
+	_shape();
+	set_caret_column(op.caret_column);
+
+	_emit_text_change();
+}
+
+void LineEdit::redo()
+{
+	if (!editable) {
+		return;
+	}
+
+	if (!has_redo()) {
+		return;
+	}
+
+	deselect();
+
+	undo_stack_pos = undo_stack_pos->next();
+	TextOperation op = undo_stack_pos->get();
+	text = op.text;
+	scroll_offset = op.scroll_offset;
+
+	_shape();
+	set_caret_column(op.caret_column);
+
+	_emit_text_change();
+}
+
+void LineEdit::shift_selection_check_pre(bool p_shift)
+{
+	if (!selection.enabled && p_shift) {
+		selection.start_column = caret_column;
+	}
+	if (!p_shift) {
+		deselect();
+	}
+}
+
+void LineEdit::shift_selection_check_post(bool p_shift)
+{
+	if (p_shift) {
+		selection_fill_at_caret();
+	}
+}
+
+void LineEdit::set_caret_at_pixel_pos(int p_x)
+{
+	Ref<StyleBox> style = theme_cache.normal;
+	bool rtl = is_layout_rtl();
+
+	int x_ofs = 0;
+	float text_width = TS->shaped_text_get_size(text_rid).x;
+	switch (alignment) {
+	case HORIZONTAL_ALIGNMENT_FILL:
+	case HORIZONTAL_ALIGNMENT_LEFT: {
+		if (rtl) {
+			x_ofs = MAX(style->get_margin(SIDE_LEFT),
+				int(get_size().width - style->get_margin(SIDE_RIGHT) - (text_width)));
+		}
+		else {
+			x_ofs = style->get_margin(SIDE_LEFT);
+		}
+	} break;
+	case HORIZONTAL_ALIGNMENT_CENTER: {
+		if (!Math::is_zero_approx(scroll_offset)) {
+			x_ofs = style->get_margin(SIDE_LEFT);
+		}
+		else {
+			int total_margin = style->get_margin(SIDE_LEFT) + style->get_margin(SIDE_RIGHT);
+			int centered = int((get_size().width - total_margin - text_width)) / 2;
+			x_ofs = style->get_margin(SIDE_LEFT) + MAX(0, centered);
+		}
+	} break;
+	case HORIZONTAL_ALIGNMENT_RIGHT: {
+		if (rtl) {
+			x_ofs = style->get_margin(SIDE_LEFT);
+		}
+		else {
+			x_ofs = MAX(style->get_margin(SIDE_LEFT),
+				int(get_size().width - style->get_margin(SIDE_RIGHT) - (text_width)));
+		}
+	} break;
+	}
+
+	bool using_placeholder = text.is_empty() && ime_text.is_empty();
+	bool display_clear_icon = !using_placeholder && is_editable() && clear_button_enabled;
+	if (right_icon.is_valid() || display_clear_icon) {
+		Ref<Texture2D> r_icon = display_clear_icon ? theme_cache.clear_icon : right_icon;
+		Point2 right_icon_size = _get_right_icon_size(r_icon);
+		if (alignment == HORIZONTAL_ALIGNMENT_CENTER) {
+			if (Math::is_zero_approx(scroll_offset)) {
+				int total_margin = style->get_margin(SIDE_LEFT) + style->get_margin(SIDE_RIGHT);
+				int center =
+					int(get_size().width - total_margin - text_width - right_icon_size.width) / 2;
+				x_ofs = style->get_margin(SIDE_LEFT) + MAX(0, center);
+			}
+			if (rtl) {
+				x_ofs += right_icon_size.width;
+			}
+		}
+		else {
+			if (rtl) {
+				x_ofs = MAX(style->get_margin(SIDE_LEFT) + right_icon_size.width, x_ofs);
+			}
+			else {
+				x_ofs = MAX(style->get_margin(SIDE_LEFT),
+					x_ofs - right_icon_size.width - style->get_margin(SIDE_RIGHT));
+			}
+		}
+	}
+
+	int ofs = std::ceil(TS->shaped_text_hit_test_position(text_rid, p_x - x_ofs - scroll_offset));
+	if (ofs == -1) {
+		return;
+	}
+	if (!caret_mid_grapheme_enabled) {
+		ofs = TS->shaped_text_closest_character_pos(text_rid, ofs);
+	}
+	set_caret_column(ofs);
+}
+
+Vector2 LineEdit::get_caret_pixel_pos()
+{
+	Ref<StyleBox> style = theme_cache.normal;
+	bool rtl = is_layout_rtl();
+
+	int x_ofs = 0;
+	float text_width = TS->shaped_text_get_size(text_rid).x;
+	switch (alignment) {
+	case HORIZONTAL_ALIGNMENT_FILL:
+	case HORIZONTAL_ALIGNMENT_LEFT: {
+		if (rtl) {
+			x_ofs = MAX(style->get_margin(SIDE_LEFT),
+				int(get_size().width - style->get_margin(SIDE_RIGHT) - (text_width)));
+		}
+		else {
+			x_ofs = style->get_margin(SIDE_LEFT);
+		}
+	} break;
+	case HORIZONTAL_ALIGNMENT_CENTER: {
+		if (!Math::is_zero_approx(scroll_offset)) {
+			x_ofs = style->get_margin(SIDE_LEFT);
+		}
+		else {
+			int total_margin = style->get_margin(SIDE_LEFT) + style->get_margin(SIDE_RIGHT);
+			int centered = int((get_size().width - total_margin - text_width)) / 2;
+			x_ofs = style->get_margin(SIDE_LEFT) + MAX(0, centered);
+		}
+	} break;
+	case HORIZONTAL_ALIGNMENT_RIGHT: {
+		if (rtl) {
+			x_ofs = style->get_margin(SIDE_LEFT);
+		}
+		else {
+			x_ofs = MAX(style->get_margin(SIDE_LEFT),
+				int(get_size().width - style->get_margin(SIDE_RIGHT) - (text_width)));
+		}
+	} break;
+	}
+
+	bool using_placeholder = text.is_empty() && ime_text.is_empty();
+	bool display_clear_icon = !using_placeholder && is_editable() && clear_button_enabled;
+	if (right_icon.is_valid() || display_clear_icon) {
+		Ref<Texture2D> r_icon = display_clear_icon ? theme_cache.clear_icon : right_icon;
+		Point2 right_icon_size = _get_right_icon_size(r_icon);
+		if (alignment == HORIZONTAL_ALIGNMENT_CENTER) {
+			if (Math::is_zero_approx(scroll_offset)) {
+				int total_margin = style->get_margin(SIDE_LEFT) + style->get_margin(SIDE_RIGHT);
+				int center =
+					int(get_size().width - total_margin - text_width - right_icon_size.width) / 2;
+				x_ofs = style->get_margin(SIDE_LEFT) + MAX(0, center);
+			}
+			if (rtl) {
+				x_ofs += right_icon_size.width;
+			}
+		}
+		else {
+			if (rtl) {
+				x_ofs = MAX(style->get_margin(SIDE_LEFT) + right_icon_size.width, x_ofs);
+			}
+			else {
+				x_ofs = MAX(style->get_margin(SIDE_LEFT),
+					x_ofs - right_icon_size.width - style->get_margin(SIDE_RIGHT));
+			}
+		}
+	}
+
+	Vector2 ret;
+	CaretInfo caret;
+	// Get position of the start of caret.
+	if (!ime_text.is_empty() && ime_selection.x != 0) {
+		caret = TS->shaped_text_get_carets(text_rid, caret_column + ime_selection.x);
+	}
+	else {
+		caret = TS->shaped_text_get_carets(text_rid, caret_column);
+	}
+
+	if ((caret.l_caret != Rect2() && (caret.l_dir == TextServer::DIRECTION_AUTO ||
+										 caret.l_dir == (TextServer::Direction)input_direction)) ||
+		(caret.t_caret == Rect2())) {
+		ret.x = x_ofs + caret.l_caret.position.x + scroll_offset;
+	}
+	else {
+		ret.x = x_ofs + caret.t_caret.position.x + scroll_offset;
+	}
+
+	// Get position of the end of caret.
+	if (!ime_text.is_empty()) {
+		if (ime_selection.y != 0) {
+			caret = TS->shaped_text_get_carets(
+				text_rid, caret_column + ime_selection.x + ime_selection.y);
+		}
+		else {
+			caret = TS->shaped_text_get_carets(text_rid, caret_column + ime_text.size());
+		}
+		if ((caret.l_caret != Rect2() &&
+				(caret.l_dir == TextServer::DIRECTION_AUTO ||
+					caret.l_dir == (TextServer::Direction)input_direction)) ||
+			(caret.t_caret == Rect2())) {
+			ret.y = x_ofs + caret.l_caret.position.x + scroll_offset;
+		}
+		else {
+			ret.y = x_ofs + caret.t_caret.position.x + scroll_offset;
+		}
+	}
+	else {
+		ret.y = ret.x;
+	}
+
+	return ret;
+}
+
+void LineEdit::set_caret_mid_grapheme_enabled(const bool p_enabled)
+{
+	caret_mid_grapheme_enabled = p_enabled;
+}
+
+bool LineEdit::is_caret_mid_grapheme_enabled() const { return caret_mid_grapheme_enabled; }
+
+bool LineEdit::is_caret_blink_enabled() const { return caret_blink_enabled; }
+
+bool LineEdit::is_caret_force_displayed() const { return caret_force_displayed; }
+
+float LineEdit::get_caret_blink_interval() const { return caret_blink_interval; }
+
+void LineEdit::set_caret_blink_interval(const float p_interval)
+{
+	ERR_FAIL_COND(p_interval <= 0);
+	caret_blink_interval = p_interval;
+}
+
+void LineEdit::_validate_caret_can_draw()
+{
+	if (caret_blink_enabled) {
+		draw_caret = true;
+		caret_blink_timer = 0.0;
+	}
+	caret_can_draw = (caret_force_displayed && !is_part_of_edited_scene()) ||
+					 (editing && (window_has_focus || (menu && menu->has_focus())) && has_focus());
+}
+
+void LineEdit::delete_char()
+{
+	if (text.is_empty() || caret_column == 0) {
+		return;
+	}
+	int delete_char_offset = 1;
+	if (!caret_mid_grapheme_enabled && backspace_deletes_composite_character_enabled) {
+		delete_char_offset = caret_column - get_previous_composite_character_column(caret_column);
+	}
+	text = text.left(caret_column - delete_char_offset) + text.substr(caret_column);
+	_shape();
+
+	set_caret_column(get_caret_column() - delete_char_offset);
+
+	_text_changed();
+}
+
+void LineEdit::set_text(String p_text) { _set_text(p_text); }
+
+Control::TextDirection LineEdit::get_text_direction() const { return text_direction; }
+
+String LineEdit::get_language() const { return language; }
+
+bool LineEdit::get_draw_control_chars() const { return draw_control_chars; }
+
+TextServer::StructuredTextParser LineEdit::get_structured_text_bidi_override() const
+{
+	return st_parser;
+}
+
+void LineEdit::clear()
+{
+	bool was_empty = text.is_empty();
+	clear_internal();
+	_clear_redo();
+	if (!was_empty) {
+		_emit_text_change();
+	}
+
+	// This should reset virtual keyboard state if needed.
+	if (editing) {
+		show_virtual_keyboard();
+	}
+}
+
+void LineEdit::show_virtual_keyboard()
+{
+	_update_ime_window_position();
+
+	if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_VIRTUAL_KEYBOARD) &&
+		virtual_keyboard_enabled) {
+		if (selection.enabled) {
+			DisplayServer::virtual_keyboard_show(text, get_global_rect(),
+				DisplayServerEnums::VirtualKeyboardType(virtual_keyboard_type), max_length,
+				selection.begin, selection.end);
+		}
+		else {
+			DisplayServer::virtual_keyboard_show(text, get_global_rect(),
+				DisplayServerEnums::VirtualKeyboardType(virtual_keyboard_type), max_length,
+				caret_column);
+		}
+	}
+}
+
+String LineEdit::get_text() const { return text; }
+
+String LineEdit::get_placeholder() const { return placeholder; }
+
+int LineEdit::get_caret_column() const { return caret_column; }
+
+int LineEdit::get_next_composite_character_column(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, text.length() + 1, -1);
+	if (p_column == text.length()) {
+		return p_column;
+	}
+	else {
+		return TS->shaped_text_next_character_pos(text_rid, p_column);
+	}
+}
+
+int LineEdit::get_previous_composite_character_column(int p_column) const
+{
+	ERR_FAIL_INDEX_V(p_column, text.length() + 1, -1);
+	if (p_column == 0) {
+		return 0;
+	}
+	else {
+		return TS->shaped_text_prev_character_pos(text_rid, p_column);
+	}
+}
+
+void LineEdit::set_scroll_offset(float p_pos)
+{
+	scroll_offset = p_pos;
+	if (scroll_offset < 0.0) {
+		scroll_offset = 0.0;
+	}
+}
+
+float LineEdit::get_scroll_offset() const { return scroll_offset; }
+
+Size2 LineEdit::get_minimum_size() const
+{
+	Ref<Font> font = theme_cache.font;
+	int font_size = theme_cache.font_size;
+
+	Size2 min_size;
+
+	// Minimum size of text.
+	// W is wider than M in most fonts, Using M may result in hiding the last digit when using float
+	// values in SpinBox, ie. ColorPicker RAW values.
+	float em_space_size = font->get_char_size('W', font_size).x;
+	min_size.width = theme_cache.minimum_character_width * em_space_size;
+
+	if (expand_to_text_length) {
+		// Ensure some space for the caret when placed at the end.
+		min_size.width = MAX(min_size.width, full_width + theme_cache.caret_width);
+	}
+
+	min_size.height = MAX(TS->shaped_text_get_size(text_rid).y, font->get_height(font_size));
+
+	// Take icons into account.
+	int icon_max_width = 0;
+	if (right_icon.is_valid()) {
+		Point2 right_icon_size = _get_right_icon_size(right_icon);
+		min_size.height = MAX(min_size.height, right_icon_size.height);
+		icon_max_width = right_icon_size.width;
+	}
+	if (clear_button_enabled) {
+		Point2 right_icon_size = _get_right_icon_size(theme_cache.clear_icon);
+		min_size.height = MAX(min_size.height, right_icon_size.height);
+		icon_max_width = MAX(icon_max_width, right_icon_size.width);
+	}
+	min_size.width += icon_max_width;
+
+	Size2 style_min_size =
+		theme_cache.normal->get_minimum_size().max(theme_cache.read_only->get_minimum_size());
+	return style_min_size + min_size;
+}
+
+bool LineEdit::has_selection() const { return selection.enabled; }
+
+String LineEdit::get_selected_text()
+{
+	if (selection.enabled) {
+		return text.substr(selection.begin, selection.end - selection.begin);
+	}
+	else {
+		return String();
+	}
+}
+
+int LineEdit::get_selection_from_column() const
+{
+	ERR_FAIL_COND_V(!selection.enabled, -1);
+	return selection.begin;
+}
+
+int LineEdit::get_selection_to_column() const
+{
+	ERR_FAIL_COND_V(!selection.enabled, -1);
+	return selection.end;
+}
+
+void LineEdit::selection_delete()
+{
+	if (selection.enabled) {
+		delete_text(selection.begin, selection.end);
+	}
+
+	deselect();
+}
+
+void LineEdit::set_max_length(int p_max_length)
+{
+	ERR_FAIL_COND(p_max_length < 0);
+	max_length = p_max_length;
+	set_text(text);
+}
+
+int LineEdit::get_max_length() const { return max_length; }
+
+void LineEdit::selection_fill_at_caret()
+{
+	if (!selecting_enabled) {
+		return;
+	}
+
+	selection.begin = caret_column;
+	selection.end = selection.start_column;
+
+	if (selection.end < selection.begin) {
+		int aux = selection.end;
+		selection.end = selection.begin;
+		selection.begin = aux;
+	}
+
+	selection.enabled = (selection.begin != selection.end);
+	queue_accessibility_update();
+}
+
+bool LineEdit::is_editable() const { return editable; }
+
+bool LineEdit::is_secret() const { return pass; }
+
+String LineEdit::get_secret_character() const { return secret_character; }
+
+bool LineEdit::is_text_field() const { return true; }
+
+void LineEdit::set_context_menu_enabled(bool p_enable) { context_menu_enabled = p_enable; }
+
+bool LineEdit::is_context_menu_enabled() { return context_menu_enabled; }
+
+void LineEdit::show_emoji_and_symbol_picker()
+{
+	_update_ime_window_position();
+	DisplayServer::show_emoji_and_symbol_picker();
+}
+
+void LineEdit::set_emoji_menu_enabled(bool p_enabled)
+{
+	if (emoji_menu_enabled != p_enabled) {
+		emoji_menu_enabled = p_enabled;
+	}
+}
+
+bool LineEdit::is_emoji_menu_enabled() const { return emoji_menu_enabled; }
+
+void LineEdit::set_backspace_deletes_composite_character_enabled(bool p_enabled)
+{
+	backspace_deletes_composite_character_enabled = p_enabled;
+}
+
+bool LineEdit::is_backspace_deletes_composite_character_enabled() const
+{
+	return backspace_deletes_composite_character_enabled;
+}
+
+bool LineEdit::is_menu_visible() const { return menu && menu->is_visible(); }
+
+PopupMenu* LineEdit::get_menu() const
+{
+	if (!menu) {
+		const_cast<LineEdit*>(this)->_generate_context_menu();
+	}
+	return menu;
+}
+
+bool LineEdit::is_expand_to_text_length_enabled() const { return expand_to_text_length; }
+
+bool LineEdit::is_clear_button_enabled() const { return clear_button_enabled; }
+
+void LineEdit::set_shortcut_keys_enabled(bool p_enabled) { shortcut_keys_enabled = p_enabled; }
+
+bool LineEdit::is_shortcut_keys_enabled() const { return shortcut_keys_enabled; }
+
+void LineEdit::set_virtual_keyboard_enabled(bool p_enable) { virtual_keyboard_enabled = p_enable; }
+
+bool LineEdit::is_virtual_keyboard_enabled() const { return virtual_keyboard_enabled; }
+
+void LineEdit::set_virtual_keyboard_show_on_focus(bool p_show_on_focus)
+{
+	virtual_keyboard_show_on_focus = p_show_on_focus;
+}
+
+bool LineEdit::get_virtual_keyboard_show_on_focus() const { return virtual_keyboard_show_on_focus; }
+
+void LineEdit::set_virtual_keyboard_type(VirtualKeyboardType p_type)
+{
+	virtual_keyboard_type = p_type;
+}
+
+LineEdit::VirtualKeyboardType LineEdit::get_virtual_keyboard_type() const
+{
+	return virtual_keyboard_type;
+}
+
+void LineEdit::set_middle_mouse_paste_enabled(bool p_enabled)
+{
+	middle_mouse_paste_enabled = p_enabled;
+}
+
+bool LineEdit::is_middle_mouse_paste_enabled() const { return middle_mouse_paste_enabled; }
+
+void LineEdit::set_selecting_enabled(bool p_enabled)
+{
+	if (selecting_enabled == p_enabled) {
+		return;
+	}
+
+	selecting_enabled = p_enabled;
+
+	if (!selecting_enabled) {
+		deselect();
+	}
+}
+
+bool LineEdit::is_selecting_enabled() const { return selecting_enabled; }
+
+void LineEdit::set_deselect_on_focus_loss_enabled(const bool p_enabled)
+{
+	if (deselect_on_focus_loss_enabled == p_enabled) {
+		return;
+	}
+
+	deselect_on_focus_loss_enabled = p_enabled;
+	if (p_enabled && selection.enabled && !has_focus()) {
+		deselect();
+	}
+}
+
+bool LineEdit::is_deselect_on_focus_loss_enabled() const { return deselect_on_focus_loss_enabled; }
+
+void LineEdit::set_drag_and_drop_selection_enabled(const bool p_enabled)
+{
+	drag_and_drop_selection_enabled = p_enabled;
+}
+
+bool LineEdit::is_drag_and_drop_selection_enabled() const
+{
+	return drag_and_drop_selection_enabled;
+}
+
+Ref<Texture2D> LineEdit::get_right_icon() { return right_icon; }
+
+LineEdit::ExpandMode LineEdit::get_icon_expand_mode() const { return icon_expand_mode; }
+
+float LineEdit::get_right_icon_scale() const { return right_icon_scale; }
+
+bool LineEdit::is_flat() const { return flat; }
+
+void LineEdit::set_select_all_on_focus(bool p_enabled) { select_all_on_focus = p_enabled; }
+
+bool LineEdit::is_select_all_on_focus() const { return select_all_on_focus; }
+
+void LineEdit::clear_pending_select_all_on_focus() { pending_select_all_on_focus = false; }
+
+void LineEdit::_text_changed()
+{
+	_emit_text_change();
+	_clear_redo();
+}
+
+PackedStringArray LineEdit::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Control::get_configuration_warnings();
+	if (secret_character.length() > 1) {
+		warnings.push_back("Secret Character property supports only one character. Extra "
+						   "characters will be ignored.");
+	}
+	return warnings;
+}
+
+void LineEdit::_fit_to_width()
+{
+	if (alignment == HORIZONTAL_ALIGNMENT_FILL) {
+		Ref<StyleBox> style = theme_cache.normal;
+		int t_width =
+			get_size().width - style->get_margin(SIDE_RIGHT) - style->get_margin(SIDE_LEFT);
+		bool using_placeholder = text.is_empty() && ime_text.is_empty();
+		bool display_clear_icon = !using_placeholder && is_editable() && clear_button_enabled;
+		if (right_icon.is_valid() || display_clear_icon) {
+			Ref<Texture2D> r_icon = display_clear_icon ? theme_cache.clear_icon : right_icon;
+			Point2 right_icon_size = _get_right_icon_size(r_icon);
+			t_width -= right_icon_size.width;
+		}
+		TS->shaped_text_fit_to_width(text_rid, MAX(t_width, full_width));
+	}
+}
+
+void LineEdit::_clear_redo()
+{
+	_create_undo_state();
+	if (undo_stack_pos == nullptr) {
+		return;
+	}
+
+	undo_stack_pos = undo_stack_pos->next();
+	while (undo_stack_pos) {
+		List<TextOperation>::Element* elem = undo_stack_pos;
+		undo_stack_pos = undo_stack_pos->next();
+		undo_stack.erase(elem);
+	}
+	_create_undo_state();
+}
+
+void LineEdit::_clear_undo_stack()
+{
+	undo_stack.clear();
+	undo_stack_pos = nullptr;
+	_create_undo_state();
+}
+
+void LineEdit::_create_undo_state()
+{
+	TextOperation op;
+	op.text = text;
+	op.caret_column = caret_column;
+	op.scroll_offset = scroll_offset;
+	undo_stack.push_back(op);
+}
+
+Key LineEdit::_get_menu_action_accelerator(const String& p_action)
+{
+	const List<InputEvent>* events = InputMap::action_get_events(p_action);
+	if (!events) {
+		return Key::NONE;
+	}
+
+	// Use first event in the list for the accelerator.
+	const List<InputEvent>::Element* first_event = events->front();
+	if (!first_event) {
+		return Key::NONE;
+	}
+
+	const InputEvent& event = first_event->get();
+	if (event.type != InputEventType::KEY) {
+		return Key::NONE;
+	}
+
+	// Use physical keycode if non-zero.
+	if (event.key.physical_keycode != Key::NONE) {
+		return event.get_physical_keycode_with_modifiers();
+	}
+	else {
+		return event.get_keycode_with_modifiers();
+	}
+}
+
+void LineEdit::_update_context_menu()
+{
+	if (!menu) {
+		_generate_context_menu();
+	}
+
+	int idx = -1;
+
+#define MENU_ITEM_ACTION_DISABLED(m_menu, m_id, m_action, m_disabled)                              \
+	idx = m_menu->get_item_index(m_id);                                                            \
+	if (idx >= 0) {                                                                                \
+		m_menu->set_item_accelerator(                                                              \
+			idx, shortcut_keys_enabled ? _get_menu_action_accelerator(m_action) : Key::NONE);      \
+		m_menu->set_item_disabled(idx, m_disabled);                                                \
+	}
+
+#define MENU_ITEM_ACTION(m_menu, m_id, m_action)                                                   \
+	idx = m_menu->get_item_index(m_id);                                                            \
+                                                                                                   \
+	if (idx >= 0) {                                                                                \
+		m_menu->set_item_accelerator(                                                              \
+			idx, shortcut_keys_enabled ? _get_menu_action_accelerator(m_action) : Key::NONE);      \
+	}
+
+#define MENU_ITEM_DISABLED(m_menu, m_id, m_disabled)                                               \
+	idx = m_menu->get_item_index(m_id);                                                            \
+	if (idx >= 0) {                                                                                \
+		m_menu->set_item_disabled(idx, m_disabled);                                                \
+	}
+
+#define MENU_ITEM_CHECKED(m_menu, m_id, m_checked)                                                 \
+	idx = m_menu->get_item_index(m_id);                                                            \
+	if (idx >= 0) {                                                                                \
+		m_menu->set_item_checked(idx, m_checked);                                                  \
+	}
+
+	if (DisplayServer::has_feature(
+			DisplayServerEnums::FEATURE_EMOJI_AND_SYMBOL_PICKER)) {
+		MENU_ITEM_DISABLED(menu, MENU_EMOJI_AND_SYMBOL, !editable || !emoji_menu_enabled)
+	}
+
+#undef MENU_ITEM_ACTION_DISABLED
+#undef MENU_ITEM_ACTION
+#undef MENU_ITEM_DISABLED
+#undef MENU_ITEM_CHECKED
+}
+
+void LineEdit::set_caret_column(int p_column) {}
+
+LineEdit::LineEdit(const String& p_placeholder)
+{
+	text_rid = TS->create_shaped_text();
+	_create_undo_state();
+	deselect();
+	set_focus_mode(FOCUS_ALL);
+	set_default_cursor_shape(CURSOR_IBEAM);
+	set_mouse_filter(MOUSE_FILTER_STOP);
+	set_process_unhandled_key_input(true);
+	set_caret_blink_enabled(false);
+	set_placeholder(p_placeholder);
+	set_editable(true); // Initialize to opposite first, so we get past the early-out in set_editable.
+}
+
+LineEdit::~LineEdit() { TS->free_rid(text_rid); }
+
+void LineEdit::select_all() {}
+
+void LineEdit::_emit_text_change() {}
+
+void LineEdit::select(int p_from, int p_to) {}
+
+void LineEdit::delete_text(int p_from_column, int p_to_column) {}
+
+void LineEdit::_shape() {}
+
+
+void LineEdit::set_right_icon(Ref<Texture2D> const&) {}
+
+void LineEdit::set_placeholder(String) {}
+
+void LineEdit::insert_text_at_caret(String) {}
+
+void LineEdit::_set_text(String, bool) {}
+
+void LineEdit::set_editable(bool) {}
+
+void LineEdit::set_caret_blink_enabled(bool) {}
+
+void LineEdit::_reset_caret_blink_timer() {}
+
+void LineEdit::_generate_context_menu() {}
+
+void LineEdit::_edit(bool, bool) {}
+
+void LineEdit::set_secret(bool) {}
+
+void LineEdit::set_horizontal_alignment(HorizontalAlignment) {}
+
+void LineEdit::set_clear_button_enabled(bool) {}
+
+void LineEdit::clear_internal() {}
+
+String LineEdit::_get_accessibility_name() const { return String(); }
+
+// --- line_edit.compat.inc ---
+
+#ifndef DISABLE_DEPRECATED
+
+
+void LineEdit::_edit_bind_compat_111117() { edit(false); }
+
+void LineEdit::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
+
+// --- item_list.cpp ---
+
+String ItemList::get_item_text(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), String());
+	return items[p_idx].text;
+}
+
+Control::TextDirection ItemList::get_item_text_direction(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), TEXT_DIRECTION_INHERITED);
+	return items[p_idx].text_direction;
+}
+
+String ItemList::get_item_language(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), "");
+	return items[p_idx].language;
+}
+
+Node::AutoTranslateMode ItemList::get_item_auto_translate_mode(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), AUTO_TRANSLATE_MODE_INHERIT);
+	return items[p_idx].auto_translate_mode;
+}
+
+void ItemList::set_item_tooltip_enabled(int p_idx, const bool p_enabled)
+{
+	if (p_idx < 0) {
+		p_idx += get_item_count();
+	}
+	ERR_FAIL_INDEX(p_idx, items.size());
+	if (items[p_idx].tooltip_enabled != p_enabled) {
+		items.write[p_idx].tooltip_enabled = p_enabled;
+		items.write[p_idx].accessibility_item_dirty = true;
+		queue_accessibility_update();
+	}
+}
+
+bool ItemList::is_item_tooltip_enabled(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), false);
+	return items[p_idx].tooltip_enabled;
+}
+
+String ItemList::get_item_tooltip(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), String());
+	return items[p_idx].tooltip;
+}
+
+Ref<Texture2D> ItemList::get_item_icon(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), Ref<Texture2D>());
+
+	return items[p_idx].icon;
+}
+
+bool ItemList::is_item_icon_transposed(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), false);
+
+	return items[p_idx].icon_transposed;
+}
+
+Rect2 ItemList::get_item_icon_region(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), Rect2());
+
+	return items[p_idx].icon_region;
+}
+
+Color ItemList::get_item_icon_modulate(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), Color());
+
+	return items[p_idx].icon_modulate;
+}
+
+Color ItemList::get_item_custom_bg_color(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), Color());
+
+	return items[p_idx].custom_bg;
+}
+
+Color ItemList::get_item_custom_fg_color(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), Color());
+
+	return items[p_idx].custom_fg;
+}
+
+Rect2 ItemList::get_item_rect(int p_idx, bool p_expand) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), Rect2());
+
+	Rect2 ret = items[p_idx].rect_cache;
+	if (p_expand && p_idx % current_columns == current_columns - 1) {
+		int width = get_size().width - theme_cache.panel_style->get_minimum_size().width;
+		if (scroll_bar_v->is_visible()) {
+			width -=
+				scroll_bar_v->get_bound_minimum_size().width + theme_cache.scroll_bar_h_separation;
+		}
+		ret.size.width = width - ret.position.x;
+	}
+	ret.position += theme_cache.panel_style->get_offset();
+	return ret;
+}
+
+void ItemList::set_item_selectable(int p_idx, bool p_selectable)
+{
+	if (p_idx < 0) {
+		p_idx += get_item_count();
+	}
+	ERR_FAIL_INDEX(p_idx, items.size());
+
+	items.write[p_idx].selectable = p_selectable;
+	items.write[p_idx].accessibility_item_dirty = true;
+	queue_accessibility_update();
+}
+
+bool ItemList::is_item_selectable(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), false);
+	return items[p_idx].selectable;
+}
+
+bool ItemList::is_item_disabled(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), false);
+	return items[p_idx].disabled;
+}
+
+bool ItemList::is_selected(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, items.size(), false);
+
+	return items[p_idx].selected;
+}
+
+int ItemList::get_current() const { return current; }
+
+int ItemList::get_item_count() const { return items.size(); }
+
+int ItemList::get_fixed_column_width() const { return fixed_column_width; }
+
+bool ItemList::is_same_column_width() const { return same_column_width; }
+
+int ItemList::get_max_text_lines() const { return max_text_lines; }
+
+int ItemList::get_max_columns() const { return max_columns; }
+
+ItemList::SelectMode ItemList::get_select_mode() const { return select_mode; }
+
+ItemList::IconMode ItemList::get_icon_mode() const { return icon_mode; }
+
+Size2i ItemList::get_fixed_icon_size() const { return fixed_icon_size; }
+
+Size2 ItemList::Item::get_icon_size() const
+{
+	if (icon.is_null()) {
+		return Size2();
+	}
+
+	Size2 size_result = Size2(icon_region.size).abs();
+	if (icon_region.size.x == 0 || icon_region.size.y == 0) {
+		size_result = icon->get_size();
+	}
+
+	if (icon_transposed) {
+		Size2 size_tmp = size_result;
+		size_result.x = size_tmp.y;
+		size_result.y = size_tmp.x;
+	}
+
+	return size_result;
+}
+
+void ItemList::center_on_current(bool p_center_verically, bool p_center_horizontally)
+{
+	if (current < 0 || current >= items.size()) {
+		return;
+	}
+
+	ERR_FAIL_COND_MSG(!p_center_verically && !p_center_horizontally,
+		"At least one of the parameters must be true.");
+
+	Rect2 r = items[current].rect_cache;
+
+	if (p_center_verically) {
+		int from_v = scroll_bar_v->get_value();
+		int to_v = from_v + scroll_bar_v->get_page();
+		int item_center_y = r.position.y + r.size.y / 2;
+		int viewport_center_y = (from_v + to_v) / 2;
+
+		int offset_y = item_center_y - viewport_center_y;
+		scroll_bar_v->set_value(scroll_bar_v->get_value() + offset_y);
+	}
+
+	if (p_center_horizontally) {
+		int from_h = scroll_bar_h->get_value();
+		int to_h = from_h + scroll_bar_h->get_page();
+		int item_center_x = r.position.x + r.size.x / 2;
+		int viewport_center_x = (from_h + to_h) / 2;
+
+		int offset_x = item_center_x - viewport_center_x;
+		scroll_bar_h->set_value(scroll_bar_h->get_value() + offset_x);
+	}
+}
+
+static Rect2 _adjust_to_max_size(Size2 p_size, Size2 p_max_size)
+{
+	Size2 size = p_max_size;
+	int tex_width = p_size.width * size.height / p_size.height;
+	int tex_height = size.height;
+
+	if (tex_width > size.width) {
+		tex_width = size.width;
+		tex_height = p_size.height * tex_width / p_size.width;
+	}
+
+	int ofs_x = (size.width - tex_width) / 2;
+	int ofs_y = (size.height - tex_height) / 2;
+
+	return Rect2(ofs_x, ofs_y, tex_width, tex_height);
+}
+
+RID ItemList::get_focused_accessibility_element() const
+{
+	if (current == -1) {
+		return get_accessibility_element();
+	}
+	else {
+		const Item& item = items[current];
+		return item.accessibility_item_element;
+	}
+}
+
+int ItemList::get_item_at_position(const Point2& p_pos, bool p_exact) const
+{
+	Vector2 pos = p_pos;
+	pos -= theme_cache.panel_style->get_offset();
+	pos.y += scroll_bar_v->get_value();
+	pos.x += scroll_bar_h->get_value();
+
+	if (is_layout_rtl()) {
+		pos.x = get_size().width - pos.x - scroll_bar_h->get_value() -
+				theme_cache.panel_style->get_margin(SIDE_LEFT) -
+				theme_cache.panel_style->get_margin(SIDE_RIGHT);
+	}
+
+	int closest = -1;
+	int closest_dist = 0x7FFFFFFF;
+
+	for (int i = 0; i < items.size(); i++) {
+		Rect2 rc = items[i].rect_cache;
+
+		if (i % current_columns ==
+			current_columns -
+				1) { // Make sure you can still select the last item when clicking past the column.
+			if (is_layout_rtl()) {
+				rc.size.width = get_size().width - scroll_bar_h->get_value() + rc.position.x;
+			}
+			else {
+				rc.size.width = get_size().width + scroll_bar_h->get_value() - rc.position.x;
+			}
+		}
+
+		if (rc.size.x < 0) {
+			continue; // Skip negative item sizes, because they are off screen.
+		}
+
+		if (rc.has_point(pos)) {
+			closest = i;
+
+			break;
+		}
+
+		float dist = rc.distance_to(pos);
+		if (!p_exact && dist < closest_dist) {
+			closest = i;
+			closest_dist = dist;
+		}
+	}
+
+	return closest;
+}
+
+bool ItemList::is_pos_at_end_of_items(const Point2& p_pos) const
+{
+	if (items.is_empty()) {
+		return true;
+	}
+
+	Vector2 pos = p_pos;
+	pos -= theme_cache.panel_style->get_offset();
+	pos.y += scroll_bar_v->get_value();
+
+	if (is_layout_rtl()) {
+		pos.x = get_size().width - pos.x;
+	}
+
+	Rect2 endrect = items[items.size() - 1].rect_cache;
+	return (pos.y > endrect.position.y + endrect.size.y);
+}
+
+Node::AutoTranslateMode ItemList::get_tooltip_auto_translate_mode_at(const Point2& p_at) const
+{
+	int closest = get_item_at_position(p_at, true);
+	if (closest != -1) {
+		return items[closest].auto_translate_mode;
+	}
+	return Control::get_tooltip_auto_translate_mode_at(p_at);
+}
+
+void ItemList::set_allow_rmb_select(bool p_allow) { allow_rmb_select = p_allow; }
+
+bool ItemList::get_allow_rmb_select() const { return allow_rmb_select; }
+
+void ItemList::set_allow_reselect(bool p_allow) { allow_reselect = p_allow; }
+
+bool ItemList::get_allow_reselect() const { return allow_reselect; }
+
+void ItemList::set_allow_search(bool p_allow) { allow_search = p_allow; }
+
+bool ItemList::get_allow_search() const { return allow_search; }
+
+real_t ItemList::get_icon_scale() const { return icon_scale; }
+
+Vector<int> ItemList::get_selected_items()
+{
+	Vector<int> selected;
+	for (int i = 0; i < items.size(); i++) {
+		if (items[i].selected) {
+			selected.push_back(i);
+			if (select_mode == SELECT_SINGLE) {
+				break;
+			}
+		}
+	}
+	return selected;
+}
+
+bool ItemList::is_anything_selected()
+{
+	for (int i = 0; i < items.size(); i++) {
+		if (items[i].selected) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+Size2 ItemList::get_minimum_size() const
+{
+	Size2 min_size;
+	if (auto_width) {
+		min_size.x = auto_width_value;
+	}
+
+	if (auto_height) {
+		min_size.y = auto_height_value;
+	}
+	return min_size;
+}
+
+void ItemList::set_autoscroll_to_bottom(const bool p_enable) { do_autoscroll_to_bottom = p_enable; }
+
+bool ItemList::has_auto_width() const { return auto_width; }
+
+bool ItemList::has_auto_height() const { return auto_height; }
+
+TextServer::OverrunBehavior ItemList::get_text_overrun_behavior() const
+{
+	return text_overrun_behavior;
+}
+
+bool ItemList::has_wraparound_items() const { return wraparound_items; }
+
+ItemList::ScrollHintMode ItemList::get_scroll_hint_mode() const { return scroll_hint_mode; }
+
+bool ItemList::is_scroll_hint_tiled() { return tile_scroll_hint; }
+
+ItemList::~ItemList() {}
+
+void ItemList::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
+
+void ItemList::deselect_all() {}
+
+
+void ItemList::set_scroll_hint_mode(ItemList::ScrollHintMode) {}
+
+void ItemList::set_fixed_column_width(int) {}
+
+void ItemList::set_fixed_icon_size(Vector2i const&) {}
+
+void ItemList::select(int, bool) {}
+
+void ItemList::set_current(int) {}
+
+void ItemList::ensure_current_is_visible() {}
+
+void ItemList::clear() {}
+
+int ItemList::add_item(String const&, Ref<Texture2D> const&, bool) {}
+
+void ItemList::set_icon_scale(float) {}
+
+ItemList::ItemList() {}
+
+// --- texture_rect.cpp ---
+
+Size2 TextureRect::get_minimum_size() const
+{
+	if (texture.is_valid()) {
+		switch (expand_mode) {
+		case EXPAND_KEEP_SIZE: {
+			return texture->get_size();
+		} break;
+		case EXPAND_IGNORE_SIZE: {
+			return Size2();
+		} break;
+		case EXPAND_FIT_WIDTH: {
+			return Size2(get_size().y, 0);
+		} break;
+		case EXPAND_FIT_WIDTH_PROPORTIONAL: {
+			real_t ratio = real_t(texture->get_width()) / texture->get_height();
+			return Size2(get_size().y * ratio, 0);
+		} break;
+		case EXPAND_FIT_HEIGHT: {
+			return Size2(0, get_size().x);
+		} break;
+		case EXPAND_FIT_HEIGHT_PROPORTIONAL: {
+			real_t ratio = real_t(texture->get_height()) / texture->get_width();
+			return Size2(0, get_size().x * ratio);
+		} break;
+		}
+	}
+	return Size2();
+}
+
+PackedStringArray TextureRect::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Control::get_configuration_warnings();
+
+	if (stretch_mode == STRETCH_TILE) {
+		Ref<AtlasTexture> at = texture;
+		while (at.is_valid() && !at->is_animated()) {
+			if (at->get_margin() != Rect2()) {
+				warnings.push_back(vformat(RTR("STRETCH_TILE mode is not supported for an "
+											   "AtlasTexture with non-zero margin.")));
+				break;
+			}
+			at = at->get_atlas();
+		}
+	}
+
+	return warnings;
+}
+
+Ref<Texture2D> TextureRect::get_texture() const { return texture; }
+
+TextureRect::ExpandMode TextureRect::get_expand_mode() const { return expand_mode; }
+
+void TextureRect::set_expand_mode(ExpandMode p_mode) {}
+
+TextureRect::StretchMode TextureRect::get_stretch_mode() const { return stretch_mode; }
+
+bool TextureRect::is_flipped_h() const { return hflip; }
+
+bool TextureRect::is_flipped_v() const { return vflip; }
+
+TextureRect::TextureRect() { set_mouse_filter(MOUSE_FILTER_PASS); }
+
+TextureRect::~TextureRect() {}
+
+void TextureRect::set_texture(const Ref<Texture2D>& p_tex) {}
+
+void TextureRect::set_stretch_mode(StretchMode p_mode) {}
+
+// --- nine_patch_rect.cpp ---
+
+void NinePatchRect::_notification(int p_what)
+{
+	switch (p_what) {
+	case NOTIFICATION_DRAW: {
+		if (texture.is_null()) {
+			return;
+		}
+
+		Rect2 rect = Rect2(Point2(), get_size());
+		Rect2 src_rect = region_rect;
+
+		texture->get_rect_region(rect, src_rect, rect, src_rect);
+
+		RID ci = get_canvas_item();
+		Renderer::canvas_item_add_nine_patch(ci, rect, src_rect,
+			texture->get_scaled_rid(), Vector2(margin[SIDE_LEFT], margin[SIDE_TOP]),
+			Vector2(margin[SIDE_RIGHT], margin[SIDE_BOTTOM]), RSE::NinePatchAxisMode(axis_h),
+			RSE::NinePatchAxisMode(axis_v), draw_center);
+	} break;
+	}
+}
+
+Size2 NinePatchRect::get_minimum_size() const
+{
+	return Size2(margin[SIDE_LEFT] + margin[SIDE_RIGHT], margin[SIDE_TOP] + margin[SIDE_BOTTOM]);
+}
+
+Ref<Texture2D> NinePatchRect::get_texture() const { return texture; }
+
+int NinePatchRect::get_patch_margin(Side p_side) const
+{
+	ERR_FAIL_INDEX_V((int)p_side, 4, 0);
+	return margin[p_side];
+}
+
+void NinePatchRect::set_region_rect(const Rect2& p_region_rect)
+{
+	if (region_rect == p_region_rect) {
+		return;
+	}
+
+	region_rect = p_region_rect;
+
+	item_rect_changed();
+}
+
+Rect2 NinePatchRect::get_region_rect() const { return region_rect; }
+
+bool NinePatchRect::is_draw_center_enabled() const { return draw_center; }
+
+NinePatchRect::AxisStretchMode NinePatchRect::get_h_axis_stretch_mode() const { return axis_h; }
+
+NinePatchRect::AxisStretchMode NinePatchRect::get_v_axis_stretch_mode() const { return axis_v; }
+
+NinePatchRect::NinePatchRect() { set_mouse_filter(MOUSE_FILTER_IGNORE); }
+
+NinePatchRect::~NinePatchRect() {}
+
+// --- reference_rect.cpp ---
+
+void ReferenceRect::_notification(int p_what)
+{
+	switch (p_what) {
+	case NOTIFICATION_DRAW: {
+		if (!is_inside_tree()) {
+			return;
+		}
+		if (Engine::is_editor_hint() || !editor_only) {
+			draw_rect(Rect2(Point2(), get_size()), border_color, false, border_width);
+		}
+	} break;
+	}
+}
+
+Color ReferenceRect::get_border_color() const { return border_color; }
+
+float ReferenceRect::get_border_width() const { return border_width; }
+
+bool ReferenceRect::get_editor_only() const { return editor_only; }
+
+// --- video_stream_player.cpp ---
+
+int VideoStreamPlayer::sp_get_channel_count() const
+{
+	if (playback.is_null()) {
+		return 0;
+	}
+
+	return playback->get_channels();
+}
+
+bool VideoStreamPlayer::mix(AudioFrame* p_buffer, int p_frames)
+{
+	// Check the amount resampler can really handle.
+	// If it cannot, wait "wait_resampler_phase_limit" times.
+	// This mechanism contributes to smoother pause/unpause operation.
+	if (p_frames <= resampler.get_num_of_ready_frames() || wait_resampler_limit <= wait_resampler) {
+		wait_resampler = 0;
+		return resampler.mix(p_buffer, p_frames);
+	}
+	wait_resampler++;
+	return false;
+}
+
+// Called from main thread (e.g. VideoStreamPlayback::update).
+int VideoStreamPlayer::_audio_mix_callback(void* p_udata, const float* p_data, int p_frames)
+{
+	ERR_FAIL_NULL_V(p_udata, 0);
+	ERR_FAIL_NULL_V(p_data, 0);
+
+	VideoStreamPlayer* vp = static_cast<VideoStreamPlayer*>(p_udata);
+
+	int todo = MIN(vp->resampler.get_writer_space(), p_frames);
+
+	float* wb = vp->resampler.get_write_buffer();
+	int c = vp->resampler.get_channel_count();
+
+	for (int i = 0; i < todo * c; i++) {
+		wb[i] = p_data[i];
+	}
+	vp->resampler.write(todo);
+
+	return todo;
+}
+
+void VideoStreamPlayer::_mix_audios(void* p_self)
+{
+	ERR_FAIL_NULL(p_self);
+	static_cast<VideoStreamPlayer*>(p_self)->_mix_audio();
+}
+
+// Called from audio thread
+void VideoStreamPlayer::_mix_audio()
+{
+	if (stream.is_null()) {
+		return;
+	}
+	if (playback.is_null() || !playback->is_playing() || playback->is_paused()) {
+		return;
+	}
+
+	AudioFrame* buffer = mix_buffer.ptrw();
+	int buffer_size = mix_buffer.size();
+
+	// Resample
+	if (!mix(buffer, buffer_size)) {
+		return;
+	}
+
+	AudioFrame vol = AudioFrame(volume, volume);
+
+	int cc = AudioServer::get_channel_count();
+
+	if (cc == 1) {
+		AudioFrame* target =
+			AudioServer::thread_get_channel_mix_buffer(bus_index, 0);
+		ERR_FAIL_NULL(target);
+
+		for (int j = 0; j < buffer_size; j++) {
+			target[j] += buffer[j] * vol;
+		}
+
+	}
+	else {
+		AudioFrame* targets[4];
+
+		for (int k = 0; k < cc; k++) {
+			targets[k] = AudioServer::thread_get_channel_mix_buffer(bus_index, k);
+			ERR_FAIL_NULL(targets[k]);
+		}
+
+		for (int j = 0; j < buffer_size; j++) {
+			AudioFrame frame = buffer[j] * vol;
+			for (int k = 0; k < cc; k++) {
+				targets[k][j] += frame;
+			}
+		}
+	}
+}
+
+Size2 VideoStreamPlayer::get_minimum_size() const
+{
+	if (!expand && texture.is_valid()) {
+		return texture_size;
+	}
+	else {
+		return Size2();
+	}
+}
+
+bool VideoStreamPlayer::has_expand() const { return expand; }
+
+void VideoStreamPlayer::set_loop(bool p_loop) { loop = p_loop; }
+
+bool VideoStreamPlayer::has_loop() const { return loop; }
+
+Ref<VideoStream> VideoStreamPlayer::get_stream() const { return stream; }
+
+void VideoStreamPlayer::play()
+{
+	ERR_FAIL_COND(!is_inside_tree());
+	if (playback.is_null()) {
+		return;
+	}
+	playback->play();
+	set_process_internal(true);
+	first_frame = true;
+
+	if (!can_process()) {
+		_notification(NOTIFICATION_PAUSED);
+	}
+}
+
+void VideoStreamPlayer::stop()
+{
+	if (!is_inside_tree()) {
+		return;
+	}
+	if (playback.is_null()) {
+		return;
+	}
+
+	playback->stop();
+	resampler.flush();
+	set_process_internal(false);
+}
+
+bool VideoStreamPlayer::is_playing() const
+{
+	if (playback.is_null()) {
+		return false;
+	}
+
+	return playback->is_playing();
+}
+
+void VideoStreamPlayer::set_paused(bool p_paused)
+{
+	if (paused == p_paused) {
+		return;
+	}
+
+	paused = p_paused;
+	if (!p_paused && !can_process()) {
+		paused_from_tree = true;
+		return;
+	}
+	else if (p_paused && paused_from_tree) {
+		paused_from_tree = false;
+		return;
+	}
+
+	if (playback.is_valid()) {
+		playback->set_paused(p_paused);
+		set_process_internal(!p_paused);
+	}
+}
+
+bool VideoStreamPlayer::is_paused() const { return paused; }
+
+void VideoStreamPlayer::set_buffering_msec(int p_msec) { buffering_ms = p_msec; }
+
+int VideoStreamPlayer::get_buffering_msec() const { return buffering_ms; }
+
+void VideoStreamPlayer::set_audio_track(int p_track)
+{
+	audio_track = p_track;
+	if (stream.is_valid()) {
+		stream->set_audio_track(audio_track);
+	}
+	if (playback.is_valid()) {
+		playback->set_audio_track(audio_track);
+	}
+}
+
+int VideoStreamPlayer::get_audio_track() const { return audio_track; }
+
+void VideoStreamPlayer::set_volume(float p_vol) { volume = p_vol; }
+
+float VideoStreamPlayer::get_volume() const { return volume; }
+
+void VideoStreamPlayer::set_volume_db(float p_db)
+{
+	if (p_db < -79) {
+		set_volume(0);
+	}
+	else {
+		set_volume(Math::db_to_linear(p_db));
+	}
+}
+
+float VideoStreamPlayer::get_volume_db() const
+{
+	if (volume == 0) {
+		return -80;
+	}
+	else {
+		return Math::linear_to_db(volume);
+	}
+}
+
+void VideoStreamPlayer::set_speed_scale(float p_speed_scale)
+{
+	ERR_FAIL_COND(p_speed_scale < 0.0);
+	speed_scale = p_speed_scale;
+}
+
+float VideoStreamPlayer::get_speed_scale() const { return speed_scale; }
+
+String VideoStreamPlayer::get_stream_name() const
+{
+	if (stream.is_null()) {
+		return "<No Stream>";
+	}
+	return stream->get_name();
+}
+
+double VideoStreamPlayer::get_stream_length() const
+{
+	if (playback.is_null()) {
+		return 0;
+	}
+	return playback->get_length();
+}
+
+double VideoStreamPlayer::get_stream_position() const
+{
+	if (playback.is_null()) {
+		return 0;
+	}
+	return playback->get_playback_position();
+}
+
+void VideoStreamPlayer::set_stream_position(double p_position)
+{
+	if (playback.is_valid()) {
+		resampler.flush();
+		playback->seek(p_position);
+		first_frame = true;
+	}
+}
+
+Ref<Texture2D> VideoStreamPlayer::get_video_texture() const
+{
+	if (playback.is_valid()) {
+		return playback->get_texture();
+	}
+
+	return Ref<Texture2D>();
+}
+
+void VideoStreamPlayer::set_autoplay(bool p_enable) { autoplay = p_enable; }
+
+bool VideoStreamPlayer::has_autoplay() const { return autoplay; }
+
+void VideoStreamPlayer::set_bus(const String& p_bus)
+{
+	// If audio is active, must lock this.
+	AudioServer::lock();
+	bus = p_bus;
+	AudioServer::unlock();
+}
+
+String VideoStreamPlayer::get_bus() const
+{
+	for (int i = 0; i < AudioServer::get_bus_count(); i++) {
+		if (AudioServer::get_bus_name(i) == bus) {
+			return bus;
+		}
+	}
+	return SceneString(Master);
+}
+
+VideoStreamPlayer::~VideoStreamPlayer()
+{
+	// Not necessary here, but make in consistent with other "stream_player" classes.
+	resampler.clear();
+}
+
+
+
+void VideoStreamPlayer::_notification(int) {}
+
+// --- virtual_joystick.cpp ---
+
+void VirtualJoystick::_notification(int p_what)
+{
+	switch (p_what) {
+	case NOTIFICATION_DRAW: {
+		if (!Engine::is_editor_hint() && visibility == VISIBILITY_WHEN_TOUCHED &&
+			!is_pressed) {
+			return;
+		}
+
+		Rect2 rect_joystick = Rect2(joystick_pos - Vector2(0.5, 0.5) * joystick_size,
+			Vector2(joystick_size, joystick_size));
+		draw_style_box(
+			is_pressed ? theme_cache.pressed_joystick.ptr() : theme_cache.normal_joystick.ptr(),
+			rect_joystick);
+
+		Rect2 rect_tip = Rect2(tip_pos - Vector2(0.5, 0.5) * tip_size, Vector2(tip_size, tip_size));
+		draw_style_box(
+			is_pressed ? theme_cache.pressed_tip.ptr() : theme_cache.normal_tip.ptr(), rect_tip);
+	} break;
+
+	case NOTIFICATION_ENTER_TREE: {
+		joystick_pos = get_size() * initial_offset_ratio;
+		tip_pos = joystick_pos;
+	} break;
+
+	case NOTIFICATION_RESIZED: {
+		_reset();
+	} break;
+	}
+}
+
+void VirtualJoystick::_reset() {}
+
+void VirtualJoystick::_handle_input_actions()
+{
+	if (input_vector.x >= 0.0f && Input::is_action_pressed(action_left)) {
+		Input::action_release(action_left);
+	}
+	if (input_vector.x <= 0.0f && Input::is_action_pressed(action_right)) {
+		Input::action_release(action_right);
+	}
+	if (input_vector.y >= 0.0f && Input::is_action_pressed(action_up)) {
+		Input::action_release(action_up);
+	}
+	if (input_vector.y <= 0.0f && Input::is_action_pressed(action_down)) {
+		Input::action_release(action_down);
+	}
+
+	if (input_vector.x < 0.0f) {
+		Input::action_press(action_left, -input_vector.x);
+	}
+	else if (input_vector.x > 0.0f) {
+		Input::action_press(action_right, input_vector.x);
+	}
+	if (input_vector.y < 0.0f) {
+		Input::action_press(action_up, -input_vector.y);
+	}
+	else if (input_vector.y > 0.0f) {
+		Input::action_press(action_down, input_vector.y);
+	}
+}
+
+Vector2 VirtualJoystick::get_joystick_position() const { return joystick_pos; }
+
+void VirtualJoystick::set_joystick_size(float p_size)
+{
+	if (joystick_size == p_size) {
+		return;
+	}
+	joystick_size = p_size;
+	_reset();
+}
+
+float VirtualJoystick::get_joystick_size() const { return joystick_size; }
+
+void VirtualJoystick::set_tip_size(float p_size)
+{
+	if (tip_size == p_size) {
+		return;
+	}
+	tip_size = p_size;
+	_reset();
+}
+
+float VirtualJoystick::get_tip_size() const { return tip_size; }
+
+float VirtualJoystick::get_deadzone_ratio() const { return deadzone_ratio; }
+
+float VirtualJoystick::get_clampzone_ratio() const { return clampzone_ratio; }
+
+void VirtualJoystick::set_initial_offset_ratio(const Vector2& p_ratio)
+{
+	if (initial_offset_ratio == p_ratio) {
+		return;
+	}
+	initial_offset_ratio = p_ratio;
+	_reset();
+}
+
+Vector2 VirtualJoystick::get_initial_offset_ratio() const { return initial_offset_ratio; }
+
+void VirtualJoystick::set_joystick_mode(JoystickMode p_mode) { joystick_mode = p_mode; }
+
+VirtualJoystick::JoystickMode VirtualJoystick::get_joystick_mode() const { return joystick_mode; }
+
+void VirtualJoystick::set_action_left(const String& p_action) { action_left = p_action; }
+
+String VirtualJoystick::get_action_left() const { return action_left; }
+
+void VirtualJoystick::set_action_right(const String& p_action) { action_right = p_action; }
+
+String VirtualJoystick::get_action_right() const { return action_right; }
+
+void VirtualJoystick::set_action_up(const String& p_action) { action_up = p_action; }
+
+String VirtualJoystick::get_action_up() const { return action_up; }
+
+void VirtualJoystick::set_action_down(const String& p_action) { action_down = p_action; }
+
+String VirtualJoystick::get_action_down() const { return action_down; }
+
+void VirtualJoystick::set_visibility_mode(VisibilityMode p_mode) { visibility = p_mode; }
+
+VirtualJoystick::VisibilityMode VirtualJoystick::get_visibility_mode() const { return visibility; }
+
+// ============================================================================
+// Merged from scene/gui/rich_text_label.cpp
+// ============================================================================
+
+#include "core/input/input_map.h"
+#include "core/io/resource_loader.h"
+#include "core/math/math_defs.h"
+#include "core/os/keyboard.h"
+#include "core/os/os.h"
+#include "core/string/translation_server.h"
+#include "modules/modules_enabled.gen.h"
+#include "scene/gui/dialogs.h"
+#include "scene/gui/label.h"
+#include "scene/gui/popup_menu.h"
+// --- Inlined from scene/gui/rich_text_effect.h ---
+#include "core/io/resource.h"
+
+class CharFXTransform : public RefCounted
+{
+public:
+	Transform2D transform;
+	Vector2i range;
+	bool visibility = true;
+	bool outline = false;
+	Point2 offset;
+	Color color;
+	double elapsed_time = 0.0f;
+	uint32_t glyph_index = 0;
+	uint16_t glyph_flags = 0;
+	uint8_t glyph_count = 0;
+	int32_t relative_index = 0;
+	RID font;
+
+	CharFXTransform();
+	~CharFXTransform() = default;
+
+	void set_transform(const Transform2D& p_transform) { transform = p_transform; }
+
+	const Transform2D& get_transform() { return transform; }
+
+	Vector2i get_range() { return range; }
+
+	void set_range(const Vector2i& p_range) { range = p_range; }
+
+	double get_elapsed_time() { return elapsed_time; }
+
+	void set_elapsed_time(double p_elapsed_time) { elapsed_time = p_elapsed_time; }
+
+	bool is_visible() { return visibility; }
+
+	void set_visibility(bool p_visibility) { visibility = p_visibility; }
+
+	bool is_outline() { return outline; }
+
+	void set_outline(bool p_outline) { outline = p_outline; }
+
+	Point2 get_offset() { return offset; }
+
+	void set_offset(Point2 p_offset) { offset = p_offset; }
+
+	Color get_color() { return color; }
+
+	void set_color(Color p_color) { color = p_color; }
+
+	uint32_t get_glyph_index() const { return glyph_index; }
+
+	void set_glyph_index(uint32_t p_glyph_index) { glyph_index = p_glyph_index; }
+
+	uint16_t get_glyph_flags() const { return glyph_flags; }
+
+	void set_glyph_flags(uint16_t p_glyph_flags) { glyph_flags = p_glyph_flags; }
+
+	uint8_t get_glyph_count() const { return glyph_count; }
+
+	void set_glyph_count(uint8_t p_glyph_count) { glyph_count = p_glyph_count; }
+
+	int32_t get_relative_index() const { return relative_index; }
+
+	void set_relative_index(int32_t p_relative_index) { relative_index = p_relative_index; }
+
+	RID get_font() const { return font; }
+
+	void set_font(RID p_font) { font = p_font; }
+};
+
+class RichTextEffect : public Resource
+{
+public:
+	bool _process_effect_impl(Ref<class CharFXTransform> p_cfx);
+
+	RichTextEffect();
+};
+
+
+
+// --- End scene/gui/rich_text_effect.h ---
+#include "scene/gui/scroll_bar.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/timer.h"
+#include "scene/resources/atlas_texture.h"
+#include "scene/resources/text_paragraph.h"
+#include "scene/resources/texture.h"
+#include "scene/theme/theme_db.h"
+#include "servers/display/accessibility_server.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
+
+#ifdef MODULE_REGEX_ENABLED
+#include "modules/regex/regex.h"
+#endif
+
+RichTextLabel::ImageData::~ImageData() = default;
+
+RichTextLabel::FXData::FXData(ItemType p_type)
+{
+	if (p_type == ITEM_CUSTOMFX) {
+		char_fx_transform.instantiate();
+	}
+}
+
+RichTextLabel::FXData::~FXData()
+{
+	char_fx_transform.unref();
+	custom_effect.unref();
+}
+
+void RichTextLabel::Item::_clear_children()
+{ // Only ever called on main or a paragraph (Line).
+	while (subitems.size()) {
+		Item* subitem = subitems.front()->get();
+		memdelete(subitem);
+		subitems.pop_front();
+	}
+}
+
+RichTextLabel::Item::Item(ItemType p_type) : type(p_type)
+{
+	switch (p_type) {
+	case ITEM_FRAME: {
+		frame = memnew(FrameData);
+	} break;
+	case ITEM_DROPCAP: {
+		dropcap = memnew(DropcapData);
+	} break;
+	case ITEM_IMAGE: {
+		image = memnew(ImageData);
+	} break;
+	case ITEM_PARAGRAPH: {
+		paragraph = memnew(ParagraphData);
+	} break;
+	case ITEM_TABLE: {
+		table = memnew(TableData);
+	} break;
+	case ITEM_SHAKE:
+	case ITEM_WAVE:
+	case ITEM_TORNADO:
+	case ITEM_RAINBOW:
+	case ITEM_PULSE:
+	case ITEM_CUSTOMFX: {
+		fx = memnew(FXData(p_type));
+	} break;
+	case ITEM_FONT_SIZE: {
+		font_size = 16;
+	} break;
+	case ITEM_LIST: {
+		text = U"•";
+	} break;
+	default:
+		break;
+	}
+}
+
+RichTextLabel::Item::~Item()
+{
+	_clear_children();
+	if (rid.is_valid()) {
+		items.free(rid);
+	}
+	switch (type) {
+	case ITEM_FRAME: {
+		if (frame) {
+			memdelete(frame);
+		}
+	} break;
+	case ITEM_DROPCAP: {
+		if (dropcap) {
+			memdelete(dropcap);
+		}
+	} break;
+	case ITEM_IMAGE: {
+		if (image) {
+			memdelete(image);
+		}
+	} break;
+	case ITEM_PARAGRAPH: {
+		if (paragraph) {
+			memdelete(paragraph);
+		}
+	} break;
+	case ITEM_TABLE: {
+		if (table) {
+			memdelete(table);
+		}
+	} break;
+	case ITEM_SHAKE:
+	case ITEM_WAVE:
+	case ITEM_TORNADO:
+	case ITEM_RAINBOW:
+	case ITEM_PULSE:
+	case ITEM_CUSTOMFX: {
+		if (fx) {
+			memdelete(fx);
+		}
+	} break;
+	default:
+		break;
+	}
+}
+
+Rect2i _merge_or_copy_rect(const Rect2i& p_a, const Rect2i& p_b)
+{
+	if (!p_a.has_area()) {
+		return p_b;
+	}
+	else {
+		return p_a.merge(p_b);
+	}
+}
+
+RichTextLabel::Line::~Line()
+{
+	if (accessibility_line_element.is_valid()) {
+		AccessibilityServer::free_element(accessibility_line_element);
+		accessibility_line_element = RID();
+		accessibility_text_element = RID();
+	}
+}
+
+RichTextLabel::Item* RichTextLabel::_get_next_item(Item* p_item, bool p_free) const
+{
+	if (!p_item) {
+		return nullptr;
+	}
+	if (p_free) {
+		if (p_item->subitems.size()) {
+			return p_item->subitems.front()->get();
+		}
+		else if (!p_item->parent) {
+			return nullptr;
+		}
+		else if (p_item->E->next()) {
+			return p_item->E->next()->get();
+		}
+		else {
+			// Go up until something with a next is found.
+			while (p_item->parent && !p_item->E->next()) {
+				p_item = p_item->parent;
+			}
+
+			if (p_item->parent) {
+				return p_item->E->next()->get();
+			}
+			else {
+				return nullptr;
+			}
+		}
+
+	}
+	else {
+		if (p_item->subitems.size() && p_item->type != ITEM_TABLE) {
+			return p_item->subitems.front()->get();
+		}
+		else if (p_item->type == ITEM_FRAME) {
+			return nullptr;
+		}
+		else if (p_item->E->next()) {
+			return p_item->E->next()->get();
+		}
+		else {
+			// Go up until something with a next is found.
+			while (p_item->parent && p_item->type != ITEM_FRAME && !p_item->E->next()) {
+				p_item = p_item->parent;
+			}
+
+			if (p_item->type != ITEM_FRAME) {
+				return p_item->E->next()->get();
+			}
+			else {
+				return nullptr;
+			}
+		}
+	}
+}
+
+RichTextLabel::Item* RichTextLabel::_get_prev_item(Item* p_item, bool p_free) const
+{
+	if (!p_item) {
+		return nullptr;
+	}
+	if (p_free) {
+		if (!p_item->parent) {
+			return nullptr;
+		}
+		else if (p_item->E->prev()) {
+			p_item = p_item->E->prev()->get();
+			while (p_item->subitems.size()) {
+				p_item = p_item->subitems.back()->get();
+			}
+			return p_item;
+		}
+		else {
+			if (p_item->parent) {
+				return p_item->parent;
+			}
+			else {
+				return nullptr;
+			}
+		}
+
+	}
+	else {
+		if (p_item->type == ITEM_FRAME) {
+			return nullptr;
+		}
+		else if (p_item->E->prev()) {
+			p_item = p_item->E->prev()->get();
+			while (p_item->subitems.size() && p_item->type != ITEM_TABLE) {
+				p_item = p_item->subitems.back()->get();
+			}
+			return p_item;
+		}
+		else {
+			if (p_item->parent && p_item->type != ITEM_FRAME) {
+				return p_item->parent;
+			}
+			else {
+				return nullptr;
+			}
+		}
+	}
+}
+
+Rect2 RichTextLabel::_get_text_rect()
+{
+	return Rect2(theme_cache.normal_style->get_offset(),
+		get_size() - theme_cache.normal_style->get_minimum_size());
+}
+
+int RichTextLabel::_get_wrap_width(const Rect2& p_text_rect) const
+{
+	int wrap_width = p_text_rect.get_size().width;
+	float combined_maximum_width = get_combined_maximum_size().x;
+	if (autowrap_mode != TextServer::AUTOWRAP_OFF && combined_maximum_width > 0.0) {
+		int maximum_width =
+			int(combined_maximum_width - theme_cache.normal_style->get_minimum_size().width);
+		if (maximum_width <= 0) {
+			maximum_width = 1;
+		}
+		wrap_width = MIN(wrap_width, maximum_width);
+		wrap_width = MAX(wrap_width, 1);
+	}
+	return wrap_width;
+}
+
+RichTextLabel::Item* RichTextLabel::_get_item_at_pos(
+	RichTextLabel::Item* p_item_from, RichTextLabel::Item* p_item_to, int p_position)
+{
+	int offset = 0;
+	for (Item* it = p_item_from; it && it != p_item_to; it = _get_next_item(it)) {
+		switch (it->type) {
+		case ITEM_TEXT: {
+			offset += it->text.length();
+			if (offset > p_position) {
+				return it;
+			}
+		} break;
+		case ITEM_NEWLINE: {
+			offset += 1;
+			if (offset == p_position) {
+				return it;
+			}
+		} break;
+		case ITEM_IMAGE: {
+			offset += 1;
+			if (offset > p_position) {
+				return it;
+			}
+		} break;
+		case ITEM_TABLE: {
+			offset += it->table->char_count;
+		} break;
+		default:
+			break;
+		}
+	}
+	return p_item_from;
+}
+
+String RichTextLabel::_roman(int p_num, bool p_capitalize) const
+{
+	if (p_num > 3999) {
+		return "ERR";
+	};
+	String s;
+	if (p_capitalize) {
+		const String roman_M[] = {"", "M", "MM", "MMM"};
+		const String roman_C[] = {"", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"};
+		const String roman_X[] = {"", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"};
+		const String roman_I[] = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"};
+		s = roman_M[p_num / 1000] + roman_C[(p_num % 1000) / 100] + roman_X[(p_num % 100) / 10] +
+			roman_I[p_num % 10];
+	}
+	else {
+		const String roman_M[] = {"", "m", "mm", "mmm"};
+		const String roman_C[] = {"", "c", "cc", "ccc", "cd", "d", "dc", "dcc", "dccc", "cm"};
+		const String roman_X[] = {"", "x", "xx", "xxx", "xl", "l", "lx", "lxx", "lxxx", "xc"};
+		const String roman_I[] = {"", "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix"};
+		s = roman_M[p_num / 1000] + roman_C[(p_num % 1000) / 100] + roman_X[(p_num % 100) / 10] +
+			roman_I[p_num % 10];
+	}
+	return s;
+}
+
+String RichTextLabel::_letters(int p_num, bool p_capitalize) const
+{
+	uint64_t n = p_num;
+
+	int chars = 0;
+	do {
+		n = (n - 1) / 26;
+		chars++;
+	} while (n);
+
+	String s;
+	s.resize_uninitialized(chars + 1);
+	char32_t* c = s.ptrw();
+	c[chars] = 0;
+	n = p_num;
+	do {
+		const char a = (p_capitalize ? 'A' : 'a');
+		n = n - 1;
+		c[--chars] = a + n % 26;
+		n /= 26;
+	} while (n);
+
+	return s;
+}
+
+String RichTextLabel::_get_prefix(
+	Item* p_item, const Vector<int>& p_list_index, const Vector<Item*>& p_list_items)
+{
+	String prefix;
+	int segments = 0;
+	for (int i = 0; i < p_list_index.size(); i++) {
+		String segment;
+		if (p_list_items[i]->list_type == LIST_DOTS) {
+			if (segments == 0) {
+				prefix = p_list_items[i]->text;
+			}
+			break;
+		}
+		prefix = "." + prefix;
+		if (p_list_items[i]->list_type == LIST_NUMBERS) {
+			segment = itos(p_list_index[i]);
+			if (is_localizing_numeral_system()) {
+				segment = TranslationServer::format_number(
+					segment, _find_language(p_item));
+			}
+			segments++;
+		}
+		else if (p_list_items[i]->list_type == LIST_LETTERS) {
+			segment = _letters(p_list_index[i], p_list_items[i]->capitalize);
+			segments++;
+		}
+		else if (p_list_items[i]->list_type == LIST_ROMAN) {
+			segment = _roman(p_list_index[i], p_list_items[i]->capitalize);
+			segments++;
+		}
+		prefix = segment + prefix;
+	}
+	return prefix + " ";
+}
+
+int RichTextLabel::_get_line_max_width(Item* p_frame, int p_line) const
+{
+	ERR_FAIL_NULL_V(p_frame, 0);
+	FrameData& fr = *p_frame->frame;
+	ERR_FAIL_INDEX_V(p_line, (int)fr.lines.size(), 0);
+
+	Line& l = fr.lines[p_line];
+	MutexLock lock(l.text_buf->get_mutex());
+
+	int max_width = Math::ceil(l.text_buf->get_non_wrapped_size().x);
+
+	Item* it_to =
+		(p_line + 1 < (int)fr.lines.size()) ? fr.lines[p_line + 1].from : nullptr;
+	for (Item* it = l.from; it && it != it_to; it = _get_next_item(it)) {
+		if (it->type != ITEM_TABLE) {
+			continue;
+		}
+
+		TableData& table = *it->table;
+
+		// Subtract the table's width recorded in text_buf.
+		max_width -= table.total_width;
+
+		// Recalculate the maximum width of the table.
+		const int col_count = table.columns.size();
+		max_width += theme_cache.table_h_separation * col_count;
+
+		// The columns in the nested table have already been calculated in _shape_line().
+		for (TableData::Column& C : table.columns) {
+			max_width += C.max_width;
+		}
+	}
+
+	max_width += Math::ceil(fr.padding.position.x + fr.padding.size.x + l.indent);
+
+	return max_width;
+}
+
+Size2 RichTextLabel::_get_item_image_final_size(
+	Item* p_img, float p_orig_width, float p_base_font_size)
+{
+	ImageData& img = *p_img->image;
+	Size2 new_size(img.rq_size);
+	Item* font_size_it = _find_font_size(p_img);
+
+	if (img.width_unit == IMAGE_UNIT_PERCENT) {
+		new_size.width = p_orig_width * img.rq_size.width / 100.f;
+	}
+	else if (img.width_unit == IMAGE_UNIT_EM) {
+		new_size.width =
+			(font_size_it ? font_size_it->font_size : p_base_font_size) * img.rq_size.width;
+	}
+
+	if (img.height_unit == IMAGE_UNIT_PERCENT) {
+		new_size.height = p_orig_width * img.rq_size.height / 100.f;
+	}
+	else if (img.height_unit == IMAGE_UNIT_EM) {
+		new_size.height =
+			(font_size_it ? font_size_it->font_size : p_base_font_size) * img.rq_size.height;
+	}
+	return new_size;
+}
+
+void RichTextLabel::_update_table_column_width(Item* p_table, int p_available_width)
+{
+	TableData& tbl = *p_table->table;
+	const int col_count = tbl.columns.size();
+
+	LocalVector<bool> columns_will_stretch;
+	columns_will_stretch.resize(col_count);
+
+	int total_ratio = 0; // The total ratio of the columns that will stretch.
+	tbl.total_width = 0;
+	float remaining_width = 0; // The available width of the columns that will stretch.
+
+	for (int i = 0; i < col_count; i++) {
+		TableData::Column& C = tbl.columns[i];
+		tbl.total_width += C.min_width;
+		C.width = C.min_width;
+		if (C.max_width > C.min_width) {
+			C.expand = true; // Like a hack.
+		}
+		columns_will_stretch[i] = C.expand;
+		if (columns_will_stretch[i]) {
+			remaining_width += C.min_width;
+			total_ratio += C.expand_ratio;
+		}
+	}
+
+	int diff = p_available_width - tbl.total_width;
+	if (diff < 0) {
+		diff = 0; // Avoid negative stretch space.
+	}
+	remaining_width += diff;
+
+	// Resize to max_width if needed and distribute the remaining space.
+	bool table_need_fit = true;
+	while (table_need_fit) {
+		table_need_fit = false;
+		float error = 0.0; // Keep track of accumulated error in pixels.
+
+		for (int i = 0; i < col_count; i++) {
+			if (!columns_will_stretch[i]) {
+				continue;
+			}
+			TableData::Column& C = tbl.columns[i];
+
+			float final_pixel_size = remaining_width * C.expand_ratio / total_ratio;
+			error += Math::fract(final_pixel_size);
+
+			if (C.shrink && final_pixel_size > C.max_width) {
+				columns_will_stretch[i] = false;
+				total_ratio -= C.expand_ratio;
+				table_need_fit = true;
+				remaining_width -= C.max_width;
+				C.width = C.max_width;
+				break;
+			}
+
+			if (final_pixel_size < C.min_width) {
+				// If available stretching area is too small for widget,
+				// then remove it from stretching area.
+				columns_will_stretch[i] = false;
+				total_ratio -= C.expand_ratio;
+				table_need_fit = true;
+				remaining_width -= C.min_width;
+				C.width = C.min_width;
+				break;
+			}
+
+			C.width = final_pixel_size;
+			// Dump accumulated error if one pixel or more.
+			if (error >= 1) {
+				C.width += 1;
+				error -= 1;
+			}
+		}
+	}
+
+	// Recalculate total width.
+	tbl.total_width = theme_cache.table_h_separation * col_count;
+	for (TableData::Column& C : tbl.columns) {
+		tbl.total_width += C.width;
+	}
+}
+
+void RichTextLabel::_update_table_size(Item* p_table)
+{
+	TableData& tbl = *p_table->table;
+	const int col_count = tbl.columns.size();
+
+	// Update line width and get total height.
+	int idx = 0;
+	tbl.total_height = 0;
+	tbl.rows.clear();
+	tbl.rows_baseline.clear();
+
+	Vector2 offset =
+		Vector2(theme_cache.table_h_separation * 0.5, theme_cache.table_v_separation * 0.5).floor();
+	float row_height = 0.0;
+	const List<Item*>::Element* prev = p_table->subitems.front();
+
+	for (const List<Item*>::Element* E = prev; E; E = E->next()) {
+		ERR_CONTINUE(E->get()->type != ITEM_FRAME); // Children should all be frames.
+		FrameData& frame = *E->get()->frame;
+
+		int column = idx % col_count;
+		const real_t frame_padding_space = frame.padding.position.x + frame.padding.size.x;
+
+		offset += frame.padding.position;
+		float yofs = 0.0;
+		float prev_h = 0.0;
+		float row_baseline = 0.0;
+		for (int i = 0; i < (int)frame.lines.size(); i++) {
+			Line& line = frame.lines[i];
+			MutexLock sub_lock(line.text_buf->get_mutex());
+			line.text_buf->set_width(
+				tbl.columns[column].width - Math::ceil(frame_padding_space + line.indent));
+			line.offset.y = prev_h;
+
+			float h = line.text_buf->get_size().y +
+					  (line.text_buf->get_line_count() - 1) * theme_cache.line_separation;
+			if (i > 0) {
+				h += theme_cache.paragraph_separation + theme_cache.line_separation;
+			}
+			if (frame.min_size_over.y > 0) {
+				h = MAX(h, frame.min_size_over.y);
+			}
+			if (frame.max_size_over.y > 0) {
+				h = MIN(h, frame.max_size_over.y);
+			}
+			yofs += h;
+			prev_h = line.offset.y + line.text_buf->get_size().y +
+					 line.text_buf->get_line_count() * theme_cache.line_separation +
+					 theme_cache.paragraph_separation;
+
+			line.offset += offset;
+			row_baseline = MAX(
+				row_baseline, line.text_buf->get_line_ascent(line.text_buf->get_line_count() - 1));
+		}
+
+		offset -= frame.padding.position;
+		offset.x += tbl.columns[column].width + theme_cache.table_h_separation;
+
+		row_height = MAX(yofs + frame.padding.position.y + frame.padding.size.y, row_height);
+		// Add row height after last column of the row or last cell of the table.
+		if (column == col_count - 1 || E->next() == nullptr) {
+			offset.x = Math::floor(theme_cache.table_h_separation * 0.5);
+			row_height += theme_cache.table_v_separation;
+			tbl.rows.push_back(row_height);
+			tbl.rows_baseline.push_back(tbl.total_height + row_baseline +
+										Math::floor(theme_cache.table_v_separation * 0.5));
+			tbl.total_height += row_height;
+			offset.y += row_height;
+			row_height = 0.0;
+			prev = E->next();
+		}
+		idx++;
+	}
+}
+
+void RichTextLabel::_find_click(Item* p_frame, const Point2i& p_click,
+	Item** r_click_frame, int* r_click_line, Item** r_click_item, int* r_click_char,
+	bool* r_outside, bool p_meta)
+{
+	if (r_click_item) {
+		*r_click_item = nullptr;
+	}
+	if (r_click_char != nullptr) {
+		*r_click_char = 0;
+	}
+	if (r_outside != nullptr) {
+		*r_outside = true;
+	}
+
+	Size2 size = get_size();
+	Rect2 text_rect = _get_text_rect();
+
+	int vofs = vscroll->get_value();
+
+	// Search for the first line.
+	FrameData& main_fr = *main->frame;
+	int to_line = main_fr.first_invalid_line.load();
+	int from_line = _find_first_line(0, to_line, vofs);
+
+	int total_height = INT32_MAX;
+	if (to_line && vertical_alignment != VERTICAL_ALIGNMENT_TOP) {
+		MutexLock lock(main_fr.lines[to_line - 1].text_buf->get_mutex());
+		if (theme_cache.line_separation < 0) {
+			// Do not apply to the last line to avoid cutting text.
+			total_height = main_fr.lines[to_line - 1].offset.y +
+						   main_fr.lines[to_line - 1].text_buf->get_size().y +
+						   (main_fr.lines[to_line - 1].text_buf->get_line_count() - 1) *
+							   theme_cache.line_separation;
+		}
+		else {
+			total_height =
+				main_fr.lines[to_line - 1].offset.y +
+				main_fr.lines[to_line - 1].text_buf->get_size().y +
+				main_fr.lines[to_line - 1].text_buf->get_line_count() * theme_cache.line_separation +
+				theme_cache.paragraph_separation;
+		}
+	}
+	float vbegin = 0, vsep = 0;
+	if (text_rect.size.y > total_height) {
+		switch (vertical_alignment) {
+		case VERTICAL_ALIGNMENT_TOP: {
+			// Nothing.
+		} break;
+		case VERTICAL_ALIGNMENT_CENTER: {
+			vbegin = (text_rect.size.y - total_height) / 2;
+		} break;
+		case VERTICAL_ALIGNMENT_BOTTOM: {
+			vbegin = text_rect.size.y - total_height;
+		} break;
+		case VERTICAL_ALIGNMENT_FILL: {
+			int lines = 0;
+			for (int l = from_line; l < to_line; l++) {
+				MutexLock lock(main_fr.lines[l].text_buf->get_mutex());
+				lines += main_fr.lines[l].text_buf->get_line_count();
+			}
+			if (lines > 1) {
+				vsep = (text_rect.size.y - total_height) / (lines - 1);
+			}
+		} break;
+		}
+	}
+
+	Point2 ofs =
+		text_rect.get_position() + Vector2(0, vbegin + main_fr.lines[from_line].offset.y - vofs);
+	while (ofs.y < size.height && from_line < to_line) {
+		MutexLock lock(main_fr.lines[from_line].text_buf->get_mutex());
+		_find_click_in_line(p_frame, from_line, ofs, text_rect.size.x, vsep, p_click, r_click_frame,
+			r_click_line, r_click_item, r_click_char, false, p_meta);
+		ofs.y += main_fr.lines[from_line].text_buf->get_size().y +
+				 main_fr.lines[from_line].text_buf->get_line_count() *
+					 (theme_cache.line_separation + vsep) +
+				 (theme_cache.paragraph_separation);
+		if (((r_click_item != nullptr) && ((*r_click_item) != nullptr)) ||
+			((r_click_frame != nullptr) && ((*r_click_frame) != nullptr))) {
+			if (r_outside != nullptr) {
+				*r_outside = false;
+			}
+			return;
+		}
+		from_line++;
+	}
+}
+
+void RichTextLabel::_update_fx(RichTextLabel::Item* p_frame, double p_delta_time)
+{
+	Item* it = p_frame;
+	while (it) {
+		if (!it->is_fx()) {
+			it = _get_next_item(it, true);
+			continue;
+		}
+
+		FXData& ifx = *it->fx;
+		ifx.elapsed_time += p_delta_time;
+
+		if (it->type == ITEM_SHAKE) {
+			bool cycle = (ifx.elapsed_time > (1.0f / ifx.rate));
+			if (cycle) {
+				ifx.elapsed_time -= (1.0f / ifx.rate);
+				ifx.reroll_random();
+			}
+		}
+
+		it = _get_next_item(it, true);
+	}
+}
+
+int RichTextLabel::_find_first_line(int p_from, int p_to, int p_vofs) const
+{
+	FrameData& main_fr = *main->frame;
+	int l = p_from;
+	int r = p_to;
+	while (l < r) {
+		int m = Math::floor(double(l + r) / 2.0);
+		MutexLock lock(main_fr.lines[m].text_buf->get_mutex());
+		int ofs = _calculate_line_vertical_offset(main_fr.lines[m]);
+		if (ofs < p_vofs) {
+			l = m + 1;
+		}
+		else {
+			r = m;
+		}
+	}
+	return MIN(l, (int)main_fr.lines.size() - 1);
+}
+
+_FORCE_INLINE_ float RichTextLabel::_calculate_line_vertical_offset(
+	const RichTextLabel::Line& line) const
+{
+	return line.get_height(theme_cache.line_separation, theme_cache.paragraph_separation);
+}
+
+void RichTextLabel::_update_theme_item_cache()
+{
+	Control::_update_theme_item_cache();
+
+	theme_cache.base_scale = get_theme_default_base_scale();
+	use_selected_font_color = theme_cache.font_selected_color != Color(0, 0, 0, 0);
+}
+
+PackedStringArray RichTextLabel::get_accessibility_configuration_warnings() const
+{
+	PackedStringArray warnings = Control::get_accessibility_configuration_warnings();
+
+	Item* it = main;
+	while (it) {
+		if (it->type == ITEM_IMAGE) {
+			if (it->image && it->image->alt_text.strip_edges().is_empty()) {
+				warnings.push_back(RTR("Image alternative text must not be empty."));
+			}
+		}
+		it = _get_next_item(it, true);
+	}
+
+	return warnings;
+}
+
+void RichTextLabel::_invalidate_accessibility()
+{
+	if (accessibility_scroll_element.is_null()) {
+		return;
+	}
+
+	Item* it = main;
+	while (it) {
+		if (it->type == ITEM_FRAME) {
+			FrameData& fr = *it->frame;
+			for (size_t i = 0; i < fr.lines.size(); i++) {
+				if (fr.lines[i].accessibility_line_element.is_valid()) {
+					AccessibilityServer::free_element(
+						fr.lines[i].accessibility_line_element);
+				}
+				fr.lines[i].accessibility_line_element = RID();
+				fr.lines[i].accessibility_text_element = RID();
+			}
+		}
+		it->accessibility_item_element = RID();
+		it = _get_next_item(it, true);
+	}
+}
+
+RID RichTextLabel::get_focused_accessibility_element() const
+{
+	if (keyboard_focus_frame && keyboard_focus_item) {
+		if (keyboard_focus_on_text) {
+			return keyboard_focus_frame->frame->lines[keyboard_focus_line]
+				.accessibility_text_element;
+		}
+		else {
+			if (keyboard_focus_item->accessibility_item_element.is_valid()) {
+				return keyboard_focus_item->accessibility_item_element;
+			}
+		}
+	}
+	else {
+		if (!main->frame->lines.is_empty()) {
+			return main->frame->lines[0].accessibility_text_element;
+		}
+	}
+	return get_accessibility_element();
+}
+
+void RichTextLabel::_prepare_scroll_anchor()
+{
+	scroll_w = vscroll->get_bound_minimum_size().width;
+	vscroll->set_anchor_and_offset(SIDE_LEFT, ANCHOR_END, -scroll_w);
+}
+
+void RichTextLabel::_find_frame(Item* p_item, Item** r_frame, int* r_line)
+{
+	if (r_frame != nullptr) {
+		*r_frame = nullptr;
+	}
+	if (r_line != nullptr) {
+		*r_line = 0;
+	}
+
+	Item* item = p_item;
+
+	while (item) {
+		if (item->parent != nullptr && item->parent->type == ITEM_FRAME) {
+			if (r_frame != nullptr) {
+				*r_frame = item->parent;
+			}
+			if (r_line != nullptr) {
+				*r_line = item->line;
+			}
+			return;
+		}
+
+		item = item->parent;
+	}
+}
+
+RichTextLabel::Item* RichTextLabel::_find_indentable(Item* p_item)
+{
+	Item* indentable = p_item;
+
+	while (indentable) {
+		if (indentable->type == ITEM_INDENT || indentable->type == ITEM_LIST) {
+			return indentable;
+		}
+		indentable = indentable->parent;
+	}
+
+	return indentable;
+}
+
+RichTextLabel::Item* RichTextLabel::_find_font(Item* p_item)
+{
+	Item* fontitem = p_item;
+
+	while (fontitem) {
+		if (fontitem->type == ITEM_FONT) {
+			switch (fontitem->def_font) {
+			case RTL_NORMAL_FONT: {
+				if (fontitem->variation) {
+					Ref<FontVariation> fc = fontitem->font;
+					if (fc.is_valid()) {
+						fc->set_base_font(theme_cache.normal_font);
+					}
+				}
+				else {
+					fontitem->font = theme_cache.normal_font;
+				}
+				if (fontitem->def_size) {
+					fontitem->font_size = theme_cache.normal_font_size;
+				}
+			} break;
+			case RTL_BOLD_FONT: {
+				if (fontitem->variation) {
+					Ref<FontVariation> fc = fontitem->font;
+					if (fc.is_valid()) {
+						fc->set_base_font(theme_cache.bold_font);
+					}
+				}
+				else {
+					fontitem->font = theme_cache.bold_font;
+				}
+				if (fontitem->def_size) {
+					fontitem->font_size = theme_cache.bold_font_size;
+				}
+			} break;
+			case RTL_ITALICS_FONT: {
+				if (fontitem->variation) {
+					Ref<FontVariation> fc = fontitem->font;
+					if (fc.is_valid()) {
+						fc->set_base_font(theme_cache.italics_font);
+					}
+				}
+				else {
+					fontitem->font = theme_cache.italics_font;
+				}
+				if (fontitem->def_size) {
+					fontitem->font_size = theme_cache.italics_font_size;
+				}
+			} break;
+			case RTL_BOLD_ITALICS_FONT: {
+				if (fontitem->variation) {
+					Ref<FontVariation> fc = fontitem->font;
+					if (fc.is_valid()) {
+						fc->set_base_font(theme_cache.bold_italics_font);
+					}
+				}
+				else {
+					fontitem->font = theme_cache.bold_italics_font;
+				}
+				if (fontitem->def_size) {
+					fontitem->font_size = theme_cache.bold_italics_font_size;
+				}
+			} break;
+			case RTL_MONO_FONT: {
+				if (fontitem->variation) {
+					Ref<FontVariation> fc = fontitem->font;
+					if (fc.is_valid()) {
+						fc->set_base_font(theme_cache.mono_font);
+					}
+				}
+				else {
+					fontitem->font = theme_cache.mono_font;
+				}
+				if (fontitem->def_size) {
+					fontitem->font_size = theme_cache.mono_font_size;
+				}
+			} break;
+			default: {
+			} break;
+			}
+			return fontitem;
+		}
+
+		fontitem = fontitem->parent;
+	}
+
+	return nullptr;
+}
+
+RichTextLabel::Item* RichTextLabel::_find_font_size(Item* p_item)
+{
+	Item* sizeitem = p_item;
+
+	while (sizeitem) {
+		if (sizeitem->type == ITEM_FONT_SIZE) {
+			return sizeitem;
+		}
+
+		sizeitem = sizeitem->parent;
+	}
+
+	return nullptr;
+}
+
+int RichTextLabel::_find_outline_size(Item* p_item, int p_default)
+{
+	Item* sizeitem = p_item;
+
+	while (sizeitem) {
+		if (sizeitem->type == ITEM_OUTLINE_SIZE) {
+			return sizeitem->outline_size;
+		}
+
+		sizeitem = sizeitem->parent;
+	}
+
+	return p_default;
+}
+
+RichTextLabel::Item* RichTextLabel::_find_dc_item(Item* p_item)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_DROPCAP) {
+			return item;
+		}
+		item = item->parent;
+	}
+
+	return nullptr;
+}
+
+RichTextLabel::Item* RichTextLabel::_find_list_item(Item* p_item)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_LIST) {
+			return item;
+		}
+		item = item->parent;
+	}
+
+	return nullptr;
+}
+
+int RichTextLabel::_find_list(
+	Item* p_item, Vector<int>& r_index, Vector<int>& r_count, Vector<Item*>& r_list)
+{
+	Item* item = p_item;
+	Item* prev_item = p_item;
+
+	int level = 0;
+
+	while (item) {
+		if (item->type == ITEM_LIST) {
+			Item* frame = nullptr;
+			int line = -1;
+			_find_frame(item, &frame, &line);
+
+			int index = 1;
+			int count = 1;
+			if (frame != nullptr) {
+				FrameData& fr = *frame->frame;
+				for (int i = item->line + 1; i < (int)fr.lines.size(); i++) {
+					if (_find_list_item(fr.lines[i].from) == item) {
+						if (i <= prev_item->line) {
+							index++;
+						}
+						count++;
+					}
+				}
+			}
+
+			r_index.push_back(index);
+			r_count.push_back(count);
+			r_list.push_back(item);
+
+			prev_item = item;
+		}
+		level++;
+		item = item->parent;
+	}
+
+	return level;
+}
+
+int RichTextLabel::_find_margin(Item* p_item, const Ref<Font>& p_base_font, int p_base_font_size)
+{
+	Item* item = p_item;
+	while (item && item->subitems.size()) {
+		Item* si = item->subitems.front()->get();
+		if (si && (si->type == ITEM_INDENT || si->type == ITEM_LIST)) {
+			item = si;
+		}
+		else {
+			break;
+		}
+	}
+
+	float margin = 0.0;
+
+	while (item) {
+		if (item->type == ITEM_FRAME) {
+			break;
+		}
+
+		if (item->type == ITEM_INDENT || item->type == ITEM_LIST) {
+			int lvl = item->level;
+			Ref<Font> font = p_base_font;
+			int font_size = p_base_font_size;
+
+			Item* font_it = _find_font(item);
+			if (font_it) {
+				if (font_it->font.is_valid()) {
+					font = font_it->font;
+				}
+				if (font_it->font_size > 0) {
+					font_size = font_it->font_size;
+				}
+			}
+			Item* font_size_it = _find_font_size(item);
+			if (font_size_it && font_size_it->font_size > 0) {
+				font_size = font_size_it->font_size;
+			}
+			if (tab_size > 0) {
+				margin += MAX(1, lvl * tab_size *
+									 (font->get_char_size(' ', font_size).width +
+										 font->get_spacing(TextServer::SPACING_SPACE)));
+			}
+		}
+
+		item = item->parent;
+	}
+
+	return margin;
+}
+
+uint32_t RichTextLabel::_find_jst_flags(Item* p_item)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_PARAGRAPH) {
+			return item->paragraph->jst_flags;
+		}
+
+		item = item->parent;
+	}
+
+	return default_jst_flags;
+}
+
+PackedFloat32Array RichTextLabel::_find_tab_stops(Item* p_item)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_PARAGRAPH) {
+			return item->paragraph->tab_stops;
+		}
+
+		item = item->parent;
+	}
+
+	return default_tab_stops;
+}
+
+HorizontalAlignment RichTextLabel::_find_alignment(Item* p_item)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_PARAGRAPH) {
+			return item->paragraph->alignment;
+		}
+
+		item = item->parent;
+	}
+
+	return default_alignment;
+}
+
+TextServer::Direction RichTextLabel::_find_direction(Item* p_item)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_PARAGRAPH) {
+			if (item->paragraph->direction != Control::TEXT_DIRECTION_INHERITED) {
+				return (TextServer::Direction)item->paragraph->direction;
+			}
+		}
+
+		item = item->parent;
+	}
+
+	if (text_direction == Control::TEXT_DIRECTION_INHERITED) {
+		return is_layout_rtl() ? TextServer::DIRECTION_RTL : TextServer::DIRECTION_LTR;
+	}
+	else {
+		return (TextServer::Direction)text_direction;
+	}
+}
+
+TextServer::StructuredTextParser RichTextLabel::_find_stt(Item* p_item)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_PARAGRAPH) {
+			return item->paragraph->st_parser;
+		}
+
+		item = item->parent;
+	}
+
+	return st_parser;
+}
+
+Color RichTextLabel::_find_color(Item* p_item, const Color& p_default_color)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_COLOR) {
+			return item->color;
+		}
+
+		item = item->parent;
+	}
+
+	return p_default_color;
+}
+
+Color RichTextLabel::_find_outline_color(Item* p_item, const Color& p_default_color)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_OUTLINE_COLOR) {
+			return item->color;
+		}
+
+		item = item->parent;
+	}
+
+	return p_default_color;
+}
+
+bool RichTextLabel::_find_underline(Item* p_item, Color* r_color)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_UNDERLINE) {
+			if (r_color) {
+				*r_color = item->color;
+			}
+			return true;
+		}
+
+		item = item->parent;
+	}
+
+	return false;
+}
+
+bool RichTextLabel::_find_strikethrough(Item* p_item, Color* r_color)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_STRIKETHROUGH) {
+			if (r_color) {
+				*r_color = item->color;
+			}
+			return true;
+		}
+
+		item = item->parent;
+	}
+
+	return false;
+}
+
+void RichTextLabel::_fetch_item_fx_stack(Item* p_item, Vector<Item*>& r_stack)
+{
+	Item* item = p_item;
+	while (item) {
+		if (item->is_fx()) {
+			r_stack.push_back(item);
+		}
+
+		item = item->parent;
+	}
+}
+
+void RichTextLabel::_normalize_subtags(Vector<String>& subtags)
+{
+	for (String& subtag : subtags) {
+		subtag = subtag.unquote();
+	}
+}
+
+bool RichTextLabel::_find_hint(Item* p_item, String* r_description)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_HINT) {
+			if (r_description) {
+				*r_description = item->text;
+			}
+			return true;
+		}
+
+		item = item->parent;
+	}
+
+	return false;
+}
+
+Color RichTextLabel::_find_bgcolor(Item* p_item)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_BGCOLOR) {
+			return item->color;
+		}
+
+		item = item->parent;
+	}
+
+	return Color(0, 0, 0, 0);
+}
+
+Color RichTextLabel::_find_fgcolor(Item* p_item)
+{
+	Item* item = p_item;
+
+	while (item) {
+		if (item->type == ITEM_FGCOLOR) {
+			return item->color;
+		}
+
+		item = item->parent;
+	}
+
+	return Color(0, 0, 0, 0);
+}
+
+bool RichTextLabel::_find_layout_subitem(Item* from, Item* to)
+{
+	if (from && from != to) {
+		if (from->type != ITEM_FONT && from->type != ITEM_COLOR && from->type != ITEM_UNDERLINE &&
+			from->type != ITEM_STRIKETHROUGH && from->type != ITEM_INDENT) {
+			return true;
+		}
+
+		for (Item* E : from->subitems) {
+			bool layout = _find_layout_subitem(E, to);
+
+			if (layout) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+int RichTextLabel::get_pending_paragraphs() const
+{
+	int to_line = main->frame->first_invalid_line.load();
+	int lines = main->frame->lines.size();
+
+	return lines - to_line;
+}
+
+bool RichTextLabel::is_finished() const
+{
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+	if (updating.load()) {
+		return false;
+	}
+	FrameData& main_fr = *main->frame;
+	return (main_fr.first_invalid_line.load() == (int)main_fr.lines.size() &&
+			main_fr.first_resized_line.load() == (int)main_fr.lines.size() &&
+			main_fr.first_invalid_font_line.load() == (int)main_fr.lines.size());
+}
+
+bool RichTextLabel::is_updating() const { return updating.load() || validating.load(); }
+
+bool RichTextLabel::is_threaded() const { return threaded; }
+
+void RichTextLabel::set_progress_bar_delay(int p_delay_ms) { progress_delay = p_delay_ms; }
+
+int RichTextLabel::get_progress_bar_delay() const { return progress_delay; }
+
+void RichTextLabel::_invalidate_current_line(Item* p_frame)
+{
+	FrameData& fr = *p_frame->frame;
+	if ((int)fr.lines.size() - 1 <= fr.first_invalid_line) {
+		fr.first_invalid_line = (int)fr.lines.size() - 1;
+		queue_accessibility_update();
+	}
+}
+
+Size2 RichTextLabel::_get_image_size(
+	const Ref<Texture2D>& p_image, float p_width, float p_height, const Rect2& p_region)
+{
+	Size2 ret;
+	if (p_width > 0) {
+		// custom width
+		ret.width = p_width;
+		if (p_height > 0) {
+			// custom height
+			ret.height = p_height;
+		}
+		else {
+			// calculate height to keep aspect ratio
+			if (p_region.has_area()) {
+				ret.height = p_region.get_size().height * p_width / p_region.get_size().width;
+			}
+			else {
+				ret.height = p_image->get_height() * p_width / p_image->get_width();
+			}
+		}
+	}
+	else {
+		if (p_height > 0) {
+			// custom height
+			ret.height = p_height;
+			// calculate width to keep aspect ratio
+			if (p_region.has_area()) {
+				ret.width = p_region.get_size().width * p_height / p_region.get_size().height;
+			}
+			else {
+				ret.width = p_image->get_width() * p_height / p_image->get_height();
+			}
+		}
+		else {
+			if (p_region.has_area()) {
+				// if the image has a region, keep the region size
+				ret = p_region.get_size();
+			}
+			else {
+				// keep original width and height
+				ret = p_image->get_size();
+			}
+		}
+	}
+	return ret;
+}
+
+void RichTextLabel::_remove_frame(HashSet<Item*>& r_erase_list, Item* p_frame, int p_line,
+	bool p_erase, int p_char_offset, int p_line_offset)
+{
+	FrameData& fr = *p_frame->frame;
+	Line& l = fr.lines[p_line];
+	Item* it_to =
+		(p_line + 1 < (int)fr.lines.size()) ? fr.lines[p_line + 1].from : nullptr;
+	if (!p_erase) {
+		l.char_offset -= p_char_offset;
+	}
+
+	for (Item* it = l.from; it && it != it_to;) {
+		Item* next_it = _get_next_item(it);
+		it->line -= p_line_offset;
+		if (!p_erase) {
+			while (r_erase_list.has(it->parent)) {
+				it->E->erase();
+				it->parent = it->parent->parent;
+				it->E = it->parent->subitems.push_back(it);
+			}
+		}
+		if (it->type == ITEM_TABLE) {
+			for (List<Item*>::Element* sub_it = it->subitems.front(); sub_it;
+				 sub_it = sub_it->next()) {
+				ERR_CONTINUE(sub_it->get()->type != ITEM_FRAME); // Children should all be frames.
+				Item* frame = sub_it->get();
+				for (int i = 0; i < (int)frame->frame->lines.size(); i++) {
+					_remove_frame(r_erase_list, frame, i, p_erase, p_char_offset, 0);
+				}
+				if (p_erase) {
+					r_erase_list.insert(frame);
+				}
+				else {
+					frame->char_ofs -= p_char_offset;
+				}
+			}
+		}
+		if (p_erase) {
+			r_erase_list.insert(it);
+		}
+		else {
+			it->char_ofs -= p_char_offset;
+		}
+		it = next_it;
+	}
+}
+
+void RichTextLabel::push_normal()
+{
+	ERR_FAIL_COND(theme_cache.normal_font.is_null());
+
+	_push_def_font(RTL_NORMAL_FONT);
+}
+
+void RichTextLabel::push_bold()
+{
+	ERR_FAIL_COND(theme_cache.bold_font.is_null());
+
+	Item* item_font = _find_font(current);
+	_push_def_font((item_font && item_font->def_font == RTL_ITALICS_FONT) ? RTL_BOLD_ITALICS_FONT
+																		  : RTL_BOLD_FONT);
+}
+
+void RichTextLabel::push_bold_italics()
+{
+	ERR_FAIL_COND(theme_cache.bold_italics_font.is_null());
+
+	_push_def_font(RTL_BOLD_ITALICS_FONT);
+}
+
+void RichTextLabel::push_italics()
+{
+	ERR_FAIL_COND(theme_cache.italics_font.is_null());
+
+	Item* item_font = _find_font(current);
+	_push_def_font((item_font && item_font->def_font == RTL_BOLD_FONT) ? RTL_BOLD_ITALICS_FONT
+																	   : RTL_ITALICS_FONT);
+}
+
+void RichTextLabel::push_mono()
+{
+	ERR_FAIL_COND(theme_cache.mono_font.is_null());
+
+	_push_def_font(RTL_MONO_FONT);
+}
+
+int RichTextLabel::get_current_table_column() const
+{
+	ERR_FAIL_COND_V(current->type != ITEM_TABLE, -1);
+
+	return current->subitems.size() % current->table->columns.size();
+}
+
+int RichTextLabel::get_tab_size() const { return tab_size; }
+
+bool RichTextLabel::is_fit_content_enabled() const { return fit_content; }
+
+bool RichTextLabel::is_meta_underlined() const { return underline_meta; }
+
+bool RichTextLabel::is_hint_underlined() const { return underline_hint; }
+
+void RichTextLabel::set_offset(int p_pixel)
+{
+	vscroll->set_value(p_pixel);
+	queue_accessibility_update();
+}
+
+bool RichTextLabel::is_scroll_active() const { return scroll_active; }
+
+void RichTextLabel::set_scroll_follow(bool p_follow)
+{
+	scroll_follow = p_follow;
+	if (!vscroll->is_visible_in_tree() ||
+		vscroll->get_value() > (vscroll->get_max() - vscroll->get_page() - 1)) {
+		scroll_following = true;
+	}
+}
+
+bool RichTextLabel::is_scroll_following() const { return scroll_follow; }
+
+void RichTextLabel::_update_follow_vc()
+{
+	if (!scroll_follow_visible_characters) {
+		return;
+	}
+	int vc = (visible_characters < 0 ? get_total_character_count()
+									 : MIN(visible_characters, get_total_character_count())) -
+			 1;
+	int voff = get_character_line(vc) + 1;
+	if (voff <= get_line_count() - 1) {
+		follow_vc_pos = get_line_offset(voff) - _get_text_rect().size.y;
+	}
+	else {
+		follow_vc_pos = vscroll->get_max();
+	}
+	vscroll->scroll_to(follow_vc_pos);
+}
+
+void RichTextLabel::set_scroll_follow_visible_characters(bool p_follow)
+{
+	if (scroll_follow_visible_characters != p_follow) {
+		scroll_follow_visible_characters = p_follow;
+		_update_follow_vc();
+	}
+}
+
+bool RichTextLabel::is_scroll_following_visible_characters() const
+{
+	return scroll_follow_visible_characters;
+}
+
+void RichTextLabel::parse_bbcode(const String& p_bbcode)
+{
+	clear();
+	append_text(p_bbcode);
+}
+
+String RichTextLabel::_get_tag_value(const String& p_tag)
+{
+	return p_tag.substr(p_tag.find_char('=') + 1);
+}
+
+int RichTextLabel::_find_unquoted(const String& p_src, char32_t p_chr, int p_from)
+{
+	if (p_from < 0) {
+		return -1;
+	}
+
+	const int len = p_src.length();
+	if (len == 0) {
+		return -1;
+	}
+
+	const char32_t* src = p_src.get_data();
+	bool in_single_quote = false;
+	bool in_double_quote = false;
+	for (int i = p_from; i < len; i++) {
+		if (in_double_quote) {
+			if (src[i] == '"') {
+				in_double_quote = false;
+			}
+		}
+		else if (in_single_quote) {
+			if (src[i] == '\'') {
+				in_single_quote = false;
+			}
+		}
+		else {
+			if (src[i] == '"') {
+				in_double_quote = true;
+			}
+			else if (src[i] == '\'') {
+				in_single_quote = true;
+			}
+			else if (src[i] == p_chr) {
+				return i;
+			}
+		}
+	}
+
+	return -1;
+}
+
+Vector<String> RichTextLabel::_split_unquoted(const String& p_src, char32_t p_splitter)
+{
+	Vector<String> ret;
+
+	if (p_src.is_empty()) {
+		return ret;
+	}
+
+	int from = 0;
+	int len = p_src.length();
+
+	while (true) {
+		int end = _find_unquoted(p_src, p_splitter, from);
+		if (end < 0) {
+			end = len;
+		}
+		if (end > from) {
+			ret.push_back(p_src.substr(from, end - from));
+		}
+		if (end == len) {
+			break;
+		}
+
+		from = end + 1;
+	}
+
+	return ret;
+}
+
+void RichTextLabel::scroll_to_selection()
+{
+	float line_offset = get_selection_line_offset();
+	if (line_offset != -1.0) {
+		vscroll->set_value(line_offset);
+		queue_accessibility_update();
+	}
+}
+
+void RichTextLabel::scroll_to_paragraph(int p_paragraph)
+{
+	_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	if (p_paragraph <= 0) {
+		vscroll->set_value(0);
+	}
+	else if (p_paragraph >= main_fr.first_invalid_line.load()) {
+		vscroll->set_value(vscroll->get_max());
+	}
+	else {
+		vscroll->set_value(main_fr.lines[p_paragraph].offset.y);
+	}
+	queue_accessibility_update();
+}
+
+int RichTextLabel::get_paragraph_count() const { return main->frame->lines.size(); }
+
+int RichTextLabel::get_visible_paragraph_count() const
+{
+	if (!is_visible()) {
+		return 0;
+	}
+
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+	return visible_paragraph_count;
+}
+
+void RichTextLabel::scroll_to_line(int p_line)
+{
+	if (p_line <= 0) {
+		vscroll->set_value(0);
+		queue_accessibility_update();
+		return;
+	}
+	_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int line_count = 0;
+	int to_line = main_fr.first_invalid_line.load();
+	for (int i = 0; i < to_line; i++) {
+		MutexLock lock(main_fr.lines[i].text_buf->get_mutex());
+		if ((line_count <= p_line) &&
+			(line_count + main_fr.lines[i].text_buf->get_line_count() >= p_line)) {
+			float line_offset = 0.f;
+			for (int j = 0; j < p_line - line_count; j++) {
+				line_offset += main_fr.lines[i].text_buf->get_line_ascent(j) +
+							   main_fr.lines[i].text_buf->get_line_descent(j) +
+							   theme_cache.line_separation;
+			}
+			vscroll->set_value(main_fr.lines[i].offset.y + line_offset);
+			queue_accessibility_update();
+			return;
+		}
+		line_count += main_fr.lines[i].text_buf->get_line_count();
+	}
+	vscroll->set_value(vscroll->get_max());
+	queue_accessibility_update();
+}
+
+float RichTextLabel::get_line_offset(int p_line)
+{
+	_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int line_count = 0;
+	int to_line = main_fr.first_invalid_line.load();
+	for (int i = 0; i < to_line; i++) {
+		MutexLock lock(main_fr.lines[i].text_buf->get_mutex());
+		if ((line_count <= p_line) &&
+			(p_line <= line_count + main_fr.lines[i].text_buf->get_line_count())) {
+			float line_offset = 0.f;
+			for (int j = 0; j < p_line - line_count; j++) {
+				line_offset += main_fr.lines[i].text_buf->get_line_ascent(j) +
+							   main_fr.lines[i].text_buf->get_line_descent(j) +
+							   theme_cache.line_separation;
+			}
+			return main_fr.lines[i].offset.y + line_offset;
+		}
+		line_count += main_fr.lines[i].text_buf->get_line_count();
+	}
+	return 0;
+}
+
+float RichTextLabel::get_paragraph_offset(int p_paragraph)
+{
+	_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int to_line = main_fr.first_invalid_line.load();
+	if (0 <= p_paragraph && p_paragraph < to_line) {
+		return main_fr.lines[p_paragraph].offset.y;
+	}
+	return 0;
+}
+
+int RichTextLabel::get_line_count() const
+{
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int line_count = 0;
+	int to_line = main_fr.first_invalid_line.load();
+	for (int i = 0; i < to_line; i++) {
+		MutexLock lock(main_fr.lines[i].text_buf->get_mutex());
+		line_count += main_fr.lines[i].text_buf->get_line_count();
+	}
+	return line_count;
+}
+
+Vector2i RichTextLabel::get_line_range(int p_line)
+{
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int line_count = 0;
+	int to_line = main_fr.first_invalid_line.load();
+	for (int i = 0; i < to_line; i++) {
+		MutexLock lock(main_fr.lines[i].text_buf->get_mutex());
+		int lc = main_fr.lines[i].text_buf->get_line_count();
+
+		if (p_line < line_count + lc) {
+			Vector2i char_offset =
+				Vector2i(main_fr.lines[i].char_offset, main_fr.lines[i].char_offset);
+			Vector2i line_range = main_fr.lines[i].text_buf->get_line_range(p_line - line_count);
+			return char_offset + line_range;
+		}
+
+		line_count += lc;
+	}
+	return Vector2i();
+}
+
+int RichTextLabel::get_visible_line_count() const
+{
+	if (!is_visible()) {
+		return 0;
+	}
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+	return visible_line_count;
+}
+
+void RichTextLabel::set_selection_enabled(bool p_enabled)
+{
+	if (selection.enabled == p_enabled) {
+		return;
+	}
+
+	selection.enabled = p_enabled;
+	if (!p_enabled) {
+		if (selection.active) {
+			deselect();
+		}
+		set_focus_mode(FOCUS_ACCESSIBILITY);
+	}
+	else {
+		set_focus_mode(FOCUS_ALL);
+	}
+	queue_accessibility_update();
+}
+
+void RichTextLabel::set_deselect_on_focus_loss_enabled(const bool p_enabled)
+{
+	if (deselect_on_focus_loss_enabled == p_enabled) {
+		return;
+	}
+
+	deselect_on_focus_loss_enabled = p_enabled;
+	if (p_enabled && selection.active && !has_focus()) {
+		deselect();
+	}
+}
+
+bool RichTextLabel::_is_click_inside_selection() const
+{
+	if (selection.active && selection.enabled && selection.click_frame && selection.from_frame &&
+		selection.to_frame) {
+		const Line& l_click = selection.click_frame->frame->lines[selection.click_line];
+		const Line& l_from = selection.from_frame->frame->lines[selection.from_line];
+		const Line& l_to = selection.to_frame->frame->lines[selection.to_line];
+		return (l_click.char_offset + selection.click_char >=
+				   l_from.char_offset + selection.from_char) &&
+			   (l_click.char_offset + selection.click_char <= l_to.char_offset + selection.to_char);
+	}
+	else {
+		return false;
+	}
+}
+
+bool RichTextLabel::_search_table_cell(Item* p_table, List<Item*>::Element* p_cell,
+	const String& p_string, bool p_reverse_search, int p_from_line)
+{
+	ERR_FAIL_COND_V(p_cell->get()->type != ITEM_FRAME, false); // Children should all be frames.
+	Item* frame = p_cell->get();
+	if (p_from_line < 0) {
+		p_from_line = (int)frame->frame->lines.size() - 1;
+	}
+
+	if (p_reverse_search) {
+		for (int i = p_from_line; i >= 0; i--) {
+			if (_search_line(frame, i, p_string, -1, p_reverse_search)) {
+				return true;
+			}
+		}
+	}
+	else {
+		for (int i = p_from_line; i < (int)frame->frame->lines.size(); i++) {
+			if (_search_line(frame, i, p_string, 0, p_reverse_search)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+bool RichTextLabel::_search_table(
+	Item* p_table, List<Item*>::Element* p_from, const String& p_string, bool p_reverse_search)
+{
+	List<Item*>::Element* E = p_from;
+	while (E != nullptr) {
+		int from_line = p_reverse_search ? -1 : 0;
+		if (_search_table_cell(p_table, E, p_string, p_reverse_search, from_line)) {
+			return true;
+		}
+		E = p_reverse_search ? E->prev() : E->next();
+	}
+	return false;
+}
+
+bool RichTextLabel::_search_line(
+	Item* p_frame, int p_line, const String& p_string, int p_char_idx, bool p_reverse_search)
+{
+	ERR_FAIL_NULL_V(p_frame, false);
+	FrameData& fr = *p_frame->frame;
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)fr.lines.size(), false);
+
+	Line& l = fr.lines[p_line];
+
+	String txt;
+	Item* it_to =
+		(p_line + 1 < (int)fr.lines.size()) ? fr.lines[p_line + 1].from : nullptr;
+	for (Item* it = l.from; it && it != it_to; it = _get_next_item(it)) {
+		switch (it->type) {
+		case ITEM_NEWLINE: {
+			txt += "\n";
+		} break;
+		case ITEM_TEXT: {
+			txt += it->text;
+		} break;
+		case ITEM_IMAGE: {
+			txt += " ";
+		} break;
+		case ITEM_TABLE: {
+			List<Item*>::Element* E =
+				p_reverse_search ? it->subitems.back() : it->subitems.front();
+			if (_search_table(it, E, p_string, p_reverse_search)) {
+				return true;
+			}
+		} break;
+		default:
+			break;
+		}
+	}
+
+	int sp = -1;
+	if (p_reverse_search) {
+		sp = txt.rfindn(p_string, p_char_idx);
+	}
+	else {
+		sp = txt.findn(p_string, p_char_idx);
+	}
+
+	if (sp != -1) {
+		selection.from_frame = p_frame;
+		selection.from_line = p_line;
+		selection.from_item = _get_item_at_pos(l.from, it_to, sp);
+		selection.from_char = sp;
+		selection.to_frame = p_frame;
+		selection.to_line = p_line;
+		selection.to_item = _get_item_at_pos(l.from, it_to, sp + p_string.length());
+		selection.to_char = sp + p_string.length();
+		selection.active = true;
+		queue_accessibility_update();
+		return true;
+	}
+
+	return false;
+}
+
+String RichTextLabel::_get_line_text(Item* p_frame, int p_line) const
+{
+	String txt;
+
+	ERR_FAIL_NULL_V(p_frame, txt);
+	FrameData& fr = *p_frame->frame;
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)fr.lines.size(), txt);
+
+	int start = 0; // Unless the current line is the `from` line.
+	if (!selection.from_line_found && p_frame == selection.from_frame) {
+		if (p_line < selection.from_line) {
+			return txt; // Skip the lines with smaller line numbers in the same `from` frame.
+		}
+		selection.from_line_found = true;
+		start = selection.from_char;
+	}
+	const bool from_this =
+		selection.from_line_found; // Used to detect cases starting from a sub-frame.
+
+	Line& l = fr.lines[p_line];
+
+	Item* it_to =
+		(p_line + 1 < (int)fr.lines.size()) ? fr.lines[p_line + 1].from : nullptr;
+	for (Item* it = l.from; !selection.to_line_found && it && it != it_to;
+		 it = _get_next_item(it)) {
+		if (it->type == ITEM_TABLE) {
+			for (Item* E : it->subitems) {
+				ERR_CONTINUE(E->type != ITEM_FRAME); // Children should all be frames.
+				for (int i = 0; !selection.to_line_found && i < (int)E->frame->lines.size(); i++) {
+					txt += _get_line_text(E, i);
+				}
+				if (selection.to_line_found) {
+					break;
+				}
+			}
+			continue;
+		}
+		if (!selection.from_line_found) {
+			continue;
+		}
+		if (it->type == ITEM_DROPCAP) {
+			txt += it->dropcap->text;
+		}
+		else if (it->type == ITEM_TEXT) {
+			txt += it->text;
+		}
+		else if (it->type == ITEM_NEWLINE) {
+			txt += "\n";
+		}
+		else if (it->type == ITEM_IMAGE) {
+			txt += " ";
+		}
+	}
+
+	if (!selection.from_line_found) {
+		return txt; // Empty.
+	}
+
+	int chars = -1; // Unless the current line is the `to` line.
+	if (p_frame == selection.to_frame && p_line == selection.to_line) {
+		selection.to_line_found = true;
+
+		if (from_this ^ selection.from_line_found) {
+			// For cases text from child frame to parent frame is considered to be on the same line,
+			// even if the line numbers are different. `start` has been reset to 0.
+			chars = selection.to_char - selection.from_char;
+		}
+		else {
+			chars = selection.to_char - start;
+		}
+	}
+
+	txt = txt.substr(start, chars);
+
+	return txt;
+}
+
+void RichTextLabel::set_context_menu_enabled(bool p_enabled) { context_menu_enabled = p_enabled; }
+
+bool RichTextLabel::is_context_menu_enabled() const { return context_menu_enabled; }
+
+void RichTextLabel::set_shortcut_keys_enabled(bool p_enabled) { shortcut_keys_enabled = p_enabled; }
+
+bool RichTextLabel::is_shortcut_keys_enabled() const { return shortcut_keys_enabled; }
+
+PopupMenu* RichTextLabel::get_menu() const
+{
+	if (!menu) {
+		const_cast<RichTextLabel*>(this)->_generate_context_menu();
+	}
+	return menu;
+}
+
+bool RichTextLabel::is_menu_visible() const { return menu && menu->is_visible(); }
+
+bool RichTextLabel::is_selection_enabled() const { return selection.enabled; }
+
+bool RichTextLabel::is_deselect_on_focus_loss_enabled() const
+{
+	return deselect_on_focus_loss_enabled;
+}
+
+void RichTextLabel::set_drag_and_drop_selection_enabled(const bool p_enabled)
+{
+	drag_and_drop_selection_enabled = p_enabled;
+}
+
+bool RichTextLabel::is_drag_and_drop_selection_enabled() const
+{
+	return drag_and_drop_selection_enabled;
+}
+
+int RichTextLabel::get_selection_from() const
+{
+	if (!selection.active || !selection.enabled) {
+		return -1;
+	}
+
+	return selection.from_frame->frame->lines[selection.from_line].char_offset +
+		   selection.from_char;
+}
+
+int RichTextLabel::get_selection_to() const
+{
+	if (!selection.active || !selection.enabled) {
+		return -1;
+	}
+
+	return selection.to_frame->frame->lines[selection.to_line].char_offset + selection.to_char - 1;
+}
+
+float RichTextLabel::get_selection_line_offset() const
+{
+	if (selection.active && selection.from_frame && selection.from_line >= 0 &&
+		selection.from_line < (int)selection.from_frame->frame->lines.size()) {
+		const Line& from_l = selection.from_frame->frame->lines[selection.from_line];
+		// Selected frame paragraph offset.
+		float line_offset = from_l.offset.y;
+
+		// Add wrapped line offset.
+		for (int i = 0; i < from_l.text_buf->get_line_count(); i++) {
+			Vector2i range = from_l.text_buf->get_line_range(i);
+			if (range.x <= selection.from_char && range.y >= selection.from_char) {
+				break;
+			}
+			line_offset += from_l.text_buf->get_line_ascent(i) +
+						   from_l.text_buf->get_line_descent(i) + theme_cache.line_separation;
+		}
+
+		// Add nested frame (e.g. table cell) offset.
+		Item* it = selection.from_frame;
+		while (it->frame->parent_frame != nullptr) {
+			line_offset += it->frame->parent_frame->frame->lines[it->line].offset.y;
+			it = it->frame->parent_frame;
+		}
+		return line_offset;
+	}
+
+	return -1.0;
+}
+
+void RichTextLabel::set_text(const String& p_bbcode)
+{
+	// Allow clearing the tag stack.
+	if (!p_bbcode.is_empty() && text == p_bbcode) {
+		return;
+	}
+
+	stack_externally_modified = false;
+
+	text = p_bbcode;
+	if (text.is_empty()) {
+		clear();
+	}
+	else {
+		_apply_translation();
+	}
+}
+
+String RichTextLabel::get_text() const { return text; }
+
+bool RichTextLabel::is_using_bbcode() const { return use_bbcode; }
+
+String RichTextLabel::get_parsed_text() const
+{
+	String txt;
+	Item* it = main;
+	while (it) {
+		if (it->type == ITEM_DROPCAP) {
+			txt += it->dropcap->text;
+		}
+		else if (it->type == ITEM_TEXT) {
+			txt += it->text;
+		}
+		else if (it->type == ITEM_NEWLINE) {
+			txt += "\n";
+		}
+		else if (it->type == ITEM_IMAGE) {
+			txt += " ";
+		}
+		else if (it->type == ITEM_INDENT || it->type == ITEM_LIST) {
+			txt += "\t";
+		}
+		it = _get_next_item(it, true);
+	}
+	return txt;
+}
+
+Control::TextDirection RichTextLabel::get_text_direction() const { return text_direction; }
+
+HorizontalAlignment RichTextLabel::get_horizontal_alignment() const { return default_alignment; }
+
+VerticalAlignment RichTextLabel::get_vertical_alignment() const { return vertical_alignment; }
+
+uint32_t RichTextLabel::get_justification_flags() const { return default_jst_flags; }
+
+PackedFloat32Array RichTextLabel::get_tab_stops() const { return default_tab_stops; }
+
+TextServer::StructuredTextParser RichTextLabel::get_structured_text_bidi_override() const
+{
+	return st_parser;
+}
+
+String RichTextLabel::get_language() const { return language; }
+
+TextServer::AutowrapMode RichTextLabel::get_autowrap_mode() const { return autowrap_mode; }
+
+uint32_t RichTextLabel::get_autowrap_trim_flags() const { return autowrap_flags_trim; }
+
+float RichTextLabel::get_visible_ratio() const { return visible_ratio; }
+
+int RichTextLabel::get_content_height() const
+{
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int total_height = 0;
+	int to_line = main_fr.first_invalid_line.load();
+	if (to_line) {
+		MutexLock lock(main_fr.lines[to_line - 1].text_buf->get_mutex());
+		if (theme_cache.line_separation < 0) {
+			// Do not apply to the last line to avoid cutting text.
+			total_height = main_fr.lines[to_line - 1].offset.y +
+						   main_fr.lines[to_line - 1].text_buf->get_size().y +
+						   (main_fr.lines[to_line - 1].text_buf->get_line_count() - 1) *
+							   theme_cache.line_separation;
+		}
+		else {
+			total_height =
+				main_fr.lines[to_line - 1].offset.y +
+				main_fr.lines[to_line - 1].text_buf->get_size().y +
+				main_fr.lines[to_line - 1].text_buf->get_line_count() * theme_cache.line_separation +
+				theme_cache.paragraph_separation;
+		}
+	}
+	return total_height;
+}
+
+Rect2i RichTextLabel::get_visible_content_rect() const { return visible_rect; }
+
+int RichTextLabel::get_content_width() const
+{
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int total_width = 0;
+	int to_line = main_fr.first_invalid_line.load();
+	for (int i = 0; i < to_line; i++) {
+		MutexLock lock(main_fr.lines[i].text_buf->get_mutex());
+		total_width =
+			MAX(total_width, main_fr.lines[i].offset.x + main_fr.lines[i].text_buf->get_size().x);
+	}
+	return total_width;
+}
+
+int RichTextLabel::get_line_height(int p_line) const
+{
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int line_count = 0;
+	int to_line = main_fr.first_invalid_line.load();
+	for (int i = 0; i < to_line; i++) {
+		MutexLock lock(main_fr.lines[i].text_buf->get_mutex());
+		int lc = main_fr.lines[i].text_buf->get_line_count();
+
+		if (p_line < line_count + lc) {
+			const Ref<TextParagraph> text_buf = main_fr.lines[i].text_buf;
+			return text_buf->get_line_ascent(p_line - line_count) +
+				   text_buf->get_line_descent(p_line - line_count) + theme_cache.line_separation;
+		}
+		line_count += lc;
+	}
+	return 0;
+}
+
+int RichTextLabel::get_line_width(int p_line) const
+{
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int line_count = 0;
+	int to_line = main_fr.first_invalid_line.load();
+	for (int i = 0; i < to_line; i++) {
+		MutexLock lock(main_fr.lines[i].text_buf->get_mutex());
+		int lc = main_fr.lines[i].text_buf->get_line_count();
+
+		if (p_line < line_count + lc) {
+			return main_fr.lines[i].text_buf->get_line_width(p_line - line_count);
+		}
+		line_count += lc;
+	}
+	return 0;
+}
+
+TextServer::VisibleCharactersBehavior RichTextLabel::get_visible_characters_behavior() const
+{
+	return visible_chars_behavior;
+}
+
+int RichTextLabel::get_visible_characters() const { return visible_characters; }
+
+int RichTextLabel::get_character_line(int p_char)
+{
+	_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int line_count = 0;
+	int to_line = main_fr.first_invalid_line.load();
+	for (int i = 0; i < to_line; i++) {
+		MutexLock lock(main_fr.lines[i].text_buf->get_mutex());
+		int char_offset = main_fr.lines[i].char_offset;
+		int char_count = main_fr.lines[i].char_count;
+		if (char_offset <= p_char && p_char < char_offset + char_count) {
+			int lc = main_fr.lines[i].text_buf->get_line_count();
+			for (int j = 0; j < lc; j++) {
+				Vector2i range = main_fr.lines[i].text_buf->get_line_range(j);
+				if (char_offset + range.x <= p_char && p_char < char_offset + range.y) {
+					break;
+				}
+				if (char_offset + range.x > p_char && line_count > 0) {
+					line_count--; // Character is not rendered and is between the lines (e.g., edge
+								  // space).
+					break;
+				}
+				if (j != lc - 1) {
+					line_count++;
+				}
+			}
+			return line_count;
+		}
+		else {
+			line_count += main_fr.lines[i].text_buf->get_line_count();
+		}
+	}
+	return -1;
+}
+
+int RichTextLabel::get_character_paragraph(int p_char)
+{
+	_validate_line_caches();
+
+	FrameData& main_fr = *main->frame;
+	int to_line = main_fr.first_invalid_line.load();
+	for (int i = 0; i < to_line; i++) {
+		int char_offset = main_fr.lines[i].char_offset;
+		if (char_offset <= p_char && p_char < char_offset + main_fr.lines[i].char_count) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+int RichTextLabel::get_total_character_count() const
+{
+	// Note: Do not use line buffer "char_count", it includes only visible characters.
+	int tc = 0;
+	Item* it = main;
+	while (it) {
+		if (it->type == ITEM_TEXT) {
+			tc += it->text.length();
+		}
+		else if (it->type == ITEM_NEWLINE) {
+			tc++;
+		}
+		else if (it->type == ITEM_IMAGE) {
+			tc++;
+		}
+		it = _get_next_item(it, true);
+	}
+
+	return tc;
+}
+
+int RichTextLabel::get_total_glyph_count() const
+{
+	const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+	int tg = 0;
+	Item* it = main;
+	while (it) {
+		if (it->type == ITEM_FRAME) {
+			FrameData& f = *it->frame;
+			for (int i = 0; i < (int)f.lines.size(); i++) {
+				MutexLock lock(f.lines[i].text_buf->get_mutex());
+				tg += TS->shaped_text_get_glyph_count(f.lines[i].text_buf->get_rid());
+			}
+		}
+		it = _get_next_item(it, true);
+	}
+
+	return tg;
+}
+
+Size2 RichTextLabel::get_minimum_size() const
+{
+	Size2 sb_min_size = theme_cache.normal_style->get_minimum_size();
+	Size2 min_size;
+	bool wrap_with_max_width =
+		autowrap_mode != TextServer::AUTOWRAP_OFF && get_combined_maximum_size().x > 0.0;
+
+	if (fit_content) {
+		if (!wrap_with_max_width) {
+			min_size.x = get_content_width();
+		}
+		min_size.y = get_content_height();
+	}
+
+	if (wrap_with_max_width) {
+		const_cast<RichTextLabel*>(this)->_validate_line_caches();
+
+		FrameData& main_fr = *main->frame;
+		int natural_width = 0;
+		int to_line = main_fr.first_invalid_line.load();
+		for (int i = 0; i < to_line; i++) {
+			MutexLock lock(main_fr.lines[i].text_buf->get_mutex());
+			natural_width = MAX(natural_width,
+				int(Math::ceil(main_fr.lines[i].offset.x +
+							   main_fr.lines[i].text_buf->get_non_wrapped_size().x)));
+		}
+
+		int maximum_width = int(get_combined_maximum_size().x - sb_min_size.width);
+		if (maximum_width <= 0) {
+			maximum_width = 1;
+		}
+		min_size.x = MIN(natural_width, maximum_width);
+	}
+
+	return sb_min_size +
+		   ((autowrap_mode != TextServer::AUTOWRAP_OFF)
+				   ? Size2(wrap_with_max_width ? MAX(1, min_size.x) : 1, min_size.height)
+				   : min_size);
+}
+
+Key RichTextLabel::_get_menu_action_accelerator(const String& p_action)
+{
+	const List<InputEvent>* events = InputMap::action_get_events(p_action);
+	if (!events) {
+		return Key::NONE;
+	}
+
+	// Use first event in the list for the accelerator.
+	const List<InputEvent>::Element* first_event = events->front();
+	if (!first_event) {
+		return Key::NONE;
+	}
+
+	const InputEvent& event = first_event->get();
+	if (event.type != InputEventType::KEY) {
+		return Key::NONE;
+	}
+
+	// Use physical keycode if non-zero
+	if (event.key.physical_keycode != Key::NONE) {
+		return event.get_physical_keycode_with_modifiers();
+	}
+	else {
+		return event.get_keycode_with_modifiers();
+	}
+}
+
+void RichTextLabel::menu_option(int p_option)
+{
+	switch (p_option) {
+	case MENU_COPY: {
+		String txt = get_selected_text();
+		if (txt.is_empty()) {
+			txt = get_parsed_text();
+		}
+
+		if (!txt.is_empty()) {
+			DisplayServer::clipboard_set(txt);
+		}
+	} break;
+	case MENU_SELECT_ALL: {
+		select_all();
+	} break;
+	}
+}
+
+void RichTextLabel::add_text(const String& p_text) {}
+
+void RichTextLabel::wait_until_finished() {}
+
+bool RichTextLabel::_validate_line_caches() { return true; }
+
+void RichTextLabel::clear() {}
+
+void RichTextLabel::_push_def_font(DefaultFont p_def_font) {}
+
+void RichTextLabel::deselect() {}
+
+void RichTextLabel::set_use_bbcode(bool) {}
+
+void RichTextLabel::select_all() {}
+
+bool RichTextLabel::search(String const&, bool, bool) { return true; }
+
+RichTextLabel::RichTextLabel(String const&) {}
+
+void RichTextLabel::push_font(Ref<Font> const&, int) {}
+
+String RichTextLabel::get_selected_text() const { return String(); }
+
+void RichTextLabel::_generate_context_menu() {}
+
+String RichTextLabel::_find_language(RichTextLabel::Item*) { return String(); }
+
+float RichTextLabel::_find_click_in_line(RichTextLabel::Item*, int, Vector2 const&, int, float,
+	Vector2i const&, RichTextLabel::Item**, int*, RichTextLabel::Item**, int*, bool, bool)
+{
+	return 0.0;
+}
+
+void RichTextLabel::_apply_translation() {}
+
+void RichTextLabel::append_text(String const&) {}
+
+Control::CursorShape RichTextLabel::get_cursor_shape(const Vector2& p_pos) const
+{
+	return Control::CURSOR_ARROW;
+}
+
+// --- rich_text_label.compat.inc ---
+
+#ifndef DISABLE_DEPRECATED
+
+
+void RichTextLabel::_push_font_bind_compat_79053(const Ref<Font>& p_font, int p_size)
+{
+	push_font(p_font, p_size);
+}
+
+#endif // DISABLE_DEPRECATED
+
+// --- rich_text_effect.cpp ---
+
+CharFXTransform::CharFXTransform() {}
+
+RichTextEffect::RichTextEffect() {}
+
+bool RichTextEffect::_process_effect_impl(Ref<CharFXTransform> p_cfx) { return false; }

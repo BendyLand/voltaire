@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_rich_text_label)
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/rich_text_label.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 

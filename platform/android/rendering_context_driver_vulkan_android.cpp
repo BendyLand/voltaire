@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "rendering_context_driver_vulkan_android.h"
+#include "platform/android/os_android.h"
 
 #ifdef VULKAN_ENABLED
 

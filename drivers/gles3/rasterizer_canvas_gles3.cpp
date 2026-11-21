@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "rasterizer_canvas_gles3.h"
+#include "drivers/gles3/rasterizer_gles3.h"
 #include "drivers/gles3/storage/material_storage.h"
 
 #ifdef GLES3_ENABLED
@@ -43,7 +43,7 @@
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_canvas_cull.h"
+#include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_server_types.h"
 
 void RasterizerCanvasGLES3::_update_transform_2d_to_mat4(
@@ -3363,3 +3363,2635 @@ void RasterizerCanvasGLES3::finalize()
 #endif // GLES3_ENABLED
 
 
+
+// ============================================================================
+// Merged from drivers/gles3/shader_gles3.cpp
+// ============================================================================
+
+#include "shader_gles3.h"
+
+#ifdef GLES3_ENABLED
+
+#include "core/io/dir_access.h"
+#include "core/string/string_builder.h"
+#include "drivers/gles3/storage/utilities.h"
+
+#ifndef WEB_ENABLED
+#include "core/io/file_access.h"
+#endif
+
+static String _mkid(const String& p_id)
+{
+	String id = "m_" + p_id.replace("__", "_dus_");
+	return id.replace("__", "_dus_"); // doubleunderscore is reserved in glsl
+}
+
+void ShaderGLES3::_add_stage(const char* p_code, StageType p_stage_type)
+{
+	Vector<String> lines = String::utf8(p_code).split("\n");
+
+	String text;
+
+	for (int i = 0; i < lines.size(); i++) {
+		const String& l = lines[i];
+		bool push_chunk = false;
+
+		StageTemplate::Chunk chunk;
+
+		if (l.begins_with("#GLOBALS")) {
+			switch (p_stage_type) {
+			case STAGE_TYPE_VERTEX:
+				chunk.type = StageTemplate::Chunk::TYPE_VERTEX_GLOBALS;
+				break;
+			case STAGE_TYPE_FRAGMENT:
+				chunk.type = StageTemplate::Chunk::TYPE_FRAGMENT_GLOBALS;
+				break;
+			default: {
+			}
+			}
+
+			push_chunk = true;
+		}
+		else if (l.begins_with("#MATERIAL_UNIFORMS")) {
+			chunk.type = StageTemplate::Chunk::TYPE_MATERIAL_UNIFORMS;
+			push_chunk = true;
+		}
+		else if (l.begins_with("#CODE")) {
+			chunk.type = StageTemplate::Chunk::TYPE_CODE;
+			push_chunk = true;
+			chunk.code =
+				l.replace_first("#CODE", String()).remove_char(':').strip_edges().to_upper();
+		}
+		else {
+			text += l + "\n";
+		}
+
+		if (push_chunk) {
+			if (text != String()) {
+				StageTemplate::Chunk text_chunk;
+				text_chunk.type = StageTemplate::Chunk::TYPE_TEXT;
+				text_chunk.text = text.utf8();
+				stage_templates[p_stage_type].chunks.push_back(text_chunk);
+				text = String();
+			}
+			stage_templates[p_stage_type].chunks.push_back(chunk);
+		}
+
+		if (text != String()) {
+			StageTemplate::Chunk text_chunk;
+			text_chunk.type = StageTemplate::Chunk::TYPE_TEXT;
+			text_chunk.text = text.utf8();
+			stage_templates[p_stage_type].chunks.push_back(text_chunk);
+			text = String();
+		}
+	}
+}
+
+void ShaderGLES3::_setup(const char* p_vertex_code, const char* p_fragment_code, const char* p_name,
+	int p_uniform_count, const char** p_uniform_names, int p_ubo_count, const UBOPair* p_ubos,
+	int p_feedback_count, const Feedback* p_feedback, int p_texture_count,
+	const TexUnitPair* p_tex_units, int p_specialization_count,
+	const Specialization* p_specializations, int p_variant_count, const char** p_variants)
+{
+	name = p_name;
+
+	for (int i = 0; i < STAGE_TYPE_MAX; i++) {
+	    stage_templates[i].chunks.clear();
+	}
+
+	if (p_vertex_code) {
+		_add_stage(p_vertex_code, STAGE_TYPE_VERTEX);
+	}
+	if (p_fragment_code) {
+		_add_stage(p_fragment_code, STAGE_TYPE_FRAGMENT);
+	}
+
+	uniform_names = p_uniform_names;
+	uniform_count = p_uniform_count;
+	ubo_pairs = p_ubos;
+	ubo_count = p_ubo_count;
+	texunit_pairs = p_tex_units;
+	texunit_pair_count = p_texture_count;
+	specializations = p_specializations;
+	specialization_count = p_specialization_count;
+	specialization_default_mask = 0;
+	for (int i = 0; i < specialization_count; i++) {
+		if (specializations[i].default_value) {
+			specialization_default_mask |= (uint64_t(1) << uint64_t(i));
+		}
+	}
+	variant_defines = p_variants;
+	variant_count = p_variant_count;
+	feedbacks = p_feedback;
+	feedback_count = p_feedback_count;
+
+	StringBuilder tohash;
+	tohash.append("[Vertex]");
+	tohash.append(p_vertex_code ? String::utf8(p_vertex_code) : "");
+	tohash.append("[Fragment]");
+	tohash.append(p_fragment_code ? String::utf8(p_fragment_code) : "");
+
+	tohash.append("[gl_implementation]");
+	const String& vendor = String::utf8((const char*)glGetString(GL_VENDOR));
+	tohash.append(vendor.is_empty() ? "unknown" : vendor);
+	const String& renderer = String::utf8((const char*)glGetString(GL_RENDERER));
+	tohash.append(renderer.is_empty() ? "unknown" : renderer);
+	const String& version = String::utf8((const char*)glGetString(GL_VERSION));
+	tohash.append(version.is_empty() ? "unknown" : version);
+
+	base_sha256 = tohash.as_string().sha256_text();
+}
+
+RID ShaderGLES3::version_create()
+{
+	// initialize() was never called
+	ERR_FAIL_COND_V(variant_count == 0, RID());
+
+	Version version;
+	return version_owner.make_rid(version);
+}
+
+void ShaderGLES3::_build_variant_code(StringBuilder& builder, uint32_t p_variant,
+	const Version* p_version, StageType p_stage_type, uint64_t p_specialization)
+{
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		builder.append("#version 330\n");
+		builder.append("#define USE_GLES_OVER_GL\n");
+	}
+	else {
+		builder.append("#version 300 es\n");
+	}
+
+	if (GLES3::Config::polyfill_half2float) {
+		builder.append("#define USE_HALF2FLOAT\n");
+	}
+
+	for (int i = 0; i < specialization_count; i++) {
+		if (p_specialization & (uint64_t(1) << uint64_t(i))) {
+			builder.append("#define " + String(specializations[i].name) + "\n");
+		}
+	}
+	if (p_version->uniforms.size()) {
+		builder.append("#define MATERIAL_UNIFORMS_USED\n");
+	}
+	for (const KeyValue<String, CharString>& E : p_version->code_sections) {
+		builder.append(String("#define ") + String(E.key) + "_CODE_USED\n");
+	}
+
+	builder.append("\n"); // make sure defines begin at newline
+	builder.append(general_defines.get_data());
+	builder.append(variant_defines[p_variant]);
+	builder.append("\n");
+	for (int j = 0; j < p_version->custom_defines.size(); j++) {
+		builder.append(p_version->custom_defines[j].get_data());
+	}
+	builder.append("\n"); // make sure defines begin at newline
+
+	// Optional support for external textures.
+	if (GLES3::Config::external_texture_supported) {
+		builder.append("#extension GL_OES_EGL_image_external : enable\n");
+		builder.append("#extension GL_OES_EGL_image_external_essl3 : enable\n");
+	}
+	else {
+		builder.append("#define samplerExternalOES sampler2D\n");
+	}
+
+	// Insert multiview extension loading, because it needs to appear before
+	// any non-preprocessor code (like the "precision highp..." lines below).
+	builder.append("#ifdef USE_MULTIVIEW\n");
+	builder.append("#if defined(GL_OVR_multiview2)\n");
+	builder.append("#extension GL_OVR_multiview2 : require\n");
+	builder.append("#elif defined(GL_OVR_multiview)\n");
+	builder.append("#extension GL_OVR_multiview : require\n");
+	builder.append("#endif\n");
+	if (p_stage_type == StageType::STAGE_TYPE_VERTEX) {
+		builder.append("layout(num_views=2) in;\n");
+	}
+	builder.append("#define ViewIndex gl_ViewID_OVR\n");
+	builder.append("#define MAX_VIEWS 2\n");
+	builder.append("#else\n");
+	builder.append("#define ViewIndex uint(0)\n");
+	builder.append("#define MAX_VIEWS 1\n");
+	builder.append("#endif\n");
+
+	// Default to highp precision unless specified otherwise.
+	builder.append("precision highp float;\n");
+	builder.append("precision highp int;\n");
+	if (!RasterizerUtilGLES3::is_gles_over_gl()) {
+		builder.append("precision highp sampler2D;\n");
+		builder.append("precision highp samplerCube;\n");
+		builder.append("precision highp sampler2DArray;\n");
+		builder.append("precision highp sampler3D;\n");
+	}
+
+	const StageTemplate& stage_template = stage_templates[p_stage_type];
+	for (uint32_t i = 0; i < stage_template.chunks.size(); i++) {
+		const StageTemplate::Chunk& chunk = stage_template.chunks[i];
+		switch (chunk.type) {
+		case StageTemplate::Chunk::TYPE_MATERIAL_UNIFORMS: {
+			builder.append(String::utf8(
+				p_version->uniforms.get_data())); // uniforms (same for vertex and fragment)
+		} break;
+		case StageTemplate::Chunk::TYPE_VERTEX_GLOBALS: {
+			builder.append(String::utf8(p_version->vertex_globals.get_data())); // vertex globals
+		} break;
+		case StageTemplate::Chunk::TYPE_FRAGMENT_GLOBALS: {
+			builder.append(
+				String::utf8(p_version->fragment_globals.get_data())); // fragment globals
+		} break;
+		case StageTemplate::Chunk::TYPE_CODE: {
+			if (p_version->code_sections.has(chunk.code)) {
+				builder.append(String::utf8(p_version->code_sections[chunk.code].get_data()));
+			}
+		} break;
+		case StageTemplate::Chunk::TYPE_TEXT: {
+			builder.append(String::utf8(chunk.text.get_data()));
+		} break;
+		}
+	}
+}
+
+static void _display_error_with_code(const String& p_error, const String& p_code)
+{
+	int line = 1;
+	Vector<String> lines = p_code.split("\n");
+
+	for (int j = 0; j < lines.size(); j++) {
+		__print_line(itos(line) + ": " + lines[j]);
+		line++;
+	}
+
+	ERR_PRINT(p_error);
+}
+
+void ShaderGLES3::_get_uniform_locations(Version::Specialization& spec, Version* p_version)
+{
+	glUseProgram(spec.id);
+
+	spec.uniform_location.resize(uniform_count);
+	for (int i = 0; i < uniform_count; i++) {
+		spec.uniform_location[i] = glGetUniformLocation(spec.id, uniform_names[i]);
+	}
+
+	for (int i = 0; i < texunit_pair_count; i++) {
+		GLint loc = glGetUniformLocation(spec.id, texunit_pairs[i].name);
+		if (loc >= 0) {
+			if (texunit_pairs[i].index < 0) {
+				glUniform1i(loc, max_image_units + texunit_pairs[i].index);
+			}
+			else {
+				glUniform1i(loc, texunit_pairs[i].index);
+			}
+		}
+	}
+
+	for (int i = 0; i < ubo_count; i++) {
+		GLint loc = glGetUniformBlockIndex(spec.id, ubo_pairs[i].name);
+		if (loc >= 0) {
+			glUniformBlockBinding(spec.id, loc, ubo_pairs[i].index);
+		}
+	}
+	// textures
+	int texture_index = 0;
+	for (uint32_t i = 0; i < p_version->texture_uniforms.size(); i++) {
+		String native_uniform_name = _mkid(p_version->texture_uniforms[i].name);
+		GLint location = glGetUniformLocation(spec.id, (native_uniform_name).ascii().get_data());
+		Vector<int32_t> texture_uniform_bindings;
+		int texture_count = p_version->texture_uniforms[i].array_size;
+		for (int j = 0; j < texture_count; j++) {
+			texture_uniform_bindings.append(texture_index + base_texture_index);
+			texture_index++;
+		}
+		glUniform1iv(location, texture_uniform_bindings.size(), texture_uniform_bindings.ptr());
+	}
+
+	glUseProgram(0);
+}
+
+void ShaderGLES3::_compile_specialization(Version::Specialization& spec, uint32_t p_variant,
+	Version* p_version, uint64_t p_specialization)
+{
+	spec.id = glCreateProgram();
+	spec.ok = false;
+	GLint status;
+
+	// vertex stage
+	{
+		StringBuilder builder;
+		_build_variant_code(builder, p_variant, p_version, STAGE_TYPE_VERTEX, p_specialization);
+
+		spec.vert_id = glCreateShader(GL_VERTEX_SHADER);
+		String builder_string = builder.as_string();
+		CharString cs = builder_string.utf8();
+		const char* cstr = cs.ptr();
+		GLint cstr_len = cs.length();
+		glShaderSource(spec.vert_id, 1, &cstr, &cstr_len);
+		glCompileShader(spec.vert_id);
+
+		glGetShaderiv(spec.vert_id, GL_COMPILE_STATUS, &status);
+		if (status == GL_FALSE) {
+			GLsizei iloglen;
+			glGetShaderiv(spec.vert_id, GL_INFO_LOG_LENGTH, &iloglen);
+
+			if (iloglen < 0) {
+				glDeleteShader(spec.vert_id);
+				glDeleteProgram(spec.id);
+				spec.id = 0;
+
+				ERR_PRINT("No OpenGL vertex shader compiler log.");
+			}
+			else {
+				if (iloglen == 0) {
+					iloglen = 4096; // buggy driver (Adreno 220+)
+				}
+
+				char* ilogmem = (char*)Memory::alloc_static_zeroed(iloglen + 1);
+				glGetShaderInfoLog(spec.vert_id, iloglen, &iloglen, ilogmem);
+
+				String err_string = name + ": Vertex shader compilation failed:\n";
+
+				err_string += ilogmem;
+
+				_display_error_with_code(err_string, builder_string);
+
+				Memory::free_static(ilogmem);
+				glDeleteShader(spec.vert_id);
+				glDeleteProgram(spec.id);
+				spec.id = 0;
+			}
+
+			ERR_FAIL();
+		}
+	}
+
+	// fragment stage
+	{
+		StringBuilder builder;
+		_build_variant_code(builder, p_variant, p_version, STAGE_TYPE_FRAGMENT, p_specialization);
+
+		spec.frag_id = glCreateShader(GL_FRAGMENT_SHADER);
+		String builder_string = builder.as_string();
+		CharString cs = builder_string.utf8();
+		const char* cstr = cs.ptr();
+		GLint cstr_len = cs.length();
+		glShaderSource(spec.frag_id, 1, &cstr, &cstr_len);
+		glCompileShader(spec.frag_id);
+
+		glGetShaderiv(spec.frag_id, GL_COMPILE_STATUS, &status);
+		if (status == GL_FALSE) {
+			GLsizei iloglen;
+			glGetShaderiv(spec.frag_id, GL_INFO_LOG_LENGTH, &iloglen);
+
+			if (iloglen < 0) {
+				glDeleteShader(spec.frag_id);
+				glDeleteProgram(spec.id);
+				spec.id = 0;
+
+				ERR_PRINT("No OpenGL fragment shader compiler log.");
+			}
+			else {
+				if (iloglen == 0) {
+					iloglen = 4096; // buggy driver (Adreno 220+)
+				}
+
+				char* ilogmem = (char*)Memory::alloc_static_zeroed(iloglen + 1);
+				glGetShaderInfoLog(spec.frag_id, iloglen, &iloglen, ilogmem);
+
+				String err_string = name + ": Fragment shader compilation failed:\n";
+
+				err_string += ilogmem;
+
+				_display_error_with_code(err_string, builder_string);
+
+				Memory::free_static(ilogmem);
+				glDeleteShader(spec.frag_id);
+				glDeleteProgram(spec.id);
+				spec.id = 0;
+			}
+
+			ERR_FAIL();
+		}
+	}
+
+	glAttachShader(spec.id, spec.frag_id);
+	glAttachShader(spec.id, spec.vert_id);
+
+	// If feedback exists, set it up.
+
+	if (feedback_count) {
+		Vector<const char*> feedback;
+		for (int i = 0; i < feedback_count; i++) {
+			if (feedbacks[i].specialization == 0 ||
+				(feedbacks[i].specialization & p_specialization)) {
+				// Specialization for this feedback is enabled
+				feedback.push_back(feedbacks[i].name);
+			}
+		}
+
+		if (feedback.size()) {
+			glTransformFeedbackVaryings(
+				spec.id, feedback.size(), feedback.ptr(), GL_INTERLEAVED_ATTRIBS);
+		}
+	}
+
+	glLinkProgram(spec.id);
+
+	glGetProgramiv(spec.id, GL_LINK_STATUS, &status);
+	if (status == GL_FALSE) {
+		GLsizei iloglen;
+		glGetProgramiv(spec.id, GL_INFO_LOG_LENGTH, &iloglen);
+
+		if (iloglen < 0) {
+			glDeleteShader(spec.frag_id);
+			glDeleteShader(spec.vert_id);
+			glDeleteProgram(spec.id);
+			spec.id = 0;
+
+			ERR_PRINT("No OpenGL program link log. Something is wrong.");
+			ERR_FAIL();
+		}
+
+		if (iloglen == 0) {
+			iloglen = 4096; // buggy driver (Adreno 220+)
+		}
+
+		char* ilogmem = (char*)Memory::alloc_static(iloglen + 1);
+		ilogmem[iloglen] = '\0';
+		glGetProgramInfoLog(spec.id, iloglen, &iloglen, ilogmem);
+
+		String err_string = name + ": Program linking failed:\n";
+
+		err_string += ilogmem;
+
+		_display_error_with_code(err_string, String());
+
+		Memory::free_static(ilogmem);
+		glDeleteShader(spec.frag_id);
+		glDeleteShader(spec.vert_id);
+		glDeleteProgram(spec.id);
+		spec.id = 0;
+
+		ERR_FAIL();
+	}
+
+	_get_uniform_locations(spec, p_version);
+
+	spec.ok = true;
+}
+
+RenderingServerTypes::ShaderNativeSourceCode ShaderGLES3::version_get_native_source_code(
+	RID p_version)
+{
+	Version* version = version_owner.get_or_null(p_version);
+	RenderingServerTypes::ShaderNativeSourceCode source_code;
+	ERR_FAIL_NULL_V(version, source_code);
+
+	source_code.versions.resize(variant_count);
+
+	for (int i = 0; i < source_code.versions.size(); i++) {
+		// vertex stage
+
+		{
+			StringBuilder builder;
+			_build_variant_code(
+				builder, i, version, STAGE_TYPE_VERTEX, specialization_default_mask);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "vertex";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+
+		// fragment stage
+		{
+			StringBuilder builder;
+			_build_variant_code(
+				builder, i, version, STAGE_TYPE_FRAGMENT, specialization_default_mask);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "fragment";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+	}
+
+	return source_code;
+}
+
+String ShaderGLES3::_version_get_sha1(Version* p_version) const
+{
+	StringBuilder hash_build;
+
+	hash_build.append("[uniforms]");
+	hash_build.append(p_version->uniforms.get_data());
+	hash_build.append("[vertex_globals]");
+	hash_build.append(p_version->vertex_globals.get_data());
+	hash_build.append("[fragment_globals]");
+	hash_build.append(p_version->fragment_globals.get_data());
+
+	Vector<String> code_sections;
+	for (const KeyValue<String, CharString>& E : p_version->code_sections) {
+		code_sections.push_back(E.key);
+	}
+	code_sections.sort();
+
+	for (int i = 0; i < code_sections.size(); i++) {
+		hash_build.append(String("[code:") + String(code_sections[i]) + "]");
+		hash_build.append(p_version->code_sections[code_sections[i]].get_data());
+	}
+	for (int i = 0; i < p_version->custom_defines.size(); i++) {
+		hash_build.append("[custom_defines:" + itos(i) + "]");
+		hash_build.append(p_version->custom_defines[i].get_data());
+	}
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		hash_build.append("[gl]");
+	}
+	else {
+		hash_build.append("[gles]");
+	}
+
+	return hash_build.as_string().sha1_text();
+}
+
+#ifndef WEB_ENABLED // not supported in webgl
+static const char* shader_file_header = "GLSC";
+static const uint32_t cache_file_version = 3;
+#endif
+
+bool ShaderGLES3::_load_from_cache(Version* p_version)
+{
+#ifdef WEB_ENABLED // not supported in webgl
+	return false;
+#else
+#if !defined(ANDROID_ENABLED) && !defined(IOS_ENABLED)
+	if (RasterizerUtilGLES3::is_gles_over_gl() &&
+		(glProgramBinary == nullptr)) { // ARB_get_program_binary extension not available.
+		return false;
+	}
+#endif
+	String sha1 = _version_get_sha1(p_version);
+	String path =
+		shader_cache_dir.path_join(name).path_join(base_sha256).path_join(sha1) + ".cache";
+
+	Ref<FileAccess> f = FileAccess::open(path, FileAccess::READ);
+	if (f.is_null()) {
+		return false;
+	}
+
+	char header[5] = {};
+	f->get_buffer((uint8_t*)header, 4);
+	ERR_FAIL_COND_V(header != String(shader_file_header), false);
+
+	uint32_t file_version = f->get_32();
+	if (file_version != cache_file_version) {
+		return false; // wrong version
+	}
+
+	int cache_variant_count = static_cast<int>(f->get_32());
+	ERR_FAIL_COND_V_MSG(cache_variant_count != variant_count, false,
+		"shader cache variant count mismatch, expected " + itos(variant_count) + " got " +
+			itos(cache_variant_count)); // should not happen but check
+
+	LocalVector<AHashMap<uint64_t, Version::Specialization>> variants;
+	for (int i = 0; i < cache_variant_count; i++) {
+		uint32_t cache_specialization_count = f->get_32();
+		AHashMap<uint64_t, Version::Specialization> variant;
+		for (uint32_t j = 0; j < cache_specialization_count; j++) {
+			uint64_t specialization_key = f->get_64();
+			uint32_t variant_size = f->get_32();
+			if (variant_size == 0) {
+				continue;
+			}
+			uint32_t variant_format = f->get_32();
+			Vector<uint8_t> variant_bytes;
+			variant_bytes.resize(variant_size);
+
+			uint32_t br = f->get_buffer(variant_bytes.ptrw(), variant_size);
+
+			ERR_FAIL_COND_V(br != variant_size, false);
+
+			Version::Specialization specialization;
+
+			specialization.id = glCreateProgram();
+			if (feedback_count) {
+				Vector<const char*> feedback;
+				for (int feedback_index = 0; feedback_index < feedback_count; feedback_index++) {
+					if (feedbacks[feedback_index].specialization == 0 ||
+						(feedbacks[feedback_index].specialization & specialization_key)) {
+						// Specialization for this feedback is enabled.
+						feedback.push_back(feedbacks[feedback_index].name);
+					}
+				}
+
+				if (!feedback.is_empty()) {
+					glTransformFeedbackVaryings(
+						specialization.id, feedback.size(), feedback.ptr(), GL_INTERLEAVED_ATTRIBS);
+				}
+			}
+			glProgramBinary(
+				specialization.id, variant_format, variant_bytes.ptr(), variant_bytes.size());
+
+			GLint link_status = 0;
+			glGetProgramiv(specialization.id, GL_LINK_STATUS, &link_status);
+			if (link_status != GL_TRUE) {
+				WARN_PRINT_ONCE("Failed to load cached shader, recompiling.");
+				return false;
+			}
+
+			_get_uniform_locations(specialization, p_version);
+
+			specialization.ok = true;
+
+			variant.insert(specialization_key, specialization);
+		}
+		variants.push_back(std::move(variant));
+	}
+	p_version->variants = variants;
+
+	return true;
+#endif // WEB_ENABLED
+}
+
+void ShaderGLES3::_save_to_cache(Version* p_version)
+{
+#ifdef WEB_ENABLED // not supported in webgl
+	return;
+#else
+	ERR_FAIL_COND(!shader_cache_dir_valid);
+#if !defined(ANDROID_ENABLED) && !defined(IOS_ENABLED)
+	if (RasterizerUtilGLES3::is_gles_over_gl() &&
+		(glGetProgramBinary == nullptr)) { // ARB_get_program_binary extension not available.
+		return;
+	}
+#endif
+	String sha1 = _version_get_sha1(p_version);
+	String path =
+		shader_cache_dir.path_join(name).path_join(base_sha256).path_join(sha1) + ".cache";
+
+	Error error;
+	Ref<FileAccess> f = FileAccess::open(path, FileAccess::WRITE, &error);
+	ERR_FAIL_COND(f.is_null());
+	f->store_buffer((const uint8_t*)shader_file_header, 4);
+	f->store_32(cache_file_version);
+	f->store_32(variant_count);
+
+	for (int i = 0; i < variant_count; i++) {
+		int cache_specialization_count = p_version->variants[i].size();
+		f->store_32(cache_specialization_count);
+
+		for (KeyValue<uint64_t, ShaderGLES3::Version::Specialization>& kv :
+			p_version->variants[i]) {
+			const uint64_t specialization_key = kv.key;
+			f->store_64(specialization_key);
+
+			const Version::Specialization* specialization = &kv.value;
+			GLint program_size = 0;
+			glGetProgramiv(specialization->id, GL_PROGRAM_BINARY_LENGTH, &program_size);
+			if (program_size == 0) {
+				f->store_32(0);
+				continue;
+			}
+			PackedByteArray compiled_program;
+			compiled_program.resize(program_size);
+			GLenum binary_format = 0;
+			glGetProgramBinary(
+				specialization->id, program_size, nullptr, &binary_format, compiled_program.ptrw());
+			if (program_size != compiled_program.size()) {
+				f->store_32(0);
+				continue;
+			}
+			f->store_32(program_size);
+			f->store_32(binary_format);
+			f->store_buffer(compiled_program.ptr(), compiled_program.size());
+		}
+	}
+#endif // WEB_ENABLED
+}
+
+void ShaderGLES3::_clear_version(Version* p_version)
+{
+	// Variants not compiled yet, just return
+	if (p_version->variants.is_empty()) {
+		return;
+	}
+
+	for (int i = 0; i < variant_count; i++) {
+		for (KeyValue<uint64_t, Version::Specialization>& kv : p_version->variants[i]) {
+			if (kv.value.id != 0) {
+				glDeleteShader(kv.value.vert_id);
+				glDeleteShader(kv.value.frag_id);
+				glDeleteProgram(kv.value.id);
+			}
+		}
+	}
+
+	p_version->variants.clear();
+}
+
+void ShaderGLES3::_initialize_version(Version* p_version)
+{
+	ERR_FAIL_COND(p_version->variants.size() > 0);
+	bool use_cache = shader_cache_dir_valid &&
+					 !(feedback_count > 0 &&
+						 GLES3::Config::disable_transform_feedback_shader_cache);
+	if (use_cache && _load_from_cache(p_version)) {
+		return;
+	}
+	p_version->variants.reserve(variant_count);
+	for (int i = 0; i < variant_count; i++) {
+		p_version->variants.push_back(AHashMap<uint64_t, Version::Specialization>());
+		Version::Specialization spec;
+		_compile_specialization(spec, i, p_version, specialization_default_mask);
+		p_version->variants[i].insert(specialization_default_mask, spec);
+	}
+	if (use_cache) {
+		_save_to_cache(p_version);
+	}
+}
+
+void ShaderGLES3::version_set_code(RID p_version, const HashMap<String, String>& p_code,
+	const String& p_uniforms, const String& p_vertex_globals, const String& p_fragment_globals,
+	const Vector<String>& p_custom_defines,
+	const LocalVector<ShaderGLES3::TextureUniformData>& p_texture_uniforms, bool p_initialize)
+{
+	Version* version = version_owner.get_or_null(p_version);
+	ERR_FAIL_NULL(version);
+
+	_clear_version(version); // clear if existing
+
+	version->vertex_globals = p_vertex_globals.utf8();
+	version->fragment_globals = p_fragment_globals.utf8();
+	version->uniforms = p_uniforms.utf8();
+	version->code_sections.clear();
+	version->texture_uniforms = p_texture_uniforms;
+	for (const KeyValue<String, String>& E : p_code) {
+		version->code_sections[String(E.key.to_upper())] = E.value.utf8();
+	}
+
+	version->custom_defines.clear();
+	for (int i = 0; i < p_custom_defines.size(); i++) {
+		version->custom_defines.push_back(p_custom_defines[i].utf8());
+	}
+
+	if (p_initialize) {
+		_initialize_version(version);
+	}
+}
+
+bool ShaderGLES3::version_is_valid(RID p_version)
+{
+	Version* version = version_owner.get_or_null(p_version);
+	return version != nullptr;
+}
+
+bool ShaderGLES3::version_free(RID p_version)
+{
+	if (version_owner.owns(p_version)) {
+		Version* version = version_owner.get_or_null(p_version);
+		_clear_version(version);
+		version_owner.free(p_version);
+	}
+	else {
+		return false;
+	}
+
+	return true;
+}
+
+bool ShaderGLES3::shader_cache_cleanup_on_start = false;
+
+ShaderGLES3::ShaderGLES3() {}
+
+void ShaderGLES3::initialize(const String& p_general_defines, int p_base_texture_index)
+{
+	general_defines = p_general_defines.utf8();
+	base_texture_index = p_base_texture_index;
+
+	if (shader_cache_dir != String()) {
+		StringBuilder hash_build;
+
+		hash_build.append("[base_hash]");
+		hash_build.append(base_sha256);
+		hash_build.append("[general_defines]");
+		hash_build.append(general_defines.get_data());
+		for (int i = 0; i < variant_count; i++) {
+			hash_build.append("[variant_defines:" + itos(i) + "]");
+			hash_build.append(variant_defines[i]);
+		}
+
+		base_sha256 = hash_build.as_string().sha256_text();
+
+		Ref<DirAccess> d = DirAccess::open(shader_cache_dir);
+		ERR_FAIL_COND(d.is_null());
+		if (d->change_dir(name) != OK) {
+			Error err = d->make_dir(name);
+			ERR_FAIL_COND(err != OK);
+			d->change_dir(name);
+		}
+
+		// erase other versions?
+		if (shader_cache_cleanup_on_start) {
+		}
+		//
+		if (d->change_dir(base_sha256) != OK) {
+			Error err = d->make_dir(base_sha256);
+			ERR_FAIL_COND(err != OK);
+		}
+		shader_cache_dir_valid = true;
+
+		print_verbose("Shader '" + name + "' SHA256: " + base_sha256);
+	}
+
+	ERR_FAIL_COND(!GLES3::Config::is_initialized());
+	max_image_units = GLES3::Config::max_texture_image_units;
+}
+
+void ShaderGLES3::set_shader_cache_dir(const String& p_dir) { shader_cache_dir = p_dir; }
+
+void ShaderGLES3::set_shader_cache_save_compressed(bool p_enable)
+{
+	shader_cache_save_compressed = p_enable;
+}
+
+void ShaderGLES3::set_shader_cache_save_compressed_zstd(bool p_enable)
+{
+	shader_cache_save_compressed_zstd = p_enable;
+}
+
+void ShaderGLES3::set_shader_cache_save_debug(bool p_enable) { shader_cache_save_debug = p_enable; }
+
+String ShaderGLES3::shader_cache_dir;
+bool ShaderGLES3::shader_cache_save_compressed = true;
+bool ShaderGLES3::shader_cache_save_compressed_zstd = true;
+bool ShaderGLES3::shader_cache_save_debug = true;
+
+ShaderGLES3::~ShaderGLES3()
+{
+	LocalVector<RID> remaining = version_owner.get_owned_list();
+	if (remaining.size()) {
+		ERR_PRINT(itos(remaining.size()) + " shaders of type " + name + " were never freed");
+		for (RID& rid : remaining) {
+			version_free(rid);
+		}
+	}
+}
+#endif
+
+
+
+// ============================================================================
+// Merged from drivers/gles3/rasterizer_gles3.cpp
+// ============================================================================
+
+#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/storage/light_storage.h"
+#include "drivers/gles3/storage/material_storage.h"
+#include "drivers/gles3/storage/mesh_storage.h"
+#include "drivers/gles3/storage/particles_storage.h"
+#include "drivers/gles3/storage/texture_storage.h"
+#include "drivers/gles3/storage/utilities.h"
+#include "rasterizer_gles3.h"
+#include "servers/rendering/storage/utilities.h"
+
+#ifdef GLES3_ENABLED
+
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "core/io/dir_access.h"
+#include "core/io/image.h"
+#include "core/os/os.h"
+#include "drivers/gles3/rasterizer_gles3.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer_scene_cull.h"
+#include "servers/rendering/rendering_server_types.h"
+
+#define _EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB 0x8242
+#define _EXT_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH_ARB 0x8243
+#define _EXT_DEBUG_CALLBACK_FUNCTION_ARB 0x8244
+#define _EXT_DEBUG_CALLBACK_USER_PARAM_ARB 0x8245
+#define _EXT_DEBUG_SOURCE_API_ARB 0x8246
+#define _EXT_DEBUG_SOURCE_WINDOW_SYSTEM_ARB 0x8247
+#define _EXT_DEBUG_SOURCE_SHADER_COMPILER_ARB 0x8248
+#define _EXT_DEBUG_SOURCE_THIRD_PARTY_ARB 0x8249
+#define _EXT_DEBUG_SOURCE_APPLICATION_ARB 0x824A
+#define _EXT_DEBUG_SOURCE_OTHER_ARB 0x824B
+#define _EXT_DEBUG_TYPE_ERROR_ARB 0x824C
+#define _EXT_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB 0x824D
+#define _EXT_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB 0x824E
+#define _EXT_DEBUG_TYPE_PORTABILITY_ARB 0x824F
+#define _EXT_DEBUG_TYPE_PERFORMANCE_ARB 0x8250
+#define _EXT_DEBUG_TYPE_OTHER_ARB 0x8251
+#define _EXT_DEBUG_TYPE_MARKER_ARB 0x8268
+#define _EXT_MAX_DEBUG_MESSAGE_LENGTH_ARB 0x9143
+#define _EXT_MAX_DEBUG_LOGGED_MESSAGES_ARB 0x9144
+#define _EXT_DEBUG_LOGGED_MESSAGES_ARB 0x9145
+#define _EXT_DEBUG_SEVERITY_HIGH_ARB 0x9146
+#define _EXT_DEBUG_SEVERITY_MEDIUM_ARB 0x9147
+#define _EXT_DEBUG_SEVERITY_LOW_ARB 0x9148
+#define _EXT_DEBUG_OUTPUT 0x92E0
+
+#ifndef GL_FRAMEBUFFER_SRGB
+#define GL_FRAMEBUFFER_SRGB 0x8DB9
+#endif
+
+#ifndef GLAPIENTRY
+#if defined(WINDOWS_ENABLED)
+#define GLAPIENTRY APIENTRY
+#else
+#define GLAPIENTRY
+#endif
+#endif
+
+#include <platform_gl.h>
+
+#if defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
+#include <platform_egl.h>
+#endif
+
+#if defined(GLAD_ENABLED) || defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
+// We can debug GL if we use GLAD or EGL, so not on iOS or Web.
+#define GL_DEBUG_CALLBACK
+
+#ifdef _WIN32
+#define strcpy strcpy_s
+#endif
+#endif // GLAD_ENABLED || EGL_ENABLED || ANDROID_ENABLED
+
+#ifdef WINDOWS_ENABLED
+bool RasterizerGLES3::screen_flipped_y = false;
+#endif
+
+void RasterizerGLES3::begin_frame(double frame_step)
+{
+	frame++;
+	delta = frame_step;
+
+	time_total += frame_step;
+
+	RasterizerCanvasGLES3::set_time(time_total);
+	scene->set_time(time_total, frame_step);
+
+	GLES3::Utilities::_capture_timestamps_begin();
+
+	// scene->iteration();
+}
+
+void RasterizerGLES3::bind_mesh_storage()
+{
+	RendererMeshStorage::mesh_allocate = &GLES3::MeshStorage::mesh_allocate;
+	RendererMeshStorage::mesh_initialize = &GLES3::MeshStorage::mesh_initialize;
+	RendererMeshStorage::mesh_set_blend_shape_count =
+		&GLES3::MeshStorage::mesh_set_blend_shape_count;
+	RendererMeshStorage::mesh_needs_instance = &GLES3::MeshStorage::mesh_needs_instance;
+	RendererMeshStorage::mesh_add_surface = &GLES3::MeshStorage::mesh_add_surface;
+	RendererMeshStorage::mesh_get_blend_shape_count =
+		&GLES3::MeshStorage::mesh_get_blend_shape_count;
+	RendererMeshStorage::mesh_set_blend_shape_mode = &GLES3::MeshStorage::mesh_set_blend_shape_mode;
+	RendererMeshStorage::mesh_get_blend_shape_mode = &GLES3::MeshStorage::mesh_get_blend_shape_mode;
+	RendererMeshStorage::mesh_surface_update_vertex_region =
+		&GLES3::MeshStorage::mesh_surface_update_vertex_region;
+	RendererMeshStorage::mesh_surface_update_attribute_region =
+		&GLES3::MeshStorage::mesh_surface_update_attribute_region;
+	RendererMeshStorage::mesh_surface_update_skin_region =
+		&GLES3::MeshStorage::mesh_surface_update_skin_region;
+	RendererMeshStorage::mesh_surface_update_index_region =
+		&GLES3::MeshStorage::mesh_surface_update_index_region;
+	RendererMeshStorage::mesh_surface_set_material = &GLES3::MeshStorage::mesh_surface_set_material;
+	RendererMeshStorage::mesh_surface_get_material = &GLES3::MeshStorage::mesh_surface_get_material;
+	RendererMeshStorage::mesh_get_surface = [](RID p_mesh, int p_surface) {
+		return GLES3::MeshStorage::mesh_get_surface(p_mesh, p_surface);
+	};
+	RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid =
+		&GLES3::MeshStorage::mesh_surface_get_vertex_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid =
+		&GLES3::MeshStorage::mesh_surface_get_attribute_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid =
+		&GLES3::MeshStorage::mesh_surface_get_skin_buffer_rd_rid;
+	RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid =
+		&GLES3::MeshStorage::mesh_surface_get_index_buffer_rd_rid;
+	RendererMeshStorage::mesh_get_surface_count = &GLES3::MeshStorage::mesh_get_surface_count;
+	RendererMeshStorage::mesh_set_custom_aabb = &GLES3::MeshStorage::mesh_set_custom_aabb;
+	RendererMeshStorage::mesh_get_custom_aabb = &GLES3::MeshStorage::mesh_get_custom_aabb;
+	RendererMeshStorage::mesh_get_aabb = &GLES3::MeshStorage::mesh_get_aabb;
+	RendererMeshStorage::mesh_set_path = &GLES3::MeshStorage::mesh_set_path;
+	RendererMeshStorage::mesh_get_path = &GLES3::MeshStorage::mesh_get_path;
+	RendererMeshStorage::mesh_set_shadow_mesh = &GLES3::MeshStorage::mesh_set_shadow_mesh;
+	RendererMeshStorage::mesh_clear = &GLES3::MeshStorage::mesh_clear;
+	RendererMeshStorage::mesh_surface_remove = &GLES3::MeshStorage::mesh_surface_remove;
+	RendererMeshStorage::mesh_debug_usage = &GLES3::MeshStorage::mesh_debug_usage;
+
+	RendererMeshStorage::mesh_instance_create = &GLES3::MeshStorage::mesh_instance_create;
+	RendererMeshStorage::mesh_instance_free = &GLES3::MeshStorage::mesh_instance_free;
+	RendererMeshStorage::mesh_instance_set_skeleton =
+		&GLES3::MeshStorage::mesh_instance_set_skeleton;
+	RendererMeshStorage::mesh_instance_set_blend_shape_weight =
+		&GLES3::MeshStorage::mesh_instance_set_blend_shape_weight;
+	RendererMeshStorage::mesh_instance_check_for_update =
+		&GLES3::MeshStorage::mesh_instance_check_for_update;
+	RendererMeshStorage::mesh_instance_set_canvas_item_transform =
+		&GLES3::MeshStorage::mesh_instance_set_canvas_item_transform;
+	RendererMeshStorage::update_mesh_instances = &GLES3::MeshStorage::update_mesh_instances;
+
+	RendererMeshStorage::_multimesh_allocate = &GLES3::MeshStorage::_multimesh_allocate;
+	RendererMeshStorage::_multimesh_initialize = &GLES3::MeshStorage::_multimesh_initialize;
+	RendererMeshStorage::_multimesh_free = &GLES3::MeshStorage::_multimesh_free;
+	RendererMeshStorage::_multimesh_allocate_data = &GLES3::MeshStorage::_multimesh_allocate_data;
+	RendererMeshStorage::_multimesh_get_instance_count =
+		&GLES3::MeshStorage::_multimesh_get_instance_count;
+	RendererMeshStorage::_multimesh_set_mesh = &GLES3::MeshStorage::_multimesh_set_mesh;
+	RendererMeshStorage::_multimesh_instance_set_transform =
+		&GLES3::MeshStorage::_multimesh_instance_set_transform;
+	RendererMeshStorage::_multimesh_instance_set_transform_2d =
+		&GLES3::MeshStorage::_multimesh_instance_set_transform_2d;
+	RendererMeshStorage::_multimesh_instance_set_color =
+		&GLES3::MeshStorage::_multimesh_instance_set_color;
+	RendererMeshStorage::_multimesh_instance_set_custom_data =
+		&GLES3::MeshStorage::_multimesh_instance_set_custom_data;
+	RendererMeshStorage::_multimesh_set_custom_aabb =
+		&GLES3::MeshStorage::_multimesh_set_custom_aabb;
+	RendererMeshStorage::_multimesh_get_custom_aabb =
+		&GLES3::MeshStorage::_multimesh_get_custom_aabb;
+	RendererMeshStorage::_multimesh_get_mesh = &GLES3::MeshStorage::_multimesh_get_mesh;
+	RendererMeshStorage::_multimesh_instance_get_transform =
+		&GLES3::MeshStorage::_multimesh_instance_get_transform;
+	RendererMeshStorage::_multimesh_instance_get_transform_2d =
+		&GLES3::MeshStorage::_multimesh_instance_get_transform_2d;
+	RendererMeshStorage::_multimesh_instance_get_color =
+		&GLES3::MeshStorage::_multimesh_instance_get_color;
+	RendererMeshStorage::_multimesh_instance_get_custom_data =
+		&GLES3::MeshStorage::_multimesh_instance_get_custom_data;
+	RendererMeshStorage::_multimesh_set_buffer = &GLES3::MeshStorage::_multimesh_set_buffer;
+	RendererMeshStorage::_multimesh_get_command_buffer_rd_rid =
+		&GLES3::MeshStorage::_multimesh_get_command_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_buffer_rd_rid =
+		&GLES3::MeshStorage::_multimesh_get_buffer_rd_rid;
+	RendererMeshStorage::_multimesh_get_buffer = &GLES3::MeshStorage::_multimesh_get_buffer;
+	RendererMeshStorage::_multimesh_set_visible_instances =
+		&GLES3::MeshStorage::_multimesh_set_visible_instances;
+	RendererMeshStorage::_multimesh_get_visible_instances =
+		&GLES3::MeshStorage::_multimesh_get_visible_instances;
+	RendererMeshStorage::_multimesh_get_aabb = &GLES3::MeshStorage::_multimesh_get_aabb;
+	RendererMeshStorage::_multimesh_get_interpolator =
+		&GLES3::MeshStorage::_multimesh_get_interpolator;
+
+	RendererMeshStorage::skeleton_allocate = &GLES3::MeshStorage::skeleton_allocate;
+	RendererMeshStorage::skeleton_initialize = &GLES3::MeshStorage::skeleton_initialize;
+	RendererMeshStorage::skeleton_free = &GLES3::MeshStorage::skeleton_free;
+	RendererMeshStorage::skeleton_allocate_data = &GLES3::MeshStorage::skeleton_allocate_data;
+	RendererMeshStorage::skeleton_set_base_transform_2d =
+		&GLES3::MeshStorage::skeleton_set_base_transform_2d;
+	RendererMeshStorage::skeleton_get_bone_count = &GLES3::MeshStorage::skeleton_get_bone_count;
+	RendererMeshStorage::skeleton_bone_set_transform =
+		&GLES3::MeshStorage::skeleton_bone_set_transform;
+	RendererMeshStorage::skeleton_bone_get_transform =
+		&GLES3::MeshStorage::skeleton_bone_get_transform;
+	RendererMeshStorage::skeleton_bone_set_transform_2d =
+		&GLES3::MeshStorage::skeleton_bone_set_transform_2d;
+	RendererMeshStorage::skeleton_bone_get_transform_2d =
+		&GLES3::MeshStorage::skeleton_bone_get_transform_2d;
+	RendererMeshStorage::skeleton_update_dependency =
+		&GLES3::MeshStorage::skeleton_update_dependency;
+}
+
+void RasterizerGLES3::end_frame(bool p_swap_buffers) { GLES3::Utilities::capture_timestamps_end(); }
+
+void RasterizerGLES3::gl_end_frame(bool p_swap_buffers)
+{
+	if (p_swap_buffers) {
+		DisplayServer::swap_buffers();
+	}
+	else {
+		glFinish();
+	}
+}
+
+#ifdef GL_DEBUG_CALLBACK
+static void GLAPIENTRY _gl_debug_print(GLenum source, GLenum type, GLuint id, GLenum severity,
+	GLsizei length, const GLchar* message, const GLvoid* userParam)
+{
+	// These are ultimately annoying, so removing for now.
+	if (type == _EXT_DEBUG_TYPE_OTHER_ARB || type == _EXT_DEBUG_TYPE_PERFORMANCE_ARB ||
+		type == _EXT_DEBUG_TYPE_MARKER_ARB) {
+		return;
+	}
+
+	char debSource[256], debType[256], debSev[256];
+
+	if (source == _EXT_DEBUG_SOURCE_API_ARB) {
+		strcpy(debSource, "OpenGL");
+	}
+	else if (source == _EXT_DEBUG_SOURCE_WINDOW_SYSTEM_ARB) {
+		strcpy(debSource, "Windows");
+	}
+	else if (source == _EXT_DEBUG_SOURCE_SHADER_COMPILER_ARB) {
+		strcpy(debSource, "Shader Compiler");
+	}
+	else if (source == _EXT_DEBUG_SOURCE_THIRD_PARTY_ARB) {
+		strcpy(debSource, "Third Party");
+	}
+	else if (source == _EXT_DEBUG_SOURCE_APPLICATION_ARB) {
+		strcpy(debSource, "Application");
+	}
+	else if (source == _EXT_DEBUG_SOURCE_OTHER_ARB) {
+		strcpy(debSource, "Other");
+	}
+	else {
+		ERR_FAIL_MSG(
+			vformat("GL ERROR: Invalid or unhandled source '%d' in debug callback.", source));
+	}
+
+	if (type == _EXT_DEBUG_TYPE_ERROR_ARB) {
+		strcpy(debType, "Error");
+	}
+	else if (type == _EXT_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB) {
+		strcpy(debType, "Deprecated behavior");
+	}
+	else if (type == _EXT_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB) {
+		strcpy(debType, "Undefined behavior");
+	}
+	else if (type == _EXT_DEBUG_TYPE_PORTABILITY_ARB) {
+		strcpy(debType, "Portability");
+	}
+	else {
+		ERR_FAIL_MSG(vformat("GL ERROR: Invalid or unhandled type '%d' in debug callback.", type));
+	}
+
+	if (severity == _EXT_DEBUG_SEVERITY_HIGH_ARB) {
+		strcpy(debSev, "High");
+	}
+	else if (severity == _EXT_DEBUG_SEVERITY_MEDIUM_ARB) {
+		strcpy(debSev, "Medium");
+	}
+	else if (severity == _EXT_DEBUG_SEVERITY_LOW_ARB) {
+		strcpy(debSev, "Low");
+	}
+	else {
+		ERR_FAIL_MSG(
+			vformat("GL ERROR: Invalid or unhandled severity '%d' in debug callback.", severity));
+	}
+
+	String output = String() + "GL ERROR: Source: " + debSource + "\tType: " + debType +
+					"\tID: " + itos(id) + "\tSeverity: " + debSev + "\tMessage: " + message;
+
+	ERR_PRINT(output);
+}
+#endif // GL_DEBUG_CALLBACK
+
+typedef void(GLAPIENTRY* DEBUGPROCARB)(GLenum source, GLenum type, GLuint id, GLenum severity,
+	GLsizei length, const char* message, const void* userParam);
+
+typedef void(GLAPIENTRY* DebugMessageCallbackARB)(DEBUGPROCARB callback, const void* userParam);
+
+#if defined(GLAD_ENABLED) && defined(EGL_ENABLED)
+void* _egl_load_function_wrapper(const char* p_name) { return (void*)eglGetProcAddress(p_name); }
+#endif
+
+void RasterizerGLES3::initialize()
+{
+#ifdef GLAD_ENABLED
+	bool glad_loaded = false;
+
+#ifdef EGL_ENABLED
+#if defined(EGL_STATIC)
+	bool has_egl = true;
+#else
+	bool has_egl = (eglGetProcAddress != nullptr);
+#endif
+
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (has_egl && !glad_loaded && gladLoadGL((GLADloadfunc)&_egl_load_function_wrapper)) {
+			glad_loaded = true;
+		}
+	}
+	else {
+		if (has_egl && !glad_loaded && gladLoadGLES2((GLADloadfunc)&_egl_load_function_wrapper)) {
+			glad_loaded = true;
+		}
+	}
+#endif // EGL_ENABLED
+
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (!glad_loaded && gladLoaderLoadGL()) {
+			glad_loaded = true;
+		}
+#ifdef GLES_API_ENABLED
+	}
+	else {
+		if (!glad_loaded && gladLoaderLoadGLES2()) {
+			glad_loaded = true;
+		}
+#endif
+	}
+
+	ERR_FAIL_COND_MSG(!glad_loaded, "Error initializing GLAD.");
+#endif // GLAD_ENABLED
+
+	// Print adapter details only AFTER GLAD has populated glGetString
+	Engine::print_header(vformat("OpenGL API %s - Compatibility - Using Device: %s - %s",
+		Renderer::get_video_adapter_api_version(), Renderer::get_video_adapter_vendor(),
+		Renderer::get_video_adapter_name()));
+	if (Engine::get_gpu_index() >= 0) {
+		WARN_PRINT(
+			"The Compatibility renderer does not support overriding the GPU with the --gpu-index "
+			"command line argument. Falling back to the default GPU for OpenGL applications.");
+	}
+
+#ifdef GL_DEBUG_CALLBACK
+	// Setup OpenGL debug callback, via DebugMessageCallbackARB (GLAD or EGL).
+
+#ifdef GLAD_ENABLED
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (OS::is_stdout_verbose()) {
+			if (GLAD_GL_ARB_debug_output) {
+				glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+				glDebugMessageCallbackARB((GLDEBUGPROCARB)_gl_debug_print, nullptr);
+				glEnable(_EXT_DEBUG_OUTPUT);
+			}
+			else {
+				__print_line("OpenGL debugging not supported!");
+			}
+		}
+	}
+
+#ifdef GL_API_ENABLED
+	if (RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (OS::is_stdout_verbose() && GLAD_GL_ARB_debug_output) {
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_ERROR_ARB,
+				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
+				_EXT_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
+				GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB,
+				_EXT_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, _EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr,
+				GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PORTABILITY_ARB,
+				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_PERFORMANCE_ARB,
+				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+			glDebugMessageControlARB(_EXT_DEBUG_SOURCE_API_ARB, _EXT_DEBUG_TYPE_OTHER_ARB,
+				_EXT_DEBUG_SEVERITY_HIGH_ARB, 0, nullptr, GL_TRUE);
+		}
+	}
+#endif // GL_API_ENABLED
+#endif // GLAD_ENABLED
+
+#if defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
+#ifdef GLES_API_ENABLED
+	if (!RasterizerUtilGLES3::is_gles_over_gl()) {
+		if (OS::is_stdout_verbose()) {
+			DebugMessageCallbackARB callback =
+				(DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallback");
+			if (!callback) {
+				callback = (DebugMessageCallbackARB)eglGetProcAddress("glDebugMessageCallbackKHR");
+			}
+
+			if (callback) {
+				__print_line("godot: ENABLING GL DEBUG");
+				glEnable(_EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+				callback((DEBUGPROCARB)_gl_debug_print, nullptr);
+				glEnable(_EXT_DEBUG_OUTPUT);
+			}
+		}
+	}
+#endif // GLES_API_ENABLED
+#endif // EGL_ENABLED || ANDROID_ENABLED
+
+#endif // GL_DEBUG_CALLBACK
+
+	{
+		// Setup shader cache.
+
+		String shader_cache_dir = Engine::get_shader_cache_path();
+		if (shader_cache_dir.is_empty()) {
+			shader_cache_dir = "user://";
+		}
+		Ref<DirAccess> da = DirAccess::open(shader_cache_dir);
+		if (da.is_null()) {
+			ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
+					  shader_cache_dir);
+		}
+		else {
+			Error err = da->change_dir("shader_cache");
+			if (err != OK) {
+				err = da->make_dir("shader_cache");
+			}
+			if (err != OK) {
+				ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " +
+						  shader_cache_dir);
+			}
+			else {
+				shader_cache_dir = shader_cache_dir.path_join("shader_cache");
+				if (!Engine::is_editor_hint()) {
+					shader_cache_dir = String(); // disable only if not editor
+				}
+				if (!shader_cache_dir.is_empty()) {
+					ShaderGLES3::set_shader_cache_dir(shader_cache_dir);
+				}
+			}
+		}
+	}
+
+	// OpenGL needs to be initialized before initializing the Rasterizers
+	GLES3::Config::initialize();
+	GLES3::Utilities::initialize();
+	GLES3::TextureStorage::initialize();
+	GLES3::MaterialStorage::initialize();
+	GLES3::MeshStorage::initialize();
+	GLES3::LightStorage::initialize();
+	GLES3::ParticlesStorage::initialize();
+	GLES3::CopyEffects::initialize();
+	GLES3::CubemapFilter::initialize();
+	GLES3::Glow::initialize();
+	GLES3::PostEffects::initialize();
+	GLES3::FeedEffects::initialize();
+	GLES3::GI::initialize();
+	GLES3::Fog::initialize();
+
+	RasterizerCanvasGLES3::initialize();
+	scene = memnew(RasterizerSceneGLES3(texture_storage, material_storage, light_storage));
+	if (RendererSceneCull::is_initialized()) {
+		RendererSceneCull::set_scene_render(scene);
+	}
+	printf("[LIFECYCLE 1] Scene allocated: scene=%p, vptr=%p\n", (void*)scene, *(void**)scene);
+	fflush(stdout);
+	RendererTextureStorage::bind<GLES3::TextureStorage>();
+	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
+	// TexBlit Shaders
+	GLES3::TextureStorage::_tex_blit_shader_initialize();
+
+	// Disable OpenGL linear to sRGB conversion, because Godot will always do this conversion
+	// itself.
+	if (GLES3::Config::srgb_framebuffer_supported) {
+		glDisable(GL_FRAMEBUFFER_SRGB);
+	}
+}
+
+void RasterizerGLES3::finalize()
+{
+	static bool finalized = false;
+	if (finalized) {
+		return;
+	}
+	finalized = true;
+	// Has to be a separate call due to TextureStorage & MaterialStorage needing to interact for
+	// TexBlit Shaders
+	GLES3::TextureStorage::_tex_blit_shader_free();
+	printf("[LIFECYCLE 4] About to memdelete(scene): scene=%p, vptr=%p\n", (void*)scene,
+		scene ? *(void**)scene : nullptr);
+	fflush(stdout);
+	if (RendererSceneCull::is_initialized() && RendererSceneCull::get_scene_render() == scene) {
+		RendererSceneCull::set_scene_render(nullptr);
+	}
+	if (scene) {
+		memdelete(scene);
+		scene = nullptr;
+	}
+	RasterizerCanvasGLES3::finalize();
+	GLES3::GI::finalize();
+	GLES3::Fog::finalize();
+	GLES3::PostEffects::finalize();
+	GLES3::Glow::finalize();
+	GLES3::CubemapFilter::finalize();
+	GLES3::CopyEffects::finalize();
+	GLES3::FeedEffects::finalize();
+	GLES3::ParticlesStorage::finalize();
+	GLES3::MeshStorage::finalize();
+	GLES3::MaterialStorage::finalize();
+	GLES3::TextureStorage::finalize();
+	GLES3::Utilities::finalize();
+	GLES3::Config::finalize();
+}
+
+void RasterizerGLES3::make_current(bool p_gles_over_gl)
+{
+	RasterizerUtilGLES3::set_gles_over_gl(p_gles_over_gl);
+	OS::set_gles_over_gl(p_gles_over_gl);
+
+	RendererCompositor::low_end = true;
+	RendererCompositor::bind_compositor<RasterizerGLES3>();
+}
+
+void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID p_screen,
+	const RenderingServerTypes::BlitToScreen& p_blit, bool p_first)
+{
+	GLES3::RenderTarget* rt = GLES3::TextureStorage::get_render_target(p_blit.render_target);
+	ERR_FAIL_NULL(rt);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+
+	if (p_first) {
+		if (p_blit.dst_rect.position != Vector2() || p_blit.dst_rect.size != rt->size) {
+			Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
+			glViewport(0, 0, max_vp[0], max_vp[1]);
+			glClearColor(0.0, 0.0, 0.0, 1.0);
+			glClear(GL_COLOR_BUFFER_BIT);
+		}
+	}
+
+	Vector2 screen_rect_end = p_blit.dst_rect.get_end();
+	Vector2 p1 = Vector2(p_blit.dst_rect.position.x, screen_rect_end.y);
+	Vector2 p2 = Vector2(screen_rect_end.x, p_blit.dst_rect.position.y);
+	Vector2 size = p2 - p1;
+
+	bool flip_y = !rt->overridden.is_overridden;
+	bool linear_to_srgb = false;
+
+	Rect2 screenrect = Rect2(Vector2(0.0, flip_y ? 1.0 : 0.0), Vector2(1.0, flip_y ? -1.0 : 1.0));
+	glViewport(int(p1.x), int(DisplayServer::window_get_size(p_screen).y - p1.y),
+		int(size.x), int(-size.y));
+
+	GLenum target = (rt->view_count > 1) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(target, rt->color);
+
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_SCISSOR_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ZERO);
+
+	if (p_blit.lens_distortion.apply &&
+		(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
+		GLES3::CopyEffects::copy_with_lens_distortion(screenrect,
+			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
+			p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
+			p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
+	}
+	else if (rt->view_count > 1) {
+		GLES3::CopyEffects::copy_to_rect_3d(screenrect,
+			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
+			0.0, linear_to_srgb);
+	}
+	else {
+		GLES3::CopyEffects::copy_to_rect(screenrect, linear_to_srgb);
+	}
+
+	glBindTexture(target, 0);
+}
+
+// is this p_screen useless in a multi window environment?
+void RasterizerGLES3::blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
+	const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	glDisable(GL_SCISSOR_TEST);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	// Querying the actual window size from the DisplayServer would deadlock in separate
+	// render thread mode, so set the biggest viewport the implementation supports to
+	// ensure the entire window is covered (including across resizes).
+	Size2i max_vp = GLES3::Utilities::get_maximum_viewport_size();
+	glViewport(0, 0, max_vp[0], max_vp[1]);
+	// glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+	// glClear(GL_COLOR_BUFFER_BIT);
+
+	for (int i = 0; i < p_amount; i++) {
+		_blit_render_target_to_screen(p_screen, p_render_targets[i], i == 0);
+	}
+}
+
+void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
+	RSE::SplashStretchMode p_stretch_mode, bool p_use_filter)
+{
+	if (p_image.is_null() || p_image->is_empty()) {
+		return;
+	}
+
+	Size2i win_size = DisplayServer::window_get_size();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	glViewport(0, 0, win_size.width, win_size.height);
+	glEnable(GL_BLEND);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+	glDepthMask(GL_FALSE);
+	glClearColor(p_color.r, p_color.g, p_color.b, OS::is_layered_allowed() ? p_color.a : 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	RID texture = GLES3::TextureStorage::texture_allocate();
+	GLES3::TextureStorage::texture_2d_initialize(texture, p_image);
+
+	Rect2 screenrect = RenderingServerTypes::get_splash_stretched_screen_rect(
+		p_image->get_size(), win_size, p_stretch_mode);
+
+#ifdef WINDOWS_ENABLED
+	if (!screen_flipped_y)
+#endif
+	{
+		// Flip Y.
+		screenrect.position.y = win_size.y - screenrect.position.y;
+		screenrect.size.y = -screenrect.size.y;
+	}
+
+	// Normalize texture coordinates to window size.
+	screenrect.position /= win_size;
+	screenrect.size /= win_size;
+
+	GLES3::Texture* t = GLES3::TextureStorage::get_texture(texture);
+	t->gl_set_filter(p_use_filter ? RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR
+								  : RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, t->tex_id);
+	GLES3::CopyEffects::copy_to_rect(screenrect);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	gl_end_frame(true);
+
+	GLES3::TextureStorage::texture_free(texture);
+}
+
+void RasterizerGLES3::bind_utilities()
+{
+	RendererUtilities::visibility_notifier_allocate =
+		&GLES3::Utilities::visibility_notifier_allocate;
+	RendererUtilities::visibility_notifier_initialize =
+		&GLES3::Utilities::visibility_notifier_initialize;
+	RendererUtilities::visibility_notifier_free = &GLES3::Utilities::visibility_notifier_free;
+	RendererUtilities::visibility_notifier_set_aabb =
+		&GLES3::Utilities::visibility_notifier_set_aabb;
+	RendererUtilities::visibility_notifier_get_aabb =
+		&GLES3::Utilities::visibility_notifier_get_aabb;
+	RendererUtilities::visibility_notifier_call = &GLES3::Utilities::visibility_notifier_call;
+
+	RendererUtilities::free = &GLES3::Utilities::free;
+	RendererUtilities::get_base_type = &GLES3::Utilities::get_base_type;
+	RendererUtilities::base_update_dependency = &GLES3::Utilities::base_update_dependency;
+
+	RendererUtilities::capture_timestamps_begin = &GLES3::Utilities::capture_timestamps_begin;
+	RendererUtilities::capture_timestamp = &GLES3::Utilities::capture_timestamp;
+	RendererUtilities::get_captured_timestamps_count =
+		&GLES3::Utilities::get_captured_timestamps_count;
+	RendererUtilities::get_captured_timestamps_frame =
+		&GLES3::Utilities::get_captured_timestamps_frame;
+	RendererUtilities::get_captured_timestamp_gpu_time =
+		&GLES3::Utilities::get_captured_timestamp_gpu_time;
+	RendererUtilities::get_captured_timestamp_cpu_time =
+		&GLES3::Utilities::get_captured_timestamp_cpu_time;
+	RendererUtilities::get_captured_timestamp_name =
+&GLES3::Utilities::get_captured_timestamp_name;
+
+	RendererUtilities::update_dirty_resources = &GLES3::Utilities::update_dirty_resources;
+	RendererUtilities::set_debug_generate_wireframes =
+		&GLES3::Utilities::set_debug_generate_wireframes;
+	RendererUtilities::has_os_feature = &GLES3::Utilities::has_os_feature;
+	RendererUtilities::update_memory_info = &GLES3::Utilities::update_memory_info;
+
+	RendererUtilities::get_rendering_info = &GLES3::Utilities::get_rendering_info;
+	RendererUtilities::get_video_adapter_name = &GLES3::Utilities::get_video_adapter_name;
+	RendererUtilities::get_video_adapter_vendor = &GLES3::Utilities::get_video_adapter_vendor;
+	RendererUtilities::get_video_adapter_type = &GLES3::Utilities::get_video_adapter_type;
+	RendererUtilities::get_video_adapter_api_version =
+		&GLES3::Utilities::get_video_adapter_api_version;
+
+	RendererUtilities::get_maximum_viewport_size = &GLES3::Utilities::get_maximum_viewport_size;
+	RendererUtilities::get_maximum_shader_varyings = &GLES3::Utilities::get_maximum_shader_varyings;
+	RendererUtilities::get_maximum_uniform_buffer_size =
+		&GLES3::Utilities::get_maximum_uniform_buffer_size;
+}
+
+#endif // GLES3_ENABLED
+
+// ============================================================================
+// Merged from drivers/gles3/effects/gles3_effects.cpp
+// ============================================================================
+
+#include "drivers/gles3/storage/utilities.h"
+
+#ifdef GLES3_ENABLED
+
+#include "core/config/project_settings.h"
+#include "core/os/os.h"
+#include "drivers/gles3/storage/texture_storage.h"
+#include "servers/rendering/rendering_server_enums.h"
+
+using namespace GLES3;
+
+// CopyEffects
+
+void CopyEffects::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+
+	data->copy.shader.initialize();
+	data->copy.shader_version = data->copy.shader.version_create();
+	data->copy.shader.version_bind_shader(data->copy.shader_version, CopyShaderGLES3::MODE_DEFAULT);
+
+	{ // Screen Triangle.
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+
+		const float qv[6] = {
+			-1.0f,
+			-1.0f,
+			3.0f,
+			-1.0f,
+			-1.0f,
+			3.0f,
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+	}
+
+	{ // Screen Quad
+		glGenBuffers(1, &data->quad);
+		glBindBuffer(GL_ARRAY_BUFFER, data->quad);
+
+		const float qv[12] = {
+			-1.0f,
+			-1.0f,
+			1.0f,
+			-1.0f,
+			1.0f,
+			1.0f,
+			-1.0f,
+			-1.0f,
+			1.0f,
+			1.0f,
+			-1.0f,
+			1.0f,
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, qv, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+
+		glGenVertexArrays(1, &data->quad_array);
+		glBindVertexArray(data->quad_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->quad);
+		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+	}
+}
+
+void CopyEffects::finalize()
+{
+	if (!data) {
+		return;
+	}
+
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	glDeleteBuffers(1, &data->quad);
+	glDeleteVertexArrays(1, &data->quad_array);
+	data->copy.shader.version_free(data->copy.shader_version);
+
+	memdelete(data);
+	data = nullptr;
+}
+
+void CopyEffects::copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb)
+{
+	ERR_FAIL_NULL(data);
+
+	uint64_t specializations = p_linear_to_srgb ? CopyShaderGLES3::CONVERT_LINEAR_TO_SRGB : 0;
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_COPY_SECTION, specializations);
+	if (!success) {
+		return;
+	}
+
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
+		CopyShaderGLES3::MODE_COPY_SECTION, specializations);
+	draw_screen_quad();
+}
+
+void CopyEffects::copy_to_rect_3d(
+	const Rect2& p_rect, float p_layer, int p_type, float p_lod, bool p_linear_to_srgb)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(p_type != Texture::TYPE_LAYERED && p_type != Texture::TYPE_3D);
+
+	CopyShaderGLES3::ShaderVariant variant = p_type == Texture::TYPE_LAYERED
+												 ? CopyShaderGLES3::MODE_COPY_SECTION_2D_ARRAY
+												 : CopyShaderGLES3::MODE_COPY_SECTION_3D;
+	uint64_t specializations = p_linear_to_srgb ? CopyShaderGLES3::CONVERT_LINEAR_TO_SRGB : 0;
+
+	bool success =
+		data->copy.shader.version_bind_shader(data->copy.shader_version, variant, specializations);
+	if (!success) {
+		return;
+	}
+
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version, variant,
+		specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::LAYER, p_layer, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::LOD, p_lod, data->copy.shader_version, variant, specializations);
+	draw_screen_quad();
+}
+
+void CopyEffects::copy_with_lens_distortion(const Rect2& p_rect, float p_layer,
+	const Vector2& p_eye_center, float p_k1, float p_k2, float p_upscale, float p_aspect_ration,
+	bool p_linear_to_srgb)
+{
+	ERR_FAIL_NULL(data);
+
+	CopyShaderGLES3::ShaderVariant variant = CopyShaderGLES3::MODE_LENS_DISTORTION;
+
+	uint64_t specializations = p_linear_to_srgb ? CopyShaderGLES3::CONVERT_LINEAR_TO_SRGB : 0;
+
+	bool success =
+		data->copy.shader.version_bind_shader(data->copy.shader_version, variant, specializations);
+	if (!success) {
+		return;
+	}
+
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version, variant,
+		specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::LAYER, p_layer, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::LOD, 0.0, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::EYE_CENTER, p_eye_center.x,
+		p_eye_center.y, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::K1, p_k1, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::K2, p_k2, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(
+		CopyShaderGLES3::UPSCALE, p_upscale, data->copy.shader_version, variant, specializations);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::ASPECT_RATIO, p_aspect_ration,
+		data->copy.shader_version, variant, specializations);
+
+	draw_screen_quad();
+}
+
+void CopyEffects::copy_to_and_from_rect(const Rect2& p_rect)
+{
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
+	if (!success) {
+		return;
+	}
+
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
+		CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
+		CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
+
+	draw_screen_quad();
+}
+
+void CopyEffects::copy_screen(float p_multiply)
+{
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_SCREEN);
+	if (!success) {
+		return;
+	}
+
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::MULTIPLY, p_multiply,
+		data->copy.shader_version, CopyShaderGLES3::MODE_SCREEN);
+
+	draw_screen_triangle();
+}
+
+void CopyEffects::copy_with_exposure(float p_exposure, float p_multiply)
+{
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
+	if (!success) {
+		return;
+	}
+
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::EXPOSURE, p_exposure,
+		data->copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::MULTIPLY, p_multiply,
+		data->copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
+
+	draw_screen_triangle();
+}
+
+void CopyEffects::copy_cube_to_rect(const Rect2& p_rect)
+{
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_OCTAHEDRAL);
+	if (!success) {
+		return;
+	}
+
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
+		CopyShaderGLES3::MODE_CUBE_TO_OCTAHEDRAL);
+	draw_screen_quad();
+}
+
+void CopyEffects::copy_cube_to_panorama(float p_mip_level)
+{
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
+	if (!success) {
+		return;
+	}
+
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::MIP_LEVEL, p_mip_level,
+		data->copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
+	draw_screen_quad();
+}
+
+// Intended for efficiently mipmapping textures.
+void CopyEffects::bilinear_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region)
+{
+	GLuint framebuffers[2];
+	glGenFramebuffers(2, framebuffers);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffers[0]);
+	glFramebufferTexture2D(
+		GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, p_source_texture, 0);
+
+	Rect2i source_region = p_region;
+	Rect2i dest_region = p_region;
+	for (int i = 1; i < p_mipmap_count; i++) {
+		dest_region.position.x >>= 1;
+		dest_region.position.y >>= 1;
+		dest_region.size = Size2i(dest_region.size.x >> 1, dest_region.size.y >> 1).maxi(1);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffers[i % 2]);
+		glFramebufferTexture2D(
+			GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, p_source_texture, i);
+		glBlitFramebuffer(source_region.position.x, source_region.position.y,
+			source_region.position.x + source_region.size.x,
+			source_region.position.y + source_region.size.y, dest_region.position.x,
+			dest_region.position.y, dest_region.position.x + dest_region.size.x,
+			dest_region.position.y + dest_region.size.y, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffers[i % 2]);
+		source_region = dest_region;
+	}
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	glDeleteFramebuffers(2, framebuffers);
+}
+
+// Intended for approximating a gaussian blur. Used for 2D backbuffer mipmaps. Slightly less
+// efficient than bilinear_blur().
+void CopyEffects::gaussian_blur(
+	GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region, const Size2i& p_size)
+{
+	ERR_FAIL_NULL(data);
+
+	GLuint framebuffer;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, p_source_texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	Size2i base_size = p_size;
+
+	Rect2i source_region = p_region;
+	Rect2i dest_region = p_region;
+
+	Size2 float_size = Size2(p_size);
+	Rect2 normalized_source_region = Rect2(p_region);
+	normalized_source_region.position = normalized_source_region.position / float_size;
+	normalized_source_region.size = normalized_source_region.size / float_size;
+	Rect2 normalized_dest_region = Rect2(p_region);
+	for (int i = 1; i < p_mipmap_count; i++) {
+		dest_region.position.x >>= 1;
+		dest_region.position.y >>= 1;
+		dest_region.size = Size2i(dest_region.size.x >> 1, dest_region.size.y >> 1).maxi(1);
+		base_size.x >>= 1;
+		base_size.y >>= 1;
+
+		glBindTexture(GL_TEXTURE_2D, p_source_texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, i - 1);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, i);
+		glFramebufferTexture2D(
+			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, p_source_texture, i);
+#ifdef DEV_ENABLED
+		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			WARN_PRINT("Could not bind Gaussian blur framebuffer, status: " +
+					   GLES3::TextureStorage::get_framebuffer_error(status));
+		}
+#endif
+
+		glViewport(0, 0, base_size.x, base_size.y);
+
+		bool success = data->copy.shader.version_bind_shader(
+			data->copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+		if (!success) {
+			return;
+		}
+
+		float_size = Size2(base_size);
+		normalized_dest_region.position = Size2(dest_region.position) / float_size;
+		normalized_dest_region.size = Size2(dest_region.size) / float_size;
+
+		data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION,
+			normalized_dest_region.position.x, normalized_dest_region.position.y,
+			normalized_dest_region.size.x, normalized_dest_region.size.y, data->copy.shader_version,
+			CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+		data->copy.shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION,
+			normalized_source_region.position.x, normalized_source_region.position.y,
+			normalized_source_region.size.x, normalized_source_region.size.y,
+			data->copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+		data->copy.shader.version_set_uniform(CopyShaderGLES3::PIXEL_SIZE, 1.0 / float_size.x,
+			1.0 / float_size.y, data->copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+
+		draw_screen_quad();
+
+		source_region = dest_region;
+		normalized_source_region = normalized_dest_region;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	glDeleteFramebuffers(1, &framebuffer);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, p_mipmap_count - 1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glViewport(0, 0, p_size.x, p_size.y);
+}
+
+void CopyEffects::set_color(const Color& p_color, const Rect2i& p_region)
+{
+	ERR_FAIL_NULL(data);
+
+	bool success = data->copy.shader.version_bind_shader(
+		data->copy.shader_version, CopyShaderGLES3::MODE_SIMPLE_COLOR);
+	if (!success) {
+		return;
+	}
+
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_region.position.x,
+		p_region.position.y, p_region.size.x, p_region.size.y, data->copy.shader_version,
+		CopyShaderGLES3::MODE_SIMPLE_COLOR);
+	data->copy.shader.version_set_uniform(CopyShaderGLES3::COLOR_IN, p_color,
+		data->copy.shader_version, CopyShaderGLES3::MODE_SIMPLE_COLOR);
+	draw_screen_quad();
+}
+
+void CopyEffects::draw_screen_triangle()
+{
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->screen_triangle_array);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glBindVertexArray(0);
+}
+
+void CopyEffects::draw_screen_quad()
+{
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->quad_array);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+}
+
+// CubemapFilter
+
+void CubemapFilter::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+
+	{
+		String defines;
+		defines += "\n#define MAX_SAMPLE_COUNT " + itos(data->ggx_samples) + "\n";
+		data->cubemap_filter.shader.initialize(defines);
+		data->cubemap_filter.shader_version = data->cubemap_filter.shader.version_create();
+	}
+
+	{ // Screen Triangle.
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+
+		const float qv[6] = {
+			-1.0f,
+			-1.0f,
+			-1.0f,
+			3.0f,
+			3.0f,
+			-1.0f,
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+	}
+}
+
+void CubemapFilter::finalize()
+{
+	if (!data) {
+		return;
+	}
+
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	data->cubemap_filter.shader.version_free(data->cubemap_filter.shader_version);
+
+	memdelete(data);
+	data = nullptr;
+}
+
+static Vector3 importance_sample_GGX(Vector2 xi, float roughness4)
+{
+	// Compute distribution direction
+	float phi = 2.0 * Math::PI * xi.x;
+	float cos_theta = std::sqrt((1.0 - xi.y) / (1.0 + (roughness4 - 1.0) * xi.y));
+	float sin_theta = std::sqrt(1.0 - cos_theta * cos_theta);
+
+	// Convert to spherical direction
+	Vector3 half_vector;
+	half_vector.x = sin_theta * std::cos(phi);
+	half_vector.y = sin_theta * std::sin(phi);
+	half_vector.z = cos_theta;
+
+	return half_vector;
+}
+
+static float distribution_GGX(float NdotH, float roughness4)
+{
+	float NdotH2 = NdotH * NdotH;
+	float denom = (NdotH2 * (roughness4 - 1.0) + 1.0);
+	denom = Math::PI * denom * denom;
+
+	return roughness4 / denom;
+}
+
+static float radical_inverse_vdC(uint32_t bits)
+{
+	bits = (bits << 16) | (bits >> 16);
+	bits = ((bits & 0x55555555) << 1) | ((bits & 0xAAAAAAAA) >> 1);
+	bits = ((bits & 0x33333333) << 2) | ((bits & 0xCCCCCCCC) >> 2);
+	bits = ((bits & 0x0F0F0F0F) << 4) | ((bits & 0xF0F0F0F0) >> 4);
+	bits = ((bits & 0x00FF00FF) << 8) | ((bits & 0xFF00FF00) >> 8);
+
+	return float(bits) * 2.3283064365386963e-10;
+}
+
+static Vector2 hammersley(uint32_t i, uint32_t N)
+{
+	return Vector2(float(i) / float(N), radical_inverse_vdC(i));
+}
+
+void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap,
+	GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer)
+{
+	ERR_FAIL_NULL(data);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, p_source_cubemap);
+	glBindFramebuffer(GL_FRAMEBUFFER, p_dest_framebuffer);
+
+	CubemapFilterShaderGLES3::ShaderVariant mode = CubemapFilterShaderGLES3::MODE_DEFAULT;
+
+	if (p_layer == 0) {
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+		// Copy over base layer without filtering.
+		mode = CubemapFilterShaderGLES3::MODE_COPY;
+	}
+
+	int size = p_source_size >> p_layer;
+	glViewport(0, 0, size, size);
+	glBindVertexArray(data->screen_triangle_array);
+
+	bool success =
+		data->cubemap_filter.shader.version_bind_shader(data->cubemap_filter.shader_version, mode);
+	if (!success) {
+		return;
+	}
+
+	if (p_layer > 0) {
+		const uint32_t sample_counts[5] = {
+			1, data->ggx_samples / 16, data->ggx_samples / 8, data->ggx_samples / 4, data->ggx_samples};
+		uint32_t sample_count = sample_counts[MIN(4, p_layer)];
+
+		float roughness = float(p_layer) / (p_mipmap_count - 1);
+		roughness *= roughness; // Convert to non-perceptual roughness.
+		float roughness4 = roughness * roughness;
+		roughness4 *= roughness4;
+
+		float solid_angle_texel = 4.0 * Math::PI / float(6 * size * size);
+
+		LocalVector<float> sample_directions;
+		sample_directions.resize(4 * sample_count);
+
+		uint32_t index = 0;
+		float weight = 0.0;
+		for (uint32_t i = 0; i < sample_count; i++) {
+			Vector2 xi = hammersley(i, sample_count);
+			Vector3 dir = importance_sample_GGX(xi, roughness4);
+			Vector3 light_vec = (2.0 * dir.z * dir - Vector3(0.0, 0.0, 1.0));
+
+			if (light_vec.z <= 0.0) {
+				continue;
+			}
+
+			sample_directions[index * 4] = light_vec.x;
+			sample_directions[index * 4 + 1] = light_vec.y;
+			sample_directions[index * 4 + 2] = light_vec.z;
+
+			float D = distribution_GGX(dir.z, roughness4);
+			float pdf = D * dir.z / (4.0 * dir.z) + 0.0001;
+
+			float solid_angle_sample = 1.0 / (float(sample_count) * pdf + 0.0001);
+
+			float mip_level =
+				MAX(0.5 * std::log2(solid_angle_sample / solid_angle_texel) + float(MAX(1, p_layer - 3)),
+					1.0);
+
+			sample_directions[index * 4 + 3] = mip_level;
+			weight += light_vec.z;
+			index++;
+		}
+
+		glUniform4fv(
+			data->cubemap_filter.shader.version_get_uniform(
+				CubemapFilterShaderGLES3::SAMPLE_DIRECTIONS_MIP,
+				data->cubemap_filter.shader_version, mode),
+			sample_count, sample_directions.ptr());
+		data->cubemap_filter.shader.version_set_uniform(
+			CubemapFilterShaderGLES3::WEIGHT, weight, data->cubemap_filter.shader_version, mode);
+		data->cubemap_filter.shader.version_set_uniform(
+			CubemapFilterShaderGLES3::SAMPLE_COUNT, index, data->cubemap_filter.shader_version, mode);
+	}
+
+	for (int i = 0; i < 6; i++) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, p_dest_cubemap, p_layer);
+#ifdef DEBUG_ENABLED
+		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			WARN_PRINT("Could not bind sky radiance face: " + itos(i) +
+					   ", status: " + GLES3::TextureStorage::get_framebuffer_error(status));
+		}
+#endif
+		data->cubemap_filter.shader.version_set_uniform(
+			CubemapFilterShaderGLES3::FACE_ID, i, data->cubemap_filter.shader_version, mode);
+
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+	}
+	glBindVertexArray(0);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+}
+
+// FeedEffects
+
+void FeedEffects::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+
+	data->feed.shader.initialize();
+	data->feed.shader_version = data->feed.shader.version_create();
+	data->feed.shader.version_bind_shader(data->feed.shader_version, FeedShaderGLES3::MODE_DEFAULT);
+
+	{ // Screen Triangle.
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+
+		const float qv[6] = {
+			-1.0f,
+			-1.0f,
+			3.0f,
+			-1.0f,
+			-1.0f,
+			3.0f,
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+	}
+}
+
+void FeedEffects::finalize()
+{
+	if (!data) {
+		return;
+	}
+
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	data->feed.shader.version_free(data->feed.shader_version);
+
+	memdelete(data);
+	data = nullptr;
+}
+
+void FeedEffects::draw()
+{
+	ERR_FAIL_NULL(data);
+
+	bool success = data->feed.shader.version_bind_shader(
+		data->feed.shader_version, FeedShaderGLES3::MODE_DEFAULT, FeedShaderGLES3::USE_EXTERNAL_SAMPLER);
+	if (!success) {
+		OS::print("Godot : FeedShaderGLES3 Could not bind version_bind_shader USE_EXTERNAL_SAMPLER");
+		return;
+	}
+
+	draw_screen_triangle();
+}
+
+void FeedEffects::draw_screen_triangle()
+{
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->screen_triangle_array);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glBindVertexArray(0);
+}
+
+// Glow
+
+void Glow::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+
+	data->glow.shader.initialize();
+	data->glow.shader_version = data->glow.shader.version_create();
+
+	{ // Screen Triangle.
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+
+		const float qv[6] = {
+			-1.0f,
+			-1.0f,
+			3.0f,
+			-1.0f,
+			-1.0f,
+			3.0f,
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+	}
+}
+
+void Glow::finalize()
+{
+	if (!data) {
+		return;
+	}
+
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	data->glow.shader.version_free(data->glow.shader_version);
+
+	memdelete(data);
+	data = nullptr;
+}
+
+void Glow::_draw_screen_triangle()
+{
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->screen_triangle_array);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glBindVertexArray(0);
+}
+
+void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level* p_glow_buffers,
+	uint32_t p_view, bool p_use_multiview)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(p_source_color == 0);
+	ERR_FAIL_COND(p_glow_buffers[3].color == 0);
+
+	// Reset some OpenGL state...
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+
+	// Start with our filter pass
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, p_glow_buffers[0].fbo);
+		glViewport(0, 0, p_glow_buffers[0].size.x, p_glow_buffers[0].size.y);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(p_use_multiview ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, p_source_color);
+
+		uint64_t specialization = p_use_multiview ? GlowShaderGLES3::USE_MULTIVIEW : 0;
+		bool success = data->glow.shader.version_bind_shader(
+			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		if (!success) {
+			return;
+		}
+
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
+			1.0 / p_glow_buffers[0].size.x, 1.0 / p_glow_buffers[0].size.y,
+			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::VIEW, float(p_view),
+			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::LUMINANCE_MULTIPLIER,
+			data->luminance_multiplier, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+			specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_BLOOM, data->glow_bloom,
+			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_THRESHOLD,
+			data->glow_hdr_bleed_threshold, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+			specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_SCALE,
+			data->glow_hdr_bleed_scale, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+			specialization);
+		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_LUMINANCE_CAP,
+			data->glow_hdr_luminance_cap, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+			specialization);
+
+		_draw_screen_triangle();
+	}
+
+	// Continue with downsampling
+	{
+		bool success = data->glow.shader.version_bind_shader(
+			data->glow.shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE, 0);
+		if (!success) {
+			return;
+		}
+
+		for (int i = 1; i < 4; i++) {
+			glBindFramebuffer(GL_FRAMEBUFFER, p_glow_buffers[i].fbo);
+			glViewport(0, 0, p_glow_buffers[i].size.x, p_glow_buffers[i].size.y);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, p_glow_buffers[i - 1].color);
+
+			data->glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
+				1.0 / p_glow_buffers[i].size.x, 1.0 / p_glow_buffers[i].size.y,
+				data->glow.shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE);
+
+			_draw_screen_triangle();
+		}
+	}
+
+	// Now upsample
+	{
+		bool success = data->glow.shader.version_bind_shader(
+			data->glow.shader_version, GlowShaderGLES3::MODE_UPSAMPLE, 0);
+		if (!success) {
+			return;
+		}
+
+		for (int i = 2; i >= 0; i--) {
+			glBindFramebuffer(GL_FRAMEBUFFER, p_glow_buffers[i].fbo);
+			glViewport(0, 0, p_glow_buffers[i].size.x, p_glow_buffers[i].size.y);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, p_glow_buffers[i + 1].color);
+
+			data->glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
+				1.0 / p_glow_buffers[i].size.x, 1.0 / p_glow_buffers[i].size.y,
+				data->glow.shader_version, GlowShaderGLES3::MODE_UPSAMPLE);
+
+			_draw_screen_triangle();
+		}
+	}
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glUseProgram(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+}
+
+// PostEffects
+
+void PostEffects::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+
+	data->post.shader.initialize();
+	data->post.shader_version = data->post.shader.version_create();
+	data->post.shader.version_bind_shader(data->post.shader_version, PostShaderGLES3::MODE_DEFAULT);
+
+	{ // Screen Triangle.
+		glGenBuffers(1, &data->screen_triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+
+		const float qv[6] = {
+			-1.0f,
+			-1.0f,
+			3.0f,
+			-1.0f,
+			-1.0f,
+			3.0f,
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+
+		glGenVertexArrays(1, &data->screen_triangle_array);
+		glBindVertexArray(data->screen_triangle_array);
+		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
+		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+	}
+}
+
+void PostEffects::finalize()
+{
+	if (!data) {
+		return;
+	}
+
+	glDeleteBuffers(1, &data->screen_triangle);
+	glDeleteVertexArrays(1, &data->screen_triangle_array);
+	data->post.shader.version_free(data->post.shader_version);
+
+	memdelete(data);
+	data = nullptr;
+}
+
+void PostEffects::_draw_screen_triangle()
+{
+	ERR_FAIL_NULL(data);
+
+	glBindVertexArray(data->screen_triangle_array);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glBindVertexArray(0);
+}
+
+void PostEffects::post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuint p_source_color,
+	GLuint p_source_depth, bool p_ssao_enabled, int p_ssao_quality_level, float p_ssao_strength,
+	float p_ssao_radius, Size2i p_source_size, float p_luminance_multiplier,
+	const Glow::Level* p_glow_buffers, float p_glow_intensity, float p_srgb_white, uint32_t p_view,
+	bool p_use_multiview, uint64_t p_spec_constants, bool p_bilinear_filtering)
+{
+	ERR_FAIL_NULL(data);
+
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	glDisable(GL_BLEND);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, p_dest_framebuffer);
+	glViewport(0, 0, p_dest_size.x, p_dest_size.y);
+
+	PostShaderGLES3::ShaderVariant mode = PostShaderGLES3::MODE_DEFAULT;
+	uint64_t flags = p_spec_constants;
+	if (p_use_multiview) {
+		flags |= PostShaderGLES3::USE_MULTIVIEW;
+	}
+	if (p_glow_buffers != nullptr) {
+		flags |= PostShaderGLES3::USE_GLOW;
+	}
+	if (p_ssao_enabled) {
+		if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_VERY_LOW) {
+			flags |= PostShaderGLES3::USE_SSAO_ABYSS;
+		}
+		else if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_LOW) {
+			flags |= PostShaderGLES3::USE_SSAO_LOW;
+		}
+		else if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_HIGH) {
+			flags |= PostShaderGLES3::USE_SSAO_HIGH;
+		}
+		else if (p_ssao_quality_level == RSE::ENV_SSAO_QUALITY_ULTRA) {
+			flags |= PostShaderGLES3::USE_SSAO_MEGA;
+		}
+		else {
+			flags |= PostShaderGLES3::USE_SSAO_MED;
+		}
+	}
+	if (p_luminance_multiplier != 1.0) {
+		flags |= PostShaderGLES3::USE_LUMINANCE_MULTIPLIER;
+	}
+
+	bool success = data->post.shader.version_bind_shader(data->post.shader_version, mode, flags);
+	if (!success) {
+		return;
+	}
+
+	GLenum texture_target = p_use_multiview ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(texture_target, p_source_color);
+
+	glTexParameteri(
+		texture_target, GL_TEXTURE_MAG_FILTER, p_bilinear_filtering ? GL_LINEAR : GL_NEAREST);
+	glTexParameteri(
+		texture_target, GL_TEXTURE_MIN_FILTER, p_bilinear_filtering ? GL_LINEAR : GL_NEAREST);
+
+	if (p_ssao_enabled) {
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(texture_target, p_source_depth);
+		glTexParameteri(texture_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // Thanks to mrjustaguy!
+		glTexParameteri(texture_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::SSAO_INTENSITY, p_ssao_strength, data->post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::SSAO_RADIUS_FRAC, p_ssao_radius, data->post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::SSAO_PRN_UV, // This converts the UV coordinate into a pseudo-random
+										  // number.
+			p_source_size.x * 1.087f * ((1.0f + sqrt(5.0f)) / 2.0f),
+			p_source_size.y * 1.087f * ((9.0f + sqrt(221.0f)) / 10.0f), data->post.shader_version,
+			mode, flags);
+	}
+
+	if (p_glow_buffers != nullptr) {
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, p_glow_buffers[0].color);
+
+		data->post.shader.version_set_uniform(PostShaderGLES3::PIXEL_SIZE, 1.0 / p_source_size.x,
+			1.0 / p_source_size.y, data->post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::GLOW_INTENSITY, p_glow_intensity, data->post.shader_version, mode, flags);
+		data->post.shader.version_set_uniform(
+			PostShaderGLES3::SRGB_WHITE, p_srgb_white, data->post.shader_version, mode, flags);
+	}
+
+	data->post.shader.version_set_uniform(
+		PostShaderGLES3::VIEW, float(p_view), data->post.shader_version, mode, flags);
+	data->post.shader.version_set_uniform(PostShaderGLES3::LUMINANCE_MULTIPLIER,
+		p_luminance_multiplier, data->post.shader_version, mode, flags);
+
+	_draw_screen_triangle();
+
+	// Reset state
+	if (p_glow_buffers != nullptr) {
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	if (p_ssao_enabled) {
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(texture_target, 0);
+	}
+
+	// Return back to nearest
+	glActiveTexture(GL_TEXTURE0);
+	glTexParameteri(texture_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(texture_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glBindTexture(texture_target, 0);
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glUseProgram(0);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+}
+
+#endif // GLES3_ENABLED

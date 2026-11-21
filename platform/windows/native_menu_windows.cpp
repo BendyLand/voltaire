@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "native_menu_windows.h"
+#include "platform/windows/display_server_windows.h"
 
 #include "display_server_windows.h"
 

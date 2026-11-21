@@ -28,8 +28,16 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
+// --- Inlined from modules/astcenc/image_compress_astcenc.h ---
+#include "core/io/image.h"
 
-#include "image_compress_astcenc.h"
+#ifdef TOOLS_ENABLED
+void _compress_astc(Image *r_img, Image::UsedChannels p_channels, Image::CompressProfile p_profile);
+#endif
+
+void _decompress_astc(Image *r_img);
+
+// --- End modules/astcenc/image_compress_astcenc.h ---
 #include "register_types.h"
 
 #include "core/os/os.h"

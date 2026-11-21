@@ -32,7 +32,7 @@
 #include "editor/export/editor_export.h"
 #include "export.h"
 // --- Inlined from platform/ios/export/export_plugin.h ---
-#include "editor/export/apple_export_utils.h"
+#include "editor/export/editor_export_platform.h"
 
 class EditorExportPlatformIOS : public EditorExportPlatformAppleEmbedded
 {

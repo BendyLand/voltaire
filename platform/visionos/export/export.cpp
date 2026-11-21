@@ -32,7 +32,7 @@
 #include "editor/export/editor_export.h"
 #include "export.h"
 // --- Inlined from platform/visionos/export/export_plugin.h ---
-#include "editor/export/apple_export_utils.h"
+#include "editor/export/editor_export_platform.h"
 
 class EditorExportPlatformVisionOS : public EditorExportPlatformAppleEmbedded
 {

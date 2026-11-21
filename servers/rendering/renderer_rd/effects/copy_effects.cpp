@@ -384,7 +384,7 @@ MotionVectorsStore::~MotionVectorsStore() { motion_shader.version_free(shader_ve
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/storage/camera_attributes_storage.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef XR_DISABLED
 #include "servers/xr/xr_interface.h"

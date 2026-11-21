@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "api/javascript_bridge_singleton.h"
+#include "platform/web/os_web.h"
 
 #include "os_web.h"
 

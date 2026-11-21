@@ -31,15 +31,15 @@
 
 #include "os_android.h"
 
-#include "dir_access_jandroid.h"
+#include "platform/android/os_android.h"
 #include "display_server_android.h"
-#include "file_access_filesystem_jandroid.h"
+#include "platform/android/os_android.h"
 #include "java_godot_io_wrapper.h"
 #include "java_godot_wrapper.h"
-#include "net_socket_android.h"
+#include "platform/android/os_android.h"
 
 #ifndef TOOLS_ENABLED
-#include "file_access_android.h"
+#include "platform/android/os_android.h"
 #endif
 
 #include "core/config/engine.h"

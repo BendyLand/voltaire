@@ -51,12 +51,255 @@
 #include "drivers/register_driver_types.h"
 #include "main.h"
 #include "main/app_icon.gen.h"
-#include "main/main_timer_sync.h"
-#include "main/performance.h"
+// --- Inlined from main/main_timer_sync.h ---
+#include <cstdint>
+
+struct MainFrameTime {
+	double process_step; // delta time to advance during process()
+	int physics_steps; // number of times to iterate the physics engine
+	double interpolation_fraction; // fraction through the current physics tick
+
+	void clamp_process_step(double min_process_step, double max_process_step);
+};
+
+class MainTimerSync {
+	class DeltaSmoother {
+	public:
+		// pass the recorded delta, returns a smoothed delta
+		int64_t smooth_delta(int64_t p_delta);
+
+	private:
+		void made_new_estimate();
+		void update_refresh_rate_estimator(int64_t p_delta);
+		bool fps_allows_smoothing(int64_t p_delta);
+
+		// estimated vsync delta (monitor refresh rate)
+		int64_t _vsync_delta = 16666;
+
+		// keep track of accumulated time so we know how many vsyncs to advance by
+		int64_t _leftover_time = 0;
+
+		// keep a rough measurement of the FPS as we run.
+		// If this drifts a long way below or above the refresh rate, the machine
+		// is struggling to keep up, and we can switch off smoothing. This
+		// also deals with the case that the user has overridden the vsync in the GPU settings,
+		// in which case we don't want to try smoothing.
+		static const int MEASURE_FPS_OVER_NUM_FRAMES = 64;
+
+		int64_t _measurement_time = 0;
+		int64_t _measurement_frame_count = 0;
+		int64_t _measurement_end_frame = MEASURE_FPS_OVER_NUM_FRAMES;
+		int64_t _measurement_start_time = 0;
+		bool _measurement_allows_smoothing = true;
+
+		// we can estimate the fps by growing it on condition
+		// that a large proportion of frames are higher than the current estimate.
+		int32_t _estimated_fps = 0;
+		int32_t _hits_at_estimated = 0;
+		int32_t _hits_above_estimated = 0;
+		int32_t _hits_below_estimated = 0;
+		int32_t _hits_one_above_estimated = 0;
+		int32_t _hits_one_below_estimated = 0;
+		bool _estimate_complete = false;
+		bool _estimate_locked = false;
+
+		// data for averaging the delta over a second or so
+		// to prevent spurious values
+		int64_t _estimator_total_delta = 0;
+		int32_t _estimator_delta_readings = 0;
+	} _delta_smoother;
+
+	// wall clock time measured on the main thread
+	uint64_t last_cpu_ticks_usec = 0;
+	uint64_t current_cpu_ticks_usec = 0;
+
+	// logical game time since last physics timestep
+	double time_accum = 0;
+
+	// current difference between wall clock time and reported sum of process_steps
+	double time_deficit = 0;
+
+	// number of frames back for keeping accumulated physics steps roughly constant.
+	// value of 12 chosen because that is what is required to make 144 Hz monitors
+	// behave well with 60 Hz physics updates. The only worse commonly available refresh
+	// would be 85, requiring CONTROL_STEPS = 17.
+	static const int CONTROL_STEPS = 12;
+
+	// sum of physics steps done over the last (i+1) frames
+	int accumulated_physics_steps[CONTROL_STEPS];
+
+	// typical value for accumulated_physics_steps[i] is either this or this plus one
+	int typical_physics_steps[CONTROL_STEPS];
+
+	int fixed_fps = 0;
+
+protected:
+	// returns the fraction of p_physics_step required for the timer to overshoot
+	// before advance_core considers changing the physics_steps return from
+	// the typical values as defined by typical_physics_steps
+	double get_physics_jitter_fix();
+
+	// gets our best bet for the average number of physics steps per render frame
+	// return value: number of frames back this data is consistent
+	int get_average_physics_steps(double &p_min, double &p_max);
+
+	// advance physics clock by p_process_step, return appropriate number of steps to simulate
+	MainFrameTime advance_core(double p_physics_step, int p_physics_ticks_per_second, double p_process_step);
+
+	// calls advance_core, keeps track of deficit it adds to animaption_step, make sure the deficit sum stays close to zero
+	MainFrameTime advance_checked(double p_physics_step, int p_physics_ticks_per_second, double p_process_step);
+
+	// determine wall clock step since last iteration
+	double get_cpu_process_step();
+
+public:
+	MainTimerSync();
+
+	// start the clock
+	void init(uint64_t p_cpu_ticks_usec);
+	// set measured wall clock time
+	void set_cpu_ticks_usec(uint64_t p_cpu_ticks_usec);
+	//set fixed fps
+	void set_fixed_fps(int p_fixed_fps);
+
+	// advance one frame, return timesteps to take
+	MainFrameTime advance(double p_physics_step, int p_physics_ticks_per_second);
+};
+
+// --- End main/main_timer_sync.h ---
+// --- Inlined from main/performance.h ---
+#include "core/templates/hash_map.h"
+
+#define PERF_WARN_OFFLINE_FUNCTION
+#define PERF_WARN_PROCESS_SYNC
+
+template <typename T> class TypedArray;
+
+class Performance final
+{
+	static inline bool _initialized = false;
+
+	static int _get_node_count();
+	static int _get_orphan_node_count();
+
+	static inline double _process_time = 0.0;
+	static inline double _physics_process_time = 0.0;
+	static inline double _navigation_process_time = 0.0;
+	static inline uint64_t _monitor_modification_time = 0;
+
+public:
+	enum Monitor
+	{
+		TIME_FPS,
+		TIME_PROCESS,
+		TIME_PHYSICS_PROCESS,
+		TIME_NAVIGATION_PROCESS,
+		MEMORY_STATIC,
+		MEMORY_STATIC_MAX,
+		MEMORY_MESSAGE_BUFFER_MAX,
+		OBJECT_COUNT,
+		OBJECT_RESOURCE_COUNT,
+		OBJECT_NODE_COUNT,
+		OBJECT_ORPHAN_NODE_COUNT,
+		RENDER_TOTAL_OBJECTS_IN_FRAME,
+		RENDER_TOTAL_PRIMITIVES_IN_FRAME,
+		RENDER_TOTAL_DRAW_CALLS_IN_FRAME,
+		RENDER_VIDEO_MEM_USED,
+		RENDER_TEXTURE_MEM_USED,
+		RENDER_BUFFER_MEM_USED,
+		PHYSICS_2D_ACTIVE_OBJECTS,
+		PHYSICS_2D_COLLISION_PAIRS,
+		PHYSICS_2D_ISLAND_COUNT,
+		PHYSICS_3D_ACTIVE_OBJECTS,
+		PHYSICS_3D_COLLISION_PAIRS,
+		PHYSICS_3D_ISLAND_COUNT,
+		AUDIO_OUTPUT_LATENCY,
+		// Deprecated, use the 2D/3D specific ones instead.
+		NAVIGATION_ACTIVE_MAPS,
+		NAVIGATION_REGION_COUNT,
+		NAVIGATION_AGENT_COUNT,
+		NAVIGATION_LINK_COUNT,
+		NAVIGATION_POLYGON_COUNT,
+		NAVIGATION_EDGE_COUNT,
+		NAVIGATION_EDGE_MERGE_COUNT,
+		NAVIGATION_EDGE_CONNECTION_COUNT,
+		NAVIGATION_EDGE_FREE_COUNT,
+		NAVIGATION_OBSTACLE_COUNT,
+		PIPELINE_COMPILATIONS_CANVAS,
+		PIPELINE_COMPILATIONS_MESH,
+		PIPELINE_COMPILATIONS_SURFACE,
+		PIPELINE_COMPILATIONS_DRAW,
+		PIPELINE_COMPILATIONS_SPECIALIZATION,
+		NAVIGATION_2D_ACTIVE_MAPS,
+		NAVIGATION_2D_REGION_COUNT,
+		NAVIGATION_2D_AGENT_COUNT,
+		NAVIGATION_2D_LINK_COUNT,
+		NAVIGATION_2D_POLYGON_COUNT,
+		NAVIGATION_2D_EDGE_COUNT,
+		NAVIGATION_2D_EDGE_MERGE_COUNT,
+		NAVIGATION_2D_EDGE_CONNECTION_COUNT,
+		NAVIGATION_2D_EDGE_FREE_COUNT,
+		NAVIGATION_2D_OBSTACLE_COUNT,
+#ifndef _3D_DISABLED
+		NAVIGATION_3D_ACTIVE_MAPS,
+		NAVIGATION_3D_REGION_COUNT,
+		NAVIGATION_3D_AGENT_COUNT,
+		NAVIGATION_3D_LINK_COUNT,
+		NAVIGATION_3D_POLYGON_COUNT,
+		NAVIGATION_3D_EDGE_COUNT,
+		NAVIGATION_3D_EDGE_MERGE_COUNT,
+		NAVIGATION_3D_EDGE_CONNECTION_COUNT,
+		NAVIGATION_3D_EDGE_FREE_COUNT,
+		NAVIGATION_3D_OBSTACLE_COUNT,
+#endif // _3D_DISABLED
+		MONITOR_MAX
+	};
+
+	enum MonitorType
+	{
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_PERCENTAGE,
+	};
+
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
+
+	static double get_monitor(Monitor p_monitor);
+	static String get_monitor_name(Monitor p_monitor);
+
+	static MonitorType get_monitor_type(Monitor p_monitor);
+
+	static void set_process_time(double p_pt);
+	static void set_physics_process_time(double p_pt);
+	static void set_navigation_process_time(double p_pt);
+
+	static uint64_t get_monitor_modification_time();
+
+	Performance() = delete;
+	Performance(const Performance&) = delete;
+	Performance& operator=(const Performance&) = delete;
+	~Performance() = delete;
+
+private:
+	class MonitorCall
+	{
+		MonitorType _type = MONITOR_TYPE_QUANTITY;
+
+	public:
+		MonitorCall();
+
+		inline MonitorType get_monitor_type() const { return _type; }
+	};
+};
+
+// --- End main/performance.h ---
 #include "main/splash.gen.h"
 #include "modules/register_module_types.h"
 #include "platform/register_platform_apis.h"
-#include "scene/gui/color_picker.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/property_list_helper.h"
@@ -75,7 +318,6 @@
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/storage/texture_storage.h"
 #include "servers/text/text_server.h"
-#include "servers/text/text_server_dummy.h"
 
 // 2D
 #ifndef NAVIGATION_2D_DISABLED
@@ -110,7 +352,7 @@
 #include "editor/editor_ui.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/file_system/editor_paths.h"
-#include "editor/project_manager/project_manager.h"
+#include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
 
 #if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
@@ -123,7 +365,46 @@
 #endif // TOOLS_ENABLED
 
 #if defined(STEAMAPI_ENABLED)
-#include "main/steam_tracker.h"
+// --- Inlined from main/steam_tracker.h ---
+#if defined(STEAMAPI_ENABLED)
+
+// SteamTracker is used to load SteamAPI dynamic library and initialize
+// the interface, this notifies Steam that Godot editor is running and
+// allow tracking of the usage time of child instances of the engine
+// (e.g., opened projects).
+//
+// Currently, SteamAPI is not used by the engine in any way, and is not
+// exposed to the scripting APIs.
+
+enum SteamAPIInitResult {
+	SteamAPIInitResult_OK = 0,
+	SteamAPIInitResult_FailedGeneric = 1,
+	SteamAPIInitResult_NoSteamClient = 2,
+	SteamAPIInitResult_VersionMismatch = 3,
+};
+
+// https://partner.steamgames.com/doc/api/steam_api#SteamAPI_Init
+typedef bool (*SteamAPI_InitFunction)();
+typedef SteamAPIInitResult (*SteamAPI_InitFlatFunction)(char *r_err_msg);
+
+// https://partner.steamgames.com/doc/api/steam_api#SteamAPI_Shutdown
+typedef void (*SteamAPI_ShutdownFunction)();
+
+class SteamTracker {
+	void *steam_library_handle = nullptr;
+	SteamAPI_InitFunction steam_init_function = nullptr;
+	SteamAPI_InitFlatFunction steam_init_flat_function = nullptr;
+	SteamAPI_ShutdownFunction steam_shutdown_function = nullptr;
+	bool steam_initialized = false;
+
+public:
+	SteamTracker();
+	~SteamTracker();
+};
+
+#endif // STEAMAPI_ENABLED
+
+// --- End main/steam_tracker.h ---
 #endif
 
 #include "modules/modules_enabled.gen.h" // For mono.
@@ -4312,7 +4593,6 @@ void Main::setup_boot_logo() {}
 // Merged from main/main_timer_sync.cpp
 // ============================================================================
 
-#include "main_timer_sync.h"
 
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
@@ -4832,7 +5112,7 @@ MainFrameTime MainTimerSync::advance(double p_physics_step, int p_physics_ticks_
 
 #include "core/config/engine.h"
 #include "core/os/os.h"
-#include "performance.h"
+
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "servers/audio/audio_server.h"
@@ -5321,7 +5601,6 @@ int Performance::_get_node_count() { return 0; }
 
 #if defined(STEAMAPI_ENABLED)
 
-#include "steam_tracker.h"
 
 #include "core/io/file_access.h"
 #include "core/os/os.h"

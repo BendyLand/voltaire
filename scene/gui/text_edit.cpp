@@ -36,7 +36,7 @@
 #include "core/os/keyboard.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
-#include "core/string/alt_codes.h"
+#include "core/string/ustring.h"
 #include "core/string/string_builder.h"
 #include "scene/gui/label.h"
 #include "scene/main/window.h"

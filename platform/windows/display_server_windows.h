@@ -41,7 +41,7 @@
 #include "servers/rendering/renderer_compositor.h"
 
 #ifdef XAUDIO2_ENABLED
-#include "drivers/xaudio2/audio_driver_xaudio2.h"
+#include "platform/windows/os_windows.h"
 #endif
 
 #if defined(RD_ENABLED)
@@ -50,9 +50,109 @@
 
 #if defined(GLES3_ENABLED)
 #if defined(ANGLE_ENABLED)
-#include "gl_manager_windows_angle.h"
+// --- Folded from platform/windows/gl_manager_windows_angle.h ---
+#if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
+
+#include "drivers/egl/egl_manager.h"
+#include "servers/display/display_server_enums.h"
+
+#include <windows.h>
+
+class GLManagerANGLE_Windows : public EGLManager {
+private:
+	virtual const char *_get_platform_extension_name() const override;
+	virtual EGLenum _get_platform_extension_enum() const override;
+	virtual EGLenum _get_platform_api_enum() const override;
+	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
+	virtual Vector<EGLint> _get_platform_context_attribs() const override;
+
+public:
+	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height);
+
+	GLManagerANGLE_Windows() {}
+	~GLManagerANGLE_Windows() {}
+};
+
+#endif // WINDOWS_ENABLED && GLES3_ENABLED
+
+// --- End platform/windows/gl_manager_windows_angle.h ---
 #endif // ANGLE_ENABLED
-#include "gl_manager_windows_native.h"
+// --- Folded from platform/windows/gl_manager_windows_native.h ---
+#if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
+
+#include "core/templates/local_vector.h"
+#include "core/templates/rb_map.h"
+#include "servers/display/display_server_enums.h"
+
+#include <windows.h>
+
+typedef bool(APIENTRY *PFNWGLSWAPINTERVALEXTPROC)(int interval);
+typedef int(APIENTRY *PFNWGLGETSWAPINTERVALEXTPROC)(void);
+
+class GLManagerNative_Windows {
+private:
+	// any data specific to the window
+	struct GLWindow {
+		bool use_vsync = false;
+
+		// windows specific
+		HDC hDC;
+		HWND hwnd;
+
+		int gldisplay_id = 0;
+	};
+
+	struct GLDisplay {
+		// windows specific
+		HGLRC hRC;
+	};
+
+	RBMap<DisplayServerEnums::WindowID, GLWindow> _windows;
+	LocalVector<GLDisplay> _displays;
+
+	GLWindow *_current_window = nullptr;
+
+	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = nullptr;
+
+	GLWindow &get_window(unsigned int id) { return _windows[id]; }
+	const GLWindow &get_window(unsigned int id) const { return _windows[id]; }
+
+	const GLDisplay &get_current_display() const { return _displays[_current_window->gldisplay_id]; }
+	const GLDisplay &get_display(unsigned int id) { return _displays[id]; }
+
+	bool direct_render;
+	int glx_minor, glx_major;
+
+private:
+	void _nvapi_setup_profile();
+	int _find_or_create_display(GLWindow &win);
+	Error _create_context(GLWindow &win, GLDisplay &gl_display);
+
+public:
+	Error window_create(DisplayServerEnums::WindowID p_window_id, HWND p_hwnd, HINSTANCE p_hinstance, int p_width, int p_height);
+	void window_destroy(DisplayServerEnums::WindowID p_window_id);
+	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {}
+
+	void release_current();
+	void swap_buffers();
+
+	void window_make_current(DisplayServerEnums::WindowID p_window_id);
+
+	Error initialize();
+
+	void set_use_vsync(DisplayServerEnums::WindowID p_window_id, bool p_use);
+	bool is_using_vsync(DisplayServerEnums::WindowID p_window_id) const;
+
+	HDC get_hdc(DisplayServerEnums::WindowID p_window_id);
+	HGLRC get_hglrc(DisplayServerEnums::WindowID p_window_id);
+
+	GLManagerNative_Windows();
+	~GLManagerNative_Windows();
+};
+
+#endif // WINDOWS_ENABLED && GLES3_ENABLED
+
+// --- End platform/windows/gl_manager_windows_native.h ---
 #endif // GLES3_ENABLED
 
 #include <windows.h>
@@ -789,3 +889,419 @@ public:
 	DisplayServerWindows(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
 	~DisplayServerWindows();
 };
+
+// --- Folded from platform/windows/drop_target_windows.h ---
+
+
+#include <shlobj.h>
+
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor") // Silence warning due to a COM API weirdness.
+
+// https://learn.microsoft.com/en-us/windows/win32/api/ole2/nf-ole2-dodragdrop#remarks
+class DropTargetWindows : public IDropTarget {
+	LONG ref_count;
+	DisplayServerWindows::WindowData *window_data = nullptr;
+	CLIPFORMAT cf_filedescriptor = 0;
+	CLIPFORMAT cf_filecontents = 0;
+	String tmp_path;
+
+	bool is_valid_filedescriptor();
+	HRESULT handle_hdrop_format(Vector<String> *p_files, IDataObject *pDataObj);
+	HRESULT handle_filedescriptor_format(Vector<String> *p_files, IDataObject *pDataObj);
+	HRESULT save_as_file(const String &p_out_dir, FILEDESCRIPTORW *p_file_desc, IDataObject *pDataObj, int p_file_idx);
+
+public:
+	DropTargetWindows(DisplayServerWindows::WindowData *p_window_data);
+	virtual ~DropTargetWindows() {}
+
+	// IUnknown
+	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvObject) override;
+	ULONG STDMETHODCALLTYPE AddRef() override;
+	ULONG STDMETHODCALLTYPE Release() override;
+
+	// IDropTarget
+	HRESULT STDMETHODCALLTYPE DragEnter(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect) override;
+	HRESULT STDMETHODCALLTYPE DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect) override;
+	HRESULT STDMETHODCALLTYPE DragLeave() override;
+	HRESULT STDMETHODCALLTYPE Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect) override;
+};
+
+VLTR_GCC_WARNING_POP
+
+// --- End platform/windows/drop_target_windows.h ---
+
+// --- Folded from platform/windows/key_mapping_windows.h ---
+#include "core/os/keyboard.h"
+
+#include <windows.h>
+
+#include <winuser.h>
+
+class KeyMappingWindows {
+	KeyMappingWindows() {}
+
+public:
+	static void initialize();
+
+	static Key get_keysym(unsigned int p_code);
+	static unsigned int get_scancode(Key p_keycode);
+	static Key get_scansym(unsigned int p_code, bool p_extended);
+	static bool is_extended_key(unsigned int p_code);
+	static KeyLocation get_location(unsigned int p_code, bool p_extended);
+};
+
+// --- End platform/windows/key_mapping_windows.h ---
+
+// --- Folded from platform/windows/native_menu_windows.h ---
+#include "core/io/image.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/rid_owner.h"
+#include "servers/display/native_menu.h"
+
+#include <windows.h>
+
+class NativeMenuWindows : public NativeMenuDriver {
+
+	enum GlobalMenuCheckType {
+		CHECKABLE_TYPE_NONE,
+		CHECKABLE_TYPE_CHECK_BOX,
+		CHECKABLE_TYPE_RADIO_BUTTON,
+	};
+
+	struct MenuItemData {
+		Callable callback;
+		Variant meta;
+		GlobalMenuCheckType checkable_type;
+		bool checked = false;
+		int max_states = 0;
+		int state = 0;
+		Ref<Image> img;
+		HBITMAP bmp = nullptr;
+	};
+
+	struct MenuData {
+		HMENU menu = nullptr;
+
+		Callable close_cb;
+		bool is_rtl = false;
+	};
+
+	mutable RID_PtrOwner<MenuData> menus;
+	HashMap<HMENU, RID> menu_lookup;
+
+	HBITMAP _make_bitmap(const Ref<Image> &p_img) const;
+
+public:
+	void _menu_activate(HMENU p_menu, int p_index) const;
+
+	virtual bool has_feature(Feature p_feature) const override;
+
+	virtual bool has_system_menu(SystemMenus p_menu_id) const override;
+	virtual RID get_system_menu(SystemMenus p_menu_id) const override;
+
+	virtual RID create_menu() override;
+	virtual bool has_menu(const RID &p_rid) const override;
+	virtual void free_menu(const RID &p_rid) override;
+
+	virtual Size2 get_size(const RID &p_rid) const override;
+	virtual void popup(const RID &p_rid, const Vector2i &p_position) override;
+
+	virtual void set_interface_direction(const RID &p_rid, bool p_is_rtl) override;
+	virtual void set_popup_open_callback(const RID &p_rid, const Callable &p_callback) override;
+	virtual Callable get_popup_open_callback(const RID &p_rid) const override;
+	virtual void set_popup_close_callback(const RID &p_rid, const Callable &p_callback) override;
+	virtual Callable get_popup_close_callback(const RID &p_rid) const override;
+	virtual void set_minimum_width(const RID &p_rid, float p_width) override;
+	virtual float get_minimum_width(const RID &p_rid) const override;
+
+	virtual bool is_opened(const RID &p_rid) const override;
+
+	virtual int add_submenu_item(const RID &p_rid, const String &p_label, const RID &p_submenu_rid, const Variant &p_tag = Variant(), int p_index = -1) override;
+	virtual int add_item(const RID &p_rid, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_check_item(const RID &p_rid, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_icon_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_icon_check_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_radio_check_item(const RID &p_rid, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_icon_radio_check_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_multistate_item(const RID &p_rid, const String &p_label, int p_max_states, int p_default_state, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_separator(const RID &p_rid, int p_index = -1) override;
+
+	virtual int find_item_index_with_text(const RID &p_rid, const String &p_text) const override;
+	virtual int find_item_index_with_tag(const RID &p_rid, const Variant &p_tag) const override;
+
+	virtual bool is_item_checked(const RID &p_rid, int p_idx) const override;
+	virtual bool is_item_checkable(const RID &p_rid, int p_idx) const override;
+	virtual bool is_item_radio_checkable(const RID &p_rid, int p_idx) const override;
+	virtual Callable get_item_callback(const RID &p_rid, int p_idx) const override;
+	virtual Callable get_item_key_callback(const RID &p_rid, int p_idx) const override;
+	virtual Variant get_item_tag(const RID &p_rid, int p_idx) const override;
+	virtual String get_item_text(const RID &p_rid, int p_idx) const override;
+	virtual RID get_item_submenu(const RID &p_rid, int p_idx) const override;
+	virtual Key get_item_accelerator(const RID &p_rid, int p_idx) const override;
+	virtual bool is_item_disabled(const RID &p_rid, int p_idx) const override;
+	virtual bool is_item_hidden(const RID &p_rid, int p_idx) const override;
+	virtual String get_item_tooltip(const RID &p_rid, int p_idx) const override;
+	virtual int get_item_state(const RID &p_rid, int p_idx) const override;
+	virtual int get_item_max_states(const RID &p_rid, int p_idx) const override;
+	virtual Ref<Texture2D> get_item_icon(const RID &p_rid, int p_idx) const override;
+	virtual int get_item_indentation_level(const RID &p_rid, int p_idx) const override;
+
+	virtual void set_item_checked(const RID &p_rid, int p_idx, bool p_checked) override;
+	virtual void set_item_checkable(const RID &p_rid, int p_idx, bool p_checkable) override;
+	virtual void set_item_radio_checkable(const RID &p_rid, int p_idx, bool p_checkable) override;
+	virtual void set_item_callback(const RID &p_rid, int p_idx, const Callable &p_callback) override;
+	virtual void set_item_key_callback(const RID &p_rid, int p_idx, const Callable &p_key_callback) override;
+	virtual void set_item_hover_callbacks(const RID &p_rid, int p_idx, const Callable &p_callback) override;
+	virtual void set_item_tag(const RID &p_rid, int p_idx, const Variant &p_tag) override;
+	virtual void set_item_text(const RID &p_rid, int p_idx, const String &p_text) override;
+	virtual void set_item_submenu(const RID &p_rid, int p_idx, const RID &p_submenu_rid) override;
+	virtual void set_item_accelerator(const RID &p_rid, int p_idx, Key p_keycode) override;
+	virtual void set_item_disabled(const RID &p_rid, int p_idx, bool p_disabled) override;
+	virtual void set_item_hidden(const RID &p_rid, int p_idx, bool p_hidden) override;
+	virtual void set_item_tooltip(const RID &p_rid, int p_idx, const String &p_tooltip) override;
+	virtual void set_item_state(const RID &p_rid, int p_idx, int p_state) override;
+	virtual void set_item_max_states(const RID &p_rid, int p_idx, int p_max_states) override;
+	virtual void set_item_icon(const RID &p_rid, int p_idx, const Ref<Texture2D> &p_icon) override;
+	virtual void set_item_indentation_level(const RID &p_rid, int p_idx, int p_level) override;
+	virtual int set_item_index(const RID &p_rid, int p_idx, int p_target_idx) override;
+
+	virtual int get_item_count(const RID &p_rid) const override;
+	virtual bool is_system_menu(const RID &p_rid) const override;
+
+	virtual void remove_item(const RID &p_rid, int p_idx) override;
+	virtual void clear(const RID &p_rid) override;
+
+	NativeMenuWindows();
+	~NativeMenuWindows();
+};
+
+// --- End platform/windows/native_menu_windows.h ---
+
+// --- Folded from platform/windows/rendering_context_driver_vulkan_windows.h ---
+#ifdef VULKAN_ENABLED
+
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+
+#include <windows.h>
+
+class RenderingContextDriverVulkanWindows : public RenderingContextDriverVulkan {
+private:
+	const char *_get_platform_surface_extension() const override final;
+
+protected:
+	SurfaceID surface_create(const void *p_platform_data) override final;
+
+public:
+	struct WindowPlatformData {
+		HWND window;
+		HINSTANCE instance;
+	};
+
+	RenderingContextDriverVulkanWindows();
+	~RenderingContextDriverVulkanWindows() override;
+};
+
+#endif // VULKAN_ENABLED
+
+// --- End platform/windows/rendering_context_driver_vulkan_windows.h ---
+
+// --- Folded from platform/windows/tts_driver.h ---
+class TTSDriver
+{
+public:
+	mem_unique_ptr<Object> obj;
+	virtual bool is_speaking() const = 0;
+	virtual bool is_paused() const = 0;
+	virtual Array get_voices() const = 0;
+
+	virtual void speak(const String& p_text, const String& p_voice, int p_volume = 50,
+		float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
+		bool p_interrupt = false) = 0;
+	virtual void pause() = 0;
+	virtual void resume() = 0;
+	virtual void stop() = 0;
+
+	virtual void process_events() = 0;
+
+	virtual bool init() = 0;
+
+	virtual ~TTSDriver() {}
+};
+
+
+
+// --- End platform/windows/tts_driver.h ---
+
+// --- Folded from platform/windows/tts_driver_onecore.h ---
+
+
+VLTR_GCC_WARNING_PUSH
+VLTR_GCC_WARNING_IGNORE("-Wnon-virtual-dtor")
+VLTR_GCC_WARNING_IGNORE("-Wctor-dtor-privacy")
+VLTR_GCC_WARNING_IGNORE("-Wshadow")
+VLTR_GCC_WARNING_IGNORE("-Wstrict-aliasing")
+GODOT_CLANG_WARNING_PUSH
+GODOT_CLANG_WARNING_IGNORE("-Wnon-virtual-dtor")
+
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Foundation.Metadata.h>
+#include <winrt/Windows.Media.Core.h>
+#include <winrt/Windows.Media.Playback.h>
+#include <winrt/Windows.Media.SpeechSynthesis.h>
+#include <winrt/Windows.Storage.Streams.h>
+
+VLTR_GCC_WARNING_POP
+GODOT_CLANG_WARNING_POP
+
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::Foundation::Metadata;
+using namespace winrt::Windows::Media::Core;
+using namespace winrt::Windows::Media::Playback;
+using namespace winrt::Windows::Media::SpeechSynthesis;
+using namespace winrt::Windows::Storage::Streams;
+
+struct TTSUtterance;
+
+class TTSDriverOneCore : public TTSDriver {
+	List<TTSUtterance> queue;
+
+	bool playing = false;
+	bool paused = false;
+	bool update_requested = false;
+
+	int64_t id = -1;
+	Char16String string;
+	std::shared_ptr<MediaPlayer> media;
+	struct TrackData {
+		TimedMetadataTrack track;
+		winrt::event_token token{};
+	};
+	Vector<TrackData> tracks;
+	winrt::event_token token_s{};
+	winrt::event_token token_f{};
+	winrt::event_token token_e{};
+	int64_t offset = 0;
+
+	void _dispose_current(bool p_silent = false, bool p_canceled = false);
+
+	void _speech_cancel(int p_msg_id);
+	void _speech_end(int p_msg_id);
+	void _speech_index_mark(int p_msg_id, int p_index_mark);
+
+public:
+	virtual bool is_speaking() const override;
+	virtual bool is_paused() const override;
+	virtual Array get_voices() const override;
+
+	virtual void speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0, bool p_interrupt = false) override;
+	virtual void pause() override;
+	virtual void resume() override;
+	virtual void stop() override;
+
+	virtual void process_events() override;
+
+	virtual bool init() override;
+
+	TTSDriverOneCore();
+	~TTSDriverOneCore();
+};
+
+// --- End platform/windows/tts_driver_onecore.h ---
+
+// --- Folded from platform/windows/tts_driver_sapi.h ---
+
+
+#include <windows.h>
+
+#include <objbase.h>
+#include <sapi.h>
+#include <winnls.h>
+
+#include <cwchar>
+
+struct TTSUtterance;
+
+class TTSDriverSAPI : public TTSDriver {
+	List<TTSUtterance> queue;
+	ISpVoice *synth = nullptr;
+	bool paused = false;
+	struct UTData {
+		Char16String string;
+		int offset;
+		int64_t id;
+	};
+	HashMap<uint32_t, UTData> ids;
+	bool update_requested = false;
+
+	static void __stdcall speech_event_callback(WPARAM wParam, LPARAM lParam);
+
+public:
+	virtual bool is_speaking() const override;
+	virtual bool is_paused() const override;
+	virtual Array get_voices() const override;
+
+	virtual void speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0, bool p_interrupt = false) override;
+	virtual void pause() override;
+	virtual void resume() override;
+	virtual void stop() override;
+
+	virtual void process_events() override;
+
+	virtual bool init() override;
+
+	TTSDriverSAPI();
+	~TTSDriverSAPI();
+};
+
+// --- End platform/windows/tts_driver_sapi.h ---
+
+// --- Folded from platform/windows/tts_windows.h ---
+#include "core/string/ustring.h"
+
+class TTSDriver;
+
+struct TTSUtterance;
+
+class TTS_Windows final
+{
+	struct Data
+	{
+		TTSDriver* driver = nullptr;
+	};
+
+	static inline Data* data = nullptr;
+
+public:
+	TTS_Windows() = delete;
+
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
+
+	static bool is_speaking();
+	static bool is_paused();
+	static Array get_voices();
+
+	static void speak(const String& p_text, const String& p_voice, int p_volume = 50,
+		float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
+		bool p_interrupt = false);
+	static void pause();
+	static void resume();
+	static void stop();
+
+	static void process_events();
+};
+
+// --- End platform/windows/tts_windows.h ---
+
+// --- Folded from platform/windows/wgl_detect_version.h ---
+#if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
+
+class Dictionary;
+
+Dictionary detect_wgl();
+
+#endif // WINDOWS_ENABLED && GLES3_ENABLED
+
+// --- End platform/windows/wgl_detect_version.h ---

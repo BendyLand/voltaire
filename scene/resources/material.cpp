@@ -4782,7 +4782,7 @@ void Environment::set_tonemapper(Environment::ToneMapper) {}
 
 // --- camera_attributes.cpp ---
 
-#include "camera_attributes.h"
+#include "scene/resources/material.h"
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"

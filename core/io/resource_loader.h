@@ -568,3 +568,30 @@ public:
 
 
 // --- End core/io/resource_format_binary.h ---
+
+// --- Folded from core/io/missing_resource.h ---
+#include "core/io/resource.h"
+
+#define META_PROPERTY_MISSING_RESOURCES "metadata/_missing_resources"
+#define META_MISSING_RESOURCES "_missing_resources"
+
+class MissingResource : public Resource
+{
+	String original_class;
+	bool recording_properties = false;
+
+protected:
+
+public:
+	void set_original_class(const String& p_class);
+	String get_original_class() const;
+
+	void set_recording_properties(bool p_enable);
+	bool is_recording_properties() const;
+
+	virtual String get_save_class() const;
+};
+
+
+
+// --- End core/io/missing_resource.h ---

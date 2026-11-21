@@ -28,8 +28,243 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
+// --- Inlined from modules/webrtc/webrtc_peer_connection.h ---
+#include "core/io/packet_peer.h"
+#include "core/templates/ring_buffer.h"
+#include "scene/main/multiplayer_peer.h"
 
-#include "webrtc_peer_connection.h"
+class WebRTCDataChannel final : public PacketPeer
+{
+public:
+	enum WriteMode
+	{
+		WRITE_MODE_TEXT,
+		WRITE_MODE_BINARY,
+	};
+
+	enum ChannelState
+	{
+		STATE_CONNECTING,
+		STATE_OPEN,
+		STATE_CLOSING,
+		STATE_CLOSED
+	};
+
+private:
+	unsigned int _in_buffer_shift = 16;
+	WriteMode _write_mode = WRITE_MODE_BINARY;
+
+#ifdef WEB_ENABLED
+	String _label;
+	String _protocol;
+
+	bool _was_string = false;
+
+	enum
+	{
+		PACKET_BUFFER_SIZE = 65536 - 5 // 4 bytes for the size, 1 for type
+	};
+
+	int _js_id = 0;
+	RingBuffer<uint8_t> in_buffer;
+	int queue_count = 0;
+	uint8_t packet_buffer[PACKET_BUFFER_SIZE];
+
+	static void _on_open(void* p_obj);
+	static void _on_close(void* p_obj);
+	static void _on_error(void* p_obj);
+	static void _on_message(void* p_obj, const uint8_t* p_data, int p_size, int p_is_string);
+#endif
+
+public:
+	void set_write_mode(WriteMode mode);
+	WriteMode get_write_mode() const;
+	bool was_string_packet() const;
+
+	ChannelState get_ready_state() const;
+	String get_label() const;
+	bool is_ordered() const;
+	int get_id() const;
+	int get_max_packet_life_time() const;
+	int get_max_retransmits() const;
+	String get_protocol() const;
+	bool is_negotiated() const;
+	int get_buffered_amount() const;
+
+	Error poll();
+	void close();
+
+	// PacketPeer
+	virtual int get_available_packet_count() const override;
+	virtual Error get_packet(const uint8_t** r_buffer,
+		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
+	virtual int get_max_packet_size() const override;
+
+	WebRTCDataChannel();
+#ifdef WEB_ENABLED
+	WebRTCDataChannel(int js_id);
+#endif
+	~WebRTCDataChannel();
+};
+
+class WebRTCPeerConnection final : public RefCounted
+{
+public:
+	enum ConnectionState
+	{
+		STATE_NEW,
+		STATE_CONNECTING,
+		STATE_CONNECTED,
+		STATE_DISCONNECTED,
+		STATE_FAILED,
+		STATE_CLOSED
+	};
+
+	enum GatheringState
+	{
+		GATHERING_STATE_NEW,
+		GATHERING_STATE_GATHERING,
+		GATHERING_STATE_COMPLETE,
+	};
+
+	enum SignalingState
+	{
+		SIGNALING_STATE_STABLE,
+		SIGNALING_STATE_HAVE_LOCAL_OFFER,
+		SIGNALING_STATE_HAVE_REMOTE_OFFER,
+		SIGNALING_STATE_HAVE_LOCAL_PRANSWER,
+		SIGNALING_STATE_HAVE_REMOTE_PRANSWER,
+		SIGNALING_STATE_CLOSED,
+	};
+
+private:
+	static String default_extension;
+
+#ifdef WEB_ENABLED
+	int _js_id = 0;
+	ConnectionState _conn_state = STATE_NEW;
+	GatheringState _gathering_state = GATHERING_STATE_NEW;
+	SignalingState _signaling_state = SIGNALING_STATE_STABLE;
+
+	static void _on_connection_state_changed(void* p_obj, int p_state);
+	static void _on_gathering_state_changed(void* p_obj, int p_state);
+	static void _on_signaling_state_changed(void* p_obj, int p_state);
+	static void _on_ice_candidate(
+		void* p_obj, const char* p_mid_name, int p_mline_idx, const char* p_candidate);
+	static void _on_data_channel(void* p_obj, int p_channel);
+	static void _on_session_created(void* p_obj, const char* p_type, const char* p_session);
+	static void _on_error(void* p_obj);
+#endif
+
+public:
+	static void set_default_extension(const String& p_name);
+
+	ConnectionState get_connection_state() const;
+	GatheringState get_gathering_state() const;
+	SignalingState get_signaling_state() const;
+
+	Error initialize(const String& p_config_json = "{}");
+	Ref<WebRTCDataChannel> create_data_channel(
+		const String& p_channel_name, const String& p_channel_config_json = "{}");
+	Error create_offer();
+	Error set_remote_description(const String& p_type, const String& p_sdp);
+	Error set_local_description(const String& p_type, const String& p_sdp);
+	Error add_ice_candidate(
+		const String& p_sdp_mid_name, int p_sdp_mline_index_name, const String& p_sdp_name);
+	Error poll();
+	void close();
+
+	static WebRTCPeerConnection* create(bool p_notify_postinitialize = true);
+
+	WebRTCPeerConnection();
+	~WebRTCPeerConnection();
+};
+
+class WebRTCMultiplayerPeer final : public MultiplayerPeer
+{
+private:
+	enum
+	{
+		CH_RELIABLE = 0,
+		CH_ORDERED = 1,
+		CH_UNRELIABLE = 2,
+		CH_RESERVED_MAX = 3
+	};
+
+	enum NetworkMode
+	{
+		MODE_NONE,
+		MODE_SERVER,
+		MODE_CLIENT,
+		MODE_MESH,
+	};
+
+	class ConnectedPeer final : public RefCounted
+	{
+	public:
+		Ref<WebRTCPeerConnection> connection;
+		List<Ref<WebRTCDataChannel>> channels;
+		bool connected;
+
+		ConnectedPeer()
+		{
+			connected = false;
+			for (int i = 0; i < CH_RESERVED_MAX; i++) {
+				channels.push_front(Ref<WebRTCDataChannel>());
+			}
+		}
+	};
+
+	uint32_t unique_id = 0;
+	int target_peer = 0;
+	int client_count = 0;
+	ConnectionStatus connection_status = CONNECTION_DISCONNECTED;
+	int next_packet_peer = 0;
+	int next_packet_channel = 0;
+	NetworkMode network_mode = MODE_NONE;
+
+	HashMap<int, Ref<ConnectedPeer>> peer_map;
+	List<TransferMode> channels_modes;
+
+	void _find_next_peer();
+	Ref<ConnectedPeer> _get_next_peer();
+
+public:
+	WebRTCMultiplayerPeer() {}
+	~WebRTCMultiplayerPeer();
+
+	Error add_peer(
+		const Ref<WebRTCPeerConnection>& p_peer, int p_peer_id, int p_unreliable_lifetime = 1);
+	void remove_peer(int p_peer_id);
+	bool has_peer(int p_peer_id);
+
+	// PacketPeer
+	virtual Error get_packet(const uint8_t** r_buffer,
+		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
+	virtual int get_available_packet_count() const override;
+	virtual int get_max_packet_size() const override;
+
+	// MultiplayerPeer
+	virtual void set_target_peer(int p_peer_id) override;
+
+	virtual int get_unique_id() const override;
+	virtual int get_packet_peer() const override;
+	virtual int get_packet_channel() const override;
+	virtual TransferMode get_packet_mode() const override;
+
+	virtual bool is_server() const override;
+	virtual bool is_server_relay_supported() const override;
+
+	virtual void poll() override;
+	virtual void close() override;
+	virtual void disconnect_peer(int p_peer_id, bool p_force = false) override;
+
+	virtual ConnectionStatus get_connection_status() const override;
+};
+
+// --- End modules/webrtc/webrtc_peer_connection.h ---
 #include "register_types.h"
 
 #include "core/config/project_settings.h"

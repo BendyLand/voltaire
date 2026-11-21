@@ -28,8 +28,18 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
+// --- Inlined from modules/hdr/image_loader_hdr.h ---
+#include "core/io/image_loader.h"
 
-#include "image_loader_hdr.h"
+class ImageLoaderHDR : public ImageFormatLoader {
+public:
+	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
+	virtual void get_recognized_extensions(List<String> *p_extensions) const;
+
+	ImageLoaderHDR();
+};
+
+// --- End modules/hdr/image_loader_hdr.h ---
 #include "register_types.h"
 
 Error ImageLoaderHDR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {

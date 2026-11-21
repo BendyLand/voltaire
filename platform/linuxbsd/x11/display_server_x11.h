@@ -618,4 +618,30 @@ public:
 
 #endif // X11_ENABLED
 
+// --- Folded from platform/linuxbsd/x11/rendering_context_driver_vulkan_x11.h ---
+#ifdef VULKAN_ENABLED
 
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+
+#include <X11/Xlib.h>
+
+class RenderingContextDriverVulkanX11 : public RenderingContextDriverVulkan {
+private:
+	virtual const char *_get_platform_surface_extension() const override final;
+
+protected:
+	SurfaceID surface_create(const void *p_platform_data) override final;
+
+public:
+	struct WindowPlatformData {
+		::Window window;
+		Display *display;
+	};
+
+	RenderingContextDriverVulkanX11();
+	~RenderingContextDriverVulkanX11();
+};
+
+#endif // VULKAN_ENABLED
+
+// --- End platform/linuxbsd/x11/rendering_context_driver_vulkan_x11.h ---

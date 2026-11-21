@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "godot_plugin_jni.h"
+#include "platform/android/os_android.h"
 
 #include "api/java_class_wrapper.h"
-#include "api/jni_singleton.h"
+#include "platform/android/os_android.h"
 #include "jni_utils.h"
 
 #include "core/config/engine.h"

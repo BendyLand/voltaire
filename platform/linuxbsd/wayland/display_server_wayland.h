@@ -2787,3 +2787,76 @@ public:
 #endif // EGL_ENABLED
 
 // --- End platform/linuxbsd/wayland/detect_prime_egl.h ---
+
+// --- Folded from platform/linuxbsd/wayland/egl_manager_wayland.h ---
+#ifdef WAYLAND_ENABLED
+#ifdef EGL_ENABLED
+#ifdef GLES3_ENABLED
+
+#include "drivers/egl/egl_manager.h"
+
+class EGLManagerWayland : public EGLManager {
+public:
+	virtual const char *_get_platform_extension_name() const override;
+	virtual EGLenum _get_platform_extension_enum() const override;
+	virtual EGLenum _get_platform_api_enum() const override;
+	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
+	virtual Vector<EGLint> _get_platform_context_attribs() const override;
+};
+
+#endif // GLES3_ENABLED
+#endif // EGL_ENABLED
+#endif // WAYLAND_ENABLED
+
+// --- Folded from platform/linuxbsd/wayland/egl_manager_wayland_gles.h ---
+#ifdef WAYLAND_ENABLED
+#ifdef EGL_ENABLED
+#ifdef GLES3_ENABLED
+
+#include "drivers/egl/egl_manager.h"
+
+class EGLManagerWaylandGLES : public EGLManager {
+public:
+	virtual const char *_get_platform_extension_name() const override;
+	virtual EGLenum _get_platform_extension_enum() const override;
+	virtual EGLenum _get_platform_api_enum() const override;
+	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
+	virtual Vector<EGLint> _get_platform_context_attribs() const override;
+};
+
+#endif // GLES3_ENABLED
+#endif // EGL_ENABLED
+#endif // WAYLAND_ENABLED
+
+// --- End platform/linuxbsd/wayland/egl_manager_wayland_gles.h ---
+
+// --- End platform/linuxbsd/wayland/egl_manager_wayland.h ---
+
+// --- Folded from platform/linuxbsd/wayland/rendering_context_driver_vulkan_wayland.h ---
+#ifdef VULKAN_ENABLED
+
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+
+class RenderingContextDriverVulkanWayland : public RenderingContextDriverVulkan {
+private:
+	virtual const char *_get_platform_surface_extension() const override final;
+	// If wp-color-management is supported, we will perform color management externally to the driver.
+	// If wp-color-management is not supported, the driver would not be able to perform color management anyway.
+	virtual bool is_colorspace_externally_managed() const override final { return true; }
+
+protected:
+	SurfaceID surface_create(const void *p_platform_data) override final;
+
+public:
+	struct WindowPlatformData {
+		struct wl_display *display;
+		struct wl_surface *surface;
+	};
+
+	RenderingContextDriverVulkanWayland();
+	~RenderingContextDriverVulkanWayland();
+};
+
+#endif // VULKAN_ENABLED
+
+// --- End platform/linuxbsd/wayland/rendering_context_driver_vulkan_wayland.h ---

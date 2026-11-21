@@ -521,3 +521,118 @@ public:
 #endif // DISABLE_DEPRECATED
 
 // --- End editor/project_upgrade/project_converter_3_to_4.h ---
+
+// --- Folded from editor/project_manager/project_manager.h ---
+#include "core/config/project_format.h"
+
+
+class ProjectManager
+{
+private:
+	static inline bool _initialized = false;
+
+public:
+	ProjectManager() = delete;
+
+	static constexpr int DEFAULT_WINDOW_WIDTH = 1152;
+	static constexpr int DEFAULT_WINDOW_HEIGHT = 648;
+
+	enum ModalMode
+	{
+		MODAL_NONE = 0,
+		MODAL_NEW_PROJECT,
+		MODAL_IMPORT_PROJECT,
+		MODAL_SCAN_PROJECTS,
+	};
+
+	enum ActiveField
+	{
+		FIELD_NONE = 0,
+		FIELD_SEARCH,
+		FIELD_MODAL_PRIMARY,
+		FIELD_MODAL_SECONDARY,
+	};
+
+	struct ProjectEntry
+	{
+		String name;
+		String path;
+		bool favorite = false;
+		bool missing = false;
+		Rect2 card_rect;
+		bool hovered = false;
+	};
+
+	struct Data
+	{
+		// Composed shared Canvas UI context, layout & widgets
+		UIContext ui;
+		UISplitLayout layout;
+		UIScrollView list_scroll;
+		UIButtonGroup buttons;
+		UIButtonGroup sidebar_buttons;
+		UIButtonGroup modal_buttons;
+		UITextField search_field;
+		UITextField modal_primary_field;
+		UITextField modal_secondary_field;
+
+		String status_text = "Voltaire Project Manager ready.";
+		String config_path;
+
+		LocalVector<ProjectEntry> projects;
+		LocalVector<int> filtered_indices;
+		int selected_project_idx = -1;
+		int hovered_project_idx = -1;
+
+		Rect2 clear_search_rect;
+		bool clear_search_hovered = false;
+
+		ModalMode modal_mode = MODAL_NONE;
+		ActiveField active_field = FIELD_NONE;
+		String modal_error_text;
+		Rect2 modal_panel_rect;
+
+		String pending_open_path;
+		String pending_open_name;
+		bool pending_open_play = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	// Lifecycle & Frame Hooks
+	static bool is_initialized() { return _initialized; }
+
+	static void initialize(RID p_viewport_rid, Size2i p_size);
+	static void poll();
+	static void process_and_draw();
+	static void finalize();
+
+	static void handle_input_event(const InputEvent& p_event);
+	static void load_projects();
+	static void save_projects();
+	static void rebuild_filtered_list();
+
+	// Button callbacks
+	static void _new_project();
+	static void _import_project();
+	static void _scan_projects();
+	static void _open_donate_page();
+	static void _edit_selected_project();
+	static void _run_selected_project();
+	static void _open_selected_folder();
+	static void _toggle_favorite_selected();
+	static void _remove_selected_project();
+	static void _quit_manager();
+	static void _cancel_modal();
+	static void _confirm_modal();
+	static void _confirm_modal_and_edit();
+
+	static bool _has_valid_selected_project();
+	static bool _has_any_selected_project();
+	static bool _read_voltaire_project(const String& p_dir, VoltaireProjectFile* r_out);
+	static String _get_default_projects_dir();
+	static void _scan_dir_for_projects(
+		const String& p_dir, int p_depth, int p_max_depth, LocalVector<String>& r_found);
+};
+
+// --- End editor/project_manager/project_manager.h ---

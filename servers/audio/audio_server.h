@@ -32,9 +32,584 @@
 #pragma once
 
 #include <atomic>
-#include "core/math/audio_frame.h"
-#include "core/templates/safe_list.h"
-#include "servers/audio/audio_effect.h"
+// --- Folded from core/math/audio_frame.h ---
+#include "core/math/vector2.h"
+#include "core/typedefs.h"
+
+static _FORCE_INLINE_ float undenormalize(float p_value) {
+	union {
+		uint32_t i;
+		float f;
+	} v;
+
+	v.f = p_value;
+
+	// original: return (v.i & 0x7f800000) == 0 ? 0.0f : f;
+	// version from Tim Blechmann:
+	return (v.i & 0x7f800000) < 0x08000000 ? 0.0f : p_value;
+}
+
+static const float AUDIO_PEAK_OFFSET = 0.0000000001f;
+static const float AUDIO_MIN_PEAK_DB = -200.0f; // linear_to_db(AUDIO_PEAK_OFFSET)
+
+struct AudioFrame {
+	// Left and right samples.
+	float left = 0.0f;
+	float right = 0.0f;
+
+	constexpr float &operator[](int p_idx) {
+		// The pointer math below assumes that the elements are placed back-to-back, like an array.
+		// This is always true in practice, but technically not guaranteed; we safety-check it here.
+		static_assert(offsetof(AudioFrame, left) == 0 * sizeof(float));
+		static_assert(offsetof(AudioFrame, right) == 1 * sizeof(float));
+		static_assert(sizeof(AudioFrame) == 2 * sizeof(float));
+
+		DEV_ASSERT((unsigned int)p_idx < 2);
+		return (&left)[p_idx];
+	}
+	constexpr const float &operator[](int p_idx) const {
+		DEV_ASSERT((unsigned int)p_idx < 2);
+		return (&left)[p_idx];
+	}
+
+	constexpr AudioFrame operator+(const AudioFrame &p_frame) const { return AudioFrame(left + p_frame.left, right + p_frame.right); }
+	constexpr AudioFrame operator-(const AudioFrame &p_frame) const { return AudioFrame(left - p_frame.left, right - p_frame.right); }
+	constexpr AudioFrame operator*(const AudioFrame &p_frame) const { return AudioFrame(left * p_frame.left, right * p_frame.right); }
+	constexpr AudioFrame operator/(const AudioFrame &p_frame) const { return AudioFrame(left / p_frame.left, right / p_frame.right); }
+
+	constexpr AudioFrame operator+(float p_sample) const { return AudioFrame(left + p_sample, right + p_sample); }
+	constexpr AudioFrame operator-(float p_sample) const { return AudioFrame(left - p_sample, right - p_sample); }
+	constexpr AudioFrame operator*(float p_sample) const { return AudioFrame(left * p_sample, right * p_sample); }
+	constexpr AudioFrame operator/(float p_sample) const { return AudioFrame(left / p_sample, right / p_sample); }
+
+	constexpr void operator+=(const AudioFrame &p_frame) {
+		left += p_frame.left;
+		right += p_frame.right;
+	}
+	constexpr void operator-=(const AudioFrame &p_frame) {
+		left -= p_frame.left;
+		right -= p_frame.right;
+	}
+	constexpr void operator*=(const AudioFrame &p_frame) {
+		left *= p_frame.left;
+		right *= p_frame.right;
+	}
+	constexpr void operator/=(const AudioFrame &p_frame) {
+		left /= p_frame.left;
+		right /= p_frame.right;
+	}
+
+	constexpr void operator+=(float p_sample) {
+		left += p_sample;
+		right += p_sample;
+	}
+	constexpr void operator-=(float p_sample) {
+		left -= p_sample;
+		right -= p_sample;
+	}
+	constexpr void operator*=(float p_sample) {
+		left *= p_sample;
+		right *= p_sample;
+	}
+	constexpr void operator/=(float p_sample) {
+		left /= p_sample;
+		right /= p_sample;
+	}
+
+	_ALWAYS_INLINE_ void undenormalize() {
+		left = ::undenormalize(left);
+		right = ::undenormalize(right);
+	}
+
+	_FORCE_INLINE_ AudioFrame lerp(const AudioFrame &p_b, float p_t) const {
+		AudioFrame res = *this;
+
+		res.left += (p_t * (p_b.left - left));
+		res.right += (p_t * (p_b.right - right));
+
+		return res;
+	}
+
+	constexpr explicit operator Vector2() const {
+		return Vector2(left, right);
+	}
+
+	constexpr AudioFrame() = default;
+
+	constexpr AudioFrame(float p_left, float p_right) :
+			left(p_left), right(p_right) {}
+	constexpr explicit AudioFrame(const Vector2 &p_v2) :
+			left(p_v2.x), right(p_v2.y) {}
+};
+
+constexpr AudioFrame operator*(float p_scalar, const AudioFrame &p_frame) {
+	return AudioFrame(p_frame.left * p_scalar, p_frame.right * p_scalar);
+}
+
+constexpr AudioFrame operator*(int32_t p_scalar, const AudioFrame &p_frame) {
+	return AudioFrame(p_frame.left * p_scalar, p_frame.right * p_scalar);
+}
+
+constexpr AudioFrame operator*(int64_t p_scalar, const AudioFrame &p_frame) {
+	return AudioFrame(p_frame.left * p_scalar, p_frame.right * p_scalar);
+}
+
+template <>
+struct is_zero_constructible<AudioFrame> : std::true_type {};
+
+// --- End core/math/audio_frame.h ---
+// --- Folded from core/templates/safe_list.h ---
+#include "core/os/memory.h"
+#include "core/typedefs.h"
+
+#include <atomic>
+#include <functional>
+#include <initializer_list>
+
+// Design goals for these classes:
+// - Accessing this list with an iterator will never result in a use-after free,
+//   even if the element being accessed has been logically removed from the list on
+//   another thread.
+// - Logical deletion from the list will not result in deallocation at that time,
+//   instead the node will be deallocated at a later time when it is safe to do so.
+// - No blocking synchronization primitives will be used.
+
+// This is used in very specific areas of the engine where it's critical that these guarantees are held.
+
+template <typename T, typename A = DefaultAllocator>
+class SafeList {
+	struct SafeListNode {
+		std::atomic<SafeListNode *> next = nullptr;
+
+		// If the node is logically deleted, this pointer will typically point
+		// to the previous list item in time that was also logically deleted.
+		std::atomic<SafeListNode *> graveyard_next = nullptr;
+
+		std::function<void(T)> deletion_fn = [](T p_t) { return; };
+
+		T val;
+	};
+
+	static_assert(std::atomic<T>::is_always_lock_free);
+
+	std::atomic<SafeListNode *> head = nullptr;
+	std::atomic<SafeListNode *> graveyard_head = nullptr;
+
+	std::atomic_uint active_iterator_count = 0;
+
+public:
+	class Iterator {
+		friend class SafeList;
+
+		SafeListNode *cursor = nullptr;
+		SafeList *list = nullptr;
+
+		Iterator(SafeListNode *p_cursor, SafeList *p_list) :
+				cursor(p_cursor), list(p_list) {
+			list->active_iterator_count++;
+		}
+
+	public:
+		Iterator(const Iterator &p_other) :
+				cursor(p_other.cursor), list(p_other.list) {
+			list->active_iterator_count++;
+		}
+
+		~Iterator() {
+			list->active_iterator_count--;
+		}
+
+	public:
+		T &operator*() {
+			return cursor->val;
+		}
+
+		Iterator &operator++() {
+			cursor = cursor->next;
+			return *this;
+		}
+
+		// These two operators are mostly useful for comparisons to nullptr.
+		bool operator==(const void *p_other) const {
+			return cursor == p_other;
+		}
+
+		bool operator!=(const void *p_other) const {
+			return cursor != p_other;
+		}
+
+		// These two allow easy range-based for loops.
+		bool operator==(const Iterator &p_other) const {
+			return cursor == p_other.cursor;
+		}
+
+		bool operator!=(const Iterator &p_other) const {
+			return cursor != p_other.cursor;
+		}
+	};
+
+public:
+	// Calling this will cause an allocation.
+	void insert(T p_value) {
+		SafeListNode *new_node = memnew_allocator(SafeListNode, A);
+		new_node->val = p_value;
+		SafeListNode *expected_head = nullptr;
+		do {
+			expected_head = head.load();
+			new_node->next.store(expected_head);
+		} while (!head.compare_exchange_strong(/* expected= */ expected_head, /* new= */ new_node));
+	}
+
+	Iterator find(T p_value) {
+		for (Iterator it = begin(); it != end(); ++it) {
+			if (*it == p_value) {
+				return it;
+			}
+		}
+		return end();
+	}
+
+	void erase(T p_value, std::function<void(T)> p_deletion_fn) {
+		Iterator tmp = find(p_value);
+		erase(tmp, p_deletion_fn);
+	}
+
+	void erase(T p_value) {
+		Iterator tmp = find(p_value);
+		erase(tmp, [](T p_t) { return; });
+	}
+
+	void erase(Iterator &p_iterator, std::function<void(T)> p_deletion_fn) {
+		p_iterator.cursor->deletion_fn = p_deletion_fn;
+		erase(p_iterator);
+	}
+
+	void erase(Iterator &p_iterator) {
+		if (find(p_iterator.cursor->val) == nullptr) {
+			// Not in the list, nothing to do.
+			return;
+		}
+		// First, remove the node from the list.
+		while (true) {
+			Iterator prev = begin();
+			SafeListNode *expected_head = prev.cursor;
+			for (; prev != end(); ++prev) {
+				if (prev.cursor && prev.cursor->next == p_iterator.cursor) {
+					break;
+				}
+			}
+			if (prev != end()) {
+				// There exists a node before this.
+				prev.cursor->next.store(p_iterator.cursor->next.load());
+				// Done.
+				break;
+			} else {
+				if (head.compare_exchange_strong(/* expected= */ expected_head, /* new= */ p_iterator.cursor->next.load())) {
+					// Successfully reassigned the head pointer before another thread changed it to something else.
+					break;
+				}
+				// Fall through upon failure, try again.
+			}
+		}
+		// Then queue it for deletion by putting it in the node graveyard.
+		// Don't touch `next` because an iterator might still be pointing at this node.
+		SafeListNode *expected_head = nullptr;
+		do {
+			expected_head = graveyard_head.load();
+			p_iterator.cursor->graveyard_next.store(expected_head);
+		} while (!graveyard_head.compare_exchange_strong(/* expected= */ expected_head, /* new= */ p_iterator.cursor));
+	}
+
+	Iterator begin() {
+		return Iterator(head.load(), this);
+	}
+
+	Iterator end() {
+		return Iterator(nullptr, this);
+	}
+
+	// Calling this will cause zero to many deallocations.
+	bool maybe_cleanup() {
+		SafeListNode *cursor = nullptr;
+		SafeListNode *new_graveyard_head = nullptr;
+		do {
+			// The access order here is theoretically important.
+			cursor = graveyard_head.load();
+			if (active_iterator_count.load() != 0) {
+				// It's not safe to clean up with an active iterator, because that iterator
+				// could be pointing to an element that we want to delete.
+				return false;
+			}
+			// Any iterator created after this point will never point to a deleted node.
+			// Swap it out with the current graveyard head.
+		} while (!graveyard_head.compare_exchange_strong(/* expected= */ cursor, /* new= */ new_graveyard_head));
+		// Our graveyard list is now unreachable by any active iterators,
+		// detached from the main graveyard head and ready for deletion.
+		while (cursor) {
+			SafeListNode *tmp = cursor;
+			cursor = cursor->graveyard_next;
+			tmp->deletion_fn(tmp->val);
+			memdelete_allocator<SafeListNode, A>(tmp);
+		}
+		return true;
+	}
+
+	_FORCE_INLINE_ SafeList() {}
+	_FORCE_INLINE_ SafeList(std::initializer_list<T> p_init) {
+		for (const T &E : p_init) {
+			insert(E);
+		}
+	}
+
+	~SafeList() {
+#ifdef DEBUG_ENABLED
+		if (!maybe_cleanup()) {
+			ERR_PRINT("There are still iterators around when destructing a SafeList. Memory will be leaked. This is a bug.");
+		}
+#else
+		maybe_cleanup();
+#endif
+	}
+};
+
+// --- End core/templates/safe_list.h ---
+// --- Folded from servers/audio/audio_effect.h ---
+#include "core/io/resource.h"
+
+#include "core/types.h"
+
+#include <type_traits>
+#include <utility>
+
+class AudioEffectInstance final : public RefCounted
+{
+public:
+	using ProcessFn = void (*)(void* p_state, const AudioFrame* p_src, AudioFrame* p_dst, int p_frames);
+	using ProcessSilenceFn = bool (*)(const void* p_state);
+	using FreeFn = void (*)(void* p_state);
+
+	void* state = nullptr;
+	ProcessFn process_fn = nullptr;
+	ProcessSilenceFn process_silence_fn = nullptr;
+	FreeFn free_fn = nullptr;
+
+private:
+	const void* state_type_tag = nullptr;
+
+	template <typename T, typename = void>
+	struct HasProcessSilence : std::false_type {};
+
+	template <typename T>
+	struct HasProcessSilence<T, std::void_t<decltype(std::declval<const T&>().process_silence())>> : std::true_type {};
+
+	template <typename T>
+	static const void* _state_type_id()
+	{
+		static const char tag = 0;
+		return &tag;
+	}
+
+	template <typename StateT>
+	static void _default_process(void* p_state, const AudioFrame* p_src, AudioFrame* p_dst, int p_frames)
+	{
+		static_cast<StateT*>(p_state)->process(p_src, p_dst, p_frames);
+	}
+
+	template <typename StateT>
+	static bool _default_process_silence(const void* p_state)
+	{
+		return static_cast<const StateT*>(p_state)->process_silence();
+	}
+
+	template <typename StateT>
+	static void _default_free(void* p_state)
+	{
+		memdelete(static_cast<StateT*>(p_state));
+	}
+
+public:
+	_ALWAYS_INLINE_ void process(
+		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
+	{
+		if (process_fn && state) {
+			process_fn(state, p_src_frames, p_dst_frames, p_frame_count);
+		}
+	}
+
+	_ALWAYS_INLINE_ bool process_silence() const
+	{
+		return (process_silence_fn && state) ? process_silence_fn(state) : false;
+	}
+
+	template <typename T>
+	_ALWAYS_INLINE_ T* get_state() const
+	{
+		return (state_type_tag == _state_type_id<T>()) ? static_cast<T*>(state) : nullptr;
+	}
+
+	template <typename StateT>
+	static Ref<AudioEffectInstance> create(
+		StateT* p_state,
+		ProcessFn p_process_fn = &_default_process<StateT>,
+		ProcessSilenceFn p_process_silence_fn = nullptr,
+		FreeFn p_free_fn = &_default_free<StateT>)
+	{
+		Ref<AudioEffectInstance> ins;
+		ins.instantiate();
+		ins->state = p_state;
+		ins->state_type_tag = _state_type_id<StateT>();
+		ins->process_fn = p_process_fn;
+		if (p_process_silence_fn) {
+			ins->process_silence_fn = p_process_silence_fn;
+		}
+		else if constexpr (HasProcessSilence<StateT>::value) {
+			ins->process_silence_fn = &_default_process_silence<StateT>;
+		}
+		ins->free_fn = p_free_fn;
+		return ins;
+	}
+
+	~AudioEffectInstance()
+	{
+		if (free_fn && state) {
+			free_fn(state);
+		}
+	}
+};
+
+struct AudioEffectAmplifyConfig;
+struct AudioEffectCaptureConfig;
+struct AudioEffectChorusConfig;
+struct AudioEffectCompressorConfig;
+struct AudioEffectDelayConfig;
+struct AudioEffectDistortionConfig;
+struct AudioEffectEQConfig;
+struct AudioEffectFilterConfig;
+struct AudioEffectHardLimiterConfig;
+struct AudioEffectLimiterConfig;
+struct AudioEffectPannerConfig;
+struct AudioEffectPhaserConfig;
+struct AudioEffectPitchShiftConfig;
+struct AudioEffectRecordConfig;
+struct AudioEffectReverbConfig;
+struct AudioEffectSpectrumAnalyzerConfig;
+struct AudioEffectStereoEnhanceConfig;
+
+class AudioEffect final : public Resource
+{
+public:
+	enum Type
+	{
+		EFFECT_AMPLIFY,
+		EFFECT_CAPTURE,
+		EFFECT_CHORUS,
+		EFFECT_COMPRESSOR,
+		EFFECT_DELAY,
+		EFFECT_DISTORTION,
+		EFFECT_EQ,
+		EFFECT_FILTER,
+		EFFECT_HARD_LIMITER,
+		EFFECT_LIMITER,
+		EFFECT_PANNER,
+		EFFECT_PHASER,
+		EFFECT_PITCH_SHIFT,
+		EFFECT_RECORD,
+		EFFECT_REVERB,
+		EFFECT_SPECTRUM_ANALYZER,
+		EFFECT_STEREO_ENHANCE,
+	};
+
+private:
+	Type effect_type = EFFECT_AMPLIFY;
+	void* config = nullptr;
+
+	void _init_config(Type p_type);
+	void _free_config();
+
+public:
+	Type get_effect_type() const { return effect_type; }
+	void set_effect_type(Type p_type);
+
+	void* get_config_ptr() const { return config; }
+
+	AudioEffectAmplifyConfig* get_amplify_config() const
+	{
+		return effect_type == EFFECT_AMPLIFY ? static_cast<AudioEffectAmplifyConfig*>(config) : nullptr;
+	}
+	AudioEffectCaptureConfig* get_capture_config() const
+	{
+		return effect_type == EFFECT_CAPTURE ? static_cast<AudioEffectCaptureConfig*>(config) : nullptr;
+	}
+	AudioEffectChorusConfig* get_chorus_config() const
+	{
+		return effect_type == EFFECT_CHORUS ? static_cast<AudioEffectChorusConfig*>(config) : nullptr;
+	}
+	AudioEffectCompressorConfig* get_compressor_config() const
+	{
+		return effect_type == EFFECT_COMPRESSOR ? static_cast<AudioEffectCompressorConfig*>(config) : nullptr;
+	}
+	AudioEffectDelayConfig* get_delay_config() const
+	{
+		return effect_type == EFFECT_DELAY ? static_cast<AudioEffectDelayConfig*>(config) : nullptr;
+	}
+	AudioEffectDistortionConfig* get_distortion_config() const
+	{
+		return effect_type == EFFECT_DISTORTION ? static_cast<AudioEffectDistortionConfig*>(config) : nullptr;
+	}
+	AudioEffectEQConfig* get_eq_config() const
+	{
+		return effect_type == EFFECT_EQ ? static_cast<AudioEffectEQConfig*>(config) : nullptr;
+	}
+	AudioEffectFilterConfig* get_filter_config() const
+	{
+		return effect_type == EFFECT_FILTER ? static_cast<AudioEffectFilterConfig*>(config) : nullptr;
+	}
+	AudioEffectHardLimiterConfig* get_hard_limiter_config() const
+	{
+		return effect_type == EFFECT_HARD_LIMITER ? static_cast<AudioEffectHardLimiterConfig*>(config) : nullptr;
+	}
+	AudioEffectLimiterConfig* get_limiter_config() const
+	{
+		return effect_type == EFFECT_LIMITER ? static_cast<AudioEffectLimiterConfig*>(config) : nullptr;
+	}
+	AudioEffectPannerConfig* get_panner_config() const
+	{
+		return effect_type == EFFECT_PANNER ? static_cast<AudioEffectPannerConfig*>(config) : nullptr;
+	}
+	AudioEffectPhaserConfig* get_phaser_config() const
+	{
+		return effect_type == EFFECT_PHASER ? static_cast<AudioEffectPhaserConfig*>(config) : nullptr;
+	}
+	AudioEffectPitchShiftConfig* get_pitch_shift_config() const
+	{
+		return effect_type == EFFECT_PITCH_SHIFT ? static_cast<AudioEffectPitchShiftConfig*>(config) : nullptr;
+	}
+	AudioEffectRecordConfig* get_record_config() const
+	{
+		return effect_type == EFFECT_RECORD ? static_cast<AudioEffectRecordConfig*>(config) : nullptr;
+	}
+	AudioEffectReverbConfig* get_reverb_config() const
+	{
+		return effect_type == EFFECT_REVERB ? static_cast<AudioEffectReverbConfig*>(config) : nullptr;
+	}
+	AudioEffectSpectrumAnalyzerConfig* get_spectrum_analyzer_config() const
+	{
+		return effect_type == EFFECT_SPECTRUM_ANALYZER ? static_cast<AudioEffectSpectrumAnalyzerConfig*>(config) : nullptr;
+	}
+	AudioEffectStereoEnhanceConfig* get_stereo_enhance_config() const
+	{
+		return effect_type == EFFECT_STEREO_ENHANCE ? static_cast<AudioEffectStereoEnhanceConfig*>(config) : nullptr;
+	}
+
+	Ref<AudioEffectInstance> instantiate();
+
+	AudioEffect(Type p_type = EFFECT_AMPLIFY);
+	AudioEffect(const AudioEffect&) = delete;
+	AudioEffect& operator=(const AudioEffect&) = delete;
+	~AudioEffect();
+};
+
+// --- End servers/audio/audio_effect.h ---
 // --- Folded from servers/audio/audio_filter_sw.h ---
 #include "core/typedefs.h"
 
@@ -787,7 +1362,7 @@ public:
 // --- End servers/audio/audio_driver_dummy.h ---
 
 // --- Folded from servers/audio/audio_rb_resampler.h ---
-#include "core/math/audio_frame.h"
+
 #include "core/templates/safe_refcount.h"
 #include "core/typedefs.h"
 

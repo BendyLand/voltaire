@@ -34,7 +34,7 @@
 TEST_FORCE_LINK(test_texture_rect)
 
 #include "core/io/image.h"
-#include "scene/gui/texture_rect.h"
+#include "scene/gui/button.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/atlas_texture.h"

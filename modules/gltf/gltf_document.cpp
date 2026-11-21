@@ -46,9 +46,9 @@
 #include "scene/3d/bone_attachment_3d.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
-#include "scene/3d/light_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
-#include "scene/3d/multimesh_instance_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/animation/animation_player.h"
 #include "scene/resources/3d/skin.h"
 #include "scene/resources/compressed_texture.h"
@@ -2676,13 +2676,12 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {}
 #include "gltf_extensions.h"
 
 #include "gltf_state.h"
-#include "scene/3d/light_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 
 #include <cfloat>
 
 #ifndef PHYSICS_3D_DISABLED
 #include "core/math/convex_hull.h"
-#include "scene/3d/physics/area_3d.h"
 #include "scene/3d/physics/collision_object_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
 #include "scene/resources/3d/shape_3d.h"

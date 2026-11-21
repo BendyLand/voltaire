@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "display_server_web.h"
+#include "platform/web/os_web.h"
 
 #include "dom_keys.inc"
 #include "godot_js.h"

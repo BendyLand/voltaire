@@ -37,7 +37,7 @@
 #include "servers/rendering/renderer_rd/rd_caches.h"
 // --- Folded from servers/rendering/renderer_rd/renderer_canvas_render_rd.h ---
 #include "core/templates/lru.h"
-#include "servers/rendering/multi_uma_buffer.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/renderer_rd/shaders/canvas.glsl.gen.h"

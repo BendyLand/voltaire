@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "tts_driver_onecore.h"
+#include "platform/windows/display_server_windows.h"
 
 #include "servers/display/display_server.h"
 

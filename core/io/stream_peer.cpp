@@ -867,7 +867,7 @@ StreamPeerSocket::~StreamPeerSocket() { disconnect_from_host(); }
 /**************************************************************************/
 
 #include <zlib.h>
-#include "core/io/stream_peer_gzip.h"
+#include "core/io/stream_peer.h"
 #include "core/io/zip_io.h"
 
 StreamPeerGZIP::~StreamPeerGZIP() { _close(); }

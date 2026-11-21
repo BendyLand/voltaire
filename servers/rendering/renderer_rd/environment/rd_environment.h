@@ -39,7 +39,7 @@
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_compiler.h"
 #include "core/templates/local_vector.h"
-#include "servers/rendering/environment/renderer_gi.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/shaders/environment/gi.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/environment/sdfgi_debug.glsl.gen.h"

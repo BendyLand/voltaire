@@ -28,8 +28,23 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
+// --- Inlined from modules/bcdec/image_decompress_bcdec.h ---
+#include "core/io/image.h"
 
-#include "image_decompress_bcdec.h"
+enum BCdecFormat {
+	BCdec_BC1,
+	BCdec_BC2,
+	BCdec_BC3,
+	BCdec_BC4,
+	BCdec_BC5,
+	BCdec_BC6S,
+	BCdec_BC6U,
+	BCdec_BC7,
+};
+
+void image_decompress_bcdec(Image *p_image);
+
+// --- End modules/bcdec/image_decompress_bcdec.h ---
 #include "register_types.h"
 
 #include "core/os/os.h"

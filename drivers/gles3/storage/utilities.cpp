@@ -1490,7 +1490,7 @@ uint64_t Utilities::get_maximum_uniform_buffer_size()
 #include "core/math/geometry_3d.h"
 #include "core/os/os.h"
 #include "drivers/gles3/storage/utilities.h"
-#include "drivers/gles3/rasterizer_scene_gles3.h"
+#include "drivers/gles3/rasterizer_gles3.h"
 #include "drivers/gles3/storage/utilities.h"
 
 using namespace GLES3;
@@ -3442,7 +3442,6 @@ void GLES3::LightStorage::initialize() {}
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
-#include "drivers/gles3/rasterizer_canvas_gles3.h"
 #include "drivers/gles3/rasterizer_gles3.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"

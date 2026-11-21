@@ -41,7 +41,7 @@
 #include "servers/rendering/rendering_device_binds.h"
 #include "servers/rendering/rendering_device_commons.h"
 #include "servers/rendering/rendering_shader_container.h"
-#include "servers/rendering/shader_include_db.h"
+#include "servers/rendering/shader_compiler.h"
 
 #ifdef MODULE_GLSLANG_ENABLED
 #include "modules/glslang/shader_compile.h"
@@ -8046,7 +8046,7 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 #include "modules/glslang/shader_compile.h"
 #endif
 
-#include "servers/rendering/shader_include_db.h"
+#include "servers/rendering/shader_compiler.h"
 #include "servers/rendering/rendering_device_driver.h"
 #include "servers/rendering/rendering_context_driver.h"
 #include <thirdparty/spirv-reflect/spirv_reflect.h>
