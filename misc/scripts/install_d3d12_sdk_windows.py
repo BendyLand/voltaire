@@ -31,7 +31,7 @@ else:
     deps_folder = os.path.join("bin", "build_deps")
 
 # Mesa NIR
-# Sync with `drivers/d3d12/SCsub` when updating Mesa.
+# Sync with `premake5.lua` when updating Mesa.
 # Check for latest version: https://github.com/godotengine/godot-nir-static/releases/latest
 mesa_version = "25.3.1-3"
 # WinPixEventRuntime

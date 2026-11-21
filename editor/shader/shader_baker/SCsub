@@ -1,6 +1,0 @@
-#!/usr/bin/env python
-from misc.utility.scons_hints import *
-
-Import("env")
-# Platform shader baker plugins are consolidated into editor/export/shader_baker_export_plugin.cpp
-# under #ifdef VULKAN_ENABLED / D3D12_ENABLED / METAL_ENABLED guards.

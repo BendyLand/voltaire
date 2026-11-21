@@ -185,52 +185,8 @@ def is_linker_command(line: str):
     return bool(ARCHIVE_COMMAND_PATTERN.search(line))
 
 
-def generate_comp_file(name, obj_list_name):
-    cont = input(
-        "Warning: this will delete any existing build artifacts. Continue? (y/N)\n"
-    )
-    if "y" not in cont.lower():
-        print("File generation aborted.")
-        return
-    print("Generating compilation file...")
-    subprocess.run(shlex.split("scons -c"), check=True)
-    scons_cmd = "scons -n progress=no verbose=yes CPPDEFINES=VOLTAIRE_BUILD"
-    comp_file = subprocess.run(
-        shlex.split(scons_cmd),
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    lines = comp_file.stdout.split("\n")
-    comp_commands = []
-    object_files = []
-    obj_pattern = re.compile(r"-o\s+([^\s]+|\"[^\"]+\")")
-    for line in lines[6:]:
-        line_str = line.strip()
-        if not line_str or line_str.startswith(("ar ", "ranlib ", "scons:", "INFO:")):
-            continue
-        comp_commands.append(line_str)
-        match = obj_pattern.search(line_str)
-        if match:
-            obj_path = match.group(1).strip("\"'")
-            if obj_path.endswith(".o"):
-                object_files.append(obj_path)
-    object_files = filter_object_files(object_files)
-    print("Writing compilation commands...")
-    with open(name, "w") as file:
-        for line in comp_commands:
-            if is_linker_command(line):
-                line = simplify_linker_command(line)
-            file.write(f"{line}\n")
-    print("Writing response file...")
-    with open(obj_list_name, "w") as file:
-        for obj in object_files:
-            file.write(f"{obj}\n")
-    print("Done!")
-
-
 options = {"gcc", "g++", "wayland-scanner"}
-lines = read_file("comp")
+lines = read_file("comp") if os.path.exists("comp") else []
 
 
 def run_command_serial(line):

@@ -1,9 +1,12 @@
 import json
 import os
-
-from SCons.Util import WhereIs
+import shutil
 
 from platform_methods import get_build_version
+
+
+def WhereIs(tool):
+    return shutil.which(tool) or tool
 
 
 def run_closure_compiler(target, source, env, for_signature):
