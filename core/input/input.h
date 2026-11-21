@@ -537,3 +537,32 @@ public:
 	Input& operator=(const Input&) = delete;
 	~Input() = delete;
 };
+
+// --- Folded from core/input/default_controller_mappings.h ---
+class DefaultControllerMappings {
+public:
+	static const char *mappings[];
+};
+
+// --- End core/input/default_controller_mappings.h ---
+
+// --- Folded from core/input/input_event_codec.h ---
+#include "core/input/input_event.h"
+
+/**
+ * Encodes the input event as a byte array.
+ *
+ * Returns `true` if the event was successfully encoded, `false` otherwise.
+ */
+bool encode_input_event(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void decode_input_event(const Vector<uint8_t>& p_data, InputEvent& r_event);
+
+void encode_input_event_key(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_mouse_button(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_mouse_motion(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_joypad_button(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_joypad_motion(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_gesture_pan(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_gesture_magnify(const InputEvent& p_event, Vector<uint8_t>& r_data);
+
+// --- End core/input/input_event_codec.h ---

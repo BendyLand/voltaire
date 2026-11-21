@@ -35,7 +35,41 @@
 #include "scene/animation/tween.h"
 #include "scene/main/node.h"
 #include "scene/resources/animation.h"
-#include "scene/resources/animation_library.h"
+// --- Folded from scene/resources/animation_library.h ---
+#include "core/templates/rb_map.h"
+#include "scene/resources/animation.h"
+
+class AnimationLibrary : public Resource
+{
+	void _animation_changed(const String& p_name);
+
+	friend class AnimationMixer; // For faster access.
+	RBMap<String, Ref<Animation>> animations;
+
+public:
+	static bool is_valid_animation_name(const String& p_name);
+	static bool is_valid_library_name(const String& p_name);
+	static String validate_library_name(const String& p_name);
+
+	Error add_animation(const String& p_name, const Ref<Animation>& p_animation);
+	void remove_animation(const String& p_name);
+	void rename_animation(const String& p_name, const String& p_new_name);
+	bool has_animation(const String& p_name) const;
+	Ref<Animation> get_animation(const String& p_name) const;
+	void get_animation_list(LocalVector<String>* p_animations) const;
+	int get_animation_list_size() const;
+
+#ifdef TOOLS_ENABLED
+	virtual void get_argument_options(
+		const String& p_function, int p_idx, List<String>* r_options) const;
+#endif
+
+	AnimationLibrary();
+};
+
+
+
+// --- End scene/resources/animation_library.h ---
 #include "servers/audio/audio_stream.h"
 
 class AnimatedValuesBackup;

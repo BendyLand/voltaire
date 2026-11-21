@@ -2296,3 +2296,2695 @@ void ClusterBuilderRD::debug(ClusterBuilderRD::ElementType) {}
 ClusterBuilderRD::ClusterBuilderRD() {}
 
 void ClusterBuilderRD::bake_cluster() {}
+
+// ============================================================================
+// Merged from servers/rendering/renderer_rd/shader_rd.cpp
+// ============================================================================
+
+#include "core/config/engine.h"
+#include "core/io/dir_access.h"
+#include "core/io/file_access.h"
+#include "core/os/os.h"
+#include "core/string/string_builder.h"
+#include "core/version.h"
+#include "servers/rendering/shader_include_db.h"
+#include "shader_rd.h"
+
+#define ENABLE_SHADER_CACHE 1
+
+void ShaderRD::_add_stage(const char* p_code, StageType p_stage_type)
+{
+	Vector<String> lines = String(p_code).split("\n");
+
+	String text;
+
+	int line_count = lines.size();
+	for (int i = 0; i < line_count; i++) {
+		const String& l = lines[i];
+		bool push_chunk = false;
+
+		StageTemplate::Chunk chunk;
+
+		if (l.begins_with("#VERSION_DEFINES")) {
+			chunk.type = StageTemplate::Chunk::TYPE_VERSION_DEFINES;
+			push_chunk = true;
+		}
+		else if (l.begins_with("#GLOBALS")) {
+			switch (p_stage_type) {
+			case STAGE_TYPE_VERTEX:
+				chunk.type = StageTemplate::Chunk::TYPE_VERTEX_GLOBALS;
+				break;
+			case STAGE_TYPE_FRAGMENT:
+				chunk.type = StageTemplate::Chunk::TYPE_FRAGMENT_GLOBALS;
+				break;
+			case STAGE_TYPE_COMPUTE:
+				chunk.type = StageTemplate::Chunk::TYPE_COMPUTE_GLOBALS;
+				break;
+			case STAGE_TYPE_RAYGEN:
+				chunk.type = StageTemplate::Chunk::TYPE_RAYGEN_GLOBALS;
+				break;
+			case STAGE_TYPE_ANY_HIT:
+				chunk.type = StageTemplate::Chunk::TYPE_ANY_HIT_GLOBALS;
+				break;
+			case STAGE_TYPE_CLOSEST_HIT:
+				chunk.type = StageTemplate::Chunk::TYPE_CLOSEST_HIT_GLOBALS;
+				break;
+			case STAGE_TYPE_MISS:
+				chunk.type = StageTemplate::Chunk::TYPE_MISS_GLOBALS;
+				break;
+			case STAGE_TYPE_INTERSECTION:
+				chunk.type = StageTemplate::Chunk::TYPE_INTERSECTION_GLOBALS;
+				break;
+			default: {
+			}
+			}
+
+			push_chunk = true;
+		}
+		else if (l.begins_with("#MATERIAL_UNIFORMS")) {
+			chunk.type = StageTemplate::Chunk::TYPE_MATERIAL_UNIFORMS;
+			push_chunk = true;
+		}
+		else if (l.begins_with("#CODE")) {
+			chunk.type = StageTemplate::Chunk::TYPE_CODE;
+			push_chunk = true;
+			chunk.code =
+				l.replace_first("#CODE", String()).remove_char(':').strip_edges().to_upper();
+		}
+		else if (l.begins_with("#include ")) {
+			String include_file = l.replace("#include ", "").strip_edges();
+			if (include_file[0] == '"') {
+				int end_pos = include_file.find_char('"', 1);
+				if (end_pos >= 0) {
+					include_file = include_file.substr(1, end_pos - 1);
+
+					String include_code = ShaderIncludeDB::get_built_in_include_file(include_file);
+					if (!include_code.is_empty()) {
+						// Add these lines into our parse list so we parse them as well.
+						Vector<String> include_lines = include_code.split("\n");
+
+						for (int j = include_lines.size() - 1; j >= 0; j--) {
+							lines.insert(i + 1, include_lines[j]);
+						}
+
+						line_count = lines.size();
+					}
+					else {
+						// Add it in as is.
+						text += l + "\n";
+					}
+				}
+				else {
+					// Add it in as is.
+					text += l + "\n";
+				}
+			}
+			else {
+				// Add it in as is.
+				text += l + "\n";
+			}
+		}
+		else {
+			text += l + "\n";
+		}
+
+		if (push_chunk) {
+			if (!text.is_empty()) {
+				StageTemplate::Chunk text_chunk;
+				text_chunk.type = StageTemplate::Chunk::TYPE_TEXT;
+				text_chunk.text = text.utf8();
+				stage_templates[p_stage_type].chunks.push_back(text_chunk);
+				text = String();
+			}
+			stage_templates[p_stage_type].chunks.push_back(chunk);
+		}
+	}
+
+	if (!text.is_empty()) {
+		StageTemplate::Chunk text_chunk;
+		text_chunk.type = StageTemplate::Chunk::TYPE_TEXT;
+		text_chunk.text = text.utf8();
+		stage_templates[p_stage_type].chunks.push_back(text_chunk);
+		text = String();
+	}
+}
+
+void ShaderRD::setup(const StageData& p_data)
+{
+	if (p_data.is_raytracing) {
+		setup_raytracing(p_data.raygen_code, p_data.any_hit_code, p_data.closest_hit_code,
+			p_data.miss_code, p_data.intersection_code, p_data.name);
+	}
+	else {
+		setup(p_data.vertex_code, p_data.fragment_code, p_data.compute_code, p_data.name);
+	}
+}
+
+void ShaderRD::setup(const char* p_vertex_code, const char* p_fragment_code,
+	const char* p_compute_code, const char* p_name)
+{
+	name = p_name;
+
+	if (p_compute_code) {
+		_add_stage(p_compute_code, STAGE_TYPE_COMPUTE);
+		pipeline_type = RDC::PIPELINE_TYPE_COMPUTE;
+	}
+	else {
+		pipeline_type = RDC::PIPELINE_TYPE_RASTERIZATION;
+		if (p_vertex_code) {
+			_add_stage(p_vertex_code, STAGE_TYPE_VERTEX);
+		}
+		if (p_fragment_code) {
+			_add_stage(p_fragment_code, STAGE_TYPE_FRAGMENT);
+		}
+	}
+
+	StringBuilder tohash;
+	tohash.append("[GodotVersionNumber]");
+	tohash.append(VLTR_VERSION_NUMBER);
+	tohash.append("[GodotVersionHash]");
+	tohash.append(VLTR_VERSION_HASH);
+	tohash.append("[Vertex]");
+	tohash.append(p_vertex_code ? p_vertex_code : "");
+	tohash.append("[Fragment]");
+	tohash.append(p_fragment_code ? p_fragment_code : "");
+	tohash.append("[Compute]");
+	tohash.append(p_compute_code ? p_compute_code : "");
+	tohash.append("[DebugInfo]");
+	tohash.append(Engine::is_generate_spirv_debug_info_enabled() ? "1" : "0");
+
+	base_sha256 = tohash.as_string().sha256_text();
+}
+
+void ShaderRD::setup_raytracing(const char* p_raygen_code, const char* p_any_hit_code,
+	const char* p_closest_hit_code, const char* p_miss_code, const char* p_intersection_code,
+	const char* p_name)
+{
+	name = p_name;
+
+	pipeline_type = RDC::PIPELINE_TYPE_RAYTRACING;
+	if (p_raygen_code) {
+		_add_stage(p_raygen_code, STAGE_TYPE_RAYGEN);
+	}
+	if (p_any_hit_code) {
+		_add_stage(p_any_hit_code, STAGE_TYPE_ANY_HIT);
+	}
+	if (p_closest_hit_code) {
+		_add_stage(p_closest_hit_code, STAGE_TYPE_CLOSEST_HIT);
+	}
+	if (p_miss_code) {
+		_add_stage(p_miss_code, STAGE_TYPE_MISS);
+	}
+	if (p_intersection_code) {
+		_add_stage(p_intersection_code, STAGE_TYPE_INTERSECTION);
+	}
+
+	StringBuilder tohash;
+	tohash.append("[GodotVersionNumber]");
+	tohash.append(VLTR_VERSION_NUMBER);
+	tohash.append("[GodotVersionHash]");
+	tohash.append(VLTR_VERSION_HASH);
+	tohash.append("[Raygen]");
+	tohash.append(p_raygen_code ? p_raygen_code : "");
+	tohash.append("[AnyHit]");
+	tohash.append(p_any_hit_code ? p_any_hit_code : "");
+	tohash.append("[ClosestHit]");
+	tohash.append(p_closest_hit_code ? p_closest_hit_code : "");
+	tohash.append("[Miss]");
+	tohash.append(p_miss_code ? p_miss_code : "");
+	tohash.append("[Intersection]");
+	tohash.append(p_intersection_code ? p_intersection_code : "");
+	tohash.append("[DebugInfo]");
+	tohash.append(Engine::is_generate_spirv_debug_info_enabled() ? "1" : "0");
+
+	base_sha256 = tohash.as_string().sha256_text();
+}
+
+RID ShaderRD::version_create(bool p_embedded)
+{
+	// initialize() was never called
+	ERR_FAIL_COND_V(group_to_variant_map.is_empty(), RID());
+
+	Version version;
+	version.dirty = true;
+	version.valid = false;
+	version.initialize_needed = true;
+	version.embedded = p_embedded;
+	version.variants.clear();
+	version.variant_data.clear();
+
+	version.mutex = memnew(Mutex);
+	RID rid = version_owner.make_rid(version);
+	{
+		MutexLock lock(versions_mutex);
+		version_mutexes.insert(rid, version.mutex);
+	}
+
+	if (p_embedded) {
+		MutexLock lock(shader_versions_embedded_set_mutex);
+		shader_versions_embedded_set.insert({this, rid});
+	}
+
+	return rid;
+}
+
+void ShaderRD::_clear_version(Version* p_version, bool p_skip_compilation)
+{
+	(void)p_skip_compilation;
+
+	// Clear versions if they exist.
+	if (!p_version->variants.is_empty()) {
+		for (int i = 0; i < variant_defines.size(); i++) {
+			if (p_version->variants[i].is_valid()) {
+				RD::free_rid(p_version->variants[i]);
+			}
+		}
+
+		p_version->variants.clear();
+		p_version->variant_data.clear();
+	}
+}
+
+void ShaderRD::_build_variant_code(StringBuilder& builder, uint32_t p_variant,
+	const Version* p_version, const StageTemplate& p_template)
+{
+	for (const StageTemplate::Chunk& chunk : p_template.chunks) {
+		switch (chunk.type) {
+		case StageTemplate::Chunk::TYPE_VERSION_DEFINES: {
+			builder.append("\n"); // make sure defines begin at newline
+			builder.append(general_defines.get_data());
+			builder.append(variant_defines[p_variant].text.get_data());
+			for (int j = 0; j < p_version->custom_defines.size(); j++) {
+				builder.append(p_version->custom_defines[j].get_data());
+			}
+			builder.append("\n"); // make sure defines begin at newline
+			if (p_version->uniforms.size()) {
+				builder.append("#define MATERIAL_UNIFORMS_USED\n");
+			}
+			for (const KeyValue<String, CharString>& E : p_version->code_sections) {
+				builder.append(String("#define ") + String(E.key) + "_CODE_USED\n");
+			}
+			builder.append(String("#define RENDER_DRIVER_") +
+						   OS::get_current_rendering_driver_name().to_upper() + "\n");
+			builder.append("#define samplerExternalOES sampler2D\n");
+			builder.append("#define textureExternalOES texture2D\n");
+		} break;
+		case StageTemplate::Chunk::TYPE_MATERIAL_UNIFORMS: {
+			builder.append(
+				p_version->uniforms.get_data()); // uniforms (same for vertex and fragment)
+		} break;
+		case StageTemplate::Chunk::TYPE_VERTEX_GLOBALS: {
+			builder.append(p_version->vertex_globals.get_data()); // vertex globals
+		} break;
+		case StageTemplate::Chunk::TYPE_FRAGMENT_GLOBALS: {
+			builder.append(p_version->fragment_globals.get_data()); // fragment globals
+		} break;
+		case StageTemplate::Chunk::TYPE_COMPUTE_GLOBALS: {
+			builder.append(p_version->compute_globals.get_data()); // compute globals
+		} break;
+		case StageTemplate::Chunk::TYPE_RAYGEN_GLOBALS: {
+			builder.append(p_version->raygen_globals.get_data()); // raygen globals
+		} break;
+		case StageTemplate::Chunk::TYPE_ANY_HIT_GLOBALS: {
+			builder.append(p_version->any_hit_globals.get_data()); // any_hit globals
+		} break;
+		case StageTemplate::Chunk::TYPE_CLOSEST_HIT_GLOBALS: {
+			builder.append(p_version->closest_hit_globals.get_data()); // closest_hit globals
+		} break;
+		case StageTemplate::Chunk::TYPE_MISS_GLOBALS: {
+			builder.append(p_version->miss_globals.get_data()); // miss globals
+		} break;
+		case StageTemplate::Chunk::TYPE_INTERSECTION_GLOBALS: {
+			builder.append(p_version->intersection_globals.get_data()); // intersection globals
+		} break;
+		case StageTemplate::Chunk::TYPE_CODE: {
+			if (p_version->code_sections.has(chunk.code)) {
+				builder.append(p_version->code_sections[chunk.code].get_data());
+			}
+		} break;
+		case StageTemplate::Chunk::TYPE_TEXT: {
+			builder.append(chunk.text.get_data());
+		} break;
+		}
+	}
+}
+
+Vector<String> ShaderRD::_build_variant_stage_sources(uint32_t p_variant, CompileData p_data)
+{
+	if (!variants_enabled[p_variant]) {
+		return Vector<String>(); // Variant is disabled, return.
+	}
+
+	Vector<String> stage_sources;
+	stage_sources.resize(RDC::SHADER_STAGE_MAX);
+
+	if (pipeline_type == RDC::PIPELINE_TYPE_COMPUTE) {
+		// Compute stage.
+		StringBuilder builder;
+		_build_variant_code(
+			builder, p_variant, p_data.version, stage_templates[STAGE_TYPE_COMPUTE]);
+		stage_sources.write[RDC::SHADER_STAGE_COMPUTE] = builder.as_string();
+	}
+	else if (pipeline_type == RDC::PIPELINE_TYPE_RAYTRACING) {
+		{
+			// Raygen stage.
+			StringBuilder builder;
+			_build_variant_code(
+				builder, p_variant, p_data.version, stage_templates[STAGE_TYPE_RAYGEN]);
+			stage_sources.write[RDC::SHADER_STAGE_RAYGEN] = builder.as_string();
+		}
+
+		{
+			// Any hit stage.
+			StringBuilder builder;
+			_build_variant_code(
+				builder, p_variant, p_data.version, stage_templates[STAGE_TYPE_ANY_HIT]);
+			stage_sources.write[RDC::SHADER_STAGE_ANY_HIT] = builder.as_string();
+		}
+
+		{
+			// Closest hit stage.
+			StringBuilder builder;
+			_build_variant_code(
+				builder, p_variant, p_data.version, stage_templates[STAGE_TYPE_CLOSEST_HIT]);
+			stage_sources.write[RDC::SHADER_STAGE_CLOSEST_HIT] = builder.as_string();
+		}
+
+		{
+			// Miss stage.
+			StringBuilder builder;
+			_build_variant_code(
+				builder, p_variant, p_data.version, stage_templates[STAGE_TYPE_MISS]);
+			stage_sources.write[RDC::SHADER_STAGE_MISS] = builder.as_string();
+		}
+
+		{
+			// Intersection stage.
+			StringBuilder builder;
+			_build_variant_code(
+				builder, p_variant, p_data.version, stage_templates[STAGE_TYPE_INTERSECTION]);
+			stage_sources.write[RDC::SHADER_STAGE_INTERSECTION] = builder.as_string();
+		}
+	}
+	else {
+		{
+			// Vertex stage.
+			StringBuilder builder;
+			_build_variant_code(
+				builder, p_variant, p_data.version, stage_templates[STAGE_TYPE_VERTEX]);
+			stage_sources.write[RDC::SHADER_STAGE_VERTEX] = builder.as_string();
+		}
+
+		{
+			// Fragment stage.
+			StringBuilder builder;
+			_build_variant_code(
+				builder, p_variant, p_data.version, stage_templates[STAGE_TYPE_FRAGMENT]);
+			stage_sources.write[RDC::SHADER_STAGE_FRAGMENT] = builder.as_string();
+		}
+	}
+
+	return stage_sources;
+}
+
+Vector<String> ShaderRD::version_build_variant_stage_sources(RID p_version, int p_variant)
+{
+	Version* version = version_owner.get_or_null(p_version);
+	ERR_FAIL_NULL_V(version, Vector<String>());
+
+	if (version->dirty) {
+		_initialize_version(version);
+	}
+
+	CompileData compile_data;
+	compile_data.version = version;
+	compile_data.group = variant_to_group[p_variant];
+	return _build_variant_stage_sources(p_variant, compile_data);
+}
+
+RenderingServerTypes::ShaderNativeSourceCode ShaderRD::version_get_native_source_code(RID p_version)
+{
+	Version* version = version_owner.get_or_null(p_version);
+	RenderingServerTypes::ShaderNativeSourceCode source_code;
+	ERR_FAIL_NULL_V(version, source_code);
+
+	MutexLock lock(*version->mutex);
+
+	source_code.versions.resize(variant_defines.size());
+
+	for (int i = 0; i < source_code.versions.size(); i++) {
+		if (pipeline_type == RDC::PIPELINE_TYPE_RASTERIZATION) {
+			// Vertex stage.
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_VERTEX]);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "vertex";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+
+		if (pipeline_type == RDC::PIPELINE_TYPE_RASTERIZATION) {
+			// Fragment stage.
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_FRAGMENT]);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "fragment";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+
+		if (pipeline_type == RDC::PIPELINE_TYPE_COMPUTE) {
+			// Compute stage.
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_COMPUTE]);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "compute";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+
+		if (pipeline_type == RDC::PIPELINE_TYPE_RAYTRACING) {
+			// Raygen stage.
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_RAYGEN]);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "raygen";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+		if (pipeline_type == RDC::PIPELINE_TYPE_RAYTRACING) {
+			// Any hit stage.
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_ANY_HIT]);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "any_hit";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+		if (pipeline_type == RDC::PIPELINE_TYPE_RAYTRACING) {
+			// Closest hit stage.
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_CLOSEST_HIT]);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "closest_hit";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+		if (pipeline_type == RDC::PIPELINE_TYPE_RAYTRACING) {
+			// Miss stage.
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_MISS]);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "miss";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+		if (pipeline_type == RDC::PIPELINE_TYPE_RAYTRACING) {
+			// Intersection stage.
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_INTERSECTION]);
+
+			RenderingServerTypes::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "intersection";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+	}
+
+	return source_code;
+}
+
+String ShaderRD::version_get_cache_file_relative_path(
+	RID p_version, int p_group, const String& p_api_name)
+{
+	Version* version = version_owner.get_or_null(p_version);
+	ERR_FAIL_NULL_V(version, String());
+
+	return _get_cache_file_relative_path(version, p_group, p_api_name);
+}
+
+String ShaderRD::_version_get_sha1(Version* p_version) const
+{
+	StringBuilder hash_build;
+
+	hash_build.append("[uniforms]");
+	hash_build.append(p_version->uniforms.get_data());
+	hash_build.append("[vertex_globals]");
+	hash_build.append(p_version->vertex_globals.get_data());
+	hash_build.append("[fragment_globals]");
+	hash_build.append(p_version->fragment_globals.get_data());
+	hash_build.append("[compute_globals]");
+	hash_build.append(p_version->compute_globals.get_data());
+	hash_build.append("[raygen_globals]");
+	hash_build.append(p_version->raygen_globals.get_data());
+	hash_build.append("[any_hit_globals]");
+	hash_build.append(p_version->any_hit_globals.get_data());
+	hash_build.append("[closest_hit_globals]");
+	hash_build.append(p_version->closest_hit_globals.get_data());
+	hash_build.append("[miss_globals]");
+	hash_build.append(p_version->miss_globals.get_data());
+	hash_build.append("[intersection_globals]");
+	hash_build.append(p_version->intersection_globals.get_data());
+
+	Vector<String> code_sections;
+	for (const KeyValue<String, CharString>& E : p_version->code_sections) {
+		code_sections.push_back(E.key);
+	}
+	code_sections.sort();
+
+	for (int i = 0; i < code_sections.size(); i++) {
+		hash_build.append(String("[code:") + String(code_sections[i]) + "]");
+		hash_build.append(p_version->code_sections[code_sections[i]].get_data());
+	}
+	for (int i = 0; i < p_version->custom_defines.size(); i++) {
+		hash_build.append("[custom_defines:" + itos(i) + "]");
+		hash_build.append(p_version->custom_defines[i].get_data());
+	}
+
+	return hash_build.as_string().sha1_text();
+}
+
+static const char* shader_file_header = "GDSC";
+static const uint32_t cache_file_version = 4;
+
+String ShaderRD::_get_cache_file_relative_path(
+	Version* p_version, int p_group, const String& p_api_name)
+{
+	String sha1 = _version_get_sha1(p_version);
+	return name.path_join(group_sha256[p_group]).path_join(sha1) + "." + p_api_name + ".cache";
+}
+
+String ShaderRD::_get_cache_file_path(
+	Version* p_version, int p_group, const String& p_api_name, bool p_user_dir)
+{
+	const String& shader_cache_dir = p_user_dir ? shader_cache_user_dir : shader_cache_res_dir;
+	String relative_path = _get_cache_file_relative_path(p_version, p_group, p_api_name);
+	return shader_cache_dir.path_join(relative_path);
+}
+
+void ShaderRD::_save_to_cache(Version* p_version, int p_group)
+{
+	ERR_FAIL_COND(!shader_cache_user_dir_valid);
+	String api_safe_name = String(RD::get_device_api_name()).validate_filename().to_lower();
+	const String& path = _get_cache_file_path(p_version, p_group, api_safe_name, true);
+	Ref<FileAccess> f = FileAccess::open(path, FileAccess::WRITE);
+	ERR_FAIL_COND(f.is_null());
+
+	PackedByteArray shader_cache_bytes =
+		ShaderRD::save_shader_cache_bytes(group_to_variant_map[p_group], p_version->variant_data);
+	f->store_buffer(shader_cache_bytes);
+}
+
+void ShaderRD::_allocate_placeholders(Version* p_version, int p_group)
+{
+	ERR_FAIL_COND(p_version->variants.is_empty());
+
+	for (uint32_t i = 0; i < group_to_variant_map[p_group].size(); i++) {
+		int variant_id = group_to_variant_map[p_group][i];
+		RID shader = RD::shader_create_placeholder();
+		{
+			p_version->variants.write[variant_id] = shader;
+		}
+	}
+}
+
+void ShaderRD::_compile_ensure_finished(Version* p_version)
+{
+	if (p_version->initialize_needed || p_version->variants.is_empty() || p_version->valid) {
+		return;
+	}
+
+	// Wait for compilation of existing groups if necessary.
+	for (int i = 0; i < group_enabled.size(); i++) {
+		if (group_enabled[i]) {
+			_compile_version_end(p_version, i);
+		}
+	}
+}
+
+void ShaderRD::_version_set(Version* p_version, const HashMap<String, String>& p_code,
+	const Vector<String>& p_custom_defines)
+{
+	p_version->code_sections.clear();
+	for (const KeyValue<String, String>& E : p_code) {
+		p_version->code_sections[String(E.key.to_upper())] = E.value.utf8();
+	}
+
+	p_version->custom_defines.clear();
+	for (const String& custom_define : p_custom_defines) {
+		p_version->custom_defines.push_back(custom_define.utf8());
+	}
+
+	p_version->dirty = true;
+	if (p_version->initialize_needed) {
+		_initialize_version(p_version);
+		for (int i = 0; i < group_enabled.size(); i++) {
+			if (!group_enabled[i]) {
+				_allocate_placeholders(p_version, i);
+				continue;
+			}
+			_compile_version_start(p_version, i);
+		}
+		p_version->initialize_needed = false;
+	}
+}
+
+void ShaderRD::version_set_code(RID p_version, const HashMap<String, String>& p_code,
+	const String& p_uniforms, const String& p_vertex_globals, const String& p_fragment_globals,
+	const Vector<String>& p_custom_defines)
+{
+	ERR_FAIL_COND(pipeline_type != RDC::PIPELINE_TYPE_RASTERIZATION);
+
+	Version* version = version_owner.get_or_null(p_version);
+	ERR_FAIL_NULL(version);
+
+	MutexLock lock(*version->mutex);
+
+	_compile_ensure_finished(version);
+
+	version->vertex_globals = p_vertex_globals.utf8();
+	version->fragment_globals = p_fragment_globals.utf8();
+	version->uniforms = p_uniforms.utf8();
+
+	_version_set(version, p_code, p_custom_defines);
+}
+
+void ShaderRD::version_set_compute_code(RID p_version, const HashMap<String, String>& p_code,
+	const String& p_uniforms, const String& p_compute_globals,
+	const Vector<String>& p_custom_defines)
+{
+	ERR_FAIL_COND(pipeline_type != RDC::PIPELINE_TYPE_COMPUTE);
+
+	Version* version = version_owner.get_or_null(p_version);
+	ERR_FAIL_NULL(version);
+
+	MutexLock lock(*version->mutex);
+
+	_compile_ensure_finished(version);
+
+	version->compute_globals = p_compute_globals.utf8();
+	version->uniforms = p_uniforms.utf8();
+
+	_version_set(version, p_code, p_custom_defines);
+}
+
+void ShaderRD::version_set_raytracing_code(RID p_version, const HashMap<String, String>& p_code,
+	const String& p_uniforms, const String& p_raygen_globals, const String& p_any_hit_globals,
+	const String& p_closest_hit_globals, const String& p_miss_globals,
+	const String& p_intersection_globals, const Vector<String>& p_custom_defines)
+{
+	ERR_FAIL_COND(pipeline_type != RDC::PIPELINE_TYPE_RAYTRACING);
+
+	Version* version = version_owner.get_or_null(p_version);
+	ERR_FAIL_NULL(version);
+
+	version->raygen_globals = p_raygen_globals.utf8();
+	version->any_hit_globals = p_any_hit_globals.utf8();
+	version->closest_hit_globals = p_closest_hit_globals.utf8();
+	version->miss_globals = p_miss_globals.utf8();
+	version->intersection_globals = p_intersection_globals.utf8();
+	version->uniforms = p_uniforms.utf8();
+
+	_version_set(version, p_code, p_custom_defines);
+}
+
+bool ShaderRD::version_is_valid(RID p_version)
+{
+	Version* version = version_owner.get_or_null(p_version);
+	ERR_FAIL_NULL_V(version, false);
+
+	MutexLock lock(*version->mutex);
+
+	if (version->dirty) {
+		_initialize_version(version);
+		for (int i = 0; i < group_enabled.size(); i++) {
+			if (!group_enabled[i]) {
+				_allocate_placeholders(version, i);
+				continue;
+			}
+			_compile_version_start(version, i);
+		}
+	}
+
+	_compile_ensure_finished(version);
+
+	return version->valid;
+}
+
+bool ShaderRD::version_free(RID p_version)
+{
+	if (version_owner.owns(p_version)) {
+		{
+			MutexLock lock(versions_mutex);
+			version_mutexes.erase(p_version);
+		}
+
+		Version* version = version_owner.get_or_null(p_version);
+		if (version->embedded) {
+			MutexLock lock(shader_versions_embedded_set_mutex);
+			shader_versions_embedded_set.erase({this, p_version});
+		}
+
+		version->mutex->lock();
+		_clear_version(version);
+		version_owner.free(p_version);
+		version->mutex->unlock();
+		memdelete(version->mutex);
+	}
+	else {
+		return false;
+	}
+
+	return true;
+}
+
+void ShaderRD::set_variant_enabled(int p_variant, bool p_enabled)
+{
+	ERR_FAIL_COND(version_owner.get_rid_count() > 0); // versions exist
+	ERR_FAIL_INDEX(p_variant, variants_enabled.size());
+	variants_enabled.write[p_variant] = p_enabled;
+}
+
+bool ShaderRD::is_variant_enabled(int p_variant) const
+{
+	ERR_FAIL_INDEX_V(p_variant, variants_enabled.size(), false);
+	return variants_enabled[p_variant];
+}
+
+int64_t ShaderRD::get_variant_count() const { return variants_enabled.size(); }
+
+int ShaderRD::get_variant_to_group(int p_variant) const { return variant_to_group[p_variant]; }
+
+void ShaderRD::enable_group(int p_group)
+{
+	ERR_FAIL_INDEX(p_group, group_enabled.size());
+
+	if (group_enabled[p_group]) {
+		// Group already enabled, do nothing.
+		return;
+	}
+
+	group_enabled.write[p_group] = true;
+
+	// Compile all versions again to include the new group.
+	for (const RID& version_rid : version_owner.get_owned_list()) {
+		Version* version = version_owner.get_or_null(version_rid);
+		version->mutex->lock();
+		_compile_version_start(version, p_group);
+		version->mutex->unlock();
+	}
+}
+
+bool ShaderRD::is_group_enabled(int p_group) const { return group_enabled[p_group]; }
+
+int64_t ShaderRD::get_group_count() const { return group_enabled.size(); }
+
+const LocalVector<int>& ShaderRD::get_group_to_variants(int p_group) const
+{
+	return group_to_variant_map[p_group];
+}
+
+const String& ShaderRD::get_name() const { return name; }
+
+const Vector<uint64_t>& ShaderRD::get_dynamic_buffers() const { return dynamic_buffers; }
+
+bool ShaderRD::shader_cache_cleanup_on_start = false;
+
+ShaderRD::ShaderRD()
+{
+	// Do not feel forced to use this, in most cases it makes little to no difference.
+	bool use_32_threads = false;
+	if (RD::get_device_vendor_name() == "NVIDIA") {
+		use_32_threads = true;
+	}
+	String base_compute_define_text;
+	if (use_32_threads) {
+		base_compute_define_text = "\n#define NATIVE_LOCAL_GROUP_SIZE 32\n#define "
+								   "NATIVE_LOCAL_SIZE_2D_X 8\n#define NATIVE_LOCAL_SIZE_2D_Y 4\n";
+	}
+	else {
+		base_compute_define_text = "\n#define NATIVE_LOCAL_GROUP_SIZE 64\n#define "
+								   "NATIVE_LOCAL_SIZE_2D_X 8\n#define NATIVE_LOCAL_SIZE_2D_Y 8\n";
+	}
+
+	base_compute_defines = base_compute_define_text.ascii();
+}
+
+ShaderRD::ShaderRD(const StageData& p_data) : ShaderRD()
+{
+	setup(p_data);
+}
+
+void ShaderRD::initialize(const Vector<String>& p_variant_defines, const String& p_general_defines,
+	const Vector<RD::PipelineImmutableSampler>& p_immutable_samplers,
+	const Vector<uint64_t>& p_dynamic_buffers)
+{
+	ERR_FAIL_COND(variant_defines.size());
+	ERR_FAIL_COND(p_variant_defines.is_empty());
+
+	general_defines = p_general_defines.utf8();
+	immutable_samplers = p_immutable_samplers;
+	dynamic_buffers = p_dynamic_buffers;
+
+	// When initialized this way, there is just one group and its always enabled.
+	group_to_variant_map.insert(0, LocalVector<int>{});
+	group_enabled.push_back(true);
+
+	for (int i = 0; i < p_variant_defines.size(); i++) {
+		variant_defines.push_back(VariantDefine(0, p_variant_defines[i], true));
+		variants_enabled.push_back(true);
+		variant_to_group.push_back(0);
+		group_to_variant_map[0].push_back(i);
+	}
+
+	if (!shader_cache_user_dir.is_empty() || !shader_cache_res_dir.is_empty()) {
+		group_sha256.resize(1);
+		_initialize_cache();
+	}
+}
+
+void ShaderRD::_initialize_cache()
+{
+	shader_cache_user_dir_valid = !shader_cache_user_dir.is_empty();
+	shader_cache_res_dir_valid = !shader_cache_res_dir.is_empty();
+	if (!shader_cache_user_dir_valid) {
+		return;
+	}
+
+	for (const KeyValue<int, LocalVector<int>>& E : group_to_variant_map) {
+		StringBuilder hash_build;
+
+		hash_build.append("[base_hash]");
+		hash_build.append(base_sha256);
+		hash_build.append("[general_defines]");
+		hash_build.append(general_defines.get_data());
+		hash_build.append("[group_id]");
+		hash_build.append(itos(E.key));
+		for (uint32_t i = 0; i < E.value.size(); i++) {
+			hash_build.append("[variant_defines:" + itos(E.value[i]) + "]");
+			hash_build.append(variant_defines[E.value[i]].text.get_data());
+		}
+
+		for (const uint64_t dyn_buffer : dynamic_buffers) {
+			hash_build.append("[dynamic_buffer]");
+			hash_build.append(uitos(dyn_buffer));
+		}
+
+		group_sha256[E.key] = hash_build.as_string().sha256_text();
+
+		if (!shader_cache_user_dir.is_empty()) {
+			// Validate if it's possible to write to all the directories required by in the user
+			// directory.
+			Ref<DirAccess> d = DirAccess::open(shader_cache_user_dir);
+			if (d.is_null()) {
+				shader_cache_user_dir_valid = false;
+				ERR_FAIL_MSG(
+					vformat("Unable to open shader cache directory at %s.", shader_cache_user_dir));
+			}
+
+			if (d->change_dir(name) != OK) {
+				Error err = d->make_dir(name);
+				if (err != OK) {
+					shader_cache_user_dir_valid = false;
+					ERR_FAIL_MSG(vformat("Unable to create shader cache directory %s at %s.", name,
+						shader_cache_user_dir));
+				}
+
+				d->change_dir(name);
+			}
+
+			if (d->change_dir(group_sha256[E.key]) != OK) {
+				Error err = d->make_dir(group_sha256[E.key]);
+				if (err != OK) {
+					shader_cache_user_dir_valid = false;
+					ERR_FAIL_MSG(vformat("Unable to create shader cache directory %s/%s at %s.",
+						name, group_sha256[E.key], shader_cache_user_dir));
+				}
+			}
+		}
+
+		print_verbose(
+			"Shader '" + name + "' (group " + itos(E.key) + ") SHA256: " + group_sha256[E.key]);
+	}
+}
+
+// Same as above, but allows specifying shader compilation groups.
+void ShaderRD::initialize(const Vector<VariantDefine>& p_variant_defines,
+	const String& p_general_defines,
+	const Vector<RD::PipelineImmutableSampler>& p_immutable_samplers,
+	const Vector<uint64_t>& p_dynamic_buffers)
+{
+	ERR_FAIL_COND(variant_defines.size());
+	ERR_FAIL_COND(p_variant_defines.is_empty());
+
+	general_defines = p_general_defines.utf8();
+	immutable_samplers = p_immutable_samplers;
+	dynamic_buffers = p_dynamic_buffers;
+
+	int max_group_id = 0;
+
+	for (int i = 0; i < p_variant_defines.size(); i++) {
+		// Fill variant array.
+		variant_defines.push_back(p_variant_defines[i]);
+		variants_enabled.push_back(true);
+		variant_to_group.push_back(p_variant_defines[i].group);
+
+		// Map variant array index to group id, so we can iterate over groups later.
+		if (!group_to_variant_map.has(p_variant_defines[i].group)) {
+			group_to_variant_map.insert(p_variant_defines[i].group, LocalVector<int>{});
+		}
+		group_to_variant_map[p_variant_defines[i].group].push_back(i);
+
+		// Track max size.
+		if (p_variant_defines[i].group > max_group_id) {
+			max_group_id = p_variant_defines[i].group;
+		}
+	}
+
+	// Set all to groups to false, then enable those that should be default.
+	group_enabled.resize_initialized(max_group_id + 1);
+	bool* enabled_ptr = group_enabled.ptrw();
+	for (int i = 0; i < p_variant_defines.size(); i++) {
+		if (p_variant_defines[i].default_enabled) {
+			enabled_ptr[p_variant_defines[i].group] = true;
+		}
+	}
+
+	if (!shader_cache_user_dir.is_empty()) {
+		group_sha256.resize(max_group_id + 1);
+		_initialize_cache();
+	}
+}
+
+void ShaderRD::shaders_embedded_set_lock() { shader_versions_embedded_set_mutex.lock(); }
+
+const ShaderRD::ShaderVersionPairSet& ShaderRD::shaders_embedded_set_get()
+{
+	return shader_versions_embedded_set;
+}
+
+void ShaderRD::shaders_embedded_set_unlock() { shader_versions_embedded_set_mutex.unlock(); }
+
+void ShaderRD::set_shader_cache_user_dir(const String& p_dir) { shader_cache_user_dir = p_dir; }
+
+const String& ShaderRD::get_shader_cache_user_dir() { return shader_cache_user_dir; }
+
+void ShaderRD::set_shader_cache_res_dir(const String& p_dir) { shader_cache_res_dir = p_dir; }
+
+const String& ShaderRD::get_shader_cache_res_dir() { return shader_cache_res_dir; }
+
+void ShaderRD::set_shader_cache_save_compressed(bool p_enable)
+{
+	shader_cache_save_compressed = p_enable;
+}
+
+void ShaderRD::set_shader_cache_save_compressed_zstd(bool p_enable)
+{
+	shader_cache_save_compressed_zstd = p_enable;
+}
+
+void ShaderRD::set_shader_cache_save_debug(bool p_enable) { shader_cache_save_debug = p_enable; }
+
+Vector<RDC::ShaderStageSPIRVData> ShaderRD::compile_stages(
+	const Vector<String>& p_stage_sources, const Vector<uint64_t>& p_dynamic_buffers)
+{
+	RDC::ShaderStageSPIRVData stage;
+	Vector<RDC::ShaderStageSPIRVData> stages;
+	String error;
+	RDC::ShaderStage compilation_failed_stage = RDC::SHADER_STAGE_MAX;
+	bool compilation_failed = false;
+	for (int64_t i = 0; i < p_stage_sources.size() && !compilation_failed; i++) {
+		if (p_stage_sources[i].is_empty()) {
+			continue;
+		}
+
+		stage.spirv = RD::shader_compile_spirv_from_source(
+			RDC::ShaderStage(i), p_stage_sources[i], RDC::SHADER_LANGUAGE_GLSL, &error);
+		stage.dynamic_buffers = p_dynamic_buffers;
+		stage.shader_stage = RDC::ShaderStage(i);
+		if (!stage.spirv.is_empty()) {
+			stages.push_back(stage);
+
+		}
+		else {
+			compilation_failed_stage = RDC::ShaderStage(i);
+			compilation_failed = true;
+		}
+	}
+
+	if (compilation_failed) {
+		ERR_PRINT(
+			"Error compiling " +
+			String(compilation_failed_stage == RDC::SHADER_STAGE_COMPUTE
+					   ? "Compute "
+					   : (compilation_failed_stage == RDC::SHADER_STAGE_VERTEX ? "Vertex"
+																			   : "Fragment")) +
+			" shader.");
+		ERR_PRINT(error);
+
+#ifdef DEBUG_ENABLED
+		ERR_PRINT("code:\n" + p_stage_sources[compilation_failed_stage].get_with_code_lines());
+#endif
+
+		return Vector<RDC::ShaderStageSPIRVData>();
+	}
+	else {
+		return stages;
+	}
+}
+
+PackedByteArray ShaderRD::save_shader_cache_bytes(
+	const LocalVector<int>& p_variants, const Vector<Vector<uint8_t>>& p_variant_data)
+{
+	uint32_t variant_count = p_variants.size();
+	PackedByteArray bytes;
+	int64_t total_size = 0;
+	total_size += 4 + sizeof(uint32_t) * 2;
+	for (uint32_t i = 0; i < variant_count; i++) {
+		total_size += sizeof(uint32_t) + p_variant_data[p_variants[i]].size();
+	}
+
+	bytes.resize(total_size);
+
+	uint8_t* bytes_ptr = bytes.ptrw();
+	memcpy(bytes_ptr, shader_file_header, 4);
+	bytes_ptr += 4;
+
+	*(uint32_t*)(bytes_ptr) = cache_file_version;
+	bytes_ptr += sizeof(uint32_t);
+
+	*(uint32_t*)(bytes_ptr) = variant_count;
+	bytes_ptr += sizeof(uint32_t);
+
+	for (uint32_t i = 0; i < variant_count; i++) {
+		int variant_id = p_variants[i];
+		*(uint32_t*)(bytes_ptr) = uint32_t(p_variant_data[variant_id].size());
+		bytes_ptr += sizeof(uint32_t);
+
+		memcpy(bytes_ptr, p_variant_data[variant_id].ptr(), p_variant_data[variant_id].size());
+		bytes_ptr += p_variant_data[variant_id].size();
+	}
+
+	DEV_ASSERT((bytes.ptrw() + bytes.size()) == bytes_ptr);
+	return bytes;
+}
+
+String ShaderRD::shader_cache_user_dir;
+String ShaderRD::shader_cache_res_dir;
+bool ShaderRD::shader_cache_save_compressed = true;
+bool ShaderRD::shader_cache_save_compressed_zstd = true;
+bool ShaderRD::shader_cache_save_debug = true;
+
+ShaderRD::~ShaderRD()
+{
+	if (version_owner.get_rid_count() > 0) {
+		ERR_PRINT(itos(version_owner.get_rid_count()) + " shaders of type " + String("ShaderRD") +
+				  " were never freed");
+		LocalVector<RID> remaining = version_owner.get_owned_list();
+		for (const RID& E : remaining) {
+			Version* v = version_owner.get_or_null(E);
+			if (v) {
+				_clear_version(v, true);
+			}
+			version_owner.free(E);
+		}
+	}
+}
+
+void ShaderRD::_compile_version_start(ShaderRD::Version* p_version, int p_group)
+
+{
+	// If not using background worker threads, compilation can run directly here or in
+	// _compile_version_end
+}
+
+void ShaderRD::_compile_version_end(ShaderRD::Version* p_version, int p_group)
+{
+	ERR_FAIL_COND(!group_to_variant_map.has(p_group));
+	const LocalVector<int>& group_variants = group_to_variant_map[p_group];
+
+	CompileData compile_data;
+	compile_data.version = p_version;
+	compile_data.group = p_group;
+
+	for (uint32_t i = 0; i < group_variants.size(); i++) {
+		_compile_variant(i, compile_data);
+	}
+
+	bool all_ok = true;
+	for (uint32_t i = 0; i < group_variants.size(); i++) {
+		int variant_idx = group_variants[i];
+		if (variants_enabled[variant_idx] && p_version->variants[variant_idx].is_null()) {
+			all_ok = false;
+			break;
+		}
+	}
+
+	if (all_ok) {
+		p_version->valid = true;
+	}
+}
+
+void ShaderRD::_initialize_version(ShaderRD::Version* p_version)
+{
+	p_version->variants.resize(variant_defines.size());
+	p_version->variant_data.resize(variant_defines.size());
+	p_version->initialize_needed = false;
+	p_version->dirty = false;
+}
+
+void ShaderRD::_compile_variant(uint32_t p_variant, CompileData p_data)
+{
+	uint32_t variant = group_to_variant_map[p_data.group][p_variant];
+	if (!variants_enabled[variant]) {
+		return; // Variant is disabled, return.
+	}
+
+	Vector<String> variant_stage_sources = _build_variant_stage_sources(variant, p_data);
+	Vector<RDC::ShaderStageSPIRVData> variant_stages =
+		compile_stages(variant_stage_sources, dynamic_buffers);
+	ERR_FAIL_COND(variant_stages.is_empty());
+
+	Vector<uint8_t> shader_data =
+		RD::shader_compile_binary_from_spirv(variant_stages, name + ":" + itos(variant));
+	ERR_FAIL_COND(shader_data.is_empty());
+
+	{
+		p_data.version->variants.write[variant] =
+			RD::shader_create_from_bytecode(shader_data, p_data.version->variants[variant]);
+		p_data.version->variant_data.write[variant] = shader_data;
+	}
+}
+
+// ============================================================================
+// Merged from servers/rendering/renderer_rd/storage_rd/material_storage.cpp
+// ============================================================================
+
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "core/io/resource_loader.h"
+#include "core/math/projection.h"
+#include "core/templates/local_vector.h"
+#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+#include "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h"
+#include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
+#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
+#include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/storage/variant_converters.h"
+
+using namespace RendererRD;
+
+_FORCE_INLINE_ static void _fill_std140_ubo_value(ShaderLanguage::DataType type,
+	const Vector<ShaderLanguage::Scalar>& value, uint8_t* data, bool p_use_linear_color)
+{
+	switch (type) {
+	case ShaderLanguage::TYPE_BOOL: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].boolean ? 1 : 0;
+	} break;
+	case ShaderLanguage::TYPE_BVEC2: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].boolean ? 1 : 0;
+		gui[1] = value[1].boolean ? 1 : 0;
+
+	} break;
+	case ShaderLanguage::TYPE_BVEC3: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].boolean ? 1 : 0;
+		gui[1] = value[1].boolean ? 1 : 0;
+		gui[2] = value[2].boolean ? 1 : 0;
+
+	} break;
+	case ShaderLanguage::TYPE_BVEC4: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].boolean ? 1 : 0;
+		gui[1] = value[1].boolean ? 1 : 0;
+		gui[2] = value[2].boolean ? 1 : 0;
+		gui[3] = value[3].boolean ? 1 : 0;
+
+	} break;
+	case ShaderLanguage::TYPE_INT: {
+		int32_t* gui = (int32_t*)data;
+		gui[0] = value[0].sint;
+
+	} break;
+	case ShaderLanguage::TYPE_IVEC2: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 2; i++) {
+			gui[i] = value[i].sint;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_IVEC3: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 3; i++) {
+			gui[i] = value[i].sint;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_IVEC4: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 4; i++) {
+			gui[i] = value[i].sint;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_UINT: {
+		uint32_t* gui = (uint32_t*)data;
+		gui[0] = value[0].uint;
+
+	} break;
+	case ShaderLanguage::TYPE_UVEC2: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 2; i++) {
+			gui[i] = value[i].uint;
+		}
+	} break;
+	case ShaderLanguage::TYPE_UVEC3: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 3; i++) {
+			gui[i] = value[i].uint;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_UVEC4: {
+		int32_t* gui = (int32_t*)data;
+
+		for (int i = 0; i < 4; i++) {
+			gui[i] = value[i].uint;
+		}
+	} break;
+	case ShaderLanguage::TYPE_FLOAT: {
+		float* gui = reinterpret_cast<float*>(data);
+		gui[0] = value[0].real;
+
+	} break;
+	case ShaderLanguage::TYPE_VEC2: {
+		float* gui = reinterpret_cast<float*>(data);
+
+		for (int i = 0; i < 2; i++) {
+			gui[i] = value[i].real;
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_VEC3: {
+		Color c = Color(value[0].real, value[1].real, value[2].real);
+		if (p_use_linear_color) {
+			c = c.srgb_to_linear();
+		}
+
+		float* gui = reinterpret_cast<float*>(data);
+
+		for (int i = 0; i < 3; i++) {
+			gui[i] = c[i];
+		}
+
+	} break;
+	case ShaderLanguage::TYPE_VEC4: {
+		Color c = Color(value[0].real, value[1].real, value[2].real, value[3].real);
+		if (p_use_linear_color) {
+			c = c.srgb_to_linear();
+		}
+
+		float* gui = reinterpret_cast<float*>(data);
+
+		for (int i = 0; i < 4; i++) {
+			gui[i] = c[i];
+		}
+	} break;
+	case ShaderLanguage::TYPE_MAT2: {
+		float* gui = reinterpret_cast<float*>(data);
+
+		// in std140 members of mat2 are treated as vec4s
+		gui[0] = value[0].real;
+		gui[1] = value[1].real;
+		gui[2] = 0;
+		gui[3] = 0;
+		gui[4] = value[2].real;
+		gui[5] = value[3].real;
+		gui[6] = 0;
+		gui[7] = 0;
+	} break;
+	case ShaderLanguage::TYPE_MAT3: {
+		float* gui = reinterpret_cast<float*>(data);
+
+		gui[0] = value[0].real;
+		gui[1] = value[1].real;
+		gui[2] = value[2].real;
+		gui[3] = 0;
+		gui[4] = value[3].real;
+		gui[5] = value[4].real;
+		gui[6] = value[5].real;
+		gui[7] = 0;
+		gui[8] = value[6].real;
+		gui[9] = value[7].real;
+		gui[10] = value[8].real;
+		gui[11] = 0;
+	} break;
+	case ShaderLanguage::TYPE_MAT4: {
+		float* gui = reinterpret_cast<float*>(data);
+
+		for (int i = 0; i < 16; i++) {
+			gui[i] = value[i].real;
+		}
+	} break;
+	default: {
+	}
+	}
+}
+
+_FORCE_INLINE_ static void _fill_std140_ubo_empty(
+	ShaderLanguage::DataType type, int p_array_size, uint8_t* data)
+{
+	if (p_array_size <= 0) {
+		p_array_size = 1;
+	}
+
+	switch (type) {
+	case ShaderLanguage::TYPE_BOOL:
+	case ShaderLanguage::TYPE_INT:
+	case ShaderLanguage::TYPE_UINT:
+	case ShaderLanguage::TYPE_FLOAT: {
+		memset(data, 0, 4 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_BVEC2:
+	case ShaderLanguage::TYPE_IVEC2:
+	case ShaderLanguage::TYPE_UVEC2:
+	case ShaderLanguage::TYPE_VEC2: {
+		memset(data, 0, 8 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_BVEC3:
+	case ShaderLanguage::TYPE_IVEC3:
+	case ShaderLanguage::TYPE_UVEC3:
+	case ShaderLanguage::TYPE_VEC3: {
+		memset(data, 0, 12 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_BVEC4:
+	case ShaderLanguage::TYPE_IVEC4:
+	case ShaderLanguage::TYPE_UVEC4:
+	case ShaderLanguage::TYPE_VEC4: {
+		memset(data, 0, 16 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_MAT2: {
+		memset(data, 0, 32 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_MAT3: {
+		memset(data, 0, 48 * p_array_size);
+	} break;
+	case ShaderLanguage::TYPE_MAT4: {
+		memset(data, 0, 64 * p_array_size);
+	} break;
+
+	default: {
+	}
+	}
+}
+
+void RendererRD::MaterialStorage::ShaderData::set_path_hint(const String& p_hint) { path = p_hint; }
+
+void RendererRD::MaterialStorage::ShaderData::set_default_texture_parameter(
+	const String& p_name, RID p_texture, int p_index)
+{
+	if (!p_texture.is_valid()) {
+		if (default_texture_params.has(p_name) && default_texture_params[p_name].has(p_index)) {
+			default_texture_params[p_name].erase(p_index);
+
+			if (default_texture_params[p_name].is_empty()) {
+				default_texture_params.erase(p_name);
+			}
+		}
+	}
+	else {
+		if (!default_texture_params.has(p_name)) {
+			default_texture_params[p_name] = HashMap<int, RID>();
+		}
+		default_texture_params[p_name][p_index] = p_texture;
+	}
+}
+
+void RendererRD::MaterialStorage::ShaderData::get_instance_param_list(
+	List<InstanceShaderParam>* p_param_list) const
+{
+}
+
+bool RendererRD::MaterialStorage::ShaderData::is_parameter_texture(const String& p_param) const
+{
+	if (!uniforms.has(p_param)) {
+		return false;
+	}
+
+	return uniforms[p_param].is_texture();
+}
+
+RDC::PipelineColorBlendState::Attachment
+RendererRD::MaterialStorage::ShaderData::blend_mode_to_blend_attachment(BlendMode p_mode)
+{
+	RDC::PipelineColorBlendState::Attachment attachment;
+
+	switch (p_mode) {
+	case BLEND_MODE_MIX: {
+		attachment.enable_blend = true;
+		attachment.alpha_blend_op = RDC::BLEND_OP_ADD;
+		attachment.color_blend_op = RDC::BLEND_OP_ADD;
+		attachment.src_color_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
+		attachment.dst_color_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		attachment.src_alpha_blend_factor = RDC::BLEND_FACTOR_ONE;
+		attachment.dst_alpha_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	} break;
+	case BLEND_MODE_ADD: {
+		attachment.enable_blend = true;
+		attachment.alpha_blend_op = RDC::BLEND_OP_ADD;
+		attachment.color_blend_op = RDC::BLEND_OP_ADD;
+		attachment.src_color_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
+		attachment.dst_color_blend_factor = RDC::BLEND_FACTOR_ONE;
+		attachment.src_alpha_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
+		attachment.dst_alpha_blend_factor = RDC::BLEND_FACTOR_ONE;
+	} break;
+	case BLEND_MODE_SUB: {
+		attachment.enable_blend = true;
+		attachment.alpha_blend_op = RDC::BLEND_OP_REVERSE_SUBTRACT;
+		attachment.color_blend_op = RDC::BLEND_OP_REVERSE_SUBTRACT;
+		attachment.src_color_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
+		attachment.dst_color_blend_factor = RDC::BLEND_FACTOR_ONE;
+		attachment.src_alpha_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
+		attachment.dst_alpha_blend_factor = RDC::BLEND_FACTOR_ONE;
+	} break;
+	case BLEND_MODE_MUL: {
+		attachment.enable_blend = true;
+		attachment.alpha_blend_op = RDC::BLEND_OP_ADD;
+		attachment.color_blend_op = RDC::BLEND_OP_ADD;
+		attachment.src_color_blend_factor = RDC::BLEND_FACTOR_DST_COLOR;
+		attachment.dst_color_blend_factor = RDC::BLEND_FACTOR_ZERO;
+		attachment.src_alpha_blend_factor = RDC::BLEND_FACTOR_DST_ALPHA;
+		attachment.dst_alpha_blend_factor = RDC::BLEND_FACTOR_ZERO;
+	} break;
+	case BLEND_MODE_ALPHA_TO_COVERAGE: {
+		attachment.enable_blend = true;
+		attachment.alpha_blend_op = RDC::BLEND_OP_ADD;
+		attachment.color_blend_op = RDC::BLEND_OP_ADD;
+		attachment.src_color_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
+		attachment.dst_color_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		attachment.src_alpha_blend_factor = RDC::BLEND_FACTOR_ONE;
+		attachment.dst_alpha_blend_factor = RDC::BLEND_FACTOR_ZERO;
+	} break;
+	case BLEND_MODE_PREMULTIPLIED_ALPHA: {
+		attachment.enable_blend = true;
+		attachment.alpha_blend_op = RDC::BLEND_OP_ADD;
+		attachment.color_blend_op = RDC::BLEND_OP_ADD;
+		attachment.src_color_blend_factor = RDC::BLEND_FACTOR_ONE;
+		attachment.dst_color_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		attachment.src_alpha_blend_factor = RDC::BLEND_FACTOR_ONE;
+		attachment.dst_alpha_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	} break;
+	case BLEND_MODE_DISABLED:
+	default: {
+		// Use default attachment values.
+	} break;
+	}
+
+	return attachment;
+}
+
+bool RendererRD::MaterialStorage::ShaderData::blend_mode_uses_blend_alpha(BlendMode p_mode)
+{
+	switch (p_mode) {
+	case BLEND_MODE_MIX:
+		return false;
+	case BLEND_MODE_ADD:
+		return true;
+	case BLEND_MODE_SUB:
+		return true;
+	case BLEND_MODE_MUL:
+		return true;
+	case BLEND_MODE_ALPHA_TO_COVERAGE:
+		return false;
+	case BLEND_MODE_PREMULTIPLIED_ALPHA:
+		return true;
+	case BLEND_MODE_DISABLED:
+	default:
+		return false;
+	}
+}
+
+RendererRD::MaterialStorage::MaterialData::~MaterialData()
+{
+	if (global_buffer_E) {
+		// unregister global buffers
+		MaterialStorage::global_shader_uniforms.materials_using_buffer.erase(global_buffer_E);
+	}
+
+	if (global_texture_E) {
+		// unregister global textures
+
+		for (const KeyValue<String, uint64_t>& E : used_global_textures) {
+			GlobalShaderUniforms::Variable* v =
+				MaterialStorage::global_shader_uniforms.variables.getptr(E.key);
+			if (v) {
+				v->texture_materials.erase(self);
+			}
+		}
+		// unregister material from those using global textures
+		MaterialStorage::global_shader_uniforms.materials_using_texture.erase(global_texture_E);
+	}
+
+	for (int i = 0; i < 2; i++) {
+		if (uniform_buffer[i].is_valid()) {
+			RD::free_rid(uniform_buffer[i]);
+		}
+	}
+
+	if (is_tex_blit) {
+		free_parameters_uniform_set(tex_blit_uniform_set);
+	}
+}
+
+RID RendererRD::MaterialStorage::MaterialData::get_default_texture_id(
+	ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint)
+{
+	RID rd_texture;
+
+	switch (p_type) {
+	case ShaderLanguage::TYPE_ISAMPLER2D:
+	case ShaderLanguage::TYPE_USAMPLER2D:
+	case ShaderLanguage::TYPE_SAMPLER2D: {
+		switch (p_hint) {
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+			rd_texture =
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_TRANSPARENT);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_ANISOTROPY: {
+			rd_texture =
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_ANISO);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL: {
+			rd_texture =
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_NORMAL);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL: {
+			rd_texture =
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_NORMAL);
+		} break;
+		default: {
+			rd_texture =
+				RendererRD::TextureStorage::texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
+		} break;
+		}
+	} break;
+
+	case ShaderLanguage::TYPE_SAMPLERCUBE: {
+		switch (p_hint) {
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_BLACK);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_TRANSPARENT);
+		} break;
+		default: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_WHITE);
+		} break;
+		}
+	} break;
+	case ShaderLanguage::TYPE_SAMPLERCUBEARRAY: {
+		switch (p_hint) {
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_WHITE: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_WHITE);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_TRANSPARENT);
+		} break;
+		default: { // previously this only had the black texture available. Keeping black as the
+				   // default to minimize breaking anything.
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_BLACK);
+		} break;
+		}
+	} break;
+
+	case ShaderLanguage::TYPE_ISAMPLER3D:
+	case ShaderLanguage::TYPE_USAMPLER3D:
+	case ShaderLanguage::TYPE_SAMPLER3D: {
+		switch (p_hint) {
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_3D_BLACK);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_3D_TRANSPARENT);
+		} break;
+		default: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
+		} break;
+		}
+	} break;
+
+	case ShaderLanguage::TYPE_ISAMPLER2DARRAY:
+	case ShaderLanguage::TYPE_USAMPLER2DARRAY:
+	case ShaderLanguage::TYPE_SAMPLER2DARRAY: {
+		switch (p_hint) {
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK);
+		} break;
+		case ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_TRANSPARENT);
+		} break;
+		default: {
+			rd_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
+		} break;
+		}
+	} break;
+
+	default: {
+	}
+	}
+
+	return rd_texture;
+}
+
+void RendererRD::MaterialStorage::MaterialData::free_parameters_uniform_set(RID p_uniform_set)
+{
+	if (p_uniform_set.is_valid() && RD::uniform_set_is_valid(p_uniform_set)) {
+		RD::uniform_set_set_invalidation_callback(p_uniform_set, nullptr, nullptr);
+		RD::free_rid(p_uniform_set);
+	}
+}
+
+void RendererRD::MaterialStorage::MaterialData::set_as_used()
+{
+	for (int i = 0; i < render_target_cache.size(); i++) {
+		render_target_cache[i]->was_used = true;
+	}
+}
+
+bool RendererRD::MaterialStorage::ShaderData::is_animated() const { return false; }
+
+bool RendererRD::MaterialStorage::ShaderData::casts_shadows() const { return false; }
+
+RenderingServerTypes::ShaderNativeSourceCode
+RendererRD::MaterialStorage::ShaderData::get_native_source_code() const
+{
+	if (is_tex_blit) {
+		return TextureStorage::tex_blit_shader.shader.version_get_native_source_code(
+			tex_blit_version);
+	}
+	return RenderingServerTypes::ShaderNativeSourceCode();
+}
+
+Pair<ShaderRD*, RID> RendererRD::MaterialStorage::ShaderData::get_native_shader_and_version() const
+{
+	if (is_tex_blit) {
+		return {&TextureStorage::tex_blit_shader.shader, tex_blit_version};
+	}
+	return {nullptr, RID()};
+}
+
+RendererRD::MaterialStorage::ShaderData::~ShaderData()
+{
+	if (is_tex_blit && tex_blit_version.is_valid()) {
+		TextureStorage::tex_blit_shader.shader.version_free(tex_blit_version);
+	}
+}
+
+RendererRD::MaterialStorage::ShaderData* RendererRD::MaterialStorage::_create_tex_blit_shader_func()
+{
+	MaterialStorage::ShaderData* shader_data = memnew(MaterialStorage::ShaderData);
+	shader_data->is_tex_blit = true;
+	return shader_data;
+}
+
+RendererRD::MaterialStorage::MaterialData* RendererRD::MaterialStorage::_create_tex_blit_material_func(
+	MaterialStorage::ShaderData* p_shader)
+{
+	MaterialStorage::MaterialData* material_data = memnew(MaterialStorage::MaterialData);
+	material_data->is_tex_blit = true;
+	material_data->tex_blit_shader_data = p_shader;
+	// update will happen later anyway so do nothing.
+	return material_data;
+}
+
+template void Samplers::append_uniforms(
+	LocalVector<RD::Uniform>& p_uniforms, int p_first_index) const;
+
+template void Samplers::append_uniforms(Vector<RD::Uniform>& p_uniforms, int p_first_index) const;
+
+template <typename Collection>
+void Samplers::append_uniforms(Collection& p_uniforms, int p_first_index) const
+{
+	// Binding ids are aligned with samplers_inc.glsl.
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 0,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST][RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 1,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR][RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 2,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS]
+			[RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 3,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS]
+			[RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 4,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC]
+			[RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 5,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC]
+			[RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 6,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST][RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 7,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR][RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 8,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS]
+			[RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 9,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS]
+			[RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 10,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC]
+			[RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED]));
+	p_uniforms.push_back(RD::Uniform(RDC::UNIFORM_TYPE_SAMPLER, p_first_index + 11,
+		rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC]
+			[RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED]));
+}
+
+bool Samplers::is_valid() const { return rids[1][1].is_valid(); }
+
+bool Samplers::is_null() const { return rids[1][1].is_null(); }
+
+bool RendererRD::MaterialStorage::free(RID p_rid)
+{
+	if (owns_shader(p_rid)) {
+		shader_free(p_rid);
+		return true;
+	}
+	else if (owns_material(p_rid)) {
+		material_free(p_rid);
+		return true;
+	}
+
+	return false;
+}
+
+int32_t RendererRD::MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements)
+{
+	int32_t idx = 0;
+	while (idx + p_elements <= global_shader_uniforms.buffer_size) {
+		if (global_shader_uniforms.buffer_usage[idx].elements == 0) {
+			bool valid = true;
+			for (uint32_t i = 1; i < p_elements; i++) {
+				if (global_shader_uniforms.buffer_usage[idx + i].elements > 0) {
+					valid = false;
+					idx += i + global_shader_uniforms.buffer_usage[idx + i].elements;
+					break;
+				}
+			}
+
+			if (!valid) {
+				continue; // if not valid, idx is in new position
+			}
+
+			return idx;
+		}
+		else {
+			idx += global_shader_uniforms.buffer_usage[idx].elements;
+		}
+	}
+
+	return -1;
+}
+
+void RendererRD::MaterialStorage::_global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements)
+{
+	int32_t prev_chunk = -1;
+
+	for (int32_t i = 0; i < p_elements; i++) {
+		int32_t chunk = (p_index + i) / GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE;
+		if (chunk != prev_chunk) {
+			if (!global_shader_uniforms.buffer_dirty_regions[chunk]) {
+				global_shader_uniforms.buffer_dirty_regions[chunk] = true;
+				global_shader_uniforms.buffer_dirty_region_count++;
+			}
+		}
+
+		prev_chunk = chunk;
+	}
+}
+
+void RendererRD::MaterialStorage::global_shader_parameter_remove(const String& p_name)
+{
+	if (!global_shader_uniforms.variables.has(p_name)) {
+		return;
+	}
+	const GlobalShaderUniforms::Variable& gv = global_shader_uniforms.variables[p_name];
+
+	if (gv.buffer_index >= 0) {
+		global_shader_uniforms.buffer_usage[gv.buffer_index].elements = 0;
+		global_shader_uniforms.must_update_buffer_materials = true;
+	}
+	else {
+		global_shader_uniforms.must_update_texture_materials = true;
+	}
+
+	global_shader_uniforms.variables.erase(p_name);
+}
+
+Vector<String> RendererRD::MaterialStorage::global_shader_parameter_get_list()
+{
+	if (!Engine::is_editor_hint()) {
+		ERR_FAIL_V_MSG(Vector<String>(), "This function should never be used outside the "
+											 "editor, it can severely damage performance.");
+	}
+
+	Vector<String> names;
+	for (const KeyValue<String, GlobalShaderUniforms::Variable>& E :
+		global_shader_uniforms.variables) {
+		names.push_back(E.key);
+	}
+	names.sort();
+	return names;
+}
+
+RSE::GlobalShaderParameterType RendererRD::MaterialStorage::global_shader_parameter_get_type_internal(
+	const String& p_name)
+{
+	if (!global_shader_uniforms.variables.has(p_name)) {
+		return RSE::GLOBAL_VAR_TYPE_MAX;
+	}
+
+	return global_shader_uniforms.variables[p_name].type;
+}
+
+RSE::GlobalShaderParameterType RendererRD::MaterialStorage::global_shader_parameter_get_type(
+	const String& p_name)
+{
+	if (!Engine::is_editor_hint()) {
+		ERR_FAIL_V_MSG(RSE::GLOBAL_VAR_TYPE_MAX, "This function should never be used outside the "
+												 "editor, it can severely damage performance.");
+	}
+
+	return global_shader_parameter_get_type_internal(p_name);
+}
+
+void RendererRD::MaterialStorage::global_shader_parameters_clear()
+{
+	global_shader_uniforms.variables.clear(); // not right but for now enough
+}
+
+RID RendererRD::MaterialStorage::global_shader_uniforms_get_storage_buffer()
+{
+	return global_shader_uniforms.buffer;
+}
+
+int32_t RendererRD::MaterialStorage::global_shader_parameters_instance_allocate(RID p_instance)
+{
+	ERR_FAIL_COND_V(global_shader_uniforms.instance_buffer_pos.has(p_instance), -1);
+	int32_t pos = _global_shader_uniform_allocate(ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES);
+	global_shader_uniforms.instance_buffer_pos[p_instance] = pos; // save anyway
+	ERR_FAIL_COND_V_MSG(pos < 0, -1,
+		"Too many instances using shader instance variables. Increase buffer size in Project "
+		"Settings.");
+	global_shader_uniforms.buffer_usage[pos].elements =
+		ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES;
+	return pos;
+}
+
+void RendererRD::MaterialStorage::global_shader_parameters_instance_free(RID p_instance)
+{
+	ERR_FAIL_COND(!global_shader_uniforms.instance_buffer_pos.has(p_instance));
+	int32_t pos = global_shader_uniforms.instance_buffer_pos[p_instance];
+	if (pos >= 0) {
+		global_shader_uniforms.buffer_usage[pos].elements = 0;
+	}
+	global_shader_uniforms.instance_buffer_pos.erase(p_instance);
+}
+
+void RendererRD::MaterialStorage::_update_global_shader_uniforms()
+{
+	if (global_shader_uniforms.buffer_dirty_region_count > 0) {
+		uint32_t total_regions = 1 + (global_shader_uniforms.buffer_size /
+										 GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE);
+		if (total_regions / global_shader_uniforms.buffer_dirty_region_count <= 4) {
+			// 25% of regions dirty, just update all buffer
+			memset(global_shader_uniforms.buffer_dirty_regions, 0, sizeof(bool) * total_regions);
+		}
+		else {
+			uint32_t region_byte_size = sizeof(GlobalShaderUniforms::Value) *
+										GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE;
+
+			for (uint32_t i = 0; i < total_regions; i++) {
+				if (global_shader_uniforms.buffer_dirty_regions[i]) {
+					global_shader_uniforms.buffer_dirty_regions[i] = false;
+				}
+			}
+		}
+
+		global_shader_uniforms.buffer_dirty_region_count = 0;
+	}
+
+	if (global_shader_uniforms.must_update_buffer_materials) {
+		// only happens in the case of a buffer variable added or removed,
+		// so not often.
+		for (const RID& E : global_shader_uniforms.materials_using_buffer) {
+			Material* material = MaterialStorage::get_material(E);
+			ERR_CONTINUE(!material); // wtf
+
+			MaterialStorage::_material_queue_update(material, true, false);
+		}
+
+		global_shader_uniforms.must_update_buffer_materials = false;
+	}
+
+	if (global_shader_uniforms.must_update_texture_materials) {
+		// only happens in the case of a buffer variable added or removed,
+		// so not often.
+		for (const RID& E : global_shader_uniforms.materials_using_texture) {
+			Material* material = MaterialStorage::get_material(E);
+			ERR_CONTINUE(!material); // wtf
+
+			MaterialStorage::_material_queue_update(material, false, true);
+		}
+
+		global_shader_uniforms.must_update_texture_materials = false;
+	}
+}
+
+RID RendererRD::MaterialStorage::shader_allocate() { return shader_owner.allocate_rid(); }
+
+void RendererRD::MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
+{
+	Shader shader;
+	shader.mutex = memnew(Mutex);
+	shader.data = nullptr;
+	shader.type = SHADER_TYPE_MAX;
+	shader.embedded = p_embedded;
+
+	shader_owner.initialize_rid(p_rid, shader);
+
+	if (p_embedded) {
+		// Add to the global embedded set.
+		MutexLock lock(embedded_set_mutex);
+		embedded_set.insert(p_rid);
+	}
+}
+
+void RendererRD::MaterialStorage::shader_free(RID p_rid)
+{
+	Shader* shader = shader_owner.get_or_null(p_rid);
+	ERR_FAIL_NULL(shader);
+
+	{
+		MutexLock lock(*shader->mutex);
+
+		// make material unreference this
+		while (shader->owners.size()) {
+			material_set_shader((*shader->owners.begin())->self, RID());
+		}
+
+		// clear data if exists
+		memdelete(shader->data);
+	}
+
+	if (shader->embedded) {
+		// Remove from the global embedded set.
+		MutexLock lock(embedded_set_mutex);
+		embedded_set.erase(p_rid);
+	}
+
+	memdelete(shader->mutex);
+
+	shader_owner.free(p_rid);
+}
+
+void RendererRD::MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
+{
+	Shader* shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL(shader);
+
+	MutexLock lock(*shader->mutex);
+
+	shader->code = p_code;
+	String mode_string = ShaderLanguage::get_shader_type(p_code);
+
+	ShaderType new_type;
+	if (mode_string == "canvas_item") {
+		new_type = SHADER_TYPE_2D;
+	}
+	else if (mode_string == "particles") {
+		new_type = SHADER_TYPE_PARTICLES;
+	}
+	else if (mode_string == "spatial") {
+		new_type = SHADER_TYPE_3D;
+	}
+	else if (mode_string == "sky") {
+		new_type = SHADER_TYPE_SKY;
+	}
+	else if (mode_string == "fog") {
+		new_type = SHADER_TYPE_FOG;
+	}
+	else if (mode_string == "texture_blit") {
+		new_type = SHADER_TYPE_TEXTURE_BLIT;
+	}
+	else {
+		new_type = SHADER_TYPE_MAX;
+	}
+
+	if (new_type != shader->type) {
+		if (shader->data) {
+			memdelete(shader->data);
+			shader->data = nullptr;
+		}
+
+		for (Material* E : shader->owners) {
+			Material* material = E;
+			material->shader_type = new_type;
+			if (material->data) {
+				memdelete(material->data);
+				material->data = nullptr;
+			}
+		}
+
+		shader->type = new_type;
+
+		if (new_type < SHADER_TYPE_MAX && shader_data_request_func[new_type]) {
+			shader->data = shader_data_request_func[new_type]();
+		}
+		else {
+			shader->type = SHADER_TYPE_MAX; // invalid
+		}
+
+		for (Material* E : shader->owners) {
+			Material* material = E;
+			if (shader->data) {
+				material->data = material_get_data_request_function(new_type)(shader->data);
+				material->data->self = material->self;
+				material->data->set_next_pass(material->next_pass);
+				material->data->set_render_priority(material->priority);
+			}
+			material->shader_type = new_type;
+		}
+
+		if (shader->data) {
+			for (const KeyValue<String, HashMap<int, RID>>& E :
+				shader->default_texture_parameter) {
+				for (const KeyValue<int, RID>& E2 : E.value) {
+					shader->data->set_default_texture_parameter(E.key, E2.value, E2.key);
+				}
+			}
+		}
+	}
+
+	if (shader->data) {
+		shader->data->set_path_hint(shader->path_hint);
+		shader->data->set_code(p_code);
+	}
+
+	for (Material* E : shader->owners) {
+		Material* material = E;
+		material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
+		_material_queue_update(material, true, true);
+	}
+}
+
+void RendererRD::MaterialStorage::shader_set_path_hint(RID p_shader, const String& p_path)
+{
+	Shader* shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL(shader);
+
+	shader->path_hint = p_path;
+	if (shader->data) {
+		shader->data->set_path_hint(p_path);
+	}
+}
+
+String RendererRD::MaterialStorage::shader_get_code(RID p_shader)
+{
+	Shader* shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL_V(shader, String());
+	return shader->code;
+}
+
+void RendererRD::MaterialStorage::shader_set_default_texture_parameter(
+	RID p_shader, const String& p_name, RID p_texture, int p_index)
+{
+	Shader* shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL(shader);
+
+	if (p_texture.is_valid() && TextureStorage::owns_texture(p_texture)) {
+		if (!shader->default_texture_parameter.has(p_name)) {
+			shader->default_texture_parameter[p_name] = HashMap<int, RID>();
+		}
+		shader->default_texture_parameter[p_name][p_index] = p_texture;
+	}
+	else {
+		if (shader->default_texture_parameter.has(p_name) &&
+			shader->default_texture_parameter[p_name].has(p_index)) {
+			shader->default_texture_parameter[p_name].erase(p_index);
+
+			if (shader->default_texture_parameter[p_name].is_empty()) {
+				shader->default_texture_parameter.erase(p_name);
+			}
+		}
+	}
+	if (shader->data) {
+		shader->data->set_default_texture_parameter(p_name, p_texture, p_index);
+	}
+
+	{
+		MutexLock lock(*shader->mutex);
+
+		for (Material* E : shader->owners) {
+			Material* material = E;
+			_material_queue_update(material, false, true);
+		}
+	}
+}
+
+RID RendererRD::MaterialStorage::shader_get_default_texture_parameter(
+	RID p_shader, const String& p_name, int p_index)
+{
+	Shader* shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL_V(shader, RID());
+	if (shader->default_texture_parameter.has(p_name) &&
+		shader->default_texture_parameter[p_name].has(p_index)) {
+		return shader->default_texture_parameter[p_name][p_index];
+	}
+
+	return RID();
+}
+
+void RendererRD::MaterialStorage::shader_set_data_request_function(
+	ShaderType p_shader_type, ShaderDataRequestFunction p_function)
+{
+	ERR_FAIL_INDEX(p_shader_type, SHADER_TYPE_MAX);
+	shader_data_request_func[p_shader_type] = p_function;
+}
+
+RendererRD::MaterialStorage::ShaderData* RendererRD::MaterialStorage::shader_get_data(RID p_shader)
+{
+	Shader* shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL_V(shader, nullptr);
+	return shader->data;
+}
+
+RenderingServerTypes::ShaderNativeSourceCode RendererRD::MaterialStorage::shader_get_native_source_code(
+	RID p_shader)
+{
+	Shader* shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL_V(shader, RenderingServerTypes::ShaderNativeSourceCode());
+	if (shader->data) {
+		return shader->data->get_native_source_code();
+	}
+	return RenderingServerTypes::ShaderNativeSourceCode();
+}
+
+void RendererRD::MaterialStorage::shader_embedded_set_lock() { embedded_set_mutex.lock(); }
+
+const HashSet<RID>& RendererRD::MaterialStorage::shader_embedded_set_get() { return embedded_set; }
+
+void RendererRD::MaterialStorage::shader_embedded_set_unlock() { embedded_set_mutex.unlock(); }
+
+void RendererRD::MaterialStorage::_material_uniform_set_erased(void* p_material)
+{
+	RID rid = *(RID*)p_material;
+	Material* material = MaterialStorage::get_material(rid);
+	if (material) {
+		if (material->data) {
+			// Uniform set may be gone because a dependency was erased. This happens
+			// if a texture is deleted, so re-create it.
+			MaterialStorage::_material_queue_update(material, false, true);
+		}
+		material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
+	}
+}
+
+void RendererRD::MaterialStorage::_material_queue_update(Material* material, bool p_uniform, bool p_texture)
+{
+	MutexLock lock(material_update_list_mutex);
+	material->uniform_dirty = material->uniform_dirty || p_uniform;
+	material->texture_dirty = material->texture_dirty || p_texture;
+
+	if (material->update_element.in_list()) {
+		return;
+	}
+
+	material_update_list.add(&material->update_element);
+}
+
+RID RendererRD::MaterialStorage::material_allocate() { return material_owner.allocate_rid(); }
+
+void RendererRD::MaterialStorage::material_initialize(RID p_rid)
+{
+	material_owner.initialize_rid(p_rid);
+	Material* material = material_owner.get_or_null(p_rid);
+	material->self = p_rid;
+}
+
+void RendererRD::MaterialStorage::material_set_shader(RID p_material, RID p_shader)
+{
+	Material* material = material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL(material);
+
+	if (material->data) {
+		memdelete(material->data);
+		material->data = nullptr;
+	}
+
+	if (material->shader) {
+		{
+			MutexLock lock(*material->shader->mutex);
+			material->shader->owners.erase(material);
+		}
+
+		material->shader = nullptr;
+		material->shader_type = SHADER_TYPE_MAX;
+	}
+
+	if (p_shader.is_null()) {
+		material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
+		material->shader_id = 0;
+		return;
+	}
+
+	Shader* shader = get_shader(p_shader);
+	ERR_FAIL_NULL(shader);
+
+	MutexLock lock(*shader->mutex);
+
+	material->shader = shader;
+	material->shader_type = shader->type;
+	material->shader_id = p_shader.get_local_index();
+	shader->owners.insert(material);
+
+	if (shader->type == SHADER_TYPE_MAX) {
+		return;
+	}
+
+	ERR_FAIL_NULL(shader->data);
+
+	material->data = material_data_request_func[shader->type](shader->data);
+	material->data->self = p_material;
+	material->data->set_next_pass(material->next_pass);
+	material->data->set_render_priority(material->priority);
+	// updating happens later
+	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
+	_material_queue_update(material, true, true);
+}
+
+RendererRD::MaterialStorage::ShaderData* RendererRD::MaterialStorage::material_get_shader_data(RID p_material)
+{
+	const MaterialStorage::Material* material = MaterialStorage::get_material(p_material);
+	if (material && material->shader && material->shader->data) {
+		return material->shader->data;
+	}
+
+	return nullptr;
+}
+
+void RendererRD::MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material)
+{
+	Material* material = material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL(material);
+
+	if (material->next_pass == p_next_material) {
+		return;
+	}
+
+	material->next_pass = p_next_material;
+	if (material->data) {
+		material->data->set_next_pass(p_next_material);
+	}
+
+	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
+}
+
+void RendererRD::MaterialStorage::material_set_render_priority(RID p_material, int priority)
+{
+	Material* material = material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL(material);
+	material->priority = priority;
+	if (material->data) {
+		material->data->set_render_priority(priority);
+	}
+	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
+}
+
+bool RendererRD::MaterialStorage::material_is_animated(RID p_material)
+{
+	Material* material = material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL_V(material, false);
+	if (material->shader && material->shader->data) {
+		if (material->shader->data->is_animated()) {
+			return true;
+		}
+		else if (material->next_pass.is_valid()) {
+			return material_is_animated(material->next_pass);
+		}
+	}
+	return false; // by default nothing is animated
+}
+
+bool RendererRD::MaterialStorage::material_casts_shadows(RID p_material)
+{
+	Material* material = material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL_V(material, true);
+	if (material->shader && material->shader->data) {
+		if (material->shader->data->casts_shadows()) {
+			return true;
+		}
+		else if (material->next_pass.is_valid()) {
+			return material_casts_shadows(material->next_pass);
+		}
+	}
+	return true; // by default everything casts shadows
+}
+
+RSE::CullMode RendererRD::MaterialStorage::material_get_cull_mode(RID p_material)
+{
+	Material* material = material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL_V(material, RSE::CULL_MODE_DISABLED);
+	ERR_FAIL_NULL_V(material->shader, RSE::CULL_MODE_DISABLED);
+	if (material->shader->type == ShaderType::SHADER_TYPE_3D && material->shader->data) {
+		RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData* sd_clustered =
+			dynamic_cast<
+				RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData*>(
+				material->shader->data);
+		if (sd_clustered) {
+			return (RSE::CullMode)sd_clustered->cull_mode;
+		}
+
+		RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData* sd_mobile =
+			dynamic_cast<RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData*>(
+				material->shader->data);
+		if (sd_mobile) {
+			return (RSE::CullMode)sd_mobile->cull_mode;
+		}
+	}
+	return RSE::CULL_MODE_DISABLED;
+}
+
+void RendererRD::MaterialStorage::material_get_instance_shader_parameters(
+	RID p_material, List<InstanceShaderParam>* r_parameters)
+{
+	Material* material = material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL(material);
+	if (material->shader && material->shader->data) {
+		material->shader->data->get_instance_param_list(r_parameters);
+
+		if (material->next_pass.is_valid()) {
+			material_get_instance_shader_parameters(material->next_pass, r_parameters);
+		}
+	}
+}
+
+void RendererRD::MaterialStorage::material_update_dependency(RID p_material, DependencyTracker* p_instance)
+{
+	Material* material = material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL(material);
+	p_instance->update_dependency(&material->dependency);
+	if (material->next_pass.is_valid()) {
+		material_update_dependency(material->next_pass, p_instance);
+	}
+}
+
+Samplers RendererRD::MaterialStorage::samplers_rd_allocate(
+	float p_mipmap_bias, RSE::ViewportAnisotropicFiltering anisotropic_filtering_level)
+{
+	Samplers samplers;
+	samplers.mipmap_bias = p_mipmap_bias;
+	samplers.anisotropic_filtering_level = (int)anisotropic_filtering_level;
+	samplers.use_nearest_mipmap_filter =
+		GLOBAL_GET_CACHED(bool, "rendering/textures/default_filters/use_nearest_mipmap_filter");
+
+	RDC::SamplerFilter mip_filter = samplers.use_nearest_mipmap_filter ? RDC::SAMPLER_FILTER_NEAREST
+																	   : RDC::SAMPLER_FILTER_LINEAR;
+	float anisotropy_max = float(1 << samplers.anisotropic_filtering_level);
+
+	for (int i = 1; i < RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
+		for (int j = 1; j < RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
+			RDC::SamplerState sampler_state;
+			switch (i) {
+			case RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST: {
+				sampler_state.mag_filter = RDC::SAMPLER_FILTER_NEAREST;
+				sampler_state.min_filter = RDC::SAMPLER_FILTER_NEAREST;
+				sampler_state.max_lod = 0;
+			} break;
+			case RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR: {
+				sampler_state.mag_filter = RDC::SAMPLER_FILTER_LINEAR;
+				sampler_state.min_filter = RDC::SAMPLER_FILTER_LINEAR;
+				sampler_state.max_lod = 0;
+			} break;
+			case RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS: {
+				sampler_state.mag_filter = RDC::SAMPLER_FILTER_NEAREST;
+				sampler_state.min_filter = RDC::SAMPLER_FILTER_NEAREST;
+				sampler_state.mip_filter = mip_filter;
+				sampler_state.lod_bias = samplers.mipmap_bias;
+			} break;
+			case RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS: {
+				sampler_state.mag_filter = RDC::SAMPLER_FILTER_LINEAR;
+				sampler_state.min_filter = RDC::SAMPLER_FILTER_LINEAR;
+				sampler_state.mip_filter = mip_filter;
+				sampler_state.lod_bias = samplers.mipmap_bias;
+
+			} break;
+			case RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC: {
+				sampler_state.mag_filter = RDC::SAMPLER_FILTER_NEAREST;
+				sampler_state.min_filter = RDC::SAMPLER_FILTER_NEAREST;
+				sampler_state.mip_filter = mip_filter;
+				sampler_state.lod_bias = samplers.mipmap_bias;
+				sampler_state.use_anisotropy = true;
+				sampler_state.anisotropy_max = anisotropy_max;
+			} break;
+			case RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC: {
+				sampler_state.mag_filter = RDC::SAMPLER_FILTER_LINEAR;
+				sampler_state.min_filter = RDC::SAMPLER_FILTER_LINEAR;
+				sampler_state.mip_filter = mip_filter;
+				sampler_state.lod_bias = samplers.mipmap_bias;
+				sampler_state.use_anisotropy = true;
+				sampler_state.anisotropy_max = anisotropy_max;
+
+			} break;
+			default: {
+			}
+			}
+			switch (j) {
+			case RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED: {
+				sampler_state.repeat_u = RDC::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+				sampler_state.repeat_v = RDC::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+				sampler_state.repeat_w = RDC::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+
+			} break;
+			case RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED: {
+				sampler_state.repeat_u = RDC::SAMPLER_REPEAT_MODE_REPEAT;
+				sampler_state.repeat_v = RDC::SAMPLER_REPEAT_MODE_REPEAT;
+				sampler_state.repeat_w = RDC::SAMPLER_REPEAT_MODE_REPEAT;
+			} break;
+			case RSE::CANVAS_ITEM_TEXTURE_REPEAT_MIRROR: {
+				sampler_state.repeat_u = RDC::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT;
+				sampler_state.repeat_v = RDC::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT;
+				sampler_state.repeat_w = RDC::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT;
+			} break;
+			default: {
+			}
+			}
+
+			samplers.rids[i][j] = RD::sampler_create(sampler_state);
+		}
+	}
+
+	return samplers;
+}
+
+void RendererRD::MaterialStorage::samplers_rd_free(Samplers& p_samplers)
+{
+	for (int i = 1; i < RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
+		for (int j = 1; j < RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
+			if (p_samplers.rids[i][j].is_valid()) {
+				RD::free_rid(p_samplers.rids[i][j]);
+				p_samplers.rids[i][j] = RID();
+			}
+		}
+	}
+}
+
+void RendererRD::MaterialStorage::material_set_data_request_function(
+	ShaderType p_shader_type, MaterialStorage::MaterialDataRequestFunction p_function)
+{
+	ERR_FAIL_INDEX(p_shader_type, SHADER_TYPE_MAX);
+	material_data_request_func[p_shader_type] = p_function;
+}
+
+RendererRD::MaterialStorage::MaterialDataRequestFunction RendererRD::MaterialStorage::material_get_data_request_function(
+	ShaderType p_shader_type)
+{
+	ERR_FAIL_INDEX_V(p_shader_type, SHADER_TYPE_MAX, nullptr);
+	return material_data_request_func[p_shader_type];
+}
+
+void RendererRD::MaterialStorage::_update_queued_materials()
+{
+	SelfList<Material>::List copy;
+	{
+		MutexLock lock(material_update_list_mutex);
+		while (SelfList<Material>* E = material_update_list.first()) {
+			DEV_ASSERT(E == &E->self()->update_element);
+			material_update_list.remove(E);
+			copy.add(E);
+		}
+	}
+
+	while (SelfList<Material>* E = copy.first()) {
+		Material* material = E->self();
+		copy.remove(E);
+		material->texture_dirty = false;
+		material->uniform_dirty = false;
+	}
+}
+
+void RendererRD::MaterialStorage::ShaderData::set_code(const String& p_code) {}
+
+void RendererRD::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
+
+void RendererRD::MaterialStorage::initialize()
+{
+	default_samplers = samplers_rd_allocate();
+
+	{
+		Vector<uint8_t> pv;
+		pv.resize(6 * 2);
+		{
+			uint8_t* w = pv.ptrw();
+			uint16_t* p16 = (uint16_t*)w;
+			p16[0] = 0;
+			p16[1] = 1;
+			p16[2] = 2;
+			p16[3] = 0;
+			p16[4] = 2;
+			p16[5] = 3;
+		}
+		quad_index_buffer = RD::index_buffer_create(6, RDC::INDEX_BUFFER_FORMAT_UINT16, pv);
+		quad_index_array = RD::index_array_create(quad_index_buffer, 0, 6);
+	}
+
+	for (int i = 0; i < SHADER_TYPE_MAX; i++) {
+		shader_data_request_func[i] = nullptr;
+		material_data_request_func[i] = nullptr;
+	}
+
+	static_assert(sizeof(GlobalShaderUniforms::Value) == 16);
+
+	global_shader_uniforms.buffer_size = 65536;
+	global_shader_uniforms.buffer_values =
+		memnew_arr(GlobalShaderUniforms::Value, global_shader_uniforms.buffer_size);
+	memset(global_shader_uniforms.buffer_values, 0,
+		sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size);
+	global_shader_uniforms.buffer_usage =
+		memnew_arr(GlobalShaderUniforms::ValueUsage, global_shader_uniforms.buffer_size);
+	global_shader_uniforms.buffer_dirty_regions = memnew_arr(bool,
+		1 + (global_shader_uniforms.buffer_size / GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE));
+	memset(global_shader_uniforms.buffer_dirty_regions, 0,
+		sizeof(bool) * (1 + (global_shader_uniforms.buffer_size /
+								GlobalShaderUniforms::BUFFER_DIRTY_REGION_SIZE)));
+	global_shader_uniforms.buffer = RD::storage_buffer_create(
+		sizeof(GlobalShaderUniforms::Value) * global_shader_uniforms.buffer_size);
+}
+
+void RendererRD::MaterialStorage::finalize()
+{
+	LocalVector<RID> owned_materials = material_owner.get_owned_list();
+	for (const RID& E : owned_materials) {
+		material_free(E);
+	}
+	LocalVector<RID> owned_shaders = shader_owner.get_owned_list();
+	for (const RID& E : owned_shaders) {
+		shader_free(E);
+	}
+	global_shader_uniforms.variables.clear();
+	global_shader_uniforms.materials_using_buffer.clear();
+	global_shader_uniforms.materials_using_texture.clear();
+	global_shader_uniforms.instance_buffer_pos.clear();
+	if (global_shader_uniforms.buffer.is_valid()) {
+		RD::free_rid(global_shader_uniforms.buffer);
+		global_shader_uniforms.buffer = RID();
+	}
+	if (global_shader_uniforms.buffer_values) {
+		memdelete_arr(global_shader_uniforms.buffer_values);
+		global_shader_uniforms.buffer_values = nullptr;
+	}
+	if (global_shader_uniforms.buffer_usage) {
+		memdelete_arr(global_shader_uniforms.buffer_usage);
+		global_shader_uniforms.buffer_usage = nullptr;
+	}
+	if (global_shader_uniforms.buffer_dirty_regions) {
+		memdelete_arr(global_shader_uniforms.buffer_dirty_regions);
+		global_shader_uniforms.buffer_dirty_regions = nullptr;
+	}
+	if (default_samplers.is_valid()) {
+		samplers_rd_free(default_samplers);
+	}
+	if (quad_index_array.is_valid()) {
+		RD::free_rid(quad_index_array);
+		quad_index_array = RID();
+	}
+	if (quad_index_buffer.is_valid()) {
+		RD::free_rid(quad_index_buffer);
+		quad_index_buffer = RID();
+	}
+	// Clear global uniform tables and cache maps
+	global_shader_parameters_clear();
+}
+
+void RendererRD::MaterialStorage::material_free(RID p_rid)
+{
+	Material* material = material_owner.get_or_null(p_rid);
+	ERR_FAIL_NULL(material);
+
+	material_set_shader(p_rid, RID());
+
+	if (material->data) {
+		memdelete(material->data);
+		material->data = nullptr;
+	}
+
+	material_owner.free(p_rid);
+}
+
+

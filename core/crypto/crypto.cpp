@@ -670,7 +670,7 @@ HashingContext::~HashingContext()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "aes_context.h"
+#include "core/crypto/crypto.h"
 
 using AESMode = CryptoCore::AESContext::Mode;
 using AESCipher = CryptoCore::AESContext::Cipher;
@@ -782,7 +782,6 @@ void AESContext::finish()
 /**************************************************************************/
 
 #include "core/crypto/crypto.h"
-#include "crypto_resource_format.h"
 
 Ref<Resource> ResourceFormatLoaderCrypto::load(const String& p_path, const String& p_original_path,
 	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)

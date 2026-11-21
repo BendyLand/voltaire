@@ -389,3 +389,135 @@ public:
 	static bool _can_modify_selected_node();
 	static bool _can_delete_selected_node();
 };
+
+// --- Folded from editor/doc/doc_tools.h ---
+#include "core/templates/rb_set.h"
+#include "core/types.h"
+
+class XMLParser;
+
+class DocTools
+{
+public:
+	String version;
+	HashMap<String, RBSet<String, NaturalNoCaseComparator>> inheriting;
+
+	static Error erase_classes(const String& p_dir);
+
+	void merge_from(const DocTools& p_data);
+	void remove_doc(const String& p_class_name);
+	void remove_script_doc_by_path(const String& p_path);
+	bool has_doc(const String& p_class_name);
+
+	enum GenerateFlags
+	{
+		GENERATE_FLAG_SKIP_BASIC_TYPES = (1 << 0),
+		GENERATE_FLAG_EXTENSION_CLASSES_ONLY = (1 << 1),
+	};
+
+	void generate(uint32_t p_flags = {});
+	Error load_classes(const String& p_dir);
+	Error save_classes(const String& p_default_path, const HashMap<String, String>& p_class_path,
+		bool p_use_relative_schema = true);
+
+	Error _load(Ref<XMLParser> parser);
+	Error load_compressed(
+		const uint8_t* p_data, int64_t p_compressed_size, int64_t p_uncompressed_size);
+	Error load_xml(const uint8_t* p_data, int64_t p_size);
+};
+
+
+
+// --- End editor/doc/doc_tools.h ---
+
+// --- Folded from editor/project_upgrade/project_converter_3_to_4.h ---
+#ifndef DISABLE_DEPRECATED
+
+#include "core/string/ustring.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/vector.h"
+
+struct SourceLine {
+	String line;
+	bool is_comment;
+};
+
+class RegEx;
+template <typename T>
+class Ref;
+
+class ProjectConverter3To4 {
+	class RegExContainer;
+
+	uint64_t maximum_file_size;
+	uint64_t maximum_line_length;
+
+	void fix_tool_declaration(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+	void fix_pause_mode(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+
+	void rename_colors(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+	void convert_hexadecimal_colors(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+	Vector<String> check_for_rename_colors(Vector<String> &lines, const RegExContainer &reg_container);
+
+	void rename_classes(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+	Vector<String> check_for_rename_classes(Vector<String> &lines, const RegExContainer &reg_container);
+
+	void rename_gdscript_functions(Vector<SourceLine> &source_lines, const RegExContainer &reg_container, bool builtin);
+	Vector<String> check_for_rename_gdscript_functions(Vector<String> &lines, const RegExContainer &reg_container, bool builtin);
+	void process_gdscript_line(String &line, const RegExContainer &reg_container, bool builtin);
+
+	void rename_csharp_functions(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+	Vector<String> check_for_rename_csharp_functions(Vector<String> &lines, const RegExContainer &reg_container);
+	void process_csharp_line(String &line, const RegExContainer &reg_container);
+
+	void rename_csharp_attributes(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+	Vector<String> check_for_rename_csharp_attributes(Vector<String> &lines, const RegExContainer &reg_container);
+
+	void rename_gdscript_keywords(Vector<SourceLine> &r_source_lines, const RegExContainer &p_reg_container, bool p_builtin);
+	Vector<String> check_for_rename_gdscript_keywords(Vector<String> &r_lines, const RegExContainer &p_reg_container, bool p_builtin);
+
+	void rename_input_map_scancode(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+	Vector<String> check_for_rename_input_map_scancode(Vector<String> &lines, const RegExContainer &reg_container);
+
+	void rename_joypad_buttons_and_axes(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+	Vector<String> check_for_rename_joypad_buttons_and_axes(Vector<String> &lines, const RegExContainer &reg_container);
+
+	void rename_animation_suffixes(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
+	Vector<String> check_for_rename_animation_suffixes(Vector<String> &lines, const RegExContainer &reg_container);
+
+	void custom_rename(Vector<SourceLine> &source_lines, const String &from, const String &to);
+	Vector<String> check_for_custom_rename(Vector<String> &lines, const String &from, const String &to);
+
+	void rename_common(const char *array[][2], LocalVector<Ref<RegEx>> &cached_regexes, Vector<SourceLine> &source_lines);
+	Vector<String> check_for_rename_common(const char *array[][2], LocalVector<Ref<RegEx>> &cached_regexes, Vector<String> &lines);
+
+	Vector<String> check_for_files();
+
+	Vector<String> parse_arguments(const String &line);
+	int get_end_parenthesis(const String &line) const;
+	String connect_arguments(const Vector<String> &line, int from, int to = -1) const;
+	String get_starting_space(const String &line) const;
+	String get_object_of_execution(const String &line) const;
+	bool contains_function_call(const String &line, const String &function) const;
+
+	String line_formatter(int current_line, String from, String to, String line);
+	String simple_line_formatter(int current_line, String old_line, String line);
+	String collect_string_from_vector(Vector<SourceLine> &vector);
+	Vector<SourceLine> split_lines(const String &text);
+
+	bool test_single_array(const char *array[][2], bool ignore_second_check = false);
+	bool test_conversion_gdscript_builtin(const String &name, const String &expected, void (ProjectConverter3To4::*func)(Vector<SourceLine> &, const RegExContainer &, bool), const String &what, const RegExContainer &reg_container, bool builtin);
+	bool test_conversion_with_regex(const String &name, const String &expected, void (ProjectConverter3To4::*func)(Vector<SourceLine> &, const RegExContainer &), const String &what, const RegExContainer &reg_container);
+	bool test_conversion_basic(const String &name, const String &expected, const char *array[][2], LocalVector<Ref<RegEx>> &regex_cache, const String &what);
+	bool test_array_names();
+	bool test_conversion(RegExContainer &reg_container);
+
+public:
+	ProjectConverter3To4(int, int);
+	bool validate_conversion();
+	bool convert();
+};
+
+#endif // DISABLE_DEPRECATED
+
+// --- End editor/project_upgrade/project_converter_3_to_4.h ---

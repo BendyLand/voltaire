@@ -207,7 +207,7 @@ void register_macos_exporter() {}
 
 #include "core/config/project_settings.h"
 #include "core/io/marshalls.h"
-#include "core/io/plist.h"
+#include "core/io/config_file.h"
 #include "core/io/zip_io.h"
 #include "core/os/os.h"
 #include "core/string/translation_server.h"

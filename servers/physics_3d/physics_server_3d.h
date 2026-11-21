@@ -32,9 +32,140 @@
 #pragma once
 // --- Folded from servers/physics_3d/direct_states/physics_direct_body_state_3d.h ---
 // --- Folded from servers/physics_3d/direct_states/physics_direct_space_state_3d.h ---
-#include "servers/physics_3d/physics_server_3d_types.h"
+// --- Folded from servers/physics_3d/physics_server_3d_types.h ---
+#include "core/math/vector3.h"
+#include "core/templates/hash_set.h"
+#include "core/templates/rid.h"
+#include "core/types.h"
+
+namespace PhysicsServer3DTypes
+{
+
+struct RayParameters
+{
+	Vector3 from;
+	Vector3 to;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+
+	bool hit_from_inside = false;
+	bool hit_back_faces = true;
+
+	bool pick_ray = false;
+};
+
+struct RayResult
+{
+	Vector3 position;
+	Vector3 normal;
+	RID rid;
+	int shape = 0;
+	int face_index = -1;
+};
+
+struct ShapeResult
+{
+	RID rid;
+	int shape = 0;
+};
+
+struct PointParameters
+{
+	Vector3 position;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+};
+
+struct ShapeParameters
+{
+	RID shape_rid;
+	Transform3D transform;
+	Vector3 motion;
+	real_t margin = 0.0;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+};
+
+struct ShapeRestInfo
+{
+	Vector3 point;
+	Vector3 normal;
+	RID rid;
+	int shape = 0;
+	Vector3 linear_velocity; // Velocity at contact point.
+};
+
+struct MotionParameters
+{
+	Transform3D from;
+	Vector3 motion;
+	real_t margin = 0.001;
+	int max_collisions = 1;
+	bool collide_separation_ray = false;
+	HashSet<RID> exclude_bodies;
+	bool recovery_as_collision = false;
+
+	MotionParameters() {}
+
+	MotionParameters(const Transform3D& p_from, const Vector3& p_motion, real_t p_margin = 0.001)
+		: from(p_from), motion(p_motion), margin(p_margin)
+	{
+	}
+};
+
+struct MotionCollision
+{
+	Vector3 position;
+	Vector3 normal;
+	Vector3 collider_velocity;
+	Vector3 collider_angular_velocity;
+	real_t depth = 0.0;
+	int local_shape = 0;
+	RID collider;
+	int collider_shape = 0;
+
+	real_t get_angle(Vector3 p_up_direction) const
+	{
+		return Math::acos(normal.dot(p_up_direction));
+	}
+};
+
+struct MotionResult
+{
+	Vector3 travel;
+	Vector3 remainder;
+	real_t collision_depth = 0.0;
+	real_t collision_safe_fraction = 0.0;
+	real_t collision_unsafe_fraction = 0.0;
+
+	static const int MAX_COLLISIONS = 32;
+	MotionCollision collisions[MAX_COLLISIONS];
+	int collision_count = 0;
+};
+
+#ifndef DISABLE_DEPRECATED
+// Graveyard.
+#endif
+
+} // namespace PhysicsServer3DTypes
+
+// Alias to make it easier to use.
+#define PS3DT PhysicsServer3DTypes
+
+
+
+// --- End servers/physics_3d/physics_server_3d_types.h ---
 // --- Folded from servers/physics_3d/queries/physics_point_query_parameters_3d.h ---
-#include "servers/physics_3d/physics_server_3d_types.h"
+
 #include "core/types.h"
 
 class PhysicsPointQueryParameters3D : public RefCounted
@@ -65,7 +196,7 @@ public:
 
 // --- End servers/physics_3d/queries/physics_point_query_parameters_3d.h ---
 // --- Folded from servers/physics_3d/queries/physics_ray_query_parameters_3d.h ---
-#include "servers/physics_3d/physics_server_3d_types.h"
+
 #include "core/types.h"
 
 class PhysicsRayQueryParameters3D : public RefCounted
@@ -109,7 +240,7 @@ public:
 // --- End servers/physics_3d/queries/physics_ray_query_parameters_3d.h ---
 // --- Folded from servers/physics_3d/queries/physics_shape_query_parameters_3d.h ---
 #include "core/types.h"
-#include "servers/physics_3d/physics_server_3d_types.h"
+
 
 class Resource;
 
@@ -576,10 +707,10 @@ public:
 };
 
 // --- End servers/physics_3d/physics_server_3d_rendering_server_handler.h ---
-#include "servers/physics_3d/physics_server_3d_types.h"
+
 // --- Folded from servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h ---
 #include "core/types.h"
-#include "servers/physics_3d/physics_server_3d_types.h"
+
 
 class PhysicsTestMotionParameters3D : public RefCounted
 {
@@ -624,7 +755,7 @@ public:
 // --- End servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h ---
 // --- Folded from servers/physics_3d/queries/physics_testmotion_query_result_3d.h ---
 #include "core/types.h"
-#include "servers/physics_3d/physics_server_3d_types.h"
+
 
 class PhysicsTestMotionResult3D : public RefCounted
 {

@@ -544,3 +544,135 @@ public:
 	Animation() = default;
 	~Animation();
 };
+
+// --- Folded from scene/resources/skeleton_profile.h ---
+#include "scene/resources/texture.h"
+
+class SkeletonProfile : public Resource
+{
+public:
+	enum TailDirection
+	{
+		TAIL_DIRECTION_AVERAGE_CHILDREN,
+		TAIL_DIRECTION_SPECIFIC_CHILD,
+		TAIL_DIRECTION_END
+	};
+
+protected:
+	bool is_read_only = false;
+
+	struct SkeletonProfileGroup
+	{
+		String group_name;
+		Ref<Texture2D> texture;
+	};
+
+	struct SkeletonProfileBone
+	{
+		String bone_name;
+		String bone_parent;
+		TailDirection tail_direction = TAIL_DIRECTION_AVERAGE_CHILDREN;
+		String bone_tail;
+		Transform3D reference_pose;
+		Vector2 handle_offset;
+		String group;
+		bool required = false;
+	};
+
+	String root_bone;
+	String scale_base_bone;
+
+	Vector<SkeletonProfileGroup> groups;
+	Vector<SkeletonProfileBone> bones;
+
+public:
+	String get_root_bone();
+	void set_root_bone(const String& p_bone_name);
+
+	String get_scale_base_bone();
+	void set_scale_base_bone(const String& p_bone_name);
+
+	int get_group_size();
+	void set_group_size(int p_size);
+
+	String get_group_name(int p_group_idx) const;
+	void set_group_name(int p_group_idx, const String& p_group_name);
+
+	Ref<Texture2D> get_texture(int p_group_idx) const;
+	void set_texture(int p_group_idx, const Ref<Texture2D>& p_texture);
+
+	int get_bone_size();
+	void set_bone_size(int p_size);
+
+	int find_bone(const String& p_bone_name) const;
+
+	PackedStringArray get_bone_names();
+	String get_bone_name(int p_bone_idx) const;
+	void set_bone_name(int p_bone_idx, const String& p_bone_name);
+
+	String get_bone_parent(int p_bone_idx) const;
+	void set_bone_parent(int p_bone_idx, const String& p_bone_parent);
+
+	TailDirection get_tail_direction(int p_bone_idx) const;
+	void set_tail_direction(int p_bone_idx, TailDirection p_tail_direction);
+
+	String get_bone_tail(int p_bone_idx) const;
+	void set_bone_tail(int p_bone_idx, const String& p_bone_tail);
+
+	Transform3D get_reference_pose(int p_bone_idx) const;
+	void set_reference_pose(int p_bone_idx, const Transform3D& p_reference_pose);
+
+	Vector2 get_handle_offset(int p_bone_idx) const;
+	void set_handle_offset(int p_bone_idx, const Vector2& p_handle_offset);
+
+	String get_group(int p_bone_idx) const;
+	void set_group(int p_bone_idx, const String& p_group);
+
+	bool is_required(int p_bone_idx) const;
+	void set_required(int p_bone_idx, bool p_required);
+
+	bool has_bone(const String& p_bone_name);
+	bool is_humanoid() const { return is_read_only; }
+
+	static Ref<SkeletonProfile> create_humanoid();
+
+	SkeletonProfile(bool p_humanoid = false);
+	~SkeletonProfile();
+};
+
+
+
+// --- End scene/resources/skeleton_profile.h ---
+
+// --- Folded from scene/resources/bone_map.h ---
+
+
+class BoneMap : public Resource
+{
+	Ref<SkeletonProfile> profile;
+	HashMap<String, String> bone_map;
+
+	void _update_profile();
+	void _validate_bone_map();
+
+public:
+	Ref<SkeletonProfile> get_profile() const;
+	void set_profile(const Ref<SkeletonProfile>& p_profile);
+
+	int get_skeleton_bone_name_count(const String& p_skeleton_bone_name) const;
+
+	String get_skeleton_bone_name(const String& p_profile_bone_name) const;
+	void set_skeleton_bone_name(
+		const String& p_profile_bone_name, const String& p_skeleton_bone_name);
+	void _set_skeleton_bone_name(const String& p_profile_bone_name,
+		const String& p_skeleton_bone_name); // Avoid to emit signal for editor.
+
+	String find_profile_bone_name(const String& p_skeleton_bone_name) const;
+
+	BoneMap();
+	~BoneMap();
+};
+
+
+
+// --- End scene/resources/bone_map.h ---

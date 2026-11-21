@@ -36,7 +36,7 @@
 #include "core/debugger/engine_debugger.h"
 #include "core/input/input.h"
 #include "core/input/input_event.h"
-#include "core/input/input_event_codec.h"
+#include "core/input/input.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
 

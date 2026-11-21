@@ -911,4 +911,642 @@ public:
 
 //////////////////////
 
+// --- Folded from scene/resources/canvas_item_material.h ---
 
+
+class CanvasItemMaterial final : public Material
+{
+public:
+	enum BlendMode
+	{
+		BLEND_MODE_MIX,
+		BLEND_MODE_ADD,
+		BLEND_MODE_SUB,
+		BLEND_MODE_MUL,
+		BLEND_MODE_PREMULT_ALPHA,
+		BLEND_MODE_DISABLED
+	};
+
+	enum LightMode
+	{
+		LIGHT_MODE_NORMAL,
+		LIGHT_MODE_UNSHADED,
+		LIGHT_MODE_LIGHT_ONLY
+	};
+
+private:
+	union MaterialKey
+	{
+		struct
+		{
+			uint32_t blend_mode : 4;
+			uint32_t light_mode : 4;
+			uint32_t particles_animation : 1;
+			uint32_t invalid_key : 1;
+		};
+
+		uint32_t key = 0;
+
+		static uint32_t hash(const MaterialKey& p_key) { return hash_murmur3_one_32(p_key.key); }
+
+		bool operator==(const MaterialKey& p_key) const { return key == p_key.key; }
+	};
+
+	struct ShaderNames
+	{
+		String particles_anim_h_frames;
+		String particles_anim_v_frames;
+		String particles_anim_loop;
+	};
+
+	static ShaderNames* shader_names;
+
+	struct ShaderData
+	{
+		RID shader;
+		int users = 0;
+	};
+
+	static HashMap<MaterialKey, ShaderData, MaterialKey> shader_map;
+
+	MaterialKey current_key;
+
+	_FORCE_INLINE_ MaterialKey _compute_key() const
+	{
+		MaterialKey mk;
+		mk.key = 0;
+		mk.blend_mode = blend_mode;
+		mk.light_mode = light_mode;
+		mk.particles_animation = particles_animation;
+		return mk;
+	}
+
+	static Mutex material_mutex;
+	static SelfList<CanvasItemMaterial>::List dirty_materials;
+	SelfList<CanvasItemMaterial> element;
+
+	void _update_shader();
+	_FORCE_INLINE_ void _queue_shader_change();
+
+	static Mutex blit_shader_mutex;
+	static RID blit_shader_cache[6];
+	static void _update_blit_shader(BlendMode p_blend);
+	mutable bool blit_shader_set = false;
+	bool texture_blit = false;
+
+	BlendMode blend_mode = BLEND_MODE_MIX;
+	LightMode light_mode = LIGHT_MODE_NORMAL;
+	bool particles_animation = false;
+
+	// Proper values set in constructor.
+	int particles_anim_h_frames = 0;
+	int particles_anim_v_frames = 0;
+	bool particles_anim_loop = false;
+
+public:
+	void set_texture_blit(bool p_enable);
+	bool is_texture_blit() const { return texture_blit; }
+
+	void set_blend_mode(BlendMode p_blend_mode);
+	BlendMode get_blend_mode() const;
+
+	void set_light_mode(LightMode p_light_mode);
+	LightMode get_light_mode() const;
+
+	void set_particles_animation(bool p_particles_anim);
+	bool get_particles_animation() const;
+
+	void set_particles_anim_h_frames(int p_frames);
+	int get_particles_anim_h_frames() const;
+	void set_particles_anim_v_frames(int p_frames);
+	int get_particles_anim_v_frames() const;
+
+	void set_particles_anim_loop(bool p_loop);
+	bool get_particles_anim_loop() const;
+
+	static void init_shaders();
+	static void finish_shaders();
+	static void cleanup_blit_shaders();
+	static void flush_changes();
+
+	virtual RID get_rid() const override;
+	virtual RID get_shader_rid() const override;
+
+	virtual Shader::Mode get_shader_mode() const override;
+
+	CanvasItemMaterial(bool p_texture_blit = false);
+	virtual ~CanvasItemMaterial();
+};
+
+// --- End scene/resources/canvas_item_material.h ---
+
+// --- Folded from scene/resources/particle_process_material.h ---
+#include "core/templates/rb_set.h"
+#include "core/templates/rid.h"
+#include "core/templates/self_list.h"
+#include "scene/resources/curve_texture.h"
+
+
+/*
+ TODO:
+-Path following
+-Emitter positions deformable by bones
+-Proper trails
+*/
+
+class ParticleProcessMaterial final : public Material
+{
+public:
+	enum Parameter
+	{
+		PARAM_INITIAL_LINEAR_VELOCITY,
+		PARAM_ANGULAR_VELOCITY,
+		PARAM_ORBIT_VELOCITY,
+		PARAM_LINEAR_ACCEL,
+		PARAM_RADIAL_ACCEL,
+		PARAM_TANGENTIAL_ACCEL,
+		PARAM_DAMPING,
+		PARAM_ANGLE,
+		PARAM_SCALE,
+		PARAM_HUE_VARIATION,
+		PARAM_ANIM_SPEED,
+		PARAM_ANIM_OFFSET,
+		PARAM_TURB_INFLUENCE_OVER_LIFE,
+		PARAM_TURB_VEL_INFLUENCE,
+		PARAM_TURB_INIT_DISPLACEMENT,
+		PARAM_RADIAL_VELOCITY,
+		PARAM_DIRECTIONAL_VELOCITY,
+		PARAM_SCALE_OVER_VELOCITY,
+		PARAM_MAX
+	};
+
+	// When extending, make sure not to overflow the size of the MaterialKey below.
+	enum ParticleFlags
+	{
+		PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY,
+		PARTICLE_FLAG_ROTATE_Y,
+		PARTICLE_FLAG_DISABLE_Z,
+		PARTICLE_FLAG_DAMPING_AS_FRICTION,
+		PARTICLE_FLAG_INHERIT_EMITTER_SCALE,
+		PARTICLE_FLAG_MAX
+	};
+
+	// When extending, make sure not to overflow the size of the MaterialKey below.
+	enum EmissionShape
+	{
+		EMISSION_SHAPE_POINT,
+		EMISSION_SHAPE_SPHERE,
+		EMISSION_SHAPE_SPHERE_SURFACE,
+		EMISSION_SHAPE_BOX,
+		EMISSION_SHAPE_POINTS,
+		EMISSION_SHAPE_DIRECTED_POINTS,
+		EMISSION_SHAPE_RING,
+		EMISSION_SHAPE_MAX
+	};
+
+	// When extending, make sure not to overflow the size of the MaterialKey below.
+	enum SubEmitterMode
+	{
+		SUB_EMITTER_DISABLED,
+		SUB_EMITTER_CONSTANT,
+		SUB_EMITTER_AT_END,
+		SUB_EMITTER_AT_COLLISION,
+		SUB_EMITTER_AT_START,
+		SUB_EMITTER_MAX
+	};
+
+	// When extending, make sure not to overflow the size of the MaterialKey below.
+	enum CollisionMode
+	{
+		COLLISION_DISABLED,
+		COLLISION_RIGID,
+		COLLISION_HIDE_ON_CONTACT,
+		COLLISION_MAX
+	};
+
+private:
+	struct MaterialKey
+	{
+		// The bit size of the struct must be kept below or equal to 64 bits.
+		// Consider this when extending ParticleFlags, EmissionShape, or SubEmitterMode.
+		uint64_t texture_mask : PARAM_MAX;
+		uint64_t texture_color : 1;
+		uint64_t particle_flags : PARTICLE_FLAG_MAX;
+		uint64_t emission_shape : 3;
+		uint64_t invalid_key : 1;
+		uint64_t has_emission_color : 1;
+		uint64_t sub_emitter : 3;
+		uint64_t attractor_enabled : 1;
+		uint64_t collision_mode : 2;
+		uint64_t collision_scale : 1;
+		uint64_t turbulence_enabled : 1;
+		uint64_t limiter_curve : 1;
+		uint64_t alpha_curve : 1;
+		uint64_t emission_curve : 1;
+		uint64_t has_initial_ramp : 1;
+		uint64_t orbit_uses_curve_xyz : 1;
+		uint64_t use_scale_3d : 1;
+		uint64_t use_rotation_3d : 1;
+		uint64_t use_rotation_velocity_3d : 1;
+		uint64_t use_rotation_velocity_3d_curve : 1;
+
+		MaterialKey() { memset(this, 0, sizeof(MaterialKey)); }
+
+		static uint32_t hash(const MaterialKey& p_key)
+		{
+			return hash_djb2_buffer((const uint8_t*)&p_key, sizeof(MaterialKey));
+		}
+
+		bool operator==(const MaterialKey& p_key) const
+		{
+			return memcmp(this, &p_key, sizeof(MaterialKey)) == 0;
+		}
+
+		bool operator<(const MaterialKey& p_key) const
+		{
+			return memcmp(this, &p_key, sizeof(MaterialKey)) < 0;
+		}
+	};
+
+	struct ShaderData
+	{
+		RID shader;
+		int users = 0;
+	};
+
+	static Mutex shader_map_mutex;
+	static HashMap<MaterialKey, ShaderData, MaterialKey> shader_map;
+	static RBSet<String> min_max_properties;
+
+	MaterialKey current_key;
+	RID shader_rid;
+
+	static Mutex dirty_materials_mutex;
+	static SelfList<ParticleProcessMaterial>::List dirty_materials;
+
+	struct ShaderNames
+	{
+		String direction;
+		String spread;
+		String flatness;
+		String initial_linear_velocity_min;
+		String initial_angle_min;
+		String angular_velocity_min;
+		String orbit_velocity_min;
+		String radial_velocity_min;
+		String linear_accel_min;
+		String radial_accel_min;
+		String tangent_accel_min;
+		String damping_min;
+		String scale_min;
+		String scale_over_velocity_min;
+		String hue_variation_min;
+		String anim_speed_min;
+		String anim_offset_min;
+		String directional_velocity_min;
+		String scale_3d_min;
+		String rotation_3d_min;
+		String rotation_velocity_3d_min;
+
+		String initial_linear_velocity_max;
+		String initial_angle_max;
+		String angular_velocity_max;
+		String orbit_velocity_max;
+		String radial_velocity_max;
+		String linear_accel_max;
+		String radial_accel_max;
+		String tangent_accel_max;
+		String damping_max;
+		String scale_max;
+		String scale_over_velocity_max;
+		String hue_variation_max;
+		String anim_speed_max;
+		String anim_offset_max;
+		String directional_velocity_max;
+		String scale_3d_max;
+		String rotation_3d_max;
+		String rotation_velocity_3d_max;
+
+		String angle_texture;
+		String angular_velocity_texture;
+		String orbit_velocity_texture;
+		String radial_velocity_texture;
+		String linear_accel_texture;
+		String radial_accel_texture;
+		String tangent_accel_texture;
+		String damping_texture;
+		String scale_texture;
+		String scale_over_velocity_texture;
+		String hue_variation_texture;
+		String anim_speed_texture;
+		String anim_offset_texture;
+		String velocity_limiter_texture;
+		String directional_velocity_texture;
+		String rotation_velocity_3d_curve;
+
+		String color;
+		String color_ramp;
+		String alpha_ramp;
+		String emission_ramp;
+		String color_initial_ramp;
+
+		String velocity_limit_curve;
+		String velocity_pivot;
+
+		String emission_sphere_radius;
+		String emission_box_extents;
+		String emission_texture_point_count;
+		String emission_texture_points;
+		String emission_texture_normal;
+		String emission_texture_color;
+		String emission_ring_axis;
+		String emission_ring_height;
+		String emission_ring_radius;
+		String emission_ring_inner_radius;
+		String emission_ring_cone_angle;
+		String emission_shape_offset;
+		String emission_shape_scale;
+
+		String turbulence_enabled;
+		String turbulence_noise_strength;
+		String turbulence_noise_scale;
+		String turbulence_noise_speed;
+		String turbulence_noise_speed_random;
+		String turbulence_influence_over_life;
+		String turbulence_influence_min;
+		String turbulence_influence_max;
+		String turbulence_initial_displacement_min;
+		String turbulence_initial_displacement_max;
+
+		String gravity;
+		String inherit_emitter_velocity_ratio;
+
+		String lifetime_randomness;
+
+		String sub_emitter_frequency;
+		String sub_emitter_amount_at_end;
+		String sub_emitter_amount_at_collision;
+		String sub_emitter_amount_at_start;
+		String sub_emitter_keep_velocity;
+
+		String collision_friction;
+		String collision_bounce;
+	};
+
+	static ShaderNames* shader_names;
+
+	SelfList<ParticleProcessMaterial> element;
+
+	void _update_shader();
+	_FORCE_INLINE_ void _queue_shader_change();
+
+	Vector3 direction;
+	float spread = 0.0f;
+	float flatness = 0.0f;
+
+	float params_min[PARAM_MAX] = {};
+	float params_max[PARAM_MAX] = {};
+	float params[PARAM_MAX] = {};
+
+	Ref<Texture2D> tex_parameters[PARAM_MAX];
+	Color color;
+	Ref<Texture2D> color_ramp;
+	Ref<Texture2D> alpha_curve;
+	Ref<Texture2D> emission_curve;
+	Ref<Texture2D> color_initial_ramp;
+	Ref<Texture2D> velocity_limit_curve;
+
+	bool directional_velocity_global = false;
+	Vector3 velocity_pivot;
+
+	bool particle_flags[PARTICLE_FLAG_MAX];
+
+	EmissionShape emission_shape;
+	float emission_sphere_radius = 0.0f;
+	Vector3 emission_box_extents;
+	Ref<Texture2D> emission_point_texture;
+	Ref<Texture2D> emission_normal_texture;
+	Ref<Texture2D> emission_color_texture;
+	Vector3 emission_ring_axis;
+	real_t emission_ring_height = 0.0f;
+	real_t emission_ring_radius = 0.0f;
+	real_t emission_ring_inner_radius = 0.0f;
+	real_t emission_ring_cone_angle = 0.0f;
+	int emission_point_count = 1;
+	Vector3 emission_shape_offset;
+	Vector3 emission_shape_scale;
+
+	bool turbulence_enabled;
+	Vector3 turbulence_noise_speed;
+	Ref<Texture2D> turbulence_color_ramp;
+	float turbulence_noise_strength = 0.0f;
+	float turbulence_noise_scale = 0.0f;
+	float turbulence_noise_speed_random = 0.0f;
+
+	Vector3 gravity;
+
+	double lifetime_randomness = 0.0;
+	double inherit_emitter_velocity_ratio = 0.0;
+
+	bool use_rotation_3d = false;
+	bool use_scale_3d = false;
+	Vector3 scale_3d_min;
+	Vector3 scale_3d_max;
+	Vector3 rotation_3d_min;
+	Vector3 rotation_3d_max;
+	bool using_rotation_velocity_3d = false;
+	Vector3 rotation_velocity_3d_min;
+	Vector3 rotation_velocity_3d_max;
+	Ref<Texture2D> rotation_velocity_3d_curve;
+
+	SubEmitterMode sub_emitter_mode;
+	double sub_emitter_frequency = 0.0;
+	int sub_emitter_amount_at_end = 0;
+	int sub_emitter_amount_at_collision = 0;
+	int sub_emitter_amount_at_start = 0;
+	bool sub_emitter_keep_velocity = false;
+	// do not save emission points here
+
+	bool attractor_interaction_enabled = false;
+	CollisionMode collision_mode;
+	bool collision_scale = false;
+	float collision_friction = 0.0f;
+	float collision_bounce = 0.0f;
+
+public:
+	static bool has_min_max_property(const String& p_name);
+
+	void set_direction(Vector3 p_direction);
+	Vector3 get_direction() const;
+
+	void set_spread(float p_spread);
+	float get_spread() const;
+
+	void set_flatness(float p_flatness);
+	float get_flatness() const;
+
+	void set_velocity_pivot(const Vector3& p_pivot);
+	Vector3 get_velocity_pivot();
+
+	void set_param(Parameter p_param, const Vector2& p_value);
+	Vector2 get_param(Parameter p_param) const;
+
+	void set_param_min(Parameter p_param, float p_value);
+	float get_param_min(Parameter p_param) const;
+
+	void set_param_max(Parameter p_param, float p_value);
+	float get_param_max(Parameter p_param) const;
+
+	void set_param_texture(Parameter p_param, const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_param_texture(Parameter p_param) const;
+
+	void set_velocity_limit_curve(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_velocity_limit_curve() const;
+
+	void set_alpha_curve(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_alpha_curve() const;
+	void set_color(const Color& p_color);
+	Color get_color() const;
+
+	void set_color_ramp(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_color_ramp() const;
+
+	void set_color_initial_ramp(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_color_initial_ramp() const;
+
+	void set_emission_curve(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_emission_curve() const;
+
+	void set_use_scale_3d(const bool p_use_scale_3d);
+	bool is_using_scale_3d() const;
+
+	void set_scale_3d_min(const Vector3& p_scale_3d_min);
+	Vector3 get_scale_3d_min() const;
+
+	void set_scale_3d_max(const Vector3& p_scale_3d_max);
+	Vector3 get_scale_3d_max() const;
+
+	void set_use_rotation_3d(const bool p_use_scale_3d);
+	bool is_using_rotation_3d() const;
+
+	void set_rotation_3d_min(const Vector3& p_rotation_3d_min);
+	Vector3 get_rotation_3d_min() const;
+
+	void set_rotation_3d_max(const Vector3& p_rotation_3d_max);
+	Vector3 get_rotation_3d_max() const;
+
+	void set_particle_flag(ParticleFlags p_particle_flag, bool p_enable);
+	bool get_particle_flag(ParticleFlags p_particle_flag) const;
+
+	void set_emission_shape(EmissionShape p_shape);
+	void set_emission_sphere_radius(real_t p_radius);
+	void set_emission_box_extents(Vector3 p_extents);
+	void set_emission_point_texture(const Ref<Texture2D>& p_points);
+	void set_emission_normal_texture(const Ref<Texture2D>& p_normals);
+	void set_emission_color_texture(const Ref<Texture2D>& p_colors);
+	void set_emission_ring_axis(Vector3 p_axis);
+	void set_emission_ring_height(real_t p_height);
+	void set_emission_ring_radius(real_t p_radius);
+	void set_emission_ring_inner_radius(real_t p_radius);
+	void set_emission_ring_cone_angle(real_t p_angle);
+	void set_emission_point_count(int p_count);
+
+	EmissionShape get_emission_shape() const;
+	real_t get_emission_sphere_radius() const;
+	Vector3 get_emission_box_extents() const;
+	Ref<Texture2D> get_emission_point_texture() const;
+	Ref<Texture2D> get_emission_normal_texture() const;
+	Ref<Texture2D> get_emission_color_texture() const;
+	Vector3 get_emission_ring_axis() const;
+	real_t get_emission_ring_height() const;
+	real_t get_emission_ring_radius() const;
+	real_t get_emission_ring_inner_radius() const;
+	real_t get_emission_ring_cone_angle() const;
+	int get_emission_point_count() const;
+
+	void set_turbulence_enabled(bool p_turbulence_enabled);
+	void set_turbulence_noise_strength(float p_turbulence_noise_strength);
+	void set_turbulence_noise_scale(float p_turbulence_noise_scale);
+	void set_turbulence_noise_speed_random(float p_turbulence_noise_speed_random);
+	void set_turbulence_noise_speed(const Vector3& p_turbulence_noise_speed);
+
+	bool get_turbulence_enabled() const;
+	float get_turbulence_noise_strength() const;
+	float get_turbulence_noise_scale() const;
+	float get_turbulence_noise_speed_random() const;
+	Vector3 get_turbulence_noise_speed() const;
+
+	void set_gravity(const Vector3& p_gravity);
+	Vector3 get_gravity() const;
+
+	void set_lifetime_randomness(double p_lifetime);
+	double get_lifetime_randomness() const;
+
+	void set_inherit_velocity_ratio(double p_ratio);
+	double get_inherit_velocity_ratio();
+
+	void set_use_rotation_velocity_3d(bool p_use_rotation_velocity_3d);
+	bool is_using_rotation_velocity_3d() const;
+	void set_rotation_velocity_3d_min(const Vector3& p_rotation_velocity_3d_min);
+	Vector3 get_rotation_velocity_3d_min() const;
+	void set_rotation_velocity_3d_max(const Vector3& p_rotation_velocity_3d_max);
+	Vector3 get_rotation_velocity_3d_max() const;
+	void set_rotation_velocity_3d_curve(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_rotation_velocity_3d_curve() const;
+
+	void set_attractor_interaction_enabled(bool p_enable);
+	bool is_attractor_interaction_enabled() const;
+
+	void set_collision_mode(CollisionMode p_collision_mode);
+	CollisionMode get_collision_mode() const;
+
+	void set_collision_use_scale(bool p_scale);
+	bool is_collision_using_scale() const;
+
+	void set_collision_friction(float p_friction);
+	float get_collision_friction() const;
+
+	void set_collision_bounce(float p_bounce);
+	float get_collision_bounce() const;
+
+	static void init_shaders();
+	static void finish_shaders();
+	static void flush_changes();
+
+	void set_sub_emitter_mode(SubEmitterMode p_sub_emitter_mode);
+	SubEmitterMode get_sub_emitter_mode() const;
+
+	void set_sub_emitter_frequency(double p_frequency);
+	double get_sub_emitter_frequency() const;
+
+	void set_sub_emitter_amount_at_end(int p_amount);
+	int get_sub_emitter_amount_at_end() const;
+
+	void set_sub_emitter_amount_at_collision(int p_amount);
+	int get_sub_emitter_amount_at_collision() const;
+
+	void set_sub_emitter_amount_at_start(int p_amount);
+	int get_sub_emitter_amount_at_start() const;
+
+	void set_sub_emitter_keep_velocity(bool p_enable);
+	bool get_sub_emitter_keep_velocity() const;
+
+	void set_emission_shape_offset(const Vector3& p_emission_shape_offset);
+	Vector3 get_emission_shape_offset() const;
+
+	void set_emission_shape_scale(const Vector3& p_emission_shape_scale);
+	Vector3 get_emission_shape_scale() const;
+
+	virtual RID get_rid() const override;
+	virtual RID get_shader_rid() const override;
+
+	virtual Shader::Mode get_shader_mode() const override;
+
+	ParticleProcessMaterial();
+	~ParticleProcessMaterial();
+};
+
+
+
+
+// --- End scene/resources/particle_process_material.h ---

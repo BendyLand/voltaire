@@ -32,7 +32,100 @@
 #pragma once
 
 #include "core/string/translation.h"
-#include "core/string/translation_domain.h"
+// --- Folded from core/string/translation_domain.h ---
+#include "core/types.h"
+
+class Translation;
+
+class TranslationDomain : public RefCounted
+{
+
+	struct PseudolocalizationConfig
+	{
+		bool enabled = false;
+		bool accents_enabled = true;
+		bool double_vowels_enabled = false;
+		bool fake_bidi_enabled = false;
+		bool override_enabled = false;
+		bool skip_placeholders_enabled = true;
+		float expansion_ratio = 0.0;
+		String prefix = "[";
+		String suffix = "]";
+	};
+
+	bool enabled = true;
+
+	String locale_override;
+	HashSet<Ref<Translation>> translations;
+	PseudolocalizationConfig pseudolocalization;
+
+	String _get_override_string(const String& p_message) const;
+	String _double_vowels(const String& p_message) const;
+	String _replace_with_accented_string(const String& p_message) const;
+	String _wrap_with_fakebidi_characters(const String& p_message) const;
+	String _add_padding(const String& p_message, int p_length) const;
+	const char32_t* _get_accented_version(char32_t p_character) const;
+	bool _is_placeholder(const String& p_message, int p_index) const;
+
+protected:
+
+public:
+	// Methods in this section are not intended for scripting.
+	String get_message_from_translations(
+		const String& p_locale, const String& p_message, const String& p_context) const;
+	String get_message_from_translations(const String& p_locale, const String& p_message,
+		const String& p_message_plural, int p_n, const String& p_context) const;
+	PackedStringArray get_loaded_locales() const;
+
+public:
+#ifndef DISABLE_DEPRECATED
+	Ref<Translation> get_translation_object(const String& p_locale) const;
+#endif
+
+	void add_translation(const Ref<Translation>& p_translation);
+	void remove_translation(const Ref<Translation>& p_translation);
+	void clear();
+
+	bool has_translation(const Ref<Translation>& p_translation) const;
+	const HashSet<Ref<Translation>> get_translations() const;
+	HashSet<Ref<Translation>> find_translations(const String& p_locale, bool p_exact) const;
+	bool has_translation_for_locale(const String& p_locale, bool p_exact) const;
+
+	String translate(const String& p_message, const String& p_context) const;
+	String translate_plural(const String& p_message, const String& p_message_plural,
+		int p_n, const String& p_context) const;
+
+	String get_locale_override() const;
+	void set_locale_override(const String& p_locale);
+
+	bool is_enabled() const;
+	void set_enabled(bool p_enabled);
+
+	bool is_pseudolocalization_enabled() const;
+	void set_pseudolocalization_enabled(bool p_enabled);
+	bool is_pseudolocalization_accents_enabled() const;
+	void set_pseudolocalization_accents_enabled(bool p_enabled);
+	bool is_pseudolocalization_double_vowels_enabled() const;
+	void set_pseudolocalization_double_vowels_enabled(bool p_enabled);
+	bool is_pseudolocalization_fake_bidi_enabled() const;
+	void set_pseudolocalization_fake_bidi_enabled(bool p_enabled);
+	bool is_pseudolocalization_override_enabled() const;
+	void set_pseudolocalization_override_enabled(bool p_enabled);
+	bool is_pseudolocalization_skip_placeholders_enabled() const;
+	void set_pseudolocalization_skip_placeholders_enabled(bool p_enabled);
+	float get_pseudolocalization_expansion_ratio() const;
+	void set_pseudolocalization_expansion_ratio(float p_ratio);
+	String get_pseudolocalization_prefix() const;
+	void set_pseudolocalization_prefix(const String& p_prefix);
+	String get_pseudolocalization_suffix() const;
+	void set_pseudolocalization_suffix(const String& p_suffix);
+
+	String pseudolocalize(const String& p_message) const;
+};
+
+
+
+// --- End core/string/translation_domain.h ---
 
 class TranslationServer final
 {
@@ -189,3 +282,48 @@ public:
 	TranslationServer& operator=(const TranslationServer&) = delete;
 	~TranslationServer() = delete;
 };
+
+// --- Folded from core/string/plural_rules.h ---
+#include "core/templates/lru.h"
+#include "core/types.h"
+
+class Expression;
+
+class PluralRules
+{
+	mutable LRUCache<int, int> cache;
+
+	// These two fields are initialized in the constructor.
+	const int nplurals;
+	const String plural;
+
+	// Cache temporary variables related to `evaluate()` to make it faster.
+	class EQNode : public RefCounted
+	{
+	public:
+		String regex;
+		Ref<EQNode> left;
+		Ref<EQNode> right;
+	};
+
+	Ref<EQNode> equi_tests;
+	Ref<Expression> expr;
+
+	int _find_unquoted(const String& p_src, char32_t p_chr) const;
+	void _cache_plural_tests(const String& p_plural_rule, Ref<EQNode>& p_node);
+
+	PluralRules(int p_nplurals, const String& p_plural);
+
+public:
+	int evaluate(int p_n) const;
+
+	int get_nplurals() const { return nplurals; }
+
+	String get_plural() const { return plural; }
+
+	static PluralRules* parse(const String& p_rules);
+};
+
+
+
+// --- End core/string/plural_rules.h ---

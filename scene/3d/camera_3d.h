@@ -30,12 +30,126 @@
 /**************************************************************************/
 
 #pragma once
+// --- Folded from core/templates/interpolated_property.h ---
+struct Vector2;
 
-#include "core/templates/interpolated_property.h"
+namespace InterpolatedPropertyFuncs {
+float lerp(float p_a, float p_b, float p_fraction);
+double lerp(double p_a, double p_b, float p_fraction);
+Vector2 lerp(const Vector2 &p_a, const Vector2 &p_b, float p_fraction);
+} //namespace InterpolatedPropertyFuncs
+
+// This class is intended to reduce the boiler plate involved to
+// support custom properties to be physics interpolated.
+
+template <class T>
+class InterpolatedProperty {
+	// Only needs interpolating / updating the servers when
+	// curr and prev are different.
+	bool _needs_interpolating = false;
+
+	// Each time we hit a physics tick, curr = prev,
+	// BUT the server may be out of date, and needs an update
+	// on the next frame, OR taking the node off the property update list.
+	bool _server_stale = false;
+
+	T _interpolated;
+	T curr;
+	T prev;
+
+public:
+	// FTI depends on the constant flow between current values
+	// (on the current tick) and stored previous values (on the previous tick).
+	// These should be updated both on each tick, and also on resets.
+	void pump() {
+		prev = curr;
+		_needs_interpolating = false;
+		_server_stale = true;
+	}
+	void reset() { pump(); }
+
+	void set_interpolated_value(const T &p_val) {
+		_interpolated = p_val;
+	}
+	const T &interpolated() const { return _interpolated; }
+
+	// Returns true if an update to the server is needed.
+	bool interpolate(float p_interpolation_fraction) {
+		if (_needs_interpolating) {
+			_interpolated = InterpolatedPropertyFuncs::lerp(prev, curr, p_interpolation_fraction);
+			return true;
+		}
+		if (_server_stale) {
+			_interpolated = curr;
+			_server_stale = false;
+			return true;
+		}
+		return false;
+	}
+
+	operator T() const {
+		return curr;
+	}
+
+	bool operator==(const T &p_o) const {
+		return p_o == curr;
+	}
+
+	bool operator!=(const T &p_o) const {
+		return p_o != curr;
+	}
+
+	InterpolatedProperty &operator=(T p_val) {
+		curr = p_val;
+		_interpolated = p_val;
+		_needs_interpolating = true;
+		return *this;
+	}
+	InterpolatedProperty(T p_val) {
+		curr = p_val;
+		_interpolated = p_val;
+		pump();
+	}
+	InterpolatedProperty() {
+		// Ensure either the constructor is run,
+		// or the memory is zeroed if using a fundamental type.
+		_interpolated = T{};
+		curr = T{};
+		prev = T{};
+	}
+};
+
+// --- End core/templates/interpolated_property.h ---
 #include "scene/3d/node_3d.h"
-#include "scene/3d/velocity_tracker_3d.h"
+// --- Folded from scene/3d/velocity_tracker_3d.h ---
+#include "core/types.h"
+
+class VelocityTracker3D : public RefCounted
+{
+	struct PositionHistory
+	{
+		uint64_t frame = 0;
+		Vector3 position;
+	};
+
+	bool physics_step = false;
+	Vector<PositionHistory> position_history;
+	int position_history_len = 0;
+
+public:
+	void reset(const Vector3& p_new_pos);
+	void set_track_physics_step(bool p_track_physics_step);
+	bool is_tracking_physics_step() const;
+	void update_position(const Vector3& p_position);
+	Vector3 get_tracked_linear_velocity() const;
+
+	VelocityTracker3D();
+};
+
+
+
+// --- End scene/3d/velocity_tracker_3d.h ---
 #include "scene/resources/camera_attributes.h"
-#include "scene/resources/compositor.h"
 #include "scene/resources/environment.h"
 #include "servers/xr/xr_tracker.h"
 
@@ -208,3 +322,280 @@ public:
 	Camera3D(bool p_xr = false);
 	~Camera3D();
 };
+
+// --- Folded from scene/3d/audio_listener_3d.h ---
+#include "scene/3d/node_3d.h"
+
+
+class AudioListener3D : public Node3D
+{
+public:
+	enum DopplerTracking
+	{
+		DOPPLER_TRACKING_DISABLED,
+		DOPPLER_TRACKING_IDLE_STEP,
+		DOPPLER_TRACKING_PHYSICS_STEP,
+	};
+
+	void make_current();
+	void clear_current();
+	bool is_current() const;
+
+	virtual Transform3D get_listener_transform() const;
+
+	void set_doppler_tracking(DopplerTracking p_tracking);
+	DopplerTracking get_doppler_tracking() const;
+
+	Vector3 get_doppler_tracked_velocity() const;
+
+	AudioListener3D();
+	~AudioListener3D();
+
+private:
+	bool force_change = false;
+	bool current = false;
+
+	RID scenario_id;
+
+	friend class Viewport;
+	void _update_audio_listener_state();
+
+	DopplerTracking doppler_tracking = DOPPLER_TRACKING_DISABLED;
+	Ref<VelocityTracker3D> velocity_tracker;
+
+protected:
+	void _update_listener();
+	virtual void _request_listener_update();
+
+	void _notification(int p_what);
+
+};
+
+
+
+// --- End scene/3d/audio_listener_3d.h ---
+
+// --- Folded from scene/3d/audio_stream_player_3d.h ---
+#include "core/templates/fixed_vector.h"
+#include "scene/3d/node_3d.h"
+#include "servers/audio/audio_server.h"
+
+#ifndef PHYSICS_3D_DISABLED
+class Area3D;
+#endif // PHYSICS_3D_DISABLED
+struct AudioFrame;
+class AudioStream;
+class AudioStreamPlayback;
+class AudioStreamPlayerInternal;
+class VelocityTracker3D;
+
+class AudioStreamPlayer3D : public Node3D
+{
+public:
+	enum AttenuationModel
+	{
+		ATTENUATION_INVERSE_DISTANCE,
+		ATTENUATION_INVERSE_SQUARE_DISTANCE,
+		ATTENUATION_LOGARITHMIC,
+		ATTENUATION_DISABLED,
+	};
+
+	enum DopplerTracking
+	{
+		DOPPLER_TRACKING_DISABLED,
+		DOPPLER_TRACKING_IDLE_STEP,
+		DOPPLER_TRACKING_PHYSICS_STEP
+	};
+
+private:
+	enum
+	{
+		MAX_OUTPUTS = 8,
+		MAX_INTERSECT_AREAS = 32
+
+	};
+
+	static constexpr int64_t VOLUME_VECTOR_SIZE = AudioServer::MAX_CHANNELS_PER_BUS;
+
+	AudioStreamPlayerInternal* internal = nullptr;
+
+	SafeNumeric<float> setplay{-1.0};
+	Ref<AudioStreamPlayback> setplayback;
+
+	AttenuationModel attenuation_model = ATTENUATION_INVERSE_DISTANCE;
+	float unit_size = 10.0;
+	float max_db = 3.0;
+	// Internally used to take doppler tracking into account.
+	float actual_pitch_scale = 1.0;
+
+	uint64_t last_mix_count = -1;
+	bool force_update_panning = false;
+
+	static void _calc_output_vol(const Vector3& source_dir, real_t tightness,
+		FixedVector<AudioFrame, VOLUME_VECTOR_SIZE>& output);
+	static AudioFrame _calc_output_vol_stereo(const Vector3& source_dir, real_t panning_strength);
+
+#ifndef PHYSICS_3D_DISABLED
+	void _calc_reverb_vol(Area3D* area, Vector3 listener_area_pos,
+		const FixedVector<AudioFrame, VOLUME_VECTOR_SIZE>& direct_path_vol,
+		FixedVector<AudioFrame, VOLUME_VECTOR_SIZE>& reverb_vol);
+#endif // PHYSICS_3D_DISABLED
+
+	static void _listener_changed_cb(void* self)
+	{
+		reinterpret_cast<AudioStreamPlayer3D*>(self)->force_update_panning = true;
+	}
+
+	void _set_playing(bool p_enable);
+	bool _is_active() const;
+	String _get_actual_bus();
+#ifndef PHYSICS_3D_DISABLED
+	Area3D* _get_overriding_area();
+#endif // PHYSICS_3D_DISABLED
+	Vector<AudioFrame> _update_panning();
+
+	uint32_t area_mask = 0;
+
+	AudioServer::PlaybackType playback_type = AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT;
+
+	bool emission_angle_enabled = false;
+	float emission_angle = 45.0;
+	float emission_angle_filter_attenuation_db = -12.0;
+	float attenuation_filter_cutoff_hz = 5000.0;
+	float attenuation_filter_db = -24.0;
+
+	float linear_attenuation = 0;
+
+	float max_distance = 0.0;
+	bool was_further_than_max_distance_last_frame = false;
+
+	Ref<VelocityTracker3D> velocity_tracker;
+
+	DopplerTracking doppler_tracking = DOPPLER_TRACKING_DISABLED;
+
+	float _get_attenuation_db(float p_distance) const;
+
+	float panning_strength = 1.0f;
+	float cached_global_panning_strength = 0.5f;
+
+	/// Hash map storing the bus volumes during the panning update.
+	/// This hash map is stored as member for efficiency reasons.
+	HashMap<String, Vector<AudioFrame>> bus_volumes;
+
+protected:
+	void _notification(int p_what);
+
+#ifndef DISABLE_DEPRECATED
+	bool _is_autoplay_enabled_bind_compat_86907();
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+public:
+	void set_stream(Ref<AudioStream> p_stream);
+	Ref<AudioStream> get_stream() const;
+
+	void set_volume_db(float p_volume);
+	float get_volume_db() const;
+
+	void set_volume_linear(float p_volume);
+	float get_volume_linear() const;
+
+	float get_unit_size() const;
+
+	void set_max_db(float p_boost);
+	float get_max_db() const;
+
+	void set_pitch_scale(float p_pitch_scale);
+	float get_pitch_scale() const;
+
+	void play(float p_from_pos = 0.0);
+	void seek(float p_seconds);
+	void stop();
+	bool is_playing() const;
+	float get_playback_position();
+
+	void set_bus(const String& p_bus);
+	String get_bus() const;
+
+	void set_max_polyphony(int p_max_polyphony);
+	int get_max_polyphony() const;
+
+	void set_autoplay(bool p_enable);
+	bool is_autoplay_enabled() const;
+
+	float get_max_distance() const;
+
+	void set_area_mask(uint32_t p_mask);
+	uint32_t get_area_mask() const;
+
+	bool is_emission_angle_enabled() const;
+
+	float get_emission_angle() const;
+
+	void set_emission_angle_filter_attenuation_db(float p_angle_attenuation_db);
+	float get_emission_angle_filter_attenuation_db() const;
+
+	void set_attenuation_filter_cutoff_hz(float p_hz);
+	float get_attenuation_filter_cutoff_hz() const;
+
+	void set_attenuation_filter_db(float p_db);
+	float get_attenuation_filter_db() const;
+
+	AttenuationModel get_attenuation_model() const;
+
+	void set_doppler_tracking(DopplerTracking p_tracking);
+	DopplerTracking get_doppler_tracking() const;
+
+	void set_stream_paused(bool p_pause);
+	bool get_stream_paused() const;
+
+	void set_panning_strength(float p_panning_strength);
+	float get_panning_strength() const;
+
+	bool has_stream_playback();
+	Ref<AudioStreamPlayback> get_stream_playback();
+
+	AudioServer::PlaybackType get_playback_type() const;
+	void set_playback_type(AudioServer::PlaybackType p_playback_type);
+
+	AudioStreamPlayer3D();
+	~AudioStreamPlayer3D();
+};
+
+
+
+// --- End scene/3d/audio_stream_player_3d.h ---
+
+// --- Folded from scene/3d/world_environment.h ---
+#include "scene/main/node.h"
+#include "scene/resources/camera_attributes.h"
+#include "scene/resources/environment.h"
+
+class WorldEnvironment : public Node
+{
+	Ref<Environment> environment;
+	Ref<CameraAttributes> camera_attributes;
+	Ref<Compositor> compositor;
+
+	void _update_current_environment();
+	void _update_current_camera_attributes();
+	void _update_current_compositor();
+
+protected:
+	void _notification(int p_what);
+
+public:
+	Ref<Environment> get_environment() const;
+
+	Ref<CameraAttributes> get_camera_attributes() const;
+
+	Ref<Compositor> get_compositor() const;
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	WorldEnvironment();
+};
+
+
+
+// --- End scene/3d/world_environment.h ---

@@ -34,11 +34,10 @@
  @brief ENet Godot specific functions
 */
 
-#include "core/io/dtls_server.h"
 #include "core/io/ip.h"
 #include "core/io/net_socket.h"
 #include "core/io/packet_peer_dtls.h"
-#include "core/io/udp_server.h"
+#include "core/io/packet_peer_udp.h"
 #include "core/os/os.h"
 
 // This must be last for windows to compile (tested with MinGW)

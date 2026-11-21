@@ -8,9 +8,7 @@ env.servers_sources = []
 env.add_source_files(env.servers_sources, "register_server_types.cpp")
 
 SConscript("audio/SCsub")
-SConscript("camera/SCsub")
 SConscript("display/SCsub")
-SConscript("movie_writer/SCsub")
 SConscript("rendering/SCsub")
 SConscript("text/SCsub")
 SConscript("navigation_2d/SCsub")

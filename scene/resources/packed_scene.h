@@ -283,4 +283,259 @@ public:
 	PackedScene();
 };
 
+// --- Folded from scene/resources/resource_format_text.h ---
+#include "core/io/file_access.h"
+#include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
+#include "core/templates/rb_map.h"
 
+
+class ResourceLoaderText
+{
+public:
+	enum
+	{
+		// Version 2: Changed names for Basis, AABB, Vectors, etc.
+		// Version 3: New string ID for ext/subresources, breaks forward compat.
+		// Version 4: PackedByteArray can be base64 encoded, and PackedVector4Array was added.
+		FORMAT_VERSION = 4,
+		// For compat, save as version 3 if not using PackedVector4Array or no big PackedByteArray.
+		FORMAT_VERSION_COMPAT = 3,
+	};
+
+private:
+	bool translation_remapped = false;
+	String local_path;
+	String res_path;
+	String error_text;
+
+	Ref<FileAccess> f;
+
+	struct ExtResource
+	{
+		Ref<ResourceLoader::LoadToken> load_token;
+		String path;
+		String type;
+	};
+
+	bool is_scene = false;
+	int format_version;
+	String res_type;
+
+	bool ignore_resource_parsing = false;
+
+	HashMap<String, ExtResource> ext_resources;
+	HashMap<String, Ref<Resource>> int_resources;
+
+	int resources_total = 0;
+	int resource_current = 0;
+
+	String resource_type;
+	String script_class;
+
+	ResourceFormatLoader::CacheMode cache_mode = ResourceFormatLoader::CACHE_MODE_REUSE;
+	ResourceFormatLoader::CacheMode cache_mode_for_external =
+		ResourceFormatLoader::CACHE_MODE_REUSE;
+
+	bool use_sub_threads = false;
+	float* progress = nullptr;
+
+	mutable int lines = 0;
+
+	ResourceUID::ID res_uid = ResourceUID::INVALID_ID;
+
+	HashMap<String, String> remaps;
+
+	void _count_resources();
+
+	struct DummyReadData
+	{
+		bool no_placeholders = false;
+		HashMap<Ref<Resource>, int> external_resources;
+		HashMap<String, Ref<Resource>> rev_external_resources;
+		HashMap<Ref<Resource>, int> resource_index_map;
+		HashMap<String, Ref<Resource>> resource_map;
+	};
+
+	void _printerr();
+
+	friend class ResourceFormatLoaderText;
+	friend
+ class ResourceFormatSaverText;
+
+	Error error = OK;
+
+	Ref<Resource> resource;
+
+public:
+	Ref<Resource> get_resource();
+	Error load();
+	Error set_uid(Ref<FileAccess> p_f, ResourceUID::ID p_uid);
+	int get_stage() const;
+	int get_stage_count() const;
+	void set_translation_remapped(bool p_remapped);
+
+	void open(Ref<FileAccess> p_f, bool p_skip_first_tag = false);
+	String recognize(Ref<FileAccess> p_f);
+	String recognize_script_class(Ref<FileAccess> p_f);
+	ResourceUID::ID get_uid(Ref<FileAccess> p_f);
+	void get_dependencies(Ref<FileAccess> p_f, List<String>* p_dependencies, bool p_add_types);
+	Error rename_dependencies(
+		Ref<FileAccess> p_f, const String& p_path, const HashMap<String, String>& p_map);
+	Error get_classes_used(HashSet<String>* r_classes);
+
+	ResourceLoaderText() = default;
+};
+
+class ResourceFormatLoaderText : public ResourceFormatLoader
+{
+public:
+	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
+		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
+		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
+	virtual void get_recognized_extensions_for_type(
+		const String& p_type, List<String>* p_extensions) const override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual bool handles_type(const String& p_type) const override;
+	virtual void get_classes_used(const String& p_path, HashSet<String>* r_classes) override;
+
+	virtual String get_resource_type(const String& p_path) const override;
+	virtual String get_resource_script_class(const String& p_path) const override;
+	virtual ResourceUID::ID get_resource_uid(const String& p_path) const override;
+	virtual bool has_custom_uid_support() const override;
+	virtual void get_dependencies(
+		const String& p_path, List<String>* p_dependencies, bool p_add_types = false) override;
+	virtual Error rename_dependencies(
+		const String& p_path, const HashMap<String, String>& p_map) override;
+
+	ResourceFormatLoaderText() = default;
+};
+
+class ResourceFormatSaverTextInstance
+{
+	String local_path;
+
+	Ref<PackedScene> packed_scene;
+
+	bool takeover_paths = false;
+	bool relative_paths = false;
+	bool bundle_resources = false;
+	bool skip_editor = false;
+
+	struct NonPersistentKey
+	{ // for resource properties generated on the fly
+		Ref<Resource> base;
+		String property;
+
+		bool operator<(const NonPersistentKey& p_key) const
+		{
+			return base == p_key.base ? property < p_key.property : base < p_key.base;
+		}
+	};
+
+	HashSet<Ref<Resource>> resource_set;
+	List<Ref<Resource>> saved_resources;
+	HashMap<Ref<Resource>, String> external_resources;
+	HashMap<Ref<Resource>, String> internal_resources;
+	bool use_compat = true;
+
+	struct ResourceSort
+	{
+		Ref<Resource> resource;
+		String id;
+
+		bool operator<(const ResourceSort& p_right) const
+		{
+			return id.naturalnocasecmp_to(p_right.id) < 0;
+		}
+	};
+
+	static String _write_resources(void* ud, const Ref<Resource>& p_resource);
+	String _write_resource(const Ref<Resource>& res);
+
+public:
+	Error save(const String& p_path, const Ref<Resource>& p_resource, uint32_t p_flags = 0);
+};
+
+class ResourceFormatSaverText : public ResourceFormatSaver
+{
+public:
+	virtual Error save(
+		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
+	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid) override;
+	virtual bool recognize(const Ref<Resource>& p_resource) const override;
+	virtual void get_recognized_extensions(
+		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
+
+	ResourceFormatSaverText() = default;
+};
+
+
+
+// --- End scene/resources/resource_format_text.h ---
+
+// --- Folded from scene/resources/video_stream.h ---
+#include "scene/resources/texture.h"
+
+class VideoStreamPlayback : public Resource
+{
+public:
+	typedef int (*AudioMixCallback)(void* p_udata, const float* p_data, int p_frames);
+	struct TheoraData;
+
+private:
+	TheoraData* data = nullptr;
+
+protected:
+	AudioMixCallback mix_callback = nullptr;
+	void* mix_udata = nullptr;
+	mutable int _channel_count = 0; // Used only to assist with bounds checking in mix_audio.
+
+	int mix_audio(int num_frames, PackedFloat32Array buffer = {}, int offset = 0);
+
+public:
+	VideoStreamPlayback();
+	~VideoStreamPlayback();
+
+	void stop();
+	void play();
+
+	bool is_playing() const;
+
+	void set_paused(bool p_paused);
+	bool is_paused() const;
+
+	double get_length() const;
+
+	double get_playback_position() const;
+	void seek(double p_time);
+
+	void set_file(const String& p_file);
+	void set_audio_track(int p_idx);
+
+	Ref<Texture2D> get_texture() const;
+	void update(double p_delta);
+
+	void set_mix_callback(AudioMixCallback p_callback, void* p_userdata);
+	int get_channels() const;
+	int get_mix_rate() const;
+};
+
+class VideoStream : public Resource
+{
+protected:
+	String file;
+	int audio_track = 0;
+
+public:
+	void set_file(const String& p_file);
+	String get_file();
+
+	void set_audio_track(int p_track);
+	Ref<VideoStreamPlayback> instantiate_playback();
+
+	VideoStream();
+	~VideoStream();
+};
+
+// --- End scene/resources/video_stream.h ---

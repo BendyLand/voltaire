@@ -35,7 +35,7 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
-#include "scene/2d/light_occluder_2d.h"
+#include "scene/2d/line_2d.h"
 #include "scene/main/canvas_item.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/packed_scene.h"

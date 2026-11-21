@@ -418,3 +418,51 @@ public:
 
 	ColorPickerButton(const String& p_text = String());
 };
+
+// --- Folded from scene/gui/color_rect.h ---
+#include "scene/gui/control.h"
+
+class ColorRect : public Control
+{
+	Color color = Color(1, 1, 1);
+
+protected:
+	void _notification(int p_what);
+
+public:
+	static void _color_rect_draw_static(CanvasItem* p_item)
+	{
+		ColorRect* rect = static_cast<ColorRect*>(p_item);
+		rect->_notification(CanvasItem::NOTIFICATION_DRAW);
+	}
+
+	ColorRect() { draw_callback = &_color_rect_draw_static; }
+
+	void notification(int p_what);
+	void set_color(const Color& p_color);
+	Color get_color() const;
+	void queue_redraw();
+};
+
+
+
+// --- End scene/gui/color_rect.h ---
+
+// --- Folded from scene/resources/color_palette.h ---
+#include "core/io/resource.h"
+
+class ColorPalette : public Resource
+{
+private:
+	PackedColorArray colors;
+
+protected:
+
+public:
+	void set_colors(const PackedColorArray& p_colors);
+	PackedColorArray get_colors() const;
+};
+
+
+
+// --- End scene/resources/color_palette.h ---

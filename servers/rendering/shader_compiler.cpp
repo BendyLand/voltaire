@@ -30,11 +30,10 @@
 /**************************************************************************/
 
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/shader_types.h"
 #include "servers/rendering/shader_compiler.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "servers/rendering/shader_preprocessor.h"
+#include "servers/rendering/shader_compiler.h"
 
 #ifdef DEV_ENABLED
 #include "scene/resources/shader.h"

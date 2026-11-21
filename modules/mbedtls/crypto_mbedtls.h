@@ -37,7 +37,6 @@
 #include <mbedtls/timing.h>
 
 #include "core/crypto/crypto.h"
-#include "core/io/dtls_server.h"
 #include "core/io/packet_peer_dtls.h"
 #include "core/io/stream_peer_tls.h"
 

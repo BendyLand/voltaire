@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_reference_rect)
 
-#include "scene/gui/reference_rect.h"
+#include "scene/gui/label.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 

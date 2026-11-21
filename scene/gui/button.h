@@ -394,3 +394,370 @@ public:
 	bool is_allow_unpress() const { return allow_unpress; }
 	ButtonGroup();
 };
+
+// --- Folded from scene/gui/menu_bar.h ---
+#include "scene/gui/popup_menu.h"
+
+class MenuBar : public Control
+{
+	Mutex mutex;
+
+	bool switch_on_hover = true;
+	bool disable_shortcuts = false;
+	bool prefer_native = true;
+	bool flat = false;
+	int start_index = -1;
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+
+	struct Menu
+	{
+		String name;
+		String tooltip;
+
+		Ref<TextLine> text_buf;
+		bool hidden = false;
+		bool disabled = false;
+		RID submenu_rid;
+		NativeMenu::SystemMenus sysmenu_id = NativeMenu::INVALID_MENU_ID;
+
+		Menu(const String& p_name)
+		{
+			name = p_name;
+			text_buf.instantiate();
+		}
+
+		Menu() { text_buf.instantiate(); }
+	};
+
+	Vector<Menu> menu_cache;
+
+	int focused_menu = -1;
+	int selected_menu = -1;
+	int active_menu = -1;
+
+	Vector2i old_mouse_pos;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+		Ref<StyleBox> normal_mirrored;
+		Ref<StyleBox> disabled;
+		Ref<StyleBox> disabled_mirrored;
+		Ref<StyleBox> pressed;
+		Ref<StyleBox> pressed_mirrored;
+		Ref<StyleBox> hover;
+		Ref<StyleBox> hover_mirrored;
+		Ref<StyleBox> hover_pressed;
+		Ref<StyleBox> hover_pressed_mirrored;
+
+		Ref<Font> font;
+		int font_size = 0;
+		int outline_size = 0;
+		Color font_outline_color;
+
+		Color font_color;
+		Color font_disabled_color;
+		Color font_pressed_color;
+		Color font_hover_color;
+		Color font_hover_pressed_color;
+		Color font_focus_color;
+
+		int h_separation = 0;
+	} theme_cache;
+
+	int _get_index_at_point(const Point2& p_point) const;
+	Rect2 _get_menu_item_rect(int p_index) const;
+	void _draw_menu_item(int p_index);
+
+	void shape(Menu& p_menu);
+	void _refresh_menu_names();
+	Vector<PopupMenu*> _get_popups() const;
+	int get_menu_idx_from_control(PopupMenu* p_child) const;
+
+	void _open_popup(int p_index, bool p_focus_item = false);
+	void _popup_visibility_changed(bool p_visible);
+
+	String global_menu_tag;
+
+	void bind_global_menu();
+	void unbind_global_menu();
+
+protected:
+	void _notification(int p_what);
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+public:
+	void set_switch_on_hover(bool p_enabled);
+	bool is_switch_on_hover();
+	void set_disable_shortcuts(bool p_disabled);
+
+	void set_prefer_global_menu(bool p_enabled);
+	bool is_prefer_global_menu() const;
+
+	bool is_native_menu() const;
+
+	virtual Size2 get_minimum_size() const override;
+
+	int get_menu_count() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_start_index(int p_index);
+	int get_start_index() const;
+
+	void set_flat(bool p_enabled);
+	bool is_flat() const;
+
+	void set_menu_title(int p_menu, const String& p_title);
+	String get_menu_title(int p_menu) const;
+
+	void set_menu_tooltip(int p_menu, const String& p_tooltip);
+	String get_menu_tooltip(int p_menu) const;
+
+	void set_menu_disabled(int p_menu, bool p_disabled);
+	bool is_menu_disabled(int p_menu) const;
+
+	void set_menu_hidden(int p_menu, bool p_hidden);
+	bool is_menu_hidden(int p_menu) const;
+
+	PopupMenu* get_menu_popup(int p_menu) const;
+
+	virtual String get_tooltip(const Point2& p_pos) const;
+
+	MenuBar();
+	~MenuBar() = default;
+};
+
+
+
+// --- End scene/gui/menu_bar.h ---
+
+// --- Folded from scene/gui/menu_button.h ---
+
+#include "scene/gui/control.h"
+#include "scene/gui/popup_menu.h"
+#include "scene/property_list_helper.h"
+
+class MenuButton : public Control
+{
+	bool switch_on_hover = false;
+	bool disable_shortcuts = false;
+	Button* button = nullptr;
+	PopupMenu* popup = nullptr;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+protected:
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+public:
+	void pressed();
+
+	Button* get_button() const { return button; }
+	PopupMenu* get_popup() const;
+	void show_popup();
+
+	void set_text(const String& p_text)
+	{
+		if (button) {
+			button->set_text(p_text);
+		}
+	}
+	String get_text() const { return button ? button->get_text() : String(); }
+	void set_flat(bool p_flat)
+	{
+		if (button) {
+			button->set_flat(p_flat);
+		}
+	}
+	bool is_flat() const { return button ? button->is_flat() : true; }
+	void set_disabled(bool p_disabled)
+	{
+		if (button) {
+			button->set_disabled(p_disabled);
+		}
+	}
+	bool is_disabled() const { return button ? button->is_disabled() : false; }
+
+	void set_switch_on_hover(bool p_enabled);
+	bool is_switch_on_hover();
+	void set_disable_shortcuts(bool p_disabled);
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+
+	virtual Size2 get_minimum_size() const override
+	{
+		return button ? button->get_minimum_size() : Size2();
+	}
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	MenuButton(const String& p_text = String());
+	~MenuButton();
+};
+
+// --- End scene/gui/menu_button.h ---
+
+// --- Folded from scene/gui/option_button.h ---
+
+#include "scene/gui/control.h"
+#include "scene/gui/popup_menu.h"
+#include "scene/property_list_helper.h"
+
+class OptionButton : public Control
+{
+	bool disable_shortcuts = false;
+	Button* button = nullptr;
+	PopupMenu* popup = nullptr;
+	int current = -1;
+	bool fit_to_longest_item = true;
+	Vector2 _cached_size;
+	bool cache_refresh_pending = false;
+	bool allow_reselect = false;
+	bool initialized = false;
+	int queued_current = -1;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+
+		Color font_color;
+		Color font_focus_color;
+		Color font_pressed_color;
+		Color font_hover_color;
+		Color font_hover_pressed_color;
+		Color font_disabled_color;
+
+		int h_separation = 0;
+
+		Ref<Texture2D> arrow_icon;
+		int arrow_margin = 0;
+		int modulate_arrow = 0;
+	};
+
+	ThemeCache theme_cache;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	void _focused(int p_which);
+	void _selected(int p_which);
+	void _select(int p_which, bool p_emit = false);
+	void _select_int(int p_which);
+	void _refresh_size_cache();
+
+	void _dummy_setter() {}
+
+	void pressed();
+
+protected:
+	Size2 get_minimum_size() const override;
+	void _queue_update_size_cache();
+	String _get_translated_text(const String& p_text) const;
+
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+public:
+	static const int ITEM_PROPERTY_SIZE = 5;
+
+	Button* get_button() const { return button; }
+	void set_text(const String& p_text)
+	{
+		if (button) {
+			button->set_text(p_text);
+		}
+	}
+	String get_text() const { return button ? button->get_text() : String(); }
+	void set_disabled(bool p_disabled)
+	{
+		if (button) {
+			button->set_disabled(p_disabled);
+		}
+	}
+	bool is_disabled() const { return button ? button->is_disabled() : false; }
+
+	void add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1);
+	void add_item(const String& p_label, int p_id = -1);
+
+	void set_item_text(int p_idx, const String& p_text);
+	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
+	void set_item_id(int p_idx, int p_id);
+	void set_item_tooltip(int p_idx, const String& p_tooltip);
+	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
+
+	String get_item_text(int p_idx) const;
+	Ref<Texture2D> get_item_icon(int p_idx) const;
+	int get_item_id(int p_idx) const;
+	int get_item_index(int p_id) const;
+	bool is_item_disabled(int p_idx) const;
+	bool is_item_separator(int p_idx) const;
+	String get_item_tooltip(int p_idx) const;
+	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
+
+	bool is_search_bar_enabled() const;
+
+	int get_search_bar_min_item_count() const;
+
+	void set_search_bar_fuzzy_search_enabled(bool p_enabled);
+	bool is_search_bar_fuzzy_search_enabled() const;
+
+	void set_search_bar_fuzzy_search_max_misses(int p_max_misses);
+	int get_search_bar_fuzzy_search_max_misses() const;
+
+	bool has_selectable_items() const;
+	int get_selectable_item(bool p_from_last = false) const;
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+	void set_fit_to_longest_item(bool p_fit);
+	bool is_fit_to_longest_item() const;
+
+	void set_allow_reselect(bool p_allow);
+	bool get_allow_reselect() const;
+
+	void add_separator(const String& p_text = "");
+
+	void clear();
+
+	void select(int p_idx);
+	int get_selected() const;
+	int get_selected_id() const;
+
+	void remove_item(int p_idx);
+
+	PopupMenu* get_popup() const;
+	void show_popup();
+
+	void set_disable_shortcuts(bool p_disabled);
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	OptionButton(const String& p_text = String());
+	~OptionButton();
+};
+
+// --- End scene/gui/option_button.h ---

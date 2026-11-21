@@ -71,3 +71,28 @@ public:
 	PacketPeerDTLS();
 	~PacketPeerDTLS();
 };
+
+// --- Folded from core/io/dtls_server.h ---
+
+
+class DTLSServer : public RefCounted
+{
+public:
+	struct Data;
+
+private:
+	Data* data = nullptr;
+
+public:
+	static bool is_available();
+	static DTLSServer* create(bool p_notify_postinitialize = true);
+
+	Error setup(Ref<TLSOptions> p_options);
+	void stop();
+	Ref<PacketPeerDTLS> take_connection(Ref<PacketPeerUDP> p_peer);
+
+	DTLSServer();
+	~DTLSServer();
+};
+
+// --- End core/io/dtls_server.h ---

@@ -1523,8 +1523,24 @@ Camera3D::~Camera3D()
 // ==========================================================================
 // Merged from scene/3d/marker_3d.cpp
 // ==========================================================================
+// --- Inlined from scene/3d/marker_3d.h ---
+#include "scene/3d/node_3d.h"
 
-#include "marker_3d.h"
+class Marker3D : public Node3D
+{
+	real_t gizmo_extents = 0.25;
+
+protected:
+
+public:
+	real_t get_gizmo_extents() const;
+
+	Marker3D();
+};
+
+
+
+// --- End scene/3d/marker_3d.h ---
 
 real_t Marker3D::get_gizmo_extents() const { return gizmo_extents; }
 
@@ -1775,8 +1791,49 @@ void Path3D::_update_debug_mesh() {}
 // ==========================================================================
 // Merged from scene/3d/remote_transform_3d.cpp
 // ==========================================================================
+// --- Inlined from scene/3d/remote_transform_3d.h ---
+#include "scene/3d/node_3d.h"
 
-#include "remote_transform_3d.h"
+class RemoteTransform3D : public Node3D
+{
+	NodePath remote_node;
+
+	bool use_global_coordinates = true;
+	bool update_remote_position = true;
+	bool update_remote_rotation = true;
+	bool update_remote_scale = true;
+
+	void _update_remote();
+	void _update_cache();
+
+protected:
+	void _notification(int p_what);
+
+public:
+	NodePath get_remote_node() const;
+
+	void set_use_global_coordinates(const bool p_enable);
+	bool get_use_global_coordinates() const;
+
+	void set_update_position(const bool p_update);
+	bool get_update_position() const;
+
+	void set_update_rotation(const bool p_update);
+	bool get_update_rotation() const;
+
+	void set_update_scale(const bool p_update);
+	bool get_update_scale() const;
+
+	void force_update_cache();
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	RemoteTransform3D();
+};
+
+
+
+// --- End scene/3d/remote_transform_3d.h ---
 
 NodePath RemoteTransform3D::get_remote_node() const { return remote_node; }
 
@@ -1848,7 +1905,7 @@ void RemoteTransform3D::_update_cache() {}
 // Merged from scene/3d/velocity_tracker_3d.cpp
 // ==========================================================================
 
-#include "velocity_tracker_3d.h"
+#include "scene/3d/camera_3d.h"
 
 #include "core/config/engine.h"
 
@@ -1945,7 +2002,7 @@ VelocityTracker3D::VelocityTracker3D() {
 // Merged from scene/3d/audio_listener_3d.cpp
 // ==========================================================================
 
-#include "audio_listener_3d.h"
+#include "scene/3d/camera_3d.h"
 #include "scene/main/viewport.h"
 
 void AudioListener3D::_update_audio_listener_state() {}
@@ -2078,18 +2135,16 @@ AudioListener3D::~AudioListener3D() {}
 // --- audio_stream_player_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
-#include "audio_stream_player_3d.h"
+#include "scene/3d/camera_3d.h"
 
 bool AudioStreamPlayer3D::_is_autoplay_enabled_bind_compat_86907() { return is_autoplay_enabled(); }
 
 void AudioStreamPlayer3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-#include "audio_stream_player_3d.h"
-#include "core/config/project_settings.h"
-#include "scene/3d/audio_listener_3d.h"
 #include "scene/3d/camera_3d.h"
-#include "scene/3d/velocity_tracker_3d.h"
+#include "core/config/project_settings.h"
+#include "scene/3d/camera_3d.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/main/viewport.h"
 #include "servers/audio/audio_stream.h"
@@ -2863,7 +2918,7 @@ Area3D* AudioStreamPlayer3D::_get_overriding_area() {}
 #include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
-#include "world_environment.h"
+#include "scene/3d/camera_3d.h"
 
 void WorldEnvironment::_notification(int p_what)
 {

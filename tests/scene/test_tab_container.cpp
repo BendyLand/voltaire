@@ -36,7 +36,7 @@ TEST_FORCE_LINK(test_tab_container)
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "scene/gui/box_container.h"
-#include "scene/gui/tab_container.h"
+#include "scene/gui/scroll_container.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "tests/display_server_mock.h"

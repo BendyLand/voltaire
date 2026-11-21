@@ -11578,7 +11578,7 @@ void RendererRD::ParticlesStorage::ParticlesShaderData::set_code(const String& p
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
-#include "servers/rendering/renderer_rd/storage_rd/utilities.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 
 // --- Merged from servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.cpp ---
 

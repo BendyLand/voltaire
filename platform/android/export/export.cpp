@@ -746,7 +746,7 @@ void AndroidEditorGradleRunner::_android_gradle_build_cancel() {
 #include "core/io/marshalls.h"
 #include "core/math/random_pcg.h"
 #include "core/os/os.h"
-#include "core/os/shared_object.h"
+#include "editor/export/editor_export_platform.h"
 #include "core/string/translation_server.h"
 #include "core/version.h"
 #include "editor/export/editor_export.h"

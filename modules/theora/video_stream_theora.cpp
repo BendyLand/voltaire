@@ -36,7 +36,7 @@
 #include "core/io/file_access.h"
 #include "core/io/image.h"
 #include "scene/resources/image_texture.h"
-#include "scene/resources/video_stream.h"
+#include "scene/resources/packed_scene.h"
 
 #include <theora/theoradec.h>
 #include <thirdparty/misc/yuv2rgb.h>

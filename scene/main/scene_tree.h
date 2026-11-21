@@ -39,7 +39,182 @@
 #include "core/types.h"
 #include "scene/animation/tween.h"
 #include "scene/main/multiplayer_api.h"
-#include "scene/main/scene_tree_fti.h"
+// --- Folded from scene/main/scene_tree_fti.h ---
+#include "core/os/mutex.h"
+#include "core/templates/local_vector.h"
+
+class Node3D;
+class Node;
+struct Transform3D;
+class SceneTreeFTITests;
+
+#ifdef DEV_ENABLED
+// Uncomment this to verify traversal method results.
+// #define GODOT_SCENE_TREE_FTI_VERIFY
+#endif
+
+#ifdef _3D_DISABLED
+// Stubs
+class SceneTreeFTI final
+{
+public:
+	SceneTreeFTI() = delete;
+
+	static void initialize() {}
+	static void finalize() {}
+	_FORCE_INLINE_ static bool is_initialized() { return true; }
+
+	static void frame_update(Node* p_root, bool p_frame_start)
+	{
+		(void)p_root;
+		(void)p_frame_start;
+	}
+	static void tick_update() {}
+	static void set_enabled(Node* p_root, bool p_enabled)
+	{
+		(void)p_root;
+		(void)p_enabled;
+	}
+	static bool is_enabled() { return false; }
+
+	static void node_3d_notify_changed(Node3D& r_node, bool p_transform_changed)
+	{
+		(void)r_node;
+		(void)p_transform_changed;
+	}
+	static void node_3d_notify_delete(Node3D* p_node) { (void)p_node; }
+	static void node_3d_request_reset(Node3D* p_node) { (void)p_node; }
+};
+#else
+
+// Important.
+// This class uses raw pointers, so it is essential that on deletion, this class is notified
+// so that any references can be cleared up to prevent dangling pointer access.
+
+class SceneTreeFTI final
+{
+	friend class SceneTreeFTITests;
+
+public:
+	enum TraversalMode : unsigned
+	{
+		TM_DEFAULT,
+		TM_LEGACY,
+		TM_DEBUG,
+	};
+
+	struct Data
+	{
+		static const uint32_t scene_tree_depth_limit = 48;
+
+		// Prev / Curr lists of Node3Ds having local xforms pumped.
+		LocalVector<Node3D*> tick_xform_list[2];
+
+		// The frame lists are changed nodes that need to start traversal,
+		// either longterm (on the tick list) or single frame forced.
+		LocalVector<Node3D*> frame_xform_list;
+		LocalVector<Node3D*> frame_xform_list_forced;
+
+		// Prev / Curr lists of Node3Ds having actively interpolated properties.
+		LocalVector<Node3D*> tick_property_list[2];
+
+		LocalVector<Node3D*> frame_property_list;
+		LocalVector<Node3D*> request_reset_list;
+		LocalVector<Node3D*> dirty_node_depth_lists[scene_tree_depth_limit];
+
+		// When we are using two alternating lists,
+		// which one is current.
+		uint32_t mirror = 0;
+
+		// Global on / off switch for SceneTreeFTI.
+		bool enabled = false;
+
+		// Whether we are in physics ticks, or in a frame.
+		bool in_frame = false;
+
+		// Updating at the start of the frame, or the end on second pass.
+		bool frame_start = true;
+
+		Mutex mutex;
+
+		TraversalMode traversal_mode = TM_DEFAULT;
+		bool use_optimized_traversal_method = true;
+
+		// DEBUGGING
+		bool periodic_debug_log = false;
+		uint32_t debug_node_count = 0;
+		uint32_t debug_nodes_processed = 0;
+
+#ifdef GODOT_SCENE_TREE_FTI_VERIFY
+		SceneTreeFTITests* _tests = nullptr;
+#endif
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+	static void _update_dirty_nodes(Node* p_node, uint32_t p_current_half_frame,
+		float p_interpolation_fraction, bool p_active,
+		const Transform3D* p_parent_global_xform = nullptr, int p_depth = 0);
+	static void _update_request_resets();
+
+	static void _reset_flags(Node* p_node);
+	static void _reset_node3d_flags(Node3D& r_node);
+	static void _node_3d_notify_set_xform(Node3D& r_node);
+	static void _node_3d_notify_set_property(Node3D& r_node);
+
+	static void _node_add_to_frame_list(Node3D& r_node, bool p_forced);
+	static void _node_remove_from_frame_list(Node3D& r_node, bool p_forced);
+
+	static void _create_depth_lists();
+	static void _clear_depth_lists();
+
+public:
+	SceneTreeFTI() = delete;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	// Hottest function, allow inlining the data->enabled check.
+	static void node_3d_notify_changed(Node3D& r_node, bool p_transform_changed)
+	{
+		if (!data || !data->enabled) {
+			return;
+		}
+		MutexLock lock(data->mutex);
+
+		if (p_transform_changed) {
+			_node_3d_notify_set_xform(r_node);
+		}
+		else {
+			_node_3d_notify_set_property(r_node);
+		}
+	}
+
+	static void node_3d_request_reset(Node3D* p_node);
+	static void node_3d_notify_delete(Node3D* p_node);
+
+	// Calculate interpolated xforms, send to visual server.
+	static void frame_update(Node* p_root, bool p_frame_start);
+
+	// Update local xform pumps.
+	static void tick_update();
+
+	static void set_enabled(Node* p_root, bool p_enabled);
+	static bool is_enabled() { return data ? data->enabled : false; }
+
+	static void set_debug_next_frame()
+	{
+		if (data) {
+			data->periodic_debug_log = true;
+		}
+	}
+};
+
+#endif // ndef _3D_DISABLED
+
+// --- End scene/main/scene_tree_fti.h ---
 
 class ArrayMesh;
 struct InputEvent;
@@ -450,3 +625,64 @@ public:
 	static void client_physics_interpolation_remove_node_3d(SelfList<Node3D>* p_elem);
 #endif
 };
+
+// --- Folded from scene/main/instance_placeholder.h ---
+#include "scene/main/node.h"
+
+class PackedScene;
+
+class InstancePlaceholder : public Node
+{
+	String path;
+
+private:
+	Node* try_get_node(
+		InstancePlaceholder* p_placeholder, Node* p_instance, const NodePath& p_path);
+
+public:
+	void set_instance_path(const String& p_name);
+	String get_instance_path() const;
+
+	Node* create_instance(
+		bool p_replace = false, const Ref<PackedScene>& p_custom_scene = Ref<PackedScene>());
+
+	InstancePlaceholder();
+};
+
+
+
+// --- End scene/main/instance_placeholder.h ---
+
+// --- Folded from scene/main/missing_node.h ---
+#include "scene/main/node.h"
+
+class MissingNode : public Node
+{
+	String original_class;
+	String original_scene;
+	bool recording_properties = false;
+	bool recording_signals = false;
+
+protected:
+
+public:
+	void set_original_class(const String& p_class);
+	String get_original_class() const;
+
+	void set_original_scene(const String& p_scene);
+	String get_original_scene() const;
+
+	void set_recording_properties(bool p_enable);
+	bool is_recording_properties() const;
+
+	void set_recording_signals(bool p_enable);
+	bool is_recording_signals() const;
+
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	MissingNode();
+};
+
+
+
+// --- End scene/main/missing_node.h ---

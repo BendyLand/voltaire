@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_viewport)
 
 #include "scene/2d/node_2d.h"
 #include "scene/gui/control.h"
-#include "scene/gui/subviewport_container.h"
+#include "scene/gui/scroll_container.h"
 #include "scene/main/canvas_layer.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
@@ -43,8 +43,7 @@ TEST_FORCE_LINK(test_viewport)
 #include "tests/signal_watcher.h"
 
 #ifndef PHYSICS_2D_DISABLED
-#include "scene/2d/physics/area_2d.h"
-#include "scene/2d/physics/collision_shape_2d.h"
+#include "scene/2d/physics/collision_object_2d.h"
 #include "scene/resources/2d/shape_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #endif // PHYSICS_2D_DISABLED

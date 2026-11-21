@@ -32,10 +32,121 @@
 #pragma once
 // --- Folded from servers/physics_2d/direct_states/physics_direct_body_state_2d.h ---
 // --- Folded from servers/physics_2d/direct_states/physics_direct_space_state_2d.h ---
-#include "servers/physics_2d/physics_server_2d_types.h"
+// --- Folded from servers/physics_2d/physics_server_2d_types.h ---
+#include "core/math/vector2.h"
+#include "core/templates/hash_set.h"
+#include "core/templates/rid.h"
+
+namespace PhysicsServer2DTypes
+{
+
+struct RayParameters
+{
+	Vector2 from;
+	Vector2 to;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+
+	bool hit_from_inside = false;
+};
+
+struct RayResult
+{
+	Vector2 position;
+	Vector2 normal;
+	RID rid;
+	int shape = 0;
+};
+
+struct ShapeResult
+{
+	RID rid;
+	int shape = 0;
+};
+
+struct PointParameters
+{
+	Vector2 position;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+
+	bool pick_point = false;
+};
+
+struct ShapeParameters
+{
+	RID shape_rid;
+	Vector2 motion;
+	real_t margin = 0.0;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+};
+
+struct ShapeRestInfo
+{
+	Vector2 point;
+	Vector2 normal;
+	RID rid;
+	int shape = 0;
+	Vector2 linear_velocity; // Velocity at contact point.
+};
+
+struct MotionParameters
+{
+	Vector2 motion;
+	real_t margin = 0.08;
+	bool collide_separation_ray = false;
+	HashSet<RID> exclude_bodies;
+	bool recovery_as_collision = false;
+
+	MotionParameters() {}
+};
+
+struct MotionResult
+{
+	Vector2 travel;
+	Vector2 remainder;
+
+	Vector2 collision_point;
+	Vector2 collision_normal;
+	Vector2 collider_velocity;
+	real_t collision_depth = 0.0;
+	real_t collision_safe_fraction = 0.0;
+	real_t collision_unsafe_fraction = 0.0;
+	int collision_local_shape = 0;
+	RID collider;
+	int collider_shape = 0;
+
+	real_t get_angle(Vector2 p_up_direction) const
+	{
+		return Math::acos(collision_normal.dot(p_up_direction));
+	}
+};
+
+#ifndef DISABLE_DEPRECATED
+// Graveyard.
+#endif
+
+} // namespace PhysicsServer2DTypes
+
+// Alias to make it easier to use.
+#define PS2DT PhysicsServer2DTypes
+
+
+
+// --- End servers/physics_2d/physics_server_2d_types.h ---
 // --- Folded from servers/physics_2d/queries/physics_ray_query_parameters_2d.h ---
 #include "core/types.h"
-#include "servers/physics_2d/physics_server_2d_types.h"
+
 
 template <typename T> class TypedArray;
 
@@ -84,7 +195,7 @@ public:
 // --- End servers/physics_2d/queries/physics_ray_query_parameters_2d.h ---
 // --- Folded from servers/physics_2d/queries/physics_shape_query_parameters_2d.h ---
 #include "core/types.h"
-#include "servers/physics_2d/physics_server_2d_types.h"
+
 
 class Resource;
 template <typename T> class Ref;
@@ -395,11 +506,11 @@ enum ProcessInfo {
 #define PS2DE PhysicsServer2DEnums
 
 // --- End servers/physics_2d/physics_server_2d_enums.h ---
-#include "servers/physics_2d/physics_server_2d_types.h"
+
 
 // --- Folded from servers/physics_2d/queries/physics_testmotion_query_parameters_2d.h ---
 #include "core/types.h"
-#include "servers/physics_2d/physics_server_2d_types.h"
+
 
 class PhysicsTestMotionParameters2D : public RefCounted
 {
@@ -437,7 +548,7 @@ public:
 
 // --- End servers/physics_2d/queries/physics_testmotion_query_parameters_2d.h ---
 // --- Folded from servers/physics_2d/queries/physics_testmotion_query_result_2d.h ---
-#include "servers/physics_2d/physics_server_2d_types.h"
+
 #include "core/types.h"
 
 class PhysicsTestMotionResult2D : public RefCounted

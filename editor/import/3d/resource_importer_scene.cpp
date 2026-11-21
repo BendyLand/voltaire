@@ -38,19 +38,18 @@
 #include "scene/3d/importer_mesh_instance_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/navigation/navigation_3d.h"
-#include "scene/3d/occluder_instance_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/physics/area_3d.h"
 #include "scene/3d/physics/collision_shape_3d.h"
-#include "scene/3d/physics/physics_body_3d.h"
+#include "scene/3d/physics/collision_object_3d.h"
 #include "scene/animation/animation_player.h"
 #include "scene/resources/3d/importer_mesh.h"
 #include "scene/resources/3d/mesh_library.h"
 #include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/animation.h"
-#include "scene/resources/bone_map.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/physics_material.h"
-#include "scene/resources/resource_format_text.h"
+#include "scene/resources/packed_scene.h"
 
 void EditorSceneFormatImporter::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options)

@@ -51,7 +51,6 @@ if env.editor_build:
     env.add_source_files(env.editor_sources, gen_exporters)
     env.add_source_files(env.editor_sources, translation_targets.keys())
 
-    SConscript("doc/SCsub")
     SConscript("export/SCsub")
     SConscript("file_system/SCsub")
     SConscript("import/SCsub")
@@ -60,7 +59,6 @@ if env.editor_build:
     SConscript("settings/SCsub")
     SConscript("shader/SCsub")
     SConscript("themes/SCsub")
-    SConscript("translations/SCsub")
 
     lib = env.add_library("editor", env.editor_sources)
     env.Prepend(LIBS=[lib])

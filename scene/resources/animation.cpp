@@ -2912,7 +2912,7 @@ int Animation::_track_find_key_bind_compat_92861(
 
 // --- animation_library.cpp ---
 
-#include "animation_library.h"
+#include "scene/animation/animation_mixer.h"
 #include "scene/scene_string_names.h"
 
 bool AnimationLibrary::is_valid_animation_name(const String& p_name)
@@ -2971,7 +2971,7 @@ void AnimationLibrary::get_argument_options(
 
 // --- bone_map.cpp ---
 
-#include "bone_map.h"
+#include "scene/resources/animation.h"
 #include "core/config/engine.h"
 
 Ref<SkeletonProfile> BoneMap::get_profile() const { return profile; }
@@ -3061,7 +3061,7 @@ void BoneMap::set_skeleton_bone_name(String const&, String const&) {}
 // --- skeleton_profile.cpp ---
 
 #include "core/config/engine.h"
-#include "skeleton_profile.h"
+#include "scene/resources/animation.h"
 
 String SkeletonProfile::get_root_bone() { return root_bone; }
 

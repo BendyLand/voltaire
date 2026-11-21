@@ -16,5 +16,3 @@ env.CommandNoCache(
     flist,
     env.Run(editor_theme_builders.make_fonts_header),
 )
-
-env.add_source_files(env.editor_sources, "*.cpp")

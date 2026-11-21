@@ -37,7 +37,85 @@
 #include "scene/gui/popup_menu.h"
 #include "scene/gui/scroll_bar.h"
 #include "scene/main/timer.h"
-#include "scene/resources/syntax_highlighter.h"
+// --- Folded from scene/resources/syntax_highlighter.h ---
+#include "core/io/resource.h"
+#include "core/templates/rb_map.h"
+
+class TextEdit;
+
+class CodeHighlighter : public Resource
+{
+private:
+	struct ColorRegion
+	{
+		Color color;
+		String start_key;
+		String end_key;
+		bool line_only = false;
+	};
+
+	TextEdit* text_edit = nullptr;
+
+	Vector<ColorRegion> color_regions;
+	HashMap<int, int> color_region_cache;
+
+	Color font_color;
+	Color member_color;
+	Color function_color;
+	Color symbol_color;
+	Color number_color;
+
+	bool uint_suffix_enabled = false;
+
+	void _lines_edited_from(int p_from_line, int p_to_line);
+
+public:
+	void clear_highlighting_cache();
+	void _clear_highlighting_cache();
+
+	void update_cache();
+	void _update_cache();
+
+	void set_text_edit(TextEdit* p_text_edit);
+	TextEdit* get_text_edit() const;
+
+	void add_keyword_color(const String& p_keyword, const Color& p_color);
+	void remove_keyword_color(const String& p_keyword);
+	bool has_keyword_color(const String& p_keyword) const;
+	Color get_keyword_color(const String& p_keyword) const;
+
+	void clear_keyword_colors();
+
+	void add_member_keyword_color(const String& p_member_keyword, const Color& p_color);
+	void remove_member_keyword_color(const String& p_member_keyword);
+	bool has_member_keyword_color(const String& p_member_keyword) const;
+	Color get_member_keyword_color(const String& p_member_keyword) const;
+
+	void clear_member_keyword_colors();
+
+	void add_color_region(const String& p_start_key, const String& p_end_key, const Color& p_color,
+		bool p_line_only = false);
+	void remove_color_region(const String& p_start_key);
+	bool has_color_region(const String& p_start_key) const;
+
+	void clear_color_regions();
+
+	void set_number_color(Color p_color);
+	Color get_number_color() const;
+
+	void set_symbol_color(Color p_color);
+	Color get_symbol_color() const;
+
+	void set_function_color(Color p_color);
+	Color get_function_color() const;
+
+	void set_member_variable_color(Color p_color);
+	Color get_member_variable_color() const;
+
+	void set_uint_suffix_enabled(bool p_enabled);
+};
+
+// --- End scene/resources/syntax_highlighter.h ---
 #include "scene/resources/text_paragraph.h"
 
 class TextEdit : public Control

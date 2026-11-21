@@ -212,4 +212,13 @@ void ED_SHORTCUT_OVERRIDE_ARRAY(const String& p_path, const String& p_feature,
 	const PackedInt32Array& p_keycodes, bool p_physical = false);
 Ref<Shortcut> ED_GET_SHORTCUT(const String& p_path);
 
+// --- Folded from editor/translations/editor_translation.h ---
+#include "core/string/ustring.h"
+#include "core/templates/vector.h"
 
+Vector<String> get_editor_locales();
+void load_editor_translations(const String &p_locale);
+void load_doc_translations(const String &p_locale);
+Vector<Vector<String>> get_extractable_message_list();
+
+// --- End editor/translations/editor_translation.h ---

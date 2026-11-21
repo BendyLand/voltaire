@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_copy_transform_modifier_3d)
 
 #include "core/math/random_number_generator.h"
 #include "scene/3d/bone_attachment_3d.h"
-#include "scene/3d/bone_constraint_3d.h"
+#include "scene/3d/skeleton_modifier_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 

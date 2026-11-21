@@ -419,8 +419,89 @@ PackedStringArray XROrigin3D::get_configuration_warnings() const
 // ==========================================================================
 // Merged from scene/3d/xr/xr_body_modifier_3d.cpp
 // ==========================================================================
+// --- Inlined from scene/3d/xr/xr_body_modifier_3d.h ---
+#include "scene/3d/skeleton_modifier_3d.h"
+#include "servers/xr/xr_tracker.h"
 
-#include "xr_body_modifier_3d.h"
+class Skeleton3D;
+
+/**
+	The XRBodyModifier3D node drives a body or hand skeleton using tracking
+	data from an XRTracker instance.
+ */
+
+class XRBodyModifier3D final : public SkeletonModifier3D {
+public:
+	enum TargetMode {
+		TARGET_BODY,
+		TARGET_HAND,
+	};
+
+	enum BodyUpdate {
+		BODY_UPDATE_UPPER_BODY = 1,
+		BODY_UPDATE_LOWER_BODY = 2,
+		BODY_UPDATE_HANDS = 4,
+	};
+
+	enum BoneUpdate {
+		BONE_UPDATE_FULL,
+		BONE_UPDATE_ROTATION_ONLY,
+		BONE_UPDATE_MAX,
+	};
+
+	XRBodyModifier3D(TargetMode p_mode = TARGET_BODY);
+
+	void set_target_mode(TargetMode p_mode);
+	TargetMode get_target_mode() const { return target_mode; }
+
+	void set_tracker_name(const String &p_tracker_name);
+	String get_tracker_name() const;
+
+	void set_body_tracker(const String &p_tracker_name);
+	String get_body_tracker() const;
+
+	void set_hand_tracker(const String &p_tracker_name);
+	String get_hand_tracker() const;
+
+	void set_body_update(uint32_t p_body_update);
+	uint32_t get_body_update() const;
+
+	void set_bone_update(BoneUpdate p_bone_update);
+	BoneUpdate get_bone_update() const;
+
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	void _notification(int p_what);
+
+protected:
+	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
+	virtual void _process_modification(double p_delta) override;
+
+private:
+	struct JointData {
+		int bone = -1;
+		int parent_joint = -1;
+	};
+
+	TargetMode target_mode = TARGET_BODY;
+	String tracker_name = "/user/body_tracker";
+	uint32_t body_update = BODY_UPDATE_UPPER_BODY | BODY_UPDATE_LOWER_BODY | BODY_UPDATE_HANDS;
+	BoneUpdate bone_update = BONE_UPDATE_FULL;
+	JointData body_joints[XRTracker::JOINT_MAX];
+	JointData hand_joints[XRTracker::HAND_JOINT_MAX];
+
+	bool has_stored_previous_transforms = false;
+	Vector<Transform3D> previous_relative_transforms;
+
+	void _get_joint_data();
+	void _get_body_joint_data();
+	void _get_hand_joint_data();
+	void _process_body_modification(Skeleton3D *p_skeleton);
+	void _process_hand_modification(Skeleton3D *p_skeleton);
+	void _tracker_changed(const String &p_tracker_name, XRServer::TrackerType p_tracker_type);
+};
+
+// --- End scene/3d/xr/xr_body_modifier_3d.h ---
 
 #include "scene/3d/skeleton_3d.h"
 #include "servers/xr/xr_server.h"
@@ -949,7 +1030,46 @@ void XRBodyModifier3D::_process_hand_modification(Skeleton3D *p_skeleton) {
 
 #include "servers/xr/xr_tracker.h"
 #include "servers/xr/xr_server.h"
-#include "xr_face_modifier_3d.h"
+// --- Inlined from scene/3d/xr/xr_face_modifier_3d.h ---
+#include "core/templates/rb_map.h"
+#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/node_3d.h"
+
+/**
+	The XRFaceModifier3D node drives the blend shapes of a MeshInstance3D
+	with facial expressions from an XRFaceTracking instance.
+
+	The blend shapes provided by the mesh are interrogated, and used to
+	deduce an optimal mapping from the Unified Expressions blend shapes
+	provided by the	XRFaceTracking instance to drive the face.
+ */
+
+class XRFaceModifier3D final : public Node3D {
+
+private:
+	String tracker_name = "/user/face_tracker";
+	NodePath target;
+
+	// Map from XRFaceTracker blend shape index to mesh blend shape index.
+	RBMap<int, int> blend_mapping;
+
+	MeshInstance3D *get_mesh_instance() const;
+	void _get_blend_data();
+	void _update_face_blends() const;
+
+protected:
+
+public:
+	void set_face_tracker(const String &p_tracker_name);
+	String get_face_tracker() const;
+
+	void set_target(const NodePath &p_target);
+	NodePath get_target() const;
+
+	void _notification(int p_what);
+};
+
+// --- End scene/3d/xr/xr_face_modifier_3d.h ---
 
 // This method takes the name of a mesh blend shape and returns the
 // corresponding XRFaceTracker blend shape. If no match is

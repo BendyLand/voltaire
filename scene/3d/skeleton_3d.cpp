@@ -42,7 +42,7 @@ void Skeleton3D::_bind_compatibility_methods() {}
 #endif // DISABLE_DEPRECATED
 #include "skeleton_3d.h"
 #if !defined(DISABLE_DEPRECATED) && !defined(PHYSICS_3D_DISABLED)
-#include "scene/3d/physics/physical_bone_simulator_3d.h"
+#include "scene/3d/physics/collision_object_3d.h"
 #endif // _DISABLE_DEPRECATED && PHYSICS_3D_DISABLED
 #include "servers/rendering/renderer.h"
 
@@ -1226,7 +1226,165 @@ PackedStringArray BoneAttachment3D::get_configuration_warnings() const
 // ==========================================================================
 
 #include "core/config/engine.h"
-#include "look_at_modifier_3d.h"
+// --- Inlined from scene/3d/look_at_modifier_3d.h ---
+#include "scene/3d/skeleton_modifier_3d.h"
+#include "scene/animation/tween.h"
+
+class LookAtModifier3D : public SkeletonModifier3D
+{
+public:
+	enum OriginFrom
+	{
+		ORIGIN_FROM_SELF,
+		ORIGIN_FROM_SPECIFIC_BONE,
+		ORIGIN_FROM_EXTERNAL_NODE,
+	};
+
+private:
+	String bone_name;
+	int bone = -1;
+
+	Vector3 forward_vector;
+	Vector3 forward_vector_nrm;
+	BoneAxis forward_axis = BONE_AXIS_PLUS_Z;
+	Vector3::Axis primary_rotation_axis = Vector3::AXIS_Y;
+	Vector3::Axis secondary_rotation_axis = Vector3::AXIS_X;
+	bool use_secondary_rotation = true;
+	bool relative = false;
+
+	OriginFrom origin_from = ORIGIN_FROM_SELF;
+	String origin_bone_name;
+	int origin_bone = -1;
+	NodePath origin_external_node;
+
+	Vector3 origin_offset;
+	float origin_safe_margin = 0.1;
+
+	NodePath target_node;
+
+	float duration = 0;
+	Tween::TransitionType transition_type = Tween::TRANS_LINEAR;
+	Tween::EaseType ease_type = Tween::EASE_IN;
+
+	bool use_angle_limitation = false;
+	bool symmetry_limitation = true;
+
+	float primary_limit_angle = Math::TAU;
+	float primary_damp_threshold = 1.0f;
+	float primary_positive_limit_angle = Math::PI;
+	float primary_positive_damp_threshold = 1.0f;
+	float primary_negative_limit_angle = Math::PI;
+	float primary_negative_damp_threshold = 1.0f;
+
+	float secondary_limit_angle = Math::TAU;
+	float secondary_damp_threshold = 1.0f;
+	float secondary_positive_limit_angle = Math::PI;
+	float secondary_positive_damp_threshold = 1.0f;
+	float secondary_negative_limit_angle = Math::PI;
+	float secondary_negative_damp_threshold = 1.0f;
+
+	bool is_within_limitations = false;
+
+	// For time-based interpolation.
+	Quaternion from_q;
+	Quaternion prev_q;
+
+	float remaining = 0;
+	float time_step = 1.0;
+
+	float remap_damped(float p_from, float p_to, float p_damp_threshold, float p_value) const;
+	double get_bspline_y(
+		const Vector2& p_from, const Vector2& p_control, const Vector2& p_to, double p_x) const;
+	bool is_intersecting_axis(const Vector3& p_prev, const Vector3& p_current,
+		Vector3::Axis p_flipping_axis, Vector3::Axis p_check_axis,
+		bool p_check_plane = false) const;
+
+	Transform3D look_at_with_axes(const Transform3D& p_rest);
+	void init_transition();
+
+protected:
+	virtual PackedStringArray get_configuration_warnings() const override;
+	virtual void _process_modification(double p_delta) override;
+
+public:
+	String get_bone_name() const;
+	int get_bone() const;
+
+	BoneAxis get_forward_axis() const;
+	Vector3::Axis get_primary_rotation_axis() const;
+	void set_use_secondary_rotation(bool p_enabled);
+	bool is_using_secondary_rotation() const;
+	void set_relative(bool p_enabled);
+	bool is_relative() const;
+
+	void set_origin_from(OriginFrom p_origin_from);
+	OriginFrom get_origin_from() const;
+	String get_origin_bone_name() const;
+	int get_origin_bone() const;
+	void set_origin_external_node(const NodePath& p_external_node);
+	NodePath get_origin_external_node() const;
+
+	void set_origin_offset(const Vector3& p_offset);
+	Vector3 get_origin_offset() const;
+	void set_origin_safe_margin(float p_margin);
+	float get_origin_safe_margin() const;
+
+	void set_target_node(const NodePath& p_target_node);
+	NodePath get_target_node() const;
+
+	void set_duration(float p_duration);
+	float get_duration() const;
+	void set_transition_type(Tween::TransitionType p_transition_type);
+	Tween::TransitionType get_transition_type() const;
+	void set_ease_type(Tween::EaseType p_ease_type);
+	Tween::EaseType get_ease_type() const;
+
+	void set_use_angle_limitation(bool p_enabled);
+	bool is_using_angle_limitation() const;
+	void set_symmetry_limitation(bool p_enabled);
+	bool is_limitation_symmetry() const;
+
+	void set_primary_limit_angle(float p_angle);
+	float get_primary_limit_angle() const;
+	void set_primary_damp_threshold(float p_power);
+	float get_primary_damp_threshold() const;
+
+	void set_primary_positive_limit_angle(float p_angle);
+	float get_primary_positive_limit_angle() const;
+	void set_primary_positive_damp_threshold(float p_power);
+	float get_primary_positive_damp_threshold() const;
+	void set_primary_negative_limit_angle(float p_angle);
+	float get_primary_negative_limit_angle() const;
+	void set_primary_negative_damp_threshold(float p_power);
+	float get_primary_negative_damp_threshold() const;
+
+	void set_secondary_limit_angle(float p_angle);
+	float get_secondary_limit_angle() const;
+	void set_secondary_damp_threshold(float p_power);
+	float get_secondary_damp_threshold() const;
+
+	void set_secondary_positive_limit_angle(float p_angle);
+	float get_secondary_positive_limit_angle() const;
+	void set_secondary_positive_damp_threshold(float p_power);
+	float get_secondary_positive_damp_threshold() const;
+	void set_secondary_negative_limit_angle(float p_angle);
+	float get_secondary_negative_limit_angle() const;
+	void set_secondary_negative_damp_threshold(float p_power);
+	float get_secondary_negative_damp_threshold() const;
+
+	float get_interpolation_remaining() const;
+	bool is_interpolating() const;
+	bool is_target_within_limitation() const;
+
+	static Vector3::Axis get_secondary_rotation_axis(
+		BoneAxis p_forward_axis, Vector3::Axis p_primary_rotation_axis);
+	static Vector3 get_basis_vector_from_bone_axis(const Basis& p_basis, BoneAxis p_axis);
+	static Vector2 get_projection_vector(const Vector3& p_vector, Vector3::Axis p_axis);
+};
+
+
+
+// --- End scene/3d/look_at_modifier_3d.h ---
 #include "scene/resources/animation.h"
 
 PackedStringArray LookAtModifier3D::get_configuration_warnings() const
@@ -1633,8 +1791,99 @@ void LookAtModifier3D::_process_modification(double p_delta) {}
 // ==========================================================================
 // Merged from scene/3d/retarget_modifier_3d.cpp
 // ==========================================================================
+// --- Inlined from scene/3d/retarget_modifier_3d.h ---
+#include "scene/3d/skeleton_modifier_3d.h"
+#include "scene/resources/animation.h"
 
-#include "retarget_modifier_3d.h"
+class RetargetModifier3D : public SkeletonModifier3D
+{
+public:
+	enum TransformFlag
+	{
+		TRANSFORM_FLAG_POSITION = 1,
+		TRANSFORM_FLAG_ROTATION = 2,
+		TRANSFORM_FLAG_SCALE = 4,
+		TRANSFORM_FLAG_ALL =
+			TRANSFORM_FLAG_POSITION | TRANSFORM_FLAG_ROTATION | TRANSFORM_FLAG_SCALE,
+	};
+
+private:
+	Ref<SkeletonProfile> profile;
+
+	bool use_global_pose = false;
+	uint32_t enable_flags = TRANSFORM_FLAG_ALL;
+
+	struct RetargetBoneInfo
+	{
+		int bone_id = -1;
+		Basis pre_basis;
+		Basis post_basis;
+	};
+
+	struct RetargetInfo
+	{
+		Vector<RetargetBoneInfo> humanoid_bone_rests;
+	};
+
+	Vector<RetargetInfo> child_skeletons;
+	Vector<int> source_bone_ids;
+
+	void _update_child_skeleton_rests(int p_child_skeleton_idx);
+	void _update_child_skeletons();
+	void _reset_child_skeleton_poses();
+	void _reset_child_skeletons();
+
+#ifdef TOOLS_ENABLED
+	void _force_update_child_skeletons();
+#endif // TOOLS_ENABLED
+
+	Vector<RetargetBoneInfo> get_humanoid_bone_rests(Skeleton3D* p_skeleton);
+
+	void _retarget_global_pose();
+	void _retarget_pose();
+
+protected:
+	virtual void _notification(int p_what);
+	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
+
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+	virtual void _set_active(bool p_active) override;
+	virtual void _process_modification(double p_delta) override;
+
+	void _profile_changed(Ref<SkeletonProfile> p_old, Ref<SkeletonProfile> p_new);
+
+public:
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	void set_use_global_pose(bool p_use_global_pose);
+	bool is_using_global_pose() const;
+	void set_enable_flags(uint32_t p_enable_flags);
+	uint32_t get_enable_flags() const;
+
+	void set_position_enabled(bool p_enabled);
+	bool is_position_enabled() const;
+	void set_rotation_enabled(bool p_enabled);
+	bool is_rotation_enabled() const;
+	void set_scale_enabled(bool p_enabled);
+	bool is_scale_enabled() const;
+
+	void set_profile(Ref<SkeletonProfile> p_profile);
+	Ref<SkeletonProfile> get_profile() const;
+
+#ifdef TOOLS_ENABLED
+	virtual bool is_processed_on_saving() const override { return true; }
+#endif
+
+	RetargetModifier3D();
+	virtual ~RetargetModifier3D();
+};
+
+
+
+// --- End scene/3d/retarget_modifier_3d.h ---
 
 PackedStringArray RetargetModifier3D::get_configuration_warnings() const
 {
@@ -1729,11 +1978,353 @@ void RetargetModifier3D::_skeleton_changed(Skeleton3D* p_old_skeleton, Skeleton3
 // ==========================================================================
 // Merged from scene/3d/spring_bone_collision_3d.cpp
 // ==========================================================================
+// --- Inlined from scene/3d/spring_bone_collision_3d.h ---
+#include "scene/3d/skeleton_3d.h"
 
-#include "spring_bone_collision_3d.h"
+class SpringBoneCollision3D : public Node3D {
+public:
+	enum ShapeType {
+		SHAPE_SPHERE,
+		SHAPE_CAPSULE,
+		SHAPE_PLANE,
+	};
+
+private:
+	ShapeType shape_type = SHAPE_SPHERE;
+	float radius = 0.1f;
+	float height = 0.5f;
+	bool inside = false;
+
+	String bone_name;
+	int bone = -1;
+
+	Vector3 position_offset;
+	Quaternion rotation_offset;
+
+	void _validate_bone_name();
+
+	static Vector3 _collide_sphere(const Vector3 &p_origin, float p_radius, bool p_inside, float p_bone_radius, float p_bone_length, const Vector3 &p_current);
+
+protected:
+	PackedStringArray get_configuration_warnings() const override;
+	void _notification(int p_what);
+
+public:
+	SpringBoneCollision3D(ShapeType p_shape_type = SHAPE_SPHERE);
+
+	void set_shape_type(ShapeType p_shape_type);
+	ShapeType get_shape_type() const { return shape_type; }
+
+	void set_radius(float p_radius);
+	float get_radius() const { return radius; }
+
+	void set_height(float p_height);
+	float get_height() const { return height; }
+	void set_mid_height(real_t p_mid_height);
+	real_t get_mid_height() const { return height - radius * 2.0f; }
+
+	void set_inside(bool p_enabled);
+	bool is_inside() const { return inside; }
+
+	Pair<Vector3, Vector3> get_head_and_tail(const Transform3D &p_center) const;
+
+	Skeleton3D *get_skeleton() const;
+
+	void set_bone_name(const String &p_name);
+	String get_bone_name() const;
+	void set_bone(int p_bone);
+	int get_bone() const;
+
+	void set_position_offset(const Vector3 &p_offset);
+	Vector3 get_position_offset() const;
+	void set_rotation_offset(const Quaternion &p_offset);
+	Quaternion get_rotation_offset() const;
+
+	void sync_pose();
+	Transform3D get_transform_from_skeleton(const Transform3D &p_center) const;
+
+	Vector3 collide(const Transform3D &p_center, float p_bone_radius, float p_bone_length, const Vector3 &p_current) const;
+};
+
+// --- End scene/3d/spring_bone_collision_3d.h ---
 
 #include "core/config/engine.h"
-#include "scene/3d/spring_bone_simulator_3d.h"
+// --- Inlined from scene/3d/spring_bone_simulator_3d.h ---
+#include "scene/3d/skeleton_modifier_3d.h"
+#include "scene/resources/curve.h"
+
+#ifndef DISABLE_DEPRECATED
+namespace compat::SpringBoneSimulator3D
+{
+enum BoneDirection : int;
+enum RotationAxis : int;
+} // namespace compat::SpringBoneSimulator3D
+#endif
+
+class SpringBoneSimulator3D : public SkeletonModifier3D
+{
+#ifdef TOOLS_ENABLED
+	bool saving = false;
+#endif // TOOLS_ENABLED
+
+	bool joints_dirty = false;
+
+	bool collisions_dirty = false;
+	void _find_collisions();
+	void _process_collisions();
+	void _make_collisions_dirty();
+
+public:
+	enum CenterFrom
+	{
+		CENTER_FROM_WORLD_ORIGIN,
+		CENTER_FROM_NODE,
+		CENTER_FROM_BONE,
+	};
+
+	struct SpringBone3DVerletInfo
+	{
+		Vector3 prev_tail;
+		Vector3 current_tail;
+		Quaternion current_rot;
+		Vector3 forward_vector;
+		float length = 0.0;
+	};
+
+	struct SpringBone3DJointSetting
+	{
+		String bone_name;
+		int bone = -1;
+
+		RotationAxis rotation_axis = ROTATION_AXIS_ALL;
+		Vector3 rotation_axis_vector = Vector3(1, 0, 0);
+
+		Vector3 get_rotation_axis_vector() const
+		{
+			Vector3 ret;
+			switch (rotation_axis) {
+			case ROTATION_AXIS_X:
+				ret = Vector3(1, 0, 0);
+				break;
+			case ROTATION_AXIS_Y:
+				ret = Vector3(0, 1, 0);
+				break;
+			case ROTATION_AXIS_Z:
+				ret = Vector3(0, 0, 1);
+				break;
+			case ROTATION_AXIS_ALL:
+				ret = Vector3(0, 0, 0);
+				break;
+			case ROTATION_AXIS_CUSTOM:
+				ret = rotation_axis_vector;
+				break;
+			}
+			return ret;
+		}
+
+		float radius = 0.1;
+		float stiffness = 1.0;
+		float drag = 0.0;
+		float gravity = 0.0;
+		Vector3 gravity_direction = Vector3(0, -1, 0);
+
+		// To process.
+		SpringBone3DVerletInfo* verlet = nullptr;
+	};
+
+	struct SpringBone3DSetting
+	{
+		bool joints_dirty = false;
+
+		String root_bone_name;
+		int root_bone = -1;
+
+		String end_bone_name;
+		int end_bone = -1;
+
+		// To make virtual end joint.
+		bool extend_end_bone = false;
+		BoneDirection end_bone_direction = BONE_DIRECTION_FROM_PARENT;
+		float end_bone_length = 0.0;
+
+		CenterFrom center_from = CENTER_FROM_WORLD_ORIGIN;
+		NodePath center_node;
+		String center_bone_name;
+		int center_bone = -1;
+
+		// Cache into joints.
+		bool individual_config = false;
+		float radius = 0.02;
+		Ref<Curve> radius_damping_curve;
+		float stiffness = 1.0;
+		Ref<Curve> stiffness_damping_curve;
+		float drag = 0.4;
+		Ref<Curve> drag_damping_curve;
+		float gravity = 0.0;
+		Ref<Curve> gravity_damping_curve;
+		Vector3 gravity_direction = Vector3(0, -1, 0);
+		RotationAxis rotation_axis = ROTATION_AXIS_ALL;
+		Vector3 rotation_axis_vector = Vector3(1, 0, 0);
+		LocalVector<SpringBone3DJointSetting*> joints;
+
+		// Cache into collisions.
+		bool enable_all_child_collisions = true;
+		LocalVector<NodePath> collisions;
+		LocalVector<NodePath> exclude_collisions;
+
+		// To process.
+		bool simulation_dirty = false;
+		Transform3D cached_center;
+		Transform3D cached_inverted_center;
+	};
+
+protected:
+	LocalVector<SpringBone3DSetting*> settings;
+	Vector3 external_force;
+	bool mutable_bone_axes = true;
+	void _notification(int p_what);
+
+	virtual void _validate_bone_names() override;
+	virtual void _skeleton_changed(Skeleton3D* p_old, Skeleton3D* p_new) override;
+	virtual void _process_modification(double p_delta) override;
+
+	void _init_joints(Skeleton3D* p_skeleton, SpringBone3DSetting* p_setting);
+	void _make_joints_dirty(int p_index, bool p_reset = false);
+
+#ifdef TOOLS_ENABLED
+	bool gizmo_dirty = false;
+	void _make_gizmo_dirty();
+#endif // TOOLS_ENABLED
+
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+#ifndef DISABLE_DEPRECATED
+	compat::SpringBoneSimulator3D::BoneDirection _get_end_bone_direction_bind_compat_110120(
+		int p_index) const;
+	void _set_end_bone_direction_bind_compat_110120(
+		int p_index, compat::SpringBoneSimulator3D::BoneDirection p_bone_direction);
+	compat::SpringBoneSimulator3D::RotationAxis _get_rotation_axis_bind_compat_110120(
+		int p_index) const;
+	void _set_rotation_axis_bind_compat_110120(
+		int p_index, compat::SpringBoneSimulator3D::RotationAxis p_axis);
+	compat::SpringBoneSimulator3D::RotationAxis _get_joint_rotation_axis_bind_compat_110120(
+		int p_index, int p_joint) const;
+	void _set_joint_rotation_axis_bind_compat_110120(
+		int p_index, int p_joint, compat::SpringBoneSimulator3D::RotationAxis p_axis);
+
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+public:
+	// Setting.
+	String get_root_bone_name(int p_index) const;
+	int get_root_bone(int p_index) const;
+
+	String get_end_bone_name(int p_index) const;
+	void set_end_bone(int p_index, int p_bone);
+	int get_end_bone(int p_index) const;
+
+	void set_extend_end_bone(int p_index, bool p_enabled);
+	bool is_end_bone_extended(int p_index) const;
+	void set_end_bone_direction(int p_index, BoneDirection p_bone_direction);
+	BoneDirection get_end_bone_direction(int p_index) const;
+	void set_end_bone_length(int p_index, float p_length);
+	float get_end_bone_length(int p_index) const;
+
+	void set_center_from(int p_index, CenterFrom p_center_from);
+	CenterFrom get_center_from(int p_index) const;
+	void set_center_node(int p_index, const NodePath& p_node_path);
+	NodePath get_center_node(int p_index) const;
+	String get_center_bone_name(int p_index) const;
+	int get_center_bone(int p_index) const;
+
+	void set_rotation_axis(int p_index, RotationAxis p_axis);
+	RotationAxis get_rotation_axis(int p_index) const;
+	void set_rotation_axis_vector(int p_index, const Vector3& p_vector);
+	Vector3 get_rotation_axis_vector(int p_index) const;
+	void set_radius(int p_index, float p_radius);
+	float get_radius(int p_index) const;
+	void set_radius_damping_curve(int p_index, const Ref<Curve>& p_damping_curve);
+	Ref<Curve> get_radius_damping_curve(int p_index) const;
+	void set_stiffness(int p_index, float p_stiffness);
+	float get_stiffness(int p_index) const;
+	void set_stiffness_damping_curve(int p_index, const Ref<Curve>& p_damping_curve);
+	Ref<Curve> get_stiffness_damping_curve(int p_index) const;
+	void set_drag(int p_index, float p_drag);
+	float get_drag(int p_index) const;
+	void set_drag_damping_curve(int p_index, const Ref<Curve>& p_damping_curve);
+	Ref<Curve> get_drag_damping_curve(int p_index) const;
+	void set_gravity(int p_index, float p_gravity);
+	float get_gravity(int p_index) const;
+	void set_gravity_damping_curve(int p_index, const Ref<Curve>& p_damping_curve);
+	Ref<Curve> get_gravity_damping_curve(int p_index) const;
+	void set_gravity_direction(int p_index, const Vector3& p_gravity_direction);
+	Vector3 get_gravity_direction(int p_index) const;
+
+	void set_setting_count(int p_count);
+	int get_setting_count() const;
+	void clear_settings();
+
+	// Individual joints.
+	void set_individual_config(int p_index, bool p_enabled);
+	bool is_config_individual(int p_index) const;
+
+	String get_joint_bone_name(int p_index, int p_joint) const;
+	int get_joint_bone(int p_index, int p_joint) const;
+
+	void set_joint_rotation_axis(int p_index, int p_joint, RotationAxis p_axis);
+	RotationAxis get_joint_rotation_axis(int p_index, int p_joint) const;
+	Vector3 get_joint_rotation_axis_vector(int p_index, int p_joint) const;
+	void set_joint_radius(int p_index, int p_joint, float p_radius);
+	float get_joint_radius(int p_index, int p_joint) const;
+	void set_joint_stiffness(int p_index, int p_joint, float p_stiffness);
+	float get_joint_stiffness(int p_index, int p_joint) const;
+	void set_joint_drag(int p_index, int p_joint, float p_drag);
+	float get_joint_drag(int p_index, int p_joint) const;
+	void set_joint_gravity(int p_index, int p_joint, float p_gravity);
+	float get_joint_gravity(int p_index, int p_joint) const;
+	void set_joint_gravity_direction(int p_index, int p_joint, const Vector3& p_gravity_direction);
+	Vector3 get_joint_gravity_direction(int p_index, int p_joint) const;
+
+	void set_joint_count(int p_index, int p_count);
+	int get_joint_count(int p_index) const;
+
+	// Individual collisions.
+	void set_enable_all_child_collisions(int p_index, bool p_enabled);
+	bool are_all_child_collisions_enabled(int p_index) const;
+
+	void set_exclude_collision_path(int p_index, int p_collision, const NodePath& p_node_path);
+	NodePath get_exclude_collision_path(int p_index, int p_collision) const;
+
+	void set_exclude_collision_count(int p_index, int p_count);
+	int get_exclude_collision_count(int p_index) const;
+	void clear_exclude_collisions(int p_index);
+
+	void set_collision_path(int p_index, int p_collision, const NodePath& p_node_path);
+	NodePath get_collision_path(int p_index, int p_collision) const;
+
+	void set_collision_count(int p_index, int p_count);
+	int get_collision_count(int p_index) const;
+	void clear_collisions(int p_index);
+
+	void set_external_force(const Vector3& p_force);
+	Vector3 get_external_force() const;
+
+	void set_mutable_bone_axes(bool p_enabled);
+	bool are_bone_axes_mutable() const;
+
+#ifdef TOOLS_ENABLED
+	virtual bool is_processed_on_saving() const override { return true; }
+#endif // TOOLS_ENABLED
+
+	~SpringBoneSimulator3D();
+};
+
+
+
+// --- End scene/3d/spring_bone_simulator_3d.h ---
 
 SpringBoneCollision3D::SpringBoneCollision3D(ShapeType p_shape_type) :
 		shape_type(p_shape_type) {
@@ -1932,11 +2523,10 @@ PackedStringArray SpringBoneCollision3D::get_configuration_warnings() const {
 // ==========================================================================
 
 #include "core/config/engine.h"
-#include "scene/3d/spring_bone_collision_3d.h"
+
 // --- spring_bone_simulator_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
-#include "spring_bone_simulator_3d.h"
 
 namespace compat::SpringBoneSimulator3D
 {
@@ -2005,7 +2595,7 @@ void SpringBoneSimulator3D::_set_joint_rotation_axis_bind_compat_110120(
 void SpringBoneSimulator3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-#include "spring_bone_simulator_3d.h"
+
 
 // Original VRM Spring Bone movement logic was distributed by (c) VRM Consortium. Licensed under the
 // MIT license.
@@ -2569,3 +3159,3427 @@ void SpringBoneSimulator3D::_skeleton_changed(
 }
 
 void SpringBoneSimulator3D::_process_modification(double p_delta) {}
+
+// ============================================================================
+// Merged from scene/3d/bone_constraint_3d.cpp
+// ============================================================================
+
+#include "scene/3d/skeleton_modifier_3d.h"
+// --- Inlined from scene/3d/ik_modifier_3d.h ---
+#include "scene/3d/skeleton_modifier_3d.h"
+
+class Curve3D;
+
+class IKModifier3D : public SkeletonModifier3D {
+public:
+	enum SolverType {
+		SOLVER_TWO_BONE,
+		SOLVER_SPLINE,
+		SOLVER_CCD,
+		SOLVER_FABRIK,
+		SOLVER_JACOBIAN,
+	};
+
+	struct BoneJoint {
+		String name;
+		int bone = -1;
+	};
+
+	struct IKModifier3DSolverInfo {
+		Quaternion current_lpose;
+		Quaternion current_lrest;
+		Quaternion current_gpose;
+		Quaternion current_grest;
+		Vector3 current_vector; // Global so needs xform_inv by gpose or grest in the process.
+		Vector3 forward_vector; // Local.
+		float length = 0.0f;
+	};
+
+	struct JointSetting {
+		RotationAxis rotation_axis = ROTATION_AXIS_ALL;
+		Vector3 rotation_axis_vector = Vector3(1, 0, 0);
+		Ref<JointLimitation3D> limitation;
+		SecondaryDirection limitation_right_axis = SECONDARY_DIRECTION_NONE;
+		Vector3 limitation_right_axis_vector = Vector3(1, 0, 0);
+		Quaternion limitation_rotation_offset;
+
+		Vector3 get_rotation_axis_vector() const;
+		Vector3 get_limitation_right_axis_vector() const;
+		Quaternion get_limitation_space(const Vector3 &p_local_forward) const;
+		Vector3 get_projected_rotation(const Quaternion &p_offset, const Vector3 &p_vector) const;
+		Vector3 get_limited_rotation(const Quaternion &p_offset, const Vector3 &p_vector, const Vector3 &p_forward) const;
+	};
+
+	struct ChainSetting {
+		bool simulation_dirty = true;
+		bool joints_dirty = false;
+		bool simulated = false;
+
+#ifdef TOOLS_ENABLED
+		Transform3D root_global_rest;
+#endif // TOOLS_ENABLED
+
+		BoneJoint root_bone;
+		BoneJoint middle_bone; // Used by SOLVER_TWO_BONE.
+		BoneJoint end_bone;
+
+		bool use_virtual_end = false;
+		bool extend_end_bone = false;
+		BoneDirection end_bone_direction = BONE_DIRECTION_FROM_PARENT;
+		float end_bone_length = 0.0f;
+
+		// Target & Pole (IterateIK / TwoBoneIK).
+		NodePath target_node;
+		NodePath pole_node;
+		SecondaryDirection pole_direction = SECONDARY_DIRECTION_NONE;
+		Vector3 pole_direction_vector;
+
+		// Spline (SplineIK).
+		NodePath path_3d;
+		bool tilt_enabled = true;
+		int tilt_fade_in = 1;
+		int tilt_fade_out = 1;
+		LocalVector<double> chain_length_accum;
+		LocalVector<double> twists;
+
+		// Chain joints & solver info (IterateIK / SplineIK).
+		LocalVector<BoneJoint> joints;
+		LocalVector<JointSetting> joint_settings;
+		LocalVector<IKModifier3DSolverInfo *> solver_info_list;
+		LocalVector<Vector3> chain;
+
+		// Two-bone state (TwoBoneIK).
+		IKModifier3DSolverInfo *root_joint_solver_info = nullptr;
+		IKModifier3DSolverInfo *mid_joint_solver_info = nullptr;
+		Vector3 root_pos;
+		Vector3 mid_pos;
+		Vector3 end_pos;
+		double cached_length_sq = 0.0;
+
+		bool is_two_bone_valid() const { return root_joint_solver_info && mid_joint_solver_info; }
+		bool is_two_bone_end_valid() const {
+			return (!use_virtual_end && end_bone.bone != -1) || (use_virtual_end && !Math::is_zero_approx(end_bone_length));
+		}
+		int get_two_bone_end_bone() const { return use_virtual_end ? middle_bone.bone : end_bone.bone; }
+		Vector3 get_pole_direction_vector() const;
+
+		void clear_solver_info();
+
+		void update_chain_coordinate(Skeleton3D *p_skeleton, int p_index, const Vector3 &p_position);
+		void update_chain_coordinate_bw(Skeleton3D *p_skeleton, int p_index, const Vector3 &p_position);
+		void update_chain_coordinate_fw(Skeleton3D *p_skeleton, int p_index, const Vector3 &p_position);
+		void cache_current_vector(Skeleton3D *p_skeleton, int p_index);
+		void cache_current_vectors(Skeleton3D *p_skeleton);
+		void init_current_joint_rotations(Skeleton3D *p_skeleton);
+
+		void cache_iterate_joint_rotations(Skeleton3D *p_skeleton, double p_angular_delta_limit = Math::PI);
+		void init_iterate_joints(Skeleton3D *p_skeleton, bool p_mutable_bone_axes);
+
+		int32_t find_nearest_point(const Vector3 &p_origin, double p_length_sq, const PackedVector3Array &p_points, bool p_is_path_closed, uint32_t p_first, double *r_ret) const;
+		void cache_spline_joint_rotations(Skeleton3D *p_skeleton, bool p_use_tilt = false);
+
+		void cache_two_bone_vectors(Skeleton3D *p_skeleton);
+		void init_two_bone_joint_rotations(Skeleton3D *p_skeleton);
+		void cache_two_bone_joint_rotations(Skeleton3D *p_skeleton, const Vector3 &p_pole_destination);
+
+		~ChainSetting() { clear_solver_info(); }
+	};
+
+protected:
+#ifdef TOOLS_ENABLED
+	bool saving = false;
+	bool gizmo_dirty = false;
+	void _make_gizmo_dirty();
+	void _update_mutable_info();
+#endif // TOOLS_ENABLED
+
+	SolverType solver_type = SOLVER_FABRIK;
+	bool mutable_bone_axes = true;
+	Transform3D cached_space;
+	bool joints_dirty = false;
+
+	// Iterative solver settings (CCD / FABRIK / Jacobian).
+	int max_iterations = 4;
+	double min_distance = 0.001;
+	double min_distance_squared = min_distance * min_distance;
+	double angular_delta_limit = Math::deg_to_rad(2.0);
+	bool deterministic = false;
+
+	LocalVector<ChainSetting *> settings;
+
+	void _notification(int p_what);
+	virtual void _skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) override;
+	virtual void _validate_bone_names() override;
+	virtual void _process_modification(double p_delta) override;
+
+	void _make_all_joints_dirty();
+	void _init_joints(Skeleton3D *p_skeleton, int p_index);
+	void _update_joints(int p_index);
+	void _clear_joints(int p_index);
+	void _make_simulation_dirty(int p_index);
+	void _update_bone_axis(Skeleton3D *p_skeleton, int p_index);
+
+	void _validate_axes(Skeleton3D *p_skeleton) const;
+	void _validate_axis(Skeleton3D *p_skeleton, int p_index, int p_joint) const;
+	void _validate_pole_directions(Skeleton3D *p_skeleton) const;
+	void _validate_pole_direction(Skeleton3D *p_skeleton, int p_index) const;
+	Transform3D _get_two_bone_global_rest(Skeleton3D *p_skeleton, int p_bone, int p_root) const;
+
+	void _process_ik(Skeleton3D *p_skeleton, double p_delta);
+	void _process_iterate_joints(double p_delta, Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination);
+	void _solve_ccd_iteration(Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination);
+	void _solve_fabrik_iteration(Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination);
+	void _solve_jacobian_iteration(Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination);
+	void _process_spline_joints(double p_delta, Skeleton3D *p_skeleton, ChainSetting *p_setting, Ref<Curve3D> p_curve, const Transform3D &p_curve_space);
+	void _process_two_bone_joints(double p_delta, Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination, const Vector3 &p_pole_destination);
+
+public:
+	IKModifier3D(SolverType p_solver_type = SOLVER_FABRIK);
+	~IKModifier3D();
+
+	void set_solver_type(SolverType p_solver_type);
+	SolverType get_solver_type() const { return solver_type; }
+	bool is_iterative_solver() const {
+		return solver_type == SOLVER_CCD || solver_type == SOLVER_FABRIK || solver_type == SOLVER_JACOBIAN;
+	}
+
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	int get_setting_count() const;
+	void set_setting_count(int p_count);
+	void clear_settings();
+
+	void set_mutable_bone_axes(bool p_enabled);
+	bool are_bone_axes_mutable() const;
+
+	// Iterative solver settings.
+	void set_max_iterations(int p_max_iterations);
+	int get_max_iterations() const;
+	void set_min_distance(double p_min_distance);
+	double get_min_distance() const;
+	void set_angular_delta_limit(double p_angular_delta_limit);
+	double get_angular_delta_limit() const;
+	void set_deterministic(bool p_deterministic);
+	bool is_deterministic() const;
+
+	// Chain / TwoBone bone configuration.
+	void set_root_bone_name(int p_index, const String &p_bone_name);
+	String get_root_bone_name(int p_index) const;
+	void set_root_bone(int p_index, int p_bone);
+	int get_root_bone(int p_index) const;
+
+	void set_middle_bone_name(int p_index, const String &p_bone_name);
+	String get_middle_bone_name(int p_index) const;
+	void set_middle_bone(int p_index, int p_bone);
+	int get_middle_bone(int p_index) const;
+
+	void set_end_bone_name(int p_index, const String &p_bone_name);
+	String get_end_bone_name(int p_index) const;
+	void set_end_bone(int p_index, int p_bone);
+	int get_end_bone(int p_index) const;
+
+	void set_use_virtual_end(int p_index, bool p_enabled);
+	bool is_using_virtual_end(int p_index) const;
+	void set_extend_end_bone(int p_index, bool p_enabled);
+	bool is_end_bone_extended(int p_index) const;
+	void set_end_bone_direction(int p_index, BoneDirection p_direction);
+	BoneDirection get_end_bone_direction(int p_index) const;
+	void set_end_bone_length(int p_index, float p_length);
+	float get_end_bone_length(int p_index) const;
+
+	// Target / Pole / Path3D settings.
+	void set_target_node(int p_index, const NodePath &p_target_node);
+	NodePath get_target_node(int p_index) const;
+
+	void set_pole_node(int p_index, const NodePath &p_pole_node);
+	NodePath get_pole_node(int p_index) const;
+	void set_pole_direction(int p_index, SecondaryDirection p_axis);
+	SecondaryDirection get_pole_direction(int p_index) const;
+	void set_pole_direction_vector(int p_index, const Vector3 &p_vector);
+	Vector3 get_pole_direction_vector(int p_index) const;
+	bool is_valid(int p_index) const;
+
+	void set_path_3d(int p_index, const NodePath &p_path_3d);
+	NodePath get_path_3d(int p_index) const;
+	void set_tilt_enabled(int p_index, bool p_enabled);
+	bool is_tilt_enabled(int p_index) const;
+	void set_tilt_fade_in(int p_index, int p_size);
+	int get_tilt_fade_in(int p_index) const;
+	void set_tilt_fade_out(int p_index, int p_size);
+	int get_tilt_fade_out(int p_index) const;
+
+	// Individual joints.
+	String get_joint_bone_name(int p_index, int p_joint) const;
+	int get_joint_bone(int p_index, int p_joint) const;
+	void set_joint_count(int p_index, int p_count);
+	int get_joint_count(int p_index) const;
+
+	void set_joint_rotation_axis(int p_index, int p_joint, RotationAxis p_axis);
+	RotationAxis get_joint_rotation_axis(int p_index, int p_joint) const;
+	void set_joint_rotation_axis_vector(int p_index, int p_joint, const Vector3 &p_vector);
+	Vector3 get_joint_rotation_axis_vector(int p_index, int p_joint) const;
+	void set_joint_limitation(int p_index, int p_joint, const Ref<JointLimitation3D> &p_limitation);
+	Ref<JointLimitation3D> get_joint_limitation(int p_index, int p_joint) const;
+	void set_joint_limitation_right_axis(int p_index, int p_joint, SecondaryDirection p_direction);
+	SecondaryDirection get_joint_limitation_right_axis(int p_index, int p_joint) const;
+	void set_joint_limitation_right_axis_vector(int p_index, int p_joint, const Vector3 &p_vector);
+	Vector3 get_joint_limitation_right_axis_vector(int p_index, int p_joint) const;
+	void set_joint_limitation_rotation_offset(int p_index, int p_joint, const Quaternion &p_offset);
+	Quaternion get_joint_limitation_rotation_offset(int p_index, int p_joint) const;
+	Quaternion get_joint_limitation_space(int p_index, int p_joint, const Vector3 &p_forward) const;
+
+#ifdef TOOLS_ENABLED
+	static Transform3D get_bone_global_rest_mutable(Skeleton3D *p_skeleton, int p_bone);
+	Transform3D get_chain_root_global_rest(int p_index) const;
+	Vector3 get_bone_vector(int p_index, int p_joint) const;
+#endif // TOOLS_ENABLED
+
+	static Quaternion get_local_pose_rotation(Skeleton3D *p_skeleton, int p_bone, const Quaternion &p_global_pose_rotation);
+	static Vector3 get_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, BoneDirection p_direction, bool p_mutable_bone_axes);
+};
+
+// --- End scene/3d/ik_modifier_3d.h ---
+
+
+BoneConstraint3D::BoneConstraint3D(ConstraintType p_type) :
+		constraint_type(p_type) {
+}
+
+BoneConstraint3D::~BoneConstraint3D() {
+	clear_settings();
+}
+
+void BoneConstraint3D::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			_make_velocity_joints_dirty();
+			_make_all_twist_joints_dirty();
+		} break;
+		default:
+			break;
+	}
+}
+
+void BoneConstraint3D::_set_active(bool p_active) {
+	if (p_active) {
+		reset();
+		_make_all_twist_joints_dirty();
+	}
+}
+
+void BoneConstraint3D::_skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) {
+	_make_velocity_joints_dirty();
+	_make_all_twist_joints_dirty();
+}
+
+void BoneConstraint3D::set_constraint_type(ConstraintType p_type) {
+	if (constraint_type == p_type) {
+		return;
+	}
+	constraint_type = p_type;
+	reset();
+	_make_velocity_joints_dirty();
+	_make_all_twist_joints_dirty();
+	update_configuration_warnings();
+}
+
+PackedStringArray BoneConstraint3D::get_configuration_warnings() const {
+	PackedStringArray warnings = SkeletonModifier3D::get_configuration_warnings();
+	if (constraint_type == CONSTRAINT_AIM) {
+		for (uint32_t i = 0; i < settings.size(); i++) {
+			if (settings[i].use_euler && get_axis_from_bone_axis(settings[i].forward_axis) == settings[i].primary_rotation_axis) {
+				warnings.push_back(vformat(RTR("Forward axis and primary rotation axis must not be parallel in setting %s."), itos(i)));
+			}
+		}
+	}
+	return warnings;
+}
+
+void BoneConstraint3D::set_setting_count(int p_count) {
+	ERR_FAIL_COND(p_count < 0);
+	settings.resize(p_count);
+	_make_velocity_joints_dirty();
+	_make_all_twist_joints_dirty();
+}
+
+int BoneConstraint3D::get_setting_count() const {
+	return (int)settings.size();
+}
+
+void BoneConstraint3D::clear_settings() {
+	settings.clear();
+	velocity_joints.clear();
+	velocity_bones.clear();
+}
+
+void BoneConstraint3D::_validate_bone_names() {
+	Skeleton3D *sk = get_skeleton();
+	if (!sk) {
+		return;
+	}
+	if (!target_bone_name.is_empty()) {
+		target_bone = sk->find_bone(target_bone_name);
+	}
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		if (!settings[i].apply_bone_name.is_empty()) {
+			settings[i].apply_bone = sk->find_bone(settings[i].apply_bone_name);
+		}
+		if (!settings[i].reference_bone_name.is_empty()) {
+			settings[i].reference_bone = sk->find_bone(settings[i].reference_bone_name);
+		}
+		if (!settings[i].root_bone.name.is_empty()) {
+			settings[i].root_bone.bone = sk->find_bone(settings[i].root_bone.name);
+		}
+		if (!settings[i].end_bone.name.is_empty()) {
+			settings[i].end_bone.bone = sk->find_bone(settings[i].end_bone.name);
+		}
+	}
+	_make_velocity_joints_dirty();
+	_make_all_twist_joints_dirty();
+}
+
+void BoneConstraint3D::set_amount(int p_index, float p_amount) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].amount = p_amount;
+}
+
+float BoneConstraint3D::get_amount(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	return settings[p_index].amount;
+}
+
+void BoneConstraint3D::set_apply_bone_name(int p_index, const String &p_name) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].apply_bone_name = p_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		settings[p_index].apply_bone = sk->find_bone(p_name);
+	}
+}
+
+String BoneConstraint3D::get_apply_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	return settings[p_index].apply_bone_name;
+}
+
+void BoneConstraint3D::set_apply_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].apply_bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		settings[p_index].apply_bone_name = sk->get_bone_name(p_bone);
+	}
+}
+
+int BoneConstraint3D::get_apply_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index].apply_bone;
+}
+
+void BoneConstraint3D::set_reference_type(int p_index, ReferenceType p_type) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].reference_type = p_type;
+}
+
+BoneConstraint3D::ReferenceType BoneConstraint3D::get_reference_type(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), REFERENCE_TYPE_BONE);
+	return settings[p_index].reference_type;
+}
+
+void BoneConstraint3D::set_reference_bone_name(int p_index, const String &p_name) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].reference_bone_name = p_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		settings[p_index].reference_bone = sk->find_bone(p_name);
+	}
+}
+
+String BoneConstraint3D::get_reference_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	return settings[p_index].reference_bone_name;
+}
+
+void BoneConstraint3D::set_reference_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].reference_bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		settings[p_index].reference_bone_name = sk->get_bone_name(p_bone);
+	}
+}
+
+int BoneConstraint3D::get_reference_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index].reference_bone;
+}
+
+void BoneConstraint3D::set_reference_node(int p_index, const NodePath &p_node) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].reference_node = p_node;
+}
+
+NodePath BoneConstraint3D::get_reference_node(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), NodePath());
+	return settings[p_index].reference_node;
+}
+
+void BoneConstraint3D::set_relative(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].relative = p_enabled;
+}
+
+bool BoneConstraint3D::is_relative(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return settings[p_index].is_relative_effective(constraint_type);
+}
+
+void BoneConstraint3D::set_additive(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].additive = p_enabled;
+}
+
+bool BoneConstraint3D::is_additive(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return settings[p_index].additive;
+}
+
+// Aim properties.
+
+void BoneConstraint3D::set_forward_axis(int p_index, BoneAxis p_axis) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].forward_axis = p_axis;
+	update_configuration_warnings();
+}
+
+SkeletonModifier3D::BoneAxis BoneConstraint3D::get_forward_axis(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), BONE_AXIS_PLUS_Y);
+	return settings[p_index].forward_axis;
+}
+
+void BoneConstraint3D::set_use_euler(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].use_euler = p_enabled;
+	update_configuration_warnings();
+}
+
+bool BoneConstraint3D::is_using_euler(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return settings[p_index].use_euler;
+}
+
+void BoneConstraint3D::set_primary_rotation_axis(int p_index, Vector3::Axis p_axis) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].primary_rotation_axis = p_axis;
+	update_configuration_warnings();
+}
+
+Vector3::Axis BoneConstraint3D::get_primary_rotation_axis(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3::AXIS_X);
+	return settings[p_index].primary_rotation_axis;
+}
+
+void BoneConstraint3D::set_use_secondary_rotation(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].use_secondary_rotation = p_enabled;
+}
+
+bool BoneConstraint3D::is_using_secondary_rotation(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return settings[p_index].use_secondary_rotation;
+}
+
+// Convert Transform properties.
+
+void BoneConstraint3D::set_apply_transform_mode(int p_index, TransformMode p_transform_mode) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].apply_transform_mode = p_transform_mode;
+}
+
+BoneConstraint3D::TransformMode BoneConstraint3D::get_apply_transform_mode(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), TRANSFORM_MODE_POSITION);
+	return settings[p_index].apply_transform_mode;
+}
+
+void BoneConstraint3D::set_apply_axis(int p_index, Vector3::Axis p_axis) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].apply_axis = p_axis;
+}
+
+Vector3::Axis BoneConstraint3D::get_apply_axis(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3::AXIS_X);
+	return settings[p_index].apply_axis;
+}
+
+void BoneConstraint3D::set_apply_range_min(int p_index, float p_range_min) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].apply_range_min = p_range_min;
+}
+
+float BoneConstraint3D::get_apply_range_min(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	return settings[p_index].apply_range_min;
+}
+
+void BoneConstraint3D::set_apply_range_max(int p_index, float p_range_max) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].apply_range_max = p_range_max;
+}
+
+float BoneConstraint3D::get_apply_range_max(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	return settings[p_index].apply_range_max;
+}
+
+void BoneConstraint3D::set_reference_transform_mode(int p_index, TransformMode p_transform_mode) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].reference_transform_mode = p_transform_mode;
+}
+
+BoneConstraint3D::TransformMode BoneConstraint3D::get_reference_transform_mode(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), TRANSFORM_MODE_POSITION);
+	return settings[p_index].reference_transform_mode;
+}
+
+void BoneConstraint3D::set_reference_axis(int p_index, Vector3::Axis p_axis) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].reference_axis = p_axis;
+}
+
+Vector3::Axis BoneConstraint3D::get_reference_axis(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3::AXIS_X);
+	return settings[p_index].reference_axis;
+}
+
+void BoneConstraint3D::set_reference_range_min(int p_index, float p_range_min) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].reference_range_min = p_range_min;
+}
+
+float BoneConstraint3D::get_reference_range_min(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	return settings[p_index].reference_range_min;
+}
+
+void BoneConstraint3D::set_reference_range_max(int p_index, float p_range_max) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].reference_range_max = p_range_max;
+}
+
+float BoneConstraint3D::get_reference_range_max(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	return settings[p_index].reference_range_max;
+}
+
+// Copy Transform properties.
+
+void BoneConstraint3D::set_copy_flags(int p_index, uint32_t p_copy_flags) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].copy_flags = p_copy_flags;
+}
+
+uint32_t BoneConstraint3D::get_copy_flags(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
+	return settings[p_index].copy_flags;
+}
+
+void BoneConstraint3D::set_copy_position(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	if (p_enabled) {
+		settings[p_index].copy_flags |= TRANSFORM_FLAG_POSITION;
+	} else {
+		settings[p_index].copy_flags &= ~TRANSFORM_FLAG_POSITION;
+	}
+}
+
+bool BoneConstraint3D::is_position_copying(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return (settings[p_index].copy_flags & TRANSFORM_FLAG_POSITION) != 0;
+}
+
+void BoneConstraint3D::set_copy_rotation(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	if (p_enabled) {
+		settings[p_index].copy_flags |= TRANSFORM_FLAG_ROTATION;
+	} else {
+		settings[p_index].copy_flags &= ~TRANSFORM_FLAG_ROTATION;
+	}
+}
+
+bool BoneConstraint3D::is_rotation_copying(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return (settings[p_index].copy_flags & TRANSFORM_FLAG_ROTATION) != 0;
+}
+
+void BoneConstraint3D::set_copy_scale(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	if (p_enabled) {
+		settings[p_index].copy_flags |= TRANSFORM_FLAG_SCALE;
+	} else {
+		settings[p_index].copy_flags &= ~TRANSFORM_FLAG_SCALE;
+	}
+}
+
+bool BoneConstraint3D::is_scale_copying(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return (settings[p_index].copy_flags & TRANSFORM_FLAG_SCALE) != 0;
+}
+
+void BoneConstraint3D::set_axis_flags(int p_index, uint32_t p_axis_flags) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].axis_flags = p_axis_flags;
+}
+
+uint32_t BoneConstraint3D::get_axis_flags(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
+	return settings[p_index].axis_flags;
+}
+
+void BoneConstraint3D::set_axis_x_enabled(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	if (p_enabled) {
+		settings[p_index].axis_flags |= AXIS_FLAG_X;
+	} else {
+		settings[p_index].axis_flags &= ~AXIS_FLAG_X;
+	}
+}
+
+bool BoneConstraint3D::is_axis_x_enabled(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return (settings[p_index].axis_flags & AXIS_FLAG_X) != 0;
+}
+
+void BoneConstraint3D::set_axis_y_enabled(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	if (p_enabled) {
+		settings[p_index].axis_flags |= AXIS_FLAG_Y;
+	} else {
+		settings[p_index].axis_flags &= ~AXIS_FLAG_Y;
+	}
+}
+
+bool BoneConstraint3D::is_axis_y_enabled(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return (settings[p_index].axis_flags & AXIS_FLAG_Y) != 0;
+}
+
+void BoneConstraint3D::set_axis_z_enabled(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	if (p_enabled) {
+		settings[p_index].axis_flags |= AXIS_FLAG_Z;
+	} else {
+		settings[p_index].axis_flags &= ~AXIS_FLAG_Z;
+	}
+}
+
+bool BoneConstraint3D::is_axis_z_enabled(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return (settings[p_index].axis_flags & AXIS_FLAG_Z) != 0;
+}
+
+void BoneConstraint3D::set_invert_flags(int p_index, uint32_t p_axis_flags) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].invert_flags = p_axis_flags;
+}
+
+uint32_t BoneConstraint3D::get_invert_flags(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
+	return settings[p_index].invert_flags;
+}
+
+void BoneConstraint3D::set_axis_x_inverted(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	if (p_enabled) {
+		settings[p_index].invert_flags |= AXIS_FLAG_X;
+	} else {
+		settings[p_index].invert_flags &= ~AXIS_FLAG_X;
+	}
+}
+
+bool BoneConstraint3D::is_axis_x_inverted(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return (settings[p_index].invert_flags & AXIS_FLAG_X) != 0;
+}
+
+void BoneConstraint3D::set_axis_y_inverted(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	if (p_enabled) {
+		settings[p_index].invert_flags |= AXIS_FLAG_Y;
+	} else {
+		settings[p_index].invert_flags &= ~AXIS_FLAG_Y;
+	}
+}
+
+bool BoneConstraint3D::is_axis_y_inverted(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return (settings[p_index].invert_flags & AXIS_FLAG_Y) != 0;
+}
+
+void BoneConstraint3D::set_axis_z_inverted(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	if (p_enabled) {
+		settings[p_index].invert_flags |= AXIS_FLAG_Z;
+	} else {
+		settings[p_index].invert_flags &= ~AXIS_FLAG_Z;
+	}
+}
+
+bool BoneConstraint3D::is_axis_z_inverted(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return (settings[p_index].invert_flags & AXIS_FLAG_Z) != 0;
+}
+
+// --- BoneTarget properties ---
+
+void BoneConstraint3D::set_bone_name(const String &p_bone_name) {
+	target_bone_name = p_bone_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		target_bone = sk->find_bone(target_bone_name);
+	}
+}
+
+String BoneConstraint3D::get_bone_name() const {
+	return target_bone_name;
+}
+
+void BoneConstraint3D::set_bone(int p_bone) {
+	target_bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		target_bone_name = sk->get_bone_name(p_bone);
+	}
+}
+
+int BoneConstraint3D::get_bone() const {
+	return target_bone;
+}
+
+// --- Chain root/end properties (LimitAngularVelocity & TwistDisperser) ---
+
+void BoneConstraint3D::set_root_bone_name(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].root_bone.name = p_bone_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		settings[p_index].root_bone.bone = sk->find_bone(p_bone_name);
+	}
+	_make_velocity_joints_dirty();
+	_make_twist_joints_dirty(p_index);
+}
+
+String BoneConstraint3D::get_root_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	return settings[p_index].root_bone.name;
+}
+
+void BoneConstraint3D::set_root_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].root_bone.bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		settings[p_index].root_bone.name = sk->get_bone_name(p_bone);
+	}
+	_make_velocity_joints_dirty();
+	_make_twist_joints_dirty(p_index);
+}
+
+int BoneConstraint3D::get_root_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index].root_bone.bone;
+}
+
+void BoneConstraint3D::set_end_bone_name(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].end_bone.name = p_bone_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		settings[p_index].end_bone.bone = sk->find_bone(p_bone_name);
+	}
+	_make_velocity_joints_dirty();
+	_make_twist_joints_dirty(p_index);
+}
+
+String BoneConstraint3D::get_end_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	return settings[p_index].end_bone.name;
+}
+
+void BoneConstraint3D::set_end_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].end_bone.bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		settings[p_index].end_bone.name = sk->get_bone_name(p_bone);
+	}
+	_make_velocity_joints_dirty();
+	_make_twist_joints_dirty(p_index);
+}
+
+int BoneConstraint3D::get_end_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index].end_bone.bone;
+}
+
+// --- LimitAngularVelocity properties & helpers ---
+
+void BoneConstraint3D::set_chain_count(int p_count) {
+	set_setting_count(p_count);
+}
+
+int BoneConstraint3D::get_chain_count() const {
+	return get_setting_count();
+}
+
+void BoneConstraint3D::clear_chains() {
+	set_chain_count(0);
+}
+
+String BoneConstraint3D::get_joint_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)velocity_joints.size(), String());
+	return velocity_joints[p_index].name;
+}
+
+int BoneConstraint3D::get_joint_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)velocity_joints.size(), -1);
+	return velocity_joints[p_index].bone;
+}
+
+int BoneConstraint3D::get_velocity_joint_count() const {
+	return (int)velocity_joints.size();
+}
+
+void BoneConstraint3D::set_max_angular_velocity(double p_angular_velocity) {
+	max_angular_velocity = p_angular_velocity;
+}
+
+double BoneConstraint3D::get_max_angular_velocity() const {
+	return max_angular_velocity;
+}
+
+void BoneConstraint3D::set_exclude(bool p_exclude) {
+	exclude = p_exclude;
+	reset();
+}
+
+bool BoneConstraint3D::is_exclude() const {
+	return exclude;
+}
+
+void BoneConstraint3D::reset() {
+	velocity_init_needed = true;
+}
+
+void BoneConstraint3D::_make_velocity_joints_dirty() {
+	velocity_joints_dirty = true;
+	velocity_init_needed = true;
+}
+
+bool BoneConstraint3D::_is_velocity_joint_contained(int p_bone) const {
+	for (const BoneJoint &joint : velocity_joints) {
+		if (joint.bone == p_bone) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void BoneConstraint3D::_update_velocity_joints() {
+	velocity_joints.clear();
+	Skeleton3D *sk = get_skeleton();
+	if (!sk) {
+		velocity_joints_dirty = false;
+		return;
+	}
+
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		int root = settings[i].root_bone.bone;
+		int end = settings[i].end_bone.bone;
+		if (root < 0 || end < 0 || root >= sk->get_bone_count() || end >= sk->get_bone_count()) {
+			continue;
+		}
+		if (root != end && !sk->is_bone_parent_of(end, root)) {
+			continue;
+		}
+		Vector<int> chain_bones;
+		int cur = end;
+		while (cur != -1) {
+			chain_bones.push_back(cur);
+			if (cur == root) {
+				break;
+			}
+			cur = sk->get_bone_parent(cur);
+		}
+		for (int j = chain_bones.size() - 1; j >= 0; j--) {
+			int b = chain_bones[j];
+			if (!_is_velocity_joint_contained(b)) {
+				BoneJoint bj;
+				bj.bone = b;
+				bj.name = sk->get_bone_name(b);
+				velocity_joints.push_back(bj);
+			}
+		}
+	}
+
+	velocity_bones.clear();
+	if (exclude) {
+		for (int b = 0; b < sk->get_bone_count(); b++) {
+			if (!_is_velocity_joint_contained(b)) {
+				velocity_bones.push_back(BoneRot(b, Quaternion()));
+			}
+		}
+	} else {
+		for (const BoneJoint &joint : velocity_joints) {
+			velocity_bones.push_back(BoneRot(joint.bone, Quaternion()));
+		}
+	}
+
+	velocity_joints_dirty = false;
+	velocity_init_needed = true;
+}
+
+// --- TwistDisperser properties & helpers ---
+
+void BoneConstraint3D::set_mutable_bone_axes(bool p_enabled) {
+	mutable_bone_axes = p_enabled;
+	_make_all_twist_joints_dirty();
+}
+
+bool BoneConstraint3D::are_bone_axes_mutable() const {
+	return mutable_bone_axes;
+}
+
+void BoneConstraint3D::set_extend_end_bone(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].extend_end_bone = p_enabled;
+	_make_twist_joints_dirty(p_index);
+}
+
+bool BoneConstraint3D::is_end_bone_extended(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return settings[p_index].extend_end_bone;
+}
+
+void BoneConstraint3D::set_end_bone_direction(int p_index, BoneDirection p_bone_direction) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].end_bone_direction = p_bone_direction;
+	_make_twist_joints_dirty(p_index);
+}
+
+SkeletonModifier3D::BoneDirection BoneConstraint3D::get_end_bone_direction(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), BONE_DIRECTION_FROM_PARENT);
+	return settings[p_index].end_bone_direction;
+}
+
+void BoneConstraint3D::set_twist_from_rest(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].twist_from_rest = p_enabled;
+}
+
+bool BoneConstraint3D::is_twist_from_rest(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), true);
+	return settings[p_index].twist_from_rest;
+}
+
+void BoneConstraint3D::set_twist_from(int p_index, const Quaternion &p_from) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].twist_from = p_from;
+}
+
+Quaternion BoneConstraint3D::get_twist_from(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Quaternion());
+	return settings[p_index].twist_from;
+}
+
+void BoneConstraint3D::set_disperse_mode(int p_index, DisperseMode p_disperse_mode) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].disperse_mode = p_disperse_mode;
+	_make_twist_joints_dirty(p_index);
+}
+
+BoneConstraint3D::DisperseMode BoneConstraint3D::get_disperse_mode(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), DISPERSE_MODE_EVEN);
+	return settings[p_index].disperse_mode;
+}
+
+void BoneConstraint3D::set_weight_position(int p_index, float p_position) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].weight_position = p_position;
+	_make_twist_joints_dirty(p_index);
+}
+
+float BoneConstraint3D::get_weight_position(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	return settings[p_index].weight_position;
+}
+
+void BoneConstraint3D::set_damping_curve(int p_index, const Ref<Curve> &p_damping_curve) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index].damping_curve = p_damping_curve;
+	_update_twist_curve(p_index);
+}
+
+Ref<Curve> BoneConstraint3D::get_damping_curve(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Ref<Curve>());
+	return settings[p_index].damping_curve;
+}
+
+String BoneConstraint3D::get_joint_bone_name(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	const LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), String());
+	return joints[p_joint].joint.name;
+}
+
+int BoneConstraint3D::get_joint_bone(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	const LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), -1);
+	return joints[p_joint].joint.bone;
+}
+
+void BoneConstraint3D::set_joint_twist_amount(int p_index, int p_joint, float p_amount) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	ERR_FAIL_INDEX(p_joint, (int)joints.size());
+	joints[p_joint].custom_amount = p_amount;
+}
+
+float BoneConstraint3D::get_joint_twist_amount(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	const LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), 0.0f);
+	return (float)joints[p_joint].custom_amount;
+}
+
+void BoneConstraint3D::set_joint_count(int p_index, int p_count) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ERR_FAIL_COND(p_count < 0);
+	settings[p_index].joints.resize(p_count);
+}
+
+int BoneConstraint3D::get_joint_count(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
+	return (int)settings[p_index].joints.size();
+}
+
+void BoneConstraint3D::_make_all_twist_joints_dirty() {
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		_make_twist_joints_dirty((int)i);
+	}
+}
+
+void BoneConstraint3D::_make_twist_joints_dirty(int p_index) {
+	if (p_index >= 0 && p_index < (int)settings.size()) {
+		settings[p_index].joints_dirty = true;
+	}
+}
+
+void BoneConstraint3D::_update_twist_curve(int p_index) {
+	Ref<Curve> curve = settings[p_index].damping_curve;
+	if (curve.is_null()) {
+		return;
+	}
+	LocalVector<DisperseJointSetting> &joints = settings[p_index].joints;
+	float unit = (int)joints.size() > 1 ? (1.0f / float((int)joints.size() - 1)) : 0.0f;
+	for (uint32_t i = 0; i < joints.size(); i++) {
+		joints[i].custom_amount = curve->sample(i * unit);
+	}
+}
+
+void BoneConstraint3D::_update_twist_joints(int p_index) {
+	ConstraintSetting &s = settings[p_index];
+	s.joints_dirty = false;
+
+	Skeleton3D *sk = get_skeleton();
+	if (!sk) {
+		return;
+	}
+
+	int root = s.root_bone.bone;
+	int end = s.end_bone.bone;
+	if (root < 0 || end < 0 || root >= sk->get_bone_count() || end >= sk->get_bone_count()) {
+		s.joints.clear();
+		return;
+	}
+	if (root != end && !sk->is_bone_parent_of(end, root)) {
+		s.joints.clear();
+		return;
+	}
+
+	Vector<int> chain_bones;
+	int cur = end;
+	while (cur != -1) {
+		chain_bones.push_back(cur);
+		if (cur == root) {
+			break;
+		}
+		cur = sk->get_bone_parent(cur);
+	}
+
+	// If not extending end bone, the end bone itself is the reference bone and not twisted as an intermediate joint.
+	int ref_bone = end;
+	if (s.extend_end_bone) {
+		Vector<int> children = sk->get_bone_children(end);
+		if (children.size() == 1) {
+			ref_bone = children[0];
+		}
+	} else if (chain_bones.size() > 1) {
+		chain_bones.remove_at(0);
+	}
+
+	s.reference_bone = ref_bone;
+	s.reference_bone_name = (ref_bone >= 0 && ref_bone < sk->get_bone_count()) ? sk->get_bone_name(ref_bone) : String();
+
+	LocalVector<DisperseJointSetting> old_joints = std::move(s.joints);
+	s.joints.resize(chain_bones.size());
+
+	for (int i = 0; i < chain_bones.size(); i++) {
+		int b = chain_bones[chain_bones.size() - 1 - i];
+		s.joints[i].joint.bone = b;
+		s.joints[i].joint.name = sk->get_bone_name(b);
+		if ((uint32_t)i < old_joints.size()) {
+			s.joints[i].custom_amount = old_joints[i].custom_amount;
+		} else {
+			s.joints[i].custom_amount = float(i + 1) / float(chain_bones.size());
+		}
+	}
+
+	const uint32_t j_count = s.joints.size();
+	if (j_count == 0) {
+		return;
+	}
+
+	if (s.disperse_mode == DISPERSE_MODE_EVEN) {
+		for (uint32_t i = 0; i < j_count; i++) {
+			s.joints[i].amount = double(i + 1) / double(j_count + (s.extend_end_bone ? 0 : 1));
+		}
+	} else if (s.disperse_mode == DISPERSE_MODE_WEIGHTED) {
+		double total_len = 0.0;
+		LocalVector<double> accum;
+		accum.resize(j_count);
+		for (uint32_t i = 0; i < j_count; i++) {
+			double seg = (i + 1 < j_count) ? (double)sk->get_bone_rest(s.joints[i + 1].joint.bone).origin.length() : (double)sk->get_bone_rest(ref_bone).origin.length();
+			accum[i] = total_len + seg * s.weight_position;
+			total_len += seg;
+		}
+		for (uint32_t i = 0; i < j_count; i++) {
+			s.joints[i].amount = total_len > CMP_EPSILON ? CLAMP(accum[i] / total_len, 0.0, 1.0) : double(i + 1) / double(j_count);
+		}
+	} else {
+		_update_twist_curve(p_index);
+		for (uint32_t i = 0; i < j_count; i++) {
+			s.joints[i].amount = s.joints[i].custom_amount;
+		}
+	}
+}
+
+// --- Processing ---
+
+void BoneConstraint3D::_process_modification(double p_delta) {
+	Skeleton3D *sk = get_skeleton();
+	if (!sk) {
+		return;
+	}
+
+	if (constraint_type == CONSTRAINT_BONE_TARGET) {
+		_process_bone_target(sk);
+		return;
+	}
+	if (constraint_type == CONSTRAINT_LIMIT_ANGULAR_VELOCITY) {
+		_process_limit_angular_velocity(sk, p_delta);
+		return;
+	}
+	if (constraint_type == CONSTRAINT_TWIST_DISPERSER) {
+		_process_twist_disperser(sk);
+		return;
+	}
+
+	Transform3D skel_inv = sk->get_global_transform_interpolated().affine_inverse();
+
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		const ConstraintSetting &s = settings[i];
+		if (s.apply_bone < 0 || s.apply_bone >= sk->get_bone_count() || Math::is_zero_approx(s.amount)) {
+			continue;
+		}
+
+		if (s.reference_type == REFERENCE_TYPE_BONE) {
+			if (s.reference_bone < 0 || s.reference_bone >= sk->get_bone_count()) {
+				continue;
+			}
+			if (constraint_type == CONSTRAINT_AIM) {
+				if (s.apply_bone == s.reference_bone) {
+					continue;
+				}
+				Vector3 ref_origin = sk->get_bone_global_pose(s.reference_bone).origin;
+				_process_aim(i, sk, s.apply_bone, ref_origin, s.amount);
+			} else {
+				Transform3D dest = sk->get_bone_pose(s.reference_bone);
+				if (s.is_relative_effective(constraint_type)) {
+					Vector3 scl_rel = dest.basis.get_scale() / sk->get_bone_rest(s.reference_bone).basis.get_scale();
+					dest.basis = sk->get_bone_rest(s.reference_bone).basis.get_rotation_quaternion().inverse() * dest.basis.get_rotation_quaternion();
+					dest.basis.scale_local(scl_rel);
+					dest.origin = dest.origin - sk->get_bone_rest(s.reference_bone).origin;
+				}
+				if (constraint_type == CONSTRAINT_CONVERT_TRANSFORM) {
+					_process_convert(i, sk, s.apply_bone, dest, s.amount);
+				} else {
+					_process_copy(i, sk, s.apply_bone, dest, s.amount);
+				}
+			}
+		} else {
+			Node3D *ref_node = dynamic_cast<Node3D *>(get_node_or_null(s.reference_node));
+			if (!ref_node) {
+				continue;
+			}
+			Transform3D ref_local = skel_inv * ref_node->get_global_transform_interpolated();
+			if (constraint_type == CONSTRAINT_AIM) {
+				_process_aim(i, sk, s.apply_bone, ref_local.origin, s.amount);
+			} else if (constraint_type == CONSTRAINT_CONVERT_TRANSFORM) {
+				_process_convert(i, sk, s.apply_bone, ref_local, s.amount);
+			} else {
+				_process_copy(i, sk, s.apply_bone, ref_local, s.amount);
+			}
+		}
+	}
+}
+
+void BoneConstraint3D::_process_bone_target(Skeleton3D *p_skeleton) {
+	if (target_bone < 0 || target_bone >= p_skeleton->get_bone_count()) {
+		return;
+	}
+	set_global_transform(p_skeleton->get_global_transform_interpolated() * p_skeleton->get_bone_global_pose(target_bone));
+}
+
+void BoneConstraint3D::_process_limit_angular_velocity(Skeleton3D *p_skeleton, double p_delta) {
+	if (velocity_joints_dirty) {
+		_update_velocity_joints();
+	}
+	if (velocity_bones.is_empty()) {
+		return;
+	}
+	if (velocity_init_needed || p_delta <= 0.0) {
+		for (uint32_t i = 0; i < velocity_bones.size(); i++) {
+			int b = velocity_bones[i].first;
+			if (b >= 0 && b < p_skeleton->get_bone_count()) {
+				velocity_bones[i].second = p_skeleton->get_bone_pose_rotation(b);
+			}
+		}
+		velocity_init_needed = false;
+		return;
+	}
+
+	double limit_angle = max_angular_velocity * p_delta;
+	for (uint32_t i = 0; i < velocity_bones.size(); i++) {
+		int b = velocity_bones[i].first;
+		if (b < 0 || b >= p_skeleton->get_bone_count()) {
+			continue;
+		}
+		Quaternion prev_rot = velocity_bones[i].second;
+		Quaternion curr_rot = p_skeleton->get_bone_pose_rotation(b);
+		double angle_diff = prev_rot.angle_to(curr_rot);
+		if (angle_diff > limit_angle && angle_diff > CMP_EPSILON) {
+			curr_rot = prev_rot.slerp(curr_rot, real_t(limit_angle / angle_diff));
+			p_skeleton->set_bone_pose_rotation(b, curr_rot);
+		}
+		velocity_bones[i].second = curr_rot;
+	}
+}
+
+void BoneConstraint3D::_process_twist_disperser(Skeleton3D *p_skeleton) {
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		if (settings[i].joints_dirty) {
+			_update_twist_joints((int)i);
+		}
+		ConstraintSetting &s = settings[i];
+		if (s.joints.is_empty() || s.reference_bone < 0 || s.reference_bone >= p_skeleton->get_bone_count()) {
+			continue;
+		}
+
+		Vector3 ref_axis = IKModifier3D::get_bone_axis(p_skeleton, s.end_bone.bone, s.end_bone_direction, mutable_bone_axes);
+		if (ref_axis.is_zero_approx()) {
+			continue;
+		}
+		ref_axis.normalize();
+
+		Quaternion base_rot = s.twist_from_rest ? p_skeleton->get_bone_rest(s.reference_bone).basis.get_rotation_quaternion() : s.twist_from;
+		Quaternion ref_delta = base_rot.inverse() * p_skeleton->get_bone_pose_rotation(s.reference_bone);
+		double total_twist = get_roll_angle(ref_delta, ref_axis);
+
+		for (uint32_t j = 0; j < s.joints.size(); j++) {
+			int b = s.joints[j].joint.bone;
+			if (b < 0 || b >= p_skeleton->get_bone_count()) {
+				continue;
+			}
+			int next_b = (j + 1 < s.joints.size()) ? s.joints[j + 1].joint.bone : s.reference_bone;
+			Vector3 joint_axis = (next_b != b) ? (mutable_bone_axes ? p_skeleton->get_bone_pose_position(next_b) : p_skeleton->get_bone_rest(next_b).origin) : ref_axis;
+			if (joint_axis.is_zero_approx()) {
+				joint_axis = ref_axis;
+			} else {
+				joint_axis.normalize();
+			}
+			s.joints[j].axis = joint_axis;
+
+			double prev_amount = j > 0 ? s.joints[j - 1].amount : 0.0;
+			double delta_twist = total_twist * ((s.disperse_mode == DISPERSE_MODE_CUSTOM ? s.joints[j].custom_amount : s.joints[j].amount) - prev_amount);
+			Quaternion swing = get_swing(p_skeleton->get_bone_pose_rotation(b), joint_axis);
+			Quaternion twist_rot(joint_axis, real_t(delta_twist));
+			p_skeleton->set_bone_pose_rotation(b, swing * twist_rot);
+		}
+
+		if (!s.extend_end_bone && s.reference_bone == s.end_bone.bone) {
+			double last_amount = s.disperse_mode == DISPERSE_MODE_CUSTOM ? s.joints[s.joints.size() - 1].custom_amount : s.joints[s.joints.size() - 1].amount;
+			double remaining_twist = total_twist * (1.0 - last_amount);
+			Quaternion end_swing = get_swing(p_skeleton->get_bone_pose_rotation(s.end_bone.bone), ref_axis);
+			p_skeleton->set_bone_pose_rotation(s.end_bone.bone, end_swing * Quaternion(ref_axis, real_t(remaining_twist)));
+		}
+	}
+}
+
+void BoneConstraint3D::_process_aim(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, const Vector3 &p_target, float p_amount) {
+	const ConstraintSetting &setting = settings[p_index];
+
+	Transform3D src_bone_rest = setting.relative ? p_skeleton->get_bone_pose(p_apply_bone) : p_skeleton->get_bone_rest(p_apply_bone);
+	Transform3D bone_rest_space;
+	int parent_bone = p_skeleton->get_bone_parent(p_apply_bone);
+	if (parent_bone < 0) {
+		bone_rest_space.translate_local(src_bone_rest.origin);
+	} else {
+		bone_rest_space = p_skeleton->get_bone_global_pose(parent_bone);
+		bone_rest_space.translate_local(src_bone_rest.origin);
+	}
+	Vector3 forward_vector = bone_rest_space.basis.get_rotation_quaternion().xform_inv(p_target - bone_rest_space.origin);
+	if (forward_vector.is_zero_approx()) {
+		return;
+	}
+	forward_vector.normalize();
+
+	Quaternion destination;
+	if (setting.use_euler) {
+		Vector3 current_vector = LookAtModifier3D::get_basis_vector_from_bone_axis(src_bone_rest.basis, setting.forward_axis).normalized();
+		Vector2 src_vec2 = LookAtModifier3D::get_projection_vector(src_bone_rest.basis.xform_inv(forward_vector), setting.primary_rotation_axis).normalized();
+		Vector2 dst_vec2 = LookAtModifier3D::get_projection_vector(src_bone_rest.basis.xform_inv(current_vector), setting.primary_rotation_axis).normalized();
+		real_t calculated_angle = src_vec2.angle_to(dst_vec2);
+		Transform3D primary_result = src_bone_rest.rotated_local(get_vector_from_axis(setting.primary_rotation_axis), calculated_angle);
+		Transform3D current_result = primary_result;
+		if (setting.use_secondary_rotation) {
+			Vector3::Axis secondary_rotation_axis = LookAtModifier3D::get_secondary_rotation_axis(setting.forward_axis, setting.primary_rotation_axis);
+			current_vector = LookAtModifier3D::get_basis_vector_from_bone_axis(primary_result.basis, setting.forward_axis).normalized();
+			src_vec2 = LookAtModifier3D::get_projection_vector(primary_result.basis.xform_inv(forward_vector), secondary_rotation_axis).normalized();
+			dst_vec2 = LookAtModifier3D::get_projection_vector(primary_result.basis.xform_inv(current_vector), secondary_rotation_axis).normalized();
+			calculated_angle = src_vec2.angle_to(dst_vec2);
+			current_result = primary_result.rotated_local(get_vector_from_axis(secondary_rotation_axis), calculated_angle);
+		}
+		destination = current_result.basis.get_rotation_quaternion();
+	} else {
+		Vector3 current_vector = LookAtModifier3D::get_basis_vector_from_bone_axis(src_bone_rest.basis, setting.forward_axis).normalized();
+		destination = Quaternion(current_vector, forward_vector) * src_bone_rest.basis.get_rotation_quaternion();
+	}
+
+	p_skeleton->set_bone_pose_rotation(p_apply_bone, p_skeleton->get_bone_pose_rotation(p_apply_bone).slerp(destination, p_amount));
+}
+
+void BoneConstraint3D::_process_convert(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, const Transform3D &p_destination, float p_amount) {
+	const ConstraintSetting &setting = settings[p_index];
+	bool rel = setting.is_relative_effective(constraint_type);
+
+	Transform3D destination = p_destination;
+	double point = 0.0;
+	int axis = (int)setting.reference_axis;
+	switch (setting.reference_transform_mode) {
+		case TRANSFORM_MODE_POSITION: {
+			point = destination.origin[axis];
+		} break;
+		case TRANSFORM_MODE_ROTATION: {
+			Quaternion tgt_rot = destination.basis.get_rotation_quaternion();
+			point = get_roll_angle(tgt_rot, get_vector_from_axis(setting.reference_axis));
+		} break;
+		case TRANSFORM_MODE_SCALE: {
+			point = destination.basis.get_scale()[axis];
+		} break;
+	}
+
+	destination = p_skeleton->get_bone_pose(p_apply_bone);
+	if (Math::is_equal_approx(setting.reference_range_min, setting.reference_range_max)) {
+		point = point <= (double)setting.reference_range_min ? 0 : 1;
+	} else {
+		point = Math::inverse_lerp((double)setting.reference_range_min, (double)setting.reference_range_max, point);
+	}
+	point = Math::lerp((double)setting.apply_range_min, (double)setting.apply_range_max, CLAMP(point, 0, 1));
+	axis = (int)setting.apply_axis;
+
+	switch (setting.apply_transform_mode) {
+		case TRANSFORM_MODE_POSITION: {
+			if (setting.additive) {
+				point = p_skeleton->get_bone_pose(p_apply_bone).origin[axis] + point;
+			} else if (rel) {
+				point = p_skeleton->get_bone_rest(p_apply_bone).origin[axis] + point;
+			}
+			destination.origin[axis] = point;
+		} break;
+		case TRANSFORM_MODE_ROTATION: {
+			Vector3 rot_axis = get_vector_from_axis(setting.apply_axis);
+			Vector3 dest_scl = destination.basis.get_scale();
+			if (influence < 1.0 || p_amount < 1.0) {
+				point = CLAMP(point, CMP_EPSILON - Math::PI, Math::PI - CMP_EPSILON);
+			}
+			Quaternion rot(rot_axis, point);
+			if (setting.additive) {
+				destination.basis = p_skeleton->get_bone_pose(p_apply_bone).basis.get_rotation_quaternion() * rot;
+			} else if (rel) {
+				destination.basis = p_skeleton->get_bone_rest(p_apply_bone).basis.get_rotation_quaternion() * rot;
+			} else {
+				destination.basis = rot;
+			}
+			destination.basis.scale_local(dest_scl);
+		} break;
+		case TRANSFORM_MODE_SCALE: {
+			Vector3 dest_scl = p_skeleton->get_bone_pose(p_apply_bone).basis.get_scale();
+			if (setting.additive) {
+				dest_scl[axis] = dest_scl[axis] * point;
+			} else if (rel) {
+				dest_scl = p_skeleton->get_bone_rest(p_apply_bone).basis.get_scale();
+				dest_scl[axis] = dest_scl[axis] * point;
+			} else {
+				dest_scl[axis] = point;
+			}
+			destination.basis = destination.basis.orthonormalized().scaled_local(dest_scl);
+		} break;
+	}
+
+	destination = p_skeleton->get_bone_pose(p_apply_bone).interpolate_with(destination, p_amount);
+	switch (setting.apply_transform_mode) {
+		case TRANSFORM_MODE_POSITION:
+			p_skeleton->set_bone_pose_position(p_apply_bone, destination.origin);
+			break;
+		case TRANSFORM_MODE_ROTATION:
+			p_skeleton->set_bone_pose_rotation(p_apply_bone, destination.basis.get_rotation_quaternion());
+			break;
+		case TRANSFORM_MODE_SCALE:
+			p_skeleton->set_bone_pose_scale(p_apply_bone, destination.basis.get_scale());
+			break;
+	}
+}
+
+void BoneConstraint3D::_process_copy(int p_index, Skeleton3D *p_skeleton, int p_apply_bone, const Transform3D &p_destination, float p_amount) {
+	const ConstraintSetting &setting = settings[p_index];
+	bool rel = setting.is_relative_effective(constraint_type);
+	Transform3D cur_pose = p_skeleton->get_bone_pose(p_apply_bone);
+	Transform3D rest_pose = p_skeleton->get_bone_rest(p_apply_bone);
+	Transform3D target = cur_pose;
+
+	if (setting.copy_flags & TRANSFORM_FLAG_POSITION) {
+		Vector3 pos = p_destination.origin;
+		for (int a = 0; a < 3; a++) {
+			if (!(setting.axis_flags & (1 << a))) {
+				pos[a] = 0.0f;
+				continue;
+			}
+			if (setting.invert_flags & (1 << a)) {
+				pos[a] = -pos[a];
+			}
+			if (setting.additive) {
+				target.origin[a] = cur_pose.origin[a] + pos[a];
+			} else if (rel) {
+				target.origin[a] = rest_pose.origin[a] + pos[a];
+			} else {
+				target.origin[a] = pos[a];
+			}
+		}
+		p_skeleton->set_bone_pose_position(p_apply_bone, cur_pose.origin.lerp(target.origin, p_amount));
+	}
+
+	if (setting.copy_flags & TRANSFORM_FLAG_ROTATION) {
+		Vector3 euler = p_destination.basis.get_euler();
+		for (int a = 0; a < 3; a++) {
+			if (!(setting.axis_flags & (1 << a))) {
+				euler[a] = 0.0f;
+			} else if (setting.invert_flags & (1 << a)) {
+				euler[a] = -euler[a];
+			}
+		}
+		Quaternion rot = Quaternion::from_euler(euler);
+		Quaternion base_rot = cur_pose.basis.get_rotation_quaternion();
+		Quaternion dst_rot = rot;
+		if (setting.additive) {
+			dst_rot = base_rot * rot;
+		} else if (rel) {
+			dst_rot = rest_pose.basis.get_rotation_quaternion() * rot;
+		}
+		p_skeleton->set_bone_pose_rotation(p_apply_bone, base_rot.slerp(dst_rot, p_amount));
+	}
+
+	if (setting.copy_flags & TRANSFORM_FLAG_SCALE) {
+		Vector3 scl = p_destination.basis.get_scale();
+		Vector3 cur_scl = cur_pose.basis.get_scale();
+		Vector3 rest_scl = rest_pose.basis.get_scale();
+		Vector3 dst_scl = cur_scl;
+		for (int a = 0; a < 3; a++) {
+			if (!(setting.axis_flags & (1 << a))) {
+				continue;
+			}
+			real_t v = scl[a];
+			if ((setting.invert_flags & (1 << a)) && !Math::is_zero_approx(v)) {
+				v = 1.0f / v;
+			}
+			if (setting.additive) {
+				dst_scl[a] = cur_scl[a] * v;
+			} else if (rel) {
+				dst_scl[a] = rest_scl[a] * v;
+			} else {
+				dst_scl[a] = v;
+			}
+		}
+		p_skeleton->set_bone_pose_scale(p_apply_bone, cur_scl.lerp(dst_scl, p_amount));
+	}
+}
+
+// ============================================================================
+// Merged from scene/3d/ik_modifier_3d.cpp
+// ============================================================================
+
+
+#include "core/config/engine.h"
+#include "scene/3d/path_3d.h"
+
+// --- JointSetting ---
+
+Vector3 IKModifier3D::JointSetting::get_rotation_axis_vector() const {
+	switch (rotation_axis) {
+		case ROTATION_AXIS_X:
+			return Vector3(1, 0, 0);
+		case ROTATION_AXIS_Y:
+			return Vector3(0, 1, 0);
+		case ROTATION_AXIS_Z:
+			return Vector3(0, 0, 1);
+		case ROTATION_AXIS_ALL:
+			return Vector3(0, 0, 0);
+		case ROTATION_AXIS_CUSTOM:
+			return rotation_axis_vector;
+	}
+	return Vector3(0, 0, 0);
+}
+
+Vector3 IKModifier3D::JointSetting::get_limitation_right_axis_vector() const {
+	switch (limitation_right_axis) {
+		case SECONDARY_DIRECTION_NONE:
+			return Vector3(0, 0, 0);
+		case SECONDARY_DIRECTION_PLUS_X:
+			return Vector3(1, 0, 0);
+		case SECONDARY_DIRECTION_MINUS_X:
+			return Vector3(-1, 0, 0);
+		case SECONDARY_DIRECTION_PLUS_Y:
+			return Vector3(0, 1, 0);
+		case SECONDARY_DIRECTION_MINUS_Y:
+			return Vector3(0, -1, 0);
+		case SECONDARY_DIRECTION_PLUS_Z:
+			return Vector3(0, 0, 1);
+		case SECONDARY_DIRECTION_MINUS_Z:
+			return Vector3(0, 0, -1);
+		case SECONDARY_DIRECTION_CUSTOM:
+			return limitation_right_axis_vector;
+	}
+	return Vector3(0, 0, 0);
+}
+
+Quaternion IKModifier3D::JointSetting::get_limitation_space(const Vector3 &p_local_forward) const {
+	if (limitation.is_null()) {
+		return Quaternion();
+	}
+	return limitation->make_space(p_local_forward, get_limitation_right_axis_vector(), limitation_rotation_offset);
+}
+
+Vector3 IKModifier3D::JointSetting::get_projected_rotation(const Quaternion &p_offset, const Vector3 &p_vector) const {
+	ERR_FAIL_COND_V(rotation_axis == ROTATION_AXIS_ALL, p_vector);
+	const double ALMOST_ONE = 1.0 - CMP_EPSILON;
+	Vector3 axis = get_rotation_axis_vector().normalized();
+	Vector3 local_vector = p_offset.xform_inv(p_vector);
+	double length = local_vector.length();
+	Vector3 projected = snap_vector_to_plane(axis, local_vector.normalized());
+	if (!Math::is_zero_approx(length)) {
+		projected = projected.normalized() * length;
+	}
+	if (Math::abs(local_vector.normalized().dot(axis)) > ALMOST_ONE) {
+		return p_vector;
+	}
+	return p_offset.xform(projected);
+}
+
+Vector3 IKModifier3D::JointSetting::get_limited_rotation(const Quaternion &p_offset, const Vector3 &p_vector, const Vector3 &p_forward) const {
+	ERR_FAIL_COND_V(limitation.is_null(), p_vector);
+	Vector3 local_vector = p_offset.xform_inv(p_vector);
+	float length = local_vector.length();
+	if (Math::is_zero_approx(length)) {
+		return p_vector;
+	}
+	Vector3 limited = limitation->solve(p_forward, get_limitation_right_axis_vector(), limitation_rotation_offset, local_vector.normalized()) * length;
+	return p_offset.xform(limited);
+}
+
+// --- ChainSetting ---
+
+Vector3 IKModifier3D::ChainSetting::get_pole_direction_vector() const {
+	switch (pole_direction) {
+		case SECONDARY_DIRECTION_NONE:
+			return Vector3(0, 0, 0);
+		case SECONDARY_DIRECTION_PLUS_X:
+			return Vector3(1, 0, 0);
+		case SECONDARY_DIRECTION_MINUS_X:
+			return Vector3(-1, 0, 0);
+		case SECONDARY_DIRECTION_PLUS_Y:
+			return Vector3(0, 1, 0);
+		case SECONDARY_DIRECTION_MINUS_Y:
+			return Vector3(0, -1, 0);
+		case SECONDARY_DIRECTION_PLUS_Z:
+			return Vector3(0, 0, 1);
+		case SECONDARY_DIRECTION_MINUS_Z:
+			return Vector3(0, 0, -1);
+		case SECONDARY_DIRECTION_CUSTOM:
+			return pole_direction_vector;
+	}
+	return Vector3(0, 0, 0);
+}
+
+void IKModifier3D::ChainSetting::clear_solver_info() {
+	for (uint32_t i = 0; i < solver_info_list.size(); i++) {
+		if (solver_info_list[i]) {
+			memdelete(solver_info_list[i]);
+			solver_info_list[i] = nullptr;
+		}
+	}
+	solver_info_list.clear();
+	if (root_joint_solver_info) {
+		memdelete(root_joint_solver_info);
+		root_joint_solver_info = nullptr;
+	}
+	if (mid_joint_solver_info) {
+		memdelete(mid_joint_solver_info);
+		mid_joint_solver_info = nullptr;
+	}
+}
+
+void IKModifier3D::ChainSetting::update_chain_coordinate(Skeleton3D *p_skeleton, int p_index, const Vector3 &p_position) {
+	if (Math::is_zero_approx(chain[p_index].distance_to(p_position))) {
+		return;
+	}
+	chain[p_index] = p_position;
+	cache_current_vector(p_skeleton, p_index);
+}
+
+void IKModifier3D::ChainSetting::update_chain_coordinate_bw(Skeleton3D *p_skeleton, int p_index, const Vector3 &p_position) {
+	if (Math::is_zero_approx(chain[p_index].distance_to(p_position))) {
+		return;
+	}
+	Vector3 result = p_position;
+	int HEAD = p_index - 1;
+	int TAIL = p_index;
+	if (HEAD >= 0 && HEAD < (int)solver_info_list.size()) {
+		IKModifier3DSolverInfo *solver_info = solver_info_list[HEAD];
+		if (solver_info) {
+			Vector3 old_head_to_tail = solver_info->current_vector;
+			Vector3 new_head_to_tail = (result - chain[HEAD]).normalized();
+			if (Math::is_equal_approx((double)old_head_to_tail.dot(new_head_to_tail), -1.0)) {
+				chain[TAIL] = chain[HEAD] + old_head_to_tail * solver_info->length;
+				return;
+			}
+		}
+	}
+	chain[p_index] = result;
+	cache_current_vector(p_skeleton, p_index);
+}
+
+void IKModifier3D::ChainSetting::update_chain_coordinate_fw(Skeleton3D *p_skeleton, int p_index, const Vector3 &p_position) {
+	if (Math::is_zero_approx(chain[p_index].distance_to(p_position))) {
+		return;
+	}
+	Vector3 result = p_position;
+	int HEAD = p_index;
+	int TAIL = p_index + 1;
+	if (TAIL >= 0 && TAIL < (int)solver_info_list.size()) {
+		IKModifier3DSolverInfo *solver_info = solver_info_list[HEAD];
+		if (solver_info) {
+			Vector3 old_head_to_tail = solver_info->current_vector;
+			Vector3 new_head_to_tail = (chain[TAIL] - result).normalized();
+			if (Math::is_equal_approx((double)old_head_to_tail.dot(new_head_to_tail), -1.0)) {
+				chain[HEAD] = chain[TAIL] - old_head_to_tail * solver_info->length;
+				return;
+			}
+		}
+	}
+	chain[p_index] = result;
+	cache_current_vector(p_skeleton, p_index);
+}
+
+void IKModifier3D::ChainSetting::cache_current_vector(Skeleton3D *p_skeleton, int p_index) {
+	int cur_head = p_index - 1;
+	int cur_tail = p_index;
+	if (cur_head >= 0 && cur_head < (int)solver_info_list.size()) {
+		IKModifier3DSolverInfo *solver_info = solver_info_list[cur_head];
+		if (solver_info) {
+			solver_info->current_vector = (chain[cur_tail] - chain[cur_head]).normalized();
+		}
+	}
+	cur_head = p_index;
+	cur_tail = p_index + 1;
+	if (cur_tail < (int)chain.size() && cur_head < (int)solver_info_list.size()) {
+		IKModifier3DSolverInfo *solver_info = solver_info_list[cur_head];
+		if (solver_info) {
+			solver_info->current_vector = (chain[cur_tail] - chain[cur_head]).normalized();
+		}
+	}
+}
+
+void IKModifier3D::ChainSetting::cache_current_vectors(Skeleton3D *p_skeleton) {
+	for (uint32_t i = 0; i < joints.size(); i++) {
+		int HEAD = i;
+		int TAIL = i + 1;
+		if (HEAD >= (int)solver_info_list.size() || TAIL >= (int)chain.size()) {
+			break;
+		}
+		IKModifier3DSolverInfo *solver_info = solver_info_list[HEAD];
+		if (!solver_info) {
+			continue;
+		}
+		solver_info->current_vector = (chain[TAIL] - chain[HEAD]).normalized();
+	}
+}
+
+void IKModifier3D::ChainSetting::init_current_joint_rotations(Skeleton3D *p_skeleton) {
+	if (root_bone.bone < 0) {
+		return;
+	}
+	Quaternion parent_gpose;
+	int parent = p_skeleton->get_bone_parent(root_bone.bone);
+	if (parent >= 0) {
+		parent_gpose = p_skeleton->get_bone_global_pose(parent).basis.get_rotation_quaternion();
+	}
+	for (uint32_t i = 0; i < joints.size(); i++) {
+		IKModifier3DSolverInfo *solver_info = solver_info_list[i];
+		if (!solver_info) {
+			continue;
+		}
+		solver_info->current_lrest = p_skeleton->get_bone_pose(joints[i].bone).basis.get_rotation_quaternion();
+		solver_info->current_grest = parent_gpose * solver_info->current_lrest;
+		solver_info->current_grest.normalize();
+		solver_info->current_lpose = solver_info->current_lrest;
+		solver_info->current_gpose = solver_info->current_grest;
+		parent_gpose = solver_info->current_gpose;
+	}
+	cache_current_vectors(p_skeleton);
+}
+
+void IKModifier3D::ChainSetting::cache_iterate_joint_rotations(Skeleton3D *p_skeleton, double p_angular_delta_limit) {
+	Transform3D parent_gpose_tr;
+	int parent = p_skeleton->get_bone_parent(root_bone.bone);
+	if (parent >= 0) {
+		parent_gpose_tr = p_skeleton->get_bone_global_pose(parent);
+	}
+	Quaternion parent_gpose = parent_gpose_tr.basis.get_rotation_quaternion();
+
+	for (uint32_t i = 0; i < joints.size(); i++) {
+		int HEAD = i;
+		IKModifier3DSolverInfo *solver_info = solver_info_list[HEAD];
+		if (!solver_info) {
+			continue;
+		}
+		solver_info->current_lrest = p_skeleton->get_bone_pose(joints[HEAD].bone).basis.get_rotation_quaternion();
+		solver_info->current_grest = parent_gpose * solver_info->current_lrest;
+		solver_info->current_grest.normalize();
+		Vector3 from = solver_info->forward_vector;
+		Vector3 to = solver_info->current_grest.xform_inv(solver_info->current_vector).normalized();
+		Quaternion prev = solver_info->current_lpose;
+		if (joint_settings[HEAD].rotation_axis == ROTATION_AXIS_ALL) {
+			solver_info->current_lpose = solver_info->current_lrest * get_swing(Quaternion(from, to), from);
+		} else {
+			solver_info->current_lpose = solver_info->current_lrest * get_from_to_rotation_by_axis(from, to, joint_settings[HEAD].get_rotation_axis_vector().normalized());
+		}
+		double diff = prev.angle_to(solver_info->current_lpose);
+		if (!Math::is_zero_approx(diff)) {
+			solver_info->current_lpose = prev.slerp(solver_info->current_lpose, MIN(1.0, p_angular_delta_limit / diff));
+		}
+		solver_info->current_gpose = parent_gpose * solver_info->current_lpose;
+		solver_info->current_gpose.normalize();
+		parent_gpose = solver_info->current_gpose;
+	}
+
+	if (chain.is_empty()) {
+		return;
+	}
+	chain[0] = p_skeleton->get_bone_global_pose(root_bone.bone).origin;
+	for (uint32_t i = 0; i < solver_info_list.size(); i++) {
+		int HEAD = i;
+		int TAIL = i + 1;
+		IKModifier3DSolverInfo *solver_info = solver_info_list[HEAD];
+		if (!solver_info || TAIL >= (int)chain.size()) {
+			continue;
+		}
+		chain[TAIL] = chain[HEAD] + solver_info->current_gpose.xform(solver_info->forward_vector) * solver_info->length;
+	}
+	cache_current_vectors(p_skeleton);
+}
+
+void IKModifier3D::ChainSetting::init_iterate_joints(Skeleton3D *p_skeleton, bool p_mutable_bone_axes) {
+	chain.clear();
+	bool extends_end = extend_end_bone && end_bone_length > 0;
+	for (uint32_t i = 0; i < joints.size(); i++) {
+		chain.push_back(p_skeleton->get_bone_global_pose(joints[i].bone).origin);
+		bool last = i == joints.size() - 1;
+		if (last && extends_end) {
+			Vector3 axis = IKModifier3D::get_bone_axis(p_skeleton, end_bone.bone, end_bone_direction, p_mutable_bone_axes);
+			if (axis.is_zero_approx()) {
+				continue;
+			}
+			if (!solver_info_list[i]) {
+				solver_info_list[i] = memnew(IKModifier3DSolverInfo);
+			}
+			solver_info_list[i]->forward_vector = snap_vector_to_plane(joint_settings[i].get_rotation_axis_vector(), axis.normalized());
+			solver_info_list[i]->length = end_bone_length;
+			chain.push_back(p_skeleton->get_bone_global_pose(joints[i].bone).xform(axis * end_bone_length));
+		} else if (!last) {
+			Vector3 axis = p_skeleton->get_bone_rest(joints[i + 1].bone).origin;
+			if (axis.is_zero_approx()) {
+				continue;
+			}
+			if (!solver_info_list[i]) {
+				solver_info_list[i] = memnew(IKModifier3DSolverInfo);
+			}
+			solver_info_list[i]->forward_vector = snap_vector_to_plane(joint_settings[i].get_rotation_axis_vector(), axis.normalized());
+			solver_info_list[i]->length = axis.length();
+		}
+	}
+	init_current_joint_rotations(p_skeleton);
+}
+
+int32_t IKModifier3D::ChainSetting::find_nearest_point(const Vector3 &p_origin, double p_length_sq, const PackedVector3Array &p_points, bool p_is_path_closed, uint32_t p_first, double *r_ret) const {
+	ERR_FAIL_COND_V(p_first >= p_points.size(), p_points.size() - 1);
+	uint32_t i = p_first;
+	if (p_is_path_closed) {
+		while (true) {
+			if (p_origin.distance_squared_to(p_points[i]) >= p_length_sq) {
+				break;
+			}
+			i++;
+			i = Math::posmod(i, p_points.size());
+			if (i == p_first) {
+				i = p_points.size();
+				break;
+			}
+		}
+	} else {
+		while (i < p_points.size()) {
+			if (p_origin.distance_squared_to(p_points[i]) >= p_length_sq) {
+				break;
+			}
+			i++;
+		}
+	}
+	if (i == 0) {
+		*r_ret = 0.0;
+		return p_first;
+	} else if (i >= p_points.size()) {
+		*r_ret = 1.0;
+		return i;
+	}
+	*r_ret = Math::inverse_lerp((double)p_origin.distance_squared_to(p_points[i - 1]), (double)p_origin.distance_squared_to(p_points[i]), p_length_sq);
+	return i - 1;
+}
+
+void IKModifier3D::ChainSetting::cache_spline_joint_rotations(Skeleton3D *p_skeleton, bool p_use_tilt) {
+	Transform3D parent_gpose_tr;
+	int parent = p_skeleton->get_bone_parent(root_bone.bone);
+	if (parent >= 0) {
+		parent_gpose_tr = p_skeleton->get_bone_global_pose(parent);
+	}
+	Quaternion parent_gpose = parent_gpose_tr.basis.get_rotation_quaternion();
+
+	if (p_use_tilt) {
+		double parent_twist = 0.0;
+		for (uint32_t i = 0; i < joints.size(); i++) {
+			int HEAD = i;
+			IKModifier3DSolverInfo *solver_info = solver_info_list[HEAD];
+			if (!solver_info) {
+				continue;
+			}
+			solver_info->current_lrest = p_skeleton->get_bone_pose(joints[HEAD].bone).basis.get_rotation_quaternion();
+			solver_info->current_grest = parent_gpose * solver_info->current_lrest;
+			solver_info->current_grest.normalize();
+			Vector3 from = solver_info->forward_vector;
+			Vector3 to = solver_info->current_grest.xform_inv(solver_info->current_vector).normalized();
+
+			Basis b = get_swing(Quaternion(from, to), from);
+			b.rotate_local(from, twists[HEAD] - parent_twist);
+			parent_twist = twists[HEAD];
+			solver_info->current_lpose = solver_info->current_lrest * b.get_rotation_quaternion();
+
+			solver_info->current_gpose = parent_gpose * solver_info->current_lpose;
+			solver_info->current_gpose.normalize();
+			parent_gpose = solver_info->current_gpose;
+		}
+	} else {
+		for (uint32_t i = 0; i < joints.size(); i++) {
+			int HEAD = i;
+			IKModifier3DSolverInfo *solver_info = solver_info_list[HEAD];
+			if (!solver_info) {
+				continue;
+			}
+			solver_info->current_lrest = p_skeleton->get_bone_pose(joints[HEAD].bone).basis.get_rotation_quaternion();
+			solver_info->current_grest = parent_gpose * solver_info->current_lrest;
+			solver_info->current_grest.normalize();
+			Vector3 from = solver_info->forward_vector;
+			Vector3 to = solver_info->current_grest.xform_inv(solver_info->current_vector).normalized();
+
+			solver_info->current_lpose = solver_info->current_lrest * get_swing(Quaternion(from, to), from);
+
+			solver_info->current_gpose = parent_gpose * solver_info->current_lpose;
+			solver_info->current_gpose.normalize();
+			parent_gpose = solver_info->current_gpose;
+		}
+	}
+	cache_current_vectors(p_skeleton);
+}
+
+void IKModifier3D::ChainSetting::cache_two_bone_vectors(Skeleton3D *p_skeleton) {
+	if (!is_two_bone_valid()) {
+		return;
+	}
+	root_joint_solver_info->current_vector = (mid_pos - root_pos).normalized();
+	mid_joint_solver_info->current_vector = (end_pos - mid_pos).normalized();
+}
+
+void IKModifier3D::ChainSetting::init_two_bone_joint_rotations(Skeleton3D *p_skeleton) {
+	if (!is_two_bone_valid()) {
+		return;
+	}
+
+	Quaternion parent_gpose;
+	int parent = p_skeleton->get_bone_parent(root_bone.bone);
+	if (parent >= 0) {
+		parent_gpose = p_skeleton->get_bone_global_pose(parent).basis.get_rotation_quaternion();
+	}
+	root_joint_solver_info->current_lrest = p_skeleton->get_bone_pose(root_bone.bone).basis.get_rotation_quaternion();
+	root_joint_solver_info->current_grest = parent_gpose * root_joint_solver_info->current_lrest;
+	root_joint_solver_info->current_grest.normalize();
+	root_joint_solver_info->current_lpose = root_joint_solver_info->current_lrest;
+	root_joint_solver_info->current_gpose = root_joint_solver_info->current_grest;
+	parent_gpose = root_joint_solver_info->current_gpose;
+
+	mid_joint_solver_info->current_lrest = p_skeleton->get_bone_global_pose(root_bone.bone).basis.get_rotation_quaternion().inverse() *
+			p_skeleton->get_bone_global_pose(middle_bone.bone).basis.get_rotation_quaternion();
+	mid_joint_solver_info->current_grest = parent_gpose * mid_joint_solver_info->current_lrest;
+	mid_joint_solver_info->current_grest.normalize();
+	mid_joint_solver_info->current_lpose = mid_joint_solver_info->current_lrest;
+	mid_joint_solver_info->current_gpose = mid_joint_solver_info->current_grest;
+
+	cache_two_bone_vectors(p_skeleton);
+}
+
+void IKModifier3D::ChainSetting::cache_two_bone_joint_rotations(Skeleton3D *p_skeleton, const Vector3 &p_pole_destination) {
+	if (!is_two_bone_valid()) {
+		return;
+	}
+
+	Quaternion parent_gpose;
+	int parent = p_skeleton->get_bone_parent(root_bone.bone);
+	if (parent >= 0) {
+		parent_gpose = p_skeleton->get_bone_global_pose(parent).basis.get_rotation_quaternion();
+	}
+
+	root_joint_solver_info->current_lrest = p_skeleton->get_bone_pose(root_bone.bone).basis.get_rotation_quaternion();
+	root_joint_solver_info->current_grest = parent_gpose * root_joint_solver_info->current_lrest;
+	root_joint_solver_info->current_grest.normalize();
+
+	Vector3 from = root_joint_solver_info->forward_vector;
+	Vector3 to = root_joint_solver_info->current_grest.xform_inv(root_joint_solver_info->current_vector).normalized();
+	root_joint_solver_info->current_lpose = root_joint_solver_info->current_lrest * get_swing(Quaternion(from, to), from);
+
+	root_joint_solver_info->current_gpose = parent_gpose * root_joint_solver_info->current_lpose;
+	root_joint_solver_info->current_gpose.normalize();
+	Quaternion root_gpose = root_joint_solver_info->current_gpose;
+
+	mid_joint_solver_info->current_lrest = p_skeleton->get_bone_global_pose(root_bone.bone).basis.get_rotation_quaternion().inverse() *
+			p_skeleton->get_bone_global_pose(middle_bone.bone).basis.get_rotation_quaternion();
+	mid_joint_solver_info->current_grest = root_gpose * mid_joint_solver_info->current_lrest;
+	mid_joint_solver_info->current_grest.normalize();
+
+	from = mid_joint_solver_info->forward_vector;
+	to = mid_joint_solver_info->current_grest.xform_inv(mid_joint_solver_info->current_vector).normalized();
+	mid_joint_solver_info->current_lpose = mid_joint_solver_info->current_lrest * get_swing(Quaternion(from, to), from);
+
+	mid_joint_solver_info->current_gpose = root_gpose * mid_joint_solver_info->current_lpose;
+	mid_joint_solver_info->current_gpose.normalize();
+
+	bool is_pole_defined = pole_direction != SECONDARY_DIRECTION_NONE &&
+			(pole_direction != SECONDARY_DIRECTION_CUSTOM || !pole_direction_vector.is_zero_approx());
+	if (is_pole_defined) {
+		Vector3 pole_dir = get_projected_normal(root_pos, end_pos, p_pole_destination);
+		if (pole_dir.is_zero_approx()) {
+			return;
+		}
+		Vector3 a = mid_joint_solver_info->current_vector.normalized();
+		Vector3 k = mid_joint_solver_info->current_gpose.xform(get_pole_direction_vector()).normalized();
+		Vector3 n = pole_dir.cross((mid_pos - root_pos).normalized()).normalized();
+
+		if (a.is_zero_approx() || k.is_zero_approx() || n.is_zero_approx() || Math::is_zero_approx(n.dot(k))) {
+			return;
+		}
+		double c0 = n.dot(k - a * k.dot(a));
+		double c1 = n.dot(a.cross(k));
+		double c2 = n.dot(a) * k.dot(a);
+		double r = Math::sqrt(c0 * c0 + c1 * c1);
+		double cos_arg = CLAMP(-c2 / r, -1.0, 1.0);
+		double phi = Math::atan2(c1, c0);
+		double acosv = Math::acos(cos_arg);
+
+		double t1 = phi + acosv;
+		double t2 = phi - acosv;
+		Quaternion q1(a, t1);
+		Quaternion q2(a, t2);
+
+		Vector3 pole_proj = snap_vector_to_plane(n, pole_dir).normalized();
+		Vector3 k1p = snap_vector_to_plane(n, q1.xform(k)).normalized();
+		Vector3 k2p = snap_vector_to_plane(n, q2.xform(k)).normalized();
+		double s1 = pole_proj.is_zero_approx() ? Math::abs(t1) : k1p.dot(pole_proj);
+		double s2 = pole_proj.is_zero_approx() ? Math::abs(t2) : k2p.dot(pole_proj);
+
+		double t = s1 >= s2 ? t1 : t2;
+		Quaternion root_roll_rot(root_joint_solver_info->forward_vector, t);
+		Quaternion mid_roll_rot(mid_joint_solver_info->forward_vector, t);
+
+		root_joint_solver_info->current_lpose = root_joint_solver_info->current_lpose * root_roll_rot;
+		root_joint_solver_info->current_gpose = parent_gpose * root_joint_solver_info->current_lpose;
+		root_joint_solver_info->current_gpose.normalize();
+		root_gpose = root_joint_solver_info->current_gpose;
+
+		mid_joint_solver_info->current_lpose = root_roll_rot.inverse() * mid_joint_solver_info->current_lpose * mid_roll_rot;
+		mid_joint_solver_info->current_gpose = root_gpose * mid_joint_solver_info->current_lpose;
+		mid_joint_solver_info->current_gpose.normalize();
+	}
+}
+
+// --- IKModifier3D ---
+
+IKModifier3D::IKModifier3D(SolverType p_solver_type) :
+		solver_type(p_solver_type) {
+}
+
+IKModifier3D::~IKModifier3D() {
+	clear_settings();
+}
+
+void IKModifier3D::set_solver_type(SolverType p_solver_type) {
+	if (solver_type == p_solver_type) {
+		return;
+	}
+	solver_type = p_solver_type;
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		_make_simulation_dirty(i);
+	}
+	update_configuration_warnings();
+}
+
+#ifdef TOOLS_ENABLED
+void IKModifier3D::_make_gizmo_dirty() {
+	gizmo_dirty = true;
+}
+
+void IKModifier3D::_update_mutable_info() {}
+#endif // TOOLS_ENABLED
+
+void IKModifier3D::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+#ifdef TOOLS_ENABLED
+			if (Engine::is_editor_hint()) {
+				set_notify_local_transform(true);
+			}
+			_update_mutable_info();
+			_make_gizmo_dirty();
+#endif // TOOLS_ENABLED
+			_make_all_joints_dirty();
+		} break;
+#ifdef TOOLS_ENABLED
+		case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
+			_make_gizmo_dirty();
+		} break;
+#endif // TOOLS_ENABLED
+	}
+}
+
+PackedStringArray IKModifier3D::get_configuration_warnings() const {
+	PackedStringArray warnings = SkeletonModifier3D::get_configuration_warnings();
+	if (solver_type == SOLVER_SPLINE) {
+		for (uint32_t i = 0; i < settings.size(); i++) {
+			if (settings[i]->path_3d.is_empty()) {
+				warnings.push_back(RTR("Detecting settings with no Path3D set! Spline IK must have a Path3D to work."));
+				break;
+			}
+		}
+	} else {
+		for (uint32_t i = 0; i < settings.size(); i++) {
+			if (settings[i]->target_node.is_empty()) {
+				warnings.push_back(RTR("Detecting settings with no target set! IKModifier3D must have a target to work."));
+				break;
+			}
+		}
+		if (solver_type == SOLVER_TWO_BONE) {
+			for (uint32_t i = 0; i < settings.size(); i++) {
+				if (settings[i]->pole_node.is_empty()) {
+					warnings.push_back(RTR("Detecting settings with no pole target set! Two-Bone IK must have a pole target to work."));
+					break;
+				}
+			}
+		}
+	}
+	return warnings;
+}
+
+int IKModifier3D::get_setting_count() const {
+	return settings.size();
+}
+
+void IKModifier3D::set_setting_count(int p_count) {
+	ERR_FAIL_COND(p_count < 0);
+	int delta = p_count - (int)settings.size();
+	if (delta < 0) {
+		for (int i = delta; i < 0; i++) {
+			memdelete(settings[settings.size() + i]);
+			settings[settings.size() + i] = nullptr;
+		}
+	}
+	settings.resize(p_count);
+	if (delta > 0) {
+		for (int i = 1; i <= delta; i++) {
+			settings[p_count - i] = memnew(ChainSetting);
+		}
+	}
+}
+
+void IKModifier3D::clear_settings() {
+	set_setting_count(0);
+}
+
+void IKModifier3D::set_mutable_bone_axes(bool p_enabled) {
+	mutable_bone_axes = p_enabled;
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		_make_simulation_dirty(i);
+	}
+#ifdef TOOLS_ENABLED
+	_update_mutable_info();
+#endif // TOOLS_ENABLED
+}
+
+bool IKModifier3D::are_bone_axes_mutable() const {
+	return mutable_bone_axes;
+}
+
+void IKModifier3D::set_max_iterations(int p_max_iterations) {
+	max_iterations = p_max_iterations;
+}
+
+int IKModifier3D::get_max_iterations() const {
+	return max_iterations;
+}
+
+void IKModifier3D::set_min_distance(double p_min_distance) {
+	min_distance = p_min_distance;
+	min_distance_squared = min_distance * min_distance;
+}
+
+double IKModifier3D::get_min_distance() const {
+	return min_distance;
+}
+
+void IKModifier3D::set_angular_delta_limit(double p_angular_delta_limit) {
+	angular_delta_limit = p_angular_delta_limit;
+}
+
+double IKModifier3D::get_angular_delta_limit() const {
+	return angular_delta_limit;
+}
+
+void IKModifier3D::set_deterministic(bool p_deterministic) {
+	deterministic = p_deterministic;
+}
+
+bool IKModifier3D::is_deterministic() const {
+	return deterministic;
+}
+
+// Bone getters & setters.
+
+void IKModifier3D::set_root_bone_name(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->root_bone.name = p_bone_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		set_root_bone(p_index, sk->find_bone(p_bone_name));
+	}
+}
+
+String IKModifier3D::get_root_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	return settings[p_index]->root_bone.name;
+}
+
+void IKModifier3D::set_root_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->root_bone.bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		settings[p_index]->root_bone.name = sk->get_bone_name(p_bone);
+	}
+	_update_joints(p_index);
+}
+
+int IKModifier3D::get_root_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index]->root_bone.bone;
+}
+
+void IKModifier3D::set_middle_bone_name(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->middle_bone.name = p_bone_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		set_middle_bone(p_index, sk->find_bone(p_bone_name));
+	}
+}
+
+String IKModifier3D::get_middle_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	return settings[p_index]->middle_bone.name;
+}
+
+void IKModifier3D::set_middle_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->middle_bone.bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		settings[p_index]->middle_bone.name = sk->get_bone_name(p_bone);
+	}
+	_make_simulation_dirty(p_index);
+}
+
+int IKModifier3D::get_middle_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index]->middle_bone.bone;
+}
+
+void IKModifier3D::set_end_bone_name(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->end_bone.name = p_bone_name;
+	Skeleton3D *sk = get_skeleton();
+	if (sk) {
+		set_end_bone(p_index, sk->find_bone(p_bone_name));
+	}
+}
+
+String IKModifier3D::get_end_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	return settings[p_index]->end_bone.name;
+}
+
+void IKModifier3D::set_end_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->end_bone.bone = p_bone;
+	Skeleton3D *sk = get_skeleton();
+	if (sk && p_bone >= 0 && p_bone < sk->get_bone_count()) {
+		settings[p_index]->end_bone.name = sk->get_bone_name(p_bone);
+	}
+	_update_joints(p_index);
+}
+
+int IKModifier3D::get_end_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	if (solver_type == SOLVER_TWO_BONE) {
+		return settings[p_index]->get_two_bone_end_bone();
+	}
+	return settings[p_index]->end_bone.bone;
+}
+
+void IKModifier3D::set_use_virtual_end(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->use_virtual_end = p_enabled;
+	_make_simulation_dirty(p_index);
+}
+
+bool IKModifier3D::is_using_virtual_end(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return settings[p_index]->use_virtual_end;
+}
+
+void IKModifier3D::set_extend_end_bone(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->extend_end_bone = p_enabled;
+	_make_simulation_dirty(p_index);
+}
+
+bool IKModifier3D::is_end_bone_extended(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return settings[p_index]->extend_end_bone;
+}
+
+void IKModifier3D::set_end_bone_direction(int p_index, BoneDirection p_direction) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->end_bone_direction = p_direction;
+	_make_simulation_dirty(p_index);
+}
+
+SkeletonModifier3D::BoneDirection IKModifier3D::get_end_bone_direction(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), BONE_DIRECTION_FROM_PARENT);
+	return settings[p_index]->end_bone_direction;
+}
+
+void IKModifier3D::set_end_bone_length(int p_index, float p_length) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	float old = settings[p_index]->end_bone_length;
+	settings[p_index]->end_bone_length = p_length;
+#ifdef TOOLS_ENABLED
+	_make_gizmo_dirty();
+#endif // TOOLS_ENABLED
+	if (mutable_bone_axes && Math::is_zero_approx(old) == Math::is_zero_approx(p_length)) {
+		return;
+	}
+	_make_simulation_dirty(p_index);
+}
+
+float IKModifier3D::get_end_bone_length(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0.0f);
+	return settings[p_index]->end_bone_length;
+}
+
+void IKModifier3D::set_target_node(int p_index, const NodePath &p_target_node) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->target_node = p_target_node;
+	update_configuration_warnings();
+}
+
+NodePath IKModifier3D::get_target_node(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), NodePath());
+	return settings[p_index]->target_node;
+}
+
+void IKModifier3D::set_pole_node(int p_index, const NodePath &p_pole_node) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->pole_node = p_pole_node;
+	update_configuration_warnings();
+}
+
+NodePath IKModifier3D::get_pole_node(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), NodePath());
+	return settings[p_index]->pole_node;
+}
+
+void IKModifier3D::set_pole_direction(int p_index, SecondaryDirection p_axis) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->pole_direction = p_axis;
+}
+
+SkeletonModifier3D::SecondaryDirection IKModifier3D::get_pole_direction(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), SECONDARY_DIRECTION_NONE);
+	return settings[p_index]->pole_direction;
+}
+
+void IKModifier3D::set_pole_direction_vector(int p_index, const Vector3 &p_vector) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->pole_direction_vector = p_vector;
+}
+
+Vector3 IKModifier3D::get_pole_direction_vector(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3());
+	return settings[p_index]->get_pole_direction_vector();
+}
+
+bool IKModifier3D::is_valid(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	if (solver_type == SOLVER_TWO_BONE) {
+		return settings[p_index]->root_bone.bone != -1 &&
+				settings[p_index]->middle_bone.bone != -1 &&
+				settings[p_index]->is_two_bone_end_valid();
+	}
+	return settings[p_index]->root_bone.bone != -1 && settings[p_index]->end_bone.bone != -1;
+}
+
+void IKModifier3D::set_path_3d(int p_index, const NodePath &p_path_3d) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->path_3d = p_path_3d;
+	update_configuration_warnings();
+}
+
+NodePath IKModifier3D::get_path_3d(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), NodePath());
+	return settings[p_index]->path_3d;
+}
+
+void IKModifier3D::set_tilt_enabled(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->tilt_enabled = p_enabled;
+}
+
+bool IKModifier3D::is_tilt_enabled(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), false);
+	return settings[p_index]->tilt_enabled;
+}
+
+void IKModifier3D::set_tilt_fade_in(int p_index, int p_size) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->tilt_fade_in = p_size;
+}
+
+int IKModifier3D::get_tilt_fade_in(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index]->tilt_fade_in;
+}
+
+void IKModifier3D::set_tilt_fade_out(int p_index, int p_size) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	settings[p_index]->tilt_fade_out = p_size;
+}
+
+int IKModifier3D::get_tilt_fade_out(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	return settings[p_index]->tilt_fade_out;
+}
+
+// Individual joints.
+
+String IKModifier3D::get_joint_bone_name(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), String());
+	const LocalVector<BoneJoint> &joints = settings[p_index]->joints;
+	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), String());
+	return joints[p_joint].name;
+}
+
+int IKModifier3D::get_joint_bone(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), -1);
+	const LocalVector<BoneJoint> &joints = settings[p_index]->joints;
+	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), -1);
+	return joints[p_joint].bone;
+}
+
+void IKModifier3D::set_joint_count(int p_index, int p_count) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ERR_FAIL_COND(p_count < 0);
+	settings[p_index]->joints.resize(p_count);
+	settings[p_index]->joint_settings.resize(p_count);
+	settings[p_index]->twists.resize(p_count);
+	settings[p_index]->chain_length_accum.resize(p_count);
+	_make_simulation_dirty(p_index);
+}
+
+int IKModifier3D::get_joint_count(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), 0);
+	return settings[p_index]->joints.size();
+}
+
+void IKModifier3D::set_joint_rotation_axis(int p_index, int p_joint, RotationAxis p_axis) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ERR_FAIL_INDEX(p_joint, (int)settings[p_index]->joint_settings.size());
+	settings[p_index]->joint_settings[p_joint].rotation_axis = p_axis;
+	_make_simulation_dirty(p_index);
+}
+
+SkeletonModifier3D::RotationAxis IKModifier3D::get_joint_rotation_axis(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), ROTATION_AXIS_ALL);
+	const LocalVector<JointSetting> &js = settings[p_index]->joint_settings;
+	ERR_FAIL_INDEX_V(p_joint, (int)js.size(), ROTATION_AXIS_ALL);
+	return js[p_joint].rotation_axis;
+}
+
+void IKModifier3D::set_joint_rotation_axis_vector(int p_index, int p_joint, const Vector3 &p_vector) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ERR_FAIL_INDEX(p_joint, (int)settings[p_index]->joint_settings.size());
+	settings[p_index]->joint_settings[p_joint].rotation_axis_vector = p_vector;
+	_make_simulation_dirty(p_index);
+}
+
+Vector3 IKModifier3D::get_joint_rotation_axis_vector(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3());
+	const LocalVector<JointSetting> &js = settings[p_index]->joint_settings;
+	ERR_FAIL_INDEX_V(p_joint, (int)js.size(), Vector3());
+	return js[p_joint].get_rotation_axis_vector();
+}
+
+void IKModifier3D::set_joint_limitation(int p_index, int p_joint, const Ref<JointLimitation3D> &p_limitation) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ERR_FAIL_INDEX(p_joint, (int)settings[p_index]->joint_settings.size());
+	settings[p_index]->joint_settings[p_joint].limitation = p_limitation;
+	_make_simulation_dirty(p_index);
+}
+
+Ref<JointLimitation3D> IKModifier3D::get_joint_limitation(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Ref<JointLimitation3D>());
+	const LocalVector<JointSetting> &js = settings[p_index]->joint_settings;
+	ERR_FAIL_INDEX_V(p_joint, (int)js.size(), Ref<JointLimitation3D>());
+	return js[p_joint].limitation;
+}
+
+void IKModifier3D::set_joint_limitation_right_axis(int p_index, int p_joint, SecondaryDirection p_direction) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ERR_FAIL_INDEX(p_joint, (int)settings[p_index]->joint_settings.size());
+	settings[p_index]->joint_settings[p_joint].limitation_right_axis = p_direction;
+}
+
+SkeletonModifier3D::SecondaryDirection IKModifier3D::get_joint_limitation_right_axis(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), SECONDARY_DIRECTION_NONE);
+	const LocalVector<JointSetting> &js = settings[p_index]->joint_settings;
+	ERR_FAIL_INDEX_V(p_joint, (int)js.size(), SECONDARY_DIRECTION_NONE);
+	return js[p_joint].limitation_right_axis;
+}
+
+void IKModifier3D::set_joint_limitation_right_axis_vector(int p_index, int p_joint, const Vector3 &p_vector) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ERR_FAIL_INDEX(p_joint, (int)settings[p_index]->joint_settings.size());
+	settings[p_index]->joint_settings[p_joint].limitation_right_axis_vector = p_vector;
+}
+
+Vector3 IKModifier3D::get_joint_limitation_right_axis_vector(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3());
+	const LocalVector<JointSetting> &js = settings[p_index]->joint_settings;
+	ERR_FAIL_INDEX_V(p_joint, (int)js.size(), Vector3());
+	return js[p_joint].get_limitation_right_axis_vector();
+}
+
+void IKModifier3D::set_joint_limitation_rotation_offset(int p_index, int p_joint, const Quaternion &p_offset) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ERR_FAIL_INDEX(p_joint, (int)settings[p_index]->joint_settings.size());
+	settings[p_index]->joint_settings[p_joint].limitation_rotation_offset = p_offset;
+}
+
+Quaternion IKModifier3D::get_joint_limitation_rotation_offset(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Quaternion());
+	const LocalVector<JointSetting> &js = settings[p_index]->joint_settings;
+	ERR_FAIL_INDEX_V(p_joint, (int)js.size(), Quaternion());
+	return js[p_joint].limitation_rotation_offset;
+}
+
+Quaternion IKModifier3D::get_joint_limitation_space(int p_index, int p_joint, const Vector3 &p_forward) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Quaternion());
+	const LocalVector<JointSetting> &js = settings[p_index]->joint_settings;
+	ERR_FAIL_INDEX_V(p_joint, (int)js.size(), Quaternion());
+	return js[p_joint].get_limitation_space(p_forward);
+}
+
+Quaternion IKModifier3D::get_local_pose_rotation(Skeleton3D *p_skeleton, int p_bone, const Quaternion &p_global_pose_rotation) {
+	int parent = p_skeleton->get_bone_parent(p_bone);
+	if (parent < 0) {
+		return p_global_pose_rotation;
+	}
+	return p_skeleton->get_bone_global_pose(parent).basis.get_rotation_quaternion().inverse() * p_global_pose_rotation;
+}
+
+Vector3 IKModifier3D::get_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, BoneDirection p_direction, bool p_mutable_bone_axes) {
+	if (!p_skeleton || !p_skeleton->is_inside_tree()) {
+		return Vector3();
+	}
+	Vector3 axis;
+	if (p_direction == BONE_DIRECTION_FROM_PARENT) {
+		axis = p_skeleton->get_bone_rest(p_end_bone).basis.xform_inv(p_mutable_bone_axes ? p_skeleton->get_bone_pose(p_end_bone).origin : p_skeleton->get_bone_rest(p_end_bone).origin);
+		axis.normalize();
+	} else {
+		axis = get_vector_from_bone_axis(static_cast<BoneAxis>((int)p_direction));
+	}
+	return axis;
+}
+
+#ifdef TOOLS_ENABLED
+Transform3D IKModifier3D::get_bone_global_rest_mutable(Skeleton3D *p_skeleton, int p_bone) {
+	int current = p_bone;
+	Transform3D accum;
+	int parent = p_skeleton->get_bone_parent(current);
+	if (parent >= 0) {
+		accum = p_skeleton->get_bone_global_rest(parent);
+	}
+	Transform3D tr = p_skeleton->get_bone_rest(current);
+	tr.origin = p_skeleton->get_bone_pose_position(current);
+	accum *= tr;
+	return accum;
+}
+
+Transform3D IKModifier3D::get_chain_root_global_rest(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Transform3D());
+	return settings[p_index]->root_global_rest;
+}
+
+Vector3 IKModifier3D::get_bone_vector(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), Vector3());
+	const LocalVector<IKModifier3DSolverInfo *> &infos = settings[p_index]->solver_info_list;
+	ERR_FAIL_INDEX_V(p_joint, (int)infos.size(), Vector3());
+	if (!infos[p_joint]) {
+		return Vector3();
+	}
+	return infos[p_joint]->forward_vector * infos[p_joint]->length;
+}
+#endif // TOOLS_ENABLED
+
+// Internal lifecycle & validation.
+
+void IKModifier3D::_skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) {
+	_make_all_joints_dirty();
+}
+
+void IKModifier3D::_validate_bone_names() {
+	Skeleton3D *sk = get_skeleton();
+	if (!sk) {
+		return;
+	}
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		ChainSetting *s = settings[i];
+		if (!s->root_bone.name.is_empty()) {
+			s->root_bone.bone = sk->find_bone(s->root_bone.name);
+		}
+		if (!s->middle_bone.name.is_empty()) {
+			s->middle_bone.bone = sk->find_bone(s->middle_bone.name);
+		}
+		if (!s->end_bone.name.is_empty()) {
+			s->end_bone.bone = sk->find_bone(s->end_bone.name);
+		}
+		_update_joints(i);
+	}
+}
+
+void IKModifier3D::_make_all_joints_dirty() {
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		_update_joints(i);
+	}
+}
+
+void IKModifier3D::_update_joints(int p_index) {
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	ChainSetting *s = settings[p_index];
+	Skeleton3D *sk = get_skeleton();
+	if (!sk || s->root_bone.bone < 0 || s->end_bone.bone < 0) {
+		_make_simulation_dirty(p_index);
+		return;
+	}
+	if (solver_type != SOLVER_TWO_BONE) {
+		LocalVector<int> chain_bones;
+		int cur = s->end_bone.bone;
+		while (cur >= 0) {
+			chain_bones.push_back(cur);
+			if (cur == s->root_bone.bone) {
+				break;
+			}
+			cur = sk->get_bone_parent(cur);
+		}
+		if (chain_bones.is_empty() || chain_bones[chain_bones.size() - 1] != s->root_bone.bone) {
+			set_joint_count(p_index, 0);
+			return;
+		}
+		chain_bones.reverse();
+		set_joint_count(p_index, chain_bones.size());
+		for (uint32_t j = 0; j < chain_bones.size(); j++) {
+			s->joints[j].bone = chain_bones[j];
+			s->joints[j].name = sk->get_bone_name(chain_bones[j]);
+		}
+	}
+	_make_simulation_dirty(p_index);
+}
+
+void IKModifier3D::_clear_joints(int p_index) {
+	ChainSetting *setting = settings[p_index];
+	if (!setting) {
+		return;
+	}
+	setting->clear_solver_info();
+	setting->root_pos = Vector3();
+	setting->mid_pos = Vector3();
+	setting->end_pos = Vector3();
+	if (solver_type != SOLVER_TWO_BONE) {
+		setting->solver_info_list.resize_initialized(setting->joints.size());
+	}
+}
+
+void IKModifier3D::_make_simulation_dirty(int p_index) {
+	ChainSetting *setting = settings[p_index];
+	if (!setting) {
+		return;
+	}
+	setting->simulation_dirty = true;
+#ifdef TOOLS_ENABLED
+	if (!mutable_bone_axes) {
+		_make_gizmo_dirty();
+	}
+#endif // TOOLS_ENABLED
+}
+
+void IKModifier3D::_validate_axes(Skeleton3D *p_skeleton) const {
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		for (uint32_t j = 0; j < settings[i]->joints.size(); j++) {
+			_validate_axis(p_skeleton, i, j);
+		}
+	}
+}
+
+void IKModifier3D::_validate_axis(Skeleton3D *p_skeleton, int p_index, int p_joint) const {
+	RotationAxis axis = settings[p_index]->joint_settings[p_joint].rotation_axis;
+	if (axis == ROTATION_AXIS_ALL) {
+		return;
+	}
+	Vector3 rot = get_joint_rotation_axis_vector(p_index, p_joint).normalized();
+	Vector3 fwd;
+	if (p_joint < (int)settings[p_index]->joints.size() - 1) {
+		fwd = p_skeleton->get_bone_rest(settings[p_index]->joints[p_joint + 1].bone).origin;
+	} else if (settings[p_index]->extend_end_bone) {
+		fwd = IKModifier3D::get_bone_axis(p_skeleton, settings[p_index]->end_bone.bone, settings[p_index]->end_bone_direction, mutable_bone_axes);
+		if (fwd.is_zero_approx()) {
+			return;
+		}
+	}
+	fwd.normalize();
+	if (Math::is_equal_approx(Math::abs(rot.dot(fwd)), 1)) {
+		WARN_PRINT_ED("Setting: " + itos(p_index) + " Joint: " + itos(p_joint) + ": Rotation axis and forward vector are colinear.");
+	}
+}
+
+void IKModifier3D::_validate_pole_directions(Skeleton3D *p_skeleton) const {
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		_validate_pole_direction(p_skeleton, i);
+	}
+}
+
+void IKModifier3D::_validate_pole_direction(Skeleton3D *p_skeleton, int p_index) const {
+	ChainSetting *setting = settings[p_index];
+	SecondaryDirection dir = setting->pole_direction;
+	if (!is_valid(p_index) || dir == SECONDARY_DIRECTION_NONE) {
+		return;
+	}
+	Vector3 kv = get_pole_direction_vector(p_index).normalized();
+	int valid_end_bone = setting->get_two_bone_end_bone();
+	Vector3 axis = IKModifier3D::get_bone_axis(p_skeleton, valid_end_bone, setting->end_bone_direction, mutable_bone_axes);
+	Vector3 global_rest_origin;
+	if (setting->extend_end_bone && setting->end_bone_length > 0 && !axis.is_zero_approx()) {
+		global_rest_origin = p_skeleton->get_bone_global_rest(valid_end_bone).xform(axis * setting->end_bone_length);
+	} else {
+		global_rest_origin = p_skeleton->get_bone_global_rest(valid_end_bone).origin;
+	}
+	axis = global_rest_origin - p_skeleton->get_bone_global_rest(setting->middle_bone.bone).origin;
+	if (axis.is_zero_approx()) {
+		return;
+	}
+	Vector3 fwd = p_skeleton->get_bone_global_rest(setting->middle_bone.bone).basis.get_rotation_quaternion().xform_inv(axis).normalized();
+	if (Math::is_equal_approx(Math::abs(kv.dot(fwd)), 1)) {
+		WARN_PRINT_ED("Setting: " + itos(p_index) + ": Pole direction and forward vector are colinear.");
+	}
+}
+
+Transform3D IKModifier3D::_get_two_bone_global_rest(Skeleton3D *p_skeleton, int p_bone, int p_root) const {
+	if (!mutable_bone_axes) {
+		return p_skeleton->get_bone_global_rest(p_bone);
+	}
+	Transform3D tr = p_skeleton->get_bone_global_rest(p_root);
+	tr.origin = tr.origin - p_skeleton->get_bone_rest(p_root).origin + p_skeleton->get_bone_pose(p_root).origin;
+	LocalVector<int> path;
+	for (int bone = p_bone; bone != p_root && bone != -1; bone = p_skeleton->get_bone_parent(bone)) {
+		path.push_back(bone);
+	}
+	path.reverse();
+	for (int bone : path) {
+		tr = tr * Transform3D(p_skeleton->get_bone_rest(bone).basis, p_skeleton->get_bone_pose(bone).origin);
+	}
+	return tr;
+}
+
+void IKModifier3D::_init_joints(Skeleton3D *p_skeleton, int p_index) {
+	ChainSetting *setting = settings[p_index];
+	if (!setting) {
+		return;
+	}
+	cached_space = p_skeleton->get_global_transform_interpolated();
+
+	if (solver_type == SOLVER_TWO_BONE) {
+		if (!setting->simulation_dirty) {
+			if (mutable_bone_axes) {
+				_update_bone_axis(p_skeleton, p_index);
+			}
+			return;
+		}
+		_clear_joints(p_index);
+		if (setting->root_bone.bone == -1 || setting->middle_bone.bone == -1 || !setting->is_two_bone_end_valid()) {
+			return;
+		}
+		_update_bone_axis(p_skeleton, p_index);
+		setting->simulation_dirty = false;
+		return;
+	}
+
+	if (solver_type == SOLVER_SPLINE) {
+		if (!setting->simulation_dirty) {
+			if (mutable_bone_axes) {
+				_update_bone_axis(p_skeleton, p_index);
+			}
+			return;
+		}
+		_clear_joints(p_index);
+		setting->chain.clear();
+		bool extends_end = setting->extend_end_bone && setting->end_bone_length > 0;
+		double accum = 0.0;
+		for (uint32_t i = 0; i < setting->joints.size(); i++) {
+			setting->chain.push_back(p_skeleton->get_bone_global_pose(setting->joints[i].bone).origin);
+			bool last = i == setting->joints.size() - 1;
+			if (last && extends_end) {
+				Vector3 axis = IKModifier3D::get_bone_axis(p_skeleton, setting->end_bone.bone, setting->end_bone_direction, mutable_bone_axes);
+				if (axis.is_zero_approx()) {
+					setting->chain_length_accum[i] = accum;
+					continue;
+				}
+				setting->solver_info_list[i] = memnew(IKModifier3DSolverInfo);
+				setting->solver_info_list[i]->forward_vector = axis.normalized();
+				setting->solver_info_list[i]->length = setting->end_bone_length;
+				setting->chain.push_back(p_skeleton->get_bone_global_pose(setting->joints[i].bone).xform(axis * setting->end_bone_length));
+			} else if (!last) {
+				Vector3 axis = p_skeleton->get_bone_rest(setting->joints[i + 1].bone).origin;
+				if (axis.is_zero_approx()) {
+					setting->chain_length_accum[i] = accum;
+					continue;
+				}
+				setting->solver_info_list[i] = memnew(IKModifier3DSolverInfo);
+				setting->solver_info_list[i]->forward_vector = axis.normalized();
+				setting->solver_info_list[i]->length = axis.length();
+			}
+			if (setting->solver_info_list[i]) {
+				accum += setting->solver_info_list[i]->length;
+			}
+			setting->chain_length_accum[i] = accum;
+		}
+		if (mutable_bone_axes) {
+			_update_bone_axis(p_skeleton, p_index);
+#ifdef TOOLS_ENABLED
+		} else {
+			_make_gizmo_dirty();
+#endif // TOOLS_ENABLED
+		}
+		setting->init_current_joint_rotations(p_skeleton);
+		setting->simulation_dirty = false;
+		return;
+	}
+
+	// Iterative solvers (CCD, FABRIK, Jacobian).
+	if (setting->simulation_dirty) {
+		_clear_joints(p_index);
+		setting->init_iterate_joints(p_skeleton, mutable_bone_axes);
+		setting->simulation_dirty = false;
+	} else if (deterministic) {
+		setting->init_iterate_joints(p_skeleton, mutable_bone_axes);
+	}
+
+	if (mutable_bone_axes) {
+#ifdef TOOLS_ENABLED
+		_update_mutable_info();
+#endif // TOOLS_ENABLED
+		_update_bone_axis(p_skeleton, p_index);
+	}
+	setting->simulated = false;
+}
+
+void IKModifier3D::_update_bone_axis(Skeleton3D *p_skeleton, int p_index) {
+	ChainSetting *setting = settings[p_index];
+	if (!setting) {
+		return;
+	}
+
+	if (solver_type == SOLVER_TWO_BONE) {
+		if (!setting->mid_joint_solver_info) {
+			setting->mid_joint_solver_info = memnew(IKModifier3DSolverInfo);
+		}
+		if (!setting->root_joint_solver_info) {
+			setting->root_joint_solver_info = memnew(IKModifier3DSolverInfo);
+		}
+		int valid_end_bone = setting->get_two_bone_end_bone();
+		Vector3 axis = IKModifier3D::get_bone_axis(p_skeleton, valid_end_bone, setting->end_bone_direction, mutable_bone_axes);
+		Vector3 global_rest_origin;
+		if (setting->extend_end_bone && setting->end_bone_length > 0 && !axis.is_zero_approx()) {
+			setting->end_pos = p_skeleton->get_bone_global_pose(valid_end_bone).xform(axis * setting->end_bone_length);
+			global_rest_origin = _get_two_bone_global_rest(p_skeleton, valid_end_bone, setting->root_bone.bone).xform(axis * setting->end_bone_length);
+		} else {
+			setting->end_pos = p_skeleton->get_bone_global_pose(valid_end_bone).origin;
+			global_rest_origin = _get_two_bone_global_rest(p_skeleton, valid_end_bone, setting->root_bone.bone).origin;
+		}
+
+		Vector3 orig = _get_two_bone_global_rest(p_skeleton, setting->middle_bone.bone, setting->root_bone.bone).origin;
+		axis = global_rest_origin - orig;
+		global_rest_origin = orig;
+		if (!axis.is_zero_approx()) {
+			setting->mid_pos = p_skeleton->get_bone_global_pose(setting->middle_bone.bone).origin;
+			setting->mid_joint_solver_info->forward_vector = p_skeleton->get_bone_global_rest(setting->middle_bone.bone).basis.get_rotation_quaternion().xform_inv(axis).normalized();
+			setting->mid_joint_solver_info->length = axis.length();
+		} else {
+			_clear_joints(p_index);
+			return;
+		}
+
+		orig = _get_two_bone_global_rest(p_skeleton, setting->root_bone.bone, setting->root_bone.bone).origin;
+		axis = global_rest_origin - orig;
+		if (!axis.is_zero_approx()) {
+			setting->root_pos = p_skeleton->get_bone_global_pose(setting->root_bone.bone).origin;
+			setting->root_joint_solver_info->forward_vector = p_skeleton->get_bone_global_rest(setting->root_bone.bone).basis.get_rotation_quaternion().xform_inv(axis).normalized();
+			setting->root_joint_solver_info->length = axis.length();
+		} else {
+			_clear_joints(p_index);
+			return;
+		}
+
+		setting->init_two_bone_joint_rotations(p_skeleton);
+		double total_length = setting->root_joint_solver_info->length + setting->mid_joint_solver_info->length;
+		setting->cached_length_sq = total_length * total_length;
+		return;
+	}
+
+	const LocalVector<BoneJoint> &joints = setting->joints;
+	const LocalVector<IKModifier3DSolverInfo *> &solver_info_list = setting->solver_info_list;
+	int len = (int)solver_info_list.size() - 1;
+	bool use_rot_axis = is_iterative_solver();
+
+	for (int j = 0; j < len; j++) {
+		if (!solver_info_list[j]) {
+			continue;
+		}
+		Vector3 axis = p_skeleton->get_bone_pose(joints[j + 1].bone).origin;
+		if (axis.is_zero_approx()) {
+			continue;
+		}
+		if (use_rot_axis) {
+			solver_info_list[j]->forward_vector = snap_vector_to_plane(setting->joint_settings[j].get_rotation_axis_vector(), axis.normalized());
+		} else {
+			solver_info_list[j]->forward_vector = axis.normalized();
+		}
+		solver_info_list[j]->length = axis.length();
+	}
+	if (setting->extend_end_bone && len >= 0 && solver_info_list[len]) {
+		Vector3 axis = IKModifier3D::get_bone_axis(p_skeleton, setting->end_bone.bone, setting->end_bone_direction, mutable_bone_axes);
+		if (!axis.is_zero_approx()) {
+			if (use_rot_axis) {
+				solver_info_list[len]->forward_vector = snap_vector_to_plane(setting->joint_settings[len].get_rotation_axis_vector(), axis.normalized());
+			} else {
+				solver_info_list[len]->forward_vector = axis.normalized();
+			}
+			solver_info_list[len]->length = setting->end_bone_length;
+		}
+	}
+}
+
+void IKModifier3D::_process_modification(double p_delta) {
+	Skeleton3D *sk = get_skeleton();
+	if (!sk) {
+		return;
+	}
+	_process_ik(sk, p_delta);
+}
+
+void IKModifier3D::_process_ik(Skeleton3D *p_skeleton, double p_delta) {
+	Transform3D skel_inv = p_skeleton->get_global_transform_interpolated().affine_inverse();
+	for (uint32_t i = 0; i < settings.size(); i++) {
+		ChainSetting *setting = settings[i];
+		if (!setting) {
+			continue;
+		}
+		_init_joints(p_skeleton, i);
+
+		if (solver_type == SOLVER_TWO_BONE) {
+			if (!setting->is_two_bone_valid()) {
+				continue;
+			}
+			Node3D *target = dynamic_cast<Node3D *>(get_node_or_null(setting->target_node));
+			if (!target) {
+				continue;
+			}
+			Vector3 dest = skel_inv.xform(target->get_global_transform_interpolated().origin);
+			Vector3 pole_dest;
+			Node3D *pole = dynamic_cast<Node3D *>(get_node_or_null(setting->pole_node));
+			if (pole) {
+				pole_dest = skel_inv.xform(pole->get_global_transform_interpolated().origin);
+			}
+			_process_two_bone_joints(p_delta, p_skeleton, setting, dest, pole_dest);
+		} else if (solver_type == SOLVER_SPLINE) {
+			Path3D *path = dynamic_cast<Path3D *>(get_node_or_null(setting->path_3d));
+			if (!path || path->get_curve().is_null() || path->get_curve()->get_point_count() == 0) {
+				continue;
+			}
+			Transform3D curve_space = skel_inv * path->get_global_transform_interpolated();
+			_process_spline_joints(p_delta, p_skeleton, setting, path->get_curve(), curve_space);
+		} else {
+			if (setting->chain.is_empty()) {
+				continue;
+			}
+			Node3D *target = dynamic_cast<Node3D *>(get_node_or_null(setting->target_node));
+			if (!target) {
+				continue;
+			}
+			Vector3 dest = skel_inv.xform(target->get_global_transform_interpolated().origin);
+			_process_iterate_joints(p_delta, p_skeleton, setting, dest);
+		}
+	}
+}
+
+void IKModifier3D::_process_iterate_joints(double p_delta, Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination) {
+	double distance_to_target_sq = INFINITY;
+	int iteration_count = 0;
+
+	if (p_setting->simulated) {
+		distance_to_target_sq = p_setting->chain[p_setting->chain.size() - 1].distance_squared_to(p_destination);
+	}
+
+	while (distance_to_target_sq > min_distance_squared && iteration_count < max_iterations) {
+		switch (solver_type) {
+			case SOLVER_CCD:
+				_solve_ccd_iteration(p_skeleton, p_setting, p_destination);
+				break;
+			case SOLVER_FABRIK:
+				_solve_fabrik_iteration(p_skeleton, p_setting, p_destination);
+				break;
+			case SOLVER_JACOBIAN:
+				_solve_jacobian_iteration(p_skeleton, p_setting, p_destination);
+				break;
+			default:
+				break;
+		}
+		p_setting->cache_iterate_joint_rotations(p_skeleton, angular_delta_limit);
+		distance_to_target_sq = p_setting->chain[p_setting->chain.size() - 1].distance_squared_to(p_destination);
+		iteration_count++;
+	}
+
+	for (uint32_t i = 0; i < p_setting->solver_info_list.size(); i++) {
+		IKModifier3DSolverInfo *solver_info = p_setting->solver_info_list[i];
+		if (!solver_info || Math::is_zero_approx(solver_info->length)) {
+			continue;
+		}
+		p_skeleton->set_bone_pose_rotation(p_setting->joints[i].bone, solver_info->current_lpose);
+	}
+
+	p_setting->simulated = true;
+}
+
+void IKModifier3D::_solve_ccd_iteration(Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination) {
+	int joint_size = (int)p_setting->joints.size();
+	int chain_size = (int)p_setting->chain.size();
+
+	for (int ancestor = joint_size - 1; ancestor >= 0; ancestor--) {
+		for (int i = ancestor; i < joint_size; i++) {
+			IKModifier3DSolverInfo *solver_info = p_setting->solver_info_list[i];
+			if (!solver_info || Math::is_zero_approx(solver_info->length)) {
+				continue;
+			}
+			int HEAD = i;
+			int TAIL = i + 1;
+
+			Vector3 current_head = p_setting->chain[HEAD];
+			Vector3 current_effector = p_setting->chain[chain_size - 1];
+			Vector3 head_to_effector = current_effector - current_head;
+			Vector3 head_to_destination = p_destination - current_head;
+
+			if (Math::is_zero_approx(head_to_destination.length_squared() * head_to_effector.length_squared())) {
+				continue;
+			}
+
+			Quaternion to_rot = Quaternion(head_to_effector.normalized(), head_to_destination.normalized());
+			Vector3 to_tail = p_setting->chain[TAIL] - current_head;
+
+			p_setting->update_chain_coordinate_fw(p_skeleton, TAIL, current_head + to_rot.xform(to_tail));
+
+			if (p_setting->joint_settings[HEAD].rotation_axis != ROTATION_AXIS_ALL) {
+				p_setting->update_chain_coordinate_fw(p_skeleton, TAIL, p_setting->chain[HEAD] + p_setting->joint_settings[HEAD].get_projected_rotation(solver_info->current_grest, p_setting->chain[TAIL] - p_setting->chain[HEAD]));
+			}
+			if (p_setting->joint_settings[HEAD].limitation.is_valid()) {
+				p_setting->update_chain_coordinate_fw(p_skeleton, TAIL, p_setting->chain[HEAD] + p_setting->joint_settings[HEAD].get_limited_rotation(solver_info->current_grest, p_setting->chain[TAIL] - p_setting->chain[HEAD], solver_info->forward_vector));
+			}
+		}
+	}
+}
+
+void IKModifier3D::_solve_fabrik_iteration(Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination) {
+	int joint_size = (int)p_setting->joints.size();
+
+	// Backwards.
+	bool first = true;
+	for (int i = joint_size - 1; i >= 0; i--) {
+		IKModifier3DSolverInfo *solver_info = p_setting->solver_info_list[i];
+		if (!solver_info || Math::is_zero_approx(solver_info->length)) {
+			continue;
+		}
+		int HEAD = i;
+		int TAIL = i + 1;
+
+		if (first) {
+			p_setting->update_chain_coordinate_bw(p_skeleton, TAIL, p_destination);
+			first = false;
+		}
+
+		p_setting->update_chain_coordinate_bw(p_skeleton, HEAD, limit_length(p_setting->chain[TAIL], p_setting->chain[HEAD], solver_info->length));
+
+		if (p_setting->joint_settings[HEAD].rotation_axis != ROTATION_AXIS_ALL) {
+			p_setting->update_chain_coordinate_bw(p_skeleton, HEAD, p_setting->chain[TAIL] + p_setting->joint_settings[HEAD].get_projected_rotation(solver_info->current_grest, p_setting->chain[HEAD] - p_setting->chain[TAIL]));
+		}
+		if (p_setting->joint_settings[HEAD].limitation.is_valid()) {
+			p_setting->update_chain_coordinate_bw(p_skeleton, HEAD, p_setting->chain[TAIL] + p_setting->joint_settings[HEAD].get_limited_rotation(solver_info->current_grest, p_setting->chain[HEAD] - p_setting->chain[TAIL], solver_info->forward_vector));
+		}
+	}
+
+	// Forwards.
+	first = true;
+	for (int i = 0; i < joint_size; i++) {
+		IKModifier3DSolverInfo *solver_info = p_setting->solver_info_list[i];
+		if (!solver_info || Math::is_zero_approx(solver_info->length)) {
+			continue;
+		}
+		int HEAD = i;
+		int TAIL = i + 1;
+
+		if (first) {
+			p_setting->update_chain_coordinate_fw(p_skeleton, HEAD, p_skeleton->get_bone_global_pose(p_setting->joints[HEAD].bone).origin);
+			first = false;
+		}
+
+		p_setting->update_chain_coordinate_fw(p_skeleton, TAIL, limit_length(p_setting->chain[HEAD], p_setting->chain[TAIL], solver_info->length));
+
+		if (p_setting->joint_settings[HEAD].rotation_axis != ROTATION_AXIS_ALL) {
+			p_setting->update_chain_coordinate_fw(p_skeleton, TAIL, p_setting->chain[HEAD] + p_setting->joint_settings[HEAD].get_projected_rotation(solver_info->current_grest, p_setting->chain[TAIL] - p_setting->chain[HEAD]));
+		}
+		if (p_setting->joint_settings[HEAD].limitation.is_valid()) {
+			p_setting->update_chain_coordinate_fw(p_skeleton, TAIL, p_setting->chain[HEAD] + p_setting->joint_settings[HEAD].get_limited_rotation(solver_info->current_grest, p_setting->chain[TAIL] - p_setting->chain[HEAD], solver_info->forward_vector));
+		}
+	}
+}
+
+void IKModifier3D::_solve_jacobian_iteration(Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination) {
+	int joint_size = (int)p_setting->joints.size();
+	int chain_size = (int)p_setting->chain.size();
+
+	for (int i = 0; i < joint_size; i++) {
+		IKModifier3DSolverInfo *solver_info = p_setting->solver_info_list[i];
+		if (!solver_info || Math::is_zero_approx(solver_info->length)) {
+			continue;
+		}
+		int HEAD = i;
+		int TAIL = i + 1;
+
+		Vector3 current_head = p_setting->chain[HEAD];
+		Vector3 current_effector = p_setting->chain[chain_size - 1];
+		Vector3 head_to_effector = current_effector - current_head;
+		Vector3 effector_to_destination = p_destination - current_effector;
+		Vector3 axis = head_to_effector.cross(effector_to_destination);
+
+		if (Math::is_zero_approx(axis.length_squared())) {
+			continue;
+		}
+
+		Quaternion to_rot = Quaternion(axis.normalized(), MIN(axis.length() / MAX(CMP_EPSILON, head_to_effector.length_squared()), angular_delta_limit));
+
+		for (int j = TAIL; j < chain_size; j++) {
+			Vector3 to_tail = p_setting->chain[j] - current_head;
+			p_setting->update_chain_coordinate_fw(p_skeleton, j, current_head + to_rot.xform(to_tail));
+
+			int k = j - 1;
+			if (p_setting->joint_settings[k].rotation_axis != ROTATION_AXIS_ALL) {
+				p_setting->update_chain_coordinate_fw(p_skeleton, j, p_setting->chain[k] + p_setting->joint_settings[k].get_projected_rotation(solver_info->current_grest, p_setting->chain[j] - p_setting->chain[k]));
+			}
+			if (p_setting->joint_settings[k].limitation.is_valid()) {
+				p_setting->update_chain_coordinate_fw(p_skeleton, j, p_setting->chain[k] + p_setting->joint_settings[k].get_limited_rotation(solver_info->current_grest, p_setting->chain[j] - p_setting->chain[k], solver_info->forward_vector));
+			}
+		}
+	}
+}
+
+void IKModifier3D::_process_spline_joints(double p_delta, Skeleton3D *p_skeleton, ChainSetting *p_setting, Ref<Curve3D> p_curve, const Transform3D &p_curve_space) {
+	if (p_setting->solver_info_list.is_empty()) {
+		return;
+	}
+	uint32_t joint_count = p_setting->joints.size();
+	uint32_t joint_last = joint_count - 1;
+
+	double path_length = p_curve->get_baked_length();
+	PackedVector3Array points = p_curve->get_baked_points();
+	Vector<real_t> tilts = p_curve->get_baked_tilts();
+	Vector<real_t> dists = p_curve->get_baked_dist_cache();
+	uint32_t point_count = points.size();
+	if (point_count == 0) {
+		return;
+	}
+	uint32_t point_last = point_count - 1;
+
+	Vector3 start_point = p_curve_space.xform(points[0]);
+	Vector3 start_vector = start_point - p_skeleton->get_bone_global_pose(p_setting->joints[0].bone).origin;
+	double start_dist = start_vector.length();
+
+	uint32_t chain_path_start = 0;
+	while (chain_path_start < joint_count) {
+		if (p_setting->chain_length_accum[chain_path_start] >= start_dist) {
+			break;
+		}
+		chain_path_start++;
+	}
+	chain_path_start = (uint32_t)CLAMP((int)chain_path_start, 0, (int)joint_last);
+
+	double fade_in_denom = 0.0;
+	int denom_start = p_setting->tilt_fade_in > 0 ? CLAMP(p_setting->tilt_fade_in - 1, (int)chain_path_start, (int)joint_count) : -1;
+	int denom_start_to = denom_start - p_setting->tilt_fade_in;
+	if (denom_start >= 0) {
+		for (int i = denom_start; i > denom_start_to; i--) {
+			if (i < 0) {
+				break;
+			}
+			IKModifier3DSolverInfo *solver_info = p_setting->solver_info_list[i];
+			if (!solver_info || Math::is_zero_approx(solver_info->length)) {
+				continue;
+			}
+			fade_in_denom += solver_info->length;
+		}
+	}
+
+	uint32_t ended = 0;
+	Vector3 end_point = p_curve_space.xform(points[point_last]);
+	Vector3 end_vector;
+	double end_to_end_length = 0.0;
+	double fade_out_denom = 0.0;
+
+	uint32_t last_nearest = 0;
+	uint32_t last_nearest_next = 0;
+	double last_interpolate = 0.0;
+
+	for (uint32_t i = 0; i < p_setting->solver_info_list.size(); i++) {
+		IKModifier3DSolverInfo *solver_info = p_setting->solver_info_list[i];
+		if (!solver_info || Math::is_zero_approx(solver_info->length)) {
+			continue;
+		}
+		uint32_t HEAD = i;
+		uint32_t TAIL = i + 1;
+		bool is_fitting_first = HEAD == chain_path_start;
+
+		if (ended > 0) {
+			p_setting->update_chain_coordinate(p_skeleton, TAIL, limit_length(p_setting->chain[HEAD], p_setting->chain[HEAD] + end_vector, solver_info->length));
+			if (p_setting->tilt_enabled) {
+				if (p_setting->tilt_fade_out < 0) {
+					p_setting->twists[HEAD] = 0.0;
+				} else if (p_setting->tilt_fade_out == 0) {
+					p_setting->twists[HEAD] = tilts[point_last];
+				} else {
+					if (ended == 1) {
+						end_to_end_length = p_setting->chain[TAIL].distance_to(end_point);
+					} else {
+						end_to_end_length += solver_info->length;
+					}
+					double fade_out_dumping = CLAMP(end_to_end_length / fade_out_denom, 0.0, 1.0);
+					p_setting->twists[HEAD] = Math::lerp(ended == 1 ? Math::lerp((double)tilts[last_nearest], (double)tilts[last_nearest_next], last_interpolate) : (double)tilts[point_last], 0.0, fade_out_dumping);
+					ended = 2;
+				}
+			}
+			continue;
+		} else if (point_count == 1 || HEAD <= chain_path_start) {
+			bool update_coordinate = !is_fitting_first || point_count == 1;
+			if (update_coordinate) {
+				p_setting->update_chain_coordinate(p_skeleton, TAIL, limit_length(p_setting->chain[HEAD], p_setting->chain[HEAD] + start_vector, solver_info->length));
+			}
+			if (p_setting->tilt_enabled) {
+				if (p_setting->tilt_fade_in < 0) {
+					p_setting->twists[HEAD] = 0.0;
+				} else if (p_setting->tilt_fade_in == 0) {
+					p_setting->twists[HEAD] = tilts[0];
+				} else {
+					double fade_in_dumping = CLAMP((double)(p_setting->chain[HEAD].distance_to(start_point) / fade_in_denom), 0.0, 1.0);
+					p_setting->twists[HEAD] = Math::lerp((double)tilts[0], 0.0, fade_in_dumping);
+				}
+			}
+			if (update_coordinate) {
+				continue;
+			}
+		}
+
+		double lsq = solver_info->length * solver_info->length;
+		Vector3 head_in_chain_space = p_curve_space.xform_inv(p_setting->chain[HEAD]);
+		double interpolate = 0.0;
+		uint32_t nearest = p_setting->find_nearest_point(head_in_chain_space, lsq, points, p_curve->is_closed(), last_nearest, &interpolate);
+		if (nearest >= point_count) {
+			if (HEAD == 0) {
+				nearest = point_count - 2;
+				interpolate = 1.0;
+			} else {
+				Vector3 chain_end = (p_setting->chain[HEAD] - p_setting->chain[HEAD - 1]).normalized();
+				Vector3 path_end = (p_curve_space.xform(points[point_last]) - p_setting->chain[HEAD]).normalized();
+				double rest_path_length = path_length - Math::lerp((double)dists[last_nearest], (double)dists[last_nearest_next], last_interpolate);
+				interpolate = CLAMP(rest_path_length / solver_info->length, 0.0, 1.0);
+				end_vector = chain_end.lerp(path_end, interpolate);
+
+				int denom_end = p_setting->tilt_fade_out > 0 ? CLAMP((int)joint_last - p_setting->tilt_fade_out, 0, (int)last_nearest) : -1;
+				int denom_end_to = denom_end + p_setting->tilt_fade_out;
+				if (denom_end >= 0) {
+					for (int e = denom_end; e < denom_end_to; e++) {
+						if (e >= (int)joint_count) {
+							break;
+						}
+						IKModifier3DSolverInfo *end_solver_info = p_setting->solver_info_list[e];
+						if (!end_solver_info || Math::is_zero_approx(end_solver_info->length)) {
+							continue;
+						}
+						fade_out_denom += end_solver_info->length;
+					}
+				}
+				ended = 1;
+				i--;
+				continue;
+			}
+		}
+		uint32_t nearest_next = p_curve->is_closed() ? Math::posmod(nearest + 1, point_count) : CLAMP(nearest, (uint32_t)0, point_last);
+		p_setting->update_chain_coordinate(p_skeleton, TAIL, limit_length(p_setting->chain[HEAD], p_curve_space.xform(points[nearest].lerp(points[nearest_next], interpolate)), solver_info->length));
+		if (!is_fitting_first) {
+			p_setting->twists[HEAD] = Math::lerp((double)tilts[last_nearest], (double)tilts[last_nearest_next], last_interpolate);
+		}
+		last_nearest = nearest;
+		last_nearest_next = nearest_next;
+		last_interpolate = interpolate;
+	}
+
+	p_setting->cache_spline_joint_rotations(p_skeleton, p_setting->tilt_enabled);
+
+	for (uint32_t i = 0; i < p_setting->solver_info_list.size(); i++) {
+		IKModifier3DSolverInfo *solver_info = p_setting->solver_info_list[i];
+		if (!solver_info || Math::is_zero_approx(solver_info->length)) {
+			continue;
+		}
+		p_skeleton->set_bone_pose_rotation(p_setting->joints[i].bone, solver_info->current_lpose);
+	}
+}
+
+void IKModifier3D::_process_two_bone_joints(double p_delta, Skeleton3D *p_skeleton, ChainSetting *p_setting, const Vector3 &p_destination, const Vector3 &p_pole_destination) {
+	Vector3 destination = p_destination;
+	p_setting->root_pos = p_skeleton->get_bone_global_pose(p_setting->root_bone.bone).origin;
+	Vector3 root_to_destination = destination - p_setting->root_pos;
+	if (root_to_destination.is_zero_approx()) {
+		return;
+	}
+
+	double rd_len_sq = root_to_destination.length_squared();
+	if (rd_len_sq >= p_setting->cached_length_sq) {
+		Vector3 rd_nrm = root_to_destination.normalized();
+		p_setting->mid_pos = p_setting->root_pos + rd_nrm * p_setting->root_joint_solver_info->length;
+		p_setting->end_pos = p_setting->mid_pos + rd_nrm * p_setting->mid_joint_solver_info->length;
+	} else {
+		double sub = p_setting->root_joint_solver_info->length - p_setting->mid_joint_solver_info->length;
+		if (rd_len_sq < sub * sub) {
+			Vector3 push_nrm = (destination - p_setting->root_pos).normalized();
+			destination = p_setting->root_pos + push_nrm * Math::abs(sub);
+			root_to_destination = destination - p_setting->root_pos;
+		}
+		p_setting->end_pos = destination;
+
+		double l_chain = root_to_destination.length();
+		Vector3 u = root_to_destination.normalized();
+		Vector3 pole_vec = get_projected_normal(p_setting->root_pos, p_setting->end_pos, p_pole_destination);
+
+		double r_root = p_setting->root_joint_solver_info->length;
+		double r_mid = p_setting->mid_joint_solver_info->length;
+
+		double a = (l_chain * l_chain + r_root * r_root - r_mid * r_mid) / (2.0 * l_chain);
+		double h2 = MAX(0.0, r_root * r_root - a * a);
+		double h = Math::sqrt(h2);
+
+		Vector3 det_plus = (p_setting->root_pos + u * a) + pole_vec * h;
+		Vector3 det_minus = (p_setting->root_pos + u * a) - pole_vec * h;
+
+		p_setting->mid_pos = p_pole_destination.distance_squared_to(det_plus) < p_pole_destination.distance_squared_to(det_minus) ? det_plus : det_minus;
+	}
+
+	p_setting->cache_two_bone_vectors(p_skeleton);
+	p_setting->cache_two_bone_joint_rotations(p_skeleton, p_pole_destination);
+
+	p_skeleton->set_bone_pose_rotation(p_setting->root_bone.bone, p_setting->root_joint_solver_info->current_lpose);
+	p_skeleton->set_bone_pose_rotation(p_setting->middle_bone.bone, get_local_pose_rotation(p_skeleton, p_setting->middle_bone.bone, p_setting->mid_joint_solver_info->current_gpose));
+}

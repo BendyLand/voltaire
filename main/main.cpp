@@ -56,7 +56,7 @@
 #include "main/splash.gen.h"
 #include "modules/register_module_types.h"
 #include "platform/register_platform_apis.h"
-#include "scene/gui/color_rect.h"
+#include "scene/gui/color_picker.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/property_list_helper.h"
@@ -107,20 +107,18 @@
 
 #ifdef TOOLS_ENABLED
 #include "editor/doc/doc_data_class_path.gen.h"
-#include "editor/doc/doc_tools.h"
 #include "editor/editor_ui.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/project_manager/project_manager.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/translations/editor_translation.h"
 
 #if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
 #include "main/splash_editor.gen.h"
 #endif
 
 #ifndef DISABLE_DEPRECATED
-#include "editor/project_upgrade/project_converter_3_to_4.h"
+#include "editor/editor_ui.h"
 #endif // DISABLE_DEPRECATED
 #endif // TOOLS_ENABLED
 

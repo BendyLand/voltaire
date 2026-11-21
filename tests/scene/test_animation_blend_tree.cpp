@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_animation_blend_tree)
 
-#include "scene/animation/animation_blend_tree.h"
+#include "scene/animation/animation_tree.h"
 
 namespace TestAnimationBlendTree {
 

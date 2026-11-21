@@ -35,7 +35,7 @@
 #include "core/templates/rb_set.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/shader_types.h"
+#include "servers/rendering/shader_compiler.h"
 #include "servers/rendering/storage/utilities.h"
 #include "shader_language.h"
 

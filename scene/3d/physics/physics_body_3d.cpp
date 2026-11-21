@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "physics_body_3d.h"
+#include "scene/3d/physics/collision_object_3d.h"
 
 #include "core/config/engine.h"
-#include "scene/3d/physics/physical_bone_simulator_3d.h"
+#include "scene/3d/physics/collision_object_3d.h"
 #include "scene/main/scene_tree.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
@@ -1131,8 +1131,7 @@ PackedStringArray PhysicsBody3D::get_configuration_warnings() const {
 // Merged from scene/3d/physics/kinematic_collision_3d.cpp
 // ==========================================================================
 
-#include "kinematic_collision_3d.h"
-#include "scene/3d/physics/physics_body_3d.h"
+#include "scene/3d/physics/collision_object_3d.h"
 
 Vector3 KinematicCollision3D::get_travel() const { return result.travel; }
 
@@ -1183,10 +1182,10 @@ Vector3 KinematicCollision3D::get_collider_velocity(int p_collision_index) const
 // Merged from scene/3d/physics/physical_bone_simulator_3d.cpp
 // ==========================================================================
 
-#include "physical_bone_simulator_3d.h"
+#include "scene/3d/physics/collision_object_3d.h"
 
 #include "core/config/engine.h"
-#include "scene/3d/physics/physics_body_3d.h"
+#include "scene/3d/physics/collision_object_3d.h"
 
 void PhysicalBoneSimulator3D::_bone_pose_updated(Skeleton3D *p_skeleton, int p_bone_id) {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_bone_id, bones.size());
@@ -1254,3 +1253,2984 @@ void PhysicalBoneSimulator3D::set_bone_global_pose(int p_bone, const Transform3D
 }
 
 void PhysicalBoneSimulator3D::_skeleton_changed(Skeleton3D *p_old_skeleton, Skeleton3D *p_new_skeleton) {}
+
+// ============================================================================
+// Merged from scene/3d/physics/collision_object_3d.cpp
+// ============================================================================
+
+#include "collision_object_3d.h"
+
+#include "core/config/engine.h"
+#include "scene/main/scene_tree.h"
+#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+
+void CollisionState3D::init(bool p_area, PS3DE::BodyMode p_mode) {
+	area = p_area;
+	body_mode = p_mode;
+	if (area) {
+		rid = PhysicsServer3D::area_create();
+	} else {
+		rid = PhysicsServer3D::body_create();
+		PhysicsServer3D::body_set_mode(rid, body_mode);
+	}
+}
+
+void CollisionState3D::free_rid() {
+	clear_debug_shapes();
+	if (rid.is_valid() && PhysicsServer3D::is_initialized()) {
+		PhysicsServer3D::free_rid(rid);
+	}
+	rid = RID();
+}
+
+void CollisionState3D::clear_debug_shapes() {
+	if (!Renderer::data) {
+		debug_shapes_count = 0;
+		return;
+	}
+	for (KeyValue<uint32_t, ShapeData> &E : shapes) {
+		ShapeData &sd = E.value;
+		for (int i = 0; i < sd.shapes.size(); i++) {
+			if (sd.shapes[i].debug_shape.is_valid()) {
+				Renderer::free_rid(sd.shapes[i].debug_shape);
+				sd.shapes.write[i].debug_shape = RID();
+			}
+		}
+	}
+	debug_shapes_count = 0;
+}
+
+void CollisionState3D::on_transform_changed(const Node3D *p_owner) {
+	if (debug_shapes_count > 0 && !debug_shape_old_transform.is_equal_approx(p_owner->get_global_transform())) {
+		debug_shape_old_transform = p_owner->get_global_transform();
+		for (KeyValue<uint32_t, ShapeData> &E : shapes) {
+			ShapeData &sd = E.value;
+			if (sd.disabled) {
+				continue;
+			}
+			const ShapeData::ShapeBase *shape_bases = sd.shapes.ptr();
+			for (int i = 0; i < sd.shapes.size(); i++) {
+				if (shape_bases[i].debug_shape.is_null()) {
+					continue;
+				}
+				Renderer::instance_set_transform(shape_bases[i].debug_shape, debug_shape_old_transform * sd.xform);
+			}
+		}
+	}
+}
+
+void CollisionState3D::handle_notification(Node3D *p_owner, int p_what) {
+	switch (p_what) {
+		case Node::NOTIFICATION_ENTER_TREE: {
+			if (area) {
+				PhysicsServer3D::area_set_transform(rid, p_owner->get_global_transform());
+			}
+			if (p_owner->is_enabled() && p_owner->get_world_3d().is_valid()) {
+				RID space = p_owner->get_world_3d()->get_space();
+				if (area) {
+					PhysicsServer3D::area_set_space(rid, space);
+				} else {
+					PhysicsServer3D::body_set_space(rid, space);
+				}
+			}
+			update_pickable(p_owner);
+		} break;
+		case Node3D::NOTIFICATION_TRANSFORM_CHANGED: {
+			on_transform_changed(p_owner);
+			if (!only_update_transform_changes && area) {
+				PhysicsServer3D::area_set_transform(rid, p_owner->get_global_transform());
+			}
+		} break;
+		case Node3D::NOTIFICATION_VISIBILITY_CHANGED: {
+			update_pickable(p_owner);
+		} break;
+		case Node::NOTIFICATION_EXIT_TREE: {
+			clear_debug_shapes();
+			if (callback_lock == 0) {
+				if (area) {
+					PhysicsServer3D::area_set_space(rid, RID());
+				} else {
+					PhysicsServer3D::body_set_space(rid, RID());
+				}
+			}
+		} break;
+		case Node::NOTIFICATION_DISABLED: {
+			apply_disabled(p_owner);
+		} break;
+		case Node::NOTIFICATION_ENABLED: {
+			apply_enabled(p_owner);
+		} break;
+	}
+}
+
+void CollisionState3D::set_collision_layer(uint32_t p_layer) {
+	collision_layer = p_layer;
+	if (area) {
+		PhysicsServer3D::area_set_collision_layer(rid, p_layer);
+	} else {
+		PhysicsServer3D::body_set_collision_layer(rid, p_layer);
+	}
+}
+
+void CollisionState3D::set_collision_mask(uint32_t p_mask) {
+	collision_mask = p_mask;
+	if (area) {
+		PhysicsServer3D::area_set_collision_mask(rid, p_mask);
+	} else {
+		PhysicsServer3D::body_set_collision_mask(rid, p_mask);
+	}
+}
+
+void CollisionState3D::set_collision_layer_value(int p_layer_number, bool p_value) {
+	ERR_FAIL_COND_MSG(p_layer_number < 1 || p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t layer_new = collision_layer;
+	if (p_value) {
+		layer_new |= 1 << (p_layer_number - 1);
+	} else {
+		layer_new &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_layer(layer_new);
+}
+
+bool CollisionState3D::get_collision_layer_value(int p_layer_number) const {
+	ERR_FAIL_COND_V_MSG(p_layer_number < 1 || p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return collision_layer & (1 << (p_layer_number - 1));
+}
+
+void CollisionState3D::set_collision_mask_value(int p_layer_number, bool p_value) {
+	ERR_FAIL_COND_MSG(p_layer_number < 1 || p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t mask = collision_mask;
+	if (p_value) {
+		mask |= 1 << (p_layer_number - 1);
+	} else {
+		mask &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_mask(mask);
+}
+
+bool CollisionState3D::get_collision_mask_value(int p_layer_number) const {
+	ERR_FAIL_COND_V_MSG(p_layer_number < 1 || p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return collision_mask & (1 << (p_layer_number - 1));
+}
+
+void CollisionState3D::set_collision_priority(real_t p_priority) {
+	collision_priority = p_priority;
+	if (!area) {
+		PhysicsServer3D::body_set_collision_priority(rid, p_priority);
+	}
+}
+
+void CollisionState3D::set_disable_mode(Node3D *p_owner, DisableMode p_mode) {
+	if (disable_mode == p_mode) {
+		return;
+	}
+	bool disabled = p_owner->is_inside_tree() && !p_owner->is_enabled();
+	if (disabled) {
+		apply_enabled(p_owner);
+	}
+	disable_mode = p_mode;
+	if (disabled) {
+		apply_disabled(p_owner);
+	}
+}
+
+void CollisionState3D::apply_disabled(Node3D *p_owner) {
+	switch (disable_mode) {
+		case DISABLE_MODE_REMOVE: {
+			if (p_owner->is_inside_tree()) {
+				if (callback_lock > 0) {
+					ERR_PRINT("Disabling a collision node during a physics callback is not allowed.");
+				} else {
+					if (area) {
+						PhysicsServer3D::area_set_space(rid, RID());
+					} else {
+						PhysicsServer3D::body_set_space(rid, RID());
+					}
+				}
+			}
+		} break;
+		case DISABLE_MODE_MAKE_STATIC: {
+			if (!area && (body_mode != PS3DE::BODY_MODE_STATIC)) {
+				PhysicsServer3D::body_set_mode(rid, PS3DE::BODY_MODE_STATIC);
+			}
+		} break;
+		case DISABLE_MODE_KEEP_ACTIVE: {
+		} break;
+	}
+}
+
+void CollisionState3D::apply_enabled(Node3D *p_owner) {
+	switch (disable_mode) {
+		case DISABLE_MODE_REMOVE: {
+			if (p_owner->is_inside_tree() && p_owner->get_world_3d().is_valid()) {
+				RID space = p_owner->get_world_3d()->get_space();
+				if (area) {
+					PhysicsServer3D::area_set_space(rid, space);
+				} else {
+					PhysicsServer3D::body_set_space(rid, space);
+				}
+			}
+		} break;
+		case DISABLE_MODE_MAKE_STATIC: {
+			if (!area && (body_mode != PS3DE::BODY_MODE_STATIC)) {
+				PhysicsServer3D::body_set_mode(rid, body_mode);
+			}
+		} break;
+		case DISABLE_MODE_KEEP_ACTIVE: {
+		} break;
+	}
+}
+
+void CollisionState3D::set_body_mode(const Node3D *p_owner, PS3DE::BodyMode p_mode) {
+	ERR_FAIL_COND(area);
+	if (body_mode == p_mode) {
+		return;
+	}
+	body_mode = p_mode;
+	if (p_owner->is_inside_tree() && !p_owner->is_enabled() && (disable_mode == DISABLE_MODE_MAKE_STATIC)) {
+		return;
+	}
+	PhysicsServer3D::body_set_mode(rid, p_mode);
+}
+
+void CollisionState3D::set_ray_pickable(const Node3D *p_owner, bool p_ray_pickable) {
+	ray_pickable = p_ray_pickable;
+	update_pickable(p_owner);
+}
+
+void CollisionState3D::update_pickable(const Node3D *p_owner) {
+	if (!p_owner->is_inside_tree()) {
+		return;
+	}
+	bool pick = ray_pickable && p_owner->is_visible_in_tree();
+	if (area) {
+		PhysicsServer3D::area_set_ray_pickable(rid, pick);
+	} else {
+		PhysicsServer3D::body_set_ray_pickable(rid, pick);
+	}
+}
+
+// Inline shape slots.
+
+int CollisionState3D::add_inline_shape(const Ref<Shape3D> &p_shape, const Transform3D &p_xform, bool p_disabled) {
+	ShapeSlot slot;
+	slot.local_xform = p_xform;
+	slot.shape = p_shape;
+	slot.disabled = p_disabled;
+	slot.owner_id = create_shape_owner();
+	shape_owner_set_transform(slot.owner_id, p_xform);
+	shape_owner_set_disabled(slot.owner_id, p_disabled);
+	if (p_shape.is_valid()) {
+		shape_owner_add_shape(slot.owner_id, p_shape);
+	}
+	int idx = (int)inline_shapes.size();
+	inline_shapes.push_back(slot);
+	return idx;
+}
+
+void CollisionState3D::set_inline_shape(int p_index, const Ref<Shape3D> &p_shape) {
+	ERR_FAIL_INDEX(p_index, (int)inline_shapes.size());
+	ShapeSlot &slot = inline_shapes[p_index];
+	slot.shape = p_shape;
+	shape_owner_clear_shapes(slot.owner_id);
+	if (p_shape.is_valid()) {
+		shape_owner_add_shape(slot.owner_id, p_shape);
+	}
+}
+
+Ref<Shape3D> CollisionState3D::get_inline_shape(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)inline_shapes.size(), Ref<Shape3D>());
+	return inline_shapes[p_index].shape;
+}
+
+void CollisionState3D::set_inline_shape_transform(int p_index, const Transform3D &p_xform) {
+	ERR_FAIL_INDEX(p_index, (int)inline_shapes.size());
+	inline_shapes[p_index].local_xform = p_xform;
+	shape_owner_set_transform(inline_shapes[p_index].owner_id, p_xform);
+}
+
+Transform3D CollisionState3D::get_inline_shape_transform(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)inline_shapes.size(), Transform3D());
+	return inline_shapes[p_index].local_xform;
+}
+
+void CollisionState3D::set_inline_shape_disabled(int p_index, bool p_disabled) {
+	ERR_FAIL_INDEX(p_index, (int)inline_shapes.size());
+	inline_shapes[p_index].disabled = p_disabled;
+	shape_owner_set_disabled(inline_shapes[p_index].owner_id, p_disabled);
+}
+
+bool CollisionState3D::is_inline_shape_disabled(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)inline_shapes.size(), false);
+	return inline_shapes[p_index].disabled;
+}
+
+void CollisionState3D::remove_inline_shape(int p_index) {
+	ERR_FAIL_INDEX(p_index, (int)inline_shapes.size());
+	remove_shape_owner(inline_shapes[p_index].owner_id);
+	inline_shapes.remove_at(p_index);
+}
+
+void CollisionState3D::clear_inline_shapes() {
+	for (uint32_t i = 0; i < inline_shapes.size(); i++) {
+		remove_shape_owner(inline_shapes[i].owner_id);
+	}
+	inline_shapes.clear();
+}
+
+// Shape owners.
+
+uint32_t CollisionState3D::create_shape_owner(Node *p_owner) {
+	uint32_t id = next_owner_id++;
+	ShapeData sd;
+	sd.owner_node = p_owner;
+	shapes[id] = sd;
+	return id;
+}
+
+void CollisionState3D::remove_shape_owner(uint32_t p_owner) {
+	ERR_FAIL_COND(!shapes.has(p_owner));
+	shape_owner_clear_shapes(p_owner);
+	shapes.erase(p_owner);
+}
+
+void CollisionState3D::get_shape_owners(List<uint32_t> *r_owners) const {
+	for (const KeyValue<uint32_t, ShapeData> &E : shapes) {
+		r_owners->push_back(E.key);
+	}
+}
+
+PackedInt32Array CollisionState3D::get_shape_owners_array() const {
+	PackedInt32Array ret;
+	for (const KeyValue<uint32_t, ShapeData> &E : shapes) {
+		ret.push_back(E.key);
+	}
+	return ret;
+}
+
+void CollisionState3D::shape_owner_set_transform(uint32_t p_owner, const Transform3D &p_transform) {
+	ERR_FAIL_COND(!shapes.has(p_owner));
+	ShapeData &sd = shapes[p_owner];
+	sd.xform = p_transform;
+	for (int i = 0; i < sd.shapes.size(); i++) {
+		if (area) {
+			PhysicsServer3D::area_set_shape_transform(rid, sd.shapes[i].index, p_transform);
+		} else {
+			PhysicsServer3D::body_set_shape_transform(rid, sd.shapes[i].index, p_transform);
+		}
+	}
+}
+
+Transform3D CollisionState3D::shape_owner_get_transform(uint32_t p_owner) const {
+	ERR_FAIL_COND_V(!shapes.has(p_owner), Transform3D());
+	return shapes[p_owner].xform;
+}
+
+void CollisionState3D::shape_owner_set_disabled(uint32_t p_owner, bool p_disabled) {
+	ERR_FAIL_COND(!shapes.has(p_owner));
+	ShapeData &sd = shapes[p_owner];
+	if (sd.disabled == p_disabled) {
+		return;
+	}
+	sd.disabled = p_disabled;
+	for (int i = 0; i < sd.shapes.size(); i++) {
+		if (area) {
+			PhysicsServer3D::area_set_shape_disabled(rid, sd.shapes[i].index, p_disabled);
+		} else {
+			PhysicsServer3D::body_set_shape_disabled(rid, sd.shapes[i].index, p_disabled);
+		}
+	}
+}
+
+bool CollisionState3D::is_shape_owner_disabled(uint32_t p_owner) const {
+	ERR_FAIL_COND_V(!shapes.has(p_owner), false);
+	return shapes[p_owner].disabled;
+}
+
+void CollisionState3D::shape_owner_add_shape(uint32_t p_owner, const Ref<Shape3D> &p_shape) {
+	ERR_FAIL_COND(!shapes.has(p_owner));
+	ERR_FAIL_COND(p_shape.is_null());
+	ShapeData &sd = shapes[p_owner];
+	ShapeData::ShapeBase s;
+	s.index = total_subshapes;
+	s.shape = p_shape;
+	if (area) {
+		PhysicsServer3D::area_add_shape(rid, p_shape->get_rid(), sd.xform, sd.disabled);
+	} else {
+		PhysicsServer3D::body_add_shape(rid, p_shape->get_rid(), sd.xform, sd.disabled);
+	}
+	sd.shapes.push_back(s);
+	total_subshapes++;
+}
+
+int CollisionState3D::shape_owner_get_shape_count(uint32_t p_owner) const {
+	ERR_FAIL_COND_V(!shapes.has(p_owner), 0);
+	return shapes[p_owner].shapes.size();
+}
+
+Ref<Shape3D> CollisionState3D::shape_owner_get_shape(uint32_t p_owner, int p_shape) const {
+	ERR_FAIL_COND_V(!shapes.has(p_owner), Ref<Shape3D>());
+	ERR_FAIL_INDEX_V(p_shape, shapes[p_owner].shapes.size(), Ref<Shape3D>());
+	return shapes[p_owner].shapes[p_shape].shape;
+}
+
+int CollisionState3D::shape_owner_get_shape_index(uint32_t p_owner, int p_shape) const {
+	ERR_FAIL_COND_V(!shapes.has(p_owner), -1);
+	ERR_FAIL_INDEX_V(p_shape, shapes[p_owner].shapes.size(), -1);
+	return shapes[p_owner].shapes[p_shape].index;
+}
+
+void CollisionState3D::shape_owner_remove_shape(uint32_t p_owner, int p_shape) {
+	ERR_FAIL_COND(!shapes.has(p_owner));
+	ERR_FAIL_INDEX(p_shape, shapes[p_owner].shapes.size());
+
+	int index_to_remove = shapes[p_owner].shapes[p_shape].index;
+	RID debug_rid = shapes[p_owner].shapes[p_shape].debug_shape;
+	if (debug_rid.is_valid() && Renderer::data) {
+		Renderer::free_rid(debug_rid);
+		debug_shapes_count--;
+	}
+	if (area) {
+		PhysicsServer3D::area_remove_shape(rid, index_to_remove);
+	} else {
+		PhysicsServer3D::body_remove_shape(rid, index_to_remove);
+	}
+
+	shapes[p_owner].shapes.remove_at(p_shape);
+
+	for (KeyValue<uint32_t, ShapeData> &E : shapes) {
+		for (int i = 0; i < E.value.shapes.size(); i++) {
+			if (E.value.shapes[i].index > index_to_remove) {
+				E.value.shapes.write[i].index -= 1;
+			}
+		}
+	}
+	total_subshapes--;
+}
+
+void CollisionState3D::shape_owner_clear_shapes(uint32_t p_owner) {
+	ERR_FAIL_COND(!shapes.has(p_owner));
+	while (shape_owner_get_shape_count(p_owner) > 0) {
+		shape_owner_remove_shape(p_owner, 0);
+	}
+}
+
+uint32_t CollisionState3D::shape_find_owner(int p_shape_index) const {
+	ERR_FAIL_INDEX_V(p_shape_index, total_subshapes, UINT32_MAX);
+	for (const KeyValue<uint32_t, ShapeData> &E : shapes) {
+		for (int i = 0; i < E.value.shapes.size(); i++) {
+			if (E.value.shapes[i].index == p_shape_index) {
+				return E.key;
+			}
+		}
+	}
+	ERR_FAIL_V_MSG(UINT32_MAX, "Can't find owner for shape index " + itos(p_shape_index) + ".");
+}
+
+// ==========================================================================
+// Merged from scene/3d/physics/area_3d.cpp
+// ==========================================================================
+
+#include "area_3d.h"
+
+#include "core/config/engine.h"
+#include "servers/audio/audio_server.h"
+
+Area3D::Area3D() {
+	collision_state.init(true);
+	set_notify_transform(true);
+	set_monitoring(true);
+	set_monitorable(true);
+}
+
+Area3D::~Area3D() {
+	collision_state.free_rid();
+}
+
+void Area3D::_notification(int p_what) {
+	collision_state.handle_notification(this, p_what);
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			_initialize_wind();
+		} break;
+		case NOTIFICATION_EXIT_TREE:
+		case NOTIFICATION_DISABLED: {
+			_clear_monitoring();
+		} break;
+	}
+}
+
+void Area3D::set_gravity_space_override_mode(SpaceOverride p_mode) {
+	gravity_space_override = p_mode;
+}
+
+Area3D::SpaceOverride Area3D::get_gravity_space_override_mode() const {
+	return gravity_space_override;
+}
+
+void Area3D::set_gravity_is_point(bool p_enabled) {
+	gravity_is_point = p_enabled;
+}
+
+bool Area3D::is_gravity_a_point() const {
+	return gravity_is_point;
+}
+
+void Area3D::set_gravity_point_unit_distance(real_t p_scale) {
+	gravity_point_unit_distance = p_scale;
+}
+
+real_t Area3D::get_gravity_point_unit_distance() const {
+	return gravity_point_unit_distance;
+}
+
+void Area3D::set_gravity_point_center(const Vector3 &p_center) {
+	gravity_vec = p_center;
+}
+
+const Vector3 &Area3D::get_gravity_point_center() const {
+	return gravity_vec;
+}
+
+void Area3D::set_gravity_direction(const Vector3 &p_direction) {
+	gravity_vec = p_direction;
+}
+
+const Vector3 &Area3D::get_gravity_direction() const {
+	return gravity_vec;
+}
+
+void Area3D::set_gravity(real_t p_gravity) {
+	gravity = p_gravity;
+}
+
+real_t Area3D::get_gravity() const {
+	return gravity;
+}
+
+void Area3D::set_linear_damp_space_override_mode(SpaceOverride p_mode) {
+	linear_damp_space_override = p_mode;
+}
+
+Area3D::SpaceOverride Area3D::get_linear_damp_space_override_mode() const {
+	return linear_damp_space_override;
+}
+
+void Area3D::set_angular_damp_space_override_mode(SpaceOverride p_mode) {
+	angular_damp_space_override = p_mode;
+}
+
+Area3D::SpaceOverride Area3D::get_angular_damp_space_override_mode() const {
+	return angular_damp_space_override;
+}
+
+void Area3D::set_linear_damp(real_t p_linear_damp) {
+	linear_damp = p_linear_damp;
+}
+
+real_t Area3D::get_linear_damp() const {
+	return linear_damp;
+}
+
+void Area3D::set_angular_damp(real_t p_angular_damp) {
+	angular_damp = p_angular_damp;
+}
+
+real_t Area3D::get_angular_damp() const {
+	return angular_damp;
+}
+
+void Area3D::set_priority(int p_priority) {
+	priority = p_priority;
+}
+
+int Area3D::get_priority() const {
+	return priority;
+}
+
+void Area3D::set_wind_force_magnitude(real_t p_wind_force_magnitude) {
+	wind_force_magnitude = p_wind_force_magnitude;
+	if (is_inside_tree()) {
+		_initialize_wind();
+	}
+}
+
+real_t Area3D::get_wind_force_magnitude() const {
+	return wind_force_magnitude;
+}
+
+void Area3D::set_wind_attenuation_factor(real_t p_wind_force_attenuation_factor) {
+	wind_attenuation_factor = p_wind_force_attenuation_factor;
+	if (is_inside_tree()) {
+		_initialize_wind();
+	}
+}
+
+real_t Area3D::get_wind_attenuation_factor() const {
+	return wind_attenuation_factor;
+}
+
+void Area3D::set_wind_source_path(const NodePath &p_wind_source_path) {
+	wind_source_path = p_wind_source_path;
+	if (is_inside_tree()) {
+		_initialize_wind();
+	}
+}
+
+const NodePath &Area3D::get_wind_source_path() const {
+	return wind_source_path;
+}
+
+void Area3D::set_monitoring(bool p_enable) {
+	if (p_enable == monitoring) {
+		return;
+	}
+	monitoring = p_enable;
+	if (!monitoring) {
+		_clear_monitoring();
+	}
+}
+
+bool Area3D::is_monitoring() const {
+	return monitoring;
+}
+
+void Area3D::set_monitorable(bool p_enable) {
+	ERR_FAIL_COND_MSG(locked || (is_inside_tree() && PhysicsServer3D::is_flushing_queries()),
+			"Function blocked during in/out signal. Use set_deferred(\"monitorable\", true/false).");
+	if (p_enable == monitorable) {
+		return;
+	}
+	monitorable = p_enable;
+	PhysicsServer3D::area_set_monitorable(get_rid(), monitorable);
+}
+
+bool Area3D::is_monitorable() const {
+	return monitorable;
+}
+
+bool Area3D::has_overlapping_bodies() const {
+	return false;
+}
+
+bool Area3D::has_overlapping_areas() const {
+	return false;
+}
+
+bool Area3D::overlaps_area(Node *rp_area) const {
+	return false;
+}
+
+bool Area3D::overlaps_body(Node *rp_body) const {
+	return false;
+}
+
+void Area3D::set_audio_bus_override(bool p_override) {
+	audio_bus_override = p_override;
+}
+
+bool Area3D::is_overriding_audio_bus() const {
+	return audio_bus_override;
+}
+
+void Area3D::set_audio_bus_name(const String &p_audio_bus) {
+	audio_bus = p_audio_bus;
+}
+
+String Area3D::get_audio_bus_name() const {
+	for (int i = 0; i < AudioServer::get_bus_count(); i++) {
+		if (AudioServer::get_bus_name(i) == audio_bus) {
+			return audio_bus;
+		}
+	}
+	return SceneString(Master);
+}
+
+void Area3D::set_use_reverb_bus(bool p_enable) {
+	use_reverb_bus = p_enable;
+}
+
+bool Area3D::is_using_reverb_bus() const {
+	return use_reverb_bus;
+}
+
+void Area3D::set_reverb_bus_name(const String &p_audio_bus) {
+	reverb_bus = p_audio_bus;
+}
+
+String Area3D::get_reverb_bus_name() const {
+	for (int i = 0; i < AudioServer::get_bus_count(); i++) {
+		if (AudioServer::get_bus_name(i) == reverb_bus) {
+			return reverb_bus;
+		}
+	}
+	return SceneString(Master);
+}
+
+void Area3D::set_reverb_amount(float p_amount) {
+	reverb_amount = p_amount;
+}
+
+float Area3D::get_reverb_amount() const {
+	return reverb_amount;
+}
+
+void Area3D::set_reverb_uniformity(float p_uniformity) {
+	reverb_uniformity = p_uniformity;
+}
+
+float Area3D::get_reverb_uniformity() const {
+	return reverb_uniformity;
+}
+
+void Area3D::_initialize_wind() {}
+
+void Area3D::_clear_monitoring() {}
+
+PackedStringArray Area3D::get_configuration_warnings() const {
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+	if (!collision_state.has_any_shapes()) {
+		warnings.push_back(RTR("This node has no shape, so it can't collide or interact with other objects.\nAdd inline shapes or a CollisionShape3D / CollisionPolygon3D child."));
+	}
+	return warnings;
+}
+
+// ==========================================================================
+// Merged from scene/3d/physics/collision_shape_3d.cpp
+// ==========================================================================
+
+#include "collision_shape_3d.h"
+
+#include "scene/3d/physics/collision_object_3d.h"
+#include "scene/main/scene_tree.h"
+
+void CollisionShape3D::_update_in_shape_owner(bool p_xform_only) {
+	if (!collision_state) {
+		return;
+	}
+	collision_state->shape_owner_set_transform(owner_id, get_transform());
+	if (p_xform_only) {
+		return;
+	}
+	collision_state->shape_owner_set_disabled(owner_id, disabled);
+}
+
+void CollisionShape3D::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_PARENTED: {
+			Node3D *parent_3d = dynamic_cast<Node3D *>(get_parent());
+			collision_state = parent_3d ? parent_3d->get_collision_state_3d() : nullptr;
+			if (collision_state) {
+				owner_id = collision_state->create_shape_owner(this);
+				if (shape.is_valid()) {
+					collision_state->shape_owner_add_shape(owner_id, shape);
+				}
+				_update_in_shape_owner();
+			}
+		} break;
+		case NOTIFICATION_ENTER_TREE: {
+			if (collision_state) {
+				_update_in_shape_owner();
+			}
+		} break;
+		case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
+			if (collision_state) {
+				_update_in_shape_owner(true);
+			}
+		} break;
+		case NOTIFICATION_UNPARENTED: {
+			if (collision_state) {
+				collision_state->remove_shape_owner(owner_id);
+			}
+			owner_id = 0;
+			collision_state = nullptr;
+		} break;
+	}
+}
+
+#ifndef DISABLE_DEPRECATED
+void CollisionShape3D::resource_changed(Ref<Resource> res) {}
+#endif
+
+Ref<Shape3D> CollisionShape3D::get_shape() const {
+	return shape;
+}
+
+void CollisionShape3D::set_shape(const Ref<Shape3D> &p_shape) {
+	if (shape == p_shape) {
+		return;
+	}
+	shape = p_shape;
+	if (shape.is_valid()) {
+		shape->set_debug_color(debug_color);
+		shape->set_debug_fill(debug_fill);
+	}
+	if (collision_state) {
+		collision_state->shape_owner_clear_shapes(owner_id);
+		if (shape.is_valid()) {
+			collision_state->shape_owner_add_shape(owner_id, shape);
+		}
+		_update_in_shape_owner();
+	}
+	update_configuration_warnings();
+}
+
+void CollisionShape3D::set_disabled(bool p_disabled) {
+	disabled = p_disabled;
+	if (collision_state) {
+		collision_state->shape_owner_set_disabled(owner_id, p_disabled);
+	}
+}
+
+bool CollisionShape3D::is_disabled() const {
+	return disabled;
+}
+
+Color CollisionShape3D::_get_default_debug_color() const {
+	return SceneTree::get_debug_collisions_color();
+}
+
+void CollisionShape3D::set_debug_color(const Color &p_color) {
+	if (debug_color == p_color) {
+		return;
+	}
+	debug_color = p_color;
+	if (shape.is_valid()) {
+		shape->set_debug_color(p_color);
+	}
+}
+
+Color CollisionShape3D::get_debug_color() const {
+	return debug_color;
+}
+
+void CollisionShape3D::set_debug_fill_enabled(bool p_enable) {
+	if (debug_fill == p_enable) {
+		return;
+	}
+	debug_fill = p_enable;
+	if (shape.is_valid()) {
+		shape->set_debug_fill(p_enable);
+	}
+}
+
+bool CollisionShape3D::get_debug_fill_enabled() const {
+	return debug_fill;
+}
+
+#ifdef DEBUG_ENABLED
+void CollisionShape3D::_shape_changed() {
+	if (shape.is_valid()) {
+		if (shape->get_debug_color() != debug_color) {
+			set_debug_color(shape->get_debug_color());
+		}
+		if (shape->get_debug_fill() != debug_fill) {
+			set_debug_fill_enabled(shape->get_debug_fill());
+		}
+	}
+}
+#endif // DEBUG_ENABLED
+
+CollisionShape3D::CollisionShape3D() {
+	set_notify_local_transform(true);
+	debug_color = _get_default_debug_color();
+}
+
+CollisionShape3D::~CollisionShape3D() {}
+
+PackedStringArray CollisionShape3D::get_configuration_warnings() const {
+	return PackedStringArray();
+}
+
+// ==========================================================================
+// Merged from scene/3d/physics/collision_polygon_3d.cpp
+// ==========================================================================
+// --- Inlined from scene/3d/physics/collision_polygon_3d.h ---
+#include "scene/3d/node_3d.h"
+
+class CollisionPolygon3D : public Node3D {
+	real_t margin = 0.04f;
+
+protected:
+	real_t depth = 1.0f;
+	AABB aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2));
+	Vector<Point2> polygon;
+
+	uint32_t owner_id = 0;
+	CollisionState3D *collision_state = nullptr;
+
+	Color debug_color;
+	bool debug_fill = true;
+	bool disabled = false;
+
+	Color _get_default_debug_color() const;
+	void _update_in_shape_owner(bool p_xform_only = false);
+	bool _is_editable_3d_polygon() const;
+	void _notification(int p_what);
+
+public:
+	real_t get_depth() const;
+	Vector<Point2> get_polygon() const;
+
+	void set_disabled(bool p_disabled);
+	bool is_disabled() const;
+
+	Color get_debug_color() const;
+	bool get_debug_fill_enabled() const;
+
+	virtual AABB get_item_rect() const;
+	real_t get_margin() const;
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	CollisionPolygon3D();
+};
+
+// --- End scene/3d/physics/collision_polygon_3d.h ---
+
+#include "scene/3d/physics/collision_object_3d.h"
+#include "scene/main/scene_tree.h"
+
+void CollisionPolygon3D::_update_in_shape_owner(bool p_xform_only) {
+	if (!collision_state) {
+		return;
+	}
+	collision_state->shape_owner_set_transform(owner_id, get_transform());
+	if (p_xform_only) {
+		return;
+	}
+	collision_state->shape_owner_set_disabled(owner_id, disabled);
+}
+
+void CollisionPolygon3D::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_PARENTED: {
+			Node3D *parent_3d = dynamic_cast<Node3D *>(get_parent());
+			collision_state = parent_3d ? parent_3d->get_collision_state_3d() : nullptr;
+			if (collision_state) {
+				owner_id = collision_state->create_shape_owner(this);
+				_update_in_shape_owner();
+			}
+		} break;
+		case NOTIFICATION_ENTER_TREE: {
+			if (collision_state) {
+				_update_in_shape_owner();
+			}
+		} break;
+		case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
+			if (collision_state) {
+				_update_in_shape_owner(true);
+			}
+		} break;
+		case NOTIFICATION_UNPARENTED: {
+			if (collision_state) {
+				collision_state->remove_shape_owner(owner_id);
+			}
+			owner_id = 0;
+			collision_state = nullptr;
+		} break;
+	}
+}
+
+Vector<Point2> CollisionPolygon3D::get_polygon() const {
+	return polygon;
+}
+
+AABB CollisionPolygon3D::get_item_rect() const {
+	return aabb;
+}
+
+real_t CollisionPolygon3D::get_depth() const {
+	return depth;
+}
+
+void CollisionPolygon3D::set_disabled(bool p_disabled) {
+	disabled = p_disabled;
+	if (collision_state) {
+		collision_state->shape_owner_set_disabled(owner_id, p_disabled);
+	}
+}
+
+bool CollisionPolygon3D::is_disabled() const {
+	return disabled;
+}
+
+Color CollisionPolygon3D::_get_default_debug_color() const {
+	return SceneTree::get_debug_collisions_color();
+}
+
+Color CollisionPolygon3D::get_debug_color() const {
+	return debug_color;
+}
+
+bool CollisionPolygon3D::get_debug_fill_enabled() const {
+	return debug_fill;
+}
+
+real_t CollisionPolygon3D::get_margin() const {
+	return margin;
+}
+
+bool CollisionPolygon3D::_is_editable_3d_polygon() const {
+	return true;
+}
+
+CollisionPolygon3D::CollisionPolygon3D() {
+	set_notify_local_transform(true);
+	debug_color = _get_default_debug_color();
+}
+
+PackedStringArray CollisionPolygon3D::get_configuration_warnings() const {
+	return PackedStringArray();
+}
+
+// ==========================================================================
+// Merged from scene/3d/physics/ray_cast_3d.cpp
+// ==========================================================================
+
+#include "core/config/engine.h"
+// --- Inlined from scene/3d/physics/ray_cast_3d.h ---
+#include "scene/3d/node_3d.h"
+#include "scene/resources/material.h"
+
+class ArrayMesh;
+
+class RayCast3D : public Node3D
+{
+	bool enabled = true;
+	bool collided = false;
+	RID against_rid;
+	int against_shape = 0;
+	Vector3 collision_point;
+	Vector3 collision_normal;
+	int collision_face_index = -1;
+
+	Vector3 target_position = Vector3(0, -1, 0);
+	HashSet<RID> exclude;
+
+	uint32_t collision_mask = 1;
+	bool exclude_parent_body = true;
+
+	Ref<Material> debug_material;
+	Color debug_shape_custom_color = Color(0.0, 0.0, 0.0);
+	int debug_shape_thickness = 2;
+	Vector<Vector3> debug_shape_vertices;
+	Vector<Vector3> debug_line_vertices;
+
+	void _create_debug_shape();
+	void _update_debug_shape();
+	void _update_debug_shape_material(bool p_check_collision = false);
+	void _update_debug_shape_vertices();
+	void _clear_debug_shape();
+
+	bool collide_with_areas = false;
+	bool collide_with_bodies = true;
+
+	bool hit_from_inside = false;
+	bool hit_back_faces = true;
+
+	RID debug_instance;
+	Ref<ArrayMesh> debug_mesh;
+
+protected:
+	void _notification(int p_what);
+	void _update_raycast_state();
+
+public:
+	void set_collide_with_areas(bool p_enabled);
+	bool is_collide_with_areas_enabled() const;
+
+	void set_collide_with_bodies(bool p_enabled);
+	bool is_collide_with_bodies_enabled() const;
+
+	void set_hit_from_inside(bool p_enabled);
+	bool is_hit_from_inside_enabled() const;
+
+	void set_hit_back_faces(bool p_enabled);
+	bool is_hit_back_faces_enabled() const;
+
+	bool is_enabled() const;
+
+	Vector3 get_target_position() const;
+
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+
+	void set_collision_mask_value(int p_layer_number, bool p_value);
+	bool get_collision_mask_value(int p_layer_number) const;
+
+	void set_exclude_parent_body(bool p_exclude_parent_body);
+	bool get_exclude_parent_body() const;
+
+	const Color& get_debug_shape_custom_color() const;
+	void set_debug_shape_custom_color(const Color& p_color);
+
+	const Vector<Vector3>& get_debug_shape_vertices() const;
+	const Vector<Vector3>& get_debug_line_vertices() const;
+
+	Ref<StandardMaterial3D> get_debug_material();
+
+	int get_debug_shape_thickness() const;
+
+	void force_raycast_update();
+	bool is_colliding() const;
+	RID get_collider_rid() const;
+	int get_collider_shape() const;
+	Vector3 get_collision_point() const;
+	Vector3 get_collision_normal() const;
+	int get_collision_face_index() const;
+
+	void add_exception_rid(const RID& p_rid);
+	void add_exception(const Node3D* rp_node);
+	void remove_exception_rid(const RID& p_rid);
+	void remove_exception(const Node3D* rp_node);
+	void clear_exceptions();
+
+	RayCast3D() = default;
+};
+
+
+
+// --- End scene/3d/physics/ray_cast_3d.h ---
+#include "scene/3d/physics/collision_object_3d.h"
+#include "scene/main/scene_tree.h"
+#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+
+Vector3 RayCast3D::get_target_position() const { return target_position; }
+
+void RayCast3D::set_collision_mask(uint32_t p_mask) { collision_mask = p_mask; }
+
+uint32_t RayCast3D::get_collision_mask() const { return collision_mask; }
+
+void RayCast3D::set_collision_mask_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t mask = get_collision_mask();
+	if (p_value) {
+		mask |= 1 << (p_layer_number - 1);
+	}
+	else {
+		mask &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_mask(mask);
+}
+
+bool RayCast3D::get_collision_mask_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return get_collision_mask() & (1 << (p_layer_number - 1));
+}
+
+bool RayCast3D::is_colliding() const { return collided; }
+
+RID RayCast3D::get_collider_rid() const { return against_rid; }
+
+int RayCast3D::get_collider_shape() const { return against_shape; }
+
+Vector3 RayCast3D::get_collision_point() const { return collision_point; }
+
+Vector3 RayCast3D::get_collision_normal() const { return collision_normal; }
+
+int RayCast3D::get_collision_face_index() const { return collision_face_index; }
+
+bool RayCast3D::is_enabled() const { return enabled; }
+
+bool RayCast3D::get_exclude_parent_body() const { return exclude_parent_body; }
+
+void RayCast3D::force_raycast_update() { _update_raycast_state(); }
+
+void RayCast3D::add_exception_rid(const RID& p_rid) { exclude.insert(p_rid); }
+
+void RayCast3D::add_exception(const Node3D* rp_node)
+{
+	ERR_FAIL_NULL(rp_node);
+	const CollisionState3D* state = rp_node->get_collision_state_3d();
+	ERR_FAIL_NULL_MSG(state, "The passed Node must have a CollisionState3D (PhysicsBody3D or Area3D).");
+	add_exception_rid(state->rid);
+}
+
+void RayCast3D::remove_exception_rid(const RID& p_rid) { exclude.erase(p_rid); }
+
+void RayCast3D::remove_exception(const Node3D* rp_node)
+{
+	ERR_FAIL_NULL(rp_node);
+	const CollisionState3D* state = rp_node->get_collision_state_3d();
+	ERR_FAIL_NULL_MSG(state, "The passed Node must have a CollisionState3D (PhysicsBody3D or Area3D).");
+	remove_exception_rid(state->rid);
+}
+
+void RayCast3D::set_collide_with_areas(bool p_enabled) { collide_with_areas = p_enabled; }
+
+bool RayCast3D::is_collide_with_areas_enabled() const { return collide_with_areas; }
+
+void RayCast3D::set_collide_with_bodies(bool p_enabled) { collide_with_bodies = p_enabled; }
+
+bool RayCast3D::is_collide_with_bodies_enabled() const { return collide_with_bodies; }
+
+void RayCast3D::set_hit_from_inside(bool p_enabled) { hit_from_inside = p_enabled; }
+
+bool RayCast3D::is_hit_from_inside_enabled() const { return hit_from_inside; }
+
+void RayCast3D::set_hit_back_faces(bool p_enabled) { hit_back_faces = p_enabled; }
+
+bool RayCast3D::is_hit_back_faces_enabled() const { return hit_back_faces; }
+
+int RayCast3D::get_debug_shape_thickness() const { return debug_shape_thickness; }
+
+void RayCast3D::_update_debug_shape_vertices()
+{
+	debug_shape_vertices.clear();
+	debug_line_vertices.clear();
+
+	if (target_position == Vector3()) {
+		return;
+	}
+
+	debug_line_vertices.push_back(Vector3());
+	debug_line_vertices.push_back(target_position);
+
+	if (debug_shape_thickness > 1) {
+		float scale_factor = 100.0;
+		Vector3 dir = Vector3(target_position).normalized();
+		// Draw truncated pyramid
+		Vector3 normal = (std::abs(dir.x) + std::abs(dir.y) > CMP_EPSILON)
+							 ? Vector3(-dir.y, dir.x, 0).normalized()
+							 : Vector3(0, -dir.z, dir.y).normalized();
+		normal *= debug_shape_thickness / scale_factor;
+		int vertices_strip_order[14] = {4, 5, 0, 1, 2, 5, 6, 4, 7, 0, 3, 2, 7, 6};
+		for (int v = 0; v < 14; v++) {
+			Vector3 vertex = vertices_strip_order[v] < 4 ? normal : normal / 3.0 + target_position;
+			debug_shape_vertices.push_back(
+				vertex.rotated(dir, Math::PI * (0.5 * (vertices_strip_order[v] % 4) + 0.25)));
+		}
+	}
+}
+
+const Vector<Vector3>& RayCast3D::get_debug_shape_vertices() const { return debug_shape_vertices; }
+
+const Vector<Vector3>& RayCast3D::get_debug_line_vertices() const { return debug_line_vertices; }
+
+void RayCast3D::set_debug_shape_custom_color(const Color& p_color)
+{
+	debug_shape_custom_color = p_color;
+	if (debug_material.is_valid()) {
+		_update_debug_shape_material();
+	}
+}
+
+Ref<StandardMaterial3D> RayCast3D::get_debug_material()
+{
+	_update_debug_shape_material();
+	return debug_material;
+}
+
+const Color& RayCast3D::get_debug_shape_custom_color() const { return debug_shape_custom_color; }
+
+void RayCast3D::_create_debug_shape()
+{
+	_update_debug_shape_material();
+
+	if (!debug_instance.is_valid()) {
+		debug_instance = Renderer::instance_create();
+	}
+
+	if (debug_mesh.is_null()) {
+		debug_mesh.instantiate();
+	}
+}
+
+void RayCast3D::_update_debug_shape_material(bool p_check_collision)
+{
+	if (debug_material.is_null()) {
+		Ref<StandardMaterial3D> material = memnew(StandardMaterial3D);
+		debug_material = material;
+
+		material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+		// Use double-sided rendering so that the RayCast can be seen if the camera is inside.
+		material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
+		material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+	}
+
+	Color color = debug_shape_custom_color;
+	if (color == Color(0.0, 0.0, 0.0)) {
+		// Use the default debug shape color defined in the Project Settings.
+		color = SceneTree::get_debug_collisions_color();
+	}
+
+	if (p_check_collision && collided) {
+		if ((color.get_h() < 0.055 || color.get_h() > 0.945) && color.get_s() > 0.5 &&
+			color.get_v() > 0.5) {
+			// If base color is already quite reddish, highlight collision with green color
+			color = Color(0.0, 1.0, 0.0, color.a);
+		}
+		else {
+			// Else, highlight collision with red color
+			color = Color(1.0, 0, 0, color.a);
+		}
+	}
+
+	Ref<StandardMaterial3D> material = static_cast<Ref<StandardMaterial3D>>(debug_material);
+}
+
+void RayCast3D::_clear_debug_shape()
+{
+	ERR_FAIL_NULL(Renderer::data);
+	if (debug_instance.is_valid()) {
+		Renderer::free_rid(debug_instance);
+		debug_instance = RID();
+	}
+	if (debug_mesh.is_valid()) {
+		Renderer::free_rid(debug_mesh->get_rid());
+		debug_mesh = Ref<ArrayMesh>();
+	}
+}
+
+void RayCast3D::_update_raycast_state() {}
+
+// ==========================================================================
+// Merged from scene/3d/physics/shape_cast_3d.cpp
+// ==========================================================================
+
+#include "core/config/engine.h"
+#include "scene/3d/physics/collision_object_3d.h"
+#include "scene/main/scene_tree.h"
+#include "scene/resources/3d/shape_3d.h"
+#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+// --- Inlined from scene/3d/physics/shape_cast_3d.h ---
+#include "scene/3d/node_3d.h"
+#include "scene/resources/3d/shape_3d.h"
+#include "scene/resources/material.h"
+
+class ShapeCast3D : public Node3D
+{
+	bool enabled = true;
+#ifndef DISABLE_DEPRECATED
+	void resource_changed(Ref<Resource> p_res);
+#endif
+
+	Ref<Shape3D> shape;
+	RID shape_rid;
+	Vector3 target_position = Vector3(0, -1, 0);
+
+	HashSet<RID> exclude;
+	real_t margin = 0.0;
+	uint32_t collision_mask = 1;
+	bool exclude_parent_body = true;
+	bool collide_with_areas = false;
+	bool collide_with_bodies = true;
+
+	Ref<Material> debug_material;
+	Color debug_shape_custom_color = Color(0.0, 0.0, 0.0);
+	Vector<Vector3> debug_shape_vertices;
+	Vector<Vector3> debug_line_vertices;
+
+	void _create_debug_shape();
+	void _update_debug_shape();
+	void _update_debug_shape_material(bool p_check_collision = false);
+	void _update_debug_shape_vertices();
+	void _clear_debug_shape();
+
+	// Result
+	int max_results = 32;
+	Vector<PS3DT::ShapeRestInfo> result;
+	bool collided = false;
+	real_t collision_safe_fraction = 1.0;
+	real_t collision_unsafe_fraction = 1.0;
+
+	RID debug_instance;
+	Ref<ArrayMesh> debug_mesh;
+
+protected:
+	void _notification(int p_what);
+	void _update_shapecast_state();
+
+public:
+	void set_collide_with_areas(bool p_clip);
+	bool is_collide_with_areas_enabled() const;
+
+	void set_collide_with_bodies(bool p_clip);
+	bool is_collide_with_bodies_enabled() const;
+
+	bool is_enabled() const;
+
+	void set_shape(const Ref<Shape3D>& p_shape);
+	Ref<Shape3D> get_shape() const;
+
+	Vector3 get_target_position() const;
+
+	void set_margin(real_t p_margin);
+	real_t get_margin() const;
+
+	void set_max_results(int p_max_results);
+	int get_max_results() const;
+
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+
+	void set_collision_mask_value(int p_layer_number, bool p_value);
+	bool get_collision_mask_value(int p_layer_number) const;
+
+	void set_exclude_parent_body(bool p_exclude_parent_body);
+	bool get_exclude_parent_body() const;
+
+	const Color& get_debug_shape_custom_color() const;
+	void set_debug_shape_custom_color(const Color& p_color);
+
+	const Vector<Vector3>& get_debug_shape_vertices() const;
+	const Vector<Vector3>& get_debug_line_vertices() const;
+
+	Ref<StandardMaterial3D> get_debug_material();
+
+	int get_collision_count() const;
+	RID get_collider_rid(int p_idx) const;
+	int get_collider_shape(int p_idx) const;
+	Vector3 get_collision_point(int p_idx) const;
+	Vector3 get_collision_normal(int p_idx) const;
+
+	real_t get_closest_collision_safe_fraction() const;
+	real_t get_closest_collision_unsafe_fraction() const;
+
+	void force_shapecast_update();
+	bool is_colliding() const;
+
+	void add_exception_rid(const RID& p_rid);
+	void add_exception(const Node3D* rp_node);
+	void remove_exception_rid(const RID& p_rid);
+	void remove_exception(const Node3D* rp_node);
+	void clear_exceptions();
+
+	virtual PackedStringArray get_configuration_warnings() const override;
+};
+
+
+
+// --- End scene/3d/physics/shape_cast_3d.h ---
+
+bool ShapeCast3D::is_enabled() const { return enabled; }
+
+Vector3 ShapeCast3D::get_target_position() const { return target_position; }
+
+void ShapeCast3D::set_margin(real_t p_margin) { margin = p_margin; }
+
+real_t ShapeCast3D::get_margin() const { return margin; }
+
+void ShapeCast3D::set_max_results(int p_max_results) { max_results = p_max_results; }
+
+int ShapeCast3D::get_max_results() const { return max_results; }
+
+void ShapeCast3D::set_collision_mask(uint32_t p_mask) { collision_mask = p_mask; }
+
+uint32_t ShapeCast3D::get_collision_mask() const { return collision_mask; }
+
+void ShapeCast3D::set_collision_mask_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t mask = get_collision_mask();
+	if (p_value) {
+		mask |= 1 << (p_layer_number - 1);
+	}
+	else {
+		mask &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_mask(mask);
+}
+
+bool ShapeCast3D::get_collision_mask_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return get_collision_mask() & (1 << (p_layer_number - 1));
+}
+
+int ShapeCast3D::get_collision_count() const { return result.size(); }
+
+bool ShapeCast3D::is_colliding() const { return collided; }
+
+RID ShapeCast3D::get_collider_rid(int p_idx) const
+{
+	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), RID(), "No collider RID found.");
+	return result[p_idx].rid;
+}
+
+int ShapeCast3D::get_collider_shape(int p_idx) const
+{
+	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), -1, "No collider shape found.");
+	return result[p_idx].shape;
+}
+
+Vector3 ShapeCast3D::get_collision_point(int p_idx) const
+{
+	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), Vector3(), "No collision point found.");
+	return result[p_idx].point;
+}
+
+Vector3 ShapeCast3D::get_collision_normal(int p_idx) const
+{
+	ERR_FAIL_INDEX_V_MSG(p_idx, result.size(), Vector3(), "No collision normal found.");
+	return result[p_idx].normal;
+}
+
+real_t ShapeCast3D::get_closest_collision_safe_fraction() const { return collision_safe_fraction; }
+
+real_t ShapeCast3D::get_closest_collision_unsafe_fraction() const
+{
+	return collision_unsafe_fraction;
+}
+
+#ifndef DISABLE_DEPRECATED
+void ShapeCast3D::resource_changed(Ref<Resource> p_res) {}
+#endif
+
+Ref<Shape3D> ShapeCast3D::get_shape() const { return shape; }
+
+bool ShapeCast3D::get_exclude_parent_body() const { return exclude_parent_body; }
+
+void ShapeCast3D::_update_shapecast_state()
+{
+	result.clear();
+
+	ERR_FAIL_COND_MSG(shape.is_null(),
+		"Null reference to shape. ShapeCast3D requires a Shape3D to sweep for collisions.");
+
+	Ref<World3D> w3d = get_world_3d();
+	ERR_FAIL_COND(w3d.is_null());
+
+	PhysicsDirectSpaceState3D* dss =
+		PhysicsServer3D::space_get_direct_state(w3d->get_space());
+	ERR_FAIL_NULL(dss);
+
+	Transform3D gt = get_global_transform();
+
+	PS3DT::ShapeParameters params;
+	params.shape_rid = shape_rid;
+	params.transform = gt;
+	params.motion = gt.basis.xform(target_position);
+	params.margin = margin;
+	params.exclude = exclude;
+	params.collision_mask = collision_mask;
+	params.collide_with_bodies = collide_with_bodies;
+	params.collide_with_areas = collide_with_areas;
+
+	collision_safe_fraction = 0.0;
+	collision_unsafe_fraction = 0.0;
+
+	if (target_position != Vector3()) {
+		dss->cast_motion(params, collision_safe_fraction, collision_unsafe_fraction);
+		if (collision_unsafe_fraction < 1.0) {
+			// Move shape transform to the point of impact,
+			// so we can collect contact info at that point.
+			gt.set_origin(
+				gt.get_origin() + params.motion * (collision_unsafe_fraction + CMP_EPSILON));
+			params.transform = gt;
+		}
+	}
+	// Regardless of whether the shape is stuck or it's moved along
+	// the motion vector, we'll only consider static collisions from now on.
+	params.motion = Vector3();
+
+	bool intersected = true;
+	while (intersected && result.size() < max_results) {
+		PS3DT::ShapeRestInfo info;
+		intersected = dss->rest_info(params, &info);
+		if (intersected) {
+			result.push_back(info);
+			params.exclude.insert(info.rid);
+		}
+	}
+	collided = !result.is_empty();
+}
+
+void ShapeCast3D::force_shapecast_update() { _update_shapecast_state(); }
+
+void ShapeCast3D::add_exception_rid(const RID& p_rid) { exclude.insert(p_rid); }
+
+void ShapeCast3D::add_exception(const Node3D* rp_node)
+{
+	ERR_FAIL_NULL(rp_node);
+	const CollisionState3D* state = rp_node->get_collision_state_3d();
+	ERR_FAIL_NULL_MSG(state, "The passed Node must have a CollisionState3D (PhysicsBody3D or Area3D).");
+	add_exception_rid(state->rid);
+}
+
+void ShapeCast3D::remove_exception_rid(const RID& p_rid) { exclude.erase(p_rid); }
+
+void ShapeCast3D::remove_exception(const Node3D* rp_node)
+{
+	ERR_FAIL_NULL(rp_node);
+	const CollisionState3D* state = rp_node->get_collision_state_3d();
+	ERR_FAIL_NULL_MSG(state, "The passed Node must have a CollisionState3D (PhysicsBody3D or Area3D).");
+	remove_exception_rid(state->rid);
+}
+
+void ShapeCast3D::clear_exceptions() { exclude.clear(); }
+
+void ShapeCast3D::set_collide_with_areas(bool p_clip) { collide_with_areas = p_clip; }
+
+bool ShapeCast3D::is_collide_with_areas_enabled() const { return collide_with_areas; }
+
+void ShapeCast3D::set_collide_with_bodies(bool p_clip) { collide_with_bodies = p_clip; }
+
+bool ShapeCast3D::is_collide_with_bodies_enabled() const { return collide_with_bodies; }
+
+void ShapeCast3D::_update_debug_shape_vertices()
+{
+	debug_shape_vertices.clear();
+	debug_line_vertices.clear();
+
+	if (shape.is_valid()) {
+		debug_shape_vertices.append_array(shape->get_debug_mesh_lines());
+		for (int i = 0; i < debug_shape_vertices.size(); i++) {
+			debug_shape_vertices.set(
+				i, debug_shape_vertices[i] +
+					   Vector3(target_position * get_closest_collision_safe_fraction()));
+		}
+	}
+
+	if (target_position == Vector3()) {
+		return;
+	}
+
+	debug_line_vertices.push_back(Vector3());
+	debug_line_vertices.push_back(target_position);
+}
+
+const Vector<Vector3>& ShapeCast3D::get_debug_shape_vertices() const
+{
+	return debug_shape_vertices;
+}
+
+const Vector<Vector3>& ShapeCast3D::get_debug_line_vertices() const { return debug_line_vertices; }
+
+void ShapeCast3D::set_debug_shape_custom_color(const Color& p_color)
+{
+	debug_shape_custom_color = p_color;
+	if (debug_material.is_valid()) {
+		_update_debug_shape_material();
+	}
+}
+
+Ref<StandardMaterial3D> ShapeCast3D::get_debug_material()
+{
+	_update_debug_shape_material();
+	return debug_material;
+}
+
+const Color& ShapeCast3D::get_debug_shape_custom_color() const { return debug_shape_custom_color; }
+
+void ShapeCast3D::_create_debug_shape()
+{
+	_update_debug_shape_material();
+
+	if (!debug_instance.is_valid()) {
+		debug_instance = Renderer::instance_create();
+	}
+
+	if (debug_mesh.is_null()) {
+		debug_mesh.instantiate();
+	}
+}
+
+void ShapeCast3D::_update_debug_shape_material(bool p_check_collision)
+{
+	if (debug_material.is_null()) {
+		Ref<StandardMaterial3D> material = memnew(StandardMaterial3D);
+		debug_material = material;
+
+		material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+		// Use double-sided rendering so that the RayCast can be seen if the camera is inside.
+		material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
+		material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+	}
+
+	Color color = debug_shape_custom_color;
+	if (color == Color(0.0, 0.0, 0.0)) {
+		// Use the default debug shape color defined in the Project Settings.
+		color = SceneTree::get_debug_collisions_color();
+	}
+
+	if (p_check_collision && collided) {
+		if ((color.get_h() < 0.055 || color.get_h() > 0.945) && color.get_s() > 0.5 &&
+			color.get_v() > 0.5) {
+			// If base color is already quite reddish, highlight collision with green color
+			color = Color(0.0, 1.0, 0.0, color.a);
+		}
+		else {
+			// Else, highlight collision with red color
+			color = Color(1.0, 0, 0, color.a);
+		}
+	}
+
+	Ref<StandardMaterial3D> material = static_cast<Ref<StandardMaterial3D>>(debug_material);
+}
+
+void ShapeCast3D::_clear_debug_shape()
+{
+	ERR_FAIL_NULL(Renderer::data);
+	if (debug_instance.is_valid()) {
+		Renderer::free_rid(debug_instance);
+		debug_instance = RID();
+	}
+	if (debug_mesh.is_valid()) {
+		Renderer::free_rid(debug_mesh->get_rid());
+		debug_mesh = Ref<ArrayMesh>();
+	}
+}
+
+// ==========================================================================
+// Merged from scene/3d/physics/spring_arm_3d.cpp
+// ==========================================================================
+
+#include "core/config/engine.h"
+#include "scene/3d/camera_3d.h"
+#include "scene/main/scene_tree.h"
+#include "scene/resources/3d/shape_3d.h"
+// --- Inlined from scene/3d/physics/spring_arm_3d.h ---
+#include "scene/3d/node_3d.h"
+#include "scene/resources/3d/shape_3d.h"
+
+class SpringArm3D : public Node3D
+{
+	Ref<Shape3D> shape;
+	HashSet<RID> excluded_objects;
+	real_t spring_length = 1.0;
+	real_t current_spring_length = 0.0;
+	uint32_t mask = 1;
+	real_t margin = 0.01;
+
+protected:
+	void _notification(int p_what);
+
+public:
+	real_t get_length() const;
+	void set_shape(Ref<Shape3D> p_shape);
+	Ref<Shape3D> get_shape() const;
+	void set_mask(uint32_t p_mask);
+	uint32_t get_mask();
+	void add_excluded_object(RID p_rid);
+	bool remove_excluded_object(RID p_rid);
+	void clear_excluded_objects();
+	real_t get_hit_length();
+	void set_margin(real_t p_margin);
+	real_t get_margin();
+
+private:
+	void process_spring();
+};
+
+
+
+// --- End scene/3d/physics/spring_arm_3d.h ---
+
+void SpringArm3D::_notification(int p_what)
+{
+	switch (p_what) {
+	case NOTIFICATION_ENTER_TREE: {
+		if (!Engine::is_editor_hint()) {
+			set_physics_process_internal(true);
+		}
+	} break;
+
+	case NOTIFICATION_EXIT_TREE: {
+		if (!Engine::is_editor_hint()) {
+			set_physics_process_internal(false);
+		}
+	} break;
+
+	case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
+		process_spring();
+	} break;
+	}
+}
+
+
+real_t SpringArm3D::get_length() const { return spring_length; }
+
+void SpringArm3D::set_shape(Ref<Shape3D> p_shape) { shape = p_shape; }
+
+Ref<Shape3D> SpringArm3D::get_shape() const { return shape; }
+
+void SpringArm3D::set_mask(uint32_t p_mask) { mask = p_mask; }
+
+uint32_t SpringArm3D::get_mask() { return mask; }
+
+real_t SpringArm3D::get_margin() { return margin; }
+
+void SpringArm3D::set_margin(real_t p_margin) { margin = p_margin; }
+
+void SpringArm3D::add_excluded_object(RID p_rid) { excluded_objects.insert(p_rid); }
+
+bool SpringArm3D::remove_excluded_object(RID p_rid) { return excluded_objects.erase(p_rid); }
+
+void SpringArm3D::clear_excluded_objects() { excluded_objects.clear(); }
+
+real_t SpringArm3D::get_hit_length() { return current_spring_length; }
+
+
+
+void SpringArm3D::process_spring() {}
+
+// ============================================================================
+// Merged from scene/3d/physics/joints/joint_3d.cpp
+// ============================================================================
+// --- Inlined from scene/3d/physics/joints/joint_3d.h ---
+#include "scene/3d/node_3d.h"
+#include "scene/3d/physics/collision_object_3d.h"
+
+class Joint3D : public Node3D {
+public:
+	enum JointType {
+		JOINT_PIN,
+		JOINT_HINGE,
+		JOINT_SLIDER,
+		JOINT_CONE_TWIST,
+		JOINT_6DOF,
+	};
+
+	using PinParam = PS3DE::PinJointParam;
+	using HingeParam = PS3DE::HingeJointParam;
+	using HingeFlag = PS3DE::HingeJointFlag;
+	using SliderParam = PS3DE::SliderJointParam;
+	using ConeTwistParam = PS3DE::ConeTwistJointParam;
+	using G6DOFParam = PS3DE::G6DOFJointAxisParam;
+	using G6DOFFlag = PS3DE::G6DOFJointAxisFlag;
+
+private:
+	JointType joint_type = JOINT_PIN;
+	RID ba, bb;
+	RID joint;
+	NodePath a;
+	NodePath b;
+	int solver_priority = 1;
+	bool exclude_from_collision = true;
+	String warning;
+	bool configured = false;
+
+	// Pin parameters.
+	real_t pin_params[3] = { 0.3f, 1.0f, 0.0f };
+
+	// Hinge parameters & flags.
+	real_t hinge_params[PS3DE::HINGE_JOINT_MAX] = {};
+	bool hinge_flags[PS3DE::HINGE_JOINT_FLAG_MAX] = {};
+
+	// Slider parameters.
+	real_t slider_params[PS3DE::SLIDER_JOINT_MAX] = {};
+
+	// Cone twist parameters.
+	static constexpr int CONE_TWIST_PARAM_MAX = 5;
+	real_t cone_params[CONE_TWIST_PARAM_MAX] = {};
+
+	// Generic 6DOF parameters & flags.
+	real_t g6dof_params[3][PS3DE::G6DOF_JOINT_MAX] = {};
+	bool g6dof_flags[3][PS3DE::G6DOF_JOINT_FLAG_MAX] = {};
+	bool linear_drive_force_limit_set[3] = {};
+	bool angular_drive_torque_limit_set[3] = {};
+	Quaternion angular_target_rotation;
+	bool has_angular_target_rotation = false;
+
+	void _init_defaults();
+	void _disconnect_signals();
+	void _update_joint(bool p_only_free = false);
+	void _configure_joint(RID p_joint, PhysicsBody3D *body_a, PhysicsBody3D *body_b);
+	bool _should_replay_g6dof_param(Vector3::Axis p_axis, G6DOFParam p_param) const;
+
+protected:
+	void _notification(int p_what);
+	_FORCE_INLINE_ bool is_configured() const { return configured; }
+
+public:
+	Joint3D(JointType p_type = JOINT_PIN);
+	~Joint3D();
+
+	void set_joint_type(JointType p_type);
+	JointType get_joint_type() const { return joint_type; }
+
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	void set_node_a(const NodePath &p_node_a);
+	NodePath get_node_a() const { return a; }
+
+	void set_node_b(const NodePath &p_node_b);
+	NodePath get_node_b() const { return b; }
+
+	void set_solver_priority(int p_priority);
+	int get_solver_priority() const { return solver_priority; }
+
+	void set_exclude_nodes_from_collision(bool p_enable);
+	bool get_exclude_nodes_from_collision() const { return exclude_from_collision; }
+
+	// Pin API.
+	void set_pin_param(PinParam p_param, real_t p_value);
+	real_t get_pin_param(PinParam p_param) const;
+
+	// Hinge API.
+	void set_hinge_param(HingeParam p_param, real_t p_value);
+	real_t get_hinge_param(HingeParam p_param) const;
+	void set_hinge_flag(HingeFlag p_flag, bool p_enabled);
+	bool get_hinge_flag(HingeFlag p_flag) const;
+
+	// Slider API.
+	void set_slider_param(SliderParam p_param, real_t p_value);
+	real_t get_slider_param(SliderParam p_param) const;
+
+	// ConeTwist API.
+	void set_cone_twist_param(ConeTwistParam p_param, real_t p_value);
+	real_t get_cone_twist_param(ConeTwistParam p_param) const;
+
+	// Generic 6DOF API.
+	void set_g6dof_param(Vector3::Axis p_axis, G6DOFParam p_param, real_t p_value);
+	real_t get_g6dof_param(Vector3::Axis p_axis, G6DOFParam p_param) const;
+	void set_g6dof_flag(Vector3::Axis p_axis, G6DOFFlag p_flag, bool p_enabled);
+	bool get_g6dof_flag(Vector3::Axis p_axis, G6DOFFlag p_flag) const;
+
+	void set_param_x(G6DOFParam p_param, real_t p_value) { set_g6dof_param(Vector3::AXIS_X, p_param, p_value); }
+	real_t get_param_x(G6DOFParam p_param) const { return get_g6dof_param(Vector3::AXIS_X, p_param); }
+	void set_param_y(G6DOFParam p_param, real_t p_value) { set_g6dof_param(Vector3::AXIS_Y, p_param, p_value); }
+	real_t get_param_y(G6DOFParam p_param) const { return get_g6dof_param(Vector3::AXIS_Y, p_param); }
+	void set_param_z(G6DOFParam p_param, real_t p_value) { set_g6dof_param(Vector3::AXIS_Z, p_param, p_value); }
+	real_t get_param_z(G6DOFParam p_param) const { return get_g6dof_param(Vector3::AXIS_Z, p_param); }
+
+	void set_flag_x(G6DOFFlag p_flag, bool p_enabled) { set_g6dof_flag(Vector3::AXIS_X, p_flag, p_enabled); }
+	bool get_flag_x(G6DOFFlag p_flag) const { return get_g6dof_flag(Vector3::AXIS_X, p_flag); }
+	void set_flag_y(G6DOFFlag p_flag, bool p_enabled) { set_g6dof_flag(Vector3::AXIS_Y, p_flag, p_enabled); }
+	bool get_flag_y(G6DOFFlag p_flag) const { return get_g6dof_flag(Vector3::AXIS_Y, p_flag); }
+	void set_flag_z(G6DOFFlag p_flag, bool p_enabled) { set_g6dof_flag(Vector3::AXIS_Z, p_flag, p_enabled); }
+	bool get_flag_z(G6DOFFlag p_flag) const { return get_g6dof_flag(Vector3::AXIS_Z, p_flag); }
+
+	void set_angular_target_rotation(const Quaternion &p_target_rotation);
+	Quaternion get_angular_target_rotation() const;
+	bool has_target_rotation() const { return has_angular_target_rotation; }
+	void clear_angular_target_rotation();
+
+	RID get_rid() const { return joint; }
+};
+
+// --- End scene/3d/physics/joints/joint_3d.h ---
+
+void Joint3D::_init_defaults() {
+	pin_params[PS3DE::PIN_JOINT_BIAS] = 0.3f;
+	pin_params[PS3DE::PIN_JOINT_DAMPING] = 1.0f;
+	pin_params[PS3DE::PIN_JOINT_IMPULSE_CLAMP] = 0.0f;
+
+	hinge_params[PS3DE::HINGE_JOINT_BIAS] = 0.3f;
+	hinge_params[PS3DE::HINGE_JOINT_LIMIT_UPPER] = Math::PI * 0.5f;
+	hinge_params[PS3DE::HINGE_JOINT_LIMIT_LOWER] = -Math::PI * 0.5f;
+	hinge_params[PS3DE::HINGE_JOINT_LIMIT_BIAS] = 0.3f;
+	hinge_params[PS3DE::HINGE_JOINT_LIMIT_SOFTNESS] = 0.9f;
+	hinge_params[PS3DE::HINGE_JOINT_LIMIT_RELAXATION] = 1.0f;
+	hinge_params[PS3DE::HINGE_JOINT_MOTOR_TARGET_VELOCITY] = 1.0f;
+	hinge_params[PS3DE::HINGE_JOINT_MOTOR_MAX_IMPULSE] = 1.0f;
+	hinge_flags[PS3DE::HINGE_JOINT_FLAG_USE_LIMIT] = false;
+	hinge_flags[PS3DE::HINGE_JOINT_FLAG_ENABLE_MOTOR] = false;
+
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_LIMIT_UPPER] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_LIMIT_LOWER] = -1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_LIMIT_SOFTNESS] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_LIMIT_RESTITUTION] = 0.7f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_LIMIT_DAMPING] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_MOTION_SOFTNESS] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_MOTION_RESTITUTION] = 0.7f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_MOTION_DAMPING] = 0.0f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_ORTHOGONAL_SOFTNESS] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_ORTHOGONAL_RESTITUTION] = 0.7f;
+	slider_params[PS3DE::SLIDER_JOINT_LINEAR_ORTHOGONAL_DAMPING] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_LIMIT_UPPER] = 0.0f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_LIMIT_LOWER] = 0.0f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_LIMIT_SOFTNESS] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_LIMIT_RESTITUTION] = 0.7f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_LIMIT_DAMPING] = 0.0f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_MOTION_SOFTNESS] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_MOTION_RESTITUTION] = 0.7f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_MOTION_DAMPING] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_ORTHOGONAL_SOFTNESS] = 1.0f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_ORTHOGONAL_RESTITUTION] = 0.7f;
+	slider_params[PS3DE::SLIDER_JOINT_ANGULAR_ORTHOGONAL_DAMPING] = 1.0f;
+
+	cone_params[PS3DE::CONE_TWIST_JOINT_SWING_SPAN] = Math::PI * 0.25f;
+	cone_params[PS3DE::CONE_TWIST_JOINT_TWIST_SPAN] = Math::PI;
+	cone_params[PS3DE::CONE_TWIST_JOINT_BIAS] = 0.3f;
+	cone_params[PS3DE::CONE_TWIST_JOINT_SOFTNESS] = 0.8f;
+	cone_params[PS3DE::CONE_TWIST_JOINT_RELAXATION] = 1.0f;
+
+	for (int ax = 0; ax < 3; ax++) {
+		g6dof_params[ax][PS3DE::G6DOF_JOINT_LINEAR_LIMIT_SOFTNESS] = 0.7f;
+		g6dof_params[ax][PS3DE::G6DOF_JOINT_LINEAR_RESTITUTION] = 0.5f;
+		g6dof_params[ax][PS3DE::G6DOF_JOINT_LINEAR_DAMPING] = 1.0f;
+		g6dof_params[ax][PS3DE::G6DOF_JOINT_ANGULAR_LIMIT_SOFTNESS] = 0.5f;
+		g6dof_params[ax][PS3DE::G6DOF_JOINT_ANGULAR_DAMPING] = 1.0f;
+		g6dof_params[ax][PS3DE::G6DOF_JOINT_ANGULAR_ERP] = 0.5f;
+		g6dof_flags[ax][PS3DE::G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT] = true;
+		g6dof_flags[ax][PS3DE::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_LIMIT] = true;
+	}
+}
+
+Joint3D::Joint3D(JointType p_type) :
+		joint_type(p_type) {
+	_init_defaults();
+	set_notify_transform(true);
+	joint = PhysicsServer3D::joint_create();
+}
+
+Joint3D::~Joint3D() {
+	if (joint.is_valid() && PhysicsServer3D::is_initialized()) {
+		PhysicsServer3D::free_rid(joint);
+	}
+}
+
+void Joint3D::set_joint_type(JointType p_type) {
+	if (joint_type == p_type) {
+		return;
+	}
+	joint_type = p_type;
+	_update_joint();
+}
+
+void Joint3D::_disconnect_signals() {}
+
+void Joint3D::_update_joint(bool p_only_free) {
+	if (configured) {
+		PhysicsServer3D::joint_clear(joint);
+		ba = RID();
+		bb = RID();
+		configured = false;
+	}
+
+	if (p_only_free || !is_inside_tree()) {
+		warning = String();
+		return;
+	}
+
+	Node *node_a = a.is_empty() ? nullptr : get_node_or_null(a);
+	Node *node_b = b.is_empty() ? nullptr : get_node_or_null(b);
+
+	PhysicsBody3D *body_a = dynamic_cast<PhysicsBody3D *>(node_a);
+	PhysicsBody3D *body_b = dynamic_cast<PhysicsBody3D *>(node_b);
+
+	if (!body_a && body_b) {
+		SWAP(body_a, body_b);
+	}
+
+	if (!body_a) {
+		warning = RTR("Node A and Node B must be PhysicsBody3Ds");
+		update_configuration_warnings();
+		return;
+	}
+
+	if (body_a == body_b) {
+		warning = RTR("Node A and Node B must be different PhysicsBody3Ds");
+		update_configuration_warnings();
+		return;
+	}
+
+	warning = String();
+	update_configuration_warnings();
+
+	ba = body_a->get_rid();
+	bb = body_b ? body_b->get_rid() : RID();
+
+	_configure_joint(joint, body_a, body_b);
+	PhysicsServer3D::joint_set_solver_priority(joint, solver_priority);
+	PhysicsServer3D::joint_disable_collisions_between_bodies(joint, exclude_from_collision);
+	configured = true;
+}
+
+bool Joint3D::_should_replay_g6dof_param(Vector3::Axis p_axis, G6DOFParam p_param) const {
+	if (p_param == PS3DE::G6DOF_JOINT_LINEAR_DRIVE_FORCE_LIMIT) {
+		return linear_drive_force_limit_set[p_axis];
+	}
+	if (p_param == PS3DE::G6DOF_JOINT_ANGULAR_DRIVE_TORQUE_LIMIT) {
+		return angular_drive_torque_limit_set[p_axis];
+	}
+	return true;
+}
+
+void Joint3D::_configure_joint(RID p_joint, PhysicsBody3D *body_a, PhysicsBody3D *body_b) {
+	Transform3D gt = get_global_transform();
+
+	if (joint_type == JOINT_PIN) {
+		Vector3 pinpos = gt.origin;
+		Vector3 local_a = body_a->to_local(pinpos);
+		Vector3 local_b = body_b ? body_b->to_local(pinpos) : pinpos;
+		PhysicsServer3D::joint_make_pin(p_joint, body_a->get_rid(), local_a, body_b ? body_b->get_rid() : RID(), local_b);
+		for (int i = 0; i < 3; i++) {
+			PhysicsServer3D::pin_joint_set_param(p_joint, PinParam(i), pin_params[i]);
+		}
+		return;
+	}
+
+	Transform3D local_a = (body_a->get_global_transform().affine_inverse() * gt).orthonormalized();
+	Transform3D local_b = (body_b ? (body_b->get_global_transform().affine_inverse() * gt) : gt).orthonormalized();
+	RID rid_b = body_b ? body_b->get_rid() : RID();
+
+	switch (joint_type) {
+		case JOINT_HINGE: {
+			PhysicsServer3D::joint_make_hinge(p_joint, body_a->get_rid(), local_a, rid_b, local_b);
+			for (int i = 0; i < PS3DE::HINGE_JOINT_MAX; i++) {
+				PhysicsServer3D::hinge_joint_set_param(p_joint, HingeParam(i), hinge_params[i]);
+			}
+			for (int i = 0; i < PS3DE::HINGE_JOINT_FLAG_MAX; i++) {
+				PhysicsServer3D::hinge_joint_set_flag(p_joint, HingeFlag(i), hinge_flags[i]);
+			}
+		} break;
+		case JOINT_SLIDER: {
+			PhysicsServer3D::joint_make_slider(p_joint, body_a->get_rid(), local_a, rid_b, local_b);
+			for (int i = 0; i < PS3DE::SLIDER_JOINT_MAX; i++) {
+				PhysicsServer3D::slider_joint_set_param(p_joint, SliderParam(i), slider_params[i]);
+			}
+		} break;
+		case JOINT_CONE_TWIST: {
+			PhysicsServer3D::joint_make_cone_twist(p_joint, body_a->get_rid(), local_a, rid_b, local_b);
+			for (int i = 0; i < CONE_TWIST_PARAM_MAX; i++) {
+				PhysicsServer3D::cone_twist_joint_set_param(p_joint, ConeTwistParam(i), cone_params[i]);
+			}
+		} break;
+		case JOINT_6DOF: {
+			PhysicsServer3D::joint_make_generic_6dof(p_joint, body_a->get_rid(), local_a, rid_b, local_b);
+			for (int ax = 0; ax < 3; ax++) {
+				Vector3::Axis axis = Vector3::Axis(ax);
+				for (int i = 0; i < PS3DE::G6DOF_JOINT_MAX; i++) {
+					G6DOFParam param = G6DOFParam(i);
+					if (_should_replay_g6dof_param(axis, param)) {
+						PhysicsServer3D::generic_6dof_joint_set_param(p_joint, axis, param, g6dof_params[ax][i]);
+					}
+				}
+				for (int i = 0; i < PS3DE::G6DOF_JOINT_FLAG_MAX; i++) {
+					PhysicsServer3D::generic_6dof_joint_set_flag(p_joint, axis, G6DOFFlag(i), g6dof_flags[ax][i]);
+				}
+			}
+			if (has_angular_target_rotation) {
+				PhysicsServer3D::generic_6dof_joint_set_angular_target_rotation(p_joint, angular_target_rotation);
+			}
+		} break;
+		default:
+			break;
+	}
+}
+
+void Joint3D::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_POST_ENTER_TREE: {
+			if (is_configured()) {
+				_disconnect_signals();
+			}
+			_update_joint();
+		} break;
+		case NOTIFICATION_TRANSFORM_CHANGED: {
+			if (is_inside_tree()) {
+				_update_joint();
+			}
+		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			if (is_configured()) {
+				_disconnect_signals();
+			}
+			_update_joint(true);
+		} break;
+	}
+}
+
+void Joint3D::set_node_a(const NodePath &p_node_a) {
+	if (a == p_node_a) {
+		return;
+	}
+	if (is_configured()) {
+		_disconnect_signals();
+	}
+	a = p_node_a;
+	_update_joint();
+}
+
+void Joint3D::set_node_b(const NodePath &p_node_b) {
+	if (b == p_node_b) {
+		return;
+	}
+	if (is_configured()) {
+		_disconnect_signals();
+	}
+	b = p_node_b;
+	_update_joint();
+}
+
+void Joint3D::set_solver_priority(int p_priority) {
+	solver_priority = p_priority;
+	if (joint.is_valid()) {
+		PhysicsServer3D::joint_set_solver_priority(joint, solver_priority);
+	}
+}
+
+void Joint3D::set_exclude_nodes_from_collision(bool p_enable) {
+	if (exclude_from_collision == p_enable) {
+		return;
+	}
+	if (is_configured()) {
+		_disconnect_signals();
+	}
+	_update_joint(true);
+	exclude_from_collision = p_enable;
+	_update_joint();
+}
+
+void Joint3D::set_pin_param(PinParam p_param, real_t p_value) {
+	ERR_FAIL_INDEX(p_param, 3);
+	pin_params[p_param] = p_value;
+	if (is_configured() && joint_type == JOINT_PIN) {
+		PhysicsServer3D::pin_joint_set_param(joint, p_param, p_value);
+	}
+}
+
+real_t Joint3D::get_pin_param(PinParam p_param) const {
+	ERR_FAIL_INDEX_V(p_param, 3, 0.0f);
+	return pin_params[p_param];
+}
+
+void Joint3D::set_hinge_param(HingeParam p_param, real_t p_value) {
+	ERR_FAIL_INDEX(p_param, PS3DE::HINGE_JOINT_MAX);
+	hinge_params[p_param] = p_value;
+	if (is_configured() && joint_type == JOINT_HINGE) {
+		PhysicsServer3D::hinge_joint_set_param(joint, p_param, p_value);
+	}
+}
+
+real_t Joint3D::get_hinge_param(HingeParam p_param) const {
+	ERR_FAIL_INDEX_V(p_param, PS3DE::HINGE_JOINT_MAX, 0.0f);
+	return hinge_params[p_param];
+}
+
+void Joint3D::set_hinge_flag(HingeFlag p_flag, bool p_enabled) {
+	ERR_FAIL_INDEX(p_flag, PS3DE::HINGE_JOINT_FLAG_MAX);
+	hinge_flags[p_flag] = p_enabled;
+	if (is_configured() && joint_type == JOINT_HINGE) {
+		PhysicsServer3D::hinge_joint_set_flag(joint, p_flag, p_enabled);
+	}
+}
+
+bool Joint3D::get_hinge_flag(HingeFlag p_flag) const {
+	ERR_FAIL_INDEX_V(p_flag, PS3DE::HINGE_JOINT_FLAG_MAX, false);
+	return hinge_flags[p_flag];
+}
+
+void Joint3D::set_slider_param(SliderParam p_param, real_t p_value) {
+	ERR_FAIL_INDEX(p_param, PS3DE::SLIDER_JOINT_MAX);
+	slider_params[p_param] = p_value;
+	if (is_configured() && joint_type == JOINT_SLIDER) {
+		PhysicsServer3D::slider_joint_set_param(joint, p_param, p_value);
+	}
+}
+
+real_t Joint3D::get_slider_param(SliderParam p_param) const {
+	ERR_FAIL_INDEX_V(p_param, PS3DE::SLIDER_JOINT_MAX, 0.0f);
+	return slider_params[p_param];
+}
+
+void Joint3D::set_cone_twist_param(ConeTwistParam p_param, real_t p_value) {
+	ERR_FAIL_INDEX(p_param, CONE_TWIST_PARAM_MAX);
+	cone_params[p_param] = p_value;
+	if (is_configured() && joint_type == JOINT_CONE_TWIST) {
+		PhysicsServer3D::cone_twist_joint_set_param(joint, p_param, p_value);
+	}
+}
+
+real_t Joint3D::get_cone_twist_param(ConeTwistParam p_param) const {
+	ERR_FAIL_INDEX_V(p_param, CONE_TWIST_PARAM_MAX, 0.0f);
+	return cone_params[p_param];
+}
+
+void Joint3D::set_g6dof_param(Vector3::Axis p_axis, G6DOFParam p_param, real_t p_value) {
+	ERR_FAIL_INDEX(p_axis, 3);
+	ERR_FAIL_INDEX(p_param, PS3DE::G6DOF_JOINT_MAX);
+	g6dof_params[p_axis][p_param] = p_value;
+	if (p_param == PS3DE::G6DOF_JOINT_LINEAR_DRIVE_FORCE_LIMIT) {
+		linear_drive_force_limit_set[p_axis] = true;
+	} else if (p_param == PS3DE::G6DOF_JOINT_ANGULAR_DRIVE_TORQUE_LIMIT) {
+		angular_drive_torque_limit_set[p_axis] = true;
+	}
+	if (is_configured() && joint_type == JOINT_6DOF) {
+		PhysicsServer3D::generic_6dof_joint_set_param(joint, p_axis, p_param, p_value);
+	}
+}
+
+real_t Joint3D::get_g6dof_param(Vector3::Axis p_axis, G6DOFParam p_param) const {
+	ERR_FAIL_INDEX_V(p_axis, 3, 0.0f);
+	ERR_FAIL_INDEX_V(p_param, PS3DE::G6DOF_JOINT_MAX, 0.0f);
+	return g6dof_params[p_axis][p_param];
+}
+
+void Joint3D::set_g6dof_flag(Vector3::Axis p_axis, G6DOFFlag p_flag, bool p_enabled) {
+	ERR_FAIL_INDEX(p_axis, 3);
+	ERR_FAIL_INDEX(p_flag, PS3DE::G6DOF_JOINT_FLAG_MAX);
+	g6dof_flags[p_axis][p_flag] = p_enabled;
+	if (is_configured() && joint_type == JOINT_6DOF) {
+		PhysicsServer3D::generic_6dof_joint_set_flag(joint, p_axis, p_flag, p_enabled);
+	}
+}
+
+bool Joint3D::get_g6dof_flag(Vector3::Axis p_axis, G6DOFFlag p_flag) const {
+	ERR_FAIL_INDEX_V(p_axis, 3, false);
+	ERR_FAIL_INDEX_V(p_flag, PS3DE::G6DOF_JOINT_FLAG_MAX, false);
+	return g6dof_flags[p_axis][p_flag];
+}
+
+void Joint3D::set_angular_target_rotation(const Quaternion &p_target_rotation) {
+	ERR_FAIL_COND_MSG(!(p_target_rotation.is_finite() && p_target_rotation.length_squared() > CMP_EPSILON),
+			"Angular target rotation must be a finite, non-zero quaternion.");
+	angular_target_rotation = p_target_rotation.normalized();
+	has_angular_target_rotation = true;
+	if (is_configured() && joint_type == JOINT_6DOF) {
+		PhysicsServer3D::generic_6dof_joint_set_angular_target_rotation(joint, angular_target_rotation);
+	}
+}
+
+Quaternion Joint3D::get_angular_target_rotation() const {
+	if (has_angular_target_rotation) {
+		return angular_target_rotation;
+	}
+	if (is_configured() && joint_type == JOINT_6DOF) {
+		return PhysicsServer3D::generic_6dof_joint_get_angular_target_rotation(joint);
+	}
+	return Quaternion();
+}
+
+void Joint3D::clear_angular_target_rotation() {
+	if (!has_angular_target_rotation) {
+		return;
+	}
+	has_angular_target_rotation = false;
+	angular_target_rotation = Quaternion();
+	if (is_configured() && joint_type == JOINT_6DOF) {
+		for (int ax = 0; ax < 3; ax++) {
+			PhysicsServer3D::generic_6dof_joint_set_param(joint, Vector3::Axis(ax),
+					PS3DE::G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT,
+					g6dof_params[ax][PS3DE::G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT]);
+		}
+	}
+}
+
+PackedStringArray Joint3D::get_configuration_warnings() const {
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+	if (!warning.is_empty()) {
+		warnings.push_back(warning);
+	}
+	return warnings;
+}
+
+// ============================================================================
+// Merged from scene/3d/physics/soft_body_3d.cpp
+// ============================================================================
+
+#include "core/config/engine.h"
+#include "scene/3d/physics/collision_object_3d.h"
+#include "servers/rendering/renderer.h"
+// --- Inlined from scene/3d/physics/soft_body_3d.h ---
+#include "scene/3d/node_3d.h"
+#include "scene/3d/visual_instance_3d.h"
+#include "scene/resources/mesh.h"
+#include "servers/physics_3d/physics_server_3d.h"
+
+class MeshInstance3D;
+class PhysicsBody3D;
+
+class SoftBody3D : public Node3D
+{
+public:
+	enum DisableMode
+	{
+		DISABLE_MODE_REMOVE,
+		DISABLE_MODE_KEEP_ACTIVE,
+	};
+
+	struct PinnedPoint
+	{
+		int point_index = -1;
+		NodePath spatial_attachment_path;
+		Node3D* spatial_attachment = nullptr; // Cache
+		Vector3 offset;
+
+		PinnedPoint();
+		PinnedPoint(const PinnedPoint& obj_tocopy);
+		void operator=(const PinnedPoint& obj);
+	};
+
+	RenderInstance3D render_instance;
+
+private:
+	Ref<Mesh> mesh;
+	PhysicsServer3DRenderingServerHandler* rendering_server_handler = nullptr;
+
+	RID physics_rid;
+
+	DisableMode disable_mode = DISABLE_MODE_REMOVE;
+
+	RID owned_mesh;
+	uint32_t collision_mask = 1;
+	uint32_t collision_layer = 1;
+	NodePath parent_collision_ignore;
+	Vector<PinnedPoint> pinned_points;
+	bool simulation_started = false;
+	bool pinned_points_cache_dirty = true;
+
+	Ref<ArrayMesh> debug_mesh_cache;
+	MeshInstance3D* debug_mesh = nullptr;
+
+	bool capture_input_on_drag = false;
+	bool ray_pickable = true;
+
+	void _update_pickable();
+
+	void _update_physics_server();
+	void _draw_soft_mesh();
+
+	void _prepare_physics_server();
+	void _become_mesh_owner();
+
+protected:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+	PackedStringArray get_configuration_warnings() const override;
+
+public:
+	virtual bool has_render_instance() const override { return true; }
+
+	void set_mesh(const Ref<Mesh>& p_mesh);
+	Ref<Mesh> get_mesh() const { return mesh; }
+	AABB get_aabb() const { return mesh.is_valid() ? mesh->get_aabb() : AABB(); }
+
+	RID get_physics_rid() const { return physics_rid; }
+
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+
+	void set_collision_layer(uint32_t p_layer);
+	uint32_t get_collision_layer() const;
+
+	void set_collision_layer_value(int p_layer_number, bool p_value);
+	bool get_collision_layer_value(int p_layer_number) const;
+
+	void set_collision_mask_value(int p_layer_number, bool p_value);
+	bool get_collision_mask_value(int p_layer_number) const;
+
+	void set_disable_mode(DisableMode p_mode);
+	DisableMode get_disable_mode() const;
+
+	void set_parent_collision_ignore(const NodePath& p_parent_collision_ignore);
+	const NodePath& get_parent_collision_ignore() const;
+	int get_point_count() const;
+
+	void set_pinned_points_indices(Vector<PinnedPoint> p_pinned_points_indices);
+	Vector<PinnedPoint> get_pinned_points_indices();
+
+	void set_simulation_precision(int p_simulation_precision);
+	int get_simulation_precision();
+
+	void set_total_mass(real_t p_total_mass);
+	real_t get_total_mass();
+
+	void set_linear_stiffness(real_t p_linear_stiffness);
+	real_t get_linear_stiffness();
+
+	void set_shrinking_factor(real_t p_shrinking_factor);
+	real_t get_shrinking_factor();
+
+	void set_pressure_coefficient(real_t p_pressure_coefficient);
+	real_t get_pressure_coefficient();
+
+	void set_damping_coefficient(real_t p_damping_coefficient);
+	real_t get_damping_coefficient();
+
+	void set_drag_coefficient(real_t p_drag_coefficient);
+	real_t get_drag_coefficient();
+
+	void add_collision_exception_with(Node* rp_node);
+	void remove_collision_exception_with(Node* rp_node);
+
+	Vector3 get_point_transform(int p_point_index);
+
+	void pin_point(int p_point_index, bool pin,
+		const NodePath& p_spatial_attachment_path = NodePath(), int p_insert_at = -1);
+	bool is_point_pinned(int p_point_index) const;
+
+	void _pin_point_deferred(int p_point_index, bool pin, const NodePath p_spatial_attachment_path);
+
+	void set_ray_pickable(bool p_ray_pickable);
+	bool is_ray_pickable() const;
+
+	void apply_impulse(int p_point_index, const Vector3& p_impulse);
+	void apply_force(int p_point_index, const Vector3& p_force);
+	void apply_central_impulse(const Vector3& p_impulse);
+	void apply_central_force(const Vector3& p_force);
+
+	SoftBody3D();
+	~SoftBody3D();
+
+private:
+	void _make_cache_dirty();
+	void _update_cache_pin_points_datas();
+
+	void _pin_point_on_physics_server(int p_point_index, bool pin);
+	void _add_pinned_point(
+		int p_point_index, const NodePath& p_spatial_attachment_path, int p_insert_at = -1);
+	void _reset_points_offsets();
+
+	void _remove_pinned_point(int p_point_index);
+	int _get_pinned_point(int p_point_index, PinnedPoint*& r_point) const;
+	int _has_pinned_point(int p_point_index) const;
+};
+
+// --- End scene/3d/physics/soft_body_3d.h ---
+
+SoftBody3D::PinnedPoint::PinnedPoint() {}
+
+SoftBody3D::PinnedPoint::PinnedPoint(const PinnedPoint& obj_tocopy)
+{
+	point_index = obj_tocopy.point_index;
+	spatial_attachment_path = obj_tocopy.spatial_attachment_path;
+	spatial_attachment = obj_tocopy.spatial_attachment;
+	offset = obj_tocopy.offset;
+}
+
+void SoftBody3D::PinnedPoint::operator=(const PinnedPoint& obj)
+{
+	point_index = obj.point_index;
+	spatial_attachment_path = obj.spatial_attachment_path;
+	spatial_attachment = obj.spatial_attachment;
+	offset = obj.offset;
+}
+
+void SoftBody3D::_update_pickable()
+{
+	if (!is_inside_tree()) {
+		return;
+	}
+	bool pickable = ray_pickable && is_visible_in_tree();
+	PhysicsServer3D::soft_body_set_ray_pickable(physics_rid, pickable);
+}
+
+void SoftBody3D::set_mesh(const Ref<Mesh>& p_mesh)
+{
+	mesh = p_mesh;
+	render_instance.set_base(mesh.is_valid() ? mesh->get_rid() : RID());
+	if (is_inside_tree()) {
+		_prepare_physics_server();
+	}
+}
+
+void SoftBody3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+void SoftBody3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+
+	switch (p_what) {
+	case NOTIFICATION_ENTER_WORLD: {
+		if (Engine::is_editor_hint()) {
+			// I have no idea what this is supposed to do, it's really weird
+			// leaving for upcoming PK work on physics
+			// add_change_receptor(this);
+		}
+
+		RID space = get_world_3d()->get_space();
+		PhysicsServer3D::soft_body_set_space(physics_rid, space);
+		_prepare_physics_server();
+	} break;
+
+	case NOTIFICATION_READY: {
+		if (!parent_collision_ignore.is_empty()) {
+			add_collision_exception_with(get_node(parent_collision_ignore));
+		}
+	} break;
+
+	case NOTIFICATION_TRANSFORM_CHANGED: {
+		if (Engine::is_editor_hint()) {
+			_reset_points_offsets();
+			return;
+		}
+
+		PhysicsServer3D::soft_body_set_transform(
+			physics_rid, get_global_transform());
+
+		set_notify_transform(false);
+		// Required to be top level with Transform at center of world in order to modify
+		// Renderer only to support custom Transform
+		set_as_top_level(true);
+		set_transform(Transform3D());
+		set_notify_transform(true);
+	} break;
+
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		_update_pickable();
+	} break;
+
+	case NOTIFICATION_EXIT_WORLD: {
+		PhysicsServer3D::soft_body_set_space(physics_rid, RID());
+	} break;
+
+	case NOTIFICATION_DISABLED: {
+		if (is_inside_tree() && (disable_mode == DISABLE_MODE_REMOVE)) {
+			_prepare_physics_server();
+		}
+	} break;
+
+	case NOTIFICATION_ENABLED: {
+		if (is_inside_tree() && (disable_mode == DISABLE_MODE_REMOVE)) {
+			_prepare_physics_server();
+		}
+	} break;
+	}
+}
+
+PackedStringArray SoftBody3D::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+	render_instance.append_geometry_warnings(warnings);
+
+	if (mesh.is_null()) {
+		warnings.push_back(RTR("This body will be ignored until you set a mesh."));
+	}
+
+	return warnings;
+}
+
+void SoftBody3D::_update_physics_server()
+{
+	if (!simulation_started) {
+		return;
+	}
+
+	_update_cache_pin_points_datas();
+	// Submit bone attachment
+	const int pinned_points_indices_size = pinned_points.size();
+	const PinnedPoint* r = pinned_points.ptr();
+	for (int i = 0; i < pinned_points_indices_size; ++i) {
+		if (r[i].spatial_attachment) {
+			PhysicsServer3D::soft_body_move_point(physics_rid, r[i].point_index,
+				r[i].spatial_attachment->get_global_transform().xform(r[i].offset));
+		}
+	}
+}
+
+void SoftBody3D::set_collision_mask(uint32_t p_mask)
+{
+	collision_mask = p_mask;
+	PhysicsServer3D::soft_body_set_collision_mask(physics_rid, p_mask);
+}
+
+uint32_t SoftBody3D::get_collision_mask() const { return collision_mask; }
+
+void SoftBody3D::set_collision_layer(uint32_t p_layer)
+{
+	collision_layer = p_layer;
+	PhysicsServer3D::soft_body_set_collision_layer(physics_rid, p_layer);
+}
+
+uint32_t SoftBody3D::get_collision_layer() const { return collision_layer; }
+
+void SoftBody3D::set_collision_layer_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t collision_layer_new = get_collision_layer();
+	if (p_value) {
+		collision_layer_new |= 1 << (p_layer_number - 1);
+	}
+	else {
+		collision_layer_new &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_layer(collision_layer_new);
+}
+
+bool SoftBody3D::get_collision_layer_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return get_collision_layer() & (1 << (p_layer_number - 1));
+}
+
+void SoftBody3D::set_collision_mask_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t mask = get_collision_mask();
+	if (p_value) {
+		mask |= 1 << (p_layer_number - 1);
+	}
+	else {
+		mask &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_mask(mask);
+}
+
+bool SoftBody3D::get_collision_mask_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return get_collision_mask() & (1 << (p_layer_number - 1));
+}
+
+void SoftBody3D::set_disable_mode(DisableMode p_mode)
+{
+	if (disable_mode == p_mode) {
+		return;
+	}
+
+	disable_mode = p_mode;
+
+	if (mesh.is_valid() && is_inside_tree() && !is_enabled()) {
+		_prepare_physics_server();
+	}
+}
+
+SoftBody3D::DisableMode SoftBody3D::get_disable_mode() const { return disable_mode; }
+
+void SoftBody3D::set_parent_collision_ignore(const NodePath& p_parent_collision_ignore)
+{
+	parent_collision_ignore = p_parent_collision_ignore;
+}
+
+const NodePath& SoftBody3D::get_parent_collision_ignore() const { return parent_collision_ignore; }
+
+void SoftBody3D::set_pinned_points_indices(Vector<SoftBody3D::PinnedPoint> p_pinned_points_indices)
+{
+	pinned_points = p_pinned_points_indices;
+	for (int i = pinned_points.size() - 1; 0 <= i; --i) {
+		pin_point(p_pinned_points_indices[i].point_index, true);
+	}
+}
+
+Vector<SoftBody3D::PinnedPoint> SoftBody3D::get_pinned_points_indices() { return pinned_points; }
+
+int SoftBody3D::get_simulation_precision()
+{
+	return PhysicsServer3D::soft_body_get_simulation_precision(physics_rid);
+}
+
+void SoftBody3D::set_simulation_precision(int p_simulation_precision)
+{
+	PhysicsServer3D::soft_body_set_simulation_precision(
+		physics_rid, p_simulation_precision);
+}
+
+real_t SoftBody3D::get_total_mass()
+{
+	return PhysicsServer3D::soft_body_get_total_mass(physics_rid);
+}
+
+void SoftBody3D::set_total_mass(real_t p_total_mass)
+{
+	PhysicsServer3D::soft_body_set_total_mass(physics_rid, p_total_mass);
+}
+
+void SoftBody3D::set_linear_stiffness(real_t p_linear_stiffness)
+{
+	PhysicsServer3D::soft_body_set_linear_stiffness(
+		physics_rid, p_linear_stiffness);
+}
+
+real_t SoftBody3D::get_linear_stiffness()
+{
+	return PhysicsServer3D::soft_body_get_linear_stiffness(physics_rid);
+}
+
+void SoftBody3D::set_shrinking_factor(real_t p_shrinking_factor)
+{
+	PhysicsServer3D::soft_body_set_shrinking_factor(
+		physics_rid, p_shrinking_factor);
+}
+
+real_t SoftBody3D::get_shrinking_factor()
+{
+	return PhysicsServer3D::soft_body_get_shrinking_factor(physics_rid);
+}
+
+real_t SoftBody3D::get_pressure_coefficient()
+{
+	return PhysicsServer3D::soft_body_get_pressure_coefficient(physics_rid);
+}
+
+void SoftBody3D::set_pressure_coefficient(real_t p_pressure_coefficient)
+{
+	PhysicsServer3D::soft_body_set_pressure_coefficient(
+		physics_rid, p_pressure_coefficient);
+}
+
+real_t SoftBody3D::get_damping_coefficient()
+{
+	return PhysicsServer3D::soft_body_get_damping_coefficient(physics_rid);
+}
+
+void SoftBody3D::set_damping_coefficient(real_t p_damping_coefficient)
+{
+	PhysicsServer3D::soft_body_set_damping_coefficient(
+		physics_rid, p_damping_coefficient);
+}
+
+real_t SoftBody3D::get_drag_coefficient()
+{
+	return PhysicsServer3D::soft_body_get_drag_coefficient(physics_rid);
+}
+
+void SoftBody3D::set_drag_coefficient(real_t p_drag_coefficient)
+{
+	PhysicsServer3D::soft_body_set_drag_coefficient(
+		physics_rid, p_drag_coefficient);
+}
+
+Vector3 SoftBody3D::get_point_transform(int p_point_index)
+{
+	return PhysicsServer3D::soft_body_get_point_global_position(
+		physics_rid, p_point_index);
+}
+
+int SoftBody3D::get_point_count() const
+{
+	if (mesh.is_null()) {
+		return 0;
+	}
+
+	const int vertex_count = mesh->surface_get_array_len(0);
+	ERR_FAIL_COND_V(vertex_count < 0, 0);
+	return vertex_count;
+}
+
+void SoftBody3D::apply_impulse(int p_point_index, const Vector3& p_impulse)
+{
+	PhysicsServer3D::soft_body_apply_point_impulse(
+		physics_rid, p_point_index, p_impulse);
+}
+
+void SoftBody3D::apply_force(int p_point_index, const Vector3& p_force)
+{
+	PhysicsServer3D::soft_body_apply_point_force(
+		physics_rid, p_point_index, p_force);
+}
+
+void SoftBody3D::apply_central_impulse(const Vector3& p_impulse)
+{
+	PhysicsServer3D::soft_body_apply_central_impulse(physics_rid, p_impulse);
+}
+
+void SoftBody3D::apply_central_force(const Vector3& p_force)
+{
+	PhysicsServer3D::soft_body_apply_central_force(physics_rid, p_force);
+}
+
+void SoftBody3D::pin_point(
+	int p_point_index, bool pin, const NodePath& p_spatial_attachment_path, int p_insert_at)
+{
+	ERR_FAIL_COND_MSG(p_insert_at < -1 || p_insert_at >= pinned_points.size(),
+		"Invalid index for pin point insertion position.");
+	_pin_point_on_physics_server(p_point_index, pin);
+	if (pin) {
+		_add_pinned_point(p_point_index, p_spatial_attachment_path, p_insert_at);
+	}
+	else {
+		_remove_pinned_point(p_point_index);
+	}
+}
+
+void SoftBody3D::_pin_point_deferred(
+	int p_point_index, bool pin, const NodePath p_spatial_attachment_path)
+{
+	pin_point(p_point_index, pin, p_spatial_attachment_path);
+	_make_cache_dirty();
+}
+
+bool SoftBody3D::is_point_pinned(int p_point_index) const
+{
+	return -1 != _has_pinned_point(p_point_index);
+}
+
+void SoftBody3D::set_ray_pickable(bool p_ray_pickable)
+{
+	ray_pickable = p_ray_pickable;
+	_update_pickable();
+}
+
+bool SoftBody3D::is_ray_pickable() const { return ray_pickable; }
+
+SoftBody3D::SoftBody3D()
+{
+	rendering_server_handler = memnew(PhysicsServer3DRenderingServerHandler);
+	if (PhysicsServer3D::is_initialized()) {
+		physics_rid = PhysicsServer3D::soft_body_create();
+	}
+}
+
+SoftBody3D::~SoftBody3D()
+{
+	memdelete(rendering_server_handler);
+	if (physics_rid.is_valid() && PhysicsServer3D::is_initialized()) {
+		PhysicsServer3D::free_rid(physics_rid);
+	}
+}
+
+void SoftBody3D::_make_cache_dirty() { pinned_points_cache_dirty = true; }
+
+void SoftBody3D::_pin_point_on_physics_server(int p_point_index, bool pin)
+{
+	PhysicsServer3D::soft_body_pin_point(physics_rid, p_point_index, pin);
+}
+
+void SoftBody3D::_remove_pinned_point(int p_point_index)
+{
+	const int id(_has_pinned_point(p_point_index));
+	if (-1 != id) {
+		pinned_points.remove_at(id);
+	}
+}
+
+int SoftBody3D::_get_pinned_point(int p_point_index, SoftBody3D::PinnedPoint*& r_point) const
+{
+	const int id = _has_pinned_point(p_point_index);
+	if (-1 == id) {
+		r_point = nullptr;
+		return -1;
+	}
+	else {
+		r_point = const_cast<SoftBody3D::PinnedPoint*>(&pinned_points.ptr()[id]);
+		return id;
+	}
+}
+
+int SoftBody3D::_has_pinned_point(int p_point_index) const
+{
+	const PinnedPoint* r = pinned_points.ptr();
+	for (int i = pinned_points.size() - 1; 0 <= i; --i) {
+		if (p_point_index == r[i].point_index) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+void SoftBody3D::_prepare_physics_server() {}
+
+void SoftBody3D::_update_cache_pin_points_datas() {}
+
+void SoftBody3D::_reset_points_offsets() {}
+
+void SoftBody3D::_add_pinned_point(int, NodePath const&, int) {}
+
+void SoftBody3D::add_collision_exception_with(Node*) {}
