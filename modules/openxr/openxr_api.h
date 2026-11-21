@@ -32,16 +32,221 @@
 #pragma once
 
 #include <openxr/openxr.h>
+#include <openxr/openxr_reflection.h>
 #include "action_map/openxr_action_map.h"
 #include "core/error/error_macros.h"
 #include "core/math/projection.h"
 #include "core/math/transform_3d.h"
 #include "core/math/vector2.h"
+#include "core/os/thread_safe.h"
 #include "core/string/ustring.h"
+#include "core/templates/hashfuncs.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/vector.h"
+#include "core/types.h"
 #include "servers/xr/xr_tracker.h"
-#include "util.h"
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXR Function Pointer & Enum Macros
+
+#define UNPACK(...) __VA_ARGS__
+
+#define INIT_XR_FUNC_V(openxr_api, name) \
+	if constexpr (true) { \
+		XrResult get_instance_proc_addr_result; \
+		get_instance_proc_addr_result = OpenXRAPI::get_instance_proc_addr(#name, (PFN_xrVoidFunction *)&name##_ptr); \
+		ERR_FAIL_COND_V(XR_FAILED(get_instance_proc_addr_result), false); \
+	} else \
+		((void)0)
+
+#define EXT_INIT_XR_FUNC_V(name) INIT_XR_FUNC_V(nullptr, name)
+#define OPENXR_API_INIT_XR_FUNC_V(name) INIT_XR_FUNC_V(nullptr, name)
+
+#define INIT_XR_FUNC(openxr_api, name) \
+	if constexpr (true) { \
+		XrResult get_instance_proc_addr_result; \
+		get_instance_proc_addr_result = OpenXRAPI::get_instance_proc_addr(#name, (PFN_xrVoidFunction *)&name##_ptr); \
+		ERR_FAIL_COND(XR_FAILED(get_instance_proc_addr_result)); \
+	} else \
+		((void)0)
+
+#define EXT_INIT_XR_FUNC(name) INIT_XR_FUNC(nullptr, name)
+#define OPENXR_API_INIT_XR_FUNC(name) INIT_XR_FUNC(nullptr, name)
+
+#define TRY_INIT_XR_FUNC(openxr_api, name) \
+	OpenXRAPI::try_get_instance_proc_addr(#name, (PFN_xrVoidFunction *)&name##_ptr)
+
+#define EXT_TRY_INIT_XR_FUNC(name) TRY_INIT_XR_FUNC(nullptr, name)
+#define OPENXR_TRY_API_INIT_XR_FUNC(name) TRY_INIT_XR_FUNC(nullptr, name)
+#define GDEXTENSION_INIT_XR_FUNC(name) \
+	if constexpr (true) { \
+		name##_ptr = reinterpret_cast<PFN_##name>(get_openxr_api()->get_instance_proc_addr(#name)); \
+		ERR_FAIL_NULL(name##_ptr); \
+	} else \
+		((void)0)
+
+#define GDEXTENSION_INIT_XR_FUNC_V(name) \
+	if constexpr (true) { \
+		name##_ptr = reinterpret_cast<PFN_##name>(get_openxr_api()->get_instance_proc_addr(#name)); \
+		ERR_FAIL_NULL_V(name##_ptr, false); \
+	} else \
+		((void)0)
+
+#define EXT_PROTO_XRRESULT_FUNC1(func_name, arg1_type, arg1) \
+	static inline PFN_##func_name func_name##_ptr = nullptr; \
+	static XRAPI_ATTR XrResult XRAPI_CALL func_name(UNPACK arg1_type p_##arg1) { \
+		if (!func_name##_ptr) { \
+			return XR_ERROR_HANDLE_INVALID; \
+		} \
+		return (*func_name##_ptr)(p_##arg1); \
+	}
+
+#define EXT_PROTO_XRRESULT_FUNC2(func_name, arg1_type, arg1, arg2_type, arg2) \
+	static inline PFN_##func_name func_name##_ptr = nullptr; \
+	static XRAPI_ATTR XrResult XRAPI_CALL func_name(UNPACK arg1_type p_##arg1, UNPACK arg2_type p_##arg2) { \
+		if (!func_name##_ptr) { \
+			return XR_ERROR_HANDLE_INVALID; \
+		} \
+		return (*func_name##_ptr)(p_##arg1, p_##arg2); \
+	}
+
+#define EXT_PROTO_XRRESULT_FUNC3(func_name, arg1_type, arg1, arg2_type, arg2, arg3_type, arg3) \
+	static inline PFN_##func_name func_name##_ptr = nullptr; \
+	static XRAPI_ATTR XrResult XRAPI_CALL func_name(UNPACK arg1_type p_##arg1, UNPACK arg2_type p_##arg2, UNPACK arg3_type p_##arg3) { \
+		if (!func_name##_ptr) { \
+			return XR_ERROR_HANDLE_INVALID; \
+		} \
+		return (*func_name##_ptr)(p_##arg1, p_##arg2, p_##arg3); \
+	}
+
+#define EXT_PROTO_XRRESULT_FUNC4(func_name, arg1_type, arg1, arg2_type, arg2, arg3_type, arg3, arg4_type, arg4) \
+	static inline PFN_##func_name func_name##_ptr = nullptr; \
+	static XRAPI_ATTR XrResult XRAPI_CALL func_name(UNPACK arg1_type p_##arg1, UNPACK arg2_type p_##arg2, UNPACK arg3_type p_##arg3, UNPACK arg4_type p_##arg4) { \
+		if (!func_name##_ptr) { \
+			return XR_ERROR_HANDLE_INVALID; \
+		} \
+		return (*func_name##_ptr)(p_##arg1, p_##arg2, p_##arg3, p_##arg4); \
+	}
+
+#define EXT_PROTO_XRRESULT_FUNC5(func_name, arg1_type, arg1, arg2_type, arg2, arg3_type, arg3, arg4_type, arg4, arg5_type, arg5) \
+	static inline PFN_##func_name func_name##_ptr = nullptr; \
+	static XRAPI_ATTR XrResult XRAPI_CALL func_name(UNPACK arg1_type p_##arg1, UNPACK arg2_type p_##arg2, UNPACK arg3_type p_##arg3, UNPACK arg4_type p_##arg4, UNPACK arg5_type p_##arg5) { \
+		if (!func_name##_ptr) { \
+			return XR_ERROR_HANDLE_INVALID; \
+		} \
+		return (*func_name##_ptr)(p_##arg1, p_##arg2, p_##arg3, p_##arg4, p_##arg5); \
+	}
+
+#define EXT_PROTO_XRRESULT_FUNC6(func_name, arg1_type, arg1, arg2_type, arg2, arg3_type, arg3, arg4_type, arg4, arg5_type, arg5, arg6_type, arg6) \
+	static inline PFN_##func_name func_name##_ptr = nullptr; \
+	static XRAPI_ATTR XrResult XRAPI_CALL func_name(UNPACK arg1_type p_##arg1, UNPACK arg2_type p_##arg2, UNPACK arg3_type p_##arg3, UNPACK arg4_type p_##arg4, UNPACK arg5_type p_##arg5, UNPACK arg6_type p_##arg6) { \
+		if (!func_name##_ptr) { \
+			return XR_ERROR_HANDLE_INVALID; \
+		} \
+		return (*func_name##_ptr)(p_##arg1, p_##arg2, p_##arg3, p_##arg4, p_##arg5, p_##arg6); \
+	}
+
+#define XR_ENUM_CASE_STR(name, val) \
+	case name: \
+		return #name;
+#define XR_ENUM_SWITCH(enumType, var) \
+	switch (var) { \
+		XR_LIST_ENUM_##enumType(XR_ENUM_CASE_STR) default : return "Unknown " #enumType ": " + String::num_int64(int64_t(var)); \
+	}
+
+///////////////////////////////////////////////////////////////////////////
+// XrUuidEXT HashMap Helpers
+
+struct HashMapHasherXrUuidEXT
+{
+	static _FORCE_INLINE_ uint32_t hash(const XrUuidEXT& p_uuid)
+	{
+		return hash_murmur3_buffer(p_uuid.data, XR_UUID_SIZE_EXT);
+	}
+};
+
+template <>
+struct HashMapComparatorDefault<XrUuidEXT>
+{
+	static bool compare(const XrUuidEXT& p_lhs, const XrUuidEXT& p_rhs)
+	{
+		for (int i = 0; i < XR_UUID_SIZE_EXT; i++) {
+			if (p_lhs.data[i] != p_rhs.data[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRUtil
+
+class OpenXRUtil final
+{
+public:
+	static String get_result_string(XrResult p_result);
+	static String get_view_configuration_name(XrViewConfigurationType p_view_configuration);
+	static String get_reference_space_name(XrReferenceSpaceType p_reference_space);
+	static String get_structure_type_name(XrStructureType p_structure_type);
+	static String get_session_state_name(XrSessionState p_session_state);
+	static String get_action_type_name(XrActionType p_action_type);
+	static String get_environment_blend_mode_name(XrEnvironmentBlendMode p_blend_mode);
+	static String make_xr_version_string(XrVersion p_version);
+	static String get_handle_as_hex_string(void* p_handle);
+	static String string_from_xruuid(const XrUuid& xr_uuid);
+	static XrUuid xruuid_from_string(const String& p_uuid);
+
+	// Copied from OpenXR xr_linear.h private header, so we can still link against
+	// system-provided packages without relying on our `thirdparty` code.
+
+	// Column-major, pre-multiplied. This type does not exist in the OpenXR API and is provided for convenience.
+	typedef struct XrMatrix4x4f
+	{
+		float m[16];
+	} XrMatrix4x4f;
+
+	static void XrMatrix4x4f_CreateProjection(XrMatrix4x4f* result, const float tanAngleLeft,
+		const float tanAngleRight, const float tanAngleUp, const float tanAngleDown,
+		const float nearZ, const float farZ);
+	static void XrMatrix4x4f_CreateProjectionFov(
+		XrMatrix4x4f* result, const XrFovf fov, const float nearZ, const float farZ);
+
+	OpenXRUtil() = delete;
+	OpenXRUtil(const OpenXRUtil&) = delete;
+	OpenXRUtil& operator=(const OpenXRUtil&) = delete;
+	~OpenXRUtil() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRStructureBase
+
+// Base class for XrStructureType based headers (with persistence config folded in)
+class OpenXRStructureBase final : public RefCounted
+{
+public:
+	bool has_valid_configuration() const;
+	void* get_header(void* p_next = nullptr);
+	XrStructureType get_structure_type();
+
+	void set_next(const Ref<OpenXRStructureBase> p_next);
+	Ref<OpenXRStructureBase> get_next() const;
+
+	void add_persistence_context(RID p_persistence_context);
+	void remove_persistence_context(RID p_persistence_context);
+
+private:
+	Ref<OpenXRStructureBase> next;
+	Vector<RID> persistence_contexts;
+	Vector<XrSpatialPersistenceContextEXT> context_handles;
+	XrSpatialContextPersistenceConfigEXT persistence_config = {
+		XR_TYPE_SPATIAL_CONTEXT_PERSISTENCE_CONFIG_EXT, nullptr, 0, nullptr};
+
+	uint64_t _get_structure_type();
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRAPI
 
 // Name we add to our extensions if OpenXR 1.1 context is available.
 #define XR_OPENXR_1_1_NAME "OPENXR_1_1"
@@ -50,11 +255,13 @@
 
 // forward declarations, we don't want to include these fully
 class OpenXRInterface;
+class OpenXRExtensionWrapper;
+class OpenXRExtensionWrapperExtension;
 
 class OpenXRAPI final
 {
 public:
-	class OpenXRSwapChainInfo
+	class OpenXRSwapChainInfo final
 	{
 	private:
 		XrSwapchain swapchain = XR_NULL_HANDLE;
@@ -241,7 +448,7 @@ private:
 		XrPath toplevel_path;	// OpenXR XrPath for this tracker
 		RID active_profile_rid; // RID of the active profile for this tracker
 	};
-	static RID get_tracker_rid(XrPath p_path); // If true we need to check for updates to our active_profile_rid.
+	static RID get_tracker_rid(XrPath p_path);
 
 	struct ActionSet
 	{						// Action sets define a set of actions that can be enabled together
@@ -651,8 +858,7 @@ public:
 		Size2i velocity_target_size;
 		LocalFloorEmulation local_floor_emulation;
 		RID_Owner<Tracker, true> tracker_owner;
-		bool interaction_profile_changed =
-		true;
+		bool interaction_profile_changed = true;
 		RID_Owner<ActionSet, true> action_set_owner;
 		RID_Owner<Action, true> action_owner;
 		RID_Owner<InteractionProfile, true> interaction_profile_owner;
@@ -671,4 +877,104 @@ public:
 	~OpenXRAPI() = delete;
 };
 
+///////////////////////////////////////////////////////////////////////////
+// OpenXRAPIExtension
 
+class OpenXRAPIExtension final : public RefCounted
+{
+protected:
+	_THREAD_SAFE_CLASS_
+
+#ifndef DISABLE_DEPRECATED
+	static void _bind_compatibility_methods();
+	void _register_composition_layer_provider_bind_compat_104087(
+		OpenXRExtensionWrapperExtension* p_extension);
+	void _unregister_composition_layer_provider_bind_compat_104087(
+		OpenXRExtensionWrapperExtension* p_extension);
+	void _register_projection_views_extension_bind_compat_104087(
+		OpenXRExtensionWrapperExtension* p_extension);
+	void _unregister_projection_views_extension_bind_compat_104087(
+		OpenXRExtensionWrapperExtension* p_extension);
+#endif
+
+public:
+	uint64_t get_openxr_version();
+	uint64_t get_instance();
+	uint64_t get_system_id();
+	uint64_t get_session();
+
+	static bool openxr_is_enabled(bool p_check_run_in_editor = true);
+
+	uint64_t get_instance_proc_addr(const String& p_name);
+	String get_error_string(uint64_t result);
+	String get_swapchain_format_name(int64_t p_swapchain_format);
+	void set_object_name(
+		int64_t p_object_type, uint64_t p_object_handle, const String& p_object_name);
+	void begin_debug_label_region(const String& p_label_name);
+	void end_debug_label_region();
+	void insert_debug_label(const String& p_label_name);
+
+	uint32_t get_view_count() const;
+	uint64_t get_view_configuration() const;
+
+	bool is_initialized();
+	bool is_running();
+
+	uint64_t get_play_space();
+	int64_t get_predicted_display_time();
+	int64_t get_next_frame_time();
+	bool can_render();
+
+	RID find_action(const String& p_name, const RID& p_action_set = RID());
+	uint64_t action_get_handle(RID p_action);
+
+	uint64_t get_hand_tracker(int p_hand_index);
+
+	void register_composition_layer_provider(OpenXRExtensionWrapper* p_extension);
+	void unregister_composition_layer_provider(OpenXRExtensionWrapper* p_extension);
+
+	void register_projection_views_extension(OpenXRExtensionWrapper* p_extension);
+	void unregister_projection_views_extension(OpenXRExtensionWrapper* p_extension);
+
+	void register_frame_info_extension(OpenXRExtensionWrapper* p_extension);
+	void unregister_frame_info_extension(OpenXRExtensionWrapper* p_extension);
+
+	void register_projection_layer_extension(OpenXRExtensionWrapper* p_extension);
+	void unregister_projection_layer_extension(OpenXRExtensionWrapper* p_extension);
+
+	double get_render_state_z_near();
+	double get_render_state_z_far();
+
+	void set_velocity_texture(RID p_render_target);
+	void set_velocity_depth_texture(RID p_render_target);
+	void set_velocity_target_size(const Size2i& p_target_size);
+
+	PackedInt64Array get_supported_swapchain_formats();
+
+	uint64_t openxr_swapchain_create(XrSwapchainCreateFlags p_create_flags,
+		XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width,
+		uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size);
+	void openxr_swapchain_free(uint64_t p_swapchain_info);
+	uint64_t openxr_swapchain_get_swapchain(uint64_t p_swapchain_info);
+	void openxr_swapchain_acquire(uint64_t p_swapchain_info);
+	RID openxr_swapchain_get_image(uint64_t p_swapchain_info);
+	void openxr_swapchain_release(uint64_t p_swapchain_info);
+
+	uint64_t get_projection_layer();
+
+	void set_render_region(const Rect2i& p_render_region);
+
+	void update_main_swapchain_size();
+
+	enum OpenXRAlphaBlendModeSupport
+	{
+		OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE = 0,
+		OPENXR_ALPHA_BLEND_MODE_SUPPORT_REAL = 1,
+		OPENXR_ALPHA_BLEND_MODE_SUPPORT_EMULATING = 2,
+	};
+
+	void set_emulate_environment_blend_mode_alpha_blend(bool p_enabled);
+	OpenXRAlphaBlendModeSupport is_environment_blend_mode_alpha_blend_supported();
+
+	OpenXRAPIExtension();
+};

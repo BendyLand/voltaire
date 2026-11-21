@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "../../util.h"
+#include "../../openxr_api.h"
 
 #include <jni.h>
 

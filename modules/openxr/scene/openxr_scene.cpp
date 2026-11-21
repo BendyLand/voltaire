@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  openxr_composition_layer.cpp                                          */
+/*  openxr_scene.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                            VOLTAIRE ENGINE                             */
@@ -29,18 +29,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "../extensions/openxr_composition_layer_extension.h"
+#include "../extensions/openxr_extensions.h"
 #include "../openxr_api.h"
 #include "../openxr_interface.h"
 #include "core/config/engine.h"
-#include "openxr_composition_layer.h"
+#include "core/config/project_settings.h"
+#include "openxr_scene.h"
 #include "platform/android/api/java_class_wrapper.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/3d/xr/xr_nodes.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+#include "servers/xr/xr_server.h"
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRCompositionLayer
 
 Vector<OpenXRCompositionLayer*> OpenXRCompositionLayer::composition_layer_nodes;
 
@@ -60,47 +67,47 @@ OpenXRCompositionLayer::OpenXRCompositionLayer(LayerType p_type) : layer_type(p_
 	switch (layer_type) {
 	case LAYER_QUAD: {
 		XrCompositionLayerQuad openxr_composition_layer = {
-			XR_TYPE_COMPOSITION_LAYER_QUAD,			  // type
-			nullptr,								  // next
-			0,										  // layerFlags
-			XR_NULL_HANDLE,							  // space
-			XR_EYE_VISIBILITY_BOTH,					  // eyeVisibility
-			{},										  // subImage
-			{{0, 0, 0, 0}, {0, 0, 0}},				  // pose
-			{(float)quad_size.x, (float)quad_size.y}, // size
+			XR_TYPE_COMPOSITION_LAYER_QUAD,
+			nullptr,
+			0,
+			XR_NULL_HANDLE,
+			XR_EYE_VISIBILITY_BOTH,
+			{},
+			{{0, 0, 0, 0}, {0, 0, 0}},
+			{(float)quad_size.x, (float)quad_size.y},
 		};
 		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
 			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
 	} break;
 	case LAYER_CYLINDER: {
 		XrCompositionLayerCylinderKHR openxr_composition_layer = {
-			XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR, // type
-			nullptr,								// next
-			0,										// layerFlags
-			XR_NULL_HANDLE,							// space
-			XR_EYE_VISIBILITY_BOTH,					// eyeVisibility
-			{},										// subImage
-			{{0, 0, 0, 0}, {0, 0, 0}},				// pose
-			radius,									// radius
-			central_angle,							// centralAngle
-			aspect_ratio,							// aspectRatio
+			XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR,
+			nullptr,
+			0,
+			XR_NULL_HANDLE,
+			XR_EYE_VISIBILITY_BOTH,
+			{},
+			{{0, 0, 0, 0}, {0, 0, 0}},
+			radius,
+			central_angle,
+			aspect_ratio,
 		};
 		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
 			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
 	} break;
 	case LAYER_EQUIRECT: {
 		XrCompositionLayerEquirect2KHR openxr_composition_layer = {
-			XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR, // type
-			nullptr,								 // next
-			0,										 // layerFlags
-			XR_NULL_HANDLE,							 // space
-			XR_EYE_VISIBILITY_BOTH,					 // eyeVisibility
-			{},										 // subImage
-			{{0, 0, 0, 0}, {0, 0, 0}},				 // pose
-			radius,									 // radius
-			central_horizontal_angle,				 // centralHorizontalAngle
-			upper_vertical_angle,					 // upperVerticalAngle
-			-lower_vertical_angle,					 // lowerVerticalAngle
+			XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR,
+			nullptr,
+			0,
+			XR_NULL_HANDLE,
+			XR_EYE_VISIBILITY_BOTH,
+			{},
+			{{0, 0, 0, 0}, {0, 0, 0}},
+			radius,
+			central_horizontal_angle,
+			upper_vertical_angle,
+			-lower_vertical_angle,
 		};
 		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
 			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
@@ -168,11 +175,7 @@ void OpenXRCompositionLayer::_setup_composition_layer()
 			OpenXRCompositionLayerExtension::composition_layer_register(composition_layer);
 			registered = true;
 
-			// NOTE: We don't setup/clear when using Android surfaces, so we don't destroy the
-			// surface unexpectedly.
 			if (layer_viewport) {
-				// Set our properties on the layer provider, which will create all the necessary
-				// resources (ex swap chains).
 				OpenXRCompositionLayerExtension::composition_layer_set_viewport(composition_layer,
 					layer_viewport->get_viewport_rid(), layer_viewport->get_size());
 			}
@@ -186,11 +189,7 @@ void OpenXRCompositionLayer::_clear_composition_layer()
 		OpenXRCompositionLayerExtension::composition_layer_unregister(composition_layer);
 		registered = false;
 
-		// NOTE: We don't setup/clear when using Android surfaces, so we don't destroy the surface
-		// unexpectedly.
 		if (!use_android_surface) {
-			// This will reset the viewport and free all the resources (ex swap chains) used by the
-			// layer.
 			OpenXRCompositionLayerExtension::composition_layer_set_viewport(
 				composition_layer, RID(), Size2i());
 		}
@@ -199,8 +198,9 @@ void OpenXRCompositionLayer::_clear_composition_layer()
 
 void OpenXRCompositionLayer::_viewport_size_changed()
 {
-	if (layer_viewport && openxr_session_running && OpenXRCompositionLayerExtension::is_initialized() &&
-		is_natively_supported() && is_visible_in_tree() && is_inside_tree()) {
+	if (layer_viewport && openxr_session_running &&
+		OpenXRCompositionLayerExtension::is_initialized() && is_natively_supported() &&
+		is_visible_in_tree() && is_inside_tree()) {
 		OpenXRCompositionLayerExtension::composition_layer_set_viewport(
 			composition_layer, layer_viewport->get_viewport_rid(), layer_viewport->get_size());
 	}
@@ -254,14 +254,11 @@ void OpenXRCompositionLayer::set_use_android_surface(bool p_use_android_surface)
 
 	use_android_surface = p_use_android_surface;
 	if (use_android_surface) {
-		// It's possible that the layer provider is unregistered here (if previously invisible)
 		set_layer_viewport(nullptr);
 		if (OpenXRCompositionLayerExtension::is_initialized()) {
 			OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(
 				composition_layer, true, android_surface_size);
 		}
-		// ...and it may not be set up above because of viewport = null, android surface is false,
-		// so set it up again:
 		if (_should_register()) {
 			_setup_composition_layer();
 		}
@@ -501,7 +498,8 @@ void OpenXRCompositionLayer::set_border_color(const Color& p_color)
 	}
 	border_color = p_color;
 	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_border_color(composition_layer, p_color);
+		OpenXRCompositionLayerExtension::composition_layer_set_border_color(
+			composition_layer, p_color);
 	}
 }
 
@@ -687,7 +685,8 @@ Vector2 OpenXRCompositionLayer::intersects_ray(
 		Vector3 offset = p_origin - cylinder_transform.origin;
 		float a = p_direction.dot(p_direction - cylinder_axis * p_direction.dot(cylinder_axis));
 		float b = 2.0 * (p_direction.dot(offset - cylinder_axis * offset.dot(cylinder_axis)));
-		float c = offset.dot(offset - cylinder_axis * offset.dot(cylinder_axis)) - (radius * radius);
+		float c =
+			offset.dot(offset - cylinder_axis * offset.dot(cylinder_axis)) - (radius * radius);
 
 		float discriminant = b * b - 4.0 * a * c;
 		if (discriminant < 0.0) {
@@ -755,7 +754,8 @@ Vector2 OpenXRCompositionLayer::intersects_ray(
 			return Vector2(-1.0, -1.0);
 		}
 
-		float vertical_intersection_angle = Math::acos(relative_point.y / radius) - (Math::PI / 2.0);
+		float vertical_intersection_angle =
+			Math::acos(relative_point.y / radius) - (Math::PI / 2.0);
 		if (vertical_intersection_angle < 0) {
 			if (Math::abs(vertical_intersection_angle) > upper_vertical_angle) {
 				return Vector2(-1.0, -1.0);
@@ -765,7 +765,6 @@ Vector2 OpenXRCompositionLayer::intersects_ray(
 			return Vector2(-1.0, -1.0);
 		}
 
-		// Re-center the intersection angle if the vertical angle is uneven between upper and lower.
 		if (upper_vertical_angle != lower_vertical_angle) {
 			vertical_intersection_angle -= (-upper_vertical_angle + lower_vertical_angle) / 2.0;
 		}
@@ -787,8 +786,7 @@ void OpenXRCompositionLayer::_reset_fallback_material()
 		return;
 	}
 
-	if (enable_hole_punch && !Engine::is_editor_hint() &&
-		is_natively_supported()) {
+	if (enable_hole_punch && !Engine::is_editor_hint() && is_natively_supported()) {
 		Ref<ShaderMaterial> material = fallback->get_surface_override_material(0);
 		if (material.is_null()) {
 			Ref<Shader> shader;
@@ -797,7 +795,6 @@ void OpenXRCompositionLayer::_reset_fallback_material()
 
 			material.instantiate();
 			material->set_shader(shader);
-
 			fallback->set_surface_override_material(0, material);
 		}
 	}
@@ -849,3 +846,305 @@ Camera3D* OpenXRCompositionLayer::_get_xrcamera3d_ancestor() const
 }
 
 void OpenXRCompositionLayer::set_layer_viewport(SubViewport* p_viewport) {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRHand
+
+OpenXRHand::OpenXRHand() {}
+
+void OpenXRHand::set_hand(Hands p_hand)
+{
+	ERR_FAIL_INDEX(p_hand, HAND_MAX);
+
+	hand = p_hand;
+}
+
+OpenXRHand::Hands OpenXRHand::get_hand() const { return hand; }
+
+void OpenXRHand::set_hand_skeleton(const NodePath& p_hand_skeleton)
+{
+	hand_skeleton = p_hand_skeleton;
+}
+
+void OpenXRHand::set_motion_range(MotionRange p_motion_range)
+{
+	ERR_FAIL_INDEX(p_motion_range, MOTION_RANGE_MAX);
+	motion_range = p_motion_range;
+
+	_set_motion_range();
+}
+
+OpenXRHand::MotionRange OpenXRHand::get_motion_range() const { return motion_range; }
+
+NodePath OpenXRHand::get_hand_skeleton() const { return hand_skeleton; }
+
+void OpenXRHand::set_skeleton_rig(SkeletonRig p_skeleton_rig)
+{
+	ERR_FAIL_INDEX(p_skeleton_rig, SKELETON_RIG_MAX);
+
+	skeleton_rig = p_skeleton_rig;
+}
+
+OpenXRHand::SkeletonRig OpenXRHand::get_skeleton_rig() const { return skeleton_rig; }
+
+void OpenXRHand::set_bone_update(BoneUpdate p_bone_update)
+{
+	ERR_FAIL_INDEX(p_bone_update, BONE_UPDATE_MAX);
+
+	bone_update = p_bone_update;
+}
+
+OpenXRHand::BoneUpdate OpenXRHand::get_bone_update() const { return bone_update; }
+
+void OpenXRHand::_get_joint_data()
+{
+	static const String bone_names[SKELETON_RIG_MAX][XR_HAND_JOINT_COUNT_EXT] = {
+		{"Palm", "Wrist", "Thumb_Metacarpal", "Thumb_Proximal", "Thumb_Distal", "Thumb_Tip",
+			"Index_Metacarpal", "Index_Proximal", "Index_Intermediate", "Index_Distal", "Index_Tip",
+			"Middle_Metacarpal", "Middle_Proximal", "Middle_Intermediate", "Middle_Distal",
+			"Middle_Tip", "Ring_Metacarpal", "Ring_Proximal", "Ring_Intermediate", "Ring_Distal",
+			"Ring_Tip", "Little_Metacarpal", "Little_Proximal", "Little_Intermediate",
+			"Little_Distal", "Little_Tip"},
+		{"Palm", "Hand", "ThumbMetacarpal", "ThumbProximal", "ThumbDistal", "ThumbTip",
+			"IndexMetacarpal", "IndexProximal", "IndexIntermediate", "IndexDistal", "IndexTip",
+			"MiddleMetacarpal", "MiddleProximal", "MiddleIntermediate", "MiddleDistal", "MiddleTip",
+			"RingMetacarpal", "RingProximal", "RingIntermediate", "RingDistal", "RingTip",
+			"LittleMetacarpal", "LittleProximal", "LittleIntermediate", "LittleDistal",
+			"LittleTip"}};
+
+	static const String bone_name_formats[SKELETON_RIG_MAX][2] = {
+		{"<bone>_L", "<bone>_R"},
+		{"Left<bone>", "Right<bone>"}};
+
+	for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
+		joints[i].bone = -1;
+		joints[i].parent_joint = -1;
+	}
+
+	Skeleton3D* skeleton = get_skeleton();
+	if (!skeleton) {
+		return;
+	}
+
+	int bones[XR_HAND_JOINT_COUNT_EXT];
+	for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
+		String bone_name =
+			bone_name_formats[skeleton_rig][hand].replace("<bone>", bone_names[skeleton_rig][i]);
+		bones[i] = skeleton->find_bone(bone_name);
+	}
+
+	for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
+		const int bone = bones[i];
+		if (bone == -1) {
+			continue;
+		}
+
+		const int parent_bone = skeleton->get_bone_parent(bone);
+		if (parent_bone == -1) {
+			joints[i].bone = bone;
+			joints[i].parent_joint = XR_HAND_JOINT_PALM_EXT;
+			continue;
+		}
+
+		for (int j = 0; j < XR_HAND_JOINT_COUNT_EXT; ++j) {
+			if (bones[j] == parent_bone) {
+				joints[i].bone = bone;
+				joints[i].parent_joint = j;
+				break;
+			}
+		}
+	}
+}
+
+void OpenXRHand::_notification(int p_what)
+{
+	switch (p_what) {
+	case NOTIFICATION_ENTER_TREE: {
+		_get_joint_data();
+		set_process_internal(true);
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		set_process_internal(false);
+		for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
+			joints[i].bone = -1;
+			joints[i].parent_joint = -1;
+		}
+	} break;
+	case NOTIFICATION_INTERNAL_PROCESS: {
+		_update_skeleton();
+	} break;
+	default: {
+	} break;
+	}
+}
+
+void OpenXRHand::_update_skeleton() {}
+
+void OpenXRHand::_set_motion_range() {}
+
+Skeleton3D* OpenXRHand::get_skeleton() { return nullptr; }
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRVisibilityMask
+
+void OpenXRVisibilityMask::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+void OpenXRVisibilityMask::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+
+	switch (p_what) {
+	case NOTIFICATION_ENTER_TREE: {
+		if (OpenXRVisibilityMaskExtension::is_initialized() &&
+			OpenXRVisibilityMaskExtension::is_available()) {
+			set_base(OpenXRVisibilityMaskExtension::get_mesh());
+		}
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		set_base(RID());
+	} break;
+	}
+}
+
+void OpenXRVisibilityMask::_on_openxr_session_begun()
+{
+	if (is_inside_tree()) {
+		if (OpenXRVisibilityMaskExtension::is_initialized() &&
+			OpenXRVisibilityMaskExtension::is_available()) {
+			set_base(OpenXRVisibilityMaskExtension::get_mesh());
+		}
+	}
+}
+
+void OpenXRVisibilityMask::_on_openxr_session_stopping() { set_base(RID()); }
+
+AABB OpenXRVisibilityMask::get_aabb() const
+{
+	AABB ret;
+	ret.position = Vector3(-1000.0, -1000.0, -1000.0);
+	ret.size = Vector3(2000.0, 2000.0, 2000.0);
+	return ret;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRRenderModel & OpenXRRenderModelManager
+
+#ifdef MODULE_GLTF_ENABLED
+
+void OpenXRRenderModel::_load_render_model_scene() {}
+
+String OpenXRRenderModel::get_top_level_path() const
+{
+	String ret;
+
+	if (render_model.is_valid() && OpenXRRenderModelExtension::is_initialized()) {
+		ret = OpenXRRenderModelExtension::render_model_get_top_level_path_as_string(render_model);
+	}
+
+	return ret;
+}
+
+RID OpenXRRenderModel::get_render_model() const { return render_model; }
+
+void OpenXRRenderModel::set_render_model(RID p_render_model)
+{
+	render_model = p_render_model;
+	if (is_inside_tree() && render_model.is_valid()) {
+		_load_render_model_scene();
+	}
+}
+
+bool OpenXRRenderModelManager::_has_filters() { return tracker != 0; }
+
+void OpenXRRenderModelManager::_on_render_model_added(RID p_render_model)
+{
+	if (_has_filters()) {
+		is_dirty = true;
+	}
+	else {
+		_update_models();
+	}
+}
+
+void OpenXRRenderModelManager::_on_render_model_removed(RID p_render_model)
+{
+	if (_has_filters()) {
+		is_dirty = true;
+	}
+	else {
+		_update_models();
+	}
+}
+
+void OpenXRRenderModelManager::_on_render_model_top_level_path_changed(RID p_path)
+{
+	if (_has_filters()) {
+		is_dirty = true;
+	}
+}
+
+void OpenXRRenderModelManager::set_tracker(RenderModelTracker p_tracker)
+{
+	if (tracker != p_tracker) {
+		tracker = p_tracker;
+		is_dirty = true;
+
+		if (tracker == RENDER_MODEL_TRACKER_ANY || tracker == RENDER_MODEL_TRACKER_NONE_SET) {
+			xr_path = XR_NULL_PATH;
+		}
+		else if (!Engine::is_editor_hint()) {
+			if (OpenXRAPI::is_allocated() && XRServer::is_initialized()) {
+				String toplevel_path;
+				String tracker_name;
+				if (tracker == RENDER_MODEL_TRACKER_LEFT_HAND) {
+					tracker_name = "left_hand";
+					toplevel_path = "/user/hand/left";
+				}
+				else if (tracker == RENDER_MODEL_TRACKER_RIGHT_HAND) {
+					tracker_name = "right_hand";
+					toplevel_path = "/user/hand/right";
+				}
+				else {
+					ERR_FAIL_MSG("Unsupported tracker value set.");
+				}
+
+				positional_tracker = XRServer::get_tracker(tracker_name);
+				if (positional_tracker.is_null()) {
+					WARN_PRINT("OpenXR: Can't find tracker " + tracker_name);
+				}
+
+				xr_path = OpenXRAPI::get_xr_path(toplevel_path);
+				if (xr_path == XR_NULL_PATH) {
+					WARN_PRINT("OpenXR: Can't find path for " + toplevel_path);
+				}
+			}
+		}
+
+		set_process_internal(true);
+	}
+}
+
+OpenXRRenderModelManager::RenderModelTracker OpenXRRenderModelManager::get_tracker() const
+{
+	return tracker;
+}
+
+void OpenXRRenderModelManager::set_make_local_to_pose(const String& p_action)
+{
+	if (make_local_to_pose != p_action) {
+		make_local_to_pose = p_action;
+
+		if (container) {
+			container->set_transform(Transform3D());
+		}
+	}
+}
+
+String OpenXRRenderModelManager::get_make_local_to_pose() const { return make_local_to_pose; }
+
+void OpenXRRenderModelManager::_update_models() {}
+
+#endif // MODULE_GLTF_ENABLED

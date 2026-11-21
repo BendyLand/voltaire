@@ -29,8 +29,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "../../openxr_util.h"
-#include "../openxr_fb_foveation_extension.h"
+#include "../../openxr_api.h"
+#include "../openxr_extensions.h"
 #include "core/string/print_string.h"
 #include "openxr_vulkan_extension.h"
 #include "servers/rendering/rendering_device.h"

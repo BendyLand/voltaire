@@ -35,8 +35,7 @@
 
 #include "core/io/dir_access.h"
 #include "core/string/string_builder.h"
-#include "drivers/gles3/rasterizer_util_gles3.h"
-#include "drivers/gles3/storage/config.h"
+#include "drivers/gles3/storage/utilities.h"
 
 #ifndef WEB_ENABLED
 #include "core/io/file_access.h"

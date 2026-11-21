@@ -34,7 +34,6 @@
 
 #ifdef GLES3_ENABLED
 
-#include "drivers/gles3/storage/config.h"
 #include "drivers/gles3/storage/material_storage.h"
 #include "drivers/gles3/storage/mesh_storage.h"
 #include "drivers/gles3/storage/texture_storage.h"

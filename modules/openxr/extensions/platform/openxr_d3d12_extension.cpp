@@ -33,7 +33,7 @@
 
 #ifdef D3D12_ENABLED
 
-#include "../../openxr_util.h"
+#include "../../openxr_api.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
 

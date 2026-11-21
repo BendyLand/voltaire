@@ -54,7 +54,6 @@
 // As some data is setup before we start rendering, and cleaned up
 // after we've stopped, that is accessed directly from both threads.
 
-#include "extensions/openxr_hand_tracking_extension.h"
 #include "openxr_api.h"
 #include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_tracker.h"
@@ -62,7 +61,7 @@
 // declare some default strings
 #define INTERACTION_PROFILE_NONE "/interaction_profiles/none"
 
-class OpenXRInterface : public XRInterface
+class OpenXRInterface final : public XRInterface
 {
 private:
 	bool initialized = false;
@@ -130,9 +129,6 @@ private:
 	void free_interaction_profiles();
 
 	void _set_default_pos(Transform3D& r_transform, double p_world_scale, uint64_t p_eye);
-
-	void handle_hand_tracking(
-		const String& p_path, OpenXRHandTrackingExtension::HandTrackedHands p_hand);
 
 protected:
 

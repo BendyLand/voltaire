@@ -33,33 +33,14 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
+#include "extensions/openxr_extensions.h"
+#include "extensions/openxr_interaction_profile_extension.h"
+#include "extensions/spatial_entities/openxr_spatial_entities.h"
 #include "modules/modules_enabled.gen.h"
-#include "openxr_api_extension.h"
+#include "openxr_api.h"
 #include "openxr_interface.h"
 #include "register_types.h"
-
-#ifndef DISABLE_DEPRECATED
-#include "scene/openxr_hand.h"
-#endif // DISABLE_DEPRECATED
-
-#include "extensions/openxr_composition_layer_extension.h"
-#include "extensions/openxr_extensions.h"
-#include "extensions/openxr_frame_synthesis_extension.h"
-#include "extensions/openxr_future_extension.h"
-#include "extensions/openxr_hand_tracking_extension.h"
-#include "extensions/openxr_interaction_profile_extension.h"
-#include "extensions/spatial_entities/openxr_spatial_anchor.h"
-#include "extensions/spatial_entities/openxr_spatial_entity_extension.h"
-#include "extensions/spatial_entities/openxr_spatial_marker_tracking.h"
-#include "extensions/spatial_entities/openxr_spatial_plane_tracking.h"
-#include "scene/openxr_composition_layer.h"
-#include "scene/openxr_visibility_mask.h"
-
-#ifdef MODULE_GLTF_ENABLED
-#include "extensions/openxr_render_model_extension.h"
-#include "scene/openxr_render_model.h"
-#include "scene/openxr_render_model_manager.h"
-#endif
+#include "scene/openxr_scene.h"
 
 #ifdef ANDROID_ENABLED
 #include "extensions/platform/openxr_android_extension.h"

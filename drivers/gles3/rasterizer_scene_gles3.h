@@ -33,16 +33,103 @@
 
 #ifdef GLES3_ENABLED
 
+#include "core/math/aabb.h"
 #include "core/math/projection.h"
+#include "core/math/vector3.h"
+#include "core/math/vector3i.h"
 #include "core/templates/paged_allocator.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/storage/material_storage.h"
 #include "drivers/gles3/storage/mesh_storage.h"
+#include "servers/rendering/environment/renderer_fog.h"
+#include "servers/rendering/environment/renderer_gi.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
+
+namespace GLES3
+{
+
+class Fog final
+{
+public:
+	Fog() = delete;
+	~Fog() = delete;
+	Fog(const Fog&) = delete;
+	Fog& operator=(const Fog&) = delete;
+
+	static void initialize();
+	static void finalize();
+	static bool is_initialized();
+	static bool free(RID p_rid);
+
+	/* FOG VOLUMES */
+
+	static bool owns_fog_volume(RID p_rid);
+	static RID fog_volume_allocate();
+	static void fog_volume_initialize(RID p_rid);
+	static void fog_volume_free(RID p_rid);
+	static void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape);
+	static void fog_volume_set_size(RID p_fog_volume, const Vector3& p_size);
+	static void fog_volume_set_material(RID p_fog_volume, RID p_material);
+	static AABB fog_volume_get_aabb(RID p_fog_volume);
+	static RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume);
+};
+
+class GI final
+{
+public:
+	GI() = delete;
+	~GI() = delete;
+	GI(const GI&) = delete;
+	GI& operator=(const GI&) = delete;
+
+	static void initialize();
+	static void finalize();
+	static bool is_initialized();
+	static bool free(RID p_rid);
+
+	/* VOXEL GI STUBS */
+	static bool owns_voxel_gi(RID p_rid);
+	static RID voxel_gi_allocate();
+	static void voxel_gi_free(RID p_voxel_gi);
+	static void voxel_gi_initialize(RID p_voxel_gi);
+	static void voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xform,
+		const AABB& p_aabb, const Vector3i& p_octree_size, const Vector<uint8_t>& p_octree_cells,
+		const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
+		const Vector<int>& p_level_counts);
+	static AABB voxel_gi_get_bounds(RID p_voxel_gi);
+	static Vector3i voxel_gi_get_octree_size(RID p_voxel_gi);
+	static Vector<uint8_t> voxel_gi_get_octree_cells(RID p_voxel_gi);
+	static Vector<uint8_t> voxel_gi_get_data_cells(RID p_voxel_gi);
+	static Vector<uint8_t> voxel_gi_get_distance_field(RID p_voxel_gi);
+	static Vector<int> voxel_gi_get_level_counts(RID p_voxel_gi);
+	static Transform3D voxel_gi_get_to_cell_xform(RID p_voxel_gi);
+	static void voxel_gi_set_dynamic_range(RID p_voxel_gi, float p_range);
+	static float voxel_gi_get_dynamic_range(RID p_voxel_gi);
+	static void voxel_gi_set_propagation(RID p_voxel_gi, float p_range);
+	static float voxel_gi_get_propagation(RID p_voxel_gi);
+	static void voxel_gi_set_energy(RID p_voxel_gi, float p_energy);
+	static float voxel_gi_get_energy(RID p_voxel_gi);
+	static void voxel_gi_set_baked_exposure_normalization(RID p_voxel_gi, float p_baked_exposure);
+	static float voxel_gi_get_baked_exposure_normalization(RID p_voxel_gi);
+	static void voxel_gi_set_bias(RID p_voxel_gi, float p_bias);
+	static float voxel_gi_get_bias(RID p_voxel_gi);
+	static void voxel_gi_set_normal_bias(RID p_voxel_gi, float p_range);
+	static float voxel_gi_get_normal_bias(RID p_voxel_gi);
+	static void voxel_gi_set_interior(RID p_voxel_gi, bool p_enable);
+	static bool voxel_gi_is_interior(RID p_voxel_gi);
+	static void voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_enable);
+	static bool voxel_gi_is_using_two_bounces(RID p_voxel_gi);
+	static uint32_t voxel_gi_get_version(RID p_probe);
+
+	/* SDFGI STUBS */
+	static void sdfgi_reset();
+};
+
+} // namespace GLES3
 
 class RenderSceneBuffersGLES3;
 

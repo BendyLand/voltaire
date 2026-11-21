@@ -80,7 +80,7 @@ public:
 	discriminated by XRServer::TrackerType.
 */
 
-class XRTracker : public RefCounted
+class XRTracker final : public RefCounted
 {
 	_THREAD_SAFE_CLASS_
 
@@ -469,11 +469,14 @@ private:
 	BodyData* body_data = nullptr;
 	HandData* hand_data = nullptr;
 	PackedFloat32Array blend_shapes;
+	Ref<RefCounted> custom_data;
 
 	BodyData* _ensure_body_data();
 	HandData* _ensure_hand_data();
 
 public:
+	void set_custom_data(const Ref<RefCounted>& p_custom_data) { custom_data = p_custom_data; }
+	Ref<RefCounted> get_custom_data() const { return custom_data; }
 	void set_tracker_type(XRServer::TrackerType p_type);
 	XRServer::TrackerType get_tracker_type() const;
 	void set_tracker_name(const String& p_name);

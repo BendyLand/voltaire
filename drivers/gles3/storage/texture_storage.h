@@ -38,9 +38,8 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rid_owner.h"
-#include "drivers/gles3/effects/copy_effects.h"
 #include "drivers/gles3/shaders/canvas_sdf.glsl.gen.h"
-#include "drivers/gles3/storage/config.h"
+#include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
 

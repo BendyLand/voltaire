@@ -34,7 +34,7 @@
 #include "core/templates/hash_set.h"
 #include "core/types.h"
 
-class StaticRaycaster : public RefCounted
+class StaticRaycaster final : public RefCounted
 {
 public:
 	struct EmbreeState;

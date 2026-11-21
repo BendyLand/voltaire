@@ -33,7 +33,6 @@
 
 #ifdef GLES3_ENABLED
 
-#include "drivers/gles3/storage/config.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/renderer.h"

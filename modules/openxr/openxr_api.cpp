@@ -32,18 +32,22 @@
 #include "action_map/openxr_action_map.h"
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
+#include "core/math/math_funcs.h"
 #include "core/os/memory.h"
 #include "core/types.h"
 #include "core/version.h"
 #include "openxr_api.h"
 #include "openxr_interface.h"
-#include "openxr_util.h"
 #include "servers/rendering/renderer.h"
 #include "servers/xr/xr_tracker.h"
 
 #ifdef ANDROID_ENABLED
 #include "core/os/os.h"
 #endif
+
+#include "extensions/openxr_extensions.h"
+#include "extensions/openxr_interaction_profile_extension.h"
+#include "extensions/spatial_entities/openxr_spatial_entities.h"
 
 #include "openxr_platform_inc.h" // IWYU pragma: keep.
 
@@ -62,12 +66,6 @@
 #ifdef D3D12_ENABLED
 #include "extensions/platform/openxr_d3d12_extension.h"
 #endif
-
-#include "extensions/openxr_extensions.h"
-#include "extensions/openxr_fb_foveation_extension.h"
-#include "extensions/openxr_fb_update_swapchain_extension.h"
-#include "extensions/openxr_hand_tracking_extension.h"
-#include "extensions/openxr_interaction_profile_extension.h"
 
 #ifdef ANDROID_ENABLED
 #define OPENXR_LOADER_NAME "libopenxr_loader.so"
@@ -2334,3 +2332,602 @@ void OpenXRAPI::allocate_view_buffers(uint32_t p_view_count, bool p_submit_depth
 String OpenXRAPI::get_swapchain_format_name(long p_swapchain_format) { return String(); }
 
 
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRUtil
+
+String OpenXRUtil::get_result_string(XrResult p_result)
+{
+	XR_ENUM_SWITCH(XrResult, p_result)
+}
+
+String OpenXRUtil::get_view_configuration_name(XrViewConfigurationType p_view_configuration)
+{
+	XR_ENUM_SWITCH(XrViewConfigurationType, p_view_configuration)
+}
+
+String OpenXRUtil::get_reference_space_name(XrReferenceSpaceType p_reference_space)
+{
+	XR_ENUM_SWITCH(XrReferenceSpaceType, p_reference_space)
+}
+
+String OpenXRUtil::get_structure_type_name(XrStructureType p_structure_type)
+{
+	XR_ENUM_SWITCH(XrStructureType, p_structure_type)
+}
+
+String OpenXRUtil::get_session_state_name(XrSessionState p_session_state)
+{
+	XR_ENUM_SWITCH(XrSessionState, p_session_state)
+}
+
+String OpenXRUtil::get_action_type_name(XrActionType p_action_type)
+{
+	XR_ENUM_SWITCH(XrActionType, p_action_type)
+}
+
+String OpenXRUtil::get_environment_blend_mode_name(XrEnvironmentBlendMode p_blend_mode)
+{
+	XR_ENUM_SWITCH(XrEnvironmentBlendMode, p_blend_mode);
+}
+
+String OpenXRUtil::make_xr_version_string(XrVersion p_version)
+{
+	String version;
+
+	version += String::num_int64(XR_VERSION_MAJOR(p_version));
+	version += String(".");
+	version += String::num_int64(XR_VERSION_MINOR(p_version));
+	version += String(".");
+	version += String::num_int64(XR_VERSION_PATCH(p_version));
+
+	return version;
+}
+
+String OpenXRUtil::get_handle_as_hex_string(void* p_handle)
+{
+	String hex;
+
+	if (p_handle == XR_NULL_HANDLE) {
+		return "null";
+	}
+
+	uint64_t handle = (uint64_t)p_handle;
+
+	while (handle != 0) {
+		uint8_t a = handle & 0x0F;
+		uint8_t b = (handle & 0xF0) >> 4;
+		handle = handle >> 8;
+
+		if (a < 10) {
+			hex = (a + '0') + hex;
+		}
+		else {
+			hex = (a + 'a' - 10) + hex;
+		}
+
+		if (b < 10) {
+			hex = (b + '0') + hex;
+		}
+		else {
+			hex = (b + 'a' - 10) + hex;
+		}
+	}
+
+	return "0x" + hex;
+}
+
+String OpenXRUtil::string_from_xruuid(const XrUuid& xr_uuid)
+{
+	String ret;
+	bool non_zero = false;
+
+	for (int i = 0; i < XR_UUID_SIZE; i++) {
+		non_zero |= xr_uuid.data[i] != 0;
+
+		char a = xr_uuid.data[i] & 0xF0 >> 4;
+		char b = xr_uuid.data[i] & 0x0F;
+
+		if (a < 10) {
+			ret += '0' + a;
+		}
+		else {
+			ret += 'a' + a - 10;
+		}
+
+		if (b < 10) {
+			ret += '0' + b;
+		}
+		else {
+			ret += 'a' + b - 10;
+		}
+	}
+
+	if (non_zero) {
+		return ret;
+	}
+	else {
+		return "";
+	}
+}
+
+XrUuid OpenXRUtil::xruuid_from_string(const String& p_uuid)
+{
+	XrUuid new_uuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+	int len = p_uuid.length();
+	if (len == 0) {
+		return new_uuid;
+	}
+	else if (len != (2 * XR_UUID_SIZE)) {
+		WARN_PRINT("OpenXR: Unexpected UUID length: " + String::num_int64(len) +
+				   " != " + String::num_int64(2 * XR_UUID_SIZE));
+	}
+
+	int j = 0;
+	for (int i = 0; i < XR_UUID_SIZE; i++) {
+		uint8_t val = 0;
+
+		// 2 chars per byte.
+		for (int k = 0; k < 2; k++) {
+			if (j < len) {
+				val <<= 4;
+
+				char32_t c = p_uuid[j++];
+				if (c >= '0' && c <= '9') {
+					val += uint8_t(c - '0');
+				}
+				else if (c >= 'a' && c <= 'f') {
+					val += uint8_t(10 + c - 'a');
+				}
+				else if (c >= 'A' && c <= 'F') {
+					val += uint8_t(10 + c - 'A');
+				}
+				else {
+					WARN_PRINT("OpenXR: Unexpected character in UUID: " + String::num_int64(c));
+				}
+			}
+		}
+
+		new_uuid.data[i] = val;
+	}
+
+	return new_uuid;
+}
+
+void OpenXRUtil::XrMatrix4x4f_CreateProjection(XrMatrix4x4f* result, const float tanAngleLeft,
+	const float tanAngleRight, const float tanAngleUp, const float tanAngleDown,
+	const float nearZ, const float farZ)
+{
+	const float tanAngleWidth = tanAngleRight - tanAngleLeft;
+
+	// Set to tanAngleUp - tanAngleDown for a clip space with positive Y up.
+	const float tanAngleHeight = (tanAngleUp - tanAngleDown);
+
+	// Set to nearZ for a [-1,1] Z clip space.
+	const float offsetZ = nearZ;
+
+	if (farZ <= nearZ) {
+		// place the far plane at infinity
+		result->m[0] = 2.0f / tanAngleWidth;
+		result->m[4] = 0.0f;
+		result->m[8] = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+		result->m[12] = 0.0f;
+
+		result->m[1] = 0.0f;
+		result->m[5] = 2.0f / tanAngleHeight;
+		result->m[9] = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+		result->m[13] = 0.0f;
+
+		result->m[2] = 0.0f;
+		result->m[6] = 0.0f;
+		result->m[10] = -1.0f;
+		result->m[14] = -(nearZ + offsetZ);
+
+		result->m[3] = 0.0f;
+		result->m[7] = 0.0f;
+		result->m[11] = -1.0f;
+		result->m[15] = 0.0f;
+	}
+	else {
+		// normal projection
+		result->m[0] = 2.0f / tanAngleWidth;
+		result->m[4] = 0.0f;
+		result->m[8] = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+		result->m[12] = 0.0f;
+
+		result->m[1] = 0.0f;
+		result->m[5] = 2.0f / tanAngleHeight;
+		result->m[9] = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+		result->m[13] = 0.0f;
+
+		result->m[2] = 0.0f;
+		result->m[6] = 0.0f;
+		result->m[10] = -(farZ + offsetZ) / (farZ - nearZ);
+		result->m[14] = -(farZ * (nearZ + offsetZ)) / (farZ - nearZ);
+
+		result->m[3] = 0.0f;
+		result->m[7] = 0.0f;
+		result->m[11] = -1.0f;
+		result->m[15] = 0.0f;
+	}
+}
+
+void OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(
+	XrMatrix4x4f* result, const XrFovf fov, const float nearZ, const float farZ)
+{
+	const float tanLeft = Math::tan(fov.angleLeft);
+	const float tanRight = Math::tan(fov.angleRight);
+
+	const float tanDown = Math::tan(fov.angleDown);
+	const float tanUp = Math::tan(fov.angleUp);
+
+	XrMatrix4x4f_CreateProjection(result, tanLeft, tanRight, tanUp, tanDown, nearZ, farZ);
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRStructureBase
+
+void OpenXRStructureBase::set_next(const Ref<OpenXRStructureBase> p_next) { next = p_next; }
+
+Ref<OpenXRStructureBase> OpenXRStructureBase::get_next() const { return next; }
+
+bool OpenXRStructureBase::has_valid_configuration() const
+{
+	if (persistence_contexts.is_empty()) {
+		return false;
+	}
+
+	ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
+
+	if (!OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
+		return false;
+	}
+
+	return true;
+}
+
+void* OpenXRStructureBase::get_header(void* p_next)
+{
+	void* n = p_next;
+	if (get_next().is_valid()) {
+		n = get_next()->get_header(n);
+	}
+
+	if (has_valid_configuration()) {
+		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
+
+		context_handles.resize(persistence_contexts.size());
+
+		XrSpatialPersistenceContextEXT* ptr = context_handles.ptrw();
+		int i = 0;
+		for (const RID& rid : persistence_contexts) {
+			ptr[i++] = OpenXRSpatialAnchorCapability::get_persistence_context_handle(rid);
+		}
+
+		persistence_config.next = n;
+		persistence_config.persistenceContextCount = (uint32_t)context_handles.size();
+		persistence_config.persistenceContexts = context_handles.ptr();
+
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&persistence_config;
+	}
+
+	return n;
+}
+
+XrStructureType OpenXRStructureBase::get_structure_type()
+{
+	if (!persistence_contexts.is_empty()) {
+		return XR_TYPE_SPATIAL_CONTEXT_PERSISTENCE_CONFIG_EXT;
+	}
+
+	XrStructureType* header = (XrStructureType*)get_header();
+	if (header == nullptr) {
+		return XR_TYPE_UNKNOWN;
+	}
+	return *header;
+}
+
+void OpenXRStructureBase::add_persistence_context(RID p_persistence_context)
+{
+	ERR_FAIL_COND(persistence_contexts.has(p_persistence_context));
+
+	persistence_contexts.push_back(p_persistence_context);
+}
+
+void OpenXRStructureBase::remove_persistence_context(RID p_persistence_context)
+{
+	ERR_FAIL_COND(!persistence_contexts.has(p_persistence_context));
+
+	persistence_contexts.erase(p_persistence_context);
+}
+
+uint64_t OpenXRStructureBase::_get_structure_type() { return (uint64_t)get_structure_type(); }
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRAPIExtension
+
+uint64_t OpenXRAPIExtension::get_openxr_version()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_openxr_version();
+}
+
+uint64_t OpenXRAPIExtension::get_instance()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_instance();
+}
+
+uint64_t OpenXRAPIExtension::get_system_id()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_system_id();
+}
+
+uint64_t OpenXRAPIExtension::get_session()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_session();
+}
+
+bool OpenXRAPIExtension::openxr_is_enabled(bool p_check_run_in_editor)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::openxr_is_enabled(p_check_run_in_editor);
+}
+
+uint64_t OpenXRAPIExtension::get_instance_proc_addr(const String& p_name)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	CharString str = p_name.utf8();
+	PFN_xrVoidFunction addr = nullptr;
+	XrResult result = OpenXRAPI::get_instance_proc_addr(str.get_data(), &addr);
+	if (result != XR_SUCCESS) {
+		return 0;
+	}
+	return reinterpret_cast<uint64_t>(addr);
+}
+
+String OpenXRAPIExtension::get_error_string(uint64_t result)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), String());
+	return OpenXRAPI::get_error_string((XrResult)result);
+}
+
+String OpenXRAPIExtension::get_swapchain_format_name(int64_t p_swapchain_format)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), String());
+	return OpenXRAPI::get_swapchain_format_name(p_swapchain_format);
+}
+
+void OpenXRAPIExtension::set_object_name(
+	int64_t p_object_type, uint64_t p_object_handle, const String& p_object_name)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::set_object_name(XrObjectType(p_object_type), p_object_handle, p_object_name);
+}
+
+void OpenXRAPIExtension::begin_debug_label_region(const String& p_label_name)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::begin_debug_label_region(p_label_name);
+}
+
+void OpenXRAPIExtension::end_debug_label_region()
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::end_debug_label_region();
+}
+
+void OpenXRAPIExtension::insert_debug_label(const String& p_label_name)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::insert_debug_label(p_label_name);
+}
+
+uint32_t OpenXRAPIExtension::get_view_count() const
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint32_t)OpenXRAPI::get_view_count();
+}
+
+uint64_t OpenXRAPIExtension::get_view_configuration() const
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_view_configuration();
+}
+
+bool OpenXRAPIExtension::is_initialized()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::is_initialized();
+}
+
+bool OpenXRAPIExtension::is_running()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::is_running();
+}
+
+uint64_t OpenXRAPIExtension::get_play_space()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_play_space();
+}
+
+int64_t OpenXRAPIExtension::get_predicted_display_time()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (XrTime)OpenXRAPI::get_predicted_display_time();
+}
+
+int64_t OpenXRAPIExtension::get_next_frame_time()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+
+	WARN_PRINT_ONCE("OpenXR: Next frame timing called, verify this is intended.");
+
+	return (XrTime)OpenXRAPI::get_next_frame_time();
+}
+
+bool OpenXRAPIExtension::can_render()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::can_render();
+}
+
+RID OpenXRAPIExtension::find_action(const String& p_name, const RID& p_action_set)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
+	return OpenXRAPI::find_action(p_name, p_action_set);
+}
+
+uint64_t OpenXRAPIExtension::action_get_handle(RID p_action)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	XrAction action_handle = OpenXRAPI::action_get_handle(p_action);
+	return (uint64_t)action_handle;
+}
+
+uint64_t OpenXRAPIExtension::get_hand_tracker(int p_hand_index)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_hand_tracker(p_hand_index);
+}
+
+double OpenXRAPIExtension::get_render_state_z_near()
+{
+	ERR_NOT_ON_RENDER_THREAD_V(0.0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0.0);
+	return OpenXRAPI::get_render_state_z_near();
+}
+
+double OpenXRAPIExtension::get_render_state_z_far()
+{
+	ERR_NOT_ON_RENDER_THREAD_V(0.0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0.0);
+	return OpenXRAPI::get_render_state_z_far();
+}
+
+void OpenXRAPIExtension::set_velocity_texture(RID p_render_target)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_velocity_texture(p_render_target);
+}
+
+void OpenXRAPIExtension::set_velocity_depth_texture(RID p_render_target)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_velocity_depth_texture(p_render_target);
+}
+
+void OpenXRAPIExtension::set_velocity_target_size(const Size2i& p_target_size)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_velocity_target_size(p_target_size);
+}
+
+PackedInt64Array OpenXRAPIExtension::get_supported_swapchain_formats()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedInt64Array());
+	return OpenXRAPI::get_supported_swapchain_formats();
+}
+
+uint64_t OpenXRAPIExtension::openxr_swapchain_create(XrSwapchainCreateFlags p_create_flags,
+	XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width,
+	uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+
+	OpenXRAPI::OpenXRSwapChainInfo* new_swapchain_info = memnew(OpenXRAPI::OpenXRSwapChainInfo);
+	new_swapchain_info->create(p_create_flags, p_usage_flags, p_swapchain_format, p_width, p_height,
+		p_sample_count, p_array_size);
+	return reinterpret_cast<uint64_t>(new_swapchain_info);
+}
+
+void OpenXRAPIExtension::openxr_swapchain_free(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	swapchain_info->free();
+	memfree(swapchain_info);
+}
+
+uint64_t OpenXRAPIExtension::openxr_swapchain_get_swapchain(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	XrSwapchain swapchain = swapchain_info->get_swapchain();
+	return (uint64_t)swapchain;
+}
+
+void OpenXRAPIExtension::openxr_swapchain_acquire(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	bool should_render = true;
+	swapchain_info->acquire(should_render);
+}
+
+RID OpenXRAPIExtension::openxr_swapchain_get_image(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	return swapchain_info->get_image();
+}
+
+void OpenXRAPIExtension::openxr_swapchain_release(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	swapchain_info->release();
+}
+
+uint64_t OpenXRAPIExtension::get_projection_layer()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_projection_layer();
+}
+
+void OpenXRAPIExtension::set_render_region(const Rect2i& p_render_region)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_render_region(p_render_region);
+}
+
+void OpenXRAPIExtension::update_main_swapchain_size()
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::update_main_swapchain_size();
+}
+
+void OpenXRAPIExtension::set_emulate_environment_blend_mode_alpha_blend(bool p_enabled)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_emulate_environment_blend_mode_alpha_blend(p_enabled);
+}
+
+OpenXRAPIExtension::OpenXRAlphaBlendModeSupport
+OpenXRAPIExtension::is_environment_blend_mode_alpha_blend_supported()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE);
+	return (OpenXRAPIExtension::OpenXRAlphaBlendModeSupport)
+		OpenXRAPI::is_environment_blend_mode_alpha_blend_supported();
+}
+
+OpenXRAPIExtension::OpenXRAPIExtension() {}

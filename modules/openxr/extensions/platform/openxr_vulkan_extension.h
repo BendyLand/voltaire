@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "../../util.h"
+#include "../../openxr_api.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
 #include "drivers/vulkan/vulkan_hooks.h"

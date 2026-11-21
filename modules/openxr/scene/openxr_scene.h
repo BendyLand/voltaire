@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  openxr_composition_layer.h                                            */
+/*  openxr_scene.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                            VOLTAIRE ENGINE                             */
@@ -32,15 +32,23 @@
 #pragma once
 
 #include <openxr/openxr.h>
+#include "modules/modules_enabled.gen.h"
 #include "scene/3d/node_3d.h"
+#include "scene/3d/skeleton_3d.h"
+#include "scene/3d/visual_instance_3d.h"
+#include "servers/xr/xr_tracker.h"
 
 class JavaObject;
 class MeshInstance3D;
 class Mesh;
 class OpenXRAPI;
 class OpenXRCompositionLayerExtension;
+class OpenXRHandTrackingExtension;
 class SubViewport;
 class Camera3D;
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRCompositionLayer
 
 class OpenXRCompositionLayer final : public Node3D
 {
@@ -266,3 +274,169 @@ public:
 	OpenXRCompositionLayer(LayerType p_type = LAYER_QUAD);
 	~OpenXRCompositionLayer() = default;
 };
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRHand
+
+class OpenXRHand final : public Node3D
+{
+public:
+	enum Hands
+	{
+		HAND_LEFT,
+		HAND_RIGHT,
+		HAND_MAX
+	};
+
+	enum MotionRange
+	{
+		MOTION_RANGE_UNOBSTRUCTED,
+		MOTION_RANGE_CONFORM_TO_CONTROLLER,
+		MOTION_RANGE_MAX
+	};
+
+	enum SkeletonRig
+	{
+		SKELETON_RIG_OPENXR,
+		SKELETON_RIG_HUMANOID,
+		SKELETON_RIG_MAX
+	};
+
+	enum BoneUpdate
+	{
+		BONE_UPDATE_FULL,
+		BONE_UPDATE_ROTATION_ONLY,
+		BONE_UPDATE_MAX
+	};
+
+private:
+	struct JointData
+	{
+		int bone = -1;
+		int parent_joint = -1;
+	};
+
+	Hands hand = HAND_LEFT;
+	MotionRange motion_range = MOTION_RANGE_UNOBSTRUCTED;
+	NodePath hand_skeleton;
+	SkeletonRig skeleton_rig = SKELETON_RIG_OPENXR;
+	BoneUpdate bone_update = BONE_UPDATE_FULL;
+
+	JointData joints[XR_HAND_JOINT_COUNT_EXT];
+
+	void _set_motion_range();
+
+	Skeleton3D* get_skeleton();
+	void _get_joint_data();
+	void _update_skeleton();
+
+public:
+	OpenXRHand();
+
+	void set_hand(Hands p_hand);
+	Hands get_hand() const;
+
+	void set_motion_range(MotionRange p_motion_range);
+	MotionRange get_motion_range() const;
+
+	void set_hand_skeleton(const NodePath& p_hand_skeleton);
+	NodePath get_hand_skeleton() const;
+
+	void set_skeleton_rig(SkeletonRig p_skeleton_rig);
+	SkeletonRig get_skeleton_rig() const;
+
+	void set_bone_update(BoneUpdate p_bone_update);
+	BoneUpdate get_bone_update() const;
+
+	void _notification(int p_what);
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRVisibilityMask
+
+class OpenXRVisibilityMask final : public Node3D
+{
+public:
+	RenderInstance3D render_instance;
+
+private:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+
+	void _on_openxr_session_begun();
+	void _on_openxr_session_stopping();
+
+public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	AABB get_aabb() const;
+
+	OpenXRVisibilityMask() = default;
+	~OpenXRVisibilityMask() = default;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRRenderModel & OpenXRRenderModelManager
+
+#ifdef MODULE_GLTF_ENABLED
+class OpenXRRenderModel final : public Node3D
+{
+private:
+	RID render_model;
+	Node3D* scene = nullptr;
+	HashMap<String, Node3D*> animatable_nodes;
+
+	void _load_render_model_scene();
+	void _on_render_model_top_level_path_changed(RID p_render_model);
+	void _notification(int p_what);
+
+public:
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	RID get_render_model() const;
+	void set_render_model(RID p_render_model);
+
+	String get_top_level_path() const;
+};
+
+class OpenXRRenderModelManager final : public Node3D
+{
+public:
+	enum RenderModelTracker
+	{
+		RENDER_MODEL_TRACKER_ANY,
+		RENDER_MODEL_TRACKER_NONE_SET,
+		RENDER_MODEL_TRACKER_LEFT_HAND,
+		RENDER_MODEL_TRACKER_RIGHT_HAND,
+	};
+
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	void set_tracker(RenderModelTracker p_tracker);
+	RenderModelTracker get_tracker() const;
+
+	void set_make_local_to_pose(const String& p_action);
+	String get_make_local_to_pose() const;
+
+private:
+	HashMap<RID, Node3D*> render_models;
+	Node3D* container = nullptr;
+
+	bool is_dirty = false;
+	RenderModelTracker tracker = RENDER_MODEL_TRACKER_ANY;
+	String make_local_to_pose;
+
+	Ref<XRTracker> positional_tracker;
+	XrPath xr_path = XR_NULL_PATH;
+
+	bool _has_filters();
+	void _on_render_model_added(RID p_render_model);
+	void _on_render_model_removed(RID p_render_model);
+	void _on_render_model_top_level_path_changed(RID p_path);
+	void _update_models();
+	void _notification(int p_what);
+};
+#endif // MODULE_GLTF_ENABLED

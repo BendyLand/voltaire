@@ -31,7 +31,6 @@
 
 #pragma once
 
-#include "../zip_packer.h"
 #include "../zip_reader.h"
 
 #include "tests/test_macros.h"

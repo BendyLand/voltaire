@@ -34,7 +34,6 @@
 #ifdef D3D12_ENABLED
 
 #include "../../openxr_api.h"
-#include "../../util.h"
 
 #include "core/templates/vector.h"
 #include "drivers/d3d12/d3d12_hooks.h"

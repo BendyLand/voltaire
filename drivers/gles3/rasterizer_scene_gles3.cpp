@@ -38,15 +38,9 @@
 
 #include "core/config/project_settings.h"
 #include "core/templates/sort_array.h"
-#include "drivers/gles3/effects/copy_effects.h"
-#include "drivers/gles3/effects/cubemap_filter.h"
-#include "drivers/gles3/effects/feed_effects.h"
-#include "drivers/gles3/effects/post_effects.h"
-#include "drivers/gles3/rasterizer_util_gles3.h"
-#include "drivers/gles3/storage/config.h"
+#include "drivers/gles3/effects/gles3_effects.h"
 #include "drivers/gles3/storage/mesh_storage.h"
 #include "drivers/gles3/storage/particles_storage.h"
-#include "drivers/gles3/storage/render_scene_buffers_gles3.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/camera/camera_feed.h"
@@ -5554,6 +5548,108 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
 
 	scene_pass = 0;
 }
+
+// GLES3::Fog
+
+void GLES3::Fog::initialize() {}
+
+void GLES3::Fog::finalize() {}
+
+bool GLES3::Fog::free(RID p_rid) { return false; }
+
+bool GLES3::Fog::owns_fog_volume(RID p_rid) { return false; }
+
+RID GLES3::Fog::fog_volume_allocate() { return RID(); }
+
+void GLES3::Fog::fog_volume_initialize(RID p_rid) {}
+
+void GLES3::Fog::fog_volume_free(RID p_rid) {}
+
+void GLES3::Fog::fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) {}
+
+void GLES3::Fog::fog_volume_set_size(RID p_fog_volume, const Vector3& p_size) {}
+
+void GLES3::Fog::fog_volume_set_material(RID p_fog_volume, RID p_material) {}
+
+AABB GLES3::Fog::fog_volume_get_aabb(RID p_fog_volume) { return AABB(); }
+
+RSE::FogVolumeShape GLES3::Fog::fog_volume_get_shape(RID p_fog_volume)
+{
+	return RSE::FOG_VOLUME_SHAPE_ELLIPSOID;
+}
+
+// GLES3::GI
+
+void GLES3::GI::initialize() {}
+
+void GLES3::GI::finalize() {}
+
+bool GLES3::GI::free(RID p_rid) { return false; }
+
+bool GLES3::GI::owns_voxel_gi(RID p_rid) { return false; }
+
+RID GLES3::GI::voxel_gi_allocate() { return RID(); }
+
+void GLES3::GI::voxel_gi_free(RID p_rid) {}
+
+void GLES3::GI::voxel_gi_initialize(RID p_rid) {}
+
+void GLES3::GI::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xform,
+	const AABB& p_aabb, const Vector3i& p_octree_size, const Vector<uint8_t>& p_octree_cells,
+	const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
+	const Vector<int>& p_level_counts)
+{
+}
+
+AABB GLES3::GI::voxel_gi_get_bounds(RID p_voxel_gi) { return AABB(); }
+
+Vector3i GLES3::GI::voxel_gi_get_octree_size(RID p_voxel_gi) { return Vector3i(); }
+
+Vector<uint8_t> GLES3::GI::voxel_gi_get_octree_cells(RID p_voxel_gi) { return Vector<uint8_t>(); }
+
+Vector<uint8_t> GLES3::GI::voxel_gi_get_data_cells(RID p_voxel_gi) { return Vector<uint8_t>(); }
+
+Vector<uint8_t> GLES3::GI::voxel_gi_get_distance_field(RID p_voxel_gi) { return Vector<uint8_t>(); }
+
+Vector<int> GLES3::GI::voxel_gi_get_level_counts(RID p_voxel_gi) { return Vector<int>(); }
+
+Transform3D GLES3::GI::voxel_gi_get_to_cell_xform(RID p_voxel_gi) { return Transform3D(); }
+
+void GLES3::GI::voxel_gi_set_dynamic_range(RID p_voxel_gi, float p_range) {}
+
+float GLES3::GI::voxel_gi_get_dynamic_range(RID p_voxel_gi) { return 0.0f; }
+
+void GLES3::GI::voxel_gi_set_propagation(RID p_voxel_gi, float p_range) {}
+
+float GLES3::GI::voxel_gi_get_propagation(RID p_voxel_gi) { return 0.0f; }
+
+void GLES3::GI::voxel_gi_set_energy(RID p_voxel_gi, float p_range) {}
+
+float GLES3::GI::voxel_gi_get_energy(RID p_voxel_gi) { return 0.0f; }
+
+void GLES3::GI::voxel_gi_set_baked_exposure_normalization(RID p_voxel_gi, float p_baked_exposure) {}
+
+float GLES3::GI::voxel_gi_get_baked_exposure_normalization(RID p_voxel_gi) { return 1.0f; }
+
+void GLES3::GI::voxel_gi_set_bias(RID p_voxel_gi, float p_range) {}
+
+float GLES3::GI::voxel_gi_get_bias(RID p_voxel_gi) { return 0.0f; }
+
+void GLES3::GI::voxel_gi_set_normal_bias(RID p_voxel_gi, float p_range) {}
+
+float GLES3::GI::voxel_gi_get_normal_bias(RID p_voxel_gi) { return 0.0f; }
+
+void GLES3::GI::voxel_gi_set_interior(RID p_voxel_gi, bool p_enable) {}
+
+bool GLES3::GI::voxel_gi_is_interior(RID p_voxel_gi) { return false; }
+
+void GLES3::GI::voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_enable) {}
+
+bool GLES3::GI::voxel_gi_is_using_two_bounces(RID p_voxel_gi) { return false; }
+
+uint32_t GLES3::GI::voxel_gi_get_version(RID p_voxel_gi) { return 0; }
+
+void GLES3::GI::sdfgi_reset() {}
 
 #endif // GLES3_ENABLED
 

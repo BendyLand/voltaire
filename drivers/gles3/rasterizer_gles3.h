@@ -33,16 +33,9 @@
 
 #include "servers/rendering/storage/material_storage.h"
 #ifdef GLES3_ENABLED
-#include "drivers/gles3/effects/copy_effects.h"
-#include "drivers/gles3/effects/cubemap_filter.h"
-#include "drivers/gles3/effects/feed_effects.h"
-#include "drivers/gles3/effects/glow.h"
-#include "drivers/gles3/effects/post_effects.h"
-#include "drivers/gles3/environment/fog.h"
-#include "drivers/gles3/environment/gi.h"
+#include "drivers/gles3/effects/gles3_effects.h"
 #include "drivers/gles3/rasterizer_canvas_gles3.h"
 #include "drivers/gles3/rasterizer_scene_gles3.h"
-#include "drivers/gles3/storage/config.h"
 #include "drivers/gles3/storage/light_storage.h"
 #include "drivers/gles3/storage/material_storage.h"
 #include "drivers/gles3/storage/mesh_storage.h"

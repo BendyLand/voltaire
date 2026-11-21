@@ -34,7 +34,6 @@
 #ifdef GLES3_ENABLED
 
 #include "../../openxr_api.h"
-#include "../../openxr_util.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "servers/display/display_server.h"
 

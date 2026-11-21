@@ -47,7 +47,6 @@
 #include "core/io/image.h"
 #include "core/os/os.h"
 #include "drivers/gles3/rasterizer_scene_gles3.h"
-#include "drivers/gles3/rasterizer_util_gles3.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_scene_cull.h"
