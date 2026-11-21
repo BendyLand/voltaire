@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/templates/paged_allocator.h"
-#include "servers/rendering/instance_uniforms.h"
+#include "servers/rendering/renderer_scene_cull.h"
 #include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_server_enums.h"

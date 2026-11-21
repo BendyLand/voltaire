@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  gi.h                                                                  */
+/*  rd_environment.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                            VOLTAIRE ENGINE                             */
@@ -31,12 +31,16 @@
 
 #pragma once
 
-#include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
+#include "servers/rendering/renderer_rd/shaders/environment/sky.glsl.gen.h"
+#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/shader_compiler.h"
+#include "core/templates/local_vector.h"
 #include "servers/rendering/environment/renderer_gi.h"
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/renderer_rd/environment/sky.h"
-#include "servers/rendering/renderer_rd/pipeline_deferred_rd.h"
 #include "servers/rendering/renderer_rd/shaders/environment/gi.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/environment/sdfgi_debug.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/environment/sdfgi_debug_probes.glsl.gen.h"
@@ -45,9 +49,364 @@
 #include "servers/rendering/renderer_rd/shaders/environment/sdfgi_preprocess.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/environment/voxel_gi.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/environment/voxel_gi_debug.glsl.gen.h"
-#include "servers/rendering/renderer_scene_render.h"
-#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/storage/utilities.h"
+#include "servers/rendering/environment/renderer_fog.h"
+#include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog_process.glsl.gen.h"
+#include "servers/rendering/renderer_rd/rd_caches.h"
+
+// Forward declare RendererSceneRenderRD so we can pass it into some of our methods, these classes
+// are pretty tightly bound
+class RendererSceneRenderRD;
+class RenderDataRD;
+class RenderSceneBuffersRD;
+
+namespace RendererRD
+{
+
+class SkyRD final
+{
+public:
+	enum SkySet
+	{
+		SKY_SET_UNIFORMS,
+		SKY_SET_MATERIAL,
+		SKY_SET_TEXTURES,
+		SKY_SET_FOG,
+	};
+
+	const int SAMPLERS_BINDING_FIRST_INDEX = 4;
+
+	// Skys need less info from Directional Lights than the normal shaders
+	struct SkyDirectionalLightData
+	{
+		float direction[3];
+		float energy;
+		float color[3];
+		float size;
+		uint32_t enabled;
+		uint32_t pad[3];
+	};
+
+private:
+	RDC::DataFormat texture_format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
+
+	enum SkyTextureSetVersion
+	{
+		SKY_TEXTURE_SET_BACKGROUND,
+		SKY_TEXTURE_SET_HALF_RES,
+		SKY_TEXTURE_SET_QUARTER_RES,
+		SKY_TEXTURE_SET_OCTMAP,
+		SKY_TEXTURE_SET_OCTMAP_HALF_RES,
+		SKY_TEXTURE_SET_OCTMAP_QUARTER_RES,
+		SKY_TEXTURE_SET_MAX
+	};
+
+	enum SkyVersion
+	{
+		SKY_VERSION_BACKGROUND,
+		SKY_VERSION_HALF_RES,
+		SKY_VERSION_QUARTER_RES,
+		SKY_VERSION_OCTMAP,
+		SKY_VERSION_OCTMAP_HALF_RES,
+		SKY_VERSION_OCTMAP_QUARTER_RES,
+
+		SKY_VERSION_BACKGROUND_MULTIVIEW,
+		SKY_VERSION_HALF_RES_MULTIVIEW,
+		SKY_VERSION_QUARTER_RES_MULTIVIEW,
+
+		SKY_VERSION_MAX
+	};
+
+	struct SkyPushConstant
+	{
+		float orientation[12];		 // 48 - 48
+		float projection[4];		 // 16 - 64
+		float position[3];			 // 12 - 76
+		float time;					 // 4 - 80
+		float border_size[2];		 // 8 - 88
+		float luminance_multiplier;	 // 4 - 92
+		float brightness_multiplier; // 4 - 96
+		// 128 is the max size of a push constant. We can replace "pad" but we can't add any more.
+	};
+
+	struct SkyShaderData : public RendererRD::MaterialStorage::ShaderData
+	{
+		bool valid = false;
+		RID version;
+
+		PipelineCacheRD pipelines[SKY_VERSION_MAX];
+		Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
+
+		Vector<uint32_t> ubo_offsets;
+		uint32_t ubo_size = 0;
+
+		String code;
+
+		bool uses_time = false;
+		bool uses_position = false;
+		bool uses_half_res = false;
+		bool uses_quarter_res = false;
+		bool uses_light = false;
+
+		virtual bool is_animated() const;
+		virtual void set_code(const String& p_Code);
+		virtual bool casts_shadows() const;
+		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
+		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;
+
+		SkyShaderData() {}
+
+		virtual ~SkyShaderData();
+	};
+
+	void _render_sky(RD::DrawListID p_list, float p_time, RID p_fb, PipelineCacheRD* p_pipeline,
+		RID p_uniform_set, RID p_texture_set, const Projection& p_projection,
+		const Basis& p_orientation, const Vector3& p_position, float p_luminance_multiplier,
+		float p_brightness_modifier, float p_border_size = 0.0);
+
+public:
+	struct SkySceneState
+	{
+		struct UBO
+		{
+			float combined_reprojection[RendererSceneRender::MAX_RENDER_VIEWS][16]; // 2 x 64 - 128
+			float view_inv_projections[RendererSceneRender::MAX_RENDER_VIEWS][16];	// 2 x 64 - 256
+			float view_eye_offsets[RendererSceneRender::MAX_RENDER_VIEWS][4];		// 2 x 16 - 288
+
+			uint32_t volumetric_fog_enabled;	// 4 - 292
+			float volumetric_fog_inv_length;	// 4 - 296
+			float volumetric_fog_detail_spread; // 4 - 300
+			float volumetric_fog_sky_affect;	// 4 - 304
+
+			uint32_t fog_enabled;  // 4 - 308
+			float fog_sky_affect;  // 4 - 312
+			float fog_density;	   // 4 - 316
+			float fog_sun_scatter; // 4 - 320
+
+			float fog_light_color[3];	  // 12 - 332
+			float fog_aerial_perspective; // 4 - 336
+
+			float z_far;					  // 4 - 340
+			uint32_t directional_light_count; // 4 - 344
+			uint32_t fog_use_legacy_blending; // 4 - 348
+			uint32_t pad1;					  // 4 - 352
+		};
+
+		UBO ubo;
+
+		uint32_t view_count = 1;
+		Transform3D cam_transform;
+		Projection cam_projection;
+
+		SkyDirectionalLightData* directional_lights = nullptr;
+		SkyDirectionalLightData* last_frame_directional_lights = nullptr;
+		uint32_t max_directional_lights;
+		uint32_t last_frame_directional_light_count;
+		RID directional_light_buffer;
+		RID uniform_set;
+		RID uniform_buffer;
+		RID fog_uniform_set;
+		RID default_fog_uniform_set;
+
+		RID fog_shader;
+		RID fog_material;
+
+		// These are lazily initialized, use "get_fog_only_texture_uniform_set" instead.
+		RID fog_only_texture_uniform_set;
+		RID fog_only_texture_multiview_uniform_set;
+
+		RID get_fog_only_texture_uniform_set(RID p_default_shader_rd, bool p_is_multiview);
+	} sky_scene_state;
+
+	struct ReflectionData
+	{
+		struct Layer
+		{
+			struct Mipmap
+			{
+				RID framebuffer;
+				RID view;
+				Size2i size;
+			};
+
+			LocalVector<Mipmap> mipmaps;
+		};
+
+		struct DownsampleLayer
+		{
+			struct Mipmap
+			{
+				RID view;
+				Size2i size;
+
+				// Used only for the raster version.
+				RID octmap_view;
+				RID framebuffer;
+			};
+
+			LocalVector<Mipmap> mipmaps;
+		};
+
+		RID radiance_base_octmap;
+		RID downsampled_radiance_octmap;
+		DownsampleLayer downsampled_layer;
+		RID coefficient_buffer;
+
+		bool dirty = true;
+		float uv_border_size = 0.0; // Border size in UV space.
+
+		LocalVector<Layer> layers;
+
+		void clear_reflection_data();
+		void update_reflection_data(int p_size, int p_mipmaps, bool p_use_array, RID p_base_oct,
+			int p_base_layer, bool p_low_quality, int p_roughness_layers,
+			RDC::DataFormat p_texture_format, float p_border_size);
+		void create_reflection_fast_filter(bool p_use_arrays);
+		void create_reflection_importance_sample(
+			bool p_use_arrays, int p_base_layer, uint32_t p_sky_ggx_samples_quality);
+		void update_reflection_mipmaps(int p_start, int p_end);
+	};
+
+	/* Sky shader */
+
+	struct SkyShader
+	{
+		ShaderRD shader{SkyShaderRD()};
+		ShaderCompiler compiler;
+
+		RID default_shader;
+		RID default_material;
+		RID default_shader_rd;
+		RID default_multiview_shader_rd; // This is lazily initialized, use "get_default_shader_rd"
+										 // instead.
+
+		RID get_default_shader_rd(bool p_is_multiview = false);
+	};
+
+	SkyShader sky_shader;
+
+	struct SkyMaterialData : public RendererRD::MaterialStorage::MaterialData
+	{
+		SkyShaderData* shader_data = nullptr;
+		RID uniform_set;
+		bool uniform_set_updated;
+
+		virtual void set_render_priority(int p_priority) {}
+
+		virtual void set_next_pass(RID p_pass) {}
+
+		virtual ~SkyMaterialData();
+	};
+
+private:
+	SkyMaterialData* _get_sky_material_data(RID p_env);
+
+public:
+	struct Sky
+	{
+		static inline const int REAL_TIME_SIZE = 256;
+		static inline const int REAL_TIME_ROUGHNESS_LAYERS = 7;
+
+		RID radiance;
+		RID radiance_first_layer_slice;
+		RID quarter_res_pass;
+		RID quarter_res_framebuffer;
+		Size2i screen_size;
+
+		RID uniform_set;
+
+		RID material;
+		RID uniform_buffer;
+
+		int radiance_size = REAL_TIME_SIZE;
+		float uv_border_size = 0.0; // Border size in UV space.
+
+		RSE::SkyMode mode = RSE::SKY_MODE_AUTOMATIC;
+		RSE::SkyMode internal_mode = RSE::SKY_MODE_INCREMENTAL; // When using SKY_MODE_AUTOMATIC,
+																// this is the mode used internally.
+
+		ReflectionData reflection;
+		bool dirty = false;
+		int processing_layer = 0;
+		Sky* dirty_list = nullptr;
+		float baked_exposure = 1.0;
+
+		// State to track when radiance octmap needs updating.
+		SkyMaterialData* prev_material_data = nullptr;
+		Vector3 prev_position;
+		float prev_time;
+		float prev_fog_aerial_perspective = 0.0;
+		Color prev_fog_light_color;
+		float prev_fog_sun_scatter = 0.0;
+		bool prev_fog_enabled = false;
+		float prev_fog_density = 0.0;
+		float prev_fog_sky_affect = 0.0;
+		float prev_fog_light_energy = 0.0;
+
+		void free_radiance();
+
+		void free();
+
+		RID get_textures(SkyTextureSetVersion p_version, RID p_default_shader_rd,
+			bool p_is_multiview, Ref<RenderSceneBuffersRD> p_render_buffers);
+		bool set_radiance_size(int p_radiance_size);
+		int get_radiance_size() const;
+		bool set_mode(RSE::SkyMode p_mode);
+		bool set_material(RID p_material);
+		Ref<Image> bake_panorama(float p_energy, int p_roughness_layers, const Size2i& p_size);
+	};
+
+	uint32_t sky_ggx_samples_quality;
+	bool sky_use_octmap_array;
+
+	Sky* dirty_sky_list = nullptr;
+	mutable RID_Owner<Sky, true> sky_owner;
+	int roughness_layers;
+
+	RendererRD::MaterialStorage::ShaderData* _create_sky_shader_func();
+	static RendererRD::MaterialStorage::ShaderData* _create_sky_shader_funcs();
+
+	RendererRD::MaterialStorage::MaterialData* _create_sky_material_func(SkyShaderData* p_shader);
+	static RendererRD::MaterialStorage::MaterialData* _create_sky_material_funcs(
+		RendererRD::MaterialStorage::ShaderData* p_shader);
+
+	SkyRD();
+	void init();
+	void set_texture_format(RDC::DataFormat p_texture_format);
+	~SkyRD();
+
+	void setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_size);
+	void update_radiance_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_env,
+		const Vector3& p_global_pos, double p_time, float p_luminance_multiplier = 1.0,
+		float p_brightness_multiplier = 1.0);
+	void update_res_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_env, double p_time,
+		float p_luminance_multiplier = 1.0, float p_brightness_multiplier = 1.0);
+	void draw_sky(RD::DrawListID p_draw_list, Ref<RenderSceneBuffersRD> p_render_buffers, RID p_env,
+		RID p_fb, double p_time, float p_luminance_multiplier = 1.0,
+		float p_brightness_multiplier = 1.0);
+
+	void invalidate_sky(Sky* p_sky);
+	void update_dirty_skys();
+
+	RID sky_get_material(RID p_sky) const;
+	RID sky_get_radiance_texture_rd(RID p_sky) const;
+	float sky_get_baked_exposure(RID p_sky) const;
+
+	RID allocate_sky_rid();
+	void initialize_sky_rid(RID p_rid);
+	Sky* get_sky(RID p_sky) const;
+	void free_sky(RID p_sky);
+	void sky_set_radiance_size(RID p_sky, int p_radiance_size);
+	int sky_get_radiance_size(RID p_sky) const;
+	void sky_set_mode(RID p_sky, RSE::SkyMode p_mode);
+	void sky_set_material(RID p_sky, RID p_material);
+	Ref<Image> sky_bake_panorama(
+		RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i& p_size);
+	float sky_get_uv_border_size(RID p_sky);
+};
+
+} // namespace RendererRD
 
 #define RB_SCOPE_GI SNAME("rbgi")
 #define RB_SCOPE_SDFGI SNAME("sdfgi")
@@ -915,6 +1274,404 @@ static void sdfgi_reset();
 		const Projection& p_camera_with_transform, bool p_lighting, bool p_emission, float p_alpha);
 
 	static void enable_vrs_shader_group();
+};
+
+} // namespace RendererRD
+
+#define RB_SCOPE_FOG SNAME("Fog")
+
+class ClusterBuilderRD;
+
+namespace RendererRD
+{
+
+class Fog final
+{
+public:
+	Fog() = delete;
+	~Fog() = delete;
+	Fog(const Fog&) = delete;
+	Fog& operator=(const Fog&) = delete;
+
+	/* FOG VOLUMES */
+
+	struct FogVolume
+	{
+		RID material;
+		Vector3 size = Vector3(2, 2, 2);
+
+		RSE::FogVolumeShape shape = RSE::FOG_VOLUME_SHAPE_BOX;
+
+		Dependency dependency;
+	};
+
+	struct FogVolumeInstance
+	{
+		RID volume;
+		Transform3D transform;
+		bool active = false;
+	};
+
+	/* Volumetric Fog */
+	struct VolumetricFogShader
+	{
+		enum ShaderGroup
+		{
+			SHADER_GROUP_BASE,
+			SHADER_GROUP_NO_ATOMICS,
+			SHADER_GROUP_VULKAN_MEMORY_MODEL,
+			SHADER_GROUP_VULKAN_MEMORY_MODEL_NO_ATOMICS,
+		};
+
+		enum FogSet
+		{
+			FOG_SET_BASE,
+			FOG_SET_UNIFORMS,
+			FOG_SET_MATERIAL,
+			FOG_SET_MAX,
+		};
+
+		struct FogPushConstant
+		{
+			float position[3];
+			float pad;
+
+			float size[3];
+			float pad2;
+
+			int32_t corner[3];
+			uint32_t shape;
+
+			float transform[16];
+		};
+
+		struct VolumeUBO
+		{
+			float fog_frustum_size_begin[2];
+			float fog_frustum_size_end[2];
+
+			float fog_frustum_end;
+			float z_near;
+			float z_far;
+			float time;
+
+			int32_t fog_volume_size[3];
+			uint32_t directional_light_count;
+
+			uint32_t use_temporal_reprojection;
+			uint32_t temporal_frame;
+			float detail_spread;
+			float temporal_blend;
+
+			float to_prev_view[16];
+			float transform[16];
+		};
+
+		ShaderCompiler compiler;
+		ShaderRD shader;
+		RID volume_ubo;
+
+		RID default_shader;
+		RID default_material;
+		RID default_shader_rd;
+
+		RID base_uniform_set;
+
+		RID params_ubo;
+
+		enum
+		{
+			VOLUMETRIC_FOG_PROCESS_SHADER_DENSITY,
+			VOLUMETRIC_FOG_PROCESS_SHADER_DENSITY_WITH_SDFGI,
+			VOLUMETRIC_FOG_PROCESS_SHADER_FILTER,
+			VOLUMETRIC_FOG_PROCESS_SHADER_FOG,
+			VOLUMETRIC_FOG_PROCESS_SHADER_COPY,
+			VOLUMETRIC_FOG_PROCESS_SHADER_MAX,
+		};
+
+		struct ParamsUBO
+		{
+			float fog_frustum_size_begin[2];
+			float fog_frustum_size_end[2];
+
+			float fog_frustum_end;
+			float ambient_inject;
+			float z_far;
+			uint32_t filter_axis;
+
+			float ambient_color[3];
+			float sky_contribution;
+
+			int32_t fog_volume_size[3];
+			uint32_t directional_light_count;
+
+			float base_emission[3];
+			float base_density;
+
+			float base_scattering[3];
+			float phase_g;
+
+			float detail_spread;
+			float gi_inject;
+			uint32_t max_voxel_gi_instances;
+			uint32_t cluster_type_size;
+
+			float screen_size[2];
+			uint32_t cluster_shift;
+			uint32_t cluster_width;
+
+			uint32_t max_cluster_element_count_div_32;
+			uint32_t use_temporal_reprojection;
+			uint32_t temporal_frame;
+			float temporal_blend;
+
+			float sky_border_size[2];
+			float pad[2];
+
+			float cam_rotation[12];
+			float to_prev_view[16];
+			float radiance_inverse_xform[12];
+		};
+
+		ShaderRD process_shader;
+
+		RID process_shader_version;
+		PipelineDeferredRD process_pipelines[VOLUMETRIC_FOG_PROCESS_SHADER_MAX];
+
+		VolumetricFogShader()
+			: shader(VolumetricFogShaderRD()), process_shader(VolumetricFogProcessShaderRD())
+		{
+		}
+	};
+
+	struct FogShaderData : public RendererRD::MaterialStorage::ShaderData
+	{
+		bool valid = false;
+		RID version;
+
+		PipelineDeferredRD pipeline;
+		Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
+
+		Vector<uint32_t> ubo_offsets;
+		uint32_t ubo_size = 0;
+
+		String code;
+
+		bool uses_time = false;
+
+		virtual void set_code(const String& p_Code) override;
+		virtual bool is_animated() const override;
+		virtual bool casts_shadows() const override;
+		virtual RenderingServerTypes::ShaderNativeSourceCode
+		get_native_source_code() const override;
+		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const override;
+
+		FogShaderData() {}
+
+		virtual ~FogShaderData();
+	};
+
+	struct FogMaterialData : public RendererRD::MaterialStorage::MaterialData
+	{
+		FogShaderData* shader_data = nullptr;
+		RID uniform_set;
+		bool uniform_set_updated;
+
+		virtual void set_render_priority(int p_priority) override {}
+
+		virtual void set_next_pass(RID p_pass) override {}
+
+		virtual ~FogMaterialData();
+	};
+
+	/* Volumetric FOG Render Buffer Data */
+	class VolumetricFog final : public RefCounted
+	{
+	public:
+		enum
+		{
+			MAX_TEMPORAL_FRAMES = 16
+		};
+
+		uint32_t width = 0;
+		uint32_t height = 0;
+		uint32_t depth = 0;
+
+		float length;
+		float spread;
+
+		RID light_density_map;
+		RID prev_light_density_map;
+		RID fog_map;
+		RID density_map;
+		RID light_map;
+		RID emissive_map;
+
+		RID fog_uniform_set;
+		RID copy_uniform_set;
+
+		struct
+		{
+			RID process_uniform_set_density;
+			RID process_uniform_set;
+			RID process_uniform_set2;
+		} gi_dependent_sets;
+
+		RID sdfgi_uniform_set;
+		RID sky_uniform_set;
+
+		int last_shadow_filter = -1;
+
+		RDC::UniformType atomic_type = RDC::UNIFORM_TYPE_IMAGE;
+
+		void configure(RenderSceneBuffersRD* p_render_buffers) {}
+
+		void free_data() {}
+
+		bool sync_gi_dependent_sets_validity(bool p_ensure_freed = false);
+
+		void init(const Vector3i& fog_size, RID p_sky_shader);
+		~VolumetricFog();
+	};
+
+	struct VolumetricFogSettings
+	{
+		Vector2i rb_size;
+		double time;
+		bool is_using_radiance_octmap_array;
+		uint32_t max_cluster_elements;
+		bool volumetric_fog_filter_active;
+		RID shadow_sampler;
+		RID voxel_gi_buffer;
+		RID shadow_atlas_depth;
+		RID omni_light_buffer;
+		RID spot_light_buffer;
+		RID area_light_buffer;
+		RID area_light_atlas;
+		RID directional_shadow_depth;
+		RID directional_light_buffer;
+
+		Ref<VolumetricFog> vfog;
+		ClusterBuilderRD* cluster_builder;
+		Ref<GI::SDFGI> sdfgi;
+		Ref<GI::RenderBuffersGI> rbgi;
+		RID env;
+		SkyRD* sky;
+	};
+
+private:
+	static inline bool _initialized = false;
+
+	static int _get_fog_shader_group();
+	static int _get_fog_variant();
+	static int _get_fog_process_variant(int p_idx);
+
+	/* FOG VOLUMES */
+
+	static inline RID_Owner<FogVolume, true> fog_volume_owner;
+	static inline RID_Owner<FogVolumeInstance> fog_volume_instance_owner;
+
+	static constexpr int SAMPLERS_BINDING_FIRST_INDEX = 3;
+
+	static inline VolumetricFogShader volumetric_fog;
+
+	static Vector3i _point_get_position_in_froxel_volume(const Vector3& p_point, float fog_end,
+		const Vector2& fog_near_size, const Vector2& fog_far_size,
+		float volumetric_fog_detail_spread, const Vector3& fog_size,
+		const Transform3D& p_cam_transform);
+
+	static RendererRD::MaterialStorage::ShaderData* _create_fog_shader_func();
+	static RendererRD::MaterialStorage::ShaderData* _create_fog_shader_funcs();
+
+	static RendererRD::MaterialStorage::MaterialData* _create_fog_material_func(
+		FogShaderData* p_shader);
+	static RendererRD::MaterialStorage::MaterialData* _create_fog_material_funcs(
+		RendererRD::MaterialStorage::ShaderData* p_shader);
+
+public:
+	static void initialize();
+	static void finalize();
+
+	static bool is_initialized() { return _initialized; }
+
+	static bool free(RID p_rid);
+
+	/* FOG VOLUMES */
+
+	static bool owns_fog_volume(RID p_rid)
+	{
+		if (!_initialized) {
+			return false;
+		}
+		return fog_volume_owner.owns(p_rid);
+	}
+
+	static RID fog_volume_allocate();
+	static void fog_volume_initialize(RID p_rid);
+	static void fog_volume_free(RID p_rid);
+	static Dependency* fog_volume_get_dependency(RID p_fog_volume);
+
+	static void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape);
+	static void fog_volume_set_size(RID p_fog_volume, const Vector3& p_size);
+	static void fog_volume_set_material(RID p_fog_volume, RID p_material);
+	static RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume);
+	static RID fog_volume_get_material(RID p_fog_volume);
+	static AABB fog_volume_get_aabb(RID p_fog_volume);
+	static Vector3 fog_volume_get_size(RID p_fog_volume);
+
+	/* FOG VOLUMES INSTANCE */
+
+	static bool owns_fog_volume_instance(RID p_rid)
+	{
+		if (!_initialized) {
+			return false;
+		}
+		return fog_volume_instance_owner.owns(p_rid);
+	}
+
+	static RID fog_volume_instance_create(RID p_fog_volume);
+	static void fog_instance_free(RID p_rid);
+
+	static void fog_volume_instance_set_transform(
+		RID p_fog_volume_instance, const Transform3D& p_transform)
+	{
+		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
+		ERR_FAIL_NULL(fvi);
+		fvi->transform = p_transform;
+	}
+
+	static void fog_volume_instance_set_active(RID p_fog_volume_instance, bool p_active)
+	{
+		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
+		ERR_FAIL_NULL(fvi);
+		fvi->active = p_active;
+	}
+
+	static RID fog_volume_instance_get_volume(RID p_fog_volume_instance)
+	{
+		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
+		ERR_FAIL_NULL_V(fvi, RID());
+		return fvi->volume;
+	}
+
+	static Vector3 fog_volume_instance_get_position(RID p_fog_volume_instance)
+	{
+		Fog::FogVolumeInstance* fvi = fog_volume_instance_owner.get_or_null(p_fog_volume_instance);
+		ERR_FAIL_NULL_V(fvi, Vector3());
+		return fvi->transform.get_origin();
+	}
+
+	/* Volumetric FOG API */
+
+	static void init_fog_shader(uint32_t p_max_directional_lights, int p_roughness_layers,
+		bool p_is_using_radiance_octmap_array);
+	static void free_fog_shader();
+
+	static void volumetric_fog_update(const VolumetricFogSettings& p_settings,
+		const Projection& p_cam_projection, const Transform3D& p_cam_transform,
+		const Transform3D& p_prev_cam_inv_transform, RID p_shadow_atlas,
+		int p_directional_light_count, bool p_use_directional_shadows, int p_positional_light_count,
+		int p_voxel_gi_count, const PagedArray<RID>& p_fog_volumes);
 };
 
 } // namespace RendererRD

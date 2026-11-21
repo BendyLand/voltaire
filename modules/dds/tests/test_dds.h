@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "../image_saver_dds.h"
+#include "../texture_loader_dds.h"
 
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"

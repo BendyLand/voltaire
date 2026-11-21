@@ -30,6 +30,9 @@
 /**************************************************************************/
 
 #include <ogg/ogg.h>
+#include "core/io/resource_importer.h"
+#include "core/io/resource_saver.h"
+#include "register_types.h"
 #include "audio_stream_ogg_vorbis.h"
 #include "core/io/file_access.h"
 #include "core/templates/rb_map.h"
@@ -622,4 +625,61 @@ void AudioStreamOggVorbis::maybe_update_info() {}
 
 Ref<AudioSample> AudioStreamOggVorbis::generate_sample() const { return Ref<AudioSample>(); }
 
+String ResourceImporterOggVorbis::get_importer_name() const { return "oggvorbisstr"; }
 
+String ResourceImporterOggVorbis::get_visible_name() const { return "Ogg Vorbis"; }
+
+void ResourceImporterOggVorbis::get_recognized_extensions(List<String>* p_extensions) const
+{
+	p_extensions->push_back("ogg");
+}
+
+String ResourceImporterOggVorbis::get_save_extension() const { return "oggvorbisstr"; }
+
+String ResourceImporterOggVorbis::get_resource_type() const { return "AudioStreamOggVorbis"; }
+
+#ifdef TOOLS_ENABLED
+bool ResourceImporterOggVorbis::has_advanced_options() const { return false; }
+
+void ResourceImporterOggVorbis::show_advanced_options(const String& p_path) {}
+#endif
+
+#ifndef DISABLE_DEPRECATED
+Ref<AudioStreamOggVorbis> ResourceImporterOggVorbis::load_from_buffer(
+	const Vector<uint8_t>& p_stream_data)
+{
+	return AudioStreamOggVorbis::load_from_buffer(p_stream_data);
+}
+
+Ref<AudioStreamOggVorbis> ResourceImporterOggVorbis::load_from_file(const String& p_path)
+{
+	return AudioStreamOggVorbis::load_from_file(p_path);
+}
+#endif
+
+ResourceImporterOggVorbis::ResourceImporterOggVorbis() {}
+
+int ResourceImporterOggVorbis::get_preset_count() const { return 0; }
+
+String ResourceImporterOggVorbis::get_preset_name(int p_preset) const { return String(); }
+
+void ResourceImporterOggVorbis::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
+#ifdef TOOLS_ENABLED
+#endif
+
+void initialize_vorbis_module(ModuleInitializationLevel p_level)
+{
+#ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		Ref<ResourceImporterOggVorbis> ogg_vorbis_importer;
+		ogg_vorbis_importer.instantiate();
+		ResourceFormatImporter::add_importer(ogg_vorbis_importer);
+	}
+#endif
+}
+
+void uninitialize_vorbis_module(ModuleInitializationLevel p_level) {}

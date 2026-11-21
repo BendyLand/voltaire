@@ -34,6 +34,9 @@
 #define DR_MP3_NO_STDIO
 
 #include <thirdparty/dr_libs/dr_bridge.h>
+#include "core/io/resource_importer.h"
+#include "core/io/resource_saver.h"
+#include "register_types.h"
 #include "audio_stream_mp3.h"
 #include "core/io/file_access.h"
 
@@ -277,5 +280,50 @@ Ref<AudioStreamMP3> AudioStreamMP3::load_from_file(const String& p_path)
 	return load_from_buffer(stream_data);
 }
 
+String ResourceImporterMP3::get_importer_name() const { return "mp3"; }
 
+String ResourceImporterMP3::get_visible_name() const { return "MP3"; }
 
+void ResourceImporterMP3::get_recognized_extensions(List<String>* p_extensions) const
+{
+#ifndef DR_MP3_ONLY_MP3
+	p_extensions->push_back("mp1");
+	p_extensions->push_back("mp2");
+#endif
+	p_extensions->push_back("mp3");
+}
+
+String ResourceImporterMP3::get_save_extension() const { return "mp3str"; }
+
+String ResourceImporterMP3::get_resource_type() const { return "AudioStreamMP3"; }
+
+int ResourceImporterMP3::get_preset_count() const { return 0; }
+
+String ResourceImporterMP3::get_preset_name(int p_idx) const { return String(); }
+
+#ifdef TOOLS_ENABLED
+bool ResourceImporterMP3::has_advanced_options() const { return false; }
+
+void ResourceImporterMP3::show_advanced_options(const String& p_path) {}
+#endif
+
+void ResourceImporterMP3::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
+#ifdef TOOLS_ENABLED
+#endif
+
+void initialize_mp3_module(ModuleInitializationLevel p_level)
+{
+#ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		Ref<ResourceImporterMP3> mp3_import;
+		mp3_import.instantiate();
+		ResourceFormatImporter::add_importer(mp3_import);
+	}
+#endif
+}
+
+void uninitialize_mp3_module(ModuleInitializationLevel p_level) {}

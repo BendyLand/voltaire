@@ -1213,5 +1213,958 @@ Ref<Resource> ResourceFormatLoader::load(const String& p_path, const String& p_o
 	Ref<Resource> r = memnew(Resource);
 	return r;
 }
+#ifdef print_lt
+#undef print_lt
+#endif
 
+// ==========================================================================
+// resource_saver.cpp
+// ==========================================================================
 
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "core/config/project_settings.h"
+#include "core/io/file_access.h"
+#include "core/io/resource_loader.h"
+#include "resource_saver.h"
+
+Ref<ResourceFormatSaver> ResourceSaver::saver[MAX_SAVERS];
+
+int ResourceSaver::saver_count = 0;
+bool ResourceSaver::timestamp_on_save = false;
+ResourceSavedCallback ResourceSaver::save_callback = nullptr;
+ResourceSaverGetResourceIDForPath ResourceSaver::save_get_id_for_path = nullptr;
+
+Error ResourceFormatSaver::save(
+	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
+{
+	Error err = ERR_METHOD_NOT_FOUND;
+	return err;
+}
+
+Error ResourceFormatSaver::set_uid(const String& p_path, ResourceUID::ID p_uid)
+{
+	Error err = ERR_FILE_UNRECOGNIZED;
+	return err;
+}
+
+bool ResourceFormatSaver::recognize(const Ref<Resource>& p_resource) const
+{
+	bool success = false;
+	return success;
+}
+
+void ResourceFormatSaver::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
+	PackedStringArray exts;
+	const String* r = exts.ptr();
+	for (int i = 0; i < exts.size(); ++i) {
+		p_extensions->push_back(r[i]);
+	}
+}
+
+bool ResourceFormatSaver::recognize_path(
+	const Ref<Resource>& p_resource, const String& p_path) const
+{
+	String extension = p_path.get_extension();
+	List<String> extensions;
+	get_recognized_extensions(p_resource, &extensions);
+	for (const String& E : extensions) {
+		if (E.nocasecmp_to(extension) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+Error ResourceSaver::save(Resource* rp_resource, const String& p_path, uint32_t p_flags)
+{
+	String path = p_path;
+	if (path.is_empty()) {
+		path = rp_resource->get_path();
+	}
+	ERR_FAIL_COND_V_MSG(path.is_empty(), ERR_INVALID_PARAMETER,
+		"Can't save resource to empty path. Provide non-empty path or a Resource with non-empty "
+		"resource_path.");
+	Error err = ERR_FILE_UNRECOGNIZED;
+	for (int i = 0; i < saver_count; i++) {
+		if (!saver[i]->recognize(rp_resource)) {
+			continue;
+		}
+
+		if (!saver[i]->recognize_path(rp_resource, path)) {
+			continue;
+		}
+
+		String old_path = rp_resource->get_path();
+
+		String local_path = ProjectSettings::localize_path(path);
+
+		if (p_flags & FLAG_CHANGE_PATH) {
+			rp_resource->set_path(local_path);
+		}
+
+		err = saver[i]->save(rp_resource, path, p_flags);
+
+		if (err == OK) {
+			if (p_flags & FLAG_CHANGE_PATH) {
+				rp_resource->set_path(old_path);
+			}
+
+			if (save_callback && path.begins_with("res://")) {
+				save_callback(rp_resource, path);
+			}
+
+			return OK;
+		}
+	}
+
+	return err;
+}
+
+Error ResourceSaver::set_uid(const String& p_path, ResourceUID::ID p_uid)
+{
+	String path = p_path;
+
+	ERR_FAIL_COND_V_MSG(path.is_empty(), ERR_INVALID_PARAMETER,
+		"Can't update UID to empty path. Provide non-empty path.");
+
+	Error err = ERR_FILE_UNRECOGNIZED;
+
+	for (int i = 0; i < saver_count; i++) {
+		err = saver[i]->set_uid(path, p_uid);
+		if (err == OK) {
+			break;
+		}
+	}
+
+	return err;
+}
+
+void ResourceSaver::set_save_callback(ResourceSavedCallback p_callback)
+{
+	save_callback = p_callback;
+}
+
+void ResourceSaver::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions)
+{
+	ERR_FAIL_COND_MSG(p_resource.is_null(), "It's not a reference to a valid Resource object.");
+	for (int i = 0; i < saver_count; i++) {
+		saver[i]->get_recognized_extensions(p_resource, p_extensions);
+	}
+}
+
+void ResourceSaver::add_resource_format_saver(
+	Ref<ResourceFormatSaver> p_format_saver, bool p_at_front)
+{
+	ERR_FAIL_COND_MSG(
+		p_format_saver.is_null(), "It's not a reference to a valid ResourceFormatSaver object.");
+	ERR_FAIL_COND(saver_count >= MAX_SAVERS);
+
+	if (p_at_front) {
+		for (int i = saver_count; i > 0; i--) {
+			saver[i] = saver[i - 1];
+		}
+		saver[0] = p_format_saver;
+		saver_count++;
+	}
+	else {
+		saver[saver_count++] = p_format_saver;
+	}
+}
+
+void ResourceSaver::remove_resource_format_saver(Ref<ResourceFormatSaver> p_format_saver)
+{
+	ERR_FAIL_COND_MSG(
+		p_format_saver.is_null(), "It's not a reference to a valid ResourceFormatSaver object.");
+
+	// Find saver
+	int i = 0;
+	for (; i < saver_count; ++i) {
+		if (saver[i] == p_format_saver) {
+			break;
+		}
+	}
+
+	ERR_FAIL_COND(i >= saver_count); // Not found
+
+	// Shift next savers up
+	for (; i < saver_count - 1; ++i) {
+		saver[i] = saver[i + 1];
+	}
+	saver[saver_count - 1].unref();
+	--saver_count;
+}
+
+bool ResourceSaver::add_custom_resource_format_saver(const String& p_script_path)
+{
+	if (_find_custom_resource_format_saver(p_script_path).is_valid()) {
+		return false;
+	}
+
+	Ref<Resource> res = ResourceLoader::load(p_script_path);
+	ERR_FAIL_COND_V(res.is_null(), false);
+
+	return true;
+}
+
+void ResourceSaver::remove_custom_savers()
+{
+	Vector<Ref<ResourceFormatSaver>> custom_savers;
+	for (int i = 0; i < custom_savers.size(); ++i) {
+		remove_resource_format_saver(custom_savers[i]);
+	}
+}
+
+ResourceUID::ID ResourceSaver::get_resource_id_for_path(const String& p_path, bool p_generate)
+{
+	if (save_get_id_for_path) {
+		return save_get_id_for_path(p_path, p_generate);
+	}
+	return ResourceUID::INVALID_ID;
+}
+
+void ResourceSaver::set_get_resource_id_for_path(ResourceSaverGetResourceIDForPath p_callback)
+{
+	save_get_id_for_path = p_callback;
+}
+
+Ref<ResourceFormatSaver> ResourceSaver::_find_custom_resource_format_saver(const String& p_path)
+{
+	Ref<ResourceFormatSaver> rfs = memnew(ResourceFormatSaver);
+	return rfs;
+}
+
+// ==========================================================================
+// resource_uid.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "core/config/project_settings.h"
+#include "core/crypto/crypto_core.h"
+#include "core/io/dir_access.h"
+#include "core/io/file_access.h"
+#include "core/io/resource_loader.h"
+#include "core/io/stream_peer.h"
+#include "core/math/random_pcg.h"
+#include "resource_uid.h"
+
+// These constants are off by 1, causing the 'z' and '9' characters never to be used.
+// This cannot be fixed without breaking compatibility; see GH-83843.
+static constexpr uint32_t uid_char_count = ('z' - 'a');
+static constexpr uint32_t uid_base = uid_char_count + ('9' - '0');
+
+String ResourceUID::get_cache_file()
+{
+	return ProjectSettings::get_project_data_path().path_join("uid_cache.bin");
+}
+
+static constexpr uint8_t uuid_characters[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
+	'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', '0', '1', '2', '3', '4',
+	'5', '6', '7', '8'};
+static constexpr uint32_t uuid_characters_element_count = std_size(uuid_characters);
+static constexpr uint8_t max_uuid_number_length =
+	13; // Max 0x7FFFFFFFFFFFFFFF (uid://d4n4ub6itg400) size is 13 characters.
+
+String ResourceUID::id_to_text(ID p_id)
+{
+	if (p_id < 0) {
+		return "uid://<invalid>";
+	}
+
+	char32_t tmp[max_uuid_number_length];
+	uint32_t tmp_size = 0;
+	do {
+		uint32_t c = p_id % uuid_characters_element_count;
+		tmp[tmp_size] = uuid_characters[c];
+		p_id /= uuid_characters_element_count;
+		++tmp_size;
+	} while (p_id);
+
+	// tmp_size + uid:// (6) + 1 for null.
+	String txt;
+	txt.resize_uninitialized(tmp_size + 7);
+
+	char32_t* p = txt.ptrw();
+	p[0] = 'u';
+	p[1] = 'i';
+	p[2] = 'd';
+	p[3] = ':';
+	p[4] = '/';
+	p[5] = '/';
+	uint32_t size = 6;
+
+	// The above loop give the number backward, recopy it in the string in the correct order.
+	for (uint32_t i = 0; i < tmp_size; ++i) {
+		p[size++] = tmp[tmp_size - i - 1];
+	}
+
+	p[size] = 0;
+
+	return txt;
+}
+
+ResourceUID::ID ResourceUID::text_to_id(const String& p_text)
+{
+	if (!p_text.begins_with("uid://") || p_text == "uid://<invalid>") {
+		return INVALID_ID;
+	}
+
+	uint32_t l = p_text.length();
+	uint64_t uid = 0;
+	for (uint32_t i = 6; i < l; i++) {
+		uid *= uid_base;
+		uint32_t c = p_text[i];
+		if (is_ascii_lower_case(c)) {
+			uid += c - 'a';
+		}
+		else if (is_digit(c)) {
+			uid += c - '0' + uid_char_count;
+		}
+		else {
+			return INVALID_ID;
+		}
+	}
+	return ID(uid & 0x7FFFFFFFFFFFFFFF);
+}
+
+ResourceUID::ID ResourceUID::create_id()
+{
+	while (true) {
+		ID id = INVALID_ID;
+		MutexLock lock(data->mutex);
+		Error err = CryptoCore::generate_random((uint8_t*)&id, sizeof(id));
+		ERR_FAIL_COND_V(err != OK, INVALID_ID);
+		id &= 0x7FFFFFFFFFFFFFFF;
+		bool exists = data->unique_ids.has(id);
+		if (!exists) {
+			return id;
+		}
+	}
+}
+
+ResourceUID::ID ResourceUID::create_id_for_path(const String& p_path)
+{
+	ID id = INVALID_ID;
+	RandomPCG rng;
+	rng.seed(
+		p_path.hash64() * p_path.to_lower().hash64() * FileAccess::get_md5(p_path).hash64());
+
+	while (true) {
+		int64_t num1 = rng.rand();
+		int64_t num2 = ((int64_t)rng.rand()) << 32;
+		id = (num1 | num2) & 0x7FFFFFFFFFFFFFFF;
+
+		MutexLock lock(data->mutex);
+		if (!data->unique_ids.has(id)) {
+			break;
+		}
+	}
+	return id;
+}
+
+bool ResourceUID::has_id(ID p_id)
+{
+	MutexLock l(data->mutex);
+	return data->unique_ids.has(p_id);
+}
+
+void ResourceUID::add_id(ID p_id, const String& p_path)
+{
+	MutexLock l(data->mutex);
+	ERR_FAIL_COND(data->unique_ids.has(p_id));
+	Cache c;
+	c.cs = p_path.utf8();
+	data->unique_ids[p_id] = c;
+	if (data->use_reverse_cache) {
+		data->reverse_cache[c.cs] = p_id;
+	}
+	data->changed = true;
+	// The cache was never loaded (probably does not exist), so assume that first ID initializes it.
+	data->cache_initialized = true;
+}
+
+void ResourceUID::set_id(ID p_id, const String& p_path)
+{
+	MutexLock l(data->mutex);
+	ERR_FAIL_COND(!data->unique_ids.has(p_id));
+	CharString cs = p_path.utf8();
+	const char* update_ptr = cs.ptr();
+	const char* cached_ptr = data->unique_ids[p_id].cs.ptr();
+	if (update_ptr == nullptr && cached_ptr == nullptr) {
+		return; // Both are empty strings.
+	}
+	if ((update_ptr == nullptr) != (cached_ptr == nullptr) || strcmp(update_ptr, cached_ptr) != 0) {
+		data->unique_ids[p_id].cs = cs;
+		data->unique_ids[p_id].saved_to_cache = false; // changed
+		if (data->use_reverse_cache) {
+			data->reverse_cache[cs] = p_id;
+		}
+		data->changed = true;
+	}
+}
+
+String ResourceUID::get_id_path(ID p_id)
+{
+	ERR_FAIL_COND_V_MSG(p_id == INVALID_ID, String(), "Invalid UID.");
+	MutexLock l(data->mutex);
+	const ResourceUID::Cache* cache = data->unique_ids.getptr(p_id);
+
+#if TOOLS_ENABLED
+	// On startup, the scan_for_uid_on_startup callback should be set and will
+	// execute EditorFileSystem::scan_for_uid, which scans all project files
+	// to reload the UID cache before the first scan.
+	// Note: EditorFileSystem::scan_for_uid sets scan_for_uid_on_startup to nullptr
+	//       once the first scan_for_uid is complete.
+	if (!cache && scan_for_uid_on_startup) {
+		scan_for_uid_on_startup();
+		cache = data->unique_ids.getptr(p_id);
+	}
+#endif
+
+	if (unlikely(!cache)) {
+		if (data->cache_initialized) {
+			ERR_PRINT(vformat("Unrecognized UID: \"%s\".", id_to_text(p_id)));
+		}
+		return String();
+	}
+	const CharString& cs = cache->cs;
+	return String::utf8(cs.ptr());
+}
+
+ResourceUID::ID ResourceUID::get_path_id(const String& p_path)
+{
+	const ID* id = data->reverse_cache.getptr(p_path.utf8());
+	if (id) {
+		return *id;
+	}
+	return INVALID_ID;
+}
+
+void ResourceUID::remove_id(ID p_id)
+{
+	MutexLock l(data->mutex);
+	ERR_FAIL_COND(!data->unique_ids.has(p_id));
+	if (data->use_reverse_cache) {
+		data->reverse_cache.erase(data->unique_ids[p_id].cs);
+	}
+	data->unique_ids.erase(p_id);
+}
+
+String ResourceUID::uid_to_path(const String& p_uid)
+{
+	return get_id_path(text_to_id(p_uid));
+}
+
+String ResourceUID::path_to_uid(const String& p_path)
+{
+	const ID id = ResourceLoader::get_resource_uid(p_path);
+	if (id == INVALID_ID) {
+		return p_path;
+	}
+	else {
+		return id_to_text(id);
+	}
+}
+
+String ResourceUID::ensure_path(const String& p_uid_or_path)
+{
+	if (p_uid_or_path.begins_with("uid://")) {
+		return uid_to_path(p_uid_or_path);
+	}
+	return p_uid_or_path;
+}
+
+Vector<uint8_t> ResourceUID::encode_binary_cache(const Vector<Pair<ID, String>>& p_entries)
+{
+	Ref<StreamPeerBuffer> buffer;
+	buffer.instantiate();
+	buffer->put_u32(p_entries.size());
+
+	for (const Pair<ID, String>& entry : p_entries) {
+		buffer->put_u64(uint64_t(entry.first));
+		CharString cs = entry.second.utf8();
+		buffer->put_u32(cs.length());
+		buffer->put_data((const uint8_t*)cs.ptr(), cs.length());
+	}
+
+	return buffer->get_data_array();
+}
+
+Error ResourceUID::save_to_cache()
+{
+	String cache_file = get_cache_file();
+	if (!FileAccess::exists(cache_file)) {
+		Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+		d->make_dir_recursive(String(cache_file).get_base_dir()); // ensure base dir exists
+	}
+
+	Ref<FileAccess> f = FileAccess::open(cache_file, FileAccess::WRITE);
+	if (f.is_null()) {
+		return ERR_CANT_OPEN;
+	}
+
+	MutexLock l(data->mutex);
+
+	Vector<Pair<ID, String>> entries;
+	entries.reserve(data->unique_ids.size());
+	data->cache_entries = 0;
+
+	for (KeyValue<ID, Cache>& E : data->unique_ids) {
+		entries.push_back(
+			Pair<ID, String>(E.key, String::utf8(E.value.cs.ptr(), E.value.cs.length())));
+		E.value.saved_to_cache = true;
+		data->cache_entries++;
+	}
+
+	Vector<uint8_t> encoded_data = encode_binary_cache(entries);
+	f->store_buffer(encoded_data.ptr(), encoded_data.size());
+
+	data->changed = false;
+	return OK;
+}
+
+Error ResourceUID::load_from_cache(bool p_reset)
+{
+	Ref<FileAccess> f = FileAccess::open(get_cache_file(), FileAccess::READ);
+	if (f.is_null()) {
+		return ERR_CANT_OPEN;
+	}
+
+	MutexLock l(data->mutex);
+	if (p_reset) {
+		if (data->use_reverse_cache) {
+			data->reverse_cache.clear();
+		}
+		data->unique_ids.clear();
+	}
+
+	uint32_t entry_count = f->get_32();
+	for (uint32_t i = 0; i < entry_count; i++) {
+		int64_t id = f->get_64();
+		int32_t len = f->get_32();
+		Cache c;
+		c.cs.resize_uninitialized(len + 1);
+		ERR_FAIL_COND_V(c.cs.size() != len + 1, ERR_FILE_CORRUPT); // Out of memory.
+		c.cs[len] = 0;
+		int32_t rl = f->get_buffer((uint8_t*)c.cs.ptrw(), len);
+		ERR_FAIL_COND_V(rl != len, ERR_FILE_CORRUPT);
+
+		c.saved_to_cache = true;
+		data->unique_ids[id] = c;
+		if (data->use_reverse_cache) {
+			data->reverse_cache[c.cs] = id;
+		}
+	}
+
+	data->cache_entries = entry_count;
+	data->changed = false;
+	data->cache_initialized = true;
+	return OK;
+}
+
+Error ResourceUID::update_cache()
+{
+	if (!data->changed) {
+		return OK;
+	}
+
+	if (data->cache_entries == 0) {
+		return save_to_cache();
+	}
+	MutexLock l(data->mutex);
+
+	Ref<FileAccess> f;
+	for (KeyValue<ID, Cache>& E : data->unique_ids) {
+		if (!E.value.saved_to_cache) {
+			if (f.is_null()) {
+				f = FileAccess::open(get_cache_file(), FileAccess::READ_WRITE); // Append.
+				if (f.is_null()) {
+					return ERR_CANT_OPEN;
+				}
+				f->seek_end();
+			}
+			f->store_64(uint64_t(E.key));
+			uint32_t s = E.value.cs.length();
+			f->store_32(s);
+			f->store_buffer((const uint8_t*)E.value.cs.ptr(), s);
+			E.value.saved_to_cache = true;
+			data->cache_entries++;
+		}
+	}
+
+	if (f.is_valid()) {
+		f->seek(0);
+		f->store_32(data->cache_entries); // update amount of entries
+	}
+
+	data->changed = false;
+
+	return OK;
+}
+
+String ResourceUID::get_path_from_cache(Ref<FileAccess>& p_cache_file, const String& p_uid_string)
+{
+	const int64_t uid_from_string = text_to_id(p_uid_string);
+	if (uid_from_string != INVALID_ID) {
+		const uint32_t entry_count = p_cache_file->get_32();
+		for (uint32_t i = 0; i < entry_count; i++) {
+			int64_t id = p_cache_file->get_64();
+			int32_t len = p_cache_file->get_32();
+
+			if (id == uid_from_string) {
+				CharString cs;
+				cs.resize_uninitialized(len + 1);
+				ERR_FAIL_COND_V(cs.size() != len + 1, String());
+				cs[len] = 0;
+				int32_t rl = p_cache_file->get_buffer((uint8_t*)cs.ptrw(), len);
+				ERR_FAIL_COND_V(rl != len, String());
+				return String::utf8(cs.get_data());
+			}
+			else {
+				p_cache_file->seek(p_cache_file->get_position() + len);
+				ERR_FAIL_COND_V(p_cache_file->eof_reached(), String());
+			}
+		}
+	}
+	return String();
+}
+
+void ResourceUID::clear()
+{
+	data->cache_entries = 0;
+	if (data->use_reverse_cache) {
+		data->reverse_cache.clear();
+	}
+	data->unique_ids.clear();
+	data->changed = false;
+}
+
+void ResourceUID::initialize()
+{
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+}
+
+void ResourceUID::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+// ==========================================================================
+// missing_resource.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "missing_resource.h"
+
+void MissingResource::set_original_class(const String& p_class) { original_class = p_class; }
+
+String MissingResource::get_original_class() const { return original_class; }
+
+void MissingResource::set_recording_properties(bool p_enable) { recording_properties = p_enable; }
+
+bool MissingResource::is_recording_properties() const { return recording_properties; }
+
+String MissingResource::get_save_class() const { return original_class; }
+
+// ==========================================================================
+// image_loader.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "image_loader.h"
+
+bool ImageFormatLoader::recognize(const String& p_extension) const
+{
+	List<String> extensions;
+	get_recognized_extensions(&extensions);
+	for (const String& E : extensions) {
+		if (E.nocasecmp_to(p_extension) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+Error ImageFormatLoaderExtension::load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess,
+	uint32_t p_flags, float p_scale)
+{
+	Error err = ERR_UNAVAILABLE;
+	return err;
+}
+
+void ImageFormatLoaderExtension::add_format_loader() { ImageLoader::add_image_format_loader(this); }
+
+void ImageFormatLoaderExtension::remove_format_loader()
+{
+	ImageLoader::remove_image_format_loader(this);
+}
+
+Error ImageLoader::load_image(const String& p_file, Ref<Image> p_image, Ref<FileAccess> p_custom,
+	uint32_t p_flags, float p_scale)
+{
+	ERR_FAIL_COND_V_MSG(
+		p_image.is_null(), ERR_INVALID_PARAMETER, "Can't load an image: invalid Image object.");
+	const String file = ResourceUID::ensure_path(p_file);
+
+	Ref<FileAccess> f = p_custom;
+	if (f.is_null()) {
+		Error err;
+		f = FileAccess::open(file, FileAccess::READ, &err);
+		ERR_FAIL_COND_V_MSG(f.is_null(), err, vformat("Error opening file '%s'.", file));
+	}
+
+	String extension = file.get_extension();
+
+	for (int i = 0; i < loader.size(); i++) {
+		if (!loader[i]->recognize(extension)) {
+			continue;
+		}
+		Error err = loader.write[i]->load_image(p_image, f, p_flags, p_scale);
+		if (err != OK) {
+			ERR_PRINT(vformat("Error loading image: '%s'.", file));
+		}
+
+		if (err != ERR_FILE_UNRECOGNIZED) {
+			return err;
+		}
+	}
+
+	return
+ERR_FILE_UNRECOGNIZED;
+}
+
+void ImageLoader::get_recognized_extensions(List<String>* p_extensions)
+{
+	for (int i = 0; i < loader.size(); i++) {
+		loader[i]->get_recognized_extensions(p_extensions);
+	}
+}
+
+Ref<ImageFormatLoader> ImageLoader::recognize(const String& p_extension)
+{
+	for (int i = 0; i < loader.size(); i++) {
+		if (loader[i]->recognize(p_extension)) {
+			return loader[i];
+		}
+	}
+
+	return nullptr;
+}
+
+void ImageLoader::add_image_format_loader(Ref<ImageFormatLoader> p_loader)
+{
+	loader.push_back(p_loader);
+}
+
+void ImageLoader::remove_image_format_loader(Ref<ImageFormatLoader> p_loader)
+{
+	loader.erase(p_loader);
+}
+
+void ImageLoader::cleanup()
+{
+	while (loader.size()) {
+		remove_image_format_loader(loader[0]);
+	}
+}
+
+void ImageFormatLoaderExtension::get_recognized_extensions(List<String>* p_extensions) const {}
+
+// ==========================================================================
+// image_resource_format.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "image_resource_format.h"
+
+Ref<Resource> ResourceFormatLoaderImage::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
+	if (f.is_null()) {
+		if (r_error) {
+			*r_error = ERR_CANT_OPEN;
+		}
+		return Ref<Resource>();
+	}
+
+	uint8_t header[4] = { 0, 0, 0, 0 };
+	f->get_buffer(header, 4);
+
+	bool unrecognized = header[0] != 'G' || header[1] != 'D' || header[2] != 'I' || header[3] != 'M';
+	if (unrecognized) {
+		if (r_error) {
+			*r_error = ERR_FILE_UNRECOGNIZED;
+		}
+		ERR_FAIL_V(Ref<Resource>());
+	}
+
+	String extension = f->get_pascal_string();
+
+	int idx = -1;
+
+	for (int i = 0; i < ImageLoader::loader.size(); i++) {
+		if (ImageLoader::loader[i]->recognize(extension)) {
+			idx = i;
+			break;
+		}
+	}
+
+	if (idx == -1) {
+		if (r_error) {
+			*r_error = ERR_FILE_UNRECOGNIZED;
+		}
+		ERR_FAIL_V(Ref<Resource>());
+	}
+
+	Ref<Image> image;
+	image.instantiate();
+
+	Error err = ImageLoader::loader.write[idx]->load_image(image, f);
+
+	if (err != OK) {
+		if (r_error) {
+			*r_error = err;
+		}
+		return Ref<Resource>();
+	}
+
+	if (r_error) {
+		*r_error = OK;
+	}
+
+	return image;
+}
+
+void ResourceFormatLoaderImage::get_recognized_extensions(List<String> *p_extensions) const {
+	p_extensions->push_back("image");
+}
+
+bool ResourceFormatLoaderImage::handles_type(const String &p_type) const {
+	return p_type == "Image";
+}
+
+String ResourceFormatLoaderImage::get_resource_type(const String &p_path) const {
+	return p_path.get_extension().to_lower() == "image" ? "Image" : String();
+}

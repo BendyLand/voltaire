@@ -30,6 +30,14 @@
 /**************************************************************************/
 
 #include "nav_map_3d.h"
+#include "core/config/engine.h"
+#include "core/os/thread.h"
+#include "register_types.h"
+#include "scene/3d/node_3d.h"
+#include "scene/main/node.h"
+#include "scene/main/scene_tree.h"
+#include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
+#include "thirdparty/recastnavigation/Recast/Include/Recast.h"
 
 #include "core/config/project_settings.h"
 #include "core/math/geometry_3d.h"
@@ -3684,3 +3692,458 @@ void NavMeshQueries3D::query_task_map_iteration_get_path(
 }
 
 #undef THREE_POINTS_CROSS_PRODUCT
+
+Mutex NavMeshGenerator3D::baking_navmesh_mutex;
+Mutex NavMeshGenerator3D::generator_task_mutex;
+RWLock NavMeshGenerator3D::generator_parsers_rwlock;
+bool NavMeshGenerator3D::use_threads = true;
+bool NavMeshGenerator3D::baking_use_multiple_threads = true;
+bool NavMeshGenerator3D::baking_use_high_priority_threads = true;
+HashMap<Ref<NavigationMesh>, NavMeshGenerator3D::NavMeshGeneratorTask3D*>
+	NavMeshGenerator3D::baking_navmeshes;
+
+static const char*
+	_navmesh_bake_state_msgs[(size_t)NavMeshGenerator3D::NavMeshBakeState::BAKE_STATE_MAX] = {
+		"",
+		"Setting up configuration...",
+		"Calculating grid size...",
+		"Creating heightfield...",
+		"Marking walkable triangles...",
+		"Constructing compact heightfield...",
+		"Eroding walkable area...",
+		"Sample partitioning...",
+		"Creating contours...",
+		"Creating polymesh...",
+		"Converting to native navigation mesh...",
+		"Baking cleanup...",
+		"Baking finished.",
+};
+
+void NavMeshGenerator3D::initialize()
+{
+	_initialized = true;
+}
+
+void NavMeshGenerator3D::finalize()
+{
+	if (!_initialized) {
+		return;
+	}
+	cleanup();
+	_initialized = false;
+}
+
+void NavMeshGenerator3D::finish() { cleanup(); }
+
+bool NavMeshGenerator3D::is_baking(Ref<NavigationMesh> p_navigation_mesh)
+{
+	MutexLock baking_navmesh_lock(baking_navmesh_mutex);
+	return baking_navmeshes.has(p_navigation_mesh);
+}
+
+String NavMeshGenerator3D::get_baking_state_msg(Ref<NavigationMesh> p_navigation_mesh)
+{
+	String bake_state_msg;
+	MutexLock baking_navmesh_lock(baking_navmesh_mutex);
+	if (baking_navmeshes.has(p_navigation_mesh)) {
+		bake_state_msg = _navmesh_bake_state_msgs[baking_navmeshes[p_navigation_mesh]->bake_state];
+	}
+	else {
+		bake_state_msg = _navmesh_bake_state_msgs[NavMeshBakeState::BAKE_STATE_NONE];
+	}
+	return bake_state_msg;
+}
+
+void NavMeshGenerator3D::generator_thread_bake(void* p_arg)
+{
+	NavMeshGeneratorTask3D* generator_task = static_cast<NavMeshGeneratorTask3D*>(p_arg);
+
+	generator_bake_from_source_geometry_data(generator_task);
+
+	generator_task->status = NavMeshGeneratorTask3D::TaskStatus::BAKING_FINISHED;
+}
+
+void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
+	NavMeshGeneratorTask3D* p_generator_task)
+{
+	Ref<NavigationMesh> p_navigation_mesh = p_generator_task->navigation_mesh;
+	const Ref<NavigationMeshSourceGeometryData3D>& p_source_geometry_data =
+		p_generator_task->source_geometry_data;
+
+	if (p_navigation_mesh.is_null() || p_source_geometry_data.is_null()) {
+		return;
+	}
+
+	Vector<float> source_geometry_vertices;
+	Vector<int> source_geometry_indices;
+	Vector<NavigationMeshSourceGeometryData3D::ProjectedObstruction> projected_obstructions;
+
+	p_source_geometry_data->get_data(
+		source_geometry_vertices, source_geometry_indices, projected_obstructions);
+
+	if (source_geometry_vertices.size() < 3 || source_geometry_indices.size() < 3) {
+		return;
+	}
+
+	rcHeightfield* hf = nullptr;
+	rcCompactHeightfield* chf = nullptr;
+	rcContourSet* cset = nullptr;
+	rcPolyMesh* poly_mesh = nullptr;
+	rcPolyMeshDetail* detail_mesh = nullptr;
+	rcContext ctx;
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CONFIGURATION;
+
+	const float* verts = source_geometry_vertices.ptr();
+	const int nverts = source_geometry_vertices.size() / 3;
+	const int* tris = source_geometry_indices.ptr();
+	const int ntris = source_geometry_indices.size() / 3;
+
+	float bmin[3], bmax[3];
+	rcCalcBounds(verts, nverts, bmin, bmax);
+
+	rcConfig cfg;
+	memset(&cfg, 0, sizeof(cfg));
+
+	cfg.cs = p_navigation_mesh->get_cell_size();
+	cfg.ch = p_navigation_mesh->get_cell_height();
+	if (p_navigation_mesh->get_border_size() > 0.0) {
+		cfg.borderSize = (int)Math::ceil(p_navigation_mesh->get_border_size() / cfg.cs);
+	}
+	cfg.walkableSlopeAngle = p_navigation_mesh->get_agent_max_slope();
+	cfg.walkableHeight = (int)Math::ceil(p_navigation_mesh->get_agent_height() / cfg.ch);
+	cfg.walkableClimb = (int)Math::floor(p_navigation_mesh->get_agent_max_climb() / cfg.ch);
+	cfg.walkableRadius = (int)Math::ceil(p_navigation_mesh->get_agent_radius() / cfg.cs);
+	cfg.maxEdgeLen =
+		(int)(p_navigation_mesh->get_edge_max_length() / p_navigation_mesh->get_cell_size());
+	cfg.maxSimplificationError = p_navigation_mesh->get_edge_max_error();
+	cfg.minRegionArea =
+		(int)(p_navigation_mesh->get_region_min_size() * p_navigation_mesh->get_region_min_size());
+	cfg.mergeRegionArea = (int)(p_navigation_mesh->get_region_merge_size() *
+								p_navigation_mesh->get_region_merge_size());
+	cfg.maxVertsPerPoly = (int)p_navigation_mesh->get_vertices_per_polygon();
+	cfg.detailSampleDist = MAX(
+		p_navigation_mesh->get_cell_size() * p_navigation_mesh->get_detail_sample_distance(), 0.1f);
+	cfg.detailSampleMaxError =
+		p_navigation_mesh->get_cell_height() * p_navigation_mesh->get_detail_sample_max_error();
+
+	if (p_navigation_mesh->get_border_size() > 0.0 &&
+		!Math::is_zero_approx(
+			Math::fmod(p_navigation_mesh->get_border_size(), p_navigation_mesh->get_cell_size()))) {
+		WARN_PRINT("Property border_size is ceiled to cell_size voxel units and loses precision.");
+	}
+	if (!Math::is_equal_approx(
+			(float)cfg.walkableHeight * cfg.ch, p_navigation_mesh->get_agent_height())) {
+		WARN_PRINT(
+			"Property agent_height is ceiled to cell_height voxel units and loses precision.");
+	}
+	if (!Math::is_equal_approx(
+			(float)cfg.walkableClimb * cfg.ch, p_navigation_mesh->get_agent_max_climb())) {
+		WARN_PRINT(
+			"Property agent_max_climb is floored to cell_height voxel units and loses precision.");
+	}
+	if (!Math::is_equal_approx(
+			(float)cfg.walkableRadius * cfg.cs, p_navigation_mesh->get_agent_radius())) {
+		WARN_PRINT("Property agent_radius is ceiled to cell_size voxel units and loses precision.");
+	}
+	if (!Math::is_equal_approx(
+			(float)cfg.maxEdgeLen * cfg.cs, p_navigation_mesh->get_edge_max_length())) {
+		WARN_PRINT(
+			"Property edge_max_length is rounded to cell_size voxel units and loses precision.");
+	}
+	if (!Math::is_equal_approx((float)cfg.minRegionArea,
+			p_navigation_mesh->get_region_min_size() * p_navigation_mesh->get_region_min_size())) {
+		WARN_PRINT("Property region_min_size is converted to int and loses precision.");
+	}
+	if (!Math::is_equal_approx(
+			(float)cfg.mergeRegionArea, p_navigation_mesh->get_region_merge_size() *
+											p_navigation_mesh->get_region_merge_size())) {
+		WARN_PRINT("Property region_merge_size is converted to int and loses precision.");
+	}
+	if (!Math::is_equal_approx(
+			(float)cfg.maxVertsPerPoly, p_navigation_mesh->get_vertices_per_polygon())) {
+		WARN_PRINT("Property vertices_per_polygon is converted to int and loses precision.");
+	}
+	if (p_navigation_mesh->get_cell_size() * p_navigation_mesh->get_detail_sample_distance() <
+		0.1f) {
+		WARN_PRINT("Property detail_sample_distance is clamped to 0.1 world units as the resulting "
+				   "value from multiplying with cell_size is too low.");
+	}
+
+	cfg.bmin[0] = bmin[0];
+	cfg.bmin[1] = bmin[1];
+	cfg.bmin[2] = bmin[2];
+	cfg.bmax[0] = bmax[0];
+	cfg.bmax[1] = bmax[1];
+	cfg.bmax[2] = bmax[2];
+
+	AABB baking_aabb = p_navigation_mesh->get_filter_baking_aabb();
+	if (baking_aabb.has_volume()) {
+		Vector3 baking_aabb_offset = p_navigation_mesh->get_filter_baking_aabb_offset();
+		cfg.bmin[0] = baking_aabb.position[0] + baking_aabb_offset.x;
+		cfg.bmin[1] = baking_aabb.position[1] + baking_aabb_offset.y;
+		cfg.bmin[2] = baking_aabb.position[2] + baking_aabb_offset.z;
+		cfg.bmax[0] = cfg.bmin[0] + baking_aabb.size[0];
+		cfg.bmax[1] = cfg.bmin[1] + baking_aabb.size[1];
+		cfg.bmax[2] = cfg.bmin[2] + baking_aabb.size[2];
+	}
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CALC_GRID_SIZE;
+	rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
+
+	if ((cfg.width * cfg.height) > 30000000) {
+		ERR_FAIL_MSG("Baking interrupted."
+					 "\nNavigationMesh baking process would likely crash the engine."
+					 "\nSource geometry is suspiciously big for the current Cell Size and Cell "
+					 "Height in the NavMesh Resource bake settings."
+					 "\nIf baking does not crash the engine or fail, the resulting NavigationMesh "
+					 "will create serious pathfinding performance issues."
+					 "\nIt is advised to increase Cell Size and/or Cell Height in the NavMesh "
+					 "Resource bake settings or reduce the size / scale of the source geometry."
+					 "\nIf you would like to try baking anyway, disable the "
+					 "'navigation/baking/use_crash_prevention_checks' project setting.");
+		return;
+	}
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CREATE_HEIGHTFIELD;
+	hf = rcAllocHeightfield();
+
+	ERR_FAIL_NULL(hf);
+	ERR_FAIL_COND(
+		!rcCreateHeightfield(&ctx, *hf, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch));
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_MARK_WALKABLE_TRIANGLES;
+	{
+		Vector<unsigned char> tri_areas;
+		tri_areas.resize(ntris);
+
+		ERR_FAIL_COND(tri_areas.is_empty());
+
+		memset(tri_areas.ptrw(), 0, ntris * sizeof(unsigned char));
+		rcMarkWalkableTriangles(
+			&ctx, cfg.walkableSlopeAngle, verts, nverts, tris, ntris, tri_areas.ptrw());
+
+		ERR_FAIL_COND(!rcRasterizeTriangles(
+			&ctx, verts, nverts, tris, tri_areas.ptr(), ntris, *hf, cfg.walkableClimb));
+	}
+
+	if (p_navigation_mesh->get_filter_low_hanging_obstacles()) {
+		rcFilterLowHangingWalkableObstacles(&ctx, cfg.walkableClimb, *hf);
+	}
+	if (p_navigation_mesh->get_filter_ledge_spans()) {
+		rcFilterLedgeSpans(&ctx, cfg.walkableHeight, cfg.walkableClimb, *hf);
+	}
+	if (p_navigation_mesh->get_filter_walkable_low_height_spans()) {
+		rcFilterWalkableLowHeightSpans(&ctx, cfg.walkableHeight, *hf);
+	}
+
+	p_generator_task->bake_state =
+		NavMeshBakeState::BAKE_STATE_CONSTRUCT_COMPACT_HEIGHTFIELD;
+
+	chf = rcAllocCompactHeightfield();
+
+	ERR_FAIL_NULL(chf);
+	ERR_FAIL_COND(
+		!rcBuildCompactHeightfield(&ctx, cfg.walkableHeight, cfg.walkableClimb, *hf, *chf));
+
+	rcFreeHeightField(hf);
+	hf = nullptr;
+
+	if (!projected_obstructions.is_empty()) {
+		for (const NavigationMeshSourceGeometryData3D::ProjectedObstruction& projected_obstruction :
+			projected_obstructions) {
+			if (projected_obstruction.carve) {
+				continue;
+			}
+			if (projected_obstruction.vertices.is_empty() ||
+				projected_obstruction.vertices.size() % 3 != 0) {
+				continue;
+			}
+
+			const float* projected_obstruction_verts = projected_obstruction.vertices.ptr();
+			const int projected_obstruction_nverts = projected_obstruction.vertices.size() / 3;
+
+			rcMarkConvexPolyArea(&ctx, projected_obstruction_verts, projected_obstruction_nverts,
+				projected_obstruction.elevation,
+				projected_obstruction.elevation + projected_obstruction.height, RC_NULL_AREA, *chf);
+		}
+	}
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_ERODE_WALKABLE_AREA;
+
+	ERR_FAIL_COND(!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf));
+
+	if (!projected_obstructions.is_empty()) {
+		for (const NavigationMeshSourceGeometryData3D::ProjectedObstruction& projected_obstruction :
+			projected_obstructions) {
+			if (!projected_obstruction.carve) {
+				continue;
+			}
+			if (projected_obstruction.vertices.is_empty() ||
+				projected_obstruction.vertices.size() % 3 != 0) {
+				continue;
+			}
+
+			const float* projected_obstruction_verts = projected_obstruction.vertices.ptr();
+			const int projected_obstruction_nverts = projected_obstruction.vertices.size() / 3;
+
+			rcMarkConvexPolyArea(&ctx, projected_obstruction_verts, projected_obstruction_nverts,
+				projected_obstruction.elevation,
+				projected_obstruction.elevation + projected_obstruction.height, RC_NULL_AREA, *chf);
+		}
+	}
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_SAMPLE_PARTITIONING;
+
+	if (p_navigation_mesh->get_sample_partition_type() ==
+		NavigationMesh::SAMPLE_PARTITION_WATERSHED) {
+		ERR_FAIL_COND(!rcBuildDistanceField(&ctx, *chf));
+		ERR_FAIL_COND(
+			!rcBuildRegions(&ctx, *chf, cfg.borderSize, cfg.minRegionArea, cfg.mergeRegionArea));
+	}
+	else if (p_navigation_mesh->get_sample_partition_type() ==
+			   NavigationMesh::SAMPLE_PARTITION_MONOTONE) {
+		ERR_FAIL_COND(!rcBuildRegionsMonotone(
+			&ctx, *chf, cfg.borderSize, cfg.minRegionArea, cfg.mergeRegionArea));
+	}
+	else {
+		ERR_FAIL_COND(!rcBuildLayerRegions(&ctx, *chf, cfg.borderSize, cfg.minRegionArea));
+	}
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CREATING_CONTOURS;
+
+	cset = rcAllocContourSet();
+
+	ERR_FAIL_NULL(cset);
+	ERR_FAIL_COND(!rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset));
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CREATING_POLYMESH;
+
+	poly_mesh = rcAllocPolyMesh();
+	ERR_FAIL_NULL(poly_mesh);
+	ERR_FAIL_COND(!rcBuildPolyMesh(&ctx, *cset, cfg.maxVertsPerPoly, *poly_mesh));
+
+	detail_mesh = rcAllocPolyMeshDetail();
+	ERR_FAIL_NULL(detail_mesh);
+	ERR_FAIL_COND(!rcBuildPolyMeshDetail(
+		&ctx, *poly_mesh, *chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *detail_mesh));
+
+	rcFreeCompactHeightfield(chf);
+	chf = nullptr;
+	rcFreeContourSet(cset);
+	cset = nullptr;
+
+	p_generator_task->bake_state =
+		NavMeshBakeState::BAKE_STATE_CONVERTING_NATIVE_NAVMESH;
+
+	Vector<Vector3> nav_vertices;
+	Vector<Vector<int>> nav_polygons;
+
+	HashMap<Vector3, int> recast_vertex_to_native_index;
+	LocalVector<int> recast_index_to_native_index;
+	recast_index_to_native_index.resize(detail_mesh->nverts);
+
+	for (int i = 0; i < detail_mesh->nverts; i++) {
+		const float* v = &detail_mesh->verts[i * 3];
+		const Vector3 vertex = Vector3(v[0], v[1], v[2]);
+		int* existing_index_ptr = recast_vertex_to_native_index.getptr(vertex);
+		if (!existing_index_ptr) {
+			int new_index = recast_vertex_to_native_index.size();
+			recast_index_to_native_index[i] = new_index;
+			recast_vertex_to_native_index[vertex] = new_index;
+			nav_vertices.push_back(vertex);
+		}
+		else {
+			recast_index_to_native_index[i] = *existing_index_ptr;
+		}
+	}
+
+	for (int i = 0; i < detail_mesh->nmeshes; i++) {
+		const unsigned int* detail_mesh_m = &detail_mesh->meshes[i * 4];
+		const unsigned int detail_mesh_bverts = detail_mesh_m[0];
+		const unsigned int detail_mesh_m_btris = detail_mesh_m[2];
+		const unsigned int detail_mesh_ntris = detail_mesh_m[3];
+		const unsigned char* detail_mesh_tris = &detail_mesh->tris[detail_mesh_m_btris * 4];
+		for (unsigned int j = 0; j < detail_mesh_ntris; j++) {
+			Vector<int> nav_indices;
+			nav_indices.resize(3);
+			int index1 = ((int)(detail_mesh_bverts + detail_mesh_tris[j * 4 + 0]));
+			int index2 = ((int)(detail_mesh_bverts + detail_mesh_tris[j * 4 + 2]));
+			int index3 = ((int)(detail_mesh_bverts + detail_mesh_tris[j * 4 + 1]));
+
+			nav_indices.write[0] = recast_index_to_native_index[index1];
+			nav_indices.write[1] = recast_index_to_native_index[index2];
+			nav_indices.write[2] = recast_index_to_native_index[index3];
+
+			nav_polygons.push_back(nav_indices);
+		}
+	}
+
+	p_navigation_mesh->set_data(nav_vertices, nav_polygons);
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_BAKE_CLEANUP;
+
+	rcFreePolyMesh(poly_mesh);
+	poly_mesh = nullptr;
+	rcFreePolyMeshDetail(detail_mesh);
+	detail_mesh = nullptr;
+
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_BAKE_FINISHED;
+}
+
+void NavMeshGenerator3D::sync() {}
+
+void NavMeshGenerator3D::cleanup() {}
+
+#ifndef DISABLE_DEPRECATED
+void NavigationMeshGenerator::initialize()
+{
+	_initialized = true;
+}
+
+void NavigationMeshGenerator::finalize()
+{
+	_initialized = false;
+}
+
+void NavigationMeshGenerator::bake(const Ref<NavigationMesh>& p_navigation_mesh, Node* p_root_node)
+{
+	WARN_PRINT_ONCE(
+		"NavigationMeshGenerator::bake() is deprecated due to core threading changes. To upgrade "
+		"existing code, first create a NavigationMeshSourceGeometryData3D resource. Use this "
+		"resource with method parse_source_geometry_data() to parse the SceneTree for nodes that "
+		"should contribute to the navigation mesh baking. The SceneTree parsing needs to happen on "
+		"the main thread. After the parsing is finished use the resource with method "
+		"bake_from_source_geometry_data() to bake a navigation mesh..");
+}
+
+void NavigationMeshGenerator::clear(Ref<NavigationMesh> p_navigation_mesh)
+{
+	if (p_navigation_mesh.is_valid()) {
+		p_navigation_mesh->clear_polygons();
+		p_navigation_mesh->set_vertices(Vector<Vector3>());
+	}
+}
+#endif // DISABLE_DEPRECATED
+
+void uninitialize_navigation_3d_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
+		return;
+	}
+
+#ifndef DISABLE_DEPRECATED
+	NavigationMeshGenerator::finalize();
+#endif // DISABLE_DEPRECATED
+	NavMeshGenerator3D::finalize();
+}
+
+void initialize_navigation_3d_module(ModuleInitializationLevel p_level)
+{
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
+		NavMeshGenerator3D::initialize();
+#ifndef DISABLE_DEPRECATED
+		NavigationMeshGenerator::initialize();
+#endif // DISABLE_DEPRECATED
+	}
+}

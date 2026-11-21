@@ -35,7 +35,7 @@
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/shader_language.h"
 
-class ShaderCompiler
+class ShaderCompiler final
 {
 public:
 	enum Stage

@@ -34,7 +34,7 @@
 #include "core/templates/lru.h"
 #include "servers/rendering/multi_uma_buffer.h"
 #include "servers/rendering/renderer_canvas_render.h"
-#include "servers/rendering/renderer_rd/pipeline_hash_map_rd.h"
+#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/renderer_rd/shaders/canvas.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/canvas_occlusion.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"

@@ -527,4 +527,967 @@ NodePath::NodePath(const String& p_path)
 
 NodePath::~NodePath() { unref(); }
 
+// ==========================================================================
+// print_string.cpp
+// ==========================================================================
 
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include <cstdio>
+#include "core/core_globals.h"
+#include "core/os/os.h"
+#include "print_string.h"
+
+static PrintHandlerList* print_handler_list = nullptr;
+static thread_local bool is_printing = false;
+
+static void __print_fallback(const String& p_string, bool p_err, bool p_reentrance)
+{
+	if (p_reentrance) {
+		fprintf(p_err ? stderr : stdout,
+			"While attempting to print an error, another error was printed:\n");
+	}
+
+	fprintf(p_err ? stderr : stdout, "%s\n", p_string.utf8().get_data());
+}
+
+void add_print_handler(PrintHandlerList* p_handler)
+{
+	_global_lock();
+	p_handler->next = print_handler_list;
+	print_handler_list = p_handler;
+	_global_unlock();
+}
+
+void remove_print_handler(const PrintHandlerList* p_handler)
+{
+	_global_lock();
+
+	PrintHandlerList* prev = nullptr;
+	PrintHandlerList* l = print_handler_list;
+
+	while (l) {
+		if (l == p_handler) {
+			if (prev) {
+				prev->next = l->next;
+			}
+			else {
+				print_handler_list = l->next;
+			}
+			break;
+		}
+		prev = l;
+		l = l->next;
+	}
+	// OS::print("print handler list is %p\n",print_handler_list);
+
+	_global_unlock();
+	ERR_FAIL_NULL(l);
+}
+
+void __print_line(const String& p_string)
+{
+	if (!CoreGlobals::print_line_enabled) {
+		return;
+	}
+
+	if (!CoreGlobals::print_ready) {
+		__print_fallback(p_string, false, false);
+		return;
+	}
+
+	if (is_printing) {
+		__print_fallback(p_string, false, true);
+		return;
+	}
+
+	is_printing = true;
+
+	OS::print("%s\n", p_string.utf8().get_data());
+
+	_global_lock();
+	PrintHandlerList* l = print_handler_list;
+	while (l) {
+		l->printfunc(l->userdata, p_string, false, false);
+		l = l->next;
+	}
+
+	_global_unlock();
+
+	is_printing = false;
+}
+
+void __print_line_rich(const String& p_string)
+{
+	if (!CoreGlobals::print_line_enabled) {
+		return;
+	}
+
+	// Convert a subset of BBCode tags to ANSI escape codes for correct display in the terminal.
+	// Support of those ANSI escape codes varies across terminal emulators,
+	// especially for italic and strikethrough.
+
+	String output;
+	int pos = 0;
+	bool in_named_url = false;
+	while (pos <= p_string.length()) {
+		int brk_pos = p_string.find_char('[', pos);
+
+		if (brk_pos < 0) {
+			brk_pos = p_string.length();
+		}
+
+		String txt = brk_pos > pos ? p_string.substr(pos, brk_pos - pos) : "";
+		if (brk_pos == p_string.length()) {
+			output += txt;
+			break;
+		}
+
+		int brk_end = p_string.find_char(']', brk_pos + 1);
+
+		if (brk_end == -1) {
+			txt += p_string.substr(brk_pos);
+			output += txt;
+			break;
+		}
+		pos = brk_end + 1;
+		output += txt;
+
+		String tag = p_string.substr(brk_pos + 1, brk_end - brk_pos - 1);
+		if (tag == "b") {
+			output += "\u001b[1m";
+		}
+		else if (tag == "/b") {
+			output += "\u001b[22m";
+		}
+		else if (tag == "i") {
+			output += "\u001b[3m";
+		}
+		else if (tag == "/i") {
+			output += "\u001b[23m";
+		}
+		else if (tag == "u") {
+			output += "\u001b[4m";
+		}
+		else if (tag == "/u") {
+			output += "\u001b[24m";
+		}
+		else if (tag == "s") {
+			output += "\u001b[9m";
+		}
+		else if (tag == "/s") {
+			output += "\u001b[29m";
+		}
+		else if (tag == "indent") {
+			output += "    ";
+		}
+		else if (tag == "/indent") {
+			output += "";
+		}
+		else if (tag == "code") {
+			output += "\u001b[2m";
+		}
+		else if (tag == "/code") {
+			output += "\u001b[22m";
+		}
+		else if (tag.begins_with("url=")) {
+			// Support named URLs using OSC 8 escape codes:
+			// <https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda>
+			in_named_url = true;
+			const String url_link = tag.substr(strlen("url="));
+			output += vformat("\u001b]8;;%s\u001b\\", url_link);
+		}
+		else if (tag == "url") {
+			output += "";
+		}
+		else if (tag == "/url") {
+			if (in_named_url) {
+				output += "\u001b]8;;\u001b\\";
+				in_named_url = false;
+			}
+			else {
+				// While it's legal to close an URL that was never opened using OSC 8 escape codes,
+				// it would result in the code being printed to unsupported terminal emulators
+				// when using unnamed URLs.
+				output += "";
+			}
+		}
+		else if (tag == "center") {
+			output += "\n\t\t\t";
+		}
+		else if (tag == "/center") {
+			output += "";
+		}
+		else if (tag == "right") {
+			output += "\n\t\t\t\t\t\t";
+		}
+		else if (tag == "/right") {
+			output += "";
+		}
+		else if (tag.begins_with("color=")) {
+			String color_name = tag.trim_prefix("color=");
+			if (color_name == "black") {
+				output += "\u001b[30m";
+			}
+			else if (color_name == "red") {
+				output += "\u001b[91m";
+			}
+			else if (color_name == "green") {
+				output += "\u001b[92m";
+			}
+			else if (color_name == "lime") {
+				output += "\u001b[92m";
+			}
+			else if (color_name == "yellow") {
+				output += "\u001b[93m";
+			}
+			else if (color_name == "blue") {
+				output += "\u001b[94m";
+			}
+			else if (color_name == "magenta") {
+				output += "\u001b[95m";
+			}
+			else if (color_name == "pink") {
+				output += "\u001b[38;5;218m";
+			}
+			else if (color_name == "purple") {
+				output += "\u001b[38;5;98m";
+			}
+			else if (color_name == "cyan") {
+				output += "\u001b[96m";
+			}
+			else if (color_name == "white") {
+				output += "\u001b[97m";
+			}
+			else if (color_name == "orange") {
+				output += "\u001b[38;5;208m";
+			}
+			else if (color_name == "gray") {
+				output += "\u001b[90m";
+			}
+			else {
+				Color c = Color::from_string(color_name, Color());
+				output += vformat("\u001b[38;2;%d;%d;%dm", c.r * 255, c.g * 255, c.b * 255);
+			}
+		}
+		else if (tag == "/color") {
+			output += "\u001b[39m";
+		}
+		else if (tag.begins_with("bgcolor=")) {
+			String color_name = tag.trim_prefix("bgcolor=");
+			if (color_name == "black") {
+				output += "\u001b[40m";
+			}
+			else if (color_name == "red") {
+				output += "\u001b[101m";
+			}
+			else if (color_name == "green") {
+				output += "\u001b[102m";
+			}
+			else if (color_name == "lime") {
+				output += "\u001b[102m";
+			}
+			else if (color_name == "yellow") {
+				output += "\u001b[103m";
+			}
+			else if (color_name == "blue") {
+				output += "\u001b[104m";
+			}
+			else if (color_name == "magenta") {
+				output += "\u001b[105m";
+			}
+			else if (color_name == "pink") {
+				output += "\u001b[48;5;218m";
+			}
+			else if (color_name == "purple") {
+				output += "\u001b[48;5;98m";
+			}
+			else if (color_name == "cyan") {
+				output += "\u001b[106m";
+			}
+			else if (color_name == "white") {
+				output += "\u001b[107m";
+			}
+			else if (color_name == "orange") {
+				output += "\u001b[48;5;208m";
+			}
+			else if (color_name == "gray") {
+				output += "\u001b[100m";
+			}
+			else {
+				Color c = Color::from_string(color_name, Color());
+				output += vformat("\u001b[48;2;%d;%d;%dm", c.r * 255, c.g * 255, c.b * 255);
+			}
+		}
+		else if (tag == "/bgcolor") {
+			output += "\u001b[49m";
+		}
+		else if (tag.begins_with("fgcolor=")) {
+			String color_name = tag.trim_prefix("fgcolor=");
+			if (color_name == "black") {
+				output += "\u001b[30;40m";
+			}
+			else if (color_name == "red") {
+				output += "\u001b[91;101m";
+			}
+			else if (color_name == "green") {
+				output += "\u001b[92;102m";
+			}
+			else if (color_name == "lime") {
+				output += "\u001b[92;102m";
+			}
+			else if (color_name == "yellow") {
+				output += "\u001b[93;103m";
+			}
+			else if (color_name == "blue") {
+				output += "\u001b[94;104m";
+			}
+			else if (color_name == "magenta") {
+				output += "\u001b[95;105m";
+			}
+			else if (color_name == "pink") {
+				output += "\u001b[38;5;218;48;5;218m";
+			}
+			else if (color_name == "purple") {
+				output += "\u001b[38;5;98;48;5;98m";
+			}
+			else if (color_name == "cyan") {
+				output += "\u001b[96;106m";
+			}
+			else if (color_name == "white") {
+				output += "\u001b[97;107m";
+			}
+			else if (color_name == "orange") {
+				output += "\u001b[38;5;208;48;5;208m";
+			}
+			else if (color_name == "gray") {
+				output += "\u001b[90;100m";
+			}
+			else {
+				Color c = Color::from_string(color_name, Color());
+				output += vformat("\u001b[38;2;%d;%d;%d;48;2;%d;%d;%dm", c.r * 255, c.g * 255,
+					c.b * 255, c.r * 255, c.g * 255, c.b * 255);
+			}
+		}
+		else if (tag == "/fgcolor") {
+			output += "\u001b[39;49m";
+		}
+		else {
+			output += "[";
+			pos = brk_pos + 1;
+		}
+	}
+	output += "\u001b[0m"; // Reset.
+
+	if (!CoreGlobals::print_ready) {
+		__print_fallback(output, false, false);
+		return;
+	}
+
+	if (is_printing) {
+		__print_fallback(output, false, true);
+		return;
+	}
+
+	is_printing = true;
+
+	OS::print_rich("%s\n", output.utf8().get_data());
+
+	_global_lock();
+	PrintHandlerList* l = print_handler_list;
+	while (l) {
+		l->printfunc(l->userdata, p_string, false, true);
+		l = l->next;
+	}
+
+	_global_unlock();
+
+	is_printing = false;
+}
+
+void print_raw(const String& p_string)
+{
+	if (!CoreGlobals::print_ready) {
+		__print_fallback(p_string, false, false);
+		return;
+	}
+
+	if (is_printing) {
+		__print_fallback(p_string, true, true);
+		return;
+	}
+
+	is_printing = true;
+
+	OS::print("%s", p_string.utf8().get_data());
+
+	is_printing = false;
+}
+
+void print_error(const String& p_string)
+{
+	if (!CoreGlobals::print_error_enabled) {
+		return;
+	}
+
+	if (!CoreGlobals::print_ready) {
+		__print_fallback(p_string, false, false);
+		return;
+	}
+
+	if (is_printing) {
+		__print_fallback(p_string, true, true);
+		return;
+	}
+
+	is_printing = true;
+
+	OS::printerr("%s\n", p_string.utf8().get_data());
+
+	_global_lock();
+	PrintHandlerList* l = print_handler_list;
+	while (l) {
+		l->printfunc(l->userdata, p_string, true, false);
+		l = l->next;
+	}
+
+	_global_unlock();
+
+	is_printing = false;
+}
+
+bool is_print_verbose_enabled() { return OS::is_stdout_verbose(); }
+
+// ==========================================================================
+// string_builder.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "string_builder.h"
+
+StringBuilder &StringBuilder::append(const String &p_string) {
+	if (p_string.is_empty()) {
+		return *this;
+	}
+
+	strings.push_back(p_string);
+	appended_strings.push_back(-1);
+
+	string_length += p_string.length();
+
+	return *this;
+}
+
+StringBuilder &StringBuilder::append(const char *p_cstring) {
+	int32_t len = strlen(p_cstring);
+
+	c_strings.push_back(p_cstring);
+	appended_strings.push_back(len);
+
+	string_length += len;
+
+	return *this;
+}
+
+String StringBuilder::as_string() const {
+	if (string_length == 0) {
+		return "";
+	}
+
+	String string;
+	string.resize_uninitialized(string_length + 1);
+	char32_t *buffer = string.ptrw();
+
+	int current_position = 0;
+
+	int godot_string_elem = 0;
+	int c_string_elem = 0;
+
+	for (uint32_t i = 0; i < appended_strings.size(); i++) {
+		const int32_t str_len = appended_strings[i];
+
+		if (str_len == -1) {
+			// Godot string
+			const String &s = strings[godot_string_elem];
+
+			memcpy(buffer + current_position, s.ptr(), s.length() * sizeof(char32_t));
+
+			current_position += s.length();
+
+			godot_string_elem++;
+		} else {
+			const char *s = c_strings[c_string_elem];
+
+			for (int32_t j = 0; j < str_len; j++) {
+				buffer[current_position + j] = s[j];
+			}
+
+			current_position += str_len;
+
+			c_string_elem++;
+		}
+	}
+	buffer[current_position] = 0;
+
+	return string;
+}
+
+// ==========================================================================
+// fuzzy_search.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "fuzzy_search.h"
+
+static const String boundary_chars = "/\\-_. ";
+
+static bool _is_valid_interval(const Vector2i& p_interval)
+{
+	// Empty intervals are represented as (-1, -1).
+	return p_interval.x >= 0 && p_interval.y >= p_interval.x;
+}
+
+static Vector2i _extend_interval(const Vector2i& p_a, const Vector2i& p_b)
+{
+	if (!_is_valid_interval(p_a)) {
+		return p_b;
+	}
+	if (!_is_valid_interval(p_b)) {
+		return p_a;
+	}
+	return Vector2i(MIN(p_a.x, p_b.x), MAX(p_a.y, p_b.y));
+}
+
+static bool _is_word_boundary(const String& p_str, int p_index)
+{
+	if (p_index == -1 || p_index == p_str.size()) {
+		return true;
+	}
+	return boundary_chars.find_char(p_str[p_index]) != -1;
+}
+
+bool FuzzySearchToken::try_exact_match(
+	FuzzyTokenMatch& p_match, const String& p_target, int p_offset) const
+{
+	p_match.token_idx = idx;
+	p_match.token_length = string.length();
+	int match_idx = p_target.find(string, p_offset);
+	if (match_idx == -1) {
+		return false;
+	}
+	p_match.add_substring(match_idx, string.length());
+	return true;
+}
+
+bool FuzzySearchToken::try_fuzzy_match(
+	FuzzyTokenMatch& p_match, const String& p_target, int p_offset, int p_miss_budget) const
+{
+	p_match.token_idx = idx;
+	p_match.token_length = string.length();
+	int run_start = -1;
+	int run_len = 0;
+
+	// Search for the subsequence p_token in p_target starting from p_offset, recording each
+	// substring for later scoring and display.
+	for (int i = 0; i < string.length(); i++) {
+		int new_offset = p_target.find_char(string[i], p_offset);
+		if (new_offset < 0) {
+			p_miss_budget--;
+			if (p_miss_budget < 0) {
+				return false;
+			}
+		}
+		else {
+			if (run_start == -1 || p_offset != new_offset) {
+				if (run_start != -1) {
+					p_match.add_substring(run_start, run_len);
+				}
+				run_start = new_offset;
+				run_len = 1;
+			}
+			else {
+				run_len += 1;
+			}
+			p_offset = new_offset + 1;
+		}
+	}
+
+	if (run_start != -1) {
+		p_match.add_substring(run_start, run_len);
+	}
+
+	return true;
+}
+
+void FuzzyTokenMatch::add_substring(int p_substring_start, int p_substring_length)
+{
+	substrings.append(Vector2i(p_substring_start, p_substring_length));
+	matched_length += p_substring_length;
+	Vector2i substring_interval = {p_substring_start, p_substring_start + p_substring_length - 1};
+	interval = _extend_interval(interval, substring_interval);
+}
+
+bool FuzzyTokenMatch::intersects(const Vector2i& p_other_interval) const
+{
+	if (!_is_valid_interval(interval) || !_is_valid_interval(p_other_interval)) {
+		return false;
+	}
+	return interval.y >= p_other_interval.x && interval.x <= p_other_interval.y;
+}
+
+bool FuzzySearchMatch::_can_add_token_match(const FuzzyTokenMatch& p_match) const
+{
+	if (p_match.get_miss_count() > miss_budget) {
+		return false;
+	}
+
+	if (p_match.intersects(match_interval)) {
+		if (token_matches.size() == 1) {
+			return false;
+		}
+		for (const FuzzyTokenMatch& existing_match : token_matches) {
+			if (existing_match.intersects(p_match.interval)) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool FuzzyTokenMatch::is_case_insensitive(const String& p_original, const String& p_adjusted) const
+{
+	for (const Vector2i& substr : substrings) {
+		const int end = substr.x + substr.y;
+		for (int i = substr.x; i < end; i++) {
+			if (p_original[i] != p_adjusted[i]) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void FuzzySearchMatch::_score_token_match(FuzzyTokenMatch& p_match, bool p_case_insensitive) const
+{
+	// This can always be tweaked more. The intuition is that exact matches should almost always
+	// be prioritized over broken up matches, and other criteria more or less act as tie breakers.
+
+	p_match.score = -20 * p_match.get_miss_count() - (p_case_insensitive ? 3 : 0);
+
+	for (const Vector2i& substring : p_match.substrings) {
+		// Score longer substrings higher than short substrings.
+		int substring_score = substring.y * substring.y;
+		// Score matches deeper in path higher than shallower matches
+		if (substring.x > dir_index) {
+			substring_score *= 2;
+		}
+		// Score matches on a word boundary higher than matches within a word
+		if (_is_word_boundary(target, substring.x - 1) ||
+			_is_word_boundary(target, substring.x + substring.y)) {
+			substring_score += 4;
+		}
+		// Score exact query matches higher than non-compact subsequence matches
+		if (substring.y == p_match.token_length) {
+			substring_score += 100;
+		}
+		p_match.score += substring_score;
+	}
+}
+
+void FuzzySearchMatch::_maybe_apply_token_order_score_bonus()
+{
+	// This adds a small bonus to results which match tokens in the same order they appear in the
+	// query.
+	if (token_matches.is_empty()) {
+		return;
+	}
+
+	int* token_range_starts = (int*)alloca(sizeof(int) * token_matches.size());
+
+	for (const FuzzyTokenMatch& match : token_matches) {
+		token_range_starts[match.token_idx] = match.interval.x;
+	}
+
+	for (int i = 1; i < token_matches.size(); i++) {
+		// Individual tokens can match without a range if the missed-character budget allows for it.
+		// If the i'th token matches in this manner, skip ahead so we check neither (i-1, i) nor (i,
+		// i+1). It's safe that this skips i=0 since any valid start will be > -1.
+		if (token_range_starts[i] == -1) {
+			i++;
+			continue;
+		}
+		if (token_range_starts[i - 1] > token_range_starts[i]) {
+			return;
+		}
+	}
+
+	score += 1;
+}
+
+void FuzzySearchMatch::_add_token_match(const FuzzyTokenMatch& p_match)
+{
+	score += p_match.score;
+	match_interval = _extend_interval(match_interval, p_match.interval);
+	miss_budget -= p_match.get_miss_count();
+	token_matches.append(p_match);
+}
+
+static void remove_low_scores(Vector<Ref<FuzzySearchMatch>>& p_results, float p_cull_score)
+{
+	// Removes all results with score < p_cull_score in-place.
+	int i = 0;
+	int j = p_results.size() - 1;
+	Ref<FuzzySearchMatch>* results = p_results.ptrw();
+
+	while (true) {
+		// Advances i to an element to remove and j to an element to keep.
+		while (j >= i && results[j]->get_score() < p_cull_score) {
+			j--;
+		}
+		while (i < j && results[i]->get_score() >= p_cull_score) {
+			i++;
+		}
+		if (i >= j) {
+			break;
+		}
+		results[i++] = results[j--];
+	}
+
+	p_results.resize(j + 1);
+}
+
+Vector<FuzzySearchToken> FuzzySearch::_get_tokens(const String& p_query) const
+{
+	Vector<FuzzySearchToken> tokens;
+
+	for (const String& string : p_query.split(" ", false)) {
+		tokens.append({
+			static_cast<int>(tokens.size()),
+			case_sensitive ? string : string.to_lower(),
+		});
+	}
+
+	struct TokenComparator
+	{
+		bool operator()(const FuzzySearchToken& p_left, const FuzzySearchToken& p_right) const
+		{
+			if (p_left.string.length() == p_right.string.length()) {
+				return p_left.idx < p_right.idx;
+			}
+			return p_left.string.length() > p_right.string.length();
+		}
+	};
+
+	// Prioritize matching longer tokens before shorter ones since match overlaps are not accepted.
+	tokens.sort_custom<TokenComparator>();
+	return tokens;
+}
+
+void FuzzySearch::_sort_and_filter(Vector<Ref<FuzzySearchMatch>>& p_results) const
+{
+	if (p_results.is_empty()) {
+		return;
+	}
+
+	if (filter_low_scores) {
+		float avg_score = 0;
+		float max_score = 0;
+
+		for (const Ref<FuzzySearchMatch>& result : p_results) {
+			avg_score += result->get_score();
+			max_score = MAX(max_score, result->get_score());
+		}
+
+		avg_score /= p_results.size();
+		float cull_score = MIN(filter_cutoff, Math::lerp(avg_score, max_score, filter_factor));
+		remove_low_scores(p_results, cull_score);
+	}
+
+	struct FuzzySearchResultComparator
+	{
+		bool operator()(
+			const Ref<FuzzySearchMatch>& p_lhs, const Ref<FuzzySearchMatch>& p_rhs) const
+		{
+			// Sort on (score, length, alphanumeric) to ensure consistent ordering.
+			if (p_lhs->score == p_rhs->score) {
+				if (p_lhs->target.length() == p_rhs->target.length()) {
+					return p_lhs->target < p_rhs->target;
+				}
+				return p_lhs->target.length() < p_rhs->target.length();
+			}
+			return p_lhs->score > p_rhs->score;
+		}
+	};
+
+	SortArray<Ref<FuzzySearchMatch>, FuzzySearchResultComparator> sorter;
+
+	if (p_results.size() > max_results) {
+		sorter.partial_sort(0, p_results.size(), max_results, p_results.ptrw());
+		p_results.resize(max_results);
+	}
+	else {
+		sorter.sort(p_results.ptrw(), p_results.size());
+	}
+}
+
+void FuzzySearch::set_case_sensitive(bool p_case_sensitive) { case_sensitive = p_case_sensitive; }
+
+bool FuzzySearch::_search_tokens(const Vector<FuzzySearchToken>& p_tokens, const String& p_target,
+	Ref<FuzzySearchMatch>& r_result) const
+{
+	r_result->target = p_target;
+	r_result->dir_index = p_target.rfind_char('/');
+	r_result->miss_budget = max_misses;
+	r_result->token_matches.reserve(p_tokens.size());
+
+	String adjusted_target = case_sensitive ? p_target : p_target.to_lower();
+
+	// For each token, eagerly generate subsequences starting from index 0 and keep the best scoring
+	// one which does not conflict with prior token matches. This is not ensured to find the highest
+	// scoring combination of matches, or necessarily the highest scoring single subsequence, as it
+	// only considers eager subsequences for a given index, and likewise eagerly finds matches for
+	// each token in sequence.
+	for (const FuzzySearchToken& token : p_tokens) {
+		FuzzyTokenMatch best_match;
+		int offset = start_offset;
+
+		while (true) {
+			FuzzyTokenMatch match;
+			if (exact_token_matches) {
+				if (!token.try_exact_match(match, adjusted_target, offset)) {
+					break;
+				}
+			}
+			else {
+				if (!token.try_fuzzy_match(match, adjusted_target, offset, r_result->miss_budget)) {
+					break;
+				}
+			}
+			if (r_result->_can_add_token_match(match)) {
+				r_result->_score_token_match(
+					match, match.is_case_insensitive(p_target, adjusted_target));
+				if (best_match.token_idx == -1 || best_match.score < match.score) {
+					best_match = match;
+				}
+			}
+			if (_is_valid_interval(match.interval)) {
+				offset = match.interval.x + 1;
+			}
+			else {
+				break;
+			}
+		}
+
+		if (best_match.token_idx == -1) {
+			return false;
+		}
+
+		r_result->_add_token_match(best_match);
+	}
+
+	if (r_result->match_interval.x == -1) {
+		// Reject matches which rely entirely on misses.
+		return false;
+	}
+
+	r_result->_maybe_apply_token_order_score_bonus();
+	return true;
+}
+
+Ref<FuzzySearchMatch> FuzzySearch::search(const String& p_query, const String& p_target) const
+{
+	Ref<FuzzySearchMatch> result;
+	result.instantiate();
+	if (_search_tokens(_get_tokens(p_query), p_target, result)) {
+		return result;
+	}
+	return nullptr;
+}
+
+Vector<Ref<FuzzySearchMatch>> FuzzySearch::search_all(
+	const String& p_query, const PackedStringArray& p_targets) const
+{
+	Vector<Ref<FuzzySearchMatch>> results;
+	const Vector<FuzzySearchToken> tokens = _get_tokens(p_query);
+
+	for (int i = 0; i < p_targets.size(); i++) {
+		Ref<FuzzySearchMatch> result;
+		result.instantiate();
+		result->original_index = i;
+		if (_search_tokens(tokens, p_targets[i], result)) {
+			results.append(result);
+		}
+	}
+
+	_sort_and_filter(results);
+	return results;
+}

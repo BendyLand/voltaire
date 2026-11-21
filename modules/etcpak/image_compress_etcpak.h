@@ -31,9 +31,9 @@
 
 #pragma once
 
-#ifdef TOOLS_ENABLED
-
 #include "core/io/image.h"
+
+#ifdef TOOLS_ENABLED
 
 enum class EtcpakType {
 	ETCPAK_TYPE_ETC1,
@@ -56,3 +56,12 @@ void _compress_bc(Image *r_img, Image::UsedChannels p_channels);
 void _compress_etcpak(EtcpakType p_compress_type, Image *r_img);
 
 #endif // TOOLS_ENABLED
+
+enum EtcpakFormat {
+	Etcpak_R,
+	Etcpak_RG,
+	Etcpak_RGB,
+	Etcpak_RGBA,
+};
+
+void _decompress_etc(Image *p_image);

@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
+#include "register_types.h"
 #include "core/config/project_settings.h"
 #include "core/crypto/crypto_core.h"
 #include "core/io/config_file.h"
@@ -42,7 +43,6 @@
 #include "modules/gltf/gltf_defines.h"
 #include "modules/gltf/gltf_extensions.h"
 #include "modules/gltf/gltf_structures.h"
-#include "modules/gltf/skin_tool.h"
 #include "scene/3d/bone_attachment_3d.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
@@ -577,4 +577,54 @@ Node* FBXDocument::generate_scene(
 	}
 	return gltf_document->generate_scene(
 		p_state->gltf_state, p_bake_fps, p_trimming, p_remove_immutable_tracks);
+}
+
+FBXState::FBXState() { gltf_state.instantiate(); }
+
+bool FBXState::get_allow_geometry_helper_nodes() { return allow_geometry_helper_nodes; }
+
+void FBXState::set_allow_geometry_helper_nodes(bool p_allow_geometry_helper_nodes)
+{
+	allow_geometry_helper_nodes = p_allow_geometry_helper_nodes;
+}
+
+#ifdef TOOLS_ENABLED
+#include "core/io/resource_importer.h"
+
+void EditorSceneFormatImporterFBX::get_extensions(List<String>* r_extensions) const
+{
+	r_extensions->push_back("fbx");
+}
+
+void EditorSceneFormatImporterFBX::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options)
+{
+}
+#endif // TOOLS_ENABLED
+
+#ifdef TOOLS_ENABLED
+#endif // TOOLS_ENABLED
+
+#define FBX_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class)                                           \
+	Ref<m_doc_ext_class> extension_##m_doc_ext_class;                                              \
+	extension_##m_doc_ext_class.instantiate();                                                     \
+	GLTFDocument::register_gltf_document_extension(extension_##m_doc_ext_class);
+
+void uninitialize_fbx_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+	GLTFDocument::unregister_all_gltf_document_extensions();
+}
+
+void initialize_fbx_module(ModuleInitializationLevel p_level)
+{
+#ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		Ref<EditorSceneFormatImporterFBX> import_fbx;
+		import_fbx.instantiate(EditorSceneFormatImporterFBX::BACKEND_UFBX);
+		ResourceImporterScene::add_scene_importer(import_fbx);
+	}
+#endif // TOOLS_ENABLED
 }

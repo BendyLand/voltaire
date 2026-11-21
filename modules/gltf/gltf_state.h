@@ -36,7 +36,7 @@
 #include "scene/3d/importer_mesh_instance_3d.h"
 #include "scene/animation/animation_player.h"
 
-class GLTFState : public Resource
+class GLTFState final : public Resource
 {
 	friend class GLTFDocument;
 	friend class GLTFNode;

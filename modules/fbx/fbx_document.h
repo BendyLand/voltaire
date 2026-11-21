@@ -33,11 +33,40 @@
 
 #include <ufbx.h>
 #include "core/io/resource.h"
-#include "fbx_state.h"
+#include "modules/gltf/gltf_state.h"
+#include "modules/gltf/gltf_structures.h"
+
+class FBXState final : public Resource
+{
+	friend class FBXDocument;
+	friend class SkinTool;
+	friend class GLTFSkin;
+
+	Ref<GLTFState> gltf_state;
+
+	// Smart pointer that holds the loaded scene.
+	ufbx_unique_ptr<ufbx_scene> scene;
+	bool allow_geometry_helper_nodes = false;
+
+	HashMap<uint64_t, Image::AlphaMode> alpha_mode_cache;
+	HashMap<Pair<uint64_t, uint64_t>, GLTFTextureIndex> albedo_transparency_textures;
+
+	Vector<GLTFSkinIndex> skin_indices;
+	Vector<GLTFSkinIndex> original_skin_indices;
+	HashSet<String> unique_mesh_names;
+
+public:
+	Ref<GLTFState> get_gltf_state() const { return gltf_state; }
+
+	bool get_allow_geometry_helper_nodes();
+	void set_allow_geometry_helper_nodes(bool p_allow_geometry_helper_nodes);
+
+	FBXState();
+};
 #include "modules/gltf/gltf_defines.h"
 #include "modules/gltf/gltf_document.h"
 
-class FBXDocument : public Resource
+class FBXDocument final : public Resource
 {
 	int _naming_version = 2;
 	Ref<GLTFDocument> gltf_document;
@@ -111,3 +140,32 @@ public:
 		const bool p_remove_immutable_tracks);
 	Error _parse(Ref<FBXState> p_state, const String& p_path, Ref<FileAccess> p_file);
 };
+
+#ifdef TOOLS_ENABLED
+#include "editor/import/3d/resource_importer_scene.h"
+
+class Animation;
+class Node;
+
+class EditorSceneFormatImporterFBX final : public EditorSceneFormatImporter
+{
+public:
+	enum Backend
+	{
+		BACKEND_UFBX,
+		BACKEND_FBX2GLTF,
+	};
+
+private:
+	Backend backend = BACKEND_UFBX;
+
+public:
+	explicit EditorSceneFormatImporterFBX(Backend p_backend = BACKEND_UFBX) : backend(p_backend) {}
+
+	Backend get_backend() const { return backend; }
+
+	virtual void get_extensions(List<String>* r_extensions) const override;
+	virtual void get_import_options(
+		const String& p_path, List<ResourceImporter::ImportOption>* r_options) override;
+};
+#endif // TOOLS_ENABLED

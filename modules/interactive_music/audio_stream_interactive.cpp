@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "audio_stream_interactive.h"
+#include "register_types.h"
 #include "core/config/engine.h"
 #include "core/math/math_funcs.h"
 
@@ -1527,3 +1528,10 @@ double AudioStreamPlaybackInteractive::get_playback_position() const
 }
 
 bool AudioStreamPlaybackInteractive::is_playing() const { return active; }
+
+void initialize_interactive_music_module(ModuleInitializationLevel p_level) {}
+
+void uninitialize_interactive_music_module(ModuleInitializationLevel p_level)
+{
+	// Nothing to do here.
+}

@@ -29,12 +29,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "render_scene_buffers_rd.compat.inc"
-#include "render_scene_buffers_rd.h"
+#include "servers/rendering/renderer_rd/environment/rd_environment.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/rendering_device_binds.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
 #include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/utilities.h"
+
+// --- Merged from servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.cpp ---
 
 RenderSceneBuffersRD::RenderSceneBuffersRD() {}
 
@@ -832,4 +841,632 @@ RID RenderSceneBuffersRD::create_texture_view(
 {
 }
 
+// --- Merged from servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.cpp ---
 
+Transform3D RenderSceneDataRD::get_cam_transform() const { return cam_transform; }
+
+Projection RenderSceneDataRD::get_cam_projection() const
+{
+	Projection correction;
+	correction.set_depth_correction(flip_y);
+	correction.add_jitter_offset(taa_jitter);
+
+	return correction * cam_projection;
+}
+
+uint32_t RenderSceneDataRD::get_view_count() const { return view_count; }
+
+Vector3 RenderSceneDataRD::get_view_eye_offset(uint32_t p_view) const
+{
+	ERR_FAIL_UNSIGNED_INDEX_V(p_view, view_count, Vector3());
+
+	return view_eye_offset[p_view];
+}
+
+Projection RenderSceneDataRD::get_view_projection(uint32_t p_view) const
+{
+	ERR_FAIL_UNSIGNED_INDEX_V(p_view, view_count, Projection());
+
+	Projection correction;
+	correction.set_depth_correction(flip_y);
+	correction.add_jitter_offset(taa_jitter);
+
+	return correction * view_projection[p_view];
+}
+
+void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw p_debug_mode,
+	RID p_env, RID p_reflection_probe_instance, RID p_camera_attributes, bool p_pancake_shadows,
+	const Size2i& p_screen_size, const Size2& p_viewport_size, const Color& p_default_bg_color,
+	float p_luminance_multiplier, bool p_opaque_render_buffers, bool p_apply_alpha_multiplier)
+{
+	UBODATA ubo_data;
+	memset(&ubo_data, 0, sizeof(UBODATA));
+
+	// just for easy access..
+	UBO& ubo = ubo_data.ubo;
+	UBO& prev_ubo = ubo_data.prev_ubo;
+
+	Projection correction;
+	correction.set_depth_correction(flip_y);
+	correction.add_jitter_offset(taa_jitter);
+	Projection projection = correction * cam_projection;
+
+	// store camera into ubo
+	RendererRD::MaterialStorage::store_camera(projection, ubo.projection_matrix);
+	RendererRD::MaterialStorage::store_camera(projection.inverse(), ubo.inv_projection_matrix);
+	RendererRD::MaterialStorage::store_transform_transposed_3x4(cam_transform, ubo.inv_view_matrix);
+	RendererRD::MaterialStorage::store_transform_transposed_3x4(
+		cam_transform.affine_inverse(), ubo.view_matrix);
+
+#ifdef REAL_T_IS_DOUBLE
+	RendererRD::MaterialStorage::split_double(
+		-cam_transform.origin.x, &ubo.inv_view_matrix[3], &ubo.inv_view_precision[0]);
+	RendererRD::MaterialStorage::split_double(
+		-cam_transform.origin.y, &ubo.inv_view_matrix[7], &ubo.inv_view_precision[1]);
+	RendererRD::MaterialStorage::split_double(
+		-cam_transform.origin.z, &ubo.inv_view_matrix[11], &ubo.inv_view_precision[2]);
+#endif
+
+	for (uint32_t v = 0; v < view_count; v++) {
+		projection = correction * view_projection[v];
+		RendererRD::MaterialStorage::store_camera(projection, ubo.projection_matrix_view[v]);
+		RendererRD::MaterialStorage::store_camera(
+			projection.inverse(), ubo.inv_projection_matrix_view[v]);
+
+		ubo.eye_offset[v][0] = view_eye_offset[v].x;
+		ubo.eye_offset[v][1] = view_eye_offset[v].y;
+		ubo.eye_offset[v][2] = view_eye_offset[v].z;
+		ubo.eye_offset[v][3] = 0.0;
+	}
+
+	RendererRD::MaterialStorage::store_transform(main_cam_transform, ubo.main_cam_inv_view_matrix);
+
+	ubo.taa_jitter[0] = taa_jitter.x;
+	ubo.taa_jitter[1] = taa_jitter.y;
+	ubo.taa_frame_count = taa_frame_count;
+
+	ubo.z_far = z_far;
+	ubo.z_near = z_near;
+
+	ubo.flags = 0;
+
+	ubo.flags |= p_pancake_shadows ? SCENE_DATA_FLAGS_USE_PANCAKE_SHADOWS : 0;
+
+	RendererRD::MaterialStorage::store_soft_shadow_kernel(
+		RendererSceneRenderRD::directional_penumbra_shadow_kernel_get(),
+		ubo.directional_penumbra_shadow_kernel);
+	RendererRD::MaterialStorage::store_soft_shadow_kernel(
+		RendererSceneRenderRD::directional_soft_shadow_kernel_get(),
+		ubo.directional_soft_shadow_kernel);
+	RendererRD::MaterialStorage::store_soft_shadow_kernel(
+		RendererSceneRenderRD::penumbra_shadow_kernel_get(), ubo.penumbra_shadow_kernel);
+	RendererRD::MaterialStorage::store_soft_shadow_kernel(
+		RendererSceneRenderRD::soft_shadow_kernel_get(), ubo.soft_shadow_kernel);
+	ubo.camera_visible_layers = camera_visible_layers;
+	ubo.pass_alpha_multiplier = p_opaque_render_buffers && p_apply_alpha_multiplier ? 0.0f : 1.0f;
+
+	ubo.viewport_size[0] = p_viewport_size.x;
+	ubo.viewport_size[1] = p_viewport_size.y;
+
+	Size2 screen_pixel_size = Vector2(1.0, 1.0) / Size2(p_screen_size);
+	ubo.screen_pixel_size[0] = screen_pixel_size.x;
+	ubo.screen_pixel_size[1] = screen_pixel_size.y;
+
+	ubo.shadow_atlas_pixel_size[0] = shadow_atlas_pixel_size.x;
+	ubo.shadow_atlas_pixel_size[1] = shadow_atlas_pixel_size.y;
+
+	ubo.directional_shadow_pixel_size[0] = directional_shadow_pixel_size.x;
+	ubo.directional_shadow_pixel_size[1] = directional_shadow_pixel_size.y;
+
+	ubo.radiance_pixel_size = radiance_pixel_size;
+	ubo.radiance_border_size = radiance_border_size;
+
+	ubo.reflection_atlas_border_size[0] = reflection_atlas_border_size.x;
+	ubo.reflection_atlas_border_size[1] = reflection_atlas_border_size.y;
+
+	ubo.time = time;
+
+	ubo.directional_light_count = directional_light_count;
+	ubo.dual_paraboloid_side = dual_paraboloid_side;
+	ubo.opaque_prepass_threshold = opaque_prepass_threshold;
+	ubo.flags |= material_uv2_mode ? SCENE_DATA_FLAGS_USE_UV2_MATERIAL : 0;
+	ubo.flags |= shadow_pass ? SCENE_DATA_FLAGS_IN_SHADOW_PASS : 0;
+
+	if (p_debug_mode == RSE::VIEWPORT_DEBUG_DRAW_UNSHADED) {
+		ubo.flags |= SCENE_DATA_FLAGS_USE_AMBIENT_LIGHT;
+		ubo.ambient_light_color_energy[0] = 1;
+		ubo.ambient_light_color_energy[1] = 1;
+		ubo.ambient_light_color_energy[2] = 1;
+		ubo.ambient_light_color_energy[3] = 1.0;
+	}
+	else if (p_env.is_valid()) {
+		RSE::EnvironmentBG env_bg = RendererSceneRender::environment_get_background(p_env);
+		RSE::EnvironmentAmbientSource ambient_src =
+			RendererSceneRender::environment_get_ambient_source(p_env);
+
+		float bg_energy_multiplier =
+			RendererSceneRender::environment_get_bg_energy_multiplier(p_env);
+
+		ubo.ambient_light_color_energy[3] = bg_energy_multiplier;
+
+		ubo.ambient_color_sky_mix =
+			RendererSceneRender::environment_get_ambient_sky_contribution(p_env);
+
+		// ambient
+		if (ambient_src == RSE::ENV_AMBIENT_SOURCE_BG &&
+			(env_bg == RSE::ENV_BG_CLEAR_COLOR || env_bg == RSE::ENV_BG_COLOR)) {
+			Color color = env_bg == RSE::ENV_BG_CLEAR_COLOR
+							  ? p_default_bg_color
+							  : RendererSceneRender::environment_get_bg_color(p_env);
+			color = color.srgb_to_linear();
+
+			ubo.ambient_light_color_energy[0] = color.r * bg_energy_multiplier;
+			ubo.ambient_light_color_energy[1] = color.g * bg_energy_multiplier;
+			ubo.ambient_light_color_energy[2] = color.b * bg_energy_multiplier;
+			ubo.flags |= SCENE_DATA_FLAGS_USE_AMBIENT_LIGHT;
+		}
+		else {
+			float energy = RendererSceneRender::environment_get_ambient_light_energy(p_env);
+			Color color = RendererSceneRender::environment_get_ambient_light(p_env);
+			color = color.srgb_to_linear();
+			ubo.ambient_light_color_energy[0] = color.r * energy;
+			ubo.ambient_light_color_energy[1] = color.g * energy;
+			ubo.ambient_light_color_energy[2] = color.b * energy;
+
+			bool use_ambient_cubemap =
+				(ambient_src == RSE::ENV_AMBIENT_SOURCE_BG && env_bg == RSE::ENV_BG_SKY) ||
+				ambient_src == RSE::ENV_AMBIENT_SOURCE_SKY;
+			bool use_ambient_light =
+				use_ambient_cubemap || ambient_src == RSE::ENV_AMBIENT_SOURCE_COLOR;
+			ubo.flags |= use_ambient_cubemap ? SCENE_DATA_FLAGS_USE_AMBIENT_CUBEMAP : 0;
+			ubo.flags |= use_ambient_light ? SCENE_DATA_FLAGS_USE_AMBIENT_LIGHT : 0;
+		}
+
+		// specular
+		RSE::EnvironmentReflectionSource ref_src =
+			RendererSceneRender::environment_get_reflection_source(p_env);
+		if ((ref_src == RSE::ENV_REFLECTION_SOURCE_BG && env_bg == RSE::ENV_BG_SKY) ||
+			ref_src == RSE::ENV_REFLECTION_SOURCE_SKY) {
+			ubo.flags |= SCENE_DATA_FLAGS_USE_REFLECTION_CUBEMAP;
+		}
+
+		if ((ubo.flags & SCENE_DATA_FLAGS_USE_AMBIENT_CUBEMAP) ||
+			(ubo.flags & SCENE_DATA_FLAGS_USE_REFLECTION_CUBEMAP)) {
+			Basis sky_transform = RendererSceneRender::environment_get_sky_orientation(p_env);
+			sky_transform = sky_transform.inverse() * cam_transform.basis;
+			RendererRD::MaterialStorage::store_transform_3x3(
+				sky_transform, ubo.radiance_inverse_xform);
+		}
+
+		ubo.flags |=
+			RendererSceneRender::environment_get_fog_enabled(p_env) ? SCENE_DATA_FLAGS_USE_FOG : 0;
+		ubo.fog_density = RendererSceneRender::environment_get_fog_density(p_env);
+		ubo.fog_height = RendererSceneRender::environment_get_fog_height(p_env);
+		ubo.fog_height_density = RendererSceneRender::environment_get_fog_height_density(p_env);
+		ubo.fog_aerial_perspective =
+			RendererSceneRender::environment_get_fog_aerial_perspective(p_env);
+
+		ubo.fog_depth_curve = RendererSceneRender::environment_get_fog_depth_curve(p_env);
+		ubo.fog_depth_end = RendererSceneRender::environment_get_fog_depth_end(p_env) > 0.0
+								? RendererSceneRender::environment_get_fog_depth_end(p_env)
+								: ubo.z_far;
+		ubo.fog_depth_begin = MIN(
+			RendererSceneRender::environment_get_fog_depth_begin(p_env), ubo.fog_depth_end - 0.001);
+
+		Color fog_color =
+			RendererSceneRender::environment_get_fog_light_color(p_env).srgb_to_linear();
+		float fog_energy = RendererSceneRender::environment_get_fog_light_energy(p_env);
+
+		ubo.fog_light_color[0] = fog_color.r * fog_energy;
+		ubo.fog_light_color[1] = fog_color.g * fog_energy;
+		ubo.fog_light_color[2] = fog_color.b * fog_energy;
+
+		ubo.fog_sun_scatter = RendererSceneRender::environment_get_fog_sun_scatter(p_env);
+	}
+	else {
+		if (!(p_reflection_probe_instance.is_valid() &&
+				RendererRD::LightStorage::reflection_probe_is_interior(
+					p_reflection_probe_instance))) {
+			ubo.flags |= SCENE_DATA_FLAGS_USE_AMBIENT_LIGHT;
+			Color clear_color = p_default_bg_color;
+			clear_color = clear_color.srgb_to_linear();
+			ubo.ambient_light_color_energy[0] = clear_color.r;
+			ubo.ambient_light_color_energy[1] = clear_color.g;
+			ubo.ambient_light_color_energy[2] = clear_color.b;
+			ubo.ambient_light_color_energy[3] = 1.0;
+		}
+	}
+
+	if (p_camera_attributes.is_valid()) {
+		ubo.emissive_exposure_normalization =
+			RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
+				p_camera_attributes);
+		ubo.IBL_exposure_normalization = 1.0;
+		if (p_env.is_valid()) {
+			RID sky_rid = RendererSceneRender::environment_get_sky(p_env);
+			if (sky_rid.is_valid()) {
+				float current_exposure =
+					RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
+						p_camera_attributes) *
+					RendererSceneRender::environment_get_bg_intensity(p_env) /
+					p_luminance_multiplier;
+				ubo.IBL_exposure_normalization =
+					current_exposure /
+					MAX(0.001, RendererSceneRenderRD::get_sky()->sky_get_baked_exposure(sky_rid));
+			}
+		}
+	}
+	else if (emissive_exposure_normalization > 0.0) {
+		// This branch is triggered when using render_material().
+		// Emissive is set outside the function.
+		ubo.emissive_exposure_normalization = emissive_exposure_normalization;
+		// IBL isn't used don't set it.
+	}
+	else {
+		ubo.emissive_exposure_normalization = 1.0;
+		ubo.IBL_exposure_normalization = 1.0;
+	}
+
+	bool roughness_limiter_enabled =
+		p_opaque_render_buffers && RendererSceneRender::screen_space_roughness_limiter_is_active();
+	ubo.flags |= roughness_limiter_enabled ? SCENE_DATA_FLAGS_USE_ROUGHNESS_LIMITER : 0;
+	ubo.roughness_limiter_amount = RendererSceneRenderRD::screen_space_roughness_limiter_get_amount();
+	ubo.roughness_limiter_limit = RendererSceneRenderRD::screen_space_roughness_limiter_get_limit();
+
+	if (calculate_motion_vectors) {
+		// Q : Should we make a complete copy or should we define a separate UBO with just the
+		// components we need?
+		memcpy(&prev_ubo, &ubo, sizeof(UBO));
+
+		Projection prev_correction;
+		prev_correction.set_depth_correction(true);
+		prev_correction.add_jitter_offset(prev_taa_jitter);
+		Projection prev_projection = prev_correction * prev_cam_projection;
+
+		// store camera into ubo
+		RendererRD::MaterialStorage::store_camera(prev_projection, prev_ubo.projection_matrix);
+		RendererRD::MaterialStorage::store_camera(
+			prev_projection.inverse(), prev_ubo.inv_projection_matrix);
+		RendererRD::MaterialStorage::store_transform_transposed_3x4(
+			prev_cam_transform, prev_ubo.inv_view_matrix);
+		RendererRD::MaterialStorage::store_transform_transposed_3x4(
+			prev_cam_transform.affine_inverse(), prev_ubo.view_matrix);
+
+#ifdef REAL_T_IS_DOUBLE
+		RendererRD::MaterialStorage::split_double(-prev_cam_transform.origin.x,
+			&prev_ubo.inv_view_matrix[3], &prev_ubo.inv_view_precision[0]);
+		RendererRD::MaterialStorage::split_double(-prev_cam_transform.origin.y,
+			&prev_ubo.inv_view_matrix[7], &prev_ubo.inv_view_precision[1]);
+		RendererRD::MaterialStorage::split_double(-prev_cam_transform.origin.z,
+			&prev_ubo.inv_view_matrix[11], &prev_ubo.inv_view_precision[2]);
+#endif
+
+		for (uint32_t v = 0; v < view_count; v++) {
+			prev_projection = prev_correction * view_projection[v];
+			RendererRD::MaterialStorage::store_camera(
+				prev_projection, prev_ubo.projection_matrix_view[v]);
+			RendererRD::MaterialStorage::store_camera(
+				prev_projection.inverse(), prev_ubo.inv_projection_matrix_view[v]);
+		}
+		prev_ubo.taa_jitter[0] = prev_taa_jitter.x;
+		prev_ubo.taa_jitter[1] = prev_taa_jitter.y;
+		prev_ubo.time -= time_step;
+	}
+	uniform_buffer = p_uniform_buffer;
+}
+
+RID RenderSceneDataRD::get_uniform_buffer() const { return uniform_buffer; }
+
+// --- Merged from servers/rendering/renderer_rd/storage_rd/utilities.cpp ---
+
+using namespace RendererRD;
+
+RSE::InstanceType Utilities::get_base_type(RID p_rid)
+{
+	if (RendererRD::MeshStorage::owns_mesh(p_rid)) {
+		return RSE::INSTANCE_MESH;
+	}
+	if (RendererRD::MeshStorage::owns_multimesh(p_rid)) {
+		return RSE::INSTANCE_MULTIMESH;
+	}
+	if (RendererRD::LightStorage::owns_reflection_probe(p_rid)) {
+		return RSE::INSTANCE_REFLECTION_PROBE;
+	}
+	if (RendererRD::TextureStorage::owns_decal(p_rid)) {
+		return RSE::INSTANCE_DECAL;
+	}
+	if (RendererRD::GI::owns_voxel_gi(p_rid)) {
+		return RSE::INSTANCE_VOXEL_GI;
+	}
+	if (RendererRD::LightStorage::owns_light(p_rid)) {
+		return RSE::INSTANCE_LIGHT;
+	}
+	if (RendererRD::LightStorage::owns_lightmap(p_rid)) {
+		return RSE::INSTANCE_LIGHTMAP;
+	}
+	if (RendererRD::ParticlesStorage::owns_particles(p_rid)) {
+		return RSE::INSTANCE_PARTICLES;
+	}
+	if (RendererRD::ParticlesStorage::owns_particles_collision(p_rid)) {
+		return RSE::INSTANCE_PARTICLES_COLLISION;
+	}
+	if (RendererRD::Fog::owns_fog_volume(p_rid)) {
+		return RSE::INSTANCE_FOG_VOLUME;
+	}
+	if (owns_visibility_notifier(p_rid)) {
+		return RSE::INSTANCE_VISIBLITY_NOTIFIER;
+	}
+
+	return RSE::INSTANCE_NONE;
+}
+
+bool Utilities::free(RID p_rid)
+{
+	if (ParticlesStorage::is_initialized() && ParticlesStorage::owns_particles(p_rid)) {
+		ParticlesStorage::free(p_rid);
+		return true;
+	}
+	if (ParticlesStorage::is_initialized() && ParticlesStorage::owns_particles_collision(p_rid)) {
+		ParticlesStorage::particles_collision_free(p_rid);
+		return true;
+	}
+	if (ParticlesStorage::is_initialized() && ParticlesStorage::owns_particles_collision_instance(p_rid)) {
+		ParticlesStorage::particles_collision_instance_free(p_rid);
+		return true;
+	}
+	if (RendererRD::LightStorage::free(p_rid)) {
+		return true;
+	}
+	else if (RendererRD::MaterialStorage::free(p_rid)) {
+		return true;
+	}
+	else if (RendererRD::MeshStorage::free(p_rid)) {
+		return true;
+	}
+	else if (RendererRD::ParticlesStorage::free(p_rid)) {
+		return true;
+	}
+	else if (RendererRD::TextureStorage::free(p_rid)) {
+		return true;
+	}
+	else if (RendererRD::GI::owns_voxel_gi(p_rid)) {
+		RendererRD::GI::voxel_gi_free(p_rid);
+		return true;
+	}
+	else if (RendererRD::Fog::owns_fog_volume(p_rid)) {
+		RendererRD::Fog::fog_volume_free(p_rid);
+		return true;
+	}
+	else if (owns_visibility_notifier(p_rid)) {
+		visibility_notifier_free(p_rid);
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+void Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance)
+{
+	if (MeshStorage::owns_mesh(p_base)) {
+		Dependency* dependency = MeshStorage::mesh_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+	}
+	else if (MeshStorage::owns_multimesh(p_base)) {
+		Dependency* dependency = MeshStorage::multimesh_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+
+		RID mesh = MeshStorage::_multimesh_get_mesh(p_base);
+		if (mesh.is_valid()) {
+			base_update_dependency(mesh, p_instance);
+		}
+	}
+	else if (LightStorage::owns_reflection_probe(p_base)) {
+		Dependency* dependency = LightStorage::reflection_probe_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+	}
+	else if (TextureStorage::owns_decal(p_base)) {
+		Dependency* dependency = TextureStorage::decal_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+	}
+	else if (GI::owns_voxel_gi(p_base)) {
+		Dependency* dependency = GI::voxel_gi_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+	}
+	else if (LightStorage::owns_lightmap(p_base)) {
+		Dependency* dependency = LightStorage::lightmap_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+	}
+	else if (LightStorage::owns_light(p_base)) {
+		Dependency* dependency = LightStorage::light_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+	}
+	else if (ParticlesStorage::owns_particles(p_base)) {
+		Dependency* dependency =
+			ParticlesStorage::particles_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+	}
+	else if (ParticlesStorage::owns_particles_collision(p_base)) {
+		Dependency* dependency =
+			ParticlesStorage::particles_collision_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+	}
+	else if (Fog::owns_fog_volume(p_base)) {
+		Dependency* dependency = Fog::fog_volume_get_dependency(p_base);
+		p_instance->update_dependency(dependency);
+	}
+	else if (owns_visibility_notifier(p_base)) {
+		VisibilityNotifier* vn = get_visibility_notifier(p_base);
+		p_instance->update_dependency(&vn->dependency);
+	}
+}
+
+RID Utilities::visibility_notifier_allocate() { return visibility_notifier_owner.allocate_rid(); }
+
+void Utilities::visibility_notifier_initialize(RID p_notifier)
+{
+	visibility_notifier_owner.initialize_rid(p_notifier, VisibilityNotifier());
+}
+
+void Utilities::visibility_notifier_free(RID p_notifier)
+{
+	VisibilityNotifier* vn = visibility_notifier_owner.get_or_null(p_notifier);
+	vn->dependency.deleted_notify(p_notifier);
+	visibility_notifier_owner.free(p_notifier);
+}
+
+void Utilities::visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb)
+{
+	VisibilityNotifier* vn = visibility_notifier_owner.get_or_null(p_notifier);
+	ERR_FAIL_NULL(vn);
+	vn->aabb = p_aabb;
+	vn->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
+}
+
+AABB Utilities::visibility_notifier_get_aabb(RID p_notifier)
+{
+	const VisibilityNotifier* vn = visibility_notifier_owner.get_or_null(p_notifier);
+	ERR_FAIL_NULL_V(vn, AABB());
+	return vn->aabb;
+}
+
+void Utilities::capture_timestamps_begin() { RD::capture_timestamp("Frame Begin"); }
+
+void Utilities::capture_timestamp(const String& p_name) { RD::capture_timestamp(p_name); }
+
+uint32_t Utilities::get_captured_timestamps_count() { return RD::get_captured_timestamps_count(); }
+
+uint64_t Utilities::get_captured_timestamps_frame() { return RD::get_captured_timestamps_frame(); }
+
+uint64_t Utilities::get_captured_timestamp_gpu_time(uint32_t p_index)
+{
+	return RD::get_captured_timestamp_gpu_time(p_index);
+}
+
+uint64_t Utilities::get_captured_timestamp_cpu_time(uint32_t p_index)
+{
+	return RD::get_captured_timestamp_cpu_time(p_index);
+}
+
+String Utilities::get_captured_timestamp_name(uint32_t p_index)
+{
+	return RD::get_captured_timestamp_name(p_index);
+}
+
+void Utilities::update_dirty_resources()
+{
+	MaterialStorage::_update_global_shader_uniforms(); // must do before materials, so it can queue
+													   // them for update
+	MaterialStorage::_update_queued_materials();
+	MeshStorage::_update_dirty_multimeshes();
+	MeshStorage::_update_dirty_skeletons();
+	TextureStorage::update_decal_atlas();
+	TextureStorage::update_area_light_atlas();
+}
+
+bool Utilities::has_os_feature(const String& p_feature)
+{
+	if (!RD::data) {
+		return false;
+	}
+
+	if (p_feature == "rgtc" &&
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_BC5_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
+		return true;
+	}
+
+#if !defined(ANDROID_ENABLED) && !defined(APPLE_EMBEDDED_ENABLED)
+	// Some Android devices report support for S3TC but we don't expect that and don't export the
+	// textures. This could be fixed but so few devices support it that it doesn't seem useful (and
+	// makes bigger APKs). For good measure we do the same hack for iOS, just in case.
+	if (p_feature == "s3tc" &&
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_BC1_RGB_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
+		return true;
+	}
+#endif
+
+	if (p_feature == "bptc" &&
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_BC7_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
+		return true;
+	}
+
+	if (p_feature == "etc2" &&
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_ETC2_R8G8B8_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
+		return true;
+	}
+
+	if (p_feature == "astc" &&
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_ASTC_4x4_UNORM_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
+		return true;
+	}
+
+	if (p_feature == "astc_hdr" &&
+		RD::texture_is_format_supported_for_usage(
+			RDC::DATA_FORMAT_ASTC_4x4_SFLOAT_BLOCK, RDC::TEXTURE_USAGE_SAMPLING_BIT)) {
+		return true;
+	}
+
+	return false;
+}
+
+void Utilities::update_memory_info()
+{
+	texture_mem_cache = RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TEXTURES);
+	buffer_mem_cache = RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_BUFFERS);
+	total_mem_cache = RenderingDevice::get_memory_usage(RenderingDevice::MEMORY_TOTAL);
+}
+
+uint64_t Utilities::get_rendering_info(RSE::RenderingInfo p_info)
+{
+	if (p_info == RSE::RENDERING_INFO_TEXTURE_MEM_USED) {
+		return texture_mem_cache;
+	}
+	else if (p_info == RSE::RENDERING_INFO_BUFFER_MEM_USED) {
+		return buffer_mem_cache;
+	}
+	else if (p_info == RSE::RENDERING_INFO_VIDEO_MEM_USED) {
+		return total_mem_cache;
+	}
+	return 0;
+}
+
+String Utilities::get_video_adapter_name() { return RenderingDevice::get_device_name(); }
+
+String Utilities::get_video_adapter_vendor() { return RenderingDevice::get_device_vendor_name(); }
+
+RenderingDeviceEnums::DeviceType Utilities::get_video_adapter_type()
+{
+	return RenderingDevice::get_device_type();
+}
+
+String Utilities::get_video_adapter_api_version()
+{
+	return RenderingDevice::get_device_api_version();
+}
+
+Size2i Utilities::get_maximum_viewport_size()
+{
+	int max_x = RenderingDevice::limit_get(RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_X);
+	int max_y = RenderingDevice::limit_get(RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y);
+	return Size2i(max_x, max_y);
+}
+
+uint32_t Utilities::get_maximum_shader_varyings()
+{
+	return RenderingDevice::limit_get(RDC::LIMIT_MAX_SHADER_VARYINGS);
+}
+
+uint64_t Utilities::get_maximum_uniform_buffer_size()
+{
+	return RenderingDevice::limit_get(RDC::LIMIT_MAX_UNIFORM_BUFFER_SIZE);
+}
+
+void RendererRD::Utilities::visibility_notifier_call(
+	RID p_notifier, bool p_enter_call, bool p_deferred)
+{
+}

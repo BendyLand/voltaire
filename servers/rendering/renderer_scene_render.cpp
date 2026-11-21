@@ -29,7 +29,30 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "renderer_scene_render.h"
+#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer_compositor.h"
+#include "servers/display/display_server.h"
+#include "core/os/os.h"
+
+#if defined(RD_ENABLED)
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#endif
+
+#if defined(GLES3_ENABLED)
+#include "drivers/gles3/rasterizer_gles3.h"
+#endif
+
+#include "servers/rendering/dummy/rasterizer_dummy.h"
+
+#ifndef XR_DISABLED
+#include "core/config/project_settings.h"
+#include "servers/xr/xr_server.h"
+#endif // XR_DISABLED
+#include "servers/rendering/renderer_canvas_render.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer_geometry_instance.h"
+
+// --- Merged from servers/rendering/renderer_scene_render.cpp ---
 
 void RendererSceneRender::CameraData::set_camera(const Transform3D p_transform,
 	const Projection p_projection, bool p_is_orthogonal, bool p_vaspect,
@@ -1101,4 +1124,379 @@ void RendererSceneRender::material_set_use_debanding(bool p_enable) {}
 
 void RendererSceneRender::update() {}
 
+// --- Merged from servers/rendering/renderer_compositor.cpp ---
 
+Error RendererCompositor::create()
+{
+	String driver_name = "";
+	if (DisplayServer::is_initialized()) {
+		driver_name = OS::get_current_rendering_driver_name();
+	}
+
+	if (driver_name == "dummy" || driver_name.is_empty()) {
+		RasterizerDummy::make_current();
+		return OK;
+	}
+
+#if defined(GLES3_ENABLED)
+	if (driver_name == "opengl3" || driver_name == "opengl3_es" || driver_name == "opengl3_angle") {
+		RasterizerGLES3::make_current(driver_name == "opengl3");
+		return OK;
+	}
+#endif
+
+#if defined(RD_ENABLED)
+	if (!low_end) {
+		low_end = false;
+		bind_compositor<RendererCompositorRD>();
+		if (DisplayServer::is_initialized()) {
+			Error err = DisplayServer::init_rendering_device();
+			ERR_FAIL_COND_V_MSG(
+				err != OK, err, "Failed to initialize RenderingDevice via DisplayServer.");
+		}
+		return OK;
+	}
+#endif
+
+	RasterizerDummy::make_current();
+	return OK;
+}
+
+bool RendererCompositor::is_xr_enabled()
+{
+#ifndef XR_DISABLED
+	return xr_enabled;
+#else
+	return false;
+#endif
+}
+
+void RendererCompositorRD::bind_utilities()
+{
+	RendererUtilities::visibility_notifier_allocate =
+		&RendererRD::Utilities::visibility_notifier_allocate;
+	RendererUtilities::visibility_notifier_initialize =
+		&RendererRD::Utilities::visibility_notifier_initialize;
+	RendererUtilities::visibility_notifier_free = &RendererRD::Utilities::visibility_notifier_free;
+	RendererUtilities::visibility_notifier_set_aabb =
+		&RendererRD::Utilities::visibility_notifier_set_aabb;
+	RendererUtilities::visibility_notifier_get_aabb =
+		&RendererRD::Utilities::visibility_notifier_get_aabb;
+	RendererUtilities::visibility_notifier_call = &RendererRD::Utilities::visibility_notifier_call;
+
+	RendererUtilities::free = &RendererRD::Utilities::free;
+	RendererUtilities::get_base_type = &RendererRD::Utilities::get_base_type;
+	RendererUtilities::base_update_dependency = &RendererRD::Utilities::base_update_dependency;
+
+	RendererUtilities::capture_timestamps_begin = &RendererRD::Utilities::capture_timestamps_begin;
+	RendererUtilities::capture_timestamp = &RendererRD::Utilities::capture_timestamp;
+	RendererUtilities::get_captured_timestamps_count =
+		&RendererRD::Utilities::get_captured_timestamps_count;
+	RendererUtilities::get_captured_timestamps_frame =
+		&RendererRD::Utilities::get_captured_timestamps_frame;
+	RendererUtilities::get_captured_timestamp_gpu_time =
+		&RendererRD::Utilities::get_captured_timestamp_gpu_time;
+	RendererUtilities::get_captured_timestamp_cpu_time =
+		&RendererRD::Utilities::get_captured_timestamp_cpu_time;
+	RendererUtilities::get_captured_timestamp_name =
+		&RendererRD::Utilities::get_captured_timestamp_name;
+
+	RendererUtilities::update_dirty_resources = &RendererRD::Utilities::update_dirty_resources;
+	RendererUtilities::set_debug_generate_wireframes =
+		&RendererRD::Utilities::set_debug_generate_wireframes;
+	RendererUtilities::has_os_feature = &RendererRD::Utilities::has_os_feature;
+	RendererUtilities::update_memory_info = &RendererRD::Utilities::update_memory_info;
+
+	RendererUtilities::get_rendering_info = &RendererRD::Utilities::get_rendering_info;
+	RendererUtilities::get_video_adapter_name = &RendererRD::Utilities::get_video_adapter_name;
+	RendererUtilities::get_video_adapter_vendor = &RendererRD::Utilities::get_video_adapter_vendor;
+	RendererUtilities::get_video_adapter_type = &RendererRD::Utilities::get_video_adapter_type;
+	RendererUtilities::get_video_adapter_api_version =
+		&RendererRD::Utilities::get_video_adapter_api_version;
+
+	RendererUtilities::get_maximum_viewport_size =
+		&RendererRD::Utilities::get_maximum_viewport_size;
+	RendererUtilities::get_maximum_shader_varyings =
+		&RendererRD::Utilities::get_maximum_shader_varyings;
+	RendererUtilities::get_maximum_uniform_buffer_size =
+		&RendererRD::Utilities::get_maximum_uniform_buffer_size;
+}
+
+// --- Merged from servers/rendering/renderer_canvas_render.cpp ---
+
+const Rect2& RCR::Item::get_rect() const
+{
+	if (custom_rect || (!rect_dirty && !update_when_visible && skeleton == RID())) {
+		return rect;
+	}
+
+	// must update rect
+
+	if (commands == nullptr) {
+		rect = Rect2();
+		rect_dirty = false;
+		return rect;
+	}
+
+	Transform2D xf;
+	bool found_xform = false;
+	bool first = true;
+
+	const Item::Command* c = commands;
+
+	while (c) {
+		Rect2 r;
+
+		switch (c->type) {
+		case Item::Command::TYPE_RECT: {
+			const Item::CommandRect* crect = reinterpret_cast<const Item::CommandRect*>(c);
+			r = crect->rect;
+
+		} break;
+		case Item::Command::TYPE_NINEPATCH: {
+			const Item::CommandNinePatch* style = reinterpret_cast<const Item::CommandNinePatch*>(c);
+			r = style->rect;
+		} break;
+
+		case Item::Command::TYPE_POLYGON: {
+			const Item::CommandPolygon* polygon = reinterpret_cast<const Item::CommandPolygon*>(c);
+			r = polygon->polygon.rect_cache;
+		} break;
+		case Item::Command::TYPE_PRIMITIVE: {
+			const Item::CommandPrimitive* primitive = reinterpret_cast<const Item::CommandPrimitive*>(c);
+			for (uint32_t j = 0; j < primitive->point_count; j++) {
+				if (j == 0) {
+					r.position = primitive->points[0];
+				}
+				else {
+					r.expand_to(primitive->points[j]);
+				}
+			}
+		} break;
+		case Item::Command::TYPE_MESH: {
+			const Item::CommandMesh* mesh = reinterpret_cast<const Item::CommandMesh*>(c);
+			AABB aabb = RendererMeshStorage::mesh_get_aabb(mesh->mesh, skeleton);
+
+			r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
+
+		} break;
+		case Item::Command::TYPE_MULTIMESH: {
+			const Item::CommandMultiMesh* multimesh = reinterpret_cast<const Item::CommandMultiMesh*>(c);
+			AABB aabb = RendererMeshStorage::multimesh_get_aabb(multimesh->multimesh);
+
+			r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
+
+		} break;
+		case Item::Command::TYPE_PARTICLES: {
+			const Item::CommandParticles* particles_cmd =
+				reinterpret_cast<const Item::CommandParticles*>(c);
+			if (particles_cmd->particles.is_valid()) {
+				AABB aabb = Renderer::particles_storage->particles_get_aabb(particles_cmd->particles);
+				r = Rect2(aabb.position.x, aabb.position.y, aabb.size.x, aabb.size.y);
+			}
+
+		} break;
+		case Item::Command::TYPE_TRANSFORM: {
+			const Item::CommandTransform* transform = reinterpret_cast<const Item::CommandTransform*>(c);
+			xf = transform->xform;
+			found_xform = true;
+			[[fallthrough]];
+		}
+		default: {
+			c = c->next;
+			continue;
+		}
+		}
+
+		if (found_xform) {
+			r = xf.xform(r);
+		}
+
+		if (first) {
+			rect = r;
+			first = false;
+		}
+		else {
+			rect = rect.merge(r);
+		}
+		c = c->next;
+	}
+
+	rect_dirty = false;
+	return rect;
+}
+
+RCR::Item::CommandMesh::~CommandMesh()
+{
+	if (mesh_instance.is_valid()) {
+		RendererMeshStorage::mesh_instance_free(mesh_instance);
+	}
+}
+
+
+void Polygon::create(const Vector<int>& p_indices, const Vector<Point2>& p_points,
+	const Vector<Color>& p_colors, const Vector<Point2>& p_uvs,
+	const Vector<int>& p_bones,
+	const Vector<float>& p_weights, int p_count)
+{
+	ERR_FAIL_COND(polygon_id != 0);
+	int count = p_count < 0 ? p_indices.size() : p_count * 3;
+	ERR_FAIL_COND(count > p_indices.size());
+	{
+		uint32_t pc = p_points.size();
+		const Vector2* v2 = p_points.ptr();
+		rect_cache.position = *v2;
+		for (uint32_t i = 1; i < pc; i++) {
+			rect_cache.expand_to(v2[i]);
+		}
+	}
+	polygon_id = RendererCanvasRender::request_polygon(
+		p_indices, p_points, p_colors, p_uvs, p_bones, p_weights, count);
+}
+
+Polygon::~Polygon()
+{
+	if (polygon_id && RendererCanvasRender::free_polygon) {
+		RendererCanvasRender::free_polygon(polygon_id);
+	}
+}
+
+// --- Merged from servers/rendering/renderer_geometry_instance.cpp ---
+
+void RenderGeometryInstance::set_skeleton(RID p_skeleton) {
+	if (!data) {
+		return;
+	}
+	data->skeleton = p_skeleton;
+
+	_mark_dirty();
+	data->dirty_dependencies = true;
+}
+
+void RenderGeometryInstance::set_material_override(RID p_override) {
+	if (!data) {
+		return;
+	}
+	data->material_override = p_override;
+
+	_mark_dirty();
+	data->dirty_dependencies = true;
+}
+
+void RenderGeometryInstance::set_material_overlay(RID p_overlay) {
+	if (!data) {
+		return;
+	}
+	data->material_overlay = p_overlay;
+
+	_mark_dirty();
+	data->dirty_dependencies = true;
+}
+
+void RenderGeometryInstance::set_surface_materials(const Vector<RID> &p_materials) {
+	if (!data) {
+		return;
+	}
+	data->surface_materials = p_materials;
+
+	_mark_dirty();
+	data->dirty_dependencies = true;
+}
+
+void RenderGeometryInstance::set_mesh_instance(RID p_mesh_instance) {
+	mesh_instance = p_mesh_instance;
+
+	_mark_dirty();
+}
+
+void RenderGeometryInstance::set_transform(const Transform3D &p_transform, const AABB &p_aabb, const AABB &p_transformed_aabb) {
+	transform = p_transform;
+	mirror = p_transform.basis.determinant() < 0;
+	if (data) {
+		data->aabb = p_aabb;
+	}
+	transformed_aabb = p_transformed_aabb;
+
+	Vector3 model_scale_vec = p_transform.basis.get_scale_abs();
+	// handle non uniform scale here
+
+	float max_scale = MAX(model_scale_vec.x, MAX(model_scale_vec.y, model_scale_vec.z));
+	float min_scale = MIN(model_scale_vec.x, MIN(model_scale_vec.y, model_scale_vec.z));
+	non_uniform_scale = max_scale >= 0.0 && (min_scale / max_scale) < 0.999;
+
+	lod_model_scale = max_scale;
+}
+
+void RenderGeometryInstance::set_pivot_data(float p_sorting_offset, bool p_use_aabb_center) {
+	sorting_offset = p_sorting_offset;
+	use_aabb_center = p_use_aabb_center;
+}
+
+void RenderGeometryInstance::set_lod_bias(float p_lod_bias) {
+	lod_bias = p_lod_bias;
+}
+
+void RenderGeometryInstance::set_layer_mask(uint32_t p_layer_mask) {
+	layer_mask = p_layer_mask;
+}
+
+void RenderGeometryInstance::set_fade_range(bool p_enable_near, float p_near_begin, float p_near_end, bool p_enable_far, float p_far_begin, float p_far_end) {
+	fade_near = p_enable_near;
+	fade_near_begin = p_near_begin;
+	fade_near_end = p_near_end;
+	fade_far = p_enable_far;
+	fade_far_begin = p_far_begin;
+	fade_far_end = p_far_end;
+}
+
+void RenderGeometryInstance::set_parent_fade_alpha(float p_alpha) {
+	parent_fade_alpha = p_alpha;
+}
+
+void RenderGeometryInstance::set_transparency(float p_transparency) {
+	force_alpha = CLAMP(1.0 - p_transparency, 0, 1);
+}
+
+void RenderGeometryInstance::set_use_baked_light(bool p_enable) {
+	if (!data) {
+		return;
+	}
+	data->use_baked_light = p_enable;
+
+	_mark_dirty();
+}
+
+void RenderGeometryInstance::set_use_dynamic_gi(bool p_enable) {
+	if (!data) {
+		return;
+	}
+	data->use_dynamic_gi = p_enable;
+
+	_mark_dirty();
+}
+
+void RenderGeometryInstance::set_instance_shader_uniforms_offset(int32_t p_offset) {
+	shader_uniforms_offset = p_offset;
+
+	_mark_dirty();
+}
+
+void RenderGeometryInstance::set_cast_double_sided_shadows(bool p_enable) {
+	if (!data) {
+		return;
+	}
+	data->cast_double_sided_shadows = p_enable;
+
+	_mark_dirty();
+}
+
+void RenderGeometryInstance::reset_motion_vectors() {
+}
+
+Transform3D RenderGeometryInstance::get_transform() {
+	return transform;
+}
+
+AABB RenderGeometryInstance::get_aabb() {
+	return data ? data->aabb : AABB();
+}

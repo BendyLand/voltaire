@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  pipeline_cache_rd.cpp                                                 */
+/*  rd_caches.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                            VOLTAIRE ENGINE                             */
@@ -29,8 +29,60 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "servers/rendering/renderer_rd/rd_caches.h"
+#include "servers/rendering/rendering_device_binds.h"
 #include "core/os/memory.h"
-#include "pipeline_cache_rd.h"
+
+// --- Merged from servers/rendering/renderer_rd/framebuffer_cache_rd.cpp ---
+
+void FramebufferCacheRD::_invalidate(Cache* p_cache)
+{
+	if (!data) {
+		return;
+	}
+
+	if (p_cache->prev) {
+		p_cache->prev->next = p_cache->next;
+	}
+	else {
+		// At beginning of table
+		uint32_t table_idx = p_cache->hash % HASH_TABLE_SIZE;
+		data->hash_table[table_idx] = p_cache->next;
+	}
+
+	if (p_cache->next) {
+		p_cache->next->prev = p_cache->prev;
+	}
+
+	data->cache_allocator.free(p_cache);
+	data->cache_instances_used--;
+}
+
+void FramebufferCacheRD::_framebuffer_invalidation_callback(void* p_userdata)
+{
+	_invalidate(reinterpret_cast<Cache*>(p_userdata));
+}
+
+void FramebufferCacheRD::initialize()
+{
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+}
+
+void FramebufferCacheRD::finalize()
+{
+	if (!data) {
+		return;
+	}
+	if (data->cache_instances_used > 0) {
+		ERR_PRINT("At exit: " + itos(data->cache_instances_used) +
+				  " framebuffer cache instance(s) still in use.");
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+// --- Merged from servers/rendering/renderer_rd/pipeline_cache_rd.cpp ---
 
 RID PipelineCacheRD::_generate_version(RD::VertexFormatID p_vertex_format_id,
 	RD::FramebufferFormatID p_framebuffer_format_id, bool p_wireframe, uint32_t p_render_pass,
@@ -140,4 +192,51 @@ PipelineCacheRD::PipelineCacheRD()
 
 PipelineCacheRD::~PipelineCacheRD() { _clear(); }
 
+// --- Merged from servers/rendering/renderer_rd/uniform_set_cache_rd.cpp ---
 
+void UniformSetCacheRD::_invalidate(Cache* p_cache)
+{
+	if (!data) {
+		return;
+	}
+
+	if (p_cache->prev) {
+		p_cache->prev->next = p_cache->next;
+	}
+	else {
+		// At beginning of table
+		uint32_t table_idx = p_cache->hash % HASH_TABLE_SIZE;
+		data->hash_table[table_idx] = p_cache->next;
+	}
+
+	if (p_cache->next) {
+		p_cache->next->prev = p_cache->prev;
+	}
+
+	data->cache_allocator.free(p_cache);
+	data->cache_instances_used--;
+}
+
+void UniformSetCacheRD::_uniform_set_invalidation_callback(void* p_userdata)
+{
+	_invalidate(reinterpret_cast<Cache*>(p_userdata));
+}
+
+void UniformSetCacheRD::initialize()
+{
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+}
+
+void UniformSetCacheRD::finalize()
+{
+	if (!data) {
+		return;
+	}
+	if (data->cache_instances_used > 0) {
+		ERR_PRINT("At exit: " + itos(data->cache_instances_used) +
+				  " uniform set cache instance(s) still in use.");
+	}
+	memdelete(data);
+	data = nullptr;
+}

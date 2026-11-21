@@ -33,9 +33,39 @@
 
 #include "core/io/image_loader.h"
 
-class ImageLoaderWebP : public ImageFormatLoader {
+class ImageLoaderWebP final : public ImageFormatLoader {
 public:
 	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
 	virtual void get_recognized_extensions(List<String> *p_extensions) const;
 	ImageLoaderWebP();
+};
+
+namespace WebPCommon {
+// Given an image, pack this data into a WebP file.
+Vector<uint8_t> _webp_lossy_pack(const Ref<Image> &p_image, float p_quality);
+Vector<uint8_t> _webp_lossless_pack(const Ref<Image> &p_image);
+// Helper function for those above.
+Vector<uint8_t> _webp_packer(const Ref<Image> &p_image, float p_quality, bool p_lossless);
+// Given a WebP file, unpack it into an image.
+Ref<Image> _webp_unpack(const Vector<uint8_t> &p_buffer);
+Error webp_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer, int p_buffer_len);
+} //namespace WebPCommon
+
+#include "core/io/resource_saver.h"
+
+class ResourceSaverWebP final : public ResourceFormatSaver
+{
+public:
+	static Error save_image(const String& p_path, const Ref<Image>& p_img,
+		const bool p_lossy = false, const float p_quality = 0.75f);
+	static Vector<uint8_t> save_image_to_buffer(
+		const Ref<Image>& p_img, const bool p_lossy = false, const float p_quality = 0.75f);
+
+	virtual Error save(
+		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
+	virtual bool recognize(const Ref<Resource>& p_resource) const override;
+	virtual void get_recognized_extensions(
+		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
+
+	ResourceSaverWebP();
 };

@@ -36,7 +36,7 @@
 
 typedef fastnoiselite::FastNoiseLite _FastNoiseLite;
 
-class FastNoiseLite : public Resource
+class FastNoiseLite final : public Resource
 {
 public:
 	enum NoiseType
@@ -443,3 +443,156 @@ public:
 };
 
 template <> uint8_t FastNoiseLite::_alpha_blend<uint8_t>(uint8_t p_bg, uint8_t p_fg, int p_alpha) const;
+
+#include "scene/resources/gradient.h"
+#include "scene/resources/texture.h"
+
+class NoiseTexture2D final : public Texture2D
+{
+private:
+	Ref<Image> image;
+
+	bool first_time = true;
+	bool update_queued = false;
+	bool regen_queued = false;
+
+	mutable RID texture;
+	uint32_t flags = 0;
+
+	Size2i size = Size2i(512, 512);
+	bool invert = false;
+	bool in_3d_space = false;
+	bool generate_mipmaps = true;
+	bool seamless = false;
+	real_t seamless_blend_skirt = 0.1;
+	bool as_normal_map = false;
+	float bump_strength = 8.0;
+	bool normalize = true;
+
+	Ref<Gradient> color_ramp;
+	Ref<FastNoiseLite> noise;
+
+	void _thread_done(const Ref<Image>& p_image);
+	void _thread_function();
+
+	void _queue_update();
+	Ref<Image> _generate_texture();
+	void _update_texture();
+	void _set_texture_image(const Ref<Image>& p_image);
+
+	Ref<Image> _modulate_with_gradient(Ref<Image> p_image, Ref<Gradient> p_gradient);
+
+public:
+	void set_noise(Ref<FastNoiseLite> p_noise);
+	Ref<FastNoiseLite> get_noise();
+
+	void set_width(int p_width);
+	void set_height(int p_height);
+
+	void set_invert(bool p_invert);
+	bool get_invert() const;
+
+	void set_in_3d_space(bool p_enable);
+	bool is_in_3d_space() const;
+
+	void set_generate_mipmaps(bool p_enable);
+	bool is_generating_mipmaps() const;
+
+	void set_seamless(bool p_seamless);
+	bool get_seamless();
+
+	void set_seamless_blend_skirt(real_t p_blend_skirt);
+	real_t get_seamless_blend_skirt();
+
+	void set_as_normal_map(bool p_as_normal_map);
+	bool is_normal_map();
+
+	void set_bump_strength(float p_bump_strength);
+	float get_bump_strength();
+
+	void set_normalize(bool p_normalize);
+	bool is_normalized() const;
+
+	void set_color_ramp(const Ref<Gradient>& p_gradient);
+	Ref<Gradient> get_color_ramp() const;
+
+	int get_width() const override;
+	int get_height() const override;
+
+	virtual RID get_rid() const override;
+
+	virtual bool has_alpha() const override { return false; }
+
+	virtual Ref<Image> get_image() const override;
+
+	NoiseTexture2D();
+	virtual ~NoiseTexture2D() = default;
+};
+
+class NoiseTexture3D final : public Texture3D
+{
+private:
+	bool first_time = true;
+	bool update_queued = false;
+	bool regen_queued = false;
+
+	mutable RID texture;
+	uint32_t flags = 0;
+
+	int width = 64;
+	int height = 64;
+	int depth = 64;
+	bool invert = false;
+	bool seamless = false;
+	real_t seamless_blend_skirt = 0.1;
+	bool normalize = true;
+
+	Ref<Gradient> color_ramp;
+	Ref<FastNoiseLite> noise;
+
+	Image::Format format = Image::FORMAT_L8;
+
+	void _thread_function();
+
+	void _queue_update();
+	void _update_texture();
+
+	Ref<Image> _modulate_with_gradient(Ref<Image> p_image, Ref<Gradient> p_gradient);
+
+public:
+	void set_noise(Ref<FastNoiseLite> p_noise);
+	Ref<FastNoiseLite> get_noise();
+
+	void set_width(int p_width);
+	void set_height(int p_height);
+	void set_depth(int p_depth);
+
+	void set_invert(bool p_invert);
+	bool get_invert() const;
+
+	void set_seamless(bool p_seamless);
+	bool get_seamless();
+
+	void set_seamless_blend_skirt(real_t p_blend_skirt);
+	real_t get_seamless_blend_skirt();
+
+	void set_normalize(bool p_normalize);
+	bool is_normalized() const;
+
+	void set_color_ramp(const Ref<Gradient>& p_gradient);
+	Ref<Gradient> get_color_ramp() const;
+
+	virtual int get_width() const override;
+	virtual int get_height() const override;
+	virtual int get_depth() const override;
+
+	virtual bool has_mipmaps() const override;
+
+	virtual RID get_rid() const override;
+
+	virtual Vector<Ref<Image>> get_data() const override;
+	virtual Image::Format get_format() const override;
+
+	NoiseTexture3D();
+	virtual ~NoiseTexture3D() = default;
+};

@@ -33,14 +33,15 @@
 
 #include "core/templates/paged_array.h"
 #include "core/templates/rid_owner.h"
-#include "servers/rendering/renderer_rd/cluster_builder_rd.h"
-#include "servers/rendering/renderer_rd/environment/sky.h"
+#include "servers/rendering/renderer_rd/environment/rd_environment.h"
 #include "servers/rendering/renderer_rd/storage_rd/forward_id_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/storage/light_storage.h"
 #include "servers/rendering/storage/utilities.h"
 
+class ClusterBuilderRD;
+class ClusterBuilderSharedDataRD;
 class RenderDataRD;
 
 namespace RendererRD

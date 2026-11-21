@@ -40,7 +40,7 @@
 class CSGShape3D;
 class GridMap;
 
-class GLTFDocument : public Resource
+class GLTFDocument final : public Resource
 {
 	friend class FBXDocument;
 
@@ -330,4 +330,74 @@ public:
 	Error _parse(Ref<GLTFState> p_state, const String& p_path, Ref<FileAccess> p_file);
 };
 
+#include "core/templates/rb_set.h"
 
+using SkinNodeIndex = int;
+using SkinSkeletonIndex = int;
+
+class SkinTool final {
+public:
+	static String _sanitize_bone_name(const String &p_name);
+	static String _gen_unique_bone_name(HashSet<String> &r_unique_names, const String &p_name);
+	static SkinNodeIndex _find_highest_node(Vector<Ref<GLTFNode>> &r_nodes, const Vector<SkinNodeIndex> &p_subset);
+	static bool _capture_nodes_in_skin(const Vector<Ref<GLTFNode>> &p_nodes, Ref<GLTFSkin> p_skin, const SkinNodeIndex p_node_index);
+	static void _capture_nodes_for_multirooted_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
+	static void _recurse_children(
+			Vector<Ref<GLTFNode>> &r_nodes,
+			const SkinNodeIndex p_node_index,
+			RBSet<SkinNodeIndex> &r_all_skin_nodes,
+			HashSet<SkinNodeIndex> &r_child_visited_set);
+	static Error _reparent_non_joint_skeleton_subtrees(
+			Vector<Ref<GLTFNode>> &r_nodes,
+			Ref<GLTFSkeleton> p_skeleton,
+			const Vector<SkinNodeIndex> &p_non_joints);
+	static Error _determine_skeleton_roots(
+			Vector<Ref<GLTFNode>> &r_nodes,
+			Vector<Ref<GLTFSkeleton>> &r_skeletons,
+			const SkinSkeletonIndex p_skel_i);
+	static Error _map_skin_joints_indices_to_skeleton_bone_indices(
+			Vector<Ref<GLTFSkin>> &r_skins,
+			Vector<Ref<GLTFSkeleton>> &r_skeletons,
+			Vector<Ref<GLTFNode>> &r_nodes);
+	static String _gen_unique_name(HashSet<String> &unique_names, const String &p_name);
+	static bool _skins_are_same(const Ref<Skin> p_skin_a, const Ref<Skin> p_skin_b);
+	static void _remove_duplicate_skins(Vector<Ref<GLTFSkin>> &r_skins);
+	static void _check_if_parent_needs_to_become_joint(
+			const Vector<Ref<GLTFNode>> &p_all_nodes,
+			const Vector<GLTFNodeIndex> &p_skeleton_node_indices,
+			const Ref<GLTFNode> &p_gltf_node,
+			Vector<GLTFNodeIndex> &r_non_joint_indices);
+
+public:
+	static Error _expand_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
+	static Error _verify_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
+	static Error _asset_parse_skins(
+			const Vector<SkinNodeIndex> &p_input_skin_indices,
+			const Vector<Ref<GLTFSkin>> &p_input_skins,
+			const Vector<Ref<GLTFNode>> &p_input_nodes,
+			Vector<SkinNodeIndex> &r_output_skin_indices,
+			Vector<Ref<GLTFSkin>> &r_output_skins,
+			HashMap<GLTFNodeIndex, bool> &r_joint_mapping);
+	static Error _determine_skeletons(
+			Vector<Ref<GLTFSkin>> &r_skins,
+			Vector<Ref<GLTFNode>> &r_nodes,
+			Vector<Ref<GLTFSkeleton>> &r_skeletons,
+			const Vector<GLTFNodeIndex> &p_single_skeleton_root,
+			bool p_turn_non_joint_descendants_into_bones);
+	static Error _create_skins(Vector<Ref<GLTFSkin>> &skins, Vector<Ref<GLTFNode>> &nodes, bool use_named_skin_binds, HashSet<String> &unique_names);
+};
+
+#ifdef TOOLS_ENABLED
+#include "editor/import/3d/resource_importer_scene.h"
+
+class Animation;
+class Node;
+
+class EditorSceneFormatImporterGLTF final : public EditorSceneFormatImporter
+{
+public:
+	virtual void get_extensions(List<String>* r_extensions) const override;
+	virtual void get_import_options(
+		const String& p_path, List<ResourceImporter::ImportOption>* r_options) override;
+};
+#endif // TOOLS_ENABLED

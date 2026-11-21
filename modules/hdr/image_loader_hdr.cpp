@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "image_loader_hdr.h"
+#include "register_types.h"
 
 Error ImageLoaderHDR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
 	String header = f->get_token();
@@ -158,4 +159,24 @@ void ImageLoaderHDR::get_recognized_extensions(List<String> *p_extensions) const
 }
 
 ImageLoaderHDR::ImageLoaderHDR() {
+}
+
+static Ref<ImageLoaderHDR> image_loader_hdr;
+
+void initialize_hdr_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	image_loader_hdr.instantiate();
+	ImageLoader::add_image_format_loader(image_loader_hdr);
+}
+
+void uninitialize_hdr_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	ImageLoader::remove_image_format_loader(image_loader_hdr);
+	image_loader_hdr.unref();
 }

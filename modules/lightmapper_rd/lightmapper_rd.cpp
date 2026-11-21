@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
+#include "register_types.h"
 #include "core/io/dir_access.h"
 #include "core/math/geometry_2d.h"
 #include "core/math/geometry_3d.h"
@@ -1050,4 +1051,11 @@ int Lightmapper::get_bake_mesh_texture_slice(int p_slice) const { return 0; }
 
 Vector3 Lightmapper::get_bake_probe_point(int p_probe) const { return Vector3(); }
 
+void uninitialize_lightmapper_rd_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
 
+void initialize_lightmapper_rd_module(ModuleInitializationLevel p_level) {}

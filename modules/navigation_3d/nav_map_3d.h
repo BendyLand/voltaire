@@ -1152,3 +1152,107 @@ private:
 
 	void _update_merge_rasterizer_cell_dimensions();
 };
+
+class Node;
+class NavigationMeshSourceGeometryData3D;
+
+class NavMeshGenerator3D final
+{
+	static inline bool _initialized = false;
+
+	static Mutex baking_navmesh_mutex;
+	static Mutex generator_task_mutex;
+
+	static RWLock generator_parsers_rwlock;
+
+	static bool use_threads;
+	static bool baking_use_multiple_threads;
+	static bool baking_use_high_priority_threads;
+
+public:
+	enum NavMeshBakeState
+	{
+		BAKE_STATE_NONE,
+		BAKE_STATE_CONFIGURATION,
+		BAKE_STATE_CALC_GRID_SIZE,
+		BAKE_STATE_CREATE_HEIGHTFIELD,
+		BAKE_STATE_MARK_WALKABLE_TRIANGLES,
+		BAKE_STATE_CONSTRUCT_COMPACT_HEIGHTFIELD,
+		BAKE_STATE_ERODE_WALKABLE_AREA,
+		BAKE_STATE_SAMPLE_PARTITIONING,
+		BAKE_STATE_CREATING_CONTOURS,
+		BAKE_STATE_CREATING_POLYMESH,
+		BAKE_STATE_CONVERTING_NATIVE_NAVMESH,
+		BAKE_STATE_BAKE_CLEANUP,
+		BAKE_STATE_BAKE_FINISHED,
+		BAKE_STATE_MAX,
+	};
+
+private:
+	struct NavMeshGeneratorTask3D
+	{
+		enum TaskStatus
+		{
+			BAKING_STARTED,
+			BAKING_FINISHED,
+			BAKING_FAILED,
+			CALLBACK_DISPATCHED,
+			CALLBACK_FAILED,
+		};
+
+		Ref<NavigationMesh> navigation_mesh;
+		Ref<NavigationMeshSourceGeometryData3D> source_geometry_data;
+		NavMeshGeneratorTask3D::TaskStatus status =
+			NavMeshGeneratorTask3D::TaskStatus::BAKING_STARTED;
+
+		NavMeshBakeState bake_state = NavMeshBakeState::BAKE_STATE_NONE;
+	};
+
+	static void generator_thread_bake(void* p_arg);
+
+	static HashMap<Ref<NavigationMesh>, NavMeshGeneratorTask3D*> baking_navmeshes;
+
+	static void generator_parse_geometry_node(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node,
+		bool p_recurse_children);
+	static void generator_parse_source_geometry_data(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_root_node);
+	static void generator_bake_from_source_geometry_data(NavMeshGeneratorTask3D* p_generator_task);
+
+public:
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
+
+	static void sync();
+	static void cleanup();
+	static void finish();
+
+	static bool is_baking(Ref<NavigationMesh> p_navigation_mesh);
+	static String get_baking_state_msg(Ref<NavigationMesh> p_navigation_mesh);
+
+	NavMeshGenerator3D() = delete;
+	NavMeshGenerator3D(const NavMeshGenerator3D&) = delete;
+	NavMeshGenerator3D& operator=(const NavMeshGenerator3D&) = delete;
+	~NavMeshGenerator3D() = delete;
+};
+
+#ifndef DISABLE_DEPRECATED
+class NavigationMeshGenerator final
+{
+	static inline bool _initialized = false;
+
+public:
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
+
+	static void bake(const Ref<NavigationMesh>& p_navigation_mesh, Node* p_root_node);
+	static void clear(Ref<NavigationMesh> p_navigation_mesh);
+
+	NavigationMeshGenerator() = delete;
+	NavigationMeshGenerator(const NavigationMeshGenerator&) = delete;
+	NavigationMeshGenerator& operator=(const NavigationMeshGenerator&) = delete;
+	~NavigationMeshGenerator() = delete;
+};
+#endif // DISABLE_DEPRECATED

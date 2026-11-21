@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "image_loader_tga.h"
+#include "register_types.h"
 
 #include "core/error/error_macros.h"
 #include "core/io/file_access_wrappers.h"
@@ -379,4 +380,24 @@ static Ref<Image> _tga_mem_loader_func(const uint8_t *p_tga, int p_size) {
 
 ImageLoaderTGA::ImageLoaderTGA() {
 	Image::_tga_mem_loader_func = _tga_mem_loader_func;
+}
+
+static Ref<ImageLoaderTGA> image_loader_tga;
+
+void initialize_tga_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	image_loader_tga.instantiate();
+	ImageLoader::add_image_format_loader(image_loader_tga);
+}
+
+void uninitialize_tga_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	ImageLoader::remove_image_format_loader(image_loader_tga);
+	image_loader_tga.unref();
 }

@@ -36,6 +36,136 @@
 #include "core/templates/safe_refcount.h"
 #include "servers/camera/camera_server.h"
 
+
+#include "core/io/image.h"
+#include "core/templates/vector.h"
+
+class CameraFeed;
+
+struct StreamingBuffer
+{
+	void* start = nullptr;
+	size_t length = 0;
+};
+
+class BufferDecoder
+{
+protected:
+	CameraFeed* camera_feed = nullptr;
+	Ref<Image> image;
+	int width = 0;
+	int height = 0;
+
+public:
+	virtual void decode(StreamingBuffer p_buffer);
+
+	BufferDecoder() = default;
+	BufferDecoder(CameraFeed* p_camera_feed);
+
+	virtual ~BufferDecoder();
+};
+
+class AbstractYuyvBufferDecoder : public BufferDecoder
+{
+protected:
+	int* component_indexes = nullptr;
+
+public:
+	AbstractYuyvBufferDecoder(CameraFeed* p_camera_feed);
+	~AbstractYuyvBufferDecoder();
+};
+
+class SeparateYuyvBufferDecoder final : public AbstractYuyvBufferDecoder
+{
+private:
+	Vector<uint8_t> y_image_data;
+	Vector<uint8_t> cbcr_image_data;
+	Ref<Image> y_image;
+	Ref<Image> cbcr_image;
+
+public:
+	SeparateYuyvBufferDecoder(CameraFeed* p_camera_feed);
+	virtual void decode(StreamingBuffer p_buffer) override;
+};
+
+class YuyvToGrayscaleBufferDecoder final : public AbstractYuyvBufferDecoder
+{
+private:
+	Vector<uint8_t> image_data;
+
+public:
+	YuyvToGrayscaleBufferDecoder(CameraFeed* p_camera_feed);
+	virtual void decode(StreamingBuffer p_buffer) override;
+};
+
+class YuyvToRgbBufferDecoder final : public AbstractYuyvBufferDecoder
+{
+private:
+	Vector<uint8_t> image_data;
+
+public:
+	YuyvToRgbBufferDecoder(CameraFeed* p_camera_feed);
+	virtual void decode(StreamingBuffer p_buffer) override;
+};
+
+class CopyBufferDecoder final : public BufferDecoder
+{
+private:
+	Vector<uint8_t> image_data;
+	bool rgba = false;
+
+public:
+	CopyBufferDecoder(CameraFeed* p_camera_feed, bool p_rgba);
+	virtual void decode(StreamingBuffer p_buffer) override;
+};
+
+class JpegBufferDecoder final : public BufferDecoder
+{
+private:
+	Vector<uint8_t> image_data;
+
+public:
+	JpegBufferDecoder(CameraFeed* p_camera_feed);
+	virtual void decode(StreamingBuffer p_buffer) override;
+};
+
+#include <linux/videodev2.h>
+#include "servers/camera/camera_feed.h"
+
+class CameraFeedLinux final : public CameraFeed
+{
+private:
+	SafeFlag exit_flag;
+	Thread* thread = nullptr;
+	String device_name;
+	int file_descriptor = -1;
+	StreamingBuffer* buffers = nullptr;
+	unsigned int buffer_count = 0;
+	BufferDecoder* buffer_decoder = nullptr;
+
+	static void update_buffer_thread_func(void* p_func);
+
+	void _update_buffer();
+	void _query_device(const String& p_device_name);
+	void _add_format(v4l2_fmtdesc description, v4l2_frmsize_discrete size, int frame_numerator,
+		int frame_denominator);
+	bool _request_buffers();
+	bool _start_capturing();
+	void _read_frame();
+	void _stop_capturing();
+	void _unmap_buffers(unsigned int p_count);
+	BufferDecoder* _create_buffer_decoder();
+	void _start_thread();
+
+public:
+	String get_device_name() const;
+	bool activate_feed() override;
+	void deactivate_feed() override;
+	FeedFormat get_format() const override;
+
+	CameraFeedLinux(const String& p_device_name);
+	~CameraFeedLinux() override;
+};
 class CameraLinux final
 {
 private:

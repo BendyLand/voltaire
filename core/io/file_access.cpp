@@ -36,8 +36,70 @@
 #include "core/io/resource_uid.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
-#include "file_access.compat.inc"
 #include "file_access.h"
+
+#ifndef DISABLE_DEPRECATED
+
+Ref<FileAccess> FileAccess::_open_encrypted_bind_compat_98918(
+	const String& p_path, ModeFlags p_mode_flags, const Vector<uint8_t>& p_key)
+{
+	return open_encrypted(p_path, p_mode_flags, p_key, Vector<uint8_t>());
+}
+
+Ref<FileAccess> FileAccess::_create_temp_bind_compat_114053(
+	int p_mode_flags, const String& p_prefix, const String& p_extension, bool p_keep)
+{
+	return _create_temp((ModeFlags)p_mode_flags, p_prefix, p_extension, p_keep);
+}
+
+void FileAccess::store_8_bind_compat_78289(uint8_t p_dest) { store_8(p_dest); }
+
+void FileAccess::store_16_bind_compat_78289(uint16_t p_dest) { store_16(p_dest); }
+
+void FileAccess::store_32_bind_compat_78289(uint32_t p_dest) { store_32(p_dest); }
+
+void FileAccess::store_64_bind_compat_78289(uint64_t p_dest) { store_64(p_dest); }
+
+void FileAccess::store_buffer_bind_compat_78289(const Vector<uint8_t>& p_buffer)
+{
+	store_buffer(p_buffer);
+}
+
+void FileAccess::store_half_bind_compat_78289(float p_dest) { store_half(p_dest); }
+
+void FileAccess::store_float_bind_compat_78289(float p_dest) { store_float(p_dest); }
+
+void FileAccess::store_double_bind_compat_78289(double p_dest) { store_double(p_dest); }
+
+void FileAccess::store_real_bind_compat_78289(real_t p_real) { store_real(p_real); }
+
+void FileAccess::store_string_bind_compat_78289(const String& p_string) { store_string(p_string); }
+
+void FileAccess::store_line_bind_compat_78289(const String& p_line) { store_line(p_line); }
+
+void FileAccess::store_csv_line_bind_compat_78289(
+	const Vector<String>& p_values, const String& p_delim)
+{
+	store_csv_line(p_values, p_delim);
+}
+
+void FileAccess::store_pascal_string_bind_compat_78289(const String& p_string)
+{
+	store_pascal_string(p_string);
+}
+
+String FileAccess::get_as_text_bind_compat_110867(bool p_skip_cr) const
+{
+	String text = get_as_text();
+	if (unlikely(p_skip_cr)) {
+		text = text.remove_char('\r');
+	}
+	return text;
+}
+
+void FileAccess::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
 
 Ref<FileAccess> FileAccess::create(AccessType p_access)
 {

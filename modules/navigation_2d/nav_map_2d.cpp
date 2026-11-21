@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "nav_map_2d.h"
+#include "register_types.h"
 
 #include "core/config/project_settings.h"
 #include "core/math/geometry_2d.h"
@@ -3590,3 +3591,26 @@ void NavMeshQueries2D::query_task_map_iteration_get_path(
 }
 
 #undef THREE_POINTS_CROSS_PRODUCT
+
+#ifdef CLIPPER2_ENABLED
+#endif
+
+void initialize_navigation_2d_module(ModuleInitializationLevel p_level)
+{
+#ifdef CLIPPER2_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
+		NavMeshGenerator2D::initialize();
+	}
+#endif
+}
+
+void uninitialize_navigation_2d_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
+		return;
+	}
+
+#ifdef CLIPPER2_ENABLED
+	NavMeshGenerator2D::finalize();
+#endif
+}

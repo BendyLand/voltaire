@@ -42,7 +42,7 @@
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_language.h"
-#include "servers/rendering/shader_warnings.h"
+#include "servers/rendering/shader_language.h"
 #include "servers/rendering/storage/camera_attributes_storage.h"
 #include "servers/rendering/storage/compositor_storage.h"
 #include "servers/rendering/storage/environment_storage.h"

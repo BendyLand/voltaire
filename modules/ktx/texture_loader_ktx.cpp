@@ -30,6 +30,8 @@
 /**************************************************************************/
 
 #include <ktx.h>
+#include "register_types.h"
+#include "core/io/resource_loader.h"
 #include <vk_format.h>
 #include "core/io/file_access.h"
 #include "core/io/file_access_wrappers.h"
@@ -651,4 +653,24 @@ String ResourceFormatKTX::get_resource_type(const String& p_path) const
 
 ResourceFormatKTX::ResourceFormatKTX() { Image::_ktx_mem_loader_func = _ktx_mem_loader_func; }
 
+static Ref<ResourceFormatKTX> resource_loader_ktx;
 
+void initialize_ktx_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	resource_loader_ktx.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_loader_ktx);
+}
+
+void uninitialize_ktx_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	ResourceLoader::remove_resource_format_loader(resource_loader_ktx);
+	resource_loader_ktx.unref();
+}

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  environment_storage.cpp                                               */
+/*  renderer_storage.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                            VOLTAIRE ENGINE                             */
@@ -29,11 +29,334 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "environment_storage.h"
+#include "servers/rendering/storage/camera_attributes_storage.h"
 
 #ifdef DEBUG_ENABLED
 #include "core/os/os.h"
 #endif
+#include "servers/rendering/storage/compositor_storage.h"
+#include "servers/rendering/storage/environment_storage.h"
+
+#ifdef DEBUG_ENABLED
+#include "core/os/os.h"
+#endif
+#include "core/config/engine.h"
+#include "core/math/transform_interpolator.h"
+#include "servers/rendering/storage/mesh_storage.h"
+#include "servers/rendering/storage/render_scene_buffers.h"
+#include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
+#include "servers/rendering/storage/utilities.h"
+
+// --- Merged from servers/rendering/storage/camera_attributes_storage.cpp ---
+
+void RendererCameraAttributes::initialize()
+{
+	if (_initialized) {
+		return;
+	}
+	dof_blur_quality = RSE::DOF_BLUR_QUALITY_MEDIUM;
+	dof_blur_bokeh_shape = RSE::DOF_BOKEH_HEXAGON;
+	dof_blur_use_jitter = false;
+	auto_exposure_counter = 2;
+	_initialized = true;
+}
+
+void RendererCameraAttributes::finalize()
+{
+	if (!_initialized) {
+		return;
+	}
+	_initialized = false;
+}
+
+RID RendererCameraAttributes::camera_attributes_allocate()
+{
+	return camera_attributes_owner.allocate_rid();
+}
+
+void RendererCameraAttributes::camera_attributes_initialize(RID p_rid)
+{
+	camera_attributes_owner.initialize_rid(p_rid, CameraAttributes());
+}
+
+void RendererCameraAttributes::camera_attributes_free(RID p_rid)
+{
+	camera_attributes_owner.free(p_rid);
+}
+
+void RendererCameraAttributes::camera_attributes_set_dof_blur_quality(
+	RSE::DOFBlurQuality p_quality, bool p_use_jitter)
+{
+	dof_blur_quality = p_quality;
+	dof_blur_use_jitter = p_use_jitter;
+}
+
+void RendererCameraAttributes::camera_attributes_set_dof_blur_bokeh_shape(RSE::DOFBokehShape p_shape)
+{
+	dof_blur_bokeh_shape = p_shape;
+}
+
+void RendererCameraAttributes::camera_attributes_set_dof_blur(RID p_camera_attributes,
+	bool p_far_enable, float p_far_distance, float p_far_transition, bool p_near_enable,
+	float p_near_distance, float p_near_transition, float p_amount)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL(cam_attributes);
+#ifdef DEBUG_ENABLED
+	if (OS::get_current_rendering_method() == "gl_compatibility" &&
+		(p_far_enable || p_near_enable)) {
+		WARN_PRINT_ONCE_ED(
+			"Depth of field blur is only available when using the Forward+ or Mobile renderer.");
+	}
+#endif
+	cam_attributes->dof_blur_far_enabled = p_far_enable;
+	cam_attributes->dof_blur_far_distance = p_far_distance;
+	cam_attributes->dof_blur_far_transition = p_far_transition;
+
+	cam_attributes->dof_blur_near_enabled = p_near_enable;
+	cam_attributes->dof_blur_near_distance = p_near_distance;
+	cam_attributes->dof_blur_near_transition = p_near_transition;
+
+	cam_attributes->dof_blur_amount = p_amount;
+}
+
+bool RendererCameraAttributes::camera_attributes_get_dof_far_enabled(RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, false);
+	return cam_attributes->dof_blur_far_enabled;
+}
+
+float RendererCameraAttributes::camera_attributes_get_dof_far_distance(RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->dof_blur_far_distance;
+}
+
+float RendererCameraAttributes::camera_attributes_get_dof_far_transition(RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->dof_blur_far_transition;
+}
+
+bool RendererCameraAttributes::camera_attributes_get_dof_near_enabled(RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, false);
+	return cam_attributes->dof_blur_near_enabled;
+}
+
+float RendererCameraAttributes::camera_attributes_get_dof_near_distance(RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->dof_blur_near_distance;
+}
+
+float RendererCameraAttributes::camera_attributes_get_dof_near_transition(RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->dof_blur_near_transition;
+}
+
+float RendererCameraAttributes::camera_attributes_get_dof_blur_amount(RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->dof_blur_amount;
+}
+
+void RendererCameraAttributes::camera_attributes_set_exposure(
+	RID p_camera_attributes, float p_multiplier, float p_exposure_normalization)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL(cam_attributes);
+	cam_attributes->exposure_multiplier = p_multiplier;
+	cam_attributes->exposure_normalization = p_exposure_normalization;
+}
+
+float RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
+	RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 1.0);
+
+	return cam_attributes->exposure_multiplier * cam_attributes->exposure_normalization;
+}
+
+void RendererCameraAttributes::camera_attributes_set_auto_exposure(RID p_camera_attributes,
+	bool p_enable, float p_min_sensitivity, float p_max_sensitivity, float p_speed, float p_scale)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL(cam_attributes);
+	if (!cam_attributes->use_auto_exposure && p_enable) {
+		cam_attributes->auto_exposure_version = ++auto_exposure_counter;
+	}
+#ifdef DEBUG_ENABLED
+	if ((OS::get_current_rendering_method() == "gl_compatibility" ||
+			OS::get_current_rendering_method() == "mobile") &&
+		p_enable) {
+		WARN_PRINT_ONCE_ED("Auto-exposure is only available when using the Forward+ renderer.");
+	}
+#endif
+	cam_attributes->use_auto_exposure = p_enable;
+	cam_attributes->auto_exposure_min_sensitivity = p_min_sensitivity;
+	cam_attributes->auto_exposure_max_sensitivity = p_max_sensitivity;
+	cam_attributes->auto_exposure_adjust_speed = p_speed;
+	cam_attributes->auto_exposure_scale = p_scale;
+}
+
+float RendererCameraAttributes::camera_attributes_get_auto_exposure_min_sensitivity(
+	RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->auto_exposure_min_sensitivity;
+}
+
+float RendererCameraAttributes::camera_attributes_get_auto_exposure_max_sensitivity(
+	RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->auto_exposure_max_sensitivity;
+}
+
+float RendererCameraAttributes::camera_attributes_get_auto_exposure_adjust_speed(
+	RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->auto_exposure_adjust_speed;
+}
+
+float RendererCameraAttributes::camera_attributes_get_auto_exposure_scale(RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->auto_exposure_scale;
+}
+
+uint64_t RendererCameraAttributes::camera_attributes_get_auto_exposure_version(
+	RID p_camera_attributes)
+{
+	CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0);
+	return cam_attributes->auto_exposure_version;
+}
+
+// --- Merged from servers/rendering/storage/compositor_storage.cpp ---
+
+void RendererCompositorStorage::initialize()
+{
+	if (_initialized) {
+		return;
+	}
+	num_compositor_effects_with_motion_vectors = 0;
+	_initialized = true;
+}
+
+void RendererCompositorStorage::finalize()
+{
+	if (!_initialized) {
+		return;
+	}
+	_initialized = false;
+}
+
+RID RendererCompositorStorage::compositor_effect_allocate()
+{
+	return compositor_effects_owner.allocate_rid();
+}
+
+void RendererCompositorStorage::compositor_effect_initialize(RID p_rid)
+{
+	compositor_effects_owner.initialize_rid(p_rid, CompositorEffect());
+}
+
+bool RendererCompositorStorage::compositor_effect_get_enabled(RID p_effect)
+{
+	CompositorEffect* effect = compositor_effects_owner.get_or_null(p_effect);
+	ERR_FAIL_NULL_V(effect, false);
+
+	return effect->is_enabled;
+}
+
+RSE::CompositorEffectCallbackType RendererCompositorStorage::compositor_effect_get_callback_type(
+	RID p_effect)
+{
+	CompositorEffect* effect = compositor_effects_owner.get_or_null(p_effect);
+	ERR_FAIL_NULL_V(effect, RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_MAX);
+
+	return effect->callback_type;
+}
+
+RID RendererCompositorStorage::compositor_allocate() { return compositor_owner.allocate_rid(); }
+
+void RendererCompositorStorage::compositor_initialize(RID p_rid)
+{
+	compositor_owner.initialize_rid(p_rid, Compositor());
+}
+
+void RendererCompositorStorage::compositor_free(RID p_rid) { compositor_owner.free(p_rid); }
+
+void RendererCompositorStorage::compositor_set_compositor_effects(
+	RID p_compositor, const Vector<RID>& p_effects)
+{
+	Compositor* compositor = compositor_owner.get_or_null(p_compositor);
+	ERR_FAIL_NULL(compositor);
+
+	compositor->compositor_effects.clear();
+	for (const RID& effect : p_effects) {
+		if (is_compositor_effect(effect)) {
+			compositor->compositor_effects.push_back(effect);
+		}
+	}
+}
+
+Vector<RID> RendererCompositorStorage::compositor_get_compositor_effects(
+	RID p_compositor, RSE::CompositorEffectCallbackType p_callback_type, bool p_enabled_only)
+{
+	Compositor* compositor = compositor_owner.get_or_null(p_compositor);
+	ERR_FAIL_NULL_V(compositor, Vector<RID>());
+
+	if (p_enabled_only || p_callback_type != RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY) {
+		Vector<RID> effects;
+
+		for (RID rid : compositor->compositor_effects) {
+			if ((!p_enabled_only || compositor_effect_get_enabled(rid)) &&
+				(p_callback_type == RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY ||
+					compositor_effect_get_callback_type(rid) == p_callback_type)) {
+				effects.push_back(rid);
+			}
+		}
+
+		return effects;
+	}
+	else {
+		return compositor->compositor_effects;
+	}
+}
+
+void RendererCompositorStorage::compositor_effect_set_flag(
+	RID p_effect, RenderingServerEnums::CompositorEffectFlags p_flag, bool p_set)
+{
+}
+
+void RendererCompositorStorage::compositor_effect_set_enabled(RID p_effect, bool p_enabled) {}
+
+bool RendererCompositorStorage::compositor_effect_get_flag(
+	RID p_effect, RenderingServerEnums::CompositorEffectFlags p_flag)
+{
+	return false;
+}
+
+void RendererCompositorStorage::compositor_effect_free(RID p_effect) {}
+
+// --- Merged from servers/rendering/storage/environment_storage.cpp ---
 
 // Storage
 
@@ -951,4 +1274,579 @@ RID RendererEnvironmentStorage::environment_get_color_correction(RID p_env) {
 	Environment *env = environment_owner.get_or_null(p_env);
 	ERR_FAIL_NULL_V(env, RID());
 	return env->color_correction;
+}
+
+// --- Merged from servers/rendering/storage/mesh_storage.cpp ---
+
+void RendererMeshStorage::multimesh_allocate_data(RID p_multimesh, int p_instances,
+	RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors, bool p_use_custom_data,
+	bool p_use_indirect)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi) {
+		mmi->_transform_format = p_transform_format;
+		mmi->_use_colors = p_use_colors;
+		mmi->_use_custom_data = p_use_custom_data;
+		mmi->_num_instances = p_instances;
+
+		mmi->_vf_size_xform = p_transform_format == RSE::MULTIMESH_TRANSFORM_2D ? 8 : 12;
+		mmi->_vf_size_color = p_use_colors ? 4 : 0;
+		mmi->_vf_size_data = p_use_custom_data ? 4 : 0;
+
+		mmi->_stride = mmi->_vf_size_xform + mmi->_vf_size_color + mmi->_vf_size_data;
+
+		int size_in_floats = p_instances * mmi->_stride;
+		mmi->_data_curr.resize_initialized(size_in_floats);
+		mmi->_data_prev.resize_initialized(size_in_floats);
+		mmi->_data_interpolated.resize_initialized(size_in_floats);
+	}
+
+	_multimesh_allocate_data(p_multimesh, p_instances, p_transform_format, p_use_colors,
+		p_use_custom_data, p_use_indirect);
+}
+
+int RendererMeshStorage::multimesh_get_instance_count(RID p_multimesh)
+{
+	return _multimesh_get_instance_count(p_multimesh);
+}
+
+void RendererMeshStorage::multimesh_set_mesh(RID p_multimesh, RID p_mesh)
+{
+	_multimesh_set_mesh(p_multimesh, p_mesh);
+}
+
+void RendererMeshStorage::multimesh_instance_set_transform(
+	RID p_multimesh, int p_index, const Transform3D& p_transform)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi && mmi->interpolated) {
+		ERR_FAIL_COND(p_index >= mmi->_num_instances);
+		ERR_FAIL_COND(mmi->_vf_size_xform != 12);
+
+		int start = p_index * mmi->_stride;
+		float* ptr = mmi->_data_curr.ptrw();
+		ptr += start;
+
+		const Transform3D& t = p_transform;
+		ptr[0] = t.basis.rows[0][0];
+		ptr[1] = t.basis.rows[0][1];
+		ptr[2] = t.basis.rows[0][2];
+		ptr[3] = t.origin.x;
+		ptr[4] = t.basis.rows[1][0];
+		ptr[5] = t.basis.rows[1][1];
+		ptr[6] = t.basis.rows[1][2];
+		ptr[7] = t.origin.y;
+		ptr[8] = t.basis.rows[2][0];
+		ptr[9] = t.basis.rows[2][1];
+		ptr[10] = t.basis.rows[2][2];
+		ptr[11] = t.origin.z;
+
+		_multimesh_add_to_interpolation_lists(p_multimesh, *mmi);
+
+		return;
+	}
+
+	_multimesh_instance_set_transform(p_multimesh, p_index, p_transform);
+}
+
+void RendererMeshStorage::multimesh_instance_set_transform_2d(
+	RID p_multimesh, int p_index, const Transform2D& p_transform)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi && mmi->interpolated) {
+		ERR_FAIL_COND(p_index >= mmi->_num_instances);
+		ERR_FAIL_COND(mmi->_vf_size_xform != 8);
+
+		int start = p_index * mmi->_stride;
+		float* ptr = mmi->_data_curr.ptrw();
+		ptr += start;
+
+		const Transform2D& t = p_transform;
+
+		ptr[0] = t.columns[0][0];
+		ptr[1] = t.columns[1][0];
+		ptr[2] = 0;
+		ptr[3] = t.columns[2][0];
+		ptr[4] = t.columns[0][1];
+		ptr[5] = t.columns[1][1];
+		ptr[6] = 0;
+		ptr[7] = t.columns[2][1];
+
+		_multimesh_add_to_interpolation_lists(p_multimesh, *mmi);
+
+		return;
+	}
+
+	_multimesh_instance_set_transform_2d(p_multimesh, p_index, p_transform);
+}
+
+void RendererMeshStorage::multimesh_instance_set_color(
+	RID p_multimesh, int p_index, const Color& p_color)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi && mmi->interpolated) {
+		ERR_FAIL_COND(p_index >= mmi->_num_instances);
+		ERR_FAIL_COND(mmi->_vf_size_color == 0);
+
+		int start = (p_index * mmi->_stride) + mmi->_vf_size_xform;
+		float* ptr = mmi->_data_curr.ptrw();
+		ptr += start;
+
+		if (mmi->_vf_size_color == 4) {
+			for (int n = 0; n < 4; n++) {
+				ptr[n] = p_color[n];
+			}
+		}
+		else {
+#ifdef DEV_ENABLED
+			// The options are currently 4 or zero, but just in case this changes in future...
+			ERR_FAIL_COND(mmi->_vf_size_color != 0);
+#endif
+		}
+		_multimesh_add_to_interpolation_lists(p_multimesh, *mmi);
+		return;
+	}
+
+	_multimesh_instance_set_color(p_multimesh, p_index, p_color);
+}
+
+void RendererMeshStorage::multimesh_instance_set_custom_data(
+	RID p_multimesh, int p_index, const Color& p_color)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi && mmi->interpolated) {
+		ERR_FAIL_COND(p_index >= mmi->_num_instances);
+		ERR_FAIL_COND(mmi->_vf_size_data == 0);
+
+		int start = (p_index * mmi->_stride) + mmi->_vf_size_xform + mmi->_vf_size_color;
+		float* ptr = mmi->_data_curr.ptrw();
+		ptr += start;
+
+		if (mmi->_vf_size_data == 4) {
+			for (int n = 0; n < 4; n++) {
+				ptr[n] = p_color[n];
+			}
+		}
+		else {
+#ifdef DEV_ENABLED
+			// The options are currently 4 or zero, but just in case this changes in future...
+			ERR_FAIL_COND(mmi->_vf_size_data != 0);
+#endif
+		}
+		_multimesh_add_to_interpolation_lists(p_multimesh, *mmi);
+		return;
+	}
+
+	_multimesh_instance_set_custom_data(p_multimesh, p_index, p_color);
+}
+
+void RendererMeshStorage::multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb)
+{
+	_multimesh_set_custom_aabb(p_multimesh, p_aabb);
+}
+
+AABB RendererMeshStorage::multimesh_get_custom_aabb(RID p_multimesh)
+{
+	return _multimesh_get_custom_aabb(p_multimesh);
+}
+
+RID RendererMeshStorage::multimesh_get_mesh(RID p_multimesh)
+{
+	return _multimesh_get_mesh(p_multimesh);
+}
+
+Transform3D RendererMeshStorage::multimesh_instance_get_transform(
+	RID p_multimesh, int p_index)
+{
+	return _multimesh_instance_get_transform(p_multimesh, p_index);
+}
+
+Transform2D RendererMeshStorage::multimesh_instance_get_transform_2d(
+	RID p_multimesh, int p_index)
+{
+	return _multimesh_instance_get_transform_2d(p_multimesh, p_index);
+}
+
+Color RendererMeshStorage::multimesh_instance_get_color(RID p_multimesh, int p_index)
+{
+	return _multimesh_instance_get_color(p_multimesh, p_index);
+}
+
+Color RendererMeshStorage::multimesh_instance_get_custom_data(RID p_multimesh, int p_index)
+{
+	return _multimesh_instance_get_custom_data(p_multimesh, p_index);
+}
+
+void RendererMeshStorage::multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi && mmi->interpolated) {
+		ERR_FAIL_COND_MSG(p_buffer.size() != mmi->_data_curr.size(),
+			"Buffer should have " + itos(mmi->_data_curr.size()) + " elements, got " +
+				itos(p_buffer.size()) + " instead.");
+
+		mmi->_data_curr = p_buffer;
+		_multimesh_add_to_interpolation_lists(p_multimesh, *mmi);
+
+		return;
+	}
+
+	_multimesh_set_buffer(p_multimesh, p_buffer);
+}
+
+RID RendererMeshStorage::multimesh_get_command_buffer_rd_rid(RID p_multimesh)
+{
+	return _multimesh_get_command_buffer_rd_rid(p_multimesh);
+}
+
+RID RendererMeshStorage::multimesh_get_buffer_rd_rid(RID p_multimesh)
+{
+	return _multimesh_get_buffer_rd_rid(p_multimesh);
+}
+
+Vector<float> RendererMeshStorage::multimesh_get_buffer(RID p_multimesh)
+{
+	return _multimesh_get_buffer(p_multimesh);
+}
+
+void RendererMeshStorage::multimesh_set_buffer_interpolated(
+	RID p_multimesh, const Vector<float>& p_buffer, const Vector<float>& p_buffer_prev)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi) {
+		ERR_FAIL_COND_MSG(p_buffer.size() != mmi->_data_curr.size(),
+			"Buffer for current frame should have " + itos(mmi->_data_curr.size()) +
+				" elements, got " + itos(p_buffer.size()) + " instead.");
+		ERR_FAIL_COND_MSG(p_buffer_prev.size() != mmi->_data_prev.size(),
+			"Buffer for previous frame should have " + itos(mmi->_data_prev.size()) +
+				" elements, got " + itos(p_buffer_prev.size()) + " instead.");
+
+		// We are assuming that mmi->interpolated is the case. (Can possibly assert this?)
+		// Even if this flag hasn't been set - just calling this function suggests interpolation is
+		// desired.
+		mmi->_data_prev = p_buffer_prev;
+		mmi->_data_curr = p_buffer;
+		_multimesh_add_to_interpolation_lists(p_multimesh, *mmi);
+	}
+}
+
+void RendererMeshStorage::multimesh_set_physics_interpolated(RID p_multimesh, bool p_interpolated)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi) {
+		if (p_interpolated == mmi->interpolated) {
+			return;
+		}
+
+		mmi->interpolated = p_interpolated;
+
+		// If we are turning on physics interpolation, as a convenience,
+		// we want to get the current buffer data from the backend,
+		// and reset all the instances.
+		if (p_interpolated) {
+			mmi->_data_curr = _multimesh_get_buffer(p_multimesh);
+			mmi->_data_prev = mmi->_data_curr;
+			mmi->_data_interpolated = mmi->_data_curr;
+		}
+	}
+}
+
+void RendererMeshStorage::multimesh_set_physics_interpolation_quality(
+	RID p_multimesh, RSE::MultimeshPhysicsInterpolationQuality p_quality)
+{
+	ERR_FAIL_COND((p_quality < 0) || (p_quality > 1));
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi) {
+		mmi->quality = (int)p_quality;
+	}
+}
+
+void RendererMeshStorage::multimesh_instance_reset_physics_interpolation(
+	RID p_multimesh, int p_index)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi) {
+		ERR_FAIL_INDEX(p_index, mmi->_num_instances);
+
+		float* w = mmi->_data_prev.ptrw();
+		const float* r = mmi->_data_curr.ptr();
+		int start = p_index * mmi->_stride;
+
+		for (int n = 0; n < mmi->_stride; n++) {
+			w[start + n] = r[start + n];
+		}
+	}
+}
+
+void RendererMeshStorage::multimesh_instances_reset_physics_interpolation(RID p_multimesh)
+{
+	MultiMeshInterpolator* mmi = _multimesh_get_interpolator(p_multimesh);
+	if (mmi && mmi->_data_curr.size()) {
+		// We don't want to invoke COW here, so copy the data directly.
+		ERR_FAIL_COND(mmi->_data_prev.size() != mmi->_data_curr.size());
+		float* w = mmi->_data_prev.ptrw();
+		const float* r = mmi->_data_curr.ptr();
+		memcpy(w, r, sizeof(float) * mmi->_data_curr.size());
+	}
+}
+
+void RendererMeshStorage::multimesh_set_visible_instances(RID p_multimesh, int p_visible)
+{
+	return _multimesh_set_visible_instances(p_multimesh, p_visible);
+}
+
+int RendererMeshStorage::multimesh_get_visible_instances(RID p_multimesh)
+{
+	return _multimesh_get_visible_instances(p_multimesh);
+}
+
+AABB RendererMeshStorage::multimesh_get_aabb(RID p_multimesh)
+{
+	return _multimesh_get_aabb(p_multimesh);
+}
+
+void RendererMeshStorage::_multimesh_add_to_interpolation_lists(
+	RID p_multimesh, MultiMeshInterpolator& r_mmi)
+{
+	if (!r_mmi.on_interpolate_update_list) {
+		r_mmi.on_interpolate_update_list = true;
+		_interpolation_data.multimesh_interpolate_update_list.push_back(p_multimesh);
+	}
+
+	if (!r_mmi.on_transform_update_list) {
+		r_mmi.on_transform_update_list = true;
+		_interpolation_data.multimesh_transform_update_list_curr->push_back(p_multimesh);
+	}
+}
+
+void InterpolationData::notify_free_multimesh(RID p_rid)
+{
+	// If the instance was on any of the lists, remove.
+	multimesh_interpolate_update_list.erase_multiple_unordered(p_rid);
+	multimesh_transform_update_lists[0].erase_multiple_unordered(p_rid);
+	multimesh_transform_update_lists[1].erase_multiple_unordered(p_rid);
+}
+
+void RendererMeshStorage::update_interpolation_tick(bool p_process)
+{
+	// Detect any that were on the previous transform list that are no longer active,
+	// we should remove them from the interpolate list.
+
+	for (unsigned int n = 0; n < _interpolation_data.multimesh_transform_update_list_prev->size();
+		 n++) {
+		const RID& rid = (*_interpolation_data.multimesh_transform_update_list_prev)[n];
+
+		bool active = true;
+
+		// No longer active? (Either the instance deleted or no longer being transformed.)
+
+		MultiMeshInterpolator* mmi = _multimesh_get_interpolator(rid);
+		if (mmi && !mmi->on_transform_update_list) {
+			active = false;
+			mmi->on_interpolate_update_list = false;
+
+			// Make sure the most recent transform is set...
+			mmi->_data_interpolated =
+				mmi->_data_curr; // TODO: Copy data rather than use Packed = function?
+
+			// ... and that both prev and current are the same, just in case of any interpolations.
+			mmi->_data_prev = mmi->_data_curr;
+
+			// Update the actual stable buffer to the backend.
+			_multimesh_set_buffer(rid, mmi->_data_interpolated);
+		}
+
+		if (!mmi) {
+			active = false;
+		}
+
+		if (!active) {
+			_interpolation_data.multimesh_interpolate_update_list.erase(rid);
+		}
+	}
+
+	if (p_process) {
+		for (unsigned int i = 0;
+			 i < _interpolation_data.multimesh_transform_update_list_curr->size(); i++) {
+			const RID& rid = (*_interpolation_data.multimesh_transform_update_list_curr)[i];
+
+			MultiMeshInterpolator* mmi = _multimesh_get_interpolator(rid);
+			if (mmi) {
+				// Reset for next tick.
+				mmi->on_transform_update_list = false;
+				mmi->_data_prev = mmi->_data_curr;
+			}
+		}
+	}
+
+	// If any have left the transform list, remove from the interpolate list.
+
+	// We maintain a mirror list for the transform updates, so we can detect when an instance
+	// is no longer being transformed, and remove it from the interpolate list.
+	SWAP(_interpolation_data.multimesh_transform_update_list_curr,
+		_interpolation_data.multimesh_transform_update_list_prev);
+
+	// Prepare for the next iteration.
+	_interpolation_data.multimesh_transform_update_list_curr->clear();
+}
+
+void RendererMeshStorage::update_interpolation_frame(bool p_process)
+{
+	if (p_process) {
+		// Only need 32 bits for interpolation, don't use real_t.
+		float f = Engine::get_physics_interpolation_fraction();
+
+		for (unsigned int c = 0; c < _interpolation_data.multimesh_interpolate_update_list.size();
+			 c++) {
+			const RID& rid = _interpolation_data.multimesh_interpolate_update_list[c];
+
+			// We could use the TransformInterpolator here to slerp transforms, but that might be
+			// too expensive, so just using a Basis lerp for now.
+			MultiMeshInterpolator* mmi = _multimesh_get_interpolator(rid);
+			if (mmi) {
+				// Make sure arrays are the correct size.
+				DEV_ASSERT(mmi->_data_prev.size() == mmi->_data_curr.size());
+
+				if (mmi->_data_interpolated.size() < mmi->_data_curr.size()) {
+					mmi->_data_interpolated.resize(mmi->_data_curr.size());
+				}
+				DEV_ASSERT(mmi->_data_interpolated.size() >= mmi->_data_curr.size());
+
+				DEV_ASSERT((mmi->_data_curr.size() % mmi->_stride) == 0);
+				int num = mmi->_data_curr.size() / mmi->_stride;
+
+				const float* pf_prev = mmi->_data_prev.ptr();
+				const float* pf_curr = mmi->_data_curr.ptr();
+				float* pf_int = mmi->_data_interpolated.ptrw();
+
+				bool use_lerp = mmi->quality == 0;
+
+				// Temporary transform (needed for swizzling).
+				Transform3D tp, tc, tr; // (transform prev, curr and result)
+
+				// Test for cache friendliness versus doing branchless.
+				for (int n = 0; n < num; n++) {
+					// Transform.
+					if (use_lerp) {
+						for (int i = 0; i < mmi->_vf_size_xform; i++) {
+							pf_int[i] = Math::lerp(pf_prev[i], pf_curr[i], f);
+						}
+					}
+					else {
+						// Silly swizzling, this will slow things down.
+						// No idea why it is using this format...
+						// ... maybe due to the shader.
+						tp.basis.rows[0][0] = pf_prev[0];
+						tp.basis.rows[0][1] = pf_prev[1];
+						tp.basis.rows[0][2] = pf_prev[2];
+						tp.basis.rows[1][0] = pf_prev[4];
+						tp.basis.rows[1][1] = pf_prev[5];
+						tp.basis.rows[1][2] = pf_prev[6];
+						tp.basis.rows[2][0] = pf_prev[8];
+						tp.basis.rows[2][1] = pf_prev[9];
+						tp.basis.rows[2][2] = pf_prev[10];
+						tp.origin.x = pf_prev[3];
+						tp.origin.y = pf_prev[7];
+						tp.origin.z = pf_prev[11];
+
+						tc.basis.rows[0][0] = pf_curr[0];
+						tc.basis.rows[0][1] = pf_curr[1];
+						tc.basis.rows[0][2] = pf_curr[2];
+						tc.basis.rows[1][0] = pf_curr[4];
+						tc.basis.rows[1][1] = pf_curr[5];
+						tc.basis.rows[1][2] = pf_curr[6];
+						tc.basis.rows[2][0] = pf_curr[8];
+						tc.basis.rows[2][1] = pf_curr[9];
+						tc.basis.rows[2][2] = pf_curr[10];
+						tc.origin.x = pf_curr[3];
+						tc.origin.y = pf_curr[7];
+						tc.origin.z = pf_curr[11];
+
+						TransformInterpolator::interpolate_transform_3d(tp, tc, tr, f);
+
+						pf_int[0] = tr.basis.rows[0][0];
+						pf_int[1] = tr.basis.rows[0][1];
+						pf_int[2] = tr.basis.rows[0][2];
+						pf_int[4] = tr.basis.rows[1][0];
+						pf_int[5] = tr.basis.rows[1][1];
+						pf_int[6] = tr.basis.rows[1][2];
+						pf_int[8] = tr.basis.rows[2][0];
+						pf_int[9] = tr.basis.rows[2][1];
+						pf_int[10] = tr.basis.rows[2][2];
+						pf_int[3] = tr.origin.x;
+						pf_int[7] = tr.origin.y;
+						pf_int[11] = tr.origin.z;
+					}
+
+					pf_prev += mmi->_vf_size_xform;
+					pf_curr += mmi->_vf_size_xform;
+					pf_int += mmi->_vf_size_xform;
+
+					// Color.
+					if (mmi->_vf_size_color == 4) {
+						for (int i = 0; i < 4; i++) {
+							pf_int[i] = Math::lerp(pf_prev[i], pf_curr[i], f);
+						}
+
+						pf_prev += 4;
+						pf_curr += 4;
+						pf_int += 4;
+					}
+
+					// Custom data.
+					if (mmi->_vf_size_data == 4) {
+						for (int i = 0; i < 4; i++) {
+							pf_int[i] = Math::lerp(pf_prev[i], pf_curr[i], f);
+						}
+
+						pf_prev += 4;
+						pf_curr += 4;
+						pf_int += 4;
+					}
+				}
+
+				_multimesh_set_buffer(rid, mmi->_data_interpolated);
+
+				// TODO: Make sure AABBs are constantly up to date through the interpolation?
+				// NYI.
+			}
+		}
+	}
+}
+
+// --- Merged from servers/rendering/storage/render_scene_buffers.cpp ---
+
+
+
+// --- Merged from servers/rendering/storage/utilities.cpp ---
+
+void Dependency::changed_notify(DependencyChangedNotification p_notification) {
+	for (const KeyValue<DependencyTracker *, uint32_t> &E : instances) {
+		if (E.key->changed_callback) {
+			E.key->changed_callback(p_notification, E.key);
+		}
+	}
+}
+
+void Dependency::deleted_notify(const RID &p_rid) {
+	for (const KeyValue<DependencyTracker *, uint32_t> &E : instances) {
+		if (E.key->deleted_callback) {
+			E.key->deleted_callback(p_rid, E.key);
+		}
+	}
+	for (const KeyValue<DependencyTracker *, uint32_t> &E : instances) {
+		E.key->dependencies.erase(this);
+	}
+	instances.clear();
+}
+
+Dependency::~Dependency() {
+#ifdef DEBUG_ENABLED
+	if (instances.size()) {
+		WARN_PRINT("Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.");
+		for (const KeyValue<DependencyTracker *, uint32_t> &E : instances) {
+			E.key->dependencies.erase(this);
+		}
+	}
+#endif
 }

@@ -32,8 +32,7 @@
 #pragma once
 
 #include "core/types.h"
-#include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
-#include "servers/rendering/renderer_rd/pipeline_deferred_rd.h"
+#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/renderer_rd/shaders/effects/bokeh_dof.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/bokeh_dof_raster.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/luminance_reduce.glsl.gen.h"

@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include <ConvectionKernels.h>
+#include "register_types.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/templates/safe_refcount.h"
@@ -427,4 +428,16 @@ void image_decompress_cvtt(Image* p_image)
 		p_image->get_width(), p_image->get_height(), p_image->has_mipmaps(), target_format, data);
 }
 
+void initialize_cvtt_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
 
+	Image::_image_compress_bptc_func = image_compress_cvtt;
+}
+
+void uninitialize_cvtt_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}

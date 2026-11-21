@@ -35,7 +35,7 @@
 
 #ifdef TOOLS_ENABLED
 
-#include "../editor/editor_scene_importer_gltf.h"
+#include "../gltf_document.h"
 
 #include "editor/import/3d/resource_importer_scene.h"
 #include "scene/3d/mesh_instance_3d.h"

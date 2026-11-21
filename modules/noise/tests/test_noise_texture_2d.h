@@ -32,7 +32,6 @@
 #pragma once
 
 #include "../fastnoise_lite.h"
-#include "../noise_texture_2d.h"
 
 #include "tests/test_macros.h"
 

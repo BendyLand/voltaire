@@ -35,7 +35,6 @@
 
 #ifdef TOOLS_ENABLED
 
-#include "../editor/editor_scene_importer_gltf.h"
 #include "../gltf_document.h"
 #include "../gltf_state.h"
 

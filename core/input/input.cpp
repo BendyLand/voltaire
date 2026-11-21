@@ -34,8 +34,45 @@
 #include "core/input/default_controller_mappings.h"
 #include "core/input/input_map.h"
 #include "core/os/os.h"
-#include "input.compat.inc"
 #include "input.h"
+
+// --- input.compat.inc ---
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#ifndef DISABLE_DEPRECATED
+
+
+void Input::_vibrate_handheld_bind_compat_91143(int p_duration_ms)
+{
+	vibrate_handheld(p_duration_ms, -1.0);
+}
+
+void Input::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
+
 
 #ifdef DEV_ENABLED
 #include "core/os/thread.h"
@@ -2563,5 +2600,1557 @@ void Input::finalize()
 	memdelete(data);
 	data = nullptr;
 }
+#ifdef STANDARD_GRAVITY
+#undef STANDARD_GRAVITY
+#endif
+
+// ==========================================================================
+// input_map.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "core/config/project_settings.h"
+#include "core/input/input.h"
+#include "core/os/keyboard.h"
+#include "core/os/os.h"
+#include "input_map.h"
+
+// --- input_map.compat.inc ---
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#ifndef DISABLE_DEPRECATED
 
 
+void InputMap::_add_action_bind_compat_97281(const String& p_action, float p_deadzone)
+{
+	add_action(p_action, p_deadzone);
+}
+
+void InputMap::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
+
+
+void InputMap::initialize()
+{
+	if (data == nullptr) {
+		data = memnew(Data);
+	}
+}
+
+void InputMap::finalize()
+{
+	if (data != nullptr) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
+/**
+ * Returns an nonexistent action error message with a suggestion of the closest
+ * matching action name (if possible).
+ */
+String InputMap::suggest_actions(const String& p_action)
+{
+	String closest_action;
+	float closest_similarity = 0.0;
+
+	if (data != nullptr) {
+		// Find the most action with the most similar name.
+		for (const KeyValue<String, Action>& kv : data->input_map) {
+			const float similarity = String(kv.key).similarity(p_action);
+
+			if (similarity > closest_similarity) {
+				closest_action = kv.key;
+				closest_similarity = similarity;
+			}
+		}
+	}
+
+	String error_message = vformat("The InputMap action \"%s\" doesn't exist.", p_action);
+
+	if (closest_similarity >= 0.4) {
+		// Only include a suggestion in the error message if it's similar enough.
+		error_message += vformat(" Did you mean \"%s\"?", closest_action);
+	}
+	return error_message;
+}
+
+#ifdef TOOLS_ENABLED
+void InputMap::get_argument_options(
+	const String& p_function, int p_idx, List<String>* r_options)
+{
+	(void)r_options;
+	const String pf = p_function;
+	bool first_argument_is_action = false;
+	if (p_idx == 0) {
+		first_argument_is_action =
+			(pf == "has_action" || pf == "erase_action" || pf == "action_set_deadzone" ||
+				pf == "action_get_deadzone" || pf == "action_has_event" ||
+				pf == "action_add_event" || pf == "action_get_events" ||
+				pf == "action_erase_event" || pf == "action_erase_events");
+	}
+	(void)first_argument_is_action;
+}
+#endif
+
+void InputMap::add_action(const String& p_action, float p_deadzone)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(data->input_map.has(p_action),
+		vformat("InputMap already has action \"%s\".", String(p_action)));
+	data->input_map[p_action] = Action();
+	data->input_map[p_action].id = data->last_id;
+	data->input_map[p_action].deadzone = p_deadzone;
+	data->last_id++;
+}
+
+void InputMap::erase_action(const String& p_action)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
+
+	data->input_map.erase(p_action);
+}
+
+List<InputEvent>::Element* InputMap::_find_event(Action& p_action, const InputEvent& p_event,
+	bool p_exact_match, bool* r_pressed, float* r_strength, float* r_raw_strength,
+	int* r_event_index)
+{
+	ERR_FAIL_COND_V(p_event.is_null(), nullptr);
+
+	int i = 0;
+	for (List<InputEvent>::Element* E = p_action.inputs.front(); E; E = E->next()) {
+		int device = E->get().get_device();
+		if (device == ALL_DEVICES || device == p_event.get_device()) {
+			if (E->get().action_match(
+					p_event, p_exact_match, p_action.deadzone, r_pressed, r_strength,
+					r_raw_strength)) {
+				if (r_event_index) {
+					*r_event_index = i;
+				}
+				return E;
+			}
+		}
+		i++;
+	}
+
+	return nullptr;
+}
+
+bool InputMap::has_action(const String& p_action)
+{
+	return data != nullptr && data->input_map.has(p_action);
+}
+
+String InputMap::get_action_description(const String& p_action)
+{
+	(void)p_action;
+	return String();
+}
+
+float InputMap::action_get_deadzone(const String& p_action)
+{
+	ERR_FAIL_NULL_V(data, 0.0f);
+	ERR_FAIL_COND_V_MSG(!data->input_map.has(p_action), 0.0f, suggest_actions(p_action));
+
+	return data->input_map[p_action].deadzone;
+}
+
+void InputMap::action_set_deadzone(const String& p_action, float p_deadzone)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
+
+	data->input_map[p_action].deadzone = p_deadzone;
+}
+
+void InputMap::action_add_event(const String& p_action, const InputEvent& p_event)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND(p_event.is_null());
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
+	if (_find_event(data->input_map[p_action], p_event, true)) {
+		return; // Already added.
+	}
+
+	InputEvent ev = p_event;
+	// Normalize legacy device IDs: before the device ID change,
+	// keyboard and mouse events defaulted to device=0.
+	if (ev.device == 0) {
+		switch (ev.type) {
+		case InputEventType::KEY:
+			ev.device = InputEvent::DEVICE_ID_KEYBOARD;
+			break;
+		case InputEventType::MOUSE_BUTTON:
+		case InputEventType::MOUSE_MOTION:
+			ev.device = InputEvent::DEVICE_ID_MOUSE;
+			break;
+		default:
+			break;
+		}
+	}
+
+	data->input_map[p_action].inputs.push_back(ev);
+}
+
+bool InputMap::action_has_event(const String& p_action, const InputEvent& p_event)
+{
+	ERR_FAIL_NULL_V(data, false);
+	ERR_FAIL_COND_V_MSG(!data->input_map.has(p_action), false, suggest_actions(p_action));
+	return (_find_event(data->input_map[p_action], p_event, true) != nullptr);
+}
+
+void InputMap::action_erase_event(const String& p_action, const InputEvent& p_event)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
+
+	List<InputEvent>::Element* E = _find_event(data->input_map[p_action], p_event, true);
+	if (E) {
+		data->input_map[p_action].inputs.erase(E);
+
+		if (Input::is_action_pressed(p_action)) {
+			Input::action_release(p_action);
+		}
+	}
+}
+
+void InputMap::action_erase_events(const String& p_action)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_COND_MSG(!data->input_map.has(p_action), suggest_actions(p_action));
+
+	if (Input::is_action_pressed(p_action)) {
+		Input::action_release(p_action);
+	}
+
+	data->input_map[p_action].inputs.clear();
+}
+
+const List<InputEvent>* InputMap::action_get_events(const String& p_action)
+{
+	ERR_FAIL_NULL_V(data, nullptr);
+	HashMap<String, Action>::Iterator E = data->input_map.find(p_action);
+	if (!E) {
+		return nullptr;
+	}
+
+	return &E->value.inputs;
+}
+
+bool InputMap::event_is_action(
+	const InputEvent& p_event, const String& p_action, bool p_exact_match)
+{
+	return event_get_action_status(p_event, p_action, p_exact_match);
+}
+
+int InputMap::event_get_index(
+	const InputEvent& p_event, const String& p_action, bool p_exact_match)
+{
+	int index = -1;
+	bool valid = event_get_action_status(
+		p_event, p_action, p_exact_match, nullptr, nullptr, nullptr, &index);
+	return valid ? index : -1;
+}
+
+bool InputMap::event_get_action_status(const InputEvent& p_event, const String& p_action,
+	bool p_exact_match, bool* r_pressed, float* r_strength, float* r_raw_strength,
+	int* r_event_index)
+{
+	ERR_FAIL_NULL_V(data, false);
+	if (p_event.is_null()) {
+		return false;
+	}
+	HashMap<String, Action>::Iterator E = data->input_map.find(p_action);
+	ERR_FAIL_COND_V_MSG(!E, false, suggest_actions(p_action));
+
+	if (p_event.type == InputEventType::ACTION) {
+		if (p_event.action.action == p_action) {
+			if (r_pressed) {
+				*r_pressed = p_event.is_pressed();
+			}
+			if (r_strength) {
+				*r_strength = p_event.action.strength;
+			}
+			if (r_raw_strength) {
+				*r_raw_strength = p_event.action.strength;
+			}
+			if (r_event_index) {
+				*r_event_index = p_event.action.event_index;
+			}
+			return true;
+		}
+	}
+
+	const Action& action = E->value;
+	int i = 0;
+	for (const InputEvent& e : action.inputs) {
+		if (e.is_null()) {
+			i++;
+			continue;
+		}
+
+		bool pressed = false;
+		float strength = 0.0f;
+		float raw_strength = 0.0f;
+
+		if (e.action_match(
+				p_event, p_exact_match, action.deadzone, &pressed, &strength, &raw_strength)) {
+			if (r_pressed) {
+				*r_pressed = pressed;
+			}
+			if (r_strength) {
+				*r_strength = strength;
+			}
+			if (r_raw_strength) {
+				*r_raw_strength = raw_strength;
+			}
+			if (r_event_index) {
+				*r_event_index = i;
+			}
+			return true;
+		}
+		i++;
+	}
+
+	return false;
+}
+
+const HashMap<String, InputMap::Action>& InputMap::get_action_map()
+{
+	static const HashMap<String, Action> _empty_action_map;
+	ERR_FAIL_NULL_V(data, _empty_action_map);
+	return data->input_map;
+}
+
+struct _BuiltinActionDisplayName
+{
+	const char* name;
+	const char* display_name;
+};
+
+static const _BuiltinActionDisplayName _builtin_action_display_names[] = {
+	/* clang-format off */
+	{ "ui_accept",                                     TTRC("Accept") },
+	{ "ui_select",                                     TTRC("Select") },
+	{ "ui_cancel",                                     TTRC("Cancel") },
+	{ "ui_close_dialog",                               TTRC("Close Dialog") },
+	{ "ui_focus_next",                                 TTRC("Focus Next") },
+	{ "ui_focus_prev",                                 TTRC("Focus Prev") },
+	{ "ui_left",                                       TTRC("Left") },
+	{ "ui_right",                                      TTRC("Right") },
+	{ "ui_up",                                         TTRC("Up") },
+	{ "ui_down",                                       TTRC("Down") },
+	{ "ui_page_up",                                    TTRC("Page Up") },
+	{ "ui_page_down",                                  TTRC("Page Down") },
+	{ "ui_home",                                       TTRC("Home") },
+	{ "ui_end",                                        TTRC("End") },
+	{ "ui_cut",                                        TTRC("Cut") },
+	{ "ui_copy",                                       TTRC("Copy") },
+	{ "ui_paste",                                      TTRC("Paste") },
+	{ "ui_focus_mode",                                 TTRC("Toggle Tab Focus Mode") },
+	{ "ui_undo",                                       TTRC("Undo") },
+	{ "ui_redo",                                       TTRC("Redo") },
+	{ "ui_text_completion_query",                      TTRC("Completion Query") },
+	{ "ui_text_newline",                               TTRC("New Line") },
+	{ "ui_text_newline_blank",                         TTRC("New Blank Line") },
+	{ "ui_text_newline_above",                         TTRC("New Line Above") },
+	{ "ui_text_indent",                                TTRC("Indent") },
+	{ "ui_text_dedent",                                TTRC("Dedent") },
+	{ "ui_text_backspace",                             TTRC("Backspace") },
+	{ "ui_text_backspace_word",                        TTRC("Backspace Word") },
+	{ "ui_text_backspace_all_to_left",                 TTRC("Backspace all to Left") },
+	{ "ui_text_delete",                                TTRC("Delete") },
+	{ "ui_text_delete_word",                           TTRC("Delete Word") },
+	{ "ui_text_delete_all_to_right",                   TTRC("Delete all to Right") },
+	{ "ui_text_caret_left",                            TTRC("Caret Left") },
+	{ "ui_text_caret_word_left",                       TTRC("Caret Word Left") },
+	{ "ui_text_caret_right",                           TTRC("Caret Right") },
+	{ "ui_text_caret_word_right",                      TTRC("Caret Word Right") },
+	{ "ui_text_caret_up",                              TTRC("Caret Up") },
+	{ "ui_text_caret_down",                            TTRC("Caret Down") },
+	{ "ui_text_caret_line_start",                      TTRC("Caret Line Start") },
+	{ "ui_text_caret_line_end",                        TTRC("Caret Line End") },
+	{ "ui_text_caret_page_up",                         TTRC("Caret Page Up") },
+	{ "ui_text_caret_page_down",                       TTRC("Caret Page Down") },
+	{ "ui_text_caret_document_start",                  TTRC("Caret Document Start") },
+	{ "ui_text_caret_document_end",                    TTRC("Caret Document End") },
+	{ "ui_text_caret_add_below",                       TTRC("Caret Add Below") },
+	{ "ui_text_caret_add_above",                       TTRC("Caret Add Above") },
+	{ "ui_text_scroll_up",                             TTRC("Scroll Up") },
+	{ "ui_text_scroll_down",                           TTRC("Scroll Down") },
+	{ "ui_text_select_all",                            TTRC("Select All") },
+	{ "ui_text_select_word_under_caret",               TTRC("Select Word Under Caret") },
+	{ "ui_text_add_selection_for_next_occurrence",     TTRC("Add Selection for Next Occurrence") },
+	{ "ui_text_skip_selection_for_next_occurrence",    TTRC("Skip Selection for Next Occurrence") },
+	{ "ui_text_clear_carets_and_selection",            TTRC("Clear Carets and Selection") },
+	{ "ui_text_toggle_insert_mode",                    TTRC("Toggle Insert Mode") },
+	{ "ui_text_submit",                                TTRC("Submit Text") },
+	{ "ui_graph_duplicate",                            TTRC("Duplicate Nodes") },
+	{ "ui_graph_delete",                               TTRC("Delete Nodes") },
+	{ "ui_graph_follow_left",                          TTRC("Follow Input Port Connection") },
+	{ "ui_graph_follow_right",                         TTRC("Follow Output Port Connection") },
+	{ "ui_filedialog_delete",                          TTRC("Delete") },
+	{ "ui_filedialog_up_one_level",                    TTRC("Go Up One Level") },
+	{ "ui_filedialog_refresh",                         TTRC("Refresh") },
+	{ "ui_filedialog_show_hidden",                     TTRC("Show Hidden") },
+	{ "ui_filedialog_find",                            TTRC("Find") },
+	{ "ui_filedialog_focus_path",                      TTRC("Focus Path") },
+	{ "ui_swap_input_direction",                       TTRC("Swap Input Direction") },
+	{ "ui_unicode_start",                              TTRC("Start Unicode Character Input") },
+	{ "ui_colorpicker_delete_preset",                  TTRC("ColorPicker: Delete Preset") },
+	{ "ui_accessibility_drag_and_drop",                TTRC("Accessibility: Keyboard Drag and Drop") },
+	{ "ui_toggle_fullscreen",                          TTRC("Toggle Fullscreen") },
+	{ "",                                              ""}
+	/* clang-format on */
+};
+
+String InputMap::get_builtin_display_name(const String& p_name)
+{
+	const String name = p_name.get_slicec('.', 0);
+	constexpr int len = std_size(_builtin_action_display_names);
+	for (int i = 0; i < len; i++) {
+		if (_builtin_action_display_names[i].name == name) {
+			return _builtin_action_display_names[i].display_name;
+		}
+	}
+
+	return p_name;
+}
+
+const HashMap<String, List<InputEvent>>& InputMap::get_builtins()
+{
+	static const HashMap<String, List<InputEvent>> _empty_builtin_map;
+	ERR_FAIL_NULL_V(data, _empty_builtin_map);
+
+	HashMap<String, List<InputEvent>>& default_builtin_cache = data->default_builtin_cache;
+
+	// Return cache if it has already been built.
+	if (default_builtin_cache.size()) {
+		return default_builtin_cache;
+	}
+
+	List<InputEvent> inputs;
+	inputs.push_back(InputEvent::make_key(Key::ENTER));
+	inputs.push_back(InputEvent::make_key(Key::KP_ENTER));
+	inputs.push_back(InputEvent::make_key(Key::SPACE));
+	default_builtin_cache.insert("ui_accept", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_joypad_button(JoyButton::Y));
+	inputs.push_back(InputEvent::make_key(Key::SPACE));
+	default_builtin_cache.insert("ui_select", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::ESCAPE));
+	default_builtin_cache.insert("ui_cancel", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::ESCAPE));
+	default_builtin_cache.insert("ui_close_dialog", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::W | KeyModifierMask::META));
+	inputs.push_back(InputEvent::make_key(Key::ESCAPE));
+	default_builtin_cache.insert("ui_close_dialog.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::TAB));
+	default_builtin_cache.insert("ui_focus_next", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::TAB | KeyModifierMask::SHIFT));
+	default_builtin_cache.insert("ui_focus_prev", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::LEFT));
+	inputs.push_back(InputEvent::make_joypad_button(JoyButton::DPAD_LEFT));
+	inputs.push_back(InputEvent::make_joypad_motion(JoyAxis::LEFT_X, -1.0));
+	default_builtin_cache.insert("ui_left", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::RIGHT));
+	inputs.push_back(InputEvent::make_joypad_button(JoyButton::DPAD_RIGHT));
+	inputs.push_back(InputEvent::make_joypad_motion(JoyAxis::LEFT_X, 1.0));
+	default_builtin_cache.insert("ui_right", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::UP));
+	inputs.push_back(InputEvent::make_joypad_button(JoyButton::DPAD_UP));
+	inputs.push_back(InputEvent::make_joypad_motion(JoyAxis::LEFT_Y, -1.0));
+	default_builtin_cache.insert("ui_up", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::DOWN));
+	inputs.push_back(InputEvent::make_joypad_button(JoyButton::DPAD_DOWN));
+	inputs.push_back(InputEvent::make_joypad_motion(JoyAxis::LEFT_Y, 1.0));
+	default_builtin_cache.insert("ui_down", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::PAGEUP));
+	default_builtin_cache.insert("ui_page_up", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::PAGEDOWN));
+	default_builtin_cache.insert("ui_page_down", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::HOME));
+	default_builtin_cache.insert("ui_home", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::END));
+	default_builtin_cache.insert("ui_end", inputs);
+
+	inputs = List<InputEvent>();
+	default_builtin_cache.insert("ui_accessibility_drag_and_drop", inputs);
+
+	// ///// UI basic Shortcuts /////
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::X | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(Key::KEY_DELETE | KeyModifierMask::SHIFT));
+	default_builtin_cache.insert("ui_cut", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::C | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(Key::INSERT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_copy", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::M | KeyModifierMask::CTRL));
+	default_builtin_cache.insert("ui_focus_mode", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::V | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(Key::INSERT | KeyModifierMask::SHIFT));
+	default_builtin_cache.insert("ui_paste", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::Z | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_undo", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(
+		Key::Z | KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT));
+	inputs.push_back(InputEvent::make_key(Key::Y | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_redo", inputs);
+
+	// ///// UI Text Input Shortcuts /////
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::SPACE | KeyModifierMask::CTRL));
+	default_builtin_cache.insert("ui_text_completion_query", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::TAB));
+	inputs.push_back(InputEvent::make_key(Key::ENTER));
+	inputs.push_back(InputEvent::make_key(Key::KP_ENTER));
+	default_builtin_cache.insert("ui_text_completion_accept", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(KeyModifierMask::SHIFT | Key::TAB));
+	inputs.push_back(InputEvent::make_key(KeyModifierMask::SHIFT | Key::ENTER));
+	inputs.push_back(InputEvent::make_key(KeyModifierMask::SHIFT | Key::KP_ENTER));
+	default_builtin_cache.insert("ui_text_completion_replace", inputs);
+
+	// Newlines
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::ENTER));
+	inputs.push_back(InputEvent::make_key(Key::KP_ENTER));
+	inputs.push_back(InputEvent::make_key(KeyModifierMask::SHIFT | Key::ENTER));
+	inputs.push_back(InputEvent::make_key(KeyModifierMask::SHIFT | Key::KP_ENTER));
+	default_builtin_cache.insert("ui_text_newline", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::ENTER | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(Key::KP_ENTER | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_newline_blank", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(
+		Key::ENTER | KeyModifierMask::SHIFT | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(
+		Key::KP_ENTER | KeyModifierMask::SHIFT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_newline_above", inputs);
+
+	// Indentation
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::TAB));
+	default_builtin_cache.insert("ui_text_indent", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::TAB | KeyModifierMask::SHIFT));
+	default_builtin_cache.insert("ui_text_dedent", inputs);
+
+	// Text Backspace and Delete
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::BACKSPACE));
+	inputs.push_back(InputEvent::make_key(Key::BACKSPACE | KeyModifierMask::SHIFT));
+	default_builtin_cache.insert("ui_text_backspace", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(
+		InputEvent::make_key(Key::BACKSPACE | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_backspace_word", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::BACKSPACE | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_text_backspace_word.macos", inputs);
+
+	inputs = List<InputEvent>();
+	default_builtin_cache.insert("ui_text_backspace_all_to_left", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(
+		InputEvent::make_key(Key::BACKSPACE | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_backspace_all_to_left.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::KEY_DELETE));
+	default_builtin_cache.insert("ui_text_delete", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(
+		InputEvent::make_key(Key::KEY_DELETE | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_delete_word", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::KEY_DELETE | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_text_delete_word.macos", inputs);
+
+	inputs = List<InputEvent>();
+	default_builtin_cache.insert("ui_text_delete_all_to_right", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(
+		InputEvent::make_key(Key::KEY_DELETE | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_delete_all_to_right.macos", inputs);
+
+	// Text Caret Movement Left/Right
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::LEFT));
+	default_builtin_cache.insert("ui_text_caret_left", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::LEFT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_word_left", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::LEFT | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_text_caret_word_left.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::RIGHT));
+	default_builtin_cache.insert("ui_text_caret_right", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::RIGHT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_word_right", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::RIGHT | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_text_caret_word_right.macos", inputs);
+
+	// Text Caret Movement Up/Down
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::UP));
+	default_builtin_cache.insert("ui_text_caret_up", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::DOWN));
+	default_builtin_cache.insert("ui_text_caret_down", inputs);
+
+	// Text Caret Movement Line Start/End
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::HOME));
+	default_builtin_cache.insert("ui_text_caret_line_start", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::A | KeyModifierMask::CTRL));
+	inputs.push_back(InputEvent::make_key(Key::LEFT | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(Key::HOME));
+	default_builtin_cache.insert("ui_text_caret_line_start.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::END));
+	default_builtin_cache.insert("ui_text_caret_line_end", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::E | KeyModifierMask::CTRL));
+	inputs.push_back(InputEvent::make_key(Key::RIGHT | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(Key::END));
+	default_builtin_cache.insert("ui_text_caret_line_end.macos", inputs);
+
+	// Text Caret Movement Page Up/Down
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::PAGEUP));
+	default_builtin_cache.insert("ui_text_caret_page_up", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::PAGEDOWN));
+	default_builtin_cache.insert("ui_text_caret_page_down", inputs);
+
+	// Text Caret Movement Document Start/End
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::HOME | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_document_start", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::UP | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(Key::HOME | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_document_start.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::END | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_document_end", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::DOWN | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(Key::END | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_document_end.macos", inputs);
+
+	// Text Caret Addition Below/Above
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(
+		Key::DOWN | KeyModifierMask::SHIFT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_add_below", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(
+		Key::L | KeyModifierMask::SHIFT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_add_below.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(
+		Key::UP | KeyModifierMask::SHIFT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_add_above", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(
+		Key::O | KeyModifierMask::SHIFT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_caret_add_above.macos", inputs);
+
+	// Text Scrolling
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::UP | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_scroll_up", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(
+		Key::UP | KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_text_scroll_up.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::DOWN | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_scroll_down", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(
+		Key::DOWN | KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_text_scroll_down.macos", inputs);
+
+	// Text Misc
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::A | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_select_all", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::G | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_text_select_word_under_caret", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(
+		InputEvent::make_key(Key::G | KeyModifierMask::CTRL | KeyModifierMask::META));
+	default_builtin_cache.insert("ui_text_select_word_under_caret.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::D | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_text_add_selection_for_next_occurrence", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(
+		Key::D | KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_text_skip_selection_for_next_occurrence", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::ESCAPE));
+	default_builtin_cache.insert("ui_text_clear_carets_and_selection", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::INSERT));
+	default_builtin_cache.insert("ui_text_toggle_insert_mode", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::MENU));
+	default_builtin_cache.insert("ui_menu", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::ENTER));
+	inputs.push_back(InputEvent::make_key(Key::KP_ENTER));
+	default_builtin_cache.insert("ui_text_submit", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(
+		InputEvent::make_key(Key::U | KeyModifierMask::CTRL | KeyModifierMask::SHIFT));
+	default_builtin_cache.insert("ui_unicode_start", inputs);
+
+	// ///// UI Graph Shortcuts /////
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::D | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_graph_duplicate", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::KEY_DELETE));
+	default_builtin_cache.insert("ui_graph_delete", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::LEFT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_graph_follow_left", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::LEFT | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_graph_follow_left.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::RIGHT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_graph_follow_right", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::RIGHT | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_graph_follow_right.macos", inputs);
+
+	// ///// UI File Dialog Shortcuts /////
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::KEY_DELETE));
+	default_builtin_cache.insert("ui_filedialog_delete", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::BACKSPACE));
+	default_builtin_cache.insert("ui_filedialog_up_one_level", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::F5));
+	default_builtin_cache.insert("ui_filedialog_refresh", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::H));
+	default_builtin_cache.insert("ui_filedialog_show_hidden", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::F | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_filedialog_find", inputs);
+
+	inputs = List<InputEvent>();
+	// Ctrl + L (matches most Windows/Linux file managers' "focus on path bar" shortcut,
+	// plus macOS Safari's "focus on address bar" shortcut).
+	inputs.push_back(InputEvent::make_key(Key::L | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_filedialog_focus_path", inputs);
+
+	inputs = List<InputEvent>();
+	// Cmd + Shift + G (matches Finder's "Go To" shortcut).
+	inputs.push_back(InputEvent::make_key(Key::G | KeyModifierMask::CMD_OR_CTRL));
+	inputs.push_back(InputEvent::make_key(Key::L | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_filedialog_focus_path.macos", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(
+		InputEvent::make_key(Key::QUOTELEFT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_swap_input_direction", inputs);
+
+	// ///// UI ColorPicker Shortcuts /////
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_joypad_button(JoyButton::X));
+	inputs.push_back(InputEvent::make_key(Key::KEY_DELETE));
+	default_builtin_cache.insert("ui_colorpicker_delete_preset", inputs);
+
+	// ///// Miscellaneous Shortcuts /////
+	inputs = List<InputEvent>();
+	inputs.push_back(InputEvent::make_key(Key::ENTER | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_toggle_fullscreen", inputs);
+
+	inputs = List<InputEvent>();
+	inputs.push_back(
+		InputEvent::make_key(Key::F | KeyModifierMask::CTRL | KeyModifierMask::META));
+	inputs.push_back(InputEvent::make_key(Key::ENTER | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_toggle_fullscreen.macos", inputs);
+
+	return default_builtin_cache;
+}
+
+const HashMap<String, List<InputEvent>>&
+InputMap::get_builtins_with_feature_overrides_applied()
+{
+	static const HashMap<String, List<InputEvent>> _empty_builtin_map;
+	ERR_FAIL_NULL_V(data, _empty_builtin_map);
+
+	HashMap<String, List<InputEvent>>& default_builtin_with_overrides_cache =
+		data->default_builtin_with_overrides_cache;
+
+	if (default_builtin_with_overrides_cache.size() > 0) {
+		return default_builtin_with_overrides_cache;
+	}
+
+	const HashMap<String, List<InputEvent>>& builtins = get_builtins();
+
+	// Get a list of all built in inputs which are valid overrides for the OS
+	// Key = builtin name (e.g. ui_accept)
+	// Value = override/feature names (e.g. macos, if it was defined as "ui_accept.macos" and the
+	// platform supports that feature)
+	HashMap<String, Vector<String>> builtins_with_overrides;
+	for (const KeyValue<String, List<InputEvent>>& E : builtins) {
+		String fullname = E.key;
+
+		const String& name = fullname.get_slicec('.', 0);
+		String override_for =
+			fullname.get_slice_count(".") > 1 ? fullname.get_slicec('.', 1) : String();
+
+		if (!override_for.is_empty() && OS::has_feature(override_for)) {
+			builtins_with_overrides[name].push_back(override_for);
+		}
+	}
+
+	for (const KeyValue<String, List<InputEvent>>& E : builtins) {
+		String fullname = E.key;
+
+		const String& name = fullname.get_slicec('.', 0);
+		String override_for =
+			fullname.get_slice_count(".") > 1 ? fullname.get_slicec('.', 1) : String();
+
+		if (builtins_with_overrides.has(name) && override_for.is_empty()) {
+			// Builtin has an override but this particular one is not an override, so skip.
+			continue;
+		}
+
+		if (!override_for.is_empty() && !OS::has_feature(override_for)) {
+			// OS does not support this override - skip.
+			continue;
+		}
+
+		default_builtin_with_overrides_cache.insert(name, E.value);
+	}
+
+	return default_builtin_with_overrides_cache;
+}
+
+void InputMap::load_default()
+{
+	HashMap<String, List<InputEvent>> builtins(get_builtins_with_feature_overrides_applied());
+
+	for (const KeyValue<String, List<InputEvent>>& E : builtins) {
+		String name = E.key;
+		add_action(name);
+		for (const InputEvent& event : E.value) {
+			action_add_event(name, event);
+		}
+	}
+}
+
+void InputMap::load_from_project_settings() {}
+
+// ==========================================================================
+// shortcut.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "shortcut.h"
+
+void Shortcut::set_events(const Vector<InputEvent>& p_events)
+{
+	events = p_events;
+	emit_changed();
+}
+
+const Vector<InputEvent>& Shortcut::get_events() const { return events; }
+
+void Shortcut::set_events_list(const List<InputEvent>* p_events)
+{
+	events.clear();
+	if (!p_events) {
+		return;
+	}
+	for (const InputEvent& ie : *p_events) {
+		events.push_back(ie);
+	}
+}
+
+bool Shortcut::matches_event(const InputEvent& p_event) const
+{
+	if (p_event.type == InputEventType::SHORTCUT && p_event.shortcut.shortcut == this) {
+		return true;
+	}
+
+	for (int i = 0; i < events.size(); i++) {
+		const InputEvent& ie = events[i];
+		if (ie.is_valid() && ie.is_match(p_event)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+String Shortcut::get_as_text() const
+{
+	for (int i = 0; i < events.size(); i++) {
+		const InputEvent& ie = events[i];
+		if (ie.is_valid()) {
+			return ie.as_text();
+		}
+	}
+
+	return "None";
+}
+
+Ref<Shortcut> Shortcut::make_from_action(const String& p_action)
+{
+	InputEvent event = InputEvent::make_action(p_action);
+
+	Ref<Shortcut> shortcut;
+	shortcut.instantiate();
+	shortcut->set_events({event});
+	return shortcut;
+}
+
+bool Shortcut::has_valid_event() const
+{
+	for (int i = 0; i < events.size(); i++) {
+		if (events[i].is_valid()) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool Shortcut::is_event_array_equal(
+	const Vector<InputEvent>& p_event_array1, const Vector<InputEvent>& p_event_array2)
+{
+	if (p_event_array1.size() != p_event_array2.size()) {
+		return false;
+	}
+	for (int i = 0; i < p_event_array1.size(); i++) {
+		if (!p_event_array1[i].is_match(p_event_array2[i], true)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// ==========================================================================
+// input_event_codec.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "input_event_codec.h"
+
+#include "core/input/input.h"
+#include "core/io/marshalls.h"
+
+enum class BoolShift : uint8_t
+{
+	SHIFT = 0,
+	CTRL,
+	ALT,
+	META,
+	ECHO,
+	PRESSED,
+	DOUBLE_CLICK,
+	PEN_INVERTED,
+};
+
+inline uint8_t operator<<(uint8_t p_left, BoolShift p_right)
+{
+	return p_left << static_cast<uint8_t>(p_right);
+}
+
+static uint8_t encode_key_modifier_state(const InputEvent& p_event)
+{
+	uint8_t bools = 0;
+	bools |= (uint8_t)p_event.is_shift_pressed() << BoolShift::SHIFT;
+	bools |= (uint8_t)p_event.is_ctrl_pressed() << BoolShift::CTRL;
+	bools |= (uint8_t)p_event.is_alt_pressed() << BoolShift::ALT;
+	bools |= (uint8_t)p_event.is_meta_pressed() << BoolShift::META;
+	return bools;
+}
+
+static void decode_key_modifier_state(uint8_t p_bools, InputEvent& r_event)
+{
+	r_event.set_shift_pressed(p_bools & (1 << BoolShift::SHIFT));
+	r_event.set_ctrl_pressed(p_bools & (1 << BoolShift::CTRL));
+	r_event.set_alt_pressed(p_bools & (1 << BoolShift::ALT));
+	r_event.set_meta_pressed(p_bools & (1 << BoolShift::META));
+}
+
+static int encode_vector2(const Vector2& p_vector, uint8_t* p_data)
+{
+	p_data += encode_float(p_vector.x, p_data);
+	encode_float(p_vector.y, p_data);
+	return sizeof(float) * 2;
+}
+
+static const uint8_t* decode_vector2(Vector2& r_vector, const uint8_t* p_data)
+{
+	r_vector.x = decode_float(p_data);
+	p_data += sizeof(float);
+	r_vector.y = decode_float(p_data);
+	p_data += sizeof(float);
+	return p_data;
+}
+
+void encode_input_event_key(const InputEvent& p_event, Vector<uint8_t>& r_data)
+{
+	r_data.resize(19);
+
+	uint8_t* data = r_data.ptrw();
+	*data = (uint8_t)InputEventType::KEY;
+	data++;
+	uint8_t bools = encode_key_modifier_state(p_event);
+	bools |= (uint8_t)p_event.key.echo << BoolShift::ECHO;
+	bools |= (uint8_t)p_event.is_pressed() << BoolShift::PRESSED;
+	*data = bools;
+	data++;
+	data += encode_uint32((uint32_t)p_event.key.keycode, data);
+	data += encode_uint32((uint32_t)p_event.key.physical_keycode, data);
+	data += encode_uint32((uint32_t)p_event.key.key_label, data);
+	data += encode_uint32(p_event.key.unicode, data);
+	*data = (uint8_t)p_event.key.location;
+	data++;
+
+	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
+}
+
+static Error decode_input_event_key(const Vector<uint8_t>& p_data, InputEvent& r_event)
+{
+	const uint8_t* data = p_data.ptr();
+	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::KEY);
+	data++;
+
+	r_event = InputEvent::make_key();
+	uint8_t bools = *data;
+	data++;
+	decode_key_modifier_state(bools, r_event);
+	r_event.key.echo = (bools & (1 << BoolShift::ECHO)) != 0;
+	r_event.pressed = (bools & (1 << BoolShift::PRESSED)) != 0;
+
+	r_event.key.keycode = (Key)decode_uint32(data);
+	data += sizeof(uint32_t);
+	r_event.key.physical_keycode = (Key)decode_uint32(data);
+	data += sizeof(uint32_t);
+	r_event.key.key_label = (Key)decode_uint32(data);
+	data += sizeof(uint32_t);
+	r_event.key.unicode = (char32_t)decode_uint32(data);
+	data += sizeof(uint32_t);
+	r_event.key.location = (KeyLocation)*data;
+
+	return OK;
+}
+
+void encode_input_event_mouse_button(const InputEvent& p_event, Vector<uint8_t>& r_data)
+{
+	r_data.resize(12);
+
+	uint8_t* data = r_data.ptrw();
+	*data = (uint8_t)InputEventType::MOUSE_BUTTON;
+	data++;
+
+	uint8_t bools = encode_key_modifier_state(p_event);
+	bools |= (uint8_t)p_event.is_pressed() << BoolShift::PRESSED;
+	bools |= (uint8_t)p_event.mouse_button.double_click << BoolShift::DOUBLE_CLICK;
+	*data = bools;
+	data++;
+
+	*data = (uint8_t)p_event.mouse_button.button_index;
+	data++;
+
+	data += encode_vector2(p_event.mouse_button.position, data);
+	*data = (uint8_t)p_event.mouse_button.button_mask;
+	data++;
+
+	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
+}
+
+static Error decode_input_event_mouse_button(const Vector<uint8_t>& p_data, InputEvent& r_event)
+{
+	const uint8_t* data = p_data.ptr();
+	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MOUSE_BUTTON);
+	data++;
+
+	r_event = InputEvent::make_mouse_button();
+	uint8_t bools = *data;
+	data++;
+	decode_key_modifier_state(bools, r_event);
+	r_event.pressed = (bools & (1 << BoolShift::PRESSED)) != 0;
+	r_event.mouse_button.double_click = (bools & (1 << BoolShift::DOUBLE_CLICK)) != 0;
+
+	r_event.mouse_button.button_index = (MouseButton)*data;
+	data++;
+
+	Vector2 pos;
+	data = decode_vector2(pos, data);
+	r_event.mouse_button.position = pos;
+	r_event.mouse_button.global_position = pos;
+	r_event.mouse_button.button_mask = (uint32_t)*data;
+
+	return OK;
+}
+
+void encode_input_event_mouse_motion(const InputEvent& p_event, Vector<uint8_t>& r_data)
+{
+	r_data.resize(31);
+
+	uint8_t* data = r_data.ptrw();
+	*data = (uint8_t)InputEventType::MOUSE_MOTION;
+	data++;
+
+	uint8_t bools = encode_key_modifier_state(p_event);
+	bools |= (uint8_t)p_event.mouse_motion.pen_inverted << BoolShift::PEN_INVERTED;
+	*data = bools;
+	data++;
+
+	data += encode_vector2(p_event.mouse_motion.position, data);
+	data += encode_float(p_event.mouse_motion.pressure, data);
+	data += encode_vector2(p_event.mouse_motion.tilt, data);
+	data += encode_vector2(p_event.mouse_motion.relative, data);
+	*data = (uint8_t)p_event.mouse_motion.button_mask;
+	data++;
+
+	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
+}
+
+static void decode_input_event_mouse_motion(const Vector<uint8_t>& p_data, InputEvent& r_event)
+{
+	const uint8_t* data = p_data.ptr();
+	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MOUSE_MOTION);
+	data++;
+
+	r_event = InputEvent::make_mouse_motion();
+	uint8_t bools = *data;
+	data++;
+	decode_key_modifier_state(bools, r_event);
+	r_event.mouse_motion.pen_inverted = (bools & (1 << BoolShift::PEN_INVERTED)) != 0;
+
+	{
+		Vector2 pos;
+		data = decode_vector2(pos, data);
+		r_event.mouse_motion.position = pos;
+		r_event.mouse_motion.global_position = pos;
+	}
+	r_event.mouse_motion.pressure = decode_float(data);
+	data += sizeof(float);
+	data = decode_vector2(r_event.mouse_motion.tilt, data);
+	r_event.mouse_motion.velocity = Input::get_last_mouse_velocity();
+	r_event.mouse_motion.screen_velocity = Input::get_last_mouse_screen_velocity();
+	{
+		Vector2 relative;
+		data = decode_vector2(relative, data);
+		r_event.mouse_motion.relative = relative;
+		r_event.mouse_motion.screen_relative = relative;
+	}
+	r_event.mouse_motion.button_mask = (uint32_t)*data;
+	data++;
+
+	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
+}
+
+void encode_input_event_joypad_button(const InputEvent& p_event, Vector<uint8_t>& r_data)
+{
+	r_data.resize(11);
+
+	uint8_t* data = r_data.ptrw();
+	*data = (uint8_t)InputEventType::JOY_BUTTON;
+	data++;
+
+	uint8_t bools = 0;
+	bools |= (uint8_t)p_event.is_pressed() << BoolShift::PRESSED;
+	*data = bools;
+	data++;
+
+	data += encode_uint64(p_event.device, data);
+	*data = (uint8_t)p_event.joy_button.button_index;
+	data++;
+
+	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
+}
+
+static void decode_input_event_joypad_button(const Vector<uint8_t>& p_data, InputEvent& r_event)
+{
+	const uint8_t* data = p_data.ptr();
+	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::JOY_BUTTON);
+	data++;
+
+	r_event = InputEvent::make_joypad_button();
+	uint8_t bools = *data;
+	data++;
+	r_event.pressed = (bools & (1 << BoolShift::PRESSED)) != 0;
+	r_event.device = decode_uint64(data);
+	data += sizeof(uint64_t);
+	r_event.joy_button.button_index = (JoyButton)*data;
+	data++;
+
+	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
+}
+
+void encode_input_event_joypad_motion(const InputEvent& p_event, Vector<uint8_t>& r_data)
+{
+	r_data.resize(14);
+
+	uint8_t* data = r_data.ptrw();
+	*data = (uint8_t)InputEventType::JOY_MOTION;
+	data++;
+
+	data += encode_uint64(p_event.device, data);
+	*data = (uint8_t)p_event.joy_motion.axis;
+	data++;
+	data += encode_float(p_event.joy_motion.axis_value, data);
+
+	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
+}
+
+static void decode_input_event_joypad_motion(const Vector<uint8_t>& p_data, InputEvent& r_event)
+{
+	const uint8_t* data = p_data.ptr();
+	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::JOY_MOTION);
+	data++;
+
+	int dev = decode_uint64(data);
+	data += sizeof(uint64_t);
+	JoyAxis axis = (JoyAxis)*data;
+	data++;
+	float val = decode_float(data);
+	data += sizeof(float);
+
+	r_event = InputEvent::make_joypad_motion(axis, val, dev);
+
+	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
+}
+
+void encode_input_event_gesture_pan(const InputEvent& p_event, Vector<uint8_t>& r_data)
+{
+	r_data.resize(18);
+
+	uint8_t* data = r_data.ptrw();
+	*data = (uint8_t)InputEventType::PAN_GESTURE;
+	data++;
+
+	*data = encode_key_modifier_state(p_event);
+	data++;
+	data += encode_vector2(p_event.gesture.position, data);
+	data += encode_vector2(p_event.gesture.delta, data);
+
+	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
+}
+
+static void decode_input_event_gesture_pan(const Vector<uint8_t>& p_data, InputEvent& r_event)
+{
+	const uint8_t* data = p_data.ptr();
+	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::PAN_GESTURE);
+	data++;
+
+	r_event = InputEvent::make_pan_gesture();
+	uint8_t bools = *data;
+	data++;
+	decode_key_modifier_state(bools, r_event);
+
+	data = decode_vector2(r_event.gesture.position, data);
+	data = decode_vector2(r_event.gesture.delta, data);
+
+	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
+}
+
+void encode_input_event_gesture_magnify(const InputEvent& p_event, Vector<uint8_t>& r_data)
+{
+	r_data.resize(14);
+
+	uint8_t* data = r_data.ptrw();
+	*data = (uint8_t)InputEventType::MAGNIFY_GESTURE;
+	data++;
+
+	*data = encode_key_modifier_state(p_event);
+	data++;
+	data += encode_vector2(p_event.gesture.position, data);
+	data += encode_float(p_event.gesture.factor, data);
+
+	DEV_ASSERT(r_data.size() >= (data - r_data.ptrw()));
+}
+
+static void decode_input_event_gesture_magnify(const Vector<uint8_t>& p_data, InputEvent& r_event)
+{
+	const uint8_t* data = p_data.ptr();
+	DEV_ASSERT(static_cast<InputEventType>(*data) == InputEventType::MAGNIFY_GESTURE);
+	data++;
+
+	r_event = InputEvent::make_magnify_gesture();
+	uint8_t bools = *data;
+	data++;
+	decode_key_modifier_state(bools, r_event);
+
+	data = decode_vector2(r_event.gesture.position, data);
+	r_event.gesture.factor = decode_float(data);
+	data += sizeof(float);
+
+	DEV_ASSERT(p_data.size() >= (data - p_data.ptr()));
+}
+
+bool encode_input_event(const InputEvent& p_event, Vector<uint8_t>& r_data)
+{
+	switch (p_event.type) {
+	case InputEventType::KEY:
+		encode_input_event_key(p_event, r_data);
+		break;
+	case InputEventType::MOUSE_BUTTON:
+		encode_input_event_mouse_button(p_event, r_data);
+		break;
+	case InputEventType::MOUSE_MOTION:
+		encode_input_event_mouse_motion(p_event, r_data);
+		break;
+	case InputEventType::JOY_MOTION:
+		encode_input_event_joypad_motion(p_event, r_data);
+		break;
+	case InputEventType::JOY_BUTTON:
+		encode_input_event_joypad_button(p_event, r_data);
+		break;
+	case InputEventType::MAGNIFY_GESTURE:
+		encode_input_event_gesture_magnify(p_event, r_data);
+		break;
+	case InputEventType::PAN_GESTURE:
+		encode_input_event_gesture_pan(p_event, r_data);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+void decode_input_event(const Vector<uint8_t>& p_data, InputEvent& r_event)
+{
+	const uint8_t* data = p_data.ptr();
+
+	switch (static_cast<InputEventType>(*data)) {
+	case InputEventType::KEY:
+		decode_input_event_key(p_data, r_event);
+		break;
+	case InputEventType::MOUSE_BUTTON:
+		decode_input_event_mouse_button(p_data, r_event);
+		break;
+	case InputEventType::MOUSE_MOTION:
+		decode_input_event_mouse_motion(p_data, r_event);
+		break;
+	case InputEventType::JOY_BUTTON:
+		decode_input_event_joypad_button(p_data, r_event);
+		break;
+	case InputEventType::JOY_MOTION:
+		decode_input_event_joypad_motion(p_data, r_event);
+		break;
+	case InputEventType::PAN_GESTURE:
+		decode_input_event_gesture_pan(p_data, r_event);
+		break;
+	case InputEventType::MAGNIFY_GESTURE:
+		decode_input_event_gesture_magnify(p_data, r_event);
+		break;
+	default:
+		r_event = InputEvent();
+		WARN_PRINT(vformat("Unknown event type %d.", static_cast<int>(*data)));
+		break;
+	}
+}

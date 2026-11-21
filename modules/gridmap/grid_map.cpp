@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
+#include "register_types.h"
 #include "core/io/marshalls.h"
 #include "core/templates/a_hash_map.h"
 #include "grid_map.h"
@@ -870,4 +871,23 @@ void GridMap::navmesh_parse_init() {}
 
 void GridMap::_debug_update_octants() {}
 
+#ifndef _3D_DISABLED
 
+
+void initialize_gridmap_module(ModuleInitializationLevel p_level)
+{
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+#ifndef NAVIGATION_3D_DISABLED
+		GridMap::navmesh_parse_init();
+#endif // NAVIGATION_3D_DISABLED
+	}
+}
+
+void uninitialize_gridmap_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+
+#endif // _3D_DISABLED
