@@ -35,7 +35,7 @@
 #include "core/io/config_file.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/file_access_memory.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/io/json.h"
 #include "core/io/resource_loader.h"
 #include "core/io/stream_peer.h"

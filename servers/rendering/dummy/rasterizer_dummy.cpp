@@ -31,16 +31,326 @@
 
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 
+#include "core/config/project_settings.h"
+#include "core/io/image.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/dummy/rasterizer_canvas_dummy.h"
-#include "servers/rendering/dummy/rasterizer_scene_dummy.h"
-#include "servers/rendering/dummy/storage/material_storage.h"
-#include "servers/rendering/dummy/storage/particles_storage.h"
-#include "servers/rendering/dummy/storage/texture_storage.h"
-#include "servers/rendering/dummy/storage/utilities.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_scene_cull.h"
+#include "servers/rendering/storage/camera_attributes_storage.h"
 #include "servers/rendering/storage/particles_storage.h"
+
+/* LightStorage */
+
+void RendererDummy::LightStorage::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void RendererDummy::LightStorage::finalize()
+{
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
+bool RendererDummy::LightStorage::free(RID p_rid)
+{
+	if (owns_lightmap(p_rid)) {
+		lightmap_free(p_rid);
+		return true;
+	}
+	else if (owns_lightmap_instance(p_rid)) {
+		lightmap_instance_free(p_rid);
+		return true;
+	}
+
+	return false;
+}
+
+RID RendererDummy::LightStorage::lightmap_allocate()
+{
+	return _get_data()->lightmap_owner.allocate_rid();
+}
+
+void RendererDummy::LightStorage::lightmap_initialize(RID p_lightmap)
+{
+	_get_data()->lightmap_owner.initialize_rid(p_lightmap, Lightmap());
+}
+
+void RendererDummy::LightStorage::lightmap_free(RID p_rid)
+{
+	if (!data) {
+		return;
+	}
+	lightmap_set_textures(p_rid, RID(), false);
+	data->lightmap_owner.free(p_rid);
+}
+
+RID RendererDummy::LightStorage::lightmap_instance_create(RID p_lightmap)
+{
+	LightmapInstance li;
+	li.lightmap = p_lightmap;
+	return _get_data()->lightmap_instance_owner.make_rid(li);
+}
+
+void RendererDummy::LightStorage::lightmap_instance_free(RID p_lightmap)
+{
+	if (!data) {
+		return;
+	}
+	data->lightmap_instance_owner.free(p_lightmap);
+}
+
+/* MaterialStorage */
+
+void RendererDummy::MaterialStorage::global_shader_parameter_remove(const String& p_name)
+{
+	Data* d = _get_data();
+	if (!d->global_shader_variables.has(p_name)) {
+		return;
+	}
+
+	d->global_shader_variables.erase(p_name);
+}
+
+Vector<String> RendererDummy::MaterialStorage::global_shader_parameter_get_list()
+{
+	Data* d = _get_data();
+	Vector<String> names;
+	for (const KeyValue<String, RSE::GlobalShaderParameterType>& E : d->global_shader_variables) {
+		names.push_back(E.key);
+	}
+	names.sort();
+	return names;
+}
+
+RID RendererDummy::MaterialStorage::shader_allocate()
+{
+	return _get_data()->shader_owner.allocate_rid();
+}
+
+void RendererDummy::MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
+{
+	_get_data()->shader_owner.initialize_rid(p_rid, DummyShader());
+}
+
+void RendererDummy::MaterialStorage::shader_free(RID p_rid)
+{
+	if (!data) {
+		return;
+	}
+	DummyShader* shader = data->shader_owner.get_or_null(p_rid);
+	ERR_FAIL_NULL(shader);
+
+	data->shader_owner.free(p_rid);
+}
+
+void RendererDummy::MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
+{
+	Data* d = _get_data();
+	DummyShader* shader = d->shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL(shader);
+	if (p_code.is_empty()) {
+		return;
+	}
+
+	String mode_string = ShaderLanguage::get_shader_type(p_code);
+
+	RSE::ShaderMode new_mode;
+	if (mode_string == "canvas_item") {
+		new_mode = RSE::SHADER_CANVAS_ITEM;
+	}
+	else if (mode_string == "particles") {
+		new_mode = RSE::SHADER_PARTICLES;
+	}
+	else if (mode_string == "spatial") {
+		new_mode = RSE::SHADER_SPATIAL;
+	}
+	else if (mode_string == "sky") {
+		new_mode = RSE::SHADER_SKY;
+	}
+	else if (mode_string == "fog") {
+		new_mode = RSE::SHADER_FOG;
+	}
+	else if (mode_string == "texture_blit") {
+		new_mode = RSE::SHADER_TEXTURE_BLIT;
+	}
+	else {
+		new_mode = RSE::SHADER_MAX;
+		ERR_FAIL_MSG("Shader type " + mode_string + " not supported in Dummy renderer.");
+	}
+	ShaderCompiler::IdentifierActions actions;
+	actions.uniforms = &shader->uniforms;
+	ShaderCompiler::GeneratedCode gen_code;
+
+	Error err = d->dummy_compiler->compile(new_mode, p_code, &actions, "", gen_code);
+	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
+}
+
+RID RendererDummy::MaterialStorage::material_allocate()
+{
+	return _get_data()->material_owner.allocate_rid();
+}
+
+void RendererDummy::MaterialStorage::material_initialize(RID p_rid)
+{
+	_get_data()->material_owner.initialize_rid(p_rid, DummyMaterial());
+}
+
+void RendererDummy::MaterialStorage::material_free(RID p_rid)
+{
+	if (!data) {
+		return;
+	}
+	DummyMaterial* material = data->material_owner.get_or_null(p_rid);
+	ERR_FAIL_NULL(material);
+
+	data->material_owner.free(p_rid);
+}
+
+void RendererDummy::MaterialStorage::material_set_shader(RID p_material, RID p_shader)
+{
+	DummyMaterial* material = _get_data()->material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL(material);
+
+	material->shader = p_shader;
+}
+
+void RendererDummy::MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material)
+{
+	DummyMaterial* material = _get_data()->material_owner.get_or_null(p_material);
+	ERR_FAIL_NULL(material);
+
+	material->next_pass = p_next_material;
+}
+
+RSE::GlobalShaderParameterType RendererDummy::MaterialStorage::global_shader_parameter_get_type(
+	const String& p_name)
+{
+	return RSE::GLOBAL_VAR_TYPE_MAX;
+}
+
+void RendererDummy::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
+
+void RendererDummy::MaterialStorage::material_get_instance_shader_parameters(
+	RID p_material, List<InstanceShaderParam>* r_parameters)
+{
+}
+
+void RendererDummy::MaterialStorage::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+	if (!data->dummy_compiler) {
+		data->dummy_compiler = memnew(ShaderCompiler);
+		ShaderCompiler::DefaultIdentifierActions actions;
+		data->dummy_compiler->initialize(actions);
+	}
+}
+
+void RendererDummy::MaterialStorage::finalize()
+{
+	if (!data) {
+		return;
+	}
+	if (data->dummy_compiler) {
+		memdelete(data->dummy_compiler);
+		data->dummy_compiler = nullptr;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+/* Utilities */
+
+RSE::InstanceType RendererDummy::Utilities::get_base_type(RID p_rid)
+{
+	if (RendererDummy::MeshStorage::owns_mesh(p_rid)) {
+		return RSE::INSTANCE_MESH;
+	}
+	else if (RendererDummy::MeshStorage::owns_multimesh(p_rid)) {
+		return RSE::INSTANCE_MULTIMESH;
+	}
+	else if (RendererDummy::LightStorage::owns_lightmap(p_rid)) {
+		return RSE::INSTANCE_LIGHTMAP;
+	}
+	return RSE::INSTANCE_NONE;
+}
+
+bool RendererDummy::Utilities::free(RID p_rid)
+{
+	if (RendererDummy::LightStorage::free(p_rid)) {
+		return true;
+	}
+	else if (RendererDummy::TextureStorage::owns_texture(p_rid)) {
+		RendererDummy::TextureStorage::texture_free(p_rid);
+		return true;
+	}
+	else if (RendererDummy::TextureStorage::owns_canvas_texture(p_rid)) {
+		RendererDummy::TextureStorage::canvas_texture_free(p_rid);
+		return true;
+	}
+	else if (RendererDummy::TextureStorage::owns_render_target(p_rid)) {
+		RendererDummy::TextureStorage::render_target_free(p_rid);
+		return true;
+	}
+	else if (RendererDummy::MeshStorage::owns_mesh(p_rid)) {
+		RendererDummy::MeshStorage::mesh_free(p_rid);
+		return true;
+	}
+	else if (RendererDummy::MeshStorage::owns_multimesh(p_rid)) {
+		RendererDummy::MeshStorage::multimesh_free(p_rid);
+		return true;
+	}
+	else if (RendererDummy::MaterialStorage::owns_shader(p_rid)) {
+		RendererDummy::MaterialStorage::shader_free(p_rid);
+		return true;
+	}
+	else if (RendererDummy::MaterialStorage::owns_material(p_rid)) {
+		RendererDummy::MaterialStorage::material_free(p_rid);
+		return true;
+	}
+	return false;
+}
+
+void RendererDummy::Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance)
+{
+	if (RendererDummy::MeshStorage::owns_mesh(p_base)) {
+		DummyMesh* mesh = RendererDummy::MeshStorage::get_mesh(p_base);
+		p_instance->update_dependency(&mesh->dependency);
+	}
+}
+
+/* RasterizerSceneDummy */
+
+bool RasterizerSceneDummy::free(RID p_rid)
+{
+	if (is_environment(p_rid)) {
+		environment_free(p_rid);
+		return true;
+	}
+	else if (is_compositor(p_rid)) {
+		compositor_free(p_rid);
+		return true;
+	}
+	else if (is_compositor_effect(p_rid)) {
+		compositor_effect_free(p_rid);
+		return true;
+	}
+	else if (RendererCameraAttributes::owns_camera_attributes(p_rid)) {
+		RendererCameraAttributes::camera_attributes_free(p_rid);
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+/* RasterizerDummy */
 
 void RasterizerDummy::initialize()
 {
@@ -193,5 +503,3 @@ void RasterizerDummy::bind_utilities()
 RendererSceneRender* RasterizerDummy::get_scene() { return scene; }
 
 RendererDummy::Utilities* RasterizerDummy::get_utilities() { return utilities; }
-
-

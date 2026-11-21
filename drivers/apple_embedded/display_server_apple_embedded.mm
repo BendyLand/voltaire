@@ -33,7 +33,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
-#include "core/io/file_access_pack.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/os/os.h"
 #import "drivers/apple_embedded/app_delegate_service.h"
 #import "drivers/apple_embedded/apple_embedded.h"

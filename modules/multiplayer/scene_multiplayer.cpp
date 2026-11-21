@@ -29,9 +29,377 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "scene_multiplayer.h"
+
 #include "core/io/marshalls.h"
 #include "core/os/os.h"
-#include "scene_multiplayer.h"
+#include "multiplayer_synchronizer.h"
+#include "scene/main/node.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
+
+// SceneReplicationConfig
+
+void SceneReplicationConfig::reset_state()
+{
+	dirty = false;
+	properties.clear();
+	sync_props.clear();
+	spawn_props.clear();
+	watch_props.clear();
+}
+
+void SceneReplicationConfig::add_property(const NodePath& p_path, int p_index)
+{
+	ERR_FAIL_COND(properties.find(p_path));
+	ERR_FAIL_COND(p_path == NodePath());
+
+	if (p_index < 0 || p_index == properties.size()) {
+		properties.push_back(ReplicationProperty(p_path));
+		dirty = true;
+		return;
+	}
+
+	ERR_FAIL_INDEX(p_index, properties.size());
+
+	List<ReplicationProperty>::Element* I = properties.front();
+	int c = 0;
+	while (c < p_index) {
+		I = I->next();
+		c++;
+	}
+	properties.insert_before(I, ReplicationProperty(p_path));
+	dirty = true;
+}
+
+void SceneReplicationConfig::remove_property(const NodePath& p_path)
+{
+	properties.erase(p_path);
+	dirty = true;
+}
+
+bool SceneReplicationConfig::has_property(const NodePath& p_path) const
+{
+	for (const ReplicationProperty& property : properties) {
+		if (property.name == p_path) {
+			return true;
+		}
+	}
+	return false;
+}
+
+int SceneReplicationConfig::property_get_index(const NodePath& p_path) const
+{
+	int i = 0;
+	for (List<ReplicationProperty>::ConstIterator itr = properties.begin(); itr != properties.end();
+		 ++itr, ++i) {
+		if (itr->name == p_path) {
+			return i;
+		}
+	}
+	ERR_FAIL_V(-1);
+}
+
+bool SceneReplicationConfig::property_get_spawn(const NodePath& p_path)
+{
+	List<ReplicationProperty>::Element* E = properties.find(p_path);
+	ERR_FAIL_COND_V(!E, false);
+	return E->get().spawn;
+}
+
+void SceneReplicationConfig::property_set_spawn(const NodePath& p_path, bool p_enabled)
+{
+	List<ReplicationProperty>::Element* E = properties.find(p_path);
+	ERR_FAIL_COND(!E);
+	if (E->get().spawn == p_enabled) {
+		return;
+	}
+	E->get().spawn = p_enabled;
+	dirty = true;
+}
+
+bool SceneReplicationConfig::property_get_sync(const NodePath& p_path)
+{
+	List<ReplicationProperty>::Element* E = properties.find(p_path);
+	ERR_FAIL_COND_V(!E, false);
+	return E->get().mode == REPLICATION_MODE_ALWAYS;
+}
+
+void SceneReplicationConfig::property_set_sync(const NodePath& p_path, bool p_enabled)
+{
+	if (p_enabled) {
+		property_set_replication_mode(p_path, REPLICATION_MODE_ALWAYS);
+	}
+	else if (property_get_replication_mode(p_path) == REPLICATION_MODE_ALWAYS) {
+		property_set_replication_mode(p_path, REPLICATION_MODE_NEVER);
+	}
+}
+
+bool SceneReplicationConfig::property_get_watch(const NodePath& p_path)
+{
+	List<ReplicationProperty>::Element* E = properties.find(p_path);
+	ERR_FAIL_COND_V(!E, false);
+	return E->get().mode == REPLICATION_MODE_ON_CHANGE;
+}
+
+void SceneReplicationConfig::property_set_watch(const NodePath& p_path, bool p_enabled)
+{
+	if (p_enabled) {
+		property_set_replication_mode(p_path, REPLICATION_MODE_ON_CHANGE);
+	}
+	else if (property_get_replication_mode(p_path) == REPLICATION_MODE_ON_CHANGE) {
+		property_set_replication_mode(p_path, REPLICATION_MODE_NEVER);
+	}
+}
+
+SceneReplicationConfig::ReplicationMode SceneReplicationConfig::property_get_replication_mode(
+	const NodePath& p_path)
+{
+	List<ReplicationProperty>::Element* E = properties.find(p_path);
+	ERR_FAIL_COND_V(!E, REPLICATION_MODE_NEVER);
+	return E->get().mode;
+}
+
+void SceneReplicationConfig::property_set_replication_mode(
+	const NodePath& p_path, ReplicationMode p_mode)
+{
+	List<ReplicationProperty>::Element* E = properties.find(p_path);
+	ERR_FAIL_COND(!E);
+	if (E->get().mode == p_mode) {
+		return;
+	}
+	E->get().mode = p_mode;
+	dirty = true;
+}
+
+void SceneReplicationConfig::_update()
+{
+	if (!dirty) {
+		return;
+	}
+	dirty = false;
+	sync_props.clear();
+	spawn_props.clear();
+	watch_props.clear();
+	for (const ReplicationProperty& prop : properties) {
+		if (prop.spawn) {
+			spawn_props.push_back(prop.name);
+		}
+		switch (prop.mode) {
+		case REPLICATION_MODE_ALWAYS:
+			sync_props.push_back(prop.name);
+			break;
+		case REPLICATION_MODE_ON_CHANGE:
+			watch_props.push_back(prop.name);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+const List<NodePath>& SceneReplicationConfig::get_spawn_properties()
+{
+	if (dirty) {
+		_update();
+	}
+	return spawn_props;
+}
+
+const List<NodePath>& SceneReplicationConfig::get_sync_properties()
+{
+	if (dirty) {
+		_update();
+	}
+	return sync_props;
+}
+
+const List<NodePath>& SceneReplicationConfig::get_watch_properties()
+{
+	if (dirty) {
+		_update();
+	}
+	return watch_props;
+}
+
+// SceneReplicationInterface
+
+bool SceneReplicationInterface::_has_authority(const Node* p_node)
+{
+	return multiplayer->has_multiplayer_peer() &&
+		   p_node->get_multiplayer_authority() == multiplayer->get_unique_id();
+}
+
+Error SceneReplicationInterface::_send_raw(
+	const uint8_t* p_buffer, int p_size, int p_peer, bool p_reliable)
+{
+	ERR_FAIL_COND_V(!p_buffer || p_size < 1, ERR_INVALID_PARAMETER);
+
+	Ref<MultiplayerPeer> peer = multiplayer->get_multiplayer_peer();
+	ERR_FAIL_COND_V(peer.is_null(), ERR_UNCONFIGURED);
+	peer->set_transfer_channel(0);
+	peer->set_transfer_mode(p_reliable ? MultiplayerPeer::TRANSFER_MODE_RELIABLE
+									   : MultiplayerPeer::TRANSFER_MODE_UNRELIABLE);
+	return multiplayer->send_command(p_peer, p_buffer, p_size);
+}
+
+void SceneReplicationInterface::set_max_sync_packet_size(int p_size)
+{
+	ERR_FAIL_COND_MSG(p_size < 128, "Sync maximum packet size must be at least 128 bytes.");
+	sync_mtu = p_size;
+}
+
+int SceneReplicationInterface::get_max_sync_packet_size() const { return sync_mtu; }
+
+void SceneReplicationInterface::set_max_delta_packet_size(int p_size)
+{
+	ERR_FAIL_COND_MSG(p_size < 128, "Sync maximum packet size must be at least 128 bytes.");
+	delta_mtu = p_size;
+}
+
+int SceneReplicationInterface::get_max_delta_packet_size() const { return delta_mtu; }
+
+// SceneRPCInterface
+
+// The RPC meta is composed by a single byte that contains (starting from the least significant
+// bit):
+// - `NetworkCommands` in the first four bits.
+// - `NetworkNodeIdCompression` in the next 2 bits.
+// - `NetworkNameIdCompression` in the next 1 bit.
+// - `byte_only_or_no_args` in the next 1 bit.
+#define NODE_ID_COMPRESSION_SHIFT MultiplayerAPI::CMD_FLAG_0_SHIFT
+#define NAME_ID_COMPRESSION_SHIFT MultiplayerAPI::CMD_FLAG_2_SHIFT
+#define BYTE_ONLY_OR_NO_ARGS_SHIFT MultiplayerAPI::CMD_FLAG_3_SHIFT
+
+#define NODE_ID_COMPRESSION_FLAG                                                                   \
+	((1 << NODE_ID_COMPRESSION_SHIFT) | (1 << (NODE_ID_COMPRESSION_SHIFT + 1)))
+#define NAME_ID_COMPRESSION_FLAG (1 << NAME_ID_COMPRESSION_SHIFT)
+#define BYTE_ONLY_OR_NO_ARGS_FLAG (1 << BYTE_ONLY_OR_NO_ARGS_SHIFT)
+
+// Returns the packet size stripping the node path added when the node is not yet cached.
+static int get_packet_len(uint32_t p_node_target, int p_packet_len)
+{
+	if (p_node_target & 0x80000000) {
+		int ofs = p_node_target & 0x7FFFFFFF;
+		return p_packet_len - (p_packet_len - ofs);
+	}
+	else {
+		return p_packet_len;
+	}
+}
+
+void SceneRPCInterface::process_rpc(int p_from, const uint8_t* p_packet, int p_packet_len)
+{
+	// Extract packet meta
+	int packet_min_size = 1;
+	int name_id_offset = 1;
+	ERR_FAIL_COND_MSG(p_packet_len < packet_min_size, "Invalid packet received. Size too small.");
+	// Compute the meta size, which depends on the compression level.
+	int node_id_compression = (p_packet[0] & NODE_ID_COMPRESSION_FLAG) >> NODE_ID_COMPRESSION_SHIFT;
+	int name_id_compression = (p_packet[0] & NAME_ID_COMPRESSION_FLAG) >> NAME_ID_COMPRESSION_SHIFT;
+
+	switch (node_id_compression) {
+	case NETWORK_NODE_ID_COMPRESSION_8:
+		packet_min_size += 1;
+		name_id_offset += 1;
+		break;
+	case NETWORK_NODE_ID_COMPRESSION_16:
+		packet_min_size += 2;
+		name_id_offset += 2;
+		break;
+	case NETWORK_NODE_ID_COMPRESSION_32:
+		packet_min_size += 4;
+		name_id_offset += 4;
+		break;
+	default:
+		ERR_FAIL_MSG("Was not possible to extract the node id compression mode.");
+	}
+	switch (name_id_compression) {
+	case NETWORK_NAME_ID_COMPRESSION_8:
+		packet_min_size += 1;
+		break;
+	case NETWORK_NAME_ID_COMPRESSION_16:
+		packet_min_size += 2;
+		break;
+	default:
+		ERR_FAIL_MSG("Was not possible to extract the name id compression mode.");
+	}
+	ERR_FAIL_COND_MSG(p_packet_len < packet_min_size, "Invalid packet received. Size too small.");
+
+	uint32_t node_target = 0;
+	switch (node_id_compression) {
+	case NETWORK_NODE_ID_COMPRESSION_8:
+		node_target = p_packet[1];
+		break;
+	case NETWORK_NODE_ID_COMPRESSION_16:
+		node_target = decode_uint16(p_packet + 1);
+		break;
+	case NETWORK_NODE_ID_COMPRESSION_32:
+		node_target = decode_uint32(p_packet + 1);
+		break;
+	default:
+		// Unreachable, checked before.
+		CRASH_NOW();
+	}
+
+	Node* node = _process_get_node(p_from, p_packet, node_target, p_packet_len);
+	ERR_FAIL_NULL_MSG(node, "Invalid packet received. Requested node was not found.");
+
+	uint16_t name_id = 0;
+	switch (name_id_compression) {
+	case NETWORK_NAME_ID_COMPRESSION_8:
+		name_id = p_packet[name_id_offset];
+		break;
+	case NETWORK_NAME_ID_COMPRESSION_16:
+		name_id = decode_uint16(p_packet + name_id_offset);
+		break;
+	default:
+		// Unreachable, checked before.
+		CRASH_NOW();
+	}
+
+	const int packet_len = get_packet_len(node_target, p_packet_len);
+	_process_rpc(node, name_id, p_from, p_packet, packet_len, packet_min_size);
+}
+
+void SceneRPCInterface::_process_rpc(Node*, unsigned short, int, unsigned char const*, int, int) {}
+
+Node* SceneRPCInterface::_process_get_node(int, unsigned char const*, unsigned int, int)
+{
+	return nullptr;
+}
+
+// MultiplayerDebugger
+
+int MultiplayerDebugger::BandwidthProfiler::bandwidth_usage(
+	const Vector<BandwidthFrame>& p_buffer, int p_pointer)
+{
+	ERR_FAIL_COND_V(p_buffer.is_empty(), 0);
+	int total_bandwidth = 0;
+
+	uint64_t timestamp = OS::get_ticks_msec();
+	uint64_t final_timestamp = timestamp - 1000;
+
+	int i = (p_pointer + p_buffer.size() - 1) % p_buffer.size();
+
+	while (i != p_pointer && p_buffer[i].packet_size > 0) {
+		if (p_buffer[i].timestamp < final_timestamp) {
+			return total_bandwidth;
+		}
+		total_bandwidth += p_buffer[i].packet_size;
+		i = (i + p_buffer.size() - 1) % p_buffer.size();
+	}
+
+	ERR_FAIL_COND_V_MSG(i == p_pointer, total_bandwidth,
+		"Reached the end of the bandwidth profiler buffer, values might be inaccurate.");
+	return total_bandwidth;
+}
+
+void MultiplayerDebugger::initialize() {}
+
+void MultiplayerDebugger::deinitialize() {}
+
+// MultiplayerAPI
 
 void MultiplayerAPI::set_root_path(const NodePath& p_path)
 {

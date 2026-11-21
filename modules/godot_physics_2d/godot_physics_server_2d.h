@@ -32,10 +32,9 @@
 #pragma once
 
 #include "core/templates/rid_owner.h"
-#include "godot_joints_2d.h"
+#include "godot_constraints_2d.h"
 #include "godot_shape_2d.h"
 #include "godot_space_2d.h"
-#include "godot_step_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 class GodotPhysicsServer2D final

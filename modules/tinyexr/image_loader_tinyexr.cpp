@@ -31,7 +31,7 @@
 
 #include "image_loader_tinyexr.h"
 
-#include "core/io/file_access_memory.h"
+#include "core/io/file_access_wrappers.h"
 
 #include <zlib.h>
 // zlib should come before including tinyexr.

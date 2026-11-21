@@ -34,7 +34,7 @@
 #include "core/crypto/crypto_core.h"
 #include "core/io/config_file.h"
 #include "core/io/file_access.h"
-#include "core/io/file_access_memory.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/io/image.h"
 #include "core/io/resource_loader.h"
 #include "core/math/color.h"

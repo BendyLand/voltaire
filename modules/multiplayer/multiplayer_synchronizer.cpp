@@ -29,8 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/engine.h"
 #include "multiplayer_synchronizer.h"
+
+#include "core/config/engine.h"
+#include "core/io/resource_loader.h"
 #include "scene/main/multiplayer_api.h"
 
 void MultiplayerSynchronizer::reset()
@@ -77,10 +79,18 @@ PackedStringArray MultiplayerSynchronizer::get_configuration_warnings() const
 {
 	PackedStringArray warnings = Node::get_configuration_warnings();
 
-	if (root_path.is_empty() || !has_node(root_path)) {
-		warnings.push_back(
-			RTR("A valid NodePath must be set in the \"Root Path\" property in order for "
-				"MultiplayerSynchronizer to be able to synchronize properties."));
+	if (mode == MODE_SPAWNER) {
+		if (spawn_path.is_empty() || !has_node(spawn_path)) {
+			warnings.push_back(RTR("A valid NodePath must be set in the \"Spawn Path\" property in "
+								   "order for MultiplayerSpawner to be able to spawn Nodes."));
+		}
+	}
+	else {
+		if (root_path.is_empty() || !has_node(root_path)) {
+			warnings.push_back(
+				RTR("A valid NodePath must be set in the \"Root Path\" property in order for "
+					"MultiplayerSynchronizer to be able to synchronize properties."));
+		}
 	}
 
 	return warnings;
@@ -124,7 +134,6 @@ MultiplayerSynchronizer::get_visibility_update_mode() const
 	return visibility_update_mode;
 }
 
-
 void MultiplayerSynchronizer::_notification(int p_what)
 {
 #ifdef TOOLS_ENABLED
@@ -132,7 +141,7 @@ void MultiplayerSynchronizer::_notification(int p_what)
 		return;
 	}
 #endif
-	if (root_path.is_empty()) {
+	if (mode == MODE_SPAWNER || root_path.is_empty()) {
 		return;
 	}
 
@@ -218,13 +227,53 @@ SceneReplicationConfig* MultiplayerSynchronizer::get_replication_config_ptr() co
 	return replication_config.ptr();
 }
 
+int MultiplayerSynchronizer::get_spawnable_scene_count() const { return spawnable_scenes.size(); }
+
+String MultiplayerSynchronizer::get_spawnable_scene(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, (int)spawnable_scenes.size(), "");
+	return spawnable_scenes[p_idx].path;
+}
+
+Vector<String> MultiplayerSynchronizer::_get_spawnable_scenes() const
+{
+	Vector<String> ss;
+	ss.resize(spawnable_scenes.size());
+	for (int i = 0; i < ss.size(); i++) {
+		ss.write[i] = ResourceUID::path_to_uid(spawnable_scenes[i].path);
+	}
+	return ss;
+}
+
+void MultiplayerSynchronizer::_set_spawnable_scenes(const Vector<String>& p_scenes)
+{
+	clear_spawnable_scenes();
+	for (int i = 0; i < p_scenes.size(); i++) {
+		add_spawnable_scene(p_scenes[i]);
+	}
+}
+
+NodePath MultiplayerSynchronizer::get_spawn_path() const { return spawn_path; }
+
+int MultiplayerSynchronizer::find_spawnable_scene_index_from_path(const String& p_scene) const
+{
+	for (uint32_t i = 0; i < spawnable_scenes.size(); i++) {
+		if (spawnable_scenes[i].path == p_scene) {
+			return i;
+		}
+	}
+	return INVALID_ID;
+}
+
+void MultiplayerSynchronizer::clear_spawnable_scenes() {}
+
+void MultiplayerSynchronizer::add_spawnable_scene(const String&) {}
+
 MultiplayerSynchronizer::MultiplayerSynchronizer()
 {
 	// Publicly visible by default.
 	peer_visibility.insert(0);
 }
-
-
 
 void MultiplayerSynchronizer::update_visibility(int) {}
 

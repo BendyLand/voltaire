@@ -31,14 +31,92 @@
 
 #pragma once
 
+#include "core/math/bvh.h"
+#include "core/math/rect2.h"
+#include "core/math/vector2.h"
+#include "core/templates/local_vector.h"
 #include "core/typedefs.h"
-#include "godot_area_2d.h"
-#include "godot_body_2d.h"
-#include "godot_broad_phase_2d.h"
-#include "godot_collision_object_2d.h"
+#include "godot_objects_2d.h"
 #include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
 
-class GodotSpace2D
+class GodotConstraint2D;
+
+class GodotBroadPhase2D final
+{
+public:
+	typedef uint32_t ID;
+
+	typedef void* (*PairCallback)(GodotCollisionObject2D* A, int p_subindex_A, GodotCollisionObject2D* B, int p_subindex_B, void* p_userdata);
+	typedef void (*UnpairCallback)(GodotCollisionObject2D* A, int p_subindex_A, GodotCollisionObject2D* B, int p_subindex_B, void* p_data, void* p_userdata);
+
+private:
+	template <typename T>
+	class UserPairTestFunction
+	{
+	public:
+		static bool user_pair_check(const T* p_a, const T* p_b)
+		{
+			// return false if no collision, decided by masks etc
+			return p_a->interacts_with(p_b);
+		}
+	};
+
+	template <typename T>
+	class UserCullTestFunction
+	{
+	public:
+		static bool user_cull_check(const T* p_a, const T* p_b)
+		{
+			return true;
+		}
+	};
+
+	enum Tree
+	{
+		TREE_STATIC = 0,
+		TREE_DYNAMIC = 1,
+	};
+
+	enum TreeFlag
+	{
+		TREE_FLAG_STATIC = 1 << TREE_STATIC,
+		TREE_FLAG_DYNAMIC = 1 << TREE_DYNAMIC,
+	};
+
+	BVH_Manager<GodotCollisionObject2D, 2, true, 128, UserPairTestFunction<GodotCollisionObject2D>, UserCullTestFunction<GodotCollisionObject2D>, Rect2, Vector2> bvh;
+
+	static void* _pair_callback(void*, uint32_t, GodotCollisionObject2D*, int, uint32_t, GodotCollisionObject2D*, int);
+	static void _unpair_callback(void*, uint32_t, GodotCollisionObject2D*, int, uint32_t, GodotCollisionObject2D*, int, void*);
+
+	PairCallback pair_callback = nullptr;
+	void* pair_userdata = nullptr;
+	UnpairCallback unpair_callback = nullptr;
+	void* unpair_userdata = nullptr;
+
+public:
+	// 0 is an invalid ID
+	ID create(GodotCollisionObject2D* p_object, int p_subindex = 0, const Rect2& p_aabb = Rect2(), bool p_static = false);
+	void move(ID p_id, const Rect2& p_aabb);
+	void set_static(ID p_id, bool p_static);
+	void remove(ID p_id);
+
+	GodotCollisionObject2D* get_object(ID p_id) const;
+	bool is_static(ID p_id) const;
+	int get_subindex(ID p_id) const;
+
+	int cull_segment(const Vector2& p_from, const Vector2& p_to, GodotCollisionObject2D** p_results, int p_max_results, int* p_result_indices = nullptr);
+	int cull_aabb(const Rect2& p_aabb, GodotCollisionObject2D** p_results, int p_max_results, int* p_result_indices = nullptr);
+
+	void set_pair_callback(PairCallback p_pair_callback, void* p_userdata);
+	void set_unpair_callback(UnpairCallback p_unpair_callback, void* p_userdata);
+
+	void update();
+
+	GodotBroadPhase2D();
+	~GodotBroadPhase2D() = default;
+};
+
+class GodotSpace2D final
 {
 public:
 	enum ElapsedTime
@@ -49,7 +127,6 @@ public:
 		ELAPSED_TIME_SOLVE_CONSTRAINTS,
 		ELAPSED_TIME_INTEGRATE_VELOCITIES,
 		ELAPSED_TIME_MAX
-
 	};
 
 private:
@@ -226,4 +303,25 @@ public:
 	~GodotSpace2D();
 };
 
+class GodotStep2D final
+{
+	uint64_t _step = 1;
 
+	int iterations = 0;
+	real_t delta = 0.0;
+
+	LocalVector<LocalVector<GodotBody2D*>> body_islands;
+	LocalVector<LocalVector<GodotConstraint2D*>> constraint_islands;
+	LocalVector<GodotConstraint2D*> all_constraints;
+
+	void _populate_island(GodotBody2D* p_body, LocalVector<GodotBody2D*>& p_body_island, LocalVector<GodotConstraint2D*>& p_constraint_island);
+	void _setup_constraint(uint32_t p_constraint_index, void* p_userdata = nullptr);
+	void _pre_solve_island(LocalVector<GodotConstraint2D*>& p_constraint_island) const;
+	void _solve_island(uint32_t p_island_index, void* p_userdata = nullptr) const;
+	void _check_suspend(LocalVector<GodotBody2D*>& p_body_island) const;
+
+public:
+	void step(GodotSpace2D* p_space, real_t p_delta);
+	GodotStep2D();
+	~GodotStep2D();
+};

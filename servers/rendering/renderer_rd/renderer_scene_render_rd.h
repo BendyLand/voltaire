@@ -32,15 +32,9 @@
 #pragma once
 
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/renderer_rd/effects/bokeh_dof.h"
 #include "servers/rendering/renderer_rd/effects/copy_effects.h"
-#include "servers/rendering/renderer_rd/effects/debug_effects.h"
-#include "servers/rendering/renderer_rd/effects/fsr.h"
-#include "servers/rendering/renderer_rd/effects/luminance.h"
-#include "servers/rendering/renderer_rd/effects/resolve.h"
-#include "servers/rendering/renderer_rd/effects/smaa.h"
-#include "servers/rendering/renderer_rd/effects/tone_mapper.h"
-#include "servers/rendering/renderer_rd/effects/vrs.h"
+#include "servers/rendering/renderer_rd/effects/post_effects.h"
+#include "servers/rendering/renderer_rd/effects/upscale_effects.h"
 #include "servers/rendering/renderer_rd/environment/gi.h"
 #include "servers/rendering/renderer_rd/environment/sky.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
@@ -50,10 +44,6 @@
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_types.h"
-
-#ifdef METAL_ENABLED
-#include "servers/rendering/renderer_rd/effects/metal_fx.h"
-#endif
 
 class RendererSceneRenderRD final
 {

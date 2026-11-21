@@ -31,9 +31,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/crypto/crypto_core.h"
-#include "core/io/file_access_compressed.h"
-#include "core/io/file_access_encrypted.h"
-#include "core/io/file_access_pack.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/io/marshalls.h"
 #include "core/io/resource_uid.h"
 #include "core/os/os.h"

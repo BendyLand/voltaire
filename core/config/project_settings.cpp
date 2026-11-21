@@ -35,7 +35,7 @@
 #include "core/io/config_file.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/file_access_pack.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/io/marshalls.h"
 #include "core/io/resource_uid.h"
 #include "core/os/os.h"

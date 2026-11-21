@@ -31,17 +31,30 @@
 
 #pragma once
 
+#include "core/templates/local_vector.h"
 #include "scene/main/node.h"
-#include "scene_replication_config.h"
+#include "scene/resources/packed_scene.h"
+#include "scene_multiplayer.h"
 
-class MultiplayerSynchronizer : public Node
+class MultiplayerSynchronizer final : public Node
 {
 public:
+	enum Mode
+	{
+		MODE_SYNCHRONIZER,
+		MODE_SPAWNER,
+	};
+
 	enum VisibilityUpdateMode
 	{
 		VISIBILITY_PROCESS_IDLE,
 		VISIBILITY_PROCESS_PHYSICS,
 		VISIBILITY_PROCESS_NONE,
+	};
+
+	enum
+	{
+		INVALID_ID = 0xFF,
 	};
 
 private:
@@ -51,6 +64,22 @@ private:
 		uint64_t last_change_usec = 0;
 	};
 
+	struct SpawnableScene
+	{
+		String path;
+		Ref<PackedScene> cache;
+	};
+
+	struct SpawnInfo
+	{
+		int id = INVALID_ID;
+
+		SpawnInfo() {}
+	};
+
+	Mode mode = MODE_SYNCHRONIZER;
+
+	// Synchronizer state.
 	Ref<SceneReplicationConfig> replication_config;
 	NodePath root_path = NodePath(".."); // Start with parent, like with AnimationPlayer.
 	uint64_t sync_interval_usec = 0;
@@ -65,15 +94,30 @@ private:
 	uint32_t net_id = 0;
 	bool sync_started = false;
 
+	// Spawner state.
+	LocalVector<SpawnableScene> spawnable_scenes;
+	HashSet<ResourceUID::ID> spawnable_ids;
+	NodePath spawn_path;
+	uint32_t spawn_limit = 0;
+
 	void _start();
 	void _stop();
 	void _update_process();
 	Error _watch_changes(uint64_t p_usec);
 
+	void _update_spawn_node();
+	void _node_added(Node* p_node);
+
+	Vector<String> _get_spawnable_scenes() const;
+	void _set_spawnable_scenes(const Vector<String>& p_scenes);
+
 protected:
 	void _notification(int p_what);
 
 public:
+	void set_mode(Mode p_mode) { mode = p_mode; }
+	Mode get_mode() const { return mode; }
+
 	void reset();
 	Node* get_root_node();
 
@@ -109,7 +153,19 @@ public:
 	List<NodePath> get_delta_properties(uint64_t p_indexes);
 	SceneReplicationConfig* get_replication_config_ptr() const;
 
+	// Spawner API.
+	void add_spawnable_scene(const String& p_path);
+	int get_spawnable_scene_count() const;
+	String get_spawnable_scene(int p_idx) const;
+	void clear_spawnable_scenes();
+
+	NodePath get_spawn_path() const;
+
+	uint32_t get_spawn_limit() const { return spawn_limit; }
+	void set_spawn_limit(uint32_t p_limit) { spawn_limit = p_limit; }
+
+	int find_spawnable_scene_index_from_path(const String& p_path) const;
+	Node* instantiate_scene(int p_idx);
+
 	MultiplayerSynchronizer();
 };
-
-

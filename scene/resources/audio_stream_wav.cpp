@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "audio_stream_wav.h"
-#include "core/io/file_access_memory.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/io/marshalls.h"
 
 const float TRIM_DB_LIMIT = -50;

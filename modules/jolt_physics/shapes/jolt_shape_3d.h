@@ -36,13 +36,74 @@
 
 #include "core/math/aabb.h"
 #include "core/math/plane.h"
+#include "core/math/transform_3d.h"
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/rid.h"
 #include "core/types.h"
 #include "servers/physics_3d/physics_server_3d_enums.h"
 
-class JoltShapedObject3D;
+class JoltObject3D;
+class JoltShape3D;
+
+class JoltShapeInstance3D final {
+	// This RAII helper exists solely to avoid needing to maintain move construction/assignment in `JoltShapeInstance3D`.
+	struct ShapeReference {
+		JoltObject3D *parent = nullptr;
+		JoltShape3D *shape = nullptr;
+
+		ShapeReference() = default;
+		ShapeReference(JoltObject3D *p_parent, JoltShape3D *p_shape);
+		ShapeReference(const ShapeReference &p_other) = delete;
+		ShapeReference(ShapeReference &&p_other);
+		~ShapeReference();
+
+		ShapeReference &operator=(const ShapeReference &p_other) = delete;
+		ShapeReference &operator=(ShapeReference &&p_other);
+
+		JoltShape3D *operator*() const { return shape; }
+		JoltShape3D *operator->() const { return shape; }
+		operator JoltShape3D *() const { return shape; }
+	};
+
+	inline static uint32_t next_id = 1;
+
+	Transform3D transform;
+	Vector3 scale;
+	ShapeReference shape;
+	JPH::ShapeRefC jolt_ref;
+	uint32_t id = next_id++;
+	bool disabled = false;
+
+public:
+	JoltShapeInstance3D() = default;
+	JoltShapeInstance3D(JoltObject3D *p_parent, JoltShape3D *p_shape, const Transform3D &p_transform = Transform3D(), const Vector3 &p_scale = Vector3(1.0f, 1.0f, 1.0f), bool p_disabled = false);
+
+	uint32_t get_id() const { return id; }
+
+	JoltShape3D *get_shape() const { return shape; }
+
+	const JPH::Shape *get_jolt_ref() const { return jolt_ref; }
+
+	const Transform3D &get_transform_unscaled() const { return transform; }
+	Transform3D get_transform_scaled() const { return transform.scaled_local(scale); }
+	void set_transform(const Transform3D &p_transform) { transform = p_transform; }
+
+	const Vector3 &get_scale() const { return scale; }
+	void set_scale(const Vector3 &p_scale) { scale = p_scale; }
+
+	AABB get_aabb() const;
+
+	bool is_built() const { return jolt_ref != nullptr; }
+
+	bool is_enabled() const { return !disabled; }
+	bool is_disabled() const { return disabled; }
+
+	void enable() { disabled = false; }
+	void disable() { disabled = true; }
+
+	bool try_build();
+};
 
 class JoltShape3D final {
 public:
@@ -55,7 +116,7 @@ public:
 #endif
 
 private:
-	HashMap<JoltShapedObject3D *, int> ref_counts_by_owner;
+	HashMap<JoltObject3D *, int> ref_counts_by_owner;
 	Mutex jolt_ref_mutex;
 	RID rid;
 	JPH::ShapeRefC jolt_ref;
@@ -100,8 +161,8 @@ public:
 	RID get_rid() const { return rid; }
 	void set_rid(const RID &p_rid) { rid = p_rid; }
 
-	void add_owner(JoltShapedObject3D *p_owner);
-	void remove_owner(JoltShapedObject3D *p_owner);
+	void add_owner(JoltObject3D *p_owner);
+	void remove_owner(JoltObject3D *p_owner);
 	void remove_self();
 
 	ShapeType get_type() const { return shape_type; }

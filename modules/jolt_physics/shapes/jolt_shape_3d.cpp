@@ -31,8 +31,8 @@
 
 #include "jolt_shape_3d.h"
 
-#include "../misc/jolt_type_conversions.h"
-#include "../objects/jolt_shaped_object_3d.h"
+#include "../jolt_globals.h"
+#include "../objects/jolt_objects_3d.h"
 #include "jolt_custom_shapes.h"
 
 // keep includes...
@@ -42,6 +42,7 @@
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/CylinderShape.h>
+#include <Jolt/Physics/Collision/Shape/DecoratedShape.h>
 #include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
@@ -51,6 +52,78 @@
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
+
+// ============================================================================
+// JoltShapeInstance3D
+// ============================================================================
+
+JoltShapeInstance3D::ShapeReference::ShapeReference(JoltObject3D *p_parent, JoltShape3D *p_shape) :
+		parent(p_parent),
+		shape(p_shape) {
+	if (shape != nullptr) {
+		shape->add_owner(parent);
+	}
+}
+
+JoltShapeInstance3D::ShapeReference::ShapeReference(ShapeReference &&p_other) :
+		parent(p_other.parent),
+		shape(p_other.shape) {
+	p_other.parent = nullptr;
+	p_other.shape = nullptr;
+}
+
+JoltShapeInstance3D::ShapeReference::~ShapeReference() {
+	if (shape != nullptr) {
+		shape->remove_owner(parent);
+	}
+}
+
+JoltShapeInstance3D::ShapeReference &JoltShapeInstance3D::ShapeReference::operator=(ShapeReference &&p_other) {
+	if (this != &p_other) {
+		SWAP(parent, p_other.parent);
+		SWAP(shape, p_other.shape);
+	}
+
+	return *this;
+}
+
+JoltShapeInstance3D::JoltShapeInstance3D(JoltObject3D *p_parent, JoltShape3D *p_shape, const Transform3D &p_transform, const Vector3 &p_scale, bool p_disabled) :
+		transform(p_transform),
+		scale(p_scale),
+		shape(p_parent, p_shape),
+		disabled(p_disabled) {
+}
+
+AABB JoltShapeInstance3D::get_aabb() const {
+	return get_transform_scaled().xform(shape->get_aabb());
+}
+
+bool JoltShapeInstance3D::try_build() {
+	ERR_FAIL_COND_V(is_disabled(), false);
+
+	const JPH::ShapeRefC maybe_new_shape = shape->try_build();
+
+	if (maybe_new_shape == nullptr) {
+		jolt_ref = nullptr;
+		return false;
+	}
+
+	if (jolt_ref != nullptr) {
+		const JPH::DecoratedShape *outer_shape = static_cast<const JPH::DecoratedShape *>(jolt_ref.GetPtr());
+
+		if (outer_shape->GetInnerShape() == maybe_new_shape) {
+			return true;
+		}
+	}
+
+	jolt_ref = JoltShape3D::with_user_data(maybe_new_shape, (uint64_t)id);
+
+	return true;
+}
+
+// ============================================================================
+// JoltShape3D
+// ============================================================================
 
 namespace {
 
@@ -65,7 +138,7 @@ String JoltShape3D::_owners_to_string() const {
 		return "'<unknown>' and 0 other object(s)";
 	}
 
-	const JoltShapedObject3D &random_owner = *ref_counts_by_owner.begin()->key;
+	const JoltObject3D &random_owner = *ref_counts_by_owner.begin()->key;
 
 	return vformat("'%s' and %d other object(s)", random_owner.to_string(), owner_count - 1);
 }
@@ -169,7 +242,7 @@ JPH::ShapeRefC JoltShape3D::_build_height_map() const {
 		return JoltShape3D::with_double_sided(_build_mesh(), true);
 	}
 
-	const int block_size = 2; // Default of JPH::HeightFieldShapeSettings::mBlockSize
+	const int block_size = 2;
 	const int block_count = width / block_size;
 
 	if (block_count < 2) {
@@ -225,22 +298,20 @@ AABB JoltShape3D::_calculate_heightmap_aabb() const {
 	return result;
 }
 
-void JoltShape3D::add_owner(JoltShapedObject3D *p_owner) {
+void JoltShape3D::add_owner(JoltObject3D *p_owner) {
 	ref_counts_by_owner[p_owner]++;
 }
 
-void JoltShape3D::remove_owner(JoltShapedObject3D *p_owner) {
+void JoltShape3D::remove_owner(JoltObject3D *p_owner) {
 	if (--ref_counts_by_owner[p_owner] <= 0) {
 		ref_counts_by_owner.erase(p_owner);
 	}
 }
 
 void JoltShape3D::remove_self() {
-	// `remove_owner` will be called when we `remove_shape`, so we need to copy the map since the
-	// iterator would be invalidated from underneath us.
-	const HashMap<JoltShapedObject3D *, int> ref_counts_by_owner_copy(ref_counts_by_owner);
+	const HashMap<JoltObject3D *, int> ref_counts_by_owner_copy(ref_counts_by_owner);
 
-	for (const KeyValue<JoltShapedObject3D *, int> &E : ref_counts_by_owner_copy) {
+	for (const KeyValue<JoltObject3D *, int> &E : ref_counts_by_owner_copy) {
 		E.key->remove_shape(this);
 	}
 }
@@ -443,7 +514,7 @@ void JoltShape3D::destroy() {
 	jolt_ref = nullptr;
 	jolt_ref_mutex.unlock();
 
-	for (const KeyValue<JoltShapedObject3D *, int> &E : ref_counts_by_owner) {
+	for (const KeyValue<JoltObject3D *, int> &E : ref_counts_by_owner) {
 		E.key->_shapes_changed();
 	}
 }

@@ -32,7 +32,7 @@
 #include <ktx.h>
 #include <vk_format.h>
 #include "core/io/file_access.h"
-#include "core/io/file_access_memory.h"
+#include "core/io/file_access_wrappers.h"
 #include "scene/resources/image_texture.h"
 #include "servers/rendering/renderer.h"
 #include "texture_loader_ktx.h"

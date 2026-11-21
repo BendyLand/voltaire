@@ -31,13 +31,9 @@
 
 #include "joints/jolt_joint_3d.h"
 #include "jolt_physics_server_3d.h"
-#include "objects/jolt_area_3d.h"
-#include "objects/jolt_body_3d.h"
-#include "objects/jolt_soft_body_3d.h"
+#include "objects/jolt_objects_3d.h"
 #include "shapes/jolt_shape_3d.h"
-#include "spaces/jolt_job_system.h"
 #include "spaces/jolt_space_3d.h"
-#include "spaces/jolt_temp_allocator.h"
 
 JoltPhysicsServer3D::JoltPhysicsServer3D(bool p_on_separate_thread)
 	: on_separate_thread(p_on_separate_thread)

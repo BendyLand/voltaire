@@ -31,9 +31,9 @@
 
 #include "jolt_joint_3d.h"
 
+#include "../jolt_globals.h"
 #include "../jolt_physics_server_3d.h"
-#include "../misc/jolt_type_conversions.h"
-#include "../objects/jolt_body_3d.h"
+#include "../objects/jolt_objects_3d.h"
 #include "../spaces/jolt_space_3d.h"
 
 #include "core/config/engine.h"

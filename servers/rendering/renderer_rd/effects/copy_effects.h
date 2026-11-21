@@ -38,13 +38,20 @@
 #include "servers/rendering/renderer_rd/shaders/effects/copy_to_fb.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/cube_to_dp.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/cube_to_octmap.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/effects/motion_vectors_store.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/octmap_downsampler.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/octmap_downsampler_raster.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/octmap_filter.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/octmap_filter_raster.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/octmap_roughness.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/octmap_roughness_raster.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/effects/resolve.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/effects/resolve_raster.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/effects/roughness_limiter.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/effects/sort.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/specular_merge.glsl.gen.h"
+
+class RenderSceneBuffersRD;
 
 namespace RendererRD
 {
@@ -483,6 +490,126 @@ public:
 		RID p_reflection, uint32_t p_view_count);
 };
 
+class Resolve final
+{
+private:
+	bool prefer_raster_effects;
+
+	struct ResolvePushConstant
+	{
+		int32_t screen_size[2];
+		int32_t samples;
+		uint32_t pad;
+	};
+
+	enum ResolveMode
+	{
+		RESOLVE_MODE_GI,
+		RESOLVE_MODE_GI_VOXEL_GI,
+		RESOLVE_MODE_DEPTH,
+		RESOLVE_MODE_MAX
+	};
+
+	struct ResolveShader
+	{
+		ResolvePushConstant push_constant;
+		ShaderRD shader{ResolveShaderRD()};
+		RID shader_version;
+		RID pipelines[RESOLVE_MODE_MAX]; // 3 quality levels
+	} resolve;
+
+	struct ResolveRasterShader
+	{
+		ResolvePushConstant push_constant;
+		ShaderRD shader{ResolveRasterShaderRD()};
+		RID shader_version;
+		PipelineCacheRD pipeline;
+	} resolve_raster;
+
+public:
+	Resolve(bool p_prefer_raster_effects);
+	~Resolve();
+
+	void resolve_gi(RID p_source_depth, RID p_source_normal_roughness, RID p_source_voxel_gi,
+		RID p_dest_depth, RID p_dest_normal_roughness, RID p_dest_voxel_gi, Vector2i p_screen_size,
+		int p_samples);
+	void resolve_depth(RID p_source_depth, RID p_dest_depth, Vector2i p_screen_size, int p_samples);
+	void resolve_depth_raster(RID p_source_rd_texture, RID p_dest_framebuffer, int p_samples);
+};
+
+// Note, this logic is unused at the time of writing. It should be re-incorporated into the renderer
+// at some point.
+class RoughnessLimiter final
+{
+private:
+	struct RoughnessLimiterPushConstant
+	{
+		int32_t screen_size[2];
+		float curve;
+		uint32_t pad;
+	};
+
+	RoughnessLimiterPushConstant push_constant;
+	ShaderRD shader{RoughnessLimiterShaderRD()};
+	RID shader_version;
+	RID pipeline;
+
+public:
+	RoughnessLimiter();
+	~RoughnessLimiter();
+
+	void roughness_limit(RID p_source_normal, RID p_roughness, const Size2i& p_size, float p_curve);
+};
+
+class SortEffects final
+{
+private:
+	enum SortMode
+	{
+		SORT_MODE_BLOCK,
+		SORT_MODE_STEP,
+		SORT_MODE_INNER,
+		SORT_MODE_MAX
+	};
+
+	struct PushConstant
+	{
+		uint32_t total_elements;
+		uint32_t pad[3];
+		int32_t job_params[4];
+	};
+
+	ShaderRD shader{SortShaderRD()};
+	RID shader_version;
+	RID pipelines[SORT_MODE_MAX];
+
+public:
+	SortEffects();
+	~SortEffects();
+
+	void sort_buffer(RID p_uniform_set, int p_size);
+};
+
+class MotionVectorsStore final
+{
+	struct PushConstant
+	{
+		float reprojection_matrix[16];
+		float resolution[2];
+		uint32_t pad[2];
+	};
+
+	ShaderRD motion_shader{MotionVectorsStoreShaderRD()};
+	RID shader_version;
+	RID pipeline;
+
+public:
+	MotionVectorsStore();
+	~MotionVectorsStore();
+
+	void process(Ref<RenderSceneBuffersRD> p_render_buffers, const Projection& p_current_projection,
+		const Transform3D& p_current_transform, const Projection& p_previous_projection,
+		const Transform3D& p_previous_transform);
+};
+
 } // namespace RendererRD
-
-

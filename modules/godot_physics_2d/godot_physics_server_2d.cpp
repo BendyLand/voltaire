@@ -1065,7 +1065,7 @@ void GodotPhysicsServer2D::joint_make_pin(
 	GodotJoint2D* prev_joint = joint_owner.get_or_null(p_joint);
 	ERR_FAIL_NULL(prev_joint);
 
-	GodotJoint2D* joint = memnew(GodotPinJoint2D(p_pos, A, B));
+	GodotJoint2D* joint = memnew(GodotJoint2D(p_pos, A, B));
 
 	joint_owner.replace(p_joint, joint);
 	joint->copy_settings_from(prev_joint);
@@ -1084,7 +1084,7 @@ void GodotPhysicsServer2D::joint_make_groove(RID p_joint, const Vector2& p_a_gro
 	GodotJoint2D* prev_joint = joint_owner.get_or_null(p_joint);
 	ERR_FAIL_NULL(prev_joint);
 
-	GodotJoint2D* joint = memnew(GodotGrooveJoint2D(p_a_groove1, p_a_groove2, p_b_anchor, A, B));
+	GodotJoint2D* joint = memnew(GodotJoint2D(p_a_groove1, p_a_groove2, p_b_anchor, A, B));
 
 	joint_owner.replace(p_joint, joint);
 	joint->copy_settings_from(prev_joint);
@@ -1103,7 +1103,7 @@ void GodotPhysicsServer2D::joint_make_damped_spring(
 	GodotJoint2D* prev_joint = joint_owner.get_or_null(p_joint);
 	ERR_FAIL_NULL(prev_joint);
 
-	GodotJoint2D* joint = memnew(GodotDampedSpringJoint2D(p_anchor_a, p_anchor_b, A, B));
+	GodotJoint2D* joint = memnew(GodotJoint2D(p_anchor_a, p_anchor_b, A, B));
 
 	joint_owner.replace(p_joint, joint);
 	joint->copy_settings_from(prev_joint);
@@ -1117,8 +1117,7 @@ void GodotPhysicsServer2D::pin_joint_set_flag(
 	ERR_FAIL_NULL(joint);
 	ERR_FAIL_COND(joint->get_type() != PS2DE::JOINT_TYPE_PIN);
 
-	GodotPinJoint2D* pin_joint = static_cast<GodotPinJoint2D*>(joint);
-	pin_joint->set_flag(p_flag, p_enabled);
+	joint->set_flag(p_flag, p_enabled);
 }
 
 bool GodotPhysicsServer2D::pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag) const
@@ -1127,8 +1126,7 @@ bool GodotPhysicsServer2D::pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p
 	ERR_FAIL_NULL_V(joint, false);
 	ERR_FAIL_COND_V(joint->get_type() != PS2DE::JOINT_TYPE_PIN, false);
 
-	GodotPinJoint2D* pin_joint = static_cast<GodotPinJoint2D*>(joint);
-	return pin_joint->get_flag(p_flag);
+	return joint->get_flag(p_flag);
 }
 
 void GodotPhysicsServer2D::pin_joint_set_param(
@@ -1138,8 +1136,7 @@ void GodotPhysicsServer2D::pin_joint_set_param(
 	ERR_FAIL_NULL(joint);
 	ERR_FAIL_COND(joint->get_type() != PS2DE::JOINT_TYPE_PIN);
 
-	GodotPinJoint2D* pin_joint = static_cast<GodotPinJoint2D*>(joint);
-	pin_joint->set_param(p_param, p_value);
+	joint->set_param(p_param, p_value);
 }
 
 real_t GodotPhysicsServer2D::pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param) const
@@ -1148,8 +1145,7 @@ real_t GodotPhysicsServer2D::pin_joint_get_param(RID p_joint, PS2DE::PinJointPar
 	ERR_FAIL_NULL_V(joint, 0);
 	ERR_FAIL_COND_V(joint->get_type() != PS2DE::JOINT_TYPE_PIN, 0);
 
-	GodotPinJoint2D* pin_joint = static_cast<GodotPinJoint2D*>(joint);
-	return pin_joint->get_param(p_param);
+	return joint->get_param(p_param);
 }
 
 void GodotPhysicsServer2D::damped_spring_joint_set_param(
@@ -1159,8 +1155,7 @@ void GodotPhysicsServer2D::damped_spring_joint_set_param(
 	ERR_FAIL_NULL(joint);
 	ERR_FAIL_COND(joint->get_type() != PS2DE::JOINT_TYPE_DAMPED_SPRING);
 
-	GodotDampedSpringJoint2D* dsj = static_cast<GodotDampedSpringJoint2D*>(joint);
-	dsj->set_param(p_param, p_value);
+	joint->set_param(p_param, p_value);
 }
 
 real_t GodotPhysicsServer2D::damped_spring_joint_get_param(
@@ -1170,8 +1165,7 @@ real_t GodotPhysicsServer2D::damped_spring_joint_get_param(
 	ERR_FAIL_NULL_V(joint, 0);
 	ERR_FAIL_COND_V(joint->get_type() != PS2DE::JOINT_TYPE_DAMPED_SPRING, 0);
 
-	GodotDampedSpringJoint2D* dsj = static_cast<GodotDampedSpringJoint2D*>(joint);
-	return dsj->get_param(p_param);
+	return joint->get_param(p_param);
 }
 
 PS2DE::JointType GodotPhysicsServer2D::joint_get_type(RID p_joint) const

@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "config_file.h"
-#include "core/io/file_access_encrypted.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/string/string_builder.h"
 
 void ConfigFile::erase_section_key(const String& p_section, const String& p_key) {}

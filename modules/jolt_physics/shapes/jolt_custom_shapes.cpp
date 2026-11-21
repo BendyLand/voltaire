@@ -31,7 +31,7 @@
 
 #include "jolt_custom_shapes.h"
 
-#include "../spaces/jolt_query_collectors.h"
+#include "../spaces/jolt_space_3d.h"
 
 #include "core/error/error_macros.h"
 

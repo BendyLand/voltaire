@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "particles_storage.h"
-#include "servers/rendering/renderer_rd/effects/sort_effects.h"
+#include "servers/rendering/renderer_rd/effects/copy_effects.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_viewport.h"

@@ -1,0 +1,2273 @@
+/**************************************************************************/
+/*  jolt_objects_3d.cpp                                                   */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "jolt_objects_3d.h"
+
+#include "../joints/jolt_joint_3d.h"
+#include "../jolt_globals.h"
+#include "../jolt_physics_server_3d.h"
+#include "../shapes/jolt_shape_3d.h"
+#include "../spaces/jolt_space_3d.h"
+
+#include "core/config/engine.h"
+#include "servers/physics_3d/direct_states/physics_direct_body_state_3d.h"
+#include "servers/physics_3d/physics_server_3d_constants.h"
+#include "servers/physics_3d/physics_server_3d_rendering_server_handler.h"
+#include "servers/rendering/renderer.h"
+
+// must stay last
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Collision/Shape/EmptyShape.h>
+#include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
+#include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
+#include <Jolt/Physics/SoftBody/SoftBodyMotionProperties.h>
+
+// ============================================================================
+// JoltGroupFilter
+// ============================================================================
+
+bool JoltGroupFilter::CanCollide(const JPH::CollisionGroup &p_group1, const JPH::CollisionGroup &p_group2) const {
+	const JoltObject3D *object1 = decode_object(p_group1.GetGroupID(), p_group1.GetSubGroupID());
+	const JoltObject3D *object2 = decode_object(p_group2.GetGroupID(), p_group2.GetSubGroupID());
+	return object1->can_interact_with(*object2);
+}
+
+void JoltGroupFilter::encode_object(const JoltObject3D *p_object, JPH::CollisionGroup::GroupID &r_group_id, JPH::CollisionGroup::SubGroupID &r_sub_group_id) {
+	const uint64_t address = reinterpret_cast<uint64_t>(p_object);
+	r_group_id = JPH::CollisionGroup::GroupID(address >> 32U);
+	r_sub_group_id = JPH::CollisionGroup::SubGroupID(address & 0xFFFFFFFFULL);
+}
+
+const JoltObject3D *JoltGroupFilter::decode_object(JPH::CollisionGroup::GroupID p_group_id, JPH::CollisionGroup::SubGroupID p_sub_group_id) {
+	const uint64_t upper_bits = (uint64_t)p_group_id << 32U;
+	const uint64_t lower_bits = (uint64_t)p_sub_group_id;
+	const uint64_t address = uint64_t(upper_bits | lower_bits);
+	return reinterpret_cast<const JoltObject3D *>(address);
+}
+
+static_assert(sizeof(JoltObject3D *) <= 8, "Pointer size greater than expected.");
+static_assert(sizeof(JPH::CollisionGroup::GroupID) == 4, "Size of Jolt's collision group ID has changed.");
+static_assert(sizeof(JPH::CollisionGroup::SubGroupID) == 4, "Size of Jolt's collision sub-group ID has changed.");
+
+// ============================================================================
+// JoltObject3D
+// ============================================================================
+
+void JoltObject3D::_remove_from_space() {
+	if (!in_space()) {
+		return;
+	}
+
+	space->remove_object(jolt_body->GetID());
+	jolt_body = nullptr;
+}
+
+void JoltObject3D::_reset_space() {
+	ERR_FAIL_NULL(space);
+
+	_space_changing();
+	_remove_from_space();
+	_add_to_space();
+	_space_changed();
+}
+
+void JoltObject3D::_update_object_layer() {
+	if (!in_space()) {
+		return;
+	}
+
+	space->get_body_iface().SetObjectLayer(jolt_body->GetID(), _get_object_layer());
+}
+
+void JoltObject3D::_collision_layer_changed() {
+	_update_object_layer();
+}
+
+void JoltObject3D::_collision_mask_changed() {
+	_update_object_layer();
+}
+
+bool JoltObject3D::_is_big() const {
+	return get_aabb().get_longest_axis_size() >= 1000.0f;
+}
+
+void JoltObject3D::_enqueue_shapes_changed() {
+	if (space != nullptr) {
+		space->enqueue_shapes_changed(&shapes_changed_element);
+	}
+}
+
+void JoltObject3D::_dequeue_shapes_changed() {
+	if (space != nullptr) {
+		space->dequeue_shapes_changed(&shapes_changed_element);
+	}
+}
+
+void JoltObject3D::_enqueue_needs_optimization() {
+	if (space != nullptr) {
+		space->enqueue_needs_optimization(&needs_optimization_element);
+	}
+}
+
+void JoltObject3D::_dequeue_needs_optimization() {
+	if (space != nullptr) {
+		space->dequeue_needs_optimization(&needs_optimization_element);
+	}
+}
+
+void JoltObject3D::_shapes_changed() {
+	commit_shapes(false);
+}
+
+void JoltObject3D::_shapes_committed() {
+	_update_object_layer();
+}
+
+void JoltObject3D::_space_changing() {
+	if (is_shaped()) {
+		_dequeue_shapes_changed();
+		_dequeue_needs_optimization();
+
+		previous_jolt_shape = nullptr;
+
+		if (in_space()) {
+			jolt_settings = new JPH::BodyCreationSettings(jolt_body->GetBodyCreationSettings());
+		}
+	}
+}
+
+JoltObject3D::JoltObject3D(ObjectType p_object_type) :
+		object_type(p_object_type),
+		shapes_changed_element(this),
+		needs_optimization_element(this) {
+	if (is_shaped()) {
+		jolt_settings = new JPH::BodyCreationSettings();
+		jolt_settings->mAllowSleeping = true;
+		jolt_settings->mFriction = 1.0f;
+		jolt_settings->mRestitution = 0.0f;
+		jolt_settings->mLinearDamping = 0.0f;
+		jolt_settings->mAngularDamping = 0.0f;
+	}
+}
+
+JoltObject3D::~JoltObject3D() {
+	if (jolt_settings != nullptr) {
+		delete jolt_settings;
+		jolt_settings = nullptr;
+	}
+}
+
+void JoltObject3D::set_space(JoltSpace3D *p_space) {
+	if (space == p_space) {
+		return;
+	}
+
+	_space_changing();
+
+	if (space != nullptr) {
+		_remove_from_space();
+	}
+
+	space = p_space;
+
+	if (space != nullptr) {
+		_add_to_space();
+	}
+
+	_space_changed();
+}
+
+void JoltObject3D::set_collision_layer(uint32_t p_layer) {
+	if (p_layer == collision_layer) {
+		return;
+	}
+
+	collision_layer = p_layer;
+
+	_collision_layer_changed();
+}
+
+void JoltObject3D::set_collision_mask(uint32_t p_mask) {
+	if (p_mask == collision_mask) {
+		return;
+	}
+
+	collision_mask = p_mask;
+
+	_collision_mask_changed();
+}
+
+bool JoltObject3D::can_collide_with(const JoltObject3D &p_other) const {
+	return (collision_mask & p_other.get_collision_layer()) != 0;
+}
+
+String JoltObject3D::to_string() const {
+	return String();
+}
+
+bool JoltObject3D::can_interact_with(const JoltObject3D &p_other) const {
+	if (const JoltBody3D *other_body = p_other.as_body()) {
+		return can_interact_with(*other_body);
+	} else if (const JoltArea3D *other_area = p_other.as_area()) {
+		return can_interact_with(*other_area);
+	} else if (const JoltSoftBody3D *other_soft_body = p_other.as_soft_body()) {
+		return can_interact_with(*other_soft_body);
+	} else {
+		ERR_FAIL_V_MSG(false, vformat("Unhandled object type: '%d'. This should not happen. Please report this.", p_other.get_type()));
+	}
+}
+
+Transform3D JoltObject3D::get_transform_unscaled() const {
+	if (!in_space()) {
+		return Transform3D(to_godot(jolt_settings->mRotation), to_godot(jolt_settings->mPosition));
+	} else {
+		return Transform3D(to_godot(jolt_body->GetRotation()), to_godot(jolt_body->GetPosition()));
+	}
+}
+
+Transform3D JoltObject3D::get_transform_scaled() const {
+	return get_transform_unscaled().scaled_local(scale);
+}
+
+Basis JoltObject3D::get_basis() const {
+	if (!in_space()) {
+		return to_godot(jolt_settings->mRotation);
+	} else {
+		return to_godot(jolt_body->GetRotation());
+	}
+}
+
+Vector3 JoltObject3D::get_position() const {
+	if (!in_space()) {
+		return to_godot(jolt_settings->mPosition);
+	} else {
+		return to_godot(jolt_body->GetPosition());
+	}
+}
+
+Vector3 JoltObject3D::get_center_of_mass() const {
+	ERR_FAIL_COND_V_MSG(!in_space(), Vector3(),
+			vformat("Failed to retrieve center-of-mass of '%s'. Doing so without a physics space is "
+					"not supported when using Jolt Physics. If this relates to a node, try adding the "
+					"node to a scene tree first.",
+					to_string()));
+	return to_godot(jolt_body->GetCenterOfMassPosition());
+}
+
+Vector3 JoltObject3D::get_center_of_mass_relative() const {
+	return get_center_of_mass() - get_position();
+}
+
+Vector3 JoltObject3D::get_center_of_mass_local() const {
+	ERR_FAIL_NULL_V_MSG(space, Vector3(),
+			vformat("Failed to retrieve local center-of-mass of '%s'. Doing so without a physics space "
+					"is not supported when using Jolt Physics. If this relates to a node, try adding "
+					"the node to a scene tree first.",
+					to_string()));
+
+	return get_transform_scaled().xform_inv(get_center_of_mass());
+}
+
+Vector3 JoltObject3D::get_linear_velocity() const {
+	if (!in_space()) {
+		return to_godot(jolt_settings->mLinearVelocity);
+	} else {
+		return to_godot(jolt_body->GetLinearVelocity());
+	}
+}
+
+Vector3 JoltObject3D::get_angular_velocity() const {
+	if (!in_space()) {
+		return to_godot(jolt_settings->mAngularVelocity);
+	} else {
+		return to_godot(jolt_body->GetAngularVelocity());
+	}
+}
+
+JPH::ShapeRefC JoltObject3D::build_shapes(bool p_optimize_compound) {
+	JPH::ShapeRefC new_shape = _try_build_shape(p_optimize_compound);
+
+	if (new_shape == nullptr) {
+		if (has_custom_center_of_mass()) {
+			new_shape = new JPH::EmptyShape(to_jolt(get_center_of_mass_custom()));
+		} else {
+			new_shape = new JPH::EmptyShape();
+		}
+	}
+
+	return new_shape;
+}
+
+void JoltObject3D::commit_shapes(bool p_optimize_compound) {
+	if (!in_space()) {
+		_shapes_committed();
+		return;
+	}
+
+	JPH::ShapeRefC new_shape = build_shapes(p_optimize_compound);
+	if (new_shape == jolt_shape) {
+		return;
+	}
+
+	if (previous_jolt_shape == nullptr) {
+		previous_jolt_shape = jolt_shape;
+	}
+
+	jolt_shape = new_shape;
+
+	space->get_body_iface().SetShape(jolt_body->GetID(), jolt_shape, false, JPH::EActivation::DontActivate);
+
+	_enqueue_shapes_changed();
+
+	if (!p_optimize_compound && jolt_shape->GetType() == JPH::EShapeType::Compound) {
+		_enqueue_needs_optimization();
+	} else {
+		_dequeue_needs_optimization();
+	}
+
+	_shapes_committed();
+}
+
+void JoltObject3D::clear_previous_shape() {
+	previous_jolt_shape = nullptr;
+}
+
+int JoltObject3D::find_shape_index(const JPH::SubShapeID &p_sub_shape_id) const {
+	ERR_FAIL_NULL_V(jolt_shape, -1);
+	return find_shape_index((uint32_t)jolt_shape->GetSubShapeUserData(p_sub_shape_id));
+}
+
+void JoltObject3D::set_shape_transform(int, Transform3D) {}
+void JoltObject3D::set_shape(int, JoltShape3D *) {}
+void JoltObject3D::set_shape_disabled(int, bool) {}
+void JoltObject3D::remove_shape(int) {}
+Transform3D JoltObject3D::get_shape_transform_scaled(int) const { return Transform3D(); }
+JoltShape3D *JoltObject3D::get_shape(int) const { return nullptr; }
+void JoltObject3D::clear_shapes() {}
+void JoltObject3D::add_shape(JoltShape3D *, Transform3D, bool) {}
+JPH::ShapeRefC JoltObject3D::_try_build_shape(bool) { return JPH::ShapeRefC(); }
+void JoltObject3D::remove_shape(const JoltShape3D *) {}
+AABB JoltObject3D::get_aabb() const { return AABB(); }
+int JoltObject3D::find_shape_index(unsigned int) const { return -1; }
+
+// ============================================================================
+// JoltArea3D
+// ============================================================================
+
+JPH::BroadPhaseLayer JoltArea3D::_get_broad_phase_layer() const {
+	return monitorable ? JoltBroadPhaseLayer::AREA_DETECTABLE : JoltBroadPhaseLayer::AREA_UNDETECTABLE;
+}
+
+JPH::ObjectLayer JoltArea3D::_get_object_layer() const {
+	ERR_FAIL_NULL_V(space, 0);
+
+	if (jolt_shape == nullptr || jolt_shape->GetType() == JPH::EShapeType::Empty) {
+		return space->map_to_object_layer(_get_broad_phase_layer(), 0, 0);
+	}
+
+	return space->map_to_object_layer(_get_broad_phase_layer(), collision_layer, collision_mask);
+}
+
+void JoltArea3D::_enqueue_call_queries() {
+	if (space != nullptr) {
+		space->enqueue_call_queries(&call_queries_element);
+	}
+}
+
+void JoltArea3D::_dequeue_call_queries() {
+	if (space != nullptr) {
+		space->dequeue_call_queries(&call_queries_element);
+	}
+}
+
+void JoltArea3D::_notify_body_entered(const JPH::BodyID &p_body_id) {
+	if (JoltBody3D *body = space->try_get_body(p_body_id)) {
+		body->add_area(this);
+	} else if (JoltSoftBody3D *soft_body = space->try_get_soft_body(p_body_id)) {
+		soft_body->add_area(this);
+	}
+}
+
+void JoltArea3D::_notify_body_exited(const JPH::BodyID &p_body_id) {
+	if (JoltBody3D *body = space->try_get_body(p_body_id)) {
+		body->remove_area(this);
+	} else if (JoltSoftBody3D *soft_body = space->try_get_soft_body(p_body_id)) {
+		soft_body->remove_area(this);
+	}
+}
+
+void JoltArea3D::_update_group_filter() {
+	if (!in_space()) {
+		return;
+	}
+
+	jolt_body->GetCollisionGroup().SetGroupFilter(JoltGroupFilter::instance);
+}
+
+void JoltArea3D::_space_changing() {
+	JoltObject3D::_space_changing();
+
+	_remove_all_overlaps();
+	_dequeue_call_queries();
+}
+
+void JoltArea3D::_space_changed() {
+	JoltObject3D::_space_changed();
+
+	_update_group_filter();
+}
+
+void JoltArea3D::_events_changed() { _enqueue_call_queries(); }
+void JoltArea3D::_body_monitoring_changed() { _update_sleeping(); }
+void JoltArea3D::_area_monitoring_changed() { _update_sleeping(); }
+void JoltArea3D::_monitorable_changed() { _update_object_layer(); }
+
+JoltArea3D::JoltArea3D() :
+		JoltObject3D(OBJECT_TYPE_AREA),
+		call_queries_element(this) {}
+
+void JoltArea3D::set_transform(Transform3D p_transform) {
+	JOLT_ENSURE_SCALE_NOT_ZERO(p_transform, vformat("An invalid transform was passed to area '%s'.", to_string()));
+
+	Vector3 new_scale;
+	JoltMath::decompose(p_transform, new_scale);
+
+	if (!scale.is_equal_approx(new_scale)) {
+		scale = new_scale;
+		_shapes_changed();
+	}
+
+	if (!in_space()) {
+		jolt_settings->mPosition = to_jolt_r(p_transform.origin);
+		jolt_settings->mRotation = to_jolt(p_transform.basis);
+	} else {
+		space->get_body_iface().SetPositionAndRotation(jolt_body->GetID(), to_jolt_r(p_transform.origin), to_jolt(p_transform.basis), JPH::EActivation::DontActivate);
+	}
+}
+
+void JoltArea3D::set_monitorable(bool p_monitorable) {
+	if (p_monitorable == monitorable) {
+		return;
+	}
+
+	monitorable = p_monitorable;
+
+	_monitorable_changed();
+}
+
+bool JoltArea3D::can_interact_with(const JoltBody3D &p_other) const { return can_monitor(p_other); }
+bool JoltArea3D::can_interact_with(const JoltSoftBody3D &p_other) const { return can_monitor(p_other); }
+bool JoltArea3D::can_interact_with(const JoltArea3D &p_other) const { return can_monitor(p_other) || p_other.can_monitor(*this); }
+
+void JoltArea3D::set_priority(float p_priority) {
+	if (p_priority == priority) {
+		return;
+	}
+	priority = p_priority;
+	_notify_bodies_updated(true);
+}
+
+void JoltArea3D::set_gravity(float p_gravity) {
+	if (p_gravity == gravity) {
+		return;
+	}
+	gravity = p_gravity;
+	_notify_bodies_updated();
+}
+
+void JoltArea3D::set_point_gravity(bool p_enabled) {
+	if (p_enabled == point_gravity) {
+		return;
+	}
+	point_gravity = p_enabled;
+	_notify_bodies_updated();
+}
+
+void JoltArea3D::set_point_gravity_distance(float p_distance) {
+	if (p_distance == point_gravity_distance) {
+		return;
+	}
+	point_gravity_distance = p_distance;
+	_notify_bodies_updated();
+}
+
+void JoltArea3D::set_linear_damp(float p_damp) {
+	if (p_damp == linear_damp) {
+		return;
+	}
+	linear_damp = p_damp;
+	_notify_bodies_updated();
+}
+
+void JoltArea3D::set_angular_damp(float p_damp) {
+	if (p_damp == angular_damp) {
+		return;
+	}
+	angular_damp = p_damp;
+	_notify_bodies_updated();
+}
+
+void JoltArea3D::set_gravity_mode(OverrideMode p_mode) {
+	if (p_mode == gravity_mode) {
+		return;
+	}
+	gravity_mode = p_mode;
+	_notify_bodies_updated();
+}
+
+void JoltArea3D::set_linear_damp_mode(OverrideMode p_mode) {
+	if (p_mode == linear_damp_mode) {
+		return;
+	}
+	linear_damp_mode = p_mode;
+	_notify_bodies_updated();
+}
+
+void JoltArea3D::set_angular_damp_mode(OverrideMode p_mode) {
+	if (p_mode == angular_damp_mode) {
+		return;
+	}
+	angular_damp_mode = p_mode;
+	_notify_bodies_updated();
+}
+
+void JoltArea3D::set_gravity_vector(const Vector3 &p_vector) {
+	if (p_vector == gravity_vector) {
+		return;
+	}
+	gravity_vector = p_vector;
+	_notify_bodies_updated();
+}
+
+Vector3 JoltArea3D::compute_gravity(const Vector3 &p_position) const {
+	if (!point_gravity) {
+		return gravity_vector * gravity;
+	}
+
+	const Vector3 point = get_transform_scaled().xform(gravity_vector);
+	const Vector3 to_point = point - p_position;
+	const real_t to_point_dist_sq = MAX(to_point.length_squared(), (real_t)CMP_EPSILON);
+	const Vector3 to_point_dir = to_point / Math::sqrt(to_point_dist_sq);
+
+	if (point_gravity_distance == 0.0f) {
+		return to_point_dir * gravity;
+	}
+
+	const float gravity_dist_sq = point_gravity_distance * point_gravity_distance;
+
+	return to_point_dir * (gravity * gravity_dist_sq / to_point_dist_sq);
+}
+
+bool JoltArea3D::shape_exited(const JPH::BodyID &p_body_id, const JPH::SubShapeID &p_other_shape_id, const JPH::SubShapeID &p_self_shape_id) {
+	return body_shape_exited(p_body_id, p_other_shape_id, p_self_shape_id) || area_shape_exited(p_body_id, p_other_shape_id, p_self_shape_id);
+}
+
+void JoltArea3D::_notify_bodies_updated(bool p_priority_changed) {}
+bool JoltArea3D::can_monitor(const JoltArea3D &) const { return true; }
+bool JoltArea3D::body_shape_exited(const JPH::BodyID &, const JPH::SubShapeID &, const JPH::SubShapeID &) { return true; }
+void JoltArea3D::_update_sleeping() {}
+bool JoltArea3D::can_monitor(const JoltSoftBody3D &) const { return true; }
+bool JoltArea3D::can_monitor(const JoltBody3D &) const { return true; }
+void JoltArea3D::body_shape_entered(const JPH::BodyID &, const JPH::SubShapeID &, const JPH::SubShapeID &) {}
+bool JoltArea3D::area_shape_exited(const JPH::BodyID &, const JPH::SubShapeID &, const JPH::SubShapeID &) { return true; }
+void JoltArea3D::_remove_all_overlaps() {}
+void JoltArea3D::call_queries() {}
+void JoltArea3D::area_shape_entered(const JPH::BodyID &, const JPH::SubShapeID &, const JPH::SubShapeID &) {}
+void JoltArea3D::_add_to_space() {}
+
+// ============================================================================
+// JoltBody3D
+// ============================================================================
+
+JPH::BroadPhaseLayer JoltBody3D::_get_broad_phase_layer() const {
+	switch (mode) {
+		case PS3DE::BODY_MODE_STATIC: {
+			return _is_big() ? JoltBroadPhaseLayer::BODY_STATIC_BIG : JoltBroadPhaseLayer::BODY_STATIC;
+		}
+		case PS3DE::BODY_MODE_KINEMATIC:
+		case PS3DE::BODY_MODE_RIGID:
+		case PS3DE::BODY_MODE_RIGID_LINEAR: {
+			return JoltBroadPhaseLayer::BODY_DYNAMIC;
+		}
+		default: {
+			ERR_FAIL_V_MSG(JoltBroadPhaseLayer::BODY_STATIC, vformat("Unhandled body mode: '%d'. This should not happen. Please report this.", mode));
+		}
+	}
+}
+
+JPH::ObjectLayer JoltBody3D::_get_object_layer() const {
+	ERR_FAIL_NULL_V(space, 0);
+
+	if (jolt_shape == nullptr || jolt_shape->GetType() == JPH::EShapeType::Empty) {
+		return space->map_to_object_layer(_get_broad_phase_layer(), 0, 0);
+	}
+
+	return space->map_to_object_layer(_get_broad_phase_layer(), collision_layer, collision_mask);
+}
+
+JPH::EMotionType JoltBody3D::_get_motion_type() const {
+	switch (mode) {
+		case PS3DE::BODY_MODE_STATIC: {
+			return JPH::EMotionType::Static;
+		}
+		case PS3DE::BODY_MODE_KINEMATIC: {
+			return JPH::EMotionType::Kinematic;
+		}
+		case PS3DE::BODY_MODE_RIGID:
+		case PS3DE::BODY_MODE_RIGID_LINEAR: {
+			return JPH::EMotionType::Dynamic;
+		}
+		default: {
+			ERR_FAIL_V_MSG(JPH::EMotionType::Static, vformat("Unhandled body mode: '%d'. This should not happen. Please report this.", mode));
+		}
+	}
+}
+
+void JoltBody3D::_add_to_space() {
+	jolt_shape = build_shapes(true);
+
+	JPH::CollisionGroup::GroupID group_id = 0;
+	JPH::CollisionGroup::SubGroupID sub_group_id = 0;
+	JoltGroupFilter::encode_object(this, group_id, sub_group_id);
+
+	jolt_settings->mUserData = reinterpret_cast<JPH::uint64>(this);
+	jolt_settings->mObjectLayer = _get_object_layer();
+	jolt_settings->mCollisionGroup = JPH::CollisionGroup(nullptr, group_id, sub_group_id);
+	jolt_settings->mMotionType = _get_motion_type();
+	jolt_settings->mAllowedDOFs = _calculate_allowed_dofs();
+	jolt_settings->mAllowDynamicOrKinematic = true;
+	jolt_settings->mCollideKinematicVsNonDynamic = reports_all_kinematic_contacts();
+	jolt_settings->mUseManifoldReduction = !reports_contacts();
+	jolt_settings->mAllowSleeping = is_sleep_actually_allowed();
+	jolt_settings->mLinearDamping = 0.0f;
+	jolt_settings->mAngularDamping = 0.0f;
+	jolt_settings->mOverrideMassProperties = JPH::EOverrideMassProperties::MassAndInertiaProvided;
+	jolt_settings->mMassPropertiesOverride = _calculate_mass_properties();
+
+	jolt_settings->SetShape(jolt_shape);
+
+	JPH::Body *new_jolt_body = space->add_object(*this, *jolt_settings, sleep_initially);
+	if (new_jolt_body == nullptr) {
+		return;
+	}
+
+	jolt_body = new_jolt_body;
+
+	delete jolt_settings;
+	jolt_settings = nullptr;
+}
+
+void JoltBody3D::_enqueue_call_queries() {
+	if (space != nullptr) {
+		space->enqueue_call_queries(&call_queries_element);
+	}
+}
+
+void JoltBody3D::_dequeue_call_queries() {
+	if (space != nullptr) {
+		space->dequeue_call_queries(&call_queries_element);
+	}
+}
+
+void JoltBody3D::_integrate_forces(float p_step) {
+	if (custom_integrator) {
+		return;
+	}
+
+	JPH::MotionProperties &motion_properties = *jolt_body->GetMotionPropertiesUnchecked();
+
+	JPH::Vec3 linear_velocity = motion_properties.GetLinearVelocity();
+	linear_velocity *= MAX(1.0f - total_linear_damp * p_step, 0.0f);
+	motion_properties.SetLinearVelocity(linear_velocity);
+
+	JPH::Vec3 angular_velocity = motion_properties.GetAngularVelocity();
+	angular_velocity *= MAX(1.0f - total_angular_damp * p_step, 0.0f);
+	motion_properties.SetAngularVelocity(angular_velocity);
+
+	jolt_body->AddForce(to_jolt(total_gravity / motion_properties.GetInverseMass() + constant_force));
+	jolt_body->AddTorque(to_jolt(constant_torque));
+}
+
+void JoltBody3D::_move_kinematic(float p_step) {
+	jolt_body->SetLinearVelocity(JPH::Vec3::sZero());
+	jolt_body->SetAngularVelocity(JPH::Vec3::sZero());
+
+	const JPH::RVec3 current_position = jolt_body->GetPosition();
+	const JPH::Quat current_rotation = jolt_body->GetRotation();
+
+	const JPH::RVec3 new_position = to_jolt_r(kinematic_transform.origin);
+	const JPH::Quat new_rotation = to_jolt(kinematic_transform.basis);
+
+	if (new_position == current_position && new_rotation == current_rotation) {
+		return;
+	}
+
+	jolt_body->MoveKinematic(new_position, new_rotation, p_step);
+}
+
+JPH::EAllowedDOFs JoltBody3D::_calculate_allowed_dofs() const {
+	if (is_static()) {
+		return JPH::EAllowedDOFs::All;
+	}
+
+	JPH::EAllowedDOFs allowed_dofs = JPH::EAllowedDOFs::All;
+
+	if (is_axis_locked(PS3DE::BODY_AXIS_LINEAR_X)) {
+		allowed_dofs &= ~JPH::EAllowedDOFs::TranslationX;
+	}
+
+	if (is_axis_locked(PS3DE::BODY_AXIS_LINEAR_Y)) {
+		allowed_dofs &= ~JPH::EAllowedDOFs::TranslationY;
+	}
+
+	if (is_axis_locked(PS3DE::BODY_AXIS_LINEAR_Z)) {
+		allowed_dofs &= ~JPH::EAllowedDOFs::TranslationZ;
+	}
+
+	if (is_axis_locked(PS3DE::BODY_AXIS_ANGULAR_X) || is_rigid_linear()) {
+		allowed_dofs &= ~JPH::EAllowedDOFs::RotationX;
+	}
+
+	if (is_axis_locked(PS3DE::BODY_AXIS_ANGULAR_Y) || is_rigid_linear()) {
+		allowed_dofs &= ~JPH::EAllowedDOFs::RotationY;
+	}
+
+	if (is_axis_locked(PS3DE::BODY_AXIS_ANGULAR_Z) || is_rigid_linear()) {
+		allowed_dofs &= ~JPH::EAllowedDOFs::RotationZ;
+	}
+
+	ERR_FAIL_COND_V_MSG(allowed_dofs == JPH::EAllowedDOFs::None, JPH::EAllowedDOFs::All,
+			vformat("Invalid axis locks for '%s'. Locking all axes is not supported when using Jolt "
+					"Physics. All axes will be unlocked. Considering freezing the body instead.",
+					to_string()));
+
+	return allowed_dofs;
+}
+
+JPH::MassProperties JoltBody3D::_calculate_mass_properties(const JPH::Shape &p_shape) const {
+	const bool calculate_mass = mass <= 0;
+	const bool calculate_inertia = inertia.x <= 0 || inertia.y <= 0 || inertia.z <= 0;
+
+	JPH::MassProperties mass_properties = p_shape.GetMassProperties();
+
+	if (calculate_mass && calculate_inertia) {
+		// Use the mass properties calculated by the shape
+	} else if (calculate_inertia) {
+		mass_properties.ScaleToMass(mass);
+	} else {
+		mass_properties.mMass = mass;
+	}
+
+	if (inertia.x > 0) {
+		mass_properties.mInertia(0, 0) = (float)inertia.x;
+		mass_properties.mInertia(0, 1) = 0;
+		mass_properties.mInertia(0, 2) = 0;
+		mass_properties.mInertia(1, 0) = 0;
+		mass_properties.mInertia(2, 0) = 0;
+	}
+
+	if (inertia.y > 0) {
+		mass_properties.mInertia(1, 1) = (float)inertia.y;
+		mass_properties.mInertia(1, 0) = 0;
+		mass_properties.mInertia(1, 2) = 0;
+		mass_properties.mInertia(0, 1) = 0;
+		mass_properties.mInertia(2, 1) = 0;
+	}
+
+	if (inertia.z > 0) {
+		mass_properties.mInertia(2, 2) = (float)inertia.z;
+		mass_properties.mInertia(2, 0) = 0;
+		mass_properties.mInertia(2, 1) = 0;
+		mass_properties.mInertia(0, 2) = 0;
+		mass_properties.mInertia(1, 2) = 0;
+	}
+
+	mass_properties.mInertia(3, 3) = 1.0f;
+
+	return mass_properties;
+}
+
+JPH::MassProperties JoltBody3D::_calculate_mass_properties() const {
+	return _calculate_mass_properties(*jolt_shape);
+}
+
+void JoltBody3D::_update_mass_properties() {
+	if (in_space()) {
+		jolt_body->GetMotionPropertiesUnchecked()->SetMassProperties(_calculate_allowed_dofs(), _calculate_mass_properties());
+	}
+}
+
+bool JoltBody3D::_needs_update_environmental_properties() const {
+	if (unlikely(!in_space())) {
+		return false;
+	}
+
+	return has_point_gravity || space->get_default_area_changed_count() != default_area_changed_count;
+}
+
+void JoltBody3D::_update_environmental_properties() {
+	if (unlikely(!in_space())) {
+		return;
+	}
+
+	total_gravity = Vector3();
+	total_linear_damp = 0.0f;
+	total_angular_damp = 0.0f;
+
+	const Vector3 position = to_godot(jolt_body->GetPosition());
+
+	bool gravity_done = false;
+	bool linear_damp_done = linear_damp_mode == PS3DE::BODY_DAMP_MODE_REPLACE;
+	bool angular_damp_done = angular_damp_mode == PS3DE::BODY_DAMP_MODE_REPLACE;
+
+	for (const JoltArea3D *area : areas) {
+		if (!gravity_done) {
+			gravity_done = JoltArea3D::apply_override(total_gravity, area->get_gravity_mode(), [&]() { return area->compute_gravity(position); });
+		}
+
+		if (!linear_damp_done) {
+			linear_damp_done = JoltArea3D::apply_override(total_linear_damp, area->get_linear_damp_mode(), [&]() { return area->get_linear_damp(); });
+		}
+
+		if (!angular_damp_done) {
+			angular_damp_done = JoltArea3D::apply_override(total_angular_damp, area->get_angular_damp_mode(), [&]() { return area->get_angular_damp(); });
+		}
+
+		if (gravity_done && linear_damp_done && angular_damp_done) {
+			break;
+		}
+	}
+
+	if (!gravity_done) {
+		total_gravity += space->get_default_area()->compute_gravity(position);
+	}
+
+	if (!linear_damp_done) {
+		total_linear_damp += space->get_default_area()->get_linear_damp();
+	}
+
+	if (!angular_damp_done) {
+		total_angular_damp += space->get_default_area()->get_angular_damp();
+	}
+
+	total_gravity *= jolt_body->GetMotionPropertiesUnchecked()->GetGravityFactor();
+
+	switch (linear_damp_mode) {
+		case PS3DE::BODY_DAMP_MODE_COMBINE: {
+			total_linear_damp += linear_damp;
+		} break;
+		case PS3DE::BODY_DAMP_MODE_REPLACE: {
+			total_linear_damp = linear_damp;
+		} break;
+	}
+
+	switch (angular_damp_mode) {
+		case PS3DE::BODY_DAMP_MODE_COMBINE: {
+			total_angular_damp += angular_damp;
+		} break;
+		case PS3DE::BODY_DAMP_MODE_REPLACE: {
+			total_angular_damp = angular_damp;
+		} break;
+	}
+
+	default_area_changed_count = space->get_default_area_changed_count();
+}
+
+void JoltBody3D::_update_kinematic_transform() {
+	if (is_kinematic()) {
+		kinematic_transform = get_transform_unscaled();
+	}
+}
+
+void JoltBody3D::_update_joint_constraints() {
+	for (JoltJoint3D *joint : joints) {
+		joint->rebuild();
+	}
+}
+
+void JoltBody3D::_update_possible_kinematic_contacts() {
+	const bool value = reports_all_kinematic_contacts();
+
+	if (!in_space()) {
+		jolt_settings->mCollideKinematicVsNonDynamic = value;
+	} else {
+		jolt_body->SetCollideKinematicVsNonDynamic(value);
+	}
+}
+
+void JoltBody3D::_update_sleep_allowed() {
+	const bool value = is_sleep_actually_allowed();
+
+	if (!in_space()) {
+		jolt_settings->mAllowSleeping = value;
+	} else {
+		jolt_body->SetAllowSleeping(value);
+	}
+}
+
+void JoltBody3D::_destroy_joint_constraints() {
+	for (JoltJoint3D *joint : joints) {
+		joint->destroy();
+	}
+}
+
+void JoltBody3D::_clear_areas() {
+	if (!in_space()) {
+		return;
+	}
+
+	areas.clear();
+	_areas_changed();
+}
+
+void JoltBody3D::_update_group_filter() {
+	JPH::GroupFilter *group_filter = !exceptions.is_empty() ? JoltGroupFilter::instance : nullptr;
+
+	if (!in_space()) {
+		jolt_settings->mCollisionGroup.SetGroupFilter(group_filter);
+	} else {
+		jolt_body->GetCollisionGroup().SetGroupFilter(group_filter);
+	}
+}
+
+void JoltBody3D::_mode_changed() {
+	_update_object_layer();
+	_update_kinematic_transform();
+	_update_mass_properties();
+	_update_sleep_allowed();
+	wake_up();
+}
+
+void JoltBody3D::_shapes_committed() {
+	JoltObject3D::_shapes_committed();
+
+	_update_mass_properties();
+	_update_joint_constraints();
+	wake_up();
+}
+
+void JoltBody3D::_space_changing() {
+	JoltObject3D::_space_changing();
+
+	sleep_initially = is_sleeping();
+
+	_destroy_joint_constraints();
+	_clear_areas();
+	_dequeue_call_queries();
+}
+
+void JoltBody3D::_space_changed() {
+	JoltObject3D::_space_changed();
+
+	_update_kinematic_transform();
+	_update_group_filter();
+	_update_joint_constraints();
+	_update_sleep_allowed();
+	_update_environmental_properties();
+}
+
+void JoltBody3D::_areas_changed() {
+	has_point_gravity = false;
+	for (JoltArea3D *area : areas) {
+		if (area->is_point_gravity()) {
+			has_point_gravity = true;
+			break;
+		}
+	}
+
+	Vector3 previous_total_gravity = total_gravity;
+	_update_environmental_properties();
+
+	if (!total_gravity.is_equal_approx(previous_total_gravity)) {
+		wake_up();
+	}
+}
+
+void JoltBody3D::_joints_changed() { wake_up(); }
+void JoltBody3D::_transform_changed() { wake_up(); }
+void JoltBody3D::_motion_changed() { wake_up(); }
+void JoltBody3D::_exceptions_changed() { _update_group_filter(); }
+
+void JoltBody3D::_axis_lock_changed() {
+	_update_mass_properties();
+	wake_up();
+}
+
+void JoltBody3D::_contact_reporting_changed() {
+	_update_possible_kinematic_contacts();
+	_update_sleep_allowed();
+	wake_up();
+}
+
+void JoltBody3D::_sleep_allowed_changed() {
+	_update_sleep_allowed();
+	wake_up();
+}
+
+JoltBody3D::JoltBody3D() :
+		JoltObject3D(OBJECT_TYPE_BODY),
+		call_queries_element(this) {}
+
+JoltBody3D::~JoltBody3D() {
+	if (direct_state != nullptr) {
+		memdelete(direct_state);
+		direct_state = nullptr;
+	}
+}
+
+void JoltBody3D::set_transform(Transform3D p_transform) {
+	JOLT_ENSURE_SCALE_NOT_ZERO(p_transform, vformat("An invalid transform was passed to physics body '%s'.", to_string()));
+
+	Vector3 new_scale;
+	JoltMath::decompose(p_transform, new_scale);
+
+	if (!scale.is_equal_approx(new_scale)) {
+		scale = new_scale;
+		_shapes_changed();
+	}
+
+	if (!in_space()) {
+		jolt_settings->mPosition = to_jolt_r(p_transform.origin);
+		jolt_settings->mRotation = to_jolt(p_transform.basis);
+	} else if (is_kinematic()) {
+		kinematic_transform = p_transform;
+	} else {
+		space->get_body_iface().SetPositionAndRotation(jolt_body->GetID(), to_jolt_r(p_transform.origin), to_jolt(p_transform.basis), JPH::EActivation::DontActivate);
+	}
+
+	_transform_changed();
+}
+
+void JoltBody3D::set_custom_integrator(bool p_enabled) {
+	if (custom_integrator == p_enabled) {
+		return;
+	}
+
+	custom_integrator = p_enabled;
+
+	if (in_space()) {
+		jolt_body->ResetForce();
+		jolt_body->ResetTorque();
+	}
+
+	_motion_changed();
+}
+
+bool JoltBody3D::is_sleeping() const {
+	if (!in_space()) {
+		return sleep_initially;
+	} else {
+		return !jolt_body->IsActive();
+	}
+}
+
+bool JoltBody3D::is_sleep_actually_allowed() const {
+	return sleep_allowed && !(is_kinematic() && reports_contacts());
+}
+
+void JoltBody3D::set_is_sleeping(bool p_enabled) {
+	if (!in_space()) {
+		sleep_initially = p_enabled;
+	} else {
+		space->set_is_object_sleeping(jolt_body->GetID(), p_enabled);
+	}
+}
+
+void JoltBody3D::set_is_sleep_allowed(bool p_enabled) {
+	if (sleep_allowed == p_enabled) {
+		return;
+	}
+
+	sleep_allowed = p_enabled;
+
+	_sleep_allowed_changed();
+}
+
+Basis JoltBody3D::get_principal_inertia_axes() const {
+	ERR_FAIL_COND_V_MSG(!in_space(), Basis(),
+			vformat("Failed to retrieve principal inertia axes of '%s'. Doing so without a physics "
+					"space is not supported when using Jolt Physics. If this relates to a node, try "
+					"adding the node to a scene tree first.",
+					to_string()));
+
+	if (unlikely(is_static() || is_kinematic())) {
+		return Basis();
+	}
+
+	return to_godot(jolt_body->GetRotation() * jolt_body->GetMotionPropertiesUnchecked()->GetInertiaRotation());
+}
+
+Vector3 JoltBody3D::get_inverse_inertia() const {
+	ERR_FAIL_COND_V_MSG(!in_space(), Vector3(),
+			vformat("Failed to retrieve inverse inertia of '%s'. Doing so without a physics space is "
+					"not supported when using Jolt Physics. If this relates to a node, try adding the "
+					"node to a scene tree first.",
+					to_string()));
+
+	if (unlikely(is_static() || is_kinematic())) {
+		return Vector3();
+	}
+
+	return to_godot(jolt_body->GetMotionPropertiesUnchecked()->GetLocalSpaceInverseInertia().GetDiagonal3());
+}
+
+Basis JoltBody3D::get_inverse_inertia_tensor() const {
+	ERR_FAIL_COND_V_MSG(!in_space(), Basis(),
+			vformat("Failed to retrieve inverse inertia tensor of '%s'. Doing so without a physics "
+					"space is not supported when using Jolt Physics. If this relates to a node, try "
+					"adding the node to a scene tree first.",
+					to_string()));
+
+	if (unlikely(is_static() || is_kinematic())) {
+		return Basis();
+	}
+
+	return to_godot(jolt_body->GetInverseInertia()).basis;
+}
+
+void JoltBody3D::set_linear_velocity(const Vector3 &p_velocity) {
+	if (is_static() || is_kinematic()) {
+		linear_surface_velocity = p_velocity;
+	} else {
+		if (!in_space()) {
+			jolt_settings->mLinearVelocity = to_jolt(p_velocity);
+		} else {
+			jolt_body->GetMotionPropertiesUnchecked()->SetLinearVelocityClamped(to_jolt(p_velocity));
+		}
+	}
+
+	_motion_changed();
+}
+
+void JoltBody3D::set_angular_velocity(const Vector3 &p_velocity) {
+	if (is_static() || is_kinematic()) {
+		angular_surface_velocity = p_velocity;
+	} else {
+		if (!in_space()) {
+			jolt_settings->mAngularVelocity = to_jolt(p_velocity);
+		} else {
+			jolt_body->GetMotionPropertiesUnchecked()->SetAngularVelocityClamped(to_jolt(p_velocity));
+		}
+	}
+
+	_motion_changed();
+}
+
+void JoltBody3D::set_axis_velocity(const Vector3 &p_axis_velocity) {
+	const Vector3 axis = p_axis_velocity.normalized();
+
+	if (!in_space()) {
+		Vector3 linear_velocity = to_godot(jolt_settings->mLinearVelocity);
+		linear_velocity -= axis * axis.dot(linear_velocity);
+		linear_velocity += p_axis_velocity;
+		jolt_settings->mLinearVelocity = to_jolt(linear_velocity);
+	} else {
+		Vector3 linear_velocity = get_linear_velocity();
+		linear_velocity -= axis * axis.dot(linear_velocity);
+		linear_velocity += p_axis_velocity;
+		set_linear_velocity(linear_velocity);
+	}
+
+	_motion_changed();
+}
+
+Vector3 JoltBody3D::get_velocity_at_position(const Vector3 &p_position) const {
+	if (unlikely(!in_space())) {
+		return Vector3();
+	}
+
+	const JPH::MotionProperties &motion_properties = *jolt_body->GetMotionPropertiesUnchecked();
+	const Vector3 total_linear_velocity = to_godot(motion_properties.GetLinearVelocity()) + linear_surface_velocity;
+	const Vector3 total_angular_velocity = to_godot(motion_properties.GetAngularVelocity()) + angular_surface_velocity;
+	const Vector3 com_to_pos = p_position - to_godot(jolt_body->GetCenterOfMassPosition());
+
+	return total_linear_velocity + total_angular_velocity.cross(com_to_pos);
+}
+
+void JoltBody3D::set_center_of_mass_custom(const Vector3 &p_center_of_mass) {
+	if (custom_center_of_mass && p_center_of_mass == center_of_mass_custom) {
+		return;
+	}
+
+	custom_center_of_mass = true;
+	center_of_mass_custom = p_center_of_mass;
+
+	_shapes_changed();
+}
+
+void JoltBody3D::set_max_contacts_reported(int p_count) {
+	ERR_FAIL_INDEX(p_count, PS3DC::MAX_CONTACTS_REPORTED_3D_MAX);
+
+	if (unlikely((int)contacts.size() == p_count)) {
+		return;
+	}
+
+	contacts.resize(p_count);
+	contact_count = MIN(contact_count, p_count);
+
+	const bool use_manifold_reduction = !reports_contacts();
+
+	if (!in_space()) {
+		jolt_settings->mUseManifoldReduction = use_manifold_reduction;
+	} else {
+		space->get_body_iface().SetUseManifoldReduction(jolt_body->GetID(), use_manifold_reduction);
+	}
+
+	_contact_reporting_changed();
+}
+
+void JoltBody3D::reset_mass_properties() {
+	if (custom_center_of_mass) {
+		custom_center_of_mass = false;
+		center_of_mass_custom.zero();
+
+		_shapes_changed();
+	}
+
+	inertia.zero();
+
+	_update_mass_properties();
+}
+
+void JoltBody3D::apply_force(const Vector3 &p_force, const Vector3 &p_position) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to apply force to '%s'. Doing so without a physics space is "
+					"not supported when using Jolt Physics. If this relates to a node, "
+					"try adding the node to a scene tree first.",
+					to_string()));
+
+	if (unlikely(!is_rigid()) || custom_integrator || p_force == Vector3()) {
+		return;
+	}
+
+	jolt_body->AddForce(to_jolt(p_force), jolt_body->GetPosition() + to_jolt(p_position));
+
+	_motion_changed();
+}
+
+void JoltBody3D::apply_central_force(const Vector3 &p_force) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to apply central force to '%s'. Doing so without a physics "
+					"space is not supported when using Jolt Physics. If this relates to a "
+					"node, try adding the node to a scene tree first.",
+					to_string()));
+
+	if (unlikely(!is_rigid()) || custom_integrator || p_force == Vector3()) {
+		return;
+	}
+
+	jolt_body->AddForce(to_jolt(p_force));
+
+	_motion_changed();
+}
+
+void JoltBody3D::apply_impulse(const Vector3 &p_impulse, const Vector3 &p_position) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to apply impulse to '%s'. Doing so without a physics space is "
+					"not supported when using Jolt Physics. If this relates to a node, "
+					"try adding the node to a scene tree first.",
+					to_string()));
+
+	if (unlikely(!is_rigid()) || p_impulse == Vector3()) {
+		return;
+	}
+
+	jolt_body->AddImpulse(to_jolt(p_impulse), jolt_body->GetPosition() + to_jolt(p_position));
+
+	_motion_changed();
+}
+
+void JoltBody3D::apply_central_impulse(const Vector3 &p_impulse) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to apply central impulse to '%s'. Doing so without a physics "
+					"space is not supported when using Jolt Physics. If this relates to a "
+					"node, try adding the node to a scene tree first.",
+					to_string()));
+
+	if (unlikely(!is_rigid()) || p_impulse == Vector3()) {
+		return;
+	}
+
+	jolt_body->AddImpulse(to_jolt(p_impulse));
+
+	_motion_changed();
+}
+
+void JoltBody3D::apply_torque(const Vector3 &p_torque) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to apply torque to '%s'. Doing so without a physics space is "
+					"not supported when using Jolt Physics. If this relates to a node, "
+					"try adding the node to a scene tree first.",
+					to_string()));
+
+	if (unlikely(!is_rigid()) || custom_integrator || p_torque == Vector3()) {
+		return;
+	}
+
+	jolt_body->AddTorque(to_jolt(p_torque));
+
+	_motion_changed();
+}
+
+void JoltBody3D::apply_torque_impulse(const Vector3 &p_impulse) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to apply torque impulse to '%s'. Doing so without a physics "
+					"space is not supported when using Jolt Physics. If this relates to a "
+					"node, try adding the node to a scene tree first.",
+					to_string()));
+
+	if (unlikely(!is_rigid()) || p_impulse == Vector3()) {
+		return;
+	}
+
+	jolt_body->AddAngularImpulse(to_jolt(p_impulse));
+
+	_motion_changed();
+}
+
+void JoltBody3D::add_constant_central_force(const Vector3 &p_force) {
+	if (p_force == Vector3()) {
+		return;
+	}
+
+	constant_force += p_force;
+
+	_motion_changed();
+}
+
+void JoltBody3D::add_constant_force(const Vector3 &p_force, const Vector3 &p_position) {
+	if (p_force == Vector3()) {
+		return;
+	}
+
+	constant_force += p_force;
+	constant_torque += (p_position - get_center_of_mass_relative()).cross(p_force);
+
+	_motion_changed();
+}
+
+void JoltBody3D::add_constant_torque(const Vector3 &p_torque) {
+	if (p_torque == Vector3()) {
+		return;
+	}
+
+	constant_torque += p_torque;
+
+	_motion_changed();
+}
+
+Vector3 JoltBody3D::get_constant_force() const { return constant_force; }
+
+void JoltBody3D::set_constant_force(const Vector3 &p_force) {
+	if (constant_force == p_force) {
+		return;
+	}
+
+	constant_force = p_force;
+
+	_motion_changed();
+}
+
+Vector3 JoltBody3D::get_constant_torque() const { return constant_torque; }
+
+void JoltBody3D::set_constant_torque(const Vector3 &p_torque) {
+	if (constant_torque == p_torque) {
+		return;
+	}
+
+	constant_torque = p_torque;
+
+	_motion_changed();
+}
+
+void JoltBody3D::add_collision_exception(const RID &p_excepted_body) {
+	exceptions.push_back(p_excepted_body);
+
+	_exceptions_changed();
+}
+
+void JoltBody3D::remove_collision_exception(const RID &p_excepted_body) {
+	exceptions.erase(p_excepted_body);
+
+	_exceptions_changed();
+}
+
+bool JoltBody3D::has_collision_exception(const RID &p_excepted_body) const {
+	return exceptions.find(p_excepted_body) >= 0;
+}
+
+void JoltBody3D::add_area(JoltArea3D *p_area) {
+	int i = 0;
+	for (; i < (int)areas.size(); i++) {
+		if (p_area->get_priority() > areas[i]->get_priority()) {
+			break;
+		}
+	}
+
+	areas.insert(i, p_area);
+
+	_areas_changed();
+}
+
+void JoltBody3D::remove_area(JoltArea3D *p_area) {
+	areas.erase(p_area);
+
+	_areas_changed();
+}
+
+void JoltBody3D::update_area(JoltArea3D *p_area, bool p_priority_changed) {
+	if (p_priority_changed) {
+		areas.erase(p_area);
+		add_area(p_area);
+	} else {
+		_areas_changed();
+	}
+}
+
+void JoltBody3D::add_joint(JoltJoint3D *p_joint) {
+	joints.push_back(p_joint);
+
+	_joints_changed();
+}
+
+void JoltBody3D::remove_joint(JoltJoint3D *p_joint) {
+	joints.erase(p_joint);
+
+	_joints_changed();
+}
+
+PhysicsDirectBodyState3D *JoltBody3D::get_direct_state() {
+	if (direct_state == nullptr) {
+		direct_state = memnew(PhysicsDirectBodyState3D(this));
+	}
+
+	return direct_state;
+}
+
+void JoltBody3D::set_mode(PS3DE::BodyMode p_mode) {
+	if (p_mode == mode) {
+		return;
+	}
+
+	mode = p_mode;
+
+	if (!in_space()) {
+		_mode_changed();
+		return;
+	}
+
+	const JPH::EMotionType motion_type = _get_motion_type();
+
+	if (motion_type == JPH::EMotionType::Static) {
+		put_to_sleep();
+	}
+
+	jolt_body->SetMotionType(motion_type);
+
+	if (motion_type != JPH::EMotionType::Static) {
+		wake_up();
+	}
+
+	if (motion_type == JPH::EMotionType::Kinematic) {
+		jolt_body->SetLinearVelocity(JPH::Vec3::sZero());
+		jolt_body->SetAngularVelocity(JPH::Vec3::sZero());
+	}
+
+	linear_surface_velocity = Vector3();
+	angular_surface_velocity = Vector3();
+
+	_mode_changed();
+}
+
+bool JoltBody3D::is_ccd_enabled() const {
+	if (!in_space()) {
+		return jolt_settings->mMotionQuality == JPH::EMotionQuality::LinearCast;
+	} else {
+		return !is_static() && jolt_body->GetMotionProperties()->GetMotionQuality() == JPH::EMotionQuality::LinearCast;
+	}
+}
+
+void JoltBody3D::set_ccd_enabled(bool p_enabled) {
+	const JPH::EMotionQuality motion_quality = p_enabled ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
+
+	if (!in_space()) {
+		jolt_settings->mMotionQuality = motion_quality;
+	} else {
+		space->get_body_iface().SetMotionQuality(jolt_body->GetID(), motion_quality);
+	}
+}
+
+void JoltBody3D::set_mass(float p_mass) {
+	if (p_mass != mass) {
+		mass = p_mass;
+		_update_mass_properties();
+	}
+}
+
+void JoltBody3D::set_inertia(const Vector3 &p_inertia) {
+	if (p_inertia != inertia) {
+		inertia = p_inertia;
+		_update_mass_properties();
+	}
+}
+
+float JoltBody3D::get_bounce() const {
+	if (!in_space()) {
+		return jolt_settings->mRestitution;
+	} else {
+		return jolt_body->GetRestitution();
+	}
+}
+
+void JoltBody3D::set_bounce(float p_bounce) {
+	if (!in_space()) {
+		jolt_settings->mRestitution = p_bounce;
+	} else {
+		jolt_body->SetRestitution(p_bounce);
+	}
+}
+
+float JoltBody3D::get_friction() const {
+	if (!in_space()) {
+		return jolt_settings->mFriction;
+	} else {
+		return jolt_body->GetFriction();
+	}
+}
+
+void JoltBody3D::set_friction(float p_friction) {
+	if (!in_space()) {
+		jolt_settings->mFriction = p_friction;
+	} else {
+		jolt_body->SetFriction(p_friction);
+	}
+}
+
+float JoltBody3D::get_gravity_scale() const {
+	if (!in_space()) {
+		return jolt_settings->mGravityFactor;
+	} else {
+		return jolt_body->GetMotionPropertiesUnchecked()->GetGravityFactor();
+	}
+}
+
+void JoltBody3D::set_gravity_scale(float p_scale) {
+	if (!in_space()) {
+		jolt_settings->mGravityFactor = p_scale;
+	} else {
+		jolt_body->GetMotionPropertiesUnchecked()->SetGravityFactor(p_scale);
+		_update_environmental_properties();
+	}
+}
+
+void JoltBody3D::set_linear_damp(float p_damp) {
+	p_damp = MAX(0.0f, p_damp);
+
+	if (p_damp == linear_damp) {
+		return;
+	}
+
+	linear_damp = p_damp;
+
+	_update_environmental_properties();
+}
+
+void JoltBody3D::set_angular_damp(float p_damp) {
+	p_damp = MAX(0.0f, p_damp);
+
+	if (p_damp == angular_damp) {
+		return;
+	}
+
+	angular_damp = p_damp;
+
+	_update_environmental_properties();
+}
+
+void JoltBody3D::set_linear_damp_mode(DampMode p_mode) {
+	if (p_mode == linear_damp_mode) {
+		return;
+	}
+
+	linear_damp_mode = p_mode;
+
+	_update_environmental_properties();
+}
+
+void JoltBody3D::set_angular_damp_mode(DampMode p_mode) {
+	if (p_mode == angular_damp_mode) {
+		return;
+	}
+
+	angular_damp_mode = p_mode;
+
+	_update_environmental_properties();
+}
+
+bool JoltBody3D::is_axis_locked(PS3DE::BodyAxis p_axis) const {
+	return (locked_axes & (uint32_t)p_axis) != 0;
+}
+
+void JoltBody3D::set_axis_lock(PS3DE::BodyAxis p_axis, bool p_enabled) {
+	const uint32_t previous_locked_axes = locked_axes;
+
+	if (p_enabled) {
+		locked_axes |= (uint32_t)p_axis;
+	} else {
+		locked_axes &= ~(uint32_t)p_axis;
+	}
+
+	if (previous_locked_axes != locked_axes) {
+		_axis_lock_changed();
+	}
+}
+
+bool JoltBody3D::can_interact_with(const JoltBody3D &p_other) const {
+	return (can_collide_with(p_other) || p_other.can_collide_with(*this)) &&
+			!has_collision_exception(p_other.get_rid()) && !p_other.has_collision_exception(rid);
+}
+
+bool JoltBody3D::can_interact_with(const JoltSoftBody3D &p_other) const {
+	return p_other.can_interact_with(*this);
+}
+
+bool JoltBody3D::can_interact_with(const JoltArea3D &p_other) const {
+	return p_other.can_interact_with(*this);
+}
+
+bool JoltBody3D::reports_all_kinematic_contacts() const { return false; }
+
+void JoltBody3D::add_contact(const JoltBody3D *, float, int, int, const Vector3 &, const Vector3 &, const Vector3 &, const Vector3 &, const Vector3 &, const Vector3 &) {}
+
+void JoltBody3D::_on_wake_up() {}
+void JoltBody3D::call_queries() {}
+void JoltBody3D::pre_step(float p_step) {}
+
+// ============================================================================
+// JoltSoftBody3D
+// ============================================================================
+
+namespace {
+
+template <typename TJoltVertex>
+void pin_vertices(const JoltSoftBody3D &p_body, const HashSet<int> &p_pinned_vertices, const LocalVector<int> &p_mesh_to_physics, JPH::Array<TJoltVertex> &r_physics_vertices) {
+	const int mesh_vertex_count = p_mesh_to_physics.size();
+	const int physics_vertex_count = (int)r_physics_vertices.size();
+
+	for (int mesh_index : p_pinned_vertices) {
+		ERR_CONTINUE_MSG(mesh_index < 0 || mesh_index >= mesh_vertex_count,
+				vformat("Index %d of pinned vertex in soft body '%s' is out of bounds. There are only "
+						"%d vertices in the current mesh.",
+						mesh_index, p_body.to_string(), mesh_vertex_count));
+
+		const int physics_index = p_mesh_to_physics[mesh_index];
+		ERR_CONTINUE_MSG(physics_index < 0 || physics_index >= physics_vertex_count,
+				vformat("Index %d of pinned vertex in soft body '%s' is out of bounds. There are only "
+						"%d vertices in the current mesh. This should not happen. Please report this.",
+						physics_index, p_body.to_string(), physics_vertex_count));
+
+		r_physics_vertices[physics_index].mInvMass = 0.0f;
+	}
+}
+
+} // namespace
+
+JPH::BroadPhaseLayer JoltSoftBody3D::_get_broad_phase_layer() const {
+	return JoltBroadPhaseLayer::BODY_DYNAMIC;
+}
+
+JPH::ObjectLayer JoltSoftBody3D::_get_object_layer() const {
+	ERR_FAIL_NULL_V(space, 0);
+
+	return space->map_to_object_layer(_get_broad_phase_layer(), collision_layer, collision_mask);
+}
+
+void JoltSoftBody3D::_space_changed() {
+	JoltObject3D::_space_changed();
+
+	_update_mass();
+	_update_pressure();
+	_update_damping();
+	_update_simulation_precision();
+	_update_group_filter();
+}
+
+void JoltSoftBody3D::_update_pressure() {
+	if (!in_space()) {
+		jolt_soft_settings->mPressure = pressure;
+		return;
+	}
+
+	JPH::SoftBodyMotionProperties &motion_properties = static_cast<JPH::SoftBodyMotionProperties &>(*jolt_body->GetMotionPropertiesUnchecked());
+	motion_properties.SetPressure(pressure);
+}
+
+void JoltSoftBody3D::_update_simulation_precision() {
+	if (!in_space()) {
+		jolt_soft_settings->mNumIterations = (JPH::uint32)simulation_precision;
+		return;
+	}
+
+	JPH::SoftBodyMotionProperties &motion_properties = static_cast<JPH::SoftBodyMotionProperties &>(*jolt_body->GetMotionPropertiesUnchecked());
+	motion_properties.SetNumIterations((JPH::uint32)simulation_precision);
+}
+
+void JoltSoftBody3D::_try_rebuild() {
+	if (space != nullptr) {
+		_reset_space();
+	}
+}
+
+void JoltSoftBody3D::_mesh_changed() { _try_rebuild(); }
+void JoltSoftBody3D::_simulation_precision_changed() { wake_up(); }
+
+void JoltSoftBody3D::_mass_changed() {
+	_update_mass();
+	wake_up();
+}
+
+void JoltSoftBody3D::_pressure_changed() {
+	_update_pressure();
+	wake_up();
+}
+
+void JoltSoftBody3D::_damping_changed() {
+	_update_damping();
+	wake_up();
+}
+
+void JoltSoftBody3D::_pins_changed() {
+	_update_mass();
+	wake_up();
+}
+
+void JoltSoftBody3D::_vertices_changed() { wake_up(); }
+void JoltSoftBody3D::_exceptions_changed() { _update_group_filter(); }
+void JoltSoftBody3D::_motion_changed() { wake_up(); }
+void JoltSoftBody3D::_transform_changed() { wake_up(); }
+void JoltSoftBody3D::_areas_changed() { wake_up(); }
+
+JoltSoftBody3D::JoltSoftBody3D() :
+		JoltObject3D(OBJECT_TYPE_SOFT_BODY) {
+	jolt_soft_settings->mRestitution = 0.0f;
+	jolt_soft_settings->mFriction = 1.0f;
+	jolt_soft_settings->mUpdatePosition = true;
+	jolt_soft_settings->mMakeRotationIdentity = false;
+}
+
+JoltSoftBody3D::~JoltSoftBody3D() {
+	if (jolt_soft_settings != nullptr) {
+		delete jolt_soft_settings;
+		jolt_soft_settings = nullptr;
+	}
+}
+
+bool JoltSoftBody3D::can_interact_with(const JoltSoftBody3D &p_other) const {
+	return (can_collide_with(p_other) || p_other.can_collide_with(*this)) &&
+			!has_collision_exception(p_other.get_rid()) && !p_other.has_collision_exception(rid);
+}
+
+bool JoltSoftBody3D::can_interact_with(const JoltArea3D &p_other) const {
+	return p_other.can_interact_with(*this);
+}
+
+Vector3 JoltSoftBody3D::get_velocity_at_position(const Vector3 &p_position) const {
+	return Vector3();
+}
+
+void JoltSoftBody3D::pre_step(float p_step) { _apply_environmental_forces(p_step); }
+
+void JoltSoftBody3D::set_mesh(const RID &p_mesh) {
+	if (unlikely(mesh == p_mesh)) {
+		return;
+	}
+
+	mesh = p_mesh;
+	_mesh_changed();
+}
+
+bool JoltSoftBody3D::is_sleeping() const {
+	if (!in_space()) {
+		return false;
+	} else {
+		return !jolt_body->IsActive();
+	}
+}
+
+void JoltSoftBody3D::apply_vertex_force(int p_index, const Vector3 &p_force) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to apply force to '%s'. Doing so without a physics space is "
+					"not supported when using Jolt Physics. If this relates to a node, "
+					"try adding the node to a scene tree first.",
+					to_string()));
+
+	apply_vertex_impulse(p_index, p_force * space->get_last_step());
+}
+
+void JoltSoftBody3D::apply_central_impulse(const Vector3 &p_impulse) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to apply central impulse to '%s'. Doing so without a physics "
+					"space is not supported when using Jolt Physics. If this relates to a "
+					"node, try adding the node to a scene tree first.",
+					to_string()));
+
+	JPH::SoftBodyMotionProperties &motion_properties = static_cast<JPH::SoftBodyMotionProperties &>(*jolt_body->GetMotionPropertiesUnchecked());
+	JPH::Array<JPH::SoftBodyVertex> &physics_vertices = motion_properties.GetVertices();
+
+	const JPH::Vec3 impulse = to_jolt(p_impulse) / physics_vertices.size();
+
+	for (JPH::SoftBodyVertex &physics_vertex : physics_vertices) {
+		if (physics_vertex.mInvMass > 0.0f) {
+			physics_vertex.mVelocity += impulse * physics_vertex.mInvMass;
+		}
+	}
+
+	_motion_changed();
+}
+
+void JoltSoftBody3D::apply_central_force(const Vector3 &p_force) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to apply central force to '%s'. Doing so without a physics "
+					"space is not supported when using Jolt Physics. If this relates to a "
+					"node, try adding the node to a scene tree first.",
+					to_string()));
+
+	jolt_body->AddForce(to_jolt(p_force));
+
+	_motion_changed();
+}
+
+void JoltSoftBody3D::set_is_sleeping(bool p_enabled) {
+	if (!in_space()) {
+		return;
+	}
+
+	space->set_is_object_sleeping(jolt_body->GetID(), p_enabled);
+}
+
+bool JoltSoftBody3D::is_sleep_allowed() const {
+	if (!in_space()) {
+		return jolt_soft_settings->mAllowSleeping;
+	} else {
+		return jolt_body->GetAllowSleeping();
+	}
+}
+
+void JoltSoftBody3D::set_is_sleep_allowed(bool p_enabled) {
+	if (!in_space()) {
+		jolt_soft_settings->mAllowSleeping = p_enabled;
+	} else {
+		jolt_body->SetAllowSleeping(p_enabled);
+	}
+}
+
+void JoltSoftBody3D::set_simulation_precision(int p_precision) {
+	if (unlikely(simulation_precision == p_precision)) {
+		return;
+	}
+
+	simulation_precision = MAX(p_precision, 0);
+
+	_simulation_precision_changed();
+}
+
+void JoltSoftBody3D::set_mass(float p_mass) {
+	ERR_FAIL_COND(p_mass <= 0.0);
+
+	if (unlikely(mass == p_mass)) {
+		return;
+	}
+
+	mass = p_mass;
+
+	_mass_changed();
+}
+
+float JoltSoftBody3D::get_stiffness_coefficient() const { return stiffness_coefficient; }
+
+void JoltSoftBody3D::set_stiffness_coefficient(float p_coefficient) {
+	stiffness_coefficient = CLAMP(p_coefficient, 0.0f, 1.0f);
+}
+
+float JoltSoftBody3D::get_shrinking_factor() const { return shrinking_factor; }
+
+void JoltSoftBody3D::set_shrinking_factor(float p_shrinking_factor) {
+	shrinking_factor = p_shrinking_factor;
+}
+
+void JoltSoftBody3D::set_pressure(float p_pressure) {
+	if (unlikely(pressure == p_pressure)) {
+		return;
+	}
+
+	pressure = MAX(p_pressure, 0.0f);
+
+	_pressure_changed();
+}
+
+void JoltSoftBody3D::set_linear_damping(float p_damping) {
+	if (unlikely(linear_damping == p_damping)) {
+		return;
+	}
+
+	linear_damping = MAX(p_damping, 0.0f);
+
+	_damping_changed();
+}
+
+float JoltSoftBody3D::get_drag() const { return 0.0f; }
+void JoltSoftBody3D::set_drag(float p_drag) {}
+
+Transform3D JoltSoftBody3D::get_transform() const {
+	return Transform3D();
+}
+
+void JoltSoftBody3D::set_transform(const Transform3D &p_transform) {
+	ERR_FAIL_COND_MSG(!in_space(),
+			vformat("Failed to set transform for '%s'. Doing so without a physics space "
+					"is not supported when using Jolt Physics. If this relates to a node, "
+					"try adding the node to a scene tree first.",
+					to_string()));
+
+	const JPH::Mat44 relative_transform = to_jolt(p_transform.orthonormalized());
+
+	JPH::BodyInterface &body_iface = space->get_body_iface();
+	body_iface.SetPosition(jolt_body->GetID(), jolt_body->GetPosition() + relative_transform.GetTranslation(), JPH::EActivation::DontActivate);
+
+	JPH::SoftBodyMotionProperties &motion_properties = static_cast<JPH::SoftBodyMotionProperties &>(*jolt_body->GetMotionPropertiesUnchecked());
+	JPH::Array<JPH::SoftBodyVertex> &physics_vertices = motion_properties.GetVertices();
+
+	for (JPH::SoftBodyVertex &vertex : physics_vertices) {
+		vertex.mPosition = vertex.mPreviousPosition = relative_transform.Multiply3x3(vertex.mPosition);
+		vertex.mVelocity = JPH::Vec3::sZero();
+	}
+
+	_transform_changed();
+}
+
+AABB JoltSoftBody3D::get_bounds() const {
+	ERR_FAIL_COND_V_MSG(!in_space(), AABB(),
+			vformat("Failed to retrieve world bounds of '%s'. Doing so without a physics space is not "
+					"supported when using Jolt Physics. If this relates to a node, try adding the node "
+					"to a scene tree first.",
+					to_string()));
+	return to_godot(jolt_body->GetWorldSpaceBounds());
+}
+
+void JoltSoftBody3D::_update_mass() {}
+void JoltSoftBody3D::_update_damping() {}
+void JoltSoftBody3D::_update_group_filter() {}
+bool JoltSoftBody3D::has_collision_exception(const RID &) const { return false; }
+void JoltSoftBody3D::apply_vertex_impulse(int, const Vector3 &) {}
+void JoltSoftBody3D::update_rendering_server(PhysicsServer3DRenderingServerHandler *) {}
+void JoltSoftBody3D::unpin_vertex(int) {}
+void JoltSoftBody3D::unpin_all_vertices() {}
+void JoltSoftBody3D::set_vertex_position(int, const Vector3 &) {}
+void JoltSoftBody3D::remove_collision_exception(const RID &) {}
+void JoltSoftBody3D::remove_area(JoltArea3D *) {}
+void JoltSoftBody3D::pin_vertex(int) {}
+bool JoltSoftBody3D::is_vertex_pinned(int) const { return false; }
+Vector3 JoltSoftBody3D::get_vertex_position(int) { return Vector3(); }
+bool JoltSoftBody3D::can_interact_with(const JoltBody3D &) const { return false; }
+void JoltSoftBody3D::_apply_environmental_forces(float) {}
+void JoltSoftBody3D::add_collision_exception(const RID &) {}
+void JoltSoftBody3D::add_area(JoltArea3D *) {}
+void JoltSoftBody3D::_add_to_space() {}
+void JoltSoftBody3D::_space_changing() {}
+
+// ============================================================================
+// PhysicsDirectBodyState3D
+// ============================================================================
+
+PhysicsDirectBodyState3D::PhysicsDirectBodyState3D(JoltBody3D *p_body) :
+		body(p_body) {}
+
+Vector3 PhysicsDirectBodyState3D::get_total_gravity() const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	return body->get_total_gravity();
+}
+
+real_t PhysicsDirectBodyState3D::get_total_angular_damp() const {
+	ERR_FAIL_NULL_V(body, 0.0);
+	return (real_t)body->get_total_angular_damp();
+}
+
+real_t PhysicsDirectBodyState3D::get_total_linear_damp() const {
+	ERR_FAIL_NULL_V(body, 0.0);
+	return (real_t)body->get_total_linear_damp();
+}
+
+Vector3 PhysicsDirectBodyState3D::get_center_of_mass() const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	return body->get_center_of_mass_relative();
+}
+
+Vector3 PhysicsDirectBodyState3D::get_center_of_mass_local() const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	return body->get_center_of_mass_local();
+}
+
+Basis PhysicsDirectBodyState3D::get_principal_inertia_axes() const {
+	ERR_FAIL_NULL_V(body, Basis());
+	return body->get_principal_inertia_axes();
+}
+
+real_t PhysicsDirectBodyState3D::get_inverse_mass() const {
+	ERR_FAIL_NULL_V(body, 0.0);
+	return 1.0 / body->get_mass();
+}
+
+Vector3 PhysicsDirectBodyState3D::get_inverse_inertia() const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	return body->get_inverse_inertia();
+}
+
+Basis PhysicsDirectBodyState3D::get_inverse_inertia_tensor() const {
+	ERR_FAIL_NULL_V(body, Basis());
+	return body->get_inverse_inertia_tensor();
+}
+
+Vector3 PhysicsDirectBodyState3D::get_linear_velocity() const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	return body->get_linear_velocity();
+}
+
+void PhysicsDirectBodyState3D::set_linear_velocity(const Vector3 &p_velocity) {
+	ERR_FAIL_NULL(body);
+	body->set_linear_velocity(p_velocity);
+}
+
+Vector3 PhysicsDirectBodyState3D::get_angular_velocity() const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	return body->get_angular_velocity();
+}
+
+void PhysicsDirectBodyState3D::set_angular_velocity(const Vector3 &p_velocity) {
+	ERR_FAIL_NULL(body);
+	body->set_angular_velocity(p_velocity);
+}
+
+void PhysicsDirectBodyState3D::set_transform(const Transform3D &p_transform) {
+	ERR_FAIL_NULL(body);
+	body->set_transform(p_transform);
+}
+
+Transform3D PhysicsDirectBodyState3D::get_transform() const {
+	ERR_FAIL_NULL_V(body, Transform3D());
+	return body->get_transform_scaled();
+}
+
+Vector3 PhysicsDirectBodyState3D::get_velocity_at_local_position(const Vector3 &p_local_position) const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	return body->get_velocity_at_position(body->get_position() + p_local_position);
+}
+
+void PhysicsDirectBodyState3D::apply_central_impulse(const Vector3 &p_impulse) {
+	ERR_FAIL_NULL(body);
+	body->apply_central_impulse(p_impulse);
+}
+
+void PhysicsDirectBodyState3D::apply_impulse(const Vector3 &p_impulse, const Vector3 &p_position) {
+	ERR_FAIL_NULL(body);
+	body->apply_impulse(p_impulse, p_position);
+}
+
+void PhysicsDirectBodyState3D::apply_torque_impulse(const Vector3 &p_impulse) {
+	ERR_FAIL_NULL(body);
+	body->apply_torque_impulse(p_impulse);
+}
+
+void PhysicsDirectBodyState3D::apply_central_force(const Vector3 &p_force) {
+	ERR_FAIL_NULL(body);
+	body->apply_central_force(p_force);
+}
+
+void PhysicsDirectBodyState3D::apply_force(const Vector3 &p_force, const Vector3 &p_position) {
+	ERR_FAIL_NULL(body);
+	body->apply_force(p_force, p_position);
+}
+
+void PhysicsDirectBodyState3D::apply_torque(const Vector3 &p_torque) {
+	ERR_FAIL_NULL(body);
+	body->apply_torque(p_torque);
+}
+
+void PhysicsDirectBodyState3D::add_constant_central_force(const Vector3 &p_force) {
+	ERR_FAIL_NULL(body);
+	body->add_constant_central_force(p_force);
+}
+
+void PhysicsDirectBodyState3D::add_constant_force(const Vector3 &p_force, const Vector3 &p_position) {
+	ERR_FAIL_NULL(body);
+	body->add_constant_force(p_force, p_position);
+}
+
+void PhysicsDirectBodyState3D::add_constant_torque(const Vector3 &p_torque) {
+	ERR_FAIL_NULL(body);
+	body->add_constant_torque(p_torque);
+}
+
+Vector3 PhysicsDirectBodyState3D::get_constant_force() const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	return body->get_constant_force();
+}
+
+void PhysicsDirectBodyState3D::set_constant_force(const Vector3 &p_force) {
+	ERR_FAIL_NULL(body);
+	body->set_constant_force(p_force);
+}
+
+Vector3 PhysicsDirectBodyState3D::get_constant_torque() const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	return body->get_constant_torque();
+}
+
+void PhysicsDirectBodyState3D::set_constant_torque(const Vector3 &p_torque) {
+	ERR_FAIL_NULL(body);
+	body->set_constant_torque(p_torque);
+}
+
+bool PhysicsDirectBodyState3D::is_sleeping() const {
+	ERR_FAIL_NULL_V(body, false);
+	return body->is_sleeping();
+}
+
+void PhysicsDirectBodyState3D::set_sleep_state(bool p_enabled) {
+	ERR_FAIL_NULL(body);
+	body->set_is_sleeping(p_enabled);
+}
+
+void PhysicsDirectBodyState3D::set_collision_layer(uint32_t p_layer) {
+	ERR_FAIL_NULL(body);
+	body->set_collision_layer(p_layer);
+}
+
+uint32_t PhysicsDirectBodyState3D::get_collision_layer() const {
+	ERR_FAIL_NULL_V(body, 0);
+	return body->get_collision_layer();
+}
+
+void PhysicsDirectBodyState3D::set_collision_mask(uint32_t p_mask) {
+	ERR_FAIL_NULL(body);
+	body->set_collision_mask(p_mask);
+}
+
+uint32_t PhysicsDirectBodyState3D::get_collision_mask() const {
+	ERR_FAIL_NULL_V(body, 0);
+	return body->get_collision_mask();
+}
+
+int PhysicsDirectBodyState3D::get_contact_count() const {
+	ERR_FAIL_NULL_V(body, 0);
+	return body->get_contact_count();
+}
+
+Vector3 PhysicsDirectBodyState3D::get_contact_local_position(int p_contact_idx) const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), Vector3());
+	return body->get_contact(p_contact_idx).position;
+}
+
+Vector3 PhysicsDirectBodyState3D::get_contact_local_normal(int p_contact_idx) const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), Vector3());
+	return body->get_contact(p_contact_idx).normal;
+}
+
+Vector3 PhysicsDirectBodyState3D::get_contact_impulse(int p_contact_idx) const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), Vector3());
+	return body->get_contact(p_contact_idx).impulse;
+}
+
+int PhysicsDirectBodyState3D::get_contact_local_shape(int p_contact_idx) const {
+	ERR_FAIL_NULL_V(body, 0);
+	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), 0);
+	return body->get_contact(p_contact_idx).shape_index;
+}
+
+Vector3 PhysicsDirectBodyState3D::get_contact_local_velocity_at_position(int p_contact_idx) const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), Vector3());
+	return body->get_contact(p_contact_idx).velocity;
+}
+
+RID PhysicsDirectBodyState3D::get_contact_collider(int p_contact_idx) const {
+	ERR_FAIL_NULL_V(body, RID());
+	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), RID());
+	return body->get_contact(p_contact_idx).collider_rid;
+}
+
+Vector3 PhysicsDirectBodyState3D::get_contact_collider_position(int p_contact_idx) const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), Vector3());
+	return body->get_contact(p_contact_idx).collider_position;
+}
+
+int PhysicsDirectBodyState3D::get_contact_collider_shape(int p_contact_idx) const {
+	ERR_FAIL_NULL_V(body, 0);
+	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), 0);
+	return body->get_contact(p_contact_idx).collider_shape_index;
+}
+
+Vector3 PhysicsDirectBodyState3D::get_contact_collider_velocity_at_position(int p_contact_idx) const {
+	ERR_FAIL_NULL_V(body, Vector3());
+	ERR_FAIL_INDEX_V(p_contact_idx, (int)body->get_contact_count(), Vector3());
+	return body->get_contact(p_contact_idx).collider_velocity;
+}
+
+real_t PhysicsDirectBodyState3D::get_step() const {
+	ERR_FAIL_NULL_V(body, 0.0);
+	ERR_FAIL_NULL_V(body->get_space(), 0.0);
+	return (real_t)body->get_space()->get_last_step();
+}
+
+void PhysicsDirectBodyState3D::integrate_forces() {
+	ERR_FAIL_NULL(body);
+	const float step = (float)get_step();
+
+	Vector3 linear_velocity = get_linear_velocity();
+	Vector3 angular_velocity = get_angular_velocity();
+
+	linear_velocity *= MAX(1.0f - (float)get_total_linear_damp() * step, 0.0f);
+	angular_velocity *= MAX(1.0f - (float)get_total_angular_damp() * step, 0.0f);
+
+	linear_velocity += get_total_gravity() * step;
+
+	set_linear_velocity(linear_velocity);
+	set_angular_velocity(angular_velocity);
+}
+
+PhysicsDirectSpaceState3D *PhysicsDirectBodyState3D::get_space_state() {
+	ERR_FAIL_NULL_V(body, nullptr);
+	ERR_FAIL_NULL_V(body->get_space(), nullptr);
+	return body->get_space()->get_direct_state();
+}

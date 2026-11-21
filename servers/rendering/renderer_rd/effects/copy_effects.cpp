@@ -7,7 +7,7 @@
 /**************************************************************************/
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/* Copyright (c) 2014-2026 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
 /* Permission is hereby granted, free of charge, to any person obtaining  */
 /* a copy of this software and associated documentation files (the        */
@@ -34,9 +34,13 @@
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/rendering_device.h"
 
 using namespace RendererRD;
+
+/* CopyEffects */
 
 void CopyEffects::initialize(uint32_t p_raster_effects)
 {
@@ -235,10 +239,7 @@ void CopyEffects::gaussian_glow_upsample_raster(RID p_source_rd_texture, RID p_d
 {
 }
 
-void CopyEffects::make_mipmap(
-	RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size)
-{
-}
+void CopyEffects::make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size) {}
 
 void CopyEffects::make_mipmap_raster(
 	RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size)
@@ -301,4 +302,67 @@ void CopyEffects::merge_specular(RID p_dest_framebuffer, RID p_specular, RID p_b
 {
 }
 
+/* Resolve */
 
+Resolve::~Resolve()
+{
+	if (prefer_raster_effects) {
+		resolve_raster.shader.version_free(resolve_raster.shader_version);
+	}
+	else {
+		resolve.shader.version_free(resolve.shader_version);
+	}
+}
+
+void Resolve::resolve_depth(
+	RID p_source_depth, RID p_dest_depth, Vector2i p_screen_size, int p_samples)
+{
+}
+
+void RendererRD::Resolve::resolve_gi(RID p_source_color, RID p_source_depth, RID p_dest_color,
+	RID p_dest_depth, RID p_velocity, RID p_normal, Vector2i p_size, int p_samples)
+{
+}
+
+Resolve::Resolve(bool p_prefer_raster_effects)
+{
+	prefer_raster_effects = p_prefer_raster_effects;
+
+	if (prefer_raster_effects) {
+		Vector<String> modes;
+		modes.push_back("\n");
+
+		resolve_raster.shader.initialize(modes);
+		resolve_raster.shader_version = resolve_raster.shader.version_create();
+	}
+	else {
+		Vector<String> modes;
+		modes.push_back("\n#define MODE_GI\n");
+		modes.push_back("\n#define MODE_GI\n#define MODE_VOXEL_GI\n");
+		modes.push_back("\n#define MODE_DEPTH\n");
+
+		resolve.shader.initialize(modes);
+		resolve.shader_version = resolve.shader.version_create();
+	}
+}
+
+/* RoughnessLimiter */
+
+RoughnessLimiter::~RoughnessLimiter() { shader.version_free(shader_version); }
+
+/* SortEffects */
+
+SortEffects::~SortEffects() { shader.version_free(shader_version); }
+
+/* MotionVectorsStore */
+
+MotionVectorsStore::MotionVectorsStore()
+{
+	Vector<String> modes;
+	modes.push_back("");
+
+	motion_shader.initialize(modes);
+	shader_version = motion_shader.version_create();
+}
+
+MotionVectorsStore::~MotionVectorsStore() { motion_shader.version_free(shader_version); }

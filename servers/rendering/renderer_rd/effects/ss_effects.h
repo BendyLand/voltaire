@@ -59,7 +59,9 @@
 #define RB_LAST_FRAME SNAME("last_frame")
 #define RB_DEINTERLEAVED SNAME("deinterleaved")
 #define RB_DEINTERLEAVED_PONG SNAME("deinterleaved_pong")
+#ifndef RB_EDGES
 #define RB_EDGES SNAME("edges")
+#endif
 #define RB_IMPORTANCE_MAP SNAME("importance_map")
 #define RB_IMPORTANCE_PONG SNAME("importance_pong")
 

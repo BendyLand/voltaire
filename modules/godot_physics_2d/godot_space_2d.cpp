@@ -29,12 +29,123 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
-#include "godot_area_pair_2d.h"
-#include "godot_body_pair_2d.h"
-#include "godot_collision_solver_2d.h"
-#include "godot_physics_server_2d.h"
 #include "godot_space_2d.h"
+
+#include "core/config/project_settings.h"
+#include "core/os/os.h"
+#include "godot_collision_solver_2d.h"
+#include "godot_constraints_2d.h"
+#include "godot_physics_server_2d.h"
+
+// ============================================================================
+// GodotBroadPhase2D
+// ============================================================================
+
+GodotBroadPhase2D::ID GodotBroadPhase2D::create(GodotCollisionObject2D* p_object, int p_subindex, const Rect2& p_aabb, bool p_static)
+{
+	uint32_t tree_id = p_static ? TREE_STATIC : TREE_DYNAMIC;
+	uint32_t tree_collision_mask = p_static ? TREE_FLAG_DYNAMIC : (TREE_FLAG_STATIC | TREE_FLAG_DYNAMIC);
+	ID oid = bvh.create(p_object, true, tree_id, tree_collision_mask, p_aabb, p_subindex);
+	return oid + 1;
+}
+
+void GodotBroadPhase2D::move(ID p_id, const Rect2& p_aabb)
+{
+	ERR_FAIL_COND(!p_id);
+	bvh.move(p_id - 1, p_aabb);
+}
+
+void GodotBroadPhase2D::set_static(ID p_id, bool p_static)
+{
+	ERR_FAIL_COND(!p_id);
+	uint32_t tree_id = p_static ? TREE_STATIC : TREE_DYNAMIC;
+	uint32_t tree_collision_mask = p_static ? TREE_FLAG_DYNAMIC : (TREE_FLAG_STATIC | TREE_FLAG_DYNAMIC);
+	bvh.set_tree(p_id - 1, tree_id, tree_collision_mask, false);
+}
+
+void GodotBroadPhase2D::remove(ID p_id)
+{
+	ERR_FAIL_COND(!p_id);
+	bvh.erase(p_id - 1);
+}
+
+GodotCollisionObject2D* GodotBroadPhase2D::get_object(ID p_id) const
+{
+	ERR_FAIL_COND_V(!p_id, nullptr);
+	GodotCollisionObject2D* it = bvh.get(p_id - 1);
+	ERR_FAIL_NULL_V(it, nullptr);
+	return it;
+}
+
+bool GodotBroadPhase2D::is_static(ID p_id) const
+{
+	ERR_FAIL_COND_V(!p_id, false);
+	uint32_t tree_id = bvh.get_tree_id(p_id - 1);
+	return tree_id == 0;
+}
+
+int GodotBroadPhase2D::get_subindex(ID p_id) const
+{
+	ERR_FAIL_COND_V(!p_id, 0);
+	return bvh.get_subindex(p_id - 1);
+}
+
+int GodotBroadPhase2D::cull_segment(const Vector2& p_from, const Vector2& p_to, GodotCollisionObject2D** p_results, int p_max_results, int* p_result_indices)
+{
+	return bvh.cull_segment(p_from, p_to, p_results, p_max_results, nullptr, 0xFFFFFFFF, p_result_indices);
+}
+
+int GodotBroadPhase2D::cull_aabb(const Rect2& p_aabb, GodotCollisionObject2D** p_results, int p_max_results, int* p_result_indices)
+{
+	return bvh.cull_aabb(p_aabb, p_results, p_max_results, nullptr, 0xFFFFFFFF, p_result_indices);
+}
+
+void* GodotBroadPhase2D::_pair_callback(void* self, uint32_t p_A, GodotCollisionObject2D* p_object_A, int subindex_A, uint32_t p_B, GodotCollisionObject2D* p_object_B, int subindex_B)
+{
+	GodotBroadPhase2D* bpo = static_cast<GodotBroadPhase2D*>(self);
+	if (!bpo->pair_callback) {
+		return nullptr;
+	}
+
+	return bpo->pair_callback(p_object_A, subindex_A, p_object_B, subindex_B, bpo->pair_userdata);
+}
+
+void GodotBroadPhase2D::_unpair_callback(void* self, uint32_t p_A, GodotCollisionObject2D* p_object_A, int subindex_A, uint32_t p_B, GodotCollisionObject2D* p_object_B, int subindex_B, void* pairdata)
+{
+	GodotBroadPhase2D* bpo = static_cast<GodotBroadPhase2D*>(self);
+	if (!bpo->unpair_callback) {
+		return;
+	}
+
+	bpo->unpair_callback(p_object_A, subindex_A, p_object_B, subindex_B, pairdata, bpo->unpair_userdata);
+}
+
+void GodotBroadPhase2D::set_pair_callback(PairCallback p_pair_callback, void* p_userdata)
+{
+	pair_callback = p_pair_callback;
+	pair_userdata = p_userdata;
+}
+
+void GodotBroadPhase2D::set_unpair_callback(UnpairCallback p_unpair_callback, void* p_userdata)
+{
+	unpair_callback = p_unpair_callback;
+	unpair_userdata = p_userdata;
+}
+
+void GodotBroadPhase2D::update()
+{
+	bvh.update();
+}
+
+GodotBroadPhase2D::GodotBroadPhase2D()
+{
+	bvh.set_pair_callback(_pair_callback, this);
+	bvh.set_unpair_callback(_unpair_callback, this);
+}
+
+// ============================================================================
+// PhysicsDirectSpaceState2D / GodotSpace2D
+// ============================================================================
 
 #define TEST_MOTION_MARGIN_MIN_VALUE 0.0001
 #define TEST_MOTION_MIN_CONTACT_DEPTH_FACTOR 0.05
@@ -130,9 +241,6 @@ bool PhysicsDirectSpaceState2D::intersect_ray(
 	int amount = space->broadphase->cull_segment(begin, end, space->intersection_query_results,
 		GodotSpace2D::INTERSECTION_QUERY_MAX, space->intersection_query_subindex_results);
 
-	// todo, create another array that references results, compute AABBs and check closest point to
-	// ray origin, sort, and stop evaluating results when beyond first collision
-
 	bool collided = false;
 	Vector2 res_point, res_normal;
 	int res_shape = -1;
@@ -164,7 +272,6 @@ bool PhysicsDirectSpaceState2D::intersect_ray(
 
 		if (shape->contains_point(local_from)) {
 			if (p_parameters.hit_from_inside) {
-				// Hit shape at starting point.
 				min_d = 0;
 				res_point = begin;
 				res_normal = Vector2();
@@ -174,7 +281,6 @@ bool PhysicsDirectSpaceState2D::intersect_ray(
 				break;
 			}
 			else {
-				// Ignore shape when starting inside.
 				continue;
 			}
 		}
@@ -199,7 +305,7 @@ bool PhysicsDirectSpaceState2D::intersect_ray(
 	if (!collided) {
 		return false;
 	}
-	ERR_FAIL_NULL_V(res_obj, false); // Shouldn't happen but silences warning.
+	ERR_FAIL_NULL_V(res_obj, false);
 
 	r_result.normal = res_normal;
 	r_result.position = res_point;
@@ -260,8 +366,6 @@ static void _rest_cbk_result(const Vector2& p_point_A, const Vector2& p_point_B,
 	rd->best_local_shape = rd->local_shape;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 int GodotSpace2D::_cull_aabb_for_body(GodotBody2D* p_body, const Rect2& p_aabb)
 {
 	int amount = broadphase->cull_aabb(p_aabb, intersection_query_results, INTERSECTION_QUERY_MAX,
@@ -301,7 +405,6 @@ int GodotSpace2D::_cull_aabb_for_body(GodotBody2D* p_body, const Rect2& p_aabb)
 	return amount;
 }
 
-// Assumes a valid collision pair, this should have been checked beforehand in the BVH or octree.
 void* GodotSpace2D::_broadphase_pair(GodotCollisionObject2D* A, int p_subindex_A,
 	GodotCollisionObject2D* B, int p_subindex_B, void* p_self)
 {
@@ -582,4 +685,282 @@ bool PhysicsDirectSpaceState2D::rest_info(
 	return false;
 }
 
+// ============================================================================
+// GodotStep2D
+// ============================================================================
 
+#define BODY_ISLAND_COUNT_RESERVE 128
+#define BODY_ISLAND_SIZE_RESERVE 512
+#define ISLAND_COUNT_RESERVE 128
+#define ISLAND_SIZE_RESERVE 512
+#define CONSTRAINT_COUNT_RESERVE 1024
+
+void GodotStep2D::_populate_island(GodotBody2D* p_body, LocalVector<GodotBody2D*>& p_body_island,
+	LocalVector<GodotConstraint2D*>& p_constraint_island)
+{
+	p_body->set_island_step(_step);
+
+	if (p_body->get_mode() > PS2DE::BODY_MODE_KINEMATIC) {
+		p_body_island.push_back(p_body);
+	}
+
+	for (const Pair<GodotConstraint2D*, int>& E : p_body->get_constraint_list()) {
+		GodotConstraint2D* constraint = E.first;
+		if (constraint->get_island_step() == _step) {
+			continue;
+		}
+		constraint->set_island_step(_step);
+		p_constraint_island.push_back(constraint);
+		all_constraints.push_back(constraint);
+
+		for (int i = 0; i < constraint->get_body_count(); i++) {
+			if (i == E.second) {
+				continue;
+			}
+			GodotBody2D* other_body = constraint->get_body_ptr()[i];
+			if (other_body->get_island_step() == _step) {
+				continue;
+			}
+			if (other_body->get_mode() == PS2DE::BODY_MODE_STATIC) {
+				continue;
+			}
+			_populate_island(other_body, p_body_island, p_constraint_island);
+		}
+	}
+}
+
+void GodotStep2D::_setup_constraint(uint32_t p_constraint_index, void* p_userdata)
+{
+	GodotConstraint2D* constraint = all_constraints[p_constraint_index];
+	constraint->setup(delta);
+}
+
+void GodotStep2D::_pre_solve_island(LocalVector<GodotConstraint2D*>& p_constraint_island) const
+{
+	uint32_t constraint_count = p_constraint_island.size();
+	uint32_t valid_constraint_count = 0;
+	for (uint32_t constraint_index = 0; constraint_index < constraint_count; ++constraint_index) {
+		GodotConstraint2D* constraint = p_constraint_island[constraint_index];
+		if (p_constraint_island[constraint_index]->pre_solve(delta)) {
+			p_constraint_island[valid_constraint_count++] = constraint;
+		}
+	}
+	p_constraint_island.resize(valid_constraint_count);
+}
+
+void GodotStep2D::_solve_island(uint32_t p_island_index, void* p_userdata) const
+{
+	const LocalVector<GodotConstraint2D*>& constraint_island = constraint_islands[p_island_index];
+
+	for (int i = 0; i < iterations; i++) {
+		uint32_t constraint_count = constraint_island.size();
+		for (uint32_t constraint_index = 0; constraint_index < constraint_count;
+			 ++constraint_index) {
+			constraint_island[constraint_index]->solve(delta);
+		}
+	}
+}
+
+void GodotStep2D::_check_suspend(LocalVector<GodotBody2D*>& p_body_island) const
+{
+	bool can_sleep = true;
+
+	uint32_t body_count = p_body_island.size();
+	for (uint32_t body_index = 0; body_index < body_count; ++body_index) {
+		GodotBody2D* body = p_body_island[body_index];
+
+		if (!body->sleep_test(delta)) {
+			can_sleep = false;
+		}
+	}
+
+	// Put all to sleep or wake up everyone.
+	for (uint32_t body_index = 0; body_index < body_count; ++body_index) {
+		GodotBody2D* body = p_body_island[body_index];
+
+		bool active = body->is_active();
+
+		if (active == can_sleep) {
+			body->set_active(!can_sleep);
+		}
+	}
+}
+
+void GodotStep2D::step(GodotSpace2D* p_space, real_t p_delta)
+{
+	p_space->lock();
+
+	p_space->setup();
+
+	p_space->set_last_step(p_delta);
+
+	iterations = p_space->get_solver_iterations();
+	delta = p_delta;
+
+	const SelfList<GodotBody2D>::List* body_list = &p_space->get_active_body_list();
+
+	/* INTEGRATE FORCES */
+
+	uint64_t profile_begtime = OS::get_ticks_usec();
+	uint64_t profile_endtime = 0;
+
+	int active_count = 0;
+
+	const SelfList<GodotBody2D>* b = body_list->first();
+	while (b) {
+		b->self()->integrate_forces(p_delta);
+		b = b->next();
+		active_count++;
+	}
+
+	p_space->set_active_objects(active_count);
+
+	p_space->update();
+
+	{
+		profile_endtime = OS::get_ticks_usec();
+		p_space->set_elapsed_time(
+			GodotSpace2D::ELAPSED_TIME_INTEGRATE_FORCES, profile_endtime - profile_begtime);
+		profile_begtime = profile_endtime;
+	}
+
+	/* GENERATE CONSTRAINT ISLANDS FOR MOVING AREAS */
+
+	uint32_t island_count = 0;
+
+	const SelfList<GodotArea2D>::List& aml = p_space->get_moved_area_list();
+
+	while (aml.first()) {
+		for (GodotConstraint2D* E : aml.first()->self()->get_constraints()) {
+			GodotConstraint2D* constraint = E;
+			if (constraint->get_island_step() == _step) {
+				continue;
+			}
+			constraint->set_island_step(_step);
+
+			++island_count;
+			if (constraint_islands.size() < island_count) {
+				constraint_islands.resize(island_count);
+			}
+			LocalVector<GodotConstraint2D*>& constraint_island =
+				constraint_islands[island_count - 1];
+			constraint_island.clear();
+
+			all_constraints.push_back(constraint);
+			constraint_island.push_back(constraint);
+		}
+		p_space->area_remove_from_moved_list(
+			(SelfList<GodotArea2D>*)aml.first());
+	}
+
+	/* GENERATE CONSTRAINT ISLANDS FOR ACTIVE RIGID BODIES */
+
+	b = body_list->first();
+
+	uint32_t body_island_count = 0;
+
+	while (b) {
+		GodotBody2D* body = b->self();
+
+		if (body->get_island_step() != _step) {
+			++body_island_count;
+			if (body_islands.size() < body_island_count) {
+				body_islands.resize(body_island_count);
+			}
+			LocalVector<GodotBody2D*>& body_island = body_islands[body_island_count - 1];
+			body_island.clear();
+			body_island.reserve(BODY_ISLAND_SIZE_RESERVE);
+
+			++island_count;
+			if (constraint_islands.size() < island_count) {
+				constraint_islands.resize(island_count);
+			}
+			LocalVector<GodotConstraint2D*>& constraint_island =
+				constraint_islands[island_count - 1];
+			constraint_island.clear();
+			constraint_island.reserve(ISLAND_SIZE_RESERVE);
+
+			_populate_island(body, body_island, constraint_island);
+
+			if (body_island.is_empty()) {
+				--body_island_count;
+			}
+
+			if (constraint_island.is_empty()) {
+				--island_count;
+			}
+		}
+		b = b->next();
+	}
+
+	p_space->set_island_count((int)island_count);
+
+	{
+		profile_endtime = OS::get_ticks_usec();
+		p_space->set_elapsed_time(
+			GodotSpace2D::ELAPSED_TIME_GENERATE_ISLANDS, profile_endtime - profile_begtime);
+		profile_begtime = profile_endtime;
+	}
+
+	/* SETUP CONSTRAINTS / PROCESS COLLISIONS */
+
+	uint32_t total_constraint_count = all_constraints.size();
+	(void)total_constraint_count;
+
+	{
+		profile_endtime = OS::get_ticks_usec();
+		p_space->set_elapsed_time(
+			GodotSpace2D::ELAPSED_TIME_SETUP_CONSTRAINTS, profile_endtime - profile_begtime);
+		profile_begtime = profile_endtime;
+	}
+
+	/* PRE-SOLVE CONSTRAINT ISLANDS */
+
+	for (uint32_t island_index = 0; island_index < island_count; ++island_index) {
+		_pre_solve_island(constraint_islands[island_index]);
+	}
+
+	/* SOLVE CONSTRAINT ISLANDS */
+
+	{
+		profile_endtime = OS::get_ticks_usec();
+		p_space->set_elapsed_time(
+			GodotSpace2D::ELAPSED_TIME_SOLVE_CONSTRAINTS, profile_endtime - profile_begtime);
+		profile_begtime = profile_endtime;
+	}
+
+	/* INTEGRATE VELOCITIES */
+
+	b = body_list->first();
+	while (b) {
+		const SelfList<GodotBody2D>* n = b->next();
+		b->self()->integrate_velocities(p_delta);
+		b = n;
+	}
+
+	/* SLEEP / WAKE UP ISLANDS */
+
+	for (uint32_t island_index = 0; island_index < body_island_count; ++island_index) {
+		_check_suspend(body_islands[island_index]);
+	}
+
+	{
+		profile_endtime = OS::get_ticks_usec();
+		p_space->set_elapsed_time(
+			GodotSpace2D::ELAPSED_TIME_INTEGRATE_VELOCITIES, profile_endtime - profile_begtime);
+	}
+
+	all_constraints.clear();
+
+	p_space->unlock();
+	_step++;
+}
+
+GodotStep2D::GodotStep2D()
+{
+	body_islands.reserve(BODY_ISLAND_COUNT_RESERVE);
+	constraint_islands.reserve(ISLAND_COUNT_RESERVE);
+	all_constraints.reserve(CONSTRAINT_COUNT_RESERVE);
+}
+
+GodotStep2D::~GodotStep2D() {}

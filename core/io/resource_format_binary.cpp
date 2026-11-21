@@ -31,7 +31,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
-#include "core/io/file_access_compressed.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/io/missing_resource.h"
 #include "core/version.h"
 #include "resource_format_binary.h"

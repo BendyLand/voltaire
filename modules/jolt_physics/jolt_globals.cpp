@@ -29,15 +29,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/*
+Adapted to Godot from the Jolt Physics library.
+Copyright 2021 Jorrit Rouwe
+*/
+
 #include "jolt_globals.h"
 
-#include "objects/jolt_group_filter.h"
+#include "objects/jolt_objects_3d.h"
 #include "shapes/jolt_custom_shapes.h"
 
 #include "core/os/memory.h"
-
-#ifdef JPH_ENABLE_ASSERTS
-#endif
 
 #include <Jolt/Jolt.h>
 
@@ -45,6 +47,27 @@
 #include <Jolt/RegisterTypes.h>
 
 #include <cstdarg>
+
+void JoltMath::decompose(Basis &p_basis, Vector3 &r_scale) {
+	Vector3 x = p_basis.get_column(Vector3::AXIS_X);
+	Vector3 y = p_basis.get_column(Vector3::AXIS_Y);
+	Vector3 z = p_basis.get_column(Vector3::AXIS_Z);
+
+	const real_t x_dot_x = x.dot(x);
+	y -= x * (y.dot(x) / x_dot_x);
+	z -= x * (z.dot(x) / x_dot_x);
+	const real_t y_dot_y = y.dot(y);
+	z -= y * (z.dot(y) / y_dot_y);
+	const real_t z_dot_z = z.dot(z);
+
+	const real_t det = x.cross(y).dot(z);
+
+	r_scale = SIGN(det) * Vector3(Math::sqrt(x_dot_x), Math::sqrt(y_dot_y), Math::sqrt(z_dot_z));
+
+	p_basis.set_column(Vector3::AXIS_X, x / r_scale.x);
+	p_basis.set_column(Vector3::AXIS_Y, y / r_scale.y);
+	p_basis.set_column(Vector3::AXIS_Z, z / r_scale.z);
+}
 
 void *jolt_alloc(size_t p_size) {
 	return Memory::alloc_static(p_size);
