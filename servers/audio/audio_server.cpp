@@ -1603,4 +1603,600 @@ void AudioServer::get_argument_options(
 {
 }
 
+#ifdef MARK_EDITED
+#undef MARK_EDITED
+#endif
 
+// ============================================================================
+// Merged from servers/audio/audio_driver_dummy.cpp
+// ============================================================================
+
+#include "audio_driver_dummy.h"
+
+#include "core/os/os.h"
+
+Error AudioDriverDummy::init() {
+	active.clear();
+	exit_thread.clear();
+	samples_in = nullptr;
+
+	if (mix_rate == -1) {
+		mix_rate = _get_configured_mix_rate();
+	}
+
+	channels = get_channels();
+	samples_in = memnew_arr(int32_t, size_t(buffer_frames) * channels);
+
+	if (use_threads) {
+		thread.start(AudioDriverDummy::thread_func, this);
+	}
+
+	return OK;
+}
+
+void AudioDriverDummy::thread_func(void *p_udata) {
+	AudioDriverDummy *ad = static_cast<AudioDriverDummy *>(p_udata);
+
+	uint64_t usdelay = (ad->buffer_frames / float(ad->mix_rate)) * 1000000;
+
+	while (!ad->exit_thread.is_set()) {
+		if (ad->active.is_set()) {
+			ad->lock();
+			ad->start_counting_ticks();
+
+			ad->audio_server_process(ad->buffer_frames, ad->samples_in);
+
+			ad->stop_counting_ticks();
+			ad->unlock();
+		}
+
+		OS::delay_usec(usdelay);
+	}
+}
+
+void AudioDriverDummy::start() {
+	active.set();
+}
+
+int AudioDriverDummy::get_mix_rate() const {
+	return mix_rate;
+}
+
+AudioDriver::SpeakerMode AudioDriverDummy::get_speaker_mode() const {
+	return speaker_mode;
+}
+
+void AudioDriverDummy::lock() {
+	mutex.lock();
+}
+
+void AudioDriverDummy::unlock() {
+	mutex.unlock();
+}
+
+void AudioDriverDummy::set_use_threads(bool p_use_threads) {
+	use_threads = p_use_threads;
+}
+
+void AudioDriverDummy::set_speaker_mode(SpeakerMode p_mode) {
+	speaker_mode = p_mode;
+}
+
+void AudioDriverDummy::set_mix_rate(int p_rate) {
+	mix_rate = p_rate;
+}
+
+uint32_t AudioDriverDummy::get_channels() const {
+	static const int channels_for_mode[4] = { 2, 4, 8, 16 };
+	return channels_for_mode[speaker_mode];
+}
+
+void AudioDriverDummy::mix_audio(int p_frames, int32_t *p_buffer) {
+	ERR_FAIL_COND(!active.is_set()); // If not active, should not mix.
+	ERR_FAIL_COND(use_threads == true); // If using threads, this will not work well.
+
+	uint32_t todo = p_frames;
+	while (todo) {
+		uint32_t to_mix = MIN(buffer_frames, todo);
+		lock();
+		audio_server_process(to_mix, samples_in);
+		unlock();
+
+		uint32_t total_samples = to_mix * channels;
+
+		for (uint32_t i = 0; i < total_samples; i++) {
+			p_buffer[i] = samples_in[i];
+		}
+
+		todo -= to_mix;
+		p_buffer += total_samples;
+	}
+}
+
+void AudioDriverDummy::finish() {
+	if (use_threads) {
+		exit_thread.set();
+		if (thread.is_started()) {
+			thread.wait_to_finish();
+		}
+	}
+
+	if (samples_in) {
+		memdelete_arr(samples_in);
+	}
+}
+
+AudioDriverDummy::AudioDriverDummy() {}
+
+// ============================================================================
+// Merged from servers/audio/audio_filter_sw.cpp
+// ============================================================================
+
+#include "audio_filter_sw.h"
+
+#include "core/math/math_funcs.h"
+
+void AudioFilterSW::set_mode(Mode p_mode) {
+	mode = p_mode;
+}
+
+void AudioFilterSW::set_cutoff(float p_cutoff) {
+	cutoff = p_cutoff;
+}
+
+void AudioFilterSW::set_resonance(float p_resonance) {
+	resonance = p_resonance;
+}
+
+void AudioFilterSW::set_gain(float p_gain) {
+	gain = p_gain;
+}
+
+void AudioFilterSW::set_sampling_rate(float p_srate) {
+	sampling_rate = p_srate;
+}
+
+void AudioFilterSW::prepare_coefficients(Coeffs *p_coeffs) {
+	int sr_limit = (sampling_rate / 2) + 512;
+
+	double final_cutoff = (cutoff > sr_limit) ? sr_limit : cutoff;
+	if (final_cutoff < 1) {
+		final_cutoff = 1; //don't allow less than this
+	}
+
+	double omega = Math::TAU * final_cutoff / sampling_rate;
+
+	double sin_v = Math::sin(omega);
+	double cos_v = Math::cos(omega);
+
+	double Q = resonance;
+	if (Q <= 0.0) {
+		Q = 0.0001;
+	}
+
+	if (mode == BANDPASS) {
+		Q *= 2.0;
+	} else if (mode == PEAK) {
+		Q *= 3.0;
+	}
+
+	double tmpgain = gain;
+
+	if (tmpgain < 0.001) {
+		tmpgain = 0.001;
+	}
+
+	if (stages > 1) {
+		Q = (Q > 1.0 ? Math::pow(Q, 1.0 / stages) : Q);
+		tmpgain = Math::pow(tmpgain, 1.0 / (stages + 1));
+	}
+	double alpha = sin_v / (2 * Q);
+
+	double a0 = 1.0 + alpha;
+
+	switch (mode) {
+		case LOWPASS: {
+			p_coeffs->b0 = (1.0 - cos_v) / 2.0;
+			p_coeffs->b1 = 1.0 - cos_v;
+			p_coeffs->b2 = (1.0 - cos_v) / 2.0;
+			p_coeffs->a1 = -2.0 * cos_v;
+			p_coeffs->a2 = 1.0 - alpha;
+		} break;
+
+		case HIGHPASS: {
+			p_coeffs->b0 = (1.0 + cos_v) / 2.0;
+			p_coeffs->b1 = -(1.0 + cos_v);
+			p_coeffs->b2 = (1.0 + cos_v) / 2.0;
+			p_coeffs->a1 = -2.0 * cos_v;
+			p_coeffs->a2 = 1.0 - alpha;
+		} break;
+
+		case BANDPASS: {
+			p_coeffs->b0 = alpha * std::sqrt(Q + 1);
+			p_coeffs->b1 = 0.0;
+			p_coeffs->b2 = -alpha * std::sqrt(Q + 1);
+			p_coeffs->a1 = -2.0 * cos_v;
+			p_coeffs->a2 = 1.0 - alpha;
+		} break;
+
+		case NOTCH: {
+			p_coeffs->b0 = 1.0;
+			p_coeffs->b1 = -2.0 * cos_v;
+			p_coeffs->b2 = 1.0;
+			p_coeffs->a1 = -2.0 * cos_v;
+			p_coeffs->a2 = 1.0 - alpha;
+		} break;
+		case PEAK: {
+			p_coeffs->b0 = (1.0 + alpha * tmpgain);
+			p_coeffs->b1 = (-2.0 * cos_v);
+			p_coeffs->b2 = (1.0 - alpha * tmpgain);
+			p_coeffs->a1 = -2 * cos_v;
+			p_coeffs->a2 = (1 - alpha / tmpgain);
+		} break;
+		case BANDLIMIT: {
+			//this one is extra tricky
+			double hicutoff = resonance;
+			double centercutoff = (cutoff + resonance) / 2.0;
+			double bandwidth = (Math::log(centercutoff) - Math::log(hicutoff)) / Math::log((double)2);
+			omega = Math::TAU * centercutoff / sampling_rate;
+			alpha = Math::sin(omega) * Math::sinh(Math::log((double)2) / 2 * bandwidth * omega / Math::sin(omega));
+			a0 = 1 + alpha;
+
+			p_coeffs->b0 = alpha;
+			p_coeffs->b1 = 0;
+			p_coeffs->b2 = -alpha;
+			p_coeffs->a1 = -2 * Math::cos(omega);
+			p_coeffs->a2 = 1 - alpha;
+
+		} break;
+		case LOWSHELF: {
+			double tmpq = Math::sqrt(Q);
+			if (tmpq <= 0) {
+				tmpq = 0.001;
+			}
+			double beta = Math::sqrt(tmpgain) / tmpq;
+
+			a0 = (tmpgain + 1.0) + (tmpgain - 1.0) * cos_v + beta * sin_v;
+			p_coeffs->b0 = tmpgain * ((tmpgain + 1.0) - (tmpgain - 1.0) * cos_v + beta * sin_v);
+			p_coeffs->b1 = 2.0 * tmpgain * ((tmpgain - 1.0) - (tmpgain + 1.0) * cos_v);
+			p_coeffs->b2 = tmpgain * ((tmpgain + 1.0) - (tmpgain - 1.0) * cos_v - beta * sin_v);
+			p_coeffs->a1 = -2.0 * ((tmpgain - 1.0) + (tmpgain + 1.0) * cos_v);
+			p_coeffs->a2 = ((tmpgain + 1.0) + (tmpgain - 1.0) * cos_v - beta * sin_v);
+
+		} break;
+		case HIGHSHELF: {
+			double tmpq = Math::sqrt(Q);
+			if (tmpq <= 0) {
+				tmpq = 0.001;
+			}
+			double beta = Math::sqrt(tmpgain) / tmpq;
+
+			a0 = (tmpgain + 1.0) - (tmpgain - 1.0) * cos_v + beta * sin_v;
+			p_coeffs->b0 = tmpgain * ((tmpgain + 1.0) + (tmpgain - 1.0) * cos_v + beta * sin_v);
+			p_coeffs->b1 = -2.0 * tmpgain * ((tmpgain - 1.0) + (tmpgain + 1.0) * cos_v);
+			p_coeffs->b2 = tmpgain * ((tmpgain + 1.0) + (tmpgain - 1.0) * cos_v - beta * sin_v);
+			p_coeffs->a1 = 2.0 * ((tmpgain - 1.0) - (tmpgain + 1.0) * cos_v);
+			p_coeffs->a2 = ((tmpgain + 1.0) - (tmpgain - 1.0) * cos_v - beta * sin_v);
+
+		} break;
+	}
+
+	p_coeffs->b0 /= a0;
+	p_coeffs->b1 /= a0;
+	p_coeffs->b2 /= a0;
+	p_coeffs->a1 /= 0.0 - a0;
+	p_coeffs->a2 /= 0.0 - a0;
+}
+
+void AudioFilterSW::set_stages(int p_stages) {
+	stages = p_stages;
+}
+
+/* Fourier transform kernel to obtain response */
+
+float AudioFilterSW::get_response(float p_freq, Coeffs *p_coeffs) {
+	float freq = p_freq / sampling_rate * Math::TAU;
+
+	float cx = p_coeffs->b0, cy = 0.0;
+
+	cx += std::cos(freq) * p_coeffs->b1;
+	cy -= std::sin(freq) * p_coeffs->b1;
+	cx += std::cos(2 * freq) * p_coeffs->b2;
+	cy -= std::sin(2 * freq) * p_coeffs->b2;
+
+	float H = cx * cx + cy * cy;
+	cx = 1.0;
+	cy = 0.0;
+
+	cx -= std::cos(freq) * p_coeffs->a1;
+	cy += std::sin(freq) * p_coeffs->a1;
+	cx -= std::cos(2 * freq) * p_coeffs->a2;
+	cy += std::sin(2 * freq) * p_coeffs->a2;
+
+	H = H / (cx * cx + cy * cy);
+	return H;
+}
+
+AudioFilterSW::Processor::Processor() {
+	set_filter(nullptr);
+}
+
+void AudioFilterSW::Processor::set_filter(AudioFilterSW *p_filter, bool p_clear_history) {
+	if (p_clear_history) {
+		ha1 = ha2 = hb1 = hb2 = 0;
+	}
+	filter = p_filter;
+}
+
+void AudioFilterSW::Processor::update_coeffs(int p_interp_buffer_len) {
+	if (!filter) {
+		return;
+	}
+
+	if (p_interp_buffer_len) { //interpolate
+		Coeffs old_coeffs = coeffs;
+		filter->prepare_coefficients(&coeffs);
+		incr_coeffs.a1 = (coeffs.a1 - old_coeffs.a1) / p_interp_buffer_len;
+		incr_coeffs.a2 = (coeffs.a2 - old_coeffs.a2) / p_interp_buffer_len;
+		incr_coeffs.b0 = (coeffs.b0 - old_coeffs.b0) / p_interp_buffer_len;
+		incr_coeffs.b1 = (coeffs.b1 - old_coeffs.b1) / p_interp_buffer_len;
+		incr_coeffs.b2 = (coeffs.b2 - old_coeffs.b2) / p_interp_buffer_len;
+		coeffs = old_coeffs;
+	} else {
+		filter->prepare_coefficients(&coeffs);
+	}
+}
+
+void AudioFilterSW::Processor::process(float *p_samples, int p_amount, int p_stride, bool p_interpolate) {
+	if (!filter) {
+		return;
+	}
+
+	if (p_interpolate) {
+		for (int i = 0; i < p_amount; i++) {
+			process_one_interp(*p_samples);
+			p_samples += p_stride;
+		}
+	} else {
+		for (int i = 0; i < p_amount; i++) {
+			process_one(*p_samples);
+			p_samples += p_stride;
+		}
+	}
+}
+
+// ============================================================================
+// Merged from servers/audio/audio_rb_resampler.cpp
+// ============================================================================
+
+#include "audio_rb_resampler.h"
+
+#include "core/math/audio_frame.h"
+#include "core/math/math_funcs_binary.h"
+#include "core/os/memory.h"
+
+int AudioRBResampler::get_channel_count() const {
+	if (!rb) {
+		return 0;
+	}
+
+	return channels;
+}
+
+// Linear interpolation based sample rate conversion (low quality)
+// Note that AudioStreamPlaybackResampled::mix has better algorithm,
+// but it wasn't obvious to integrate that with VideoStreamPlayer
+template <int C>
+uint32_t AudioRBResampler::_resample(AudioFrame *p_dest, int p_todo, int32_t p_increment) {
+	uint32_t read = offset & MIX_FRAC_MASK;
+
+	for (int i = 0; i < p_todo; i++) {
+		offset = (offset + p_increment) & (((1 << (rb_bits + MIX_FRAC_BITS)) - 1));
+		read += p_increment;
+		uint32_t pos = offset >> MIX_FRAC_BITS;
+		float frac = float(offset & MIX_FRAC_MASK) / float(MIX_FRAC_LEN);
+		ERR_FAIL_COND_V(pos >= rb_len, 0);
+		uint32_t pos_next = (pos + 1) & rb_mask;
+
+		// since this is a template with a known compile time value (C), conditionals go away when compiling.
+		if constexpr (C == 1) {
+			float v0 = rb[pos];
+			float v0n = rb[pos_next];
+			v0 += (v0n - v0) * frac;
+			p_dest[i] = AudioFrame(v0, v0);
+		}
+
+		if constexpr (C == 2) {
+			float v0 = rb[(pos << 1) + 0];
+			float v1 = rb[(pos << 1) + 1];
+			float v0n = rb[(pos_next << 1) + 0];
+			float v1n = rb[(pos_next << 1) + 1];
+
+			v0 += (v0n - v0) * frac;
+			v1 += (v1n - v1) * frac;
+			p_dest[i] = AudioFrame(v0, v1);
+		}
+
+		// Downmix to stereo. Apply -3dB to center, and sides, -6dB to rear.
+
+		// four channels - channel order: front left, front right, rear left, rear right
+		if constexpr (C == 4) {
+			float v0 = rb[(pos << 2) + 0] + rb[(pos << 2) + 2] / 2;
+			float v1 = rb[(pos << 2) + 1] + rb[(pos << 2) + 3] / 2;
+			float v0n = rb[(pos_next << 2) + 0] + rb[(pos_next << 2) + 2] / 2;
+			float v1n = rb[(pos_next << 2) + 1] + rb[(pos_next << 2) + 3] / 2;
+			v0 += (v0n - v0) * frac;
+			v1 += (v1n - v1) * frac;
+			p_dest[i] = AudioFrame(v0, v1);
+		}
+
+		// six channels - channel order: front left, center, front right, rear left, rear right, LFE
+		if constexpr (C == 6) {
+			float v0 = rb[(pos * 6) + 0] + rb[(pos * 6) + 1] / Math::SQRT2 + rb[(pos * 6) + 3] / 2;
+			float v1 = rb[(pos * 6) + 2] + rb[(pos * 6) + 1] / Math::SQRT2 + rb[(pos * 6) + 4] / 2;
+			float v0n = rb[(pos_next * 6) + 0] + rb[(pos_next * 6) + 1] / Math::SQRT2 + rb[(pos_next * 6) + 3] / 2;
+			float v1n = rb[(pos_next * 6) + 2] + rb[(pos_next * 6) + 1] / Math::SQRT2 + rb[(pos_next * 6) + 4] / 2;
+			v0 += (v0n - v0) * frac;
+			v1 += (v1n - v1) * frac;
+			p_dest[i] = AudioFrame(v0, v1);
+		}
+
+		// eight channels - channel order: front left, center, front right, side left, side right, rear left, rear
+		// right, LFE
+		if constexpr (C == 8) {
+			float v0 = rb[(pos << 3) + 0] + rb[(pos << 3) + 1] / Math::SQRT2 + rb[(pos << 3) + 3] / Math::SQRT2 + rb[(pos << 3) + 5] / 2;
+			float v1 = rb[(pos << 3) + 2] + rb[(pos << 3) + 1] / Math::SQRT2 + rb[(pos << 3) + 4] / Math::SQRT2 + rb[(pos << 3) + 6] / 2;
+			float v0n = rb[(pos_next << 3) + 0] + rb[(pos_next << 3) + 1] / Math::SQRT2 + rb[(pos_next << 3) + 3] / Math::SQRT2 + rb[(pos_next << 3) + 5] / 2;
+			float v1n = rb[(pos_next << 3) + 2] + rb[(pos_next << 3) + 1] / Math::SQRT2 + rb[(pos_next << 3) + 4] / Math::SQRT2 + rb[(pos_next << 3) + 6] / 2;
+			v0 += (v0n - v0) * frac;
+			v1 += (v1n - v1) * frac;
+			p_dest[i] = AudioFrame(v0, v1);
+		}
+	}
+
+	return read >> MIX_FRAC_BITS; //rb_read_pos = offset >> MIX_FRAC_BITS;
+}
+
+bool AudioRBResampler::mix(AudioFrame *p_dest, int p_frames) {
+	if (!rb) {
+		return false;
+	}
+
+	int32_t increment = (src_mix_rate * MIX_FRAC_LEN * playback_speed) / target_mix_rate;
+	int read_space = get_reader_space();
+	int target_todo = MIN(get_num_of_ready_frames(), p_frames);
+
+	{
+		int src_read = 0;
+		switch (channels) {
+			case 1:
+				src_read = _resample<1>(p_dest, target_todo, increment);
+				break;
+			case 2:
+				src_read = _resample<2>(p_dest, target_todo, increment);
+				break;
+			case 4:
+				src_read = _resample<4>(p_dest, target_todo, increment);
+				break;
+			case 6:
+				src_read = _resample<6>(p_dest, target_todo, increment);
+				break;
+			case 8:
+				src_read = _resample<8>(p_dest, target_todo, increment);
+				break;
+		}
+
+		if (src_read > read_space) {
+			src_read = read_space;
+		}
+
+		rb_read_pos.set((rb_read_pos.get() + src_read) & rb_mask);
+
+		// Create fadeout effect for the end of stream (note that it can be because of slow writer)
+		if (p_frames - target_todo > 0) {
+			for (int i = 0; i < target_todo; i++) {
+				p_dest[i] = p_dest[i] * float(target_todo - i) / float(target_todo);
+			}
+		}
+
+		// Fill zeros (silence) for the rest of frames
+		for (int i = target_todo; i < p_frames; i++) {
+			p_dest[i] = AudioFrame(0, 0);
+		}
+	}
+
+	return true;
+}
+
+int AudioRBResampler::get_num_of_ready_frames() {
+	if (!is_ready()) {
+		return 0;
+	}
+	int32_t increment = (src_mix_rate * MIX_FRAC_LEN) / target_mix_rate;
+	int read_space = get_reader_space();
+	return (int64_t(read_space) << MIX_FRAC_BITS) / increment;
+}
+
+Error AudioRBResampler::setup(int p_channels, int p_src_mix_rate, int p_target_mix_rate, int p_buffer_msec, int p_minbuff_needed) {
+	ERR_FAIL_COND_V(p_channels != 1 && p_channels != 2 && p_channels != 4 && p_channels != 6 && p_channels != 8, ERR_INVALID_PARAMETER);
+
+	int desired_rb_bits = Math::nearest_shift((uint32_t)MAX((p_buffer_msec / 1000.0) * p_src_mix_rate, p_minbuff_needed));
+
+	bool recreate = !rb;
+
+	if (rb && (uint32_t(desired_rb_bits) != rb_bits || channels != uint32_t(p_channels))) {
+		memdelete_arr(rb);
+		memdelete_arr(read_buf);
+		recreate = true;
+	}
+
+	if (recreate) {
+		channels = p_channels;
+		rb_bits = desired_rb_bits;
+		rb_len = (1 << rb_bits);
+		rb_mask = rb_len - 1;
+		const size_t array_size = rb_len * (size_t)p_channels;
+		rb = memnew_arr(float, array_size);
+		read_buf = memnew_arr(float, array_size);
+	}
+
+	src_mix_rate = p_src_mix_rate;
+	target_mix_rate = p_target_mix_rate;
+	offset = 0;
+	rb_read_pos.set(0);
+	rb_write_pos.set(0);
+
+	//avoid maybe strange noises upon load
+	for (unsigned int i = 0; i < (rb_len * channels); i++) {
+		rb[i] = 0;
+		read_buf[i] = 0;
+	}
+
+	return OK;
+}
+
+void AudioRBResampler::clear() {
+	if (!rb) {
+		return;
+	}
+
+	//should be stopped at this point but just in case
+	memdelete_arr(rb);
+	memdelete_arr(read_buf);
+	rb = nullptr;
+	offset = 0;
+	rb_read_pos.set(0);
+	rb_write_pos.set(0);
+	read_buf = nullptr;
+}
+
+void AudioRBResampler::set_playback_speed(double p_playback_speed) {
+	playback_speed = p_playback_speed;
+}
+
+double AudioRBResampler::get_playback_speed() const {
+	return playback_speed;
+}
+
+AudioRBResampler::AudioRBResampler() {
+	rb = nullptr;
+	offset = 0;
+	read_buf = nullptr;
+	rb_read_pos.set(0);
+	rb_write_pos.set(0);
+
+	rb_bits = 0;
+	rb_len = 0;
+	rb_mask = 0;
+	read_buff_len = 0;
+	channels = 0;
+	src_mix_rate = 0;
+	target_mix_rate = 0;
+}
+
+AudioRBResampler::~AudioRBResampler() {
+	if (rb) {
+		memdelete_arr(rb);
+		memdelete_arr(read_buf);
+	}
+}

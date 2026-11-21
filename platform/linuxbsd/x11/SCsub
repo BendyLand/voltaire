@@ -7,7 +7,6 @@ File = env.File
 
 source_files = [
     File("display_server_x11.cpp"),
-    File("key_mapping_x11.cpp"),
 ]
 
 if env["use_sowrap"]:
@@ -27,9 +26,7 @@ if env["vulkan"]:
 if env["opengl3"]:
     env.Append(CPPDEFINES=["GLAD_GLX_NO_X11"])
     source_files.append([
-        File("gl_manager_x11_egl.cpp"),
         File("gl_manager_x11.cpp"),
-        File("detect_prime_x11.cpp"),
         File("#thirdparty/glad/glx.c"),
     ])
 

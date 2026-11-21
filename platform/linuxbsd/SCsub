@@ -6,11 +6,7 @@ Import("env")
 import platform_linuxbsd_builders
 
 common_linuxbsd = [
-    "crash_handler_linuxbsd.cpp",
     "os_linuxbsd.cpp",
-    "freedesktop_portal_desktop.cpp",
-    "freedesktop_screensaver.cpp",
-    "freedesktop_at_spi_monitor.cpp",
 ]
 
 if env["library_type"] == "executable":

@@ -119,11 +119,7 @@ generated_sources = [
 ]
 
 source_files = generated_sources + [
-    File("detect_prime_egl.cpp"),
     File("display_server_wayland.cpp"),
-    File("key_mapping_xkb.cpp"),
-    File("wayland_thread.cpp"),
-    File("wayland_embedder.cpp"),
 ]
 
 if env["use_sowrap"]:
@@ -142,6 +138,5 @@ if env["vulkan"]:
 
 if env["opengl3"]:
     source_files.append(File("egl_manager_wayland.cpp"))
-    source_files.append(File("egl_manager_wayland_gles.cpp"))
 
 Return("source_files")

@@ -1329,3 +1329,341 @@ bool PhysicsServer3D::is_flushing_queries() { return false; }
 int PhysicsServer3D::get_process_info(PS3DE::ProcessInfo p_info) { return 0; }
 
 #endif // MODULE_JOLT_PHYSICS_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_3d/physics_server_3d_rendering_server_handler.cpp
+// ============================================================================
+
+#include "physics_server_3d_rendering_server_handler.h"
+
+#include "servers/rendering/renderer.h"
+
+void PhysicsServer3DRenderingServerHandler::prepare(RID p_mesh_rid, int p_surface)
+{
+	clear();
+
+	ERR_FAIL_COND(!p_mesh_rid.is_valid());
+
+	mesh = p_mesh_rid;
+	surface = p_surface;
+
+	RenderingServerTypes::SurfaceData surface_data = Renderer::mesh_get_surface(mesh, surface);
+
+	uint32_t surface_offsets[RSE::ARRAY_MAX];
+	uint32_t vertex_stride;
+	uint32_t normal_tangent_stride;
+	uint32_t attrib_stride;
+	uint32_t skin_stride;
+	Renderer::mesh_surface_make_offsets_from_format(surface_data.format,
+		surface_data.vertex_count, surface_data.index_count, surface_offsets, vertex_stride,
+		normal_tangent_stride, attrib_stride, skin_stride);
+
+	buffer = surface_data.vertex_data;
+	stride = vertex_stride;
+	normal_stride = normal_tangent_stride;
+	offset_vertices = surface_offsets[RSE::ARRAY_VERTEX];
+	offset_normal = surface_offsets[RSE::ARRAY_NORMAL];
+}
+
+void PhysicsServer3DRenderingServerHandler::clear()
+{
+	buffer.resize(0);
+	stride = 0;
+	normal_stride = 0;
+	offset_vertices = 0;
+	offset_normal = 0;
+
+	surface = 0;
+	mesh = RID();
+}
+
+void PhysicsServer3DRenderingServerHandler::open() { write_buffer = buffer.ptrw(); }
+
+void PhysicsServer3DRenderingServerHandler::close() { write_buffer = nullptr; }
+
+void PhysicsServer3DRenderingServerHandler::commit_changes()
+{
+	Renderer::mesh_surface_update_vertex_region(mesh, surface, 0, buffer);
+}
+
+void PhysicsServer3DRenderingServerHandler::set_vertex(int p_vertex_id, const Vector3& p_vertex)
+{
+	ERR_FAIL_NULL(write_buffer);
+	float* vertex_buffer =
+		reinterpret_cast<float*>(write_buffer + p_vertex_id * stride + offset_vertices);
+	*vertex_buffer++ = (float)p_vertex.x;
+	*vertex_buffer++ = (float)p_vertex.y;
+	*vertex_buffer++ = (float)p_vertex.z;
+}
+
+void PhysicsServer3DRenderingServerHandler::set_normal(int p_vertex_id, const Vector3& p_normal)
+{
+	ERR_FAIL_NULL(write_buffer);
+	Vector2 res = p_normal.octahedron_encode();
+	uint32_t value = 0;
+	value |= (uint16_t)CLAMP(res.x * 65535, 0, 65535);
+	value |= (uint16_t)CLAMP(res.y * 65535, 0, 65535) << 16;
+	memcpy(&write_buffer[p_vertex_id * normal_stride + offset_normal], &value, sizeof(uint32_t));
+}
+
+void PhysicsServer3DRenderingServerHandler::set_aabb(const AABB& p_aabb)
+{
+	Renderer::mesh_set_custom_aabb(mesh, p_aabb);
+}
+
+// ============================================================================
+// Merged from servers/physics_3d/direct_states/physics_direct_body_state_3d.cpp
+// ============================================================================
+
+#include "servers/physics_3d/direct_states/physics_direct_body_state_3d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+#ifndef MODULE_JOLT_PHYSICS_ENABLED
+
+PhysicsDirectBodyState3D::PhysicsDirectBodyState3D(JoltBody3D* p_body) : body(p_body) {}
+
+Vector3 PhysicsDirectBodyState3D::get_total_gravity() const { return Vector3(); }
+real_t PhysicsDirectBodyState3D::get_total_angular_damp() const { return 0.0; }
+real_t PhysicsDirectBodyState3D::get_total_linear_damp() const { return 0.0; }
+
+Vector3 PhysicsDirectBodyState3D::get_center_of_mass() const { return Vector3(); }
+Vector3 PhysicsDirectBodyState3D::get_center_of_mass_local() const { return Vector3(); }
+Basis PhysicsDirectBodyState3D::get_principal_inertia_axes() const { return Basis(); }
+real_t PhysicsDirectBodyState3D::get_inverse_mass() const { return 0.0; }
+Vector3 PhysicsDirectBodyState3D::get_inverse_inertia() const { return Vector3(); }
+Basis PhysicsDirectBodyState3D::get_inverse_inertia_tensor() const { return Basis(); }
+
+void PhysicsDirectBodyState3D::set_linear_velocity(const Vector3& p_velocity) {}
+Vector3 PhysicsDirectBodyState3D::get_linear_velocity() const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::set_angular_velocity(const Vector3& p_velocity) {}
+Vector3 PhysicsDirectBodyState3D::get_angular_velocity() const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::set_transform(const Transform3D& p_transform) {}
+Transform3D PhysicsDirectBodyState3D::get_transform() const { return Transform3D(); }
+
+Vector3 PhysicsDirectBodyState3D::get_velocity_at_local_position(const Vector3& p_position) const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::apply_central_impulse(const Vector3& p_impulse) {}
+void PhysicsDirectBodyState3D::apply_impulse(const Vector3& p_impulse, const Vector3& p_position) {}
+void PhysicsDirectBodyState3D::apply_torque_impulse(const Vector3& p_impulse) {}
+
+void PhysicsDirectBodyState3D::apply_central_force(const Vector3& p_force) {}
+void PhysicsDirectBodyState3D::apply_force(const Vector3& p_force, const Vector3& p_position) {}
+void PhysicsDirectBodyState3D::apply_torque(const Vector3& p_torque) {}
+
+void PhysicsDirectBodyState3D::add_constant_central_force(const Vector3& p_force) {}
+void PhysicsDirectBodyState3D::add_constant_force(const Vector3& p_force, const Vector3& p_position) {}
+void PhysicsDirectBodyState3D::add_constant_torque(const Vector3& p_torque) {}
+
+void PhysicsDirectBodyState3D::set_constant_force(const Vector3& p_force) {}
+Vector3 PhysicsDirectBodyState3D::get_constant_force() const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::set_constant_torque(const Vector3& p_torque) {}
+Vector3 PhysicsDirectBodyState3D::get_constant_torque() const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::set_sleep_state(bool p_sleep) {}
+bool PhysicsDirectBodyState3D::is_sleeping() const { return false; }
+
+void PhysicsDirectBodyState3D::set_collision_layer(uint32_t p_layer) {}
+uint32_t PhysicsDirectBodyState3D::get_collision_layer() const { return 0; }
+
+void PhysicsDirectBodyState3D::set_collision_mask(uint32_t p_mask) {}
+uint32_t PhysicsDirectBodyState3D::get_collision_mask() const { return 0; }
+
+int PhysicsDirectBodyState3D::get_contact_count() const { return 0; }
+
+Vector3 PhysicsDirectBodyState3D::get_contact_local_position(int p_contact_idx) const { return Vector3(); }
+Vector3 PhysicsDirectBodyState3D::get_contact_local_normal(int p_contact_idx) const { return Vector3(); }
+Vector3 PhysicsDirectBodyState3D::get_contact_impulse(int p_contact_idx) const { return Vector3(); }
+int PhysicsDirectBodyState3D::get_contact_local_shape(int p_contact_idx) const { return 0; }
+Vector3 PhysicsDirectBodyState3D::get_contact_local_velocity_at_position(int p_contact_idx) const { return Vector3(); }
+
+RID PhysicsDirectBodyState3D::get_contact_collider(int p_contact_idx) const { return RID(); }
+Vector3 PhysicsDirectBodyState3D::get_contact_collider_position(int p_contact_idx) const { return Vector3(); }
+int PhysicsDirectBodyState3D::get_contact_collider_shape(int p_contact_idx) const { return 0; }
+Vector3 PhysicsDirectBodyState3D::get_contact_collider_velocity_at_position(int p_contact_idx) const { return Vector3(); }
+
+real_t PhysicsDirectBodyState3D::get_step() const { return 0.0; }
+
+void PhysicsDirectBodyState3D::integrate_forces() {}
+
+PhysicsDirectSpaceState3D* PhysicsDirectBodyState3D::get_space_state() { return nullptr; }
+
+#endif // !MODULE_JOLT_PHYSICS_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_3d/direct_states/physics_direct_space_state_3d.cpp
+// ============================================================================
+
+#include "servers/physics_3d/direct_states/physics_direct_space_state_3d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+Vector<real_t> PhysicsDirectSpaceState3D::_cast_motion(
+	PhysicsShapeQueryParameters3D* rp_shape_query)
+{
+	real_t closest_safe = 1.0f, closest_unsafe = 1.0f;
+	bool res = cast_motion(rp_shape_query->get_parameters(), closest_safe, closest_unsafe);
+	if (!res) {
+		return Vector<real_t>();
+	}
+	Vector<real_t> ret;
+	ret.resize(2);
+	ret.write[0] = closest_safe;
+	ret.write[1] = closest_unsafe;
+	return ret;
+}
+
+#ifndef MODULE_JOLT_PHYSICS_ENABLED
+
+PhysicsDirectSpaceState3D::PhysicsDirectSpaceState3D(JoltSpace3D* p_space) : space(p_space) {}
+
+bool PhysicsDirectSpaceState3D::intersect_ray(
+	const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result)
+{
+	return false;
+}
+
+int PhysicsDirectSpaceState3D::intersect_point(
+	const PS3DT::PointParameters& p_point_params,
+	PS3DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+int PhysicsDirectSpaceState3D::intersect_shape(
+	const PS3DT::ShapeParameters& p_shape_params,
+	PS3DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+bool PhysicsDirectSpaceState3D::cast_motion(
+	const PS3DT::ShapeParameters& p_shape_params, real_t& r_closest_safe,
+	real_t& r_closest_unsafe, PS3DT::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+bool PhysicsDirectSpaceState3D::collide_shape(
+	const PS3DT::ShapeParameters& p_shape_params, Vector3* r_results,
+	int p_result_max, int& r_result_count)
+{
+	r_result_count = 0;
+	return false;
+}
+
+bool PhysicsDirectSpaceState3D::rest_info(
+	const PS3DT::ShapeParameters& p_shape_params,
+	PS3DT::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+Vector3 PhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
+	RID p_object, Vector3 p_point) const
+{
+	return Vector3();
+}
+
+bool PhysicsDirectSpaceState3D::body_test_motion(const JoltBody3D& p_body,
+	const PS3DT::MotionParameters& p_parameters, PS3DT::MotionResult* r_result) const
+{
+	return false;
+}
+
+#endif // !MODULE_JOLT_PHYSICS_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_3d/queries/physics_shape_query_parameters_3d.cpp
+// ============================================================================
+
+#include "core/io/resource.h"
+#include "servers/physics_3d/queries/physics_shape_query_parameters_3d.h"
+
+Ref<Resource> PhysicsShapeQueryParameters3D::get_shape() const { return shape_ref; }
+
+void PhysicsShapeQueryParameters3D::set_shape(const Ref<Resource>& p_shape_ref)
+{
+	ERR_FAIL_COND(p_shape_ref.is_null());
+	shape_ref = p_shape_ref;
+	parameters.shape_rid = p_shape_ref->get_rid();
+}
+
+void PhysicsShapeQueryParameters3D::set_shape_rid(const RID& p_shape)
+{
+	if (parameters.shape_rid != p_shape) {
+		shape_ref = Ref<Resource>();
+		parameters.shape_rid = p_shape;
+	}
+}
+
+
+
+// ============================================================================
+// Merged from servers/physics_3d/queries/physics_testmotion_query_result_3d.cpp
+// ============================================================================
+
+#include "servers/physics_3d/queries/physics_testmotion_query_result_3d.h"
+
+Vector3 PhysicsTestMotionResult3D::get_travel() const { return result.travel; }
+
+Vector3 PhysicsTestMotionResult3D::get_remainder() const { return result.remainder; }
+
+real_t PhysicsTestMotionResult3D::get_collision_safe_fraction() const
+{
+	return result.collision_safe_fraction;
+}
+
+real_t PhysicsTestMotionResult3D::get_collision_unsafe_fraction() const
+{
+	return result.collision_unsafe_fraction;
+}
+
+int PhysicsTestMotionResult3D::get_collision_count() const { return result.collision_count; }
+
+Vector3 PhysicsTestMotionResult3D::get_collision_point(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, Vector3());
+	return result.collisions[p_collision_index].position;
+}
+
+Vector3 PhysicsTestMotionResult3D::get_collision_normal(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, Vector3());
+	return result.collisions[p_collision_index].normal;
+}
+
+Vector3 PhysicsTestMotionResult3D::get_collider_velocity(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, Vector3());
+	return result.collisions[p_collision_index].collider_velocity;
+}
+
+RID PhysicsTestMotionResult3D::get_collider_rid(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, RID());
+	return result.collisions[p_collision_index].collider;
+}
+
+int PhysicsTestMotionResult3D::get_collider_shape(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, 0);
+	return result.collisions[p_collision_index].collider_shape;
+}
+
+int PhysicsTestMotionResult3D::get_collision_local_shape(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, 0);
+	return result.collisions[p_collision_index].local_shape;
+}
+
+real_t PhysicsTestMotionResult3D::get_collision_depth(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, 0.0);
+	return result.collisions[p_collision_index].depth;
+}
+
+

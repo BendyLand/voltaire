@@ -4306,3 +4306,1102 @@ void Main::cleanup(bool p_force)
 }
 
 void Main::setup_boot_logo() {}
+
+#ifdef MAIN_PRINT
+#undef MAIN_PRINT
+#endif
+
+// ============================================================================
+// Merged from main/main_timer_sync.cpp
+// ============================================================================
+
+#include "main_timer_sync.h"
+
+#include "core/os/os.h"
+#include "servers/display/display_server.h"
+
+// Uncomment this define to get more debugging logs for the delta smoothing.
+// #define GODOT_DEBUG_DELTA_SMOOTHER
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+#include "core/string/print_string.h"
+#include "core/string/string.h"
+#endif
+
+void MainFrameTime::clamp_process_step(double min_process_step, double max_process_step) {
+	if (process_step < min_process_step) {
+		process_step = min_process_step;
+	} else if (process_step > max_process_step) {
+		process_step = max_process_step;
+	}
+}
+
+/////////////////////////////////
+
+void MainTimerSync::DeltaSmoother::made_new_estimate() {
+	_hits_above_estimated = 0;
+	_hits_at_estimated = 0;
+	_hits_below_estimated = 0;
+	_hits_one_above_estimated = 0;
+	_hits_one_below_estimated = 0;
+
+	_estimate_complete = false;
+
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+	print_line("estimated fps " + itos(_estimated_fps));
+#endif
+}
+
+void MainTimerSync::DeltaSmoother::update_refresh_rate_estimator(int64_t p_delta) {
+	// the calling code should prevent 0 or negative values of delta
+	// (preventing divide by zero)
+
+	// note that if the estimate gets locked, and something external changes this
+	// (e.g. user changes to non-vsync in the OS), then the results may be less than ideal,
+	// but usually it will detect this via the FPS measurement and not attempt smoothing.
+	// This should be a rare occurrence anyway, and will be cured next time user restarts game.
+	if (_estimate_locked) {
+		return;
+	}
+
+	// First average the delta over NUM_READINGS
+	_estimator_total_delta += p_delta;
+	_estimator_delta_readings++;
+
+	const int NUM_READINGS = 60;
+
+	if (_estimator_delta_readings < NUM_READINGS) {
+		return;
+	}
+
+	// use average
+	p_delta = _estimator_total_delta / NUM_READINGS;
+
+	// reset the averager for next time
+	_estimator_delta_readings = 0;
+	_estimator_total_delta = 0;
+
+	///////////////////////////////
+
+	int fps = Math::round(1000000.0 / p_delta);
+
+	// initial estimation, to speed up converging, special case we will estimate the refresh rate
+	// from the first average FPS reading
+	if (_estimated_fps == 0) {
+		// below 50 might be chugging loading stuff, or else
+		// dropping loads of frames, so the estimate will be inaccurate
+		if (fps >= 50) {
+			_estimated_fps = fps;
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+			print_line("initial guess (average measured) refresh rate: " + itos(fps));
+#endif
+		} else {
+			// can't get started until above 50
+			return;
+		}
+	}
+
+	// we hit our exact estimated refresh rate.
+	// increase our confidence in the estimate.
+	if (fps == _estimated_fps) {
+		// note that each hit is an average of NUM_READINGS frames
+		_hits_at_estimated++;
+
+		if (_estimate_complete && _hits_at_estimated == 20) {
+			_estimate_locked = true;
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+			print_line("estimate LOCKED at " + itos(_estimated_fps) + " fps");
+#endif
+			return;
+		}
+
+		// if we are getting pretty confident in this estimate, decide it is complete
+		// (it can still be increased later, and possibly lowered but only for a short time)
+		if ((!_estimate_complete) && (_hits_at_estimated > 2)) {
+			// when the estimate is complete we turn on smoothing
+			if (_estimated_fps) {
+				_estimate_complete = true;
+				_vsync_delta = 1000000 / _estimated_fps;
+
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+				print_line("estimate complete. vsync_delta " + itos(_vsync_delta) + ", fps " + itos(_estimated_fps));
+#endif
+			}
+		}
+
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+		if ((_hits_at_estimated % (400 / NUM_READINGS)) == 0) {
+			String sz = "hits at estimated : " + itos(_hits_at_estimated) + ", above : " + itos(_hits_above_estimated) + "( " + itos(_hits_one_above_estimated) + " ), below : " + itos(_hits_below_estimated) + " (" + itos(_hits_one_below_estimated) + " )";
+
+			print_line(sz);
+		}
+#endif
+
+		return;
+	}
+
+	const int SIGNIFICANCE_UP = 1;
+	const int SIGNIFICANCE_DOWN = 2;
+
+	// we are not usually interested in slowing the estimate
+	// but we may have overshot, so make it possible to reduce
+	if (fps < _estimated_fps) {
+		// micro changes
+		if (fps == (_estimated_fps - 1)) {
+			_hits_one_below_estimated++;
+
+			if ((_hits_one_below_estimated > _hits_at_estimated) && (_hits_one_below_estimated > SIGNIFICANCE_DOWN)) {
+				_estimated_fps--;
+				made_new_estimate();
+			}
+
+			return;
+		} else {
+			_hits_below_estimated++;
+
+			// don't allow large lowering if we are established at a refresh rate, as it will probably be dropped frames
+			bool established = _estimate_complete && (_hits_at_estimated > 10);
+
+			// macro changes
+			// note there is a large barrier to macro lowering. That is because it is more likely to be dropped frames
+			// than mis-estimation of the refresh rate.
+			if (!established) {
+				if (((_hits_below_estimated / 8) > _hits_at_estimated) && (_hits_below_estimated > SIGNIFICANCE_DOWN)) {
+					// decrease the estimate
+					_estimated_fps--;
+					made_new_estimate();
+				}
+			}
+
+			return;
+		}
+	}
+
+	// Changes increasing the estimate.
+	// micro changes
+	if (fps == (_estimated_fps + 1)) {
+		_hits_one_above_estimated++;
+
+		if ((_hits_one_above_estimated > _hits_at_estimated) && (_hits_one_above_estimated > SIGNIFICANCE_UP)) {
+			_estimated_fps++;
+			made_new_estimate();
+		}
+		return;
+	} else {
+		_hits_above_estimated++;
+
+		// macro changes
+		if ((_hits_above_estimated > _hits_at_estimated) && (_hits_above_estimated > SIGNIFICANCE_UP)) {
+			// increase the estimate
+			int change = fps - _estimated_fps;
+			change /= 2;
+			change = MAX(1, change);
+
+			_estimated_fps += change;
+			made_new_estimate();
+		}
+		return;
+	}
+}
+
+bool MainTimerSync::DeltaSmoother::fps_allows_smoothing(int64_t p_delta) {
+	_measurement_time += p_delta;
+	_measurement_frame_count++;
+
+	if (_measurement_frame_count == _measurement_end_frame) {
+		// only switch on or off if the estimate is complete
+		if (_estimate_complete) {
+			int64_t time_passed = _measurement_time - _measurement_start_time;
+
+			// average delta
+			time_passed /= MEASURE_FPS_OVER_NUM_FRAMES;
+
+			// estimate fps
+			if (time_passed) {
+				double fps = 1000000.0 / time_passed;
+				double ratio = fps / (double)_estimated_fps;
+
+				if ((ratio > 0.95) && (ratio < 1.05)) {
+					_measurement_allows_smoothing = true;
+				} else {
+					_measurement_allows_smoothing = false;
+				}
+			}
+		} // estimate complete
+
+		// new start time for next iteration
+		_measurement_start_time = _measurement_time;
+		_measurement_end_frame += MEASURE_FPS_OVER_NUM_FRAMES;
+	}
+
+	return _measurement_allows_smoothing;
+}
+
+int64_t MainTimerSync::DeltaSmoother::smooth_delta(int64_t p_delta) {
+	// Conditions to disable smoothing.
+	// Note that vsync is a request, it cannot be relied on, the OS may override this.
+	// If the OS turns vsync on without vsync in the app, smoothing will not be enabled.
+	// If the OS turns vsync off with sync enabled in the app, the smoothing must detect this
+	// via the error metric and switch off.
+	// Also only try smoothing if vsync is enabled (classical vsync, not new types) ..
+	// This condition is currently checked before calling smooth_delta().
+	if (!OS::is_delta_smoothing_enabled() || Engine::is_editor_hint()) {
+		return p_delta;
+	}
+
+	// only attempt smoothing if vsync is selected
+	DisplayServerEnums::VSyncMode vsync_mode = DisplayServer::window_get_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID);
+	if (vsync_mode != DisplayServerEnums::VSYNC_ENABLED) {
+		return p_delta;
+	}
+
+	// Very important, ignore long deltas and pass them back unmodified.
+	// This is to deal with resuming after suspend for long periods.
+	if (p_delta > 1000000) {
+		return p_delta;
+	}
+
+	// keep a running guesstimate of the FPS, and turn off smoothing if
+	// conditions not close to the estimated FPS
+	if (!fps_allows_smoothing(p_delta)) {
+		return p_delta;
+	}
+
+	// we can't cope with negative deltas .. OS bug on some hardware
+	// and also very small deltas caused by vsync being off.
+	// This could possibly be part of a hiccup, this value isn't fixed in stone...
+	if (p_delta < 1000) {
+		return p_delta;
+	}
+
+	// note still some vsync off will still get through to this point...
+	// and we need to cope with it by not converging the estimator / and / or not smoothing
+	update_refresh_rate_estimator(p_delta);
+
+	// no smoothing until we know what the refresh rate is
+	if (!_estimate_complete) {
+		return p_delta;
+	}
+
+	// accumulate the time we have available to use
+	_leftover_time += p_delta;
+
+	// how many vsyncs units can we fit?
+	int64_t units = _leftover_time / _vsync_delta;
+
+	// a delta must include minimum 1 vsync
+	// (if it is less than that, it is either random error or we are no longer running at the vsync rate,
+	// in which case we should switch off delta smoothing, or re-estimate the refresh rate)
+	units = MAX(units, 1);
+
+	_leftover_time -= units * _vsync_delta;
+
+	return units * _vsync_delta;
+}
+
+/////////////////////////////////////
+
+// returns the fraction of p_physics_step required for the timer to overshoot
+// before advance_core considers changing the physics_steps return from
+// the typical values as defined by typical_physics_steps
+double MainTimerSync::get_physics_jitter_fix() {
+	return Engine::get_physics_jitter_fix();
+}
+
+// gets our best bet for the average number of physics steps per render frame
+// return value: number of frames back this data is consistent
+int MainTimerSync::get_average_physics_steps(double &p_min, double &p_max) {
+	p_min = typical_physics_steps[0];
+	p_max = p_min + 1;
+
+	for (int i = 1; i < CONTROL_STEPS; ++i) {
+		const double typical_lower = typical_physics_steps[i];
+		const double current_min = typical_lower / (i + 1);
+		if (current_min > p_max) {
+			return i; // bail out if further restrictions would void the interval
+		} else if (current_min > p_min) {
+			p_min = current_min;
+		}
+		const double current_max = (typical_lower + 1) / (i + 1);
+		if (current_max < p_min) {
+			return i;
+		} else if (current_max < p_max) {
+			p_max = current_max;
+		}
+	}
+
+	return CONTROL_STEPS;
+}
+
+// advance physics clock by p_process_step, return appropriate number of steps to simulate
+MainFrameTime MainTimerSync::advance_core(double p_physics_step, int p_physics_ticks_per_second, double p_process_step) {
+	MainFrameTime ret;
+
+	ret.process_step = p_process_step;
+
+	// simple determination of number of physics iteration
+	time_accum += ret.process_step;
+	ret.physics_steps = std::floor(time_accum * p_physics_ticks_per_second);
+
+	int min_typical_steps = typical_physics_steps[0];
+	int max_typical_steps = min_typical_steps + 1;
+
+	// given the past recorded steps and typical steps to match, calculate bounds for this
+	// step to be typical
+	bool update_typical = false;
+
+	for (int i = 0; i < CONTROL_STEPS - 1; ++i) {
+		int steps_left_to_match_typical = typical_physics_steps[i + 1] - accumulated_physics_steps[i];
+		if (steps_left_to_match_typical > max_typical_steps ||
+				steps_left_to_match_typical + 1 < min_typical_steps) {
+			update_typical = true;
+			break;
+		}
+
+		if (steps_left_to_match_typical > min_typical_steps) {
+			min_typical_steps = steps_left_to_match_typical;
+		}
+		if (steps_left_to_match_typical + 1 < max_typical_steps) {
+			max_typical_steps = steps_left_to_match_typical + 1;
+		}
+	}
+
+#ifdef DEBUG_ENABLED
+	if (max_typical_steps < 0) {
+		WARN_PRINT_ONCE("`max_typical_steps` is negative. This could hint at an engine bug or system timer misconfiguration.");
+	}
+#endif
+
+	// try to keep it consistent with previous iterations
+	if (ret.physics_steps < min_typical_steps) {
+		const int max_possible_steps = std::floor((time_accum)*p_physics_ticks_per_second + get_physics_jitter_fix());
+		if (max_possible_steps < min_typical_steps) {
+			ret.physics_steps = max_possible_steps;
+			update_typical = true;
+		} else {
+			ret.physics_steps = min_typical_steps;
+		}
+	} else if (ret.physics_steps > max_typical_steps) {
+		const int min_possible_steps = std::floor((time_accum)*p_physics_ticks_per_second - get_physics_jitter_fix());
+		if (min_possible_steps > max_typical_steps) {
+			ret.physics_steps = min_possible_steps;
+			update_typical = true;
+		} else {
+			ret.physics_steps = max_typical_steps;
+		}
+	}
+
+	if (ret.physics_steps < 0) {
+		ret.physics_steps = 0;
+	}
+
+	time_accum -= ret.physics_steps * p_physics_step;
+
+	// keep track of accumulated step counts
+	for (int i = CONTROL_STEPS - 2; i >= 0; --i) {
+		accumulated_physics_steps[i + 1] = accumulated_physics_steps[i] + ret.physics_steps;
+	}
+	accumulated_physics_steps[0] = ret.physics_steps;
+
+	if (update_typical) {
+		for (int i = CONTROL_STEPS - 1; i >= 0; --i) {
+			if (typical_physics_steps[i] > accumulated_physics_steps[i]) {
+				typical_physics_steps[i] = accumulated_physics_steps[i];
+			} else if (typical_physics_steps[i] < accumulated_physics_steps[i] - 1) {
+				typical_physics_steps[i] = accumulated_physics_steps[i] - 1;
+			}
+		}
+	}
+
+	return ret;
+}
+
+// calls advance_core, keeps track of deficit it adds to animaption_step, make sure the deficit sum stays close to zero
+MainFrameTime MainTimerSync::advance_checked(double p_physics_step, int p_physics_ticks_per_second, double p_process_step) {
+	if (fixed_fps != -1) {
+		p_process_step = 1.0 / fixed_fps;
+	}
+
+	float min_output_step = p_process_step / 8;
+	min_output_step = MAX(min_output_step, 1E-6);
+
+	// compensate for last deficit
+	p_process_step += time_deficit;
+
+	MainFrameTime ret = advance_core(p_physics_step, p_physics_ticks_per_second, p_process_step);
+
+	// we will do some clamping on ret.process_step and need to sync those changes to time_accum,
+	// that's easiest if we just remember their fixed difference now
+	const double process_minus_accum = ret.process_step - time_accum;
+
+	// first, least important clamping: keep ret.process_step consistent with typical_physics_steps.
+	// this smoothes out the process steps and culls small but quick variations.
+	{
+		double min_average_physics_steps, max_average_physics_steps;
+		int consistent_steps = get_average_physics_steps(min_average_physics_steps, max_average_physics_steps);
+		if (consistent_steps > 3) {
+			ret.clamp_process_step(min_average_physics_steps * p_physics_step, max_average_physics_steps * p_physics_step);
+		}
+	}
+
+	// second clamping: keep abs(time_deficit) < jitter_fix * frame_slise
+	double max_clock_deviation = get_physics_jitter_fix() * p_physics_step;
+	ret.clamp_process_step(p_process_step - max_clock_deviation, p_process_step + max_clock_deviation);
+
+	// last clamping: make sure time_accum is between 0 and p_physics_step for consistency between physics and process
+	ret.clamp_process_step(process_minus_accum, process_minus_accum + p_physics_step);
+
+	// all the operations above may have turned ret.p_process_step negative or zero, keep a minimal value
+	if (ret.process_step < min_output_step) {
+		ret.process_step = min_output_step;
+	}
+
+	// restore time_accum
+	time_accum = ret.process_step - process_minus_accum;
+
+	// forcing ret.process_step to be positive may trigger a violation of the
+	// promise that time_accum is between 0 and p_physics_step
+#ifdef DEBUG_ENABLED
+	if (time_accum < -1E-7) {
+		WARN_PRINT_ONCE("Intermediate value of `time_accum` is negative. This could hint at an engine bug or system timer misconfiguration.");
+	}
+#endif
+
+	if (time_accum > p_physics_step) {
+		const int extra_physics_steps = std::floor(time_accum * p_physics_ticks_per_second);
+		time_accum -= extra_physics_steps * p_physics_step;
+		ret.physics_steps += extra_physics_steps;
+	}
+
+#ifdef DEBUG_ENABLED
+	if (time_accum < -1E-7) {
+		WARN_PRINT_ONCE("Final value of `time_accum` is negative. It should always be between 0 and `p_physics_step`. This hints at an engine bug.");
+	}
+	if (time_accum > p_physics_step + 1E-7) {
+		WARN_PRINT_ONCE("Final value of `time_accum` is larger than `p_physics_step`. It should always be between 0 and `p_physics_step`. This hints at an engine bug.");
+	}
+#endif
+
+	// track deficit
+	time_deficit = p_process_step - ret.process_step;
+
+	// p_physics_step is 1.0 / iterations_per_sec
+	// i.e. the time in seconds taken by a physics tick
+	ret.interpolation_fraction = time_accum / p_physics_step;
+
+	return ret;
+}
+
+// determine wall clock step since last iteration
+double MainTimerSync::get_cpu_process_step() {
+	uint64_t cpu_ticks_elapsed = current_cpu_ticks_usec - last_cpu_ticks_usec;
+	last_cpu_ticks_usec = current_cpu_ticks_usec;
+
+	cpu_ticks_elapsed = _delta_smoother.smooth_delta(cpu_ticks_elapsed);
+
+	return cpu_ticks_elapsed / 1000000.0;
+}
+
+MainTimerSync::MainTimerSync() {
+	for (int i = CONTROL_STEPS - 1; i >= 0; --i) {
+		typical_physics_steps[i] = i;
+		accumulated_physics_steps[i] = i;
+	}
+}
+
+// start the clock
+void MainTimerSync::init(uint64_t p_cpu_ticks_usec) {
+	current_cpu_ticks_usec = last_cpu_ticks_usec = p_cpu_ticks_usec;
+}
+
+// set measured wall clock time
+void MainTimerSync::set_cpu_ticks_usec(uint64_t p_cpu_ticks_usec) {
+	current_cpu_ticks_usec = p_cpu_ticks_usec;
+}
+
+void MainTimerSync::set_fixed_fps(int p_fixed_fps) {
+	fixed_fps = p_fixed_fps;
+}
+
+// advance one physics frame, return timesteps to take
+MainFrameTime MainTimerSync::advance(double p_physics_step, int p_physics_ticks_per_second) {
+	double cpu_process_step = get_cpu_process_step();
+
+	return advance_checked(p_physics_step, p_physics_ticks_per_second, cpu_process_step);
+}
+
+// ============================================================================
+// Merged from main/performance.cpp
+// ============================================================================
+
+#include "core/config/engine.h"
+#include "core/os/os.h"
+#include "performance.h"
+#include "scene/main/node.h"
+#include "scene/main/scene_tree.h"
+#include "servers/audio/audio_server.h"
+#include "servers/rendering/renderer.h"
+
+#ifndef NAVIGATION_2D_DISABLED
+#include "servers/navigation_2d/navigation_server_2d.h"
+#endif // NAVIGATION_2D_DISABLED
+
+#ifndef NAVIGATION_3D_DISABLED
+#include "servers/navigation_3d/navigation_server_3d.h"
+#endif // NAVIGATION_3D_DISABLED
+
+#ifndef PHYSICS_2D_DISABLED
+#include "servers/physics_2d/physics_server_2d.h"
+#endif // PHYSICS_2D_DISABLED
+
+#ifndef PHYSICS_3D_DISABLED
+#include "servers/physics_3d/physics_server_3d.h"
+#endif // PHYSICS_3D_DISABLED
+
+int Performance::_get_orphan_node_count()
+{
+#ifdef DEBUG_ENABLED
+	const int total_node_count = Node::total_node_count.get();
+	const int orphan_node_count = total_node_count - _get_node_count();
+	return orphan_node_count;
+#else
+	return 0;
+#endif
+}
+
+String Performance::get_monitor_name(Monitor p_monitor)
+{
+	ERR_FAIL_INDEX_V(p_monitor, MONITOR_MAX, String());
+	static const char* names[MONITOR_MAX] = {
+		PNAME("time/fps"),
+		PNAME("time/process"),
+		PNAME("time/physics_process"),
+		PNAME("time/navigation_process"),
+		PNAME("memory/static"),
+		PNAME("memory/static_max"),
+		PNAME("memory/msg_buf_max"),
+		PNAME("object/objects"),
+		PNAME("object/resources"),
+		PNAME("object/nodes"),
+		PNAME("object/orphan_nodes"),
+		PNAME("raster/total_objects_drawn"),
+		PNAME("raster/total_primitives_drawn"),
+		PNAME("raster/total_draw_calls"),
+		PNAME("video/video_mem"),
+		PNAME("video/texture_mem"),
+		PNAME("video/buffer_mem"),
+		PNAME("physics_2d/active_objects"),
+		PNAME("physics_2d/collision_pairs"),
+		PNAME("physics_2d/islands"),
+		PNAME("physics_3d/active_objects"),
+		PNAME("physics_3d/collision_pairs"),
+		PNAME("physics_3d/islands"),
+		PNAME("audio/driver/output_latency"),
+#if !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
+		PNAME("navigation/active_maps"),
+		PNAME("navigation/regions"),
+		PNAME("navigation/agents"),
+		PNAME("navigation/links"),
+		PNAME("navigation/polygons"),
+		PNAME("navigation/edges"),
+		PNAME("navigation/edges_merged"),
+		PNAME("navigation/edges_connected"),
+		PNAME("navigation/edges_free"),
+		PNAME("navigation/obstacles"),
+#endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
+		PNAME("pipeline/compilations_canvas"),
+		PNAME("pipeline/compilations_mesh"),
+		PNAME("pipeline/compilations_surface"),
+		PNAME("pipeline/compilations_draw"),
+		PNAME("pipeline/compilations_specialization"),
+#ifndef NAVIGATION_2D_DISABLED
+		PNAME("navigation_2d/active_maps"),
+		PNAME("navigation_2d/regions"),
+		PNAME("navigation_2d/agents"),
+		PNAME("navigation_2d/links"),
+		PNAME("navigation_2d/polygons"),
+		PNAME("navigation_2d/edges"),
+		PNAME("navigation_2d/edges_merged"),
+		PNAME("navigation_2d/edges_connected"),
+		PNAME("navigation_2d/edges_free"),
+		PNAME("navigation_2d/obstacles"),
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		PNAME("navigation_3d/active_maps"),
+		PNAME("navigation_3d/regions"),
+		PNAME("navigation_3d/agents"),
+		PNAME("navigation_3d/links"),
+		PNAME("navigation_3d/polygons"),
+		PNAME("navigation_3d/edges"),
+		PNAME("navigation_3d/edges_merged"),
+		PNAME("navigation_3d/edges_connected"),
+		PNAME("navigation_3d/edges_free"),
+		PNAME("navigation_3d/obstacles"),
+#endif // NAVIGATION_3D_DISABLED
+	};
+	static_assert(std_size(names) == MONITOR_MAX);
+
+	return names[p_monitor];
+}
+
+double Performance::get_monitor(Monitor p_monitor)
+{
+	int info = 0;
+
+	switch (p_monitor) {
+	case TIME_FPS:
+		return Engine::get_frames_per_second();
+	case TIME_PROCESS:
+		return _process_time;
+	case TIME_PHYSICS_PROCESS:
+		return _physics_process_time;
+	case TIME_NAVIGATION_PROCESS:
+		return _navigation_process_time;
+	case MEMORY_STATIC:
+		return Memory::get_mem_usage();
+	case MEMORY_STATIC_MAX:
+		return Memory::get_mem_max_usage();
+	case OBJECT_RESOURCE_COUNT:
+		return ResourceCache::get_cached_resource_count();
+	case OBJECT_NODE_COUNT:
+		return _get_node_count();
+	case OBJECT_ORPHAN_NODE_COUNT:
+		return _get_orphan_node_count();
+	case RENDER_TOTAL_OBJECTS_IN_FRAME:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME);
+	case RENDER_TOTAL_PRIMITIVES_IN_FRAME:
+		return Renderer::get_rendering_info(
+			RSE::RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME);
+	case RENDER_TOTAL_DRAW_CALLS_IN_FRAME:
+		return Renderer::get_rendering_info(
+			RSE::RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME);
+	case RENDER_VIDEO_MEM_USED:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_VIDEO_MEM_USED);
+	case RENDER_TEXTURE_MEM_USED:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_TEXTURE_MEM_USED);
+	case RENDER_BUFFER_MEM_USED:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_BUFFER_MEM_USED);
+	case PIPELINE_COMPILATIONS_CANVAS:
+		return Renderer::get_rendering_info(
+			RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_CANVAS);
+	case PIPELINE_COMPILATIONS_MESH:
+		return Renderer::get_rendering_info(
+			RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_MESH);
+	case PIPELINE_COMPILATIONS_SURFACE:
+		return Renderer::get_rendering_info(
+			RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SURFACE);
+	case PIPELINE_COMPILATIONS_DRAW:
+		return Renderer::get_rendering_info(
+			RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW);
+	case PIPELINE_COMPILATIONS_SPECIALIZATION:
+		return Renderer::get_rendering_info(
+			RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION);
+#ifndef PHYSICS_2D_DISABLED
+	case PHYSICS_2D_ACTIVE_OBJECTS:
+		return PhysicsServer2D::get_process_info(PS2DE::INFO_ACTIVE_OBJECTS);
+	case PHYSICS_2D_COLLISION_PAIRS:
+		return PhysicsServer2D::get_process_info(PS2DE::INFO_COLLISION_PAIRS);
+	case PHYSICS_2D_ISLAND_COUNT:
+		return PhysicsServer2D::get_process_info(PS2DE::INFO_ISLAND_COUNT);
+#else
+	case PHYSICS_2D_ACTIVE_OBJECTS:
+		return 0;
+	case PHYSICS_2D_COLLISION_PAIRS:
+		return 0;
+	case PHYSICS_2D_ISLAND_COUNT:
+		return 0;
+#endif // PHYSICS_2D_DISABLED
+#ifndef PHYSICS_3D_DISABLED
+	case PHYSICS_3D_ACTIVE_OBJECTS:
+		return PhysicsServer3D::get_process_info(PS3DE::INFO_ACTIVE_OBJECTS);
+	case PHYSICS_3D_COLLISION_PAIRS:
+		return PhysicsServer3D::get_process_info(PS3DE::INFO_COLLISION_PAIRS);
+	case PHYSICS_3D_ISLAND_COUNT:
+		return PhysicsServer3D::get_process_info(PS3DE::INFO_ISLAND_COUNT);
+#else
+	case PHYSICS_3D_ACTIVE_OBJECTS:
+		return 0;
+	case PHYSICS_3D_COLLISION_PAIRS:
+		return 0;
+	case PHYSICS_3D_ISLAND_COUNT:
+		return 0;
+#endif // PHYSICS_3D_DISABLED
+
+	case AUDIO_OUTPUT_LATENCY:
+		return AudioServer::get_output_latency();
+
+		// Deprecated, use the 2D/3D specific ones instead.
+	case NAVIGATION_ACTIVE_MAPS:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_ACTIVE_MAPS);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_ACTIVE_MAPS);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_REGION_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_REGION_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_REGION_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_AGENT_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_AGENT_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_AGENT_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_LINK_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_LINK_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_LINK_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_POLYGON_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_POLYGON_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_POLYGON_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_EDGE_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_EDGE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_EDGE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_EDGE_MERGE_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_EDGE_MERGE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_EDGE_MERGE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_EDGE_CONNECTION_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_EDGE_CONNECTION_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_EDGE_CONNECTION_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_EDGE_FREE_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_EDGE_FREE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_EDGE_FREE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_OBSTACLE_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_OBSTACLE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_OBSTACLE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+#ifndef NAVIGATION_2D_DISABLED
+	case NAVIGATION_2D_ACTIVE_MAPS:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_ACTIVE_MAPS);
+	case NAVIGATION_2D_REGION_COUNT:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_REGION_COUNT);
+	case NAVIGATION_2D_AGENT_COUNT:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_AGENT_COUNT);
+	case NAVIGATION_2D_LINK_COUNT:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_LINK_COUNT);
+	case NAVIGATION_2D_POLYGON_COUNT:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_POLYGON_COUNT);
+	case NAVIGATION_2D_EDGE_COUNT:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_EDGE_COUNT);
+	case NAVIGATION_2D_EDGE_MERGE_COUNT:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_EDGE_MERGE_COUNT);
+	case NAVIGATION_2D_EDGE_CONNECTION_COUNT:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_EDGE_CONNECTION_COUNT);
+	case NAVIGATION_2D_EDGE_FREE_COUNT:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_EDGE_FREE_COUNT);
+	case NAVIGATION_2D_OBSTACLE_COUNT:
+		return NavigationServer2D::get_process_info(
+			NavigationServer2D::INFO_OBSTACLE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+
+#ifndef NAVIGATION_3D_DISABLED
+	case NAVIGATION_3D_ACTIVE_MAPS:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_ACTIVE_MAPS);
+	case NAVIGATION_3D_REGION_COUNT:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_REGION_COUNT);
+	case NAVIGATION_3D_AGENT_COUNT:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_AGENT_COUNT);
+	case NAVIGATION_3D_LINK_COUNT:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_LINK_COUNT);
+	case NAVIGATION_3D_POLYGON_COUNT:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_POLYGON_COUNT);
+	case NAVIGATION_3D_EDGE_COUNT:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_EDGE_COUNT);
+	case NAVIGATION_3D_EDGE_MERGE_COUNT:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_EDGE_MERGE_COUNT);
+	case NAVIGATION_3D_EDGE_CONNECTION_COUNT:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_EDGE_CONNECTION_COUNT);
+	case NAVIGATION_3D_EDGE_FREE_COUNT:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_EDGE_FREE_COUNT);
+	case NAVIGATION_3D_OBSTACLE_COUNT:
+		return NavigationServer3D::get_process_info(
+			NavigationServer3D::INFO_OBSTACLE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+
+	default: {
+	}
+	}
+
+	return 0;
+}
+
+Performance::MonitorType Performance::get_monitor_type(Monitor p_monitor)
+{
+	ERR_FAIL_INDEX_V(p_monitor, MONITOR_MAX, MONITOR_TYPE_QUANTITY);
+	// ugly
+	static const MonitorType types[MONITOR_MAX] = {
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+#ifndef _3D_DISABLED
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+#endif // _3D_DISABLED
+
+	};
+	static_assert((sizeof(types) / sizeof(MonitorType)) == MONITOR_MAX);
+
+	return types[p_monitor];
+}
+
+void Performance::set_process_time(double p_pt) { _process_time = p_pt; }
+
+void Performance::set_physics_process_time(double p_pt) { _physics_process_time = p_pt; }
+
+void Performance::set_navigation_process_time(double p_pt) { _navigation_process_time = p_pt; }
+
+uint64_t Performance::get_monitor_modification_time() { return _monitor_modification_time; }
+
+void Performance::initialize()
+{
+	_process_time = 0.0;
+	_physics_process_time = 0.0;
+	_navigation_process_time = 0.0;
+	_monitor_modification_time = 0;
+	_initialized = true;
+}
+
+void Performance::finalize()
+{
+	_process_time = 0.0;
+	_physics_process_time = 0.0;
+	_navigation_process_time = 0.0;
+	_monitor_modification_time = 0;
+	_initialized = false;
+}
+
+Performance::MonitorCall::MonitorCall() {}
+
+int Performance::_get_node_count() { return 0; }
+
+
+
+// ============================================================================
+// Merged from main/steam_tracker.cpp
+// ============================================================================
+
+#if defined(STEAMAPI_ENABLED)
+
+#include "steam_tracker.h"
+
+#include "core/io/file_access.h"
+#include "core/os/os.h"
+
+// https://partner.steamgames.com/doc/sdk/api#initialization_and_shutdown
+
+SteamTracker::SteamTracker() {
+	String path;
+	if (OS::has_feature("linuxbsd")) {
+		path = OS::get_executable_path().get_base_dir().path_join("libsteam_api.so");
+		if (!FileAccess::exists(path)) {
+			path = OS::get_executable_path().get_base_dir().path_join("../lib").path_join("libsteam_api.so");
+			if (!FileAccess::exists(path)) {
+				return;
+			}
+		}
+	} else if (OS::has_feature("windows")) {
+		if (OS::has_feature("64")) {
+			path = OS::get_executable_path().get_base_dir().path_join("steam_api64.dll");
+		} else {
+			path = OS::get_executable_path().get_base_dir().path_join("steam_api.dll");
+		}
+		if (!FileAccess::exists(path)) {
+			return;
+		}
+	} else if (OS::has_feature("macos")) {
+		path = OS::get_executable_path().get_base_dir().path_join("libsteam_api.dylib");
+		if (!FileAccess::exists(path)) {
+			path = OS::get_executable_path().get_base_dir().path_join("../Frameworks").path_join("libsteam_api.dylib");
+			if (!FileAccess::exists(path)) {
+				return;
+			}
+		}
+	} else {
+		return;
+	}
+
+	Error err = OS::open_dynamic_library(path, steam_library_handle);
+	if (err != OK) {
+		steam_library_handle = nullptr;
+		return;
+	}
+	print_verbose("Loaded SteamAPI library");
+
+	void *symbol_handle = nullptr;
+	err = OS::get_dynamic_library_symbol_handle(steam_library_handle, "SteamAPI_InitFlat", symbol_handle, true); // Try new API, 1.59+.
+	if (err != OK) {
+		err = OS::get_dynamic_library_symbol_handle(steam_library_handle, "SteamAPI_Init", symbol_handle); // Try old API.
+		if (err != OK) {
+			return;
+		}
+		steam_init_function = (SteamAPI_InitFunction)symbol_handle;
+	} else {
+		steam_init_flat_function = (SteamAPI_InitFlatFunction)symbol_handle;
+	}
+
+	err = OS::get_dynamic_library_symbol_handle(steam_library_handle, "SteamAPI_Shutdown", symbol_handle);
+	if (err != OK) {
+		return;
+	}
+	steam_shutdown_function = (SteamAPI_ShutdownFunction)symbol_handle;
+
+	if (steam_init_flat_function) {
+		char err_msg[1024] = {};
+		steam_initialized = (steam_init_flat_function(&err_msg[0]) == SteamAPIInitResult_OK);
+	} else if (steam_init_function) {
+		steam_initialized = steam_init_function();
+	}
+}
+
+SteamTracker::~SteamTracker() {
+	if (steam_shutdown_function && steam_initialized) {
+		steam_shutdown_function();
+	}
+	if (steam_library_handle) {
+		OS::close_dynamic_library(steam_library_handle);
+	}
+}
+
+#endif // STEAMAPI_ENABLED

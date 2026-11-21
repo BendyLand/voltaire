@@ -28,8 +28,22 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
+// Inlined servers/display/display_server.compat.inc
+#ifndef DISABLE_DEPRECATED
 
-#include "display_server.compat.inc"
+#include "display_server.h"
+
+RID DisplayServer::_accessibility_create_sub_text_edit_elements_bind_compat_113459(
+	const RID& p_parent_rid, const RID& p_shaped_text, float p_min_height, int p_insert_pos)
+{
+	return accessibility_create_sub_text_edit_elements(
+		p_parent_rid, p_shaped_text, p_min_height, p_insert_pos, false);
+}
+
+#endif // DISABLE_DEPRECATED
+
+
+
 #include "display_server.h"
 
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Input);
@@ -2769,3 +2783,1427 @@ void DisplayServer::accessibility_update_set_foreground_color(const RID& p_id, c
 	data->driver->accessibility_update_set_foreground_color(p_id, p_color);
 }
 #endif // DISABLE_DEPRECATED
+
+// ============================================================================
+// Merged from servers/display/accessibility_server.cpp
+// ============================================================================
+
+#include "accessibility_server.h"
+#include "servers/display/accessibility_server_dummy.h"
+
+AccessibilityServerDriver::AccessibilityServerDriver()
+{
+	AccessibilityServer::_bind_driver(this);
+}
+
+AccessibilityServerDriver::~AccessibilityServerDriver()
+{
+	AccessibilityServer::_unbind_driver(this);
+}
+
+AccessibilityServer::AccessibilityServerCreate
+	AccessibilityServer::server_create_functions[AccessibilityServer::MAX_SERVERS] = {
+		{"dummy", &AccessibilityServerDummy::create_func}};
+
+int AccessibilityServer::server_create_count = 1;
+
+void AccessibilityServer::_bind_driver(AccessibilityServerDriver* p_driver)
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+	data->driver = p_driver;
+}
+
+void AccessibilityServer::_unbind_driver(AccessibilityServerDriver* p_driver)
+{
+	if (data && data->driver == p_driver) {
+		data->driver = nullptr;
+	}
+}
+
+AccessibilityServerDriver* AccessibilityServer::create(int p_index, Error& r_error)
+{
+	ERR_FAIL_INDEX_V(p_index, server_create_count, nullptr);
+	if (data && data->driver) {
+		memdelete(data->driver);
+		data->driver = nullptr;
+	}
+	AccessibilityServerDriver* driver = server_create_functions[p_index].create_function(r_error);
+	if (r_error != OK) {
+		if (driver) {
+			memdelete(driver);
+		}
+		return nullptr;
+	}
+	if (driver) {
+		_bind_driver(driver);
+	}
+	return driver;
+}
+
+void AccessibilityServer::finalize()
+{
+	if (!data) {
+		return;
+	}
+	if (data->driver) {
+		memdelete(data->driver);
+		data->driver = nullptr;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void AccessibilityServer::register_create_function(const char* p_name, CreateFunction p_function)
+{
+	ERR_FAIL_COND(server_create_count == MAX_SERVERS);
+	// Dummy server is always last
+	server_create_functions[server_create_count] = server_create_functions[server_create_count - 1];
+	server_create_functions[server_create_count - 1].name = p_name;
+	server_create_functions[server_create_count - 1].create_function = p_function;
+	server_create_count++;
+}
+
+int AccessibilityServer::get_create_function_count() { return server_create_count; }
+
+const char* AccessibilityServer::get_create_function_name(int p_index)
+{
+	ERR_FAIL_INDEX_V(p_index, server_create_count, nullptr);
+	return server_create_functions[p_index].name;
+}
+
+bool AccessibilityServer::is_supported()
+{
+	return is_initialized() ? data->driver->is_supported() : false;
+}
+
+bool AccessibilityServer::window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle)
+{
+	return is_initialized() ? data->driver->window_create(p_window_id, p_handle) : true;
+}
+
+void AccessibilityServer::window_destroy(DisplayServerEnums::WindowID p_window_id)
+{
+	if (is_initialized()) {
+		data->driver->window_destroy(p_window_id);
+	}
+}
+
+RID AccessibilityServer::create_element(
+	DisplayServerEnums::WindowID p_window_id, AccessibilityServerEnums::AccessibilityRole p_role)
+{
+	return is_initialized() ? data->driver->create_element(p_window_id, p_role) : RID();
+}
+
+RID AccessibilityServer::create_sub_element(const RID& p_parent_rid,
+	AccessibilityServerEnums::AccessibilityRole p_role, int p_insert_pos)
+{
+	return is_initialized() ? data->driver->create_sub_element(p_parent_rid, p_role, p_insert_pos)
+							: RID();
+}
+
+RID AccessibilityServer::create_sub_text_edit_elements(const RID& p_parent_rid,
+	const RID& p_shaped_text, float p_min_height, int p_insert_pos, bool p_is_last_line)
+{
+	return is_initialized() ? data->driver->create_sub_text_edit_elements(
+								  p_parent_rid, p_shaped_text, p_min_height, p_insert_pos,
+								  p_is_last_line)
+							: RID();
+}
+
+bool AccessibilityServer::has_element(const RID& p_id)
+{
+	return is_initialized() ? data->driver->has_element(p_id) : false;
+}
+
+void AccessibilityServer::free_element(const RID& p_id)
+{
+	if (is_initialized()) {
+		data->driver->free_element(p_id);
+	}
+}
+
+RID AccessibilityServer::get_window_root(DisplayServerEnums::WindowID p_window_id)
+{
+	return is_initialized() ? data->driver->get_window_root(p_window_id) : RID();
+}
+
+void AccessibilityServer::update_set_focus(const RID& p_id)
+{
+	if (is_initialized()) {
+		data->driver->update_set_focus(p_id);
+	}
+}
+
+void AccessibilityServer::set_window_rect(
+	DisplayServerEnums::WindowID p_window_id, const Rect2& p_rect_out, const Rect2& p_rect_in)
+{
+	if (is_initialized()) {
+		data->driver->set_window_rect(p_window_id, p_rect_out, p_rect_in);
+	}
+}
+
+void AccessibilityServer::set_window_focused(
+	DisplayServerEnums::WindowID p_window_id, bool p_focused)
+{
+	if (is_initialized()) {
+		data->driver->set_window_focused(p_window_id, p_focused);
+	}
+}
+
+void AccessibilityServer::window_activation_completed(DisplayServerEnums::WindowID p_window_id)
+{
+	if (is_initialized()) {
+		data->driver->window_activation_completed(p_window_id);
+	}
+}
+
+void AccessibilityServer::window_deactivation_completed(DisplayServerEnums::WindowID p_window_id)
+{
+	if (is_initialized()) {
+		data->driver->window_deactivation_completed(p_window_id);
+	}
+}
+
+void AccessibilityServer::update_set_role(
+	const RID& p_id, AccessibilityServerEnums::AccessibilityRole p_role)
+{
+	if (is_initialized()) {
+		data->driver->update_set_role(p_id, p_role);
+	}
+}
+
+void AccessibilityServer::update_set_name(const RID& p_id, const String& p_name)
+{
+	if (is_initialized()) {
+		data->driver->update_set_name(p_id, p_name);
+	}
+}
+
+void AccessibilityServer::update_set_braille_label(const RID& p_id, const String& p_name)
+{
+	if (is_initialized()) {
+		data->driver->update_set_braille_label(p_id, p_name);
+	}
+}
+
+void AccessibilityServer::update_set_braille_role_description(
+	const RID& p_id, const String& p_description)
+{
+	if (is_initialized()) {
+		data->driver->update_set_braille_role_description(p_id, p_description);
+	}
+}
+
+void AccessibilityServer::update_set_extra_info(
+	const RID& p_id, const String& p_name_extra_info)
+{
+	if (is_initialized()) {
+		data->driver->update_set_extra_info(p_id, p_name_extra_info);
+	}
+}
+
+void AccessibilityServer::update_set_description(const RID& p_id, const String& p_description)
+{
+	if (is_initialized()) {
+		data->driver->update_set_description(p_id, p_description);
+	}
+}
+
+void AccessibilityServer::update_set_value(const RID& p_id, const String& p_value)
+{
+	if (is_initialized()) {
+		data->driver->update_set_value(p_id, p_value);
+	}
+}
+
+void AccessibilityServer::update_set_tooltip(const RID& p_id, const String& p_tooltip)
+{
+	if (is_initialized()) {
+		data->driver->update_set_tooltip(p_id, p_tooltip);
+	}
+}
+
+void AccessibilityServer::update_set_bounds(const RID& p_id, const Rect2& p_rect)
+{
+	if (is_initialized()) {
+		data->driver->update_set_bounds(p_id, p_rect);
+	}
+}
+
+void AccessibilityServer::update_set_transform(const RID& p_id, const Transform2D& p_transform)
+{
+	if (is_initialized()) {
+		data->driver->update_set_transform(p_id, p_transform);
+	}
+}
+
+void AccessibilityServer::update_add_child(const RID& p_id, const RID& p_child_id)
+{
+	if (is_initialized()) {
+		data->driver->update_add_child(p_id, p_child_id);
+	}
+}
+
+void AccessibilityServer::update_add_related_controls(const RID& p_id, const RID& p_related_id)
+{
+	if (is_initialized()) {
+		data->driver->update_add_related_controls(p_id, p_related_id);
+	}
+}
+
+void AccessibilityServer::update_add_related_details(const RID& p_id, const RID& p_related_id)
+{
+	if (is_initialized()) {
+		data->driver->update_add_related_details(p_id, p_related_id);
+	}
+}
+
+void AccessibilityServer::update_add_related_described_by(
+	const RID& p_id, const RID& p_related_id)
+{
+	if (is_initialized()) {
+		data->driver->update_add_related_described_by(p_id, p_related_id);
+	}
+}
+
+void AccessibilityServer::update_add_related_flow_to(const RID& p_id, const RID& p_related_id)
+{
+	if (is_initialized()) {
+		data->driver->update_add_related_flow_to(p_id, p_related_id);
+	}
+}
+
+void AccessibilityServer::update_add_related_labeled_by(const RID& p_id, const RID& p_related_id)
+{
+	if (is_initialized()) {
+		data->driver->update_add_related_labeled_by(p_id, p_related_id);
+	}
+}
+
+void AccessibilityServer::update_add_related_radio_group(
+	const RID& p_id, const RID& p_related_id)
+{
+	if (is_initialized()) {
+		data->driver->update_add_related_radio_group(p_id, p_related_id);
+	}
+}
+
+void AccessibilityServer::update_set_active_descendant(const RID& p_id, const RID& p_other_id)
+{
+	if (is_initialized()) {
+		data->driver->update_set_active_descendant(p_id, p_other_id);
+	}
+}
+
+void AccessibilityServer::update_set_next_on_line(const RID& p_id, const RID& p_other_id)
+{
+	if (is_initialized()) {
+		data->driver->update_set_next_on_line(p_id, p_other_id);
+	}
+}
+
+void AccessibilityServer::update_set_previous_on_line(const RID& p_id, const RID& p_other_id)
+{
+	if (is_initialized()) {
+		data->driver->update_set_previous_on_line(p_id, p_other_id);
+	}
+}
+
+void AccessibilityServer::update_set_member_of(const RID& p_id, const RID& p_group_id)
+{
+	if (is_initialized()) {
+		data->driver->update_set_member_of(p_id, p_group_id);
+	}
+}
+
+void AccessibilityServer::update_set_in_page_link_target(const RID& p_id, const RID& p_other_id)
+{
+	if (is_initialized()) {
+		data->driver->update_set_in_page_link_target(p_id, p_other_id);
+	}
+}
+
+void AccessibilityServer::update_set_error_message(const RID& p_id, const RID& p_other_id)
+{
+	if (is_initialized()) {
+		data->driver->update_set_error_message(p_id, p_other_id);
+	}
+}
+
+void AccessibilityServer::update_set_live(
+	const RID& p_id, AccessibilityServerEnums::AccessibilityLiveMode p_live)
+{
+	if (is_initialized()) {
+		data->driver->update_set_live(p_id, p_live);
+	}
+}
+
+void AccessibilityServer::update_add_custom_action(
+	const RID& p_id, int p_action_id, const String& p_action_description)
+{
+	if (is_initialized()) {
+		data->driver->update_add_custom_action(p_id, p_action_id, p_action_description);
+	}
+}
+
+void AccessibilityServer::update_set_table_row_count(const RID& p_id, int p_count)
+{
+	if (is_initialized()) {
+		data->driver->update_set_table_row_count(p_id, p_count);
+	}
+}
+
+void AccessibilityServer::update_set_table_column_count(const RID& p_id, int p_count)
+{
+	if (is_initialized()) {
+		data->driver->update_set_table_column_count(p_id, p_count);
+	}
+}
+
+void AccessibilityServer::update_set_table_row_index(const RID& p_id, int p_index)
+{
+	if (is_initialized()) {
+		data->driver->update_set_table_row_index(p_id, p_index);
+	}
+}
+
+void AccessibilityServer::update_set_table_column_index(const RID& p_id, int p_index)
+{
+	if (is_initialized()) {
+		data->driver->update_set_table_column_index(p_id, p_index);
+	}
+}
+
+void AccessibilityServer::update_set_table_cell_position(
+	const RID& p_id, int p_row_index, int p_column_index)
+{
+	if (is_initialized()) {
+		data->driver->update_set_table_cell_position(p_id, p_row_index, p_column_index);
+	}
+}
+
+void AccessibilityServer::update_set_table_cell_span(
+	const RID& p_id, int p_row_span, int p_column_span)
+{
+	if (is_initialized()) {
+		data->driver->update_set_table_cell_span(p_id, p_row_span, p_column_span);
+	}
+}
+
+void AccessibilityServer::update_set_list_item_count(const RID& p_id, int p_size)
+{
+	if (is_initialized()) {
+		data->driver->update_set_list_item_count(p_id, p_size);
+	}
+}
+
+void AccessibilityServer::update_set_list_item_index(const RID& p_id, int p_index)
+{
+	if (is_initialized()) {
+		data->driver->update_set_list_item_index(p_id, p_index);
+	}
+}
+
+void AccessibilityServer::update_set_list_item_level(const RID& p_id, int p_level)
+{
+	if (is_initialized()) {
+		data->driver->update_set_list_item_level(p_id, p_level);
+	}
+}
+
+void AccessibilityServer::update_set_list_item_selected(const RID& p_id, bool p_selected)
+{
+	if (is_initialized()) {
+		data->driver->update_set_list_item_selected(p_id, p_selected);
+	}
+}
+
+void AccessibilityServer::update_set_list_item_expanded(const RID& p_id, bool p_expanded)
+{
+	if (is_initialized()) {
+		data->driver->update_set_list_item_expanded(p_id, p_expanded);
+	}
+}
+
+void AccessibilityServer::update_set_popup_type(
+	const RID& p_id, AccessibilityServerEnums::AccessibilityPopupType p_popup)
+{
+	if (is_initialized()) {
+		data->driver->update_set_popup_type(p_id, p_popup);
+	}
+}
+
+void AccessibilityServer::update_set_checked(const RID& p_id, bool p_checekd)
+{
+	if (is_initialized()) {
+		data->driver->update_set_checked(p_id, p_checekd);
+	}
+}
+
+void AccessibilityServer::update_set_num_value(const RID& p_id, double p_position)
+{
+	if (is_initialized()) {
+		data->driver->update_set_num_value(p_id, p_position);
+	}
+}
+
+void AccessibilityServer::update_set_num_range(const RID& p_id, double p_min, double p_max)
+{
+	if (is_initialized()) {
+		data->driver->update_set_num_range(p_id, p_min, p_max);
+	}
+}
+
+void AccessibilityServer::update_set_num_step(const RID& p_id, double p_step)
+{
+	if (is_initialized()) {
+		data->driver->update_set_num_step(p_id, p_step);
+	}
+}
+
+void AccessibilityServer::update_set_num_jump(const RID& p_id, double p_jump)
+{
+	if (is_initialized()) {
+		data->driver->update_set_num_jump(p_id, p_jump);
+	}
+}
+
+void AccessibilityServer::update_set_scroll_x(const RID& p_id, double p_position)
+{
+	if (is_initialized()) {
+		data->driver->update_set_scroll_x(p_id, p_position);
+	}
+}
+
+void AccessibilityServer::update_set_scroll_x_range(const RID& p_id, double p_min, double p_max)
+{
+	if (is_initialized()) {
+		data->driver->update_set_scroll_x_range(p_id, p_min, p_max);
+	}
+}
+
+void AccessibilityServer::update_set_scroll_y(const RID& p_id, double p_position)
+{
+	if (is_initialized()) {
+		data->driver->update_set_scroll_y(p_id, p_position);
+	}
+}
+
+void AccessibilityServer::update_set_scroll_y_range(const RID& p_id, double p_min, double p_max)
+{
+	if (is_initialized()) {
+		data->driver->update_set_scroll_y_range(p_id, p_min, p_max);
+	}
+}
+
+void AccessibilityServer::update_set_text_decorations(const RID& p_id, bool p_underline,
+	bool p_strikethrough, bool p_overline, const Color& p_color)
+{
+	if (is_initialized()) {
+		data->driver->update_set_text_decorations(
+			p_id, p_underline, p_strikethrough, p_overline, p_color);
+	}
+}
+
+void AccessibilityServer::update_set_text_align(const RID& p_id, HorizontalAlignment p_align)
+{
+	if (is_initialized()) {
+		data->driver->update_set_text_align(p_id, p_align);
+	}
+}
+
+void AccessibilityServer::update_set_text_selection(const RID& p_id, const RID& p_text_start_id,
+	int p_start_char, const RID& p_text_end_id, int p_end_char)
+{
+	if (is_initialized()) {
+		data->driver->update_set_text_selection(
+			p_id, p_text_start_id, p_start_char, p_text_end_id, p_end_char);
+	}
+}
+
+void AccessibilityServer::update_set_flag(
+	const RID& p_id, AccessibilityServerEnums::AccessibilityFlags p_flag, bool p_value)
+{
+	if (is_initialized()) {
+		data->driver->update_set_flag(p_id, p_flag, p_value);
+	}
+}
+
+void AccessibilityServer::update_set_classname(const RID& p_id, const String& p_classname)
+{
+	if (is_initialized()) {
+		data->driver->update_set_classname(p_id, p_classname);
+	}
+}
+
+void AccessibilityServer::update_set_placeholder(const RID& p_id, const String& p_placeholder)
+{
+	if (is_initialized()) {
+		data->driver->update_set_placeholder(p_id, p_placeholder);
+	}
+}
+
+void AccessibilityServer::update_set_language(const RID& p_id, const String& p_language)
+{
+	if (is_initialized()) {
+		data->driver->update_set_language(p_id, p_language);
+	}
+}
+
+void AccessibilityServer::update_set_text_orientation(const RID& p_id, bool p_vertical)
+{
+	if (is_initialized()) {
+		data->driver->update_set_text_orientation(p_id, p_vertical);
+	}
+}
+
+void AccessibilityServer::update_set_list_orientation(const RID& p_id, bool p_vertical)
+{
+	if (is_initialized()) {
+		data->driver->update_set_list_orientation(p_id, p_vertical);
+	}
+}
+
+void AccessibilityServer::update_set_shortcut(const RID& p_id, const String& p_shortcut)
+{
+	if (is_initialized()) {
+		data->driver->update_set_shortcut(p_id, p_shortcut);
+	}
+}
+
+void AccessibilityServer::update_set_url(const RID& p_id, const String& p_url)
+{
+	if (is_initialized()) {
+		data->driver->update_set_url(p_id, p_url);
+	}
+}
+
+void AccessibilityServer::update_set_role_description(const RID& p_id, const String& p_description)
+{
+	if (is_initialized()) {
+		data->driver->update_set_role_description(p_id, p_description);
+	}
+}
+
+void AccessibilityServer::update_set_state_description(
+	const RID& p_id, const String& p_description)
+{
+	if (is_initialized()) {
+		data->driver->update_set_state_description(p_id, p_description);
+	}
+}
+
+void AccessibilityServer::update_set_color_value(const RID& p_id, const Color& p_color)
+{
+	if (is_initialized()) {
+		data->driver->update_set_color_value(p_id, p_color);
+	}
+}
+
+void AccessibilityServer::update_set_background_color(const RID& p_id, const Color& p_color)
+{
+	if (is_initialized()) {
+		data->driver->update_set_background_color(p_id, p_color);
+	}
+}
+
+void AccessibilityServer::update_set_foreground_color(const RID& p_id, const Color& p_color)
+{
+	if (is_initialized()) {
+		data->driver->update_set_foreground_color(p_id, p_color);
+	}
+}
+
+// ============================================================================
+// Merged from servers/display/display_server_headless.cpp
+// ============================================================================
+
+#include "display_server_headless.h"
+
+#include "core/input/input.h"
+#include "core/input/input_event.h"
+#include "servers/display/native_menu.h"
+#include "servers/rendering/dummy/rasterizer_dummy.h"
+
+DisplayServerDriver* DisplayServerHeadless::create_func(const String& p_rendering_driver,
+	DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
+	uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
+	DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error)
+{
+	r_error = OK;
+	RasterizerDummy::make_current();
+	return memnew(DisplayServerHeadless());
+}
+
+void DisplayServerHeadless::_dispatch_input_events(const InputEvent& p_event)
+{
+	if (DisplayServerHeadless* ds = DisplayServer::driver_as<DisplayServerHeadless>()) {
+		ds->_dispatch_input_event(p_event);
+	}
+}
+
+void DisplayServerHeadless::process_events() { Input::flush_buffered_events(); }
+
+DisplayServerHeadless::DisplayServerHeadless()
+{
+	NativeMenu::initialize();
+	Input::set_event_dispatch_function(_dispatch_input_events);
+}
+
+DisplayServerHeadless::~DisplayServerHeadless()
+{
+	NativeMenu::finalize();
+}
+
+void DisplayServerHeadless::_dispatch_input_event(const InputEvent&) {}
+
+// ============================================================================
+// Merged from servers/display/native_menu.cpp
+// ============================================================================
+
+#include "native_menu.h"
+#include "scene/resources/texture.h"
+
+NativeMenuDriver::NativeMenuDriver() { NativeMenu::_bind_driver(this); }
+
+NativeMenuDriver::~NativeMenuDriver() { NativeMenu::_unbind_driver(this); }
+
+bool NativeMenuDriver::has_feature(Feature p_feature) const
+{
+	(void)p_feature;
+	return false;
+}
+
+bool NativeMenuDriver::has_system_menu(SystemMenus p_menu_id) const
+{
+	(void)p_menu_id;
+	return false;
+}
+
+RID NativeMenuDriver::get_system_menu(SystemMenus p_menu_id) const
+{
+	(void)p_menu_id;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return RID();
+}
+
+String NativeMenuDriver::get_system_menu_name(SystemMenus p_menu_id) const
+{
+	switch (p_menu_id) {
+	case MAIN_MENU_ID:
+		return "Main menu";
+	case APPLICATION_MENU_ID:
+		return "Application menu";
+	case WINDOW_MENU_ID:
+		return "Window menu";
+	case HELP_MENU_ID:
+		return "Help menu";
+	case DOCK_MENU_ID:
+		return "Dock menu";
+	default:
+		return "Invalid";
+	}
+}
+
+String NativeMenuDriver::get_system_menu_text(SystemMenus p_menu_id) const
+{
+	(void)p_menu_id;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return String();
+}
+
+void NativeMenuDriver::set_system_menu_text(SystemMenus p_menu_id, const String& p_name)
+{
+	(void)p_menu_id;
+	(void)p_name;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+RID NativeMenuDriver::create_menu()
+{
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return RID();
+}
+
+bool NativeMenuDriver::has_menu(const RID& p_rid) const
+{
+	(void)p_rid;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return false;
+}
+
+void NativeMenuDriver::free_menu(const RID& p_rid)
+{
+	(void)p_rid;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+Size2 NativeMenuDriver::get_size(const RID& p_rid) const
+{
+	(void)p_rid;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return Size2();
+}
+
+void NativeMenuDriver::popup(const RID& p_rid, const Vector2i& p_position)
+{
+	(void)p_rid;
+	(void)p_position;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_interface_direction(const RID& p_rid, bool p_is_rtl)
+{
+	(void)p_rid;
+	(void)p_is_rtl;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+bool NativeMenuDriver::is_opened(const RID& p_rid) const
+{
+	(void)p_rid;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return false;
+}
+
+void NativeMenuDriver::set_minimum_width(const RID& p_rid, float p_width)
+{
+	(void)p_rid;
+	(void)p_width;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+float NativeMenuDriver::get_minimum_width(const RID& p_rid) const
+{
+	(void)p_rid;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return 0.f;
+}
+
+int NativeMenuDriver::add_separator(const RID& p_rid, int p_index)
+{
+	(void)p_rid;
+	(void)p_index;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return -1;
+}
+
+int NativeMenuDriver::find_item_index_with_text(const RID& p_rid, const String& p_text) const
+{
+	(void)p_rid;
+	(void)p_text;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return -1;
+}
+
+int NativeMenuDriver::find_item_index_with_submenu(
+	const RID& p_rid, const RID& p_submenu_rid) const
+{
+	if (!has_menu(p_rid) || !has_menu(p_submenu_rid)) {
+		return -1;
+	}
+	int count = get_item_count(p_rid);
+	for (int i = 0; i < count; i++) {
+		if (p_submenu_rid == get_item_submenu(p_rid, i)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+bool NativeMenuDriver::is_item_checked(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return false;
+}
+
+bool NativeMenuDriver::is_item_indeterminate(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return false;
+}
+
+bool NativeMenuDriver::is_item_checkable(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return false;
+}
+
+bool NativeMenuDriver::is_item_radio_checkable(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return false;
+}
+
+String NativeMenuDriver::get_item_text(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return String();
+}
+
+RID NativeMenuDriver::get_item_submenu(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return RID();
+}
+
+Key NativeMenuDriver::get_item_accelerator(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return Key::NONE;
+}
+
+bool NativeMenuDriver::is_item_disabled(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return false;
+}
+
+bool NativeMenuDriver::is_item_hidden(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return false;
+}
+
+String NativeMenuDriver::get_item_tooltip(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return String();
+}
+
+int NativeMenuDriver::get_item_state(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return -1;
+}
+
+int NativeMenuDriver::get_item_max_states(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return -1;
+}
+
+Ref<Texture2D> NativeMenuDriver::get_item_icon(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return Ref<Texture2D>();
+}
+
+int NativeMenuDriver::get_item_indentation_level(const RID& p_rid, int p_idx) const
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return 0;
+}
+
+void NativeMenuDriver::set_item_checked(const RID& p_rid, int p_idx, bool p_checked)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_checked;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_indeterminate(const RID& p_rid, int p_idx, bool p_indeterminate)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_indeterminate;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_checkable(const RID& p_rid, int p_idx, bool p_checkable)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_checkable;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_radio_checkable(const RID& p_rid, int p_idx, bool p_checkable)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_checkable;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_text(const RID& p_rid, int p_idx, const String& p_text)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_text;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_submenu(const RID& p_rid, int p_idx, const RID& p_submenu_rid)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_submenu_rid;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_accelerator(const RID& p_rid, int p_idx, Key p_keycode)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_keycode;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_disabled(const RID& p_rid, int p_idx, bool p_disabled)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_disabled;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_hidden(const RID& p_rid, int p_idx, bool p_hidden)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_hidden;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_tooltip(const RID& p_rid, int p_idx, const String& p_tooltip)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_tooltip;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_state(const RID& p_rid, int p_idx, int p_state)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_state;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_max_states(const RID& p_rid, int p_idx, int p_max_states)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_max_states;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_icon(const RID& p_rid, int p_idx, const Ref<Texture2D>& p_icon)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_icon;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::set_item_indentation_level(const RID& p_rid, int p_idx, int p_level)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_level;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+int NativeMenuDriver::set_item_index(const RID& p_rid, int p_idx, int p_target_idx)
+{
+	(void)p_rid;
+	(void)p_idx;
+	(void)p_target_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return -1;
+}
+
+int NativeMenuDriver::get_item_count(const RID& p_rid) const
+{
+	(void)p_rid;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return 0;
+}
+
+bool NativeMenuDriver::is_system_menu(const RID& p_rid) const
+{
+	(void)p_rid;
+	WARN_PRINT("Global menus are not supported on this platform.");
+	return false;
+}
+
+void NativeMenuDriver::remove_item(const RID& p_rid, int p_idx)
+{
+	(void)p_rid;
+	(void)p_idx;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+void NativeMenuDriver::clear(const RID& p_rid)
+{
+	(void)p_rid;
+	WARN_PRINT("Global menus are not supported on this platform.");
+}
+
+/* NativeMenu Static Dispatch */
+
+void NativeMenu::_bind_driver(NativeMenuDriver* p_driver)
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+	data->driver = p_driver;
+}
+
+void NativeMenu::_unbind_driver(NativeMenuDriver* p_driver)
+{
+	if (data && data->driver == p_driver) {
+		data->driver = nullptr;
+	}
+}
+
+void NativeMenu::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+	if (!data->driver) {
+		memnew(NativeMenuDriver);
+	}
+}
+
+void NativeMenu::finalize()
+{
+	if (!data) {
+		return;
+	}
+	if (data->driver) {
+		NativeMenuDriver* drv = data->driver;
+		data->driver = nullptr;
+		memdelete(drv);
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+bool NativeMenu::has_feature(Feature p_feature)
+{
+	return is_initialized() ? data->driver->has_feature(p_feature) : false;
+}
+
+bool NativeMenu::has_system_menu(SystemMenus p_menu_id)
+{
+	return is_initialized() ? data->driver->has_system_menu(p_menu_id) : false;
+}
+
+RID NativeMenu::get_system_menu(SystemMenus p_menu_id)
+{
+	return is_initialized() ? data->driver->get_system_menu(p_menu_id) : RID();
+}
+
+String NativeMenu::get_system_menu_name(SystemMenus p_menu_id)
+{
+	return is_initialized() ? data->driver->get_system_menu_name(p_menu_id) : String();
+}
+
+String NativeMenu::get_system_menu_text(SystemMenus p_menu_id)
+{
+	return is_initialized() ? data->driver->get_system_menu_text(p_menu_id) : String();
+}
+
+void NativeMenu::set_system_menu_text(SystemMenus p_menu_id, const String& p_name)
+{
+	if (is_initialized()) {
+		data->driver->set_system_menu_text(p_menu_id, p_name);
+	}
+}
+
+RID NativeMenu::create_menu() { return is_initialized() ? data->driver->create_menu() : RID(); }
+
+bool NativeMenu::has_menu(const RID& p_rid)
+{
+	return is_initialized() ? data->driver->has_menu(p_rid) : false;
+}
+
+void NativeMenu::free_menu(const RID& p_rid)
+{
+	if (is_initialized()) {
+		data->driver->free_menu(p_rid);
+	}
+}
+
+Size2 NativeMenu::get_size(const RID& p_rid)
+{
+	return is_initialized() ? data->driver->get_size(p_rid) : Size2();
+}
+
+void NativeMenu::popup(const RID& p_rid, const Vector2i& p_position)
+{
+	if (is_initialized()) {
+		data->driver->popup(p_rid, p_position);
+	}
+}
+
+void NativeMenu::set_interface_direction(const RID& p_rid, bool p_is_rtl)
+{
+	if (is_initialized()) {
+		data->driver->set_interface_direction(p_rid, p_is_rtl);
+	}
+}
+
+void NativeMenu::set_minimum_width(const RID& p_rid, float p_width)
+{
+	if (is_initialized()) {
+		data->driver->set_minimum_width(p_rid, p_width);
+	}
+}
+
+float NativeMenu::get_minimum_width(const RID& p_rid)
+{
+	return is_initialized() ? data->driver->get_minimum_width(p_rid) : 0.f;
+}
+
+bool NativeMenu::is_opened(const RID& p_rid)
+{
+	return is_initialized() ? data->driver->is_opened(p_rid) : false;
+}
+
+int NativeMenu::add_separator(const RID& p_rid, int p_index)
+{
+	return is_initialized() ? data->driver->add_separator(p_rid, p_index) : -1;
+}
+
+int NativeMenu::find_item_index_with_text(const RID& p_rid, const String& p_text)
+{
+	return is_initialized() ? data->driver->find_item_index_with_text(p_rid, p_text) : -1;
+}
+
+int NativeMenu::find_item_index_with_submenu(const RID& p_rid, const RID& p_submenu_rid)
+{
+	return is_initialized() ? data->driver->find_item_index_with_submenu(p_rid, p_submenu_rid) : -1;
+}
+
+bool NativeMenu::is_item_checked(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->is_item_checked(p_rid, p_idx) : false;
+}
+
+bool NativeMenu::is_item_indeterminate(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->is_item_indeterminate(p_rid, p_idx) : false;
+}
+
+bool NativeMenu::is_item_checkable(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->is_item_checkable(p_rid, p_idx) : false;
+}
+
+bool NativeMenu::is_item_radio_checkable(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->is_item_radio_checkable(p_rid, p_idx) : false;
+}
+
+String NativeMenu::get_item_text(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->get_item_text(p_rid, p_idx) : String();
+}
+
+RID NativeMenu::get_item_submenu(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->get_item_submenu(p_rid, p_idx) : RID();
+}
+
+Key NativeMenu::get_item_accelerator(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->get_item_accelerator(p_rid, p_idx) : Key::NONE;
+}
+
+bool NativeMenu::is_item_disabled(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->is_item_disabled(p_rid, p_idx) : false;
+}
+
+bool NativeMenu::is_item_hidden(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->is_item_hidden(p_rid, p_idx) : false;
+}
+
+String NativeMenu::get_item_tooltip(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->get_item_tooltip(p_rid, p_idx) : String();
+}
+
+int NativeMenu::get_item_state(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->get_item_state(p_rid, p_idx) : -1;
+}
+
+int NativeMenu::get_item_max_states(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->get_item_max_states(p_rid, p_idx) : -1;
+}
+
+Ref<Texture2D> NativeMenu::get_item_icon(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->get_item_icon(p_rid, p_idx) : Ref<Texture2D>();
+}
+
+int NativeMenu::get_item_indentation_level(const RID& p_rid, int p_idx)
+{
+	return is_initialized() ? data->driver->get_item_indentation_level(p_rid, p_idx) : 0;
+}
+
+void NativeMenu::set_item_checked(const RID& p_rid, int p_idx, bool p_checked)
+{
+	if (is_initialized()) {
+		data->driver->set_item_checked(p_rid, p_idx, p_checked);
+	}
+}
+
+void NativeMenu::set_item_indeterminate(const RID& p_rid, int p_idx, bool p_indeterminate)
+{
+	if (is_initialized()) {
+		data->driver->set_item_indeterminate(p_rid, p_idx, p_indeterminate);
+	}
+}
+
+void NativeMenu::set_item_checkable(const RID& p_rid, int p_idx, bool p_checkable)
+{
+	if (is_initialized()) {
+		data->driver->set_item_checkable(p_rid, p_idx, p_checkable);
+	}
+}
+
+void NativeMenu::set_item_radio_checkable(const RID& p_rid, int p_idx, bool p_checkable)
+{
+	if (is_initialized()) {
+		data->driver->set_item_radio_checkable(p_rid, p_idx, p_checkable);
+	}
+}
+
+void NativeMenu::set_item_text(const RID& p_rid, int p_idx, const String& p_text)
+{
+	if (is_initialized()) {
+		data->driver->set_item_text(p_rid, p_idx, p_text);
+	}
+}
+
+void NativeMenu::set_item_submenu(const RID& p_rid, int p_idx, const RID& p_submenu_rid)
+{
+	if (is_initialized()) {
+		data->driver->set_item_submenu(p_rid, p_idx, p_submenu_rid);
+	}
+}
+
+void NativeMenu::set_item_accelerator(const RID& p_rid, int p_idx, Key p_keycode)
+{
+	if (is_initialized()) {
+		data->driver->set_item_accelerator(p_rid, p_idx, p_keycode);
+	}
+}
+
+void NativeMenu::set_item_disabled(const RID& p_rid, int p_idx, bool p_disabled)
+{
+	if (is_initialized()) {
+		data->driver->set_item_disabled(p_rid, p_idx, p_disabled);
+	}
+}
+
+void NativeMenu::set_item_hidden(const RID& p_rid, int p_idx, bool p_hidden)
+{
+	if (is_initialized()) {
+		data->driver->set_item_hidden(p_rid, p_idx, p_hidden);
+	}
+}
+
+void NativeMenu::set_item_tooltip(const RID& p_rid, int p_idx, const String& p_tooltip)
+{
+	if (is_initialized()) {
+		data->driver->set_item_tooltip(p_rid, p_idx, p_tooltip);
+	}
+}
+
+void NativeMenu::set_item_state(const RID& p_rid, int p_idx, int p_state)
+{
+	if (is_initialized()) {
+		data->driver->set_item_state(p_rid, p_idx, p_state);
+	}
+}
+
+void NativeMenu::set_item_max_states(const RID& p_rid, int p_idx, int p_max_states)
+{
+	if (is_initialized()) {
+		data->driver->set_item_max_states(p_rid, p_idx, p_max_states);
+	}
+}
+
+void NativeMenu::set_item_icon(const RID& p_rid, int p_idx, const Ref<Texture2D>& p_icon)
+{
+	if (is_initialized()) {
+		data->driver->set_item_icon(p_rid, p_idx, p_icon);
+	}
+}
+
+void NativeMenu::set_item_indentation_level(const RID& p_rid, int p_idx, int p_level)
+{
+	if (is_initialized()) {
+		data->driver->set_item_indentation_level(p_rid, p_idx, p_level);
+	}
+}
+
+int NativeMenu::set_item_index(const RID& p_rid, int p_idx, int p_target_idx)
+{
+	return is_initialized() ? data->driver->set_item_index(p_rid, p_idx, p_target_idx) : -1;
+}
+
+int NativeMenu::get_item_count(const RID& p_rid)
+{
+	return is_initialized() ? data->driver->get_item_count(p_rid) : 0;
+}
+
+bool NativeMenu::is_system_menu(const RID& p_rid)
+{
+	return is_initialized() ? data->driver->is_system_menu(p_rid) : false;
+}
+
+void NativeMenu::remove_item(const RID& p_rid, int p_idx)
+{
+	if (is_initialized()) {
+		data->driver->remove_item(p_rid, p_idx);
+	}
+}
+
+void NativeMenu::clear(const RID& p_rid)
+{
+	if (is_initialized()) {
+		data->driver->clear(p_rid);
+	}
+}

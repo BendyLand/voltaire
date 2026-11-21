@@ -899,3 +899,244 @@ bool PhysicsServer2D::is_flushing_queries() { return false; }
 int PhysicsServer2D::get_process_info(PS2DE::ProcessInfo p_info) { return 0; }
 
 #endif // MODULE_GODOT_PHYSICS_2D_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_2d/direct_states/physics_direct_body_state_2d.cpp
+// ============================================================================
+
+#include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+#ifndef MODULE_GODOT_PHYSICS_2D_ENABLED
+
+PhysicsDirectBodyState2D::PhysicsDirectBodyState2D(GodotBody2D* p_body) : body(p_body) {}
+
+Vector2 PhysicsDirectBodyState2D::get_total_gravity() const { return Vector2(); }
+real_t PhysicsDirectBodyState2D::get_total_linear_damp() const { return 0.0; }
+real_t PhysicsDirectBodyState2D::get_total_angular_damp() const { return 0.0; }
+
+Vector2 PhysicsDirectBodyState2D::get_center_of_mass() const { return Vector2(); }
+Vector2 PhysicsDirectBodyState2D::get_center_of_mass_local() const { return Vector2(); }
+real_t PhysicsDirectBodyState2D::get_inverse_mass() const { return 0.0; }
+real_t PhysicsDirectBodyState2D::get_inverse_inertia() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::set_linear_velocity(const Vector2& p_velocity) {}
+Vector2 PhysicsDirectBodyState2D::get_linear_velocity() const { return Vector2(); }
+
+void PhysicsDirectBodyState2D::set_angular_velocity(real_t p_velocity) {}
+real_t PhysicsDirectBodyState2D::get_angular_velocity() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::set_transform(const Transform2D& p_transform) {}
+Transform2D PhysicsDirectBodyState2D::get_transform() const { return Transform2D(); }
+
+Vector2 PhysicsDirectBodyState2D::get_velocity_at_local_position(const Vector2& p_position) const { return Vector2(); }
+
+void PhysicsDirectBodyState2D::apply_central_impulse(const Vector2& p_impulse) {}
+void PhysicsDirectBodyState2D::apply_torque_impulse(real_t p_torque) {}
+void PhysicsDirectBodyState2D::apply_impulse(const Vector2& p_impulse, const Vector2& p_position) {}
+
+void PhysicsDirectBodyState2D::apply_central_force(const Vector2& p_force) {}
+void PhysicsDirectBodyState2D::apply_force(const Vector2& p_force, const Vector2& p_position) {}
+void PhysicsDirectBodyState2D::apply_torque(real_t p_torque) {}
+
+void PhysicsDirectBodyState2D::add_constant_central_force(const Vector2& p_force) {}
+void PhysicsDirectBodyState2D::add_constant_force(const Vector2& p_force, const Vector2& p_position) {}
+void PhysicsDirectBodyState2D::add_constant_torque(real_t p_torque) {}
+
+void PhysicsDirectBodyState2D::set_constant_force(const Vector2& p_force) {}
+Vector2 PhysicsDirectBodyState2D::get_constant_force() const { return Vector2(); }
+
+void PhysicsDirectBodyState2D::set_constant_torque(real_t p_torque) {}
+real_t PhysicsDirectBodyState2D::get_constant_torque() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::set_sleep_state(bool p_enable) {}
+bool PhysicsDirectBodyState2D::is_sleeping() const { return false; }
+
+void PhysicsDirectBodyState2D::set_collision_layer(uint32_t p_layer) {}
+uint32_t PhysicsDirectBodyState2D::get_collision_layer() const { return 0; }
+
+void PhysicsDirectBodyState2D::set_collision_mask(uint32_t p_mask) {}
+uint32_t PhysicsDirectBodyState2D::get_collision_mask() const { return 0; }
+
+int PhysicsDirectBodyState2D::get_contact_count() const { return 0; }
+
+Vector2 PhysicsDirectBodyState2D::get_contact_local_position(int p_contact_idx) const { return Vector2(); }
+Vector2 PhysicsDirectBodyState2D::get_contact_local_normal(int p_contact_idx) const { return Vector2(); }
+int PhysicsDirectBodyState2D::get_contact_local_shape(int p_contact_idx) const { return 0; }
+Vector2 PhysicsDirectBodyState2D::get_contact_local_velocity_at_position(int p_contact_idx) const { return Vector2(); }
+
+RID PhysicsDirectBodyState2D::get_contact_collider(int p_contact_idx) const { return RID(); }
+Vector2 PhysicsDirectBodyState2D::get_contact_collider_position(int p_contact_idx) const { return Vector2(); }
+int PhysicsDirectBodyState2D::get_contact_collider_shape(int p_contact_idx) const { return 0; }
+Vector2 PhysicsDirectBodyState2D::get_contact_collider_velocity_at_position(int p_contact_idx) const { return Vector2(); }
+Vector2 PhysicsDirectBodyState2D::get_contact_impulse(int p_contact_idx) const { return Vector2(); }
+
+real_t PhysicsDirectBodyState2D::get_step() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::integrate_forces() {}
+
+PhysicsDirectSpaceState2D* PhysicsDirectBodyState2D::get_space_state() { return nullptr; }
+
+#endif // !MODULE_GODOT_PHYSICS_2D_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_2d/direct_states/physics_direct_space_state_2d.cpp
+// ============================================================================
+
+#include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+Vector<real_t> PhysicsDirectSpaceState2D::_cast_motion(
+	PhysicsShapeQueryParameters2D* rp_shape_query)
+{
+	real_t closest_safe = 1.0f, closest_unsafe = 1.0f;
+	bool res = cast_motion(rp_shape_query->get_parameters(), closest_safe, closest_unsafe);
+	if (!res) {
+		return Vector<real_t>();
+	}
+	Vector<real_t> ret;
+	ret.resize(2);
+	ret.write[0] = closest_safe;
+	ret.write[1] = closest_unsafe;
+	return ret;
+}
+
+#ifndef MODULE_GODOT_PHYSICS_2D_ENABLED
+
+PhysicsDirectSpaceState2D::PhysicsDirectSpaceState2D(GodotSpace2D* p_space) : space(p_space) {}
+
+bool PhysicsDirectSpaceState2D::intersect_ray(
+	const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result)
+{
+	return false;
+}
+
+int PhysicsDirectSpaceState2D::intersect_point(
+	const PS2DT::PointParameters& p_parameters,
+	PS2DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+int PhysicsDirectSpaceState2D::intersect_shape(
+	const PS2DT::ShapeParameters& p_parameters,
+	PS2DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+bool PhysicsDirectSpaceState2D::cast_motion(
+	const PS2DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
+	real_t& p_closest_unsafe)
+{
+	return false;
+}
+
+bool PhysicsDirectSpaceState2D::collide_shape(
+	const PS2DT::ShapeParameters& p_parameters, Vector2* r_results,
+	int p_result_max, int& r_result_count)
+{
+	r_result_count = 0;
+	return false;
+}
+
+bool PhysicsDirectSpaceState2D::rest_info(
+	const PS2DT::ShapeParameters& p_parameters,
+	PS2DT::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+#endif // !MODULE_GODOT_PHYSICS_2D_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_2d/queries/physics_ray_query_parameters_2d.cpp
+// ============================================================================
+
+#include "servers/physics_2d/queries/physics_ray_query_parameters_2d.h"
+
+Ref<PhysicsRayQueryParameters2D> PhysicsRayQueryParameters2D::create(
+	Vector2 p_from, Vector2 p_to, uint32_t p_mask, const TypedArray<RID>& p_exclude)
+{
+	Ref<PhysicsRayQueryParameters2D> params;
+	params.instantiate();
+	params->set_from(p_from);
+	params->set_to(p_to);
+	params->set_collision_mask(p_mask);
+	params->set_exclude(p_exclude);
+	return params;
+}
+
+
+
+void PhysicsRayQueryParameters2D::set_exclude(TypedArray<RID> const&) {}
+
+// ============================================================================
+// Merged from servers/physics_2d/queries/physics_shape_query_parameters_2d.cpp
+// ============================================================================
+
+#include "core/io/resource.h"
+#include "servers/physics_2d/queries/physics_shape_query_parameters_2d.h"
+
+Ref<Resource> PhysicsShapeQueryParameters2D::get_shape() const { return shape_ref; }
+
+void PhysicsShapeQueryParameters2D::set_shape(const Ref<Resource>& p_shape_ref)
+{
+	ERR_FAIL_COND(p_shape_ref.is_null());
+	shape_ref = p_shape_ref;
+	parameters.shape_rid = p_shape_ref->get_rid();
+}
+
+void PhysicsShapeQueryParameters2D::set_shape_rid(const RID& p_shape)
+{
+	if (parameters.shape_rid != p_shape) {
+		shape_ref = Ref<Resource>();
+		parameters.shape_rid = p_shape;
+	}
+}
+
+
+
+// ============================================================================
+// Merged from servers/physics_2d/queries/physics_testmotion_query_result_2d.cpp
+// ============================================================================
+
+#include "servers/physics_2d/queries/physics_testmotion_query_result_2d.h"
+
+Vector2 PhysicsTestMotionResult2D::get_travel() const { return result.travel; }
+
+Vector2 PhysicsTestMotionResult2D::get_remainder() const { return result.remainder; }
+
+Vector2 PhysicsTestMotionResult2D::get_collision_point() const { return result.collision_point; }
+
+Vector2 PhysicsTestMotionResult2D::get_collision_normal() const { return result.collision_normal; }
+
+Vector2 PhysicsTestMotionResult2D::get_collider_velocity() const
+{
+	return result.collider_velocity;
+}
+
+RID PhysicsTestMotionResult2D::get_collider_rid() const { return result.collider; }
+
+int PhysicsTestMotionResult2D::get_collider_shape() const { return result.collider_shape; }
+
+int PhysicsTestMotionResult2D::get_collision_local_shape() const
+{
+	return result.collision_local_shape;
+}
+
+real_t PhysicsTestMotionResult2D::get_collision_depth() const { return result.collision_depth; }
+
+real_t PhysicsTestMotionResult2D::get_collision_safe_fraction() const
+{
+	return result.collision_safe_fraction;
+}
+
+real_t PhysicsTestMotionResult2D::get_collision_unsafe_fraction() const
+{
+	return result.collision_unsafe_fraction;
+}
+
+
