@@ -169,7 +169,7 @@ const PrimitiveMesh::TextMeshState& PrimitiveMesh::_get_text_state() const
 	if (text_state) {
 		return *text_state;
 	}
-	static const TextMeshState default_state;
+	static const TextMeshState default_state{};
 	return default_state;
 }
 
