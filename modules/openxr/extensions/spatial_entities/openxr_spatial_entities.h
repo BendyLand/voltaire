@@ -34,7 +34,7 @@
 #include <openxr/openxr.h>
 #include "../../openxr_structure.h"
 #include "scene/resources/mesh.h"
-#include "servers/xr/xr_positional_tracker.h"
+#include "servers/xr/xr_tracker.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/resources/3d/shape_3d.h"
@@ -286,7 +286,7 @@ private:
 };
 
 // Unified tracker for spatial entities (generic, anchor, plane, marker)
-class OpenXRSpatialEntityTracker : public XRPositionalTracker
+class OpenXRSpatialEntityTracker final : public XRTracker
 {
 public:
 	enum EntityType
@@ -305,7 +305,7 @@ public:
 	};
 
 	OpenXRSpatialEntityTracker(EntityType p_entity_type = ENTITY_GENERIC);
-	virtual ~OpenXRSpatialEntityTracker();
+	~OpenXRSpatialEntityTracker() override;
 
 	void set_entity_type(EntityType p_entity_type) { entity_type = p_entity_type; }
 	EntityType get_entity_type() const { return entity_type; }

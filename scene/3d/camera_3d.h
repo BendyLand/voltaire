@@ -37,7 +37,7 @@
 #include "scene/resources/camera_attributes.h"
 #include "scene/resources/compositor.h"
 #include "scene/resources/environment.h"
-#include "servers/xr/xr_positional_tracker.h"
+#include "servers/xr/xr_tracker.h"
 
 class Camera3D : public Node3D
 {
@@ -106,7 +106,7 @@ private:
 	bool xr_enabled = false;
 	String tracker_name = "head";
 	String pose_name = "default";
-	Ref<XRPositionalTracker> tracker;
+	Ref<XRTracker> tracker;
 
 	void _bind_tracker();
 	void _unbind_tracker();

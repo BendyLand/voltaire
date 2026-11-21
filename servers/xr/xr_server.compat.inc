@@ -33,17 +33,17 @@
 
 #include "xr_server.h"
 
-void XRServer::_add_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker)
+void XRServer::_add_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker)
 {
 	add_tracker(p_tracker);
 }
 
-void XRServer::_remove_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker)
+void XRServer::_remove_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker)
 {
 	remove_tracker(p_tracker);
 }
 
-Ref<XRPositionalTracker> XRServer::_get_tracker_bind_compat_90645(const String& p_name)
+Ref<XRTracker> XRServer::_get_tracker_bind_compat_90645(const String& p_name)
 {
 	return get_tracker(p_name);
 }

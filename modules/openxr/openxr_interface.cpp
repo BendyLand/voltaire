@@ -199,20 +199,21 @@ OpenXRInterface::Tracker* OpenXRInterface::find_tracker(const String& p_tracker_
 	ERR_FAIL_COND_V(tracker_rid.is_null(), nullptr);
 
 	// Create our controller tracker.
-	Ref<XRControllerTracker> controller_tracker;
+	Ref<XRTracker> controller_tracker;
 	controller_tracker.instantiate();
+	controller_tracker->set_tracker_type(XRServer::TRACKER_CONTROLLER);
 
 	// We have standardized some names to make things nicer to the user so lets recognize the
 	// toplevel paths related to these.
 	if (p_tracker_name == "/user/hand/left") {
 		controller_tracker->set_tracker_name("left_hand");
 		controller_tracker->set_tracker_desc("Left hand controller");
-		controller_tracker->set_tracker_hand(XRPositionalTracker::TRACKER_HAND_LEFT);
+		controller_tracker->set_tracker_hand(XRTracker::TRACKER_HAND_LEFT);
 	}
 	else if (p_tracker_name == "/user/hand/right") {
 		controller_tracker->set_tracker_name("right_hand");
 		controller_tracker->set_tracker_desc("Right hand controller");
-		controller_tracker->set_tracker_hand(XRPositionalTracker::TRACKER_HAND_RIGHT);
+		controller_tracker->set_tracker_hand(XRTracker::TRACKER_HAND_RIGHT);
 	}
 	else {
 		controller_tracker->set_tracker_name(p_tracker_name);

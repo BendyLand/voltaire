@@ -32,8 +32,7 @@
 #pragma once
 
 #include "servers/xr/xr_interface.h"
-#include "servers/xr/xr_positional_tracker.h"
-#include "servers/xr/xr_vrs.h"
+#include "servers/xr/xr_tracker.h"
 
 /**
 	The mobile interface is a native VR interface that can be used on Android and iOS phones.
@@ -70,7 +69,7 @@ private:
 	double aspect = 1.0;
 
 	// at a minimum we need a tracker for our head
-	Ref<XRPositionalTracker> head;
+	Ref<XRTracker> head;
 	Transform3D head_transform;
 
 	XRVRS xr_vrs;

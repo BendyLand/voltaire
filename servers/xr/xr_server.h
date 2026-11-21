@@ -36,7 +36,6 @@
 
 class XRInterface;
 class XRTracker;
-class XRPositionalTracker;
 
 class XRServer final
 {
@@ -108,9 +107,9 @@ private:
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
-	static void _add_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker);
-	static void _remove_tracker_bind_compat_90645(const Ref<XRPositionalTracker>& p_tracker);
-	static Ref<XRPositionalTracker> _get_tracker_bind_compat_90645(const String& p_name);
+	static void _add_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker);
+	static void _remove_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker);
+	static Ref<XRTracker> _get_tracker_bind_compat_90645(const String& p_name);
 #endif
 
 public:

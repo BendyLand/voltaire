@@ -38,9 +38,34 @@
 #include "servers/xr/xr_interface.h"
 #include "xr_nodes.h"
 
-// XRNode3D is a node that has it's transform updated by an XRPositionalTracker.
-// Note that trackers are only available in runtime and only after an XRInterface registers one.
+// XRNode3D is a node that has its transform updated by an XRTracker.
+// Note that trackers are only available at runtime and only after an XRInterface registers one.
 // So we bind by name and as long as a tracker isn't available, our node remains inactive.
+
+void XRNode3D::set_mode(Mode p_mode)
+{
+	if (mode == p_mode) {
+		return;
+	}
+	mode = p_mode;
+	update_configuration_warnings();
+}
+
+void XRNode3D::set_tracker(const String& p_tracker_name)
+{
+	if (tracker.is_valid() && tracker->get_tracker_name() == p_tracker_name) {
+		return;
+	}
+
+	_unbind_tracker();
+
+	tracker_name = p_tracker_name;
+	pose_name = SceneString(default_);
+
+	_bind_tracker();
+
+	update_configuration_warnings();
+}
 
 String XRNode3D::get_tracker() const { return tracker_name; }
 
@@ -106,6 +131,35 @@ Ref<XRPose> XRNode3D::get_pose()
 	}
 }
 
+void XRNode3D::_bind_tracker()
+{
+	ERR_FAIL_COND(tracker.is_valid());
+
+	if (XRServer::is_initialized()) {
+		tracker = XRServer::get_tracker(tracker_name);
+		if (tracker.is_null()) {
+			return;
+		}
+
+		Ref<XRPose> pose = get_pose();
+		if (pose.is_valid()) {
+			set_transform(pose->get_adjusted_transform());
+			_set_has_tracking_data(pose->get_has_tracking_data());
+		}
+		else {
+			_set_has_tracking_data(false);
+		}
+	}
+}
+
+void XRNode3D::_unbind_tracker()
+{
+	if (tracker.is_valid()) {
+		tracker.unref();
+		_set_has_tracking_data(false);
+	}
+}
+
 void XRNode3D::_changed_tracker(const String& p_tracker_name, int p_tracker_type)
 {
 	if (tracker_name == p_tracker_name) {
@@ -140,6 +194,14 @@ void XRNode3D::_pose_lost_tracking(const Ref<XRPose>& p_pose)
 	}
 }
 
+void XRNode3D::_set_has_tracking_data(bool p_has_tracking_data)
+{
+	if (has_tracking_data != p_has_tracking_data) {
+		has_tracking_data = p_has_tracking_data;
+		_update_visibility();
+	}
+}
+
 void XRNode3D::_update_visibility()
 {
 	// If configured, show or hide the node based on tracking data.
@@ -154,19 +216,60 @@ void XRNode3D::_update_visibility()
 	}
 }
 
-XRPositionalTracker::TrackerHand XRController3D::get_tracker_hand() const
+void XRNode3D::_button_pressed(const String& p_name) {}
+
+void XRNode3D::_button_released(const String& p_name) {}
+
+void XRNode3D::_input_float_changed(const String& p_name, float p_value) {}
+
+void XRNode3D::_input_vector2_changed(const String& p_name, Vector2 p_value) {}
+
+void XRNode3D::_profile_changed(const String& p_role) {}
+
+bool XRNode3D::is_button_pressed(const String& p_name) const
 {
-	// get our XRServer
 	if (tracker.is_null()) {
-		return XRPositionalTracker::TRACKER_HAND_UNKNOWN;
+		return false;
+	}
+	return tracker->is_button_pressed(p_name);
+}
+
+XRTracker::InputValue XRNode3D::get_input(const String& p_name) const
+{
+	if (tracker.is_null()) {
+		return XRTracker::InputValue();
+	}
+	return tracker->get_input(p_name);
+}
+
+float XRNode3D::get_float(const String& p_name) const
+{
+	if (tracker.is_null()) {
+		return 0.0f;
+	}
+	return tracker->get_input_float(p_name);
+}
+
+Vector2 XRNode3D::get_vector2(const String& p_name) const
+{
+	if (tracker.is_null()) {
+		return Vector2();
+	}
+	return tracker->get_input_vector2(p_name);
+}
+
+XRTracker::TrackerHand XRNode3D::get_tracker_hand() const
+{
+	if (tracker.is_null()) {
+		return XRTracker::TRACKER_HAND_UNKNOWN;
 	}
 
 	return tracker->get_tracker_hand();
 }
 
-Vector3 XRAnchor3D::get_size() const { return size; }
+Vector3 XRNode3D::get_size() const { return size; }
 
-Plane XRAnchor3D::get_plane() const
+Plane XRNode3D::get_plane() const
 {
 	Vector3 location = get_position();
 	Basis orientation = get_transform().basis;
@@ -175,6 +278,36 @@ Plane XRAnchor3D::get_plane() const
 
 	return plane;
 }
+
+PackedStringArray XRNode3D::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+
+	if (is_visible() && is_inside_tree()) {
+		const XROrigin3D* origin = dynamic_cast<const XROrigin3D*>(get_parent());
+		if (origin == nullptr) {
+			warnings.push_back(RTR("XRNode3D may not function as expected without an XROrigin3D node as its parent."));
+		}
+		if (tracker_name.is_empty()) {
+			warnings.push_back(RTR("No tracker name is set."));
+		}
+		if (mode != MODE_ANCHOR && pose_name.is_empty()) {
+			warnings.push_back(RTR("No pose is set."));
+		}
+	}
+
+	if (get_physics_interpolation_mode() != Node::PHYSICS_INTERPOLATION_MODE_OFF) {
+		warnings.push_back(RTR("XRNode3D should have physics_interpolation_mode set to OFF in order to avoid jitter."));
+	}
+
+	return warnings;
+}
+
+XRNode3D::XRNode3D(Mode p_mode) : mode(p_mode) {}
+
+XRNode3D::~XRNode3D() { _unbind_tracker(); }
+
+// XROrigin3D
 
 Vector<XROrigin3D*> XROrigin3D::origin_nodes;
 
@@ -282,5 +415,3 @@ PackedStringArray XROrigin3D::get_configuration_warnings() const
 	}
 	return warnings;
 }
-
-void XRNode3D::_set_has_tracking_data(bool) {}

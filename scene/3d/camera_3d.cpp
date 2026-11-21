@@ -67,7 +67,7 @@ void Camera3D::_bind_tracker()
 {
 	ERR_FAIL_COND(tracker.is_valid());
 	if (XRServer::is_initialized()) {
-		tracker = dynamic_cast<XRPositionalTracker*>(XRServer::get_tracker(tracker_name).ptr());
+		tracker = XRServer::get_tracker(tracker_name);
 		if (tracker.is_valid()) {
 			Ref<XRPose> pose = tracker->get_pose(pose_name);
 			if (pose.is_valid()) {

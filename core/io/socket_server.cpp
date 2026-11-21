@@ -53,6 +53,51 @@ Error SocketServer::_listen(const NetSocket::Address& p_addr)
 	return OK;
 }
 
+Error SocketServer::listen(uint16_t p_port, const IPAddress& p_bind_address)
+{
+	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
+	ERR_FAIL_COND_V(_sock->is_open(), ERR_ALREADY_IN_USE);
+	ERR_FAIL_COND_V(
+		!p_bind_address.is_valid() && !p_bind_address.is_wildcard(), ERR_INVALID_PARAMETER);
+
+	domain = StreamPeerSocket::DOMAIN_TCP;
+	IP::Type ip_type = IP::TYPE_ANY;
+
+	// If the bind address is valid use its type as the socket type
+	if (p_bind_address.is_valid()) {
+		ip_type = p_bind_address.is_ipv4() ? IP::TYPE_IPV4 : IP::TYPE_IPV6;
+	}
+
+	Error err = _sock->open(NetSocket::Family::INET, NetSocket::TYPE_TCP, ip_type);
+
+	ERR_FAIL_COND_V(err != OK, ERR_CANT_CREATE);
+
+	_sock->set_reuse_address_enabled(true);
+
+	return _listen(NetSocket::Address(p_bind_address, p_port));
+}
+
+Error SocketServer::listen_path(const String& p_path)
+{
+	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
+	ERR_FAIL_COND_V(_sock->is_open(), ERR_ALREADY_IN_USE);
+	ERR_FAIL_COND_V(p_path.is_empty(), ERR_INVALID_PARAMETER);
+
+	domain = StreamPeerSocket::DOMAIN_UDS;
+	IP::Type ip_type = IP::TYPE_NONE;
+	Error err = _sock->open(NetSocket::Family::UNIX, NetSocket::TYPE_NONE, ip_type);
+	ERR_FAIL_COND_V(err != OK, ERR_CANT_CREATE);
+
+	return _listen(NetSocket::Address(p_path));
+}
+
+int SocketServer::get_local_port() const
+{
+	NetSocket::Address addr;
+	_sock->get_socket_address(&addr);
+	return addr.port();
+}
+
 bool SocketServer::is_listening() const
 {
 	ERR_FAIL_COND_V(_sock.is_null(), false);
@@ -72,6 +117,24 @@ bool SocketServer::is_connection_available() const
 	return (err == OK);
 }
 
+Ref<StreamPeerSocket> SocketServer::take_connection()
+{
+	Ref<StreamPeerSocket> conn;
+	if (!is_connection_available()) {
+		return conn;
+	}
+
+	NetSocket::Address addr;
+	Ref<NetSocket> ns = _sock->accept(addr);
+	if (ns.is_null()) {
+		return conn;
+	}
+
+	conn.instantiate(domain);
+	conn->accept_socket(ns, addr);
+	return conn;
+}
+
 void SocketServer::stop()
 {
 	if (_sock.is_valid()) {
@@ -82,5 +145,3 @@ void SocketServer::stop()
 SocketServer::SocketServer() : _sock(NetSocket::create()) {}
 
 SocketServer::~SocketServer() { stop(); }
-
-

@@ -33,6 +33,11 @@
 #include "core/math/geometry_2d.h"
 #include "core/os/mutex.h"
 #include "navigation_polygon.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
+
+NavigationPolygon::NavigationPolygon() :
+		cell_size(NavigationDefaults2D::NAV_MESH_CELL_SIZE) {
+}
 
 #ifdef DEBUG_ENABLED
 Rect2 NavigationPolygon::_edit_get_rect() const
@@ -498,4 +503,4 @@ Vector2 NavigationPolygon::get_baking_rect_offset() const { return baking_rect_o
 
 
 
-bool NavigationPolygon::_edit_is_selected_on_click(Vector2 const&, double) const {}
+bool NavigationPolygon::_edit_is_selected_on_click(Vector2 const&, double) const { return false; }

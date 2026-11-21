@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  codesign.cpp                                                          */
+/*  apple_export_utils.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                            VOLTAIRE ENGINE                             */
@@ -29,18 +29,864 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "codesign.h"
+#include "apple_export_utils.h"
 
+#include "core/config/project_settings.h"
 #include "core/crypto/crypto_core.h"
 #include "core/io/dir_access.h"
+#include "core/io/file_access.h"
 #include "core/io/plist.h"
-#include "editor/export/lipo.h"
-#include "editor/export/macho.h"
 #include "editor/file_system/editor_paths.h"
-
 #include "modules/regex/regex.h"
 
 #include <ctime>
+
+
+/*************************************************************************/
+/* MachO                                                                 */
+/*************************************************************************/
+
+uint32_t MachO::seg_align(uint64_t p_vmaddr, uint32_t p_min, uint32_t p_max) {
+	uint32_t salign = p_max;
+	if (p_vmaddr != 0) {
+		uint64_t seg_align = 1;
+		salign = 0;
+		while ((seg_align & p_vmaddr) == 0) {
+			seg_align = seg_align << 1;
+			salign++;
+		}
+		salign = CLAMP(salign, p_min, p_max);
+	}
+	return salign;
+}
+
+bool MachO::alloc_signature(uint64_t p_size) {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), false, "MachO: File not opened.");
+	if (signature_offset != 0) {
+		// Nothing to do, already have signature load command.
+		return true;
+	}
+	if (lc_limit == 0 || lc_limit + 16 > exe_base) {
+		ERR_FAIL_V_MSG(false, "MachO: Can't allocate signature load command, please use \"codesign_allocate\" utility first.");
+	} else {
+		// Add signature load command.
+		signature_offset = lc_limit;
+
+		fa->seek(lc_limit);
+		LoadCommandHeader lc;
+		lc.cmd = LC_CODE_SIGNATURE;
+		lc.cmdsize = 16;
+		if (swap) {
+			lc.cmdsize = BSWAP32(lc.cmdsize);
+		}
+		fa->store_buffer((const uint8_t *)&lc, sizeof(LoadCommandHeader));
+
+		uint32_t lc_offset = fa->get_length() + PAD(fa->get_length(), 16);
+		uint32_t lc_size = 0;
+		if (swap) {
+			lc_offset = BSWAP32(lc_offset);
+			lc_size = BSWAP32(lc_size);
+		}
+		fa->store_32(lc_offset);
+		fa->store_32(lc_size);
+
+		// Write new command number.
+		fa->seek(0x10);
+		uint32_t ncmds = fa->get_32();
+		uint32_t cmdssize = fa->get_32();
+		if (swap) {
+			ncmds = BSWAP32(ncmds);
+			cmdssize = BSWAP32(cmdssize);
+		}
+		ncmds += 1;
+		cmdssize += 16;
+		if (swap) {
+			ncmds = BSWAP32(ncmds);
+			cmdssize = BSWAP32(cmdssize);
+		}
+		fa->seek(0x10);
+		fa->store_32(ncmds);
+		fa->store_32(cmdssize);
+
+		lc_limit = lc_limit + sizeof(LoadCommandHeader) + 8;
+
+		return true;
+	}
+}
+
+bool MachO::is_macho(const String &p_path) {
+	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
+	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("MachO: Can't open file: \"%s\".", p_path));
+	uint32_t magic = fb->get_32();
+	return (magic == 0xcefaedfe || magic == 0xfeedface || magic == 0xcffaedfe || magic == 0xfeedfacf);
+}
+
+uint32_t MachO::get_filetype(const String &p_path) {
+	Ref<FileAccess> fa = FileAccess::open(p_path, FileAccess::READ);
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, vformat("MachO: Can't open file: \"%s\".", p_path));
+	uint32_t magic = fa->get_32();
+	MachHeader mach_header;
+
+	// Read MachO header.
+	if (magic == 0xcefaedfe || magic == 0xfeedface) {
+		// Thin 32-bit binary.
+		fa->get_buffer((uint8_t *)&mach_header, sizeof(MachHeader));
+	} else if (magic == 0xcffaedfe || magic == 0xfeedfacf) {
+		// Thin 64-bit binary.
+		fa->get_buffer((uint8_t *)&mach_header, sizeof(MachHeader));
+		fa->get_32(); // Skip extra reserved field.
+	} else {
+		ERR_FAIL_V_MSG(0, vformat("MachO: File is not a valid MachO binary: \"%s\".", p_path));
+	}
+	return mach_header.filetype;
+}
+
+bool MachO::open_file(const String &p_path) {
+	fa = FileAccess::open(p_path, FileAccess::READ_WRITE);
+	ERR_FAIL_COND_V_MSG(fa.is_null(), false, vformat("MachO: Can't open file: \"%s\".", p_path));
+	uint32_t magic = fa->get_32();
+	MachHeader mach_header;
+
+	// Read MachO header.
+	swap = (magic == 0xcffaedfe || magic == 0xcefaedfe);
+	if (magic == 0xcefaedfe || magic == 0xfeedface) {
+		// Thin 32-bit binary.
+		fa->get_buffer((uint8_t *)&mach_header, sizeof(MachHeader));
+	} else if (magic == 0xcffaedfe || magic == 0xfeedfacf) {
+		// Thin 64-bit binary.
+		fa->get_buffer((uint8_t *)&mach_header, sizeof(MachHeader));
+		fa->get_32(); // Skip extra reserved field.
+	} else {
+		ERR_FAIL_V_MSG(false, vformat("MachO: File is not a valid MachO binary: \"%s\".", p_path));
+	}
+
+	if (swap) {
+		mach_header.ncmds = BSWAP32(mach_header.ncmds);
+		mach_header.cpusubtype = BSWAP32(mach_header.cpusubtype);
+		mach_header.cputype = BSWAP32(mach_header.cputype);
+	}
+	cpusubtype = mach_header.cpusubtype;
+	cputype = mach_header.cputype;
+	align = 0;
+	exe_base = std::numeric_limits<uint64_t>::max();
+	exe_limit = 0;
+	lc_limit = 0;
+	link_edit_offset = 0;
+	signature_offset = 0;
+
+	// Read load commands.
+	for (uint32_t i = 0; i < mach_header.ncmds; i++) {
+		LoadCommandHeader lc;
+		fa->get_buffer((uint8_t *)&lc, sizeof(LoadCommandHeader));
+		if (swap) {
+			lc.cmd = BSWAP32(lc.cmd);
+			lc.cmdsize = BSWAP32(lc.cmdsize);
+		}
+		uint64_t ps = fa->get_position();
+		switch (lc.cmd) {
+			case LC_SEGMENT: {
+				LoadCommandSegment lc_seg;
+				fa->get_buffer((uint8_t *)&lc_seg, sizeof(LoadCommandSegment));
+				if (swap) {
+					lc_seg.nsects = BSWAP32(lc_seg.nsects);
+					lc_seg.vmaddr = BSWAP32(lc_seg.vmaddr);
+					lc_seg.vmsize = BSWAP32(lc_seg.vmsize);
+				}
+				align = MAX(align, seg_align(lc_seg.vmaddr, 2, 15));
+				if (String(lc_seg.segname) == "__TEXT") {
+					exe_limit = MAX(exe_limit, lc_seg.vmsize);
+					for (uint32_t j = 0; j < lc_seg.nsects; j++) {
+						Section lc_sect;
+						fa->get_buffer((uint8_t *)&lc_sect, sizeof(Section));
+						if (String(lc_sect.sectname) == "__text") {
+							if (swap) {
+								exe_base = MIN(exe_base, BSWAP32(lc_sect.offset));
+							} else {
+								exe_base = MIN(exe_base, lc_sect.offset);
+							}
+						}
+						if (swap) {
+							align = MAX(align, BSWAP32(lc_sect.align));
+						} else {
+							align = MAX(align, lc_sect.align);
+						}
+					}
+				} else if (String(lc_seg.segname) == "__LINKEDIT") {
+					link_edit_offset = ps - 8;
+				}
+			} break;
+			case LC_SEGMENT_64: {
+				LoadCommandSegment64 lc_seg;
+				fa->get_buffer((uint8_t *)&lc_seg, sizeof(LoadCommandSegment64));
+				if (swap) {
+					lc_seg.nsects = BSWAP32(lc_seg.nsects);
+					lc_seg.vmaddr = BSWAP64(lc_seg.vmaddr);
+					lc_seg.vmsize = BSWAP64(lc_seg.vmsize);
+				}
+				align = MAX(align, seg_align(lc_seg.vmaddr, 3, 15));
+				if (String(lc_seg.segname) == "__TEXT") {
+					exe_limit = MAX(exe_limit, lc_seg.vmsize);
+					for (uint32_t j = 0; j < lc_seg.nsects; j++) {
+						Section64 lc_sect;
+						fa->get_buffer((uint8_t *)&lc_sect, sizeof(Section64));
+						if (String(lc_sect.sectname) == "__text") {
+							if (swap) {
+								exe_base = MIN(exe_base, BSWAP32(lc_sect.offset));
+							} else {
+								exe_base = MIN(exe_base, lc_sect.offset);
+							}
+							if (swap) {
+								align = MAX(align, BSWAP32(lc_sect.align));
+							} else {
+								align = MAX(align, lc_sect.align);
+							}
+						}
+					}
+				} else if (String(lc_seg.segname) == "__LINKEDIT") {
+					link_edit_offset = ps - 8;
+				}
+			} break;
+			case LC_CODE_SIGNATURE: {
+				signature_offset = ps - 8;
+			} break;
+			default: {
+			} break;
+		}
+		fa->seek(ps + lc.cmdsize - 8);
+		lc_limit = ps + lc.cmdsize - 8;
+	}
+
+	if (exe_limit == 0 || lc_limit == 0) {
+		ERR_FAIL_V_MSG(false, vformat("MachO: No load commands or executable code found: \"%s\".", p_path));
+	}
+
+	return true;
+}
+
+uint64_t MachO::get_exe_base() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
+	return exe_base;
+}
+
+uint64_t MachO::get_exe_limit() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
+	return exe_limit;
+}
+
+int32_t MachO::get_align() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
+	return align;
+}
+
+uint32_t MachO::get_cputype() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
+	return cputype;
+}
+
+uint32_t MachO::get_cpusubtype() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
+	return cpusubtype;
+}
+
+uint64_t MachO::get_size() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
+	return fa->get_length();
+}
+
+uint64_t MachO::get_signature_offset() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
+	ERR_FAIL_COND_V_MSG(signature_offset == 0, 0, "MachO: No signature load command.");
+
+	fa->seek(signature_offset + 8);
+	if (swap) {
+		return BSWAP32(fa->get_32());
+	} else {
+		return fa->get_32();
+	}
+}
+
+uint64_t MachO::get_code_limit() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
+
+	if (signature_offset == 0) {
+		return fa->get_length() + PAD(fa->get_length(), 16);
+	} else {
+		return get_signature_offset();
+	}
+}
+
+uint64_t MachO::get_signature_size() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
+	ERR_FAIL_COND_V_MSG(signature_offset == 0, 0, "MachO: No signature load command.");
+
+	fa->seek(signature_offset + 12);
+	if (swap) {
+		return BSWAP32(fa->get_32());
+	} else {
+		return fa->get_32();
+	}
+}
+
+bool MachO::is_signed() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), false, "MachO: File not opened.");
+	if (signature_offset == 0) {
+		return false;
+	}
+
+	fa->seek(get_signature_offset());
+	uint32_t magic = BSWAP32(fa->get_32());
+	if (magic != 0xfade0cc0) {
+		return false; // No SuperBlob found.
+	}
+	fa->get_32(); // Skip size field, unused.
+	uint32_t count = BSWAP32(fa->get_32());
+	for (uint32_t i = 0; i < count; i++) {
+		uint32_t index_type = BSWAP32(fa->get_32());
+		uint32_t offset = BSWAP32(fa->get_32());
+		if (index_type == 0x00000000) { // CodeDirectory index type.
+			fa->seek(get_signature_offset() + offset + 12);
+			uint32_t flags = BSWAP32(fa->get_32());
+			if (flags & 0x20000) {
+				return false; // Found CD, linker-signed.
+			} else {
+				return true; // Found CD, not linker-signed.
+			}
+		}
+	}
+	return false; // No CD found.
+}
+
+PackedByteArray MachO::get_cdhash_sha1() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedByteArray(), "MachO: File not opened.");
+	if (signature_offset == 0) {
+		return PackedByteArray();
+	}
+
+	fa->seek(get_signature_offset());
+	uint32_t magic = BSWAP32(fa->get_32());
+	if (magic != 0xfade0cc0) {
+		return PackedByteArray(); // No SuperBlob found.
+	}
+	fa->get_32(); // Skip size field, unused.
+	uint32_t count = BSWAP32(fa->get_32());
+	for (uint32_t i = 0; i < count; i++) {
+		fa->get_32(); // Index type, skip.
+		uint32_t offset = BSWAP32(fa->get_32());
+		uint64_t pos = fa->get_position();
+
+		fa->seek(get_signature_offset() + offset);
+		uint32_t cdmagic = BSWAP32(fa->get_32());
+		uint32_t cdsize = BSWAP32(fa->get_32());
+		if (cdmagic == 0xfade0c02) { // CodeDirectory.
+			fa->seek(get_signature_offset() + offset + 36);
+			uint8_t hash_size = fa->get_8();
+			uint8_t hash_type = fa->get_8();
+			if (hash_size == 0x14 && hash_type == 0x01) { /* SHA-1 */
+				PackedByteArray hash;
+				hash.resize(0x14);
+
+				fa->seek(get_signature_offset() + offset);
+				PackedByteArray blob;
+				blob.resize(cdsize);
+				fa->get_buffer(blob.ptrw(), cdsize);
+
+				CryptoCore::SHA1Context ctx;
+				ctx.start();
+				ctx.update(blob.ptr(), blob.size());
+				ctx.finish(hash.ptrw());
+
+				return hash;
+			}
+		}
+		fa->seek(pos);
+	}
+	return PackedByteArray();
+}
+
+PackedByteArray MachO::get_cdhash_sha256() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedByteArray(), "MachO: File not opened.");
+	if (signature_offset == 0) {
+		return PackedByteArray();
+	}
+
+	fa->seek(get_signature_offset());
+	uint32_t magic = BSWAP32(fa->get_32());
+	if (magic != 0xfade0cc0) {
+		return PackedByteArray(); // No SuperBlob found.
+	}
+	fa->get_32(); // Skip size field, unused.
+	uint32_t count = BSWAP32(fa->get_32());
+	for (uint32_t i = 0; i < count; i++) {
+		fa->get_32(); // Index type, skip.
+		uint32_t offset = BSWAP32(fa->get_32());
+		uint64_t pos = fa->get_position();
+
+		fa->seek(get_signature_offset() + offset);
+		uint32_t cdmagic = BSWAP32(fa->get_32());
+		uint32_t cdsize = BSWAP32(fa->get_32());
+		if (cdmagic == 0xfade0c02) { // CodeDirectory.
+			fa->seek(get_signature_offset() + offset + 36);
+			uint8_t hash_size = fa->get_8();
+			uint8_t hash_type = fa->get_8();
+			if (hash_size == 0x20 && hash_type == 0x02) { /* SHA-256 */
+				PackedByteArray hash;
+				hash.resize(0x20);
+
+				fa->seek(get_signature_offset() + offset);
+				PackedByteArray blob;
+				blob.resize(cdsize);
+				fa->get_buffer(blob.ptrw(), cdsize);
+
+				CryptoCore::SHA256Context ctx;
+				ctx.start();
+				ctx.update(blob.ptr(), blob.size());
+				ctx.finish(hash.ptrw());
+
+				return hash;
+			}
+		}
+		fa->seek(pos);
+	}
+	return PackedByteArray();
+}
+
+PackedByteArray MachO::get_requirements() {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedByteArray(), "MachO: File not opened.");
+	if (signature_offset == 0) {
+		return PackedByteArray();
+	}
+
+	fa->seek(get_signature_offset());
+	uint32_t magic = BSWAP32(fa->get_32());
+	if (magic != 0xfade0cc0) {
+		return PackedByteArray(); // No SuperBlob found.
+	}
+	fa->get_32(); // Skip size field, unused.
+	uint32_t count = BSWAP32(fa->get_32());
+	for (uint32_t i = 0; i < count; i++) {
+		fa->get_32(); // Index type, skip.
+		uint32_t offset = BSWAP32(fa->get_32());
+		uint64_t pos = fa->get_position();
+
+		fa->seek(get_signature_offset() + offset);
+		uint32_t rqmagic = BSWAP32(fa->get_32());
+		uint32_t rqsize = BSWAP32(fa->get_32());
+		if (rqmagic == 0xfade0c01) { // Requirements.
+			PackedByteArray blob;
+			fa->seek(get_signature_offset() + offset);
+			blob.resize(rqsize);
+			fa->get_buffer(blob.ptrw(), rqsize);
+			return blob;
+		}
+		fa->seek(pos);
+	}
+	return PackedByteArray();
+}
+
+const Ref<FileAccess> MachO::get_file() const {
+	return fa;
+}
+
+Ref<FileAccess> MachO::get_file() {
+	return fa;
+}
+
+bool MachO::set_signature_size(uint64_t p_size) {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), false, "MachO: File not opened.");
+
+	// Ensure signature load command exists.
+	ERR_FAIL_COND_V_MSG(link_edit_offset == 0, false, "MachO: No __LINKEDIT segment found.");
+	ERR_FAIL_COND_V_MSG(!alloc_signature(p_size), false, "MachO: Can't allocate signature load command.");
+
+	// Update signature load command.
+	uint64_t old_size = get_signature_size();
+	uint64_t new_size = p_size + PAD(p_size, 16384);
+
+	if (new_size <= old_size) {
+		fa->seek(get_signature_offset());
+		for (uint64_t i = 0; i < old_size; i++) {
+			fa->store_8(0x00);
+		}
+		return true;
+	}
+
+	fa->seek(signature_offset + 12);
+	if (swap) {
+		fa->store_32(BSWAP32(new_size));
+	} else {
+		fa->store_32(new_size);
+	}
+
+	uint64_t end = get_signature_offset() + new_size;
+
+	// Update "__LINKEDIT" segment.
+	LoadCommandHeader lc;
+	fa->seek(link_edit_offset);
+	fa->get_buffer((uint8_t *)&lc, sizeof(LoadCommandHeader));
+	if (swap) {
+		lc.cmd = BSWAP32(lc.cmd);
+		lc.cmdsize = BSWAP32(lc.cmdsize);
+	}
+	switch (lc.cmd) {
+		case LC_SEGMENT: {
+			LoadCommandSegment lc_seg;
+			fa->get_buffer((uint8_t *)&lc_seg, sizeof(LoadCommandSegment));
+			if (swap) {
+				lc_seg.vmsize = BSWAP32(lc_seg.vmsize);
+				lc_seg.filesize = BSWAP32(lc_seg.filesize);
+				lc_seg.fileoff = BSWAP32(lc_seg.fileoff);
+			}
+
+			lc_seg.vmsize = end - lc_seg.fileoff;
+			lc_seg.vmsize += PAD(lc_seg.vmsize, 4096);
+			lc_seg.filesize = end - lc_seg.fileoff;
+
+			if (swap) {
+				lc_seg.vmsize = BSWAP32(lc_seg.vmsize);
+				lc_seg.filesize = BSWAP32(lc_seg.filesize);
+			}
+			fa->seek(link_edit_offset + 8);
+			fa->store_buffer((const uint8_t *)&lc_seg, sizeof(LoadCommandSegment));
+		} break;
+		case LC_SEGMENT_64: {
+			LoadCommandSegment64 lc_seg;
+			fa->get_buffer((uint8_t *)&lc_seg, sizeof(LoadCommandSegment64));
+			if (swap) {
+				lc_seg.vmsize = BSWAP64(lc_seg.vmsize);
+				lc_seg.filesize = BSWAP64(lc_seg.filesize);
+				lc_seg.fileoff = BSWAP64(lc_seg.fileoff);
+			}
+			lc_seg.vmsize = end - lc_seg.fileoff;
+			lc_seg.vmsize += PAD(lc_seg.vmsize, 4096);
+			lc_seg.filesize = end - lc_seg.fileoff;
+			if (swap) {
+				lc_seg.vmsize = BSWAP64(lc_seg.vmsize);
+				lc_seg.filesize = BSWAP64(lc_seg.filesize);
+			}
+			fa->seek(link_edit_offset + 8);
+			fa->store_buffer((const uint8_t *)&lc_seg, sizeof(LoadCommandSegment64));
+		} break;
+		default: {
+			ERR_FAIL_V_MSG(false, "MachO: Invalid __LINKEDIT segment type.");
+		} break;
+	}
+	fa->seek(get_signature_offset());
+	for (uint64_t i = 0; i < new_size; i++) {
+		fa->store_8(0x00);
+	}
+	return true;
+}
+
+/*************************************************************************/
+/* LipO                                                                  */
+/*************************************************************************/
+
+bool LipO::is_lipo(const String &p_path) {
+	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
+	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_path));
+	uint32_t magic = fb->get_32();
+	return (magic == 0xbebafeca || magic == 0xcafebabe || magic == 0xbfbafeca || magic == 0xcafebabf);
+}
+
+bool LipO::create_file(const String &p_output_path, const Vector<String> &p_files) {
+	close();
+
+	fa = FileAccess::open(p_output_path, FileAccess::WRITE);
+	ERR_FAIL_COND_V_MSG(fa.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_output_path));
+
+	uint64_t max_size = 0;
+	for (int i = 0; i < p_files.size(); i++) {
+		{
+			MachO mh;
+			if (!mh.open_file(p_files[i])) {
+				ERR_FAIL_V_MSG(false, vformat("LipO: Invalid MachO file: \"%s\".", p_files[i]));
+			}
+
+			FatArch arch;
+			arch.cputype = mh.get_cputype();
+			arch.cpusubtype = mh.get_cpusubtype();
+			arch.offset = 0;
+			arch.size = mh.get_size();
+			arch.align = mh.get_align();
+			max_size += arch.size;
+
+			archs.push_back(arch);
+		}
+
+		Ref<FileAccess> fb = FileAccess::open(p_files[i], FileAccess::READ);
+		if (fb.is_null()) {
+			close();
+			ERR_FAIL_V_MSG(false, vformat("LipO: Can't open file: \"%s\".", p_files[i]));
+		}
+	}
+
+	// Write header.
+	bool is_64 = (max_size >= std::numeric_limits<uint32_t>::max());
+	if (is_64) {
+		fa->store_32(0xbfbafeca);
+	} else {
+		fa->store_32(0xbebafeca);
+	}
+	fa->store_32(BSWAP32(archs.size()));
+	uint64_t offset = archs.size() * (is_64 ? 32 : 20) + 8;
+	for (int i = 0; i < archs.size(); i++) {
+		archs.write[i].offset = offset + PAD(offset, uint64_t(1) << archs[i].align);
+		if (is_64) {
+			fa->store_32(BSWAP32(archs[i].cputype));
+			fa->store_32(BSWAP32(archs[i].cpusubtype));
+			fa->store_64(BSWAP64(archs[i].offset));
+			fa->store_64(BSWAP64(archs[i].size));
+			fa->store_32(BSWAP32(archs[i].align));
+			fa->store_32(0);
+		} else {
+			fa->store_32(BSWAP32(archs[i].cputype));
+			fa->store_32(BSWAP32(archs[i].cpusubtype));
+			fa->store_32(BSWAP32(archs[i].offset));
+			fa->store_32(BSWAP32(archs[i].size));
+			fa->store_32(BSWAP32(archs[i].align));
+		}
+		offset = archs[i].offset + archs[i].size;
+	}
+
+	// Write files and padding.
+	for (int i = 0; i < archs.size(); i++) {
+		Ref<FileAccess> fb = FileAccess::open(p_files[i], FileAccess::READ);
+		if (fb.is_null()) {
+			close();
+			ERR_FAIL_V_MSG(false, vformat("LipO: Can't open file: \"%s\".", p_files[i]));
+		}
+		uint64_t cur = fa->get_position();
+		for (uint64_t j = cur; j < archs[i].offset; j++) {
+			fa->store_8(0);
+		}
+		int pages = archs[i].size / 4096;
+		int remain = archs[i].size % 4096;
+		unsigned char step[4096];
+		for (int j = 0; j < pages; j++) {
+			uint64_t br = fb->get_buffer(step, 4096);
+			if (br > 0) {
+				fa->store_buffer(step, br);
+			}
+		}
+		uint64_t br = fb->get_buffer(step, remain);
+		if (br > 0) {
+			fa->store_buffer(step, br);
+		}
+	}
+	return true;
+}
+
+bool LipO::create_file(const String &p_output_path, const Vector<String> &p_files, const Vector<Vector2i> &p_cputypes) {
+	close();
+
+	fa = FileAccess::open(p_output_path, FileAccess::WRITE);
+	ERR_FAIL_COND_V_MSG(fa.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_output_path));
+	ERR_FAIL_COND_V(p_files.size() != p_cputypes.size(), false);
+
+	uint64_t max_size = 0;
+	for (int i = 0; i < p_files.size(); i++) {
+		Ref<FileAccess> fb = FileAccess::open(p_files[i], FileAccess::READ);
+		if (fb.is_null()) {
+			close();
+			ERR_FAIL_V_MSG(false, vformat("LipO: Can't open file: \"%s\".", p_files[i]));
+		}
+
+		{
+			FatArch arch;
+			MachO mh;
+			if (MachO::is_macho(p_files[i]) && mh.open_file(p_files[i])) {
+				arch.cputype = mh.get_cputype();
+				arch.cpusubtype = mh.get_cpusubtype();
+				arch.offset = 0;
+				arch.size = mh.get_size();
+				arch.align = mh.get_align();
+				ERR_FAIL_V_MSG(arch.cputype != (uint32_t)p_cputypes[i].x || arch.cpusubtype != (uint32_t)p_cputypes[i].y, vformat("Mismatching MachO architecture: \"%s\".", p_files[i]));
+			} else {
+				arch.cputype = (uint32_t)p_cputypes[i].x;
+				arch.cpusubtype = (uint32_t)p_cputypes[i].y;
+				arch.offset = 0;
+				arch.size = fb->get_length();
+				arch.align = 0x03;
+			}
+			max_size += arch.size;
+
+			archs.push_back(arch);
+		}
+	}
+
+	// Write header.
+	bool is_64 = (max_size >= std::numeric_limits<uint32_t>::max());
+	if (is_64) {
+		fa->store_32(0xbfbafeca);
+	} else {
+		fa->store_32(0xbebafeca);
+	}
+	fa->store_32(BSWAP32(archs.size()));
+	uint64_t offset = archs.size() * (is_64 ? 32 : 20) + 8;
+	for (int i = 0; i < archs.size(); i++) {
+		archs.write[i].offset = offset + PAD(offset, uint64_t(1) << archs[i].align);
+		if (is_64) {
+			fa->store_32(BSWAP32(archs[i].cputype));
+			fa->store_32(BSWAP32(archs[i].cpusubtype));
+			fa->store_64(BSWAP64(archs[i].offset));
+			fa->store_64(BSWAP64(archs[i].size));
+			fa->store_32(BSWAP32(archs[i].align));
+			fa->store_32(0);
+		} else {
+			fa->store_32(BSWAP32(archs[i].cputype));
+			fa->store_32(BSWAP32(archs[i].cpusubtype));
+			fa->store_32(BSWAP32(archs[i].offset));
+			fa->store_32(BSWAP32(archs[i].size));
+			fa->store_32(BSWAP32(archs[i].align));
+		}
+		offset = archs[i].offset + archs[i].size;
+	}
+
+	// Write files and padding.
+	for (int i = 0; i < archs.size(); i++) {
+		Ref<FileAccess> fb = FileAccess::open(p_files[i], FileAccess::READ);
+		if (fb.is_null()) {
+			close();
+			ERR_FAIL_V_MSG(false, vformat("LipO: Can't open file: \"%s\".", p_files[i]));
+		}
+		uint64_t cur = fa->get_position();
+		for (uint64_t j = cur; j < archs[i].offset; j++) {
+			fa->store_8(0);
+		}
+		int pages = archs[i].size / 4096;
+		int remain = archs[i].size % 4096;
+		unsigned char step[4096];
+		for (int j = 0; j < pages; j++) {
+			uint64_t br = fb->get_buffer(step, 4096);
+			if (br > 0) {
+				fa->store_buffer(step, br);
+			}
+		}
+		uint64_t br = fb->get_buffer(step, remain);
+		if (br > 0) {
+			fa->store_buffer(step, br);
+		}
+	}
+	return true;
+}
+
+bool LipO::open_file(const String &p_path) {
+	close();
+
+	fa = FileAccess::open(p_path, FileAccess::READ);
+	ERR_FAIL_COND_V_MSG(fa.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_path));
+
+	uint32_t magic = fa->get_32();
+	if (magic == 0xbebafeca) {
+		// 32-bit fat binary, bswap.
+		uint32_t nfat_arch = BSWAP32(fa->get_32());
+		for (uint32_t i = 0; i < nfat_arch; i++) {
+			FatArch arch;
+			arch.cputype = BSWAP32(fa->get_32());
+			arch.cpusubtype = BSWAP32(fa->get_32());
+			arch.offset = BSWAP32(fa->get_32());
+			arch.size = BSWAP32(fa->get_32());
+			arch.align = BSWAP32(fa->get_32());
+
+			archs.push_back(arch);
+		}
+	} else if (magic == 0xcafebabe) {
+		// 32-bit fat binary.
+		uint32_t nfat_arch = fa->get_32();
+		for (uint32_t i = 0; i < nfat_arch; i++) {
+			FatArch arch;
+			arch.cputype = fa->get_32();
+			arch.cpusubtype = fa->get_32();
+			arch.offset = fa->get_32();
+			arch.size = fa->get_32();
+			arch.align = fa->get_32();
+
+			archs.push_back(arch);
+		}
+	} else if (magic == 0xbfbafeca) {
+		// 64-bit fat binary, bswap.
+		uint32_t nfat_arch = BSWAP32(fa->get_32());
+		for (uint32_t i = 0; i < nfat_arch; i++) {
+			FatArch arch;
+			arch.cputype = BSWAP32(fa->get_32());
+			arch.cpusubtype = BSWAP32(fa->get_32());
+			arch.offset = BSWAP64(fa->get_64());
+			arch.size = BSWAP64(fa->get_64());
+			arch.align = BSWAP32(fa->get_32());
+			fa->get_32(); // Skip, reserved.
+
+			archs.push_back(arch);
+		}
+	} else if (magic == 0xcafebabf) {
+		// 64-bit fat binary.
+		uint32_t nfat_arch = fa->get_32();
+		for (uint32_t i = 0; i < nfat_arch; i++) {
+			FatArch arch;
+			arch.cputype = fa->get_32();
+			arch.cpusubtype = fa->get_32();
+			arch.offset = fa->get_64();
+			arch.size = fa->get_64();
+			arch.align = fa->get_32();
+			fa->get_32(); // Skip, reserved.
+
+			archs.push_back(arch);
+		}
+	} else {
+		close();
+		ERR_FAIL_V_MSG(false, vformat("LipO: Invalid fat binary: \"%s\".", p_path));
+	}
+	return true;
+}
+
+int LipO::get_arch_count() const {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "LipO: File not opened.");
+	return archs.size();
+}
+
+uint32_t LipO::get_arch_cputype(int p_index) const {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "LipO: File not opened.");
+	ERR_FAIL_INDEX_V(p_index, archs.size(), 0);
+	return archs[p_index].cputype;
+}
+
+uint32_t LipO::get_arch_cpusubtype(int p_index) const {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "LipO: File not opened.");
+	ERR_FAIL_INDEX_V(p_index, archs.size(), 0);
+	return archs[p_index].cpusubtype;
+}
+
+bool LipO::extract_arch(int p_index, const String &p_path) {
+	ERR_FAIL_COND_V_MSG(fa.is_null(), false, "LipO: File not opened.");
+	ERR_FAIL_INDEX_V(p_index, archs.size(), false);
+
+	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::WRITE);
+	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_path));
+
+	fa->seek(archs[p_index].offset);
+
+	int pages = archs[p_index].size / 4096;
+	int remain = archs[p_index].size % 4096;
+	unsigned char step[4096];
+	for (int i = 0; i < pages; i++) {
+		uint64_t br = fa->get_buffer(step, 4096);
+		if (br > 0) {
+			fb->store_buffer(step, br);
+		}
+	}
+	uint64_t br = fa->get_buffer(step, remain);
+	if (br > 0) {
+		fb->store_buffer(step, br);
+	}
+	return true;
+}
+
+void LipO::close() {
+	archs.clear();
+}
+
+LipO::~LipO() {
+	close();
+}
 
 /*************************************************************************/
 /* CodeSignCodeResources                                                 */
@@ -253,7 +1099,7 @@ bool CodeSignCodeResources::add_nested_file(const String &p_root, const String &
 		PackedByteArray rq_blob = mh.get_requirements();
 		String req_string;
 		if (rq_blob.size() > 8) {
-			CodeSignRequirements rq = CodeSignRequirements(rq_blob);
+			CodeSignBlob rq = CodeSignBlob::make_requirements(rq_blob);
 			Vector<String> rqs = rq.parse_requirements();
 			for (int j = 0; j < rqs.size(); j++) {
 				if (rqs[j].begins_with("designated => ")) {
@@ -437,21 +1283,29 @@ bool CodeSignCodeResources::save_to_file(const String &p_path) {
 	return true;
 }
 
+
+
 /*************************************************************************/
-/* CodeSignRequirements                                                  */
+/* CodeSignBlob                                                          */
 /*************************************************************************/
 
-CodeSignRequirements::CodeSignRequirements() {
-	blob.append_array({ 0xFA, 0xDE, 0x0C, 0x01 }); // Requirement set magic.
-	blob.append_array({ 0x00, 0x00, 0x00, 0x0C }); // Length of requirements set (12 bytes).
-	blob.append_array({ 0x00, 0x00, 0x00, 0x00 }); // Empty.
+CodeSignBlob CodeSignBlob::make_requirements() {
+	CodeSignBlob b;
+	b.index_type = INDEX_REQUIREMENTS;
+	b.blob.append_array({ 0xFA, 0xDE, 0x0C, 0x01 }); // Requirement set magic.
+	b.blob.append_array({ 0x00, 0x00, 0x00, 0x0C }); // Length of requirements set (12 bytes).
+	b.blob.append_array({ 0x00, 0x00, 0x00, 0x00 }); // Empty.
+	return b;
 }
 
-CodeSignRequirements::CodeSignRequirements(const PackedByteArray &p_data) {
-	blob = p_data;
+CodeSignBlob CodeSignBlob::make_requirements(const PackedByteArray &p_data) {
+	CodeSignBlob b;
+	b.index_type = INDEX_REQUIREMENTS;
+	b.blob = p_data;
+	return b;
 }
 
-_FORCE_INLINE_ void CodeSignRequirements::_parse_certificate_slot(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
+_FORCE_INLINE_ void CodeSignBlob::_parse_certificate_slot(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
 #define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
 	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
 	r_out += "certificate ";
@@ -467,7 +1321,7 @@ _FORCE_INLINE_ void CodeSignRequirements::_parse_certificate_slot(uint32_t &r_po
 #undef _R
 }
 
-_FORCE_INLINE_ void CodeSignRequirements::_parse_key(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
+_FORCE_INLINE_ void CodeSignBlob::_parse_key(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
 #define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
 	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
 	const uint32_t key_size = _R(r_pos);
@@ -477,7 +1331,7 @@ _FORCE_INLINE_ void CodeSignRequirements::_parse_key(uint32_t &r_pos, String &r_
 #undef _R
 }
 
-_FORCE_INLINE_ void CodeSignRequirements::_parse_oid_key(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
+_FORCE_INLINE_ void CodeSignBlob::_parse_oid_key(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
 #define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
 	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
 	uint32_t key_size = _R(r_pos);
@@ -508,7 +1362,7 @@ _FORCE_INLINE_ void CodeSignRequirements::_parse_oid_key(uint32_t &r_pos, String
 #undef _R
 }
 
-_FORCE_INLINE_ void CodeSignRequirements::_parse_hash_string(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
+_FORCE_INLINE_ void CodeSignBlob::_parse_hash_string(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
 #define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
 	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
 	uint32_t tag_size = _R(r_pos);
@@ -518,7 +1372,7 @@ _FORCE_INLINE_ void CodeSignRequirements::_parse_hash_string(uint32_t &r_pos, St
 #undef _R
 }
 
-_FORCE_INLINE_ void CodeSignRequirements::_parse_value(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
+_FORCE_INLINE_ void CodeSignBlob::_parse_value(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
 #define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
 	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
 	const uint32_t key_size = _R(r_pos);
@@ -528,7 +1382,7 @@ _FORCE_INLINE_ void CodeSignRequirements::_parse_value(uint32_t &r_pos, String &
 #undef _R
 }
 
-_FORCE_INLINE_ void CodeSignRequirements::_parse_date(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
+_FORCE_INLINE_ void CodeSignBlob::_parse_date(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
 #define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
 	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
 	uint32_t date = _R(r_pos);
@@ -543,7 +1397,7 @@ _FORCE_INLINE_ void CodeSignRequirements::_parse_date(uint32_t &r_pos, String &r
 #undef _R
 }
 
-_FORCE_INLINE_ bool CodeSignRequirements::_parse_match(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
+_FORCE_INLINE_ bool CodeSignBlob::_parse_match(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
 #define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
 	ERR_FAIL_COND_V_MSG(r_pos >= p_rq_size, false, "CodeSign/Requirements: Out of bounds.");
 	uint32_t match = _R(r_pos);
@@ -616,7 +1470,7 @@ _FORCE_INLINE_ bool CodeSignRequirements::_parse_match(uint32_t &r_pos, String &
 #undef _R
 }
 
-Vector<String> CodeSignRequirements::parse_requirements() const {
+Vector<String> CodeSignBlob::parse_requirements() const {
 #define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
 	Vector<String> list;
 
@@ -769,181 +1623,87 @@ Vector<String> CodeSignRequirements::parse_requirements() const {
 #undef _R
 }
 
-PackedByteArray CodeSignRequirements::get_hash_sha1() const {
-	PackedByteArray hash;
-	hash.resize(0x14);
-
-	CryptoCore::SHA1Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
+CodeSignBlob CodeSignBlob::make_entitlements_text() {
+	CodeSignBlob b;
+	b.index_type = INDEX_ENTITLEMENTS_TEXT;
+	b.blob.append_array({ 0xFA, 0xDE, 0x71, 0x71 }); // Text Entitlements set magic.
+	b.blob.append_array({ 0x00, 0x00, 0x00, 0x08 }); // Length (8 bytes).
+	return b;
 }
 
-PackedByteArray CodeSignRequirements::get_hash_sha256() const {
-	PackedByteArray hash;
-	hash.resize(0x20);
-
-	CryptoCore::SHA256Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
-}
-
-int CodeSignRequirements::get_size() const {
-	return blob.size();
-}
-
-void CodeSignRequirements::write_to_file(Ref<FileAccess> p_file) const {
-	ERR_FAIL_COND_MSG(p_file.is_null(), "CodeSign/Requirements: Invalid file handle.");
-	p_file->store_buffer(blob.ptr(), blob.size());
-}
-
-/*************************************************************************/
-/* CodeSignEntitlementsText                                             */
-/*************************************************************************/
-
-CodeSignEntitlementsText::CodeSignEntitlementsText() {
-	blob.append_array({ 0xFA, 0xDE, 0x71, 0x71 }); // Text Entitlements set magic.
-	blob.append_array({ 0x00, 0x00, 0x00, 0x08 }); // Length (8 bytes).
-}
-
-CodeSignEntitlementsText::CodeSignEntitlementsText(const String &p_string) {
+CodeSignBlob CodeSignBlob::make_entitlements_text(const String &p_string) {
+	CodeSignBlob b;
+	b.index_type = INDEX_ENTITLEMENTS_TEXT;
 	CharString utf8 = p_string.utf8();
-	blob.append_array({ 0xFA, 0xDE, 0x71, 0x71 }); // Text Entitlements set magic.
+	b.blob.append_array({ 0xFA, 0xDE, 0x71, 0x71 }); // Text Entitlements set magic.
 	for (int i = 3; i >= 0; i--) {
 		uint8_t x = ((utf8.length() + 8) >> i * 8) & 0xFF; // Size.
-		blob.push_back(x);
+		b.blob.push_back(x);
 	}
 	for (int i = 0; i < utf8.length(); i++) { // Write data.
-		blob.push_back(utf8[i]);
+		b.blob.push_back(utf8[i]);
 	}
+	return b;
 }
 
-PackedByteArray CodeSignEntitlementsText::get_hash_sha1() const {
-	PackedByteArray hash;
-	hash.resize(0x14);
-
-	CryptoCore::SHA1Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
+CodeSignBlob CodeSignBlob::make_entitlements_binary() {
+	CodeSignBlob b;
+	b.index_type = INDEX_ENTITLEMENTS_BINARY;
+	b.blob.append_array({ 0xFA, 0xDE, 0x71, 0x72 }); // Binary Entitlements magic.
+	b.blob.append_array({ 0x00, 0x00, 0x00, 0x08 }); // Length (8 bytes).
+	return b;
 }
 
-PackedByteArray CodeSignEntitlementsText::get_hash_sha256() const {
-	PackedByteArray hash;
-	hash.resize(0x20);
-
-	CryptoCore::SHA256Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
-}
-
-int CodeSignEntitlementsText::get_size() const {
-	return blob.size();
-}
-
-void CodeSignEntitlementsText::write_to_file(Ref<FileAccess> p_file) const {
-	ERR_FAIL_COND_MSG(p_file.is_null(), "CodeSign/EntitlementsText: Invalid file handle.");
-	p_file->store_buffer(blob.ptr(), blob.size());
-}
-
-/*************************************************************************/
-/* CodeSignEntitlementsBinary                                           */
-/*************************************************************************/
-
-CodeSignEntitlementsBinary::CodeSignEntitlementsBinary() {
-	blob.append_array({ 0xFA, 0xDE, 0x71, 0x72 }); // Binary Entitlements magic.
-	blob.append_array({ 0x00, 0x00, 0x00, 0x08 }); // Length (8 bytes).
-}
-
-CodeSignEntitlementsBinary::CodeSignEntitlementsBinary(const String &p_string) {
+CodeSignBlob CodeSignBlob::make_entitlements_binary(const String &p_string) {
+	CodeSignBlob b;
+	b.index_type = INDEX_ENTITLEMENTS_BINARY;
 	PList pl = PList(p_string);
 
 	PackedByteArray asn1 = pl.save_asn1();
-	blob.append_array({ 0xFA, 0xDE, 0x71, 0x72 }); // Binary Entitlements magic.
+	b.blob.append_array({ 0xFA, 0xDE, 0x71, 0x72 }); // Binary Entitlements magic.
 	uint32_t size = asn1.size() + 8;
 	for (int i = 3; i >= 0; i--) {
 		uint8_t x = (size >> i * 8) & 0xFF; // Size.
-		blob.push_back(x);
+		b.blob.push_back(x);
 	}
-	blob.append_array(asn1); // Write data.
+	b.blob.append_array(asn1); // Write data.
+	return b;
 }
 
-PackedByteArray CodeSignEntitlementsBinary::get_hash_sha1() const {
-	PackedByteArray hash;
-	hash.resize(0x14);
-
-	CryptoCore::SHA1Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
+CodeSignBlob CodeSignBlob::make_code_directory() {
+	CodeSignBlob b;
+	b.index_type = INDEX_CODE_DIRECTORY;
+	b.blob.append_array({ 0xFA, 0xDE, 0x0C, 0x02 }); // Code Directory magic.
+	b.blob.append_array({ 0x00, 0x00, 0x00, 0x00 }); // Size (8 bytes).
+	return b;
 }
 
-PackedByteArray CodeSignEntitlementsBinary::get_hash_sha256() const {
-	PackedByteArray hash;
-	hash.resize(0x20);
+CodeSignBlob CodeSignBlob::make_code_directory(uint8_t p_hash_size, uint8_t p_hash_type, bool p_main, const CharString &p_id, const CharString &p_team_id, uint32_t p_page_size, uint64_t p_exe_limit, uint64_t p_code_limit) {
+	CodeSignBlob b;
+	b.index_type = INDEX_CODE_DIRECTORY;
+	b.pages = p_code_limit / (uint64_t(1) << p_page_size);
+	b.remain = p_code_limit % (uint64_t(1) << p_page_size);
+	b.code_slots = b.pages + (b.remain > 0 ? 1 : 0);
+	b.special_slots = 7;
 
-	CryptoCore::SHA256Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
-}
-
-int CodeSignEntitlementsBinary::get_size() const {
-	return blob.size();
-}
-
-void CodeSignEntitlementsBinary::write_to_file(Ref<FileAccess> p_file) const {
-	ERR_FAIL_COND_MSG(p_file.is_null(), "CodeSign/EntitlementsBinary: Invalid file handle.");
-	p_file->store_buffer(blob.ptr(), blob.size());
-}
-
-/*************************************************************************/
-/* CodeSignCodeDirectory                                                 */
-/*************************************************************************/
-
-CodeSignCodeDirectory::CodeSignCodeDirectory() {
-	blob.append_array({ 0xFA, 0xDE, 0x0C, 0x02 }); // Code Directory magic.
-	blob.append_array({ 0x00, 0x00, 0x00, 0x00 }); // Size (8 bytes).
-}
-
-CodeSignCodeDirectory::CodeSignCodeDirectory(uint8_t p_hash_size, uint8_t p_hash_type, bool p_main, const CharString &p_id, const CharString &p_team_id, uint32_t p_page_size, uint64_t p_exe_limit, uint64_t p_code_limit) {
-	pages = p_code_limit / (uint64_t(1) << p_page_size);
-	remain = p_code_limit % (uint64_t(1) << p_page_size);
-	code_slots = pages + (remain > 0 ? 1 : 0);
-	special_slots = 7;
-
-	int cd_size = 8 + sizeof(CodeDirectoryHeader) + (code_slots + special_slots) * p_hash_size + p_id.size() + p_team_id.size();
+	int cd_size = 8 + sizeof(CodeDirectoryHeader) + (b.code_slots + b.special_slots) * p_hash_size + p_id.size() + p_team_id.size();
 	int cd_off = 8 + sizeof(CodeDirectoryHeader);
-	blob.append_array({ 0xFA, 0xDE, 0x0C, 0x02 }); // Code Directory magic.
+	b.blob.append_array({ 0xFA, 0xDE, 0x0C, 0x02 }); // Code Directory magic.
 	for (int i = 3; i >= 0; i--) {
 		uint8_t x = (cd_size >> i * 8) & 0xFF; // Size.
-		blob.push_back(x);
+		b.blob.push_back(x);
 	}
-	blob.resize(cd_size);
-	memset(blob.ptrw() + 8, 0x00, cd_size - 8);
-	CodeDirectoryHeader *cd = reinterpret_cast<CodeDirectoryHeader *>(blob.ptrw() + 8);
+	b.blob.resize(cd_size);
+	memset(b.blob.ptrw() + 8, 0x00, cd_size - 8);
+	CodeDirectoryHeader *cd = reinterpret_cast<CodeDirectoryHeader *>(b.blob.ptrw() + 8);
 
 	bool is_64_cl = (p_code_limit >= std::numeric_limits<uint32_t>::max());
 
 	// Version and options.
 	cd->version = BSWAP32(0x20500);
 	cd->flags = BSWAP32(SIGNATURE_ADHOC | SIGNATURE_RUNTIME);
-	cd->special_slots = BSWAP32(special_slots);
-	cd->code_slots = BSWAP32(code_slots);
+	cd->special_slots = BSWAP32(b.special_slots);
+	cd->code_slots = BSWAP32(b.code_slots);
 	if (is_64_cl) {
 		cd->code_limit_64 = BSWAP64(p_code_limit);
 	} else {
@@ -964,13 +1724,13 @@ CodeSignCodeDirectory::CodeSignCodeDirectory(uint8_t p_hash_size, uint8_t p_hash
 
 	// Copy ID.
 	cd->ident_offset = BSWAP32(cd_off);
-	memcpy(blob.ptrw() + cd_off, p_id.get_data(), p_id.size());
+	memcpy(b.blob.ptrw() + cd_off, p_id.get_data(), p_id.size());
 	cd_off += p_id.size();
 
 	// Copy Team ID.
 	if (p_team_id.length() > 0) {
 		cd->team_offset = BSWAP32(cd_off);
-		memcpy(blob.ptrw() + cd_off, p_team_id.get_data(), p_team_id.size());
+		memcpy(b.blob.ptrw() + cd_off, p_team_id.get_data(), p_team_id.size());
 		cd_off += p_team_id.size();
 	} else {
 		cd->team_offset = 0;
@@ -980,10 +1740,11 @@ CodeSignCodeDirectory::CodeSignCodeDirectory(uint8_t p_hash_size, uint8_t p_hash
 	cd->scatter_vector_offset = 0; // Not used.
 
 	// Executable hashes offset.
-	cd->hash_offset = BSWAP32(cd_off + special_slots * cd->hash_size);
+	cd->hash_offset = BSWAP32(cd_off + b.special_slots * cd->hash_size);
+	return b;
 }
 
-bool CodeSignCodeDirectory::set_hash_in_slot(const PackedByteArray &p_hash, int p_slot) {
+bool CodeSignBlob::set_hash_in_slot(const PackedByteArray &p_hash, int p_slot) {
 	ERR_FAIL_COND_V_MSG((p_slot < -special_slots) || (p_slot >= code_slots), false, vformat("CodeSign/CodeDirectory: Invalid hash slot index: %d.", p_slot));
 	CodeDirectoryHeader *cd = reinterpret_cast<CodeDirectoryHeader *>(blob.ptrw() + 8);
 	for (int i = 0; i < cd->hash_size; i++) {
@@ -992,61 +1753,19 @@ bool CodeSignCodeDirectory::set_hash_in_slot(const PackedByteArray &p_hash, int 
 	return true;
 }
 
-int32_t CodeSignCodeDirectory::get_page_count() {
-	return pages;
-}
-
-int32_t CodeSignCodeDirectory::get_page_remainder() {
-	return remain;
-}
-
-PackedByteArray CodeSignCodeDirectory::get_hash_sha1() const {
-	PackedByteArray hash;
-	hash.resize(0x14);
-
-	CryptoCore::SHA1Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
-}
-
-PackedByteArray CodeSignCodeDirectory::get_hash_sha256() const {
-	PackedByteArray hash;
-	hash.resize(0x20);
-
-	CryptoCore::SHA256Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
-}
-
-int CodeSignCodeDirectory::get_size() const {
-	return blob.size();
-}
-
-void CodeSignCodeDirectory::write_to_file(Ref<FileAccess> p_file) const {
-	ERR_FAIL_COND_MSG(p_file.is_null(), "CodeSign/CodeDirectory: Invalid file handle.");
-	p_file->store_buffer(blob.ptr(), blob.size());
-}
-
-/*************************************************************************/
-/* CodeSignSignature                                                     */
-/*************************************************************************/
-
-CodeSignSignature::CodeSignSignature() {
-	blob.append_array({ 0xFA, 0xDE, 0x0B, 0x01 }); // Signature magic.
+CodeSignBlob CodeSignBlob::make_signature() {
+	CodeSignBlob b;
+	b.index_type = INDEX_SIGNATURE;
+	b.blob.append_array({ 0xFA, 0xDE, 0x0B, 0x01 }); // Signature magic.
 	uint32_t sign_size = 8; // Ad-hoc signature is empty.
 	for (int i = 3; i >= 0; i--) {
 		uint8_t x = (sign_size >> i * 8) & 0xFF; // Size.
-		blob.push_back(x);
+		b.blob.push_back(x);
 	}
+	return b;
 }
 
-PackedByteArray CodeSignSignature::get_hash_sha1() const {
+PackedByteArray CodeSignBlob::get_hash_sha1() const {
 	PackedByteArray hash;
 	hash.resize(0x14);
 
@@ -1058,7 +1777,7 @@ PackedByteArray CodeSignSignature::get_hash_sha1() const {
 	return hash;
 }
 
-PackedByteArray CodeSignSignature::get_hash_sha256() const {
+PackedByteArray CodeSignBlob::get_hash_sha256() const {
 	PackedByteArray hash;
 	hash.resize(0x20);
 
@@ -1070,12 +1789,8 @@ PackedByteArray CodeSignSignature::get_hash_sha256() const {
 	return hash;
 }
 
-int CodeSignSignature::get_size() const {
-	return blob.size();
-}
-
-void CodeSignSignature::write_to_file(Ref<FileAccess> p_file) const {
-	ERR_FAIL_COND_MSG(p_file.is_null(), "CodeSign/Signature: Invalid file handle.");
+void CodeSignBlob::write_to_file(Ref<FileAccess> p_file) const {
+	ERR_FAIL_COND_MSG(p_file.is_null(), "CodeSignBlob: Invalid file handle.");
 	p_file->store_buffer(blob.ptr(), blob.size());
 }
 
@@ -1083,8 +1798,8 @@ void CodeSignSignature::write_to_file(Ref<FileAccess> p_file) const {
 /* CodeSignSuperBlob                                                     */
 /*************************************************************************/
 
-bool CodeSignSuperBlob::add_blob(const Ref<CodeSignBlob> &p_blob) {
-	if (p_blob.is_valid()) {
+bool CodeSignSuperBlob::add_blob(const CodeSignBlob &p_blob) {
+	if (!p_blob.is_empty()) {
 		blobs.push_back(p_blob);
 		return true;
 	} else {
@@ -1095,10 +1810,10 @@ bool CodeSignSuperBlob::add_blob(const Ref<CodeSignBlob> &p_blob) {
 int CodeSignSuperBlob::get_size() const {
 	int size = 12 + blobs.size() * 8;
 	for (int i = 0; i < blobs.size(); i++) {
-		if (blobs[i].is_null()) {
+		if (blobs[i].is_empty()) {
 			return 0;
 		}
-		size += blobs[i]->get_size();
+		size += blobs[i].get_size();
 	}
 	return size;
 }
@@ -1115,19 +1830,20 @@ void CodeSignSuperBlob::write_to_file(Ref<FileAccess> p_file) const {
 
 	// Write index.
 	for (int i = 0; i < blobs.size(); i++) {
-		if (blobs[i].is_null()) {
+		if (blobs[i].is_empty()) {
 			return;
 		}
-		p_file->store_32(BSWAP32(blobs[i]->get_index_type()));
+		p_file->store_32(BSWAP32(blobs[i].get_index_type()));
 		p_file->store_32(BSWAP32(data_offset));
-		data_offset += blobs[i]->get_size();
+		data_offset += blobs[i].get_size();
 	}
 
 	// Write blobs.
 	for (int i = 0; i < blobs.size(); i++) {
-		blobs[i]->write_to_file(p_file);
+		blobs[i].write_to_file(p_file);
 	}
 }
+
 
 /*************************************************************************/
 /* CodeSign                                                              */
@@ -1359,8 +2075,8 @@ Error CodeSign::_codesign_file(bool p_use_hardened_runtime, bool p_force, const 
 
 	print_verbose("CodeSign: Processing entitlements...");
 
-	Ref<CodeSignEntitlementsText> cet;
-	Ref<CodeSignEntitlementsBinary> ceb;
+	CodeSignBlob cet;
+	CodeSignBlob ceb;
 	if (!p_ent_path.is_empty()) {
 		String entitlements = FileAccess::get_file_as_string(p_ent_path);
 		if (entitlements.is_empty()) {
@@ -1368,14 +2084,13 @@ Error CodeSign::_codesign_file(bool p_use_hardened_runtime, bool p_force, const 
 			r_error_msg = TTR("Invalid entitlements file.");
 			ERR_FAIL_V_MSG(FAILED, "CodeSign: Invalid entitlements file.");
 		}
-		cet.instantiate(entitlements);
-		ceb.instantiate(entitlements);
+		cet = CodeSignBlob::make_entitlements_text(entitlements);
+		ceb = CodeSignBlob::make_entitlements_binary(entitlements);
 	}
 
 	print_verbose("CodeSign: Generating requirements...");
-	Ref<CodeSignRequirements> rq;
 	String team_id = "";
-	rq.instantiate();
+	CodeSignBlob rq = CodeSignBlob::make_requirements();
 
 	// Sign executables.
 	for (int i = 0; i < files_to_sign.size(); i++) {
@@ -1388,42 +2103,42 @@ Error CodeSign::_codesign_file(bool p_use_hardened_runtime, bool p_force, const 
 		print_verbose(vformat("CodeSign: Signing executable for cputype: %d ...", mh.get_cputype()));
 
 		print_verbose("CodeSign: Generating CodeDirectory...");
-		Ref<CodeSignCodeDirectory> cd1 = memnew(CodeSignCodeDirectory(0x14, 0x01, true, uuid_str, team_id.utf8(), 12, mh.get_exe_limit(), mh.get_code_limit()));
-		Ref<CodeSignCodeDirectory> cd2 = memnew(CodeSignCodeDirectory(0x20, 0x02, true, uuid_str, team_id.utf8(), 12, mh.get_exe_limit(), mh.get_code_limit()));
+		CodeSignBlob cd1 = CodeSignBlob::make_code_directory(0x14, 0x01, true, uuid_str, team_id.utf8(), 12, mh.get_exe_limit(), mh.get_code_limit());
+		CodeSignBlob cd2 = CodeSignBlob::make_code_directory(0x20, 0x02, true, uuid_str, team_id.utf8(), 12, mh.get_exe_limit(), mh.get_code_limit());
 		print_verbose("CodeSign: Calculating special slot hashes...");
 		if (info_hash2.size() == 0x20) {
-			cd2->set_hash_in_slot(info_hash2, CodeSignCodeDirectory::SLOT_INFO_PLIST);
+			cd2.set_hash_in_slot(info_hash2, CodeSignBlob::SLOT_INFO_PLIST);
 		}
 		if (info_hash1.size() == 0x14) {
-			cd1->set_hash_in_slot(info_hash1, CodeSignCodeDirectory::SLOT_INFO_PLIST);
+			cd1.set_hash_in_slot(info_hash1, CodeSignBlob::SLOT_INFO_PLIST);
 		}
-		cd1->set_hash_in_slot(rq->get_hash_sha1(), CodeSignCodeDirectory::Slot::SLOT_REQUIREMENTS);
-		cd2->set_hash_in_slot(rq->get_hash_sha256(), CodeSignCodeDirectory::Slot::SLOT_REQUIREMENTS);
+		cd1.set_hash_in_slot(rq.get_hash_sha1(), CodeSignBlob::SLOT_REQUIREMENTS);
+		cd2.set_hash_in_slot(rq.get_hash_sha256(), CodeSignBlob::SLOT_REQUIREMENTS);
 		if (res_hash2.size() == 0x20) {
-			cd2->set_hash_in_slot(res_hash2, CodeSignCodeDirectory::SLOT_RESOURCES);
+			cd2.set_hash_in_slot(res_hash2, CodeSignBlob::SLOT_RESOURCES);
 		}
 		if (res_hash1.size() == 0x14) {
-			cd1->set_hash_in_slot(res_hash1, CodeSignCodeDirectory::SLOT_RESOURCES);
+			cd1.set_hash_in_slot(res_hash1, CodeSignBlob::SLOT_RESOURCES);
 		}
-		if (cet.is_valid()) {
-			cd1->set_hash_in_slot(cet->get_hash_sha1(), CodeSignCodeDirectory::Slot::SLOT_ENTITLEMENTS); //Text variant.
-			cd2->set_hash_in_slot(cet->get_hash_sha256(), CodeSignCodeDirectory::Slot::SLOT_ENTITLEMENTS);
+		if (!cet.is_empty()) {
+			cd1.set_hash_in_slot(cet.get_hash_sha1(), CodeSignBlob::SLOT_ENTITLEMENTS); //Text variant.
+			cd2.set_hash_in_slot(cet.get_hash_sha256(), CodeSignBlob::SLOT_ENTITLEMENTS);
 		}
-		if (ceb.is_valid()) {
-			cd1->set_hash_in_slot(ceb->get_hash_sha1(), CodeSignCodeDirectory::Slot::SLOT_DER_ENTITLEMENTS); //ASN.1 variant.
-			cd2->set_hash_in_slot(ceb->get_hash_sha256(), CodeSignCodeDirectory::Slot::SLOT_DER_ENTITLEMENTS);
+		if (!ceb.is_empty()) {
+			cd1.set_hash_in_slot(ceb.get_hash_sha1(), CodeSignBlob::SLOT_DER_ENTITLEMENTS); //ASN.1 variant.
+			cd2.set_hash_in_slot(ceb.get_hash_sha256(), CodeSignBlob::SLOT_DER_ENTITLEMENTS);
 		}
 
 		// Calculate signature size.
 		int sign_size = 12; // SuperBlob header.
-		sign_size += cd1->get_size() + 8;
-		sign_size += cd2->get_size() + 8;
-		sign_size += rq->get_size() + 8;
-		if (cet.is_valid()) {
-			sign_size += cet->get_size() + 8;
+		sign_size += cd1.get_size() + 8;
+		sign_size += cd2.get_size() + 8;
+		sign_size += rq.get_size() + 8;
+		if (!cet.is_empty()) {
+			sign_size += cet.get_size() + 8;
 		}
-		if (ceb.is_valid()) {
-			sign_size += ceb->get_size() + 8;
+		if (!ceb.is_empty()) {
+			sign_size += ceb.get_size() + 8;
 		}
 		sign_size += 16; // Empty signature size.
 
@@ -1443,38 +2158,37 @@ Error CodeSign::_codesign_file(bool p_use_hardened_runtime, bool p_force, const 
 		hash2.resize(0x20);
 		buffer.resize(1 << 12);
 		mh.get_file()->seek(0);
-		for (int32_t j = 0; j < cd2->get_page_count(); j++) {
+		for (int32_t j = 0; j < cd2.get_page_count(); j++) {
 			mh.get_file()->get_buffer(buffer.ptrw(), (1 << 12));
 			CryptoCore::SHA256Context ctx2;
 			ctx2.start();
 			ctx2.update(buffer.ptr(), (1 << 12));
 			ctx2.finish(hash2.ptrw());
-			cd2->set_hash_in_slot(hash2, j);
+			cd2.set_hash_in_slot(hash2, j);
 
 			CryptoCore::SHA1Context ctx1;
 			ctx1.start();
 			ctx1.update(buffer.ptr(), (1 << 12));
 			ctx1.finish(hash1.ptrw());
-			cd1->set_hash_in_slot(hash1, j);
+			cd1.set_hash_in_slot(hash1, j);
 		}
-		if (cd2->get_page_remainder() > 0) {
-			mh.get_file()->get_buffer(buffer.ptrw(), cd2->get_page_remainder());
+		if (cd2.get_page_remainder() > 0) {
+			mh.get_file()->get_buffer(buffer.ptrw(), cd2.get_page_remainder());
 			CryptoCore::SHA256Context ctx2;
 			ctx2.start();
-			ctx2.update(buffer.ptr(), cd2->get_page_remainder());
+			ctx2.update(buffer.ptr(), cd2.get_page_remainder());
 			ctx2.finish(hash2.ptrw());
-			cd2->set_hash_in_slot(hash2, cd2->get_page_count());
+			cd2.set_hash_in_slot(hash2, cd2.get_page_count());
 
 			CryptoCore::SHA1Context ctx1;
 			ctx1.start();
-			ctx1.update(buffer.ptr(), cd1->get_page_remainder());
+			ctx1.update(buffer.ptr(), cd1.get_page_remainder());
 			ctx1.finish(hash1.ptrw());
-			cd1->set_hash_in_slot(hash1, cd1->get_page_count());
+			cd1.set_hash_in_slot(hash1, cd1.get_page_count());
 		}
 
 		print_verbose("CodeSign: Generating signature...");
-		Ref<CodeSignSignature> cs;
-		cs.instantiate();
+		CodeSignBlob cs = CodeSignBlob::make_signature();
 
 		print_verbose("CodeSign: Writing signature superblob...");
 		// Write signature data to the executable.
@@ -1482,10 +2196,10 @@ Error CodeSign::_codesign_file(bool p_use_hardened_runtime, bool p_force, const 
 		sb.add_blob(cd2);
 		sb.add_blob(cd1);
 		sb.add_blob(rq);
-		if (cet.is_valid()) {
+		if (!cet.is_empty()) {
 			sb.add_blob(cet);
 		}
-		if (ceb.is_valid()) {
+		if (!ceb.is_empty()) {
 			sb.add_blob(ceb);
 		}
 		sb.add_blob(cs);
@@ -1556,3 +2270,157 @@ Error CodeSign::codesign(bool p_use_hardened_runtime, bool p_force, const String
 		ERR_FAIL_V_MSG(FAILED, "CodeSign: Unknown object type.");
 	}
 }
+
+/*************************************************************************/
+/* PluginConfigAppleEmbedded                                             */
+/*************************************************************************/
+
+String PluginConfigAppleEmbedded::resolve_local_dependency_path(
+	String plugin_config_dir, String dependency_path)
+{
+	String absolute_path;
+
+	if (dependency_path.is_empty()) {
+		return absolute_path;
+	}
+
+	if (dependency_path.is_absolute_path()) {
+		return dependency_path;
+	}
+
+	String res_path = ProjectSettings::globalize_path("res://");
+	absolute_path = plugin_config_dir.path_join(dependency_path);
+
+	return absolute_path.replace(res_path, "res://");
+}
+
+String PluginConfigAppleEmbedded::resolve_system_dependency_path(String dependency_path)
+{
+	String absolute_path;
+
+	if (dependency_path.is_empty()) {
+		return absolute_path;
+	}
+
+	if (dependency_path.is_absolute_path()) {
+		return dependency_path;
+	}
+
+	String system_path = "/System/Library/Frameworks";
+
+	return system_path.path_join(dependency_path);
+}
+
+Vector<String> PluginConfigAppleEmbedded::resolve_local_dependencies(
+	String plugin_config_dir, Vector<String> p_paths)
+{
+	Vector<String> paths;
+
+	for (int i = 0; i < p_paths.size(); i++) {
+		String path = resolve_local_dependency_path(plugin_config_dir, p_paths[i]);
+
+		if (path.is_empty()) {
+			continue;
+		}
+
+		paths.push_back(path);
+	}
+
+	return paths;
+}
+
+Vector<String> PluginConfigAppleEmbedded::resolve_system_dependencies(Vector<String> p_paths)
+{
+	Vector<String> paths;
+
+	for (int i = 0; i < p_paths.size(); i++) {
+		String path = resolve_system_dependency_path(p_paths[i]);
+
+		if (path.is_empty()) {
+			continue;
+		}
+
+		paths.push_back(path);
+	}
+
+	return paths;
+}
+
+bool PluginConfigAppleEmbedded::validate_plugin(PluginConfigAppleEmbedded& plugin_config)
+{
+	bool valid_name = !plugin_config.name.is_empty();
+	bool valid_binary_name = !plugin_config.binary.is_empty();
+	bool valid_initialize = !plugin_config.initialization_method.is_empty();
+	bool valid_deinitialize = !plugin_config.deinitialization_method.is_empty();
+
+	bool fields_value = valid_name && valid_binary_name && valid_initialize && valid_deinitialize;
+
+	if (!fields_value) {
+		return false;
+	}
+
+	String plugin_extension = plugin_config.binary.get_extension().to_lower();
+
+	if ((plugin_extension == "a" && FileAccess::exists(plugin_config.binary)) ||
+		(plugin_extension == "xcframework" && DirAccess::exists(plugin_config.binary))) {
+		plugin_config.valid_config = true;
+		plugin_config.supports_targets = false;
+	}
+	else {
+		String file_path = plugin_config.binary.get_base_dir();
+		String file_name = plugin_config.binary.get_basename().get_file();
+		String file_extension = plugin_config.binary.get_extension();
+		String release_file_name = file_path.path_join(file_name + ".release." + file_extension);
+		String debug_file_name = file_path.path_join(file_name + ".debug." + file_extension);
+
+		if ((plugin_extension == "a" && FileAccess::exists(release_file_name) &&
+				FileAccess::exists(debug_file_name)) ||
+			(plugin_extension == "xcframework" && DirAccess::exists(release_file_name) &&
+				DirAccess::exists(debug_file_name))) {
+			plugin_config.valid_config = true;
+			plugin_config.supports_targets = true;
+		}
+	}
+
+	return plugin_config.valid_config;
+}
+
+String PluginConfigAppleEmbedded::get_plugin_main_binary(
+	PluginConfigAppleEmbedded& plugin_config, bool p_debug)
+{
+	if (!plugin_config.supports_targets) {
+		return plugin_config.binary;
+	}
+
+	String plugin_binary_dir = plugin_config.binary.get_base_dir();
+	String plugin_name_prefix = plugin_config.binary.get_basename().get_file();
+	String plugin_extension = plugin_config.binary.get_extension();
+	String plugin_file =
+		plugin_name_prefix + "." + (p_debug ? "debug" : "release") + "." + plugin_extension;
+
+	return plugin_binary_dir.path_join(plugin_file);
+}
+
+uint64_t PluginConfigAppleEmbedded::get_plugin_modification_time(
+	const PluginConfigAppleEmbedded& plugin_config, const String& config_path)
+{
+	uint64_t last_updated = FileAccess::get_modified_time(config_path);
+
+	if (!plugin_config.supports_targets) {
+		last_updated = MAX(last_updated, FileAccess::get_modified_time(plugin_config.binary));
+	}
+	else {
+		String file_path = plugin_config.binary.get_base_dir();
+		String file_name = plugin_config.binary.get_basename().get_file();
+		String plugin_extension = plugin_config.binary.get_extension();
+		String release_file_name = file_path.path_join(file_name + ".release." + plugin_extension);
+		String debug_file_name = file_path.path_join(file_name + ".debug." + plugin_extension);
+
+		last_updated = MAX(last_updated, FileAccess::get_modified_time(release_file_name));
+		last_updated = MAX(last_updated, FileAccess::get_modified_time(debug_file_name));
+	}
+
+	return last_updated;
+}
+
+

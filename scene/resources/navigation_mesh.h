@@ -33,7 +33,6 @@
 
 #include "core/os/rw_lock.h"
 #include "scene/resources/mesh.h"
-#include "servers/navigation_3d/navigation_constants_3d.h"
 
 class NavigationMesh : public Resource
 {
@@ -71,8 +70,8 @@ public:
 	};
 
 protected:
-	float cell_size = NavigationDefaults3D::NAV_MESH_CELL_SIZE;
-	float cell_height = NavigationDefaults3D::NAV_MESH_CELL_HEIGHT;
+	float cell_size = 0.25f;
+	float cell_height = 0.25f;
 	float border_size = 0.0f;
 	float agent_height = 1.5f;
 	float agent_radius = 0.5f;
@@ -100,6 +99,8 @@ protected:
 	Vector3 filter_baking_aabb_offset;
 
 public:
+	NavigationMesh();
+
 	// Recast settings
 	void set_sample_partition_type(SamplePartitionType p_value);
 	SamplePartitionType get_sample_partition_type() const;

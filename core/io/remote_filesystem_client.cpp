@@ -33,7 +33,7 @@
 
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/stream_peer_tcp.h"
+#include "core/io/stream_peer_socket.h"
 #include "core/os/os.h"
 #include "core/string/string_builder.h"
 
@@ -149,7 +149,7 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 		cache_path = dir->get_current_dir();
 	}
 
-	Ref<StreamPeerTCP> tcp_client;
+	Ref<StreamPeerSocket> tcp_client;
 	tcp_client.instantiate();
 
 	IPAddress ip = p_host.is_valid_ip_address() ? IPAddress(p_host) : IP::resolve_hostname(p_host);
@@ -158,12 +158,12 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 	Error err = tcp_client->connect_to_host(ip, p_port);
 	ERR_FAIL_COND_V_MSG(err != OK, err, vformat("Unable to open connection to remote file server (%s, port %d) failed.", String(p_host), p_port));
 
-	while (tcp_client->get_status() == StreamPeerTCP::STATUS_CONNECTING) {
+	while (tcp_client->get_status() == StreamPeerSocket::STATUS_CONNECTING) {
 		tcp_client->poll();
 		OS::delay_usec(100);
 	}
 
-	if (tcp_client->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
+	if (tcp_client->get_status() != StreamPeerSocket::STATUS_CONNECTED) {
 		ERR_FAIL_V_MSG(ERR_CANT_CONNECT, vformat("Connection to remote file server (%s, port %d) failed.", String(p_host), p_port));
 	}
 
@@ -237,11 +237,11 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 	}
 
 	tcp_client->poll();
-	ERR_FAIL_COND_V_MSG(tcp_client->get_status() != StreamPeerTCP::STATUS_CONNECTED, ERR_CONNECTION_ERROR, "Remote filesystem server disconnected after sending header.");
+	ERR_FAIL_COND_V_MSG(tcp_client->get_status() != StreamPeerSocket::STATUS_CONNECTED, ERR_CONNECTION_ERROR, "Remote filesystem server disconnected after sending header.");
 
 	uint32_t file_count = tcp_client->get_u32();
 
-	ERR_FAIL_COND_V_MSG(tcp_client->get_status() != StreamPeerTCP::STATUS_CONNECTED, ERR_CONNECTION_ERROR, "Remote filesystem server disconnected while waiting for file list");
+	ERR_FAIL_COND_V_MSG(tcp_client->get_status() != StreamPeerSocket::STATUS_CONNECTED, ERR_CONNECTION_ERROR, "Remote filesystem server disconnected while waiting for file list");
 
 	LocalVector<uint8_t> file_buffer;
 
@@ -252,7 +252,7 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 		String file = tcp_client->get_utf8_string();
 		ERR_FAIL_COND_V_MSG(file == String(), ERR_CONNECTION_ERROR, "Invalid file name received from remote filesystem.");
 		uint64_t server_modified_time = tcp_client->get_u64();
-		ERR_FAIL_COND_V_MSG(tcp_client->get_status() != StreamPeerTCP::STATUS_CONNECTED, ERR_CONNECTION_ERROR, "Remote filesystem server disconnected while waiting for file info.");
+		ERR_FAIL_COND_V_MSG(tcp_client->get_status() != StreamPeerSocket::STATUS_CONNECTED, ERR_CONNECTION_ERROR, "Remote filesystem server disconnected while waiting for file info.");
 
 		FileCache fc;
 		fc.path = file;
@@ -286,7 +286,7 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 			server_disconnected = true;
 		}
 
-		if (tcp_client->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
+		if (tcp_client->get_status() != StreamPeerSocket::STATUS_CONNECTED) {
 			// Early disconnect, stop accepting files.
 			server_disconnected = true;
 		}

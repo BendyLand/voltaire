@@ -32,7 +32,9 @@
 #pragma once
 
 #include "core/os/process_id.h"
-#include "editor/export/editor_export_preset.h"
+#define IN_EDITOR_EXPORT_PLATFORM_H
+#include "editor/export/editor_export.h"
+#undef IN_EDITOR_EXPORT_PLATFORM_H
 #include "scene/resources/texture.h"
 
 class DirAccess;

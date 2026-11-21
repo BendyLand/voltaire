@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include "servers/xr/xr_controller_tracker.h"
 #include "servers/xr/xr_interface.h"
+#include "servers/xr/xr_tracker.h"
 
 /**
 	The WebXR interface is a VR/AR interface that can be used on the web.
@@ -44,7 +44,7 @@ protected:
 
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
-	Ref<XRPositionalTracker> _get_input_source_tracker_bind_compat_90645(
+	Ref<XRTracker> _get_input_source_tracker_bind_compat_90645(
 		int p_input_source_id) const;
 #endif
 
@@ -70,7 +70,7 @@ public:
 	virtual String get_reference_space_type() const = 0;
 	virtual String get_enabled_features() const = 0;
 	virtual bool is_input_source_active(int p_input_source_id) const = 0;
-	virtual Ref<XRControllerTracker> get_input_source_tracker(int p_input_source_id) const = 0;
+	virtual Ref<XRTracker> get_input_source_tracker(int p_input_source_id) const = 0;
 	virtual TargetRayMode get_input_source_target_ray_mode(int p_input_source_id) const = 0;
 	virtual String get_visibility_state() const = 0;
 	virtual float get_display_refresh_rate() const = 0;

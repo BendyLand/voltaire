@@ -32,17 +32,16 @@
 #pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
-#include "servers/xr/xr_body_tracker.h"
-#include "servers/xr/xr_hand_tracker.h"
+#include "servers/xr/xr_tracker.h"
 
 class Skeleton3D;
 
 /**
 	The XRBodyModifier3D node drives a body or hand skeleton using tracking
-	data from an XRBodyTracker or XRHandTracker instance.
+	data from an XRTracker instance.
  */
 
-class XRBodyModifier3D : public SkeletonModifier3D {
+class XRBodyModifier3D final : public SkeletonModifier3D {
 public:
 	enum TargetMode {
 		TARGET_BODY,
@@ -99,8 +98,8 @@ private:
 	String tracker_name = "/user/body_tracker";
 	uint32_t body_update = BODY_UPDATE_UPPER_BODY | BODY_UPDATE_LOWER_BODY | BODY_UPDATE_HANDS;
 	BoneUpdate bone_update = BONE_UPDATE_FULL;
-	JointData body_joints[XRBodyTracker::JOINT_MAX];
-	JointData hand_joints[XRHandTracker::HAND_JOINT_MAX];
+	JointData body_joints[XRTracker::JOINT_MAX];
+	JointData hand_joints[XRTracker::HAND_JOINT_MAX];
 
 	bool has_stored_previous_transforms = false;
 	Vector<Transform3D> previous_relative_transforms;

@@ -345,8 +345,8 @@ Error WSLPeer::connect_to_url(const String& p_url, const Ref<TLSOptions>& p_opti
 	resolver.start(host, port);
 	resolver.try_next_candidate(tcp);
 
-	if (tcp->get_status() != StreamPeerTCP::STATUS_CONNECTING &&
-		tcp->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
+	if (tcp->get_status() != StreamPeerSocket::STATUS_CONNECTING &&
+		tcp->get_status() != StreamPeerSocket::STATUS_CONNECTED) {
 		_clear();
 		return FAILED;
 	}
@@ -781,7 +781,7 @@ WSLPeer::~WSLPeer() { close(-1); }
 
 #endif // WEB_ENABLED
 
-void WSLPeer::Resolver::try_next_candidate(Ref<StreamPeerTCP> const&) {}
+void WSLPeer::Resolver::try_next_candidate(Ref<StreamPeerSocket> const&) {}
 
 void WSLPeer::Resolver::start(String const&, int) {}
 

@@ -38,17 +38,33 @@
 class ShaderRD;
 class RenderingShaderContainerFormat;
 
-class ShaderBakerExportPluginPlatform : public RefCounted
+class ShaderBakerExportPluginPlatform final : public RefCounted
 {
 public:
-	virtual RenderingShaderContainerFormat* create_shader_container_format(
-		const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset) = 0;
-	virtual bool matches_driver(const String& p_driver) = 0;
+	enum Driver
+	{
+		DRIVER_VULKAN,
+		DRIVER_D3D12,
+		DRIVER_METAL,
+	};
 
-	virtual ~ShaderBakerExportPluginPlatform() {}
+private:
+	Driver driver;
+#ifdef D3D12_ENABLED
+	void* lib_d3d12 = nullptr;
+#endif
+
+public:
+	explicit ShaderBakerExportPluginPlatform(Driver p_driver) : driver(p_driver) {}
+	~ShaderBakerExportPluginPlatform() override;
+
+	Driver get_driver() const { return driver; }
+	RenderingShaderContainerFormat* create_shader_container_format(
+		const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset);
+	bool matches_driver(const String& p_driver) const;
 };
 
-class ShaderBakerExportPlugin : public EditorExportPlugin
+class ShaderBakerExportPlugin final : public EditorExportPlugin
 {
 protected:
 	struct WorkItem
@@ -62,8 +78,6 @@ protected:
 
 	struct WorkResult
 	{
-		// Since this result is per group, this vector will have gaps in the data it covers as the
-		// indices must stay relative to all variants.
 		Vector<PackedByteArray> variant_data;
 	};
 
@@ -90,29 +104,27 @@ protected:
 	BinaryMutex tasks_mutex;
 	ConditionVariable tasks_condition;
 
-	virtual String get_name() const override;
-	virtual bool _is_active(const Vector<String>& p_features) const;
-	virtual bool _initialize_container_format(
+	String get_name() const override;
+	bool _is_active(const Vector<String>& p_features) const;
+	bool _initialize_container_format(
 		const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset);
-	virtual void _cleanup_container_format();
-	virtual bool _initialize_cache_directory();
-	virtual bool _begin_customize_resources(
+	void _cleanup_container_format();
+	bool _initialize_cache_directory();
+	bool _begin_customize_resources(
 		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
-	virtual bool _begin_customize_scenes(
+	bool _begin_customize_scenes(
 		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
-	virtual void _end_customize_resources() override;
-	virtual Ref<Resource> _customize_resource(
+	void _end_customize_resources() override;
+	Ref<Resource> _customize_resource(
 		const Ref<Resource>& p_resource, const String& p_path) override;
-	virtual Node* _customize_scene(Node* p_root, const String& p_path) override;
-	virtual uint64_t _get_customization_configuration_hash() const override;
-	virtual void _customize_shader_version(ShaderRD* p_shader, RID p_version);
+	Node* _customize_scene(Node* p_root, const String& p_path) override;
+	uint64_t _get_customization_configuration_hash() const override;
+	void _customize_shader_version(ShaderRD* p_shader, RID p_version);
 	void _process_work_item(WorkItem p_work_item);
 
 public:
 	ShaderBakerExportPlugin();
-	virtual ~ShaderBakerExportPlugin();
+	~ShaderBakerExportPlugin() override;
 	void add_platform(Ref<ShaderBakerExportPluginPlatform> p_platform);
 	void remove_platform(Ref<ShaderBakerExportPluginPlatform> p_platform);
 };
-
-

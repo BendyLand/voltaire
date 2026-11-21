@@ -44,7 +44,7 @@
 	provided by the	XRFaceTracking instance to drive the face.
  */
 
-class XRFaceModifier3D : public Node3D {
+class XRFaceModifier3D final : public Node3D {
 
 private:
 	String tracker_name = "/user/face_tracker";

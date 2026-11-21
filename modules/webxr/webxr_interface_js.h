@@ -45,13 +45,11 @@ namespace GLES3 {
 class TextureStorage;
 }
 
-class XRHandTracker;
-
 class WebXRInterfaceJS : public WebXRInterface {
 
 private:
 	bool initialized;
-	Ref<XRPositionalTracker> head_tracker;
+	Ref<XRTracker> head_tracker;
 	Transform3D head_transform;
 
 	String session_mode;
@@ -73,7 +71,7 @@ private:
 	static constexpr uint8_t input_source_count = 16;
 
 	struct InputSource {
-		Ref<XRControllerTracker> tracker;
+		Ref<XRTracker> tracker;
 		bool active = false;
 		TargetRayMode target_ray_mode;
 		int touch_index = -1;
@@ -81,7 +79,7 @@ private:
 
 	static const int WEBXR_HAND_JOINT_MAX = 25;
 	static const int HAND_MAX = 2;
-	Ref<XRHandTracker> hand_trackers[HAND_MAX];
+	Ref<XRTracker> hand_trackers[HAND_MAX];
 
 	RID color_texture;
 	RID depth_texture;
@@ -107,7 +105,7 @@ public:
 	virtual String get_reference_space_type() const override;
 	virtual String get_enabled_features() const override;
 	virtual bool is_input_source_active(int p_input_source_id) const override;
-	virtual Ref<XRControllerTracker> get_input_source_tracker(int p_input_source_id) const override;
+	virtual Ref<XRTracker> get_input_source_tracker(int p_input_source_id) const override;
 	virtual TargetRayMode get_input_source_target_ray_mode(int p_input_source_id) const override;
 	virtual String get_visibility_state() const override;
 	virtual PackedVector3Array get_play_area() const override;

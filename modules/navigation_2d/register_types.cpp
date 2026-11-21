@@ -33,7 +33,7 @@
 #include "servers/navigation_2d/navigation_server_2d.h"
 
 #ifdef CLIPPER2_ENABLED
-#include "2d/nav_mesh_generator_2d.h"
+#include "nav_map_2d.h"
 #endif
 
 void initialize_navigation_2d_module(ModuleInitializationLevel p_level)

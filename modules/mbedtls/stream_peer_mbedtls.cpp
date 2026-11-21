@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/stream_peer_tcp.h"
+#include "core/io/stream_peer_socket.h"
 #include "stream_peer_mbedtls.h"
 
 int StreamPeerTLS::Data::bio_send(void* ctx, const unsigned char* buf, size_t len)
@@ -284,8 +284,8 @@ void StreamPeerTLS::poll()
 		return;
 	}
 
-	Ref<StreamPeerTCP> tcp = data->base;
-	if (tcp.is_valid() && tcp->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
+	Ref<StreamPeerSocket> tcp = data->base;
+	if (tcp.is_valid() && tcp->get_status() != StreamPeerSocket::STATUS_CONNECTED) {
 		disconnect_from_stream();
 		return;
 	}
@@ -318,8 +318,8 @@ void StreamPeerTLS::disconnect_from_stream()
 		return;
 	}
 
-	Ref<StreamPeerTCP> tcp = data->base;
-	if (tcp.is_valid() && tcp->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
+	Ref<StreamPeerSocket> tcp = data->base;
+	if (tcp.is_valid() && tcp->get_status() == StreamPeerSocket::STATUS_CONNECTED) {
 		// We are still connected on the socket, try to send close notify.
 		mbedtls_ssl_close_notify(data->tls_ctx->get_context());
 	}

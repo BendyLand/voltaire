@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_navigation_region_2d)
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "scene/2d/navigation/navigation_region_2d.h"
+#include "scene/2d/navigation/navigation_2d.h"
 
 namespace TestNavigationRegion2D {
 

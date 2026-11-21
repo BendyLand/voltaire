@@ -37,7 +37,7 @@
 #include "resource_importer_scene.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
-#include "scene/3d/navigation/navigation_region_3d.h"
+#include "scene/3d/navigation/navigation_3d.h"
 #include "scene/3d/occluder_instance_3d.h"
 #include "scene/3d/physics/area_3d.h"
 #include "scene/3d/physics/collision_shape_3d.h"

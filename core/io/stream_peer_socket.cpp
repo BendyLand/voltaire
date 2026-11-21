@@ -29,9 +29,163 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/os/os.h"
-#include "stream_peer_socket.compat.inc"
 #include "stream_peer_socket.h"
+
+#include "core/os/os.h"
+
+void StreamPeerSocket::accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address& p_addr)
+{
+	_sock = p_sock;
+	_sock->set_blocking_enabled(false);
+
+	timeout = 30;
+	status = STATUS_CONNECTED;
+	peer_address = p_addr;
+	if (p_addr.is_unix()) {
+		domain = DOMAIN_UDS;
+		peer_path = String(p_addr.get_path().get_data());
+	}
+	else if (p_addr.is_inet()) {
+		domain = DOMAIN_TCP;
+	}
+}
+
+Error StreamPeerSocket::bind(int p_port, const IPAddress& p_host)
+{
+	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
+	ERR_FAIL_COND_V(_sock->is_open(), ERR_ALREADY_IN_USE);
+	ERR_FAIL_COND_V_MSG(p_port < 0 || p_port > 65535, ERR_INVALID_PARAMETER,
+		"The local port number must be between 0 and 65535 (inclusive).");
+
+	domain = DOMAIN_TCP;
+	IP::Type ip_type = p_host.is_ipv4() ? IP::TYPE_IPV4 : IP::TYPE_IPV6;
+	if (p_host.is_wildcard()) {
+		ip_type = IP::TYPE_ANY;
+	}
+	Error err = _sock->open(NetSocket::Family::INET, NetSocket::TYPE_TCP, ip_type);
+	if (err != OK) {
+		return err;
+	}
+	_sock->set_blocking_enabled(false);
+	NetSocket::Address addr(p_host, p_port);
+	return _sock->bind(addr);
+}
+
+Error StreamPeerSocket::connect_to_host(const IPAddress& p_host, int p_port)
+{
+	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
+	ERR_FAIL_COND_V(status != STATUS_NONE, ERR_ALREADY_IN_USE);
+	ERR_FAIL_COND_V(!p_host.is_valid(), ERR_INVALID_PARAMETER);
+	ERR_FAIL_COND_V_MSG(p_port < 1 || p_port > 65535, ERR_INVALID_PARAMETER,
+		"The remote port number must be between 1 and 65535 (inclusive).");
+
+	domain = DOMAIN_TCP;
+	if (!_sock->is_open()) {
+		IP::Type ip_type = p_host.is_ipv4() ? IP::TYPE_IPV4 : IP::TYPE_IPV6;
+		Error err = _sock->open(NetSocket::Family::INET, NetSocket::TYPE_TCP, ip_type);
+		if (err != OK) {
+			return err;
+		}
+		_sock->set_blocking_enabled(false);
+	}
+
+	timeout = 30;
+
+	NetSocket::Address addr(p_host, p_port);
+	Error err = _sock->connect_to_host(addr);
+
+	if (err == OK) {
+		status = STATUS_CONNECTED;
+	}
+	else if (err == ERR_BUSY) {
+		status = STATUS_CONNECTING;
+	}
+	else {
+		ERR_PRINT("Connection to remote host failed!");
+		disconnect_from_host();
+		return FAILED;
+	}
+
+	peer_address = addr;
+
+	return OK;
+}
+
+void StreamPeerSocket::set_no_delay(bool p_enabled)
+{
+	ERR_FAIL_COND(_sock.is_null() || !_sock->is_open());
+	_sock->set_tcp_no_delay_enabled(p_enabled);
+}
+
+IPAddress StreamPeerSocket::get_connected_host() const { return peer_address.ip(); }
+
+int StreamPeerSocket::get_connected_port() const { return peer_address.port(); }
+
+int StreamPeerSocket::get_local_port() const
+{
+	NetSocket::Address addr;
+	_sock->get_socket_address(&addr);
+	return addr.port();
+}
+
+Error StreamPeerSocket::bind(const String& p_path)
+{
+	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
+	ERR_FAIL_COND_V(_sock->is_open(), ERR_ALREADY_IN_USE);
+
+	domain = DOMAIN_UDS;
+	IP::Type ip_type = IP::TYPE_NONE;
+	Error err = _sock->open(NetSocket::Family::UNIX, NetSocket::TYPE_NONE, ip_type);
+	if (err != OK) {
+		return err;
+	}
+	_sock->set_blocking_enabled(false);
+	NetSocket::Address addr(p_path);
+	return _sock->bind(addr);
+}
+
+Error StreamPeerSocket::connect_to_path(const String& p_path)
+{
+	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
+	ERR_FAIL_COND_V(_sock->is_open(), ERR_ALREADY_IN_USE);
+	ERR_FAIL_COND_V(p_path.is_empty(), ERR_INVALID_PARAMETER);
+
+	domain = DOMAIN_UDS;
+	if (!_sock->is_open()) {
+		IP::Type ip_type = IP::TYPE_NONE;
+		Error err = _sock->open(NetSocket::Family::UNIX, NetSocket::TYPE_NONE, ip_type);
+		if (err != OK) {
+			return err;
+		}
+		_sock->set_blocking_enabled(false);
+	}
+
+	timeout = 30;
+	NetSocket::Address addr(p_path);
+	Error err = _sock->connect_to_host(addr);
+
+	if (err == OK) {
+		status = STATUS_CONNECTED;
+	}
+	else if (err == ERR_BUSY) {
+		status = STATUS_CONNECTING;
+	}
+	else {
+		ERR_PRINT("Connection to remote host failed!");
+		disconnect_from_host();
+		return FAILED;
+	}
+
+	peer_address = addr;
+	peer_path = p_path;
+
+	return OK;
+}
+
+String StreamPeerSocket::get_connected_path() const
+{
+	return String(peer_address.get_path().get_data());
+}
 
 Error StreamPeerSocket::poll()
 {
@@ -160,13 +314,11 @@ Error StreamPeerSocket::read(uint8_t* p_buffer, int p_bytes, int& r_received, bo
 				disconnect_from_host();
 				return FAILED;
 			}
-
 		}
 		else if (read == 0) {
 			disconnect_from_host();
 			r_received = total_read;
 			return ERR_FILE_EOF;
-
 		}
 		else {
 			to_read -= read;
@@ -195,6 +347,7 @@ void StreamPeerSocket::disconnect_from_host()
 	timeout = 0;
 	status = STATUS_NONE;
 	peer_address = NetSocket::Address();
+	peer_path = String();
 }
 
 Error StreamPeerSocket::wait(NetSocket::PollType p_type, int p_timeout)
@@ -231,8 +384,9 @@ int StreamPeerSocket::get_available_bytes() const
 	return _sock->get_available_bytes();
 }
 
-StreamPeerSocket::StreamPeerSocket() : _sock(NetSocket::create()) {}
+StreamPeerSocket::StreamPeerSocket(Domain p_domain)
+	: domain(p_domain), _sock(NetSocket::create())
+{
+}
 
 StreamPeerSocket::~StreamPeerSocket() { disconnect_from_host(); }
-
-

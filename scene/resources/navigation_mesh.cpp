@@ -31,9 +31,12 @@
 
 #include "navigation_mesh.h"
 
-#ifdef DEBUG_ENABLED
 #include "servers/navigation_3d/navigation_server_3d.h"
-#endif // DEBUG_ENABLED
+
+NavigationMesh::NavigationMesh() :
+		cell_size(NavigationDefaults3D::NAV_MESH_CELL_SIZE),
+		cell_height(NavigationDefaults3D::NAV_MESH_CELL_HEIGHT) {
+}
 
 void NavigationMesh::set_sample_partition_type(SamplePartitionType p_value)
 {

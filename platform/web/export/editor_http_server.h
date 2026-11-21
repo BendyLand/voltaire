@@ -31,15 +31,15 @@
 
 #pragma once
 
+#include "core/io/socket_server.h"
 #include "core/io/stream_peer_tls.h"
-#include "core/io/tcp_server.h"
 
 class EditorHTTPServer : public RefCounted
 {
 private:
-	Ref<TCPServer> server;
+	Ref<SocketServer> server;
 	HashMap<String, String> mimes;
-	Ref<StreamPeerTCP> tcp;
+	Ref<StreamPeerSocket> tcp;
 	Ref<StreamPeerTLS> tls;
 	Ref<StreamPeer> peer;
 	Ref<CryptoKey> key;

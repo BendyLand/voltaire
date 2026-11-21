@@ -40,7 +40,7 @@
 #include "core/string/ustring.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/vector.h"
-#include "servers/xr/xr_pose.h"
+#include "servers/xr/xr_tracker.h"
 #include "util.h"
 
 // Name we add to our extensions if OpenXR 1.1 context is available.

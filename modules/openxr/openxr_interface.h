@@ -56,9 +56,8 @@
 
 #include "extensions/openxr_hand_tracking_extension.h"
 #include "openxr_api.h"
-#include "servers/xr/xr_controller_tracker.h"
 #include "servers/xr/xr_interface.h"
-#include "servers/xr/xr_vrs.h"
+#include "servers/xr/xr_tracker.h"
 
 // declare some default strings
 #define INTERACTION_PROFILE_NONE "/interaction_profiles/none"
@@ -71,7 +70,7 @@ private:
 	XRInterface::TrackingStatus tracking_state;
 
 	// At a minimum we need a tracker for our head
-	Ref<XRPositionalTracker> head;
+	Ref<XRTracker> head;
 	Transform3D head_transform;
 	Vector3 head_linear_velocity;
 	Vector3 head_angular_velocity;
@@ -103,7 +102,7 @@ private:
 	{							 // A tracker we've registered with OpenXR
 		String tracker_name;	 // Name of our tracker (can be altered from the action map)
 		Vector<Action*> actions; // Actions related to this tracker
-		Ref<XRControllerTracker>
+		Ref<XRTracker>
 			controller_tracker;	 // Our positional tracker object that holds our tracker state
 		RID tracker_rid;		 // RID of the tracker registered with our OpenXR API
 		RID interaction_profile; // RID of the interaction profile bound to this tracker (can be

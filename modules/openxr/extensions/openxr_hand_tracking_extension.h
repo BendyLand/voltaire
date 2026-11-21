@@ -33,7 +33,7 @@
 
 #include "../util.h"
 #include "core/math/quaternion.h"
-#include "servers/xr/xr_hand_tracker.h"
+#include "servers/xr/xr_tracker.h"
 
 class OpenXRHandTrackingExtension final
 {
@@ -57,7 +57,7 @@ public:
 	struct HandTracker
 	{
 		bool is_initialized = false;
-		Ref<XRHandTracker> godot_tracker;
+		Ref<XRTracker> godot_tracker;
 		HandTrackedSource source = OPENXR_SOURCE_UNKNOWN;
 	};
 

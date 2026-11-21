@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  nav_mesh_generator_3d.h                                               */
+/*  navigation_mesh_generator.h                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                            VOLTAIRE ENGINE                             */
@@ -31,10 +31,10 @@
 
 #pragma once
 
+#include "scene/resources/navigation_mesh.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 
 class Node;
-class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
 
 class NavMeshGenerator3D final
@@ -117,3 +117,23 @@ public:
 	NavMeshGenerator3D& operator=(const NavMeshGenerator3D&) = delete;
 	~NavMeshGenerator3D() = delete;
 };
+
+#ifndef DISABLE_DEPRECATED
+class NavigationMeshGenerator final
+{
+	static inline bool _initialized = false;
+
+public:
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
+
+	static void bake(const Ref<NavigationMesh>& p_navigation_mesh, Node* p_root_node);
+	static void clear(Ref<NavigationMesh> p_navigation_mesh);
+
+	NavigationMeshGenerator() = delete;
+	NavigationMeshGenerator(const NavigationMeshGenerator&) = delete;
+	NavigationMeshGenerator& operator=(const NavigationMeshGenerator&) = delete;
+	~NavigationMeshGenerator() = delete;
+};
+#endif // DISABLE_DEPRECATED

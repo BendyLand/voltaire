@@ -40,7 +40,7 @@
 #include "core/templates/rid_owner.h"
 #include "modules/gltf/gltf_document.h"
 #include "scene/3d/node_3d.h"
-#include "servers/xr/xr_pose.h"
+#include "servers/xr/xr_tracker.h"
 
 class OpenXRRenderModelData : public RefCounted
 {

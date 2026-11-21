@@ -49,7 +49,7 @@ void EditorHTTPServer::_server_thread_poll(void *data) {
 void EditorHTTPServer::_clear_client() {
 	peer = Ref<StreamPeer>();
 	tls = Ref<StreamPeerTLS>();
-	tcp = Ref<StreamPeerTCP>();
+	tcp = Ref<StreamPeerSocket>();
 	memset(req_buf, 0, sizeof(req_buf));
 	time = 0;
 	req_pos = 0;
@@ -149,7 +149,7 @@ void EditorHTTPServer::_poll() {
 		_clear_client();
 		return;
 	}
-	if (tcp->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
+	if (tcp->get_status() != StreamPeerSocket::STATUS_CONNECTED) {
 		return;
 	}
 

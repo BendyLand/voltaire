@@ -37,7 +37,7 @@
 
 #include <openxr/openxr.h>
 #include "scene/3d/node_3d.h"
-#include "servers/xr/xr_positional_tracker.h"
+#include "servers/xr/xr_tracker.h"
 
 class OpenXRRenderModelManager : public Node3D
 {
@@ -67,7 +67,7 @@ private:
 	String make_local_to_pose;
 
 	// cached values
-	Ref<XRPositionalTracker> positional_tracker;
+	Ref<XRTracker> positional_tracker;
 	XrPath xr_path = XR_NULL_PATH;
 
 	bool _has_filters();

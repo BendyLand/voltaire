@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  nav_mesh_generator_3d.cpp                                             */
+/*  navigation_mesh_generator.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                            VOLTAIRE ENGINE                             */
@@ -29,14 +29,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include <Recast.h>
+#include "navigation_mesh_generator.h"
+
 #include "core/config/project_settings.h"
 #include "core/os/thread.h"
-#include "nav_mesh_generator_3d.h"
 #include "scene/3d/node_3d.h"
+#include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
 #include "scene/resources/navigation_mesh.h"
+#include "thirdparty/recastnavigation/Recast/Include/Recast.h"
 
 Mutex NavMeshGenerator3D::baking_navmesh_mutex;
 Mutex NavMeshGenerator3D::generator_task_mutex;
@@ -54,12 +56,12 @@ static const char*
 		"Calculating grid size...",
 		"Creating heightfield...",
 		"Marking walkable triangles...",
-		"Constructing compact heightfield...", // step 5
+		"Constructing compact heightfield...",
 		"Eroding walkable area...",
 		"Sample partitioning...",
 		"Creating contours...",
 		"Creating polymesh...",
-		"Converting to native navigation mesh...", // step 10
+		"Converting to native navigation mesh...",
 		"Baking cleanup...",
 		"Baking finished.",
 };
@@ -137,7 +139,7 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 	rcPolyMeshDetail* detail_mesh = nullptr;
 	rcContext ctx;
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CONFIGURATION; // step #1
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CONFIGURATION;
 
 	const float* verts = source_geometry_vertices.ptr();
 	const int nverts = source_geometry_vertices.size() / 3;
@@ -233,10 +235,9 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 		cfg.bmax[2] = cfg.bmin[2] + baking_aabb.size[2];
 	}
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CALC_GRID_SIZE; // step #2
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CALC_GRID_SIZE;
 	rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
 
-	// ~30000000 seems to be around sweetspot where Editor baking breaks
 	if ((cfg.width * cfg.height) > 30000000) {
 		ERR_FAIL_MSG("Baking interrupted."
 					 "\nNavigationMesh baking process would likely crash the engine."
@@ -251,14 +252,14 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 		return;
 	}
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CREATE_HEIGHTFIELD; // step #3
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CREATE_HEIGHTFIELD;
 	hf = rcAllocHeightfield();
 
 	ERR_FAIL_NULL(hf);
 	ERR_FAIL_COND(
 		!rcCreateHeightfield(&ctx, *hf, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch));
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_MARK_WALKABLE_TRIANGLES; // step #4
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_MARK_WALKABLE_TRIANGLES;
 	{
 		Vector<unsigned char> tri_areas;
 		tri_areas.resize(ntris);
@@ -284,7 +285,7 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 	}
 
 	p_generator_task->bake_state =
-		NavMeshBakeState::BAKE_STATE_CONSTRUCT_COMPACT_HEIGHTFIELD; // step #5
+		NavMeshBakeState::BAKE_STATE_CONSTRUCT_COMPACT_HEIGHTFIELD;
 
 	chf = rcAllocCompactHeightfield();
 
@@ -295,7 +296,6 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 	rcFreeHeightField(hf);
 	hf = nullptr;
 
-	// Add obstacles to the source geometry. Those will be affected by e.g. agent_radius.
 	if (!projected_obstructions.is_empty()) {
 		for (const NavigationMeshSourceGeometryData3D::ProjectedObstruction& projected_obstruction :
 			projected_obstructions) {
@@ -316,12 +316,10 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 		}
 	}
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_ERODE_WALKABLE_AREA; // step #6
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_ERODE_WALKABLE_AREA;
 
 	ERR_FAIL_COND(!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf));
 
-	// Carve obstacles to the eroded geometry. Those will NOT be affected by e.g. agent_radius
-	// because that step is already done.
 	if (!projected_obstructions.is_empty()) {
 		for (const NavigationMeshSourceGeometryData3D::ProjectedObstruction& projected_obstruction :
 			projected_obstructions) {
@@ -342,7 +340,7 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 		}
 	}
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_SAMPLE_PARTITIONING; // step #7
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_SAMPLE_PARTITIONING;
 
 	if (p_navigation_mesh->get_sample_partition_type() ==
 		NavigationMesh::SAMPLE_PARTITION_WATERSHED) {
@@ -359,14 +357,14 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 		ERR_FAIL_COND(!rcBuildLayerRegions(&ctx, *chf, cfg.borderSize, cfg.minRegionArea));
 	}
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CREATING_CONTOURS; // step #8
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CREATING_CONTOURS;
 
 	cset = rcAllocContourSet();
 
 	ERR_FAIL_NULL(cset);
 	ERR_FAIL_COND(!rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset));
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CREATING_POLYMESH; // step #9
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_CREATING_POLYMESH;
 
 	poly_mesh = rcAllocPolyMesh();
 	ERR_FAIL_NULL(poly_mesh);
@@ -383,7 +381,7 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 	cset = nullptr;
 
 	p_generator_task->bake_state =
-		NavMeshBakeState::BAKE_STATE_CONVERTING_NATIVE_NAVMESH; // step #10
+		NavMeshBakeState::BAKE_STATE_CONVERTING_NATIVE_NAVMESH;
 
 	Vector<Vector3> nav_vertices;
 	Vector<Vector<int>> nav_polygons;
@@ -416,7 +414,6 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 		for (unsigned int j = 0; j < detail_mesh_ntris; j++) {
 			Vector<int> nav_indices;
 			nav_indices.resize(3);
-			// Polygon order in recast is opposite than godot's
 			int index1 = ((int)(detail_mesh_bverts + detail_mesh_tris[j * 4 + 0]));
 			int index2 = ((int)(detail_mesh_bverts + detail_mesh_tris[j * 4 + 2]));
 			int index3 = ((int)(detail_mesh_bverts + detail_mesh_tris[j * 4 + 1]));
@@ -431,18 +428,47 @@ void NavMeshGenerator3D::generator_bake_from_source_geometry_data(
 
 	p_navigation_mesh->set_data(nav_vertices, nav_polygons);
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_BAKE_CLEANUP; // step #11
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_BAKE_CLEANUP;
 
 	rcFreePolyMesh(poly_mesh);
 	poly_mesh = nullptr;
 	rcFreePolyMeshDetail(detail_mesh);
 	detail_mesh = nullptr;
 
-	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_BAKE_FINISHED; // step #12
+	p_generator_task->bake_state = NavMeshBakeState::BAKE_STATE_BAKE_FINISHED;
 }
 
 void NavMeshGenerator3D::sync() {}
 
 void NavMeshGenerator3D::cleanup() {}
 
+#ifndef DISABLE_DEPRECATED
+void NavigationMeshGenerator::initialize()
+{
+	_initialized = true;
+}
 
+void NavigationMeshGenerator::finalize()
+{
+	_initialized = false;
+}
+
+void NavigationMeshGenerator::bake(const Ref<NavigationMesh>& p_navigation_mesh, Node* p_root_node)
+{
+	WARN_PRINT_ONCE(
+		"NavigationMeshGenerator::bake() is deprecated due to core threading changes. To upgrade "
+		"existing code, first create a NavigationMeshSourceGeometryData3D resource. Use this "
+		"resource with method parse_source_geometry_data() to parse the SceneTree for nodes that "
+		"should contribute to the navigation mesh baking. The SceneTree parsing needs to happen on "
+		"the main thread. After the parsing is finished use the resource with method "
+		"bake_from_source_geometry_data() to bake a navigation mesh..");
+}
+
+void NavigationMeshGenerator::clear(Ref<NavigationMesh> p_navigation_mesh)
+{
+	if (p_navigation_mesh.is_valid()) {
+		p_navigation_mesh->clear_polygons();
+		p_navigation_mesh->set_vertices(Vector<Vector3>());
+	}
+}
+#endif // DISABLE_DEPRECATED

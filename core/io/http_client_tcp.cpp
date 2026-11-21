@@ -31,7 +31,7 @@
 
 #ifndef WEB_ENABLED
 
-#include "core/io/stream_peer_tcp.h"
+#include "core/io/stream_peer_socket.h"
 #include "core/io/stream_peer_tls.h"
 #include "core/os/os.h"
 #include "core/version.h"
@@ -251,7 +251,7 @@ Error HTTPClientTCP::get_response_headers(List<String>* r_response)
 
 void HTTPClientTCP::close()
 {
-	if (tcp_connection->get_status() != StreamPeerTCP::STATUS_NONE) {
+	if (tcp_connection->get_status() != StreamPeerSocket::STATUS_NONE) {
 		tcp_connection->disconnect_from_host();
 	}
 
@@ -312,12 +312,12 @@ Error HTTPClientTCP::poll()
 		}
 	} break;
 	case STATUS_CONNECTING: {
-		StreamPeerTCP::Status s = tcp_connection->get_status();
+		StreamPeerSocket::Status s = tcp_connection->get_status();
 		switch (s) {
-		case StreamPeerTCP::STATUS_CONNECTING: {
+		case StreamPeerSocket::STATUS_CONNECTING: {
 			return OK;
 		} break;
-		case StreamPeerTCP::STATUS_CONNECTED: {
+		case StreamPeerSocket::STATUS_CONNECTED: {
 			if (tls_options.is_valid() && proxy_client.is_valid()) {
 				Error err = proxy_client->poll();
 				if (err == ERR_UNCONFIGURED) {
@@ -408,8 +408,8 @@ Error HTTPClientTCP::poll()
 			}
 			return OK;
 		} break;
-		case StreamPeerTCP::STATUS_ERROR:
-		case StreamPeerTCP::STATUS_NONE: {
+		case StreamPeerSocket::STATUS_ERROR:
+		case StreamPeerSocket::STATUS_NONE: {
 			Error err = ERR_CANT_CONNECT;
 			close();
 			status = STATUS_CANT_CONNECT;
@@ -428,7 +428,7 @@ Error HTTPClientTCP::poll()
 				return ERR_CONNECTION_ERROR;
 			}
 		}
-		else if (tcp_connection->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
+		else if (tcp_connection->get_status() != StreamPeerSocket::STATUS_CONNECTED) {
 			status = STATUS_CONNECTION_ERROR;
 			return ERR_CONNECTION_ERROR;
 		}

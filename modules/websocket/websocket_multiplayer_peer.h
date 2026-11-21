@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/io/tcp_server.h"
+#include "core/io/socket_server.h"
 #include "core/templates/list.h"
 #include "scene/main/multiplayer_peer.h"
 #include "websocket_peer.h"
@@ -62,7 +62,7 @@ protected:
 	struct PendingPeer
 	{
 		uint64_t time = 0;
-		Ref<StreamPeerTCP> tcp;
+		Ref<StreamPeerSocket> tcp;
 		Ref<StreamPeer> connection;
 		Ref<WebSocketPeer> ws;
 	};
@@ -70,7 +70,7 @@ protected:
 	uint64_t handshake_timeout = 3000;
 	Ref<WebSocketPeer> peer_config;
 	HashMap<int, PendingPeer> pending_peers;
-	Ref<TCPServer> tcp_server;
+	Ref<SocketServer> tcp_server;
 	Ref<TLSOptions> tls_server_options;
 
 	ConnectionStatus connection_status = CONNECTION_DISCONNECTED;

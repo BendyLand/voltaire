@@ -30,11 +30,7 @@
 /**************************************************************************/
 
 #include "register_types.h"
-#include "3d/nav_mesh_generator_3d.h"
-
-#ifndef DISABLE_DEPRECATED
-#include "3d/navigation_mesh_generator.h"
-#endif // DISABLE_DEPRECATED
+#include "navigation_mesh_generator.h"
 
 #include "core/config/engine.h"
 #include "servers/navigation_3d/navigation_server_3d.h"

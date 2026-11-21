@@ -75,14 +75,9 @@
 
 // XR
 #ifndef XR_DISABLED
-#include "servers/xr/xr_body_tracker.h"
-#include "servers/xr/xr_controller_tracker.h"
-#include "servers/xr/xr_face_tracker.h"
-#include "servers/xr/xr_hand_tracker.h"
 #include "servers/xr/xr_interface.h"
-#include "servers/xr/xr_positional_tracker.h"
 #include "servers/xr/xr_server.h"
-#include "servers/xr/xr_vrs.h"
+#include "servers/xr/xr_tracker.h"
 #endif // XR_DISABLED
 
 static bool has_server_feature_callback(const String& p_feature)

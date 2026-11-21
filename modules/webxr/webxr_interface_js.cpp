@@ -42,7 +42,7 @@
 #include "scene/main/window.h"
 #include "scene/scene_string_names.h"
 #include "servers/display/display_server.h"
-#include "servers/xr/xr_hand_tracker.h"
+#include "servers/xr/xr_tracker.h"
 
 #include <emscripten.h>
 
@@ -161,8 +161,8 @@ bool WebXRInterfaceJS::is_input_source_active(int p_input_source_id) const {
 	return input_sources[p_input_source_id].active;
 }
 
-Ref<XRControllerTracker> WebXRInterfaceJS::get_input_source_tracker(int p_input_source_id) const {
-	ERR_FAIL_INDEX_V(p_input_source_id, input_source_count, Ref<XRControllerTracker>());
+Ref<XRTracker> WebXRInterfaceJS::get_input_source_tracker(int p_input_source_id) const {
+	ERR_FAIL_INDEX_V(p_input_source_id, input_source_count, Ref<XRTracker>());
 	return input_sources[p_input_source_id].tracker;
 }
 
@@ -650,10 +650,11 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 	input_source.target_ray_mode = (WebXRInterface::TargetRayMode)tmp_target_ray_mode;
 	input_source.touch_index = touch_index;
 
-	Ref<XRControllerTracker> &tracker = input_source.tracker;
+	Ref<XRTracker> &tracker = input_source.tracker;
 
 	if (tracker.is_null()) {
 		tracker.instantiate();
+		tracker->set_tracker_type(XRServer::TRACKER_CONTROLLER);
 
 		String tracker_name;
 		if (input_source.target_ray_mode == WebXRInterface::TargetRayMode::TARGET_RAY_MODE_SCREEN) {
@@ -666,7 +667,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 		if (p_input_source_id < 2) {
 			tracker->set_tracker_name(tracker_name);
 			tracker->set_tracker_desc(p_input_source_id == 0 ? "Left hand controller" : "Right hand controller");
-			tracker->set_tracker_hand(p_input_source_id == 0 ? XRPositionalTracker::TRACKER_HAND_LEFT : XRPositionalTracker::TRACKER_HAND_RIGHT);
+			tracker->set_tracker_hand(p_input_source_id == 0 ? XRTracker::TRACKER_HAND_LEFT : XRTracker::TRACKER_HAND_RIGHT);
 		} else {
 			tracker->set_tracker_name(tracker_name);
 			tracker->set_tracker_desc(tracker_name);
@@ -736,7 +737,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 	}
 
 	if (p_input_source_id < 2) {
-		Ref<XRHandTracker> hand_tracker = hand_trackers[p_input_source_id];
+		Ref<XRTracker> hand_tracker = hand_trackers[p_input_source_id];
 		if (has_hand_data) {
 			// Transform orientations to match Godot Humanoid skeleton.
 			const Basis bone_adjustment(
@@ -746,13 +747,14 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 
 			if (unlikely(hand_tracker.is_null())) {
 				hand_tracker.instantiate();
-				hand_tracker->set_tracker_hand(p_input_source_id == 0 ? XRPositionalTracker::TRACKER_HAND_LEFT : XRPositionalTracker::TRACKER_HAND_RIGHT);
+				hand_tracker->set_tracker_type(XRServer::TRACKER_HAND);
+				hand_tracker->set_tracker_hand(p_input_source_id == 0 ? XRTracker::TRACKER_HAND_LEFT : XRTracker::TRACKER_HAND_RIGHT);
 				hand_tracker->set_tracker_name(p_input_source_id == 0 ? "/user/hand_tracker/left" : "/user/hand_tracker/right");
 
 				// These flags always apply, since WebXR doesn't give us enough insight to be more fine grained.
-				uint32_t joint_flags(XRHandTracker::HAND_JOINT_FLAG_POSITION_VALID | XRHandTracker::HAND_JOINT_FLAG_ORIENTATION_VALID | XRHandTracker::HAND_JOINT_FLAG_POSITION_TRACKED | XRHandTracker::HAND_JOINT_FLAG_ORIENTATION_TRACKED);
-				for (int godot_joint = 0; godot_joint < XRHandTracker::HAND_JOINT_MAX; godot_joint++) {
-					hand_tracker->set_hand_joint_flags((XRHandTracker::HandJoint)godot_joint, joint_flags);
+				uint32_t joint_flags(XRTracker::HAND_JOINT_FLAG_POSITION_VALID | XRTracker::HAND_JOINT_FLAG_ORIENTATION_VALID | XRTracker::HAND_JOINT_FLAG_POSITION_TRACKED | XRTracker::HAND_JOINT_FLAG_ORIENTATION_TRACKED);
+				for (int godot_joint = 0; godot_joint < XRTracker::HAND_JOINT_MAX; godot_joint++) {
+					hand_tracker->set_hand_joint_flags((XRTracker::HandJoint)godot_joint, joint_flags);
 				}
 
 				hand_trackers[p_input_source_id] = hand_tracker;
@@ -761,7 +763,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 
 			hand_tracker->set_has_tracking_data(true);
 			for (int webxr_joint = 0; webxr_joint < WEBXR_HAND_JOINT_MAX; webxr_joint++) {
-				XRHandTracker::HandJoint godot_joint = (XRHandTracker::HandJoint)(webxr_joint + 1);
+				XRTracker::HandJoint godot_joint = (XRTracker::HandJoint)(webxr_joint + 1);
 
 				Transform3D joint_transform = _js_matrix_to_transform(hand_joints + (16 * webxr_joint));
 				joint_transform.basis *= bone_adjustment;
@@ -786,7 +788,7 @@ void WebXRInterfaceJS::_update_input_source(int p_input_source_id) {
 				palm_transform.origin = (palm_transform.origin + phalanx) / 2.0;
 
 				// Set the palm joint and the pose.
-				hand_tracker->set_hand_joint_transform(XRHandTracker::HAND_JOINT_PALM, palm_transform);
+				hand_tracker->set_hand_joint_transform(XRTracker::HAND_JOINT_PALM, palm_transform);
 				hand_tracker->set_pose("default", palm_transform, Vector3(), Vector3());
 			}
 

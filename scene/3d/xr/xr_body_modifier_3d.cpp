@@ -122,11 +122,11 @@ void XRBodyModifier3D::_notification(int p_what) {
 			_get_joint_data();
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
-			for (int i = 0; i < XRBodyTracker::JOINT_MAX; i++) {
+			for (int i = 0; i < XRTracker::JOINT_MAX; i++) {
 				body_joints[i].bone = -1;
 				body_joints[i].parent_joint = -1;
 			}
-			for (int i = 0; i < XRHandTracker::HAND_JOINT_MAX; i++) {
+			for (int i = 0; i < XRTracker::HAND_JOINT_MAX; i++) {
 				hand_joints[i].bone = -1;
 				hand_joints[i].parent_joint = -1;
 			}
@@ -159,7 +159,7 @@ void XRBodyModifier3D::_get_joint_data() {
 }
 
 void XRBodyModifier3D::_get_body_joint_data() {
-	for (int i = 0; i < XRBodyTracker::JOINT_MAX; i++) {
+	for (int i = 0; i < XRTracker::JOINT_MAX; i++) {
 		body_joints[i].bone = -1;
 		body_joints[i].parent_joint = -1;
 	}
@@ -169,7 +169,7 @@ void XRBodyModifier3D::_get_body_joint_data() {
 		return;
 	}
 
-	static const char *const bone_names[XRBodyTracker::JOINT_MAX] = {
+	static const char *const bone_names[XRTracker::JOINT_MAX] = {
 		"Root",
 		// Upper body.
 		"Hips",
@@ -264,43 +264,43 @@ void XRBodyModifier3D::_get_body_joint_data() {
 		"RightMiddleFoot",
 	};
 
-	int bones[XRBodyTracker::JOINT_MAX];
-	for (int i = 0; i < XRBodyTracker::JOINT_MAX; i++) {
+	int bones[XRTracker::JOINT_MAX];
+	for (int i = 0; i < XRTracker::JOINT_MAX; i++) {
 		bones[i] = -1;
 	}
 
-	bones[XRBodyTracker::JOINT_ROOT] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_ROOT]);
+	bones[XRTracker::JOINT_ROOT] = skeleton->find_bone(bone_names[XRTracker::JOINT_ROOT]);
 
 	if (body_update & BODY_UPDATE_UPPER_BODY) {
-		for (int i = XRBodyTracker::JOINT_HIPS; i <= XRBodyTracker::JOINT_RIGHT_LOWER_ARM; i++) {
+		for (int i = XRTracker::JOINT_HIPS; i <= XRTracker::JOINT_RIGHT_LOWER_ARM; i++) {
 			bones[i] = skeleton->find_bone(bone_names[i]);
 		}
-		bones[XRBodyTracker::JOINT_LOWER_CHEST] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_LOWER_CHEST]);
-		bones[XRBodyTracker::JOINT_LEFT_SCAPULA] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_LEFT_SCAPULA]);
-		bones[XRBodyTracker::JOINT_LEFT_WRIST_TWIST] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_LEFT_WRIST_TWIST]);
-		bones[XRBodyTracker::JOINT_RIGHT_SCAPULA] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_RIGHT_SCAPULA]);
-		bones[XRBodyTracker::JOINT_RIGHT_WRIST_TWIST] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_RIGHT_WRIST_TWIST]);
+		bones[XRTracker::JOINT_LOWER_CHEST] = skeleton->find_bone(bone_names[XRTracker::JOINT_LOWER_CHEST]);
+		bones[XRTracker::JOINT_LEFT_SCAPULA] = skeleton->find_bone(bone_names[XRTracker::JOINT_LEFT_SCAPULA]);
+		bones[XRTracker::JOINT_LEFT_WRIST_TWIST] = skeleton->find_bone(bone_names[XRTracker::JOINT_LEFT_WRIST_TWIST]);
+		bones[XRTracker::JOINT_RIGHT_SCAPULA] = skeleton->find_bone(bone_names[XRTracker::JOINT_RIGHT_SCAPULA]);
+		bones[XRTracker::JOINT_RIGHT_WRIST_TWIST] = skeleton->find_bone(bone_names[XRTracker::JOINT_RIGHT_WRIST_TWIST]);
 	}
 
 	if (body_update & BODY_UPDATE_LOWER_BODY) {
-		for (int i = XRBodyTracker::JOINT_LEFT_UPPER_LEG; i <= XRBodyTracker::JOINT_RIGHT_TOES; i++) {
+		for (int i = XRTracker::JOINT_LEFT_UPPER_LEG; i <= XRTracker::JOINT_RIGHT_TOES; i++) {
 			bones[i] = skeleton->find_bone(bone_names[i]);
 		}
-		bones[XRBodyTracker::JOINT_LEFT_FOOT_TWIST] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_LEFT_FOOT_TWIST]);
-		bones[XRBodyTracker::JOINT_LEFT_HEEL] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_LEFT_HEEL]);
-		bones[XRBodyTracker::JOINT_LEFT_MIDDLE_FOOT] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_LEFT_MIDDLE_FOOT]);
-		bones[XRBodyTracker::JOINT_RIGHT_FOOT_TWIST] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_RIGHT_FOOT_TWIST]);
-		bones[XRBodyTracker::JOINT_RIGHT_HEEL] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_RIGHT_HEEL]);
-		bones[XRBodyTracker::JOINT_RIGHT_MIDDLE_FOOT] = skeleton->find_bone(bone_names[XRBodyTracker::JOINT_RIGHT_MIDDLE_FOOT]);
+		bones[XRTracker::JOINT_LEFT_FOOT_TWIST] = skeleton->find_bone(bone_names[XRTracker::JOINT_LEFT_FOOT_TWIST]);
+		bones[XRTracker::JOINT_LEFT_HEEL] = skeleton->find_bone(bone_names[XRTracker::JOINT_LEFT_HEEL]);
+		bones[XRTracker::JOINT_LEFT_MIDDLE_FOOT] = skeleton->find_bone(bone_names[XRTracker::JOINT_LEFT_MIDDLE_FOOT]);
+		bones[XRTracker::JOINT_RIGHT_FOOT_TWIST] = skeleton->find_bone(bone_names[XRTracker::JOINT_RIGHT_FOOT_TWIST]);
+		bones[XRTracker::JOINT_RIGHT_HEEL] = skeleton->find_bone(bone_names[XRTracker::JOINT_RIGHT_HEEL]);
+		bones[XRTracker::JOINT_RIGHT_MIDDLE_FOOT] = skeleton->find_bone(bone_names[XRTracker::JOINT_RIGHT_MIDDLE_FOOT]);
 	}
 
 	if (body_update & BODY_UPDATE_HANDS) {
-		for (int i = XRBodyTracker::JOINT_LEFT_HAND; i <= XRBodyTracker::JOINT_RIGHT_PINKY_FINGER_TIP; i++) {
+		for (int i = XRTracker::JOINT_LEFT_HAND; i <= XRTracker::JOINT_RIGHT_PINKY_FINGER_TIP; i++) {
 			bones[i] = skeleton->find_bone(bone_names[i]);
 		}
 	}
 
-	for (int i = 0; i < XRBodyTracker::JOINT_MAX; i++) {
+	for (int i = 0; i < XRTracker::JOINT_MAX; i++) {
 		const int b = bones[i];
 		if (b == -1) {
 			continue;
@@ -309,7 +309,7 @@ void XRBodyModifier3D::_get_body_joint_data() {
 		int parent_bone = skeleton->get_bone_parent(b);
 		while (parent_bone != -1) {
 			bool found = false;
-			for (int j = 0; j < XRBodyTracker::JOINT_MAX; j++) {
+			for (int j = 0; j < XRTracker::JOINT_MAX; j++) {
 				if (bones[j] == parent_bone) {
 					body_joints[i].parent_joint = j;
 					found = true;
@@ -325,7 +325,7 @@ void XRBodyModifier3D::_get_body_joint_data() {
 }
 
 void XRBodyModifier3D::_get_hand_joint_data() {
-	for (int i = 0; i < XRHandTracker::HAND_JOINT_MAX; i++) {
+	for (int i = 0; i < XRTracker::HAND_JOINT_MAX; i++) {
 		hand_joints[i].bone = -1;
 		hand_joints[i].parent_joint = -1;
 	}
@@ -335,7 +335,7 @@ void XRBodyModifier3D::_get_hand_joint_data() {
 		return;
 	}
 
-	static const char *const left_hand_names[XRHandTracker::HAND_JOINT_MAX] = {
+	static const char *const left_hand_names[XRTracker::HAND_JOINT_MAX] = {
 		"LeftPalm",
 		"LeftHand",
 		"LeftThumbMetacarpal",
@@ -364,7 +364,7 @@ void XRBodyModifier3D::_get_hand_joint_data() {
 		"LeftLittleTip",
 	};
 
-	static const char *const right_hand_names[XRHandTracker::HAND_JOINT_MAX] = {
+	static const char *const right_hand_names[XRTracker::HAND_JOINT_MAX] = {
 		"RightPalm",
 		"RightHand",
 		"RightThumbMetacarpal",
@@ -396,12 +396,12 @@ void XRBodyModifier3D::_get_hand_joint_data() {
 	const bool is_right = tracker_name.contains("right");
 	const char *const *names = is_right ? right_hand_names : left_hand_names;
 
-	int bones[XRHandTracker::HAND_JOINT_MAX];
-	for (int i = 0; i < XRHandTracker::HAND_JOINT_MAX; i++) {
+	int bones[XRTracker::HAND_JOINT_MAX];
+	for (int i = 0; i < XRTracker::HAND_JOINT_MAX; i++) {
 		bones[i] = skeleton->find_bone(names[i]);
 	}
 
-	for (int i = 0; i < XRHandTracker::HAND_JOINT_MAX; i++) {
+	for (int i = 0; i < XRTracker::HAND_JOINT_MAX; i++) {
 		const int b = bones[i];
 		if (b == -1) {
 			continue;
@@ -410,7 +410,7 @@ void XRBodyModifier3D::_get_hand_joint_data() {
 		int parent_bone = skeleton->get_bone_parent(b);
 		while (parent_bone != -1) {
 			bool found = false;
-			for (int j = 0; j < XRHandTracker::HAND_JOINT_MAX; j++) {
+			for (int j = 0; j < XRTracker::HAND_JOINT_MAX; j++) {
 				if (bones[j] == parent_bone) {
 					hand_joints[i].parent_joint = j;
 					found = true;
@@ -439,31 +439,31 @@ void XRBodyModifier3D::_process_modification(double p_delta) {
 }
 
 void XRBodyModifier3D::_process_body_modification(Skeleton3D *p_skeleton) {
-	const Ref<XRBodyTracker> tracker = XRServer::get_tracker(tracker_name);
-	if (tracker.is_null() || !tracker->get_has_tracking_data()) {
+	const Ref<XRTracker> tracker = XRServer::get_tracker(tracker_name);
+	if (tracker.is_null() || tracker->get_tracker_type() != XRServer::TRACKER_BODY || !tracker->get_has_tracking_data()) {
 		return;
 	}
 
 	const float ss = p_skeleton->get_motion_scale();
-	Transform3D transforms[XRBodyTracker::JOINT_MAX];
-	Transform3D inv_transforms[XRBodyTracker::JOINT_MAX];
-	bool valid[XRBodyTracker::JOINT_MAX] = {};
+	Transform3D transforms[XRTracker::JOINT_MAX];
+	Transform3D inv_transforms[XRTracker::JOINT_MAX];
+	bool valid[XRTracker::JOINT_MAX] = {};
 
-	for (int joint = 0; joint < XRBodyTracker::JOINT_MAX; joint++) {
-		uint32_t flags = tracker->get_joint_flags(static_cast<XRBodyTracker::Joint>(joint));
-		if ((flags & XRBodyTracker::JOINT_FLAG_ORIENTATION_VALID) && (flags & XRBodyTracker::JOINT_FLAG_POSITION_VALID)) {
+	for (int joint = 0; joint < XRTracker::JOINT_MAX; joint++) {
+		uint32_t flags = tracker->get_joint_flags(static_cast<XRTracker::Joint>(joint));
+		if ((flags & XRTracker::JOINT_FLAG_ORIENTATION_VALID) && (flags & XRTracker::JOINT_FLAG_POSITION_VALID)) {
 			valid[joint] = true;
-			transforms[joint] = tracker->get_joint_transform(static_cast<XRBodyTracker::Joint>(joint));
+			transforms[joint] = tracker->get_joint_transform(static_cast<XRTracker::Joint>(joint));
 			transforms[joint].origin *= ss;
 			inv_transforms[joint] = transforms[joint].inverse();
 		}
 	}
 
-	if (!valid[XRBodyTracker::JOINT_ROOT]) {
+	if (!valid[XRTracker::JOINT_ROOT]) {
 		return;
 	}
 
-	for (int joint = 0; joint < XRBodyTracker::JOINT_MAX; joint++) {
+	for (int joint = 0; joint < XRTracker::JOINT_MAX; joint++) {
 		const int b = body_joints[joint].bone;
 		if (b == -1 || !valid[joint]) {
 			continue;
@@ -484,8 +484,8 @@ void XRBodyModifier3D::_process_body_modification(Skeleton3D *p_skeleton) {
 }
 
 void XRBodyModifier3D::_process_hand_modification(Skeleton3D *p_skeleton) {
-	const Ref<XRHandTracker> tracker = XRServer::get_tracker(tracker_name);
-	if (tracker.is_null()) {
+	const Ref<XRTracker> tracker = XRServer::get_tracker(tracker_name);
+	if (tracker.is_null() || tracker->get_tracker_type() != XRServer::TRACKER_HAND) {
 		return;
 	}
 
@@ -493,7 +493,7 @@ void XRBodyModifier3D::_process_hand_modification(Skeleton3D *p_skeleton) {
 		if (!has_stored_previous_transforms) {
 			return;
 		}
-		for (int joint = 0; joint < XRHandTracker::HAND_JOINT_MAX; joint++) {
+		for (int joint = 0; joint < XRTracker::HAND_JOINT_MAX; joint++) {
 			const int b = hand_joints[joint].bone;
 			if (b == -1) {
 				continue;
@@ -507,29 +507,29 @@ void XRBodyModifier3D::_process_hand_modification(Skeleton3D *p_skeleton) {
 	}
 
 	const float ss = p_skeleton->get_motion_scale();
-	Transform3D transforms[XRHandTracker::HAND_JOINT_MAX];
-	Transform3D inv_transforms[XRHandTracker::HAND_JOINT_MAX];
-	bool valid[XRHandTracker::HAND_JOINT_MAX] = {};
+	Transform3D transforms[XRTracker::HAND_JOINT_MAX];
+	Transform3D inv_transforms[XRTracker::HAND_JOINT_MAX];
+	bool valid[XRTracker::HAND_JOINT_MAX] = {};
 
-	previous_relative_transforms.resize(XRHandTracker::HAND_JOINT_MAX);
+	previous_relative_transforms.resize(XRTracker::HAND_JOINT_MAX);
 
-	for (int joint = 0; joint < XRHandTracker::HAND_JOINT_MAX; joint++) {
-		uint32_t flags = tracker->get_hand_joint_flags(static_cast<XRHandTracker::HandJoint>(joint));
-		if (flags & XRHandTracker::HAND_JOINT_FLAG_ORIENTATION_VALID) {
+	for (int joint = 0; joint < XRTracker::HAND_JOINT_MAX; joint++) {
+		uint32_t flags = tracker->get_hand_joint_flags(static_cast<XRTracker::HandJoint>(joint));
+		if (flags & XRTracker::HAND_JOINT_FLAG_ORIENTATION_VALID) {
 			valid[joint] = true;
-			transforms[joint] = tracker->get_hand_joint_transform(static_cast<XRHandTracker::HandJoint>(joint));
+			transforms[joint] = tracker->get_hand_joint_transform(static_cast<XRTracker::HandJoint>(joint));
 			transforms[joint].origin *= ss;
 			inv_transforms[joint] = transforms[joint].inverse();
 		}
 	}
 
-	if (!valid[XRHandTracker::HAND_JOINT_WRIST]) {
+	if (!valid[XRTracker::HAND_JOINT_WRIST]) {
 		return;
 	}
 
 	const Transform3D skel_inv = p_skeleton->get_global_transform_interpolated().affine_inverse();
 
-	for (int joint = 0; joint < XRHandTracker::HAND_JOINT_MAX; joint++) {
+	for (int joint = 0; joint < XRTracker::HAND_JOINT_MAX; joint++) {
 		const int b = hand_joints[joint].bone;
 		if (b == -1 || !valid[joint]) {
 			continue;

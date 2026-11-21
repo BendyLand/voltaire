@@ -35,7 +35,7 @@
 
 #include <wslay/wslay.h>
 #include "core/crypto/crypto_core.h"
-#include "core/io/stream_peer_tcp.h"
+#include "core/io/stream_peer_socket.h"
 #include "packet_buffer.h"
 #include "websocket_peer.h"
 
@@ -74,7 +74,7 @@ private:
 		int port = 0;
 
 	public:
-		void try_next_candidate(const Ref<StreamPeerTCP>& p_tcp);
+		void try_next_candidate(const Ref<StreamPeerSocket>& p_tcp);
 		void start(const String& p_host, int p_port);
 		void stop();
 
@@ -98,7 +98,7 @@ private:
 	// WebSocket connection state.
 	WebSocketPeer::State ready_state = WebSocketPeer::STATE_CLOSED;
 	bool is_server = false;
-	Ref<StreamPeerTCP> tcp;
+	Ref<StreamPeerSocket> tcp;
 	Ref<StreamPeer> connection;
 	wslay_event_context_ptr wsl_ctx = nullptr;
 

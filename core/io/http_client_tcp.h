@@ -35,7 +35,7 @@
 #include "core/io/http_client.h"
 #include "core/io/ip.h"
 
-class StreamPeerTCP;
+class StreamPeerSocket;
 
 class HTTPClientTCP : public HTTPClient
 {
@@ -66,7 +66,7 @@ private:
 	bool read_until_eof = false;
 
 	Ref<StreamPeerBuffer> request_buffer;
-	Ref<StreamPeerTCP> tcp_connection;
+	Ref<StreamPeerSocket> tcp_connection;
 	Ref<StreamPeer> connection;
 	Ref<HTTPClientTCP> proxy_client; // Negotiate with proxy server.
 

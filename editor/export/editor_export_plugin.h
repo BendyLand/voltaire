@@ -33,7 +33,6 @@
 
 #include "core/os/shared_object.h"
 #include "editor/export/editor_export_platform.h"
-#include "editor/export/editor_export_preset.h"
 #include "scene/main/node.h"
 
 class EditorExportPlugin : public RefCounted
@@ -126,23 +125,16 @@ protected:
 	virtual void _end_generate_apple_embedded_project(
 		const String& p_path, bool p_will_build_archive);
 
-
 	virtual bool _begin_customize_resources(const Ref<EditorExportPlatform>& p_platform,
-		const Vector<String>&
-			p_features); // Return true if this plugin does property export customization
+		const Vector<String>& p_features);
 	virtual Ref<Resource> _customize_resource(const Ref<Resource>& p_resource,
-		const String& p_path); // If nothing is returned, it means do not touch (nothing changed).
-							   // If something is returned (either the same or a different resource)
-							   // it means changes are made.
+		const String& p_path);
 
 	virtual bool _begin_customize_scenes(const Ref<EditorExportPlatform>& p_platform,
-		const Vector<String>&
-			p_features); // Return true if this plugin does property export customization
-	virtual Node* _customize_scene(
-		Node* p_root, const String& p_path); // Return true if a change was made
+		const Vector<String>& p_features);
+	virtual Node* _customize_scene(Node* p_root, const String& p_path);
 
-	virtual uint64_t _get_customization_configuration_hash()
-		const; // Hash used for caching customized resources and scenes.
+	virtual uint64_t _get_customization_configuration_hash() const;
 
 	virtual void _end_customize_scenes();
 	virtual void _end_customize_resources();
@@ -193,4 +185,30 @@ public:
 	const Vector<String>& get_macos_plugin_files() const;
 };
 
+class DedicatedServerExportPlugin final : public EditorExportPlugin
+{
+private:
+	EditorExportPreset::FileExportMode current_export_mode =
+		EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
 
+	EditorExportPreset::FileExportMode _get_export_mode_for_path(const String& p_path);
+
+protected:
+	String get_name() const override { return "DedicatedServer"; }
+
+	PackedStringArray _get_export_features(
+		const Ref<EditorExportPlatform>& p_platform, bool p_debug) const override;
+	uint64_t _get_customization_configuration_hash() const override;
+
+	bool _begin_customize_scenes(
+		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
+	bool _begin_customize_resources(
+		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
+
+	Node* _customize_scene(Node* p_root, const String& p_path) override;
+	Ref<Resource> _customize_resource(
+		const Ref<Resource>& p_resource, const String& p_path) override;
+
+	void _end_customize_scenes() override;
+	void _end_customize_resources() override;
+};

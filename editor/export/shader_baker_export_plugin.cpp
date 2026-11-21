@@ -29,6 +29,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "shader_baker_export_plugin.h"
+
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
@@ -39,7 +41,19 @@
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/rendering_shader_container.h"
-#include "shader_baker_export_plugin.h"
+
+#ifdef VULKAN_ENABLED
+#include "drivers/vulkan/rendering_shader_container_vulkan.h"
+#endif
+
+#ifdef D3D12_ENABLED
+#include "drivers/d3d12/rendering_shader_container_d3d12.h"
+#include <windows.h>
+#endif
+
+#ifdef METAL_ENABLED
+#include "drivers/metal/rendering_shader_container_metal.h"
+#endif
 
 // Ensure that AlphaCut is the same between the two classes so we can share the code to detect
 // transparency.
@@ -49,6 +63,84 @@ static_assert(
 	ENUM_MEMBERS_EQUAL(Sprite3D::ALPHA_CUT_OPAQUE_PREPASS, Label3D::ALPHA_CUT_OPAQUE_PREPASS));
 static_assert(ENUM_MEMBERS_EQUAL(Sprite3D::ALPHA_CUT_HASH, Label3D::ALPHA_CUT_HASH));
 static_assert(ENUM_MEMBERS_EQUAL(Sprite3D::ALPHA_CUT_MAX, Label3D::ALPHA_CUT_MAX));
+
+ShaderBakerExportPluginPlatform::~ShaderBakerExportPluginPlatform()
+{
+#ifdef D3D12_ENABLED
+	if (lib_d3d12 != nullptr) {
+		FreeLibrary((HMODULE)(lib_d3d12));
+	}
+#endif
+}
+
+RenderingShaderContainerFormat* ShaderBakerExportPluginPlatform::create_shader_container_format(
+	const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset)
+{
+	switch (driver) {
+	case DRIVER_VULKAN: {
+#ifdef VULKAN_ENABLED
+		return memnew(RenderingShaderContainerFormatVulkan);
+#else
+		ERR_FAIL_V_MSG(nullptr, "Vulkan shader baker is not enabled in this build.");
+#endif
+	}
+	case DRIVER_D3D12: {
+#ifdef D3D12_ENABLED
+		if (lib_d3d12 == nullptr) {
+			lib_d3d12 = LoadLibraryW(L"D3D12.dll");
+			ERR_FAIL_NULL_V_MSG(lib_d3d12, nullptr, "Unable to load D3D12.dll.");
+		}
+		RenderingShaderContainerFormatD3D12* shader_container_format_d3d12 =
+			memnew(RenderingShaderContainerFormatD3D12);
+		shader_container_format_d3d12->set_lib_d3d12(lib_d3d12);
+		return shader_container_format_d3d12;
+#else
+		ERR_FAIL_V_MSG(nullptr, "D3D12 shader baker is not enabled in this build.");
+#endif
+	}
+	case DRIVER_METAL: {
+#ifdef METAL_ENABLED
+		const String& os_name = p_platform->get_os_name();
+		const MetalDeviceProfile* profile = nullptr;
+		MinOsVersion min_os_version;
+
+		if (os_name == U"macOS") {
+			profile = MetalDeviceProfile::get_profile(
+				MetalDeviceProfile::Platform::macOS, MetalDeviceProfile::GPU::Apple7, min_os_version);
+		}
+		else if (os_name == U"iOS") {
+			profile = MetalDeviceProfile::get_profile(
+				MetalDeviceProfile::Platform::iOS, MetalDeviceProfile::GPU::Apple7, min_os_version);
+		}
+		else if (os_name == U"visionOS") {
+			profile = MetalDeviceProfile::get_profile(
+				MetalDeviceProfile::Platform::visionOS, MetalDeviceProfile::GPU::Apple8, min_os_version);
+		}
+		else {
+			ERR_FAIL_V_MSG(nullptr, vformat("Unsupported platform: %s", os_name));
+		}
+		ERR_FAIL_NULL_V(profile, nullptr);
+		return memnew(RenderingShaderContainerFormatMetal(profile, true));
+#else
+		ERR_FAIL_V_MSG(nullptr, "Metal shader baker is not enabled in this build.");
+#endif
+	}
+	}
+	return nullptr;
+}
+
+bool ShaderBakerExportPluginPlatform::matches_driver(const String& p_driver) const
+{
+	switch (driver) {
+	case DRIVER_VULKAN:
+		return p_driver == "vulkan";
+	case DRIVER_D3D12:
+		return p_driver == "d3d12";
+	case DRIVER_METAL:
+		return p_driver == "metal";
+	}
+	return false;
+}
 
 String ShaderBakerExportPlugin::get_name() const { return "ShaderBaker"; }
 
@@ -106,8 +198,6 @@ Ref<Resource> ShaderBakerExportPlugin::_customize_resource(
 	if (material.is_valid()) {
 		RID material_rid = material->get_rid();
 		if (material_rid.is_valid()) {
-			// FIX: Check if RendererRD can be used here or if it has to be
-			//      one layer higher (RendererMaterialStorage)
 			RendererRD::MaterialStorage::ShaderData* shader_data =
 				RendererRD::MaterialStorage::material_get_shader_data(material_rid);
 			if (shader_data != nullptr) {
@@ -132,7 +222,6 @@ uint64_t ShaderBakerExportPlugin::_get_customization_configuration_hash() const
 void ShaderBakerExportPlugin::_process_work_item(WorkItem p_work_item)
 {
 	if (!tasks_cancelled) {
-		// Only process the item if the tasks haven't been cancelled by the user yet.
 		Vector<RDC::ShaderStageSPIRVData> spirv_data =
 			ShaderRD::compile_stages(p_work_item.stage_sources, p_work_item.dynamic_buffers);
 		if (unlikely(spirv_data.is_empty())) {
@@ -142,7 +231,6 @@ void ShaderBakerExportPlugin::_process_work_item(WorkItem p_work_item)
 			Ref<RenderingShaderContainer> shader_container =
 				shader_container_format->create_container();
 
-			// Compile shader binary from SPIR-V.
 			bool code_compiled =
 				shader_container->set_code_from_spirv(p_work_item.shader_name, spirv_data);
 			if (unlikely(!code_compiled)) {
@@ -169,13 +257,18 @@ void ShaderBakerExportPlugin::_process_work_item(WorkItem p_work_item)
 
 ShaderBakerExportPlugin::ShaderBakerExportPlugin()
 {
-	// Do nothing.
+#ifdef VULKAN_ENABLED
+	add_platform(memnew(ShaderBakerExportPluginPlatform(ShaderBakerExportPluginPlatform::DRIVER_VULKAN)));
+#endif
+#ifdef D3D12_ENABLED
+	add_platform(memnew(ShaderBakerExportPluginPlatform(ShaderBakerExportPluginPlatform::DRIVER_D3D12)));
+#endif
+#ifdef METAL_ENABLED
+	add_platform(memnew(ShaderBakerExportPluginPlatform(ShaderBakerExportPluginPlatform::DRIVER_METAL)));
+#endif
 }
 
-ShaderBakerExportPlugin::~ShaderBakerExportPlugin()
-{
-	// Do nothing.
-}
+ShaderBakerExportPlugin::~ShaderBakerExportPlugin() {}
 
 void ShaderBakerExportPlugin::add_platform(Ref<ShaderBakerExportPluginPlatform> p_platform)
 {
@@ -207,5 +300,3 @@ bool ShaderBakerExportPlugin::_initialize_container_format(
 }
 
 void ShaderBakerExportPlugin::_customize_shader_version(ShaderRD* p_shader, RID p_version) {}
-
-

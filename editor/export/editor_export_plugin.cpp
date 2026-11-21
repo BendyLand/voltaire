@@ -29,9 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "editor_export_plugin.h"
+
 #include "core/config/project_settings.h"
 #include "editor/export/editor_export_platform.h"
-#include "editor_export_plugin.h"
 
 void EditorExportPlugin::set_export_base_path(const String& p_export_base_path)
 {
@@ -183,7 +184,7 @@ void EditorExportPlugin::_export_begin(
 void EditorExportPlugin::_export_end() {}
 
 void EditorExportPlugin::_end_generate_apple_embedded_project(
-	const String& p_path, bool p_p_will_build_archive)
+	const String& p_path, bool p_will_build_archive)
 {
 }
 
@@ -245,8 +246,7 @@ bool EditorExportPlugin::_get_export_option_visibility(
 }
 
 String EditorExportPlugin::_get_export_option_warning(
-	const Ref<EditorExportPlatform>& p_platform
-, const String& p_option) const
+	const Ref<EditorExportPlatform>& p_platform, const String& p_option) const
 {
 	return String();
 }
@@ -301,4 +301,99 @@ PackedByteArray EditorExportPlugin::update_android_prebuilt_manifest(
 	return PackedByteArray();
 }
 
+// DedicatedServerExportPlugin
 
+EditorExportPreset::FileExportMode DedicatedServerExportPlugin::_get_export_mode_for_path(
+	const String& p_path)
+{
+	Ref<EditorExportPreset> preset = get_export_preset();
+	ERR_FAIL_COND_V(preset.is_null(), EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED);
+
+	EditorExportPreset::FileExportMode mode = preset->get_file_export_mode(p_path);
+	if (mode != EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED) {
+		return mode;
+	}
+
+	String path = p_path;
+	if (path.begins_with("res://")) {
+		path = path.substr(6);
+	}
+
+	Vector<String> parts = path.split("/");
+
+	while (parts.size() > 0) {
+		parts.resize(parts.size() - 1);
+
+		String test_path = "res://";
+		if (parts.size() > 0) {
+			test_path += String("/").join(parts) + "/";
+		}
+
+		mode = preset->get_file_export_mode(test_path);
+		if (mode != EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED) {
+			break;
+		}
+	}
+
+	return mode;
+}
+
+PackedStringArray DedicatedServerExportPlugin::_get_export_features(
+	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
+{
+	PackedStringArray ret;
+
+	Ref<EditorExportPreset> preset = get_export_preset();
+	ERR_FAIL_COND_V(preset.is_null(), ret);
+
+	if (preset->is_dedicated_server()) {
+		ret.append("dedicated_server");
+	}
+	return ret;
+}
+
+bool DedicatedServerExportPlugin::_begin_customize_scenes(
+	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
+{
+	Ref<EditorExportPreset> preset = get_export_preset();
+	ERR_FAIL_COND_V(preset.is_null(), false);
+
+	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
+
+	return preset->get_export_filter() == EditorExportPreset::EXPORT_CUSTOMIZED;
+}
+
+bool DedicatedServerExportPlugin::_begin_customize_resources(
+	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
+{
+	Ref<EditorExportPreset> preset = get_export_preset();
+	ERR_FAIL_COND_V(preset.is_null(), false);
+
+	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
+
+	return preset->get_export_filter() == EditorExportPreset::EXPORT_CUSTOMIZED;
+}
+
+Node* DedicatedServerExportPlugin::_customize_scene(Node* p_root, const String& p_path)
+{
+	current_export_mode = _get_export_mode_for_path(p_path);
+	return nullptr;
+}
+
+void DedicatedServerExportPlugin::_end_customize_scenes()
+{
+	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
+}
+
+void DedicatedServerExportPlugin::_end_customize_resources()
+{
+	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
+}
+
+Ref<Resource> DedicatedServerExportPlugin::_customize_resource(
+	const Ref<Resource>& p_resource, const String& p_path)
+{
+	return p_resource;
+}
+
+uint64_t DedicatedServerExportPlugin::_get_customization_configuration_hash() const { return 0; }
