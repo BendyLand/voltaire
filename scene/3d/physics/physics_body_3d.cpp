@@ -34,7 +34,7 @@
 #include "core/config/engine.h"
 #include "scene/3d/physics/physical_bone_simulator_3d.h"
 #include "scene/main/scene_tree.h"
-#include "servers/physics_3d/physics_server_3d_constants.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 namespace {
 

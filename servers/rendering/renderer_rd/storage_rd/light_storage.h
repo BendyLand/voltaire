@@ -34,7 +34,73 @@
 #include "core/templates/paged_array.h"
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/renderer_rd/environment/rd_environment.h"
-#include "servers/rendering/renderer_rd/storage_rd/forward_id_storage.h"
+// --- Folded from servers/rendering/renderer_rd/storage_rd/forward_id_storage.h ---
+#include <cstdint>
+
+class RendererSceneRenderRD;
+
+namespace RendererRD
+{
+
+typedef int32_t ForwardID;
+
+enum ForwardIDType
+{
+	FORWARD_ID_TYPE_OMNI_LIGHT,
+	FORWARD_ID_TYPE_SPOT_LIGHT,
+	FORWARD_ID_TYPE_REFLECTION_PROBE,
+	FORWARD_ID_TYPE_DECAL,
+	FORWARD_ID_TYPE_AREA_LIGHT,
+	FORWARD_ID_MAX,
+};
+
+class ForwardIDStorage final
+{
+private:
+	static ForwardID _default_allocate_forward_id(ForwardIDType p_type) { return -1; }
+	static void _default_free_forward_id(ForwardIDType p_type, ForwardID p_id) {}
+	static void _default_map_forward_id(
+		ForwardIDType p_type, ForwardID p_id, uint32_t p_index, uint64_t p_last_pass)
+	{
+	}
+	static bool _default_uses_forward_ids() { return false; }
+
+public:
+	inline static ForwardID (*allocate_forward_id)(ForwardIDType p_type) =
+		&_default_allocate_forward_id;
+	inline static void (*free_forward_id)(ForwardIDType p_type, ForwardID p_id) =
+		&_default_free_forward_id;
+	inline static void (*map_forward_id)(ForwardIDType p_type, ForwardID p_id, uint32_t p_index,
+		uint64_t p_last_pass) = &_default_map_forward_id;
+	inline static bool (*uses_forward_ids)() = &_default_uses_forward_ids;
+
+	template <typename Impl> static void bind()
+	{
+		allocate_forward_id = &Impl::allocate_forward_id;
+		free_forward_id = &Impl::free_forward_id;
+		map_forward_id = &Impl::map_forward_id;
+		uses_forward_ids = &Impl::uses_forward_ids;
+	}
+
+	static void reset()
+	{
+		allocate_forward_id = &_default_allocate_forward_id;
+		free_forward_id = &_default_free_forward_id;
+		map_forward_id = &_default_map_forward_id;
+		uses_forward_ids = &_default_uses_forward_ids;
+	}
+
+	ForwardIDStorage() = delete;
+	ForwardIDStorage(const ForwardIDStorage&) = delete;
+	ForwardIDStorage& operator=(const ForwardIDStorage&) = delete;
+	~ForwardIDStorage() = delete;
+};
+
+} // namespace RendererRD
+
+
+
+// --- End servers/rendering/renderer_rd/storage_rd/forward_id_storage.h ---
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/storage/light_storage.h"

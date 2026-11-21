@@ -32,7 +32,93 @@
 #include "editor/export/editor_export.h"
 #include "editor/settings/editor_settings.h"
 #include "export.h"
-#include "export_plugin.h"
+// --- Inlined from platform/windows/export/export_plugin.h ---
+#include "core/os/process_id.h"
+#include "editor/export/editor_export_platform.h"
+
+// Optional environment variables for defining confidential information. If any
+// of these is set, they will override the values set in the credentials file.
+const String ENV_WIN_CODESIGN_ID_TYPE = "GODOT_WINDOWS_CODESIGN_IDENTITY_TYPE";
+const String ENV_WIN_CODESIGN_ID = "GODOT_WINDOWS_CODESIGN_IDENTITY";
+const String ENV_WIN_CODESIGN_PASS = "GODOT_WINDOWS_CODESIGN_PASSWORD";
+
+class EditorExportPlatformWindows : public EditorExportPlatformPC
+{
+	struct SSHCleanupCommand
+	{
+		String host;
+		String port;
+		Vector<String> ssh_args;
+		String cmd_args;
+		bool wait = false;
+
+		SSHCleanupCommand() {}
+
+		SSHCleanupCommand(const String& p_host, const String& p_port,
+			const Vector<String>& p_ssh_arg, const String& p_cmd_args, bool p_wait = false)
+		{
+			host = p_host;
+			port = p_port;
+			ssh_args = p_ssh_arg;
+			cmd_args = p_cmd_args;
+			wait = p_wait;
+		}
+	};
+
+	Ref<ImageTexture> run_icon;
+	Ref<ImageTexture> stop_icon;
+
+	Vector<SSHCleanupCommand> cleanup_commands;
+	ProcessID ssh_pid = 0;
+	int menu_options = 0;
+
+	Error _process_icon(const Ref<EditorExportPreset>& p_preset, const String& p_src_path,
+		const String& p_dst_path);
+	Error _add_data(
+		const Ref<EditorExportPreset>& p_preset, const String& p_path, bool p_console_icon);
+	Error _code_sign(const Ref<EditorExportPreset>& p_preset, const String& p_path);
+
+	String _get_exe_arch(const String& p_path) const;
+
+public:
+	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
+		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
+	virtual Error modify_template(const Ref<EditorExportPreset>& p_preset, bool p_debug,
+		const String& p_path, uint32_t p_flags) override;
+	virtual Error sign_shared_object(
+		const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path) override;
+	virtual List<String> get_binary_extensions(
+		const Ref<EditorExportPreset>& p_preset) const override;
+	virtual void get_export_options(List<ExportOption>* r_options) const override;
+	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
+		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
+	virtual bool has_valid_project_configuration(
+		const Ref<EditorExportPreset>& p_preset, String& r_error) const override;
+	virtual bool get_export_option_visibility(
+		const EditorExportPreset* p_preset, const String& p_option) const override;
+	virtual String get_export_option_warning(
+		const EditorExportPreset* p_preset, const String& p_name) const override;
+
+	virtual String get_template_file_name(
+		const String& p_target, const String& p_arch) const override;
+	virtual Error fixup_embedded_pck(
+		const String& p_path, int64_t p_embedded_start, int64_t p_embedded_size) override;
+
+	virtual void get_platform_features(List<String>* r_features) const override;
+
+	virtual Ref<Texture2D> get_run_icon() const override;
+	virtual bool poll_export() override;
+	virtual int get_options_count() const override;
+	virtual String get_option_label(int p_index) const override;
+	virtual String get_option_tooltip(int p_index) const override;
+	virtual Error run(
+		const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags) override;
+	virtual void cleanup() override;
+};
+
+
+
+// --- End platform/windows/export/export_plugin.h ---
 
 void register_windows_exporter_types() {}
 
@@ -54,12 +140,218 @@ void register_windows_exporter_types() {}
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
-#include "export_plugin.h"
+
 #include "logo_svg.gen.h"
 #include "modules/svg/image_loader_svg.h"
 #include "run_icon_svg.gen.h"
 #include "scene/resources/image_texture.h"
-#include "template_modifier.h"
+// --- Inlined from platform/windows/export/template_modifier.h ---
+#include "core/io/file_access.h"
+
+class EditorExportPreset;
+
+class TemplateModifier {
+	const uint32_t PE_PAGE_SIZE = 4096;
+	const uint32_t BLOCK_SIZE = 512;
+	const uint32_t COFF_HEADER_SIZE = 24;
+	const uint32_t POINTER_TO_PE_HEADER_OFFSET = 0x3c;
+	// all offsets below are calculated from POINTER_TO_PE_HEADER_OFFSET value, at 0 is magic string PE (0x50450000)
+	const uint32_t MAGIC_NUMBER_OFFSET = 24;
+	const uint32_t SIZE_OF_INITIALIZED_DATA_OFFSET = 32;
+	const uint32_t SIZE_OF_IMAGE_OFFSET = 80;
+
+	struct ByteStream {
+		void save(uint8_t p_value, Vector<uint8_t> &r_bytes) const;
+		void save(uint16_t p_value, Vector<uint8_t> &r_bytes) const;
+		void save(uint32_t p_value, Vector<uint8_t> &r_bytes) const;
+		void save(const String &p_value, Vector<uint8_t> &r_bytes) const;
+		void save(uint32_t p_value, Vector<uint8_t> &r_bytes, uint32_t p_count) const;
+		Vector<uint8_t> save() const;
+	};
+
+	struct ResourceDirectoryTable : ByteStream {
+		static const uint16_t SIZE = 16;
+
+		uint16_t name_entry_count = 0;
+		uint16_t id_entry_count = 0;
+
+		Vector<uint8_t> save() const;
+	};
+
+	struct ResourceDirectoryEntry : ByteStream {
+		static const uint16_t SIZE = 8;
+		static const uint32_t ICON = 0x03;
+		static const uint32_t GROUP_ICON = 0x0e;
+		static const uint32_t MANIFEST = 0x18;
+		static const uint32_t VERSION = 0x10;
+		static const uint32_t ENGLISH = 0x0409;
+		static const uint32_t HIGH_BIT = 0x80000000;
+
+		uint32_t id = 0;
+		uint32_t data_offset = 0;
+		bool name = false;
+		bool subdirectory = false;
+
+		Vector<uint8_t> save() const;
+	};
+
+	struct FixedFileInfo : ByteStream {
+		uint32_t signature = 0xfeef04bd;
+		uint32_t struct_version = 0x10000;
+		uint32_t file_version_ms = 0;
+		uint32_t file_version_ls = 0;
+		uint32_t product_version_ms = 0;
+		uint32_t product_version_ls = 0;
+		uint32_t file_flags_mask = 0;
+		uint32_t file_flags = 0;
+		uint32_t file_os = 0x00000004;
+		uint32_t file_type = 0x00000001;
+		uint32_t file_subtype = 0;
+		uint32_t file_date_ms = 0;
+		uint32_t file_date_ls = 0;
+
+		Vector<uint8_t> save() const;
+		void set_file_version(const String &p_file_version);
+		void set_product_version(const String &p_product_version);
+	};
+
+	struct Structure : ByteStream {
+		uint16_t length = 0;
+		uint16_t value_length = 0;
+		uint16_t type = 0;
+		String key;
+
+		Vector<uint8_t> save() const;
+		Vector<uint8_t> &add_length(Vector<uint8_t> &r_bytes) const;
+	};
+
+	struct StringStructure : Structure {
+		String value;
+
+		Vector<uint8_t> save() const;
+		StringStructure();
+		StringStructure(const String &p_key, const String &p_value);
+	};
+
+	struct StringTable : Structure {
+		Vector<StringStructure> strings;
+
+		Vector<uint8_t> save() const;
+		void put(const String &p_key, const String &p_value);
+		StringTable();
+	};
+
+	struct StringFileInfo : Structure {
+		StringTable string_table;
+
+		Vector<uint8_t> save() const;
+		StringFileInfo();
+	};
+
+	struct Var : Structure {
+		const uint32_t value = 0x04b00409;
+
+		Vector<uint8_t> save() const;
+		Var();
+	};
+
+	struct VarFileInfo : Structure {
+		Var var;
+
+		Vector<uint8_t> save() const;
+		VarFileInfo();
+	};
+
+	struct VersionInfo : Structure {
+		FixedFileInfo value;
+		StringFileInfo string_file_info;
+		VarFileInfo var_file_info;
+
+		Vector<uint8_t> save() const;
+		VersionInfo();
+	};
+
+	struct ManifestInfo : Structure {
+		String manifest;
+
+		Vector<uint8_t> save() const;
+		ManifestInfo() {}
+	};
+
+	struct IconEntry : ByteStream {
+		static const uint32_t SIZE = 16;
+
+		uint8_t width = 0;
+		uint8_t height = 0;
+		uint8_t colors = 0;
+		uint8_t reserved = 0;
+		uint16_t planes = 0;
+		uint16_t bits_per_pixel = 32;
+		uint32_t image_size = 0;
+		uint32_t image_offset = 0;
+		Vector<uint8_t> data;
+
+		Vector<uint8_t> save() const;
+		void load(Ref<FileAccess> p_file);
+	};
+
+	struct GroupIcon : ByteStream {
+		static constexpr uint8_t SIZES[6] = { 16, 32, 48, 64, 128, 0 };
+
+		uint16_t reserved = 0;
+		uint16_t type = 1;
+		uint16_t image_count = 0;
+		Vector<IconEntry> icon_entries;
+		Vector<Vector<uint8_t>> images;
+
+		Vector<uint8_t> save() const;
+		void load(Ref<FileAccess> p_icon_file);
+		void fill_with_godot_blue();
+	};
+
+	struct SectionEntry : ByteStream {
+		static const uint32_t SIZE = 40;
+
+		String name;
+		uint32_t virtual_size = 0;
+		uint32_t virtual_address = 0;
+		uint32_t size_of_raw_data = 0;
+		uint32_t pointer_to_raw_data = 0;
+		uint32_t pointer_to_relocations = 0;
+		uint32_t pointer_to_line_numbers = 0;
+		uint16_t number_of_relocations = 0;
+		uint16_t number_of_line_numbers = 0;
+		uint32_t characteristics = 0;
+
+		Vector<uint8_t> save() const;
+		void load(Ref<FileAccess> p_file);
+	};
+
+	struct ResourceDataEntry : ByteStream {
+		static const uint16_t SIZE = 16;
+
+		uint32_t rva = 0;
+		uint32_t size = 0;
+
+		Vector<uint8_t> save() const;
+	};
+
+	uint32_t _snap(uint32_t p_value, uint32_t p_size) const;
+	uint32_t _get_pe_header_offset(Ref<FileAccess> p_executable) const;
+	Vector<SectionEntry> _get_section_entries(Ref<FileAccess> p_executable) const;
+	GroupIcon _create_group_icon(const String &p_icon_path) const;
+	ManifestInfo _create_manifest_info() const;
+	VersionInfo _create_version_info(const HashMap<String, String> &p_strings) const;
+	Vector<uint8_t> _create_resources(uint32_t p_virtual_address, const GroupIcon &p_group_icon, const VersionInfo &p_version_info, const ManifestInfo &p_manifest_info) const;
+	Error _truncate(const String &p_executable_path, uint32_t p_size) const;
+	HashMap<String, String> _get_strings(const Ref<EditorExportPreset> &p_preset) const;
+	Error _modify_template(const Ref<EditorExportPreset> &p_preset, const String &p_template_path, const String &p_icon_path) const;
+
+public:
+	static Error modify(const Ref<EditorExportPreset> &p_preset, const String &p_template_path, const String &p_icon_path);
+};
+
+// --- End platform/windows/export/template_modifier.h ---
 
 #ifdef WINDOWS_ENABLED
 #include "shlobj.h"
@@ -158,7 +450,7 @@ void register_windows_exporter() {}
 #include "core/io/dir_access.h"
 #include "core/io/image.h"
 #include "editor/export/editor_export.h"
-#include "template_modifier.h"
+
 
 void TemplateModifier::ByteStream::save(uint8_t p_value, Vector<uint8_t>& r_bytes) const
 {

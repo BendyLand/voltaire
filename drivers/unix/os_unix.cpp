@@ -34,13 +34,133 @@
 #ifdef UNIX_ENABLED
 
 #include "drivers/unix/dir_access_unix.h"
-#include "drivers/unix/file_access_unix.h"
-#include "drivers/unix/file_access_unix_pipe.h"
-#include "drivers/unix/thread_posix.h"
+#include "drivers/unix/os_unix.h"
+// --- Inlined from drivers/unix/file_access_unix_pipe.h ---
+#if defined(UNIX_ENABLED)
+
+#include "core/io/file_access.h"
+
+class FileAccessUnixPipe : public FileAccess
+{
+	bool unlink_on_close = false;
+
+	int fd[2] = {-1, -1};
+
+	mutable Error last_error = OK;
+	String path;
+	String path_src;
+
+	void _close();
+
+public:
+	Error open_existing(int p_rfd, int p_wfd, bool p_blocking);
+	virtual Error open_internal(const String& p_path, int p_mode_flags) override; ///< open a file
+
+	virtual bool is_open() const override; ///< true when file is open
+
+	virtual String get_path() const override; /// returns the path for the current open file
+	virtual String
+	get_path_absolute() const override; /// returns the absolute path for the current open file
+
+	virtual void seek(uint64_t p_position) override {}
+
+	virtual void seek_end(int64_t p_position = 0) override {}
+
+	virtual uint64_t get_position() const override { return 0; }
+
+	virtual uint64_t get_length() const override;
+
+	virtual bool eof_reached() const override { return false; }
+
+	virtual uint64_t get_buffer(uint8_t* p_dst, uint64_t p_length) const override;
+
+	virtual Error get_error() const override; ///< get last error
+
+	virtual Error resize(int64_t p_length) override { return ERR_UNAVAILABLE; }
+
+	virtual void flush() override {}
+
+	virtual bool store_buffer(
+		const uint8_t* p_src, uint64_t p_length) override; ///< store an array of bytes
+
+	virtual bool file_exists(const String& p_path) override { return false; }
+
+	virtual uint64_t _get_modified_time(const String& p_file) override { return 0; }
+
+	virtual uint64_t _get_access_time(const String& p_file) override { return 0; }
+
+	virtual int64_t _get_size(const String& p_file) override { return -1; }
+
+	virtual uint32_t _get_unix_permissions(
+		const String& p_file) override
+	{
+		return 0;
+	}
+
+	virtual Error _set_unix_permissions(
+		const String& p_file, uint32_t p_permissions) override
+	{
+		return ERR_UNAVAILABLE;
+	}
+
+	virtual bool _get_hidden_attribute(const String& p_file) override { return false; }
+
+	virtual Error _set_hidden_attribute(const String& p_file, bool p_hidden) override
+	{
+		return ERR_UNAVAILABLE;
+	}
+
+	virtual bool _get_read_only_attribute(const String& p_file) override { return false; }
+
+	virtual Error _set_read_only_attribute(const String& p_file, bool p_ro) override
+	{
+		return ERR_UNAVAILABLE;
+	}
+
+	virtual void close() override;
+
+	FileAccessUnixPipe() {}
+
+	virtual ~FileAccessUnixPipe();
+};
+
+#endif // UNIX_ENABLED
+
+
+
+// --- End drivers/unix/file_access_unix_pipe.h ---
+// --- Inlined from drivers/unix/thread_posix.h ---
+void init_thread_posix();
+
+// --- End drivers/unix/thread_posix.h ---
 
 #ifndef UNIX_SOCKET_UNAVAILABLE
-#include "drivers/unix/ip_unix.h"
-#include "drivers/unix/net_socket_unix.h"
+// --- Inlined from drivers/unix/ip_unix.h ---
+#if defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE)
+
+#include "core/io/ip.h"
+
+class IPUnix final
+{
+public:
+	static void _resolve_hostname(
+		List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type = IP::TYPE_ANY);
+	static void get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces);
+
+	static void make_default();
+
+	IPUnix() = delete;
+	IPUnix(const IPUnix&) = delete;
+	IPUnix& operator=(const IPUnix&) = delete;
+	~IPUnix() = delete;
+};
+
+#endif // UNIX_ENABLED
+
+
+
+// --- End drivers/unix/ip_unix.h ---
+#include "drivers/unix/os_unix.h"
 #endif
 
 #if defined(__APPLE__)
@@ -1749,7 +1869,7 @@ DirAccessUnix::~DirAccessUnix() {
 // Merged from drivers/unix/file_access_unix.cpp
 // ============================================================================
 
-#include "file_access_unix.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(UNIX_ENABLED)
 
@@ -2357,7 +2477,6 @@ FileAccessUnix::~FileAccessUnix() {
 // Merged from drivers/unix/file_access_unix_pipe.cpp
 // ============================================================================
 
-#include "file_access_unix_pipe.h"
 
 #if defined(UNIX_ENABLED)
 
@@ -2528,7 +2647,6 @@ FileAccessUnixPipe::~FileAccessUnixPipe() {
 
 #if defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE)
 
-#include "ip_unix.h"
 
 #include <netdb.h>
 
@@ -2670,7 +2788,7 @@ void IPUnix::make_default()
 // so this allows skipping this file to reimplement this API differently.
 #if defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE)
 
-#include "net_socket_unix.h"
+#include "drivers/unix/os_unix.h"
 
 #include <fcntl.h>
 #include <netdb.h>
@@ -3505,8 +3623,22 @@ Error NetSocketUnix::leave_multicast_group(const IPAddress &p_multi_address, con
 // ============================================================================
 
 #ifdef UNIX_ENABLED
+// --- Inlined from drivers/unix/syslog_logger.h ---
+#ifdef UNIX_ENABLED
 
-#include "syslog_logger.h"
+#include "core/io/logger.h"
+
+class SyslogLogger : public Logger {
+public:
+	virtual void logv(const char *p_format, va_list p_list, bool p_err) _PRINTF_FORMAT_ATTRIBUTE_2_0;
+	virtual void print_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, ErrorType p_type);
+
+	virtual ~SyslogLogger();
+};
+
+#endif // UNIX_ENABLED
+
+// --- End drivers/unix/syslog_logger.h ---
 
 #include <syslog.h>
 
@@ -3546,7 +3678,6 @@ SyslogLogger::~SyslogLogger() {
 
 #if defined(UNIX_ENABLED)
 
-#include "thread_posix.h"
 
 #include "core/os/thread.h"
 #include "core/string/ustring.h"

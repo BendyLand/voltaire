@@ -64,7 +64,6 @@
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/world_2d.h"
 #include "scene/theme/theme_db.h"
-#include "servers/audio/audio_driver_dummy.h"
 #include "servers/audio/audio_server.h"
 #include "servers/camera/camera_server.h"
 #include "servers/display/accessibility_server.h"

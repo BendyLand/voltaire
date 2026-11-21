@@ -35,7 +35,7 @@
 #include "core/templates/rb_map.h"
 #include "scene/2d/node_2d.h"
 #include "scene/resources/2d/shape_2d.h"
-#include "servers/physics_2d/physics_server_2d_enums.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 // Plain non-virtual composed component for 2D collision state (shared by PhysicsBody2D and Area2D).
 // Supports both inline ShapeSlots directly on the body/area and child CollisionShape2D/CollisionPolygon2D owners.

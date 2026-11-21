@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "../multiplayer_synchronizer.h"
+#include "modules/multiplayer/scene_multiplayer.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "tests/test_macros.h"

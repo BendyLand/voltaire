@@ -34,7 +34,7 @@
 #include "scene/2d/physics/collision_object_2d.h"
 #include "scene/2d/physics/kinematic_collision_2d.h"
 #include "scene/resources/physics_material.h"
-#include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 class Joint2D;
 class Skeleton2D;

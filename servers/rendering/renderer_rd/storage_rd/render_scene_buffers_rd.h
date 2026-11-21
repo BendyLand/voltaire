@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/templates/hash_map.h"
-#include "servers/rendering/renderer_rd/effects/post_effects.h"
+#include "servers/rendering/renderer_rd/effects/copy_effects.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"

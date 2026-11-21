@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "servers/display/display_server_headless.h"
+#include "servers/display/display_server.h"
 
 // Specialized DisplayServer for unittests based on DisplayServerHeadless, that
 // additionally supports things like mouse enter/exit events and clipboard.

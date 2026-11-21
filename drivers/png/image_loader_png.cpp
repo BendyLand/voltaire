@@ -219,7 +219,7 @@ Error png_to_image(const uint8_t* p_source, size_t p_size, bool p_force_linear, 
 #include "core/io/file_access.h"
 #include "core/io/image.h"
 #include "drivers/png/png_driver_common.h"
-#include "resource_saver_png.h"
+#include "drivers/png/image_loader_png.h"
 #include "scene/resources/image_texture.h"
 
 Error ResourceSaverPNG::save(

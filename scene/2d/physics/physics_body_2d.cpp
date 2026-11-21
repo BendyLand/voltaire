@@ -36,7 +36,6 @@
 #include "scene/2d/skeleton_2d.h"
 #include "scene/main/scene_tree.h"
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/physics_2d/physics_server_2d_constants.h"
 
 PhysicsBody2D::PhysicsBody2D(BodyMode p_mode) :
 		mode(p_mode) {

@@ -34,7 +34,6 @@
 #include "scene/3d/physics/collision_object_3d.h"
 #include "scene/3d/physics/kinematic_collision_3d.h"
 #include "scene/resources/physics_material.h"
-#include "servers/physics_3d/direct_states/physics_direct_body_state_3d.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
 class PhysicsBody3D;

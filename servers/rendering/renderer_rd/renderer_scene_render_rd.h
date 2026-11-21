@@ -33,7 +33,6 @@
 
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/effects/copy_effects.h"
-#include "servers/rendering/renderer_rd/effects/post_effects.h"
 #include "servers/rendering/renderer_rd/effects/upscale_effects.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_data_rd.h"

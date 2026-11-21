@@ -67,8 +67,46 @@ void EditorImportPlugin::get_import_options(
 // ============================================================================
 // Merged from editor/import/editor_atlas_packer.cpp
 // ============================================================================
+// --- Inlined from editor/import/editor_atlas_packer.h ---
+#include "core/math/vector2.h"
+#include "core/math/vector2i.h"
+#include "core/templates/vector.h"
 
-#include "editor_atlas_packer.h"
+class EditorAtlasPacker {
+public:
+	struct Chart {
+		Vector<Vector2> vertices;
+		struct Face {
+			int vertex[3] = { 0 };
+		};
+		Vector<Face> faces;
+		bool can_transpose = false;
+
+		Vector2 final_offset;
+		bool transposed = false;
+	};
+
+private:
+	struct PlottedBitmap {
+		int chart_index = 0;
+		Vector2i offset;
+		int area = 0;
+		Vector<int> top_heights;
+		Vector<int> bottom_heights;
+		bool transposed = false;
+
+		Vector2 final_pos;
+
+		bool operator<(const PlottedBitmap &p_bm) const {
+			return area > p_bm.area;
+		}
+	};
+
+public:
+	static void chart_pack(Vector<Chart> &charts, int &r_width, int &r_height, int p_atlas_max_size = 2048, int p_cell_resolution = 4);
+};
+
+// --- End editor/import/editor_atlas_packer.h ---
 
 #include "core/math/geometry_2d.h"
 #include "core/math/math_funcs_binary.h"
@@ -296,7 +334,7 @@ void EditorAtlasPacker::chart_pack(Vector<Chart> &charts, int &r_width, int &r_h
 #include "core/io/resource_saver.h"
 #include "core/string/translation.h"
 #include "core/string/translation_server.h"
-#include "resource_importer_csv_translation.h"
+#include "editor/import/editor_import_plugin.h"
 
 String ResourceImporterCSVTranslation::get_importer_name() const { return "csv_translation"; }
 
@@ -328,8 +366,55 @@ void ResourceImporterCSVTranslation::get_import_options(
 // ============================================================================
 // Merged from editor/import/resource_importer_font.cpp
 // ============================================================================
+// --- Inlined from editor/import/resource_importer_font.h ---
+#include "core/io/resource_importer.h"
 
-#include "resource_importer_font.h"
+class ResourceImporterFont final : public ResourceImporter
+{
+public:
+	enum Mode
+	{
+		MODE_DYNAMIC,
+		MODE_BMFONT,
+		MODE_IMAGEFONT,
+	};
+
+private:
+	enum Presets
+	{
+		PRESET_DYNAMIC,
+		PRESET_MSDF,
+		PRESET_MAX
+	};
+
+	Mode mode = MODE_DYNAMIC;
+
+public:
+	explicit ResourceImporterFont(Mode p_mode = MODE_DYNAMIC);
+
+	Mode get_mode() const { return mode; }
+	void set_mode(Mode p_mode) { mode = p_mode; }
+
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+	virtual void get_build_dependencies(
+		const String& p_path, HashSet<String>* r_build_dependencies) override;
+
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+
+	virtual void get_import_options(
+		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
+	virtual bool has_advanced_options() const override;
+	virtual void show_advanced_options(const String& p_path) override;
+
+	virtual bool can_import_threaded() const override { return true; }
+};
+
+// --- End editor/import/resource_importer_font.h ---
 
 #include "core/io/config_file.h"
 #include "core/io/file_access.h"
@@ -452,7 +537,29 @@ void ResourceImporterFont::get_import_options(
 
 #include "core/io/file_access.h"
 #include "core/io/resource_saver.h"
-#include "resource_importer_shader_file.h"
+// --- Inlined from editor/import/resource_importer_shader_file.h ---
+#include "core/io/resource_importer.h"
+
+class ResourceImporterShaderFile : public ResourceImporter
+{
+public:
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+
+	virtual void get_import_options(
+		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
+	virtual bool can_import_threaded() const override { return true; }
+};
+
+
+
+// --- End editor/import/resource_importer_shader_file.h ---
 #include "servers/rendering/rendering_device_binds.h"
 
 String ResourceImporterShaderFile::get_importer_name() const { return "glsl"; }
@@ -501,7 +608,7 @@ static String _include_function(const String& p_path, void* userpointer)
 // Merged from editor/import/resource_importer_texture.cpp
 // ============================================================================
 
-#include "resource_importer_texture.h"
+#include "editor/import/editor_import_plugin.h"
 
 #include "core/config/project_settings.h"
 #include "core/error/error_macros.h"
@@ -511,7 +618,7 @@ static String _include_function(const String& p_path, void* userpointer)
 #include "core/math/geometry_2d.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/import/atlas_import_failed.xpm"
-#include "editor/import/editor_atlas_packer.h"
+
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/resources/atlas_texture.h"
@@ -1306,7 +1413,30 @@ String ResourceImporterTexture::get_import_settings_string() const { return Stri
 // ============================================================================
 
 #include "core/io/resource_saver.h"
-#include "resource_importer_wav.h"
+// --- Inlined from editor/import/resource_importer_wav.h ---
+#include "core/io/resource_importer.h"
+
+class ResourceImporterWAV : public ResourceImporter
+{
+public:
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+
+	virtual void get_import_options(
+		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
+
+	virtual bool can_import_threaded() const override { return true; }
+};
+
+
+
+// --- End editor/import/resource_importer_wav.h ---
 #include "scene/resources/audio_stream_wav.h"
 
 String ResourceImporterWAV::get_importer_name() const { return "wav"; }

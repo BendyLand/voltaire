@@ -33,7 +33,21 @@
 
 #include "core/input/input_event.h"
 #include "core/os/os.h"
-#include "crash_handler_linuxbsd.h"
+// --- Folded from platform/linuxbsd/crash_handler_linuxbsd.h ---
+class CrashHandler {
+	bool disabled;
+
+public:
+	void initialize();
+
+	void disable();
+	bool is_disabled() const { return disabled; }
+
+	CrashHandler();
+	~CrashHandler();
+};
+
+// --- End platform/linuxbsd/crash_handler_linuxbsd.h ---
 #include "drivers/alsa/audio_driver_alsa.h"
 #include "drivers/alsamidi/midi_driver_alsamidi.h"
 #include "drivers/pulseaudio/audio_driver_pulseaudio.h"
@@ -144,3 +158,166 @@ public:
 	static bool _test_create_rendering_device(const String& p_display_driver);
 #endif
 };
+
+// --- Folded from platform/linuxbsd/freedesktop_at_spi_monitor.h ---
+#ifdef DBUS_ENABLED
+
+#include "core/os/thread.h"
+#include "core/templates/safe_refcount.h"
+
+class FreeDesktopAtSPIMonitor {
+private:
+	Thread thread;
+
+	SafeFlag exit_thread;
+	SafeFlag ac_enabled;
+	SafeFlag sr_enabled;
+	SafeFlag supported;
+
+	static void monitor_thread_func(void *p_userdata);
+
+public:
+	FreeDesktopAtSPIMonitor();
+	~FreeDesktopAtSPIMonitor();
+
+	bool is_supported() { return supported.is_set(); }
+	bool is_active() { return sr_enabled.is_set() && ac_enabled.is_set(); }
+};
+
+#endif // DBUS_ENABLED
+
+// --- End platform/linuxbsd/freedesktop_at_spi_monitor.h ---
+
+// --- Folded from platform/linuxbsd/freedesktop_portal_desktop.h ---
+#ifdef DBUS_ENABLED
+
+#include "core/os/mutex.h"
+#include "core/os/thread.h"
+#include "core/templates/safe_refcount.h"
+#include "servers/display/display_server_enums.h"
+#include "core/types.h"
+
+struct DBusMessage;
+struct DBusConnection;
+struct DBusMessageIter;
+
+class FreeDesktopPortalDesktop
+{
+private:
+	bool unsupported = false;
+
+	enum ReadVariantType
+	{
+		VAR_TYPE_UINT32, // u
+		VAR_TYPE_BOOL,	 // b
+		VAR_TYPE_COLOR,	 // (ddd)
+	};
+
+	static bool try_parse_variant(
+		DBusMessage* p_reply_message, ReadVariantType p_type, void* r_value);
+	// Read a setting from org.freekdesktop.portal.Settings
+	bool read_setting(
+		const char* p_namespace, const char* p_key, ReadVariantType p_type, void* r_value);
+
+	static void append_dbus_string(DBusMessageIter* p_iter, const String& p_string);
+	static void append_dbus_dict_string(DBusMessageIter* p_iter, const String& p_key,
+		const String& p_value, bool p_as_byte_array = false);
+	static void append_dbus_dict_bool(DBusMessageIter* p_iter, const String& p_key, bool p_value);
+
+	static Error make_request_token(String& r_token);
+	bool send_request(DBusMessage* p_message, const String& r_token, String& r_response_path,
+		String& r_response_filter);
+
+	struct ColorPickerData
+	{
+		String filter;
+		String path;
+	};
+
+	Mutex color_picker_mutex;
+	Vector<ColorPickerData> color_pickers;
+
+	struct FileDialogData
+	{
+		Vector<String> filter_names;
+		HashMap<String, String> option_ids;
+		DisplayServerEnums::WindowID prev_focus = DisplayServerEnums::INVALID_WINDOW_ID;
+		String filter;
+		String path;
+		bool opt_in_cb = false;
+	};
+
+	Mutex file_dialog_mutex;
+	Vector<FileDialogData> file_dialogs;
+	Thread monitor_thread;
+	SafeFlag monitor_thread_abort;
+	DBusConnection* monitor_connection = nullptr;
+
+	String theme_path;
+	void _system_theme_changed_callback();
+	bool _is_interface_supported(const char* p_iface, uint32_t p_minimum_version);
+
+	Mutex inhibit_mutex;
+	String inhibit_path;
+	String inhibit_filter;
+
+	static void _thread_monitor(void* p_ud);
+
+public:
+	FreeDesktopPortalDesktop();
+	~FreeDesktopPortalDesktop();
+
+	bool is_supported() { return !unsupported; }
+
+	bool is_file_chooser_supported();
+	bool is_settings_supported();
+	bool is_screenshot_supported();
+	bool is_inhibit_supported();
+
+	void process_callbacks();
+
+	// org.freedesktop.portal.Settings methods.
+
+	// Retrieve the system's preferred color scheme.
+	// 0: No preference or unknown.
+	// 1: Prefer dark appearance.
+	// 2: Prefer light appearance.
+	uint32_t get_appearance_color_scheme();
+	Color get_appearance_accent_color();
+
+	// Retrieve high-contrast setting.
+	// -1: Unknown.
+	// 0: Disabled.
+	// 1: Enabled.
+	uint32_t get_high_contrast();
+
+	// org.freedesktop.portal.Inhibit methods.
+	bool inhibit(const String& p_xid);
+	void uninhibit();
+};
+
+#endif // DBUS_ENABLED
+
+
+
+// --- End platform/linuxbsd/freedesktop_portal_desktop.h ---
+
+// --- Folded from platform/linuxbsd/freedesktop_screensaver.h ---
+#ifdef DBUS_ENABLED
+
+#include <cstdint>
+
+class FreeDesktopScreenSaver {
+private:
+	uint32_t cookie = 0;
+	bool unsupported = false;
+
+public:
+	FreeDesktopScreenSaver();
+	void inhibit();
+	void uninhibit();
+};
+
+#endif // DBUS_ENABLED
+
+// --- End platform/linuxbsd/freedesktop_screensaver.h ---

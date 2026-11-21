@@ -119,7 +119,7 @@ Vector<EGLint> EGLManagerWayland::_get_platform_context_attribs() const {
 // Merged from platform/linuxbsd/wayland/egl_manager_wayland_gles.cpp
 // ============================================================================
 
-#include "egl_manager_wayland_gles.h"
+#include "platform/linuxbsd/wayland/egl_manager_wayland.h"
 
 #ifdef WAYLAND_ENABLED
 #ifdef EGL_ENABLED

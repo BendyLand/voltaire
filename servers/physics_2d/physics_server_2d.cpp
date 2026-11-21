@@ -904,7 +904,7 @@ int PhysicsServer2D::get_process_info(PS2DE::ProcessInfo p_info) { return 0; }
 // Merged from servers/physics_2d/direct_states/physics_direct_body_state_2d.cpp
 // ============================================================================
 
-#include "servers/physics_2d/direct_states/physics_direct_body_state_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 #include "modules/modules_enabled.gen.h"
 
@@ -984,7 +984,7 @@ PhysicsDirectSpaceState2D* PhysicsDirectBodyState2D::get_space_state() { return 
 // Merged from servers/physics_2d/direct_states/physics_direct_space_state_2d.cpp
 // ============================================================================
 
-#include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 #include "modules/modules_enabled.gen.h"
 
@@ -1055,7 +1055,7 @@ bool PhysicsDirectSpaceState2D::rest_info(
 // Merged from servers/physics_2d/queries/physics_ray_query_parameters_2d.cpp
 // ============================================================================
 
-#include "servers/physics_2d/queries/physics_ray_query_parameters_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 Ref<PhysicsRayQueryParameters2D> PhysicsRayQueryParameters2D::create(
 	Vector2 p_from, Vector2 p_to, uint32_t p_mask, const TypedArray<RID>& p_exclude)
@@ -1078,7 +1078,7 @@ void PhysicsRayQueryParameters2D::set_exclude(TypedArray<RID> const&) {}
 // ============================================================================
 
 #include "core/io/resource.h"
-#include "servers/physics_2d/queries/physics_shape_query_parameters_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 Ref<Resource> PhysicsShapeQueryParameters2D::get_shape() const { return shape_ref; }
 
@@ -1103,7 +1103,7 @@ void PhysicsShapeQueryParameters2D::set_shape_rid(const RID& p_shape)
 // Merged from servers/physics_2d/queries/physics_testmotion_query_result_2d.cpp
 // ============================================================================
 
-#include "servers/physics_2d/queries/physics_testmotion_query_result_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 Vector2 PhysicsTestMotionResult2D::get_travel() const { return result.travel; }
 

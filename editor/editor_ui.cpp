@@ -2116,7 +2116,7 @@ void EditorUI::_ps_toggle_use_3d()
 #include "core/config/project_format.h"
 #include "core/io/file_access.h"
 #include "core/os/keyboard.h"
-#include "editor/ui_widgets.h"
+#include "editor/editor_ui.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"

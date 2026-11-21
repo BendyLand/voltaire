@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/config/project_format.h"
-#include "editor/ui_widgets.h"
+#include "editor/editor_ui.h"
 
 class ProjectManager
 {

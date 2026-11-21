@@ -35,7 +35,100 @@
 #include "core/math/audio_frame.h"
 #include "core/templates/safe_list.h"
 #include "servers/audio/audio_effect.h"
-#include "servers/audio/audio_filter_sw.h"
+// --- Folded from servers/audio/audio_filter_sw.h ---
+#include "core/typedefs.h"
+
+class AudioFilterSW {
+public:
+	struct Coeffs {
+		double a1 = 0.0;
+		double a2 = 0.0;
+		double b0 = 0.0;
+		double b1 = 0.0;
+		double b2 = 0.0;
+	};
+
+	enum Mode {
+		BANDPASS,
+		HIGHPASS,
+		LOWPASS,
+		NOTCH,
+		PEAK,
+		BANDLIMIT,
+		LOWSHELF,
+		HIGHSHELF
+	};
+
+	class Processor { // Simple filter processor.
+		AudioFilterSW *filter = nullptr;
+		Coeffs coeffs;
+		// History.
+		float ha1 = 0.0f;
+		float ha2 = 0.0f;
+		float hb1 = 0.0f;
+		float hb2 = 0.0f;
+		Coeffs incr_coeffs;
+
+	public:
+		void set_filter(AudioFilterSW *p_filter, bool p_clear_history = true);
+		void process(float *p_samples, int p_amount, int p_stride = 1, bool p_interpolate = false);
+		void update_coeffs(int p_interp_buffer_len = 0);
+		_ALWAYS_INLINE_ void process_one(float &p_sample);
+		_ALWAYS_INLINE_ void process_one_interp(float &p_sample);
+
+		Processor();
+	};
+
+private:
+	float cutoff = 5000.0f;
+	float resonance = 0.5f;
+	float gain = 1.0f;
+	float sampling_rate = 44100.0f;
+	int stages = 1;
+	Mode mode = LOWPASS;
+
+public:
+	float get_response(float p_freq, Coeffs *p_coeffs);
+
+	void set_mode(Mode p_mode);
+	void set_cutoff(float p_cutoff);
+	void set_resonance(float p_resonance);
+	void set_gain(float p_gain);
+	void set_sampling_rate(float p_srate);
+	void set_stages(int p_stages); //adjust for multiple stages
+
+	void prepare_coefficients(Coeffs *p_coeffs);
+
+	AudioFilterSW() {}
+};
+
+/* inline methods */
+
+void AudioFilterSW::Processor::process_one(float &p_sample) {
+	float pre = p_sample;
+	p_sample = (p_sample * coeffs.b0 + hb1 * coeffs.b1 + hb2 * coeffs.b2 + ha1 * coeffs.a1 + ha2 * coeffs.a2);
+	ha2 = ha1;
+	hb2 = hb1;
+	hb1 = pre;
+	ha1 = p_sample;
+}
+
+void AudioFilterSW::Processor::process_one_interp(float &p_sample) {
+	float pre = p_sample;
+	p_sample = (p_sample * coeffs.b0 + hb1 * coeffs.b1 + hb2 * coeffs.b2 + ha1 * coeffs.a1 + ha2 * coeffs.a2);
+	ha2 = ha1;
+	hb2 = hb1;
+	hb1 = pre;
+	ha1 = p_sample;
+
+	coeffs.b0 += incr_coeffs.b0;
+	coeffs.b1 += incr_coeffs.b1;
+	coeffs.b2 += incr_coeffs.b2;
+	coeffs.a1 += incr_coeffs.a1;
+	coeffs.a2 += incr_coeffs.a2;
+}
+
+// --- End servers/audio/audio_filter_sw.h ---
 
 class AudioDriverDummy;
 class AudioSample;
@@ -640,4 +733,212 @@ public:
 	AudioBusLayout();
 };
 
+// --- Folded from servers/audio/audio_driver_dummy.h ---
+#include "core/os/mutex.h"
+#include "core/os/thread.h"
+#include "core/templates/safe_refcount.h"
 
+
+class AudioDriverDummy : public AudioDriver {
+	Thread thread;
+	Mutex mutex;
+
+	int32_t *samples_in = nullptr;
+
+	static void thread_func(void *p_udata);
+
+	uint32_t buffer_frames = 4096;
+	int32_t mix_rate = -1;
+	SpeakerMode speaker_mode = SPEAKER_MODE_STEREO;
+
+	int channels;
+
+	SafeFlag active;
+	SafeFlag exit_thread;
+
+	bool use_threads = true;
+
+public:
+	virtual const char *get_name() const override {
+		return "Dummy";
+	}
+
+	virtual Error init() override;
+	virtual void start() override;
+	virtual int get_mix_rate() const override;
+	virtual SpeakerMode get_speaker_mode() const override;
+
+	virtual void lock() override;
+	virtual void unlock() override;
+	virtual void finish() override;
+
+	void set_use_threads(bool p_use_threads);
+	void set_speaker_mode(SpeakerMode p_mode);
+	void set_mix_rate(int p_rate);
+
+	uint32_t get_channels() const;
+
+	void mix_audio(int p_frames, int32_t *p_buffer);
+
+	AudioDriverDummy();
+	~AudioDriverDummy() {}
+};
+
+// --- End servers/audio/audio_driver_dummy.h ---
+
+// --- Folded from servers/audio/audio_rb_resampler.h ---
+#include "core/math/audio_frame.h"
+#include "core/templates/safe_refcount.h"
+#include "core/typedefs.h"
+
+struct AudioRBResampler {
+	uint32_t rb_bits;
+	uint32_t rb_len;
+	uint32_t rb_mask;
+	uint32_t read_buff_len;
+	uint32_t channels;
+	uint32_t src_mix_rate;
+	uint32_t target_mix_rate;
+	double playback_speed = 1.0;
+
+	SafeNumeric<int> rb_read_pos;
+	SafeNumeric<int> rb_write_pos;
+
+	int32_t offset; //contains the fractional remainder of the resampler
+	enum {
+		MIX_FRAC_BITS = 13,
+		MIX_FRAC_LEN = (1 << MIX_FRAC_BITS),
+		MIX_FRAC_MASK = MIX_FRAC_LEN - 1,
+	};
+
+	float *read_buf = nullptr;
+	float *rb = nullptr;
+
+	template <int C>
+	uint32_t _resample(AudioFrame *p_dest, int p_todo, int32_t p_increment);
+
+public:
+	_FORCE_INLINE_ void flush() {
+		rb_read_pos.set(0);
+		rb_write_pos.set(0);
+		offset = 0;
+	}
+
+	_FORCE_INLINE_ bool is_ready() const {
+		return rb != nullptr;
+	}
+
+	_FORCE_INLINE_ int get_total() const {
+		return rb_len - 1;
+	}
+
+	_FORCE_INLINE_ int get_writer_space() const {
+		int space, r, w;
+
+		r = rb_read_pos.get();
+		w = rb_write_pos.get();
+
+		if (r == w) {
+			space = rb_len - 1;
+		} else if (w < r) {
+			space = r - w - 1;
+		} else {
+			space = (rb_len - w) + (r - 1);
+		}
+
+		return space;
+	}
+
+	_FORCE_INLINE_ int get_reader_space() const {
+		int space, r, w;
+
+		r = rb_read_pos.get();
+		w = rb_write_pos.get();
+
+		if (r == w) {
+			space = 0;
+		} else if (w < r) {
+			space = rb_len - r + w;
+		} else {
+			space = w - r;
+		}
+
+		return space;
+	}
+
+	_FORCE_INLINE_ bool has_data() const {
+		return rb && rb_read_pos.get() != rb_write_pos.get();
+	}
+
+	_FORCE_INLINE_ float *get_write_buffer() { return read_buf; }
+	_FORCE_INLINE_ void write(uint32_t p_frames) {
+		ERR_FAIL_COND(p_frames >= rb_len);
+
+		int wp = rb_write_pos.get();
+
+		switch (channels) {
+			case 1: {
+				for (uint32_t i = 0; i < p_frames; i++) {
+					rb[wp] = read_buf[i];
+					wp = (wp + 1) & rb_mask;
+				}
+			} break;
+			case 2: {
+				for (uint32_t i = 0; i < p_frames; i++) {
+					rb[(wp << 1) + 0] = read_buf[(i << 1) + 0];
+					rb[(wp << 1) + 1] = read_buf[(i << 1) + 1];
+					wp = (wp + 1) & rb_mask;
+				}
+			} break;
+			case 4: {
+				for (uint32_t i = 0; i < p_frames; i++) {
+					rb[(wp << 2) + 0] = read_buf[(i << 2) + 0];
+					rb[(wp << 2) + 1] = read_buf[(i << 2) + 1];
+					rb[(wp << 2) + 2] = read_buf[(i << 2) + 2];
+					rb[(wp << 2) + 3] = read_buf[(i << 2) + 3];
+					wp = (wp + 1) & rb_mask;
+				}
+			} break;
+			case 6: {
+				for (uint32_t i = 0; i < p_frames; i++) {
+					rb[(wp * 6) + 0] = read_buf[(i * 6) + 0];
+					rb[(wp * 6) + 1] = read_buf[(i * 6) + 1];
+					rb[(wp * 6) + 2] = read_buf[(i * 6) + 2];
+					rb[(wp * 6) + 3] = read_buf[(i * 6) + 3];
+					rb[(wp * 6) + 4] = read_buf[(i * 6) + 4];
+					rb[(wp * 6) + 5] = read_buf[(i * 6) + 5];
+					wp = (wp + 1) & rb_mask;
+				}
+			} break;
+			case 8: {
+				for (uint32_t i = 0; i < p_frames; i++) {
+					rb[(wp << 3) + 0] = read_buf[(i << 3) + 0];
+					rb[(wp << 3) + 1] = read_buf[(i << 3) + 1];
+					rb[(wp << 3) + 2] = read_buf[(i << 3) + 2];
+					rb[(wp << 3) + 3] = read_buf[(i << 3) + 3];
+					rb[(wp << 3) + 4] = read_buf[(i << 3) + 4];
+					rb[(wp << 3) + 5] = read_buf[(i << 3) + 5];
+					rb[(wp << 3) + 6] = read_buf[(i << 3) + 6];
+					rb[(wp << 3) + 7] = read_buf[(i << 3) + 7];
+					wp = (wp + 1) & rb_mask;
+				}
+			} break;
+		}
+
+		rb_write_pos.set(wp);
+	}
+
+	int get_channel_count() const;
+
+	Error setup(int p_channels, int p_src_mix_rate, int p_target_mix_rate, int p_buffer_msec, int p_minbuff_needed = -1);
+	void clear();
+	bool mix(AudioFrame *p_dest, int p_frames);
+	int get_num_of_ready_frames();
+	void set_playback_speed(double p_playback_speed);
+	double get_playback_speed() const;
+
+	AudioRBResampler();
+	~AudioRBResampler();
+};
+
+// --- End servers/audio/audio_rb_resampler.h ---

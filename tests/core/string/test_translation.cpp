@@ -39,7 +39,7 @@ TEST_FORCE_LINK(test_translation)
 #include "core/string/translation_server.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/import/resource_importer_csv_translation.h"
+#include "editor/import/editor_import_plugin.h"
 #endif
 
 #include "tests/test_utils.h"

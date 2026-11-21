@@ -33,7 +33,6 @@
 
 #include "core/io/resource_saver.h"
 #include "drivers/png/image_loader_png.h"
-#include "drivers/png/resource_saver_png.h"
 
 #ifdef ACCESSKIT_ENABLED
 #include "drivers/accesskit/accessibility_server_accesskit.h"

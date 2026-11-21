@@ -722,7 +722,7 @@ void FileAccessWindows::finalize() {
 
 #if defined(WINDOWS_ENABLED)
 
-#include "dir_access_windows.h"
+#include "drivers/windows/file_access_windows.h"
 
 #include "core/os/memory.h"
 #include "core/os/os.h"
@@ -1269,7 +1269,7 @@ DirAccessWindows::~DirAccessWindows() {
 
 #ifdef WINDOWS_ENABLED
 
-#include "file_access_windows_pipe.h"
+#include "drivers/windows/file_access_windows.h"
 
 #include "core/string/ustring.h"
 
@@ -1398,7 +1398,7 @@ FileAccessWindowsPipe::~FileAccessWindowsPipe() {
 
 #if defined(WINDOWS_ENABLED)
 
-#include "ip_windows.h"
+#include "drivers/windows/file_access_windows.h"
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -1532,7 +1532,7 @@ void IPWindows::make_default()
 
 #ifdef WINDOWS_ENABLED
 
-#include "net_socket_winsock.h"
+#include "drivers/windows/file_access_windows.h"
 
 #include <mswsock.h>
 #include <winsock2.h>
@@ -2135,7 +2135,7 @@ Error NetSocketWinSock::leave_multicast_group(const IPAddress &p_multi_address, 
 
 #ifdef WINDOWS_ENABLED
 
-#include "thread_windows.h"
+#include "drivers/windows/file_access_windows.h"
 
 #include "core/os/thread.h"
 #include "core/string/ustring.h"

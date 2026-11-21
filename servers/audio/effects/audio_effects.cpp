@@ -1877,7 +1877,7 @@ float AudioEffectStereoEnhanceConfig::get_surround() const { return surround; }
 // Merged from servers/audio/effects/eq_filter.cpp
 // ============================================================================
 
-#include "eq_filter.h"
+#include "servers/audio/effects/audio_effects.h"
 
 #include "core/error/error_macros.h"
 #include "core/math/math_funcs.h"
@@ -2063,7 +2063,7 @@ EQ::~EQ() {
 // Merged from servers/audio/effects/reverb_filter.cpp
 // ============================================================================
 
-#include "reverb_filter.h"
+#include "servers/audio/effects/audio_effects.h"
 
 #include "core/math/audio_frame.h"
 #include "core/os/memory.h"

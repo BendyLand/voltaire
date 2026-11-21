@@ -33,7 +33,7 @@
 
 #include "servers/rendering/storage/material_storage.h"
 #ifdef GLES3_ENABLED
-#include "drivers/gles3/effects/gles3_effects.h"
+#include "drivers/gles3/storage/utilities.h"
 #include "drivers/gles3/rasterizer_canvas_gles3.h"
 #include "drivers/gles3/rasterizer_scene_gles3.h"
 #include "drivers/gles3/storage/light_storage.h"

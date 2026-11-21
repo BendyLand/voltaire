@@ -38,7 +38,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/templates/sort_array.h"
-#include "drivers/gles3/effects/gles3_effects.h"
+#include "drivers/gles3/storage/utilities.h"
 #include "drivers/gles3/storage/mesh_storage.h"
 #include "drivers/gles3/storage/particles_storage.h"
 #include "drivers/gles3/storage/texture_storage.h"

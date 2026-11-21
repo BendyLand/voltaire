@@ -473,7 +473,7 @@ GLManager_X11::~GLManager_X11() { release_current(); }
 // Merged from platform/linuxbsd/x11/gl_manager_x11_egl.cpp
 // ============================================================================
 
-#include "gl_manager_x11_egl.h"
+#include "platform/linuxbsd/x11/gl_manager_x11.h"
 
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
@@ -517,7 +517,7 @@ Vector<EGLint> GLManagerEGL_X11::_get_platform_context_attribs() const {
 #include "core/core_globals.h"
 #include "core/string/print_string.h"
 #include "core/types.h"
-#include "detect_prime_x11.h"
+#include "platform/linuxbsd/x11/gl_manager_x11.h"
 
 #ifdef SOWRAP_ENABLED
 #include "x11/dynwrappers/xlib-so_wrap.h"

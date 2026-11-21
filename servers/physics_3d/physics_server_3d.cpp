@@ -1334,7 +1334,7 @@ int PhysicsServer3D::get_process_info(PS3DE::ProcessInfo p_info) { return 0; }
 // Merged from servers/physics_3d/physics_server_3d_rendering_server_handler.cpp
 // ============================================================================
 
-#include "physics_server_3d_rendering_server_handler.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 #include "servers/rendering/renderer.h"
 
@@ -1415,7 +1415,7 @@ void PhysicsServer3DRenderingServerHandler::set_aabb(const AABB& p_aabb)
 // Merged from servers/physics_3d/direct_states/physics_direct_body_state_3d.cpp
 // ============================================================================
 
-#include "servers/physics_3d/direct_states/physics_direct_body_state_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 #include "modules/modules_enabled.gen.h"
 
@@ -1497,7 +1497,7 @@ PhysicsDirectSpaceState3D* PhysicsDirectBodyState3D::get_space_state() { return 
 // Merged from servers/physics_3d/direct_states/physics_direct_space_state_3d.cpp
 // ============================================================================
 
-#include "servers/physics_3d/direct_states/physics_direct_space_state_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 #include "modules/modules_enabled.gen.h"
 
@@ -1581,7 +1581,7 @@ bool PhysicsDirectSpaceState3D::body_test_motion(const JoltBody3D& p_body,
 // ============================================================================
 
 #include "core/io/resource.h"
-#include "servers/physics_3d/queries/physics_shape_query_parameters_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 Ref<Resource> PhysicsShapeQueryParameters3D::get_shape() const { return shape_ref; }
 
@@ -1606,7 +1606,7 @@ void PhysicsShapeQueryParameters3D::set_shape_rid(const RID& p_shape)
 // Merged from servers/physics_3d/queries/physics_testmotion_query_result_3d.cpp
 // ============================================================================
 
-#include "servers/physics_3d/queries/physics_testmotion_query_result_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 Vector3 PhysicsTestMotionResult3D::get_travel() const { return result.travel; }
 

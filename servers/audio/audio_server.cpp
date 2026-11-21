@@ -38,7 +38,7 @@
 #include "core/string/ustring.h"
 #include "core/templates/pair.h"
 #include "scene/scene_string_names.h"
-#include "servers/audio/audio_driver_dummy.h"
+#include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
 
 #ifdef TOOLS_ENABLED
@@ -1611,7 +1611,7 @@ void AudioServer::get_argument_options(
 // Merged from servers/audio/audio_driver_dummy.cpp
 // ============================================================================
 
-#include "audio_driver_dummy.h"
+#include "servers/audio/audio_server.h"
 
 #include "core/os/os.h"
 
@@ -1732,7 +1732,7 @@ AudioDriverDummy::AudioDriverDummy() {}
 // Merged from servers/audio/audio_filter_sw.cpp
 // ============================================================================
 
-#include "audio_filter_sw.h"
+#include "servers/audio/audio_server.h"
 
 #include "core/math/math_funcs.h"
 
@@ -1969,7 +1969,7 @@ void AudioFilterSW::Processor::process(float *p_samples, int p_amount, int p_str
 // Merged from servers/audio/audio_rb_resampler.cpp
 // ============================================================================
 
-#include "audio_rb_resampler.h"
+#include "servers/audio/audio_server.h"
 
 #include "core/math/audio_frame.h"
 #include "core/math/math_funcs_binary.h"

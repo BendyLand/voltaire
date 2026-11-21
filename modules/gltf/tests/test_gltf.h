@@ -41,7 +41,7 @@
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "editor/import/3d/resource_importer_scene.h"
-#include "editor/import/resource_importer_texture.h"
+#include "editor/import/editor_import_plugin.h"
 #include "scene/resources/compressed_texture.h"
 #include "scene/resources/compressed_texture_resource_format.h"
 #include "scene/resources/packed_scene.h"

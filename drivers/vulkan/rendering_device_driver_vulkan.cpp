@@ -35,7 +35,7 @@
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "core/templates/fixed_vector.h"
-#include "drivers/vulkan/vulkan_hooks.h"
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
 #include "rendering_device_driver_vulkan.h"
 
 #if defined(SWAPPY_FRAME_PACING_ENABLED)
@@ -8826,7 +8826,7 @@ RenderingDeviceDriverVulkan::~RenderingDeviceDriverVulkan()
 #include "core/config/project_settings.h"
 #include "core/version.h"
 #include "drivers/vulkan/rendering_device_driver_vulkan.h"
-#include "drivers/vulkan/vulkan_hooks.h"
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
 #include "rendering_context_driver_vulkan.h"
 
 #ifndef DEV_ENABLED
@@ -10097,7 +10097,7 @@ const RenderingContextDriverVulkan::Functions& RenderingContextDriverVulkan::fun
 // ============================================================================
 
 #include <thirdparty/misc/smolv.h>
-#include "rendering_shader_container_vulkan.h"
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
 
 // RenderingShaderContainerVulkan
 
@@ -10246,7 +10246,7 @@ RenderingShaderContainerFormatVulkan::~RenderingShaderContainerFormatVulkan() {}
 // Merged from drivers/vulkan/vulkan_hooks.cpp
 // ============================================================================
 
-#include "vulkan_hooks.h"
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
 
 void VulkanHooks::reset()
 {

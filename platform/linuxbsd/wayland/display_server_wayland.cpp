@@ -60,17 +60,15 @@
 
 #ifdef GLES3_ENABLED
 #include "core/io/file_access.h"
-#include "detect_prime_egl.h"
+#include "platform/linuxbsd/wayland/display_server_wayland.h"
 #include "drivers/egl/egl_manager.h"
 #include "drivers/gles3/rasterizer_gles3.h"
 #include "wayland/egl_manager_wayland.h"
-#include "wayland/egl_manager_wayland_gles.h"
+#include "platform/linuxbsd/wayland/egl_manager_wayland.h"
 #endif
 
 #ifdef DBUS_ENABLED
-#include "freedesktop_at_spi_monitor.h"
-#include "freedesktop_portal_desktop.h"
-#include "freedesktop_screensaver.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 
 #ifdef SOWRAP_ENABLED
 #include "dbus-so_wrap.h"
@@ -2505,7 +2503,7 @@ void DisplayServerWayland::register_wayland_driver()
 #ifdef GLES3_ENABLED
 #ifdef EGL_ENABLED
 
-#include "detect_prime_egl.h"
+#include "platform/linuxbsd/wayland/display_server_wayland.h"
 
 #include "core/core_globals.h"
 #include "core/string/print_string.h"
@@ -2764,7 +2762,7 @@ int DetectPrimeEGL::detect_prime(EGLenum p_platform_enum) {
 // Merged from platform/linuxbsd/wayland/key_mapping_xkb.cpp
 // ============================================================================
 
-#include "key_mapping_xkb.h"
+#include "platform/linuxbsd/wayland/display_server_wayland.h"
 
 #ifdef SOWRAP_ENABLED
 #include "xkbcommon-so_wrap.h"
@@ -3205,7 +3203,7 @@ KeyLocation KeyMappingXKB::get_location(unsigned int p_code) {
 // Merged from platform/linuxbsd/wayland/wayland_thread.cpp
 // ============================================================================
 
-#include "wayland_thread.h"
+#include "platform/linuxbsd/wayland/display_server_wayland.h"
 
 #ifdef WAYLAND_ENABLED
 
@@ -9588,7 +9586,7 @@ bool WaylandThread::window_is_ready(DisplayServerEnums::WindowID p_window_id) co
 // Merged from platform/linuxbsd/wayland/wayland_embedder.cpp
 // ============================================================================
 
-#include "wayland_embedder.h"
+#include "platform/linuxbsd/wayland/display_server_wayland.h"
 
 #ifdef WAYLAND_ENABLED
 

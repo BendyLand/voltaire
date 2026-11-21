@@ -141,3 +141,62 @@ public:
 };
 
 #endif // X11_ENABLED && GLES3_ENABLED
+
+// --- Folded from platform/linuxbsd/x11/gl_manager_x11_egl.h ---
+#if defined(X11_ENABLED) && defined(GLES3_ENABLED)
+
+#include "drivers/egl/egl_manager.h"
+#include "servers/display/display_server_enums.h"
+
+class GLManagerEGL_X11 : public EGLManager
+{
+private:
+	virtual const char* _get_platform_extension_name() const override;
+	virtual EGLenum _get_platform_extension_enum() const override;
+	virtual EGLenum _get_platform_api_enum() const override;
+	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
+	virtual Vector<EGLint> _get_platform_context_attribs() const override;
+
+public:
+	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {}
+
+	GLManagerEGL_X11() {}
+
+	~GLManagerEGL_X11() {}
+};
+
+#endif // X11_ENABLED && GLES3_ENABLED
+
+// --- End platform/linuxbsd/x11/gl_manager_x11_egl.h ---
+
+// --- Folded from platform/linuxbsd/x11/detect_prime_x11.h ---
+#if defined(X11_ENABLED) && defined(GLES3_ENABLED)
+
+class DetectPrimeX11 {
+private:
+	struct Vendor {
+		const char *glxvendor = nullptr;
+		int priority = 0;
+	};
+
+	static constexpr Vendor vendor_map[] = {
+		{ "Advanced Micro Devices, Inc.", 30 },
+		{ "AMD", 30 },
+		{ "NVIDIA Corporation", 30 },
+		{ "X.Org", 30 },
+		{ "Intel Open Source Technology Center", 20 },
+		{ "Intel", 20 },
+		{ "nouveau", 10 },
+		{ "Mesa Project", 0 },
+		{ nullptr, 0 }
+	};
+
+public:
+	static void create_context();
+
+	static int detect_prime();
+};
+
+#endif // X11_ENABLED && GLES3_ENABLED
+
+// --- End platform/linuxbsd/x11/detect_prime_x11.h ---

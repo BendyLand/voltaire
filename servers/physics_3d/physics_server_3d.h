@@ -30,14 +30,630 @@
 /**************************************************************************/
 
 #pragma once
-
-#include "servers/physics_3d/direct_states/physics_direct_body_state_3d.h"
-#include "servers/physics_3d/direct_states/physics_direct_space_state_3d.h"
-#include "servers/physics_3d/physics_server_3d_enums.h"
-#include "servers/physics_3d/physics_server_3d_rendering_server_handler.h"
+// --- Folded from servers/physics_3d/direct_states/physics_direct_body_state_3d.h ---
+// --- Folded from servers/physics_3d/direct_states/physics_direct_space_state_3d.h ---
 #include "servers/physics_3d/physics_server_3d_types.h"
-#include "servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h"
-#include "servers/physics_3d/queries/physics_testmotion_query_result_3d.h"
+// --- Folded from servers/physics_3d/queries/physics_point_query_parameters_3d.h ---
+#include "servers/physics_3d/physics_server_3d_types.h"
+#include "core/types.h"
+
+class PhysicsPointQueryParameters3D : public RefCounted
+{
+	PS3DT::PointParameters parameters;
+
+public:
+	const PS3DT::PointParameters& get_parameters() const { return parameters; }
+
+	void set_position(const Vector3& p_position) { parameters.position = p_position; }
+
+	const Vector3& get_position() const { return parameters.position; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_point_query_parameters_3d.h ---
+// --- Folded from servers/physics_3d/queries/physics_ray_query_parameters_3d.h ---
+#include "servers/physics_3d/physics_server_3d_types.h"
+#include "core/types.h"
+
+class PhysicsRayQueryParameters3D : public RefCounted
+{
+	PS3DT::RayParameters parameters;
+
+public:
+	const PS3DT::RayParameters& get_parameters() const { return parameters; }
+
+	void set_from(const Vector3& p_from) { parameters.from = p_from; }
+
+	const Vector3& get_from() const { return parameters.from; }
+
+	void set_to(const Vector3& p_to) { parameters.to = p_to; }
+
+	const Vector3& get_to() const { return parameters.to; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+
+	void set_hit_from_inside(bool p_enable) { parameters.hit_from_inside = p_enable; }
+
+	bool is_hit_from_inside_enabled() const { return parameters.hit_from_inside; }
+
+	void set_hit_back_faces(bool p_enable) { parameters.hit_back_faces = p_enable; }
+
+	bool is_hit_back_faces_enabled() const { return parameters.hit_back_faces; }
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_ray_query_parameters_3d.h ---
+// --- Folded from servers/physics_3d/queries/physics_shape_query_parameters_3d.h ---
+#include "core/types.h"
+#include "servers/physics_3d/physics_server_3d_types.h"
+
+class Resource;
+
+class PhysicsShapeQueryParameters3D : public RefCounted
+{
+	PS3DT::ShapeParameters parameters;
+
+	Ref<Resource> shape_ref;
+
+protected:
+
+public:
+	const PS3DT::ShapeParameters& get_parameters() const { return parameters; }
+
+	void set_shape(const Ref<Resource>& p_shape_ref);
+	Ref<Resource> get_shape() const;
+
+	void set_shape_rid(const RID& p_shape);
+
+	RID get_shape_rid() const { return parameters.shape_rid; }
+
+	void set_transform(const Transform3D& p_transform) { parameters.transform = p_transform; }
+
+	const Transform3D& get_transform() const { return parameters.transform; }
+
+	void set_motion(const Vector3& p_motion) { parameters.motion = p_motion; }
+
+	const Vector3& get_motion() const { return parameters.motion; }
+
+	void set_margin(real_t p_margin) { parameters.margin = p_margin; }
+
+	real_t get_margin() const { return parameters.margin; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_shape_query_parameters_3d.h ---
+
+class JoltBody3D;
+class JoltSpace3D;
+
+class PhysicsDirectSpaceState3D final
+{
+	JoltSpace3D* space = nullptr;
+
+	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters3D* rp_shape_query);
+
+public:
+	PhysicsDirectSpaceState3D() = default;
+	explicit PhysicsDirectSpaceState3D(JoltSpace3D* p_space);
+
+	bool intersect_ray(
+		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result);
+	int intersect_point(const PS3DT::PointParameters& p_parameters,
+		PS3DT::ShapeResult* r_results, int p_result_max);
+	int intersect_shape(const PS3DT::ShapeParameters& p_parameters,
+		PS3DT::ShapeResult* r_results, int p_result_max);
+	bool cast_motion(const PS3DT::ShapeParameters& p_parameters, real_t& r_closest_safe,
+		real_t& r_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr);
+	bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
+		int p_result_max, int& r_result_count);
+	bool rest_info(
+		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info);
+	Vector3 get_closest_point_to_object_volume(
+		RID p_object, Vector3 p_point) const;
+
+	bool body_test_motion(const JoltBody3D& p_body, const PS3DT::MotionParameters& p_parameters,
+		PS3DT::MotionResult* r_result) const;
+
+	JoltSpace3D& get_space() const { return *space; }
+};
+
+// --- End servers/physics_3d/direct_states/physics_direct_space_state_3d.h ---
+
+class JoltBody3D;
+
+class PhysicsDirectBodyState3D final
+{
+	JoltBody3D* body = nullptr;
+
+public:
+	PhysicsDirectBodyState3D() = default;
+	explicit PhysicsDirectBodyState3D(JoltBody3D* p_body);
+
+	Vector3 get_total_gravity() const;
+	real_t get_total_angular_damp() const;
+	real_t get_total_linear_damp() const;
+
+	Vector3 get_center_of_mass() const;
+	Vector3 get_center_of_mass_local() const;
+	Basis get_principal_inertia_axes() const;
+	real_t get_inverse_mass() const;
+	Vector3 get_inverse_inertia() const;
+	Basis get_inverse_inertia_tensor() const;
+
+	void set_linear_velocity(const Vector3& p_velocity);
+	Vector3 get_linear_velocity() const;
+
+	void set_angular_velocity(const Vector3& p_velocity);
+	Vector3 get_angular_velocity() const;
+
+	void set_transform(const Transform3D& p_transform);
+	Transform3D get_transform() const;
+
+	Vector3 get_velocity_at_local_position(const Vector3& p_position) const;
+
+	void apply_central_impulse(const Vector3& p_impulse);
+	void apply_impulse(const Vector3& p_impulse, const Vector3& p_position = Vector3());
+	void apply_torque_impulse(const Vector3& p_impulse);
+
+	void apply_central_force(const Vector3& p_force);
+	void apply_force(const Vector3& p_force, const Vector3& p_position = Vector3());
+	void apply_torque(const Vector3& p_torque);
+
+	void add_constant_central_force(const Vector3& p_force);
+	void add_constant_force(const Vector3& p_force, const Vector3& p_position = Vector3());
+	void add_constant_torque(const Vector3& p_torque);
+
+	void set_constant_force(const Vector3& p_force);
+	Vector3 get_constant_force() const;
+
+	void set_constant_torque(const Vector3& p_torque);
+	Vector3 get_constant_torque() const;
+
+	void set_sleep_state(bool p_sleep);
+	bool is_sleeping() const;
+
+	void set_collision_layer(uint32_t p_layer);
+	uint32_t get_collision_layer() const;
+
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+
+	int get_contact_count() const;
+
+	Vector3 get_contact_local_position(int p_contact_idx) const;
+	Vector3 get_contact_local_normal(int p_contact_idx) const;
+	Vector3 get_contact_impulse(int p_contact_idx) const;
+	int get_contact_local_shape(int p_contact_idx) const;
+	Vector3 get_contact_local_velocity_at_position(int p_contact_idx) const;
+
+	RID get_contact_collider(int p_contact_idx) const;
+	Vector3 get_contact_collider_position(int p_contact_idx) const;
+	int get_contact_collider_shape(int p_contact_idx) const;
+	Vector3 get_contact_collider_velocity_at_position(int p_contact_idx) const;
+
+	real_t get_step() const;
+	void integrate_forces();
+
+	PhysicsDirectSpaceState3D* get_space_state();
+};
+
+// --- End servers/physics_3d/direct_states/physics_direct_body_state_3d.h ---
+
+// --- Folded from servers/physics_3d/physics_server_3d_enums.h ---
+namespace PhysicsServer3DEnums
+{
+
+/* SHAPE API */
+
+enum ShapeType
+{
+	SHAPE_WORLD_BOUNDARY,  ///< plane:"plane"
+	SHAPE_SEPARATION_RAY,  ///< float:"length"
+	SHAPE_SPHERE,		   ///< float:"radius"
+	SHAPE_BOX,			   ///< vec3:"extents"
+	SHAPE_CAPSULE,		   ///< dict( float:"radius", float:"height"):capsule
+	SHAPE_CYLINDER,		   ///< dict( float:"radius", float:"height"):cylinder
+	SHAPE_CONVEX_POLYGON,  ///< array of planes:"planes"
+	SHAPE_CONCAVE_POLYGON, ///< vector3 array:"triangles" , or Dictionary with "indices" (int array)
+						   ///< and "triangles" (Vector3 array)
+	SHAPE_HEIGHTMAP, ///< dict( int:"width", int:"depth",float:"cell_size", float_array:"heights"
+	SHAPE_SOFT_BODY, ///< Used internally, can't be created from the physics server.
+	SHAPE_CUSTOM,	 ///< Server-Implementation based custom shape, calling shape_create() with this
+					 ///< value will result in an error
+};
+
+/* SPACE API */
+
+enum SpaceParameter
+{
+	SPACE_PARAM_CONTACT_RECYCLE_RADIUS,
+	SPACE_PARAM_CONTACT_MAX_SEPARATION,
+	SPACE_PARAM_CONTACT_MAX_ALLOWED_PENETRATION,
+	SPACE_PARAM_CONTACT_DEFAULT_BIAS,
+	SPACE_PARAM_BODY_LINEAR_VELOCITY_SLEEP_THRESHOLD,
+	SPACE_PARAM_BODY_ANGULAR_VELOCITY_SLEEP_THRESHOLD,
+	SPACE_PARAM_BODY_TIME_TO_SLEEP,
+	SPACE_PARAM_SOLVER_ITERATIONS,
+};
+
+/* AREA API */
+
+enum AreaParameter
+{
+	AREA_PARAM_GRAVITY_OVERRIDE_MODE,
+	AREA_PARAM_GRAVITY,
+	AREA_PARAM_GRAVITY_VECTOR,
+	AREA_PARAM_GRAVITY_IS_POINT,
+	AREA_PARAM_GRAVITY_POINT_UNIT_DISTANCE,
+	AREA_PARAM_LINEAR_DAMP_OVERRIDE_MODE,
+	AREA_PARAM_LINEAR_DAMP,
+	AREA_PARAM_ANGULAR_DAMP_OVERRIDE_MODE,
+	AREA_PARAM_ANGULAR_DAMP,
+	AREA_PARAM_PRIORITY,
+	AREA_PARAM_WIND_FORCE_MAGNITUDE,
+	AREA_PARAM_WIND_SOURCE,
+	AREA_PARAM_WIND_DIRECTION,
+	AREA_PARAM_WIND_ATTENUATION_FACTOR,
+};
+
+enum AreaSpaceOverrideMode
+{
+	AREA_SPACE_OVERRIDE_DISABLED,
+	AREA_SPACE_OVERRIDE_COMBINE,
+	AREA_SPACE_OVERRIDE_COMBINE_REPLACE,
+	AREA_SPACE_OVERRIDE_REPLACE,
+	AREA_SPACE_OVERRIDE_REPLACE_COMBINE
+};
+
+/* BODY API */
+
+enum BodyMode
+{
+	BODY_MODE_STATIC,
+	BODY_MODE_KINEMATIC,
+	BODY_MODE_RIGID,
+	BODY_MODE_RIGID_LINEAR,
+};
+
+enum BodyDampMode
+{
+	BODY_DAMP_MODE_COMBINE,
+	BODY_DAMP_MODE_REPLACE,
+};
+
+enum BodyParameter
+{
+	BODY_PARAM_BOUNCE,
+	BODY_PARAM_FRICTION,
+	BODY_PARAM_MASS, ///< unused for static, always infinite
+	BODY_PARAM_INERTIA,
+	BODY_PARAM_CENTER_OF_MASS,
+	BODY_PARAM_GRAVITY_SCALE,
+	BODY_PARAM_LINEAR_DAMP_MODE,
+	BODY_PARAM_ANGULAR_DAMP_MODE,
+	BODY_PARAM_LINEAR_DAMP,
+	BODY_PARAM_ANGULAR_DAMP,
+	BODY_PARAM_MAX,
+};
+
+enum BodyState
+{
+	BODY_STATE_TRANSFORM,
+	BODY_STATE_LINEAR_VELOCITY,
+	BODY_STATE_ANGULAR_VELOCITY,
+	BODY_STATE_SLEEPING,
+	BODY_STATE_CAN_SLEEP
+};
+
+enum BodyAxis
+{
+	BODY_AXIS_LINEAR_X = 1 << 0,
+	BODY_AXIS_LINEAR_Y = 1 << 1,
+	BODY_AXIS_LINEAR_Z = 1 << 2,
+	BODY_AXIS_ANGULAR_X = 1 << 3,
+	BODY_AXIS_ANGULAR_Y = 1 << 4,
+	BODY_AXIS_ANGULAR_Z = 1 << 5
+};
+
+/* JOINT API */
+
+enum JointType
+{
+	JOINT_TYPE_PIN,
+	JOINT_TYPE_HINGE,
+	JOINT_TYPE_SLIDER,
+	JOINT_TYPE_CONE_TWIST,
+	JOINT_TYPE_6DOF,
+	JOINT_TYPE_MAX,
+
+};
+
+enum PinJointParam
+{
+	PIN_JOINT_BIAS,
+	PIN_JOINT_DAMPING,
+	PIN_JOINT_IMPULSE_CLAMP
+};
+
+enum HingeJointParam
+{
+	HINGE_JOINT_BIAS,
+	HINGE_JOINT_LIMIT_UPPER,
+	HINGE_JOINT_LIMIT_LOWER,
+	HINGE_JOINT_LIMIT_BIAS,
+	HINGE_JOINT_LIMIT_SOFTNESS,
+	HINGE_JOINT_LIMIT_RELAXATION,
+	HINGE_JOINT_MOTOR_TARGET_VELOCITY,
+	HINGE_JOINT_MOTOR_MAX_IMPULSE,
+	HINGE_JOINT_MAX
+};
+
+enum HingeJointFlag
+{
+	HINGE_JOINT_FLAG_USE_LIMIT,
+	HINGE_JOINT_FLAG_ENABLE_MOTOR,
+	HINGE_JOINT_FLAG_MAX
+};
+
+enum SliderJointParam
+{
+	SLIDER_JOINT_LINEAR_LIMIT_UPPER,
+	SLIDER_JOINT_LINEAR_LIMIT_LOWER,
+	SLIDER_JOINT_LINEAR_LIMIT_SOFTNESS,
+	SLIDER_JOINT_LINEAR_LIMIT_RESTITUTION,
+	SLIDER_JOINT_LINEAR_LIMIT_DAMPING,
+	SLIDER_JOINT_LINEAR_MOTION_SOFTNESS,
+	SLIDER_JOINT_LINEAR_MOTION_RESTITUTION,
+	SLIDER_JOINT_LINEAR_MOTION_DAMPING,
+	SLIDER_JOINT_LINEAR_ORTHOGONAL_SOFTNESS,
+	SLIDER_JOINT_LINEAR_ORTHOGONAL_RESTITUTION,
+	SLIDER_JOINT_LINEAR_ORTHOGONAL_DAMPING,
+
+	SLIDER_JOINT_ANGULAR_LIMIT_UPPER,
+	SLIDER_JOINT_ANGULAR_LIMIT_LOWER,
+	SLIDER_JOINT_ANGULAR_LIMIT_SOFTNESS,
+	SLIDER_JOINT_ANGULAR_LIMIT_RESTITUTION,
+	SLIDER_JOINT_ANGULAR_LIMIT_DAMPING,
+	SLIDER_JOINT_ANGULAR_MOTION_SOFTNESS,
+	SLIDER_JOINT_ANGULAR_MOTION_RESTITUTION,
+	SLIDER_JOINT_ANGULAR_MOTION_DAMPING,
+	SLIDER_JOINT_ANGULAR_ORTHOGONAL_SOFTNESS,
+	SLIDER_JOINT_ANGULAR_ORTHOGONAL_RESTITUTION,
+	SLIDER_JOINT_ANGULAR_ORTHOGONAL_DAMPING,
+	SLIDER_JOINT_MAX
+};
+
+enum ConeTwistJointParam
+{
+	CONE_TWIST_JOINT_SWING_SPAN,
+	CONE_TWIST_JOINT_TWIST_SPAN,
+	CONE_TWIST_JOINT_BIAS,
+	CONE_TWIST_JOINT_SOFTNESS,
+	CONE_TWIST_JOINT_RELAXATION,
+	CONE_TWIST_MAX
+};
+
+enum G6DOFJointAxisParam
+{
+	G6DOF_JOINT_LINEAR_LOWER_LIMIT,
+	G6DOF_JOINT_LINEAR_UPPER_LIMIT,
+	G6DOF_JOINT_LINEAR_LIMIT_SOFTNESS,
+	G6DOF_JOINT_LINEAR_RESTITUTION,
+	G6DOF_JOINT_LINEAR_DAMPING,
+	G6DOF_JOINT_LINEAR_MOTOR_TARGET_VELOCITY,
+	G6DOF_JOINT_LINEAR_MOTOR_FORCE_LIMIT,
+	G6DOF_JOINT_LINEAR_SPRING_STIFFNESS,
+	G6DOF_JOINT_LINEAR_SPRING_DAMPING,
+	G6DOF_JOINT_LINEAR_SPRING_EQUILIBRIUM_POINT,
+	G6DOF_JOINT_ANGULAR_LOWER_LIMIT,
+	G6DOF_JOINT_ANGULAR_UPPER_LIMIT,
+	G6DOF_JOINT_ANGULAR_LIMIT_SOFTNESS,
+	G6DOF_JOINT_ANGULAR_DAMPING,
+	G6DOF_JOINT_ANGULAR_RESTITUTION,
+	G6DOF_JOINT_ANGULAR_FORCE_LIMIT,
+	G6DOF_JOINT_ANGULAR_ERP,
+	G6DOF_JOINT_ANGULAR_MOTOR_TARGET_VELOCITY,
+	G6DOF_JOINT_ANGULAR_MOTOR_FORCE_LIMIT,
+	G6DOF_JOINT_ANGULAR_SPRING_STIFFNESS,
+	G6DOF_JOINT_ANGULAR_SPRING_DAMPING,
+	G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT,
+	G6DOF_JOINT_LINEAR_DRIVE_FORCE_LIMIT,
+	G6DOF_JOINT_ANGULAR_DRIVE_TORQUE_LIMIT,
+	G6DOF_JOINT_MAX
+};
+
+enum G6DOFJointAxisFlag
+{
+	G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT,
+	G6DOF_JOINT_FLAG_ENABLE_ANGULAR_LIMIT,
+	G6DOF_JOINT_FLAG_ENABLE_ANGULAR_SPRING,
+	G6DOF_JOINT_FLAG_ENABLE_LINEAR_SPRING,
+	G6DOF_JOINT_FLAG_ENABLE_ANGULAR_MOTOR,
+#ifndef DISABLE_DEPRECATED
+	G6DOF_JOINT_FLAG_ENABLE_MOTOR = G6DOF_JOINT_FLAG_ENABLE_ANGULAR_MOTOR,
+#endif // DISABLE_DEPRECATED
+	G6DOF_JOINT_FLAG_ENABLE_LINEAR_MOTOR,
+	G6DOF_JOINT_FLAG_MAX
+};
+
+/* QUERY API */
+
+enum AreaBodyStatus
+{
+	AREA_BODY_ADDED,
+	AREA_BODY_REMOVED
+};
+
+enum ProcessInfo
+{
+	INFO_ACTIVE_OBJECTS,
+	INFO_COLLISION_PAIRS,
+	INFO_ISLAND_COUNT
+};
+
+#ifndef DISABLE_DEPRECATED
+// Graveyard.
+#endif
+
+} // namespace PhysicsServer3DEnums
+
+// Alias to make it easier to use.
+#define PS3DE PhysicsServer3DEnums
+
+
+
+// --- End servers/physics_3d/physics_server_3d_enums.h ---
+// --- Folded from servers/physics_3d/physics_server_3d_rendering_server_handler.h ---
+#include "core/math/aabb.h"
+#include "core/math/vector3.h"
+#include "core/templates/rid.h"
+#include "core/templates/vector.h"
+
+class PhysicsServer3DRenderingServerHandler final
+{
+	RID mesh;
+	int surface = 0;
+	Vector<uint8_t> buffer;
+	uint32_t stride = 0;
+	uint32_t normal_stride = 0;
+	uint32_t offset_vertices = 0;
+	uint32_t offset_normal = 0;
+
+	uint8_t* write_buffer = nullptr;
+
+public:
+	PhysicsServer3DRenderingServerHandler() = default;
+	~PhysicsServer3DRenderingServerHandler() = default;
+
+	bool is_ready(RID p_mesh_rid) const { return mesh.is_valid() && mesh == p_mesh_rid; }
+
+	void prepare(RID p_mesh_rid, int p_surface);
+	void clear();
+	void open();
+	void close();
+	void commit_changes();
+
+	void set_vertex(int p_vertex_id, const Vector3& p_vertex);
+	void set_normal(int p_vertex_id, const Vector3& p_normal);
+	void set_aabb(const AABB& p_aabb);
+};
+
+// --- End servers/physics_3d/physics_server_3d_rendering_server_handler.h ---
+#include "servers/physics_3d/physics_server_3d_types.h"
+// --- Folded from servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h ---
+#include "core/types.h"
+#include "servers/physics_3d/physics_server_3d_types.h"
+
+class PhysicsTestMotionParameters3D : public RefCounted
+{
+	PS3DT::MotionParameters parameters;
+
+public:
+	const PS3DT::MotionParameters& get_parameters() const { return parameters; }
+
+	const Transform3D& get_from() const { return parameters.from; }
+
+	void set_from(const Transform3D& p_from) { parameters.from = p_from; }
+
+	const Vector3& get_motion() const { return parameters.motion; }
+
+	void set_motion(const Vector3& p_motion) { parameters.motion = p_motion; }
+
+	real_t get_margin() const { return parameters.margin; }
+
+	void set_margin(real_t p_margin) { parameters.margin = p_margin; }
+
+	int get_max_collisions() const { return parameters.max_collisions; }
+
+	void set_max_collisions(int p_max_collisions) { parameters.max_collisions = p_max_collisions; }
+
+	bool is_collide_separation_ray_enabled() const { return parameters.collide_separation_ray; }
+
+	void set_collide_separation_ray_enabled(bool p_enabled)
+	{
+		parameters.collide_separation_ray = p_enabled;
+	}
+
+	bool is_recovery_as_collision_enabled() const { return parameters.recovery_as_collision; }
+
+	void set_recovery_as_collision_enabled(bool p_enabled)
+	{
+		parameters.recovery_as_collision = p_enabled;
+	}
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h ---
+// --- Folded from servers/physics_3d/queries/physics_testmotion_query_result_3d.h ---
+#include "core/types.h"
+#include "servers/physics_3d/physics_server_3d_types.h"
+
+class PhysicsTestMotionResult3D : public RefCounted
+{
+	PS3DT::MotionResult result;
+
+protected:
+
+public:
+	PS3DT::MotionResult* get_result_ptr() { return &result; }
+
+	Vector3 get_travel() const;
+	Vector3 get_remainder() const;
+	real_t get_collision_safe_fraction() const;
+	real_t get_collision_unsafe_fraction() const;
+
+	int get_collision_count() const;
+
+	Vector3 get_collision_point(int p_collision_index = 0) const;
+	Vector3 get_collision_normal(int p_collision_index = 0) const;
+	Vector3 get_collider_velocity(int p_collision_index = 0) const;
+	RID get_collider_rid(int p_collision_index = 0) const;
+	int get_collider_shape(int p_collision_index = 0) const;
+	int get_collision_local_shape(int p_collision_index = 0) const;
+	real_t get_collision_depth(int p_collision_index = 0) const;
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_testmotion_query_result_3d.h ---
 
 class JoltPhysicsServer3D;
 class PhysicsDirectSpaceState3D;
@@ -254,3 +870,15 @@ public:
 	PhysicsServer3D& operator=(const PhysicsServer3D&) = delete;
 	~PhysicsServer3D() = delete;
 };
+
+// --- Folded from servers/physics_3d/physics_server_3d_constants.h ---
+namespace PhysicsServer3DConstants {
+
+constexpr int MAX_CONTACTS_REPORTED_3D_MAX = 4096;
+
+} // namespace PhysicsServer3DConstants
+
+// Alias to make it easier to use.
+#define PS3DC PhysicsServer3DConstants
+
+// --- End servers/physics_3d/physics_server_3d_constants.h ---

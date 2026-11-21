@@ -402,4 +402,258 @@ public:
 	virtual void initialize() {}
 };
 
+// --- Folded from editor/export/editor_export_platform_pc.h ---
 
+
+class ImageTexture;
+
+class EditorExportPlatformPC : public EditorExportPlatform
+{
+private:
+	Ref<ImageTexture> logo;
+	String name;
+	String os_name;
+
+	int chmod_flags = -1;
+
+public:
+	virtual String get_name() const override;
+	virtual void get_preset_features(
+		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const override;
+	virtual void get_export_options(List<ExportOption>* r_options) const override;
+	virtual String get_export_option_warning(
+		const EditorExportPreset* p_preset, const String& p_name) const override;
+
+	virtual String get_os_name() const override;
+	virtual Ref<Texture2D> get_logo() const override;
+
+	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
+		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
+	virtual bool has_valid_project_configuration(
+		const Ref<EditorExportPreset>& p_preset, String& r_error) const override;
+	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
+		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
+	virtual Error sign_shared_object(
+		const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path);
+	virtual String get_template_file_name(const String& p_target, const String& p_arch) const = 0;
+
+	virtual Error prepare_template(const Ref<EditorExportPreset>& p_preset, bool p_debug,
+		const String& p_path, uint32_t p_flags);
+
+	virtual Error modify_template(const Ref<EditorExportPreset>& p_preset, bool p_debug,
+		const String& p_path, uint32_t p_flags)
+	{
+		return OK;
+	}
+
+	virtual Error export_project_data(const Ref<EditorExportPreset>& p_preset, bool p_debug,
+		const String& p_path, uint32_t p_flags);
+
+	void set_name(const String& p_name);
+	void set_os_name(const String& p_name);
+
+	void set_logo(const Ref<Texture2D>& p_logo);
+
+	void add_platform_feature(const String& p_feature);
+	virtual void get_platform_features(List<String>* r_features) const override;
+	virtual void resolve_platform_feature_priorities(
+		const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features) override;
+
+	int get_chmod_flags() const;
+	void set_chmod_flags(int p_flags);
+
+	virtual Error fixup_embedded_pck(
+		const String& p_path, int64_t p_embedded_start, int64_t p_embedded_size)
+	{
+		return Error::OK;
+	}
+};
+
+
+
+// --- End editor/export/editor_export_platform_pc.h ---
+
+// --- Folded from editor/export/editor_export_plugin.h ---
+#include "core/os/shared_object.h"
+
+#include "scene/main/node.h"
+
+class EditorExportPlugin : public RefCounted
+{
+	friend class EditorExport;
+	friend class EditorExportPlatform;
+	friend class EditorExportPreset;
+
+	String export_base_path;
+	Ref<EditorExportPreset> export_preset;
+
+	Vector<SharedObject> shared_objects;
+
+	struct ExtraFile
+	{
+		String path;
+		Vector<uint8_t> data;
+		bool remap = false;
+	};
+
+	Vector<ExtraFile> extra_files;
+	bool skipped = false;
+
+	Vector<String> apple_embedded_platform_frameworks;
+	Vector<String> apple_embedded_platform_embedded_frameworks;
+	Vector<String> apple_embedded_platform_project_static_libs;
+	String apple_embedded_platform_plist_content;
+	String apple_embedded_platform_linker_flags;
+	Vector<String> apple_embedded_platform_bundle_files;
+	String apple_embedded_platform_cpp_code;
+
+	Vector<String> macos_plugin_files;
+
+	_FORCE_INLINE_ void _clear()
+	{
+		shared_objects.clear();
+		extra_files.clear();
+		skipped = false;
+	}
+
+	_FORCE_INLINE_ void _export_end_clear()
+	{
+		apple_embedded_platform_frameworks.clear();
+		apple_embedded_platform_embedded_frameworks.clear();
+		apple_embedded_platform_bundle_files.clear();
+		apple_embedded_platform_plist_content = "";
+		apple_embedded_platform_linker_flags = "";
+		apple_embedded_platform_cpp_code = "";
+		macos_plugin_files.clear();
+	}
+
+	// Export
+	void _export_file_script(
+		const String& p_path, const String& p_type, const Vector<String>& p_features);
+	void _export_begin_script(
+		const Vector<String>& p_features, bool p_debug, const String& p_path, int p_flags);
+	void _export_end_script();
+
+	String _has_valid_export_configuration(const Ref<EditorExportPlatform>& p_export_platform,
+		const Ref<EditorExportPreset>& p_preset);
+
+protected:
+	void set_export_base_path(const String& p_export_base_path);
+	const String& get_export_base_path() const;
+	void set_export_preset(const Ref<EditorExportPreset>& p_preset);
+	Ref<EditorExportPreset> get_export_preset() const;
+	Ref<EditorExportPlatform> get_export_platform() const;
+
+	void add_file(const String& p_path, const Vector<uint8_t>& p_file, bool p_remap);
+	void add_shared_object(
+		const String& p_path, const Vector<String>& tags, const String& p_target = String());
+	void _add_shared_object(const SharedObject& p_shared_object);
+
+	void add_apple_embedded_platform_framework(const String& p_path);
+	void add_apple_embedded_platform_embedded_framework(const String& p_path);
+	void add_apple_embedded_platform_project_static_lib(const String& p_path);
+	void add_apple_embedded_platform_plist_content(const String& p_plist_content);
+	void add_apple_embedded_platform_linker_flags(const String& p_flags);
+	void add_apple_embedded_platform_bundle_file(const String& p_path);
+	void add_apple_embedded_platform_cpp_code(const String& p_code);
+	void add_macos_plugin_file(const String& p_path);
+
+	void skip();
+
+	virtual void _export_file(
+		const String& p_path, const String& p_type, const HashSet<String>& p_features);
+	virtual void _export_begin(
+		const HashSet<String>& p_features, bool p_debug, const String& p_path, int p_flags);
+	virtual void _export_end();
+	virtual void _end_generate_apple_embedded_project(
+		const String& p_path, bool p_will_build_archive);
+
+	virtual bool _begin_customize_resources(const Ref<EditorExportPlatform>& p_platform,
+		const Vector<String>& p_features);
+	virtual Ref<Resource> _customize_resource(const Ref<Resource>& p_resource,
+		const String& p_path);
+
+	virtual bool _begin_customize_scenes(const Ref<EditorExportPlatform>& p_platform,
+		const Vector<String>& p_features);
+	virtual Node* _customize_scene(Node* p_root, const String& p_path);
+
+	virtual uint64_t _get_customization_configuration_hash() const;
+
+	virtual void _end_customize_scenes();
+	virtual void _end_customize_resources();
+
+	virtual PackedStringArray _get_export_features(
+		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
+	virtual void _get_export_options(const Ref<EditorExportPlatform>& p_export_platform,
+		List<EditorExportPlatform::ExportOption>* r_options) const;
+	virtual bool _should_update_export_options(
+		const Ref<EditorExportPlatform>& p_export_platform) const;
+	virtual bool _get_export_option_visibility(
+		const Ref<EditorExportPlatform>& p_export_platform, const String& p_option_name) const;
+	virtual String _get_export_option_warning(
+		const Ref<EditorExportPlatform>& p_export_platform, const String& p_option_name) const;
+
+public:
+	virtual String get_name() const;
+
+	virtual bool supports_platform(const Ref<EditorExportPlatform>& p_export_platform) const;
+	PackedStringArray get_export_features(
+		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
+
+	void end_generate_apple_embedded_project(const String& p_path, bool p_will_build_archive);
+
+	virtual PackedStringArray get_android_dependencies(
+		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
+	virtual PackedStringArray get_android_dependencies_maven_repos(
+		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
+	virtual PackedStringArray get_android_libraries(
+		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
+	virtual String get_android_manifest_activity_element_contents(
+		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
+	virtual String get_android_manifest_application_element_contents(
+		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
+	virtual String get_android_manifest_element_contents(
+		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
+	virtual PackedByteArray update_android_prebuilt_manifest(
+		const Ref<EditorExportPlatform>& p_export_platform,
+		const PackedByteArray& p_manifest_data) const;
+
+	Vector<String> get_apple_embedded_platform_frameworks() const;
+	Vector<String> get_apple_embedded_platform_embedded_frameworks() const;
+	Vector<String> get_apple_embedded_platform_project_static_libs() const;
+	String get_apple_embedded_platform_plist_content() const;
+	String get_apple_embedded_platform_linker_flags() const;
+	Vector<String> get_apple_embedded_platform_bundle_files() const;
+	String get_apple_embedded_platform_cpp_code() const;
+	const Vector<String>& get_macos_plugin_files() const;
+};
+
+class DedicatedServerExportPlugin final : public EditorExportPlugin
+{
+private:
+	EditorExportPreset::FileExportMode current_export_mode =
+		EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
+
+	EditorExportPreset::FileExportMode _get_export_mode_for_path(const String& p_path);
+
+protected:
+	String get_name() const override { return "DedicatedServer"; }
+
+	PackedStringArray _get_export_features(
+		const Ref<EditorExportPlatform>& p_platform, bool p_debug) const override;
+	uint64_t _get_customization_configuration_hash() const override;
+
+	bool _begin_customize_scenes(
+		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
+	bool _begin_customize_resources(
+		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
+
+	Node* _customize_scene(Node* p_root, const String& p_path) override;
+	Ref<Resource> _customize_resource(
+		const Ref<Resource>& p_resource, const String& p_path) override;
+
+	void _end_customize_scenes() override;
+	void _end_customize_resources() override;
+};
+
+// --- End editor/export/editor_export_plugin.h ---

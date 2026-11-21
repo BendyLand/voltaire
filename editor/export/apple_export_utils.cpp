@@ -2443,7 +2443,7 @@ uint64_t PluginConfigAppleEmbedded::get_plugin_modification_time(
 #include "editor/editor_string_names.h"
 #include "editor/export/editor_export.h"
 #include "editor/themes/editor_scale.h"
-#include "editor_export_platform_apple_embedded.h"
+#include "editor/export/apple_export_utils.h"
 #include "main/main.h"
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For mono.
 #include "modules/svg/image_loader_svg.h"

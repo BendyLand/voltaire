@@ -44,12 +44,12 @@
 #endif
 
 #ifdef X11_ENABLED
-#include "x11/detect_prime_x11.h"
+#include "platform/linuxbsd/x11/gl_manager_x11.h"
 #include "x11/display_server_x11.h"
 #endif
 
 #ifdef WAYLAND_ENABLED
-#include "wayland/detect_prime_egl.h"
+#include "platform/linuxbsd/wayland/display_server_wayland.h"
 #include "wayland/display_server_wayland.h"
 #endif
 
@@ -1695,7 +1695,7 @@ void OS::finalize()
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/version.h"
-#include "crash_handler_linuxbsd.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 #include "main/main.h"
 
 #ifndef DEBUG_ENABLED
@@ -1814,7 +1814,7 @@ void CrashHandler::initialize() {}
 // Merged from platform/linuxbsd/freedesktop_portal_desktop.cpp
 // ============================================================================
 
-#include "freedesktop_portal_desktop.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 
 #ifdef DBUS_ENABLED
 
@@ -2416,7 +2416,7 @@ void FreeDesktopPortalDesktop::_thread_monitor(void* p_userdata) {}
 // Merged from platform/linuxbsd/freedesktop_screensaver.cpp
 // ============================================================================
 
-#include "freedesktop_screensaver.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 
 #ifdef DBUS_ENABLED
 
@@ -2538,7 +2538,7 @@ void FreeDesktopScreenSaver::inhibit() {}
 // Merged from platform/linuxbsd/freedesktop_at_spi_monitor.cpp
 // ============================================================================
 
-#include "freedesktop_at_spi_monitor.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 
 #ifdef DBUS_ENABLED
 

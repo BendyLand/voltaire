@@ -34,7 +34,6 @@
 #include "../../openxr_api.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
-#include "drivers/vulkan/vulkan_hooks.h"
 
 // Always include this as late as possible.
 #include "../../openxr_platform_inc.h" // IWYU pragma: keep.

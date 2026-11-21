@@ -36,7 +36,7 @@
 #include "core/templates/rb_set.h"
 #include "movie_writer.h"
 #include "scene/main/window.h"
-#include "servers/audio/audio_driver_dummy.h"
+#include "servers/audio/audio_server.h"
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/renderer.h"
 
@@ -179,7 +179,7 @@ void MovieWriter::end() {}
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "movie_writer_pngwav.h"
+#include "servers/movie_writer/movie_writer.h"
 
 uint32_t MovieWriterPNGWAV::get_audio_mix_rate() const { return mix_rate; }
 

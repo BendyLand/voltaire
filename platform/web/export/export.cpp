@@ -32,7 +32,149 @@
 #include "editor/export/editor_export.h"
 #include "editor/settings/editor_settings.h"
 #include "export.h"
-#include "export_plugin.h"
+// --- Inlined from platform/web/export/export_plugin.h ---
+#include "editor/editor_string_names.h"
+#include "editor/export/editor_export_platform.h"
+// --- Folded from platform/web/export/editor_http_server.h ---
+#include "core/io/socket_server.h"
+#include "core/io/stream_peer_tls.h"
+
+class EditorHTTPServer : public RefCounted
+{
+private:
+	Ref<SocketServer> server;
+	HashMap<String, String> mimes;
+	Ref<StreamPeerSocket> tcp;
+	Ref<StreamPeerTLS> tls;
+	Ref<StreamPeer> peer;
+	Ref<CryptoKey> key;
+	Ref<X509Certificate> cert;
+	bool use_tls = false;
+	uint64_t time = 0;
+	uint8_t req_buf[4096];
+	int req_pos = 0;
+
+	SafeFlag server_quit;
+	Mutex server_lock;
+	Thread server_thread;
+
+	void _clear_client();
+	void _set_internal_certs(Ref<Crypto> p_crypto);
+	void _send_response();
+	void _poll();
+
+	static void _server_thread_poll(void* data);
+
+public:
+	EditorHTTPServer();
+	~EditorHTTPServer();
+
+	void stop();
+	Error listen(
+		int p_port, IPAddress p_address, bool p_use_tls, String p_tls_key, String p_tls_cert);
+	bool is_listening() const;
+};
+
+
+
+// --- End platform/web/export/editor_http_server.h ---
+#include "main/splash.gen.h"
+
+class ImageTexture;
+
+class EditorExportPlatformWeb : public EditorExportPlatform
+{
+	enum RemoteDebugState
+	{
+		REMOTE_DEBUG_STATE_UNAVAILABLE,
+		REMOTE_DEBUG_STATE_AVAILABLE,
+		REMOTE_DEBUG_STATE_SERVING,
+	};
+
+	Ref<ImageTexture> logo;
+	Ref<ImageTexture> run_icon;
+	Ref<ImageTexture> stop_icon;
+	Ref<ImageTexture> restart_icon;
+	RemoteDebugState remote_debug_state = REMOTE_DEBUG_STATE_UNAVAILABLE;
+
+	Ref<EditorHTTPServer> server;
+
+	String _get_template_name(bool p_extension, bool p_thread_support, bool p_debug) const
+	{
+		String name = "web";
+		if (p_extension) {
+			name += "_dlink";
+		}
+		if (!p_thread_support) {
+			name += "_nothreads";
+		}
+		if (p_debug) {
+			name += "_debug.zip";
+		}
+		else {
+			name += "_release.zip";
+		}
+		return name;
+	}
+
+	Error _extract_template(
+		const String& p_template, const String& p_dir, const String& p_name, bool pwa);
+	void _replace_strings(const HashMap<String, String>& p_replaces, Vector<uint8_t>& r_template);
+	Error _build_pwa(const Ref<EditorExportPreset>& p_preset, const String p_path,
+		const Vector<SharedObject>& p_shared_objects);
+	Error _write_or_error(const uint8_t* p_content, int p_len, String p_path);
+
+	Error _export_project(const Ref<EditorExportPreset>& p_preset, int p_debug_flags);
+	Error _launch_browser(const String& p_bind_host, uint16_t p_bind_port, bool p_use_tls);
+	Error _start_server(const String& p_bind_host, uint16_t p_bind_port, bool p_use_tls);
+	Error _stop_server();
+
+public:
+	virtual void get_preset_features(
+		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const override;
+
+	virtual void get_export_options(List<ExportOption>* r_options) const override;
+	virtual bool get_export_option_visibility(
+		const EditorExportPreset* p_preset, const String& p_option) const override;
+
+	virtual String get_name() const override;
+	virtual String get_os_name() const override;
+	virtual Ref<Texture2D> get_logo() const override;
+
+	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
+		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
+	virtual bool has_valid_project_configuration(
+		const Ref<EditorExportPreset>& p_preset, String& r_error) const override;
+	virtual List<String> get_binary_extensions(
+		const Ref<EditorExportPreset>& p_preset) const override;
+	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
+		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
+
+	virtual bool poll_export() override;
+	virtual int get_options_count() const override;
+	virtual String get_option_label(int p_index) const override;
+	virtual String get_option_tooltip(int p_index) const override;
+	virtual Error run(
+		const Ref<EditorExportPreset>& p_preset, int p_option, uint32_t p_debug_flags) override;
+	virtual Ref<Texture2D> get_run_icon() const override;
+
+	virtual void get_platform_features(List<String>* r_features) const override
+	{
+		r_features->push_back("web");
+		r_features->push_back(get_os_name().to_lower());
+	}
+
+	virtual void resolve_platform_feature_priorities(
+		const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features) override
+	{
+	}
+
+	String get_debug_protocol() const override { return "ws://"; }
+
+	~EditorExportPlatformWeb() = default;
+};
+
+// --- End platform/web/export/export_plugin.h ---
 
 void register_web_exporter_types() {}
 
@@ -44,7 +186,6 @@ void register_web_exporter_types() {}
 // Merged from platform/web/export/editor_http_server.cpp
 // ============================================================================
 
-#include "editor_http_server.h"
 
 #include "core/io/file_access.h"
 #include "core/os/os.h"
@@ -287,7 +428,7 @@ EditorHTTPServer::~EditorHTTPServer() {
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
-#include "export_plugin.h"
+
 #include "logo_svg.gen.h"
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For mono.
 #include "modules/svg/image_loader_svg.h"

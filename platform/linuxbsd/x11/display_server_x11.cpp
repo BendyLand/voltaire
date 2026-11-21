@@ -48,7 +48,46 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/display/native_menu.h"
 #include "servers/rendering/dummy/rasterizer_dummy.h"
-#include "x11/key_mapping_x11.h"
+// --- Inlined from platform/linuxbsd/x11/key_mapping_x11.h ---
+#include "core/os/keyboard.h"
+#include "core/templates/hash_map.h"
+
+#include <X11/XF86keysym.h>
+#include <X11/Xlib.h>
+
+#define XK_MISCELLANY
+#define XK_LATIN1
+#define XK_XKB_KEYS
+#include <X11/keysymdef.h>
+
+class KeyMappingX11 {
+	struct HashMapHasherKeys {
+		static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
+		static _FORCE_INLINE_ uint32_t hash(const char32_t p_uchar) { return hash_fmix32(p_uchar); }
+		static _FORCE_INLINE_ uint32_t hash(const unsigned p_key) { return hash_fmix32(p_key); }
+		static _FORCE_INLINE_ uint32_t hash(const KeySym p_key) { return hash_fmix32(p_key); }
+	};
+
+	static inline HashMap<KeySym, Key, HashMapHasherKeys> xkeysym_map;
+	static inline HashMap<unsigned int, Key, HashMapHasherKeys> scancode_map;
+	static inline HashMap<Key, unsigned int, HashMapHasherKeys> scancode_map_inv;
+	static inline HashMap<KeySym, char32_t, HashMapHasherKeys> xkeysym_unicode_map;
+	static inline HashMap<unsigned int, KeyLocation, HashMapHasherKeys> location_map;
+
+	KeyMappingX11() {}
+
+public:
+	static void initialize();
+
+	static bool is_sym_numpad(KeySym p_keysym);
+	static Key get_keycode(KeySym p_keysym);
+	static unsigned int get_xlibcode(Key p_keysym);
+	static Key get_scancode(unsigned int p_code);
+	static char32_t get_unicode_from_keysym(KeySym p_keysym);
+	static KeyLocation get_location(unsigned int p_code);
+};
+
+// --- End platform/linuxbsd/x11/key_mapping_x11.h ---
 
 #ifdef SOWRAP_ENABLED
 #include "x11/dynwrappers/xext-so_wrap.h"
@@ -73,15 +112,13 @@
 
 #ifdef GLES3_ENABLED
 #include "drivers/gles3/rasterizer_gles3.h"
-#include "x11/detect_prime_x11.h"
+#include "platform/linuxbsd/x11/gl_manager_x11.h"
 #include "x11/gl_manager_x11.h"
-#include "x11/gl_manager_x11_egl.h"
+#include "platform/linuxbsd/x11/gl_manager_x11.h"
 #endif
 
 #ifdef DBUS_ENABLED
-#include "freedesktop_at_spi_monitor.h"
-#include "freedesktop_portal_desktop.h"
-#include "freedesktop_screensaver.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 
 #ifdef SOWRAP_ENABLED
 #include "dbus-so_wrap.h"
@@ -6701,7 +6738,6 @@ void DisplayServerX11::process_events()
 // Merged from platform/linuxbsd/x11/key_mapping_x11.cpp
 // ============================================================================
 
-#include "key_mapping_x11.h"
 
 void KeyMappingX11::initialize() {
 	// X11 Keysym to Godot Key map.

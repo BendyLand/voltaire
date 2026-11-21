@@ -1060,7 +1060,7 @@ PackedStringArray CollisionPolygon2D::get_configuration_warnings() const {
 #include "scene/2d/physics/collision_object_2d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/world_2d.h"
-#include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 Vector2 RayCast2D::get_target_position() const { return target_position; }
 
@@ -1191,7 +1191,6 @@ void RayCast2D::_update_raycast_state() {}
 #include "scene/2d/physics/collision_object_2d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/world_2d.h"
-#include "servers/physics_2d/direct_states/physics_direct_space_state_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #include "shape_cast_2d.h"
 

@@ -967,3 +967,351 @@ public:
 	static void accessibility_update_set_foreground_color(const RID& p_id, const Color& p_color);
 #endif // DISABLE_DEPRECATED
 };
+
+// --- Folded from servers/display/display_server_headless.h ---
+
+
+struct InputEvent;
+
+class DisplayServerHeadless : public DisplayServerDriver
+{
+private:
+	friend class DisplayServer;
+
+	static Vector<String> get_rendering_drivers_func()
+	{
+		Vector<String> drivers;
+		drivers.push_back("dummy");
+		return drivers;
+	}
+
+	static DisplayServerDriver* create_func(const String& p_rendering_driver,
+		DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
+		uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
+		DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error);
+
+	static void _dispatch_input_events(const InputEvent& p_event);
+	void _dispatch_input_event(const InputEvent& p_event);
+
+public:
+	bool has_feature(DisplayServerEnums::Feature p_feature) const override { return false; }
+
+	String get_name() const override { return "headless"; }
+
+	// Stub implementations to prevent warnings from being printed for methods
+	// that don't affect the project's behavior in headless mode.
+
+	int get_screen_count() const override { return 0; }
+
+	int get_primary_screen() const override { return 0; }
+
+	Point2i screen_get_position(
+		int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override
+	{
+		return Point2i();
+	}
+
+	Size2i screen_get_size(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override
+	{
+		return Size2i();
+	}
+
+	Rect2i screen_get_usable_rect(
+		int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override
+	{
+		return Rect2i();
+	}
+
+	int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override
+	{
+		return 96; /* 0 might cause issues */
+	}
+
+	float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override
+	{
+		return 1;
+	}
+
+	float screen_get_max_scale() const override { return 1; }
+
+	float screen_get_refresh_rate(
+		int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override
+	{
+		return SCREEN_REFRESH_RATE_FALLBACK;
+	}
+
+	void screen_set_orientation(DisplayServerEnums::ScreenOrientation p_orientation,
+		int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) override
+	{
+	}
+
+	void screen_set_keep_on(bool p_enable) override {}
+
+	Vector<DisplayServerEnums::WindowID> get_window_list() const override
+	{
+		return Vector<DisplayServerEnums::WindowID>();
+	}
+
+	DisplayServerEnums::WindowID create_sub_window(DisplayServerEnums::WindowMode p_mode,
+		DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags,
+		const Rect2i& p_rect = Rect2i(), bool p_exclusive = false,
+		DisplayServerEnums::WindowID p_transient_parent =
+			DisplayServerEnums::INVALID_WINDOW_ID) override
+	{
+		return 0;
+	}
+
+	void show_window(DisplayServerEnums::WindowID p_id) override {}
+
+	void delete_sub_window(DisplayServerEnums::WindowID p_id) override {}
+
+	DisplayServerEnums::WindowID get_window_at_screen_position(
+		const Point2i& p_position) const override
+	{
+		return 0;
+	}
+
+	void window_set_title(const String& p_title,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	void window_set_mouse_passthrough(const Vector<Vector2>& p_region,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	int window_get_current_screen(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return DisplayServerEnums::INVALID_SCREEN;
+	}
+
+	void window_set_current_screen(int p_screen,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	Point2i window_get_position(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return Point2i();
+	}
+
+	Point2i window_get_position_with_decorations(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return Point2i();
+	}
+
+	void window_set_position(const Point2i& p_position,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	void window_set_transient(
+		DisplayServerEnums::WindowID p_window, DisplayServerEnums::WindowID p_parent) override
+	{
+	}
+
+	void window_set_max_size(const Size2i p_size,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	Size2i window_get_max_size(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return Size2i();
+	}
+
+	void window_set_min_size(const Size2i p_size,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	Size2i window_get_min_size(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return Size2i();
+	}
+
+	void window_set_size(const Size2i p_size,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	Size2i window_get_size(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return Size2i();
+	}
+
+	Size2i window_get_size_with_decorations(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return Size2i();
+	}
+
+	void window_set_mode(DisplayServerEnums::WindowMode p_mode,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	DisplayServerEnums::WindowMode window_get_mode(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return DisplayServerEnums::WINDOW_MODE_MINIMIZED;
+	}
+
+	void window_set_vsync_mode(DisplayServerEnums::VSyncMode p_vsync_mode,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	DisplayServerEnums::VSyncMode window_get_vsync_mode(
+		DisplayServerEnums::WindowID p_window) const override
+	{
+		return DisplayServerEnums::VSyncMode::VSYNC_ENABLED;
+	}
+
+	bool window_is_maximize_allowed(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return false;
+	}
+
+	void window_set_flag(DisplayServerEnums::WindowFlags p_flag, bool p_enabled,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	bool window_get_flag(DisplayServerEnums::WindowFlags p_flag,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return false;
+	}
+
+	void window_request_attention(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	void window_set_taskbar_progress_value(float p_value,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	void window_set_taskbar_progress_state(DisplayServerEnums::ProgressState p_state,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	void window_move_to_foreground(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	bool window_is_focused(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return true;
+	}
+
+	bool window_can_draw(
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return false;
+	}
+
+	bool can_any_window_draw() const override { return false; }
+
+	void window_set_ime_active(const bool p_active,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	void window_set_ime_position(const Point2i& p_pos,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override
+	{
+	}
+
+	int64_t window_get_native_handle(DisplayServerEnums::HandleType p_handle_type,
+		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override
+	{
+		return 0;
+	}
+
+	void process_events() override;
+
+	void set_native_icon(const String& p_filename) override {}
+
+	void set_icon(const Ref<Image>& p_icon) override {}
+
+	bool tts_is_speaking() const override { return false; }
+
+	bool tts_is_paused() const override { return false; }
+
+	void tts_speak(const String& p_text, const String& p_voice, int p_volume = 50,
+		float p_pitch = 1.0f, float p_rate = 1.0f, int64_t p_utterance_id = 0,
+		bool p_interrupt = false) override
+	{
+	}
+
+	void tts_pause() override {}
+
+	void tts_resume() override {}
+
+	void tts_stop() override {}
+
+	void mouse_set_mode(DisplayServerEnums::MouseMode p_mode) override {}
+
+	void mouse_set_mode_override(DisplayServerEnums::MouseMode p_mode) override {}
+
+	void mouse_set_mode_override_enabled(bool p_override_enabled) override {}
+
+	Point2i mouse_get_position() const override { return Point2i(); }
+
+	void clipboard_set(const String& p_text) override {}
+
+	void clipboard_set_primary(const String& p_text) override {}
+
+	void virtual_keyboard_show(const String& p_existing_text, const Rect2& p_screen_rect = Rect2(),
+		DisplayServerEnums::VirtualKeyboardType p_type = DisplayServerEnums::KEYBOARD_TYPE_DEFAULT,
+		int p_max_length = -1, int p_cursor_start = -1, int p_cursor_end = -1) override
+	{
+	}
+
+	void virtual_keyboard_hide() override {}
+
+	void cursor_set_shape(DisplayServerEnums::CursorShape p_shape) override {}
+
+	void cursor_set_custom_image(const Ref<Resource>& p_cursor,
+		DisplayServerEnums::CursorShape p_shape = DisplayServerEnums::CURSOR_ARROW,
+		const Vector2& p_hotspot = Vector2()) override
+	{
+	}
+
+	void release_rendering_thread() override {}
+
+	void swap_buffers() override {}
+
+	void status_indicator_set_icon(
+		DisplayServerEnums::IndicatorID p_id, const Ref<Texture2D>& p_icon) override
+	{
+	}
+
+	void status_indicator_set_tooltip(
+		DisplayServerEnums::IndicatorID p_id, const String& p_tooltip) override
+	{
+	}
+
+	void delete_status_indicator(DisplayServerEnums::IndicatorID p_id) override {}
+
+	DisplayServerHeadless();
+	~DisplayServerHeadless();
+};
+
+
+
+// --- End servers/display/display_server_headless.h ---
