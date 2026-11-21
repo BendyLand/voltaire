@@ -1275,7 +1275,10 @@ void ImageTexture::set_color_map(const HashMap<Color, Color>& p_color_map)
 
 HashMap<Color, Color> ImageTexture::get_color_map() const
 {
-	return svg_data ? svg_data->cmap : HashMap<Color, Color>();
+	if (svg_data) {
+		return HashMap<Color, Color>(svg_data->cmap);
+	}
+	return HashMap<Color, Color>();
 }
 
 void ImageTexture::reload_from_file() {}

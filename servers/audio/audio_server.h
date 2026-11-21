@@ -450,22 +450,22 @@ public:
 	template <typename StateT>
 	static Ref<AudioEffectInstance> create(
 		StateT* p_state,
-		ProcessFn p_process_fn = &_default_process<StateT>,
+		ProcessFn p_process_fn = nullptr,
 		ProcessSilenceFn p_process_silence_fn = nullptr,
-		FreeFn p_free_fn = &_default_free<StateT>)
+		FreeFn p_free_fn = nullptr)
 	{
 		Ref<AudioEffectInstance> ins;
 		ins.instantiate();
 		ins->state = p_state;
 		ins->state_type_tag = _state_type_id<StateT>();
-		ins->process_fn = p_process_fn;
+		ins->process_fn = p_process_fn ? p_process_fn : &_default_process<StateT>;
 		if (p_process_silence_fn) {
 			ins->process_silence_fn = p_process_silence_fn;
 		}
 		else if constexpr (HasProcessSilence<StateT>::value) {
 			ins->process_silence_fn = &_default_process_silence<StateT>;
 		}
-		ins->free_fn = p_free_fn;
+		ins->free_fn = p_free_fn ? p_free_fn : &_default_free<StateT>;
 		return ins;
 	}
 

@@ -1624,8 +1624,8 @@ public:
 		const RDC::TextureFormat& p_format, const RDD::TextureView& p_view, const Vector<Vector<uint8_t>>& p_data = {});
 	static RID texture_create_shared(const TextureView& p_view, RID p_with_texture);
 	static RID texture_create_from_extension(RDC::TextureType p_type, RDC::DataFormat p_format,
-		RDC::TextureSamples p_samples, uint32_t p_usage, uint64_t p_image, uint64_t p_width,
-		uint64_t p_height, uint64_t p_depth, uint64_t p_layers, uint64_t p_mipmaps = 1);
+		RDC::TextureSamples p_samples, uint32_t p_usage, uint64_t p_image, uint32_t p_width,
+		uint32_t p_height, uint32_t p_depth, uint32_t p_layers, uint32_t p_mipmaps = 1);
 	static RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture,
 		uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1,
 		RDC::TextureSliceType p_slice_type = RDC::TEXTURE_SLICE_2D, uint32_t p_layers = 0);

@@ -32,6 +32,7 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
+#include "core/input/input_event.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/templates/fixed_vector.h"
@@ -1494,10 +1495,23 @@ RID RenderingDevice::texture_buffer_create(
 		texture_buffer.draw_tracker->buffer_driver_id = texture_buffer.driver_id;
 	}
 
+	texture_buffer.usage = (RDD::BUFFER_USAGE_TRANSFER_FROM_BIT |
+							RDD::BUFFER_USAGE_TRANSFER_TO_BIT |
+							RDD::BUFFER_USAGE_TEXEL_BIT);
+	texture_buffer.driver_id = data->driver->buffer_create(
+		size_bytes, texture_buffer.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
+	ERR_FAIL_COND_V(!texture_buffer.driver_id, RID());
+
 	bool ok = data->driver->buffer_set_texel_format(texture_buffer.driver_id, p_format);
 	if (!ok) {
 		data->driver->buffer_free(texture_buffer.driver_id);
 		ERR_FAIL_V(RID());
+	}
+
+	// Texture buffers are assumed to be immutable unless they don't have initial data.
+	if (p_data.is_empty()) {
+		texture_buffer.draw_tracker = RDG::resource_tracker_create();
+		texture_buffer.draw_tracker->buffer_driver_id = texture_buffer.driver_id;
 	}
 
 	if (p_data.size()) {
@@ -5854,6 +5868,7 @@ void RenderingDevice::_free_internal(RID p_id)
 
 		RDG::ResourceTracker* draw_tracker = texture->draw_tracker;
 		if (draw_tracker != nullptr) {
+			DEV_ASSERT(draw_tracker->reference_count > 0);
 			draw_tracker->reference_count--;
 			if (draw_tracker->reference_count == 0) {
 				RDG::resource_tracker_free(draw_tracker);
@@ -6879,9 +6894,57 @@ RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_
 
 RID RenderingDevice::texture_create_from_extension(RDC::TextureType p_type,
 	RDC::DataFormat p_format, RDC::TextureSamples p_samples, uint32_t p_usage, uint64_t p_image,
-	uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers, uint64_t p_mipmaps)
+	uint32_t p_width, uint32_t p_height, uint32_t p_depth, uint32_t p_layers, uint32_t p_mipmaps)
 {
-	return RID();
+	ERR_RENDER_THREAD_GUARD_V(RID());
+
+	ERR_FAIL_COND_V(p_image == 0, RID());
+	ERR_FAIL_COND_V(p_width == 0 || p_height == 0 || p_depth == 0 || p_layers == 0 || p_mipmaps == 0, RID());
+	ERR_FAIL_INDEX_V(p_type, RDC::TEXTURE_TYPE_MAX, RID());
+	ERR_FAIL_INDEX_V(p_format, RDC::DATA_FORMAT_MAX, RID());
+	ERR_FAIL_INDEX_V(p_samples, RDC::TEXTURE_SAMPLES_MAX, RID());
+
+	const bool has_depth = (p_usage & RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+
+	RDD::TextureID driver_id = data->driver->texture_create_from_extension(
+		p_image, p_type, p_format, uint32_t(p_layers), has_depth, uint32_t(p_mipmaps));
+	ERR_FAIL_COND_V(!driver_id, RID());
+
+	Texture texture;
+	texture.driver_id = driver_id;
+	texture.type = p_type;
+	texture.format = p_format;
+	texture.samples = p_samples;
+	texture.width = uint32_t(p_width);
+	texture.height = uint32_t(p_height);
+	texture.depth = uint32_t(p_depth);
+	texture.layers = uint32_t(p_layers);
+	texture.mipmaps = uint32_t(p_mipmaps);
+	texture.usage_flags = p_usage;
+	texture.slice_type = RDC::TEXTURE_SLICE_MAX;
+	texture.pending_clear = false; // Never auto-clear external image contents.
+
+	BitField<RDD::TextureAspectBits> aspect;
+	if (has_depth) {
+		aspect.set_flag(RDD::TEXTURE_ASPECT_DEPTH_BIT);
+	}
+	else {
+		aspect.set_flag(RDD::TEXTURE_ASPECT_COLOR_BIT);
+	}
+	texture.read_aspect_flags = aspect;
+	texture.barrier_aspect_flags = aspect;
+
+	texture.draw_tracker = RDG::resource_tracker_create();
+	texture.draw_tracker->texture_driver_id = texture.driver_id;
+	texture.draw_tracker->texture_subresources.aspect = texture.barrier_aspect_flags;
+	texture.draw_tracker->texture_subresources.base_mipmap = 0;
+	texture.draw_tracker->texture_subresources.mipmap_count = texture.mipmaps;
+	texture.draw_tracker->texture_subresources.base_layer = 0;
+	texture.draw_tracker->texture_subresources.layer_count = texture.layers;
+	texture.draw_tracker->texture_size = Size2i(texture.width, texture.height);
+	texture.draw_tracker->texture_usage = texture.usage_flags;
+
+	return data->texture_owner.make_rid(texture);
 }
 
 Error RenderingDevice::texture_update(
@@ -7483,6 +7546,16 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 	Texture* src_texture = data->texture_owner.get_or_null(p_with_texture);
 	ERR_FAIL_NULL_V(src_texture, RID());
 
+	if (src_texture->owner.is_valid()) {
+		if (src_texture->slice_type != RDC::TEXTURE_SLICE_MAX) {
+			p_mipmap += src_texture->slice_rect.position.x;
+			p_layer += src_texture->slice_rect.position.y;
+		}
+		p_with_texture = src_texture->owner;
+		src_texture = data->texture_owner.get_or_null(p_with_texture);
+		ERR_FAIL_NULL_V(src_texture, RID());
+	}
+
 	ERR_FAIL_COND_V(p_slice_type == RDC::TEXTURE_SLICE_2D &&
 						src_texture->type != RDC::TEXTURE_TYPE_2D &&
 						src_texture->type != RDC::TEXTURE_TYPE_2D_ARRAY &&
@@ -7495,6 +7568,13 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 	ERR_FAIL_COND_V(p_mipmap + p_mipmaps > src_texture->mipmaps, RID());
 
 	Texture texture = *src_texture;
+	texture.owner = p_with_texture;
+	texture.shared_fallback = nullptr;
+	texture.slice_trackers = nullptr;
+	texture.is_resolve_buffer = false;
+	texture.is_discardable = false;
+	texture.pending_clear = false;
+	texture.bound = false;
 
 	if (p_slice_type == RDC::TEXTURE_SLICE_2D) {
 		texture.type = RDC::TEXTURE_TYPE_2D;
@@ -7508,7 +7588,18 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 		texture.type = RDC::TEXTURE_TYPE_3D;
 		texture.layers = (p_layers > 0) ? p_layers : 1;
 	}
+	ERR_FAIL_COND_V(p_layer + texture.layers > src_texture->layers, RID());
+
 	texture.mipmaps = p_mipmaps;
+	texture.width = MAX(1u, src_texture->width >> p_mipmap);
+	texture.height = MAX(1u, src_texture->height >> p_mipmap);
+	if (src_texture->type == RDC::TEXTURE_TYPE_3D) {
+		texture.depth = MAX(1u, src_texture->depth >> p_mipmap);
+	}
+	texture.slice_type = p_slice_type;
+	texture.slice_rect = Rect2i(p_mipmap, p_layer, p_mipmaps, texture.layers);
+	texture.base_mipmap = p_mipmap;
+	texture.base_layer = p_layer;
 
 	RDD::TextureView tv;
 	bool create_shared = true;
@@ -7525,6 +7616,7 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 			"Format override is not in the list of allowed shareable formats for original "
 			"texture.");
 
+		texture.format = p_view.format_override;
 		tv.format = p_view.format_override;
 		create_shared = data->driver->texture_can_make_shared_with_format(
 			texture.driver_id, p_view.format_override, raw_reinterpretation);
@@ -7535,10 +7627,75 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view,
 	tv.swizzle_b = p_view.swizzle_b;
 	tv.swizzle_a = p_view.swizzle_a;
 
-	texture.driver_id = data->driver->texture_create_shared_from_slice(
-		src_texture->driver_id, tv, p_slice_type, p_layer, texture.layers, p_mipmap, p_mipmaps);
+	if (create_shared) {
+		texture.driver_id = data->driver->texture_create_shared_from_slice(
+			src_texture->driver_id, tv, p_slice_type, p_layer, texture.layers, p_mipmap, p_mipmaps);
+	}
+	else {
+		RDD::TextureView regular_view = tv;
+		regular_view.format = src_texture->format;
+		texture.driver_id = data->driver->texture_create_shared_from_slice(src_texture->driver_id,
+			regular_view, p_slice_type, p_layer, texture.layers, p_mipmap, p_mipmaps);
 
-	return data->texture_owner.make_rid(texture);
+		RDC::TextureFormat alias_format = texture.texture_format();
+		alias_format.format = tv.format;
+		alias_format.usage_bits =
+			RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+
+		_texture_check_shared_fallback(src_texture);
+		_texture_check_shared_fallback(&texture);
+
+		texture.shared_fallback->texture = data->driver->texture_create(alias_format, tv);
+		texture.shared_fallback->raw_reinterpretation = raw_reinterpretation;
+		data->texture_memory.add(
+			data->driver->texture_get_allocation_size(texture.shared_fallback->texture));
+	}
+
+	if (src_texture->draw_tracker != nullptr) {
+		const Rect2i parent_rect(0, 0, src_texture->mipmaps, src_texture->layers);
+		if (texture.slice_rect == parent_rect) {
+			texture.draw_tracker = src_texture->draw_tracker;
+			texture.draw_tracker->reference_count++;
+			texture.slice_type = RDC::TEXTURE_SLICE_MAX;
+		}
+		else {
+			if (src_texture->slice_trackers == nullptr) {
+				src_texture->slice_trackers = memnew(
+					std::remove_pointer_t<decltype(src_texture->slice_trackers)>);
+			}
+			auto E = src_texture->slice_trackers->find(texture.slice_rect);
+			if (E) {
+				texture.draw_tracker = E->value;
+				texture.draw_tracker->reference_count++;
+			}
+			else {
+				texture.draw_tracker = RDG::resource_tracker_create();
+				texture.draw_tracker->texture_driver_id = texture.driver_id;
+				texture.draw_tracker->texture_subresources =
+					src_texture->draw_tracker->texture_subresources;
+				texture.draw_tracker->texture_subresources.base_mipmap = p_mipmap;
+				texture.draw_tracker->texture_subresources.mipmap_count = p_mipmaps;
+				texture.draw_tracker->texture_subresources.base_layer = p_layer;
+				texture.draw_tracker->texture_subresources.layer_count = texture.layers;
+				texture.draw_tracker->texture_size = Size2i(texture.width, texture.height);
+				texture.draw_tracker->texture_usage = texture.usage_flags;
+				texture.draw_tracker->texture_slice_or_dirty_rect = texture.slice_rect;
+				texture.draw_tracker->parent = src_texture->draw_tracker;
+				(*src_texture->slice_trackers)[texture.slice_rect] = texture.draw_tracker;
+			}
+		}
+	}
+
+	RID id = data->texture_owner.make_rid(texture);
+
+	if (!create_shared) {
+		Texture* dst_texture = data->texture_owner.get_or_null(id);
+		_texture_copy_shared(p_with_texture, src_texture, id, dst_texture);
+	}
+
+	_add_dependency(id, p_with_texture);
+
+	return id;
 }
 
 Error RenderingDevice::screen_prepare_for_drawing(DisplayServerEnums::WindowID p_screen)
