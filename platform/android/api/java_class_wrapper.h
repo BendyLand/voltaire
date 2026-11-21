@@ -239,68 +239,85 @@ public:
 #endif
 };
 
-class JavaClassWrapper
+class JavaClassWrapper final
 {
-#ifdef ANDROID_ENABLED
-	RBMap<String, Ref<JavaClass>> class_cache;
 	friend class JavaClass;
-	jmethodID Class_getConstructors;
-	jmethodID Class_getDeclaredMethods;
-	jmethodID Class_getFields;
-	jmethodID Class_getInterfaces;
-	jmethodID Class_getName;
-	jmethodID Class_getSuperclass;
-	jmethodID Class_isInterface;
-	jmethodID Constructor_getParameterTypes;
-	jmethodID Constructor_getModifiers;
-	jmethodID Method_getParameterTypes;
-	jmethodID Method_getReturnType;
-	jmethodID Method_getModifiers;
-	jmethodID Method_getName;
-	jmethodID Field_getName;
-	jmethodID Field_getModifiers;
-	jmethodID Field_get;
-	jmethodID Boolean_booleanValue;
-	jmethodID Byte_byteValue;
-	jmethodID Character_characterValue;
-	jmethodID Short_shortValue;
-	jmethodID Integer_integerValue;
-	jmethodID Long_longValue;
-	jmethodID Float_floatValue;
-	jmethodID Double_doubleValue;
-
-	jclass proxy_class;
-	jmethodID Proxy_isProxyClass;
-
-	jclass android_runtime_class;
-	jmethodID ARP_create_proxy_from_godot_callable;
-	jmethodID ARP_create_proxy_from_godot_object_id;
-
-	bool _is_proxy_class(JNIEnv* env, jclass p_class);
-	bool _get_type_sig(JNIEnv* env, jobject obj, uint32_t& sig, String& strsig);
-	bool _wrap_class_components(JNIEnv* p_env, const Ref<JavaClass>& p_java_class, jclass p_class,
-		bool p_allow_non_public_methods_access);
-#endif
-
-	Ref<JavaObject> exception;
-
-	Ref<JavaClass> _wrap(const String& p_class, bool p_allow_non_public_methods_access = false);
-
-	static JavaClassWrapper* singleton;
-
-protected:
 
 public:
-	static JavaClassWrapper* get_singleton() { return singleton; }
+	struct Data
+	{
+#ifdef ANDROID_ENABLED
+		RBMap<String, Ref<JavaClass>> class_cache;
+		jmethodID Class_getConstructors = nullptr;
+		jmethodID Class_getDeclaredMethods = nullptr;
+		jmethodID Class_getFields = nullptr;
+		jmethodID Class_getInterfaces = nullptr;
+		jmethodID Class_getName = nullptr;
+		jmethodID Class_getSuperclass = nullptr;
+		jmethodID Class_isInterface = nullptr;
+		jmethodID Constructor_getParameterTypes = nullptr;
+		jmethodID Constructor_getModifiers = nullptr;
+		jmethodID Method_getParameterTypes = nullptr;
+		jmethodID Method_getReturnType = nullptr;
+		jmethodID Method_getModifiers = nullptr;
+		jmethodID Method_getName = nullptr;
+		jmethodID Field_getName = nullptr;
+		jmethodID Field_getModifiers = nullptr;
+		jmethodID Field_get = nullptr;
+		jmethodID Boolean_booleanValue = nullptr;
+		jmethodID Byte_byteValue = nullptr;
+		jmethodID Character_characterValue = nullptr;
+		jmethodID Short_shortValue = nullptr;
+		jmethodID Integer_integerValue = nullptr;
+		jmethodID Long_longValue = nullptr;
+		jmethodID Float_floatValue = nullptr;
+		jmethodID Double_doubleValue = nullptr;
 
-	Ref<JavaClass> wrap(const String& p_class) { return _wrap(p_class, false); }
+		jclass proxy_class = nullptr;
+		jmethodID Proxy_isProxyClass = nullptr;
 
-	Ref<JavaObject> get_exception() { return exception; }
+		jclass android_runtime_class = nullptr;
+		jmethodID ARP_create_proxy_from_godot_callable = nullptr;
+		jmethodID ARP_create_proxy_from_godot_object_id = nullptr;
+#endif
+		Ref<JavaObject> exception;
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+#ifdef ANDROID_ENABLED
+	static bool _is_proxy_class(JNIEnv* env, jclass p_class);
+	static bool _get_type_sig(JNIEnv* env, jobject obj, uint32_t& sig, String& strsig);
+	static bool _wrap_class_components(JNIEnv* p_env, const Ref<JavaClass>& p_java_class,
+		jclass p_class, bool p_allow_non_public_methods_access);
+#endif
+
+	static Ref<JavaClass> _wrap(
+		const String& p_class, bool p_allow_non_public_methods_access = false);
+
+public:
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
+
+	static Ref<JavaClass> wrap(const String& p_class) { return _wrap(p_class, false); }
+
+	static Ref<JavaObject> get_exception() { return data ? data->exception : Ref<JavaObject>(); }
 
 #ifdef ANDROID_ENABLED
-	Ref<JavaClass> wrap_jclass(jclass p_class, bool p_allow_non_public_methods_access = false);
+	static Ref<JavaClass> wrap_jclass(
+		jclass p_class, bool p_allow_non_public_methods_access = false);
+	static Ref<JavaObject> create_sam_callback(
+		const String& p_sam_interface, const Callable& p_callable);
+	static Ref<JavaObject> create_proxy(
+		const Object* p_object, const PackedStringArray& p_interfaces);
 #endif
-	JavaClassWrapper();
+
+	JavaClassWrapper() = delete;
+	JavaClassWrapper(const JavaClassWrapper&) = delete;
+	JavaClassWrapper& operator=(const JavaClassWrapper&) = delete;
+	~JavaClassWrapper() = delete;
 };
 
 

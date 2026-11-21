@@ -39,7 +39,7 @@
 #include <SDL3/SDL_gamepad.h>
 #include <SDL3/SDL_iostream.h>
 #include <SDL3/SDL_joystick.h>
-#include "core/input/default_controller_mappings.h"
+#include "core/input/input.h"
 
 // Macro to skip the SDL joystick event handling if the device is an SDL gamepad, because
 // there are separate events for SDL gamepads
@@ -88,17 +88,17 @@ void JoypadSDL::process_events()
 	for (int i = 0; i < Input::JOYPADS_MAX; i++) {
 		Joypad& joy = joypads[i];
 		if (joy.attached && joy.supports_force_feedback) {
-			uint64_t timestamp = Input::get_singleton()->get_joy_vibration_timestamp(i);
+			uint64_t timestamp = Input::get_joy_vibration_timestamp(i);
 
 			// Update the joypad rumble only if there was a new vibration request
 			if (timestamp > joy.ff_effect_timestamp) {
 				joy.ff_effect_timestamp = timestamp;
 
 				SDL_Joystick* sdl_joy = SDL_GetJoystickFromID(joypads[i].sdl_instance_idx);
-				Vector2 strength = Input::get_singleton()->get_joy_vibration_strength(i);
+				Vector2 strength = Input::get_joy_vibration_strength(i);
 				// Invalid values for strength are filtered by Input::start_joy_vibration().
 
-				float duration = Input::get_singleton()->get_joy_vibration_duration(i);
+				float duration = Input::get_joy_vibration_duration(i);
 				Uint32 duration_ms = 0;
 				if (duration < 0.0f) {
 					continue; // Invalid duration.
@@ -133,7 +133,7 @@ void JoypadSDL::process_events()
 	while (SDL_PollEvent(&sdl_event)) {
 		// A new joypad was attached
 		if (sdl_event.type == SDL_EVENT_JOYSTICK_ADDED) {
-			int joy_id = Input::get_singleton()->get_unused_joy_id();
+			int joy_id = Input::get_unused_joy_id();
 			if (joy_id == -1) {
 				// There is no space for more joypads...
 				print_error("A new joypad was attached but couldn't allocate a new id for it "
@@ -201,11 +201,11 @@ void JoypadSDL::process_events()
 				}
 #endif
 
-				Input::get_singleton()->set_joy_features(joy_id, &joypads[joy_id]);
+				Input::set_joy_features(joy_id, &joypads[joy_id]);
 
 				if (joypads[joy_id].supports_motion_sensors) {
 					// Data rate for all sensors should be the same.
-					Input::get_singleton()->set_joy_motion_sensors_rate(
+					Input::set_joy_motion_sensors_rate(
 						joy_id, SDL_GetGamepadSensorDataRate(gamepad, SDL_SENSOR_ACCEL));
 				}
 			}
@@ -224,7 +224,7 @@ void JoypadSDL::process_events()
 			case SDL_EVENT_JOYSTICK_AXIS_MOTION:
 				SKIP_EVENT_FOR_GAMEPAD;
 
-				Input::get_singleton()->joy_axis(joy_id,
+				Input::joy_axis(joy_id,
 					static_cast<JoyAxis>(
 						sdl_event.jaxis.axis), // Godot joy axis constants are already intentionally
 											   // the same as SDL's
@@ -244,7 +244,7 @@ void JoypadSDL::process_events()
 					continue;
 				}
 
-				Input::get_singleton()->joy_button(joy_id,
+				Input::joy_button(joy_id,
 					static_cast<JoyButton>(
 						sdl_event.jbutton
 							.button), // Godot button constants are intentionally the same as SDL's,
@@ -255,7 +255,7 @@ void JoypadSDL::process_events()
 			case SDL_EVENT_JOYSTICK_HAT_MOTION:
 				SKIP_EVENT_FOR_GAMEPAD;
 
-				Input::get_singleton()->joy_hat(joy_id,
+				Input::joy_hat(joy_id,
 					(uint32_t)sdl_event.jhat.value // Godot hat masks are identical to SDL hat
 												   // masks, so we can just use them as-is.
 				);
@@ -277,7 +277,7 @@ void JoypadSDL::process_events()
 								 2.0f;
 				}
 
-				Input::get_singleton()->joy_axis(joy_id,
+				Input::joy_axis(joy_id,
 					static_cast<JoyAxis>(
 						sdl_event.gaxis.axis), // Godot joy axis constants are already intentionally
 											   // the same as SDL's
@@ -287,7 +287,7 @@ void JoypadSDL::process_events()
 			// Do note SDL gamepads do not have separate events for the dpad
 			case SDL_EVENT_GAMEPAD_BUTTON_UP:
 			case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-				Input::get_singleton()->joy_button(joy_id,
+				Input::joy_button(joy_id,
 					static_cast<JoyButton>(
 						sdl_event.gbutton
 							.button), // Godot button constants are intentionally the same as SDL's,
@@ -298,7 +298,7 @@ void JoypadSDL::process_events()
 			case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN:
 			case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION:
 			case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
-				Input::get_singleton()->joy_touchpad(joy_id, sdl_event.gtouchpad.touchpad,
+				Input::joy_touchpad(joy_id, sdl_event.gtouchpad.touchpad,
 					sdl_event.gtouchpad.finger,
 					Vector2(sdl_event.gtouchpad.x, sdl_event.gtouchpad.y),
 					sdl_event.gtouchpad.pressure, sdl_event.type != SDL_EVENT_GAMEPAD_TOUCHPAD_UP);
@@ -320,7 +320,7 @@ void JoypadSDL::process_events()
 		SDL_GetGamepadSensorData(gamepad, SDL_SENSOR_ACCEL, accel_data, 3);
 		SDL_GetGamepadSensorData(gamepad, SDL_SENSOR_GYRO, gyro_data, 3);
 
-		Input::get_singleton()->joy_motion_sensors(i,
+		Input::joy_motion_sensors(i,
 			Vector3(-accel_data[0], -accel_data[1], -accel_data[2]),
 			Vector3(gyro_data[0], gyro_data[1], gyro_data[2]));
 	}

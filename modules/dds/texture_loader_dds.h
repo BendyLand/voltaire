@@ -31,9 +31,10 @@
 
 #pragma once
 
+#include "core/io/image.h"
 #include "core/io/resource_loader.h"
 
-class ResourceFormatDDS : public ResourceFormatLoader
+class ResourceFormatDDS final : public ResourceFormatLoader
 {
 public:
 	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
@@ -48,4 +49,5 @@ public:
 	virtual ~ResourceFormatDDS() {}
 };
 
-
+Error save_dds(const String &p_path, const Ref<Image> &p_img);
+Vector<uint8_t> save_dds_buffer(const Ref<Image> &p_img);

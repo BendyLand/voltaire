@@ -29,22 +29,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "action_map/openxr_interaction_profile_metadata.h"
+#include "modules/openxr/openxr_api.h"
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
+#include "core/math/math_funcs.h"
 #include "core/os/memory.h"
 #include "core/types.h"
 #include "core/version.h"
 #include "openxr_api.h"
-#include "openxr_interface.h"
-#include "openxr_util.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer.h"
-#include "servers/xr/xr_hand_tracker.h"
+#include "servers/xr/xr_tracker.h"
 
 #ifdef ANDROID_ENABLED
 #include "core/os/os.h"
 #endif
+
+#include "extensions/openxr_extensions.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
 
 #include "openxr_platform_inc.h" // IWYU pragma: keep.
 
@@ -64,14 +66,6 @@
 #include "extensions/platform/openxr_d3d12_extension.h"
 #endif
 
-#include "extensions/openxr_composition_layer_depth_extension.h"
-#include "extensions/openxr_debug_utils_extension.h"
-#include "extensions/openxr_eye_gaze_interaction.h"
-#include "extensions/openxr_fb_display_refresh_rate_extension.h"
-#include "extensions/openxr_fb_foveation_extension.h"
-#include "extensions/openxr_fb_update_swapchain_extension.h"
-#include "extensions/openxr_hand_tracking_extension.h"
-
 #ifdef ANDROID_ENABLED
 #define OPENXR_LOADER_NAME "libopenxr_loader.so"
 #endif
@@ -82,10 +76,9 @@ bool OpenXRAPI::OpenXRSwapChainInfo::create(XrSwapchainCreateFlags p_create_flag
 	XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width,
 	uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, bool p_use_next_extensions)
 {
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
-	XrSession xr_session = openxr_api->get_session();
+	XrSession xr_session = OpenXRAPI::get_session();
 	ERR_FAIL_COND_V(xr_session == XR_NULL_HANDLE, false);
 
 	// We already have a swapchain?
@@ -110,9 +103,9 @@ bool OpenXRAPI::OpenXRSwapChainInfo::create(XrSwapchainCreateFlags p_create_flag
 	};
 
 	XrSwapchain new_swapchain;
-	result = openxr_api->xrCreateSwapchain(xr_session, &swapchain_create_info, &new_swapchain);
+	result = OpenXRAPI::xrCreateSwapchain(xr_session, &swapchain_create_info, &new_swapchain);
 	if (XR_FAILED(result)) {
-		// print_line("OpenXR: Failed to get swapchain [", openxr_api->get_error_string(result),
+		// print_line("OpenXR: Failed to get swapchain [", OpenXRAPI::get_error_string(result),
 		// "]");
 		return false;
 	}
@@ -146,15 +139,14 @@ void OpenXRAPI::OpenXRSwapChainInfo::free_queued()
 
 void OpenXRAPI::OpenXRSwapChainInfo::free()
 {
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	if (image_acquired) {
 		release();
 	}
 
 	if (swapchain != XR_NULL_HANDLE) {
-		openxr_api->xrDestroySwapchain(swapchain);
+		OpenXRAPI::xrDestroySwapchain(swapchain);
 		swapchain = XR_NULL_HANDLE;
 	}
 }
@@ -168,24 +160,21 @@ bool OpenXRAPI::OpenXRSwapChainInfo::release()
 
 	image_acquired = false; // Regardless if we succeed or not, consider this released.
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL_V(openxr_api, false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
 	XrSwapchainImageReleaseInfo swapchain_image_release_info = {
 		XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO, // type
 		nullptr								  // next
 	};
-	XrResult result = openxr_api->xrReleaseSwapchainImage(swapchain, &swapchain_image_release_info);
+	XrResult result = OpenXRAPI::xrReleaseSwapchainImage(swapchain, &swapchain_image_release_info);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to release swapchain image! [",
-		// openxr_api->get_error_string(result), "]");
+		// OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
 	return true;
 }
-
-OpenXRAPI* OpenXRAPI::singleton = nullptr;
 
 bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
 {
@@ -198,58 +187,54 @@ bool OpenXRAPI::openxr_is_enabled(bool p_check_run_in_editor)
 	}
 }
 
-String OpenXRAPI::get_error_string(XrResult result) const { return String(); }
+String OpenXRAPI::get_error_string(XrResult result) { return String(); }
 
 void OpenXRAPI::set_object_name(
 	XrObjectType p_object_type, uint64_t p_object_handle, const String& p_object_name)
 {
-	OpenXRDebugUtilsExtension* debug_utils = OpenXRDebugUtilsExtension::get_singleton();
-	if (!debug_utils || !debug_utils->get_active()) {
+	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	debug_utils->set_object_name(p_object_type, p_object_handle, p_object_name.utf8().get_data());
+	OpenXRDebugUtilsExtension::set_object_name(p_object_type, p_object_handle, p_object_name.utf8().get_data());
 }
 
 void OpenXRAPI::begin_debug_label_region(const String& p_label_name)
 {
-	OpenXRDebugUtilsExtension* debug_utils = OpenXRDebugUtilsExtension::get_singleton();
-	if (!debug_utils || !debug_utils->get_active()) {
+	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	debug_utils->begin_debug_label_region(p_label_name.utf8().get_data());
+	OpenXRDebugUtilsExtension::begin_debug_label_region(p_label_name.utf8().get_data());
 }
 
 void OpenXRAPI::end_debug_label_region()
 {
-	OpenXRDebugUtilsExtension* debug_utils = OpenXRDebugUtilsExtension::get_singleton();
-	if (!debug_utils || !debug_utils->get_active()) {
+	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	debug_utils->end_debug_label_region();
+	OpenXRDebugUtilsExtension::end_debug_label_region();
 }
 
 void OpenXRAPI::insert_debug_label(const String& p_label_name)
 {
-	OpenXRDebugUtilsExtension* debug_utils = OpenXRDebugUtilsExtension::get_singleton();
-	if (!debug_utils || !debug_utils->get_active()) {
+	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	debug_utils->insert_debug_label(p_label_name.utf8().get_data());
+	OpenXRDebugUtilsExtension::insert_debug_label(p_label_name.utf8().get_data());
 }
 
 bool OpenXRAPI::load_layer_properties()
 {
 	// This queries additional layers that are available and can be initialized when we create our
 	// OpenXR instance
-	if (!layer_properties.is_empty()) {
+	if (!data->layer_properties.is_empty()) {
 		// already retrieved this
 		return true;
 	}
@@ -260,18 +245,18 @@ bool OpenXRAPI::load_layer_properties()
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate number of api layer properties");
 
-	layer_properties.resize(num_layer_properties);
-	for (XrApiLayerProperties& layer : layer_properties) {
+	data->layer_properties.resize(num_layer_properties);
+	for (XrApiLayerProperties& layer : data->layer_properties) {
 		layer.type = XR_TYPE_API_LAYER_PROPERTIES;
 		layer.next = nullptr;
 	}
 
 	result = xrEnumerateApiLayerProperties(
-		num_layer_properties, &num_layer_properties, layer_properties.ptr());
+		num_layer_properties, &num_layer_properties, data->layer_properties.ptr());
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate api layer properties");
 
-	for (const XrApiLayerProperties& layer : layer_properties) {
+	for (const XrApiLayerProperties& layer : data->layer_properties) {
 		print_verbose(vformat("OpenXR: Found OpenXR layer %s.", layer.layerName));
 	}
 
@@ -283,7 +268,7 @@ bool OpenXRAPI::load_supported_extensions()
 	// This queries supported extensions that are available and can be initialized when we create
 	// our OpenXR instance
 
-	if (!supported_extensions.is_empty()) {
+	if (!data->supported_extensions.is_empty()) {
 		// already retrieved this
 		return true;
 	}
@@ -295,28 +280,28 @@ bool OpenXRAPI::load_supported_extensions()
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate number of extension properties");
 
-	supported_extensions.resize(num_supported_extensions);
+	data->supported_extensions.resize(num_supported_extensions);
 
 	// set our types
-	for (XrExtensionProperties& extension : supported_extensions) {
+	for (XrExtensionProperties& extension : data->supported_extensions) {
 		extension.type = XR_TYPE_EXTENSION_PROPERTIES;
 		extension.next = nullptr;
 	}
 	result = xrEnumerateInstanceExtensionProperties(
-		nullptr, num_supported_extensions, &num_supported_extensions, supported_extensions.ptr());
+		nullptr, num_supported_extensions, &num_supported_extensions, data->supported_extensions.ptr());
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate extension properties");
 
-	for (const XrExtensionProperties& extension : supported_extensions) {
+	for (const XrExtensionProperties& extension : data->supported_extensions) {
 		print_verbose(vformat("OpenXR: Found OpenXR extension %s.", extension.extensionName));
 	}
 
 	return true;
 }
 
-bool OpenXRAPI::is_extension_supported(const String& p_extension) const
+bool OpenXRAPI::is_extension_supported(const String& p_extension)
 {
-	for (const XrExtensionProperties& extension : supported_extensions) {
+	for (const XrExtensionProperties& extension : data->supported_extensions) {
 		if (extension.extensionName == p_extension) {
 			return true;
 		}
@@ -325,7 +310,7 @@ bool OpenXRAPI::is_extension_supported(const String& p_extension) const
 	return false;
 }
 
-bool OpenXRAPI::is_any_extension_enabled(const String& p_extensions) const
+bool OpenXRAPI::is_any_extension_enabled(const String& p_extensions)
 {
 	// We allow a comma separated list of extensions here, only one needs to be supported.
 	// This allows us to check for extensions that were renamed or that were embedded in core
@@ -333,7 +318,7 @@ bool OpenXRAPI::is_any_extension_enabled(const String& p_extensions) const
 	for (const String& name : p_extensions.split(",", false)) {
 		CharString extension = name.utf8();
 
-		if (enabled_extensions.has(extension)) {
+		if (data->enabled_extensions.has(extension)) {
 			return true;
 		}
 	}
@@ -344,7 +329,7 @@ bool OpenXRAPI::is_any_extension_enabled(const String& p_extensions) const
 bool OpenXRAPI::is_top_level_path_supported(const String& p_toplevel_path)
 {
 	String required_extensions =
-		OpenXRInteractionProfileMetadata::get_singleton()->get_top_level_extensions(
+		OpenXRInteractionProfileMetadata::get_top_level_extensions(
 			p_toplevel_path);
 
 	// If unsupported is returned we likely have a misspelled interaction profile path in our action
@@ -372,7 +357,7 @@ bool OpenXRAPI::is_top_level_path_supported(const String& p_toplevel_path)
 bool OpenXRAPI::is_interaction_profile_supported(const String& p_ip_path)
 {
 	String required_extensions =
-		OpenXRInteractionProfileMetadata::get_singleton()->get_interaction_profile_extensions(
+		OpenXRInteractionProfileMetadata::get_interaction_profile_extensions(
 			p_ip_path);
 
 	// If unsupported is returned we likely have a misspelled interaction profile path in our action
@@ -405,7 +390,7 @@ bool OpenXRAPI::interaction_profile_supports_io_path(
 	}
 
 	const OpenXRInteractionProfileMetadata::IOPath* io_path =
-		OpenXRInteractionProfileMetadata::get_singleton()->get_io_path(p_ip_path, p_io_path);
+		OpenXRInteractionProfileMetadata::get_io_path(p_ip_path, p_io_path);
 
 	// If the io_path is not part of our metadata we've likely got a misspelled name or a bad action
 	// map, report
@@ -450,40 +435,40 @@ bool OpenXRAPI::load_supported_view_configuration_types()
 	// This queries the supported configuration types, likely there will only be one choosing
 	// between Mono (phone AR) and Stereo (HMDs)
 
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, false);
 
-	supported_view_configuration_types.clear();
+	data->supported_view_configuration_types.clear();
 
 	uint32_t num_view_configuration_types = 0;
 	XrResult result = xrEnumerateViewConfigurations(
-		instance, system_id, 0, &num_view_configuration_types, nullptr);
+		data->instance, data->system_id, 0, &num_view_configuration_types, nullptr);
 	if (XR_FAILED(result)) {
 		// print_line(
 		// 	"OpenXR: Failed to get view configuration count [", get_error_string(result), "]");
 		return false;
 	}
 
-	supported_view_configuration_types.resize(num_view_configuration_types);
+	data->supported_view_configuration_types.resize(num_view_configuration_types);
 
-	result = xrEnumerateViewConfigurations(instance, system_id, num_view_configuration_types,
-		&num_view_configuration_types, supported_view_configuration_types.ptr());
+	result = xrEnumerateViewConfigurations(data->instance, data->system_id, num_view_configuration_types,
+		&num_view_configuration_types, data->supported_view_configuration_types.ptr());
 	ERR_FAIL_COND_V_MSG(XR_FAILED(result), false, "OpenXR: Failed to enumerateview configurations");
 	ERR_FAIL_COND_V_MSG(num_view_configuration_types == 0, false,
 		"OpenXR: Failed to enumerateview configurations"); // JIC there should be at least 1!
 
 	for (const XrViewConfigurationType& view_configuration_type :
-		supported_view_configuration_types) {
+		data->supported_view_configuration_types) {
 		print_verbose(vformat("OpenXR: Found supported view configuration %s.",
 			OpenXRUtil::get_view_configuration_name(view_configuration_type)));
 	}
 
 	// Check value we loaded at startup...
-	if (!is_view_configuration_supported(view_configuration)) {
+	if (!is_view_configuration_supported(data->view_configuration)) {
 		print_verbose(vformat("OpenXR: %s isn't supported, defaulting to %s.",
-			OpenXRUtil::get_view_configuration_name(view_configuration),
-			OpenXRUtil::get_view_configuration_name(supported_view_configuration_types[0])));
+			OpenXRUtil::get_view_configuration_name(data->view_configuration),
+			OpenXRUtil::get_view_configuration_name(data->supported_view_configuration_types[0])));
 
-		view_configuration = supported_view_configuration_types[0];
+		data->view_configuration = data->supported_view_configuration_types[0];
 	}
 
 	return true;
@@ -493,12 +478,12 @@ bool OpenXRAPI::load_supported_environmental_blend_modes()
 {
 	// This queries the supported environmental blend modes.
 
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, false);
 
-	supported_environment_blend_modes.clear();
+	data->supported_environment_blend_modes.clear();
 
 	uint32_t num_supported_environment_blend_modes = 0;
-	XrResult result = xrEnumerateEnvironmentBlendModes(instance, system_id, view_configuration, 0,
+	XrResult result = xrEnumerateEnvironmentBlendModes(data->instance, data->system_id, data->view_configuration, 0,
 		&num_supported_environment_blend_modes, nullptr);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: Failed to get supported environmental blend mode count [",
@@ -506,18 +491,18 @@ bool OpenXRAPI::load_supported_environmental_blend_modes()
 		return false;
 	}
 
-	supported_environment_blend_modes.resize(num_supported_environment_blend_modes);
+	data->supported_environment_blend_modes.resize(num_supported_environment_blend_modes);
 
-	result = xrEnumerateEnvironmentBlendModes(instance, system_id, view_configuration,
+	result = xrEnumerateEnvironmentBlendModes(data->instance, data->system_id, data->view_configuration,
 		num_supported_environment_blend_modes, &num_supported_environment_blend_modes,
-		supported_environment_blend_modes.ptrw());
+		data->supported_environment_blend_modes.ptrw());
 	ERR_FAIL_COND_V_MSG(
 		XR_FAILED(result), false, "OpenXR: Failed to enumerate environmental blend modes");
 	ERR_FAIL_COND_V_MSG(num_supported_environment_blend_modes == 0, false,
 		"OpenXR: Failed to enumerate environmental blend modes"); // JIC there should be at least 1!
 
 	for (const XrEnvironmentBlendMode& supported_environment_blend_mode :
-		supported_environment_blend_modes) {
+		data->supported_environment_blend_modes) {
 		print_verbose(vformat("OpenXR: Found environmental blend mode %s.",
 			OpenXRUtil::get_environment_blend_mode_name(supported_environment_blend_mode)));
 	}
@@ -525,91 +510,91 @@ bool OpenXRAPI::load_supported_environmental_blend_modes()
 	return true;
 }
 
-bool OpenXRAPI::is_view_configuration_supported(XrViewConfigurationType p_configuration_type) const
+bool OpenXRAPI::is_view_configuration_supported(XrViewConfigurationType p_configuration_type)
 {
-	return supported_view_configuration_types.has(p_configuration_type);
+	return data->supported_view_configuration_types.has(p_configuration_type);
 }
 
 bool OpenXRAPI::is_reference_space_supported(XrReferenceSpaceType p_reference_space)
 {
-	return supported_reference_spaces.has(p_reference_space);
+	return data->supported_reference_spaces.has(p_reference_space);
 }
 
 bool OpenXRAPI::is_swapchain_format_supported(int64_t p_swapchain_format)
 {
-	return supported_swapchain_formats.has(p_swapchain_format);
+	return data->supported_swapchain_formats.has(p_swapchain_format);
 }
 
 void OpenXRAPI::set_form_factor(XrFormFactor p_form_factor)
 {
 	ERR_FAIL_COND(is_initialized());
 
-	form_factor = p_form_factor;
+	data->form_factor = p_form_factor;
 }
 
-uint32_t OpenXRAPI::get_view_count() const { return view_configuration_views.size(); }
+uint32_t OpenXRAPI::get_view_count() { return data->view_configuration_views.size(); }
 
 void OpenXRAPI::set_view_configuration(XrViewConfigurationType p_view_configuration)
 {
 	ERR_FAIL_COND(is_initialized());
 
-	view_configuration = p_view_configuration;
+	data->view_configuration = p_view_configuration;
 }
 
 bool OpenXRAPI::set_requested_reference_space(XrReferenceSpaceType p_requested_reference_space)
 {
-	if (custom_play_space != XR_NULL_HANDLE) {
+	if (data->custom_play_space != XR_NULL_HANDLE) {
 		return false;
 	}
 
-	requested_reference_space = p_requested_reference_space;
-	play_space_is_dirty = true;
+	data->requested_reference_space = p_requested_reference_space;
+	data->play_space_is_dirty = true;
 
 	return true;
 }
 
 void OpenXRAPI::set_custom_play_space(XrSpace p_custom_space)
 {
-	custom_play_space = p_custom_space;
-	play_space_is_dirty = true;
+	data->custom_play_space = p_custom_space;
+	data->play_space_is_dirty = true;
 }
 
 void OpenXRAPI::set_submit_depth_buffer(bool p_submit_depth_buffer)
 {
 	ERR_FAIL_COND(is_initialized());
 
-	submit_depth_buffer = p_submit_depth_buffer;
+	data->submit_depth_buffer = p_submit_depth_buffer;
 }
 
-bool OpenXRAPI::is_initialized() { return (instance != XR_NULL_HANDLE); }
+bool OpenXRAPI::is_initialized() { return data != nullptr && (data->instance != XR_NULL_HANDLE); }
 
 bool OpenXRAPI::is_running()
 {
-	if (instance == XR_NULL_HANDLE) {
+	if (data->instance == XR_NULL_HANDLE) {
 		return false;
 	}
-	if (session == XR_NULL_HANDLE) {
+	if (data->session == XR_NULL_HANDLE) {
 		return false;
 	}
 
-	return running;
+	return data->running;
 }
 
 bool OpenXRAPI::openxr_loader_init()
 {
 #ifdef ANDROID_ENABLED
 	ERR_FAIL_COND_V_MSG(
-		openxr_loader_library_handle != nullptr, false, "OpenXR Loader library is already loaded.");
+		data->openxr_loader_library_handle != nullptr, false, "OpenXR Loader library is already loaded.");
 
 	{
 		Error error_code = OS::open_dynamic_library(
-			OPENXR_LOADER_NAME, openxr_loader_library_handle);
+			OPENXR_LOADER_NAME, data->openxr_loader_library_handle);
 		ERR_FAIL_COND_V_MSG(error_code != OK, false, "OpenXR loader not found.");
 	}
 
 	{
 		Error error_code = OS::get_dynamic_library_symbol_handle(
-			openxr_loader_library_handle, "xrGetInstanceProcAddr", (void*&)xrGetInstanceProcAddr);
+			data->openxr_loader_library_handle, "xrGetInstanceProcAddr", (void*&)data->xrGetInstanceProcAddr);
 		ERR_FAIL_COND_V_MSG(error_code != OK, false,
 			"Symbol xrGetInstanceProcAddr not found in OpenXR Loader library.");
 	}
@@ -625,7 +610,7 @@ bool OpenXRAPI::openxr_loader_init()
 
 bool OpenXRAPI::resolve_instance_openxr_symbols()
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, false);
 
 	OPENXR_API_INIT_XR_FUNC_V(xrAcquireSwapchainImage);
 	OPENXR_API_INIT_XR_FUNC_V(xrApplyHapticFeedback);
@@ -675,7 +660,11 @@ bool OpenXRAPI::resolve_instance_openxr_symbols()
 
 XrResult OpenXRAPI::try_get_instance_proc_addr(const char* p_name, PFN_xrVoidFunction* p_addr)
 {
-	return xrGetInstanceProcAddr(instance, p_name, p_addr);
+	#ifdef ANDROID_ENABLED
+	return data->xrGetInstanceProcAddr(data->instance, p_name, p_addr);
+#else
+	return ::xrGetInstanceProcAddr(data->instance, p_name, p_addr);
+#endif
 }
 
 XrResult OpenXRAPI::get_instance_proc_addr(const char* p_name, PFN_xrVoidFunction* p_addr)
@@ -717,7 +706,7 @@ bool OpenXRAPI::initialize_session()
 		return false;
 	}
 
-	allocate_view_buffers(view_configuration_views.size(), submit_depth_buffer);
+	allocate_view_buffers(data->view_configuration_views.size(), data->submit_depth_buffer);
 
 	return true;
 }
@@ -729,25 +718,25 @@ void OpenXRAPI::finish()
 	destroy_instance();
 }
 
-void OpenXRAPI::set_xr_interface(OpenXRInterface* p_xr_interface) { xr_interface = p_xr_interface; }
+void OpenXRAPI::set_xr_interface(OpenXRInterface* p_xr_interface) { data->xr_interface = p_xr_interface; }
 
 Size2 OpenXRAPI::get_recommended_target_size()
 {
-	ERR_FAIL_COND_V(view_configuration_views.is_empty(), Size2());
+	ERR_FAIL_COND_V(data->view_configuration_views.is_empty(), Size2());
 
 	Size2 target_size;
 
 	if (Renderer::data && Renderer::is_on_render_thread()) {
-		target_size.width = view_configuration_views[0].recommendedImageRectWidth *
-							render_state.render_target_size_multiplier;
-		target_size.height = view_configuration_views[0].recommendedImageRectHeight *
-							 render_state.render_target_size_multiplier;
+		target_size.width = data->view_configuration_views[0].recommendedImageRectWidth *
+							data->render_state.render_target_size_multiplier;
+		target_size.height = data->view_configuration_views[0].recommendedImageRectHeight *
+							 data->render_state.render_target_size_multiplier;
 	}
 	else {
 		target_size.width =
-			view_configuration_views[0].recommendedImageRectWidth * render_target_size_multiplier;
+			data->view_configuration_views[0].recommendedImageRectWidth * data->render_target_size_multiplier;
 		target_size.height =
-			view_configuration_views[0].recommendedImageRectHeight * render_target_size_multiplier;
+			data->view_configuration_views[0].recommendedImageRectHeight * data->render_target_size_multiplier;
 	}
 
 	return target_size;
@@ -758,7 +747,7 @@ XRPose::TrackingConfidence OpenXRAPI::get_head_center(
 {
 	XrResult result;
 
-	if (!running) {
+	if (!data->running) {
 		return XRPose::XR_TRACKING_CONFIDENCE_NONE;
 	}
 
@@ -786,7 +775,7 @@ XRPose::TrackingConfidence OpenXRAPI::get_head_center(
 		}						  // pose
 	};
 
-	result = xrLocateSpace(view_space, play_space, display_time, &location);
+	result = xrLocateSpace(data->view_space, data->play_space, display_time, &location);
 	if (XR_FAILED(result)) {
 		// print_line(
 		// 	"OpenXR: Failed to locate view space in play space [", get_error_string(result), "]");
@@ -796,13 +785,13 @@ XRPose::TrackingConfidence OpenXRAPI::get_head_center(
 	XRPose::TrackingConfidence confidence = transform_from_location(location, r_transform);
 	parse_velocities(velocity, r_linear_velocity, r_angular_velocity);
 
-	if (head_pose_confidence != confidence) {
+	if (data->head_pose_confidence != confidence) {
 		// prevent error spam
-		head_pose_confidence = confidence;
-		if (head_pose_confidence == XRPose::XR_TRACKING_CONFIDENCE_NONE) {
+		data->head_pose_confidence = confidence;
+		if (data->head_pose_confidence == XRPose::XR_TRACKING_CONFIDENCE_NONE) {
 			// print_line("OpenXR head space location not valid (check tracking?)");
 		}
-		else if (head_pose_confidence == XRPose::XR_TRACKING_CONFIDENCE_LOW) {
+		else if (data->head_pose_confidence == XRPose::XR_TRACKING_CONFIDENCE_LOW) {
 			print_verbose("OpenVR Head pose now tracking with low confidence");
 		}
 		else {
@@ -817,17 +806,17 @@ bool OpenXRAPI::get_view_transform(uint32_t p_view, Transform3D& r_transform)
 {
 	ERR_NOT_ON_RENDER_THREAD_V(false);
 
-	if (!render_state.running) {
+	if (!data->render_state.running) {
 		return false;
 	}
 
 	// we don't have valid view info
-	if (render_state.views.is_empty() || !render_state.view_pose_valid) {
+	if (data->render_state.views.is_empty() || !data->render_state.view_pose_valid) {
 		return false;
 	}
 
 	// Note, the timing of this is set right before rendering, which is what we need here.
-	r_transform = transform_from_pose(render_state.views[p_view].pose);
+	r_transform = transform_from_pose(data->render_state.views[p_view].pose);
 
 	return true;
 }
@@ -837,23 +826,22 @@ void OpenXRAPI::_allocate_view_buffers_rt(uint32_t p_view_count, bool p_submit_d
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
-	openxr_api->render_state.submit_depth_buffer = p_submit_depth_buffer;
+	data->render_state.submit_depth_buffer = p_submit_depth_buffer;
 
 	// Allocate buffers we'll be populating with view information.
-	openxr_api->render_state.views.resize(p_view_count);
-	openxr_api->render_state.projection_views.resize(p_view_count);
+	data->render_state.views.resize(p_view_count);
+	data->render_state.projection_views.resize(p_view_count);
 
 	for (uint32_t i = 0; i < p_view_count; i++) {
-		openxr_api->render_state.views[i] = {
+		data->render_state.views[i] = {
 			XR_TYPE_VIEW, // type
 			nullptr,	  // next
 			{},			  // pose
 			{},			  // fov
 		};
-		openxr_api->render_state.projection_views[i] = {
+		data->render_state.projection_views[i] = {
 			XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW, // type
 			nullptr,								   // next
 			{},										   // pose
@@ -863,11 +851,12 @@ void OpenXRAPI::_allocate_view_buffers_rt(uint32_t p_view_count, bool p_submit_d
 	}
 
 	if (p_submit_depth_buffer &&
-		OpenXRCompositionLayerDepthExtension::get_singleton()->is_available()) {
-		openxr_api->render_state.depth_views.resize(p_view_count);
+		OpenXRInteractionProfileExtension::is_profile_available(
+			OpenXRInteractionProfileExtension::PROFILE_COMPOSITION_LAYER_DEPTH)) {
+		data->render_state.depth_views.resize(p_view_count);
 
 		for (uint32_t i = 0; i < p_view_count; i++) {
-			openxr_api->render_state.depth_views[i] = {
+			data->render_state.depth_views[i] = {
 				XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR, // type
 				nullptr,								  // next
 				{},										  // subImage
@@ -885,9 +874,8 @@ void OpenXRAPI::_set_render_session_running_rt(bool p_is_running)
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.running = p_is_running;
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.running = p_is_running;
 }
 
 void OpenXRAPI::_set_render_display_info_rt(XrTime p_predicted_display_time, bool p_should_render)
@@ -895,10 +883,9 @@ void OpenXRAPI::_set_render_display_info_rt(XrTime p_predicted_display_time, boo
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.predicted_display_time = p_predicted_display_time;
-	openxr_api->render_state.should_render = p_should_render;
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.predicted_display_time = p_predicted_display_time;
+	data->render_state.should_render = p_should_render;
 }
 
 void OpenXRAPI::_set_render_environment_blend_mode_rt(int32_t p_environment_blend_mode)
@@ -906,9 +893,8 @@ void OpenXRAPI::_set_render_environment_blend_mode_rt(int32_t p_environment_blen
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.environment_blend_mode =
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.environment_blend_mode =
 		XrEnvironmentBlendMode(p_environment_blend_mode);
 }
 
@@ -917,9 +903,8 @@ void OpenXRAPI::_set_render_play_space_rt(uint64_t p_play_space)
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.play_space = XrSpace(p_play_space);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.play_space = XrSpace(p_play_space);
 }
 
 void OpenXRAPI::_set_render_state_multiplier_rt(double p_render_target_size_multiplier)
@@ -927,31 +912,28 @@ void OpenXRAPI::_set_render_state_multiplier_rt(double p_render_target_size_mult
 	// Must be called from rendering thread!
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.render_target_size_multiplier = p_render_target_size_multiplier;
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.render_target_size_multiplier = p_render_target_size_multiplier;
 }
 
 void OpenXRAPI::_set_render_state_render_region_rt(const Rect2i& p_render_region)
 {
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
-	openxr_api->render_state.render_region = p_render_region;
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	data->render_state.render_region = p_render_region;
 }
 
 void OpenXRAPI::_update_main_swapchain_size_rt()
 {
 	ERR_NOT_ON_RENDER_THREAD;
 
-	OpenXRAPI* openxr_api = OpenXRAPI::get_singleton();
-	ERR_FAIL_NULL(openxr_api);
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	uint32_t view_count_output = 0;
-	XrResult result = openxr_api->xrEnumerateViewConfigurationViews(openxr_api->instance,
-		openxr_api->system_id, openxr_api->view_configuration, openxr_api->get_view_count(),
-		&view_count_output, openxr_api->view_configuration_views.ptr());
+	XrResult result = OpenXRAPI::xrEnumerateViewConfigurationViews(data->instance,
+		data->system_id, data->view_configuration, OpenXRAPI::get_view_count(),
+		&view_count_output, data->view_configuration_views.ptr());
 	if (XR_FAILED(result)) {
 		return;
 	}
@@ -960,9 +942,9 @@ void OpenXRAPI::_update_main_swapchain_size_rt()
 	for (uint32_t i = 0; i < view_count_output; i++) {
 		print_verbose("OpenXR: Recommended resolution changed");
 		print_verbose(String(" - recommended render width: ") +
-					  itos(openxr_api->view_configuration_views[i].recommendedImageRectWidth));
+					  itos(data->view_configuration_views[i].recommendedImageRectWidth));
 		print_verbose(String(" - recommended render height: ") +
-					  itos(openxr_api->view_configuration_views[i].recommendedImageRectHeight));
+					  itos(data->view_configuration_views[i].recommendedImageRectHeight));
 	}
 #endif
 }
@@ -970,7 +952,7 @@ void OpenXRAPI::_update_main_swapchain_size_rt()
 void OpenXRAPI::free_main_swapchains()
 {
 	for (int i = 0; i < OPENXR_SWAPCHAIN_MAX; i++) {
-		render_state.main_swapchains[i].queue_free();
+		data->render_state.main_swapchains[i].queue_free();
 	}
 }
 
@@ -978,14 +960,14 @@ XrSwapchain OpenXRAPI::get_color_swapchain()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(XR_NULL_HANDLE);
 
-	return render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_swapchain();
+	return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_swapchain();
 }
 
 RID OpenXRAPI::get_color_texture()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
-	return render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_image();
+	return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_image();
 }
 
 RID OpenXRAPI::get_depth_texture()
@@ -993,9 +975,9 @@ RID OpenXRAPI::get_depth_texture()
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
 	// Note, image will not be acquired if we didn't have a suitable swap chain format.
-	if (render_state.submit_depth_buffer &&
-		render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].is_image_acquired()) {
-		return render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].get_image();
+	if (data->render_state.submit_depth_buffer &&
+		data->render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].is_image_acquired()) {
+		return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].get_image();
 	}
 	else {
 		return RID();
@@ -1006,44 +988,42 @@ RID OpenXRAPI::get_density_map_texture()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext && fov_ext->is_enabled()) {
-		return render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_density_map();
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+		return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_density_map();
 	}
 
 	return RID();
 }
 
-void OpenXRAPI::set_velocity_texture(RID p_render_target) { velocity_texture = p_render_target; }
+void OpenXRAPI::set_velocity_texture(RID p_render_target) { data->velocity_texture = p_render_target; }
 
-RID OpenXRAPI::get_velocity_texture() { return velocity_texture; }
+RID OpenXRAPI::get_velocity_texture() { return data->velocity_texture; }
 
 void OpenXRAPI::set_velocity_depth_texture(RID p_render_target)
 {
-	velocity_depth_texture = p_render_target;
+	data->velocity_depth_texture = p_render_target;
 }
 
-RID OpenXRAPI::get_velocity_depth_texture() { return velocity_depth_texture; }
+RID OpenXRAPI::get_velocity_depth_texture() { return data->velocity_depth_texture; }
 
 void OpenXRAPI::set_velocity_target_size(const Size2i& p_target_size)
 {
-	velocity_target_size = p_target_size;
+	data->velocity_target_size = p_target_size;
 }
 
-Size2i OpenXRAPI::get_velocity_target_size() { return velocity_target_size; }
+Size2i OpenXRAPI::get_velocity_target_size() { return data->velocity_target_size; }
 
-const XrCompositionLayerProjection* OpenXRAPI::get_projection_layer() const
+const XrCompositionLayerProjection* OpenXRAPI::get_projection_layer()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(nullptr);
 
-	return &render_state.projection_layer;
+	return &data->render_state.projection_layer;
 }
 
-float OpenXRAPI::get_display_refresh_rate() const
+float OpenXRAPI::get_display_refresh_rate()
 {
-	OpenXRDisplayRefreshRateExtension* drrext = OpenXRDisplayRefreshRateExtension::get_singleton();
-	if (drrext) {
-		return drrext->get_refresh_rate();
+	if (OpenXRDisplayRefreshRateExtension::is_initialized()) {
+		return OpenXRDisplayRefreshRateExtension::get_refresh_rate();
 	}
 
 	return 0.0;
@@ -1051,42 +1031,39 @@ float OpenXRAPI::get_display_refresh_rate() const
 
 void OpenXRAPI::set_display_refresh_rate(float p_refresh_rate)
 {
-	OpenXRDisplayRefreshRateExtension* drrext = OpenXRDisplayRefreshRateExtension::get_singleton();
-	if (drrext != nullptr) {
-		drrext->set_refresh_rate(p_refresh_rate);
+	if (OpenXRDisplayRefreshRateExtension::is_initialized()) {
+		OpenXRDisplayRefreshRateExtension::set_refresh_rate(p_refresh_rate);
 	}
 }
 
-double OpenXRAPI::get_render_target_size_multiplier() const
+double OpenXRAPI::get_render_target_size_multiplier()
 {
-	return render_target_size_multiplier;
+	return data->render_target_size_multiplier;
 }
 
 void OpenXRAPI::set_render_target_size_multiplier(double multiplier)
 {
-	render_target_size_multiplier = multiplier;
+	data->render_target_size_multiplier = multiplier;
 	set_render_state_multiplier(multiplier);
 }
 
-Rect2i OpenXRAPI::get_render_region() const { return render_region; }
+Rect2i OpenXRAPI::get_render_region() { return data->render_region; }
 
 void OpenXRAPI::set_render_region(const Rect2i& p_render_region)
 {
-	render_region = p_render_region;
+	data->render_region = p_render_region;
 	set_render_state_render_region(p_render_region);
 }
 
-bool OpenXRAPI::is_foveation_supported() const
+bool OpenXRAPI::is_foveation_supported()
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	return fov_ext != nullptr && fov_ext->is_enabled();
+	return OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled();
 }
 
-int OpenXRAPI::get_foveation_level() const
+int OpenXRAPI::get_foveation_level()
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr && fov_ext->is_enabled()) {
-		switch (fov_ext->get_foveation_level()) {
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+		switch (OpenXRFBFoveationExtension::get_foveation_level()) {
 		case XR_FOVEATION_LEVEL_NONE_FB:
 			return 0;
 		case XR_FOVEATION_LEVEL_LOW_FB:
@@ -1106,52 +1083,47 @@ int OpenXRAPI::get_foveation_level() const
 void OpenXRAPI::set_foveation_level(int p_foveation_level)
 {
 	ERR_FAIL_UNSIGNED_INDEX(p_foveation_level, 4);
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr && fov_ext->is_enabled()) {
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
 		XrFoveationLevelFB levels[] = {XR_FOVEATION_LEVEL_NONE_FB, XR_FOVEATION_LEVEL_LOW_FB,
 			XR_FOVEATION_LEVEL_MEDIUM_FB, XR_FOVEATION_LEVEL_HIGH_FB};
-		fov_ext->set_foveation_level(levels[p_foveation_level]);
+		OpenXRFBFoveationExtension::set_foveation_level(levels[p_foveation_level]);
 	}
 }
 
-bool OpenXRAPI::get_foveation_dynamic() const
+bool OpenXRAPI::get_foveation_dynamic()
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr && fov_ext->is_enabled()) {
-		return fov_ext->get_foveation_dynamic() == XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB;
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+		return OpenXRFBFoveationExtension::get_foveation_dynamic() == XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB;
 	}
 	return false;
 }
 
 void OpenXRAPI::set_foveation_dynamic(bool p_foveation_dynamic)
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr && fov_ext->is_enabled()) {
-		fov_ext->set_foveation_dynamic(p_foveation_dynamic ? XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB
+	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+		OpenXRFBFoveationExtension::set_foveation_dynamic(p_foveation_dynamic ? XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB
 														   : XR_FOVEATION_DYNAMIC_DISABLED_FB);
 	}
 }
 
-bool OpenXRAPI::get_foveation_with_subsampled_images() const
+bool OpenXRAPI::get_foveation_with_subsampled_images()
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr) {
-		return fov_ext->is_foveation_with_subsampled_images_enabled();
+	if (OpenXRFBFoveationExtension::is_initialized()) {
+		return OpenXRFBFoveationExtension::is_foveation_with_subsampled_images_enabled();
 	}
 	return false;
 }
 
 void OpenXRAPI::set_foveation_with_subsampled_images(bool p_enabled)
 {
-	OpenXRFBFoveationExtension* fov_ext = OpenXRFBFoveationExtension::get_singleton();
-	if (fov_ext != nullptr) {
-		fov_ext->set_foveation_with_subsampled_images_enabled(p_enabled);
+	if (OpenXRFBFoveationExtension::is_initialized()) {
+		OpenXRFBFoveationExtension::set_foveation_with_subsampled_images_enabled(p_enabled);
 	}
 }
 
 PackedInt64Array OpenXRAPI::get_supported_swapchain_formats()
 {
-	return supported_swapchain_formats;
+	return data->supported_swapchain_formats;
 }
 
 Transform3D OpenXRAPI::transform_from_pose(const XrPosef& p_pose)
@@ -1265,12 +1237,12 @@ XrPath OpenXRAPI::get_xr_path(const String& p_path) { return XrPath(); }
 
 String OpenXRAPI::get_xr_path_name(const XrPath& p_path)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, String());
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, String());
 
 	uint32_t size = 0;
 	char path_name[XR_MAX_PATH_LENGTH];
 
-	XrResult result = xrPathToString(instance, p_path, XR_MAX_PATH_LENGTH, &size, path_name);
+	XrResult result = xrPathToString(data->instance, p_path, XR_MAX_PATH_LENGTH, &size, path_name);
 	if (XR_FAILED(result)) {
 		ERR_FAIL_V_MSG(
 			String(), "OpenXR: failed to get name for a path! [" + get_error_string(result) + "]");
@@ -1281,8 +1253,8 @@ String OpenXRAPI::get_xr_path_name(const XrPath& p_path)
 
 RID OpenXRAPI::get_tracker_rid(XrPath p_path)
 {
-	for (const RID& tracker_rid : tracker_owner.get_owned_list()) {
-		Tracker* tracker = tracker_owner.get_or_null(tracker_rid);
+	for (const RID& tracker_rid : data->tracker_owner.get_owned_list()) {
+		Tracker* tracker = data->tracker_owner.get_or_null(tracker_rid);
 		if (tracker && tracker->toplevel_path == p_path) {
 			return tracker_rid;
 		}
@@ -1293,8 +1265,8 @@ RID OpenXRAPI::get_tracker_rid(XrPath p_path)
 
 RID OpenXRAPI::find_tracker(const String& p_name)
 {
-	for (const RID& tracker_rid : tracker_owner.get_owned_list()) {
-		Tracker* tracker = tracker_owner.get_or_null(tracker_rid);
+	for (const RID& tracker_rid : data->tracker_owner.get_owned_list()) {
+		Tracker* tracker = data->tracker_owner.get_or_null(tracker_rid);
 		if (tracker && tracker->name == p_name) {
 			return tracker_rid;
 		}
@@ -1305,7 +1277,7 @@ RID OpenXRAPI::find_tracker(const String& p_name)
 
 RID OpenXRAPI::tracker_create(const String& p_name)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, RID());
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, RID());
 
 	Tracker new_tracker;
 	new_tracker.name = p_name;
@@ -1315,7 +1287,7 @@ RID OpenXRAPI::tracker_create(const String& p_name)
 	new_tracker.toplevel_path = get_xr_path(p_name);
 	ERR_FAIL_COND_V(new_tracker.toplevel_path == XR_NULL_PATH, RID());
 
-	return tracker_owner.make_rid(new_tracker);
+	return data->tracker_owner.make_rid(new_tracker);
 }
 
 String OpenXRAPI::tracker_get_name(RID p_tracker)
@@ -1324,7 +1296,7 @@ String OpenXRAPI::tracker_get_name(RID p_tracker)
 		return String("None");
 	}
 
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, String());
 
 	return tracker->name;
@@ -1333,10 +1305,10 @@ String OpenXRAPI::tracker_get_name(RID p_tracker)
 void OpenXRAPI::tracker_check_profile(RID p_tracker, XrSession p_session)
 {
 	if (p_session == XR_NULL_HANDLE) {
-		p_session = session;
+		p_session = data->session;
 	}
 
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL(tracker);
 
 	if (tracker->toplevel_path == XR_NULL_PATH) {
@@ -1363,26 +1335,26 @@ void OpenXRAPI::tracker_check_profile(RID p_tracker, XrSession p_session)
 	if (was_profile != new_profile) {
 		tracker->active_profile_rid = get_interaction_profile_rid(new_profile);
 
-		if (xr_interface) {
-			xr_interface->tracker_profile_changed(p_tracker, tracker->active_profile_rid);
+		if (data->xr_interface) {
+			data->xr_interface->tracker_profile_changed(p_tracker, tracker->active_profile_rid);
 		}
 	}
 }
 
 void OpenXRAPI::tracker_free(RID p_tracker)
 {
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL(tracker);
 
 	// there is nothing to free here
 
-	tracker_owner.free(p_tracker);
+	data->tracker_owner.free(p_tracker);
 }
 
 RID OpenXRAPI::action_set_create(
 	const String& p_name, const String& p_localized_name, const int p_priority)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, RID());
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, RID());
 	ActionSet action_set;
 
 	action_set.name = p_name;
@@ -1401,7 +1373,7 @@ RID OpenXRAPI::action_set_create(
 	copy_string_to_char_buffer(p_localized_name, action_set_info.localizedActionSetName,
 		XR_MAX_LOCALIZED_ACTION_SET_NAME_SIZE);
 
-	XrResult result = xrCreateActionSet(instance, &action_set_info, &action_set.handle);
+	XrResult result = xrCreateActionSet(data->instance, &action_set_info, &action_set.handle);
 	if (XR_FAILED(result)) {
 		// print_line(
 		// 	"OpenXR: failed to create action set ", p_name, "! [", get_error_string(result), "]");
@@ -1410,13 +1382,13 @@ RID OpenXRAPI::action_set_create(
 
 	set_object_name(XR_OBJECT_TYPE_ACTION_SET, uint64_t(action_set.handle), p_name);
 
-	return action_set_owner.make_rid(action_set);
+	return data->action_set_owner.make_rid(action_set);
 }
 
 RID OpenXRAPI::find_action_set(const String& p_name)
 {
-	for (const RID& action_set_rid : action_set_owner.get_owned_list()) {
-		ActionSet* action_set = action_set_owner.get_or_null(action_set_rid);
+	for (const RID& action_set_rid : data->action_set_owner.get_owned_list()) {
+		ActionSet* action_set = data->action_set_owner.get_or_null(action_set_rid);
 		if (action_set && action_set->name == p_name) {
 			return action_set_rid;
 		}
@@ -1431,7 +1403,7 @@ String OpenXRAPI::action_set_get_name(RID p_action_set)
 		return String("None");
 	}
 
-	ActionSet* action_set = action_set_owner.get_or_null(p_action_set);
+	ActionSet* action_set = data->action_set_owner.get_or_null(p_action_set);
 	ERR_FAIL_NULL_V(action_set, String());
 
 	return action_set->name;
@@ -1443,7 +1415,7 @@ XrActionSet OpenXRAPI::action_set_get_handle(RID p_action_set)
 		return XR_NULL_HANDLE;
 	}
 
-	ActionSet* action_set = action_set_owner.get_or_null(p_action_set);
+	ActionSet* action_set = data->action_set_owner.get_or_null(p_action_set);
 	ERR_FAIL_NULL_V(action_set, XR_NULL_HANDLE);
 
 	return action_set->handle;
@@ -1451,12 +1423,12 @@ XrActionSet OpenXRAPI::action_set_get_handle(RID p_action_set)
 
 bool OpenXRAPI::attach_action_sets(const Vector<RID>& p_action_sets)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, false);
 
 	Vector<XrActionSet> action_handles;
 	action_handles.resize(p_action_sets.size());
 	for (int i = 0; i < p_action_sets.size(); i++) {
-		ActionSet* action_set = action_set_owner.get_or_null(p_action_sets[i]);
+		ActionSet* action_set = data->action_set_owner.get_or_null(p_action_sets[i]);
 		ERR_FAIL_NULL_V(action_set, false);
 
 		if (action_set->is_attached) {
@@ -1475,14 +1447,14 @@ bool OpenXRAPI::attach_action_sets(const Vector<RID>& p_action_sets)
 		action_handles.ptr()					 // actionSets
 	};
 
-	XrResult result = xrAttachSessionActionSets(session, &attach_info);
+	XrResult result = xrAttachSessionActionSets(data->session, &attach_info);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to attach action sets! [", get_error_string(result), "]");
 		return false;
 	}
 
 	for (int i = 0; i < p_action_sets.size(); i++) {
-		ActionSet* action_set = action_set_owner.get_or_null(p_action_sets[i]);
+		ActionSet* action_set = data->action_set_owner.get_or_null(p_action_sets[i]);
 		ERR_FAIL_NULL_V(action_set, false);
 		action_set->is_attached = true;
 	}
@@ -1510,20 +1482,20 @@ bool OpenXRAPI::attach_action_sets(const Vector<RID>& p_action_sets)
 
 void OpenXRAPI::action_set_free(RID p_action_set)
 {
-	ActionSet* action_set = action_set_owner.get_or_null(p_action_set);
+	ActionSet* action_set = data->action_set_owner.get_or_null(p_action_set);
 	ERR_FAIL_NULL(action_set);
 
 	if (action_set->handle != XR_NULL_HANDLE) {
 		xrDestroyActionSet(action_set->handle);
 	}
 
-	action_set_owner.free(p_action_set);
+	data->action_set_owner.free(p_action_set);
 }
 
 RID OpenXRAPI::get_action_rid(XrAction p_action)
 {
-	for (const RID& action_rid : action_owner.get_owned_list()) {
-		Action* action = action_owner.get_or_null(action_rid);
+	for (const RID& action_rid : data->action_owner.get_owned_list()) {
+		Action* action = data->action_owner.get_or_null(action_rid);
 		if (action && action->handle == p_action) {
 			return action_rid;
 		}
@@ -1534,8 +1506,8 @@ RID OpenXRAPI::get_action_rid(XrAction p_action)
 
 RID OpenXRAPI::find_action(const String& p_name, const RID& p_action_set)
 {
-	for (const RID& action_rid : action_owner.get_owned_list()) {
-		Action* action = action_owner.get_or_null(action_rid);
+	for (const RID& action_rid : data->action_owner.get_owned_list()) {
+		Action* action = data->action_owner.get_or_null(action_rid);
 		if (action && action->name == p_name &&
 			(p_action_set.is_null() || action->action_set_rid == p_action_set)) {
 			return action_rid;
@@ -1548,12 +1520,12 @@ RID OpenXRAPI::find_action(const String& p_name, const RID& p_action_set)
 RID OpenXRAPI::action_create(RID p_action_set, const String& p_name, const String& p_localized_name,
 	OpenXRAction::ActionType p_action_type, const Vector<RID>& p_trackers)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, RID());
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, RID());
 
 	Action action;
 	action.name = p_name;
 
-	ActionSet* action_set = action_set_owner.get_or_null(p_action_set);
+	ActionSet* action_set = data->action_set_owner.get_or_null(p_action_set);
 	ERR_FAIL_NULL_V(action_set, RID());
 	ERR_FAIL_COND_V(action_set->handle == XR_NULL_HANDLE, RID());
 	action.action_set_rid = p_action_set;
@@ -1581,7 +1553,7 @@ RID OpenXRAPI::action_create(RID p_action_set, const String& p_name, const Strin
 
 	Vector<XrPath> toplevel_paths;
 	for (int i = 0; i < p_trackers.size(); i++) {
-		Tracker* tracker = tracker_owner.get_or_null(p_trackers[i]);
+		Tracker* tracker = data->tracker_owner.get_or_null(p_trackers[i]);
 		if (tracker != nullptr && tracker->toplevel_path != XR_NULL_PATH) {
 			ActionTracker action_tracker = {
 				p_trackers[i],	// tracker
@@ -1617,7 +1589,7 @@ RID OpenXRAPI::action_create(RID p_action_set, const String& p_name, const Strin
 
 	set_object_name(XR_OBJECT_TYPE_ACTION, uint64_t(action.handle), p_name);
 
-	return action_owner.make_rid(action);
+	return data->action_owner.make_rid(action);
 }
 
 String OpenXRAPI::action_get_name(RID p_action)
@@ -1626,7 +1598,7 @@ String OpenXRAPI::action_get_name(RID p_action)
 		return String("None");
 	}
 
-	Action* action = action_owner.get_or_null(p_action);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, String());
 
 	return action->name;
@@ -1638,7 +1610,7 @@ XrAction OpenXRAPI::action_get_handle(RID p_action)
 		return XR_NULL_HANDLE;
 	}
 
-	Action* action = action_owner.get_or_null(p_action);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, XR_NULL_HANDLE);
 
 	return action->handle;
@@ -1646,20 +1618,20 @@ XrAction OpenXRAPI::action_get_handle(RID p_action)
 
 void OpenXRAPI::action_free(RID p_action)
 {
-	Action* action = action_owner.get_or_null(p_action);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL(action);
 
 	if (action->handle != XR_NULL_HANDLE) {
 		xrDestroyAction(action->handle);
 	}
 
-	action_owner.free(p_action);
+	data->action_owner.free(p_action);
 }
 
 RID OpenXRAPI::get_interaction_profile_rid(XrPath p_path)
 {
-	for (const RID& ip_rid : interaction_profile_owner.get_owned_list()) {
-		InteractionProfile* ip = interaction_profile_owner.get_or_null(ip_rid);
+	for (const RID& ip_rid : data->interaction_profile_owner.get_owned_list()) {
+		InteractionProfile* ip = data->interaction_profile_owner.get_or_null(ip_rid);
 		if (ip && ip->path == p_path) {
 			return ip_rid;
 		}
@@ -1674,7 +1646,7 @@ XrPath OpenXRAPI::get_interaction_profile_path(RID p_interaction_profile)
 		return XR_NULL_PATH;
 	}
 
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, XR_NULL_PATH);
 
 	return ip->path;
@@ -1693,7 +1665,7 @@ RID OpenXRAPI::interaction_profile_create(const String& p_name)
 	new_interaction_profile.internal_name = get_interaction_profile_internal_name(p_name);
 
 	XrResult result = xrStringToPath(
-		instance, new_interaction_profile.internal_name.get_data(), &new_interaction_profile.path);
+		data->instance, new_interaction_profile.internal_name.get_data(), &new_interaction_profile.path);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to get path for ", p_name, "! [", get_error_string(result),
 		// "]");
@@ -1706,7 +1678,7 @@ RID OpenXRAPI::interaction_profile_create(const String& p_name)
 	}
 
 	new_interaction_profile.name = p_name;
-	return interaction_profile_owner.make_rid(new_interaction_profile);
+	return data->interaction_profile_owner.make_rid(new_interaction_profile);
 }
 
 String OpenXRAPI::interaction_profile_get_name(RID p_interaction_profile)
@@ -1715,7 +1687,7 @@ String OpenXRAPI::interaction_profile_get_name(RID p_interaction_profile)
 		return String("None");
 	}
 
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, String());
 
 	return ip->name;
@@ -1723,18 +1695,18 @@ String OpenXRAPI::interaction_profile_get_name(RID p_interaction_profile)
 
 void OpenXRAPI::interaction_profile_clear_bindings(RID p_interaction_profile)
 {
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL(ip);
 
 	ip->bindings.clear();
 }
 
 CharString OpenXRAPI::get_interaction_profile_internal_name(
-	const String& p_interaction_profile_name) const
+	const String& p_interaction_profile_name)
 {
 	CharString internal_name = p_interaction_profile_name.utf8();
 
-	if (openxr_version < XR_API_VERSION_1_1_0) {
+	if (data->openxr_version < XR_API_VERSION_1_1_0) {
 		// These interaction profiles were renamed in OpenXR 1.1,
 		// if we don't support OpenXR 1.1, rename them back.
 		if (internal_name == "/interaction_profiles/meta/touch_pro_controller") {
@@ -1749,7 +1721,7 @@ CharString OpenXRAPI::get_interaction_profile_internal_name(
 }
 
 const char* OpenXRAPI::check_profile_path(
-	const CharString& p_interaction_profile_name, const char* p_path) const
+	const CharString& p_interaction_profile_name, const char* p_path)
 {
 	// We store the new names of these paths in our action map, so if we're on older versions of
 	// OpenXR, we need to use the old names.
@@ -1872,7 +1844,7 @@ const char* OpenXRAPI::check_profile_path(
 	for (size_t i = 0; i < length; i++) {
 		const RenameMap& rename = renames[i];
 
-		if (rename.before_version != 0 && openxr_version >= rename.before_version) {
+		if (rename.before_version != 0 && data->openxr_version >= rename.before_version) {
 			// We're done, we are on a new version than this, no need to check further.
 			return p_path;
 		}
@@ -1889,7 +1861,7 @@ const char* OpenXRAPI::check_profile_path(
 int OpenXRAPI::interaction_profile_add_binding(
 	RID p_interaction_profile, RID p_action, const String& p_path)
 {
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, -1);
 
 	if (!interaction_profile_supports_io_path(ip->name, p_path)) {
@@ -1898,12 +1870,12 @@ int OpenXRAPI::interaction_profile_add_binding(
 
 	XrActionSuggestedBinding binding;
 
-	Action* action = action_owner.get_or_null(p_action);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_COND_V(action == nullptr || action->handle == XR_NULL_HANDLE, -1);
 
 	binding.action = action->handle;
 
-	XrResult result = xrStringToPath(instance,
+	XrResult result = xrStringToPath(data->instance,
 		check_profile_path(ip->internal_name, p_path.utf8().get_data()), &binding.binding);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to get path for ", p_path, "! [", get_error_string(result),
@@ -1919,7 +1891,7 @@ int OpenXRAPI::interaction_profile_add_binding(
 bool OpenXRAPI::interaction_profile_add_modifier(
 	RID p_interaction_profile, const PackedByteArray& p_modifier)
 {
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, false);
 
 	if (!p_modifier.is_empty()) {
@@ -1932,9 +1904,9 @@ bool OpenXRAPI::interaction_profile_add_modifier(
 
 bool OpenXRAPI::interaction_profile_suggest_bindings(RID p_interaction_profile)
 {
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+	ERR_FAIL_COND_V(data->instance == XR_NULL_HANDLE, false);
 
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL_V(ip, false);
 
 	void* next = nullptr;
@@ -1964,7 +1936,7 @@ bool OpenXRAPI::interaction_profile_suggest_bindings(RID p_interaction_profile)
 		ip->bindings.ptr()							   // suggestedBindings
 	};
 
-	XrResult result = xrSuggestInteractionProfileBindings(instance, &suggested_bindings);
+	XrResult result = xrSuggestInteractionProfileBindings(data->instance, &suggested_bindings);
 	if (result == XR_ERROR_PATH_UNSUPPORTED) {
 		// this is fine, not all runtimes support all devices.
 		print_verbose(
@@ -1997,24 +1969,24 @@ bool OpenXRAPI::interaction_profile_suggest_bindings(RID p_interaction_profile)
 
 void OpenXRAPI::interaction_profile_free(RID p_interaction_profile)
 {
-	InteractionProfile* ip = interaction_profile_owner.get_or_null(p_interaction_profile);
+	InteractionProfile* ip = data->interaction_profile_owner.get_or_null(p_interaction_profile);
 	ERR_FAIL_NULL(ip);
 
 	ip->bindings.clear();
 	ip->modifiers.clear();
 
-	interaction_profile_owner.free(p_interaction_profile);
+	data->interaction_profile_owner.free(p_interaction_profile);
 }
 
 bool OpenXRAPI::get_action_bool(RID p_action, RID p_tracker)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, false);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, false);
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, false);
 
-	if (!running) {
+	if (!data->running) {
 		return false;
 	}
 
@@ -2029,7 +2001,7 @@ bool OpenXRAPI::get_action_bool(RID p_action, RID p_tracker)
 
 	XrActionStateBoolean result_state;
 	result_state.type = XR_TYPE_ACTION_STATE_BOOLEAN, result_state.next = nullptr;
-	XrResult result = xrGetActionStateBoolean(session, &get_info, &result_state);
+	XrResult result = xrGetActionStateBoolean(data->session, &get_info, &result_state);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: couldn't get action boolean! [", get_error_string(result), "]");
 		return false;
@@ -2040,13 +2012,13 @@ bool OpenXRAPI::get_action_bool(RID p_action, RID p_tracker)
 
 float OpenXRAPI::get_action_float(RID p_action, RID p_tracker)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, 0.0);
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, 0.0);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, 0.0);
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, 0.0);
 
-	if (!running) {
+	if (!data->running) {
 
 		return 0.0;
 	}
@@ -2062,7 +2034,7 @@ float OpenXRAPI::get_action_float(RID p_action, RID p_tracker)
 
 	XrActionStateFloat result_state;
 	result_state.type = XR_TYPE_ACTION_STATE_FLOAT, result_state.next = nullptr;
-	XrResult result = xrGetActionStateFloat(session, &get_info, &result_state);
+	XrResult result = xrGetActionStateFloat(data->session, &get_info, &result_state);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: couldn't get action float! [", get_error_string(result), "]");
 		return 0.0;
@@ -2073,13 +2045,13 @@ float OpenXRAPI::get_action_float(RID p_action, RID p_tracker)
 
 Vector2 OpenXRAPI::get_action_vector2(RID p_action, RID p_tracker)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, Vector2());
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, Vector2());
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, Vector2());
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, Vector2());
 
-	if (!running) {
+	if (!data->running) {
 		return Vector2();
 	}
 
@@ -2094,7 +2066,7 @@ Vector2 OpenXRAPI::get_action_vector2(RID p_action, RID p_tracker)
 
 	XrActionStateVector2f result_state;
 	result_state.type = XR_TYPE_ACTION_STATE_VECTOR2F, result_state.next = nullptr;
-	XrResult result = xrGetActionStateVector2f(session, &get_info, &result_state);
+	XrResult result = xrGetActionStateVector2f(data->session, &get_info, &result_state);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: couldn't get action vector2! [", get_error_string(result), "]");
 		return Vector2();
@@ -2107,13 +2079,13 @@ Vector2 OpenXRAPI::get_action_vector2(RID p_action, RID p_tracker)
 XRPose::TrackingConfidence OpenXRAPI::get_action_pose(RID p_action, RID p_tracker,
 	Transform3D& r_transform, Vector3& r_linear_velocity, Vector3& r_angular_velocity)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, XRPose::XR_TRACKING_CONFIDENCE_NONE);
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, XRPose::XR_TRACKING_CONFIDENCE_NONE);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, XRPose::XR_TRACKING_CONFIDENCE_NONE);
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, XRPose::XR_TRACKING_CONFIDENCE_NONE);
 
-	if (!running) {
+	if (!data->running) {
 		return XRPose::XR_TRACKING_CONFIDENCE_NONE;
 	}
 
@@ -2156,7 +2128,7 @@ XRPose::TrackingConfidence OpenXRAPI::get_action_pose(RID p_action, RID p_tracke
 		};
 
 		XrSpace space;
-		XrResult result = xrCreateActionSpace(session, &action_space_info, &space);
+		XrResult result = xrCreateActionSpace(data->session, &action_space_info, &space);
 		if (XR_FAILED(result)) {
 			// print_line("OpenXR: couldn't create action space! [", get_error_string(result), "]");
 			return XRPose::XR_TRACKING_CONFIDENCE_NONE;
@@ -2184,7 +2156,7 @@ XRPose::TrackingConfidence OpenXRAPI::get_action_pose(RID p_action, RID p_tracke
 	};
 
 	XrResult result =
-		xrLocateSpace(action->trackers[index].space, play_space, display_time, &location);
+		xrLocateSpace(action->trackers[index].space, data->play_space, display_time, &location);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to locate space! [", get_error_string(result), "]");
 		return XRPose::XR_TRACKING_CONFIDENCE_NONE;
@@ -2199,13 +2171,13 @@ XRPose::TrackingConfidence OpenXRAPI::get_action_pose(RID p_action, RID p_tracke
 bool OpenXRAPI::trigger_haptic_pulse(
 	RID p_action, RID p_tracker, float p_frequency, float p_amplitude, XrDuration p_duration_ns)
 {
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
-	Action* action = action_owner.get_or_null(p_action);
+	ERR_FAIL_COND_V(data->session == XR_NULL_HANDLE, false);
+	Action* action = data->action_owner.get_or_null(p_action);
 	ERR_FAIL_NULL_V(action, false);
-	Tracker* tracker = tracker_owner.get_or_null(p_tracker);
+	Tracker* tracker = data->tracker_owner.get_or_null(p_tracker);
 	ERR_FAIL_NULL_V(tracker, false);
 
-	if (!running) {
+	if (!data->running) {
 		return false;
 	}
 
@@ -2227,7 +2199,7 @@ bool OpenXRAPI::trigger_haptic_pulse(
 	};
 
 	XrResult result =
-		xrApplyHapticFeedback(session, &action_info, (const XrHapticBaseHeader*)&vibration);
+		xrApplyHapticFeedback(data->session, &action_info, (const XrHapticBaseHeader*)&vibration);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: failed to apply haptic feedback! [", get_error_string(result), "]");
 		return false;
@@ -2238,29 +2210,29 @@ bool OpenXRAPI::trigger_haptic_pulse(
 
 const Vector<XrEnvironmentBlendMode> OpenXRAPI::get_supported_environment_blend_modes()
 {
-	return supported_environment_blend_modes;
+	return data->supported_environment_blend_modes;
 }
 
-bool OpenXRAPI::is_environment_blend_mode_supported(XrEnvironmentBlendMode p_blend_mode) const
+bool OpenXRAPI::is_environment_blend_mode_supported(XrEnvironmentBlendMode p_blend_mode)
 {
-	return supported_environment_blend_modes.has(p_blend_mode);
+	return data->supported_environment_blend_modes.has(p_blend_mode);
 }
 
 bool OpenXRAPI::set_environment_blend_mode(XrEnvironmentBlendMode p_blend_mode)
 {
-	if (emulate_environment_blend_mode_alpha_blend &&
+	if (data->emulate_environment_blend_mode_alpha_blend &&
 		p_blend_mode == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
-		requested_environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
-		environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-		set_render_environment_blend_mode(environment_blend_mode);
+		data->requested_environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
+		data->environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+		set_render_environment_blend_mode(data->environment_blend_mode);
 		return true;
 	}
 	// We allow setting this when not initialized and will check if it is supported when
 	// initializing. After OpenXR is initialized we verify we're setting a supported blend mode.
 	else if (!is_initialized() || is_environment_blend_mode_supported(p_blend_mode)) {
-		requested_environment_blend_mode = p_blend_mode;
-		environment_blend_mode = p_blend_mode;
-		set_render_environment_blend_mode(environment_blend_mode);
+		data->requested_environment_blend_mode = p_blend_mode;
+		data->environment_blend_mode = p_blend_mode;
+		set_render_environment_blend_mode(data->environment_blend_mode);
 		return true;
 	}
 	return false;
@@ -2268,12 +2240,12 @@ bool OpenXRAPI::set_environment_blend_mode(XrEnvironmentBlendMode p_blend_mode)
 
 void OpenXRAPI::set_emulate_environment_blend_mode_alpha_blend(bool p_enabled)
 {
-	emulate_environment_blend_mode_alpha_blend = p_enabled;
+	data->emulate_environment_blend_mode_alpha_blend = p_enabled;
 }
 
 OpenXRAPI::OpenXRAlphaBlendModeSupport OpenXRAPI::is_environment_blend_mode_alpha_blend_supported()
 {
-	if (emulate_environment_blend_mode_alpha_blend) {
+	if (data->emulate_environment_blend_mode_alpha_blend) {
 		return OPENXR_ALPHA_BLEND_MODE_SUPPORT_EMULATING;
 	}
 	else if (is_environment_blend_mode_supported(XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND)) {
@@ -2306,7 +2278,22 @@ void OpenXRAPI::post_draw_viewport(RID p_render_target) {}
 
 RID OpenXRAPI::OpenXRSwapChainInfo::get_density_map() { return RID(); }
 
-OpenXRAPI::~OpenXRAPI() {}
+void OpenXRAPI::setup()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRAPI::finalize()
+{
+	if (!data) {
+		return;
+	}
+	finish();
+	memdelete(data);
+	data = nullptr;
+}
 
 bool OpenXRAPI::obtain_swapchain_formats() { return true; }
 
@@ -2320,7 +2307,7 @@ bool OpenXRAPI::get_view_projection(
 	return true;
 }
 
-Size2 OpenXRAPI::get_play_space_bounds() const { return Size2(); }
+Size2 OpenXRAPI::get_play_space_bounds() { return Size2(); }
 
 XrHandTrackerEXT OpenXRAPI::get_hand_tracker(int p_hand_index) { return XrHandTrackerEXT(); }
 
@@ -2341,6 +2328,10682 @@ void OpenXRAPI::cleanup_extension_wrappers() {}
 
 void OpenXRAPI::allocate_view_buffers(uint32_t p_view_count, bool p_submit_depth_buffer) {}
 
-String OpenXRAPI::get_swapchain_format_name(long p_swapchain_format) const { return String(); }
+String OpenXRAPI::get_swapchain_format_name(long p_swapchain_format) { return String(); }
 
 
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRUtil
+
+String OpenXRUtil::get_result_string(XrResult p_result)
+{
+	XR_ENUM_SWITCH(XrResult, p_result)
+}
+
+String OpenXRUtil::get_view_configuration_name(XrViewConfigurationType p_view_configuration)
+{
+	XR_ENUM_SWITCH(XrViewConfigurationType, p_view_configuration)
+}
+
+String OpenXRUtil::get_reference_space_name(XrReferenceSpaceType p_reference_space)
+{
+	XR_ENUM_SWITCH(XrReferenceSpaceType, p_reference_space)
+}
+
+String OpenXRUtil::get_structure_type_name(XrStructureType p_structure_type)
+{
+	XR_ENUM_SWITCH(XrStructureType, p_structure_type)
+}
+
+String OpenXRUtil::get_session_state_name(XrSessionState p_session_state)
+{
+	XR_ENUM_SWITCH(XrSessionState, p_session_state)
+}
+
+String OpenXRUtil::get_action_type_name(XrActionType p_action_type)
+{
+	XR_ENUM_SWITCH(XrActionType, p_action_type)
+}
+
+String OpenXRUtil::get_environment_blend_mode_name(XrEnvironmentBlendMode p_blend_mode)
+{
+	XR_ENUM_SWITCH(XrEnvironmentBlendMode, p_blend_mode);
+}
+
+String OpenXRUtil::make_xr_version_string(XrVersion p_version)
+{
+	String version;
+
+	version += String::num_int64(XR_VERSION_MAJOR(p_version));
+	version += String(".");
+	version += String::num_int64(XR_VERSION_MINOR(p_version));
+	version += String(".");
+	version += String::num_int64(XR_VERSION_PATCH(p_version));
+
+	return version;
+}
+
+String OpenXRUtil::get_handle_as_hex_string(void* p_handle)
+{
+	String hex;
+
+	if (p_handle == XR_NULL_HANDLE) {
+		return "null";
+	}
+
+	uint64_t handle = (uint64_t)p_handle;
+
+	while (handle != 0) {
+		uint8_t a = handle & 0x0F;
+		uint8_t b = (handle & 0xF0) >> 4;
+		handle = handle >> 8;
+
+		if (a < 10) {
+			hex = (a + '0') + hex;
+		}
+		else {
+			hex = (a + 'a' - 10) + hex;
+		}
+
+		if (b < 10) {
+			hex = (b + '0') + hex;
+		}
+		else {
+			hex = (b + 'a' - 10) + hex;
+		}
+	}
+
+	return "0x" + hex;
+}
+
+String OpenXRUtil::string_from_xruuid(const XrUuid& xr_uuid)
+{
+	String ret;
+	bool non_zero = false;
+
+	for (int i = 0; i < XR_UUID_SIZE; i++) {
+		non_zero |= xr_uuid.data[i] != 0;
+
+		char a = xr_uuid.data[i] & 0xF0 >> 4;
+		char b = xr_uuid.data[i] & 0x0F;
+
+		if (a < 10) {
+			ret += '0' + a;
+		}
+		else {
+			ret += 'a' + a - 10;
+		}
+
+		if (b < 10) {
+			ret += '0' + b;
+		}
+		else {
+			ret += 'a' + b - 10;
+		}
+	}
+
+	if (non_zero) {
+		return ret;
+	}
+	else {
+		return "";
+	}
+}
+
+XrUuid OpenXRUtil::xruuid_from_string(const String& p_uuid)
+{
+	XrUuid new_uuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+	int len = p_uuid.length();
+	if (len == 0) {
+		return new_uuid;
+	}
+	else if (len != (2 * XR_UUID_SIZE)) {
+		WARN_PRINT("OpenXR: Unexpected UUID length: " + String::num_int64(len) +
+				   " != " + String::num_int64(2 * XR_UUID_SIZE));
+	}
+
+	int j = 0;
+	for (int i = 0; i < XR_UUID_SIZE; i++) {
+		uint8_t val = 0;
+
+		// 2 chars per byte.
+		for (int k = 0; k < 2; k++) {
+			if (j < len) {
+				val <<= 4;
+
+				char32_t c = p_uuid[j++];
+				if (c >= '0' && c <= '9') {
+					val += uint8_t(c - '0');
+				}
+				else if (c >= 'a' && c <= 'f') {
+					val += uint8_t(10 + c - 'a');
+				}
+				else if (c >= 'A' && c <= 'F') {
+					val += uint8_t(10 + c - 'A');
+				}
+				else {
+					WARN_PRINT("OpenXR: Unexpected character in UUID: " + String::num_int64(c));
+				}
+			}
+		}
+
+		new_uuid.data[i] = val;
+	}
+
+	return new_uuid;
+}
+
+void OpenXRUtil::XrMatrix4x4f_CreateProjection(XrMatrix4x4f* result, const float tanAngleLeft,
+	const float tanAngleRight, const float tanAngleUp, const float tanAngleDown,
+	const float nearZ, const float farZ)
+{
+	const float tanAngleWidth = tanAngleRight - tanAngleLeft;
+
+	// Set to tanAngleUp - tanAngleDown for a clip space with positive Y up.
+	const float tanAngleHeight = (tanAngleUp - tanAngleDown);
+
+	// Set to nearZ for a [-1,1] Z clip space.
+	const float offsetZ = nearZ;
+
+	if (farZ <= nearZ) {
+		// place the far plane at infinity
+		result->m[0] = 2.0f / tanAngleWidth;
+		result->m[4] = 0.0f;
+		result->m[8] = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+		result->m[12] = 0.0f;
+
+		result->m[1] = 0.0f;
+		result->m[5] = 2.0f / tanAngleHeight;
+		result->m[9] = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+		result->m[13] = 0.0f;
+
+		result->m[2] = 0.0f;
+		result->m[6] = 0.0f;
+		result->m[10] = -1.0f;
+		result->m[14] = -(nearZ + offsetZ);
+
+		result->m[3] = 0.0f;
+		result->m[7] = 0.0f;
+		result->m[11] = -1.0f;
+		result->m[15] = 0.0f;
+	}
+	else {
+		// normal projection
+		result->m[0] = 2.0f / tanAngleWidth;
+		result->m[4] = 0.0f;
+		result->m[8] = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+		result->m[12] = 0.0f;
+
+		result->m[1] = 0.0f;
+		result->m[5] = 2.0f / tanAngleHeight;
+		result->m[9] = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+		result->m[13] = 0.0f;
+
+		result->m[2] = 0.0f;
+		result->m[6] = 0.0f;
+		result->m[10] = -(farZ + offsetZ) / (farZ - nearZ);
+		result->m[14] = -(farZ * (nearZ + offsetZ)) / (farZ - nearZ);
+
+		result->m[3] = 0.0f;
+		result->m[7] = 0.0f;
+		result->m[11] = -1.0f;
+		result->m[15] = 0.0f;
+	}
+}
+
+void OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(
+	XrMatrix4x4f* result, const XrFovf fov, const float nearZ, const float farZ)
+{
+	const float tanLeft = Math::tan(fov.angleLeft);
+	const float tanRight = Math::tan(fov.angleRight);
+
+	const float tanDown = Math::tan(fov.angleDown);
+	const float tanUp = Math::tan(fov.angleUp);
+
+	XrMatrix4x4f_CreateProjection(result, tanLeft, tanRight, tanUp, tanDown, nearZ, farZ);
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRStructureBase
+
+void OpenXRStructureBase::set_next(const Ref<OpenXRStructureBase> p_next) { next = p_next; }
+
+Ref<OpenXRStructureBase> OpenXRStructureBase::get_next() const { return next; }
+
+bool OpenXRStructureBase::has_valid_configuration() const
+{
+	if (persistence_contexts.is_empty()) {
+		return false;
+	}
+
+	ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
+
+	if (!OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
+		return false;
+	}
+
+	return true;
+}
+
+void* OpenXRStructureBase::get_header(void* p_next)
+{
+	void* n = p_next;
+	if (get_next().is_valid()) {
+		n = get_next()->get_header(n);
+	}
+
+	if (has_valid_configuration()) {
+		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
+
+		context_handles.resize(persistence_contexts.size());
+
+		XrSpatialPersistenceContextEXT* ptr = context_handles.ptrw();
+		int i = 0;
+		for (const RID& rid : persistence_contexts) {
+			ptr[i++] = OpenXRSpatialAnchorCapability::get_persistence_context_handle(rid);
+		}
+
+		persistence_config.next = n;
+		persistence_config.persistenceContextCount = (uint32_t)context_handles.size();
+		persistence_config.persistenceContexts = context_handles.ptr();
+
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&persistence_config;
+	}
+
+	return n;
+}
+
+XrStructureType OpenXRStructureBase::get_structure_type()
+{
+	if (!persistence_contexts.is_empty()) {
+		return XR_TYPE_SPATIAL_CONTEXT_PERSISTENCE_CONFIG_EXT;
+	}
+
+	XrStructureType* header = (XrStructureType*)get_header();
+	if (header == nullptr) {
+		return XR_TYPE_UNKNOWN;
+	}
+	return *header;
+}
+
+void OpenXRStructureBase::add_persistence_context(RID p_persistence_context)
+{
+	ERR_FAIL_COND(persistence_contexts.has(p_persistence_context));
+
+	persistence_contexts.push_back(p_persistence_context);
+}
+
+void OpenXRStructureBase::remove_persistence_context(RID p_persistence_context)
+{
+	ERR_FAIL_COND(!persistence_contexts.has(p_persistence_context));
+
+	persistence_contexts.erase(p_persistence_context);
+}
+
+uint64_t OpenXRStructureBase::_get_structure_type() { return (uint64_t)get_structure_type(); }
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRAPIExtension
+
+uint64_t OpenXRAPIExtension::get_openxr_version()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_openxr_version();
+}
+
+uint64_t OpenXRAPIExtension::get_instance()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_instance();
+}
+
+uint64_t OpenXRAPIExtension::get_system_id()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_system_id();
+}
+
+uint64_t OpenXRAPIExtension::get_session()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_session();
+}
+
+bool OpenXRAPIExtension::openxr_is_enabled(bool p_check_run_in_editor)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::openxr_is_enabled(p_check_run_in_editor);
+}
+
+uint64_t OpenXRAPIExtension::get_instance_proc_addr(const String& p_name)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	CharString str = p_name.utf8();
+	PFN_xrVoidFunction addr = nullptr;
+	XrResult result = OpenXRAPI::get_instance_proc_addr(str.get_data(), &addr);
+	if (result != XR_SUCCESS) {
+		return 0;
+	}
+	return reinterpret_cast<uint64_t>(addr);
+}
+
+String OpenXRAPIExtension::get_error_string(uint64_t result)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), String());
+	return OpenXRAPI::get_error_string((XrResult)result);
+}
+
+String OpenXRAPIExtension::get_swapchain_format_name(int64_t p_swapchain_format)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), String());
+	return OpenXRAPI::get_swapchain_format_name(p_swapchain_format);
+}
+
+void OpenXRAPIExtension::set_object_name(
+	int64_t p_object_type, uint64_t p_object_handle, const String& p_object_name)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::set_object_name(XrObjectType(p_object_type), p_object_handle, p_object_name);
+}
+
+void OpenXRAPIExtension::begin_debug_label_region(const String& p_label_name)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::begin_debug_label_region(p_label_name);
+}
+
+void OpenXRAPIExtension::end_debug_label_region()
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::end_debug_label_region();
+}
+
+void OpenXRAPIExtension::insert_debug_label(const String& p_label_name)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::insert_debug_label(p_label_name);
+}
+
+uint32_t OpenXRAPIExtension::get_view_count() const
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint32_t)OpenXRAPI::get_view_count();
+}
+
+uint64_t OpenXRAPIExtension::get_view_configuration() const
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_view_configuration();
+}
+
+bool OpenXRAPIExtension::is_initialized()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::is_initialized();
+}
+
+bool OpenXRAPIExtension::is_running()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::is_running();
+}
+
+uint64_t OpenXRAPIExtension::get_play_space()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_play_space();
+}
+
+int64_t OpenXRAPIExtension::get_predicted_display_time()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (XrTime)OpenXRAPI::get_predicted_display_time();
+}
+
+int64_t OpenXRAPIExtension::get_next_frame_time()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+
+	WARN_PRINT_ONCE("OpenXR: Next frame timing called, verify this is intended.");
+
+	return (XrTime)OpenXRAPI::get_next_frame_time();
+}
+
+bool OpenXRAPIExtension::can_render()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+	return OpenXRAPI::can_render();
+}
+
+RID OpenXRAPIExtension::find_action(const String& p_name, const RID& p_action_set)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
+	return OpenXRAPI::find_action(p_name, p_action_set);
+}
+
+uint64_t OpenXRAPIExtension::action_get_handle(RID p_action)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	XrAction action_handle = OpenXRAPI::action_get_handle(p_action);
+	return (uint64_t)action_handle;
+}
+
+uint64_t OpenXRAPIExtension::get_hand_tracker(int p_hand_index)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_hand_tracker(p_hand_index);
+}
+
+double OpenXRAPIExtension::get_render_state_z_near()
+{
+	ERR_NOT_ON_RENDER_THREAD_V(0.0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0.0);
+	return OpenXRAPI::get_render_state_z_near();
+}
+
+double OpenXRAPIExtension::get_render_state_z_far()
+{
+	ERR_NOT_ON_RENDER_THREAD_V(0.0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0.0);
+	return OpenXRAPI::get_render_state_z_far();
+}
+
+void OpenXRAPIExtension::set_velocity_texture(RID p_render_target)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_velocity_texture(p_render_target);
+}
+
+void OpenXRAPIExtension::set_velocity_depth_texture(RID p_render_target)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_velocity_depth_texture(p_render_target);
+}
+
+void OpenXRAPIExtension::set_velocity_target_size(const Size2i& p_target_size)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_velocity_target_size(p_target_size);
+}
+
+PackedInt64Array OpenXRAPIExtension::get_supported_swapchain_formats()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedInt64Array());
+	return OpenXRAPI::get_supported_swapchain_formats();
+}
+
+uint64_t OpenXRAPIExtension::openxr_swapchain_create(XrSwapchainCreateFlags p_create_flags,
+	XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width,
+	uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+
+	OpenXRAPI::OpenXRSwapChainInfo* new_swapchain_info = memnew(OpenXRAPI::OpenXRSwapChainInfo);
+	new_swapchain_info->create(p_create_flags, p_usage_flags, p_swapchain_format, p_width, p_height,
+		p_sample_count, p_array_size);
+	return reinterpret_cast<uint64_t>(new_swapchain_info);
+}
+
+void OpenXRAPIExtension::openxr_swapchain_free(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	swapchain_info->free();
+	memfree(swapchain_info);
+}
+
+uint64_t OpenXRAPIExtension::openxr_swapchain_get_swapchain(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	XrSwapchain swapchain = swapchain_info->get_swapchain();
+	return (uint64_t)swapchain;
+}
+
+void OpenXRAPIExtension::openxr_swapchain_acquire(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	bool should_render = true;
+	swapchain_info->acquire(should_render);
+}
+
+RID OpenXRAPIExtension::openxr_swapchain_get_image(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	return swapchain_info->get_image();
+}
+
+void OpenXRAPIExtension::openxr_swapchain_release(uint64_t p_swapchain_info)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
+		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
+	swapchain_info->release();
+}
+
+uint64_t OpenXRAPIExtension::get_projection_layer()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
+	return (uint64_t)OpenXRAPI::get_projection_layer();
+}
+
+void OpenXRAPIExtension::set_render_region(const Rect2i& p_render_region)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_render_region(p_render_region);
+}
+
+void OpenXRAPIExtension::update_main_swapchain_size()
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::update_main_swapchain_size();
+}
+
+void OpenXRAPIExtension::set_emulate_environment_blend_mode_alpha_blend(bool p_enabled)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	OpenXRAPI::set_emulate_environment_blend_mode_alpha_blend(p_enabled);
+}
+
+OpenXRAPIExtension::OpenXRAlphaBlendModeSupport
+OpenXRAPIExtension::is_environment_blend_mode_alpha_blend_supported()
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE);
+	return (OpenXRAPIExtension::OpenXRAlphaBlendModeSupport)
+		OpenXRAPI::is_environment_blend_mode_alpha_blend_supported();
+}
+
+OpenXRAPIExtension::OpenXRAPIExtension() {}
+
+#ifdef None
+#undef None
+#endif
+#ifdef Status
+#undef Status
+#endif
+#ifdef Bool
+#undef Bool
+#endif
+#ifdef True
+#undef True
+#endif
+#ifdef False
+#undef False
+#endif
+#ifdef CursorShape
+#undef CursorShape
+#endif
+#ifdef KeyPress
+#undef KeyPress
+#endif
+#ifdef KeyRelease
+#undef KeyRelease
+#endif
+#ifdef FocusIn
+#undef FocusIn
+#endif
+#ifdef FocusOut
+#undef FocusOut
+#endif
+#ifdef Expose
+#undef Expose
+#endif
+#ifdef FontChange
+#undef FontChange
+#endif
+#ifdef Unsorted
+#undef Unsorted
+#endif
+#ifdef Always
+#undef Always
+#endif
+#ifdef Above
+#undef Above
+#endif
+#ifdef Below
+#undef Below
+#endif
+
+// ============================================================================
+// Merged from modules/openxr/register_types.cpp
+// ============================================================================
+
+#include "modules/openxr/openxr_api.h"
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "core/os/os.h"
+#include "extensions/openxr_extensions.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
+#include "modules/modules_enabled.gen.h"
+#include "openxr_api.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
+#include "register_types.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
+
+#ifdef ANDROID_ENABLED
+#include "extensions/platform/openxr_android_extension.h"
+#endif
+
+static Ref<OpenXRInterface> openxr_interface;
+
+void uninitialize_openxr_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	if (openxr_interface.is_valid()) {
+		// uninitialize just in case
+		if (openxr_interface->is_initialized()) {
+			openxr_interface->uninitialize();
+		}
+
+		// unregister our interface from the XR server
+		if (XRServer::is_initialized()) {
+			if (XRServer::get_primary_interface() == openxr_interface) {
+				XRServer::set_primary_interface(Ref<XRInterface>());
+			}
+			XRServer::remove_interface(openxr_interface);
+		}
+
+		// and release
+		openxr_interface.unref();
+	}
+
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::finalize();
+	}
+
+	if (OpenXRInteractionProfileMetadata::is_initialized()) {
+		OpenXRInteractionProfileMetadata::finalize();
+	}
+
+	if (OpenXRInteractionProfileExtension::is_initialized()) {
+		OpenXRInteractionProfileExtension::finalize();
+	}
+
+	// cleanup our extension wrappers
+	OpenXRAPI::cleanup_extension_wrappers();
+}
+
+void initialize_openxr_module(ModuleInitializationLevel p_level) {}
+
+// ============================================================================
+// Merged from modules/openxr/openxr_interface.cpp
+// ============================================================================
+
+#include <openxr/openxr.h>
+#include "modules/openxr/openxr_api.h"
+#include "core/config/engine.h"
+#include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
+#include "extensions/openxr_extensions.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/rendering_server_types.h"
+
+String OpenXRInterface::get_name() const { return String("OpenXR"); }
+
+uint32_t OpenXRInterface::get_capabilities() const
+{
+	return XRInterface::XR_VR + XRInterface::XR_STEREO;
+}
+
+XRInterface::TrackingStatus OpenXRInterface::get_tracking_status() const { return tracking_state; }
+
+OpenXRInterface::ActionSet* OpenXRInterface::create_action_set(
+	const String& p_action_set_name, const String& p_localized_name, const int p_priority)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), nullptr);
+
+	// find if it already exists
+	for (int i = 0; i < action_sets.size(); i++) {
+		if (action_sets[i]->action_set_name == p_action_set_name) {
+			// already exists in this set
+			return nullptr;
+		}
+	}
+
+	ActionSet* action_set = memnew(ActionSet);
+	action_set->action_set_name = p_action_set_name;
+	action_set->is_active = true;
+	action_set->action_set_rid =
+		OpenXRAPI::action_set_create(p_action_set_name, p_localized_name, p_priority);
+	action_sets.push_back(action_set);
+
+	return action_set;
+}
+
+void OpenXRInterface::free_action_sets()
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	for (int i = 0; i < action_sets.size(); i++) {
+		ActionSet* action_set = action_sets[i];
+
+		free_actions(action_set);
+
+		OpenXRAPI::action_set_free(action_set->action_set_rid);
+
+		memfree(action_set);
+	}
+	action_sets.clear();
+}
+
+OpenXRInterface::Action* OpenXRInterface::create_action(ActionSet* p_action_set,
+	const String& p_action_name, const String& p_localized_name,
+	OpenXRAction::ActionType p_action_type, const Vector<Tracker*> p_trackers)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), nullptr);
+
+	for (int i = 0; i < p_action_set->actions.size(); i++) {
+		if (p_action_set->actions[i]->action_name == p_action_name) {
+			// already exists in this set
+			return nullptr;
+		}
+	}
+
+	Vector<RID> tracker_rids;
+	for (int i = 0; i < p_trackers.size(); i++) {
+		tracker_rids.push_back(p_trackers[i]->tracker_rid);
+	}
+
+	Action* action = memnew(Action);
+	if (p_action_type == OpenXRAction::OPENXR_ACTION_POSE) {
+		// We can't have dual action names in OpenXR hence we added _pose,
+		// but default, aim and grip and default pose action names in Godot so rename them on the
+		// tracker. NOTE need to decide on whether we should keep the naming convention or rename it
+		// on Godots side
+		if (p_action_name == "default_pose") {
+			action->action_name = "default";
+		}
+		else if (p_action_name == "aim_pose") {
+			action->action_name = "aim";
+		}
+		else if (p_action_name == "grip_pose") {
+			action->action_name = "grip";
+		}
+		else {
+			action->action_name = p_action_name;
+		}
+	}
+	else {
+		action->action_name = p_action_name;
+	}
+
+	action->action_type = p_action_type;
+	action->action_rid = OpenXRAPI::action_create(
+		p_action_set->action_set_rid, p_action_name, p_localized_name, p_action_type, tracker_rids);
+	p_action_set->actions.push_back(action);
+
+	// we link our actions back to our trackers so we know which actions to check when we're
+	// processing our trackers
+	for (int i = 0; i < p_trackers.size(); i++) {
+		if (!p_trackers[i]->actions.has(action)) {
+			p_trackers[i]->actions.push_back(action);
+		}
+	}
+
+	return action;
+}
+
+OpenXRInterface::Action* OpenXRInterface::find_action(const String& p_action_name)
+{
+	// We just find the first action by this name
+
+	for (int i = 0; i < action_sets.size(); i++) {
+		for (int j = 0; j < action_sets[i]->actions.size(); j++) {
+			if (action_sets[i]->actions[j]->action_name == p_action_name) {
+				return action_sets[i]->actions[j];
+			}
+		}
+	}
+
+	// not found
+	return nullptr;
+}
+
+void OpenXRInterface::free_actions(ActionSet* p_action_set)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	for (int i = 0; i < p_action_set->actions.size(); i++) {
+		Action* action = p_action_set->actions[i];
+
+		OpenXRAPI::action_free(action->action_rid);
+
+		memdelete(action);
+	}
+	p_action_set->actions.clear();
+}
+
+OpenXRInterface::Tracker* OpenXRInterface::find_tracker(const String& p_tracker_name, bool p_create)
+{
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), nullptr);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), nullptr);
+
+	Tracker* tracker = nullptr;
+	for (int i = 0; i < trackers.size(); i++) {
+		tracker = trackers[i];
+		if (tracker->tracker_name == p_tracker_name) {
+			return tracker;
+		}
+	}
+
+	if (!p_create) {
+		return nullptr;
+	}
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_top_level_path_supported(p_tracker_name), nullptr);
+
+	// Create our RID
+	RID tracker_rid = OpenXRAPI::tracker_create(p_tracker_name);
+	ERR_FAIL_COND_V(tracker_rid.is_null(), nullptr);
+
+	// Create our controller tracker.
+	Ref<XRTracker> controller_tracker;
+	controller_tracker.instantiate();
+	controller_tracker->set_tracker_type(XRServer::TRACKER_CONTROLLER);
+
+	// We have standardized some names to make things nicer to the user so lets recognize the
+	// toplevel paths related to these.
+	if (p_tracker_name == "/user/hand/left") {
+		controller_tracker->set_tracker_name("left_hand");
+		controller_tracker->set_tracker_desc("Left hand controller");
+		controller_tracker->set_tracker_hand(XRTracker::TRACKER_HAND_LEFT);
+	}
+	else if (p_tracker_name == "/user/hand/right") {
+		controller_tracker->set_tracker_name("right_hand");
+		controller_tracker->set_tracker_desc("Right hand controller");
+		controller_tracker->set_tracker_hand(XRTracker::TRACKER_HAND_RIGHT);
+	}
+	else {
+		controller_tracker->set_tracker_name(p_tracker_name);
+		controller_tracker->set_tracker_desc(p_tracker_name);
+	}
+	controller_tracker->set_tracker_profile(INTERACTION_PROFILE_NONE);
+	XRServer::add_tracker(controller_tracker);
+
+	// create a new entry
+	tracker = memnew(Tracker);
+	tracker->tracker_name = p_tracker_name;
+	tracker->tracker_rid = tracker_rid;
+	tracker->controller_tracker = controller_tracker;
+	tracker->interaction_profile = RID();
+	trackers.push_back(tracker);
+
+	return tracker;
+}
+
+void OpenXRInterface::tracker_profile_changed(RID p_tracker, RID p_interaction_profile)
+{
+	Tracker* tracker = nullptr;
+	for (int i = 0; i < trackers.size() && tracker == nullptr; i++) {
+		if (trackers[i]->tracker_rid == p_tracker) {
+			tracker = trackers[i];
+		}
+	}
+	ERR_FAIL_NULL(tracker);
+
+	tracker->interaction_profile = p_interaction_profile;
+
+	if (p_interaction_profile.is_null()) {
+		print_verbose("OpenXR: Interaction profile for " + tracker->tracker_name + " changed to " +
+					  INTERACTION_PROFILE_NONE);
+		tracker->controller_tracker->set_tracker_profile(INTERACTION_PROFILE_NONE);
+	}
+	else {
+		String name = OpenXRAPI::interaction_profile_get_name(p_interaction_profile);
+		print_verbose(
+			"OpenXR: Interaction profile for " + tracker->tracker_name + " changed to " + name);
+		tracker->controller_tracker->set_tracker_profile(name);
+	}
+}
+
+void OpenXRInterface::trigger_haptic_pulse(const String& p_action_name,
+	const String& p_tracker_name, double p_frequency, double p_amplitude, double p_duration_sec,
+	double p_delay_sec)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	Action* action = find_action(p_action_name);
+	ERR_FAIL_NULL(action);
+
+	// We need to map our tracker name to our OpenXR name for our inbuild names.
+	String tracker_name = p_tracker_name;
+	if (tracker_name == "left_hand") {
+		tracker_name = "/user/hand/left";
+	}
+	else if (tracker_name == "right_hand") {
+		tracker_name = "/user/hand/right";
+	}
+	Tracker* tracker = find_tracker(tracker_name);
+	ERR_FAIL_NULL(tracker);
+
+	// TODO OpenXR does not support delay, so we may need to add support for that somehow...
+
+	XrDuration duration = XrDuration(p_duration_sec * 1000000000.0); // seconds -> nanoseconds
+
+	OpenXRAPI::trigger_haptic_pulse(
+		action->action_rid, tracker->tracker_rid, p_frequency, p_amplitude, duration);
+}
+
+void OpenXRInterface::free_trackers()
+{
+	ERR_FAIL_COND(!XRServer::is_initialized());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	for (int i = 0; i < trackers.size(); i++) {
+		Tracker* tracker = trackers[i];
+
+		OpenXRAPI::tracker_free(tracker->tracker_rid);
+		XRServer::remove_tracker(tracker->controller_tracker);
+		tracker->controller_tracker.unref();
+
+		memdelete(tracker);
+	}
+	trackers.clear();
+}
+
+void OpenXRInterface::free_interaction_profiles()
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	for (const RID& interaction_profile : interaction_profiles) {
+		OpenXRAPI::interaction_profile_free(interaction_profile);
+	}
+	interaction_profiles.clear();
+}
+
+bool OpenXRInterface::initialize_on_startup() const
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return false;
+	}
+	else if (!OpenXRAPI::is_initialized()) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+
+bool OpenXRInterface::is_initialized() const { return initialized; }
+
+bool OpenXRInterface::supports_play_area_mode(XRInterface::PlayAreaMode p_mode)
+{
+	if (p_mode == XRInterface::XR_PLAY_AREA_3DOF) {
+		return false;
+	}
+	return true;
+}
+
+XRInterface::PlayAreaMode OpenXRInterface::get_play_area_mode() const
+{
+	if (!OpenXRAPI::is_allocated() || !initialized) {
+		return XRInterface::XR_PLAY_AREA_UNKNOWN;
+	}
+
+	XrReferenceSpaceType reference_space = OpenXRAPI::get_reference_space();
+
+	if (reference_space == XR_REFERENCE_SPACE_TYPE_LOCAL) {
+		return XRInterface::XR_PLAY_AREA_SITTING;
+	}
+	else if (reference_space == XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT) {
+		return XRInterface::XR_PLAY_AREA_ROOMSCALE;
+	}
+	else if (reference_space == XR_REFERENCE_SPACE_TYPE_STAGE) {
+		return XRInterface::XR_PLAY_AREA_STAGE;
+	}
+	else if (reference_space == XR_REFERENCE_SPACE_TYPE_MAX_ENUM) {
+		return XRInterface::XR_PLAY_AREA_CUSTOM;
+	}
+
+	return XRInterface::XR_PLAY_AREA_UNKNOWN;
+}
+
+bool OpenXRInterface::set_play_area_mode(XRInterface::PlayAreaMode p_mode)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+
+	XrReferenceSpaceType reference_space;
+
+	if (p_mode == XRInterface::XR_PLAY_AREA_SITTING) {
+		reference_space = XR_REFERENCE_SPACE_TYPE_LOCAL;
+	}
+	else if (p_mode == XRInterface::XR_PLAY_AREA_ROOMSCALE) {
+		reference_space = XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT;
+	}
+	else if (p_mode == XRInterface::XR_PLAY_AREA_STAGE) {
+		reference_space = XR_REFERENCE_SPACE_TYPE_STAGE;
+	}
+	else {
+		return false;
+	}
+
+	if (OpenXRAPI::set_requested_reference_space(reference_space)) {
+		if (XRServer::is_initialized()) {
+			XRServer::clear_reference_frame();
+		}
+		return true;
+	}
+
+	return false;
+}
+
+PackedVector3Array OpenXRInterface::get_play_area() const
+{
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), PackedVector3Array());
+	PackedVector3Array arr;
+
+	Vector3 sides[4] = {
+		Vector3(-0.5f, 0.0f, -0.5f),
+		Vector3(0.5f, 0.0f, -0.5f),
+		Vector3(0.5f, 0.0f, 0.5f),
+		Vector3(-0.5f, 0.0f, 0.5f),
+	};
+
+	if (OpenXRAPI::is_allocated() && OpenXRAPI::is_initialized()) {
+		Size2 extents = OpenXRAPI::get_play_space_bounds();
+		if (extents.width != 0.0 && extents.height != 0.0) {
+			Transform3D reference_frame = XRServer::get_reference_frame();
+
+			for (int i = 0; i < 4; i++) {
+				Vector3 coord = sides[i];
+
+				// Scale it up.
+				coord.x *= extents.width;
+				coord.z *= extents.height;
+
+				// Now apply our reference.
+				Vector3 out = reference_frame.xform(coord);
+				arr.push_back(out);
+			}
+		}
+		else {
+			WARN_PRINT_ONCE("OpenXR: No extents available.");
+		}
+	}
+
+	return arr;
+}
+
+float OpenXRInterface::get_display_refresh_rate() const
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return 0.0;
+	}
+	else if (!OpenXRAPI::is_initialized()) {
+		return 0.0;
+	}
+	else {
+		return OpenXRAPI::get_display_refresh_rate();
+	}
+}
+
+void OpenXRInterface::set_display_refresh_rate(float p_refresh_rate)
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return;
+	}
+	else if (!OpenXRAPI::is_initialized()) {
+		return;
+	}
+	else {
+		OpenXRAPI::set_display_refresh_rate(p_refresh_rate);
+	}
+}
+
+bool OpenXRInterface::is_hand_tracking_supported()
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return false;
+	}
+	else if (!OpenXRAPI::is_initialized()) {
+		return false;
+	}
+	else {
+		if (!OpenXRHandTrackingExtension::is_initialized()) {
+			return false;
+		}
+		else {
+			return OpenXRHandTrackingExtension::get_active();
+		}
+	}
+}
+
+bool OpenXRInterface::is_hand_interaction_supported() const
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return false;
+	}
+	else if (!OpenXRAPI::is_initialized()) {
+		return false;
+	}
+	else {
+		if (!OpenXRInteractionProfileExtension::is_initialized()) {
+			return false;
+		}
+		else {
+			return OpenXRInteractionProfileExtension::is_profile_available(
+				OpenXRInteractionProfileExtension::PROFILE_HAND_INTERACTION);
+		}
+	}
+}
+
+bool OpenXRInterface::is_eye_gaze_interaction_supported()
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return false;
+	}
+	else if (!OpenXRAPI::is_initialized()) {
+		return false;
+	}
+	else {
+		if (!OpenXREyeGazeInteractionExtension::is_initialized()) {
+			return false;
+		}
+		else {
+			return OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction();
+		}
+	}
+}
+
+bool OpenXRInterface::is_action_set_active(const String& p_action_set) const
+{
+	for (ActionSet* action_set : action_sets) {
+		if (action_set->action_set_name == p_action_set) {
+			return action_set->is_active;
+		}
+	}
+
+	WARN_PRINT("OpenXR: Unknown action set " + p_action_set);
+	return false;
+}
+
+void OpenXRInterface::set_action_set_active(const String& p_action_set, bool p_active)
+{
+	for (ActionSet* action_set : action_sets) {
+		if (action_set->action_set_name == p_action_set) {
+			action_set->is_active = p_active;
+			return;
+		}
+	}
+
+	WARN_PRINT("OpenXR: Unknown action set " + p_action_set);
+}
+
+float OpenXRInterface::get_vrs_min_radius() const { return xr_vrs.get_vrs_min_radius(); }
+
+void OpenXRInterface::set_vrs_min_radius(float p_vrs_min_radius)
+{
+	xr_vrs.set_vrs_min_radius(p_vrs_min_radius);
+}
+
+float OpenXRInterface::get_vrs_strength() const { return xr_vrs.get_vrs_strength(); }
+
+void OpenXRInterface::set_vrs_strength(float p_vrs_strength)
+{
+	xr_vrs.set_vrs_strength(p_vrs_strength);
+}
+
+double OpenXRInterface::get_render_target_size_multiplier() const
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return 1.0;
+	}
+	else {
+		return OpenXRAPI::get_render_target_size_multiplier();
+	}
+}
+
+void OpenXRInterface::set_render_target_size_multiplier(double multiplier)
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return;
+	}
+	else {
+		OpenXRAPI::set_render_target_size_multiplier(multiplier);
+	}
+}
+
+bool OpenXRInterface::is_foveation_supported() const
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return false;
+	}
+	else {
+		return OpenXRAPI::is_foveation_supported();
+	}
+}
+
+int OpenXRInterface::get_foveation_level() const
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return 0;
+	}
+	else {
+		return OpenXRAPI::get_foveation_level();
+	}
+}
+
+void OpenXRInterface::set_foveation_level(int p_foveation_level)
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return;
+	}
+	else {
+		OpenXRAPI::set_foveation_level(p_foveation_level);
+	}
+}
+
+bool OpenXRInterface::get_foveation_dynamic() const
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return false;
+	}
+	else {
+		return OpenXRAPI::get_foveation_dynamic();
+	}
+}
+
+void OpenXRInterface::set_foveation_dynamic(bool p_foveation_dynamic)
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return;
+	}
+	else {
+		OpenXRAPI::set_foveation_dynamic(p_foveation_dynamic);
+	}
+}
+
+bool OpenXRInterface::get_foveation_with_subsampled_images() const
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return false;
+	}
+	else {
+		return OpenXRAPI::get_foveation_with_subsampled_images();
+	}
+}
+
+void OpenXRInterface::set_foveation_with_subsampled_images(bool p_enabled)
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return;
+	}
+	else {
+		OpenXRAPI::set_foveation_with_subsampled_images(p_enabled);
+	}
+}
+
+Size2 OpenXRInterface::get_render_target_size()
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return Size2();
+	}
+	else {
+		return OpenXRAPI::get_recommended_target_size();
+	}
+}
+
+uint32_t OpenXRInterface::get_view_count()
+{
+	// TODO set this based on our configuration
+	return 2;
+}
+
+void OpenXRInterface::_set_default_pos(
+	Transform3D& r_transform, double p_world_scale, uint64_t p_eye)
+{
+	r_transform = Transform3D();
+
+	// if we're not tracking, don't put our head on the floor...
+	r_transform.origin.y = 1.5 * p_world_scale;
+
+	// overkill but..
+	if (p_eye == 1) {
+		r_transform.origin.x = 0.03 * p_world_scale;
+	}
+	else if (p_eye == 2) {
+		r_transform.origin.x = -0.03 * p_world_scale;
+	}
+}
+
+Transform3D OpenXRInterface::get_camera_transform()
+{
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Transform3D());
+
+	Transform3D hmd_transform;
+	double world_scale = XRServer::get_world_scale();
+
+	// head_transform should be updated in process
+
+	hmd_transform.basis = head_transform.basis;
+	hmd_transform.origin = head_transform.origin * world_scale;
+
+	return hmd_transform;
+}
+
+Transform3D OpenXRInterface::get_transform_for_view(
+	uint32_t p_view, const Transform3D& p_cam_transform)
+{
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Transform3D());
+	ERR_FAIL_UNSIGNED_INDEX_V_MSG(
+		p_view, get_view_count(), Transform3D(), "View index outside bounds.");
+
+	Transform3D t;
+	if (OpenXRAPI::is_allocated() && OpenXRAPI::get_view_transform(p_view, t)) {
+		// update our cached value if we have a valid transform
+		transform_for_view[p_view] = t;
+	}
+	else {
+		// reuse cached value
+		t = transform_for_view[p_view];
+	}
+
+	// Apply our world scale
+	double world_scale = XRServer::get_world_scale();
+	t.origin *= world_scale;
+
+	return p_cam_transform * XRServer::get_reference_frame() * t;
+}
+
+Projection OpenXRInterface::get_projection_for_view(
+	uint32_t p_view, double p_aspect, double p_z_near, double p_z_far)
+{
+	Projection cm;
+	ERR_FAIL_UNSIGNED_INDEX_V_MSG(p_view, get_view_count(), cm, "View index outside bounds.");
+
+	if (OpenXRAPI::is_allocated()) {
+		if (OpenXRAPI::get_view_projection(p_view, p_z_near, p_z_far, cm)) {
+			return cm;
+		}
+	}
+
+	// Failed to get from our OpenXR device? Default to some sort of sensible camera matrix..
+	cm.set_for_hmd(p_view + 1, 1.0, 6.0, 14.5, 4.0, 1.5, p_z_near, p_z_far);
+
+	return cm;
+}
+
+Rect2i OpenXRInterface::get_render_region()
+{
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_render_region();
+	}
+	else {
+		return Rect2i();
+	}
+}
+
+RID OpenXRInterface::get_color_texture()
+{
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_color_texture();
+	}
+	else {
+		return RID();
+	}
+}
+
+RID OpenXRInterface::get_depth_texture()
+{
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_depth_texture();
+	}
+	else {
+		return RID();
+	}
+}
+
+RID OpenXRInterface::get_velocity_texture()
+{
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_velocity_texture();
+	}
+	else {
+		return RID();
+	}
+}
+
+RID OpenXRInterface::get_velocity_depth_texture()
+{
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_velocity_depth_texture();
+	}
+	else {
+		return RID();
+	}
+}
+
+Size2i OpenXRInterface::get_velocity_target_size()
+{
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::get_velocity_target_size();
+	}
+	else {
+		return Size2i();
+	}
+}
+
+void OpenXRInterface::pre_render()
+{
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::pre_render();
+	}
+}
+
+bool OpenXRInterface::pre_draw_viewport(RID p_render_target)
+{
+	if (OpenXRAPI::is_allocated()) {
+		return OpenXRAPI::pre_draw_viewport(p_render_target);
+	}
+	else {
+		// don't render
+		return false;
+	}
+}
+
+Vector<RenderingServerTypes::BlitToScreen> OpenXRInterface::post_draw_viewport(
+	RID p_render_target, const Rect2& p_screen_rect)
+{
+	Vector<RenderingServerTypes::BlitToScreen> blit_to_screen;
+
+#ifndef ANDROID_ENABLED
+	// If separate HMD we should output one eye to screen
+	if (p_screen_rect != Rect2()) {
+		RenderingServerTypes::BlitToScreen blit;
+
+		blit.render_target = p_render_target;
+		blit.multi_view.use_layer = true;
+		blit.multi_view.layer = 0;
+		blit.lens_distortion.apply = false;
+
+		Size2 render_size = get_render_target_size();
+		Rect2 dst_rect = p_screen_rect;
+		float new_height = dst_rect.size.x * (render_size.y / render_size.x);
+		if (new_height > dst_rect.size.y) {
+			dst_rect.position.y = (0.5 * dst_rect.size.y) - (0.5 * new_height);
+			dst_rect.size.y = new_height;
+		}
+		else {
+			float new_width = dst_rect.size.y * (render_size.x / render_size.y);
+
+			dst_rect.position.x = (0.5 * dst_rect.size.x) - (0.5 * new_width);
+			dst_rect.size.x = new_width;
+		}
+
+		blit.dst_rect = dst_rect;
+		blit_to_screen.push_back(blit);
+	}
+#endif
+
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::post_draw_viewport(p_render_target);
+	}
+
+	return blit_to_screen;
+}
+
+void OpenXRInterface::end_frame()
+{
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::end_frame();
+	}
+}
+
+bool OpenXRInterface::is_passthrough_enabled()
+{
+	return get_environment_blend_mode() == XR_ENV_BLEND_MODE_ALPHA_BLEND;
+}
+
+bool OpenXRInterface::start_passthrough()
+{
+	return set_environment_blend_mode(XR_ENV_BLEND_MODE_ALPHA_BLEND);
+}
+
+void OpenXRInterface::stop_passthrough() { set_environment_blend_mode(XR_ENV_BLEND_MODE_OPAQUE); }
+
+XRInterface::EnvironmentBlendMode OpenXRInterface::get_environment_blend_mode() const
+{
+	if (OpenXRAPI::is_allocated()) {
+		XrEnvironmentBlendMode oxr_blend_mode = OpenXRAPI::get_environment_blend_mode();
+		switch (oxr_blend_mode) {
+		case XR_ENVIRONMENT_BLEND_MODE_OPAQUE: {
+			return XR_ENV_BLEND_MODE_OPAQUE;
+		} break;
+		case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE: {
+			return XR_ENV_BLEND_MODE_ADDITIVE;
+		} break;
+		case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: {
+			return XR_ENV_BLEND_MODE_ALPHA_BLEND;
+		} break;
+		default:
+			break;
+		}
+	}
+
+	return XR_ENV_BLEND_MODE_OPAQUE;
+}
+
+bool OpenXRInterface::set_environment_blend_mode(XRInterface::EnvironmentBlendMode mode)
+{
+	if (OpenXRAPI::is_allocated()) {
+		XrEnvironmentBlendMode oxr_blend_mode;
+		switch (mode) {
+		case XR_ENV_BLEND_MODE_OPAQUE:
+			oxr_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+			break;
+		case XR_ENV_BLEND_MODE_ADDITIVE:
+			oxr_blend_mode = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE;
+			break;
+		case XR_ENV_BLEND_MODE_ALPHA_BLEND:
+			oxr_blend_mode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
+			break;
+		default:
+			WARN_PRINT("Unknown blend mode requested: " + String::num_int64(int64_t(mode)));
+			oxr_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+		}
+		return OpenXRAPI::set_environment_blend_mode(oxr_blend_mode);
+	}
+	return false;
+}
+
+void OpenXRInterface::on_reference_space_change_pending(XrReferenceSpaceType p_type)
+{
+	reference_stage_changing = true;
+
+	// Emit play area bounds changed signal when the reference space changes.
+	PlayAreaMode mode = XR_PLAY_AREA_UNKNOWN;
+
+	switch (p_type) {
+	case XR_REFERENCE_SPACE_TYPE_VIEW:
+		mode = XR_PLAY_AREA_3DOF;
+		break;
+	case XR_REFERENCE_SPACE_TYPE_LOCAL:
+		mode = XR_PLAY_AREA_SITTING;
+		break;
+	case XR_REFERENCE_SPACE_TYPE_STAGE:
+		mode = XR_PLAY_AREA_STAGE;
+		break;
+	case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR:
+		mode = XR_PLAY_AREA_ROOMSCALE;
+		break;
+	default:
+		mode = XR_PLAY_AREA_UNKNOWN;
+		break;
+	}
+
+	print_verbose("OpenXR Interface: Play area changed, emitting signal.");
+}
+
+OpenXRInterface::SessionState OpenXRInterface::get_session_state()
+{
+	if (OpenXRAPI::is_allocated()) {
+		return (SessionState)OpenXRAPI::get_session_state();
+	}
+
+	return SESSION_STATE_UNKNOWN;
+}
+
+/** User Presence. */
+bool OpenXRInterface::is_user_presence_supported() const
+{
+	if (!OpenXRAPI::is_initialized()) {
+		return false;
+	}
+	else {
+		return OpenXRUserPresenceExtension::is_initialized() && OpenXRUserPresenceExtension::is_active();
+	}
+}
+
+bool OpenXRInterface::is_user_present() const
+{
+	// If extension is unavailable or unsupported, we default to user is present.
+	if (!is_user_presence_supported()) {
+		return true;
+	}
+	else {
+		return OpenXRUserPresenceExtension::is_user_present();
+	}
+}
+
+RID OpenXRInterface::get_vrs_texture()
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return RID();
+	}
+
+	RID density_map = OpenXRAPI::get_density_map_texture();
+	if (density_map.is_valid()) {
+		return density_map;
+	}
+
+	PackedVector2Array eye_foci;
+
+	Size2 target_size = get_render_target_size();
+	real_t aspect_ratio = target_size.x / target_size.y;
+	uint32_t view_count = get_view_count();
+
+	for (uint32_t v = 0; v < view_count; v++) {
+		eye_foci.push_back(OpenXRAPI::get_eye_focus(v, aspect_ratio));
+	}
+
+	xr_vrs.set_vrs_render_region(get_render_region());
+
+	return xr_vrs.make_vrs_texture(target_size, eye_foci);
+}
+
+XRInterface::VRSTextureFormat OpenXRInterface::get_vrs_texture_format()
+{
+	if (!OpenXRAPI::is_allocated()) {
+		return XR_VRS_TEXTURE_FORMAT_UNIFIED;
+	}
+
+	RID density_map = OpenXRAPI::get_density_map_texture();
+	if (density_map.is_valid()) {
+		return XR_VRS_TEXTURE_FORMAT_FRAGMENT_DENSITY_MAP;
+	}
+
+	return XR_VRS_TEXTURE_FORMAT_UNIFIED;
+}
+
+void OpenXRInterface::set_cpu_level(PerfSettingsLevel p_level)
+{
+	if (OpenXRPerformanceSettingsExtension::is_initialized() && OpenXRPerformanceSettingsExtension::is_available()) {
+		OpenXRPerformanceSettingsExtension::set_cpu_level(p_level);
+	}
+}
+
+void OpenXRInterface::set_gpu_level(PerfSettingsLevel p_level)
+{
+	if (OpenXRPerformanceSettingsExtension::is_initialized() && OpenXRPerformanceSettingsExtension::is_available()) {
+		OpenXRPerformanceSettingsExtension::set_gpu_level(p_level);
+	}
+}
+
+OpenXRInterface::OpenXRInterface()
+{
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::set_xr_interface(this);
+	}
+
+	// while we don't have head tracking, don't put the headset on the floor...
+	_set_default_pos(head_transform, 1.0, 0);
+	_set_default_pos(transform_for_view[0], 1.0, 1);
+	_set_default_pos(transform_for_view[1], 1.0, 2);
+}
+
+OpenXRInterface::~OpenXRInterface()
+{
+	if (is_initialized()) {
+		uninitialize();
+	}
+
+	if (OpenXRAPI::is_allocated()) {
+		OpenXRAPI::set_xr_interface(nullptr);
+	}
+}
+
+void OpenXRInterface::uninitialize() {}
+
+void OpenXRInterface::on_refresh_rate_changes(float) {}
+
+void OpenXRInterface::on_gpu_level_changed(OpenXRInterface::PerfSettingsSubDomain,
+	OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel)
+{
+}
+
+void OpenXRInterface::on_cpu_level_changed(OpenXRInterface::PerfSettingsSubDomain,
+	OpenXRInterface::PerfSettingsNotificationLevel, OpenXRInterface::PerfSettingsNotificationLevel)
+{
+}
+
+PackedStringArray OpenXRInterface::get_suggested_tracker_names() const
+{
+	return PackedStringArray();
+}
+
+bool OpenXRInterface::initialize() { return false; }
+
+void OpenXRInterface::process() {}
+
+bool OpenXRInterface::is_passthrough_supported() { return false; }
+
+
+
+// ============================================================================
+// Merged from modules/openxr/action_map/openxr_action_map.cpp
+// ============================================================================
+
+#include "modules/openxr/openxr_api.h"
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRAction
+
+Ref<OpenXRAction> OpenXRAction::new_action(const char* p_name, const char* p_localized_name,
+	const ActionType p_action_type, const char* p_toplevel_paths)
+{
+	Ref<OpenXRAction> action;
+	action.instantiate();
+	action->set_name(String(p_name));
+	action->set_localized_name(String(p_localized_name));
+	action->set_action_type(p_action_type);
+	action->parse_toplevel_paths(String(p_toplevel_paths));
+
+	return action;
+}
+
+String OpenXRAction::get_name_with_set() const
+{
+	String action_name = get_name();
+
+	if (action_set != nullptr) {
+		action_name = action_set->get_name() + "/" + action_name;
+	}
+
+	return action_name;
+}
+
+void OpenXRAction::set_localized_name(const String& p_localized_name)
+{
+	localized_name = p_localized_name;
+	emit_changed();
+}
+
+String OpenXRAction::get_localized_name() const { return localized_name; }
+
+void OpenXRAction::set_action_type(const OpenXRAction::ActionType p_action_type)
+{
+	action_type = p_action_type;
+	emit_changed();
+}
+
+OpenXRAction::ActionType OpenXRAction::get_action_type() const { return action_type; }
+
+void OpenXRAction::set_toplevel_paths(const PackedStringArray p_toplevel_paths)
+{
+	toplevel_paths = p_toplevel_paths;
+	emit_changed();
+}
+
+PackedStringArray OpenXRAction::get_toplevel_paths() const { return toplevel_paths; }
+
+void OpenXRAction::add_toplevel_path(const String& p_toplevel_path)
+{
+	if (!toplevel_paths.has(p_toplevel_path)) {
+		toplevel_paths.push_back(p_toplevel_path);
+		emit_changed();
+	}
+}
+
+void OpenXRAction::rem_toplevel_path(const String& p_toplevel_path)
+{
+	if (toplevel_paths.has(p_toplevel_path)) {
+		toplevel_paths.erase(p_toplevel_path);
+		emit_changed();
+	}
+}
+
+void OpenXRAction::parse_toplevel_paths(const String& p_toplevel_paths)
+{
+	toplevel_paths = p_toplevel_paths.split(",", false);
+	emit_changed();
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRActionSet
+
+Ref<OpenXRActionSet> OpenXRActionSet::new_action_set(
+	const char* p_name, const char* p_localized_name, const int p_priority)
+{
+	Ref<OpenXRActionSet> action_set;
+	action_set.instantiate();
+	action_set->set_name(String(p_name));
+	action_set->set_localized_name(p_localized_name);
+	action_set->set_priority(p_priority);
+
+	return action_set;
+}
+
+void OpenXRActionSet::set_localized_name(const String& p_localized_name)
+{
+	localized_name = p_localized_name;
+	emit_changed();
+}
+
+String OpenXRActionSet::get_localized_name() const { return localized_name; }
+
+void OpenXRActionSet::set_priority(const int p_priority)
+{
+	priority = p_priority;
+	emit_changed();
+}
+
+int OpenXRActionSet::get_priority() const { return priority; }
+
+Ref<OpenXRAction> OpenXRActionSet::add_new_action(const char* p_name, const char* p_localized_name,
+	const OpenXRAction::ActionType p_action_type, const char* p_toplevel_paths)
+{
+	Ref<OpenXRAction> new_action =
+		OpenXRAction::new_action(p_name, p_localized_name, p_action_type, p_toplevel_paths);
+	add_action(new_action);
+	return new_action;
+}
+
+OpenXRActionSet::~OpenXRActionSet() { clear_actions(); }
+
+void OpenXRActionSet::clear_actions() {}
+
+void OpenXRActionSet::add_action(Ref<OpenXRAction> const&) {}
+
+void OpenXRActionSet::remove_action(Ref<OpenXRAction> const&) {}
+
+Ref<OpenXRAction> OpenXRActionSet::get_action(String const&) const { return Ref<OpenXRAction>(); }
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRHapticBase
+
+void OpenXRHapticBase::set_duration(int64_t p_duration)
+{
+	haptic_vibration.duration = p_duration;
+	emit_changed();
+}
+
+int64_t OpenXRHapticBase::get_duration() const { return haptic_vibration.duration; }
+
+void OpenXRHapticBase::set_frequency(float p_frequency)
+{
+	haptic_vibration.frequency = p_frequency;
+	emit_changed();
+}
+
+float OpenXRHapticBase::get_frequency() const { return haptic_vibration.frequency; }
+
+void OpenXRHapticBase::set_amplitude(float p_amplitude)
+{
+	haptic_vibration.amplitude = p_amplitude;
+	emit_changed();
+}
+
+float OpenXRHapticBase::get_amplitude() const { return haptic_vibration.amplitude; }
+
+const XrHapticBaseHeader* OpenXRHapticBase::get_xr_structure()
+{
+	return (XrHapticBaseHeader*)&haptic_vibration;
+}
+
+OpenXRHapticBase::OpenXRHapticBase()
+{
+	haptic_vibration.type = XR_TYPE_HAPTIC_VIBRATION;
+	haptic_vibration.next = nullptr;
+	haptic_vibration.duration = -1;
+	haptic_vibration.frequency = 0.0;
+	haptic_vibration.amplitude = 1.0;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRBindingModifier
+
+PackedByteArray OpenXRBindingModifier::get_ip_modification() { return PackedByteArray(); }
+
+String OpenXRBindingModifier::get_description() const { return ""; }
+
+OpenXRBindingModifier::OpenXRBindingModifier() {}
+
+OpenXRBindingModifier::~OpenXRBindingModifier() {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRIPBinding & OpenXRInteractionProfile
+
+Ref<OpenXRIPBinding> OpenXRIPBinding::new_binding(
+	const Ref<OpenXRAction>& p_action, const String& p_binding_path)
+{
+	Ref<OpenXRIPBinding> binding;
+	binding.instantiate();
+	binding->set_action(p_action);
+	binding->set_binding_path(p_binding_path);
+
+	return binding;
+}
+
+void OpenXRIPBinding::set_action(const Ref<OpenXRAction>& p_action)
+{
+	action = p_action;
+	emit_changed();
+}
+
+Ref<OpenXRAction> OpenXRIPBinding::get_action() const { return action; }
+
+void OpenXRIPBinding::set_binding_path(const String& p_path)
+{
+	if (OpenXRInteractionProfileMetadata::is_initialized()) {
+		binding_path = OpenXRInteractionProfileMetadata::check_path_name(p_path);
+	}
+	else {
+		binding_path = p_path;
+	}
+
+	emit_changed();
+}
+
+String OpenXRIPBinding::get_binding_path() const { return binding_path; }
+
+int OpenXRIPBinding::get_binding_modifier_count() const { return binding_modifiers.size(); }
+
+Ref<OpenXRBindingModifier> OpenXRIPBinding::get_binding_modifier(int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, binding_modifiers.size(), nullptr);
+
+	return binding_modifiers[p_index];
+}
+
+void OpenXRIPBinding::clear_binding_modifiers()
+{
+	if (binding_modifiers.is_empty()) {
+		return;
+	}
+
+	for (int i = 0; i < binding_modifiers.size(); i++) {
+		Ref<OpenXRBindingModifier> binding_modifier = binding_modifiers[i];
+		binding_modifier->ip_binding = nullptr;
+	}
+	binding_modifiers.clear();
+	emit_changed();
+}
+
+void OpenXRIPBinding::add_binding_modifier(const Ref<OpenXRBindingModifier>& p_binding_modifier)
+{
+	ERR_FAIL_COND(p_binding_modifier.is_null());
+
+	if (!binding_modifiers.has(p_binding_modifier)) {
+		if (p_binding_modifier->ip_binding && p_binding_modifier->ip_binding != this) {
+			p_binding_modifier->ip_binding->remove_binding_modifier(p_binding_modifier);
+		}
+
+		p_binding_modifier->ip_binding = this;
+		binding_modifiers.push_back(p_binding_modifier);
+		emit_changed();
+	}
+}
+
+void OpenXRIPBinding::remove_binding_modifier(const Ref<OpenXRBindingModifier>& p_binding_modifier)
+{
+	int idx = binding_modifiers.find(p_binding_modifier);
+	if (idx != -1) {
+		binding_modifiers.remove_at(idx);
+
+		ERR_FAIL_COND_MSG(p_binding_modifier->ip_binding != this,
+			"Removing binding modifier that belongs to this binding but had incorrect binding "
+			"pointer.");
+		p_binding_modifier->ip_binding = nullptr;
+
+		emit_changed();
+	}
+}
+
+#ifndef DISABLE_DEPRECATED
+
+void OpenXRIPBinding::set_paths(const PackedStringArray& p_paths)
+{
+	binding_path = "";
+	for (const String& path : p_paths) {
+		if (!binding_path.is_empty()) {
+			binding_path += ",";
+		}
+		binding_path += path;
+	}
+}
+
+PackedStringArray OpenXRIPBinding::get_paths() const
+{
+	PackedStringArray paths = binding_path.split(",", false);
+	return paths;
+}
+
+int OpenXRIPBinding::get_path_count() const
+{
+	return binding_path.is_empty() ? 0 : 1;
+}
+
+bool OpenXRIPBinding::has_path(const String& p_path) const
+{
+	return binding_path == p_path;
+}
+
+void OpenXRIPBinding::add_path(const String& p_path)
+{
+	if (binding_path != p_path) {
+		ERR_FAIL_COND_MSG(!binding_path.is_empty(),
+			"Method add_path has been deprecated. A binding path was already set, create separate "
+			"binding resources for each path and use set_binding_path instead.");
+
+		binding_path = p_path;
+		emit_changed();
+	}
+}
+
+void OpenXRIPBinding::remove_path(const String& p_path)
+{
+	ERR_FAIL_COND_MSG(binding_path != p_path,
+		"Method remove_path has been deprecated. Attempt at removing a different binding path, "
+		"remove the correct binding record from the interaction profile instead.");
+
+	binding_path = p_path;
+	emit_changed();
+}
+
+#endif // DISABLE_DEPRECATED
+
+OpenXRIPBinding::~OpenXRIPBinding() { action.unref(); }
+
+Ref<OpenXRInteractionProfile> OpenXRInteractionProfile::new_profile(
+	const char* p_input_profile_path)
+{
+	Ref<OpenXRInteractionProfile> profile;
+	profile.instantiate();
+	profile->set_interaction_profile_path(String(p_input_profile_path));
+
+	return profile;
+}
+
+void OpenXRInteractionProfile::set_interaction_profile_path(const String& p_input_profile_path)
+{
+	if (OpenXRInteractionProfileMetadata::is_initialized()) {
+		interaction_profile_path =
+			OpenXRInteractionProfileMetadata::check_profile_name(p_input_profile_path);
+	}
+	else {
+		interaction_profile_path = p_input_profile_path;
+	}
+	emit_changed();
+}
+
+String OpenXRInteractionProfile::get_interaction_profile_path() const
+{
+	return interaction_profile_path;
+}
+
+void OpenXRInteractionProfile::add_new_binding(
+	const Ref<OpenXRAction>& p_action, const String& p_paths)
+{
+	PackedStringArray paths = p_paths.split(",", false);
+
+	for (const String& path : paths) {
+		Ref<OpenXRIPBinding> binding = OpenXRIPBinding::new_binding(p_action, path);
+		add_binding(binding);
+	}
+}
+
+int OpenXRInteractionProfile::get_binding_modifier_count() const
+{
+	return binding_modifiers.size();
+}
+
+Ref<OpenXRBindingModifier> OpenXRInteractionProfile::get_binding_modifier(int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, binding_modifiers.size(), nullptr);
+
+	return binding_modifiers[p_index];
+}
+
+void OpenXRInteractionProfile::clear_binding_modifiers()
+{
+	if (binding_modifiers.is_empty()) {
+		return;
+	}
+
+	for (int i = 0; i < binding_modifiers.size(); i++) {
+		Ref<OpenXRBindingModifier> binding_modifier = binding_modifiers[i];
+		binding_modifier->interaction_profile = nullptr;
+	}
+	binding_modifiers.clear();
+	emit_changed();
+}
+
+void OpenXRInteractionProfile::add_binding_modifier(
+	const Ref<OpenXRBindingModifier>& p_binding_modifier)
+{
+	ERR_FAIL_COND(p_binding_modifier.is_null());
+
+	if (!binding_modifiers.has(p_binding_modifier)) {
+		if (p_binding_modifier->interaction_profile &&
+			p_binding_modifier->interaction_profile != this) {
+			p_binding_modifier->interaction_profile->remove_binding_modifier(p_binding_modifier);
+		}
+
+		p_binding_modifier->interaction_profile = this;
+		binding_modifiers.push_back(p_binding_modifier);
+		emit_changed();
+	}
+}
+
+void OpenXRInteractionProfile::remove_binding_modifier(
+	const Ref<OpenXRBindingModifier>& p_binding_modifier)
+{
+	int idx = binding_modifiers.find(p_binding_modifier);
+	if (idx != -1) {
+		binding_modifiers.remove_at(idx);
+
+		ERR_FAIL_COND_MSG(p_binding_modifier->interaction_profile != this,
+			"Removing binding modifier that belongs to this interaction profile but had incorrect "
+			"interaction profile pointer.");
+		p_binding_modifier->interaction_profile = nullptr;
+
+		emit_changed();
+	}
+}
+
+void OpenXRInteractionProfile::add_binding(const Ref<OpenXRIPBinding>& p_binding) {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRInteractionProfileMetadata
+
+void OpenXRInteractionProfileMetadata::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+	_register_core_metadata();
+}
+
+void OpenXRInteractionProfileMetadata::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void OpenXRInteractionProfileMetadata::register_profile_rename(
+	const String& p_old_name, const String& p_new_name)
+{
+	ERR_FAIL_COND(data->profile_renames.has(p_old_name));
+
+	data->profile_renames[p_old_name] = p_new_name;
+}
+
+String OpenXRInteractionProfileMetadata::check_profile_name(const String& p_name)
+{
+	if (data->profile_renames.has(p_name)) {
+		return data->profile_renames[p_name];
+	}
+
+	return p_name;
+}
+
+void OpenXRInteractionProfileMetadata::register_path_rename(
+	const String& p_old_name, const String& p_new_name)
+{
+	ERR_FAIL_COND(data->path_renames.has(p_old_name));
+
+	data->path_renames[p_old_name] = p_new_name;
+}
+
+String OpenXRInteractionProfileMetadata::check_path_name(const String& p_name)
+{
+	if (data->path_renames.has(p_name)) {
+		return data->path_renames[p_name];
+	}
+
+	return p_name;
+}
+
+void OpenXRInteractionProfileMetadata::register_top_level_path(const String& p_display_name,
+	const String& p_openxr_path, const String& p_openxr_extension_names)
+{
+	ERR_FAIL_COND_MSG(
+		has_top_level_path(p_openxr_path), p_openxr_path + " had already been registered");
+
+	TopLevelPath new_toplevel_path = {p_display_name, p_openxr_path, p_openxr_extension_names};
+
+	data->top_level_paths.push_back(new_toplevel_path);
+}
+
+void OpenXRInteractionProfileMetadata::register_interaction_profile(const String& p_display_name,
+	const String& p_openxr_path, const String& p_openxr_extension_names)
+{
+	ERR_FAIL_COND_MSG(
+		has_interaction_profile(p_openxr_path), p_openxr_path + " has already been registered");
+
+	InteractionProfile new_profile;
+	new_profile.display_name = p_display_name;
+	new_profile.openxr_path = p_openxr_path;
+	new_profile.openxr_extension_names = p_openxr_extension_names;
+
+	data->interaction_profiles.push_back(new_profile);
+}
+
+void OpenXRInteractionProfileMetadata::register_io_path(const String& p_interaction_profile,
+	const String& p_display_name, const String& p_toplevel_path, const String& p_openxr_path,
+	const String& p_openxr_extension_names, OpenXRAction::ActionType p_action_type)
+{
+	ERR_FAIL_COND_MSG(!has_interaction_profile(p_interaction_profile),
+		"Unknown interaction profile " + p_interaction_profile);
+	ERR_FAIL_COND_MSG(
+		!has_top_level_path(p_toplevel_path), "Unknown top level path " + p_toplevel_path);
+
+	for (InteractionProfile& interaction_profile : data->interaction_profiles) {
+		if (interaction_profile.openxr_path == p_interaction_profile) {
+			ERR_FAIL_COND_MSG(interaction_profile.has_io_path(p_openxr_path),
+				p_interaction_profile + " already has io path " + p_openxr_path + " registered!");
+
+			IOPath new_io_path = {p_display_name, p_toplevel_path, p_openxr_path,
+				p_openxr_extension_names, p_action_type};
+
+			interaction_profile.io_paths.push_back(new_io_path);
+		}
+	}
+}
+
+bool OpenXRInteractionProfileMetadata::has_top_level_path(const String& p_openxr_path)
+{
+	for (int i = 0; i < data->top_level_paths.size(); i++) {
+		if (data->top_level_paths[i].openxr_path == p_openxr_path) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+String OpenXRInteractionProfileMetadata::get_top_level_name(const String& p_openxr_path)
+{
+	for (int i = 0; i < data->top_level_paths.size(); i++) {
+		if (data->top_level_paths[i].openxr_path == p_openxr_path) {
+			return data->top_level_paths[i].display_name;
+		}
+	}
+
+	return String();
+}
+
+String OpenXRInteractionProfileMetadata::get_top_level_extensions(const String& p_openxr_path)
+{
+	for (int i = 0; i < data->top_level_paths.size(); i++) {
+		if (data->top_level_paths[i].openxr_path == p_openxr_path) {
+			return data->top_level_paths[i].openxr_extension_names;
+		}
+	}
+
+	return XR_PATH_UNSUPPORTED_NAME;
+}
+
+bool OpenXRInteractionProfileMetadata::has_interaction_profile(const String& p_openxr_path)
+{
+	for (const InteractionProfile& interaction_profile : data->interaction_profiles) {
+		if (interaction_profile.openxr_path == p_openxr_path) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+String OpenXRInteractionProfileMetadata::get_interaction_profile_extensions(
+	const String& p_openxr_path)
+{
+	for (const InteractionProfile& interaction_profile : data->interaction_profiles) {
+		if (interaction_profile.openxr_path == p_openxr_path) {
+			return interaction_profile.openxr_extension_names;
+		}
+	}
+
+	return XR_PATH_UNSUPPORTED_NAME;
+}
+
+const OpenXRInteractionProfileMetadata::InteractionProfile*
+OpenXRInteractionProfileMetadata::get_profile(const String& p_openxr_path)
+{
+	for (const InteractionProfile& interaction_profile : data->interaction_profiles) {
+		if (interaction_profile.openxr_path == p_openxr_path) {
+			return &interaction_profile;
+		}
+	}
+
+	return nullptr;
+}
+
+bool OpenXRInteractionProfileMetadata::InteractionProfile::has_io_path(
+	const String& p_io_path) const
+{
+	for (int i = 0; i < io_paths.size(); i++) {
+		if (io_paths[i].openxr_path == p_io_path) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+const OpenXRInteractionProfileMetadata::IOPath*
+OpenXRInteractionProfileMetadata::InteractionProfile::get_io_path(const String& p_io_path) const
+{
+	for (int i = 0; i < io_paths.size(); i++) {
+		if (io_paths[i].openxr_path == p_io_path) {
+			return &io_paths[i];
+		}
+	}
+
+	return nullptr;
+}
+
+const OpenXRInteractionProfileMetadata::IOPath* OpenXRInteractionProfileMetadata::get_io_path(
+	const String& p_interaction_profile, const String& p_io_path)
+{
+	const OpenXRInteractionProfileMetadata::InteractionProfile* profile =
+		get_profile(p_interaction_profile);
+	if (profile != nullptr) {
+		return profile->get_io_path(p_io_path);
+	}
+
+	return nullptr;
+}
+
+PackedStringArray OpenXRInteractionProfileMetadata::get_interaction_profile_paths()
+{
+	PackedStringArray arr;
+
+	for (const InteractionProfile& interaction_profile : data->interaction_profiles) {
+		arr.push_back(interaction_profile.openxr_path);
+	}
+
+	return arr;
+}
+
+void OpenXRInteractionProfileMetadata::_register_core_metadata()
+{
+	register_path_rename(
+		"/user/hand/left/input/palm_ext/pose", "/user/hand/left/input/grip_surface/pose");
+	register_path_rename(
+		"/user/hand/right/input/palm_ext/pose", "/user/hand/right/input/grip_surface/pose");
+
+	// Our core toplevel paths
+	register_top_level_path("Left hand controller", "/user/hand/left", "");
+	register_top_level_path("Right hand controller", "/user/hand/right", "");
+	register_top_level_path("Head", "/user/head", "");
+	register_top_level_path("Gamepad", "/user/gamepad", "");
+	register_top_level_path("Treadmill", "/user/treadmill", "");
+
+	{ // Fallback Khronos simple controller
+		const String profile_path = "/interaction_profiles/khr/simple_controller";
+		register_interaction_profile("Simple controller", profile_path, "");
+		for (const String user_path : {"/user/hand/left", "/user/hand/right"}) {
+			register_io_path(profile_path, "Grip pose", user_path, user_path + "/input/grip/pose",
+				"", OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Aim pose", user_path, user_path + "/input/aim/pose", "",
+				OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Grip surface pose", user_path,
+				user_path + "/input/grip_surface/pose",
+				XR_EXT_PALM_POSE_EXTENSION_NAME "," XR_KHR_MAINTENANCE1_EXTENSION_NAME
+												"," XR_OPENXR_1_1_NAME,
+				OpenXRAction::OPENXR_ACTION_POSE);
+
+			register_io_path(profile_path, "Menu click", user_path, user_path + "/input/menu/click",
+				"", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Select click", user_path,
+				user_path + "/input/select/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Haptic output", user_path, user_path + "/output/haptic",
+				"", OpenXRAction::OPENXR_ACTION_HAPTIC);
+		}
+	}
+
+	{ // Original HTC Vive wands
+		const String profile_path = "/interaction_profiles/htc/vive_controller";
+		register_interaction_profile("HTC Vive wand", profile_path, "");
+		for (const String user_path : {"/user/hand/left", "/user/hand/right"}) {
+			register_io_path(profile_path, "Grip pose", user_path, user_path + "/input/grip/pose",
+				"", OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Aim pose", user_path, user_path + "/input/aim/pose", "",
+				OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Grip surface pose", user_path,
+				user_path + "/input/grip_surface/pose",
+				XR_EXT_PALM_POSE_EXTENSION_NAME "," XR_KHR_MAINTENANCE1_EXTENSION_NAME
+												"," XR_OPENXR_1_1_NAME,
+				OpenXRAction::OPENXR_ACTION_POSE);
+
+			register_io_path(profile_path, "Menu click", user_path, user_path + "/input/menu/click",
+				"", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "System click", user_path,
+				user_path + "/input/system/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Trigger", user_path, user_path + "/input/trigger/value",
+				"", OpenXRAction::OPENXR_ACTION_FLOAT);
+			register_io_path(profile_path, "Trigger click", user_path,
+				user_path + "/input/trigger/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Squeeze click", user_path,
+				user_path + "/input/squeeze/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Trackpad", user_path, user_path + "/input/trackpad", "",
+				OpenXRAction::OPENXR_ACTION_VECTOR2);
+			register_io_path(profile_path, "Trackpad click", user_path,
+				user_path + "/input/trackpad/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad touch", user_path,
+				user_path + "/input/trackpad/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Up", user_path,
+				user_path + "/input/trackpad/dpad_up", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Down", user_path,
+				user_path + "/input/trackpad/dpad_down", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Left", user_path,
+				user_path + "/input/trackpad/dpad_left", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Right", user_path,
+				user_path + "/input/trackpad/dpad_right", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Center", user_path,
+				user_path + "/input/trackpad/dpad_center", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Haptic output", user_path, user_path + "/output/haptic",
+				"", OpenXRAction::OPENXR_ACTION_HAPTIC);
+		}
+	}
+
+	{ // Microsoft motion controller (original WMR controllers)
+		const String profile_path = "/interaction_profiles/microsoft/motion_controller";
+		register_interaction_profile("MS Motion controller", profile_path, "");
+		for (const String user_path : {"/user/hand/left", "/user/hand/right"}) {
+			register_io_path(profile_path, "Grip pose", user_path, user_path + "/input/grip/pose",
+				"", OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Aim pose", user_path, user_path + "/input/aim/pose", "",
+				OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Grip surface pose", user_path,
+				user_path + "/input/grip_surface/pose",
+				XR_EXT_PALM_POSE_EXTENSION_NAME "," XR_KHR_MAINTENANCE1_EXTENSION_NAME
+												"," XR_OPENXR_1_1_NAME,
+				OpenXRAction::OPENXR_ACTION_POSE);
+
+			register_io_path(profile_path, "Menu click", user_path, user_path + "/input/menu/click",
+				"", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Trigger", user_path, user_path + "/input/trigger/value",
+				"", OpenXRAction::OPENXR_ACTION_FLOAT);
+			register_io_path(profile_path, "Trigger click", user_path,
+				user_path + "/input/trigger/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Squeeze click", user_path,
+				user_path + "/input/squeeze/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Thumbstick", user_path, user_path + "/input/thumbstick",
+				"", OpenXRAction::OPENXR_ACTION_VECTOR2);
+			register_io_path(profile_path, "Thumbstick click", user_path,
+				user_path + "/input/thumbstick/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Up", user_path,
+				user_path + "/input/thumbstick/dpad_up", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Down", user_path,
+				user_path + "/input/thumbstick/dpad_down", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Left", user_path,
+				user_path + "/input/thumbstick/dpad_left", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Right", user_path,
+				user_path + "/input/thumbstick/dpad_right", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Trackpad", user_path, user_path + "/input/trackpad", "",
+				OpenXRAction::OPENXR_ACTION_VECTOR2);
+			register_io_path(profile_path, "Trackpad click", user_path,
+				user_path + "/input/trackpad/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad touch", user_path,
+				user_path + "/input/trackpad/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Up", user_path,
+				user_path + "/input/trackpad/dpad_up", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Down", user_path,
+				user_path + "/input/trackpad/dpad_down", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Left", user_path,
+				user_path + "/input/trackpad/dpad_left", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Right", user_path,
+				user_path + "/input/trackpad/dpad_right", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Center", user_path,
+				user_path + "/input/trackpad/dpad_center", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Haptic output", user_path, user_path + "/output/haptic",
+				"", OpenXRAction::OPENXR_ACTION_HAPTIC);
+		}
+	}
+
+	{ // Meta touch controller (original touch controllers, Quest 1 and Quest 2 controllers)
+		const String profile_path = "/interaction_profiles/oculus/touch_controller";
+		register_interaction_profile("Touch controller", profile_path, "");
+		for (const String user_path : {"/user/hand/left", "/user/hand/right"}) {
+			register_io_path(profile_path, "Grip pose", user_path, user_path + "/input/grip/pose",
+				"", OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Aim pose", user_path, user_path + "/input/aim/pose", "",
+				OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Grip surface pose", user_path,
+				user_path + "/input/grip_surface/pose",
+				XR_EXT_PALM_POSE_EXTENSION_NAME "," XR_KHR_MAINTENANCE1_EXTENSION_NAME
+												"," XR_OPENXR_1_1_NAME,
+				OpenXRAction::OPENXR_ACTION_POSE);
+
+			register_io_path(profile_path, "Trigger", user_path, user_path + "/input/trigger/value",
+				"", OpenXRAction::OPENXR_ACTION_FLOAT);
+			register_io_path(profile_path, "Trigger touch", user_path,
+				user_path + "/input/trigger/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Squeeze", user_path, user_path + "/input/squeeze/value",
+				"", OpenXRAction::OPENXR_ACTION_FLOAT);
+
+			register_io_path(profile_path, "Thumbstick", user_path, user_path + "/input/thumbstick",
+				"", OpenXRAction::OPENXR_ACTION_VECTOR2);
+			register_io_path(profile_path, "Thumbstick click", user_path,
+				user_path + "/input/thumbstick/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick touch", user_path,
+				user_path + "/input/thumbstick/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Up", user_path,
+				user_path + "/input/thumbstick/dpad_up", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Down", user_path,
+				user_path + "/input/thumbstick/dpad_down", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Left", user_path,
+				user_path + "/input/thumbstick/dpad_left", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Right", user_path,
+				user_path + "/input/thumbstick/dpad_right", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Thumbrest touch", user_path,
+				user_path + "/input/thumbrest/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Haptic output", user_path, user_path + "/output/haptic",
+				"", OpenXRAction::OPENXR_ACTION_HAPTIC);
+		}
+
+		register_io_path(profile_path, "Menu click", "/user/hand/left",
+			"/user/hand/left/input/menu/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+		register_io_path(profile_path, "System click", "/user/hand/right",
+			"/user/hand/right/input/system/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+		register_io_path(profile_path, "X click", "/user/hand/left",
+			"/user/hand/left/input/x/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+		register_io_path(profile_path, "X touch", "/user/hand/left",
+			"/user/hand/left/input/x/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+		register_io_path(profile_path, "Y click", "/user/hand/left",
+			"/user/hand/left/input/y/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+		register_io_path(profile_path, "Y touch", "/user/hand/left",
+			"/user/hand/left/input/y/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+		register_io_path(profile_path, "A click", "/user/hand/right",
+			"/user/hand/right/input/a/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+		register_io_path(profile_path, "A touch", "/user/hand/right",
+			"/user/hand/right/input/a/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+		register_io_path(profile_path, "B click", "/user/hand/right",
+			"/user/hand/right/input/b/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+		register_io_path(profile_path, "B touch", "/user/hand/right",
+			"/user/hand/right/input/b/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+	}
+
+	{ // Valve Index controller
+		const String profile_path = "/interaction_profiles/valve/index_controller";
+		register_interaction_profile("Index controller", profile_path, "");
+		for (const String user_path : {"/user/hand/left", "/user/hand/right"}) {
+			register_io_path(profile_path, "Grip pose", user_path, user_path + "/input/grip/pose",
+				"", OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Aim pose", user_path, user_path + "/input/aim/pose", "",
+				OpenXRAction::OPENXR_ACTION_POSE);
+			register_io_path(profile_path, "Grip surface pose", user_path,
+				user_path + "/input/grip_surface/pose",
+				XR_EXT_PALM_POSE_EXTENSION_NAME "," XR_KHR_MAINTENANCE1_EXTENSION_NAME
+												"," XR_OPENXR_1_1_NAME,
+				OpenXRAction::OPENXR_ACTION_POSE);
+
+			register_io_path(profile_path, "System click", user_path,
+				user_path + "/input/system/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "A click", user_path, user_path + "/input/a/click", "",
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "A touch", user_path, user_path + "/input/a/touch", "",
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "B click", user_path, user_path + "/input/b/click", "",
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "B touch", user_path, user_path + "/input/b/touch", "",
+				OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Trigger", user_path, user_path + "/input/trigger/value",
+				"", OpenXRAction::OPENXR_ACTION_FLOAT);
+			register_io_path(profile_path, "Trigger click", user_path,
+				user_path + "/input/trigger/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trigger touch", user_path,
+				user_path + "/input/trigger/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Squeeze", user_path, user_path + "/input/squeeze/value",
+				"", OpenXRAction::OPENXR_ACTION_FLOAT);
+			register_io_path(profile_path, "Squeeze force", user_path,
+				user_path + "/input/squeeze/force", "", OpenXRAction::OPENXR_ACTION_FLOAT);
+
+			register_io_path(profile_path, "Thumbstick", user_path, user_path + "/input/thumbstick",
+				"", OpenXRAction::OPENXR_ACTION_VECTOR2);
+			register_io_path(profile_path, "Thumbstick click", user_path,
+				user_path + "/input/thumbstick/click", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick touch", user_path,
+				user_path + "/input/thumbstick/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Up", user_path,
+				user_path + "/input/thumbstick/dpad_up", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Down", user_path,
+				user_path + "/input/thumbstick/dpad_down", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Left", user_path,
+				user_path + "/input/thumbstick/dpad_left", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Thumbstick Dpad Right", user_path,
+				user_path + "/input/thumbstick/dpad_right", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Trackpad", user_path, user_path + "/input/trackpad", "",
+				OpenXRAction::OPENXR_ACTION_VECTOR2);
+			register_io_path(profile_path, "Trackpad force", user_path,
+				user_path + "/input/trackpad/force", "", OpenXRAction::OPENXR_ACTION_FLOAT);
+			register_io_path(profile_path, "Trackpad touch", user_path,
+				user_path + "/input/trackpad/touch", "", OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Up", user_path,
+				user_path + "/input/trackpad/dpad_up", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Down", user_path,
+				user_path + "/input/trackpad/dpad_down", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Left", user_path,
+				user_path + "/input/trackpad/dpad_left", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Right", user_path,
+				user_path + "/input/trackpad/dpad_right", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+			register_io_path(profile_path, "Trackpad Dpad Center", user_path,
+				user_path + "/input/trackpad/dpad_center", XR_EXT_DPAD_BINDING_EXTENSION_NAME,
+				OpenXRAction::OPENXR_ACTION_BOOL);
+
+			register_io_path(profile_path, "Haptic output", user_path, user_path + "/output/haptic",
+				"", OpenXRAction::OPENXR_ACTION_HAPTIC);
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRActionMap
+
+void OpenXRActionMap::create_default_action_sets()
+{
+	Ref<OpenXRActionSet> action_set = OpenXRActionSet::new_action_set("godot", "Godot action set");
+	add_action_set(action_set);
+
+	Ref<OpenXRAction> trigger = action_set->add_new_action("trigger", "Trigger",
+		OpenXRAction::OPENXR_ACTION_FLOAT, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> trigger_click = action_set->add_new_action("trigger_click", "Trigger click",
+		OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> trigger_touch = action_set->add_new_action("trigger_touch",
+		"Trigger touching", OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> grip = action_set->add_new_action(
+		"grip", "Grip", OpenXRAction::OPENXR_ACTION_FLOAT, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> grip_click = action_set->add_new_action("grip_click", "Grip click",
+		OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> grip_force = action_set->add_new_action("grip_force", "Grip force",
+		OpenXRAction::OPENXR_ACTION_FLOAT, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> primary =
+		action_set->add_new_action("primary", "Primary joystick/thumbstick/trackpad",
+			OpenXRAction::OPENXR_ACTION_VECTOR2, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> primary_click =
+		action_set->add_new_action("primary_click", "Primary joystick/thumbstick/trackpad click",
+			OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> primary_touch =
+		action_set->add_new_action("primary_touch", "Primary joystick/thumbstick/trackpad touching",
+			OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> secondary =
+		action_set->add_new_action("secondary", "Secondary joystick/thumbstick/trackpad",
+			OpenXRAction::OPENXR_ACTION_VECTOR2, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> secondary_click = action_set->add_new_action("secondary_click",
+		"Secondary joystick/thumbstick/trackpad click", OpenXRAction::OPENXR_ACTION_BOOL,
+		"/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> secondary_touch = action_set->add_new_action("secondary_touch",
+		"Secondary joystick/thumbstick/trackpad touching", OpenXRAction::OPENXR_ACTION_BOOL,
+		"/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> menu_button = action_set->add_new_action("menu_button", "Menu button",
+		OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> select_button = action_set->add_new_action("select_button", "Select button",
+		OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> ax_button = action_set->add_new_action("ax_button", "A/X button",
+		OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> ax_touch = action_set->add_new_action("ax_touch", "A/X touching",
+		OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> by_button = action_set->add_new_action("by_button", "B/Y button",
+		OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> by_touch = action_set->add_new_action("by_touch", "B/Y touching",
+		OpenXRAction::OPENXR_ACTION_BOOL, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> default_pose =
+		action_set->add_new_action("default_pose", "Default pose", OpenXRAction::OPENXR_ACTION_POSE,
+			"/user/hand/left,"
+			"/user/hand/right,"
+			"/user/vive_tracker_htcx/role/left_foot,"
+			"/user/vive_tracker_htcx/role/right_foot,"
+			"/user/vive_tracker_htcx/role/left_shoulder,"
+			"/user/vive_tracker_htcx/role/right_shoulder,"
+			"/user/vive_tracker_htcx/role/left_elbow,"
+			"/user/vive_tracker_htcx/role/right_elbow,"
+			"/user/vive_tracker_htcx/role/left_knee,"
+			"/user/vive_tracker_htcx/role/right_knee,"
+			"/user/vive_tracker_htcx/role/waist,"
+			"/user/vive_tracker_htcx/role/chest,"
+			"/user/vive_tracker_htcx/role/camera,"
+			"/user/vive_tracker_htcx/role/keyboard,"
+			"/user/vive_tracker_htcx/role/left_wrist,"
+			"/user/vive_tracker_htcx/role/right_wrist,"
+			"/user/vive_tracker_htcx/role/left_ankle,"
+			"/user/vive_tracker_htcx/role/right_ankle,"
+			"/user/eyes_ext");
+	Ref<OpenXRAction> aim_pose = action_set->add_new_action("aim_pose", "Aim pose",
+		OpenXRAction::OPENXR_ACTION_POSE, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> grip_pose = action_set->add_new_action("grip_pose", "Grip pose",
+		OpenXRAction::OPENXR_ACTION_POSE, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> palm_pose = action_set->add_new_action("palm_pose", "Palm pose",
+		OpenXRAction::OPENXR_ACTION_POSE, "/user/hand/left,/user/hand/right");
+	Ref<OpenXRAction> haptic =
+		action_set->add_new_action("haptic", "Haptic", OpenXRAction::OPENXR_ACTION_HAPTIC,
+			"/user/hand/left,"
+			"/user/hand/right,"
+			"/user/vive_tracker_htcx/role/left_foot,"
+			"/user/vive_tracker_htcx/role/right_foot,"
+			"/user/vive_tracker_htcx/role/left_shoulder,"
+			"/user/vive_tracker_htcx/role/right_shoulder,"
+			"/user/vive_tracker_htcx/role/left_elbow,"
+			"/user/vive_tracker_htcx/role/right_elbow,"
+			"/user/vive_tracker_htcx/role/left_knee,"
+			"/user/vive_tracker_htcx/role/right_knee,"
+			"/user/vive_tracker_htcx/role/waist,"
+			"/user/vive_tracker_htcx/role/chest,"
+			"/user/vive_tracker_htcx/role/camera,"
+			"/user/vive_tracker_htcx/role/keyboard,"
+			"/user/vive_tracker_htcx/role/left_wrist,"
+			"/user/vive_tracker_htcx/role/right_wrist,"
+			"/user/vive_tracker_htcx/role/left_ankle,"
+			"/user/vive_tracker_htcx/role/right_ankle");
+
+	// Create our interaction profiles.
+	Ref<OpenXRInteractionProfile> profile =
+		OpenXRInteractionProfile::new_profile("/interaction_profiles/khr/generic_controller");
+	profile->add_new_binding(
+		default_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(
+		aim_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(
+		grip_pose, "/user/hand/left/input/grip/pose,/user/hand/right/input/grip/pose");
+	profile->add_new_binding(palm_pose,
+		"/user/hand/left/input/grip_surface/pose,/user/hand/right/input/grip_surface/pose");
+	profile->add_new_binding(
+		ax_button, "/user/hand/left/input/primary/click,/user/hand/right/input/primary/click");
+	profile->add_new_binding(
+		by_button, "/user/hand/left/input/secondary/click,/user/hand/right/input/secondary/click");
+	profile->add_new_binding(
+		trigger, "/user/hand/left/input/trigger/value,/user/hand/right/input/trigger/value");
+	profile->add_new_binding(
+		trigger_click, "/user/hand/left/input/trigger/value,/user/hand/right/input/trigger/value");
+	profile->add_new_binding(
+		grip, "/user/hand/left/input/squeeze/value,/user/hand/right/input/squeeze/value");
+	profile->add_new_binding(
+		grip_click, "/user/hand/left/input/squeeze/value,/user/hand/right/input/squeeze/value");
+	profile->add_new_binding(
+		primary, "/user/hand/left/input/thumbstick,/user/hand/right/input/thumbstick");
+	profile->add_new_binding(primary_click,
+		"/user/hand/left/input/thumbstick/click,/user/hand/right/input/thumbstick/click");
+	profile->add_new_binding(
+		haptic, "/user/hand/left/output/haptic,/user/hand/right/output/haptic");
+	add_interaction_profile(profile);
+
+	// Create our Meta touch controller profile.
+	profile =
+		OpenXRInteractionProfile::new_profile("/interaction_profiles/oculus/touch_controller");
+	profile->add_new_binding(
+		default_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(
+		aim_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(
+		grip_pose, "/user/hand/left/input/grip/pose,/user/hand/right/input/grip/pose");
+	profile->add_new_binding(palm_pose,
+		"/user/hand/left/input/grip_surface/pose,/user/hand/right/input/grip_surface/pose");
+	profile->add_new_binding(
+		menu_button, "/user/hand/left/input/menu/click,/user/hand/right/input/system/click");
+	profile->add_new_binding(
+		ax_button, "/user/hand/left/input/x/click,/user/hand/right/input/a/click");
+	profile->add_new_binding(
+		ax_touch, "/user/hand/left/input/x/touch,/user/hand/right/input/a/touch");
+	profile->add_new_binding(
+		by_button, "/user/hand/left/input/y/click,/user/hand/right/input/b/click");
+	profile->add_new_binding(
+		by_touch, "/user/hand/left/input/y/touch,/user/hand/right/input/b/touch");
+	profile->add_new_binding(
+		trigger, "/user/hand/left/input/trigger/value,/user/hand/right/input/trigger/value");
+	profile->add_new_binding(
+		trigger_click, "/user/hand/left/input/trigger/value,/user/hand/right/input/trigger/value");
+	profile->add_new_binding(
+		trigger_touch, "/user/hand/left/input/trigger/touch,/user/hand/right/input/trigger/touch");
+	profile->add_new_binding(
+		grip, "/user/hand/left/input/squeeze/value,/user/hand/right/input/squeeze/value");
+	profile->add_new_binding(
+		grip_click, "/user/hand/left/input/squeeze/value,/user/hand/right/input/squeeze/value");
+	profile->add_new_binding(
+		primary, "/user/hand/left/input/thumbstick,/user/hand/right/input/thumbstick");
+	profile->add_new_binding(primary_click,
+		"/user/hand/left/input/thumbstick/click,/user/hand/right/input/thumbstick/click");
+	profile->add_new_binding(primary_touch,
+		"/user/hand/left/input/thumbstick/touch,/user/hand/right/input/thumbstick/touch");
+	profile->add_new_binding(
+		haptic, "/user/hand/left/output/haptic,/user/hand/right/output/haptic");
+	add_interaction_profile(profile);
+
+	// Create our Pico 4 controller profile.
+	profile =
+		OpenXRInteractionProfile::new_profile("/interaction_profiles/bytedance/pico4_controller");
+	profile->add_new_binding(
+		default_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(
+		aim_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(
+		grip_pose, "/user/hand/left/input/grip/pose,/user/hand/right/input/grip/pose");
+	profile->add_new_binding(palm_pose,
+		"/user/hand/left/input/grip_surface/pose,/user/hand/right/input/grip_surface/pose");
+	profile->add_new_binding(
+		select_button, "/user/hand/left/input/system/click,/user/hand/right/input/system/click");
+	profile->add_new_binding(menu_button, "/user/hand/left/input/menu/click");
+	profile->add_new_binding(
+		ax_button, "/user/hand/left/input/x/click,/user/hand/right/input/a/click");
+	profile->add_new_binding(
+		ax_touch, "/user/hand/left/input/x/touch,/user/hand/right/input/a/touch");
+	profile->add_new_binding(
+		by_button, "/user/hand/left/input/y/click,/user/hand/right/input/b/click");
+	profile->add_new_binding(
+		by_touch, "/user/hand/left/input/y/touch,/user/hand/right/input/b/touch");
+	profile->add_new_binding(
+		trigger, "/user/hand/left/input/trigger/value,/user/hand/right/input/trigger/value");
+	profile->add_new_binding(
+		trigger_click, "/user/hand/left/input/trigger/value,/user/hand/right/input/trigger/value");
+	profile->add_new_binding(
+		trigger_touch, "/user/hand/left/input/trigger/touch,/user/hand/right/input/trigger/touch");
+	profile->add_new_binding(
+		grip, "/user/hand/left/input/squeeze/value,/user/hand/right/input/squeeze/value");
+	profile->add_new_binding(
+		grip_click, "/user/hand/left/input/squeeze/value,/user/hand/right/input/squeeze/value");
+	profile->add_new_binding(
+		primary, "/user/hand/left/input/thumbstick,/user/hand/right/input/thumbstick");
+	profile->add_new_binding(primary_click,
+		"/user/hand/left/input/thumbstick/click,/user/hand/right/input/thumbstick/click");
+	profile->add_new_binding(primary_touch,
+		"/user/hand/left/input/thumbstick/touch,/user/hand/right/input/thumbstick/touch");
+	profile->add_new_binding(
+		haptic, "/user/hand/left/output/haptic,/user/hand/right/output/haptic");
+	add_interaction_profile(profile);
+
+	// Create our hand interaction profile.
+	profile =
+		OpenXRInteractionProfile::new_profile("/interaction_profiles/ext/hand_interaction_ext");
+	profile->add_new_binding(
+		default_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(
+		aim_pose, "/user/hand/left/input/aim/pose,/user/hand/right/input/aim/pose");
+	profile->add_new_binding(
+		grip_pose, "/user/hand/left/input/grip/pose,/user/hand/right/input/grip/pose");
+	profile->add_new_binding(palm_pose,
+		"/user/hand/left/input/grip_surface/pose,/user/hand/right/input/grip_surface/pose");
+	profile->add_new_binding(
+		trigger, "/user/hand/left/input/pinch_ext/value,/user/hand/right/input/pinch_ext/value");
+	profile->add_new_binding(trigger_click,
+		"/user/hand/left/input/pinch_ext/value,/user/hand/right/input/pinch_ext/value");
+	profile->add_new_binding(
+		grip, "/user/hand/left/input/grasp_ext/value,/user/hand/right/input/grasp_ext/value");
+	profile->add_new_binding(
+		grip_click, "/user/hand/left/input/grasp_ext/value,/user/hand/right/input/grasp_ext/value");
+	add_interaction_profile(profile);
+}
+
+void OpenXRActionMap::create_editor_action_sets() {}
+
+Ref<OpenXRAction> OpenXRActionMap::get_action(const String& p_path) const
+{
+	PackedStringArray paths = p_path.split("/", false);
+	ERR_FAIL_COND_V(paths.size() != 2, Ref<OpenXRAction>());
+
+	Ref<OpenXRActionSet> action_set = find_action_set(paths[0]);
+	if (action_set.is_valid()) {
+		return action_set->get_action(paths[1]);
+	}
+
+	return Ref<OpenXRAction>();
+}
+
+void OpenXRActionMap::add_interaction_profile(const Ref<OpenXRInteractionProfile>&) {}
+
+int OpenXRActionMap::get_interaction_profile_count() const { return 0; }
+
+void OpenXRActionMap::add_action_set(Ref<OpenXRActionSet> const&) {}
+
+void OpenXRActionMap::remove_interaction_profile(Ref<OpenXRInteractionProfile> const&) {}
+
+void OpenXRActionMap::remove_action_set(Ref<OpenXRActionSet> const&) {}
+
+Ref<OpenXRInteractionProfile> OpenXRActionMap::get_interaction_profile(int) const
+{
+	return Ref<OpenXRInteractionProfile>();
+}
+
+Ref<OpenXRActionSet> OpenXRActionMap::find_action_set(String const&) const
+{
+	return Ref<OpenXRActionSet>();
+}
+
+// ============================================================================
+// Merged from modules/openxr/scene/openxr_scene.cpp
+// ============================================================================
+
+#include "modules/openxr/extensions/openxr_extensions.h"
+#include "modules/openxr/openxr_api.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
+#include "platform/android/api/java_class_wrapper.h"
+#include "scene/3d/camera_3d.h"
+#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
+#include "scene/3d/xr/xr_nodes.h"
+#include "scene/main/viewport.h"
+#include "scene/resources/3d/primitive_meshes.h"
+#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+#include "servers/xr/xr_server.h"
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRCompositionLayer
+
+Vector<OpenXRCompositionLayer*> OpenXRCompositionLayer::composition_layer_nodes;
+
+static const char* HOLE_PUNCH_SHADER_CODE =
+	"shader_type spatial;\n"
+	"render_mode blend_mix, depth_draw_opaque, cull_back, shadow_to_opacity, shadows_disabled;\n"
+	"void fragment() {\n"
+	"\tALBEDO = vec3(0.0, 0.0, 0.0);\n"
+	"}\n";
+
+OpenXRCompositionLayer::OpenXRCompositionLayer(LayerType p_type) : layer_type(p_type)
+{
+	if (!OpenXRCompositionLayerExtension::is_initialized()) {
+		return;
+	}
+
+	switch (layer_type) {
+	case LAYER_QUAD: {
+		XrCompositionLayerQuad openxr_composition_layer = {
+			XR_TYPE_COMPOSITION_LAYER_QUAD,
+			nullptr,
+			0,
+			XR_NULL_HANDLE,
+			XR_EYE_VISIBILITY_BOTH,
+			{},
+			{{0, 0, 0, 0}, {0, 0, 0}},
+			{(float)quad_size.x, (float)quad_size.y},
+		};
+		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
+			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
+	} break;
+	case LAYER_CYLINDER: {
+		XrCompositionLayerCylinderKHR openxr_composition_layer = {
+			XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR,
+			nullptr,
+			0,
+			XR_NULL_HANDLE,
+			XR_EYE_VISIBILITY_BOTH,
+			{},
+			{{0, 0, 0, 0}, {0, 0, 0}},
+			radius,
+			central_angle,
+			aspect_ratio,
+		};
+		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
+			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
+	} break;
+	case LAYER_EQUIRECT: {
+		XrCompositionLayerEquirect2KHR openxr_composition_layer = {
+			XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR,
+			nullptr,
+			0,
+			XR_NULL_HANDLE,
+			XR_EYE_VISIBILITY_BOTH,
+			{},
+			{{0, 0, 0, 0}, {0, 0, 0}},
+			radius,
+			central_horizontal_angle,
+			upper_vertical_angle,
+			-lower_vertical_angle,
+		};
+		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
+			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
+	} break;
+	}
+}
+
+XrStructureType OpenXRCompositionLayer::_get_openxr_type() const
+{
+	switch (layer_type) {
+	case LAYER_QUAD:
+		return XR_TYPE_COMPOSITION_LAYER_QUAD;
+	case LAYER_CYLINDER:
+		return XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR;
+	case LAYER_EQUIRECT:
+		return XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR;
+	}
+	return XR_TYPE_COMPOSITION_LAYER_QUAD;
+}
+
+Ref<Mesh> OpenXRCompositionLayer::_create_fallback_mesh()
+{
+	if (layer_type == LAYER_QUAD) {
+		Ref<PrimitiveMesh> mesh;
+		mesh.instantiate(PrimitiveMesh::MESH_QUAD);
+		mesh->set_plane_size(quad_size);
+		return mesh;
+	}
+	Ref<Mesh> m = memnew(Mesh);
+	return m;
+}
+
+bool OpenXRCompositionLayer::_should_use_fallback_node()
+{
+	if (Engine::is_editor_hint() || !OpenXRAPI::is_allocated()) {
+		return true;
+	}
+	else if (openxr_session_running) {
+		return enable_hole_punch || !is_natively_supported();
+	}
+	return false;
+}
+
+void OpenXRCompositionLayer::_create_fallback_node()
+{
+	ERR_FAIL_COND(fallback);
+	fallback = memnew(MeshInstance3D);
+	fallback->set_cast_shadows_setting(RenderInstance3D::SHADOW_CASTING_SETTING_OFF);
+	add_child(fallback, false, INTERNAL_MODE_FRONT);
+	should_update_fallback_mesh = true;
+}
+
+void OpenXRCompositionLayer::_remove_fallback_node()
+{
+	ERR_FAIL_COND(fallback == nullptr);
+	remove_child(fallback);
+	fallback->queue_free();
+	fallback = nullptr;
+}
+
+void OpenXRCompositionLayer::_setup_composition_layer()
+{
+	if (use_android_surface || layer_viewport) {
+		if (OpenXRCompositionLayerExtension::is_initialized()) {
+			OpenXRCompositionLayerExtension::composition_layer_register(composition_layer);
+			registered = true;
+
+			if (layer_viewport) {
+				OpenXRCompositionLayerExtension::composition_layer_set_viewport(composition_layer,
+					layer_viewport->get_viewport_rid(), layer_viewport->get_size());
+			}
+		}
+	}
+}
+
+void OpenXRCompositionLayer::_clear_composition_layer()
+{
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_unregister(composition_layer);
+		registered = false;
+
+		if (!use_android_surface) {
+			OpenXRCompositionLayerExtension::composition_layer_set_viewport(
+				composition_layer, RID(), Size2i());
+		}
+	}
+}
+
+void OpenXRCompositionLayer::_viewport_size_changed()
+{
+	if (layer_viewport && openxr_session_running &&
+		OpenXRCompositionLayerExtension::is_initialized() && is_natively_supported() &&
+		is_visible_in_tree() && is_inside_tree()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_viewport(
+			composition_layer, layer_viewport->get_viewport_rid(), layer_viewport->get_size());
+	}
+}
+
+void OpenXRCompositionLayer::_on_openxr_session_begun()
+{
+	openxr_session_running = true;
+	if (_should_register()) {
+		_setup_composition_layer();
+	}
+	if (!fallback && _should_use_fallback_node()) {
+		_create_fallback_node();
+	}
+}
+
+void OpenXRCompositionLayer::_on_openxr_session_stopping()
+{
+	openxr_session_running = false;
+	if (fallback && !_should_use_fallback_node()) {
+		_remove_fallback_node();
+	}
+	_clear_composition_layer();
+}
+
+void OpenXRCompositionLayer::update_fallback_mesh() { should_update_fallback_mesh = true; }
+
+bool OpenXRCompositionLayer::_should_register()
+{
+	return !registered && openxr_session_running && is_inside_tree() && is_visible_in_tree() &&
+		   is_natively_supported();
+}
+
+bool OpenXRCompositionLayer::is_viewport_in_use(SubViewport* p_viewport)
+{
+	ERR_FAIL_NULL_V(p_viewport, false);
+	for (const OpenXRCompositionLayer* other_composition_layer : composition_layer_nodes) {
+		if (other_composition_layer != this && other_composition_layer->is_inside_tree() &&
+			other_composition_layer->get_layer_viewport() == p_viewport) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void OpenXRCompositionLayer::set_use_android_surface(bool p_use_android_surface)
+{
+	if (use_android_surface == p_use_android_surface) {
+		return;
+	}
+
+	use_android_surface = p_use_android_surface;
+	if (use_android_surface) {
+		set_layer_viewport(nullptr);
+		if (OpenXRCompositionLayerExtension::is_initialized()) {
+			OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(
+				composition_layer, true, android_surface_size);
+		}
+		if (_should_register()) {
+			_setup_composition_layer();
+		}
+	}
+	else {
+		if (OpenXRCompositionLayerExtension::is_initialized()) {
+			OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(
+				composition_layer, false, Size2i());
+		}
+	}
+}
+
+bool OpenXRCompositionLayer::get_use_android_surface() const { return use_android_surface; }
+
+void OpenXRCompositionLayer::set_android_surface_size(Size2i p_size)
+{
+	if (android_surface_size == p_size) {
+		return;
+	}
+
+	android_surface_size = p_size;
+	if (use_android_surface && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(
+			composition_layer, true, android_surface_size);
+	}
+}
+
+Size2i OpenXRCompositionLayer::get_android_surface_size() const { return android_surface_size; }
+
+SubViewport* OpenXRCompositionLayer::get_layer_viewport() const { return layer_viewport; }
+
+bool OpenXRCompositionLayer::get_enable_hole_punch() const { return enable_hole_punch; }
+
+int OpenXRCompositionLayer::get_sort_order() const { return sort_order; }
+
+void OpenXRCompositionLayer::set_alpha_blend(bool p_alpha_blend)
+{
+	alpha_blend = p_alpha_blend;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_alpha_blend(
+			composition_layer, p_alpha_blend);
+	}
+	if (fallback) {
+		_reset_fallback_material();
+	}
+}
+
+bool OpenXRCompositionLayer::get_alpha_blend() const { return alpha_blend; }
+
+bool OpenXRCompositionLayer::is_natively_supported() const
+{
+	if (OpenXRCompositionLayerExtension::is_initialized() && OpenXRAPI::is_allocated()) {
+		return OpenXRCompositionLayerExtension::is_available(_get_openxr_type());
+	}
+	return false;
+}
+
+void OpenXRCompositionLayer::set_protected_content(bool p_protected_content)
+{
+	if (protected_content == p_protected_content) {
+		return;
+	}
+	protected_content = p_protected_content;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_protected_content(
+			composition_layer, p_protected_content);
+	}
+}
+
+bool OpenXRCompositionLayer::is_protected_content() const { return protected_content; }
+
+void OpenXRCompositionLayer::set_min_filter(Filter p_mode)
+{
+	if (min_filter == p_mode) {
+		return;
+	}
+	min_filter = p_mode;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_min_filter(
+			composition_layer, (OpenXRCompositionLayerExtension::Filter)p_mode);
+	}
+}
+
+OpenXRCompositionLayer::Filter OpenXRCompositionLayer::get_min_filter() const { return min_filter; }
+
+void OpenXRCompositionLayer::set_mag_filter(Filter p_mode)
+{
+	if (mag_filter == p_mode) {
+		return;
+	}
+	mag_filter = p_mode;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_mag_filter(
+			composition_layer, (OpenXRCompositionLayerExtension::Filter)p_mode);
+	}
+}
+
+OpenXRCompositionLayer::Filter OpenXRCompositionLayer::get_mag_filter() const { return mag_filter; }
+
+void OpenXRCompositionLayer::set_mipmap_mode(MipmapMode p_mode)
+{
+	if (mipmap_mode == p_mode) {
+		return;
+	}
+	mipmap_mode = p_mode;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_mipmap_mode(
+			composition_layer, (OpenXRCompositionLayerExtension::MipmapMode)p_mode);
+	}
+}
+
+OpenXRCompositionLayer::MipmapMode OpenXRCompositionLayer::get_mipmap_mode() const
+{
+	return mipmap_mode;
+}
+
+void OpenXRCompositionLayer::set_horizontal_wrap(Wrap p_mode)
+{
+	if (horizontal_wrap == p_mode) {
+		return;
+	}
+	horizontal_wrap = p_mode;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_horizontal_wrap(
+			composition_layer, (OpenXRCompositionLayerExtension::Wrap)p_mode);
+	}
+}
+
+OpenXRCompositionLayer::Wrap OpenXRCompositionLayer::get_horizontal_wrap() const
+{
+	return horizontal_wrap;
+}
+
+void OpenXRCompositionLayer::set_vertical_wrap(Wrap p_mode)
+{
+	if (vertical_wrap == p_mode) {
+		return;
+	}
+	vertical_wrap = p_mode;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_vertical_wrap(
+			composition_layer, (OpenXRCompositionLayerExtension::Wrap)p_mode);
+	}
+}
+
+OpenXRCompositionLayer::Wrap OpenXRCompositionLayer::get_vertical_wrap() const
+{
+	return vertical_wrap;
+}
+
+void OpenXRCompositionLayer::set_red_swizzle(Swizzle p_mode)
+{
+	if (red_swizzle == p_mode) {
+		return;
+	}
+	red_swizzle = p_mode;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_red_swizzle(
+			composition_layer, (OpenXRCompositionLayerExtension::Swizzle)p_mode);
+	}
+}
+
+OpenXRCompositionLayer::Swizzle OpenXRCompositionLayer::get_red_swizzle() const
+{
+	return red_swizzle;
+}
+
+void OpenXRCompositionLayer::set_green_swizzle(Swizzle p_mode)
+{
+	if (green_swizzle == p_mode) {
+		return;
+	}
+	green_swizzle = p_mode;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_green_swizzle(
+			composition_layer, (OpenXRCompositionLayerExtension::Swizzle)p_mode);
+	}
+}
+
+OpenXRCompositionLayer::Swizzle OpenXRCompositionLayer::get_green_swizzle() const
+{
+	return green_swizzle;
+}
+
+void OpenXRCompositionLayer::set_blue_swizzle(Swizzle p_mode)
+{
+	if (blue_swizzle == p_mode) {
+		return;
+	}
+	blue_swizzle = p_mode;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_blue_swizzle(
+			composition_layer, (OpenXRCompositionLayerExtension::Swizzle)p_mode);
+	}
+}
+
+OpenXRCompositionLayer::Swizzle OpenXRCompositionLayer::get_blue_swizzle() const
+{
+	return blue_swizzle;
+}
+
+void OpenXRCompositionLayer::set_alpha_swizzle(Swizzle p_mode)
+{
+	if (alpha_swizzle == p_mode) {
+		return;
+	}
+	alpha_swizzle = p_mode;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_alpha_swizzle(
+			composition_layer, (OpenXRCompositionLayerExtension::Swizzle)p_mode);
+	}
+}
+
+OpenXRCompositionLayer::Swizzle OpenXRCompositionLayer::get_alpha_swizzle() const
+{
+	return alpha_swizzle;
+}
+
+void OpenXRCompositionLayer::set_max_anisotropy(float p_value)
+{
+	if (max_anisotropy == p_value) {
+		return;
+	}
+	max_anisotropy = p_value;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_max_anisotropy(
+			composition_layer, p_value);
+	}
+}
+
+float OpenXRCompositionLayer::get_max_anisotropy() const { return max_anisotropy; }
+
+void OpenXRCompositionLayer::set_border_color(const Color& p_color)
+{
+	if (border_color == p_color) {
+		return;
+	}
+	border_color = p_color;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_border_color(
+			composition_layer, p_color);
+	}
+}
+
+Color OpenXRCompositionLayer::get_border_color() const { return border_color; }
+
+void OpenXRCompositionLayer::set_eye_visibility(EyeVisibility p_eye_visibility)
+{
+	if (eye_visibility == p_eye_visibility) {
+		return;
+	}
+	eye_visibility = p_eye_visibility;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_eye_visibility(
+			composition_layer, (OpenXRCompositionLayerExtension::EyeVisibility)p_eye_visibility);
+	}
+}
+
+OpenXRCompositionLayer::EyeVisibility OpenXRCompositionLayer::get_eye_visibility() const
+{
+	return eye_visibility;
+}
+
+void OpenXRCompositionLayer::set_quad_size(const Size2& p_size)
+{
+	quad_size = p_size;
+	if (layer_type == LAYER_QUAD && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_quad_size(composition_layer, p_size);
+	}
+	update_fallback_mesh();
+}
+
+Size2 OpenXRCompositionLayer::get_quad_size() const { return quad_size; }
+
+void OpenXRCompositionLayer::set_radius(float p_radius)
+{
+	ERR_FAIL_COND(p_radius <= 0);
+	radius = p_radius;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		if (layer_type == LAYER_CYLINDER) {
+			OpenXRCompositionLayerExtension::composition_layer_set_cylinder_radius(
+				composition_layer, p_radius);
+		}
+		else if (layer_type == LAYER_EQUIRECT) {
+			OpenXRCompositionLayerExtension::composition_layer_set_equirect_radius(
+				composition_layer, p_radius);
+		}
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_radius() const { return radius; }
+
+void OpenXRCompositionLayer::set_fallback_segments(uint32_t p_fallback_segments)
+{
+	ERR_FAIL_COND(p_fallback_segments == 0);
+	fallback_segments = p_fallback_segments;
+	update_fallback_mesh();
+}
+
+uint32_t OpenXRCompositionLayer::get_fallback_segments() const { return fallback_segments; }
+
+void OpenXRCompositionLayer::set_aspect_ratio(float p_aspect_ratio)
+{
+	ERR_FAIL_COND(p_aspect_ratio <= 0);
+	aspect_ratio = p_aspect_ratio;
+	if (layer_type == LAYER_CYLINDER && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_cylinder_aspect_ratio(
+			composition_layer, p_aspect_ratio);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_aspect_ratio() const { return aspect_ratio; }
+
+void OpenXRCompositionLayer::set_central_angle(float p_central_angle)
+{
+	ERR_FAIL_COND(p_central_angle <= 0);
+	central_angle = p_central_angle;
+	if (layer_type == LAYER_CYLINDER && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_cylinder_central_angle(
+			composition_layer, p_central_angle);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_central_angle() const { return central_angle; }
+
+void OpenXRCompositionLayer::set_central_horizontal_angle(float p_angle)
+{
+	ERR_FAIL_COND(p_angle <= 0);
+	central_horizontal_angle = p_angle;
+	if (layer_type == LAYER_EQUIRECT && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_central_horizontal_angle(
+			composition_layer, p_angle);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_central_horizontal_angle() const
+{
+	return central_horizontal_angle;
+}
+
+void OpenXRCompositionLayer::set_upper_vertical_angle(float p_angle)
+{
+	ERR_FAIL_COND(p_angle <= 0 || p_angle > (Math::PI / 2.0));
+	upper_vertical_angle = p_angle;
+	if (layer_type == LAYER_EQUIRECT && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_upper_vertical_angle(
+			composition_layer, p_angle);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_upper_vertical_angle() const
+{
+	return upper_vertical_angle;
+}
+
+void OpenXRCompositionLayer::set_lower_vertical_angle(float p_angle)
+{
+	ERR_FAIL_COND(p_angle <= 0 || p_angle > (Math::PI / 2.0));
+	lower_vertical_angle = p_angle;
+	if (layer_type == LAYER_EQUIRECT && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_lower_vertical_angle(
+			composition_layer, -p_angle);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_lower_vertical_angle() const
+{
+	return lower_vertical_angle;
+}
+
+Ref<JavaObject> OpenXRCompositionLayer::get_android_surface()
+{
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		return OpenXRCompositionLayerExtension::composition_layer_get_android_surface(
+			composition_layer);
+	}
+	return Ref<JavaObject>();
+}
+
+Vector2 OpenXRCompositionLayer::intersects_ray(
+	const Vector3& p_origin, const Vector3& p_direction) const
+{
+	switch (layer_type) {
+	case LAYER_QUAD: {
+		Transform3D quad_transform = get_global_transform();
+		Vector3 quad_normal = quad_transform.basis.get_column(2);
+
+		float denom = quad_normal.dot(p_direction);
+		if (Math::abs(denom) > 0.0001) {
+			Vector3 vector = quad_transform.origin - p_origin;
+			float t = vector.dot(quad_normal) / denom;
+			if (t < 0.0) {
+				return Vector2(-1.0, -1.0);
+			}
+			Vector3 intersection = p_origin + p_direction * t;
+
+			Vector3 relative_point = intersection - quad_transform.origin;
+			Vector2 projected_point = Vector2(relative_point.dot(quad_transform.basis.get_column(0)),
+				relative_point.dot(quad_transform.basis.get_column(1)));
+			if (Math::abs(projected_point.x) > quad_size.x / 2.0) {
+				return Vector2(-1.0, -1.0);
+			}
+			if (Math::abs(projected_point.y) > quad_size.y / 2.0) {
+				return Vector2(-1.0, -1.0);
+			}
+
+			float u = 0.5 + (projected_point.x / quad_size.x);
+			float v = 1.0 - (0.5 + (projected_point.y / quad_size.y));
+
+			return Vector2(u, v);
+		}
+		return Vector2(-1.0, -1.0);
+	}
+	case LAYER_CYLINDER: {
+		Transform3D cylinder_transform = get_global_transform();
+		Vector3 cylinder_axis = cylinder_transform.basis.get_column(1);
+
+		Vector3 offset = p_origin - cylinder_transform.origin;
+		float a = p_direction.dot(p_direction - cylinder_axis * p_direction.dot(cylinder_axis));
+		float b = 2.0 * (p_direction.dot(offset - cylinder_axis * offset.dot(cylinder_axis)));
+		float c =
+			offset.dot(offset - cylinder_axis * offset.dot(cylinder_axis)) - (radius * radius);
+
+		float discriminant = b * b - 4.0 * a * c;
+		if (discriminant < 0.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float t0 = (-b - Math::sqrt(discriminant)) / (2.0 * a);
+		float t1 = (-b + Math::sqrt(discriminant)) / (2.0 * a);
+		float t = MAX(t0, t1);
+
+		if (t < 0.0) {
+			return Vector2(-1.0, -1.0);
+		}
+		Vector3 intersection = p_origin + p_direction * t;
+
+		Basis correction = cylinder_transform.basis.inverse();
+		correction.rotate(Vector3(0.0, 1.0, 0.0), -Math::PI / 2.0);
+		Vector3 relative_point = correction.xform(intersection - cylinder_transform.origin);
+
+		Vector2 projected_point = Vector2(relative_point.x, relative_point.z);
+		float intersection_angle = Math::atan2(projected_point.y, projected_point.x);
+		if (Math::abs(intersection_angle) > central_angle / 2.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float arc_length = radius * central_angle;
+		float height = aspect_ratio * arc_length;
+		if (Math::abs(relative_point.y) > height / 2.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float u = 0.5 + (intersection_angle / central_angle);
+		float v = 1.0 - (0.5 + (relative_point.y / height));
+
+		return Vector2(u, v);
+	}
+	case LAYER_EQUIRECT: {
+		Transform3D equirect_transform = get_global_transform();
+
+		Vector3 offset = p_origin - equirect_transform.origin;
+		float a = p_direction.dot(p_direction);
+		float b = 2.0 * offset.dot(p_direction);
+		float c = offset.dot(offset) - (radius * radius);
+
+		float discriminant = b * b - 4.0 * a * c;
+		if (discriminant < 0.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float t0 = (-b - Math::sqrt(discriminant)) / (2.0 * a);
+		float t1 = (-b + Math::sqrt(discriminant)) / (2.0 * a);
+		float t = MAX(t0, t1);
+
+		if (t < 0.0) {
+			return Vector2(-1.0, -1.0);
+		}
+		Vector3 intersection = p_origin + p_direction * t;
+
+		Basis correction = equirect_transform.basis.inverse();
+		correction.rotate(Vector3(0.0, 1.0, 0.0), -Math::PI / 2.0);
+		Vector3 relative_point = correction.xform(intersection - equirect_transform.origin);
+
+		float horizontal_intersection_angle = Math::atan2(relative_point.z, relative_point.x);
+		if (Math::abs(horizontal_intersection_angle) > central_horizontal_angle / 2.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float vertical_intersection_angle =
+			Math::acos(relative_point.y / radius) - (Math::PI / 2.0);
+		if (vertical_intersection_angle < 0) {
+			if (Math::abs(vertical_intersection_angle) > upper_vertical_angle) {
+				return Vector2(-1.0, -1.0);
+			}
+		}
+		else if (vertical_intersection_angle > lower_vertical_angle) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		if (upper_vertical_angle != lower_vertical_angle) {
+			vertical_intersection_angle -= (-upper_vertical_angle + lower_vertical_angle) / 2.0;
+		}
+
+		float u = 0.5 + (horizontal_intersection_angle / central_horizontal_angle);
+		float v = 0.5 + (vertical_intersection_angle / (upper_vertical_angle + lower_vertical_angle));
+
+		return Vector2(u, v);
+	}
+	}
+	return Vector2(-1.0, -1.0);
+}
+
+void OpenXRCompositionLayer::_reset_fallback_material()
+{
+	ERR_FAIL_NULL(fallback);
+
+	if (fallback->get_mesh().is_null()) {
+		return;
+	}
+
+	if (enable_hole_punch && !Engine::is_editor_hint() && is_natively_supported()) {
+		Ref<ShaderMaterial> material = fallback->get_surface_override_material(0);
+		if (material.is_null()) {
+			Ref<Shader> shader;
+			shader.instantiate();
+			shader->set_code(HOLE_PUNCH_SHADER_CODE);
+
+			material.instantiate();
+			material->set_shader(shader);
+			fallback->set_surface_override_material(0, material);
+		}
+	}
+	else if (layer_viewport) {
+		Ref<StandardMaterial3D> material = fallback->get_surface_override_material(0);
+		if (material.is_null()) {
+			material.instantiate();
+			material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+			material->set_local_to_scene(true);
+			fallback->set_surface_override_material(0, material);
+		}
+		material->set_transparency(get_alpha_blend() ? StandardMaterial3D::TRANSPARENCY_ALPHA
+													 : StandardMaterial3D::TRANSPARENCY_DISABLED);
+		material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, layer_viewport->get_texture());
+	}
+	else {
+		fallback->set_surface_override_material(0, Ref<Material>());
+	}
+}
+
+PackedStringArray OpenXRCompositionLayer::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+
+	if (!get_transform().basis.is_orthonormal()) {
+		warnings.push_back(RTR("OpenXR composition layers must have orthonormalized transforms "
+							   "(ie. no scale or shearing)."));
+	}
+
+	if (enable_hole_punch && get_sort_order() >= 0) {
+		warnings.push_back(
+			RTR("Hole punching won't work as expected unless the sort order is less than zero."));
+	}
+
+	return warnings;
+}
+
+Camera3D* OpenXRCompositionLayer::_get_xrcamera3d_ancestor() const
+{
+	Node* parent = get_parent();
+	while (parent != nullptr) {
+		Camera3D* camera = dynamic_cast<Camera3D*>(parent);
+		if (camera != nullptr && camera->is_xr_enabled()) {
+			return camera;
+		}
+		parent = parent->get_parent();
+	}
+	return nullptr;
+}
+
+void OpenXRCompositionLayer::set_layer_viewport(SubViewport* p_viewport) {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRHand
+
+OpenXRHand::OpenXRHand() {}
+
+void OpenXRHand::set_hand(Hands p_hand)
+{
+	ERR_FAIL_INDEX(p_hand, HAND_MAX);
+
+	hand = p_hand;
+}
+
+OpenXRHand::Hands OpenXRHand::get_hand() const { return hand; }
+
+void OpenXRHand::set_hand_skeleton(const NodePath& p_hand_skeleton)
+{
+	hand_skeleton = p_hand_skeleton;
+}
+
+void OpenXRHand::set_motion_range(MotionRange p_motion_range)
+{
+	ERR_FAIL_INDEX(p_motion_range, MOTION_RANGE_MAX);
+	motion_range = p_motion_range;
+
+	_set_motion_range();
+}
+
+OpenXRHand::MotionRange OpenXRHand::get_motion_range() const { return motion_range; }
+
+NodePath OpenXRHand::get_hand_skeleton() const { return hand_skeleton; }
+
+void OpenXRHand::set_skeleton_rig(SkeletonRig p_skeleton_rig)
+{
+	ERR_FAIL_INDEX(p_skeleton_rig, SKELETON_RIG_MAX);
+
+	skeleton_rig = p_skeleton_rig;
+}
+
+OpenXRHand::SkeletonRig OpenXRHand::get_skeleton_rig() const { return skeleton_rig; }
+
+void OpenXRHand::set_bone_update(BoneUpdate p_bone_update)
+{
+	ERR_FAIL_INDEX(p_bone_update, BONE_UPDATE_MAX);
+
+	bone_update = p_bone_update;
+}
+
+OpenXRHand::BoneUpdate OpenXRHand::get_bone_update() const { return bone_update; }
+
+void OpenXRHand::_get_joint_data()
+{
+	static const String bone_names[SKELETON_RIG_MAX][XR_HAND_JOINT_COUNT_EXT] = {
+		{"Palm", "Wrist", "Thumb_Metacarpal", "Thumb_Proximal", "Thumb_Distal", "Thumb_Tip",
+			"Index_Metacarpal", "Index_Proximal", "Index_Intermediate", "Index_Distal", "Index_Tip",
+			"Middle_Metacarpal", "Middle_Proximal", "Middle_Intermediate", "Middle_Distal",
+			"Middle_Tip", "Ring_Metacarpal", "Ring_Proximal", "Ring_Intermediate", "Ring_Distal",
+			"Ring_Tip", "Little_Metacarpal", "Little_Proximal", "Little_Intermediate",
+			"Little_Distal", "Little_Tip"},
+		{"Palm", "Hand", "ThumbMetacarpal", "ThumbProximal", "ThumbDistal", "ThumbTip",
+			"IndexMetacarpal", "IndexProximal", "IndexIntermediate", "IndexDistal", "IndexTip",
+			"MiddleMetacarpal", "MiddleProximal", "MiddleIntermediate", "MiddleDistal", "MiddleTip",
+			"RingMetacarpal", "RingProximal", "RingIntermediate", "RingDistal", "RingTip",
+			"LittleMetacarpal", "LittleProximal", "LittleIntermediate", "LittleDistal",
+			"LittleTip"}};
+
+	static const String bone_name_formats[SKELETON_RIG_MAX][2] = {
+		{"<bone>_L", "<bone>_R"},
+		{"Left<bone>", "Right<bone>"}};
+
+	for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
+		joints[i].bone = -1;
+		joints[i].parent_joint = -1;
+	}
+
+	Skeleton3D* skeleton = get_skeleton();
+	if (!skeleton) {
+		return;
+	}
+
+	int bones[XR_HAND_JOINT_COUNT_EXT];
+	for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
+		String bone_name =
+			bone_name_formats[skeleton_rig][hand].replace("<bone>", bone_names[skeleton_rig][i]);
+		bones[i] = skeleton->find_bone(bone_name);
+	}
+
+	for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
+		const int bone = bones[i];
+		if (bone == -1) {
+			continue;
+		}
+
+		const int parent_bone = skeleton->get_bone_parent(bone);
+		if (parent_bone == -1) {
+			joints[i].bone = bone;
+			joints[i].parent_joint = XR_HAND_JOINT_PALM_EXT;
+			continue;
+		}
+
+		for (int j = 0; j < XR_HAND_JOINT_COUNT_EXT; ++j) {
+			if (bones[j] == parent_bone) {
+				joints[i].bone = bone;
+				joints[i].parent_joint = j;
+				break;
+			}
+		}
+	}
+}
+
+void OpenXRHand::_notification(int p_what)
+{
+	switch (p_what) {
+	case NOTIFICATION_ENTER_TREE: {
+		_get_joint_data();
+		set_process_internal(true);
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		set_process_internal(false);
+		for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
+			joints[i].bone = -1;
+			joints[i].parent_joint = -1;
+		}
+	} break;
+	case NOTIFICATION_INTERNAL_PROCESS: {
+		_update_skeleton();
+	} break;
+	default: {
+	} break;
+	}
+}
+
+void OpenXRHand::_update_skeleton() {}
+
+void OpenXRHand::_set_motion_range() {}
+
+Skeleton3D* OpenXRHand::get_skeleton() { return nullptr; }
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRVisibilityMask
+
+void OpenXRVisibilityMask::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+void OpenXRVisibilityMask::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+
+	switch (p_what) {
+	case NOTIFICATION_ENTER_TREE: {
+		if (OpenXRVisibilityMaskExtension::is_initialized() &&
+			OpenXRVisibilityMaskExtension::is_available()) {
+			set_base(OpenXRVisibilityMaskExtension::get_mesh());
+		}
+	} break;
+	case NOTIFICATION_EXIT_TREE: {
+		set_base(RID());
+	} break;
+	}
+}
+
+void OpenXRVisibilityMask::_on_openxr_session_begun()
+{
+	if (is_inside_tree()) {
+		if (OpenXRVisibilityMaskExtension::is_initialized() &&
+			OpenXRVisibilityMaskExtension::is_available()) {
+			set_base(OpenXRVisibilityMaskExtension::get_mesh());
+		}
+	}
+}
+
+void OpenXRVisibilityMask::_on_openxr_session_stopping() { set_base(RID()); }
+
+AABB OpenXRVisibilityMask::get_aabb() const
+{
+	AABB ret;
+	ret.position = Vector3(-1000.0, -1000.0, -1000.0);
+	ret.size = Vector3(2000.0, 2000.0, 2000.0);
+	return ret;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRRenderModel & OpenXRRenderModelManager
+
+#ifdef MODULE_GLTF_ENABLED
+
+void OpenXRRenderModel::_load_render_model_scene() {}
+
+String OpenXRRenderModel::get_top_level_path() const
+{
+	String ret;
+
+	if (render_model.is_valid() && OpenXRRenderModelExtension::is_initialized()) {
+		ret = OpenXRRenderModelExtension::render_model_get_top_level_path_as_string(render_model);
+	}
+
+	return ret;
+}
+
+RID OpenXRRenderModel::get_render_model() const { return render_model; }
+
+void OpenXRRenderModel::set_render_model(RID p_render_model)
+{
+	render_model = p_render_model;
+	if (is_inside_tree() && render_model.is_valid()) {
+		_load_render_model_scene();
+	}
+}
+
+bool OpenXRRenderModelManager::_has_filters() { return tracker != 0; }
+
+void OpenXRRenderModelManager::_on_render_model_added(RID p_render_model)
+{
+	if (_has_filters()) {
+		is_dirty = true;
+	}
+	else {
+		_update_models();
+	}
+}
+
+void OpenXRRenderModelManager::_on_render_model_removed(RID p_render_model)
+{
+	if (_has_filters()) {
+		is_dirty = true;
+	}
+	else {
+		_update_models();
+	}
+}
+
+void OpenXRRenderModelManager::_on_render_model_top_level_path_changed(RID p_path)
+{
+	if (_has_filters()) {
+		is_dirty = true;
+	}
+}
+
+void OpenXRRenderModelManager::set_tracker(RenderModelTracker p_tracker)
+{
+	if (tracker != p_tracker) {
+		tracker = p_tracker;
+		is_dirty = true;
+
+		if (tracker == RENDER_MODEL_TRACKER_ANY || tracker == RENDER_MODEL_TRACKER_NONE_SET) {
+			xr_path = XR_NULL_PATH;
+		}
+		else if (!Engine::is_editor_hint()) {
+			if (OpenXRAPI::is_allocated() && XRServer::is_initialized()) {
+				String toplevel_path;
+				String tracker_name;
+				if (tracker == RENDER_MODEL_TRACKER_LEFT_HAND) {
+					tracker_name = "left_hand";
+					toplevel_path = "/user/hand/left";
+				}
+				else if (tracker == RENDER_MODEL_TRACKER_RIGHT_HAND) {
+					tracker_name = "right_hand";
+					toplevel_path = "/user/hand/right";
+				}
+				else {
+					ERR_FAIL_MSG("Unsupported tracker value set.");
+				}
+
+				positional_tracker = XRServer::get_tracker(tracker_name);
+				if (positional_tracker.is_null()) {
+					WARN_PRINT("OpenXR: Can't find tracker " + tracker_name);
+				}
+
+				xr_path = OpenXRAPI::get_xr_path(toplevel_path);
+				if (xr_path == XR_NULL_PATH) {
+					WARN_PRINT("OpenXR: Can't find path for " + toplevel_path);
+				}
+			}
+		}
+
+		set_process_internal(true);
+	}
+}
+
+OpenXRRenderModelManager::RenderModelTracker OpenXRRenderModelManager::get_tracker() const
+{
+	return tracker;
+}
+
+void OpenXRRenderModelManager::set_make_local_to_pose(const String& p_action)
+{
+	if (make_local_to_pose != p_action) {
+		make_local_to_pose = p_action;
+
+		if (container) {
+			container->set_transform(Transform3D());
+		}
+	}
+}
+
+String OpenXRRenderModelManager::get_make_local_to_pose() const { return make_local_to_pose; }
+
+void OpenXRRenderModelManager::_update_models() {}
+
+#endif // MODULE_GLTF_ENABLED
+
+// ============================================================================
+// Merged from modules/openxr/extensions/openxr_extensions.cpp
+// ============================================================================
+
+#include "modules/openxr/openxr_api.h"
+#include "core/config/project_settings.h"
+#include "core/os/os.h"
+#include "core/string/print_string.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
+#include "platform/android/api/java_class_wrapper.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/storage/texture_storage.h"
+#include "servers/xr/xr_server.h"
+
+#ifdef XR_USE_PLATFORM_ANDROID
+#include <unistd.h>
+#endif
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXREyeGazeInteractionExtension
+
+void OpenXREyeGazeInteractionExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXREyeGazeInteractionExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXREyeGazeInteractionExtension::get_requested_extensions(
+	XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/eye_gaze_interaction") &&
+		(!OS::has_feature("mobile") ||
+			OS::has_feature(XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME))) {
+		request_extensions[XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME] = &data->available;
+	}
+
+	return request_extensions;
+}
+
+void* OpenXREyeGazeInteractionExtension::set_system_properties_and_get_next_pointer(
+	void* p_next_pointer)
+{
+	if (!data->available) {
+		return p_next_pointer;
+	}
+
+	data->properties.type = XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT;
+	data->properties.next = p_next_pointer;
+	data->properties.supportsEyeGazeInteraction = false;
+
+	return &data->properties;
+}
+
+PackedStringArray OpenXREyeGazeInteractionExtension::get_suggested_tracker_names()
+{
+	PackedStringArray arr = {"/user/eyes_ext"};
+	return arr;
+}
+
+bool OpenXREyeGazeInteractionExtension::is_available() { return data != nullptr && data->available; }
+
+bool OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction()
+{
+	if (data->available && data->properties.supportsEyeGazeInteraction) {
+		return !OS::has_feature("mobile") ||
+			   OS::has_feature("PERMISSION_XR_EXT_eye_gaze_interaction");
+	}
+
+	return false;
+}
+
+bool OpenXREyeGazeInteractionExtension::get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+
+	if (!data->init_eye_gaze_pose) {
+		data->init_eye_gaze_pose = true;
+
+		data->eye_tracker = OpenXRAPI::find_tracker("/user/eyes_ext");
+		if (data->eye_tracker.is_null()) {
+			WARN_PRINT("Couldn't obtain eye tracker");
+		}
+
+		data->eye_action = OpenXRAPI::find_action("eye_gaze_pose");
+		if (data->eye_action.is_null()) {
+			WARN_PRINT("Couldn't obtain pose action for `eye_gaze_pose`, make sure to add this to "
+					   "your action map.");
+		}
+	}
+
+	if (data->eye_tracker.is_null() || data->eye_action.is_null()) {
+		return false;
+	}
+
+	Transform3D eye_transform;
+	Vector3 linear_velocity;
+	Vector3 angular_velocity;
+	XRPose::TrackingConfidence confidence = OpenXRAPI::get_action_pose(
+		data->eye_action, data->eye_tracker, eye_transform, linear_velocity, angular_velocity);
+	if (confidence == XRPose::XR_TRACKING_CONFIDENCE_NONE) {
+		return false;
+	}
+
+	r_eye_pose = eye_transform.origin + eye_transform.basis[2] * p_dist;
+
+	return true;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRUserPresenceExtension
+
+void OpenXRUserPresenceExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRUserPresenceExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void* OpenXRUserPresenceExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
+{
+	if (!data->available) {
+		return p_next_pointer;
+	}
+
+	data->properties.type = XR_TYPE_SYSTEM_USER_PRESENCE_PROPERTIES_EXT;
+	data->properties.next = p_next_pointer;
+	data->properties.supportsUserPresence = false;
+
+	return &data->properties;
+}
+
+bool OpenXRUserPresenceExtension::is_active()
+{
+	return data->available && data->properties.supportsUserPresence;
+}
+
+void OpenXRUserPresenceExtension::on_state_ready() { data->user_present = true; }
+
+void OpenXRUserPresenceExtension::on_state_stopping() { data->user_present = false; }
+
+bool OpenXRUserPresenceExtension::is_user_present()
+{
+	return data != nullptr && data->user_present;
+}
+
+HashMap<String, bool*> OpenXRUserPresenceExtension::get_requested_extensions(XrVersion)
+{
+	return HashMap<String, bool*>();
+}
+
+bool OpenXRUserPresenceExtension::on_event_polled(const XrEventDataBuffer&) { return false; }
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRAndroidThreadSettingsExtension
+
+void OpenXRAndroidThreadSettingsExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRAndroidThreadSettingsExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRAndroidThreadSettingsExtension::get_requested_extensions(XrVersion)
+{
+	HashMap<String, bool*> request_extensions;
+
+#ifdef XR_USE_PLATFORM_ANDROID
+	request_extensions[XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME] = &data->available;
+#endif
+
+	return request_extensions;
+}
+
+void OpenXRAndroidThreadSettingsExtension::on_instance_created(XrInstance)
+{
+	if (!data->available) {
+		return;
+	}
+
+	if (!_initialize_openxr_android_thread_settings_extension()) {
+		print_error("OpenXR: Failed to initialize android thread settings extension");
+		data->available = false;
+	}
+}
+
+bool OpenXRAndroidThreadSettingsExtension::set_application_thread_type(
+	ThreadType p_thread_type, uint32_t p_thread_id)
+{
+	if (!data->available) {
+		return false;
+	}
+
+#ifdef XR_USE_PLATFORM_ANDROID
+	XrAndroidThreadTypeKHR thread_type{};
+	switch (p_thread_type) {
+	case THREAD_TYPE_APPLICATION_MAIN:
+		thread_type = XR_ANDROID_THREAD_TYPE_APPLICATION_MAIN_KHR;
+		break;
+	case THREAD_TYPE_APPLICATION_WORKER:
+		thread_type = XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR;
+		break;
+	case THREAD_TYPE_RENDERER_MAIN:
+		thread_type = XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR;
+		break;
+	case THREAD_TYPE_RENDERER_WORKER:
+		thread_type = XR_ANDROID_THREAD_TYPE_RENDERER_WORKER_KHR;
+		break;
+	default:
+		print_error(
+			vformat("OpenXR: Failed to set android application thread; invalid thread type %d",
+				p_thread_type));
+		return false;
+	}
+
+	XrResult result = xrSetAndroidApplicationThreadKHR(
+		OpenXRAPI::get_session(), thread_type, p_thread_id == 0 ? gettid() : p_thread_id);
+	if (result != XR_SUCCESS) {
+		print_error(vformat("OpenXR: Failed to set android application thread; %s",
+			OpenXRAPI::get_error_string(result)));
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+bool OpenXRAndroidThreadSettingsExtension::_initialize_openxr_android_thread_settings_extension()
+{
+#ifdef XR_USE_PLATFORM_ANDROID
+	EXT_INIT_XR_FUNC_V(xrSetAndroidApplicationThreadKHR);
+#endif
+	return true;
+}
+
+void OpenXRAndroidThreadSettingsExtension::_set_render_thread_type()
+{
+	if (Thread::is_main_thread()) {
+		return;
+	}
+
+	set_application_thread_type(THREAD_TYPE_RENDERER_MAIN);
+}
+
+void OpenXRAndroidThreadSettingsExtension::on_session_created(XrSession) {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRDisplayRefreshRateExtension
+
+void OpenXRDisplayRefreshRateExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRDisplayRefreshRateExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRDisplayRefreshRateExtension::get_requested_extensions(XrVersion)
+{
+	HashMap<String, bool*> request_extensions;
+
+	request_extensions[XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME] = &data->display_refresh_rate_ext;
+
+	return request_extensions;
+}
+
+void OpenXRDisplayRefreshRateExtension::on_instance_created(const XrInstance)
+{
+	if (data->display_refresh_rate_ext) {
+		EXT_INIT_XR_FUNC(xrEnumerateDisplayRefreshRatesFB);
+		EXT_INIT_XR_FUNC(xrGetDisplayRefreshRateFB);
+		EXT_INIT_XR_FUNC(xrRequestDisplayRefreshRateFB);
+	}
+}
+
+void OpenXRDisplayRefreshRateExtension::on_instance_destroyed()
+{
+	data->display_refresh_rate_ext = false;
+}
+
+bool OpenXRDisplayRefreshRateExtension::on_event_polled(const XrEventDataBuffer& event)
+{
+	switch (event.type) {
+	case XR_TYPE_EVENT_DATA_DISPLAY_REFRESH_RATE_CHANGED_FB: {
+		const XrEventDataDisplayRefreshRateChangedFB* event_fb =
+			(const XrEventDataDisplayRefreshRateChangedFB*)&event;
+
+		OpenXRInterface* xr_interface = OpenXRAPI::get_xr_interface();
+		if (xr_interface) {
+			xr_interface->on_refresh_rate_changes(event_fb->toDisplayRefreshRate);
+		}
+
+		return true;
+	} break;
+	default:
+		return false;
+	}
+}
+
+void OpenXRDisplayRefreshRateExtension::set_refresh_rate(float) {}
+
+float OpenXRDisplayRefreshRateExtension::get_refresh_rate() { return 0.0f; }
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRPerformanceSettingsExtension
+
+void OpenXRPerformanceSettingsExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRPerformanceSettingsExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRPerformanceSettingsExtension::get_requested_extensions(XrVersion)
+{
+	HashMap<String, bool*> request_extensions;
+
+	request_extensions[XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME] = &data->available;
+
+	return request_extensions;
+}
+
+void OpenXRPerformanceSettingsExtension::on_instance_created(const XrInstance)
+{
+	if (data->available) {
+		EXT_INIT_XR_FUNC(xrPerfSettingsSetPerformanceLevelEXT);
+	}
+}
+
+bool OpenXRPerformanceSettingsExtension::on_event_polled(const XrEventDataBuffer& event)
+{
+	switch (event.type) {
+	case XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT: {
+		const XrEventDataPerfSettingsEXT* perf_settings_event =
+			(const XrEventDataPerfSettingsEXT*)&event;
+
+		OpenXRInterface::PerfSettingsSubDomain sub_domain =
+			openxr_to_sub_domain(perf_settings_event->subDomain);
+		OpenXRInterface::PerfSettingsNotificationLevel from_level =
+			openxr_to_notification_level(perf_settings_event->fromLevel);
+		OpenXRInterface::PerfSettingsNotificationLevel to_level =
+			openxr_to_notification_level(perf_settings_event->toLevel);
+
+		OpenXRInterface* openxr_interface = OpenXRAPI::get_xr_interface();
+
+		if (perf_settings_event->domain == XR_PERF_SETTINGS_DOMAIN_CPU_EXT) {
+			openxr_interface->on_cpu_level_changed(sub_domain, from_level, to_level);
+		}
+		else if (perf_settings_event->domain == XR_PERF_SETTINGS_DOMAIN_GPU_EXT) {
+			openxr_interface->on_gpu_level_changed(sub_domain, from_level, to_level);
+		}
+		else {
+			print_error(vformat(
+				"OpenXR: no matching performance settings domain for %s", perf_settings_event->domain));
+		}
+		return true;
+	} break;
+	default:
+		return false;
+	}
+}
+
+bool OpenXRPerformanceSettingsExtension::is_available() { return data != nullptr && data->available; }
+
+void OpenXRPerformanceSettingsExtension::set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level)
+{
+	XrSession session = OpenXRAPI::get_session();
+	XrPerfSettingsLevelEXT xr_level = level_to_openxr(p_level);
+
+	XrResult result =
+		xrPerfSettingsSetPerformanceLevelEXT(session, XR_PERF_SETTINGS_DOMAIN_CPU_EXT, xr_level);
+	if (XR_FAILED(result)) {
+		print_error(vformat("OpenXR: failed to set CPU performance level [%s]",
+			OpenXRAPI::get_error_string(result)));
+	}
+}
+
+void OpenXRPerformanceSettingsExtension::set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level)
+{
+	XrSession session = OpenXRAPI::get_session();
+	XrPerfSettingsLevelEXT xr_level = level_to_openxr(p_level);
+
+	XrResult result =
+		xrPerfSettingsSetPerformanceLevelEXT(session, XR_PERF_SETTINGS_DOMAIN_GPU_EXT, xr_level);
+	if (XR_FAILED(result)) {
+		print_error(vformat("OpenXR: failed to set GPU performance level [%s]",
+			OpenXRAPI::get_error_string(result)));
+	}
+}
+
+XrPerfSettingsLevelEXT OpenXRPerformanceSettingsExtension::level_to_openxr(
+	OpenXRInterface::PerfSettingsLevel p_level)
+{
+	switch (p_level) {
+	case OpenXRInterface::PerfSettingsLevel::PERF_SETTINGS_LEVEL_POWER_SAVINGS:
+		return XR_PERF_SETTINGS_LEVEL_POWER_SAVINGS_EXT;
+	case OpenXRInterface::PerfSettingsLevel::PERF_SETTINGS_LEVEL_SUSTAINED_LOW:
+		return XR_PERF_SETTINGS_LEVEL_SUSTAINED_LOW_EXT;
+	case OpenXRInterface::PerfSettingsLevel::PERF_SETTINGS_LEVEL_SUSTAINED_HIGH:
+		return XR_PERF_SETTINGS_LEVEL_SUSTAINED_HIGH_EXT;
+	case OpenXRInterface::PerfSettingsLevel::PERF_SETTINGS_LEVEL_BOOST:
+		return XR_PERF_SETTINGS_LEVEL_BOOST_EXT;
+	default:
+		print_error("Invalid performance settings level.");
+		return XR_PERF_SETTINGS_LEVEL_SUSTAINED_HIGH_EXT;
+	}
+}
+
+OpenXRInterface::PerfSettingsSubDomain OpenXRPerformanceSettingsExtension::openxr_to_sub_domain(
+	XrPerfSettingsSubDomainEXT p_sub_domain)
+{
+	switch (p_sub_domain) {
+	case XR_PERF_SETTINGS_SUB_DOMAIN_COMPOSITING_EXT:
+		return OpenXRInterface::PerfSettingsSubDomain::PERF_SETTINGS_SUB_DOMAIN_COMPOSITING;
+	case XR_PERF_SETTINGS_SUB_DOMAIN_RENDERING_EXT:
+		return OpenXRInterface::PerfSettingsSubDomain::PERF_SETTINGS_SUB_DOMAIN_RENDERING;
+	case XR_PERF_SETTINGS_SUB_DOMAIN_THERMAL_EXT:
+		return OpenXRInterface::PerfSettingsSubDomain::PERF_SETTINGS_SUB_DOMAIN_THERMAL;
+	default:
+		print_error("Invalid performance settings sub domain.");
+		return OpenXRInterface::PerfSettingsSubDomain::PERF_SETTINGS_SUB_DOMAIN_COMPOSITING;
+	}
+}
+
+OpenXRInterface::PerfSettingsNotificationLevel
+OpenXRPerformanceSettingsExtension::openxr_to_notification_level(
+	XrPerfSettingsNotificationLevelEXT p_notification_level)
+{
+	switch (p_notification_level) {
+	case XR_PERF_SETTINGS_NOTIF_LEVEL_NORMAL_EXT:
+		return OpenXRInterface::PerfSettingsNotificationLevel::PERF_SETTINGS_NOTIF_LEVEL_NORMAL;
+	case XR_PERF_SETTINGS_NOTIF_LEVEL_WARNING_EXT:
+		return OpenXRInterface::PerfSettingsNotificationLevel::PERF_SETTINGS_NOTIF_LEVEL_WARNING;
+	case XR_PERF_SETTINGS_NOTIF_LEVEL_IMPAIRED_EXT:
+		return OpenXRInterface::PerfSettingsNotificationLevel::PERF_SETTINGS_NOTIF_LEVEL_IMPAIRED;
+	default:
+		print_error("Invalid performance settings notification level.");
+		return OpenXRInterface::PerfSettingsNotificationLevel::PERF_SETTINGS_NOTIF_LEVEL_NORMAL;
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRDebugUtilsExtension
+
+void OpenXRDebugUtilsExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRDebugUtilsExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRDebugUtilsExtension::get_requested_extensions(XrVersion)
+{
+	HashMap<String, bool*> request_extensions;
+
+	request_extensions[XR_EXT_DEBUG_UTILS_EXTENSION_NAME] = &data->debug_utils_ext;
+
+	return request_extensions;
+}
+
+void OpenXRDebugUtilsExtension::on_instance_destroyed()
+{
+	if (data->default_messenger != XR_NULL_HANDLE) {
+		XrResult result = xrDestroyDebugUtilsMessengerEXT(data->default_messenger);
+		if (XR_FAILED(result)) {
+			ERR_PRINT("OpenXR: Failed to destroy debug callback [" +
+					  OpenXRAPI::get_error_string(result) + "]");
+		}
+
+		data->default_messenger = XR_NULL_HANDLE;
+	}
+
+	xrCreateDebugUtilsMessengerEXT_ptr = nullptr;
+	xrDestroyDebugUtilsMessengerEXT_ptr = nullptr;
+	xrSetDebugUtilsObjectNameEXT_ptr = nullptr;
+	xrSessionBeginDebugUtilsLabelRegionEXT_ptr = nullptr;
+	xrSessionEndDebugUtilsLabelRegionEXT_ptr = nullptr;
+	xrSessionInsertDebugUtilsLabelEXT_ptr = nullptr;
+	data->debug_utils_ext = false;
+}
+
+bool OpenXRDebugUtilsExtension::get_active() { return data != nullptr && data->debug_utils_ext; }
+
+void OpenXRDebugUtilsExtension::set_object_name(
+	XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name)
+{
+	ERR_FAIL_COND(!data->debug_utils_ext);
+	ERR_FAIL_NULL(xrSetDebugUtilsObjectNameEXT_ptr);
+
+	const XrDebugUtilsObjectNameInfoEXT space_name_info = {
+		XR_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+		nullptr,
+		p_object_type,
+		p_object_handle,
+		p_object_name,
+	};
+
+	XrResult result = xrSetDebugUtilsObjectNameEXT_ptr(OpenXRAPI::get_instance(), &space_name_info);
+	if (XR_FAILED(result)) {
+		ERR_PRINT(
+			"OpenXR: Failed to set object name [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+}
+
+void OpenXRDebugUtilsExtension::begin_debug_label_region(const char* p_label_name)
+{
+	ERR_FAIL_COND(!data->debug_utils_ext);
+	ERR_FAIL_NULL(xrSessionBeginDebugUtilsLabelRegionEXT_ptr);
+
+	const XrDebugUtilsLabelEXT session_active_region_label = {
+		XR_TYPE_DEBUG_UTILS_LABEL_EXT,
+		nullptr,
+		p_label_name,
+	};
+
+	XrResult result = xrSessionBeginDebugUtilsLabelRegionEXT_ptr(
+		OpenXRAPI::get_session(), &session_active_region_label);
+	if (XR_FAILED(result)) {
+		ERR_PRINT(
+			"OpenXR: Failed to begin label region [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+}
+
+void OpenXRDebugUtilsExtension::end_debug_label_region()
+{
+	ERR_FAIL_COND(!data->debug_utils_ext);
+	ERR_FAIL_NULL(xrSessionEndDebugUtilsLabelRegionEXT_ptr);
+
+	XrResult result = xrSessionEndDebugUtilsLabelRegionEXT_ptr(OpenXRAPI::get_session());
+	if (XR_FAILED(result)) {
+		ERR_PRINT(
+			"OpenXR: Failed to end label region [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+}
+
+void OpenXRDebugUtilsExtension::insert_debug_label(const char* p_label_name)
+{
+	ERR_FAIL_COND(!data->debug_utils_ext);
+	ERR_FAIL_NULL(xrSessionInsertDebugUtilsLabelEXT_ptr);
+
+	const XrDebugUtilsLabelEXT session_active_region_label = {
+		XR_TYPE_DEBUG_UTILS_LABEL_EXT,
+		nullptr,
+		p_label_name,
+	};
+
+	XrResult result = xrSessionInsertDebugUtilsLabelEXT_ptr(
+		OpenXRAPI::get_session(), &session_active_region_label);
+	if (XR_FAILED(result)) {
+		ERR_PRINT("OpenXR: Failed to insert label [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+}
+
+XrBool32 XRAPI_PTR OpenXRDebugUtilsExtension::_debug_callback(
+	XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
+	XrDebugUtilsMessageTypeFlagsEXT p_message_types,
+	const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data)
+{
+	if (OpenXRDebugUtilsExtension::is_initialized()) {
+		return OpenXRDebugUtilsExtension::debug_callback(
+			p_message_severity, p_message_types, p_callback_data, p_user_data);
+	}
+
+	return XR_FALSE;
+}
+
+XrBool32 OpenXRDebugUtilsExtension::debug_callback(
+	XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
+	XrDebugUtilsMessageTypeFlagsEXT p_message_types,
+	const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void*)
+{
+	String msg;
+
+	ERR_FAIL_NULL_V(p_callback_data, XR_FALSE);
+
+	if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) {
+		msg = ", type: General";
+	}
+	else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+		msg = ", type: Validation";
+	}
+	else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+		msg = ", type: Performance";
+	}
+	else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT) {
+		msg = ", type: Conformance";
+	}
+	else {
+		msg = ", type: Unknown (" + String::num_uint64(p_message_types) + ")";
+	}
+
+	if (p_callback_data->functionName) {
+		msg += ", function Name: " + String(p_callback_data->functionName);
+	}
+	if (p_callback_data->messageId) {
+		msg += "\nMessage ID: " + String(p_callback_data->messageId);
+	}
+	if (p_callback_data->message) {
+		msg += "\nMessage: " + String(p_callback_data->message);
+	}
+
+	if (p_callback_data->objectCount > 0) {
+		String objects;
+
+		for (uint32_t i = 0; i < p_callback_data->objectCount; i++) {
+			if (!objects.is_empty()) {
+				objects += ", ";
+			}
+			objects += p_callback_data->objects[i].objectName;
+		}
+
+		msg += "\nObjects: " + objects;
+	}
+
+	if (p_callback_data->sessionLabelCount > 0) {
+		String labels;
+
+		for (uint32_t i = 0; i < p_callback_data->sessionLabelCount; i++) {
+			if (!labels.is_empty()) {
+				labels += ", ";
+			}
+			labels += p_callback_data->sessionLabels[i].labelName;
+		}
+
+		msg += "\nLabels: " + labels;
+	}
+
+	if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+		ERR_PRINT("OpenXR: Severity: Error" + msg);
+	}
+	else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+		WARN_PRINT("OpenXR: Severity: Warning" + msg);
+	}
+	else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+		print_verbose("OpenXR: Severity: Verbose" + msg);
+	}
+
+	return XR_FALSE;
+}
+
+void OpenXRDebugUtilsExtension::on_instance_created(const XrInstance) {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRVisibilityMaskExtension
+
+static const char* VISIBILITY_MASK_SHADER_CODE =
+	"shader_type spatial;\n"
+	"render_mode unshaded, shadows_disabled, cull_disabled;\n"
+	"void vertex() {\n"
+	"\tif (int(VERTEX.z) == VIEW_INDEX) {\n"
+	"\t\tVERTEX.z = -1.0;\n"
+	"\t\tVERTEX += EYE_OFFSET;\n"
+	"\t\tPOSITION = PROJECTION_MATRIX * vec4(VERTEX, 1.0);\n"
+	"\t\tPOSITION.xy /= POSITION.w;\n"
+	"\t\tPOSITION.z = 1.0;\n"
+	"\t\tPOSITION.w = 1.0;\n"
+	"\t} else {\n"
+	"\t\tPOSITION = vec4(2.0, 2.0, 2.0, 1.0);\n"
+	"\t}\n"
+	"}\n"
+	"void fragment() {\n"
+	"\tALBEDO = vec3(0.0, 0.0, 0.0);\n"
+	"}\n";
+
+void OpenXRVisibilityMaskExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRVisibilityMaskExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRVisibilityMaskExtension::get_requested_extensions(XrVersion)
+{
+	HashMap<String, bool*> request_extensions;
+
+	request_extensions[XR_KHR_VISIBILITY_MASK_EXTENSION_NAME] = &data->available;
+
+	return request_extensions;
+}
+
+void OpenXRVisibilityMaskExtension::on_instance_created(const XrInstance)
+{
+	if (data->available) {
+		EXT_INIT_XR_FUNC(xrGetVisibilityMaskKHR);
+	}
+}
+
+void OpenXRVisibilityMaskExtension::on_session_created(const XrSession)
+{
+	if (data->available) {
+		ERR_FAIL_NULL(Renderer::data);
+		ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+		data->shader = Renderer::shader_create();
+		Renderer::shader_set_code(data->shader, VISIBILITY_MASK_SHADER_CODE);
+
+		data->material = Renderer::material_create();
+		Renderer::material_set_shader(data->material, data->shader);
+		Renderer::material_set_render_priority(data->material, 99);
+
+		data->mesh_count = OpenXRAPI::get_view_count();
+		for (uint32_t i = 0; i < data->mesh_count; i++) {
+			_update_mesh_data(i);
+		}
+
+		_update_mesh();
+	}
+}
+
+void OpenXRVisibilityMaskExtension::on_session_destroyed()
+{
+	ERR_FAIL_NULL(Renderer::data);
+
+	if (data->mesh.is_valid()) {
+		Renderer::free_rid(data->mesh);
+		data->mesh = RID();
+	}
+
+	if (data->material.is_valid()) {
+		Renderer::free_rid(data->material);
+		data->material = RID();
+	}
+
+	if (data->shader.is_valid()) {
+		Renderer::free_rid(data->shader);
+		data->shader = RID();
+	}
+
+	data->mesh_count = 0;
+}
+
+void OpenXRVisibilityMaskExtension::on_pre_render() { _update_mesh(); }
+
+bool OpenXRVisibilityMaskExtension::on_event_polled(const XrEventDataBuffer& event)
+{
+	if (event.type == XR_TYPE_EVENT_DATA_VISIBILITY_MASK_CHANGED_KHR) {
+		const XrEventDataVisibilityMaskChangedKHR* vismask_event =
+			(const XrEventDataVisibilityMaskChangedKHR*)&event;
+
+		print_verbose("OpenXR EVENT: Visibility mask changed for view " +
+					  String::num_uint64(vismask_event->viewIndex));
+
+		if (data->available) {
+			_update_mesh_data(vismask_event->viewIndex);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool OpenXRVisibilityMaskExtension::is_available() { return data != nullptr && data->available; }
+
+RID OpenXRVisibilityMaskExtension::get_mesh() { return data ? data->mesh : RID(); }
+
+void OpenXRVisibilityMaskExtension::_update_mesh_data(uint32_t p_view)
+{
+	if (data->available) {
+		ERR_FAIL_UNSIGNED_INDEX(p_view, 4);
+		ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+		XrSession session = OpenXRAPI::get_session();
+		XrViewConfigurationType view_configuration_type = OpenXRAPI::get_view_configuration();
+
+		XrVisibilityMaskKHR visibility_mask_data = {
+			XR_TYPE_VISIBILITY_MASK_KHR,
+			nullptr,
+			0,
+			0,
+			nullptr,
+			0,
+			0,
+			nullptr,
+		};
+
+		XrResult result = xrGetVisibilityMaskKHR(session, view_configuration_type, p_view,
+			XR_VISIBILITY_MASK_TYPE_HIDDEN_TRIANGLE_MESH_KHR, &visibility_mask_data);
+		if (XR_FAILED(result)) {
+			return;
+		}
+
+		data->mesh_data[p_view].vertices.resize(visibility_mask_data.vertexCountOutput);
+		data->mesh_data[p_view].indices.resize(visibility_mask_data.indexCountOutput);
+
+		visibility_mask_data.vertexCapacityInput = visibility_mask_data.vertexCountOutput;
+		visibility_mask_data.vertices = data->mesh_data[p_view].vertices.ptrw();
+		visibility_mask_data.indexCapacityInput = visibility_mask_data.indexCountOutput;
+		visibility_mask_data.indices = data->mesh_data[p_view].indices.ptrw();
+
+		result = xrGetVisibilityMaskKHR(session, view_configuration_type, p_view,
+			XR_VISIBILITY_MASK_TYPE_HIDDEN_TRIANGLE_MESH_KHR, &visibility_mask_data);
+		if (XR_FAILED(result)) {
+			return;
+		}
+
+		data->is_dirty = true;
+	}
+}
+
+void OpenXRVisibilityMaskExtension::_update_mesh() {}
+
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRCompositionLayerExtension
+
+void OpenXRCompositionLayerExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRCompositionLayerExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRCompositionLayerExtension::get_requested_extensions(
+	XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	request_extensions[XR_KHR_COMPOSITION_LAYER_CYLINDER_EXTENSION_NAME] =
+		&data->cylinder_ext_available;
+	request_extensions[XR_KHR_COMPOSITION_LAYER_EQUIRECT2_EXTENSION_NAME] =
+		&data->equirect_ext_available;
+
+#ifdef ANDROID_ENABLED
+	request_extensions[XR_KHR_ANDROID_SURFACE_SWAPCHAIN_EXTENSION_NAME] =
+		&data->android_surface_ext_available;
+#endif
+
+	return request_extensions;
+}
+
+void OpenXRCompositionLayerExtension::on_instance_created(const XrInstance p_instance)
+{
+#ifdef ANDROID_ENABLED
+	EXT_INIT_XR_FUNC(xrDestroySwapchain);
+	if (data->android_surface_ext_available) {
+		EXT_INIT_XR_FUNC(xrCreateSwapchainAndroidSurfaceKHR);
+	}
+#endif
+}
+
+void OpenXRCompositionLayerExtension::on_pre_render()
+{
+	for (CompositionLayer* composition_layer : data->registered_composition_layers) {
+		composition_layer->on_pre_render();
+	}
+}
+
+int OpenXRCompositionLayerExtension::get_composition_layer_count()
+{
+	return data->registered_composition_layers.size();
+}
+
+XrCompositionLayerBaseHeader* OpenXRCompositionLayerExtension::get_composition_layer(int p_index)
+{
+	ERR_FAIL_UNSIGNED_INDEX_V(
+		(unsigned int)p_index, data->registered_composition_layers.size(), nullptr);
+	return data->registered_composition_layers[p_index]->get_composition_layer();
+}
+
+int OpenXRCompositionLayerExtension::get_composition_layer_order(int p_index)
+{
+	ERR_FAIL_UNSIGNED_INDEX_V((unsigned int)p_index, data->registered_composition_layers.size(), 1);
+	return data->registered_composition_layers[p_index]->sort_order;
+}
+
+RID OpenXRCompositionLayerExtension::composition_layer_create(
+	XrCompositionLayerBaseHeader* p_openxr_layer)
+{
+	RID rid = data->composition_layer_owner.make_rid();
+	CompositionLayer* layer = data->composition_layer_owner.get_or_null(rid);
+
+	switch (p_openxr_layer->type) {
+	case XR_TYPE_COMPOSITION_LAYER_QUAD: {
+		layer->composition_layer_quad = *(XrCompositionLayerQuad*)p_openxr_layer;
+	} break;
+	case XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR: {
+		layer->composition_layer_cylinder = *(XrCompositionLayerCylinderKHR*)p_openxr_layer;
+	} break;
+	case XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR: {
+		layer->composition_layer_equirect = *(XrCompositionLayerEquirect2KHR*)p_openxr_layer;
+	} break;
+	default: {
+		ERR_PRINT(vformat("Invalid OpenXR composition layer type: %s", p_openxr_layer->type));
+		data->composition_layer_owner.free(rid);
+		return RID();
+	}
+	}
+
+	return rid;
+}
+
+Ref<JavaObject> OpenXRCompositionLayerExtension::composition_layer_get_android_surface(RID p_layer)
+{
+	MutexLock lock(data->composition_layer_mutex);
+	CompositionLayer* layer = data->composition_layer_owner.get_or_null(p_layer);
+	ERR_FAIL_NULL_V(layer, Ref<JavaObject>());
+	return layer->get_android_surface();
+}
+
+void OpenXRCompositionLayerExtension::_composition_layer_register_rt(RID p_layer)
+{
+	CompositionLayer* layer = data->composition_layer_owner.get_or_null(p_layer);
+	ERR_FAIL_NULL(layer);
+	data->registered_composition_layers.push_back(layer);
+}
+
+void OpenXRCompositionLayerExtension::_composition_layer_unregister_rt(RID p_layer)
+{
+	CompositionLayer* layer = data->composition_layer_owner.get_or_null(p_layer);
+	ERR_FAIL_NULL(layer);
+	data->registered_composition_layers.erase(layer);
+}
+
+bool OpenXRCompositionLayerExtension::is_available(XrStructureType p_which)
+{
+	switch (p_which) {
+	case XR_TYPE_COMPOSITION_LAYER_QUAD: {
+		return true;
+	} break;
+	case XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR: {
+		return data != nullptr && data->cylinder_ext_available;
+	} break;
+	case XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR: {
+		return data != nullptr && data->equirect_ext_available;
+	} break;
+	default: {
+		ERR_PRINT(vformat("Unsupported composition layer type: %s", p_which));
+		return false;
+	}
+	}
+}
+
+#ifdef ANDROID_ENABLED
+bool OpenXRCompositionLayerExtension::create_android_surface_swapchain(
+	XrSwapchainCreateInfo* p_info, XrSwapchain* r_swapchain, jobject* r_surface)
+{
+	if (data->android_surface_ext_available) {
+		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+
+		XrResult result = xrCreateSwapchainAndroidSurfaceKHR(
+			OpenXRAPI::get_session(), p_info, r_swapchain, r_surface);
+		if (XR_FAILED(result)) {
+			print_line("OpenXR: Failed to create Android surface swapchain [",
+				OpenXRAPI::get_error_string(result), "]");
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+#endif
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_viewport(
+	RID p_viewport, const Size2i& p_size)
+{
+	ERR_FAIL_COND(use_android_surface);
+
+	if (subviewport.viewport != p_viewport) {
+		if (subviewport.viewport.is_valid()) {
+			RID rt = Renderer::viewport_get_render_target(subviewport.viewport);
+			RendererTextureStorage::render_target_set_override(rt, RID(), RID(), RID(), RID());
+		}
+
+		subviewport.viewport = p_viewport;
+
+		if (subviewport.viewport.is_valid()) {
+			subviewport.viewport_size = p_size;
+		}
+		else {
+			free_swapchain();
+			subviewport.viewport_size = Size2i();
+		}
+	}
+	else if (subviewport.viewport_size != p_size) {
+		subviewport.viewport_size = p_size;
+	}
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_use_android_surface(
+	bool p_use_android_surface, const Size2i& p_size)
+{
+#ifdef ANDROID_ENABLED
+	if (p_use_android_surface == use_android_surface) {
+		if (use_android_surface && swapchain_size != p_size) {
+			if (OpenXRFBUpdateSwapchainExtension::is_initialized() &&
+				OpenXRFBUpdateSwapchainExtension::is_android_ext_enabled()) {
+				swapchain_size = p_size;
+				OpenXRFBUpdateSwapchainExtension::update_swapchain_surface_size(
+					android_surface.swapchain, swapchain_size);
+			}
+		}
+		return;
+	}
+
+	use_android_surface = p_use_android_surface;
+
+	if (use_android_surface) {
+		if (!OpenXRCompositionLayerExtension::is_android_surface_swapchain_available()) {
+			ERR_PRINT_ONCE("OpenXR: Cannot use Android surface for composition layer because the "
+						   "extension isn't available");
+		}
+
+		if (subviewport.viewport.is_valid()) {
+			set_viewport(RID(), Size2i());
+		}
+
+		swapchain_size = p_size;
+	}
+	else {
+		free_swapchain();
+	}
+#endif
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_alpha_blend(bool p_alpha_blend)
+{
+	if (alpha_blend != p_alpha_blend) {
+		alpha_blend = p_alpha_blend;
+		if (alpha_blend) {
+			composition_layer.layerFlags |= XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+		}
+		else {
+			composition_layer.layerFlags &= ~XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+		}
+	}
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_transform(
+	const Transform3D& p_transform)
+{
+	Transform3D xf;
+
+	if (pose_space == POSE_HEAD_LOCKED) {
+		xf = p_transform;
+	}
+	else {
+		Transform3D reference_frame = XRServer::get_reference_frame();
+		xf = reference_frame.inverse() * p_transform;
+	}
+
+	Quaternion quat(xf.basis.orthonormalized());
+
+	if (Math::is_zero_approx(quat.length())) {
+		quat = Quaternion();
+	}
+
+	XrPosef pose = {{(float)quat.x, (float)quat.y, (float)quat.z, (float)quat.w},
+		{(float)xf.origin.x, (float)xf.origin.y, (float)xf.origin.z}};
+
+	switch (composition_layer.type) {
+	case XR_TYPE_COMPOSITION_LAYER_QUAD: {
+		composition_layer_quad.pose = pose;
+	} break;
+	case XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR: {
+		composition_layer_cylinder.pose = pose;
+	} break;
+	case XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR: {
+		composition_layer_equirect.pose = pose;
+	} break;
+	default: {
+		ERR_PRINT(vformat("Cannot set transform on unsupported composition layer type: %s",
+			composition_layer.type));
+	}
+	}
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_min_filter(Filter p_mode)
+{
+	swapchain_state.min_filter = p_mode;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_mag_filter(Filter p_mode)
+{
+	swapchain_state.mag_filter = p_mode;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_mipmap_mode(MipmapMode p_mode)
+{
+	swapchain_state.mipmap_mode = p_mode;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_horizontal_wrap(Wrap p_mode)
+{
+	swapchain_state.horizontal_wrap = p_mode;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_vertical_wrap(Wrap p_mode)
+{
+	swapchain_state.vertical_wrap = p_mode;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_red_swizzle(Swizzle p_mode)
+{
+	swapchain_state.red_swizzle = p_mode;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_green_swizzle(Swizzle p_mode)
+{
+	swapchain_state.green_swizzle = p_mode;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_blue_swizzle(Swizzle p_mode)
+{
+	swapchain_state.blue_swizzle = p_mode;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_alpha_swizzle(Swizzle p_mode)
+{
+	swapchain_state.alpha_swizzle = p_mode;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_max_anisotropy(float p_value)
+{
+	swapchain_state.max_anisotropy = p_value;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_border_color(const Color& p_color)
+{
+	swapchain_state.border_color = p_color;
+	swapchain_state_is_dirty = true;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_pose_space(PoseSpace p_pose_space)
+{
+	pose_space = p_pose_space;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_eye_visibility(
+	EyeVisibility p_eye_visibility)
+{
+	XrEyeVisibility eye_visibility;
+
+	switch (p_eye_visibility) {
+	case EYE_VISIBILITY_BOTH: {
+		eye_visibility = XR_EYE_VISIBILITY_BOTH;
+	} break;
+	case EYE_VISIBILITY_LEFT: {
+		eye_visibility = XR_EYE_VISIBILITY_LEFT;
+	} break;
+	case EYE_VISIBILITY_RIGHT: {
+		eye_visibility = XR_EYE_VISIBILITY_RIGHT;
+	} break;
+	default: {
+		eye_visibility = XR_EYE_VISIBILITY_BOTH;
+	}
+	}
+
+	switch (composition_layer.type) {
+	case XR_TYPE_COMPOSITION_LAYER_QUAD: {
+		composition_layer_quad.eyeVisibility = eye_visibility;
+	} break;
+	case XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR: {
+		composition_layer_cylinder.eyeVisibility = eye_visibility;
+	} break;
+	case XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR: {
+		composition_layer_equirect.eyeVisibility = eye_visibility;
+	} break;
+	default: {
+		ERR_PRINT(vformat("%s does not support setting eye visibility.", composition_layer.type));
+	}
+	}
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_quad_size(const Size2& p_size)
+{
+	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_QUAD);
+	composition_layer_quad.size = {(float)p_size.x, (float)p_size.y};
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_cylinder_radius(float p_radius)
+{
+	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR);
+	composition_layer_cylinder.radius = p_radius;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_cylinder_aspect_ratio(
+	float p_aspect_ratio)
+{
+	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR);
+	composition_layer_cylinder.aspectRatio = p_aspect_ratio;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_cylinder_central_angle(
+	float p_central_angle)
+{
+	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR);
+	composition_layer_cylinder.centralAngle = p_central_angle;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_equirect_radius(float p_radius)
+{
+	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR);
+	composition_layer_equirect.radius = p_radius;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_equirect_central_horizontal_angle(
+	float p_angle)
+{
+	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR);
+	composition_layer_equirect.centralHorizontalAngle = p_angle;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_equirect_upper_vertical_angle(
+	float p_angle)
+{
+	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR);
+	composition_layer_equirect.upperVerticalAngle = p_angle;
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::set_equirect_lower_vertical_angle(
+	float p_angle)
+{
+	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR);
+	composition_layer_equirect.lowerVerticalAngle = p_angle;
+}
+
+Ref<JavaObject> OpenXRCompositionLayerExtension::CompositionLayer::get_android_surface()
+{
+#ifdef ANDROID_ENABLED
+	if (use_android_surface) {
+		MutexLock lock(OpenXRCompositionLayerExtension::data->composition_layer_mutex);
+		if (android_surface.surface.is_null()) {
+			create_android_surface();
+		}
+		return android_surface.surface;
+	}
+#endif
+	return Ref<JavaObject>();
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::on_pre_render()
+{
+#ifdef ANDROID_ENABLED
+	if (use_android_surface) {
+		MutexLock lock(OpenXRCompositionLayerExtension::data->composition_layer_mutex);
+		if (android_surface.surface.is_null()) {
+			create_android_surface();
+		}
+		return;
+	}
+#endif
+
+	if (subviewport.viewport.is_valid() && OpenXRAPI::is_allocated() && OpenXRAPI::is_running()) {
+		RSE::ViewportUpdateMode update_mode =
+			Renderer::viewport_get_update_mode(subviewport.viewport);
+		if (update_mode == RSE::VIEWPORT_UPDATE_ONCE ||
+			update_mode == RSE::VIEWPORT_UPDATE_ALWAYS) {
+			if (update_and_acquire_swapchain(update_mode == RSE::VIEWPORT_UPDATE_ONCE)) {
+				RID rt = Renderer::viewport_get_render_target(subviewport.viewport);
+				RendererTextureStorage::render_target_set_override(
+					rt, get_current_swapchain_texture(), RID(), RID(), RID());
+			}
+		}
+	}
+
+	if (swapchain_state_is_dirty) {
+		update_swapchain_state();
+		swapchain_state_is_dirty = false;
+	}
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::free()
+{
+	if (use_android_surface) {
+		free_swapchain();
+	}
+	else {
+		set_viewport(RID(), Size2i());
+	}
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::update_swapchain_state()
+{
+	if (!OpenXRFBUpdateSwapchainExtension::is_initialized()) {
+		return;
+	}
+
+#ifdef ANDROID_ENABLED
+	if (use_android_surface) {
+		if (android_surface.swapchain == XR_NULL_HANDLE) {
+			return;
+		}
+
+		OpenXRFBUpdateSwapchainExtension::update_swapchain_state(
+			android_surface.swapchain, &swapchain_state);
+	}
+	else
+#endif
+	{
+		if (subviewport.swapchain_info.get_swapchain() == XR_NULL_HANDLE) {
+			return;
+		}
+
+		OpenXRFBUpdateSwapchainExtension::update_swapchain_state(
+			subviewport.swapchain_info.get_swapchain(), &swapchain_state);
+	}
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::update_swapchain_sub_image(
+	XrSwapchainSubImage& r_subimage)
+{
+#ifdef ANDROID_ENABLED
+	if (use_android_surface) {
+		r_subimage.swapchain = android_surface.swapchain;
+	}
+	else
+#endif
+	{
+		XrSwapchain swapchain = subviewport.swapchain_info.get_swapchain();
+
+		if (swapchain && subviewport.swapchain_info.is_image_acquired()) {
+			subviewport.swapchain_info.release();
+		}
+
+		r_subimage.swapchain = swapchain;
+	}
+
+	r_subimage.imageRect.extent.width = swapchain_size.width;
+	r_subimage.imageRect.extent.height = swapchain_size.height;
+}
+
+bool OpenXRCompositionLayerExtension::CompositionLayer::update_and_acquire_swapchain(
+	bool p_static_image)
+{
+	ERR_FAIL_COND_V(use_android_surface, false);
+
+	if (!OpenXRAPI::is_allocated() || !OpenXRCompositionLayerExtension::is_initialized()) {
+		return false;
+	}
+	if (!OpenXRCompositionLayerExtension::is_available(composition_layer.type)) {
+		return false;
+	}
+
+	if (subviewport.swapchain_info.get_swapchain() != XR_NULL_HANDLE) {
+		if (swapchain_size == subviewport.viewport_size && !p_static_image &&
+			!subviewport.static_image &&
+			protected_content == subviewport.swapchain_protected_content) {
+			bool should_render = true;
+			return subviewport.swapchain_info.acquire(should_render);
+		}
+
+		subviewport.swapchain_info.queue_free();
+	}
+
+	int64_t swapchain_format = OpenXRAPI::get_color_swapchain_format();
+	const uint32_t sample_count = 1;
+	const uint32_t array_size = 1;
+	XrSwapchainCreateFlags create_flags = 0;
+	if (p_static_image) {
+		create_flags |= XR_SWAPCHAIN_CREATE_STATIC_IMAGE_BIT;
+	}
+	if (protected_content) {
+		create_flags |= XR_SWAPCHAIN_CREATE_PROTECTED_CONTENT_BIT;
+	}
+	if (!subviewport.swapchain_info.create(create_flags,
+			XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT |
+				XR_SWAPCHAIN_USAGE_MUTABLE_FORMAT_BIT,
+			swapchain_format, subviewport.viewport_size.width, subviewport.viewport_size.height,
+			sample_count, array_size)) {
+		swapchain_size = Size2i();
+		return false;
+	}
+
+	swapchain_state_is_dirty = true;
+
+	bool should_render = true;
+	bool ret = subviewport.swapchain_info.acquire(should_render);
+
+	swapchain_size = subviewport.viewport_size;
+	subviewport.static_image = p_static_image;
+	subviewport.swapchain_protected_content = protected_content;
+	return ret;
+}
+
+RID OpenXRCompositionLayerExtension::CompositionLayer::get_current_swapchain_texture()
+{
+	ERR_FAIL_COND_V(use_android_surface, RID());
+
+	if (!OpenXRAPI::is_allocated()) {
+		return RID();
+	}
+
+	return subviewport.swapchain_info.get_image();
+}
+
+void OpenXRCompositionLayerExtension::CompositionLayer::free_swapchain()
+{
+#ifdef ANDROID_ENABLED
+	if (use_android_surface) {
+		if (android_surface.swapchain != XR_NULL_HANDLE) {
+			OpenXRCompositionLayerExtension::xrDestroySwapchain(android_surface.swapchain);
+			android_surface.swapchain = XR_NULL_HANDLE;
+			android_surface.surface.unref();
+		}
+	}
+	else
+#endif
+	{
+		if (subviewport.swapchain_info.get_swapchain() != XR_NULL_HANDLE) {
+			subviewport.swapchain_info.queue_free();
+		}
+		subviewport.static_image = false;
+	}
+
+	swapchain_size = Size2i();
+}
+
+#ifdef ANDROID_ENABLED
+void OpenXRCompositionLayerExtension::CompositionLayer::create_android_surface()
+{
+	ERR_FAIL_COND(
+		android_surface.swapchain != XR_NULL_HANDLE || android_surface.surface.is_valid());
+
+	XrSwapchainCreateFlags create_flags = 0;
+	if (protected_content) {
+		create_flags = XR_SWAPCHAIN_CREATE_PROTECTED_CONTENT_BIT;
+	}
+
+	XrSwapchainCreateInfo info = {
+		XR_TYPE_SWAPCHAIN_CREATE_INFO,
+		nullptr,
+		create_flags,
+		XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT |
+			XR_SWAPCHAIN_USAGE_MUTABLE_FORMAT_BIT,
+		0,
+		0,
+		(uint32_t)swapchain_size.x,
+		(uint32_t)swapchain_size.y,
+		0,
+		0,
+		0,
+	};
+
+	jobject surface = nullptr;
+	OpenXRCompositionLayerExtension::create_android_surface_swapchain(
+		&info, &android_surface.swapchain, &surface);
+
+	swapchain_state_is_dirty = true;
+
+	if (surface) {
+		android_surface.surface.instantiate(
+			JavaClassWrapper::wrap("android.view.Surface"), surface);
+	}
+}
+#endif
+
+void OpenXRCompositionLayerExtension::composition_layer_set_viewport(
+	RID p_layer, RID p_viewport, const Vector2i& p_size)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(
+	RID p_layer, bool p_enable, const Vector2i& p_size)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_unregister(RID p_layer) {}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_vertical_wrap(
+	RID p_layer, OpenXRCompositionLayerExtension::Wrap p_wrap)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_red_swizzle(
+	RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_quad_size(
+	RID p_layer, const Vector2& p_size)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_protected_content(
+	RID p_layer, bool p_protected)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_mipmap_mode(
+	RID p_layer, OpenXRCompositionLayerExtension::MipmapMode p_mode)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_min_filter(
+	RID p_layer, OpenXRCompositionLayerExtension::Filter p_filter)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_max_anisotropy(
+	RID p_layer, float p_anisotropy)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_mag_filter(
+	RID p_layer, OpenXRCompositionLayerExtension::Filter p_filter)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_horizontal_wrap(
+	RID p_layer, OpenXRCompositionLayerExtension::Wrap p_wrap)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_green_swizzle(
+	RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_eye_visibility(
+	RID p_layer, OpenXRCompositionLayerExtension::EyeVisibility p_visibility)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_equirect_upper_vertical_angle(
+	RID p_layer, float p_angle)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_equirect_radius(
+	RID p_layer, float p_radius)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_equirect_lower_vertical_angle(
+	RID p_layer, float p_angle)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_equirect_central_horizontal_angle(
+	RID p_layer, float p_angle)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_cylinder_radius(
+	RID p_layer, float p_radius)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_cylinder_central_angle(
+	RID p_layer, float p_angle)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_cylinder_aspect_ratio(
+	RID p_layer, float p_ratio)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_border_color(
+	RID p_layer, const Color& p_color)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_blue_swizzle(
+	RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_alpha_swizzle(
+	RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_set_alpha_blend(RID p_layer, bool p_blend)
+{
+}
+
+void OpenXRCompositionLayerExtension::composition_layer_register(RID p_layer) {}
+
+XrCompositionLayerBaseHeader*
+OpenXRCompositionLayerExtension::CompositionLayer::get_composition_layer()
+{
+	return &composition_layer;
+}
+
+void OpenXRCompositionLayerExtension::on_session_created(XrSession_T* p_session) {}
+
+void OpenXRCompositionLayerExtension::on_session_destroyed() {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRFrameSynthesisExtension
+
+void OpenXRFrameSynthesisExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRFrameSynthesisExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void OpenXRFrameSynthesisExtension::prepare_view_configuration(uint32_t p_view_count)
+{
+	if (!data->frame_synthesis_ext) {
+		return;
+	}
+
+	data->render_state.config_views.resize(p_view_count);
+
+	for (XrFrameSynthesisConfigViewEXT& config_view : data->render_state.config_views) {
+		config_view.type = XR_TYPE_FRAME_SYNTHESIS_CONFIG_VIEW_EXT;
+		config_view.next = nullptr;
+		config_view.recommendedMotionVectorImageRectWidth = 0;
+		config_view.recommendedMotionVectorImageRectHeight = 0;
+	}
+}
+
+void* OpenXRFrameSynthesisExtension::set_view_configuration_and_get_next_pointer(
+	uint32_t p_view, void* p_next_pointer)
+{
+	if (!data->frame_synthesis_ext) {
+		return nullptr;
+	}
+
+	ERR_FAIL_UNSIGNED_INDEX_V(p_view, data->render_state.config_views.size(), nullptr);
+
+	XrFrameSynthesisConfigViewEXT& config_view = data->render_state.config_views[p_view];
+	config_view.next = p_next_pointer;
+
+	return &config_view;
+}
+
+void OpenXRFrameSynthesisExtension::on_session_destroyed()
+{
+	if (!data->frame_synthesis_ext) {
+		return;
+	}
+
+	free_swapchains();
+}
+
+void OpenXRFrameSynthesisExtension::on_pre_draw_viewport(RID p_render_target)
+{
+	if (!data->frame_synthesis_ext) {
+		return;
+	}
+
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	if (!data->enabled || data->render_state.config_views.size() != 2 ||
+		data->render_state.frame_synthesis_info.size() != 2 || data->render_state.skip_next_frame) {
+		OpenXRAPI::set_velocity_texture(RID());
+		OpenXRAPI::set_velocity_depth_texture(RID());
+		data->render_state.previous_transform = XRServer::get_world_origin();
+		return;
+	}
+
+	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
+		bool should_render = true;
+		data->render_state.swapchains[i].acquire(should_render);
+	}
+
+	OpenXRAPI::set_velocity_texture(
+		data->render_state.swapchains[SWAPCHAIN_MOTION_VECTOR].get_image());
+	OpenXRAPI::set_velocity_depth_texture(
+		data->render_state.swapchains[SWAPCHAIN_DEPTH].get_image());
+
+	uint32_t width = data->render_state.config_views[0].recommendedMotionVectorImageRectWidth;
+	uint32_t height = data->render_state.config_views[0].recommendedMotionVectorImageRectHeight;
+	OpenXRAPI::set_velocity_target_size(Size2i(width, height));
+
+	Transform3D world_transform = XRServer::get_world_origin();
+	Transform3D delta_transform =
+		data->render_state.previous_transform.affine_inverse() * world_transform;
+	Quaternion delta_quat = delta_transform.basis.get_quaternion();
+	Vector3 delta_origin = delta_transform.origin;
+
+	float z_far = OpenXRAPI::get_render_state_z_far();
+	float z_near = OpenXRAPI::get_render_state_z_near();
+
+	for (XrFrameSynthesisInfoEXT& frame_synthesis_info : data->render_state.frame_synthesis_info) {
+		frame_synthesis_info.layerFlags =
+			data->render_state.relax_frame_interval
+				? XR_FRAME_SYNTHESIS_INFO_REQUEST_RELAXED_FRAME_INTERVAL_BIT_EXT
+				: 0;
+
+		frame_synthesis_info.appSpaceDeltaPose = {
+			{(float)delta_quat.x, (float)delta_quat.y, (float)delta_quat.z, (float)delta_quat.w},
+			{(float)delta_origin.x, (float)delta_origin.y, (float)delta_origin.z}};
+
+		if (z_far != z_near) {
+			frame_synthesis_info.nearZ = z_far;
+			frame_synthesis_info.farZ = z_near;
+		}
+	}
+
+	data->render_state.previous_transform = world_transform;
+}
+
+void OpenXRFrameSynthesisExtension::on_post_draw_viewport(RID p_render_target)
+{
+	if (!data->frame_synthesis_ext || !data->enabled ||
+		data->render_state.config_views.size() != 2 ||
+		data->render_state.frame_synthesis_info.size() != 2 || data->render_state.skip_next_frame) {
+		return;
+	}
+
+	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
+		data->render_state.swapchains[i].release();
+	}
+}
+
+void* OpenXRFrameSynthesisExtension::set_projection_views_and_get_next_pointer(
+	int p_view_index, void* p_next_pointer)
+{
+	if (!data->frame_synthesis_ext || !data->enabled ||
+		data->render_state.config_views.size() != 2 ||
+		data->render_state.frame_synthesis_info.size() != 2) {
+		return nullptr;
+	}
+
+	if (data->render_state.skip_next_frame) {
+		if (p_view_index == 1) {
+			data->render_state.skip_next_frame = false;
+		}
+		return nullptr;
+	}
+
+	data->render_state.frame_synthesis_info[p_view_index].next = p_next_pointer;
+	return &data->render_state.frame_synthesis_info[p_view_index];
+}
+
+bool OpenXRFrameSynthesisExtension::is_available()
+{
+	return data != nullptr && data->frame_synthesis_ext;
+}
+
+bool OpenXRFrameSynthesisExtension::is_enabled()
+{
+	return data != nullptr && data->frame_synthesis_ext && data->enabled;
+}
+
+bool OpenXRFrameSynthesisExtension::get_relax_frame_interval()
+{
+	return data != nullptr && data->relax_frame_interval;
+}
+
+void OpenXRFrameSynthesisExtension::_set_render_state_enabled_rt(bool p_enabled)
+{
+	data->render_state.enabled = p_enabled;
+}
+
+void OpenXRFrameSynthesisExtension::_set_relax_frame_interval_rt(bool p_relax_frame_interval)
+{
+	data->render_state.relax_frame_interval = p_relax_frame_interval;
+}
+
+void OpenXRFrameSynthesisExtension::free_swapchains()
+{
+	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
+		data->render_state.swapchains[i].queue_free();
+	}
+}
+
+void OpenXRFrameSynthesisExtension::_set_skip_next_frame_rt()
+{
+	data->render_state.skip_next_frame = true;
+}
+
+HashMap<String, bool*> OpenXRFrameSynthesisExtension::get_requested_extensions(
+	XrVersion p_version)
+{
+	return HashMap<String, bool*>();
+}
+
+void OpenXRFrameSynthesisExtension::on_instance_created(XrInstance_T* p_instance) {}
+
+void OpenXRFrameSynthesisExtension::on_instance_destroyed() {}
+
+void OpenXRFrameSynthesisExtension::print_view_configuration_info(unsigned int p_view_config) {}
+
+void OpenXRFrameSynthesisExtension::on_main_swapchains_created() {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRFutureResult & OpenXRFutureExtension
+
+void OpenXRFutureExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRFutureExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+OpenXRFutureResult::ResultStatus OpenXRFutureResult::get_status() const { return status; }
+
+XrFutureEXT OpenXRFutureResult::get_future() const { return future; }
+
+uint64_t OpenXRFutureResult::_get_future() const { return (uint64_t)future; }
+
+void OpenXRFutureResult::cancel_future()
+{
+	ERR_FAIL_COND(status != RESULT_RUNNING);
+	ERR_FAIL_COND(!OpenXRFutureExtension::is_initialized());
+
+	OpenXRFutureExtension::cancel_future(future);
+}
+
+void OpenXRFutureResult::_mark_as_cancelled() {}
+
+void OpenXRFutureResult::_mark_as_finished() {}
+
+HashMap<String, bool*> OpenXRFutureExtension::get_requested_extensions(XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	request_extensions[XR_EXT_FUTURE_EXTENSION_NAME] = &data->future_ext;
+
+	return request_extensions;
+}
+
+void OpenXRFutureExtension::on_instance_created(const XrInstance p_instance)
+{
+	if (data->future_ext) {
+		EXT_INIT_XR_FUNC(xrPollFutureEXT);
+		EXT_INIT_XR_FUNC(xrCancelFutureEXT);
+
+		data->future_ext = xrPollFutureEXT_ptr && xrCancelFutureEXT_ptr;
+	}
+}
+
+void OpenXRFutureExtension::on_instance_destroyed()
+{
+	xrPollFutureEXT_ptr = nullptr;
+	xrCancelFutureEXT_ptr = nullptr;
+}
+
+void OpenXRFutureExtension::on_session_destroyed()
+{
+	if (!is_active()) {
+		return;
+	}
+
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	for (const KeyValue<XrFutureEXT, Ref<OpenXRFutureResult>>& element : data->futures) {
+		XrFutureCancelInfoEXT cancel_info = {
+			XR_TYPE_FUTURE_CANCEL_INFO_EXT,
+			nullptr,
+			element.key,
+		};
+		XrResult result = xrCancelFutureEXT_ptr(OpenXRAPI::get_instance(), &cancel_info);
+		if (XR_FAILED(result)) {
+			WARN_PRINT(
+				"OpenXR: Failed to cancel future [" + OpenXRAPI::get_error_string(result) + "]");
+		}
+
+		element.value->_mark_as_cancelled();
+	}
+	data->futures.clear();
+}
+
+bool OpenXRFutureExtension::is_active() { return data != nullptr && data->future_ext; }
+
+void OpenXRFutureExtension::cancel_future(XrFutureEXT p_future)
+{
+	ERR_FAIL_COND(!data->futures.has(p_future));
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	XrFutureCancelInfoEXT cancel_info = {
+		XR_TYPE_FUTURE_CANCEL_INFO_EXT,
+		nullptr,
+		p_future,
+	};
+	XrResult result = xrCancelFutureEXT_ptr(OpenXRAPI::get_instance(), &cancel_info);
+	if (XR_FAILED(result)) {
+		WARN_PRINT(
+			"OpenXR: Failed to cancel future [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	data->futures[p_future]->_mark_as_cancelled();
+	data->futures.erase(p_future);
+}
+
+void OpenXRFutureExtension::_cancel_future(uint64_t p_future)
+{
+	cancel_future((XrFutureEXT)p_future);
+}
+
+void OpenXRFutureExtension::on_process()
+{
+	if (!is_active()) {
+		return;
+	}
+
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	Vector<XrFutureEXT> completed;
+	for (const KeyValue<XrFutureEXT, Ref<OpenXRFutureResult>>& element : data->futures) {
+		XrFuturePollInfoEXT poll_info = {
+			XR_TYPE_FUTURE_POLL_INFO_EXT,
+			nullptr,
+			element.key,
+		};
+		XrFuturePollResultEXT poll_result = {
+			XR_TYPE_FUTURE_POLL_RESULT_EXT,
+			nullptr,
+			XR_FUTURE_STATE_MAX_ENUM_EXT,
+		};
+		XrResult result = xrPollFutureEXT_ptr(OpenXRAPI::get_instance(), &poll_info, &poll_result);
+		if (XR_FAILED(result)) {
+			ERR_PRINT("OpenXR: Failed to obtain future status [" +
+					  OpenXRAPI::get_error_string(result) + "]");
+			continue;
+		}
+		if (poll_result.state == XR_FUTURE_STATE_READY_EXT) {
+			element.value->_mark_as_finished();
+			completed.push_back(element.key);
+		}
+	}
+
+	for (const XrFutureEXT& future : completed) {
+		data->futures.erase(future);
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRHandTrackingExtension
+
+void OpenXRHandTrackingExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRHandTrackingExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void OpenXRHandTrackingExtension::on_session_destroyed() { cleanup_hand_tracking(); }
+
+void OpenXRHandTrackingExtension::on_state_stopping() { cleanup_hand_tracking(); }
+
+const OpenXRHandTrackingExtension::HandTracker* OpenXRHandTrackingExtension::get_hand_tracker(
+	HandTrackedHands p_hand)
+{
+	ERR_FAIL_UNSIGNED_INDEX_V(p_hand, OPENXR_MAX_TRACKED_HANDS, nullptr);
+
+	return &data->hand_trackers[p_hand];
+}
+
+bool OpenXRHandTrackingExtension::get_active() { return true; }
+
+void OpenXRHandTrackingExtension::cleanup_hand_tracking() {}
+
+void OpenXRHandTrackingExtension::on_instance_destroyed() {}
+
+void* OpenXRHandTrackingExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
+{
+	return p_next_pointer;
+}
+
+void OpenXRHandTrackingExtension::on_state_ready() {}
+
+void OpenXRHandTrackingExtension::on_process() {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRRenderModelExtension
+
+#ifdef MODULE_GLTF_ENABLED
+#include "modules/gltf/gltf_document.h"
+#include "scene/3d/node_3d.h"
+
+OpenXRRenderModelData::OpenXRRenderModelData() = default;
+OpenXRRenderModelData::~OpenXRRenderModelData() = default;
+
+Ref<GLTFState> OpenXRRenderModelData::get_gltf_state() { return gltf_state; }
+
+void OpenXRRenderModelExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRRenderModelExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void OpenXRRenderModelExtension::on_instance_created(const XrInstance p_instance)
+{
+	EXT_INIT_XR_FUNC(xrLocateSpace);
+	EXT_INIT_XR_FUNC(xrDestroySpace);
+	EXT_INIT_XR_FUNC(xrPathToString);
+
+	if (data->render_model_ext) {
+		EXT_INIT_XR_FUNC(xrCreateRenderModelEXT);
+		EXT_INIT_XR_FUNC(xrDestroyRenderModelEXT);
+		EXT_INIT_XR_FUNC(xrGetRenderModelPropertiesEXT);
+		EXT_INIT_XR_FUNC(xrCreateRenderModelSpaceEXT);
+		EXT_INIT_XR_FUNC(xrCreateRenderModelAssetEXT);
+		EXT_INIT_XR_FUNC(xrDestroyRenderModelAssetEXT);
+		EXT_INIT_XR_FUNC(xrGetRenderModelAssetDataEXT);
+		EXT_INIT_XR_FUNC(xrGetRenderModelAssetPropertiesEXT);
+		EXT_INIT_XR_FUNC(xrGetRenderModelStateEXT);
+	}
+
+	if (data->interaction_render_model_ext) {
+		EXT_INIT_XR_FUNC(xrEnumerateInteractionRenderModelIdsEXT);
+		EXT_INIT_XR_FUNC(xrEnumerateRenderModelSubactionPathsEXT);
+		EXT_INIT_XR_FUNC(xrGetRenderModelPoseTopLevelUserPathEXT);
+	}
+}
+
+void OpenXRRenderModelExtension::on_session_created(const XrSession p_session)
+{
+	data->_interaction_data_dirty = true;
+}
+
+void OpenXRRenderModelExtension::on_instance_destroyed()
+{
+	xrCreateRenderModelEXT_ptr = nullptr;
+	xrDestroyRenderModelEXT_ptr = nullptr;
+	xrGetRenderModelPropertiesEXT_ptr = nullptr;
+	xrCreateRenderModelSpaceEXT_ptr = nullptr;
+	xrCreateRenderModelAssetEXT_ptr = nullptr;
+	xrDestroyRenderModelAssetEXT_ptr = nullptr;
+	xrGetRenderModelAssetDataEXT_ptr = nullptr;
+	xrGetRenderModelAssetPropertiesEXT_ptr = nullptr;
+	xrGetRenderModelStateEXT_ptr = nullptr;
+	xrEnumerateInteractionRenderModelIdsEXT_ptr = nullptr;
+	xrEnumerateRenderModelSubactionPathsEXT_ptr = nullptr;
+	xrGetRenderModelPoseTopLevelUserPathEXT_ptr = nullptr;
+
+	data->uuid_ext = false;
+	data->render_model_ext = false;
+	data->interaction_render_model_ext = false;
+}
+
+void OpenXRRenderModelExtension::on_session_destroyed()
+{
+	_clear_interaction_data();
+	_clear_render_model_data();
+	data->xr_sync_has_run = false;
+}
+
+bool OpenXRRenderModelExtension::on_event_polled(const XrEventDataBuffer& event)
+{
+	if (event.type == XR_TYPE_EVENT_DATA_INTERACTION_RENDER_MODELS_CHANGED_EXT) {
+		data->_interaction_data_dirty = true;
+		return true;
+	}
+	else if (event.type == XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED) {
+		data->_interaction_data_dirty = true;
+		return false;
+	}
+
+	return false;
+}
+
+void OpenXRRenderModelExtension::on_sync_actions()
+{
+	if (!is_active()) {
+		return;
+	}
+
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	data->xr_sync_has_run = true;
+
+	if (data->_interaction_data_dirty) {
+		_update_interaction_data();
+	}
+
+	LocalVector<RID> owned = data->render_model_owner.get_owned_list();
+
+	for (const RID& rid : owned) {
+		RenderModel* render_model = data->render_model_owner.get_or_null(rid);
+		if (render_model && render_model->xr_space != XR_NULL_HANDLE) {
+			XrSpaceLocation render_model_location = {
+				XR_TYPE_SPACE_LOCATION,
+				nullptr,
+				0,
+				{{0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}},
+			};
+
+			XrResult result = xrLocateSpace(render_model->xr_space, OpenXRAPI::get_play_space(),
+				OpenXRAPI::get_predicted_display_time(), &render_model_location);
+			ERR_CONTINUE_MSG(XR_FAILED(result), "OpenXR: Failed to locate render model space [" +
+													OpenXRAPI::get_error_string(result) + "]");
+
+			render_model->confidence = OpenXRAPI::transform_from_location(
+				render_model_location, render_model->root_transform);
+
+			if (!render_model->node_states.is_empty()) {
+				XrRenderModelStateGetInfoEXT get_state_info = {
+					XR_TYPE_RENDER_MODEL_STATE_GET_INFO_EXT,
+					nullptr,
+					OpenXRAPI::get_predicted_display_time(),
+				};
+
+				XrRenderModelStateEXT state = {
+					XR_TYPE_RENDER_MODEL_STATE_EXT,
+					nullptr,
+					render_model->animatable_node_count,
+					render_model->node_states.ptr(),
+				};
+
+				result = xrGetRenderModelStateEXT(
+					render_model->xr_render_model, &get_state_info, &state);
+				if (XR_FAILED(result)) {
+					ERR_PRINT("OpenXR: Failed to update node states [" +
+							  OpenXRAPI::get_error_string(result) + "]");
+				}
+			}
+
+			XrPath new_path = XR_NULL_PATH;
+
+			if (data->toplevel_paths.is_empty()) {
+				data->toplevel_paths.push_back(OpenXRAPI::get_xr_path("/user/hand/left"));
+				data->toplevel_paths.push_back(OpenXRAPI::get_xr_path("/user/hand/right"));
+			}
+
+			XrInteractionRenderModelTopLevelUserPathGetInfoEXT info = {
+				XR_TYPE_INTERACTION_RENDER_MODEL_TOP_LEVEL_USER_PATH_GET_INFO_EXT,
+				nullptr,
+				(uint32_t)data->toplevel_paths.size(),
+				data->toplevel_paths.ptr(),
+			};
+			result = xrGetRenderModelPoseTopLevelUserPathEXT(
+				render_model->xr_render_model, &info, &new_path);
+			if (XR_FAILED(result)) {
+				ERR_PRINT("OpenXR: Failed to update the top level path for render models [" +
+						  OpenXRAPI::get_error_string(result) + "]");
+			}
+			else if (new_path != render_model->top_level_path) {
+				print_verbose("OpenXR: Render model top level path changed to " +
+							  OpenXRAPI::get_xr_path_name(new_path));
+				render_model->top_level_path = new_path;
+			}
+		}
+	}
+}
+
+bool OpenXRRenderModelExtension::is_active()
+{
+	return data != nullptr && data->render_model_ext && data->interaction_render_model_ext;
+}
+
+void OpenXRRenderModelExtension::_clear_interaction_data()
+{
+	for (const KeyValue<XrRenderModelIdEXT, RID>& e : data->interaction_render_models) {
+		render_model_destroy(e.value);
+	}
+	data->interaction_render_models.clear();
+}
+
+bool OpenXRRenderModelExtension::_update_interaction_data()
+{
+	ERR_FAIL_COND_V_MSG(!data->interaction_render_model_ext, false,
+		"Interaction render model extension hasn't been enabled.");
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+
+	XrSession session = OpenXRAPI::get_session();
+	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
+
+	if (!data->xr_sync_has_run) {
+		return true;
+	}
+
+	data->_interaction_data_dirty = false;
+
+	XrInteractionRenderModelIdsEnumerateInfoEXT interaction_info = {
+		XR_TYPE_INTERACTION_RENDER_MODEL_IDS_ENUMERATE_INFO_EXT,
+		nullptr,
+	};
+
+	uint32_t interaction_count = 0;
+	XrResult result = xrEnumerateInteractionRenderModelIdsEXT(
+		session, &interaction_info, 0, &interaction_count, nullptr);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(false, "OpenXR: Failed to obtain render model interaction id count [" +
+								  OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	LocalVector<XrRenderModelIdEXT> render_model_interaction_ids;
+	render_model_interaction_ids.resize(interaction_count);
+
+	if (!render_model_interaction_ids.is_empty()) {
+		result = xrEnumerateInteractionRenderModelIdsEXT(session, &interaction_info,
+			render_model_interaction_ids.size(), &interaction_count,
+			render_model_interaction_ids.ptr());
+		if (XR_FAILED(result)) {
+			ERR_FAIL_V_MSG(false, "OpenXR: Failed to obtain render model interaction ids [" +
+									  OpenXRAPI::get_error_string(result) + "]");
+		}
+	}
+
+	LocalVector<XrRenderModelIdEXT> erase_ids;
+	for (const KeyValue<XrRenderModelIdEXT, RID>& e : data->interaction_render_models) {
+		if (!render_model_interaction_ids.has(e.key)) {
+			if (e.value.is_valid()) {
+				render_model_destroy(e.value);
+			}
+			erase_ids.push_back(e.key);
+		}
+	}
+
+	for (const XrRenderModelIdEXT& id : erase_ids) {
+		data->interaction_render_models.erase(id);
+	}
+
+	for (const XrRenderModelIdEXT& id : render_model_interaction_ids) {
+		if (!data->interaction_render_models.has(id)) {
+			data->interaction_render_models[id] = render_model_create(id);
+		}
+	}
+
+	return true;
+}
+
+bool OpenXRRenderModelExtension::has_render_model(RID p_render_model)
+{
+	return data->render_model_owner.owns(p_render_model);
+}
+
+RID OpenXRRenderModelExtension::render_model_create(XrRenderModelIdEXT p_render_model_id)
+{
+	ERR_FAIL_COND_V_MSG(
+		!data->render_model_ext, RID(), "Render model extension hasn't been enabled.");
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
+
+	XrSession session = OpenXRAPI::get_session();
+	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, RID());
+
+	RenderModel render_model;
+	render_model.xr_render_model_id = p_render_model_id;
+
+	const HashSet<String> supported_gltf_extensions_hash_set =
+		GLTFDocument::get_supported_gltf_extensions_hashset();
+	Vector<CharString> supported_gltf_extensions_char_string;
+	supported_gltf_extensions_char_string.resize(supported_gltf_extensions_hash_set.size());
+	int64_t supported_gltf_extension_index = 0;
+	for (const String& ext : supported_gltf_extensions_hash_set) {
+		supported_gltf_extensions_char_string.set(supported_gltf_extension_index, ext.utf8());
+		supported_gltf_extension_index++;
+	}
+	Vector<const char*> supported_gltf_extensions;
+	supported_gltf_extensions.resize(supported_gltf_extensions_char_string.size());
+	for (int64_t i = 0; i < supported_gltf_extensions_char_string.size(); i++) {
+		supported_gltf_extensions.write[i] = supported_gltf_extensions_char_string[i].get_data();
+	}
+
+	XrRenderModelCreateInfoEXT create_info = {
+		XR_TYPE_RENDER_MODEL_CREATE_INFO_EXT,
+		nullptr,
+		p_render_model_id,
+		uint32_t(supported_gltf_extensions.size()),
+		supported_gltf_extensions.ptr(),
+	};
+
+	XrResult result = xrCreateRenderModelEXT(session, &create_info, &render_model.xr_render_model);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(RID(), "OpenXR: Failed to create render model [" +
+								  OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	XrRenderModelPropertiesGetInfoEXT properties_info = {
+		XR_TYPE_RENDER_MODEL_PROPERTIES_GET_INFO_EXT,
+		nullptr,
+	};
+
+	XrRenderModelPropertiesEXT properties = {
+		XR_TYPE_RENDER_MODEL_PROPERTIES_EXT,
+		nullptr,
+		{},
+		0,
+	};
+
+	result =
+		xrGetRenderModelPropertiesEXT(render_model.xr_render_model, &properties_info, &properties);
+	if (XR_FAILED(result)) {
+		ERR_PRINT("OpenXR: Failed to get render model properties [" +
+				  OpenXRAPI::get_error_string(result) + "]");
+	}
+	else {
+		render_model.animatable_node_count = properties.animatableNodeCount;
+		render_model.render_model_data =
+			_get_render_model_data(properties.cacheId, properties.animatableNodeCount);
+	}
+
+	XrRenderModelSpaceCreateInfoEXT space_create_info = {
+		XR_TYPE_RENDER_MODEL_SPACE_CREATE_INFO_EXT,
+		nullptr,
+		render_model.xr_render_model,
+	};
+
+	result = xrCreateRenderModelSpaceEXT(session, &space_create_info, &render_model.xr_space);
+	if (XR_FAILED(result)) {
+		ERR_PRINT("OpenXR: Failed to create render model space [" +
+				  OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	if (render_model.animatable_node_count > 0) {
+		render_model.node_states.resize(render_model.animatable_node_count);
+	}
+
+	return data->render_model_owner.make_rid(render_model);
+}
+
+RID OpenXRRenderModelExtension::_render_model_create(uint64_t p_render_model_id)
+{
+	RID ret;
+
+	ERR_FAIL_COND_V(p_render_model_id == XR_NULL_RENDER_MODEL_ID_EXT, ret);
+
+	if (is_active()) {
+		ret = render_model_create(XrRenderModelIdEXT(p_render_model_id));
+	}
+
+	return ret;
+}
+
+void OpenXRRenderModelExtension::render_model_destroy(RID p_render_model)
+{
+	ERR_FAIL_COND_MSG(!data->render_model_ext, "Render model extension hasn't been enabled.");
+
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL(render_model);
+
+	if (render_model->xr_space != XR_NULL_HANDLE) {
+		xrDestroySpace(render_model->xr_space);
+	}
+
+	render_model->node_states.clear();
+
+	XrResult result = xrDestroyRenderModelEXT(render_model->xr_render_model);
+	if (XR_FAILED(result)) {
+		ERR_PRINT("OpenXR: Failed to destroy render model [" +
+				  OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	data->render_model_owner.free(p_render_model);
+}
+
+Node3D* OpenXRRenderModelExtension::render_model_new_scene_instance(RID p_render_model)
+{
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL_V(render_model, nullptr);
+
+	if (render_model->render_model_data.is_null()) {
+		return nullptr;
+	}
+
+	return render_model->render_model_data->new_scene_instance();
+}
+
+PackedStringArray OpenXRRenderModelExtension::render_model_get_subaction_paths(RID p_render_model)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedStringArray());
+
+	XrInstance instance = OpenXRAPI::get_instance();
+	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, PackedStringArray());
+
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL_V(render_model, PackedStringArray());
+
+	PackedStringArray subaction_paths;
+
+	XrInteractionRenderModelSubactionPathInfoEXT subaction_info = {
+		XR_TYPE_INTERACTION_RENDER_MODEL_SUBACTION_PATH_INFO_EXT,
+		nullptr,
+	};
+
+	uint32_t capacity;
+
+	XrResult result = xrEnumerateRenderModelSubactionPathsEXT(
+		render_model->xr_render_model, &subaction_info, 0, &capacity, nullptr);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(
+			PackedStringArray(), "OpenXR: Failed to obtain render model subaction path count [" +
+									 OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	if (capacity > 0) {
+		LocalVector<XrPath> paths;
+		paths.resize(capacity);
+
+		result = xrEnumerateRenderModelSubactionPathsEXT(
+			render_model->xr_render_model, &subaction_info, capacity, &capacity, paths.ptr());
+		if (XR_FAILED(result)) {
+			ERR_FAIL_V_MSG(PackedStringArray(),
+				"OpenXR: Failed to obtain render model subaction paths [" +
+					OpenXRAPI::get_error_string(result) + "]");
+		}
+
+		for (uint32_t i = 0; i < capacity; i++) {
+			char buffer[1024];
+			uint32_t size = 0;
+			xrPathToString(instance, paths[i], 1024, &size, buffer);
+			if (size > 0) {
+				subaction_paths.push_back(String(buffer));
+			}
+		}
+	}
+
+	return subaction_paths;
+}
+
+XrPath OpenXRRenderModelExtension::render_model_get_top_level_path(RID p_render_model)
+{
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL_V(render_model, XRPose::TrackingConfidence::XR_TRACKING_CONFIDENCE_NONE);
+
+	return render_model->top_level_path;
+}
+
+String OpenXRRenderModelExtension::render_model_get_top_level_path_as_string(RID p_render_model)
+{
+	String ret;
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
+
+	if (is_active() && has_render_model(p_render_model)) {
+		XrPath path = render_model_get_top_level_path(p_render_model);
+		if (path == XR_NULL_PATH) {
+			return "None";
+		}
+		else {
+			return OpenXRAPI::get_xr_path_name(path);
+		}
+	}
+
+	return ret;
+}
+
+XRPose::TrackingConfidence OpenXRRenderModelExtension::render_model_get_confidence(
+	RID p_render_model)
+{
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL_V(render_model, XRPose::TrackingConfidence::XR_TRACKING_CONFIDENCE_NONE);
+
+	return render_model->confidence;
+}
+
+Transform3D OpenXRRenderModelExtension::render_model_get_root_transform(RID p_render_model)
+{
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), Transform3D());
+
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL_V(render_model, Transform3D());
+
+	real_t world_scale = XRServer::get_world_scale();
+	Transform3D root_transform =
+		render_model->root_transform.scaled(Vector3(world_scale, world_scale, world_scale));
+
+	return XRServer::get_reference_frame() * root_transform;
+}
+
+uint32_t OpenXRRenderModelExtension::render_model_get_animatable_node_count(RID p_render_model)
+{
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL_V(render_model, 0);
+
+	return render_model->animatable_node_count;
+}
+
+String OpenXRRenderModelExtension::render_model_get_animatable_node_name(
+	RID p_render_model, uint32_t p_index)
+{
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL_V(render_model, String());
+
+	if (render_model->render_model_data.is_null()) {
+		return String();
+	}
+
+	return render_model->render_model_data->get_node_name(p_index);
+}
+
+bool OpenXRRenderModelExtension::render_model_is_animatable_node_visible(
+	RID p_render_model, uint32_t p_index)
+{
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL_V(render_model, false);
+	ERR_FAIL_UNSIGNED_INDEX_V(p_index, render_model->animatable_node_count, false);
+
+	if (render_model->node_states.is_empty()) {
+		return false;
+	}
+
+	return render_model->node_states[p_index].isVisible;
+}
+
+Transform3D OpenXRRenderModelExtension::render_model_get_animatable_node_transform(
+	RID p_render_model, uint32_t p_index)
+{
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
+
+	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
+	ERR_FAIL_NULL_V(render_model, Transform3D());
+	ERR_FAIL_UNSIGNED_INDEX_V(p_index, render_model->animatable_node_count, Transform3D());
+
+	if (render_model->node_states.is_empty()) {
+		return Transform3D();
+	}
+
+	return OpenXRAPI::transform_from_pose(render_model->node_states[p_index].nodePose);
+}
+
+Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_get_render_model_data(
+	XrUuidEXT p_cache_id, uint32_t p_animatable_node_count)
+{
+	if (data->render_model_data_cache.has(p_cache_id)) {
+		return data->render_model_data_cache[p_cache_id];
+	}
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), nullptr);
+
+	XrSession session = OpenXRAPI::get_session();
+	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, nullptr);
+
+	XrRenderModelAssetEXT asset;
+	XrRenderModelAssetCreateInfoEXT create_info = {
+		XR_TYPE_RENDER_MODEL_ASSET_CREATE_INFO_EXT,
+		nullptr,
+		p_cache_id,
+	};
+
+	XrResult result = xrCreateRenderModelAssetEXT(session, &create_info, &asset);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to create render model asset [" +
+									OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	Ref<OpenXRRenderModelData> render_model_data = _load_asset(asset, p_animatable_node_count);
+
+	result = xrDestroyRenderModelAssetEXT(asset);
+	if (XR_FAILED(result)) {
+		ERR_PRINT("OpenXR: Failed to destroy render model asset [" +
+				  OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	data->render_model_data_cache[p_cache_id] = render_model_data;
+
+	return render_model_data;
+}
+
+Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_load_asset(
+	XrRenderModelAssetEXT p_asset, uint32_t p_animatable_node_count)
+{
+	XrRenderModelAssetDataGetInfoEXT get_info = {
+		XR_TYPE_RENDER_MODEL_ASSET_DATA_GET_INFO_EXT,
+		nullptr,
+	};
+
+	XrRenderModelAssetDataEXT asset_data = {
+		XR_TYPE_RENDER_MODEL_ASSET_DATA_EXT,
+		nullptr,
+		0,
+		0,
+		nullptr,
+	};
+
+	XrResult result = xrGetRenderModelAssetDataEXT(p_asset, &get_info, &asset_data);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to get render model buffer size [" +
+									OpenXRAPI::get_error_string(result) + "]");
+	}
+	ERR_FAIL_COND_V(asset_data.bufferCountOutput == 0, nullptr);
+
+	PackedByteArray buffer;
+	buffer.resize(asset_data.bufferCountOutput);
+	asset_data.buffer = buffer.ptrw();
+	asset_data.bufferCapacityInput = asset_data.bufferCountOutput;
+
+	result = xrGetRenderModelAssetDataEXT(p_asset, &get_info, &asset_data);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to get render model buffer [" +
+									OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	PackedStringArray node_names;
+
+	if (p_animatable_node_count > 0) {
+		Vector<XrRenderModelAssetNodePropertiesEXT> node_properties;
+		node_properties.resize(p_animatable_node_count);
+
+		XrRenderModelAssetPropertiesGetInfoEXT properties_info = {
+			XR_TYPE_RENDER_MODEL_ASSET_PROPERTIES_GET_INFO_EXT,
+			nullptr,
+		};
+
+		XrRenderModelAssetPropertiesEXT asset_properties = {
+			XR_TYPE_RENDER_MODEL_ASSET_PROPERTIES_EXT,
+			nullptr,
+			uint32_t(node_properties.size()),
+			node_properties.ptrw(),
+		};
+
+		result = xrGetRenderModelAssetPropertiesEXT(p_asset, &properties_info, &asset_properties);
+		if (XR_FAILED(result)) {
+			ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to get render model property info [" +
+										OpenXRAPI::get_error_string(result) + "]");
+		}
+
+		node_names.resize(p_animatable_node_count);
+		String* node_names_ptrw = node_names.ptrw();
+		for (uint32_t i = 0; i < p_animatable_node_count; i++) {
+			node_names_ptrw[i] = String(node_properties[i].uniqueName);
+		}
+	}
+
+	Ref<OpenXRRenderModelData> render_model_data;
+	render_model_data.instantiate();
+
+	render_model_data->parse_gltf_document(buffer);
+	render_model_data->set_node_names(node_names);
+
+	return render_model_data;
+}
+
+void OpenXRRenderModelExtension::_clear_render_model_data()
+{
+	data->toplevel_paths.clear();
+	data->render_model_data_cache.clear();
+
+	LocalVector<RID> owned = data->render_model_owner.get_owned_list();
+	for (const RID& rid : owned) {
+		render_model_destroy(rid);
+	}
+}
+
+bool OpenXRRenderModelData::parse_gltf_document(const PackedByteArray& p_bytes)
+{
+	Ref<GLTFState> new_state;
+	new_state.instantiate();
+	Ref<GLTFDocument> new_gltf_document;
+	new_gltf_document.instantiate();
+
+	Error err = new_gltf_document->append_from_buffer(p_bytes, "", new_state);
+	if (err != OK) {
+		ERR_FAIL_V_MSG(false, "OpenXR: Failed to parse GLTF data.");
+	}
+
+	gltf_document = new_gltf_document;
+	gltf_state = new_state;
+	return true;
+}
+
+void OpenXRRenderModelData::set_node_names(const PackedStringArray& p_node_names)
+{
+	node_names = p_node_names;
+}
+
+PackedStringArray OpenXRRenderModelData::get_node_names() const { return node_names; }
+
+const String OpenXRRenderModelData::get_node_name(uint32_t p_node_index) const
+{
+	ERR_FAIL_UNSIGNED_INDEX_V(p_node_index, node_names.size(), String());
+
+	return node_names[p_node_index];
+}
+
+Node3D* OpenXRRenderModelData::new_scene_instance()
+{
+	return nullptr;
+}
+
+HashMap<String, bool*> OpenXRRenderModelExtension::get_requested_extensions(XrVersion p_version)
+{
+	return HashMap<String, bool*>();
+}
+#endif // MODULE_GLTF_ENABLED
+
+////////////////////////////////////////////////////////////////////////////
+// Platform-header dependent extensions (included last to isolate X11/driver macros)
+
+#define Window OpenXRX11Window
+#include "modules/openxr/openxr_platform_inc.h"
+#undef Window
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRFBUpdateSwapchainExtension
+
+#ifndef GL_CUBIC_IMG
+#define GL_CUBIC_IMG 0x9139
+#endif
+#ifndef GL_CUBIC_MIPMAP_LINEAR_IMG
+#define GL_CUBIC_MIPMAP_LINEAR_IMG 0x913B
+#endif
+#ifndef GL_CUBIC_MIPMAP_NEAREST_IMG
+#define GL_CUBIC_MIPMAP_NEAREST_IMG 0x913A
+#endif
+#ifndef GL_CLAMP_TO_BORDER
+#define GL_CLAMP_TO_BORDER 0x812D
+#endif
+
+void OpenXRFBUpdateSwapchainExtension::initialize(const String& p_rendering_driver)
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+	data->rendering_driver = p_rendering_driver;
+}
+
+void OpenXRFBUpdateSwapchainExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRFBUpdateSwapchainExtension::get_requested_extensions(
+	XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME] =
+		&data->fb_swapchain_update_state_ext;
+
+	if (data->rendering_driver == "vulkan") {
+#ifdef XR_USE_GRAPHICS_API_VULKAN
+		request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_VULKAN_EXTENSION_NAME] =
+			&data->fb_swapchain_update_state_vulkan_ext;
+#endif
+	}
+	else if (data->rendering_driver == "opengl3" || data->rendering_driver == "opengl3_es") {
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+		request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_OPENGL_ES_EXTENSION_NAME] =
+			&data->fb_swapchain_update_state_opengles_ext;
+#endif
+	}
+
+#ifdef ANDROID_ENABLED
+	request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_ANDROID_SURFACE_EXTENSION_NAME] =
+		&data->fb_swapchain_update_state_android_ext;
+#endif
+
+	return request_extensions;
+}
+
+void OpenXRFBUpdateSwapchainExtension::on_instance_created(const XrInstance p_instance)
+{
+	if (data->fb_swapchain_update_state_ext) {
+		EXT_INIT_XR_FUNC(xrUpdateSwapchainFB);
+		EXT_INIT_XR_FUNC(xrGetSwapchainStateFB);
+	}
+}
+
+void OpenXRFBUpdateSwapchainExtension::on_instance_destroyed()
+{
+	data->fb_swapchain_update_state_ext = false;
+	data->fb_swapchain_update_state_vulkan_ext = false;
+	data->fb_swapchain_update_state_opengles_ext = false;
+}
+
+bool OpenXRFBUpdateSwapchainExtension::is_enabled()
+{
+	return data != nullptr && data->fb_swapchain_update_state_ext;
+}
+
+bool OpenXRFBUpdateSwapchainExtension::is_android_ext_enabled()
+{
+	return data != nullptr && data->fb_swapchain_update_state_android_ext;
+}
+
+void OpenXRFBUpdateSwapchainExtension::update_swapchain_state(XrSwapchain p_swapchain,
+	const OpenXRCompositionLayerExtension::SwapchainState* p_swapchain_state)
+{
+	if (!p_swapchain_state) {
+		return;
+	}
+
+	if (data->rendering_driver == "vulkan") {
+#ifdef XR_USE_GRAPHICS_API_VULKAN
+		if (!data->fb_swapchain_update_state_ext || !data->fb_swapchain_update_state_vulkan_ext) {
+			return;
+		}
+
+		Color border_color = p_swapchain_state->border_color;
+		XrSwapchainStateSamplerVulkanFB swapchain_state = {
+			XR_TYPE_SWAPCHAIN_STATE_SAMPLER_VULKAN_FB,
+			nullptr,
+			(VkFilter)filter_to_vk(p_swapchain_state->min_filter),
+			(VkFilter)filter_to_vk(p_swapchain_state->mag_filter),
+			(VkSamplerMipmapMode)mipmap_mode_to_vk(p_swapchain_state->mipmap_mode),
+			(VkSamplerAddressMode)wrap_to_vk(p_swapchain_state->horizontal_wrap),
+			(VkSamplerAddressMode)wrap_to_vk(p_swapchain_state->vertical_wrap),
+			(VkComponentSwizzle)swizzle_to_vk(p_swapchain_state->red_swizzle),
+			(VkComponentSwizzle)swizzle_to_vk(p_swapchain_state->green_swizzle),
+			(VkComponentSwizzle)swizzle_to_vk(p_swapchain_state->blue_swizzle),
+			(VkComponentSwizzle)swizzle_to_vk(p_swapchain_state->alpha_swizzle),
+			p_swapchain_state->max_anisotropy,
+			{border_color.r, border_color.g, border_color.b, border_color.a},
+		};
+
+		XrResult result =
+			xrUpdateSwapchainFB(p_swapchain, (XrSwapchainStateBaseHeaderFB*)&swapchain_state);
+		if (XR_FAILED(result)) {
+			print_error(vformat(
+				"OpenXR: Failed to update swapchain [%s]", OpenXRAPI::get_error_string(result)));
+			return;
+		}
+#endif
+	}
+	else if (data->rendering_driver == "opengl3" || data->rendering_driver == "opengl3_es") {
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+		if (!data->fb_swapchain_update_state_ext ||
+			!data->fb_swapchain_update_state_opengles_ext) {
+			return;
+		}
+
+		Color border_color = p_swapchain_state->border_color;
+		XrSwapchainStateSamplerOpenGLESFB swapchain_state = {
+			XR_TYPE_SWAPCHAIN_STATE_SAMPLER_OPENGL_ES_FB,
+			nullptr,
+			filter_to_gl(p_swapchain_state->min_filter, p_swapchain_state->mipmap_mode),
+			filter_to_gl(p_swapchain_state->mag_filter),
+			wrap_to_gl(p_swapchain_state->horizontal_wrap),
+			wrap_to_gl(p_swapchain_state->vertical_wrap),
+			swizzle_to_gl(p_swapchain_state->red_swizzle),
+			swizzle_to_gl(p_swapchain_state->green_swizzle),
+			swizzle_to_gl(p_swapchain_state->blue_swizzle),
+			swizzle_to_gl(p_swapchain_state->alpha_swizzle),
+			p_swapchain_state->max_anisotropy,
+			{border_color.r, border_color.g, border_color.b, border_color.a},
+		};
+
+		XrResult result =
+			xrUpdateSwapchainFB(p_swapchain, (XrSwapchainStateBaseHeaderFB*)&swapchain_state);
+		if (XR_FAILED(result)) {
+			print_error(vformat(
+				"OpenXR: Failed to update swapchain [%s]", OpenXRAPI::get_error_string(result)));
+			return;
+		}
+#endif
+	}
+}
+
+void OpenXRFBUpdateSwapchainExtension::update_swapchain_surface_size(
+	XrSwapchain p_swapchain, const Size2i& p_size)
+{
+#ifdef ANDROID_ENABLED
+	if (!data->fb_swapchain_update_state_ext || !data->fb_swapchain_update_state_android_ext) {
+		return;
+	}
+
+	XrSwapchainStateAndroidSurfaceDimensionsFB swapchain_state = {
+		XR_TYPE_SWAPCHAIN_STATE_ANDROID_SURFACE_DIMENSIONS_FB,
+		nullptr,
+		(uint32_t)p_size.width,
+		(uint32_t)p_size.height,
+	};
+
+	XrResult result =
+		xrUpdateSwapchainFB(p_swapchain, (XrSwapchainStateBaseHeaderFB*)&swapchain_state);
+	if (XR_FAILED(result)) {
+		print_error(vformat("OpenXR: Failed to update swapchain surface size [%s]",
+			OpenXRAPI::get_error_string(result)));
+	}
+#endif
+}
+
+uint32_t OpenXRFBUpdateSwapchainExtension::filter_to_gl(
+	OpenXRCompositionLayerExtension::Filter p_filter,
+	OpenXRCompositionLayerExtension::MipmapMode p_mipmap_mode)
+{
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+	switch (p_mipmap_mode) {
+	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_DISABLED:
+		switch (p_filter) {
+		case OpenXRCompositionLayerExtension::Filter::FILTER_NEAREST:
+			return GL_NEAREST;
+		case OpenXRCompositionLayerExtension::Filter::FILTER_LINEAR:
+			return GL_LINEAR;
+		case OpenXRCompositionLayerExtension::Filter::FILTER_CUBIC:
+			return GL_CUBIC_IMG;
+		}
+	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_NEAREST:
+		switch (p_filter) {
+		case OpenXRCompositionLayerExtension::Filter::FILTER_NEAREST:
+			return GL_NEAREST_MIPMAP_NEAREST;
+		case OpenXRCompositionLayerExtension::Filter::FILTER_LINEAR:
+			return GL_LINEAR_MIPMAP_NEAREST;
+		case OpenXRCompositionLayerExtension::Filter::FILTER_CUBIC:
+			return GL_CUBIC_MIPMAP_NEAREST_IMG;
+		}
+	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_LINEAR:
+		switch (p_filter) {
+		case OpenXRCompositionLayerExtension::Filter::FILTER_NEAREST:
+			return GL_NEAREST_MIPMAP_LINEAR;
+		case OpenXRCompositionLayerExtension::Filter::FILTER_LINEAR:
+			return GL_LINEAR_MIPMAP_LINEAR;
+		case OpenXRCompositionLayerExtension::Filter::FILTER_CUBIC:
+			return GL_CUBIC_MIPMAP_LINEAR_IMG;
+		}
+	}
+#endif
+	return 0;
+}
+
+uint32_t OpenXRFBUpdateSwapchainExtension::wrap_to_gl(OpenXRCompositionLayerExtension::Wrap p_wrap)
+{
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+	switch (p_wrap) {
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_CLAMP_TO_BORDER:
+		return GL_CLAMP_TO_BORDER;
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_CLAMP_TO_EDGE:
+		return GL_CLAMP_TO_EDGE;
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_REPEAT:
+		return GL_REPEAT;
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_MIRRORED_REPEAT:
+		return GL_MIRRORED_REPEAT;
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_MIRROR_CLAMP_TO_EDGE:
+		return GL_CLAMP_TO_EDGE;
+	}
+#endif
+	return 0;
+}
+
+uint32_t OpenXRFBUpdateSwapchainExtension::swizzle_to_gl(
+	OpenXRCompositionLayerExtension::Swizzle p_swizzle)
+{
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+	switch (p_swizzle) {
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_RED:
+		return GL_RED;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_GREEN:
+		return GL_GREEN;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_BLUE:
+		return GL_BLUE;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ALPHA:
+		return GL_ALPHA;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ZERO:
+		return GL_ZERO;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ONE:
+		return GL_ONE;
+	}
+#endif
+	return 0;
+}
+
+uint32_t OpenXRFBUpdateSwapchainExtension::filter_to_vk(
+	OpenXRCompositionLayerExtension::Filter p_filter)
+{
+#ifdef XR_USE_GRAPHICS_API_VULKAN
+	switch (p_filter) {
+	case OpenXRCompositionLayerExtension::Filter::FILTER_NEAREST:
+		return VK_FILTER_NEAREST;
+	case OpenXRCompositionLayerExtension::Filter::FILTER_LINEAR:
+		return VK_FILTER_LINEAR;
+	case OpenXRCompositionLayerExtension::Filter::FILTER_CUBIC:
+		return VK_FILTER_CUBIC_EXT;
+	}
+#endif
+	return 0;
+}
+
+uint32_t OpenXRFBUpdateSwapchainExtension::mipmap_mode_to_vk(
+	OpenXRCompositionLayerExtension::MipmapMode p_mipmap_mode)
+{
+#ifdef XR_USE_GRAPHICS_API_VULKAN
+	switch (p_mipmap_mode) {
+	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_DISABLED:
+		return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_NEAREST:
+		return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_LINEAR:
+		return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	}
+#endif
+	return 0;
+}
+
+uint32_t OpenXRFBUpdateSwapchainExtension::wrap_to_vk(OpenXRCompositionLayerExtension::Wrap p_wrap)
+{
+#ifdef XR_USE_GRAPHICS_API_VULKAN
+	switch (p_wrap) {
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_CLAMP_TO_BORDER:
+		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_CLAMP_TO_EDGE:
+		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_REPEAT:
+		return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_MIRRORED_REPEAT:
+		return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	case OpenXRCompositionLayerExtension::Wrap::WRAP_MIRROR_CLAMP_TO_EDGE:
+		return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+	}
+#endif
+	return 0;
+}
+
+uint32_t OpenXRFBUpdateSwapchainExtension::swizzle_to_vk(
+	OpenXRCompositionLayerExtension::Swizzle p_swizzle)
+{
+#ifdef XR_USE_GRAPHICS_API_VULKAN
+	switch (p_swizzle) {
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_RED:
+		return VK_COMPONENT_SWIZZLE_R;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_GREEN:
+		return VK_COMPONENT_SWIZZLE_G;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_BLUE:
+		return VK_COMPONENT_SWIZZLE_B;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ALPHA:
+		return VK_COMPONENT_SWIZZLE_A;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ZERO:
+		return VK_COMPONENT_SWIZZLE_ZERO;
+	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ONE:
+		return VK_COMPONENT_SWIZZLE_ONE;
+	}
+#endif
+	return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRFBFoveationExtension
+
+struct OpenXRFBFoveationExtension::Data
+{
+#ifdef VULKAN_ENABLED
+	XrVulkanSwapchainCreateInfoMETA meta_vulkan_swapchain_create_info;
+#endif
+	String rendering_driver;
+	bool fb_foveation_ext = false;
+	bool fb_foveation_configuration_ext = false;
+	bool fb_foveation_vulkan_ext = false;
+	bool meta_foveation_eye_tracked_ext = false;
+	bool meta_vulkan_swapchain_create_info_ext = false;
+	XrFoveationLevelFB foveation_level = XR_FOVEATION_LEVEL_NONE_FB;
+	XrFoveationDynamicFB foveation_dynamic = XR_FOVEATION_DYNAMIC_DISABLED_FB;
+	bool foveation_with_subsampled_images_enabled = false;
+	bool foveation_with_subsampled_images_active = false;
+	XrSwapchainCreateInfoFoveationFB swapchain_create_info_foveation_fb;
+	XrSystemFoveationEyeTrackedPropertiesMETA meta_foveation_eye_tracked_properties;
+	XrFoveationEyeTrackedProfileCreateInfoMETA meta_foveation_eye_tracked_create_info;
+};
+
+void OpenXRFBFoveationExtension::initialize(const String& p_rendering_driver)
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+	data->rendering_driver = p_rendering_driver;
+}
+
+void OpenXRFBFoveationExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void OpenXRFBFoveationExtension::on_instance_created(const XrInstance p_instance)
+{
+	if (data->fb_foveation_ext) {
+		EXT_INIT_XR_FUNC(xrCreateFoveationProfileFB);
+		EXT_INIT_XR_FUNC(xrDestroyFoveationProfileFB);
+	}
+
+	if (data->meta_foveation_eye_tracked_ext) {
+		EXT_INIT_XR_FUNC(xrGetFoveationEyeTrackedStateMETA);
+	}
+}
+
+void OpenXRFBFoveationExtension::on_instance_destroyed()
+{
+	data->fb_foveation_ext = false;
+	data->fb_foveation_configuration_ext = false;
+	data->meta_foveation_eye_tracked_ext = false;
+}
+
+bool OpenXRFBFoveationExtension::is_enabled()
+{
+	bool enabled = OpenXRFBUpdateSwapchainExtension::is_initialized() &&
+				   OpenXRFBUpdateSwapchainExtension::is_enabled() && data->fb_foveation_ext &&
+				   data->fb_foveation_configuration_ext;
+#ifdef XR_USE_GRAPHICS_API_VULKAN
+	if (data->rendering_driver == "vulkan") {
+		enabled = enabled && data->fb_foveation_vulkan_ext;
+	}
+#endif
+	return enabled;
+}
+
+void* OpenXRFBFoveationExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
+{
+#ifdef XR_USE_GRAPHICS_API_VULKAN
+	if (data->rendering_driver == "vulkan") {
+		data->meta_foveation_eye_tracked_properties.next = p_next_pointer;
+		return &data->meta_foveation_eye_tracked_properties;
+	}
+#endif
+	return p_next_pointer;
+}
+
+void* OpenXRFBFoveationExtension::set_swapchain_create_info_and_get_next_pointer(
+	void* p_next_pointer)
+{
+	void* next = p_next_pointer;
+	if (is_enabled() && data->foveation_level > 0) {
+		data->swapchain_create_info_foveation_fb.next = next;
+		next = &data->swapchain_create_info_foveation_fb;
+
+#ifdef VULKAN_ENABLED
+		if (data->meta_vulkan_swapchain_create_info_ext) {
+			data->meta_vulkan_swapchain_create_info.additionalCreateFlags = 0;
+			if (data->meta_foveation_eye_tracked_ext &&
+				data->meta_foveation_eye_tracked_properties.supportsFoveationEyeTracked) {
+				data->meta_vulkan_swapchain_create_info.additionalCreateFlags |=
+					VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM;
+			}
+			if (data->foveation_with_subsampled_images_enabled &&
+				data->foveation_with_subsampled_images_active) {
+				data->meta_vulkan_swapchain_create_info.additionalCreateFlags |=
+					VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
+			}
+
+			data->meta_vulkan_swapchain_create_info.next = next;
+			next = &data->meta_vulkan_swapchain_create_info;
+		}
+#endif
+	}
+
+	return next;
+}
+
+void OpenXRFBFoveationExtension::on_main_swapchains_created() { update_profile(); }
+
+XrFoveationLevelFB OpenXRFBFoveationExtension::get_foveation_level()
+{
+	return data ? data->foveation_level : XR_FOVEATION_LEVEL_NONE_FB;
+}
+
+void OpenXRFBFoveationExtension::set_foveation_level(XrFoveationLevelFB p_foveation_level)
+{
+	data->foveation_level = p_foveation_level;
+	update_profile();
+}
+
+XrFoveationDynamicFB OpenXRFBFoveationExtension::get_foveation_dynamic()
+{
+	return data ? data->foveation_dynamic : XR_FOVEATION_DYNAMIC_DISABLED_FB;
+}
+
+void OpenXRFBFoveationExtension::set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic)
+{
+	data->foveation_dynamic = p_foveation_dynamic;
+	update_profile();
+}
+
+bool OpenXRFBFoveationExtension::is_foveation_eye_tracked_enabled()
+{
+	return is_enabled() && data->meta_foveation_eye_tracked_ext &&
+		   data->meta_vulkan_swapchain_create_info_ext &&
+		   data->meta_foveation_eye_tracked_properties.supportsFoveationEyeTracked;
+}
+
+void OpenXRFBFoveationExtension::set_foveation_with_subsampled_images_enabled(bool p_enabled)
+{
+	data->foveation_with_subsampled_images_enabled = p_enabled;
+}
+
+bool OpenXRFBFoveationExtension::is_foveation_with_subsampled_images_enabled()
+{
+	return is_enabled() && data->foveation_level > 0 &&
+		   data->meta_vulkan_swapchain_create_info_ext &&
+		   data->foveation_with_subsampled_images_enabled;
+}
+
+void OpenXRFBFoveationExtension::set_foveation_with_subsampled_images_active(bool p_active)
+{
+	data->foveation_with_subsampled_images_active = p_active;
+}
+
+void OpenXRFBFoveationExtension::update_profile() {}
+
+void OpenXRFBFoveationExtension::get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets) {}
+
+HashMap<String, bool*> OpenXRFBFoveationExtension::get_requested_extensions(XrVersion p_version)
+{
+	return HashMap<String, bool*>();
+}
+
+#ifdef None
+#undef None
+#endif
+#ifdef Status
+#undef Status
+#endif
+#ifdef Bool
+#undef Bool
+#endif
+#ifdef True
+#undef True
+#endif
+#ifdef False
+#undef False
+#endif
+#ifdef CursorShape
+#undef CursorShape
+#endif
+#ifdef KeyPress
+#undef KeyPress
+#endif
+#ifdef KeyRelease
+#undef KeyRelease
+#endif
+#ifdef FocusIn
+#undef FocusIn
+#endif
+#ifdef FocusOut
+#undef FocusOut
+#endif
+#ifdef Expose
+#undef Expose
+#endif
+#ifdef FontChange
+#undef FontChange
+#endif
+#ifdef Unsorted
+#undef Unsorted
+#endif
+#ifdef Always
+#undef Always
+#endif
+#ifdef Above
+#undef Above
+#endif
+#ifdef Below
+#undef Below
+#endif
+
+// ============================================================================
+// Merged from modules/openxr/extensions/openxr_interaction_profile_extension.cpp
+// ============================================================================
+
+#include "modules/openxr/openxr_api.h"
+#include "core/math/math_funcs.h"
+#include "core/string/print_string.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
+
+#ifndef XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME
+#define XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME "XR_LOGITECH_mx_ink_stylus_interaction"
+#endif
+
+#ifndef XR_VALVE_FRAME_CONTROLLER_INTERACTION_EXTENSION_NAME
+#define XR_VALVE_FRAME_CONTROLLER_INTERACTION_EXTENSION_NAME "XR_VALVE_frame_controller_interaction"
+#endif
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRInteractionProfileExtension
+
+OpenXRInteractionProfileExtension::OpenXRInteractionProfileExtension(ProfileKind p_kind)
+	: kind(p_kind)
+{
+}
+
+void OpenXRInteractionProfileExtension::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew_arr(OpenXRInteractionProfileExtension, PROFILE_MAX);
+	for (int i = 0; i < PROFILE_MAX; i++) {
+		data[i] = OpenXRInteractionProfileExtension(static_cast<ProfileKind>(i));
+	}
+}
+
+void OpenXRInteractionProfileExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete_arr(data);
+	data = nullptr;
+}
+
+OpenXRInteractionProfileExtension* OpenXRInteractionProfileExtension::get_profile(
+	ProfileKind p_kind)
+{
+	ERR_FAIL_INDEX_V(p_kind, PROFILE_MAX, nullptr);
+	return data ? &data[p_kind] : nullptr;
+}
+
+bool OpenXRInteractionProfileExtension::is_profile_available(ProfileKind p_kind, int p_subindex)
+{
+	ERR_FAIL_INDEX_V(p_kind, PROFILE_MAX, false);
+	return data != nullptr && data[p_kind].is_available(p_subindex);
+}
+
+HashMap<String, bool*> OpenXRInteractionProfileExtension::get_all_requested_extensions(
+	XrVersion p_version)
+{
+	HashMap<String, bool*> result;
+	if (!data) {
+		return result;
+	}
+	for (int i = 0; i < PROFILE_MAX; i++) {
+		HashMap<String, bool*> ext = data[i].get_requested_extensions(p_version);
+		for (const KeyValue<String, bool*>& kv : ext) {
+			result[kv.key] = kv.value;
+		}
+	}
+	return result;
+}
+
+HashMap<String, bool*> OpenXRInteractionProfileExtension::get_requested_extensions(
+	XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	switch (kind) {
+	case PROFILE_HTC_CONTROLLER: {
+		if (p_version < XR_API_VERSION_1_1_0) {
+			request_extensions[XR_HTC_VIVE_COSMOS_CONTROLLER_INTERACTION_EXTENSION_NAME] =
+				&flags[HTC_VIVE_COSMOS];
+			request_extensions[XR_HTC_VIVE_FOCUS3_CONTROLLER_INTERACTION_EXTENSION_NAME] =
+				&flags[HTC_VIVE_FOCUS3];
+		}
+		request_extensions[XR_HTC_HAND_INTERACTION_EXTENSION_NAME] = &flags[HTC_HAND_INTERACTION];
+	} break;
+	case PROFILE_HTC_VIVE_TRACKER: {
+		request_extensions[XR_HTCX_VIVE_TRACKER_INTERACTION_EXTENSION_NAME] = &flags[0];
+	} break;
+	case PROFILE_HUAWEI_CONTROLLER: {
+		request_extensions[XR_HUAWEI_CONTROLLER_INTERACTION_EXTENSION_NAME] = &flags[0];
+	} break;
+	case PROFILE_KHR_GENERIC_CONTROLLER: {
+		if (p_version < XR_API_VERSION_1_1_0) {
+			request_extensions[XR_KHR_GENERIC_CONTROLLER_EXTENSION_NAME] = &flags[0];
+		}
+	} break;
+	case PROFILE_META_CONTROLLER: {
+		if (p_version < XR_API_VERSION_1_1_0) {
+			request_extensions[XR_FB_TOUCH_CONTROLLER_PRO_EXTENSION_NAME] = &flags[META_TOUCH_PRO];
+			request_extensions[XR_META_TOUCH_CONTROLLER_PLUS_EXTENSION_NAME] =
+				&flags[META_TOUCH_PLUS];
+		}
+		request_extensions[XR_FB_TOUCH_CONTROLLER_PROXIMITY_EXTENSION_NAME] =
+			&flags[META_TOUCH_PROXIMITY];
+	} break;
+	case PROFILE_ML2_CONTROLLER: {
+		if (p_version < XR_API_VERSION_1_1_0) {
+			request_extensions[XR_ML_ML2_CONTROLLER_INTERACTION_EXTENSION_NAME] = &flags[0];
+		}
+	} break;
+	case PROFILE_MXINK: {
+		request_extensions[XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME] = &flags[0];
+	} break;
+	case PROFILE_PALM_POSE: {
+		if (p_version < XR_API_VERSION_1_1_0) {
+			request_extensions[XR_EXT_PALM_POSE_EXTENSION_NAME] = &flags[0];
+		}
+	} break;
+	case PROFILE_PICO_CONTROLLER: {
+		request_extensions[XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME] = &flags[0];
+	} break;
+	case PROFILE_VALVE_CONTROLLER: {
+		request_extensions[XR_VALVE_FRAME_CONTROLLER_INTERACTION_EXTENSION_NAME] = &flags[0];
+	} break;
+	case PROFILE_WMR_CONTROLLER: {
+		if (p_version < XR_API_VERSION_1_1_0) {
+			request_extensions[XR_EXT_HP_MIXED_REALITY_CONTROLLER_EXTENSION_NAME] =
+				&flags[WMR_HPMR];
+			request_extensions[XR_EXT_SAMSUNG_ODYSSEY_CONTROLLER_EXTENSION_NAME] =
+				&flags[WMR_SAMSUNG_ODESSY];
+		}
+		request_extensions[XR_MSFT_HAND_INTERACTION_EXTENSION_NAME] = &flags[WMR_HAND_INTERACTION];
+	} break;
+	case PROFILE_HAND_INTERACTION: {
+		request_extensions[XR_EXT_HAND_INTERACTION_EXTENSION_NAME] = &flags[0];
+	} break;
+	case PROFILE_LOCAL_FLOOR: {
+		if (p_version < XR_API_VERSION_1_1_0) {
+			request_extensions[XR_EXT_LOCAL_FLOOR_EXTENSION_NAME] = &flags[0];
+		}
+	} break;
+	case PROFILE_DPAD_BINDING: {
+		request_extensions[XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME] = &flags[0];
+		request_extensions[XR_EXT_DPAD_BINDING_EXTENSION_NAME] = &flags[1];
+	} break;
+	case PROFILE_VALVE_ANALOG_THRESHOLD: {
+		request_extensions[XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME] = &flags[0];
+		request_extensions[XR_VALVE_ANALOG_THRESHOLD_EXTENSION_NAME] = &flags[1];
+	} break;
+	case PROFILE_COMPOSITION_LAYER_DEPTH: {
+		request_extensions[XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME] = &flags[0];
+	} break;
+	case PROFILE_MAX:
+		break;
+	}
+
+	return request_extensions;
+}
+
+PackedStringArray OpenXRInteractionProfileExtension::get_suggested_tracker_names() const
+{
+	switch (kind) {
+	case PROFILE_HTC_CONTROLLER: {
+		return PackedStringArray{
+			"/user/hand_htc/left",
+			"/user/hand_htc/right",
+		};
+	}
+	case PROFILE_HTC_VIVE_TRACKER: {
+		return PackedStringArray{
+			"/user/vive_tracker_htcx/role/handheld_object",
+			"/user/vive_tracker_htcx/role/left_foot",
+			"/user/vive_tracker_htcx/role/right_foot",
+			"/user/vive_tracker_htcx/role/left_shoulder",
+			"/user/vive_tracker_htcx/role/right_shoulder",
+			"/user/vive_tracker_htcx/role/left_elbow",
+			"/user/vive_tracker_htcx/role/right_elbow",
+			"/user/vive_tracker_htcx/role/left_knee",
+			"/user/vive_tracker_htcx/role/right_knee",
+			"/user/vive_tracker_htcx/role/waist",
+			"/user/vive_tracker_htcx/role/chest",
+			"/user/vive_tracker_htcx/role/camera",
+			"/user/vive_tracker_htcx/role/keyboard",
+			"/user/vive_tracker_htcx/role/left_wrist",
+			"/user/vive_tracker_htcx/role/right_wrist",
+			"/user/vive_tracker_htcx/role/left_ankle",
+			"/user/vive_tracker_htcx/role/right_ankle",
+		};
+	}
+	default:
+		return PackedStringArray();
+	}
+}
+
+bool OpenXRInteractionProfileExtension::on_event_polled(const XrEventDataBuffer& p_event)
+{
+	if (kind == PROFILE_HTC_VIVE_TRACKER &&
+		p_event.type == XR_TYPE_EVENT_DATA_VIVE_TRACKER_CONNECTED_HTCX) {
+		print_verbose("OpenXR EVENT: VIVE tracker connected");
+		return true;
+	}
+	return false;
+}
+
+void OpenXRInteractionProfileExtension::on_register_metadata()
+{
+	if (kind != PROFILE_HAND_INTERACTION) {
+		return;
+	}
+
+	const String profile_path = "/interaction_profiles/ext/hand_interaction_ext";
+	OpenXRInteractionProfileMetadata::register_interaction_profile(
+		"Hand interaction", profile_path, XR_EXT_HAND_INTERACTION_EXTENSION_NAME);
+	for (const String user_path : {"/user/hand/left", "/user/hand/right"}) {
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Grip pose", user_path,
+			user_path + "/input/grip/pose", "", OpenXRAction::OPENXR_ACTION_POSE);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Aim pose", user_path,
+			user_path + "/input/aim/pose", "", OpenXRAction::OPENXR_ACTION_POSE);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Pinch pose", user_path,
+			user_path + "/input/pinch_ext/pose", "", OpenXRAction::OPENXR_ACTION_POSE);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Poke pose", user_path,
+			user_path + "/input/poke_ext/pose", "", OpenXRAction::OPENXR_ACTION_POSE);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Grip surface pose",
+			user_path, user_path + "/input/grip_surface/pose",
+			XR_EXT_PALM_POSE_EXTENSION_NAME "," XR_KHR_MAINTENANCE1_EXTENSION_NAME
+											"," XR_OPENXR_1_1_NAME,
+			OpenXRAction::OPENXR_ACTION_POSE);
+
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Pinch", user_path,
+			user_path + "/input/pinch_ext/value", "", OpenXRAction::OPENXR_ACTION_FLOAT);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Pinch ready", user_path,
+			user_path + "/input/pinch_ext/ready_ext", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Aim activate", user_path,
+			user_path + "/input/aim_activate_ext/value", "", OpenXRAction::OPENXR_ACTION_FLOAT);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Aim activate ready",
+			user_path, user_path + "/input/aim_activate_ext/ready_ext", "",
+			OpenXRAction::OPENXR_ACTION_BOOL);
+
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Grasp", user_path,
+			user_path + "/input/grasp_ext/value", "", OpenXRAction::OPENXR_ACTION_FLOAT);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Grasp ready", user_path,
+			user_path + "/input/grasp_ext/ready_ext", "", OpenXRAction::OPENXR_ACTION_BOOL);
+
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Swipe left", user_path,
+			user_path + "/input/swipe_left_meta/click", "XR_META_hand_tracking_microgestures",
+			OpenXRAction::OPENXR_ACTION_BOOL);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Swipe right", user_path,
+			user_path + "/input/swipe_right_meta/click", "XR_META_hand_tracking_microgestures",
+			OpenXRAction::OPENXR_ACTION_BOOL);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Swipe forward", user_path,
+			user_path + "/input/swipe_forward_meta/click", "XR_META_hand_tracking_microgestures",
+			OpenXRAction::OPENXR_ACTION_BOOL);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Swipe backward", user_path,
+			user_path + "/input/swipe_backward_meta/click", "XR_META_hand_tracking_microgestures",
+			OpenXRAction::OPENXR_ACTION_BOOL);
+		OpenXRInteractionProfileMetadata::register_io_path(profile_path, "Tap thumb", user_path,
+			user_path + "/input/tap_thumb_meta/click", "XR_META_hand_tracking_microgestures",
+			OpenXRAction::OPENXR_ACTION_BOOL);
+	}
+}
+
+bool OpenXRInteractionProfileExtension::is_available(int p_subindex) const
+{
+	if (kind == PROFILE_DPAD_BINDING || kind == PROFILE_VALVE_ANALOG_THRESHOLD) {
+		return flags[0] && flags[1];
+	}
+	ERR_FAIL_INDEX_V(p_subindex, 3, false);
+	return flags[p_subindex];
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRDpadBindingModifier
+
+OpenXRDpadBindingModifier::OpenXRDpadBindingModifier()
+{
+	ERR_FAIL_COND(
+		dpad_bindings_data.resize_initialized(sizeof(XrInteractionProfileDpadBindingEXT)) != OK);
+	dpad_bindings = (XrInteractionProfileDpadBindingEXT*)dpad_bindings_data.ptrw();
+
+	dpad_bindings->type = XR_TYPE_INTERACTION_PROFILE_DPAD_BINDING_EXT;
+	dpad_bindings->next = nullptr;
+
+	dpad_bindings->forceThreshold = 0.6;
+	dpad_bindings->forceThresholdReleased = 0.4;
+	dpad_bindings->centerRegion = 0.1;
+	dpad_bindings->wedgeAngle = Math::deg_to_rad(90.0);
+	dpad_bindings->isSticky = false;
+}
+
+void OpenXRDpadBindingModifier::set_action_set(const Ref<OpenXRActionSet>& p_action_set)
+{
+	action_set = p_action_set;
+}
+
+Ref<OpenXRActionSet> OpenXRDpadBindingModifier::get_action_set() const { return action_set; }
+
+void OpenXRDpadBindingModifier::set_input_path(const String& p_input_path)
+{
+	input_path = p_input_path;
+	emit_changed();
+}
+
+String OpenXRDpadBindingModifier::get_input_path() const { return input_path; }
+
+void OpenXRDpadBindingModifier::set_threshold(float p_threshold)
+{
+	ERR_FAIL_NULL(dpad_bindings);
+	ERR_FAIL_COND(p_threshold < 0.0 || p_threshold > 1.0);
+
+	dpad_bindings->forceThreshold = p_threshold;
+	emit_changed();
+}
+
+float OpenXRDpadBindingModifier::get_threshold() const
+{
+	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
+	return dpad_bindings->forceThreshold;
+}
+
+void OpenXRDpadBindingModifier::set_threshold_released(float p_threshold)
+{
+	ERR_FAIL_NULL(dpad_bindings);
+	ERR_FAIL_COND(p_threshold < 0.0 || p_threshold > 1.0);
+
+	dpad_bindings->forceThresholdReleased = p_threshold;
+	emit_changed();
+}
+
+float OpenXRDpadBindingModifier::get_threshold_released() const
+{
+	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
+	return dpad_bindings->forceThresholdReleased;
+}
+
+void OpenXRDpadBindingModifier::set_center_region(float p_center_region)
+{
+	ERR_FAIL_NULL(dpad_bindings);
+	ERR_FAIL_COND(p_center_region < 0.0 || p_center_region > 1.0);
+
+	dpad_bindings->centerRegion = p_center_region;
+	emit_changed();
+}
+
+float OpenXRDpadBindingModifier::get_center_region() const
+{
+	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
+	return dpad_bindings->centerRegion;
+}
+
+void OpenXRDpadBindingModifier::set_wedge_angle(float p_wedge_angle)
+{
+	ERR_FAIL_NULL(dpad_bindings);
+	dpad_bindings->wedgeAngle = p_wedge_angle;
+	emit_changed();
+}
+
+float OpenXRDpadBindingModifier::get_wedge_angle() const
+{
+	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
+	return dpad_bindings->wedgeAngle;
+}
+
+void OpenXRDpadBindingModifier::set_wedge_angle_deg(float p_wedge_angle)
+{
+	ERR_FAIL_NULL(dpad_bindings);
+	dpad_bindings->wedgeAngle = Math::deg_to_rad(p_wedge_angle);
+	emit_changed();
+}
+
+float OpenXRDpadBindingModifier::get_wedge_angle_deg() const
+{
+	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
+	return Math::rad_to_deg(dpad_bindings->wedgeAngle);
+}
+
+void OpenXRDpadBindingModifier::set_is_sticky(bool p_sticky)
+{
+	ERR_FAIL_NULL(dpad_bindings);
+	dpad_bindings->isSticky = p_sticky;
+	emit_changed();
+}
+
+bool OpenXRDpadBindingModifier::get_is_sticky() const
+{
+	ERR_FAIL_NULL_V(dpad_bindings, false);
+	return dpad_bindings->isSticky;
+}
+
+void OpenXRDpadBindingModifier::set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic)
+{
+	on_haptic = p_haptic;
+	emit_changed();
+}
+
+Ref<OpenXRHapticBase> OpenXRDpadBindingModifier::get_on_haptic() const { return on_haptic; }
+
+void OpenXRDpadBindingModifier::set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic)
+{
+	off_haptic = p_haptic;
+	emit_changed();
+}
+
+Ref<OpenXRHapticBase> OpenXRDpadBindingModifier::get_off_haptic() const { return off_haptic; }
+
+PackedByteArray OpenXRDpadBindingModifier::get_ip_modification()
+{
+	ERR_FAIL_NULL_V(dpad_bindings, PackedByteArray());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedByteArray());
+
+	if (!OpenXRInteractionProfileExtension::is_initialized() ||
+		!OpenXRInteractionProfileExtension::is_profile_available(
+			OpenXRInteractionProfileExtension::PROFILE_DPAD_BINDING)) {
+		WARN_PRINT("DPad binding extension is not enabled or available.");
+		return PackedByteArray();
+	}
+
+	dpad_bindings->binding = OpenXRAPI::get_xr_path(input_path);
+	ERR_FAIL_COND_V(dpad_bindings->binding == XR_NULL_PATH, PackedByteArray());
+
+	ERR_FAIL_COND_V(action_set.is_null(), PackedByteArray());
+	RID action_set_rid = OpenXRAPI::find_action_set(action_set->get_name());
+	ERR_FAIL_COND_V(!action_set_rid.is_valid(), PackedByteArray());
+	dpad_bindings->actionSet = OpenXRAPI::action_set_get_handle(action_set_rid);
+
+	dpad_bindings->onHaptic = on_haptic.is_valid() ? on_haptic->get_xr_structure() : nullptr;
+	dpad_bindings->offHaptic = off_haptic.is_valid() ? off_haptic->get_xr_structure() : nullptr;
+
+	return dpad_bindings_data;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRAnalogThresholdModifier
+
+OpenXRAnalogThresholdModifier::OpenXRAnalogThresholdModifier()
+{
+	analog_threshold.type = XR_TYPE_INTERACTION_PROFILE_ANALOG_THRESHOLD_VALVE;
+	analog_threshold.next = nullptr;
+
+	analog_threshold.onThreshold = 0.6;
+	analog_threshold.offThreshold = 0.4;
+}
+
+void OpenXRAnalogThresholdModifier::set_on_threshold(float p_threshold)
+{
+	ERR_FAIL_COND(p_threshold < 0.0 || p_threshold > 1.0);
+
+	analog_threshold.onThreshold = p_threshold;
+	emit_changed();
+}
+
+float OpenXRAnalogThresholdModifier::get_on_threshold() const
+{
+	return analog_threshold.onThreshold;
+}
+
+void OpenXRAnalogThresholdModifier::set_off_threshold(float p_threshold)
+{
+	ERR_FAIL_COND(p_threshold < 0.0 || p_threshold > 1.0);
+
+	analog_threshold.offThreshold = p_threshold;
+	emit_changed();
+}
+
+float OpenXRAnalogThresholdModifier::get_off_threshold() const
+{
+	return analog_threshold.offThreshold;
+}
+
+void OpenXRAnalogThresholdModifier::set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic)
+{
+	on_haptic = p_haptic;
+	emit_changed();
+}
+
+Ref<OpenXRHapticBase> OpenXRAnalogThresholdModifier::get_on_haptic() const { return on_haptic; }
+
+void OpenXRAnalogThresholdModifier::set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic)
+{
+	off_haptic = p_haptic;
+	emit_changed();
+}
+
+Ref<OpenXRHapticBase> OpenXRAnalogThresholdModifier::get_off_haptic() const { return off_haptic; }
+
+PackedByteArray OpenXRAnalogThresholdModifier::get_ip_modification()
+{
+	PackedByteArray ret;
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
+
+	if (!OpenXRInteractionProfileExtension::is_initialized() ||
+		!OpenXRInteractionProfileExtension::is_profile_available(
+			OpenXRInteractionProfileExtension::PROFILE_VALVE_ANALOG_THRESHOLD)) {
+		WARN_PRINT("Analog threshold extension is not enabled or available.");
+		return ret;
+	}
+
+	ERR_FAIL_NULL_V(ip_binding, ret);
+
+	Ref<OpenXRAction> action = ip_binding->get_action();
+	ERR_FAIL_COND_V(action.is_null(), ret);
+
+	Ref<OpenXRActionSet> action_set = action->get_action_set();
+	ERR_FAIL_COND_V(action_set.is_null(), ret);
+	RID action_set_rid = OpenXRAPI::find_action_set(action_set->get_name());
+	ERR_FAIL_COND_V(!action_set_rid.is_valid(), ret);
+
+	RID action_rid = OpenXRAPI::find_action(action->get_name(), action_set_rid);
+	ERR_FAIL_COND_V(!action_rid.is_valid(), ret);
+
+	analog_threshold.action = OpenXRAPI::action_get_handle(action_rid);
+
+	analog_threshold.binding = OpenXRAPI::get_xr_path(ip_binding->get_binding_path());
+	ERR_FAIL_COND_V(analog_threshold.binding == XR_NULL_PATH, ret);
+
+	analog_threshold.onHaptic = on_haptic.is_valid() ? on_haptic->get_xr_structure() : nullptr;
+	analog_threshold.offHaptic = off_haptic.is_valid() ? off_haptic->get_xr_structure() : nullptr;
+
+	ERR_FAIL_COND_V(ret.resize(sizeof(XrInteractionProfileAnalogThresholdVALVE)) != OK, ret);
+	memcpy(ret.ptrw(), &analog_threshold, sizeof(XrInteractionProfileAnalogThresholdVALVE));
+
+	return ret;
+}
+
+// ============================================================================
+// Merged from modules/openxr/extensions/spatial_entities/openxr_spatial_entities.cpp
+// ============================================================================
+
+#include <cstring>
+#include <openxr/openxr.h>
+#include "modules/openxr/openxr_api.h"
+#include "core/config/project_settings.h"
+#include "modules/openxr/extensions/openxr_extensions.h"
+#include "scene/resources/3d/primitive_meshes.h"
+#include "servers/xr/xr_server.h"
+
+#ifndef PHYSICS_3D_DISABLED
+#include "scene/resources/3d/shape_3d.h"
+#endif
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialCapabilityConfigurationBaseHeader
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::OpenXRSpatialCapabilityConfigurationBaseHeader(
+	CapabilityType p_capability_type)
+{
+	set_capability_type(p_capability_type);
+}
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::~OpenXRSpatialCapabilityConfigurationBaseHeader() {}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::set_capability_type(
+	CapabilityType p_capability_type)
+{
+	capability_type = p_capability_type;
+	enabled_components.clear();
+
+	if (capability_type == CAPABILITY_ARUCO) {
+		int dict = GLOBAL_GET_CACHED(int, "xr/openxr/extensions/spatial_entity/aruco_dict");
+		aruco_dict = (XrSpatialMarkerArucoDictEXT)(XR_SPATIAL_MARKER_ARUCO_DICT_4X4_50_EXT + dict);
+	}
+	else if (capability_type == CAPABILITY_APRIL_TAG) {
+		int dict = GLOBAL_GET_CACHED(int, "xr/openxr/extensions/spatial_entity/april_tag_dict");
+		april_dict =
+			(XrSpatialMarkerAprilTagDictEXT)(XR_SPATIAL_MARKER_APRIL_TAG_DICT_16H5_EXT + dict);
+	}
+}
+
+bool OpenXRSpatialCapabilityConfigurationBaseHeader::has_valid_configuration() const
+{
+	switch (capability_type) {
+	case CAPABILITY_ANCHOR: {
+		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
+		return OpenXRSpatialAnchorCapability::is_spatial_anchor_supported();
+	}
+	case CAPABILITY_PLANE_TRACKING: {
+		ERR_FAIL_COND_V(!OpenXRSpatialPlaneTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialPlaneTrackingCapability::is_supported();
+	}
+	case CAPABILITY_QR_CODE: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported();
+	}
+	case CAPABILITY_MICRO_QR_CODE: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported();
+	}
+	case CAPABILITY_ARUCO: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialMarkerTrackingCapability::is_aruco_supported();
+	}
+	case CAPABILITY_APRIL_TAG: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
+		return OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported();
+	}
+	case CAPABILITY_NONE:
+	default:
+		return false;
+	}
+}
+
+uint64_t OpenXRSpatialCapabilityConfigurationBaseHeader::_get_configurationgd()
+{
+	return (uint64_t)get_configuration();
+}
+
+XrSpatialCapabilityConfigurationBaseHeaderEXT*
+OpenXRSpatialCapabilityConfigurationBaseHeader::get_configuration()
+{
+	switch (capability_type) {
+	case CAPABILITY_ANCHOR: {
+		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialAnchorCapability::is_spatial_anchor_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT);
+		if (OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
+			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT);
+		}
+
+		config.anchor = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ANCHOR_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_ANCHOR_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.anchor;
+	}
+	case CAPABILITY_PLANE_TRACKING: {
+		ERR_FAIL_COND_V(!OpenXRSpatialPlaneTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialPlaneTrackingCapability::is_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PLANE_ALIGNMENT_EXT);
+
+		if (get_supports_mesh_2d()) {
+			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT);
+		}
+		else if (get_supports_polygons()) {
+			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT);
+		}
+		if (get_supports_labels()) {
+			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT);
+		}
+
+		config.plane = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_PLANE_TRACKING_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.plane;
+	}
+	case CAPABILITY_QR_CODE: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+
+		config.qrcode = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_QR_CODE_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.qrcode;
+	}
+	case CAPABILITY_MICRO_QR_CODE: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+
+		config.micro_qrcode = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_MICRO_QR_CODE_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.micro_qrcode;
+	}
+	case CAPABILITY_ARUCO: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialMarkerTrackingCapability::is_aruco_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+
+		config.aruco = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ARUCO_MARKER_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+			aruco_dict,
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.aruco;
+	}
+	case CAPABILITY_APRIL_TAG: {
+		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
+		if (!OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported()) {
+			return nullptr;
+		}
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
+
+		enabled_components.clear();
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
+		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
+
+		config.april_tag = {
+			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_APRIL_TAG_EXT,
+			nullptr,
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT,
+			(uint32_t)enabled_components.size(),
+			enabled_components.ptr(),
+			april_dict,
+		};
+		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.april_tag;
+	}
+	case CAPABILITY_NONE:
+	default:
+		return nullptr;
+	}
+}
+
+bool OpenXRSpatialCapabilityConfigurationBaseHeader::get_supports_mesh_2d()
+{
+	if (supports_mesh_2d == -1) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+		supports_mesh_2d =
+			OpenXRSpatialEntityExtension::supports_component_type(
+				XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT, XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT)
+				? 1
+				: 0;
+	}
+
+	return supports_mesh_2d == 1;
+}
+
+bool OpenXRSpatialCapabilityConfigurationBaseHeader::get_supports_polygons()
+{
+	if (supports_polygons == -1) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+		supports_polygons =
+			OpenXRSpatialEntityExtension::supports_component_type(
+				XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT, XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT)
+				? 1
+				: 0;
+	}
+
+	return supports_polygons == 1;
+}
+
+bool OpenXRSpatialCapabilityConfigurationBaseHeader::get_supports_labels()
+{
+	if (supports_labels == -1) {
+		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+		supports_labels =
+			OpenXRSpatialEntityExtension::supports_component_type(
+				XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,
+				XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT)
+				? 1
+				: 0;
+	}
+
+	return supports_labels == 1;
+}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::set_aruco_dict(
+	XrSpatialMarkerArucoDictEXT p_dict)
+{
+	aruco_dict = p_dict;
+}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::_set_aruco_dict(ArucoDict p_dict)
+{
+	set_aruco_dict((XrSpatialMarkerArucoDictEXT)p_dict);
+}
+
+XrSpatialMarkerArucoDictEXT OpenXRSpatialCapabilityConfigurationBaseHeader::get_aruco_dict() const
+{
+	return aruco_dict;
+}
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::ArucoDict
+OpenXRSpatialCapabilityConfigurationBaseHeader::_get_aruco_dict() const
+{
+	return (ArucoDict)get_aruco_dict();
+}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::set_april_dict(
+	XrSpatialMarkerAprilTagDictEXT p_dict)
+{
+	april_dict = p_dict;
+}
+
+void OpenXRSpatialCapabilityConfigurationBaseHeader::_set_april_dict(AprilTagDict p_dict)
+{
+	set_april_dict((XrSpatialMarkerAprilTagDictEXT)p_dict);
+}
+
+XrSpatialMarkerAprilTagDictEXT
+OpenXRSpatialCapabilityConfigurationBaseHeader::get_april_dict() const
+{
+	return april_dict;
+}
+
+OpenXRSpatialCapabilityConfigurationBaseHeader::AprilTagDict
+OpenXRSpatialCapabilityConfigurationBaseHeader::_get_april_dict() const
+{
+	return (AprilTagDict)get_april_dict();
+}
+
+PackedInt64Array OpenXRSpatialCapabilityConfigurationBaseHeader::_get_enabled_components() const
+{
+	PackedInt64Array components;
+
+	for (const XrSpatialComponentTypeEXT& component_type : enabled_components) {
+		components.push_back((int64_t)component_type);
+	}
+
+	return components;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialComponentData
+
+OpenXRSpatialComponentData::OpenXRSpatialComponentData(ComponentKind p_kind)
+	: component_kind(p_kind)
+{
+	_init_structure_header();
+}
+
+OpenXRSpatialComponentData::~OpenXRSpatialComponentData() { _free_buffers(); }
+
+void OpenXRSpatialComponentData::_free_buffers()
+{
+	if (data_ptr != nullptr) {
+		memfree(data_ptr);
+		data_ptr = nullptr;
+	}
+	if (entity_states_ptr != nullptr) {
+		memfree(entity_states_ptr);
+		entity_states_ptr = nullptr;
+	}
+	capacity = 0;
+}
+
+void OpenXRSpatialComponentData::_init_structure_header()
+{
+	switch (component_kind) {
+	case COMPONENT_QUERY_RESULT:
+		structure.query_result = {
+			XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT,
+			nullptr,
+			capacity,
+			0,
+			static_cast<XrSpatialEntityIdEXT*>(data_ptr),
+			capacity,
+			0,
+			entity_states_ptr,
+		};
+		break;
+	case COMPONENT_BOUNDED_2D:
+		structure.bounded2d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_BOUNDED_2D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialBounded2DDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_BOUNDED_3D:
+		structure.bounded3d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_BOUNDED_3D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrBoxf*>(data_ptr),
+		};
+		break;
+	case COMPONENT_PARENT:
+		structure.parent_list = {
+			XR_TYPE_SPATIAL_COMPONENT_PARENT_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialEntityIdEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_MESH_2D:
+		structure.mesh2d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_MESH_2D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialMeshDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_MESH_3D:
+		structure.mesh3d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_MESH_3D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialMeshDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_ANCHOR:
+		structure.anchor_list = {
+			XR_TYPE_SPATIAL_COMPONENT_ANCHOR_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrPosef*>(data_ptr),
+		};
+		break;
+	case COMPONENT_PERSISTENCE:
+		structure.persistence_list = {
+			XR_TYPE_SPATIAL_COMPONENT_PERSISTENCE_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialPersistenceDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_PLANE_ALIGNMENT:
+		structure.plane_alignment_list = {
+			XR_TYPE_SPATIAL_COMPONENT_PLANE_ALIGNMENT_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialPlaneAlignmentEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_POLYGON_2D:
+		structure.polygon2d_list = {
+			XR_TYPE_SPATIAL_COMPONENT_POLYGON_2D_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialPolygon2DDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_PLANE_SEMANTIC_LABEL:
+		structure.plane_semantic_label_list = {
+			XR_TYPE_SPATIAL_COMPONENT_PLANE_SEMANTIC_LABEL_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialPlaneSemanticLabelEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_MARKER:
+		structure.marker_list = {
+			XR_TYPE_SPATIAL_COMPONENT_MARKER_LIST_EXT,
+			nullptr,
+			capacity,
+			static_cast<XrSpatialMarkerDataEXT*>(data_ptr),
+		};
+		break;
+	case COMPONENT_NONE:
+	default:
+		break;
+	}
+}
+
+void OpenXRSpatialComponentData::set_component_kind(ComponentKind p_kind)
+{
+	if (component_kind == p_kind) {
+		return;
+	}
+	_free_buffers();
+	component_kind = p_kind;
+	_init_structure_header();
+}
+
+void OpenXRSpatialComponentData::set_capacity(uint32_t p_capacity)
+{
+	if (component_kind == COMPONENT_NONE) {
+		_free_buffers();
+		return;
+	}
+
+	if (p_capacity == 0) {
+		_free_buffers();
+		_init_structure_header();
+		return;
+	}
+
+	size_t elem_size = 0;
+	switch (component_kind) {
+	case COMPONENT_QUERY_RESULT:
+		elem_size = sizeof(XrSpatialEntityIdEXT);
+		break;
+	case COMPONENT_BOUNDED_2D:
+		elem_size = sizeof(XrSpatialBounded2DDataEXT);
+		break;
+	case COMPONENT_BOUNDED_3D:
+		elem_size = sizeof(XrBoxf);
+		break;
+	case COMPONENT_PARENT:
+		elem_size = sizeof(XrSpatialEntityIdEXT);
+		break;
+	case COMPONENT_MESH_2D:
+	case COMPONENT_MESH_3D:
+		elem_size = sizeof(XrSpatialMeshDataEXT);
+		break;
+	case COMPONENT_ANCHOR:
+		elem_size = sizeof(XrPosef);
+		break;
+	case COMPONENT_PERSISTENCE:
+		elem_size = sizeof(XrSpatialPersistenceDataEXT);
+		break;
+	case COMPONENT_PLANE_ALIGNMENT:
+		elem_size = sizeof(XrSpatialPlaneAlignmentEXT);
+		break;
+	case COMPONENT_POLYGON_2D:
+		elem_size = sizeof(XrSpatialPolygon2DDataEXT);
+		break;
+	case COMPONENT_PLANE_SEMANTIC_LABEL:
+		elem_size = sizeof(XrSpatialPlaneSemanticLabelEXT);
+		break;
+	case COMPONENT_MARKER:
+		elem_size = sizeof(XrSpatialMarkerDataEXT);
+		break;
+	case COMPONENT_NONE:
+	default:
+		return;
+	}
+
+	uint32_t old_capacity = capacity;
+	data_ptr = memrealloc(data_ptr, elem_size * p_capacity);
+	ERR_FAIL_NULL(data_ptr);
+	if (p_capacity > old_capacity) {
+		memset(static_cast<uint8_t*>(data_ptr) + elem_size * old_capacity, 0,
+			elem_size * (p_capacity - old_capacity));
+	}
+
+	if (component_kind == COMPONENT_QUERY_RESULT) {
+		entity_states_ptr = static_cast<XrSpatialEntityTrackingStateEXT*>(memrealloc(
+			entity_states_ptr, sizeof(XrSpatialEntityTrackingStateEXT) * p_capacity));
+		ERR_FAIL_NULL(entity_states_ptr);
+		if (p_capacity > old_capacity) {
+			memset(entity_states_ptr + old_capacity, 0,
+				sizeof(XrSpatialEntityTrackingStateEXT) * (p_capacity - old_capacity));
+		}
+	}
+
+	capacity = p_capacity;
+	_init_structure_header();
+}
+
+int64_t OpenXRSpatialComponentData::_get_component_typegd() const
+{
+	return (int64_t)get_component_type();
+}
+
+XrSpatialComponentTypeEXT OpenXRSpatialComponentData::get_component_type() const
+{
+	switch (component_kind) {
+	case COMPONENT_BOUNDED_2D:
+		return XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT;
+	case COMPONENT_BOUNDED_3D:
+		return XR_SPATIAL_COMPONENT_TYPE_BOUNDED_3D_EXT;
+	case COMPONENT_PARENT:
+		return XR_SPATIAL_COMPONENT_TYPE_PARENT_EXT;
+	case COMPONENT_MESH_2D:
+		return XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT;
+	case COMPONENT_MESH_3D:
+		return XR_SPATIAL_COMPONENT_TYPE_MESH_3D_EXT;
+	case COMPONENT_ANCHOR:
+		return XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT;
+	case COMPONENT_PERSISTENCE:
+		return XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT;
+	case COMPONENT_PLANE_ALIGNMENT:
+		return XR_SPATIAL_COMPONENT_TYPE_PLANE_ALIGNMENT_EXT;
+	case COMPONENT_POLYGON_2D:
+		return XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT;
+	case COMPONENT_PLANE_SEMANTIC_LABEL:
+		return XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT;
+	case COMPONENT_MARKER:
+		return XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT;
+	case COMPONENT_QUERY_RESULT:
+	case COMPONENT_NONE:
+	default:
+		return XR_SPATIAL_COMPONENT_TYPE_MAX_ENUM_EXT;
+	}
+}
+
+void* OpenXRSpatialComponentData::get_structure_data(void* p_next)
+{
+	switch (component_kind) {
+	case COMPONENT_QUERY_RESULT:
+		structure.query_result.next = p_next;
+		structure.query_result.entityIdCountOutput = 0;
+		structure.query_result.entityStateCountOutput = 0;
+		return &structure.query_result;
+	case COMPONENT_BOUNDED_2D:
+		structure.bounded2d_list.next = p_next;
+		return &structure.bounded2d_list;
+	case COMPONENT_BOUNDED_3D:
+		structure.bounded3d_list.next = p_next;
+		return &structure.bounded3d_list;
+	case COMPONENT_PARENT:
+		structure.parent_list.next = p_next;
+		return &structure.parent_list;
+	case COMPONENT_MESH_2D:
+		structure.mesh2d_list.next = p_next;
+		return &structure.mesh2d_list;
+	case COMPONENT_MESH_3D:
+		structure.mesh3d_list.next = p_next;
+		return &structure.mesh3d_list;
+	case COMPONENT_ANCHOR:
+		structure.anchor_list.next = p_next;
+		return &structure.anchor_list;
+	case COMPONENT_PERSISTENCE:
+		structure.persistence_list.next = p_next;
+		return &structure.persistence_list;
+	case COMPONENT_PLANE_ALIGNMENT:
+		structure.plane_alignment_list.next = p_next;
+		return &structure.plane_alignment_list;
+	case COMPONENT_POLYGON_2D:
+		structure.polygon2d_list.next = p_next;
+		return &structure.polygon2d_list;
+	case COMPONENT_PLANE_SEMANTIC_LABEL:
+		structure.plane_semantic_label_list.next = p_next;
+		return &structure.plane_semantic_label_list;
+	case COMPONENT_MARKER:
+		structure.marker_list.next = p_next;
+		return &structure.marker_list;
+	case COMPONENT_NONE:
+	default:
+		return nullptr;
+	}
+}
+
+XrSpatialEntityIdEXT OpenXRSpatialComponentData::get_entity_id(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_QUERY_RESULT, XR_NULL_ENTITY);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_NULL_ENTITY);
+
+	return static_cast<const XrSpatialEntityIdEXT*>(data_ptr)[p_index];
+}
+
+uint64_t OpenXRSpatialComponentData::_get_entity_id(int64_t p_index) const
+{
+	return (uint64_t)get_entity_id(p_index);
+}
+
+XrSpatialEntityTrackingStateEXT OpenXRSpatialComponentData::get_entity_state(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(
+		component_kind != COMPONENT_QUERY_RESULT, XR_SPATIAL_ENTITY_TRACKING_STATE_MAX_ENUM_EXT);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_ENTITY_TRACKING_STATE_MAX_ENUM_EXT);
+
+	return entity_states_ptr[p_index];
+}
+
+String OpenXRSpatialComponentData::get_entity_tracking_state_name(
+	XrSpatialEntityTrackingStateEXT p_tracking_state)
+{
+	XR_ENUM_SWITCH(XrSpatialEntityTrackingStateEXT, p_tracking_state)
+}
+
+Transform3D OpenXRSpatialComponentData::get_center_pose(int64_t p_index) const
+{
+	if (component_kind == COMPONENT_BOUNDED_2D) {
+		return get_center_pose_2d(p_index);
+	}
+	if (component_kind == COMPONENT_BOUNDED_3D) {
+		return get_center_pose_3d(p_index);
+	}
+	ERR_FAIL_V(Transform3D());
+}
+
+Transform3D OpenXRSpatialComponentData::get_center_pose_2d(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_2D, Transform3D());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
+
+	const XrSpatialBounded2DDataEXT* arr =
+		static_cast<const XrSpatialBounded2DDataEXT*>(data_ptr);
+	return OpenXRAPI::transform_from_pose(arr[p_index].center);
+}
+
+Transform3D OpenXRSpatialComponentData::get_center_pose_3d(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_3D, Transform3D());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
+
+	const XrBoxf* arr = static_cast<const XrBoxf*>(data_ptr);
+	return OpenXRAPI::transform_from_pose(arr[p_index].center);
+}
+
+Vector2 OpenXRSpatialComponentData::get_size_2d(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_2D, Vector2());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Vector2());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector2());
+
+	const XrExtent2Df& extents =
+		static_cast<const XrSpatialBounded2DDataEXT*>(data_ptr)[p_index].extents;
+	return Vector2(extents.width, extents.height);
+}
+
+Vector3 OpenXRSpatialComponentData::get_size_3d(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_3D, Vector3());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Vector3());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector3());
+
+	const XrExtent3Df& extents = static_cast<const XrBoxf*>(data_ptr)[p_index].extents;
+	return Vector3(extents.width, extents.height, extents.depth);
+}
+
+RID OpenXRSpatialComponentData::get_parent(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_PARENT, RID());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, RID());
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), RID());
+
+	const XrSpatialEntityIdEXT* arr = static_cast<const XrSpatialEntityIdEXT*>(data_ptr);
+	return OpenXRSpatialEntityExtension::find_spatial_entity(arr[p_index]);
+}
+
+Transform3D OpenXRSpatialComponentData::get_transform(int64_t p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
+
+	switch (component_kind) {
+	case COMPONENT_MESH_2D:
+	case COMPONENT_MESH_3D:
+		return OpenXRAPI::transform_from_pose(
+			static_cast<const XrSpatialMeshDataEXT*>(data_ptr)[p_index].origin);
+	case COMPONENT_POLYGON_2D:
+		return OpenXRAPI::transform_from_pose(
+			static_cast<const XrSpatialPolygon2DDataEXT*>(data_ptr)[p_index].origin);
+	default:
+		ERR_FAIL_V(Transform3D());
+	}
+}
+
+PackedVector2Array OpenXRSpatialComponentData::get_vertices(RID p_snapshot, int64_t p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, PackedVector2Array());
+
+	const XrSpatialBufferEXT* buffer = nullptr;
+	if (component_kind == COMPONENT_MESH_2D) {
+		buffer = &static_cast<const XrSpatialMeshDataEXT*>(data_ptr)[p_index].vertexBuffer;
+	}
+	else if (component_kind == COMPONENT_POLYGON_2D) {
+		buffer = &static_cast<const XrSpatialPolygon2DDataEXT*>(data_ptr)[p_index].vertexBuffer;
+	}
+	else {
+		ERR_FAIL_V(PackedVector2Array());
+	}
+
+	if (buffer->bufferId == XR_NULL_SPATIAL_BUFFER_ID_EXT) {
+		return PackedVector2Array();
+	}
+
+	ERR_FAIL_COND_V(
+		buffer->bufferType != XR_SPATIAL_BUFFER_TYPE_VECTOR2F_EXT, PackedVector2Array());
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedVector2Array());
+
+	return OpenXRSpatialEntityExtension::get_vector2_buffer(p_snapshot, buffer->bufferId);
+}
+
+PackedInt32Array OpenXRSpatialComponentData::get_indices(RID p_snapshot, int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MESH_2D, PackedInt32Array());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, PackedInt32Array());
+
+	const XrSpatialBufferEXT& buffer =
+		static_cast<const XrSpatialMeshDataEXT*>(data_ptr)[p_index].indexBuffer;
+	if (buffer.bufferId == XR_NULL_SPATIAL_BUFFER_ID_EXT) {
+		return PackedInt32Array();
+	}
+
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedInt32Array());
+
+	PackedInt32Array ret;
+
+	switch (buffer.bufferType) {
+	case XR_SPATIAL_BUFFER_TYPE_UINT8_EXT: {
+		PackedByteArray data =
+			OpenXRSpatialEntityExtension::get_uint8_buffer(p_snapshot, buffer.bufferId);
+
+		ret.resize(data.size());
+		int count = ret.size();
+		int32_t* ptr = ret.ptrw();
+		for (int i = 0; i < count; i++) {
+			ptr[i] = data[i];
+		}
+	} break;
+	case XR_SPATIAL_BUFFER_TYPE_UINT16_EXT: {
+		Vector<uint16_t> data =
+			OpenXRSpatialEntityExtension::get_uint16_buffer(p_snapshot, buffer.bufferId);
+
+		ret.resize(data.size());
+		int count = ret.size();
+		int32_t* ptr = ret.ptrw();
+		for (int i = 0; i < count; i++) {
+			ptr[i] = data[i];
+		}
+	} break;
+	case XR_SPATIAL_BUFFER_TYPE_UINT32_EXT: {
+		Vector<uint32_t> data =
+			OpenXRSpatialEntityExtension::get_uint32_buffer(p_snapshot, buffer.bufferId);
+
+		ret.resize(data.size());
+		int count = ret.size();
+		int32_t* ptr = ret.ptrw();
+		for (int i = 0; i < count; i++) {
+			ptr[i] = data[i];
+		}
+	} break;
+	default: {
+		ERR_FAIL_V_MSG(PackedInt32Array(), "OpenXR: Unsupported buffer type for indices.");
+	} break;
+	}
+
+	return ret;
+}
+
+Ref<Mesh> OpenXRSpatialComponentData::get_mesh(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MESH_3D, nullptr);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, nullptr);
+
+	// TODO implement, need to convert mesh data to Godot mesh resource
+	return nullptr;
+}
+
+Transform3D OpenXRSpatialComponentData::get_entity_pose(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_ANCHOR, Transform3D());
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
+
+	return OpenXRAPI::transform_from_pose(static_cast<const XrPosef*>(data_ptr)[p_index]);
+}
+
+XrUuid OpenXRSpatialComponentData::get_persistent_uuid(int64_t p_index) const
+{
+	XrUuid null_uuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+	ERR_FAIL_COND_V(component_kind != COMPONENT_PERSISTENCE, null_uuid);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, null_uuid);
+
+	return static_cast<const XrSpatialPersistenceDataEXT*>(data_ptr)[p_index].persistUuid;
+}
+
+String OpenXRSpatialComponentData::_get_persistent_uuid(int64_t p_index) const
+{
+	return OpenXRUtil::string_from_xruuid(get_persistent_uuid(p_index));
+}
+
+XrSpatialPersistenceStateEXT OpenXRSpatialComponentData::get_persistent_state(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(
+		component_kind != COMPONENT_PERSISTENCE, XR_SPATIAL_PERSISTENCE_STATE_MAX_ENUM_EXT);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_PERSISTENCE_STATE_MAX_ENUM_EXT);
+
+	return static_cast<const XrSpatialPersistenceDataEXT*>(data_ptr)[p_index].persistState;
+}
+
+uint64_t OpenXRSpatialComponentData::_get_persistent_state(int64_t p_index) const
+{
+	return (uint64_t)get_persistent_state(p_index);
+}
+
+String OpenXRSpatialComponentData::get_persistence_state_name(XrSpatialPersistenceStateEXT p_state)
+{
+	XR_ENUM_SWITCH(XrSpatialPersistenceStateEXT, p_state)
+}
+
+XrSpatialPlaneAlignmentEXT OpenXRSpatialComponentData::get_plane_alignment(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(
+		component_kind != COMPONENT_PLANE_ALIGNMENT, XR_SPATIAL_PLANE_ALIGNMENT_MAX_ENUM_EXT);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_PLANE_ALIGNMENT_MAX_ENUM_EXT);
+
+	return static_cast<const XrSpatialPlaneAlignmentEXT*>(data_ptr)[p_index];
+}
+
+OpenXRSpatialComponentData::PlaneAlignment OpenXRSpatialComponentData::_get_plane_alignment(
+	int64_t p_index) const
+{
+	return (PlaneAlignment)get_plane_alignment(p_index);
+}
+
+XrSpatialPlaneSemanticLabelEXT OpenXRSpatialComponentData::get_plane_semantic_label(
+	int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_PLANE_SEMANTIC_LABEL,
+		XR_SPATIAL_PLANE_SEMANTIC_LABEL_MAX_ENUM_EXT);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_PLANE_SEMANTIC_LABEL_MAX_ENUM_EXT);
+
+	return static_cast<const XrSpatialPlaneSemanticLabelEXT*>(data_ptr)[p_index];
+}
+
+OpenXRSpatialComponentData::PlaneSemanticLabel
+OpenXRSpatialComponentData::_get_plane_semantic_label(int64_t p_index) const
+{
+	return (PlaneSemanticLabel)get_plane_semantic_label(p_index);
+}
+
+OpenXRSpatialComponentData::MarkerType OpenXRSpatialComponentData::get_marker_type(
+	int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MARKER, MARKER_TYPE_UNKNOWN);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, MARKER_TYPE_UNKNOWN);
+
+	switch (static_cast<const XrSpatialMarkerDataEXT*>(data_ptr)[p_index].capability) {
+	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT:
+		return MARKER_TYPE_QRCODE;
+	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT:
+		return MARKER_TYPE_MICRO_QRCODE;
+	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT:
+		return MARKER_TYPE_ARUCO;
+	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT:
+		return MARKER_TYPE_APRIL_TAG;
+	default:
+		return MARKER_TYPE_UNKNOWN;
+	}
+}
+
+uint32_t OpenXRSpatialComponentData::get_marker_id(int64_t p_index) const
+{
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MARKER, 0);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, 0);
+
+	return static_cast<const XrSpatialMarkerDataEXT*>(data_ptr)[p_index].markerId;
+}
+
+XrSpatialBufferEXT OpenXRSpatialComponentData::get_marker_data(int64_t p_index) const
+{
+	XrSpatialBufferEXT null_buffer = {
+		XR_NULL_SPATIAL_BUFFER_ID_EXT, XR_SPATIAL_BUFFER_TYPE_UNKNOWN_EXT};
+
+	ERR_FAIL_COND_V(component_kind != COMPONENT_MARKER, null_buffer);
+	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, null_buffer);
+
+	return static_cast<const XrSpatialMarkerDataEXT*>(data_ptr)[p_index].data;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialEntityTracker
+
+OpenXRSpatialEntityTracker::OpenXRSpatialEntityTracker(EntityType p_entity_type)
+	: entity_type(p_entity_type)
+{
+	xr_tracker.instantiate(XRServer::TrackerType::TRACKER_ANCHOR);
+}
+
+OpenXRSpatialEntityTracker::~OpenXRSpatialEntityTracker()
+{
+	if (spatial_entity.is_valid()) {
+		if (OpenXRSpatialEntityExtension::is_initialized()) {
+			OpenXRSpatialEntityExtension::free_spatial_entity(spatial_entity);
+			spatial_entity = RID();
+		}
+	}
+}
+
+void OpenXRSpatialEntityTracker::set_spatial_context(const RID& p_spatial_context)
+{
+	// Trackers shouldn't be switching spatial contexts; always create a new tracker for new
+	// contexts
+	ERR_FAIL_COND(spatial_context.is_valid() && spatial_context != p_spatial_context);
+	spatial_context = p_spatial_context;
+}
+
+RID OpenXRSpatialEntityTracker::get_spatial_context() const { return spatial_context; }
+
+void OpenXRSpatialEntityTracker::set_entity(const RID& p_entity)
+{
+	if (spatial_entity.is_valid()) {
+		if (spatial_entity == p_entity) {
+			return;
+		}
+
+		if (OpenXRSpatialEntityExtension::is_initialized()) {
+			OpenXRSpatialEntityExtension::free_spatial_entity(spatial_entity);
+			spatial_entity = RID();
+		}
+	}
+
+	spatial_entity = p_entity;
+
+	if (p_entity.is_valid()) {
+		ERR_FAIL_COND(!OpenXRSpatialEntityExtension::is_initialized());
+
+		XrSpatialEntityIdEXT entity_id = OpenXRSpatialEntityExtension::get_spatial_entity_id(p_entity);
+
+		String tracker_name = String("openxr/spatial_entity/") + String::num_int64(entity_id);
+		set_tracker_name(tracker_name);
+	}
+	else {
+		set_tracker_name("openxr/spatial_entity/null");
+	}
+}
+
+RID OpenXRSpatialEntityTracker::get_entity() const { return spatial_entity; }
+
+void OpenXRSpatialEntityTracker::set_spatial_tracking_state(
+	const XrSpatialEntityTrackingStateEXT p_state)
+{
+	if (spatial_tracking_state != p_state) {
+		spatial_tracking_state = p_state;
+	}
+}
+
+void OpenXRSpatialEntityTracker::_set_spatial_tracking_state(const EntityTrackingState p_state)
+{
+	set_spatial_tracking_state((XrSpatialEntityTrackingStateEXT)p_state);
+}
+
+XrSpatialEntityTrackingStateEXT OpenXRSpatialEntityTracker::get_spatial_tracking_state() const
+{
+	return spatial_tracking_state;
+}
+
+OpenXRSpatialEntityTracker::EntityTrackingState
+OpenXRSpatialEntityTracker::_get_spatial_tracking_state() const
+{
+	return (EntityTrackingState)get_spatial_tracking_state();
+}
+
+void OpenXRSpatialEntityTracker::add_next(Ref<OpenXRStructureBase> p_next)
+{
+	// Prepend p_next to next
+	if (p_next.is_valid()) {
+		if (next.is_valid()) {
+			p_next->set_next(next);
+		}
+
+		next = p_next;
+	}
+}
+
+void OpenXRSpatialEntityTracker::remove_next(Ref<OpenXRStructureBase> p_next)
+{
+	if (p_next.is_null()) {
+		return;
+	}
+
+	Ref<OpenXRStructureBase> prev;
+	for (Ref<OpenXRStructureBase> n = next; n.is_valid(); n = n->get_next()) {
+		if (n == p_next) {
+			if (prev.is_null()) {
+				next = p_next->get_next();
+			}
+			else {
+				prev->set_next(p_next->get_next());
+			}
+
+			p_next->set_next(nullptr);
+			break;
+		}
+
+		prev = n;
+	}
+}
+
+Ref<OpenXRStructureBase> OpenXRSpatialEntityTracker::get_next() const { return next; }
+
+bool OpenXRSpatialEntityTracker::has_uuid() const
+{
+	for (int i = 0; i < XR_UUID_SIZE; i++) {
+		if (uuid.data[i] != 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+XrUuid OpenXRSpatialEntityTracker::get_uuid() const { return uuid; }
+
+void OpenXRSpatialEntityTracker::set_uuid(const XrUuid& p_uuid)
+{
+	if (uuid_is_equal(uuid, p_uuid)) {
+		return;
+	}
+
+	uuid = p_uuid;
+}
+
+String OpenXRSpatialEntityTracker::_get_uuid() const { return OpenXRUtil::string_from_xruuid(uuid); }
+
+void OpenXRSpatialEntityTracker::_set_uuid(const String& p_uuid)
+{
+	set_uuid(OpenXRUtil::xruuid_from_string(p_uuid));
+}
+
+bool OpenXRSpatialEntityTracker::uuid_is_equal(const XrUuid& p_a, const XrUuid& p_b)
+{
+	for (int i = 0; i < XR_UUID_SIZE; i++) {
+		if (p_a.data[i] != p_b.data[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void OpenXRSpatialEntityTracker::set_bounds_size(const Vector2& p_bounds_size)
+{
+	if (entity_type == ENTITY_PLANE) {
+		if (Math::abs(bounds_size.x - p_bounds_size.x) > 0.001 ||
+			Math::abs(bounds_size.y - p_bounds_size.y) > 0.001) {
+			bounds_size = p_bounds_size;
+
+			if (!mesh.has_mesh_data) {
+				// Bounds changing only effects mesh data if we don't have polygon data.
+				clear_mesh_data();
+			}
+		}
+	}
+	else {
+		bounds_size = p_bounds_size;
+	}
+}
+
+Vector2 OpenXRSpatialEntityTracker::get_bounds_size() const { return bounds_size; }
+
+void OpenXRSpatialEntityTracker::set_plane_alignment(
+	OpenXRSpatialComponentData::PlaneAlignment p_plane_alignment)
+{
+	if (plane_alignment != p_plane_alignment) {
+		plane_alignment = p_plane_alignment;
+	}
+}
+
+OpenXRSpatialComponentData::PlaneAlignment OpenXRSpatialEntityTracker::get_plane_alignment() const
+{
+	return plane_alignment;
+}
+
+void OpenXRSpatialEntityTracker::set_plane_label(const String& p_plane_label)
+{
+	if (plane_label != p_plane_label) {
+		plane_label = p_plane_label;
+
+		// Also copy to description, should do something nicer here.
+		set_tracker_desc(plane_label);
+	}
+}
+
+String OpenXRSpatialEntityTracker::get_plane_label() const { return plane_label; }
+
+void OpenXRSpatialEntityTracker::set_mesh_data(const Transform3D& p_origin,
+	const PackedVector2Array& p_vertices, const PackedInt32Array& p_indices)
+{
+	if (p_vertices.size() < 3) {
+		if (mesh.has_mesh_data) {
+			clear_mesh_data();
+		}
+	}
+	else {
+		bool has_changed = !mesh.has_mesh_data;
+
+		mesh.has_mesh_data = true;
+		mesh.origin = p_origin;
+
+		if (mesh.vertices.size() != p_vertices.size()) {
+			has_changed = true;
+		}
+		else {
+			// Compare the vertices with a bit of margin, we ignore small jittering on vertices.
+			for (uint32_t i = 0; i < p_vertices.size() && !has_changed; i++) {
+				const Vector2& a = p_vertices[i];
+				const Vector2& b = mesh.vertices[i];
+				has_changed = (Math::abs(a.x - b.x) > 0.001) || (Math::abs(a.y - b.y) > 0.001);
+			}
+		}
+		if (has_changed) {
+			mesh.vertices = p_vertices;
+		}
+
+		if (p_indices.is_empty()) {
+			// Assume polygon, turn into triangle strip...
+			int count = (p_vertices.size() - 2) * 3;
+
+			if (has_changed || mesh.indices.size() != count) {
+				has_changed = true;
+
+				int offset = 1;
+				mesh.indices.resize(count);
+				int32_t* idx = mesh.indices.ptrw();
+				for (int i = 0; i < count; i += 3) {
+					idx[i + 0] = 0;
+					idx[i + 2] = offset++;
+					idx[i + 1] = offset;
+				}
+			}
+		}
+		else {
+			if (mesh.indices.size() != p_indices.size()) {
+				has_changed = true;
+			}
+			else {
+				for (uint32_t i = 0; i < p_indices.size() && !has_changed; i++) {
+					has_changed = mesh.indices[i] != p_indices[i];
+				}
+			}
+			if (has_changed) {
+				mesh.indices = p_indices;
+			}
+		}
+
+		if (has_changed) {
+			mesh.mesh.unref();
+#ifndef PHYSICS_3D_DISABLED
+			mesh.shape3d.unref();
+#endif
+		}
+	}
+}
+
+void OpenXRSpatialEntityTracker::clear_mesh_data()
+{
+	mesh.mesh.unref();
+#ifndef PHYSICS_3D_DISABLED
+	mesh.shape3d.unref();
+#endif
+
+	if (mesh.has_mesh_data) {
+		mesh.has_mesh_data = false;
+		mesh.origin = Transform3D();
+		mesh.vertices.clear();
+		mesh.indices.clear();
+	}
+}
+
+Transform3D OpenXRSpatialEntityTracker::get_mesh_offset() const
+{
+	Transform3D offset;
+
+	if (mesh.has_mesh_data) {
+		offset = mesh.origin;
+
+		Ref<XRPose> pose = get_pose(SNAME("default"));
+		if (pose.is_valid()) {
+			offset = pose->get_transform().inverse() * offset;
+		}
+
+		if (XRServer::is_initialized()) {
+			offset.origin *= XRServer::get_world_scale();
+		}
+	}
+
+	return offset;
+}
+
+#ifndef PHYSICS_3D_DISABLED
+Ref<Shape3D> OpenXRSpatialEntityTracker::get_shape(real_t p_thickness)
+{
+	if (mesh.shape3d.is_valid()) {
+		return mesh.shape3d;
+	}
+
+	if (mesh.has_mesh_data) {
+		Ref<Shape3D> shape;
+		Vector<Vector3> faces;
+
+		int isize = mesh.indices.size();
+		const Vector2* vr = mesh.vertices.ptr();
+		const int32_t* ir = mesh.indices.ptr();
+
+		HashMap<Edge, int, Edge> edge_counts;
+		for (int i = 0; i < isize; i += 3) {
+			for (int j = 0; j < 3; j++) {
+				Edge e(ir[i + j], ir[i + ((j + 1) % 3)]);
+				edge_counts[e]++;
+			}
+		}
+
+		thread_local LocalVector<Edge> outer_edges;
+		outer_edges.clear();
+		for (const KeyValue<Edge, int>& e : edge_counts) {
+			if (e.value > 1) {
+				outer_edges.push_back(e.key);
+			}
+		}
+
+		faces.resize(2 * isize + 6 * outer_edges.size());
+		Vector3* write = faces.ptrw();
+
+		for (int i = 0; i < isize; i += 3) {
+			Vector3 a = Vector3(vr[ir[i]].x, vr[ir[i]].y, 0.0);
+			Vector3 b = Vector3(vr[ir[i + 1]].x, vr[ir[i + 1]].y, 0.0);
+			Vector3 c = Vector3(vr[ir[i + 2]].x, vr[ir[i + 2]].y, 0.0);
+
+			*write++ = a;
+			*write++ = b;
+			*write++ = c;
+
+			a.z = -p_thickness;
+			b.z = -p_thickness;
+			c.z = -p_thickness;
+
+			*write++ = a;
+			*write++ = c;
+			*write++ = b;
+		}
+
+		for (const Edge& edge : outer_edges) {
+			Vector3 a = Vector3(vr[edge.a].x, vr[edge.a].y, 0.0);
+			Vector3 b = Vector3(vr[edge.b].x, vr[edge.b].y, 0.0);
+			Vector3 c = b + Vector3(0.0, 0.0, -p_thickness);
+			Vector3 d = a + Vector3(0.0, 0.0, -p_thickness);
+
+			*write++ = a;
+			*write++ = b;
+			*write++ = c;
+
+			*write++ = a;
+			*write++ = c;
+			*write++ = d;
+		}
+
+		shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
+		shape->set_faces(faces);
+
+		mesh.shape3d = shape;
+	}
+	else if (bounds_size.x > 0.0 && bounds_size.y > 0.0) {
+		Ref<Shape3D> box_shape = memnew(Shape3D(Shape3D::SHAPE_BOX));
+		box_shape->set_size(Vector3(bounds_size.x, bounds_size.y, p_thickness));
+
+		mesh.shape3d = box_shape;
+	}
+
+	return mesh.shape3d;
+}
+#endif // PHYSICS_3D_DISABLED
+
+void OpenXRSpatialEntityTracker::set_marker_type(
+	OpenXRSpatialComponentData::MarkerType p_marker_type)
+{
+	marker_type = p_marker_type;
+}
+
+OpenXRSpatialComponentData::MarkerType OpenXRSpatialEntityTracker::get_marker_type() const
+{
+	return marker_type;
+}
+
+void OpenXRSpatialEntityTracker::set_marker_id(uint32_t p_id) { marker_id = p_id; }
+
+uint32_t OpenXRSpatialEntityTracker::get_marker_id() const { return marker_id; }
+
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialEntityExtension
+
+void OpenXRSpatialEntityExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRSpatialEntityExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRSpatialEntityExtension::get_requested_extensions(XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled")) {
+		request_extensions[XR_EXT_SPATIAL_ENTITY_EXTENSION_NAME] = &data->spatial_entity_ext;
+	}
+
+	return request_extensions;
+}
+
+void OpenXRSpatialEntityExtension::on_instance_created(const XrInstance p_instance)
+{
+	if (data->spatial_entity_ext) {
+		EXT_INIT_XR_FUNC(xrEnumerateSpatialCapabilitiesEXT);
+		EXT_INIT_XR_FUNC(xrEnumerateSpatialCapabilityComponentTypesEXT);
+		EXT_INIT_XR_FUNC(xrEnumerateSpatialCapabilityFeaturesEXT);
+		EXT_INIT_XR_FUNC(xrCreateSpatialContextAsyncEXT);
+		EXT_INIT_XR_FUNC(xrCreateSpatialContextCompleteEXT);
+		EXT_INIT_XR_FUNC(xrDestroySpatialContextEXT);
+		EXT_INIT_XR_FUNC(xrCreateSpatialDiscoverySnapshotAsyncEXT);
+		EXT_INIT_XR_FUNC(xrCreateSpatialDiscoverySnapshotCompleteEXT);
+		EXT_INIT_XR_FUNC(xrQuerySpatialComponentDataEXT);
+		EXT_INIT_XR_FUNC(xrDestroySpatialSnapshotEXT);
+		EXT_INIT_XR_FUNC(xrCreateSpatialEntityFromIdEXT);
+		EXT_INIT_XR_FUNC(xrDestroySpatialEntityEXT);
+		EXT_INIT_XR_FUNC(xrCreateSpatialUpdateSnapshotEXT);
+		EXT_INIT_XR_FUNC(xrGetSpatialBufferStringEXT);
+		EXT_INIT_XR_FUNC(xrGetSpatialBufferUint8EXT);
+		EXT_INIT_XR_FUNC(xrGetSpatialBufferUint16EXT);
+		EXT_INIT_XR_FUNC(xrGetSpatialBufferUint32EXT);
+		EXT_INIT_XR_FUNC(xrGetSpatialBufferFloatEXT);
+		EXT_INIT_XR_FUNC(xrGetSpatialBufferVector2fEXT);
+		EXT_INIT_XR_FUNC(xrGetSpatialBufferVector3fEXT);
+	}
+}
+
+void OpenXRSpatialEntityExtension::on_instance_destroyed()
+{
+	data->supported_capabilities.clear();
+	data->capabilities_load_state = 0;
+
+	xrEnumerateSpatialCapabilitiesEXT_ptr = nullptr;
+	xrEnumerateSpatialCapabilityComponentTypesEXT_ptr = nullptr;
+	xrEnumerateSpatialCapabilityFeaturesEXT_ptr = nullptr;
+	xrCreateSpatialContextAsyncEXT_ptr = nullptr;
+	xrCreateSpatialContextCompleteEXT_ptr = nullptr;
+	xrDestroySpatialContextEXT_ptr = nullptr;
+	xrCreateSpatialDiscoverySnapshotAsyncEXT_ptr = nullptr;
+	xrCreateSpatialDiscoverySnapshotCompleteEXT_ptr = nullptr;
+	xrQuerySpatialComponentDataEXT_ptr = nullptr;
+	xrDestroySpatialSnapshotEXT_ptr = nullptr;
+	xrCreateSpatialEntityFromIdEXT_ptr = nullptr;
+	xrDestroySpatialEntityEXT_ptr = nullptr;
+	xrCreateSpatialUpdateSnapshotEXT_ptr = nullptr;
+	xrGetSpatialBufferStringEXT_ptr = nullptr;
+	xrGetSpatialBufferUint8EXT_ptr = nullptr;
+	xrGetSpatialBufferUint16EXT_ptr = nullptr;
+	xrGetSpatialBufferUint32EXT_ptr = nullptr;
+	xrGetSpatialBufferFloatEXT_ptr = nullptr;
+	xrGetSpatialBufferVector2fEXT_ptr = nullptr;
+	xrGetSpatialBufferVector3fEXT_ptr = nullptr;
+}
+
+bool OpenXRSpatialEntityExtension::get_active()
+{
+	return data != nullptr && data->spatial_entity_ext;
+}
+
+bool OpenXRSpatialEntityExtension::_load_capabilities()
+{
+	if (data->capabilities_load_state == 0) {
+		if (!data->spatial_entity_ext) {
+			return false;
+		}
+
+		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+
+		XrInstance instance = OpenXRAPI::get_instance();
+		ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+		XrSystemId system_id = OpenXRAPI::get_system_id();
+		ERR_FAIL_COND_V(system_id == 0, false);
+
+		data->capabilities_load_state = 2;
+
+		Vector<XrSpatialCapabilityEXT> capabilities;
+		uint32_t capability_size = 0;
+		XrResult result =
+			xrEnumerateSpatialCapabilitiesEXT(instance, system_id, 0, &capability_size, nullptr);
+		if (XR_FAILED(result)) {
+			ERR_FAIL_V_MSG(false, "OpenXR: Failed to get spatial entity capability count [" +
+									  OpenXRAPI::get_error_string(result) + "]");
+		}
+
+		if (capability_size > 0) {
+			capabilities.resize(capability_size);
+			result = xrEnumerateSpatialCapabilitiesEXT(
+				instance, system_id, capabilities.size(), &capability_size, capabilities.ptrw());
+			if (XR_FAILED(result)) {
+				ERR_FAIL_V_MSG(false, "OpenXR: Failed to get spatial entity capabilities [" +
+										  OpenXRAPI::get_error_string(result) + "]");
+			}
+
+			for (const XrSpatialCapabilityEXT& capability : capabilities) {
+				print_verbose("OpenXR: Found spatial entity capability " +
+							  get_spatial_capability_name(capability) + ".");
+
+				SpatialEntityCapabality& spatial_entity_capability =
+					data->supported_capabilities[capability];
+
+				XrSpatialCapabilityComponentTypesEXT component_types = {
+					XR_TYPE_SPATIAL_CAPABILITY_COMPONENT_TYPES_EXT,
+					nullptr,
+					0,
+					0,
+					nullptr,
+				};
+				result = xrEnumerateSpatialCapabilityComponentTypesEXT(
+					instance, system_id, capability, &component_types);
+				if (XR_FAILED(result)) {
+					ERR_PRINT("OpenXR: Failed to get spatial entity component type count [" +
+							  OpenXRAPI::get_error_string(result) + "]");
+				}
+				else if (component_types.componentTypeCountOutput > 0) {
+					spatial_entity_capability.component_types.resize(
+						component_types.componentTypeCountOutput);
+					component_types.componentTypeCapacityInput =
+						spatial_entity_capability.component_types.size();
+					component_types.componentTypeCountOutput = 0;
+					component_types.componentTypes =
+						spatial_entity_capability.component_types.ptrw();
+					result = xrEnumerateSpatialCapabilityComponentTypesEXT(
+						instance, system_id, capability, &component_types);
+					if (XR_FAILED(result)) {
+						ERR_PRINT("OpenXR: Failed to get spatial entity component types [" +
+								  OpenXRAPI::get_error_string(result) + "]");
+					}
+					else if (is_print_verbose_enabled()) {
+						for (const XrSpatialComponentTypeEXT& component_type :
+							spatial_entity_capability.component_types) {
+							print_verbose("- component type " +
+										  get_spatial_component_type_name(component_type));
+						}
+					}
+				}
+
+				result = xrEnumerateSpatialCapabilityFeaturesEXT(
+					instance, system_id, capability, 0, &capability_size, nullptr);
+				if (XR_FAILED(result)) {
+					ERR_PRINT("OpenXR: Failed to get spatial entity feature count [" +
+							  OpenXRAPI::get_error_string(result) + "]");
+				}
+				else if (capability_size > 0) {
+					spatial_entity_capability.features.resize(capability_size);
+					result = xrEnumerateSpatialCapabilityFeaturesEXT(instance, system_id,
+						capability, spatial_entity_capability.features.size(), &capability_size,
+						spatial_entity_capability.features.ptrw());
+					if (XR_FAILED(result)) {
+						ERR_PRINT("OpenXR: Failed to get spatial entity features [" +
+								  OpenXRAPI::get_error_string(result) + "]");
+					}
+					else if (is_print_verbose_enabled()) {
+						for (const XrSpatialCapabilityFeatureEXT& feature :
+							spatial_entity_capability.features) {
+							print_verbose("- feature " + get_spatial_feature_name(feature));
+						}
+					}
+				}
+			}
+		}
+
+		data->capabilities_load_state = 1;
+	}
+
+	return data->capabilities_load_state == 1;
+}
+
+bool OpenXRSpatialEntityExtension::supports_capability(XrSpatialCapabilityEXT p_capability)
+{
+	if (!_load_capabilities()) {
+		return false;
+	}
+
+	return data->supported_capabilities.has(p_capability);
+}
+
+bool OpenXRSpatialEntityExtension::_supports_capability(Capability p_capability)
+{
+	return supports_capability((XrSpatialCapabilityEXT)p_capability);
+}
+
+bool OpenXRSpatialEntityExtension::supports_component_type(
+	XrSpatialCapabilityEXT p_capability, XrSpatialComponentTypeEXT p_component_type)
+{
+	if (!_load_capabilities()) {
+		return false;
+	}
+
+	if (data->supported_capabilities.has(p_capability)) {
+		return data->supported_capabilities[p_capability].component_types.has(p_component_type);
+	}
+	return false;
+}
+
+bool OpenXRSpatialEntityExtension::_supports_component_type(
+	Capability p_capability, ComponentType p_component_type)
+{
+	return supports_component_type(
+		(XrSpatialCapabilityEXT)p_capability, (XrSpatialComponentTypeEXT)p_component_type);
+}
+
+bool OpenXRSpatialEntityExtension::get_spatial_context_ready(RID p_spatial_context)
+{
+	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
+	ERR_FAIL_NULL_V(context_data, false);
+
+	return context_data->spatial_context != XR_NULL_HANDLE;
+}
+
+void OpenXRSpatialEntityExtension::free_spatial_context(RID p_spatial_context)
+{
+	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
+	ERR_FAIL_NULL(context_data);
+
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	if (context_data->spatial_context != XR_NULL_HANDLE) {
+		XrResult result = xrDestroySpatialContextEXT(context_data->spatial_context);
+		if (XR_FAILED(result)) {
+			WARN_PRINT("OpenXR: Failed to destroy the spatial context [" +
+					   OpenXRAPI::get_error_string(result) + "]");
+		}
+		context_data->spatial_context = XR_NULL_HANDLE;
+
+		data->spatial_context_owner.free(p_spatial_context);
+	}
+}
+
+XrSpatialContextEXT OpenXRSpatialEntityExtension::get_spatial_context_handle(
+	RID p_spatial_context)
+{
+	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
+	ERR_FAIL_NULL_V(context_data, XR_NULL_HANDLE);
+
+	return context_data->spatial_context;
+}
+
+uint64_t OpenXRSpatialEntityExtension::_get_spatial_context_handle(RID p_spatial_context)
+{
+	return (uint64_t)get_spatial_context_handle(p_spatial_context);
+}
+
+RID OpenXRSpatialEntityExtension::update_spatial_entities(RID p_spatial_context,
+	const LocalVector<RID>& p_entities,
+	const LocalVector<XrSpatialComponentTypeEXT>& p_component_types,
+	Ref<OpenXRStructureBase> p_next)
+{
+	if (!get_active()) {
+		return RID();
+	}
+
+	ERR_FAIL_COND_V(p_entities.is_empty(), RID());
+
+	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
+	ERR_FAIL_NULL_V(context_data, RID());
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
+
+	thread_local LocalVector<XrSpatialEntityEXT> entities;
+
+	entities.resize(p_entities.size());
+	XrSpatialEntityEXT* ptr = entities.ptr();
+	for (const RID& rid : p_entities) {
+		SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(rid);
+		*ptr = entity_data ? entity_data->entity : XR_NULL_HANDLE;
+		ptr++;
+	}
+
+	void* next = nullptr;
+	if (p_next.is_valid()) {
+		next = p_next->get_header(next);
+	}
+
+	SpatialSnapshotData spatial_snapshot_data;
+	spatial_snapshot_data.spatial_context = p_spatial_context;
+
+	XrSpatialUpdateSnapshotCreateInfoEXT create_info = {
+		XR_TYPE_SPATIAL_UPDATE_SNAPSHOT_CREATE_INFO_EXT,
+		next,
+		(uint32_t)entities.size(),
+		entities.ptr(),
+		(uint32_t)p_component_types.size(),
+		p_component_types.is_empty() ? nullptr : p_component_types.ptr(),
+		OpenXRAPI::get_play_space(),
+		OpenXRAPI::get_predicted_display_time(),
+	};
+	XrResult result = xrCreateSpatialUpdateSnapshotEXT(
+		context_data->spatial_context, &create_info, &spatial_snapshot_data.spatial_snapshot);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(RID(), "OpenXR: Failed to create update snapshot [" +
+								  OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	return data->spatial_snapshot_owner.make_rid(spatial_snapshot_data);
+}
+
+void OpenXRSpatialEntityExtension::free_spatial_snapshot(RID p_spatial_snapshot)
+{
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL(snapshot_data);
+
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	if (snapshot_data->spatial_snapshot != XR_NULL_HANDLE) {
+		XrResult result = xrDestroySpatialSnapshotEXT(snapshot_data->spatial_snapshot);
+		if (XR_FAILED(result)) {
+			WARN_PRINT("OpenXR: Failed to destroy the spatial snapshot [" +
+					   OpenXRAPI::get_error_string(result) + "]");
+		}
+		snapshot_data->spatial_snapshot = XR_NULL_HANDLE;
+	}
+
+	data->spatial_snapshot_owner.free(p_spatial_snapshot);
+}
+
+XrSpatialSnapshotEXT OpenXRSpatialEntityExtension::get_spatial_snapshot_handle(
+	RID p_spatial_snapshot)
+{
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL_V(snapshot_data, XR_NULL_HANDLE);
+
+	return snapshot_data->spatial_snapshot;
+}
+
+RID OpenXRSpatialEntityExtension::get_spatial_snapshot_context(RID p_spatial_snapshot)
+{
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL_V(snapshot_data, RID());
+
+	return snapshot_data->spatial_context;
+}
+
+uint64_t OpenXRSpatialEntityExtension::_get_spatial_snapshot_handle(RID p_spatial_snapshot)
+{
+	return (uint64_t)get_spatial_snapshot_handle(p_spatial_snapshot);
+}
+
+String OpenXRSpatialEntityExtension::get_string(
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
+{
+	String ret;
+
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL_V(snapshot_data, ret);
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
+
+	XrSpatialBufferGetInfoEXT info = {
+		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
+		nullptr,
+		p_buffer_id,
+	};
+
+	uint32_t count = 0;
+	XrResult result =
+		xrGetSpatialBufferStringEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(ret,
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	LocalVector<char> buffer;
+	buffer.resize(count + 1);
+	buffer[count] = '\0';
+
+	result = xrGetSpatialBufferStringEXT(
+		snapshot_data->spatial_snapshot, &info, buffer.size(), &count, buffer.ptr());
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(
+			ret, "OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	ret = String::utf8(buffer.ptr());
+	return ret;
+}
+
+PackedByteArray OpenXRSpatialEntityExtension::get_uint8_buffer(
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
+{
+	PackedByteArray ret;
+
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL_V(snapshot_data, ret);
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
+
+	XrSpatialBufferGetInfoEXT info = {
+		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
+		nullptr,
+		p_buffer_id,
+	};
+
+	uint32_t count = 0;
+	XrResult result =
+		xrGetSpatialBufferUint8EXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(ret,
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	ret.resize(count);
+
+	result = xrGetSpatialBufferUint8EXT(
+		snapshot_data->spatial_snapshot, &info, ret.size(), &count, (uint8_t*)ret.ptrw());
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(PackedByteArray(),
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	return ret;
+}
+
+Vector<uint16_t> OpenXRSpatialEntityExtension::get_uint16_buffer(
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
+{
+	Vector<uint16_t> ret;
+
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL_V(snapshot_data, ret);
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
+
+	XrSpatialBufferGetInfoEXT info = {
+		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
+		nullptr,
+		p_buffer_id,
+	};
+
+	uint32_t count = 0;
+	XrResult result =
+		xrGetSpatialBufferUint16EXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(ret,
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	ret.resize(count);
+
+	result = xrGetSpatialBufferUint16EXT(
+		snapshot_data->spatial_snapshot, &info, ret.size(), &count, ret.ptrw());
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(Vector<uint16_t>(),
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	return ret;
+}
+
+Vector<uint32_t> OpenXRSpatialEntityExtension::get_uint32_buffer(
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
+{
+	Vector<uint32_t> ret;
+
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL_V(snapshot_data, ret);
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
+
+	XrSpatialBufferGetInfoEXT info = {
+		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
+		nullptr,
+		p_buffer_id,
+	};
+
+	uint32_t count = 0;
+	XrResult result =
+		xrGetSpatialBufferUint32EXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(ret,
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	ret.resize(count);
+
+	result = xrGetSpatialBufferUint32EXT(
+		snapshot_data->spatial_snapshot, &info, ret.size(), &count, ret.ptrw());
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(Vector<uint32_t>(),
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	return ret;
+}
+
+PackedFloat32Array OpenXRSpatialEntityExtension::get_float_buffer(
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
+{
+	PackedFloat32Array ret;
+
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL_V(snapshot_data, ret);
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
+
+	XrSpatialBufferGetInfoEXT info = {
+		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
+		nullptr,
+		p_buffer_id,
+	};
+
+	uint32_t count = 0;
+	XrResult result =
+		xrGetSpatialBufferFloatEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(ret,
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	ret.resize(count);
+
+	result = xrGetSpatialBufferFloatEXT(
+		snapshot_data->spatial_snapshot, &info, ret.size(), &count, ret.ptrw());
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(PackedFloat32Array(),
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	return ret;
+}
+
+PackedVector2Array OpenXRSpatialEntityExtension::get_vector2_buffer(
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
+{
+	PackedVector2Array ret;
+
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL_V(snapshot_data, ret);
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
+
+	XrSpatialBufferGetInfoEXT info = {
+		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
+		nullptr,
+		p_buffer_id,
+	};
+
+	uint32_t count = 0;
+	XrResult result =
+		xrGetSpatialBufferVector2fEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(ret,
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+#ifdef REAL_T_IS_DOUBLE
+	LocalVector<XrVector2f> buffer;
+	buffer.resize(count);
+
+	result = xrGetSpatialBufferVector2fEXT(
+		snapshot_data->spatial_snapshot, &info, buffer.size(), &count, buffer.ptr());
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(
+			ret, "OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	ret.resize(count);
+	Vector2* ptr = ret.ptrw();
+	for (uint32_t i = 0; i < count; i++) {
+		ptr[i].x = buffer[i].x;
+		ptr[i].y = buffer[i].y;
+	}
+#else
+	ret.resize(count);
+
+	result = xrGetSpatialBufferVector2fEXT(
+		snapshot_data->spatial_snapshot, &info, ret.size(), &count, (XrVector2f*)ret.ptrw());
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(PackedVector2Array(),
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+#endif
+
+	return ret;
+}
+
+PackedVector3Array OpenXRSpatialEntityExtension::get_vector3_buffer(
+	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
+{
+	PackedVector3Array ret;
+
+	SpatialSnapshotData* snapshot_data =
+		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
+	ERR_FAIL_NULL_V(snapshot_data, ret);
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
+
+	XrSpatialBufferGetInfoEXT info = {
+		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
+		nullptr,
+		p_buffer_id,
+	};
+
+	uint32_t count = 0;
+	XrResult result =
+		xrGetSpatialBufferVector3fEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(ret,
+			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+#ifdef REAL_T_IS_DOUBLE
+	LocalVector<XrVector3f> buffer;
+	buffer.resize(count);
+
+	result = xrGetSpatialBufferVector3fEXT(
+		snapshot_data->spatial_snapshot, &info, buffer.size(), &count, buffer.ptr());
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(
+			ret, "OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	ret.resize(count);
+	Vector3* ptr = ret.ptrw();
+	for (uint32_t i = 0; i < count; i++) {
+		ptr[i].x = buffer[i].x;
+		ptr[i].y = buffer[i].y;
+		ptr[i].z = buffer[i].z;
+	}
+#else
+	ret.resize(count);
+
+	result = xrGetSpatialBufferVector3fEXT(
+		snapshot_data->spatial_snapshot, &info, ret.size(), &count, (XrVector3f*)ret.ptrw());
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(PackedVector3Array(),
+			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+#endif
+
+	return ret;
+}
+
+String OpenXRSpatialEntityExtension::_get_string(RID p_spatial_snapshot, uint64_t p_buffer_id)
+{
+	return get_string(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
+}
+
+PackedByteArray OpenXRSpatialEntityExtension::_get_uint8_buffer(
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
+{
+	return get_uint8_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
+}
+
+PackedInt32Array OpenXRSpatialEntityExtension::_get_uint16_buffer(
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
+{
+	PackedInt32Array ret;
+	Vector<uint16_t> buffer =
+		get_uint16_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
+
+	if (!buffer.is_empty()) {
+		ret.resize(buffer.size());
+
+		int size = ret.size();
+		int32_t* ptr = ret.ptrw();
+		for (int i = 0; i < size; i++) {
+			ptr[i] = buffer[i];
+		}
+	}
+
+	return ret;
+}
+
+PackedInt32Array OpenXRSpatialEntityExtension::_get_uint32_buffer(
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
+{
+	PackedInt32Array ret;
+	Vector<uint32_t> buffer =
+		get_uint32_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
+
+	if (!buffer.is_empty()) {
+		ret.resize(buffer.size());
+
+		int size = ret.size();
+		int32_t* ptr = ret.ptrw();
+		for (int i = 0; i < size; i++) {
+			ptr[i] = buffer[i];
+		}
+	}
+
+	return ret;
+}
+
+PackedFloat32Array OpenXRSpatialEntityExtension::_get_float_buffer(
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
+{
+	return get_float_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
+}
+
+PackedVector2Array OpenXRSpatialEntityExtension::_get_vector2_buffer(
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
+{
+	return get_vector2_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
+}
+
+PackedVector3Array OpenXRSpatialEntityExtension::_get_vector3_buffer(
+	RID p_spatial_snapshot, uint64_t p_buffer_id)
+{
+	return get_vector3_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
+}
+
+RID OpenXRSpatialEntityExtension::find_spatial_entity(XrSpatialEntityIdEXT p_entity_id)
+{
+	ERR_FAIL_COND_V(!get_active(), RID());
+
+	LocalVector<RID> entities = data->spatial_entity_owner.get_owned_list();
+	for (const RID& entity : entities) {
+		SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(entity);
+		ERR_FAIL_NULL_V(entity_data, RID());
+
+		if (entity_data->entity_id == p_entity_id) {
+			return entity;
+		}
+	}
+
+	return RID();
+}
+
+RID OpenXRSpatialEntityExtension::_find_entity(uint64_t p_entity_id)
+{
+	return find_spatial_entity((XrSpatialEntityIdEXT)p_entity_id);
+}
+
+RID OpenXRSpatialEntityExtension::add_spatial_entity(
+	RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id, XrSpatialEntityEXT p_entity)
+{
+	ERR_FAIL_COND_V(!get_active(), RID());
+
+	SpatialEntityData spatial_entity_data;
+	spatial_entity_data.spatial_context = p_spatial_context;
+	spatial_entity_data.entity_id = p_entity_id;
+	spatial_entity_data.entity = p_entity;
+
+	return data->spatial_entity_owner.make_rid(spatial_entity_data);
+}
+
+RID OpenXRSpatialEntityExtension::_add_entity(
+	RID p_spatial_context, uint64_t p_entity_id, uint64_t p_entity)
+{
+	return add_spatial_entity(
+		p_spatial_context, (XrSpatialEntityIdEXT)p_entity_id, (XrSpatialEntityEXT)p_entity);
+}
+
+RID OpenXRSpatialEntityExtension::make_spatial_entity(
+	RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id)
+{
+	ERR_FAIL_COND_V(!get_active(), RID());
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
+
+	SpatialEntityData spatial_entity_data;
+	spatial_entity_data.spatial_context = p_spatial_context;
+	spatial_entity_data.entity_id = p_entity_id;
+	XrSpatialEntityFromIdCreateInfoEXT create_info = {
+		XR_TYPE_SPATIAL_ENTITY_FROM_ID_CREATE_INFO_EXT,
+		nullptr,
+		p_entity_id,
+	};
+	XrResult result = xrCreateSpatialEntityFromIdEXT(
+		get_spatial_context_handle(p_spatial_context), &create_info, &spatial_entity_data.entity);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(RID(), "OpenXR: Failed to create spatial entity [" +
+								  OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	return data->spatial_entity_owner.make_rid(spatial_entity_data);
+}
+
+RID OpenXRSpatialEntityExtension::_make_entity(RID p_spatial_context, uint64_t p_entity_id)
+{
+	return make_spatial_entity(p_spatial_context, (XrSpatialEntityIdEXT)p_entity_id);
+}
+
+XrSpatialEntityIdEXT OpenXRSpatialEntityExtension::get_spatial_entity_id(RID p_entity)
+{
+	SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(p_entity);
+	ERR_FAIL_NULL_V(entity_data, XR_NULL_ENTITY);
+
+	return entity_data->entity_id;
+}
+
+uint64_t OpenXRSpatialEntityExtension::_get_entity_id(RID p_entity)
+{
+	return (uint64_t)get_spatial_entity_id(p_entity);
+}
+
+RID OpenXRSpatialEntityExtension::get_spatial_entity_context(RID p_entity)
+{
+	SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(p_entity);
+	ERR_FAIL_NULL_V(entity_data, RID());
+
+	return entity_data->spatial_context;
+}
+
+void OpenXRSpatialEntityExtension::free_spatial_entity(RID p_entity)
+{
+	SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(p_entity);
+	ERR_FAIL_NULL(entity_data);
+	ERR_FAIL_COND(entity_data->entity == XR_NULL_HANDLE);
+
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	XrResult result = xrDestroySpatialEntityEXT_ptr(entity_data->entity);
+	if (XR_FAILED(result)) {
+		WARN_PRINT("OpenXR: Failed to destroy spatial entity [" +
+				   OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	data->spatial_entity_owner.free(p_entity);
+}
+
+String OpenXRSpatialEntityExtension::get_spatial_capability_name(
+	XrSpatialCapabilityEXT p_capability)
+{
+	XR_ENUM_SWITCH(XrSpatialCapabilityEXT, p_capability)
+}
+
+String OpenXRSpatialEntityExtension::get_spatial_component_type_name(
+	XrSpatialComponentTypeEXT p_component_type)
+{
+	XR_ENUM_SWITCH(XrSpatialComponentTypeEXT, p_component_type)
+}
+
+String OpenXRSpatialEntityExtension::get_spatial_feature_name(
+	XrSpatialCapabilityFeatureEXT p_feature)
+{
+	XR_ENUM_SWITCH(XrSpatialCapabilityFeatureEXT, p_feature)
+}
+
+void OpenXRSpatialEntityExtension::on_session_destroyed() {}
+
+bool OpenXRSpatialEntityExtension::on_event_polled(const XrEventDataBuffer& p_event)
+{
+	return false;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialAnchorCapability
+
+void OpenXRSpatialAnchorCapability::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRSpatialAnchorCapability::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRSpatialAnchorCapability::get_requested_extensions(XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled") &&
+		GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enable_spatial_anchors")) {
+		request_extensions[XR_EXT_SPATIAL_ANCHOR_EXTENSION_NAME] = &data->spatial_anchor_ext;
+		if (GLOBAL_GET_CACHED(
+				bool, "xr/openxr/extensions/spatial_entity/enable_persistent_anchors")) {
+			request_extensions[XR_EXT_SPATIAL_PERSISTENCE_EXTENSION_NAME] =
+				&data->spatial_persistence_ext;
+			request_extensions[XR_EXT_SPATIAL_PERSISTENCE_OPERATIONS_EXTENSION_NAME] =
+				&data->spatial_persistence_operations_ext;
+		}
+	}
+
+	return request_extensions;
+}
+
+void OpenXRSpatialAnchorCapability::on_instance_created(const XrInstance p_instance)
+{
+	ERR_FAIL_COND(!OpenXRSpatialEntityExtension::is_initialized());
+
+	if (data->spatial_anchor_ext) {
+		EXT_INIT_XR_FUNC(xrCreateSpatialAnchorEXT);
+	}
+
+	if (data->spatial_persistence_ext) {
+		ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+		XrResult xr_result =
+			OpenXRAPI::get_instance_proc_addr("xrEnumerateSpatialPersistenceScopesEXT",
+				(PFN_xrVoidFunction*)&xrEnumerateSpatialPersistenceScopesEXT_ptr);
+		if (xr_result != XR_SUCCESS) {
+			print_verbose("OpenXR: xrEnumerateSpatialPersistenceScopesEXT is not supported, "
+						  "falling back to xrEnumerateSpatialPersistenceStoresEXT!");
+			xr_result = OpenXRAPI::get_instance_proc_addr("xrEnumerateSpatialPersistenceStoresEXT",
+				(PFN_xrVoidFunction*)&xrEnumerateSpatialPersistenceScopesEXT_ptr);
+		}
+		ERR_FAIL_COND(XR_FAILED(xr_result));
+
+		EXT_INIT_XR_FUNC(xrCreateSpatialPersistenceContextAsyncEXT);
+		EXT_INIT_XR_FUNC(xrCreateSpatialPersistenceContextCompleteEXT);
+		EXT_INIT_XR_FUNC(xrDestroySpatialPersistenceContextEXT);
+	}
+
+	if (data->spatial_persistence_operations_ext) {
+		EXT_INIT_XR_FUNC(xrPersistSpatialEntityAsyncEXT);
+		EXT_INIT_XR_FUNC(xrPersistSpatialEntityCompleteEXT);
+		EXT_INIT_XR_FUNC(xrUnpersistSpatialEntityAsyncEXT);
+		EXT_INIT_XR_FUNC(xrUnpersistSpatialEntityCompleteEXT);
+	}
+}
+
+void OpenXRSpatialAnchorCapability::on_instance_destroyed()
+{
+	xrCreateSpatialAnchorEXT_ptr = nullptr;
+
+	xrEnumerateSpatialPersistenceScopesEXT_ptr = nullptr;
+	xrCreateSpatialPersistenceContextAsyncEXT_ptr = nullptr;
+	xrCreateSpatialPersistenceContextCompleteEXT_ptr = nullptr;
+	xrDestroySpatialPersistenceContextEXT_ptr = nullptr;
+}
+
+bool OpenXRSpatialAnchorCapability::is_spatial_anchor_supported()
+{
+	return data != nullptr && data->spatial_anchor_supported;
+}
+
+bool OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()
+{
+	if (!is_spatial_anchor_supported()) {
+		return false;
+	}
+
+	return data->spatial_persistence_ext;
+}
+
+bool OpenXRSpatialAnchorCapability::_load_supported_persistence_scopes()
+{
+	ERR_FAIL_COND_V(!is_spatial_persistence_supported(), false);
+
+	if (data->supported_persistence_scopes.is_empty()) {
+		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+
+		uint32_t size;
+		XrInstance instance = OpenXRAPI::get_instance();
+		XrSystemId system_id = OpenXRAPI::get_system_id();
+
+		ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
+
+		XrResult result =
+			xrEnumerateSpatialPersistenceScopesEXT(instance, system_id, 0, &size, nullptr);
+		if (XR_FAILED(result)) {
+			ERR_FAIL_V_MSG(false, "OpenXR: Failed to query persistence scope count [" +
+									  OpenXRAPI::get_error_string(result) + "]");
+		}
+
+		if (size > 0) {
+			data->supported_persistence_scopes.resize(size);
+			result = xrEnumerateSpatialPersistenceScopesEXT(instance, system_id,
+				data->supported_persistence_scopes.size(), &size,
+				data->supported_persistence_scopes.ptrw());
+			if (XR_FAILED(result)) {
+				ERR_FAIL_V_MSG(false, "OpenXR: Failed to query persistence scopes [" +
+										  OpenXRAPI::get_error_string(result) + "]");
+			}
+		}
+
+		if (is_print_verbose_enabled()) {
+			if (!data->supported_persistence_scopes.is_empty()) {
+				print_verbose("OpenXR: Supported spatial persistence scopes:");
+				for (const XrSpatialPersistenceScopeEXT& scope :
+					data->supported_persistence_scopes) {
+					print_verbose(" - " + get_spatial_persistence_scope_name(scope));
+				}
+			}
+			else {
+				WARN_PRINT("OpenXR: No persistence scopes found!");
+			}
+		}
+	}
+
+	return true;
+}
+
+bool OpenXRSpatialAnchorCapability::is_persistence_scope_supported(
+	XrSpatialPersistenceScopeEXT p_scope)
+{
+	if (!is_spatial_persistence_supported()) {
+		return false;
+	}
+
+	if (!_load_supported_persistence_scopes()) {
+		return false;
+	}
+
+	return data->supported_persistence_scopes.has(p_scope);
+}
+
+bool OpenXRSpatialAnchorCapability::_is_persistence_scope_supported(PersistenceScope p_scope)
+{
+	return is_persistence_scope_supported((XrSpatialPersistenceScopeEXT)p_scope);
+}
+
+XrSpatialPersistenceContextEXT OpenXRSpatialAnchorCapability::get_persistence_context_handle(
+	RID p_persistence_context)
+{
+	PersistenceContextData* persistence_context_data =
+		data->persistence_context_owner.get_or_null(p_persistence_context);
+	ERR_FAIL_NULL_V(persistence_context_data, XR_NULL_HANDLE);
+
+	return persistence_context_data->persistence_context;
+}
+
+uint64_t OpenXRSpatialAnchorCapability::_get_persistence_context_handle(RID p_persistence_context)
+{
+	return (uint64_t)get_persistence_context_handle(p_persistence_context);
+}
+
+void OpenXRSpatialAnchorCapability::free_persistence_context(RID p_persistence_context)
+{
+	PersistenceContextData* persistence_context_data =
+		data->persistence_context_owner.get_or_null(p_persistence_context);
+	ERR_FAIL_NULL(persistence_context_data);
+
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	if (persistence_context_data->persistence_context != XR_NULL_HANDLE) {
+		XrResult result =
+			xrDestroySpatialPersistenceContextEXT(persistence_context_data->persistence_context);
+		if (XR_FAILED(result)) {
+			WARN_PRINT("OpenXR: Failed to destroy the persistence context [" +
+					   OpenXRAPI::get_error_string(result) + "]");
+		}
+		persistence_context_data->persistence_context = XR_NULL_HANDLE;
+	}
+
+	data->persistence_context_owner.free(p_persistence_context);
+}
+
+void OpenXRSpatialAnchorCapability::_on_persistence_context_completed(RID p_persistence_context)
+{
+	data->persistence_context = p_persistence_context;
+
+	_create_spatial_context();
+}
+
+void OpenXRSpatialAnchorCapability::_on_spatial_context_created(RID p_spatial_context)
+{
+	data->spatial_context = p_spatial_context;
+	data->need_discovery = true;
+}
+
+void OpenXRSpatialAnchorCapability::_on_spatial_discovery_recommended(RID p_spatial_context)
+{
+	if (p_spatial_context == data->spatial_context) {
+		data->need_discovery = true;
+	}
+}
+
+Ref<OpenXRAnchorTracker> OpenXRSpatialAnchorCapability::create_new_anchor(
+	const Transform3D& p_transform, RID p_spatial_context, Ref<OpenXRStructureBase> p_next)
+{
+	Ref<OpenXRAnchorTracker> tracker;
+
+	ERR_FAIL_COND_V_MSG(!is_spatial_anchor_supported(), tracker,
+		"OpenXR: Spatial entity anchor capability is not supported on this hardware!");
+
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), tracker);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), tracker);
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), tracker);
+
+	XrPosef pose = OpenXRAPI::pose_from_transform(p_transform);
+
+	RID sc = p_spatial_context.is_valid() ? p_spatial_context : data->spatial_context;
+	ERR_FAIL_COND_V(sc.is_null(), tracker);
+
+	void* next = nullptr;
+	if (p_next.is_valid()) {
+		next = p_next->get_header(next);
+	}
+
+	XrSpatialAnchorCreateInfoEXT create_info = {
+		XR_TYPE_SPATIAL_ANCHOR_CREATE_INFO_EXT,
+		next,
+		OpenXRAPI::get_play_space(),
+		OpenXRAPI::get_predicted_display_time(),
+		pose,
+	};
+	XrSpatialEntityIdEXT entity_id;
+	XrSpatialEntityEXT entity;
+	XrResult result = xrCreateSpatialAnchorEXT(
+		OpenXRSpatialEntityExtension::get_spatial_context_handle(sc), &create_info, &entity_id,
+		&entity);
+	if (XR_FAILED(result)) {
+		ERR_FAIL_V_MSG(tracker,
+			"OpenXR: Failed to create anchor [" + OpenXRAPI::get_error_string(result) + "]");
+	}
+
+	tracker.instantiate(OpenXRSpatialEntityTracker::ENTITY_ANCHOR);
+	tracker->set_spatial_context(sc);
+	tracker->set_entity(OpenXRSpatialEntityExtension::add_spatial_entity(sc, entity_id, entity));
+	tracker->set_tracker_desc("Anchor");
+	tracker->set_pose(SNAME("default"), p_transform, Vector3(), Vector3());
+	tracker->add_next(p_next);
+
+	data->anchor_trackers[sc][entity_id] = tracker;
+	XRServer::add_tracker(tracker->get_xr_tracker());
+
+	return tracker;
+}
+
+void OpenXRSpatialAnchorCapability::remove_anchor(Ref<OpenXRAnchorTracker> p_anchor_tracker)
+{
+	ERR_FAIL_COND(p_anchor_tracker.is_null());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+	ERR_FAIL_COND(!XRServer::is_initialized());
+	ERR_FAIL_COND(!OpenXRSpatialEntityExtension::is_initialized());
+
+	ERR_FAIL_COND_MSG(p_anchor_tracker->has_uuid(),
+		"OpenXR: This anchor is persistent. It must first be made unpersistent.");
+
+	XRServer::remove_tracker(p_anchor_tracker->get_xr_tracker());
+
+	RID entity = p_anchor_tracker->get_entity();
+	ERR_FAIL_COND(entity.is_null());
+
+	XrSpatialEntityIdEXT entity_id = OpenXRSpatialEntityExtension::get_spatial_entity_id(entity);
+	ERR_FAIL_COND(entity_id == XR_NULL_ENTITY);
+
+	for (KeyValue<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRAnchorTracker>>>& anchors :
+		data->anchor_trackers) {
+		if (anchors.value.has(entity_id)) {
+			anchors.value.erase(entity_id);
+			break;
+		}
+	}
+
+	p_anchor_tracker->set_entity(RID());
+}
+
+String OpenXRSpatialAnchorCapability::get_spatial_persistence_scope_name(
+	XrSpatialPersistenceScopeEXT p_scope)
+{
+	XR_ENUM_SWITCH(XrSpatialPersistenceScopeEXT, p_scope)
+}
+
+String OpenXRSpatialAnchorCapability::get_spatial_persistence_context_result_name(
+	XrSpatialPersistenceContextResultEXT p_result)
+{
+	XR_ENUM_SWITCH(XrSpatialPersistenceContextResultEXT, p_result)
+}
+
+Ref<OpenXRFutureResult> OpenXRSpatialAnchorCapability::_create_spatial_context()
+{
+	Ref<OpenXRFutureResult> oxfr = memnew(OpenXRFutureResult);
+	return oxfr;
+}
+
+void OpenXRSpatialAnchorCapability::on_session_created(XrSession_T* p_session) {}
+
+void OpenXRSpatialAnchorCapability::on_session_destroyed() {}
+
+void OpenXRSpatialAnchorCapability::on_process() {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialMarkerTrackingCapability
+
+void OpenXRSpatialMarkerTrackingCapability::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRSpatialMarkerTrackingCapability::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRSpatialMarkerTrackingCapability::get_requested_extensions(
+	XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled") &&
+		GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enable_marker_tracking")) {
+		request_extensions[XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME] =
+			&data->spatial_marker_tracking_ext;
+	}
+
+	return request_extensions;
+}
+
+bool OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported()
+{
+	if (!data->spatial_marker_tracking_ext) {
+		return false;
+	}
+
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+	return OpenXRSpatialEntityExtension::supports_capability(
+		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT);
+}
+
+bool OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported()
+{
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+	return OpenXRSpatialEntityExtension::supports_capability(
+		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT);
+}
+
+bool OpenXRSpatialMarkerTrackingCapability::is_aruco_supported()
+{
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+	return OpenXRSpatialEntityExtension::supports_capability(
+		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT);
+}
+
+bool OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported()
+{
+	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
+
+	return OpenXRSpatialEntityExtension::supports_capability(
+		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT);
+}
+
+void OpenXRSpatialMarkerTrackingCapability::_on_spatial_context_created(RID p_spatial_context)
+{
+	data->spatial_context = p_spatial_context;
+	data->need_discovery = true;
+}
+
+void OpenXRSpatialMarkerTrackingCapability::_on_spatial_discovery_recommended(RID p_spatial_context)
+{
+	if (p_spatial_context == data->spatial_context) {
+		data->need_discovery = true;
+	}
+}
+
+void OpenXRSpatialMarkerTrackingCapability::on_session_created(XrSession_T* p_session) {}
+
+void OpenXRSpatialMarkerTrackingCapability::on_session_destroyed() {}
+
+void OpenXRSpatialMarkerTrackingCapability::on_process() {}
+
+////////////////////////////////////////////////////////////////////////////
+// OpenXRSpatialPlaneTrackingCapability
+
+void OpenXRSpatialPlaneTrackingCapability::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXRSpatialPlaneTrackingCapability::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+HashMap<String, bool*> OpenXRSpatialPlaneTrackingCapability::get_requested_extensions(
+	XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled") &&
+		GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enable_plane_tracking")) {
+		request_extensions[XR_EXT_SPATIAL_PLANE_TRACKING_EXTENSION_NAME] =
+			&data->spatial_plane_tracking_ext;
+	}
+
+	return request_extensions;
+}
+
+bool OpenXRSpatialPlaneTrackingCapability::is_supported()
+{
+	return data != nullptr && data->spatial_plane_tracking_supported;
+}
+
+void OpenXRSpatialPlaneTrackingCapability::_on_spatial_context_created(RID p_spatial_context)
+{
+	data->spatial_context = p_spatial_context;
+	data->need_discovery = true;
+}
+
+void OpenXRSpatialPlaneTrackingCapability::_on_spatial_discovery_recommended(RID p_spatial_context)
+{
+	if (p_spatial_context == data->spatial_context) {
+		data->need_discovery = true;
+	}
+}
+
+void OpenXRSpatialPlaneTrackingCapability::on_session_created(XrSession_T* p_session) {}
+
+void OpenXRSpatialPlaneTrackingCapability::on_session_destroyed() {}
+
+void OpenXRSpatialPlaneTrackingCapability::on_process() {}

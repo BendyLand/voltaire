@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_sky)
 
 #ifndef _3D_DISABLED
 
-#include "scene/resources/sky.h"
+#include "scene/resources/environment.h"
 
 namespace TestSky {
 

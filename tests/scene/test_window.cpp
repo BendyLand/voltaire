@@ -61,7 +61,7 @@ public:
 };
 
 TEST_CASE("[SceneTree][Window]") {
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 
 	SUBCASE("Control-mouse-over within Window-black bars should not happen") {
 		Window *w = memnew(Window);

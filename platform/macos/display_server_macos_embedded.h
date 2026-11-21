@@ -69,8 +69,6 @@ class DisplayServerMacOSEmbedded : public DisplayServerMacOSBase {
 
 	DisplayServerMacOSEmbeddedState state;
 
-	NativeMenu *native_menu = nullptr;
-
 	HashMap<DisplayServerEnums::WindowID, ObjectID> window_attached_instance_id;
 
 	HashMap<DisplayServerEnums::WindowID, Callable> window_event_callbacks;
@@ -116,7 +114,7 @@ class DisplayServerMacOSEmbedded : public DisplayServerMacOSBase {
 
 public:
 	static void register_embedded_driver();
-	static DisplayServer *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
 	static Vector<String> get_rendering_drivers_func();
 
 	void _window_set_size(const Size2i p_size, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID);

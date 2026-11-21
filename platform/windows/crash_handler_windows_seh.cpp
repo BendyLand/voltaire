@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "crash_handler_windows.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/config/project_settings.h"
 #include "core/os/main_loop.h"
@@ -123,7 +123,7 @@ DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
 	DWORD cbNeeded;
 	std::vector<HMODULE> module_handles(1);
 
-	if (OS::get_singleton() == nullptr || OS::is_disable_crash_handler() || IsDebuggerPresent()) {
+	if (!OS::is_initialized() || OS::is_disable_crash_handler() || IsDebuggerPresent()) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 
@@ -132,13 +132,13 @@ DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
 	}
 
 	String msg;
-	if (ProjectSettings::get_singleton()) {
+	if (ProjectSettings::is_initialized()) {
 		msg = GLOBAL_GET("debug/settings/crash_handler/message");
 	}
 
 	// Tell MainLoop about the crash. This can be handled by users too in Node.
-	if (OS::get_main_loop()) {
-		OS::get_main_loop()->notification(MainLoop::NOTIFICATION_CRASH);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_CRASH);
 	}
 
 	print_error("\n================================================================");

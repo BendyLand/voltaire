@@ -32,7 +32,7 @@
 #pragma once
 
 #include "scene/3d/node_3d.h"
-#include "scene/resources/3d/mesh_library.h"
+#include "scene/resources/3d/primitive_meshes.h"
 
 class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;

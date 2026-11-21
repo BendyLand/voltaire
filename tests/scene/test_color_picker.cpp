@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_color_picker)
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/color_picker.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "tests/display_server_mock.h"
 
@@ -43,7 +43,7 @@ namespace TestColorPicker {
 
 TEST_CASE("[SceneTree][ColorPicker]") {
 	ColorPicker *cp = memnew(ColorPicker);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(cp);
 
 	SUBCASE("[COLOR_PICKER] Mouse movement after Slider release") {

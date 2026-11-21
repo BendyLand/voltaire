@@ -34,7 +34,7 @@
 TEST_FORCE_LINK(test_texture_rect)
 
 #include "core/io/image.h"
-#include "scene/gui/texture_rect.h"
+#include "scene/gui/button.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/atlas_texture.h"
@@ -157,7 +157,7 @@ TEST_CASE("[SceneTree][TextureRect] Flip flags") {
 
 TEST_CASE("[SceneTree][TextureRect] Minimum size") {
 	TextureRect *texture_rect = memnew(TextureRect);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(texture_rect);
 
 	Ref<Image> image = memnew(Image(64, 32, false, Image::FORMAT_RGB8));
@@ -165,7 +165,7 @@ TEST_CASE("[SceneTree][TextureRect] Minimum size") {
 
 	SUBCASE("EXPAND_KEEP_SIZE reports the texture's pixel dimensions") {
 		texture_rect->set_texture(tex);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK(texture_rect->get_combined_minimum_size() == Size2(64, 32));
 	}
@@ -173,17 +173,17 @@ TEST_CASE("[SceneTree][TextureRect] Minimum size") {
 	SUBCASE("EXPAND_IGNORE_SIZE reports zero even with a texture") {
 		texture_rect->set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
 		texture_rect->set_texture(tex);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK(texture_rect->get_combined_minimum_size() == Size2(0, 0));
 	}
 
 	SUBCASE("Clearing the texture resets minimum size to zero") {
 		texture_rect->set_texture(tex);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		texture_rect->set_texture(Ref<Texture2D>());
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK(texture_rect->get_combined_minimum_size() == Size2(0, 0));
 	}

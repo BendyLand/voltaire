@@ -32,7 +32,6 @@
 #pragma once
 
 #include "../fastnoise_lite.h"
-#include "../noise_texture_3d.h"
 
 #include "tests/test_macros.h"
 
@@ -196,7 +195,6 @@ TEST_CASE("[NoiseTexture3D][SceneTree] Generating a basic noise texture with mip
 
 	Ref<NoiseTexture3DTester> tester = memnew(NoiseTexture3DTester(noise_texture.ptr()));
 	noise_texture->connect_changed(callable_mp(tester.ptr(), &NoiseTexture3DTester::check_mip_and_color_ramp));
-	MessageQueue::get_singleton()->flush();
 }
 
 TEST_CASE("[NoiseTexture3D][SceneTree] Generating a seamless noise texture") {
@@ -215,7 +213,6 @@ TEST_CASE("[NoiseTexture3D][SceneTree] Generating a seamless noise texture") {
 	SUBCASE("Grayscale(L8) 16x16x16, with seamless blend skirt of 0.05") {
 		noise_texture->set_seamless_blend_skirt(0.05);
 		noise_texture->connect_changed(callable_mp(tester.ptr(), &NoiseTexture3DTester::check_seamless_texture_grayscale));
-		MessageQueue::get_singleton()->flush();
 	}
 
 	SUBCASE("16x16x16 modulated with default (transparent)black and white gradient (RGBA8), with seamless blend skirt of 1.0") {
@@ -229,7 +226,6 @@ TEST_CASE("[NoiseTexture3D][SceneTree] Generating a seamless noise texture") {
 		noise_texture->set_color_ramp(gradient);
 		noise_texture->set_seamless_blend_skirt(1.0);
 		noise_texture->connect_changed(callable_mp(tester.ptr(), &NoiseTexture3DTester::check_seamless_texture_rgba));
-		MessageQueue::get_singleton()->flush();
 	}
 }
 

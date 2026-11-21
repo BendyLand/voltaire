@@ -15,7 +15,6 @@ if not env["disable_3d"]:
     SConscript("3d/SCsub")
 SConscript("2d/SCsub")
 SConscript("animation/SCsub")
-SConscript("audio/SCsub")
 SConscript("resources/SCsub")
 SConscript("theme/SCsub")
 

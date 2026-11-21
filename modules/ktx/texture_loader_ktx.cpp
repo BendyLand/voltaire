@@ -30,12 +30,34 @@
 /**************************************************************************/
 
 #include <ktx.h>
+#include "register_types.h"
+#include "core/io/resource_loader.h"
 #include <vk_format.h>
 #include "core/io/file_access.h"
-#include "core/io/file_access_memory.h"
+#include "core/io/file_access_wrappers.h"
 #include "scene/resources/image_texture.h"
 #include "servers/rendering/renderer.h"
-#include "texture_loader_ktx.h"
+// --- Inlined from modules/ktx/texture_loader_ktx.h ---
+#include "core/io/resource_loader.h"
+
+class ResourceFormatKTX : public ResourceFormatLoader
+{
+public:
+	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
+		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
+		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual bool handles_type(const String& p_type) const override;
+	virtual String get_resource_type(const String& p_path) const override;
+
+	virtual ~ResourceFormatKTX() {}
+
+	ResourceFormatKTX();
+};
+
+
+
+// --- End modules/ktx/texture_loader_ktx.h ---
 
 KTX_error_code ktx_read(ktxStream* stream, void* dst, const ktx_size_t count)
 {
@@ -651,4 +673,24 @@ String ResourceFormatKTX::get_resource_type(const String& p_path) const
 
 ResourceFormatKTX::ResourceFormatKTX() { Image::_ktx_mem_loader_func = _ktx_mem_loader_func; }
 
+static Ref<ResourceFormatKTX> resource_loader_ktx;
 
+void initialize_ktx_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	resource_loader_ktx.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_loader_ktx);
+}
+
+void uninitialize_ktx_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	ResourceLoader::remove_resource_format_loader(resource_loader_ktx);
+	resource_loader_ktx.unref();
+}

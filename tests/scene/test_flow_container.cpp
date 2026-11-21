@@ -42,13 +42,13 @@ namespace TestFlowContainer {
 
 TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 	HFlowContainer *hflow_container = memnew(HFlowContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(hflow_container);
 
 	hflow_container->add_theme_constant_override("h_separation", 0);
 	hflow_container->add_theme_constant_override("v_separation", 0);
 	hflow_container->set_size(Size2(100, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	SUBCASE("Default behavior") {
 		Control *child_control_1 = memnew(Control);
@@ -60,7 +60,7 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 		hflow_container->add_child(child_control_1);
 		hflow_container->add_child(child_control_2);
 		hflow_container->add_child(child_control_3);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				hflow_container->get_alignment() == FlowContainer::ALIGNMENT_BEGIN,
@@ -114,7 +114,7 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 		hflow_container->add_child(child_control_1);
 		hflow_container->add_child(child_control_2);
 		hflow_container->add_child(child_control_3);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				hflow_container->get_line_count() == 2,
@@ -137,14 +137,14 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 				"Third child control wraps to the second line.");
 
 		hflow_container->set_last_wrap_alignment(FlowContainer::LAST_WRAP_ALIGNMENT_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_3->get_position().is_equal_approx(Point2(10, 10)),
 				"Last wrapped line is centered relative to the previous line when LAST_WRAP_ALIGNMENT_CENTER is used.");
 
 		hflow_container->set_last_wrap_alignment(FlowContainer::LAST_WRAP_ALIGNMENT_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_3->get_position().is_equal_approx(Point2(20, 10)),
@@ -163,10 +163,10 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 		hflow_container->set_size(Size2(100, 100));
 		hflow_container->add_child(child_control_1);
 		hflow_container->add_child(child_control_2);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		hflow_container->set_alignment(FlowContainer::ALIGNMENT_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(30, 0)),
@@ -177,7 +177,7 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 				"Second child control follows centered alignment when ALIGNMENT_CENTER is used.");
 
 		hflow_container->set_alignment(FlowContainer::ALIGNMENT_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(60, 0)),
@@ -189,7 +189,7 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 
 		hflow_container->set_alignment(FlowContainer::ALIGNMENT_BEGIN);
 		hflow_container->set_layout_direction(Control::LAYOUT_DIRECTION_RTL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(80, 0)),
@@ -213,7 +213,7 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 		hflow_container->set_size(Size2(100, 100));
 		hflow_container->add_child(child_control_1);
 		hflow_container->add_child(child_control_2);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(50, 10)),
@@ -228,7 +228,7 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 				"Second child control is placed immediately after the first expanded child control.");
 
 		child_control_2->set_stretch_ratio(3.0f);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(35, 10)),
@@ -257,7 +257,7 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 		hflow_container->add_child(child_control_1);
 		hflow_container->add_child(child_control_2);
 		hflow_container->add_child(child_control_3);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(0, 0)),
@@ -268,7 +268,7 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 				"Third child control wraps to the next row by default.");
 
 		hflow_container->set_reverse_fill(true);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(0, 90)),
@@ -283,7 +283,7 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 				"Wrapped row order is inverted from bottom to top when reverse fill is enabled.");
 
 		hflow_container->set_layout_direction(Control::LAYOUT_DIRECTION_RTL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(30, 90)),
@@ -307,13 +307,13 @@ TEST_CASE("[SceneTree][FlowContainer] HFlowContainer") {
 
 TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 	VFlowContainer *vflow_container = memnew(VFlowContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(vflow_container);
 
 	vflow_container->add_theme_constant_override("h_separation", 0);
 	vflow_container->add_theme_constant_override("v_separation", 0);
 	vflow_container->set_size(Size2(100, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	SUBCASE("Default behavior") {
 		Control *child_control_1 = memnew(Control);
@@ -325,7 +325,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 		vflow_container->add_child(child_control_1);
 		vflow_container->add_child(child_control_2);
 		vflow_container->add_child(child_control_3);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				vflow_container->get_alignment() == FlowContainer::ALIGNMENT_BEGIN,
@@ -379,7 +379,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 		vflow_container->add_child(child_control_1);
 		vflow_container->add_child(child_control_2);
 		vflow_container->add_child(child_control_3);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				vflow_container->get_line_count() == 2,
@@ -402,14 +402,14 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 				"Third child control wraps to the second column.");
 
 		vflow_container->set_last_wrap_alignment(FlowContainer::LAST_WRAP_ALIGNMENT_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_3->get_position().is_equal_approx(Point2(20, 10)),
 				"Last wrapped column is centered relative to the previous column when LAST_WRAP_ALIGNMENT_CENTER is used.");
 
 		vflow_container->set_last_wrap_alignment(FlowContainer::LAST_WRAP_ALIGNMENT_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_3->get_position().is_equal_approx(Point2(20, 20)),
@@ -428,10 +428,10 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 		vflow_container->set_size(Size2(100, 100));
 		vflow_container->add_child(child_control_1);
 		vflow_container->add_child(child_control_2);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		vflow_container->set_alignment(FlowContainer::ALIGNMENT_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(0, 30)),
@@ -442,7 +442,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 				"Second child control follows centered vertical alignment when ALIGNMENT_CENTER is used.");
 
 		vflow_container->set_alignment(FlowContainer::ALIGNMENT_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(0, 60)),
@@ -454,7 +454,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 
 		vflow_container->set_alignment(FlowContainer::ALIGNMENT_BEGIN);
 		vflow_container->set_layout_direction(Control::LAYOUT_DIRECTION_RTL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(80, 0)),
@@ -478,7 +478,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 		vflow_container->set_size(Size2(100, 100));
 		vflow_container->add_child(child_control_1);
 		vflow_container->add_child(child_control_2);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(20, 50)),
@@ -493,7 +493,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 				"Second child control is placed immediately after the first expanded child control.");
 
 		child_control_2->set_stretch_ratio(3.0f);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(20, 35)),
@@ -522,7 +522,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 		vflow_container->add_child(child_control_1);
 		vflow_container->add_child(child_control_2);
 		vflow_container->add_child(child_control_3);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(0, 0)),
@@ -537,7 +537,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 				"Third child control starts in the third column by default.");
 
 		vflow_container->set_reverse_fill(true);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(80, 0)),
@@ -552,7 +552,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 				"Third child control continues right-to-left column filling when reverse fill is enabled.");
 
 		vflow_container->set_layout_direction(Control::LAYOUT_DIRECTION_RTL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_position().is_equal_approx(Point2(0, 0)),

@@ -42,7 +42,7 @@ namespace TestAspectRatioContainer {
 
 TEST_CASE("[SceneTree][AspectRatioContainer] Default Properties") {
 	AspectRatioContainer *aspect_ratio_container = memnew(AspectRatioContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(aspect_ratio_container);
 	Control *child_control = memnew(Control);
 	aspect_ratio_container->add_child(child_control);
@@ -73,41 +73,41 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Default Properties") {
 
 TEST_CASE("[SceneTree][AspectRatioContainer] Aspect Ratio") {
 	AspectRatioContainer *aspect_ratio_container = memnew(AspectRatioContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(aspect_ratio_container);
 	Control *child_control = memnew(Control);
 	aspect_ratio_container->add_child(child_control);
 
 	aspect_ratio_container->set_size(Size2(200, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(100, 100)),
 			"Child control is resized to maintain aspect ratio when AspectRatioContainer is resized.");
 
 	aspect_ratio_container->set_size(Size2(100, 200));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(100, 100)),
 			"Child control is resized to maintain aspect ratio when AspectRatioContainer is resized.");
 
 	aspect_ratio_container->set_ratio(2.0f);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(100, 50)),
 			"Child control is resized to maintain aspect ratio when AspectRatioContainer ratio is changed.");
 
 	aspect_ratio_container->set_ratio(0.5f);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(100, 200)),
 			"Child control is resized to maintain aspect ratio when AspectRatioContainer ratio is changed.");
 
 	aspect_ratio_container->set_size(Size2(200, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(50, 100)),
@@ -119,34 +119,34 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Aspect Ratio") {
 
 TEST_CASE("[SceneTree][AspectRatioContainer] Stretch Modes") {
 	AspectRatioContainer *aspect_ratio_container = memnew(AspectRatioContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(aspect_ratio_container);
 	Control *child_control = memnew(Control);
 	aspect_ratio_container->add_child(child_control);
 
 	aspect_ratio_container->set_size(Size2(200, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(100, 100)),
 			"Child control is resized to maintain aspect ratio in STRETCH_FIT mode.");
 
 	aspect_ratio_container->set_stretch_mode(AspectRatioContainer::STRETCH_WIDTH_CONTROLS_HEIGHT);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(200, 200)),
 			"Child control height is adjusted to maintain aspect ratio in STRETCH_WIDTH_CONTROLS_HEIGHT mode.");
 
 	aspect_ratio_container->set_stretch_mode(AspectRatioContainer::STRETCH_HEIGHT_CONTROLS_WIDTH);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(100, 100)),
 			"Child control width is adjusted to maintain aspect ratio in STRETCH_HEIGHT_CONTROLS_WIDTH mode.");
 
 	aspect_ratio_container->set_stretch_mode(AspectRatioContainer::STRETCH_COVER);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(200, 200)),
@@ -154,7 +154,7 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Stretch Modes") {
 
 	aspect_ratio_container->set_size(Size2(100, 200));
 	aspect_ratio_container->set_stretch_mode(AspectRatioContainer::STRETCH_FIT);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			aspect_ratio_container->get_stretch_mode() == AspectRatioContainer::STRETCH_FIT,
@@ -165,21 +165,21 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Stretch Modes") {
 			"Child control is resized to maintain aspect ratio in STRETCH_FIT mode.");
 
 	aspect_ratio_container->set_stretch_mode(AspectRatioContainer::STRETCH_WIDTH_CONTROLS_HEIGHT);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(100, 100)),
 			"Child control height is adjusted to maintain aspect ratio in STRETCH_WIDTH_CONTROLS_HEIGHT mode.");
 
 	aspect_ratio_container->set_stretch_mode(AspectRatioContainer::STRETCH_HEIGHT_CONTROLS_WIDTH);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(200, 200)),
 			"Child control width is adjusted to maintain aspect ratio in STRETCH_HEIGHT_CONTROLS_WIDTH mode.");
 
 	aspect_ratio_container->set_stretch_mode(AspectRatioContainer::STRETCH_COVER);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_size().is_equal_approx(Size2(200, 200)),
@@ -191,14 +191,14 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Stretch Modes") {
 
 TEST_CASE("[SceneTree][AspectRatioContainer] Alignment modes") {
 	AspectRatioContainer *aspect_ratio_container = memnew(AspectRatioContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(aspect_ratio_container);
 	Control *child_control = memnew(Control);
 	aspect_ratio_container->add_child(child_control);
 
 	SUBCASE("Horizontal Alignment") {
 		aspect_ratio_container->set_size(Size2(200, 100));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				aspect_ratio_container->get_alignment_horizontal() == AspectRatioContainer::ALIGNMENT_CENTER,
@@ -209,14 +209,14 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Alignment modes") {
 				"Child control is aligned to the center in ALIGNMENT_CENTER horizontal alignment mode.");
 
 		aspect_ratio_container->set_alignment_horizontal(AspectRatioContainer::ALIGNMENT_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the left in ALIGNMENT_BEGIN horizontal alignment mode.");
 
 		aspect_ratio_container->set_alignment_horizontal(AspectRatioContainer::ALIGNMENT_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(100, 0)),
@@ -225,7 +225,7 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Alignment modes") {
 
 	SUBCASE("Vertical Alignment") {
 		aspect_ratio_container->set_size(Size2(100, 200));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				aspect_ratio_container->get_alignment_vertical() == AspectRatioContainer::ALIGNMENT_CENTER,
@@ -236,14 +236,14 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Alignment modes") {
 				"Child control is aligned to the center in ALIGNMENT_CENTER vertical alignment mode.");
 
 		aspect_ratio_container->set_alignment_vertical(AspectRatioContainer::ALIGNMENT_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the top in ALIGNMENT_BEGIN vertical alignment mode.");
 
 		aspect_ratio_container->set_alignment_vertical(AspectRatioContainer::ALIGNMENT_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 100)),
@@ -256,35 +256,35 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Alignment modes") {
 
 TEST_CASE("[SceneTree][AspectRatioContainer] Container Sizing Flags") {
 	AspectRatioContainer *aspect_ratio_container = memnew(AspectRatioContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(aspect_ratio_container);
 	Control *child_control = memnew(Control);
 	aspect_ratio_container->add_child(child_control);
 
 	SUBCASE("Horizontal Flags") {
 		aspect_ratio_container->set_size(Size2(200, 100));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(50, 0)),
 				"Child control is vertically centered by default with SIZE_FILL.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(50, 0)),
 				"Child control is aligned to the left of its would-be area with SIZE_FILL in SIZE_SHRINK_BEGIN horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(100, 0)),
 				"Child control is centered in its would-be area with SIZE_FILL in SIZE_SHRINK_CENTER horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(150, 0)),
@@ -294,28 +294,28 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Container Sizing Flags") {
 	SUBCASE("Horizontal Flags RTL") {
 		aspect_ratio_container->set_size(Size2(200, 100));
 		aspect_ratio_container->set_layout_direction(Control::LAYOUT_DIRECTION_RTL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(50, 0)),
 				"Child control is vertically centered by default with SIZE_FILL.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(150, 0)),
 				"Child control is aligned to the right of its would-be area with SIZE_FILL in RTL SIZE_SHRINK_BEGIN horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(100, 0)),
 				"Child control is centered in its would-be area with SIZE_FILL in SIZE_SHRINK_CENTER horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(50, 0)),
@@ -324,28 +324,28 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Container Sizing Flags") {
 
 	SUBCASE("Vertical Flags") {
 		aspect_ratio_container->set_size(Size2(100, 200));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 50)),
 				"Child control is horizontally centered by default with SIZE_FILL.");
 
 		child_control->set_v_size_flags(Control::SIZE_SHRINK_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 50)),
 				"Child control is aligned to the top of its would-be area with SIZE_FILL in SIZE_SHRINK_BEGIN vertical size flag mode.");
 
 		child_control->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 100)),
 				"Child control is centered in its would-be area with SIZE_FILL in SIZE_SHRINK_CENTER vertical size flag mode.");
 
 		child_control->set_v_size_flags(Control::SIZE_SHRINK_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 150)),

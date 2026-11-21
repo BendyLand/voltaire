@@ -43,8 +43,8 @@ namespace TestTextServer {
 TEST_SUITE("[TextServer]") {
 	TEST_CASE("[TextServer] Init, font loading and shaping") {
 		SUBCASE("[TextServer] Loading fonts") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				if (!ts->has_feature(TextServer::FEATURE_FONT_DYNAMIC)) {
@@ -59,8 +59,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Text layout: Font fallback") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				if (!ts->has_feature(TextServer::FEATURE_FONT_DYNAMIC) || !ts->has_feature(TextServer::FEATURE_SIMPLE_LAYOUT)) {
@@ -111,8 +111,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Text layout: BiDi") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				if (!ts->has_feature(TextServer::FEATURE_FONT_DYNAMIC) || !ts->has_feature(TextServer::FEATURE_BIDI_LAYOUT)) {
@@ -160,8 +160,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Text layout: Line break and align points") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				if (!ts->has_feature(TextServer::FEATURE_FONT_DYNAMIC) || !ts->has_feature(TextServer::FEATURE_SIMPLE_LAYOUT)) {
@@ -555,8 +555,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Text layout: Line breaking") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				if (!ts->has_feature(TextServer::FEATURE_FONT_DYNAMIC) || !ts->has_feature(TextServer::FEATURE_SIMPLE_LAYOUT)) {
@@ -666,8 +666,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Text layout: Justification") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				if (!ts->has_feature(TextServer::FEATURE_FONT_DYNAMIC) || !ts->has_feature(TextServer::FEATURE_SIMPLE_LAYOUT)) {
@@ -735,8 +735,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Unicode identifiers") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				static const char32_t *data[19] = { U"-30", U"100", U"10.1", U"10,1", U"1e2", U"1e-2", U"1e2e3", U"0xAB", U"AB", U"Test1", U"1Test", U"Test*1", U"test_testeT", U"test_tes teT", U"عَلَيْكُمْ", U"عَلَيْكُمْTest", U"ӒӖӚӜ", U"_test", U"ÂÃÄÅĀĂĄÇĆĈĊ" };
@@ -756,8 +756,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Unicode letters") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				struct ul_testcase {
@@ -847,8 +847,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Strip Diacritics") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				if (ts->has_feature(TextServer::FEATURE_SHAPING)) {
@@ -870,8 +870,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Word break") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				if (!ts->has_feature(TextServer::FEATURE_SIMPLE_LAYOUT)) {
@@ -977,8 +977,8 @@ TEST_SUITE("[TextServer]") {
 		}
 
 		SUBCASE("[TextServer] Buffer invalidation") {
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(i);
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				Ref<TextServer> ts = TextServerManager::get_interface(i);
 				CHECK_FALSE_MESSAGE(ts.is_null(), "Invalid TS interface.");
 
 				if (!ts->has_feature(TextServer::FEATURE_SIMPLE_LAYOUT)) {

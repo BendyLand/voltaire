@@ -109,7 +109,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer Start and Stop") {
 	Timer *test_timer = memnew(Timer);
 
 	SUBCASE("[Timer] Timer start and stop") {
-		SceneTree::get_singleton()->get_root()->add_child(test_timer);
+		SceneTree::get_root()->add_child(test_timer);
 
 		test_timer->start(5.0);
 
@@ -149,7 +149,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer process callback") {
 
 TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 	Timer *test_timer = memnew(Timer);
-	SceneTree::get_singleton()->get_root()->add_child(test_timer);
+	SceneTree::get_root()->add_child(test_timer);
 
 	test_timer->set_process(true);
 	test_timer->set_physics_process(true);
@@ -158,7 +158,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 		SIGNAL_WATCH(test_timer, SNAME("timeout"));
 		test_timer->start(0.1);
 
-		SceneTree::get_singleton()->process(0.2);
+		SceneTree::process(0.2);
 
 		Array signal_args = { {} };
 		SIGNAL_CHECK(SNAME("timeout"), signal_args);
@@ -170,7 +170,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 		SIGNAL_WATCH(test_timer, SNAME("timeout"));
 		test_timer->start(0.1);
 
-		SceneTree::get_singleton()->process(0.05);
+		SceneTree::process(0.05);
 
 		SIGNAL_CHECK_FALSE(SNAME("timeout"));
 
@@ -183,7 +183,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 		SIGNAL_WATCH(test_timer, SNAME("timeout"));
 		test_timer->start(0.1);
 
-		SceneTree::get_singleton()->physics_process(0.2);
+		SceneTree::physics_process(0.2);
 
 		Array signal_args = { {} };
 		SIGNAL_CHECK(SNAME("timeout"), signal_args);
@@ -195,7 +195,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 		SIGNAL_WATCH(test_timer, SNAME("timeout"));
 		test_timer->start(0.1);
 
-		SceneTree::get_singleton()->physics_process(0.05);
+		SceneTree::physics_process(0.05);
 
 		SIGNAL_CHECK_FALSE(SNAME("timeout"));
 

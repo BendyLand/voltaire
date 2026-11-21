@@ -57,10 +57,8 @@
 #import <QuartzCore/CAMetalLayer.h>
 
 class InputEvent;
-class NativeMenu;
-
 /// "Embedded" as in "Embedded Device".
-class DisplayServerAppleEmbedded : public DisplayServer {
+class DisplayServerAppleEmbedded : public DisplayServerDriver {
 
 	_THREAD_SAFE_CLASS_
 
@@ -68,7 +66,6 @@ class DisplayServerAppleEmbedded : public DisplayServer {
 	RenderingContextDriver *rendering_context = nullptr;
 	RenderingDevice *rendering_device = nullptr;
 #endif
-	NativeMenu *native_menu = nullptr;
 
 	id tts = nullptr;
 
@@ -104,8 +101,6 @@ protected:
 
 public:
 	String rendering_driver;
-
-	static DisplayServerAppleEmbedded *get_singleton();
 
 	static Vector<String> get_rendering_drivers_func();
 

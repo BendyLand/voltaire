@@ -708,11 +708,11 @@ bool JavaClass::_call_method(JavaObject *p_instance, const String &p_method, con
 		env->ExceptionClear();
 
 		jclass java_class = env->GetObjectClass(exception);
-		Ref<JavaClass> java_class_wrapped = JavaClassWrapper::singleton->wrap_jclass(java_class);
+		Ref<JavaClass> java_class_wrapped = JavaClassWrapper::wrap_jclass(java_class);
 
-		JavaClassWrapper::singleton->exception.instantiate(java_class_wrapped, exception);
+		JavaClassWrapper::data->exception.instantiate(java_class_wrapped, exception);
 	} else {
-		JavaClassWrapper::singleton->exception.unref();
+		JavaClassWrapper::data->exception.unref();
 	}
 
 	env->PopLocalFrame(nullptr);
@@ -822,12 +822,12 @@ Ref<JavaClass> JavaClass::get_java_parent_class() const {
 	JNIEnv *env = get_jni_env();
 	ERR_FAIL_NULL_V(env, Ref<JavaClass>());
 
-	jclass superclass = (jclass)env->CallObjectMethod(_class, JavaClassWrapper::singleton->Class_getSuperclass);
+	jclass superclass = (jclass)env->CallObjectMethod(_class, JavaClassWrapper::data->Class_getSuperclass);
 	if (!superclass) {
 		return Ref<JavaClass>();
 	}
 
-	Ref<JavaClass> ret = JavaClassWrapper::singleton->wrap_jclass(superclass);
+	Ref<JavaClass> ret = JavaClassWrapper::wrap_jclass(superclass);
 	env->DeleteLocalRef(superclass);
 	return ret;
 }
@@ -923,7 +923,7 @@ JavaObject::~JavaObject() {
 ////////////////////
 
 bool JavaClassWrapper::_get_type_sig(JNIEnv *env, jobject obj, uint32_t &sig, String &strsig) {
-	jstring name2 = (jstring)env->CallObjectMethod(obj, Class_getName);
+	jstring name2 = (jstring)env->CallObjectMethod(obj, data->Class_getName);
 	String str_type = jstring_to_string(name2, env);
 	env->DeleteLocalRef(name2);
 	uint32_t t = 0;
@@ -1023,41 +1023,41 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 			return Variant();
 		} break;
 		case ARG_TYPE_BOOLEAN | ARG_NUMBER_CLASS_BIT: {
-			var = env->CallBooleanMethod(obj, JavaClassWrapper::singleton->Boolean_booleanValue);
+			var = env->CallBooleanMethod(obj, JavaClassWrapper::data->Boolean_booleanValue);
 			return true;
 		} break;
 		case ARG_TYPE_BYTE | ARG_NUMBER_CLASS_BIT: {
-			var = env->CallByteMethod(obj, JavaClassWrapper::singleton->Byte_byteValue);
+			var = env->CallByteMethod(obj, JavaClassWrapper::data->Byte_byteValue);
 			return true;
 
 		} break;
 		case ARG_TYPE_CHAR | ARG_NUMBER_CLASS_BIT: {
-			var = env->CallCharMethod(obj, JavaClassWrapper::singleton->Character_characterValue);
+			var = env->CallCharMethod(obj, JavaClassWrapper::data->Character_characterValue);
 			return true;
 
 		} break;
 		case ARG_TYPE_SHORT | ARG_NUMBER_CLASS_BIT: {
-			var = env->CallShortMethod(obj, JavaClassWrapper::singleton->Short_shortValue);
+			var = env->CallShortMethod(obj, JavaClassWrapper::data->Short_shortValue);
 			return true;
 
 		} break;
 		case ARG_TYPE_INT | ARG_NUMBER_CLASS_BIT: {
-			var = env->CallIntMethod(obj, JavaClassWrapper::singleton->Integer_integerValue);
+			var = env->CallIntMethod(obj, JavaClassWrapper::data->Integer_integerValue);
 			return true;
 
 		} break;
 		case ARG_TYPE_LONG | ARG_NUMBER_CLASS_BIT: {
-			var = (int64_t)env->CallLongMethod(obj, JavaClassWrapper::singleton->Long_longValue);
+			var = (int64_t)env->CallLongMethod(obj, JavaClassWrapper::data->Long_longValue);
 			return true;
 
 		} break;
 		case ARG_TYPE_FLOAT | ARG_NUMBER_CLASS_BIT: {
-			var = env->CallFloatMethod(obj, JavaClassWrapper::singleton->Float_floatValue);
+			var = env->CallFloatMethod(obj, JavaClassWrapper::data->Float_floatValue);
 			return true;
 
 		} break;
 		case ARG_TYPE_DOUBLE | ARG_NUMBER_CLASS_BIT: {
-			var = env->CallDoubleMethod(obj, JavaClassWrapper::singleton->Double_doubleValue);
+			var = env->CallDoubleMethod(obj, JavaClassWrapper::data->Double_doubleValue);
 			return true;
 		} break;
 		case ARG_TYPE_STRING: {
@@ -1074,7 +1074,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 		} break;
 		case ARG_TYPE_CLASS: {
 			jclass java_class = env->GetObjectClass(obj);
-			Ref<JavaClass> java_class_wrapped = JavaClassWrapper::singleton->wrap_jclass(java_class);
+			Ref<JavaClass> java_class_wrapped = JavaClassWrapper::wrap_jclass(java_class);
 			env->DeleteLocalRef(java_class);
 
 			if (java_class_wrapped.is_valid()) {
@@ -1205,7 +1205,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 			for (int i = 0; i < count; i++) {
 				jobject o = env->GetObjectArrayElement(arr, i);
 				if (o) {
-					bool val = env->CallBooleanMethod(o, JavaClassWrapper::singleton->Boolean_booleanValue);
+					bool val = env->CallBooleanMethod(o, JavaClassWrapper::data->Boolean_booleanValue);
 					ret[i] = val;
 				}
 				env->DeleteLocalRef(o);
@@ -1228,7 +1228,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 				if (!o) {
 					ptr[i] = 0;
 				} else {
-					int val = env->CallByteMethod(o, JavaClassWrapper::singleton->Byte_byteValue);
+					int val = env->CallByteMethod(o, JavaClassWrapper::data->Byte_byteValue);
 					ptr[i] = (uint8_t)val;
 				}
 				env->DeleteLocalRef(o);
@@ -1252,7 +1252,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 					count = i;
 					break;
 				} else {
-					int val = env->CallCharMethod(o, JavaClassWrapper::singleton->Character_characterValue);
+					int val = env->CallCharMethod(o, JavaClassWrapper::data->Character_characterValue);
 					ptr[i] = (jchar)val;
 				}
 				env->DeleteLocalRef(o);
@@ -1274,7 +1274,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 				if (!o) {
 					ptr[i] = 0;
 				} else {
-					int val = env->CallShortMethod(o, JavaClassWrapper::singleton->Short_shortValue);
+					int val = env->CallShortMethod(o, JavaClassWrapper::data->Short_shortValue);
 					ptr[i] = val;
 				}
 				env->DeleteLocalRef(o);
@@ -1296,7 +1296,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 				if (!o) {
 					ptr[i] = 0;
 				} else {
-					int val = env->CallIntMethod(o, JavaClassWrapper::singleton->Integer_integerValue);
+					int val = env->CallIntMethod(o, JavaClassWrapper::data->Integer_integerValue);
 					ptr[i] = val;
 				}
 				env->DeleteLocalRef(o);
@@ -1318,7 +1318,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 				if (!o) {
 					ptr[i] = 0;
 				} else {
-					int64_t val = env->CallLongMethod(o, JavaClassWrapper::singleton->Long_longValue);
+					int64_t val = env->CallLongMethod(o, JavaClassWrapper::data->Long_longValue);
 					ptr[i] = val;
 				}
 				env->DeleteLocalRef(o);
@@ -1340,7 +1340,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 				if (!o) {
 					ptr[i] = 0.0;
 				} else {
-					float val = env->CallFloatMethod(o, JavaClassWrapper::singleton->Float_floatValue);
+					float val = env->CallFloatMethod(o, JavaClassWrapper::data->Float_floatValue);
 					ptr[i] = val;
 				}
 				env->DeleteLocalRef(o);
@@ -1362,7 +1362,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 				if (!o) {
 					ptr[i] = 0.0;
 				} else {
-					double val = env->CallDoubleMethod(o, JavaClassWrapper::singleton->Double_doubleValue);
+					double val = env->CallDoubleMethod(o, JavaClassWrapper::data->Double_doubleValue);
 					ptr[i] = val;
 				}
 				env->DeleteLocalRef(o);
@@ -1438,7 +1438,7 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 				jobject obj = env->GetObjectArrayElement(jarr, i);
 				if (obj) {
 					jclass java_class = env->GetObjectClass(obj);
-					Ref<JavaClass> java_class_wrapped = JavaClassWrapper::singleton->wrap_jclass(java_class);
+					Ref<JavaClass> java_class_wrapped = JavaClassWrapper::wrap_jclass(java_class);
 					env->DeleteLocalRef(java_class);
 
 					if (java_class_wrapped.is_valid()) {
@@ -1465,14 +1465,14 @@ bool JavaClass::_convert_object_to_variant(JNIEnv *env, jobject obj, Variant &va
 bool JavaClassWrapper::_wrap_class_components(JNIEnv *p_env, const Ref<JavaClass> &p_java_class, jclass p_class, bool p_allow_non_public_methods_access) {
 	ERR_FAIL_NULL_V(p_class, false);
 
-	jobjectArray constructors = (jobjectArray)p_env->CallObjectMethod(p_class, Class_getConstructors);
+	jobjectArray constructors = (jobjectArray)p_env->CallObjectMethod(p_class, data->Class_getConstructors);
 	if (p_env->ExceptionCheck()) {
 		p_env->ExceptionDescribe();
 		p_env->ExceptionClear();
 	}
 	ERR_FAIL_NULL_V(constructors, false);
 
-	jobjectArray methods = (jobjectArray)p_env->CallObjectMethod(p_class, Class_getDeclaredMethods);
+	jobjectArray methods = (jobjectArray)p_env->CallObjectMethod(p_class, data->Class_getDeclaredMethods);
 	if (p_env->ExceptionCheck()) {
 		p_env->ExceptionDescribe();
 		p_env->ExceptionClear();
@@ -1494,12 +1494,12 @@ bool JavaClassWrapper::_wrap_class_components(JNIEnv *p_env, const Ref<JavaClass
 		if (is_constructor) {
 			str_method = "<init>";
 		} else {
-			jstring name = (jstring)p_env->CallObjectMethod(obj, Method_getName);
+			jstring name = (jstring)p_env->CallObjectMethod(obj, data->Method_getName);
 			str_method = jstring_to_string(name, p_env);
 			p_env->DeleteLocalRef(name);
 		}
 
-		jint mods = p_env->CallIntMethod(obj, is_constructor ? Constructor_getModifiers : Method_getModifiers);
+		jint mods = p_env->CallIntMethod(obj, is_constructor ? data->Constructor_getModifiers : data->Method_getModifiers);
 		bool is_public = (mods & 0x0001) != 0; // java.lang.reflect.Modifier.PUBLIC
 
 		if (!is_public && (is_constructor || !p_allow_non_public_methods_access)) {
@@ -1507,7 +1507,7 @@ bool JavaClassWrapper::_wrap_class_components(JNIEnv *p_env, const Ref<JavaClass
 			continue; //not public bye
 		}
 
-		jobjectArray param_types = (jobjectArray)p_env->CallObjectMethod(obj, is_constructor ? Constructor_getParameterTypes : Method_getParameterTypes);
+		jobjectArray param_types = (jobjectArray)p_env->CallObjectMethod(obj, is_constructor ? data->Constructor_getParameterTypes : data->Method_getParameterTypes);
 		int count = p_env->GetArrayLength(param_types);
 
 		if (!p_java_class->methods.has(str_method)) {
@@ -1549,7 +1549,7 @@ bool JavaClassWrapper::_wrap_class_components(JNIEnv *p_env, const Ref<JavaClass
 			signature += "V";
 			mi.return_type = JavaClass::ARG_TYPE_CLASS;
 		} else {
-			jobject return_type = (jobject)p_env->CallObjectMethod(obj, Method_getReturnType);
+			jobject return_type = (jobject)p_env->CallObjectMethod(obj, data->Method_getReturnType);
 
 			String strsig;
 			uint32_t sig = 0;
@@ -1633,7 +1633,7 @@ bool JavaClassWrapper::_wrap_class_components(JNIEnv *p_env, const Ref<JavaClass
 	p_env->DeleteLocalRef(constructors);
 	p_env->DeleteLocalRef(methods);
 
-	jobjectArray fields = (jobjectArray)p_env->CallObjectMethod(p_class, Class_getFields);
+	jobjectArray fields = (jobjectArray)p_env->CallObjectMethod(p_class, data->Class_getFields);
 
 	int count = p_env->GetArrayLength(fields);
 
@@ -1641,13 +1641,13 @@ bool JavaClassWrapper::_wrap_class_components(JNIEnv *p_env, const Ref<JavaClass
 		jobject obj = p_env->GetObjectArrayElement(fields, i);
 		ERR_CONTINUE(!obj);
 
-		jstring name = (jstring)p_env->CallObjectMethod(obj, Field_getName);
+		jstring name = (jstring)p_env->CallObjectMethod(obj, data->Field_getName);
 		String str_field = jstring_to_string(name, p_env);
 		p_env->DeleteLocalRef(name);
-		int mods = p_env->CallIntMethod(obj, Field_getModifiers);
+		int mods = p_env->CallIntMethod(obj, data->Field_getModifiers);
 		if ((mods & 0x8) && (mods & 0x1)) { //static public!
 
-			jobject objc = p_env->CallObjectMethod(obj, Field_get, nullptr);
+			jobject objc = p_env->CallObjectMethod(obj, data->Field_get, nullptr);
 			if (objc) {
 				uint32_t sig;
 				String strsig;
@@ -1671,12 +1671,31 @@ bool JavaClassWrapper::_wrap_class_components(JNIEnv *p_env, const Ref<JavaClass
 
 	p_env->DeleteLocalRef(fields);
 	return true;
+}{
+					if ((sig & JavaClass::ARG_TYPE_MASK) <= JavaClass::ARG_TYPE_STRING) {
+						Variant value;
+						if (JavaClass::_convert_object_to_variant(p_env, objc, value, sig)) {
+							p_java_class->constant_map[str_field] = value;
+						}
+					}
+				}
+
+				p_env->DeleteLocalRef(cl);
+			}
+
+			p_env->DeleteLocalRef(objc);
+		}
+		p_env->DeleteLocalRef(obj);
+	}
+
+	p_env->DeleteLocalRef(fields);
+	return true;
 }
 
 Ref<JavaClass> JavaClassWrapper::_wrap(const String &p_class, bool p_allow_non_public_methods_access) {
 	String class_name_dots = p_class.replace_char('/', '.');
-	if (class_cache.has(class_name_dots)) {
-		return class_cache[class_name_dots];
+	if (data->class_cache.has(class_name_dots)) {
+		return data->class_cache[class_name_dots];
 	}
 
 	JNIEnv *env = get_jni_env();
@@ -1691,12 +1710,12 @@ Ref<JavaClass> JavaClassWrapper::_wrap(const String &p_class, bool p_allow_non_p
 	Vector<String> class_name_parts = class_name_dots.split(".");
 	java_class->java_constructor_name = class_name_parts[class_name_parts.size() - 1];
 	java_class->_class = (jclass)env->NewGlobalRef(bclass);
-	java_class->is_interface = env->CallBooleanMethod(bclass, Class_isInterface);
+	java_class->is_interface = env->CallBooleanMethod(bclass, data->Class_isInterface);
 
 	bool class_components_configured;
 	if (_is_proxy_class(env, bclass)) {
 		// Proxy class components must be setup using the interfaces they implement.
-		jobjectArray interfaces = (jobjectArray)env->CallObjectMethod(bclass, Class_getInterfaces);
+		jobjectArray interfaces = (jobjectArray)env->CallObjectMethod(bclass, data->Class_getInterfaces);
 		if (env->ExceptionCheck()) {
 			env->ExceptionDescribe();
 			env->ExceptionClear();
@@ -1706,7 +1725,7 @@ Ref<JavaClass> JavaClassWrapper::_wrap(const String &p_class, bool p_allow_non_p
 			jclass interface = (jclass)env->GetObjectArrayElement(interfaces, i);
 			ERR_CONTINUE(!interface);
 
-			jstring j_interface_name = (jstring)env->CallObjectMethod(interface, Class_getName);
+			jstring j_interface_name = (jstring)env->CallObjectMethod(interface, data->Class_getName);
 			String interface_name = jstring_to_string(j_interface_name, env);
 			env->DeleteLocalRef(j_interface_name);
 			if (!_wrap_class_components(env, java_class, interface, p_allow_non_public_methods_access)) {
@@ -1727,7 +1746,7 @@ Ref<JavaClass> JavaClassWrapper::_wrap(const String &p_class, bool p_allow_non_p
 	}
 
 	// Cache the initialized JavaClass instance.
-	class_cache[class_name_dots] = java_class;
+	data->class_cache[class_name_dots] = java_class;
 
 	return java_class;
 }
@@ -1735,8 +1754,8 @@ Ref<JavaClass> JavaClassWrapper::_wrap(const String &p_class, bool p_allow_non_p
 Ref<JavaObject> JavaClassWrapper::create_sam_callback(const String &p_sam_interface, const Callable &p_callable) {
 	JNIEnv *env = get_jni_env();
 	ERR_FAIL_NULL_V(env, Ref<JavaObject>());
-	ERR_FAIL_NULL_V(android_runtime_class, Ref<JavaObject>());
-	ERR_FAIL_NULL_V(ARP_create_proxy_from_godot_callable, Ref<JavaObject>());
+	ERR_FAIL_NULL_V(data->android_runtime_class, Ref<JavaObject>());
+	ERR_FAIL_NULL_V(data->ARP_create_proxy_from_godot_callable, Ref<JavaObject>());
 
 	Ref<JavaClass> interface_class = wrap(p_sam_interface);
 	if (interface_class.is_null()) {
@@ -1756,7 +1775,7 @@ Ref<JavaObject> JavaClassWrapper::create_sam_callback(const String &p_sam_interf
 	jobject j_callable = callable_to_jcallable(env, p_callable);
 	jstring j_interface = env->NewStringUTF(p_sam_interface.utf8().get_data());
 
-	jobject proxy = env->CallStaticObjectMethod(android_runtime_class, ARP_create_proxy_from_godot_callable, j_interface, j_callable);
+	jobject proxy = env->CallStaticObjectMethod(data->android_runtime_class, data->ARP_create_proxy_from_godot_callable, j_interface, j_callable);
 	Ref<JavaObject> result = _jobject_to_variant(env, proxy);
 
 	env->DeleteLocalRef(j_callable);
@@ -1772,8 +1791,8 @@ Ref<JavaObject> JavaClassWrapper::create_proxy(const Object *p_object, const Pac
 
 	JNIEnv *env = get_jni_env();
 	ERR_FAIL_NULL_V(env, Ref<JavaObject>());
-	ERR_FAIL_NULL_V(android_runtime_class, Ref<JavaObject>());
-	ERR_FAIL_NULL_V(ARP_create_proxy_from_godot_callable, Ref<JavaObject>());
+	ERR_FAIL_NULL_V(data->android_runtime_class, Ref<JavaObject>());
+	ERR_FAIL_NULL_V(data->ARP_create_proxy_from_godot_callable, Ref<JavaObject>());
 
 	for (const String &interface_name : p_interfaces) {
 		Ref<JavaClass> interface_class = wrap(interface_name);
@@ -1796,7 +1815,7 @@ Ref<JavaObject> JavaClassWrapper::create_proxy(const Object *p_object, const Pac
 		env->DeleteLocalRef(j_interface);
 	}
 
-	jobject proxy = env->CallStaticObjectMethod(android_runtime_class, ARP_create_proxy_from_godot_object_id, object_id, j_interfaces);
+	jobject proxy = env->CallStaticObjectMethod(data->android_runtime_class, data->ARP_create_proxy_from_godot_object_id, object_id, j_interfaces);
 	Ref<JavaObject> result = _jobject_to_variant(env, proxy);
 
 	env->DeleteLocalRef(j_interfaces);
@@ -1809,7 +1828,7 @@ Ref<JavaClass> JavaClassWrapper::wrap_jclass(jclass p_class, bool p_allow_non_pu
 	JNIEnv *env = get_jni_env();
 	ERR_FAIL_NULL_V(env, Ref<JavaClass>());
 
-	jstring class_name = (jstring)env->CallObjectMethod(p_class, Class_getName);
+	jstring class_name = (jstring)env->CallObjectMethod(p_class, data->Class_getName);
 	String class_name_string = jstring_to_string(class_name, env);
 	env->DeleteLocalRef(class_name);
 
@@ -1817,91 +1836,100 @@ Ref<JavaClass> JavaClassWrapper::wrap_jclass(jclass p_class, bool p_allow_non_pu
 }
 
 bool JavaClassWrapper::_is_proxy_class(JNIEnv *env, jclass p_class) {
-	ERR_FAIL_NULL_V(proxy_class, false);
-	ERR_FAIL_NULL_V(Proxy_isProxyClass, false);
+	ERR_FAIL_NULL_V(data->proxy_class, false);
+	ERR_FAIL_NULL_V(data->Proxy_isProxyClass, false);
 	ERR_FAIL_NULL_V(env, false);
 
-	return env->CallStaticBooleanMethod(proxy_class, Proxy_isProxyClass, p_class);
+	return env->CallStaticBooleanMethod(data->proxy_class, data->Proxy_isProxyClass, p_class);
 }
 
-JavaClassWrapper *JavaClassWrapper::singleton = nullptr;
+void JavaClassWrapper::finalize() {
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
 
-JavaClassWrapper::JavaClassWrapper() {
-	singleton = this;
+void JavaClassWrapper::initialize() {
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
 
 	JNIEnv *env = get_jni_env();
 	ERR_FAIL_NULL(env);
 
-	proxy_class = jni_find_class(env, "java/lang/reflect/Proxy");
-	if (proxy_class) {
-		proxy_class = (jclass)env->NewGlobalRef(proxy_class);
-		Proxy_isProxyClass = env->GetStaticMethodID(proxy_class, "isProxyClass", "(Ljava/lang/Class;)Z");
+	data->proxy_class = jni_find_class(env, "java/lang/reflect/Proxy");
+	if (data->proxy_class) {
+		data->proxy_class = (jclass)env->NewGlobalRef(data->proxy_class);
+		data->Proxy_isProxyClass = env->GetStaticMethodID(data->proxy_class, "isProxyClass", "(Ljava/lang/Class;)Z");
 	}
 
-	android_runtime_class = jni_find_class(env, "org/godotengine/godot/plugin/AndroidRuntimePlugin");
-	if (android_runtime_class) {
-		android_runtime_class = (jclass)env->NewGlobalRef(android_runtime_class);
-		ARP_create_proxy_from_godot_callable = env->GetStaticMethodID(android_runtime_class, "createProxyFromGodotCallable", "(Ljava/lang/String;Lorg/godotengine/godot/variant/Callable;)Ljava/lang/Object;");
-		ARP_create_proxy_from_godot_object_id = env->GetStaticMethodID(android_runtime_class, "createProxyFromGodotObjectID", "(J[Ljava/lang/String;)Ljava/lang/Object;");
+	data->android_runtime_class = jni_find_class(env, "org/godotengine/godot/plugin/AndroidRuntimePlugin");
+	if (data->android_runtime_class) {
+		data->android_runtime_class = (jclass)env->NewGlobalRef(data->android_runtime_class);
+		data->ARP_create_proxy_from_godot_callable = env->GetStaticMethodID(data->android_runtime_class, "createProxyFromGodotCallable", "(Ljava/lang/String;Lorg/godotengine/godot/variant/Callable;)Ljava/lang/Object;");
+		data->ARP_create_proxy_from_godot_object_id = env->GetStaticMethodID(data->android_runtime_class, "createProxyFromGodotObjectID", "(J[Ljava/lang/String;)Ljava/lang/Object;");
 	}
 
 	jclass bclass = jni_find_class(env, "java/lang/Class");
-	Class_getConstructors = env->GetMethodID(bclass, "getConstructors", "()[Ljava/lang/reflect/Constructor;");
-	Class_getDeclaredMethods = env->GetMethodID(bclass, "getDeclaredMethods", "()[Ljava/lang/reflect/Method;");
-	Class_getFields = env->GetMethodID(bclass, "getFields", "()[Ljava/lang/reflect/Field;");
-	Class_getInterfaces = env->GetMethodID(bclass, "getInterfaces", "()[Ljava/lang/Class;");
-	Class_getName = env->GetMethodID(bclass, "getName", "()Ljava/lang/String;");
-	Class_getSuperclass = env->GetMethodID(bclass, "getSuperclass", "()Ljava/lang/Class;");
-	Class_isInterface = env->GetMethodID(bclass, "isInterface", "()Z");
+	data->Class_getConstructors = env->GetMethodID(bclass, "getConstructors", "()[Ljava/lang/reflect/Constructor;");
+	data->Class_getDeclaredMethods = env->GetMethodID(bclass, "getDeclaredMethods", "()[Ljava/lang/reflect/Method;");
+	data->Class_getFields = env->GetMethodID(bclass, "getFields", "()[Ljava/lang/reflect/Field;");
+	data->Class_getInterfaces = env->GetMethodID(bclass, "getInterfaces", "()[Ljava/lang/Class;");
+	data->Class_getName = env->GetMethodID(bclass, "getName", "()Ljava/lang/String;");
+	data->Class_getSuperclass = env->GetMethodID(bclass, "getSuperclass", "()Ljava/lang/Class;");
+	data->Class_isInterface = env->GetMethodID(bclass, "isInterface", "()Z");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/reflect/Constructor");
-	Constructor_getParameterTypes = env->GetMethodID(bclass, "getParameterTypes", "()[Ljava/lang/Class;");
-	Constructor_getModifiers = env->GetMethodID(bclass, "getModifiers", "()I");
+	data->Constructor_getParameterTypes = env->GetMethodID(bclass, "getParameterTypes", "()[Ljava/lang/Class;");
+	data->Constructor_getModifiers = env->GetMethodID(bclass, "getModifiers", "()I");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/reflect/Method");
-	Method_getParameterTypes = env->GetMethodID(bclass, "getParameterTypes", "()[Ljava/lang/Class;");
-	Method_getReturnType = env->GetMethodID(bclass, "getReturnType", "()Ljava/lang/Class;");
-	Method_getName = env->GetMethodID(bclass, "getName", "()Ljava/lang/String;");
-	Method_getModifiers = env->GetMethodID(bclass, "getModifiers", "()I");
+	data->Method_getParameterTypes = env->GetMethodID(bclass, "getParameterTypes", "()[Ljava/lang/Class;");
+	data->Method_getReturnType = env->GetMethodID(bclass, "getReturnType", "()Ljava/lang/Class;");
+	data->Method_getName = env->GetMethodID(bclass, "getName", "()Ljava/lang/String;");
+	data->Method_getModifiers = env->GetMethodID(bclass, "getModifiers", "()I");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/reflect/Field");
-	Field_getName = env->GetMethodID(bclass, "getName", "()Ljava/lang/String;");
-	Field_getModifiers = env->GetMethodID(bclass, "getModifiers", "()I");
-	Field_get = env->GetMethodID(bclass, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+	data->Field_getName = env->GetMethodID(bclass, "getName", "()Ljava/lang/String;");
+	data->Field_getModifiers = env->GetMethodID(bclass, "getModifiers", "()I");
+	data->Field_get = env->GetMethodID(bclass, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/Boolean");
-	Boolean_booleanValue = env->GetMethodID(bclass, "booleanValue", "()Z");
+	data->Boolean_booleanValue = env->GetMethodID(bclass, "booleanValue", "()Z");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/Byte");
-	Byte_byteValue = env->GetMethodID(bclass, "byteValue", "()B");
+	data->Byte_byteValue = env->GetMethodID(bclass, "byteValue", "()B");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/Character");
-	Character_characterValue = env->GetMethodID(bclass, "charValue", "()C");
+	data->Character_characterValue = env->GetMethodID(bclass, "charValue", "()C");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/Short");
-	Short_shortValue = env->GetMethodID(bclass, "shortValue", "()S");
+	data->Short_shortValue = env->GetMethodID(bclass, "shortValue", "()S");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/Integer");
-	Integer_integerValue = env->GetMethodID(bclass, "intValue", "()I");
+	data->Integer_integerValue = env->GetMethodID(bclass, "intValue", "()I");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/Long");
-	Long_longValue = env->GetMethodID(bclass, "longValue", "()J");
+	data->Long_longValue = env->GetMethodID(bclass, "longValue", "()J");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/Float");
-	Float_floatValue = env->GetMethodID(bclass, "floatValue", "()F");
+	data->Float_floatValue = env->GetMethodID(bclass, "floatValue", "()F");
 	env->DeleteLocalRef(bclass);
 
 	bclass = jni_find_class(env, "java/lang/Double");
-	Double_doubleValue = env->GetMethodID(bclass, "doubleValue", "()D");
+	data->Double_doubleValue = env->GetMethodID(bclass, "doubleValue", "()D");
 	env->DeleteLocalRef(bclass);
 }

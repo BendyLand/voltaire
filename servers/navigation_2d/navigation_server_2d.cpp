@@ -29,10 +29,163 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "navigation_server_2d.h"
+
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "navigation_server_2d.h"
 #include "scene/main/node.h" // IWYU pragma: keep. Needed to bind `Node *` arg.
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationPathQueryParameters2D
+
+void NavigationPathQueryParameters2D::set_pathfinding_algorithm(
+	const NavigationPathQueryParameters2D::PathfindingAlgorithm p_pathfinding_algorithm)
+{
+	pathfinding_algorithm = p_pathfinding_algorithm;
+}
+
+NavigationPathQueryParameters2D::PathfindingAlgorithm
+NavigationPathQueryParameters2D::get_pathfinding_algorithm() const
+{
+	return pathfinding_algorithm;
+}
+
+void NavigationPathQueryParameters2D::set_path_postprocessing(
+	const NavigationPathQueryParameters2D::PathPostProcessing p_path_postprocessing)
+{
+	path_postprocessing = p_path_postprocessing;
+}
+
+NavigationPathQueryParameters2D::PathPostProcessing
+NavigationPathQueryParameters2D::get_path_postprocessing() const
+{
+	return path_postprocessing;
+}
+
+void NavigationPathQueryParameters2D::set_map(RID p_map) { map = p_map; }
+
+RID NavigationPathQueryParameters2D::get_map() const { return map; }
+
+void NavigationPathQueryParameters2D::set_start_position(Vector2 p_start_position)
+{
+	start_position = p_start_position;
+}
+
+Vector2 NavigationPathQueryParameters2D::get_start_position() const { return start_position; }
+
+void NavigationPathQueryParameters2D::set_target_position(Vector2 p_target_position)
+{
+	target_position = p_target_position;
+}
+
+Vector2 NavigationPathQueryParameters2D::get_target_position() const { return target_position; }
+
+void NavigationPathQueryParameters2D::set_navigation_layers(uint32_t p_navigation_layers)
+{
+	navigation_layers = p_navigation_layers;
+}
+
+uint32_t NavigationPathQueryParameters2D::get_navigation_layers() const
+{
+	return navigation_layers;
+}
+
+void NavigationPathQueryParameters2D::set_metadata_flags(uint32_t p_flags)
+{
+	metadata_flags = (int64_t)p_flags;
+}
+
+uint32_t NavigationPathQueryParameters2D::get_metadata_flags() const
+{
+	return (int64_t)metadata_flags;
+}
+
+void NavigationPathQueryParameters2D::set_simplify_path(bool p_enabled)
+{
+	simplify_path = p_enabled;
+}
+
+bool NavigationPathQueryParameters2D::get_simplify_path() const { return simplify_path; }
+
+void NavigationPathQueryParameters2D::set_simplify_epsilon(real_t p_epsilon)
+{
+	simplify_epsilon = MAX(0.0, p_epsilon);
+}
+
+real_t NavigationPathQueryParameters2D::get_simplify_epsilon() const { return simplify_epsilon; }
+
+void NavigationPathQueryParameters2D::set_path_return_max_length(float p_length)
+{
+	path_return_max_length = MAX(0.0, p_length);
+}
+
+float NavigationPathQueryParameters2D::get_path_return_max_length() const
+{
+	return path_return_max_length;
+}
+
+void NavigationPathQueryParameters2D::set_path_return_max_radius(float p_radius)
+{
+	path_return_max_radius = MAX(0.0, p_radius);
+}
+
+float NavigationPathQueryParameters2D::get_path_return_max_radius() const
+{
+	return path_return_max_radius;
+}
+
+void NavigationPathQueryParameters2D::set_path_search_max_polygons(int p_max_polygons)
+{
+	path_search_max_polygons = p_max_polygons;
+}
+
+int NavigationPathQueryParameters2D::get_path_search_max_polygons() const
+{
+	return path_search_max_polygons;
+}
+
+void NavigationPathQueryParameters2D::set_path_search_max_distance(float p_distance)
+{
+	path_search_max_distance = MAX(0.0, p_distance);
+}
+
+float NavigationPathQueryParameters2D::get_path_search_max_distance() const
+{
+	return path_search_max_distance;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationPathQueryResult2D
+
+void NavigationPathQueryResult2D::set_path(const Vector<Vector2>& p_path) { path = p_path; }
+
+const Vector<Vector2>& NavigationPathQueryResult2D::get_path() const { return path; }
+
+void NavigationPathQueryResult2D::set_path_types(const Vector<int32_t>& p_path_types)
+{
+	path_types = p_path_types;
+}
+
+const Vector<int32_t>& NavigationPathQueryResult2D::get_path_types() const { return path_types; }
+
+void NavigationPathQueryResult2D::set_path_owner_ids(const Vector<int64_t>& p_path_owner_ids)
+{
+	path_owner_ids = p_path_owner_ids;
+}
+
+const Vector<int64_t>& NavigationPathQueryResult2D::get_path_owner_ids() const
+{
+	return path_owner_ids;
+}
+
+void NavigationPathQueryResult2D::set_path_length(float p_length) { path_length = p_length; }
+
+float NavigationPathQueryResult2D::get_path_length() const { return path_length; }
+
+void NavigationPathQueryResult2D::reset() {}
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationServer2D
 
 bool NavigationServer2D::get_debug_enabled() { return data->debug_enabled; }
 
@@ -195,9 +348,7 @@ bool NavigationServer2D::get_debug_navigation_avoidance_enable_obstacles_static(
 {
 	return data->debug_navigation_avoidance_enable_obstacles_static;
 }
-#endif // DEBUG_ENABLED
 
-#ifdef DEBUG_ENABLED
 void NavigationServer2D::set_debug_navigation_geometry_face_color(const Color& p_color)
 {
 	if (!data) {
@@ -393,7 +544,6 @@ void NavigationServer2D::finalize()
 
 void NavigationServer2D::process(double p_delta_time) {}
 
-
 void NavigationServer2D::free_rid(RID p_rid) {}
 
 int NavigationServer2D::get_process_info(ProcessInfo p_info) { return 0; }
@@ -491,5 +641,3 @@ void NavigationServer2D::agent_set_avoidance_mask(RID p_agent, uint32_t p_mask) 
 void NavigationServer2D::agent_set_avoidance_priority(RID p_agent, real_t p_priority) {}
 
 void NavigationServer2D::agent_set_paused(RID p_agent, bool p_paused) {}
-
-

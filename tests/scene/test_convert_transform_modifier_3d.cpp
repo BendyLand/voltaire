@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_convert_transform_modifier_3d)
 
 #include "core/math/random_number_generator.h"
 #include "scene/3d/bone_attachment_3d.h"
-#include "scene/3d/convert_transform_modifier_3d.h"
+#include "scene/3d/skeleton_modifier_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 
@@ -78,16 +78,15 @@ Transform3D make_random_transform_3d(int p_seed) {
 }
 
 TEST_CASE("[SceneTree][ConvertTransformModifier3D]") {
-	SceneTree *tree = SceneTree::get_singleton();
 	int seed = 12345;
 	Skeleton3D *skeleton = memnew(Skeleton3D);
-	ConvertTransformModifier3D *mod = memnew(ConvertTransformModifier3D);
+	BoneConstraint3D *mod = memnew(BoneConstraint3D(BoneConstraint3D::CONSTRAINT_CONVERT_TRANSFORM));
 
 	// Instead of awaiting the process to wait to finish deferred process and watch "skeleton_updated" signal,
 	// force notify NOTIFICATION_UPDATE_SKELETON and get the modified pose from the BoneAttachment's transform.
 	BoneAttachment3D *modified = memnew(BoneAttachment3D);
 
-	tree->get_root()->add_child(skeleton);
+	SceneTree::get_root()->add_child(skeleton);
 
 	int root = skeleton->add_bone("root");
 	skeleton->set_bone_rest(root, make_random_transform_3d(++seed));
@@ -126,10 +125,10 @@ TEST_CASE("[SceneTree][ConvertTransformModifier3D]") {
 	mod->set_apply_axis(0, Vector3::AXIS_Y);
 
 	// ===== [ConvertTransformModifier3D] Position x to y =====
-	mod->set_reference_transform_mode(0, ConvertTransformModifier3D::TRANSFORM_MODE_POSITION);
+	mod->set_reference_transform_mode(0, BoneConstraint3D::TRANSFORM_MODE_POSITION);
 	mod->set_reference_range_min(0, -100.0);
 	mod->set_reference_range_max(0, 100.0);
-	mod->set_apply_transform_mode(0, ConvertTransformModifier3D::TRANSFORM_MODE_POSITION);
+	mod->set_apply_transform_mode(0, BoneConstraint3D::TRANSFORM_MODE_POSITION);
 	mod->set_apply_range_min(0, -100.0);
 	mod->set_apply_range_max(0, 100.0);
 
@@ -170,10 +169,10 @@ TEST_CASE("[SceneTree][ConvertTransformModifier3D]") {
 	}
 
 	// ===== [ConvertTransformModifier3D] Rotation (roll) x to y =====
-	mod->set_reference_transform_mode(0, ConvertTransformModifier3D::TRANSFORM_MODE_ROTATION);
+	mod->set_reference_transform_mode(0, BoneConstraint3D::TRANSFORM_MODE_ROTATION);
 	mod->set_reference_range_min(0, -180.0);
 	mod->set_reference_range_max(0, 180.0);
-	mod->set_apply_transform_mode(0, ConvertTransformModifier3D::TRANSFORM_MODE_ROTATION);
+	mod->set_apply_transform_mode(0, BoneConstraint3D::TRANSFORM_MODE_ROTATION);
 	mod->set_apply_range_min(0, -180.0);
 	mod->set_apply_range_max(0, 180.0);
 
@@ -214,10 +213,10 @@ TEST_CASE("[SceneTree][ConvertTransformModifier3D]") {
 	}
 
 	// ===== [ConvertTransformModifier3D] Scale x to y =====
-	mod->set_reference_transform_mode(0, ConvertTransformModifier3D::TRANSFORM_MODE_SCALE);
+	mod->set_reference_transform_mode(0, BoneConstraint3D::TRANSFORM_MODE_SCALE);
 	mod->set_reference_range_min(0, 0);
 	mod->set_reference_range_max(0, 10.0);
-	mod->set_apply_transform_mode(0, ConvertTransformModifier3D::TRANSFORM_MODE_SCALE);
+	mod->set_apply_transform_mode(0, BoneConstraint3D::TRANSFORM_MODE_SCALE);
 	mod->set_apply_range_min(0, 0);
 	mod->set_apply_range_max(0, 10.0);
 

@@ -31,13 +31,10 @@
 
 #include "display_server_windows.h"
 
-#include "drop_target_windows.h"
-#include "key_mapping_windows.h"
-#include "native_menu_windows.h"
+#include "platform/windows/display_server_windows.h"
 #include "os_windows.h"
-#include "tts_windows.h"
-#include "wgl_detect_version.h"
-#include "winrt_utils.h"
+#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -61,7 +58,7 @@
 #endif
 
 #if defined(VULKAN_ENABLED)
-#include "rendering_context_driver_vulkan_windows.h"
+#include "platform/windows/display_server_windows.h"
 #endif
 #if defined(D3D12_ENABLED)
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
@@ -197,7 +194,7 @@ bool DisplayServerWindows::has_feature(DisplayServerEnums::Feature p_feature) co
 		case DisplayServerEnums::FEATURE_EMOJI_AND_SYMBOL_PICKER:
 			return (os_ver.dwBuildNumber >= 17134); // Windows 10 Redstone 4 (1803)+ only.
 		case DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER: {
-			return AccessibilityServer::get_singleton()->is_supported();
+			return AccessibilityServer::is_supported();
 		} break;
 		default:
 			return false;
@@ -356,63 +353,63 @@ void DisplayServerWindows::_register_raw_input_devices(DisplayServerEnums::Windo
 }
 
 void DisplayServerWindows::initialize_tts() const {
-	const_cast<DisplayServerWindows *>(this)->tts = memnew(TTS_Windows);
+	TTS_Windows::initialize();
 }
 
 bool DisplayServerWindows::tts_is_speaking() const {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, false);
-	return tts->is_speaking();
+	ERR_FAIL_COND_V(!TTS_Windows::is_initialized(), false);
+	return TTS_Windows::is_speaking();
 }
 
 bool DisplayServerWindows::tts_is_paused() const {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, false);
-	return tts->is_paused();
+	ERR_FAIL_COND_V(!TTS_Windows::is_initialized(), false);
+	return TTS_Windows::is_paused();
 }
 
 TypedArray<Dictionary> DisplayServerWindows::tts_get_voices() const {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL_V(tts, TypedArray<Dictionary>());
-	return tts->get_voices();
+	ERR_FAIL_COND_V(!TTS_Windows::is_initialized(), TypedArray<Dictionary>());
+	return TTS_Windows::get_voices();
 }
 
 void DisplayServerWindows::tts_speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt) {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
+	ERR_FAIL_COND(!TTS_Windows::is_initialized());
+	TTS_Windows::speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
 }
 
 void DisplayServerWindows::tts_pause() {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->pause();
+	ERR_FAIL_COND(!TTS_Windows::is_initialized());
+	TTS_Windows::pause();
 }
 
 void DisplayServerWindows::tts_resume() {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->resume();
+	ERR_FAIL_COND(!TTS_Windows::is_initialized());
+	TTS_Windows::resume();
 }
 
 void DisplayServerWindows::tts_stop() {
-	if (unlikely(!tts)) {
+	if (unlikely(!TTS_Windows::is_initialized())) {
 		initialize_tts();
 	}
-	ERR_FAIL_NULL(tts);
-	tts->stop();
+	ERR_FAIL_COND(!TTS_Windows::is_initialized());
+	TTS_Windows::stop();
 }
 
 Error DisplayServerWindows::file_dialog_show(const String &p_title, const String &p_current_directory, const String &p_filename, bool p_show_hidden, DisplayServerEnums::FileDialogMode p_mode, const Vector<String> &p_filters, const Callable &p_callback, DisplayServerEnums::WindowID p_window_id) {
@@ -545,7 +542,7 @@ public:
 VLTR_GCC_WARNING_POP
 
 LRESULT CALLBACK WndProcFileDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	DisplayServerWindows *ds_win = static_cast<DisplayServerWindows *>(DisplayServer::get_singleton());
+	DisplayServerWindows *ds_win = DisplayServer::driver_as<DisplayServerWindows>();
 	if (ds_win) {
 		return ds_win->WndProcFileDialog(hWnd, uMsg, wParam, lParam);
 	} else {
@@ -573,7 +570,7 @@ LRESULT DisplayServerWindows::WndProcFileDialog(HWND hWnd, UINT uMsg, WPARAM wPa
 }
 
 void DisplayServerWindows::_thread_fd_monitor(void *p_ud) {
-	DisplayServerWindows *ds = static_cast<DisplayServerWindows *>(get_singleton());
+	DisplayServerWindows *ds = DisplayServer::driver_as<DisplayServerWindows>();
 	FileDialogData *fd = (FileDialogData *)p_ud;
 
 	if (fd->mode < 0 && fd->mode >= DisplayServerEnums::FILE_DIALOG_MODE_SAVE_MAX) {
@@ -836,7 +833,7 @@ void DisplayServerWindows::_thread_fd_monitor(void *p_ud) {
 	fd->finished.set();
 
 	if (fd->window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-		callable_mp(DisplayServer::get_singleton(), &DisplayServer::window_move_to_foreground).call_deferred(fd->window_id);
+		callable_mp_static(&DisplayServer::window_move_to_foreground).call_deferred(fd->window_id);
 	}
 }
 
@@ -2311,7 +2308,7 @@ void DisplayServerWindows::_update_real_mouse_position(DisplayServerEnums::Windo
 			old_x = mouse_pos.x;
 			old_y = mouse_pos.y;
 			old_invalid = false;
-			Input::get_singleton()->set_mouse_position(Point2i(mouse_pos.x, mouse_pos.y));
+			Input::set_mouse_position(Point2i(mouse_pos.x, mouse_pos.y));
 		}
 	}
 }
@@ -3790,7 +3787,7 @@ static INT_PTR input_text_dialog_init(HWND hWnd, UINT code, WPARAM wParam, LPARA
 
 	SetWindowTextW(hWnd, (LPCWSTR)init.title);
 
-	const int dpi = DisplayServerWindows::get_singleton()->screen_get_dpi();
+	const int dpi = DisplayServer::screen_get_dpi();
 
 	const int margin = scale_with_dpi(7, dpi);
 	const SIZE dlg_size = { scale_with_dpi(300, dpi), scale_with_dpi(50, dpi) };
@@ -4240,13 +4237,13 @@ void DisplayServerWindows::process_events() {
 	}
 	_THREAD_SAFE_UNLOCK_
 
-	if (tts) {
-		tts->process_events();
+	if (TTS_Windows::is_initialized()) {
+		TTS_Windows::process_events();
 	}
 
 	if (!drop_events) {
 		_process_key_events();
-		Input::get_singleton()->flush_buffered_events();
+		Input::flush_buffered_events();
 	}
 
 	// Poll HDR output state for windows that have requested it.
@@ -4981,7 +4978,7 @@ void DisplayServerWindows::window_start_drag(DisplayServerEnums::WindowID p_wind
 	SendMessage(wd.hWnd, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, MAKELPARAM(coords.x, coords.y));
 
 	for (int btn = (int)MouseButton::LEFT; btn <= (int)MouseButton::MB_XBUTTON2; btn++) {
-		if (Input::get_singleton()->is_mouse_button_pressed(MouseButton(btn))) {
+		if (Input::is_mouse_button_pressed(MouseButton(btn))) {
 			Ref<InputEventMouseButton> mb;
 			mb.instantiate();
 			mb->set_window_id(p_window);
@@ -4989,7 +4986,7 @@ void DisplayServerWindows::window_start_drag(DisplayServerEnums::WindowID p_wind
 			mb->set_button_index(MouseButton::LEFT);
 			mb->set_position(Vector2(coords.x, coords.y));
 			mb->set_global_position(mb->get_position());
-			Input::get_singleton()->parse_input_event(mb);
+			Input::parse_input_event(mb);
 		}
 	}
 }
@@ -5044,7 +5041,7 @@ void DisplayServerWindows::window_start_resize(DisplayServerEnums::WindowResizeE
 	SendMessage(wd.hWnd, WM_SYSCOMMAND, SC_SIZE | op, MAKELPARAM(coords.x, coords.y));
 
 	for (int btn = (int)MouseButton::LEFT; btn <= (int)MouseButton::MB_XBUTTON2; btn++) {
-		if (Input::get_singleton()->is_mouse_button_pressed(MouseButton(btn))) {
+		if (Input::is_mouse_button_pressed(MouseButton(btn))) {
 			Ref<InputEventMouseButton> mb;
 			mb.instantiate();
 			mb->set_window_id(p_window);
@@ -5052,7 +5049,7 @@ void DisplayServerWindows::window_start_resize(DisplayServerEnums::WindowResizeE
 			mb->set_button_index(MouseButton::LEFT);
 			mb->set_position(Vector2(coords.x, coords.y));
 			mb->set_global_position(mb->get_position());
-			Input::get_singleton()->parse_input_event(mb);
+			Input::parse_input_event(mb);
 		}
 	}
 }
@@ -5095,7 +5092,7 @@ void DisplayServerWindows::_touch_event(DisplayServerEnums::WindowID p_window, b
 	event->set_pressed(p_pressed);
 	event->set_position(Vector2(p_x, p_y));
 
-	Input::get_singleton()->parse_input_event(event);
+	Input::parse_input_event(event);
 }
 
 void DisplayServerWindows::_drag_event(DisplayServerEnums::WindowID p_window, float p_x, float p_y, int idx) {
@@ -5116,7 +5113,7 @@ void DisplayServerWindows::_drag_event(DisplayServerEnums::WindowID p_window, fl
 	event->set_relative(Vector2(p_x, p_y) - curr->get());
 	event->set_relative_screen_position(event->get_relative());
 
-	Input::get_singleton()->parse_input_event(event);
+	Input::parse_input_event(event);
 
 	curr->get() = Vector2(p_x, p_y);
 }
@@ -5129,7 +5126,9 @@ void DisplayServerWindows::_send_window_event(const WindowData &wd, DisplayServe
 }
 
 void DisplayServerWindows::_dispatch_input_events(const Ref<InputEvent> &p_event) {
-	static_cast<DisplayServerWindows *>(get_singleton())->_dispatch_input_event(p_event);
+	if (DisplayServerWindows *ds = DisplayServer::driver_as<DisplayServerWindows>()) {
+		ds->_dispatch_input_event(p_event);
+	}
 }
 
 void DisplayServerWindows::_dispatch_input_event(const Ref<InputEvent> &p_event) {
@@ -5180,7 +5179,7 @@ void DisplayServerWindows::_dispatch_input_event(const Ref<InputEvent> &p_event)
 }
 
 LRESULT CALLBACK MouseProc(int code, WPARAM wParam, LPARAM lParam) {
-	DisplayServerWindows *ds_win = static_cast<DisplayServerWindows *>(DisplayServer::get_singleton());
+	DisplayServerWindows *ds_win = DisplayServer::driver_as<DisplayServerWindows>();
 	if (ds_win) {
 		return ds_win->MouseProc(code, wParam, lParam);
 	} else {
@@ -5356,7 +5355,7 @@ LRESULT DisplayServerWindows::_handle_early_window_message(HWND hWnd, UINT uMsg,
 			// Fix this up so we can recognize the remaining messages.
 			pWindowData->hWnd = hWnd;
 
-			if (!AccessibilityServer::get_singleton()->window_create(pWindowData->id, (void *)hWnd)) {
+			if (!AccessibilityServer::window_create(pWindowData->id, (void *)hWnd)) {
 				if (OS::is_stdout_verbose()) {
 					ERR_PRINT("Can't create an accessibility adapter for window, accessibility support disabled!");
 				}
@@ -5451,8 +5450,8 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				break;
 			}
 			app_focused = new_app_focused;
-			if (OS::get_main_loop()) {
-				OS::get_main_loop()->notification(app_focused ? MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN : MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
+			if (MainLoop::is_active()) {
+				MainLoop::notification(app_focused ? MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN : MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
 			}
 		} break;
 		case WM_ACTIVATE: {
@@ -5553,8 +5552,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				case SC_MONITORPOWER: // Monitor trying to enter powersave?
 					return 0; // Prevent from happening.
 				case SC_KEYMENU:
-					Engine *engine = Engine::get_singleton();
-					if (((lParam >> 16) <= 0) && !engine->is_project_manager_hint() && !engine->is_editor_hint() && !GLOBAL_GET_CACHED(bool, "application/run/enable_alt_space_menu")) {
+					if (((lParam >> 16) <= 0) && !Engine::is_project_manager_hint() && !Engine::is_editor_hint() && !GLOBAL_GET_CACHED(bool, "application/run/enable_alt_space_menu")) {
 						return 0;
 					}
 					if (!_get_mods().has_flag(WinKeyModifierMask::ALT) || !(GetAsyncKeyState(VK_SPACE) & (1 << 15))) {
@@ -5720,7 +5718,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				mm->set_relative_screen_position(mm->get_relative());
 
 				if ((windows[window_id].window_focused || windows[window_id].is_popup) && mm->get_relative() != Vector2()) {
-					Input::get_singleton()->parse_input_event(mm);
+					Input::parse_input_event(mm);
 				}
 			}
 			delete[] lpb;
@@ -5806,7 +5804,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 						SetCursorPos(pos.x, pos.y);
 					}
 
-					mm->set_velocity(Input::get_singleton()->get_last_mouse_velocity());
+					mm->set_velocity(Input::get_last_mouse_velocity());
 					mm->set_screen_velocity(mm->get_velocity());
 
 					if (old_invalid) {
@@ -5821,7 +5819,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 					old_y = mm->get_position().y;
 
 					if (windows[window_id].window_focused || window_get_active_popup() == window_id) {
-						Input::get_singleton()->parse_input_event(mm);
+						Input::parse_input_event(mm);
 					}
 				}
 				return 0;
@@ -5964,7 +5962,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			mb->set_position(Vector2(coords.x, coords.y));
 			mb->set_global_position(Vector2(coords.x, coords.y));
 
-			Input::get_singleton()->parse_input_event(mb);
+			Input::parse_input_event(mb);
 
 			return 0;
 		} break;
@@ -5992,7 +5990,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				break;
 			}
 
-			if (Input::get_singleton()->is_emulating_mouse_from_touch()) {
+			if (Input::is_emulating_mouse_from_touch()) {
 				// Universal translation enabled; ignore OS translation.
 				LPARAM extra = GetMessageExtraInfo();
 				if (IsTouchEvent(extra)) {
@@ -6089,7 +6087,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				SetCursorPos(pos.x, pos.y);
 			}
 
-			mm->set_velocity(Input::get_singleton()->get_last_mouse_velocity());
+			mm->set_velocity(Input::get_last_mouse_velocity());
 			mm->set_screen_velocity(mm->get_velocity());
 
 			if (old_invalid) {
@@ -6103,7 +6101,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			old_x = mm->get_position().x;
 			old_y = mm->get_position().y;
 			if (windows[window_id].window_focused || window_get_active_popup() == window_id) {
-				Input::get_singleton()->parse_input_event(mm);
+				Input::parse_input_event(mm);
 			}
 
 			return 0; // Pointer event handled return 0 to avoid duplicate WM_MOUSEMOVE event.
@@ -6117,7 +6115,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				break;
 			}
 
-			if (Input::get_singleton()->is_emulating_mouse_from_touch()) {
+			if (Input::is_emulating_mouse_from_touch()) {
 				// Universal translation enabled; ignore OS translation.
 				LPARAM extra = GetMessageExtraInfo();
 				if (IsTouchEvent(extra)) {
@@ -6216,7 +6214,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				SetCursorPos(pos.x, pos.y);
 			}
 
-			mm->set_velocity(Input::get_singleton()->get_last_mouse_velocity());
+			mm->set_velocity(Input::get_last_mouse_velocity());
 			mm->set_screen_velocity(mm->get_velocity());
 
 			if (old_invalid) {
@@ -6236,12 +6234,12 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				mm->set_global_position(mm->get_position());
 			}
 
-			Input::get_singleton()->parse_input_event(mm);
+			Input::parse_input_event(mm);
 
 		} break;
 		case WM_LBUTTONDOWN:
 		case WM_LBUTTONUP:
-			if (Input::get_singleton()->is_emulating_mouse_from_touch()) {
+			if (Input::is_emulating_mouse_from_touch()) {
 				// Universal translation enabled; ignore OS translations for left button.
 				LPARAM extra = GetMessageExtraInfo();
 				if (IsTouchEvent(extra)) {
@@ -6410,14 +6408,14 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 			mb->set_global_position(mb->get_position());
 
-			Input::get_singleton()->parse_input_event(mb);
+			Input::parse_input_event(mb);
 			if (mb->is_pressed() && mb->get_button_index() >= MouseButton::WHEEL_UP && mb->get_button_index() <= MouseButton::WHEEL_RIGHT) {
 				// Send release for mouse wheel.
 				Ref<InputEventMouseButton> mbd = mb->duplicate();
 				mbd->set_window_id(window_id);
 				mbd->set_button_mask(mouse_get_button_state());
 				mbd->set_pressed(false);
-				Input::get_singleton()->parse_input_event(mbd);
+				Input::parse_input_event(mbd);
 			}
 
 			// Propagate the button up event to the window on which the button down
@@ -6583,7 +6581,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		} break;
 
 		case WM_ENTERSIZEMOVE: {
-			Input::get_singleton()->release_pressed_events();
+			Input::release_pressed_events();
 			windows[window_id].move_timer_id = SetTimer(windows[window_id].hWnd, DisplayServerWindows::TIMER_ID_MOVE_REDRAW, USER_TIMER_MINIMUM, (TIMERPROC) nullptr);
 		} break;
 		case WM_EXITSIZEMOVE: {
@@ -6663,7 +6661,9 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 			if (windows[window_id].ime_active) {
 				SetCaretPos(windows[window_id].im_position.x, windows[window_id].im_position.y);
-				OS::get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				if (MainLoop::is_active()) {
+					MainLoop::notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+				}
 			}
 		} break;
 		case WM_INPUTLANGCHANGEREQUEST: {
@@ -6723,9 +6723,9 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 		} break;
 		case WM_DESTROY: {
-			AccessibilityServer::get_singleton()->window_destroy(window_id);
+			AccessibilityServer::window_destroy(window_id);
 
-			Input::get_singleton()->flush_buffered_events();
+			Input::flush_buffered_events();
 			if (window_mouseover_id == window_id) {
 				window_mouseover_id = DisplayServerEnums::INVALID_WINDOW_ID;
 				_send_window_event(windows[window_id], DisplayServerEnums::WINDOW_EVENT_MOUSE_EXIT);
@@ -6761,7 +6761,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	DisplayServerWindows *ds_win = static_cast<DisplayServerWindows *>(DisplayServer::get_singleton());
+	DisplayServerWindows *ds_win = DisplayServer::driver_as<DisplayServerWindows>();
 	if (ds_win) {
 		return ds_win->WndProc(hWnd, uMsg, wParam, lParam);
 	} else {
@@ -6778,11 +6778,11 @@ void DisplayServerWindows::_process_activate_event(DisplayServerEnums::WindowID 
 			SetFocus(wd.hWnd);
 		}
 		wd.window_focused = true;
-		AccessibilityServer::get_singleton()->set_window_focused(p_window_id, true);
+		AccessibilityServer::set_window_focused(p_window_id, true);
 
 		_send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
 	} else { // WM_INACTIVE.
-		Input::get_singleton()->release_pressed_events();
+		Input::release_pressed_events();
 		track_mouse_leave_event(wd.hWnd);
 		// Release capture unconditionally because it can be set due to dragging, in addition to captured mode.
 		// When the user is moving a window, it's important to not ReleaseCapture because it will cause
@@ -6793,7 +6793,7 @@ void DisplayServerWindows::_process_activate_event(DisplayServerEnums::WindowID 
 			ReleaseCapture();
 		}
 		wd.window_focused = false;
-		AccessibilityServer::get_singleton()->set_window_focused(p_window_id, false);
+		AccessibilityServer::set_window_focused(p_window_id, false);
 
 		_send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
 	}
@@ -6876,7 +6876,7 @@ void DisplayServerWindows::_process_key_events() {
 						k->set_ctrl_pressed(false);
 					}
 
-					Input::get_singleton()->parse_input_event(k);
+					Input::parse_input_event(k);
 				} else {
 					// Do nothing.
 				}
@@ -6960,7 +6960,7 @@ void DisplayServerWindows::_process_key_events() {
 
 				k->set_echo((ke.uMsg == WM_KEYDOWN && (ke.lParam & (1 << 30))));
 
-				Input::get_singleton()->parse_input_event(k);
+				Input::parse_input_event(k);
 
 			} break;
 		}
@@ -7627,7 +7627,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 	drop_events = false;
 	key_event_pos = 0;
 
-	hInstance = static_cast<OS_Windows *>(OS::get_singleton())->get_hinstance();
+	hInstance = OS_Windows::get_hinstance();
 
 	pressrc = 0;
 	old_invalid = true;
@@ -8222,8 +8222,8 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 
 	r_error = OK;
 
-	static_cast<OS_Windows *>(OS::get_singleton())->set_main_window(windows[DisplayServerEnums::MAIN_WINDOW_ID].hWnd);
-	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
+	OS_Windows::set_main_window(windows[DisplayServerEnums::MAIN_WINDOW_ID].hWnd);
+	Input::set_event_dispatch_function(_dispatch_input_events);
 }
 
 Vector<String> DisplayServerWindows::get_rendering_drivers_func() {
@@ -8246,8 +8246,8 @@ Vector<String> DisplayServerWindows::get_rendering_drivers_func() {
 	return drivers;
 }
 
-DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
-	DisplayServer *ds = memnew(DisplayServerWindows(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
+DisplayServerDriver *DisplayServerWindows::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
+	DisplayServerDriver *ds = memnew(DisplayServerWindows(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 	if (r_error != OK) {
 		if (tested_drivers == 0) {
 			OS::alert("Failed to register the window class.", "Unable to initialize DisplayServer");
@@ -8290,7 +8290,7 @@ DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_drive
 }
 
 void DisplayServerWindows::register_windows_driver() {
-	register_create_function("windows", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("windows", create_func, get_rendering_drivers_func);
 }
 
 DisplayServerWindows::~DisplayServerWindows() {
@@ -8349,7 +8349,7 @@ DisplayServerWindows::~DisplayServerWindows() {
 	screen_set_keep_on(false);
 
 	if (native_menu) {
-		memdelete(native_menu);
+		NativeMenu::finalize();
 		native_menu = nullptr;
 	}
 
@@ -8398,7 +8398,7 @@ DisplayServerWindows::~DisplayServerWindows() {
 		gl_manager_native = nullptr;
 	}
 #endif
-	memdelete(tts);
+	TTS_Windows::finalize();
 
 	OleUninitialize();
 }

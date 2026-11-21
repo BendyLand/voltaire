@@ -44,16 +44,14 @@ class ImporterMeshInstance3D : public Node3D
 	NodePath skeleton_path;
 	Vector<Ref<Material>> surface_materials;
 	uint32_t layer_mask = 1;
-	GeometryInstance3D::ShadowCastingSetting shadow_casting_setting =
-		GeometryInstance3D::SHADOW_CASTING_SETTING_ON;
+	RenderInstance3D::ShadowCastingSetting shadow_casting_setting =
+		RenderInstance3D::SHADOW_CASTING_SETTING_ON;
 	float visibility_range_begin = 0.0;
 	float visibility_range_end = 0.0;
 	float visibility_range_begin_margin = 0.0;
 	float visibility_range_end_margin = 0.0;
-	GeometryInstance3D::VisibilityRangeFadeMode visibility_range_fade_mode =
-		GeometryInstance3D::VISIBILITY_RANGE_FADE_DISABLED;
-
-protected:
+	RenderInstance3D::VisibilityRangeFadeMode visibility_range_fade_mode =
+		RenderInstance3D::VISIBILITY_RANGE_FADE_DISABLED;
 
 public:
 	void set_mesh(const Ref<ImporterMesh>& p_mesh);
@@ -71,16 +69,13 @@ public:
 	void set_layer_mask(const uint32_t p_layer_mask);
 	uint32_t get_layer_mask() const;
 
-	void set_cast_shadows_setting(
-		GeometryInstance3D::ShadowCastingSetting p_shadow_casting_setting);
-	GeometryInstance3D::ShadowCastingSetting get_cast_shadows_setting() const;
+	void set_cast_shadows_setting(RenderInstance3D::ShadowCastingSetting p_shadow_casting_setting);
+	RenderInstance3D::ShadowCastingSetting get_cast_shadows_setting() const;
 
 	float get_visibility_range_begin() const;
 	float get_visibility_range_end() const;
 	float get_visibility_range_begin_margin() const;
 	float get_visibility_range_end_margin() const;
 
-	GeometryInstance3D::VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
+	RenderInstance3D::VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
 };
-
-

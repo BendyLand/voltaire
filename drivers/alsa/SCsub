@@ -3,8 +3,5 @@ from misc.utility.scons_hints import *
 
 Import("env")
 
-if "alsa" in env and env["alsa"]:
-    if env["use_sowrap"]:
-        env.add_source_files(env.drivers_sources, "asound-so_wrap.c")
-
-env.add_source_files(env.drivers_sources, "*.cpp")
+if env["use_sowrap"] and (("alsa" in env and env["alsa"]) or ("pulseaudio" in env and env["pulseaudio"])):
+    env.add_source_files(env.drivers_sources, "asound-so_wrap.c")

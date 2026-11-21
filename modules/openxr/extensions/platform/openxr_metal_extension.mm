@@ -32,7 +32,6 @@
 #import "openxr_metal_extension.h"
 
 #include "../../openxr_api.h"
-#include "../../openxr_util.h"
 
 #import "drivers/metal/rendering_device_driver_metal.h"
 #include "servers/rendering/rendering_device.h"
@@ -48,14 +47,14 @@ HashMap<String, bool *> OpenXRMetalExtension::get_requested_extensions(XrVersion
 
 void OpenXRMetalExtension::on_instance_created(const XrInstance p_instance) {
 	// Obtain pointers to functions we're accessing here.
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	EXT_INIT_XR_FUNC(xrGetMetalGraphicsRequirementsKHR);
 	EXT_INIT_XR_FUNC(xrEnumerateSwapchainImages);
 }
 
 bool OpenXRMetalExtension::check_graphics_api_support() {
-	ERR_FAIL_NULL_V(OpenXRAPI::get_singleton(), false);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
 
 	// TODO We may need to do a callback like we do in Vulkan where we run this first
 	// and provide the obtained metalDevice to our Metal driver to use.
@@ -66,8 +65,8 @@ bool OpenXRMetalExtension::check_graphics_api_support() {
 	// can't support applications that want to add XR as an optional/temporary
 	// feature that users enable when needed.
 
-	XrSystemId system_id = OpenXRAPI::get_singleton()->get_system_id();
-	XrInstance instance = OpenXRAPI::get_singleton()->get_instance();
+	XrSystemId system_id = OpenXRAPI::get_system_id();
+	XrInstance instance = OpenXRAPI::get_instance();
 
 	XrGraphicsRequirementsMetalKHR metal_requirements;
 	metal_requirements.type = XR_TYPE_GRAPHICS_REQUIREMENTS_METAL_KHR;
@@ -75,17 +74,14 @@ bool OpenXRMetalExtension::check_graphics_api_support() {
 	metal_requirements.metalDevice = nullptr;
 
 	XrResult result = xrGetMetalGraphicsRequirementsKHR(instance, system_id, &metal_requirements);
-	if (!OpenXRAPI::get_singleton()->xr_result(result, "Failed to get Metal graphics requirements!")) {
+	if (!OpenXRAPI::xr_result(result, "Failed to get Metal graphics requirements!")) {
 		return false;
 	}
 
 	// See what metal device we are using...
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL_V(rendering_server, false);
-	RenderingDevice *rendering_device = rendering_server->get_rendering_device();
-	ERR_FAIL_NULL_V(rendering_device, false);
+	ERR_FAIL_NULL_V(RD::data, false);
 
-	void *our_metal_device = (void *)rendering_device->get_driver_resource(RD::DRIVER_RESOURCE_LOGICAL_DEVICE);
+	void *our_metal_device = (void *)RD::get_driver_resource(RD::DRIVER_RESOURCE_LOGICAL_DEVICE);
 
 	// Make sure we're using the same one.
 	ERR_FAIL_COND_V(metal_requirements.metalDevice != our_metal_device, false);
@@ -100,14 +96,11 @@ void *OpenXRMetalExtension::set_session_create_and_get_next_pointer(void *p_next
 		return p_next_pointer;
 	}
 
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL_V(rendering_server, p_next_pointer);
-	RenderingDevice *rendering_device = rendering_server->get_rendering_device();
-	ERR_FAIL_NULL_V(rendering_device, p_next_pointer);
+	ERR_FAIL_NULL_V(RD::data, p_next_pointer);
 
 	graphics_binding_metal.type = XR_TYPE_GRAPHICS_BINDING_METAL_KHR;
 	graphics_binding_metal.next = p_next_pointer;
-	graphics_binding_metal.commandQueue = (void *)rendering_device->get_driver_resource(RD::DRIVER_RESOURCE_COMMAND_QUEUE);
+	graphics_binding_metal.commandQueue = (void *)RD::get_driver_resource(RD::DRIVER_RESOURCE_COMMAND_QUEUE);
 
 	return &graphics_binding_metal;
 }
@@ -150,15 +143,12 @@ String OpenXRMetalExtension::get_swapchain_format_name(int64_t p_swapchain_forma
 bool OpenXRMetalExtension::get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, void **r_swapchain_graphics_data) {
 	LocalVector<XrSwapchainImageMetalKHR, uint32_t, false, true> images;
 
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL_V(rendering_server, false);
-	RenderingDevice *rendering_device = rendering_server->get_rendering_device();
-	ERR_FAIL_NULL_V(rendering_device, false);
+	ERR_FAIL_NULL_V(RD::data, false);
 
 	uint32_t swapchain_length;
 	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
 	if (XR_FAILED(result)) {
-		print_line("OpenXR: Failed to get swapchain image count [", OpenXRAPI::get_singleton()->get_error_string(result), "]");
+		print_line("OpenXR: Failed to get swapchain image count [", OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -172,7 +162,7 @@ bool OpenXRMetalExtension::get_swapchain_image_data(XrSwapchain p_swapchain, int
 
 	result = xrEnumerateSwapchainImages(p_swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader *)images.ptr());
 	if (XR_FAILED(result)) {
-		print_line("OpenXR: Failed to get swapchain images [", OpenXRAPI::get_singleton()->get_error_string(result), "]");
+		print_line("OpenXR: Failed to get swapchain images [", OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -259,7 +249,7 @@ bool OpenXRMetalExtension::get_swapchain_image_data(XrSwapchain p_swapchain, int
 	// Create Godot texture objects for each entry in our swapchain.
 	for (uint64_t i = 0; i < swapchain_length; i++) {
 		// Note, the formats we sent to render_device are ignored on metal.
-		RID image_rid = rendering_device->texture_create_from_extension(
+		RID image_rid = RD::texture_create_from_extension(
 				p_array_size == 1 ? RenderingDevice::TEXTURE_TYPE_2D : RenderingDevice::TEXTURE_TYPE_2D_ARRAY,
 				format,
 				samples,
@@ -286,13 +276,10 @@ void OpenXRMetalExtension::cleanup_swapchain_graphics_data(void **p_swapchain_gr
 
 	SwapchainGraphicsData *data = (SwapchainGraphicsData *)*p_swapchain_graphics_data;
 
-	RenderingServer *rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-	RenderingDevice *rendering_device = rendering_server->get_rendering_device();
-	ERR_FAIL_NULL(rendering_device);
+	ERR_FAIL_NULL(RD::data);
 
 	for (const RID &texture_rid : data->texture_rids) {
-		rendering_device->free_rid(texture_rid);
+		RD::free_rid(texture_rid);
 	}
 	data->texture_rids.clear();
 

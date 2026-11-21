@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "key_mapping_windows.h"
+#include "platform/windows/display_server_windows.h"
 
 #include "core/templates/hash_map.h"
 

@@ -51,7 +51,6 @@ public:
 		int array_size;
 	};
 
-protected:
 	struct TexUnitPair
 	{
 		const char* name;
@@ -196,7 +195,7 @@ private:
 	int base_texture_index = 0;
 	Version::Specialization* current_shader = nullptr;
 
-protected:
+public:
 	ShaderGLES3();
 	void _setup(const char* p_vertex_code, const char* p_fragment_code, const char* p_name,
 		int p_uniform_count, const char** p_uniform_names, int p_ubo_count, const UBOPair* p_ubos,
@@ -262,9 +261,6 @@ protected:
 		return spec->uniform_location[p_which];
 	}
 
-	virtual void _init() = 0;
-
-public:
 	RID version_create();
 
 	void version_set_code(RID p_version, const HashMap<String, String>& p_code,
@@ -285,7 +281,7 @@ public:
 	RenderingServerTypes::ShaderNativeSourceCode version_get_native_source_code(RID p_version);
 
 	void initialize(const String& p_general_defines = "", int p_base_texture_index = 0);
-	virtual ~ShaderGLES3();
+	~ShaderGLES3();
 };
 
 #endif // GLES3_ENABLED

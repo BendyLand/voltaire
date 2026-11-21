@@ -34,7 +34,7 @@
 TEST_FORCE_LINK(test_fuzzy_search)
 
 #include "core/io/file_access.h"
-#include "core/string/fuzzy_search.h"
+#include "core/string/translation_server.h"
 #include "tests/test_utils.h"
 
 namespace TestFuzzySearch {

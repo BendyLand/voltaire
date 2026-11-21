@@ -546,6 +546,7 @@ def configure(env: "SConsEnvironment"):
 
     if platform.system() == "Linux":
         env.Append(LIBS=["dl"])
+        env["_LIBFLAGS"] = "-Wl,--start-group " + env["_LIBFLAGS"] + " -Wl,--end-group"
 
     if platform.libc_ver()[0] != "glibc":
         if env["execinfo"]:

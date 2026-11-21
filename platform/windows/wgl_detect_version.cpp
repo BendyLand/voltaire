@@ -31,7 +31,7 @@
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
-#include "wgl_detect_version.h"
+#include "platform/windows/display_server_windows.h"
 
 #include "os_windows.h"
 
@@ -87,7 +87,7 @@ Dictionary detect_wgl() {
 	}
 
 	LPCWSTR class_name = L"EngineWGLDetect";
-	HINSTANCE hInstance = static_cast<OS_Windows *>(OS::get_singleton())->get_hinstance();
+	HINSTANCE hInstance = OS_Windows::get_hinstance();
 	WNDCLASSW wc = {};
 
 	wc.lpfnWndProc = DefWindowProcW;

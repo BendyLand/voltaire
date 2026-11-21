@@ -518,7 +518,7 @@ public:
 	virtual void set_use_parent_material(bool p_use_parent_material);
 	bool get_use_parent_material() const;
 
-	InputEvent* make_input_local(InputEvent* rp_event) const;
+	InputEvent make_input_local(const InputEvent& p_event) const;
 	Vector2 make_canvas_position_local(const Vector2& screen_point) const;
 
 	Vector2 get_global_mouse_position() const;
@@ -556,56 +556,5 @@ public:
 	~CanvasItem();
 };
 
-class CanvasTexture : public Texture2D
-{
-	Ref<Texture2D> diffuse_texture;
-	Ref<Texture2D> normal_texture;
-	Ref<Texture2D> specular_texture;
-	Color specular = Color(1, 1, 1, 1);
-	real_t shininess = 1.0;
-
-	RID canvas_texture;
-
-	CanvasItem::TextureFilter texture_filter = CanvasItem::TEXTURE_FILTER_PARENT_NODE;
-	CanvasItem::TextureRepeat texture_repeat = CanvasItem::TEXTURE_REPEAT_PARENT_NODE;
-
-protected:
-	static void _bind_methods();
-
-public:
-	void set_diffuse_texture(const Ref<Texture2D>& p_diffuse);
-	Ref<Texture2D> get_diffuse_texture() const;
-
-	void set_normal_texture(const Ref<Texture2D>& p_normal);
-	Ref<Texture2D> get_normal_texture() const;
-
-	void set_specular_texture(const Ref<Texture2D>& p_specular);
-	Ref<Texture2D> get_specular_texture() const;
-
-	void set_specular_color(const Color& p_color);
-	Color get_specular_color() const;
-
-	void set_specular_shininess(real_t p_shininess);
-	real_t get_specular_shininess() const;
-
-	void set_texture_filter(CanvasItem::TextureFilter p_filter);
-	CanvasItem::TextureFilter get_texture_filter() const;
-
-	void set_texture_repeat(CanvasItem::TextureRepeat p_repeat);
-	CanvasItem::TextureRepeat get_texture_repeat() const;
-
-	virtual int get_width() const override;
-	virtual int get_height() const override;
-
-	virtual bool is_pixel_opaque(int p_x, int p_y) const override;
-	virtual bool has_alpha() const override;
-
-	virtual Ref<Image> get_image() const override;
-
-	virtual RID get_rid() const override;
-
-	CanvasTexture();
-	~CanvasTexture();
-};
 
 

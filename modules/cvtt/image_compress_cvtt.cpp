@@ -30,10 +30,17 @@
 /**************************************************************************/
 
 #include <ConvectionKernels.h>
+#include "register_types.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/templates/safe_refcount.h"
-#include "image_compress_cvtt.h"
+// --- Inlined from modules/cvtt/image_compress_cvtt.h ---
+#include "core/io/image.h"
+
+void image_compress_cvtt(Image *p_image, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format);
+void image_decompress_cvtt(Image *p_image);
+
+// --- End modules/cvtt/image_compress_cvtt.h ---
 
 struct CVTTCompressionJobParams
 {
@@ -427,4 +434,16 @@ void image_decompress_cvtt(Image* p_image)
 		p_image->get_width(), p_image->get_height(), p_image->has_mipmaps(), target_format, data);
 }
 
+void initialize_cvtt_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
 
+	Image::_image_compress_bptc_func = image_compress_cvtt;
+}
+
+void uninitialize_cvtt_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}

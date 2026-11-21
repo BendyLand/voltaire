@@ -38,15 +38,23 @@
 #include "scene/resources/text_line.h"
 #include "servers/display/native_menu.h"
 
-class PanelContainer;
-class VBoxContainer;
+class Panel;
 class LineEdit;
 class Timer;
 class PopupMenuItems;
 
-class PopupMenu : public Popup
+class PopupMenu : public Window
 {
 	friend class PopupMenuItems;
+
+public:
+	using HideReason = PopupTracker::HideReason;
+	static constexpr HideReason HIDE_REASON_NONE = PopupTracker::HIDE_REASON_NONE;
+	static constexpr HideReason HIDE_REASON_CANCELED = PopupTracker::HIDE_REASON_CANCELED;
+	static constexpr HideReason HIDE_REASON_UNFOCUSED = PopupTracker::HIDE_REASON_UNFOCUSED;
+
+private:
+	PopupTracker tracker;
 
 	static HashMap<NativeMenu::SystemMenus, PopupMenu*> system_menus;
 
@@ -190,8 +198,8 @@ class PopupMenu : public Popup
 	int search_bar_min_item_count = 0;
 	bool search_bar_fuzzy_search_enabled = true;
 	int search_bar_fuzzy_search_max_misses = 2;
-	PanelContainer* panel = nullptr;
-	VBoxContainer* vbox_container = nullptr;
+	Panel* panel = nullptr;
+	Control* vbox_container = nullptr;
 	LineEdit* search_bar = nullptr;
 	ScrollContainer* scroll_container = nullptr;
 	PopupMenuItems* control = nullptr;
@@ -260,8 +268,8 @@ class PopupMenu : public Popup
 
 	void _close_pressed();
 	void _menu_changed();
-	void _input_from_window_internal(const Ref<InputEvent>& p_event);
-	bool _set_item_accelerator(int p_index, const Ref<InputEventKey>& p_ie);
+	void _input_from_window_internal(const InputEvent& p_event);
+	bool _set_item_accelerator(int p_index, const InputEvent& p_ie);
 	void _set_item_checkable_type(int p_index, int p_checkable_type);
 	int _get_item_checkable_type(int p_index) const;
 	void _native_popup(const Rect2i& p_rect);
@@ -273,11 +281,12 @@ class PopupMenu : public Popup
 
 protected:
 	virtual void _pre_popup(const Size2i& p_size) override;
+	virtual void _post_popup() override;
 	virtual Rect2i _popup_adjust_rect() const override;
 
 	virtual void add_child_notify(Node* p_child) override;
 	virtual void remove_child_notify(Node* p_child) override;
-	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
 
 	virtual void _popup_base(const Rect2i& p_bounds = Rect2i()) override;
 	void _notification(int p_what);
@@ -310,7 +319,9 @@ public:
 
 	virtual RID get_focused_accessibility_element() const override;
 
-	virtual void _parent_focused() override;
+	HideReason get_hide_reason() const { return tracker.hide_reason; }
+
+	void _parent_focused();
 
 	RID bind_global_menu();
 	void unbind_global_menu();
@@ -429,7 +440,7 @@ public:
 
 	void scroll_to_item(int p_idx);
 
-	bool activate_item_by_event(const Ref<InputEvent>& p_event, bool p_for_global_only = false);
+	bool activate_item_by_event(const InputEvent& p_event, bool p_for_global_only = false);
 	void activate_item(int p_idx);
 
 	void _about_to_popup();
@@ -471,7 +482,7 @@ public:
 
 	virtual void set_visible(bool p_visible) override;
 
-	PopupMenu() = default;
+	PopupMenu();
 	~PopupMenu();
 };
 

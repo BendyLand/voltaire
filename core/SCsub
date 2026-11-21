@@ -224,10 +224,7 @@ SConscript("math/SCsub")
 SConscript("crypto/SCsub")
 SConscript("io/SCsub")
 SConscript("input/SCsub")
-SConscript("templates/SCsub")
 SConscript("string/SCsub")
-SConscript("config/SCsub")
-SConscript("error/SCsub")
 
 
 # Build it all as a library

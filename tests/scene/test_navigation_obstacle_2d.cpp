@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_navigation_obstacle_2d)
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "scene/2d/navigation/navigation_obstacle_2d.h"
+#include "scene/2d/navigation/navigation_2d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/world_2d.h"
@@ -53,7 +53,7 @@ TEST_SUITE("[Navigation2D]") {
 
 	TEST_CASE("[SceneTree][NavigationObstacle2D] New obstacle should attach to default map") {
 		Node2D *node_2d = memnew(Node2D);
-		SceneTree::get_singleton()->get_root()->add_child(node_2d);
+		SceneTree::get_root()->add_child(node_2d);
 
 		NavigationObstacle2D *obstacle_node = memnew(NavigationObstacle2D);
 		// obstacle should not be attached to any map when outside of tree

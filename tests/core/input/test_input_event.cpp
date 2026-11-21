@@ -79,8 +79,9 @@ TEST_CASE("[InputEvent][SceneTree] Test methods that interact with the InputMap"
 	Ref<InputEventJoypadMotion> iejm;
 	iejm.instantiate();
 
-	InputMap::get_singleton()->add_action(mock_action, 0.5);
-	InputMap::get_singleton()->action_add_event(mock_action, iejm);
+	InputMap::initialize();
+	InputMap::add_action(mock_action, 0.5);
+	InputMap::action_add_event(mock_action, iejm);
 
 	CHECK(iejm->is_action_type());
 	CHECK(iejm->is_action(mock_action));
@@ -94,7 +95,7 @@ TEST_CASE("[InputEvent][SceneTree] Test methods that interact with the InputMap"
 	CHECK(Math::is_equal_approx(iejm->get_action_raw_strength(mock_action), 0.8f));
 	CHECK(iejm->is_action_pressed(mock_action));
 
-	InputMap::get_singleton()->erase_action(mock_action);
+	InputMap::erase_action(mock_action);
 }
 
 TEST_CASE("[InputEvent] Test xformed_by") {

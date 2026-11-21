@@ -179,13 +179,13 @@ def include_file_in_rd_header(filename: str, header_data: RDHeaderStruct, depth:
 def build_rd_header_lines_for_raytracing_stage(lines, stage: str):
     if lines:
         return f"""\
-        static const char _{stage}_code[] = {{
+	static const char _{stage}_code[] = {{
 {to_raw_cstring(lines)}
-        }};
+	}};
 """
     else:
         return f"""\
-        static const char *_{stage}_code = nullptr;
+	static const char *_{stage}_code = nullptr;
 """
 
 
@@ -198,9 +198,7 @@ def build_rd_header(filename: str, shader: str) -> None:
 #include "core/types.h"
 #include "servers/rendering/renderer_rd/shader_rd.h"
 
-class {class_name} : public ShaderRD {{
-public:
-    {class_name}() {{
+inline ShaderRD::StageData {class_name}() {{
 """)
 
         if (
@@ -216,32 +214,43 @@ public:
             file.write(build_rd_header_lines_for_raytracing_stage(header_data.miss_lines, "miss"))
             file.write(build_rd_header_lines_for_raytracing_stage(header_data.intersection_lines, "intersection"))
             file.write(f"""\
-        setup_raytracing(_raygen_code, _any_hit_code, _closest_hit_code, _miss_code, _intersection_code, "{class_name}");
+	ShaderRD::StageData d;
+	d.raygen_code = _raygen_code;
+	d.any_hit_code = _any_hit_code;
+	d.closest_hit_code = _closest_hit_code;
+	d.miss_code = _miss_code;
+	d.intersection_code = _intersection_code;
+	d.name = "{class_name}";
+	d.is_raytracing = true;
+	return d;
 """)
         elif header_data.compute_lines:
             file.write(f"""\
-        static const char *_vertex_code = nullptr;
-        static const char *_fragment_code = nullptr;
-        static const char _compute_code[] = {{
+	static const char _compute_code[] = {{
 {to_raw_cstring(header_data.compute_lines)}
-        }};
-        setup(_vertex_code, _fragment_code, _compute_code, "{class_name}");
+	}};
+	ShaderRD::StageData d;
+	d.compute_code = _compute_code;
+	d.name = "{class_name}";
+	return d;
 """)
         else:
             file.write(f"""\
-        static const char _vertex_code[] = {{
+	static const char _vertex_code[] = {{
 {to_raw_cstring(header_data.vertex_lines)}
-        }};
-        static const char _fragment_code[] = {{
+	}};
+	static const char _fragment_code[] = {{
 {to_raw_cstring(header_data.fragment_lines)}
-        }};
-        static const char *_compute_code = nullptr;
-        setup(_vertex_code, _fragment_code, _compute_code, "{class_name}");
+	}};
+	ShaderRD::StageData d;
+	d.vertex_code = _vertex_code;
+	d.fragment_code = _fragment_code;
+	d.name = "{class_name}";
+	return d;
 """)
 
         file.write("""\
-    }
-};
+}
 """)
 
 

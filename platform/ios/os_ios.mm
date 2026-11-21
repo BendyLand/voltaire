@@ -35,19 +35,17 @@
 
 #ifdef IOS_ENABLED
 
-OS_IOS *OS_IOS::get_singleton() {
-	return (OS_IOS *)OS_AppleEmbedded::get_singleton();
-}
-
-OS_IOS::OS_IOS() :
-		OS_AppleEmbedded() {
+void OS_IOS::setup() {
+	OS_AppleEmbedded::setup();
 	DisplayServerIOS::register_ios_driver();
 }
 
-OS_IOS::~OS_IOS() {}
-
-String OS_IOS::get_name() const {
+String OS_IOS::get_name() {
 	return "iOS";
+}
+
+String OS::get_name() {
+	return OS_IOS::get_name();
 }
 
 #endif // IOS_ENABLED

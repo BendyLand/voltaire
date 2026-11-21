@@ -14,7 +14,5 @@ env_noise.Prepend(CPPPATH=[thirdparty_dir])
 module_obj = []
 
 env_noise.add_source_files(module_obj, "*.cpp")
-if env.editor_build:
-    env_noise.add_source_files(module_obj, "editor/*.cpp")
 
 env.modules_sources += module_obj

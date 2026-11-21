@@ -106,8 +106,6 @@ module_obj = []
 
 env_theora.add_source_files(module_obj, "*.cpp")
 
-if env.editor_build:
-    env_theora.add_source_files(module_obj, "editor/*.cpp")
 
 env.modules_sources += module_obj
 

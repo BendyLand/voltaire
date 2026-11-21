@@ -31,17 +31,85 @@
 
 #include "os_web.h"
 
-#include "api/javascript_bridge_singleton.h"
-#include "display_server_web.h"
+#include "platform/web/os_web.h"
 #include "godot_js.h"
-#include "ip_web.h"
-#include "net_socket_web.h"
+// --- Inlined from platform/web/ip_web.h ---
+#include "core/io/ip.h"
+
+class IPWeb final
+{
+public:
+	static void _resolve_hostname(
+		List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type = IP::TYPE_ANY)
+	{
+		(void)r_addresses;
+		(void)p_hostname;
+		(void)p_type;
+	}
+
+	static void get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces)
+	{
+		(void)r_interfaces;
+	}
+
+	static void make_default() { IP::bind<IPWeb>(); }
+
+	IPWeb() = delete;
+	IPWeb(const IPWeb&) = delete;
+	IPWeb& operator=(const IPWeb&) = delete;
+	~IPWeb() = delete;
+};
+
+// --- End platform/web/ip_web.h ---
+// --- Inlined from platform/web/net_socket_web.h ---
+#include "core/io/net_socket.h"
+
+#include <sys/socket.h>
+
+class NetSocketWeb : public NetSocket {
+
+protected:
+	static Ref<NetSocket> _create_func() {
+		return memnew(NetSocketWeb);
+	}
+
+public:
+	static void make_default() {
+		_create = _create_func;
+	}
+
+	virtual Error open(Family p_family, Type p_sock_type, IP::Type &ip_type) override { return ERR_UNAVAILABLE; }
+	virtual void close() override {}
+	virtual Error bind(Address p_addr) override { return ERR_UNAVAILABLE; }
+	virtual Error listen(int p_max_pending) override { return ERR_UNAVAILABLE; }
+	virtual Error connect_to_host(Address p_addr) override { return ERR_UNAVAILABLE; }
+	virtual Error poll(PollType p_type, int timeout) const override { return ERR_UNAVAILABLE; }
+	virtual Error recv(uint8_t *p_buffer, int p_len, int &r_read) override { return ERR_UNAVAILABLE; }
+	virtual Error recvfrom(uint8_t *p_buffer, int p_len, int &r_read, IPAddress &r_ip, uint16_t &r_port, bool p_peek = false) override { return ERR_UNAVAILABLE; }
+	virtual Error send(const uint8_t *p_buffer, int p_len, int &r_sent) override { return ERR_UNAVAILABLE; }
+	virtual Error sendto(const uint8_t *p_buffer, int p_len, int &r_sent, IPAddress p_ip, uint16_t p_port) override { return ERR_UNAVAILABLE; }
+	virtual Ref<NetSocket> accept(Address &r_addr) override { return Ref<NetSocket>(); }
+
+	virtual bool is_open() const override { return false; }
+	virtual int get_available_bytes() const override { return -1; }
+	virtual Error get_socket_address(Address *r_addr) const override { return ERR_UNAVAILABLE; }
+
+	virtual Error set_broadcasting_enabled(bool p_enabled) override { return ERR_UNAVAILABLE; }
+	virtual void set_blocking_enabled(bool p_enabled) override {}
+	virtual void set_ipv6_only_enabled(bool p_enabled) override {}
+	virtual void set_tcp_no_delay_enabled(bool p_enabled) override {}
+	virtual void set_reuse_address_enabled(bool p_enabled) override {}
+	virtual Error join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) override { return ERR_UNAVAILABLE; }
+	virtual Error leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) override { return ERR_UNAVAILABLE; }
+};
+
+// --- End platform/web/net_socket_web.h ---
 
 #include "core/io/file_access.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "drivers/unix/dir_access_unix.h"
-#include "drivers/unix/file_access_unix.h"
+#include "drivers/unix/os_unix.h"
 #include "main/main.h"
 
 #include <dlfcn.h>
@@ -51,55 +119,88 @@ void OS_Web::alert(const String &p_alert, const String &p_title) {
 	godot_js_display_alert(p_alert.utf8().get_data());
 }
 
-// Lifecycle
-void OS_Web::initialize() {
+void OS_Web::initialize_core() {
+	if (!data) {
+		data = memnew(Data);
+	}
+
+	char locale_ptr[16];
+	godot_js_config_locale_get(locale_ptr, 16);
+	setenv("LANG", locale_ptr, true);
+
+	godot_js_pwa_cb(&OS_Web::update_pwa_state_callback);
+
+	data->idb_available = godot_js_os_fs_is_persistent();
+
 	OS_Unix::initialize_core();
+	FileAccessUnix::close_notification_func = file_access_close_callback;
+	DirAccessUnix::remove_notification_func = dir_access_remove_callback;
+}
+
+void OS_Web::initialize() {
+	if (!data) {
+		initialize_core();
+	}
+
+	if (AudioDriverWeb::is_available()) {
+		data->audio_drivers.push_back(memnew(AudioDriverWorklet));
+		data->audio_drivers.push_back(memnew(AudioDriverScriptProcessor));
+	}
+	for (AudioDriverWeb *audio_driver : data->audio_drivers) {
+		AudioDriverManager::add_driver(audio_driver);
+	}
+
 	IPWeb::make_default();
 	NetSocketWeb::make_default();
 	DisplayServerWeb::register_web_driver();
+	MIDIDriver::bind<MIDIDriverWebMidi>();
+	MIDIDriver::initialize();
 }
 
 void OS_Web::resume_audio() {
 	AudioDriverWeb::resume();
 }
 
-void OS_Web::set_main_loop(MainLoop *p_main_loop) {
-	main_loop = p_main_loop;
-}
-
-MainLoop *OS_Web::get_main_loop() const {
-	return main_loop;
-}
-
 void OS_Web::fs_sync_callback() {
-	get_singleton()->idb_is_syncing = false;
+	if (data) {
+		data->idb_is_syncing = false;
+	}
 }
 
 bool OS_Web::main_loop_iterate() {
 	GodotProfileFrameMark;
 	GodotProfileZone("OS_Web::main_loop_iterate");
-	if (is_userfs_persistent() && idb_needs_sync && !idb_is_syncing) {
-		idb_is_syncing = true;
-		idb_needs_sync = false;
+	if (data && is_userfs_persistent() && data->idb_needs_sync && !data->idb_is_syncing) {
+		data->idb_is_syncing = true;
+		data->idb_needs_sync = false;
 		godot_js_os_fs_sync(&fs_sync_callback);
 	}
 
-	DisplayServer::get_singleton()->process_events();
+	DisplayServer::process_events();
 
 	return Main::iteration();
 }
 
 void OS_Web::delete_main_loop() {
-	memdelete(main_loop);
-	main_loop = nullptr;
+	MainLoop::clear();
 }
 
 void OS_Web::finalize() {
 	delete_main_loop();
-	for (AudioDriverWeb *driver : audio_drivers) {
-		memdelete(driver);
+	MIDIDriver::finalize();
+	MIDIDriver::reset_backend();
+	if (data) {
+		for (AudioDriverWeb *driver : data->audio_drivers) {
+			memdelete(driver);
+		}
+		data->audio_drivers.clear();
+		memdelete(data);
+		data = nullptr;
 	}
-	audio_drivers.clear();
+}
+
+void OS_Web::finalize_core() {
+	OS_Unix::finalize_core();
 }
 
 // Miscellaneous
@@ -112,7 +213,7 @@ Dictionary OS_Web::execute_with_pipe(const String &p_path, const List<String> &p
 	ERR_FAIL_V_MSG(Dictionary(), "OS::execute_with_pipe is not available on the Web platform.");
 }
 
-Error OS_Web::create_process(const String &p_path, const List<String> &p_arguments, ProcessID *r_child_id, bool p_open_console) {
+Error OS_Web::create_process(const String &p_path, const List<String> &p_arguments, OS::ProcessID *r_child_id, bool p_open_console) {
 	Array args;
 	for (const String &E : p_arguments) {
 		args.push_back(E);
@@ -123,31 +224,31 @@ Error OS_Web::create_process(const String &p_path, const List<String> &p_argumen
 	return OK;
 }
 
-Error OS_Web::kill(const ProcessID &p_pid) {
+Error OS_Web::kill(const OS::ProcessID &p_pid) {
 	ERR_FAIL_V_MSG(ERR_UNAVAILABLE, "OS::kill() is not available on the Web platform.");
 }
 
-int OS_Web::get_process_id() const {
+int OS_Web::get_process_id() {
 	return 0;
 }
 
-bool OS_Web::is_process_running(const ProcessID &p_pid) const {
+bool OS_Web::is_process_running(const OS::ProcessID &p_pid) {
 	return false;
 }
 
-int OS_Web::get_process_exit_code(const ProcessID &p_pid) const {
+int OS_Web::get_process_exit_code(const OS::ProcessID &p_pid) {
 	return -1;
 }
 
-int OS_Web::get_processor_count() const {
+int OS_Web::get_processor_count() {
 	return godot_js_os_hw_concurrency_get();
 }
 
-String OS_Web::get_unique_id() const {
+String OS_Web::get_unique_id() {
 	ERR_FAIL_V_MSG("", "OS::get_unique_id() is not available on the Web platform.");
 }
 
-int OS_Web::get_default_thread_pool_size() const {
+int OS_Web::get_default_thread_pool_size() {
 #ifdef THREADS_ENABLED
 	return godot_js_os_thread_pool_size_get();
 #else // No threads.
@@ -181,17 +282,16 @@ bool OS_Web::_check_internal_feature_support(const String &p_feature) {
 	return false;
 }
 
-String OS_Web::get_executable_path() const {
+String OS_Web::get_executable_path() {
 	return OS::get_executable_path();
 }
 
 Error OS_Web::shell_open(const String &p_uri) {
-	// Open URI in a new tab, browser will deal with it by protocol.
 	godot_js_os_shell_open(p_uri.utf8().get_data());
 	return OK;
 }
 
-String OS_Web::get_name() const {
+String OS_Web::get_name() {
 	return "Web";
 }
 
@@ -205,26 +305,25 @@ void OS_Web::vibrate_handheld(int p_duration_ms, float p_amplitude) {
 	godot_js_input_vibrate_handheld(p_duration_ms);
 }
 
-String OS_Web::get_user_data_dir(const String &p_user_dir) const {
+String OS_Web::get_user_data_dir(const String &p_user_dir) {
 	String userfs = "/userfs";
 	return userfs.path_join(p_user_dir).replace_char('\\', '/');
 }
 
-String OS_Web::get_cache_path() const {
+String OS_Web::get_cache_path() {
 	return "/home/web_user/.cache";
 }
 
-String OS_Web::get_config_path() const {
+String OS_Web::get_config_path() {
 	return "/home/web_user/.config";
 }
 
-String OS_Web::get_data_path() const {
+String OS_Web::get_data_path() {
 	return "/home/web_user/.local/share";
 }
 
 void OS_Web::file_access_close_callback(const String &p_file, int p_flags) {
-	OS_Web *os = OS_Web::get_singleton();
-	if (!(os->is_userfs_persistent() && (p_flags & FileAccess::WRITE))) {
+	if (!data || !(is_userfs_persistent() && (p_flags & FileAccess::WRITE))) {
 		return; // FS persistence is not working or we are not writing.
 	}
 	bool is_file_persistent = p_file.begins_with("/userfs");
@@ -233,34 +332,33 @@ void OS_Web::file_access_close_callback(const String &p_file, int p_flags) {
 	is_file_persistent = is_file_persistent || p_file.begins_with("/home/web_user/");
 #endif
 	if (is_file_persistent) {
-		os->idb_needs_sync = true;
+		data->idb_needs_sync = true;
 	}
 }
 
 void OS_Web::dir_access_remove_callback(const String &p_file) {
-	OS_Web *os = OS_Web::get_singleton();
+	if (!data) {
+		return;
+	}
 	bool is_file_persistent = p_file.begins_with("/userfs");
 #ifdef TOOLS_ENABLED
 	// Hack for editor persistence (can we track).
 	is_file_persistent = is_file_persistent || p_file.begins_with("/home/web_user/");
 #endif
 	if (is_file_persistent) {
-		os->idb_needs_sync = true;
+		data->idb_needs_sync = true;
 	}
 }
 
 void OS_Web::update_pwa_state_callback() {
-	if (OS_Web::get_singleton()) {
-		OS_Web::get_singleton()->pwa_is_waiting = true;
-	}
-	if (JavaScriptBridge::get_singleton()) {
-		JavaScriptBridge::get_singleton()->emit_signal("pwa_update_available");
+	if (data) {
+		data->pwa_is_waiting = true;
 	}
 }
 
 void OS_Web::force_fs_sync() {
-	if (is_userfs_persistent()) {
-		idb_needs_sync = true;
+	if (data && is_userfs_persistent()) {
+		data->idb_needs_sync = true;
 	}
 }
 
@@ -268,8 +366,8 @@ Error OS_Web::pwa_update() {
 	return godot_js_pwa_update() ? FAILED : OK;
 }
 
-bool OS_Web::is_userfs_persistent() const {
-	return idb_available;
+bool OS_Web::is_userfs_persistent() {
+	return data && data->idb_available;
 }
 
 Error OS_Web::open_dynamic_library(const String &p_path, void *&p_library_handle, GDExtensionData *p_data) {
@@ -284,34 +382,131 @@ Error OS_Web::open_dynamic_library(const String &p_path, void *&p_library_handle
 	return OK;
 }
 
-OS_Web *OS_Web::get_singleton() {
-	return static_cast<OS_Web *>(OS::get_singleton());
-}
-
 void OS_Web::initialize_joypads() {
 }
 
-OS_Web::OS_Web() {
-	char locale_ptr[16];
-	godot_js_config_locale_get(locale_ptr, 16);
-	setenv("LANG", locale_ptr, true);
+/* -------------------------------------------------------------------------- */
+/*                        OS Static Platform Dispatch                         */
+/* -------------------------------------------------------------------------- */
 
-	godot_js_pwa_cb(&OS_Web::update_pwa_state_callback);
+void OS::initialize_core() {
+	OS_Web::initialize_core();
+	_initialized = true;
+}
 
-	if (AudioDriverWeb::is_available()) {
-		audio_drivers.push_back(memnew(AudioDriverWorklet));
-		audio_drivers.push_back(memnew(AudioDriverScriptProcessor));
-	}
-	for (AudioDriverWeb *audio_driver : audio_drivers) {
-		AudioDriverManager::add_driver(audio_driver);
-	}
-
-	idb_available = godot_js_os_fs_is_persistent();
-
+void OS::initialize() {
+	OS_Web::initialize();
 	Vector<Logger *> loggers;
 	loggers.push_back(memnew(StdLogger));
 	_set_logger(memnew(CompositeLogger(loggers)));
-
-	FileAccessUnix::close_notification_func = file_access_close_callback;
-	DirAccessUnix::remove_notification_func = dir_access_remove_callback;
+	_initialized = true;
 }
+
+void OS::finalize() {
+	_initialized = false;
+	OS_Web::finalize();
+	if (_logger) {
+		memdelete(_logger);
+		_logger = nullptr;
+	}
+}
+
+void OS::finalize_core() {
+	OS_Web::finalize_core();
+}
+
+void OS::initialize_joypads() {
+	OS_Web::initialize_joypads();
+}
+
+uint64_t OS::get_ticks_usec() {
+	return OS_Unix::get_ticks_usec();
+}
+
+void OS::delay_usec(uint32_t p_usec) {
+	OS_Unix::delay_usec(p_usec);
+}
+
+String OS::get_environment(const String &p_var) {
+	return OS_Unix::get_environment(p_var);
+}
+
+bool OS::has_environment(const String &p_var) {
+	return OS_Unix::has_environment(p_var);
+}
+
+void OS::set_environment(const String &p_var, const String &p_value) {
+	OS_Unix::set_environment(p_var, p_value);
+}
+
+void OS::unset_environment(const String &p_var) {
+	OS_Unix::unset_environment(p_var);
+}
+
+void OS::load_shell_environment() {
+}
+
+OS::DateTime OS::get_datetime(bool p_utc) {
+	return OS_Unix::get_datetime(p_utc);
+}
+
+OS::TimeZoneInfo OS::get_time_zone_info() {
+	return OS_Unix::get_time_zone_info();
+}
+
+Error OS::execute(const String &p_path, const List<String> &p_arguments, String *r_pipe, int *r_exitcode, bool p_read_stderr, Mutex *p_pipe_mutex, bool p_open_console) {
+	return OS_Web::execute(p_path, p_arguments, r_pipe, r_exitcode, p_read_stderr, p_pipe_mutex, p_open_console);
+}
+
+Error OS::create_process(const String &p_path, const List<String> &p_arguments, ProcessID *r_child_id, bool p_open_console) {
+	return OS_Web::create_process(p_path, p_arguments, r_child_id, p_open_console);
+}
+
+Error OS::kill(const ProcessID &p_pid) {
+	return OS_Web::kill(p_pid);
+}
+
+bool OS::is_process_running(const ProcessID &p_pid) {
+	return OS_Web::is_process_running(p_pid);
+}
+
+Error OS::get_entropy(uint8_t *r_buffer, int p_bytes) {
+	return OS_Unix::get_entropy(r_buffer, p_bytes);
+}
+
+String OS::get_system_ca_certificates() {
+	return String();
+}
+
+String OS::get_name() {
+	return OS_Web::get_name();
+}
+
+List<String> OS::get_cmdline_platform_args() {
+	return List<String>();
+}
+
+bool OS::_check_internal_feature_support(const String &p_feature) {
+	return OS_Web::_check_internal_feature_support(p_feature);
+}
+
+void OS::disable_crash_handler() {
+}
+
+void OS::vibrate_handheld(int p_duration_ms, float p_amplitude) {
+	OS_Web::vibrate_handheld(p_duration_ms, p_amplitude);
+}
+
+Error OS::move_to_trash(const String &p_path) {
+	return FAILED;
+}
+
+#ifdef TOOLS_ENABLED
+bool OS::_test_create_rendering_device(const String &p_display_driver) {
+	return false;
+}
+
+bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
+	return false;
+}
+#endif

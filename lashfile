@@ -1,33 +1,53 @@
 build:
-	scons -j 5 linkflags="-Wl,--whole-archive bin/obj/modules/libmodule_svg.linuxbsd.editor.x86_64.a -Wl,--allow-multiple-definition -Wl,--no-whole-archive" debug_symbols=yes target=editor compiledb=yes warnings=no
-
-er:
-	lash build 2> errs
+	ninja -C build
 
 err:
-	lash link 2> errs
-
-errs:
 	lash build 2> errs
-	lash link 2> errs
 
-test:
-	if [[ -f ./bin/voltaire.linuxbsd.editor.x86_64 ]]; then
-		./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs
+testd:
+	if [[ -f ./bin/x86_64/debug/voltaire ]]; then
+		./bin/x86_64/debug/voltaire --display-driver wayland --rendering-driver dummy --accurate-breadcrumbs
 	else
 		echo "Binary not built."
 	fi
 
+testg:
+	if [[ -f ./bin/x86_64/debug/voltaire ]]; then
+		./bin/x86_64/debug/voltaire --display-driver wayland --rendering-driver opengl3 --accurate-breadcrumbs
+	else
+		echo "Binary not built."
+	fi
+
+testge:
+	if [[ -f ./bin/x86_64/debug/voltaire ]]; then
+		./bin/x86_64/debug/voltaire --display-driver wayland --rendering-driver opengl3_es --accurate-breadcrumbs
+	else
+		echo "Binary not built."
+	fi
+
+testv:
+	if [[ -f ./bin/x86_64/debug/voltaire ]]; then
+		./bin/x86_64/debug/voltaire --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs
+	else
+		echo "Binary not built."
+	fi
+
+test:
+	lash testv
+
+inspectd:
+	gdb --args ./bin/x86_64/debug/voltaire --display-driver wayland --rendering-driver dummy --accurate-breadcrumbs
+
+inspectg:
+	gdb --args ./bin/x86_64/debug/voltaire --display-driver wayland --rendering-driver opengl3 --accurate-breadcrumbs
+
+inspectge:
+	gdb --args ./bin/x86_64/debug/voltaire --display-driver wayland --rendering-driver opengl3_es --accurate-breadcrumbs
+
+inspectv:
+	gdb --args ./bin/x86_64/debug/voltaire --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs
+
 inspect:
-	# gdb ./bin/voltaire.linuxbsd.editor.x86_64
-	gdb --args ./bin/voltaire.linuxbsd.editor.x86_64 --display-driver wayland --rendering-driver vulkan --accurate-breadcrumbs
+	lash inspectv
 
-link:
-	g++ -o bin/voltaire.linuxbsd.editor.x86_64 -static-libgcc -static-libstdc++ -O2 @bin/objects.txt -Lbin/build_deps/accesskit/lib/linux/x86_64/static -laccesskit -lrt -lpthread -ldl
-
-remind:
-	todo -l show
-
-todo:
-	todo -li
 

@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "dir_access_jandroid.h"
+#include "platform/android/os_android.h"
 
 #include "jni_utils.h"
 #include "thread_jandroid.h"

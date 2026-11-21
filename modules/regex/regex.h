@@ -36,7 +36,7 @@
 #include "core/templates/vector.h"
 #include "core/types.h"
 
-class RegExMatch : public RefCounted
+class RegExMatch final : public RefCounted
 {
 	struct Range
 	{
@@ -59,7 +59,7 @@ public:
 	Vector<String> get_strings() const;
 };
 
-class RegEx : public RefCounted
+class RegEx final : public RefCounted
 {
 	void* general_ctx = nullptr;
 	void* code = nullptr;

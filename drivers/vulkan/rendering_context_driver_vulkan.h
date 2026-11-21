@@ -255,4 +255,129 @@ public:
 
 #endif // VULKAN_ENABLED
 
+// --- Folded from drivers/vulkan/vulkan_hooks.h ---
+#include <drivers/vulkan/godot_vulkan.h>
+#include "core/math/vector2i.h"
+#include "core/templates/local_vector.h"
 
+class VulkanHooks final
+{
+private:
+	static inline bool _is_bound = false;
+
+	static bool _default_create_vulkan_instance(
+		const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance)
+	{
+		(void)p_vulkan_create_info;
+		(void)r_instance;
+		return false;
+	}
+	static bool _default_get_physical_device(VkPhysicalDevice* r_device)
+	{
+		(void)r_device;
+		return false;
+	}
+	static bool _default_create_vulkan_device(
+		const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device)
+	{
+		(void)p_device_create_info;
+		(void)r_device;
+		return false;
+	}
+	static void _default_set_direct_queue_family_and_index(
+		uint32_t p_queue_family_index, uint32_t p_queue_index)
+	{
+		(void)p_queue_family_index;
+		(void)p_queue_index;
+	}
+	static bool _default_use_fragment_density_offsets() { return false; }
+	static void _default_get_fragment_density_offsets(
+		LocalVector<VkOffset2D>& r_offsets, const Vector2i& p_granularity)
+	{
+		(void)r_offsets;
+		(void)p_granularity;
+	}
+	static bool _default_use_subsampled_images() { return false; }
+
+public:
+	static bool is_bound() { return _is_bound; }
+
+	inline static bool (*create_vulkan_instance)(const VkInstanceCreateInfo* p_vulkan_create_info,
+		VkInstance* r_instance) = &_default_create_vulkan_instance;
+	inline static bool (*get_physical_device)(
+		VkPhysicalDevice* r_device) = &_default_get_physical_device;
+	inline static bool (*create_vulkan_device)(const VkDeviceCreateInfo* p_device_create_info,
+		VkDevice* r_device) = &_default_create_vulkan_device;
+	inline static void (*set_direct_queue_family_and_index)(uint32_t p_queue_family_index,
+		uint32_t p_queue_index) = &_default_set_direct_queue_family_and_index;
+	inline static bool (*use_fragment_density_offsets)() = &_default_use_fragment_density_offsets;
+	inline static void (*get_fragment_density_offsets)(LocalVector<VkOffset2D>& r_offsets,
+		const Vector2i& p_granularity) = &_default_get_fragment_density_offsets;
+	inline static bool (*use_subsampled_images)() = &_default_use_subsampled_images;
+
+	template <typename Impl> static void bind()
+	{
+		create_vulkan_instance = &Impl::create_vulkan_instance;
+		get_physical_device = &Impl::get_physical_device;
+		create_vulkan_device = &Impl::create_vulkan_device;
+		set_direct_queue_family_and_index = &Impl::set_direct_queue_family_and_index;
+		use_fragment_density_offsets = &Impl::use_fragment_density_offsets;
+		get_fragment_density_offsets = &Impl::get_fragment_density_offsets;
+		use_subsampled_images = &Impl::use_subsampled_images;
+		_is_bound = true;
+	}
+
+	static void reset();
+
+	VulkanHooks() = delete;
+	VulkanHooks(const VulkanHooks&) = delete;
+	VulkanHooks& operator=(const VulkanHooks&) = delete;
+	~VulkanHooks() = delete;
+};
+
+
+
+// --- End drivers/vulkan/vulkan_hooks.h ---
+
+// --- Folded from drivers/vulkan/rendering_shader_container_vulkan.h ---
+#include "servers/rendering/rendering_shader_container.h"
+
+class RenderingShaderContainerVulkan : public RenderingShaderContainer
+{
+public:
+	static const uint32_t FORMAT_VERSION;
+
+	enum CompressionFlagsVulkan
+	{
+		COMPRESSION_FLAG_SMOLV = 0x10000,
+	};
+
+	bool debug_info_enabled = false;
+
+protected:
+	virtual uint32_t _format() const override;
+	virtual uint32_t _format_version() const override;
+	virtual bool _set_code_from_spirv(const ReflectShader& p_shader) override;
+
+public:
+	RenderingShaderContainerVulkan(bool p_debug_info_enabled);
+};
+
+class RenderingShaderContainerFormatVulkan : public RenderingShaderContainerFormat
+{
+private:
+	bool debug_info_enabled = false;
+
+public:
+	virtual Ref<RenderingShaderContainer> create_container() const override;
+	virtual RDC::ShaderLanguageVersion get_shader_language_version() const override;
+	virtual RDC::ShaderSpirvVersion get_shader_spirv_version() const override;
+	void set_debug_info_enabled(bool p_debug_info_enabled);
+	bool get_debug_info_enabled() const;
+	RenderingShaderContainerFormatVulkan();
+	virtual ~RenderingShaderContainerFormatVulkan();
+};
+
+
+
+// --- End drivers/vulkan/rendering_shader_container_vulkan.h ---

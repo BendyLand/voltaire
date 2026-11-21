@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_reference_rect)
 
-#include "scene/gui/reference_rect.h"
+#include "scene/gui/label.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 
@@ -111,13 +111,13 @@ TEST_CASE("[SceneTree][ReferenceRect] Editor only flag") {
 
 TEST_CASE("[SceneTree][ReferenceRect] Minimum size on tree") {
 	ReferenceRect *reference_rect = memnew(ReferenceRect);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(reference_rect);
 
 	reference_rect->set_border_width(4.0f);
 	reference_rect->set_editor_only(false);
 	reference_rect->set_border_color(Color(0, 1, 0, 1));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK(reference_rect->get_combined_minimum_size() == Size2(0, 0));
 

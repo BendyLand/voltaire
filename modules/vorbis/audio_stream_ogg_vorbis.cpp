@@ -30,7 +30,173 @@
 /**************************************************************************/
 
 #include <ogg/ogg.h>
-#include "audio_stream_ogg_vorbis.h"
+#include "core/io/resource_importer.h"
+#include "core/io/resource_saver.h"
+#include "register_types.h"
+// --- Inlined from modules/vorbis/audio_stream_ogg_vorbis.h ---
+#include <vorbis/codec.h>
+#include "modules/ogg/ogg_packet_sequence.h"
+#include "servers/audio/audio_stream.h"
+
+class AudioStreamOggVorbis;
+
+class AudioStreamPlaybackOggVorbis : public AudioStreamPlaybackResampled
+{
+	uint32_t frames_mixed = 0;
+	bool active = false;
+	bool looping_override = false;
+	bool looping = false;
+	int loops = 0;
+
+	enum
+	{
+		FADE_SIZE = 256
+	};
+
+	AudioFrame loop_fade[FADE_SIZE];
+	int loop_fade_remaining = FADE_SIZE;
+
+	vorbis_info info;
+	vorbis_comment comment;
+	vorbis_dsp_state dsp_state;
+	vorbis_block block;
+
+	bool info_is_allocated = false;
+	bool comment_is_allocated = false;
+	bool dsp_state_is_allocated = false;
+	bool block_is_allocated = false;
+
+	bool ready = false;
+
+	bool have_samples_left = false;
+	bool have_packets_left = false;
+
+	friend class AudioStreamOggVorbis;
+
+	Ref<OggPacketSequence> vorbis_data;
+	Ref<OggPacketSequencePlayback> vorbis_data_playback;
+	Ref<AudioStreamOggVorbis> vorbis_stream;
+
+	bool _is_sample = false;
+	Ref<AudioSamplePlayback> sample_playback;
+
+	int _mix_frames(AudioFrame* p_buffer, int p_frames);
+	int _mix_frames_vorbis(AudioFrame* p_buffer, int p_frames);
+
+	// Allocates vorbis data structures. Returns true upon success, false on failure.
+	bool _alloc_vorbis();
+
+protected:
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
+	virtual float get_stream_sampling_rate() override;
+
+public:
+	virtual void start(double p_from_pos = 0.0) override;
+	virtual void stop() override;
+	virtual bool is_playing() const override;
+
+	virtual int get_loop_count() const override; // times it looped
+
+	virtual double get_playback_position() const override;
+	virtual void seek(double p_time) override;
+
+	virtual void tag_used_streams() override;
+
+	virtual void set_is_sample(bool p_is_sample) override;
+	virtual bool get_is_sample() const override;
+	virtual Ref<AudioSamplePlayback> get_sample_playback() const override;
+	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override;
+
+	AudioStreamPlaybackOggVorbis() {}
+
+	~AudioStreamPlaybackOggVorbis();
+};
+
+class AudioStreamOggVorbis final : public AudioStream
+{
+	friend class AudioStreamPlaybackOggVorbis;
+
+	int channels = 1;
+	double length = 0.0;
+	bool loop = false;
+	double loop_offset = 0.0;
+
+	// Performs a seek to the beginning of the stream, should not be called during playback!
+	// Also causes allocation and deallocation.
+	void maybe_update_info();
+
+	Ref<OggPacketSequence> packet_sequence;
+
+	double bpm = 0;
+	int beat_count = 0;
+	int bar_beats = 4;
+
+public:
+	static Ref<AudioStreamOggVorbis> load_from_file(const String& p_path);
+	static Ref<AudioStreamOggVorbis> load_from_buffer(const Vector<uint8_t>& p_stream_data);
+
+	void set_loop(bool p_enable);
+	virtual bool has_loop() const override;
+
+	void set_loop_offset(double p_seconds);
+	double get_loop_offset() const;
+
+	void set_bpm(double p_bpm);
+	virtual double get_bpm() const override;
+
+	void set_beat_count(int p_beat_count);
+	virtual int get_beat_count() const override;
+
+	void set_bar_beats(int p_bar_beats);
+	virtual int get_bar_beats() const override;
+
+	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
+
+	void set_packet_sequence(Ref<OggPacketSequence> p_packet_sequence);
+	Ref<OggPacketSequence> get_packet_sequence() const;
+
+	virtual double get_length() const override; // if supported, otherwise return 0
+
+	virtual bool is_monophonic() const override;
+
+	virtual bool can_be_sampled() const override { return true; }
+
+	virtual Ref<AudioSample> generate_sample() const override;
+};
+
+#include "core/io/resource_importer.h"
+
+class ResourceImporterOggVorbis final : public ResourceImporter
+{
+protected:
+
+public:
+#ifdef TOOLS_ENABLED
+	virtual bool has_advanced_options() const override;
+	virtual void show_advanced_options(const String& p_path) override;
+#endif
+
+#ifndef DISABLE_DEPRECATED
+	static Ref<AudioStreamOggVorbis> load_from_file(const String& p_path);
+	static Ref<AudioStreamOggVorbis> load_from_buffer(const Vector<uint8_t>& p_stream_data);
+#endif
+
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+	virtual void get_import_options(
+		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
+
+	virtual bool can_import_threaded() const override { return true; }
+
+	ResourceImporterOggVorbis();
+};
+
+// --- End modules/vorbis/audio_stream_ogg_vorbis.h ---
 #include "core/io/file_access.h"
 #include "core/templates/rb_map.h"
 
@@ -622,4 +788,61 @@ void AudioStreamOggVorbis::maybe_update_info() {}
 
 Ref<AudioSample> AudioStreamOggVorbis::generate_sample() const { return Ref<AudioSample>(); }
 
+String ResourceImporterOggVorbis::get_importer_name() const { return "oggvorbisstr"; }
 
+String ResourceImporterOggVorbis::get_visible_name() const { return "Ogg Vorbis"; }
+
+void ResourceImporterOggVorbis::get_recognized_extensions(List<String>* p_extensions) const
+{
+	p_extensions->push_back("ogg");
+}
+
+String ResourceImporterOggVorbis::get_save_extension() const { return "oggvorbisstr"; }
+
+String ResourceImporterOggVorbis::get_resource_type() const { return "AudioStreamOggVorbis"; }
+
+#ifdef TOOLS_ENABLED
+bool ResourceImporterOggVorbis::has_advanced_options() const { return false; }
+
+void ResourceImporterOggVorbis::show_advanced_options(const String& p_path) {}
+#endif
+
+#ifndef DISABLE_DEPRECATED
+Ref<AudioStreamOggVorbis> ResourceImporterOggVorbis::load_from_buffer(
+	const Vector<uint8_t>& p_stream_data)
+{
+	return AudioStreamOggVorbis::load_from_buffer(p_stream_data);
+}
+
+Ref<AudioStreamOggVorbis> ResourceImporterOggVorbis::load_from_file(const String& p_path)
+{
+	return AudioStreamOggVorbis::load_from_file(p_path);
+}
+#endif
+
+ResourceImporterOggVorbis::ResourceImporterOggVorbis() {}
+
+int ResourceImporterOggVorbis::get_preset_count() const { return 0; }
+
+String ResourceImporterOggVorbis::get_preset_name(int p_preset) const { return String(); }
+
+void ResourceImporterOggVorbis::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
+#ifdef TOOLS_ENABLED
+#endif
+
+void initialize_vorbis_module(ModuleInitializationLevel p_level)
+{
+#ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		Ref<ResourceImporterOggVorbis> ogg_vorbis_importer;
+		ogg_vorbis_importer.instantiate();
+		ResourceFormatImporter::add_importer(ogg_vorbis_importer);
+	}
+#endif
+}
+
+void uninitialize_vorbis_module(ModuleInitializationLevel p_level) {}

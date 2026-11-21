@@ -41,8 +41,8 @@ TEST_FORCE_LINK(test_triangle_mesh)
 namespace TestTriangleMesh {
 
 TEST_CASE("[SceneTree][TriangleMesh] BVH creation and intersection") {
-	Ref<BoxMesh> box_mesh;
-	box_mesh.instantiate();
+	Ref<PrimitiveMesh> box_mesh;
+	box_mesh.instantiate(PrimitiveMesh::MESH_BOX);
 
 	const Vector<Face3> faces = box_mesh->get_faces();
 

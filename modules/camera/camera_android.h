@@ -122,19 +122,30 @@ public:
 	~CameraFeedAndroid() override;
 };
 
-class CameraAndroid : public CameraServer {
-
+class CameraAndroid final
+{
 private:
-	ACameraManager *cameraManager = nullptr;
+	struct Data
+	{
+		ACameraManager* camera_manager = nullptr;
+	};
 
-	void update_feeds();
-	void remove_all_feeds();
+	static inline Data* data = nullptr;
+
+	static void update_feeds();
+	static void remove_all_feeds();
 
 public:
-	void set_monitoring_feeds(bool p_monitoring_feeds) override;
-	void handle_application_pause() override;
-	void handle_application_resume() override;
-	void handle_display_rotation_change(int p_orientation) override;
+	static void initialize();
+	static void finalize();
 
-	~CameraAndroid();
+	static void set_monitoring_feeds(bool p_monitoring_feeds);
+	static void handle_application_pause();
+	static void handle_application_resume();
+	static void handle_display_rotation_change(int p_orientation);
+
+	CameraAndroid() = delete;
+	CameraAndroid(const CameraAndroid&) = delete;
+	CameraAndroid& operator=(const CameraAndroid&) = delete;
+	~CameraAndroid() = delete;
 };

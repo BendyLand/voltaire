@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "android_keys_utils.h"
+#include "platform/android/os_android.h"
 
 Key godot_code_from_android_code(unsigned int p_code) {
 	for (int i = 0; android_godot_code_pairs[i].android_code != AKEYCODE_MAX; i++) {

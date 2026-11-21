@@ -61,8 +61,8 @@ TEST_CASE("[SceneTree][GridMap][MeshLibrary] Octant querying") {
 	mesh_library->set_item_name(item1, "Item1");
 	mesh_library->set_item_name(item2, "Item2");
 
-	Ref<BoxMesh> box_mesh;
-	box_mesh.instantiate();
+	Ref<PrimitiveMesh> box_mesh;
+	box_mesh.instantiate(PrimitiveMesh::MESH_BOX);
 	box_mesh->set_size(Vector3(1.0, 1.0, 1.0));
 
 	mesh_library->set_item_mesh(item1, box_mesh);
@@ -78,7 +78,7 @@ TEST_CASE("[SceneTree][GridMap][MeshLibrary] Octant querying") {
 	GridMap *grid_map = memnew(GridMap);
 	grid_map->set_mesh_library(mesh_library);
 
-	SceneTree::get_singleton()->get_root()->add_child(grid_map);
+	SceneTree::get_root()->add_child(grid_map);
 
 	grid_map->set_octant_size(8);
 	grid_map->set_cell_size(Vector3(1.0, 1.0, 1.0));
@@ -115,7 +115,7 @@ TEST_CASE("[SceneTree][GridMap][MeshLibrary] Octant querying") {
 	CHECK(grid_map->get_octants_in_bounds(bounds).size() == 8);
 	CHECK(grid_map->get_used_octants_in_bounds(bounds).size() == 2);
 
-	SceneTree::get_singleton()->get_root()->remove_child(grid_map);
+	SceneTree::get_root()->remove_child(grid_map);
 
 	memdelete(grid_map);
 }

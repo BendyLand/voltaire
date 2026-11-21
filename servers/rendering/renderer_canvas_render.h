@@ -87,73 +87,58 @@ struct Item
 
 		Command* next = nullptr;
 		Type type;
-
-		virtual ~Command() {}
 	};
 
-	struct CommandRect : public Command
+	struct CommandRect
 	{
+		Command header{nullptr, Command::TYPE_RECT};
 		Rect2 rect;
 		Color modulate;
 		Rect2 source;
-		uint16_t flags;
-		float outline;
-		float px_range;
+		uint16_t flags = 0;
+		float outline = 0;
+		float px_range = 1;
 
 		RID texture;
-
-		CommandRect()
-		{
-			flags = 0;
-			outline = 0;
-			px_range = 1;
-			type = TYPE_RECT;
-		}
 	};
 
-	struct CommandNinePatch : public Command
+	struct CommandNinePatch
 	{
+		Command header{nullptr, Command::TYPE_NINEPATCH};
 		Rect2 rect;
 		Rect2 source;
 		float margin[4];
-		bool draw_center;
+		bool draw_center = true;
 		Color color;
 		RSE::NinePatchAxisMode axis_x;
 		RSE::NinePatchAxisMode axis_y;
 
 		RID texture;
-
-		CommandNinePatch()
-		{
-			draw_center = true;
-			type = TYPE_NINEPATCH;
-		}
 	};
 
-	struct CommandPolygon : public Command
+	struct CommandPolygon
 	{
+		Command header{nullptr, Command::TYPE_POLYGON};
 		RSE::PrimitiveType primitive;
 		Polygon polygon;
 
 		RID texture;
-
-		CommandPolygon() { type = TYPE_POLYGON; }
 	};
 
-	struct CommandPrimitive : public Command
+	struct CommandPrimitive
 	{
+		Command header{nullptr, Command::TYPE_PRIMITIVE};
 		uint32_t point_count;
 		Vector2 points[4];
 		Vector2 uvs[4];
 		Color colors[4];
 
 		RID texture;
-
-		CommandPrimitive() { type = TYPE_PRIMITIVE; }
 	};
 
-	struct CommandMesh : public Command
+	struct CommandMesh
 	{
+		Command header{nullptr, Command::TYPE_MESH};
 		RID mesh;
 		Transform2D transform;
 		Color modulate;
@@ -161,54 +146,43 @@ struct Item
 
 		RID texture;
 
-		CommandMesh() { type = TYPE_MESH; }
-
 		~CommandMesh();
 	};
 
-	struct CommandMultiMesh : public Command
+	struct CommandMultiMesh
 	{
+		Command header{nullptr, Command::TYPE_MULTIMESH};
 		RID multimesh;
 
 		RID texture;
-
-		CommandMultiMesh() { type = TYPE_MULTIMESH; }
 	};
 
-	struct CommandParticles : public Command
+	struct CommandParticles
 	{
+		Command header{nullptr, Command::TYPE_PARTICLES};
 		RID particles;
 		RID texture;
-
-		CommandParticles() { type = TYPE_PARTICLES; }
 	};
 
-	struct CommandTransform : public Command
+	struct CommandTransform
 	{
+		Command header{nullptr, Command::TYPE_TRANSFORM};
 		Transform2D xform;
-
-		CommandTransform() { type = TYPE_TRANSFORM; }
 	};
 
-	struct CommandClipIgnore : public Command
+	struct CommandClipIgnore
 	{
-		bool ignore;
-
-		CommandClipIgnore()
-		{
-			type = TYPE_CLIP_IGNORE;
-			ignore = false;
-		}
+		Command header{nullptr, Command::TYPE_CLIP_IGNORE};
+		bool ignore = false;
 	};
 
-	struct CommandAnimationSlice : public Command
+	struct CommandAnimationSlice
 	{
+		Command header{nullptr, Command::TYPE_ANIMATION_SLICE};
 		double animation_length = 0;
 		double slice_begin = 0;
 		double slice_end = 0;
 		double offset = 0;
-
-		CommandAnimationSlice() { type = TYPE_ANIMATION_SLICE; }
 	};
 
 	struct ViewportRender
@@ -290,12 +264,13 @@ struct Item
 
 	template <typename T> T* alloc_command()
 	{
+		static_assert(offsetof(T, header) == 0, "Command header must be at offset 0.");
 		T* command = nullptr;
 		if (commands == nullptr) {
-			command = memnew(T);
-			command->next = nullptr;
-			commands = command;
-			last_command = command;
+			command = memnew_placement(memalloc(sizeof(T)), T);
+			command->header.next = nullptr;
+			commands = &command->header;
+			last_command = &command->header;
 		}
 		else {
 			while (true) {
@@ -315,9 +290,9 @@ struct Item
 
 				void* memory = c->memory + c->usage;
 				command = memnew_placement(memory, T);
-				command->next = nullptr;
-				last_command->next = command;
-				last_command = command;
+				command->header.next = nullptr;
+				last_command->next = &command->header;
+				last_command = &command->header;
 				c->usage += sizeof(T);
 				break;
 			}
@@ -329,15 +304,31 @@ struct Item
 
 	void clear()
 	{
+		static_assert(std::is_trivially_destructible_v<CommandRect>);
+		static_assert(std::is_trivially_destructible_v<CommandNinePatch>);
+		static_assert(std::is_trivially_destructible_v<CommandPrimitive>);
+		static_assert(std::is_trivially_destructible_v<CommandMultiMesh>);
+		static_assert(std::is_trivially_destructible_v<CommandParticles>);
+		static_assert(std::is_trivially_destructible_v<CommandTransform>);
+		static_assert(std::is_trivially_destructible_v<CommandClipIgnore>);
+		static_assert(std::is_trivially_destructible_v<CommandAnimationSlice>);
+
 		Command* c = commands;
 		while (c) {
 			Command* n = c->next;
-			if (c == commands) {
-				memdelete(commands);
-				commands = nullptr;
+			switch (c->type) {
+			case Command::TYPE_POLYGON:
+				reinterpret_cast<CommandPolygon*>(c)->~CommandPolygon();
+				break;
+			case Command::TYPE_MESH:
+				reinterpret_cast<CommandMesh*>(c)->~CommandMesh();
+				break;
+			default:
+				break;
 			}
-			else {
-				c->~Command();
+			if (c == commands) {
+				memfree(commands);
+				commands = nullptr;
 			}
 			c = n;
 		}
@@ -579,10 +570,16 @@ public:
     template <typename T>
     static void bind()
     {
+        initialize = &T::initialize;
+        finalize = &T::finalize;
+
         request_polygon = &T::request_polygon;
         free_polygon = &T::free_polygon;
 
         canvas_render_items = &T::canvas_render_items;
+        set_time = &T::set_time;
+        update = &T::update;
+        free = &T::free;
         set_debug_redraw = &T::set_debug_redraw;
         get_pipeline_compilations = &T::get_pipeline_compilations;
 

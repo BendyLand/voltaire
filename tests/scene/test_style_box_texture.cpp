@@ -33,15 +33,16 @@
 
 TEST_FORCE_LINK(test_style_box_texture)
 
-#include "scene/resources/style_box_texture.h"
+#include "scene/resources/style_box.h"
 
 namespace TestStyleBoxTexture {
 
-TEST_CASE("[StyleBoxTexture] Constructor") {
-	Ref<StyleBoxTexture> style_box_texture = memnew(StyleBoxTexture);
+TEST_CASE("[StyleBox] STYLE_TEXTURE Constructor") {
+	Ref<StyleBox> style_box_texture = memnew(StyleBox(StyleBox::STYLE_TEXTURE));
 
-	CHECK(style_box_texture->get_h_axis_stretch_mode() == style_box_texture->AXIS_STRETCH_MODE_STRETCH);
-	CHECK(style_box_texture->get_v_axis_stretch_mode() == style_box_texture->AXIS_STRETCH_MODE_STRETCH);
+	CHECK(style_box_texture->get_style_type() == StyleBox::STYLE_TEXTURE);
+	CHECK(style_box_texture->get_h_axis_stretch_mode() == StyleBox::AXIS_STRETCH_MODE_STRETCH);
+	CHECK(style_box_texture->get_v_axis_stretch_mode() == StyleBox::AXIS_STRETCH_MODE_STRETCH);
 	CHECK(style_box_texture->is_draw_center_enabled() == true);
 
 	CHECK(style_box_texture->get_expand_margin(SIDE_LEFT) == 0);
@@ -59,16 +60,16 @@ TEST_CASE("[StyleBoxTexture] Constructor") {
 	CHECK(style_box_texture->get_texture_margin(SIDE_BOTTOM) == 0);
 }
 
-TEST_CASE("[StyleBoxTexture] set_texture, get_texture") {
-	Ref<StyleBoxTexture> style_box_texture = memnew(StyleBoxTexture);
+TEST_CASE("[StyleBox] STYLE_TEXTURE set_texture, get_texture") {
+	Ref<StyleBox> style_box_texture = memnew(StyleBox(StyleBox::STYLE_TEXTURE));
 	Ref<Texture2D> texture = memnew(Texture2D);
 
 	style_box_texture->set_texture(texture);
 	CHECK(style_box_texture->get_texture() == texture);
 }
 
-TEST_CASE("[StyleBoxTexture] set_texture_margin, set_texture_margin_all, set_texture_margin_individual, get_texture_margin") {
-	Ref<StyleBoxTexture> style_box_texture = memnew(StyleBoxTexture);
+TEST_CASE("[StyleBox] STYLE_TEXTURE set_texture_margin, set_texture_margin_all, set_texture_margin_individual, get_texture_margin") {
+	Ref<StyleBox> style_box_texture = memnew(StyleBox(StyleBox::STYLE_TEXTURE));
 
 	SUBCASE("set_texture_margin, get_texture_margin") {
 		style_box_texture->set_texture_margin(SIDE_LEFT, 1);
@@ -101,8 +102,8 @@ TEST_CASE("[StyleBoxTexture] set_texture_margin, set_texture_margin_all, set_tex
 	}
 }
 
-TEST_CASE("[StyleBoxTexture] set_expand_margin, set_expand_margin_all, set_expand_margin_individual") {
-	Ref<StyleBoxTexture> style_box_texture = memnew(StyleBoxTexture);
+TEST_CASE("[StyleBox] STYLE_TEXTURE set_expand_margin, set_expand_margin_all, set_expand_margin_individual") {
+	Ref<StyleBox> style_box_texture = memnew(StyleBox(StyleBox::STYLE_TEXTURE));
 
 	SUBCASE("set_expand_margin, get_expand_margin") {
 		style_box_texture->set_expand_margin(SIDE_LEFT, 1);
@@ -135,55 +136,55 @@ TEST_CASE("[StyleBoxTexture] set_expand_margin, set_expand_margin_all, set_expan
 	}
 }
 
-TEST_CASE("[StyleBoxTexture] set_region_rect, get_region_rect") {
-	Ref<StyleBoxTexture> style_box_texture = memnew(StyleBoxTexture);
+TEST_CASE("[StyleBox] STYLE_TEXTURE set_region_rect, get_region_rect") {
+	Ref<StyleBox> style_box_texture = memnew(StyleBox(StyleBox::STYLE_TEXTURE));
 
 	style_box_texture->set_region_rect(Rect2(1, 1, 1, 1));
 	CHECK(style_box_texture->get_region_rect() == Rect2(1, 1, 1, 1));
 }
 
-TEST_CASE("[StyleBoxTexture] set_draw_center, get_draw_center") {
-	Ref<StyleBoxTexture> style_box_texture = memnew(StyleBoxTexture);
+TEST_CASE("[StyleBox] STYLE_TEXTURE set_draw_center, get_draw_center") {
+	Ref<StyleBox> style_box_texture = memnew(StyleBox(StyleBox::STYLE_TEXTURE));
 
 	style_box_texture->set_draw_center(false);
 	CHECK(style_box_texture->is_draw_center_enabled() == false);
 }
 
-TEST_CASE("[StyleBoxTexture] set_h_axis_stretch_mode, set_v_axis_stretch_mode, get_h_axis_stretch_mode, get_v_axis_stretch_mode") {
-	Ref<StyleBoxTexture> style_box_texture = memnew(StyleBoxTexture);
+TEST_CASE("[StyleBox] STYLE_TEXTURE set_h_axis_stretch_mode, set_v_axis_stretch_mode, get_h_axis_stretch_mode, get_v_axis_stretch_mode") {
+	Ref<StyleBox> style_box_texture = memnew(StyleBox(StyleBox::STYLE_TEXTURE));
 
 	SUBCASE("set_h_axis_stretch_mode, get_h_axis_stretch_mode") {
-		style_box_texture->set_h_axis_stretch_mode(style_box_texture->AXIS_STRETCH_MODE_TILE);
-		CHECK(style_box_texture->get_h_axis_stretch_mode() == style_box_texture->AXIS_STRETCH_MODE_TILE);
+		style_box_texture->set_h_axis_stretch_mode(StyleBox::AXIS_STRETCH_MODE_TILE);
+		CHECK(style_box_texture->get_h_axis_stretch_mode() == StyleBox::AXIS_STRETCH_MODE_TILE);
 
-		style_box_texture->set_h_axis_stretch_mode(style_box_texture->AXIS_STRETCH_MODE_TILE_FIT);
-		CHECK(style_box_texture->get_h_axis_stretch_mode() == style_box_texture->AXIS_STRETCH_MODE_TILE_FIT);
+		style_box_texture->set_h_axis_stretch_mode(StyleBox::AXIS_STRETCH_MODE_TILE_FIT);
+		CHECK(style_box_texture->get_h_axis_stretch_mode() == StyleBox::AXIS_STRETCH_MODE_TILE_FIT);
 
-		style_box_texture->set_h_axis_stretch_mode(style_box_texture->AXIS_STRETCH_MODE_STRETCH);
-		CHECK(style_box_texture->get_h_axis_stretch_mode() == style_box_texture->AXIS_STRETCH_MODE_STRETCH);
+		style_box_texture->set_h_axis_stretch_mode(StyleBox::AXIS_STRETCH_MODE_STRETCH);
+		CHECK(style_box_texture->get_h_axis_stretch_mode() == StyleBox::AXIS_STRETCH_MODE_STRETCH);
 	}
 
 	SUBCASE("set_v_axis_stretch_mode, get_v_axis_stretch_mode") {
-		style_box_texture->set_v_axis_stretch_mode(style_box_texture->AXIS_STRETCH_MODE_TILE);
-		CHECK(style_box_texture->get_v_axis_stretch_mode() == style_box_texture->AXIS_STRETCH_MODE_TILE);
+		style_box_texture->set_v_axis_stretch_mode(StyleBox::AXIS_STRETCH_MODE_TILE);
+		CHECK(style_box_texture->get_v_axis_stretch_mode() == StyleBox::AXIS_STRETCH_MODE_TILE);
 
-		style_box_texture->set_v_axis_stretch_mode(style_box_texture->AXIS_STRETCH_MODE_TILE_FIT);
-		CHECK(style_box_texture->get_v_axis_stretch_mode() == style_box_texture->AXIS_STRETCH_MODE_TILE_FIT);
+		style_box_texture->set_v_axis_stretch_mode(StyleBox::AXIS_STRETCH_MODE_TILE_FIT);
+		CHECK(style_box_texture->get_v_axis_stretch_mode() == StyleBox::AXIS_STRETCH_MODE_TILE_FIT);
 
-		style_box_texture->set_v_axis_stretch_mode(style_box_texture->AXIS_STRETCH_MODE_STRETCH);
-		CHECK(style_box_texture->get_v_axis_stretch_mode() == style_box_texture->AXIS_STRETCH_MODE_STRETCH);
+		style_box_texture->set_v_axis_stretch_mode(StyleBox::AXIS_STRETCH_MODE_STRETCH);
+		CHECK(style_box_texture->get_v_axis_stretch_mode() == StyleBox::AXIS_STRETCH_MODE_STRETCH);
 	}
 }
 
-TEST_CASE("[StyleBoxTexture] set_modulate, get_modulate") {
-	Ref<StyleBoxTexture> style_box_texture = memnew(StyleBoxTexture);
+TEST_CASE("[StyleBox] STYLE_TEXTURE set_modulate, get_modulate") {
+	Ref<StyleBox> style_box_texture = memnew(StyleBox(StyleBox::STYLE_TEXTURE));
 
 	style_box_texture->set_modulate(Color(0, 0, 0, 0));
 	CHECK(style_box_texture->get_modulate() == Color(0, 0, 0, 0));
 }
 
-TEST_CASE("[StyleBoxTexture] get_draw_rect") {
-	Ref<StyleBoxTexture> style_box_texture = memnew(StyleBoxTexture);
+TEST_CASE("[StyleBox] STYLE_TEXTURE get_draw_rect") {
+	Ref<StyleBox> style_box_texture = memnew(StyleBox(StyleBox::STYLE_TEXTURE));
 
 	style_box_texture->set_expand_margin_all(5);
 	CHECK(style_box_texture->get_draw_rect(Rect2(0, 0, 1, 1)) == Rect2(-5, -5, 11, 11));

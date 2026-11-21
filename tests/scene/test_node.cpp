@@ -113,8 +113,8 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a very simple scene tr
 	Node *node = memnew(Node);
 
 	// Check initial scene tree setup.
-	CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 0);
-	CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 1);
+	CHECK_EQ(SceneTree::get_root()->get_child_count(), 0);
+	CHECK_EQ(SceneTree::get_node_count(), 1);
 
 	// Check initial node setup.
 	CHECK(node->get_name() == String());
@@ -125,71 +125,71 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a very simple scene tr
 	ERR_PRINT_ON;
 	CHECK_EQ(node->get_child_count(), 0);
 
-	SceneTree::get_singleton()->get_root()->add_child(node);
+	SceneTree::get_root()->add_child(node);
 
-	CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 1);
-	CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 2);
+	CHECK_EQ(SceneTree::get_root()->get_child_count(), 1);
+	CHECK_EQ(SceneTree::get_node_count(), 2);
 
 	CHECK(node->get_name() != String());
 	CHECK(node->is_inside_tree());
-	CHECK_EQ(SceneTree::get_singleton()->get_root(), node->get_parent());
+	CHECK_EQ(SceneTree::get_root(), node->get_parent());
 	CHECK_FALSE(node->get_path().is_empty());
 	CHECK_EQ(node->get_child_count(), 0);
 
 	SUBCASE("Node should be accessible as first child") {
-		Node *child = SceneTree::get_singleton()->get_root()->get_child(0);
+		Node *child = SceneTree::get_root()->get_child(0);
 		CHECK_EQ(child, node);
 	}
 
 	SUBCASE("Node should be accessible via the node path") {
-		Node *child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(node->get_path());
+		Node *child_by_path = SceneTree::get_root()->get_node_or_null(node->get_path());
 		CHECK_EQ(child_by_path, node);
 
-		child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(NodePath("Node"));
+		child_by_path = SceneTree::get_root()->get_node_or_null(NodePath("Node"));
 		CHECK_EQ(child_by_path, nullptr);
 
-		child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(NodePath("/root/Node"));
+		child_by_path = SceneTree::get_root()->get_node_or_null(NodePath("/root/Node"));
 		CHECK_EQ(child_by_path, nullptr);
 
 		node->set_name("Node");
 
-		child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(node->get_path());
+		child_by_path = SceneTree::get_root()->get_node_or_null(node->get_path());
 		CHECK_EQ(child_by_path, node);
 
-		child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(NodePath("Node"));
+		child_by_path = SceneTree::get_root()->get_node_or_null(NodePath("Node"));
 		CHECK_EQ(child_by_path, node);
 
-		child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(NodePath("/root/Node"));
+		child_by_path = SceneTree::get_root()->get_node_or_null(NodePath("/root/Node"));
 		CHECK_EQ(child_by_path, node);
 	}
 
 	SUBCASE("Node should be accessible via group") {
-		Vector<Node *> nodes = SceneTree::get_singleton()->get_nodes_in_group("nodes");
+		Vector<Node *> nodes = SceneTree::get_nodes_in_group("nodes");
 		CHECK(nodes.is_empty());
 
 		node->add_to_group("nodes");
 
-		nodes = SceneTree::get_singleton()->get_nodes_in_group("nodes");
+		nodes = SceneTree::get_nodes_in_group("nodes");
 		CHECK_EQ(nodes.size(), 1);
 		Node *E = nodes.get(0);
 		CHECK_EQ(E, node);
 	}
 
 	SUBCASE("Node should be possible to find") {
-		Node *child = SceneTree::get_singleton()->get_root()->find_child("Node", true, false);
+		Node *child = SceneTree::get_root()->find_child("Node", true, false);
 		CHECK_EQ(child, nullptr);
 
 		node->set_name("Node");
 
-		child = SceneTree::get_singleton()->get_root()->find_child("Node", true, false);
+		child = SceneTree::get_root()->find_child("Node", true, false);
 		CHECK_EQ(child, node);
 	}
 
 	SUBCASE("Node should be possible to remove") {
-		SceneTree::get_singleton()->get_root()->remove_child(node);
+		SceneTree::get_root()->remove_child(node);
 
-		CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 0);
-		CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 1);
+		CHECK_EQ(SceneTree::get_root()->get_child_count(), 0);
+		CHECK_EQ(SceneTree::get_node_count(), 1);
 
 		CHECK_FALSE(node->is_inside_tree());
 		CHECK_EQ(node->get_parent(), nullptr);
@@ -199,17 +199,17 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a very simple scene tr
 	}
 
 	SUBCASE("Node should be possible to move") {
-		SceneTree::get_singleton()->get_root()->move_child(node, 0);
+		SceneTree::get_root()->move_child(node, 0);
 
-		Node *child = SceneTree::get_singleton()->get_root()->get_child(0);
+		Node *child = SceneTree::get_root()->get_child(0);
 		CHECK_EQ(child, node);
 		CHECK(node->is_inside_tree());
 	}
 
 	SUBCASE("Node should be possible to reparent") {
-		node->reparent(SceneTree::get_singleton()->get_root());
+		node->reparent(SceneTree::get_root());
 
-		Node *child = SceneTree::get_singleton()->get_root()->get_child(0);
+		Node *child = SceneTree::get_root()->get_child(0);
 		CHECK_EQ(child, node);
 		CHECK(node->is_inside_tree());
 	}
@@ -234,8 +234,8 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 	Node *node2 = memnew(Node);
 	Node *node1_1 = memnew(Node);
 
-	SceneTree::get_singleton()->get_root()->add_child(node1);
-	SceneTree::get_singleton()->get_root()->add_child(node2);
+	SceneTree::get_root()->add_child(node1);
+	SceneTree::get_root()->add_child(node2);
 
 	node1->add_child(node1_1);
 
@@ -243,14 +243,14 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 	CHECK_EQ(node1_1->get_parent(), node1);
 	CHECK_EQ(node1->get_child_count(), 1);
 
-	CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 2);
-	CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 4);
+	CHECK_EQ(SceneTree::get_root()->get_child_count(), 2);
+	CHECK_EQ(SceneTree::get_node_count(), 4);
 
 	SUBCASE("Nodes should be accessible via get_child(..)") {
-		Node *child1 = SceneTree::get_singleton()->get_root()->get_child(0);
+		Node *child1 = SceneTree::get_root()->get_child(0);
 		CHECK_EQ(child1, node1);
 
-		Node *child2 = SceneTree::get_singleton()->get_root()->get_child(1);
+		Node *child2 = SceneTree::get_root()->get_child(1);
 		CHECK_EQ(child2, node2);
 
 		Node *child1_1 = node1->get_child(0);
@@ -259,15 +259,15 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 
 	SUBCASE("Removed nodes should also remove their children from the scene tree") {
 		// Should also remove node1_1 from the scene tree.
-		SceneTree::get_singleton()->get_root()->remove_child(node1);
+		SceneTree::get_root()->remove_child(node1);
 
 		CHECK_EQ(node1->get_child_count(), 1);
 
-		CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 1);
-		CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 2);
+		CHECK_EQ(SceneTree::get_root()->get_child_count(), 1);
+		CHECK_EQ(SceneTree::get_node_count(), 2);
 
 		// First child should now be the second node.
-		Node *child1 = SceneTree::get_singleton()->get_root()->get_child(0);
+		Node *child1 = SceneTree::get_root()->get_child(0);
 		CHECK_EQ(child1, node2);
 	}
 
@@ -277,26 +277,26 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 		CHECK_EQ(node1_1->get_parent(), nullptr);
 		CHECK_EQ(node1->get_child_count(), 0);
 
-		CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 3);
+		CHECK_EQ(SceneTree::get_node_count(), 3);
 	}
 
 	SUBCASE("Nodes should be in the expected order when a node is moved to the back") {
-		SceneTree::get_singleton()->get_root()->move_child(node1, 1);
+		SceneTree::get_root()->move_child(node1, 1);
 
-		Node *child1 = SceneTree::get_singleton()->get_root()->get_child(0);
+		Node *child1 = SceneTree::get_root()->get_child(0);
 		CHECK_EQ(child1, node2);
 
-		Node *child2 = SceneTree::get_singleton()->get_root()->get_child(1);
+		Node *child2 = SceneTree::get_root()->get_child(1);
 		CHECK_EQ(child2, node1);
 	}
 
 	SUBCASE("Nodes should be in the expected order when a node is moved to the front") {
-		SceneTree::get_singleton()->get_root()->move_child(node2, 0);
+		SceneTree::get_root()->move_child(node2, 0);
 
-		Node *child1 = SceneTree::get_singleton()->get_root()->get_child(0);
+		Node *child1 = SceneTree::get_root()->get_child(0);
 		CHECK_EQ(child1, node2);
 
-		Node *child2 = SceneTree::get_singleton()->get_root()->get_child(1);
+		Node *child2 = SceneTree::get_root()->get_child(1);
 		CHECK_EQ(child2, node1);
 	}
 
@@ -314,8 +314,8 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 		Node *child = node2->get_child(0);
 		CHECK_EQ(child, node1_1);
 
-		CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 2);
-		CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 4);
+		CHECK_EQ(SceneTree::get_root()->get_child_count(), 2);
+		CHECK_EQ(SceneTree::get_node_count(), 4);
 	}
 
 	SUBCASE("Nodes should be in the expected order when reparented") {
@@ -330,57 +330,57 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 		Node *child = node2->get_child(0);
 		CHECK_EQ(child, node1_1);
 
-		CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 2);
-		CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 4);
+		CHECK_EQ(SceneTree::get_root()->get_child_count(), 2);
+		CHECK_EQ(SceneTree::get_node_count(), 4);
 	}
 
 	SUBCASE("Nodes should be possible to find") {
-		Node *child = SceneTree::get_singleton()->get_root()->find_child("NestedNode", true, false);
+		Node *child = SceneTree::get_root()->find_child("NestedNode", true, false);
 		CHECK_EQ(child, nullptr);
 
-		TypedArray<Node> children = SceneTree::get_singleton()->get_root()->find_children("NestedNode", "", true, false);
+		TypedArray<Node> children = SceneTree::get_root()->find_children("NestedNode", "", true, false);
 		CHECK_EQ(children.size(), 0);
 
 		node1->set_name("Node1");
 		node2->set_name("Node2");
 		node1_1->set_name("NestedNode");
 
-		child = SceneTree::get_singleton()->get_root()->find_child("NestedNode", true, false);
+		child = SceneTree::get_root()->find_child("NestedNode", true, false);
 		CHECK_EQ(child, node1_1);
 
-		children = SceneTree::get_singleton()->get_root()->find_children("NestedNode", "", true, false);
+		children = SceneTree::get_root()->find_children("NestedNode", "", true, false);
 		CHECK_EQ(children.size(), 1);
 		CHECK_EQ(Object::cast_to<Node>(children[0]), node1_1);
 
 		// First node that matches with the name is node1.
-		child = SceneTree::get_singleton()->get_root()->find_child("Node?", true, false);
+		child = SceneTree::get_root()->find_child("Node?", true, false);
 		CHECK_EQ(child, node1);
 
-		children = SceneTree::get_singleton()->get_root()->find_children("Node?", "", true, false);
+		children = SceneTree::get_root()->find_children("Node?", "", true, false);
 		CHECK_EQ(children.size(), 2);
 		CHECK_EQ(Object::cast_to<Node>(children[0]), node1);
 		CHECK_EQ(Object::cast_to<Node>(children[1]), node2);
 
-		SceneTree::get_singleton()->get_root()->move_child(node2, 0);
+		SceneTree::get_root()->move_child(node2, 0);
 
 		// It should be node2, as it is now the first one in the tree.
-		child = SceneTree::get_singleton()->get_root()->find_child("Node?", true, false);
+		child = SceneTree::get_root()->find_child("Node?", true, false);
 		CHECK_EQ(child, node2);
 
-		children = SceneTree::get_singleton()->get_root()->find_children("Node?", "", true, false);
+		children = SceneTree::get_root()->find_children("Node?", "", true, false);
 		CHECK_EQ(children.size(), 2);
 		CHECK_EQ(Object::cast_to<Node>(children[0]), node2);
 		CHECK_EQ(Object::cast_to<Node>(children[1]), node1);
 	}
 
 	SUBCASE("Nodes should be accessible via their node path") {
-		Node *child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(node1->get_path());
+		Node *child_by_path = SceneTree::get_root()->get_node_or_null(node1->get_path());
 		CHECK_EQ(child_by_path, node1);
 
-		child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(node2->get_path());
+		child_by_path = SceneTree::get_root()->get_node_or_null(node2->get_path());
 		CHECK_EQ(child_by_path, node2);
 
-		child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(node1_1->get_path());
+		child_by_path = SceneTree::get_root()->get_node_or_null(node1_1->get_path());
 		CHECK_EQ(child_by_path, node1_1);
 
 		node1->set_name("Node1");
@@ -389,18 +389,18 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 		child_by_path = node1->get_node_or_null(NodePath("NestedNode"));
 		CHECK_EQ(child_by_path, node1_1);
 
-		child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(NodePath("/root/Node1/NestedNode"));
+		child_by_path = SceneTree::get_root()->get_node_or_null(NodePath("/root/Node1/NestedNode"));
 		CHECK_EQ(child_by_path, node1_1);
 
-		child_by_path = SceneTree::get_singleton()->get_root()->get_node_or_null(NodePath("Node1/NestedNode"));
+		child_by_path = SceneTree::get_root()->get_node_or_null(NodePath("Node1/NestedNode"));
 		CHECK_EQ(child_by_path, node1_1);
 	}
 
 	SUBCASE("Nodes should be accessible via their groups") {
-		Vector<Node *> nodes = SceneTree::get_singleton()->get_nodes_in_group("nodes");
+		Vector<Node *> nodes = SceneTree::get_nodes_in_group("nodes");
 		CHECK(nodes.is_empty());
 
-		nodes = SceneTree::get_singleton()->get_nodes_in_group("other_nodes");
+		nodes = SceneTree::get_nodes_in_group("other_nodes");
 		CHECK(nodes.is_empty());
 
 		node1->add_to_group("nodes");
@@ -408,7 +408,7 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 		node1_1->add_to_group("nodes");
 		node1_1->add_to_group("other_nodes");
 
-		nodes = SceneTree::get_singleton()->get_nodes_in_group("nodes");
+		nodes = SceneTree::get_nodes_in_group("nodes");
 		CHECK_EQ(nodes.size(), 2);
 
 		Node *E = nodes.get(0);
@@ -419,7 +419,7 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 		// Clear and try again with the other group.
 		nodes.clear();
 
-		nodes = SceneTree::get_singleton()->get_nodes_in_group("other_nodes");
+		nodes = SceneTree::get_nodes_in_group("other_nodes");
 		CHECK_EQ(nodes.size(), 2);
 
 		E = nodes.get(0);
@@ -431,7 +431,7 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 		nodes.clear();
 
 		node1->remove_from_group("nodes");
-		nodes = SceneTree::get_singleton()->get_nodes_in_group("nodes");
+		nodes = SceneTree::get_nodes_in_group("nodes");
 		CHECK_EQ(nodes.size(), 1);
 
 		E = nodes.get(0);
@@ -443,38 +443,38 @@ TEST_CASE("[SceneTree][Node] Testing node operations with a more complex simple 
 
 		node1->add_sibling(node1_1);
 
-		CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 3);
-		CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 4);
+		CHECK_EQ(SceneTree::get_root()->get_child_count(), 3);
+		CHECK_EQ(SceneTree::get_node_count(), 4);
 
-		CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child(0), node1);
-		CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child(1), node1_1);
-		CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child(2), node2);
+		CHECK_EQ(SceneTree::get_root()->get_child(0), node1);
+		CHECK_EQ(SceneTree::get_root()->get_child(1), node1_1);
+		CHECK_EQ(SceneTree::get_root()->get_child(2), node2);
 	}
 
 	SUBCASE("Replaced nodes should be be removed and the replacing node added") {
-		SceneTree::get_singleton()->get_root()->remove_child(node2);
+		SceneTree::get_root()->remove_child(node2);
 
 		node1->replace_by(node2);
 
-		CHECK_EQ(SceneTree::get_singleton()->get_root()->get_child_count(), 1);
-		CHECK_EQ(SceneTree::get_singleton()->get_node_count(), 3);
+		CHECK_EQ(SceneTree::get_root()->get_child_count(), 1);
+		CHECK_EQ(SceneTree::get_node_count(), 3);
 
 		CHECK_FALSE(node1->is_inside_tree());
 		CHECK(node2->is_inside_tree());
 
 		CHECK_EQ(node1->get_parent(), nullptr);
-		CHECK_EQ(node2->get_parent(), SceneTree::get_singleton()->get_root());
+		CHECK_EQ(node2->get_parent(), SceneTree::get_root());
 		CHECK_EQ(node2->get_child_count(), 1);
 		CHECK_EQ(node2->get_child(0), node1_1);
 	}
 
 	SUBCASE("Replacing nodes should keep the groups of the replaced nodes") {
-		SceneTree::get_singleton()->get_root()->remove_child(node2);
+		SceneTree::get_root()->remove_child(node2);
 
 		node1->add_to_group("nodes");
 		node1->replace_by(node2, true);
 
-		Vector<Node *> nodes = SceneTree::get_singleton()->get_nodes_in_group("nodes");
+		Vector<Node *> nodes = SceneTree::get_nodes_in_group("nodes");
 		CHECK_EQ(nodes.size(), 1);
 
 		Node *E = nodes.get(0);
@@ -526,7 +526,7 @@ TEST_CASE("[SceneTree][Node] Duplicating node with internal children") {
 
 TEST_CASE("[SceneTree][Node]Exported node checks") {
 	TestNode *node = memnew(TestNode);
-	SceneTree::get_singleton()->get_root()->add_child(node);
+	SceneTree::get_root()->add_child(node);
 
 	Node *child = memnew(Node);
 	child->set_name("Child");
@@ -741,7 +741,7 @@ TEST_CASE("[Node] Processing checks") {
 
 TEST_CASE("[SceneTree][Node] Test the processing") {
 	TestNode *node = memnew(TestNode);
-	SceneTree::get_singleton()->get_root()->add_child(node);
+	SceneTree::get_root()->add_child(node);
 
 	SUBCASE("No process") {
 		CHECK_EQ(0, node->process_counter);
@@ -750,7 +750,7 @@ TEST_CASE("[SceneTree][Node] Test the processing") {
 
 	SUBCASE("Process") {
 		node->set_process(true);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_EQ(1, node->process_counter);
 		CHECK_EQ(0, node->physics_process_counter);
@@ -760,7 +760,7 @@ TEST_CASE("[SceneTree][Node] Test the processing") {
 
 	SUBCASE("Physics process") {
 		node->set_physics_process(true);
-		SceneTree::get_singleton()->physics_process(0);
+		SceneTree::physics_process(0);
 
 		CHECK_EQ(0, node->process_counter);
 		CHECK_EQ(1, node->physics_process_counter);
@@ -771,8 +771,8 @@ TEST_CASE("[SceneTree][Node] Test the processing") {
 	SUBCASE("Normal and physics process") {
 		node->set_process(true);
 		node->set_physics_process(true);
-		SceneTree::get_singleton()->process(0);
-		SceneTree::get_singleton()->physics_process(0);
+		SceneTree::process(0);
+		SceneTree::physics_process(0);
 
 		CHECK_EQ(1, node->process_counter);
 		CHECK_EQ(1, node->physics_process_counter);
@@ -783,8 +783,8 @@ TEST_CASE("[SceneTree][Node] Test the processing") {
 	SUBCASE("Internal, normal and physics process") {
 		node->set_process_internal(true);
 		node->set_physics_process_internal(true);
-		SceneTree::get_singleton()->process(0);
-		SceneTree::get_singleton()->physics_process(0);
+		SceneTree::process(0);
+		SceneTree::physics_process(0);
 
 		CHECK_EQ(0, node->process_counter);
 		CHECK_EQ(0, node->physics_process_counter);
@@ -797,8 +797,8 @@ TEST_CASE("[SceneTree][Node] Test the processing") {
 		node->set_physics_process(true);
 		node->set_process_internal(true);
 		node->set_physics_process_internal(true);
-		SceneTree::get_singleton()->process(0);
-		SceneTree::get_singleton()->physics_process(0);
+		SceneTree::process(0);
+		SceneTree::physics_process(0);
 
 		CHECK_EQ(1, node->process_counter);
 		CHECK_EQ(1, node->physics_process_counter);
@@ -811,10 +811,10 @@ TEST_CASE("[SceneTree][Node] Test the processing") {
 		node->set_physics_process(true);
 		node->set_process_internal(true);
 		node->set_physics_process_internal(true);
-		SceneTree::get_singleton()->process(0);
-		SceneTree::get_singleton()->physics_process(0);
-		SceneTree::get_singleton()->process(0);
-		SceneTree::get_singleton()->physics_process(0);
+		SceneTree::process(0);
+		SceneTree::physics_process(0);
+		SceneTree::process(0);
+		SceneTree::physics_process(0);
 
 		CHECK_EQ(2, node->process_counter);
 		CHECK_EQ(2, node->physics_process_counter);
@@ -827,15 +827,15 @@ TEST_CASE("[SceneTree][Node] Test the processing") {
 		node->set_physics_process(true);
 		node->set_process_internal(true);
 		node->set_physics_process_internal(true);
-		SceneTree::get_singleton()->process(0);
-		SceneTree::get_singleton()->physics_process(0);
+		SceneTree::process(0);
+		SceneTree::physics_process(0);
 
 		node->set_process(false);
 		node->set_physics_process(false);
 		node->set_process_internal(false);
 		node->set_physics_process_internal(false);
-		SceneTree::get_singleton()->process(0);
-		SceneTree::get_singleton()->physics_process(0);
+		SceneTree::process(0);
+		SceneTree::physics_process(0);
 
 		CHECK_EQ(1, node->process_counter);
 		CHECK_EQ(1, node->physics_process_counter);
@@ -851,19 +851,19 @@ TEST_CASE("[SceneTree][Node] Test the process priority") {
 
 	TestNode *node = memnew(TestNode);
 	node->callback_list = &process_order;
-	SceneTree::get_singleton()->get_root()->add_child(node);
+	SceneTree::get_root()->add_child(node);
 
 	TestNode *node2 = memnew(TestNode);
 	node2->callback_list = &process_order;
-	SceneTree::get_singleton()->get_root()->add_child(node2);
+	SceneTree::get_root()->add_child(node2);
 
 	TestNode *node3 = memnew(TestNode);
 	node3->callback_list = &process_order;
-	SceneTree::get_singleton()->get_root()->add_child(node3);
+	SceneTree::get_root()->add_child(node3);
 
 	TestNode *node4 = memnew(TestNode);
 	node4->callback_list = &process_order;
-	SceneTree::get_singleton()->get_root()->add_child(node4);
+	SceneTree::get_root()->add_child(node4);
 
 	SUBCASE("Process priority") {
 		node->set_process(true);
@@ -875,7 +875,7 @@ TEST_CASE("[SceneTree][Node] Test the process priority") {
 		node4->set_process(true);
 		node4->set_process_priority(30);
 
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_EQ(4, process_order.size());
 		List<Node *>::Element *E = process_order.front();
@@ -898,7 +898,7 @@ TEST_CASE("[SceneTree][Node] Test the process priority") {
 		node4->set_physics_process(true);
 		node4->set_physics_process_priority(30);
 
-		SceneTree::get_singleton()->physics_process(0);
+		SceneTree::physics_process(0);
 
 		CHECK_EQ(4, process_order.size());
 		List<Node *>::Element *E = process_order.front();

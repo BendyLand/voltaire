@@ -80,8 +80,8 @@ TEST_CASE("[SceneTree][ArrayMesh] Adding and modifying blendshapes.") {
 	}
 
 	SUBCASE("Adding blend shape after surface is added causes error") {
-		Ref<CylinderMesh> cylinder;
-		cylinder.instantiate();
+		Ref<PrimitiveMesh> cylinder;
+		cylinder.instantiate(PrimitiveMesh::MESH_CYLINDER);
 		Array cylinder_array;
 		cylinder_array.resize(Mesh::ARRAY_MAX);
 		cylinder->create_mesh_array(cylinder_array, 3.f, 3.f, 5.f);
@@ -94,8 +94,8 @@ TEST_CASE("[SceneTree][ArrayMesh] Adding and modifying blendshapes.") {
 	}
 
 	SUBCASE("Adding blend shapes once all surfaces have been removed is allowed") {
-		Ref<CylinderMesh> cylinder;
-		cylinder.instantiate();
+		Ref<PrimitiveMesh> cylinder;
+		cylinder.instantiate(PrimitiveMesh::MESH_CYLINDER);
 		Array cylinder_array;
 		cylinder_array.resize(Mesh::ARRAY_MAX);
 		cylinder->create_mesh_array(cylinder_array, 3.f, 3.f, 5.f);
@@ -142,8 +142,8 @@ TEST_CASE("[SceneTree][ArrayMesh] Adding and modifying blendshapes.") {
 	SUBCASE("Clearing all blend shapes once all surfaces have been removed is allowed") {
 		mesh->add_blend_shape(name_a);
 		mesh->add_blend_shape(name_b);
-		Ref<CylinderMesh> cylinder;
-		cylinder.instantiate();
+		Ref<PrimitiveMesh> cylinder;
+		cylinder.instantiate(PrimitiveMesh::MESH_CYLINDER);
 		Array cylinder_array;
 		cylinder_array.resize(Mesh::ARRAY_MAX);
 		cylinder->create_mesh_array(cylinder_array, 3.f, 3.f, 5.f);
@@ -180,8 +180,8 @@ TEST_CASE("[SceneTree][ArrayMesh] Adding and modifying blendshapes.") {
 	SUBCASE("Can't clear blend shapes after surface had been added.") {
 		mesh->add_blend_shape(name_a);
 		mesh->add_blend_shape(name_b);
-		Ref<CylinderMesh> cylinder;
-		cylinder.instantiate();
+		Ref<PrimitiveMesh> cylinder;
+		cylinder.instantiate(PrimitiveMesh::MESH_CYLINDER);
 		Array cylinder_array;
 		cylinder_array.resize(Mesh::ARRAY_MAX);
 		cylinder->create_mesh_array(cylinder_array, 3.f, 3.f, 5.f);
@@ -208,15 +208,15 @@ TEST_CASE("[SceneTree][ArrayMesh] Adding and modifying blendshapes.") {
 TEST_CASE("[SceneTree][ArrayMesh] Surface metadata tests.") {
 	Ref<ArrayMesh> mesh;
 	mesh.instantiate();
-	Ref<CylinderMesh> cylinder;
-	cylinder.instantiate();
+	Ref<PrimitiveMesh> cylinder;
+	cylinder.instantiate(PrimitiveMesh::MESH_CYLINDER);
 	Array cylinder_array;
 	cylinder_array.resize(Mesh::ARRAY_MAX);
 	cylinder->create_mesh_array(cylinder_array, 3.f, 3.f, 5.f);
 	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, cylinder_array);
 
-	Ref<BoxMesh> box;
-	box.instantiate();
+	Ref<PrimitiveMesh> box;
+	box.instantiate(PrimitiveMesh::MESH_BOX);
 	Array box_array;
 	box_array.resize(Mesh::ARRAY_MAX);
 	box->create_mesh_array(box_array, Vector3(2.f, 1.2f, 1.6f));
@@ -305,8 +305,8 @@ TEST_CASE("[SceneTree][ArrayMesh] Surface metadata tests.") {
 TEST_CASE("[SceneTree][ArrayMesh] Get/Set mesh metadata and actions") {
 	Ref<ArrayMesh> mesh;
 	mesh.instantiate();
-	Ref<CylinderMesh> cylinder;
-	cylinder.instantiate();
+	Ref<PrimitiveMesh> cylinder;
+	cylinder.instantiate(PrimitiveMesh::MESH_CYLINDER);
 	Array cylinder_array;
 	cylinder_array.resize(Mesh::ARRAY_MAX);
 	constexpr float cylinder_radius = 3.f;
@@ -314,8 +314,8 @@ TEST_CASE("[SceneTree][ArrayMesh] Get/Set mesh metadata and actions") {
 	cylinder->create_mesh_array(cylinder_array, cylinder_radius, cylinder_radius, cylinder_height);
 	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, cylinder_array);
 
-	Ref<BoxMesh> box;
-	box.instantiate();
+	Ref<PrimitiveMesh> box;
+	box.instantiate(PrimitiveMesh::MESH_BOX);
 	Array box_array;
 	box_array.resize(Mesh::ARRAY_MAX);
 	const Vector3 box_size = Vector3(2.f, 1.2f, 1.6f);

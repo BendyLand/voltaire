@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
+import os
 import methods
 
 
 def doc_data_class_path_builder(target, source):
-    paths = dict(sorted(source[0].items()))
+    paths = dict(
+        sorted((k, v) for k, v in source[0].items() if os.path.isdir(v))
+    )
     data = "\n".join([f'\t{{"{key}", "{value}"}},' for key, value in paths.items()])
     with methods.generated_wrapper(str(target[0])) as file:
         file.write(f"""\

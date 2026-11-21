@@ -35,7 +35,7 @@
 
 #ifdef TOOLS_ENABLED
 
-#include "../editor/editor_scene_importer_gltf.h"
+#include "../gltf_document.h"
 
 #include "editor/import/3d/resource_importer_scene.h"
 #include "scene/3d/mesh_instance_3d.h"
@@ -58,7 +58,7 @@ TEST_CASE("[SceneTree][Node] GLTF test mesh and material meta export and import"
 	material_dict["node_type"] = "material";
 	original_material->set_meta("extras", material_dict);
 
-	Ref<PlaneMesh> original_meshdata = memnew(PlaneMesh);
+	Ref<PrimitiveMesh> original_meshdata = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
 	original_meshdata->set_name("planemesh");
 	Dictionary meshdata_dict;
 	meshdata_dict["node_type"] = "planemesh";
@@ -73,7 +73,7 @@ TEST_CASE("[SceneTree][Node] GLTF test mesh and material meta export and import"
 	original_mesh_instance->set_meta("extras", mesh_instance_dict);
 
 	Node3D *original = memnew(Node3D);
-	SceneTree::get_singleton()->get_root()->add_child(original);
+	SceneTree::get_root()->add_child(original);
 	original->add_child(original_mesh_instance);
 	original->set_name("node3d");
 	Dictionary node_dict;
@@ -81,8 +81,8 @@ TEST_CASE("[SceneTree][Node] GLTF test mesh and material meta export and import"
 	original->set_meta("extras", node_dict);
 	original->set_meta("meta_not_nested_under_extras", "should not propagate");
 
-	original->set_owner(SceneTree::get_singleton()->get_root());
-	original_mesh_instance->set_owner(SceneTree::get_singleton()->get_root());
+	original->set_owner(SceneTree::get_root());
+	original_mesh_instance->set_owner(SceneTree::get_root());
 
 	// Convert to GLFT and back.
 	Node *loaded = gltf_export_then_import(original, "gltf_extras");
@@ -133,7 +133,7 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 	skeleton->set_bone_meta(1, "extras", child_bone_extras);
 
 	// We have to have a mesh to link with skeleton or it will not get imported.
-	Ref<PlaneMesh> meshdata = memnew(PlaneMesh);
+	Ref<PrimitiveMesh> meshdata = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
 	meshdata->set_name("planemesh");
 
 	MeshInstance3D *mesh = memnew(MeshInstance3D);
@@ -141,7 +141,7 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 	mesh->set_name("mesh_instance_3d");
 
 	Node3D *original = memnew(Node3D);
-	SceneTree::get_singleton()->get_root()->add_child(original);
+	SceneTree::get_root()->add_child(original);
 	original->add_child(skeleton);
 	original->add_child(mesh);
 	original->set_name("node3d");
@@ -149,8 +149,8 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 	// Now that both skeleton and mesh are part of scene, link them.
 	mesh->set_skeleton_path(mesh->get_path_to(skeleton));
 
-	mesh->set_owner(SceneTree::get_singleton()->get_root());
-	original->set_owner(SceneTree::get_singleton()->get_root());
+	mesh->set_owner(SceneTree::get_root());
+	original->set_owner(SceneTree::get_root());
 
 	// Convert to GLFT and back.
 	Node *loaded = gltf_export_then_import(original, "gltf_bone_extras");

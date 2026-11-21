@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "rendering_shader_container_d3d12.h"
+#include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
 #include "core/templates/sort_array.h"
-#include "drivers/d3d12/dxil_hash.h"
+#include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
 #include <drivers/d3d12/godot_d3d12ma.h>
 #include <drivers/d3d12/godot_d3dx12.h>

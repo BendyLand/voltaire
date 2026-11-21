@@ -37,9 +37,9 @@
 #include "core/templates/rid_owner.h"
 #include "servers/display/accessibility_server.h"
 
-class AccessibilityServerAccessKit : public AccessibilityServer
+class AccessibilityServerAccessKit : public AccessibilityServerDriver
 {
-	static AccessibilityServer* create_func(Error& r_error);
+	static AccessibilityServerDriver* create_func(Error& r_error);
 
 	struct AccessibilityElement
 	{

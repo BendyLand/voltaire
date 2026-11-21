@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "godot_plugin_jni.h"
+#include "platform/android/os_android.h"
 
 #include "api/java_class_wrapper.h"
-#include "api/jni_singleton.h"
+#include "platform/android/os_android.h"
 #include "jni_utils.h"
 
 #include "core/config/engine.h"
@@ -57,7 +57,7 @@ JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_plugin_GodotPlugin_nativeR
 	ERR_FAIL_COND_V(jni_singletons.has(singname), false);
 
 	jclass java_class = env->GetObjectClass(obj);
-	Ref<JavaClass> java_class_wrapped = JavaClassWrapper::get_singleton()->wrap_jclass(java_class, true);
+	Ref<JavaClass> java_class_wrapped = JavaClassWrapper::wrap_jclass(java_class, true);
 	env->DeleteLocalRef(java_class);
 
 	Ref<JavaObject> plugin_object = memnew(JavaObject(java_class_wrapped, obj));

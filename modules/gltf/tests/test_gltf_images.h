@@ -36,10 +36,9 @@
 #include "test_gltf.h"
 
 #include "editor/file_system/editor_file_system.h"
-#include "editor/inspector/editor_resource_preview.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/resources/3d/primitive_meshes.cpp"
+#include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/image_texture.h"
 
 namespace TestGltf {
@@ -82,8 +81,8 @@ TEST_CASE("[SceneTree][Node] Export GLTF with external texture and import") {
 	original_material->set_texture(StandardMaterial3D::TextureParam::TEXTURE_ALBEDO, original_texture);
 	original_material->set_name("material");
 
-	Ref<PlaneMesh> original_meshdata;
-	original_meshdata.instantiate();
+	Ref<PrimitiveMesh> original_meshdata;
+	original_meshdata.instantiate(PrimitiveMesh::MESH_PLANE);
 	original_meshdata->set_name("planemesh");
 	original_meshdata->surface_set_material(0, original_material);
 
@@ -92,10 +91,10 @@ TEST_CASE("[SceneTree][Node] Export GLTF with external texture and import") {
 	original_mesh_instance->set_name("mesh_instance_3d");
 
 	Node3D *original = memnew(Node3D);
-	SceneTree::get_singleton()->get_root()->add_child(original);
+	SceneTree::get_root()->add_child(original);
 	original->add_child(original_mesh_instance);
-	original->set_owner(SceneTree::get_singleton()->get_root());
-	original_mesh_instance->set_owner(SceneTree::get_singleton()->get_root());
+	original->set_owner(SceneTree::get_root());
+	original_mesh_instance->set_owner(SceneTree::get_root());
 
 	// Convert to GLFT and back.
 	Node *loaded = gltf_export_then_import(original, "gltf_images");

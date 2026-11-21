@@ -151,17 +151,6 @@ TEST_CASE("[ProjectSettings] localize_path") {
 	TestProjectSettingsInternalsAccessor::resource_path() = old_resource_path;
 }
 
-TEST_CASE("[SceneTree][ProjectSettings] settings_changed signal") {
-	SIGNAL_WATCH(ProjectSettings::get_singleton(), SNAME("settings_changed"));
-
-	ProjectSettings::set_setting("test_signal_setting", "test_value");
-	MessageQueue::get_singleton()->flush();
-
-	SIGNAL_CHECK("settings_changed", { {} });
-
-	SIGNAL_UNWATCH(ProjectSettings::get_singleton(), SNAME("settings_changed"));
-}
-
 TEST_CASE("[ProjectSettings] get_changed_settings basic functionality") {
 	String setting_name = "test_changed_setting";
 	ProjectSettings::set_setting(setting_name, "test_value");
@@ -193,24 +182,6 @@ TEST_CASE("[ProjectSettings] check_changed_settings_in_group") {
 
 	CHECK(ProjectSettings::check_changed_settings_in_group("group1"));
 	CHECK(ProjectSettings::check_changed_settings_in_group("other_setting"));
-}
-
-TEST_CASE("[SceneTree][ProjectSettings] Changes cleared after settings_changed signal") {
-	SIGNAL_WATCH(ProjectSettings::get_singleton(), SNAME("settings_changed"));
-
-	ProjectSettings::set_setting("signal_clear_test", "value");
-
-	PackedStringArray changes_before = ProjectSettings::get_changed_settings();
-	CHECK(changes_before.has("signal_clear_test"));
-
-	MessageQueue::get_singleton()->flush();
-
-	SIGNAL_CHECK("settings_changed", { {} });
-
-	PackedStringArray changes_after = ProjectSettings::get_changed_settings();
-	CHECK_FALSE(changes_after.has("signal_clear_test"));
-
-	SIGNAL_UNWATCH(ProjectSettings::get_singleton(), SNAME("settings_changed"));
 }
 
 TEST_CASE("[ProjectSettings] No tracking when setting same value") {

@@ -283,7 +283,7 @@ void DisplayServerMacOSBase::_update_keyboard_layouts() const {
 }
 
 void DisplayServerMacOSBase::_keyboard_layout_changed(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef user_info) {
-	DisplayServerMacOSBase *ds = (DisplayServerMacOSBase *)DisplayServer::get_singleton();
+	DisplayServerMacOSBase *ds = DisplayServer::driver_as<DisplayServerMacOSBase>();
 	if (ds) {
 		ds->keyboard_layout_dirty = true;
 	}
@@ -466,7 +466,9 @@ void DisplayServerMacOSBase::update_im_text(const Point2i &p_selection, const St
 	im_selection = p_selection;
 	im_text = p_text;
 
-	OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+	}
 }
 
 Point2i DisplayServerMacOSBase::ime_get_selection() const {

@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_navigation_agent_3d)
 
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
-#include "scene/3d/navigation/navigation_agent_3d.h"
+#include "scene/3d/navigation/navigation_3d.h"
 #include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
@@ -53,7 +53,7 @@ TEST_SUITE("[Navigation3D]") {
 
 	TEST_CASE("[SceneTree][NavigationAgent3D] New agent should attach to default map") {
 		Node3D *node_3d = memnew(Node3D);
-		SceneTree::get_singleton()->get_root()->add_child(node_3d);
+		SceneTree::get_root()->add_child(node_3d);
 
 		NavigationAgent3D *agent_node = memnew(NavigationAgent3D);
 

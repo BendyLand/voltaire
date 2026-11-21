@@ -404,4 +404,7 @@ errs
 out
 leaks
 diff
+voltaire/
+consolidation_report.txt
+build/
 

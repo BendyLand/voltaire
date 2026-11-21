@@ -50,11 +50,11 @@ class World2D;
 #ifndef _3D_DISABLED
 class AudioListener3D;
 class Camera3D;
-class CollisionObject3D;
+class Node3D;
 class World3D;
 #endif // _3D_DISABLED
 
-class ViewportTexture : public Texture2D
+class ViewportTexture final : public Texture2D
 {
 	NodePath path;
 
@@ -292,7 +292,7 @@ private:
 	bool physics_object_picking = false;
 	bool physics_object_picking_sort = false;
 	bool physics_object_picking_first_only = false;
-	List<Ref<InputEvent>> physics_picking_events;
+	List<InputEvent> physics_picking_events;
 	Transform3D physics_last_object_transform;
 	Transform3D physics_last_camera_transform;
 #endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
@@ -456,21 +456,21 @@ private:
 	bool disable_input = false;
 	bool disable_input_override = false;
 
-	void _gui_call_input(Control* p_control, const Ref<InputEvent>& p_input);
+	void _gui_call_input(Control* p_control, const InputEvent& p_input);
 	void _gui_call_notification(Control* p_control, int p_what);
 
 	void _gui_sort_roots();
 	Control* _gui_find_control_at_pos(
 		CanvasItem* p_node, const Point2& p_global, const Transform2D& p_xform);
 
-	void _gui_input_event(Ref<InputEvent> p_event);
+	void _gui_input_event(InputEvent p_event);
 	void _perform_drop(Control* p_control = nullptr);
-	void _gui_cleanup_internal_state(Ref<InputEvent> p_event);
+	void _gui_cleanup_internal_state(InputEvent p_event);
 
-	void _push_shortcut_input_internal(const Ref<InputEvent>& p_event);
-	void _push_unhandled_input_internal(const Ref<InputEvent>& p_event);
+	void _push_shortcut_input_internal(const InputEvent& p_event);
+	void _push_unhandled_input_internal(const InputEvent& p_event);
 
-	Ref<InputEvent> _make_input_local(const Ref<InputEvent>& ev);
+	InputEvent _make_input_local(const InputEvent& ev);
 
 	friend class Control;
 
@@ -521,10 +521,10 @@ private:
 	void _sub_window_grab_focus(Window* p_window);
 	void _sub_window_remove(Window* p_window);
 	int _sub_window_find(Window* p_window) const;
-	bool _sub_windows_forward_input(const Ref<InputEvent>& p_event);
+	bool _sub_windows_forward_input(const InputEvent& p_event);
 	SubWindowResize _sub_window_get_resize_margin(Window* p_subwindow, const Point2& p_point);
 
-	void _update_mouse_over(const Ref<InputEventMouse>& p_mm);
+	void _update_mouse_over(const InputEvent& p_mm);
 	virtual void _update_mouse_over(Vector2 p_pos);
 	virtual void _mouse_leave_viewport();
 
@@ -653,9 +653,9 @@ public:
 
 	void _push_text_input(const String& p_text, bool p_emit_text_changed_signal = false);
 	void push_text_input(const String& p_text);
-	void push_input(InputEvent* rp_event, bool p_local_coords = false);
+	void push_input(const InputEvent& p_event, bool p_local_coords = false);
 #ifndef DISABLE_DEPRECATED
-	void push_unhandled_input(InputEvent* rp_event, bool p_local_coords = false);
+	void push_unhandled_input(const InputEvent& p_event, bool p_local_coords = false);
 #endif // DISABLE_DEPRECATED
 	void notify_mouse_entered();
 	void notify_mouse_exited();
@@ -865,8 +865,8 @@ private:
 	void _audio_listener_3d_make_next_current(AudioListener3D* p_exclude);
 
 #ifndef PHYSICS_3D_DISABLED
-	void _collision_object_3d_input_event(CollisionObject3D* p_object, Camera3D* p_camera,
-		const Ref<InputEvent>& p_input_event, const Vector3& p_pos, const Vector3& p_normal,
+	void _collision_object_3d_input_event(Node3D* p_object, Camera3D* p_camera,
+		const InputEvent& p_input_event, const Vector3& p_pos, const Vector3& p_normal,
 		int p_shape);
 #endif // PHYSICS_3D_DISABLED
 

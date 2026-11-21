@@ -36,6 +36,8 @@
 #include "scene/resources/environment.h"
 #include "servers/rendering/rendering_server_enums.h"
 
+struct CollisionState3D;
+
 class Node3DGizmo : public RefCounted
 {
 public:
@@ -54,6 +56,7 @@ class Node3D : public Node
 {
 	friend class SceneTreeFTI;
 	friend class SceneTreeFTITests;
+	friend struct RenderInstance3D;
 
 public:
 	// Edit mode for the rotation.
@@ -390,6 +393,10 @@ public:
 
 	void set_visibility_parent(const NodePath& p_path);
 	NodePath get_visibility_parent() const;
+
+	virtual bool has_render_instance() const { return false; }
+	virtual CollisionState3D* get_collision_state_3d() { return nullptr; }
+	virtual const CollisionState3D* get_collision_state_3d() const { return nullptr; }
 
 	Node3D() = default;
 	~Node3D();

@@ -51,6 +51,7 @@ public:
 		TIMER_PROCESS_IDLE,
 	};
 
+	void set_wait_time(double p_time);
 	double get_wait_time() const;
 
 	void set_one_shot(bool p_one_shot);

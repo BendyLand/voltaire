@@ -38,7 +38,7 @@ TEST_FORCE_LINK(test_navigation_region_3d)
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
 #include "scene/3d/mesh_instance_3d.h"
-#include "scene/3d/navigation/navigation_region_3d.h"
+#include "scene/3d/navigation/navigation_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/3d/primitive_meshes.h"
@@ -54,13 +54,13 @@ TEST_SUITE("[Navigation3D]") {
 
 	TEST_CASE("[SceneTree][NavigationRegion3D] Region should bake successfully from valid geometry") {
 		Node3D *node_3d = memnew(Node3D);
-		SceneTree::get_singleton()->get_root()->add_child(node_3d);
+		SceneTree::get_root()->add_child(node_3d);
 		Ref<NavigationMesh> navigation_mesh = memnew(NavigationMesh);
 		NavigationRegion3D *navigation_region = memnew(NavigationRegion3D);
 		navigation_region->set_navigation_mesh(navigation_mesh);
 		node_3d->add_child(navigation_region);
-		Ref<PlaneMesh> plane_mesh = memnew(PlaneMesh);
-		plane_mesh->set_size(Size2(10.0, 10.0));
+		Ref<PrimitiveMesh> plane_mesh = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
+		plane_mesh->set_plane_size(Size2(10.0, 10.0));
 		MeshInstance3D *mesh_instance = memnew(MeshInstance3D);
 		mesh_instance->set_mesh(plane_mesh);
 		navigation_region->add_child(mesh_instance);

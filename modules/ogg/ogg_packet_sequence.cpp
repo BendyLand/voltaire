@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "ogg_packet_sequence.h"
+#include "register_types.h"
 
 void OggPacketSequence::push_page(int64_t p_granule_pos, const Vector<PackedByteArray>& p_data)
 {
@@ -211,4 +212,16 @@ OggPacketSequencePlayback::OggPacketSequencePlayback() { packet = new ogg_packet
 
 OggPacketSequencePlayback::~OggPacketSequencePlayback() { delete packet; }
 
+void initialize_ogg_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
 
+void uninitialize_ogg_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}

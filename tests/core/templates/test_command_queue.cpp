@@ -119,7 +119,6 @@ public:
 	bool exit_threads = false;
 
 	Thread reader_thread;
-	WorkerThreadPool::TaskID reader_task_id = WorkerThreadPool::INVALID_TASK_ID;
 	Thread writer_thread;
 
 	int func1_count = 0;
@@ -149,17 +148,7 @@ public:
 	void reader_thread_loop() {
 		reader_threadwork.thread_wait_for_work();
 		while (!exit_threads) {
-			if (reader_task_id == WorkerThreadPool::INVALID_TASK_ID) {
-				command_queue.flush_all();
-			} else {
-				if (message_count_to_read < 0) {
-					command_queue.flush_all();
-				}
-				for (int i = 0; i < message_count_to_read; i++) {
-					WorkerThreadPool::get_singleton()->yield();
-					command_queue.wait_and_flush();
-				}
-			}
+			command_queue.flush_all();
 			message_count_to_read = 0;
 
 			reader_threadwork.thread_done_work();
@@ -222,13 +211,8 @@ public:
 		sts->writer_thread_loop();
 	}
 
-	void init_threads(bool p_use_thread_pool_sync = false) {
-		if (p_use_thread_pool_sync) {
-			reader_task_id = WorkerThreadPool::get_singleton()->add_native_task(&SharedThreadState::static_reader_thread_loop, this, true);
-			command_queue.set_pump_task_id(reader_task_id);
-		} else {
-			reader_thread.start(&SharedThreadState::static_reader_thread_loop, this);
-		}
+	void init_threads() {
+		reader_thread.start(&SharedThreadState::static_reader_thread_loop, this);
 		writer_thread.start(&SharedThreadState::static_writer_thread_loop, this);
 	}
 	void destroy_threads() {
@@ -236,11 +220,7 @@ public:
 		reader_threadwork.main_start_work();
 		writer_threadwork.main_start_work();
 
-		if (reader_task_id != WorkerThreadPool::INVALID_TASK_ID) {
-			WorkerThreadPool::get_singleton()->wait_for_task_completion(reader_task_id);
-		} else {
-			reader_thread.wait_to_finish();
-		}
+		reader_thread.wait_to_finish();
 		writer_thread.wait_to_finish();
 	}
 
@@ -283,11 +263,11 @@ public:
 	}
 };
 
-static void test_command_queue_basic(bool p_use_thread_pool_sync) {
+static void test_command_queue_basic() {
 	const char *COMMAND_QUEUE_SETTING = "memory/limits/command_queue/multithreading_queue_size_kb";
 	ProjectSettings::set_setting(COMMAND_QUEUE_SETTING, 1);
 	SharedThreadState sts;
-	sts.init_threads(p_use_thread_pool_sync);
+	sts.init_threads();
 
 	sts.add_msg_to_write(SharedThreadState::TEST_MSG_FUNC1_TRANSFORM);
 	sts.writer_threadwork.main_start_work();
@@ -326,12 +306,9 @@ static void test_command_queue_basic(bool p_use_thread_pool_sync) {
 }
 
 TEST_CASE("[CommandQueue] Test Queue Basics") {
-	test_command_queue_basic(false);
+	test_command_queue_basic();
 }
 
-TEST_CASE("[CommandQueue] Test Queue Basics with WorkerThreadPool sync.") {
-	test_command_queue_basic(true);
-}
 
 TEST_CASE("[CommandQueue] Test Queue Wrapping to same spot.") {
 	const char *COMMAND_QUEUE_SETTING = "memory/limits/command_queue/multithreading_queue_size_kb";

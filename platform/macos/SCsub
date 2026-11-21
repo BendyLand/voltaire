@@ -38,8 +38,6 @@ if env.editor_build:
         "display_server_macos_embedded.mm",
         "embedded_debugger.mm",
         "embedded_gl_manager.mm",
-        "editor/embedded_game_view_plugin.mm",
-        "editor/embedded_process_macos.mm",
     ]
 
 if env["library_type"] == "executable":

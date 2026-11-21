@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "core/config/project_format.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/rb_map.h"
 #include "core/types.h"
@@ -102,6 +103,8 @@ private:
 private:
 	struct Data
 	{
+		VoltaireProjectFile project;
+
 		bool is_changed = false;
 
 		// Starting version from 1 ensures that all callers can reset their tested version to 0,
@@ -130,8 +133,8 @@ private:
 		Vector<String> global_class_list;
 		bool is_global_class_list_loaded = false;
 		String project_data_dir_name;
-	};
 
+	};
 
 public:
 	static const int CONFIG_VERSION = 5;
@@ -139,6 +142,9 @@ public:
 
 	static void initialize();
 	static void finalize();
+
+	static const VoltaireProjectFile &get_project() { return data->project; }
+	static VoltaireProjectFile &get_project_mut() { return data->project; }
 
 	static void refresh_global_class_list();
 	static void store_global_class_list(const Vector<String>& p_classes);
@@ -248,4 +254,26 @@ public:
 		return _ggc_temp2;                                                                         \
 	})(m_setting_name)
 
+// --- Folded from core/core_constants.h ---
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/list.h"
 
+class CoreConstants {
+public:
+	static int get_global_constant_count();
+	static String get_global_constant_enum(int p_idx);
+	static bool is_global_constant_bitfield(int p_idx);
+	static bool get_ignore_value_in_docs(int p_idx);
+	static const char *get_global_constant_name(int p_idx);
+	static int64_t get_global_constant_value(int p_idx);
+	static bool is_global_constant(const String &p_name);
+	static int get_global_constant_index(const String &p_name);
+	static bool is_global_enum(const String &p_enum);
+	static void get_enum_values(const String &p_enum, HashMap<String, int64_t> *r_values);
+#ifdef TOOLS_ENABLED
+	static void get_global_enums(List<String> *r_values);
+#endif
+};
+
+// --- End core/core_constants.h ---

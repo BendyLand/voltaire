@@ -69,7 +69,7 @@ TEST_CASE("[SceneTree][Control] Transforms") {
 
 TEST_CASE("[SceneTree][Control] Focus") {
 	Control *ctrl = memnew(Control);
-	SceneTree::get_singleton()->get_root()->add_child(ctrl);
+	SceneTree::get_root()->add_child(ctrl);
 
 	SUBCASE("[SceneTree][Control] Default focus") {
 		CHECK_UNARY_FALSE(ctrl->has_focus());
@@ -105,7 +105,7 @@ TEST_CASE("[SceneTree][Control] Focus") {
 		CHECK_UNARY(ctrl->has_focus());
 
 		Control *other_ctrl = memnew(Control);
-		SceneTree::get_singleton()->get_root()->add_child(other_ctrl);
+		SceneTree::get_root()->add_child(other_ctrl);
 		other_ctrl->set_focus_mode(Control::FocusMode::FOCUS_ALL);
 		other_ctrl->grab_focus();
 
@@ -207,7 +207,7 @@ TEST_CASE("[SceneTree][Control] Find next/prev valid focus") {
 	Node *intermediate = memnew(Node);
 	Control *ctrl = memnew(Control);
 	intermediate->add_child(ctrl);
-	SceneTree::get_singleton()->get_root()->add_child(intermediate);
+	SceneTree::get_root()->add_child(intermediate);
 
 	SUBCASE("[SceneTree][Control] In FOCUS_CLICK mode") {
 		ctrl->set_focus_mode(Control::FocusMode::FOCUS_CLICK);
@@ -228,7 +228,7 @@ TEST_CASE("[SceneTree][Control] Find next/prev valid focus") {
 			Control *ctrl1 = memnew(Control);
 			Control *ctrl2 = memnew(Control);
 			Control *ctrl3 = memnew(Control);
-			Window *win = SceneTree::get_singleton()->get_root();
+			Window *win = SceneTree::get_root();
 
 			ctrl1->set_focus_mode(Control::FocusMode::FOCUS_ALL);
 			ctrl2->set_focus_mode(Control::FocusMode::FOCUS_ALL);
@@ -479,7 +479,7 @@ TEST_CASE("[SceneTree][Control] Find next/prev valid focus") {
 
 		SUBCASE("[SceneTree][Control] Has a sibling control but the parent node is not a control") {
 			Control *other_ctrl = memnew(Control);
-			SceneTree::get_singleton()->get_root()->add_child(other_ctrl);
+			SceneTree::get_root()->add_child(other_ctrl);
 
 			SUBCASE("[SceneTree][Control] Has a sibling control with FOCUS_ALL") {
 				other_ctrl->set_focus_mode(Control::FocusMode::FOCUS_ALL);
@@ -1016,7 +1016,7 @@ TEST_CASE("[SceneTree][Control] Anchoring") {
 	Control *test_child = memnew(Control);
 	test_control->add_child(test_child);
 	test_control->set_size(Size2(2, 2));
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_control);
 
 	SUBCASE("Anchoring without offsets") {
@@ -1105,7 +1105,7 @@ TEST_CASE("[SceneTree][Control] Anchoring") {
 TEST_CASE("[SceneTree][Control] Custom maximum size") {
 	Control *test_control = memnew(Control);
 	test_control->set_custom_maximum_size(Size2(4, 2));
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_control);
 	test_control->set_size(Size2(4, 2));
 	CHECK_MESSAGE(
@@ -1133,7 +1133,7 @@ TEST_CASE("[SceneTree][Control] Custom maximum size") {
 			"Adjust only y axis if y is above custom maximum size.");
 
 	test_control->set_custom_minimum_size(Size2(5, 3));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 	CHECK_MESSAGE(
 			test_control->get_size().is_equal_approx(Vector2(4, 2)),
 			"Custom maximum size overrides custom minimum size.");
@@ -1173,7 +1173,7 @@ TEST_CASE("[SceneTree][Control] Custom maximum size") {
 TEST_CASE("[SceneTree][Control] Custom minimum size") {
 	Control *test_control = memnew(Control);
 	test_control->set_custom_minimum_size(Size2(4, 2));
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_control);
 	CHECK_MESSAGE(
 			test_control->get_size().is_equal_approx(Vector2(4, 2)),
@@ -1205,7 +1205,7 @@ TEST_CASE("[SceneTree][Control] Custom minimum size") {
 TEST_CASE("[SceneTree][Control] Grow direction") {
 	Control *test_control = memnew(Control);
 	test_control->set_size(Size2(1, 1));
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(test_control);
 
 	SUBCASE("Defaults") {
@@ -1219,7 +1219,7 @@ TEST_CASE("[SceneTree][Control] Grow direction") {
 	SUBCASE("Horizontal grow direction begin") {
 		test_control->set_h_grow_direction(Control::GROW_DIRECTION_BEGIN);
 		test_control->set_custom_minimum_size(Size2(2, 2));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		SIGNAL_CHECK("minimum_size_changed", signal_args)
 		CHECK_MESSAGE(
 				test_control->get_rect().is_equal_approx(
@@ -1230,7 +1230,7 @@ TEST_CASE("[SceneTree][Control] Grow direction") {
 	SUBCASE("Vertical grow direction begin") {
 		test_control->set_v_grow_direction(Control::GROW_DIRECTION_BEGIN);
 		test_control->set_custom_minimum_size(Size2(4, 3));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		SIGNAL_CHECK("minimum_size_changed", signal_args);
 		CHECK_MESSAGE(
 				test_control->get_rect().is_equal_approx(
@@ -1241,7 +1241,7 @@ TEST_CASE("[SceneTree][Control] Grow direction") {
 	SUBCASE("Horizontal grow direction end") {
 		test_control->set_h_grow_direction(Control::GROW_DIRECTION_END);
 		test_control->set_custom_minimum_size(Size2(5, 3));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		SIGNAL_CHECK("minimum_size_changed", signal_args);
 		CHECK_MESSAGE(
 				test_control->get_rect().is_equal_approx(
@@ -1252,7 +1252,7 @@ TEST_CASE("[SceneTree][Control] Grow direction") {
 	SUBCASE("Vertical grow direction end") {
 		test_control->set_v_grow_direction(Control::GROW_DIRECTION_END);
 		test_control->set_custom_minimum_size(Size2(4, 4));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		SIGNAL_CHECK("minimum_size_changed", signal_args);
 		CHECK_MESSAGE(
 				test_control->get_rect().is_equal_approx(
@@ -1264,7 +1264,7 @@ TEST_CASE("[SceneTree][Control] Grow direction") {
 	SUBCASE("Horizontal grow direction both") {
 		test_control->set_h_grow_direction(Control::GROW_DIRECTION_BOTH);
 		test_control->set_custom_minimum_size(Size2(2, 4));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		SIGNAL_CHECK("minimum_size_changed", signal_args);
 		CHECK_MESSAGE(
 				test_control->get_rect().is_equal_approx(
@@ -1275,7 +1275,7 @@ TEST_CASE("[SceneTree][Control] Grow direction") {
 	SUBCASE("Vertical grow direction both") {
 		test_control->set_v_grow_direction(Control::GROW_DIRECTION_BOTH);
 		test_control->set_custom_minimum_size(Size2(6, 3));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		SIGNAL_CHECK("minimum_size_changed", signal_args);
 		CHECK_MESSAGE(
 				test_control->get_rect().is_equal_approx(

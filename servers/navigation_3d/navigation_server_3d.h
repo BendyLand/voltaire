@@ -39,10 +39,181 @@
 #include "core/templates/rid.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/vector.h"
+#include "core/types.h"
 #include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
 #include "scene/resources/navigation_mesh.h"
-#include "servers/navigation_3d/navigation_path_query_parameters_3d.h"
-#include "servers/navigation_3d/navigation_path_query_result_3d.h"
+
+namespace NavigationEnums3D {
+
+enum PathfindingAlgorithm {
+	PATHFINDING_ALGORITHM_ASTAR = 0,
+};
+
+enum PathPostProcessing {
+	PATH_POSTPROCESSING_CORRIDORFUNNEL = 0,
+	PATH_POSTPROCESSING_EDGECENTERED,
+	PATH_POSTPROCESSING_NONE,
+};
+
+enum PathSegmentType {
+	PATH_SEGMENT_TYPE_REGION = 0,
+	PATH_SEGMENT_TYPE_LINK
+};
+
+enum PathMetadataFlags {
+	PATH_INCLUDE_NONE = 0,
+	PATH_INCLUDE_TYPES = 1,
+	PATH_INCLUDE_RIDS = 2,
+	PATH_INCLUDE_OWNERS = 4,
+	PATH_INCLUDE_ALL = PATH_INCLUDE_TYPES | PATH_INCLUDE_RIDS | PATH_INCLUDE_OWNERS
+};
+
+} // namespace NavigationEnums3D
+
+namespace NavigationDefaults3D {
+
+// Rasterization.
+
+// To find the polygons edges the vertices are displaced in a grid where
+// each cell has the following cell_size and cell_height.
+constexpr float NAV_MESH_CELL_HEIGHT = 0.25f; // Must match ProjectSettings default 3D cell_height and NavigationMesh cell_height.
+constexpr float NAV_MESH_CELL_SIZE = 0.25f; // Must match ProjectSettings default 3D cell_size and NavigationMesh cell_size.
+constexpr float NAV_MESH_CELL_SIZE_MIN = 0.01f;
+constexpr const char *const NAV_MESH_CELL_SIZE_HINT = "0.001,100,0.001,or_greater";
+
+// Map.
+
+constexpr float EDGE_CONNECTION_MARGIN = 0.25f;
+constexpr float LINK_CONNECTION_RADIUS = 1.0f;
+constexpr int path_search_max_polygons = 4096;
+
+// Agent.
+
+constexpr float AVOIDANCE_AGENT_HEIGHT = 1.0;
+constexpr float AVOIDANCE_AGENT_RADIUS = 0.5;
+constexpr float AVOIDANCE_AGENT_MAX_SPEED = 10.0;
+constexpr float AVOIDANCE_AGENT_TIME_HORIZON_AGENTS = 1.0;
+constexpr float AVOIDANCE_AGENT_TIME_HORIZON_OBSTACLES = 0.0;
+constexpr int AVOIDANCE_AGENT_MAX_NEIGHBORS = 10;
+constexpr float AVOIDANCE_AGENT_NEIGHBOR_DISTANCE = 50.0;
+
+} // namespace NavigationDefaults3D
+
+class NavigationPathQueryParameters3D final : public RefCounted
+{
+public:
+	enum PathfindingAlgorithm
+	{
+		PATHFINDING_ALGORITHM_ASTAR = NavigationEnums3D::PATHFINDING_ALGORITHM_ASTAR,
+	};
+
+	enum PathPostProcessing
+	{
+		PATH_POSTPROCESSING_CORRIDORFUNNEL = NavigationEnums3D::PATH_POSTPROCESSING_CORRIDORFUNNEL,
+		PATH_POSTPROCESSING_EDGECENTERED = NavigationEnums3D::PATH_POSTPROCESSING_EDGECENTERED,
+		PATH_POSTPROCESSING_NONE = NavigationEnums3D::PATH_POSTPROCESSING_NONE,
+	};
+
+	enum PathMetadataFlags
+	{
+		PATH_METADATA_INCLUDE_NONE = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_NONE,
+		PATH_METADATA_INCLUDE_TYPES = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_TYPES,
+		PATH_METADATA_INCLUDE_RIDS = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_RIDS,
+		PATH_METADATA_INCLUDE_OWNERS = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_OWNERS,
+		PATH_METADATA_INCLUDE_ALL = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_ALL
+	};
+
+private:
+	PathfindingAlgorithm pathfinding_algorithm = PATHFINDING_ALGORITHM_ASTAR;
+	PathPostProcessing path_postprocessing = PATH_POSTPROCESSING_CORRIDORFUNNEL;
+	RID map;
+	Vector3 start_position;
+	Vector3 target_position;
+	uint32_t navigation_layers = 1;
+	uint32_t metadata_flags = PATH_METADATA_INCLUDE_ALL;
+	bool simplify_path = false;
+	real_t simplify_epsilon = 0.0;
+
+	LocalVector<RID> _excluded_regions;
+	LocalVector<RID> _included_regions;
+
+	float path_return_max_length = 0.0;
+	float path_return_max_radius = 0.0;
+	int path_search_max_polygons = NavigationDefaults3D::path_search_max_polygons;
+	float path_search_max_distance = 0.0;
+
+public:
+	void set_pathfinding_algorithm(const PathfindingAlgorithm p_pathfinding_algorithm);
+	PathfindingAlgorithm get_pathfinding_algorithm() const;
+
+	void set_path_postprocessing(const PathPostProcessing p_path_postprocessing);
+	PathPostProcessing get_path_postprocessing() const;
+
+	void set_map(RID p_map);
+	RID get_map() const;
+
+	void set_start_position(Vector3 p_start_position);
+	Vector3 get_start_position() const;
+
+	void set_target_position(Vector3 p_target_position);
+	Vector3 get_target_position() const;
+
+	void set_navigation_layers(uint32_t p_navigation_layers);
+	uint32_t get_navigation_layers() const;
+
+	void set_metadata_flags(uint32_t p_flags);
+	uint32_t get_metadata_flags() const;
+
+	void set_simplify_path(bool p_enabled);
+	bool get_simplify_path() const;
+
+	void set_simplify_epsilon(real_t p_epsilon);
+	real_t get_simplify_epsilon() const;
+
+	void set_path_return_max_length(float p_length);
+	float get_path_return_max_length() const;
+
+	void set_path_return_max_radius(float p_radius);
+	float get_path_return_max_radius() const;
+
+	void set_path_search_max_polygons(int p_max_polygons);
+	int get_path_search_max_polygons() const;
+
+	void set_path_search_max_distance(float p_distance);
+	float get_path_search_max_distance() const;
+};
+
+class NavigationPathQueryResult3D final : public RefCounted
+{
+	Vector<Vector3> path;
+	Vector<int32_t> path_types;
+	Vector<int64_t> path_owner_ids;
+	float path_length = 0.0;
+
+public:
+	enum PathSegmentType
+	{
+		PATH_SEGMENT_TYPE_REGION = NavigationEnums3D::PathSegmentType::PATH_SEGMENT_TYPE_REGION,
+		PATH_SEGMENT_TYPE_LINK = NavigationEnums3D::PathSegmentType::PATH_SEGMENT_TYPE_LINK,
+	};
+
+	void set_path(const Vector<Vector3>& p_path);
+	const Vector<Vector3>& get_path() const;
+
+	void set_path_types(const Vector<int32_t>& p_path_types);
+	const Vector<int32_t>& get_path_types() const;
+
+	void set_path_owner_ids(const Vector<int64_t>& p_path_owner_ids);
+	const Vector<int64_t>& get_path_owner_ids() const;
+
+	void set_path_length(float p_length);
+	float get_path_length() const;
+
+	void reset();
+
+	void set_data(const LocalVector<Vector3>& p_path, const LocalVector<int32_t>& p_path_types,
+		const LocalVector<RID>& p_path_rids, const LocalVector<int64_t>& p_path_owner_ids);
+};
 
 class NavigationServer3D final
 {
@@ -509,5 +680,3 @@ public:
 	NavigationServer3D& operator=(const NavigationServer3D&) = delete;
 	~NavigationServer3D() = delete;
 };
-
-

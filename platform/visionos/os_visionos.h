@@ -35,14 +35,16 @@
 
 #import "drivers/apple_embedded/os_apple_embedded.h"
 
-class OS_VisionOS : public OS_AppleEmbedded {
+class OS_VisionOS final
+{
 public:
-	static OS_VisionOS *get_singleton();
+	OS_VisionOS() = delete;
+	~OS_VisionOS() = delete;
+	OS_VisionOS(const OS_VisionOS&) = delete;
+	OS_VisionOS& operator=(const OS_VisionOS&) = delete;
 
-	OS_VisionOS();
-	~OS_VisionOS();
-
-	virtual String get_name() const override;
+	static void setup();
+	static String get_name();
 };
 
 #endif // VISIONOS_ENABLED

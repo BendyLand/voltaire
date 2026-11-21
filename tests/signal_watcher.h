@@ -52,43 +52,48 @@
 //
 // All signals are automatically discarded between test/sub test cases.
 
-class SignalWatcher
+class SignalWatcher final
 {
-	inline static SignalWatcher* singleton = nullptr;
+	struct Data
+	{
+		HashMap<String, Array> _signals;
+		mem_unique_ptr<Object> obj;
+	};
 
-	HashMap<String, Array> _signals;
+	static inline Data* data = nullptr;
 
-	void _add_signal_entry(const Array& p_args, const String& p_name);
-	void _signal_callback_zero(const String& p_name);
-	void _signal_callback_one(Variant p_arg1, const String& p_name);
-	void _signal_callback_two(Variant p_arg1, Variant p_arg2, const String& p_name);
-	void _signal_callback_three(
+	static void _add_signal_entry(const Array& p_args, const String& p_name);
+	static void _signal_callback_zero(const String& p_name);
+	static void _signal_callback_one(Variant p_arg1, const String& p_name);
+	static void _signal_callback_two(Variant p_arg1, Variant p_arg2, const String& p_name);
+	static void _signal_callback_three(
 		Variant p_arg1, Variant p_arg2, Variant p_arg3, const String& p_name);
 
 public:
-	mem_unique_ptr<Object> obj;
-	static SignalWatcher* get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-	void watch_signal(Object* p_object, const String& p_signal);
-	void unwatch_signal(Object* p_object, const String& p_signal);
-	bool check(const String& p_name, const Array& p_args);
-	bool check_false(const String& p_name);
-	void discard_signal(const String& p_name);
+	static void watch_signal(Object* p_object, const String& p_signal);
+	static void unwatch_signal(Object* p_object, const String& p_signal);
+	static bool check(const String& p_name, const Array& p_args);
+	static bool check_false(const String& p_name);
+	static void discard_signal(const String& p_name);
 
-	void _clear_signals();
+	static void _clear_signals();
 
-	SignalWatcher();
-	~SignalWatcher();
+	SignalWatcher() = delete;
+	SignalWatcher(const SignalWatcher&) = delete;
+	SignalWatcher& operator=(const SignalWatcher&) = delete;
+	~SignalWatcher() = delete;
 };
 
 #define SIGNAL_WATCH(m_object, m_signal)                                                           \
-	SignalWatcher::get_singleton()->watch_signal(m_object, m_signal);
+	SignalWatcher::watch_signal(m_object, m_signal);
 #define SIGNAL_UNWATCH(m_object, m_signal)                                                         \
-	SignalWatcher::get_singleton()->unwatch_signal(m_object, m_signal);
+	SignalWatcher::unwatch_signal(m_object, m_signal);
 
 #define SIGNAL_CHECK(m_signal, m_args)                                                             \
-	CHECK(SignalWatcher::get_singleton()->check(m_signal, m_args));
-#define SIGNAL_CHECK_FALSE(m_signal) CHECK(SignalWatcher::get_singleton()->check_false(m_signal));
-#define SIGNAL_DISCARD(m_signal) SignalWatcher::get_singleton()->discard_signal(m_signal);
-
-
+	CHECK(SignalWatcher::check(m_signal, m_args));
+#define SIGNAL_CHECK_FALSE(m_signal) CHECK(SignalWatcher::check_false(m_signal));
+#define SIGNAL_DISCARD(m_signal) SignalWatcher::discard_signal(m_signal);

@@ -59,7 +59,7 @@
 		}
 	}
 
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds) {
 		return;
 	}

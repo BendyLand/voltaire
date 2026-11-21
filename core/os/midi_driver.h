@@ -39,12 +39,27 @@
  * Multi-Platform abstraction for accessing to MIDI.
  */
 
-class MIDIDriver
+class MIDIDriver final
 {
-	static MIDIDriver* singleton;
 	static uint8_t last_received_message;
+	static inline bool _is_bound = false;
 
-protected:
+	static void _default_initialize_backend() {}
+	static void _default_finalize_backend() {}
+	static Error _default_open() { return ERR_UNAVAILABLE; }
+	static void _default_close() {}
+
+	inline static void (*_initialize_backend)() = &_default_initialize_backend;
+	inline static void (*_finalize_backend)() = &_default_finalize_backend;
+
+public:
+	struct Data
+	{
+		PackedStringArray connected_input_names;
+	};
+
+	static inline Data* data = nullptr;
+
 	// Categories of message for parser logic.
 	enum class MessageCategory
 	{
@@ -102,18 +117,33 @@ protected:
 		bool skipping_sys_ex = false;
 	};
 
-	PackedStringArray connected_input_names;
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	_FORCE_INLINE_ static bool is_bound() { return _is_bound; }
 
-public:
-	static MIDIDriver* get_singleton();
+	inline static Error (*open)() = &_default_open;
+	inline static void (*close)() = &_default_close;
 
-	MIDIDriver();
-	virtual ~MIDIDriver() = default;
+	template <typename Impl> static void bind()
+	{
+		_initialize_backend = &Impl::initialize;
+		_finalize_backend = &Impl::finalize;
+		open = &Impl::open;
+		close = &Impl::close;
+		_is_bound = true;
+	}
 
-	virtual Error open() = 0;
-	virtual void close() = 0;
+	static void reset_backend();
 
-	PackedStringArray get_connected_inputs() const;
+	static void add_connected_input(const String& p_name);
+	static void clear_connected_inputs();
+	static PackedStringArray get_connected_inputs();
+
+	MIDIDriver() = delete;
+	MIDIDriver(const MIDIDriver&) = delete;
+	MIDIDriver& operator=(const MIDIDriver&) = delete;
+	~MIDIDriver() = delete;
 };
 
 

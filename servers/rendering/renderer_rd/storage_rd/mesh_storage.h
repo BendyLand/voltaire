@@ -330,7 +330,7 @@ private:
 			SHADER_MODE_MAX
 		};
 
-		SkeletonShaderRD shader;
+		ShaderRD shader{SkeletonShaderRD()};
 		RID version;
 		RID version_shader[SHADER_MODE_MAX];
 		RID pipeline[SHADER_MODE_MAX];

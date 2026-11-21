@@ -41,30 +41,42 @@
 
 #include <cstdio>
 
-class MIDIDriverCoreMidi : public MIDIDriver {
-	MIDIClientRef client = 0;
-	MIDIPortRef port_in;
-
-	struct InputConnection {
+class MIDIDriverCoreMidi final
+{
+	struct InputConnection
+	{
 		InputConnection() = default;
 		InputConnection(int p_device_index, MIDIEndpointRef p_source);
-		Parser parser;
+		MIDIDriver::Parser parser;
 		MIDIEndpointRef source;
 	};
 
-	Vector<InputConnection *> connected_sources;
+public:
+	struct Data
+	{
+		MIDIClientRef client = 0;
+		MIDIPortRef port_in = 0;
+		Vector<InputConnection*> connected_sources;
+		Mutex mutex;
+		bool core_midi_closed = false;
+	};
 
-	static Mutex mutex;
-	static bool core_midi_closed;
+	static inline Data* data = nullptr;
 
-	static void read(const MIDIPacketList *packet_list, void *read_proc_ref_con, void *src_conn_ref_con);
+private:
+	static void read(
+		const MIDIPacketList* packet_list, void* read_proc_ref_con, void* src_conn_ref_con);
 
 public:
-	virtual Error open() override;
-	virtual void close() override;
+	static void initialize();
+	static void finalize();
+	static Error open();
+	static void close();
 
-	MIDIDriverCoreMidi() = default;
-	virtual ~MIDIDriverCoreMidi();
+	MIDIDriverCoreMidi() = delete;
+	MIDIDriverCoreMidi(const MIDIDriverCoreMidi&) = delete;
+	MIDIDriverCoreMidi& operator=(const MIDIDriverCoreMidi&) = delete;
+	~MIDIDriverCoreMidi() = delete;
 };
 
 #endif // COREMIDI_ENABLED

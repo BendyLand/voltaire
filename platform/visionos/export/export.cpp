@@ -31,7 +31,47 @@
 
 #include "editor/export/editor_export.h"
 #include "export.h"
-#include "export_plugin.h"
+// --- Inlined from platform/visionos/export/export_plugin.h ---
+#include "editor/export/editor_export_platform.h"
+
+class EditorExportPlatformVisionOS : public EditorExportPlatformAppleEmbedded
+{
+	static Vector<String> device_types;
+
+	virtual String get_platform_name() const override { return "visionos"; }
+
+	virtual String get_sdk_name() const override { return "xros"; }
+
+	virtual const Vector<String> get_device_types() const override { return device_types; }
+
+	virtual String get_minimum_deployment_target() const override { return "26.0"; }
+
+	virtual Vector<EditorExportPlatformAppleEmbedded::IconInfo> get_icon_infos() const override;
+
+	virtual void get_export_options(List<ExportOption>* r_options) const override;
+
+	virtual String _process_config_file_line(const Ref<EditorExportPreset>& p_preset,
+		const String& p_line, const AppleEmbeddedConfigData& p_config, bool p_debug,
+		const CodeSigningDetails& p_code_signing) override;
+
+public:
+	virtual String get_name() const override { return "visionOS"; }
+
+	virtual String get_os_name() const override { return "visionOS"; }
+
+	virtual void get_platform_features(List<String>* r_features) const override
+	{
+		EditorExportPlatformAppleEmbedded::get_platform_features(r_features);
+		r_features->push_back("visionos");
+	}
+
+	virtual void initialize() override;
+	~EditorExportPlatformVisionOS();
+};
+
+
+
+// --- End platform/visionos/export/export_plugin.h ---
 
 void register_visionos_exporter_types() {}
 
@@ -40,7 +80,103 @@ void register_visionos_exporter()
 	Ref<EditorExportPlatformVisionOS> platform;
 	platform.instantiate();
 
-	EditorExport::get_singleton()->add_export_platform(platform);
+	EditorExport::add_export_platform(platform);
+}
+
+
+
+// ============================================================================
+// Merged from platform/visionos/export/export_plugin.cpp
+// ============================================================================
+
+#include "core/config/engine.h"
+
+#include "logo_svg.gen.h"
+#include "run_icon_svg.gen.h"
+
+Vector<String> EditorExportPlatformVisionOS::device_types({"realityDevice"});
+
+void EditorExportPlatformVisionOS::initialize()
+{
+	if (Engine::is_editor_hint()) {
+		EditorExportPlatformAppleEmbedded::_initialize(_visionos_logo_svg, _visionos_run_icon_svg);
+#ifdef MACOS_ENABLED
+		_start_remote_device_poller_thread();
+#endif
+	}
+}
+
+EditorExportPlatformVisionOS::~EditorExportPlatformVisionOS()
+{
+#ifdef MACOS_ENABLED
+	_stop_remote_device_poller_thread();
+#endif
+}
+
+Vector<EditorExportPlatformAppleEmbedded::IconInfo>
+EditorExportPlatformVisionOS::get_icon_infos() const
+{
+	return Vector<EditorExportPlatformAppleEmbedded::IconInfo>();
+}
+
+String EditorExportPlatformVisionOS::_process_config_file_line(
+	const Ref<EditorExportPreset>& p_preset, const String& p_line,
+	const AppleEmbeddedConfigData& p_config, bool p_debug, const CodeSigningDetails& p_code_signing)
+{
+	// Do visionOS specific processing first, and call super implementation if there are no matches
+
+	String strnew;
+
+	// Supported Destinations
+	if (p_line.contains("$targeted_device_family")) {
+		strnew += p_line.replace("$targeted_device_family", "7") + "\n";
+
+		// MoltenVK Framework not used on visionOS
+	}
+	else if (p_line.contains("$moltenvk_buildfile")) {
+		strnew += p_line.replace("$moltenvk_buildfile", "") + "\n";
+	}
+	else if (p_line.contains("$moltenvk_fileref")) {
+		strnew += p_line.replace("$moltenvk_fileref", "") + "\n";
+	}
+	else if (p_line.contains("$moltenvk_buildphase")) {
+		strnew += p_line.replace("$moltenvk_buildphase", "") + "\n";
+	}
+	else if (p_line.contains("$moltenvk_buildgrp")) {
+		strnew += p_line.replace("$moltenvk_buildgrp", "") + "\n";
+
+		// Launch Storyboard
+	}
+	else if (p_line.contains("$plist_launch_screen_name")) {
+		strnew += p_line.replace("$plist_launch_screen_name", "") + "\n";
+	}
+	else if (p_line.contains("$pbx_launch_screen_file_reference")) {
+		strnew += p_line.replace("$pbx_launch_screen_file_reference", "") + "\n";
+	}
+	else if (p_line.contains("$pbx_launch_screen_copy_files")) {
+		strnew += p_line.replace("$pbx_launch_screen_copy_files", "") + "\n";
+	}
+	else if (p_line.contains("$pbx_launch_screen_build_phase")) {
+		strnew += p_line.replace("$pbx_launch_screen_build_phase", "") + "\n";
+	}
+	else if (p_line.contains("$pbx_launch_screen_build_reference")) {
+		strnew += p_line.replace("$pbx_launch_screen_build_reference", "") + "\n";
+	}
+	else if (p_line.contains("$valid_archs")) {
+		strnew += p_line.replace("$valid_archs", "arm64") + "\n";
+
+		// Apple Embedded common
+	}
+	else {
+		strnew += EditorExportPlatformAppleEmbedded::_process_config_file_line(
+			p_preset, p_line, p_config, p_debug, p_code_signing);
+	}
+	return strnew;
+}
+
+void EditorExportPlatformVisionOS::get_export_options(
+	List<EditorExportPlatform::ExportOption>* r_options) const
+{
 }
 
 

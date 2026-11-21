@@ -138,7 +138,7 @@ TEST_CASE("[SceneTree][TextureButton] Click mask set and get") {
 
 TEST_CASE("[SceneTree][TextureButton] Combined minimum size priority") {
 	TextureButton *texture_button = memnew(TextureButton);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(texture_button);
 
 	Ref<ImageTexture> tex_n = make_test_texture(16, 8);
@@ -149,20 +149,20 @@ TEST_CASE("[SceneTree][TextureButton] Combined minimum size priority") {
 		texture_button->set_texture_normal(tex_n);
 		texture_button->set_texture_pressed(tex_p);
 		texture_button->set_texture_hover(tex_h);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		CHECK(texture_button->get_combined_minimum_size() == Size2(16, 8));
 	}
 
 	SUBCASE("texture_pressed when normal is empty") {
 		texture_button->set_texture_pressed(tex_p);
 		texture_button->set_texture_hover(tex_h);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		CHECK(texture_button->get_combined_minimum_size() == Size2(10, 20));
 	}
 
 	SUBCASE("texture_hover when normal and pressed are empty") {
 		texture_button->set_texture_hover(tex_h);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		CHECK(texture_button->get_combined_minimum_size() == Size2(4, 4));
 	}
 
@@ -171,7 +171,7 @@ TEST_CASE("[SceneTree][TextureButton] Combined minimum size priority") {
 		mask.instantiate();
 		mask->create(Size2i(7, 5));
 		texture_button->set_click_mask(mask);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 		CHECK(texture_button->get_combined_minimum_size() == Size2(7, 5));
 	}
 
@@ -180,13 +180,13 @@ TEST_CASE("[SceneTree][TextureButton] Combined minimum size priority") {
 
 TEST_CASE("[SceneTree][TextureButton] ignore_texture_size") {
 	TextureButton *texture_button = memnew(TextureButton);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(texture_button);
 
 	Ref<ImageTexture> tex = make_test_texture(32, 16);
 	texture_button->set_texture_normal(tex);
 	texture_button->set_ignore_texture_size(true);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK(texture_button->get_combined_minimum_size() == Size2(0, 0));
 

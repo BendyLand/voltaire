@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_path_follow_2d)
 
-#include "scene/2d/path_2d.h"
+#include "scene/2d/line_2d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 
@@ -58,7 +58,7 @@ TEST_CASE("[SceneTree][PathFollow2D] Sampling with progress ratio") {
 	PathFollow2D *path_follow_2d = memnew(PathFollow2D);
 	path_follow_2d->set_loop(false);
 	path->add_child(path_follow_2d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_2d->set_progress_ratio(0);
 	CHECK(is_equal_approx(Vector2(0, 0), path_follow_2d->get_transform().get_origin()));
@@ -103,7 +103,7 @@ TEST_CASE("[SceneTree][PathFollow2D] Sampling with progress") {
 	PathFollow2D *path_follow_2d = memnew(PathFollow2D);
 	path_follow_2d->set_loop(false);
 	path->add_child(path_follow_2d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_2d->set_progress(0);
 	CHECK(is_equal_approx(Vector2(0, 0), path_follow_2d->get_transform().get_origin()));
@@ -144,7 +144,7 @@ TEST_CASE("[SceneTree][PathFollow2D] Removal of a point in curve") {
 	path->set_curve(curve);
 	PathFollow2D *path_follow_2d = memnew(PathFollow2D);
 	path->add_child(path_follow_2d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_2d->set_progress_ratio(0.5);
 	CHECK(is_equal_approx(Vector2(100, 0), path_follow_2d->get_transform().get_origin()));
@@ -167,7 +167,7 @@ TEST_CASE("[SceneTree][PathFollow2D] Setting h_offset and v_offset") {
 	path->set_curve(curve);
 	PathFollow2D *path_follow_2d = memnew(PathFollow2D);
 	path->add_child(path_follow_2d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_2d->set_progress_ratio(0.5);
 	CHECK(is_equal_approx(Vector2(50, 0), path_follow_2d->get_transform().get_origin()));
@@ -189,7 +189,7 @@ TEST_CASE("[SceneTree][PathFollow2D] Progress ratio out of range") {
 	path->set_curve(curve);
 	PathFollow2D *path_follow_2d = memnew(PathFollow2D);
 	path->add_child(path_follow_2d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_2d->set_loop(true);
 
@@ -226,7 +226,7 @@ TEST_CASE("[SceneTree][PathFollow2D] Progress out of range") {
 	path->set_curve(curve);
 	PathFollow2D *path_follow_2d = memnew(PathFollow2D);
 	path->add_child(path_follow_2d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_2d->set_loop(true);
 

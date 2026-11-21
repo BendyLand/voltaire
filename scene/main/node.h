@@ -33,8 +33,54 @@
 
 #include "core/input/input_event.h"
 #include "core/os/thread_safe.h"
-#include "core/templates/iterable.h"
-#include "core/templates/mem_unique_ptr.h"
+// --- Folded from core/templates/iterable.h ---
+#include <utility>
+
+template <typename I>
+class Iterable {
+	I _begin;
+	I _end;
+
+public:
+	I begin() { return _begin; }
+	I end() { return _end; }
+
+	Iterable(I &&p_begin, I &&p_end) :
+			_begin(std::move(p_begin)), _end(std::move(p_end)) {}
+	Iterable(const I &p_begin, const I &p_end) :
+			_begin(p_begin), _end(p_end) {}
+};
+
+// --- End core/templates/iterable.h ---
+// --- Folded from core/templates/mem_unique_ptr.h ---
+#ifndef MEM_UNIQUE_PTR_H
+#define MEM_UNIQUE_PTR_H
+
+#include <memory>
+#include <utility>
+#include "core/os/memory.h"
+
+template <typename T> struct MemDeleter
+{
+	void operator()(T* p) const
+	{
+		if (p) {
+			memdelete(p);
+		}
+	}
+};
+
+template <typename T> using mem_unique_ptr = std::unique_ptr<T, MemDeleter<T>>;
+
+template <typename T, typename... Args> mem_unique_ptr<T> mem_make_unique(Args&&... p_args)
+{
+	return mem_unique_ptr<T>(memnew(T(std::forward<Args>(p_args)...)));
+}
+
+#endif // MEM_UNIQUE_PTR_H
+
+
+// --- End core/templates/mem_unique_ptr.h ---
 #include "scene/resources/packed_scene.h"
 #include "scene/scene_string_names.h" // IWYU pragma: export. Make available to all Nodes.
 
@@ -73,6 +119,10 @@ protected:
 	};
 
 public:
+	void notification(int p_what, bool p_reversed = false)
+	{
+		_notification(p_what);
+	}
 	// N.B. Any enum stored as a bitfield should be specified as UNSIGNED to work around
 	// some compilers trying to store it as signed, and requiring 1 more bit than necessary.
 	enum ProcessMode : unsigned int
@@ -238,6 +288,7 @@ private:
 		String scene_file_path;
 		Ref<SceneState> instance_state;
 		Ref<SceneState> inherited_state;
+		bool inside_tree = false;
 
 		Node* parent = nullptr;
 		Node* owner = nullptr;
@@ -255,7 +306,6 @@ private:
 		int blocked = 0; // Safeguard that throws an error when attempting to modify the tree in a
 						 // harmful way while being traversed.
 		String name;
-		SceneTree* tree = nullptr;
 
 		String editor_description;
 
@@ -366,7 +416,7 @@ private:
 
 	friend class SceneTree;
 
-	void _set_tree(SceneTree* p_tree);
+	void _set_tree(bool p_in_tree);
 	void _propagate_pause_notification(bool p_enable);
 	void _propagate_suspend_notification(bool p_enable);
 
@@ -457,10 +507,10 @@ protected:
 	int32_t _get_scene_tree_depth() const { return data.depth; }
 
 	// call from SceneTree
-	void _call_input(const Ref<InputEvent>& p_event);
-	void _call_shortcut_input(const Ref<InputEvent>& p_event);
-	void _call_unhandled_input(const Ref<InputEvent>& p_event);
-	void _call_unhandled_key_input(const Ref<InputEvent>& p_event);
+	void _call_input(const InputEvent& p_event);
+	void _call_shortcut_input(const InputEvent& p_event);
+	void _call_unhandled_input(const InputEvent& p_event);
+	void _call_unhandled_key_input(const InputEvent& p_event);
 
 	virtual String _to_string();
 
@@ -474,9 +524,9 @@ protected:
 protected:
 	virtual bool _uses_signal_mutex() const { return false; } // Node uses thread guards instead.
 
-	virtual void input(const Ref<InputEvent>& p_event);
-	virtual void unhandled_input(const Ref<InputEvent>& p_event);
-	virtual void unhandled_key_input(const Ref<InputEvent>& p_key_event);
+	virtual void input(const InputEvent& p_event);
+	virtual void unhandled_input(const InputEvent& p_event);
+	virtual void unhandled_key_input(const InputEvent& p_key_event);
 
 public:
 	enum
@@ -588,13 +638,7 @@ public:
 	Window* get_non_popup_window() const;
 	Window* get_last_exclusive_window() const;
 
-	_FORCE_INLINE_ SceneTree* get_tree() const
-	{
-		ERR_FAIL_NULL_V(data.tree, nullptr);
-		return data.tree;
-	}
-
-	_FORCE_INLINE_ bool is_inside_tree() const { return data.tree; }
+	_FORCE_INLINE_ bool is_inside_tree() const { return data.inside_tree; }
 
 	bool is_internal() const { return data.internal_mode != INTERNAL_MODE_DISABLED; }
 
@@ -738,7 +782,7 @@ public:
 			// No thread processing.
 			// Only accessible if node is outside the scene tree
 			// or access will happen from a node-safe thread.
-			return !data.tree || is_current_thread_safe_for_nodes();
+			return !data.inside_tree || is_current_thread_safe_for_nodes();
 		}
 		else {
 			// Thread processing.
@@ -752,7 +796,7 @@ public:
 			// No thread processing.
 			// Only accessible if node is outside the scene tree
 			// or access will happen from a node-safe thread.
-			return is_current_thread_safe_for_nodes() || unlikely(!data.tree);
+			return is_current_thread_safe_for_nodes() || unlikely(!data.inside_tree);
 		}
 		else {
 			// Thread processing.

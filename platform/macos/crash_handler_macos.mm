@@ -59,26 +59,26 @@ static void handle_crash(int sig) {
 	signal(SIGILL, SIG_DFL);
 	signal(SIGTRAP, SIG_DFL);
 
-	if (OS::get_singleton() == nullptr) {
+	if (!OS::is_initialized()) {
 		abort();
 	}
 
-	if (OS::get_singleton()->is_crash_handler_silent()) {
+	if (OS::is_crash_handler_silent()) {
 		std::_Exit(0);
 	}
 
 	void *bt_buffer[256];
 	size_t size = backtrace(bt_buffer, 256);
-	String exec_path = OS::get_singleton()->get_executable_path();
+	String exec_path = OS::get_executable_path();
 
 	String msg;
-	if (ProjectSettings::get_singleton()) {
+	if (ProjectSettings::is_initialized()) {
 		msg = GLOBAL_GET("debug/settings/crash_handler/message");
 	}
 
 	// Tell MainLoop about the crash. This can be handled by users too in Node.
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_CRASH);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_CRASH);
 	}
 
 	// Dump the backtrace to stderr with a message to the user.
