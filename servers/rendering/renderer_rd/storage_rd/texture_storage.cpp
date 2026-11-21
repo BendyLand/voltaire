@@ -2617,7 +2617,6 @@ void RendererRD::TextureStorage::_update_render_target(RenderTarget* rt)
 		tex->rd_format_srgb = rt->color_format_srgb;
 		tex->format = rt->image_format;
 		tex->validated_format = rt->use_hdr ? Image::FORMAT_RGBAH : Image::FORMAT_RGBA8;
-
 		Vector<RID> proxies = tex->proxies; // make a copy, since update may change it
 		for (int i = 0; i < proxies.size(); i++) {
 			texture_proxy_update(proxies[i], rt->texture);

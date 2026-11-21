@@ -32,10 +32,10 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
-#include "core/utils.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/templates/fixed_vector.h"
+#include "core/utils.h"
 #include "modules/modules_enabled.gen.h"
 #include "rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
@@ -1059,8 +1059,8 @@ Error RenderingDevice::_buffer_update(
 	data->copy_bytes_count += p_size;
 
 	if (p_buffer->usage & RDD::BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT) {
-		uint8_t* dst_data = data->driver->buffer_persistent_map_advance(
-			p_buffer->driver_id, data->frames_drawn);
+		uint8_t* dst_data =
+			data->driver->buffer_persistent_map_advance(p_buffer->driver_id, data->frames_drawn);
 
 		memcpy(dst_data + p_offset, p_data, p_size);
 		data->direct_copy_count++;
@@ -1946,8 +1946,7 @@ Vector<uint8_t> RenderingDevice::texture_get_data(RID p_texture, uint32_t p_laye
 	RDD::TextureAspect aspect = (tex->read_aspect_flags & RDD::TEXTURE_ASPECT_DEPTH_BIT)
 									? RDD::TEXTURE_ASPECT_DEPTH
 									: RDD::TEXTURE_ASPECT_COLOR;
-	uint32_t mip_alignment =
-		data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT);
+	uint32_t mip_alignment = data->driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT);
 	uint32_t buffer_size = 0;
 
 	thread_local LocalVector<RDD::TextureCopyableLayout> mip_layouts;
@@ -2008,9 +2007,9 @@ Vector<uint8_t> RenderingDevice::texture_get_data(RID p_texture, uint32_t p_laye
 	for (uint32_t i = 0; i < tex->mipmaps; i++) {
 		uint32_t width = 0, height = 0, depth = 0;
 
-		uint32_t tight_mip_size = RDC::get_image_format_required_size(tex->format,
-			MAX(1u, tex->width >> i), MAX(1u, tex->height >> i), MAX(1u, tex->depth >> i), 1,
-			&width, &height, &depth);
+		uint32_t tight_mip_size =
+			RDC::get_image_format_required_size(tex->format, MAX(1u, tex->width >> i),
+				MAX(1u, tex->height >> i), MAX(1u, tex->depth >> i), 1, &width, &height, &depth);
 
 		uint32_t row_count = (height / block_h) * depth;
 		uint32_t tight_row_pitch = tight_mip_size / row_count;
@@ -2045,6 +2044,17 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 	ERR_FAIL_NULL_V(src_texture, RID());
 
 	Texture texture = *src_texture;
+	texture.shared_fallback = nullptr;
+	texture.slice_trackers = nullptr;
+	texture.is_resolve_buffer = false;
+	texture.is_discardable = false;
+
+	if (src_texture->owner.is_valid()) {
+		p_with_texture = src_texture->owner;
+		src_texture = data->texture_owner.get_or_null(p_with_texture);
+		ERR_FAIL_NULL_V(src_texture, RID());
+	}
+	texture.owner = p_with_texture;
 
 	RDD::TextureView tv;
 	bool create_shared = true;
@@ -2061,6 +2071,7 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 			"Format override is not in the list of allowed shareable formats for original "
 			"texture.");
 
+		texture.format = p_view.format_override;
 		tv.format = p_view.format_override;
 		create_shared = data->driver->texture_can_make_shared_with_format(
 			texture.driver_id, p_view.format_override, raw_reinterpretation);
@@ -2093,7 +2104,20 @@ RID RenderingDevice::texture_create_shared(const TextureView& p_view, RID p_with
 			data->driver->texture_get_allocation_size(texture.shared_fallback->texture));
 	}
 
-	return data->texture_owner.make_rid(texture);
+	if (texture.draw_tracker != nullptr) {
+		texture.draw_tracker->reference_count++;
+	}
+
+	RID id = data->texture_owner.make_rid(texture);
+
+	if (!create_shared) {
+		Texture* dst_texture = data->texture_owner.get_or_null(id);
+		_texture_copy_shared(p_with_texture, src_texture, id, dst_texture);
+	}
+
+	_add_dependency(id, p_with_texture);
+
+	return id;
 }
 
 uint32_t RenderingDevice::_texture_layer_count(Texture* p_texture)
@@ -2435,7 +2459,6 @@ RDC::TextureFormat RenderingDevice::texture_get_format(RID p_texture)
 	tf.width = tex->width;
 	tf.height = tex->height;
 	tf.depth = tex->depth;
-
 
 	tf.array_layers = tex->layers;
 	tf.mipmaps = tex->mipmaps;
@@ -4108,8 +4131,7 @@ Error RenderingDevice::_raytracing_pipeline_create_sbt_buffer(
 
 	r_sbt_buffer.size = miss_sbt_offset + miss_sbt_size;
 	r_sbt_buffer.driver_id = data->driver->buffer_create(r_sbt_buffer.size,
-		RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::
-BUFFER_USAGE_SHADER_BINDING_TABLE_BIT |
+		RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_SHADER_BINDING_TABLE_BIT |
 			RDD::BUFFER_USAGE_DEVICE_ADDRESS_BIT,
 		RDD::MEMORY_ALLOCATION_TYPE_GPU, data->frames_drawn);
 	ERR_FAIL_COND_V(!r_sbt_buffer.driver_id, ERR_CANT_CREATE);
@@ -5835,7 +5857,6 @@ void RenderingDevice::_free_internal(RID p_id)
 			draw_tracker->reference_count--;
 			if (draw_tracker->reference_count == 0) {
 				RDG::resource_tracker_free(draw_tracker);
-
 				if (texture->owner.is_valid() && (texture->slice_type != RDC::TEXTURE_SLICE_MAX)) {
 					// If this was a texture slice, erase the tracker from the map.
 					Texture* owner_texture = data->texture_owner.get_or_null(texture->owner);
@@ -5924,8 +5945,7 @@ void RenderingDevice::_free_internal(RID p_id)
 	}
 	else if (data->uniform_set_owner.owns(p_id)) {
 		UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_id);
-		data->frames[data->frame].uniform_sets_to_dispose_of.push_back
-(*uniform_set);
+		data->frames[data->frame].uniform_sets_to_dispose_of.push_back(*uniform_set);
 		data->uniform_set_owner.free(p_id);
 
 		if (uniform_set->invalidated_callback != nullptr) {
@@ -6756,15 +6776,13 @@ void RenderingDevice::swap_buffers(bool p_present)
 
 	if (data->upload_staging_buffers.used) {
 		data->upload_staging_buffers.current =
-			(data->upload_staging_buffers.current + 1) %
-			data->upload_staging_buffers.blocks.size();
+			(data->upload_staging_buffers.current + 1) % data->upload_staging_buffers.blocks.size();
 		data->upload_staging_buffers.used = false;
 	}
 
 	if (data->download_staging_buffers.used) {
-		data->download_staging_buffers.current =
-			(data->download_staging_buffers.current + 1) %
-			data->download_staging_buffers.blocks.size();
+		data->download_staging_buffers.current = (data->download_staging_buffers.current + 1) %
+												 data->download_staging_buffers.blocks.size();
 		data->download_staging_buffers.used = false;
 	}
 
@@ -6816,9 +6834,8 @@ RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_
 		p_depth_stencil_state, p_blend_state, color_attachments, p_dynamic_state_flags, render_pass,
 		p_for_render_pass, p_specialization_constants);
 
-	if (unlikely(!pipeline_id &&
-				 data->driver->get_driver_workarounds()
-					 .dont_print_on_render_pipeline_creation_failure)) {
+	if (unlikely(!pipeline_id && data->driver->get_driver_workarounds()
+									 .dont_print_on_render_pipeline_creation_failure)) {
 		return RID();
 	}
 
@@ -7574,35 +7591,35 @@ Error RenderingDevice::screen_prepare_for_drawing(DisplayServerEnums::WindowID p
 
 void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_array)
 {
-    ERR_RENDER_THREAD_GUARD();
+	ERR_RENDER_THREAD_GUARD();
 
-    ERR_FAIL_COND(!data->draw_list.active);
+	ERR_FAIL_COND(!data->draw_list.active);
 
-    if (data->draw_list.state.index_array == p_index_array) {
-        return;
-    }
+	if (data->draw_list.state.index_array == p_index_array) {
+		return;
+	}
 
-    IndexArray* index_array = data->index_array_owner.get_or_null(p_index_array);
-    ERR_FAIL_NULL(index_array);
+	IndexArray* index_array = data->index_array_owner.get_or_null(p_index_array);
+	ERR_FAIL_NULL(index_array);
 
-    _check_transfer_worker_index_array(index_array);
+	_check_transfer_worker_index_array(index_array);
 
-    if (index_array->draw_tracker != nullptr) {
-        data->draw_graph.add_draw_list_usage(
-            index_array->draw_tracker, RDG::RESOURCE_USAGE_INDEX_BUFFER_READ);
-    }
+	if (index_array->draw_tracker != nullptr) {
+		data->draw_graph.add_draw_list_usage(
+			index_array->draw_tracker, RDG::RESOURCE_USAGE_INDEX_BUFFER_READ);
+	}
 
-    data->draw_graph.add_draw_list_bind_index_buffer(index_array->driver_id, index_array->format,
-        index_array->offset * (index_array->format == RDC::INDEX_BUFFER_FORMAT_UINT16 ? 2 : 4));
+	data->draw_graph.add_draw_list_bind_index_buffer(index_array->driver_id, index_array->format,
+		index_array->offset * (index_array->format == RDC::INDEX_BUFFER_FORMAT_UINT16 ? 2 : 4));
 
-    data->draw_list.validation.index_array_count = index_array->indices;
+	data->draw_list.validation.index_array_count = index_array->indices;
 #ifdef DEBUG_ENABLED
-    data->draw_list.validation.index_array_max_index = index_array->max_index;
-    data->draw_list.validation.index_buffer_uses_restart_indices =
-        index_array->supports_restart_indices;
+	data->draw_list.validation.index_array_max_index = index_array->max_index;
+	data->draw_list.validation.index_buffer_uses_restart_indices =
+		index_array->supports_restart_indices;
 #endif
 
-    data->draw_list.state.index_array = p_index_array;
+	data->draw_list.state.index_array = p_index_array;
 }
 
 void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array)
@@ -7628,7 +7645,8 @@ void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_verte
 #endif
 	data->draw_list.validation.vertex_array_size = vertex_array->vertex_count;
 
-	data->draw_graph.add_draw_list_bind_vertex_buffers(vertex_array->buffers, vertex_array->offsets);
+	data->draw_graph.add_draw_list_bind_vertex_buffers(
+		vertex_array->buffers, vertex_array->offsets);
 
 	for (int i = 0; i < vertex_array->draw_trackers.size(); i++) {
 		data->draw_graph.add_draw_list_usage(
@@ -8039,20 +8057,20 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 // Merged from servers/rendering/rendering_device_commons.cpp
 // ============================================================================
 
-#include "servers/rendering/rendering_device_commons.h"
 #include "modules/modules_enabled.gen.h" // For glslang.
 #include "servers/rendering/rendering_device_binds.h"
+#include "servers/rendering/rendering_device_commons.h"
 #ifdef MODULE_GLSLANG_ENABLED
 #include "modules/glslang/shader_compile.h"
 #endif
 
-#include "servers/rendering/shader_compiler.h"
-#include "servers/rendering/rendering_device_driver.h"
-#include "servers/rendering/rendering_context_driver.h"
 #include <thirdparty/spirv-reflect/spirv_reflect.h>
 #include "core/io/compression.h"
-#include "servers/rendering/rendering_shader_container.h"
 #include "servers/rendering/renderer_rd/shader_rd.h"
+#include "servers/rendering/rendering_context_driver.h"
+#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_shader_container.h"
+#include "servers/rendering/shader_compiler.h"
 
 // --- Merged from servers/rendering/rendering_device_commons.cpp ---
 
@@ -9231,8 +9249,7 @@ Error RDShaderFile::parse_versions_from_text(const String& p_text, const String 
 				if (!error.is_empty()) {
 					error += String() + "\n\nStage '" + stage_str[i] + "' source code: \n\n";
 					Vector<String> sclines = code.split("\n");
-					for (int j = 0; j < sclines.size(); j++)
- {
+					for (int j = 0; j < sclines.size(); j++) {
 						error += itos(j + 1) + "\t\t" + sclines[j] + "\n";
 					}
 					errors_found = true;
@@ -9256,29 +9273,30 @@ Error RDShaderFile::parse_versions_from_text(const String& p_text, const String 
 /**** MISC ****/
 /**************/
 
-uint64_t RenderingDeviceDriver::api_trait_get(ApiTrait p_trait) {
+uint64_t RenderingDeviceDriver::api_trait_get(ApiTrait p_trait)
+{
 	// Sensible canonical defaults.
 	switch (p_trait) {
-		case API_TRAIT_HONORS_PIPELINE_BARRIERS:
-			return 1;
-		case API_TRAIT_SHADER_CHANGE_INVALIDATION:
-			return SHADER_CHANGE_INVALIDATION_ALL_BOUND_UNIFORM_SETS;
-		case API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT:
-			return 1;
-		case API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP:
-			return 1;
-		case API_TRAIT_SECONDARY_VIEWPORT_SCISSOR:
-			return 1;
-		case API_TRAIT_CLEARS_WITH_COPY_ENGINE:
-			return true;
-		case API_TRAIT_USE_GENERAL_IN_COPY_QUEUES:
-			return false;
-		case API_TRAIT_BUFFERS_REQUIRE_TRANSITIONS:
-			return false;
-		case API_TRAIT_TEXTURE_OUTPUTS_REQUIRE_CLEARS:
-			return false;
-		default:
-			ERR_FAIL_V(0);
+	case API_TRAIT_HONORS_PIPELINE_BARRIERS:
+		return 1;
+	case API_TRAIT_SHADER_CHANGE_INVALIDATION:
+		return SHADER_CHANGE_INVALIDATION_ALL_BOUND_UNIFORM_SETS;
+	case API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT:
+		return 1;
+	case API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP:
+		return 1;
+	case API_TRAIT_SECONDARY_VIEWPORT_SCISSOR:
+		return 1;
+	case API_TRAIT_CLEARS_WITH_COPY_ENGINE:
+		return true;
+	case API_TRAIT_USE_GENERAL_IN_COPY_QUEUES:
+		return false;
+	case API_TRAIT_BUFFERS_REQUIRE_TRANSITIONS:
+		return false;
+	case API_TRAIT_TEXTURE_OUTPUTS_REQUIRE_CLEARS:
+		return false;
+	default:
+		ERR_FAIL_V(0);
 	}
 }
 
@@ -10852,7 +10870,8 @@ RDD::BarrierAccessBits RenderingDeviceGraph::_usage_to_access_bits(ResourceUsage
 {
 #if FORCE_FULL_ACCESS_BITS
 	return RDD::BarrierAccessBits(
-		RDD::BARRIER_ACCESS_MEMORY_READ_BIT | RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT);
+		RDD::BARRIER_ACCESS_MEMORY_READ_BIT | RDD::BARRIER_ACCESS_MEMORY_WRIT
+E_BIT);
 #else
 	switch (p_usage) {
 	case RESOURCE_USAGE_NONE:
@@ -12387,17 +12406,17 @@ void RenderingDeviceGraph::add_draw_list_begin(RDD::RenderPassID p_render_pass,
 		p_attachment_clear_values, p_stages, p_breadcrumb, p_split_cmd_buffer);
 }
 
-void RenderingDeviceGraph::add_draw_list_bind_index_buffer(RDD::BufferID p_buffer,
-    RenderingDeviceCommons::IndexBufferFormat p_format, uint32_t p_offset)
+void RenderingDeviceGraph::add_draw_list_bind_index_buffer(
+	RDD::BufferID p_buffer, RenderingDeviceCommons::IndexBufferFormat p_format, uint32_t p_offset)
 {
-    DrawListBindIndexBufferInstruction* instruction =
-        reinterpret_cast<DrawListBindIndexBufferInstruction*>(
-            _allocate_draw_list_instruction(sizeof(DrawListBindIndexBufferInstruction)));
-    instruction->header.type = DrawListInstruction::TYPE_BIND_INDEX_BUFFER;
-    instruction->buffer = p_buffer;
-    instruction->format = p_format;
-    instruction->offset = p_offset;
-    draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
+	DrawListBindIndexBufferInstruction* instruction =
+		reinterpret_cast<DrawListBindIndexBufferInstruction*>(
+			_allocate_draw_list_instruction(sizeof(DrawListBindIndexBufferInstruction)));
+	instruction->header.type = DrawListInstruction::TYPE_BIND_INDEX_BUFFER;
+	instruction->buffer = p_buffer;
+	instruction->format = p_format;
+	instruction->offset = p_offset;
+	draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
 }
 
 void RenderingDeviceGraph::add_draw_list_bind_pipeline(
@@ -13432,9 +13451,9 @@ void RenderingDeviceGraph::_add_command_to_graph(ResourceTracker** p_resource_tr
 				// Indicate the area that should be tracked is the entire resource.
 				const RDD::TextureSubresourceRange& parent_subresources =
 					resource_tracker->parent->texture_subresources;
-				search_tracker_rect = Rect2i(parent_subresources.base_mipmap,
-					parent_subresources.base_layer, parent_subresources.mipmap_count,
-					parent_subresources.layer_count);
+				search_tracker_rect =
+					Rect2i(parent_subresources.base_mipmap, parent_subresources.base_layer,
+						parent_subresources.mipmap_count, parent_subresources.layer_count);
 			}
 			else if (resource_tracker->in_parent_dirty_list) {
 				if (resource_tracker->parent->usage == new_resource_usage) {
@@ -13648,7 +13667,8 @@ void RenderingDeviceGraph::_add_command_to_graph(ResourceTracker** p_resource_tr
 					r_command->memory_barrier.dst_access | new_usage_access;
 			}
 			else {
-				DEV_ASSERT(false && "Resource tracker does not contain a valid buffer or texture ID.");
+				DEV_ASSERT(
+					false && "Resource tracker does not contain a valid buffer or texture ID.");
 			}
 		}
 
@@ -13692,8 +13712,8 @@ void RenderingDeviceGraph::_add_command_to_graph(ResourceTracker** p_resource_tr
 								!resource_has_parent, "Command can't have itself as a dependency.");
 						}
 						else if (!write_list_node.partial_coverage ||
-								 _check_command_intersection(resource_tracker,
-									 write_list_node.command_index, p_command_index)) {
+								   _check_command_intersection(resource_tracker,
+									   write_list_node.command_index, p_command_index)) {
 							_check_discardable_attachment_dependency(
 								search_tracker, write_list_node.command_index, p_command_index);
 
@@ -13755,9 +13775,9 @@ void RenderingDeviceGraph::_add_command_to_graph(ResourceTracker** p_resource_tr
 						search_tracker->write_command_or_list_index, tracker_rect, -1, false);
 				}
 
-				search_tracker->write_command_or_list_index =
-					_add_to_write_list(p_command_index, search_tracker_rect,
-						search_tracker->write_command_or_list_index, write_usage_has_partial_coverage);
+				search_tracker->write_command_or_list_index = _add_to_write_list(p_command_index,
+					search_tracker_rect, search_tracker->write_command_or_list_index,
+					write_usage_has_partial_coverage);
 				search_tracker->write_command_list_enabled = true;
 			}
 			else {
@@ -13822,12 +13842,12 @@ void RenderingDeviceGraph::_add_command_to_graph(ResourceTracker** p_resource_tr
 			}
 		}
 		else if (resource_has_parent) {
-			search_tracker->read_slice_command_list_index = _add_to_slice_read_list(
-				p_command_index, resource_tracker_rect, search_tracker->read_slice_command_list_index);
+			search_tracker->read_slice_command_list_index = _add_to_slice_read_list(p_command_index,
+				resource_tracker_rect, search_tracker->read_slice_command_list_index);
 		}
 		else {
-			search_tracker->read_full_command_list_index = _add_to_command_list(
-				p_command_index, search_tracker->read_full_command_list_index);
+			search_tracker->read_full_command_list_index =
+				_add_to_command_list(p_command_index, search_tracker->read_full_command_list_index);
 		}
 	}
 }
@@ -13914,9 +13934,8 @@ void RenderingDeviceGraph::_group_barriers_for_render_commands(
 
 	const bool is_memory_barrier_empty = (barrier_group.memory_barrier.src_access == 0) &&
 										 (barrier_group.memory_barrier.dst_access == 0);
-	const bool are_texture_barriers_empty =
-		barrier_group.normalization_barriers.is_empty() &&
-		barrier_group.transition_barriers.is_empty();
+	const bool are_texture_barriers_empty = barrier_group.normalization_barriers.is_empty() &&
+											barrier_group.transition_barriers.is_empty();
 #if USE_BUFFER_BARRIERS
 	const bool are_buffer_barriers_empty = barrier_group.buffer_barriers.is_empty();
 #else
@@ -13937,9 +13956,9 @@ void RenderingDeviceGraph::_group_barriers_for_render_commands(
 		barrier_group.normalization_barriers.is_empty() ? barrier_group.transition_barriers
 														: barrier_group.normalization_barriers;
 #if USE_BUFFER_BARRIERS
-	const VectorView<RDD::BufferBarrier> buffer_barriers =
-		!are_buffer_barriers_empty ? barrier_group.buffer_barriers
-								   : VectorView<RDD::BufferBarrier>();
+	const VectorView<RDD::BufferBarrier> buffer_barriers = !are_buffer_barriers_empty
+															   ? barrier_group.buffer_barriers
+															   : VectorView<RDD::BufferBarrier>();
 #else
 	const VectorView<RDD::BufferBarrier> buffer_barriers = VectorView<RDD::BufferBarrier>();
 #endif
