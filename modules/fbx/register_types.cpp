@@ -34,8 +34,7 @@
 #include "register_types.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/editor_scene_importer_fbx2gltf.h"
-#include "editor/editor_scene_importer_ufbx.h"
+#include "editor/editor_scene_importer_fbx.h"
 #endif // TOOLS_ENABLED
 
 #define FBX_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class)                                           \
@@ -55,8 +54,8 @@ void initialize_fbx_module(ModuleInitializationLevel p_level)
 {
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		Ref<EditorSceneFormatImporterUFBX> import_fbx;
-		import_fbx.instantiate();
+		Ref<EditorSceneFormatImporterFBX> import_fbx;
+		import_fbx.instantiate(EditorSceneFormatImporterFBX::BACKEND_UFBX);
 		ResourceImporterScene::add_scene_importer(import_fbx);
 	}
 #endif // TOOLS_ENABLED

@@ -30,19 +30,11 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "extensions/gltf_document_extension_texture_ktx.h"
-#include "extensions/gltf_document_extension_texture_webp.h"
-#include "extensions/gltf_spec_gloss.h"
 #include "gltf_document.h"
+#include "gltf_extensions.h"
 #include "gltf_state.h"
+#include "gltf_structures.h"
 #include "register_types.h"
-#include "structures/gltf_object_model_property.h"
-
-#ifndef PHYSICS_3D_DISABLED
-#include "extensions/physics/gltf_document_extension_physics.h"
-#include "extensions/physics/gltf_physics_body.h"
-#include "extensions/physics/gltf_physics_shape.h"
-#endif // PHYSICS_3D_DISABLED
 
 #define GLTF_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class)                                          \
 	Ref<m_doc_ext_class> extension_##m_doc_ext_class;                                              \

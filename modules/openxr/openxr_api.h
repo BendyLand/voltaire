@@ -32,7 +32,7 @@
 #pragma once
 
 #include <openxr/openxr.h>
-#include "action_map/openxr_action.h"
+#include "action_map/openxr_action_map.h"
 #include "core/error/error_macros.h"
 #include "core/math/projection.h"
 #include "core/math/transform_3d.h"

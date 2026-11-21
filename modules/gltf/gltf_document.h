@@ -31,9 +31,8 @@
 
 #pragma once
 
-#include "extensions/gltf_document_extension.h"
-#include "extensions/gltf_spec_gloss.h"
 #include "gltf_defines.h"
+#include "gltf_extensions.h"
 #include "gltf_state.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/multimesh_instance_3d.h"

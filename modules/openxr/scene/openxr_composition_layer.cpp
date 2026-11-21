@@ -39,6 +39,8 @@
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/xr/xr_nodes.h"
 #include "scene/main/viewport.h"
+#include "scene/resources/3d/primitive_meshes.h"
+#include "scene/resources/mesh.h"
 
 Vector<OpenXRCompositionLayer*> OpenXRCompositionLayer::composition_layer_nodes;
 
@@ -48,6 +50,88 @@ static const char* HOLE_PUNCH_SHADER_CODE =
 	"void fragment() {\n"
 	"\tALBEDO = vec3(0.0, 0.0, 0.0);\n"
 	"}\n";
+
+OpenXRCompositionLayer::OpenXRCompositionLayer(LayerType p_type) : layer_type(p_type)
+{
+	if (!OpenXRCompositionLayerExtension::is_initialized()) {
+		return;
+	}
+
+	switch (layer_type) {
+	case LAYER_QUAD: {
+		XrCompositionLayerQuad openxr_composition_layer = {
+			XR_TYPE_COMPOSITION_LAYER_QUAD,			  // type
+			nullptr,								  // next
+			0,										  // layerFlags
+			XR_NULL_HANDLE,							  // space
+			XR_EYE_VISIBILITY_BOTH,					  // eyeVisibility
+			{},										  // subImage
+			{{0, 0, 0, 0}, {0, 0, 0}},				  // pose
+			{(float)quad_size.x, (float)quad_size.y}, // size
+		};
+		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
+			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
+	} break;
+	case LAYER_CYLINDER: {
+		XrCompositionLayerCylinderKHR openxr_composition_layer = {
+			XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR, // type
+			nullptr,								// next
+			0,										// layerFlags
+			XR_NULL_HANDLE,							// space
+			XR_EYE_VISIBILITY_BOTH,					// eyeVisibility
+			{},										// subImage
+			{{0, 0, 0, 0}, {0, 0, 0}},				// pose
+			radius,									// radius
+			central_angle,							// centralAngle
+			aspect_ratio,							// aspectRatio
+		};
+		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
+			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
+	} break;
+	case LAYER_EQUIRECT: {
+		XrCompositionLayerEquirect2KHR openxr_composition_layer = {
+			XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR, // type
+			nullptr,								 // next
+			0,										 // layerFlags
+			XR_NULL_HANDLE,							 // space
+			XR_EYE_VISIBILITY_BOTH,					 // eyeVisibility
+			{},										 // subImage
+			{{0, 0, 0, 0}, {0, 0, 0}},				 // pose
+			radius,									 // radius
+			central_horizontal_angle,				 // centralHorizontalAngle
+			upper_vertical_angle,					 // upperVerticalAngle
+			-lower_vertical_angle,					 // lowerVerticalAngle
+		};
+		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
+			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
+	} break;
+	}
+}
+
+XrStructureType OpenXRCompositionLayer::_get_openxr_type() const
+{
+	switch (layer_type) {
+	case LAYER_QUAD:
+		return XR_TYPE_COMPOSITION_LAYER_QUAD;
+	case LAYER_CYLINDER:
+		return XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR;
+	case LAYER_EQUIRECT:
+		return XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR;
+	}
+	return XR_TYPE_COMPOSITION_LAYER_QUAD;
+}
+
+Ref<Mesh> OpenXRCompositionLayer::_create_fallback_mesh()
+{
+	if (layer_type == LAYER_QUAD) {
+		Ref<PrimitiveMesh> mesh;
+		mesh.instantiate(PrimitiveMesh::MESH_QUAD);
+		mesh->set_plane_size(quad_size);
+		return mesh;
+	}
+	Ref<Mesh> m = memnew(Mesh);
+	return m;
+}
 
 bool OpenXRCompositionLayer::_should_use_fallback_node()
 {
@@ -440,6 +524,119 @@ OpenXRCompositionLayer::EyeVisibility OpenXRCompositionLayer::get_eye_visibility
 	return eye_visibility;
 }
 
+void OpenXRCompositionLayer::set_quad_size(const Size2& p_size)
+{
+	quad_size = p_size;
+	if (layer_type == LAYER_QUAD && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_quad_size(composition_layer, p_size);
+	}
+	update_fallback_mesh();
+}
+
+Size2 OpenXRCompositionLayer::get_quad_size() const { return quad_size; }
+
+void OpenXRCompositionLayer::set_radius(float p_radius)
+{
+	ERR_FAIL_COND(p_radius <= 0);
+	radius = p_radius;
+	if (OpenXRCompositionLayerExtension::is_initialized()) {
+		if (layer_type == LAYER_CYLINDER) {
+			OpenXRCompositionLayerExtension::composition_layer_set_cylinder_radius(
+				composition_layer, p_radius);
+		}
+		else if (layer_type == LAYER_EQUIRECT) {
+			OpenXRCompositionLayerExtension::composition_layer_set_equirect_radius(
+				composition_layer, p_radius);
+		}
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_radius() const { return radius; }
+
+void OpenXRCompositionLayer::set_fallback_segments(uint32_t p_fallback_segments)
+{
+	ERR_FAIL_COND(p_fallback_segments == 0);
+	fallback_segments = p_fallback_segments;
+	update_fallback_mesh();
+}
+
+uint32_t OpenXRCompositionLayer::get_fallback_segments() const { return fallback_segments; }
+
+void OpenXRCompositionLayer::set_aspect_ratio(float p_aspect_ratio)
+{
+	ERR_FAIL_COND(p_aspect_ratio <= 0);
+	aspect_ratio = p_aspect_ratio;
+	if (layer_type == LAYER_CYLINDER && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_cylinder_aspect_ratio(
+			composition_layer, p_aspect_ratio);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_aspect_ratio() const { return aspect_ratio; }
+
+void OpenXRCompositionLayer::set_central_angle(float p_central_angle)
+{
+	ERR_FAIL_COND(p_central_angle <= 0);
+	central_angle = p_central_angle;
+	if (layer_type == LAYER_CYLINDER && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_cylinder_central_angle(
+			composition_layer, p_central_angle);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_central_angle() const { return central_angle; }
+
+void OpenXRCompositionLayer::set_central_horizontal_angle(float p_angle)
+{
+	ERR_FAIL_COND(p_angle <= 0);
+	central_horizontal_angle = p_angle;
+	if (layer_type == LAYER_EQUIRECT && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_central_horizontal_angle(
+			composition_layer, p_angle);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_central_horizontal_angle() const
+{
+	return central_horizontal_angle;
+}
+
+void OpenXRCompositionLayer::set_upper_vertical_angle(float p_angle)
+{
+	ERR_FAIL_COND(p_angle <= 0 || p_angle > (Math::PI / 2.0));
+	upper_vertical_angle = p_angle;
+	if (layer_type == LAYER_EQUIRECT && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_upper_vertical_angle(
+			composition_layer, p_angle);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_upper_vertical_angle() const
+{
+	return upper_vertical_angle;
+}
+
+void OpenXRCompositionLayer::set_lower_vertical_angle(float p_angle)
+{
+	ERR_FAIL_COND(p_angle <= 0 || p_angle > (Math::PI / 2.0));
+	lower_vertical_angle = p_angle;
+	if (layer_type == LAYER_EQUIRECT && OpenXRCompositionLayerExtension::is_initialized()) {
+		OpenXRCompositionLayerExtension::composition_layer_set_equirect_lower_vertical_angle(
+			composition_layer, -p_angle);
+	}
+	update_fallback_mesh();
+}
+
+float OpenXRCompositionLayer::get_lower_vertical_angle() const
+{
+	return lower_vertical_angle;
+}
+
 Ref<JavaObject> OpenXRCompositionLayer::get_android_surface()
 {
 	if (OpenXRCompositionLayerExtension::is_initialized()) {
@@ -452,6 +649,133 @@ Ref<JavaObject> OpenXRCompositionLayer::get_android_surface()
 Vector2 OpenXRCompositionLayer::intersects_ray(
 	const Vector3& p_origin, const Vector3& p_direction) const
 {
+	switch (layer_type) {
+	case LAYER_QUAD: {
+		Transform3D quad_transform = get_global_transform();
+		Vector3 quad_normal = quad_transform.basis.get_column(2);
+
+		float denom = quad_normal.dot(p_direction);
+		if (Math::abs(denom) > 0.0001) {
+			Vector3 vector = quad_transform.origin - p_origin;
+			float t = vector.dot(quad_normal) / denom;
+			if (t < 0.0) {
+				return Vector2(-1.0, -1.0);
+			}
+			Vector3 intersection = p_origin + p_direction * t;
+
+			Vector3 relative_point = intersection - quad_transform.origin;
+			Vector2 projected_point = Vector2(relative_point.dot(quad_transform.basis.get_column(0)),
+				relative_point.dot(quad_transform.basis.get_column(1)));
+			if (Math::abs(projected_point.x) > quad_size.x / 2.0) {
+				return Vector2(-1.0, -1.0);
+			}
+			if (Math::abs(projected_point.y) > quad_size.y / 2.0) {
+				return Vector2(-1.0, -1.0);
+			}
+
+			float u = 0.5 + (projected_point.x / quad_size.x);
+			float v = 1.0 - (0.5 + (projected_point.y / quad_size.y));
+
+			return Vector2(u, v);
+		}
+		return Vector2(-1.0, -1.0);
+	}
+	case LAYER_CYLINDER: {
+		Transform3D cylinder_transform = get_global_transform();
+		Vector3 cylinder_axis = cylinder_transform.basis.get_column(1);
+
+		Vector3 offset = p_origin - cylinder_transform.origin;
+		float a = p_direction.dot(p_direction - cylinder_axis * p_direction.dot(cylinder_axis));
+		float b = 2.0 * (p_direction.dot(offset - cylinder_axis * offset.dot(cylinder_axis)));
+		float c = offset.dot(offset - cylinder_axis * offset.dot(cylinder_axis)) - (radius * radius);
+
+		float discriminant = b * b - 4.0 * a * c;
+		if (discriminant < 0.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float t0 = (-b - Math::sqrt(discriminant)) / (2.0 * a);
+		float t1 = (-b + Math::sqrt(discriminant)) / (2.0 * a);
+		float t = MAX(t0, t1);
+
+		if (t < 0.0) {
+			return Vector2(-1.0, -1.0);
+		}
+		Vector3 intersection = p_origin + p_direction * t;
+
+		Basis correction = cylinder_transform.basis.inverse();
+		correction.rotate(Vector3(0.0, 1.0, 0.0), -Math::PI / 2.0);
+		Vector3 relative_point = correction.xform(intersection - cylinder_transform.origin);
+
+		Vector2 projected_point = Vector2(relative_point.x, relative_point.z);
+		float intersection_angle = Math::atan2(projected_point.y, projected_point.x);
+		if (Math::abs(intersection_angle) > central_angle / 2.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float arc_length = radius * central_angle;
+		float height = aspect_ratio * arc_length;
+		if (Math::abs(relative_point.y) > height / 2.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float u = 0.5 + (intersection_angle / central_angle);
+		float v = 1.0 - (0.5 + (relative_point.y / height));
+
+		return Vector2(u, v);
+	}
+	case LAYER_EQUIRECT: {
+		Transform3D equirect_transform = get_global_transform();
+
+		Vector3 offset = p_origin - equirect_transform.origin;
+		float a = p_direction.dot(p_direction);
+		float b = 2.0 * offset.dot(p_direction);
+		float c = offset.dot(offset) - (radius * radius);
+
+		float discriminant = b * b - 4.0 * a * c;
+		if (discriminant < 0.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float t0 = (-b - Math::sqrt(discriminant)) / (2.0 * a);
+		float t1 = (-b + Math::sqrt(discriminant)) / (2.0 * a);
+		float t = MAX(t0, t1);
+
+		if (t < 0.0) {
+			return Vector2(-1.0, -1.0);
+		}
+		Vector3 intersection = p_origin + p_direction * t;
+
+		Basis correction = equirect_transform.basis.inverse();
+		correction.rotate(Vector3(0.0, 1.0, 0.0), -Math::PI / 2.0);
+		Vector3 relative_point = correction.xform(intersection - equirect_transform.origin);
+
+		float horizontal_intersection_angle = Math::atan2(relative_point.z, relative_point.x);
+		if (Math::abs(horizontal_intersection_angle) > central_horizontal_angle / 2.0) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		float vertical_intersection_angle = Math::acos(relative_point.y / radius) - (Math::PI / 2.0);
+		if (vertical_intersection_angle < 0) {
+			if (Math::abs(vertical_intersection_angle) > upper_vertical_angle) {
+				return Vector2(-1.0, -1.0);
+			}
+		}
+		else if (vertical_intersection_angle > lower_vertical_angle) {
+			return Vector2(-1.0, -1.0);
+		}
+
+		// Re-center the intersection angle if the vertical angle is uneven between upper and lower.
+		if (upper_vertical_angle != lower_vertical_angle) {
+			vertical_intersection_angle -= (-upper_vertical_angle + lower_vertical_angle) / 2.0;
+		}
+
+		float u = 0.5 + (horizontal_intersection_angle / central_horizontal_angle);
+		float v = 0.5 + (vertical_intersection_angle / (upper_vertical_angle + lower_vertical_angle));
+
+		return Vector2(u, v);
+	}
+	}
 	return Vector2(-1.0, -1.0);
 }
 
@@ -525,5 +849,3 @@ Camera3D* OpenXRCompositionLayer::_get_xrcamera3d_ancestor() const
 }
 
 void OpenXRCompositionLayer::set_layer_viewport(SubViewport* p_viewport) {}
-
-

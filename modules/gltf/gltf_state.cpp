@@ -29,7 +29,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "gltf_state.compat.inc"
 #include "gltf_state.h"
 
 void GLTFState::add_used_extension(const String& p_extension_name, bool p_required)

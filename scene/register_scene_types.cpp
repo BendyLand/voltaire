@@ -33,7 +33,6 @@
 
 #include "scene/resources/compressed_texture_resource_format.h"
 #include "scene/resources/resource_format_text.h"
-#include "scene/resources/shader_include_resource_format.h"
 #include "scene/resources/shader_resource_format.h"
 #include "scene/scene_string_names.h"
 
@@ -44,9 +43,6 @@ static Ref<ResourceFormatLoaderCompressedTexture> resource_loader_compressed_tex
 
 static Ref<ResourceFormatSaverShader> resource_saver_shader;
 static Ref<ResourceFormatLoaderShader> resource_loader_shader;
-
-static Ref<ResourceFormatSaverShaderInclude> resource_saver_shader_include;
-static Ref<ResourceFormatLoaderShaderInclude> resource_loader_shader_include;
 
 void unregister_scene_types() { SceneStrings::finalize(); }
 

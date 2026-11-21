@@ -29,12 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "action_map/openxr_action.h"
 #include "action_map/openxr_action_map.h"
-#include "action_map/openxr_action_set.h"
-#include "action_map/openxr_haptic_feedback.h"
-#include "action_map/openxr_interaction_profile.h"
-#include "action_map/openxr_interaction_profile_metadata.h"
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
@@ -47,41 +42,17 @@
 #include "scene/openxr_hand.h"
 #endif // DISABLE_DEPRECATED
 
-#include "extensions/openxr_android_thread_settings_extension.h"
-#include "extensions/openxr_composition_layer_depth_extension.h"
 #include "extensions/openxr_composition_layer_extension.h"
-#include "extensions/openxr_debug_utils_extension.h"
-#include "extensions/openxr_dpad_binding_extension.h"
-#include "extensions/openxr_eye_gaze_interaction.h"
-#include "extensions/openxr_fb_display_refresh_rate_extension.h"
+#include "extensions/openxr_extensions.h"
 #include "extensions/openxr_frame_synthesis_extension.h"
 #include "extensions/openxr_future_extension.h"
-#include "extensions/openxr_hand_interaction_extension.h"
 #include "extensions/openxr_hand_tracking_extension.h"
-#include "extensions/openxr_htc_controller_extension.h"
-#include "extensions/openxr_htc_vive_tracker_extension.h"
-#include "extensions/openxr_huawei_controller_extension.h"
-#include "extensions/openxr_khr_generic_controller_extension.h"
-#include "extensions/openxr_local_floor_extension.h"
-#include "extensions/openxr_meta_controller_extension.h"
-#include "extensions/openxr_ml2_controller_extension.h"
-#include "extensions/openxr_mxink_extension.h"
-#include "extensions/openxr_palm_pose_extension.h"
-#include "extensions/openxr_performance_settings_extension.h"
-#include "extensions/openxr_pico_controller_extension.h"
-#include "extensions/openxr_user_presence_extension.h"
-#include "extensions/openxr_valve_analog_threshold_extension.h"
-#include "extensions/openxr_valve_controller_extension.h"
-#include "extensions/openxr_visibility_mask_extension.h"
-#include "extensions/openxr_wmr_controller_extension.h"
+#include "extensions/openxr_interaction_profile_extension.h"
 #include "extensions/spatial_entities/openxr_spatial_anchor.h"
 #include "extensions/spatial_entities/openxr_spatial_entity_extension.h"
 #include "extensions/spatial_entities/openxr_spatial_marker_tracking.h"
 #include "extensions/spatial_entities/openxr_spatial_plane_tracking.h"
 #include "scene/openxr_composition_layer.h"
-#include "scene/openxr_composition_layer_cylinder.h"
-#include "scene/openxr_composition_layer_equirect.h"
-#include "scene/openxr_composition_layer_quad.h"
 #include "scene/openxr_visibility_mask.h"
 
 #ifdef MODULE_GLTF_ENABLED
@@ -126,6 +97,10 @@ void uninitialize_openxr_module(ModuleInitializationLevel p_level)
 
 	if (OpenXRInteractionProfileMetadata::is_initialized()) {
 		OpenXRInteractionProfileMetadata::finalize();
+	}
+
+	if (OpenXRInteractionProfileExtension::is_initialized()) {
+		OpenXRInteractionProfileExtension::finalize();
 	}
 
 	// cleanup our extension wrappers

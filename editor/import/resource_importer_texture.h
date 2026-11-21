@@ -38,9 +38,69 @@
 
 class CompressedTexture2D;
 
-class ResourceImporterTexture : public ResourceImporter
+class LayeredTextureImport final : public RefCounted
 {
 public:
+	Image::CompressSource* csource = nullptr;
+	String save_path;
+	List<String>* platform_variants = nullptr;
+	Ref<Image> image = nullptr;
+	Vector<Ref<Image>>* slices = nullptr;
+	int compress_mode = 0;
+	float lossy = 1.0;
+
+	Image::BasisUniversalPackerParams basisu_params;
+
+	int hdr_compression = 0;
+	bool mipmaps = true;
+	bool high_quality = false;
+	Image::CompressProfile compression_profile = Image::COMPRESS_PROFILE_AUTOMATIC;
+	Image::UsedChannels used_channels = Image::USED_CHANNELS_RGBA;
+};
+
+class ResourceImporterTexture final : public ResourceImporter
+{
+public:
+	enum ImportTarget
+	{
+		TARGET_TEXTURE_2D,
+		TARGET_LAYERED_2D_ARRAY,
+		TARGET_CUBEMAP,
+		TARGET_CUBEMAP_ARRAY,
+		TARGET_TEXTURE_3D,
+		TARGET_TEXTURE_ATLAS,
+		TARGET_IMAGE,
+		TARGET_BITMAP,
+		TARGET_SVG,
+	};
+
+	enum Mode
+	{
+		MODE_2D_ARRAY,
+		MODE_CUBEMAP,
+		MODE_CUBEMAP_ARRAY,
+		MODE_3D,
+	};
+
+	enum CubemapFormat
+	{
+		CUBEMAP_FORMAT_1X6,
+		CUBEMAP_FORMAT_2X3,
+		CUBEMAP_FORMAT_3X2,
+		CUBEMAP_FORMAT_6X1,
+	};
+
+	enum TextureFlags
+	{
+		TEXTURE_FLAGS_MIPMAPS = 1
+	};
+
+	enum ImportMode
+	{
+		IMPORT_MODE_REGION,
+		IMPORT_MODE_2D_MESH
+	};
+
 	enum CompressMode
 	{
 		COMPRESS_LOSSLESS,
@@ -65,13 +125,34 @@ public:
 		REMAP_1,
 	};
 
-protected:
+	enum Preset
+	{
+		PRESET_DETECT,
+		PRESET_2D,
+		PRESET_3D,
+	};
+
+	static inline ResourceImporterTexture* singleton = nullptr;
+
+private:
+	struct PackData
+	{
+		Rect2 region;
+		bool is_cropped = false;
+		bool is_mesh = false;
+		Vector<int> chart_pieces;				// one for region, many for mesh
+		Vector<Vector<Vector2>> chart_vertices; // for mesh
+		Ref<Image> image;
+	};
+
 	enum
 	{
 		MAKE_3D_FLAG = 1,
 		MAKE_ROUGHNESS_FLAG = 2,
 		MAKE_NORMAL_FLAG = 4
 	};
+
+	ImportTarget target = TARGET_TEXTURE_2D;
 
 	static inline Mutex mutex;
 
@@ -95,6 +176,8 @@ protected:
 	static inline void _clamp_hdr_exposure(Ref<Image>& r_image);
 	static inline void _invert_y_channel(Ref<Image>& r_image);
 
+	Mode _get_layered_mode() const;
+
 public:
 	static void save_to_ctex_format(Ref<FileAccess> f, const Ref<Image>& p_image,
 		CompressMode p_compress_mode, Image::UsedChannels p_channels,
@@ -102,24 +185,27 @@ public:
 		float p_lossy_quality, const Image::BasisUniversalPackerParams& p_basisu_params,
 		Image::BPTCFormat p_bptc_format);
 
+	void _check_compress_ctex(
+		const String& p_source_file, Ref<LayeredTextureImport> r_texture_import);
+
+	void _save_tex(Vector<Ref<Image>> p_images, const String& p_to_path, int p_compress_mode,
+		float p_lossy, const Image::BasisUniversalPackerParams& p_basisu_params,
+		Image::CompressMode p_vram_compression, Image::CompressProfile p_vram_compression_profile,
+		Image::CompressSource p_csource, Image::UsedChannels used_channels, bool p_mipmaps,
+		bool p_force_po2, Image::BPTCFormat p_bptc_format);
+
 	virtual String get_importer_name() const override;
 	virtual String get_visible_name() const override;
 	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
 	virtual String get_save_extension() const override;
 	virtual String get_resource_type() const override;
 
-	enum Preset
-	{
-		PRESET_DETECT,
-		PRESET_2D,
-		PRESET_3D,
-	};
-
 	virtual int get_preset_count() const override;
 	virtual String get_preset_name(int p_idx) const override;
 
 	virtual void get_import_options(
 		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
+	virtual String get_option_group_file() const override;
 
 	virtual bool can_import_threaded() const override { return true; }
 
@@ -127,8 +213,11 @@ public:
 
 	virtual String get_import_settings_string() const override;
 
+	ImportTarget get_target() const { return target; }
+	void set_target(ImportTarget p_target) { target = p_target; }
+	void set_mode(Mode p_mode);
+
 	ResourceImporterTexture(bool p_singleton = false);
+	ResourceImporterTexture(ImportTarget p_target, bool p_singleton = false);
 	~ResourceImporterTexture();
 };
-
-

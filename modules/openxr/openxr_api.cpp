@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "action_map/openxr_interaction_profile_metadata.h"
+#include "action_map/openxr_action_map.h"
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/os/memory.h"
@@ -64,13 +64,11 @@
 #include "extensions/platform/openxr_d3d12_extension.h"
 #endif
 
-#include "extensions/openxr_composition_layer_depth_extension.h"
-#include "extensions/openxr_debug_utils_extension.h"
-#include "extensions/openxr_eye_gaze_interaction.h"
-#include "extensions/openxr_fb_display_refresh_rate_extension.h"
+#include "extensions/openxr_extensions.h"
 #include "extensions/openxr_fb_foveation_extension.h"
 #include "extensions/openxr_fb_update_swapchain_extension.h"
 #include "extensions/openxr_hand_tracking_extension.h"
+#include "extensions/openxr_interaction_profile_extension.h"
 
 #ifdef ANDROID_ENABLED
 #define OPENXR_LOADER_NAME "libopenxr_loader.so"
@@ -857,7 +855,8 @@ void OpenXRAPI::_allocate_view_buffers_rt(uint32_t p_view_count, bool p_submit_d
 	}
 
 	if (p_submit_depth_buffer &&
-		OpenXRCompositionLayerDepthExtension::is_available()) {
+		OpenXRInteractionProfileExtension::is_profile_available(
+			OpenXRInteractionProfileExtension::PROFILE_COMPOSITION_LAYER_DEPTH)) {
 		data->render_state.depth_views.resize(p_view_count);
 
 		for (uint32_t i = 0; i < p_view_count; i++) {

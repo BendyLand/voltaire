@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "../extensions/openxr_visibility_mask_extension.h"
+#include "../extensions/openxr_extensions.h"
 #include "../openxr_interface.h"
 #include "openxr_visibility_mask.h"
 #include "scene/3d/xr/xr_nodes.h"

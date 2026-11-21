@@ -31,7 +31,7 @@
 
 #include "../openxr_platform_inc.h"
 #include "core/config/project_settings.h"
-#include "openxr_eye_gaze_interaction.h"
+#include "openxr_extensions.h"
 #include "openxr_fb_foveation_extension.h"
 #include "servers/rendering/renderer.h"
 

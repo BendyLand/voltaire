@@ -42,9 +42,16 @@ class OpenXRCompositionLayerExtension;
 class SubViewport;
 class Camera3D;
 
-class OpenXRCompositionLayer : public Node3D
+class OpenXRCompositionLayer final : public Node3D
 {
 public:
+	enum LayerType
+	{
+		LAYER_QUAD,
+		LAYER_CYLINDER,
+		LAYER_EQUIRECT,
+	};
+
 	// Must be identical to Filter enum definition in OpenXRCompositionLayerExtension.
 	enum Filter
 	{
@@ -90,10 +97,26 @@ public:
 		EYE_VISIBILITY_RIGHT,
 	};
 
-protected:
-	RID composition_layer;
-
 private:
+	RID composition_layer;
+	LayerType layer_type = LAYER_QUAD;
+
+	// Quad parameters.
+	Size2 quad_size = Size2(1.0, 1.0);
+
+	// Cylinder / Equirect shared parameters.
+	float radius = 1.0;
+	uint32_t fallback_segments = 10;
+
+	// Cylinder parameters.
+	float aspect_ratio = 1.0;
+	float central_angle = Math::PI / 2.0;
+
+	// Equirect parameters.
+	float central_horizontal_angle = Math::PI / 2.0;
+	float upper_vertical_angle = Math::PI / 4.0;
+	float lower_vertical_angle = Math::PI / 4.0;
+
 	SubViewport* layer_viewport = nullptr;
 	bool use_android_surface = false;
 	Size2i android_surface_size = Size2i(1024, 1024);
@@ -131,17 +154,15 @@ private:
 
 	Camera3D* _get_xrcamera3d_ancestor() const;
 
-protected:
-
 	void _notification(int p_what);
 
-	virtual void _on_openxr_session_begun();
-	virtual void _on_openxr_session_stopping();
+	void _on_openxr_session_begun();
+	void _on_openxr_session_stopping();
 
 	bool _should_register();
 
-	virtual Ref<Mesh> _create_fallback_mesh() = 0;
-	virtual XrStructureType _get_openxr_type() const = 0;
+	Ref<Mesh> _create_fallback_mesh();
+	XrStructureType _get_openxr_type() const;
 
 	void update_transform();
 	void update_fallback_mesh();
@@ -149,9 +170,9 @@ protected:
 	static Vector<OpenXRCompositionLayer*> composition_layer_nodes;
 	bool is_viewport_in_use(SubViewport* p_viewport);
 
-	OpenXRCompositionLayer() = default;
-
 public:
+	LayerType get_layer_type() const { return layer_type; }
+
 	void set_layer_viewport(SubViewport* p_viewport);
 	SubViewport* get_layer_viewport() const;
 
@@ -210,11 +231,38 @@ public:
 	void set_eye_visibility(EyeVisibility p_eye_visibility);
 	EyeVisibility get_eye_visibility() const;
 
+	// Quad properties.
+	void set_quad_size(const Size2& p_size);
+	Size2 get_quad_size() const;
+
+	// Cylinder & Equirect shared properties.
+	void set_radius(float p_radius);
+	float get_radius() const;
+
+	void set_fallback_segments(uint32_t p_fallback_segments);
+	uint32_t get_fallback_segments() const;
+
+	// Cylinder properties.
+	void set_aspect_ratio(float p_aspect_ratio);
+	float get_aspect_ratio() const;
+
+	void set_central_angle(float p_angle);
+	float get_central_angle() const;
+
+	// Equirect properties.
+	void set_central_horizontal_angle(float p_angle);
+	float get_central_horizontal_angle() const;
+
+	void set_upper_vertical_angle(float p_angle);
+	float get_upper_vertical_angle() const;
+
+	void set_lower_vertical_angle(float p_angle);
+	float get_lower_vertical_angle() const;
+
 	virtual PackedStringArray get_configuration_warnings() const override;
 
-	virtual Vector2 intersects_ray(const Vector3& p_origin, const Vector3& p_direction) const;
+	Vector2 intersects_ray(const Vector3& p_origin, const Vector3& p_direction) const;
 
+	OpenXRCompositionLayer(LayerType p_type = LAYER_QUAD);
 	~OpenXRCompositionLayer() = default;
 };
-
-

@@ -31,20 +31,10 @@
 
 #pragma once
 
-#include "extensions/gltf_light.h"
+#include "gltf_extensions.h"
+#include "gltf_structures.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
 #include "scene/animation/animation_player.h"
-#include "structures/gltf_accessor.h"
-#include "structures/gltf_animation.h"
-#include "structures/gltf_buffer_view.h"
-#include "structures/gltf_camera.h"
-#include "structures/gltf_mesh.h"
-#include "structures/gltf_node.h"
-#include "structures/gltf_object_model_property.h"
-#include "structures/gltf_skeleton.h"
-#include "structures/gltf_skin.h"
-#include "structures/gltf_texture.h"
-#include "structures/gltf_texture_sampler.h"
 
 class GLTFState : public Resource
 {
@@ -117,30 +107,6 @@ protected:
 	HashMap<GLTFNodeIndex, Node*> scene_nodes;
 	HashMap<GLTFNodeIndex, ImporterMeshInstance3D*> scene_mesh_instances;
 	HashMap<String, Ref<GLTFObjectModelProperty>> object_model_properties;
-
-protected:
-
-#ifndef DISABLE_DEPRECATED
-	// Non-const getters for compatibility.
-	int32_t _get_handle_binary_image_bind_compat_113172();
-	int _get_major_version_bind_compat_113172();
-	int _get_minor_version_bind_compat_113172();
-	Vector<uint8_t> _get_glb_data_bind_compat_113172();
-	bool _get_use_named_skin_binds_bind_compat_113172();
-	bool _get_discard_meshes_and_materials_bind_compat_113172();
-	String _get_scene_name_bind_compat_113172();
-	String _get_base_path_bind_compat_113172();
-	String _get_extract_path_bind_compat_113172();
-	String _get_extract_prefix_bind_compat_113172();
-	PackedInt32Array _get_root_nodes_bind_compat_113172();
-	bool _get_create_animations_bind_compat_113172();
-	bool _get_import_as_skeleton_bones_bind_compat_113172();
-	Node* _get_scene_node_bind_compat_113172(GLTFNodeIndex p_gltf_node_index);
-	GLTFNodeIndex _get_node_index_bind_compat_113172(Node* p_node);
-	int _get_animation_players_count_bind_compat_113172(int p_anim_player_index);
-	AnimationPlayer* _get_animation_player_bind_compat_113172(int p_anim_player_index);
-	static void _bind_compatibility_methods();
-#endif // DISABLE_DEPRECATED
 
 public:
 	double get_bake_fps() const { return bake_fps; }

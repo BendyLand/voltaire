@@ -32,9 +32,7 @@
 #pragma once
 
 #include "gltf_defines.h"
-#include "structures/gltf_node.h"
-#include "structures/gltf_skeleton.h"
-#include "structures/gltf_skin.h"
+#include "gltf_structures.h"
 
 #include "core/templates/rb_set.h"
 

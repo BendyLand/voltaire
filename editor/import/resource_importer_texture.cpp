@@ -29,14 +29,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "resource_importer_texture.h"
+
 #include "core/config/project_settings.h"
+#include "core/error/error_macros.h"
 #include "core/io/config_file.h"
 #include "core/io/image_loader.h"
+#include "core/io/resource_saver.h"
+#include "core/math/geometry_2d.h"
 #include "editor/file_system/editor_file_system.h"
+#include "editor/import/atlas_import_failed.xpm"
+#include "editor/import/editor_atlas_packer.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
-#include "resource_importer_texture.h"
+#include "scene/resources/atlas_texture.h"
+#include "scene/resources/bit_map.h"
 #include "scene/resources/compressed_texture.h"
+#include "scene/resources/image_texture.h"
+#include "scene/resources/mesh.h"
 
 void ResourceImporterTexture::_texture_reimport_roughness(const Ref<CompressedTexture2D>& p_tex,
 	const String& p_normal_path, RSE::TextureDetectRoughnessChannel p_channel)
@@ -83,30 +93,178 @@ void ResourceImporterTexture::_texture_reimport_normal(const Ref<CompressedTextu
 	make_flags[path].flags |= MAKE_NORMAL_FLAG;
 }
 
-String ResourceImporterTexture::get_importer_name() const { return "texture"; }
+void ResourceImporterTexture::set_mode(Mode p_mode)
+{
+	switch (p_mode) {
+	case MODE_2D_ARRAY:
+		target = TARGET_LAYERED_2D_ARRAY;
+		break;
+	case MODE_CUBEMAP:
+		target = TARGET_CUBEMAP;
+		break;
+	case MODE_CUBEMAP_ARRAY:
+		target = TARGET_CUBEMAP_ARRAY;
+		break;
+	case MODE_3D:
+		target = TARGET_TEXTURE_3D;
+		break;
+	}
+}
 
-String ResourceImporterTexture::get_visible_name() const { return "Texture2D"; }
+ResourceImporterTexture::Mode ResourceImporterTexture::_get_layered_mode() const
+{
+	switch (target) {
+	case TARGET_LAYERED_2D_ARRAY:
+		return MODE_2D_ARRAY;
+	case TARGET_CUBEMAP:
+		return MODE_CUBEMAP;
+	case TARGET_CUBEMAP_ARRAY:
+		return MODE_CUBEMAP_ARRAY;
+	case TARGET_TEXTURE_3D:
+		return MODE_3D;
+	default:
+		return MODE_CUBEMAP;
+	}
+}
+
+String ResourceImporterTexture::get_importer_name() const
+{
+	switch (target) {
+	case TARGET_TEXTURE_2D:
+		return "texture";
+	case TARGET_LAYERED_2D_ARRAY:
+		return "2d_array_texture";
+	case TARGET_CUBEMAP:
+		return "cubemap_texture";
+	case TARGET_CUBEMAP_ARRAY:
+		return "cubemap_array_texture";
+	case TARGET_TEXTURE_3D:
+		return "3d_texture";
+	case TARGET_TEXTURE_ATLAS:
+		return "texture_atlas";
+	case TARGET_IMAGE:
+		return "image";
+	case TARGET_BITMAP:
+		return "bitmap";
+	case TARGET_SVG:
+		return "svg";
+	}
+	ERR_FAIL_V(String());
+}
+
+String ResourceImporterTexture::get_visible_name() const
+{
+	switch (target) {
+	case TARGET_TEXTURE_2D:
+		return "Texture2D";
+	case TARGET_LAYERED_2D_ARRAY:
+		return "Texture2DArray";
+	case TARGET_CUBEMAP:
+		return "Cubemap";
+	case TARGET_CUBEMAP_ARRAY:
+		return "CubemapArray";
+	case TARGET_TEXTURE_3D:
+		return "Texture3D";
+	case TARGET_TEXTURE_ATLAS:
+		return "TextureAtlas";
+	case TARGET_IMAGE:
+		return "Image";
+	case TARGET_BITMAP:
+		return "BitMap";
+	case TARGET_SVG:
+		return "ImageTexture";
+	}
+	ERR_FAIL_V(String());
+}
 
 void ResourceImporterTexture::get_recognized_extensions(List<String>* p_extensions) const
 {
+	if (!p_extensions) {
+		return;
+	}
+	if (target == TARGET_SVG) {
+		p_extensions->push_back("svg");
+		return;
+	}
 	ImageLoader::get_recognized_extensions(p_extensions);
 }
 
-String ResourceImporterTexture::get_save_extension() const { return "ctex"; }
+String ResourceImporterTexture::get_save_extension() const
+{
+	switch (target) {
+	case TARGET_TEXTURE_2D:
+		return "ctex";
+	case TARGET_LAYERED_2D_ARRAY:
+		return "ctexarray";
+	case TARGET_CUBEMAP:
+		return "ccube";
+	case TARGET_CUBEMAP_ARRAY:
+		return "ccubearray";
+	case TARGET_TEXTURE_3D:
+		return "ctex3d";
+	case TARGET_TEXTURE_ATLAS:
+		return "res";
+	case TARGET_IMAGE:
+		return "image";
+	case TARGET_BITMAP:
+		return "res";
+	case TARGET_SVG:
+		return "dpitex";
+	}
+	ERR_FAIL_V(String());
+}
 
-String ResourceImporterTexture::get_resource_type() const { return "CompressedTexture2D"; }
+String ResourceImporterTexture::get_resource_type() const
+{
+	switch (target) {
+	case TARGET_TEXTURE_2D:
+		return "CompressedTexture2D";
+	case TARGET_LAYERED_2D_ARRAY:
+	case TARGET_CUBEMAP:
+	case TARGET_CUBEMAP_ARRAY:
+		return "CompressedTextureLayered";
+	case TARGET_TEXTURE_3D:
+		return "CompressedTexture3D";
+	case TARGET_TEXTURE_ATLAS:
+		return "Texture2D";
+	case TARGET_IMAGE:
+		return "Image";
+	case TARGET_BITMAP:
+		return "BitMap";
+	case TARGET_SVG:
+		return "ImageTexture";
+	}
+	ERR_FAIL_V(String());
+}
 
-int ResourceImporterTexture::get_preset_count() const { return 3; }
+int ResourceImporterTexture::get_preset_count() const
+{
+	if (target == TARGET_TEXTURE_2D) {
+		return 3;
+	}
+	return 0;
+}
 
 String ResourceImporterTexture::get_preset_name(int p_idx) const
 {
-	static const char* preset_names[] = {
-		TTRC("2D/3D (Auto-Detect)"),
-		TTRC("2D"),
-		TTRC("3D"),
-	};
+	if (target == TARGET_TEXTURE_2D && p_idx >= 0 && p_idx < 3) {
+		static const char* preset_names[] = {
+			TTRC("2D/3D (Auto-Detect)"),
+			TTRC("2D"),
+			TTRC("3D"),
+		};
 
-	return TTRGET(preset_names[p_idx]);
+		return TTRGET(preset_names[p_idx]);
+	}
+	return String();
+}
+
+String ResourceImporterTexture::get_option_group_file() const
+{
+	if (target == TARGET_TEXTURE_ATLAS) {
+		return "atlas_file";
+	}
+	return String();
 }
 
 void ResourceImporterTexture::_remap_channels(Ref<Image>& r_image, ChannelRemap p_options[4])
@@ -377,9 +535,9 @@ void ResourceImporterTexture::_clamp_hdr_exposure(Ref<Image>& r_image)
 				clamped_color = color;
 			}
 			else {
-				clamped_color = (color / luma) * ((linear * linear - compressed *
-luma) /
-													 (2 * linear - compressed - luma));
+				clamped_color =
+					(color / luma) * ((linear * linear - compressed * luma) /
+										 (2 * linear - compressed - luma));
 			}
 
 			r_image->set_pixel(i, j, clamped_color);
@@ -387,18 +545,271 @@ luma) /
 	}
 }
 
-const char* ResourceImporterTexture::compression_formats[] = {"s3tc_bptc", "etc2_astc", nullptr};
-
-ResourceImporterTexture::ResourceImporterTexture(bool p_singleton)
+void ResourceImporterTexture::_save_tex(Vector<Ref<Image>> p_images, const String& p_to_path,
+	int p_compress_mode, float p_lossy, const Image::BasisUniversalPackerParams& p_basisu_params,
+	Image::CompressMode p_vram_compression, Image::CompressProfile p_vram_compression_profile,
+	Image::CompressSource p_csource, Image::UsedChannels used_channels, bool p_mipmaps,
+	bool p_force_po2, Image::BPTCFormat p_bptc_format)
 {
-	(void)p_singleton;
+	Vector<Ref<Image>> mipmap_images; // for 3D
+	Mode layered_mode = _get_layered_mode();
 
-	CompressedTexture2D::request_3d_callback = _texture_reimport_3d;
-	CompressedTexture2D::request_roughness_callback = _texture_reimport_roughness;
-	CompressedTexture2D::request_normal_callback = _texture_reimport_normal;
+	if (layered_mode == MODE_3D) {
+		// 3D saves in its own way
+
+		for (int i = 0; i < p_images.size(); i++) {
+			if (p_images.write[i]->has_mipmaps()) {
+				p_images.write[i]->clear_mipmaps();
+			}
+
+			if (p_force_po2) {
+				p_images.write[i]->resize_to_po2();
+			}
+		}
+
+		if (p_mipmaps) {
+			Vector<Ref<Image>> parent_images = p_images;
+			// create 3D mipmaps, this is horrible, though not used very often
+			int w = p_images[0]->get_width();
+			int h = p_images[0]->get_height();
+			int d = p_images.size();
+
+			while (w > 1 || h > 1 || d > 1) {
+				Vector<Ref<Image>> mipmaps;
+				int mm_w = MAX(1, w >> 1);
+				int mm_h = MAX(1, h >> 1);
+				int mm_d = MAX(1, d >> 1);
+
+				for (int i = 0; i < mm_d; i++) {
+					Ref<Image> mm =
+						Image::create_empty(mm_w, mm_h, false, p_images[0]->get_format());
+					Vector3 pos;
+					pos.z = float(i) * float(d) / float(mm_d) + 0.5;
+					for (int x = 0; x < mm_w; x++) {
+						for (int y = 0; y < mm_h; y++) {
+							pos.x = float(x) * float(w) / float(mm_w) + 0.5;
+							pos.y = float(y) * float(h) / float(mm_h) + 0.5;
+
+							Vector3i posi = Vector3i(pos);
+							Vector3 fract = pos - Vector3(posi);
+							Vector3i posi_n = posi;
+							if (posi_n.x < w - 1) {
+								posi_n.x++;
+							}
+							if (posi_n.y < h - 1) {
+								posi_n.y++;
+							}
+							if (posi_n.z < d - 1) {
+								posi_n.z++;
+							}
+
+							Color c000 = parent_images[posi.z]->get_pixel(posi.x, posi.y);
+							Color c100 = parent_images[posi.z]->get_pixel(posi_n.x, posi.y);
+							Color c010 = parent_images[posi.z]->get_pixel(posi.x, posi_n.y);
+							Color c110 = parent_images[posi.z]->get_pixel(posi_n.x, posi_n.y);
+							Color c001 = parent_images[posi_n.z]->get_pixel(posi.x, posi.y);
+							Color c101 = parent_images[posi_n.z]->get_pixel(posi_n.x, posi.y);
+							Color c011 = parent_images[posi_n.z]->get_pixel(posi.x, posi_n.y);
+							Color c111 = parent_images[posi_n.z]->get_pixel(posi_n.x, posi_n.y);
+
+							Color cx00 = c000.lerp(c100, fract.x);
+							Color cx01 = c001.lerp(c101, fract.x);
+							Color cx10 = c010.lerp(c110, fract.x);
+							Color cx11 = c011.lerp(c111, fract.x);
+
+							Color cy0 = cx00.lerp(cx10, fract.y);
+							Color cy1 = cx01.lerp(cx11, fract.y);
+
+							Color cz = cy0.lerp(cy1, fract.z);
+
+							mm->set_pixel(x, y, cz);
+						}
+					}
+
+					mipmaps.push_back(mm);
+				}
+
+				w = mm_w;
+				h = mm_h;
+				d = mm_d;
+
+				mipmap_images.append_array(mipmaps);
+				parent_images = mipmaps;
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < p_images.size(); i++) {
+			if (p_force_po2) {
+				p_images.write[i]->resize_to_po2();
+			}
+
+			if (p_mipmaps) {
+				p_images.write[i]->generate_mipmaps(p_csource == Image::COMPRESS_SOURCE_NORMAL);
+			}
+			else {
+				p_images.write[i]->clear_mipmaps();
+			}
+		}
+	}
+
+	Ref<FileAccess> f = FileAccess::open(p_to_path, FileAccess::WRITE);
+	f->store_8('G');
+	f->store_8('S');
+	f->store_8('T');
+	f->store_8('L');
+
+	f->store_32(CompressedTextureLayered::FORMAT_VERSION);
+	f->store_32(p_images.size()); // For 2d layers or 3d depth.
+	f->store_32(layered_mode);
+	f->store_32(0);
+
+	f->store_32(0);
+	f->store_32(mipmap_images.size()); // Adjust the amount of mipmaps.
+	f->store_32(0);
+	f->store_32(0);
+
+	if ((p_compress_mode == COMPRESS_LOSSLESS || p_compress_mode == COMPRESS_LOSSY) &&
+		p_images[0]->get_format() >= Image::FORMAT_RF) {
+		p_compress_mode = COMPRESS_VRAM_UNCOMPRESSED; // These can't go as lossy.
+	}
+
+	for (int i = 0; i < p_images.size(); i++) {
+		ResourceImporterTexture::save_to_ctex_format(f, p_images[i],
+			ResourceImporterTexture::CompressMode(p_compress_mode), used_channels,
+			p_vram_compression, p_vram_compression_profile, p_lossy, p_basisu_params,
+			p_bptc_format);
+	}
+
+	for (int i = 0; i < mipmap_images.size(); i++) {
+		ResourceImporterTexture::save_to_ctex_format(f, mipmap_images[i],
+			ResourceImporterTexture::CompressMode(p_compress_mode), used_channels,
+			p_vram_compression, p_vram_compression_profile, p_lossy, p_basisu_params,
+			p_bptc_format);
+	}
 }
 
-ResourceImporterTexture::~ResourceImporterTexture() {}
+// FIXME: Rasterization has issues, see
+// https://github.com/godotengine/godot/issues/68350#issuecomment-1305610290
+[[maybe_unused]] static void _plot_triangle(Vector2i* p_vertices, const Vector2i& p_offset,
+	bool p_transposed, Ref<Image> p_image, const Ref<Image>& p_src_image)
+{
+	int width = p_image->get_width();
+	int height = p_image->get_height();
+	int src_width = p_src_image->get_width();
+	int src_height = p_src_image->get_height();
+
+	int x[3];
+	int y[3];
+
+	for (int j = 0; j < 3; j++) {
+		x[j] = p_vertices[j].x;
+		y[j] = p_vertices[j].y;
+	}
+
+	// sort the points vertically
+	if (y[1] > y[2]) {
+		SWAP(x[1], x[2]);
+		SWAP(y[1], y[2]);
+	}
+	if (y[0] > y[1]) {
+		SWAP(x[0], x[1]);
+		SWAP(y[0], y[1]);
+	}
+	if (y[1] > y[2]) {
+		SWAP(x[1], x[2]);
+		SWAP(y[1], y[2]);
+	}
+
+	double dx_far = double(x[2] - x[0]) / (y[2] - y[0] + 1);
+	double dx_upper = double(x[1] - x[0]) / (y[1] - y[0] + 1);
+	double dx_low = double(x[2] - x[1]) / (y[2] - y[1] + 1);
+	double xf = x[0];
+	double xt = x[0] + dx_upper; // if y[0] == y[1], special case
+	int max_y = MIN(y[2], p_transposed ? (width - p_offset.x - 1) : (height - p_offset.y - 1));
+	for (int yi = y[0]; yi < max_y; yi++) {
+		if (yi >= 0) {
+			for (int xi = (xf > 0 ? int(xf) : 0); xi < (xt <= src_width ? xt : src_width); xi++) {
+				int px = xi, py = yi;
+				int sx = px, sy = py;
+				sx = CLAMP(sx, 0, src_width - 1);
+				sy = CLAMP(sy, 0, src_height - 1);
+				Color color = p_src_image->get_pixel(sx, sy);
+				if (p_transposed) {
+					SWAP(px, py);
+				}
+				px += p_offset.x;
+				py += p_offset.y;
+
+				// may have been cropped, so don't blit what is not visible?
+				if (px < 0 || px >= width) {
+					continue;
+				}
+				if (py < 0 || py >= height) {
+					continue;
+				}
+				p_image->set_pixel(px, py, color);
+			}
+
+			for (int xi = (xf < src_width ? int(xf) : src_width - 1); xi >= (xt > 0 ? xt : 0);
+				 xi--) {
+				int px = xi, py = yi;
+				int sx = px, sy = py;
+				sx = CLAMP(sx, 0, src_width - 1);
+				sy = CLAMP(sy, 0, src_height - 1);
+				Color color = p_src_image->get_pixel(sx, sy);
+				if (p_transposed) {
+					SWAP(px, py);
+				}
+				px += p_offset.x;
+				py += p_offset.y;
+
+				// may have been cropped, so don't blit what is not visible?
+				if (px < 0 || px >= width) {
+					continue;
+				}
+				if (py < 0 || py >= height) {
+					continue;
+				}
+				p_image->set_pixel(px, py, color);
+			}
+		}
+		xf += dx_far;
+		if (yi < y[1]) {
+			xt += dx_upper;
+		}
+		else {
+			xt += dx_low;
+		}
+	}
+}
+
+const char* ResourceImporterTexture::compression_formats[] = {"s3tc_bptc", "etc2_astc", nullptr};
+
+ResourceImporterTexture::ResourceImporterTexture(bool p_singleton) :
+	ResourceImporterTexture(TARGET_TEXTURE_2D, p_singleton)
+{
+}
+
+ResourceImporterTexture::ResourceImporterTexture(ImportTarget p_target, bool p_singleton) :
+	target(p_target)
+{
+	if (p_singleton) {
+		singleton = this;
+	}
+	if (target == TARGET_TEXTURE_2D) {
+		CompressedTexture2D::request_3d_callback = _texture_reimport_3d;
+		CompressedTexture2D::request_roughness_callback = _texture_reimport_roughness;
+		CompressedTexture2D::request_normal_callback = _texture_reimport_normal;
+	}
+}
+
+ResourceImporterTexture::~ResourceImporterTexture()
+{
+	if (singleton == this) {
+		singleton = nullptr;
+	}
+}
 
 void ResourceImporterTexture::save_to_ctex_format(Ref<FileAccess> f, const Ref<Image>& p_image,
 	CompressMode p_compress_mode, Image::UsedChannels p_channels,
@@ -411,8 +822,9 @@ void ResourceImporterTexture::save_to_ctex_format(Ref<FileAccess> f, const Ref<I
 void ResourceImporterTexture::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
 {
+	(void)p_path;
+	(void)r_options;
+	(void)p_preset;
 }
 
 String ResourceImporterTexture::get_import_settings_string() const { return String(); }
-
-

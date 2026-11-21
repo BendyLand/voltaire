@@ -34,10 +34,8 @@
 #include "core/config/engine.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
-#include "extensions/openxr_eye_gaze_interaction.h"
-#include "extensions/openxr_hand_interaction_extension.h"
-#include "extensions/openxr_performance_settings_extension.h"
-#include "extensions/openxr_user_presence_extension.h"
+#include "extensions/openxr_extensions.h"
+#include "extensions/openxr_interaction_profile_extension.h"
 #include "openxr_interface.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -480,11 +478,12 @@ bool OpenXRInterface::is_hand_interaction_supported() const
 		return false;
 	}
 	else {
-		if (!OpenXRHandInteractionExtension::is_initialized()) {
+		if (!OpenXRInteractionProfileExtension::is_initialized()) {
 			return false;
 		}
 		else {
-			return OpenXRHandInteractionExtension::is_available();
+			return OpenXRInteractionProfileExtension::is_profile_available(
+				OpenXRInteractionProfileExtension::PROFILE_HAND_INTERACTION);
 		}
 	}
 }
