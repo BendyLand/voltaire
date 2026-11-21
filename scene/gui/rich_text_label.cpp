@@ -35,8 +35,7 @@
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
-#include "modules/modules_enabled.gen.h" // For regex.
-#include "rich_text_label.compat.inc"
+#include "modules/modules_enabled.gen.h"
 #include "rich_text_label.h"
 #include "scene/gui/label.h"
 #include "scene/gui/popup_menu.h"
@@ -51,6 +50,7 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
+
 #ifdef MODULE_REGEX_ENABLED
 #include "modules/regex/regex.h"
 #endif
@@ -2536,4 +2536,22 @@ Control::CursorShape RichTextLabel::get_cursor_shape(const Vector2& p_pos) const
 	return Control::CURSOR_ARROW;
 }
 
+// --- rich_text_label.compat.inc ---
 
+#ifndef DISABLE_DEPRECATED
+
+
+void RichTextLabel::_push_font_bind_compat_79053(const Ref<Font>& p_font, int p_size)
+{
+	push_font(p_font, p_size);
+}
+
+#endif // DISABLE_DEPRECATED
+
+// --- rich_text_effect.cpp ---
+
+CharFXTransform::CharFXTransform() {}
+
+RichTextEffect::RichTextEffect() {}
+
+bool RichTextEffect::_process_effect_impl(Ref<CharFXTransform> p_cfx) { return false; }

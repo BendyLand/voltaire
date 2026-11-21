@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "control.compat.inc"
+#include "servers/display/display_server.h"
 #include "control.h"
 
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
@@ -2319,5 +2319,15 @@ Vector<int> Control::get_allowed_size_flags_vertical() const
 	return {SIZE_FILL, SIZE_EXPAND, SIZE_SHRINK_BEGIN, SIZE_SHRINK_CENTER, SIZE_SHRINK_END};
 }
 
+// --- control.compat.inc ---
+
+#ifndef DISABLE_DEPRECATED
 
 
+bool Control::_has_focus_bind_compat_110250() const { return has_focus(false); }
+
+void Control::_grab_focus_bind_compat_110250() { return grab_focus(false); }
+
+void Control::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED

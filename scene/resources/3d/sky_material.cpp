@@ -635,3 +635,306 @@ SkyMaterial::~SkyMaterial()
 		Renderer::material_set_shader(_get_material(), RID());
 	}
 }
+
+// --- joint_limitation_3d.cpp ---
+
+#include "joint_limitation_3d.h"
+
+#include "core/templates/local_vector.h"
+
+void JointLimitation3D::set_angle(real_t p_angle)
+{
+	angle = p_angle;
+	emit_changed();
+}
+
+real_t JointLimitation3D::get_angle() const { return angle; }
+
+Quaternion JointLimitation3D::make_space(const Vector3& p_local_forward_vector,
+	const Vector3& p_local_right_vector, const Quaternion& p_rotation_offset) const
+{
+	const double ALMOST_ONE = 1.0 - CMP_EPSILON;
+	// The default is to interpret the forward vector as the +Y axis.
+	Vector3 axis_y = p_local_forward_vector.normalized();
+	Vector3 axis_x = p_local_right_vector.normalized();
+	if (axis_x.is_zero_approx() || Math::abs(axis_x.dot(axis_y)) > ALMOST_ONE) {
+		return (Quaternion(Vector3(0, 1, 0), axis_y) * p_rotation_offset.normalized()).normalized();
+	}
+	// Prior X axis.
+	Vector3 axis_z = axis_x.cross(axis_y);
+	axis_z.normalize();
+	axis_x = axis_y.cross(axis_z);
+	axis_x.normalize();
+	return (Basis(axis_x, axis_y, axis_z).get_rotation_quaternion() * p_rotation_offset.normalized())
+		.normalized();
+}
+
+Vector3 JointLimitation3D::_solve(const Vector3& p_direction) const
+{
+	// Assume the central (forward of the cone) axis is the +Y.
+	// This is based on the coordinate system set by JointLimitation3D::make_space().
+	Vector3 center_axis = Vector3(0, 1, 0);
+
+	real_t current_angle = p_direction.angle_to(center_axis);
+	real_t max_angle = angle * 0.5;
+
+	if (current_angle <= max_angle) {
+		return p_direction;
+	}
+
+	Vector3 plane_normal;
+	if (Math::is_equal_approx((double)current_angle, Math::PI)) {
+		plane_normal = center_axis.get_any_perpendicular();
+	}
+	else {
+		plane_normal = center_axis.cross(p_direction).normalized();
+	}
+
+	Quaternion rotation = Quaternion(plane_normal, max_angle);
+	Vector3 limited_dir = rotation.xform(center_axis);
+
+	Vector3 projection = p_direction - center_axis * p_direction.dot(center_axis);
+	if (projection.length_squared() > CMP_EPSILON) {
+		Vector3 side_dir = projection.normalized();
+		Quaternion side_rotation = Quaternion(center_axis.cross(side_dir).normalized(), max_angle);
+		limited_dir = side_rotation.xform(center_axis);
+	}
+
+	return limited_dir.normalized();
+}
+
+Vector3 JointLimitation3D::solve(const Vector3& p_local_forward_vector,
+	const Vector3& p_local_right_vector, const Quaternion& p_rotation_offset,
+	const Vector3& p_local_current_vector) const
+{
+	Quaternion space = make_space(p_local_forward_vector, p_local_right_vector, p_rotation_offset);
+	Vector3 dir = p_local_current_vector.normalized();
+	return space.xform(_solve(space.xform_inv(dir)));
+}
+
+#ifdef TOOLS_ENABLED
+void JointLimitation3D::draw_shape(Ref<SurfaceTool>& p_surface_tool, const Transform3D& p_transform,
+	float p_bone_length, const Color& p_color) const
+{
+	static const int N = 16;
+	static const real_t DP = Math::TAU / (real_t)N;
+
+	real_t sphere_r = p_bone_length * (real_t)0.25;
+	if (sphere_r <= CMP_EPSILON) {
+		return;
+	}
+	real_t alpha = CLAMP((real_t)angle, (real_t)0.0, (real_t)Math::TAU) * 0.5;
+	real_t y_cap = sphere_r * Math::cos(alpha);
+	real_t r_cap = sphere_r * Math::sin(alpha);
+
+	LocalVector<Vector3> vts;
+
+	// Cone bottom.
+	if (r_cap > CMP_EPSILON) {
+		for (int i = 0; i < N; i++) {
+			real_t a0 = (real_t)i * DP;
+			real_t a1 = (real_t)((i + 1) % N) * DP;
+			Vector3 p0 = Vector3(r_cap * Math::cos(a0), y_cap, r_cap * Math::sin(a0));
+			Vector3 p1 = Vector3(r_cap * Math::cos(a1), y_cap, r_cap * Math::sin(a1));
+			vts.push_back(p0);
+			vts.push_back(p1);
+		}
+	}
+
+	// Rotate arcs around Y-axis.
+	real_t t_start;
+	real_t arc_len;
+	if (alpha <= (real_t)1e-6) {
+		t_start = (real_t)0.5 * Math::PI;
+		arc_len = Math::PI;
+	}
+	else {
+		t_start = (real_t)0.5 * Math::PI + alpha;
+		arc_len = Math::PI - alpha;
+	}
+	real_t dt = arc_len / (real_t)N;
+
+	for (int k = 0; k < N; k++) {
+		Basis ry(Vector3(0, 1, 0), (real_t)k * DP);
+
+		Vector3 prev =
+			ry.xform(Vector3(sphere_r * Math::cos(t_start), sphere_r * Math::sin(t_start), 0));
+
+		for (int s = 1; s <= N; s++) {
+			real_t t = t_start + dt * (real_t)s;
+			Vector3 cur = ry.xform(Vector3(sphere_r * Math::cos(t), sphere_r * Math::sin(t), 0));
+
+			vts.push_back(prev);
+			vts.push_back(cur);
+
+			prev = cur;
+		}
+
+		Vector3 mouth =
+			ry.xform(Vector3(sphere_r * Math::cos(t_start), sphere_r * Math::sin(t_start), 0));
+		Vector3 center = Vector3();
+
+		vts.push_back(center);
+		vts.push_back(mouth);
+	}
+
+	// Stack rings.
+	for (int i = 1; i <= 3; i++) {
+		for (int sgn = -1; sgn <= 1; sgn += 2) {
+			real_t y = (real_t)sgn * sphere_r * ((real_t)i / (real_t)4.0);
+			if (y >= y_cap - CMP_EPSILON) {
+				continue;
+			}
+			real_t ring_r2 = sphere_r * sphere_r - y * y;
+			if (ring_r2 <= (real_t)0.0) {
+				continue;
+			}
+			real_t ring_r = Math::sqrt(ring_r2);
+
+			for (int j = 0; j < N; j++) {
+				real_t a0 = (real_t)j * DP;
+				real_t a1 = (real_t)((j + 1) % N) * DP;
+				Vector3 p0 = Vector3(ring_r * Math::cos(a0), y, ring_r * Math::sin(a0));
+				Vector3 p1 = Vector3(ring_r * Math::cos(a1), y, ring_r * Math::sin(a1));
+
+				vts.push_back(p0);
+				vts.push_back(p1);
+			}
+		}
+	}
+
+	for (int64_t i = 0; i < vts.size(); i++) {
+		p_surface_tool->set_color(p_color);
+		p_surface_tool->add_vertex(p_transform.xform(vts[i]));
+	}
+}
+#endif // TOOLS_ENABLED
+
+// --- world_3d.cpp ---
+
+#include "core/config/project_settings.h"
+#include "scene/3d/camera_3d.h"
+#include "scene/resources/camera_attributes.h"
+#include "scene/resources/environment.h"
+#include "servers/rendering/renderer.h"
+#include "world_3d.h"
+
+#ifndef NAVIGATION_3D_DISABLED
+#include "servers/navigation_3d/navigation_server_3d.h"
+#endif // NAVIGATION_3D_DISABLED
+
+void World3D::_register_camera(Camera3D* p_camera) { cameras.insert(p_camera); }
+
+void World3D::_remove_camera(Camera3D* p_camera) { cameras.erase(p_camera); }
+
+RID World3D::get_scenario() const { return scenario; }
+
+void World3D::set_environment(const Ref<Environment>& p_environment)
+{
+	if (environment == p_environment) {
+		return;
+	}
+
+	environment = p_environment;
+	if (environment.is_valid()) {
+		Renderer::scenario_set_environment(scenario, environment->get_rid());
+	}
+	else {
+		Renderer::scenario_set_environment(scenario, RID());
+	}
+
+	emit_changed();
+}
+
+Ref<Environment> World3D::get_environment() const { return environment; }
+
+void World3D::set_fallback_environment(const Ref<Environment>& p_environment)
+{
+	if (fallback_environment == p_environment) {
+		return;
+	}
+
+	fallback_environment = p_environment;
+	if (fallback_environment.is_valid()) {
+		Renderer::scenario_set_fallback_environment(scenario, p_environment->get_rid());
+	}
+	else {
+		Renderer::scenario_set_fallback_environment(scenario, RID());
+	}
+
+	emit_changed();
+}
+
+Ref<Environment> World3D::get_fallback_environment() const { return fallback_environment; }
+
+void World3D::set_camera_attributes(const Ref<CameraAttributes>& p_camera_attributes)
+{
+	camera_attributes = p_camera_attributes;
+	if (camera_attributes.is_valid()) {
+		Renderer::scenario_set_camera_attributes(scenario, camera_attributes->get_rid());
+	}
+	else {
+		Renderer::scenario_set_camera_attributes(scenario, RID());
+	}
+}
+
+Ref<CameraAttributes> World3D::get_camera_attributes() const { return camera_attributes; }
+
+void World3D::set_compositor(const Ref<Compositor>& p_compositor)
+{
+	compositor = p_compositor;
+	if (compositor.is_valid()) {
+		Renderer::scenario_set_compositor(scenario, compositor->get_rid());
+	}
+	else {
+		Renderer::scenario_set_compositor(scenario, RID());
+	}
+}
+
+Ref<Compositor> World3D::get_compositor() const { return compositor; }
+
+#ifndef PHYSICS_3D_DISABLED
+PhysicsDirectSpaceState3D* World3D::get_direct_space_state()
+{
+	return PhysicsServer3D::space_get_direct_state(get_space());
+}
+#endif // PHYSICS_3D_DISABLED
+
+
+World3D::World3D() { scenario = Renderer::scenario_create(); }
+
+World3D::~World3D()
+{
+	ERR_FAIL_NULL(Renderer::data);
+
+#ifndef NAVIGATION_3D_DISABLED
+	ERR_FAIL_NULL(NavigationServer3D::data);
+#endif // NAVIGATION_3D_DISABLED
+
+	Renderer::free_rid(scenario);
+
+#ifndef PHYSICS_3D_DISABLED
+	if (space.is_valid()) {
+		ERR_FAIL_COND(!PhysicsServer3D::is_initialized());
+		PhysicsServer3D::free_rid(space);
+	}
+#endif // PHYSICS_3D_DISABLED
+
+#ifndef NAVIGATION_3D_DISABLED
+	if (navigation_map.is_valid()) {
+		NavigationServer3D::free_rid(navigation_map);
+	}
+#endif // NAVIGATION_3D_DISABLED
+}
+
+#ifndef NAVIGATION_3D_DISABLED
+RID World3D::get_navigation_map() const
+{
+	return RID();
+}
+#endif // NAVIGATION_3D_DISABLED
+
+RID World3D::get_space() const
+{
+	return RID();
+}

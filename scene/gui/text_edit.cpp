@@ -45,7 +45,6 @@
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "text_edit.compat.inc"
 #include "text_edit.h"
 
 void TextEdit::Text::set_font(const Ref<Font>& p_font)
@@ -6275,4 +6274,23 @@ void TextEdit::_code_line_col_changed()
 
 void TextEdit::_code_text_changed() {}
 
+// --- text_edit.compat.inc ---
 
+#ifndef DISABLE_DEPRECATED
+
+
+void TextEdit::_set_selection_mode_bind_compat_86978(
+	SelectionMode p_mode, int p_line, int p_column, int p_caret)
+{
+	set_selection_mode(p_mode);
+}
+
+Point2i TextEdit::_get_line_column_at_pos_bind_compat_100913(
+	const Point2i& p_pos, bool p_allow_out_of_bounds) const
+{
+	return get_line_column_at_pos(p_pos, p_allow_out_of_bounds, true);
+}
+
+void TextEdit::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED

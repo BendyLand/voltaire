@@ -46,7 +46,6 @@
 #include "scene/theme/theme_db.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "tree.compat.inc"
 #include "tree.h"
 
 Size2 TreeItem::Cell::get_icon_size() const
@@ -3388,3 +3387,14 @@ void TreeItem::move_after(TreeItem*) {}
 TreeItem* TreeItem::create_child(int) {}
 
 void Tree::_determine_hovered_item() {}
+
+// --- tree.compat.inc ---
+
+#ifndef DISABLE_DEPRECATED
+
+
+void TreeItem::_select_bind_compat_119367(int p_column) { select(p_column, true); }
+
+void TreeItem::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED

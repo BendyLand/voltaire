@@ -570,3 +570,32 @@ PackedStringArray PhysicsBody2D::get_configuration_warnings() const {
 	}
 	return warnings;
 }
+
+// ==========================================================================
+// Merged from scene/2d/physics/kinematic_collision_2d.cpp
+// ==========================================================================
+
+#include "kinematic_collision_2d.h"
+#include "scene/2d/physics/physics_body_2d.h"
+
+Vector2 KinematicCollision2D::get_position() const { return result.collision_point; }
+
+Vector2 KinematicCollision2D::get_normal() const { return result.collision_normal; }
+
+Vector2 KinematicCollision2D::get_travel() const { return result.travel; }
+
+Vector2 KinematicCollision2D::get_remainder() const { return result.remainder; }
+
+real_t KinematicCollision2D::get_angle(const Vector2& p_up_direction) const
+{
+	ERR_FAIL_COND_V(p_up_direction == Vector2(), 0);
+	return result.get_angle(p_up_direction);
+}
+
+real_t KinematicCollision2D::get_depth() const { return result.collision_depth; }
+
+RID KinematicCollision2D::get_collider_rid() const { return result.collider; }
+
+int KinematicCollision2D::get_collider_shape_index() const { return result.collider_shape; }
+
+Vector2 KinematicCollision2D::get_collider_velocity() const { return result.collider_velocity; }

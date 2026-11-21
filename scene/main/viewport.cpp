@@ -32,7 +32,6 @@
 #include <execinfo.h>
 #include <unistd.h>
 #include "core/string/print_string.h"
-#include "viewport.compat.inc"
 #include "viewport.h"
 
 STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
@@ -2610,5 +2609,19 @@ Transform2D SubViewport::get_popup_base_transform() const { return Transform2D()
 Viewport* SubViewport::get_section_root_viewport() const { return nullptr; }
 
 bool SubViewport::is_attached_in_viewport() const { return false; }
+
+// --- viewport.compat.inc ---
+
+#ifndef DISABLE_DEPRECATED
+
+#include "viewport.h"
+
+#ifndef XR_DISABLED
+bool Viewport::_is_using_xr_115799() { return is_using_xr(); }
+#endif
+
+void Viewport::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
 
 

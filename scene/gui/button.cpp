@@ -33,6 +33,12 @@
 #include "core/os/os.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
+#include "menu_button.h"
+#include "scene/main/window.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
+#include "option_button.h"
+#include "menu_bar.h"
 
 ButtonBehavior::DrawMode ButtonBehavior::get_draw_mode() const
 {
@@ -797,3 +803,713 @@ Button* ButtonGroup::get_pressed_button()
 }
 
 ButtonGroup::ButtonGroup() { set_local_to_scene(true); }
+
+// --- menu_button.cpp ---
+
+void MenuButton::pressed()
+{
+	if (popup && popup->is_visible()) {
+		popup->hide();
+		return;
+	}
+
+	show_popup();
+}
+
+PopupMenu* MenuButton::get_popup() const { return popup; }
+
+void MenuButton::set_switch_on_hover(bool p_enabled) { switch_on_hover = p_enabled; }
+
+bool MenuButton::is_switch_on_hover() { return switch_on_hover; }
+
+int MenuButton::get_item_count() const { return popup ? popup->get_item_count() : 0; }
+
+void MenuButton::set_disable_shortcuts(bool p_disabled) { disable_shortcuts = p_disabled; }
+
+#ifdef TOOLS_ENABLED
+PackedStringArray MenuButton::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Control::get_configuration_warnings();
+	if (popup) {
+		warnings.append_array(popup->get_configuration_warnings());
+	}
+	return warnings;
+}
+#endif
+
+MenuButton::MenuButton(const String& p_text)
+{
+	button = memnew(Button(p_text));
+	button->set_flat(true);
+	button->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
+	add_child(button, false, INTERNAL_MODE_FRONT);
+
+	popup = memnew(PopupMenu);
+	popup->hide();
+	add_child(popup, false, INTERNAL_MODE_FRONT);
+}
+
+MenuButton::~MenuButton() {}
+
+void MenuButton::show_popup() {}
+
+// --- option_button.cpp ---
+
+static const int NONE_SELECTED = -1;
+
+Size2 OptionButton::get_minimum_size() const
+{
+	Size2 minsize = fit_to_longest_item
+						? _cached_size
+						: (button ? button->get_minimum_size() : Size2());
+
+	if (has_theme_icon(SNAME("arrow")) && theme_cache.arrow_icon.is_valid()) {
+		const Size2 padding = theme_cache.normal.is_valid()
+								  ? theme_cache.normal->get_minimum_size()
+								  : Size2();
+		const Size2 arrow_size = theme_cache.arrow_icon->get_size();
+
+		Size2 content_size = minsize - padding;
+		content_size.width += arrow_size.width + MAX(0, theme_cache.h_separation);
+		content_size.height = MAX(content_size.height, arrow_size.height);
+
+		minsize = content_size + padding;
+	}
+
+	if (fit_to_longest_item && popup) {
+		minsize.width = MAX(minsize.width, popup->get_contents_minimum_size().width);
+	}
+
+	return minsize;
+}
+
+void OptionButton::_selected(int p_which) { _select(p_which, true); }
+
+void OptionButton::pressed()
+{
+	if (popup && popup->is_visible()) {
+		popup->hide();
+		return;
+	}
+
+	show_popup();
+}
+
+void OptionButton::add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id)
+{
+	bool first_selectable = !has_selectable_items();
+	if (first_selectable) {
+		select(get_item_count() - 1);
+	}
+	_queue_update_size_cache();
+}
+
+void OptionButton::add_item(const String& p_label, int p_id)
+{
+	bool first_selectable = !has_selectable_items();
+	if (first_selectable) {
+		select(get_item_count() - 1);
+	}
+	_queue_update_size_cache();
+}
+
+void OptionButton::set_item_text(int p_idx, const String& p_text)
+{
+	if (current == p_idx) {
+		set_text(p_text);
+	}
+	_queue_update_size_cache();
+}
+
+void OptionButton::set_item_id(int p_idx, int p_id) {}
+
+void OptionButton::set_item_tooltip(int p_idx, const String& p_tooltip) {}
+
+void OptionButton::set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode)
+{
+	if (!popup) {
+		return;
+	}
+	if (p_idx < 0) {
+		p_idx += get_item_count();
+	}
+	if (popup->get_item_auto_translate_mode(p_idx) == p_mode) {
+		return;
+	}
+	if (current == p_idx) {
+		set_text(popup->get_item_text(p_idx));
+	}
+	_queue_update_size_cache();
+}
+
+String OptionButton::get_item_text(int p_idx) const
+{
+	return popup ? popup->get_item_text(p_idx) : String();
+}
+
+Ref<Texture2D> OptionButton::get_item_icon(int p_idx) const
+{
+	return popup ? popup->get_item_icon(p_idx) : Ref<Texture2D>();
+}
+
+int OptionButton::get_item_id(int p_idx) const
+{
+	if (p_idx == NONE_SELECTED || !popup) {
+		return NONE_SELECTED;
+	}
+
+	return popup->get_item_id(p_idx);
+}
+
+int OptionButton::get_item_index(int p_id) const
+{
+	return popup ? popup->get_item_index(p_id) : -1;
+}
+
+String OptionButton::get_item_tooltip(int p_idx) const
+{
+	return popup ? popup->get_item_tooltip(p_idx) : String();
+}
+
+Node::AutoTranslateMode OptionButton::get_item_auto_translate_mode(int p_idx) const
+{
+	return popup ? popup->get_item_auto_translate_mode(p_idx) : AUTO_TRANSLATE_MODE_INHERIT;
+}
+
+bool OptionButton::is_item_disabled(int p_idx) const
+{
+	return popup ? popup->is_item_disabled(p_idx) : false;
+}
+
+bool OptionButton::is_item_separator(int p_idx) const
+{
+	return popup ? popup->is_item_separator(p_idx) : false;
+}
+
+bool OptionButton::has_selectable_items() const
+{
+	for (int i = 0; i < get_item_count(); i++) {
+		if (!is_item_disabled(i) && !is_item_separator(i)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+int OptionButton::get_selectable_item(bool p_from_last) const
+{
+	if (!p_from_last) {
+		for (int i = 0; i < get_item_count(); i++) {
+			if (!is_item_disabled(i) && !is_item_separator(i)) {
+				return i;
+			}
+		}
+	}
+	else {
+		for (int i = get_item_count() - 1; i >= 0; i--) {
+			if (!is_item_disabled(i) && !is_item_separator(i)) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+int OptionButton::get_item_count() const { return popup ? popup->get_item_count() : 0; }
+
+void OptionButton::set_fit_to_longest_item(bool p_fit)
+{
+	if (p_fit == fit_to_longest_item) {
+		return;
+	}
+	fit_to_longest_item = p_fit;
+
+	_refresh_size_cache();
+}
+
+bool OptionButton::is_fit_to_longest_item() const { return fit_to_longest_item; }
+
+void OptionButton::set_allow_reselect(bool p_allow) { allow_reselect = p_allow; }
+
+bool OptionButton::get_allow_reselect() const { return allow_reselect; }
+
+bool OptionButton::is_search_bar_enabled() const
+{
+	return popup ? popup->is_search_bar_enabled() : false;
+}
+
+int OptionButton::get_search_bar_min_item_count() const
+{
+	return popup ? popup->get_search_bar_min_item_count() : 0;
+}
+
+void OptionButton::set_search_bar_fuzzy_search_enabled(bool p_enabled)
+{
+	if (popup) {
+		popup->set_search_bar_fuzzy_search_enabled(p_enabled);
+	}
+}
+
+bool OptionButton::is_search_bar_fuzzy_search_enabled() const
+{
+	return popup ? popup->is_search_bar_fuzzy_search_enabled() : false;
+}
+
+void OptionButton::set_search_bar_fuzzy_search_max_misses(int p_max_misses)
+{
+	if (popup) {
+		popup->set_search_bar_fuzzy_search_max_misses(p_max_misses);
+	}
+}
+
+int OptionButton::get_search_bar_fuzzy_search_max_misses() const
+{
+	return popup ? popup->get_search_bar_fuzzy_search_max_misses() : 0;
+}
+
+void OptionButton::add_separator(const String& p_text) {}
+
+void OptionButton::_select_int(int p_which)
+{
+	if (p_which < NONE_SELECTED || !popup) {
+		return;
+	}
+	if (p_which >= popup->get_item_count()) {
+		if (!initialized) {
+			queued_current = p_which;
+		}
+		return;
+	}
+	_select(p_which, false);
+}
+
+void OptionButton::select(int p_idx) { _select(p_idx, false); }
+
+int OptionButton::get_selected() const { return current; }
+
+int OptionButton::get_selected_id() const { return get_item_id(current); }
+
+void OptionButton::remove_item(int p_idx)
+{
+	if (current == p_idx) {
+		_select(NONE_SELECTED);
+	}
+	_queue_update_size_cache();
+}
+
+PopupMenu* OptionButton::get_popup() const { return popup; }
+
+void OptionButton::show_popup()
+{
+	if (!get_viewport() || !popup) {
+		return;
+	}
+
+	if (current != NONE_SELECTED && !popup->is_item_disabled(current)) {
+		popup->scroll_to_item(current);
+	}
+	else {
+		for (int i = 0; i < popup->get_item_count(); i++) {
+			if (!popup->is_item_disabled(i)) {
+				popup->scroll_to_item(i);
+				break;
+			}
+		}
+	}
+
+	Rect2 rect = get_screen_rect();
+	rect.position.y += rect.size.height;
+	if (get_viewport()->is_embedding_subwindows() && popup->get_force_native()) {
+		Transform2D xform = get_viewport()->get_popup_base_transform_native();
+		rect = xform.xform(rect);
+	}
+	rect.size.height = 0;
+	popup->set_min_size(Size2(0, 0));
+	popup->popup(rect);
+}
+
+void OptionButton::set_disable_shortcuts(bool p_disabled) { disable_shortcuts = p_disabled; }
+
+#ifdef TOOLS_ENABLED
+PackedStringArray OptionButton::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Control::get_configuration_warnings();
+	if (popup) {
+		warnings.append_array(popup->get_configuration_warnings());
+	}
+	return warnings;
+}
+#endif
+
+OptionButton::OptionButton(const String& p_text)
+{
+	button = memnew(Button(p_text));
+	button->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
+	add_child(button, false, INTERNAL_MODE_FRONT);
+
+	popup = memnew(PopupMenu);
+	popup->hide();
+	add_child(popup, false, INTERNAL_MODE_FRONT);
+}
+
+OptionButton::~OptionButton() {}
+
+void OptionButton::_select(int p_which, bool p_emit) {}
+
+void OptionButton::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
+
+void OptionButton::clear() {}
+
+void OptionButton::_refresh_size_cache() {}
+
+void OptionButton::_queue_update_size_cache() {}
+
+String OptionButton::_get_translated_text(const String& p_text) const { return p_text; }
+
+// --- menu_bar.cpp ---
+
+bool MenuBar::is_native_menu() const
+{
+#ifdef TOOLS_ENABLED
+	if (is_part_of_edited_scene()) {
+		return false;
+	}
+#endif
+
+	return (
+		NativeMenu::has_feature(NativeMenu::FEATURE_GLOBAL_MENU) && prefer_native);
+}
+
+void MenuBar::unbind_global_menu()
+{
+	if (global_menu_tag.is_empty()) {
+		return;
+	}
+
+	RID main_menu = NativeMenu::get_system_menu(NativeMenu::MAIN_MENU_ID);
+
+	Vector<PopupMenu*> popups = _get_popups();
+	for (int i = menu_cache.size() - 1; i >= 0; i--) {
+		if (!popups[i]->is_system_menu()) {
+			if (menu_cache[i].submenu_rid.is_valid()) {
+				int item_idx =
+					NativeMenu::find_item_index_with_submenu(main_menu, menu_cache[i].submenu_rid);
+				if (item_idx >= 0) {
+					NativeMenu::remove_item(main_menu, item_idx);
+				}
+			}
+			popups[i]->unbind_global_menu();
+			menu_cache.write[i].submenu_rid = RID();
+		}
+		menu_cache.write[i].sysmenu_id = NativeMenu::INVALID_MENU_ID;
+	}
+
+	global_menu_tag = String();
+}
+
+int MenuBar::_get_index_at_point(const Point2& p_point) const
+{
+	Ref<StyleBox> style = theme_cache.normal;
+	int offset = 0;
+	Point2 point = p_point;
+	if (is_layout_rtl()) {
+		point.x = get_size().x - point.x;
+	}
+
+	for (int i = 0; i < menu_cache.size(); i++) {
+		if (menu_cache[i].hidden) {
+			continue;
+		}
+		Size2 size = menu_cache[i].text_buf->get_size() + style->get_minimum_size();
+		if (point.x > offset && point.x < offset + size.x) {
+			if (point.y > 0 && point.y < size.y) {
+				return i;
+			}
+		}
+		offset += size.x + theme_cache.h_separation;
+	}
+	return -1;
+}
+
+Rect2 MenuBar::_get_menu_item_rect(int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, menu_cache.size(), Rect2());
+
+	Ref<StyleBox> style = theme_cache.normal;
+
+	int offset = 0;
+	for (int i = 0; i < p_index; i++) {
+		if (menu_cache[i].hidden) {
+			continue;
+		}
+		Size2 size = menu_cache[i].text_buf->get_size() + style->get_minimum_size();
+		offset += size.x + theme_cache.h_separation;
+	}
+
+	Size2 size = menu_cache[p_index].text_buf->get_size() + style->get_minimum_size();
+	if (is_layout_rtl()) {
+		return Rect2(Point2(get_size().x - offset - size.x, 0), size);
+	}
+	else {
+		return Rect2(Point2(offset, 0), size);
+	}
+}
+
+void MenuBar::_draw_menu_item(int p_index)
+{
+	ERR_FAIL_INDEX(p_index, menu_cache.size());
+
+	RID ci = get_canvas_item();
+	bool hovered = (focused_menu == p_index);
+	bool pressed = (active_menu == p_index);
+	bool rtl = is_layout_rtl();
+
+	if (menu_cache[p_index].hidden) {
+		return;
+	}
+
+	Color color;
+	Ref<StyleBox> style;
+	Rect2 item_rect = _get_menu_item_rect(p_index);
+
+	if (menu_cache[p_index].disabled) {
+		if (rtl && has_theme_stylebox(SNAME("disabled_mirrored"))) {
+			style = theme_cache.disabled_mirrored;
+		}
+		else {
+			style = theme_cache.disabled;
+		}
+		if (!flat) {
+			style->draw(ci, item_rect);
+		}
+		color = theme_cache.font_disabled_color;
+	}
+	else if (hovered && pressed && has_theme_stylebox("hover_pressed")) {
+		if (rtl && has_theme_stylebox(SNAME("hover_pressed_mirrored"))) {
+			style = theme_cache.hover_pressed_mirrored;
+		}
+		else {
+			style = theme_cache.hover_pressed;
+		}
+		if (!flat) {
+			style->draw(ci, item_rect);
+		}
+		if (has_theme_color(SNAME("font_hover_pressed_color"))) {
+			color = theme_cache.font_hover_pressed_color;
+		}
+	}
+	else if (pressed) {
+		if (rtl && has_theme_stylebox(SNAME("pressed_mirrored"))) {
+			style = theme_cache.pressed_mirrored;
+		}
+		else {
+			style = theme_cache.pressed;
+		}
+		if (!flat) {
+			style->draw(ci, item_rect);
+		}
+		if (has_theme_color(SNAME("font_pressed_color"))) {
+			color = theme_cache.font_pressed_color;
+		}
+		else {
+			color = theme_cache.font_color;
+		}
+	}
+	else if (hovered) {
+		if (rtl && has_theme_stylebox(SNAME("hover_mirrored"))) {
+			style = theme_cache.hover_mirrored;
+		}
+		else {
+			style = theme_cache.hover;
+		}
+		if (!flat) {
+			style->draw(ci, item_rect);
+		}
+		color = theme_cache.font_hover_color;
+	}
+	else {
+		if (rtl && has_theme_stylebox(SNAME("normal_mirrored"))) {
+			style = theme_cache.normal_mirrored;
+		}
+		else {
+			style = theme_cache.normal;
+		}
+		if (!flat) {
+			style->draw(ci, item_rect);
+		}
+		// Focus colors only take precedence over normal state.
+		if (has_focus(true)) {
+			color = theme_cache.font_focus_color;
+		}
+		else {
+			color = theme_cache.font_color;
+		}
+	}
+
+	Point2 text_ofs =
+		item_rect.position + Point2(style->get_margin(SIDE_LEFT), style->get_margin(SIDE_TOP));
+
+	Color font_outline_color = theme_cache.font_outline_color;
+	int outline_size = theme_cache.outline_size;
+	if (outline_size > 0 && font_outline_color.a > 0) {
+		menu_cache[p_index].text_buf->draw_outline(ci, text_ofs, outline_size, font_outline_color);
+	}
+	menu_cache[p_index].text_buf->draw(ci, text_ofs, color);
+}
+
+int MenuBar::get_menu_idx_from_control(PopupMenu* p_child) const
+{
+	ERR_FAIL_NULL_V(p_child, -1);
+	ERR_FAIL_COND_V(p_child->get_parent() != this, -1);
+
+	Vector<PopupMenu*> popups = _get_popups();
+	for (int i = 0; i < popups.size(); i++) {
+		if (popups[i] == p_child) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+void MenuBar::set_switch_on_hover(bool p_enabled) { switch_on_hover = p_enabled; }
+
+bool MenuBar::is_switch_on_hover() { return switch_on_hover; }
+
+void MenuBar::set_disable_shortcuts(bool p_disabled) { disable_shortcuts = p_disabled; }
+
+Control::TextDirection MenuBar::get_text_direction() const { return text_direction; }
+
+String MenuBar::get_language() const { return language; }
+
+bool MenuBar::is_flat() const { return flat; }
+
+void MenuBar::set_start_index(int p_index)
+{
+	if (start_index != p_index) {
+		start_index = p_index;
+		if (!global_menu_tag.is_empty()) {
+			unbind_global_menu();
+			bind_global_menu();
+		}
+	}
+}
+
+int MenuBar::get_start_index() const { return start_index; }
+
+void MenuBar::set_prefer_global_menu(bool p_enabled)
+{
+	if (prefer_native != p_enabled) {
+		prefer_native = p_enabled;
+		if (prefer_native) {
+			bind_global_menu
+();
+		}
+		else {
+			unbind_global_menu();
+		}
+	}
+}
+
+bool MenuBar::is_prefer_global_menu() const { return prefer_native; }
+
+Size2 MenuBar::get_minimum_size() const
+{
+	if (is_native_menu()) {
+		return Size2();
+	}
+
+	Ref<StyleBox> style = theme_cache.normal;
+
+	Vector2 size;
+	for (int i = 0; i < menu_cache.size(); i++) {
+		if (menu_cache[i].hidden) {
+			continue;
+		}
+		Size2 sz = menu_cache[i].text_buf->get_size() + style->get_minimum_size();
+		size.y = MAX(size.y, sz.y);
+		size.x += sz.x;
+	}
+	if (menu_cache.size() > 1) {
+		size.x += theme_cache.h_separation * (menu_cache.size() - 1);
+	}
+	return size;
+}
+
+int MenuBar::get_menu_count() const { return menu_cache.size(); }
+
+String MenuBar::get_menu_title(int p_menu) const
+{
+	ERR_FAIL_INDEX_V(p_menu, menu_cache.size(), String());
+	return menu_cache[p_menu].name;
+}
+
+String MenuBar::get_menu_tooltip(int p_menu) const
+{
+	ERR_FAIL_INDEX_V(p_menu, menu_cache.size(), String());
+	return menu_cache[p_menu].tooltip;
+}
+
+void MenuBar::set_menu_disabled(int p_menu, bool p_disabled)
+{
+	ERR_FAIL_INDEX(p_menu, menu_cache.size());
+	menu_cache.write[p_menu].disabled = p_disabled;
+	if (!global_menu_tag.is_empty() && menu_cache[p_menu].submenu_rid.is_valid()) {
+		RID main_menu = NativeMenu::get_system_menu(NativeMenu::MAIN_MENU_ID);
+		int item_idx =
+			NativeMenu::find_item_index_with_submenu(main_menu, menu_cache[p_menu].submenu_rid);
+		if (item_idx >= 0) {
+			NativeMenu::set_item_disabled(main_menu, item_idx, p_disabled);
+		}
+	}
+}
+
+bool MenuBar::is_menu_disabled(int p_menu) const
+{
+	ERR_FAIL_INDEX_V(p_menu, menu_cache.size(), false);
+	return menu_cache[p_menu].disabled;
+}
+
+bool MenuBar::is_menu_hidden(int p_menu) const
+{
+	ERR_FAIL_INDEX_V(p_menu, menu_cache.size(), false);
+	return menu_cache[p_menu].hidden;
+}
+
+PopupMenu* MenuBar::get_menu_popup(int p_idx) const
+{
+	Vector<PopupMenu*> controls = _get_popups();
+	if (p_idx >= 0 && p_idx < controls.size()) {
+		return controls[p_idx];
+	}
+	else {
+		return nullptr;
+	}
+}
+
+String MenuBar::get_tooltip(const Point2& p_pos) const
+{
+	int index = _get_index_at_point(p_pos);
+	if (index >= 0 && index < menu_cache.size()) {
+		return menu_cache[index].tooltip;
+	}
+	else {
+		return String();
+	}
+}
+
+MenuBar::MenuBar()
+{
+	set_focus_mode(FOCUS_ACCESSIBILITY);
+	set_process_shortcut_input(true);
+}
+
+Vector<PopupMenu*> MenuBar::_get_popups() const {}
+
+void MenuBar::bind_global_menu() {}
+
+void MenuBar::add_child_notify(Node* p_child) {}
+
+void MenuBar::remove_child_notify(Node* p_child) {}
+
+void MenuBar::move_child_notify(Node* p_child) {}

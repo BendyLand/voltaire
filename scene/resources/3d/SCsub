@@ -3,14 +3,8 @@ from misc.utility.scons_hints import *
 
 Import("env")
 
-env.add_source_files(env.scene_sources, "importer_mesh.cpp")
-env.add_source_files(env.scene_sources, "joint_limitation_3d.cpp")
-env.add_source_files(env.scene_sources, "mesh_library.cpp")
 env.add_source_files(env.scene_sources, "primitive_meshes.cpp")
-env.add_source_files(env.scene_sources, "skin.cpp")
 env.add_source_files(env.scene_sources, "sky_material.cpp")
-env.add_source_files(env.scene_sources, "world_3d.cpp")
-env.add_source_files(env.scene_sources, "skeleton/*.cpp")
 
 if not env["disable_physics_3d"]:
     env.add_source_files(env.scene_sources, "shape_3d.cpp")

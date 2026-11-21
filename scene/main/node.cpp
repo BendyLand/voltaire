@@ -2061,3 +2061,321 @@ void Node::_add_child_nocheck(Node* p_child, const String& p_name, InternalMode 
 
 	notification(NOTIFICATION_CHILD_ORDER_CHANGED);
 }
+
+// ==========================================================================
+// Merged from scene/main/instance_placeholder.cpp
+// ==========================================================================
+
+#include "core/io/resource_loader.h"
+#include "instance_placeholder.h"
+#include "scene/resources/packed_scene.h"
+
+void InstancePlaceholder::set_instance_path(const String& p_name) { path = p_name; }
+
+String InstancePlaceholder::get_instance_path() const { return path; }
+
+Node* InstancePlaceholder::try_get_node(
+	InstancePlaceholder* p_placeholder, Node* p_instance, const NodePath& p_path)
+{
+	// First try to resolve internally,
+	// if that fails try resolving externally.
+	Node* node = p_instance->get_node_or_null(p_path);
+	if (node == nullptr) {
+		node = p_placeholder->get_node_or_null(p_path);
+	}
+
+	return node;
+}
+
+InstancePlaceholder::InstancePlaceholder() {}
+
+// ==========================================================================
+// Merged from scene/main/missing_node.cpp
+// ==========================================================================
+
+#include "missing_node.h"
+
+void MissingNode::set_original_class(const String& p_class) { original_class = p_class; }
+
+String MissingNode::get_original_class() const { return original_class; }
+
+void MissingNode::set_original_scene(const String& p_scene) { original_scene = p_scene; }
+
+String MissingNode::get_original_scene() const { return original_scene; }
+
+void MissingNode::set_recording_properties(bool p_enable) { recording_properties = p_enable; }
+
+bool MissingNode::is_recording_properties() const { return recording_properties; }
+
+void MissingNode::set_recording_signals(bool p_enable) { recording_signals = p_enable; }
+
+bool MissingNode::is_recording_signals() const { return recording_signals; }
+
+PackedStringArray MissingNode::get_configuration_warnings() const
+{
+	// The mere existence of this node is warning.
+	PackedStringArray warnings = Node::get_configuration_warnings();
+	if (!original_scene.is_empty()) {
+		warnings.push_back(vformat(RTR("This node was an instance of scene '%s', which was no "
+									   "longer available when this scene was loaded."),
+			original_scene));
+		warnings.push_back(
+			vformat(RTR("Saving current scene will discard instance and all its properties, "
+						"including editable children edits (if existing).")));
+	}
+	else if (!original_class.is_empty()) {
+		warnings.push_back(vformat(RTR("This node was saved as class type '%s', which was no "
+									   "longer available when this scene was loaded."),
+			original_class));
+		warnings.push_back(
+			RTR("Data from the original node is kept as a placeholder until this type of node is "
+				"available again. It can hence be safely re-saved without risk of data loss."));
+	}
+	else {
+		warnings.push_back(
+			RTR("Unrecognized missing node. Check scene dependency errors for details."));
+	}
+	return warnings;
+}
+
+MissingNode::MissingNode() {}
+
+// ==========================================================================
+// Merged from scene/main/resource_preloader.cpp
+// ==========================================================================
+
+#include "core/templates/rb_set.h"
+#include "resource_preloader.h"
+
+void ResourcePreloader::rename_resource(const String& p_from_name, const String& p_to_name)
+{
+	ERR_FAIL_COND(!resources.has(p_from_name));
+
+	Ref<Resource> res = resources[p_from_name];
+
+	resources.erase(p_from_name);
+	add_resource(p_to_name, res);
+}
+
+bool ResourcePreloader::has_resource(const String& p_name) const
+{
+	return resources.has(p_name);
+}
+
+Ref<Resource> ResourcePreloader::get_resource(const String& p_name) const
+{
+	ERR_FAIL_COND_V(!resources.has(p_name), Ref<Resource>());
+	return resources[p_name];
+}
+
+Vector<String> ResourcePreloader::_get_resource_list() const
+{
+	Vector<String> res;
+	res.resize(resources.size());
+	int i = 0;
+	for (const KeyValue<String, Ref<Resource>>& E : resources) {
+		res.set(i, E.key);
+		i++;
+	}
+
+	return res;
+}
+
+void ResourcePreloader::get_resource_list(List<String>* p_list)
+{
+	for (const KeyValue<String, Ref<Resource>>& E : resources) {
+		p_list->push_back(E.key);
+	}
+}
+
+
+ResourcePreloader::ResourcePreloader() {}
+
+
+
+void ResourcePreloader::add_resource(String const&, Ref<Resource> const&) {}
+
+// ==========================================================================
+// Merged from scene/main/shader_globals_override.cpp
+// ==========================================================================
+
+#include "scene/main/scene_tree.h"
+#include "servers/rendering/renderer.h"
+#include "shader_globals_override.h"
+
+String* ShaderGlobalsOverride::_remap(const String& p_name) const
+{
+	String* r = param_remaps.getptr(p_name);
+	if (!r) {
+		// not cached, do caching
+		String p = p_name;
+		if (p.begins_with("params/")) {
+			String q = p.replace_first("params/", "");
+			param_remaps[p] = q;
+			r = param_remaps.getptr(p);
+		}
+	}
+
+	return r;
+}
+
+PackedStringArray ShaderGlobalsOverride::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node::get_configuration_warnings();
+
+	if (!active) {
+		warnings.push_back(RTR("ShaderGlobalsOverride is not active because another node of the "
+							   "same type is in the scene."));
+	}
+
+	return warnings;
+}
+
+// ==========================================================================
+// Merged from scene/main/timer.cpp
+// ==========================================================================
+
+#include "core/config/engine.h"
+#include "timer.h"
+
+void Timer::set_wait_time(double p_time)
+{
+	ERR_FAIL_COND_MSG(p_time <= 0, "Time should be greater than zero.");
+	wait_time = p_time;
+	update_configuration_warnings();
+}
+
+double Timer::get_wait_time() const { return wait_time; }
+
+void Timer::set_one_shot(bool p_one_shot) { one_shot = p_one_shot; }
+
+bool Timer::is_one_shot() const { return one_shot; }
+
+void Timer::set_autostart(bool p_start) { autostart = p_start; }
+
+bool Timer::has_autostart() const { return autostart; }
+
+void Timer::stop()
+{
+	time_left = -1;
+	_set_process(false);
+	autostart = false;
+}
+
+void Timer::set_paused(bool p_paused)
+{
+	if (paused == p_paused) {
+		return;
+	}
+
+	paused = p_paused;
+	_set_process(processing);
+}
+
+bool Timer::is_paused() const { return paused; }
+
+void Timer::set_ignore_time_scale(bool p_ignore) { ignore_time_scale = p_ignore; }
+
+bool Timer::is_ignoring_time_scale() { return ignore_time_scale; }
+
+bool Timer::is_stopped() const { return get_time_left() <= 0; }
+
+double Timer::get_time_left() const { return time_left > 0 ? time_left : 0; }
+
+void Timer::set_timer_process_callback(TimerProcessCallback p_callback)
+{
+	if (timer_process_callback == p_callback) {
+		return;
+	}
+
+	switch (timer_process_callback) {
+	case TIMER_PROCESS_PHYSICS:
+		if (is_physics_processing_internal()) {
+
+		set_physics_process_internal(false);
+			set_process_internal(true);
+		}
+		break;
+	case TIMER_PROCESS_IDLE:
+		if (is_processing_internal()) {
+			set_process_internal(false);
+			set_physics_process_internal(true);
+		}
+		break;
+	}
+	timer_process_callback = p_callback;
+}
+
+Timer::TimerProcessCallback Timer::get_timer_process_callback() const
+{
+	return timer_process_callback;
+}
+
+void Timer::_set_process(bool p_process, bool p_force)
+{
+	switch (timer_process_callback) {
+	case TIMER_PROCESS_PHYSICS:
+		set_physics_process_internal(p_process && !paused);
+		break;
+	case TIMER_PROCESS_IDLE:
+		set_process_internal(p_process && !paused);
+		break;
+	}
+	processing = p_process;
+}
+
+PackedStringArray Timer::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node::get_configuration_warnings();
+
+	if (wait_time < 0.05 - CMP_EPSILON) {
+		warnings.push_back(
+			RTR("Very low timer wait times (< 0.05 seconds) may behave in significantly different "
+				"ways depending on the rendered or physics frame rate.\nConsider using a script's "
+				"process loop instead of relying on a Timer for very low wait times."));
+	}
+
+	return warnings;
+}
+
+// ==========================================================================
+// Merged from scene/main/status_indicator.cpp
+// ==========================================================================
+
+#include "scene/gui/popup_menu.h"
+#include "servers/display/display_server.h"
+#include "status_indicator.h"
+
+void StatusIndicator::set_icon(const Ref<Texture2D>& p_icon)
+{
+	ERR_MAIN_THREAD_GUARD;
+	icon = p_icon;
+	if (iid != DisplayServerEnums::INVALID_INDICATOR_ID) {
+		DisplayServer::status_indicator_set_icon(iid, icon);
+	}
+}
+
+Ref<Texture2D> StatusIndicator::get_icon() const { return icon; }
+
+void StatusIndicator::set_tooltip(const String& p_tooltip)
+{
+	ERR_MAIN_THREAD_GUARD;
+	tooltip = p_tooltip;
+	if (iid != DisplayServerEnums::INVALID_INDICATOR_ID) {
+		DisplayServer::status_indicator_set_tooltip(iid, tooltip);
+	}
+}
+
+String StatusIndicator::get_tooltip() const { return tooltip; }
+
+NodePath StatusIndicator::get_menu() const { return menu; }
+
+bool StatusIndicator::is_visible() const { return visible; }
+
+Rect2 StatusIndicator::get_rect() const
+{
+	if (iid == DisplayServerEnums::INVALID_INDICATOR_ID) {
+		return Rect2();
+	}
+	return DisplayServer::status_indicator_get_rect(iid);
+}

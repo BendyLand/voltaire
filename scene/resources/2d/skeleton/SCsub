@@ -4,4 +4,3 @@ from misc.utility.scons_hints import *
 Import("env")
 
 env.add_source_files(env.scene_sources, "skeleton_modification_2d.cpp")
-env.add_source_files(env.scene_sources, "skeleton_modification_stack_2d.cpp")

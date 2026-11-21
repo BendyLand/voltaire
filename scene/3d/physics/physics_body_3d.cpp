@@ -1126,3 +1126,131 @@ PackedStringArray PhysicsBody3D::get_configuration_warnings() const {
 
 	return warnings;
 }
+
+// ==========================================================================
+// Merged from scene/3d/physics/kinematic_collision_3d.cpp
+// ==========================================================================
+
+#include "kinematic_collision_3d.h"
+#include "scene/3d/physics/physics_body_3d.h"
+
+Vector3 KinematicCollision3D::get_travel() const { return result.travel; }
+
+Vector3 KinematicCollision3D::get_remainder() const { return result.remainder; }
+
+int KinematicCollision3D::get_collision_count() const { return result.collision_count; }
+
+real_t KinematicCollision3D::get_depth() const { return result.collision_depth; }
+
+Vector3 KinematicCollision3D::get_position(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, Vector3());
+	return result.collisions[p_collision_index].position;
+}
+
+Vector3 KinematicCollision3D::get_normal(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, Vector3());
+	return result.collisions[p_collision_index].normal;
+}
+
+real_t KinematicCollision3D::get_angle(int p_collision_index, const Vector3& p_up_direction) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, 0.0);
+	ERR_FAIL_COND_V(p_up_direction == Vector3(), 0);
+	return result.collisions[p_collision_index].get_angle(p_up_direction);
+}
+
+RID KinematicCollision3D::get_collider_rid(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, RID());
+	return result.collisions[p_collision_index].collider;
+}
+
+int KinematicCollision3D::get_collider_shape_index(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, 0);
+	return result.collisions[p_collision_index].collider_shape;
+}
+
+Vector3 KinematicCollision3D::get_collider_velocity(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, Vector3());
+	return result.collisions[p_collision_index].collider_velocity;
+}
+
+// ==========================================================================
+// Merged from scene/3d/physics/physical_bone_simulator_3d.cpp
+// ==========================================================================
+
+#include "physical_bone_simulator_3d.h"
+
+#include "core/config/engine.h"
+#include "scene/3d/physics/physics_body_3d.h"
+
+void PhysicalBoneSimulator3D::_bone_pose_updated(Skeleton3D *p_skeleton, int p_bone_id) {
+	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_bone_id, bones.size());
+	bones[p_bone_id].global_pose = p_skeleton->get_bone_global_pose(p_bone_id);
+}
+
+void PhysicalBoneSimulator3D::_set_active(bool p_active) {
+	if (!Engine::is_editor_hint()) {
+		_reset_physical_bones_state();
+	}
+}
+
+void PhysicalBoneSimulator3D::_reset_physical_bones_state() {
+	for (uint32_t i = 0; i < bones.size(); i += 1) {
+		if (bones[i].physical_bone) {
+			bones[i].physical_bone->reset_physics_simulation_state();
+		}
+	}
+}
+
+bool PhysicalBoneSimulator3D::is_simulating_physics() const {
+	return simulating;
+}
+
+int PhysicalBoneSimulator3D::get_bone_count() const {
+	return bones.size();
+}
+
+PhysicsBody3D *PhysicalBoneSimulator3D::get_physical_bone(int p_bone) {
+	const int bone_size = bones.size();
+	ERR_FAIL_INDEX_V(p_bone, bone_size, nullptr);
+	return bones[p_bone].physical_bone;
+}
+
+PhysicsBody3D *PhysicalBoneSimulator3D::get_physical_bone_parent(int p_bone) {
+	const int bone_size = bones.size();
+	ERR_FAIL_INDEX_V(p_bone, bone_size, nullptr);
+	if (bones[p_bone].cache_parent_physical_bone) {
+		return bones[p_bone].cache_parent_physical_bone;
+	}
+	return _get_physical_bone_parent(p_bone);
+}
+
+PhysicsBody3D *PhysicalBoneSimulator3D::_get_physical_bone_parent(int p_bone) {
+	const int bone_size = bones.size();
+	ERR_FAIL_INDEX_V(p_bone, bone_size, nullptr);
+	const int parent_bone = bones[p_bone].parent;
+	if (parent_bone < 0) {
+		return nullptr;
+	}
+	PhysicsBody3D *pb = bones[parent_bone].physical_bone;
+	return pb ? pb : get_physical_bone_parent(parent_bone);
+}
+
+Transform3D PhysicalBoneSimulator3D::get_bone_global_pose(int p_bone) const {
+	const int bone_size = bones.size();
+	ERR_FAIL_INDEX_V(p_bone, bone_size, Transform3D());
+	return bones[p_bone].global_pose;
+}
+
+void PhysicalBoneSimulator3D::set_bone_global_pose(int p_bone, const Transform3D &p_pose) {
+	const int bone_size = bones.size();
+	ERR_FAIL_INDEX(p_bone, bone_size);
+	bones[p_bone].global_pose = p_pose;
+}
+
+void PhysicalBoneSimulator3D::_skeleton_changed(Skeleton3D *p_old_skeleton, Skeleton3D *p_new_skeleton) {}

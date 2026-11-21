@@ -504,3 +504,661 @@ Vector2 NavigationPolygon::get_baking_rect_offset() const { return baking_rect_o
 
 
 bool NavigationPolygon::_edit_is_selected_on_click(Vector2 const&, double) const { return false; }
+
+// --- navigation_mesh_source_geometry_data_2d.cpp ---
+
+#include "navigation_mesh_source_geometry_data_2d.h"
+
+void NavigationMeshSourceGeometryData2D::clear()
+{
+	RWLockWrite write_lock(geometry_rwlock);
+	traversable_outlines.clear();
+	obstruction_outlines.clear();
+	_projected_obstructions.clear();
+	bounds_dirty = true;
+}
+
+bool NavigationMeshSourceGeometryData2D::has_data()
+{
+	RWLockRead read_lock(geometry_rwlock);
+	return traversable_outlines.size();
+}
+
+void NavigationMeshSourceGeometryData2D::clear_projected_obstructions()
+{
+	RWLockWrite write_lock(geometry_rwlock);
+	_projected_obstructions.clear();
+	bounds_dirty = true;
+}
+
+void NavigationMeshSourceGeometryData2D::_set_traversable_outlines(
+	const Vector<Vector<Vector2>>& p_traversable_outlines)
+{
+	RWLockWrite write_lock(geometry_rwlock);
+	traversable_outlines = p_traversable_outlines;
+	bounds_dirty = true;
+}
+
+void NavigationMeshSourceGeometryData2D::_set_obstruction_outlines(
+	const Vector<Vector<Vector2>>& p_obstruction_outlines)
+{
+	RWLockWrite write_lock(geometry_rwlock);
+	obstruction_outlines = p_obstruction_outlines;
+	bounds_dirty = true;
+}
+
+const Vector<Vector<Vector2>>& NavigationMeshSourceGeometryData2D::_get_traversable_outlines() const
+{
+	RWLockRead read_lock(geometry_rwlock);
+	return traversable_outlines;
+}
+
+const Vector<Vector<Vector2>>& NavigationMeshSourceGeometryData2D::_get_obstruction_outlines() const
+{
+	RWLockRead read_lock(geometry_rwlock);
+	return obstruction_outlines;
+}
+
+void NavigationMeshSourceGeometryData2D::_add_traversable_outline(
+	const Vector<Vector2>& p_shape_outline)
+{
+	if (p_shape_outline.size() > 1) {
+		RWLockWrite write_lock(geometry_rwlock);
+		traversable_outlines.push_back(p_shape_outline);
+		bounds_dirty = true;
+	}
+}
+
+void NavigationMeshSourceGeometryData2D::_add_obstruction_outline(
+	const Vector<Vector2>& p_shape_outline)
+{
+	if (p_shape_outline.size() > 1) {
+		RWLockWrite write_lock(geometry_rwlock);
+		obstruction_outlines.push_back(p_shape_outline);
+		bounds_dirty = true;
+	}
+}
+
+void NavigationMeshSourceGeometryData2D::add_traversable_outline(
+	const PackedVector2Array& p_shape_outline)
+{
+	if (p_shape_outline.size() > 1) {
+		RWLockWrite write_lock(geometry_rwlock);
+		Vector<Vector2> traversable_outline;
+		traversable_outline.resize(p_shape_outline.size());
+		for (int i = 0; i < p_shape_outline.size(); i++) {
+			traversable_outline.write[i] = p_shape_outline[i];
+		}
+		traversable_outlines.push_back(traversable_outline);
+		bounds_dirty = true;
+	}
+}
+
+void NavigationMeshSourceGeometryData2D::add_obstruction_outline(
+	const PackedVector2Array& p_shape_outline)
+{
+	if (p_shape_outline.size() > 1) {
+		RWLockWrite write_lock(geometry_rwlock);
+		Vector<Vector2> obstruction_outline;
+		obstruction_outline.resize(p_shape_outline.size());
+		for (int i = 0; i < p_shape_outline.size(); i++) {
+			obstruction_outline.write[i] = p_shape_outline[i];
+		}
+		obstruction_outlines.push_back(obstruction_outline);
+		bounds_dirty = true;
+	}
+}
+
+void NavigationMeshSourceGeometryData2D::merge(
+	const Ref<NavigationMeshSourceGeometryData2D>& p_other_geometry)
+{
+	ERR_FAIL_COND(p_other_geometry.is_null());
+
+	Vector<Vector<Vector2>> other_traversable_outlines;
+	Vector<Vector<Vector2>> other_obstruction_outlines;
+	Vector<ProjectedObstruction> other_projected_obstructions;
+
+	p_other_geometry->get_data(
+		other_traversable_outlines, other_obstruction_outlines, other_projected_obstructions);
+
+	RWLockWrite write_lock(geometry_rwlock);
+	traversable_outlines.append_array(other_traversable_outlines);
+	obstruction_outlines.append_array(other_obstruction_outlines);
+	_projected_obstructions.append_array(other_projected_obstructions);
+	bounds_dirty = true;
+}
+
+void NavigationMeshSourceGeometryData2D::add_projected_obstruction(
+	const Vector<Vector2>& p_vertices, bool p_carve)
+{
+	ERR_FAIL_COND(p_vertices.size() < 2);
+
+	ProjectedObstruction projected_obstruction;
+	projected_obstruction.vertices.resize(p_vertices.size() * 2);
+	projected_obstruction.carve = p_carve;
+
+	float* obstruction_vertices_ptrw = projected_obstruction.vertices.ptrw();
+
+	int vertex_index = 0;
+	for (const Vector2& vertex : p_vertices) {
+		obstruction_vertices_ptrw[vertex_index++] = vertex.x;
+		obstruction_vertices_ptrw[vertex_index++] = vertex.y;
+	}
+
+	RWLockWrite write_lock(geometry_rwlock);
+	_projected_obstructions.push_back(projected_obstruction);
+	bounds_dirty = true;
+}
+
+Vector<NavigationMeshSourceGeometryData2D::ProjectedObstruction>
+NavigationMeshSourceGeometryData2D::_get_projected_obstructions() const
+{
+	RWLockRead read_lock(geometry_rwlock);
+	return _projected_obstructions;
+}
+
+void NavigationMeshSourceGeometryData2D::set_data(
+	const Vector<Vector<Vector2>>& p_traversable_outlines,
+	const Vector<Vector<Vector2>>& p_obstruction_outlines,
+	Vector<ProjectedObstruction>& p_projected_obstructions)
+{
+	RWLockWrite write_lock(geometry_rwlock);
+	traversable_outlines = p_traversable_outlines;
+	obstruction_outlines = p_obstruction_outlines;
+	_projected_obstructions = p_projected_obstructions;
+	bounds_dirty = true;
+}
+
+void NavigationMeshSourceGeometryData2D::get_data(Vector<Vector<Vector2>>& r_traversable_outlines,
+	Vector<Vector<Vector2>>& r_obstruction_outlines,
+	Vector<ProjectedObstruction>& r_projected_obstructions)
+{
+	RWLockRead read_lock(geometry_rwlock);
+	r_traversable_outlines = traversable_outlines;
+	r_obstruction_outlines = obstruction_outlines;
+	r_projected_obstructions = _projected_obstructions;
+}
+
+Rect2 NavigationMeshSourceGeometryData2D::get_bounds()
+{
+	geometry_rwlock.read_lock();
+
+	if (bounds_dirty) {
+		geometry_rwlock.read_unlock();
+		RWLockWrite write_lock(geometry_rwlock);
+
+		bounds_dirty = false;
+		bounds = Rect2();
+		bool first_vertex = true;
+
+		for (const Vector<Vector2>& traversable_outline : traversable_outlines) {
+			for (const Vector2& traversable_point : traversable_outline) {
+				if (first_vertex) {
+					first_vertex = false;
+					bounds.position = traversable_point;
+				}
+				else {
+					bounds.expand_to(traversable_point);
+				}
+			}
+		}
+
+		for (const Vector<Vector2>& obstruction_outline : obstruction_outlines) {
+			for (const Vector2& obstruction_point : obstruction_outline) {
+				if (first_vertex) {
+					first_vertex = false;
+					bounds.position = obstruction_point;
+				}
+				else {
+					bounds.expand_to(obstruction_point);
+				}
+			}
+		}
+
+		for (const ProjectedObstruction& projected_obstruction : _projected_obstructions) {
+			for (int i = 0; i < projected_obstruction.vertices.size() / 2; i++) {
+				const Vector2 vertex = Vector2(projected_obstruction.vertices[i * 2],
+					projected_obstruction.vertices[i * 2 + 1]);
+				if (first_vertex) {
+					first_vertex = false;
+					bounds.position = vertex;
+				}
+				else {
+					bounds.expand_to(vertex);
+				}
+			}
+		}
+	}
+	else {
+		geometry_rwlock.read_unlock();
+	}
+
+	RWLockRead read_lock(geometry_rwlock);
+	return bounds;
+}
+
+// --- polygon_path_finder.cpp ---
+
+#include "core/math/geometry_2d.h"
+#include "polygon_path_finder.h"
+
+bool PolygonPathFinder::_is_point_inside(const Vector2& p_point) const
+{
+	int crosses = 0;
+
+	for (const Edge& E : edges) {
+		const Edge& e = E;
+
+		Vector2 a = points[e.points[0]].pos;
+		Vector2 b = points[e.points[1]].pos;
+
+		if (Geometry2D::segment_intersects_segment(a, b, p_point, outside_point, nullptr)) {
+			crosses++;
+		}
+	}
+
+	return crosses & 1;
+}
+
+void PolygonPathFinder::setup(const Vector<Vector2>& p_points, const Vector<int>& p_connections)
+{
+	ERR_FAIL_COND(p_connections.size() & 1);
+
+	points.clear();
+	edges.clear();
+
+	// insert points
+
+	int point_count = p_points.size();
+	points.resize(point_count + 2);
+	bounds = Rect2();
+
+	for (int i = 0; i < p_points.size(); i++) {
+		points.write[i].pos = p_points[i];
+		points.write[i].penalty = 0;
+
+		outside_point = i == 0 ? p_points[0] : p_points[i].max(outside_point);
+
+		if (i == 0) {
+			bounds.position = points[i].pos;
+		}
+		else {
+			bounds.expand_to(points[i].pos);
+		}
+	}
+
+	outside_point.x += 20.451 + Math::randf() * 10.2039;
+	outside_point.y += 21.193 + Math::randf() * 12.5412;
+
+	// insert edges (which are also connections)
+
+	for (int i = 0; i < p_connections.size(); i += 2) {
+		Edge e(p_connections[i], p_connections[i + 1]);
+		ERR_FAIL_INDEX(e.points[0], point_count);
+		ERR_FAIL_INDEX(e.points[1], point_count);
+		points.write[p_connections[i]].connections.insert(p_connections[i + 1]);
+		points.write[p_connections[i + 1]].connections.insert(p_connections[i]);
+		edges.insert(e);
+	}
+
+	// fill the remaining connections based on visibility
+
+	for (int i = 0; i < point_count; i++) {
+		for (int j = i + 1; j < point_count; j++) {
+			if (edges.has(Edge(i, j))) {
+				continue; // if in edge ignore
+			}
+
+			Vector2 from = points[i].pos;
+			Vector2 to = points[j].pos;
+
+			if (!_is_point_inside(
+					from * 0.5 + to * 0.5)) { // connection between points in inside space
+				continue;
+			}
+
+			bool valid = true;
+
+			for (const Edge& E : edges) {
+				const Edge& e = E;
+				if (e.points[0] == i || e.points[1] == i || e.points[0] == j || e.points[1] == j) {
+					continue;
+				}
+
+				Vector2 a = points[e.points[0]].pos;
+				Vector2 b = points[e.points[1]].pos;
+
+				if (Geometry2D::segment_intersects_segment(a, b, from, to, nullptr)) {
+					valid = false;
+					break;
+				}
+			}
+
+			if (valid) {
+				points.write[i].connections.insert(j);
+				points.write[j].connections.insert(i);
+			}
+		}
+	}
+}
+
+Vector<Vector2> PolygonPathFinder::find_path(const Vector2& p_from, const Vector2& p_to)
+{
+	Vector<Vector2> path;
+
+	Vector2 from = p_from;
+	Vector2 to = p_to;
+	Edge ignore_from_edge(-1, -1);
+	Edge ignore_to_edge(-1, -1);
+
+	if (!_is_point_inside(from)) {
+		float closest_dist = 1e20f;
+		Vector2 closest_point;
+
+		for (const Edge& E : edges) {
+			const Edge& e = E;
+			const Vector2 segment_a = points[e.points[0]].pos;
+			const Vector2 segment_b = points[e.points[1]].pos;
+			Vector2 closest = Geometry2D::get_closest_point_to_segment(from, segment_a, segment_b);
+			float d = from.distance_squared_to(closest);
+
+			if (d < closest_dist) {
+				ignore_from_edge = E;
+				closest_dist = d;
+				closest_point = closest;
+			}
+		}
+
+		from = closest_point;
+	};
+
+	if (!_is_point_inside(to)) {
+		float closest_dist = 1e20f;
+		Vector2 closest_point;
+
+		for (const Edge& E : edges) {
+			const Edge& e = E;
+			const Vector2 segment_a = points[e.points[0]].pos;
+			const Vector2 segment_b = points[e.points[1]].pos;
+			Vector2 closest = Geometry2D::get_closest_point_to_segment(to, segment_a, segment_b);
+			float d = to.distance_squared_to(closest);
+
+			if (d < closest_dist) {
+				ignore_to_edge = E;
+				closest_dist = d;
+				closest_point = closest;
+			}
+		}
+
+		to = closest_point;
+	};
+
+	// test direct connection
+	{
+		bool can_see_eachother = true;
+
+		for (const Edge& E : edges) {
+			const Edge& e = E;
+			if (e.points[0] == ignore_from_edge.points[0] &&
+				e.points[1] == ignore_from_edge.points[1]) {
+				continue;
+			}
+			if (e.points[0] == ignore_to_edge.points[0] &&
+				e.points[1] == ignore_to_edge.points[1]) {
+				continue;
+			}
+
+			Vector2 a = points[e.points[0]].pos;
+			Vector2 b = points[e.points[1]].pos;
+
+			if (Geometry2D::segment_intersects_segment(a, b, from, to, nullptr)) {
+				can_see_eachother = false;
+				break;
+			}
+		}
+
+		if (can_see_eachother) {
+			path.push_back(from);
+			path.push_back(to);
+			return path;
+		}
+	}
+
+	// add to graph
+
+	int aidx = points.size() - 2;
+	int bidx = points.size() - 1;
+	points.write[aidx].pos = from;
+	points.write[bidx].pos = to;
+	points.write[aidx].distance = 0;
+	points.write[bidx].distance = 0;
+	points.write[aidx].prev = -1;
+	points.write[bidx].prev = -1;
+	points.write[aidx].penalty = 0;
+	points.write[bidx].penalty = 0;
+
+	for (int i = 0; i < points.size() - 2; i++) {
+		bool valid_a = true;
+		bool valid_b = true;
+		points.write[i].prev = -1;
+		points.write[i].distance = 0;
+
+		if (!_is_point_inside(from * 0.5 + points[i].pos * 0.5)) {
+			valid_a = false;
+		}
+
+		if (!_is_point_inside(to * 0.5 + points[i].pos * 0.5)) {
+			valid_b = false;
+		}
+
+		for (const Edge& E : edges) {
+			const Edge& e = E;
+
+			if (e.points[0] == i || e.points[1] == i) {
+				continue;
+			}
+
+			Vector2 a = points[e.points[0]].pos;
+			Vector2 b = points[e.points[1]].pos;
+
+			if (valid_a) {
+				if (e.points[0] != ignore_from_edge.points[1] &&
+					e.points[1] != ignore_from_edge.points[1] &&
+					e.points[0] != ignore_from_edge.points[0] &&
+					e.points[1] != ignore_from_edge.points[0]) {
+					if (Geometry2D::segment_intersects_segment(
+							a, b, from, points[i].pos, nullptr)) {
+						valid_a = false;
+					}
+				}
+			}
+
+			if (valid_b) {
+				if (e.points[0] != ignore_to_edge.points[1] &&
+					e.points[1] != ignore_to_edge.points[1] &&
+					e.points[0] != ignore_to_edge.points[0] &&
+					e.points[1] != ignore_to_edge.points[0]) {
+					if (Geometry2D::segment_intersects_segment(a, b, to, points[i].pos, nullptr)) {
+						valid_b = false;
+					}
+				}
+			}
+
+			if (!valid_a && !valid_b) {
+				break;
+			}
+		}
+
+		if (valid_a) {
+			points.write[i].connections.insert(aidx);
+			points.write[aidx].connections.insert(i);
+		}
+
+		if (valid_b) {
+			points.write[i].connections.insert(bidx);
+			points.write[bidx].connections.insert(i);
+		}
+	}
+	// solve graph
+
+	HashSet<int> open_list;
+
+	points.write[aidx].distance = 0;
+	points.write[aidx].prev = aidx;
+	for (const int& E : points[aidx].connections) {
+		open_list.insert(E);
+		points.write[E].distance = from.distance_to(points[E].pos);
+		points.write[E].prev = aidx;
+	}
+
+	bool found_route = false;
+
+	while (true) {
+		if (open_list.is_empty()) {
+			print_verbose("Open list empty.");
+			break;
+		}
+		// check open list
+
+		int least_cost_point = -1;
+		float least_cost = 1e30;
+
+		// this could be faster (cache previous results)
+		for (const int& E : open_list) {
+			const Point& p = points[E];
+			float cost = p.distance;
+			cost += p.pos.distance_to(to);
+			cost += p.penalty;
+
+			if (cost < least_cost) {
+				least_cost_point = E;
+				least_cost = cost;
+			}
+		}
+
+		const Point& np = points[least_cost_point];
+		// open the neighbors for search
+
+		for (const int& E : np.connections) {
+			Point& p = points.write[E];
+			float distance = np.pos.distance_to(p.pos) + np.distance;
+
+			if (p.prev != -1) {
+				// oh this was visited already, can we win the cost?
+
+				if (p.distance > distance) {
+					p.prev = least_cost_point; // reassign previous
+					p.distance = distance;
+				}
+			}
+			else {
+				// add to open neighbors
+
+				p.prev = least_cost_point;
+				p.distance = distance;
+				open_list.insert(E);
+
+				if (E == bidx) {
+					// oh my reached end! stop algorithm
+					found_route = true;
+					break;
+				}
+			}
+		}
+
+		if (found_route) {
+			break;
+		}
+
+		open_list.erase(least_cost_point);
+	}
+
+	if (found_route) {
+		int at = bidx;
+		path.push_back(points[at].pos);
+		do {
+			at = points[at].prev;
+			path.push_back(points[at].pos);
+		} while (at != aidx);
+
+		path.reverse();
+	}
+
+	for (int i = 0; i < points.size() - 2; i++) {
+		points.write[i].connections.erase(aidx);
+		points.write[i].connections.erase(bidx);
+		points.write[i].prev = -1;
+		points.write[i].distance = 0;
+	}
+
+	points.write[aidx].connections.clear();
+	points.write[aidx].prev = -1;
+	points.write[aidx].distance = 0;
+	points.write[bidx].connections.clear();
+	points.write[bidx].prev = -1;
+	points.write[bidx].distance = 0;
+
+	return path;
+}
+
+bool PolygonPathFinder::is_point_inside(const Vector2& p_point) const
+{
+	return _is_point_inside(p_point);
+}
+
+Vector2 PolygonPathFinder::get_closest_point(const Vector2& p_point) const
+{
+	float closest_dist = 1e20f;
+	Vector2 closest_point;
+
+	for (const Edge& E : edges) {
+		const Edge& e = E;
+		const Vector2 segment_a = points[e.points[0]].pos;
+		const Vector2 segment_b = points[e.points[1]].pos;
+		Vector2 closest = Geometry2D::get_closest_point_to_segment(p_point, segment_a, segment_b);
+		float d = p_point.distance_squared_to(closest);
+
+		if (d < closest_dist) {
+			closest_dist = d;
+			closest_point = closest;
+		}
+	}
+
+	ERR_FAIL_COND_V(Math::is_equal_approx(closest_dist, 1e20f), Vector2());
+
+	return closest_point;
+}
+
+Vector<Vector2> PolygonPathFinder::get_intersections(
+	const Vector2& p_from, const Vector2& p_to) const
+{
+	Vector<Vector2> inters;
+
+	for (const Edge& E : edges) {
+		Vector2 a = points[E.points[0]].pos;
+		Vector2 b = points[E.points[1]].pos;
+
+		Vector2 res;
+		if (Geometry2D::segment_intersects_segment(a, b, p_from, p_to, &res)) {
+			inters.push_back(res);
+		}
+	}
+
+	return inters;
+}
+
+Rect2 PolygonPathFinder::get_bounds() const { return bounds; }
+
+void PolygonPathFinder::set_point_penalty(int p_point, float p_penalty)
+{
+	ERR_FAIL_INDEX(p_point, points.size() - 2);
+	points.write[p_point].penalty = p_penalty;
+}
+
+float PolygonPathFinder::get_point_penalty(int p_point) const
+{
+	ERR_FAIL_INDEX_V(p_point, points.size() - 2, 0);
+	return points[p_point].penalty;
+}
+
+PolygonPathFinder::PolygonPathFinder() {}

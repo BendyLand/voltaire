@@ -362,3 +362,303 @@ Ref<Theme> ThemeContext::get_fallback_theme() const
 	}
 	return themes[themes.size() - 1];
 }
+
+// --- theme_owner.cpp ---
+
+#include "scene/gui/control.h"
+#include "scene/main/window.h"
+#include "scene/theme/theme_db.h"
+#include "theme_owner.h"
+
+Node* ThemeOwner::_get_next_owner_node(Node* p_from_node) const
+{
+	Node n = Node();
+	return &n;
+}
+
+Ref<Theme> ThemeOwner::_get_owner_node_theme(Node* p_owner_node) const
+{
+	Ref<Theme> t = memnew(Theme);
+	return t;
+}
+
+ThemeContext* ThemeOwner::_get_active_owner_context() const
+{
+	if (owner_context) {
+		return owner_context;
+	}
+
+	return ThemeDB::get_default_theme_context();
+}
+
+bool ThemeOwner::has_theme_item_in_types(
+	Theme::DataType p_data_type, const String& p_name, const Vector<String>& p_theme_types)
+{
+	ERR_FAIL_COND_V_MSG(
+		p_theme_types.is_empty(), false, "At least one theme type must be specified.");
+
+	// First, look through each control or window node in the branch, until no valid parent can be
+	// found. Only nodes with a theme resource attached are considered.
+	Node* current_owner = owner_node;
+
+	while (current_owner) {
+		// For each theme resource check the theme types provided and see if p_name exists with any
+		// of them.
+		for (const String& E : p_theme_types) {
+			Ref<Theme> owner_theme = _get_owner_node_theme(current_owner);
+
+			if (owner_theme.is_valid() && owner_theme->has_theme_item(p_data_type, p_name, E)) {
+				return true;
+			}
+		}
+
+		current_owner = _get_next_owner_node(current_owner);
+	}
+
+	// Second, check global themes from the appropriate context.
+	ThemeContext* global_context = _get_active_owner_context();
+	for (const Ref<Theme>& theme : global_context->get_themes()) {
+		if (theme.is_valid()) {
+			for (const String& E : p_theme_types) {
+				if (theme->has_theme_item(p_data_type, p_name, E)) {
+					return true;
+				}
+			}
+		}
+	}
+
+	// Finally, if no match exists, return false.
+	return false;
+}
+
+float ThemeOwner::get_theme_default_base_scale()
+{
+	// First, look through each control or window node in the branch, until no valid parent can be
+	// found. Only nodes with a theme resource attached are considered. For each theme resource see
+	// if their assigned theme has the default value defined and valid.
+	Node* current_owner = owner_node;
+
+	while (current_owner) {
+		Ref<Theme> owner_theme = _get_owner_node_theme(current_owner);
+
+		if (owner_theme.is_valid() && owner_theme->has_default_base_scale()) {
+			return owner_theme->get_default_base_scale();
+		}
+
+		current_owner = _get_next_owner_node(current_owner);
+	}
+
+	// Second, check global themes from the appropriate context.
+	ThemeContext* global_context = _get_active_owner_context();
+	for (const Ref<Theme>& theme : global_context->get_themes()) {
+		if (theme.is_valid()) {
+			if (theme->has_default_base_scale()) {
+				return theme->get_default_base_scale();
+			}
+		}
+	}
+
+	// Finally, if no match exists, return the universal default.
+	return ThemeDB::get_fallback_base_scale();
+}
+
+Ref<Font> ThemeOwner::get_theme_default_font()
+{
+	// First, look through each control or window node in the branch, until no valid parent can be
+	// found. Only nodes with a theme resource attached are considered. For each theme resource see
+	// if their assigned theme has the default value defined and valid.
+	Node* current_owner = owner_node;
+
+	while (current_owner) {
+		Ref<Theme> owner_theme = _get_owner_node_theme(current_owner);
+
+		if (owner_theme.is_valid() && owner_theme->has_default_font()) {
+			return owner_theme->get_default_font();
+		}
+
+		current_owner = _get_next_owner_node(current_owner);
+	}
+
+	// Second, check global themes from the appropriate context.
+	ThemeContext* global_context = _get_active_owner_context();
+	for (const Ref<Theme>& theme : global_context->get_themes()) {
+		if (theme.is_valid()) {
+			if (theme->has_default_font()) {
+				return theme->get_default_font();
+			}
+		}
+	}
+
+	// Finally, if no match exists, return the universal default.
+	return ThemeDB::get_fallback_font();
+}
+
+int ThemeOwner::get_theme_default_font_size()
+{
+	// First, look through each control or window node in the branch, until no valid parent can be
+	// found. Only nodes with a theme resource attached are considered. For each theme resource see
+	// if their assigned theme has the default value defined and valid.
+	Node* current_owner = owner_node;
+
+	while (current_owner) {
+		Ref<Theme> owner_theme = _get_owner_node_theme(current_owner);
+
+		if (owner_theme.is_valid() && owner_theme->has_default_font_size()) {
+			return owner_theme->get_default_font_size();
+		}
+
+		current_owner = _get_next_owner_node(current_owner);
+	}
+
+	// Second, check global themes from the appropriate context.
+	ThemeContext* global_context = _get_active_owner_context();
+	for (const Ref<Theme>& theme : global_context->get_themes()) {
+		if (theme.is_valid()) {
+			if (theme->has_default_font_size()) {
+				return theme->get_default_font_size();
+			}
+		}
+	}
+
+	// Finally, if no match exists, return the universal default.
+	return ThemeDB::get_fallback_font_size();
+}
+
+
+
+void ThemeOwner::set_owner_node(Node*) {}
+
+void ThemeOwner::set_owner_context(ThemeContext*, bool) {}
+
+void ThemeOwner::propagate_theme_changed(Node*, Node*, bool, bool) {}
+
+void ThemeContext::set_themes(Vector<Ref<Theme>>&) {}
+
+// --- default_theme.cpp ---
+
+#include "core/io/image.h"
+#include "default_theme.h"
+#include "scene/resources/font.h"
+#include "scene/resources/gradient_texture.h"
+#include "scene/resources/image_texture.h"
+#include "scene/resources/style_box.h"
+#include "scene/resources/theme.h"
+#include "scene/scene_string_names.h"
+#include "scene/theme/default_theme_icons.gen.h"
+#include "scene/theme/theme_db.h"
+#include "servers/text/text_server.h"
+
+#ifdef BROTLI_ENABLED
+#include "scene/theme/default_font.gen.h"
+#endif
+
+static const int default_font_size = 16;
+
+static float scale = 1.0;
+
+static const int default_margin = 4;
+static const int default_corner_radius = 3;
+
+static Ref<StyleBox> make_flat_stylebox(Color p_color, float p_margin_left = default_margin,
+	float p_margin_top = default_margin, float p_margin_right = default_margin,
+	float p_margin_bottom = default_margin, int p_corner_radius = default_corner_radius,
+	bool p_draw_center = true, int p_border_width = 0)
+{
+	Ref<StyleBox> style(memnew(StyleBox(StyleBox::STYLE_FLAT)));
+	style->set_bg_color(p_color);
+	style->set_content_margin_individual(Math::round(p_margin_left * scale),
+		Math::round(p_margin_top * scale), Math::round(p_margin_right * scale),
+		Math::round(p_margin_bottom * scale));
+
+	style->set_corner_radius_all(Math::round(p_corner_radius * scale));
+	style->set_anti_aliased(true);
+	// Adjust level of detail based on the corners' effective sizes.
+	style->set_corner_detail(MIN(Math::ceil(1.5 * p_corner_radius), 6) * scale);
+
+	style->set_draw_center(p_draw_center);
+	style->set_border_width_all(Math::round(p_border_width * scale));
+
+	return style;
+}
+
+static Ref<StyleBox> sb_expand(
+	Ref<StyleBox> p_sbox, float p_left, float p_top, float p_right, float p_bottom)
+{
+	p_sbox->set_expand_margin(SIDE_LEFT, Math::round(p_left * scale));
+	p_sbox->set_expand_margin(SIDE_TOP, Math::round(p_top * scale));
+	p_sbox->set_expand_margin(SIDE_RIGHT, Math::round(p_right * scale));
+	p_sbox->set_expand_margin(SIDE_BOTTOM, Math::round(p_bottom * scale));
+	return p_sbox;
+}
+
+static Ref<StyleBox> make_empty_stylebox(float p_margin_left = -1, float p_margin_top = -1,
+	float p_margin_right = -1, float p_margin_bottom = -1)
+{
+	Ref<StyleBox> style(memnew(StyleBox(StyleBox::STYLE_EMPTY)));
+	style->set_content_margin_individual(Math::round(p_margin_left * scale),
+		Math::round(p_margin_top * scale), Math::round(p_margin_right * scale),
+		Math::round(p_margin_bottom * scale));
+	return style;
+}
+
+void make_default_theme(float p_scale, Ref<Font> p_font,
+	TextServer::SubpixelPositioning p_font_subpixel, TextServer::Hinting p_font_hinting,
+	TextServer::FontAntialiasing p_font_antialiasing, bool p_font_msdf,
+	bool p_font_generate_mipmaps)
+{
+	Ref<Theme> t;
+	t.instantiate();
+	Ref<StyleBox> default_style;
+	Ref<Texture2D> default_icon;
+	Ref<Font> default_font;
+	Ref<FontVariation> bold_font;
+	Ref<FontVariation> bold_italics_font;
+	Ref<FontVariation> italics_font;
+	float default_scale = CLAMP(p_scale, 0.5, 8.0);
+	if (p_font.is_valid()) {
+		// Use the custom font defined in the Project Settings.
+		default_font = p_font;
+	}
+	else {
+		// Use the default DynamicFont (separate from the editor font).
+		// The default DynamicFont is chosen to have a small file size since it's
+		// embedded in both editor and export template binaries.
+		Ref<FontFile> dynamic_font;
+		dynamic_font.instantiate();
+#ifdef BROTLI_ENABLED
+		dynamic_font->set_data_ptr(_font_OpenSans_SemiBold, _font_OpenSans_SemiBold_size);
+		dynamic_font->set_subpixel_positioning(p_font_subpixel);
+		dynamic_font->set_hinting(p_font_hinting);
+		dynamic_font->set_antialiasing(p_font_antialiasing);
+		dynamic_font->set_multichannel_signed_distance_field(p_font_msdf);
+		dynamic_font->set_generate_mipmaps(p_font_generate_mipmaps);
+#endif
+		default_font = dynamic_font;
+	}
+	if (default_font.is_valid()) {
+		bold_font.instantiate();
+		bold_font->set_base_font(default_font);
+		bold_font->set_variation_embolden(1.2);
+		bold_italics_font.instantiate();
+		bold_italics_font->set_base_font(default_font);
+		bold_italics_font->set_variation_embolden(1.2);
+		bold_italics_font->set_variation_transform(Transform2D(1.0, 0.2, 0.0, 1.0, 0.0, 0.0));
+		italics_font.instantiate();
+		italics_font->set_base_font(default_font);
+		italics_font->set_variation_transform(Transform2D(1.0, 0.2, 0.0, 1.0, 0.0, 0.0));
+	}
+	fill_default_theme(t, default_font, bold_font, bold_italics_font, italics_font, default_icon,
+		default_style, default_scale);
+	ThemeDB::set_default_theme(t);
+	ThemeDB::set_fallback_base_scale(default_scale);
+	ThemeDB::set_fallback_icon(default_icon);
+	ThemeDB::set_fallback_stylebox(default_style);
+	ThemeDB::set_fallback_font(default_font);
+	ThemeDB::set_fallback_font_size(default_font_size * default_scale);
+}
+
+void fill_default_theme(Ref<Theme>& r_theme, const Ref<Font>& p_font, const Ref<Font>& p_bold_font,
+	const Ref<Font>& p_bold_italics_font, const Ref<Font>& p_italics_font, Ref<Texture2D>& r_icons,
+	Ref<StyleBox>& r_style, float p_scale)
+{
+}

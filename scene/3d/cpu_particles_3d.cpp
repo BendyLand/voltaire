@@ -639,4 +639,699 @@ void CPUParticles3D::_particles_process(double p_delta) {}
 
 PackedStringArray CPUParticles3D::get_configuration_warnings() const { return PackedStringArray(); }
 
+// ==========================================================================
+// Merged from scene/3d/gpu_particles_3d.cpp
+// ==========================================================================
 
+#include "core/config/engine.h"
+#include "core/os/os.h"
+#include "gpu_particles_3d.h"
+#include "scene/3d/cpu_particles_3d.h"
+#include "scene/resources/curve_texture.h"
+#include "scene/resources/gradient_texture.h"
+#include "scene/resources/mesh.h"
+#include "scene/resources/particle_process_material.h"
+#include "servers/rendering/renderer.h"
+
+AABB GPUParticles3D::get_aabb() const { return AABB(); }
+
+void GPUParticles3D::set_emitting(bool p_emitting)
+{
+	// Do not return even if `p_emitting == emitting` because `emitting` is just an approximation.
+	if (p_emitting && p_emitting != emitting && !use_fixed_seed && one_shot) {
+		set_seed(Math::rand());
+	}
+	if (p_emitting && one_shot) {
+		if (!active && !emitting) {
+			// Last cycle ended.
+			active = true;
+			time = 0;
+			signal_canceled = false;
+			emission_time = lifetime;
+			active_time = lifetime * (2 - explosiveness_ratio);
+		}
+		else {
+			signal_canceled = true;
+		}
+		set_process_internal(true);
+	}
+	else if (!p_emitting) {
+		if (one_shot) {
+			set_process_internal(true);
+		}
+		else {
+			set_process_internal(false);
+		}
+	}
+	else {
+		set_process_internal(true);
+	}
+
+	emitting = p_emitting;
+	Renderer::particles_set_emitting(particles, p_emitting);
+}
+
+void GPUParticles3D::set_amount(int p_amount)
+{
+	ERR_FAIL_COND_MSG(p_amount < 1, "Amount of particles cannot be smaller than 1.");
+	amount = p_amount;
+	Renderer::particles_set_amount(particles, amount);
+}
+
+void GPUParticles3D::set_lifetime(double p_lifetime)
+{
+	ERR_FAIL_COND_MSG(p_lifetime <= 0, "Particles lifetime must be greater than 0.");
+	lifetime = p_lifetime;
+	Renderer::particles_set_lifetime(particles, lifetime);
+}
+
+void GPUParticles3D::set_interp_to_end(float p_interp)
+{
+	interp_to_end_factor = CLAMP(p_interp, 0.0, 1.0);
+	Renderer::particles_set_interp_to_end(particles, interp_to_end_factor);
+}
+
+void GPUParticles3D::set_one_shot(bool p_one_shot)
+{
+	one_shot = p_one_shot;
+	Renderer::particles_set_one_shot(particles, one_shot);
+
+	if (is_emitting()) {
+		if (!one_shot) {
+			Renderer::particles_restart(particles);
+		}
+	}
+}
+
+bool GPUParticles3D::get_use_fixed_seed() const { return use_fixed_seed; }
+
+void GPUParticles3D::set_seed(uint32_t p_seed)
+{
+	seed = p_seed;
+	Renderer::particles_set_seed(particles, p_seed);
+}
+
+uint32_t GPUParticles3D::get_seed() const { return seed; }
+
+void GPUParticles3D::set_pre_process_time(double p_time)
+{
+	pre_process_time = p_time;
+	Renderer::particles_set_pre_process_time(particles, pre_process_time);
+}
+
+void GPUParticles3D::set_explosiveness_ratio(real_t p_ratio)
+{
+	explosiveness_ratio = p_ratio;
+	Renderer::particles_set_explosiveness_ratio(particles, explosiveness_ratio);
+}
+
+void GPUParticles3D::set_randomness_ratio(real_t p_ratio)
+{
+	randomness_ratio = p_ratio;
+	Renderer::particles_set_randomness_ratio(particles, randomness_ratio);
+}
+
+void GPUParticles3D::set_use_local_coordinates(bool p_enable)
+{
+	local_coords = p_enable;
+	Renderer::particles_set_use_local_coordinates(particles, local_coords);
+}
+
+void GPUParticles3D::set_speed_scale(double p_scale)
+{
+	speed_scale = p_scale;
+	Renderer::particles_set_speed_scale(particles, p_scale);
+}
+
+void GPUParticles3D::set_collision_base_size(real_t p_size)
+{
+	collision_base_size = p_size;
+	Renderer::particles_set_collision_base_size(particles, p_size);
+}
+
+bool GPUParticles3D::is_emitting() const { return emitting; }
+
+int GPUParticles3D::get_amount() const { return amount; }
+
+double GPUParticles3D::get_lifetime() const { return lifetime; }
+
+float GPUParticles3D::get_interp_to_end() const { return interp_to_end_factor; }
+
+bool GPUParticles3D::get_one_shot() const { return one_shot; }
+
+double GPUParticles3D::get_pre_process_time() const { return pre_process_time; }
+
+real_t GPUParticles3D::get_explosiveness_ratio() const { return explosiveness_ratio; }
+
+real_t GPUParticles3D::get_randomness_ratio() const { return randomness_ratio; }
+
+AABB GPUParticles3D::get_visibility_aabb() const { return visibility_aabb; }
+
+bool GPUParticles3D::get_use_local_coordinates() const { return local_coords; }
+
+Ref<Material> GPUParticles3D::get_process_material() const { return process_material; }
+
+double GPUParticles3D::get_speed_scale() const { return speed_scale; }
+
+real_t GPUParticles3D::get_collision_base_size() const { return collision_base_size; }
+
+void GPUParticles3D::set_draw_order(DrawOrder p_order)
+{
+	draw_order = p_order;
+	Renderer::particles_set_draw_order(particles, RSE::ParticlesDrawOrder(p_order));
+}
+
+void GPUParticles3D::set_trail_lifetime(double p_seconds)
+{
+	ERR_FAIL_COND(p_seconds < 0.01 - CMP_EPSILON);
+	trail_lifetime = p_seconds;
+	Renderer::particles_set_trails(particles, trail_enabled, trail_lifetime);
+}
+
+bool GPUParticles3D::is_trail_enabled() const { return trail_enabled; }
+
+double GPUParticles3D::get_trail_lifetime() const { return trail_lifetime; }
+
+GPUParticles3D::DrawOrder GPUParticles3D::get_draw_order() const { return draw_order; }
+
+int GPUParticles3D::get_draw_passes() const { return draw_passes.size(); }
+
+Ref<Mesh> GPUParticles3D::get_draw_pass_mesh(int p_pass) const
+{
+	ERR_FAIL_INDEX_V(p_pass, draw_passes.size(), Ref<Mesh>());
+
+	return draw_passes[p_pass];
+}
+
+void GPUParticles3D::set_fixed_fps(int p_count)
+{
+	fixed_fps = p_count;
+	Renderer::particles_set_fixed_fps(particles, p_count);
+}
+
+int GPUParticles3D::get_fixed_fps() const { return fixed_fps; }
+
+void GPUParticles3D::set_fractional_delta(bool p_enable)
+{
+	fractional_delta = p_enable;
+	Renderer::particles_set_fractional_delta(particles, p_enable);
+}
+
+bool GPUParticles3D::get_fractional_delta() const { return fractional_delta; }
+
+void GPUParticles3D::set_interpolate(bool p_enable)
+{
+	interpolate = p_enable;
+	Renderer::particles_set_interpolate(particles, p_enable);
+}
+
+bool GPUParticles3D::get_interpolate() const { return interpolate; }
+
+void GPUParticles3D::restart(bool p_keep_seed)
+{
+	if (!p_keep_seed && !use_fixed_seed) {
+		set_seed(Math::rand());
+	}
+	Renderer::particles_restart(particles);
+	Renderer::particles_set_emitting(particles, true);
+
+	emitting = true;
+	active = true;
+	signal_canceled = false;
+	time = 0;
+	emission_time = lifetime * (1 - explosiveness_ratio);
+	active_time = lifetime * (2 - explosiveness_ratio);
+	set_process_internal(true);
+}
+
+AABB GPUParticles3D::capture_aabb() const
+{
+	return Renderer::particles_get_current_aabb(particles);
+}
+
+void GPUParticles3D::request_particles_process(
+	real_t p_requested_process_time, real_t p_request_process_time_residual)
+{
+	Renderer::particles_request_process_time(
+		particles, p_requested_process_time, p_request_process_time_residual);
+	// Setting emitting independently from set_emitting is important here
+	// we assume to be in a controlled process situation.
+	// setting RS emission to true is necessary to ensure particles will emit when
+	// regular process time is > than zero but the particles are already in trailing mode.
+	// this could also be done on the GScript/tool side.
+	if (p_requested_process_time > 0.0) {
+		emitting = true;
+		Renderer::particles_set_emitting(particles, true);
+	}
+	if (p_request_process_time_residual > 0.0) {
+		emitting = false;
+	}
+}
+
+void GPUParticles3D::emit_particle(const Transform3D& p_transform, const Vector3& p_velocity,
+	const Color& p_color, const Color& p_custom, uint32_t p_emit_flags)
+{
+	Renderer::particles_emit(
+		particles, p_transform, p_velocity, p_color, p_custom, p_emit_flags);
+}
+
+NodePath GPUParticles3D::get_sub_emitter() const { return sub_emitter; }
+
+Ref<Skin> GPUParticles3D::get_skin() const { return skin; }
+
+GPUParticles3D::TransformAlign GPUParticles3D::get_transform_align() const
+{
+	return transform_align;
+}
+
+void GPUParticles3D::set_transform_align_channel_filter(
+	RSE::ParticlesTransformAlignCustomSrc p_align_channel_filter)
+{
+	ERR_FAIL_INDEX(uint32_t(p_align_channel_filter),
+		uint32_t(RSE::ParticlesTransformAlignCustomSrc::PARTICLES_ALIGN_CHANNEL_FILTER_MAX));
+	transform_align_channel_filter = p_align_channel_filter;
+	Renderer::particles_set_transform_align_channel_filter(
+		particles, transform_align_channel_filter);
+}
+
+RSE::ParticlesTransformAlignCustomSrc GPUParticles3D::get_transform_align_channel_filter() const
+{
+	return transform_align_channel_filter;
+}
+
+void GPUParticles3D::set_transform_align_axis(RSE::ParticlesTransformAlignAxis p_axis)
+{
+	transform_align_axis = p_axis;
+	Renderer::particles_set_transform_align_axis(particles, p_axis);
+}
+
+RSE::ParticlesTransformAlignAxis GPUParticles3D::get_transform_align_axis() const
+{
+	return transform_align_axis;
+}
+
+void GPUParticles3D::set_amount_ratio(float p_ratio)
+{
+	amount_ratio = p_ratio;
+	Renderer::particles_set_amount_ratio(particles, p_ratio);
+}
+
+float GPUParticles3D::get_amount_ratio() const { return amount_ratio; }
+
+GPUParticles3D::GPUParticles3D()
+{
+	particles = Renderer::particles_create();
+	Renderer::particles_set_mode(particles, RSE::PARTICLES_MODE_3D);
+	set_base(particles);
+	one_shot = false; // Needed so that set_emitting doesn't access uninitialized values
+	set_emitting(true);
+	set_one_shot(false);
+	set_seed(Math::rand());
+	set_amount_ratio(1.0);
+	set_amount(8);
+	set_lifetime(1);
+	set_fixed_fps(30);
+	set_fractional_delta(true);
+	set_interpolate(true);
+	set_pre_process_time(0);
+	set_explosiveness_ratio(0);
+	set_randomness_ratio(0);
+	set_trail_lifetime(0.3);
+	set_use_local_coordinates(false);
+	set_draw_passes(1);
+	set_draw_order(DRAW_ORDER_INDEX);
+	set_speed_scale(1);
+	set_collision_base_size(collision_base_size);
+	set_transform_align(TRANSFORM_ALIGN_DISABLED);
+	set_transform_align_channel_filter(
+		RSE::ParticlesTransformAlignCustomSrc::PARTICLES_ALIGN_CHANNEL_FILTER_X);
+	set_transform_align_axis(RSE::ParticlesTransformAlignAxis::PARTICLES_ALIGN_AXIS_Y);
+	set_use_fixed_seed(false);
+}
+
+void GPUParticles3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void GPUParticles3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+GPUParticles3D::~GPUParticles3D()
+{
+	ERR_FAIL_NULL(Renderer::data);
+	Renderer::free_rid(particles);
+}
+
+PackedStringArray GPUParticles3D::get_configuration_warnings() const { return PackedStringArray(); }
+
+void GPUParticles3D::set_use_fixed_seed(bool) {}
+
+void GPUParticles3D::set_transform_align(GPUParticles3D::TransformAlign) {}
+
+void GPUParticles3D::set_draw_passes(int) {}
+
+// ==========================================================================
+// Merged from scene/3d/gpu_particles_collision_3d.cpp
+// ==========================================================================
+
+#include "gpu_particles_collision_3d.h"
+
+#include "core/math/geometry_3d.h"
+#include "core/os/os.h"
+#include "scene/3d/camera_3d.h"
+#include "scene/3d/mesh_instance_3d.h"
+#include "scene/main/viewport.h"
+#include "servers/rendering/renderer.h"
+
+GPUParticlesCollision3D::BakeBeginFunc GPUParticlesCollision3D::bake_begin_function = nullptr;
+GPUParticlesCollision3D::BakeStepFunc GPUParticlesCollision3D::bake_step_function = nullptr;
+GPUParticlesCollision3D::BakeEndFunc GPUParticlesCollision3D::bake_end_function = nullptr;
+
+void GPUParticlesCollision3D::_apply_shape_type()
+{
+	if (!collision.is_valid()) {
+		return;
+	}
+	RSE::ParticlesCollisionType rs_type = RSE::PARTICLES_COLLISION_TYPE_BOX_COLLIDE;
+	switch (shape_type) {
+	case SHAPE_SPHERE:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_SPHERE_COLLIDE;
+		break;
+	case SHAPE_BOX:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_BOX_COLLIDE;
+		break;
+	case SHAPE_SDF:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_SDF_COLLIDE;
+		break;
+	case SHAPE_HEIGHT_FIELD:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_HEIGHTFIELD_COLLIDE;
+		break;
+	}
+	Renderer::particles_collision_set_collision_type(collision, rs_type);
+}
+
+void GPUParticlesCollision3D::set_shape_type(ShapeType p_type)
+{
+	shape_type = p_type;
+	_apply_shape_type();
+	set_process_internal(shape_type == SHAPE_HEIGHT_FIELD &&
+						 (follow_camera_mode || update_mode == UPDATE_MODE_ALWAYS));
+}
+
+void GPUParticlesCollision3D::set_cull_mask(uint32_t p_cull_mask)
+{
+	cull_mask = p_cull_mask;
+	Renderer::particles_collision_set_cull_mask(collision, p_cull_mask);
+}
+
+uint32_t GPUParticlesCollision3D::get_cull_mask() const { return cull_mask; }
+
+void GPUParticlesCollision3D::set_radius(real_t p_radius)
+{
+	radius = p_radius;
+	Renderer::particles_collision_set_sphere_radius(collision, radius);
+}
+
+void GPUParticlesCollision3D::set_size(const Vector3& p_size)
+{
+	size = p_size;
+	Renderer::particles_collision_set_box_extents(collision, size / 2);
+}
+
+void GPUParticlesCollision3D::set_thickness(float p_thickness) { thickness = p_thickness; }
+
+bool GPUParticlesCollision3D::get_bake_mask_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(p_layer_number < 1 || p_layer_number > 20, false,
+		vformat(
+			"The render layer number (%d) must be between 1 and 20 (inclusive).", p_layer_number));
+	return bake_mask & (1 << (p_layer_number - 1));
+}
+
+void GPUParticlesCollision3D::set_texture(const Ref<Texture3D>& p_texture)
+{
+	texture = p_texture;
+	RID tex = texture.is_valid() ? texture->get_rid() : RID();
+	Renderer::particles_collision_set_field_texture(collision, tex);
+}
+
+Vector3i GPUParticlesCollision3D::get_estimated_cell_size() const
+{
+	static const int subdivs[SDF_RESOLUTION_MAX] = {16, 32, 64, 128, 256, 512};
+	int subdiv = subdivs[sdf_resolution];
+	AABB aabb(-size / 2, size);
+	float cell_size = aabb.get_longest_axis_size() / float(subdiv);
+	Vector3i sdf_size = Vector3i(aabb.size / cell_size);
+	return sdf_size.maxi(1);
+}
+
+void GPUParticlesCollision3D::set_update_mode(UpdateMode p_update_mode)
+{
+	update_mode = p_update_mode;
+	set_process_internal(shape_type == SHAPE_HEIGHT_FIELD &&
+						 (follow_camera_mode || update_mode == UPDATE_MODE_ALWAYS));
+}
+
+void GPUParticlesCollision3D::set_heightfield_mask(uint32_t p_heightfield_mask)
+{
+	heightfield_mask = p_heightfield_mask;
+	Renderer::particles_collision_set_height_field_mask(collision, p_heightfield_mask);
+}
+
+void GPUParticlesCollision3D::set_heightfield_mask_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Render layer number must be between 1 and 20 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 20, "Render layer number must be between 1 and 20 inclusive.");
+	uint32_t mask = get_heightfield_mask();
+	if (p_value) {
+		mask |= 1 << (p_layer_number - 1);
+	}
+	else {
+		mask &= ~(1 << (p_layer_number - 1));
+	}
+	set_heightfield_mask(mask);
+}
+
+bool GPUParticlesCollision3D::get_heightfield_mask_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Render layer number must be between 1 and 20 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 20, false, "Render layer number must be between 1 and 20 inclusive.");
+	return heightfield_mask & (1 << (p_layer_number - 1));
+}
+
+void GPUParticlesCollision3D::set_follow_camera_enabled(bool p_enabled)
+{
+	follow_camera_mode = p_enabled;
+	set_process_internal(shape_type == SHAPE_HEIGHT_FIELD &&
+						 (follow_camera_mode || update_mode == UPDATE_MODE_ALWAYS));
+}
+
+AABB GPUParticlesCollision3D::get_aabb() const
+{
+	if (shape_type == SHAPE_SPHERE) {
+		return AABB(
+			Vector3(-radius, -radius, -radius), Vector3(radius * 2, radius * 2, radius * 2));
+	}
+	return AABB(-size / 2, size);
+}
+
+PackedStringArray GPUParticlesCollision3D::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node3D::get_configuration_warnings();
+
+	if (shape_type == SHAPE_SDF && bake_mask == 0) {
+		warnings.push_back(RTR("The Bake Mask has no bits enabled, which means baking will not "
+							   "produce any collision for this GPUParticlesCollision3D.\nTo "
+							   "resolve this, enable at least one bit in the Bake Mask property."));
+	}
+
+	return warnings;
+}
+
+void GPUParticlesCollision3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+void GPUParticlesCollision3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+
+	if (shape_type != SHAPE_HEIGHT_FIELD) {
+		return;
+	}
+
+	switch (p_what) {
+	case NOTIFICATION_INTERNAL_PROCESS: {
+		if (update_mode == UPDATE_MODE_ALWAYS) {
+			Renderer::particles_collision_height_field_update(collision);
+		}
+
+		if (follow_camera_mode && get_viewport()) {
+			Camera3D* cam = get_viewport()->get_camera_3d();
+			if (cam) {
+				Transform3D xform = get_global_transform();
+				Vector3 x_axis = xform.basis.get_column(Vector3::AXIS_X).normalized();
+				Vector3 z_axis = xform.basis.get_column(Vector3::AXIS_Z).normalized();
+				float x_len = xform.basis.get_scale().x;
+				float z_len = xform.basis.get_scale().z;
+
+				Vector3 cam_pos = cam->get_global_transform().origin;
+				Transform3D new_xform = xform;
+
+				while (x_axis.dot(cam_pos - new_xform.origin) > x_len) {
+					new_xform.origin += x_axis * x_len;
+				}
+				while (x_axis.dot(cam_pos - new_xform.origin) < -x_len) {
+					new_xform.origin -= x_axis * x_len;
+				}
+
+				while (z_axis.dot(cam_pos - new_xform.origin) > z_len) {
+					new_xform.origin += z_axis * z_len;
+				}
+				while (z_axis.dot(cam_pos - new_xform.origin) < -z_len) {
+					new_xform.origin -= z_axis * z_len;
+				}
+
+				if (new_xform != xform) {
+					set_global_transform(new_xform);
+					Renderer::particles_collision_height_field_update(collision);
+				}
+			}
+		}
+	} break;
+
+	case NOTIFICATION_TRANSFORM_CHANGED: {
+		Renderer::particles_collision_height_field_update(collision);
+	} break;
+	}
+}
+
+GPUParticlesCollision3D::GPUParticlesCollision3D(ShapeType p_type) : shape_type(p_type)
+{
+	if (Renderer::data) {
+		collision = Renderer::particles_collision_create();
+		_apply_shape_type();
+		set_base(collision);
+	}
+}
+
+GPUParticlesCollision3D::~GPUParticlesCollision3D()
+{
+	if (collision.is_valid() && Renderer::data) {
+		Renderer::free_rid(collision);
+	}
+}
+
+void GPUParticlesAttractor3D::_apply_attractor_type()
+{
+	if (!collision.is_valid()) {
+		return;
+	}
+	RSE::ParticlesCollisionType rs_type = RSE::PARTICLES_COLLISION_TYPE_SPHERE_ATTRACT;
+	switch (attractor_type) {
+	case ATTRACTOR_SPHERE:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_SPHERE_ATTRACT;
+		break;
+	case ATTRACTOR_BOX:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_BOX_ATTRACT;
+		break;
+	case ATTRACTOR_VECTOR_FIELD:
+		rs_type = RSE::PARTICLES_COLLISION_TYPE_VECTOR_FIELD_ATTRACT;
+		break;
+	}
+	Renderer::particles_collision_set_collision_type(collision, rs_type);
+}
+
+void GPUParticlesAttractor3D::set_attractor_type(AttractorType p_type)
+{
+	attractor_type = p_type;
+	_apply_attractor_type();
+}
+
+void GPUParticlesAttractor3D::set_cull_mask(uint32_t p_cull_mask)
+{
+	cull_mask = p_cull_mask;
+	Renderer::particles_collision_set_cull_mask(collision, p_cull_mask);
+}
+
+uint32_t GPUParticlesAttractor3D::get_cull_mask() const { return cull_mask; }
+
+void GPUParticlesAttractor3D::set_strength(real_t p_strength)
+{
+	strength = p_strength;
+	Renderer::particles_collision_set_attractor_strength(collision, p_strength);
+}
+
+real_t GPUParticlesAttractor3D::get_strength() const { return strength; }
+
+void GPUParticlesAttractor3D::set_attenuation(real_t p_attenuation)
+{
+	attenuation = p_attenuation;
+	Renderer::particles_collision_set_attractor_attenuation(collision, p_attenuation);
+}
+
+real_t GPUParticlesAttractor3D::get_attenuation() const { return attenuation; }
+
+real_t GPUParticlesAttractor3D::get_directionality() const { return directionality; }
+
+void GPUParticlesAttractor3D::set_radius(real_t p_radius)
+{
+	radius = p_radius;
+	Renderer::particles_collision_set_sphere_radius(collision, radius);
+}
+
+void GPUParticlesAttractor3D::set_size(const Vector3& p_size)
+{
+	size = p_size;
+	Renderer::particles_collision_set_box_extents(collision, size / 2);
+}
+
+void GPUParticlesAttractor3D::set_texture(const Ref<Texture3D>& p_texture)
+{
+	texture = p_texture;
+	RID tex = texture.is_valid() ? texture->get_rid() : RID();
+	Renderer::particles_collision_set_field_texture(collision, tex);
+}
+
+AABB GPUParticlesAttractor3D::get_aabb() const
+{
+	if (attractor_type == ATTRACTOR_SPHERE) {
+		return AABB(
+			Vector3(-radius, -radius, -radius), Vector3(radius * 2, radius * 2, radius * 2));
+	}
+	return AABB(-size / 2, size);
+}
+
+void GPUParticlesAttractor3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void GPUParticlesAttractor3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+GPUParticlesAttractor3D::GPUParticlesAttractor3D(AttractorType p_type) : attractor_type(p_type)
+{
+	if (Renderer::data) {
+		collision = Renderer::particles_collision_create();
+		_apply_attractor_type();
+		set_base(collision);
+	}
+}
+
+GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
+{
+	if (collision.is_valid() && Renderer::data) {
+		Renderer::free_rid(collision);
+	}
+}

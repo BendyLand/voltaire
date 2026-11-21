@@ -51,11 +51,7 @@ class TextureRect;
 class ColorPicker : public Control
 {
 	friend class ColorPickerShape;
-
-	friend class ColorModeRGB;
-	friend class ColorModeHSV;
-	friend class ColorModeLinear;
-	friend class ColorModeOKHSL;
+	friend class ColorMode;
 
 public:
 	enum ColorModeType

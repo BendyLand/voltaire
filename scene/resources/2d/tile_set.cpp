@@ -38,7 +38,6 @@
 #include "scene/resources/image_texture.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
-#include "tile_set.compat.inc"
 #include "tile_set.h"
 
 Vector<int> TileMapPattern::_get_tile_data() const
@@ -4393,4 +4392,21 @@ void TileData::add_custom_data_layer(int p_index) {}
 
 void TileSet::remove_source(int p_source_id) {}
 
+// --- tile_set.compat.inc ---
 
+#ifndef DISABLE_DEPRECATED
+#ifndef NAVIGATION_2D_DISABLED
+Ref<NavigationPolygon> TileData::_get_navigation_polygon_bind_compat_84660(int p_layer_id) const
+{
+	return get_navigation_polygon(p_layer_id, false, false, false);
+}
+#endif // NAVIGATION_2D_DISABLED
+
+Ref<OccluderPolygon2D> TileData::_get_occluder_bind_compat_84660(int p_layer_id) const
+{
+	return get_occluder_polygon(p_layer_id, 0, false, false, false);
+}
+
+void TileData::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED

@@ -34,7 +34,6 @@
 #include "core/os/os.h"
 #include "core/templates/hash_map.h"
 #include "core/types.h"
-#include "font.compat.inc"
 #include "font.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/text_line.h"
@@ -1793,4 +1792,1553 @@ Ref<Font> FontVariation::_get_base_font_or_default() const
 	return ThemeDB::get_fallback_font();
 }
 
+// --- font.compat.inc ---
 
+#ifndef DISABLE_DEPRECATED
+real_t Font::_draw_char_bind_compat_104872(RID p_canvas_item, const Point2& p_pos, char32_t p_char,
+	int p_font_size, const Color& p_modulate) const
+{
+	return draw_char(p_canvas_item, p_pos, p_char, p_font_size, p_modulate, 0.0);
+}
+
+real_t Font::_draw_char_outline_bind_compat_104872(RID p_canvas_item, const Point2& p_pos,
+	char32_t p_char, int p_font_size, int p_size, const Color& p_modulate) const
+{
+	return draw_char_outline(p_canvas_item, p_pos, p_char, p_font_size, p_size, p_modulate, 0.0);
+}
+
+#endif // DISABLE_DEPRECATED
+
+// --- text_line.cpp ---
+
+#include "text_line.h"
+
+RID TextLine::get_rid() const { return rid; }
+
+void TextLine::clear() { TS->shaped_text_clear(rid); }
+
+Ref<TextLine> TextLine::duplicate() const
+{
+	Ref<TextLine> copy;
+	copy.instantiate();
+	if (rid.is_valid()) {
+		TS->free_rid(copy->rid);
+		copy->rid = TS->shaped_text_duplicate(rid);
+	}
+	copy->dirty = true;
+	copy->width = width;
+	copy->flags = flags;
+	copy->alignment = alignment;
+	copy->el_char = el_char;
+	copy->overrun_behavior = overrun_behavior;
+	copy->tab_stops = tab_stops;
+
+	return copy;
+}
+
+void TextLine::set_preserve_invalid(bool p_enabled)
+{
+	TS->shaped_text_set_preserve_invalid(rid, p_enabled);
+	dirty = true;
+}
+
+bool TextLine::get_preserve_invalid() const { return TS->shaped_text_get_preserve_invalid(rid); }
+
+void TextLine::set_preserve_control(bool p_enabled)
+{
+	TS->shaped_text_set_preserve_control(rid, p_enabled);
+	dirty = true;
+}
+
+bool TextLine::get_preserve_control() const { return TS->shaped_text_get_preserve_control(rid); }
+
+void TextLine::set_direction(TextServer::Direction p_direction)
+{
+	TS->shaped_text_set_direction(rid, p_direction);
+	dirty = true;
+}
+
+TextServer::Direction TextLine::get_direction() const { return TS->shaped_text_get_direction(rid); }
+
+TextServer::Direction TextLine::get_inferred_direction() const
+{
+	return TS->shaped_text_get_inferred_direction(rid);
+}
+
+void TextLine::set_orientation(TextServer::Orientation p_orientation)
+{
+	TS->shaped_text_set_orientation(rid, p_orientation);
+	dirty = true;
+}
+
+TextServer::Orientation TextLine::get_orientation() const
+{
+	return TS->shaped_text_get_orientation(rid);
+}
+
+void TextLine::set_horizontal_alignment(HorizontalAlignment p_alignment)
+{
+	if (alignment != p_alignment) {
+		if (alignment == HORIZONTAL_ALIGNMENT_FILL || p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
+			alignment = p_alignment;
+			dirty = true;
+		}
+		else {
+			alignment = p_alignment;
+		}
+	}
+}
+
+HorizontalAlignment TextLine::get_horizontal_alignment() const { return alignment; }
+
+void TextLine::tab_align(const Vector<float>& p_tab_stops)
+{
+	tab_stops = p_tab_stops;
+	dirty = true;
+}
+
+void TextLine::set_flags(uint32_t p_flags)
+{
+	if (flags != p_flags) {
+		flags = p_flags;
+		dirty = true;
+	}
+}
+
+uint32_t TextLine::get_flags() const { return flags; }
+
+void TextLine::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior)
+{
+	if (overrun_behavior != p_behavior) {
+		overrun_behavior = p_behavior;
+		dirty = true;
+	}
+}
+
+TextServer::OverrunBehavior TextLine::get_text_overrun_behavior() const { return overrun_behavior; }
+
+void TextLine::set_ellipsis_char(const String& p_char)
+{
+	String c = p_char;
+	if (c.length() > 1) {
+		WARN_PRINT("Ellipsis must be exactly one character long (" + itos(c.length()) +
+				   " characters given).");
+		c = c.left(1);
+	}
+	if (el_char == c) {
+		return;
+	}
+	el_char = c;
+	dirty = true;
+}
+
+String TextLine::get_ellipsis_char() const { return el_char; }
+
+void TextLine::set_width(float p_width)
+{
+	if (width == p_width) {
+		return;
+	}
+	width = p_width;
+	if (alignment == HORIZONTAL_ALIGNMENT_FILL ||
+		overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
+		dirty = true;
+	}
+}
+
+float TextLine::get_width() const { return width; }
+
+Size2 TextLine::get_size() const
+{
+	_shape();
+	return TS->shaped_text_get_size(rid);
+}
+
+float TextLine::get_line_ascent() const
+{
+	_shape();
+	return TS->shaped_text_get_ascent(rid);
+}
+
+float TextLine::get_line_descent() const
+{
+	_shape();
+	return TS->shaped_text_get_descent(rid);
+}
+
+float TextLine::get_line_width() const
+{
+	_shape();
+	return TS->shaped_text_get_width(rid);
+}
+
+float TextLine::get_line_underline_position() const
+{
+	_shape();
+	return TS->shaped_text_get_underline_position(rid);
+}
+
+float TextLine::get_line_underline_thickness() const
+{
+	_shape();
+	return TS->shaped_text_get_underline_thickness(rid);
+}
+
+void TextLine::draw(
+	RID p_canvas, const Vector2& p_pos, const Color& p_color, float p_oversampling) const
+{
+	_shape();
+
+	Vector2 ofs = p_pos;
+
+	float length = TS->shaped_text_get_width(rid);
+	if (width > 0) {
+		switch (alignment) {
+		case HORIZONTAL_ALIGNMENT_FILL:
+		case HORIZONTAL_ALIGNMENT_LEFT:
+			break;
+		case HORIZONTAL_ALIGNMENT_CENTER: {
+			if (length <= width) {
+				if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
+					ofs.x += Math::floor((width - length) / 2.0);
+				}
+				else {
+					ofs.y += Math::floor((width - length) / 2.0);
+				}
+			}
+			else if (TS->shaped_text_get_inferred_direction(rid) == TextServer::DIRECTION_RTL) {
+				if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
+					ofs.x += width - length;
+				}
+				else {
+					ofs.y += width - length;
+				}
+			}
+		} break;
+		case HORIZONTAL_ALIGNMENT_RIGHT: {
+			if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
+				ofs.x += width - length;
+			}
+			else {
+				ofs.y += width - length;
+			}
+		} break;
+		}
+	}
+
+	float clip_l;
+	if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
+		ofs.y += TS->shaped_text_get_ascent(rid);
+		clip_l = MAX(0, p_pos.x - ofs.x);
+	}
+	else {
+		ofs.x += TS->shaped_text_get_ascent(rid);
+		clip_l = MAX(0, p_pos.y - ofs.y);
+	}
+	return TS->shaped_text_draw(
+		rid, p_canvas, ofs, clip_l, clip_l + width, p_color, p_oversampling);
+}
+
+void TextLine::draw_outline(RID p_canvas, const Vector2& p_pos, int p_outline_size,
+	const Color& p_color, float p_oversampling) const
+{
+	_shape();
+
+	Vector2 ofs = p_pos;
+
+	float length = TS->shaped_text_get_width(rid);
+	if (width > 0) {
+		switch (alignment) {
+		case HORIZONTAL_ALIGNMENT_FILL:
+		case HORIZONTAL_ALIGNMENT_LEFT:
+			break;
+		case HORIZONTAL_ALIGNMENT_CENTER: {
+			if (length <= width) {
+				if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
+					ofs.x += Math::floor((width - length) / 2.0);
+				}
+				else {
+					ofs.y += Math::floor((width - length) / 2.0);
+				}
+			}
+			else if (TS->shaped_text_get_inferred_direction(rid) == TextServer::DIRECTION_RTL) {
+				if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
+					ofs.x += width - length;
+				}
+				else {
+					ofs.y += width - length;
+				}
+			}
+		} break;
+		case HORIZONTAL_ALIGNMENT_RIGHT: {
+			if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
+				ofs.x += width - length;
+			}
+			else {
+				ofs.y += width - length;
+			}
+		} break;
+		}
+	}
+
+	float clip_l;
+	if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
+		ofs.y += TS->shaped_text_get_ascent(rid);
+		clip_l = MAX(0, p_pos.x - ofs.x);
+	}
+	else {
+		ofs.x += TS->shaped_text_get_ascent(rid);
+		clip_l = MAX(0, p_pos.y - ofs.y);
+	}
+	return TS->shaped_text_draw_outline(
+		rid, p_canvas, ofs, clip_l, clip_l + width, p_outline_size, p_color, p_oversampling);
+}
+
+int TextLine::hit_test(float p_coords) const
+{
+	_shape();
+
+	return TS->shaped_text_hit_test_position(rid, p_coords);
+}
+
+TextLine::TextLine() { rid = TS->create_shaped_text(); }
+
+TextLine::~TextLine() { TS->free_rid(rid); }
+
+void TextLine::_shape() const {}
+
+
+TextLine::TextLine(String const&, Ref<Font> const&, int, String const&, TextServer::Direction, TextServer::Orientation) {}
+
+// --- text_line.compat.inc ---
+
+#ifndef DISABLE_DEPRECATED
+void TextLine::_draw_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, const Color& p_color) const
+{
+	draw(p_canvas, p_pos, p_color, 0.0);
+}
+
+void TextLine::_draw_outline_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, int p_outline_size, const Color& p_color) const
+{
+	draw_outline(p_canvas, p_pos, p_outline_size, p_color, 0.0);
+}
+
+void TextLine::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
+
+// --- text_paragraph.cpp ---
+
+#include "text_paragraph.h"
+
+RID TextParagraph::get_rid() const { return rid; }
+
+RID TextParagraph::get_line_rid(int p_line) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)lines_rid.size(), RID());
+	return lines_rid[p_line];
+}
+
+RID TextParagraph::get_dropcap_rid() const { return dropcap_rid; }
+
+void TextParagraph::clear()
+{
+	_THREAD_SAFE_METHOD_
+
+	for (const RID& line_rid : lines_rid) {
+		TS->free_rid(line_rid);
+	}
+	lines_rid.clear();
+	TS->shaped_text_clear(rid);
+	TS->shaped_text_clear(dropcap_rid);
+}
+
+Ref<TextParagraph> TextParagraph::duplicate() const
+{
+	Ref<TextParagraph> copy;
+	copy.instantiate();
+	if (dropcap_rid.is_valid()) {
+		TS->free_rid(copy->dropcap_rid);
+		copy->dropcap_rid = TS->shaped_text_duplicate(dropcap_rid);
+	}
+	copy->dropcap_lines = dropcap_lines;
+	copy->dropcap_margins = dropcap_margins;
+	if (rid.is_valid()) {
+		TS->free_rid(copy->rid);
+		copy->rid = TS->shaped_text_duplicate(rid);
+	}
+	copy->lines_dirty = true;
+	copy->line_spacing = line_spacing;
+	copy->width = width;
+	copy->max_lines_visible = max_lines_visible;
+	copy->brk_flags = brk_flags;
+	copy->jst_flags = jst_flags;
+	copy->el_char = el_char;
+	copy->overrun_behavior = overrun_behavior;
+	copy->alignment = alignment;
+	copy->tab_stops = tab_stops;
+
+	return copy;
+}
+
+void TextParagraph::set_preserve_invalid(bool p_enabled)
+{
+	_THREAD_SAFE_METHOD_
+
+	TS->shaped_text_set_preserve_invalid(rid, p_enabled);
+	TS->shaped_text_set_preserve_invalid(dropcap_rid, p_enabled);
+	lines_dirty = true;
+}
+
+bool TextParagraph::get_preserve_invalid() const
+{
+	_THREAD_SAFE_METHOD_
+
+	return TS->shaped_text_get_preserve_invalid(rid);
+}
+
+void TextParagraph::set_preserve_control(bool p_enabled)
+{
+	_THREAD_SAFE_METHOD_
+
+	TS->shaped_text_set_preserve_control(rid, p_enabled);
+	TS->shaped_text_set_preserve_control(dropcap_rid, p_enabled);
+	lines_dirty = true;
+}
+
+bool TextParagraph::get_preserve_control() const
+{
+	_THREAD_SAFE_METHOD_
+
+	return TS->shaped_text_get_preserve_control(rid);
+}
+
+void TextParagraph::set_direction(TextServer::Direction p_direction)
+{
+	_THREAD_SAFE_METHOD_
+
+	TS->shaped_text_set_direction(rid, p_direction);
+	TS->shaped_text_set_direction(dropcap_rid, p_direction);
+	lines_dirty = true;
+}
+
+TextServer::Direction TextParagraph::get_direction() const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	return TS->shaped_text_get_direction(rid);
+}
+
+TextServer::Direction TextParagraph::get_inferred_direction() const
+{
+	_THREAD_SAFE_METHOD_
+
+	const_cast<TextParagraph*>(this)->_shape_lines();
+	return TS->shaped_text_get_inferred_direction(rid);
+}
+
+void TextParagraph::set_custom_punctuation(const String& p_punct)
+{
+	_THREAD_SAFE_METHOD_
+
+	TS->shaped_text_set_custom_punctuation(rid, p_punct);
+	lines_dirty = true;
+}
+
+String TextParagraph::get_custom_punctuation() const
+{
+	_THREAD_SAFE_METHOD_
+
+	return TS->shaped_text_get_custom_punctuation(rid);
+}
+
+void TextParagraph::set_orientation(TextServer::Orientation p_orientation)
+{
+	_THREAD_SAFE_METHOD_
+
+	TS->shaped_text_set_orientation(rid, p_orientation);
+	TS->shaped_text_set_orientation(dropcap_rid, p_orientation);
+	lines_dirty = true;
+}
+
+TextServer::Orientation TextParagraph::get_orientation() const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	return TS->shaped_text_get_orientation(rid);
+}
+
+void TextParagraph::clear_dropcap()
+{
+	_THREAD_SAFE_METHOD_
+	dropcap_margins = Rect2();
+	TS->shaped_text_clear(dropcap_rid);
+	lines_dirty = true;
+}
+
+void TextParagraph::set_alignment(HorizontalAlignment p_alignment)
+{
+	_THREAD_SAFE_METHOD_
+
+	if (alignment != p_alignment) {
+		if (alignment == HORIZONTAL_ALIGNMENT_FILL || p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
+			alignment = p_alignment;
+			lines_dirty = true;
+		}
+		else {
+			alignment = p_alignment;
+		}
+	}
+}
+
+HorizontalAlignment TextParagraph::get_alignment() const { return alignment; }
+
+void TextParagraph::tab_align(const Vector<float>& p_tab_stops)
+{
+	_THREAD_SAFE_METHOD_
+
+	tab_stops = p_tab_stops;
+	lines_dirty = true;
+}
+
+void TextParagraph::set_justification_flags(uint32_t p_flags)
+{
+	_THREAD_SAFE_METHOD_
+
+	if (jst_flags != p_flags) {
+		jst_flags = p_flags;
+		lines_dirty = true;
+	}
+}
+
+uint32_t TextParagraph::get_justification_flags() const { return jst_flags; }
+
+void TextParagraph::set_break_flags(uint32_t p_flags)
+{
+	_THREAD_SAFE_METHOD_
+
+	if (brk_flags != p_flags) {
+		brk_flags = p_flags;
+		lines_dirty = true;
+	}
+}
+
+uint32_t TextParagraph::get_break_flags() const { return brk_flags; }
+
+void TextParagraph::set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior)
+{
+	_THREAD_SAFE_METHOD_
+
+	if (overrun_behavior != p_behavior) {
+		overrun_behavior = p_behavior;
+		lines_dirty = true;
+	}
+}
+
+TextServer::OverrunBehavior TextParagraph::get_text_overrun_behavior() const
+{
+	return overrun_behavior;
+}
+
+void TextParagraph::set_ellipsis_char(const String& p_char)
+{
+	String c = p_char;
+	if (c.length() > 1) {
+		WARN_PRINT("Ellipsis must be exactly one character long (" + itos(c.length()) +
+				   " characters given).");
+		c = c.left(1);
+	}
+	if (el_char == c) {
+		return;
+	}
+	el_char = c;
+	lines_dirty = true;
+}
+
+String TextParagraph::get_ellipsis_char() const { return el_char; }
+
+void TextParagraph::set_width(float p_width)
+{
+	_THREAD_SAFE_METHOD_
+
+	if (width != p_width) {
+		width = p_width;
+		lines_dirty = true;
+	}
+}
+
+float TextParagraph::get_width() const { return width; }
+
+Size2 TextParagraph::get_non_wrapped_size() const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	return TS->shaped_text_get_size(rid);
+}
+
+Size2 TextParagraph::get_size() const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+
+	float h_offset = 0.f;
+	float v_offset = 0.f;
+	if (TS->shaped_text_get_orientation(dropcap_rid) == TextServer::ORIENTATION_HORIZONTAL) {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).x + dropcap_margins.size.x +
+				   dropcap_margins.position.x;
+		v_offset = TS->shaped_text_get_size(dropcap_rid).y + dropcap_margins.size.y +
+				   dropcap_margins.position.y;
+	}
+	else {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).y + dropcap_margins.size.y +
+				   dropcap_margins.position.y;
+		v_offset = TS->shaped_text_get_size(dropcap_rid).x + dropcap_margins.size.x +
+				   dropcap_margins.position.x;
+	}
+
+	Size2 size;
+	int visible_lines = (max_lines_visible >= 0) ? MIN(max_lines_visible, (int)lines_rid.size())
+												 : (int)lines_rid.size();
+	for (int i = 0; i < visible_lines; i++) {
+		Size2 lsize = TS->shaped_text_get_size(lines_rid[i]);
+		if (TS->shaped_text_get_orientation(lines_rid[i]) == TextServer::ORIENTATION_HORIZONTAL) {
+			if (h_offset > 0 && i <= dropcap_lines) {
+				lsize.x += h_offset;
+			}
+			size.x = MAX(size.x, lsize.x);
+			size.y += lsize.y;
+			if (i != visible_lines - 1) {
+				size.y += line_spacing;
+			}
+		}
+		else {
+			if (h_offset > 0 && i <= dropcap_lines) {
+				lsize.y += h_offset;
+			}
+			size.x += lsize.x;
+			size.y = MAX(size.y, lsize.y);
+			if (i != visible_lines - 1) {
+				size.x += line_spacing;
+			}
+		}
+	}
+	if (h_offset > 0) {
+		if (TS->shaped_text_get_orientation(dropcap_rid) == TextServer::ORIENTATION_HORIZONTAL) {
+			size.y = MAX(size.y, v_offset);
+		}
+		else {
+			size.x = MAX(size.x, v_offset);
+		}
+	}
+	return size;
+}
+
+Vector2i TextParagraph::get_range() const
+{
+	_THREAD_SAFE_METHOD_
+
+	return TS->shaped_text_get_range(rid);
+}
+
+int TextParagraph::get_line_count() const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	return (int)lines_rid.size();
+}
+
+void TextParagraph::set_max_lines_visible(int p_lines)
+{
+	_THREAD_SAFE_METHOD_
+
+	if (p_lines != max_lines_visible) {
+		max_lines_visible = p_lines;
+		lines_dirty = true;
+	}
+}
+
+int TextParagraph::get_max_lines_visible() const { return max_lines_visible; }
+
+void TextParagraph::set_line_spacing(float p_spacing)
+{
+	_THREAD_SAFE_METHOD_
+
+	if (line_spacing != p_spacing) {
+		line_spacing = p_spacing;
+		lines_dirty = true;
+	}
+}
+
+float TextParagraph::get_line_spacing() const { return line_spacing; }
+
+Size2 TextParagraph::get_line_size(int p_line) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)lines_rid.size(), Size2());
+	return TS->shaped_text_get_size(lines_rid[p_line]);
+}
+
+Vector2i TextParagraph::get_line_range(int p_line) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)lines_rid.size(), Vector2i());
+	return TS->shaped_text_get_range(lines_rid[p_line]);
+}
+
+float TextParagraph::get_line_ascent(int p_line) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)lines_rid.size(), 0.f);
+	return TS->shaped_text_get_ascent(lines_rid[p_line]);
+}
+
+float TextParagraph::get_line_descent(int p_line) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)lines_rid.size(), 0.f);
+	return TS->shaped_text_get_descent(lines_rid[p_line]);
+}
+
+float TextParagraph::get_line_width(int p_line) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)lines_rid.size(), 0.f);
+	return TS->shaped_text_get_width(lines_rid[p_line]);
+}
+
+float TextParagraph::get_line_underline_position(int p_line) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)lines_rid.size(), 0.f);
+	return TS->shaped_text_get_underline_position(lines_rid[p_line]);
+}
+
+float TextParagraph::get_line_underline_thickness(int p_line) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)lines_rid.size(), 0.f);
+	return TS->shaped_text_get_underline_thickness(lines_rid[p_line]);
+}
+
+Size2 TextParagraph::get_dropcap_size() const
+{
+	_THREAD_SAFE_METHOD_
+
+	return TS->shaped_text_get_size(dropcap_rid) + dropcap_margins.size + dropcap_margins.position;
+}
+
+int TextParagraph::get_dropcap_lines() const { return dropcap_lines; }
+
+void TextParagraph::draw(RID p_canvas, const Vector2& p_pos, const Color& p_color,
+	const Color& p_dc_color, float p_oversampling) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	Vector2 ofs = p_pos;
+	float h_offset = 0.f;
+	if (TS->shaped_text_get_orientation(dropcap_rid) == TextServer::ORIENTATION_HORIZONTAL) {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).x + dropcap_margins.size.x +
+				   dropcap_margins.position.x;
+	}
+	else {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).y + dropcap_margins.size.y +
+				   dropcap_margins.position.y;
+	}
+
+	if (h_offset > 0) {
+		// Draw dropcap.
+		float l_width = width > 0 ? width : get_size().x;
+		Vector2 dc_off = ofs;
+		if (TS->shaped_text_get_inferred_direction(dropcap_rid) == TextServer::DIRECTION_RTL) {
+			if (TS->shaped_text_get_orientation(dropcap_rid) ==
+				TextServer::ORIENTATION_HORIZONTAL) {
+				dc_off.x += l_width - h_offset;
+			}
+			else {
+				dc_off.y += l_width - h_offset;
+			}
+		}
+		TS->shaped_text_draw(dropcap_rid, p_canvas,
+			dc_off + Vector2(0, TS->shaped_text_get_ascent(dropcap_rid) + dropcap_margins.size.y +
+									dropcap_margins.position.y / 2),
+			-1, -1, p_dc_color, p_oversampling);
+	}
+
+	int lines_visible = (max_lines_visible >= 0) ? MIN(max_lines_visible, (int)lines_rid.size())
+												 : (int)lines_rid.size();
+
+	for (int i = 0; i < lines_visible; i++) {
+		float l_width = width > 0 ? width : get_size().x;
+		if (TS->shaped_text_get_orientation(lines_rid[i]) == TextServer::ORIENTATION_HORIZONTAL) {
+			ofs.x = p_pos.x;
+			ofs.y += TS->shaped_text_get_ascent(lines_rid[i]);
+			if (i <= dropcap_lines) {
+				if (TS->shaped_text_get_inferred_direction(dropcap_rid) ==
+					TextServer::DIRECTION_LTR) {
+					ofs.x -= h_offset;
+				}
+				l_width -= h_offset;
+			}
+		}
+		else {
+			ofs.y = p_pos.y;
+			ofs.x += TS->shaped_text_get_ascent(lines_rid[i]);
+			if (i <= dropcap_lines) {
+				if (TS->shaped_text_get_inferred_direction(dropcap_rid) ==
+					TextServer::DIRECTION_LTR) {
+					ofs.y -= h_offset;
+				}
+				l_width -= h_offset;
+			}
+		}
+		float line_width = TS->shaped_text_get_width(lines_rid[i]);
+		if (l_width > 0) {
+			switch (alignment) {
+			case HORIZONTAL_ALIGNMENT_FILL:
+				if (TS->shaped_text_get_inferred_direction(lines_rid[i]) ==
+					TextServer::DIRECTION_RTL) {
+					if (TS->shaped_text_get_orientation(lines_rid[i]) ==
+						TextServer::ORIENTATION_HORIZONTAL) {
+						ofs.x += l_width - line_width;
+					}
+					else {
+						ofs.y += l_width - line_width;
+					}
+				}
+				break;
+			case HORIZONTAL_ALIGNMENT_LEFT:
+				break;
+			case HORIZONTAL_ALIGNMENT_CENTER: {
+				if (line_width <= l_width) {
+					if (TS->shaped_text_get_orientation(lines_rid[i]) ==
+						TextServer::ORIENTATION_HORIZONTAL) {
+						ofs.x += Math::floor((l_width - line_width) / 2.0);
+					}
+					else {
+						ofs.y += Math::floor((l_width - line_width) / 2.0);
+					}
+				}
+				else if (TS->shaped_text_get_inferred_direction(lines_rid[i]) ==
+						   TextServer::DIRECTION_RTL) {
+					if (TS->shaped_text_get_orientation(lines_rid[i]) ==
+						TextServer::ORIENTATION_HORIZONTAL) {
+						ofs.x += l_width - line_width;
+					}
+					else {
+						ofs.y += l_width - line_width;
+					}
+				}
+			} break;
+			case HORIZONTAL_ALIGNMENT_RIGHT: {
+				if (TS->shaped_text_get_orientation(lines_rid[i]) ==
+					TextServer::ORIENTATION_HORIZONTAL) {
+					ofs.x += l_width - line_width;
+				}
+				else {
+					ofs.y += l_width - line_width;
+				}
+			} break;
+			}
+		}
+		float clip_l;
+		if (TS->shaped_text_get_orientation(lines_rid[i]) == TextServer::ORIENTATION_HORIZONTAL) {
+			clip_l = MAX(0, p_pos.x - ofs.x);
+		}
+		else {
+			clip_l = MAX(0, p_pos.y - ofs.y);
+		}
+		TS->shaped_text_draw(
+			lines_rid[i], p_canvas, ofs, clip_l, clip_l + l_width, p_color, p_oversampling);
+		if (TS->shaped_text_get_orientation(lines_rid[i]) == TextServer::ORIENTATION_HORIZONTAL) {
+			ofs.x = p_pos.x;
+			ofs.y += TS->shaped_text_get_descent(lines_rid[i]) + line_spacing;
+		}
+		else {
+			ofs.y = p_pos.y;
+			ofs.x += TS->shaped_text_get_descent(lines_rid[i]) + line_spacing;
+		}
+	}
+}
+
+void TextParagraph::draw_outline(RID p_canvas, const Vector2& p_pos, int p_outline_size,
+	const Color& p_color, const Color& p_dc_color, float p_oversampling) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	Vector2 ofs = p_pos;
+
+	float h_offset = 0.f;
+	if (TS->shaped_text_get_orientation(dropcap_rid) == TextServer::ORIENTATION_HORIZONTAL) {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).x + dropcap_margins.size.x +
+				   dropcap_margins.position.x;
+	}
+	else {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).y + dropcap_margins.size.y +
+				   dropcap_margins.position.y;
+	}
+
+	if (h_offset > 0) {
+		// Draw dropcap.
+		float l_width = width > 0 ? width : get_size().x;
+		Vector2 dc_off = ofs;
+		if (TS->shaped_text_get_inferred_direction(dropcap_rid) == TextServer::DIRECTION_RTL) {
+			if (TS->shaped_text_get_orientation(dropcap_rid) ==
+				TextServer::ORIENTATION_HORIZONTAL) {
+				dc_off.x += l_width - h_offset;
+			}
+			else {
+				dc_off.y += l_width - h_offset;
+			}
+		}
+		TS->shaped_text_draw_outline(dropcap_rid, p_canvas,
+			dc_off + Vector2(dropcap_margins.position.x,
+						 TS->shaped_text_get_ascent(dropcap_rid) + dropcap_margins.position.y),
+			-1, -1, p_outline_size, p_dc_color, p_oversampling);
+	}
+
+	for (int i = 0; i < (int)lines_rid.size(); i++) {
+		float l_width = width > 0 ? width : get_size().x;
+		if (TS->shaped_text_get_orientation(lines_rid[i]) == TextServer::ORIENTATION_HORIZONTAL) {
+			ofs.x = p_pos.x;
+			ofs.y += TS->shaped_text_get_ascent(lines_rid[i]);
+			if (i <= dropcap_lines) {
+				if (TS->shaped_text_get_inferred_direction(dropcap_rid) ==
+					TextServer::DIRECTION_LTR) {
+					ofs.x -= h_offset;
+				}
+				l_width -= h_offset;
+			}
+		}
+		else {
+			ofs.y = p_pos.y;
+			ofs.x += TS->shaped_text_get_ascent(lines_rid[i]);
+			if (i <= dropcap_lines) {
+				if (TS->shaped_text_get_inferred_direction(dropcap_rid) ==
+					TextServer::DIRECTION_LTR) {
+					ofs.y -= h_offset;
+				}
+				l_width -= h_offset;
+			}
+		}
+		float length = TS->shaped_text_get_width(lines_rid[i]);
+		if (l_width > 0) {
+			switch (alignment) {
+			case HORIZONTAL_ALIGNMENT_FILL:
+				if (TS->shaped_text_get_inferred_direction(lines_rid[i]) ==
+					TextServer::DIRECTION_RTL) {
+					if (TS->shaped_text_get_orientation(lines_rid[i]) ==
+						TextServer::ORIENTATION_HORIZONTAL) {
+						ofs.x += l_width - length;
+					}
+					else {
+						ofs.y += l_width - length;
+					}
+				}
+				break;
+			case HORIZONTAL_ALIGNMENT_LEFT:
+				break;
+			case HORIZONTAL_ALIGNMENT_CENTER: {
+				if (length <= l_width) {
+					if (TS->shaped_text_get_orientation(lines_rid[i]) ==
+						TextServer::ORIENTATION_HORIZONTAL) {
+						ofs.x += Math::floor((l_width - length) / 2.0);
+					}
+					else {
+						ofs.y += Math::floor((l_width - length) / 2.0);
+					}
+				}
+				else if (TS->shaped_text_get_inferred_direction(lines_rid[i]) ==
+						   TextServer::DIRECTION_RTL) {
+					if (TS->shaped_text_get_orientation(lines_rid[i]) ==
+						TextServer::ORIENTATION_HORIZONTAL) {
+						ofs.x += l_width - length;
+					}
+					else {
+						ofs.y += l_width - length;
+					}
+				}
+			} break;
+			case HORIZONTAL_ALIGNMENT_RIGHT: {
+				if (TS->shaped_text_get_orientation(lines_rid[i]) ==
+					TextServer::ORIENTATION_HORIZONTAL) {
+					ofs.x += l_width - length;
+				}
+				else {
+					ofs.y += l_width - length;
+				}
+			} break;
+			}
+		}
+		float clip_l;
+		if (TS->shaped_text_get_orientation(lines_rid[i]) == TextServer::ORIENTATION_HORIZONTAL) {
+			clip_l = MAX(0, p_pos.x - ofs.x);
+		}
+		else {
+			clip_l = MAX(0, p_pos.y - ofs.y);
+		}
+		TS->shaped_text_draw_outline(lines_rid[i], p_canvas, ofs, clip_l, clip_l + l_width,
+			p_outline_size, p_color, p_oversampling);
+		if (TS->shaped_text_get_orientation(lines_rid[i]) == TextServer::ORIENTATION_HORIZONTAL) {
+			ofs.x = p_pos.x;
+			ofs.y += TS->shaped_text_get_descent(lines_rid[i]) + line_spacing;
+		}
+		else {
+			ofs.y = p_pos.y;
+			ofs.x += TS->shaped_text_get_descent(lines_rid[i]) + line_spacing;
+		}
+	}
+}
+
+int TextParagraph::hit_test(const Point2& p_coords) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	Vector2 ofs;
+	if (TS->shaped_text_get_orientation(rid) == TextServer::ORIENTATION_HORIZONTAL) {
+		if (ofs.y < 0) {
+			return 0;
+		}
+	}
+	else {
+		if (ofs.x < 0) {
+			return 0;
+		}
+	}
+	for (const RID& line_rid : lines_rid) {
+		if (TS->shaped_text_get_orientation(line_rid) == TextServer::ORIENTATION_HORIZONTAL) {
+			if ((p_coords.y >= ofs.y) &&
+				(p_coords.y <= ofs.y + TS->shaped_text_get_size(line_rid).y)) {
+				return TS->shaped_text_hit_test_position(line_rid, p_coords.x);
+			}
+			ofs.y += TS->shaped_text_get_size(line_rid).y + line_spacing;
+		}
+		else {
+			if ((p_coords.x >= ofs.x) &&
+				(p_coords.x <= ofs.x + TS->shaped_text_get_size(line_rid).x)) {
+				return TS->shaped_text_hit_test_position(line_rid, p_coords.y);
+			}
+			ofs.y += TS->shaped_text_get_size(line_rid).x + line_spacing;
+		}
+	}
+	return TS->shaped_text_get_range(rid).y;
+}
+
+bool TextParagraph::is_dirty() { return lines_dirty; }
+
+void TextParagraph::draw_dropcap(
+	RID p_canvas, const Vector2& p_pos, const Color& p_color, float p_oversampling) const
+{
+	_THREAD_SAFE_METHOD_
+
+	Vector2 ofs = p_pos;
+	float h_offset = 0.f;
+	if (TS->shaped_text_get_orientation(dropcap_rid) == TextServer::ORIENTATION_HORIZONTAL) {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).x + dropcap_margins.size.x +
+				   dropcap_margins.position.x;
+	}
+	else {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).y + dropcap_margins.size.y +
+				   dropcap_margins.position.y;
+	}
+
+	if (h_offset > 0) {
+		// Draw dropcap.
+		float l_width = width > 0 ? width : get_size().x;
+		if (TS->shaped_text_get_inferred_direction(dropcap_rid) == TextServer::DIRECTION_RTL) {
+			if (TS->shaped_text_get_orientation(dropcap_rid) ==
+				TextServer::ORIENTATION_HORIZONTAL) {
+				ofs.x += l_width - h_offset;
+			}
+			else {
+				ofs.y += l_width - h_offset;
+			}
+		}
+		TS->shaped_text_draw(dropcap_rid, p_canvas,
+			ofs + Vector2(dropcap_margins.position.x,
+					  TS->shaped_text_get_ascent(dropcap_rid) + dropcap_margins.position.y),
+			-1, -1, p_color, p_oversampling);
+	}
+}
+
+void TextParagraph::draw_dropcap_outline(RID p_canvas, const Vector2& p_pos, int p_outline_size,
+	const Color& p_color, float p_oversampling) const
+{
+	_THREAD_SAFE_METHOD_
+
+	Vector2 ofs = p_pos;
+	float h_offset = 0.f;
+	if (TS->shaped_text_get_orientation(dropcap_rid) == TextServer::ORIENTATION_HORIZONTAL) {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).x + dropcap_margins.size.x +
+				   dropcap_margins.position.x;
+	}
+	else {
+		h_offset = TS->shaped_text_get_size(dropcap_rid).y + dropcap_margins.size.y +
+				   dropcap_margins.position.y;
+	}
+
+	if (h_offset > 0) {
+		// Draw dropcap.
+		float l_width = width > 0 ? width : get_size().x;
+		if (TS->shaped_text_get_inferred_direction(dropcap_rid) == TextServer::DIRECTION_RTL) {
+			if (TS->shaped_text_get_orientation(dropcap_rid) ==
+				TextServer::ORIENTATION_HORIZONTAL) {
+				ofs.x += l_width - h_offset;
+			}
+			else {
+				ofs.y += l_width - h_offset;
+			}
+		}
+		TS->shaped_text_draw_outline(dropcap_rid, p_canvas,
+			ofs + Vector2(dropcap_margins.position.x,
+					  TS->shaped_text_get_ascent(dropcap_rid) + dropcap_margins.position.y),
+			-1, -1, p_outline_size, p_color, p_oversampling);
+	}
+}
+
+void TextParagraph::draw_line(RID p_canvas, const Vector2& p_pos, int p_line, const Color& p_color,
+	float p_oversampling) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND(p_line < 0 || p_line >= (int)lines_rid.size());
+
+	Vector2 ofs = p_pos;
+
+	if (TS->shaped_text_get_orientation(lines_rid[p_line]) == TextServer::ORIENTATION_HORIZONTAL) {
+		ofs.y += TS->shaped_text_get_ascent(lines_rid[p_line]);
+	}
+	else {
+		ofs.x += TS->shaped_text_get_ascent(lines_rid[p_line]);
+	}
+	return TS->shaped_text_draw(lines_rid[p_line], p_canvas, ofs, -1, -1, p_color, p_oversampling);
+}
+
+void TextParagraph::draw_line_outline(RID p_canvas, const Vector2& p_pos, int p_line,
+	int p_outline_size, const Color& p_color, float p_oversampling) const
+{
+	_THREAD_SAFE_METHOD_
+
+	_shape_lines();
+	ERR_FAIL_COND(p_line < 0 || p_line >= (int)lines_rid.size());
+
+	Vector2 ofs = p_pos;
+	if (TS->shaped_text_get_orientation(lines_rid[p_line]) == TextServer::ORIENTATION_HORIZONTAL) {
+		ofs.y += TS->shaped_text_get_ascent(lines_rid[p_line]);
+	}
+	else {
+		ofs.x += TS->shaped_text_get_ascent(lines_rid[p_line]);
+	}
+	return TS->shaped_text_draw_outline(
+		lines_rid[p_line], p_canvas, ofs, -1, -1, p_outline_size, p_color, p_oversampling);
+}
+
+TextParagraph::TextParagraph()
+{
+	rid = TS->create_shaped_text();
+	dropcap_rid = TS->create_shaped_text();
+}
+
+TextParagraph::~TextParagraph()
+{
+	for (const RID& line_rid : lines_rid) {
+		TS->free_rid(line_rid);
+	}
+	lines_rid.clear();
+	TS->free_rid(rid);
+	TS->free_rid(dropcap_rid);
+}
+
+void TextParagraph::_shape_lines() const {}
+
+// --- text_paragraph.compat.inc ---
+
+#ifndef DISABLE_DEPRECATED
+void TextParagraph::_draw_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, const Color& p_color, const Color& p_dc_color) const
+{
+	draw(p_canvas, p_pos, p_color, p_dc_color, 0.0);
+}
+
+void TextParagraph::_draw_outline_bind_compat_104872(RID p_canvas, const Vector2& p_pos,
+	int p_outline_size, const Color& p_color, const Color& p_dc_color) const
+{
+	draw_outline(p_canvas, p_pos, p_outline_size, p_color, p_dc_color, 0.0);
+}
+
+void TextParagraph::_draw_line_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, int p_line, const Color& p_color) const
+{
+	draw_line(p_canvas, p_pos, p_line, p_color, 0.0);
+}
+
+void TextParagraph::_draw_line_outline_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, int p_line, int p_outline_size, const Color& p_color) const
+{
+	draw_line_outline(p_canvas, p_pos, p_line, p_outline_size, p_color, 0.0);
+}
+
+void TextParagraph::_draw_dropcap_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, const Color& p_color) const
+{
+	draw_dropcap(p_canvas, p_pos, p_color, 0.0);
+}
+
+void TextParagraph::_draw_dropcap_outline_bind_compat_104872(
+	RID p_canvas, const Vector2& p_pos, int p_outline_size, const Color& p_color) const
+{
+	draw_dropcap_outline(p_canvas, p_pos, p_outline_size, p_color, 0.0);
+}
+
+void TextParagraph::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
+
+// --- label_settings.cpp ---
+
+#include "label_settings.h"
+
+void LabelSettings::_font_changed() { emit_changed(); }
+
+void LabelSettings::set_line_spacing(real_t p_spacing)
+{
+	if (line_spacing != p_spacing) {
+		line_spacing = p_spacing;
+		emit_changed();
+	}
+}
+
+real_t LabelSettings::get_line_spacing() const { return line_spacing; }
+
+void LabelSettings::set_paragraph_spacing(real_t p_spacing)
+{
+	if (paragraph_spacing != p_spacing) {
+		paragraph_spacing = p_spacing;
+		emit_changed();
+	}
+}
+
+real_t LabelSettings::get_paragraph_spacing() const { return paragraph_spacing; }
+
+Ref<Font> LabelSettings::get_font() const { return font; }
+
+void LabelSettings::set_font_size(int p_size)
+{
+	if (font_size != p_size) {
+		font_size = p_size;
+		emit_changed();
+	}
+}
+
+int LabelSettings::get_font_size() const { return font_size; }
+
+void LabelSettings::set_font_color(const Color& p_color)
+{
+	if (font_color != p_color) {
+		font_color = p_color;
+		emit_changed();
+	}
+}
+
+Color LabelSettings::get_font_color() const { return font_color; }
+
+void LabelSettings::set_outline_size(int p_size)
+{
+	if (outline_size != p_size) {
+		outline_size = p_size;
+		emit_changed();
+	}
+}
+
+int LabelSettings::get_outline_size() const { return outline_size; }
+
+void LabelSettings::set_outline_color(const Color& p_color)
+{
+	if (outline_color != p_color) {
+		outline_color = p_color;
+		emit_changed();
+	}
+}
+
+Color LabelSettings::get_outline_color() const { return outline_color; }
+
+void LabelSettings::set_shadow_size(int p_size)
+{
+	if (shadow_size != p_size) {
+		shadow_size = p_size;
+		emit_changed();
+	}
+}
+
+int LabelSettings::get_shadow_size() const { return shadow_size; }
+
+void LabelSettings::set_shadow_color(const Color& p_color)
+{
+	if (shadow_color != p_color) {
+		shadow_color = p_color;
+		emit_changed();
+	}
+}
+
+Color LabelSettings::get_shadow_color() const { return shadow_color; }
+
+void LabelSettings::set_shadow_offset(const Vector2& p_offset)
+{
+	if (shadow_offset != p_offset) {
+		shadow_offset = p_offset;
+		emit_changed();
+	}
+}
+
+Vector2 LabelSettings::get_shadow_offset() const { return shadow_offset; }
+
+Vector<LabelSettings::StackedOutlineData> LabelSettings::get_stacked_outline_data() const
+{
+	return stacked_outline_data;
+}
+
+int LabelSettings::get_stacked_outline_count() const { return stacked_outline_data.size(); }
+
+void LabelSettings::set_stacked_outline_size(int p_index, int p_size)
+{
+	ERR_FAIL_INDEX(p_index, stacked_outline_data.size());
+	if (stacked_outline_data[p_index].size != p_size) {
+		stacked_outline_data.write[p_index].size = p_size;
+		emit_changed();
+	}
+}
+
+int LabelSettings::get_stacked_outline_size(int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, stacked_outline_data.size(), 0);
+	return stacked_outline_data[p_index].size;
+}
+
+void LabelSettings::set_stacked_outline_color(int p_index, const Color& p_color)
+{
+	ERR_FAIL_INDEX(p_index, stacked_outline_data.size());
+	if (stacked_outline_data[p_index].color != p_color) {
+		stacked_outline_data.write[p_index].color = p_color;
+		emit_changed();
+	}
+}
+
+Color LabelSettings::get_stacked_outline_color(int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, stacked_outline_data.size(), Color());
+	return stacked_outline_data[p_index].color;
+}
+
+Vector<LabelSettings::StackedShadowData> LabelSettings::get_stacked_shadow_data() const
+{
+	return stacked_shadow_data;
+}
+
+int LabelSettings::get_stacked_shadow_count() const { return stacked_shadow_data.size(); }
+
+void LabelSettings::set_stacked_shadow_offset(int p_index, const Vector2& p_offset)
+{
+	ERR_FAIL_INDEX(p_index, stacked_shadow_data.size());
+	if (stacked_shadow_data[p_index].offset != p_offset) {
+		stacked_shadow_data.write[p_index].offset = p_offset;
+		emit_changed();
+	}
+}
+
+Vector2 LabelSettings::get_stacked_shadow_offset(int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, stacked_shadow_data.size(), Vector2());
+	return stacked_shadow_data[p_index].offset;
+}
+
+void LabelSettings::set_stacked_shadow_color(int p_index, const Color& p_color)
+{
+	ERR_FAIL_INDEX(p_index, stacked_shadow_data.size());
+	if (stacked_shadow_data[p_index].color != p_color) {
+		stacked_shadow_data.write[p_index].color = p_color;
+		emit_changed();
+	}
+}
+
+Color LabelSettings::get_stacked_shadow_color(int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, stacked_shadow_data.size(), Color());
+	return stacked_shadow_data[p_index].color;
+}
+
+void LabelSettings::set_stacked_shadow_outline_size(int p_index, int p_size)
+{
+	ERR_FAIL_INDEX(p_index, stacked_shadow_data.size());
+	if (stacked_shadow_data[p_index].outline_size != p_size) {
+		stacked_shadow_data.write[p_index].outline_size = p_size;
+		emit_changed();
+	}
+}
+
+int LabelSettings::get_stacked_shadow_outline_size(int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, stacked_shadow_data.size(), 0);
+	return stacked_shadow_data[p_index].outline_size;
+}
+
+// --- text_file.cpp ---
+
+#include "core/io/file_access.h"
+#include "core/io/resource_loader.h"
+#include "text_file.h"
+
+bool TextFile::has_text() const { return !text.is_empty(); }
+
+String TextFile::get_text() const { return text; }
+
+void TextFile::set_text(const String& p_code) { text = p_code; }
+
+void TextFile::reload_from_file() { load_text(path); }
+
+
+
+Error TextFile::load_text(String const&) {}
+
+// --- syntax_highlighter.cpp ---
+
+#include "scene/gui/text_edit.h"
+#include "syntax_highlighter.h"
+
+void CodeHighlighter::_clear_highlighting_cache() { color_region_cache.clear(); }
+
+void CodeHighlighter::clear_highlighting_cache() { _clear_highlighting_cache(); }
+
+void CodeHighlighter::_update_cache() { font_color = text_edit->get_font_color(); }
+
+void CodeHighlighter::update_cache()
+{
+	clear_highlighting_cache();
+
+	if (text_edit == nullptr) {
+		return;
+	}
+	_update_cache();
+}
+
+void CodeHighlighter::set_text_edit(TextEdit* p_text_edit) { text_edit = p_text_edit; }
+
+TextEdit* CodeHighlighter::get_text_edit() const { return text_edit; }
+
+void CodeHighlighter::add_color_region(
+	const String& p_start_key, const String& p_end_key, const Color& p_color, bool p_line_only)
+{
+	for (int i = 0; i < p_start_key.length(); i++) {
+		ERR_FAIL_COND_MSG(!is_symbol(p_start_key[i]), "color regions must start with a symbol");
+	}
+
+	if (p_end_key.length() > 0) {
+		for (int i = 0; i < p_end_key.length(); i++) {
+			ERR_FAIL_COND_MSG(!is_symbol(p_end_key[i]), "color regions must end with a symbol");
+		}
+	}
+
+	int at = 0;
+	for (int i = 0; i < color_regions.size(); i++) {
+		ERR_FAIL_COND_MSG(color_regions[i].start_key == p_start_key,
+			"color region with start key '" + p_start_key + "' already exists.");
+		if (p_start_key.length() < color_regions[i].start_key.length()) {
+			at++;
+		}
+	}
+
+	ColorRegion color_region;
+	color_region.color = p_color;
+	color_region.start_key = p_start_key;
+	color_region.end_key = p_end_key;
+	color_region.line_only = p_line_only || p_end_key.is_empty();
+	color_regions.insert(at, color_region);
+	clear_highlighting_cache();
+}
+
+void CodeHighlighter::remove_color_region(const String& p_start_key)
+{
+	for (int i = 0; i < color_regions.size(); i++) {
+		if (color_regions[i].start_key == p_start_key) {
+			color_regions.remove_at(i);
+			break;
+		}
+	}
+	clear_highlighting_cache();
+}
+
+bool CodeHighlighter::has_color_region(const String& p_start_key) const
+{
+	for (int i = 0; i < color_regions.size(); i++) {
+		if (color_regions[i].start_key == p_start_key) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void CodeHighlighter::clear_color_regions()
+{
+	color_regions.clear();
+	clear_highlighting_cache();
+}
+
+void CodeHighlighter::set_uint_suffix_enabled(bool p_enabled) { uint_suffix_enabled = p_enabled; }
+
+void CodeHighlighter::set_number_color(Color p_color)
+{
+	number_color = p_color;
+	clear_highlighting_cache();
+}
+
+Color CodeHighlighter::get_number_color() const { return number_color; }
+
+void CodeHighlighter::set_symbol_color(Color p_color)
+{
+	symbol_color = p_color;
+	clear_highlighting_cache();
+}
+
+Color CodeHighlighter::get_symbol_color() const { return symbol_color; }
+
+void CodeHighlighter::set_function_color(Color p_color)
+{
+	function_color = p_color;
+	clear_highlighting_cache();
+}
+
+Color CodeHighlighter::get_function_color() const { return function_color; }
+
+void CodeHighlighter::set_member_variable_color(Color p_color)
+{
+	member_color = p_color;
+	clear_highlighting_cache();
+}
+
+Color CodeHighlighter::get_member_variable_color() const { return member_color; }

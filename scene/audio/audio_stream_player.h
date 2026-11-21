@@ -31,13 +31,84 @@
 
 #pragma once
 
+#include "core/templates/safe_refcount.h"
 #include "scene/main/node.h"
 #include "servers/audio/audio_server.h"
 
 struct AudioFrame;
 class AudioStream;
 class AudioStreamPlayback;
-class AudioStreamPlayerInternal;
+class AudioSamplePlayback;
+
+class AudioStreamPlayerInternal
+{
+private:
+	struct ParameterData
+	{
+		String path;
+	};
+
+	static inline const String PARAM_PREFIX = "parameters/";
+
+	Node* node = nullptr;
+	bool physical = false;
+	AudioServer::PlaybackType playback_type = AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT;
+
+	HashMap<String, ParameterData> playback_parameters;
+
+	void _set_process(bool p_enabled);
+	void _update_stream_parameters();
+
+	_FORCE_INLINE_ bool _is_sample()
+	{
+		return (AudioServer::get_default_playback_type() ==
+					   AudioServer::PlaybackType::PLAYBACK_TYPE_SAMPLE &&
+				   get_playback_type() == AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT) ||
+			   get_playback_type() == AudioServer::PlaybackType::PLAYBACK_TYPE_SAMPLE;
+	}
+
+public:
+	Vector<Ref<AudioStreamPlayback>> stream_playbacks;
+	Ref<AudioStream> stream;
+
+	SafeFlag active;
+
+	float pitch_scale = 1.0;
+	float volume_db = 0.0;
+	bool autoplay = false;
+	String bus;
+	int max_polyphony = 1;
+
+	void process();
+	void ensure_playback_limit();
+
+	void notification(int p_what);
+
+	void set_stream(Ref<AudioStream> p_stream);
+	void set_pitch_scale(float p_pitch_scale);
+	void set_max_polyphony(int p_max_polyphony);
+
+	String get_bus() const;
+
+	Ref<AudioStreamPlayback> play_basic();
+	void seek(float p_seconds);
+	void stop_basic();
+	bool is_playing() const;
+
+	float get_playback_position();
+
+	void set_playing(bool p_enable);
+	bool is_active() const;
+
+	void set_stream_paused(bool p_pause);
+	bool get_stream_paused() const;
+
+	bool has_stream_playback();
+	Ref<AudioStreamPlayback> get_stream_playback();
+
+	void set_playback_type(AudioServer::PlaybackType p_playback_type);
+	AudioServer::PlaybackType get_playback_type() const;
+};
 
 class AudioStreamPlayer : public Node
 {
