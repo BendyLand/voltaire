@@ -36,10 +36,11 @@
 
 class PacketPeerDTLS : public PacketPeer
 {
-protected:
-	static inline PacketPeerDTLS* (*_create)(bool p_notify_postinitialize) = nullptr;
+public:
+	struct Data;
 
-	static inline bool available = false;
+private:
+	Data* data = nullptr;
 
 public:
 	enum Status
@@ -51,14 +52,47 @@ public:
 		STATUS_ERROR_HOSTNAME_MISMATCH
 	};
 
-	virtual void poll() = 0;
-	virtual Error connect_to_peer(Ref<PacketPeerUDP> p_base, const String& p_hostname,
-		Ref<TLSOptions> p_options = Ref<TLSOptions>()) = 0;
-	virtual void disconnect_from_peer() = 0;
-	virtual Status get_status() const = 0;
+	Data* get_data() const { return data; }
+
+	void poll();
+	Error connect_to_peer(Ref<PacketPeerUDP> p_base, const String& p_hostname,
+		Ref<TLSOptions> p_options = Ref<TLSOptions>());
+	void disconnect_from_peer();
+	Status get_status() const;
+
+	virtual Error get_packet(const uint8_t** r_buffer, int& r_buffer_size) override;
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
+	virtual int get_available_packet_count() const override;
+	virtual int get_max_packet_size() const override;
 
 	static PacketPeerDTLS* create(bool p_notify_postinitialize = true);
 	static bool is_available();
+
+	PacketPeerDTLS();
+	~PacketPeerDTLS();
 };
 
+// --- Folded from core/io/dtls_server.h ---
 
+
+class DTLSServer : public RefCounted
+{
+public:
+	struct Data;
+
+private:
+	Data* data = nullptr;
+
+public:
+	static bool is_available();
+	static DTLSServer* create(bool p_notify_postinitialize = true);
+
+	Error setup(Ref<TLSOptions> p_options);
+	void stop();
+	Ref<PacketPeerDTLS> take_connection(Ref<PacketPeerUDP> p_peer);
+
+	DTLSServer();
+	~DTLSServer();
+};
+
+// --- End core/io/dtls_server.h ---

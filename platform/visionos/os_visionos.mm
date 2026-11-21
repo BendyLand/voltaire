@@ -35,19 +35,17 @@
 
 #ifdef VISIONOS_ENABLED
 
-OS_VisionOS *OS_VisionOS::get_singleton() {
-	return (OS_VisionOS *)OS_AppleEmbedded::get_singleton();
-}
-
-OS_VisionOS::OS_VisionOS() :
-		OS_AppleEmbedded() {
+void OS_VisionOS::setup() {
+	OS_AppleEmbedded::setup();
 	DisplayServerVisionOS::register_visionos_driver();
 }
 
-OS_VisionOS::~OS_VisionOS() {}
-
-String OS_VisionOS::get_name() const {
+String OS_VisionOS::get_name() {
 	return "visionOS";
+}
+
+String OS::get_name() {
+	return OS_VisionOS::get_name();
 }
 
 #endif // VISIONOS_ENABLED

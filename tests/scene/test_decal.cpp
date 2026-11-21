@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_decal)
 
 #ifndef _3D_DISABLED
 
-#include "scene/3d/decal.h"
+#include "scene/3d/visual_instance_3d.h"
 
 namespace TestDecal {
 

@@ -122,7 +122,7 @@ GodotApplication *GodotApp = nil;
 		} break;
 	}
 
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && keycode != Key::NONE) {
 		DisplayServerMacOS::KeyEvent ke;
 
@@ -150,7 +150,7 @@ GodotApplication *GodotApp = nil;
 		[self mediaKeyEvent:keyCode state:keyState repeat:keyRepeat];
 	}
 
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		if ([event type] == NSEventTypeLeftMouseDown || [event type] == NSEventTypeRightMouseDown || [event type] == NSEventTypeOtherMouseDown) {
 			if (ds->mouse_process_popups()) {

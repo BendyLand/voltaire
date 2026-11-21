@@ -29,9 +29,63 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "audio_driver_web.h"
+#include "platform/web/os_web.h"
+// --- Inlined from platform/web/godot_audio.h ---
+#include <cstdint>
 
-#include "godot_audio.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern int godot_audio_is_available();
+extern int godot_audio_has_worklet();
+extern int godot_audio_has_script_processor();
+extern int godot_audio_init(int *p_mix_rate, int p_latency, void (*_state_cb)(int), void (*_latency_cb)(float));
+extern void godot_audio_resume();
+
+extern int godot_audio_input_start();
+extern void godot_audio_input_stop();
+
+// Samples
+extern int godot_audio_sample_stream_is_registered(const char *p_stream_object_id);
+extern void godot_audio_sample_register_stream(const char *p_stream_object_id, float *p_frames_buf, int p_frames_total, const char *p_loop_mode, int p_loop_begin, int p_loop_end);
+extern void godot_audio_sample_unregister_stream(const char *p_stream_object_id);
+extern void godot_audio_sample_start(const char *p_playback_object_id, const char *p_stream_object_id, int p_bus_index, float p_offset, float p_pitch_scale, float *p_volume_ptr);
+extern void godot_audio_sample_stop(const char *p_playback_object_id);
+extern void godot_audio_sample_set_pause(const char *p_playback_object_id, bool p_pause);
+extern int godot_audio_sample_is_active(const char *p_playback_object_id);
+extern double godot_audio_get_sample_playback_position(const char *p_playback_object_id);
+extern void godot_audio_sample_update_pitch_scale(const char *p_playback_object_id, float p_pitch_scale);
+extern void godot_audio_sample_set_volumes_linear(const char *p_playback_object_id, int *p_buses_buf, int p_buses_size, float *p_volumes_buf, int p_volumes_size);
+extern void godot_audio_sample_set_finished_callback(void (*p_callback)(const char *));
+
+extern void godot_audio_sample_bus_set_count(int p_count);
+extern void godot_audio_sample_bus_remove(int p_index);
+extern void godot_audio_sample_bus_add(int p_at_pos = -1);
+extern void godot_audio_sample_bus_move(int p_bus, int p_to_pos);
+extern void godot_audio_sample_bus_set_send(int p_bus, int p_send_index);
+extern void godot_audio_sample_bus_set_volume_db(int p_bus, float p_volume_db);
+extern void godot_audio_sample_bus_set_solo(int p_bus, bool p_enable);
+extern void godot_audio_sample_bus_set_mute(int p_bus, bool p_enable);
+
+// Worklet
+typedef int32_t GodotAudioState[4];
+extern int godot_audio_worklet_create(int p_channels);
+extern void godot_audio_worklet_start(float *p_in_buf, int p_in_size, float *p_out_buf, int p_out_size, GodotAudioState p_state);
+extern void godot_audio_worklet_start_no_threads(float *p_out_buf, int p_out_size, void (*p_out_cb)(int p_pos, int p_frames), float *p_in_buf, int p_in_size, void (*p_in_cb)(int p_pos, int p_frames));
+extern int godot_audio_worklet_state_add(GodotAudioState p_state, int p_idx, int p_value);
+extern int godot_audio_worklet_state_get(GodotAudioState p_state, int p_idx);
+extern int godot_audio_worklet_state_wait(int32_t *p_state, int p_idx, int32_t p_expected, int p_timeout);
+
+// Script
+extern int godot_audio_script_create(int *p_buffer_size, int p_channels);
+extern void godot_audio_script_start(float *p_in_buf, int p_in_size, float *p_out_buf, int p_out_size, void (*p_cb)());
+
+#ifdef __cplusplus
+}
+#endif
+
+// --- End platform/web/godot_audio.h ---
 
 #include "core/config/engine.h"
 #include "core/math/math_funcs_binary.h"
@@ -65,7 +119,7 @@ void AudioDriverWeb::_sample_playback_finished_callback(const char *p_playback_o
 		return;
 	}
 
-	AudioServer::get_singleton()->stop_sample_playback(playback);
+	AudioServer::stop_sample_playback(playback);
 }
 
 void AudioDriverWeb::_audio_driver_process(int p_from, int p_samples) {
@@ -292,7 +346,7 @@ void AudioDriverWeb::start_sample_playback(const Ref<AudioSamplePlayback> &p_pla
 	godot_audio_sample_start(
 			itos(p_playback->get_instance_id()).utf8().get_data(),
 			itos(p_playback->stream->get_instance_id()).utf8().get_data(),
-			AudioServer::get_singleton()->get_bus_index(p_playback->bus),
+			AudioServer::get_bus_index(p_playback->bus),
 			p_playback->offset,
 			p_playback->pitch_scale,
 			volume_ptrw);
@@ -338,7 +392,7 @@ void AudioDriverWeb::set_sample_playback_bus_volumes_linear(const Ref<AudioSampl
 	float *values_ptrw = values.ptrw();
 	int idx = 0;
 	for (KeyValue<String, Vector<AudioFrame>> pair : p_bus_volumes) {
-		int bus_index = AudioServer::get_singleton()->get_bus_index(pair.key);
+		int bus_index = AudioServer::get_bus_index(pair.key);
 		buses_ptrw[idx] = bus_index;
 		ERR_FAIL_COND(pair.value.size() != AudioServer::MAX_CHANNELS_PER_BUS);
 		for (int i = 0; i < real_max_channels; i += 2) {
@@ -373,7 +427,7 @@ void AudioDriverWeb::move_sample_bus(int p_bus, int p_to_pos) {
 }
 
 void AudioDriverWeb::set_sample_bus_send(int p_bus, const String &p_send) {
-	godot_audio_sample_bus_set_send(p_bus, AudioServer::get_singleton()->get_bus_index(p_send));
+	godot_audio_sample_bus_set_send(p_bus, AudioServer::get_bus_index(p_send));
 }
 
 void AudioDriverWeb::set_sample_bus_volume_db(int p_bus, float p_volume_db) {
@@ -455,8 +509,6 @@ void AudioDriverWorklet::finish_driver() {
 #else // No threads.
 
 /// AudioWorkletNode implementation (no threads)
-AudioDriverWorklet *AudioDriverWorklet::singleton = nullptr;
-
 Error AudioDriverWorklet::create(int &p_buffer_size, int p_channels) {
 	if (!godot_audio_has_worklet()) {
 		return ERR_UNAVAILABLE;
@@ -470,23 +522,22 @@ void AudioDriverWorklet::start(float *p_out_buf, int p_out_buf_size, float *p_in
 }
 
 void AudioDriverWorklet::_process_callback(int p_pos, int p_samples) {
-	AudioDriverWorklet *driver = AudioDriverWorklet::get_singleton();
+	AudioDriverWorklet *driver = static_cast<AudioDriverWorklet *>(AudioDriverManager::get_active_driver());
 	driver->_audio_driver_process(p_pos, p_samples);
 }
 
 void AudioDriverWorklet::_capture_callback(int p_pos, int p_samples) {
-	AudioDriverWorklet *driver = AudioDriverWorklet::get_singleton();
+	AudioDriverWorklet *driver = static_cast<AudioDriverWorklet *>(AudioDriverManager::get_active_driver());
 	driver->_audio_driver_capture(p_pos, p_samples);
 }
 
 #endif // THREADS_ENABLED
 
 /// ScriptProcessorNode implementation
-AudioDriverScriptProcessor *AudioDriverScriptProcessor::singleton = nullptr;
-
 void AudioDriverScriptProcessor::_process_callback() {
-	AudioDriverScriptProcessor::get_singleton()->_audio_driver_capture();
-	AudioDriverScriptProcessor::get_singleton()->_audio_driver_process();
+	AudioDriverScriptProcessor *driver = static_cast<AudioDriverScriptProcessor *>(AudioDriverManager::get_active_driver());
+	driver->_audio_driver_capture();
+	driver->_audio_driver_process();
 }
 
 Error AudioDriverScriptProcessor::create(int &p_buffer_samples, int p_channels) {

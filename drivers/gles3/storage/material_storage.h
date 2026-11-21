@@ -49,194 +49,12 @@
 namespace GLES3
 {
 
+enum
+{
+	PARTICLES_MAX_USERDATAS = 6
+};
+
 struct ShaderData
-{
-	String path;
-	HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
-	HashMap<String, HashMap<int, RID>> default_texture_params;
-
-	virtual void set_path_hint(const String& p_hint);
-	virtual void set_default_texture_parameter(
-		const String& p_name, RID p_texture, int p_index);
-	virtual void get_instance_param_list(
-		List<InstanceShaderParam>* p_param_list) const;
-	virtual bool is_parameter_texture(const String& p_param) const;
-
-	virtual void set_code(const String& p_Code) = 0;
-	virtual bool is_animated() const = 0;
-	virtual bool casts_shadows() const = 0;
-
-	virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const
-	{
-		return RenderingServerTypes::ShaderNativeSourceCode();
-	}
-
-	virtual ~ShaderData() {}
-};
-
-typedef ShaderData* (*ShaderDataRequestFunction)();
-
-struct Material;
-
-struct Shader
-{
-	ShaderData* data = nullptr;
-	String code;
-	String path_hint;
-	RSE::ShaderMode mode;
-	HashMap<String, HashMap<int, RID>> default_texture_parameter;
-	HashSet<Material*> owners;
-};
-
-struct MaterialData
-{
-	RID get_default_texture_id(
-		ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint);
-
-	virtual void set_render_priority(int p_priority) = 0;
-	virtual void set_next_pass(RID p_pass) = 0;
-	virtual void bind_uniforms() = 0;
-	virtual ~MaterialData();
-
-	// Used internally by all Materials
-protected:
-	Vector<uint8_t> ubo_data;
-	GLuint uniform_buffer = GLuint(0);
-	Vector<RID> texture_cache;
-
-private:
-	friend class MaterialStorage;
-	RID self;
-	List<RID>::Element* global_buffer_E = nullptr;
-	List<RID>::Element* global_texture_E = nullptr;
-	uint64_t global_textures_pass = 0;
-	HashMap<String, uint64_t> used_global_textures;
-};
-
-typedef MaterialData* (*MaterialDataRequestFunction)(ShaderData*);
-
-struct Material
-{
-	RID self;
-	MaterialData* data = nullptr;
-	Shader* shader = nullptr;
-	// shortcut to shader data and type
-	RSE::ShaderMode shader_mode = RSE::SHADER_MAX;
-	uint32_t shader_id = 0;
-	bool uniform_dirty = false;
-	bool texture_dirty = false;
-	int32_t priority = 0;
-	RID next_pass;
-	SelfList<Material> update_element;
-
-	Dependency dependency;
-
-	Material() : update_element(this) {}
-};
-
-struct CanvasShaderData : public ShaderData
-{
-	enum BlendMode
-	{ // Used internally.
-		BLEND_MODE_MIX,
-		BLEND_MODE_ADD,
-		BLEND_MODE_SUB,
-		BLEND_MODE_MUL,
-		BLEND_MODE_PMALPHA,
-		BLEND_MODE_DISABLED,
-		BLEND_MODE_LCD,
-	};
-
-	bool valid;
-	RID version;
-
-	Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
-
-	Vector<uint32_t> ubo_offsets;
-	uint32_t ubo_size;
-
-	String code;
-
-	BlendMode blend_mode;
-
-	bool uses_screen_texture;
-	bool uses_screen_texture_mipmaps;
-	bool uses_sdf;
-	bool uses_time;
-	bool uses_custom0;
-	bool uses_custom1;
-
-	uint64_t vertex_input_mask;
-
-	virtual void set_code(const String& p_Code);
-	virtual bool is_animated() const;
-	virtual bool casts_shadows() const;
-	virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
-
-	CanvasShaderData();
-	virtual ~CanvasShaderData();
-};
-
-ShaderData* _create_canvas_shader_func();
-
-struct CanvasMaterialData : public MaterialData
-{
-	CanvasShaderData* shader_data = nullptr;
-
-	virtual void set_render_priority(int p_priority) {}
-
-	virtual void set_next_pass(RID p_pass) {}
-
-	virtual void bind_uniforms();
-	virtual ~CanvasMaterialData();
-};
-
-MaterialData* _create_canvas_material_func(ShaderData* p_shader);
-
-struct SkyShaderData : public ShaderData
-{
-	bool valid;
-	RID version;
-
-	Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
-
-	Vector<uint32_t> ubo_offsets;
-	uint32_t ubo_size;
-
-	String code;
-
-	bool uses_time;
-	bool uses_position;
-	bool uses_half_res;
-	bool uses_quarter_res;
-	bool uses_light;
-
-	virtual void set_code(const String& p_Code);
-	virtual bool is_animated() const;
-	virtual bool casts_shadows() const;
-	virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
-	SkyShaderData();
-	virtual ~SkyShaderData();
-};
-
-ShaderData* _create_sky_shader_func();
-
-struct SkyMaterialData : public MaterialData
-{
-	SkyShaderData* shader_data = nullptr;
-	bool uniform_set_updated = false;
-
-	virtual void set_render_priority(int p_priority) {}
-
-	virtual void set_next_pass(RID p_pass) {}
-
-	virtual void bind_uniforms();
-	virtual ~SkyMaterialData();
-};
-
-MaterialData* _create_sky_material_func(ShaderData* p_shader);
-
-struct SceneShaderData : public ShaderData
 {
 	enum BlendMode
 	{ // Used internally.
@@ -245,7 +63,10 @@ struct SceneShaderData : public ShaderData
 		BLEND_MODE_SUB,
 		BLEND_MODE_MUL,
 		BLEND_MODE_PREMULT_ALPHA,
-		BLEND_MODE_ALPHA_TO_COVERAGE
+		BLEND_MODE_PMALPHA = BLEND_MODE_PREMULT_ALPHA,
+		BLEND_MODE_ALPHA_TO_COVERAGE,
+		BLEND_MODE_DISABLED,
+		BLEND_MODE_LCD,
 	};
 
 	enum DepthDraw
@@ -288,190 +109,166 @@ struct SceneShaderData : public ShaderData
 		ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE
 	};
 
-	bool valid;
+	RSE::ShaderMode mode = RSE::SHADER_MAX;
+	String path;
+	HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
+	HashMap<String, HashMap<int, RID>> default_texture_params;
+
+	bool valid = false;
 	RID version;
 
 	Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
 
 	Vector<uint32_t> ubo_offsets;
-	uint32_t ubo_size;
+	uint32_t ubo_size = 0;
 
 	String code;
 
-	BlendMode blend_mode;
-	AlphaAntiAliasing alpha_antialiasing_mode;
-	DepthDraw depth_draw;
-	DepthTest depth_test;
-	RSE::CullMode cull_mode;
+	BlendMode blend_mode = BLEND_MODE_MIX;
+	AlphaAntiAliasing alpha_antialiasing_mode = ALPHA_ANTIALIASING_OFF;
+	DepthDraw depth_draw = DEPTH_DRAW_OPAQUE;
+	DepthTest depth_test = DEPTH_TEST_ENABLED;
+	RSE::CullMode cull_mode = RSE::CULL_MODE_BACK;
 
-	StencilCompare stencil_compare;
-	uint32_t stencil_flags;
-	int32_t stencil_reference;
-	bool stencil_enabled;
+	StencilCompare stencil_compare = STENCIL_COMPARE_ALWAYS;
+	uint32_t stencil_flags = 0;
+	int32_t stencil_reference = -1;
+	bool stencil_enabled = false;
 
-	bool uses_point_size;
-	bool uses_alpha;
-	bool compiler_alpha_clip;
-	bool uses_blend_alpha;
-	bool uses_depth_prepass_alpha;
-	bool uses_discard;
-	bool uses_roughness;
-	bool uses_normal;
-	bool uses_particle_trails;
-	bool wireframe;
+	bool uses_point_size = false;
+	bool uses_alpha = false;
+	bool compiler_alpha_clip = false;
+	bool uses_blend_alpha = false;
+	bool uses_depth_prepass_alpha = false;
+	bool uses_discard = false;
+	bool uses_roughness = false;
+	bool uses_normal = false;
+	bool uses_particle_trails = false;
+	bool wireframe = false;
 
-	bool unshaded;
-	bool uses_vertex;
-	bool uses_position;
-	bool uses_sss;
-	bool uses_transmittance;
-	bool uses_screen_texture;
-	bool uses_screen_texture_mipmaps;
-	bool uses_depth_texture;
-	bool uses_normal_texture;
-	bool uses_bent_normal_texture;
-	bool uses_time;
-	bool uses_vertex_time;
-	bool uses_fragment_time;
-	bool writes_modelview_or_projection;
-	bool uses_world_coordinates;
-	bool uses_tangent;
-	bool writes_tangent;
-	bool uses_color;
-	bool uses_uv;
-	bool uses_uv2;
-	bool uses_custom0;
-	bool uses_custom1;
-	bool uses_custom2;
-	bool uses_custom3;
-	bool uses_bones;
-	bool uses_weights;
+	bool unshaded = false;
+	bool uses_vertex = false;
+	bool uses_position = false;
+	bool uses_sss = false;
+	bool uses_transmittance = false;
+	bool uses_screen_texture = false;
+	bool uses_screen_texture_mipmaps = false;
+	bool uses_depth_texture = false;
+	bool uses_normal_texture = false;
+	bool uses_bent_normal_texture = false;
+	bool uses_sdf = false;
+	bool uses_time = false;
+	bool uses_vertex_time = false;
+	bool uses_fragment_time = false;
+	bool uses_half_res = false;
+	bool uses_quarter_res = false;
+	bool uses_light = false;
+	bool uses_collision = false;
+	bool writes_modelview_or_projection = false;
+	bool uses_world_coordinates = false;
+	bool uses_tangent = false;
+	bool writes_tangent = false;
+	bool uses_color = false;
+	bool uses_uv = false;
+	bool uses_uv2 = false;
+	bool uses_custom0 = false;
+	bool uses_custom1 = false;
+	bool uses_custom2 = false;
+	bool uses_custom3 = false;
+	bool uses_bones = false;
+	bool uses_weights = false;
 
-	uint64_t vertex_input_mask;
+	uint64_t vertex_input_mask = 0;
 
-	virtual void set_code(const String& p_Code);
-	virtual bool is_animated() const;
-	virtual bool casts_shadows() const;
-	virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
+	bool userdatas_used[PARTICLES_MAX_USERDATAS] = {};
+	uint32_t userdata_count = 0;
 
-	SceneShaderData();
-	virtual ~SceneShaderData();
+	explicit ShaderData(RSE::ShaderMode p_mode) : mode(p_mode) {}
+	~ShaderData();
+
+	void set_path_hint(const String& p_hint);
+	void set_default_texture_parameter(const String& p_name, RID p_texture, int p_index);
+	void get_instance_param_list(List<InstanceShaderParam>* p_param_list) const;
+	bool is_parameter_texture(const String& p_param) const;
+
+	void set_code(const String& p_code);
+	bool is_animated() const;
+	bool casts_shadows() const;
+	RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
+
+private:
+	void _set_code_canvas(const String& p_code);
+	void _set_code_sky(const String& p_code);
+	void _set_code_scene(const String& p_code);
+	void _set_code_particles(const String& p_code);
+	void _set_code_tex_blit(const String& p_code);
 };
 
-ShaderData* _create_scene_shader_func();
+struct Material;
 
-struct SceneMaterialData : public MaterialData
+struct Shader
 {
-	SceneShaderData* shader_data = nullptr;
+	ShaderData* data = nullptr;
+	String code;
+	String path_hint;
+	RSE::ShaderMode mode;
+	HashMap<String, HashMap<int, RID>> default_texture_parameter;
+	HashSet<Material*> owners;
+};
+
+struct MaterialData
+{
+	ShaderData* shader_data = nullptr;
 	uint64_t last_pass = 0;
 	uint32_t index = 0;
 	RID next_pass;
-	uint8_t priority = 0;
-	virtual void set_render_priority(int p_priority);
-	virtual void set_next_pass(RID p_pass);
-	virtual void bind_uniforms();
-	virtual ~SceneMaterialData();
-};
-
-MaterialData* _create_scene_material_func(ShaderData* p_shader);
-
-enum
-{
-	PARTICLES_MAX_USERDATAS = 6
-};
-
-struct ParticlesShaderData : public ShaderData
-{
-	bool valid;
-	RID version;
-
-	Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
-
-	Vector<uint32_t> ubo_offsets;
-	uint32_t ubo_size;
-
-	String code;
-
-	bool uses_collision;
-	bool uses_time;
-
-	bool userdatas_used[PARTICLES_MAX_USERDATAS] = {};
-	uint32_t userdata_count;
-
-	virtual void set_code(const String& p_Code);
-	virtual bool is_animated() const;
-	virtual bool casts_shadows() const;
-	virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
-
-	ParticlesShaderData() {}
-
-	virtual ~ParticlesShaderData();
-};
-
-ShaderData* _create_particles_shader_func();
-
-struct ParticleProcessMaterialData : public MaterialData
-{
-	ParticlesShaderData* shader_data = nullptr;
 	RID uniform_set;
+	uint8_t priority = 0;
+	bool uniform_set_updated = false;
 
-	virtual void set_render_priority(int p_priority) {}
+	explicit MaterialData(ShaderData* p_shader_data = nullptr) : shader_data(p_shader_data) {}
+	~MaterialData();
 
-	virtual void set_next_pass(RID p_pass) {}
+	RID get_default_texture_id(
+		ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint);
 
-	virtual void bind_uniforms();
-	virtual ~ParticleProcessMaterialData();
+	void set_render_priority(int p_priority);
+	void set_next_pass(RID p_pass);
+	void bind_uniforms();
+
+	// Used internally by all Materials
+protected:
+	Vector<uint8_t> ubo_data;
+	GLuint uniform_buffer = GLuint(0);
+	Vector<RID> texture_cache;
+
+private:
+	friend class MaterialStorage;
+	RID self;
+	List<RID>::Element* global_buffer_E = nullptr;
+	List<RID>::Element* global_texture_E = nullptr;
+	uint64_t global_textures_pass = 0;
+	HashMap<String, uint64_t> used_global_textures;
 };
 
-MaterialData* _create_particles_material_func(ShaderData* p_shader);
-
-struct TexBlitShaderData : public ShaderData
+struct Material
 {
-	enum BlendMode
-	{ // Used internally.
-		BLEND_MODE_MIX,
-		BLEND_MODE_ADD,
-		BLEND_MODE_SUB,
-		BLEND_MODE_MUL,
-		BLEND_MODE_DISABLED,
-	};
+	RID self;
+	MaterialData* data = nullptr;
+	Shader* shader = nullptr;
+	// shortcut to shader data and type
+	RSE::ShaderMode shader_mode = RSE::SHADER_MAX;
+	uint32_t shader_id = 0;
+	bool uniform_dirty = false;
+	bool texture_dirty = false;
+	int32_t priority = 0;
+	RID next_pass;
+	SelfList<Material> update_element;
 
-	bool valid;
-	RID version;
+	Dependency dependency;
 
-	Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
-
-	Vector<uint32_t> ubo_offsets;
-	uint32_t ubo_size;
-
-	String code;
-
-	BlendMode blend_mode;
-
-	virtual void set_code(const String& p_code);
-	virtual bool is_animated() const;
-	virtual bool casts_shadows() const;
-	virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
-
-	TexBlitShaderData();
-	virtual ~TexBlitShaderData();
+	Material() : update_element(this) {}
 };
-
-ShaderData* _create_tex_blit_shader_func();
-
-struct TexBlitMaterialData : public MaterialData
-{
-	TexBlitShaderData* shader_data = nullptr;
-
-	virtual void set_render_priority(int p_priority) {}
-
-	virtual void set_next_pass(RID p_pass) {}
-
-	virtual void bind_uniforms();
-	virtual ~TexBlitMaterialData();
-};
-
-MaterialData* _create_tex_blit_material_func(ShaderData* p_shader);
 
 struct GlobalShaderUniforms
 {
@@ -551,11 +348,9 @@ private:
 
 	/* SHADER API */
 
-	static inline ShaderDataRequestFunction shader_data_request_func[RSE::SHADER_MAX] = {};
 	static inline RID_Owner<Shader, true> shader_owner;
 
 	/* MATERIAL API */
-	static inline MaterialDataRequestFunction material_data_request_func[RSE::SHADER_MAX] = {};
 	static inline RID_Owner<Material, true> material_owner;
 
 	static inline SelfList<Material>::List material_update_list;

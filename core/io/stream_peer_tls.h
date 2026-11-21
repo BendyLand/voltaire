@@ -36,8 +36,11 @@
 
 class StreamPeerTLS : public StreamPeer
 {
-protected:
-	static StreamPeerTLS* (*_create)(bool p_notify_postinitialize);
+public:
+	struct Data;
+
+private:
+	Data* data = nullptr;
 
 public:
 	enum Status
@@ -49,18 +52,26 @@ public:
 		STATUS_ERROR_HOSTNAME_MISMATCH
 	};
 
-	virtual void poll() = 0;
-	virtual Error accept_stream(Ref<StreamPeer> p_base, Ref<TLSOptions> p_options) = 0;
-	virtual Error connect_to_stream(
-		Ref<StreamPeer> p_base, const String& p_common_name, Ref<TLSOptions> p_options) = 0;
-	virtual Status get_status() const = 0;
-	virtual Ref<StreamPeer> get_stream() const = 0;
+	void poll();
+	Error accept_stream(Ref<StreamPeer> p_base, Ref<TLSOptions> p_options);
+	Error connect_to_stream(Ref<StreamPeer> p_base, const String& p_common_name,
+		Ref<TLSOptions> p_options = Ref<TLSOptions>());
+	Status get_status() const;
+	Ref<StreamPeer> get_stream() const;
 
-	virtual void disconnect_from_stream() = 0;
+	void disconnect_from_stream();
+
+	virtual Error put_data(const uint8_t* p_data, int p_bytes) override;
+	virtual Error put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent) override;
+
+	virtual Error get_data(uint8_t* p_buffer, int p_bytes) override;
+	virtual Error get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received) override;
+
+	virtual int get_available_bytes() const override;
 
 	static StreamPeerTLS* create(bool p_notify_postinitialize = true);
-
 	static bool is_available();
+
+	StreamPeerTLS();
+	~StreamPeerTLS();
 };
-
-

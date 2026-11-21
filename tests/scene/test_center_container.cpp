@@ -42,27 +42,27 @@ namespace TestCenterContainer {
 
 TEST_CASE("[SceneTree][CenterContainer] Standard behavior") {
 	CenterContainer *center_container = memnew(CenterContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(center_container);
 	Control *child_control = memnew(Control);
 	center_container->add_child(child_control);
 
 	center_container->set_size(Size2(100, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_position().is_equal_approx(Point2(50, 50)),
 			"Child control is centered within the CenterContainer by default.");
 
 	child_control->set_custom_minimum_size(Size2(20, 20));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_position().is_equal_approx(Point2(40, 40)),
 			"Child control remains centered when custom minimum size is set.");
 
 	child_control->set_custom_minimum_size(Size2(200, 200));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			center_container->get_size().is_equal_approx(Size2(200, 200)),
@@ -73,7 +73,7 @@ TEST_CASE("[SceneTree][CenterContainer] Standard behavior") {
 			"Child control is positioned at the top-left corner when its minimum size equals the container size.");
 
 	child_control->set_custom_minimum_size(Size2());
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_position().is_equal_approx(Point2(50, 50)),
@@ -84,14 +84,14 @@ TEST_CASE("[SceneTree][CenterContainer] Standard behavior") {
 			"CenterContainer returns to original size when child control's custom minimum size is reset.");
 
 	center_container->set_use_top_left(true);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_position().is_equal_approx(Point2(0, 0)),
 			"Child control is aligned to the top-left corner when use_top_left is enabled.");
 
 	center_container->set_layout_direction(Control::LAYOUT_DIRECTION_RTL);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_position().is_equal_approx(Point2(100, 0)),
@@ -103,7 +103,7 @@ TEST_CASE("[SceneTree][CenterContainer] Standard behavior") {
 
 TEST_CASE("[SceneTree][CenterContainer] Multiple children") {
 	CenterContainer *center_container = memnew(CenterContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(center_container);
 
 	center_container->set_size(Size2(100, 100));
@@ -112,7 +112,7 @@ TEST_CASE("[SceneTree][CenterContainer] Multiple children") {
 	Control *child_control_2 = memnew(Control);
 	center_container->add_child(child_control_1);
 	center_container->add_child(child_control_2);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control_1->get_position().is_equal_approx(Point2(50, 50)),
@@ -123,7 +123,7 @@ TEST_CASE("[SceneTree][CenterContainer] Multiple children") {
 			"Second child control is also centered and overlaps the first child control by default.");
 
 	child_control_1->set_custom_minimum_size(Size2(20, 20));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control_1->get_position().is_equal_approx(Point2(40, 40)),
@@ -134,7 +134,7 @@ TEST_CASE("[SceneTree][CenterContainer] Multiple children") {
 			"Second child control remains centered and overlaps the first child control even when the first child has a custom minimum size.");
 
 	child_control_1->set_custom_minimum_size(Size2(200, 0));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			center_container->get_size().is_equal_approx(Size2(200, 100)),
@@ -149,7 +149,7 @@ TEST_CASE("[SceneTree][CenterContainer] Multiple children") {
 			"Second child control is centered on the new container center.");
 
 	child_control_2->set_custom_minimum_size(Size2(0, 200));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			center_container->get_size().is_equal_approx(Size2(200, 200)),

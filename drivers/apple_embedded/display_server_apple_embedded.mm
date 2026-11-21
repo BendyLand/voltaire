@@ -33,7 +33,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
-#include "core/io/file_access_pack.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/os/os.h"
 #import "drivers/apple_embedded/app_delegate_service.h"
 #import "drivers/apple_embedded/apple_embedded.h"
@@ -49,10 +49,6 @@
 
 static const float kDisplayServerIOSAcceleration = 1.f;
 
-DisplayServerAppleEmbedded *DisplayServerAppleEmbedded::get_singleton() {
-	return (DisplayServerAppleEmbedded *)DisplayServer::get_singleton();
-}
-
 DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
 	KeyMappingAppleEmbedded::initialize();
 
@@ -63,7 +59,7 @@ DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering
 	if (tts_enabled) {
 		initialize_tts();
 	}
-	native_menu = memnew(NativeMenu);
+	NativeMenu::initialize();
 
 	bool has_made_render_compositor_current = false;
 
@@ -102,7 +98,7 @@ DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering
 			wpd.metal.layer = (__bridge CA::MetalLayer *)layer;
 			rendering_context = memnew(RenderingContextDriverMetal);
 		} else {
-			OS::get_singleton()->alert("Metal is only supported on iOS 14.0 and later.");
+			OS::alert("Metal is only supported on iOS 14.0 and later.");
 			r_error = ERR_UNAVAILABLE;
 			return;
 		}
@@ -117,8 +113,8 @@ DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering
 			if (fallback_to_opengl3 && rendering_driver != "opengl3") {
 				WARN_PRINT("Your device does not seem to support MoltenVK or Metal, switching to OpenGL 3.");
 				rendering_driver = "opengl3";
-				OS::get_singleton()->set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
-				OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 			} else
 #endif
 			{
@@ -175,16 +171,13 @@ DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering
 	bool keep_screen_on = bool(GLOBAL_GET("display/window/energy_saving/keep_screen_on"));
 	screen_set_keep_on(keep_screen_on);
 
-	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
+	Input::set_event_dispatch_function(_dispatch_input_events);
 
 	r_error = OK;
 }
 
 DisplayServerAppleEmbedded::~DisplayServerAppleEmbedded() {
-	if (native_menu) {
-		memdelete(native_menu);
-		native_menu = nullptr;
-	}
+	NativeMenu::finalize();
 
 #if defined(RD_ENABLED)
 	if (rendering_device) {
@@ -241,11 +234,13 @@ void DisplayServerAppleEmbedded::window_set_drop_files_callback(const Callable &
 }
 
 void DisplayServerAppleEmbedded::process_events() {
-	Input::get_singleton()->flush_buffered_events();
+	Input::flush_buffered_events();
 }
 
 void DisplayServerAppleEmbedded::_dispatch_input_events(const Ref<InputEvent> &p_event) {
-	DisplayServerAppleEmbedded::get_singleton()->send_input_event(p_event);
+	if (DisplayServerAppleEmbedded *ds = DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+		ds->send_input_event(p_event);
+	}
 }
 
 void DisplayServerAppleEmbedded::send_input_event(const Ref<InputEvent> &p_event) const {
@@ -294,12 +289,11 @@ void DisplayServerAppleEmbedded::touch_drag(int p_idx, int p_prev_x, int p_prev_
 }
 
 void DisplayServerAppleEmbedded::perform_event(const Ref<InputEvent> &p_event) {
-	Input *input_singleton = Input::get_singleton();
-	if (input_singleton == nullptr) {
+	if (!Input::is_initialized()) {
 		return;
 	}
 
-	input_singleton->parse_input_event(p_event);
+	Input::parse_input_event(p_event.ptr());
 }
 
 void DisplayServerAppleEmbedded::touches_canceled(int p_idx) {
@@ -338,19 +332,19 @@ void DisplayServerAppleEmbedded::key(Key p_key, char32_t p_char, Key p_unshifted
 // MARK: Motion
 
 void DisplayServerAppleEmbedded::update_gravity(const Vector3 &p_gravity) {
-	Input::get_singleton()->set_gravity(p_gravity);
+	Input::set_gravity(p_gravity);
 }
 
 void DisplayServerAppleEmbedded::update_accelerometer(const Vector3 &p_accelerometer) {
-	Input::get_singleton()->set_accelerometer(p_accelerometer / kDisplayServerIOSAcceleration);
+	Input::set_accelerometer(p_accelerometer / kDisplayServerIOSAcceleration);
 }
 
 void DisplayServerAppleEmbedded::update_magnetometer(const Vector3 &p_magnetometer) {
-	Input::get_singleton()->set_magnetometer(p_magnetometer);
+	Input::set_magnetometer(p_magnetometer);
 }
 
 void DisplayServerAppleEmbedded::update_gyroscope(const Vector3 &p_gyroscope) {
-	Input::get_singleton()->set_gyroscope(p_gyroscope);
+	Input::set_gyroscope(p_gyroscope);
 }
 
 // MARK: -
@@ -359,7 +353,7 @@ bool DisplayServerAppleEmbedded::has_feature(DisplayServerEnums::Feature p_featu
 	switch (p_feature) {
 #ifndef DISABLE_DEPRECATED
 		case DisplayServerEnums::FEATURE_GLOBAL_MENU: {
-			return (native_menu && native_menu->has_feature(NativeMenu::FEATURE_GLOBAL_MENU));
+			return NativeMenu::is_initialized() && NativeMenu::has_feature(NativeMenu::FEATURE_GLOBAL_MENU);
 		} break;
 #endif
 		// case DisplayServerEnums::FEATURE_CURSOR_SHAPE:

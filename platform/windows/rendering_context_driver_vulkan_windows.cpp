@@ -31,7 +31,7 @@
 
 #if defined(WINDOWS_ENABLED) && defined(VULKAN_ENABLED)
 
-#include "rendering_context_driver_vulkan_windows.h"
+#include "platform/windows/display_server_windows.h"
 
 #include "core/os/os.h"
 

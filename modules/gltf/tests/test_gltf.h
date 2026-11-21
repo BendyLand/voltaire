@@ -35,16 +35,14 @@
 
 #ifdef TOOLS_ENABLED
 
-#include "../editor/editor_scene_importer_gltf.h"
 #include "../gltf_document.h"
 #include "../gltf_state.h"
 
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "editor/import/3d/resource_importer_scene.h"
-#include "editor/import/resource_importer_texture.h"
+#include "editor/import/editor_import_plugin.h"
 #include "scene/resources/compressed_texture.h"
-#include "scene/resources/compressed_texture_resource_format.h"
 #include "scene/resources/packed_scene.h"
 #include "tests/test_utils.h"
 
@@ -54,7 +52,7 @@ static Node *gltf_import(const String &p_file) {
 	// Setting up importers.
 	Ref<ResourceImporterScene> import_scene;
 	import_scene.instantiate("PackedScene");
-	ResourceFormatImporter::get_singleton()->add_importer(import_scene);
+	ResourceFormatImporter::add_importer(import_scene);
 	Ref<EditorSceneFormatImporterGLTF> import_gltf;
 	import_gltf.instantiate();
 	ResourceImporterScene::add_scene_importer(import_gltf);
@@ -62,10 +60,10 @@ static Node *gltf_import(const String &p_file) {
 	// Support processing png files in editor import.
 	Ref<ResourceImporterTexture> import_texture;
 	import_texture.instantiate(true);
-	ResourceFormatImporter::get_singleton()->add_importer(import_texture);
+	ResourceFormatImporter::add_importer(import_texture);
 
 	// Once editor import convert pngs to ctex, we will need to load it as ctex resource.
-	Ref<ResourceFormatLoaderCompressedTexture2D> resource_loader_stream_texture;
+	Ref<ResourceFormatLoaderCompressedTexture> resource_loader_stream_texture;
 	if constexpr (GD_IS_CLASS_ENABLED(CompressedTexture2D)) {
 		resource_loader_stream_texture.instantiate();
 		ResourceLoader::add_resource_format_loader(resource_loader_stream_texture);
@@ -103,7 +101,7 @@ static Node *gltf_import(const String &p_file) {
 	Node *p_scene = packed_scene->instantiate();
 
 	ResourceImporterScene::remove_scene_importer(import_gltf);
-	ResourceFormatImporter::get_singleton()->remove_importer(import_texture);
+	ResourceFormatImporter::remove_importer(import_texture);
 	if constexpr (GD_IS_CLASS_ENABLED(CompressedTexture2D)) {
 		ResourceLoader::remove_resource_format_loader(resource_loader_stream_texture);
 		resource_loader_stream_texture.unref();
@@ -133,12 +131,11 @@ void init(const String &p_test, const String &p_copy_target = String()) {
 	// Setup project settings with `res://` set to a temporary path.
 	String project_folder = TestUtils::get_temp_path(p_test.get_file().get_basename());
 	TestProjectSettingsInternalsAccessor::resource_path() = project_folder;
-	ProjectSettings *ps = ProjectSettings::get_singleton();
-	err = ps->setup(project_folder, String(), true);
+	err = ProjectSettings::setup(project_folder, String(), true);
 
 	// Create the imported files folder as the editor import process expects it to exist.
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	da->make_dir_recursive(ps->globalize_path(ps->get_imported_files_path()));
+	da->make_dir_recursive(ProjectSettings::globalize_path(ProjectSettings::get_imported_files_path()));
 
 	if (p_copy_target.is_empty()) {
 		return;

@@ -21,6 +21,7 @@ LINKER_EXCLUSIONS = {
     "bin/obj/thirdparty/harfbuzz/src/hb-subset.linuxbsd.editor.x86_64.o",
     "bin/obj/thirdparty/harfbuzz/src/hb-vector-paint.linuxbsd.editor.x86_64.o",
     "bin/obj/thirdparty/harfbuzz/src/hb-vector-paint-svg.linuxbsd.editor.x86_64.o",
+    "bin/obj/thirdparty/icu4c/common/ubiditransform.linuxbsd.editor.x86_64.o",
 }
 
 ARCHIVE_COMMAND_PATTERN = re.compile(r"(\b\w+\.a\b)+")

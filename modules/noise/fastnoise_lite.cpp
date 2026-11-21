@@ -29,6 +29,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <cfloat> // FLT_MAX
+#include "register_types.h"
+#include "servers/rendering/renderer.h"
 #include "core/config/engine.h"
 #include "fastnoise_lite.h"
 
@@ -298,7 +301,7 @@ void FastNoiseLite::set_domain_warp_fractal_gain(real_t p_gain)
 
 real_t FastNoiseLite::get_domain_warp_fractal_gain() const { return domain_warp_fractal_gain; }
 
-// Noise interface functions.
+// Noise evaluation & image generation functions.
 
 real_t FastNoiseLite::get_noise_1d(real_t p_x) const
 {
@@ -336,6 +339,531 @@ real_t FastNoiseLite::get_noise_3d(real_t p_x, real_t p_y, real_t p_z) const
 	return _noise.GetNoise(p_x, p_y, p_z);
 }
 
+// Template specialization for faster grayscale blending.
+template <> uint8_t FastNoiseLite::_alpha_blend<uint8_t>(uint8_t p_bg, uint8_t p_fg, int p_alpha) const
+{
+	uint16_t alpha = p_alpha + 1;
+	uint16_t inv_alpha = 256 - p_alpha;
+
+	return (uint8_t)((alpha * p_fg + inv_alpha * p_bg) >> 8);
+}
+
+Vector<Ref<Image>> FastNoiseLite::_get_seamless_image(int p_width, int p_height, int p_depth,
+	bool p_invert, bool p_in_3d_space, real_t p_blend_skirt, bool p_normalize) const
+{
+	ERR_FAIL_COND_V(p_width <= 0 || p_height <= 0 || p_depth <= 0, Vector<Ref<Image>>());
+
+	int skirt_width = MAX(1, p_width * p_blend_skirt);
+	int skirt_height = MAX(1, p_height * p_blend_skirt);
+	int skirt_depth = MAX(1, p_depth * p_blend_skirt);
+	int src_width = p_width + skirt_width;
+	int src_height = p_height + skirt_height;
+	int src_depth = p_depth + skirt_depth;
+
+	Vector<Ref<Image>> src =
+		_get_image(src_width, src_height, src_depth, p_invert, p_in_3d_space, p_normalize);
+	bool grayscale = (src[0]->get_format() == Image::FORMAT_L8);
+
+	if (grayscale) {
+		return _generate_seamless_image<uint8_t>(
+			src, p_width, p_height, p_depth, p_invert, p_blend_skirt);
+	}
+	else {
+		return _generate_seamless_image<uint32_t>(
+			src, p_width, p_height, p_depth, p_invert, p_blend_skirt);
+	}
+}
+
+Ref<Image> FastNoiseLite::get_seamless_image(int p_width, int p_height, bool p_invert,
+	bool p_in_3d_space, real_t p_blend_skirt, bool p_normalize) const
+{
+	Vector<Ref<Image>> images = _get_seamless_image(
+		p_width, p_height, 1, p_invert, p_in_3d_space, p_blend_skirt, p_normalize);
+	if (images.is_empty()) {
+		return Ref<Image>();
+	}
+	return images[0];
+}
+
+Vector<Ref<Image>> FastNoiseLite::_get_image(int p_width, int p_height, int p_depth, bool p_invert,
+	bool p_in_3d_space, bool p_normalize) const
+{
+	ERR_FAIL_COND_V(p_width <= 0 || p_height <= 0 || p_depth <= 0, Vector<Ref<Image>>());
+
+	Vector<Ref<Image>> images;
+	images.resize(p_depth);
+
+	if (p_normalize) {
+		// Get all values and identify min/max values.
+		LocalVector<real_t> values;
+		values.resize(p_width * p_height * p_depth);
+
+		real_t min_val = FLT_MAX;
+		real_t max_val = -FLT_MAX;
+		int idx = 0;
+		for (int d = 0; d < p_depth; d++) {
+			for (int y = 0; y < p_height; y++) {
+				for (int x = 0; x < p_width; x++) {
+					values[idx] = p_in_3d_space ? get_noise_3d(x, y, d) : get_noise_2d(x, y);
+					if (values[idx] > max_val) {
+						max_val = values[idx];
+					}
+					if (values[idx] < min_val) {
+						min_val = values[idx];
+					}
+					idx++;
+				}
+			}
+		}
+		idx = 0;
+		// Normalize values and write to texture.
+		for (int d = 0; d < p_depth; d++) {
+			Vector<uint8_t> data;
+			data.resize(p_width * p_height);
+
+			uint8_t* wd8 = data.ptrw();
+			uint8_t ivalue;
+
+			for (int y = 0; y < p_height; y++) {
+				for (int x = 0; x < p_width; x++) {
+					if (max_val == min_val) {
+						ivalue = 0;
+					}
+					else {
+						ivalue = static_cast<uint8_t>(
+							CLAMP((values[idx] - min_val) / (max_val - min_val) * 255.f, 0, 255));
+					}
+
+					if (p_invert) {
+						ivalue = 255 - ivalue;
+					}
+
+					wd8[x + y * p_width] = ivalue;
+					idx++;
+				}
+			}
+			Ref<Image> img = memnew(Image(p_width, p_height, false, Image::FORMAT_L8, data));
+			images.write[d] = img;
+		}
+	}
+	else {
+		// Without normalization, the expected range of the noise function is [-1, 1].
+		for (int d = 0; d < p_depth; d++) {
+			Vector<uint8_t> data;
+			data.resize(p_width * p_height);
+
+			uint8_t* wd8 = data.ptrw();
+
+			uint8_t ivalue;
+			int idx = 0;
+			for (int y = 0; y < p_height; y++) {
+				for (int x = 0; x < p_width; x++) {
+					float value = (p_in_3d_space ? get_noise_3d(x, y, d) : get_noise_2d(x, y));
+					ivalue = static_cast<uint8_t>(CLAMP(value * 127.5f + 127.5f, 0.0f, 255.0f));
+					wd8[idx] = p_invert ? (255 - ivalue) : ivalue;
+					idx++;
+				}
+			}
+
+			Ref<Image> img = memnew(Image(p_width, p_height, false, Image::FORMAT_L8, data));
+			images.write[d] = img;
+		}
+	}
+
+	return images;
+}
+
+Ref<Image> FastNoiseLite::get_image(
+	int p_width, int p_height, bool p_invert, bool p_in_3d_space, bool p_normalize) const
+{
+	Vector<Ref<Image>> images =
+		_get_image(p_width, p_height, 1, p_invert, p_in_3d_space, p_normalize);
+	if (images.is_empty()) {
+		return Ref<Image>();
+	}
+	return images[0];
+}
+
 void FastNoiseLite::_changed() { emit_changed(); }
 
+NoiseTexture2D::NoiseTexture2D()
+{
+	noise = Ref<FastNoiseLite>();
 
+	_queue_update();
+}
+
+void NoiseTexture2D::_set_texture_image(const Ref<Image>& p_image)
+{
+	image = p_image;
+	if (image.is_valid()) {
+		if (texture.is_valid()) {
+			RID new_texture = Renderer::texture_2d_create(p_image);
+			Renderer::texture_replace(texture, new_texture);
+		}
+		else {
+			texture = Renderer::texture_2d_create(p_image);
+		}
+		Renderer::texture_set_path(texture, get_path());
+	}
+	emit_changed();
+}
+
+Ref<Image> NoiseTexture2D::_generate_texture()
+{
+	// Prevent memdelete due to unref() on other thread.
+	Ref<FastNoiseLite> ref_noise = noise;
+
+	if (ref_noise.is_null()) {
+		return Ref<Image>();
+	}
+
+	Ref<Image> new_image;
+
+	if (seamless) {
+		new_image = ref_noise->get_seamless_image(
+			size.x, size.y, invert, in_3d_space, seamless_blend_skirt, normalize);
+	}
+	else {
+		new_image = ref_noise->get_image(size.x, size.y, invert, in_3d_space, normalize);
+	}
+	if (color_ramp.is_valid()) {
+		new_image = _modulate_with_gradient(new_image, color_ramp);
+	}
+	if (as_normal_map) {
+		new_image->bump_map_to_normal_map(bump_strength);
+	}
+	if (generate_mipmaps) {
+		new_image->generate_mipmaps();
+	}
+
+	return new_image;
+}
+
+Ref<Image> NoiseTexture2D::_modulate_with_gradient(Ref<Image> p_image, Ref<Gradient> p_gradient)
+{
+	int width = p_image->get_width();
+	int height = p_image->get_height();
+
+	Ref<Image> new_image = Image::create_empty(width, height, false, Image::FORMAT_RGBA8);
+
+	for (int row = 0; row < height; row++) {
+		for (int col = 0; col < width; col++) {
+			Color pixel_color = p_image->get_pixel(col, row);
+			Color ramp_color = p_gradient->get_color_at_offset(pixel_color.get_luminance());
+			new_image->set_pixel(col, row, ramp_color);
+		}
+	}
+
+	return new_image;
+}
+
+void NoiseTexture2D::set_noise(Ref<FastNoiseLite> p_noise)
+{
+	if (noise == p_noise) {
+		return;
+	}
+	noise = p_noise;
+	_queue_update();
+}
+
+Ref<FastNoiseLite> NoiseTexture2D::get_noise() { return noise; }
+
+void NoiseTexture2D::set_width(int p_width)
+{
+	ERR_FAIL_COND(p_width <= 0);
+	if (p_width == size.x) {
+		return;
+	}
+	size.x = p_width;
+	_queue_update();
+}
+
+void NoiseTexture2D::set_height(int p_height)
+{
+	ERR_FAIL_COND(p_height <= 0);
+	if (p_height == size.y) {
+		return;
+	}
+	size.y = p_height;
+	_queue_update();
+}
+
+void NoiseTexture2D::set_invert(bool p_invert)
+{
+	if (p_invert == invert) {
+		return;
+	}
+	invert = p_invert;
+	_queue_update();
+}
+
+bool NoiseTexture2D::get_invert() const { return invert; }
+
+void NoiseTexture2D::set_in_3d_space(bool p_enable)
+{
+	if (p_enable == in_3d_space) {
+		return;
+	}
+	in_3d_space = p_enable;
+	_queue_update();
+}
+
+bool NoiseTexture2D::is_in_3d_space() const { return in_3d_space; }
+
+void NoiseTexture2D::set_generate_mipmaps(bool p_enable)
+{
+	if (p_enable == generate_mipmaps) {
+		return;
+	}
+	generate_mipmaps = p_enable;
+	_queue_update();
+}
+
+bool NoiseTexture2D::is_generating_mipmaps() const { return generate_mipmaps; }
+
+void NoiseTexture2D::set_seamless(bool p_seamless)
+{
+	if (p_seamless == seamless) {
+		return;
+	}
+	seamless = p_seamless;
+	_queue_update();
+}
+
+bool NoiseTexture2D::get_seamless() { return seamless; }
+
+void NoiseTexture2D::set_seamless_blend_skirt(real_t p_blend_skirt)
+{
+	ERR_FAIL_COND(p_blend_skirt < 0 || p_blend_skirt > 1);
+
+	if (p_blend_skirt == seamless_blend_skirt) {
+		return;
+	}
+	seamless_blend_skirt = p_blend_skirt;
+	_queue_update();
+}
+
+real_t NoiseTexture2D::get_seamless_blend_skirt() { return seamless_blend_skirt; }
+
+void NoiseTexture2D::set_as_normal_map(bool p_as_normal_map)
+{
+	if (p_as_normal_map == as_normal_map) {
+		return;
+	}
+	as_normal_map = p_as_normal_map;
+	_queue_update();
+}
+
+bool NoiseTexture2D::is_normal_map() { return as_normal_map; }
+
+void NoiseTexture2D::set_bump_strength(float p_bump_strength)
+{
+	if (p_bump_strength == bump_strength) {
+		return;
+	}
+	bump_strength = p_bump_strength;
+	if (as_normal_map) {
+		_queue_update();
+	}
+}
+
+float NoiseTexture2D::get_bump_strength() { return bump_strength; }
+
+void NoiseTexture2D::set_normalize(bool p_normalize)
+{
+	if (normalize == p_normalize) {
+		return;
+	}
+	normalize = p_normalize;
+	_queue_update();
+}
+
+bool NoiseTexture2D::is_normalized() const { return normalize; }
+
+void NoiseTexture2D::set_color_ramp(const Ref<Gradient>& p_gradient)
+{
+	if (color_ramp == p_gradient) {
+		return;
+	}
+	color_ramp = p_gradient;
+	_queue_update();
+}
+
+Ref<Gradient> NoiseTexture2D::get_color_ramp() const { return color_ramp; }
+
+int NoiseTexture2D::get_width() const { return size.x; }
+
+int NoiseTexture2D::get_height() const { return size.y; }
+
+RID NoiseTexture2D::get_rid() const
+{
+	if (!texture.is_valid()) {
+		texture = Renderer::texture_2d_placeholder_create();
+	}
+
+	return texture;
+}
+
+Ref<Image> NoiseTexture2D::get_image() const { return image; }
+
+void NoiseTexture2D::_queue_update() {}
+
+NoiseTexture3D::NoiseTexture3D()
+{
+	noise = Ref<FastNoiseLite>();
+
+	_queue_update();
+}
+
+Ref<Image> NoiseTexture3D::_modulate_with_gradient(Ref<Image> p_image, Ref<Gradient> p_gradient)
+{
+	int w = p_image->get_width();
+	int h = p_image->get_height();
+
+	Ref<Image> new_image = Image::create_empty(w, h, false, Image::FORMAT_RGBA8);
+
+	for (int row = 0; row < h; row++) {
+		for (int col = 0; col < w; col++) {
+			Color pixel_color = p_image->get_pixel(col, row);
+			Color ramp_color = p_gradient->get_color_at_offset(pixel_color.get_luminance());
+			new_image->set_pixel(col, row, ramp_color);
+		}
+	}
+
+	return new_image;
+}
+
+void NoiseTexture3D::set_noise(Ref<FastNoiseLite> p_noise)
+{
+	if (noise == p_noise) {
+		return;
+	}
+	noise = p_noise;
+	_queue_update();
+}
+
+Ref<FastNoiseLite> NoiseTexture3D::get_noise() { return noise; }
+
+void NoiseTexture3D::set_width(int p_width)
+{
+	ERR_FAIL_COND(p_width <= 0);
+	if (p_width == width) {
+		return;
+	}
+	width = p_width;
+	_queue_update();
+}
+
+void NoiseTexture3D::set_height(int p_height)
+{
+	ERR_FAIL_COND(p_height <= 0);
+	if (p_height == height) {
+		return;
+	}
+	height = p_height;
+	_queue_update();
+}
+
+void NoiseTexture3D::set_depth(int p_depth)
+{
+	ERR_FAIL_COND(p_depth <= 0);
+	if (p_depth == depth) {
+		return;
+	}
+	depth = p_depth;
+	_queue_update();
+}
+
+void NoiseTexture3D::set_invert(bool p_invert)
+{
+	if (p_invert == invert) {
+		return;
+	}
+	invert = p_invert;
+	_queue_update();
+}
+
+bool NoiseTexture3D::get_invert() const { return invert; }
+
+void NoiseTexture3D::set_seamless(bool p_seamless)
+{
+	if (p_seamless == seamless) {
+		return;
+	}
+	seamless = p_seamless;
+	_queue_update();
+}
+
+bool NoiseTexture3D::get_seamless() { return seamless; }
+
+void NoiseTexture3D::set_seamless_blend_skirt(real_t p_blend_skirt)
+{
+	ERR_FAIL_COND(p_blend_skirt < 0.05 || p_blend_skirt > 1);
+
+	if (p_blend_skirt == seamless_blend_skirt) {
+		return;
+	}
+	seamless_blend_skirt = p_blend_skirt;
+	_queue_update();
+}
+
+real_t NoiseTexture3D::get_seamless_blend_skirt() { return seamless_blend_skirt; }
+
+void NoiseTexture3D::set_normalize(bool p_normalize)
+{
+	if (normalize == p_normalize) {
+		return;
+	}
+	normalize = p_normalize;
+	_queue_update();
+}
+
+bool NoiseTexture3D::is_normalized() const { return normalize; }
+
+void NoiseTexture3D::set_color_ramp(const Ref<Gradient>& p_gradient)
+{
+	if (color_ramp == p_gradient) {
+		return;
+	}
+	color_ramp = p_gradient;
+	_queue_update();
+}
+
+Ref<Gradient> NoiseTexture3D::get_color_ramp() const { return color_ramp; }
+
+int NoiseTexture3D::get_width() const { return width; }
+
+int NoiseTexture3D::get_height() const { return height; }
+
+int NoiseTexture3D::get_depth() const { return depth; }
+
+bool NoiseTexture3D::has_mipmaps() const { return false; }
+
+RID NoiseTexture3D::get_rid() const
+{
+	if (!texture.is_valid()) {
+		texture = Renderer::texture_3d_placeholder_create();
+	}
+
+	return texture;
+}
+
+Vector<Ref<Image>> NoiseTexture3D::get_data() const
+{
+	ERR_FAIL_COND_V(!texture.is_valid(), Vector<Ref<Image>>());
+	return Renderer::texture_3d_get(texture);
+}
+
+Image::Format NoiseTexture3D::get_format() const { return format; }
+
+void NoiseTexture3D::_queue_update() {}
+
+void initialize_noise_module(ModuleInitializationLevel p_level) {}
+
+void uninitialize_noise_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}

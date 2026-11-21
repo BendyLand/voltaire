@@ -88,7 +88,7 @@
 - (void)searchForItemsWithSearchString:(NSString *)searchString resultLimit:(NSInteger)resultLimit matchedItemHandler:(void (^)(NSArray *items))handleMatchedItems {
 	NSMutableArray *found_items = [[NSMutableArray alloc] init];
 
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->_help_get_search_callback().is_valid()) {
 		Callable cb = ds->_help_get_search_callback();
 
@@ -117,7 +117,7 @@
 }
 
 - (void)performActionForItem:(id)item {
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->_help_get_action_callback().is_valid()) {
 		Callable cb = ds->_help_get_action_callback();
 
@@ -134,7 +134,7 @@
 }
 
 - (void)system_theme_changed:(NSNotification *)notification {
-	DisplayServerMacOSBase *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOSBase *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		ds->emit_system_theme_changed();
 	}
@@ -192,7 +192,7 @@ static const char *godot_ac_ctx = "gd_accessibility_observer_ctx";
 		}
 	}
 	if (!args.is_empty()) {
-		if (os_mac->get_main_loop()) {
+		if (MainLoop::is_active()) {
 			// Application is already running, open a new instance with the URL/files as command line arguments.
 			os_mac->create_instance(args);
 		} else if (os_mac->get_cmd_argc() == 0) {
@@ -209,7 +209,7 @@ static const char *godot_ac_ctx = "gd_accessibility_observer_ctx";
 		args.push_back(String::utf8([url.path UTF8String]));
 	}
 	if (!args.is_empty()) {
-		if (os_mac->get_main_loop()) {
+		if (MainLoop::is_active()) {
 			// Application is already running, open a new instance with the URL/files as command line arguments.
 			os_mac->create_instance(args);
 		} else if (os_mac->get_cmd_argc() == 0) {
@@ -220,12 +220,12 @@ static const char *godot_ac_ctx = "gd_accessibility_observer_ctx";
 }
 
 - (void)applicationDidResignActive:(NSNotification *)notification {
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		ds->mouse_process_popups(true);
 	}
-	if (os_mac->get_main_loop()) {
-		os_mac->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
 	}
 }
 
@@ -244,15 +244,14 @@ static const CGKeyCode modifiers[8] = {
 constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEventModifierFlagShift | NSEventModifierFlagOption | NSEventModifierFlagControl;
 
 - (void)applicationDidBecomeActive:(NSNotification *)notification {
-	if (os_mac->get_main_loop()) {
-		os_mac->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
 	}
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds) {
 		return;
 	}
-	Input *input = Input::get_singleton();
-	if (!input) {
+	if (!Input::is_initialized()) {
 		return;
 	}
 
@@ -282,7 +281,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 		ke->set_physical_keycode(KeyMappingMacOS::translate_key(key));
 		ke->set_key_label(KeyMappingMacOS::remap_key(key, mod, true));
 		ke->set_location(KeyMappingMacOS::translate_location(key));
-		input->parse_input_event(ke);
+		Input::parse_input_event(ke.ptr());
 	}
 }
 
@@ -297,15 +296,15 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 }
 
 - (void)globalMenuCallback:(id)sender {
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		return ds->menu_callback(sender);
 	}
 }
 
 - (NSMenu *)applicationDockMenu:(NSApplication *)sender {
-	if (NativeMenu::get_singleton()) {
-		NativeMenuMacOS *nmenu = (NativeMenuMacOS *)NativeMenu::get_singleton();
+	if (NativeMenu::is_initialized()) {
+		NativeMenuMacOS *nmenu = NativeMenu::driver_as<NativeMenuMacOS>();
 		return nmenu->_get_dock_menu();
 	} else {
 		return nullptr;
@@ -322,7 +321,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 		return NSTerminateNow;
 	}
 
-	DisplayServerMacOS *ds = Object::cast_to<DisplayServerMacOS>(DisplayServer::get_singleton());
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds && ds->has_window(DisplayServerEnums::MAIN_WINDOW_ID)) {
 		ds->send_window_event(ds->get_window(DisplayServerEnums::MAIN_WINDOW_ID), DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 	}
@@ -331,8 +330,8 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 }
 
 - (void)showAbout:(id)sender {
-	if (os_mac->get_main_loop()) {
-		os_mac->get_main_loop()->notification(MainLoop::NOTIFICATION_WM_ABOUT);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_WM_ABOUT);
 	}
 }
 

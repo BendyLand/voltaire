@@ -61,7 +61,7 @@ TEST_CASE("[SceneTree][PathFollow3D] Sampling with progress ratio") {
 	PathFollow3D *path_follow_3d = memnew(PathFollow3D);
 	path_follow_3d->set_loop(false);
 	path->add_child(path_follow_3d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_3d->set_progress_ratio(0);
 	CHECK(is_equal_approx(Vector3(0, 0, 0), path_follow_3d->get_transform().get_origin()));
@@ -106,7 +106,7 @@ TEST_CASE("[SceneTree][PathFollow3D] Sampling with progress") {
 	PathFollow3D *path_follow_3d = memnew(PathFollow3D);
 	path_follow_3d->set_loop(false);
 	path->add_child(path_follow_3d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_3d->set_progress(0);
 	CHECK(is_equal_approx(Vector3(0, 0, 0), path_follow_3d->get_transform().get_origin()));
@@ -148,7 +148,7 @@ TEST_CASE("[SceneTree][PathFollow3D] Removal of a point in curve") {
 	path->set_curve(curve);
 	PathFollow3D *path_follow_3d = memnew(PathFollow3D);
 	path->add_child(path_follow_3d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_3d->set_progress_ratio(0.5);
 	CHECK(is_equal_approx(Vector3(100, 0, 0), path_follow_3d->get_transform().get_origin()));
@@ -172,7 +172,7 @@ TEST_CASE("[SceneTree][PathFollow3D] Progress ratio out of range") {
 	path->set_curve(curve);
 	PathFollow3D *path_follow_3d = memnew(PathFollow3D);
 	path->add_child(path_follow_3d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_3d->set_loop(true);
 
@@ -210,7 +210,7 @@ TEST_CASE("[SceneTree][PathFollow3D] Progress out of range") {
 	path->set_curve(curve);
 	PathFollow3D *path_follow_3d = memnew(PathFollow3D);
 	path->add_child(path_follow_3d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_3d->set_loop(true);
 
@@ -253,7 +253,7 @@ TEST_CASE("[SceneTree][PathFollow3D] Calculate forward vector") {
 	path->set_curve(curve);
 	PathFollow3D *path_follow_3d = memnew(PathFollow3D);
 	path->add_child(path_follow_3d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_3d->set_loop(false);
 	path_follow_3d->set_rotation_mode(PathFollow3D::RotationMode::ROTATION_ORIENTED);
@@ -306,7 +306,7 @@ TEST_CASE("[SceneTree][PathFollow3D] Calculate forward vector with degenerate cu
 	path->set_curve(curve);
 	PathFollow3D *path_follow_3d = memnew(PathFollow3D);
 	path->add_child(path_follow_3d);
-	SceneTree::get_singleton()->get_root()->add_child(path);
+	SceneTree::get_root()->add_child(path);
 
 	path_follow_3d->set_loop(false);
 	path_follow_3d->set_rotation_mode(PathFollow3D::RotationMode::ROTATION_ORIENTED);

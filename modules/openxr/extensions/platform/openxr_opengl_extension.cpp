@@ -34,9 +34,25 @@
 #ifdef GLES3_ENABLED
 
 #include "../../openxr_api.h"
-#include "../../openxr_util.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "servers/display/display_server.h"
+
+void OpenXROpenGLExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXROpenGLExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
 
 // OpenXR requires us to submit sRGB textures so that it recognizes the content
 // as being in sRGB color space. We do fall back on "normal" textures but this
@@ -65,7 +81,7 @@ HashMap<String, bool*> OpenXROpenGLExtension::get_requested_extensions(XrVersion
 	request_extensions[XR_KHR_OPENGL_ENABLE_EXTENSION_NAME] = nullptr;
 #endif
 #if defined(LINUXBSD_ENABLED) && defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
-	request_extensions[XR_MNDX_EGL_ENABLE_EXTENSION_NAME] = &egl_extension_enabled;
+	request_extensions[XR_MNDX_EGL_ENABLE_EXTENSION_NAME] = &data->egl_extension_enabled;
 #endif
 
 	return request_extensions;
@@ -74,7 +90,7 @@ HashMap<String, bool*> OpenXROpenGLExtension::get_requested_extensions(XrVersion
 void OpenXROpenGLExtension::on_instance_created(const XrInstance p_instance)
 {
 	// Obtain pointers to functions we're accessing here.
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 #ifdef XR_USE_GRAPHICS_API_OPENGL_ES
 	EXT_INIT_XR_FUNC(xrGetOpenGLESGraphicsRequirementsKHR);
@@ -111,30 +127,28 @@ void* OpenXROpenGLExtension::set_session_create_and_get_next_pointer(void* p_nex
 		// return p_next_pointer;
 	}
 
-	DisplayServer* display_server = DisplayServer::get_singleton();
-
 #ifdef WIN32
 	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR,
 	graphics_binding_gl.next = p_next_pointer;
 
 	graphics_binding_gl.hDC =
-		(HDC)display_server->window_get_native_handle(DisplayServerEnums::WINDOW_VIEW);
+		(HDC)DisplayServer::window_get_native_handle(DisplayServerEnums::WINDOW_VIEW);
 	graphics_binding_gl.hGLRC =
-		(HGLRC)display_server->window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
+		(HGLRC)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
 #elif defined(ANDROID_ENABLED)
 	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR;
 	graphics_binding_gl.next = p_next_pointer;
 
 	graphics_binding_gl.display =
-		(void*)display_server->window_get_native_handle(DisplayServerEnums::DISPLAY_HANDLE);
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::DISPLAY_HANDLE);
 	graphics_binding_gl.config =
 		(EGLConfig)0; // https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/master/src/tests/hello_xr/graphicsplugin_opengles.cpp#L122
 	graphics_binding_gl.context =
-		(void*)display_server->window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
 #else
 #if defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
-	if (display_server->get_name() == "Wayland") {
-		ERR_FAIL_COND_V_MSG(!egl_extension_enabled, p_next_pointer,
+	if (DisplayServer::get_name() == "Wayland") {
+		ERR_FAIL_COND_V_MSG(!data->egl_extension_enabled, p_next_pointer,
 			"OpenXR cannot initialize on Wayland without the XR_MNDX_egl_enable extension.");
 
 		graphics_binding_egl.type = XR_TYPE_GRAPHICS_BINDING_EGL_MNDX;
@@ -142,11 +156,11 @@ void* OpenXROpenGLExtension::set_session_create_and_get_next_pointer(void* p_nex
 
 		graphics_binding_egl.getProcAddress = eglGetProcAddress;
 		graphics_binding_egl.display =
-			(void*)display_server->window_get_native_handle(DisplayServerEnums::EGL_DISPLAY);
+			(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::EGL_DISPLAY);
 		graphics_binding_egl.config =
-			(void*)display_server->window_get_native_handle(DisplayServerEnums::EGL_CONFIG);
+			(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::EGL_CONFIG);
 		graphics_binding_egl.context =
-			(void*)display_server->window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
+			(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
 
 		return &graphics_binding_egl;
 	}
@@ -156,15 +170,15 @@ void* OpenXROpenGLExtension::set_session_create_and_get_next_pointer(void* p_nex
 	graphics_binding_gl.next = p_next_pointer;
 
 	void* display_handle =
-		(void*)display_server->window_get_native_handle(DisplayServerEnums::DISPLAY_HANDLE);
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::DISPLAY_HANDLE);
 	void* glxcontext_handle =
-		(void*)display_server->window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
 	void* glxdrawable_handle =
-		(void*)display_server->window_get_native_handle(DisplayServerEnums::WINDOW_HANDLE);
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::WINDOW_HANDLE);
 	void* glx_fbconfig_handle =
-		(void*)display_server->window_get_native_handle(DisplayServerEnums::GLX_FBCONFIG);
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::GLX_FBCONFIG);
 	VisualID glx_visualid =
-		(VisualID)display_server->window_get_native_handle(DisplayServerEnums::GLX_VISUALID);
+		(VisualID)DisplayServer::window_get_native_handle(DisplayServerEnums::GLX_VISUALID);
 
 	graphics_binding_gl.xDisplay = (Display*)display_handle;
 	graphics_binding_gl.glxContext = (GLXContext)glxcontext_handle;
@@ -203,7 +217,7 @@ bool OpenXROpenGLExtension::get_swapchain_image_data(XrSwapchain p_swapchain,
 	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: Failed to get swapchain image count [",
-		// OpenXRAPI::get_singleton()->get_error_string(result), "]");
+		// OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -229,7 +243,7 @@ bool OpenXROpenGLExtension::get_swapchain_image_data(XrSwapchain p_swapchain,
 		(XrSwapchainImageBaseHeader*)images.ptr());
 	if (XR_FAILED(result)) {
 		// print_line("OpenXR: Failed to get swapchain images [",
-		// OpenXRAPI::get_singleton()->get_error_string(result), "]");
+		// OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -304,7 +318,7 @@ void OpenXROpenGLExtension::cleanup_swapchain_graphics_data(void** p_swapchain_g
 		return String(#e);                                                                         \
 	} break;
 
-String OpenXROpenGLExtension::get_swapchain_format_name(int64_t p_swapchain_format) const
+String OpenXROpenGLExtension::get_swapchain_format_name(int64_t p_swapchain_format)
 {
 	// These are somewhat different per platform, will need to weed some stuff out...
 	switch (p_swapchain_format) {

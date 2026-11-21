@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "metal_device_profile.h"
+#include "drivers/metal/metal_objects_shared.h"
 
 #include "drivers/metal/metal_utils.h"
 

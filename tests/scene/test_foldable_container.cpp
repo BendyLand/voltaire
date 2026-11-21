@@ -36,7 +36,7 @@ TEST_FORCE_LINK(test_foldable_container)
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "scene/gui/control.h"
-#include "scene/gui/foldable_container.h"
+#include "scene/gui/scroll_container.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 
@@ -44,9 +44,9 @@ namespace TestFoldableContainer {
 
 TEST_CASE("[SceneTree][FoldableContainer] Default properties") {
 	FoldableContainer *foldable_container = memnew(FoldableContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(foldable_container);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!foldable_container->is_folded(),
@@ -93,14 +93,14 @@ TEST_CASE("[SceneTree][FoldableContainer] Default properties") {
 
 TEST_CASE("[SceneTree][FoldableContainer] Fold and expand behavior") {
 	FoldableContainer *foldable_container = memnew(FoldableContainer("Section"));
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(foldable_container);
 
 	Control *child_control = memnew(Control);
 	child_control->set_custom_minimum_size(Size2(120, 80));
 	foldable_container->add_child(child_control);
 	foldable_container->set_size(Size2(200, 200));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	Size2 expanded_minimum_size = foldable_container->get_minimum_size();
 
@@ -109,7 +109,7 @@ TEST_CASE("[SceneTree][FoldableContainer] Fold and expand behavior") {
 			"Child control is visible when FoldableContainer is expanded.");
 
 	foldable_container->fold();
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			foldable_container->is_folded(),
@@ -124,7 +124,7 @@ TEST_CASE("[SceneTree][FoldableContainer] Fold and expand behavior") {
 			"Folded minimum size is smaller than expanded minimum size when content is present.");
 
 	foldable_container->expand();
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!foldable_container->is_folded(),
@@ -135,14 +135,14 @@ TEST_CASE("[SceneTree][FoldableContainer] Fold and expand behavior") {
 			"Child control is visible again after FoldableContainer is expanded.");
 
 	foldable_container->set_folded(true);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			foldable_container->is_folded(),
 			"set_folded(true) folds the FoldableContainer.");
 
 	foldable_container->set_folded(false);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!foldable_container->is_folded(),
@@ -154,7 +154,7 @@ TEST_CASE("[SceneTree][FoldableContainer] Fold and expand behavior") {
 
 TEST_CASE("[SceneTree][FoldableContainer] Title position and title bar controls") {
 	FoldableContainer *foldable_container = memnew(FoldableContainer("Section"));
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(foldable_container);
 
 	Control *content_control = memnew(Control);
@@ -166,7 +166,7 @@ TEST_CASE("[SceneTree][FoldableContainer] Title position and title bar controls"
 	foldable_container->add_title_bar_control(title_control);
 
 	foldable_container->set_size(Size2(200, 140));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			title_control->get_parent() == foldable_container,
@@ -176,7 +176,7 @@ TEST_CASE("[SceneTree][FoldableContainer] Title position and title bar controls"
 	real_t top_content_y = content_control->get_position().y;
 
 	foldable_container->set_title_position(FoldableContainer::POSITION_BOTTOM);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	real_t bottom_title_control_y = title_control->get_position().y;
 	real_t bottom_content_y = content_control->get_position().y;
@@ -206,7 +206,7 @@ TEST_CASE("[SceneTree][FoldableContainer] FoldableGroup behavior") {
 
 	FoldableContainer *container_a = memnew(FoldableContainer("A"));
 	FoldableContainer *container_b = memnew(FoldableContainer("B"));
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(container_a);
 	root->add_child(container_b);
 
@@ -214,7 +214,7 @@ TEST_CASE("[SceneTree][FoldableContainer] FoldableGroup behavior") {
 	container_b->set_folded(true);
 	container_a->set_foldable_group(foldable_group);
 	container_b->set_foldable_group(foldable_group);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!container_a->is_folded(),
@@ -229,7 +229,7 @@ TEST_CASE("[SceneTree][FoldableContainer] FoldableGroup behavior") {
 			"FoldableGroup tracks the currently expanded container.");
 
 	container_b->set_folded(false);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			container_a->is_folded(),
@@ -244,7 +244,7 @@ TEST_CASE("[SceneTree][FoldableContainer] FoldableGroup behavior") {
 			"FoldableGroup updates expanded container after a different container is expanded.");
 
 	container_b->set_folded(true);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			!container_b->is_folded(),
@@ -252,7 +252,7 @@ TEST_CASE("[SceneTree][FoldableContainer] FoldableGroup behavior") {
 
 	foldable_group->set_allow_folding_all(true);
 	container_b->set_folded(true);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			container_b->is_folded(),

@@ -31,10 +31,33 @@
 
 #pragma once
 
+#include "core/typedefs.h"
 
-class MainLoop
+class MainLoop final
 {
+private:
+	static inline bool _active = false;
+
+	static void _default_initialize() {}
+	static void _default_iteration_prepare() {}
+	static bool _default_physics_process(double p_time)
+	{
+		(void)p_time;
+		return false;
+	}
+	static void _default_iteration_end() {}
+	static bool _default_process(double p_time)
+	{
+		(void)p_time;
+		return false;
+	}
+	static void _default_finalize() {}
+	static void _default_notification(int p_notification) { (void)p_notification; }
+	static void _default_destroy() {}
+
 public:
+	MainLoop() = delete;
+
 	enum
 	{
 		// make sure these are replicated in Node
@@ -52,19 +75,29 @@ public:
 		NOTIFICATION_APPLICATION_PIP_MODE_EXITED = 2020,
 	};
 
-	virtual void initialize();
+	inline static void (*initialize)() = &_default_initialize;
+	inline static void (*iteration_prepare)() = &_default_iteration_prepare;
+	inline static bool (*physics_process)(double p_time) = &_default_physics_process;
+	inline static void (*iteration_end)() = &_default_iteration_end;
+	inline static bool (*process)(double p_time) = &_default_process;
+	inline static void (*finalize)() = &_default_finalize;
+	inline static void (*notification)(int p_notification) = &_default_notification;
+	inline static void (*destroy)() = &_default_destroy;
 
-	virtual void iteration_prepare() {}
+	template <typename Impl> static void bind()
+	{
+		initialize = &Impl::initialize_tree;
+		iteration_prepare = &Impl::iteration_prepare;
+		physics_process = &Impl::physics_process;
+		iteration_end = &Impl::iteration_end;
+		process = &Impl::process;
+		finalize = &Impl::finalize_tree;
+		notification = &Impl::notification;
+		destroy = &Impl::finalize;
+		_active = true;
+	}
 
-	virtual bool physics_process(double p_time);
-
-	virtual void iteration_end() {}
-
-	virtual bool process(double p_time);
-	virtual void finalize();
-
-	MainLoop() = default;
-	virtual ~MainLoop() = default;
+	static void reset_backend();
+	static void clear();
+	_FORCE_INLINE_ static bool is_active() { return _active; }
 };
-
-

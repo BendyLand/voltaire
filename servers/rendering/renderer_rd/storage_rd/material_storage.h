@@ -33,7 +33,7 @@
 
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
-#include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
+#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/renderer_rd/shader_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -161,6 +161,10 @@ public:
 		HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
 		HashMap<String, HashMap<int, RID>> default_texture_params;
 
+		bool is_tex_blit = false;
+		bool tex_blit_valid = false;
+		RID tex_blit_version;
+
 		virtual void set_path_hint(const String& p_hint);
 		virtual void set_default_texture_parameter(
 			const String& p_name, RID p_texture, int p_index);
@@ -168,13 +172,13 @@ public:
 			List<InstanceShaderParam>* p_param_list) const;
 		virtual bool is_parameter_texture(const String& p_param) const;
 
-		virtual void set_code(const String& p_Code) = 0;
-		virtual bool is_animated() const = 0;
-		virtual bool casts_shadows() const = 0;
-		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const = 0;
-		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const = 0;
+		virtual void set_code(const String& p_Code);
+		virtual bool is_animated() const;
+		virtual bool casts_shadows() const;
+		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
+		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;
 
-		virtual ~ShaderData() {}
+		virtual ~ShaderData();
 
 		static RDC::PipelineColorBlendState::Attachment blend_mode_to_blend_attachment(
 			BlendMode p_mode);
@@ -184,12 +188,17 @@ public:
 	struct MaterialData
 	{
 		Vector<RendererRD::TextureStorage::RenderTarget*> render_target_cache;
+		bool is_tex_blit = false;
+		ShaderData* tex_blit_shader_data = nullptr;
+		RID tex_blit_uniform_set;
+		bool tex_blit_uniform_set_updated = false;
+
 		void set_as_used();
 		RID get_default_texture_id(
 			ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint);
 
-		virtual void set_render_priority(int p_priority) = 0;
-		virtual void set_next_pass(RID p_pass) = 0;
+		virtual void set_render_priority(int p_priority) {}
+		virtual void set_next_pass(RID p_pass) {}
 		virtual ~MaterialData();
 
 		void free_parameters_uniform_set(RID p_uniform_set);
@@ -210,31 +219,6 @@ public:
 
 	/* Texture Blit Shader */
 
-	struct TexBlitShaderData : public ShaderData
-	{
-		bool valid;
-		RID version;
-
-		PipelineCacheRD pipelines[4];
-		Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
-
-		Vector<uint32_t> ubo_offsets;
-		uint32_t ubo_size;
-
-		String code;
-
-		BlendMode blend_mode;
-
-		virtual bool is_animated() const;
-		virtual void set_code(const String& p_Code);
-		virtual bool casts_shadows() const;
-		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
-		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;
-
-		TexBlitShaderData();
-		virtual ~TexBlitShaderData();
-	};
-
 	static ShaderData* _create_tex_blit_shader_func();
 
 	static MaterialStorage::ShaderData* _create_tex_blit_shader_funcs()
@@ -242,25 +226,12 @@ public:
 		return _create_tex_blit_shader_func();
 	}
 
-	struct TexBlitMaterialData : public MaterialData
-	{
-		TexBlitShaderData* shader_data = nullptr;
-		RID uniform_set;
-		bool uniform_set_updated;
-
-		virtual void set_render_priority(int p_priority) {}
-
-		virtual void set_next_pass(RID p_pass) {}
-
-		virtual ~TexBlitMaterialData();
-	};
-
 	static MaterialData* _create_tex_blit_material_func(ShaderData* p_shader);
 
 	static MaterialStorage::MaterialData* _create_tex_blit_material_funcs(
 		MaterialStorage::ShaderData* p_shader)
 	{
-		return _create_tex_blit_material_func(static_cast<TexBlitShaderData*>(p_shader));
+		return _create_tex_blit_material_func(p_shader);
 	}
 
 private:

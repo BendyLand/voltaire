@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_vector4i)
 
-#include "core/math/vector4i.h"
+#include "core/math/vector4.h"
 
 namespace TestVector4i {
 

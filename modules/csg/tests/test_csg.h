@@ -67,12 +67,12 @@ TEST_CASE("[SceneTree][CSG] CSGPolygon3D") {
 		Path3D *path = memnew(Path3D);
 		path->set_curve(curve);
 
-		CSGPolygon3D *csg_polygon_3d = memnew(CSGPolygon3D);
-		SceneTree::get_singleton()->get_root()->add_child(csg_polygon_3d);
+		CSGShape3D *csg_polygon_3d = memnew(CSGShape3D(CSGShape3D::SHAPE_POLYGON));
+		SceneTree::get_root()->add_child(csg_polygon_3d);
 
 		csg_polygon_3d->add_child(path);
 		csg_polygon_3d->set_path_node(csg_polygon_3d->get_path_to(path));
-		csg_polygon_3d->set_mode(CSGPolygon3D::Mode::MODE_PATH);
+		csg_polygon_3d->set_polygon_mode(CSGShape3D::POLYGON_MODE_PATH);
 
 		PackedVector2Array polygon;
 		polygon.append(Vector2(-polygon_radius, 0));
@@ -81,14 +81,14 @@ TEST_CASE("[SceneTree][CSG] CSGPolygon3D") {
 		polygon.append(Vector2(0, -polygon_radius));
 		csg_polygon_3d->set_polygon(polygon);
 
-		csg_polygon_3d->set_path_rotation(CSGPolygon3D::PathRotation::PATH_ROTATION_PATH);
+		csg_polygon_3d->set_path_rotation(CSGShape3D::PATH_ROTATION_PATH);
 		csg_polygon_3d->set_path_rotation_accurate(true);
 
 		// Minimize the number of extrusions.
 		// This decreases the number of samples taken from the curve.
 		// Having fewer samples increases the inaccuracy of the line between samples as an approximation of the tangent of the curve.
 		// With correct polygon orientation, the bounding box for the given curve should be independent of the number of extrusions.
-		csg_polygon_3d->set_path_interval_type(CSGPolygon3D::PathIntervalType::PATH_INTERVAL_DISTANCE);
+		csg_polygon_3d->set_path_interval_type(CSGShape3D::PATH_INTERVAL_DISTANCE);
 		csg_polygon_3d->set_path_interval(1000.0f);
 
 		// Call get_brush_faces to force the bounding box to update.
@@ -103,7 +103,7 @@ TEST_CASE("[SceneTree][CSG] CSGPolygon3D") {
 		CHECK(csg_polygon_3d->get_aabb().is_equal_approx(expected_aabb));
 
 		csg_polygon_3d->remove_child(path);
-		SceneTree::get_singleton()->get_root()->remove_child(csg_polygon_3d);
+		SceneTree::get_root()->remove_child(csg_polygon_3d);
 
 		memdelete(csg_polygon_3d);
 		memdelete(path);

@@ -64,8 +64,7 @@
 
 #undef CursorShape // Xlib macro conflicting with our type.
 
-class InputEvent;
-class InputEventWithModifiers;
+struct InputEvent;
 class NativeMenu;
 
 #ifdef RD_ENABLED
@@ -84,10 +83,6 @@ class FreeDesktopAtSPIMonitor;
 class FreeDesktopScreenSaver;
 #endif
 
-#ifdef SPEECHD_ENABLED
-class TTS_Linux;
-#endif
-
 typedef struct _xrr_monitor_info
 {
 	Atom name;
@@ -103,19 +98,19 @@ typedef struct _xrr_monitor_info
 	RROutput* outputs = nullptr;
 } xrr_monitor_info;
 
-class DisplayServerX11 : public DisplayServer
+class DisplayServerX11 : public DisplayServerDriver
 {
 	_THREAD_SAFE_CLASS_
 
-	Atom wm_delete;
-	Atom xdnd_enter;
-	Atom xdnd_position;
-	Atom xdnd_status;
-	Atom xdnd_action_copy;
-	Atom xdnd_drop;
-	Atom xdnd_finished;
-	Atom xdnd_selection;
-	Atom xdnd_aware;
+	Atom wm_delete = None;
+	Atom xdnd_enter = None;
+	Atom xdnd_position = None;
+	Atom xdnd_status = None;
+	Atom xdnd_action_copy = None;
+	Atom xdnd_drop = None;
+	Atom xdnd_finished = None;
+	Atom xdnd_selection = None;
+	Atom xdnd_aware = None;
 	Atom requested = None;
 	int xdnd_version = 5;
 
@@ -132,11 +127,6 @@ class DisplayServerX11 : public DisplayServer
 	bool keep_screen_on = false;
 #endif
 
-#ifdef SPEECHD_ENABLED
-	TTS_Linux* tts = nullptr;
-#endif
-	NativeMenu* native_menu = nullptr;
-
 #if defined(DBUS_ENABLED)
 	FreeDesktopPortalDesktop* portal_desktop = nullptr;
 	FreeDesktopAtSPIMonitor* atspi_monitor = nullptr;
@@ -144,9 +134,9 @@ class DisplayServerX11 : public DisplayServer
 
 	struct WindowData
 	{
-		Window x11_window;
-		Window x11_xim_window;
-		::XIC xic;
+		Window x11_window = 0;
+		Window x11_xim_window = 0;
+		::XIC xic = nullptr;
 		bool ime_active = false;
 		bool ime_in_progress = false;
 		bool ime_suppress_next_keyup = false;
@@ -220,13 +210,13 @@ class DisplayServerX11 : public DisplayServer
 	String internal_clipboard;
 	String internal_clipboard_primary;
 	Window xdnd_source_window = 0;
-	::Display* x11_display;
+	::Display* x11_display = nullptr;
 	char* xmbstring = nullptr;
 	int xmblen = 0;
 	unsigned long last_timestamp = 0;
 	::Time last_keyrelease_time = 0;
 	::XIM xim = nullptr;
-	::XIMStyle xim_style;
+	::XIMStyle xim_style = 0;
 	bool warn_xim_just_stopped = true;
 
 	static int _xim_preedit_start_callback(::XIM xim, ::XPointer client_data, ::XPointer call_data);
@@ -279,7 +269,7 @@ class DisplayServerX11 : public DisplayServer
 
 	Rect2i _screen_get_rect(int p_screen) const;
 
-	void _get_key_modifier_state(unsigned int p_x11_state, Ref<InputEventWithModifiers> state);
+	void _get_key_modifier_state(unsigned int p_x11_state, InputEvent& r_state);
 	void _flush_mouse_motion();
 
 	DisplayServerEnums::MouseMode mouse_mode = DisplayServerEnums::MOUSE_MODE_VISIBLE;
@@ -307,9 +297,9 @@ class DisplayServerX11 : public DisplayServer
 
 	const char* cursor_theme = nullptr;
 	int cursor_size = 0;
-	XcursorImage* cursor_img[DisplayServerEnums::CURSOR_MAX];
-	Cursor cursors[DisplayServerEnums::CURSOR_MAX];
-	Cursor null_cursor;
+	XcursorImage* cursor_img[DisplayServerEnums::CURSOR_MAX] = {};
+	Cursor cursors[DisplayServerEnums::CURSOR_MAX] = {};
+	Cursor null_cursor = None;
 	DisplayServerEnums::CursorShape current_cursor = DisplayServerEnums::CURSOR_ARROW;
 
 	String rendering_driver;
@@ -360,8 +350,8 @@ class DisplayServerX11 : public DisplayServer
 	bool _window_focus_check();
 
 	void _send_window_event(const WindowData& wd, DisplayServerEnums::WindowEvent p_event);
-	static void _dispatch_input_events(const Ref<InputEvent>& p_event);
-	void _dispatch_input_event(const Ref<InputEvent>& p_event);
+	static void _dispatch_input_events(const InputEvent& p_event);
+	void _dispatch_input_event(const InputEvent& p_event);
 	void _set_input_focus(Window p_window, int p_revert_to);
 
 	mutable Mutex events_mutex;
@@ -611,7 +601,7 @@ public:
 	virtual void set_native_icon(const String& p_filename) override;
 	virtual void set_icon(const Ref<Image>& p_icon) override;
 
-	static DisplayServer* create_func(const String& p_rendering_driver,
+	static DisplayServerDriver* create_func(const String& p_rendering_driver,
 		DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
 		uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen,
 		DisplayServerEnums::Context p_context, int64_t p_parent_window, Error& r_error);
@@ -628,4 +618,30 @@ public:
 
 #endif // X11_ENABLED
 
+// --- Folded from platform/linuxbsd/x11/rendering_context_driver_vulkan_x11.h ---
+#ifdef VULKAN_ENABLED
 
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+
+#include <X11/Xlib.h>
+
+class RenderingContextDriverVulkanX11 : public RenderingContextDriverVulkan {
+private:
+	virtual const char *_get_platform_surface_extension() const override final;
+
+protected:
+	SurfaceID surface_create(const void *p_platform_data) override final;
+
+public:
+	struct WindowPlatformData {
+		::Window window;
+		Display *display;
+	};
+
+	RenderingContextDriverVulkanX11();
+	~RenderingContextDriverVulkanX11();
+};
+
+#endif // VULKAN_ENABLED
+
+// --- End platform/linuxbsd/x11/rendering_context_driver_vulkan_x11.h ---

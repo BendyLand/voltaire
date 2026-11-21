@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_navigation_agent_2d)
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "scene/2d/navigation/navigation_agent_2d.h"
+#include "scene/2d/navigation/navigation_2d.h"
 #include "scene/2d/node_2d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
@@ -54,7 +54,7 @@ TEST_SUITE("[Navigation2D]") {
 
 	TEST_CASE("[SceneTree][NavigationAgent2D] New agent should attach to default map") {
 		Node2D *node_2d = memnew(Node2D);
-		SceneTree::get_singleton()->get_root()->add_child(node_2d);
+		SceneTree::get_root()->add_child(node_2d);
 
 		NavigationAgent2D *agent_node = memnew(NavigationAgent2D);
 

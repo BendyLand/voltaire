@@ -31,8 +31,7 @@
 
 #include "test_crypto_mbedtls.h"
 
-#include "../crypto_mbedtls.h"
-
+#include "core/crypto/crypto.h"
 #include "core/io/file_access.h"
 #include "tests/test_macros.h"
 #include "tests/test_utils.h"
@@ -40,7 +39,7 @@
 namespace TestCryptoMbedTLS {
 
 void hmac_digest_test(HashingContext::HashType ht, String expected_hex) {
-	CryptoMbedTLS crypto;
+	Crypto crypto;
 	PackedByteArray key = String("supersecretkey").to_utf8_buffer();
 	PackedByteArray msg = String("Return of the MAC!").to_utf8_buffer();
 	PackedByteArray digest = crypto.hmac_digest(ht, key, msg);
@@ -49,7 +48,7 @@ void hmac_digest_test(HashingContext::HashType ht, String expected_hex) {
 }
 
 void hmac_context_digest_test(HashingContext::HashType ht, String expected_hex) {
-	HMACContextMbedTLS ctx;
+	HMACContext ctx;
 	PackedByteArray key = String("supersecretkey").to_utf8_buffer();
 	PackedByteArray msg1 = String("Return of ").to_utf8_buffer();
 	PackedByteArray msg2 = String("the MAC!").to_utf8_buffer();
@@ -65,7 +64,7 @@ void hmac_context_digest_test(HashingContext::HashType ht, String expected_hex) 
 }
 
 Ref<CryptoKey> load_key(const String &p_key_path, bool p_public_only) {
-	Ref<CryptoKey> key(memnew(CryptoKeyMbedTLS));
+	Ref<CryptoKey> key(memnew(CryptoKey));
 	REQUIRE(key.is_valid());
 	Error err = key->load(p_key_path, p_public_only);
 	REQUIRE(err == OK);
@@ -105,7 +104,7 @@ void crypto_key_save_public_only_test(const String &p_in_priv_path, const String
 }
 
 void crypto_key_generate_save_load(const String &p_out_priv_path, const String &p_out_pub_path) {
-	Ref<Crypto> c(memnew(CryptoMbedTLS));
+	Ref<Crypto> c(memnew(Crypto));
 	REQUIRE(c.is_valid());
 	Ref<CryptoKey> key = c->generate_rsa(1024);
 	CHECK(key->save_to_string() != key->save_to_string(true));
@@ -122,14 +121,14 @@ void crypto_key_generate_save_load(const String &p_out_priv_path, const String &
 }
 
 void crypto_generate_sign_verify_test(HashingContext::HashType p_hash_type, const Vector<uint8_t> &p_hash) {
-	Ref<Crypto> c(memnew(CryptoMbedTLS));
+	Ref<Crypto> c(memnew(Crypto));
 	REQUIRE(c.is_valid());
 	Ref<CryptoKey> key = c->generate_rsa(1024);
 	Vector<uint8_t> signature = c->sign(p_hash_type, p_hash, key);
 	CHECK(signature.size() > 0);
 	bool valid = c->verify(p_hash_type, p_hash, signature, key);
 	CHECK(valid);
-	Ref<CryptoKey> pub(memnew(CryptoKeyMbedTLS));
+	Ref<CryptoKey> pub(memnew(CryptoKey));
 	pub->load_from_string(key->save_to_string(true), true);
 	valid = c->verify(p_hash_type, p_hash, signature, pub);
 	CHECK(valid);
@@ -138,7 +137,7 @@ void crypto_generate_sign_verify_test(HashingContext::HashType p_hash_type, cons
 void crypto_sign_verify_test(const String &p_in_priv_path, const String &p_in_pub_path, HashingContext::HashType p_hash_type, const Vector<uint8_t> &p_hash) {
 	Ref<CryptoKey> priv = load_key(p_in_priv_path, false);
 	Ref<CryptoKey> pub = load_key(p_in_pub_path, true);
-	Ref<Crypto> c(memnew(CryptoMbedTLS));
+	Ref<Crypto> c(memnew(Crypto));
 	REQUIRE(c.is_valid());
 	Vector<uint8_t> signature = c->sign(p_hash_type, p_hash, priv);
 	CHECK(signature.size() > 0);
@@ -148,7 +147,7 @@ void crypto_sign_verify_test(const String &p_in_priv_path, const String &p_in_pu
 
 void crypto_verify_test(const String &p_in_pub_path, HashingContext::HashType p_hash_type, const Vector<uint8_t> &p_hash, const Vector<uint8_t> &p_signature, bool p_expected) {
 	Ref<CryptoKey> pub = load_key(p_in_pub_path, true);
-	Ref<Crypto> c(memnew(CryptoMbedTLS));
+	Ref<Crypto> c(memnew(Crypto));
 	REQUIRE(c.is_valid());
 	bool valid = c->verify(p_hash_type, p_hash, p_signature, pub);
 	CHECK_EQ(valid, p_expected);
@@ -167,7 +166,7 @@ bool equals(const PackedByteArray &p_a, const PackedByteArray &p_b) {
 void crypto_encrypt_decrypt_test(const String &p_in_priv_path, const String &p_in_pub_path, const Vector<uint8_t> &p_message) {
 	Ref<CryptoKey> priv = load_key(p_in_priv_path, false);
 	Ref<CryptoKey> pub = load_key(p_in_pub_path, true);
-	Ref<Crypto> c(memnew(CryptoMbedTLS));
+	Ref<Crypto> c(memnew(Crypto));
 	REQUIRE(c.is_valid());
 	Vector<uint8_t> ciphertext = c->encrypt(pub, p_message);
 	Vector<uint8_t> plaintext = c->decrypt(priv, ciphertext);
@@ -176,7 +175,7 @@ void crypto_encrypt_decrypt_test(const String &p_in_priv_path, const String &p_i
 
 void crypto_decrypt_test(const String &p_in_priv_path, const Vector<uint8_t> &p_ciphertext, const Vector<uint8_t> &p_message, bool p_valid, bool p_try_pub_key) {
 	Ref<CryptoKey> priv = load_key(p_in_priv_path, p_try_pub_key);
-	Ref<Crypto> c(memnew(CryptoMbedTLS));
+	Ref<Crypto> c(memnew(Crypto));
 	REQUIRE(c.is_valid());
 	Vector<uint8_t> plaintext = c->decrypt(priv, p_ciphertext);
 	CHECK_EQ(equals(plaintext, p_message), p_valid);

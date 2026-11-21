@@ -60,7 +60,7 @@
 
 - (BOOL)canBecomeKeyWindow {
 	// Required for NSWindowStyleMaskBorderless windows.
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return YES;
 	}
@@ -71,7 +71,7 @@
 
 - (BOOL)canBecomeMainWindow {
 	// Required for NSWindowStyleMaskBorderless windows.
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (!ds || !ds->has_window(window_id)) {
 		return YES;
 	}

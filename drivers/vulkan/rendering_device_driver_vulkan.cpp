@@ -35,8 +35,870 @@
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "core/templates/fixed_vector.h"
-#include "drivers/vulkan/vulkan_hooks.h"
-#include "rendering_device_driver_vulkan.h"
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+// --- Inlined from drivers/vulkan/rendering_device_driver_vulkan.h ---
+#include "core/templates/hash_map.h"
+#include "core/templates/paged_allocator.h"
+#include "core/templates/rb_map.h"
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+#include "servers/rendering/rendering_device_driver.h"
+
+#ifdef DEBUG_ENABLED
+#ifndef _MSC_VER
+#define _DEBUG
+#endif
+#endif
+#include <drivers/vulkan/godot_vulkan.h>
+#include <thirdparty/re-spirv/re-spirv.h>
+#include <thirdparty/vulkan/vk_mem_alloc.h>
+
+class FileAccess;
+
+// Design principles:
+// - Vulkan structs are zero-initialized and fields not requiring a non-zero value are omitted
+// (except in cases where expresivity reasons apply).
+class RenderingDeviceDriverVulkan : public RenderingDeviceDriver
+{
+	struct CommandQueue;
+	struct SwapChain;
+	struct CommandBufferInfo;
+	struct RenderPassInfo;
+	struct Framebuffer;
+
+	struct Queue
+	{
+		VkQueue queue = VK_NULL_HANDLE;
+		uint32_t virtual_count = 0;
+		BinaryMutex submit_mutex;
+	};
+
+	struct SubgroupCapabilities
+	{
+		uint32_t size = 0;
+		uint32_t min_size = 0;
+		uint32_t max_size = 0;
+		VkShaderStageFlags supported_stages = 0;
+		VkSubgroupFeatureFlags supported_operations = 0;
+		VkBool32 quad_operations_in_all_stages = false;
+		bool size_control_is_supported = false;
+
+		uint32_t supported_stages_flags_rd() const;
+		String supported_stages_desc() const;
+		uint32_t supported_operations_flags_rd() const;
+		String supported_operations_desc() const;
+	};
+
+	struct ShaderCapabilities
+	{
+		bool shader_float16_is_supported = false;
+		bool shader_int8_is_supported = false;
+	};
+
+	struct StorageBufferCapabilities
+	{
+		bool storage_buffer_16_bit_access_is_supported = false;
+		bool uniform_and_storage_buffer_16_bit_access_is_supported = false;
+		bool storage_push_constant_16_is_supported = false;
+		bool storage_input_output_16 = false;
+	};
+
+	struct AccelerationStructureCapabilities
+	{
+		bool acceleration_structure_support = false;
+		uint32_t min_acceleration_structure_scratch_offset_alignment = 0;
+	};
+
+	struct RaytracingCapabilities
+	{
+		bool raytracing_pipeline_support = false;
+		uint32_t shader_group_handle_size = 0;
+		uint32_t shader_group_handle_alignment = 0;
+		uint32_t shader_group_handle_size_aligned = 0;
+		uint32_t shader_group_base_alignment = 0;
+		bool validation = false;
+	};
+
+	struct DeviceFunctions
+	{
+		PFN_vkCreateSwapchainKHR CreateSwapchainKHR = nullptr;
+		PFN_vkDestroySwapchainKHR DestroySwapchainKHR = nullptr;
+		PFN_vkGetSwapchainImagesKHR GetSwapchainImagesKHR = nullptr;
+		PFN_vkAcquireNextImageKHR AcquireNextImageKHR = nullptr;
+		PFN_vkQueuePresentKHR QueuePresentKHR = nullptr;
+		PFN_vkCreateRenderPass2KHR CreateRenderPass2KHR = nullptr;
+		PFN_vkCmdEndRenderPass2KHR EndRenderPass2KHR = nullptr;
+
+		// Debug marker extensions.
+		PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT = nullptr;
+		PFN_vkCmdDebugMarkerEndEXT CmdDebugMarkerEndEXT = nullptr;
+		PFN_vkCmdDebugMarkerInsertEXT CmdDebugMarkerInsertEXT = nullptr;
+		PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT = nullptr;
+
+		// Debug device fault.
+		PFN_vkGetDeviceFaultInfoEXT GetDeviceFaultInfoEXT = nullptr;
+
+		// Raytracing extensions.
+		PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR = nullptr;
+		PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR = nullptr;
+		PFN_vkGetAccelerationStructureBuildSizesKHR GetAccelerationStructureBuildSizesKHR = nullptr;
+		PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR = nullptr;
+		PFN_vkCreateRayTracingPipelinesKHR CreateRaytracingPipelinesKHR = nullptr;
+		PFN_vkGetRayTracingShaderGroupHandlesKHR GetRayTracingShaderGroupHandlesKHR = nullptr;
+		PFN_vkCmdTraceRaysKHR CmdTraceRaysKHR = nullptr;
+	};
+
+	// Debug marker extensions.
+	VkDebugReportObjectTypeEXT _convert_to_debug_report_objectType(VkObjectType p_object_type);
+
+	VkDevice vk_device = VK_NULL_HANDLE;
+	RenderingContextDriverVulkan* context_driver = nullptr;
+	RenderingContextDriver::Device context_device = {};
+	uint32_t frame_count = 1;
+	VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+	VkPhysicalDeviceProperties physical_device_properties = {};
+	VkPhysicalDeviceFeatures physical_device_features = {};
+	VkPhysicalDeviceFeatures requested_device_features = {};
+	HashMap<CharString, bool> requested_device_extensions;
+	HashSet<CharString> enabled_device_extension_names;
+	TightLocalVector<TightLocalVector<Queue>> queue_families;
+	TightLocalVector<VkQueueFamilyProperties> queue_family_properties;
+	RDD::Capabilities device_capabilities;
+	SubgroupCapabilities subgroup_capabilities;
+	MultiviewCapabilities multiview_capabilities;
+	FragmentShadingRateCapabilities fsr_capabilities;
+	FragmentDensityMapCapabilities fdm_capabilities;
+	ShaderCapabilities shader_capabilities;
+	StorageBufferCapabilities storage_buffer_capabilities;
+	RenderingShaderContainerFormatVulkan shader_container_format;
+	bool buffer_device_address_support = false;
+	bool vulkan_memory_model_support = false;
+	bool vulkan_memory_model_device_scope_support = false;
+	AccelerationStructureCapabilities acceleration_structure_capabilities;
+	bool ray_query_support = false;
+	RaytracingCapabilities raytracing_capabilities;
+	bool pipeline_cache_control_support = false;
+	bool device_fault_support = false;
+	bool framebuffer_depth_resolve = false;
+#if defined(VK_TRACK_DEVICE_MEMORY)
+	bool device_memory_report_support = false;
+#endif
+#if defined(SWAPPY_FRAME_PACING_ENABLED)
+	// Swappy frame pacer for Android.
+	bool swappy_frame_pacer_enable = false;
+	uint8_t swappy_mode =
+		2; // See default value for display/window/frame_pacing/android/swappy_mode.
+#endif
+	DeviceFunctions device_functions;
+
+	struct PendingFlushes
+	{
+		LocalVector<VmaAllocation> allocations;
+		LocalVector<VkDeviceSize> offsets;
+		LocalVector<VkDeviceSize> sizes;
+	};
+
+	PendingFlushes pending_flushes;
+
+	struct PipelineStatistics
+	{
+		Ref<FileAccess> file_access;
+		Mutex file_access_mutex;
+	};
+
+	PipelineStatistics pipeline_statistics;
+	RDC::DriverWorkarounds driver_workarounds;
+
+	void _register_requested_device_extension(const CharString& p_extension_name, bool p_required);
+	Error _initialize_device_extensions();
+	void _check_driver_workarounds(const VkPhysicalDeviceProperties& p_device_properties,
+		const VkPhysicalDeviceDriverPropertiesKHR* p_driver_properties);
+	void _get_device_properties();
+	Error _check_device_features();
+	Error _check_device_capabilities();
+	void _choose_vrs_capabilities();
+	Error _add_queue_create_info(LocalVector<VkDeviceQueueCreateInfo>& r_queue_create_info);
+	Error _initialize_device(const LocalVector<VkDeviceQueueCreateInfo>& p_queue_create_info);
+	Error _initialize_allocator();
+	Error _initialize_pipeline_cache();
+	VkResult _create_render_pass(VkDevice p_device, const VkRenderPassCreateInfo2* p_create_info,
+		const VkAllocationCallbacks* p_allocator, VkRenderPass* p_render_pass);
+	bool _release_image_semaphore(
+		CommandQueue* p_command_queue, uint32_t p_semaphore_index, bool p_release_on_swap_chain);
+	bool _recreate_image_semaphore(
+		CommandQueue* p_command_queue, uint32_t p_semaphore_index, bool p_release_on_swap_chain);
+	void _set_object_name(
+		VkObjectType p_object_type, uint64_t p_object_handle, String p_object_name);
+
+public:
+	Error initialize(uint32_t p_device_index, uint32_t p_frame_count) override final;
+
+private:
+	VmaAllocator allocator = nullptr;
+	HashMap<uint32_t, VmaPool> small_allocs_pools;
+
+	VmaPool _find_or_create_small_allocs_pool(uint32_t p_mem_type_index);
+
+private:
+#if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
+	// It's a circular buffer.
+	BufferID breadcrumb_buffer;
+	uint32_t breadcrumb_offset = 0u;
+	uint32_t breadcrumb_id = 0u;
+#endif
+
+public:
+	struct BufferInfo
+	{
+		VkBuffer vk_buffer = VK_NULL_HANDLE;
+
+		struct
+		{
+			VmaAllocation handle = nullptr;
+			uint64_t size = UINT64_MAX;
+		} allocation;
+
+		uint64_t size = 0;
+		VkBufferView vk_view = VK_NULL_HANDLE; // For texel buffers.
+		// If dynamic buffer, then its range is [0; RenderingDeviceDriverVulkan::frame_count)
+		// else it's UINT32_MAX.
+		uint32_t frame_idx = UINT32_MAX;
+
+		bool is_dynamic() const { return frame_idx != UINT32_MAX; }
+	};
+
+	struct BufferDynamicInfo : BufferInfo
+	{
+		uint8_t* persistent_ptr = nullptr;
+#ifdef DEBUG_ENABLED
+		// For tracking that a persistent buffer isn't mapped twice in the same frame.
+		uint64_t last_frame_mapped = 0;
+#endif
+	};
+
+	virtual BufferID buffer_create(uint64_t p_size, uint32_t p_usage,
+		MemoryAllocationType p_allocation_type, uint64_t p_frames_drawn) override final;
+	virtual bool buffer_set_texel_format(BufferID p_buffer, RDC::DataFormat p_format) override final;
+	virtual void buffer_free(BufferID p_buffer) override final;
+	virtual uint64_t buffer_get_allocation_size(BufferID p_buffer) override final;
+	virtual uint8_t* buffer_map(BufferID p_buffer) override final;
+	virtual void buffer_unmap(BufferID p_buffer) override final;
+	virtual uint8_t* buffer_persistent_map_advance(
+		BufferID p_buffer, uint64_t p_frames_drawn) override final;
+	virtual uint64_t buffer_get_dynamic_offsets(Span<BufferID> p_buffers) override final;
+	virtual void buffer_flush(BufferID p_buffer) override final;
+	virtual uint64_t buffer_get_device_address(BufferID p_buffer) override final;
+
+	struct TextureInfo
+	{
+		VkImage vk_image = VK_NULL_HANDLE;
+		VkImageView vk_view = VK_NULL_HANDLE;
+		RDC::DataFormat rd_format = RDC::DATA_FORMAT_MAX;
+		VkImageCreateInfo vk_create_info = {};
+		VkImageViewCreateInfo vk_view_create_info = {};
+
+		struct
+		{
+			VmaAllocation handle = nullptr;
+			VmaAllocationInfo info = {};
+		} allocation; // All 0/null if just a view.
+
+		bool is_subsampled = false;
+#ifdef DEBUG_ENABLED
+		bool created_from_extension = false;
+		bool transient = false;
+#endif
+	};
+
+	VkSampleCountFlagBits _ensure_supported_sample_count(RDC::TextureSamples p_requested_sample_count);
+
+public:
+	virtual TextureID texture_create(
+		const RDC::TextureFormat& p_format, const TextureView& p_view) override final;
+	virtual TextureID texture_create_from_extension(uint64_t p_native_texture, RDC::TextureType p_type,
+		RDC::DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil,
+		uint32_t p_mipmaps) override final;
+	virtual TextureID texture_create_shared(
+		TextureID p_original_texture, const TextureView& p_view) override final;
+	virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture,
+		const TextureView& p_view, RDC::TextureSliceType p_slice_type, uint32_t p_layer,
+		uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) override final;
+	virtual void texture_free(TextureID p_texture) override final;
+	virtual uint64_t texture_get_allocation_size(TextureID p_texture) override final;
+	virtual void texture_get_copyable_layout(TextureID p_texture,
+		const TextureSubresource& p_subresource, TextureCopyableLayout* r_layout) override final;
+	virtual Vector<uint8_t> texture_get_data(TextureID p_texture, uint32_t p_layer) override final;
+	virtual uint32_t texture_get_usages_supported_by_format(
+		RDC::DataFormat p_format, bool p_cpu_readable) override final;
+	virtual bool texture_can_make_shared_with_format(
+		TextureID p_texture, RDC::DataFormat p_format, bool& r_raw_reinterpretation) override final;
+
+public:
+	virtual SamplerID sampler_create(const RDC::SamplerState& p_state) final override;
+	virtual void sampler_free(SamplerID p_sampler) final override;
+	virtual bool sampler_is_format_supported_for_filter(
+		RDC::DataFormat p_format, RDC::SamplerFilter p_filter) override final;
+
+private:
+	struct VertexFormatInfo
+	{
+		TightLocalVector<VkVertexInputBindingDescription> vk_bindings;
+		TightLocalVector<VkVertexInputAttributeDescription> vk_attributes;
+		VkPipelineVertexInputStateCreateInfo vk_create_info = {};
+	};
+
+public:
+	virtual VertexFormatID vertex_format_create(Span<RDC::VertexAttribute> p_vertex_attribs,
+		const RDC::VertexAttributeBindingsMap& p_vertex_bindings) override final;
+	virtual void vertex_format_free(VertexFormatID p_vertex_format) override final;
+
+	virtual void command_pipeline_barrier(CommandBufferID p_cmd_buffer,
+		uint32_t p_dst_stages,
+		VectorView<MemoryAccessBarrier> p_memory_barriers,
+		VectorView<BufferBarrier> p_buffer_barriers, VectorView<TextureBarrier> p_texture_barriers,
+		VectorView<AccelerationStructureBarrier> p_acceleration_structure_barriers) final;
+
+private:
+	struct Fence
+	{
+		VkFence vk_fence = VK_NULL_HANDLE;
+		CommandQueue* queue_signaled_from = nullptr;
+	};
+
+public:
+	virtual FenceID fence_create() override final;
+	virtual Error fence_wait(FenceID p_fence) override final;
+	virtual void fence_free(FenceID p_fence) override final;
+
+	virtual SemaphoreID semaphore_create() override final;
+	virtual void semaphore_free(SemaphoreID p_semaphore) override final;
+
+	virtual CommandQueueFamilyID command_queue_family_get(
+		uint32_t p_cmd_queue_family_bits,
+		RenderingContextDriver::SurfaceID p_surface = 0) override final;
+private:
+	struct CommandQueue
+	{
+		LocalVector<VkSemaphore> image_semaphores;
+		LocalVector<SwapChain*> image_semaphores_swap_chains;
+		LocalVector<uint32_t> pending_semaphores_for_execute;
+		LocalVector<uint32_t> pending_semaphores_for_fence;
+		LocalVector<uint32_t> free_image_semaphores;
+		LocalVector<Pair<Fence*, uint32_t>> image_semaphores_for_fences;
+		uint32_t queue_family = 0;
+		uint32_t queue_index = 0;
+	};
+
+public:
+	virtual CommandQueueID command_queue_create(CommandQueueFamilyID p_cmd_queue_family,
+		bool p_identify_as_main_queue = false) override final;
+	virtual Error command_queue_execute_and_present(CommandQueueID p_cmd_queue,
+		VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers,
+		VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence,
+		VectorView<SwapChainID> p_swap_chains) override final;
+	virtual void command_queue_free(CommandQueueID p_cmd_queue) override final;
+
+private:
+	struct CommandPool
+	{
+		VkCommandPool vk_command_pool = VK_NULL_HANDLE;
+		CommandBufferType buffer_type = COMMAND_BUFFER_TYPE_PRIMARY;
+		LocalVector<CommandBufferInfo*> command_buffers_created;
+	};
+
+public:
+	virtual CommandPoolID command_pool_create(CommandQueueFamilyID p_cmd_queue_family,
+		CommandBufferType p_cmd_buffer_type) override final;
+	virtual bool command_pool_reset(CommandPoolID p_cmd_pool) override final;
+	virtual void command_pool_free(CommandPoolID p_cmd_pool) override final;
+
+
+private:
+	struct CommandBufferInfo
+	{
+		VkCommandBuffer vk_command_buffer = VK_NULL_HANDLE;
+		Framebuffer* active_framebuffer = nullptr;
+		RenderPassInfo* active_render_pass = nullptr;
+	};
+
+public:
+	virtual CommandBufferID command_buffer_create(CommandPoolID p_cmd_pool) override final;
+	virtual bool command_buffer_begin(CommandBufferID p_cmd_buffer) override final;
+	virtual bool command_buffer_begin_secondary(CommandBufferID p_cmd_buffer,
+		RenderPassID p_render_pass, uint32_t p_subpass, FramebufferID p_framebuffer) override final;
+	virtual void command_buffer_end(CommandBufferID p_cmd_buffer) override final;
+	virtual void command_buffer_execute_secondary(CommandBufferID p_cmd_buffer,
+		VectorView<CommandBufferID> p_secondary_cmd_buffers) override final;
+
+private:
+	struct SwapChain
+	{
+		VkSwapchainKHR vk_swapchain = VK_NULL_HANDLE;
+		RenderingContextDriver::SurfaceID surface = RenderingContextDriver::SurfaceID();
+		VkFormat format = VK_FORMAT_UNDEFINED;
+		VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+		RDC::ColorSpace rdd_color_space = RDC::COLOR_SPACE_REC709_NONLINEAR_SRGB;
+		TightLocalVector<VkImage> images;
+		TightLocalVector<VkImageView> image_views;
+		TightLocalVector<VkSemaphore> present_semaphores;
+		TightLocalVector<FramebufferID> framebuffers;
+		LocalVector<CommandQueue*> command_queues_acquired;
+		LocalVector<uint32_t> command_queues_acquired_semaphores;
+		RenderPassID render_pass;
+		int pre_transform_rotation_degrees = 0;
+		uint32_t image_index = 0;
+#ifdef ANDROID_ENABLED
+		uint64_t refresh_duration = 0;
+#endif
+	};
+
+	bool _determine_swap_chain_format(RenderingContextDriver::SurfaceID p_surface,
+		VkFormat& r_format, VkColorSpaceKHR& r_color_space, RDC::ColorSpace& r_rdd_color_space);
+	void _swap_chain_release(SwapChain* p_swap_chain);
+
+public:
+	virtual SwapChainID swap_chain_create(
+		RenderingContextDriver::SurfaceID p_surface) override final;
+	virtual Error swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain,
+		uint32_t p_desired_framebuffer_count) override final;
+	virtual FramebufferID swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue,
+		SwapChainID p_swap_chain, bool& r_resize_required) override final;
+	virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) override final;
+	virtual int swap_chain_get_pre_rotation_degrees(SwapChainID p_swap_chain) override final;
+	virtual RDC::DataFormat swap_chain_get_format(SwapChainID p_swap_chain) override final;
+	virtual RDC::ColorSpace swap_chain_get_color_space(SwapChainID p_swap_chain) override final;
+	virtual bool swap_chain_get_hdr_output_supported(SwapChainID p_swap_chain) override final;
+	virtual void swap_chain_set_max_fps(SwapChainID p_swap_chain, int p_max_fps) override final;
+	virtual void swap_chain_free(SwapChainID p_swap_chain) override final;
+
+private:
+	struct Framebuffer
+	{
+		VkFramebuffer vk_framebuffer = VK_NULL_HANDLE;
+
+		// Only filled in if the framebuffer uses a fragment density map with offsets. Unused
+		// otherwise.
+		uint32_t fragment_density_map_offsets_layers = 0;
+
+		// Only filled in by a framebuffer created by a swap chain. Unused otherwise.
+		VkImage swap_chain_image = VK_NULL_HANDLE;
+		VkImageSubresourceRange swap_chain_image_subresource_range = {};
+		bool swap_chain_acquired = false;
+	};
+
+public:
+	virtual FramebufferID framebuffer_create(RenderPassID p_render_pass,
+		VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) override final;
+	virtual void framebuffer_free(FramebufferID p_framebuffer) override final;
+
+private:
+	struct ShaderInfo
+	{
+		String name;
+		VkShaderStageFlags vk_push_constant_stages = 0;
+		TightLocalVector<VkPipelineShaderStageCreateInfo> vk_stages_create_info;
+		TightLocalVector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
+		TightLocalVector<respv::Shader> respv_stage_shaders;
+		TightLocalVector<Vector<uint8_t>> spirv_stage_bytes;
+		TightLocalVector<uint64_t> original_stage_size;
+		VkPipelineLayout vk_pipeline_layout = VK_NULL_HANDLE;
+	};
+
+public:
+	virtual ShaderID shader_create_from_container(
+		const Ref<RenderingShaderContainer>& p_shader_container,
+		const Vector<ImmutableSampler>& p_immutable_samplers) override final;
+	virtual void shader_free(ShaderID p_shader) override final;
+
+	virtual void shader_destroy_modules(ShaderID p_shader) override final;
+
+	// Descriptor sets require allocation from a pool.
+	// The documentation on how to use pools properly
+	// is scarce, and the documentation is strange.
+	//
+	// Basically, you can mix and match pools as you
+	// like, but you'll run into fragmentation issues.
+	// Because of this, the recommended approach is to
+	// create a pool for every descriptor set type, as
+	// this prevents fragmentation.
+	//
+	// This is implemented here as a having a list of
+	// pools (each can contain up to 64 sets) for each
+	// set layout. The amount of sets for each type
+	// is used as the key.
+
+private:
+	static const uint32_t MAX_UNIFORM_POOL_ELEMENT = 65535;
+
+	struct DescriptorSetPoolKey
+	{
+		uint16_t uniform_type[RDC::UNIFORM_TYPE_MAX] = {};
+
+		bool operator<(const DescriptorSetPoolKey& p_other) const
+		{
+			return memcmp(uniform_type, p_other.uniform_type, sizeof(uniform_type)) < 0;
+		}
+	};
+
+	using DescriptorSetPools = RBMap<DescriptorSetPoolKey, HashMap<VkDescriptorPool, uint32_t>>;
+	DescriptorSetPools descriptor_set_pools;
+	uint32_t max_descriptor_sets_per_pool = 64;
+
+	HashMap<int, DescriptorSetPools> linear_descriptor_set_pools;
+	bool linear_descriptor_pools_enabled = true;
+	VkDescriptorPool _descriptor_set_pool_create(
+		const DescriptorSetPoolKey& p_key, bool p_linear_pool);
+	void _descriptor_set_pool_unreference(DescriptorSetPools::Iterator p_pool_sets_it,
+		VkDescriptorPool p_vk_descriptor_pool, int p_linear_pool_index);
+
+	// Global flag to toggle usage of immutable sampler when creating pipeline layouts.
+	// It cannot change after creating the PSOs, since we need to skipping samplers when creating
+	// uniform sets.
+	bool immutable_samplers_enabled = true;
+
+	struct UniformSetInfo
+	{
+		VkDescriptorSet vk_descriptor_set = VK_NULL_HANDLE;
+		VkDescriptorPool vk_descriptor_pool = VK_NULL_HANDLE;
+		VkDescriptorPool vk_linear_descriptor_pool = VK_NULL_HANDLE;
+		DescriptorSetPools::Iterator pool_sets_it;
+		TightLocalVector<const BufferInfo*, uint32_t> dynamic_buffers;
+	};
+
+	bool adreno_5xx_empty_descriptor_set_layout_workaround = false;
+
+public:
+	virtual UniformSetID uniform_set_create(VectorView<BoundUniform> p_uniforms, ShaderID p_shader,
+		uint32_t p_set_index, int p_linear_pool_index) override final;
+	virtual void linear_uniform_set_pools_reset(int p_linear_pool_index) override final;
+	virtual void uniform_set_free(UniformSetID p_uniform_set) override final;
+	virtual bool uniform_sets_have_linear_pools() const override final;
+	virtual uint32_t uniform_sets_get_dynamic_offsets(VectorView<UniformSetID> p_uniform_sets,
+		ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) const override final;
+
+	// ----- COMMANDS -----
+
+	virtual void command_uniform_set_prepare_for_use(CommandBufferID p_cmd_buffer,
+		UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) override final;
+
+	/******************/
+	/**** TRANSFER ****/
+	/******************/
+
+	virtual void command_clear_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer,
+		uint64_t p_offset, uint64_t p_size) override final;
+	virtual void command_copy_buffer(CommandBufferID p_cmd_buffer, BufferID p_src_buffer,
+		BufferID p_dst_buffer, VectorView<BufferCopyRegion> p_regions) override final;
+
+	virtual void command_copy_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture,
+		TextureLayout p_src_texture_layout, TextureID p_dst_texture,
+		TextureLayout p_dst_texture_layout, VectorView<TextureCopyRegion> p_regions) override final;
+	virtual void command_resolve_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture,
+		TextureLayout p_src_texture_layout, uint32_t p_src_layer, uint32_t p_src_mipmap,
+		TextureID p_dst_texture, TextureLayout p_dst_texture_layout, uint32_t p_dst_layer,
+		uint32_t p_dst_mipmap) override final;
+	virtual void command_clear_color_texture(CommandBufferID p_cmd_buffer, TextureID p_texture,
+		TextureLayout p_texture_layout, const Color& p_color,
+		const TextureSubresourceRange& p_subresources) override final;
+	virtual void command_clear_depth_stencil_texture(CommandBufferID p_cmd_buffer,
+		TextureID p_texture, TextureLayout p_texture_layout, float p_depth, uint8_t p_stencil,
+		const TextureSubresourceRange& p_subresources) override final;
+
+	virtual void command_copy_buffer_to_texture(CommandBufferID p_cmd_buffer, BufferID p_src_buffer,
+		TextureID p_dst_texture, TextureLayout p_dst_texture_layout,
+		VectorView<BufferTextureCopyRegion> p_regions) override final;
+	virtual void command_copy_texture_to_buffer(CommandBufferID p_cmd_buffer,
+		TextureID p_src_texture, TextureLayout p_src_texture_layout, BufferID p_dst_buffer,
+		VectorView<BufferTextureCopyRegion> p_regions) override final;
+
+	/******************/
+	/**** PIPELINE ****/
+	/******************/
+private:
+	struct PipelineCacheHeader
+	{
+		uint32_t magic = 0;
+		uint32_t data_size = 0;
+		uint64_t data_hash = 0;
+		uint32_t vendor_id = 0;
+		uint32_t device_id = 0;
+		uint32_t driver_version = 0;
+		uint8_t uuid[VK_UUID_SIZE] = {};
+		uint8_t driver_abi = 0;
+	};
+
+	struct PipelineCache
+	{
+		String file_path;
+		size_t current_size = 0;
+		Vector<uint8_t> buffer; // Header then data.
+		VkPipelineCache vk_cache = VK_NULL_HANDLE;
+	};
+
+	static int caching_instance_count;
+	PipelineCache pipelines_cache;
+	String pipeline_cache_id;
+	HashMap<uint64_t, bool> has_comp_alpha;
+
+public:
+	virtual void pipeline_free(PipelineID p_pipeline) override final;
+
+	// ----- BINDING -----
+
+	virtual void command_bind_push_constants(CommandBufferID p_cmd_buffer, ShaderID p_shader,
+		uint32_t p_first_index, VectorView<uint32_t> p_data) override final;
+
+	// ----- CACHE -----
+
+	virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) override final;
+	virtual void pipeline_cache_free() override final;
+	virtual size_t pipeline_cache_query_size() override final;
+	virtual Vector<uint8_t> pipeline_cache_serialize() override final;
+
+	/*******************/
+	/**** RENDERING ****/
+	/*******************/
+
+private:
+	// ----- SUBPASS -----
+
+	struct RenderPassInfo
+	{
+		VkRenderPass vk_render_pass = VK_NULL_HANDLE;
+		bool uses_fragment_density_map = false;
+	};
+
+public:
+	virtual RenderPassID render_pass_create(VectorView<Attachment> p_attachments,
+		VectorView<Subpass> p_subpasses, VectorView<SubpassDependency> p_subpass_dependencies,
+		uint32_t p_view_count,
+		AttachmentReference p_fragment_density_map_attachment) override final;
+	virtual void render_pass_free(RenderPassID p_render_pass) override final;
+
+	// ----- COMMANDS -----
+
+	virtual void command_begin_render_pass(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass,
+		FramebufferID p_framebuffer, CommandBufferType p_cmd_buffer_type, const Rect2i& p_rect,
+		VectorView<RenderPassClearValue> p_clear_values) override final;
+	virtual void command_end_render_pass(CommandBufferID p_cmd_buffer) override final;
+	virtual void command_next_render_subpass(
+		CommandBufferID p_cmd_buffer, CommandBufferType p_cmd_buffer_type) override final;
+	virtual void command_render_set_viewport(
+		CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_viewports) override final;
+	virtual void command_render_set_scissor(
+		CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_scissors) override final;
+	virtual void command_render_clear_attachments(CommandBufferID p_cmd_buffer,
+		VectorView<AttachmentClear> p_attachment_clears, VectorView<Rect2i> p_rects) override final;
+
+	// Binding.
+	virtual void command_bind_render_pipeline(
+		CommandBufferID p_cmd_buffer, PipelineID p_pipeline) override final;
+	virtual void command_bind_render_uniform_sets(CommandBufferID p_cmd_buffer,
+		VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index,
+		uint32_t p_set_count, uint32_t p_dynamic_offsets) override final;
+
+	// Drawing.
+	virtual void command_render_draw(CommandBufferID p_cmd_buffer, uint32_t p_vertex_count,
+		uint32_t p_instance_count, uint32_t p_base_vertex,
+		uint32_t p_first_instance) override final;
+	virtual void command_render_draw_indexed(CommandBufferID p_cmd_buffer, uint32_t p_index_count,
+		uint32_t p_instance_count, uint32_t p_first_index, int32_t p_vertex_offset,
+		uint32_t p_first_instance) override final;
+	virtual void command_render_draw_indexed_indirect(CommandBufferID p_cmd_buffer,
+		BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count,
+		uint32_t p_stride) override final;
+	virtual void command_render_draw_indexed_indirect_count(CommandBufferID p_cmd_buffer,
+		BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer,
+		uint64_t p_count_buffer_offset, uint32_t p_max_draw_count,
+		uint32_t p_stride) override final;
+	virtual void command_render_draw_indirect(CommandBufferID p_cmd_buffer,
+		BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count,
+		uint32_t p_stride) override final;
+	virtual void command_render_draw_indirect_count(CommandBufferID p_cmd_buffer,
+		BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer,
+		uint64_t p_count_buffer_offset, uint32_t p_max_draw_count,
+		uint32_t p_stride) override final;
+
+	// Buffer binding.
+	virtual void command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer,
+		uint32_t p_binding_count, const BufferID* p_buffers, const uint64_t* p_offsets,
+		uint64_t p_dynamic_offsets) override final;
+	virtual void command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer,
+		RDC::IndexBufferFormat p_format, uint64_t p_offset) override final;
+
+	// Dynamic state.
+	virtual void command_render_set_blend_constants(
+		CommandBufferID p_cmd_buffer, const Color& p_constants) override final;
+	virtual void command_render_set_line_width(
+		CommandBufferID p_cmd_buffer, float p_width) override final;
+
+	// ----- PIPELINE -----
+
+	virtual PipelineID render_pipeline_create(ShaderID p_shader, VertexFormatID p_vertex_format,
+		RDC::RenderPrimitive p_render_primitive, RDC::PipelineRasterizationState p_rasterization_state,
+		RDC::PipelineMultisampleState p_multisample_state,
+		RDC::PipelineDepthStencilState p_depth_stencil_state, RDC::PipelineColorBlendState p_blend_state,
+		VectorView<int32_t> p_color_attachments,
+		uint32_t p_dynamic_state, RenderPassID p_render_pass,
+		uint32_t p_render_subpass,
+		VectorView<RDC::PipelineSpecializationConstant> p_specialization_constants) override final;
+
+	virtual void command_bind_compute_pipeline(
+		CommandBufferID p_cmd_buffer, PipelineID p_pipeline) override final;
+	virtual void command_bind_compute_uniform_sets(CommandBufferID p_cmd_buffer,
+		VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index,
+		uint32_t p_set_count, uint32_t p_dynamic_offsets) override final;
+	virtual void command_compute_dispatch(CommandBufferID p_cmd_buffer, uint32_t p_x_groups,
+		uint32_t p_y_groups, uint32_t p_z_groups) override final;
+	virtual void command_compute_dispatch_indirect(
+		CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) override final;
+	virtual PipelineID compute_pipeline_create(ShaderID p_shader,
+		VectorView<RDC::PipelineSpecializationConstant> p_specialization_constants) override final;
+
+	struct AccelerationStructureInfo
+	{
+		VkAccelerationStructureKHR vk_acceleration_structure = VK_NULL_HANDLE;
+		// Buffer used for the structure
+		RDD::BufferID buffer;
+
+		// Alignment of the scratch buffer for building the structure
+		uint32_t scratch_alignment;
+		// Size of the scratch buffer for building the structure
+		uint32_t scratch_size;
+
+		// Required for building
+		TightLocalVector<VkAccelerationStructureGeometryKHR> geometries;
+		VkAccelerationStructureBuildGeometryInfoKHR build_info;
+		TightLocalVector<VkAccelerationStructureBuildRangeInfoKHR> range_infos;
+	};
+
+	virtual AccelerationStructureID blas_create(
+		VectorView<AccelerationStructureGeometry> p_geometries,
+		uint32_t p_flags) override final;
+	virtual AccelerationStructureID tlas_create(uint32_t p_max_instance_count,
+		uint32_t p_flags) override final;
+	virtual void acceleration_structure_instance_write(
+		uint8_t* r_driver_instance, const AccelerationStructureInstance& p_instance) override final;
+	virtual void acceleration_structure_free(
+		AccelerationStructureID p_acceleration_structure) override final;
+	virtual uint32_t acceleration_structure_get_scratch_size_bytes(
+		AccelerationStructureID p_acceleration_structure) override final;
+
+private:
+	void _acceleration_structure_create(VkAccelerationStructureTypeKHR p_type,
+		VkAccelerationStructureBuildSizesInfoKHR p_size_info,
+		AccelerationStructureInfo* r_accel_info);
+
+private:
+	VkStridedDeviceAddressRegionKHR _sbt_to_vk_strided_device_address_region(
+		const ShaderBindingTable& p_sbt);
+
+public:
+	// ----- COMMANDS -----
+	virtual void command_build_blas(CommandBufferID p_cmd_buffer,
+		AccelerationStructureID p_acceleration_structure, BufferID p_scratch_buffer) override final;
+	virtual void command_build_tlas(CommandBufferID p_cmd_buffer,
+		AccelerationStructureID p_acceleration_structure, BufferID p_scratch_buffer,
+		BufferID p_instance_buffer, uint32_t p_instance_offset,
+		uint32_t p_instance_count) override final;
+	virtual void command_bind_raytracing_pipeline(
+		CommandBufferID p_cmd_buffer, RaytracingPipelineID p_pipeline) override final;
+	virtual void command_bind_raytracing_uniform_set(CommandBufferID p_cmd_buffer,
+		UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) override final;
+	virtual void command_trace_rays(CommandBufferID p_cmd_buffer,
+		const ShaderBindingTable& p_raygen_sbt, const ShaderBindingTable& p_miss_sbt,
+		const ShaderBindingTable& p_hit_sbt, uint32_t p_width, uint32_t p_height,
+		uint32_t p_depth) override final;
+
+public:
+	// ----- PIPELINE -----
+	virtual RaytracingPipelineID raytracing_pipeline_create(VectorView<PipelineShader> p_shaders,
+		VectorView<uint32_t> p_raygen_shader_indices, VectorView<uint32_t> p_miss_shader_indices,
+		VectorView<HitGroup> p_hit_groups, uint32_t p_max_trace_recursion_depth,
+		ShaderID p_layout_defining_shader) override final;
+	virtual void raytracing_pipeline_free(RaytracingPipelineID p_pipeline) override final;
+
+	virtual bool raytracing_pipeline_get_shader_group_handles(RaytracingPipelineID p_pipeline,
+		uint32_t p_group_index_offset, VectorView<uint32_t> p_group_indices, uint8_t* r_data,
+		uint32_t p_data_stride_bytes) override final;
+
+	/*****************/
+	/**** QUERIES ****/
+	/*****************/
+
+	// ----- TIMESTAMP -----
+
+	// Basic.
+	virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) override final;
+	virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) override final;
+	virtual void timestamp_query_pool_get_results(
+		QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t* r_results) override final;
+
+	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) override final;
+
+	// Commands.
+	virtual void command_timestamp_query_pool_reset(
+		CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_query_count) override final;
+	virtual void command_timestamp_write(
+		CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_index) override final;
+
+	/****************/
+	/**** LABELS ****/
+	/****************/
+
+	virtual void command_begin_label(CommandBufferID p_cmd_buffer, const char* p_label_name,
+		const Color& p_color) override final;
+	virtual void command_end_label(CommandBufferID p_cmd_buffer) override final;
+
+	/****************/
+	/**** DEBUG *****/
+	/****************/
+	virtual void command_insert_breadcrumb(
+		CommandBufferID p_cmd_buffer, uint32_t p_data) override final;
+	void print_lost_device_info();
+	void on_device_lost() const;
+	static String get_vulkan_result(VkResult err);
+
+	virtual void begin_segment(uint32_t p_frame_index, uint32_t p_frames_drawn) override final;
+	virtual void end_segment() override final;
+	virtual void set_object_name(
+		ObjectType p_type, ID p_driver_id, const String& p_name) override final;
+	virtual uint64_t get_resource_native_handle(
+		RDC::DriverResource p_type, ID p_driver_id) override final;
+	virtual uint64_t get_total_memory_used() override final;
+	virtual uint64_t get_lazily_memory_used() override final;
+	virtual uint64_t limit_get(RDC::Limit p_limit) override final;
+	virtual uint64_t api_trait_get(ApiTrait p_trait) override final;
+	virtual bool has_feature(RDC::Features p_feature) override final;
+	virtual const MultiviewCapabilities& get_multiview_capabilities() override final;
+	virtual const FragmentShadingRateCapabilities&
+	get_fragment_shading_rate_capabilities() override final;
+	virtual const FragmentDensityMapCapabilities&
+	get_fragment_density_map_capabilities() override final;
+	virtual String get_api_name() const override final;
+	virtual String get_api_version() const override final;
+	virtual String get_pipeline_cache_uuid() const override final;
+	virtual const Capabilities& get_capabilities() const override final;
+	virtual const RenderingShaderContainerFormat&
+	get_shader_container_format() const override final;
+
+	virtual bool is_composite_alpha_supported(CommandQueueID p_queue) const override final;
+
+	virtual RDC::DriverWorkarounds get_driver_workarounds() const override final;
+
+private:
+	using VersatileResource = VersatileResourceTemplate<BufferInfo, TextureInfo, VertexFormatInfo,
+		ShaderInfo, UniformSetInfo, RenderPassInfo, CommandBufferInfo>;
+	PagedAllocator<VersatileResource, true> resources_allocator;
+
+public:
+	RenderingDeviceDriverVulkan(RenderingContextDriverVulkan* p_context_driver);
+	virtual ~RenderingDeviceDriverVulkan();
+};
+
+using VKC = RenderingContextDriverVulkan;
+
+
+// --- End drivers/vulkan/rendering_device_driver_vulkan.h ---
 
 #if defined(SWAPPY_FRAME_PACING_ENABLED)
 #include <thirdparty/swappy-frame-pacing/swappyVk.h>
@@ -936,8 +1798,8 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 		enabled_device_extension_names.has(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
 
 	bool use_fdm_offsets = false;
-	if (VulkanHooks::get_singleton() != nullptr) {
-		use_fdm_offsets = VulkanHooks::get_singleton()->use_fragment_density_offsets();
+	if (VulkanHooks::is_bound()) {
+		use_fdm_offsets = VulkanHooks::use_fragment_density_offsets();
 	}
 
 	// References:
@@ -1662,11 +2524,10 @@ Error RenderingDeviceDriverVulkan::_initialize_device(
 	create_info.ppEnabledExtensionNames = enabled_extension_names.ptr();
 	create_info.pEnabledFeatures = &requested_device_features;
 
-	if (VulkanHooks::get_singleton() != nullptr) {
-		bool device_created =
-			VulkanHooks::get_singleton()->create_vulkan_device(&create_info, &vk_device);
+	if (VulkanHooks::is_bound()) {
+		bool device_created = VulkanHooks::create_vulkan_device(&create_info, &vk_device);
 		ERR_FAIL_COND_V_MSG(!device_created, ERR_CANT_CREATE,
-			"Couldn't create a Vulkan device through the VulkanHooks singleton.");
+			"Couldn't create a Vulkan device through VulkanHooks.");
 	}
 	else {
 		VkResult err = vkCreateDevice(physical_device, &create_info,
@@ -2132,7 +2993,7 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 		GLOBAL_GET("display/window/frame_pacing/android/enable_frame_pacing");
 	swappy_mode = GLOBAL_GET("display/window/frame_pacing/android/swappy_mode");
 
-	if (VulkanHooks::get_singleton() != nullptr) {
+	if (VulkanHooks::is_bound()) {
 		// Hooks control device creation & possibly presentation
 		// (e.g. OpenXR) thus it's too risky to use Swappy.
 		swappy_frame_pacer_enable = false;
@@ -2585,7 +3446,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 	}
 
 	bool use_subsampled_images =
-		VulkanHooks::get_singleton() && VulkanHooks::get_singleton()->use_subsampled_images();
+		VulkanHooks::is_bound() && VulkanHooks::use_subsampled_images();
 	if (fdm_capabilities.attachment_supported && use_subsampled_images && p_format.is_subsampled &&
 		(p_format.usage_bits &
 			(RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
@@ -3634,9 +4495,8 @@ RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(
 	queue_family[picked_queue_index].virtual_count++;
 
 	// If is was identified as the main queue and a hook is active, indicate it as such to the hook.
-	if (p_identify_as_main_queue && (VulkanHooks::get_singleton() != nullptr)) {
-		VulkanHooks::get_singleton()->set_direct_queue_family_and_index(
-			family_index, picked_queue_index);
+	if (p_identify_as_main_queue && VulkanHooks::is_bound()) {
+		VulkanHooks::set_direct_queue_family_and_index(family_index, picked_queue_index);
 	}
 
 	return CommandQueueID(command_queue);
@@ -4461,10 +5321,10 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(
 #if defined(SWAPPY_FRAME_PACING_ENABLED)
 	if (swappy_frame_pacer_enable) {
 		SwappyVk_initAndGetRefreshCycleDuration(get_jni_env(),
-			static_cast<OS_Android*>(OS::get_singleton())->get_godot_java()->get_activity(),
+			OS_Android::get_godot_java()->get_activity(),
 			physical_device, vk_device, swap_chain->vk_swapchain, &swap_chain->refresh_duration);
 		SwappyVk_setWindow(vk_device, swap_chain->vk_swapchain,
-			static_cast<OS_Android*>(OS::get_singleton())->get_native_window());
+			OS_Android::get_native_window());
 		SwappyVk_setSwapIntervalNS(
 			vk_device, swap_chain->vk_swapchain, swap_chain->refresh_duration);
 
@@ -5361,13 +6221,6 @@ VkDescriptorPool RenderingDeviceDriverVulkan::_descriptor_set_pool_create(
 	descriptor_set_pool_create_info.maxSets = max_descriptor_sets_per_pool;
 	descriptor_set_pool_create_info.poolSizeCount = vk_sizes_count;
 	descriptor_set_pool_create_info.pPoolSizes = vk_sizes;
-	// In RenderingDeviceDriverVulkan::_descriptor_set_pool_create, right before vkCreateDescriptorPool:
-	printf("[DEBUG pool_create] max_sets=%u, sizes_count=%u\n",
-	       max_descriptor_sets_per_pool, vk_sizes_count);
-	for (uint32_t i = 0; i < vk_sizes_count; i++) {
-	    printf("  size[%u]: type=%d, count=%u\n", i, vk_sizes[i].type, vk_sizes[i].descriptorCount);
-	}
-
 	VkDescriptorPool vk_pool = VK_NULL_HANDLE;
 	VkResult res = vkCreateDescriptorPool(vk_device, &descriptor_set_pool_create_info,
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_DESCRIPTOR_POOL), &vk_pool);
@@ -6482,13 +7335,11 @@ void RenderingDeviceDriverVulkan::command_begin_render_pass(CommandBufferID p_cm
 	CommandBufferInfo* command_buffer = (CommandBufferInfo*)(p_cmd_buffer.id);
 	RenderPassInfo* render_pass = (RenderPassInfo*)(p_render_pass.id);
 	Framebuffer* framebuffer = (Framebuffer*)(p_framebuffer.id);
-	// DUMP(framebuffer);
 
 	ERR_FAIL_NULL(command_buffer);
 	ERR_FAIL_COND(command_buffer->vk_command_buffer == VK_NULL_HANDLE);
 	ERR_FAIL_NULL(render_pass);
 	ERR_FAIL_COND(render_pass->vk_render_pass == VK_NULL_HANDLE);
-	DUMP(framebuffer);
 	ERR_FAIL_NULL(framebuffer);
 	ERR_FAIL_COND(framebuffer->vk_framebuffer == VK_NULL_HANDLE);
 
@@ -6548,8 +7399,8 @@ void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_
 	if (device_functions.EndRenderPass2KHR != nullptr && fdm_capabilities.offset_supported &&
 		command_buffer->active_render_pass->uses_fragment_density_map) {
 		LocalVector<VkOffset2D> fragment_density_offsets;
-		if (VulkanHooks::get_singleton() != nullptr) {
-			VulkanHooks::get_singleton()->get_fragment_density_offsets(
+		if (VulkanHooks::is_bound()) {
+			VulkanHooks::get_fragment_density_offsets(
 				fragment_density_offsets, fdm_capabilities.offset_granularity);
 		}
 		if (fragment_density_offsets.size() > 0) {
@@ -8748,4 +9599,1574 @@ RenderingDeviceDriverVulkan::~RenderingDeviceDriverVulkan()
 	}
 }
 
+#ifdef ARRAY_SIZE
+#undef ARRAY_SIZE
+#endif
+#ifdef VULKAN_RAYTRACING_ENABLED
+#undef VULKAN_RAYTRACING_ENABLED
+#endif
+#ifdef PRINT_NATIVE_COMMANDS
+#undef PRINT_NATIVE_COMMANDS
+#endif
+#ifdef RESPV_ENABLED
+#undef RESPV_ENABLED
+#endif
+#ifdef RESPV_ONLY_INLINE_SHADERS_WITH_SPEC_CONSTANTS
+#undef RESPV_ONLY_INLINE_SHADERS_WITH_SPEC_CONSTANTS
+#endif
+#ifdef RESPV_VERBOSE
+#undef RESPV_VERBOSE
+#endif
+#ifdef RESPV_DONT_REMOVE_DEAD_CODE
+#undef RESPV_DONT_REMOVE_DEAD_CODE
+#endif
+#ifdef RECORD_PIPELINE_STATISTICS
+#undef RECORD_PIPELINE_STATISTICS
+#endif
+#ifdef RECORD_PIPELINE_STATISTICS_PATH
+#undef RECORD_PIPELINE_STATISTICS_PATH
+#endif
+#ifdef VK_DEVICEFEATURE_ENABLE_IF
+#undef VK_DEVICEFEATURE_ENABLE_IF
+#endif
+#ifdef None
+#undef None
+#endif
+#ifdef Status
+#undef Status
+#endif
+#ifdef Bool
+#undef Bool
+#endif
+#ifdef True
+#undef True
+#endif
+#ifdef False
+#undef False
+#endif
+#ifdef CursorShape
+#undef CursorShape
+#endif
+#ifdef KeyPress
+#undef KeyPress
+#endif
+#ifdef KeyRelease
+#undef KeyRelease
+#endif
+#ifdef FocusIn
+#undef FocusIn
+#endif
+#ifdef FocusOut
+#undef FocusOut
+#endif
+#ifdef Expose
+#undef Expose
+#endif
+#ifdef FontChange
+#undef FontChange
+#endif
+#ifdef Unsorted
+#undef Unsorted
+#endif
+#ifdef Always
+#undef Always
+#endif
+#ifdef Above
+#undef Above
+#endif
+#ifdef Below
+#undef Below
+#endif
 
+// ============================================================================
+// Merged from drivers/vulkan/rendering_context_driver_vulkan.cpp
+// ============================================================================
+
+#ifdef VULKAN_ENABLED
+
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "core/version.h"
+
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+#include "rendering_context_driver_vulkan.h"
+
+#ifndef DEV_ENABLED
+#include "core/os/os.h"
+#endif
+
+#include <vk_enum_string_helper.h>
+
+#if defined(VK_TRACK_DRIVER_MEMORY)
+/*************************************************/
+// Driver memory tracking
+/*************************************************/
+// Total driver memory and allocation amount.
+SafeNumeric<size_t> driver_memory_total_memory;
+SafeNumeric<size_t> driver_memory_total_alloc_count;
+// Amount of driver memory for every object type.
+SafeNumeric<size_t>
+	driver_memory_tracker[RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_COUNT]
+						 [RenderingContextDriverVulkan::VK_TRACKED_SYSTEM_ALLOCATION_SCOPE_COUNT];
+// Amount of allocations for every object type.
+SafeNumeric<uint32_t> driver_memory_allocation_count
+	[RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_COUNT]
+	[RenderingContextDriverVulkan::VK_TRACKED_SYSTEM_ALLOCATION_SCOPE_COUNT];
+#endif
+
+#if defined(VK_TRACK_DEVICE_MEMORY)
+/*************************************************/
+// Device memory report
+/*************************************************/
+// Total device memory and allocation amount.
+HashMap<uint64_t, size_t> memory_report_table;
+// Total memory and allocation amount.
+SafeNumeric<uint64_t> memory_report_total_memory;
+SafeNumeric<uint64_t> memory_report_total_alloc_count;
+// Amount of device memory for every object type.
+SafeNumeric<size_t>
+	memory_report_mem_usage[RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_COUNT];
+// Amount of device memory allocations for every object type.
+SafeNumeric<size_t>
+	memory_report_allocation_count[RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_COUNT];
+#endif
+
+const char* RenderingContextDriverVulkan::get_tracked_object_name(uint32_t p_type_index) const
+{
+#if defined(VK_TRACK_DRIVER_MEMORY) || defined(VK_TRACK_DEVICE_MEMORY)
+	static constexpr const char* vkTrackedObjectTypeNames[] = {"UNKNOWN", "INSTANCE",
+		"PHYSICAL_DEVICE", "DEVICE", "QUEUE", "SEMAPHORE", "COMMAND_BUFFER", "FENCE",
+		"DEVICE_MEMORY", "BUFFER", "IMAGE", "EVENT", "QUERY_POOL", "BUFFER_VIEW", "IMAGE_VIEW",
+		"SHADER_MODULE", "PIPELINE_CACHE", "PIPELINE_LAYOUT", "RENDER_PASS", "PIPELINE",
+		"DESCRIPTOR_SET_LAYOUT", "SAMPLER", "DESCRIPTOR_POOL", "DESCRIPTOR_SET", "FRAMEBUFFER",
+		"COMMAND_POOL", "DESCRIPTOR_UPDATE_TEMPLATE_KHR", "SURFACE_KHR", "SWAPCHAIN_KHR",
+		"DEBUG_UTILS_MESSENGER_EXT", "DEBUG_REPORT_CALLBACK_EXT", "ACCELERATION_STRUCTURE",
+		"VMA_BUFFER_OR_IMAGE"};
+
+	return vkTrackedObjectTypeNames[p_type_index];
+#else
+	return "VK_TRACK_*_MEMORY disabled at build time";
+#endif
+}
+
+#if defined(VK_TRACK_DRIVER_MEMORY) || defined(VK_TRACK_DEVICE_MEMORY)
+uint64_t RenderingContextDriverVulkan::get_tracked_object_type_count() const
+{
+	return VK_TRACKED_OBJECT_TYPE_COUNT;
+}
+#endif
+
+#if defined(VK_TRACK_DRIVER_MEMORY) || defined(VK_TRACK_DEVICE_MEMORY)
+RenderingContextDriverVulkan::VkTrackedObjectType vk_object_to_tracked_object(VkObjectType p_type)
+{
+	if (p_type > VK_OBJECT_TYPE_COMMAND_POOL &&
+		p_type != (VkObjectType)RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_VMA) {
+		switch (p_type) {
+		case VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE:
+			return RenderingContextDriverVulkan::VK_TRACKED_OBJECT_DESCRIPTOR_UPDATE_TEMPLATE_KHR;
+		case VK_OBJECT_TYPE_SURFACE_KHR:
+			return RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_SURFACE;
+		case VK_OBJECT_TYPE_SWAPCHAIN_KHR:
+			return RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_SWAPCHAIN;
+		case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT:
+			return RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT;
+		case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT:
+			return RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT;
+		case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
+		case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV:
+			return RenderingContextDriverVulkan::VK_TRACKED_OBJECT_TYPE_ACCELERATION_STRUCTURE;
+		default:
+			_err_print_error(FUNCTION_STR, __FILE__, __LINE__,
+				"Unknown VkObjectType enum value " + itos((uint32_t)p_type) +
+					".Please add it to VkTrackedObjectType, switch statement in "
+					"vk_object_to_tracked_object and get_tracked_object_name.",
+				(int)p_type);
+			return (RenderingContextDriverVulkan::VkTrackedObjectType)VK_OBJECT_TYPE_UNKNOWN;
+		}
+	}
+
+	return (RenderingContextDriverVulkan::VkTrackedObjectType)p_type;
+}
+#endif
+
+#if defined(VK_TRACK_DEVICE_MEMORY)
+uint64_t RenderingContextDriverVulkan::get_device_total_memory() const
+{
+	return memory_report_total_memory.get();
+}
+
+uint64_t RenderingContextDriverVulkan::get_device_allocation_count() const
+{
+	return memory_report_total_alloc_count.get();
+}
+
+uint64_t RenderingContextDriverVulkan::get_device_memory_by_object_type(uint32_t p_type) const
+{
+	return memory_report_mem_usage[p_type].get();
+}
+
+uint64_t RenderingContextDriverVulkan::get_device_allocs_by_object_type(uint32_t p_type) const
+{
+	return memory_report_allocation_count[p_type].get();
+}
+#endif
+
+#if defined(VK_TRACK_DRIVER_MEMORY)
+uint64_t RenderingContextDriverVulkan::get_driver_total_memory() const
+{
+	return driver_memory_total_memory.get();
+}
+
+uint64_t RenderingContextDriverVulkan::get_driver_allocation_count() const
+{
+	return driver_memory_total_alloc_count.get();
+}
+
+uint64_t RenderingContextDriverVulkan::get_driver_memory_by_object_type(uint32_t p_type) const
+{
+	uint64_t ret = 0;
+	for (uint32_t i = 0; i < VK_TRACKED_SYSTEM_ALLOCATION_SCOPE_COUNT; i++) {
+		ret += driver_memory_tracker[p_type][i].get();
+	}
+
+	return ret;
+}
+
+uint64_t RenderingContextDriverVulkan::get_driver_allocs_by_object_type(uint32_t p_type) const
+{
+	uint64_t ret = 0;
+	for (uint32_t i = 0; i < VK_TRACKED_SYSTEM_ALLOCATION_SCOPE_COUNT; i++) {
+		ret += driver_memory_allocation_count[p_type][i].get();
+	}
+
+	return ret;
+}
+#endif
+
+#if defined(VK_TRACK_DEVICE_MEMORY)
+void RenderingContextDriverVulkan::memory_report_callback(
+	const VkDeviceMemoryReportCallbackDataEXT* p_callback_data, void* p_user_data)
+{
+	if (!p_callback_data) {
+		return;
+	}
+	const RenderingContextDriverVulkan::VkTrackedObjectType obj_type =
+		vk_object_to_tracked_object(p_callback_data->objectType);
+	uint64_t obj_id = p_callback_data->memoryObjectId;
+
+	if (p_callback_data->type == VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATE_EXT) {
+		// Realloc, update size
+		if (memory_report_table.has(obj_id)) {
+			memory_report_total_memory.sub(memory_report_table[obj_id]);
+			memory_report_mem_usage[obj_type].sub(memory_report_table[obj_id]);
+
+			memory_report_total_memory.add(p_callback_data->size);
+			memory_report_mem_usage[obj_type].add(p_callback_data->size);
+
+			memory_report_table[p_callback_data->memoryObjectId] = p_callback_data->size;
+		}
+		else {
+			memory_report_table[obj_id] = p_callback_data->size;
+
+			memory_report_total_alloc_count.increment();
+			memory_report_allocation_count[obj_type].increment();
+			memory_report_mem_usage[obj_type].add(p_callback_data->size);
+			memory_report_total_memory.add(p_callback_data->size);
+		}
+	}
+	else if (p_callback_data->type == VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_FREE_EXT) {
+		if (memory_report_table.has(obj_id)) {
+			memory_report_total_alloc_count.decrement();
+			memory_report_allocation_count[obj_type].decrement();
+			memory_report_mem_usage[obj_type].sub(p_callback_data->size);
+			memory_report_total_memory.sub(p_callback_data->size);
+
+			memory_report_table.remove(memory_report_table.find(obj_id));
+		}
+	}
+}
+#endif
+
+VkAllocationCallbacks* RenderingContextDriverVulkan::get_allocation_callbacks(VkObjectType p_type)
+{
+#if !defined(VK_TRACK_DRIVER_MEMORY)
+	return nullptr;
+#else
+	if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
+		return nullptr;
+	}
+
+#ifdef _MSC_VER
+#define LAMBDA_VK_CALL_CONV
+#else
+#define LAMBDA_VK_CALL_CONV VKAPI_PTR
+#endif
+
+	struct TrackedMemHeader
+	{
+		size_t size;
+		VkSystemAllocationScope allocation_scope;
+		VkTrackedObjectType type;
+	};
+
+	VkAllocationCallbacks tracking_callbacks = {
+		// Allocation function
+		nullptr,
+		[](void* p_user_data, size_t size, size_t alignment,
+			VkSystemAllocationScope allocation_scope) LAMBDA_VK_CALL_CONV -> void* {
+			static constexpr size_t tracking_data_size = 32;
+			VkTrackedObjectType type = static_cast<VkTrackedObjectType>(
+				*reinterpret_cast<VkTrackedObjectType*>(p_user_data));
+
+			driver_memory_total_memory.add(size);
+			driver_memory_total_alloc_count.increment();
+			driver_memory_tracker[type][allocation_scope].add(size);
+			driver_memory_allocation_count[type][allocation_scope].increment();
+
+			alignment = MAX(alignment, tracking_data_size);
+
+			uint8_t* ret = reinterpret_cast<uint8_t*>(
+				Memory::alloc_aligned_static(size + alignment, alignment));
+			if (ret == nullptr) {
+				return nullptr;
+			}
+
+			// Track allocation
+			TrackedMemHeader* header = reinterpret_cast<TrackedMemHeader*>(ret);
+			header->size = size;
+			header->allocation_scope = allocation_scope;
+			header->type = type;
+			*reinterpret_cast<size_t*>(ret + alignment - sizeof(size_t)) = alignment;
+
+			// Return first available chunk of memory
+			return ret + alignment;
+		},
+
+		// Reallocation function
+		[](void* p_user_data, void* p_original, size_t size, size_t alignment,
+			VkSystemAllocationScope allocation_scope) LAMBDA_VK_CALL_CONV -> void* {
+			if (p_original == nullptr) {
+				VkObjectType type =
+					static_cast<VkObjectType>(*reinterpret_cast<uint32_t*>(p_user_data));
+				return get_allocation_callbacks(type)->pfnAllocation(
+					p_user_data, size, alignment, allocation_scope);
+			}
+
+			uint8_t* mem = reinterpret_cast<uint8_t*>(p_original);
+			// Retrieve alignment
+			alignment = *reinterpret_cast<size_t*>(mem - sizeof(size_t));
+			// Retrieve allocation data
+			TrackedMemHeader* header = reinterpret_cast<TrackedMemHeader*>(mem - alignment);
+
+			// Update allocation size
+			driver_memory_total_memory.sub(header->size);
+			driver_memory_total_memory.add(size);
+			driver_memory_tracker[header->type][header->allocation_scope].sub(header->size);
+			driver_memory_tracker[header->type][header->allocation_scope].add(size);
+
+			uint8_t* ret = reinterpret_cast<uint8_t*>(Memory::realloc_aligned_static(
+				header, size + alignment, header->size + alignment, alignment));
+			if (ret == nullptr) {
+				return nullptr;
+			}
+			// Update tracker
+			header = reinterpret_cast<TrackedMemHeader*>(ret);
+			header->size = size;
+			return ret + alignment;
+		},
+
+		// Free function
+		[](void* p_user_data, void* p_memory) LAMBDA_VK_CALL_CONV {
+			if (!p_memory) {
+				return;
+			}
+
+			uint8_t* mem = reinterpret_cast<uint8_t*>(p_memory);
+			size_t alignment = *reinterpret_cast<size_t*>(mem - sizeof(size_t));
+			TrackedMemHeader* header = reinterpret_cast<TrackedMemHeader*>(mem - alignment);
+
+			driver_memory_total_alloc_count.decrement();
+			driver_memory_total_memory.sub(header->size);
+			driver_memory_tracker[header->type][header->allocation_scope].sub(header->size);
+			driver_memory_allocation_count[header->type][header->allocation_scope].decrement();
+
+			Memory::free_aligned_static(header);
+		},
+		// Internal allocation / deallocation. We don't track them as they cannot really be
+		// controlled or optimized by the programmer.
+		[](void* p_user_data, size_t size, VkInternalAllocationType allocation_type,
+			VkSystemAllocationScope allocation_scope) LAMBDA_VK_CALL_CONV {},
+		[](void* p_user_data, size_t size, VkInternalAllocationType allocation_type,
+			VkSystemAllocationScope allocation_scope) LAMBDA_VK_CALL_CONV {},
+	};
+
+	// Create a callback per object type
+	static VkAllocationCallbacks object_callbacks[VK_TRACKED_OBJECT_TYPE_COUNT] = {};
+	static uint32_t object_user_data[VK_TRACKED_OBJECT_TYPE_COUNT] = {};
+
+	// Only build the first time
+	if (!object_callbacks[0].pfnAllocation) {
+		for (uint32_t c = 0; c < VK_TRACKED_OBJECT_TYPE_COUNT; ++c) {
+			object_callbacks[c] = tracking_callbacks;
+			object_user_data[c] = c;
+			object_callbacks[c].pUserData = &object_user_data[c];
+
+			for (uint32_t i = 0; i < VK_TRACKED_SYSTEM_ALLOCATION_SCOPE_COUNT; i++) {
+				driver_memory_tracker[c][i].set(0);
+				driver_memory_allocation_count[c][i].set(0);
+			}
+		}
+	}
+
+	uint32_t type_index = vk_object_to_tracked_object(p_type);
+	return &object_callbacks[type_index];
+#endif
+}
+
+RenderingContextDriverVulkan::RenderingContextDriverVulkan()
+{
+	// Empty constructor.
+}
+
+RenderingContextDriverVulkan::~RenderingContextDriverVulkan()
+{
+	if (debug_messenger != VK_NULL_HANDLE && functions.DestroyDebugUtilsMessengerEXT != nullptr) {
+		functions.DestroyDebugUtilsMessengerEXT(instance, debug_messenger,
+			get_allocation_callbacks(VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT));
+	}
+
+	if (debug_report != VK_NULL_HANDLE && functions.DestroyDebugReportCallbackEXT != nullptr) {
+		functions.DestroyDebugReportCallbackEXT(instance, debug_report,
+			get_allocation_callbacks(VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT));
+	}
+
+	if (instance != VK_NULL_HANDLE) {
+		vkDestroyInstance(instance, get_allocation_callbacks(VK_OBJECT_TYPE_INSTANCE));
+	}
+}
+
+Error RenderingContextDriverVulkan::_initialize_vulkan_version()
+{
+	// https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VkApplicationInfo.html#_description
+	// For Vulkan 1.0 vkEnumerateInstanceVersion is not available, including not in the loader we
+	// compile against on Android.
+	typedef VkResult(VKAPI_PTR * _vkEnumerateInstanceVersion)(uint32_t*);
+	_vkEnumerateInstanceVersion func =
+		(_vkEnumerateInstanceVersion)vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
+	if (func != nullptr) {
+		uint32_t api_version;
+		VkResult res = func(&api_version);
+		if (res == VK_SUCCESS) {
+			instance_api_version = api_version;
+		}
+		else {
+			// According to the documentation this shouldn't fail with anything except a memory
+			// allocation error in which case we're in deep trouble anyway.
+			ERR_FAIL_V(ERR_CANT_CREATE);
+		}
+	}
+	else {
+		__print_line("vkEnumerateInstanceVersion not available, assuming Vulkan 1.0.");
+		instance_api_version = VK_API_VERSION_1_0;
+	}
+
+	return OK;
+}
+
+void RenderingContextDriverVulkan::_register_requested_instance_extension(
+	const CharString& p_extension_name, bool p_required)
+{
+	ERR_FAIL_COND(requested_instance_extensions.has(p_extension_name));
+	requested_instance_extensions[p_extension_name] = p_required;
+}
+
+Error RenderingContextDriverVulkan::_initialize_instance_extensions()
+{
+	enabled_instance_extension_names.clear();
+
+	// The surface extension and the platform-specific surface extension are core requirements.
+	_register_requested_instance_extension(VK_KHR_SURFACE_EXTENSION_NAME, true);
+	if (_get_platform_surface_extension()) {
+		_register_requested_instance_extension(_get_platform_surface_extension(), true);
+	}
+
+	if (_use_validation_layers()) {
+		_register_requested_instance_extension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, false);
+	}
+
+	// This extension allows us to use the properties2 features to query additional device
+	// capabilities.
+	_register_requested_instance_extension(
+		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, false);
+
+	// This extension allows us to use colorspaces other than SRGB.
+	_register_requested_instance_extension(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME, false);
+
+#if defined(USE_VOLK) && (defined(MACOS_ENABLED) || defined(IOS_ENABLED))
+	_register_requested_instance_extension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, true);
+#endif
+
+	// Only enable debug utils in verbose mode or DEV_ENABLED.
+	// End users would get spammed with messages of varying verbosity due to the
+	// mess that thirdparty layers/extensions and drivers seem to leave in their
+	// wake, making the Windows registry a bottomless pit of broken layer JSON.
+#ifdef DEV_ENABLED
+	bool want_debug_utils = true;
+#else
+	bool want_debug_utils = OS::is_stdout_verbose();
+#endif
+	if (want_debug_utils) {
+		_register_requested_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, false);
+	}
+
+	// Load instance extensions that are available.
+	uint32_t instance_extension_count = 0;
+	VkResult err =
+		vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, nullptr);
+	ERR_FAIL_COND_V(err != VK_SUCCESS && err != VK_INCOMPLETE, ERR_CANT_CREATE);
+	ERR_FAIL_COND_V_MSG(
+		instance_extension_count == 0, ERR_CANT_CREATE, "No instance extensions were found.");
+
+	TightLocalVector<VkExtensionProperties> instance_extensions;
+	instance_extensions.resize(instance_extension_count);
+	err = vkEnumerateInstanceExtensionProperties(
+		nullptr, &instance_extension_count, instance_extensions.ptr());
+	if (err != VK_SUCCESS && err != VK_INCOMPLETE) {
+		ERR_FAIL_V(ERR_CANT_CREATE);
+	}
+
+#ifdef DEV_ENABLED
+	for (uint32_t i = 0; i < instance_extension_count; i++) {
+		print_verbose(String("Vulkan: Found instance extension ") +
+					  String::utf8(instance_extensions[i].extensionName) + String("."));
+	}
+#endif
+
+	// Enable all extensions that are supported and requested.
+	for (uint32_t i = 0; i < instance_extension_count; i++) {
+		CharString extension_name(instance_extensions[i].extensionName);
+		if (requested_instance_extensions.has(extension_name)) {
+			enabled_instance_extension_names.insert(extension_name);
+		}
+	}
+
+	// Now check our requested extensions.
+	for (KeyValue<CharString, bool>& requested_extension : requested_instance_extensions) {
+		if (!enabled_instance_extension_names.has(requested_extension.key)) {
+			if (requested_extension.value) {
+				ERR_FAIL_V_MSG(ERR_BUG, String("Required Vulkan instance extension ") +
+											String::utf8(requested_extension.key) +
+											String(" not found."));
+			}
+			else {
+				print_verbose(String("Optional Vulkan instance extension ") +
+							  String::utf8(requested_extension.key) + String(" not found."));
+			}
+		}
+	}
+
+	return OK;
+}
+
+Error RenderingContextDriverVulkan::_find_validation_layers(
+	TightLocalVector<const char*>& r_layer_names) const
+{
+	r_layer_names.clear();
+
+	uint32_t instance_layer_count = 0;
+	VkResult err = vkEnumerateInstanceLayerProperties(&instance_layer_count, nullptr);
+	ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+	if (instance_layer_count > 0) {
+		TightLocalVector<VkLayerProperties> layer_properties;
+		layer_properties.resize(instance_layer_count);
+		err = vkEnumerateInstanceLayerProperties(&instance_layer_count, layer_properties.ptr());
+		ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+
+		// Preferred set of validation layers.
+		const std::initializer_list<const char*> preferred = {"VK_LAYER_KHRONOS_validation"};
+
+		// Alternative (deprecated, removed in SDK 1.1.126.0) set of validation layers.
+		const std::initializer_list<const char*> lunarg = {"VK_LAYER_LUNARG_standard_validation"};
+
+		// Alternative (deprecated, removed in SDK 1.1.121.1) set of validation layers.
+		const std::initializer_list<const char*> google = {"VK_LAYER_GOOGLE_threading",
+			"VK_LAYER_LUNARG_parameter_validation", "VK_LAYER_LUNARG_object_tracker",
+			"VK_LAYER_LUNARG_core_validation", "VK_LAYER_GOOGLE_unique_objects"};
+
+		// Verify all the layers of the list are present.
+		for (const std::initializer_list<const char*>& list : {preferred, lunarg, google}) {
+			bool layers_found = false;
+			for (const char* layer_name : list) {
+				layers_found = false;
+
+				for (const VkLayerProperties& properties : layer_properties) {
+					if (!strcmp(properties.layerName, layer_name)) {
+						layers_found = true;
+						break;
+					}
+				}
+
+				if (!layers_found) {
+					break;
+				}
+			}
+
+			if (layers_found) {
+				r_layer_names.reserve(list.size());
+				for (const char* layer_name : list) {
+					r_layer_names.push_back(layer_name);
+				}
+
+				break;
+			}
+		}
+	}
+
+	return OK;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL RenderingContextDriverVulkan::_debug_messenger_callback(
+	VkDebugUtilsMessageSeverityFlagBitsEXT p_message_severity,
+	VkDebugUtilsMessageTypeFlagsEXT p_message_type,
+	const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data)
+{
+	// This error needs to be ignored because the AMD allocator will mix up memory types on IGP
+	// processors.
+	if (strstr(p_callback_data->pMessage, "Mapping an image with layout") != nullptr &&
+		strstr(p_callback_data->pMessage,
+			"can result in undefined behavior if this memory is used by the device") != nullptr) {
+		return VK_FALSE;
+	}
+	// This needs to be ignored because Validator is wrong here.
+	if (strstr(p_callback_data->pMessage, "Invalid SPIR-V binary version 1.3") != nullptr) {
+		return VK_FALSE;
+	}
+	// This needs to be ignored because Validator is wrong here.
+	if (strstr(p_callback_data->pMessage, "Shader requires flag") != nullptr) {
+		return VK_FALSE;
+	}
+
+	// This needs to be ignored because Validator is wrong here.
+	if (strstr(p_callback_data->pMessage, "SPIR-V module not valid: Pointer operand") != nullptr &&
+		strstr(p_callback_data->pMessage, "must be a memory object") != nullptr) {
+		return VK_FALSE;
+	}
+
+	// Suppress warning about incompatible drivers (-9), even though this should arguably be the
+	// loader's responsibility. This was generating noise on Linux when Mesa Dozen is provided.
+	if (strstr(p_callback_data->pMessage,
+			"Received return code -9 from call to vkCreateInstance in ICD") != nullptr &&
+		strstr(p_callback_data->pMessage, "Skipping this driver") != nullptr) {
+		return VK_FALSE;
+	}
+
+	if (p_callback_data->pMessageIdName &&
+		strstr(p_callback_data->pMessageIdName,
+			"UNASSIGNED-CoreValidation-DrawState-ClearCmdBeforeDraw") != nullptr) {
+		return VK_FALSE;
+	}
+
+	String type_string;
+	switch (p_message_type) {
+	case (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT):
+		type_string = "GENERAL";
+		break;
+	case (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT):
+		type_string = "VALIDATION";
+		break;
+	case (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT):
+		type_string = "PERFORMANCE";
+		break;
+	case (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT &
+		  VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT):
+		type_string = "VALIDATION|PERFORMANCE";
+		break;
+	}
+
+	String objects_string;
+	if (p_callback_data->objectCount > 0) {
+		objects_string = "\n\tObjects - " + String::num_int64(p_callback_data->objectCount);
+		for (uint32_t object = 0; object < p_callback_data->objectCount; ++object) {
+			objects_string += "\n\t\tObject[" + String::num_int64(object) + "]" + " - " +
+							  string_VkObjectType(p_callback_data->pObjects[object].objectType) +
+							  ", Handle " +
+							  String::num_int64(p_callback_data->pObjects[object].objectHandle);
+
+			if (p_callback_data->pObjects[object].pObjectName != nullptr &&
+				strlen(p_callback_data->pObjects[object].pObjectName) > 0) {
+				objects_string +=
+					", Name \"" + String(p_callback_data->pObjects[object].pObjectName) + "\"";
+			}
+		}
+	}
+
+	String labels_string;
+	if (p_callback_data->cmdBufLabelCount > 0) {
+		labels_string =
+			"\n\tCommand Buffer Labels - " + String::num_int64(p_callback_data->cmdBufLabelCount);
+		for (uint32_t cmd_buf_label = 0; cmd_buf_label < p_callback_data->cmdBufLabelCount;
+			 ++cmd_buf_label) {
+			labels_string += "\n\t\tLabel[" + String::num_int64(cmd_buf_label) + "]" + " - " +
+							 p_callback_data->pCmdBufLabels[cmd_buf_label].pLabelName + "{ ";
+
+			for (int color_idx = 0; color_idx < 4; ++color_idx) {
+				labels_string +=
+					String::num(p_callback_data->pCmdBufLabels[cmd_buf_label].color[color_idx]);
+				if (color_idx < 3) {
+					labels_string += ", ";
+				}
+			}
+
+			labels_string += " }";
+		}
+	}
+
+	String error_message(type_string + " - Message Id Number: " +
+						 String::num_int64(p_callback_data->messageIdNumber) +
+						 " | Message Id Name: " + p_callback_data->pMessageIdName + "\n\t" +
+						 p_callback_data->pMessage + objects_string + labels_string);
+
+	// Convert VK severity to our own log macros.
+	// Note: Which severity we receive depends on what's set in VkDebugUtilsMessengerCreateInfoEXT,
+	// we don't enable everything by default.
+	switch (p_message_severity) {
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+		print_verbose(error_message);
+		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+		__print_line(error_message);
+		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+		WARN_PRINT(error_message);
+		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+		ERR_PRINT(error_message);
+		CRASH_COND_MSG(Engine::is_abort_on_gpu_errors_enabled(),
+			"Crashing, because abort on GPU errors is enabled.");
+		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
+		break; // Shouldn't happen, only handling to make compilers happy.
+	}
+
+	return VK_FALSE;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL RenderingContextDriverVulkan::_debug_report_callback(
+	VkDebugReportFlagsEXT p_flags, VkDebugReportObjectTypeEXT p_object_type, uint64_t p_object,
+	size_t p_location, int32_t p_message_code, const char* p_layer_prefix, const char* p_message,
+	void* p_user_data)
+{
+	String debug_message =
+		String("Vulkan Debug Report: object - ") + String::num_int64(p_object) + "\n" + p_message;
+
+	switch (p_flags) {
+	case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
+	case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
+		__print_line(debug_message);
+		break;
+	case VK_DEBUG_REPORT_WARNING_BIT_EXT:
+	case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
+		WARN_PRINT(debug_message);
+		break;
+	case VK_DEBUG_REPORT_ERROR_BIT_EXT:
+		ERR_PRINT(debug_message);
+		break;
+	}
+
+	return VK_FALSE;
+}
+
+Error RenderingContextDriverVulkan::_initialize_instance()
+{
+	Error err;
+	TightLocalVector<const char*> enabled_extension_names;
+	enabled_extension_names.reserve(enabled_instance_extension_names.size());
+	for (const CharString& extension_name : enabled_instance_extension_names) {
+		enabled_extension_names.push_back(extension_name.ptr());
+	}
+
+	// We'll set application version to the Vulkan version we're developing against, even if our
+	// instance is based on an older Vulkan version, devices can still support newer versions of
+	// Vulkan. The exception is when we're on Vulkan 1.0, we should not set this to anything
+	// but 1.0. Note that this value is only used by validation layers to warn us about version
+	// issues.
+	uint32_t application_api_version =
+		instance_api_version == VK_API_VERSION_1_0 ? VK_API_VERSION_1_0 : VK_API_VERSION_1_2;
+
+	VkApplicationInfo app_info = {};
+	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	app_info.pEngineName = VLTR_VERSION_NAME;
+	app_info.engineVersion =
+		VK_MAKE_VERSION(VLTR_VERSION_MAJOR, VLTR_VERSION_MINOR, VLTR_VERSION_PATCH);
+	app_info.apiVersion = application_api_version;
+
+	TightLocalVector<const char*> enabled_layer_names;
+	if (_use_validation_layers()) {
+		err = _find_validation_layers(enabled_layer_names);
+		ERR_FAIL_COND_V(err != OK, err);
+	}
+
+	VkInstanceCreateInfo instance_info = {};
+	instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+
+#if defined(USE_VOLK) && (defined(MACOS_ENABLED) || defined(IOS_ENABLED))
+	instance_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
+
+	instance_info.pApplicationInfo = &app_info;
+	instance_info.enabledExtensionCount = enabled_extension_names.size();
+	instance_info.ppEnabledExtensionNames = enabled_extension_names.ptr();
+	instance_info.enabledLayerCount = enabled_layer_names.size();
+	instance_info.ppEnabledLayerNames = enabled_layer_names.ptr();
+
+	// This is info for a temp callback to use during CreateInstance. After the instance is created,
+	// we use the instance-based function to register the final callback.
+	VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info = {};
+	VkDebugReportCallbackCreateInfoEXT debug_report_callback_create_info = {};
+	const bool has_debug_utils_extension =
+		enabled_instance_extension_names.has(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	const bool has_debug_report_extension =
+		enabled_instance_extension_names.has(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	if (has_debug_utils_extension) {
+		debug_messenger_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		debug_messenger_create_info.pNext = nullptr;
+		debug_messenger_create_info.flags = 0;
+		debug_messenger_create_info.messageSeverity =
+			VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+			VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		debug_messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+												  VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+												  VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		debug_messenger_create_info.pfnUserCallback = _debug_messenger_callback;
+		debug_messenger_create_info.pUserData = this;
+		instance_info.pNext = &debug_messenger_create_info;
+	}
+	else if (has_debug_report_extension) {
+		debug_report_callback_create_info.sType =
+			VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+		debug_report_callback_create_info.flags =
+			VK_DEBUG_REPORT_INFORMATION_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT |
+			VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT |
+			VK_DEBUG_REPORT_DEBUG_BIT_EXT;
+		debug_report_callback_create_info.pfnCallback = _debug_report_callback;
+		debug_report_callback_create_info.pUserData = this;
+		instance_info.pNext = &debug_report_callback_create_info;
+	}
+
+	err = _create_vulkan_instance(&instance_info, &instance);
+	ERR_FAIL_COND_V(err != OK, err);
+
+#ifdef USE_VOLK
+	volkLoadInstance(instance);
+#endif
+
+	// Physical device.
+	if (enabled_instance_extension_names.has(
+			VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+		functions.GetPhysicalDeviceFeatures2 = PFN_vkGetPhysicalDeviceFeatures2(
+			vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2"));
+		functions.GetPhysicalDeviceProperties2 = PFN_vkGetPhysicalDeviceProperties2(
+			vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+
+		// In Vulkan 1.0, the functions might be accessible under their original extension names.
+		if (functions.GetPhysicalDeviceFeatures2 == nullptr) {
+			functions.GetPhysicalDeviceFeatures2 = PFN_vkGetPhysicalDeviceFeatures2(
+				vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2KHR"));
+		}
+
+		if (functions.GetPhysicalDeviceProperties2 == nullptr) {
+			functions.GetPhysicalDeviceProperties2 = PFN_vkGetPhysicalDeviceProperties2(
+				vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
+		}
+	}
+
+	// Device.
+	functions.GetDeviceProcAddr =
+		PFN_vkGetDeviceProcAddr(vkGetInstanceProcAddr(instance, "vkGetDeviceProcAddr"));
+
+	// Surfaces.
+	functions.GetPhysicalDeviceSurfaceSupportKHR = PFN_vkGetPhysicalDeviceSurfaceSupportKHR(
+		vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceSupportKHR"));
+	functions.GetPhysicalDeviceSurfaceFormatsKHR = PFN_vkGetPhysicalDeviceSurfaceFormatsKHR(
+		vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceFormatsKHR"));
+	functions.GetPhysicalDeviceSurfaceCapabilitiesKHR =
+		PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+			vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"));
+	functions.GetPhysicalDeviceSurfacePresentModesKHR =
+		PFN_vkGetPhysicalDeviceSurfacePresentModesKHR(
+			vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfacePresentModesKHR"));
+
+	// Debug utils and report.
+	if (has_debug_utils_extension) {
+		// Setup VK_EXT_debug_utils function pointers always (we use them for debug labels and
+		// names).
+		functions.CreateDebugUtilsMessengerEXT =
+			(PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+				instance, "vkCreateDebugUtilsMessengerEXT");
+		functions.DestroyDebugUtilsMessengerEXT =
+			(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+				instance, "vkDestroyDebugUtilsMessengerEXT");
+		functions.CmdBeginDebugUtilsLabelEXT =
+			(PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(
+				instance, "vkCmdBeginDebugUtilsLabelEXT");
+		functions.CmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(
+			instance, "vkCmdEndDebugUtilsLabelEXT");
+		functions.SetDebugUtilsObjectNameEXT =
+			(PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(
+				instance, "vkSetDebugUtilsObjectNameEXT");
+
+		if (!functions.debug_util_functions_available()) {
+			ERR_FAIL_V_MSG(ERR_CANT_CREATE,
+				"GetProcAddr: Failed to init VK_EXT_debug_utils\nGetProcAddr: Failure");
+		}
+
+		VkResult res = functions.CreateDebugUtilsMessengerEXT(instance,
+			&debug_messenger_create_info,
+			get_allocation_callbacks(VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT), &debug_messenger);
+		switch (res) {
+		case VK_SUCCESS:
+			break;
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			ERR_FAIL_V_MSG(ERR_CANT_CREATE, "CreateDebugUtilsMessengerEXT: out of host "
+											"memory\nCreateDebugUtilsMessengerEXT Failure");
+			break;
+		default:
+			ERR_FAIL_V_MSG(ERR_CANT_CREATE, "CreateDebugUtilsMessengerEXT: unknown "
+											"failure\nCreateDebugUtilsMessengerEXT Failure");
+			break;
+		}
+	}
+	else if (has_debug_report_extension) {
+		functions.CreateDebugReportCallbackEXT =
+			(PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
+				instance, "vkCreateDebugReportCallbackEXT");
+		functions.DebugReportMessageEXT =
+			(PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(instance, "vkDebugReportMessageEXT");
+		functions.DestroyDebugReportCallbackEXT =
+			(PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(
+				instance, "vkDestroyDebugReportCallbackEXT");
+
+		if (!functions.debug_report_functions_available()) {
+			ERR_FAIL_V_MSG(ERR_CANT_CREATE,
+				"GetProcAddr: Failed to init VK_EXT_debug_report\nGetProcAddr: Failure");
+		}
+
+		VkResult res =
+			functions.CreateDebugReportCallbackEXT(instance, &debug_report_callback_create_info,
+				get_allocation_callbacks(VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT), &debug_report);
+		switch (res) {
+		case VK_SUCCESS:
+			break;
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			ERR_FAIL_V_MSG(ERR_CANT_CREATE, "CreateDebugReportCallbackEXT: out of host "
+											"memory\nCreateDebugReportCallbackEXT Failure");
+			break;
+		default:
+			ERR_FAIL_V_MSG(ERR_CANT_CREATE, "CreateDebugReportCallbackEXT: unknown "
+											"failure\nCreateDebugReportCallbackEXT Failure");
+			break;
+		}
+	}
+
+	return OK;
+}
+
+Error RenderingContextDriverVulkan::_initialize_devices()
+{
+	if (VulkanHooks::is_bound()) {
+		VkPhysicalDevice physical_device;
+		bool device_retrieved = VulkanHooks::get_physical_device(&physical_device);
+		ERR_FAIL_COND_V(!device_retrieved, ERR_CANT_CREATE);
+
+		// When a hook is active, pretend the device returned by the hook is the only device
+		// available.
+		driver_devices.resize(1);
+		physical_devices.resize(1);
+		device_queue_families.resize(1);
+		physical_devices[0] = physical_device;
+
+	}
+	else {
+		uint32_t physical_device_count = 0;
+		VkResult err = vkEnumeratePhysicalDevices(instance, &physical_device_count, nullptr);
+		ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+		ERR_FAIL_COND_V_MSG(physical_device_count == 0, ERR_CANT_CREATE,
+			"vkEnumeratePhysicalDevices reported zero accessible devices.\n\nDo you have a "
+			"compatible Vulkan installable client driver (ICD) "
+			"installed?\nvkEnumeratePhysicalDevices Failure.");
+
+		driver_devices.resize(physical_device_count);
+		physical_devices.resize(physical_device_count);
+		device_queue_families.resize(physical_device_count);
+		err = vkEnumeratePhysicalDevices(instance, &physical_device_count, physical_devices.ptr());
+		ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+	}
+
+	// Fill the list of driver devices with the properties from the physical devices.
+	for (uint32_t i = 0; i < physical_devices.size(); i++) {
+		VkPhysicalDeviceProperties props;
+		vkGetPhysicalDeviceProperties(physical_devices[i], &props);
+
+		Device& driver_device = driver_devices[i];
+		driver_device.name = String::utf8(props.deviceName);
+		driver_device.vendor = props.vendorID;
+		driver_device.type = DeviceType(props.deviceType);
+
+		uint32_t queue_family_properties_count = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(
+			physical_devices[i], &queue_family_properties_count, nullptr);
+
+		if (queue_family_properties_count > 0) {
+			device_queue_families[i].properties.resize(queue_family_properties_count);
+			vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[i],
+				&queue_family_properties_count, device_queue_families[i].properties.ptr());
+		}
+	}
+
+	return OK;
+}
+
+bool RenderingContextDriverVulkan::_use_validation_layers() const
+{
+	return Engine::is_validation_layers_enabled();
+}
+
+Error RenderingContextDriverVulkan::_create_vulkan_instance(
+	const VkInstanceCreateInfo* p_create_info, VkInstance* r_instance)
+{
+	if (VulkanHooks::is_bound()) {
+		return VulkanHooks::create_vulkan_instance(p_create_info, r_instance)
+				   ? OK
+				   : ERR_CANT_CREATE;
+	}
+	else {
+		VkResult err = vkCreateInstance(
+			p_create_info, get_allocation_callbacks(VK_OBJECT_TYPE_INSTANCE), r_instance);
+		ERR_FAIL_COND_V_MSG(err == VK_ERROR_INCOMPATIBLE_DRIVER, ERR_CANT_CREATE,
+			"Cannot find a compatible Vulkan installable client driver (ICD).\n\n"
+			"vkCreateInstance Failure");
+		ERR_FAIL_COND_V_MSG(err == VK_ERROR_EXTENSION_NOT_PRESENT, ERR_CANT_CREATE,
+			"Cannot find a specified extension library.\n"
+			"Make sure your layers path is set appropriately.\n"
+			"vkCreateInstance Failure");
+		ERR_FAIL_COND_V_MSG(err, ERR_CANT_CREATE,
+			"vkCreateInstance failed.\n\n"
+			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
+			"Please look at the Getting Started guide for additional information.\n"
+			"vkCreateInstance Failure");
+	}
+
+	return OK;
+}
+
+Error RenderingContextDriverVulkan::initialize()
+{
+	Error err;
+
+#ifdef USE_VOLK
+	if (volkInitialize() != VK_SUCCESS) {
+		return FAILED;
+	}
+#endif
+
+	err = _initialize_vulkan_version();
+	ERR_FAIL_COND_V(err != OK, err);
+
+	err = _initialize_instance_extensions();
+	ERR_FAIL_COND_V(err != OK, err);
+
+	err = _initialize_instance();
+	ERR_FAIL_COND_V(err != OK, err);
+
+	err = _initialize_devices();
+	ERR_FAIL_COND_V(err != OK, err);
+
+	return OK;
+}
+
+const RenderingContextDriver::Device& RenderingContextDriverVulkan::device_get(
+	uint32_t p_device_index) const
+{
+	DEV_ASSERT(p_device_index < driver_devices.size());
+	return driver_devices[p_device_index];
+}
+
+uint32_t RenderingContextDriverVulkan::device_get_count() const { return driver_devices.size(); }
+
+bool RenderingContextDriverVulkan::device_supports_present(
+	uint32_t p_device_index, SurfaceID p_surface) const
+{
+	DEV_ASSERT(p_device_index < physical_devices.size());
+
+	// Check if any of the queues supported by the device supports presenting to the window's
+	// surface.
+	const VkPhysicalDevice physical_device = physical_devices[p_device_index];
+	const DeviceQueueFamilies& queue_families = device_queue_families[p_device_index];
+	for (uint32_t i = 0; i < queue_families.properties.size(); i++) {
+		if ((queue_families.properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
+			queue_family_supports_present(physical_device, i, p_surface)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+RenderingDeviceDriver* RenderingContextDriverVulkan::driver_create()
+{
+	return memnew(RenderingDeviceDriverVulkan(this));
+}
+
+void RenderingContextDriverVulkan::driver_free(RenderingDeviceDriver* p_driver)
+{
+	memdelete(p_driver);
+}
+
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkan::surface_create(
+	const void* p_platform_data)
+{
+	DEV_ASSERT(
+		false &&
+		"Surface creation should not be called on the platform-agnostic version of the driver.");
+	return SurfaceID();
+}
+
+void RenderingContextDriverVulkan::surface_set_size(
+	SurfaceID p_surface, uint32_t p_width, uint32_t p_height)
+{
+	Surface* surface = (Surface*)(p_surface);
+	surface->width = p_width;
+	surface->height = p_height;
+	surface->needs_resize = true;
+}
+
+void RenderingContextDriverVulkan::surface_set_vsync_mode(
+	SurfaceID p_surface, DisplayServerEnums::VSyncMode p_vsync_mode)
+{
+	Surface* surface = (Surface*)(p_surface);
+	surface->vsync_mode = p_vsync_mode;
+	surface->needs_resize = true;
+}
+
+DisplayServerEnums::VSyncMode RenderingContextDriverVulkan::surface_get_vsync_mode(
+	SurfaceID p_surface) const
+{
+	Surface* surface = (Surface*)(p_surface);
+	return surface->vsync_mode;
+}
+
+void RenderingContextDriverVulkan::surface_set_hdr_output_enabled(
+	SurfaceID p_surface, bool p_enabled)
+{
+	Surface* surface = (Surface*)(p_surface);
+	surface->hdr_output = p_enabled;
+	surface->needs_resize = true;
+}
+
+bool RenderingContextDriverVulkan::surface_get_hdr_output_enabled(SurfaceID p_surface) const
+{
+	Surface* surface = (Surface*)(p_surface);
+	return surface->hdr_output;
+}
+
+void RenderingContextDriverVulkan::surface_set_hdr_output_reference_luminance(
+	SurfaceID p_surface, float p_reference_luminance)
+{
+	Surface* surface = (Surface*)(p_surface);
+	surface->hdr_reference_luminance = p_reference_luminance;
+}
+
+float RenderingContextDriverVulkan::surface_get_hdr_output_reference_luminance(
+	SurfaceID p_surface) const
+{
+	Surface* surface = (Surface*)(p_surface);
+	return surface->hdr_reference_luminance;
+}
+
+void RenderingContextDriverVulkan::surface_set_hdr_output_max_luminance(
+	SurfaceID p_surface, float p_max_luminance)
+{
+	Surface* surface = (Surface*)(p_surface);
+	surface->hdr_max_luminance = p_max_luminance;
+}
+
+float RenderingContextDriverVulkan::surface_get_hdr_output_max_luminance(SurfaceID p_surface) const
+{
+	Surface* surface = (Surface*)(p_surface);
+	return surface->hdr_max_luminance;
+}
+
+void RenderingContextDriverVulkan::surface_set_hdr_output_linear_luminance_scale(
+	SurfaceID p_surface, float p_linear_luminance_scale)
+{
+	Surface* surface = (Surface*)(p_surface);
+	surface->hdr_linear_luminance_scale = p_linear_luminance_scale;
+}
+
+float RenderingContextDriverVulkan::surface_get_hdr_output_linear_luminance_scale(
+	SurfaceID p_surface) const
+{
+	Surface* surface = (Surface*)(p_surface);
+	return surface->hdr_linear_luminance_scale;
+}
+
+float RenderingContextDriverVulkan::surface_get_hdr_output_max_value(SurfaceID p_surface) const
+{
+	Surface* surface = (Surface*)(p_surface);
+	return MAX(surface->hdr_max_luminance / MAX(surface->hdr_reference_luminance, 1.0f), 1.0f);
+}
+
+uint32_t RenderingContextDriverVulkan::surface_get_width(SurfaceID p_surface) const
+{
+	Surface* surface = (Surface*)(p_surface);
+	return surface->width;
+}
+
+uint32_t RenderingContextDriverVulkan::surface_get_height(SurfaceID p_surface) const
+{
+	Surface* surface = (Surface*)(p_surface);
+	return surface->height;
+}
+
+void RenderingContextDriverVulkan::surface_set_needs_resize(
+	SurfaceID p_surface, bool p_needs_resize)
+{
+	Surface* surface = (Surface*)(p_surface);
+	surface->needs_resize = p_needs_resize;
+}
+
+bool RenderingContextDriverVulkan::surface_get_needs_resize(SurfaceID p_surface) const
+{
+	Surface* surface = (Surface*)(p_surface);
+	return surface->needs_resize;
+}
+
+void RenderingContextDriverVulkan::surface_destroy(SurfaceID p_surface)
+{
+	Surface* surface = (Surface*)(p_surface);
+	vkDestroySurfaceKHR(
+		instance, surface->vk_surface, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR));
+	memdelete(surface);
+}
+
+bool RenderingContextDriverVulkan::is_debug_utils_enabled() const
+{
+	return enabled_instance_extension_names.has(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+}
+
+bool RenderingContextDriverVulkan::is_colorspace_supported() const
+{
+	return enabled_instance_extension_names.has(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
+}
+
+VkInstance RenderingContextDriverVulkan::instance_get() const { return instance; }
+
+VkPhysicalDevice RenderingContextDriverVulkan::physical_device_get(uint32_t p_device_index) const
+{
+	DEV_ASSERT(p_device_index < physical_devices.size());
+	return physical_devices[p_device_index];
+}
+
+uint32_t RenderingContextDriverVulkan::queue_family_get_count(uint32_t p_device_index) const
+{
+	DEV_ASSERT(p_device_index < physical_devices.size());
+	return device_queue_families[p_device_index].properties.size();
+}
+
+VkQueueFamilyProperties RenderingContextDriverVulkan::queue_family_get(
+	uint32_t p_device_index, uint32_t p_queue_family_index) const
+{
+	DEV_ASSERT(p_device_index < physical_devices.size());
+	DEV_ASSERT(p_queue_family_index < queue_family_get_count(p_device_index));
+	return device_queue_families[p_device_index].properties[p_queue_family_index];
+}
+
+bool RenderingContextDriverVulkan::queue_family_supports_present(
+		VkPhysicalDevice p_physical_device, uint32_t p_queue_family_index, SurfaceID p_surface) const
+{
+	DEV_ASSERT(p_physical_device != VK_NULL_HANDLE);
+	DEV_ASSERT(p_surface != 0);
+
+	Surface *surface = (Surface *)(p_surface);
+	VkBool32 present_supported = VK_FALSE;
+	VkResult err = vkGetPhysicalDeviceSurfaceSupportKHR(
+			p_physical_device, p_queue_family_index, surface->vk_surface, &present_supported);
+
+	return (err == VK_SUCCESS) && (present_supported == VK_TRUE);
+}
+
+const RenderingContextDriverVulkan::Functions& RenderingContextDriverVulkan::functions_get() const
+{
+	return functions;
+}
+
+#endif // VULKAN_ENABLED
+
+#ifdef LAMBDA_VK_CALL_CONV
+#undef LAMBDA_VK_CALL_CONV
+#endif
+#ifdef None
+#undef None
+#endif
+#ifdef Status
+#undef Status
+#endif
+#ifdef Bool
+#undef Bool
+#endif
+#ifdef True
+#undef True
+#endif
+#ifdef False
+#undef False
+#endif
+#ifdef CursorShape
+#undef CursorShape
+#endif
+#ifdef KeyPress
+#undef KeyPress
+#endif
+#ifdef KeyRelease
+#undef KeyRelease
+#endif
+#ifdef FocusIn
+#undef FocusIn
+#endif
+#ifdef FocusOut
+#undef FocusOut
+#endif
+#ifdef Expose
+#undef Expose
+#endif
+#ifdef FontChange
+#undef FontChange
+#endif
+#ifdef Unsorted
+#undef Unsorted
+#endif
+#ifdef Always
+#undef Always
+#endif
+#ifdef Above
+#undef Above
+#endif
+#ifdef Below
+#undef Below
+#endif
+
+// ============================================================================
+// Merged from drivers/vulkan/rendering_shader_container_vulkan.cpp
+// ============================================================================
+
+#include <thirdparty/misc/smolv.h>
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+
+// RenderingShaderContainerVulkan
+
+const uint32_t RenderingShaderContainerVulkan::FORMAT_VERSION = 1;
+
+uint32_t RenderingShaderContainerVulkan::_format() const { return 0x43565053; }
+
+uint32_t RenderingShaderContainerVulkan::_format_version() const { return FORMAT_VERSION; }
+
+bool RenderingShaderContainerVulkan::_set_code_from_spirv(const ReflectShader& p_shader)
+{
+	const LocalVector<ReflectShaderStage>& p_spirv = p_shader.shader_stages;
+
+	PackedByteArray code_bytes;
+	shaders.resize(p_spirv.size());
+	for (uint64_t i = 0; i < p_spirv.size(); i++) {
+		RenderingShaderContainer::Shader& shader = shaders.ptrw()[i];
+		if (debug_info_enabled) {
+			// Store SPIR-V as is when debug info is required.
+			shader.code_compressed_bytes = p_spirv[i].spirv_data();
+			shader.code_compression_flags = 0;
+			shader.code_decompressed_size = 0;
+		}
+		else {
+			// Encode into smolv.
+			Span<uint8_t> spirv = p_spirv[i].spirv().reinterpret<uint8_t>();
+			smolv::ByteArray smolv_bytes;
+			bool smolv_encoded = smolv::Encode(
+				spirv.ptr(), spirv.size(), smolv_bytes, smolv::kEncodeFlagStripDebugInfo);
+			ERR_FAIL_COND_V_MSG(!smolv_encoded, false, "Failed to compress SPIR-V into smolv.");
+
+			code_bytes.resize(smolv_bytes.size());
+			memcpy(code_bytes.ptrw(), smolv_bytes.data(), code_bytes.size());
+
+			// Compress.
+			uint32_t compressed_size = 0;
+			shader.code_decompressed_size = code_bytes.size();
+			shader.code_compressed_bytes.resize(code_bytes.size());
+
+			bool compressed = compress_code(code_bytes.ptr(), code_bytes.size(),
+				shader.code_compressed_bytes.ptrw(), &compressed_size,
+				&shader.code_compression_flags);
+			ERR_FAIL_COND_V_MSG(!compressed, false,
+				vformat("Failed to compress native code to native for SPIR-V #%d.", i));
+
+			shader.code_compressed_bytes.resize(compressed_size);
+
+			// Indicate it uses smolv for compression.
+			shader.code_compression_flags |= COMPRESSION_FLAG_SMOLV;
+		}
+
+		shader.shader_stage = p_spirv[i].shader_stage;
+	}
+
+	return true;
+}
+
+RenderingShaderContainerVulkan::RenderingShaderContainerVulkan(bool p_debug_info_enabled)
+{
+	debug_info_enabled = p_debug_info_enabled;
+}
+
+// RenderingShaderContainerFormatVulkan
+
+Ref<RenderingShaderContainer> RenderingShaderContainerFormatVulkan::create_container() const
+{
+	return memnew(RenderingShaderContainerVulkan(debug_info_enabled));
+}
+
+RenderingDeviceCommons::ShaderLanguageVersion
+RenderingShaderContainerFormatVulkan::get_shader_language_version() const
+{
+	return RDC::SHADER_LANGUAGE_VULKAN_VERSION_1_1;
+}
+
+RenderingDeviceCommons::ShaderSpirvVersion
+RenderingShaderContainerFormatVulkan::get_shader_spirv_version() const
+{
+	return RDC::SHADER_SPIRV_VERSION_1_4;
+}
+
+void RenderingShaderContainerFormatVulkan::set_debug_info_enabled(bool p_debug_info_enabled)
+{
+	debug_info_enabled = p_debug_info_enabled;
+}
+
+bool RenderingShaderContainerFormatVulkan::get_debug_info_enabled() const
+{
+	return debug_info_enabled;
+}
+
+RenderingShaderContainerFormatVulkan::RenderingShaderContainerFormatVulkan() {}
+
+RenderingShaderContainerFormatVulkan::~RenderingShaderContainerFormatVulkan() {}
+
+#ifdef None
+#undef None
+#endif
+#ifdef Status
+#undef Status
+#endif
+#ifdef Bool
+#undef Bool
+#endif
+#ifdef True
+#undef True
+#endif
+#ifdef False
+#undef False
+#endif
+#ifdef CursorShape
+#undef CursorShape
+#endif
+#ifdef KeyPress
+#undef KeyPress
+#endif
+#ifdef KeyRelease
+#undef KeyRelease
+#endif
+#ifdef FocusIn
+#undef FocusIn
+#endif
+#ifdef FocusOut
+#undef FocusOut
+#endif
+#ifdef Expose
+#undef Expose
+#endif
+#ifdef FontChange
+#undef FontChange
+#endif
+#ifdef Unsorted
+#undef Unsorted
+#endif
+#ifdef Always
+#undef Always
+#endif
+#ifdef Above
+#undef Above
+#endif
+#ifdef Below
+#undef Below
+#endif
+
+// ============================================================================
+// Merged from drivers/vulkan/vulkan_hooks.cpp
+// ============================================================================
+
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+
+void VulkanHooks::reset()
+{
+	create_vulkan_instance = &_default_create_vulkan_instance;
+	get_physical_device = &_default_get_physical_device;
+	create_vulkan_device = &_default_create_vulkan_device;
+	set_direct_queue_family_and_index = &_default_set_direct_queue_family_and_index;
+	use_fragment_density_offsets = &_default_use_fragment_density_offsets;
+	get_fragment_density_offsets = &_default_get_fragment_density_offsets;
+	use_subsampled_images = &_default_use_subsampled_images;
+	_is_bound = false;
+}
+
+#ifdef None
+#undef None
+#endif
+#ifdef Status
+#undef Status
+#endif
+#ifdef Bool
+#undef Bool
+#endif
+#ifdef True
+#undef True
+#endif
+#ifdef False
+#undef False
+#endif
+#ifdef CursorShape
+#undef CursorShape
+#endif
+#ifdef KeyPress
+#undef KeyPress
+#endif
+#ifdef KeyRelease
+#undef KeyRelease
+#endif
+#ifdef FocusIn
+#undef FocusIn
+#endif
+#ifdef FocusOut
+#undef FocusOut
+#endif
+#ifdef Expose
+#undef Expose
+#endif
+#ifdef FontChange
+#undef FontChange
+#endif
+#ifdef Unsorted
+#undef Unsorted
+#endif
+#ifdef Always
+#undef Always
+#endif
+#ifdef Above
+#undef Above
+#endif
+#ifdef Below
+#undef Below
+#endif

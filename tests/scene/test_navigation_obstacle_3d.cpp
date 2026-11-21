@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_navigation_obstacle_3d)
 
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
-#include "scene/3d/navigation/navigation_obstacle_3d.h"
+#include "scene/3d/navigation/navigation_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 
@@ -52,7 +52,7 @@ TEST_SUITE("[Navigation3D]") {
 
 	TEST_CASE("[SceneTree][NavigationObstacle3D] New obstacle should attach to default map") {
 		Node3D *node_3d = memnew(Node3D);
-		SceneTree::get_singleton()->get_root()->add_child(node_3d);
+		SceneTree::get_root()->add_child(node_3d);
 
 		NavigationObstacle3D *obstacle_node = memnew(NavigationObstacle3D);
 		// obstacle should not be attached to any map when outside of tree

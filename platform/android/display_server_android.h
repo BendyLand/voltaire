@@ -34,14 +34,13 @@
 #include "servers/display/display_server.h"
 
 class InputEvent;
-class NativeMenu;
 
 #if defined(RD_ENABLED)
 class RenderingContextDriver;
 class RenderingDevice;
 #endif
 
-class DisplayServerAndroid : public DisplayServer {
+class DisplayServerAndroid : public DisplayServerDriver {
 
 	String rendering_driver;
 
@@ -81,7 +80,6 @@ class DisplayServerAndroid : public DisplayServer {
 #if defined(RD_ENABLED)
 	RenderingDevice *rendering_device = nullptr;
 #endif
-	NativeMenu *native_menu = nullptr;
 
 	ObjectID window_attached_instance_id;
 
@@ -104,8 +102,6 @@ class DisplayServerAndroid : public DisplayServer {
 	static void _dispatch_input_events(const Ref<InputEvent> &p_event);
 
 public:
-	static DisplayServerAndroid *get_singleton();
-
 	virtual bool has_feature(DisplayServerEnums::Feature p_feature) const override;
 	virtual String get_name() const override;
 
@@ -244,7 +240,7 @@ public:
 	virtual void mouse_set_mode_override_enabled(bool p_override_enabled) override;
 	virtual bool mouse_is_mode_override_enabled() const override;
 
-	static DisplayServer *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
 	static Vector<String> get_rendering_drivers_func();
 	static void register_android_driver();
 

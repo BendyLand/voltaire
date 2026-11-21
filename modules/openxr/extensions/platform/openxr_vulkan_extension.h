@@ -31,51 +31,47 @@
 
 #pragma once
 
-#include "../../util.h"
+#include "../../openxr_api.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
-#include "drivers/vulkan/vulkan_hooks.h"
 
 // Always include this as late as possible.
 #include "../../openxr_platform_inc.h" // IWYU pragma: keep.
 
-class OpenXRVulkanExtension : VulkanHooks
+class OpenXRVulkanExtension final
 {
 public:
-	OpenXRVulkanExtension() = default;
-	virtual ~OpenXRVulkanExtension() override = default;
 
-	virtual HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
 
-	virtual void on_instance_created(const XrInstance p_instance);
-	virtual void* set_session_create_and_get_next_pointer(void* p_next_pointer);
+	static void on_instance_created(const XrInstance p_instance);
+	static void* set_session_create_and_get_next_pointer(void* p_next_pointer);
 
-	virtual bool create_vulkan_instance(
-		const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance) override final;
-	virtual bool get_physical_device(VkPhysicalDevice* r_device) override final;
-	virtual bool create_vulkan_device(
-		const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device) override final;
-	virtual void set_direct_queue_family_and_index(
-		uint32_t p_queue_family_index, uint32_t p_queue_index) override final;
-	virtual bool use_subsampled_images() override final;
-	virtual bool use_fragment_density_offsets() override final;
-	virtual void get_fragment_density_offsets(
-		LocalVector<VkOffset2D>& r_offets, const Vector2i& p_granularity) override final;
+	static bool create_vulkan_instance(
+		const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance);
+	static bool get_physical_device(VkPhysicalDevice* r_device);
+	static bool create_vulkan_device(
+		const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device);
+	static void set_direct_queue_family_and_index(
+		uint32_t p_queue_family_index, uint32_t p_queue_index);
+	static bool use_subsampled_images();
+	static bool use_fragment_density_offsets();
+	static void get_fragment_density_offsets(
+		LocalVector<VkOffset2D>& r_offets, const Vector2i& p_granularity);
 
-	virtual void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
-	virtual void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
-	virtual String get_swapchain_format_name(int64_t p_swapchain_format) const;
-	virtual bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format,
+	static void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
+	static void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
+	static String get_swapchain_format_name(int64_t p_swapchain_format);
+	static bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format,
 		uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size,
 		void** r_swapchain_graphics_data);
-	virtual void cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data);
-	virtual bool create_projection_fov(
+	static void cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data);
+	static bool create_projection_fov(
 		const XrFovf p_fov, double p_z_near, double p_z_far, Projection& r_camera_matrix);
-	virtual RID get_texture(void* p_swapchain_graphics_data, int p_image_index);
-	virtual RID get_density_map(void* p_swapchain_graphics_data, int p_image_index);
+	static RID get_texture(void* p_swapchain_graphics_data, int p_image_index);
+	static RID get_density_map(void* p_swapchain_graphics_data, int p_image_index);
 
 private:
-	static OpenXRVulkanExtension* singleton;
 	static XrGraphicsBindingVulkanKHR
 		graphics_binding_vulkan; // declaring this as static so we don't need to know its size and
 								 // we only need it once when creating our session
@@ -87,13 +83,7 @@ private:
 		Vector<RID> density_map_rids;
 	};
 
-	bool check_graphics_api_support(XrVersion p_desired_version);
-
-	VkInstance vulkan_instance = nullptr;
-	VkPhysicalDevice vulkan_physical_device = nullptr;
-	VkDevice vulkan_device = nullptr;
-	uint32_t vulkan_queue_family_index = UINT32_MAX;
-	uint32_t vulkan_queue_index = UINT32_MAX;
+	static bool check_graphics_api_support(XrVersion p_desired_version);
 
 	EXT_PROTO_XRRESULT_FUNC3(xrGetVulkanGraphicsRequirements2KHR, (XrInstance), p_instance,
 		(XrSystemId), p_system_id, (XrGraphicsRequirementsVulkanKHR*), p_graphics_requirements)
@@ -109,6 +99,27 @@ private:
 	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSwapchainImages, (XrSwapchain), p_swapchain, (uint32_t),
 		p_image_capacity_input, (uint32_t*), p_image_count_output, (XrSwapchainImageBaseHeader*),
 		p_images)
+
+public:
+	struct Data
+	{
+		VkInstance vulkan_instance = nullptr;
+		VkPhysicalDevice vulkan_physical_device = nullptr;
+		VkDevice vulkan_device = nullptr;
+		uint32_t vulkan_queue_family_index = UINT32_MAX;
+		uint32_t vulkan_queue_index = UINT32_MAX;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRVulkanExtension() = delete;
+	OpenXRVulkanExtension(const OpenXRVulkanExtension&) = delete;
+	OpenXRVulkanExtension& operator=(const OpenXRVulkanExtension&) = delete;
+	~OpenXRVulkanExtension() = delete;
 };
 
 

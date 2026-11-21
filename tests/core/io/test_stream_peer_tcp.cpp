@@ -34,7 +34,7 @@
 TEST_FORCE_LINK(test_stream_peer_tcp)
 
 #include "core/io/net_socket.h"
-#include "core/io/stream_peer_tcp.h"
+#include "core/io/stream_peer_socket.h"
 
 namespace TestStreamPeerTCP {
 
@@ -214,7 +214,7 @@ MockNetSocket::~MockNetSocket() {}
 TEST_CASE("[StreamPeerTCP] Basics") {
 	Ref<MockNetSocket> ns;
 	ns.instantiate();
-	Ref<StreamPeerTCP> spt;
+	Ref<StreamPeerSocket> spt;
 	spt.instantiate();
 	NetSocket::Address peer_ip = NetSocket::Address(IPAddress("127.0.1.1"), 5678);
 	spt->accept_socket(ns, peer_ip);
@@ -249,7 +249,7 @@ TEST_CASE("[StreamPeerTCP] Basics") {
 TEST_CASE("[StreamPeerTCP] Poll") {
 	Ref<MockNetSocket> ns;
 	ns.instantiate();
-	Ref<StreamPeerTCP> spt;
+	Ref<StreamPeerSocket> spt;
 	spt.instantiate();
 	IPAddress peer_ip = IPAddress("127.2.2.2");
 	int peer_port = 45878;
@@ -263,7 +263,7 @@ TEST_CASE("[StreamPeerTCP] Poll") {
 	SUBCASE("Unconnected status causes connect_to_host") {
 		Error poll_ret = spt->poll();
 		REQUIRE(poll_ret == OK);
-		REQUIRE(spt->get_status() == StreamPeerTCP::STATUS_CONNECTED);
+		REQUIRE(spt->get_status() == StreamPeerSocket::STATUS_CONNECTED);
 		REQUIRE(ns->is_open() == true);
 	}
 
@@ -279,7 +279,7 @@ TEST_CASE("[StreamPeerTCP] Poll") {
 TEST_CASE("[StreamPeerTCP] Data") {
 	Ref<MockNetSocket> ns;
 	ns.instantiate();
-	Ref<StreamPeerTCP> spt;
+	Ref<StreamPeerSocket> spt;
 	spt.instantiate();
 	IPAddress peer_ip = IPAddress("127.5.4.3");
 	int peer_port = 8908;

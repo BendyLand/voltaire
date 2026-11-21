@@ -135,7 +135,7 @@ TEST_CASE("[SceneTree][Camera3D] Position queries") {
 	SubViewport *mock_viewport = memnew(SubViewport);
 	// 4:2.
 	mock_viewport->set_size(Vector2(400, 200));
-	SceneTree::get_singleton()->get_root()->add_child(mock_viewport);
+	SceneTree::get_root()->add_child(mock_viewport);
 	mock_viewport->add_child(test_camera);
 	test_camera->set_keep_aspect_mode(Camera3D::KeepAspect::KEEP_WIDTH);
 	REQUIRE_MESSAGE(test_camera->is_current(), "Camera3D should be made current upon entering tree.");
@@ -222,7 +222,7 @@ TEST_CASE("[SceneTree][Camera3D] Project/Unproject position") {
 	SubViewport *mock_viewport = memnew(SubViewport);
 	// 4:2.
 	mock_viewport->set_size(Vector2(400, 200));
-	SceneTree::get_singleton()->get_root()->add_child(mock_viewport);
+	SceneTree::get_root()->add_child(mock_viewport);
 	mock_viewport->add_child(test_camera);
 	test_camera->set_global_position(Vector3(0, 0, 0));
 	test_camera->set_global_rotation(Vector3(0, 0, 0));
@@ -295,7 +295,7 @@ TEST_CASE("[SceneTree][Camera3D] Project ray") {
 	SubViewport *mock_viewport = memnew(SubViewport);
 	// 4:2.
 	mock_viewport->set_size(Vector2(400, 200));
-	SceneTree::get_singleton()->get_root()->add_child(mock_viewport);
+	SceneTree::get_root()->add_child(mock_viewport);
 	mock_viewport->add_child(test_camera);
 	test_camera->set_global_position(Vector3(0, 0, 0));
 	test_camera->set_global_rotation(Vector3(0, 0, 0));

@@ -33,9 +33,8 @@
 
 TEST_FORCE_LINK(test_tcp_server)
 
-#include "core/config/project_settings.h"
-#include "core/io/stream_peer_tcp.h"
-#include "core/io/tcp_server.h"
+#include "core/io/socket_server.h"
+#include "core/io/stream_peer_socket.h"
 #include "core/os/os.h"
 
 #include <functional>
@@ -54,8 +53,8 @@ void wait_for_condition(std::function<bool()> f_test) {
 	}
 }
 
-Ref<TCPServer> create_server(const IPAddress &p_address, int p_port) {
-	Ref<TCPServer> server;
+Ref<SocketServer> create_server(const IPAddress &p_address, int p_port) {
+	Ref<SocketServer> server;
 	server.instantiate();
 
 	REQUIRE_EQ(server->listen(PORT, LOCALHOST), Error::OK);
@@ -65,34 +64,34 @@ Ref<TCPServer> create_server(const IPAddress &p_address, int p_port) {
 	return server;
 }
 
-Ref<StreamPeerTCP> create_client(const IPAddress &p_address, int p_port) {
-	Ref<StreamPeerTCP> client;
+Ref<StreamPeerSocket> create_client(const IPAddress &p_address, int p_port) {
+	Ref<StreamPeerSocket> client;
 	client.instantiate();
 
 	REQUIRE_EQ(client->connect_to_host(LOCALHOST, PORT), Error::OK);
 	CHECK_EQ(client->get_connected_host(), LOCALHOST);
 	CHECK_EQ(client->get_connected_port(), PORT);
-	CHECK_EQ(client->get_status(), StreamPeerTCP::STATUS_CONNECTING);
+	CHECK_EQ(client->get_status(), StreamPeerSocket::STATUS_CONNECTING);
 
 	return client;
 }
 
-Ref<StreamPeerTCP> accept_connection(Ref<TCPServer> &p_server) {
+Ref<StreamPeerSocket> accept_connection(Ref<SocketServer> &p_server) {
 	wait_for_condition([&]() {
 		return p_server->is_connection_available();
 	});
 
 	REQUIRE(p_server->is_connection_available());
-	Ref<StreamPeerTCP> client_from_server = p_server->take_connection();
+	Ref<StreamPeerSocket> client_from_server = p_server->take_connection();
 	REQUIRE(client_from_server.is_valid());
 	CHECK_EQ(client_from_server->get_connected_host(), LOCALHOST);
-	CHECK_EQ(client_from_server->get_status(), StreamPeerTCP::STATUS_CONNECTED);
+	CHECK_EQ(client_from_server->get_status(), StreamPeerSocket::STATUS_CONNECTED);
 
 	return client_from_server;
 }
 
 TEST_CASE("[TCPServer] Instantiation") {
-	Ref<TCPServer> server;
+	Ref<SocketServer> server;
 	server.instantiate();
 
 	REQUIRE(server.is_valid());
@@ -100,15 +99,15 @@ TEST_CASE("[TCPServer] Instantiation") {
 }
 
 TEST_CASE("[TCPServer] Accept a connection and receive/send data") {
-	Ref<TCPServer> server = create_server(LOCALHOST, PORT);
-	Ref<StreamPeerTCP> client = create_client(LOCALHOST, PORT);
-	Ref<StreamPeerTCP> client_from_server = accept_connection(server);
+	Ref<SocketServer> server = create_server(LOCALHOST, PORT);
+	Ref<StreamPeerSocket> client = create_client(LOCALHOST, PORT);
+	Ref<StreamPeerSocket> client_from_server = accept_connection(server);
 
 	wait_for_condition([&]() {
-		return client->poll() != Error::OK || client->get_status() == StreamPeerTCP::STATUS_CONNECTED;
+		return client->poll() != Error::OK || client->get_status() == StreamPeerSocket::STATUS_CONNECTED;
 	});
 
-	CHECK_EQ(client->get_status(), StreamPeerTCP::STATUS_CONNECTED);
+	CHECK_EQ(client->get_status(), StreamPeerSocket::STATUS_CONNECTED);
 
 	// Sending data from client to server.
 	const String hello_world = "Hello World!";
@@ -126,37 +125,37 @@ TEST_CASE("[TCPServer] Accept a connection and receive/send data") {
 }
 
 TEST_CASE("[TCPServer] Handle multiple clients at the same time") {
-	Ref<TCPServer> server = create_server(LOCALHOST, PORT);
+	Ref<SocketServer> server = create_server(LOCALHOST, PORT);
 
-	Vector<Ref<StreamPeerTCP>> clients;
+	Vector<Ref<StreamPeerSocket>> clients;
 	for (int i = 0; i < 5; i++) {
 		clients.push_back(create_client(LOCALHOST, PORT));
 	}
 
-	Vector<Ref<StreamPeerTCP>> clients_from_server;
+	Vector<Ref<StreamPeerSocket>> clients_from_server;
 	for (int i = 0; i < clients.size(); i++) {
 		clients_from_server.push_back(accept_connection(server));
 	}
 
 	wait_for_condition([&]() {
 		bool should_exit = true;
-		for (Ref<StreamPeerTCP> &c : clients) {
+		for (Ref<StreamPeerSocket> &c : clients) {
 			if (c->poll() != Error::OK) {
 				return true;
 			}
-			StreamPeerTCP::Status status = c->get_status();
-			if (status != StreamPeerTCP::STATUS_CONNECTED && status != StreamPeerTCP::STATUS_CONNECTING) {
+			StreamPeerSocket::Status status = c->get_status();
+			if (status != StreamPeerSocket::STATUS_CONNECTED && status != StreamPeerSocket::STATUS_CONNECTING) {
 				return true;
 			}
-			if (status != StreamPeerTCP::STATUS_CONNECTED) {
+			if (status != StreamPeerSocket::STATUS_CONNECTED) {
 				should_exit = false;
 			}
 		}
 		return should_exit;
 	});
 
-	for (Ref<StreamPeerTCP> &c : clients) {
-		REQUIRE_EQ(c->get_status(), StreamPeerTCP::STATUS_CONNECTED);
+	for (Ref<StreamPeerSocket> &c : clients) {
+		REQUIRE_EQ(c->get_status(), StreamPeerSocket::STATUS_CONNECTED);
 	}
 
 	// Sending data from each client to server.
@@ -166,22 +165,22 @@ TEST_CASE("[TCPServer] Handle multiple clients at the same time") {
 		CHECK_EQ(clients_from_server[i]->get_string(), hello_client);
 	}
 
-	for (Ref<StreamPeerTCP> &c : clients) {
+	for (Ref<StreamPeerSocket> &c : clients) {
 		c->disconnect_from_host();
 	}
 	server->stop();
 }
 
 TEST_CASE("[TCPServer] When stopped shouldn't accept new connections") {
-	Ref<TCPServer> server = create_server(LOCALHOST, PORT);
-	Ref<StreamPeerTCP> client = create_client(LOCALHOST, PORT);
-	Ref<StreamPeerTCP> client_from_server = accept_connection(server);
+	Ref<SocketServer> server = create_server(LOCALHOST, PORT);
+	Ref<StreamPeerSocket> client = create_client(LOCALHOST, PORT);
+	Ref<StreamPeerSocket> client_from_server = accept_connection(server);
 
 	wait_for_condition([&]() {
-		return client->poll() != Error::OK || client->get_status() == StreamPeerTCP::STATUS_CONNECTED;
+		return client->poll() != Error::OK || client->get_status() == StreamPeerSocket::STATUS_CONNECTED;
 	});
 
-	CHECK_EQ(client->get_status(), StreamPeerTCP::STATUS_CONNECTED);
+	CHECK_EQ(client->get_status(), StreamPeerSocket::STATUS_CONNECTED);
 
 	// Sending data from client to server.
 	const String hello_world = "Hello World!";
@@ -192,38 +191,31 @@ TEST_CASE("[TCPServer] When stopped shouldn't accept new connections") {
 	server->stop();
 	CHECK_FALSE(server->is_listening());
 
-	// Make sure the client times out in less than the wait time.
-	int timeout = ProjectSettings::get_setting("network/limits/tcp/connect_timeout_seconds");
-	ProjectSettings::set_setting("network/limits/tcp/connect_timeout_seconds", 1);
-
-	Ref<StreamPeerTCP> new_client = create_client(LOCALHOST, PORT);
-
-	// Reset the timeout setting.
-	ProjectSettings::set_setting("network/limits/tcp/connect_timeout_seconds", timeout);
+	Ref<StreamPeerSocket> new_client = create_client(LOCALHOST, PORT);
 
 	CHECK_FALSE(server->is_connection_available());
 
 	wait_for_condition([&]() {
-		return new_client->poll() != Error::OK || new_client->get_status() == StreamPeerTCP::STATUS_ERROR;
+		return new_client->poll() != Error::OK || new_client->get_status() == StreamPeerSocket::STATUS_ERROR;
 	});
 
 	CHECK_FALSE(server->is_connection_available());
 
-	CHECK_EQ(new_client->get_status(), StreamPeerTCP::STATUS_ERROR);
+	CHECK_EQ(new_client->get_status(), StreamPeerSocket::STATUS_ERROR);
 	new_client->disconnect_from_host();
-	CHECK_EQ(new_client->get_status(), StreamPeerTCP::STATUS_NONE);
+	CHECK_EQ(new_client->get_status(), StreamPeerSocket::STATUS_NONE);
 }
 
 TEST_CASE("[TCPServer] Should disconnect client") {
-	Ref<TCPServer> server = create_server(LOCALHOST, PORT);
-	Ref<StreamPeerTCP> client = create_client(LOCALHOST, PORT);
-	Ref<StreamPeerTCP> client_from_server = accept_connection(server);
+	Ref<SocketServer> server = create_server(LOCALHOST, PORT);
+	Ref<StreamPeerSocket> client = create_client(LOCALHOST, PORT);
+	Ref<StreamPeerSocket> client_from_server = accept_connection(server);
 
 	wait_for_condition([&]() {
-		return client->poll() != Error::OK || client->get_status() == StreamPeerTCP::STATUS_CONNECTED;
+		return client->poll() != Error::OK || client->get_status() == StreamPeerSocket::STATUS_CONNECTED;
 	});
 
-	CHECK_EQ(client->get_status(), StreamPeerTCP::STATUS_CONNECTED);
+	CHECK_EQ(client->get_status(), StreamPeerSocket::STATUS_CONNECTED);
 
 	// Sending data from client to server.
 	const String hello_world = "Hello World!";
@@ -236,16 +228,16 @@ TEST_CASE("[TCPServer] Should disconnect client") {
 
 	// Wait for disconnection
 	wait_for_condition([&]() {
-		return client->poll() != Error::OK || client->get_status() == StreamPeerTCP::STATUS_NONE;
+		return client->poll() != Error::OK || client->get_status() == StreamPeerSocket::STATUS_NONE;
 	});
 
 	// Wait for disconnection
 	wait_for_condition([&]() {
-		return client_from_server->poll() != Error::OK || client_from_server->get_status() == StreamPeerTCP::STATUS_NONE;
+		return client_from_server->poll() != Error::OK || client_from_server->get_status() == StreamPeerSocket::STATUS_NONE;
 	});
 
-	CHECK_EQ(client->get_status(), StreamPeerTCP::STATUS_NONE);
-	CHECK_EQ(client_from_server->get_status(), StreamPeerTCP::STATUS_NONE);
+	CHECK_EQ(client->get_status(), StreamPeerSocket::STATUS_NONE);
+	CHECK_EQ(client_from_server->get_status(), StreamPeerSocket::STATUS_NONE);
 
 	ERR_PRINT_OFF;
 	CHECK_EQ(client->get_string(), String());

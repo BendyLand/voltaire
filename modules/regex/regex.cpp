@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "core/os/memory.h"
-#include "regex.compat.inc"
+#include "register_types.h"
 #include "regex.h"
 
 extern "C"
@@ -333,5 +333,33 @@ RegEx::~RegEx()
 	pcre2_general_context_free_32((pcre2_general_context_32*)general_ctx);
 }
 
+#ifndef DISABLE_DEPRECATED
 
 
+Ref<RegEx> RegEx::_create_from_string_bind_compat_95212(const String& p_pattern)
+{
+	return create_from_string(p_pattern, true);
+}
+
+Error RegEx::_compile_bind_compat_95212(const String& p_pattern)
+{
+	return compile(p_pattern, true);
+}
+
+void RegEx::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
+
+void initialize_regex_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+
+void uninitialize_regex_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}

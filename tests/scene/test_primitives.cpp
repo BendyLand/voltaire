@@ -40,7 +40,8 @@ TEST_FORCE_LINK(test_primitives)
 namespace TestPrimitives {
 
 TEST_CASE("[SceneTree][Primitive][Capsule] Capsule Primitive") {
-	Ref<CapsuleMesh> capsule = memnew(CapsuleMesh);
+	Ref<PrimitiveMesh> capsule = memnew(PrimitiveMesh(PrimitiveMesh::MESH_CAPSULE));
+	CHECK(capsule->get_mesh_type() == PrimitiveMesh::MESH_CAPSULE);
 
 	SUBCASE("[SceneTree][Primitive][Capsule] Default values should be valid") {
 		CHECK_MESSAGE(capsule->get_radius() > 0,
@@ -88,66 +89,11 @@ TEST_CASE("[SceneTree][Primitive][Capsule] Capsule Primitive") {
 		CHECK_MESSAGE(capsule->get_radius() >= capsule->get_height() * 0.5,
 				"Ensure radius >= height * 0.5 (needed for capsule to exist).");
 	}
-
-	SUBCASE("[Primitive][Capsule] Check mesh is correct") {
-		Array data{};
-		data.resize(RSE::ARRAY_MAX);
-		float radius{ 0.5f };
-		float height{ 4.f };
-		int num_radial_segments{ 4 };
-		int num_rings{ 8 };
-		CapsuleMesh::create_mesh_array(data, radius, height, num_radial_segments, num_rings);
-		Vector<Vector3> points = data[RSE::ARRAY_VERTEX];
-
-		SUBCASE("[Primitive][Capsule] Ensure all vertices positions are within bounding radius and height") {
-			// Get mesh data
-
-			// Check all points within radius of capsule
-			float dist_to_yaxis = 0.f;
-			for (Vector3 point : points) {
-				float new_dist_to_y = point.x * point.x + point.z * point.z;
-				if (new_dist_to_y > dist_to_yaxis) {
-					dist_to_yaxis = new_dist_to_y;
-				}
-			}
-
-			CHECK(dist_to_yaxis <= radius * radius);
-
-			// Check highest point and lowest point are within height of each other
-			float max_y{ 0.f };
-			float min_y{ 0.f };
-			for (Vector3 point : points) {
-				if (point.y > max_y) {
-					max_y = point.y;
-				}
-				if (point.y < min_y) {
-					min_y = point.y;
-				}
-			}
-
-			CHECK(max_y - min_y <= height);
-		}
-
-		SUBCASE("[Primitive][Capsule] If normal.y == 0, then mesh makes a cylinder.") {
-			Vector<Vector3> normals = data[RSE::ARRAY_NORMAL];
-			for (int ii = 0; ii < points.size(); ++ii) {
-				float point_dist_from_yaxis = Math::sqrt(points[ii].x * points[ii].x + points[ii].z * points[ii].z);
-				Vector3 yaxis_to_point{ points[ii].x / point_dist_from_yaxis, 0.f, points[ii].z / point_dist_from_yaxis };
-				if (normals[ii].y == 0.f) {
-					float mag_of_normal = Math::sqrt(normals[ii].x * normals[ii].x + normals[ii].z * normals[ii].z);
-					Vector3 normalized_normal = normals[ii] / mag_of_normal;
-					CHECK_MESSAGE(point_dist_from_yaxis == doctest::Approx(radius),
-							"Points on the tube of the capsule are radius away from y-axis.");
-					CHECK_MESSAGE(normalized_normal.is_equal_approx(yaxis_to_point),
-							"Normal points orthogonal from mid cylinder.");
-				}
-			}
-		}
-	}
 } // End capsule tests
 
 TEST_CASE("[SceneTree][Primitive][Box] Box Primitive") {
-	Ref<BoxMesh> box = memnew(BoxMesh);
+	Ref<PrimitiveMesh> box = memnew(PrimitiveMesh(PrimitiveMesh::MESH_BOX));
+	CHECK(box->get_mesh_type() == PrimitiveMesh::MESH_BOX);
 
 	SUBCASE("[SceneTree][Primitive][Box] Default values should be valid") {
 		CHECK(box->get_size().x > 0);
@@ -182,61 +128,11 @@ TEST_CASE("[SceneTree][Primitive][Box] Box Primitive") {
 		CHECK(box->get_subdivide_height() >= 0);
 		CHECK(box->get_subdivide_depth() >= 0);
 	}
-
-	SUBCASE("[Primitive][Box] Check mesh is correct.") {
-		Array data{};
-		data.resize(RSE::ARRAY_MAX);
-		Vector3 size{ 0.5f, 1.2f, .9f };
-		int subdivide_width{ 3 };
-		int subdivide_height{ 2 };
-		int subdivide_depth{ 8 };
-		BoxMesh::create_mesh_array(data, size, subdivide_width, subdivide_height, subdivide_depth);
-		Vector<Vector3> normals = data[RSE::ARRAY_NORMAL];
-
-		SUBCASE("Only 6 distinct normals.") {
-			Vector<Vector3> distinct_normals{};
-			distinct_normals.push_back(normals[0]);
-
-			for (const Vector3 &normal : normals) {
-				bool add_normal{ true };
-				for (const Vector3 &vec : distinct_normals) {
-					if (vec.is_equal_approx(normal)) {
-						add_normal = false;
-					}
-				}
-
-				if (add_normal) {
-					distinct_normals.push_back(normal);
-				}
-			}
-
-			CHECK_MESSAGE(distinct_normals.size() == 6,
-					"There are exactly 6 distinct normals in the mesh data.");
-
-			// All normals are orthogonal, or pointing in same direction.
-			bool normal_correct_direction{ true };
-			for (int rowIndex = 0; rowIndex < distinct_normals.size(); ++rowIndex) {
-				for (int colIndex = rowIndex + 1; colIndex < distinct_normals.size(); ++colIndex) {
-					if (!Math::is_equal_approx(distinct_normals[rowIndex].normalized().dot(distinct_normals[colIndex].normalized()), 0) &&
-							!Math::is_equal_approx(distinct_normals[rowIndex].normalized().dot(distinct_normals[colIndex].normalized()), 1) &&
-							!Math::is_equal_approx(distinct_normals[rowIndex].normalized().dot(distinct_normals[colIndex].normalized()), -1)) {
-						normal_correct_direction = false;
-						break;
-					}
-				}
-				if (!normal_correct_direction) {
-					break;
-				}
-			}
-
-			CHECK_MESSAGE(normal_correct_direction,
-					"All normals are either orthogonal or colinear.");
-		}
-	}
 } // End box tests
 
 TEST_CASE("[SceneTree][Primitive][Cylinder] Cylinder Primitive") {
-	Ref<CylinderMesh> cylinder = memnew(CylinderMesh);
+	Ref<PrimitiveMesh> cylinder = memnew(PrimitiveMesh(PrimitiveMesh::MESH_CYLINDER));
+	CHECK(cylinder->get_mesh_type() == PrimitiveMesh::MESH_CYLINDER);
 
 	SUBCASE("[SceneTree][Primitive][Cylinder] Default values should be valid") {
 		CHECK(cylinder->get_top_radius() > 0);
@@ -273,184 +169,34 @@ TEST_CASE("[SceneTree][Primitive][Cylinder] Cylinder Primitive") {
 		CHECK(cylinder->get_radial_segments() >= 0);
 		CHECK(cylinder->get_rings() >= 0);
 	}
-
-	SUBCASE("[Primitive][Cylinder] Actual cylinder mesh tests (top and bottom radius the same).") {
-		Array data{};
-		data.resize(RSE::ARRAY_MAX);
-		real_t radius = .9f;
-		real_t height = 3.2f;
-		int radial_segments = 8;
-		int rings = 5;
-		bool top_cap = true;
-		bool bottom_cap = true;
-		CylinderMesh::create_mesh_array(data, radius, radius, height, radial_segments, rings, top_cap, bottom_cap);
-		Vector<Vector3> points = data[RSE::ARRAY_VERTEX];
-		Vector<Vector3> normals = data[RSE::ARRAY_NORMAL];
-
-		SUBCASE("[Primitive][Cylinder] Side points are radius away from y-axis.") {
-			bool is_radius_correct{ true };
-			for (int index = 0; index < normals.size(); ++index) {
-				if (Math::is_equal_approx(normals[index].y, 0)) {
-					if (!Math::is_equal_approx((points[index] - Vector3(0, points[index].y, 0)).length_squared(), radius * radius)) {
-						is_radius_correct = false;
-						break;
-					}
-				}
-			}
-
-			CHECK(is_radius_correct);
-		}
-
-		SUBCASE("[Primitive][Cylinder] Only possible normals point in direction of point or in positive/negative y direction.") {
-			bool is_correct_normals{ true };
-			for (int index = 0; index < normals.size(); ++index) {
-				Vector3 yaxis_to_point = points[index] - Vector3(0.f, points[index].y, 0.f);
-				Vector3 point_to_normal = normals[index].normalized() - yaxis_to_point.normalized();
-				//				std::cout << "<" << point_to_normal.x << ", " << point_to_normal.y << ", " << point_to_normal.z << ">\n";
-				if (!(point_to_normal.is_equal_approx(Vector3(0, 0, 0))) &&
-						(!Math::is_equal_approx(Math::abs(normals[index].normalized().y), 1))) {
-					is_correct_normals = false;
-					break;
-				}
-			}
-
-			CHECK(is_correct_normals);
-		}
-
-		SUBCASE("[Primitive][Cylinder] Points on top and bottom are height/2 away from origin.") {
-			bool is_height_correct{ true };
-			real_t half_height = 0.5 * height;
-			for (int index = 0; index < normals.size(); ++index) {
-				if (Math::is_equal_approx(normals[index].x, 0) &&
-						Math::is_equal_approx(normals[index].z, 0) &&
-						normals[index].y > 0) {
-					if (!Math::is_equal_approx(points[index].y, half_height)) {
-						is_height_correct = false;
-						break;
-					}
-				}
-				if (Math::is_equal_approx(normals[index].x, 0) &&
-						Math::is_equal_approx(normals[index].z, 0) &&
-						normals[index].y < 0) {
-					if (!Math::is_equal_approx(points[index].y, -half_height)) {
-						is_height_correct = false;
-						break;
-					}
-				}
-			}
-
-			CHECK(is_height_correct);
-		}
-
-		SUBCASE("[Primitive][Cylinder] Does mesh obey cap parameters?") {
-			CylinderMesh::create_mesh_array(data, radius, radius, height, radial_segments, rings, top_cap, false);
-			points = data[RSE::ARRAY_VERTEX];
-			normals = data[RSE::ARRAY_NORMAL];
-			bool no_bottom_cap{ true };
-
-			for (int index = 0; index < normals.size(); ++index) {
-				if (Math::is_equal_approx(normals[index].x, 0) &&
-						Math::is_equal_approx(normals[index].z, 0) &&
-						normals[index].y < 0) {
-					no_bottom_cap = false;
-					break;
-				}
-			}
-
-			CHECK_MESSAGE(no_bottom_cap,
-					"Check there is no bottom cap.");
-
-			CylinderMesh::create_mesh_array(data, radius, radius, height, radial_segments, rings, false, bottom_cap);
-			points = data[RSE::ARRAY_VERTEX];
-			normals = data[RSE::ARRAY_NORMAL];
-			bool no_top_cap{ true };
-
-			for (int index = 0; index < normals.size(); ++index) {
-				if (Math::is_equal_approx(normals[index].x, 0) &&
-						Math::is_equal_approx(normals[index].z, 0) &&
-						normals[index].y > 0) {
-					no_top_cap = false;
-					break;
-				}
-			}
-
-			CHECK_MESSAGE(no_top_cap,
-					"Check there is no top cap.");
-		}
-	}
-
-	SUBCASE("[Primitive][Cylinder] Slanted cylinder mesh (top and bottom radius different).") {
-		Array data{};
-		data.resize(RSE::ARRAY_MAX);
-		real_t top_radius = 2.f;
-		real_t bottom_radius = 1.f;
-		real_t height = 1.f;
-		int radial_segments = 8;
-		int rings = 5;
-		CylinderMesh::create_mesh_array(data, top_radius, bottom_radius, height, radial_segments, rings, false, false);
-		Vector<Vector3> points = data[RSE::ARRAY_VERTEX];
-		Vector<Vector3> normals = data[RSE::ARRAY_NORMAL];
-
-		SUBCASE("[Primitive][Cylinder] Side points lie correct distance from y-axis") {
-			bool is_radius_correct{ true };
-			for (int index = 0; index < points.size(); ++index) {
-				real_t radius = ((top_radius - bottom_radius) / height) * (points[index].y - 0.5 * height) + top_radius;
-				Vector3 distance_to_yaxis = points[index] - Vector3(0.f, points[index].y, 0.f);
-				if (!Math::is_equal_approx(distance_to_yaxis.length_squared(), radius * radius)) {
-					is_radius_correct = false;
-					break;
-				}
-			}
-
-			CHECK(is_radius_correct);
-		}
-
-		SUBCASE("[Primitive][Cylinder] Normal on side is orthogonal to side tangent vector") {
-			bool is_normal_correct{ true };
-			for (int index = 0; index < points.size(); ++index) {
-				Vector3 yaxis_to_point = points[index] - Vector3(0.f, points[index].y, 0.f);
-				Vector3 yaxis_to_rb = yaxis_to_point.normalized() * bottom_radius;
-				Vector3 rb_to_point = yaxis_to_point - yaxis_to_rb;
-				Vector3 y_to_bottom = -Vector3(0.f, points[index].y + 0.5 * height, 0.f);
-				Vector3 side_tangent = rb_to_point - y_to_bottom;
-
-				if (!Math::is_equal_approx(normals[index].dot(side_tangent), 0)) {
-					is_normal_correct = false;
-					break;
-				}
-			}
-
-			CHECK(is_normal_correct);
-		}
-	}
-
 } // End cylinder tests
 
 TEST_CASE("[SceneTree][Primitive][Plane] Plane Primitive") {
-	Ref<PlaneMesh> plane = memnew(PlaneMesh);
+	Ref<PrimitiveMesh> plane = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PLANE));
+	CHECK(plane->get_mesh_type() == PrimitiveMesh::MESH_PLANE);
 
 	SUBCASE("[SceneTree][Primitive][Plane] Default values should be valid") {
-		CHECK(plane->get_size().x > 0);
-		CHECK(plane->get_size().y > 0);
+		CHECK(plane->get_plane_size().x > 0);
+		CHECK(plane->get_plane_size().y > 0);
 		CHECK(plane->get_subdivide_width() >= 0);
 		CHECK(plane->get_subdivide_depth() >= 0);
-		CHECK((plane->get_orientation() == PlaneMesh::FACE_X || plane->get_orientation() == PlaneMesh::FACE_Y || plane->get_orientation() == PlaneMesh::FACE_Z));
+		CHECK((plane->get_orientation() == PrimitiveMesh::FACE_X || plane->get_orientation() == PrimitiveMesh::FACE_Y || plane->get_orientation() == PrimitiveMesh::FACE_Z));
 	}
 
 	SUBCASE("[SceneTree][Primitive][Plane] Set properties and get them.") {
 		Size2 size{ 3.2, 1.8 };
 		Vector3 offset{ -7.3, 0.4, -1.7 };
-		plane->set_size(size);
+		plane->set_plane_size(size);
 		plane->set_subdivide_width(15);
 		plane->set_subdivide_depth(29);
 		plane->set_center_offset(offset);
-		plane->set_orientation(PlaneMesh::FACE_X);
+		plane->set_orientation(PrimitiveMesh::FACE_X);
 
-		CHECK(plane->get_size().is_equal_approx(size));
+		CHECK(plane->get_plane_size().is_equal_approx(size));
 		CHECK(plane->get_subdivide_width() == 15);
 		CHECK(plane->get_subdivide_depth() == 29);
 		CHECK(plane->get_center_offset().is_equal_approx(offset));
-		CHECK(plane->get_orientation() == PlaneMesh::FACE_X);
+		CHECK(plane->get_orientation() == PrimitiveMesh::FACE_X);
 	}
 
 	SUBCASE("[SceneTree][Primitive][Plane] Ensure number of segments is >= 0.") {
@@ -464,16 +210,25 @@ TEST_CASE("[SceneTree][Primitive][Plane] Plane Primitive") {
 	}
 }
 
-TEST_CASE("[SceneTree][Primitive][Quad] QuadMesh Primitive") {
-	Ref<QuadMesh> quad = memnew(QuadMesh);
+TEST_CASE("[SceneTree][Primitive][Quad] Quad Primitive") {
+	Ref<PrimitiveMesh> quad = memnew(PrimitiveMesh(PrimitiveMesh::MESH_QUAD));
+	CHECK(quad->get_mesh_type() == PrimitiveMesh::MESH_QUAD);
 
 	SUBCASE("[Primitive][Quad] Orientation on initialization is in z direction") {
-		CHECK(quad->get_orientation() == PlaneMesh::FACE_Z);
+		CHECK(quad->get_orientation() == PrimitiveMesh::FACE_Z);
+		CHECK(quad->get_plane_size().is_equal_approx(Size2(1, 1)));
 	}
 }
 
+TEST_CASE("[SceneTree][Primitive][Point] Point Primitive") {
+	Ref<PrimitiveMesh> point = memnew(PrimitiveMesh(PrimitiveMesh::MESH_POINT));
+	CHECK(point->get_mesh_type() == PrimitiveMesh::MESH_POINT);
+	CHECK(point->surface_get_primitive_type(0) == Mesh::PRIMITIVE_POINTS);
+}
+
 TEST_CASE("[SceneTree][Primitive][Prism] Prism Primitive") {
-	Ref<PrismMesh> prism = memnew(PrismMesh);
+	Ref<PrimitiveMesh> prism = memnew(PrimitiveMesh(PrimitiveMesh::MESH_PRISM));
+	CHECK(prism->get_mesh_type() == PrimitiveMesh::MESH_PRISM);
 
 	SUBCASE("[Primitive][Prism] There are valid values of properties on initialization.") {
 		CHECK(prism->get_left_to_right() >= 0);
@@ -514,7 +269,8 @@ TEST_CASE("[SceneTree][Primitive][Prism] Prism Primitive") {
 }
 
 TEST_CASE("[SceneTree][Primitive][Sphere] Sphere Primitive") {
-	Ref<SphereMesh> sphere = memnew(SphereMesh);
+	Ref<PrimitiveMesh> sphere = memnew(PrimitiveMesh(PrimitiveMesh::MESH_SPHERE));
+	CHECK(sphere->get_mesh_type() == PrimitiveMesh::MESH_SPHERE);
 
 	SUBCASE("[Primitive][Sphere] There are valid values of properties on initialization.") {
 		CHECK(sphere->get_radius() >= 0);
@@ -523,7 +279,7 @@ TEST_CASE("[SceneTree][Primitive][Sphere] Sphere Primitive") {
 		CHECK(sphere->get_rings() >= 0);
 	}
 
-	SUBCASE("[Primitive][Sphere] Are able to change prism properties.") {
+	SUBCASE("[Primitive][Sphere] Are able to change sphere properties.") {
 		sphere->set_radius(3.4f);
 		sphere->set_height(2.2f);
 		sphere->set_radial_segments(36);
@@ -546,46 +302,13 @@ TEST_CASE("[SceneTree][Primitive][Sphere] Sphere Primitive") {
 		CHECK(sphere->get_radial_segments() >= 0);
 		CHECK(sphere->get_rings() >= 0);
 	}
-
-	SUBCASE("[Primitive][Sphere] Sphere mesh tests.") {
-		Array data{};
-		data.resize(RSE::ARRAY_MAX);
-		real_t radius = 1.1f;
-		int radial_segments = 8;
-		int rings = 5;
-		SphereMesh::create_mesh_array(data, radius, 2 * radius, radial_segments, rings);
-		Vector<Vector3> points = data[RSE::ARRAY_VERTEX];
-		Vector<Vector3> normals = data[RSE::ARRAY_NORMAL];
-
-		SUBCASE("[Primitive][Sphere] All points lie radius away from origin.") {
-			bool is_radius_correct = true;
-			for (Vector3 point : points) {
-				if (!Math::is_equal_approx(point.length_squared(), radius * radius)) {
-					is_radius_correct = false;
-					break;
-				}
-			}
-
-			CHECK(is_radius_correct);
-		}
-
-		SUBCASE("[Primitive][Sphere] All normals lie in direction of corresponding point.") {
-			bool is_normals_correct = true;
-			for (int index = 0; index < points.size(); ++index) {
-				if (!Math::is_equal_approx(normals[index].normalized().dot(points[index].normalized()), 1)) {
-					is_normals_correct = false;
-					break;
-				}
-			}
-
-			CHECK(is_normals_correct);
-		}
-	}
 }
 
 TEST_CASE("[SceneTree][Primitive][Torus] Torus Primitive") {
-	Ref<TorusMesh> torus = memnew(TorusMesh);
+	Ref<PrimitiveMesh> torus = memnew(PrimitiveMesh(PrimitiveMesh::MESH_TORUS));
 	Ref<PrimitiveMesh> prim = memnew(PrimitiveMesh);
+	CHECK(torus->get_mesh_type() == PrimitiveMesh::MESH_TORUS);
+	CHECK(prim->get_mesh_type() == PrimitiveMesh::MESH_BOX);
 
 	SUBCASE("[Primitive][Torus] There are valid values of properties on initialization.") {
 		CHECK(torus->get_inner_radius() > 0);
@@ -608,7 +331,8 @@ TEST_CASE("[SceneTree][Primitive][Torus] Torus Primitive") {
 }
 
 TEST_CASE("[SceneTree][Primitive][TubeTrail] TubeTrail Primitive") {
-	Ref<TubeTrailMesh> tube = memnew(TubeTrailMesh);
+	Ref<PrimitiveMesh> tube = memnew(PrimitiveMesh(PrimitiveMesh::MESH_TUBE_TRAIL));
+	CHECK(tube->get_mesh_type() == PrimitiveMesh::MESH_TUBE_TRAIL);
 
 	SUBCASE("[Primitive][TubeTrail] There are valid values of properties on initialization.") {
 		CHECK(tube->get_radius() > 0);
@@ -617,7 +341,7 @@ TEST_CASE("[SceneTree][Primitive][TubeTrail] TubeTrail Primitive") {
 		CHECK(tube->get_section_length() > 0);
 		CHECK(tube->get_section_rings() >= 0);
 		CHECK(tube->get_curve().is_null());
-		CHECK(tube->get_builtin_bind_pose_count() >= 0);
+		CHECK(tube->get_builtin_bind_pose_count() > 0);
 	}
 
 	SUBCASE("[Primitive][TubeTrail] Are able to change properties.") {
@@ -657,7 +381,7 @@ TEST_CASE("[SceneTree][Primitive][TubeTrail] TubeTrail Primitive") {
 	}
 
 	SUBCASE("[Primitive][TubeTrail] Assign same curve to two different tube trails") {
-		Ref<TubeTrailMesh> tube2 = memnew(TubeTrailMesh);
+		Ref<PrimitiveMesh> tube2 = memnew(PrimitiveMesh(PrimitiveMesh::MESH_TUBE_TRAIL));
 		Ref<Curve> curve = memnew(Curve);
 		tube->set_curve(curve);
 		tube2->set_curve(curve);
@@ -668,28 +392,29 @@ TEST_CASE("[SceneTree][Primitive][TubeTrail] TubeTrail Primitive") {
 }
 
 TEST_CASE("[SceneTree][Primitive][RibbonTrail] RibbonTrail Primitive") {
-	Ref<RibbonTrailMesh> ribbon = memnew(RibbonTrailMesh);
+	Ref<PrimitiveMesh> ribbon = memnew(PrimitiveMesh(PrimitiveMesh::MESH_RIBBON_TRAIL));
+	CHECK(ribbon->get_mesh_type() == PrimitiveMesh::MESH_RIBBON_TRAIL);
 
 	SUBCASE("[Primitive][RibbonTrail] There are valid values of properties on initialization.") {
-		CHECK(ribbon->get_size() > 0);
+		CHECK(ribbon->get_ribbon_size() > 0);
 		CHECK(ribbon->get_sections() >= 0);
 		CHECK(ribbon->get_section_length() > 0);
 		CHECK(ribbon->get_section_segments() >= 0);
-		CHECK(ribbon->get_builtin_bind_pose_count() >= 0);
+		CHECK(ribbon->get_builtin_bind_pose_count() > 0);
 		CHECK(ribbon->get_curve().is_null());
-		CHECK((ribbon->get_shape() == RibbonTrailMesh::SHAPE_CROSS ||
-				ribbon->get_shape() == RibbonTrailMesh::SHAPE_FLAT));
+		CHECK((ribbon->get_ribbon_shape() == PrimitiveMesh::SHAPE_CROSS ||
+				ribbon->get_ribbon_shape() == PrimitiveMesh::SHAPE_FLAT));
 	}
 
 	SUBCASE("[Primitive][RibbonTrail] Able to change properties.") {
 		Ref<Curve> curve = memnew(Curve);
-		ribbon->set_size(4.3f);
+		ribbon->set_ribbon_size(4.3f);
 		ribbon->set_sections(16);
 		ribbon->set_section_length(1.3f);
 		ribbon->set_section_segments(9);
 		ribbon->set_curve(curve);
 
-		CHECK(ribbon->get_size() == doctest::Approx(4.3f));
+		CHECK(ribbon->get_ribbon_size() == doctest::Approx(4.3f));
 		CHECK(ribbon->get_section_length() == doctest::Approx(1.3f));
 		CHECK(ribbon->get_sections() == 16);
 		CHECK(ribbon->get_section_segments() == 9);
@@ -716,7 +441,7 @@ TEST_CASE("[SceneTree][Primitive][RibbonTrail] RibbonTrail Primitive") {
 	}
 
 	SUBCASE("[Primitive][RibbonTrail] Assign same curve to two different ribbon trails") {
-		Ref<RibbonTrailMesh> ribbon2 = memnew(RibbonTrailMesh);
+		Ref<PrimitiveMesh> ribbon2 = memnew(PrimitiveMesh(PrimitiveMesh::MESH_RIBBON_TRAIL));
 		Ref<Curve> curve = memnew(Curve);
 		ribbon->set_curve(curve);
 		ribbon2->set_curve(curve);
@@ -727,7 +452,8 @@ TEST_CASE("[SceneTree][Primitive][RibbonTrail] RibbonTrail Primitive") {
 }
 
 TEST_CASE("[SceneTree][Primitive][Text] Text Primitive") {
-	Ref<TextMesh> text = memnew(TextMesh);
+	Ref<PrimitiveMesh> text = memnew(PrimitiveMesh(PrimitiveMesh::MESH_TEXT));
+	CHECK(text->get_mesh_type() == PrimitiveMesh::MESH_TEXT);
 
 	SUBCASE("[Primitive][Text] There are valid values of properties on initialization.") {
 		CHECK((text->get_horizontal_alignment() == HORIZONTAL_ALIGNMENT_CENTER ||
@@ -755,7 +481,6 @@ TEST_CASE("[SceneTree][Primitive][Text] Text Primitive") {
 				text->get_structured_text_bidi_override() == TextServer::STRUCTURED_TEXT_LIST ||
 				text->get_structured_text_bidi_override() == TextServer::STRUCTURED_TEXT_GDSCRIPT ||
 				text->get_structured_text_bidi_override() == TextServer::STRUCTURED_TEXT_CUSTOM));
-		CHECK(text->get_structured_text_bidi_override_options().size() >= 0);
 		CHECK(text->get_width() > 0);
 		CHECK(text->get_depth() > 0);
 		CHECK(text->get_curve_step() > 0);
@@ -764,7 +489,6 @@ TEST_CASE("[SceneTree][Primitive][Text] Text Primitive") {
 
 	SUBCASE("[Primitive][Text] Change the properties of the mesh.") {
 		Ref<Font> font = memnew(Font);
-		Array options{};
 		Point2 offset{ 30.8, 104.23 };
 		text->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_RIGHT);
 		text->set_vertical_alignment(VERTICAL_ALIGNMENT_BOTTOM);
@@ -776,7 +500,6 @@ TEST_CASE("[SceneTree][Primitive][Text] Text Primitive") {
 		text->set_text_direction(TextServer::DIRECTION_RTL);
 		text->set_language("French");
 		text->set_structured_text_bidi_override(TextServer::STRUCTURED_TEXT_EMAIL);
-		text->set_structured_text_bidi_override_options(options);
 		text->set_uppercase(true);
 		real_t width{ 0.6 };
 		real_t depth{ 1.7 };
@@ -797,7 +520,6 @@ TEST_CASE("[SceneTree][Primitive][Text] Text Primitive") {
 		CHECK(text->get_autowrap_mode() == TextServer::AUTOWRAP_WORD_SMART);
 		CHECK(text->get_language() == "French");
 		CHECK(text->get_structured_text_bidi_override() == TextServer::STRUCTURED_TEXT_EMAIL);
-		CHECK(text->get_structured_text_bidi_override_options() == options);
 		CHECK(text->is_uppercase() == true);
 		CHECK(text->get_offset() == offset);
 		CHECK(text->get_line_spacing() == doctest::Approx(1.7f));
@@ -809,51 +531,40 @@ TEST_CASE("[SceneTree][Primitive][Text] Text Primitive") {
 
 	SUBCASE("[Primitive][Text] Set objects multiple times.") {
 		Ref<Font> font = memnew(Font);
-		Array options{};
 		Point2 offset{ 30.8, 104.23 };
 
 		text->set_font(font);
 		text->set_font(font);
 		text->set_font(font);
-		text->set_structured_text_bidi_override_options(options);
-		text->set_structured_text_bidi_override_options(options);
-		text->set_structured_text_bidi_override_options(options);
 		text->set_offset(offset);
 		text->set_offset(offset);
 		text->set_offset(offset);
 
 		CHECK(text->get_font() == font);
-		CHECK(text->get_structured_text_bidi_override_options() == options);
 		CHECK(text->get_offset() == offset);
 	}
 
 	SUBCASE("[Primitive][Text] Set then change objects.") {
 		Ref<Font> font1 = memnew(Font);
 		Ref<Font> font2 = memnew(Font);
-		Array options1{};
-		Array options2{};
 		Point2 offset1{ 30.8, 104.23 };
 		Point2 offset2{ -30.8, -104.23 };
 
 		text->set_font(font1);
-		text->set_structured_text_bidi_override_options(options1);
 		text->set_offset(offset1);
 
 		CHECK(text->get_font() == font1);
-		CHECK(text->get_structured_text_bidi_override_options() == options1);
 		CHECK(text->get_offset() == offset1);
 
 		text->set_font(font2);
-		text->set_structured_text_bidi_override_options(options2);
 		text->set_offset(offset2);
 
 		CHECK(text->get_font() == font2);
-		CHECK(text->get_structured_text_bidi_override_options() == options2);
 		CHECK(text->get_offset() == offset2);
 	}
 
-	SUBCASE("[Primitive][Text] Assign same font to two Textmeshes.") {
-		Ref<TextMesh> text2 = memnew(TextMesh);
+	SUBCASE("[Primitive][Text] Assign same font to two Text meshes.") {
+		Ref<PrimitiveMesh> text2 = memnew(PrimitiveMesh(PrimitiveMesh::MESH_TEXT));
 		Ref<Font> font = memnew(Font);
 
 		text->set_font(font);

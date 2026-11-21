@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_nine_patch_rect)
 
-#include "scene/gui/nine_patch_rect.h"
+#include "scene/gui/label.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/texture.h"
@@ -156,20 +156,20 @@ TEST_CASE("[SceneTree][NinePatchRect] Patch margins") {
 
 TEST_CASE("[SceneTree][NinePatchRect] Patch margins drive minimum size") {
 	NinePatchRect *nine_patch = memnew(NinePatchRect);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(nine_patch);
 
 	nine_patch->set_patch_margin(SIDE_LEFT, 10);
 	nine_patch->set_patch_margin(SIDE_TOP, 20);
 	nine_patch->set_patch_margin(SIDE_RIGHT, 30);
 	nine_patch->set_patch_margin(SIDE_BOTTOM, 40);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	// Minimum width is left + right; minimum height is top + bottom.
 	CHECK(nine_patch->get_combined_minimum_size() == Size2(40, 60));
 
 	nine_patch->set_patch_margin(SIDE_RIGHT, 0);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 	CHECK(nine_patch->get_combined_minimum_size() == Size2(10, 60));
 
 	memdelete(nine_patch);

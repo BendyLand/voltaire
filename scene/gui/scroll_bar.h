@@ -31,9 +31,10 @@
 
 #pragma once
 
+#include "scene/gui/control.h"
 #include "scene/gui/range.h"
 
-class ScrollBar : public Range
+class ScrollBar : public Control
 {
 	enum HighlightStatus
 	{
@@ -85,7 +86,7 @@ class ScrollBar : public Range
 	bool smooth_scroll_enabled = false;
 
 	void _drag_node_exit();
-	void _drag_node_input(const Ref<InputEvent>& p_input);
+	void _drag_node_input(const InputEvent& p_input);
 
 protected:
 	struct ThemeCache
@@ -115,6 +116,79 @@ protected:
 public:
 	static inline const int PAGE_DIVISOR = 8;
 
+	NumericRange range;
+
+	Orientation get_orientation() const { return orientation; }
+
+	double get_value() const { return range.value; }
+	double get_min() const { return range.min; }
+	double get_max() const { return range.max; }
+	double get_step() const { return range.step; }
+	double get_page() const { return range.page; }
+	double get_as_ratio() const { return range.get_as_ratio(); }
+
+	void set_value(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_value_no_signal(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+	}
+
+	void set_min(double p_min)
+	{
+		if (range.set_min(p_min)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_max(double p_max)
+	{
+		if (range.set_max(p_max)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_step(double p_step)
+	{
+		if (range.set_step(p_step)) {
+			queue_accessibility_update();
+		}
+	}
+
+	void set_page(double p_page)
+	{
+		if (range.set_page(p_page)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_as_ratio(double p_value)
+	{
+		if (range.set_as_ratio(p_value)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_allow_greater(bool p_allow) { range.allow_greater = p_allow; }
+	bool is_greater_allowed() const { return range.allow_greater; }
+	void set_allow_lesser(bool p_allow) { range.allow_lesser = p_allow; }
+	bool is_lesser_allowed() const { return range.allow_lesser; }
+	void set_use_rounded_values(bool p_enable) { range.rounded_values = p_enable; }
+	bool is_using_rounded_values() const { return range.rounded_values; }
+	bool is_ratio_exp() const { return range.exp_ratio; }
+
 	void scroll(double p_amount);
 	void scroll_to(double p_position);
 
@@ -129,24 +203,13 @@ public:
 	bool is_smooth_scroll_enabled() const;
 
 	virtual Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override
+	{
+		PackedStringArray warnings = Control::get_configuration_warnings();
+		range.append_configuration_warnings(warnings);
+		return warnings;
+	}
+
 	ScrollBar(Orientation p_orientation = VERTICAL);
 	~ScrollBar();
 };
-
-class HScrollBar : public ScrollBar
-{
-protected:
-
-public:
-	HScrollBar() : ScrollBar(HORIZONTAL) { set_v_size_flags(0); }
-};
-
-class VScrollBar : public ScrollBar
-{
-protected:
-
-public:
-	VScrollBar() : ScrollBar(VERTICAL) { set_h_size_flags(0); }
-};
-
-

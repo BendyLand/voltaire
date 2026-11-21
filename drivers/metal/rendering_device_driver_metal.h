@@ -31,7 +31,6 @@
 
 #pragma once
 
-#include "drivers/metal/metal_device_profile.h"
 #include "drivers/metal/metal_objects_shared.h"
 #include "servers/rendering/rendering_device_driver.h"
 

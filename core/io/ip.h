@@ -34,11 +34,9 @@
 #include "core/io/ip_address.h"
 #include "core/types.h"
 
-template <typename T> class TypedArray;
-
 struct _IP_ResolverPrivate;
 
-class IP
+class IP final
 {
 public:
 	enum ResolverStatus
@@ -65,17 +63,6 @@ public:
 
 	typedef int ResolverID;
 
-private:
-	_IP_ResolverPrivate* resolver = nullptr;
-
-protected:
-	static inline IP* singleton = nullptr;
-
-	Vector<String> _get_local_addresses() const;
-
-	static IP* (*_create)();
-
-public:
 	struct Interface_Info
 	{
 		String name;
@@ -84,28 +71,63 @@ public:
 		List<IPAddress> ip_addresses;
 	};
 
-	IPAddress resolve_hostname(const String& p_hostname, Type p_type = TYPE_ANY);
-	Vector<String> resolve_hostname_addresses(const String& p_hostname, Type p_type = TYPE_ANY);
+	struct Data
+	{
+		_IP_ResolverPrivate* resolver = nullptr;
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+	static void _default_resolve_hostname(
+		List<IPAddress>& r_addresses, const String& p_hostname, Type p_type)
+	{
+		(void)r_addresses;
+		(void)p_hostname;
+		(void)p_type;
+	}
+	static void _default_get_local_interfaces(HashMap<String, Interface_Info>* r_interfaces)
+	{
+		(void)r_interfaces;
+	}
+
+	static Vector<String> _get_local_addresses();
+
+public:
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	inline static void (*_resolve_hostname)(List<IPAddress>& r_addresses, const String& p_hostname,
+		Type p_type) = &_default_resolve_hostname;
+	inline static void (*get_local_interfaces)(
+		HashMap<String, Interface_Info>* r_interfaces) = &_default_get_local_interfaces;
+
+	template <typename Impl> static void bind()
+	{
+		_resolve_hostname = &Impl::_resolve_hostname;
+		get_local_interfaces = &Impl::get_local_interfaces;
+	}
+
+	static void reset_backend();
+
+	static IPAddress resolve_hostname(const String& p_hostname, Type p_type = TYPE_ANY);
+	static Vector<String> resolve_hostname_addresses(
+		const String& p_hostname, Type p_type = TYPE_ANY);
 	// async resolver hostname
-	ResolverID resolve_hostname_queue_item(const String& p_hostname, Type p_type = TYPE_ANY);
-	ResolverStatus get_resolve_item_status(ResolverID p_id) const;
-	IPAddress get_resolve_item_address(ResolverID p_id) const;
-	virtual void get_local_addresses(List<IPAddress>* r_addresses) const;
+	static ResolverID resolve_hostname_queue_item(const String& p_hostname, Type p_type = TYPE_ANY);
+	static ResolverStatus get_resolve_item_status(ResolverID p_id);
+	static IPAddress get_resolve_item_address(ResolverID p_id);
+	static void get_local_addresses(List<IPAddress>* r_addresses);
 
-	virtual void _resolve_hostname(
-		List<IPAddress>& r_addresses, const String& p_hostname, Type p_type = TYPE_ANY) const = 0;
+	static void erase_resolve_item(ResolverID p_id);
 
-	virtual void get_local_interfaces(HashMap<String, Interface_Info>* r_interfaces) const = 0;
-	void erase_resolve_item(ResolverID p_id);
+	static void clear_cache(const String& p_hostname = "");
 
-	void clear_cache(const String& p_hostname = "");
-
-	static IP* get_singleton();
-
-	static IP* create();
-
-	IP();
-	~IP();
+	IP() = delete;
+	IP(const IP&) = delete;
+	IP& operator=(const IP&) = delete;
+	~IP() = delete;
 };
 
 

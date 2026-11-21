@@ -31,24 +31,49 @@
 
 #pragma once
 
+#include "core/os/memory.h"
 #include "core/string/ustring.h"
 
-class EditorStrings {
-	inline static EditorStrings *singleton = nullptr;
-
+class EditorStrings final
+{
 public:
-	static void create() { singleton = memnew(EditorStrings); }
-	static void free() {
-		memdelete(singleton);
-		singleton = nullptr;
+	struct Data
+	{
+		const String Editor = String("Editor");
+		const String EditorFonts = String("EditorFonts");
+		const String EditorIcons = String("EditorIcons");
+		const String EditorStyles = String("EditorStyles");
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize()
+	{
+		if (!data) {
+			data = memnew(Data);
+		}
 	}
 
-	_FORCE_INLINE_ static EditorStrings *get_singleton() { return singleton; }
+	static void finalize()
+	{
+		if (data) {
+			memdelete(data);
+			data = nullptr;
+		}
+	}
 
-	const String Editor = String("Editor");
-	const String EditorFonts = String("EditorFonts");
-	const String EditorIcons = String("EditorIcons");
-	const String EditorStyles = String("EditorStyles");
+	static bool is_initialized() { return data != nullptr; }
+
+	_FORCE_INLINE_ static Data* _get_data()
+	{
+		if (!data) {
+			initialize();
+		}
+		return data;
+	}
+
+	EditorStrings() = delete;
+	~EditorStrings() = delete;
 };
 
-#define EditorString(m_name) EditorStrings::get_singleton()->m_name
+#define EditorString(m_name) EditorStrings::_get_data()->m_name

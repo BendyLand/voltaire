@@ -32,7 +32,6 @@
 #pragma once
 
 #include "scene/resources/navigation_mesh.h"
-#include "servers/navigation_2d/navigation_constants_2d.h"
 
 class NavigationPolygon : public Resource
 {
@@ -49,7 +48,7 @@ class NavigationPolygon : public Resource
 	// Navigation mesh
 	Ref<NavigationMesh> navigation_mesh;
 
-	real_t cell_size = NavigationDefaults2D::NAV_MESH_CELL_SIZE;
+	real_t cell_size = 1.0f;
 	real_t border_size = 0.0f;
 
 	Rect2 baking_rect;
@@ -58,6 +57,8 @@ class NavigationPolygon : public Resource
 protected:
 
 public:
+	NavigationPolygon();
+
 #ifdef DEBUG_ENABLED
 	Rect2 _edit_get_rect() const;
 	bool _edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const;

@@ -31,49 +31,37 @@
 
 #pragma once
 
+#include "core/io/ip_address.h"
 #include "core/io/net_socket.h"
 #include "core/io/stream_peer_socket.h"
 
-class SocketServer : public RefCounted
+class SocketServer final : public RefCounted
 {
-protected:
+private:
 	enum
 	{
 		MAX_PENDING_CONNECTIONS = 8,
 	};
 
+	StreamPeerSocket::Domain domain = StreamPeerSocket::DOMAIN_TCP;
 	Ref<NetSocket> _sock;
 
 	Error _listen(const NetSocket::Address& p_addr);
 
-	template <typename T> Ref<T> _take_connection()
-	{
-		Ref<T> conn;
-		if (!is_connection_available()) {
-			return conn;
-		}
-
-		Ref<NetSocket> ns;
-		NetSocket::Address addr;
-		ns = _sock->accept(addr);
-		if (ns.is_null()) {
-			return conn;
-		}
-
-		conn.instantiate();
-		conn->accept_socket(ns, addr);
-		return conn;
-	}
-
 public:
+	Error listen(uint16_t p_port, const IPAddress& p_bind_address = IPAddress("*"));
+	Error listen_path(const String& p_path);
+	Error listen(const String& p_path) { return listen_path(p_path); }
+
+	int get_local_port() const;
+
 	bool is_listening() const;
 	bool is_connection_available() const;
-	virtual Ref<StreamPeerSocket> take_socket_connection() = 0;
+	Ref<StreamPeerSocket> take_connection();
+	Ref<StreamPeerSocket> take_socket_connection() { return take_connection(); }
 
 	void stop(); // Stop listening
 
 	SocketServer();
-	~SocketServer();
+	~SocketServer() override;
 };
-
-

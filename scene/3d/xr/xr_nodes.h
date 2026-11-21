@@ -31,61 +31,38 @@
 
 #pragma once
 
-#include "scene/3d/camera_3d.h"
-#include "servers/xr/xr_positional_tracker.h"
+#include "scene/3d/node_3d.h"
+#include "servers/xr/xr_tracker.h"
 
 /*
-	XRCamera is a subclass of camera which will register itself with its parent XROrigin and as a
-   result is automatically positioned
+	XRNode3D is a consolidated helper node that binds to an XRTracker
+	(supporting generic tracker, controller, and anchor modes).
+
+	It must be a child node of an XROrigin3D node.
 */
 
-class XRCamera3D : public Camera3D
+class XRNode3D final : public Node3D
 {
-protected:
-	// The name and pose for our HMD tracker is currently the only hardcoded bit.
-	// If we ever are able to support multiple HMDs we may need to make this settable.
-	String tracker_name = "head";
-	String pose_name = SceneString(default_);
-	Ref<XRPositionalTracker> tracker;
-
-	void _bind_tracker();
-	void _unbind_tracker();
-	void _changed_tracker(const String& p_tracker_name, int p_tracker_type);
-	void _removed_tracker(const String& p_tracker_name, int p_tracker_type);
-	void _pose_changed(const Ref<XRPose>& p_pose);
-
 public:
-	PackedStringArray get_configuration_warnings() const override;
+	enum Mode
+	{
+		MODE_TRACKER,
+		MODE_CONTROLLER,
+		MODE_ANCHOR,
+	};
 
-	virtual Vector3 project_local_ray_normal(const Point2& p_pos) const override;
-	virtual Point2 unproject_position(const Vector3& p_pos) const override;
-	virtual Vector3 project_position(const Point2& p_point, real_t p_z_depth) const override;
-	virtual Vector<Plane> get_frustum() const override;
-
-	XRCamera3D();
-	~XRCamera3D();
-};
-
-/*
-	XRNode3D is a helper node that implements binding to a tracker.
-
-	It must be a child node of our XROrigin node
-*/
-
-class XRNode3D : public Node3D
-{
 private:
+	Mode mode = MODE_TRACKER;
 	String tracker_name;
 	String pose_name = SceneString(default_);
 	bool has_tracking_data = false;
 	bool show_when_tracked = false;
+	Vector3 size;
 
-protected:
-	Ref<XRPositionalTracker> tracker;
+	Ref<XRTracker> tracker;
 
-
-	virtual void _bind_tracker();
-	virtual void _unbind_tracker();
+	void _bind_tracker();
+	void _unbind_tracker();
 	void _changed_tracker(const String& p_tracker_name, int p_tracker_type);
 	void _removed_tracker(const String& p_tracker_name, int p_tracker_type);
 
@@ -95,7 +72,16 @@ protected:
 
 	void _update_visibility();
 
+	void _button_pressed(const String& p_name);
+	void _button_released(const String& p_name);
+	void _input_float_changed(const String& p_name, float p_value);
+	void _input_vector2_changed(const String& p_name, Vector2 p_value);
+	void _profile_changed(const String& p_role);
+
 public:
+	void set_mode(Mode p_mode);
+	Mode get_mode() const { return mode; }
+
 	void set_tracker(const String& p_tracker_name);
 	String get_tracker() const;
 
@@ -113,68 +99,29 @@ public:
 
 	Ref<XRPose> get_pose();
 
+	// Controller methods (MODE_CONTROLLER)
+	bool is_button_pressed(const String& p_name) const;
+	XRTracker::InputValue get_input(const String& p_name) const;
+	float get_float(const String& p_name) const;
+	Vector2 get_vector2(const String& p_name) const;
+	XRTracker::TrackerHand get_tracker_hand() const;
+
+	// Anchor methods (MODE_ANCHOR)
+	Vector3 get_size() const;
+	Plane get_plane() const;
+
 	PackedStringArray get_configuration_warnings() const override;
 
-	XRNode3D();
+	XRNode3D(Mode p_mode = MODE_TRACKER);
 	~XRNode3D();
 };
 
 /*
-	XRController3D is a helper node that automatically updates its position based on tracker data.
-
-	It must be a child node of our XROrigin node
+	XROrigin3D is a special spatial node that acts as our origin point mapping our real world center
+	of our tracking volume into our virtual world.
 */
 
-class XRController3D : public XRNode3D
-{
-protected:
-	virtual void _bind_tracker() override;
-	virtual void _unbind_tracker() override;
-
-	void _button_pressed(const String& p_name);
-	void _button_released(const String& p_name);
-	void _input_float_changed(const String& p_name, float p_value);
-	void _input_vector2_changed(const String& p_name, Vector2 p_value);
-	void _profile_changed(const String& p_role);
-
-public:
-	bool is_button_pressed(const String& p_name) const;
-	float get_float(const String& p_name) const;
-	Vector2 get_vector2(const String& p_name) const;
-
-	XRPositionalTracker::TrackerHand get_tracker_hand() const;
-};
-
-/*
-	XRAnchor3D is a helper node that automatically updates its position based on anchor data, it
-   represents a real world location. It must be a child node of our XROrigin3D node
-*/
-
-class XRAnchor3D : public XRNode3D
-{
-private:
-	Vector3 size;
-
-protected:
-
-public:
-	Vector3 get_size() const;
-	Plane get_plane() const;
-};
-
-/*
-	XROrigin3D is special spatial node that acts as our origin point mapping our real world center
-   of our tracking volume into our virtual world.
-
-	It is this point that you will move around the world as the player 'moves while standing still',
-   i.e. the player moves through teleporting or controller inputs as opposed to physically moving.
-
-	Our camera and controllers will always be child nodes and thus place relative to this origin
-   point. This node will automatically locate any camera child nodes and update its position while
-   our XRController3D node will handle tracked controllers.
-*/
-
-class XROrigin3D : public Node3D
+class XROrigin3D final : public Node3D
 {
 private:
 	bool current = false;
@@ -195,5 +142,3 @@ public:
 	void set_current(bool p_enabled);
 	bool is_current() const;
 };
-
-

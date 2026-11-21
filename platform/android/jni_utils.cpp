@@ -476,7 +476,7 @@ Variant _jobject_to_variant(JNIEnv *env, jobject obj, int p_depth) {
 		return jcallable_to_callable(env, obj);
 	}
 
-	Ref<JavaObject> generic_object(memnew(JavaObject(JavaClassWrapper::get_singleton()->wrap(name), obj)));
+	Ref<JavaObject> generic_object(memnew(JavaObject(JavaClassWrapper::wrap(name), obj)));
 
 	env->DeleteLocalRef(c);
 

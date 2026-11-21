@@ -31,6 +31,7 @@
 
 #import "os_visionos.h"
 
+#include "core/os/os.h"
 #include "core/profiling/profiling.h"
 #import "drivers/apple_embedded/godot_app_delegate.h"
 #import "drivers/apple_embedded/main_utilities.h"
@@ -40,12 +41,12 @@
 
 #include <cstdio>
 
-static OS_VisionOS *os = nullptr;
-
 int apple_embedded_main(int argc, char **argv) {
 	change_to_launch_dir(argv);
 
-	os = new OS_VisionOS();
+	OS_VisionOS::setup();
+	OS::initialize_core();
+	OS::initialize();
 
 	// We must override main when testing is enabled
 	TEST_MAIN_OVERRIDE
@@ -64,13 +65,14 @@ int apple_embedded_main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	os->initialize_modules();
+	OS_AppleEmbedded::initialize_modules();
 
-	return os->get_exit_code();
+	return OS::get_exit_code();
 }
 
 void apple_embedded_finish() {
 	Main::cleanup();
 	godot_cleanup_profiler();
-	delete os;
+	OS::finalize();
+	OS::finalize_core();
 }

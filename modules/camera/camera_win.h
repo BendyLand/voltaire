@@ -33,11 +33,26 @@
 
 #include "servers/camera/camera_server.h"
 
-class CameraWindows : public CameraServer {
+class CameraWindows final
+{
 private:
-	void add_active_cameras();
+	static void add_active_cameras();
 
 public:
-	CameraWindows();
-	~CameraWindows() {}
+	static void initialize();
+	static void finalize() {}
+
+	static void set_monitoring_feeds(bool p_monitoring_feeds)
+	{
+		CameraServer::set_monitoring_feeds_state(p_monitoring_feeds);
+	}
+
+	static void handle_application_pause() {}
+	static void handle_application_resume() {}
+	static void handle_display_rotation_change(int p_orientation) { (void)p_orientation; }
+
+	CameraWindows() = delete;
+	CameraWindows(const CameraWindows&) = delete;
+	CameraWindows& operator=(const CameraWindows&) = delete;
+	~CameraWindows() = delete;
 };

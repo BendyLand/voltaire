@@ -119,7 +119,7 @@ struct AreaLightAtlas
 
 struct TexBlitShader
 {
-	BlitShaderRD shader;
+	ShaderRD shader{BlitShaderRD()};
 	ShaderCompiler compiler;
 	RID default_shader;
 	RID default_material;
@@ -150,10 +150,12 @@ public:
 			float pad[2];
 		};
 
-		CanvasSdfShaderRD shader;
+		ShaderRD shader;
 		ShaderCompiler compiler;
 		RID shader_version;
 		RID pipeline;
+
+		RenderTargetSDF() : shader(CanvasSdfShaderRD()) {}
 	};
 
 	static inline RenderTargetSDF rt_sdf;

@@ -38,7 +38,7 @@
 #import <AppKit/AppKit.h>
 #import <ApplicationServices/ApplicationServices.h>
 
-class NativeMenuMacOS : public NativeMenu {
+class NativeMenuMacOS : public NativeMenuDriver {
 
 	struct MenuData {
 		NSMenu *menu = nullptr;

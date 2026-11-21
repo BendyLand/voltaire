@@ -1151,9 +1151,28 @@ public:
         }
     };
 
-    struct ShaderSpecializationConstant : public PipelineSpecializationConstant
+    struct ShaderSpecializationConstant
     {
+        PipelineSpecializationConstantType type = {};
+        uint32_t constant_id = 0xffffffff;
+
+        union
+        {
+            uint32_t int_value = 0;
+            float float_value;
+            bool bool_value;
+        };
+
         uint32_t stages = 0;
+
+        operator PipelineSpecializationConstant() const
+        {
+            PipelineSpecializationConstant psc;
+            psc.type = type;
+            psc.constant_id = constant_id;
+            psc.int_value = int_value;
+            return psc;
+        }
 
         bool operator<(const ShaderSpecializationConstant& p_other) const
         {

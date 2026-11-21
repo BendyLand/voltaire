@@ -31,7 +31,54 @@
 
 #include "editor/export/editor_export.h"
 #include "export.h"
-#include "export_plugin.h"
+// --- Inlined from platform/ios/export/export_plugin.h ---
+#include "editor/export/editor_export_platform.h"
+
+class EditorExportPlatformIOS : public EditorExportPlatformAppleEmbedded
+{
+	static Vector<String> device_types;
+
+	virtual String get_platform_name() const override { return "ios"; }
+
+	virtual String get_sdk_name() const override { return "iphoneos"; }
+
+	virtual const Vector<String> get_device_types() const override { return device_types; }
+
+	virtual String get_minimum_deployment_target() const override { return "15.0"; }
+
+	virtual Vector<IconInfo> get_icon_infos() const override;
+
+	virtual void get_export_options(List<ExportOption>* r_options) const override;
+	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
+		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
+
+	virtual Error _export_loading_screen_file(
+		const Ref<EditorExportPreset>& p_preset, const String& p_dest_dir) override;
+	virtual Error _export_icons(
+		const Ref<EditorExportPreset>& p_preset, const String& p_iconset_dir) override;
+
+	virtual String _process_config_file_line(const Ref<EditorExportPreset>& p_preset,
+		const String& p_line, const AppleEmbeddedConfigData& p_config, bool p_debug,
+		const CodeSigningDetails& p_code_signing) override;
+
+public:
+	virtual String get_name() const override { return "iOS"; }
+
+	virtual String get_os_name() const override { return "iOS"; }
+
+	virtual void get_platform_features(List<String>* r_features) const override
+	{
+		EditorExportPlatformAppleEmbedded::get_platform_features(r_features);
+		r_features->push_back("ios");
+	}
+
+	virtual void initialize() override;
+	~EditorExportPlatformIOS();
+};
+
+
+
+// --- End platform/ios/export/export_plugin.h ---
 
 #ifdef MACOS_ENABLED
 #include "editor/settings/editor_settings.h"
@@ -41,17 +88,111 @@ void register_ios_exporter_types() {}
 
 void register_ios_exporter()
 {
-	// TODO: Move to editor_settings.cpp
-#ifdef MACOS_ENABLED
-	EDITOR_DEF("export/ios/ios_deploy", "");
-	EditorSettings::get_singleton()->add_property_hint(
-		PropertyInfo(Variant::STRING, "export/ios/ios_deploy", PROPERTY_HINT_GLOBAL_FILE, "*"));
-#endif
-
 	Ref<EditorExportPlatformIOS> platform;
 	platform.instantiate();
 
-	EditorExport::get_singleton()->add_export_platform(platform);
+	EditorExport::add_export_platform(platform);
+}
+
+
+
+// ============================================================================
+// Merged from platform/ios/export/export_plugin.cpp
+// ============================================================================
+
+#include "core/config/engine.h"
+
+#include "logo_svg.gen.h"
+#include "main/splash.gen.h"
+#include "run_icon_svg.gen.h"
+
+Vector<String> EditorExportPlatformIOS::device_types({"iPhone", "iPad"});
+
+void EditorExportPlatformIOS::initialize()
+{
+	if (Engine::is_editor_hint()) {
+		EditorExportPlatformAppleEmbedded::_initialize(_ios_logo_svg, _ios_run_icon_svg);
+#ifdef MACOS_ENABLED
+		_start_remote_device_poller_thread();
+#endif
+	}
+}
+
+EditorExportPlatformIOS::~EditorExportPlatformIOS()
+{
+#ifdef MACOS_ENABLED
+	_stop_remote_device_poller_thread();
+#endif
+}
+
+Vector<EditorExportPlatformAppleEmbedded::IconInfo> EditorExportPlatformIOS::get_icon_infos() const
+{
+	return {
+		// Settings on iPhone, iPad Pro, iPad, iPad mini
+		{PNAME("icons/settings_58x58"), "universal", "Icon-58", "58", "2x", "29x29", false},
+		{PNAME("icons/settings_87x87"), "universal", "Icon-87", "87", "3x", "29x29", false},
+
+		// Notifications on iPhone, iPad Pro, iPad, iPad mini
+		{PNAME("icons/notification_40x40"), "universal", "Icon-40", "40", "2x", "20x20", false},
+		{PNAME("icons/notification_60x60"), "universal", "Icon-60", "60", "3x", "20x20", false},
+		{PNAME("icons/notification_76x76"), "universal", "Icon-76", "76", "2x", "38x38", false},
+		{PNAME("icons/notification_114x114"), "universal", "Icon-114", "114", "3x", "38x38", false},
+
+		// Spotlight on iPhone, iPad Pro, iPad, iPad mini
+		{PNAME("icons/spotlight_80x80"), "universal", "Icon-80", "80", "2x", "40x40", false},
+		{PNAME("icons/spotlight_120x120"), "universal", "Icon-120", "120", "3x", "40x40", false},
+
+		// Home Screen on iPhone
+		{PNAME("icons/iphone_120x120"), "universal", "Icon-120-1", "120", "2x", "60x60", false},
+		{PNAME("icons/iphone_180x180"), "universal", "Icon-180", "180", "3x", "60x60", false},
+
+		// Home Screen on iPad Pro
+		{PNAME("icons/ipad_167x167"), "universal", "Icon-167", "167", "2x", "83.5x83.5", false},
+
+		// Home Screen on iPad, iPad mini
+		{PNAME("icons/ipad_152x152"), "universal", "Icon-152", "152", "2x", "76x76", false},
+
+		{PNAME("icons/ios_128x128"), "universal", "Icon-128", "128", "2x", "64x64", false},
+		{PNAME("icons/ios_192x192"), "universal", "Icon-192", "192", "3x", "64x64", false},
+
+		{PNAME("icons/ios_136x136"), "universal", "Icon-136", "136", "2x", "68x68", false},
+
+		// App Store
+		{PNAME("icons/app_store_1024x1024"), "universal", "Icon-1024", "1024", "1x", "1024x1024",
+			true},
+	};
+}
+
+void EditorExportPlatformIOS::get_export_options(
+	List<EditorExportPlatform::ExportOption>* r_options) const
+{
+}
+
+bool EditorExportPlatformIOS::has_valid_export_configuration(
+	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
+	bool p_debug) const
+{
+	return false;
+}
+
+String EditorExportPlatformIOS::_process_config_file_line(const Ref<EditorExportPreset>& p_preset,
+	const String& p_line,
+	const EditorExportPlatformAppleEmbedded::AppleEmbeddedConfigData& p_config_data, bool p_is_main,
+	const EditorExportPlatformAppleEmbedded::CodeSigningDetails& p_signing_details)
+{
+	return String();
+}
+
+Error EditorExportPlatformIOS::_export_loading_screen_file(
+	const Ref<EditorExportPreset>& p_preset, const String& p_dest_dir)
+{
+	return OK;
+}
+
+Error EditorExportPlatformIOS::_export_icons(
+	const Ref<EditorExportPreset>& p_preset, const String& p_dest_dir)
+{
+	return OK;
 }
 
 

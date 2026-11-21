@@ -30,8 +30,164 @@
 /**************************************************************************/
 
 #include "core/input/input.h"
+#include "register_types.h"
 #include "core/os/os.h"
-#include "mobile_vr_interface.h"
+// --- Inlined from modules/mobile_vr/mobile_vr_interface.h ---
+#include "servers/xr/xr_interface.h"
+#include "servers/xr/xr_tracker.h"
+
+/**
+	The mobile interface is a native VR interface that can be used on Android and iOS phones.
+	It contains a basic implementation supporting 3DOF tracking if a gyroscope and accelerometer are
+	present and sets up the proper projection matrices based on the values provided.
+
+	We're planning to eventually do separate interfaces towards mobile SDKs that have far more
+   capabilities and do not rely on the user providing most of these settings (though enhancing this
+   with auto detection features based on the device we're running on would be cool). I'm mostly
+   adding this as an example or base plate for more advanced interfaces.
+*/
+
+class MobileVRInterface : public XRInterface
+{
+private:
+	bool initialized = false;
+	XRInterface::TrackingStatus tracking_state;
+	XRPose::TrackingConfidence tracking_confidence = XRPose::XR_TRACKING_CONFIDENCE_NONE;
+
+	// Just set some defaults for these. At some point we need to look at adding a lookup table for
+	// common device + headset combos and/or support reading cardboard QR codes
+	double eye_height = 1.85;
+	uint64_t last_ticks = 0;
+
+	double intraocular_dist = 6.0;
+	double display_width = 14.5;
+	double display_to_lens = 4.0;
+	double oversample = 1.5;
+
+	Rect2 offset_rect = Rect2(0, 0, 1, 1); // Full screen rect.
+
+	double k1 = 0.215;
+	double k2 = 0.215;
+	double aspect = 1.0;
+
+	// at a minimum we need a tracker for our head
+	Ref<XRTracker> head;
+	Transform3D head_transform;
+
+	XRVRS xr_vrs;
+
+	/*
+		logic for processing our sensor data, this was originally in our positional tracker logic
+	   but I think that doesn't make sense in hindsight. It only makes marginally more sense to park
+	   it here for now, this probably deserves an object of its own
+	*/
+	Vector3 scale_magneto(const Vector3& p_magnetometer);
+	Basis combine_acc_mag(const Vector3& p_grav, const Vector3& p_magneto);
+
+	int mag_count = 0;
+	bool has_gyro = false;
+	bool sensor_first = false;
+	Vector3 last_accerometer_data;
+	Vector3 last_magnetometer_data;
+	Vector3 mag_current_min;
+	Vector3 mag_current_max;
+	Vector3 mag_next_min;
+	Vector3 mag_next_max;
+
+	///@TODO a few support functions for trackers, most are math related and should likely be moved
+	///elsewhere
+	float floor_decimals(const float p_value, const float p_decimals)
+	{
+		float power_of_10 = std::pow(10.0f, p_decimals);
+		return std::floor(p_value * power_of_10) / power_of_10;
+	}
+
+	Vector3 floor_decimals(const Vector3& p_vector, const float p_decimals)
+	{
+		return Vector3(floor_decimals(p_vector.x, p_decimals),
+			floor_decimals(p_vector.y, p_decimals), floor_decimals(p_vector.z, p_decimals));
+	}
+
+	Vector3 low_pass(const Vector3& p_vector, const Vector3& p_last_vector, const float p_factor)
+	{
+		return p_vector + (p_factor * (p_last_vector - p_vector));
+	}
+
+	Vector3 scrub(const Vector3& p_vector, const Vector3& p_last_vector, const float p_decimals,
+		const float p_factor)
+	{
+		return low_pass(floor_decimals(p_vector, p_decimals), p_last_vector, p_factor);
+	}
+
+	void set_position_from_sensors();
+
+protected:
+
+public:
+	void set_eye_height(const double p_eye_height);
+	double get_eye_height() const;
+
+	void set_iod(const double p_iod);
+	double get_iod() const;
+
+	void set_display_width(const double p_display_width);
+	double get_display_width() const;
+
+	void set_offset_rect(const Rect2& p_offset_rect);
+	Rect2 get_offset_rect() const;
+
+	void set_display_to_lens(const double p_display_to_lens);
+	double get_display_to_lens() const;
+
+	void set_oversample(const double p_oversample);
+	double get_oversample() const;
+
+	void set_k1(const double p_k1);
+	double get_k1() const;
+
+	void set_k2(const double p_k2);
+	double get_k2() const;
+
+	float get_vrs_min_radius() const;
+	void set_vrs_min_radius(float p_vrs_min_radius);
+
+	float get_vrs_strength() const;
+	void set_vrs_strength(float p_vrs_strength);
+
+	virtual String get_name() const override;
+	virtual uint32_t get_capabilities() const override;
+
+	virtual TrackingStatus get_tracking_status() const override;
+
+	virtual bool is_initialized() const override;
+	virtual bool initialize() override;
+	virtual void uninitialize() override;
+
+	virtual bool supports_play_area_mode(XRInterface::PlayAreaMode p_mode) override;
+	virtual XRInterface::PlayAreaMode get_play_area_mode() const override;
+	virtual bool set_play_area_mode(XRInterface::PlayAreaMode p_mode) override;
+
+	virtual Size2 get_render_target_size() override;
+	virtual uint32_t get_view_count() override;
+	virtual Transform3D get_camera_transform() override;
+	virtual Transform3D get_transform_for_view(
+		uint32_t p_view, const Transform3D& p_cam_transform) override;
+	virtual Projection get_projection_for_view(
+		uint32_t p_view, double p_aspect, double p_z_near, double p_z_far) override;
+	virtual Vector<RenderingServerTypes::BlitToScreen> post_draw_viewport(
+		RID p_render_target, const Rect2& p_screen_rect) override;
+
+	virtual void process() override;
+
+	virtual RID get_vrs_texture() override;
+
+	MobileVRInterface();
+	~MobileVRInterface();
+};
+
+
+
+// --- End modules/mobile_vr/mobile_vr_interface.h ---
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server_types.h"
 
@@ -139,16 +295,15 @@ void MobileVRInterface::set_position_from_sensors()
 	float delta_time = (double)ticks_elapsed / 1000000.0;
 
 	// few things we need
-	Input* input = Input::get_singleton();
 	Vector3 down(0.0, -1.0, 0.0); // Down is Y negative
 
 	// make copies of our inputs
 	bool has_grav = false;
-	Vector3 acc = input->get_accelerometer();
-	Vector3 gyro = input->get_gyroscope();
-	Vector3 grav = input->get_gravity();
+	Vector3 acc = Input::get_accelerometer();
+	Vector3 gyro = Input::get_gyroscope();
+	Vector3 grav = Input::get_gravity();
 	Vector3 magneto = scale_magneto(
-		input->get_magnetometer()); // this may be overkill on iOS because we're already getting a
+		Input::get_magnetometer()); // this may be overkill on iOS because we're already getting a
 									// calibrated magnetometer reading
 
 	if (sensor_first) {
@@ -297,8 +452,7 @@ bool MobileVRInterface::is_initialized() const { return (initialized); }
 
 bool MobileVRInterface::initialize()
 {
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, false);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), false);
 
 	if (!initialized) {
 		// reset our sensor data
@@ -317,10 +471,10 @@ bool MobileVRInterface::initialize()
 		head->set_tracker_type(XRServer::TRACKER_HEAD);
 		head->set_tracker_name("head");
 		head->set_tracker_desc("Players head");
-		xr_server->add_tracker(head);
+		XRServer::add_tracker(head);
 
 		// make this our primary interface
-		xr_server->set_primary_interface(this);
+		XRServer::set_primary_interface(this);
 
 		last_ticks = OS::get_ticks_usec();
 
@@ -334,17 +488,16 @@ void MobileVRInterface::uninitialize()
 {
 	if (initialized) {
 		// do any cleanup here...
-		XRServer* xr_server = XRServer::get_singleton();
-		if (xr_server != nullptr) {
+		if (XRServer::is_initialized()) {
 			if (head.is_valid()) {
-				xr_server->remove_tracker(head);
+				XRServer::remove_tracker(head);
 
 				head.unref();
 			}
 
-			if (xr_server->get_primary_interface() == this) {
+			if (XRServer::get_primary_interface() == this) {
 				// no longer our primary interface
-				xr_server->set_primary_interface(nullptr);
+				XRServer::set_primary_interface(nullptr);
 			}
 		}
 
@@ -373,7 +526,7 @@ Size2 MobileVRInterface::get_render_target_size()
 	_THREAD_SAFE_METHOD_
 
 	// we use half our window size
-	Size2 target_size = DisplayServer::get_singleton()->window_get_size();
+	Size2 target_size = DisplayServer::window_get_size();
 
 	target_size.x *= 0.5 * oversample;
 	target_size.y *= oversample;
@@ -387,17 +540,16 @@ Transform3D MobileVRInterface::get_camera_transform()
 
 	Transform3D transform_for_eye;
 
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, transform_for_eye);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), transform_for_eye);
 
 	if (initialized) {
-		float world_scale = xr_server->get_world_scale();
+		float world_scale = XRServer::get_world_scale();
 
 		// just scale our origin point of our transform
 		Transform3D _head_transform = head_transform;
 		_head_transform.origin *= world_scale;
 
-		transform_for_eye = (xr_server->get_reference_frame()) * _head_transform;
+		transform_for_eye = (XRServer::get_reference_frame()) * _head_transform;
 	}
 
 	return transform_for_eye;
@@ -410,11 +562,10 @@ Transform3D MobileVRInterface::get_transform_for_view(
 
 	Transform3D transform_for_eye;
 
-	XRServer* xr_server = XRServer::get_singleton();
-	ERR_FAIL_NULL_V(xr_server, transform_for_eye);
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), transform_for_eye);
 
 	if (initialized) {
-		float world_scale = xr_server->get_world_scale();
+		float world_scale = XRServer::get_world_scale();
 
 		// we don't need to check for the existence of our HMD, doesn't affect our values...
 		// note * 0.01 to convert cm to m and * 0.5 as we're moving half in each direction...
@@ -432,7 +583,7 @@ Transform3D MobileVRInterface::get_transform_for_view(
 		Transform3D _head_transform = head_transform;
 		_head_transform.origin *= world_scale;
 
-		transform_for_eye = p_cam_transform * (xr_server->get_reference_frame()) * _head_transform *
+		transform_for_eye = p_cam_transform * (XRServer::get_reference_frame()) * _head_transform *
 							transform_for_eye;
 	}
 	else {
@@ -556,4 +707,37 @@ MobileVRInterface::~MobileVRInterface()
 	};
 }
 
+static Ref<MobileVRInterface> mobile_vr;
 
+void initialize_mobile_vr_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+	if (XRServer::is_initialized()) {
+		mobile_vr.instantiate();
+		XRServer::add_interface(mobile_vr);
+	}
+}
+
+void uninitialize_mobile_vr_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	if (mobile_vr.is_valid()) {
+		// uninitialize our interface if it is initialized
+		if (mobile_vr->is_initialized()) {
+			mobile_vr->uninitialize();
+		}
+
+		// unregister our interface from the XR server
+		if (XRServer::is_initialized()) {
+			XRServer::remove_interface(mobile_vr);
+		}
+
+		// and release
+		mobile_vr.unref();
+	}
+}

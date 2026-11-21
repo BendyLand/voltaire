@@ -42,16 +42,16 @@ namespace TestBoxContainer {
 
 TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 	HBoxContainer *hbox_container = memnew(HBoxContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(hbox_container);
 
 	hbox_container->set_size(Size2(100, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	SUBCASE("Default behavior") {
 		Control *child_control = memnew(Control);
 		hbox_container->add_child(child_control);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				hbox_container->get_alignment() == BoxContainer::ALIGNMENT_BEGIN,
@@ -84,49 +84,49 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 		Control *child_control = memnew(Control);
 		hbox_container->add_child(child_control);
 		child_control->set_custom_minimum_size(Size2(20, 20));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the left by default with SIZE_FILL.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the left of in SIZE_SHRINK_BEGIN horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the left of in SIZE_SHRINK_CENTER horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the left of in SIZE_SHRINK_END horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_EXPAND | Control::SIZE_SHRINK_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the left in SIZE_EXPAND | SIZE_SHRINK_BEGIN horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_EXPAND | Control::SIZE_SHRINK_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(40, 0)),
 				"Child control is aligned to the center in SIZE_EXPAND | SIZE_SHRINK_CENTER horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_EXPAND | Control::SIZE_SHRINK_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(80, 0)),
@@ -138,28 +138,28 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 	SUBCASE("Child Vertical Size Flags") {
 		Control *child_control = memnew(Control);
 		hbox_container->add_child(child_control);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the top by default with SIZE_FILL.");
 
 		child_control->set_v_size_flags(Control::SIZE_SHRINK_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the top of in SIZE_SHRINK_BEGIN vertical size flag mode.");
 
 		child_control->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 50)),
 				"Child control is aligned to the center of in SIZE_SHRINK_CENTER vertical size flag mode.");
 
 		child_control->set_v_size_flags(Control::SIZE_SHRINK_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 100)),
@@ -171,21 +171,21 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 	SUBCASE("Child Alignment") {
 		Control *child_control = memnew(Control);
 		hbox_container->add_child(child_control);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the left in ALIGNMENT_BEGIN mode by default.");
 
 		hbox_container->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(50, 0)),
 				"Child control is aligned to the center in ALIGNMENT_CENTER mode.");
 
 		hbox_container->set_alignment(BoxContainer::ALIGNMENT_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(100, 0)),
@@ -198,21 +198,21 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 		Control *child_control = memnew(Control);
 		hbox_container->add_child(child_control);
 		hbox_container->set_layout_direction(Control::LAYOUT_DIRECTION_RTL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(100, 0)),
 				"Child control is aligned to the right in RTL ALIGNMENT_BEGIN mode by default.");
 
 		hbox_container->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(50, 0)),
 				"Child control is aligned to the center in RTL ALIGNMENT_CENTER mode.");
 
 		hbox_container->set_alignment(BoxContainer::ALIGNMENT_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
@@ -228,7 +228,7 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 		hbox_container->add_child(child_control_2);
 
 		hbox_container->add_theme_constant_override("separation", 10);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_2->get_position().is_equal_approx(Point2(10, 0)),
@@ -245,7 +245,7 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 		hbox_container->add_spacer();
 		hbox_container->add_child(child_control_2);
 		hbox_container->add_theme_constant_override("separation", 0);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_2->get_position().is_equal_approx(Point2(100, 0)),
@@ -263,7 +263,7 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 		hbox_container->add_theme_constant_override("separation", 0);
 
 		child_control_1->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(100, 100)),
@@ -282,7 +282,7 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 				"Non-expanding child control is positioned after the expanding child control.");
 
 		child_control_2->set_custom_minimum_size(Size2(20, 0));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(80, 100)),
@@ -301,7 +301,7 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 				"Non-expanding child control is positioned after the expanding child control.");
 
 		child_control_2->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(50, 100)),
@@ -320,7 +320,7 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 				"Second expanding child control is positioned after the first expanding child control.");
 
 		child_control_2->set_stretch_ratio(3);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(25, 100)),
@@ -347,16 +347,16 @@ TEST_CASE("[SceneTree][BoxContainer] HBoxContainer") {
 
 TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 	VBoxContainer *vbox_container = memnew(VBoxContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(vbox_container);
 
 	vbox_container->set_size(Size2(100, 100));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	SUBCASE("Default behavior") {
 		Control *child_control = memnew(Control);
 		vbox_container->add_child(child_control);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				vbox_container->get_alignment() == BoxContainer::ALIGNMENT_BEGIN,
@@ -389,49 +389,49 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 		Control *child_control = memnew(Control);
 		vbox_container->add_child(child_control);
 		child_control->set_custom_minimum_size(Size2(20, 20));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the top by default with SIZE_FILL.");
 
 		child_control->set_v_size_flags(Control::SIZE_SHRINK_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the top of in SIZE_SHRINK_BEGIN vertical size flag mode.");
 
 		child_control->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the top of in SIZE_SHRINK_CENTER vertical size flag mode.");
 
 		child_control->set_v_size_flags(Control::SIZE_SHRINK_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the top of in SIZE_SHRINK_END vertical size flag mode.");
 
 		child_control->set_v_size_flags(Control::SIZE_EXPAND | Control::SIZE_SHRINK_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the top in SIZE_EXPAND | SIZE_SHRINK_BEGIN vertical size flag mode.");
 
 		child_control->set_v_size_flags(Control::SIZE_EXPAND | Control::SIZE_SHRINK_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 40)),
 				"Child control is aligned to the center in SIZE_EXPAND | SIZE_SHRINK_CENTER vertical size flag mode.");
 
 		child_control->set_v_size_flags(Control::SIZE_EXPAND | Control::SIZE_SHRINK_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 80)),
@@ -443,28 +443,28 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 	SUBCASE("Child Horizontal Size Flags") {
 		Control *child_control = memnew(Control);
 		vbox_container->add_child(child_control);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the left by default with SIZE_FILL.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_BEGIN);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the left of in SIZE_SHRINK_BEGIN horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(50, 0)),
 				"Child control is aligned to the center of in SIZE_SHRINK_CENTER horizontal size flag mode.");
 
 		child_control->set_h_size_flags(Control::SIZE_SHRINK_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(100, 0)),
@@ -476,21 +476,21 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 	SUBCASE("Child Alignment") {
 		Control *child_control = memnew(Control);
 		vbox_container->add_child(child_control);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 0)),
 				"Child control is aligned to the top in ALIGNMENT_BEGIN mode by default.");
 
 		vbox_container->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 50)),
 				"Child control is aligned to the center in ALIGNMENT_CENTER mode.");
 
 		vbox_container->set_alignment(BoxContainer::ALIGNMENT_END);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control->get_position().is_equal_approx(Point2(0, 100)),
@@ -506,7 +506,7 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 		vbox_container->add_child(child_control_2);
 
 		vbox_container->add_theme_constant_override("separation", 10);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_2->get_position().is_equal_approx(Point2(0, 10)),
@@ -523,7 +523,7 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 		vbox_container->add_spacer();
 		vbox_container->add_child(child_control_2);
 		vbox_container->add_theme_constant_override("separation", 0);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_2->get_position().is_equal_approx(Point2(0, 100)),
@@ -541,7 +541,7 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 		vbox_container->add_theme_constant_override("separation", 0);
 
 		child_control_1->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(100, 100)),
@@ -560,7 +560,7 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 				"Non-expanding child control is positioned after the expanding child control.");
 
 		child_control_2->set_custom_minimum_size(Size2(0, 20));
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(100, 80)),
@@ -579,7 +579,7 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 				"Non-expanding child control is positioned after the expanding child control.");
 
 		child_control_2->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(100, 50)),
@@ -598,7 +598,7 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 				"Second expanding child control is positioned after the first expanding child control.");
 
 		child_control_2->set_stretch_ratio(3);
-		SceneTree::get_singleton()->process(0);
+		SceneTree::process(0);
 
 		CHECK_MESSAGE(
 				child_control_1->get_size().is_equal_approx(Size2(100, 25)),

@@ -60,7 +60,7 @@
 		return NO;
 	}
 
-	if (!OS::get_singleton()) {
+	if (!OS::is_initialized()) {
 		exit(0);
 	}
 
@@ -71,7 +71,7 @@
 
 	if (!self.hasStartedMain) {
 		self.hasStartedMain = YES;
-		OS_AppleEmbedded::get_singleton()->start();
+		OS_AppleEmbedded::start();
 		return YES;
 	}
 
@@ -84,37 +84,14 @@
 	self.hasFinishedProjectDataSetup = YES;
 
 	Main::setup2();
-
-	// this might be necessary before here
-	NSDictionary *dict = [[NSBundle mainBundle] infoDictionary];
-	for (NSString *key in dict) {
-		NSObject *value = [dict objectForKey:key];
-		String ukey = String::utf8([key UTF8String]);
-
-		// we need a NSObject to Variant conversor
-
-		if ([value isKindOfClass:[NSString class]]) {
-			NSString *str = (NSString *)value;
-			String uval = String::utf8([str UTF8String]);
-
-			ProjectSettings::get_singleton()->set("Info.plist/" + ukey, uval);
-
-		} else if ([value isKindOfClass:[NSNumber class]]) {
-			NSNumber *n = (NSNumber *)value;
-			double dval = [n doubleValue];
-
-			ProjectSettings::get_singleton()->set("Info.plist/" + ukey, dval);
-		}
-		// do stuff
-	}
 }
 
 - (void)renderOnView:(UIView *)view {
-	if (!OS_AppleEmbedded::get_singleton()) {
+	if (!OS_AppleEmbedded::is_initialized()) {
 		return;
 	}
 
-	OS_AppleEmbedded::get_singleton()->iterate();
+	OS_AppleEmbedded::iterate();
 }
 
 @end

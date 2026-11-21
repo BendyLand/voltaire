@@ -37,8 +37,7 @@
 #include "core/input/input.h"
 #include "core/input/input_map.h"
 #include "core/io/dir_access.h"
-#include "core/io/file_access_pack.h"
-#include "core/io/file_access_zip.h"
+#include "core/io/file_access_wrappers.h"
 #include "core/io/image.h"
 #include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
@@ -52,12 +51,262 @@
 #include "drivers/register_driver_types.h"
 #include "main.h"
 #include "main/app_icon.gen.h"
-#include "main/main_timer_sync.h"
-#include "main/performance.h"
+// --- Inlined from main/main_timer_sync.h ---
+#include <cstdint>
+
+struct MainFrameTime
+{
+	double process_step;		   // delta time to advance during process()
+	int physics_steps;			   // number of times to iterate the physics engine
+	double interpolation_fraction; // fraction through the current physics tick
+
+	void clamp_process_step(double min_process_step, double max_process_step);
+};
+
+class MainTimerSync
+{
+	class DeltaSmoother
+	{
+	public:
+		// pass the recorded delta, returns a smoothed delta
+		int64_t smooth_delta(int64_t p_delta);
+
+	private:
+		void made_new_estimate();
+		void update_refresh_rate_estimator(int64_t p_delta);
+		bool fps_allows_smoothing(int64_t p_delta);
+
+		// estimated vsync delta (monitor refresh rate)
+		int64_t _vsync_delta = 16666;
+
+		// keep track of accumulated time so we know how many vsyncs to advance by
+		int64_t _leftover_time = 0;
+
+		// keep a rough measurement of the FPS as we run.
+		// If this drifts a long way below or above the refresh rate, the machine
+		// is struggling to keep up, and we can switch off smoothing. This
+		// also deals with the case that the user has overridden the vsync in the GPU settings,
+		// in which case we don't want to try smoothing.
+		static const int MEASURE_FPS_OVER_NUM_FRAMES = 64;
+
+		int64_t _measurement_time = 0;
+		int64_t _measurement_frame_count = 0;
+		int64_t _measurement_end_frame = MEASURE_FPS_OVER_NUM_FRAMES;
+		int64_t _measurement_start_time = 0;
+		bool _measurement_allows_smoothing = true;
+
+		// we can estimate the fps by growing it on condition
+		// that a large proportion of frames are higher than the current estimate.
+		int32_t _estimated_fps = 0;
+		int32_t _hits_at_estimated = 0;
+		int32_t _hits_above_estimated = 0;
+		int32_t _hits_below_estimated = 0;
+		int32_t _hits_one_above_estimated = 0;
+		int32_t _hits_one_below_estimated = 0;
+		bool _estimate_complete = false;
+		bool _estimate_locked = false;
+
+		// data for averaging the delta over a second or so
+		// to prevent spurious values
+		int64_t _estimator_total_delta = 0;
+		int32_t _estimator_delta_readings = 0;
+	} _delta_smoother;
+
+	// wall clock time measured on the main thread
+	uint64_t last_cpu_ticks_usec = 0;
+	uint64_t current_cpu_ticks_usec = 0;
+
+	// logical game time since last physics timestep
+	double time_accum = 0;
+
+	// current difference between wall clock time and reported sum of process_steps
+	double time_deficit = 0;
+
+	// number of frames back for keeping accumulated physics steps roughly constant.
+	// value of 12 chosen because that is what is required to make 144 Hz monitors
+	// behave well with 60 Hz physics updates. The only worse commonly available refresh
+	// would be 85, requiring CONTROL_STEPS = 17.
+	static const int CONTROL_STEPS = 12;
+
+	// sum of physics steps done over the last (i+1) frames
+	int accumulated_physics_steps[CONTROL_STEPS];
+
+	// typical value for accumulated_physics_steps[i] is either this or this plus one
+	int typical_physics_steps[CONTROL_STEPS];
+
+	int fixed_fps = 0;
+
+protected:
+	// returns the fraction of p_physics_step required for the timer to overshoot
+	// before advance_core considers changing the physics_steps return from
+	// the typical values as defined by typical_physics_steps
+	double get_physics_jitter_fix();
+
+	// gets our best bet for the average number of physics steps per render frame
+	// return value: number of frames back this data is consistent
+	int get_average_physics_steps(double& p_min, double& p_max);
+
+	// advance physics clock by p_process_step, return appropriate number of steps to simulate
+	MainFrameTime advance_core(
+		double p_physics_step, int p_physics_ticks_per_second, double p_process_step);
+
+	// calls advance_core, keeps track of deficit it adds to animaption_step, make sure the deficit
+	// sum stays close to zero
+	MainFrameTime advance_checked(
+		double p_physics_step, int p_physics_ticks_per_second, double p_process_step);
+
+	// determine wall clock step since last iteration
+	double get_cpu_process_step();
+
+public:
+	MainTimerSync();
+
+	// start the clock
+	void init(uint64_t p_cpu_ticks_usec);
+	// set measured wall clock time
+	void set_cpu_ticks_usec(uint64_t p_cpu_ticks_usec);
+	// set fixed fps
+	void set_fixed_fps(int p_fixed_fps);
+
+	// advance one frame, return timesteps to take
+	MainFrameTime advance(double p_physics_step, int p_physics_ticks_per_second);
+};
+
+// --- End main/main_timer_sync.h ---
+// --- Inlined from main/performance.h ---
+#include "core/templates/hash_map.h"
+
+#define PERF_WARN_OFFLINE_FUNCTION
+#define PERF_WARN_PROCESS_SYNC
+
+template <typename T> class TypedArray;
+
+class Performance final
+{
+	static inline bool _initialized = false;
+
+	static int _get_node_count();
+	static int _get_orphan_node_count();
+
+	static inline double _process_time = 0.0;
+	static inline double _physics_process_time = 0.0;
+	static inline double _navigation_process_time = 0.0;
+	static inline uint64_t _monitor_modification_time = 0;
+
+public:
+	enum Monitor
+	{
+		TIME_FPS,
+		TIME_PROCESS,
+		TIME_PHYSICS_PROCESS,
+		TIME_NAVIGATION_PROCESS,
+		MEMORY_STATIC,
+		MEMORY_STATIC_MAX,
+		MEMORY_MESSAGE_BUFFER_MAX,
+		OBJECT_COUNT,
+		OBJECT_RESOURCE_COUNT,
+		OBJECT_NODE_COUNT,
+		OBJECT_ORPHAN_NODE_COUNT,
+		RENDER_TOTAL_OBJECTS_IN_FRAME,
+		RENDER_TOTAL_PRIMITIVES_IN_FRAME,
+		RENDER_TOTAL_DRAW_CALLS_IN_FRAME,
+		RENDER_VIDEO_MEM_USED,
+		RENDER_TEXTURE_MEM_USED,
+		RENDER_BUFFER_MEM_USED,
+		PHYSICS_2D_ACTIVE_OBJECTS,
+		PHYSICS_2D_COLLISION_PAIRS,
+		PHYSICS_2D_ISLAND_COUNT,
+		PHYSICS_3D_ACTIVE_OBJECTS,
+		PHYSICS_3D_COLLISION_PAIRS,
+		PHYSICS_3D_ISLAND_COUNT,
+		AUDIO_OUTPUT_LATENCY,
+		// Deprecated, use the 2D/3D specific ones instead.
+		NAVIGATION_ACTIVE_MAPS,
+		NAVIGATION_REGION_COUNT,
+		NAVIGATION_AGENT_COUNT,
+		NAVIGATION_LINK_COUNT,
+		NAVIGATION_POLYGON_COUNT,
+		NAVIGATION_EDGE_COUNT,
+		NAVIGATION_EDGE_MERGE_COUNT,
+		NAVIGATION_EDGE_CONNECTION_COUNT,
+		NAVIGATION_EDGE_FREE_COUNT,
+		NAVIGATION_OBSTACLE_COUNT,
+		PIPELINE_COMPILATIONS_CANVAS,
+		PIPELINE_COMPILATIONS_MESH,
+		PIPELINE_COMPILATIONS_SURFACE,
+		PIPELINE_COMPILATIONS_DRAW,
+		PIPELINE_COMPILATIONS_SPECIALIZATION,
+		NAVIGATION_2D_ACTIVE_MAPS,
+		NAVIGATION_2D_REGION_COUNT,
+		NAVIGATION_2D_AGENT_COUNT,
+		NAVIGATION_2D_LINK_COUNT,
+		NAVIGATION_2D_POLYGON_COUNT,
+		NAVIGATION_2D_EDGE_COUNT,
+		NAVIGATION_2D_EDGE_MERGE_COUNT,
+		NAVIGATION_2D_EDGE_CONNECTION_COUNT,
+		NAVIGATION_2D_EDGE_FREE_COUNT,
+		NAVIGATION_2D_OBSTACLE_COUNT,
+#ifndef _3D_DISABLED
+		NAVIGATION_3D_ACTIVE_MAPS,
+		NAVIGATION_3D_REGION_COUNT,
+		NAVIGATION_3D_AGENT_COUNT,
+		NAVIGATION_3D_LINK_COUNT,
+		NAVIGATION_3D_POLYGON_COUNT,
+		NAVIGATION_3D_EDGE_COUNT,
+		NAVIGATION_3D_EDGE_MERGE_COUNT,
+		NAVIGATION_3D_EDGE_CONNECTION_COUNT,
+		NAVIGATION_3D_EDGE_FREE_COUNT,
+		NAVIGATION_3D_OBSTACLE_COUNT,
+#endif // _3D_DISABLED
+		MONITOR_MAX
+	};
+
+	enum MonitorType
+	{
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_PERCENTAGE,
+	};
+
+	static void initialize();
+	static void finalize();
+
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
+
+	static double get_monitor(Monitor p_monitor);
+	static String get_monitor_name(Monitor p_monitor);
+
+	static MonitorType get_monitor_type(Monitor p_monitor);
+
+	static void set_process_time(double p_pt);
+	static void set_physics_process_time(double p_pt);
+	static void set_navigation_process_time(double p_pt);
+
+	static uint64_t get_monitor_modification_time();
+
+	Performance() = delete;
+	Performance(const Performance&) = delete;
+	Performance& operator=(const Performance&) = delete;
+	~Performance() = delete;
+
+private:
+	class MonitorCall
+	{
+		MonitorType _type = MONITOR_TYPE_QUANTITY;
+
+	public:
+		MonitorCall();
+
+		inline MonitorType get_monitor_type() const { return _type; }
+	};
+};
+
+// --- End main/performance.h ---
 #include "main/splash.gen.h"
 #include "modules/register_module_types.h"
 #include "platform/register_platform_apis.h"
-#include "scene/gui/color_rect.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/property_list_helper.h"
@@ -65,7 +314,6 @@
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/world_2d.h"
 #include "scene/theme/theme_db.h"
-#include "servers/audio/audio_driver_dummy.h"
 #include "servers/audio/audio_server.h"
 #include "servers/camera/camera_server.h"
 #include "servers/display/accessibility_server.h"
@@ -77,7 +325,6 @@
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/storage/texture_storage.h"
 #include "servers/text/text_server.h"
-#include "servers/text/text_server_dummy.h"
 
 // 2D
 #ifndef NAVIGATION_2D_DISABLED
@@ -86,7 +333,6 @@
 
 #ifndef PHYSICS_2D_DISABLED
 #include "servers/physics_2d/physics_server_2d.h"
-#include "servers/physics_2d/physics_server_2d_dummy.h"
 #endif // PHYSICS_2D_DISABLED
 
 // 3D
@@ -96,7 +342,6 @@
 
 #ifndef PHYSICS_3D_DISABLED
 #include "servers/physics_3d/physics_server_3d.h"
-#include "servers/physics_3d/physics_server_3d_dummy.h"
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
@@ -110,33 +355,70 @@
 #endif
 
 #ifdef TOOLS_ENABLED
-#include "editor/debugger/debug_adapter/debug_adapter_server.h"
-#include "editor/debugger/editor_debugger_node.h"
 #include "editor/doc/doc_data_class_path.gen.h"
-#include "editor/doc/doc_tools.h"
-#include "editor/doc/editor_help.h"
-#include "editor/editor_node.h"
+#include "editor/editor_ui.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/file_system/editor_paths.h"
-#include "editor/gui/progress_dialog.h"
-#include "editor/project_manager/project_manager.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/translations/editor_translation.h"
 
 #if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
 #include "main/splash_editor.gen.h"
 #endif
 
 #ifndef DISABLE_DEPRECATED
-#include "editor/project_upgrade/project_converter_3_to_4.h"
+#include "editor/editor_ui.h"
 #endif // DISABLE_DEPRECATED
 #endif // TOOLS_ENABLED
 
 #if defined(STEAMAPI_ENABLED)
-#include "main/steam_tracker.h"
+// --- Inlined from main/steam_tracker.h ---
+#if defined(STEAMAPI_ENABLED)
+
+// SteamTracker is used to load SteamAPI dynamic library and initialize
+// the interface, this notifies Steam that Godot editor is running and
+// allow tracking of the usage time of child instances of the engine
+// (e.g., opened projects).
+//
+// Currently, SteamAPI is not used by the engine in any way, and is not
+// exposed to the scripting APIs.
+
+enum SteamAPIInitResult
+{
+	SteamAPIInitResult_OK = 0,
+	SteamAPIInitResult_FailedGeneric = 1,
+	SteamAPIInitResult_NoSteamClient = 2,
+	SteamAPIInitResult_VersionMismatch = 3,
+};
+
+// https://partner.steamgames.com/doc/api/steam_api#SteamAPI_Init
+typedef bool (*SteamAPI_InitFunction)();
+typedef SteamAPIInitResult (*SteamAPI_InitFlatFunction)(char* r_err_msg);
+
+// https://partner.steamgames.com/doc/api/steam_api#SteamAPI_Shutdown
+typedef void (*SteamAPI_ShutdownFunction)();
+
+class SteamTracker
+{
+	void* steam_library_handle = nullptr;
+	SteamAPI_InitFunction steam_init_function = nullptr;
+	SteamAPI_InitFlatFunction steam_init_flat_function = nullptr;
+	SteamAPI_ShutdownFunction steam_shutdown_function = nullptr;
+	bool steam_initialized = false;
+
+public:
+	SteamTracker();
+	~SteamTracker();
+};
+
+#endif // STEAMAPI_ENABLED
+
+// --- End main/steam_tracker.h ---
 #endif
 
 #include "modules/modules_enabled.gen.h" // For mono.
+#ifdef MODULE_TEXT_SERVER_ADV_ENABLED
+#include "modules/text_server_adv/register_types.h"
+#endif
 
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 #include "modules/mono/editor/bindings_generator.h"
@@ -153,38 +435,9 @@
 
 // Singletons
 
-// Initialized in setup()
-static Input* input = nullptr;
-static InputMap* input_map = nullptr;
-static TranslationServer* translation_server = nullptr;
-static Performance* performance = nullptr;
-static PackedData* packed_data = nullptr;
-#ifdef MINIZIP_ENABLED
-static ZipArchive* zip_packed_data = nullptr;
-#endif
-
 #if defined(STEAMAPI_ENABLED)
 static SteamTracker* steam_tracker = nullptr;
 #endif
-
-// Initialized in setup2()
-static AudioServer* audio_server = nullptr;
-static CameraServer* camera_server = nullptr;
-static AccessibilityServer* accessibility_server = nullptr;
-static DisplayServer* display_server = nullptr;
-static TextServerManager* tsman = nullptr;
-static ThemeDB* theme_db = nullptr;
-#ifndef PHYSICS_2D_DISABLED
-static PhysicsServer2DManager* physics_server_2d_manager = nullptr;
-static PhysicsServer2D* physics_server_2d = nullptr;
-#endif // PHYSICS_2D_DISABLED
-#ifndef PHYSICS_3D_DISABLED
-static PhysicsServer3DManager* physics_server_3d_manager = nullptr;
-static PhysicsServer3D* physics_server_3d = nullptr;
-#endif // PHYSICS_3D_DISABLED
-#ifndef XR_DISABLED
-static XRServer* xr_server = nullptr;
-#endif // XR_DISABLED
 // We error out if setup2() doesn't turn this true
 static bool _start_success = false;
 
@@ -349,18 +602,16 @@ static Vector<String> get_files_with_extension(const String& p_root, const Strin
 void finalize_physics()
 {
 #ifndef PHYSICS_3D_DISABLED
-	if (physics_server_3d) {
-		physics_server_3d->finish();
-		memdelete(physics_server_3d);
-		physics_server_3d = nullptr;
+	if (PhysicsServer3D::is_initialized()) {
+		PhysicsServer3D::finish();
+		PhysicsServer3D::finalize();
 	}
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-	if (physics_server_2d) {
-		physics_server_2d->finish();
-		memdelete(physics_server_2d);
-		physics_server_2d = nullptr;
+	if (PhysicsServer2D::is_initialized()) {
+		PhysicsServer2D::finish();
+		PhysicsServer2D::finalize();
 	}
 #endif // PHYSICS_2D_DISABLED
 }
@@ -369,21 +620,17 @@ void finalize_display()
 {
 	ShaderLanguage::finish();
 	Renderer::finalize();
-	memdelete(display_server);
-	memdelete(accessibility_server);
+	DisplayServer::finalize();
+	AccessibilityServer::finalize();
 }
 
-void initialize_theme_db() { theme_db = memnew(ThemeDB); }
+void initialize_theme_db() { ThemeDB::initialize(); }
 
-void finalize_theme_db()
-{
-	memdelete(theme_db);
-	theme_db = nullptr;
-}
+void finalize_theme_db() { ThemeDB::finalize(); }
 
 // #define DEBUG_INIT
 #ifdef DEBUG_INIT
-#define MAIN_PRINT(m_txt) print_line(m_txt)
+#define MAIN_PRINT(m_txt) __print_line(m_txt)
 #else
 #define MAIN_PRINT(m_txt)
 #endif
@@ -393,18 +640,17 @@ void Main::print_header(bool p_rich)
 	if (VLTR_VERSION_TIMESTAMP > 0) {
 		// Version timestamp available.
 		if (p_rich) {
-			Engine::print_header_rich("\u001b[38;5;39m" + String(VLTR_VERSION_NAME) +
-									  "\u001b[0m v" + get_full_version_string() + " (" +
-									  Time::get_singleton()->get_datetime_string_from_unix_time(
-										  VLTR_VERSION_TIMESTAMP, true) +
-									  " UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header_rich(
+				"\u001b[38;5;39m" + String(VLTR_VERSION_NAME) + "\u001b[0m v" +
+				get_full_version_string() + " (" +
+				Time::get_datetime_string_from_unix_time(VLTR_VERSION_TIMESTAMP, true) +
+				" UTC) - \u001b[4m" + String(VLTR_VERSION_WEBSITE));
 		}
 		else {
-			Engine::print_header(String(VLTR_VERSION_NAME) + " v" + get_full_version_string() +
-								 " (" +
-								 Time::get_singleton()->get_datetime_string_from_unix_time(
-									 VLTR_VERSION_TIMESTAMP, true) +
-								 " UTC) - " + String(VLTR_VERSION_WEBSITE));
+			Engine::print_header(
+				String(VLTR_VERSION_NAME) + " v" + get_full_version_string() + " (" +
+				Time::get_datetime_string_from_unix_time(VLTR_VERSION_TIMESTAMP, true) +
+				" UTC) - " + String(VLTR_VERSION_WEBSITE));
 		}
 	}
 	else {
@@ -502,7 +748,7 @@ void Main::print_help(const char* p_binary)
 						 "Linietsky, Ariel Manzur.");
 
 	print_help_title("Usage");
-	OS::print("  %s \u001b[96m[options] [path to \"project.godot\" file]\u001b[0m\n", p_binary);
+	OS::print("  %s \u001b[96m[options] [path to \"project.vltr\" file]\u001b[0m\n", p_binary);
 
 #if defined(TOOLS_ENABLED)
 	print_help_title("Option legend (this build = editor)");
@@ -571,7 +817,7 @@ void Main::print_help(const char* p_binary)
 		"-l, --language <locale>", "Use a specific locale (<locale> being a two-letter code).\n");
 #if defined(OVERRIDE_PATH_ENABLED)
 	print_help_option("--path <directory>",
-		"Path to a project (<directory> must contain a \"project.godot\" file).\n",
+		"Path to a project (<directory> must contain a \"project.vltr\" file).\n",
 		CLI_OPTION_AVAILABILITY_TEMPLATE_UNSAFE);
 	print_help_option("--scene <path>",
 		"Path or UID of a scene in the project that should be started.\n",
@@ -881,25 +1127,18 @@ Error Main::test_setup()
 	register_core_types();
 	register_core_driver_types();
 
-	packed_data = memnew(PackedData);
+	PackedData::initialize();
 
 	register_core_settings(); // Here globals are present.
 
-	translation_server = memnew(TranslationServer);
-	tsman = memnew(TextServerManager);
+	TranslationServer::initialize();
+	TextServerManager::initialize();
 
-	if (tsman) {
+	if (TextServerManager::is_initialized()) {
 		Ref<TextServerDummy> ts;
 		ts.instantiate();
-		tsman->add_interface(ts);
+		TextServerManager::add_interface(ts);
 	}
-
-#ifndef PHYSICS_3D_DISABLED
-	physics_server_3d_manager = memnew(PhysicsServer3DManager);
-#endif // PHYSICS_3D_DISABLED
-#ifndef PHYSICS_2D_DISABLED
-	physics_server_2d_manager = memnew(PhysicsServer2DManager);
-#endif // PHYSICS_2D_DISABLED
 
 	// From `Main::setup2()`.
 	register_early_core_singletons();
@@ -914,17 +1153,13 @@ Error Main::test_setup()
 	XRServer::set_xr_mode(XRServer::XRMODE_OFF); // Skip in tests.
 #endif // XR_DISABLED
 	initialize_modules(MODULE_INITIALIZATION_LEVEL_SERVERS);
-	GDExtensionManager::get_singleton()->initialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_SERVERS);
 
-	translation_server->setup(); // register translations, load them, etc.
+	TranslationServer::setup(); // register translations, load them, etc.
 	if (!locale.is_empty()) {
-		translation_server->set_locale(locale);
+		TranslationServer::set_locale(locale);
 	}
-	translation_server->load_project_translations(translation_server->get_main_domain());
+	TranslationServer::load_project_translations(TranslationServer::get_main_domain());
 	ResourceLoader::load_translation_remaps(); // load remaps for resources
-
-	message_queue = memnew(MessageQueue);
 
 	RasterizerDummy::make_current();
 	rendering_server = memnew(Renderer());
@@ -941,6 +1176,12 @@ Error Main::test_setup()
 #ifndef NAVIGATION_2D_DISABLED
 	NavigationServer2D::initialize();
 #endif // NAVIGATION_2D_DISABLED
+#ifndef PHYSICS_3D_DISABLED
+	PhysicsServer3D::initialize();
+#endif // PHYSICS_3D_DISABLED
+#ifndef PHYSICS_2D_DISABLED
+	PhysicsServer2D::initialize();
+#endif // PHYSICS_2D_DISABLED
 
 	register_scene_types();
 	register_driver_types();
@@ -948,31 +1189,26 @@ Error Main::test_setup()
 	register_scene_singletons();
 
 	initialize_modules(MODULE_INITIALIZATION_LEVEL_SCENE);
-	GDExtensionManager::get_singleton()->initialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_SCENE);
 
 #ifdef TOOLS_ENABLED
 	ClassDB::set_current_api(ClassDB::API_EDITOR);
 	register_editor_types();
 
 	initialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
-	GDExtensionManager::get_singleton()->initialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_EDITOR);
 
 	ClassDB::set_current_api(ClassDB::API_CORE);
 #endif
 	register_platform_apis();
 
 	// Theme needs modules to be initialized so that sub-resources can be loaded.
-	theme_db->initialize_theme_noproject();
+	ThemeDB::initialize_theme_noproject();
 
-	ERR_FAIL_COND_V(
-		TextServerManager::get_singleton()->get_interface_count() == 0, ERR_CANT_CREATE);
+	ERR_FAIL_COND_V(TextServerManager::get_interface_count() == 0, ERR_CANT_CREATE);
 
 	/* Use one with the most features available. */
 	int max_features = 0;
-	for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-		uint32_t features = TextServerManager::get_singleton()->get_interface(i)->get_features();
+	for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+		uint32_t features = TextServerManager::get_interface(i)->get_features();
 		int feature_number = 0;
 		while (features) {
 			feature_number += features & 1;
@@ -984,8 +1220,8 @@ Error Main::test_setup()
 		}
 	}
 	if (text_driver_idx >= 0) {
-		Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(text_driver_idx);
-		TextServerManager::get_singleton()->set_primary_interface(ts);
+		Ref<TextServer> ts = TextServerManager::get_interface(text_driver_idx);
+		TextServerManager::set_primary_interface(ts);
 		if (ts->has_feature(TextServer::FEATURE_USE_SUPPORT_DATA)) {
 			ts->load_support_data("res://" + ts->get_support_data_filename());
 		}
@@ -1011,8 +1247,8 @@ void Main::test_cleanup()
 	// Printing in the usual way can become problematic during/after cleanup.
 	CoreGlobals::print_ready = false;
 
-	for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-		TextServerManager::get_singleton()->get_interface(i)->cleanup();
+	for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+		TextServerManager::get_interface(i)->cleanup();
 	}
 
 	ResourceLoader::remove_custom_loaders();
@@ -1020,14 +1256,10 @@ void Main::test_cleanup()
 	PropertyListHelper::clear_base_helpers();
 
 #ifdef TOOLS_ENABLED
-	GDExtensionManager::get_singleton()->deinitialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_EDITOR);
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
 	unregister_editor_types();
 #endif
 
-	GDExtensionManager::get_singleton()->deinitialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_SCENE);
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SCENE);
 
 	unregister_platform_apis();
@@ -1042,10 +1274,6 @@ void Main::test_cleanup()
 		rendering_server->finish();
 		memdelete(rendering_server);
 	}
-	if (message_queue) {
-		message_queue->flush();
-		memdelete(message_queue);
-	}
 
 #ifndef NAVIGATION_2D_DISABLED
 	NavigationServer2D::finalize();
@@ -1054,23 +1282,20 @@ void Main::test_cleanup()
 	NavigationServer3D::finalize();
 #endif // NAVIGATION_3D_DISABLED
 
-	GDExtensionManager::get_singleton()->deinitialize_extensions(
-		GDExtension::INITIALIZATION_LEVEL_SERVERS);
+	finalize_physics();
+
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SERVERS);
 	unregister_server_types();
 
 	EngineDebugger::deinitialize();
 	OS::finalize();
 
-	memdelete(packed_data);
-	memdelete(translation_server);
-	memdelete(tsman);
-#ifndef PHYSICS_3D_DISABLED
-	memdelete(physics_server_3d_manager);
-#endif // PHYSICS_3D_DISABLED
-#ifndef PHYSICS_2D_DISABLED
-	memdelete(physics_server_2d_manager);
-#endif // PHYSICS_2D_DISABLED
+#ifdef MINIZIP_ENABLED
+	ZipArchive::finalize();
+#endif
+	PackedData::finalize();
+	TranslationServer::finalize();
+	TextServerManager::finalize();
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
@@ -1179,15 +1404,15 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 	MAIN_PRINT("Main: Initialize Globals");
 
-	input_map = memnew(InputMap);
+	InputMap::initialize();
 
 	// initialize internal ProjectSettings::Data struct
 	ProjectSettings::initialize();
 
 	register_core_settings(); // here globals are present
 
-	translation_server = memnew(TranslationServer);
-	performance = memnew(Performance);
+	TranslationServer::initialize();
+	Performance::initialize();
 
 	MAIN_PRINT("Main: Parse CMDLine");
 
@@ -1245,21 +1470,11 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	String default_renderer_mobile = "";
 	String renderer_hints = "";
 
-	packed_data = PackedData::get_singleton();
-	if (!packed_data) {
-		packed_data = memnew(PackedData);
-	}
+	PackedData::initialize();
 
 #ifdef MINIZIP_ENABLED
-
-	// XXX: always get_singleton() == 0x0
-	zip_packed_data = ZipArchive::get_singleton();
-	// TODO: remove this temporary fix
-	if (!zip_packed_data) {
-		zip_packed_data = memnew(ZipArchive);
-	}
-
-	packed_data->add_pack_source(zip_packed_data);
+	ZipArchive::initialize();
+	PackedData::add_pack_source(memnew(PackedSourceZIP));
 #endif
 
 	// Exit error code used in the `goto error` conditions.
@@ -2005,7 +2220,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				goto error;
 			}
 		}
-		else if (arg.ends_with("project.godot")) {
+		else if (arg.ends_with("project.vltr")) {
 #if defined(OVERRIDE_PATH_ENABLED)
 			String path;
 			String file = arg;
@@ -2026,7 +2241,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 			editor = true;
 #endif
 #else
-			ERR_PRINT("`project.godot` path was specified on the command line, but this Godot "
+			ERR_PRINT("`project.vltr` path was specified on the command line, but this Godot "
 					  "binary was compiled without support for path overrides. Aborting.\n"
 					  "To be able to use it, use the `disable_path_overrides=no` SCons option when "
 					  "compiling Godot.\n");
@@ -2306,7 +2521,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 						"<port> argument for --dap-port <port> must be between 0 and 65535.\n");
 					goto error;
 				}
-				DebugAdapterServer::port_override = port_override;
+				(void)port_override;
 				N = N->next();
 			}
 			else {
@@ -2355,7 +2570,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 #if defined(DEBUG_ENABLED) || defined(TOOLS_ENABLED)
 	// Network file system needs to be configured before globals, since globals are based on the
-	// 'project.godot' file which will only be available through the network if this is enabled
+	// 'project.vltr' file which will only be available through the network if this is enabled
 	if (!remotefs.is_empty()) {
 		int port;
 		if (remotefs.contains_char(':')) {
@@ -2380,6 +2595,29 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 #ifdef TOOLS_ENABLED
 		found_project = true;
 #endif
+		const VoltaireProjectFile& proj = ProjectSettings::get_project();
+
+		if (!force_res && !project_manager && !editor && proj.config.window_width > 0 &&
+			proj.config.window_height > 0) {
+			window_size.width = (int)proj.config.window_width;
+			window_size.height = (int)proj.config.window_height;
+		}
+		if (!disable_vsync) {
+			window_vsync_mode = (proj.header.flags & PROJECT_FLAG_VSYNC)
+									? DisplayServerEnums::VSYNC_ENABLED
+									: DisplayServerEnums::VSYNC_DISABLED;
+		}
+		if (!editor && !project_manager) {
+			if (proj.header.flags & PROJECT_FLAG_BORDERLESS) {
+				window_flags |= DisplayServerEnums::WINDOW_FLAG_BORDERLESS_BIT;
+			}
+			if (!(proj.header.flags & PROJECT_FLAG_RESIZABLE)) {
+				window_flags |= DisplayServerEnums::WINDOW_FLAG_RESIZE_DISABLED_BIT;
+			}
+		}
+		if (proj.config.physics_ticks_per_second > 0) {
+			Engine::set_physics_ticks_per_second((int)proj.config.physics_ticks_per_second);
+		}
 	}
 	else {
 #ifdef TOOLS_ENABLED
@@ -2398,8 +2636,8 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 						 "project from the CWD, use the `disable_path_overrides=no` SCons option "
 						 "when compiling Godot.\n";
 		}
-		else if (FileAccess::exists(old_cwd.path_join("project.godot"))) {
-			error_msg += "\"project.godot\" was found in the current working directory. To be able "
+		else if (FileAccess::exists(old_cwd.path_join("project.vltr"))) {
+			error_msg += "\"project.vltr\" was found in the current working directory. To be able "
 						 "to load a project from the CWD, use the `disable_path_overrides=no` "
 						 "SCons option when compiling Godot.\n";
 		}
@@ -2535,10 +2773,10 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 								// display
 
 	if (!editor) {
-		ResourceUID::get_singleton()->enable_reverse_cache();
+		ResourceUID::enable_reverse_cache();
 	}
-	ResourceUID::get_singleton()->load_from_cache(true); // Load UUIDs from cache.
-	ProjectSettings::fix_autoload_paths();				 // Handles autoloads saved as UID.
+	ResourceUID::load_from_cache(true);	   // Load UUIDs from cache.
+	ProjectSettings::fix_autoload_paths(); // Handles autoloads saved as UID.
 
 	if (ProjectSettings::has_custom_feature("dedicated_server")) {
 		audio_driver = NULL_AUDIO_DRIVER;
@@ -2547,7 +2785,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 #ifdef TOOLS_ENABLED
 	if (editor) {
-		packed_data->set_disabled(true);
+		PackedData::set_disabled(true);
 	}
 #endif
 
@@ -2572,7 +2810,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 	if (main_args.is_empty()) {
 #ifdef TOOLS_ENABLED
-		if (!editor && !project_manager) {
+		if (!editor && !project_manager && !found_project) {
 #endif
 			const String error_msg =
 				"Error: Can't run project: no main scene defined in the project.\n";
@@ -2587,10 +2825,10 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (editor || project_manager) {
 		Engine::set_editor_hint(true);
 		use_custom_res = false;
-		input_map->load_default(); // keys for editor
+		InputMap::load_default(); // keys for editor
 	}
 	else {
-		input_map->load_from_project_settings(); // keys for game
+		InputMap::load_from_project_settings(); // keys for game
 	}
 
 	if (quiet_stdout) {
@@ -2836,7 +3074,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	// Make sure that headless is the last one, which it is assumed to be by design.
 	DEV_ASSERT(NULL_DISPLAY_DRIVER == DisplayServer::get_create_function_name(
 										  DisplayServer::get_create_function_count() - 1));
-	if (audio_driver.is_empty()) { // Specified in project.godot.
+	if (audio_driver.is_empty()) { // Specified in project.vltr.
 		if (project_manager) {
 			// The project manager doesn't need to play sound (TTS audio output is not emitted by
 			// Godot, but by the system itself). Disable audio output so it doesn't appear in the
@@ -2866,7 +3104,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 	if (Engine::get_write_movie_path() != String()) {
 		// Always use dummy driver for audio driver (which is last), also in no threaded mode.
 		audio_driver_idx = AudioDriverManager::get_driver_count() - 1;
-		AudioDriverDummy::get_dummy_singleton()->set_use_threads(false);
+		AudioDriverManager::get_dummy_driver()->set_use_threads(false);
 	}
 
 #if defined(MACOS_ENABLED) || defined(IOS_ENABLED)
@@ -2912,10 +3150,13 @@ error:
 		OS::remove_lock_file();
 	}
 
-	memdelete(performance);
-	memdelete(input_map);
-	memdelete(translation_server);
-	memdelete(packed_data);
+	Performance::finalize();
+	InputMap::finalize();
+	TranslationServer::finalize();
+#ifdef MINIZIP_ENABLED
+	ZipArchive::finalize();
+#endif
+	PackedData::finalize();
 
 	unregister_core_driver_types();
 	unregister_core_extensions();
@@ -2957,14 +3198,15 @@ Error Main::setup2(bool p_show_boot_logo)
 	if (editor || project_manager || cmdline_tool) {
 		OS::benchmark_begin_measure("Startup", "Initialize Early Settings");
 
-		EditorPaths::create();
+		EditorPaths::initialize();
+		if (editor || project_manager) {
+			EditorSettings::initialize();
+		}
 
 		// Editor setting class is not available, load config directly.
 		if (!init_use_custom_screen && (editor || project_manager) &&
-			EditorPaths::get_singleton()->are_paths_valid()) {
-			ERR_FAIL_COND_V(
-				!DirAccess::dir_exists_absolute(EditorPaths::get_singleton()->get_config_dir()),
-				FAILED);
+			EditorPaths::are_paths_valid()) {
+			ERR_FAIL_COND_V(!DirAccess::dir_exists_absolute(EditorPaths::get_config_dir()), FAILED);
 
 			String config_file_path = EditorSettings::get_existing_settings_path();
 			if (FileAccess::exists(config_file_path)) {
@@ -2973,7 +3215,7 @@ Error Main::setup2(bool p_show_boot_logo)
 			}
 		}
 
-		if (found_project && EditorPaths::get_singleton()->is_self_contained()) {
+		if (found_project && EditorPaths::is_self_contained()) {
 			if (ProjectSettings::get_resource_path() == OS::get_executable_path().get_base_dir()) {
 				ERR_PRINT("You are trying to run a self-contained editor at the same location as a "
 						  "project. This is not allowed, since editor files will mix with project "
@@ -2989,9 +3231,8 @@ Error Main::setup2(bool p_show_boot_logo)
 			Ref<ConfigFile> config;
 			config.instantiate();
 			// Load and amend existing config if it exists.
-			Error err =
-				config->load(EditorPaths::get_singleton()->get_project_settings_dir().path_join(
-					"editor_layout.cfg"));
+			Error err = config->load(
+				EditorPaths::get_project_settings_dir().path_join("editor_layout.cfg"));
 		}
 
 		if (init_screen == EditorSettings::InitialScreen::INITIAL_SCREEN_AUTO) {
@@ -3004,23 +3245,19 @@ Error Main::setup2(bool p_show_boot_logo)
 
 	OS::benchmark_begin_measure("Startup", "Servers");
 
-	tsman = memnew(TextServerManager);
-	if (tsman) {
+	TextServerManager::initialize();
+	if (TextServerManager::is_initialized()) {
 		Ref<TextServerDummy> ts;
 		ts.instantiate();
-		tsman->add_interface(ts);
+		TextServerManager::add_interface(ts);
 	}
-
-#ifndef PHYSICS_3D_DISABLED
-	physics_server_3d_manager = memnew(PhysicsServer3DManager);
-#endif // PHYSICS_3D_DISABLED
-#ifndef PHYSICS_2D_DISABLED
-	physics_server_2d_manager = memnew(PhysicsServer2DManager);
-#endif // PHYSICS_2D_DISABLED
 
 	register_server_types();
 	{
 		OS::benchmark_begin_measure("Servers", "Modules and Extensions");
+#ifdef MODULE_TEXT_SERVER_ADV_ENABLED
+		initialize_text_server_adv_module(MODULE_INITIALIZATION_LEVEL_SERVERS);
+#endif
 		OS::benchmark_end_measure("Servers", "Modules and Extensions");
 	}
 
@@ -3029,7 +3266,7 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::benchmark_begin_measure("Servers", "Input");
 
-		input = memnew(Input);
+		Input::initialize();
 		OS::initialize_joypads();
 
 		OS::benchmark_end_measure("Servers", "Input");
@@ -3122,8 +3359,8 @@ Error Main::setup2(bool p_show_boot_logo)
 		}
 
 		Error err;
-		accessibility_server = AccessibilityServer::create(accessibility_driver_idx, err);
-		if (err != OK || accessibility_server == nullptr) {
+		AccessibilityServer::create(accessibility_driver_idx, err);
+		if (err != OK || !AccessibilityServer::is_initialized()) {
 			String last_name =
 				AccessibilityServer::get_create_function_name(accessibility_driver_idx);
 
@@ -3135,19 +3372,19 @@ Error Main::setup2(bool p_show_boot_logo)
 				WARN_VERBOSE(vformat(
 					"Accessibility driver %s failed, falling back to %s.", last_name, name));
 
-				accessibility_server = AccessibilityServer::create(i, err);
-				if (err == OK && accessibility_server != nullptr) {
+				AccessibilityServer::create(i, err);
+				if (err == OK && AccessibilityServer::is_initialized()) {
 					break;
 				}
 			}
 		}
-		accessibility_server->set_mode(accessibility_mode);
+		AccessibilityServer::set_mode(accessibility_mode);
 
 		String rendering_driver = OS::get_current_rendering_driver_name();
-		display_server = DisplayServer::create(display_driver_idx, rendering_driver, window_mode,
-			window_vsync_mode, window_flags, window_position, window_size, init_screen, context,
+		DisplayServer::create(display_driver_idx, rendering_driver, window_mode, window_vsync_mode,
+			window_flags, window_position, window_size, init_screen, context,
 			init_embed_parent_window_id, err);
-		if (err != OK || display_server == nullptr) {
+		if (err != OK || !DisplayServer::is_initialized()) {
 			String last_name = DisplayServer::get_create_function_name(display_driver_idx);
 
 			// We can't use this display server, try other ones as fallback.
@@ -3161,31 +3398,26 @@ Error Main::setup2(bool p_show_boot_logo)
 				WARN_PRINT(
 					vformat("Display driver %s failed, falling back to %s.", last_name, name));
 
-				display_server = DisplayServer::create(i, rendering_driver, window_mode,
-					window_vsync_mode, window_flags, window_position, window_size, init_screen,
-					context, init_embed_parent_window_id, err);
-				if (err == OK && display_server != nullptr) {
+				DisplayServer::create(i, rendering_driver, window_mode, window_vsync_mode,
+					window_flags, window_position, window_size, init_screen, context,
+					init_embed_parent_window_id, err);
+				if (err == OK && DisplayServer::is_initialized()) {
 					break;
 				}
 			}
 		}
 
-		if (err != OK || display_server == nullptr) {
+		if (err != OK || !DisplayServer::is_initialized()) {
 			ERR_PRINT("Unable to create DisplayServer, all display drivers failed.\nUse "
 					  "\"--headless\" command line argument to run the engine in headless mode if "
 					  "this is desired (e.g. for continuous integration).");
 
-			memdelete(display_server);
+			DisplayServer::finalize();
+			AccessibilityServer::finalize();
 			unregister_server_types();
 
-			memdelete(input);
-			memdelete(tsman);
-#ifndef PHYSICS_3D_DISABLED
-			memdelete(physics_server_3d_manager);
-#endif // PHYSICS_3D_DISABLED
-#ifndef PHYSICS_2D_DISABLED
-			memdelete(physics_server_2d_manager);
-#endif // PHYSICS_2D_DISABLED
+			Input::finalize();
+			TextServerManager::finalize();
 
 			return err;
 		}
@@ -3219,25 +3451,25 @@ Error Main::setup2(bool p_show_boot_logo)
 				break;
 			}
 			if (!(force_res || use_custom_res)) {
-				display_server->window_set_size(
+				DisplayServer::window_set_size(
 					Size2(window_size) * ui_scale, DisplayServerEnums::MAIN_WINDOW_ID);
 			}
-			if (display_server->has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS) &&
-				!display_server->has_feature(DisplayServerEnums::FEATURE_SELF_FITTING_WINDOWS)) {
-				Size2 real_size = DisplayServer::get_singleton()->window_get_size();
-				Rect2i scr_rect = display_server->screen_get_usable_rect(init_screen);
-				display_server->window_set_position(
+			if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS) &&
+				!DisplayServer::has_feature(DisplayServerEnums::FEATURE_SELF_FITTING_WINDOWS)) {
+				Size2 real_size = DisplayServer::window_get_size();
+				Rect2i scr_rect = DisplayServer::screen_get_usable_rect(init_screen);
+				DisplayServer::window_set_position(
 					scr_rect.position + (scr_rect.size - real_size) / 2,
 					DisplayServerEnums::MAIN_WINDOW_ID);
 			}
 		}
 #endif
-		if (display_server->has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS)) {
-			display_server->show_window(DisplayServerEnums::MAIN_WINDOW_ID);
+		if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_SUBWINDOWS)) {
+			DisplayServer::show_window(DisplayServerEnums::MAIN_WINDOW_ID);
 		}
 
-		if (display_server->has_feature(DisplayServerEnums::FEATURE_ORIENTATION)) {
-			display_server->screen_set_orientation(window_orientation);
+		if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_ORIENTATION)) {
+			DisplayServer::screen_set_orientation(window_orientation);
 		}
 
 		OS::benchmark_end_measure("Servers", "Display");
@@ -3254,21 +3486,20 @@ Error Main::setup2(bool p_show_boot_logo)
 	if (editor && init_windowed) {
 		// We still need to check we are actually in windowed mode, because
 		// certain platform might only support one fullscreen window.
-		if (DisplayServer::get_singleton()->window_get_mode() ==
-			DisplayServerEnums::WINDOW_MODE_WINDOWED) {
-			Vector2i current_size = DisplayServer::get_singleton()->window_get_size();
-			Vector2i current_pos = DisplayServer::get_singleton()->window_get_position();
-			int screen = DisplayServer::get_singleton()->window_get_current_screen();
-			Rect2i screen_rect = DisplayServer::get_singleton()->screen_get_usable_rect(screen);
+		if (DisplayServer::window_get_mode() == DisplayServerEnums::WINDOW_MODE_WINDOWED) {
+			Vector2i current_size = DisplayServer::window_get_size();
+			Vector2i current_pos = DisplayServer::window_get_position();
+			int screen = DisplayServer::window_get_current_screen();
+			Rect2i screen_rect = DisplayServer::screen_get_usable_rect(screen);
 
 			Vector2i adjusted_end = screen_rect.get_end().min(current_pos + current_size);
 			Vector2i adjusted_pos = screen_rect.get_position().max(adjusted_end - current_size);
-			Vector2i adjusted_size = DisplayServer::get_singleton()->window_get_min_size().max(
-				adjusted_end - adjusted_pos);
+			Vector2i adjusted_size =
+				DisplayServer::window_get_min_size().max(adjusted_end - adjusted_pos);
 
 			if (current_pos != adjusted_end || current_size != adjusted_size) {
-				DisplayServer::get_singleton()->window_set_position(adjusted_pos);
-				DisplayServer::get_singleton()->window_set_size(adjusted_size);
+				DisplayServer::window_set_position(adjusted_pos);
+				DisplayServer::window_set_size(adjusted_size);
 			}
 		}
 	}
@@ -3333,8 +3564,8 @@ Error Main::setup2(bool p_show_boot_logo)
 		AudioDriverManager::initialize(audio_driver_idx);
 
 		// Right moment to create and initialize the audio server.
-		audio_server = memnew(AudioServer);
-		audio_server->init();
+		AudioServer::initialize();
+		AudioServer::init();
 
 		OS::benchmark_end_measure("Servers", "Audio");
 	}
@@ -3345,7 +3576,7 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::benchmark_begin_measure("Servers", "XR");
 
-		xr_server = memnew(XRServer);
+		XRServer::initialize();
 
 		OS::benchmark_end_measure("Servers", "XR");
 	}
@@ -3372,16 +3603,13 @@ Error Main::setup2(bool p_show_boot_logo)
 				// do none..
 			}
 			else if (init_maximized) {
-				DisplayServer::get_singleton()->window_set_mode(
-					DisplayServerEnums::WINDOW_MODE_MAXIMIZED);
+				DisplayServer::window_set_mode(DisplayServerEnums::WINDOW_MODE_MAXIMIZED);
 			}
 			else if (init_fullscreen) {
-				DisplayServer::get_singleton()->window_set_mode(
-					DisplayServerEnums::WINDOW_MODE_FULLSCREEN);
+				DisplayServer::window_set_mode(DisplayServerEnums::WINDOW_MODE_FULLSCREEN);
 			}
 			if (init_always_on_top) {
-				DisplayServer::get_singleton()->window_set_flag(
-					DisplayServerEnums::WINDOW_FLAG_ALWAYS_ON_TOP, true);
+				DisplayServer::window_set_flag(DisplayServerEnums::WINDOW_FLAG_ALWAYS_ON_TOP, true);
 			}
 		}
 
@@ -3395,8 +3623,6 @@ Error Main::setup2(bool p_show_boot_logo)
 
 		MAIN_PRINT("Main: Touch Input");
 
-		Input* id = Input::get_singleton();
-
 		OS::benchmark_end_measure("Startup", "Setup Window and Boot");
 	}
 
@@ -3407,11 +3633,11 @@ Error Main::setup2(bool p_show_boot_logo)
 	{
 		OS::benchmark_begin_measure("Startup", "Translations and Remaps");
 
-		translation_server->setup(); // register translations, load them, etc.
+		TranslationServer::setup(); // register translations, load them, etc.
 		if (!locale.is_empty()) {
-			translation_server->set_locale(locale);
+			TranslationServer::set_locale(locale);
 		}
-		translation_server->load_project_translations(translation_server->get_main_domain());
+		TranslationServer::load_project_translations(TranslationServer::get_main_domain());
 		ResourceLoader::load_translation_remaps(); // load remaps for resources
 
 		OS::benchmark_end_measure("Startup", "Translations and Remaps");
@@ -3426,9 +3652,8 @@ Error Main::setup2(bool p_show_boot_logo)
 
 		/* Enum text drivers */
 		String text_driver_options;
-		for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-			const String driver_name =
-				TextServerManager::get_singleton()->get_interface(i)->get_name();
+		for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+			const String driver_name = TextServerManager::get_interface(i)->get_name();
 			if (driver_name == "Dummy") {
 				// Dummy text driver cannot draw any text, making the editor unusable if selected.
 				continue;
@@ -3442,11 +3667,9 @@ Error Main::setup2(bool p_show_boot_logo)
 
 		if (!text_driver.is_empty()) {
 			/* Load user selected text server. */
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				if (TextServerManager::get_singleton()->get_interface(i)->get_short_name() ==
-						text_driver ||
-					TextServerManager::get_singleton()->get_interface(i)->get_name() ==
-						text_driver) {
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				if (TextServerManager::get_interface(i)->get_short_name() == text_driver ||
+					TextServerManager::get_interface(i)->get_name() == text_driver) {
 					text_driver_idx = i;
 					break;
 				}
@@ -3456,9 +3679,8 @@ Error Main::setup2(bool p_show_boot_logo)
 		if (text_driver_idx < 0) {
 			/* If not selected, use one with the most features available. */
 			int max_features = 0;
-			for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-				uint32_t features =
-					TextServerManager::get_singleton()->get_interface(i)->get_features();
+			for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+				uint32_t features = TextServerManager::get_interface(i)->get_features();
 				int feature_number = 0;
 				while (features) {
 					feature_number += features & 1;
@@ -3471,8 +3693,8 @@ Error Main::setup2(bool p_show_boot_logo)
 			}
 		}
 		if (text_driver_idx >= 0) {
-			Ref<TextServer> ts = TextServerManager::get_singleton()->get_interface(text_driver_idx);
-			TextServerManager::get_singleton()->set_primary_interface(ts);
+			Ref<TextServer> ts = TextServerManager::get_interface(text_driver_idx);
+			TextServerManager::set_primary_interface(ts);
 			if (ts->has_feature(TextServer::FEATURE_USE_SUPPORT_DATA)) {
 				ts->load_support_data("res://" + ts->get_support_data_filename());
 			}
@@ -3546,9 +3768,16 @@ Error Main::setup2(bool p_show_boot_logo)
 
 	OS::benchmark_begin_measure("Startup", "Finalize Setup");
 
-	camera_server = CameraServer::create();
+	CameraServer::initialize();
 
 	MAIN_PRINT("Main: Load Physics");
+
+#ifndef PHYSICS_3D_DISABLED
+	PhysicsServer3D::initialize();
+#endif // PHYSICS_3D_DISABLED
+#ifndef PHYSICS_2D_DISABLED
+	PhysicsServer2D::initialize();
+#endif // PHYSICS_2D_DISABLED
 
 #if TOOLS_ENABLED
 
@@ -3560,8 +3789,8 @@ Error Main::setup2(bool p_show_boot_logo)
 	}
 
 #endif
-	theme_db->initialize_theme();
-	audio_server->load_default_bus_layout();
+	ThemeDB::initialize_theme();
+	AudioServer::load_default_bus_layout();
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 	// Hacky to have it here, but we don't have good facility yet to let modules
 	// register command line options to call at the right time. This needs to happen
@@ -3865,7 +4094,8 @@ int Main::start()
 		err = docsrc.load_classes(index_path);
 		ERR_FAIL_COND_V_MSG(err != OK, EXIT_FAILURE,
 			"Error loading classes from: " + index_path + ": " + itos(err));
-		checked_paths.insert(index_path);
+		checked_paths.insert(
+index_path);
 
 		__print_line("Merging docs...");
 		doc.merge_from(docsrc);
@@ -3882,8 +4112,9 @@ int Main::start()
 		ERR_FAIL_COND_V_MSG(err != OK, EXIT_FAILURE, "Error saving new docs:" + itos(err));
 
 		__print_line("Deleting docs cache...");
-		if (FileAccess::exists(EditorHelp::get_cache_full_path())) {
-			DirAccess::remove_file_or_error(EditorHelp::get_cache_full_path());
+		String doc_cache_path = EditorPaths::get_cache_dir().path_join("editor_doc_cache-4.5.res");
+		if (FileAccess::exists(doc_cache_path)) {
+			DirAccess::remove_file_or_error(doc_cache_path);
 		}
 
 		return EXIT_SUCCESS;
@@ -3908,9 +4139,15 @@ int Main::start()
 	game_path = String();
 	main_loop_type = String();
 #endif // defined(OVERRIDE_PATH_ENABLED)
-
+	if (game_path.is_empty() && ProjectSettings::is_project_loaded()) {
+		const char* ms = ProjectSettings::get_project().config.main_scene;
+		if (ms[0] != '\0') {
+			game_path = String::utf8(ms);
+		}
+	}
 #ifdef TOOLS_ENABLED
-	if (!editor && !project_manager && !cmdline_tool && script.is_empty() && game_path.is_empty()) {
+	if (!editor && !project_manager && !found_project && !cmdline_tool && script.is_empty() &&
+		game_path.is_empty()) {
 		// If we end up here, it means we didn't manage to detect what we want to run.
 		// Let's throw an error gently. The code leading to this is pretty brittle so
 		// this might end up triggered by valid usage, in which case we'll have to
@@ -3922,27 +4159,20 @@ int Main::start()
 	}
 #endif
 
-	MainLoop* main_loop = memnew(SceneTree);
-
+	SceneTree::initialize();
 	if (!script.is_empty()) {
+		SceneTree::finalize();
 		return EXIT_FAILURE;
 	}
 
-	if (!main_loop && main_loop_type.is_empty()) {
-		main_loop_type = "SceneTree";
-	}
-
-	if (!main_loop) {
-		memdelete(main_loop);
+	if (!SceneTree::is_initialized()) {
 		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
 	}
 
-	OS::set_main_loop(main_loop);
-
-	if (DisplayServer::get_singleton()->has_feature(DisplayServerEnums::FEATURE_ICON) &&
-		!has_icon && OS::get_bundle_icon_path().is_empty()) {
+	if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_ICON) && !has_icon &&
+		OS::get_bundle_icon_path().is_empty()) {
 		Ref<Image> icon = memnew(Image(app_icon_png));
-		DisplayServer::get_singleton()->set_icon(icon);
+		DisplayServer::set_icon(icon);
 	}
 
 #ifdef MACOS_ENABLED
@@ -3952,8 +4182,8 @@ int Main::start()
 		int64_t minimum_time = 1000 * minimum_time_msec;
 		uint64_t prev_time = OS::get_ticks_usec();
 		while (minimum_time > 0) {
-			DisplayServer::get_singleton()->process_events();
-			O S::get_singleton()->delay_usec(100);
+			DisplayServer::process_events();
+			OS::delay_usec(100);
 
 			uint64_t next_time = OS::get_ticks_usec();
 			minimum_time -= (next_time - prev_time);
@@ -3961,59 +4191,48 @@ int Main::start()
 		}
 	}
 	else {
-		DisplayServer::get_singleton()->process_events();
+		DisplayServer::process_events();
 	}
 #endif
 
 	OS::benchmark_end_measure("Startup", "Main::Start");
 	OS::benchmark_dump();
-	Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
-	SceneTree* scene_tree = memnew(SceneTree);
 
-	if (!script.is_empty()) {
-		memdelete(scene_tree);
-		return EXIT_FAILURE;
+	if (ProjectSettings::is_project_loaded()) {
+		const VoltaireProjectConfig& cfg = ProjectSettings::get_project().config;
+		Renderer::set_default_clear_color(
+			Color(cfg.clear_color[0], cfg.clear_color[1], cfg.clear_color[2], cfg.clear_color[3]));
 	}
-
-	if (!scene_tree) {
-		ERR_FAIL_V_MSG(EXIT_FAILURE, "Invalid MainLoop type.");
+	else {
+		Renderer::set_default_clear_color(Color(0.2f, 0.4f, 0.8f, 1.0f));
 	}
+	SceneTree::initialize_tree();
 
-	OS::set_main_loop(scene_tree);
-	scene_tree->initialize();
-
-	Window* root = scene_tree->get_root();
+	Window* root = SceneTree::get_root();
 	if (root) {
 		root->show();
-
-		// Determine window dimensions
 		Size2i win_size = root->get_size();
-		if (win_size.x <= 0 || win_size.y <= 0) {
-			win_size = Size2i(1024, 600);
+		if ((win_size.x <= 0 || win_size.y <= 0) && DisplayServer::is_initialized()) {
+			win_size = DisplayServer::window_get_size(DisplayServerEnums::MAIN_WINDOW_ID);
 		}
-
-		RID viewport_rid = root->get_viewport_rid();
-		RID root_canvas = root->find_world_2d()->get_canvas();
-
-		// Configure the server viewport to render and present to the OS window
-		Renderer::viewport_set_size(viewport_rid, win_size.x, win_size.y);
-		Renderer::viewport_set_active(viewport_rid, true);
-		Renderer::viewport_set_update_mode(viewport_rid, RSE::VIEWPORT_UPDATE_ALWAYS);
-		Renderer::viewport_attach_to_screen(
-			viewport_rid, Rect2(0, 0, win_size.x, win_size.y), DisplayServerEnums::MAIN_WINDOW_ID);
-
-		// Instantiate and attach ColorRect directly to root canvas
-		ColorRect* rect = memnew(ColorRect);
-		root->add_child(rect);
-		rect->set_size(Size2(300, 200));
-		rect->set_color(Color(1.0f, 0.0f, 0.0f, 1.0f));
-
-		// Link canvas item to canvas and mark visible
-		Renderer::canvas_item_set_parent(rect->get_canvas_item(), root_canvas);
-		Renderer::canvas_item_set_visible(rect->get_canvas_item(), true);
-
-		// Statically trigger draw
-		rect->notification(CanvasItem::NOTIFICATION_DRAW);
+		if (win_size.x <= 0 || win_size.y <= 0) {
+			win_size = Size2i(1152, 648);
+		}
+#ifdef TOOLS_ENABLED
+		if (editor) {
+			EditorUI::initialize(
+				RID(), win_size, ProjectSettings::get_resource_path(), String(), false);
+		}
+		else if (found_project && !project_manager) {
+			EditorUI::initialize(
+				RID(), win_size, ProjectSettings::get_resource_path(), String(), true);
+		}
+		else {
+			ProjectManager::initialize(RID(), win_size);
+		}
+#else
+		ProjectManager::initialize(RID(), win_size);
+#endif
 	}
 	else {
 		__print_line("Window root failed to be created");
@@ -4052,11 +4271,6 @@ static uint64_t navigation_process_max = 0;
 bool Main::iteration()
 {
 	// Inside RendererCompositorRD::begin_frame or Main::iteration:
-	static uint64_t frame_counter = 0;
-	if ((++frame_counter % 60) == 0) {
-		__print_line(vformat("Render loop alive! Frame: %d", frame_counter
-));
-	}
 	iterating++;
 
 	const uint64_t ticks = OS::get_ticks_usec();
@@ -4099,16 +4313,16 @@ bool Main::iteration()
 	// process all our active interfaces
 #ifndef XR_DISABLED
 
-	XRServer::get_singleton()->_process();
+	XRServer::_process();
 #endif // XR_DISABLED
 
-	if (Input::get_singleton()->is_agile_input_event_flushing()) {
-		Input::get_singleton()->flush_buffered_events();
+	if (Input::is_agile_input_event_flushing()) {
+		Input::flush_buffered_events();
 	}
 
 	uint64_t process_begin = OS::get_ticks_usec();
 
-	if (OS::get_main_loop()->process(process_step * time_scale)) {
+	if (MainLoop::process(process_step * time_scale)) {
 		exit = true;
 	}
 
@@ -4121,7 +4335,16 @@ bool Main::iteration()
 
 	Renderer::sync(); // sync if still drawing from previous frames.
 
-	if (DisplayServer::get_singleton()->window_can_draw()) {
+	if (ProjectManager::is_initialized()) {
+		ProjectManager::poll();
+	}
+#ifdef TOOLS_ENABLED
+	if (EditorUI::is_initialized()) {
+		EditorUI::poll(scaled_step);
+	}
+#endif
+
+	if (DisplayServer::window_can_draw()) {
 		Renderer::draw(true, scaled_step);
 	}
 
@@ -4132,7 +4355,7 @@ bool Main::iteration()
 	process_max = MAX(process_ticks, process_max);
 	uint64_t frame_time = OS::get_ticks_usec() - ticks;
 
-	AudioServer::get_singleton()->update();
+	AudioServer::update();
 
 	frames++;
 	Engine::_process_frames++;
@@ -4157,9 +4380,9 @@ bool Main::iteration()
 		}
 
 		Engine::_fps = frames;
-		performance->set_process_time(USEC_TO_SEC(process_max));
-		performance->set_physics_process_time(USEC_TO_SEC(physics_process_max));
-		performance->set_navigation_process_time(USEC_TO_SEC(navigation_process_max));
+		Performance::set_process_time(USEC_TO_SEC(process_max));
+		Performance::set_physics_process_time(USEC_TO_SEC(physics_process_max));
+		Performance::set_navigation_process_time(USEC_TO_SEC(navigation_process_max));
 		process_max = 0;
 		physics_process_max = 0;
 		navigation_process_max = 0;
@@ -4185,8 +4408,8 @@ bool Main::iteration()
 	}
 
 #ifdef TOOLS_ENABLED
-	if (wait_for_import && EditorFileSystem::get_singleton() &&
-		EditorFileSystem::get_singleton()->doing_first_scan()) {
+	if (wait_for_import && EditorFileSystem::is_initialized() &&
+		EditorFileSystem::doing_first_scan()) {
 		exit = false;
 	}
 #endif
@@ -4195,13 +4418,12 @@ bool Main::iteration()
 		return exit;
 	}
 
-	SceneTree* scene_tree = SceneTree::get_singleton();
-	bool wake_for_events = scene_tree && scene_tree->is_accessibility_enabled();
+	bool wake_for_events = SceneTree::is_initialized() && SceneTree::is_accessibility_enabled();
 
-	OS::add_frame_delay(DisplayServer::get_singleton()->window_can_draw(), wake_for_events);
+	OS::add_frame_delay(DisplayServer::window_can_draw(), wake_for_events);
 
 #ifdef TOOL
-S_ENABLED
+	S_ENABLED
 	if (auto_build_solutions) {
 		auto_build_solutions = false;
 		// Only relevant when running the editor.
@@ -4210,11 +4432,9 @@ S_ENABLED
 			ERR_FAIL_V_MSG(true, "Command line option --build-solutions was passed, but no project "
 								 "is being edited. Aborting.");
 		}
-		if (!EditorNode::get_singleton()->call_build()) {
-			OS::set_exit_code(EXIT_FAILURE);
-			ERR_FAIL_V_MSG(true, "Command line option --build-solutions was passed, but the build "
-								 "callback failed. Aborting.");
-		}
+		OS::set_exit_code(EXIT_FAILURE);
+		ERR_FAIL_V_MSG(true, "Command line option --build-solutions is not supported without a "
+							 "registered build callback. Aborting.");
 	}
 #endif
 
@@ -4241,14 +4461,8 @@ void Main::cleanup(bool p_force)
 	// Printing in the usual way can become problematic during/after cleanup.
 	CoreGlobals::print_ready = false;
 
-#ifdef DEBUG_ENABLED
-	if (input) {
-		input->flush_frame_parsed_events();
-	}
-#endif
-
-	for (int i = 0; i < TextServerManager::get_singleton()->get_interface_count(); i++) {
-		TextServerManager::get_singleton()->get_interface(i)->cleanup();
+	for (int i = 0; i < TextServerManager::get_interface_count(); i++) {
+		TextServerManager::get_interface(i)->cleanup();
 	}
 
 	if (movie_writer) {
@@ -4277,6 +4491,8 @@ void Main::cleanup(bool p_force)
 	NavigationServer3D::finalize();
 #endif // NAVIGATION_3D_DISABLED
 
+	CameraServer::finalize();
+
 	OS::_cmdline.clear();
 	OS::_user_args.clear();
 	OS::_execpath = "";
@@ -4288,16 +4504,29 @@ void Main::cleanup(bool p_force)
 	// finalization
 	Renderer::sync();
 
+#ifdef TOOLS_ENABLED
+	if (EditorUI::is_initialized()) {
+		EditorUI::finalize();
+	}
+#endif
+	if (ProjectManager::is_initialized()) {
+		ProjectManager::finalize();
+	}
+
+	if (ThemeDB::is_initialized()) {
+		ThemeDB::finalize_theme();
+	}
+
 	// clear global shader variables before scene and other graphics stuff are deinitialized.
 	Renderer::global_shader_parameters_clear();
 
 	Renderer::finalize();
 
 #ifndef XR_DISABLED
-	if (xr_server) {
+	if (XRServer::is_initialized()) {
 		// Now that we're unregistering properly in plugins we need to keep access to xr_server for
 		// a little longer We do however unset our primary interface
-		xr_server->set_primary_interface(Ref<XRInterface>());
+		XRServer::set_primary_interface(Ref<XRInterface>());
 	}
 #endif // XR_DISABLED
 
@@ -4308,37 +4537,36 @@ void Main::cleanup(bool p_force)
 	unregister_scene_types();
 
 	finalize_theme_db();
+#ifdef TOOLS_ENABLED
+	EditorSettings::finalize();
+	EditorPaths::finalize();
+#endif
 	finalize_physics();
 	unregister_server_types();
 
 #ifndef XR_DISABLED
-	memdelete(xr_server);
+	XRServer::finalize();
 #endif // XR_DISABLED
 
-	if (audio_server) {
-		audio_server->finish();
-		memdelete(audio_server);
+	if (AudioServer::is_initialized()) {
+		AudioServer::finish();
+		AudioServer::finalize();
 	}
-
-	memdelete(camera_server);
 
 	OS::finalize();
 
 	finalize_display();
 
-	memdelete(input);
+	Input::finalize();
 
-	memdelete(packed_data);
-	memdelete(performance);
-	memdelete(input_map);
-	memdelete(translation_server);
-	memdelete(tsman);
-#ifndef PHYSICS_3D_DISABLED
-	memdelete(physics_server_3d_manager);
-#endif // PHYSICS_3D_DISABLED
-#ifndef PHYSICS_2D_DISABLED
-	memdelete(physics_server_2d_manager);
-#endif // PHYSICS_2D_DISABLED
+#ifdef MINIZIP_ENABLED
+	ZipArchive::finalize();
+#endif
+	PackedData::finalize();
+	Performance::finalize();
+	InputMap::finalize();
+	TranslationServer::finalize();
+	TextServerManager::finalize();
 
 	if (OS::is_restart_on_exit_set()) {
 		// attempt to restart with arguments
@@ -4366,3 +4594,1110 @@ void Main::cleanup(bool p_force)
 
 void Main::setup_boot_logo() {}
 
+#ifdef MAIN_PRINT
+#undef MAIN_PRINT
+#endif
+
+// ============================================================================
+// Merged from main/main_timer_sync.cpp
+// ============================================================================
+
+#include "core/os/os.h"
+#include "servers/display/display_server.h"
+
+// Uncomment this define to get more debugging logs for the delta smoothing.
+// #define GODOT_DEBUG_DELTA_SMOOTHER
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+#include "core/string/print_string.h"
+#include "core/string/string.h"
+#endif
+
+void MainFrameTime::clamp_process_step(double min_process_step, double max_process_step)
+{
+	if (process_step < min_process_step) {
+		process_step = min_process_step;
+	}
+	else if (process_step > max_process_step) {
+		process_step = max_process_step;
+	}
+}
+
+/////////////////////////////////
+
+void MainTimerSync::DeltaSmoother::made_new_estimate()
+{
+	_hits_above_estimated = 0;
+	_hits_at_estimated = 0;
+	_hits_below_estimated = 0;
+	_hits_one_above_estimated = 0;
+	_hits_one_below_estimated = 0;
+
+	_estimate_complete = false;
+
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+	print_line("estimated fps " + itos(_estimated_fps));
+#endif
+}
+
+void MainTimerSync::DeltaSmoother::update_refresh_rate_estimator(int64_t p_delta)
+{
+	// the calling code should prevent 0 or negative values of delta
+	// (preventing divide by zero)
+
+	// note that if the estimate gets locked, and something external changes this
+	// (e.g. user changes to non-vsync in the OS), then the results may be less than ideal,
+	// but usually it will detect this via the FPS measurement and not attempt smoothing.
+	// This should be a rare occurrence anyway, and will be cured next time user restarts game.
+	if (_estimate_locked) {
+		return;
+	}
+
+	// First average the delta over NUM_READINGS
+	_estimator_total_delta += p_delta;
+	_estimator_delta_readings++;
+
+	const int NUM_READINGS = 60;
+
+	if (_estimator_delta_readings < NUM_READINGS) {
+		return;
+	}
+
+	// use average
+	p_delta = _estimator_total_delta / NUM_READINGS;
+
+	// reset the averager for next time
+	_estimator_delta_readings = 0;
+	_estimator_total_delta = 0;
+
+	///////////////////////////////
+
+	int fps = Math::round(1000000.0 / p_delta);
+
+	// initial estimation, to speed up converging, special case we will estimate the refresh rate
+	// from the first average FPS reading
+	if (_estimated_fps == 0) {
+		// below 50 might be chugging loading stuff, or else
+		// dropping loads of frames, so the estimate will be inaccurate
+		if (fps >= 50) {
+			_estimated_fps = fps;
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+			print_line("initial guess (average measured) refresh rate: " + itos(fps));
+#endif
+		}
+		else {
+			// can't get started until above 50
+			return;
+		}
+	}
+
+	// we hit our exact estimated refresh rate.
+	// increase our confidence in the estimate.
+	if (fps == _estimated_fps) {
+		// note that each hit is an average of NUM_READINGS frames
+		_hits_at_estimated++;
+
+		if (_estimate_complete && _hits_at_estimated == 20) {
+			_estimate_locked = true;
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+			print_line("estimate LOCKED at " + itos(_estimated_fps) + " fps");
+#endif
+			return;
+		}
+
+		// if we are getting pretty confident in this estimate, decide it is complete
+		// (it can still be increased later, and possibly lowered but only for a short time)
+		if ((!_estimate_complete) && (_hits_at_estimated > 2)) {
+			// when the estimate is complete we turn on smoothing
+			if (_estimated_fps) {
+				_estimate_complete = true;
+				_vsync_delta = 1000000 / _estimated_fps;
+
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+				print_line("estimate complete. vsync_delta " + itos(_vsync_delta) + ", fps " +
+						   itos(_estimated_fps));
+#endif
+			}
+		}
+
+#ifdef GODOT_DEBUG_DELTA_SMOOTHER
+		if ((_hits_at_estimated % (400 / NUM_READINGS)) == 0) {
+			String sz = "hits at estimated : " + itos(_hits_at_estimated) +
+						", above : " + itos(_hits_above_estimated) + "( " +
+						itos(_hits_one_above_estimated) +
+						" ), below : " + itos(_hits_below_estimated) + " (" +
+						itos(_hits_one_below_estimated) + " )";
+
+			print_line(sz);
+		}
+#endif
+
+		return;
+	}
+
+	const int SIGNIFICANCE_UP = 1;
+	const int SIGNIFICANCE_DOWN = 2;
+
+	// we are not usually interested in slowing the estimate
+	// but we may have overshot, so make it possible to reduce
+	if (fps < _estimated_fps) {
+		// micro changes
+		if (fps == (_estimated_fps - 1)) {
+			_hits_one_below_estimated++;
+
+			if ((_hits_one_below_estimated > _hits_at_estimated) &&
+				(_hits_one_below_estimated > SIGNIFICANCE_DOWN)) {
+				_estimated_fps--;
+				made_new_estimate();
+			}
+
+			return;
+		}
+		else {
+			_hits_below_estimated++;
+
+			// don't allow large lowering if we are established at a refresh rate, as it will
+			// probably be dropped frames
+			bool established = _estimate_complete && (_hits_at_estimated > 10);
+
+			// macro changes
+			// note there is a large barrier to macro lowering. That is because it is more likely to
+			// be dropped frames than mis-estimation of the refresh rate.
+			if (!established) {
+				if (((_hits_below_estimated / 8) > _hits_at_estimated) &&
+					(_hits_below_estimated > SIGNIFICANCE_DOWN)) {
+					// decrease the estimate
+					_estimated_fps--;
+					made_new_estimate();
+				}
+			}
+
+			return;
+		}
+	}
+
+	// Changes increasing the estimate.
+	// micro changes
+	if (fps == (_estimated_fps + 1)) {
+		_hits_one_above_estimated++;
+
+		if ((_hits_one_above_estimated > _hits_at_estimated) &&
+			(_hits_one_above_estimated > SIGNIFICANCE_UP)) {
+			_estimated_fps++;
+			made_new_estimate();
+		}
+		return;
+	}
+	else {
+		_hits_above_estimated++;
+
+		// macro changes
+		if ((_hits_above_estimated > _hits_at_estimated) &&
+			(_hits_above_estimated > SIGNIFICANCE_UP)) {
+			// increase the estimate
+			int change = fps - _estimated_fps;
+			change /= 2;
+			change = MAX(1, change);
+
+			_estimated_fps += change;
+			made_new_estimate();
+		}
+		return;
+	}
+}
+
+bool MainTimerSync::DeltaSmoother::fps_allows_smoothing(int64_t p_delta)
+{
+	_measurement_time += p_delta;
+	_measurement_frame_count++;
+
+	if (_measurement_frame_count == _measurement_end_frame) {
+		// only switch on or off if the estimate is complete
+		if (_estimate_complete) {
+			int64_t time_passed = _measurement_time - _measurement_start_time;
+
+			// average delta
+			time_passed /= MEASURE_FPS_OVER_NUM_FRAMES;
+
+			// estimate fps
+			if (time_passed) {
+				double fps = 1000000.0 / time_passed;
+				double ratio = fps / (double)_estimated_fps;
+
+				if ((ratio > 0.95) && (ratio < 1.05)) {
+					_measurement_allows_smoothing = true;
+				}
+				else {
+					_measurement_allows_smoothing = false;
+				}
+			}
+		} // estimate complete
+
+		// new start time for next iteration
+		_measurement_start_time = _measurement_time;
+		_measurement_end_frame += MEASURE_FPS_OVER_NUM_FRAMES;
+	}
+
+	return _measurement_allows_smoothing;
+}
+
+int64_t MainTimerSync::DeltaSmoother::smooth_delta(int64_t p_delta)
+{
+	// Conditions to disable smoothing.
+	// Note that vsync is a request, it cannot be relied on, the OS may override this.
+	// If the OS turns vsync on without vsync in the app, smoothing will not be enabled.
+	// If the OS turns vsync off with sync enabled in the app, the smoothing must detect this
+	// via the error metric and switch off.
+	// Also only try smoothing if vsync is enabled (classical vsync, not new types) ..
+	// This condition is currently checked before calling smooth_delta().
+	if (!OS::is_delta_smoothing_enabled() || Engine::is_editor_hint()) {
+		return p_delta;
+	}
+
+	// only attempt smoothing if vsync is selected
+	DisplayServerEnums::VSyncMode vsync_mode =
+		DisplayServer::window_get_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID);
+	if (vsync_mode != DisplayServerEnums::VSYNC_ENABLED) {
+		return p_delta;
+	}
+
+	// Very important, ignore long deltas and pass them back unmodified.
+	// This is to deal with resuming after suspend for long periods.
+	if (p_delta > 1000000) {
+		return p_delta;
+	}
+
+	// keep a running guesstimate of the FPS, and turn off smoothing if
+	// conditions not close to the estimated FPS
+	if (!fps_allows_smoothing(p_delta)) {
+		return p_delta;
+	}
+
+	// we can't cope with negative deltas .. OS bug on some hardware
+	// and also very small deltas caused by vsync being off.
+	// This could possibly be part of a hiccup, this value isn't fixed in stone...
+	if (p_delta < 1000) {
+		return p_delta;
+	}
+
+	// note still some vsync off will still get through to this point...
+	// and we need to cope with it by not converging the estimator / and / or not smoothing
+	update_refresh_rate_estimator(p_delta);
+
+	// no smoothing until we know what the refresh rate is
+	if (!_estimate_complete) {
+		return p_delta;
+	}
+
+	// accumulate the time we have available to use
+	_leftover_time += p_delta;
+
+	// how many vsyncs units can we fit?
+	int64_t units = _leftover_time / _vsync_delta;
+
+	// a delta must include minimum 1 vsync
+	// (if it is less than that, it is either random error or we are no longer running at the vsync
+	// rate, in which case we should switch off delta smoothing, or re-estimate the refresh rate)
+	units = MAX(units, 1);
+
+	_leftover_time -= units * _vsync_delta;
+
+	return units * _vsync_delta;
+}
+
+/////////////////////////////////////
+
+// returns the fraction of p_physics_step required for the timer to overshoot
+// before advance_core considers changing the physics_steps return from
+// the typical values as defined by typical_physics_steps
+double MainTimerSync::get_physics_jitter_fix() { return Engine::get_physics_jitter_fix(); }
+
+// gets our best bet for the average number of physics steps per render frame
+// return value: number of frames back this data is consistent
+int MainTimerSync::get_average_physics_steps(double& p_min, double& p_max)
+{
+	p_min = typical_physics_steps[0];
+	p_max = p_min + 1;
+
+	for (int i = 1; i < CONTROL_STEPS; ++i) {
+		const double typical_lower = typical_physics_steps[i];
+		const double current_min = typical_lower / (i + 1);
+		if (current_min > p_max) {
+			return i; // bail out if further restrictions would void the interval
+		}
+		else if (current_min > p_min) {
+			p_min = current_min;
+		}
+		const double current_max = (typical_lower + 1) / (i + 1);
+		if (current_max < p_min) {
+			return i;
+		}
+		else if (current_max < p_max) {
+			p_max = current_max;
+		}
+	}
+
+	return CONTROL_STEPS;
+}
+
+// advance physics clock by p_process_step, return appropriate number of steps to simulate
+MainFrameTime MainTimerSync::advance_core(
+	double p_physics_step, int p_physics_ticks_per_second, double p_process_step)
+{
+	MainFrameTime ret;
+
+	ret.process_step = p_process_step;
+
+	// simple determination of number of physics iteration
+	time_accum += ret.process_step;
+	ret.physics_steps = std::floor(time_accum * p_physics_ticks_per_second);
+
+	int min_typical_steps = typical_physics_steps[0];
+	int max_typical_steps = min_typical_steps + 1;
+
+	// given the past recorded steps and typical steps to match, calculate bounds for this
+	// step to be typical
+	bool update_typical = false;
+
+	for (int i = 0; i < CONTROL_STEPS - 1; ++i) {
+		int steps_left_to_match_typical =
+			typical_physics_steps[i + 1] - accumulated_physics_steps[i];
+		if (steps_left_to_match_typical > max_typical_steps ||
+			steps_left_to_match_typical + 1 < min_typical_steps) {
+			update_typical = true;
+			break;
+		}
+
+		if (steps_left_to_match_typical > min_typical_steps) {
+			min_typical_steps = steps_left_to_match_typical;
+		}
+		if (steps_left_to_match_typical + 1 < max_typical_steps) {
+			max_typical_steps = steps_left_to_match_typical + 1;
+		}
+	}
+
+#ifdef DEBUG_ENABLED
+	if (max_typical_steps < 0) {
+		WARN_PRINT_ONCE("`max_typical_steps` is negative. This could hint at an engine bug or "
+						"system timer misconfiguration.");
+	}
+#endif
+
+	// try to keep it consistent with previous iterations
+	if (ret.physics_steps < min_typical_steps) {
+		const int max_possible_steps =
+			std::floor((time_accum)*p_physics_ticks_per_second + get_physics_jitter_fix());
+		if (max_possible_steps < min_typical_steps) {
+			ret.physics_steps = max_possible_steps;
+			update_typical = true;
+		}
+		else {
+			ret.physics_steps = min_typical_steps;
+		}
+	}
+	else if (ret.physics_steps > max_typical_steps) {
+		const int min_possible_steps =
+			std::floor((time_accum)*p_physics_ticks_per_second - get_physics_jitter_fix());
+		if (min_possible_steps > max_typical_steps) {
+			ret.physics_steps = min_possible_steps;
+			update_typical = true;
+		}
+		else {
+			ret.physics_steps = max_typical_steps;
+		}
+	}
+
+	if (ret.physics_steps < 0) {
+		ret.physics_steps = 0;
+	}
+
+	time_accum -= ret.physics_steps * p_physics_step;
+
+	// keep track of accumulated step counts
+	for (int i = CONTROL_STEPS - 2; i >= 0; --i) {
+		accumulated_physics_steps[i + 1] = accumulated_physics_steps[i] + ret.physics_steps;
+	}
+	accumulated_physics_steps[0] = ret.physics_steps;
+
+	if (update_typical) {
+		for (int i = CONTROL_STEPS - 1; i >= 0; --i) {
+			if (typical_physics_steps[i] > accumulated_physics_steps[i]) {
+				typical_physics_steps[i] = accumulated_physics_steps[i];
+			}
+			else if (typical_physics_steps[i] < accumulated_physics_steps[i] - 1) {
+				typical_physics_steps[i] = accumulated_physics_steps[i] - 1;
+			}
+		}
+	}
+
+	return ret;
+}
+
+// calls advance_core, keeps track of deficit it adds to animaption_step, make sure the deficit sum
+// stays close to zero
+MainFrameTime MainTimerSync::advance_checked(
+	double p_physics_step, int p_physics_ticks_per_second, double p_process_step)
+{
+	if (fixed_fps != -1) {
+		p_process_step = 1.0 / fixed_fps;
+	}
+
+	float min_output_step = p_process_step / 8;
+	min_output_step = MAX(min_output_step, 1E-6);
+
+	// compensate for last deficit
+	p_process_step += time_deficit;
+
+	MainFrameTime ret = advance_core(p_physics_step, p_physics_ticks_per_second, p_process_step);
+
+	// we will do some clamping on ret.process_step and need to sync those changes to time_accum,
+	// that's easiest if we just remember their fixed difference now
+	const double process_minus_accum = ret.process_step - time_accum;
+
+	// first, least important clamping: keep ret.process_step consistent with typical_physics_steps.
+	// this smoothes out the process steps and culls small but quick variations.
+	{
+		double min_average_physics_steps, max_average_physics_steps;
+		int consistent_steps =
+			get_average_physics_steps(min_average_physics_steps, max_average_physics_steps);
+		if (consistent_steps > 3) {
+			ret.clamp_process_step(min_average_physics_steps * p_physics_step,
+				max_average_physics_steps * p_physics_step);
+		}
+	}
+
+	// second clamping: keep abs(time_deficit) < jitter_fix * frame_slise
+	double max_clock_deviation = get_physics_jitter_fix() * p_physics_step;
+	ret.clamp_process_step(
+		p_process_step - max_clock_deviation, p_process_step + max_clock_deviation);
+
+	// last clamping: make sure time_accum is between 0 and p_physics_step for consistency between
+	// physics and process
+	ret.clamp_process_step(process_minus_accum, process_minus_accum + p_physics_step);
+
+	// all the operations above may have turned ret.p_process_step negative or zero, keep a minimal
+	// value
+	if (ret.process_step < min_output_step) {
+		ret.process_step = min_output_step;
+	}
+
+	// restore time_accum
+	time_accum = ret.process_step - process_minus_accum;
+
+	// forcing ret.process_step to be positive may trigger a violation of the
+	// promise that time_accum is between 0 and p_physics_step
+#ifdef DEBUG_ENABLED
+	if (time_accum < -1E-7) {
+		WARN_PRINT_ONCE("Intermediate value of `time_accum` is negative. This could hint at an "
+						"engine bug or system timer misconfiguration.");
+	}
+#endif
+
+	if (time_accum > p_physics_step) {
+		const int extra_physics_steps = std::floor(time_accum * p_physics_ticks_per_second);
+		time_accum -= extra_physics_steps * p_physics_step;
+		ret.physics_steps += extra_physics_steps;
+	}
+
+#ifdef DEBUG_ENABLED
+	if (time_accum < -1E-7) {
+		WARN_PRINT_ONCE("Final value of `time_accum` is negative. It should always be between 0 "
+						"and `p_physics_step`. This hints at an engine bug.");
+	}
+	if (time_accum > p_physics_step + 1E-7) {
+		WARN_PRINT_ONCE("Final value of `time_accum` is larger than `p_physics_step`. It should "
+						"always be between 0 and `p_physics_step`. This hints at an engine bug.");
+	}
+#endif
+
+	// track deficit
+	time_deficit = p_process_step - ret.process_step;
+
+	// p_physics_step is 1.0 / iterations_per_sec
+	// i.e. the time in seconds taken by a physics tick
+	ret.interpolation_fraction = time_accum / p_physics_step;
+
+	return ret;
+}
+
+// determine wall clock step since last iteration
+double MainTimerSync::get_cpu_process_step()
+{
+	uint64_t cpu_ticks_elapsed = current_cpu_ticks_usec - last_cpu_ticks_usec;
+	last_cpu_ticks_usec = current_cpu_ticks_usec;
+
+	cpu_ticks_elapsed = _delta_smoother.smooth_delta(cpu_ticks_elapsed);
+
+	return cpu_ticks_elapsed / 1000000.0;
+}
+
+MainTimerSync::MainTimerSync()
+{
+	for (int i = CONTROL_STEPS - 1; i >= 0; --i) {
+		typical_physics_steps[i] = i;
+		accumulated_physics_steps[i] = i;
+	}
+}
+
+// start the clock
+void MainTimerSync::init(uint64_t p_cpu_ticks_usec)
+{
+	current_cpu_ticks_usec = last_cpu_ticks_usec = p_cpu_ticks_usec;
+}
+
+// set measured wall clock time
+void MainTimerSync::set_cpu_ticks_usec(uint64_t p_cpu_ticks_usec)
+{
+	current_cpu_ticks_usec = p_cpu_ticks_usec;
+}
+
+void MainTimerSync::set_fixed_fps(int p_fixed_fps) { fixed_fps = p_fixed_fps; }
+
+// advance one physics frame, return timesteps to take
+MainFrameTime MainTimerSync::advance(double p_physics_step, int p_physics_ticks_per_second)
+{
+	double cpu_process_step = get_cpu_process_step();
+
+	return advance_checked(p_physics_step, p_physics_ticks_per_second, cpu_process_step);
+}
+
+// ============================================================================
+// Merged from main/performance.cpp
+// ============================================================================
+
+#include "core/config/engine.h"
+#include "core/os/os.h"
+#include "scene/main/node.h"
+#include "scene/main/scene_tree.h"
+#include "servers/audio/audio_server.h"
+#include "servers/rendering/renderer.h"
+
+#ifndef NAVIGATION_2D_DISABLED
+#include "servers/navigation_2d/navigation_server_2d.h"
+#endif // NAVIGATION_2D_DISABLED
+
+#ifndef NAVIGATION_3D_DISABLED
+#include "servers/navigation_3d/navigation_server_3d.h"
+#endif // NAVIGATION_3D_DISABLED
+
+#ifndef PHYSICS_2D_DISABLED
+#include "servers/physics_2d/physics_server_2d.h"
+#endif // PHYSICS_2D_DISABLED
+
+#ifndef PHYSICS_3D_DISABLED
+#include "servers/physics_3d/physics_server_3d.h"
+#endif // PHYSICS_3D_DISABLED
+
+int Performance::_get_orphan_node_count()
+{
+#ifdef DEBUG_ENABLED
+	const int total_node_count = Node::total_node_count.get();
+	const int orphan_node_count = total_node_count - _get_node_count();
+	return orphan_node_count;
+#else
+	return 0;
+#endif
+}
+
+String Performance::get_monitor_name(Monitor p_monitor)
+{
+	ERR_FAIL_INDEX_V(p_monitor, MONITOR_MAX, String());
+	static const char* names[MONITOR_MAX] = {
+		PNAME("time/fps"),
+		PNAME("time/process"),
+		PNAME("time/physics_process"),
+		PNAME("time/navigation_process"),
+		PNAME("memory/static"),
+		PNAME("memory/static_max"),
+		PNAME("memory/msg_buf_max"),
+		PNAME("object/objects"),
+		PNAME("object/resources"),
+		PNAME("object/nodes"),
+		PNAME("object/orphan_nodes"),
+		PNAME("raster/total_objects_drawn"),
+		PNAME("raster/total_primitives_drawn"),
+		PNAME("raster/total_draw_calls"),
+		PNAME("video/video_mem"),
+		PNAME("video/texture_mem"),
+		PNAME("video/buffer_mem"),
+		PNAME("physics_2d/active_objects"),
+		PNAME("physics_2d/collision_pairs"),
+		PNAME("physics_2d/islands"),
+		PNAME("physics_3d/active_objects"),
+		PNAME("physics_3d/collision_pairs"),
+		PNAME("physics_3d/islands"),
+		PNAME("audio/driver/output_latency"),
+#if !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
+		PNAME("navigation/active_maps"),
+		PNAME("navigation/regions"),
+		PNAME("navigation/agents"),
+		PNAME("navigation/links"),
+		PNAME("navigation/polygons"),
+		PNAME("navigation/edges"),
+		PNAME("navigation/edges_merged"),
+		PNAME("navigation/edges_connected"),
+		PNAME("navigation/edges_free"),
+		PNAME("navigation/obstacles"),
+#endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
+		PNAME("pipeline/compilations_canvas"),
+		PNAME("pipeline/compilations_mesh"),
+		PNAME("pipeline/compilations_surface"),
+		PNAME("pipeline/compilations_draw"),
+		PNAME("pipeline/compilations_specialization"),
+#ifndef NAVIGATION_2D_DISABLED
+		PNAME("navigation_2d/active_maps"),
+		PNAME("navigation_2d/regions"),
+		PNAME("navigation_2d/agents"),
+		PNAME("navigation_2d/links"),
+		PNAME("navigation_2d/polygons"),
+		PNAME("navigation_2d/edges"),
+		PNAME("navigation_2d/edges_merged"),
+		PNAME("navigation_2d/edges_connected"),
+		PNAME("navigation_2d/edges_free"),
+		PNAME("navigation_2d/obstacles"),
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		PNAME("navigation_3d/active_maps"),
+		PNAME("navigation_3d/regions"),
+		PNAME("navigation_3d/agents"),
+		PNAME("navigation_3d/links"),
+		PNAME("navigation_3d/polygons"),
+		PNAME("navigation_3d/edges"),
+		PNAME("navigation_3d/edges_merged"),
+		PNAME("navigation_3d/edges_connected"),
+		PNAME("navigation_3d/edges_free"),
+		PNAME("navigation_3d/obstacles"),
+#endif // NAVIGATION_3D_DISABLED
+	};
+	static_assert(std_size(names) == MONITOR_MAX);
+
+	return names[p_monitor];
+}
+
+double Performance::get_monitor(Monitor p_monitor)
+{
+	int info = 0;
+
+	switch (p_monitor) {
+	case TIME_FPS:
+		return Engine::get_frames_per_second();
+	case TIME_PROCESS:
+		return _process_time;
+	case TIME_PHYSICS_PROCESS:
+		return _physics_process_time;
+	case TIME_NAVIGATION_PROCESS:
+		return _navigation_process_time;
+	case MEMORY_STATIC:
+		return Memory::get_mem_usage();
+	case MEMORY_STATIC_MAX:
+		return Memory::get_mem_max_usage();
+	case OBJECT_RESOURCE_COUNT:
+		return ResourceCache::get_cached_resource_count();
+	case OBJECT_NODE_COUNT:
+		return _get_node_count();
+	case OBJECT_ORPHAN_NODE_COUNT:
+		return _get_orphan_node_count();
+	case RENDER_TOTAL_OBJECTS_IN_FRAME:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME);
+	case RENDER_TOTAL_PRIMITIVES_IN_FRAME:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME);
+	case RENDER_TOTAL_DRAW_CALLS_IN_FRAME:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME);
+	case RENDER_VIDEO_MEM_USED:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_VIDEO_MEM_USED);
+	case RENDER_TEXTURE_MEM_USED:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_TEXTURE_MEM_USED);
+	case RENDER_BUFFER_MEM_USED:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_BUFFER_MEM_USED);
+	case PIPELINE_COMPILATIONS_CANVAS:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_CANVAS);
+	case PIPELINE_COMPILATIONS_MESH:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_MESH);
+	case PIPELINE_COMPILATIONS_SURFACE:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SURFACE);
+	case PIPELINE_COMPILATIONS_DRAW:
+		return Renderer::get_rendering_info(RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW);
+	case PIPELINE_COMPILATIONS_SPECIALIZATION:
+		return Renderer::get_rendering_info(
+			RSE::RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION);
+#ifndef PHYSICS_2D_DISABLED
+	case PHYSICS_2D_ACTIVE_OBJECTS:
+		return PhysicsServer2D::get_process_info(PS2DE::INFO_ACTIVE_OBJECTS);
+	case PHYSICS_2D_COLLISION_PAIRS:
+		return PhysicsServer2D::get_process_info(PS2DE::INFO_COLLISION_PAIRS);
+	case PHYSICS_2D_ISLAND_COUNT:
+		return PhysicsServer2D::get_process_info(PS2DE::INFO_ISLAND_COUNT);
+#else
+	case PHYSICS_2D_ACTIVE_OBJECTS:
+		return 0;
+	case PHYSICS_2D_COLLISION_PAIRS:
+		return 0;
+	case PHYSICS_2D_ISLAND_COUNT:
+		return 0;
+#endif // PHYSICS_2D_DISABLED
+#ifndef PHYSICS_3D_DISABLED
+	case PHYSICS_3D_ACTIVE_OBJECTS:
+		return PhysicsServer3D::get_process_info(PS3DE::INFO_ACTIVE_OBJECTS);
+	case PHYSICS_3D_COLLISION_PAIRS:
+		return PhysicsServer3D::get_process_info(PS3DE::INFO_COLLISION_PAIRS);
+	case PHYSICS_3D_ISLAND_COUNT:
+		return PhysicsServer3D::get_process_info(PS3DE::INFO_ISLAND_COUNT);
+#else
+	case PHYSICS_3D_ACTIVE_OBJECTS:
+		return 0;
+	case PHYSICS_3D_COLLISION_PAIRS:
+		return 0;
+	case PHYSICS_3D_ISLAND_COUNT:
+		return 0;
+#endif // PHYSICS_3D_DISABLED
+
+	case AUDIO_OUTPUT_LATENCY:
+		return AudioServer::get_output_latency();
+
+		// Deprecated, use the 2D/3D specific ones instead.
+	case NAVIGATION_ACTIVE_MAPS:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_ACTIVE_MAPS);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(NavigationServer3D::INFO_ACTIVE_MAPS);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_REGION_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_REGION_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(NavigationServer3D::INFO_REGION_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_AGENT_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_AGENT_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(NavigationServer3D::INFO_AGENT_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_LINK_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_LINK_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(NavigationServer3D::INFO_LINK_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_POLYGON_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_POLYGON_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(NavigationServer3D::INFO_POLYGON_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_EDGE_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_EDGE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(NavigationServer3D::INFO_EDGE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_EDGE_MERGE_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_EDGE_MERGE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(NavigationServer3D::INFO_EDGE_MERGE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_EDGE_CONNECTION_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_EDGE_CONNECTION_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info +=
+			NavigationServer3D::get_process_info(NavigationServer3D::INFO_EDGE_CONNECTION_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_EDGE_FREE_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_EDGE_FREE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(NavigationServer3D::INFO_EDGE_FREE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+	case NAVIGATION_OBSTACLE_COUNT:
+#ifndef NAVIGATION_2D_DISABLED
+		info = NavigationServer2D::get_process_info(NavigationServer2D::INFO_OBSTACLE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+		info += NavigationServer3D::get_process_info(NavigationServer3D::INFO_OBSTACLE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+		return info;
+
+#ifndef NAVIGATION_2D_DISABLED
+	case NAVIGATION_2D_ACTIVE_MAPS:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_ACTIVE_MAPS);
+	case NAVIGATION_2D_REGION_COUNT:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_REGION_COUNT);
+	case NAVIGATION_2D_AGENT_COUNT:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_AGENT_COUNT);
+	case NAVIGATION_2D_LINK_COUNT:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_LINK_COUNT);
+	case NAVIGATION_2D_POLYGON_COUNT:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_POLYGON_COUNT);
+	case NAVIGATION_2D_EDGE_COUNT:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_EDGE_COUNT);
+	case NAVIGATION_2D_EDGE_MERGE_COUNT:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_EDGE_MERGE_COUNT);
+	case NAVIGATION_2D_EDGE_CONNECTION_COUNT:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_EDGE_CONNECTION_COUNT);
+	case NAVIGATION_2D_EDGE_FREE_COUNT:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_EDGE_FREE_COUNT);
+	case NAVIGATION_2D_OBSTACLE_COUNT:
+		return NavigationServer2D::get_process_info(NavigationServer2D::INFO_OBSTACLE_COUNT);
+#endif // NAVIGATION_2D_DISABLED
+
+#ifndef NAVIGATION_3D_DISABLED
+	case NAVIGATION_3D_ACTIVE_MAPS:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_ACTIVE_MAPS);
+	case NAVIGATION_3D_REGION_COUNT:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_REGION_COUNT);
+	case NAVIGATION_3D_AGENT_COUNT:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_AGENT_COUNT);
+	case NAVIGATION_3D_LINK_COUNT:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_LINK_COUNT);
+	case NAVIGATION_3D_POLYGON_COUNT:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_POLYGON_COUNT);
+	case NAVIGATION_3D_EDGE_COUNT:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_EDGE_COUNT);
+	case NAVIGATION_3D_EDGE_MERGE_COUNT:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_EDGE_MERGE_COUNT);
+	case NAVIGATION_3D_EDGE_CONNECTION_COUNT:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_EDGE_CONNECTION_COUNT);
+	case NAVIGATION_3D_EDGE_FREE_COUNT:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_EDGE_FREE_COUNT);
+	case NAVIGATION_3D_OBSTACLE_COUNT:
+		return NavigationServer3D::get_process_info(NavigationServer3D::INFO_OBSTACLE_COUNT);
+#endif // NAVIGATION_3D_DISABLED
+
+	default: {
+	}
+	}
+
+	return 0;
+}
+
+Performance::MonitorType Performance::get_monitor_type(Monitor p_monitor)
+{
+	ERR_FAIL_INDEX_V(p_monitor, MONITOR_MAX, MONITOR_TYPE_QUANTITY);
+	// ugly
+	static const MonitorType types[MONITOR_MAX] = {
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_MEMORY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_TIME,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+#ifndef _3D_DISABLED
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+		MONITOR_TYPE_QUANTITY,
+#endif // _3D_DISABLED
+
+	};
+	static_assert((sizeof(types) / sizeof(MonitorType)) == MONITOR_MAX);
+
+	return types[p_monitor];
+}
+
+void Performance::set_process_time(double p_pt) { _process_time = p_pt; }
+
+void Performance::set_physics_process_time(double p_pt) { _physics_process_time = p_pt; }
+
+void Performance::set_navigation_process_time(double p_pt) { _navigation_process_time = p_pt; }
+
+uint64_t Performance::get_monitor_modification_time() { return _monitor_modification_time; }
+
+void Performance::initialize()
+{
+	_process_time = 0.0;
+	_physics_process_time = 0.0;
+	_navigation_process_time = 0.0;
+	_monitor_modification_time = 0;
+	_initialized = true;
+}
+
+void Performance::finalize()
+{
+	_process_time = 0.0;
+	_physics_process_time = 0.0;
+	_navigation_process_time = 0.0;
+	_monitor_modification_time = 0;
+	_initialized = false;
+}
+
+Performance::MonitorCall::MonitorCall() {}
+
+int Performance::_get_node_count() { return 0; }
+
+// ============================================================================
+// Merged from main/steam_tracker.cpp
+// ============================================================================
+
+#if defined(STEAMAPI_ENABLED)
+
+#include "core/io/file_access.h"
+#include "core/os/os.h"
+
+// https://partner.steamgames.com/doc/sdk/api#initialization_and_shutdown
+
+SteamTracker::SteamTracker()
+{
+	String path;
+	if (OS::has_feature("linuxbsd")) {
+		path = OS::get_executable_path().get_base_dir().path_join("libsteam_api.so");
+		if (!FileAccess::exists(path)) {
+			path = OS::get_executable_path().get_base_dir().path_join("../lib").path_join(
+				"libsteam_api.so");
+			if (!FileAccess::exists(path)) {
+				return;
+			}
+		}
+	}
+	else if (OS::has_feature("windows")) {
+		if (OS::has_feature("64")) {
+			path = OS::get_executable_path().get_base_dir().path_join("steam_api64.dll");
+		}
+		else {
+			path = OS::get_executable_path().get_base_dir().path_join("steam_api.dll");
+		}
+		if (!FileAccess::exists(path)) {
+			return;
+		}
+	}
+	else if (OS::has_feature("macos")) {
+		path = OS::get_executable_path().get_base_dir().path_join("libsteam_api.dylib");
+		if (!FileAccess::exists(path)) {
+			path = OS::get_executable_path()
+					   .get_base_dir()
+					   .path_join("../Frameworks")
+					   .path_join("libsteam_api.dylib");
+			if (!FileAccess::exists(path)) {
+				return;
+			}
+		}
+	}
+	else {
+		return;
+	}
+
+	Error err = OS::open_dynamic_library(path, steam_library_handle);
+	if (err != OK) {
+		steam_library_handle = nullptr;
+		return;
+	}
+	print_verbose("Loaded SteamAPI library");
+
+	void* symbol_handle = nullptr;
+	err = OS::get_dynamic_library_symbol_handle(
+		steam_library_handle, "SteamAPI_InitFlat", symbol_handle, true); // Try new API, 1.59+.
+	if (err != OK) {
+		err = OS::get_dynamic_library_symbol_handle(
+			steam_library_handle, "SteamAPI_Init", symbol_handle); // Try old API.
+		if (err != OK) {
+			return;
+		}
+		steam_init_function = (SteamAPI_InitFunction)symbol_handle;
+	}
+	else {
+		steam_init_flat_function = (SteamAPI_InitFlatFunction)symbol_handle;
+	}
+
+	err = OS::get_dynamic_library_symbol_handle(
+		steam_library_handle, "SteamAPI_Shutdown", symbol_handle);
+	if (err != OK) {
+		return;
+	}
+	steam_shutdown_function = (SteamAPI_ShutdownFunction)symbol_handle;
+
+	if (steam_init_flat_function) {
+		char err_msg[1024] = {};
+		steam_initialized = (steam_init_flat_function(&err_msg[0]) == SteamAPIInitResult_OK);
+	}
+	else if (steam_init_function) {
+		steam_initialized = steam_init_function();
+	}
+}
+
+SteamTracker::~SteamTracker()
+{
+	if (steam_shutdown_function && steam_initialized) {
+		steam_shutdown_function();
+	}
+	if (steam_library_handle) {
+		OS::close_dynamic_library(steam_library_handle);
+	}
+}
+
+#endif // STEAMAPI_ENABLED

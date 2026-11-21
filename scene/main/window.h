@@ -261,7 +261,7 @@ private:
 
 	friend class Viewport; // friend back, can call the methods below
 
-	void _window_input(const Ref<InputEvent>& p_ev);
+	void _window_input(const InputEvent& p_ev);
 	void _window_input_text(const String& p_text, bool p_emit_signal = false);
 	void _window_drop_files(const Vector<String>& p_files);
 	void _rect_changed_callback(const Rect2i& p_callback);
@@ -288,7 +288,7 @@ protected:
 
 	virtual void _update_theme_item_cache();
 
-	virtual void _input_from_window(const Ref<InputEvent>& p_event) {}
+	virtual void _input_from_window(const InputEvent& p_event) {}
 
 	void _notification(int p_what);
 	static void _bind_methods();

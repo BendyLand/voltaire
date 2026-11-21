@@ -36,7 +36,7 @@ TEST_FORCE_LINK(test_code_edit)
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "core/input/input_map.h"
-#include "scene/gui/code_edit.h"
+#include "scene/gui/text_edit.h"
 #include "scene/main/scene_tree.h"
 #include "tests/display_server_mock.h"
 #include "tests/signal_watcher.h"
@@ -44,8 +44,8 @@ TEST_FORCE_LINK(test_code_edit)
 namespace TestCodeEdit {
 
 TEST_CASE("[SceneTree][CodeEdit] line gutters") {
-	CodeEdit *code_edit = memnew(CodeEdit);
-	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	TextEdit *code_edit = memnew(TextEdit(true));
+	SceneTree::get_root()->add_child(code_edit);
 	code_edit->grab_focus();
 
 	SUBCASE("[CodeEdit] breakpoints") {
@@ -110,7 +110,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* breakpoint on lines that still exist are kept. */
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK(code_edit->is_line_breakpointed(0));
 			SIGNAL_CHECK_FALSE("breakpoint_toggled");
 
@@ -125,7 +124,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_breakpointed(1));
@@ -143,7 +141,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* breakpoint on lines that still exist are removed. */
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
@@ -158,7 +155,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_breakpointed(1));
@@ -330,7 +326,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
@@ -356,13 +351,11 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			args = { { 9 }, { 14 } };
 
 			code_edit->insert_text_at_caret("\n\n\n\n\n");
-			MessageQueue::get_singleton()->flush();
 			SIGNAL_DISCARD("breakpoint_toggled")
 			CHECK(code_edit->is_line_breakpointed(9));
 
 			code_edit->select(0, 0, 6, 0);
 			code_edit->insert_text_at_caret("\n\n\n\n\n\n\n\n\n\n\n");
-			MessageQueue::get_singleton()->flush();
 			CHECK(code_edit->is_line_breakpointed(14));
 			SIGNAL_CHECK("breakpoint_toggled", args);
 		}
@@ -377,7 +370,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_breakpointed(0));
 			SIGNAL_CHECK("breakpoint_toggled", args);
 
@@ -436,7 +428,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* bookmarks on lines that still exist are kept. */
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK(code_edit->is_line_bookmarked(0));
 
 			/* bookmarks on lines that are removed should also be removed. */
@@ -447,7 +438,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			CHECK(code_edit->is_line_bookmarked(1));
 
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_bookmarked(1));
@@ -461,7 +451,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* bookmarks on lines that still exist are removed. */
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 
 			/* bookmarks on lines that are removed should also be removed. */
@@ -472,7 +461,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			CHECK(code_edit->is_line_bookmarked(1));
 
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_bookmarked(1));
@@ -576,7 +564,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 		}
 
@@ -587,7 +574,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_bookmarked(0));
 
 			/* Undo does not restore bookmark. */
@@ -642,7 +628,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* executing on lines that still exist are kept. */
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK(code_edit->is_line_executing(0));
 
 			/* executing on lines that are removed should also be removed. */
@@ -653,7 +638,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			CHECK(code_edit->is_line_executing(1));
 
 			code_edit->set_text("");
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_executing(1));
@@ -667,7 +651,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			/* executing on lines that still exist are removed. */
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 
 			/* executing on lines that are removed should also be removed. */
@@ -678,7 +661,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 			CHECK(code_edit->is_line_executing(1));
 
 			code_edit->clear();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 			ERR_PRINT_OFF;
 			CHECK_FALSE(code_edit->is_line_executing(1));
@@ -782,7 +764,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 		}
 
@@ -793,7 +774,6 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 
 			code_edit->select(0, 0, 2, 0);
 			code_edit->delete_selection();
-			MessageQueue::get_singleton()->flush();
 			CHECK_FALSE(code_edit->is_line_executing(0));
 
 			/* Undo does not restore executing lines. */
@@ -841,8 +821,8 @@ TEST_CASE("[SceneTree][CodeEdit] line gutters") {
 }
 
 TEST_CASE("[SceneTree][CodeEdit] delimiters") {
-	CodeEdit *code_edit = memnew(CodeEdit);
-	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	TextEdit *code_edit = memnew(TextEdit(true));
+	SceneTree::get_root()->add_child(code_edit);
 	code_edit->grab_focus();
 
 	const Point2 OUTSIDE_DELIMITER = Point2(-1, -1);
@@ -903,7 +883,7 @@ TEST_CASE("[SceneTree][CodeEdit] delimiters") {
 			CHECK(code_edit->get_string_delimiters().size() == 2);
 
 			/* Set should override existing, and test multiline */
-			TypedArray<String> delimiters = { "^^ ^^" };
+			Vector<String> delimiters = { "^^ ^^" };
 
 			code_edit->set_string_delimiters(delimiters);
 			CHECK_FALSE(code_edit->has_string_delimiter("\""));
@@ -968,7 +948,7 @@ TEST_CASE("[SceneTree][CodeEdit] delimiters") {
 			CHECK(code_edit->get_comment_delimiters().size() == 2);
 
 			/* Set should override existing, and test multiline. */
-			TypedArray<String> delimiters = { "^^ ^^" };
+			Vector<String> delimiters = { "^^ ^^" };
 
 			code_edit->set_comment_delimiters(delimiters);
 			CHECK_FALSE(code_edit->has_comment_delimiter("\""));
@@ -1744,8 +1724,8 @@ TEST_CASE("[SceneTree][CodeEdit] delimiters") {
 }
 
 TEST_CASE("[SceneTree][CodeEdit] indent") {
-	CodeEdit *code_edit = memnew(CodeEdit);
-	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	TextEdit *code_edit = memnew(TextEdit(true));
+	SceneTree::get_root()->add_child(code_edit);
 	code_edit->grab_focus();
 
 	SUBCASE("[CodeEdit] indent settings") {
@@ -1766,7 +1746,7 @@ TEST_CASE("[SceneTree][CodeEdit] indent") {
 		CHECK(code_edit->is_indent_using_spaces());
 
 		/* Only the first char is registered. */
-		TypedArray<String> auto_indent_prefixes = { "::", "s", "1" };
+		Vector<String> auto_indent_prefixes = { "::", "s", "1" };
 		code_edit->set_auto_indent_prefixes(auto_indent_prefixes);
 
 		auto_indent_prefixes = code_edit->get_auto_indent_prefixes();
@@ -2897,8 +2877,8 @@ TEST_CASE("[SceneTree][CodeEdit] indent") {
 }
 
 TEST_CASE("[SceneTree][CodeEdit] folding") {
-	CodeEdit *code_edit = memnew(CodeEdit);
-	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	TextEdit *code_edit = memnew(TextEdit(true));
+	SceneTree::get_root()->add_child(code_edit);
 	code_edit->grab_focus();
 	code_edit->set_line_folding_enabled(true);
 
@@ -3458,8 +3438,8 @@ TEST_CASE("[SceneTree][CodeEdit] folding") {
 }
 
 TEST_CASE("[SceneTree][CodeEdit] region folding") {
-	CodeEdit *code_edit = memnew(CodeEdit);
-	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	TextEdit *code_edit = memnew(TextEdit(true));
+	SceneTree::get_root()->add_child(code_edit);
 	code_edit->grab_focus();
 
 	SUBCASE("[CodeEdit] region tags") {
@@ -3730,8 +3710,8 @@ TEST_CASE("[SceneTree][CodeEdit] region folding") {
 }
 
 TEST_CASE("[SceneTree][CodeEdit] completion") {
-	CodeEdit *code_edit = memnew(CodeEdit);
-	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	TextEdit *code_edit = memnew(TextEdit(true));
+	SceneTree::get_root()->add_child(code_edit);
 	code_edit->grab_focus();
 
 	SUBCASE("[CodeEdit] auto brace completion") {
@@ -3903,7 +3883,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->set_caret_column(3);
 
 		// Full completion.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_FUNCTION, "test()", "test()");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_FUNCTION, "test()", "test()");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "(test())");
@@ -3911,7 +3891,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->undo();
 
 		// With "arg".
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_FUNCTION, "test(", "test(");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_FUNCTION, "test(", "test(");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "(test())");
@@ -3922,7 +3902,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->set_auto_brace_completion_enabled(false);
 
 		// Full completion.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_FUNCTION, "test()", "test()");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_FUNCTION, "test()", "test()");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "(test())");
@@ -3930,7 +3910,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->undo();
 
 		// With "arg".
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_FUNCTION, "test(", "test(");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_FUNCTION, "test(", "test(");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "(test()");
@@ -3943,7 +3923,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->set_caret_column(1);
 
 		// Full completion.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_NODE_PATH, "\"test\"", "\"test\"");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_NODE_PATH, "\"test\"", "\"test\"");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "\"test\"");
@@ -3951,7 +3931,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->undo();
 
 		// With "arg".
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_NODE_PATH, "\"test", "\"test");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_NODE_PATH, "\"test", "\"test");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "\"\"test\"");
@@ -3962,7 +3942,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->set_auto_brace_completion_enabled(false);
 
 		// Full completion.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_NODE_PATH, "\"test\"", "\"test\"");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_NODE_PATH, "\"test\"", "\"test\"");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "\"test\"");
@@ -3970,7 +3950,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->undo();
 
 		// With "arg".
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_NODE_PATH, "\"test", "\"test");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_NODE_PATH, "\"test", "\"test");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "\"\"test\"");
@@ -3983,7 +3963,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		CHECK(code_edit->is_code_completion_enabled());
 
 		/* Set prefixes, single char only, disallow empty. */
-		TypedArray<String> completion_prefixes = { "", ".", ".", ",," };
+		Vector<String> completion_prefixes = { "", ".", ".", ",," };
 
 		ERR_PRINT_OFF;
 		code_edit->set_code_completion_prefixes(completion_prefixes);
@@ -4014,7 +3994,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		SIGNAL_CHECK("code_completion_requested", signal_args);
 
 		/* Insert prefix. */
-		TypedArray<String> completion_prefixes = { "." };
+		Vector<String> completion_prefixes = { "." };
 		code_edit->set_code_completion_prefixes(completion_prefixes);
 
 		code_edit->insert_text_at_caret(".");
@@ -4029,7 +4009,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		/* Should work when complete ends with prefix. */
 		code_edit->clear();
 		code_edit->insert_text_at_caret("t");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "test.", "test.");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "test.", "test.");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "test.");
@@ -4051,7 +4031,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			CHECK(code_edit->get_code_completion_options().size() == 0);
 
 			/* Adding does not update the list. */
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "item_0.", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "item_0.", "item_0");
 
 			code_edit->set_code_completion_selected_index(1);
 			CHECK(code_edit->get_code_completion_selected_index() == -1);
@@ -4064,9 +4044,9 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->insert_text_at_caret("i");
 
 			code_edit->update_code_completion_options();
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0", Color(1, 0, 0), Ref<Resource>(), Color(1, 0, 0));
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "item_1.", "item_1");
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "item_2.", "item_2");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0", Color(1, 0, 0), Ref<Resource>(), Color(1, 0, 0));
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "item_1.", "item_1");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "item_2.", "item_2");
 
 			ERR_PRINT_OFF;
 			code_edit->set_code_completion_selected_index(1);
@@ -4088,7 +4068,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 
 			/* Check data. */
 			Dictionary option = code_edit->get_code_completion_option(0);
-			CHECK((int)option["kind"] == (int)CodeEdit::CodeCompletionKind::KIND_CLASS);
+			CHECK((int)option["kind"] == (int)TextEdit::CodeCompletionKind::KIND_CLASS);
 			CHECK(option["display_text"] == "item_0.");
 			CHECK(option["insert_text"] == "item_0");
 			CHECK(option["font_color"] == Color(1, 0, 0));
@@ -4101,9 +4081,9 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			/* Test home and end keys close the completion and move the caret */
 			/* => ui_text_caret_line_start */
 			code_edit->set_caret_column(before_text_caret_column + 1);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0", Color(1, 0, 0), Ref<Resource>(), Color(1, 0, 0));
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "item_1.", "item_1");
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "item_2.", "item_2");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0", Color(1, 0, 0), Ref<Resource>(), Color(1, 0, 0));
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "item_1.", "item_1");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "item_2.", "item_2");
 
 			code_edit->update_code_completion_options();
 
@@ -4114,9 +4094,9 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 
 			/* => ui_text_caret_line_end */
 			code_edit->set_caret_column(before_text_caret_column + 1);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0", Color(1, 0, 0), Ref<Resource>(), Color(1, 0, 0));
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "item_1.", "item_1");
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "item_2.", "item_2");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0", Color(1, 0, 0), Ref<Resource>(), Color(1, 0, 0));
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "item_1.", "item_1");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "item_2.", "item_2");
 
 			code_edit->update_code_completion_options();
 
@@ -4127,9 +4107,9 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 
 			/* Check input. */
 			code_edit->set_caret_column(before_text_caret_column + 1);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0", Color(1, 0, 0), Ref<Resource>(), Color(1, 0, 0));
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "item_1.", "item_1");
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "item_2.", "item_2");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0", Color(1, 0, 0), Ref<Resource>(), Color(1, 0, 0));
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "item_1.", "item_1");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "item_2.", "item_2");
 
 			code_edit->update_code_completion_options();
 
@@ -4180,7 +4160,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 
 			/* Does nothing in readonly. */
 			code_edit->undo();
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
 			code_edit->update_code_completion_options();
 			code_edit->set_editable(false);
 			code_edit->confirm_code_completion();
@@ -4191,7 +4171,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1 test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0 test");
@@ -4200,7 +4180,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("\"item_1 test\"");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "\"item_0\"");
@@ -4209,7 +4189,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("\"item_1 test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "\"item_0\" test");
@@ -4218,7 +4198,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1 test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_accept");
 			CHECK(code_edit->get_line(0) == "item_01 test");
@@ -4227,7 +4207,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("\"item_1 test\"");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0.", "item_0");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_accept");
 			CHECK(code_edit->get_line(0) == "\"item_0\"1 test\"");
@@ -4237,7 +4217,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1 test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0(", "item_0(");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0(", "item_0(");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0( test");
@@ -4247,7 +4227,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1( test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0", "item_0");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0( test");
@@ -4257,7 +4237,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1( test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0(", "item_0(");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0(", "item_0(");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0( test");
@@ -4268,7 +4248,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1 test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0()", "item_0()");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0()", "item_0()");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0() test");
@@ -4278,7 +4258,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1() test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0", "item_0");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0() test");
@@ -4288,7 +4268,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1() test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0()", "item_0()");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0()", "item_0()");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0() test");
@@ -4301,7 +4281,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1 test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0(", "item_0(");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0(", "item_0(");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0() test");
@@ -4311,7 +4291,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1( test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0", "item_0");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0( test");
@@ -4321,7 +4301,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1( test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0(", "item_0(");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0(", "item_0(");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0( test");
@@ -4332,7 +4312,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1 test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0()", "item_0()");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0()", "item_0()");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0() test");
@@ -4342,7 +4322,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1() test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0", "item_0");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0", "item_0");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0() test");
@@ -4352,7 +4332,7 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			code_edit->clear();
 			code_edit->insert_text_at_caret("item_1() test");
 			code_edit->set_caret_column(2);
-			code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_CLASS, "item_0()", "item_0()");
+			code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_CLASS, "item_0()", "item_0()");
 			code_edit->update_code_completion_options();
 			SEND_GUI_ACTION("ui_text_completion_replace");
 			CHECK(code_edit->get_line(0) == "item_0() test");
@@ -4365,8 +4345,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->clear();
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "tset", "tset");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "tset", "tset");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "test");
@@ -4375,8 +4355,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->clear();
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "stest", "stest");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "stest", "stest");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "test");
@@ -4385,8 +4365,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->clear();
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "tset", "tset");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "stest", "stest");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "tset", "tset");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "stest", "stest");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "stest");
@@ -4395,8 +4375,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->clear();
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "Test", "Test");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "Test", "Test");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "test");
@@ -4405,8 +4385,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->clear();
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "Test", "Test");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "stest_bis", "test_bis");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "Test", "Test");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "stest_bis", "test_bis");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "Test");
@@ -4415,8 +4395,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->clear();
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "test_bis", "test_bis", Color(1, 1, 1), Ref<Resource>(), Variant::NIL, CodeEdit::LOCATION_LOCAL);
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "test_bis", "test_bis", Color(1, 1, 1), Ref<Resource>(), Variant::NIL, TextEdit::LOCATION_LOCAL);
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "test_bis");
@@ -4425,8 +4405,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->clear();
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "Test", "Test", Color(1, 1, 1), Ref<Resource>(), Variant::NIL, CodeEdit::LOCATION_LOCAL);
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "test", "test");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "Test", "Test", Color(1, 1, 1), Ref<Resource>(), Variant::NIL, TextEdit::LOCATION_LOCAL);
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "test");
@@ -4435,8 +4415,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->clear();
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "stest", "stest");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "sstest", "sstest");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "stest", "stest");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "sstest", "sstest");
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "stest");
@@ -4445,8 +4425,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		code_edit->clear();
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "stest", "stest");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "sstest", "sstest", Color(1, 1, 1), Ref<Resource>(), Variant::NIL, CodeEdit::LOCATION_LOCAL);
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "stest", "stest");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "sstest", "sstest", Color(1, 1, 1), Ref<Resource>(), Variant::NIL, TextEdit::LOCATION_LOCAL);
 		code_edit->update_code_completion_options();
 		code_edit->confirm_code_completion();
 		CHECK(code_edit->get_line(0) == "sstest");
@@ -4459,56 +4439,56 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 		// Initially select item 0.
 		code_edit->insert_text_at_caret("te");
 		code_edit->set_caret_column(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
 		code_edit->update_code_completion_options();
 		CHECK_MESSAGE(code_edit->get_code_completion_selected_index() == 0, "Initially selected item should be 0.");
 
 		// After adding later options shouldn't update selection.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4"); // Added te4.
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4"); // Added te4.
 		code_edit->update_code_completion_options();
 		CHECK_MESSAGE(code_edit->get_code_completion_selected_index() == 0, "Adding later options shouldn't update selection.");
 
 		code_edit->set_code_completion_selected_index(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te5", "te5"); // Added te5.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te6", "te6"); // Added te6.
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te5", "te5"); // Added te5.
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te6", "te6"); // Added te6.
 		code_edit->update_code_completion_options();
 		CHECK_MESSAGE(code_edit->get_code_completion_selected_index() == 2, "Adding later options shouldn't update selection.");
 
 		// Removing elements after selected element shouldn't update selection.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te5", "te5"); // Removed te6.
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te5", "te5"); // Removed te6.
 		code_edit->update_code_completion_options();
 		CHECK_MESSAGE(code_edit->get_code_completion_selected_index() == 2, "Removing elements after selected element shouldn't update selection.");
 
 		// Changing elements after selected element shouldn't update selection.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te6", "te6"); // Changed te5->te6.
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te1", "te1");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te6", "te6"); // Changed te5->te6.
 		code_edit->update_code_completion_options();
 		CHECK_MESSAGE(code_edit->get_code_completion_selected_index() == 2, "Changing elements after selected element shouldn't update selection.");
 
 		// Changing elements before selected element should reset selection.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te2", "te2"); // Changed te1->te2.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te6", "te6");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te2", "te2"); // Changed te1->te2.
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te6", "te6");
 		code_edit->update_code_completion_options();
 		CHECK_MESSAGE(code_edit->get_code_completion_selected_index() == 0, "Changing elements before selected element should reset selection.");
 
 		// Removing elements before selected element should reset selection.
 		code_edit->set_code_completion_selected_index(2);
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3"); // Removed te2.
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
-		code_edit->add_code_completion_option(CodeEdit::CodeCompletionKind::KIND_VARIABLE, "te6", "te6");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te3", "te3"); // Removed te2.
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te4", "te4");
+		code_edit->add_code_completion_option(TextEdit::CodeCompletionKind::KIND_VARIABLE, "te6", "te6");
 		code_edit->update_code_completion_options();
 		CHECK_MESSAGE(code_edit->get_code_completion_selected_index() == 0, "Removing elements before selected element should reset selection.");
 	}
@@ -4517,8 +4497,8 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 }
 
 TEST_CASE("[SceneTree][CodeEdit] symbol lookup") {
-	CodeEdit *code_edit = memnew(CodeEdit);
-	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	TextEdit *code_edit = memnew(TextEdit(true));
+	SceneTree::get_root()->add_child(code_edit);
 	code_edit->grab_focus();
 
 	code_edit->set_symbol_lookup_on_click_enabled(true);
@@ -4554,11 +4534,11 @@ TEST_CASE("[SceneTree][CodeEdit] symbol lookup") {
 }
 
 TEST_CASE("[SceneTree][CodeEdit] line length guidelines") {
-	CodeEdit *code_edit = memnew(CodeEdit);
-	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	TextEdit *code_edit = memnew(TextEdit(true));
+	SceneTree::get_root()->add_child(code_edit);
 	code_edit->grab_focus();
 
-	TypedArray<int> guide_lines;
+	Vector<int> guide_lines;
 
 	code_edit->set_line_length_guidelines(guide_lines);
 	CHECK(code_edit->get_line_length_guidelines().size() == 0);
@@ -4575,8 +4555,8 @@ TEST_CASE("[SceneTree][CodeEdit] line length guidelines") {
 }
 
 TEST_CASE("[SceneTree][CodeEdit] text manipulation") {
-	CodeEdit *code_edit = memnew(CodeEdit);
-	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	TextEdit *code_edit = memnew(TextEdit(true));
+	SceneTree::get_root()->add_child(code_edit);
 	code_edit->grab_focus();
 
 	SUBCASE("[SceneTree][CodeEdit] backspace") {
@@ -4673,7 +4653,7 @@ TEST_CASE("[SceneTree][CodeEdit] text manipulation") {
 	}
 
 	SUBCASE("[TextEdit] cut") {
-		DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+		DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 		code_edit->set_line_folding_enabled(true);
 
 		// Cut without a selection removes the entire line.
@@ -4821,21 +4801,19 @@ TEST_CASE("[SceneTree][CodeEdit] text manipulation") {
 	}
 
 	SUBCASE("[SceneTree][CodeEdit] cut when empty selection clipboard disabled") {
-		DisplayServerMock *DS = (DisplayServerMock *)(DisplayServer::get_singleton());
+		DisplayServerMock *DS = DisplayServer::driver_as<DisplayServerMock>();
 		code_edit->set_empty_selection_clipboard_enabled(false);
 		DS->clipboard_set("");
 
 		code_edit->set_text("this is\nsome\n");
 		code_edit->set_caret_line(0);
 		code_edit->set_caret_column(6);
-		MessageQueue::get_singleton()->flush();
 		SIGNAL_DISCARD("text_set");
 		SIGNAL_DISCARD("text_changed");
 		SIGNAL_DISCARD("lines_edited_from");
 		SIGNAL_DISCARD("caret_changed");
 
 		code_edit->cut();
-		MessageQueue::get_singleton()->flush();
 		CHECK(DS->clipboard_get() == "");
 		CHECK(code_edit->get_text() == "this is\nsome\n");
 		CHECK(code_edit->get_caret_line() == 0);

@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/string/ustring.h"
-#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
 #include "core/templates/list.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/safe_refcount.h"
@@ -40,7 +40,60 @@
 #include "core/types.h"
 
 #ifdef DEBUG_ENABLED
-#include "servers/rendering/shader_warnings.h"
+
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+
+class ShaderWarning final
+{
+public:
+	enum Code
+	{
+		FLOAT_COMPARISON,
+		UNUSED_CONSTANT,
+		UNUSED_FUNCTION,
+		UNUSED_STRUCT,
+		UNUSED_UNIFORM,
+		UNUSED_VARYING,
+		UNUSED_LOCAL_VARIABLE,
+		FORMATTING_ERROR,
+		DEVICE_LIMIT_EXCEEDED,
+		MAGIC_POSITION_WRITE,
+		WARNING_MAX,
+	};
+
+	enum CodeFlags : uint32_t
+	{
+		NONE_FLAG = 0U,
+		FLOAT_COMPARISON_FLAG = 1U,
+		UNUSED_CONSTANT_FLAG = 2U,
+		UNUSED_FUNCTION_FLAG = 4U,
+		UNUSED_STRUCT_FLAG = 8U,
+		UNUSED_UNIFORM_FLAG = 16U,
+		UNUSED_VARYING_FLAG = 32U,
+		UNUSED_LOCAL_VARIABLE_FLAG = 64U,
+		FORMATTING_ERROR_FLAG = 128U,
+		DEVICE_LIMIT_EXCEEDED_FLAG = 256U,
+		MAGIC_POSITION_WRITE_FLAG = 512U,
+	};
+
+private:
+	Code code;
+	int line;
+	String subject;
+
+public:
+	Code get_code() const;
+	int get_line() const;
+	const String& get_subject() const;
+	String get_message() const;
+	String get_name() const;
+
+	static String get_name_from_code(Code p_code);
+	static Code get_code_from_name(const String& p_name);
+	static CodeFlags get_flags_from_codemap(const HashMap<Code, bool>& p_map);
+};
+
 #endif // DEBUG_ENABLED
 
 class ShaderLanguage

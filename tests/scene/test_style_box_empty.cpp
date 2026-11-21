@@ -37,15 +37,16 @@ TEST_FORCE_LINK(test_style_box_empty)
 
 namespace TestStyleBoxEmpty {
 
-TEST_CASE("[StyleBoxEmpty] Constructor") {
-	Ref<StyleBoxEmpty> style_box_empty = memnew(StyleBoxEmpty);
+TEST_CASE("[StyleBox] STYLE_EMPTY Constructor") {
+	Ref<StyleBox> style_box_empty = memnew(StyleBox(StyleBox::STYLE_EMPTY));
 
+	CHECK(style_box_empty->get_style_type() == StyleBox::STYLE_EMPTY);
 	CHECK(style_box_empty->get_offset() == Point2(0, 0));
 	CHECK(style_box_empty->get_current_item_drawn() == nullptr);
 }
 
-TEST_CASE("[StyleBoxEmpty] set_content_margin, set_content_margin_all, set_content_margin_individual, get_content_margin, get_margin") {
-	Ref<StyleBoxEmpty> style_box_empty = memnew(StyleBoxEmpty);
+TEST_CASE("[StyleBox] STYLE_EMPTY set_content_margin, set_content_margin_all, set_content_margin_individual, get_content_margin, get_margin") {
+	Ref<StyleBox> style_box_empty = memnew(StyleBox(StyleBox::STYLE_EMPTY));
 
 	SUBCASE("set_content_margin, get_content_margin") {
 		style_box_empty->set_content_margin(SIDE_LEFT, 2);

@@ -32,7 +32,7 @@
 // Based on the patched public domain implementation released by Microsoft here:
 // https://github.com/microsoft/hlsl-specs/blob/main/proposals/infra/INF-0004-validator-hashing.md
 
-#include "dxil_hash.h"
+#include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
 #include <memory.h>
 

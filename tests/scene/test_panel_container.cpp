@@ -43,9 +43,9 @@ namespace TestPanelContainer {
 
 TEST_CASE("[SceneTree][PanelContainer] Default properties") {
 	PanelContainer *panel_container = memnew(PanelContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(panel_container);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			panel_container->get_mouse_filter() == Control::MOUSE_FILTER_STOP,
@@ -56,10 +56,10 @@ TEST_CASE("[SceneTree][PanelContainer] Default properties") {
 
 TEST_CASE("[SceneTree][PanelContainer] StyleBox affects layout and minimum size") {
 	PanelContainer *panel_container = memnew(PanelContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(panel_container);
 
-	Ref<StyleBoxEmpty> panel_style = memnew(StyleBoxEmpty);
+	Ref<StyleBox> panel_style = memnew(StyleBox(StyleBox::STYLE_EMPTY));
 	panel_style->set_content_margin_individual(5, 6, 7, 8);
 	panel_container->add_theme_style_override("panel", panel_style);
 
@@ -68,7 +68,7 @@ TEST_CASE("[SceneTree][PanelContainer] StyleBox affects layout and minimum size"
 	panel_container->add_child(child_control);
 
 	panel_container->set_size(Size2(100, 80));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_position().is_equal_approx(Point2(5, 6)),
@@ -88,10 +88,10 @@ TEST_CASE("[SceneTree][PanelContainer] StyleBox affects layout and minimum size"
 
 TEST_CASE("[SceneTree][PanelContainer] Multiple children use maximum minimum size") {
 	PanelContainer *panel_container = memnew(PanelContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(panel_container);
 
-	Ref<StyleBoxEmpty> panel_style = memnew(StyleBoxEmpty);
+	Ref<StyleBox> panel_style = memnew(StyleBox(StyleBox::STYLE_EMPTY));
 	panel_style->set_content_margin_individual(2, 3, 4, 5);
 	panel_container->add_theme_style_override("panel", panel_style);
 
@@ -101,7 +101,7 @@ TEST_CASE("[SceneTree][PanelContainer] Multiple children use maximum minimum siz
 	child_control_2->set_custom_minimum_size(Size2(20, 50));
 	panel_container->add_child(child_control_1);
 	panel_container->add_child(child_control_2);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			panel_container->get_minimum_size().is_equal_approx(Size2(46, 58)),

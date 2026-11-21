@@ -256,8 +256,11 @@ def build_gles3_header(filename: str, shader: str) -> None:
         file.write(f"""\
 #include "drivers/gles3/shader_gles3.h"
 
-class {out_file_class} : public ShaderGLES3 {{
-public:
+struct {out_file_class} {{
+	using TextureUniformData = ShaderGLES3::TextureUniformData;
+
+	ShaderGLES3 shader;
+
 """)
 
         if header_data.uniforms:
@@ -297,7 +300,7 @@ public:
 
         file.write(f"""\
 	_FORCE_INLINE_ bool version_bind_shader(RID p_version, ShaderVariant p_variant{defvariant}, uint64_t p_specialization = {defspec}) {{
-		return _version_bind_shader(p_version, p_variant, p_specialization);
+		return shader._version_bind_shader(p_version, p_variant, p_specialization);
 	}}
 
 """)
@@ -305,7 +308,7 @@ public:
         if header_data.uniforms:
             file.write(f"""\
 	_FORCE_INLINE_ int version_get_uniform(Uniforms p_uniform, RID p_version, ShaderVariant p_variant{defvariant}, uint64_t p_specialization = {defspec}) {{
-		return _version_get_uniform(p_uniform, p_version, p_variant, p_specialization);
+		return shader._version_get_uniform(p_uniform, p_version, p_variant, p_specialization);
 	}}
 
 	/* clang-format off */
@@ -467,8 +470,32 @@ public:
 """)
 
         file.write("""\
-protected:
-	virtual void _init() override {
+	RID version_create() {
+		return shader.version_create();
+	}
+
+	void version_set_code(RID p_version, const HashMap<String, String> &p_code, const String &p_uniforms, const String &p_vertex_globals, const String &p_fragment_globals, const Vector<String> &p_custom_defines, const LocalVector<ShaderGLES3::TextureUniformData> &p_texture_uniforms, bool p_initialize = false) {
+		shader.version_set_code(p_version, p_code, p_uniforms, p_vertex_globals, p_fragment_globals, p_custom_defines, p_texture_uniforms, p_initialize);
+	}
+
+	bool version_is_valid(RID p_version) {
+		return shader.version_is_valid(p_version);
+	}
+
+	bool version_free(RID p_version) {
+		return shader.version_free(p_version);
+	}
+
+	RenderingServerTypes::ShaderNativeSourceCode version_get_native_source_code(RID p_version) {
+		return shader.version_get_native_source_code(p_version);
+	}
+
+	void initialize(const String &p_general_defines = "", int p_base_texture_index = 0) {
+		_init();
+		shader.initialize(p_general_defines, p_base_texture_index);
+	}
+
+	void _init() {
 """)
 
         if header_data.uniforms:
@@ -494,31 +521,31 @@ protected:
         else:
             variant_count = 1
             file.write("""\
-		static const char **_variant_defines[] = {" "};
+		static const char *_variant_defines[] = {" "};
 """)
 
         if header_data.texunits:
             texunits = ",\n\t\t\t".join(f'{{ "{name}", {texunit} }}' for name, texunit in header_data.texunits)
             file.write(f"""\
-		static TexUnitPair _texunit_pairs[] = {{
+		static ShaderGLES3::TexUnitPair _texunit_pairs[] = {{
 			{texunits},
 		}};
 """)
         else:
             file.write("""\
-		static TexUnitPair *_texunit_pairs = nullptr;
+		static ShaderGLES3::TexUnitPair *_texunit_pairs = nullptr;
 """)
 
         if header_data.ubos:
             ubos = ",\n\t\t\t".join(f'{{ "{name}", {ubo} }}' for name, ubo in header_data.ubos)
             file.write(f"""\
-		static UBOPair _ubo_pairs[] = {{
+		static ShaderGLES3::UBOPair _ubo_pairs[] = {{
 			{ubos},
 		}};
 """)
         else:
             file.write("""\
-		static UBOPair *_ubo_pairs = nullptr;
+		static ShaderGLES3::UBOPair *_ubo_pairs = nullptr;
 """)
 
         if header_data.specialization_names:
@@ -527,13 +554,13 @@ protected:
                 for index, name in enumerate(header_data.specialization_names)
             )
             file.write(f"""\
-		static Specialization _spec_pairs[] = {{
+		static ShaderGLES3::Specialization _spec_pairs[] = {{
 			{specializations},
 		}};
 """)
         else:
             file.write("""\
-		static Specialization *_spec_pairs = nullptr;
+		static ShaderGLES3::Specialization *_spec_pairs = nullptr;
 """)
 
         if header_data.feedbacks:
@@ -542,13 +569,13 @@ protected:
                 for name, spec in header_data.feedbacks
             )
             file.write(f"""\
-		static const Feedback _feedbacks[] = {{
+		static const ShaderGLES3::Feedback _feedbacks[] = {{
 			{feedbacks},
 		}};
 """)
         else:
             file.write("""\
-		static const Feedback *_feedbacks = nullptr;
+		static const ShaderGLES3::Feedback *_feedbacks = nullptr;
 """)
 
         file.write(f"""\
@@ -560,7 +587,7 @@ protected:
 {to_raw_cstring(header_data.fragment_lines)}
 		}};
 
-		_setup(_vertex_code, _fragment_code, "{out_file_class}",
+		shader._setup(_vertex_code, _fragment_code, "{out_file_class}",
 				{len(header_data.uniforms)}, _uniform_strings, {len(header_data.ubos)}, _ubo_pairs,
 				{len(header_data.feedbacks)}, _feedbacks, {len(header_data.texunits)}, _texunit_pairs,
 				{len(header_data.specialization_names)}, _spec_pairs, {variant_count}, _variant_defines);

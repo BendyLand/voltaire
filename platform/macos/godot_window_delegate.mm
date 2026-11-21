@@ -332,7 +332,7 @@
 
 	wd.focused = true;
 	ds->set_last_focused_window(window_id);
-	AccessibilityServer::get_singleton()->set_window_focused(window_id, true);
+	AccessibilityServer::set_window_focused(window_id, true);
 
 	ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
 }
@@ -350,7 +350,7 @@
 
 	wd.focused = false;
 	ds->release_pressed_events();
-	AccessibilityServer::get_singleton()->set_window_focused(window_id, false);
+	AccessibilityServer::set_window_focused(window_id, false);
 
 	ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
 }
@@ -364,7 +364,7 @@
 
 	wd.focused = false;
 	ds->release_pressed_events();
-	AccessibilityServer::get_singleton()->set_window_focused(window_id, false);
+	AccessibilityServer::set_window_focused(window_id, false);
 
 	ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
 }
@@ -379,7 +379,7 @@
 	if ([wd.window_object isKeyWindow]) {
 		wd.focused = true;
 		ds->set_last_focused_window(window_id);
-		AccessibilityServer::get_singleton()->set_window_focused(window_id, true);
+		AccessibilityServer::set_window_focused(window_id, true);
 
 		ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
 	}

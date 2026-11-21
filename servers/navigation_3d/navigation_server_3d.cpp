@@ -29,10 +29,163 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "navigation_server_3d.h"
+
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "navigation_server_3d.h"
 #include "scene/main/node.h" // IWYU pragma: keep. Needed to bind `Node *` arg.
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationPathQueryParameters3D
+
+void NavigationPathQueryParameters3D::set_pathfinding_algorithm(
+	const NavigationPathQueryParameters3D::PathfindingAlgorithm p_pathfinding_algorithm)
+{
+	pathfinding_algorithm = p_pathfinding_algorithm;
+}
+
+NavigationPathQueryParameters3D::PathfindingAlgorithm
+NavigationPathQueryParameters3D::get_pathfinding_algorithm() const
+{
+	return pathfinding_algorithm;
+}
+
+void NavigationPathQueryParameters3D::set_path_postprocessing(
+	const NavigationPathQueryParameters3D::PathPostProcessing p_path_postprocessing)
+{
+	path_postprocessing = p_path_postprocessing;
+}
+
+NavigationPathQueryParameters3D::PathPostProcessing
+NavigationPathQueryParameters3D::get_path_postprocessing() const
+{
+	return path_postprocessing;
+}
+
+void NavigationPathQueryParameters3D::set_map(RID p_map) { map = p_map; }
+
+RID NavigationPathQueryParameters3D::get_map() const { return map; }
+
+void NavigationPathQueryParameters3D::set_start_position(Vector3 p_start_position)
+{
+	start_position = p_start_position;
+}
+
+Vector3 NavigationPathQueryParameters3D::get_start_position() const { return start_position; }
+
+void NavigationPathQueryParameters3D::set_target_position(Vector3 p_target_position)
+{
+	target_position = p_target_position;
+}
+
+Vector3 NavigationPathQueryParameters3D::get_target_position() const { return target_position; }
+
+void NavigationPathQueryParameters3D::set_navigation_layers(uint32_t p_navigation_layers)
+{
+	navigation_layers = p_navigation_layers;
+}
+
+uint32_t NavigationPathQueryParameters3D::get_navigation_layers() const
+{
+	return navigation_layers;
+}
+
+void NavigationPathQueryParameters3D::set_metadata_flags(uint32_t p_flags)
+{
+	metadata_flags = (int64_t)p_flags;
+}
+
+uint32_t NavigationPathQueryParameters3D::get_metadata_flags() const
+{
+	return (int64_t)metadata_flags;
+}
+
+void NavigationPathQueryParameters3D::set_simplify_path(bool p_enabled)
+{
+	simplify_path = p_enabled;
+}
+
+bool NavigationPathQueryParameters3D::get_simplify_path() const { return simplify_path; }
+
+void NavigationPathQueryParameters3D::set_simplify_epsilon(real_t p_epsilon)
+{
+	simplify_epsilon = MAX(0.0, p_epsilon);
+}
+
+real_t NavigationPathQueryParameters3D::get_simplify_epsilon() const { return simplify_epsilon; }
+
+void NavigationPathQueryParameters3D::set_path_return_max_length(float p_length)
+{
+	path_return_max_length = MAX(0.0, p_length);
+}
+
+float NavigationPathQueryParameters3D::get_path_return_max_length() const
+{
+	return path_return_max_length;
+}
+
+void NavigationPathQueryParameters3D::set_path_return_max_radius(float p_radius)
+{
+	path_return_max_radius = MAX(0.0, p_radius);
+}
+
+float NavigationPathQueryParameters3D::get_path_return_max_radius() const
+{
+	return path_return_max_radius;
+}
+
+void NavigationPathQueryParameters3D::set_path_search_max_polygons(int p_max_polygons)
+{
+	path_search_max_polygons = p_max_polygons;
+}
+
+int NavigationPathQueryParameters3D::get_path_search_max_polygons() const
+{
+	return path_search_max_polygons;
+}
+
+void NavigationPathQueryParameters3D::set_path_search_max_distance(float p_distance)
+{
+	path_search_max_distance = MAX(0.0, p_distance);
+}
+
+float NavigationPathQueryParameters3D::get_path_search_max_distance() const
+{
+	return path_search_max_distance;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationPathQueryResult3D
+
+void NavigationPathQueryResult3D::set_path(const Vector<Vector3>& p_path) { path = p_path; }
+
+const Vector<Vector3>& NavigationPathQueryResult3D::get_path() const { return path; }
+
+void NavigationPathQueryResult3D::set_path_types(const Vector<int32_t>& p_path_types)
+{
+	path_types = p_path_types;
+}
+
+const Vector<int32_t>& NavigationPathQueryResult3D::get_path_types() const { return path_types; }
+
+void NavigationPathQueryResult3D::set_path_owner_ids(const Vector<int64_t>& p_path_owner_ids)
+{
+	path_owner_ids = p_path_owner_ids;
+}
+
+const Vector<int64_t>& NavigationPathQueryResult3D::get_path_owner_ids() const
+{
+	return path_owner_ids;
+}
+
+void NavigationPathQueryResult3D::set_path_length(float p_length) { path_length = p_length; }
+
+float NavigationPathQueryResult3D::get_path_length() const { return path_length; }
+
+void NavigationPathQueryResult3D::reset() {}
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationServer3D
 
 bool NavigationServer3D::get_debug_enabled() { return data->debug_enabled; }
 
@@ -42,9 +195,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_face_m
 	if (data->debug_navigation_geometry_face_material.is_valid()) {
 		return data->debug_navigation_geometry_face_material;
 	}
-
-	bool enabled_geometry_face_random_color =
-		get_debug_navigation_enable_geometry_face_random_color();
 
 	Ref<StandardMaterial3D> face_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	face_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
@@ -60,8 +210,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_edge_m
 	if (data->debug_navigation_geometry_edge_material.is_valid()) {
 		return data->debug_navigation_geometry_edge_material;
 	}
-
-	bool enabled_edge_lines_xray = get_debug_navigation_enable_edge_lines_xray();
 
 	Ref<StandardMaterial3D> line_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	line_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
@@ -92,8 +240,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_edge_d
 		return data->debug_navigation_geometry_edge_disabled_material;
 	}
 
-	bool enabled_edge_lines_xray = get_debug_navigation_enable_edge_lines_xray();
-
 	Ref<StandardMaterial3D> line_disabled_material =
 		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	line_disabled_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
@@ -108,8 +254,6 @@ Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_edge_connection
 	if (data->debug_navigation_edge_connections_material.is_valid()) {
 		return data->debug_navigation_edge_connections_material;
 	}
-
-	bool enabled_edge_connections_xray = get_debug_navigation_enable_edge_connections_xray();
 
 	Ref<StandardMaterial3D> edge_connections_material =
 		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
@@ -254,9 +398,6 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_edge_m
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	// material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	// material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	// material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
 
 	data->debug_navigation_avoidance_static_obstacle_pushin_edge_material = material;
 	return data->debug_navigation_avoidance_static_obstacle_pushin_edge_material;
@@ -271,9 +412,6 @@ NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_edge_
 
 	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
 	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	/// material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	// material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	// material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
 
 	data->debug_navigation_avoidance_static_obstacle_pushout_edge_material = material;
 	return data->debug_navigation_avoidance_static_obstacle_pushout_edge_material;
@@ -654,9 +792,4 @@ void NavigationServer3D::agent_set_avoidance_mask(RID p_agent, uint32_t p_mask) 
 void NavigationServer3D::agent_set_avoidance_priority(RID p_agent, real_t p_priority) {}
 
 void NavigationServer3D::agent_set_paused(RID p_agent, bool p_paused) {}
-
-void NavigationServer3DManager::initialize_server() {}
-
-int NavigationServer3DManager::find_server_id(const String& p_name) { return -1; }
-
 

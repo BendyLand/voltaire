@@ -31,58 +31,164 @@
 
 #pragma once
 
-#include "csg.h"
+#include "core/math/aabb.h"
+#include "core/math/transform_3d.h"
+#include "core/math/vector2.h"
+#include "core/math/vector3.h"
+#include "core/templates/vector.h"
+#include "scene/resources/material.h"
+
+struct CSGBrush
+{
+	struct Face
+	{
+		Vector3 vertices[3];
+		Vector2 uvs[3];
+		AABB aabb;
+		bool smooth = false;
+		bool invert = false;
+		int material = 0;
+	};
+
+	Vector<Face> faces;
+	Vector<Ref<Material>> materials;
+
+	inline void _regen_face_aabbs()
+	{
+		for (int i = 0; i < faces.size(); i++) {
+			faces.write[i].aabb = AABB();
+			faces.write[i].aabb.position = faces[i].vertices[0];
+			faces.write[i].aabb.expand_to(faces[i].vertices[1]);
+			faces.write[i].aabb.expand_to(faces[i].vertices[2]);
+		}
+	}
+
+	// Create a brush from faces.
+	void build_from_faces(const Vector<Vector3>& p_vertices, const Vector<Vector2>& p_uvs,
+		const Vector<bool>& p_smooth, const Vector<Ref<Material>>& p_materials,
+		const Vector<bool>& p_invert_faces);
+	void copy_from(const CSGBrush& p_brush, const Transform3D& p_xform);
+};
 #include "scene/3d/path_3d.h"
 #include "scene/3d/visual_instance_3d.h"
+#include "scene/resources/mesh.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/resources/3d/concave_polygon_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
-class Mesh;
 class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
 
-class CSGShape3D : public GeometryInstance3D
+class CSGShape3D : public Node3D
 {
 public:
+	enum ShapeType
+	{
+		SHAPE_COMBINER,
+		SHAPE_BOX,
+		SHAPE_SPHERE,
+		SHAPE_CYLINDER,
+		SHAPE_TORUS,
+		SHAPE_MESH,
+		SHAPE_POLYGON,
+	};
+
 	enum Operation
 	{
 		OPERATION_UNION,
 		OPERATION_INTERSECTION,
 		OPERATION_SUBTRACTION,
-
 	};
 
+	enum PolygonMode
+	{
+		POLYGON_MODE_DEPTH,
+		POLYGON_MODE_SPIN,
+		POLYGON_MODE_PATH,
+	};
+
+	enum PathIntervalType
+	{
+		PATH_INTERVAL_DISTANCE,
+		PATH_INTERVAL_SUBDIVIDE,
+	};
+
+	enum PathRotation
+	{
+		PATH_ROTATION_POLYGON,
+		PATH_ROTATION_PATH,
+		PATH_ROTATION_PATH_FOLLOW,
+	};
+
+	RenderInstance3D render_instance;
+
 private:
+	ShapeType shape_type = SHAPE_BOX;
 	Operation operation = OPERATION_UNION;
 	CSGShape3D* parent_shape = nullptr;
 
 	CSGBrush* brush = nullptr;
-
 	AABB node_aabb;
 
 	bool dirty = false;
 	bool last_visible = false;
-	float snap = 0.001;
+	float snap = 0.001f;
 
 	bool autosmooth = false;
-	float smoothing_angle = 50.0;
+	float smoothing_angle = 50.0f;
 
 #ifndef PHYSICS_3D_DISABLED
 	bool use_collision = false;
 	uint32_t collision_layer = 1;
 	uint32_t collision_mask = 1;
 	real_t collision_priority = 1.0;
-	Ref<ConcavePolygonShape3D> root_collision_shape;
+	Ref<Shape3D> root_collision_shape;
 	RID root_collision_body;
 	RID root_collision_debug_instance;
 	Transform3D debug_shape_old_transform;
 #endif // PHYSICS_3D_DISABLED
 
 	bool calculate_tangents = true;
-
 	Ref<ArrayMesh> root_mesh;
+
+	// Shared primitive fields
+	bool flip_faces = false;
+	bool smooth_faces = true;
+	Ref<Material> material;
+
+	// Box / Cylinder / Sphere / Torus parameters
+	Vector3 size = Vector3(1, 1, 1);
+	float radius = 0.5f;
+	float height = 2.0f;
+	float inner_radius = 0.5f;
+	float outer_radius = 1.0f;
+	int radial_segments = 12;
+	int rings = 6;
+	int sides = 8;
+	int ring_sides = 6;
+	bool cone = false;
+
+	// Mesh parameters
+	Ref<Mesh> mesh;
+
+	// Polygon parameters
+	Vector<Vector2> polygon;
+	PolygonMode polygon_mode = POLYGON_MODE_DEPTH;
+	float depth = 1.0f;
+	float spin_degrees = 360.0f;
+	int spin_sides = 8;
+	NodePath path_node;
+	PathIntervalType path_interval_type = PATH_INTERVAL_DISTANCE;
+	float path_interval = 1.0f;
+	float path_simplify_angle = 0.0f;
+	PathRotation path_rotation = PATH_ROTATION_PATH_FOLLOW;
+	bool path_rotation_accurate = false;
+	bool path_local = false;
+	Path3D* path = nullptr;
+	bool path_continuous_u = true;
+	real_t path_u_distance = 1.0;
+	bool path_joined = false;
 
 	struct ShapeUpdateSurface
 	{
@@ -113,23 +219,44 @@ private:
 	void _build_surfaces_default(
 		CSGBrush* p_brush, Vector<ShapeUpdateSurface>& r_surfaces, Vector<int>& r_face_count);
 
-protected:
-	void _notification(int p_what);
-	virtual CSGBrush* _build_brush() = 0;
-	void _make_dirty(bool p_parent_removing = false);
-	PackedStringArray get_configuration_warnings() const override;
-
-	friend class CSGCombiner3D;
+	CSGBrush* _create_brush_from_arrays(const Vector<Vector3>& p_vertices,
+		const Vector<Vector2>& p_uv, const Vector<bool>& p_smooth,
+		const Vector<Ref<Material>>& p_materials);
+	CSGBrush* _build_brush();
+	CSGBrush* _build_box_brush();
+	CSGBrush* _build_sphere_brush();
+	CSGBrush* _build_cylinder_brush();
+	CSGBrush* _build_torus_brush();
+	CSGBrush* _build_mesh_brush();
+	CSGBrush* _build_polygon_brush();
 	CSGBrush* _get_brush();
 
+	void _make_dirty(bool p_parent_removing = false);
+	void _path_exited();
+	bool _is_editable_3d_polygon() const;
+	bool _has_editable_3d_polygon_no_depth() const;
+
+protected:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+	PackedStringArray get_configuration_warnings() const override;
+
 public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	void set_shape_type(ShapeType p_type);
+	ShapeType get_shape_type() const { return shape_type; }
+
 	void update_shape();
 
+	void set_operation(Operation p_operation);
 	Operation get_operation() const;
 
-	virtual Vector<Vector3> get_brush_faces();
-
-	virtual AABB get_aabb() const override;
+	Vector<Vector3> get_brush_faces();
+	AABB get_aabb() const;
 
 #ifndef PHYSICS_3D_DISABLED
 	void set_use_collision(bool p_enable);
@@ -171,10 +298,98 @@ public:
 
 	Ref<ArrayMesh> bake_static_mesh();
 #ifndef PHYSICS_3D_DISABLED
-	Ref<ConcavePolygonShape3D> bake_collision_shape();
+	Ref<Shape3D> bake_collision_shape();
 #endif // PHYSICS_3D_DISABLED
 
-	virtual Ref<TriangleMesh> generate_triangle_mesh() const override;
+	Ref<TriangleMesh> generate_triangle_mesh() const;
+
+	// Primitive / Shape parameters
+	void set_flip_faces(bool p_invert);
+	bool get_flip_faces() const;
+
+	void set_smooth_faces(bool p_smooth_faces);
+	bool get_smooth_faces() const;
+
+	void set_material(const Ref<Material>& p_material);
+	Ref<Material> get_material() const;
+
+	void set_size(const Vector3& p_size);
+	Vector3 get_size() const { return size; }
+
+	void set_radius(float p_radius);
+	float get_radius() const { return radius; }
+
+	void set_height(float p_height);
+	float get_height() const { return height; }
+
+	void set_inner_radius(float p_radius);
+	float get_inner_radius() const { return inner_radius; }
+
+	void set_outer_radius(float p_radius);
+	float get_outer_radius() const { return outer_radius; }
+
+	void set_radial_segments(int p_segments);
+	int get_radial_segments() const { return radial_segments; }
+
+	void set_rings(int p_rings);
+	int get_rings() const { return rings; }
+
+	void set_sides(int p_sides);
+	int get_sides() const { return sides; }
+
+	void set_ring_sides(int p_ring_sides);
+	int get_ring_sides() const { return ring_sides; }
+
+	void set_cone(bool p_cone);
+	bool is_cone() const { return cone; }
+
+	void set_mesh(const Ref<Mesh>& p_mesh);
+	Ref<Mesh> get_mesh() const { return mesh; }
+
+	void set_polygon(const Vector<Vector2>& p_polygon);
+	Vector<Vector2> get_polygon() const { return polygon; }
+
+	void set_polygon_mode(PolygonMode p_mode);
+	PolygonMode get_polygon_mode() const { return polygon_mode; }
+
+	void set_depth(float p_depth);
+	float get_depth() const { return depth; }
+
+	void set_spin_degrees(float p_degrees);
+	float get_spin_degrees() const { return spin_degrees; }
+
+	void set_spin_sides(int p_sides);
+	int get_spin_sides() const { return spin_sides; }
+
+	void set_path_node(const NodePath& p_path);
+	NodePath get_path_node() const { return path_node; }
+
+	void set_path_interval_type(PathIntervalType p_type);
+	PathIntervalType get_path_interval_type() const { return path_interval_type; }
+
+	void set_path_interval(float p_interval);
+	float get_path_interval() const { return path_interval; }
+
+	void set_path_simplify_angle(float p_angle);
+	float get_path_simplify_angle() const { return path_simplify_angle; }
+
+	void set_path_rotation(PathRotation p_rotation);
+	PathRotation get_path_rotation() const { return path_rotation; }
+
+	void set_path_rotation_accurate(bool p_accurate);
+	bool get_path_rotation_accurate() const { return path_rotation_accurate; }
+
+	void set_path_local(bool p_local);
+	bool is_path_local() const { return path_local; }
+
+	void set_path_continuous_u(bool p_enable);
+	bool is_path_continuous_u() const { return path_continuous_u; }
+
+	void set_path_u_distance(real_t p_distance);
+	real_t get_path_u_distance() const { return path_u_distance; }
+
+	void set_path_joined(bool p_joined);
+	bool is_path_joined() const { return path_joined; }
 
 #ifndef NAVIGATION_3D_DISABLED
 private:
@@ -186,248 +401,6 @@ public:
 		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
 #endif // NAVIGATION_3D_DISABLED
 
-	CSGShape3D();
+	CSGShape3D(ShapeType p_type = SHAPE_BOX);
 	~CSGShape3D();
 };
-
-class CSGCombiner3D : public CSGShape3D
-{
-private:
-	virtual CSGBrush* _build_brush() override;
-
-public:
-	CSGCombiner3D();
-};
-
-class CSGPrimitive3D : public CSGShape3D
-{
-protected:
-	bool flip_faces;
-	CSGBrush* _create_brush_from_arrays(const Vector<Vector3>& p_vertices,
-		const Vector<Vector2>& p_uv, const Vector<bool>& p_smooth,
-		const Vector<Ref<Material>>& p_materials);
-
-public:
-	void set_flip_faces(bool p_invert);
-	bool get_flip_faces();
-
-	CSGPrimitive3D();
-};
-
-class CSGMesh3D : public CSGPrimitive3D
-{
-	virtual CSGBrush* _build_brush() override;
-
-	Ref<Mesh> mesh;
-	Ref<Material> material;
-
-	void _mesh_changed();
-
-protected:
-public:
-	void set_mesh(const Ref<Mesh>& p_mesh);
-	Ref<Mesh> get_mesh();
-
-	void set_material(const Ref<Material>& p_material);
-	Ref<Material> get_material() const;
-};
-
-class CSGSphere3D : public CSGPrimitive3D
-{
-	virtual CSGBrush* _build_brush() override;
-
-	Ref<Material> material;
-	bool smooth_faces;
-	float radius;
-	int radial_segments;
-	int rings;
-
-protected:
-public:
-	float get_radius() const;
-
-	int get_radial_segments() const;
-
-	int get_rings() const;
-
-	void set_material(const Ref<Material>& p_material);
-	Ref<Material> get_material() const;
-
-	void set_smooth_faces(bool p_smooth_faces);
-	bool get_smooth_faces() const;
-
-	CSGSphere3D();
-};
-
-class CSGBox3D : public CSGPrimitive3D
-{
-	virtual CSGBrush* _build_brush() override;
-
-	Ref<Material> material;
-	Vector3 size = Vector3(1, 1, 1);
-
-public:
-	Vector3 get_size() const;
-	Ref<Material> get_material() const;
-
-	CSGBox3D() {}
-};
-
-class CSGCylinder3D : public CSGPrimitive3D
-{
-	virtual CSGBrush* _build_brush() override;
-
-	Ref<Material> material;
-	float radius;
-	float height;
-	int sides;
-	bool cone;
-	bool smooth_faces;
-
-public:
-	float get_radius() const;
-	float get_height() const;
-
-	int get_sides() const;
-
-	bool is_cone() const;
-
-	void set_smooth_faces(bool p_smooth_faces);
-	bool get_smooth_faces() const;
-
-	void set_material(const Ref<Material>& p_material);
-	Ref<Material> get_material() const;
-
-	CSGCylinder3D();
-};
-
-class CSGTorus3D : public CSGPrimitive3D
-{
-	virtual CSGBrush* _build_brush() override;
-
-	Ref<Material> material;
-	float inner_radius;
-	float outer_radius;
-	int sides;
-	int ring_sides;
-	bool smooth_faces;
-
-public:
-	float get_inner_radius() const;
-
-	float get_outer_radius() const;
-
-	int get_sides() const;
-
-	int get_ring_sides() const;
-
-	void set_smooth_faces(bool p_smooth_faces);
-	bool get_smooth_faces() const;
-
-	void set_material(const Ref<Material>& p_material);
-	Ref<Material> get_material() const;
-
-	CSGTorus3D();
-};
-
-class CSGPolygon3D : public CSGPrimitive3D
-{
-public:
-	enum Mode
-	{
-		MODE_DEPTH,
-		MODE_SPIN,
-		MODE_PATH
-	};
-
-	enum PathIntervalType
-	{
-		PATH_INTERVAL_DISTANCE,
-		PATH_INTERVAL_SUBDIVIDE
-	};
-
-	enum PathRotation
-	{
-		PATH_ROTATION_POLYGON,
-		PATH_ROTATION_PATH,
-		PATH_ROTATION_PATH_FOLLOW,
-	};
-
-private:
-	virtual CSGBrush* _build_brush() override;
-
-	Vector<Vector2> polygon;
-	Ref<Material> material;
-
-	Mode mode;
-
-	float depth;
-
-	float spin_degrees;
-	int spin_sides;
-
-	NodePath path_node;
-	PathIntervalType path_interval_type;
-	float path_interval;
-	float path_simplify_angle;
-	PathRotation path_rotation;
-	bool path_rotation_accurate;
-	bool path_local;
-
-	Path3D* path = nullptr;
-
-	bool smooth_faces;
-	bool path_continuous_u;
-	real_t path_u_distance;
-	bool path_joined;
-
-	bool _is_editable_3d_polygon() const;
-	bool _has_editable_3d_polygon_no_depth() const;
-
-	void _path_exited();
-
-protected:
-	void _notification(int p_what);
-
-public:
-	Vector<Vector2> get_polygon() const;
-
-	Mode get_mode() const;
-
-	float get_depth() const;
-
-	float get_spin_degrees() const;
-
-	int get_spin_sides() const;
-
-	NodePath get_path_node() const;
-
-	PathIntervalType get_path_interval_type() const;
-
-	float get_path_interval() const;
-
-	float get_path_simplify_angle() const;
-
-	PathRotation get_path_rotation() const;
-
-	bool get_path_rotation_accurate() const;
-
-	bool is_path_local() const;
-
-	void set_path_continuous_u(bool p_enable);
-	bool is_path_continuous_u() const;
-
-	real_t get_path_u_distance() const;
-
-	bool is_path_joined() const;
-
-	void set_smooth_faces(bool p_smooth_faces);
-	bool get_smooth_faces() const;
-
-	void set_material(const Ref<Material>& p_material);
-	Ref<Material> get_material() const;
-
-	CSGPolygon3D();
-};
-
-

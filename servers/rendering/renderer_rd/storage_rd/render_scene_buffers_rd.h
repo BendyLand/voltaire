@@ -32,15 +32,14 @@
 #pragma once
 
 #include "core/templates/hash_map.h"
-#include "servers/rendering/renderer_rd/effects/vrs.h"
+#include "servers/rendering/renderer_rd/effects/copy_effects.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_buffer_custom_data_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
 #include "servers/rendering/storage/render_scene_buffers.h"
 
 #ifdef METAL_ENABLED
-#include "servers/rendering/renderer_rd/effects/metal_fx.h"
+#include "servers/rendering/renderer_rd/effects/upscale_effects.h"
 #endif
 
 #define RB_SCOPE_BUFFERS SNAME("render_buffers")
@@ -185,8 +184,15 @@ private:
 	void update_sizes(NamedTexture& p_named_texture);
 	void free_named_texture(NamedTexture& p_named_texture);
 
+	struct CustomDataEntry
+	{
+		Ref<RefCounted> data;
+		void (*configure_fn)(RefCounted*, RenderSceneBuffersRD*) = nullptr;
+		void (*free_fn)(RefCounted*) = nullptr;
+	};
+
 	// Data buffers
-	mutable HashMap<String, Ref<RenderBufferCustomDataRD>> data_buffers;
+	mutable HashMap<String, CustomDataEntry> data_buffers;
 
 	// Samplers.
 	RendererRD::Samplers samplers;
@@ -278,9 +284,26 @@ public:
 	void allocate_blur_textures();
 
 	// Custom data
-	bool has_custom_data(const String& p_name);
-	void set_custom_data(const String& p_name, Ref<RenderBufferCustomDataRD> p_data);
-	Ref<RenderBufferCustomDataRD> get_custom_data(const String& p_name) const;
+	bool has_custom_data(const String& p_name) const;
+
+	template <typename T>
+	void set_custom_data(const String& p_name, const Ref<T>& p_data)
+	{
+		static_assert(std::is_base_of_v<RefCounted, T>, "Custom data must inherit RefCounted.");
+		if (p_data.is_valid()) {
+			data_buffers[p_name] = {
+				p_data,
+				+[](RefCounted* p_obj, RenderSceneBuffersRD* p_rb) {
+					static_cast<T*>(p_obj)->configure(p_rb);
+				},
+				+[](RefCounted* p_obj) { static_cast<T*>(p_obj)->free_data(); }};
+		}
+		else if (data_buffers.has(p_name)) {
+			data_buffers.erase(p_name);
+		}
+	}
+
+	Ref<RefCounted> get_custom_data(const String& p_name) const;
 
 	// Getters
 
@@ -554,23 +577,6 @@ private:
 		}
 	}
 
-#ifndef DISABLE_DEPRECATED
-
-	RID _get_color_texture_bind_compat_80214();
-	RID _get_color_layer_bind_compat_80214(const uint32_t p_layer);
-	RID _get_depth_texture_bind_compat_80214();
-	RID _get_depth_layer_bind_compat_80214(const uint32_t p_layer);
-	RID _get_velocity_texture_bind_compat_80214();
-	RID _get_velocity_layer_bind_compat_80214(const uint32_t p_layer);
-
-	RID _create_texture_bind_compat_98670(const String& p_context,
-		const String& p_texture_name, const RDC::DataFormat p_data_format,
-		const uint32_t p_usage_bits, const RDC::TextureSamples p_texture_samples,
-		const Size2i p_size, const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique);
-
-	static void _bind_compatibility_methods();
-
-#endif // DISABLE_DEPRECATED
 public:
 	struct WeightBuffers
 	{

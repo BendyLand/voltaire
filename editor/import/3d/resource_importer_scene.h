@@ -34,11 +34,8 @@
 #include "core/error/error_macros.h"
 #include "core/io/resource_importer.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
-#include "scene/resources/3d/box_shape_3d.h"
-#include "scene/resources/3d/capsule_shape_3d.h"
-#include "scene/resources/3d/cylinder_shape_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
-#include "scene/resources/3d/sphere_shape_3d.h"
+#include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/mesh.h"
 
@@ -407,8 +404,7 @@ Vector<Ref<Shape3D>> ResourceImporterScene::get_collision_shapes(
 		return shapes;
 	}
 	else if (generate_shape_type == SHAPE_TYPE_BOX) {
-		Ref<BoxShape3D> box;
-		box.instantiate();
+		Ref<Shape3D> box = memnew(Shape3D(Shape3D::SHAPE_BOX));
 		if (p_options.has(SNAME("primitive/size"))) {
 			box->set_size(
 				p_options[SNAME("primitive/size")].operator Vector3() * p_applied_root_scale);
@@ -423,8 +419,7 @@ Vector<Ref<Shape3D>> ResourceImporterScene::get_collision_shapes(
 
 	}
 	else if (generate_shape_type == SHAPE_TYPE_SPHERE) {
-		Ref<SphereShape3D> sphere;
-		sphere.instantiate();
+		Ref<Shape3D> sphere = memnew(Shape3D(Shape3D::SHAPE_SPHERE));
 		if (p_options.has(SNAME("primitive/radius"))) {
 			sphere->set_radius(
 				p_options[SNAME("primitive/radius")].operator float() * p_applied_root_scale);
@@ -438,8 +433,7 @@ Vector<Ref<Shape3D>> ResourceImporterScene::get_collision_shapes(
 		return shapes;
 	}
 	else if (generate_shape_type == SHAPE_TYPE_CYLINDER) {
-		Ref<CylinderShape3D> cylinder;
-		cylinder.instantiate();
+		Ref<Shape3D> cylinder = memnew(Shape3D(Shape3D::SHAPE_CYLINDER));
 		if (p_options.has(SNAME("primitive/height"))) {
 			cylinder->set_height(
 				p_options[SNAME("primitive/height")].operator float() * p_applied_root_scale);
@@ -460,8 +454,7 @@ Vector<Ref<Shape3D>> ResourceImporterScene::get_collision_shapes(
 		return shapes;
 	}
 	else if (generate_shape_type == SHAPE_TYPE_CAPSULE) {
-		Ref<CapsuleShape3D> capsule;
-		capsule.instantiate();
+		Ref<Shape3D> capsule = memnew(Shape3D(Shape3D::SHAPE_CAPSULE));
 		if (p_options.has(SNAME("primitive/height"))) {
 			capsule->set_height(
 				p_options[SNAME("primitive/height")].operator float() * p_applied_root_scale);

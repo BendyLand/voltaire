@@ -29,9 +29,80 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "zip_reader.h"
+#include "register_types.h"
+
 #include "core/error/error_macros.h"
 #include "core/io/zip_io.h"
-#include "zip_reader.h"
+#include "core/os/time.h"
+
+// ZIPPacker
+
+Error ZIPPacker::open(const String& p_path, ZipAppend p_append)
+{
+	if (fa.is_valid()) {
+		close();
+	}
+
+	zlib_filefunc_def io = zipio_create_io(&fa);
+	zf = zipOpen2(p_path.utf8().get_data(), p_append, nullptr, &io);
+	return zf != nullptr ? OK : FAILED;
+}
+
+Error ZIPPacker::close()
+{
+	ERR_FAIL_COND_V_MSG(fa.is_null(), FAILED, "ZIPPacker cannot be closed because it is not open.");
+
+	Error err = zipClose(zf, nullptr) == ZIP_OK ? OK : FAILED;
+	if (err == OK) {
+		DEV_ASSERT(fa.is_null());
+		directories.clear();
+		zf = nullptr;
+	}
+
+	return err;
+}
+
+void ZIPPacker::set_compression_level(int p_compression_level)
+{
+	ERR_FAIL_COND_MSG(
+		p_compression_level < Z_DEFAULT_COMPRESSION || p_compression_level > Z_BEST_COMPRESSION,
+		"Invalid compression level.");
+	compression_level = p_compression_level;
+}
+
+int ZIPPacker::get_compression_level() const { return compression_level; }
+
+Error ZIPPacker::write_file(const Vector<uint8_t>& p_data)
+{
+	ERR_FAIL_COND_V_MSG(fa.is_null(), FAILED, "ZIPPacker must be opened before use.");
+
+	return zipWriteInFileInZip(zf, p_data.ptr(), p_data.size()) == ZIP_OK ? OK : FAILED;
+}
+
+Error ZIPPacker::close_file()
+{
+	ERR_FAIL_COND_V_MSG(fa.is_null(), FAILED, "ZIPPacker must be opened before use.");
+
+	return zipCloseFileInZip(zf) == ZIP_OK ? OK : FAILED;
+}
+
+ZIPPacker::ZIPPacker() {}
+
+ZIPPacker::~ZIPPacker()
+{
+	if (fa.is_valid()) {
+		close();
+	}
+}
+
+Error ZIPPacker::start_file(
+	const String& p_path, uint32_t p_permissions, uint64_t p_modified_time)
+{
+	return OK;
+}
+
+// ZIPReader
 
 Error ZIPReader::open(const String& p_path)
 {
@@ -181,5 +252,18 @@ ZIPReader::~ZIPReader()
 	}
 }
 
+// Module registration
 
+void initialize_zip_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
 
+void uninitialize_zip_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}

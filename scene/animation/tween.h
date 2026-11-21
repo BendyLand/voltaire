@@ -33,36 +33,13 @@
 
 #include "core/types.h"
 
-class Tween;
+class Tweener;
 class Node;
 class SceneTree;
 
-class Tweener : public RefCounted
+class Tween final : public RefCounted
 {
-public:
-	virtual void set_tween(const Ref<Tween>& p_tween);
-	virtual void start();
-	virtual bool step(double& r_delta) = 0;
-
-protected:
-
-	Ref<Tween> _get_tween();
-	void _finish();
-
-	double elapsed_time = 0;
-	bool finished = false;
-};
-
-class PropertyTweener;
-class IntervalTweener;
-class CallbackTweener;
-class MethodTweener;
-class SubtweenTweener;
-class AwaitTweener;
-
-class Tween : public RefCounted
-{
-	friend class PropertyTweener;
+	friend class Tweener;
 
 public:
 	enum TweenProcessMode
@@ -110,7 +87,7 @@ private:
 	TransitionType default_transition = TransitionType::TRANS_LINEAR;
 	EaseType default_ease = EaseType::EASE_IN_OUT;
 
-	SceneTree* parent_tree = nullptr;
+	bool is_in_tree = false;
 	LocalVector<List<Ref<Tweener>>> tweeners;
 	LocalVector<Ref<Tween>> subtweens;
 	double total_time = 0;
@@ -120,6 +97,7 @@ private:
 	float speed_scale = 1;
 	bool ignore_time_scale = false;
 
+	Node* bound_node = nullptr;
 	bool is_bound = false;
 	bool started = false;
 	bool running = true;
@@ -139,11 +117,14 @@ private:
 	void _stop_internal(bool p_reset);
 
 protected:
-	virtual String _to_string();
+	String _to_string();
 
 public:
-	IntervalTweener* tween_interval(double p_time);
-	SubtweenTweener* tween_subtween(Tween* rp_subtween);
+	Ref<Tweener> tween_interval(double p_time);
+	Ref<Tweener> tween_subtween(Tween* rp_subtween);
+	Ref<Tweener> tween_callback(void (*p_callback)() = nullptr);
+	Ref<Tweener> tween_property(const Vector<String>& p_property, double p_duration);
+	Ref<Tweener> tween_method(double p_duration);
 	void append(Ref<Tweener> p_tweener);
 
 	bool custom_step(double p_delta);
@@ -186,128 +167,70 @@ public:
 	double get_total_time() const;
 
 	Tween();
-	Tween(SceneTree* p_parent_tree);
+	explicit Tween(bool p_in_tree);
+	~Tween();
 };
 
-class PropertyTweener : public Tweener
+class Tweener final : public RefCounted
 {
+	friend class Tween;
+
 public:
-	PropertyTweener* from_current();
-	PropertyTweener* as_relative();
-	PropertyTweener* set_trans(Tween::TransitionType p_trans);
-	PropertyTweener* set_ease(Tween::EaseType p_ease);
-	PropertyTweener* set_delay(double p_delay);
+	enum Type
+	{
+		TWEENER_INTERVAL,
+		TWEENER_CALLBACK,
+		TWEENER_SUBTWEEN,
+		TWEENER_PROPERTY,
+		TWEENER_METHOD,
+		TWEENER_AWAIT,
+	};
 
-	void set_tween(const Ref<Tween>& p_tween) override;
-	void start() override;
-	bool step(double& r_delta) override;
+	Type get_type() const { return type; }
 
-	PropertyTweener();
+	Ref<Tweener> from(double p_value);
+	Ref<Tweener> from_current();
+	Ref<Tweener> as_relative();
+	Ref<Tweener> set_trans(Tween::TransitionType p_trans);
+	Ref<Tweener> set_ease(Tween::EaseType p_ease);
+	Ref<Tweener> set_custom_interpolator(real_t (*p_interpolator)(real_t));
+	Ref<Tweener> set_delay(double p_delay);
+	Ref<Tweener> set_timeout(double p_timeout);
 
-protected:
+	void set_tween(const Ref<Tween>& p_tween);
+	void start();
+	bool step(double& r_delta);
+
+	Tweener();
+	explicit Tweener(Type p_type);
+	Tweener(Type p_type, double p_duration);
+	explicit Tweener(const Ref<Tween>& p_subtween);
+	~Tweener() = default;
+
+	Ref<Tween> subtween;
 
 private:
-	Vector<String> property;
+	Ref<Tween> _get_tween();
+	void _finish();
 
+	Type type = TWEENER_INTERVAL;
+	Tween* tween = nullptr;
 	Ref<RefCounted> ref_copy; // Makes sure that RefCounted objects are not freed too early.
+	Vector<String> property;
+	real_t (*custom_interpolator)(real_t) = nullptr;
+	void (*callback)() = nullptr;
 
-	double duration = 0;
-	Tween::TransitionType trans_type = Tween::TRANS_MAX; // This is set inside set_tween();
-	Tween::EaseType ease_type = Tween::EASE_MAX;
-
-	double delay = 0;
-	bool do_continue = true;
-	bool do_continue_delayed = false;
-	bool relative = false;
-};
-
-class IntervalTweener : public Tweener
-{
-public:
-	bool step(double& r_delta) override;
-
-	IntervalTweener(double p_time);
-	IntervalTweener();
-
-private:
-	double duration = 0;
-};
-
-class CallbackTweener : public Tweener
-{
-public:
-	CallbackTweener* set_delay(double p_delay);
-
-	bool step(double& r_delta) override;
-
-	CallbackTweener();
-
-private:
-	double delay = 0;
-
-	Ref<RefCounted> ref_copy;
-};
-
-class
- MethodTweener : public Tweener
-{
-public:
-	MethodTweener* set_trans(Tween::TransitionType p_trans);
-	MethodTweener* set_ease(Tween::EaseType p_ease);
-	MethodTweener* set_delay(double p_delay);
-
-	void set_tween(const Ref<Tween>& p_tween) override;
-	bool step(double& r_delta) override;
-
-	MethodTweener();
-
-protected:
-
-private:
-	double duration = 0;
-	double delay = 0;
+	double elapsed_time = 0.0;
+	double duration = 0.0;
+	double delay = 0.0;
+	double timeout = -1.0;
+	double initial_val = 0.0;
 	Tween::TransitionType trans_type = Tween::TRANS_MAX;
 	Tween::EaseType ease_type = Tween::EASE_MAX;
 
-	Ref<RefCounted> ref_copy;
-};
-
-class SubtweenTweener : public Tweener
-{
-public:
-	Ref<Tween> subtween;
-	void start() override;
-	bool step(double& r_delta) override;
-
-	SubtweenTweener* set_delay(double p_delay);
-
-	SubtweenTweener(const Ref<Tween>& p_subtween);
-	SubtweenTweener();
-
-protected:
-
-private:
-	double delay = 0;
-};
-
-class AwaitTweener : public Tweener
-{
-public:
-	Ref<AwaitTweener> set_timeout(double p_timeout);
-
-	void start() override;
-	bool step(double& r_delta) override;
-
-	AwaitTweener();
-
-protected:
-
-private:
+	bool finished = false;
+	bool do_continue = true;
+	bool do_continue_delayed = false;
+	bool relative = false;
 	bool received = false;
-
-	double timeout = -1;
-
-	Ref<RefCounted> ref_copy;
 };
-
-

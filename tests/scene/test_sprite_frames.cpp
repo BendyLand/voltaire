@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_sprite_frames)
 
-#include "scene/resources/sprite_frames.h"
+#include "scene/3d/visual_instance_3d.h"
 
 namespace TestSpriteFrames {
 

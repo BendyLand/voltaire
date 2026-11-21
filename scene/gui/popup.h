@@ -36,12 +36,8 @@
 
 class Panel;
 
-class Popup : public Window
+struct PopupTracker
 {
-	LocalVector<Window*> visible_parents;
-	bool popped_up = false;
-
-public:
 	enum HideReason
 	{
 		HIDE_REASON_NONE,
@@ -50,33 +46,33 @@ public:
 		HIDE_REASON_UNFOCUSED, // E.g., user clicked outside.
 	};
 
-private:
+	LocalVector<Window*> visible_parents;
+	bool popped_up = false;
 	HideReason hide_reason = HIDE_REASON_NONE;
 
-	void _initialize_visible_parents();
-	void _deinitialize_visible_parents();
-
-protected:
-	void _close_pressed();
-	virtual Rect2i _popup_adjust_rect() const override;
-	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
-
-	void _notification(int p_what);
-
-	virtual void _parent_focused();
-
-	virtual void _post_popup() override;
-
-public:
-	HideReason get_hide_reason() const { return hide_reason; }
-
-	Popup();
-	~Popup();
+	void configure_window(Window* p_window);
+	void initialize_visible_parents(Window* p_window);
+	void deinitialize_visible_parents(Window* p_window);
+	void post_popup();
+	bool handle_cancel_input(const Window* p_window, const InputEvent& p_event);
+	bool handle_parent_focused(const Window* p_window);
+	void close_pressed(Window* p_window);
+	static Rect2i adjust_popup_rect(const Window* p_window);
 };
 
-class PopupPanel : public Popup
+class Popup : public Window
 {
+public:
+	using HideReason = PopupTracker::HideReason;
+	static constexpr HideReason HIDE_REASON_NONE = PopupTracker::HIDE_REASON_NONE;
+	static constexpr HideReason HIDE_REASON_CANCELED = PopupTracker::HIDE_REASON_CANCELED;
+	static constexpr HideReason HIDE_REASON_UNFOCUSED = PopupTracker::HIDE_REASON_UNFOCUSED;
+
+private:
+	PopupTracker tracker;
+	bool is_panel = false;
 	Panel* panel = nullptr;
+	bool close_on_accept = false;
 
 	struct ThemeCache
 	{
@@ -85,24 +81,33 @@ class PopupPanel : public Popup
 
 	mutable Rect2i pre_popup_rect;
 
-protected:
-	virtual void _input_from_window(const Ref<InputEvent>& p_event) override;
-
-	virtual Rect2i _popup_adjust_rect() const override;
-
 	void _update_shadow_offsets() const;
 	void _update_child_rects() const;
 
-	void _notification(int p_what);
-
+protected:
+	void _close_pressed();
+	void _parent_focused();
+	virtual Rect2i _popup_adjust_rect() const override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
+	virtual void _post_popup() override;
 	virtual Size2 _get_contents_minimum_size() const override;
 
+	void _notification(int p_what);
+
 public:
+	HideReason get_hide_reason() const { return tracker.hide_reason; }
+
+	void set_panel_enabled(bool p_enabled);
+	bool is_panel_enabled() const { return is_panel; }
+	Panel* get_panel() const { return panel; }
+
+	void set_close_on_accept(bool p_enable) { close_on_accept = p_enable; }
+	bool is_closing_on_accept() const { return close_on_accept; }
+
 #ifdef TOOLS_ENABLED
 	PackedStringArray get_configuration_warnings() const override;
 #endif
 
-	PopupPanel();
+	Popup(bool p_panel = false);
+	~Popup();
 };
-
-

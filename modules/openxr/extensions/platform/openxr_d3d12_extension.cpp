@@ -33,9 +33,26 @@
 
 #ifdef D3D12_ENABLED
 
-#include "../../openxr_util.h"
+#include "../../openxr_api.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
+
+void OpenXRD3D12Extension::initialize()
+{
+	if (data == nullptr) {
+		data = memnew(Data);
+		D3D12Hooks::bind<OpenXRD3D12Extension>();
+	}
+}
+
+void OpenXRD3D12Extension::finalize()
+{
+	if (data != nullptr) {
+		D3D12Hooks::reset();
+		memdelete(data);
+		data = nullptr;
+	}
+}
 
 HashMap<String, bool*> OpenXRD3D12Extension::get_requested_extensions(XrVersion p_version)
 {
@@ -49,14 +66,17 @@ HashMap<String, bool*> OpenXRD3D12Extension::get_requested_extensions(XrVersion 
 void OpenXRD3D12Extension::on_instance_created(const XrInstance p_instance)
 {
 	// Obtain pointers to functions we're accessing here.
-	ERR_FAIL_NULL(OpenXRAPI::get_singleton());
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
 	EXT_INIT_XR_FUNC(xrGetD3D12GraphicsRequirementsKHR);
 	EXT_INIT_XR_FUNC(xrEnumerateSwapchainImages);
 }
 
-D3D_FEATURE_LEVEL OpenXRD3D12Extension::get_feature_level() const
+D3D_FEATURE_LEVEL OpenXRD3D12Extension::get_feature_level()
 {
+	ERR_FAIL_NULL_V(data, D3D_FEATURE_LEVEL_11_0);
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), D3D_FEATURE_LEVEL_11_0);
+
 	XrGraphicsRequirementsD3D12KHR d3d12_requirements = {
 		XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR, // type
 		nullptr,								 // next
@@ -64,11 +84,12 @@ D3D_FEATURE_LEVEL OpenXRD3D12Extension::get_feature_level() const
 		(D3D_FEATURE_LEVEL)0					 // minFeatureLevel
 	};
 
-	XrResult result = xrGetD3D12GraphicsRequirementsKHR(OpenXRAPI::get_singleton()->get_instance(),
-		OpenXRAPI::get_singleton()->get_system_id(), &d3d12_requirements);
+	XrResult result = xrGetD3D12GraphicsRequirementsKHR(
+		OpenXRAPI::get_instance(), OpenXRAPI::get_system_id(),
+		&d3d12_requirements);
 	if (XR_FAILED(result)) {
 		print_line("OpenXR: Failed to get Direct3D 12 graphics requirements [",
-			OpenXRAPI::get_singleton()->get_error_string(result), "]");
+			OpenXRAPI::get_error_string(result), "]");
 		return D3D_FEATURE_LEVEL_11_0; // Good default.
 	}
 
@@ -80,8 +101,11 @@ D3D_FEATURE_LEVEL OpenXRD3D12Extension::get_feature_level() const
 	return d3d12_requirements.minFeatureLevel;
 }
 
-LUID OpenXRD3D12Extension::get_adapter_luid() const
+LUID OpenXRD3D12Extension::get_adapter_luid()
 {
+	ERR_FAIL_NULL_V(data, LUID{});
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), LUID{});
+
 	XrGraphicsRequirementsD3D12KHR d3d12_requirements = {
 		XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR, // type
 		nullptr,								 // next
@@ -89,41 +113,48 @@ LUID OpenXRD3D12Extension::get_adapter_luid() const
 		(D3D_FEATURE_LEVEL)0					 // minFeatureLevel
 	};
 
-	XrResult result = xrGetD3D12GraphicsRequirementsKHR(OpenXRAPI::get_singleton()->get_instance(),
-		OpenXRAPI::get_singleton()->get_system_id(), &d3d12_requirements);
+	XrResult result = xrGetD3D12GraphicsRequirementsKHR(
+		OpenXRAPI::get_instance(), OpenXRAPI::get_system_id(),
+		&d3d12_requirements);
 	if (XR_FAILED(result)) {
 		print_line("OpenXR: Failed to get Direct3D 12 graphics requirements [",
-			OpenXRAPI::get_singleton()->get_error_string(result), "]");
+			OpenXRAPI::get_error_string(result), "]");
 		return {};
 	}
 
 	return d3d12_requirements.adapterLuid;
 }
 
-void OpenXRD3D12Extension::set_device(ID3D12Device* p_device) { graphics_device = p_device; }
+void OpenXRD3D12Extension::set_device(ID3D12Device* p_device)
+{
+	ERR_FAIL_NULL(data);
+	data->graphics_device = p_device;
+}
 
 void OpenXRD3D12Extension::set_command_queue(ID3D12CommandQueue* p_queue)
 {
-	command_queue = p_queue;
+	ERR_FAIL_NULL(data);
+	data->command_queue = p_queue;
 }
 
 void OpenXRD3D12Extension::cleanup_device()
 {
-	command_queue.Reset();
-	graphics_device.Reset();
+	ERR_FAIL_NULL(data);
+	data->command_queue.Reset();
+	data->graphics_device.Reset();
 }
 
 XrGraphicsBindingD3D12KHR OpenXRD3D12Extension::graphics_binding_d3d12;
 
 void* OpenXRD3D12Extension::set_session_create_and_get_next_pointer(void* p_next_pointer)
 {
-	DEV_ASSERT(graphics_device && "Graphics Device was not specified yet.");
-	DEV_ASSERT(command_queue && "Command queue was not specified yet.");
+	DEV_ASSERT(data->graphics_device && "Graphics Device was not specified yet.");
+	DEV_ASSERT(data->command_queue && "Command queue was not specified yet.");
 
 	graphics_binding_d3d12.type = XR_TYPE_GRAPHICS_BINDING_D3D12_KHR,
 	graphics_binding_d3d12.next = p_next_pointer;
-	graphics_binding_d3d12.device = graphics_device.Get();
-	graphics_binding_d3d12.queue = command_queue.Get();
+	graphics_binding_d3d12.device = data->graphics_device.Get();
+	graphics_binding_d3d12.queue = data->command_queue.Get();
 
 	return &graphics_binding_d3d12;
 }
@@ -148,16 +179,14 @@ bool OpenXRD3D12Extension::get_swapchain_image_data(XrSwapchain p_swapchain,
 	int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count,
 	uint32_t p_array_size, void** r_swapchain_graphics_data)
 {
-	Renderer* rendering_server = Renderer::get_singleton();
-	ERR_FAIL_NULL_V(rendering_server, false);
-	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
-	ERR_FAIL_NULL_V(rendering_device, false);
+	ERR_FAIL_NULL_V(Renderer::data, false);
+	ERR_FAIL_NULL_V(RD::data, false);
 
 	uint32_t swapchain_length;
 	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
 	if (XR_FAILED(result)) {
 		print_line("OpenXR: Failed to get swapchain image count [",
-			OpenXRAPI::get_singleton()->get_error_string(result), "]");
+			OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -174,7 +203,7 @@ bool OpenXRD3D12Extension::get_swapchain_image_data(XrSwapchain p_swapchain,
 		(XrSwapchainImageBaseHeader*)images.ptr());
 	if (XR_FAILED(result)) {
 		print_line("OpenXR: Failed to get swapchain images [",
-			OpenXRAPI::get_singleton()->get_error_string(result), "]");
+			OpenXRAPI::get_error_string(result), "]");
 		return false;
 	}
 
@@ -268,7 +297,7 @@ bool OpenXRD3D12Extension::get_swapchain_image_data(XrSwapchain p_swapchain,
 	Vector<RID> texture_rids;
 
 	for (const XrSwapchainImageD3D12KHR& swapchain_image : images) {
-		RID texture_rid = rendering_device->texture_create_from_extension(
+		RID texture_rid = RD::texture_create_from_extension(
 			p_array_size == 1 ? RenderingDevice::TEXTURE_TYPE_2D
 							  : RenderingDevice::TEXTURE_TYPE_2D_ARRAY,
 			format, samples, usage_flags, (uint64_t)swapchain_image.texture, p_width, p_height, 1,
@@ -312,17 +341,15 @@ void OpenXRD3D12Extension::cleanup_swapchain_graphics_data(void** p_swapchain_gr
 		return;
 	}
 
-	Renderer* rendering_server = Renderer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
-	ERR_FAIL_NULL(rendering_device);
+	ERR_FAIL_NULL(Renderer::data);
+	ERR_FAIL_NULL(RD::data);
 
 	SwapchainGraphicsData* data = (SwapchainGraphicsData*)*p_swapchain_graphics_data;
 
 	for (const RID& texture_rid : data->texture_rids) {
 		// This should clean up our RIDs and associated texture objects but shouldn't destroy the
 		// images, they are owned by our XrSwapchain.
-		rendering_device->free_rid(texture_rid);
+		RD::free_rid(texture_rid);
 	}
 	data->texture_rids.clear();
 
@@ -335,7 +362,7 @@ void OpenXRD3D12Extension::cleanup_swapchain_graphics_data(void** p_swapchain_gr
 		return String(#e);                                                                         \
 	} break;
 
-String OpenXRD3D12Extension::get_swapchain_format_name(int64_t p_swapchain_format) const
+String OpenXRD3D12Extension::get_swapchain_format_name(int64_t p_swapchain_format)
 {
 	// These are somewhat different per platform, will need to weed some stuff out...
 	switch (p_swapchain_format) {

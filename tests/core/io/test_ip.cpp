@@ -39,9 +39,9 @@ namespace TestIP {
 
 TEST_CASE("[IP] resolve_hostname") {
 	for (int x = 0; x < 1000; x++) {
-		IPAddress IPV4 = IP::get_singleton()->resolve_hostname("localhost", IP::TYPE_IPV4);
+		IPAddress IPV4 = IP::resolve_hostname("localhost", IP::TYPE_IPV4);
 		CHECK("127.0.0.1" == String(IPV4));
-		IPAddress IPV6 = IP::get_singleton()->resolve_hostname("localhost", IP::TYPE_IPV6);
+		IPAddress IPV6 = IP::resolve_hostname("localhost", IP::TYPE_IPV6);
 		CHECK("0:0:0:0:0:0:0:1" == String(IPV6));
 	}
 }

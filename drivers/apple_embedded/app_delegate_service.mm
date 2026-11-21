@@ -132,17 +132,17 @@ static GDTViewController *mainViewController = nil;
 	if ([notification.name isEqualToString:AVAudioSessionInterruptionNotification]) {
 		if ([[notification.userInfo valueForKey:AVAudioSessionInterruptionTypeKey] isEqualToNumber:[NSNumber numberWithInt:AVAudioSessionInterruptionTypeBegan]]) {
 			NSLog(@"Audio interruption began");
-			OS_AppleEmbedded::get_singleton()->on_focus_out();
+			OS_AppleEmbedded::on_focus_out();
 		} else if ([[notification.userInfo valueForKey:AVAudioSessionInterruptionTypeKey] isEqualToNumber:[NSNumber numberWithInt:AVAudioSessionInterruptionTypeEnded]]) {
 			NSLog(@"Audio interruption ended");
-			OS_AppleEmbedded::get_singleton()->on_focus_in();
+			OS_AppleEmbedded::on_focus_in();
 		}
 	}
 }
 
 - (void)applicationDidReceiveMemoryWarning:(UIApplication *)application {
-	if (OS::get_singleton()->get_main_loop()) {
-		OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_OS_MEMORY_WARNING);
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_OS_MEMORY_WARNING);
 	}
 }
 
@@ -161,39 +161,39 @@ static GDTViewController *mainViewController = nil;
 // notification panel by swiping from the upper part of the screen.
 
 - (void)sceneDidDisconnect:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
-	OS_AppleEmbedded::get_singleton()->on_focus_out();
+	OS_AppleEmbedded::on_focus_out();
 }
 
 - (void)sceneWillResignActive:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
-	OS_AppleEmbedded::get_singleton()->on_focus_out();
+	OS_AppleEmbedded::on_focus_out();
 }
 
 - (void)sceneDidBecomeActive:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
-	OS_AppleEmbedded::get_singleton()->on_focus_in();
+	OS_AppleEmbedded::on_focus_in();
 }
 
 - (void)sceneDidEnterBackground:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
-	OS_AppleEmbedded::get_singleton()->on_enter_background();
+	OS_AppleEmbedded::on_enter_background();
 }
 
 - (void)sceneWillEnterForeground:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
-	OS_AppleEmbedded::get_singleton()->on_exit_background();
+	OS_AppleEmbedded::on_exit_background();
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
-	OS_AppleEmbedded::get_singleton()->on_focus_out();
+	OS_AppleEmbedded::on_focus_out();
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-	OS_AppleEmbedded::get_singleton()->on_focus_in();
+	OS_AppleEmbedded::on_focus_in();
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
-	OS_AppleEmbedded::get_singleton()->on_enter_background();
+	OS_AppleEmbedded::on_enter_background();
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
-	OS_AppleEmbedded::get_singleton()->on_exit_background();
+	OS_AppleEmbedded::on_exit_background();
 }
 
 - (void)dealloc {

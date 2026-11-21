@@ -31,19 +31,19 @@
 
 #pragma once
 
+#include "core/io/ip_address.h"
 #include "core/io/net_socket.h"
 #include "core/io/stream_peer.h"
 
-#ifndef DISABLE_DEPRECATED
-namespace compat::StreamPeerTCP
-{
-enum class Status;
-} // namespace compat::StreamPeerTCP
-#endif
-
-class StreamPeerSocket : public StreamPeer
+class StreamPeerSocket final : public StreamPeer
 {
 public:
+	enum Domain
+	{
+		DOMAIN_TCP,
+		DOMAIN_UDS,
+	};
+
 	enum Status
 	{
 		STATUS_NONE,
@@ -52,23 +52,35 @@ public:
 		STATUS_ERROR,
 	};
 
-protected:
-#ifndef DISABLE_DEPRECATED
-	compat::StreamPeerTCP::Status _get_status_bind_compat_107954() const;
-	static void _bind_compatibility_methods();
-#endif
-
+private:
+	Domain domain = DOMAIN_TCP;
 	Ref<NetSocket> _sock;
 	uint64_t timeout = 0;
 	Status status = STATUS_NONE;
 	NetSocket::Address peer_address;
+	String peer_path;
 
 	Error write(const uint8_t* p_data, int p_bytes, int& r_sent, bool p_block);
 	Error read(uint8_t* p_buffer, int p_bytes, int& r_received, bool p_block);
 
-
 public:
-	virtual void accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address& p_addr) = 0;
+	Domain get_domain() const { return domain; }
+
+	void accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address& p_addr);
+
+	// TCP operations.
+	Error bind(int p_port, const IPAddress& p_host = IPAddress("*"));
+	Error connect_to_host(const IPAddress& p_host, int p_port);
+	void set_no_delay(bool p_enabled);
+	IPAddress get_connected_host() const;
+	int get_connected_port() const;
+	int get_local_port() const;
+
+	// UDS operations.
+	Error bind(const String& p_path);
+	Error bind_path(const String& p_path) { return bind(p_path); }
+	Error connect_to_path(const String& p_path);
+	String get_connected_path() const;
 
 	void disconnect_from_host();
 
@@ -81,14 +93,12 @@ public:
 	// Wait or check for writable, readable.
 	Error wait(NetSocket::PollType p_type, int p_timeout = 0);
 
-	// Read/Write from StreamPeer
+	// Read/Write from StreamPeer.
 	Error put_data(const uint8_t* p_data, int p_bytes) override;
 	Error put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent) override;
 	Error get_data(uint8_t* p_buffer, int p_bytes) override;
 	Error get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received) override;
 
-	StreamPeerSocket();
-	virtual ~StreamPeerSocket();
+	StreamPeerSocket(Domain p_domain = DOMAIN_TCP);
+	~StreamPeerSocket() override;
 };
-
-

@@ -34,7 +34,144 @@
 #define DR_MP3_NO_STDIO
 
 #include <thirdparty/dr_libs/dr_bridge.h>
-#include "audio_stream_mp3.h"
+#include "core/io/resource_importer.h"
+#include "core/io/resource_saver.h"
+#include "register_types.h"
+// --- Inlined from modules/mp3/audio_stream_mp3.h ---
+#include <thirdparty/dr_libs/dr_mp3.h>
+#include "servers/audio/audio_stream.h"
+
+class AudioStreamMP3;
+
+class AudioStreamPlaybackMP3 : public AudioStreamPlaybackResampled
+{
+	enum
+	{
+		FADE_SIZE = 256
+	};
+
+	AudioFrame loop_fade[FADE_SIZE];
+	int loop_fade_remaining = FADE_SIZE;
+
+	bool looping_override = false;
+	bool looping = false;
+	drmp3 mp3d = {};
+	uint32_t frames_mixed = 0;
+	bool active = false;
+	int loops = 0;
+
+	friend class AudioStreamMP3;
+
+	Ref<AudioStreamMP3> mp3_stream;
+
+	bool _is_sample = false;
+	Ref<AudioSamplePlayback> sample_playback;
+
+protected:
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
+	virtual float get_stream_sampling_rate() override;
+
+public:
+	virtual void start(double p_from_pos = 0.0) override;
+	virtual void stop() override;
+	virtual bool is_playing() const override;
+
+	virtual int get_loop_count() const override; // times it looped
+
+	virtual double get_playback_position() const override;
+	virtual void seek(double p_time) override;
+
+	virtual void tag_used_streams() override;
+
+	virtual void set_is_sample(bool p_is_sample) override;
+	virtual bool get_is_sample() const override;
+	virtual Ref<AudioSamplePlayback> get_sample_playback() const override;
+	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override;
+
+	AudioStreamPlaybackMP3() {}
+
+	~AudioStreamPlaybackMP3();
+};
+
+class AudioStreamMP3 final : public AudioStream
+{
+	friend class AudioStreamPlaybackMP3;
+
+	TightLocalVector<uint8_t> data;
+
+	float sample_rate = 1.0;
+	int channels = 1;
+	float length = 0.0;
+	bool loop = false;
+	float loop_offset = 0.0;
+
+	double bpm = 0;
+	int beat_count = 0;
+	int bar_beats = 4;
+
+protected:
+
+public:
+	static Ref<AudioStreamMP3> load_from_buffer(const Vector<uint8_t>& p_stream_data);
+	static Ref<AudioStreamMP3> load_from_file(const String& p_path);
+
+	void set_loop(bool p_enable);
+	virtual bool has_loop() const override;
+
+	void set_loop_offset(double p_seconds);
+	double get_loop_offset() const;
+
+	void set_bpm(double p_bpm);
+	virtual double get_bpm() const override;
+
+	void set_beat_count(int p_beat_count);
+	virtual int get_beat_count() const override;
+
+	void set_bar_beats(int p_bar_beats);
+	virtual int get_bar_beats() const override;
+
+	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
+
+	void set_data(const Vector<uint8_t>& p_data);
+	Vector<uint8_t> get_data() const;
+
+	virtual double get_length() const override;
+
+	virtual bool is_monophonic() const override;
+
+	virtual bool can_be_sampled() const override { return true; }
+
+	virtual Ref<AudioSample> generate_sample() const override;
+};
+
+#include "core/io/resource_importer.h"
+
+class ResourceImporterMP3 final : public ResourceImporter
+{
+public:
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+
+	virtual void get_import_options(
+		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
+
+#ifdef TOOLS_ENABLED
+	virtual bool has_advanced_options() const override;
+	virtual void show_advanced_options(const String& p_path) override;
+#endif
+
+	virtual bool can_import_threaded() const override { return true; }
+
+	ResourceImporterMP3() = default;
+};
+
+// --- End modules/mp3/audio_stream_mp3.h ---
 #include "core/io/file_access.h"
 
 int AudioStreamPlaybackMP3::_mix_internal(AudioFrame* p_buffer, int p_frames)
@@ -277,5 +414,50 @@ Ref<AudioStreamMP3> AudioStreamMP3::load_from_file(const String& p_path)
 	return load_from_buffer(stream_data);
 }
 
+String ResourceImporterMP3::get_importer_name() const { return "mp3"; }
 
+String ResourceImporterMP3::get_visible_name() const { return "MP3"; }
 
+void ResourceImporterMP3::get_recognized_extensions(List<String>* p_extensions) const
+{
+#ifndef DR_MP3_ONLY_MP3
+	p_extensions->push_back("mp1");
+	p_extensions->push_back("mp2");
+#endif
+	p_extensions->push_back("mp3");
+}
+
+String ResourceImporterMP3::get_save_extension() const { return "mp3str"; }
+
+String ResourceImporterMP3::get_resource_type() const { return "AudioStreamMP3"; }
+
+int ResourceImporterMP3::get_preset_count() const { return 0; }
+
+String ResourceImporterMP3::get_preset_name(int p_idx) const { return String(); }
+
+#ifdef TOOLS_ENABLED
+bool ResourceImporterMP3::has_advanced_options() const { return false; }
+
+void ResourceImporterMP3::show_advanced_options(const String& p_path) {}
+#endif
+
+void ResourceImporterMP3::get_import_options(
+	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
+{
+}
+
+#ifdef TOOLS_ENABLED
+#endif
+
+void initialize_mp3_module(ModuleInitializationLevel p_level)
+{
+#ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		Ref<ResourceImporterMP3> mp3_import;
+		mp3_import.instantiate();
+		ResourceFormatImporter::add_importer(mp3_import);
+	}
+#endif
+}
+
+void uninitialize_mp3_module(ModuleInitializationLevel p_level) {}

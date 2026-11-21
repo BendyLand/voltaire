@@ -34,7 +34,7 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
-#include "servers/rendering/renderer_rd/pipeline_deferred_rd.h"
+#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/renderer_rd/shaders/particles.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/particles_copy.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
@@ -305,7 +305,7 @@ private:
 			uint32_t trail_pass;
 		};
 
-		ParticlesShaderRD shader;
+		ShaderRD shader;
 		ShaderCompiler compiler;
 
 		RID default_shader;
@@ -358,11 +358,13 @@ private:
 			COPY_MODE_MAX,
 		};
 
-		ParticlesCopyShaderRD copy_shader;
+		ShaderRD copy_shader;
 		RID copy_shader_version;
 		PipelineDeferredRD copy_pipelines[MAX_USERDATAS + 1][COPY_MODE_MAX];
 
 		LocalVector<float> pose_update_buffer;
+
+		ParticlesShader() : shader(ParticlesShaderRD()), copy_shader(ParticlesCopyShaderRD()) {}
 	};
 
 	static inline ParticlesShader particles_shader;

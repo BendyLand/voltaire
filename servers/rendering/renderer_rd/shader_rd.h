@@ -62,6 +62,20 @@ public:
 	typedef Pair<ShaderRD*, RID> ShaderVersionPair;
 	typedef HashSet<ShaderVersionPair> ShaderVersionPairSet;
 
+	struct StageData
+	{
+		const char* vertex_code = nullptr;
+		const char* fragment_code = nullptr;
+		const char* compute_code = nullptr;
+		const char* raygen_code = nullptr;
+		const char* any_hit_code = nullptr;
+		const char* closest_hit_code = nullptr;
+		const char* miss_code = nullptr;
+		const char* intersection_code = nullptr;
+		const char* name = nullptr;
+		bool is_raytracing = false;
+	};
+
 private:
 	// versions
 	CharString general_defines;
@@ -200,15 +214,16 @@ private:
 	void _version_set(Version* p_version, const HashMap<String, String>& p_code,
 		const Vector<String>& p_custom_defines);
 
-protected:
+public:
 	ShaderRD();
+	explicit ShaderRD(const StageData& p_data);
+	void setup(const StageData& p_data);
 	void setup(const char* p_vertex_code, const char* p_fragment_code, const char* p_compute_code,
 		const char* p_name);
 	void setup_raytracing(const char* p_raygen_code, const char* p_any_hit_code,
 		const char* p_closest_hit_code, const char* p_miss_code, const char* p_intersection_code,
 		const char* p_name);
 
-public:
 	_FORCE_INLINE_ RID version_get_shader(RID p_version, int p_variant)
 	{
 		ERR_FAIL_INDEX_V(p_variant, variant_defines.size(), RID());
@@ -323,5 +338,5 @@ public:
 			Vector<RD::PipelineImmutableSampler>(),
 		const Vector<uint64_t>& p_dynamic_buffers = Vector<uint64_t>());
 
-	virtual ~ShaderRD();
+	~ShaderRD();
 };

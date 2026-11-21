@@ -29,35 +29,57 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "webmidi_driver.h"
+#include "platform/web/os_web.h"
+// --- Inlined from platform/web/godot_midi.h ---
+#include <cstdint>
 
-#include "godot_midi.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern int godot_js_webmidi_open_midi_inputs(
+		void (*p_callback)(int p_size, const char **p_connected_input_names),
+		void (*p_on_midi_message)(int p_device_index, int p_status, const uint8_t *p_data, int p_data_len),
+		const uint8_t *p_data_buffer,
+		const int p_data_buffer_len);
+
+extern void godot_js_webmidi_close_midi_inputs();
+
+#ifdef __cplusplus
+}
+#endif
+
+// --- End platform/web/godot_midi.h ---
 
 #ifdef PROXY_TO_PTHREAD_ENABLED
 #endif
 
-MIDIDriverWebMidi *MIDIDriverWebMidi::get_singleton() {
-	return static_cast<MIDIDriverWebMidi *>(MIDIDriver::get_singleton());
+void MIDIDriverWebMidi::initialize() {}
+
+void MIDIDriverWebMidi::finalize()
+{
+	close();
 }
 
-Error MIDIDriverWebMidi::open() {
-	Error error = (Error)godot_js_webmidi_open_midi_inputs(&MIDIDriverWebMidi::set_input_names_callback, &MIDIDriverWebMidi::on_midi_message, _event_buffer, MIDIDriverWebMidi::MAX_EVENT_BUFFER_LENGTH);
+Error MIDIDriverWebMidi::open()
+{
+	Error error = (Error)godot_js_webmidi_open_midi_inputs(
+		&MIDIDriverWebMidi::set_input_names_callback, &MIDIDriverWebMidi::on_midi_message,
+		_event_buffer, MIDIDriverWebMidi::MAX_EVENT_BUFFER_LENGTH);
 	if (error == ERR_UNAVAILABLE) {
 		ERR_PRINT("Web MIDI is not supported on this browser.");
 	}
 	return error;
 }
 
-void MIDIDriverWebMidi::close() {
-	get_singleton()->connected_input_names.clear();
+void MIDIDriverWebMidi::close()
+{
+	MIDIDriver::clear_connected_inputs();
 	godot_js_webmidi_close_midi_inputs();
 }
 
-MIDIDriverWebMidi::~MIDIDriverWebMidi() {
-	close();
-}
-
-void MIDIDriverWebMidi::set_input_names_callback(int p_size, const char **p_input_names) {
+void MIDIDriverWebMidi::set_input_names_callback(int p_size, const char** p_input_names)
+{
 	Vector<String> input_names;
 	for (int i = 0; i < p_size; i++) {
 		input_names.append(String::utf8(p_input_names[i]));
@@ -72,10 +94,11 @@ void MIDIDriverWebMidi::set_input_names_callback(int p_size, const char **p_inpu
 	_set_input_names_callback(input_names);
 }
 
-void MIDIDriverWebMidi::_set_input_names_callback(const Vector<String> &p_input_names) {
-	get_singleton()->connected_input_names.clear();
-	for (const String &input_name : p_input_names) {
-		get_singleton()->connected_input_names.push_back(input_name);
+void MIDIDriverWebMidi::_set_input_names_callback(const Vector<String>& p_input_names)
+{
+	MIDIDriver::clear_connected_inputs();
+	for (const String& input_name : p_input_names) {
+		MIDIDriver::add_connected_input(input_name);
 	}
 }
 

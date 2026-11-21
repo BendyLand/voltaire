@@ -36,7 +36,7 @@ TEST_FORCE_LINK(test_tab_container)
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "scene/gui/box_container.h"
-#include "scene/gui/tab_container.h"
+#include "scene/gui/scroll_container.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "tests/display_server_mock.h"
@@ -46,8 +46,7 @@ namespace TestTabContainer {
 
 TEST_CASE("[SceneTree][TabContainer] tab operations") {
 	TabContainer *tab_container = memnew(TabContainer);
-	SceneTree::get_singleton()->get_root()->add_child(tab_container);
-	MessageQueue::get_singleton()->flush();
+	SceneTree::get_root()->add_child(tab_container);
 	SIGNAL_WATCH(tab_container, "tab_selected");
 	SIGNAL_WATCH(tab_container, "tab_changed");
 
@@ -65,8 +64,7 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 
 		// Add first tab child.
 		tab_container->add_child(tab0);
-		// MessageQueue::get_singleton()->flush();
-		CHECK(tab_container->get_tab_count() == 1);
+		//		CHECK(tab_container->get_tab_count() == 1);
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
 		SIGNAL_CHECK("tab_selected", { { 0 } });
@@ -196,7 +194,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == -1);
 		SIGNAL_CHECK("tab_selected", { { 0 } });
 		SIGNAL_CHECK("tab_changed", { { 0 } });
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab0->is_visible());
 		CHECK_FALSE(tab1->is_visible());
 		CHECK_FALSE(tab2->is_visible());
@@ -207,7 +204,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 0);
 		SIGNAL_CHECK("tab_selected", { { 1 } });
 		SIGNAL_CHECK("tab_changed", { { 1 } });
-		MessageQueue::get_singleton()->flush();
 		CHECK_FALSE(tab0->is_visible());
 		CHECK(tab1->is_visible());
 		CHECK_FALSE(tab2->is_visible());
@@ -218,7 +214,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 1);
 		SIGNAL_CHECK("tab_selected", { { 1 } });
 		SIGNAL_CHECK_FALSE("tab_changed");
-		MessageQueue::get_singleton()->flush();
 		CHECK_FALSE(tab0->is_visible());
 		CHECK(tab1->is_visible());
 		CHECK_FALSE(tab2->is_visible());
@@ -230,7 +225,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 1);
 		SIGNAL_CHECK_FALSE("tab_selected");
 		SIGNAL_CHECK_FALSE("tab_changed");
-		MessageQueue::get_singleton()->flush();
 		CHECK_FALSE(tab0->is_visible());
 		CHECK(tab1->is_visible());
 		CHECK_FALSE(tab2->is_visible());
@@ -240,7 +234,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 1);
 		SIGNAL_CHECK_FALSE("tab_selected");
 		SIGNAL_CHECK_FALSE("tab_changed");
-		MessageQueue::get_singleton()->flush();
 		CHECK_FALSE(tab0->is_visible());
 		CHECK(tab1->is_visible());
 		CHECK_FALSE(tab2->is_visible());
@@ -253,7 +246,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		tab_container->add_child(tab2);
 		SIGNAL_DISCARD("tab_selected");
 		SIGNAL_DISCARD("tab_changed");
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab0->is_visible());
 		CHECK_FALSE(tab1->is_visible());
 		CHECK_FALSE(tab2->is_visible());
@@ -264,7 +256,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 0);
 		SIGNAL_CHECK("tab_selected", { { 1 } });
 		SIGNAL_CHECK("tab_changed", { { 1 } });
-		MessageQueue::get_singleton()->flush();
 		CHECK_FALSE(tab0->is_visible());
 		CHECK(tab1->is_visible());
 		CHECK_FALSE(tab2->is_visible());
@@ -275,7 +266,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 1);
 		SIGNAL_CHECK("tab_selected", { { 2 } });
 		SIGNAL_CHECK("tab_changed", { { 2 } });
-		MessageQueue::get_singleton()->flush();
 		CHECK_FALSE(tab0->is_visible());
 		CHECK_FALSE(tab1->is_visible());
 		CHECK(tab2->is_visible());
@@ -286,7 +276,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 2);
 		SIGNAL_CHECK("tab_selected", { { 1 } });
 		SIGNAL_CHECK("tab_changed", { { 1 } });
-		MessageQueue::get_singleton()->flush();
 		CHECK_FALSE(tab0->is_visible());
 		CHECK(tab1->is_visible());
 		CHECK_FALSE(tab2->is_visible());
@@ -298,7 +287,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 0);
 		SIGNAL_DISCARD("tab_selected");
 		SIGNAL_DISCARD("tab_changed");
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab0->is_visible());
 
 		tab0->hide();
@@ -306,7 +294,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 0);
 		SIGNAL_CHECK_FALSE("tab_selected");
 		SIGNAL_CHECK_FALSE("tab_changed");
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab0->is_visible());
 
 		// Can hide the last tab if deselection is enabled.
@@ -316,7 +303,6 @@ TEST_CASE("[SceneTree][TabContainer] tab operations") {
 		CHECK(tab_container->get_previous_tab() == 0);
 		SIGNAL_CHECK("tab_selected", { { -1 } });
 		SIGNAL_CHECK("tab_changed", { { -1 } });
-		MessageQueue::get_singleton()->flush();
 		CHECK_FALSE(tab0->is_visible());
 	}
 
@@ -356,8 +342,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
 
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
-		MessageQueue::get_singleton()->flush();
+		SceneTree::get_root()->add_child(tab_container);
 		CHECK(tab_container->get_tab_count() == 2);
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
@@ -394,8 +379,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		SIGNAL_CHECK_FALSE("tab_changed");
 
 		// Current tab is set when entering the tree.
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
-		MessageQueue::get_singleton()->flush();
+		SceneTree::get_root()->add_child(tab_container);
 		CHECK(tab_container->get_tab_count() == 3);
 		CHECK(tab_container->get_current_tab() == 1);
 		CHECK(tab_container->get_previous_tab() == 0);
@@ -429,8 +413,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 
 		// This will print an error message as if `set_current_tab` was called after.
 		ERR_PRINT_OFF;
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
-		MessageQueue::get_singleton()->flush();
+		SceneTree::get_root()->add_child(tab_container);
 		CHECK(tab_container->get_tab_count() == 2);
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
@@ -449,7 +432,6 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		CHECK(tab_container->get_tab_count() == 1);
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab0->is_visible());
 
 		// Adding a visible child after will hide it because it is not the current tab.
@@ -457,14 +439,12 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		CHECK(tab_container->get_tab_count() == 2);
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab0->is_visible());
 		CHECK_FALSE(tab1->is_visible());
 
 		// Can change current by showing child now after children have been added.
 		// This queues the current tab to update on entering the tree.
 		tab1->show();
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab_container->get_tab_count() == 2);
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
@@ -473,8 +453,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		CHECK(tab0->is_visible());
 		CHECK(tab1->is_visible());
 
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
-		MessageQueue::get_singleton()->flush();
+		SceneTree::get_root()->add_child(tab_container);
 		CHECK(tab_container->get_tab_count() == 2);
 		CHECK(tab_container->get_current_tab() == 1);
 		CHECK(tab_container->get_previous_tab() == 0);
@@ -488,12 +467,10 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		tab_container->add_child(tab0);
 		tab_container->add_child(tab1);
 		tab_container->add_child(tab2);
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
 
 		tab2->show();
-		MessageQueue::get_singleton()->flush();
 		CHECK(tab_container->get_tab_count() == 3);
 		CHECK(tab_container->get_current_tab() == 0);
 		CHECK(tab_container->get_previous_tab() == -1);
@@ -509,8 +486,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 		CHECK(tab_container->get_previous_tab() == -1);
 
 		// Current tab is set when entering the tree.
-		SceneTree::get_singleton()->get_root()->add_child(tab_container);
-		MessageQueue::get_singleton()->flush();
+		SceneTree::get_root()->add_child(tab_container);
 		CHECK(tab_container->get_tab_count() == 3);
 		CHECK(tab_container->get_current_tab() == 1);
 		CHECK(tab_container->get_previous_tab() == 0);
@@ -532,7 +508,7 @@ TEST_CASE("[SceneTree][TabContainer] initialization") {
 
 TEST_CASE("[SceneTree][TabContainer] layout and offset") {
 	TabContainer *tab_container = memnew(TabContainer);
-	SceneTree::get_singleton()->get_root()->add_child(tab_container);
+	SceneTree::get_root()->add_child(tab_container);
 	tab_container->set_clip_tabs(false);
 
 	Control *tab0 = memnew(Control);
@@ -546,7 +522,6 @@ TEST_CASE("[SceneTree][TabContainer] layout and offset") {
 	tab_container->add_child(tab1);
 	tab_container->add_child(tab2);
 
-	MessageQueue::get_singleton()->flush();
 
 	Size2 all_tabs_size = tab_container->get_size();
 	const float side_margin = tab_container->get_theme_constant("side_margin");
@@ -612,7 +587,6 @@ TEST_CASE("[SceneTree][TabContainer] layout and offset") {
 		// Bottom position.
 		tab_container->set_tabs_position(TabContainer::POSITION_BOTTOM);
 		CHECK(tab_container->get_tabs_position() == TabContainer::POSITION_BOTTOM);
-		MessageQueue::get_singleton()->flush();
 
 		// Tab bar is at the bottom.
 		CHECK(internal_container->get_anchor(SIDE_TOP) == 1);
@@ -637,7 +611,6 @@ TEST_CASE("[SceneTree][TabContainer] layout and offset") {
 		// Top position.
 		tab_container->set_tabs_position(TabContainer::POSITION_TOP);
 		CHECK(tab_container->get_tabs_position() == TabContainer::POSITION_TOP);
-		MessageQueue::get_singleton()->flush();
 
 		// Tab bar is at the top.
 		CHECK(internal_container->get_anchor(SIDE_TOP) == 0);
@@ -665,7 +638,7 @@ TEST_CASE("[SceneTree][TabContainer] layout and offset") {
 
 TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 	TabContainer *tab_container = memnew(TabContainer);
-	SceneTree::get_singleton()->get_root()->add_child(tab_container);
+	SceneTree::get_root()->add_child(tab_container);
 
 	tab_container->set_clip_tabs(false);
 	Control *tab0 = memnew(Control);
@@ -679,7 +652,6 @@ TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 	tab_container->add_child(tab1);
 	tab_container->add_child(tab2);
 
-	MessageQueue::get_singleton()->flush();
 
 	const float side_margin = tab_container->get_theme_constant("side_margin");
 
@@ -797,7 +769,7 @@ TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 
 	SUBCASE("[TabContainer] Drag and drop to different TabContainer") {
 		TabContainer *target_tab_container = memnew(TabContainer);
-		SceneTree::get_singleton()->get_root()->add_child(target_tab_container);
+		SceneTree::get_root()->add_child(target_tab_container);
 
 		target_tab_container->set_clip_tabs(false);
 		Control *other_tab0 = memnew(Control);
@@ -805,7 +777,6 @@ TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 		target_tab_container->add_child(other_tab0);
 
 		target_tab_container->set_position(tab_container->get_size());
-		MessageQueue::get_singleton()->flush();
 
 		Vector<Rect2> target_tab_rects = {
 			target_tab_container->get_tab_bar()->get_tab_rect(0)

@@ -103,7 +103,7 @@ protected:
 		error_set = true;
 	}
 
-	virtual Error _get_token(Token& r_token);
+	Error _get_token(Token& r_token);
 
 	String error_str;
 	bool error_set = true;
@@ -129,7 +129,19 @@ protected:
 
 		Type type = TYPE_INPUT;
 
-		virtual ~ENode() { memdelete(next); }
+		int input_index = 0;
+		ENode* nodes[2] = {nullptr, nullptr};
+		ENode* base = nullptr;
+		ENode* index = nullptr;
+		String name;
+		Vector<ENode*> arguments;
+
+		~ENode()
+		{
+			if (next) {
+				memdelete(next);
+			}
+		}
 	};
 
 	struct ExpressionNode
@@ -144,88 +156,10 @@ protected:
 
 	ENode* _parse_expression();
 
-	struct InputNode : public ENode
+	ENode* alloc_node(ENode::Type p_type = ENode::TYPE_INPUT)
 	{
-		int index = 0;
-
-		InputNode() { type = TYPE_INPUT; }
-	};
-
-	struct ConstantNode : public ENode
-	{
-
-		ConstantNode() { type = TYPE_CONSTANT; }
-	};
-
-	struct OperatorNode : public ENode
-	{
-		ENode* nodes[2] = {nullptr, nullptr};
-
-		OperatorNode() { type = TYPE_OPERATOR; }
-	};
-
-	struct SelfNode : public ENode
-	{
-		SelfNode() { type = TYPE_SELF; }
-	};
-
-	struct IndexNode : public ENode
-	{
-		ENode* base = nullptr;
-		ENode* index = nullptr;
-
-		IndexNode() { type = TYPE_INDEX; }
-	};
-
-	struct NamedIndexNode : public ENode
-	{
-		ENode* base = nullptr;
-		String name;
-
-		NamedIndexNode() { type = TYPE_NAMED_INDEX; }
-	};
-
-	struct ConstructorNode : public ENode
-	{
-		Vector<ENode*> arguments;
-
-		ConstructorNode() { type = TYPE_CONSTRUCTOR; }
-	};
-
-	struct CallNode : public ENode
-	{
-		ENode* base = nullptr;
-		String method;
-		Vector<ENode*> arguments;
-
-		CallNode() { type = TYPE_CALL; }
-	};
-
-	struct ArrayNode : public ENode
-	{
-		Vector<ENode*> array;
-
-		ArrayNode() { type = TYPE_ARRAY; }
-	};
-
-	struct DictionaryNode : public ENode
-	{
-		Vector<ENode*> dict;
-
-		DictionaryNode() { type = TYPE_DICTIONARY; }
-	};
-
-	struct BuiltinFuncNode : public ENode
-	{
-		String func;
-		Vector<ENode*> arguments;
-
-		BuiltinFuncNode() { type = TYPE_BUILTIN_FUNC; }
-	};
-
-	template <typename T> T* alloc_node()
-	{
-		T* node = memnew(T);
+		ENode* node = memnew(ENode);
+		node->type = p_type;
 		node->next = nodes;
 		nodes = node;
 		return node;

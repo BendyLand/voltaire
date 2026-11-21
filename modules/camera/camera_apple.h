@@ -36,14 +36,20 @@
 
 #include "servers/camera/camera_server.h"
 
-class CameraApple : public CameraServer {
-
+class CameraApple final
+{
 public:
-	CameraApple() = default;
+	static void initialize() {}
+	static void finalize();
 
-	void update_feeds();
-	void set_monitoring_feeds(bool p_monitoring_feeds) override;
-	void handle_display_rotation_change(int p_orientation) override;
-	void handle_application_pause() override;
-	void handle_application_resume() override;
+	static void update_feeds();
+	static void set_monitoring_feeds(bool p_monitoring_feeds);
+	static void handle_display_rotation_change(int p_orientation);
+	static void handle_application_pause();
+	static void handle_application_resume();
+
+	CameraApple() = delete;
+	CameraApple(const CameraApple&) = delete;
+	CameraApple& operator=(const CameraApple&) = delete;
+	~CameraApple() = delete;
 };

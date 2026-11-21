@@ -37,12 +37,16 @@
 class ResourceImporter;
 class ResourceFormatImporter;
 
-typedef Ref<Resource> (*ResourceFormatImporterLoadOnStartup)(ResourceFormatImporter* p_importer,
+typedef Ref<Resource> (*ResourceFormatImporterLoadOnStartup)(
 	const String& p_path, Error* r_error, bool p_use_sub_threads, float* r_progress,
 	ResourceFormatLoader::CacheMode p_cache_mode);
 
-class ResourceFormatImporter : public ResourceFormatLoader
+class ResourceFormatImporter final
 {
+public:
+	using CacheMode = ResourceFormatLoader::CacheMode;
+
+private:
 	struct PathAndType
 	{
 		String path;
@@ -52,10 +56,8 @@ class ResourceFormatImporter : public ResourceFormatLoader
 		ResourceUID::ID uid = ResourceUID::INVALID_ID;
 	};
 
-	Error _get_path_and_type(const String& p_path, PathAndType& r_path_and_type, bool p_load,
-		bool* r_valid = nullptr) const;
-
-	static inline ResourceFormatImporter* singleton = nullptr;
+	static Error _get_path_and_type(const String& p_path, PathAndType& r_path_and_type, bool p_load,
+		bool* r_valid = nullptr);
 
 	// need them to stay in order to compute the settings hash
 	struct SortImporterByName
@@ -63,63 +65,153 @@ class ResourceFormatImporter : public ResourceFormatLoader
 		bool operator()(const Ref<ResourceImporter>& p_a, const Ref<ResourceImporter>& p_b) const;
 	};
 
-	Vector<Ref<ResourceImporter>> importers;
+	struct Data
+	{
+		Vector<Ref<ResourceImporter>> importers;
+	};
+
+	static inline Data* data = nullptr;
 
 public:
-	static ResourceFormatImporter* get_singleton() { return singleton; }
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
+	static Ref<Resource> load(const String& p_path, const String& p_original_path = "",
+		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
+		CacheMode p_cache_mode = ResourceFormatLoader::CACHE_MODE_REUSE);
+	static Ref<Resource> load_internal(const String& p_path, Error* r_error, bool p_use_sub_threads,
+		float* r_progress, CacheMode p_cache_mode, bool p_silence_errors);
+	static void get_recognized_extensions(List<String>* p_extensions);
+	static void get_recognized_extensions_for_type(
+		const String& p_type, List<String>* p_extensions);
+	static bool recognize_path(
+		const String& p_path, const String& p_for_type = String());
+	static bool handles_type(const String& p_type);
+	static String get_resource_type(const String& p_path);
+	static String get_resource_script_class(const String& p_path);
+	static ResourceUID::ID get_resource_uid(const String& p_path);
+	static bool has_custom_uid_support();
+	static bool is_import_valid(const String& p_path);
+	static void get_dependencies(
+		const String& p_path, List<String>* p_dependencies, bool p_add_types = false);
+
+	static bool is_imported(const String& p_path) { return recognize_path(p_path); }
+
+	static String get_import_group_file(const String& p_path);
+	static void get_classes_used(const String& p_path, HashSet<String>* r_classes);
+	static bool exists(const String& p_path);
+
+	static void get_build_dependencies(const String& p_path, HashSet<String>* r_dependencies);
+
+	static int get_import_order(const String& p_path);
+
+	static Error get_import_order_threads_and_importer(
+		const String& p_path, int& r_order, bool& r_can_threads, String& r_importer);
+
+	static String get_internal_resource_path(const String& p_path);
+	static void get_internal_resource_path_list(const String& p_path, List<String>* r_paths);
+
+	static void add_importer(const Ref<ResourceImporter>& p_importer, bool p_first_priority = false);
+
+	static void remove_importer(const Ref<ResourceImporter>& p_importer)
+	{
+		if (data) {
+			data->importers.erase(p_importer);
+		}
+	}
+
+	static Ref<ResourceImporter> get_importer_by_name(const String& p_name);
+	static Ref<ResourceImporter> get_importer_by_file(const String& p_file);
+	static void get_importers_for_file(const String& p_file, List<Ref<ResourceImporter>>* r_importers);
+	static void get_importers(List<Ref<ResourceImporter>>* r_importers);
+
+	static bool are_import_settings_valid(const String& p_path);
+	static String get_import_settings_hash();
+
+	static String get_import_base_path(const String& p_for_file);
+	static Error get_resource_import_info(const String& p_path, String& r_type, ResourceUID::ID& r_uid,
+		String& r_import_group_file);
+
+	ResourceFormatImporter() = delete;
+	ResourceFormatImporter(const ResourceFormatImporter&) = delete;
+	ResourceFormatImporter& operator=(const ResourceFormatImporter&) = delete;
+	~ResourceFormatImporter() = delete;
+};
+
+class ResourceFormatImporterLoader : public ResourceFormatLoader
+{
+public:
 	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
 		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	Ref<Resource> load_internal(const String& p_path, Error* r_error, bool p_use_sub_threads,
-		float* r_progress, CacheMode p_cache_mode, bool p_silence_errors);
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+		CacheMode p_cache_mode = CACHE_MODE_REUSE) override
+	{
+		return ResourceFormatImporter::load(
+			p_path, p_original_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
+	}
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override
+	{
+		ResourceFormatImporter::get_recognized_extensions(p_extensions);
+	}
 	virtual void get_recognized_extensions_for_type(
-		const String& p_type, List<String>* p_extensions) const override;
+		const String& p_type, List<String>* p_extensions) const override
+	{
+		ResourceFormatImporter::get_recognized_extensions_for_type(p_type, p_extensions);
+	}
 	virtual bool recognize_path(
-		const String& p_path, const String& p_for_type = String()) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-	virtual String get_resource_script_class(const String& p_path) const override;
-	virtual ResourceUID::ID get_resource_uid(const String& p_path) const override;
-	virtual bool has_custom_uid_support() const override;
-	virtual bool is_import_valid(const String& p_path) const override;
+		const String& p_path, const String& p_for_type = String()) const override
+	{
+		return ResourceFormatImporter::recognize_path(p_path, p_for_type);
+	}
+	virtual bool handles_type(const String& p_type) const override
+	{
+		return ResourceFormatImporter::handles_type(p_type);
+	}
+	virtual String get_resource_type(const String& p_path) const override
+	{
+		return ResourceFormatImporter::get_resource_type(p_path);
+	}
+	virtual String get_resource_script_class(const String& p_path) const override
+	{
+		return ResourceFormatImporter::get_resource_script_class(p_path);
+	}
+	virtual ResourceUID::ID get_resource_uid(const String& p_path) const override
+	{
+		return ResourceFormatImporter::get_resource_uid(p_path);
+	}
+	virtual bool has_custom_uid_support() const override
+	{
+		return ResourceFormatImporter::has_custom_uid_support();
+	}
+	virtual bool is_import_valid(const String& p_path) const override
+	{
+		return ResourceFormatImporter::is_import_valid(p_path);
+	}
 	virtual void get_dependencies(
-		const String& p_path, List<String>* p_dependencies, bool p_add_types = false) override;
-
-	virtual bool is_imported(const String& p_path) const override { return recognize_path(p_path); }
-
-	virtual String get_import_group_file(const String& p_path) const override;
-	virtual void get_classes_used(const String& p_path, HashSet<String>* r_classes) override;
-	virtual bool exists(const String& p_path) const override;
-
-	void get_build_dependencies(const String& p_path, HashSet<String>* r_dependencies);
-
-	virtual int get_import_order(const String& p_path) const override;
-
-	Error get_import_order_threads_and_importer(
-		const String& p_path, int& r_order, bool& r_can_threads, String& r_importer) const;
-
-	String get_internal_resource_path(const String& p_path) const;
-	void get_internal_resource_path_list(const String& p_path, List<String>* r_paths);
-
-	void add_importer(const Ref<ResourceImporter>& p_importer, bool p_first_priority = false);
-
-	void remove_importer(const Ref<ResourceImporter>& p_importer) { importers.erase(p_importer); }
-
-	Ref<ResourceImporter> get_importer_by_name(const String& p_name) const;
-	Ref<ResourceImporter> get_importer_by_file(const String& p_file) const;
-	void get_importers_for_file(const String& p_file, List<Ref<ResourceImporter>>* r_importers);
-	void get_importers(List<Ref<ResourceImporter>>* r_importers);
-
-	bool are_import_settings_valid(const String& p_path) const;
-	String get_import_settings_hash() const;
-
-	String get_import_base_path(const String& p_for_file) const;
-	Error get_resource_import_info(const String& p_path, String& r_type, ResourceUID::ID& r_uid,
-		String& r_import_group_file) const;
-
-	ResourceFormatImporter();
+		const String& p_path, List<String>* p_dependencies, bool p_add_types = false) override
+	{
+		ResourceFormatImporter::get_dependencies(p_path, p_dependencies, p_add_types);
+	}
+	virtual bool is_imported(const String& p_path) const override
+	{
+		return ResourceFormatImporter::is_imported(p_path);
+	}
+	virtual String get_import_group_file(const String& p_path) const override
+	{
+		return ResourceFormatImporter::get_import_group_file(p_path);
+	}
+	virtual void get_classes_used(const String& p_path, HashSet<String>* r_classes) override
+	{
+		ResourceFormatImporter::get_classes_used(p_path, r_classes);
+	}
+	virtual bool exists(const String& p_path) const override
+	{
+		return ResourceFormatImporter::exists(p_path);
+	}
+	virtual int get_import_order(const String& p_path) const override
+	{
+		return ResourceFormatImporter::get_import_order(p_path);
+	}
 };
 
 class ResourceImporter : public RefCounted

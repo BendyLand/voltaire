@@ -34,6 +34,8 @@
 #include "scene/main/canvas_item.h"
 #include "scene/resources/environment.h"
 
+struct CollisionState2D;
+
 class Node2D : public CanvasItem
 {
 	mutable MTFlag xform_dirty;
@@ -103,6 +105,9 @@ public:
 	Transform2D get_relative_transform_to_parent(const Node* rp_parent) const;
 
 	Transform2D get_transform() const override;
+
+	virtual CollisionState2D* get_collision_state_2d() { return nullptr; }
+	virtual const CollisionState2D* get_collision_state_2d() const { return nullptr; }
 
 	Node2D() = default;
 };

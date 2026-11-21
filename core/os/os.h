@@ -34,15 +34,74 @@
 #include <cstdlib>
 #include "core/config/engine.h"
 #include "core/io/logger.h"
-#include "core/io/remote_filesystem_client.h"
+// --- Folded from core/io/remote_filesystem_client.h ---
+#include "core/string/ustring.h"
+#include "core/templates/hash_set.h"
+#include "core/templates/local_vector.h"
+
+class RemoteFilesystemClient {
+	String cache_path;
+	HashSet<String> validated_directories;
+
+protected:
+	String _get_cache_path() { return cache_path; }
+	struct FileCache {
+		String path; // Local path (as in "folder/to/file.png")
+		uint64_t server_modified_time = 0; // MD5 checksum.
+		uint64_t modified_time = 0;
+	};
+	virtual bool _is_configured() { return !cache_path.is_empty(); }
+	// Can be re-implemented per platform. If so, feel free to ignore get_cache_path()
+	virtual Vector<FileCache> _load_cache_file();
+	virtual Error _store_file(const String &p_path, const LocalVector<uint8_t> &p_file, uint64_t &r_modified_time);
+	virtual Error _remove_file(const String &p_path);
+	virtual Error _store_cache_file(const Vector<FileCache> &p_cache);
+	virtual Error _synchronize_with_server(const String &p_host, int p_port, const String &p_password, String &r_cache_path);
+
+	virtual void _update_cache_path(String &r_cache_path);
+
+public:
+	Error synchronize_with_server(const String &p_host, int p_port, const String &p_password, String &r_cache_path);
+	virtual ~RemoteFilesystemClient() {}
+};
+
+// --- End core/io/remote_filesystem_client.h ---
 #include "core/os/process_id.h"
-#include "core/os/time_enums.h"
+// --- Folded from core/os/time_enums.h ---
+#include <cstdint>
+
+enum Month {
+	/// Start at 1 to follow Windows SYSTEMTIME structure
+	/// https://msdn.microsoft.com/en-us/library/windows/desktop/ms724950(v=vs.85).aspx
+	MONTH_JANUARY = 1,
+	MONTH_FEBRUARY,
+	MONTH_MARCH,
+	MONTH_APRIL,
+	MONTH_MAY,
+	MONTH_JUNE,
+	MONTH_JULY,
+	MONTH_AUGUST,
+	MONTH_SEPTEMBER,
+	MONTH_OCTOBER,
+	MONTH_NOVEMBER,
+	MONTH_DECEMBER,
+};
+
+enum Weekday : uint8_t {
+	WEEKDAY_SUNDAY,
+	WEEKDAY_MONDAY,
+	WEEKDAY_TUESDAY,
+	WEEKDAY_WEDNESDAY,
+	WEEKDAY_THURSDAY,
+	WEEKDAY_FRIDAY,
+	WEEKDAY_SATURDAY,
+};
+
+// --- End core/os/time_enums.h ---
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
-
-class MainLoop;
 
 class OS final
 {
@@ -191,9 +250,7 @@ public:
 
 	static void set_cmdline(
 		const char* p_execpath, const List<String>& p_args, const List<String>& p_user_args);
-	static void set_main_loop(MainLoop* p_main_loop);
 	static void delete_main_loop();
-	static MainLoop* get_main_loop();
 
 	static bool prefer_meta_over_ctrl();
 

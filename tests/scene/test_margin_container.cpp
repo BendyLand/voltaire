@@ -42,7 +42,7 @@ namespace TestMarginContainer {
 
 TEST_CASE("[SceneTree][MarginContainer] Default margins and layout") {
 	MarginContainer *margin_container = memnew(MarginContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(margin_container);
 
 	Control *child_control = memnew(Control);
@@ -50,7 +50,7 @@ TEST_CASE("[SceneTree][MarginContainer] Default margins and layout") {
 	margin_container->add_child(child_control);
 
 	margin_container->set_size(Size2(100, 80));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			margin_container->get_margin_size(SIDE_LEFT) == 0,
@@ -86,7 +86,7 @@ TEST_CASE("[SceneTree][MarginContainer] Default margins and layout") {
 
 TEST_CASE("[SceneTree][MarginContainer] Custom margins affect layout and minimum size") {
 	MarginContainer *margin_container = memnew(MarginContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(margin_container);
 
 	margin_container->add_theme_constant_override("margin_left", 10);
@@ -99,7 +99,7 @@ TEST_CASE("[SceneTree][MarginContainer] Custom margins affect layout and minimum
 	margin_container->add_child(child_control);
 
 	margin_container->set_size(Size2(200, 150));
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			child_control->get_position().is_equal_approx(Point2(10, 20)),
@@ -119,7 +119,7 @@ TEST_CASE("[SceneTree][MarginContainer] Custom margins affect layout and minimum
 
 TEST_CASE("[SceneTree][MarginContainer] Multiple children use maximum minimum size") {
 	MarginContainer *margin_container = memnew(MarginContainer);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(margin_container);
 
 	margin_container->add_theme_constant_override("margin_left", 1);
@@ -133,7 +133,7 @@ TEST_CASE("[SceneTree][MarginContainer] Multiple children use maximum minimum si
 	child_control_2->set_custom_minimum_size(Size2(20, 50));
 	margin_container->add_child(child_control_1);
 	margin_container->add_child(child_control_2);
-	SceneTree::get_singleton()->process(0);
+	SceneTree::process(0);
 
 	CHECK_MESSAGE(
 			margin_container->get_minimum_size().is_equal_approx(Size2(44, 56)),

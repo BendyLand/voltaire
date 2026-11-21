@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/io/dir_access.h"
-#include "core/io/resource_loader_constants.h"
+#include "core/io/resource_loader.h"
 #include "core/os/semaphore.h"
 #include "core/os/thread.h"
 #include "core/os/thread_safe.h"
@@ -42,8 +42,6 @@
 
 class ResourceFormatImporter;
 class FileAccess;
-
-struct EditorProgressBG;
 
 class EditorFileSystemDirectory
 {
@@ -120,10 +118,6 @@ public:
 	~EditorFileSystemDirectory();
 };
 
-class EditorFileSystemImportFormatSupportQuery : public RefCounted
-{
-};
-
 class EditorFileSystem : public Node
 {
 	_THREAD_SAFE_CLASS_
@@ -186,7 +180,7 @@ class EditorFileSystem : public Node
 
 	EditorFileSystemDirectory* filesystem = nullptr;
 
-	static EditorFileSystem* singleton;
+
 
 	using ScriptClassInfo = EditorFileSystemDirectory::FileInfo::ScriptClassInfo;
 
@@ -213,7 +207,6 @@ class EditorFileSystem : public Node
 	{
 		float hi = 0;
 		int current = 0;
-		EditorProgressBG* progress = nullptr;
 		void increment();
 	};
 
@@ -270,22 +263,18 @@ class EditorFileSystem : public Node
 		}
 	};
 
-	struct ScriptClassInfoUpdate : public ScriptClassInfo
+	struct ScriptClassInfoUpdate
 	{
+		ScriptClassInfo class_info;
 		String type;
 		ScriptClassInfoUpdate() = default;
 
-		explicit ScriptClassInfoUpdate(const ScriptClassInfo& p_info) : ScriptClassInfo(p_info) {}
+		explicit ScriptClassInfoUpdate(const ScriptClassInfo& p_info) : class_info(p_info) {}
 
 		static ScriptClassInfoUpdate from_file_info(const EditorFileSystemDirectory::FileInfo* p_fi)
 		{
-			ScriptClassInfoUpdate update;
+			ScriptClassInfoUpdate update(p_fi->class_info);
 			update.type = p_fi->type;
-			update.name = p_fi->class_info.name;
-			update.extends = p_fi->class_info.extends;
-			update.icon_path = p_fi->class_info.icon_path;
-			update.is_abstract = p_fi->class_info.is_abstract;
-			update.is_tool = p_fi->class_info.is_tool;
 			return update;
 		}
 	};
@@ -324,30 +313,35 @@ class EditorFileSystem : public Node
 		const String& p_path, bool p_generate);
 
 	bool _scan_extensions();
-	bool _scan_import_support(const Vector<String>& reimports);
-
-	Vector<Ref<EditorFileSystemImportFormatSupportQuery>> import_support_queries;
 
 	String _get_file_by_class_name(EditorFileSystemDirectory* p_dir, const String& p_class_name,
 		EditorFileSystemDirectory::FileInfo*& r_file_info);
 
 public:
-	static EditorFileSystem* get_singleton() { return singleton; }
+	static inline EditorFileSystem* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
 
-	EditorFileSystemDirectory* get_filesystem();
-	bool is_scanning() const;
+	EditorFileSystemDirectory* _impl_get_filesystem();
+	static EditorFileSystemDirectory* get_filesystem();
+	bool _impl_is_scanning() const;
+	static bool is_scanning();
 
 	bool is_importing() const { return importing; }
 
-	bool doing_first_scan() const { return first_scan; }
+	bool _impl_doing_first_scan() const { return first_scan; }
+	static bool doing_first_scan() { return instance->_impl_doing_first_scan(); }
 
 	float get_scanning_progress() const;
 	HashSet<String> get_valid_extensions() const;
 
-	EditorFileSystemDirectory* get_filesystem_path(const String& p_path);
-	String get_file_type(const String& p_file) const;
-	EditorFileSystemDirectory* find_file(const String& p_file, int* r_index) const;
-	ResourceUID::ID get_file_uid(const String& p_path) const;
+	EditorFileSystemDirectory* _impl_get_filesystem_path(const String& p_path);
+	static EditorFileSystemDirectory* get_filesystem_path(const String& p_path);
+	String _impl_get_file_type(const String& p_file) const;
+	static String get_file_type(const String& p_file);
+	EditorFileSystemDirectory* _impl_find_file(const String& p_file, int* r_index) const;
+	static EditorFileSystemDirectory* find_file(const String& p_file, int* r_index);
+	ResourceUID::ID _impl_get_file_uid(const String& p_path) const;
+	static ResourceUID::ID get_file_uid(const String& p_path);
 
 	bool is_group_file(const String& p_path) const;
 
@@ -355,8 +349,6 @@ public:
 
 	static void scan_for_uid();
 
-	void add_import_format_support_query(Ref<EditorFileSystemImportFormatSupportQuery> p_query);
-	void remove_import_format_support_query(Ref<EditorFileSystemImportFormatSupportQuery> p_query);
 	EditorFileSystem() = default;
 	~EditorFileSystem();
 };

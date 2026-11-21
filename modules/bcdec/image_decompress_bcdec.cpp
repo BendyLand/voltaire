@@ -28,8 +28,24 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
+// --- Inlined from modules/bcdec/image_decompress_bcdec.h ---
+#include "core/io/image.h"
 
-#include "image_decompress_bcdec.h"
+enum BCdecFormat {
+	BCdec_BC1,
+	BCdec_BC2,
+	BCdec_BC3,
+	BCdec_BC4,
+	BCdec_BC5,
+	BCdec_BC6S,
+	BCdec_BC6U,
+	BCdec_BC7,
+};
+
+void image_decompress_bcdec(Image *p_image);
+
+// --- End modules/bcdec/image_decompress_bcdec.h ---
+#include "register_types.h"
 
 #include "core/os/os.h"
 #include "core/string/print_string.h"
@@ -301,4 +317,19 @@ void image_decompress_bcdec(Image *p_image) {
 
 	print_verbose(vformat("bcdec: Decompression of a %dx%d %s image with %d mipmaps took %d ms.",
 			p_image->get_width(), p_image->get_height(), Image::get_format_name(source_format), p_image->get_mipmap_count(), OS::get_ticks_msec() - start_time));
+}
+
+void initialize_bcdec_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	Image::_image_decompress_bc = image_decompress_bcdec;
+	Image::_image_decompress_bptc = image_decompress_bcdec;
+}
+
+void uninitialize_bcdec_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
 }

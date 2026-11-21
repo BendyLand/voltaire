@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "servers/display/display_server_headless.h"
+#include "servers/display/display_server.h"
 
 // Specialized DisplayServer for unittests based on DisplayServerHeadless, that
 // additionally supports things like mouse enter/exit events and clipboard.
@@ -49,7 +49,7 @@ private:
 	String primary_clipboard_text;
 
 	static Vector<String> get_rendering_drivers_func();
-	static DisplayServer *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
 
 	void _set_mouse_position(const Point2i &p_position);
 	void _set_window_over(bool p_over);
@@ -91,7 +91,7 @@ public:
 	}
 
 	static void register_mock_driver() {
-		register_create_function("mock", create_func, get_rendering_drivers_func);
+		DisplayServer::register_create_function("mock", create_func, get_rendering_drivers_func);
 	}
 };
 
@@ -105,16 +105,15 @@ public:
 // SEND_GUI_MOUSE_MOTION_EVENT - takes a position, mouse mask and modifiers e.g SEND_GUI_MOUSE_MOTION_EVENT(Vector2(50, 50), MouseButtonMask::LEFT, KeyModifierMask::META);
 // SEND_GUI_DOUBLE_CLICK - takes a position and modifiers. e.g SEND_GUI_DOUBLE_CLICK(Vector2(50, 50), KeyModifierMask::META);
 
-#define _SEND_DISPLAYSERVER_EVENT(m_event) ((DisplayServerMock *)(DisplayServer::get_singleton()))->simulate_event(m_event);
+#define _SEND_DISPLAYSERVER_EVENT(m_event) DisplayServer::driver_as<DisplayServerMock>()->simulate_event(m_event);
 
 #define SEND_GUI_ACTION(m_action) \
 	{ \
-		const List<Ref<InputEvent>> *events = InputMap::get_singleton()->action_get_events(m_action); \
+		const List<Ref<InputEvent>> *events = InputMap::action_get_events(m_action); \
 		const List<Ref<InputEvent>>::Element *first_event = events->front(); \
 		Ref<InputEventKey> event = first_event->get()->duplicate(); \
 		event->set_pressed(true); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define SEND_GUI_KEY_EVENT(m_input) \
@@ -122,7 +121,6 @@ public:
 		Ref<InputEventKey> event = InputEventKey::create_reference(m_input); \
 		event->set_pressed(true); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define SEND_GUI_KEY_UP_EVENT(m_input) \
@@ -130,7 +128,6 @@ public:
 		Ref<InputEventKey> event = InputEventKey::create_reference(m_input); \
 		event->set_pressed(false); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define _UPDATE_EVENT_MODIFIERS(m_event, m_modifiers) \
@@ -160,7 +157,6 @@ public:
 	{ \
 		_CREATE_GUI_MOUSE_EVENT(m_screen_pos, m_input, m_mask, m_modifiers); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define SEND_GUI_MOUSE_BUTTON_RELEASED_EVENT(m_screen_pos, m_input, m_mask, m_modifiers) \
@@ -168,7 +164,6 @@ public:
 		_CREATE_GUI_MOUSE_EVENT(m_screen_pos, m_input, m_mask, m_modifiers); \
 		event->set_pressed(false); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 #define SEND_GUI_DOUBLE_CLICK(m_screen_pos, m_modifiers) \
@@ -176,7 +171,6 @@ public:
 		_CREATE_GUI_MOUSE_EVENT(m_screen_pos, MouseButton::LEFT, MouseButtonMask::NONE, m_modifiers); \
 		event->set_double_click(true); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}
 
 // We toggle _print_error_enabled to prevent display server not supported warnings.
@@ -190,7 +184,6 @@ public:
 		event->set_button_mask(m_mask); \
 		_UPDATE_EVENT_MODIFIERS(event, m_modifiers); \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 		CoreGlobals::print_error_enabled = errors_enabled; \
 	}
 
@@ -198,5 +191,4 @@ public:
 	{ \
 		_CREATE_GUI_TOUCH_EVENT(m_screen_pos, m_pressed, m_double) \
 		_SEND_DISPLAYSERVER_EVENT(event); \
-		MessageQueue::get_singleton()->flush(); \
 	}

@@ -44,7 +44,7 @@ TEST_CASE("[SceneTree][Button] is_hovered()") {
 	// Create new button instance.
 	Button *button = memnew(Button);
 	CHECK(button != nullptr);
-	Window *root = SceneTree::get_singleton()->get_root();
+	Window *root = SceneTree::get_root();
 	root->add_child(button);
 
 	// Set up button's size and position.

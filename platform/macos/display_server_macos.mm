@@ -158,8 +158,8 @@ DisplayServerEnums::WindowID DisplayServerMacOS::_create_window(DisplayServerEnu
 		[wd.window_object setRestorable:NO];
 		[wd.window_object setColorSpace:[NSColorSpace sRGBColorSpace]];
 
-		if (!AccessibilityServer::get_singleton()->window_create(id, (__bridge void *)wd.window_object)) {
-			if (OS::get_singleton()->is_stdout_verbose()) {
+		if (!AccessibilityServer::window_create(id, (__bridge void *)wd.window_object)) {
+			if (OS::is_stdout_verbose()) {
 				ERR_PRINT("Can't create an accessibility adapter for window, accessibility support disabled!");
 			}
 		}
@@ -207,7 +207,7 @@ DisplayServerEnums::WindowID DisplayServerMacOS::_create_window(DisplayServerEnu
 			Error err = rendering_context->window_create(window_id_counter, &wpd);
 
 			if (err != OK) {
-				AccessibilityServer::get_singleton()->window_destroy(id);
+				AccessibilityServer::window_destroy(id);
 			}
 
 			ERR_FAIL_COND_V_MSG(err != OK, DisplayServerEnums::INVALID_WINDOW_ID, vformat("Can't create a %s context", rendering_driver));
@@ -234,7 +234,7 @@ DisplayServerEnums::WindowID DisplayServerMacOS::_create_window(DisplayServerEnu
 		}
 #endif
 		if (gl_failed) {
-			AccessibilityServer::get_singleton()->window_destroy(id);
+			AccessibilityServer::window_destroy(id);
 
 			windows.erase(id);
 			ERR_FAIL_V_MSG(DisplayServerEnums::INVALID_WINDOW_ID, "Can't create an OpenGL context.");
@@ -328,7 +328,7 @@ void DisplayServerMacOS::set_window_per_pixel_transparency_enabled(bool p_enable
 	ERR_FAIL_COND(!windows.has(p_window));
 	WindowData &wd = windows[p_window];
 
-	if (!OS::get_singleton()->is_layered_allowed()) {
+	if (!OS::is_layered_allowed()) {
 		return;
 	}
 	if (p_enabled) {
@@ -419,7 +419,7 @@ Point2i DisplayServerMacOS::_get_native_screen_position(int p_screen) const {
 }
 
 void DisplayServerMacOS::_displays_arrangement_changed(CGDirectDisplayID display_id, CGDisplayChangeSummaryFlags flags, void *user_info) {
-	DisplayServerMacOS *ds = (DisplayServerMacOS *)DisplayServer::get_singleton();
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
 	if (ds) {
 		ds->displays_arrangement_dirty = true;
 	}
@@ -454,7 +454,9 @@ void DisplayServerMacOS::mouse_exit_window(DisplayServerEnums::WindowID p_window
 }
 
 void DisplayServerMacOS::_dispatch_input_events(const Ref<InputEvent> &p_event) {
-	((DisplayServerMacOS *)(get_singleton()))->_dispatch_input_event(p_event);
+	if (DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>()) {
+		ds->_dispatch_input_event(p_event);
+	}
 }
 
 void DisplayServerMacOS::_dispatch_input_event(const Ref<InputEvent> &p_event) {
@@ -504,7 +506,7 @@ void DisplayServerMacOS::_dispatch_input_event(const Ref<InputEvent> &p_event) {
 
 void DisplayServerMacOS::_push_input(const Ref<InputEvent> &p_event) {
 	Ref<InputEvent> ev = p_event;
-	Input::get_singleton()->parse_input_event(ev);
+	Input::parse_input_event(ev);
 }
 
 void DisplayServerMacOS::_process_key_events() {
@@ -657,7 +659,7 @@ void DisplayServerMacOS::send_event(NSEvent *p_event) {
 			k->set_key_label(Key::PERIOD);
 			k->set_echo([p_event isARepeat]);
 
-			Input::get_singleton()->parse_input_event(k);
+			Input::parse_input_event(k);
 			return;
 		}
 
@@ -674,7 +676,7 @@ void DisplayServerMacOS::send_event(NSEvent *p_event) {
 			k->set_key_label(Key::TAB);
 			k->set_echo([p_event isARepeat]);
 
-			Input::get_singleton()->parse_input_event(k);
+			Input::parse_input_event(k);
 			return;
 		}
 	}
@@ -696,16 +698,16 @@ void DisplayServerMacOS::send_window_event_by_id(DisplayServerEnums::WindowEvent
 
 void DisplayServerMacOS::release_pressed_events() {
 	_THREAD_SAFE_METHOD_
-	if (Input::get_singleton()) {
-		Input::get_singleton()->release_pressed_events();
+	if (Input::is_initialized()) {
+		Input::release_pressed_events();
 	}
 }
 
 void DisplayServerMacOS::sync_mouse_state() {
 	_THREAD_SAFE_METHOD_
-	if (Input::get_singleton()) {
-		Vector2i pos = Input::get_singleton()->get_mouse_position();
-		BitField<MouseButtonMask> in_mask = Input::get_singleton()->get_mouse_button_mask();
+	if (Input::is_initialized()) {
+		Vector2i pos = Input::get_mouse_position();
+		BitField<MouseButtonMask> in_mask = Input::get_mouse_button_mask();
 		BitField<MouseButtonMask> ds_mask = mouse_get_button_state();
 		for (int btn = (int)MouseButton::LEFT; btn <= (int)MouseButton::MB_XBUTTON2; btn++) {
 			MouseButtonMask mbm = mouse_button_to_mask(MouseButton(btn));
@@ -717,7 +719,7 @@ void DisplayServerMacOS::sync_mouse_state() {
 				mb->set_position(pos);
 				mb->set_global_position(pos);
 				mb->set_button_mask(ds_mask);
-				Input::get_singleton()->parse_input_event(mb);
+				Input::parse_input_event(mb);
 			}
 			if (!in_mask.has_flag(mbm) && ds_mask.has_flag(mbm)) {
 				Ref<InputEventMouseButton> mb;
@@ -727,7 +729,7 @@ void DisplayServerMacOS::sync_mouse_state() {
 				mb->set_position(pos);
 				mb->set_global_position(pos);
 				mb->set_button_mask(ds_mask);
-				Input::get_singleton()->parse_input_event(mb);
+				Input::parse_input_event(mb);
 			}
 		}
 	}
@@ -745,7 +747,7 @@ void DisplayServerMacOS::update_mouse_pos(DisplayServerMacOS::WindowData &p_wd, 
 	const float scale = screen_get_max_scale();
 	p_wd.mouse_pos.x = p_location_in_window.x * scale;
 	p_wd.mouse_pos.y = (content_rect.size.height - p_location_in_window.y) * scale;
-	Input::get_singleton()->set_mouse_position(p_wd.mouse_pos);
+	Input::set_mouse_position(p_wd.mouse_pos);
 }
 
 void DisplayServerMacOS::pop_last_key_event() {
@@ -791,7 +793,7 @@ void DisplayServerMacOS::window_destroy(DisplayServerEnums::WindowID p_window) {
 		rendering_context->window_destroy(p_window);
 	}
 #endif
-	AccessibilityServer::get_singleton()->window_destroy(p_window);
+	AccessibilityServer::window_destroy(p_window);
 
 	windows.erase(p_window);
 
@@ -857,7 +859,7 @@ bool DisplayServerMacOS::has_feature(DisplayServerEnums::Feature p_feature) cons
 		case DisplayServerEnums::FEATURE_HDR_OUTPUT:
 			return true;
 		case DisplayServerEnums::FEATURE_ACCESSIBILITY_SCREEN_READER: {
-			return AccessibilityServer::get_singleton()->is_supported();
+			return AccessibilityServer::is_supported();
 		} break;
 		default: {
 		}
@@ -966,7 +968,7 @@ Error DisplayServerMacOS::_file_dialog_with_options_show(const String &p_title, 
 		void (^completion_handler)(NSInteger ret) = ^(NSInteger ret) {
 			if (ret == NSModalResponseOK) {
 				// Save bookmark for folder.
-				if (OS::get_singleton()->is_sandboxed()) {
+				if (OS::is_sandboxed()) {
 					NSArray *bookmarks = [[NSUserDefaults standardUserDefaults] arrayForKey:@"sec_bookmarks"];
 					bool skip = false;
 					for (id bookmark in bookmarks) {
@@ -1051,7 +1053,7 @@ Error DisplayServerMacOS::_file_dialog_with_options_show(const String &p_title, 
 				}
 			}
 			if (p_window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-				callable_mp(DisplayServer::get_singleton(), &DisplayServer::window_move_to_foreground).call_deferred(p_window_id);
+				callable_mp_static(&DisplayServer::window_move_to_foreground).call_deferred(p_window_id);
 			}
 		};
 		if (nswindow) {
@@ -1082,7 +1084,7 @@ Error DisplayServerMacOS::_file_dialog_with_options_show(const String &p_title, 
 			if (ret == NSModalResponseOK) {
 				// Save bookmark for folder.
 				NSArray *urls = [(NSOpenPanel *)panel URLs];
-				if (OS::get_singleton()->is_sandboxed()) {
+				if (OS::is_sandboxed()) {
 					NSArray *bookmarks = [[NSUserDefaults standardUserDefaults] arrayForKey:@"sec_bookmarks"];
 					NSMutableArray *new_bookmarks = [bookmarks mutableCopy];
 					for (NSUInteger i = 0; i != [urls count]; ++i) {
@@ -1172,7 +1174,7 @@ Error DisplayServerMacOS::_file_dialog_with_options_show(const String &p_title, 
 				}
 			}
 			if (p_window_id != DisplayServerEnums::INVALID_WINDOW_ID) {
-				callable_mp(DisplayServer::get_singleton(), &DisplayServer::window_move_to_foreground).call_deferred(p_window_id);
+				callable_mp_static(&DisplayServer::window_move_to_foreground).call_deferred(p_window_id);
 			}
 		};
 		if (nswindow) {
@@ -1495,7 +1497,7 @@ float DisplayServerMacOS::screen_get_scale(int p_screen) const {
 	int screen_count = get_screen_count();
 	ERR_FAIL_INDEX_V(p_screen, screen_count, 1.0f);
 
-	if (OS::get_singleton()->is_hidpi_allowed()) {
+	if (OS::is_hidpi_allowed()) {
 		NSArray<NSScreen *> *screens = NSScreen.screens;
 		NSUInteger index = (NSUInteger)p_screen;
 		if (index < screens.count) {
@@ -3291,7 +3293,7 @@ void DisplayServerMacOS::_process_events(bool p_pump) {
 
 	if (!drop_events) {
 		_process_key_events();
-		Input::get_singleton()->flush_buffered_events();
+		Input::flush_buffered_events();
 	}
 
 	_THREAD_SAFE_LOCK_
@@ -3544,20 +3546,20 @@ bool DisplayServerMacOS::is_window_transparency_available() const {
 		return false;
 	}
 #endif
-	return OS::get_singleton()->is_layered_allowed();
+	return OS::is_layered_allowed();
 }
 
-DisplayServer *DisplayServerMacOS::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
-	DisplayServer *ds = memnew(DisplayServerMacOS(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
+DisplayServerDriver *DisplayServerMacOS::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
+	DisplayServerDriver *ds = memnew(DisplayServerMacOS(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error));
 	if (r_error != OK) {
 		if (p_rendering_driver == "vulkan") {
 			String executable_command;
-			if (OS::get_singleton()->get_bundle_resource_dir() == OS::get_singleton()->get_executable_path().get_base_dir()) {
-				executable_command = vformat("\"%s\" --rendering-driver opengl3", OS::get_singleton()->get_executable_path());
+			if (OS::get_bundle_resource_dir() == OS::get_executable_path().get_base_dir()) {
+				executable_command = vformat("\"%s\" --rendering-driver opengl3", OS::get_executable_path());
 			} else {
-				executable_command = vformat("open \"%s\" --args --rendering-driver opengl3", OS::get_singleton()->get_bundle_resource_dir().path_join("../..").simplify_path());
+				executable_command = vformat("open \"%s\" --args --rendering-driver opengl3", OS::get_bundle_resource_dir().path_join("../..").simplify_path());
 			}
-			OS::get_singleton()->alert(
+			OS::alert(
 					vformat("Your video card drivers seem not to support the required Vulkan version.\n\n"
 							"If possible, consider updating your macOS version or using the OpenGL 3 driver.\n\n"
 							"You can enable the OpenGL 3 driver by starting the engine from the\n"
@@ -3565,7 +3567,7 @@ DisplayServer *DisplayServerMacOS::create_func(const String &p_rendering_driver,
 							executable_command),
 					"Unable to initialize Vulkan video driver");
 		} else {
-			OS::get_singleton()->alert(
+			OS::alert(
 					"Your video card drivers seem not to support the required OpenGL 3.3 version.\n\n"
 					"If possible, consider updating your macOS version.",
 					"Unable to initialize OpenGL video driver");
@@ -3595,7 +3597,7 @@ Vector<String> DisplayServerMacOS::get_rendering_drivers_func() {
 }
 
 void DisplayServerMacOS::register_macos_driver() {
-	register_create_function("macos", create_func, get_rendering_drivers_func);
+	DisplayServer::register_create_function("macos", create_func, get_rendering_drivers_func);
 }
 
 DisplayServerEnums::WindowID DisplayServerMacOS::window_get_active_popup() const {
@@ -3666,7 +3668,7 @@ void DisplayServerMacOS::popup_open(DisplayServerEnums::WindowID p_window) {
 			// Inform OS that popup was opened, to close other native popups.
 			[[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.apple.HIToolbox.beginMenuTrackingNotification" object:@"org.godotengine.godot.popup_window"];
 		}
-		time_since_popup = OS::get_singleton()->get_ticks_msec();
+		time_since_popup = OS::get_ticks_msec();
 		popup_list.push_back(p_window);
 	}
 }
@@ -3710,7 +3712,7 @@ bool DisplayServerMacOS::mouse_process_popups(bool p_close) {
 			[[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.apple.HIToolbox.endMenuTrackingNotification" object:@"org.godotengine.godot.popup_window"];
 		}
 	} else {
-		uint64_t delta = OS::get_singleton()->get_ticks_msec() - time_since_popup;
+		uint64_t delta = OS::get_ticks_msec() - time_since_popup;
 		if (delta < 250) {
 			return false;
 		}
@@ -3746,7 +3748,7 @@ bool DisplayServerMacOS::mouse_process_popups(bool p_close) {
 }
 
 DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
-	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
+	Input::set_event_dispatch_function(_dispatch_input_events);
 
 	r_error = OK;
 
@@ -3871,7 +3873,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 	// Metal rendering driver not available on Intel.
 	if (rendering_driver == "metal") {
 		rendering_driver = "vulkan";
-		OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+		OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 	}
 #endif
 	if (rendering_driver == "vulkan") {
@@ -3893,8 +3895,8 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 			if (fallback_to_opengl3 && rendering_driver != "opengl3") {
 				WARN_PRINT("Your device does not seem to support MoltenVK or Metal, switching to OpenGL 3.");
 				rendering_driver = "opengl3";
-				OS::get_singleton()->set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
-				OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_method("gl_compatibility", OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 			} else
 #endif
 			{
@@ -3907,7 +3909,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 
 #if defined(GLES3_ENABLED)
 #if defined(ANGLE_ENABLED)
-	if (rendering_driver == "opengl3" && OS::get_singleton()->get_processor_name().contains("Virtual")) {
+	if (rendering_driver == "opengl3" && OS::get_processor_name().contains("Virtual")) {
 		WARN_PRINT("Virtual Machine detected, switching to ANGLE.");
 		rendering_driver = "opengl3_angle";
 	}
@@ -3916,7 +3918,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 		if (gl_manager_angle->initialize() != OK || gl_manager_angle->open_display(nullptr) != OK) {
 			memdelete(gl_manager_angle);
 			gl_manager_angle = nullptr;
-			if (OS::get_singleton()->get_processor_name().contains("Virtual")) {
+			if (OS::get_processor_name().contains("Virtual")) {
 				r_error = ERR_UNAVAILABLE;
 				ERR_FAIL_MSG("Could not initialize ANGLE OpenGL.");
 			}
@@ -3924,7 +3926,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 			if (fallback) {
 				WARN_PRINT("Your video card drivers seem not to support GLES3 / ANGLE, switching to native OpenGL.");
 				rendering_driver = "opengl3";
-				OS::get_singleton()->set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
+				OS::set_current_rendering_driver_name(rendering_driver, OS::RENDERING_SOURCE_FALLBACK);
 			} else {
 				r_error = ERR_UNAVAILABLE;
 				ERR_FAIL_MSG("Could not initialize ANGLE OpenGL.");
@@ -3932,7 +3934,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 		}
 	}
 #else
-	if (rendering_driver == "opengl3" && OS::get_singleton()->get_processor_name().contains("Virtual")) {
+	if (rendering_driver == "opengl3" && OS::get_processor_name().contains("Virtual")) {
 		r_error = ERR_UNAVAILABLE;
 		ERR_FAIL_MSG("Virtual Machine detected, could not initialize OpenGL.");
 	}
@@ -4010,7 +4012,7 @@ DisplayServerMacOS::~DisplayServerMacOS() {
 
 	// Destroy native menu.
 	if (native_menu) {
-		memdelete(native_menu);
+		NativeMenu::finalize();
 		native_menu = nullptr;
 	}
 

@@ -36,16 +36,13 @@
 #include "core/io/resource.h"
 #include "core/os/thread_safe.h"
 
-class EditorPlugin;
-
-class EditorSettings : public Resource
+class EditorSettings final
 {
-	_THREAD_SAFE_CLASS_
+	static inline BinaryMutex _thread_safe_mutex;
 
 public:
 	struct Plugin
 	{
-		EditorPlugin* instance = nullptr;
 		String path;
 		String name;
 		String author;
@@ -72,46 +69,46 @@ public:
 	};
 
 private:
-	static Ref<EditorSettings> singleton;
+	struct Data
+	{
+		HashSet<String> changed_settings;
+		String auto_language;
 
-	HashSet<String> changed_settings;
-	mutable String auto_language;
+		Ref<ConfigFile> project_metadata;
+		bool project_metadata_dirty = false;
+		int last_order = 0;
 
-	mutable Ref<ConfigFile> project_metadata;
-	bool project_metadata_dirty = false;
-	int last_order;
+		Ref<Resource> clipboard;
+		HashMap<String, Ref<Shortcut>> shortcuts;
+		HashMap<String, List<InputEvent>> builtin_action_overrides;
 
-	Ref<Resource> clipboard;
-	mutable HashMap<String, Ref<Shortcut>> shortcuts;
-	HashMap<String, List<Ref<InputEvent>>> builtin_action_overrides;
+		Vector<String> favorites;
+		HashMap<String, PackedStringArray> favorite_properties;
+		Vector<String> recent_dirs;
 
-	Vector<String> favorites;
-	HashMap<String, PackedStringArray> favorite_properties;
-	Vector<String> recent_dirs;
-
-	bool save_changed_setting = true;
-	bool optimize_save = true; // do not save stuff that came from config but was not set from
-							   // engine
-	bool initialized = false;
-
-	bool _property_can_revert(const String& p_name) const;
-
-	void _set_initialized();
-	void _load_defaults(Ref<ConfigFile> p_extra_config = Ref<ConfigFile>());
-	void _load_default_visual_shader_editor_theme();
-	static String _guess_exec_args_for_extenal_editor(const String& p_value);
-	const String _get_project_metadata_path() const;
+		bool save_changed_setting = true;
+		bool optimize_save = true;
+		bool initialized = false;
 #ifndef DISABLE_DEPRECATED
-	HashMap<String, String> compat_map;
-	void _handle_setting_compatibility();
-	void _rename_setting(const String& p_old_name, const String& p_new_name);
-	void _rename_shortcut(const String& p_old_path, const String& p_new_path);
+		HashMap<String, String> compat_map;
+#endif
+	};
+
+	static bool _property_can_revert(const String& p_name);
+
+	static void _set_initialized();
+	static void _load_defaults(Ref<ConfigFile> p_extra_config = Ref<ConfigFile>());
+	static void _load_default_visual_shader_editor_theme();
+	static String _guess_exec_args_for_extenal_editor(const String& p_value);
+	static String _get_project_metadata_path();
+#ifndef DISABLE_DEPRECATED
+	static void _handle_setting_compatibility();
+	static void _rename_setting(const String& p_old_name, const String& p_new_name);
+	static void _rename_shortcut(const String& p_old_path, const String& p_new_path);
 #endif
 
 	// Bind helpers.
-	Vector<String> _get_shortcut_list();
-
-protected:
+	static Vector<String> _get_shortcut_list();
 
 public:
 	enum
@@ -119,78 +116,92 @@ public:
 		NOTIFICATION_EDITOR_SETTINGS_CHANGED = 10000
 	};
 
-	static EditorSettings* get_singleton();
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
 	static String get_existing_settings_path();
 	static String get_newest_settings_path();
 
-	static void create();
-	void init_shortcuts();
-	void setup_language(bool p_initial_setup);
-	void setup_network();
+	static void init_shortcuts();
+	static void setup_language(bool p_initial_setup);
+	static void setup_network();
 	static void save();
-	static void destroy();
-	void set_optimize_save(bool p_optimize);
+	static void set_optimize_save(bool p_optimize);
 
-	bool has_default_value(const String& p_setting) const;
-	bool has_setting(const String& p_setting) const;
-	void erase(const String& p_setting);
-	void raise_order(const String& p_setting);
-	void set_restart_if_changed(const String& p_setting, bool p_restart);
-	void set_basic(const String& p_setting, bool p_basic);
+	static bool has_default_value(const String& p_setting);
+	static bool has_setting(const String& p_setting);
+	static void erase(const String& p_setting);
+	static void raise_order(const String& p_setting);
+	static void set_restart_if_changed(const String& p_setting, bool p_restart);
+	static void set_basic(const String& p_setting, bool p_basic);
 
-	PackedStringArray get_changed_settings() const;
-	bool check_changed_settings_in_group(const String& p_setting_prefix) const;
-	void mark_setting_changed(const String& p_setting);
+	static PackedStringArray get_changed_settings();
+	static bool check_changed_settings_in_group(const String& p_setting_prefix);
+	static void mark_setting_changed(const String& p_setting);
 
-	void set_resource_clipboard(const Ref<Resource>& p_resource) { clipboard = p_resource; }
+	static void set_resource_clipboard(const Ref<Resource>& p_resource)
+	{
+		if (data) {
+			data->clipboard = p_resource;
+		}
+	}
 
-	Ref<Resource> get_resource_clipboard() const { return clipboard; }
+	static Ref<Resource> get_resource_clipboard()
+	{
+		return data ? data->clipboard : Ref<Resource>();
+	}
 
-	void save_project_metadata();
+	static void save_project_metadata();
 
-	void set_favorites(const Vector<String>& p_favorites, bool p_update_file_dialog = true);
-	void set_favorites_bind(const Vector<String>& p_favorites);
-	Vector<String> get_favorites() const;
-	Vector<String> get_favorite_folders() const;
-	void set_favorite_properties(const HashMap<String, PackedStringArray>& p_favorite_properties);
-	HashMap<String, PackedStringArray> get_favorite_properties() const;
-	void set_recent_dirs(const Vector<String>& p_recent_dirs, bool p_update_file_dialog = true);
-	void set_recent_dirs_bind(const Vector<String>& p_recent_dirs);
-	Vector<String> get_recent_dirs() const;
-	void load_favorites_and_recent_dirs();
+	static void set_favorites(const Vector<String>& p_favorites, bool p_update_file_dialog = true);
+	static void set_favorites_bind(const Vector<String>& p_favorites);
+	static Vector<String> get_favorites();
+	static Vector<String> get_favorite_folders();
+	static void set_favorite_properties(
+		const HashMap<String, PackedStringArray>& p_favorite_properties);
+	static HashMap<String, PackedStringArray> get_favorite_properties();
+	static void set_recent_dirs(
+		const Vector<String>& p_recent_dirs, bool p_update_file_dialog = true);
+	static void set_recent_dirs_bind(const Vector<String>& p_recent_dirs);
+	static Vector<String> get_recent_dirs();
+	static void load_favorites_and_recent_dirs();
 
 	static HashMap<String, Color> get_godot2_text_editor_theme();
 	static bool is_default_text_editor_theme(const String& p_theme_name);
-	void update_text_editor_themes_list();
+	static void update_text_editor_themes_list();
 
-	Vector<String> get_script_templates(
+	static Vector<String> get_script_templates(
 		const String& p_extension, const String& p_custom_path = String());
-	String get_editor_layouts_config() const;
+	static String get_editor_layouts_config();
 	static float get_auto_display_scale();
-	String get_language() const;
+	static String get_language();
 
-	void _add_shortcut_default(const String& p_path, const Ref<Shortcut>& p_shortcut);
-	void add_shortcut(const String& p_path, const Ref<Shortcut>& p_shortcut);
-	void remove_shortcut(const String& p_path);
-	bool is_shortcut(const String& p_path, const Ref<InputEvent>& p_event) const;
-	bool has_shortcut(const String& p_path) const;
-	Ref<Shortcut> get_shortcut(const String& p_path) const;
-	void get_shortcut_list(List<String>* r_shortcuts);
+	static void _add_shortcut_default(const String& p_path, const Ref<Shortcut>& p_shortcut);
+	static void add_shortcut(const String& p_path, const Ref<Shortcut>& p_shortcut);
+	static void remove_shortcut(const String& p_path);
+	static bool is_shortcut(const String& p_path, const InputEvent& p_event);
+	static bool has_shortcut(const String& p_path);
+	static Ref<Shortcut> get_shortcut(const String& p_path);
+	static void get_shortcut_list(List<String>* r_shortcuts);
 
-	void notify_changes();
+	static void notify_changes();
 
 #ifdef TOOLS_ENABLED
-	virtual void get_argument_options(
-		const String& p_function, int p_idx, List<String>* r_options) const;
+	static void get_argument_options(
+		const String& p_function, int p_idx, List<String>* r_options);
 #endif
 
-	EditorSettings();
+	EditorSettings() = delete;
+	~EditorSettings() = delete;
 };
 
 #define EDITOR_DEF(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val))
 #define EDITOR_DEF_RST(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val), true)
 #define EDITOR_DEF_BASIC(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val), false, true)
-#define ED_IS_SHORTCUT(p_name, p_ev) (EditorSettings::get_singleton()->is_shortcut(p_name, p_ev))
+#define ED_IS_SHORTCUT(p_name, p_ev) (EditorSettings::is_shortcut(p_name, p_ev))
 Ref<Shortcut> ED_SHORTCUT(
 	const String& p_path, const String& p_name, Key p_keycode = Key::NONE, bool p_physical = false);
 Ref<Shortcut> ED_SHORTCUT_ARRAY(const String& p_path, const String& p_name,
@@ -201,4 +212,13 @@ void ED_SHORTCUT_OVERRIDE_ARRAY(const String& p_path, const String& p_feature,
 	const PackedInt32Array& p_keycodes, bool p_physical = false);
 Ref<Shortcut> ED_GET_SHORTCUT(const String& p_path);
 
+// --- Folded from editor/translations/editor_translation.h ---
+#include "core/string/ustring.h"
+#include "core/templates/vector.h"
 
+Vector<String> get_editor_locales();
+void load_editor_translations(const String &p_locale);
+void load_doc_translations(const String &p_locale);
+Vector<Vector<String>> get_extractable_message_list();
+
+// --- End editor/translations/editor_translation.h ---

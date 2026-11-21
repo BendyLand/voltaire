@@ -37,6 +37,16 @@
 // IWYU pragma: begin_keep
 
 #ifdef VULKAN_ENABLED
+#include "servers/rendering/rendering_context_driver.h"
+#include "servers/rendering/rendering_shader_container.h"
+#endif
+
+#ifdef X11_ENABLED
+#define Window OpenXRX11Window
+#define Font OpenXRX11Font
+#endif
+
+#ifdef VULKAN_ENABLED
 #define XR_USE_GRAPHICS_API_VULKAN
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
 #endif // VULKAN_ENABLED
@@ -93,5 +103,31 @@
 
 // Include platform dependent structs.
 #include <openxr/openxr_platform.h>
+
+#ifdef X11_ENABLED
+#undef Font
+#undef Window
+#ifdef CursorShape
+#undef CursorShape
+#endif
+#ifdef None
+#undef None
+#endif
+#ifdef Status
+#undef Status
+#endif
+#ifdef Bool
+#undef Bool
+#endif
+#ifdef True
+#undef True
+#endif
+#ifdef False
+#undef False
+#endif
+#ifdef Always
+#undef Always
+#endif
+#endif // X11_ENABLED
 
 // IWYU pragma: end_keep

@@ -28,8 +28,17 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
+// --- Inlined from modules/astcenc/image_compress_astcenc.h ---
+#include "core/io/image.h"
 
-#include "image_compress_astcenc.h"
+#ifdef TOOLS_ENABLED
+void _compress_astc(Image *r_img, Image::UsedChannels p_channels, Image::CompressProfile p_profile);
+#endif
+
+void _decompress_astc(Image *r_img);
+
+// --- End modules/astcenc/image_compress_astcenc.h ---
+#include "register_types.h"
 
 #include "core/os/os.h"
 #include "core/string/print_string.h"
@@ -317,4 +326,22 @@ void _decompress_astc(Image *r_img) {
 	r_img->set_data(width, height, has_mipmaps, target_format, dest_data);
 
 	print_verbose(vformat("astcenc: Decompression took %d ms.", OS::get_ticks_msec() - start_time));
+}
+
+void initialize_astcenc_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+#ifdef TOOLS_ENABLED
+	Image::_image_compress_astc_func = _compress_astc;
+#endif
+
+	Image::_image_decompress_astc = _decompress_astc;
+}
+
+void uninitialize_astcenc_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
 }

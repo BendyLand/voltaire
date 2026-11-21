@@ -89,7 +89,7 @@ void CameraWindows::add_active_cameras() {
 	///@TODO scan through any active cameras and create CameraFeedWindows objects for them
 }
 
-CameraWindows::CameraWindows() {
+void CameraWindows::initialize() {
 	// Find cameras active right now
 	add_active_cameras();
 

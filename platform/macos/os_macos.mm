@@ -94,6 +94,11 @@ void OS_MacOS::initialize() {
 	crash_handler.initialize();
 
 	initialize_core();
+
+#ifdef COREMIDI_ENABLED
+	MIDIDriver::bind<MIDIDriverCoreMidi>();
+	MIDIDriver::initialize();
+#endif
 }
 
 String OS_MacOS::get_model_name() const {
@@ -234,7 +239,8 @@ void OS_MacOS::finalize() {
 	}
 
 #ifdef COREMIDI_ENABLED
-	midi_driver.close();
+	MIDIDriver::finalize();
+	MIDIDriver::reset_backend();
 #endif
 
 	delete_main_loop();
@@ -255,17 +261,8 @@ void OS_MacOS::initialize_joypads() {
 #endif
 }
 
-void OS_MacOS::set_main_loop(MainLoop *p_main_loop) {
-	main_loop = p_main_loop;
-}
-
 void OS_MacOS::delete_main_loop() {
-	if (!main_loop) {
-		return;
-	}
-
-	memdelete(main_loop);
-	main_loop = nullptr;
+	MainLoop::clear();
 }
 
 void OS_MacOS::set_cmdline_platform_args(const List<String> &p_args) {
@@ -280,14 +277,14 @@ void OS_MacOS::load_shell_environment() const {
 	static bool shell_env_loaded = false;
 	if (unlikely(!shell_env_loaded)) {
 		shell_env_loaded = true;
-		if (OS::get_singleton()->has_environment("TERM") || OS::get_singleton()->has_environment("__GODOT_SHELL_ENV_SET")) {
+		if (OS::has_environment("TERM") || OS::has_environment("__GODOT_SHELL_ENV_SET")) {
 			return; // Already started from terminal, or other the instance with the shell environment, do nothing.
 		}
 		String pipe;
 		List<String> args;
 		args.push_back("-c");
 		args.push_back(". /etc/zshrc;. /etc/zprofile;. ~/.zshenv;. ~/.zshrc;. ~/.zprofile;env");
-		Error err = OS::get_singleton()->execute("zsh", args, &pipe);
+		Error err = OS::execute("zsh", args, &pipe);
 		if (err == OK) {
 			Vector<String> env_vars = pipe.split("\n");
 			for (const String &E : env_vars) {
@@ -295,10 +292,10 @@ void OS_MacOS::load_shell_environment() const {
 				if (tags.size() != 2 || tags[0] == "SHELL" || tags[0] == "USER" || tags[0] == "COMMAND_MODE" || tags[0] == "TMPDIR" || tags[0] == "TERM_SESSION_ID" || tags[0] == "PWD" || tags[0] == "OLDPWD" || tags[0] == "SHLVL" || tags[0] == "HOME" || tags[0] == "DISPLAY" || tags[0] == "LOGNAME" || tags[0] == "TERM" || tags[0] == "COLORTERM" || tags[0] == "_" || tags[0].begins_with("__CF") || tags[0].begins_with("XPC_") || tags[0].begins_with("__GODOT")) {
 					continue;
 				}
-				OS::get_singleton()->set_environment(tags[0], tags[1]);
+				OS::set_environment(tags[0], tags[1]);
 			}
 		}
-		OS::get_singleton()->set_environment("__GODOT_SHELL_ENV_SET", "1");
+		OS::set_environment("__GODOT_SHELL_ENV_SET", "1");
 	}
 }
 
@@ -413,10 +410,6 @@ Error OS_MacOS::open_dynamic_library(const String &p_path, void *&p_library_hand
 	}
 
 	return OK;
-}
-
-MainLoop *OS_MacOS::get_main_loop() const {
-	return main_loop;
 }
 
 String OS_MacOS::get_config_path() const {
@@ -858,7 +851,7 @@ Error OS_MacOS::create_instance(const List<String> &p_arguments, ProcessID *r_ch
 	if (nsappname != nil) {
 		String path = String::utf8([[[NSBundle mainBundle] bundlePath] UTF8String]);
 #ifdef TOOLS_ENABLED
-		if (Engine::get_singleton() && !Engine::get_singleton()->is_project_manager_hint() && !Engine::get_singleton()->is_editor_hint()) {
+		if (!Engine::is_project_manager_hint() && !Engine::is_editor_hint()) {
 			// Project started from the editor, inject "path" argument to set instance working directory.
 			char cwd[PATH_MAX];
 			if (::getcwd(cwd, sizeof(cwd)) != nullptr) {
@@ -1086,12 +1079,11 @@ void OS_MacOS_NSApp::start_main() {
 			ret = Main::start();
 		}
 		if (ret == EXIT_SUCCESS) {
-			if (main_loop) {
+			if (MainLoop::is_active()) {
 				@autoreleasepool {
-					main_loop->initialize();
+					MainLoop::initialize();
 				}
-				DisplayServer *ds = DisplayServer::get_singleton();
-				DisplayServerMacOS *ds_mac = Object::cast_to<DisplayServerMacOS>(ds);
+				DisplayServerMacOS *ds_mac = DisplayServer::driver_as<DisplayServerMacOS>();
 
 				pre_wait_observer = CFRunLoopObserverCreateWithHandler(kCFAllocatorDefault, kCFRunLoopBeforeWaiting, true, 0, ^(CFRunLoopObserverRef observer, CFRunLoopActivity activity) {
 					@autoreleasepool {
@@ -1101,8 +1093,8 @@ void OS_MacOS_NSApp::start_main() {
 
 							if (ds_mac) {
 								ds_mac->_process_events(false);
-							} else if (ds) {
-								ds->process_events();
+							} else if (DisplayServer::is_initialized()) {
+								DisplayServer::process_events();
 							}
 #ifdef SDL_ENABLED
 							if (joypad_sdl) {
@@ -1149,8 +1141,8 @@ void OS_MacOS_NSApp::terminate() {
 }
 
 void OS_MacOS_NSApp::cleanup() {
-	if (main_loop) {
-		main_loop->finalize();
+	if (MainLoop::is_active()) {
+		MainLoop::finalize();
 	}
 	if (main_started) {
 		@autoreleasepool {
@@ -1206,16 +1198,16 @@ void OS_MacOS_Headless::run() {
 		ret = Main::start();
 	}
 
-	if (ret == EXIT_SUCCESS && main_loop) {
+	if (ret == EXIT_SUCCESS && MainLoop::is_active()) {
 		@autoreleasepool {
-			main_loop->initialize();
+			MainLoop::initialize();
 		}
 
 		while (true) {
 			@autoreleasepool {
 				@try {
-					if (Input::get_singleton()) {
-						Input::get_singleton()->flush_buffered_events();
+					if (Input::is_initialized()) {
+						Input::flush_buffered_events();
 					}
 
 					if (Main::iteration()) {
@@ -1229,7 +1221,7 @@ void OS_MacOS_Headless::run() {
 			}
 		}
 
-		main_loop->finalize();
+		MainLoop::finalize();
 	}
 
 	Main::cleanup();
@@ -1261,14 +1253,14 @@ void OS_MacOS_Embedded::run() {
 		ret = Main::start();
 	}
 
-	DisplayServerMacOSEmbedded *ds = Object::cast_to<DisplayServerMacOSEmbedded>(DisplayServer::get_singleton());
+	DisplayServerMacOSEmbedded *ds = DisplayServer::driver_as<DisplayServerMacOSEmbedded>();
 	if (!ds) {
 		ERR_FAIL_MSG("DisplayServerMacOSEmbedded is not initialized.");
 	}
 
-	if (ds && ret == EXIT_SUCCESS && main_loop) {
+	if (ds && ret == EXIT_SUCCESS && MainLoop::is_active()) {
 		@autoreleasepool {
-			main_loop->initialize();
+			MainLoop::initialize();
 		}
 
 		while (true) {
@@ -1295,7 +1287,7 @@ void OS_MacOS_Embedded::run() {
 			}
 		}
 
-		main_loop->finalize();
+		MainLoop::finalize();
 	}
 
 	Main::cleanup();

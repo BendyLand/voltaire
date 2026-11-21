@@ -54,12 +54,10 @@
 #include "core/math/vector3.h"
 #include "core/math/vector3i.h"
 #include "core/math/vector4.h"
-#include "core/math/vector4i.h"
 #include "core/math/projection.h"
 
 // Strings & Paths
 #include "core/string/node_path.h"
-#include "core/string/ustring.h"
 #include "core/string/ustring.h"
 
 // Core Identifiers & Handles

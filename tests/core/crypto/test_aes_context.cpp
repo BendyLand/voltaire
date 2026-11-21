@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_aes_context)
 
-#include "core/crypto/aes_context.h"
+#include "core/crypto/crypto.h"
 
 namespace TestAes_context {
 
