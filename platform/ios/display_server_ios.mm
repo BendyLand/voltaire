@@ -29,9 +29,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "display_server_ios.h"
+#import "platform/ios/os_ios.h"
 
-#import "device_metrics.h"
+#import "platform/ios/os_ios.h"
 
 #import <UIKit/UIKit.h>
 #import <sys/utsname.h>

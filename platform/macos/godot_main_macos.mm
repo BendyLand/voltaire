@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_application.h"
+#import "platform/macos/os_macos.h"
 #import "os_macos.h"
 
 #include "core/profiling/profiling.h"

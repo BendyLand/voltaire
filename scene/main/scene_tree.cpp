@@ -39,9 +39,9 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "scene/animation/tween.h"
+#include "scene/animation/animation_mixer.h"
 #include "scene/gui/control.h"
-#include "scene/main/multiplayer_api.h"
+#include "scene/main/scene_tree.h"
 #include "scene/main/node.h"
 #include "scene/main/viewport.h"
 #include "scene/main/window.h"
@@ -57,7 +57,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 
 #ifndef _3D_DISABLED
 #include "scene/3d/node_3d.h"
-#include "scene/resources/3d/world_3d.h"
+#include "scene/3d/node_3d.h"
 #endif // _3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
@@ -1757,7 +1757,7 @@ SceneTreeFTITests::SceneTreeFTITests()
 // Merged from scene/main/multiplayer_api.cpp
 // ==========================================================================
 
-#include "multiplayer_api.h"
+#include "scene/main/scene_tree.h"
 
 #include "core/io/marshalls.h"
 #include "modules/modules_enabled.gen.h"
@@ -2708,9 +2708,9 @@ void HTTPRequest::_defer_done(int p_status, int p_code, const PackedStringArray&
 #include "core/io/resource.h"
 #include "core/io/resource_loader.h"
 #include "core/string/print_string.h"
-#include "scene/animation/tween.h"
+#include "scene/animation/animation_mixer.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/multiplayer_api.h"
+#include "scene/main/scene_tree.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "scene/main/window.h"
@@ -5126,15 +5126,15 @@ Rect2 StatusIndicator::get_rect() const
 // ============================================================================
 
 #include "canvas_item.h"
-#include "scene/2d/camera_2d.h"
-#include "scene/main/canvas_layer.h"
+#include "scene/2d/node_2d.h"
+#include "scene/main/canvas_item.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/atlas_texture.h"
 #include "scene/resources/font.h"
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
-#include "scene/resources/multimesh.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/style_box.h"
 #include "scene/resources/world_2d.h"
 #include "servers/display/accessibility_server.h"
@@ -6320,7 +6320,7 @@ void CanvasItem::_bind_compatibility_methods() {}
 // Merged from scene/main/canvas_layer.cpp
 // ==========================================================================
 
-#include "canvas_layer.h"
+#include "scene/main/canvas_item.h"
 #include "scene/2d/line_2d.h"
 #include "scene/main/canvas_item.h"
 #include "scene/main/viewport.h"
@@ -6691,9 +6691,9 @@ void CanvasLayer::set_custom_viewport(Node*) {}
 #include "core/templates/sort_array.h"
 #include "scene/gui/control.h"
 #include "scene/gui/label.h"
-#include "scene/gui/popup.h"
+#include "scene/gui/popup_menu.h"
 #include "scene/gui/scroll_container.h"
-#include "scene/main/canvas_layer.h"
+#include "scene/main/canvas_item.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/mesh.h"
@@ -6704,12 +6704,12 @@ void CanvasLayer::set_custom_viewport(Node*) {}
 #include "servers/rendering/rendering_server_enums.h"
 
 // 2D.
-#include "scene/2d/camera_2d.h"
+#include "scene/2d/node_2d.h"
 #include "scene/resources/world_2d.h"
 
 #ifndef _3D_DISABLED
 #include "scene/3d/camera_3d.h"
-#include "scene/resources/3d/world_3d.h"
+#include "scene/3d/node_3d.h"
 #endif // _3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED

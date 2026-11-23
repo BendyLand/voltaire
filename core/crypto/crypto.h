@@ -31,7 +31,34 @@
 
 #pragma once
 
-#include "core/crypto/hashing_context.h"
+// --- Inlined/Folded from core/crypto/hashing_context.h ---
+#include "core/types.h"
+
+class HashingContext : public RefCounted
+{
+public:
+	enum HashType : int32_t
+	{
+		HASH_MD5,
+		HASH_SHA1,
+		HASH_SHA256
+	};
+
+private:
+	void* ctx = nullptr;
+	HashType type = HASH_MD5;
+
+protected:
+	void _create_ctx(HashType p_type);
+	void _delete_ctx();
+
+public:
+	Error start(HashType p_type);
+	Error update(const Vector<uint8_t>& p_chunk);
+	Vector<uint8_t> finish();
+
+	~HashingContext();
+};
 #include "core/io/resource.h"
 
 class CryptoKey : public Resource

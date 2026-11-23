@@ -807,7 +807,7 @@ void uninitialize_multiplayer_module(ModuleInitializationLevel p_level)
 
 #include "core/config/engine.h"
 #include "core/io/resource_loader.h"
-#include "scene/main/multiplayer_api.h"
+#include "scene/main/scene_tree.h"
 
 void MultiplayerSynchronizer::reset()
 {

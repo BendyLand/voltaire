@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "device_metrics.h"
+#import "platform/ios/os_ios.h"
 
 @implementation GDTDeviceMetrics
 

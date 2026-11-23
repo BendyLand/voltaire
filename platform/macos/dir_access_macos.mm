@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "dir_access_macos.h"
+#import "platform/macos/os_macos.h"
 
 #if defined(UNIX_ENABLED)
 

@@ -29,13 +29,224 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_driver_types.h"
+#include "main/main.h"
 
 #include "core/io/resource_saver.h"
-#include "drivers/png/image_loader_png.h"
+// --- Inlined/Folded from drivers/png/image_loader_png.h ---
+#include "core/io/image_loader.h"
+
+class ImageLoaderPNG : public ImageFormatLoader {
+private:
+	static Vector<uint8_t> lossless_pack_png(const Ref<Image> &p_image);
+	static Ref<Image> lossless_unpack_png(const Vector<uint8_t> &p_data);
+	static Ref<Image> unpack_mem_png(const uint8_t *p_png, int p_size);
+	static Ref<Image> load_mem_png(const uint8_t *p_png, int p_size);
+
+public:
+	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
+	virtual void get_recognized_extensions(List<String> *p_extensions) const;
+	ImageLoaderPNG();
+};
+
+// --- Folded from drivers/png/resource_saver_png.h ---
+#include "core/io/image.h"
+#include "core/io/resource_saver.h"
+
+class ResourceSaverPNG : public ResourceFormatSaver
+{
+public:
+	static Error save_image(const String& p_path, const Ref<Image>& p_img);
+	static Vector<uint8_t> save_image_to_buffer(const Ref<Image>& p_img);
+
+	virtual Error save(
+		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
+	virtual bool recognize(const Ref<Resource>& p_resource) const override;
+	virtual void get_recognized_extensions(
+		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
+
+	ResourceSaverPNG();
+};
+
+
+
+
+
+// --- End drivers/png/resource_saver_png.h ---
 
 #ifdef ACCESSKIT_ENABLED
-#include "drivers/accesskit/accessibility_server_accesskit.h"
+// --- Inlined/Folded from drivers/accesskit/accessibility_server_accesskit.h ---
+#ifdef ACCESSKIT_ENABLED
+
+#include <accesskit.h>
+#include "core/templates/rid_owner.h"
+#include "servers/display/accessibility_server.h"
+
+class AccessibilityServerAccessKit : public AccessibilityServerDriver
+{
+	static AccessibilityServerDriver* create_func(Error& r_error);
+
+	struct AccessibilityElement
+	{
+
+		DisplayServerEnums::WindowID window_id = DisplayServerEnums::INVALID_WINDOW_ID;
+		RID parent;
+		LocalVector<RID> children;
+		Vector3i run;
+		String name;
+		String name_extra_info;
+		int64_t flags = 0;
+
+		accesskit_role role = ACCESSKIT_ROLE_UNKNOWN;
+		accesskit_node* node = nullptr;
+	};
+
+	mutable RID_PtrOwner<AccessibilityElement> rid_owner{65536, 1048576};
+
+	struct WindowData
+	{
+		// Adapter.
+#ifdef WINDOWS_ENABLED
+		accesskit_windows_subclassing_adapter* adapter = nullptr;
+#endif
+#ifdef MACOS_ENABLED
+		accesskit_macos_subclassing_adapter* adapter = nullptr;
+#endif
+#ifdef LINUXBSD_ENABLED
+		accesskit_unix_adapter* adapter = nullptr;
+#endif
+
+		RID root_id;
+		bool initial_update_completed = false;
+		HashSet<RID> update;
+		bool activated = false;
+	};
+
+	RID focus;
+
+	HashMap<DisplayServerEnums::WindowID, WindowData> windows;
+
+	HashMap<AccessibilityServerEnums::AccessibilityRole, accesskit_role> role_map;
+	HashMap<AccessibilityServerEnums::AccessibilityAction, accesskit_action> action_map;
+
+	_FORCE_INLINE_ accesskit_role _accessibility_role(
+		AccessibilityServerEnums::AccessibilityRole p_role) const;
+	_FORCE_INLINE_ accesskit_action _accessibility_action(
+		AccessibilityServerEnums::AccessibilityAction p_action) const;
+
+	void _free_recursive(WindowData* p_wd, const RID& p_id);
+	_FORCE_INLINE_ void _ensure_node(const RID& p_id, AccessibilityElement* p_ae);
+
+	static void _accessibility_action_callback(
+		struct accesskit_action_request* p_request, void* p_user_data);
+	static accesskit_tree_update* _accessibility_initial_tree_update_callback(void* p_user_data);
+	static void _accessibility_deactivation_callback(void* p_user_data);
+	static accesskit_tree_update* _accessibility_build_tree_update(void* p_user_data);
+
+	bool in_accessibility_update = false;
+
+public:
+	bool is_supported() const override { return true; }
+
+	bool window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle) override;
+	void window_destroy(DisplayServerEnums::WindowID p_window_id) override;
+
+	RID create_element(DisplayServerEnums::WindowID p_window_id,
+		AccessibilityServerEnums::AccessibilityRole p_role) override;
+	RID create_sub_element(const RID& p_parent_rid,
+		AccessibilityServerEnums::AccessibilityRole p_role, int p_insert_pos = -1) override;
+	virtual RID create_sub_text_edit_elements(const RID& p_parent_rid, const RID& p_shaped_text,
+		float p_min_height, int p_insert_pos = -1, bool p_is_last_line = false) override;
+	bool has_element(const RID& p_id) const override;
+	void free_element(const RID& p_id) override;
+
+
+	void update_set_focus(const RID& p_id) override;
+	RID get_window_root(DisplayServerEnums::WindowID p_window_id) const override;
+
+	void set_window_rect(DisplayServerEnums::WindowID p_window_id, const Rect2& p_rect_out,
+		const Rect2& p_rect_in) override;
+	void set_window_focused(DisplayServerEnums::WindowID p_window_id, bool p_focused) override;
+	void window_activation_completed(DisplayServerEnums::WindowID p_window_id) override;
+	void window_deactivation_completed(DisplayServerEnums::WindowID p_window_id) override;
+
+	void update_set_role(
+		const RID& p_id, AccessibilityServerEnums::AccessibilityRole p_role) override;
+	void update_set_name(const RID& p_id, const String& p_name) override;
+	void update_set_braille_label(const RID& p_id, const String& p_name) override;
+	void update_set_braille_role_description(const RID& p_id, const String& p_description) override;
+	void update_set_extra_info(const RID& p_id, const String& p_name_extra_info) override;
+	void update_set_description(const RID& p_id, const String& p_description) override;
+	void update_set_value(const RID& p_id, const String& p_value) override;
+	void update_set_tooltip(const RID& p_id, const String& p_tooltip) override;
+	void update_set_bounds(const RID& p_id, const Rect2& p_rect) override;
+	void update_set_transform(const RID& p_id, const Transform2D& p_transform) override;
+	void update_add_child(const RID& p_id, const RID& p_child_id) override;
+	void update_add_related_controls(const RID& p_id, const RID& p_related_id) override;
+	void update_add_related_details(const RID& p_id, const RID& p_related_id) override;
+	void update_add_related_described_by(const RID& p_id, const RID& p_related_id) override;
+	void update_add_related_flow_to(const RID& p_id, const RID& p_related_id) override;
+	void update_add_related_labeled_by(const RID& p_id, const RID& p_related_id) override;
+	void update_add_related_radio_group(const RID& p_id, const RID& p_related_id) override;
+	void update_set_active_descendant(const RID& p_id, const RID& p_other_id) override;
+	void update_set_next_on_line(const RID& p_id, const RID& p_other_id) override;
+	void update_set_previous_on_line(const RID& p_id, const RID& p_other_id) override;
+	void update_set_member_of(const RID& p_id, const RID& p_group_id) override;
+	void update_set_in_page_link_target(const RID& p_id, const RID& p_other_id) override;
+	void update_set_error_message(const RID& p_id, const RID& p_other_id) override;
+	void update_set_live(
+		const RID& p_id, AccessibilityServerEnums::AccessibilityLiveMode p_live) override;
+	void update_add_custom_action(
+		const RID& p_id, int p_action_id, const String& p_action_description) override;
+	void update_set_table_row_count(const RID& p_id, int p_count) override;
+	void update_set_table_column_count(const RID& p_id, int p_count) override;
+	void update_set_table_row_index(const RID& p_id, int p_index) override;
+	void update_set_table_column_index(const RID& p_id, int p_index) override;
+	void update_set_table_cell_position(
+		const RID& p_id, int p_row_index, int p_column_index) override;
+	void update_set_table_cell_span(const RID& p_id, int p_row_span, int p_column_span) override;
+	void update_set_list_item_count(const RID& p_id, int p_size) override;
+	void update_set_list_item_index(const RID& p_id, int p_index) override;
+	void update_set_list_item_level(const RID& p_id, int p_level) override;
+	void update_set_list_item_selected(const RID& p_id, bool p_selected) override;
+	void update_set_list_item_expanded(const RID& p_id, bool p_expanded) override;
+	void update_set_popup_type(
+		const RID& p_id, AccessibilityServerEnums::AccessibilityPopupType p_popup) override;
+	void update_set_checked(const RID& p_id, bool p_checekd) override;
+	void update_set_num_value(const RID& p_id, double p_position) override;
+	void update_set_num_range(const RID& p_id, double p_min, double p_max) override;
+	void update_set_num_step(const RID& p_id, double p_step) override;
+	void update_set_num_jump(const RID& p_id, double p_jump) override;
+	void update_set_scroll_x(const RID& p_id, double p_position) override;
+	void update_set_scroll_x_range(const RID& p_id, double p_min, double p_max) override;
+	void update_set_scroll_y(const RID& p_id, double p_position) override;
+	void update_set_scroll_y_range(const RID& p_id, double p_min, double p_max) override;
+	void update_set_text_decorations(const RID& p_id, bool p_underline, bool p_strikethrough,
+		bool p_overline, const Color& p_color) override;
+	void update_set_text_align(const RID& p_id, HorizontalAlignment p_align) override;
+	void update_set_text_selection(const RID& p_id, const RID& p_text_start_id, int p_start_char,
+		const RID& p_text_end_id, int p_end_char) override;
+	void update_set_flag(const RID& p_id, AccessibilityServerEnums::AccessibilityFlags p_flag,
+		bool p_value) override;
+	void update_set_classname(const RID& p_id, const String& p_classname) override;
+	void update_set_placeholder(const RID& p_id, const String& p_placeholder) override;
+	void update_set_language(const RID& p_id, const String& p_language) override;
+	void update_set_text_orientation(const RID& p_id, bool p_vertical) override;
+	void update_set_list_orientation(const RID& p_id, bool p_vertical) override;
+	void update_set_shortcut(const RID& p_id, const String& p_shortcut) override;
+	void update_set_url(const RID& p_id, const String& p_url) override;
+	void update_set_role_description(const RID& p_id, const String& p_description) override;
+	void update_set_state_description(const RID& p_id, const String& p_description) override;
+	void update_set_color_value(const RID& p_id, const Color& p_color) override;
+	void update_set_background_color(const RID& p_id, const Color& p_color) override;
+	void update_set_foreground_color(const RID& p_id, const Color& p_color) override;
+
+	static void register_create_func();
+
+	AccessibilityServerAccessKit();
+	~AccessibilityServerAccessKit();
+};
+
+#endif // ACCESSKIT_ENABLED
 #endif
 
 static Ref<ImageLoaderPNG> image_loader_png;
@@ -73,7 +284,7 @@ void unregister_driver_types() {
 
 #ifdef ACCESSKIT_ENABLED
 
-#include "drivers/accesskit/accessibility_server_accesskit.h"
+
 #include "servers/text/text_server.h"
 
 _FORCE_INLINE_ accesskit_role AccessibilityServerAccessKit::_accessibility_role(
@@ -2013,7 +2224,5109 @@ void AccessibilityServerAccessKit::register_create_func()
 #include "core/os/os.h"
 
 #ifdef SOWRAP_ENABLED
-#include "drivers/alsa/asound-so_wrap.h"
+// --- Inlined/Folded from drivers/alsa/asound-so_wrap.h ---
+#ifndef DYLIBLOAD_WRAPPER_ASOUND
+#define DYLIBLOAD_WRAPPER_ASOUND
+// This file is generated. Do not edit!
+// see https://github.com/hpvb/dynload-wrapper for details
+// generated by generate-wrapper.py 0.3 on 2023-01-12 10:26:13
+// flags: generate-wrapper.py --include ./thirdparty/linuxbsd_headers/alsa/asoundlib.h --sys-include "thirdparty/linuxbsd_headers/alsa/asoundlib.h" --soname libasound.so.2 --init-name asound --omit-prefix snd_pcm_sw_params_set_tstamp_type --omit-prefix snd_pcm_status_get_audio_htstamp_report --omit-prefix snd_pcm_sw_params_get_tstamp_type --omit-prefix snd_pcm_status_set_audio_htstamp_config --output-header ./drivers/alsa/asound-so_wrap.h --output-implementation ./drivers/alsa/asound-so_wrap.c
+//
+#include <stdint.h>
+
+#define snd_asoundlib_version snd_asoundlib_version_dylibloader_orig_asound
+#define snd_dlopen snd_dlopen_dylibloader_orig_asound
+#define snd_dlsym snd_dlsym_dylibloader_orig_asound
+#define snd_dlclose snd_dlclose_dylibloader_orig_asound
+#define snd_async_add_handler snd_async_add_handler_dylibloader_orig_asound
+#define snd_async_del_handler snd_async_del_handler_dylibloader_orig_asound
+#define snd_async_handler_get_fd snd_async_handler_get_fd_dylibloader_orig_asound
+#define snd_async_handler_get_signo snd_async_handler_get_signo_dylibloader_orig_asound
+#define snd_async_handler_get_callback_private snd_async_handler_get_callback_private_dylibloader_orig_asound
+#define snd_shm_area_create snd_shm_area_create_dylibloader_orig_asound
+#define snd_shm_area_share snd_shm_area_share_dylibloader_orig_asound
+#define snd_shm_area_destroy snd_shm_area_destroy_dylibloader_orig_asound
+#define snd_user_file snd_user_file_dylibloader_orig_asound
+#define snd_input_stdio_open snd_input_stdio_open_dylibloader_orig_asound
+#define snd_input_stdio_attach snd_input_stdio_attach_dylibloader_orig_asound
+#define snd_input_buffer_open snd_input_buffer_open_dylibloader_orig_asound
+#define snd_input_close snd_input_close_dylibloader_orig_asound
+#define snd_input_scanf snd_input_scanf_dylibloader_orig_asound
+#define snd_input_gets snd_input_gets_dylibloader_orig_asound
+#define snd_input_getc snd_input_getc_dylibloader_orig_asound
+#define snd_input_ungetc snd_input_ungetc_dylibloader_orig_asound
+#define snd_output_stdio_open snd_output_stdio_open_dylibloader_orig_asound
+#define snd_output_stdio_attach snd_output_stdio_attach_dylibloader_orig_asound
+#define snd_output_buffer_open snd_output_buffer_open_dylibloader_orig_asound
+#define snd_output_buffer_string snd_output_buffer_string_dylibloader_orig_asound
+#define snd_output_close snd_output_close_dylibloader_orig_asound
+#define snd_output_printf snd_output_printf_dylibloader_orig_asound
+#define snd_output_vprintf snd_output_vprintf_dylibloader_orig_asound
+#define snd_output_puts snd_output_puts_dylibloader_orig_asound
+#define snd_output_putc snd_output_putc_dylibloader_orig_asound
+#define snd_output_flush snd_output_flush_dylibloader_orig_asound
+#define snd_strerror snd_strerror_dylibloader_orig_asound
+#define snd_lib_error_set_handler snd_lib_error_set_handler_dylibloader_orig_asound
+#define snd_lib_error_set_local snd_lib_error_set_local_dylibloader_orig_asound
+#define snd_config_top snd_config_top_dylibloader_orig_asound
+#define snd_config_load snd_config_load_dylibloader_orig_asound
+#define snd_config_load_override snd_config_load_override_dylibloader_orig_asound
+#define snd_config_save snd_config_save_dylibloader_orig_asound
+#define snd_config_update snd_config_update_dylibloader_orig_asound
+#define snd_config_update_r snd_config_update_r_dylibloader_orig_asound
+#define snd_config_update_free snd_config_update_free_dylibloader_orig_asound
+#define snd_config_update_free_global snd_config_update_free_global_dylibloader_orig_asound
+#define snd_config_update_ref snd_config_update_ref_dylibloader_orig_asound
+#define snd_config_ref snd_config_ref_dylibloader_orig_asound
+#define snd_config_unref snd_config_unref_dylibloader_orig_asound
+#define snd_config_search snd_config_search_dylibloader_orig_asound
+#define snd_config_searchv snd_config_searchv_dylibloader_orig_asound
+#define snd_config_search_definition snd_config_search_definition_dylibloader_orig_asound
+#define snd_config_expand snd_config_expand_dylibloader_orig_asound
+#define snd_config_evaluate snd_config_evaluate_dylibloader_orig_asound
+#define snd_config_add snd_config_add_dylibloader_orig_asound
+#define snd_config_delete snd_config_delete_dylibloader_orig_asound
+#define snd_config_delete_compound_members snd_config_delete_compound_members_dylibloader_orig_asound
+#define snd_config_copy snd_config_copy_dylibloader_orig_asound
+#define snd_config_make snd_config_make_dylibloader_orig_asound
+#define snd_config_make_integer snd_config_make_integer_dylibloader_orig_asound
+#define snd_config_make_integer64 snd_config_make_integer64_dylibloader_orig_asound
+#define snd_config_make_real snd_config_make_real_dylibloader_orig_asound
+#define snd_config_make_string snd_config_make_string_dylibloader_orig_asound
+#define snd_config_make_pointer snd_config_make_pointer_dylibloader_orig_asound
+#define snd_config_make_compound snd_config_make_compound_dylibloader_orig_asound
+#define snd_config_imake_integer snd_config_imake_integer_dylibloader_orig_asound
+#define snd_config_imake_integer64 snd_config_imake_integer64_dylibloader_orig_asound
+#define snd_config_imake_real snd_config_imake_real_dylibloader_orig_asound
+#define snd_config_imake_string snd_config_imake_string_dylibloader_orig_asound
+#define snd_config_imake_safe_string snd_config_imake_safe_string_dylibloader_orig_asound
+#define snd_config_imake_pointer snd_config_imake_pointer_dylibloader_orig_asound
+#define snd_config_get_type snd_config_get_type_dylibloader_orig_asound
+#define snd_config_set_id snd_config_set_id_dylibloader_orig_asound
+#define snd_config_set_integer snd_config_set_integer_dylibloader_orig_asound
+#define snd_config_set_integer64 snd_config_set_integer64_dylibloader_orig_asound
+#define snd_config_set_real snd_config_set_real_dylibloader_orig_asound
+#define snd_config_set_string snd_config_set_string_dylibloader_orig_asound
+#define snd_config_set_ascii snd_config_set_ascii_dylibloader_orig_asound
+#define snd_config_set_pointer snd_config_set_pointer_dylibloader_orig_asound
+#define snd_config_get_id snd_config_get_id_dylibloader_orig_asound
+#define snd_config_get_integer snd_config_get_integer_dylibloader_orig_asound
+#define snd_config_get_integer64 snd_config_get_integer64_dylibloader_orig_asound
+#define snd_config_get_real snd_config_get_real_dylibloader_orig_asound
+#define snd_config_get_ireal snd_config_get_ireal_dylibloader_orig_asound
+#define snd_config_get_string snd_config_get_string_dylibloader_orig_asound
+#define snd_config_get_ascii snd_config_get_ascii_dylibloader_orig_asound
+#define snd_config_get_pointer snd_config_get_pointer_dylibloader_orig_asound
+#define snd_config_test_id snd_config_test_id_dylibloader_orig_asound
+#define snd_config_iterator_first snd_config_iterator_first_dylibloader_orig_asound
+#define snd_config_iterator_next snd_config_iterator_next_dylibloader_orig_asound
+#define snd_config_iterator_end snd_config_iterator_end_dylibloader_orig_asound
+#define snd_config_iterator_entry snd_config_iterator_entry_dylibloader_orig_asound
+#define snd_config_get_bool_ascii snd_config_get_bool_ascii_dylibloader_orig_asound
+#define snd_config_get_bool snd_config_get_bool_dylibloader_orig_asound
+#define snd_config_get_ctl_iface_ascii snd_config_get_ctl_iface_ascii_dylibloader_orig_asound
+#define snd_config_get_ctl_iface snd_config_get_ctl_iface_dylibloader_orig_asound
+#define snd_names_list snd_names_list_dylibloader_orig_asound
+#define snd_names_list_free snd_names_list_free_dylibloader_orig_asound
+#define snd_pcm_open snd_pcm_open_dylibloader_orig_asound
+#define snd_pcm_open_lconf snd_pcm_open_lconf_dylibloader_orig_asound
+#define snd_pcm_open_fallback snd_pcm_open_fallback_dylibloader_orig_asound
+#define snd_pcm_close snd_pcm_close_dylibloader_orig_asound
+#define snd_pcm_name snd_pcm_name_dylibloader_orig_asound
+#define snd_pcm_type snd_pcm_type_dylibloader_orig_asound
+#define snd_pcm_stream snd_pcm_stream_dylibloader_orig_asound
+#define snd_pcm_poll_descriptors_count snd_pcm_poll_descriptors_count_dylibloader_orig_asound
+#define snd_pcm_poll_descriptors snd_pcm_poll_descriptors_dylibloader_orig_asound
+#define snd_pcm_poll_descriptors_revents snd_pcm_poll_descriptors_revents_dylibloader_orig_asound
+#define snd_pcm_nonblock snd_pcm_nonblock_dylibloader_orig_asound
+#define snd_async_add_pcm_handler snd_async_add_pcm_handler_dylibloader_orig_asound
+#define snd_async_handler_get_pcm snd_async_handler_get_pcm_dylibloader_orig_asound
+#define snd_pcm_info snd_pcm_info_dylibloader_orig_asound
+#define snd_pcm_hw_params_current snd_pcm_hw_params_current_dylibloader_orig_asound
+#define snd_pcm_hw_params snd_pcm_hw_params_dylibloader_orig_asound
+#define snd_pcm_hw_free snd_pcm_hw_free_dylibloader_orig_asound
+#define snd_pcm_sw_params_current snd_pcm_sw_params_current_dylibloader_orig_asound
+#define snd_pcm_sw_params snd_pcm_sw_params_dylibloader_orig_asound
+#define snd_pcm_prepare snd_pcm_prepare_dylibloader_orig_asound
+#define snd_pcm_reset snd_pcm_reset_dylibloader_orig_asound
+#define snd_pcm_status snd_pcm_status_dylibloader_orig_asound
+#define snd_pcm_start snd_pcm_start_dylibloader_orig_asound
+#define snd_pcm_drop snd_pcm_drop_dylibloader_orig_asound
+#define snd_pcm_drain snd_pcm_drain_dylibloader_orig_asound
+#define snd_pcm_pause snd_pcm_pause_dylibloader_orig_asound
+#define snd_pcm_state snd_pcm_state_dylibloader_orig_asound
+#define snd_pcm_hwsync snd_pcm_hwsync_dylibloader_orig_asound
+#define snd_pcm_delay snd_pcm_delay_dylibloader_orig_asound
+#define snd_pcm_resume snd_pcm_resume_dylibloader_orig_asound
+#define snd_pcm_htimestamp snd_pcm_htimestamp_dylibloader_orig_asound
+#define snd_pcm_avail snd_pcm_avail_dylibloader_orig_asound
+#define snd_pcm_avail_update snd_pcm_avail_update_dylibloader_orig_asound
+#define snd_pcm_avail_delay snd_pcm_avail_delay_dylibloader_orig_asound
+#define snd_pcm_rewindable snd_pcm_rewindable_dylibloader_orig_asound
+#define snd_pcm_rewind snd_pcm_rewind_dylibloader_orig_asound
+#define snd_pcm_forwardable snd_pcm_forwardable_dylibloader_orig_asound
+#define snd_pcm_forward snd_pcm_forward_dylibloader_orig_asound
+#define snd_pcm_writei snd_pcm_writei_dylibloader_orig_asound
+#define snd_pcm_readi snd_pcm_readi_dylibloader_orig_asound
+#define snd_pcm_writen snd_pcm_writen_dylibloader_orig_asound
+#define snd_pcm_readn snd_pcm_readn_dylibloader_orig_asound
+#define snd_pcm_wait snd_pcm_wait_dylibloader_orig_asound
+#define snd_pcm_link snd_pcm_link_dylibloader_orig_asound
+#define snd_pcm_unlink snd_pcm_unlink_dylibloader_orig_asound
+#define snd_pcm_query_chmaps snd_pcm_query_chmaps_dylibloader_orig_asound
+#define snd_pcm_query_chmaps_from_hw snd_pcm_query_chmaps_from_hw_dylibloader_orig_asound
+#define snd_pcm_free_chmaps snd_pcm_free_chmaps_dylibloader_orig_asound
+#define snd_pcm_get_chmap snd_pcm_get_chmap_dylibloader_orig_asound
+#define snd_pcm_set_chmap snd_pcm_set_chmap_dylibloader_orig_asound
+#define snd_pcm_chmap_type_name snd_pcm_chmap_type_name_dylibloader_orig_asound
+#define snd_pcm_chmap_name snd_pcm_chmap_name_dylibloader_orig_asound
+#define snd_pcm_chmap_long_name snd_pcm_chmap_long_name_dylibloader_orig_asound
+#define snd_pcm_chmap_print snd_pcm_chmap_print_dylibloader_orig_asound
+#define snd_pcm_chmap_from_string snd_pcm_chmap_from_string_dylibloader_orig_asound
+#define snd_pcm_chmap_parse_string snd_pcm_chmap_parse_string_dylibloader_orig_asound
+#define snd_pcm_recover snd_pcm_recover_dylibloader_orig_asound
+#define snd_pcm_set_params snd_pcm_set_params_dylibloader_orig_asound
+#define snd_pcm_get_params snd_pcm_get_params_dylibloader_orig_asound
+#define snd_pcm_info_sizeof snd_pcm_info_sizeof_dylibloader_orig_asound
+#define snd_pcm_info_malloc snd_pcm_info_malloc_dylibloader_orig_asound
+#define snd_pcm_info_free snd_pcm_info_free_dylibloader_orig_asound
+#define snd_pcm_info_copy snd_pcm_info_copy_dylibloader_orig_asound
+#define snd_pcm_info_get_device snd_pcm_info_get_device_dylibloader_orig_asound
+#define snd_pcm_info_get_subdevice snd_pcm_info_get_subdevice_dylibloader_orig_asound
+#define snd_pcm_info_get_stream snd_pcm_info_get_stream_dylibloader_orig_asound
+#define snd_pcm_info_get_card snd_pcm_info_get_card_dylibloader_orig_asound
+#define snd_pcm_info_get_id snd_pcm_info_get_id_dylibloader_orig_asound
+#define snd_pcm_info_get_name snd_pcm_info_get_name_dylibloader_orig_asound
+#define snd_pcm_info_get_subdevice_name snd_pcm_info_get_subdevice_name_dylibloader_orig_asound
+#define snd_pcm_info_get_class snd_pcm_info_get_class_dylibloader_orig_asound
+#define snd_pcm_info_get_subclass snd_pcm_info_get_subclass_dylibloader_orig_asound
+#define snd_pcm_info_get_subdevices_count snd_pcm_info_get_subdevices_count_dylibloader_orig_asound
+#define snd_pcm_info_get_subdevices_avail snd_pcm_info_get_subdevices_avail_dylibloader_orig_asound
+#define snd_pcm_info_get_sync snd_pcm_info_get_sync_dylibloader_orig_asound
+#define snd_pcm_info_set_device snd_pcm_info_set_device_dylibloader_orig_asound
+#define snd_pcm_info_set_subdevice snd_pcm_info_set_subdevice_dylibloader_orig_asound
+#define snd_pcm_info_set_stream snd_pcm_info_set_stream_dylibloader_orig_asound
+#define snd_pcm_hw_params_any snd_pcm_hw_params_any_dylibloader_orig_asound
+#define snd_pcm_hw_params_can_mmap_sample_resolution snd_pcm_hw_params_can_mmap_sample_resolution_dylibloader_orig_asound
+#define snd_pcm_hw_params_is_double snd_pcm_hw_params_is_double_dylibloader_orig_asound
+#define snd_pcm_hw_params_is_batch snd_pcm_hw_params_is_batch_dylibloader_orig_asound
+#define snd_pcm_hw_params_is_block_transfer snd_pcm_hw_params_is_block_transfer_dylibloader_orig_asound
+#define snd_pcm_hw_params_is_monotonic snd_pcm_hw_params_is_monotonic_dylibloader_orig_asound
+#define snd_pcm_hw_params_can_overrange snd_pcm_hw_params_can_overrange_dylibloader_orig_asound
+#define snd_pcm_hw_params_can_pause snd_pcm_hw_params_can_pause_dylibloader_orig_asound
+#define snd_pcm_hw_params_can_resume snd_pcm_hw_params_can_resume_dylibloader_orig_asound
+#define snd_pcm_hw_params_is_half_duplex snd_pcm_hw_params_is_half_duplex_dylibloader_orig_asound
+#define snd_pcm_hw_params_is_joint_duplex snd_pcm_hw_params_is_joint_duplex_dylibloader_orig_asound
+#define snd_pcm_hw_params_can_sync_start snd_pcm_hw_params_can_sync_start_dylibloader_orig_asound
+#define snd_pcm_hw_params_can_disable_period_wakeup snd_pcm_hw_params_can_disable_period_wakeup_dylibloader_orig_asound
+#define snd_pcm_hw_params_supports_audio_wallclock_ts snd_pcm_hw_params_supports_audio_wallclock_ts_dylibloader_orig_asound
+#define snd_pcm_hw_params_supports_audio_ts_type snd_pcm_hw_params_supports_audio_ts_type_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_rate_numden snd_pcm_hw_params_get_rate_numden_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_sbits snd_pcm_hw_params_get_sbits_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_fifo_size snd_pcm_hw_params_get_fifo_size_dylibloader_orig_asound
+#define snd_pcm_hw_params_sizeof snd_pcm_hw_params_sizeof_dylibloader_orig_asound
+#define snd_pcm_hw_params_malloc snd_pcm_hw_params_malloc_dylibloader_orig_asound
+#define snd_pcm_hw_params_free snd_pcm_hw_params_free_dylibloader_orig_asound
+#define snd_pcm_hw_params_copy snd_pcm_hw_params_copy_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_access snd_pcm_hw_params_get_access_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_access snd_pcm_hw_params_test_access_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_access snd_pcm_hw_params_set_access_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_access_first snd_pcm_hw_params_set_access_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_access_last snd_pcm_hw_params_set_access_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_access_mask snd_pcm_hw_params_set_access_mask_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_access_mask snd_pcm_hw_params_get_access_mask_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_format snd_pcm_hw_params_get_format_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_format snd_pcm_hw_params_test_format_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_format snd_pcm_hw_params_set_format_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_format_first snd_pcm_hw_params_set_format_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_format_last snd_pcm_hw_params_set_format_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_format_mask snd_pcm_hw_params_set_format_mask_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_format_mask snd_pcm_hw_params_get_format_mask_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_subformat snd_pcm_hw_params_get_subformat_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_subformat snd_pcm_hw_params_test_subformat_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_subformat snd_pcm_hw_params_set_subformat_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_subformat_first snd_pcm_hw_params_set_subformat_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_subformat_last snd_pcm_hw_params_set_subformat_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_subformat_mask snd_pcm_hw_params_set_subformat_mask_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_subformat_mask snd_pcm_hw_params_get_subformat_mask_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_channels snd_pcm_hw_params_get_channels_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_channels_min snd_pcm_hw_params_get_channels_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_channels_max snd_pcm_hw_params_get_channels_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_channels snd_pcm_hw_params_test_channels_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_channels snd_pcm_hw_params_set_channels_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_channels_min snd_pcm_hw_params_set_channels_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_channels_max snd_pcm_hw_params_set_channels_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_channels_minmax snd_pcm_hw_params_set_channels_minmax_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_channels_near snd_pcm_hw_params_set_channels_near_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_channels_first snd_pcm_hw_params_set_channels_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_channels_last snd_pcm_hw_params_set_channels_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_rate snd_pcm_hw_params_get_rate_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_rate_min snd_pcm_hw_params_get_rate_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_rate_max snd_pcm_hw_params_get_rate_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_rate snd_pcm_hw_params_test_rate_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_rate snd_pcm_hw_params_set_rate_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_rate_min snd_pcm_hw_params_set_rate_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_rate_max snd_pcm_hw_params_set_rate_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_rate_minmax snd_pcm_hw_params_set_rate_minmax_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_rate_near snd_pcm_hw_params_set_rate_near_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_rate_first snd_pcm_hw_params_set_rate_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_rate_last snd_pcm_hw_params_set_rate_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_rate_resample snd_pcm_hw_params_set_rate_resample_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_rate_resample snd_pcm_hw_params_get_rate_resample_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_export_buffer snd_pcm_hw_params_set_export_buffer_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_export_buffer snd_pcm_hw_params_get_export_buffer_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_wakeup snd_pcm_hw_params_set_period_wakeup_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_period_wakeup snd_pcm_hw_params_get_period_wakeup_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_period_time snd_pcm_hw_params_get_period_time_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_period_time_min snd_pcm_hw_params_get_period_time_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_period_time_max snd_pcm_hw_params_get_period_time_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_period_time snd_pcm_hw_params_test_period_time_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_time snd_pcm_hw_params_set_period_time_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_time_min snd_pcm_hw_params_set_period_time_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_time_max snd_pcm_hw_params_set_period_time_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_time_minmax snd_pcm_hw_params_set_period_time_minmax_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_time_near snd_pcm_hw_params_set_period_time_near_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_time_first snd_pcm_hw_params_set_period_time_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_time_last snd_pcm_hw_params_set_period_time_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_period_size snd_pcm_hw_params_get_period_size_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_period_size_min snd_pcm_hw_params_get_period_size_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_period_size_max snd_pcm_hw_params_get_period_size_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_period_size snd_pcm_hw_params_test_period_size_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_size snd_pcm_hw_params_set_period_size_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_size_min snd_pcm_hw_params_set_period_size_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_size_max snd_pcm_hw_params_set_period_size_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_size_minmax snd_pcm_hw_params_set_period_size_minmax_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_size_near snd_pcm_hw_params_set_period_size_near_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_size_first snd_pcm_hw_params_set_period_size_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_size_last snd_pcm_hw_params_set_period_size_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_period_size_integer snd_pcm_hw_params_set_period_size_integer_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_periods snd_pcm_hw_params_get_periods_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_periods_min snd_pcm_hw_params_get_periods_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_periods_max snd_pcm_hw_params_get_periods_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_periods snd_pcm_hw_params_test_periods_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_periods snd_pcm_hw_params_set_periods_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_periods_min snd_pcm_hw_params_set_periods_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_periods_max snd_pcm_hw_params_set_periods_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_periods_minmax snd_pcm_hw_params_set_periods_minmax_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_periods_near snd_pcm_hw_params_set_periods_near_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_periods_first snd_pcm_hw_params_set_periods_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_periods_last snd_pcm_hw_params_set_periods_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_periods_integer snd_pcm_hw_params_set_periods_integer_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_buffer_time snd_pcm_hw_params_get_buffer_time_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_buffer_time_min snd_pcm_hw_params_get_buffer_time_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_buffer_time_max snd_pcm_hw_params_get_buffer_time_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_buffer_time snd_pcm_hw_params_test_buffer_time_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_time snd_pcm_hw_params_set_buffer_time_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_time_min snd_pcm_hw_params_set_buffer_time_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_time_max snd_pcm_hw_params_set_buffer_time_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_time_minmax snd_pcm_hw_params_set_buffer_time_minmax_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_time_near snd_pcm_hw_params_set_buffer_time_near_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_time_first snd_pcm_hw_params_set_buffer_time_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_time_last snd_pcm_hw_params_set_buffer_time_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_buffer_size snd_pcm_hw_params_get_buffer_size_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_buffer_size_min snd_pcm_hw_params_get_buffer_size_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_buffer_size_max snd_pcm_hw_params_get_buffer_size_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_buffer_size snd_pcm_hw_params_test_buffer_size_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_size snd_pcm_hw_params_set_buffer_size_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_size_min snd_pcm_hw_params_set_buffer_size_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_size_max snd_pcm_hw_params_set_buffer_size_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_size_minmax snd_pcm_hw_params_set_buffer_size_minmax_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_size_near snd_pcm_hw_params_set_buffer_size_near_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_size_first snd_pcm_hw_params_set_buffer_size_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_buffer_size_last snd_pcm_hw_params_set_buffer_size_last_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_min_align snd_pcm_hw_params_get_min_align_dylibloader_orig_asound
+#define snd_pcm_sw_params_sizeof snd_pcm_sw_params_sizeof_dylibloader_orig_asound
+#define snd_pcm_sw_params_malloc snd_pcm_sw_params_malloc_dylibloader_orig_asound
+#define snd_pcm_sw_params_free snd_pcm_sw_params_free_dylibloader_orig_asound
+#define snd_pcm_sw_params_copy snd_pcm_sw_params_copy_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_boundary snd_pcm_sw_params_get_boundary_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_tstamp_mode snd_pcm_sw_params_set_tstamp_mode_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_tstamp_mode snd_pcm_sw_params_get_tstamp_mode_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_avail_min snd_pcm_sw_params_set_avail_min_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_avail_min snd_pcm_sw_params_get_avail_min_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_period_event snd_pcm_sw_params_set_period_event_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_period_event snd_pcm_sw_params_get_period_event_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_start_threshold snd_pcm_sw_params_set_start_threshold_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_start_threshold snd_pcm_sw_params_get_start_threshold_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_stop_threshold snd_pcm_sw_params_set_stop_threshold_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_stop_threshold snd_pcm_sw_params_get_stop_threshold_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_silence_threshold snd_pcm_sw_params_set_silence_threshold_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_silence_threshold snd_pcm_sw_params_get_silence_threshold_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_silence_size snd_pcm_sw_params_set_silence_size_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_silence_size snd_pcm_sw_params_get_silence_size_dylibloader_orig_asound
+#define snd_pcm_access_mask_sizeof snd_pcm_access_mask_sizeof_dylibloader_orig_asound
+#define snd_pcm_access_mask_malloc snd_pcm_access_mask_malloc_dylibloader_orig_asound
+#define snd_pcm_access_mask_free snd_pcm_access_mask_free_dylibloader_orig_asound
+#define snd_pcm_access_mask_copy snd_pcm_access_mask_copy_dylibloader_orig_asound
+#define snd_pcm_access_mask_none snd_pcm_access_mask_none_dylibloader_orig_asound
+#define snd_pcm_access_mask_any snd_pcm_access_mask_any_dylibloader_orig_asound
+#define snd_pcm_access_mask_test snd_pcm_access_mask_test_dylibloader_orig_asound
+#define snd_pcm_access_mask_empty snd_pcm_access_mask_empty_dylibloader_orig_asound
+#define snd_pcm_access_mask_set snd_pcm_access_mask_set_dylibloader_orig_asound
+#define snd_pcm_access_mask_reset snd_pcm_access_mask_reset_dylibloader_orig_asound
+#define snd_pcm_format_mask_sizeof snd_pcm_format_mask_sizeof_dylibloader_orig_asound
+#define snd_pcm_format_mask_malloc snd_pcm_format_mask_malloc_dylibloader_orig_asound
+#define snd_pcm_format_mask_free snd_pcm_format_mask_free_dylibloader_orig_asound
+#define snd_pcm_format_mask_copy snd_pcm_format_mask_copy_dylibloader_orig_asound
+#define snd_pcm_format_mask_none snd_pcm_format_mask_none_dylibloader_orig_asound
+#define snd_pcm_format_mask_any snd_pcm_format_mask_any_dylibloader_orig_asound
+#define snd_pcm_format_mask_test snd_pcm_format_mask_test_dylibloader_orig_asound
+#define snd_pcm_format_mask_empty snd_pcm_format_mask_empty_dylibloader_orig_asound
+#define snd_pcm_format_mask_set snd_pcm_format_mask_set_dylibloader_orig_asound
+#define snd_pcm_format_mask_reset snd_pcm_format_mask_reset_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_sizeof snd_pcm_subformat_mask_sizeof_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_malloc snd_pcm_subformat_mask_malloc_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_free snd_pcm_subformat_mask_free_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_copy snd_pcm_subformat_mask_copy_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_none snd_pcm_subformat_mask_none_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_any snd_pcm_subformat_mask_any_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_test snd_pcm_subformat_mask_test_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_empty snd_pcm_subformat_mask_empty_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_set snd_pcm_subformat_mask_set_dylibloader_orig_asound
+#define snd_pcm_subformat_mask_reset snd_pcm_subformat_mask_reset_dylibloader_orig_asound
+#define snd_pcm_status_sizeof snd_pcm_status_sizeof_dylibloader_orig_asound
+#define snd_pcm_status_malloc snd_pcm_status_malloc_dylibloader_orig_asound
+#define snd_pcm_status_free snd_pcm_status_free_dylibloader_orig_asound
+#define snd_pcm_status_copy snd_pcm_status_copy_dylibloader_orig_asound
+#define snd_pcm_status_get_state snd_pcm_status_get_state_dylibloader_orig_asound
+#define snd_pcm_status_get_trigger_tstamp snd_pcm_status_get_trigger_tstamp_dylibloader_orig_asound
+#define snd_pcm_status_get_trigger_htstamp snd_pcm_status_get_trigger_htstamp_dylibloader_orig_asound
+#define snd_pcm_status_get_tstamp snd_pcm_status_get_tstamp_dylibloader_orig_asound
+#define snd_pcm_status_get_htstamp snd_pcm_status_get_htstamp_dylibloader_orig_asound
+#define snd_pcm_status_get_audio_htstamp snd_pcm_status_get_audio_htstamp_dylibloader_orig_asound
+#define snd_pcm_status_get_driver_htstamp snd_pcm_status_get_driver_htstamp_dylibloader_orig_asound
+#define snd_pcm_status_get_delay snd_pcm_status_get_delay_dylibloader_orig_asound
+#define snd_pcm_status_get_avail snd_pcm_status_get_avail_dylibloader_orig_asound
+#define snd_pcm_status_get_avail_max snd_pcm_status_get_avail_max_dylibloader_orig_asound
+#define snd_pcm_status_get_overrange snd_pcm_status_get_overrange_dylibloader_orig_asound
+#define snd_pcm_type_name snd_pcm_type_name_dylibloader_orig_asound
+#define snd_pcm_stream_name snd_pcm_stream_name_dylibloader_orig_asound
+#define snd_pcm_access_name snd_pcm_access_name_dylibloader_orig_asound
+#define snd_pcm_format_name snd_pcm_format_name_dylibloader_orig_asound
+#define snd_pcm_format_description snd_pcm_format_description_dylibloader_orig_asound
+#define snd_pcm_subformat_name snd_pcm_subformat_name_dylibloader_orig_asound
+#define snd_pcm_subformat_description snd_pcm_subformat_description_dylibloader_orig_asound
+#define snd_pcm_format_value snd_pcm_format_value_dylibloader_orig_asound
+#define snd_pcm_tstamp_mode_name snd_pcm_tstamp_mode_name_dylibloader_orig_asound
+#define snd_pcm_state_name snd_pcm_state_name_dylibloader_orig_asound
+#define snd_pcm_dump snd_pcm_dump_dylibloader_orig_asound
+#define snd_pcm_dump_hw_setup snd_pcm_dump_hw_setup_dylibloader_orig_asound
+#define snd_pcm_dump_sw_setup snd_pcm_dump_sw_setup_dylibloader_orig_asound
+#define snd_pcm_dump_setup snd_pcm_dump_setup_dylibloader_orig_asound
+#define snd_pcm_hw_params_dump snd_pcm_hw_params_dump_dylibloader_orig_asound
+#define snd_pcm_sw_params_dump snd_pcm_sw_params_dump_dylibloader_orig_asound
+#define snd_pcm_status_dump snd_pcm_status_dump_dylibloader_orig_asound
+#define snd_pcm_mmap_begin snd_pcm_mmap_begin_dylibloader_orig_asound
+#define snd_pcm_mmap_commit snd_pcm_mmap_commit_dylibloader_orig_asound
+#define snd_pcm_mmap_writei snd_pcm_mmap_writei_dylibloader_orig_asound
+#define snd_pcm_mmap_readi snd_pcm_mmap_readi_dylibloader_orig_asound
+#define snd_pcm_mmap_writen snd_pcm_mmap_writen_dylibloader_orig_asound
+#define snd_pcm_mmap_readn snd_pcm_mmap_readn_dylibloader_orig_asound
+#define snd_pcm_format_signed snd_pcm_format_signed_dylibloader_orig_asound
+#define snd_pcm_format_unsigned snd_pcm_format_unsigned_dylibloader_orig_asound
+#define snd_pcm_format_linear snd_pcm_format_linear_dylibloader_orig_asound
+#define snd_pcm_format_float snd_pcm_format_float_dylibloader_orig_asound
+#define snd_pcm_format_little_endian snd_pcm_format_little_endian_dylibloader_orig_asound
+#define snd_pcm_format_big_endian snd_pcm_format_big_endian_dylibloader_orig_asound
+#define snd_pcm_format_cpu_endian snd_pcm_format_cpu_endian_dylibloader_orig_asound
+#define snd_pcm_format_width snd_pcm_format_width_dylibloader_orig_asound
+#define snd_pcm_format_physical_width snd_pcm_format_physical_width_dylibloader_orig_asound
+#define snd_pcm_build_linear_format snd_pcm_build_linear_format_dylibloader_orig_asound
+#define snd_pcm_format_size snd_pcm_format_size_dylibloader_orig_asound
+#define snd_pcm_format_silence snd_pcm_format_silence_dylibloader_orig_asound
+#define snd_pcm_format_silence_16 snd_pcm_format_silence_16_dylibloader_orig_asound
+#define snd_pcm_format_silence_32 snd_pcm_format_silence_32_dylibloader_orig_asound
+#define snd_pcm_format_silence_64 snd_pcm_format_silence_64_dylibloader_orig_asound
+#define snd_pcm_format_set_silence snd_pcm_format_set_silence_dylibloader_orig_asound
+#define snd_pcm_bytes_to_frames snd_pcm_bytes_to_frames_dylibloader_orig_asound
+#define snd_pcm_frames_to_bytes snd_pcm_frames_to_bytes_dylibloader_orig_asound
+#define snd_pcm_bytes_to_samples snd_pcm_bytes_to_samples_dylibloader_orig_asound
+#define snd_pcm_samples_to_bytes snd_pcm_samples_to_bytes_dylibloader_orig_asound
+#define snd_pcm_area_silence snd_pcm_area_silence_dylibloader_orig_asound
+#define snd_pcm_areas_silence snd_pcm_areas_silence_dylibloader_orig_asound
+#define snd_pcm_area_copy snd_pcm_area_copy_dylibloader_orig_asound
+#define snd_pcm_areas_copy snd_pcm_areas_copy_dylibloader_orig_asound
+#define snd_pcm_hook_get_pcm snd_pcm_hook_get_pcm_dylibloader_orig_asound
+#define snd_pcm_hook_get_private snd_pcm_hook_get_private_dylibloader_orig_asound
+#define snd_pcm_hook_set_private snd_pcm_hook_set_private_dylibloader_orig_asound
+#define snd_pcm_hook_add snd_pcm_hook_add_dylibloader_orig_asound
+#define snd_pcm_hook_remove snd_pcm_hook_remove_dylibloader_orig_asound
+#define snd_pcm_meter_get_bufsize snd_pcm_meter_get_bufsize_dylibloader_orig_asound
+#define snd_pcm_meter_get_channels snd_pcm_meter_get_channels_dylibloader_orig_asound
+#define snd_pcm_meter_get_rate snd_pcm_meter_get_rate_dylibloader_orig_asound
+#define snd_pcm_meter_get_now snd_pcm_meter_get_now_dylibloader_orig_asound
+#define snd_pcm_meter_get_boundary snd_pcm_meter_get_boundary_dylibloader_orig_asound
+#define snd_pcm_meter_add_scope snd_pcm_meter_add_scope_dylibloader_orig_asound
+#define snd_pcm_meter_search_scope snd_pcm_meter_search_scope_dylibloader_orig_asound
+#define snd_pcm_scope_malloc snd_pcm_scope_malloc_dylibloader_orig_asound
+#define snd_pcm_scope_set_ops snd_pcm_scope_set_ops_dylibloader_orig_asound
+#define snd_pcm_scope_set_name snd_pcm_scope_set_name_dylibloader_orig_asound
+#define snd_pcm_scope_get_name snd_pcm_scope_get_name_dylibloader_orig_asound
+#define snd_pcm_scope_get_callback_private snd_pcm_scope_get_callback_private_dylibloader_orig_asound
+#define snd_pcm_scope_set_callback_private snd_pcm_scope_set_callback_private_dylibloader_orig_asound
+#define snd_pcm_scope_s16_open snd_pcm_scope_s16_open_dylibloader_orig_asound
+#define snd_pcm_scope_s16_get_channel_buffer snd_pcm_scope_s16_get_channel_buffer_dylibloader_orig_asound
+#define snd_spcm_init snd_spcm_init_dylibloader_orig_asound
+#define snd_spcm_init_duplex snd_spcm_init_duplex_dylibloader_orig_asound
+#define snd_spcm_init_get_params snd_spcm_init_get_params_dylibloader_orig_asound
+#define snd_pcm_start_mode_name snd_pcm_start_mode_name_dylibloader_orig_asound
+#define snd_pcm_xrun_mode_name snd_pcm_xrun_mode_name_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_start_mode snd_pcm_sw_params_set_start_mode_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_start_mode snd_pcm_sw_params_get_start_mode_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_xrun_mode snd_pcm_sw_params_set_xrun_mode_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_xrun_mode snd_pcm_sw_params_get_xrun_mode_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_xfer_align snd_pcm_sw_params_set_xfer_align_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_xfer_align snd_pcm_sw_params_get_xfer_align_dylibloader_orig_asound
+#define snd_pcm_sw_params_set_sleep_min snd_pcm_sw_params_set_sleep_min_dylibloader_orig_asound
+#define snd_pcm_sw_params_get_sleep_min snd_pcm_sw_params_get_sleep_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_tick_time snd_pcm_hw_params_get_tick_time_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_tick_time_min snd_pcm_hw_params_get_tick_time_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_get_tick_time_max snd_pcm_hw_params_get_tick_time_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_test_tick_time snd_pcm_hw_params_test_tick_time_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_tick_time snd_pcm_hw_params_set_tick_time_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_tick_time_min snd_pcm_hw_params_set_tick_time_min_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_tick_time_max snd_pcm_hw_params_set_tick_time_max_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_tick_time_minmax snd_pcm_hw_params_set_tick_time_minmax_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_tick_time_near snd_pcm_hw_params_set_tick_time_near_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_tick_time_first snd_pcm_hw_params_set_tick_time_first_dylibloader_orig_asound
+#define snd_pcm_hw_params_set_tick_time_last snd_pcm_hw_params_set_tick_time_last_dylibloader_orig_asound
+#define snd_rawmidi_open snd_rawmidi_open_dylibloader_orig_asound
+#define snd_rawmidi_open_lconf snd_rawmidi_open_lconf_dylibloader_orig_asound
+#define snd_rawmidi_close snd_rawmidi_close_dylibloader_orig_asound
+#define snd_rawmidi_poll_descriptors_count snd_rawmidi_poll_descriptors_count_dylibloader_orig_asound
+#define snd_rawmidi_poll_descriptors snd_rawmidi_poll_descriptors_dylibloader_orig_asound
+#define snd_rawmidi_poll_descriptors_revents snd_rawmidi_poll_descriptors_revents_dylibloader_orig_asound
+#define snd_rawmidi_nonblock snd_rawmidi_nonblock_dylibloader_orig_asound
+#define snd_rawmidi_info_sizeof snd_rawmidi_info_sizeof_dylibloader_orig_asound
+#define snd_rawmidi_info_malloc snd_rawmidi_info_malloc_dylibloader_orig_asound
+#define snd_rawmidi_info_free snd_rawmidi_info_free_dylibloader_orig_asound
+#define snd_rawmidi_info_copy snd_rawmidi_info_copy_dylibloader_orig_asound
+#define snd_rawmidi_info_get_device snd_rawmidi_info_get_device_dylibloader_orig_asound
+#define snd_rawmidi_info_get_subdevice snd_rawmidi_info_get_subdevice_dylibloader_orig_asound
+#define snd_rawmidi_info_get_stream snd_rawmidi_info_get_stream_dylibloader_orig_asound
+#define snd_rawmidi_info_get_card snd_rawmidi_info_get_card_dylibloader_orig_asound
+#define snd_rawmidi_info_get_flags snd_rawmidi_info_get_flags_dylibloader_orig_asound
+#define snd_rawmidi_info_get_id snd_rawmidi_info_get_id_dylibloader_orig_asound
+#define snd_rawmidi_info_get_name snd_rawmidi_info_get_name_dylibloader_orig_asound
+#define snd_rawmidi_info_get_subdevice_name snd_rawmidi_info_get_subdevice_name_dylibloader_orig_asound
+#define snd_rawmidi_info_get_subdevices_count snd_rawmidi_info_get_subdevices_count_dylibloader_orig_asound
+#define snd_rawmidi_info_get_subdevices_avail snd_rawmidi_info_get_subdevices_avail_dylibloader_orig_asound
+#define snd_rawmidi_info_set_device snd_rawmidi_info_set_device_dylibloader_orig_asound
+#define snd_rawmidi_info_set_subdevice snd_rawmidi_info_set_subdevice_dylibloader_orig_asound
+#define snd_rawmidi_info_set_stream snd_rawmidi_info_set_stream_dylibloader_orig_asound
+#define snd_rawmidi_info snd_rawmidi_info_dylibloader_orig_asound
+#define snd_rawmidi_params_sizeof snd_rawmidi_params_sizeof_dylibloader_orig_asound
+#define snd_rawmidi_params_malloc snd_rawmidi_params_malloc_dylibloader_orig_asound
+#define snd_rawmidi_params_free snd_rawmidi_params_free_dylibloader_orig_asound
+#define snd_rawmidi_params_copy snd_rawmidi_params_copy_dylibloader_orig_asound
+#define snd_rawmidi_params_set_buffer_size snd_rawmidi_params_set_buffer_size_dylibloader_orig_asound
+#define snd_rawmidi_params_get_buffer_size snd_rawmidi_params_get_buffer_size_dylibloader_orig_asound
+#define snd_rawmidi_params_set_avail_min snd_rawmidi_params_set_avail_min_dylibloader_orig_asound
+#define snd_rawmidi_params_get_avail_min snd_rawmidi_params_get_avail_min_dylibloader_orig_asound
+#define snd_rawmidi_params_set_no_active_sensing snd_rawmidi_params_set_no_active_sensing_dylibloader_orig_asound
+#define snd_rawmidi_params_get_no_active_sensing snd_rawmidi_params_get_no_active_sensing_dylibloader_orig_asound
+#define snd_rawmidi_params snd_rawmidi_params_dylibloader_orig_asound
+#define snd_rawmidi_params_current snd_rawmidi_params_current_dylibloader_orig_asound
+#define snd_rawmidi_status_sizeof snd_rawmidi_status_sizeof_dylibloader_orig_asound
+#define snd_rawmidi_status_malloc snd_rawmidi_status_malloc_dylibloader_orig_asound
+#define snd_rawmidi_status_free snd_rawmidi_status_free_dylibloader_orig_asound
+#define snd_rawmidi_status_copy snd_rawmidi_status_copy_dylibloader_orig_asound
+#define snd_rawmidi_status_get_tstamp snd_rawmidi_status_get_tstamp_dylibloader_orig_asound
+#define snd_rawmidi_status_get_avail snd_rawmidi_status_get_avail_dylibloader_orig_asound
+#define snd_rawmidi_status_get_xruns snd_rawmidi_status_get_xruns_dylibloader_orig_asound
+#define snd_rawmidi_status snd_rawmidi_status_dylibloader_orig_asound
+#define snd_rawmidi_drain snd_rawmidi_drain_dylibloader_orig_asound
+#define snd_rawmidi_drop snd_rawmidi_drop_dylibloader_orig_asound
+#define snd_rawmidi_write snd_rawmidi_write_dylibloader_orig_asound
+#define snd_rawmidi_read snd_rawmidi_read_dylibloader_orig_asound
+#define snd_rawmidi_name snd_rawmidi_name_dylibloader_orig_asound
+#define snd_rawmidi_type snd_rawmidi_type_dylibloader_orig_asound
+#define snd_rawmidi_stream snd_rawmidi_stream_dylibloader_orig_asound
+#define snd_timer_query_open snd_timer_query_open_dylibloader_orig_asound
+#define snd_timer_query_open_lconf snd_timer_query_open_lconf_dylibloader_orig_asound
+#define snd_timer_query_close snd_timer_query_close_dylibloader_orig_asound
+#define snd_timer_query_next_device snd_timer_query_next_device_dylibloader_orig_asound
+#define snd_timer_query_info snd_timer_query_info_dylibloader_orig_asound
+#define snd_timer_query_params snd_timer_query_params_dylibloader_orig_asound
+#define snd_timer_query_status snd_timer_query_status_dylibloader_orig_asound
+#define snd_timer_open snd_timer_open_dylibloader_orig_asound
+#define snd_timer_open_lconf snd_timer_open_lconf_dylibloader_orig_asound
+#define snd_timer_close snd_timer_close_dylibloader_orig_asound
+#define snd_async_add_timer_handler snd_async_add_timer_handler_dylibloader_orig_asound
+#define snd_async_handler_get_timer snd_async_handler_get_timer_dylibloader_orig_asound
+#define snd_timer_poll_descriptors_count snd_timer_poll_descriptors_count_dylibloader_orig_asound
+#define snd_timer_poll_descriptors snd_timer_poll_descriptors_dylibloader_orig_asound
+#define snd_timer_poll_descriptors_revents snd_timer_poll_descriptors_revents_dylibloader_orig_asound
+#define snd_timer_info snd_timer_info_dylibloader_orig_asound
+#define snd_timer_params snd_timer_params_dylibloader_orig_asound
+#define snd_timer_status snd_timer_status_dylibloader_orig_asound
+#define snd_timer_start snd_timer_start_dylibloader_orig_asound
+#define snd_timer_stop snd_timer_stop_dylibloader_orig_asound
+#define snd_timer_continue snd_timer_continue_dylibloader_orig_asound
+#define snd_timer_read snd_timer_read_dylibloader_orig_asound
+#define snd_timer_id_sizeof snd_timer_id_sizeof_dylibloader_orig_asound
+#define snd_timer_id_malloc snd_timer_id_malloc_dylibloader_orig_asound
+#define snd_timer_id_free snd_timer_id_free_dylibloader_orig_asound
+#define snd_timer_id_copy snd_timer_id_copy_dylibloader_orig_asound
+#define snd_timer_id_set_class snd_timer_id_set_class_dylibloader_orig_asound
+#define snd_timer_id_get_class snd_timer_id_get_class_dylibloader_orig_asound
+#define snd_timer_id_set_sclass snd_timer_id_set_sclass_dylibloader_orig_asound
+#define snd_timer_id_get_sclass snd_timer_id_get_sclass_dylibloader_orig_asound
+#define snd_timer_id_set_card snd_timer_id_set_card_dylibloader_orig_asound
+#define snd_timer_id_get_card snd_timer_id_get_card_dylibloader_orig_asound
+#define snd_timer_id_set_device snd_timer_id_set_device_dylibloader_orig_asound
+#define snd_timer_id_get_device snd_timer_id_get_device_dylibloader_orig_asound
+#define snd_timer_id_set_subdevice snd_timer_id_set_subdevice_dylibloader_orig_asound
+#define snd_timer_id_get_subdevice snd_timer_id_get_subdevice_dylibloader_orig_asound
+#define snd_timer_ginfo_sizeof snd_timer_ginfo_sizeof_dylibloader_orig_asound
+#define snd_timer_ginfo_malloc snd_timer_ginfo_malloc_dylibloader_orig_asound
+#define snd_timer_ginfo_free snd_timer_ginfo_free_dylibloader_orig_asound
+#define snd_timer_ginfo_copy snd_timer_ginfo_copy_dylibloader_orig_asound
+#define snd_timer_ginfo_set_tid snd_timer_ginfo_set_tid_dylibloader_orig_asound
+#define snd_timer_ginfo_get_tid snd_timer_ginfo_get_tid_dylibloader_orig_asound
+#define snd_timer_ginfo_get_flags snd_timer_ginfo_get_flags_dylibloader_orig_asound
+#define snd_timer_ginfo_get_card snd_timer_ginfo_get_card_dylibloader_orig_asound
+#define snd_timer_ginfo_get_id snd_timer_ginfo_get_id_dylibloader_orig_asound
+#define snd_timer_ginfo_get_name snd_timer_ginfo_get_name_dylibloader_orig_asound
+#define snd_timer_ginfo_get_resolution snd_timer_ginfo_get_resolution_dylibloader_orig_asound
+#define snd_timer_ginfo_get_resolution_min snd_timer_ginfo_get_resolution_min_dylibloader_orig_asound
+#define snd_timer_ginfo_get_resolution_max snd_timer_ginfo_get_resolution_max_dylibloader_orig_asound
+#define snd_timer_ginfo_get_clients snd_timer_ginfo_get_clients_dylibloader_orig_asound
+#define snd_timer_info_sizeof snd_timer_info_sizeof_dylibloader_orig_asound
+#define snd_timer_info_malloc snd_timer_info_malloc_dylibloader_orig_asound
+#define snd_timer_info_free snd_timer_info_free_dylibloader_orig_asound
+#define snd_timer_info_copy snd_timer_info_copy_dylibloader_orig_asound
+#define snd_timer_info_is_slave snd_timer_info_is_slave_dylibloader_orig_asound
+#define snd_timer_info_get_card snd_timer_info_get_card_dylibloader_orig_asound
+#define snd_timer_info_get_id snd_timer_info_get_id_dylibloader_orig_asound
+#define snd_timer_info_get_name snd_timer_info_get_name_dylibloader_orig_asound
+#define snd_timer_info_get_resolution snd_timer_info_get_resolution_dylibloader_orig_asound
+#define snd_timer_params_sizeof snd_timer_params_sizeof_dylibloader_orig_asound
+#define snd_timer_params_malloc snd_timer_params_malloc_dylibloader_orig_asound
+#define snd_timer_params_free snd_timer_params_free_dylibloader_orig_asound
+#define snd_timer_params_copy snd_timer_params_copy_dylibloader_orig_asound
+#define snd_timer_params_set_auto_start snd_timer_params_set_auto_start_dylibloader_orig_asound
+#define snd_timer_params_get_auto_start snd_timer_params_get_auto_start_dylibloader_orig_asound
+#define snd_timer_params_set_exclusive snd_timer_params_set_exclusive_dylibloader_orig_asound
+#define snd_timer_params_get_exclusive snd_timer_params_get_exclusive_dylibloader_orig_asound
+#define snd_timer_params_set_early_event snd_timer_params_set_early_event_dylibloader_orig_asound
+#define snd_timer_params_get_early_event snd_timer_params_get_early_event_dylibloader_orig_asound
+#define snd_timer_params_set_ticks snd_timer_params_set_ticks_dylibloader_orig_asound
+#define snd_timer_params_get_ticks snd_timer_params_get_ticks_dylibloader_orig_asound
+#define snd_timer_params_set_queue_size snd_timer_params_set_queue_size_dylibloader_orig_asound
+#define snd_timer_params_get_queue_size snd_timer_params_get_queue_size_dylibloader_orig_asound
+#define snd_timer_params_set_filter snd_timer_params_set_filter_dylibloader_orig_asound
+#define snd_timer_params_get_filter snd_timer_params_get_filter_dylibloader_orig_asound
+#define snd_timer_status_sizeof snd_timer_status_sizeof_dylibloader_orig_asound
+#define snd_timer_status_malloc snd_timer_status_malloc_dylibloader_orig_asound
+#define snd_timer_status_free snd_timer_status_free_dylibloader_orig_asound
+#define snd_timer_status_copy snd_timer_status_copy_dylibloader_orig_asound
+#define snd_timer_status_get_timestamp snd_timer_status_get_timestamp_dylibloader_orig_asound
+#define snd_timer_status_get_resolution snd_timer_status_get_resolution_dylibloader_orig_asound
+#define snd_timer_status_get_lost snd_timer_status_get_lost_dylibloader_orig_asound
+#define snd_timer_status_get_overrun snd_timer_status_get_overrun_dylibloader_orig_asound
+#define snd_timer_status_get_queue snd_timer_status_get_queue_dylibloader_orig_asound
+#define snd_timer_info_get_ticks snd_timer_info_get_ticks_dylibloader_orig_asound
+#define snd_hwdep_open snd_hwdep_open_dylibloader_orig_asound
+#define snd_hwdep_close snd_hwdep_close_dylibloader_orig_asound
+#define snd_hwdep_poll_descriptors snd_hwdep_poll_descriptors_dylibloader_orig_asound
+#define snd_hwdep_poll_descriptors_count snd_hwdep_poll_descriptors_count_dylibloader_orig_asound
+#define snd_hwdep_poll_descriptors_revents snd_hwdep_poll_descriptors_revents_dylibloader_orig_asound
+#define snd_hwdep_nonblock snd_hwdep_nonblock_dylibloader_orig_asound
+#define snd_hwdep_info snd_hwdep_info_dylibloader_orig_asound
+#define snd_hwdep_dsp_status snd_hwdep_dsp_status_dylibloader_orig_asound
+#define snd_hwdep_dsp_load snd_hwdep_dsp_load_dylibloader_orig_asound
+#define snd_hwdep_ioctl snd_hwdep_ioctl_dylibloader_orig_asound
+#define snd_hwdep_write snd_hwdep_write_dylibloader_orig_asound
+#define snd_hwdep_read snd_hwdep_read_dylibloader_orig_asound
+#define snd_hwdep_info_sizeof snd_hwdep_info_sizeof_dylibloader_orig_asound
+#define snd_hwdep_info_malloc snd_hwdep_info_malloc_dylibloader_orig_asound
+#define snd_hwdep_info_free snd_hwdep_info_free_dylibloader_orig_asound
+#define snd_hwdep_info_copy snd_hwdep_info_copy_dylibloader_orig_asound
+#define snd_hwdep_info_get_device snd_hwdep_info_get_device_dylibloader_orig_asound
+#define snd_hwdep_info_get_card snd_hwdep_info_get_card_dylibloader_orig_asound
+#define snd_hwdep_info_get_id snd_hwdep_info_get_id_dylibloader_orig_asound
+#define snd_hwdep_info_get_name snd_hwdep_info_get_name_dylibloader_orig_asound
+#define snd_hwdep_info_get_iface snd_hwdep_info_get_iface_dylibloader_orig_asound
+#define snd_hwdep_info_set_device snd_hwdep_info_set_device_dylibloader_orig_asound
+#define snd_hwdep_dsp_status_sizeof snd_hwdep_dsp_status_sizeof_dylibloader_orig_asound
+#define snd_hwdep_dsp_status_malloc snd_hwdep_dsp_status_malloc_dylibloader_orig_asound
+#define snd_hwdep_dsp_status_free snd_hwdep_dsp_status_free_dylibloader_orig_asound
+#define snd_hwdep_dsp_status_copy snd_hwdep_dsp_status_copy_dylibloader_orig_asound
+#define snd_hwdep_dsp_status_get_version snd_hwdep_dsp_status_get_version_dylibloader_orig_asound
+#define snd_hwdep_dsp_status_get_id snd_hwdep_dsp_status_get_id_dylibloader_orig_asound
+#define snd_hwdep_dsp_status_get_num_dsps snd_hwdep_dsp_status_get_num_dsps_dylibloader_orig_asound
+#define snd_hwdep_dsp_status_get_dsp_loaded snd_hwdep_dsp_status_get_dsp_loaded_dylibloader_orig_asound
+#define snd_hwdep_dsp_status_get_chip_ready snd_hwdep_dsp_status_get_chip_ready_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_sizeof snd_hwdep_dsp_image_sizeof_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_malloc snd_hwdep_dsp_image_malloc_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_free snd_hwdep_dsp_image_free_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_copy snd_hwdep_dsp_image_copy_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_get_index snd_hwdep_dsp_image_get_index_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_get_name snd_hwdep_dsp_image_get_name_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_get_image snd_hwdep_dsp_image_get_image_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_get_length snd_hwdep_dsp_image_get_length_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_set_index snd_hwdep_dsp_image_set_index_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_set_name snd_hwdep_dsp_image_set_name_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_set_image snd_hwdep_dsp_image_set_image_dylibloader_orig_asound
+#define snd_hwdep_dsp_image_set_length snd_hwdep_dsp_image_set_length_dylibloader_orig_asound
+#define snd_card_load snd_card_load_dylibloader_orig_asound
+#define snd_card_next snd_card_next_dylibloader_orig_asound
+#define snd_card_get_index snd_card_get_index_dylibloader_orig_asound
+#define snd_card_get_name snd_card_get_name_dylibloader_orig_asound
+#define snd_card_get_longname snd_card_get_longname_dylibloader_orig_asound
+#define snd_device_name_hint snd_device_name_hint_dylibloader_orig_asound
+#define snd_device_name_free_hint snd_device_name_free_hint_dylibloader_orig_asound
+#define snd_device_name_get_hint snd_device_name_get_hint_dylibloader_orig_asound
+#define snd_ctl_open snd_ctl_open_dylibloader_orig_asound
+#define snd_ctl_open_lconf snd_ctl_open_lconf_dylibloader_orig_asound
+#define snd_ctl_open_fallback snd_ctl_open_fallback_dylibloader_orig_asound
+#define snd_ctl_close snd_ctl_close_dylibloader_orig_asound
+#define snd_ctl_nonblock snd_ctl_nonblock_dylibloader_orig_asound
+#define snd_async_add_ctl_handler snd_async_add_ctl_handler_dylibloader_orig_asound
+#define snd_async_handler_get_ctl snd_async_handler_get_ctl_dylibloader_orig_asound
+#define snd_ctl_poll_descriptors_count snd_ctl_poll_descriptors_count_dylibloader_orig_asound
+#define snd_ctl_poll_descriptors snd_ctl_poll_descriptors_dylibloader_orig_asound
+#define snd_ctl_poll_descriptors_revents snd_ctl_poll_descriptors_revents_dylibloader_orig_asound
+#define snd_ctl_subscribe_events snd_ctl_subscribe_events_dylibloader_orig_asound
+#define snd_ctl_card_info snd_ctl_card_info_dylibloader_orig_asound
+#define snd_ctl_elem_list snd_ctl_elem_list_dylibloader_orig_asound
+#define snd_ctl_elem_info snd_ctl_elem_info_dylibloader_orig_asound
+#define snd_ctl_elem_read snd_ctl_elem_read_dylibloader_orig_asound
+#define snd_ctl_elem_write snd_ctl_elem_write_dylibloader_orig_asound
+#define snd_ctl_elem_lock snd_ctl_elem_lock_dylibloader_orig_asound
+#define snd_ctl_elem_unlock snd_ctl_elem_unlock_dylibloader_orig_asound
+#define snd_ctl_elem_tlv_read snd_ctl_elem_tlv_read_dylibloader_orig_asound
+#define snd_ctl_elem_tlv_write snd_ctl_elem_tlv_write_dylibloader_orig_asound
+#define snd_ctl_elem_tlv_command snd_ctl_elem_tlv_command_dylibloader_orig_asound
+#define snd_ctl_hwdep_next_device snd_ctl_hwdep_next_device_dylibloader_orig_asound
+#define snd_ctl_hwdep_info snd_ctl_hwdep_info_dylibloader_orig_asound
+#define snd_ctl_pcm_next_device snd_ctl_pcm_next_device_dylibloader_orig_asound
+#define snd_ctl_pcm_info snd_ctl_pcm_info_dylibloader_orig_asound
+#define snd_ctl_pcm_prefer_subdevice snd_ctl_pcm_prefer_subdevice_dylibloader_orig_asound
+#define snd_ctl_rawmidi_next_device snd_ctl_rawmidi_next_device_dylibloader_orig_asound
+#define snd_ctl_rawmidi_info snd_ctl_rawmidi_info_dylibloader_orig_asound
+#define snd_ctl_rawmidi_prefer_subdevice snd_ctl_rawmidi_prefer_subdevice_dylibloader_orig_asound
+#define snd_ctl_set_power_state snd_ctl_set_power_state_dylibloader_orig_asound
+#define snd_ctl_get_power_state snd_ctl_get_power_state_dylibloader_orig_asound
+#define snd_ctl_read snd_ctl_read_dylibloader_orig_asound
+#define snd_ctl_wait snd_ctl_wait_dylibloader_orig_asound
+#define snd_ctl_name snd_ctl_name_dylibloader_orig_asound
+#define snd_ctl_type snd_ctl_type_dylibloader_orig_asound
+#define snd_ctl_elem_type_name snd_ctl_elem_type_name_dylibloader_orig_asound
+#define snd_ctl_elem_iface_name snd_ctl_elem_iface_name_dylibloader_orig_asound
+#define snd_ctl_event_type_name snd_ctl_event_type_name_dylibloader_orig_asound
+#define snd_ctl_event_elem_get_mask snd_ctl_event_elem_get_mask_dylibloader_orig_asound
+#define snd_ctl_event_elem_get_numid snd_ctl_event_elem_get_numid_dylibloader_orig_asound
+#define snd_ctl_event_elem_get_id snd_ctl_event_elem_get_id_dylibloader_orig_asound
+#define snd_ctl_event_elem_get_interface snd_ctl_event_elem_get_interface_dylibloader_orig_asound
+#define snd_ctl_event_elem_get_device snd_ctl_event_elem_get_device_dylibloader_orig_asound
+#define snd_ctl_event_elem_get_subdevice snd_ctl_event_elem_get_subdevice_dylibloader_orig_asound
+#define snd_ctl_event_elem_get_name snd_ctl_event_elem_get_name_dylibloader_orig_asound
+#define snd_ctl_event_elem_get_index snd_ctl_event_elem_get_index_dylibloader_orig_asound
+#define snd_ctl_elem_list_alloc_space snd_ctl_elem_list_alloc_space_dylibloader_orig_asound
+#define snd_ctl_elem_list_free_space snd_ctl_elem_list_free_space_dylibloader_orig_asound
+#define snd_ctl_ascii_elem_id_get snd_ctl_ascii_elem_id_get_dylibloader_orig_asound
+#define snd_ctl_ascii_elem_id_parse snd_ctl_ascii_elem_id_parse_dylibloader_orig_asound
+#define snd_ctl_ascii_value_parse snd_ctl_ascii_value_parse_dylibloader_orig_asound
+#define snd_ctl_elem_id_sizeof snd_ctl_elem_id_sizeof_dylibloader_orig_asound
+#define snd_ctl_elem_id_malloc snd_ctl_elem_id_malloc_dylibloader_orig_asound
+#define snd_ctl_elem_id_free snd_ctl_elem_id_free_dylibloader_orig_asound
+#define snd_ctl_elem_id_clear snd_ctl_elem_id_clear_dylibloader_orig_asound
+#define snd_ctl_elem_id_copy snd_ctl_elem_id_copy_dylibloader_orig_asound
+#define snd_ctl_elem_id_get_numid snd_ctl_elem_id_get_numid_dylibloader_orig_asound
+#define snd_ctl_elem_id_get_interface snd_ctl_elem_id_get_interface_dylibloader_orig_asound
+#define snd_ctl_elem_id_get_device snd_ctl_elem_id_get_device_dylibloader_orig_asound
+#define snd_ctl_elem_id_get_subdevice snd_ctl_elem_id_get_subdevice_dylibloader_orig_asound
+#define snd_ctl_elem_id_get_name snd_ctl_elem_id_get_name_dylibloader_orig_asound
+#define snd_ctl_elem_id_get_index snd_ctl_elem_id_get_index_dylibloader_orig_asound
+#define snd_ctl_elem_id_set_numid snd_ctl_elem_id_set_numid_dylibloader_orig_asound
+#define snd_ctl_elem_id_set_interface snd_ctl_elem_id_set_interface_dylibloader_orig_asound
+#define snd_ctl_elem_id_set_device snd_ctl_elem_id_set_device_dylibloader_orig_asound
+#define snd_ctl_elem_id_set_subdevice snd_ctl_elem_id_set_subdevice_dylibloader_orig_asound
+#define snd_ctl_elem_id_set_name snd_ctl_elem_id_set_name_dylibloader_orig_asound
+#define snd_ctl_elem_id_set_index snd_ctl_elem_id_set_index_dylibloader_orig_asound
+#define snd_ctl_card_info_sizeof snd_ctl_card_info_sizeof_dylibloader_orig_asound
+#define snd_ctl_card_info_malloc snd_ctl_card_info_malloc_dylibloader_orig_asound
+#define snd_ctl_card_info_free snd_ctl_card_info_free_dylibloader_orig_asound
+#define snd_ctl_card_info_clear snd_ctl_card_info_clear_dylibloader_orig_asound
+#define snd_ctl_card_info_copy snd_ctl_card_info_copy_dylibloader_orig_asound
+#define snd_ctl_card_info_get_card snd_ctl_card_info_get_card_dylibloader_orig_asound
+#define snd_ctl_card_info_get_id snd_ctl_card_info_get_id_dylibloader_orig_asound
+#define snd_ctl_card_info_get_driver snd_ctl_card_info_get_driver_dylibloader_orig_asound
+#define snd_ctl_card_info_get_name snd_ctl_card_info_get_name_dylibloader_orig_asound
+#define snd_ctl_card_info_get_longname snd_ctl_card_info_get_longname_dylibloader_orig_asound
+#define snd_ctl_card_info_get_mixername snd_ctl_card_info_get_mixername_dylibloader_orig_asound
+#define snd_ctl_card_info_get_components snd_ctl_card_info_get_components_dylibloader_orig_asound
+#define snd_ctl_event_sizeof snd_ctl_event_sizeof_dylibloader_orig_asound
+#define snd_ctl_event_malloc snd_ctl_event_malloc_dylibloader_orig_asound
+#define snd_ctl_event_free snd_ctl_event_free_dylibloader_orig_asound
+#define snd_ctl_event_clear snd_ctl_event_clear_dylibloader_orig_asound
+#define snd_ctl_event_copy snd_ctl_event_copy_dylibloader_orig_asound
+#define snd_ctl_event_get_type snd_ctl_event_get_type_dylibloader_orig_asound
+#define snd_ctl_elem_list_sizeof snd_ctl_elem_list_sizeof_dylibloader_orig_asound
+#define snd_ctl_elem_list_malloc snd_ctl_elem_list_malloc_dylibloader_orig_asound
+#define snd_ctl_elem_list_free snd_ctl_elem_list_free_dylibloader_orig_asound
+#define snd_ctl_elem_list_clear snd_ctl_elem_list_clear_dylibloader_orig_asound
+#define snd_ctl_elem_list_copy snd_ctl_elem_list_copy_dylibloader_orig_asound
+#define snd_ctl_elem_list_set_offset snd_ctl_elem_list_set_offset_dylibloader_orig_asound
+#define snd_ctl_elem_list_get_used snd_ctl_elem_list_get_used_dylibloader_orig_asound
+#define snd_ctl_elem_list_get_count snd_ctl_elem_list_get_count_dylibloader_orig_asound
+#define snd_ctl_elem_list_get_id snd_ctl_elem_list_get_id_dylibloader_orig_asound
+#define snd_ctl_elem_list_get_numid snd_ctl_elem_list_get_numid_dylibloader_orig_asound
+#define snd_ctl_elem_list_get_interface snd_ctl_elem_list_get_interface_dylibloader_orig_asound
+#define snd_ctl_elem_list_get_device snd_ctl_elem_list_get_device_dylibloader_orig_asound
+#define snd_ctl_elem_list_get_subdevice snd_ctl_elem_list_get_subdevice_dylibloader_orig_asound
+#define snd_ctl_elem_list_get_name snd_ctl_elem_list_get_name_dylibloader_orig_asound
+#define snd_ctl_elem_list_get_index snd_ctl_elem_list_get_index_dylibloader_orig_asound
+#define snd_ctl_elem_info_sizeof snd_ctl_elem_info_sizeof_dylibloader_orig_asound
+#define snd_ctl_elem_info_malloc snd_ctl_elem_info_malloc_dylibloader_orig_asound
+#define snd_ctl_elem_info_free snd_ctl_elem_info_free_dylibloader_orig_asound
+#define snd_ctl_elem_info_clear snd_ctl_elem_info_clear_dylibloader_orig_asound
+#define snd_ctl_elem_info_copy snd_ctl_elem_info_copy_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_type snd_ctl_elem_info_get_type_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_readable snd_ctl_elem_info_is_readable_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_writable snd_ctl_elem_info_is_writable_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_volatile snd_ctl_elem_info_is_volatile_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_inactive snd_ctl_elem_info_is_inactive_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_locked snd_ctl_elem_info_is_locked_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_tlv_readable snd_ctl_elem_info_is_tlv_readable_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_tlv_writable snd_ctl_elem_info_is_tlv_writable_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_tlv_commandable snd_ctl_elem_info_is_tlv_commandable_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_owner snd_ctl_elem_info_is_owner_dylibloader_orig_asound
+#define snd_ctl_elem_info_is_user snd_ctl_elem_info_is_user_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_owner snd_ctl_elem_info_get_owner_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_count snd_ctl_elem_info_get_count_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_min snd_ctl_elem_info_get_min_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_max snd_ctl_elem_info_get_max_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_step snd_ctl_elem_info_get_step_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_min64 snd_ctl_elem_info_get_min64_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_max64 snd_ctl_elem_info_get_max64_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_step64 snd_ctl_elem_info_get_step64_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_items snd_ctl_elem_info_get_items_dylibloader_orig_asound
+#define snd_ctl_elem_info_set_item snd_ctl_elem_info_set_item_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_item_name snd_ctl_elem_info_get_item_name_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_dimensions snd_ctl_elem_info_get_dimensions_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_dimension snd_ctl_elem_info_get_dimension_dylibloader_orig_asound
+#define snd_ctl_elem_info_set_dimension snd_ctl_elem_info_set_dimension_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_id snd_ctl_elem_info_get_id_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_numid snd_ctl_elem_info_get_numid_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_interface snd_ctl_elem_info_get_interface_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_device snd_ctl_elem_info_get_device_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_subdevice snd_ctl_elem_info_get_subdevice_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_name snd_ctl_elem_info_get_name_dylibloader_orig_asound
+#define snd_ctl_elem_info_get_index snd_ctl_elem_info_get_index_dylibloader_orig_asound
+#define snd_ctl_elem_info_set_id snd_ctl_elem_info_set_id_dylibloader_orig_asound
+#define snd_ctl_elem_info_set_numid snd_ctl_elem_info_set_numid_dylibloader_orig_asound
+#define snd_ctl_elem_info_set_interface snd_ctl_elem_info_set_interface_dylibloader_orig_asound
+#define snd_ctl_elem_info_set_device snd_ctl_elem_info_set_device_dylibloader_orig_asound
+#define snd_ctl_elem_info_set_subdevice snd_ctl_elem_info_set_subdevice_dylibloader_orig_asound
+#define snd_ctl_elem_info_set_name snd_ctl_elem_info_set_name_dylibloader_orig_asound
+#define snd_ctl_elem_info_set_index snd_ctl_elem_info_set_index_dylibloader_orig_asound
+#define snd_ctl_add_integer_elem_set snd_ctl_add_integer_elem_set_dylibloader_orig_asound
+#define snd_ctl_add_integer64_elem_set snd_ctl_add_integer64_elem_set_dylibloader_orig_asound
+#define snd_ctl_add_boolean_elem_set snd_ctl_add_boolean_elem_set_dylibloader_orig_asound
+#define snd_ctl_add_enumerated_elem_set snd_ctl_add_enumerated_elem_set_dylibloader_orig_asound
+#define snd_ctl_add_bytes_elem_set snd_ctl_add_bytes_elem_set_dylibloader_orig_asound
+#define snd_ctl_elem_add_integer snd_ctl_elem_add_integer_dylibloader_orig_asound
+#define snd_ctl_elem_add_integer64 snd_ctl_elem_add_integer64_dylibloader_orig_asound
+#define snd_ctl_elem_add_boolean snd_ctl_elem_add_boolean_dylibloader_orig_asound
+#define snd_ctl_elem_add_enumerated snd_ctl_elem_add_enumerated_dylibloader_orig_asound
+#define snd_ctl_elem_add_iec958 snd_ctl_elem_add_iec958_dylibloader_orig_asound
+#define snd_ctl_elem_remove snd_ctl_elem_remove_dylibloader_orig_asound
+#define snd_ctl_elem_value_sizeof snd_ctl_elem_value_sizeof_dylibloader_orig_asound
+#define snd_ctl_elem_value_malloc snd_ctl_elem_value_malloc_dylibloader_orig_asound
+#define snd_ctl_elem_value_free snd_ctl_elem_value_free_dylibloader_orig_asound
+#define snd_ctl_elem_value_clear snd_ctl_elem_value_clear_dylibloader_orig_asound
+#define snd_ctl_elem_value_copy snd_ctl_elem_value_copy_dylibloader_orig_asound
+#define snd_ctl_elem_value_compare snd_ctl_elem_value_compare_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_id snd_ctl_elem_value_get_id_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_numid snd_ctl_elem_value_get_numid_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_interface snd_ctl_elem_value_get_interface_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_device snd_ctl_elem_value_get_device_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_subdevice snd_ctl_elem_value_get_subdevice_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_name snd_ctl_elem_value_get_name_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_index snd_ctl_elem_value_get_index_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_id snd_ctl_elem_value_set_id_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_numid snd_ctl_elem_value_set_numid_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_interface snd_ctl_elem_value_set_interface_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_device snd_ctl_elem_value_set_device_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_subdevice snd_ctl_elem_value_set_subdevice_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_name snd_ctl_elem_value_set_name_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_index snd_ctl_elem_value_set_index_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_boolean snd_ctl_elem_value_get_boolean_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_integer snd_ctl_elem_value_get_integer_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_integer64 snd_ctl_elem_value_get_integer64_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_enumerated snd_ctl_elem_value_get_enumerated_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_byte snd_ctl_elem_value_get_byte_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_boolean snd_ctl_elem_value_set_boolean_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_integer snd_ctl_elem_value_set_integer_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_integer64 snd_ctl_elem_value_set_integer64_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_enumerated snd_ctl_elem_value_set_enumerated_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_byte snd_ctl_elem_value_set_byte_dylibloader_orig_asound
+#define snd_ctl_elem_set_bytes snd_ctl_elem_set_bytes_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_bytes snd_ctl_elem_value_get_bytes_dylibloader_orig_asound
+#define snd_ctl_elem_value_get_iec958 snd_ctl_elem_value_get_iec958_dylibloader_orig_asound
+#define snd_ctl_elem_value_set_iec958 snd_ctl_elem_value_set_iec958_dylibloader_orig_asound
+#define snd_tlv_parse_dB_info snd_tlv_parse_dB_info_dylibloader_orig_asound
+#define snd_tlv_get_dB_range snd_tlv_get_dB_range_dylibloader_orig_asound
+#define snd_tlv_convert_to_dB snd_tlv_convert_to_dB_dylibloader_orig_asound
+#define snd_tlv_convert_from_dB snd_tlv_convert_from_dB_dylibloader_orig_asound
+#define snd_ctl_get_dB_range snd_ctl_get_dB_range_dylibloader_orig_asound
+#define snd_ctl_convert_to_dB snd_ctl_convert_to_dB_dylibloader_orig_asound
+#define snd_ctl_convert_from_dB snd_ctl_convert_from_dB_dylibloader_orig_asound
+#define snd_hctl_compare_fast snd_hctl_compare_fast_dylibloader_orig_asound
+#define snd_hctl_open snd_hctl_open_dylibloader_orig_asound
+#define snd_hctl_open_ctl snd_hctl_open_ctl_dylibloader_orig_asound
+#define snd_hctl_close snd_hctl_close_dylibloader_orig_asound
+#define snd_hctl_nonblock snd_hctl_nonblock_dylibloader_orig_asound
+#define snd_hctl_poll_descriptors_count snd_hctl_poll_descriptors_count_dylibloader_orig_asound
+#define snd_hctl_poll_descriptors snd_hctl_poll_descriptors_dylibloader_orig_asound
+#define snd_hctl_poll_descriptors_revents snd_hctl_poll_descriptors_revents_dylibloader_orig_asound
+#define snd_hctl_get_count snd_hctl_get_count_dylibloader_orig_asound
+#define snd_hctl_set_compare snd_hctl_set_compare_dylibloader_orig_asound
+#define snd_hctl_first_elem snd_hctl_first_elem_dylibloader_orig_asound
+#define snd_hctl_last_elem snd_hctl_last_elem_dylibloader_orig_asound
+#define snd_hctl_find_elem snd_hctl_find_elem_dylibloader_orig_asound
+#define snd_hctl_set_callback snd_hctl_set_callback_dylibloader_orig_asound
+#define snd_hctl_set_callback_private snd_hctl_set_callback_private_dylibloader_orig_asound
+#define snd_hctl_get_callback_private snd_hctl_get_callback_private_dylibloader_orig_asound
+#define snd_hctl_load snd_hctl_load_dylibloader_orig_asound
+#define snd_hctl_free snd_hctl_free_dylibloader_orig_asound
+#define snd_hctl_handle_events snd_hctl_handle_events_dylibloader_orig_asound
+#define snd_hctl_name snd_hctl_name_dylibloader_orig_asound
+#define snd_hctl_wait snd_hctl_wait_dylibloader_orig_asound
+#define snd_hctl_ctl snd_hctl_ctl_dylibloader_orig_asound
+#define snd_hctl_elem_next snd_hctl_elem_next_dylibloader_orig_asound
+#define snd_hctl_elem_prev snd_hctl_elem_prev_dylibloader_orig_asound
+#define snd_hctl_elem_info snd_hctl_elem_info_dylibloader_orig_asound
+#define snd_hctl_elem_read snd_hctl_elem_read_dylibloader_orig_asound
+#define snd_hctl_elem_write snd_hctl_elem_write_dylibloader_orig_asound
+#define snd_hctl_elem_tlv_read snd_hctl_elem_tlv_read_dylibloader_orig_asound
+#define snd_hctl_elem_tlv_write snd_hctl_elem_tlv_write_dylibloader_orig_asound
+#define snd_hctl_elem_tlv_command snd_hctl_elem_tlv_command_dylibloader_orig_asound
+#define snd_hctl_elem_get_hctl snd_hctl_elem_get_hctl_dylibloader_orig_asound
+#define snd_hctl_elem_get_id snd_hctl_elem_get_id_dylibloader_orig_asound
+#define snd_hctl_elem_get_numid snd_hctl_elem_get_numid_dylibloader_orig_asound
+#define snd_hctl_elem_get_interface snd_hctl_elem_get_interface_dylibloader_orig_asound
+#define snd_hctl_elem_get_device snd_hctl_elem_get_device_dylibloader_orig_asound
+#define snd_hctl_elem_get_subdevice snd_hctl_elem_get_subdevice_dylibloader_orig_asound
+#define snd_hctl_elem_get_name snd_hctl_elem_get_name_dylibloader_orig_asound
+#define snd_hctl_elem_get_index snd_hctl_elem_get_index_dylibloader_orig_asound
+#define snd_hctl_elem_set_callback snd_hctl_elem_set_callback_dylibloader_orig_asound
+#define snd_hctl_elem_get_callback_private snd_hctl_elem_get_callback_private_dylibloader_orig_asound
+#define snd_hctl_elem_set_callback_private snd_hctl_elem_set_callback_private_dylibloader_orig_asound
+#define snd_sctl_build snd_sctl_build_dylibloader_orig_asound
+#define snd_sctl_free snd_sctl_free_dylibloader_orig_asound
+#define snd_sctl_install snd_sctl_install_dylibloader_orig_asound
+#define snd_sctl_remove snd_sctl_remove_dylibloader_orig_asound
+#define snd_mixer_open snd_mixer_open_dylibloader_orig_asound
+#define snd_mixer_close snd_mixer_close_dylibloader_orig_asound
+#define snd_mixer_first_elem snd_mixer_first_elem_dylibloader_orig_asound
+#define snd_mixer_last_elem snd_mixer_last_elem_dylibloader_orig_asound
+#define snd_mixer_handle_events snd_mixer_handle_events_dylibloader_orig_asound
+#define snd_mixer_attach snd_mixer_attach_dylibloader_orig_asound
+#define snd_mixer_attach_hctl snd_mixer_attach_hctl_dylibloader_orig_asound
+#define snd_mixer_detach snd_mixer_detach_dylibloader_orig_asound
+#define snd_mixer_detach_hctl snd_mixer_detach_hctl_dylibloader_orig_asound
+#define snd_mixer_get_hctl snd_mixer_get_hctl_dylibloader_orig_asound
+#define snd_mixer_poll_descriptors_count snd_mixer_poll_descriptors_count_dylibloader_orig_asound
+#define snd_mixer_poll_descriptors snd_mixer_poll_descriptors_dylibloader_orig_asound
+#define snd_mixer_poll_descriptors_revents snd_mixer_poll_descriptors_revents_dylibloader_orig_asound
+#define snd_mixer_load snd_mixer_load_dylibloader_orig_asound
+#define snd_mixer_free snd_mixer_free_dylibloader_orig_asound
+#define snd_mixer_wait snd_mixer_wait_dylibloader_orig_asound
+#define snd_mixer_set_compare snd_mixer_set_compare_dylibloader_orig_asound
+#define snd_mixer_set_callback snd_mixer_set_callback_dylibloader_orig_asound
+#define snd_mixer_get_callback_private snd_mixer_get_callback_private_dylibloader_orig_asound
+#define snd_mixer_set_callback_private snd_mixer_set_callback_private_dylibloader_orig_asound
+#define snd_mixer_get_count snd_mixer_get_count_dylibloader_orig_asound
+#define snd_mixer_class_unregister snd_mixer_class_unregister_dylibloader_orig_asound
+#define snd_mixer_elem_next snd_mixer_elem_next_dylibloader_orig_asound
+#define snd_mixer_elem_prev snd_mixer_elem_prev_dylibloader_orig_asound
+#define snd_mixer_elem_set_callback snd_mixer_elem_set_callback_dylibloader_orig_asound
+#define snd_mixer_elem_get_callback_private snd_mixer_elem_get_callback_private_dylibloader_orig_asound
+#define snd_mixer_elem_set_callback_private snd_mixer_elem_set_callback_private_dylibloader_orig_asound
+#define snd_mixer_elem_get_type snd_mixer_elem_get_type_dylibloader_orig_asound
+#define snd_mixer_class_register snd_mixer_class_register_dylibloader_orig_asound
+#define snd_mixer_elem_new snd_mixer_elem_new_dylibloader_orig_asound
+#define snd_mixer_elem_add snd_mixer_elem_add_dylibloader_orig_asound
+#define snd_mixer_elem_remove snd_mixer_elem_remove_dylibloader_orig_asound
+#define snd_mixer_elem_free snd_mixer_elem_free_dylibloader_orig_asound
+#define snd_mixer_elem_info snd_mixer_elem_info_dylibloader_orig_asound
+#define snd_mixer_elem_value snd_mixer_elem_value_dylibloader_orig_asound
+#define snd_mixer_elem_attach snd_mixer_elem_attach_dylibloader_orig_asound
+#define snd_mixer_elem_detach snd_mixer_elem_detach_dylibloader_orig_asound
+#define snd_mixer_elem_empty snd_mixer_elem_empty_dylibloader_orig_asound
+#define snd_mixer_elem_get_private snd_mixer_elem_get_private_dylibloader_orig_asound
+#define snd_mixer_class_sizeof snd_mixer_class_sizeof_dylibloader_orig_asound
+#define snd_mixer_class_malloc snd_mixer_class_malloc_dylibloader_orig_asound
+#define snd_mixer_class_free snd_mixer_class_free_dylibloader_orig_asound
+#define snd_mixer_class_copy snd_mixer_class_copy_dylibloader_orig_asound
+#define snd_mixer_class_get_mixer snd_mixer_class_get_mixer_dylibloader_orig_asound
+#define snd_mixer_class_get_event snd_mixer_class_get_event_dylibloader_orig_asound
+#define snd_mixer_class_get_private snd_mixer_class_get_private_dylibloader_orig_asound
+#define snd_mixer_class_get_compare snd_mixer_class_get_compare_dylibloader_orig_asound
+#define snd_mixer_class_set_event snd_mixer_class_set_event_dylibloader_orig_asound
+#define snd_mixer_class_set_private snd_mixer_class_set_private_dylibloader_orig_asound
+#define snd_mixer_class_set_private_free snd_mixer_class_set_private_free_dylibloader_orig_asound
+#define snd_mixer_class_set_compare snd_mixer_class_set_compare_dylibloader_orig_asound
+#define snd_mixer_selem_channel_name snd_mixer_selem_channel_name_dylibloader_orig_asound
+#define snd_mixer_selem_register snd_mixer_selem_register_dylibloader_orig_asound
+#define snd_mixer_selem_get_id snd_mixer_selem_get_id_dylibloader_orig_asound
+#define snd_mixer_selem_get_name snd_mixer_selem_get_name_dylibloader_orig_asound
+#define snd_mixer_selem_get_index snd_mixer_selem_get_index_dylibloader_orig_asound
+#define snd_mixer_find_selem snd_mixer_find_selem_dylibloader_orig_asound
+#define snd_mixer_selem_is_active snd_mixer_selem_is_active_dylibloader_orig_asound
+#define snd_mixer_selem_is_playback_mono snd_mixer_selem_is_playback_mono_dylibloader_orig_asound
+#define snd_mixer_selem_has_playback_channel snd_mixer_selem_has_playback_channel_dylibloader_orig_asound
+#define snd_mixer_selem_is_capture_mono snd_mixer_selem_is_capture_mono_dylibloader_orig_asound
+#define snd_mixer_selem_has_capture_channel snd_mixer_selem_has_capture_channel_dylibloader_orig_asound
+#define snd_mixer_selem_get_capture_group snd_mixer_selem_get_capture_group_dylibloader_orig_asound
+#define snd_mixer_selem_has_common_volume snd_mixer_selem_has_common_volume_dylibloader_orig_asound
+#define snd_mixer_selem_has_playback_volume snd_mixer_selem_has_playback_volume_dylibloader_orig_asound
+#define snd_mixer_selem_has_playback_volume_joined snd_mixer_selem_has_playback_volume_joined_dylibloader_orig_asound
+#define snd_mixer_selem_has_capture_volume snd_mixer_selem_has_capture_volume_dylibloader_orig_asound
+#define snd_mixer_selem_has_capture_volume_joined snd_mixer_selem_has_capture_volume_joined_dylibloader_orig_asound
+#define snd_mixer_selem_has_common_switch snd_mixer_selem_has_common_switch_dylibloader_orig_asound
+#define snd_mixer_selem_has_playback_switch snd_mixer_selem_has_playback_switch_dylibloader_orig_asound
+#define snd_mixer_selem_has_playback_switch_joined snd_mixer_selem_has_playback_switch_joined_dylibloader_orig_asound
+#define snd_mixer_selem_has_capture_switch snd_mixer_selem_has_capture_switch_dylibloader_orig_asound
+#define snd_mixer_selem_has_capture_switch_joined snd_mixer_selem_has_capture_switch_joined_dylibloader_orig_asound
+#define snd_mixer_selem_has_capture_switch_exclusive snd_mixer_selem_has_capture_switch_exclusive_dylibloader_orig_asound
+#define snd_mixer_selem_ask_playback_vol_dB snd_mixer_selem_ask_playback_vol_dB_dylibloader_orig_asound
+#define snd_mixer_selem_ask_capture_vol_dB snd_mixer_selem_ask_capture_vol_dB_dylibloader_orig_asound
+#define snd_mixer_selem_ask_playback_dB_vol snd_mixer_selem_ask_playback_dB_vol_dylibloader_orig_asound
+#define snd_mixer_selem_ask_capture_dB_vol snd_mixer_selem_ask_capture_dB_vol_dylibloader_orig_asound
+#define snd_mixer_selem_get_playback_volume snd_mixer_selem_get_playback_volume_dylibloader_orig_asound
+#define snd_mixer_selem_get_capture_volume snd_mixer_selem_get_capture_volume_dylibloader_orig_asound
+#define snd_mixer_selem_get_playback_dB snd_mixer_selem_get_playback_dB_dylibloader_orig_asound
+#define snd_mixer_selem_get_capture_dB snd_mixer_selem_get_capture_dB_dylibloader_orig_asound
+#define snd_mixer_selem_get_playback_switch snd_mixer_selem_get_playback_switch_dylibloader_orig_asound
+#define snd_mixer_selem_get_capture_switch snd_mixer_selem_get_capture_switch_dylibloader_orig_asound
+#define snd_mixer_selem_set_playback_volume snd_mixer_selem_set_playback_volume_dylibloader_orig_asound
+#define snd_mixer_selem_set_capture_volume snd_mixer_selem_set_capture_volume_dylibloader_orig_asound
+#define snd_mixer_selem_set_playback_dB snd_mixer_selem_set_playback_dB_dylibloader_orig_asound
+#define snd_mixer_selem_set_capture_dB snd_mixer_selem_set_capture_dB_dylibloader_orig_asound
+#define snd_mixer_selem_set_playback_volume_all snd_mixer_selem_set_playback_volume_all_dylibloader_orig_asound
+#define snd_mixer_selem_set_capture_volume_all snd_mixer_selem_set_capture_volume_all_dylibloader_orig_asound
+#define snd_mixer_selem_set_playback_dB_all snd_mixer_selem_set_playback_dB_all_dylibloader_orig_asound
+#define snd_mixer_selem_set_capture_dB_all snd_mixer_selem_set_capture_dB_all_dylibloader_orig_asound
+#define snd_mixer_selem_set_playback_switch snd_mixer_selem_set_playback_switch_dylibloader_orig_asound
+#define snd_mixer_selem_set_capture_switch snd_mixer_selem_set_capture_switch_dylibloader_orig_asound
+#define snd_mixer_selem_set_playback_switch_all snd_mixer_selem_set_playback_switch_all_dylibloader_orig_asound
+#define snd_mixer_selem_set_capture_switch_all snd_mixer_selem_set_capture_switch_all_dylibloader_orig_asound
+#define snd_mixer_selem_get_playback_volume_range snd_mixer_selem_get_playback_volume_range_dylibloader_orig_asound
+#define snd_mixer_selem_get_playback_dB_range snd_mixer_selem_get_playback_dB_range_dylibloader_orig_asound
+#define snd_mixer_selem_set_playback_volume_range snd_mixer_selem_set_playback_volume_range_dylibloader_orig_asound
+#define snd_mixer_selem_get_capture_volume_range snd_mixer_selem_get_capture_volume_range_dylibloader_orig_asound
+#define snd_mixer_selem_get_capture_dB_range snd_mixer_selem_get_capture_dB_range_dylibloader_orig_asound
+#define snd_mixer_selem_set_capture_volume_range snd_mixer_selem_set_capture_volume_range_dylibloader_orig_asound
+#define snd_mixer_selem_is_enumerated snd_mixer_selem_is_enumerated_dylibloader_orig_asound
+#define snd_mixer_selem_is_enum_playback snd_mixer_selem_is_enum_playback_dylibloader_orig_asound
+#define snd_mixer_selem_is_enum_capture snd_mixer_selem_is_enum_capture_dylibloader_orig_asound
+#define snd_mixer_selem_get_enum_items snd_mixer_selem_get_enum_items_dylibloader_orig_asound
+#define snd_mixer_selem_get_enum_item_name snd_mixer_selem_get_enum_item_name_dylibloader_orig_asound
+#define snd_mixer_selem_get_enum_item snd_mixer_selem_get_enum_item_dylibloader_orig_asound
+#define snd_mixer_selem_set_enum_item snd_mixer_selem_set_enum_item_dylibloader_orig_asound
+#define snd_mixer_selem_id_sizeof snd_mixer_selem_id_sizeof_dylibloader_orig_asound
+#define snd_mixer_selem_id_malloc snd_mixer_selem_id_malloc_dylibloader_orig_asound
+#define snd_mixer_selem_id_free snd_mixer_selem_id_free_dylibloader_orig_asound
+#define snd_mixer_selem_id_copy snd_mixer_selem_id_copy_dylibloader_orig_asound
+#define snd_mixer_selem_id_get_name snd_mixer_selem_id_get_name_dylibloader_orig_asound
+#define snd_mixer_selem_id_get_index snd_mixer_selem_id_get_index_dylibloader_orig_asound
+#define snd_mixer_selem_id_set_name snd_mixer_selem_id_set_name_dylibloader_orig_asound
+#define snd_mixer_selem_id_set_index snd_mixer_selem_id_set_index_dylibloader_orig_asound
+#define snd_seq_open snd_seq_open_dylibloader_orig_asound
+#define snd_seq_open_lconf snd_seq_open_lconf_dylibloader_orig_asound
+#define snd_seq_name snd_seq_name_dylibloader_orig_asound
+#define snd_seq_type snd_seq_type_dylibloader_orig_asound
+#define snd_seq_close snd_seq_close_dylibloader_orig_asound
+#define snd_seq_poll_descriptors_count snd_seq_poll_descriptors_count_dylibloader_orig_asound
+#define snd_seq_poll_descriptors snd_seq_poll_descriptors_dylibloader_orig_asound
+#define snd_seq_poll_descriptors_revents snd_seq_poll_descriptors_revents_dylibloader_orig_asound
+#define snd_seq_nonblock snd_seq_nonblock_dylibloader_orig_asound
+#define snd_seq_client_id snd_seq_client_id_dylibloader_orig_asound
+#define snd_seq_get_output_buffer_size snd_seq_get_output_buffer_size_dylibloader_orig_asound
+#define snd_seq_get_input_buffer_size snd_seq_get_input_buffer_size_dylibloader_orig_asound
+#define snd_seq_set_output_buffer_size snd_seq_set_output_buffer_size_dylibloader_orig_asound
+#define snd_seq_set_input_buffer_size snd_seq_set_input_buffer_size_dylibloader_orig_asound
+#define snd_seq_system_info_sizeof snd_seq_system_info_sizeof_dylibloader_orig_asound
+#define snd_seq_system_info_malloc snd_seq_system_info_malloc_dylibloader_orig_asound
+#define snd_seq_system_info_free snd_seq_system_info_free_dylibloader_orig_asound
+#define snd_seq_system_info_copy snd_seq_system_info_copy_dylibloader_orig_asound
+#define snd_seq_system_info_get_queues snd_seq_system_info_get_queues_dylibloader_orig_asound
+#define snd_seq_system_info_get_clients snd_seq_system_info_get_clients_dylibloader_orig_asound
+#define snd_seq_system_info_get_ports snd_seq_system_info_get_ports_dylibloader_orig_asound
+#define snd_seq_system_info_get_channels snd_seq_system_info_get_channels_dylibloader_orig_asound
+#define snd_seq_system_info_get_cur_clients snd_seq_system_info_get_cur_clients_dylibloader_orig_asound
+#define snd_seq_system_info_get_cur_queues snd_seq_system_info_get_cur_queues_dylibloader_orig_asound
+#define snd_seq_system_info snd_seq_system_info_dylibloader_orig_asound
+#define snd_seq_client_info_sizeof snd_seq_client_info_sizeof_dylibloader_orig_asound
+#define snd_seq_client_info_malloc snd_seq_client_info_malloc_dylibloader_orig_asound
+#define snd_seq_client_info_free snd_seq_client_info_free_dylibloader_orig_asound
+#define snd_seq_client_info_copy snd_seq_client_info_copy_dylibloader_orig_asound
+#define snd_seq_client_info_get_client snd_seq_client_info_get_client_dylibloader_orig_asound
+#define snd_seq_client_info_get_type snd_seq_client_info_get_type_dylibloader_orig_asound
+#define snd_seq_client_info_get_name snd_seq_client_info_get_name_dylibloader_orig_asound
+#define snd_seq_client_info_get_broadcast_filter snd_seq_client_info_get_broadcast_filter_dylibloader_orig_asound
+#define snd_seq_client_info_get_error_bounce snd_seq_client_info_get_error_bounce_dylibloader_orig_asound
+#define snd_seq_client_info_get_card snd_seq_client_info_get_card_dylibloader_orig_asound
+#define snd_seq_client_info_get_pid snd_seq_client_info_get_pid_dylibloader_orig_asound
+#define snd_seq_client_info_get_event_filter snd_seq_client_info_get_event_filter_dylibloader_orig_asound
+#define snd_seq_client_info_get_num_ports snd_seq_client_info_get_num_ports_dylibloader_orig_asound
+#define snd_seq_client_info_get_event_lost snd_seq_client_info_get_event_lost_dylibloader_orig_asound
+#define snd_seq_client_info_set_client snd_seq_client_info_set_client_dylibloader_orig_asound
+#define snd_seq_client_info_set_name snd_seq_client_info_set_name_dylibloader_orig_asound
+#define snd_seq_client_info_set_broadcast_filter snd_seq_client_info_set_broadcast_filter_dylibloader_orig_asound
+#define snd_seq_client_info_set_error_bounce snd_seq_client_info_set_error_bounce_dylibloader_orig_asound
+#define snd_seq_client_info_set_event_filter snd_seq_client_info_set_event_filter_dylibloader_orig_asound
+#define snd_seq_client_info_event_filter_clear snd_seq_client_info_event_filter_clear_dylibloader_orig_asound
+#define snd_seq_client_info_event_filter_add snd_seq_client_info_event_filter_add_dylibloader_orig_asound
+#define snd_seq_client_info_event_filter_del snd_seq_client_info_event_filter_del_dylibloader_orig_asound
+#define snd_seq_client_info_event_filter_check snd_seq_client_info_event_filter_check_dylibloader_orig_asound
+#define snd_seq_get_client_info snd_seq_get_client_info_dylibloader_orig_asound
+#define snd_seq_get_any_client_info snd_seq_get_any_client_info_dylibloader_orig_asound
+#define snd_seq_set_client_info snd_seq_set_client_info_dylibloader_orig_asound
+#define snd_seq_query_next_client snd_seq_query_next_client_dylibloader_orig_asound
+#define snd_seq_client_pool_sizeof snd_seq_client_pool_sizeof_dylibloader_orig_asound
+#define snd_seq_client_pool_malloc snd_seq_client_pool_malloc_dylibloader_orig_asound
+#define snd_seq_client_pool_free snd_seq_client_pool_free_dylibloader_orig_asound
+#define snd_seq_client_pool_copy snd_seq_client_pool_copy_dylibloader_orig_asound
+#define snd_seq_client_pool_get_client snd_seq_client_pool_get_client_dylibloader_orig_asound
+#define snd_seq_client_pool_get_output_pool snd_seq_client_pool_get_output_pool_dylibloader_orig_asound
+#define snd_seq_client_pool_get_input_pool snd_seq_client_pool_get_input_pool_dylibloader_orig_asound
+#define snd_seq_client_pool_get_output_room snd_seq_client_pool_get_output_room_dylibloader_orig_asound
+#define snd_seq_client_pool_get_output_free snd_seq_client_pool_get_output_free_dylibloader_orig_asound
+#define snd_seq_client_pool_get_input_free snd_seq_client_pool_get_input_free_dylibloader_orig_asound
+#define snd_seq_client_pool_set_output_pool snd_seq_client_pool_set_output_pool_dylibloader_orig_asound
+#define snd_seq_client_pool_set_input_pool snd_seq_client_pool_set_input_pool_dylibloader_orig_asound
+#define snd_seq_client_pool_set_output_room snd_seq_client_pool_set_output_room_dylibloader_orig_asound
+#define snd_seq_get_client_pool snd_seq_get_client_pool_dylibloader_orig_asound
+#define snd_seq_set_client_pool snd_seq_set_client_pool_dylibloader_orig_asound
+#define snd_seq_port_info_sizeof snd_seq_port_info_sizeof_dylibloader_orig_asound
+#define snd_seq_port_info_malloc snd_seq_port_info_malloc_dylibloader_orig_asound
+#define snd_seq_port_info_free snd_seq_port_info_free_dylibloader_orig_asound
+#define snd_seq_port_info_copy snd_seq_port_info_copy_dylibloader_orig_asound
+#define snd_seq_port_info_get_client snd_seq_port_info_get_client_dylibloader_orig_asound
+#define snd_seq_port_info_get_port snd_seq_port_info_get_port_dylibloader_orig_asound
+#define snd_seq_port_info_get_addr snd_seq_port_info_get_addr_dylibloader_orig_asound
+#define snd_seq_port_info_get_name snd_seq_port_info_get_name_dylibloader_orig_asound
+#define snd_seq_port_info_get_capability snd_seq_port_info_get_capability_dylibloader_orig_asound
+#define snd_seq_port_info_get_type snd_seq_port_info_get_type_dylibloader_orig_asound
+#define snd_seq_port_info_get_midi_channels snd_seq_port_info_get_midi_channels_dylibloader_orig_asound
+#define snd_seq_port_info_get_midi_voices snd_seq_port_info_get_midi_voices_dylibloader_orig_asound
+#define snd_seq_port_info_get_synth_voices snd_seq_port_info_get_synth_voices_dylibloader_orig_asound
+#define snd_seq_port_info_get_read_use snd_seq_port_info_get_read_use_dylibloader_orig_asound
+#define snd_seq_port_info_get_write_use snd_seq_port_info_get_write_use_dylibloader_orig_asound
+#define snd_seq_port_info_get_port_specified snd_seq_port_info_get_port_specified_dylibloader_orig_asound
+#define snd_seq_port_info_get_timestamping snd_seq_port_info_get_timestamping_dylibloader_orig_asound
+#define snd_seq_port_info_get_timestamp_real snd_seq_port_info_get_timestamp_real_dylibloader_orig_asound
+#define snd_seq_port_info_get_timestamp_queue snd_seq_port_info_get_timestamp_queue_dylibloader_orig_asound
+#define snd_seq_port_info_set_client snd_seq_port_info_set_client_dylibloader_orig_asound
+#define snd_seq_port_info_set_port snd_seq_port_info_set_port_dylibloader_orig_asound
+#define snd_seq_port_info_set_addr snd_seq_port_info_set_addr_dylibloader_orig_asound
+#define snd_seq_port_info_set_name snd_seq_port_info_set_name_dylibloader_orig_asound
+#define snd_seq_port_info_set_capability snd_seq_port_info_set_capability_dylibloader_orig_asound
+#define snd_seq_port_info_set_type snd_seq_port_info_set_type_dylibloader_orig_asound
+#define snd_seq_port_info_set_midi_channels snd_seq_port_info_set_midi_channels_dylibloader_orig_asound
+#define snd_seq_port_info_set_midi_voices snd_seq_port_info_set_midi_voices_dylibloader_orig_asound
+#define snd_seq_port_info_set_synth_voices snd_seq_port_info_set_synth_voices_dylibloader_orig_asound
+#define snd_seq_port_info_set_port_specified snd_seq_port_info_set_port_specified_dylibloader_orig_asound
+#define snd_seq_port_info_set_timestamping snd_seq_port_info_set_timestamping_dylibloader_orig_asound
+#define snd_seq_port_info_set_timestamp_real snd_seq_port_info_set_timestamp_real_dylibloader_orig_asound
+#define snd_seq_port_info_set_timestamp_queue snd_seq_port_info_set_timestamp_queue_dylibloader_orig_asound
+#define snd_seq_create_port snd_seq_create_port_dylibloader_orig_asound
+#define snd_seq_delete_port snd_seq_delete_port_dylibloader_orig_asound
+#define snd_seq_get_port_info snd_seq_get_port_info_dylibloader_orig_asound
+#define snd_seq_get_any_port_info snd_seq_get_any_port_info_dylibloader_orig_asound
+#define snd_seq_set_port_info snd_seq_set_port_info_dylibloader_orig_asound
+#define snd_seq_query_next_port snd_seq_query_next_port_dylibloader_orig_asound
+#define snd_seq_port_subscribe_sizeof snd_seq_port_subscribe_sizeof_dylibloader_orig_asound
+#define snd_seq_port_subscribe_malloc snd_seq_port_subscribe_malloc_dylibloader_orig_asound
+#define snd_seq_port_subscribe_free snd_seq_port_subscribe_free_dylibloader_orig_asound
+#define snd_seq_port_subscribe_copy snd_seq_port_subscribe_copy_dylibloader_orig_asound
+#define snd_seq_port_subscribe_get_sender snd_seq_port_subscribe_get_sender_dylibloader_orig_asound
+#define snd_seq_port_subscribe_get_dest snd_seq_port_subscribe_get_dest_dylibloader_orig_asound
+#define snd_seq_port_subscribe_get_queue snd_seq_port_subscribe_get_queue_dylibloader_orig_asound
+#define snd_seq_port_subscribe_get_exclusive snd_seq_port_subscribe_get_exclusive_dylibloader_orig_asound
+#define snd_seq_port_subscribe_get_time_update snd_seq_port_subscribe_get_time_update_dylibloader_orig_asound
+#define snd_seq_port_subscribe_get_time_real snd_seq_port_subscribe_get_time_real_dylibloader_orig_asound
+#define snd_seq_port_subscribe_set_sender snd_seq_port_subscribe_set_sender_dylibloader_orig_asound
+#define snd_seq_port_subscribe_set_dest snd_seq_port_subscribe_set_dest_dylibloader_orig_asound
+#define snd_seq_port_subscribe_set_queue snd_seq_port_subscribe_set_queue_dylibloader_orig_asound
+#define snd_seq_port_subscribe_set_exclusive snd_seq_port_subscribe_set_exclusive_dylibloader_orig_asound
+#define snd_seq_port_subscribe_set_time_update snd_seq_port_subscribe_set_time_update_dylibloader_orig_asound
+#define snd_seq_port_subscribe_set_time_real snd_seq_port_subscribe_set_time_real_dylibloader_orig_asound
+#define snd_seq_get_port_subscription snd_seq_get_port_subscription_dylibloader_orig_asound
+#define snd_seq_subscribe_port snd_seq_subscribe_port_dylibloader_orig_asound
+#define snd_seq_unsubscribe_port snd_seq_unsubscribe_port_dylibloader_orig_asound
+#define snd_seq_query_subscribe_sizeof snd_seq_query_subscribe_sizeof_dylibloader_orig_asound
+#define snd_seq_query_subscribe_malloc snd_seq_query_subscribe_malloc_dylibloader_orig_asound
+#define snd_seq_query_subscribe_free snd_seq_query_subscribe_free_dylibloader_orig_asound
+#define snd_seq_query_subscribe_copy snd_seq_query_subscribe_copy_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_client snd_seq_query_subscribe_get_client_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_port snd_seq_query_subscribe_get_port_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_root snd_seq_query_subscribe_get_root_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_type snd_seq_query_subscribe_get_type_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_index snd_seq_query_subscribe_get_index_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_num_subs snd_seq_query_subscribe_get_num_subs_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_addr snd_seq_query_subscribe_get_addr_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_queue snd_seq_query_subscribe_get_queue_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_exclusive snd_seq_query_subscribe_get_exclusive_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_time_update snd_seq_query_subscribe_get_time_update_dylibloader_orig_asound
+#define snd_seq_query_subscribe_get_time_real snd_seq_query_subscribe_get_time_real_dylibloader_orig_asound
+#define snd_seq_query_subscribe_set_client snd_seq_query_subscribe_set_client_dylibloader_orig_asound
+#define snd_seq_query_subscribe_set_port snd_seq_query_subscribe_set_port_dylibloader_orig_asound
+#define snd_seq_query_subscribe_set_root snd_seq_query_subscribe_set_root_dylibloader_orig_asound
+#define snd_seq_query_subscribe_set_type snd_seq_query_subscribe_set_type_dylibloader_orig_asound
+#define snd_seq_query_subscribe_set_index snd_seq_query_subscribe_set_index_dylibloader_orig_asound
+#define snd_seq_query_port_subscribers snd_seq_query_port_subscribers_dylibloader_orig_asound
+#define snd_seq_queue_info_sizeof snd_seq_queue_info_sizeof_dylibloader_orig_asound
+#define snd_seq_queue_info_malloc snd_seq_queue_info_malloc_dylibloader_orig_asound
+#define snd_seq_queue_info_free snd_seq_queue_info_free_dylibloader_orig_asound
+#define snd_seq_queue_info_copy snd_seq_queue_info_copy_dylibloader_orig_asound
+#define snd_seq_queue_info_get_queue snd_seq_queue_info_get_queue_dylibloader_orig_asound
+#define snd_seq_queue_info_get_name snd_seq_queue_info_get_name_dylibloader_orig_asound
+#define snd_seq_queue_info_get_owner snd_seq_queue_info_get_owner_dylibloader_orig_asound
+#define snd_seq_queue_info_get_locked snd_seq_queue_info_get_locked_dylibloader_orig_asound
+#define snd_seq_queue_info_get_flags snd_seq_queue_info_get_flags_dylibloader_orig_asound
+#define snd_seq_queue_info_set_name snd_seq_queue_info_set_name_dylibloader_orig_asound
+#define snd_seq_queue_info_set_owner snd_seq_queue_info_set_owner_dylibloader_orig_asound
+#define snd_seq_queue_info_set_locked snd_seq_queue_info_set_locked_dylibloader_orig_asound
+#define snd_seq_queue_info_set_flags snd_seq_queue_info_set_flags_dylibloader_orig_asound
+#define snd_seq_create_queue snd_seq_create_queue_dylibloader_orig_asound
+#define snd_seq_alloc_named_queue snd_seq_alloc_named_queue_dylibloader_orig_asound
+#define snd_seq_alloc_queue snd_seq_alloc_queue_dylibloader_orig_asound
+#define snd_seq_free_queue snd_seq_free_queue_dylibloader_orig_asound
+#define snd_seq_get_queue_info snd_seq_get_queue_info_dylibloader_orig_asound
+#define snd_seq_set_queue_info snd_seq_set_queue_info_dylibloader_orig_asound
+#define snd_seq_query_named_queue snd_seq_query_named_queue_dylibloader_orig_asound
+#define snd_seq_get_queue_usage snd_seq_get_queue_usage_dylibloader_orig_asound
+#define snd_seq_set_queue_usage snd_seq_set_queue_usage_dylibloader_orig_asound
+#define snd_seq_queue_status_sizeof snd_seq_queue_status_sizeof_dylibloader_orig_asound
+#define snd_seq_queue_status_malloc snd_seq_queue_status_malloc_dylibloader_orig_asound
+#define snd_seq_queue_status_free snd_seq_queue_status_free_dylibloader_orig_asound
+#define snd_seq_queue_status_copy snd_seq_queue_status_copy_dylibloader_orig_asound
+#define snd_seq_queue_status_get_queue snd_seq_queue_status_get_queue_dylibloader_orig_asound
+#define snd_seq_queue_status_get_events snd_seq_queue_status_get_events_dylibloader_orig_asound
+#define snd_seq_queue_status_get_tick_time snd_seq_queue_status_get_tick_time_dylibloader_orig_asound
+#define snd_seq_queue_status_get_real_time snd_seq_queue_status_get_real_time_dylibloader_orig_asound
+#define snd_seq_queue_status_get_status snd_seq_queue_status_get_status_dylibloader_orig_asound
+#define snd_seq_get_queue_status snd_seq_get_queue_status_dylibloader_orig_asound
+#define snd_seq_queue_tempo_sizeof snd_seq_queue_tempo_sizeof_dylibloader_orig_asound
+#define snd_seq_queue_tempo_malloc snd_seq_queue_tempo_malloc_dylibloader_orig_asound
+#define snd_seq_queue_tempo_free snd_seq_queue_tempo_free_dylibloader_orig_asound
+#define snd_seq_queue_tempo_copy snd_seq_queue_tempo_copy_dylibloader_orig_asound
+#define snd_seq_queue_tempo_get_queue snd_seq_queue_tempo_get_queue_dylibloader_orig_asound
+#define snd_seq_queue_tempo_get_tempo snd_seq_queue_tempo_get_tempo_dylibloader_orig_asound
+#define snd_seq_queue_tempo_get_ppq snd_seq_queue_tempo_get_ppq_dylibloader_orig_asound
+#define snd_seq_queue_tempo_get_skew snd_seq_queue_tempo_get_skew_dylibloader_orig_asound
+#define snd_seq_queue_tempo_get_skew_base snd_seq_queue_tempo_get_skew_base_dylibloader_orig_asound
+#define snd_seq_queue_tempo_set_tempo snd_seq_queue_tempo_set_tempo_dylibloader_orig_asound
+#define snd_seq_queue_tempo_set_ppq snd_seq_queue_tempo_set_ppq_dylibloader_orig_asound
+#define snd_seq_queue_tempo_set_skew snd_seq_queue_tempo_set_skew_dylibloader_orig_asound
+#define snd_seq_queue_tempo_set_skew_base snd_seq_queue_tempo_set_skew_base_dylibloader_orig_asound
+#define snd_seq_get_queue_tempo snd_seq_get_queue_tempo_dylibloader_orig_asound
+#define snd_seq_set_queue_tempo snd_seq_set_queue_tempo_dylibloader_orig_asound
+#define snd_seq_queue_timer_sizeof snd_seq_queue_timer_sizeof_dylibloader_orig_asound
+#define snd_seq_queue_timer_malloc snd_seq_queue_timer_malloc_dylibloader_orig_asound
+#define snd_seq_queue_timer_free snd_seq_queue_timer_free_dylibloader_orig_asound
+#define snd_seq_queue_timer_copy snd_seq_queue_timer_copy_dylibloader_orig_asound
+#define snd_seq_queue_timer_get_queue snd_seq_queue_timer_get_queue_dylibloader_orig_asound
+#define snd_seq_queue_timer_get_type snd_seq_queue_timer_get_type_dylibloader_orig_asound
+#define snd_seq_queue_timer_get_id snd_seq_queue_timer_get_id_dylibloader_orig_asound
+#define snd_seq_queue_timer_get_resolution snd_seq_queue_timer_get_resolution_dylibloader_orig_asound
+#define snd_seq_queue_timer_set_type snd_seq_queue_timer_set_type_dylibloader_orig_asound
+#define snd_seq_queue_timer_set_id snd_seq_queue_timer_set_id_dylibloader_orig_asound
+#define snd_seq_queue_timer_set_resolution snd_seq_queue_timer_set_resolution_dylibloader_orig_asound
+#define snd_seq_get_queue_timer snd_seq_get_queue_timer_dylibloader_orig_asound
+#define snd_seq_set_queue_timer snd_seq_set_queue_timer_dylibloader_orig_asound
+#define snd_seq_free_event snd_seq_free_event_dylibloader_orig_asound
+#define snd_seq_event_length snd_seq_event_length_dylibloader_orig_asound
+#define snd_seq_event_output snd_seq_event_output_dylibloader_orig_asound
+#define snd_seq_event_output_buffer snd_seq_event_output_buffer_dylibloader_orig_asound
+#define snd_seq_event_output_direct snd_seq_event_output_direct_dylibloader_orig_asound
+#define snd_seq_event_input snd_seq_event_input_dylibloader_orig_asound
+#define snd_seq_event_input_pending snd_seq_event_input_pending_dylibloader_orig_asound
+#define snd_seq_drain_output snd_seq_drain_output_dylibloader_orig_asound
+#define snd_seq_event_output_pending snd_seq_event_output_pending_dylibloader_orig_asound
+#define snd_seq_extract_output snd_seq_extract_output_dylibloader_orig_asound
+#define snd_seq_drop_output snd_seq_drop_output_dylibloader_orig_asound
+#define snd_seq_drop_output_buffer snd_seq_drop_output_buffer_dylibloader_orig_asound
+#define snd_seq_drop_input snd_seq_drop_input_dylibloader_orig_asound
+#define snd_seq_drop_input_buffer snd_seq_drop_input_buffer_dylibloader_orig_asound
+#define snd_seq_remove_events_sizeof snd_seq_remove_events_sizeof_dylibloader_orig_asound
+#define snd_seq_remove_events_malloc snd_seq_remove_events_malloc_dylibloader_orig_asound
+#define snd_seq_remove_events_free snd_seq_remove_events_free_dylibloader_orig_asound
+#define snd_seq_remove_events_copy snd_seq_remove_events_copy_dylibloader_orig_asound
+#define snd_seq_remove_events_get_condition snd_seq_remove_events_get_condition_dylibloader_orig_asound
+#define snd_seq_remove_events_get_queue snd_seq_remove_events_get_queue_dylibloader_orig_asound
+#define snd_seq_remove_events_get_time snd_seq_remove_events_get_time_dylibloader_orig_asound
+#define snd_seq_remove_events_get_dest snd_seq_remove_events_get_dest_dylibloader_orig_asound
+#define snd_seq_remove_events_get_channel snd_seq_remove_events_get_channel_dylibloader_orig_asound
+#define snd_seq_remove_events_get_event_type snd_seq_remove_events_get_event_type_dylibloader_orig_asound
+#define snd_seq_remove_events_get_tag snd_seq_remove_events_get_tag_dylibloader_orig_asound
+#define snd_seq_remove_events_set_condition snd_seq_remove_events_set_condition_dylibloader_orig_asound
+#define snd_seq_remove_events_set_queue snd_seq_remove_events_set_queue_dylibloader_orig_asound
+#define snd_seq_remove_events_set_time snd_seq_remove_events_set_time_dylibloader_orig_asound
+#define snd_seq_remove_events_set_dest snd_seq_remove_events_set_dest_dylibloader_orig_asound
+#define snd_seq_remove_events_set_channel snd_seq_remove_events_set_channel_dylibloader_orig_asound
+#define snd_seq_remove_events_set_event_type snd_seq_remove_events_set_event_type_dylibloader_orig_asound
+#define snd_seq_remove_events_set_tag snd_seq_remove_events_set_tag_dylibloader_orig_asound
+#define snd_seq_remove_events snd_seq_remove_events_dylibloader_orig_asound
+#define snd_seq_set_bit snd_seq_set_bit_dylibloader_orig_asound
+#define snd_seq_unset_bit snd_seq_unset_bit_dylibloader_orig_asound
+#define snd_seq_change_bit snd_seq_change_bit_dylibloader_orig_asound
+#define snd_seq_get_bit snd_seq_get_bit_dylibloader_orig_asound
+#define snd_seq_control_queue snd_seq_control_queue_dylibloader_orig_asound
+#define snd_seq_create_simple_port snd_seq_create_simple_port_dylibloader_orig_asound
+#define snd_seq_delete_simple_port snd_seq_delete_simple_port_dylibloader_orig_asound
+#define snd_seq_connect_from snd_seq_connect_from_dylibloader_orig_asound
+#define snd_seq_connect_to snd_seq_connect_to_dylibloader_orig_asound
+#define snd_seq_disconnect_from snd_seq_disconnect_from_dylibloader_orig_asound
+#define snd_seq_disconnect_to snd_seq_disconnect_to_dylibloader_orig_asound
+#define snd_seq_set_client_name snd_seq_set_client_name_dylibloader_orig_asound
+#define snd_seq_set_client_event_filter snd_seq_set_client_event_filter_dylibloader_orig_asound
+#define snd_seq_set_client_pool_output snd_seq_set_client_pool_output_dylibloader_orig_asound
+#define snd_seq_set_client_pool_output_room snd_seq_set_client_pool_output_room_dylibloader_orig_asound
+#define snd_seq_set_client_pool_input snd_seq_set_client_pool_input_dylibloader_orig_asound
+#define snd_seq_sync_output_queue snd_seq_sync_output_queue_dylibloader_orig_asound
+#define snd_seq_parse_address snd_seq_parse_address_dylibloader_orig_asound
+#define snd_seq_reset_pool_output snd_seq_reset_pool_output_dylibloader_orig_asound
+#define snd_seq_reset_pool_input snd_seq_reset_pool_input_dylibloader_orig_asound
+#define snd_midi_event_new snd_midi_event_new_dylibloader_orig_asound
+#define snd_midi_event_resize_buffer snd_midi_event_resize_buffer_dylibloader_orig_asound
+#define snd_midi_event_free snd_midi_event_free_dylibloader_orig_asound
+#define snd_midi_event_init snd_midi_event_init_dylibloader_orig_asound
+#define snd_midi_event_reset_encode snd_midi_event_reset_encode_dylibloader_orig_asound
+#define snd_midi_event_reset_decode snd_midi_event_reset_decode_dylibloader_orig_asound
+#define snd_midi_event_no_status snd_midi_event_no_status_dylibloader_orig_asound
+#define snd_midi_event_encode snd_midi_event_encode_dylibloader_orig_asound
+#define snd_midi_event_encode_byte snd_midi_event_encode_byte_dylibloader_orig_asound
+#define snd_midi_event_decode snd_midi_event_decode_dylibloader_orig_asound
+#include <thirdparty/linuxbsd_headers/alsa/asoundlib.h> // IWYU pragma: export.
+#undef snd_asoundlib_version
+#undef snd_dlopen
+#undef snd_dlsym
+#undef snd_dlclose
+#undef snd_async_add_handler
+#undef snd_async_del_handler
+#undef snd_async_handler_get_fd
+#undef snd_async_handler_get_signo
+#undef snd_async_handler_get_callback_private
+#undef snd_shm_area_create
+#undef snd_shm_area_share
+#undef snd_shm_area_destroy
+#undef snd_user_file
+#undef snd_input_stdio_open
+#undef snd_input_stdio_attach
+#undef snd_input_buffer_open
+#undef snd_input_close
+#undef snd_input_scanf
+#undef snd_input_gets
+#undef snd_input_getc
+#undef snd_input_ungetc
+#undef snd_output_stdio_open
+#undef snd_output_stdio_attach
+#undef snd_output_buffer_open
+#undef snd_output_buffer_string
+#undef snd_output_close
+#undef snd_output_printf
+#undef snd_output_vprintf
+#undef snd_output_puts
+#undef snd_output_putc
+#undef snd_output_flush
+#undef snd_strerror
+#undef snd_lib_error_set_handler
+#undef snd_lib_error_set_local
+#undef snd_config_top
+#undef snd_config_load
+#undef snd_config_load_override
+#undef snd_config_save
+#undef snd_config_update
+#undef snd_config_update_r
+#undef snd_config_update_free
+#undef snd_config_update_free_global
+#undef snd_config_update_ref
+#undef snd_config_ref
+#undef snd_config_unref
+#undef snd_config_search
+#undef snd_config_searchv
+#undef snd_config_search_definition
+#undef snd_config_expand
+#undef snd_config_evaluate
+#undef snd_config_add
+#undef snd_config_delete
+#undef snd_config_delete_compound_members
+#undef snd_config_copy
+#undef snd_config_make
+#undef snd_config_make_integer
+#undef snd_config_make_integer64
+#undef snd_config_make_real
+#undef snd_config_make_string
+#undef snd_config_make_pointer
+#undef snd_config_make_compound
+#undef snd_config_imake_integer
+#undef snd_config_imake_integer64
+#undef snd_config_imake_real
+#undef snd_config_imake_string
+#undef snd_config_imake_safe_string
+#undef snd_config_imake_pointer
+#undef snd_config_get_type
+#undef snd_config_set_id
+#undef snd_config_set_integer
+#undef snd_config_set_integer64
+#undef snd_config_set_real
+#undef snd_config_set_string
+#undef snd_config_set_ascii
+#undef snd_config_set_pointer
+#undef snd_config_get_id
+#undef snd_config_get_integer
+#undef snd_config_get_integer64
+#undef snd_config_get_real
+#undef snd_config_get_ireal
+#undef snd_config_get_string
+#undef snd_config_get_ascii
+#undef snd_config_get_pointer
+#undef snd_config_test_id
+#undef snd_config_iterator_first
+#undef snd_config_iterator_next
+#undef snd_config_iterator_end
+#undef snd_config_iterator_entry
+#undef snd_config_get_bool_ascii
+#undef snd_config_get_bool
+#undef snd_config_get_ctl_iface_ascii
+#undef snd_config_get_ctl_iface
+#undef snd_names_list
+#undef snd_names_list_free
+#undef snd_pcm_open
+#undef snd_pcm_open_lconf
+#undef snd_pcm_open_fallback
+#undef snd_pcm_close
+#undef snd_pcm_name
+#undef snd_pcm_type
+#undef snd_pcm_stream
+#undef snd_pcm_poll_descriptors_count
+#undef snd_pcm_poll_descriptors
+#undef snd_pcm_poll_descriptors_revents
+#undef snd_pcm_nonblock
+#undef snd_async_add_pcm_handler
+#undef snd_async_handler_get_pcm
+#undef snd_pcm_info
+#undef snd_pcm_hw_params_current
+#undef snd_pcm_hw_params
+#undef snd_pcm_hw_free
+#undef snd_pcm_sw_params_current
+#undef snd_pcm_sw_params
+#undef snd_pcm_prepare
+#undef snd_pcm_reset
+#undef snd_pcm_status
+#undef snd_pcm_start
+#undef snd_pcm_drop
+#undef snd_pcm_drain
+#undef snd_pcm_pause
+#undef snd_pcm_state
+#undef snd_pcm_hwsync
+#undef snd_pcm_delay
+#undef snd_pcm_resume
+#undef snd_pcm_htimestamp
+#undef snd_pcm_avail
+#undef snd_pcm_avail_update
+#undef snd_pcm_avail_delay
+#undef snd_pcm_rewindable
+#undef snd_pcm_rewind
+#undef snd_pcm_forwardable
+#undef snd_pcm_forward
+#undef snd_pcm_writei
+#undef snd_pcm_readi
+#undef snd_pcm_writen
+#undef snd_pcm_readn
+#undef snd_pcm_wait
+#undef snd_pcm_link
+#undef snd_pcm_unlink
+#undef snd_pcm_query_chmaps
+#undef snd_pcm_query_chmaps_from_hw
+#undef snd_pcm_free_chmaps
+#undef snd_pcm_get_chmap
+#undef snd_pcm_set_chmap
+#undef snd_pcm_chmap_type_name
+#undef snd_pcm_chmap_name
+#undef snd_pcm_chmap_long_name
+#undef snd_pcm_chmap_print
+#undef snd_pcm_chmap_from_string
+#undef snd_pcm_chmap_parse_string
+#undef snd_pcm_recover
+#undef snd_pcm_set_params
+#undef snd_pcm_get_params
+#undef snd_pcm_info_sizeof
+#undef snd_pcm_info_malloc
+#undef snd_pcm_info_free
+#undef snd_pcm_info_copy
+#undef snd_pcm_info_get_device
+#undef snd_pcm_info_get_subdevice
+#undef snd_pcm_info_get_stream
+#undef snd_pcm_info_get_card
+#undef snd_pcm_info_get_id
+#undef snd_pcm_info_get_name
+#undef snd_pcm_info_get_subdevice_name
+#undef snd_pcm_info_get_class
+#undef snd_pcm_info_get_subclass
+#undef snd_pcm_info_get_subdevices_count
+#undef snd_pcm_info_get_subdevices_avail
+#undef snd_pcm_info_get_sync
+#undef snd_pcm_info_set_device
+#undef snd_pcm_info_set_subdevice
+#undef snd_pcm_info_set_stream
+#undef snd_pcm_hw_params_any
+#undef snd_pcm_hw_params_can_mmap_sample_resolution
+#undef snd_pcm_hw_params_is_double
+#undef snd_pcm_hw_params_is_batch
+#undef snd_pcm_hw_params_is_block_transfer
+#undef snd_pcm_hw_params_is_monotonic
+#undef snd_pcm_hw_params_can_overrange
+#undef snd_pcm_hw_params_can_pause
+#undef snd_pcm_hw_params_can_resume
+#undef snd_pcm_hw_params_is_half_duplex
+#undef snd_pcm_hw_params_is_joint_duplex
+#undef snd_pcm_hw_params_can_sync_start
+#undef snd_pcm_hw_params_can_disable_period_wakeup
+#undef snd_pcm_hw_params_supports_audio_wallclock_ts
+#undef snd_pcm_hw_params_supports_audio_ts_type
+#undef snd_pcm_hw_params_get_rate_numden
+#undef snd_pcm_hw_params_get_sbits
+#undef snd_pcm_hw_params_get_fifo_size
+#undef snd_pcm_hw_params_sizeof
+#undef snd_pcm_hw_params_malloc
+#undef snd_pcm_hw_params_free
+#undef snd_pcm_hw_params_copy
+#undef snd_pcm_hw_params_get_access
+#undef snd_pcm_hw_params_test_access
+#undef snd_pcm_hw_params_set_access
+#undef snd_pcm_hw_params_set_access_first
+#undef snd_pcm_hw_params_set_access_last
+#undef snd_pcm_hw_params_set_access_mask
+#undef snd_pcm_hw_params_get_access_mask
+#undef snd_pcm_hw_params_get_format
+#undef snd_pcm_hw_params_test_format
+#undef snd_pcm_hw_params_set_format
+#undef snd_pcm_hw_params_set_format_first
+#undef snd_pcm_hw_params_set_format_last
+#undef snd_pcm_hw_params_set_format_mask
+#undef snd_pcm_hw_params_get_format_mask
+#undef snd_pcm_hw_params_get_subformat
+#undef snd_pcm_hw_params_test_subformat
+#undef snd_pcm_hw_params_set_subformat
+#undef snd_pcm_hw_params_set_subformat_first
+#undef snd_pcm_hw_params_set_subformat_last
+#undef snd_pcm_hw_params_set_subformat_mask
+#undef snd_pcm_hw_params_get_subformat_mask
+#undef snd_pcm_hw_params_get_channels
+#undef snd_pcm_hw_params_get_channels_min
+#undef snd_pcm_hw_params_get_channels_max
+#undef snd_pcm_hw_params_test_channels
+#undef snd_pcm_hw_params_set_channels
+#undef snd_pcm_hw_params_set_channels_min
+#undef snd_pcm_hw_params_set_channels_max
+#undef snd_pcm_hw_params_set_channels_minmax
+#undef snd_pcm_hw_params_set_channels_near
+#undef snd_pcm_hw_params_set_channels_first
+#undef snd_pcm_hw_params_set_channels_last
+#undef snd_pcm_hw_params_get_rate
+#undef snd_pcm_hw_params_get_rate_min
+#undef snd_pcm_hw_params_get_rate_max
+#undef snd_pcm_hw_params_test_rate
+#undef snd_pcm_hw_params_set_rate
+#undef snd_pcm_hw_params_set_rate_min
+#undef snd_pcm_hw_params_set_rate_max
+#undef snd_pcm_hw_params_set_rate_minmax
+#undef snd_pcm_hw_params_set_rate_near
+#undef snd_pcm_hw_params_set_rate_first
+#undef snd_pcm_hw_params_set_rate_last
+#undef snd_pcm_hw_params_set_rate_resample
+#undef snd_pcm_hw_params_get_rate_resample
+#undef snd_pcm_hw_params_set_export_buffer
+#undef snd_pcm_hw_params_get_export_buffer
+#undef snd_pcm_hw_params_set_period_wakeup
+#undef snd_pcm_hw_params_get_period_wakeup
+#undef snd_pcm_hw_params_get_period_time
+#undef snd_pcm_hw_params_get_period_time_min
+#undef snd_pcm_hw_params_get_period_time_max
+#undef snd_pcm_hw_params_test_period_time
+#undef snd_pcm_hw_params_set_period_time
+#undef snd_pcm_hw_params_set_period_time_min
+#undef snd_pcm_hw_params_set_period_time_max
+#undef snd_pcm_hw_params_set_period_time_minmax
+#undef snd_pcm_hw_params_set_period_time_near
+#undef snd_pcm_hw_params_set_period_time_first
+#undef snd_pcm_hw_params_set_period_time_last
+#undef snd_pcm_hw_params_get_period_size
+#undef snd_pcm_hw_params_get_period_size_min
+#undef snd_pcm_hw_params_get_period_size_max
+#undef snd_pcm_hw_params_test_period_size
+#undef snd_pcm_hw_params_set_period_size
+#undef snd_pcm_hw_params_set_period_size_min
+#undef snd_pcm_hw_params_set_period_size_max
+#undef snd_pcm_hw_params_set_period_size_minmax
+#undef snd_pcm_hw_params_set_period_size_near
+#undef snd_pcm_hw_params_set_period_size_first
+#undef snd_pcm_hw_params_set_period_size_last
+#undef snd_pcm_hw_params_set_period_size_integer
+#undef snd_pcm_hw_params_get_periods
+#undef snd_pcm_hw_params_get_periods_min
+#undef snd_pcm_hw_params_get_periods_max
+#undef snd_pcm_hw_params_test_periods
+#undef snd_pcm_hw_params_set_periods
+#undef snd_pcm_hw_params_set_periods_min
+#undef snd_pcm_hw_params_set_periods_max
+#undef snd_pcm_hw_params_set_periods_minmax
+#undef snd_pcm_hw_params_set_periods_near
+#undef snd_pcm_hw_params_set_periods_first
+#undef snd_pcm_hw_params_set_periods_last
+#undef snd_pcm_hw_params_set_periods_integer
+#undef snd_pcm_hw_params_get_buffer_time
+#undef snd_pcm_hw_params_get_buffer_time_min
+#undef snd_pcm_hw_params_get_buffer_time_max
+#undef snd_pcm_hw_params_test_buffer_time
+#undef snd_pcm_hw_params_set_buffer_time
+#undef snd_pcm_hw_params_set_buffer_time_min
+#undef snd_pcm_hw_params_set_buffer_time_max
+#undef snd_pcm_hw_params_set_buffer_time_minmax
+#undef snd_pcm_hw_params_set_buffer_time_near
+#undef snd_pcm_hw_params_set_buffer_time_first
+#undef snd_pcm_hw_params_set_buffer_time_last
+#undef snd_pcm_hw_params_get_buffer_size
+#undef snd_pcm_hw_params_get_buffer_size_min
+#undef snd_pcm_hw_params_get_buffer_size_max
+#undef snd_pcm_hw_params_test_buffer_size
+#undef snd_pcm_hw_params_set_buffer_size
+#undef snd_pcm_hw_params_set_buffer_size_min
+#undef snd_pcm_hw_params_set_buffer_size_max
+#undef snd_pcm_hw_params_set_buffer_size_minmax
+#undef snd_pcm_hw_params_set_buffer_size_near
+#undef snd_pcm_hw_params_set_buffer_size_first
+#undef snd_pcm_hw_params_set_buffer_size_last
+#undef snd_pcm_hw_params_get_min_align
+#undef snd_pcm_sw_params_sizeof
+#undef snd_pcm_sw_params_malloc
+#undef snd_pcm_sw_params_free
+#undef snd_pcm_sw_params_copy
+#undef snd_pcm_sw_params_get_boundary
+#undef snd_pcm_sw_params_set_tstamp_mode
+#undef snd_pcm_sw_params_get_tstamp_mode
+#undef snd_pcm_sw_params_set_avail_min
+#undef snd_pcm_sw_params_get_avail_min
+#undef snd_pcm_sw_params_set_period_event
+#undef snd_pcm_sw_params_get_period_event
+#undef snd_pcm_sw_params_set_start_threshold
+#undef snd_pcm_sw_params_get_start_threshold
+#undef snd_pcm_sw_params_set_stop_threshold
+#undef snd_pcm_sw_params_get_stop_threshold
+#undef snd_pcm_sw_params_set_silence_threshold
+#undef snd_pcm_sw_params_get_silence_threshold
+#undef snd_pcm_sw_params_set_silence_size
+#undef snd_pcm_sw_params_get_silence_size
+#undef snd_pcm_access_mask_sizeof
+#undef snd_pcm_access_mask_malloc
+#undef snd_pcm_access_mask_free
+#undef snd_pcm_access_mask_copy
+#undef snd_pcm_access_mask_none
+#undef snd_pcm_access_mask_any
+#undef snd_pcm_access_mask_test
+#undef snd_pcm_access_mask_empty
+#undef snd_pcm_access_mask_set
+#undef snd_pcm_access_mask_reset
+#undef snd_pcm_format_mask_sizeof
+#undef snd_pcm_format_mask_malloc
+#undef snd_pcm_format_mask_free
+#undef snd_pcm_format_mask_copy
+#undef snd_pcm_format_mask_none
+#undef snd_pcm_format_mask_any
+#undef snd_pcm_format_mask_test
+#undef snd_pcm_format_mask_empty
+#undef snd_pcm_format_mask_set
+#undef snd_pcm_format_mask_reset
+#undef snd_pcm_subformat_mask_sizeof
+#undef snd_pcm_subformat_mask_malloc
+#undef snd_pcm_subformat_mask_free
+#undef snd_pcm_subformat_mask_copy
+#undef snd_pcm_subformat_mask_none
+#undef snd_pcm_subformat_mask_any
+#undef snd_pcm_subformat_mask_test
+#undef snd_pcm_subformat_mask_empty
+#undef snd_pcm_subformat_mask_set
+#undef snd_pcm_subformat_mask_reset
+#undef snd_pcm_status_sizeof
+#undef snd_pcm_status_malloc
+#undef snd_pcm_status_free
+#undef snd_pcm_status_copy
+#undef snd_pcm_status_get_state
+#undef snd_pcm_status_get_trigger_tstamp
+#undef snd_pcm_status_get_trigger_htstamp
+#undef snd_pcm_status_get_tstamp
+#undef snd_pcm_status_get_htstamp
+#undef snd_pcm_status_get_audio_htstamp
+#undef snd_pcm_status_get_driver_htstamp
+#undef snd_pcm_status_get_delay
+#undef snd_pcm_status_get_avail
+#undef snd_pcm_status_get_avail_max
+#undef snd_pcm_status_get_overrange
+#undef snd_pcm_type_name
+#undef snd_pcm_stream_name
+#undef snd_pcm_access_name
+#undef snd_pcm_format_name
+#undef snd_pcm_format_description
+#undef snd_pcm_subformat_name
+#undef snd_pcm_subformat_description
+#undef snd_pcm_format_value
+#undef snd_pcm_tstamp_mode_name
+#undef snd_pcm_state_name
+#undef snd_pcm_dump
+#undef snd_pcm_dump_hw_setup
+#undef snd_pcm_dump_sw_setup
+#undef snd_pcm_dump_setup
+#undef snd_pcm_hw_params_dump
+#undef snd_pcm_sw_params_dump
+#undef snd_pcm_status_dump
+#undef snd_pcm_mmap_begin
+#undef snd_pcm_mmap_commit
+#undef snd_pcm_mmap_writei
+#undef snd_pcm_mmap_readi
+#undef snd_pcm_mmap_writen
+#undef snd_pcm_mmap_readn
+#undef snd_pcm_format_signed
+#undef snd_pcm_format_unsigned
+#undef snd_pcm_format_linear
+#undef snd_pcm_format_float
+#undef snd_pcm_format_little_endian
+#undef snd_pcm_format_big_endian
+#undef snd_pcm_format_cpu_endian
+#undef snd_pcm_format_width
+#undef snd_pcm_format_physical_width
+#undef snd_pcm_build_linear_format
+#undef snd_pcm_format_size
+#undef snd_pcm_format_silence
+#undef snd_pcm_format_silence_16
+#undef snd_pcm_format_silence_32
+#undef snd_pcm_format_silence_64
+#undef snd_pcm_format_set_silence
+#undef snd_pcm_bytes_to_frames
+#undef snd_pcm_frames_to_bytes
+#undef snd_pcm_bytes_to_samples
+#undef snd_pcm_samples_to_bytes
+#undef snd_pcm_area_silence
+#undef snd_pcm_areas_silence
+#undef snd_pcm_area_copy
+#undef snd_pcm_areas_copy
+#undef snd_pcm_hook_get_pcm
+#undef snd_pcm_hook_get_private
+#undef snd_pcm_hook_set_private
+#undef snd_pcm_hook_add
+#undef snd_pcm_hook_remove
+#undef snd_pcm_meter_get_bufsize
+#undef snd_pcm_meter_get_channels
+#undef snd_pcm_meter_get_rate
+#undef snd_pcm_meter_get_now
+#undef snd_pcm_meter_get_boundary
+#undef snd_pcm_meter_add_scope
+#undef snd_pcm_meter_search_scope
+#undef snd_pcm_scope_malloc
+#undef snd_pcm_scope_set_ops
+#undef snd_pcm_scope_set_name
+#undef snd_pcm_scope_get_name
+#undef snd_pcm_scope_get_callback_private
+#undef snd_pcm_scope_set_callback_private
+#undef snd_pcm_scope_s16_open
+#undef snd_pcm_scope_s16_get_channel_buffer
+#undef snd_spcm_init
+#undef snd_spcm_init_duplex
+#undef snd_spcm_init_get_params
+#undef snd_pcm_start_mode_name
+#undef snd_pcm_xrun_mode_name
+#undef snd_pcm_sw_params_set_start_mode
+#undef snd_pcm_sw_params_get_start_mode
+#undef snd_pcm_sw_params_set_xrun_mode
+#undef snd_pcm_sw_params_get_xrun_mode
+#undef snd_pcm_sw_params_set_xfer_align
+#undef snd_pcm_sw_params_get_xfer_align
+#undef snd_pcm_sw_params_set_sleep_min
+#undef snd_pcm_sw_params_get_sleep_min
+#undef snd_pcm_hw_params_get_tick_time
+#undef snd_pcm_hw_params_get_tick_time_min
+#undef snd_pcm_hw_params_get_tick_time_max
+#undef snd_pcm_hw_params_test_tick_time
+#undef snd_pcm_hw_params_set_tick_time
+#undef snd_pcm_hw_params_set_tick_time_min
+#undef snd_pcm_hw_params_set_tick_time_max
+#undef snd_pcm_hw_params_set_tick_time_minmax
+#undef snd_pcm_hw_params_set_tick_time_near
+#undef snd_pcm_hw_params_set_tick_time_first
+#undef snd_pcm_hw_params_set_tick_time_last
+#undef snd_rawmidi_open
+#undef snd_rawmidi_open_lconf
+#undef snd_rawmidi_close
+#undef snd_rawmidi_poll_descriptors_count
+#undef snd_rawmidi_poll_descriptors
+#undef snd_rawmidi_poll_descriptors_revents
+#undef snd_rawmidi_nonblock
+#undef snd_rawmidi_info_sizeof
+#undef snd_rawmidi_info_malloc
+#undef snd_rawmidi_info_free
+#undef snd_rawmidi_info_copy
+#undef snd_rawmidi_info_get_device
+#undef snd_rawmidi_info_get_subdevice
+#undef snd_rawmidi_info_get_stream
+#undef snd_rawmidi_info_get_card
+#undef snd_rawmidi_info_get_flags
+#undef snd_rawmidi_info_get_id
+#undef snd_rawmidi_info_get_name
+#undef snd_rawmidi_info_get_subdevice_name
+#undef snd_rawmidi_info_get_subdevices_count
+#undef snd_rawmidi_info_get_subdevices_avail
+#undef snd_rawmidi_info_set_device
+#undef snd_rawmidi_info_set_subdevice
+#undef snd_rawmidi_info_set_stream
+#undef snd_rawmidi_info
+#undef snd_rawmidi_params_sizeof
+#undef snd_rawmidi_params_malloc
+#undef snd_rawmidi_params_free
+#undef snd_rawmidi_params_copy
+#undef snd_rawmidi_params_set_buffer_size
+#undef snd_rawmidi_params_get_buffer_size
+#undef snd_rawmidi_params_set_avail_min
+#undef snd_rawmidi_params_get_avail_min
+#undef snd_rawmidi_params_set_no_active_sensing
+#undef snd_rawmidi_params_get_no_active_sensing
+#undef snd_rawmidi_params
+#undef snd_rawmidi_params_current
+#undef snd_rawmidi_status_sizeof
+#undef snd_rawmidi_status_malloc
+#undef snd_rawmidi_status_free
+#undef snd_rawmidi_status_copy
+#undef snd_rawmidi_status_get_tstamp
+#undef snd_rawmidi_status_get_avail
+#undef snd_rawmidi_status_get_xruns
+#undef snd_rawmidi_status
+#undef snd_rawmidi_drain
+#undef snd_rawmidi_drop
+#undef snd_rawmidi_write
+#undef snd_rawmidi_read
+#undef snd_rawmidi_name
+#undef snd_rawmidi_type
+#undef snd_rawmidi_stream
+#undef snd_timer_query_open
+#undef snd_timer_query_open_lconf
+#undef snd_timer_query_close
+#undef snd_timer_query_next_device
+#undef snd_timer_query_info
+#undef snd_timer_query_params
+#undef snd_timer_query_status
+#undef snd_timer_open
+#undef snd_timer_open_lconf
+#undef snd_timer_close
+#undef snd_async_add_timer_handler
+#undef snd_async_handler_get_timer
+#undef snd_timer_poll_descriptors_count
+#undef snd_timer_poll_descriptors
+#undef snd_timer_poll_descriptors_revents
+#undef snd_timer_info
+#undef snd_timer_params
+#undef snd_timer_status
+#undef snd_timer_start
+#undef snd_timer_stop
+#undef snd_timer_continue
+#undef snd_timer_read
+#undef snd_timer_id_sizeof
+#undef snd_timer_id_malloc
+#undef snd_timer_id_free
+#undef snd_timer_id_copy
+#undef snd_timer_id_set_class
+#undef snd_timer_id_get_class
+#undef snd_timer_id_set_sclass
+#undef snd_timer_id_get_sclass
+#undef snd_timer_id_set_card
+#undef snd_timer_id_get_card
+#undef snd_timer_id_set_device
+#undef snd_timer_id_get_device
+#undef snd_timer_id_set_subdevice
+#undef snd_timer_id_get_subdevice
+#undef snd_timer_ginfo_sizeof
+#undef snd_timer_ginfo_malloc
+#undef snd_timer_ginfo_free
+#undef snd_timer_ginfo_copy
+#undef snd_timer_ginfo_set_tid
+#undef snd_timer_ginfo_get_tid
+#undef snd_timer_ginfo_get_flags
+#undef snd_timer_ginfo_get_card
+#undef snd_timer_ginfo_get_id
+#undef snd_timer_ginfo_get_name
+#undef snd_timer_ginfo_get_resolution
+#undef snd_timer_ginfo_get_resolution_min
+#undef snd_timer_ginfo_get_resolution_max
+#undef snd_timer_ginfo_get_clients
+#undef snd_timer_info_sizeof
+#undef snd_timer_info_malloc
+#undef snd_timer_info_free
+#undef snd_timer_info_copy
+#undef snd_timer_info_is_slave
+#undef snd_timer_info_get_card
+#undef snd_timer_info_get_id
+#undef snd_timer_info_get_name
+#undef snd_timer_info_get_resolution
+#undef snd_timer_params_sizeof
+#undef snd_timer_params_malloc
+#undef snd_timer_params_free
+#undef snd_timer_params_copy
+#undef snd_timer_params_set_auto_start
+#undef snd_timer_params_get_auto_start
+#undef snd_timer_params_set_exclusive
+#undef snd_timer_params_get_exclusive
+#undef snd_timer_params_set_early_event
+#undef snd_timer_params_get_early_event
+#undef snd_timer_params_set_ticks
+#undef snd_timer_params_get_ticks
+#undef snd_timer_params_set_queue_size
+#undef snd_timer_params_get_queue_size
+#undef snd_timer_params_set_filter
+#undef snd_timer_params_get_filter
+#undef snd_timer_status_sizeof
+#undef snd_timer_status_malloc
+#undef snd_timer_status_free
+#undef snd_timer_status_copy
+#undef snd_timer_status_get_timestamp
+#undef snd_timer_status_get_resolution
+#undef snd_timer_status_get_lost
+#undef snd_timer_status_get_overrun
+#undef snd_timer_status_get_queue
+#undef snd_timer_info_get_ticks
+#undef snd_hwdep_open
+#undef snd_hwdep_close
+#undef snd_hwdep_poll_descriptors
+#undef snd_hwdep_poll_descriptors_count
+#undef snd_hwdep_poll_descriptors_revents
+#undef snd_hwdep_nonblock
+#undef snd_hwdep_info
+#undef snd_hwdep_dsp_status
+#undef snd_hwdep_dsp_load
+#undef snd_hwdep_ioctl
+#undef snd_hwdep_write
+#undef snd_hwdep_read
+#undef snd_hwdep_info_sizeof
+#undef snd_hwdep_info_malloc
+#undef snd_hwdep_info_free
+#undef snd_hwdep_info_copy
+#undef snd_hwdep_info_get_device
+#undef snd_hwdep_info_get_card
+#undef snd_hwdep_info_get_id
+#undef snd_hwdep_info_get_name
+#undef snd_hwdep_info_get_iface
+#undef snd_hwdep_info_set_device
+#undef snd_hwdep_dsp_status_sizeof
+#undef snd_hwdep_dsp_status_malloc
+#undef snd_hwdep_dsp_status_free
+#undef snd_hwdep_dsp_status_copy
+#undef snd_hwdep_dsp_status_get_version
+#undef snd_hwdep_dsp_status_get_id
+#undef snd_hwdep_dsp_status_get_num_dsps
+#undef snd_hwdep_dsp_status_get_dsp_loaded
+#undef snd_hwdep_dsp_status_get_chip_ready
+#undef snd_hwdep_dsp_image_sizeof
+#undef snd_hwdep_dsp_image_malloc
+#undef snd_hwdep_dsp_image_free
+#undef snd_hwdep_dsp_image_copy
+#undef snd_hwdep_dsp_image_get_index
+#undef snd_hwdep_dsp_image_get_name
+#undef snd_hwdep_dsp_image_get_image
+#undef snd_hwdep_dsp_image_get_length
+#undef snd_hwdep_dsp_image_set_index
+#undef snd_hwdep_dsp_image_set_name
+#undef snd_hwdep_dsp_image_set_image
+#undef snd_hwdep_dsp_image_set_length
+#undef snd_card_load
+#undef snd_card_next
+#undef snd_card_get_index
+#undef snd_card_get_name
+#undef snd_card_get_longname
+#undef snd_device_name_hint
+#undef snd_device_name_free_hint
+#undef snd_device_name_get_hint
+#undef snd_ctl_open
+#undef snd_ctl_open_lconf
+#undef snd_ctl_open_fallback
+#undef snd_ctl_close
+#undef snd_ctl_nonblock
+#undef snd_async_add_ctl_handler
+#undef snd_async_handler_get_ctl
+#undef snd_ctl_poll_descriptors_count
+#undef snd_ctl_poll_descriptors
+#undef snd_ctl_poll_descriptors_revents
+#undef snd_ctl_subscribe_events
+#undef snd_ctl_card_info
+#undef snd_ctl_elem_list
+#undef snd_ctl_elem_info
+#undef snd_ctl_elem_read
+#undef snd_ctl_elem_write
+#undef snd_ctl_elem_lock
+#undef snd_ctl_elem_unlock
+#undef snd_ctl_elem_tlv_read
+#undef snd_ctl_elem_tlv_write
+#undef snd_ctl_elem_tlv_command
+#undef snd_ctl_hwdep_next_device
+#undef snd_ctl_hwdep_info
+#undef snd_ctl_pcm_next_device
+#undef snd_ctl_pcm_info
+#undef snd_ctl_pcm_prefer_subdevice
+#undef snd_ctl_rawmidi_next_device
+#undef snd_ctl_rawmidi_info
+#undef snd_ctl_rawmidi_prefer_subdevice
+#undef snd_ctl_set_power_state
+#undef snd_ctl_get_power_state
+#undef snd_ctl_read
+#undef snd_ctl_wait
+#undef snd_ctl_name
+#undef snd_ctl_type
+#undef snd_ctl_elem_type_name
+#undef snd_ctl_elem_iface_name
+#undef snd_ctl_event_type_name
+#undef snd_ctl_event_elem_get_mask
+#undef snd_ctl_event_elem_get_numid
+#undef snd_ctl_event_elem_get_id
+#undef snd_ctl_event_elem_get_interface
+#undef snd_ctl_event_elem_get_device
+#undef snd_ctl_event_elem_get_subdevice
+#undef snd_ctl_event_elem_get_name
+#undef snd_ctl_event_elem_get_index
+#undef snd_ctl_elem_list_alloc_space
+#undef snd_ctl_elem_list_free_space
+#undef snd_ctl_ascii_elem_id_get
+#undef snd_ctl_ascii_elem_id_parse
+#undef snd_ctl_ascii_value_parse
+#undef snd_ctl_elem_id_sizeof
+#undef snd_ctl_elem_id_malloc
+#undef snd_ctl_elem_id_free
+#undef snd_ctl_elem_id_clear
+#undef snd_ctl_elem_id_copy
+#undef snd_ctl_elem_id_get_numid
+#undef snd_ctl_elem_id_get_interface
+#undef snd_ctl_elem_id_get_device
+#undef snd_ctl_elem_id_get_subdevice
+#undef snd_ctl_elem_id_get_name
+#undef snd_ctl_elem_id_get_index
+#undef snd_ctl_elem_id_set_numid
+#undef snd_ctl_elem_id_set_interface
+#undef snd_ctl_elem_id_set_device
+#undef snd_ctl_elem_id_set_subdevice
+#undef snd_ctl_elem_id_set_name
+#undef snd_ctl_elem_id_set_index
+#undef snd_ctl_card_info_sizeof
+#undef snd_ctl_card_info_malloc
+#undef snd_ctl_card_info_free
+#undef snd_ctl_card_info_clear
+#undef snd_ctl_card_info_copy
+#undef snd_ctl_card_info_get_card
+#undef snd_ctl_card_info_get_id
+#undef snd_ctl_card_info_get_driver
+#undef snd_ctl_card_info_get_name
+#undef snd_ctl_card_info_get_longname
+#undef snd_ctl_card_info_get_mixername
+#undef snd_ctl_card_info_get_components
+#undef snd_ctl_event_sizeof
+#undef snd_ctl_event_malloc
+#undef snd_ctl_event_free
+#undef snd_ctl_event_clear
+#undef snd_ctl_event_copy
+#undef snd_ctl_event_get_type
+#undef snd_ctl_elem_list_sizeof
+#undef snd_ctl_elem_list_malloc
+#undef snd_ctl_elem_list_free
+#undef snd_ctl_elem_list_clear
+#undef snd_ctl_elem_list_copy
+#undef snd_ctl_elem_list_set_offset
+#undef snd_ctl_elem_list_get_used
+#undef snd_ctl_elem_list_get_count
+#undef snd_ctl_elem_list_get_id
+#undef snd_ctl_elem_list_get_numid
+#undef snd_ctl_elem_list_get_interface
+#undef snd_ctl_elem_list_get_device
+#undef snd_ctl_elem_list_get_subdevice
+#undef snd_ctl_elem_list_get_name
+#undef snd_ctl_elem_list_get_index
+#undef snd_ctl_elem_info_sizeof
+#undef snd_ctl_elem_info_malloc
+#undef snd_ctl_elem_info_free
+#undef snd_ctl_elem_info_clear
+#undef snd_ctl_elem_info_copy
+#undef snd_ctl_elem_info_get_type
+#undef snd_ctl_elem_info_is_readable
+#undef snd_ctl_elem_info_is_writable
+#undef snd_ctl_elem_info_is_volatile
+#undef snd_ctl_elem_info_is_inactive
+#undef snd_ctl_elem_info_is_locked
+#undef snd_ctl_elem_info_is_tlv_readable
+#undef snd_ctl_elem_info_is_tlv_writable
+#undef snd_ctl_elem_info_is_tlv_commandable
+#undef snd_ctl_elem_info_is_owner
+#undef snd_ctl_elem_info_is_user
+#undef snd_ctl_elem_info_get_owner
+#undef snd_ctl_elem_info_get_count
+#undef snd_ctl_elem_info_get_min
+#undef snd_ctl_elem_info_get_max
+#undef snd_ctl_elem_info_get_step
+#undef snd_ctl_elem_info_get_min64
+#undef snd_ctl_elem_info_get_max64
+#undef snd_ctl_elem_info_get_step64
+#undef snd_ctl_elem_info_get_items
+#undef snd_ctl_elem_info_set_item
+#undef snd_ctl_elem_info_get_item_name
+#undef snd_ctl_elem_info_get_dimensions
+#undef snd_ctl_elem_info_get_dimension
+#undef snd_ctl_elem_info_set_dimension
+#undef snd_ctl_elem_info_get_id
+#undef snd_ctl_elem_info_get_numid
+#undef snd_ctl_elem_info_get_interface
+#undef snd_ctl_elem_info_get_device
+#undef snd_ctl_elem_info_get_subdevice
+#undef snd_ctl_elem_info_get_name
+#undef snd_ctl_elem_info_get_index
+#undef snd_ctl_elem_info_set_id
+#undef snd_ctl_elem_info_set_numid
+#undef snd_ctl_elem_info_set_interface
+#undef snd_ctl_elem_info_set_device
+#undef snd_ctl_elem_info_set_subdevice
+#undef snd_ctl_elem_info_set_name
+#undef snd_ctl_elem_info_set_index
+#undef snd_ctl_add_integer_elem_set
+#undef snd_ctl_add_integer64_elem_set
+#undef snd_ctl_add_boolean_elem_set
+#undef snd_ctl_add_enumerated_elem_set
+#undef snd_ctl_add_bytes_elem_set
+#undef snd_ctl_elem_add_integer
+#undef snd_ctl_elem_add_integer64
+#undef snd_ctl_elem_add_boolean
+#undef snd_ctl_elem_add_enumerated
+#undef snd_ctl_elem_add_iec958
+#undef snd_ctl_elem_remove
+#undef snd_ctl_elem_value_sizeof
+#undef snd_ctl_elem_value_malloc
+#undef snd_ctl_elem_value_free
+#undef snd_ctl_elem_value_clear
+#undef snd_ctl_elem_value_copy
+#undef snd_ctl_elem_value_compare
+#undef snd_ctl_elem_value_get_id
+#undef snd_ctl_elem_value_get_numid
+#undef snd_ctl_elem_value_get_interface
+#undef snd_ctl_elem_value_get_device
+#undef snd_ctl_elem_value_get_subdevice
+#undef snd_ctl_elem_value_get_name
+#undef snd_ctl_elem_value_get_index
+#undef snd_ctl_elem_value_set_id
+#undef snd_ctl_elem_value_set_numid
+#undef snd_ctl_elem_value_set_interface
+#undef snd_ctl_elem_value_set_device
+#undef snd_ctl_elem_value_set_subdevice
+#undef snd_ctl_elem_value_set_name
+#undef snd_ctl_elem_value_set_index
+#undef snd_ctl_elem_value_get_boolean
+#undef snd_ctl_elem_value_get_integer
+#undef snd_ctl_elem_value_get_integer64
+#undef snd_ctl_elem_value_get_enumerated
+#undef snd_ctl_elem_value_get_byte
+#undef snd_ctl_elem_value_set_boolean
+#undef snd_ctl_elem_value_set_integer
+#undef snd_ctl_elem_value_set_integer64
+#undef snd_ctl_elem_value_set_enumerated
+#undef snd_ctl_elem_value_set_byte
+#undef snd_ctl_elem_set_bytes
+#undef snd_ctl_elem_value_get_bytes
+#undef snd_ctl_elem_value_get_iec958
+#undef snd_ctl_elem_value_set_iec958
+#undef snd_tlv_parse_dB_info
+#undef snd_tlv_get_dB_range
+#undef snd_tlv_convert_to_dB
+#undef snd_tlv_convert_from_dB
+#undef snd_ctl_get_dB_range
+#undef snd_ctl_convert_to_dB
+#undef snd_ctl_convert_from_dB
+#undef snd_hctl_compare_fast
+#undef snd_hctl_open
+#undef snd_hctl_open_ctl
+#undef snd_hctl_close
+#undef snd_hctl_nonblock
+#undef snd_hctl_poll_descriptors_count
+#undef snd_hctl_poll_descriptors
+#undef snd_hctl_poll_descriptors_revents
+#undef snd_hctl_get_count
+#undef snd_hctl_set_compare
+#undef snd_hctl_first_elem
+#undef snd_hctl_last_elem
+#undef snd_hctl_find_elem
+#undef snd_hctl_set_callback
+#undef snd_hctl_set_callback_private
+#undef snd_hctl_get_callback_private
+#undef snd_hctl_load
+#undef snd_hctl_free
+#undef snd_hctl_handle_events
+#undef snd_hctl_name
+#undef snd_hctl_wait
+#undef snd_hctl_ctl
+#undef snd_hctl_elem_next
+#undef snd_hctl_elem_prev
+#undef snd_hctl_elem_info
+#undef snd_hctl_elem_read
+#undef snd_hctl_elem_write
+#undef snd_hctl_elem_tlv_read
+#undef snd_hctl_elem_tlv_write
+#undef snd_hctl_elem_tlv_command
+#undef snd_hctl_elem_get_hctl
+#undef snd_hctl_elem_get_id
+#undef snd_hctl_elem_get_numid
+#undef snd_hctl_elem_get_interface
+#undef snd_hctl_elem_get_device
+#undef snd_hctl_elem_get_subdevice
+#undef snd_hctl_elem_get_name
+#undef snd_hctl_elem_get_index
+#undef snd_hctl_elem_set_callback
+#undef snd_hctl_elem_get_callback_private
+#undef snd_hctl_elem_set_callback_private
+#undef snd_sctl_build
+#undef snd_sctl_free
+#undef snd_sctl_install
+#undef snd_sctl_remove
+#undef snd_mixer_open
+#undef snd_mixer_close
+#undef snd_mixer_first_elem
+#undef snd_mixer_last_elem
+#undef snd_mixer_handle_events
+#undef snd_mixer_attach
+#undef snd_mixer_attach_hctl
+#undef snd_mixer_detach
+#undef snd_mixer_detach_hctl
+#undef snd_mixer_get_hctl
+#undef snd_mixer_poll_descriptors_count
+#undef snd_mixer_poll_descriptors
+#undef snd_mixer_poll_descriptors_revents
+#undef snd_mixer_load
+#undef snd_mixer_free
+#undef snd_mixer_wait
+#undef snd_mixer_set_compare
+#undef snd_mixer_set_callback
+#undef snd_mixer_get_callback_private
+#undef snd_mixer_set_callback_private
+#undef snd_mixer_get_count
+#undef snd_mixer_class_unregister
+#undef snd_mixer_elem_next
+#undef snd_mixer_elem_prev
+#undef snd_mixer_elem_set_callback
+#undef snd_mixer_elem_get_callback_private
+#undef snd_mixer_elem_set_callback_private
+#undef snd_mixer_elem_get_type
+#undef snd_mixer_class_register
+#undef snd_mixer_elem_new
+#undef snd_mixer_elem_add
+#undef snd_mixer_elem_remove
+#undef snd_mixer_elem_free
+#undef snd_mixer_elem_info
+#undef snd_mixer_elem_value
+#undef snd_mixer_elem_attach
+#undef snd_mixer_elem_detach
+#undef snd_mixer_elem_empty
+#undef snd_mixer_elem_get_private
+#undef snd_mixer_class_sizeof
+#undef snd_mixer_class_malloc
+#undef snd_mixer_class_free
+#undef snd_mixer_class_copy
+#undef snd_mixer_class_get_mixer
+#undef snd_mixer_class_get_event
+#undef snd_mixer_class_get_private
+#undef snd_mixer_class_get_compare
+#undef snd_mixer_class_set_event
+#undef snd_mixer_class_set_private
+#undef snd_mixer_class_set_private_free
+#undef snd_mixer_class_set_compare
+#undef snd_mixer_selem_channel_name
+#undef snd_mixer_selem_register
+#undef snd_mixer_selem_get_id
+#undef snd_mixer_selem_get_name
+#undef snd_mixer_selem_get_index
+#undef snd_mixer_find_selem
+#undef snd_mixer_selem_is_active
+#undef snd_mixer_selem_is_playback_mono
+#undef snd_mixer_selem_has_playback_channel
+#undef snd_mixer_selem_is_capture_mono
+#undef snd_mixer_selem_has_capture_channel
+#undef snd_mixer_selem_get_capture_group
+#undef snd_mixer_selem_has_common_volume
+#undef snd_mixer_selem_has_playback_volume
+#undef snd_mixer_selem_has_playback_volume_joined
+#undef snd_mixer_selem_has_capture_volume
+#undef snd_mixer_selem_has_capture_volume_joined
+#undef snd_mixer_selem_has_common_switch
+#undef snd_mixer_selem_has_playback_switch
+#undef snd_mixer_selem_has_playback_switch_joined
+#undef snd_mixer_selem_has_capture_switch
+#undef snd_mixer_selem_has_capture_switch_joined
+#undef snd_mixer_selem_has_capture_switch_exclusive
+#undef snd_mixer_selem_ask_playback_vol_dB
+#undef snd_mixer_selem_ask_capture_vol_dB
+#undef snd_mixer_selem_ask_playback_dB_vol
+#undef snd_mixer_selem_ask_capture_dB_vol
+#undef snd_mixer_selem_get_playback_volume
+#undef snd_mixer_selem_get_capture_volume
+#undef snd_mixer_selem_get_playback_dB
+#undef snd_mixer_selem_get_capture_dB
+#undef snd_mixer_selem_get_playback_switch
+#undef snd_mixer_selem_get_capture_switch
+#undef snd_mixer_selem_set_playback_volume
+#undef snd_mixer_selem_set_capture_volume
+#undef snd_mixer_selem_set_playback_dB
+#undef snd_mixer_selem_set_capture_dB
+#undef snd_mixer_selem_set_playback_volume_all
+#undef snd_mixer_selem_set_capture_volume_all
+#undef snd_mixer_selem_set_playback_dB_all
+#undef snd_mixer_selem_set_capture_dB_all
+#undef snd_mixer_selem_set_playback_switch
+#undef snd_mixer_selem_set_capture_switch
+#undef snd_mixer_selem_set_playback_switch_all
+#undef snd_mixer_selem_set_capture_switch_all
+#undef snd_mixer_selem_get_playback_volume_range
+#undef snd_mixer_selem_get_playback_dB_range
+#undef snd_mixer_selem_set_playback_volume_range
+#undef snd_mixer_selem_get_capture_volume_range
+#undef snd_mixer_selem_get_capture_dB_range
+#undef snd_mixer_selem_set_capture_volume_range
+#undef snd_mixer_selem_is_enumerated
+#undef snd_mixer_selem_is_enum_playback
+#undef snd_mixer_selem_is_enum_capture
+#undef snd_mixer_selem_get_enum_items
+#undef snd_mixer_selem_get_enum_item_name
+#undef snd_mixer_selem_get_enum_item
+#undef snd_mixer_selem_set_enum_item
+#undef snd_mixer_selem_id_sizeof
+#undef snd_mixer_selem_id_malloc
+#undef snd_mixer_selem_id_free
+#undef snd_mixer_selem_id_copy
+#undef snd_mixer_selem_id_get_name
+#undef snd_mixer_selem_id_get_index
+#undef snd_mixer_selem_id_set_name
+#undef snd_mixer_selem_id_set_index
+#undef snd_seq_open
+#undef snd_seq_open_lconf
+#undef snd_seq_name
+#undef snd_seq_type
+#undef snd_seq_close
+#undef snd_seq_poll_descriptors_count
+#undef snd_seq_poll_descriptors
+#undef snd_seq_poll_descriptors_revents
+#undef snd_seq_nonblock
+#undef snd_seq_client_id
+#undef snd_seq_get_output_buffer_size
+#undef snd_seq_get_input_buffer_size
+#undef snd_seq_set_output_buffer_size
+#undef snd_seq_set_input_buffer_size
+#undef snd_seq_system_info_sizeof
+#undef snd_seq_system_info_malloc
+#undef snd_seq_system_info_free
+#undef snd_seq_system_info_copy
+#undef snd_seq_system_info_get_queues
+#undef snd_seq_system_info_get_clients
+#undef snd_seq_system_info_get_ports
+#undef snd_seq_system_info_get_channels
+#undef snd_seq_system_info_get_cur_clients
+#undef snd_seq_system_info_get_cur_queues
+#undef snd_seq_system_info
+#undef snd_seq_client_info_sizeof
+#undef snd_seq_client_info_malloc
+#undef snd_seq_client_info_free
+#undef snd_seq_client_info_copy
+#undef snd_seq_client_info_get_client
+#undef snd_seq_client_info_get_type
+#undef snd_seq_client_info_get_name
+#undef snd_seq_client_info_get_broadcast_filter
+#undef snd_seq_client_info_get_error_bounce
+#undef snd_seq_client_info_get_card
+#undef snd_seq_client_info_get_pid
+#undef snd_seq_client_info_get_event_filter
+#undef snd_seq_client_info_get_num_ports
+#undef snd_seq_client_info_get_event_lost
+#undef snd_seq_client_info_set_client
+#undef snd_seq_client_info_set_name
+#undef snd_seq_client_info_set_broadcast_filter
+#undef snd_seq_client_info_set_error_bounce
+#undef snd_seq_client_info_set_event_filter
+#undef snd_seq_client_info_event_filter_clear
+#undef snd_seq_client_info_event_filter_add
+#undef snd_seq_client_info_event_filter_del
+#undef snd_seq_client_info_event_filter_check
+#undef snd_seq_get_client_info
+#undef snd_seq_get_any_client_info
+#undef snd_seq_set_client_info
+#undef snd_seq_query_next_client
+#undef snd_seq_client_pool_sizeof
+#undef snd_seq_client_pool_malloc
+#undef snd_seq_client_pool_free
+#undef snd_seq_client_pool_copy
+#undef snd_seq_client_pool_get_client
+#undef snd_seq_client_pool_get_output_pool
+#undef snd_seq_client_pool_get_input_pool
+#undef snd_seq_client_pool_get_output_room
+#undef snd_seq_client_pool_get_output_free
+#undef snd_seq_client_pool_get_input_free
+#undef snd_seq_client_pool_set_output_pool
+#undef snd_seq_client_pool_set_input_pool
+#undef snd_seq_client_pool_set_output_room
+#undef snd_seq_get_client_pool
+#undef snd_seq_set_client_pool
+#undef snd_seq_port_info_sizeof
+#undef snd_seq_port_info_malloc
+#undef snd_seq_port_info_free
+#undef snd_seq_port_info_copy
+#undef snd_seq_port_info_get_client
+#undef snd_seq_port_info_get_port
+#undef snd_seq_port_info_get_addr
+#undef snd_seq_port_info_get_name
+#undef snd_seq_port_info_get_capability
+#undef snd_seq_port_info_get_type
+#undef snd_seq_port_info_get_midi_channels
+#undef snd_seq_port_info_get_midi_voices
+#undef snd_seq_port_info_get_synth_voices
+#undef snd_seq_port_info_get_read_use
+#undef snd_seq_port_info_get_write_use
+#undef snd_seq_port_info_get_port_specified
+#undef snd_seq_port_info_get_timestamping
+#undef snd_seq_port_info_get_timestamp_real
+#undef snd_seq_port_info_get_timestamp_queue
+#undef snd_seq_port_info_set_client
+#undef snd_seq_port_info_set_port
+#undef snd_seq_port_info_set_addr
+#undef snd_seq_port_info_set_name
+#undef snd_seq_port_info_set_capability
+#undef snd_seq_port_info_set_type
+#undef snd_seq_port_info_set_midi_channels
+#undef snd_seq_port_info_set_midi_voices
+#undef snd_seq_port_info_set_synth_voices
+#undef snd_seq_port_info_set_port_specified
+#undef snd_seq_port_info_set_timestamping
+#undef snd_seq_port_info_set_timestamp_real
+#undef snd_seq_port_info_set_timestamp_queue
+#undef snd_seq_create_port
+#undef snd_seq_delete_port
+#undef snd_seq_get_port_info
+#undef snd_seq_get_any_port_info
+#undef snd_seq_set_port_info
+#undef snd_seq_query_next_port
+#undef snd_seq_port_subscribe_sizeof
+#undef snd_seq_port_subscribe_malloc
+#undef snd_seq_port_subscribe_free
+#undef snd_seq_port_subscribe_copy
+#undef snd_seq_port_subscribe_get_sender
+#undef snd_seq_port_subscribe_get_dest
+#undef snd_seq_port_subscribe_get_queue
+#undef snd_seq_port_subscribe_get_exclusive
+#undef snd_seq_port_subscribe_get_time_update
+#undef snd_seq_port_subscribe_get_time_real
+#undef snd_seq_port_subscribe_set_sender
+#undef snd_seq_port_subscribe_set_dest
+#undef snd_seq_port_subscribe_set_queue
+#undef snd_seq_port_subscribe_set_exclusive
+#undef snd_seq_port_subscribe_set_time_update
+#undef snd_seq_port_subscribe_set_time_real
+#undef snd_seq_get_port_subscription
+#undef snd_seq_subscribe_port
+#undef snd_seq_unsubscribe_port
+#undef snd_seq_query_subscribe_sizeof
+#undef snd_seq_query_subscribe_malloc
+#undef snd_seq_query_subscribe_free
+#undef snd_seq_query_subscribe_copy
+#undef snd_seq_query_subscribe_get_client
+#undef snd_seq_query_subscribe_get_port
+#undef snd_seq_query_subscribe_get_root
+#undef snd_seq_query_subscribe_get_type
+#undef snd_seq_query_subscribe_get_index
+#undef snd_seq_query_subscribe_get_num_subs
+#undef snd_seq_query_subscribe_get_addr
+#undef snd_seq_query_subscribe_get_queue
+#undef snd_seq_query_subscribe_get_exclusive
+#undef snd_seq_query_subscribe_get_time_update
+#undef snd_seq_query_subscribe_get_time_real
+#undef snd_seq_query_subscribe_set_client
+#undef snd_seq_query_subscribe_set_port
+#undef snd_seq_query_subscribe_set_root
+#undef snd_seq_query_subscribe_set_type
+#undef snd_seq_query_subscribe_set_index
+#undef snd_seq_query_port_subscribers
+#undef snd_seq_queue_info_sizeof
+#undef snd_seq_queue_info_malloc
+#undef snd_seq_queue_info_free
+#undef snd_seq_queue_info_copy
+#undef snd_seq_queue_info_get_queue
+#undef snd_seq_queue_info_get_name
+#undef snd_seq_queue_info_get_owner
+#undef snd_seq_queue_info_get_locked
+#undef snd_seq_queue_info_get_flags
+#undef snd_seq_queue_info_set_name
+#undef snd_seq_queue_info_set_owner
+#undef snd_seq_queue_info_set_locked
+#undef snd_seq_queue_info_set_flags
+#undef snd_seq_create_queue
+#undef snd_seq_alloc_named_queue
+#undef snd_seq_alloc_queue
+#undef snd_seq_free_queue
+#undef snd_seq_get_queue_info
+#undef snd_seq_set_queue_info
+#undef snd_seq_query_named_queue
+#undef snd_seq_get_queue_usage
+#undef snd_seq_set_queue_usage
+#undef snd_seq_queue_status_sizeof
+#undef snd_seq_queue_status_malloc
+#undef snd_seq_queue_status_free
+#undef snd_seq_queue_status_copy
+#undef snd_seq_queue_status_get_queue
+#undef snd_seq_queue_status_get_events
+#undef snd_seq_queue_status_get_tick_time
+#undef snd_seq_queue_status_get_real_time
+#undef snd_seq_queue_status_get_status
+#undef snd_seq_get_queue_status
+#undef snd_seq_queue_tempo_sizeof
+#undef snd_seq_queue_tempo_malloc
+#undef snd_seq_queue_tempo_free
+#undef snd_seq_queue_tempo_copy
+#undef snd_seq_queue_tempo_get_queue
+#undef snd_seq_queue_tempo_get_tempo
+#undef snd_seq_queue_tempo_get_ppq
+#undef snd_seq_queue_tempo_get_skew
+#undef snd_seq_queue_tempo_get_skew_base
+#undef snd_seq_queue_tempo_set_tempo
+#undef snd_seq_queue_tempo_set_ppq
+#undef snd_seq_queue_tempo_set_skew
+#undef snd_seq_queue_tempo_set_skew_base
+#undef snd_seq_get_queue_tempo
+#undef snd_seq_set_queue_tempo
+#undef snd_seq_queue_timer_sizeof
+#undef snd_seq_queue_timer_malloc
+#undef snd_seq_queue_timer_free
+#undef snd_seq_queue_timer_copy
+#undef snd_seq_queue_timer_get_queue
+#undef snd_seq_queue_timer_get_type
+#undef snd_seq_queue_timer_get_id
+#undef snd_seq_queue_timer_get_resolution
+#undef snd_seq_queue_timer_set_type
+#undef snd_seq_queue_timer_set_id
+#undef snd_seq_queue_timer_set_resolution
+#undef snd_seq_get_queue_timer
+#undef snd_seq_set_queue_timer
+#undef snd_seq_free_event
+#undef snd_seq_event_length
+#undef snd_seq_event_output
+#undef snd_seq_event_output_buffer
+#undef snd_seq_event_output_direct
+#undef snd_seq_event_input
+#undef snd_seq_event_input_pending
+#undef snd_seq_drain_output
+#undef snd_seq_event_output_pending
+#undef snd_seq_extract_output
+#undef snd_seq_drop_output
+#undef snd_seq_drop_output_buffer
+#undef snd_seq_drop_input
+#undef snd_seq_drop_input_buffer
+#undef snd_seq_remove_events_sizeof
+#undef snd_seq_remove_events_malloc
+#undef snd_seq_remove_events_free
+#undef snd_seq_remove_events_copy
+#undef snd_seq_remove_events_get_condition
+#undef snd_seq_remove_events_get_queue
+#undef snd_seq_remove_events_get_time
+#undef snd_seq_remove_events_get_dest
+#undef snd_seq_remove_events_get_channel
+#undef snd_seq_remove_events_get_event_type
+#undef snd_seq_remove_events_get_tag
+#undef snd_seq_remove_events_set_condition
+#undef snd_seq_remove_events_set_queue
+#undef snd_seq_remove_events_set_time
+#undef snd_seq_remove_events_set_dest
+#undef snd_seq_remove_events_set_channel
+#undef snd_seq_remove_events_set_event_type
+#undef snd_seq_remove_events_set_tag
+#undef snd_seq_remove_events
+#undef snd_seq_set_bit
+#undef snd_seq_unset_bit
+#undef snd_seq_change_bit
+#undef snd_seq_get_bit
+#undef snd_seq_control_queue
+#undef snd_seq_create_simple_port
+#undef snd_seq_delete_simple_port
+#undef snd_seq_connect_from
+#undef snd_seq_connect_to
+#undef snd_seq_disconnect_from
+#undef snd_seq_disconnect_to
+#undef snd_seq_set_client_name
+#undef snd_seq_set_client_event_filter
+#undef snd_seq_set_client_pool_output
+#undef snd_seq_set_client_pool_output_room
+#undef snd_seq_set_client_pool_input
+#undef snd_seq_sync_output_queue
+#undef snd_seq_parse_address
+#undef snd_seq_reset_pool_output
+#undef snd_seq_reset_pool_input
+#undef snd_midi_event_new
+#undef snd_midi_event_resize_buffer
+#undef snd_midi_event_free
+#undef snd_midi_event_init
+#undef snd_midi_event_reset_encode
+#undef snd_midi_event_reset_decode
+#undef snd_midi_event_no_status
+#undef snd_midi_event_encode
+#undef snd_midi_event_encode_byte
+#undef snd_midi_event_decode
+#ifdef __cplusplus
+extern "C" {
+#endif
+#define snd_asoundlib_version snd_asoundlib_version_dylibloader_wrapper_asound
+#define snd_dlopen snd_dlopen_dylibloader_wrapper_asound
+#define snd_dlsym snd_dlsym_dylibloader_wrapper_asound
+#define snd_dlclose snd_dlclose_dylibloader_wrapper_asound
+#define snd_async_add_handler snd_async_add_handler_dylibloader_wrapper_asound
+#define snd_async_del_handler snd_async_del_handler_dylibloader_wrapper_asound
+#define snd_async_handler_get_fd snd_async_handler_get_fd_dylibloader_wrapper_asound
+#define snd_async_handler_get_signo snd_async_handler_get_signo_dylibloader_wrapper_asound
+#define snd_async_handler_get_callback_private snd_async_handler_get_callback_private_dylibloader_wrapper_asound
+#define snd_shm_area_create snd_shm_area_create_dylibloader_wrapper_asound
+#define snd_shm_area_share snd_shm_area_share_dylibloader_wrapper_asound
+#define snd_shm_area_destroy snd_shm_area_destroy_dylibloader_wrapper_asound
+#define snd_user_file snd_user_file_dylibloader_wrapper_asound
+#define snd_input_stdio_open snd_input_stdio_open_dylibloader_wrapper_asound
+#define snd_input_stdio_attach snd_input_stdio_attach_dylibloader_wrapper_asound
+#define snd_input_buffer_open snd_input_buffer_open_dylibloader_wrapper_asound
+#define snd_input_close snd_input_close_dylibloader_wrapper_asound
+#define snd_input_scanf snd_input_scanf_dylibloader_wrapper_asound
+#define snd_input_gets snd_input_gets_dylibloader_wrapper_asound
+#define snd_input_getc snd_input_getc_dylibloader_wrapper_asound
+#define snd_input_ungetc snd_input_ungetc_dylibloader_wrapper_asound
+#define snd_output_stdio_open snd_output_stdio_open_dylibloader_wrapper_asound
+#define snd_output_stdio_attach snd_output_stdio_attach_dylibloader_wrapper_asound
+#define snd_output_buffer_open snd_output_buffer_open_dylibloader_wrapper_asound
+#define snd_output_buffer_string snd_output_buffer_string_dylibloader_wrapper_asound
+#define snd_output_close snd_output_close_dylibloader_wrapper_asound
+#define snd_output_printf snd_output_printf_dylibloader_wrapper_asound
+#define snd_output_vprintf snd_output_vprintf_dylibloader_wrapper_asound
+#define snd_output_puts snd_output_puts_dylibloader_wrapper_asound
+#define snd_output_putc snd_output_putc_dylibloader_wrapper_asound
+#define snd_output_flush snd_output_flush_dylibloader_wrapper_asound
+#define snd_strerror snd_strerror_dylibloader_wrapper_asound
+#define snd_lib_error_set_handler snd_lib_error_set_handler_dylibloader_wrapper_asound
+#define snd_lib_error_set_local snd_lib_error_set_local_dylibloader_wrapper_asound
+#define snd_config_top snd_config_top_dylibloader_wrapper_asound
+#define snd_config_load snd_config_load_dylibloader_wrapper_asound
+#define snd_config_load_override snd_config_load_override_dylibloader_wrapper_asound
+#define snd_config_save snd_config_save_dylibloader_wrapper_asound
+#define snd_config_update snd_config_update_dylibloader_wrapper_asound
+#define snd_config_update_r snd_config_update_r_dylibloader_wrapper_asound
+#define snd_config_update_free snd_config_update_free_dylibloader_wrapper_asound
+#define snd_config_update_free_global snd_config_update_free_global_dylibloader_wrapper_asound
+#define snd_config_update_ref snd_config_update_ref_dylibloader_wrapper_asound
+#define snd_config_ref snd_config_ref_dylibloader_wrapper_asound
+#define snd_config_unref snd_config_unref_dylibloader_wrapper_asound
+#define snd_config_search snd_config_search_dylibloader_wrapper_asound
+#define snd_config_searchv snd_config_searchv_dylibloader_wrapper_asound
+#define snd_config_search_definition snd_config_search_definition_dylibloader_wrapper_asound
+#define snd_config_expand snd_config_expand_dylibloader_wrapper_asound
+#define snd_config_evaluate snd_config_evaluate_dylibloader_wrapper_asound
+#define snd_config_add snd_config_add_dylibloader_wrapper_asound
+#define snd_config_delete snd_config_delete_dylibloader_wrapper_asound
+#define snd_config_delete_compound_members snd_config_delete_compound_members_dylibloader_wrapper_asound
+#define snd_config_copy snd_config_copy_dylibloader_wrapper_asound
+#define snd_config_make snd_config_make_dylibloader_wrapper_asound
+#define snd_config_make_integer snd_config_make_integer_dylibloader_wrapper_asound
+#define snd_config_make_integer64 snd_config_make_integer64_dylibloader_wrapper_asound
+#define snd_config_make_real snd_config_make_real_dylibloader_wrapper_asound
+#define snd_config_make_string snd_config_make_string_dylibloader_wrapper_asound
+#define snd_config_make_pointer snd_config_make_pointer_dylibloader_wrapper_asound
+#define snd_config_make_compound snd_config_make_compound_dylibloader_wrapper_asound
+#define snd_config_imake_integer snd_config_imake_integer_dylibloader_wrapper_asound
+#define snd_config_imake_integer64 snd_config_imake_integer64_dylibloader_wrapper_asound
+#define snd_config_imake_real snd_config_imake_real_dylibloader_wrapper_asound
+#define snd_config_imake_string snd_config_imake_string_dylibloader_wrapper_asound
+#define snd_config_imake_safe_string snd_config_imake_safe_string_dylibloader_wrapper_asound
+#define snd_config_imake_pointer snd_config_imake_pointer_dylibloader_wrapper_asound
+#define snd_config_get_type snd_config_get_type_dylibloader_wrapper_asound
+#define snd_config_set_id snd_config_set_id_dylibloader_wrapper_asound
+#define snd_config_set_integer snd_config_set_integer_dylibloader_wrapper_asound
+#define snd_config_set_integer64 snd_config_set_integer64_dylibloader_wrapper_asound
+#define snd_config_set_real snd_config_set_real_dylibloader_wrapper_asound
+#define snd_config_set_string snd_config_set_string_dylibloader_wrapper_asound
+#define snd_config_set_ascii snd_config_set_ascii_dylibloader_wrapper_asound
+#define snd_config_set_pointer snd_config_set_pointer_dylibloader_wrapper_asound
+#define snd_config_get_id snd_config_get_id_dylibloader_wrapper_asound
+#define snd_config_get_integer snd_config_get_integer_dylibloader_wrapper_asound
+#define snd_config_get_integer64 snd_config_get_integer64_dylibloader_wrapper_asound
+#define snd_config_get_real snd_config_get_real_dylibloader_wrapper_asound
+#define snd_config_get_ireal snd_config_get_ireal_dylibloader_wrapper_asound
+#define snd_config_get_string snd_config_get_string_dylibloader_wrapper_asound
+#define snd_config_get_ascii snd_config_get_ascii_dylibloader_wrapper_asound
+#define snd_config_get_pointer snd_config_get_pointer_dylibloader_wrapper_asound
+#define snd_config_test_id snd_config_test_id_dylibloader_wrapper_asound
+#define snd_config_iterator_first snd_config_iterator_first_dylibloader_wrapper_asound
+#define snd_config_iterator_next snd_config_iterator_next_dylibloader_wrapper_asound
+#define snd_config_iterator_end snd_config_iterator_end_dylibloader_wrapper_asound
+#define snd_config_iterator_entry snd_config_iterator_entry_dylibloader_wrapper_asound
+#define snd_config_get_bool_ascii snd_config_get_bool_ascii_dylibloader_wrapper_asound
+#define snd_config_get_bool snd_config_get_bool_dylibloader_wrapper_asound
+#define snd_config_get_ctl_iface_ascii snd_config_get_ctl_iface_ascii_dylibloader_wrapper_asound
+#define snd_config_get_ctl_iface snd_config_get_ctl_iface_dylibloader_wrapper_asound
+#define snd_names_list snd_names_list_dylibloader_wrapper_asound
+#define snd_names_list_free snd_names_list_free_dylibloader_wrapper_asound
+#define snd_pcm_open snd_pcm_open_dylibloader_wrapper_asound
+#define snd_pcm_open_lconf snd_pcm_open_lconf_dylibloader_wrapper_asound
+#define snd_pcm_open_fallback snd_pcm_open_fallback_dylibloader_wrapper_asound
+#define snd_pcm_close snd_pcm_close_dylibloader_wrapper_asound
+#define snd_pcm_name snd_pcm_name_dylibloader_wrapper_asound
+#define snd_pcm_type snd_pcm_type_dylibloader_wrapper_asound
+#define snd_pcm_stream snd_pcm_stream_dylibloader_wrapper_asound
+#define snd_pcm_poll_descriptors_count snd_pcm_poll_descriptors_count_dylibloader_wrapper_asound
+#define snd_pcm_poll_descriptors snd_pcm_poll_descriptors_dylibloader_wrapper_asound
+#define snd_pcm_poll_descriptors_revents snd_pcm_poll_descriptors_revents_dylibloader_wrapper_asound
+#define snd_pcm_nonblock snd_pcm_nonblock_dylibloader_wrapper_asound
+#define snd_async_add_pcm_handler snd_async_add_pcm_handler_dylibloader_wrapper_asound
+#define snd_async_handler_get_pcm snd_async_handler_get_pcm_dylibloader_wrapper_asound
+#define snd_pcm_info snd_pcm_info_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_current snd_pcm_hw_params_current_dylibloader_wrapper_asound
+#define snd_pcm_hw_params snd_pcm_hw_params_dylibloader_wrapper_asound
+#define snd_pcm_hw_free snd_pcm_hw_free_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_current snd_pcm_sw_params_current_dylibloader_wrapper_asound
+#define snd_pcm_sw_params snd_pcm_sw_params_dylibloader_wrapper_asound
+#define snd_pcm_prepare snd_pcm_prepare_dylibloader_wrapper_asound
+#define snd_pcm_reset snd_pcm_reset_dylibloader_wrapper_asound
+#define snd_pcm_status snd_pcm_status_dylibloader_wrapper_asound
+#define snd_pcm_start snd_pcm_start_dylibloader_wrapper_asound
+#define snd_pcm_drop snd_pcm_drop_dylibloader_wrapper_asound
+#define snd_pcm_drain snd_pcm_drain_dylibloader_wrapper_asound
+#define snd_pcm_pause snd_pcm_pause_dylibloader_wrapper_asound
+#define snd_pcm_state snd_pcm_state_dylibloader_wrapper_asound
+#define snd_pcm_hwsync snd_pcm_hwsync_dylibloader_wrapper_asound
+#define snd_pcm_delay snd_pcm_delay_dylibloader_wrapper_asound
+#define snd_pcm_resume snd_pcm_resume_dylibloader_wrapper_asound
+#define snd_pcm_htimestamp snd_pcm_htimestamp_dylibloader_wrapper_asound
+#define snd_pcm_avail snd_pcm_avail_dylibloader_wrapper_asound
+#define snd_pcm_avail_update snd_pcm_avail_update_dylibloader_wrapper_asound
+#define snd_pcm_avail_delay snd_pcm_avail_delay_dylibloader_wrapper_asound
+#define snd_pcm_rewindable snd_pcm_rewindable_dylibloader_wrapper_asound
+#define snd_pcm_rewind snd_pcm_rewind_dylibloader_wrapper_asound
+#define snd_pcm_forwardable snd_pcm_forwardable_dylibloader_wrapper_asound
+#define snd_pcm_forward snd_pcm_forward_dylibloader_wrapper_asound
+#define snd_pcm_writei snd_pcm_writei_dylibloader_wrapper_asound
+#define snd_pcm_readi snd_pcm_readi_dylibloader_wrapper_asound
+#define snd_pcm_writen snd_pcm_writen_dylibloader_wrapper_asound
+#define snd_pcm_readn snd_pcm_readn_dylibloader_wrapper_asound
+#define snd_pcm_wait snd_pcm_wait_dylibloader_wrapper_asound
+#define snd_pcm_link snd_pcm_link_dylibloader_wrapper_asound
+#define snd_pcm_unlink snd_pcm_unlink_dylibloader_wrapper_asound
+#define snd_pcm_query_chmaps snd_pcm_query_chmaps_dylibloader_wrapper_asound
+#define snd_pcm_query_chmaps_from_hw snd_pcm_query_chmaps_from_hw_dylibloader_wrapper_asound
+#define snd_pcm_free_chmaps snd_pcm_free_chmaps_dylibloader_wrapper_asound
+#define snd_pcm_get_chmap snd_pcm_get_chmap_dylibloader_wrapper_asound
+#define snd_pcm_set_chmap snd_pcm_set_chmap_dylibloader_wrapper_asound
+#define snd_pcm_chmap_type_name snd_pcm_chmap_type_name_dylibloader_wrapper_asound
+#define snd_pcm_chmap_name snd_pcm_chmap_name_dylibloader_wrapper_asound
+#define snd_pcm_chmap_long_name snd_pcm_chmap_long_name_dylibloader_wrapper_asound
+#define snd_pcm_chmap_print snd_pcm_chmap_print_dylibloader_wrapper_asound
+#define snd_pcm_chmap_from_string snd_pcm_chmap_from_string_dylibloader_wrapper_asound
+#define snd_pcm_chmap_parse_string snd_pcm_chmap_parse_string_dylibloader_wrapper_asound
+#define snd_pcm_recover snd_pcm_recover_dylibloader_wrapper_asound
+#define snd_pcm_set_params snd_pcm_set_params_dylibloader_wrapper_asound
+#define snd_pcm_get_params snd_pcm_get_params_dylibloader_wrapper_asound
+#define snd_pcm_info_sizeof snd_pcm_info_sizeof_dylibloader_wrapper_asound
+#define snd_pcm_info_malloc snd_pcm_info_malloc_dylibloader_wrapper_asound
+#define snd_pcm_info_free snd_pcm_info_free_dylibloader_wrapper_asound
+#define snd_pcm_info_copy snd_pcm_info_copy_dylibloader_wrapper_asound
+#define snd_pcm_info_get_device snd_pcm_info_get_device_dylibloader_wrapper_asound
+#define snd_pcm_info_get_subdevice snd_pcm_info_get_subdevice_dylibloader_wrapper_asound
+#define snd_pcm_info_get_stream snd_pcm_info_get_stream_dylibloader_wrapper_asound
+#define snd_pcm_info_get_card snd_pcm_info_get_card_dylibloader_wrapper_asound
+#define snd_pcm_info_get_id snd_pcm_info_get_id_dylibloader_wrapper_asound
+#define snd_pcm_info_get_name snd_pcm_info_get_name_dylibloader_wrapper_asound
+#define snd_pcm_info_get_subdevice_name snd_pcm_info_get_subdevice_name_dylibloader_wrapper_asound
+#define snd_pcm_info_get_class snd_pcm_info_get_class_dylibloader_wrapper_asound
+#define snd_pcm_info_get_subclass snd_pcm_info_get_subclass_dylibloader_wrapper_asound
+#define snd_pcm_info_get_subdevices_count snd_pcm_info_get_subdevices_count_dylibloader_wrapper_asound
+#define snd_pcm_info_get_subdevices_avail snd_pcm_info_get_subdevices_avail_dylibloader_wrapper_asound
+#define snd_pcm_info_get_sync snd_pcm_info_get_sync_dylibloader_wrapper_asound
+#define snd_pcm_info_set_device snd_pcm_info_set_device_dylibloader_wrapper_asound
+#define snd_pcm_info_set_subdevice snd_pcm_info_set_subdevice_dylibloader_wrapper_asound
+#define snd_pcm_info_set_stream snd_pcm_info_set_stream_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_any snd_pcm_hw_params_any_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_can_mmap_sample_resolution snd_pcm_hw_params_can_mmap_sample_resolution_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_is_double snd_pcm_hw_params_is_double_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_is_batch snd_pcm_hw_params_is_batch_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_is_block_transfer snd_pcm_hw_params_is_block_transfer_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_is_monotonic snd_pcm_hw_params_is_monotonic_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_can_overrange snd_pcm_hw_params_can_overrange_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_can_pause snd_pcm_hw_params_can_pause_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_can_resume snd_pcm_hw_params_can_resume_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_is_half_duplex snd_pcm_hw_params_is_half_duplex_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_is_joint_duplex snd_pcm_hw_params_is_joint_duplex_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_can_sync_start snd_pcm_hw_params_can_sync_start_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_can_disable_period_wakeup snd_pcm_hw_params_can_disable_period_wakeup_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_supports_audio_wallclock_ts snd_pcm_hw_params_supports_audio_wallclock_ts_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_supports_audio_ts_type snd_pcm_hw_params_supports_audio_ts_type_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_rate_numden snd_pcm_hw_params_get_rate_numden_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_sbits snd_pcm_hw_params_get_sbits_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_fifo_size snd_pcm_hw_params_get_fifo_size_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_sizeof snd_pcm_hw_params_sizeof_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_malloc snd_pcm_hw_params_malloc_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_free snd_pcm_hw_params_free_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_copy snd_pcm_hw_params_copy_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_access snd_pcm_hw_params_get_access_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_access snd_pcm_hw_params_test_access_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_access snd_pcm_hw_params_set_access_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_access_first snd_pcm_hw_params_set_access_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_access_last snd_pcm_hw_params_set_access_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_access_mask snd_pcm_hw_params_set_access_mask_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_access_mask snd_pcm_hw_params_get_access_mask_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_format snd_pcm_hw_params_get_format_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_format snd_pcm_hw_params_test_format_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_format snd_pcm_hw_params_set_format_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_format_first snd_pcm_hw_params_set_format_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_format_last snd_pcm_hw_params_set_format_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_format_mask snd_pcm_hw_params_set_format_mask_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_format_mask snd_pcm_hw_params_get_format_mask_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_subformat snd_pcm_hw_params_get_subformat_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_subformat snd_pcm_hw_params_test_subformat_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_subformat snd_pcm_hw_params_set_subformat_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_subformat_first snd_pcm_hw_params_set_subformat_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_subformat_last snd_pcm_hw_params_set_subformat_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_subformat_mask snd_pcm_hw_params_set_subformat_mask_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_subformat_mask snd_pcm_hw_params_get_subformat_mask_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_channels snd_pcm_hw_params_get_channels_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_channels_min snd_pcm_hw_params_get_channels_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_channels_max snd_pcm_hw_params_get_channels_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_channels snd_pcm_hw_params_test_channels_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_channels snd_pcm_hw_params_set_channels_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_channels_min snd_pcm_hw_params_set_channels_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_channels_max snd_pcm_hw_params_set_channels_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_channels_minmax snd_pcm_hw_params_set_channels_minmax_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_channels_near snd_pcm_hw_params_set_channels_near_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_channels_first snd_pcm_hw_params_set_channels_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_channels_last snd_pcm_hw_params_set_channels_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_rate snd_pcm_hw_params_get_rate_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_rate_min snd_pcm_hw_params_get_rate_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_rate_max snd_pcm_hw_params_get_rate_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_rate snd_pcm_hw_params_test_rate_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_rate snd_pcm_hw_params_set_rate_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_rate_min snd_pcm_hw_params_set_rate_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_rate_max snd_pcm_hw_params_set_rate_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_rate_minmax snd_pcm_hw_params_set_rate_minmax_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_rate_near snd_pcm_hw_params_set_rate_near_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_rate_first snd_pcm_hw_params_set_rate_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_rate_last snd_pcm_hw_params_set_rate_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_rate_resample snd_pcm_hw_params_set_rate_resample_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_rate_resample snd_pcm_hw_params_get_rate_resample_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_export_buffer snd_pcm_hw_params_set_export_buffer_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_export_buffer snd_pcm_hw_params_get_export_buffer_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_wakeup snd_pcm_hw_params_set_period_wakeup_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_period_wakeup snd_pcm_hw_params_get_period_wakeup_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_period_time snd_pcm_hw_params_get_period_time_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_period_time_min snd_pcm_hw_params_get_period_time_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_period_time_max snd_pcm_hw_params_get_period_time_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_period_time snd_pcm_hw_params_test_period_time_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_time snd_pcm_hw_params_set_period_time_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_time_min snd_pcm_hw_params_set_period_time_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_time_max snd_pcm_hw_params_set_period_time_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_time_minmax snd_pcm_hw_params_set_period_time_minmax_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_time_near snd_pcm_hw_params_set_period_time_near_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_time_first snd_pcm_hw_params_set_period_time_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_time_last snd_pcm_hw_params_set_period_time_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_period_size snd_pcm_hw_params_get_period_size_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_period_size_min snd_pcm_hw_params_get_period_size_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_period_size_max snd_pcm_hw_params_get_period_size_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_period_size snd_pcm_hw_params_test_period_size_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_size snd_pcm_hw_params_set_period_size_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_size_min snd_pcm_hw_params_set_period_size_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_size_max snd_pcm_hw_params_set_period_size_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_size_minmax snd_pcm_hw_params_set_period_size_minmax_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_size_near snd_pcm_hw_params_set_period_size_near_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_size_first snd_pcm_hw_params_set_period_size_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_size_last snd_pcm_hw_params_set_period_size_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_period_size_integer snd_pcm_hw_params_set_period_size_integer_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_periods snd_pcm_hw_params_get_periods_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_periods_min snd_pcm_hw_params_get_periods_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_periods_max snd_pcm_hw_params_get_periods_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_periods snd_pcm_hw_params_test_periods_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_periods snd_pcm_hw_params_set_periods_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_periods_min snd_pcm_hw_params_set_periods_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_periods_max snd_pcm_hw_params_set_periods_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_periods_minmax snd_pcm_hw_params_set_periods_minmax_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_periods_near snd_pcm_hw_params_set_periods_near_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_periods_first snd_pcm_hw_params_set_periods_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_periods_last snd_pcm_hw_params_set_periods_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_periods_integer snd_pcm_hw_params_set_periods_integer_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_buffer_time snd_pcm_hw_params_get_buffer_time_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_buffer_time_min snd_pcm_hw_params_get_buffer_time_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_buffer_time_max snd_pcm_hw_params_get_buffer_time_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_buffer_time snd_pcm_hw_params_test_buffer_time_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_time snd_pcm_hw_params_set_buffer_time_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_time_min snd_pcm_hw_params_set_buffer_time_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_time_max snd_pcm_hw_params_set_buffer_time_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_time_minmax snd_pcm_hw_params_set_buffer_time_minmax_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_time_near snd_pcm_hw_params_set_buffer_time_near_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_time_first snd_pcm_hw_params_set_buffer_time_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_time_last snd_pcm_hw_params_set_buffer_time_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_buffer_size snd_pcm_hw_params_get_buffer_size_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_buffer_size_min snd_pcm_hw_params_get_buffer_size_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_buffer_size_max snd_pcm_hw_params_get_buffer_size_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_buffer_size snd_pcm_hw_params_test_buffer_size_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_size snd_pcm_hw_params_set_buffer_size_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_size_min snd_pcm_hw_params_set_buffer_size_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_size_max snd_pcm_hw_params_set_buffer_size_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_size_minmax snd_pcm_hw_params_set_buffer_size_minmax_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_size_near snd_pcm_hw_params_set_buffer_size_near_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_size_first snd_pcm_hw_params_set_buffer_size_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_buffer_size_last snd_pcm_hw_params_set_buffer_size_last_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_min_align snd_pcm_hw_params_get_min_align_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_sizeof snd_pcm_sw_params_sizeof_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_malloc snd_pcm_sw_params_malloc_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_free snd_pcm_sw_params_free_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_copy snd_pcm_sw_params_copy_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_boundary snd_pcm_sw_params_get_boundary_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_tstamp_mode snd_pcm_sw_params_set_tstamp_mode_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_tstamp_mode snd_pcm_sw_params_get_tstamp_mode_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_avail_min snd_pcm_sw_params_set_avail_min_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_avail_min snd_pcm_sw_params_get_avail_min_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_period_event snd_pcm_sw_params_set_period_event_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_period_event snd_pcm_sw_params_get_period_event_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_start_threshold snd_pcm_sw_params_set_start_threshold_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_start_threshold snd_pcm_sw_params_get_start_threshold_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_stop_threshold snd_pcm_sw_params_set_stop_threshold_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_stop_threshold snd_pcm_sw_params_get_stop_threshold_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_silence_threshold snd_pcm_sw_params_set_silence_threshold_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_silence_threshold snd_pcm_sw_params_get_silence_threshold_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_silence_size snd_pcm_sw_params_set_silence_size_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_silence_size snd_pcm_sw_params_get_silence_size_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_sizeof snd_pcm_access_mask_sizeof_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_malloc snd_pcm_access_mask_malloc_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_free snd_pcm_access_mask_free_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_copy snd_pcm_access_mask_copy_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_none snd_pcm_access_mask_none_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_any snd_pcm_access_mask_any_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_test snd_pcm_access_mask_test_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_empty snd_pcm_access_mask_empty_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_set snd_pcm_access_mask_set_dylibloader_wrapper_asound
+#define snd_pcm_access_mask_reset snd_pcm_access_mask_reset_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_sizeof snd_pcm_format_mask_sizeof_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_malloc snd_pcm_format_mask_malloc_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_free snd_pcm_format_mask_free_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_copy snd_pcm_format_mask_copy_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_none snd_pcm_format_mask_none_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_any snd_pcm_format_mask_any_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_test snd_pcm_format_mask_test_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_empty snd_pcm_format_mask_empty_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_set snd_pcm_format_mask_set_dylibloader_wrapper_asound
+#define snd_pcm_format_mask_reset snd_pcm_format_mask_reset_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_sizeof snd_pcm_subformat_mask_sizeof_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_malloc snd_pcm_subformat_mask_malloc_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_free snd_pcm_subformat_mask_free_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_copy snd_pcm_subformat_mask_copy_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_none snd_pcm_subformat_mask_none_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_any snd_pcm_subformat_mask_any_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_test snd_pcm_subformat_mask_test_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_empty snd_pcm_subformat_mask_empty_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_set snd_pcm_subformat_mask_set_dylibloader_wrapper_asound
+#define snd_pcm_subformat_mask_reset snd_pcm_subformat_mask_reset_dylibloader_wrapper_asound
+#define snd_pcm_status_sizeof snd_pcm_status_sizeof_dylibloader_wrapper_asound
+#define snd_pcm_status_malloc snd_pcm_status_malloc_dylibloader_wrapper_asound
+#define snd_pcm_status_free snd_pcm_status_free_dylibloader_wrapper_asound
+#define snd_pcm_status_copy snd_pcm_status_copy_dylibloader_wrapper_asound
+#define snd_pcm_status_get_state snd_pcm_status_get_state_dylibloader_wrapper_asound
+#define snd_pcm_status_get_trigger_tstamp snd_pcm_status_get_trigger_tstamp_dylibloader_wrapper_asound
+#define snd_pcm_status_get_trigger_htstamp snd_pcm_status_get_trigger_htstamp_dylibloader_wrapper_asound
+#define snd_pcm_status_get_tstamp snd_pcm_status_get_tstamp_dylibloader_wrapper_asound
+#define snd_pcm_status_get_htstamp snd_pcm_status_get_htstamp_dylibloader_wrapper_asound
+#define snd_pcm_status_get_audio_htstamp snd_pcm_status_get_audio_htstamp_dylibloader_wrapper_asound
+#define snd_pcm_status_get_driver_htstamp snd_pcm_status_get_driver_htstamp_dylibloader_wrapper_asound
+#define snd_pcm_status_get_delay snd_pcm_status_get_delay_dylibloader_wrapper_asound
+#define snd_pcm_status_get_avail snd_pcm_status_get_avail_dylibloader_wrapper_asound
+#define snd_pcm_status_get_avail_max snd_pcm_status_get_avail_max_dylibloader_wrapper_asound
+#define snd_pcm_status_get_overrange snd_pcm_status_get_overrange_dylibloader_wrapper_asound
+#define snd_pcm_type_name snd_pcm_type_name_dylibloader_wrapper_asound
+#define snd_pcm_stream_name snd_pcm_stream_name_dylibloader_wrapper_asound
+#define snd_pcm_access_name snd_pcm_access_name_dylibloader_wrapper_asound
+#define snd_pcm_format_name snd_pcm_format_name_dylibloader_wrapper_asound
+#define snd_pcm_format_description snd_pcm_format_description_dylibloader_wrapper_asound
+#define snd_pcm_subformat_name snd_pcm_subformat_name_dylibloader_wrapper_asound
+#define snd_pcm_subformat_description snd_pcm_subformat_description_dylibloader_wrapper_asound
+#define snd_pcm_format_value snd_pcm_format_value_dylibloader_wrapper_asound
+#define snd_pcm_tstamp_mode_name snd_pcm_tstamp_mode_name_dylibloader_wrapper_asound
+#define snd_pcm_state_name snd_pcm_state_name_dylibloader_wrapper_asound
+#define snd_pcm_dump snd_pcm_dump_dylibloader_wrapper_asound
+#define snd_pcm_dump_hw_setup snd_pcm_dump_hw_setup_dylibloader_wrapper_asound
+#define snd_pcm_dump_sw_setup snd_pcm_dump_sw_setup_dylibloader_wrapper_asound
+#define snd_pcm_dump_setup snd_pcm_dump_setup_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_dump snd_pcm_hw_params_dump_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_dump snd_pcm_sw_params_dump_dylibloader_wrapper_asound
+#define snd_pcm_status_dump snd_pcm_status_dump_dylibloader_wrapper_asound
+#define snd_pcm_mmap_begin snd_pcm_mmap_begin_dylibloader_wrapper_asound
+#define snd_pcm_mmap_commit snd_pcm_mmap_commit_dylibloader_wrapper_asound
+#define snd_pcm_mmap_writei snd_pcm_mmap_writei_dylibloader_wrapper_asound
+#define snd_pcm_mmap_readi snd_pcm_mmap_readi_dylibloader_wrapper_asound
+#define snd_pcm_mmap_writen snd_pcm_mmap_writen_dylibloader_wrapper_asound
+#define snd_pcm_mmap_readn snd_pcm_mmap_readn_dylibloader_wrapper_asound
+#define snd_pcm_format_signed snd_pcm_format_signed_dylibloader_wrapper_asound
+#define snd_pcm_format_unsigned snd_pcm_format_unsigned_dylibloader_wrapper_asound
+#define snd_pcm_format_linear snd_pcm_format_linear_dylibloader_wrapper_asound
+#define snd_pcm_format_float snd_pcm_format_float_dylibloader_wrapper_asound
+#define snd_pcm_format_little_endian snd_pcm_format_little_endian_dylibloader_wrapper_asound
+#define snd_pcm_format_big_endian snd_pcm_format_big_endian_dylibloader_wrapper_asound
+#define snd_pcm_format_cpu_endian snd_pcm_format_cpu_endian_dylibloader_wrapper_asound
+#define snd_pcm_format_width snd_pcm_format_width_dylibloader_wrapper_asound
+#define snd_pcm_format_physical_width snd_pcm_format_physical_width_dylibloader_wrapper_asound
+#define snd_pcm_build_linear_format snd_pcm_build_linear_format_dylibloader_wrapper_asound
+#define snd_pcm_format_size snd_pcm_format_size_dylibloader_wrapper_asound
+#define snd_pcm_format_silence snd_pcm_format_silence_dylibloader_wrapper_asound
+#define snd_pcm_format_silence_16 snd_pcm_format_silence_16_dylibloader_wrapper_asound
+#define snd_pcm_format_silence_32 snd_pcm_format_silence_32_dylibloader_wrapper_asound
+#define snd_pcm_format_silence_64 snd_pcm_format_silence_64_dylibloader_wrapper_asound
+#define snd_pcm_format_set_silence snd_pcm_format_set_silence_dylibloader_wrapper_asound
+#define snd_pcm_bytes_to_frames snd_pcm_bytes_to_frames_dylibloader_wrapper_asound
+#define snd_pcm_frames_to_bytes snd_pcm_frames_to_bytes_dylibloader_wrapper_asound
+#define snd_pcm_bytes_to_samples snd_pcm_bytes_to_samples_dylibloader_wrapper_asound
+#define snd_pcm_samples_to_bytes snd_pcm_samples_to_bytes_dylibloader_wrapper_asound
+#define snd_pcm_area_silence snd_pcm_area_silence_dylibloader_wrapper_asound
+#define snd_pcm_areas_silence snd_pcm_areas_silence_dylibloader_wrapper_asound
+#define snd_pcm_area_copy snd_pcm_area_copy_dylibloader_wrapper_asound
+#define snd_pcm_areas_copy snd_pcm_areas_copy_dylibloader_wrapper_asound
+#define snd_pcm_hook_get_pcm snd_pcm_hook_get_pcm_dylibloader_wrapper_asound
+#define snd_pcm_hook_get_private snd_pcm_hook_get_private_dylibloader_wrapper_asound
+#define snd_pcm_hook_set_private snd_pcm_hook_set_private_dylibloader_wrapper_asound
+#define snd_pcm_hook_add snd_pcm_hook_add_dylibloader_wrapper_asound
+#define snd_pcm_hook_remove snd_pcm_hook_remove_dylibloader_wrapper_asound
+#define snd_pcm_meter_get_bufsize snd_pcm_meter_get_bufsize_dylibloader_wrapper_asound
+#define snd_pcm_meter_get_channels snd_pcm_meter_get_channels_dylibloader_wrapper_asound
+#define snd_pcm_meter_get_rate snd_pcm_meter_get_rate_dylibloader_wrapper_asound
+#define snd_pcm_meter_get_now snd_pcm_meter_get_now_dylibloader_wrapper_asound
+#define snd_pcm_meter_get_boundary snd_pcm_meter_get_boundary_dylibloader_wrapper_asound
+#define snd_pcm_meter_add_scope snd_pcm_meter_add_scope_dylibloader_wrapper_asound
+#define snd_pcm_meter_search_scope snd_pcm_meter_search_scope_dylibloader_wrapper_asound
+#define snd_pcm_scope_malloc snd_pcm_scope_malloc_dylibloader_wrapper_asound
+#define snd_pcm_scope_set_ops snd_pcm_scope_set_ops_dylibloader_wrapper_asound
+#define snd_pcm_scope_set_name snd_pcm_scope_set_name_dylibloader_wrapper_asound
+#define snd_pcm_scope_get_name snd_pcm_scope_get_name_dylibloader_wrapper_asound
+#define snd_pcm_scope_get_callback_private snd_pcm_scope_get_callback_private_dylibloader_wrapper_asound
+#define snd_pcm_scope_set_callback_private snd_pcm_scope_set_callback_private_dylibloader_wrapper_asound
+#define snd_pcm_scope_s16_open snd_pcm_scope_s16_open_dylibloader_wrapper_asound
+#define snd_pcm_scope_s16_get_channel_buffer snd_pcm_scope_s16_get_channel_buffer_dylibloader_wrapper_asound
+#define snd_spcm_init snd_spcm_init_dylibloader_wrapper_asound
+#define snd_spcm_init_duplex snd_spcm_init_duplex_dylibloader_wrapper_asound
+#define snd_spcm_init_get_params snd_spcm_init_get_params_dylibloader_wrapper_asound
+#define snd_pcm_start_mode_name snd_pcm_start_mode_name_dylibloader_wrapper_asound
+#define snd_pcm_xrun_mode_name snd_pcm_xrun_mode_name_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_start_mode snd_pcm_sw_params_set_start_mode_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_start_mode snd_pcm_sw_params_get_start_mode_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_xrun_mode snd_pcm_sw_params_set_xrun_mode_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_xrun_mode snd_pcm_sw_params_get_xrun_mode_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_xfer_align snd_pcm_sw_params_set_xfer_align_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_xfer_align snd_pcm_sw_params_get_xfer_align_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_set_sleep_min snd_pcm_sw_params_set_sleep_min_dylibloader_wrapper_asound
+#define snd_pcm_sw_params_get_sleep_min snd_pcm_sw_params_get_sleep_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_tick_time snd_pcm_hw_params_get_tick_time_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_tick_time_min snd_pcm_hw_params_get_tick_time_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_get_tick_time_max snd_pcm_hw_params_get_tick_time_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_test_tick_time snd_pcm_hw_params_test_tick_time_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_tick_time snd_pcm_hw_params_set_tick_time_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_tick_time_min snd_pcm_hw_params_set_tick_time_min_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_tick_time_max snd_pcm_hw_params_set_tick_time_max_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_tick_time_minmax snd_pcm_hw_params_set_tick_time_minmax_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_tick_time_near snd_pcm_hw_params_set_tick_time_near_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_tick_time_first snd_pcm_hw_params_set_tick_time_first_dylibloader_wrapper_asound
+#define snd_pcm_hw_params_set_tick_time_last snd_pcm_hw_params_set_tick_time_last_dylibloader_wrapper_asound
+#define snd_rawmidi_open snd_rawmidi_open_dylibloader_wrapper_asound
+#define snd_rawmidi_open_lconf snd_rawmidi_open_lconf_dylibloader_wrapper_asound
+#define snd_rawmidi_close snd_rawmidi_close_dylibloader_wrapper_asound
+#define snd_rawmidi_poll_descriptors_count snd_rawmidi_poll_descriptors_count_dylibloader_wrapper_asound
+#define snd_rawmidi_poll_descriptors snd_rawmidi_poll_descriptors_dylibloader_wrapper_asound
+#define snd_rawmidi_poll_descriptors_revents snd_rawmidi_poll_descriptors_revents_dylibloader_wrapper_asound
+#define snd_rawmidi_nonblock snd_rawmidi_nonblock_dylibloader_wrapper_asound
+#define snd_rawmidi_info_sizeof snd_rawmidi_info_sizeof_dylibloader_wrapper_asound
+#define snd_rawmidi_info_malloc snd_rawmidi_info_malloc_dylibloader_wrapper_asound
+#define snd_rawmidi_info_free snd_rawmidi_info_free_dylibloader_wrapper_asound
+#define snd_rawmidi_info_copy snd_rawmidi_info_copy_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_device snd_rawmidi_info_get_device_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_subdevice snd_rawmidi_info_get_subdevice_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_stream snd_rawmidi_info_get_stream_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_card snd_rawmidi_info_get_card_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_flags snd_rawmidi_info_get_flags_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_id snd_rawmidi_info_get_id_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_name snd_rawmidi_info_get_name_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_subdevice_name snd_rawmidi_info_get_subdevice_name_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_subdevices_count snd_rawmidi_info_get_subdevices_count_dylibloader_wrapper_asound
+#define snd_rawmidi_info_get_subdevices_avail snd_rawmidi_info_get_subdevices_avail_dylibloader_wrapper_asound
+#define snd_rawmidi_info_set_device snd_rawmidi_info_set_device_dylibloader_wrapper_asound
+#define snd_rawmidi_info_set_subdevice snd_rawmidi_info_set_subdevice_dylibloader_wrapper_asound
+#define snd_rawmidi_info_set_stream snd_rawmidi_info_set_stream_dylibloader_wrapper_asound
+#define snd_rawmidi_info snd_rawmidi_info_dylibloader_wrapper_asound
+#define snd_rawmidi_params_sizeof snd_rawmidi_params_sizeof_dylibloader_wrapper_asound
+#define snd_rawmidi_params_malloc snd_rawmidi_params_malloc_dylibloader_wrapper_asound
+#define snd_rawmidi_params_free snd_rawmidi_params_free_dylibloader_wrapper_asound
+#define snd_rawmidi_params_copy snd_rawmidi_params_copy_dylibloader_wrapper_asound
+#define snd_rawmidi_params_set_buffer_size snd_rawmidi_params_set_buffer_size_dylibloader_wrapper_asound
+#define snd_rawmidi_params_get_buffer_size snd_rawmidi_params_get_buffer_size_dylibloader_wrapper_asound
+#define snd_rawmidi_params_set_avail_min snd_rawmidi_params_set_avail_min_dylibloader_wrapper_asound
+#define snd_rawmidi_params_get_avail_min snd_rawmidi_params_get_avail_min_dylibloader_wrapper_asound
+#define snd_rawmidi_params_set_no_active_sensing snd_rawmidi_params_set_no_active_sensing_dylibloader_wrapper_asound
+#define snd_rawmidi_params_get_no_active_sensing snd_rawmidi_params_get_no_active_sensing_dylibloader_wrapper_asound
+#define snd_rawmidi_params snd_rawmidi_params_dylibloader_wrapper_asound
+#define snd_rawmidi_params_current snd_rawmidi_params_current_dylibloader_wrapper_asound
+#define snd_rawmidi_status_sizeof snd_rawmidi_status_sizeof_dylibloader_wrapper_asound
+#define snd_rawmidi_status_malloc snd_rawmidi_status_malloc_dylibloader_wrapper_asound
+#define snd_rawmidi_status_free snd_rawmidi_status_free_dylibloader_wrapper_asound
+#define snd_rawmidi_status_copy snd_rawmidi_status_copy_dylibloader_wrapper_asound
+#define snd_rawmidi_status_get_tstamp snd_rawmidi_status_get_tstamp_dylibloader_wrapper_asound
+#define snd_rawmidi_status_get_avail snd_rawmidi_status_get_avail_dylibloader_wrapper_asound
+#define snd_rawmidi_status_get_xruns snd_rawmidi_status_get_xruns_dylibloader_wrapper_asound
+#define snd_rawmidi_status snd_rawmidi_status_dylibloader_wrapper_asound
+#define snd_rawmidi_drain snd_rawmidi_drain_dylibloader_wrapper_asound
+#define snd_rawmidi_drop snd_rawmidi_drop_dylibloader_wrapper_asound
+#define snd_rawmidi_write snd_rawmidi_write_dylibloader_wrapper_asound
+#define snd_rawmidi_read snd_rawmidi_read_dylibloader_wrapper_asound
+#define snd_rawmidi_name snd_rawmidi_name_dylibloader_wrapper_asound
+#define snd_rawmidi_type snd_rawmidi_type_dylibloader_wrapper_asound
+#define snd_rawmidi_stream snd_rawmidi_stream_dylibloader_wrapper_asound
+#define snd_timer_query_open snd_timer_query_open_dylibloader_wrapper_asound
+#define snd_timer_query_open_lconf snd_timer_query_open_lconf_dylibloader_wrapper_asound
+#define snd_timer_query_close snd_timer_query_close_dylibloader_wrapper_asound
+#define snd_timer_query_next_device snd_timer_query_next_device_dylibloader_wrapper_asound
+#define snd_timer_query_info snd_timer_query_info_dylibloader_wrapper_asound
+#define snd_timer_query_params snd_timer_query_params_dylibloader_wrapper_asound
+#define snd_timer_query_status snd_timer_query_status_dylibloader_wrapper_asound
+#define snd_timer_open snd_timer_open_dylibloader_wrapper_asound
+#define snd_timer_open_lconf snd_timer_open_lconf_dylibloader_wrapper_asound
+#define snd_timer_close snd_timer_close_dylibloader_wrapper_asound
+#define snd_async_add_timer_handler snd_async_add_timer_handler_dylibloader_wrapper_asound
+#define snd_async_handler_get_timer snd_async_handler_get_timer_dylibloader_wrapper_asound
+#define snd_timer_poll_descriptors_count snd_timer_poll_descriptors_count_dylibloader_wrapper_asound
+#define snd_timer_poll_descriptors snd_timer_poll_descriptors_dylibloader_wrapper_asound
+#define snd_timer_poll_descriptors_revents snd_timer_poll_descriptors_revents_dylibloader_wrapper_asound
+#define snd_timer_info snd_timer_info_dylibloader_wrapper_asound
+#define snd_timer_params snd_timer_params_dylibloader_wrapper_asound
+#define snd_timer_status snd_timer_status_dylibloader_wrapper_asound
+#define snd_timer_start snd_timer_start_dylibloader_wrapper_asound
+#define snd_timer_stop snd_timer_stop_dylibloader_wrapper_asound
+#define snd_timer_continue snd_timer_continue_dylibloader_wrapper_asound
+#define snd_timer_read snd_timer_read_dylibloader_wrapper_asound
+#define snd_timer_id_sizeof snd_timer_id_sizeof_dylibloader_wrapper_asound
+#define snd_timer_id_malloc snd_timer_id_malloc_dylibloader_wrapper_asound
+#define snd_timer_id_free snd_timer_id_free_dylibloader_wrapper_asound
+#define snd_timer_id_copy snd_timer_id_copy_dylibloader_wrapper_asound
+#define snd_timer_id_set_class snd_timer_id_set_class_dylibloader_wrapper_asound
+#define snd_timer_id_get_class snd_timer_id_get_class_dylibloader_wrapper_asound
+#define snd_timer_id_set_sclass snd_timer_id_set_sclass_dylibloader_wrapper_asound
+#define snd_timer_id_get_sclass snd_timer_id_get_sclass_dylibloader_wrapper_asound
+#define snd_timer_id_set_card snd_timer_id_set_card_dylibloader_wrapper_asound
+#define snd_timer_id_get_card snd_timer_id_get_card_dylibloader_wrapper_asound
+#define snd_timer_id_set_device snd_timer_id_set_device_dylibloader_wrapper_asound
+#define snd_timer_id_get_device snd_timer_id_get_device_dylibloader_wrapper_asound
+#define snd_timer_id_set_subdevice snd_timer_id_set_subdevice_dylibloader_wrapper_asound
+#define snd_timer_id_get_subdevice snd_timer_id_get_subdevice_dylibloader_wrapper_asound
+#define snd_timer_ginfo_sizeof snd_timer_ginfo_sizeof_dylibloader_wrapper_asound
+#define snd_timer_ginfo_malloc snd_timer_ginfo_malloc_dylibloader_wrapper_asound
+#define snd_timer_ginfo_free snd_timer_ginfo_free_dylibloader_wrapper_asound
+#define snd_timer_ginfo_copy snd_timer_ginfo_copy_dylibloader_wrapper_asound
+#define snd_timer_ginfo_set_tid snd_timer_ginfo_set_tid_dylibloader_wrapper_asound
+#define snd_timer_ginfo_get_tid snd_timer_ginfo_get_tid_dylibloader_wrapper_asound
+#define snd_timer_ginfo_get_flags snd_timer_ginfo_get_flags_dylibloader_wrapper_asound
+#define snd_timer_ginfo_get_card snd_timer_ginfo_get_card_dylibloader_wrapper_asound
+#define snd_timer_ginfo_get_id snd_timer_ginfo_get_id_dylibloader_wrapper_asound
+#define snd_timer_ginfo_get_name snd_timer_ginfo_get_name_dylibloader_wrapper_asound
+#define snd_timer_ginfo_get_resolution snd_timer_ginfo_get_resolution_dylibloader_wrapper_asound
+#define snd_timer_ginfo_get_resolution_min snd_timer_ginfo_get_resolution_min_dylibloader_wrapper_asound
+#define snd_timer_ginfo_get_resolution_max snd_timer_ginfo_get_resolution_max_dylibloader_wrapper_asound
+#define snd_timer_ginfo_get_clients snd_timer_ginfo_get_clients_dylibloader_wrapper_asound
+#define snd_timer_info_sizeof snd_timer_info_sizeof_dylibloader_wrapper_asound
+#define snd_timer_info_malloc snd_timer_info_malloc_dylibloader_wrapper_asound
+#define snd_timer_info_free snd_timer_info_free_dylibloader_wrapper_asound
+#define snd_timer_info_copy snd_timer_info_copy_dylibloader_wrapper_asound
+#define snd_timer_info_is_slave snd_timer_info_is_slave_dylibloader_wrapper_asound
+#define snd_timer_info_get_card snd_timer_info_get_card_dylibloader_wrapper_asound
+#define snd_timer_info_get_id snd_timer_info_get_id_dylibloader_wrapper_asound
+#define snd_timer_info_get_name snd_timer_info_get_name_dylibloader_wrapper_asound
+#define snd_timer_info_get_resolution snd_timer_info_get_resolution_dylibloader_wrapper_asound
+#define snd_timer_params_sizeof snd_timer_params_sizeof_dylibloader_wrapper_asound
+#define snd_timer_params_malloc snd_timer_params_malloc_dylibloader_wrapper_asound
+#define snd_timer_params_free snd_timer_params_free_dylibloader_wrapper_asound
+#define snd_timer_params_copy snd_timer_params_copy_dylibloader_wrapper_asound
+#define snd_timer_params_set_auto_start snd_timer_params_set_auto_start_dylibloader_wrapper_asound
+#define snd_timer_params_get_auto_start snd_timer_params_get_auto_start_dylibloader_wrapper_asound
+#define snd_timer_params_set_exclusive snd_timer_params_set_exclusive_dylibloader_wrapper_asound
+#define snd_timer_params_get_exclusive snd_timer_params_get_exclusive_dylibloader_wrapper_asound
+#define snd_timer_params_set_early_event snd_timer_params_set_early_event_dylibloader_wrapper_asound
+#define snd_timer_params_get_early_event snd_timer_params_get_early_event_dylibloader_wrapper_asound
+#define snd_timer_params_set_ticks snd_timer_params_set_ticks_dylibloader_wrapper_asound
+#define snd_timer_params_get_ticks snd_timer_params_get_ticks_dylibloader_wrapper_asound
+#define snd_timer_params_set_queue_size snd_timer_params_set_queue_size_dylibloader_wrapper_asound
+#define snd_timer_params_get_queue_size snd_timer_params_get_queue_size_dylibloader_wrapper_asound
+#define snd_timer_params_set_filter snd_timer_params_set_filter_dylibloader_wrapper_asound
+#define snd_timer_params_get_filter snd_timer_params_get_filter_dylibloader_wrapper_asound
+#define snd_timer_status_sizeof snd_timer_status_sizeof_dylibloader_wrapper_asound
+#define snd_timer_status_malloc snd_timer_status_malloc_dylibloader_wrapper_asound
+#define snd_timer_status_free snd_timer_status_free_dylibloader_wrapper_asound
+#define snd_timer_status_copy snd_timer_status_copy_dylibloader_wrapper_asound
+#define snd_timer_status_get_timestamp snd_timer_status_get_timestamp_dylibloader_wrapper_asound
+#define snd_timer_status_get_resolution snd_timer_status_get_resolution_dylibloader_wrapper_asound
+#define snd_timer_status_get_lost snd_timer_status_get_lost_dylibloader_wrapper_asound
+#define snd_timer_status_get_overrun snd_timer_status_get_overrun_dylibloader_wrapper_asound
+#define snd_timer_status_get_queue snd_timer_status_get_queue_dylibloader_wrapper_asound
+#define snd_timer_info_get_ticks snd_timer_info_get_ticks_dylibloader_wrapper_asound
+#define snd_hwdep_open snd_hwdep_open_dylibloader_wrapper_asound
+#define snd_hwdep_close snd_hwdep_close_dylibloader_wrapper_asound
+#define snd_hwdep_poll_descriptors snd_hwdep_poll_descriptors_dylibloader_wrapper_asound
+#define snd_hwdep_poll_descriptors_count snd_hwdep_poll_descriptors_count_dylibloader_wrapper_asound
+#define snd_hwdep_poll_descriptors_revents snd_hwdep_poll_descriptors_revents_dylibloader_wrapper_asound
+#define snd_hwdep_nonblock snd_hwdep_nonblock_dylibloader_wrapper_asound
+#define snd_hwdep_info snd_hwdep_info_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status snd_hwdep_dsp_status_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_load snd_hwdep_dsp_load_dylibloader_wrapper_asound
+#define snd_hwdep_ioctl snd_hwdep_ioctl_dylibloader_wrapper_asound
+#define snd_hwdep_write snd_hwdep_write_dylibloader_wrapper_asound
+#define snd_hwdep_read snd_hwdep_read_dylibloader_wrapper_asound
+#define snd_hwdep_info_sizeof snd_hwdep_info_sizeof_dylibloader_wrapper_asound
+#define snd_hwdep_info_malloc snd_hwdep_info_malloc_dylibloader_wrapper_asound
+#define snd_hwdep_info_free snd_hwdep_info_free_dylibloader_wrapper_asound
+#define snd_hwdep_info_copy snd_hwdep_info_copy_dylibloader_wrapper_asound
+#define snd_hwdep_info_get_device snd_hwdep_info_get_device_dylibloader_wrapper_asound
+#define snd_hwdep_info_get_card snd_hwdep_info_get_card_dylibloader_wrapper_asound
+#define snd_hwdep_info_get_id snd_hwdep_info_get_id_dylibloader_wrapper_asound
+#define snd_hwdep_info_get_name snd_hwdep_info_get_name_dylibloader_wrapper_asound
+#define snd_hwdep_info_get_iface snd_hwdep_info_get_iface_dylibloader_wrapper_asound
+#define snd_hwdep_info_set_device snd_hwdep_info_set_device_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status_sizeof snd_hwdep_dsp_status_sizeof_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status_malloc snd_hwdep_dsp_status_malloc_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status_free snd_hwdep_dsp_status_free_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status_copy snd_hwdep_dsp_status_copy_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status_get_version snd_hwdep_dsp_status_get_version_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status_get_id snd_hwdep_dsp_status_get_id_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status_get_num_dsps snd_hwdep_dsp_status_get_num_dsps_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status_get_dsp_loaded snd_hwdep_dsp_status_get_dsp_loaded_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_status_get_chip_ready snd_hwdep_dsp_status_get_chip_ready_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_sizeof snd_hwdep_dsp_image_sizeof_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_malloc snd_hwdep_dsp_image_malloc_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_free snd_hwdep_dsp_image_free_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_copy snd_hwdep_dsp_image_copy_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_get_index snd_hwdep_dsp_image_get_index_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_get_name snd_hwdep_dsp_image_get_name_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_get_image snd_hwdep_dsp_image_get_image_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_get_length snd_hwdep_dsp_image_get_length_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_set_index snd_hwdep_dsp_image_set_index_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_set_name snd_hwdep_dsp_image_set_name_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_set_image snd_hwdep_dsp_image_set_image_dylibloader_wrapper_asound
+#define snd_hwdep_dsp_image_set_length snd_hwdep_dsp_image_set_length_dylibloader_wrapper_asound
+#define snd_card_load snd_card_load_dylibloader_wrapper_asound
+#define snd_card_next snd_card_next_dylibloader_wrapper_asound
+#define snd_card_get_index snd_card_get_index_dylibloader_wrapper_asound
+#define snd_card_get_name snd_card_get_name_dylibloader_wrapper_asound
+#define snd_card_get_longname snd_card_get_longname_dylibloader_wrapper_asound
+#define snd_device_name_hint snd_device_name_hint_dylibloader_wrapper_asound
+#define snd_device_name_free_hint snd_device_name_free_hint_dylibloader_wrapper_asound
+#define snd_device_name_get_hint snd_device_name_get_hint_dylibloader_wrapper_asound
+#define snd_ctl_open snd_ctl_open_dylibloader_wrapper_asound
+#define snd_ctl_open_lconf snd_ctl_open_lconf_dylibloader_wrapper_asound
+#define snd_ctl_open_fallback snd_ctl_open_fallback_dylibloader_wrapper_asound
+#define snd_ctl_close snd_ctl_close_dylibloader_wrapper_asound
+#define snd_ctl_nonblock snd_ctl_nonblock_dylibloader_wrapper_asound
+#define snd_async_add_ctl_handler snd_async_add_ctl_handler_dylibloader_wrapper_asound
+#define snd_async_handler_get_ctl snd_async_handler_get_ctl_dylibloader_wrapper_asound
+#define snd_ctl_poll_descriptors_count snd_ctl_poll_descriptors_count_dylibloader_wrapper_asound
+#define snd_ctl_poll_descriptors snd_ctl_poll_descriptors_dylibloader_wrapper_asound
+#define snd_ctl_poll_descriptors_revents snd_ctl_poll_descriptors_revents_dylibloader_wrapper_asound
+#define snd_ctl_subscribe_events snd_ctl_subscribe_events_dylibloader_wrapper_asound
+#define snd_ctl_card_info snd_ctl_card_info_dylibloader_wrapper_asound
+#define snd_ctl_elem_list snd_ctl_elem_list_dylibloader_wrapper_asound
+#define snd_ctl_elem_info snd_ctl_elem_info_dylibloader_wrapper_asound
+#define snd_ctl_elem_read snd_ctl_elem_read_dylibloader_wrapper_asound
+#define snd_ctl_elem_write snd_ctl_elem_write_dylibloader_wrapper_asound
+#define snd_ctl_elem_lock snd_ctl_elem_lock_dylibloader_wrapper_asound
+#define snd_ctl_elem_unlock snd_ctl_elem_unlock_dylibloader_wrapper_asound
+#define snd_ctl_elem_tlv_read snd_ctl_elem_tlv_read_dylibloader_wrapper_asound
+#define snd_ctl_elem_tlv_write snd_ctl_elem_tlv_write_dylibloader_wrapper_asound
+#define snd_ctl_elem_tlv_command snd_ctl_elem_tlv_command_dylibloader_wrapper_asound
+#define snd_ctl_hwdep_next_device snd_ctl_hwdep_next_device_dylibloader_wrapper_asound
+#define snd_ctl_hwdep_info snd_ctl_hwdep_info_dylibloader_wrapper_asound
+#define snd_ctl_pcm_next_device snd_ctl_pcm_next_device_dylibloader_wrapper_asound
+#define snd_ctl_pcm_info snd_ctl_pcm_info_dylibloader_wrapper_asound
+#define snd_ctl_pcm_prefer_subdevice snd_ctl_pcm_prefer_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_rawmidi_next_device snd_ctl_rawmidi_next_device_dylibloader_wrapper_asound
+#define snd_ctl_rawmidi_info snd_ctl_rawmidi_info_dylibloader_wrapper_asound
+#define snd_ctl_rawmidi_prefer_subdevice snd_ctl_rawmidi_prefer_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_set_power_state snd_ctl_set_power_state_dylibloader_wrapper_asound
+#define snd_ctl_get_power_state snd_ctl_get_power_state_dylibloader_wrapper_asound
+#define snd_ctl_read snd_ctl_read_dylibloader_wrapper_asound
+#define snd_ctl_wait snd_ctl_wait_dylibloader_wrapper_asound
+#define snd_ctl_name snd_ctl_name_dylibloader_wrapper_asound
+#define snd_ctl_type snd_ctl_type_dylibloader_wrapper_asound
+#define snd_ctl_elem_type_name snd_ctl_elem_type_name_dylibloader_wrapper_asound
+#define snd_ctl_elem_iface_name snd_ctl_elem_iface_name_dylibloader_wrapper_asound
+#define snd_ctl_event_type_name snd_ctl_event_type_name_dylibloader_wrapper_asound
+#define snd_ctl_event_elem_get_mask snd_ctl_event_elem_get_mask_dylibloader_wrapper_asound
+#define snd_ctl_event_elem_get_numid snd_ctl_event_elem_get_numid_dylibloader_wrapper_asound
+#define snd_ctl_event_elem_get_id snd_ctl_event_elem_get_id_dylibloader_wrapper_asound
+#define snd_ctl_event_elem_get_interface snd_ctl_event_elem_get_interface_dylibloader_wrapper_asound
+#define snd_ctl_event_elem_get_device snd_ctl_event_elem_get_device_dylibloader_wrapper_asound
+#define snd_ctl_event_elem_get_subdevice snd_ctl_event_elem_get_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_event_elem_get_name snd_ctl_event_elem_get_name_dylibloader_wrapper_asound
+#define snd_ctl_event_elem_get_index snd_ctl_event_elem_get_index_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_alloc_space snd_ctl_elem_list_alloc_space_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_free_space snd_ctl_elem_list_free_space_dylibloader_wrapper_asound
+#define snd_ctl_ascii_elem_id_get snd_ctl_ascii_elem_id_get_dylibloader_wrapper_asound
+#define snd_ctl_ascii_elem_id_parse snd_ctl_ascii_elem_id_parse_dylibloader_wrapper_asound
+#define snd_ctl_ascii_value_parse snd_ctl_ascii_value_parse_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_sizeof snd_ctl_elem_id_sizeof_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_malloc snd_ctl_elem_id_malloc_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_free snd_ctl_elem_id_free_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_clear snd_ctl_elem_id_clear_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_copy snd_ctl_elem_id_copy_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_get_numid snd_ctl_elem_id_get_numid_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_get_interface snd_ctl_elem_id_get_interface_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_get_device snd_ctl_elem_id_get_device_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_get_subdevice snd_ctl_elem_id_get_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_get_name snd_ctl_elem_id_get_name_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_get_index snd_ctl_elem_id_get_index_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_set_numid snd_ctl_elem_id_set_numid_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_set_interface snd_ctl_elem_id_set_interface_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_set_device snd_ctl_elem_id_set_device_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_set_subdevice snd_ctl_elem_id_set_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_set_name snd_ctl_elem_id_set_name_dylibloader_wrapper_asound
+#define snd_ctl_elem_id_set_index snd_ctl_elem_id_set_index_dylibloader_wrapper_asound
+#define snd_ctl_card_info_sizeof snd_ctl_card_info_sizeof_dylibloader_wrapper_asound
+#define snd_ctl_card_info_malloc snd_ctl_card_info_malloc_dylibloader_wrapper_asound
+#define snd_ctl_card_info_free snd_ctl_card_info_free_dylibloader_wrapper_asound
+#define snd_ctl_card_info_clear snd_ctl_card_info_clear_dylibloader_wrapper_asound
+#define snd_ctl_card_info_copy snd_ctl_card_info_copy_dylibloader_wrapper_asound
+#define snd_ctl_card_info_get_card snd_ctl_card_info_get_card_dylibloader_wrapper_asound
+#define snd_ctl_card_info_get_id snd_ctl_card_info_get_id_dylibloader_wrapper_asound
+#define snd_ctl_card_info_get_driver snd_ctl_card_info_get_driver_dylibloader_wrapper_asound
+#define snd_ctl_card_info_get_name snd_ctl_card_info_get_name_dylibloader_wrapper_asound
+#define snd_ctl_card_info_get_longname snd_ctl_card_info_get_longname_dylibloader_wrapper_asound
+#define snd_ctl_card_info_get_mixername snd_ctl_card_info_get_mixername_dylibloader_wrapper_asound
+#define snd_ctl_card_info_get_components snd_ctl_card_info_get_components_dylibloader_wrapper_asound
+#define snd_ctl_event_sizeof snd_ctl_event_sizeof_dylibloader_wrapper_asound
+#define snd_ctl_event_malloc snd_ctl_event_malloc_dylibloader_wrapper_asound
+#define snd_ctl_event_free snd_ctl_event_free_dylibloader_wrapper_asound
+#define snd_ctl_event_clear snd_ctl_event_clear_dylibloader_wrapper_asound
+#define snd_ctl_event_copy snd_ctl_event_copy_dylibloader_wrapper_asound
+#define snd_ctl_event_get_type snd_ctl_event_get_type_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_sizeof snd_ctl_elem_list_sizeof_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_malloc snd_ctl_elem_list_malloc_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_free snd_ctl_elem_list_free_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_clear snd_ctl_elem_list_clear_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_copy snd_ctl_elem_list_copy_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_set_offset snd_ctl_elem_list_set_offset_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_get_used snd_ctl_elem_list_get_used_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_get_count snd_ctl_elem_list_get_count_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_get_id snd_ctl_elem_list_get_id_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_get_numid snd_ctl_elem_list_get_numid_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_get_interface snd_ctl_elem_list_get_interface_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_get_device snd_ctl_elem_list_get_device_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_get_subdevice snd_ctl_elem_list_get_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_get_name snd_ctl_elem_list_get_name_dylibloader_wrapper_asound
+#define snd_ctl_elem_list_get_index snd_ctl_elem_list_get_index_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_sizeof snd_ctl_elem_info_sizeof_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_malloc snd_ctl_elem_info_malloc_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_free snd_ctl_elem_info_free_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_clear snd_ctl_elem_info_clear_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_copy snd_ctl_elem_info_copy_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_type snd_ctl_elem_info_get_type_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_readable snd_ctl_elem_info_is_readable_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_writable snd_ctl_elem_info_is_writable_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_volatile snd_ctl_elem_info_is_volatile_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_inactive snd_ctl_elem_info_is_inactive_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_locked snd_ctl_elem_info_is_locked_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_tlv_readable snd_ctl_elem_info_is_tlv_readable_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_tlv_writable snd_ctl_elem_info_is_tlv_writable_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_tlv_commandable snd_ctl_elem_info_is_tlv_commandable_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_owner snd_ctl_elem_info_is_owner_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_is_user snd_ctl_elem_info_is_user_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_owner snd_ctl_elem_info_get_owner_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_count snd_ctl_elem_info_get_count_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_min snd_ctl_elem_info_get_min_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_max snd_ctl_elem_info_get_max_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_step snd_ctl_elem_info_get_step_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_min64 snd_ctl_elem_info_get_min64_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_max64 snd_ctl_elem_info_get_max64_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_step64 snd_ctl_elem_info_get_step64_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_items snd_ctl_elem_info_get_items_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_set_item snd_ctl_elem_info_set_item_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_item_name snd_ctl_elem_info_get_item_name_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_dimensions snd_ctl_elem_info_get_dimensions_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_dimension snd_ctl_elem_info_get_dimension_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_set_dimension snd_ctl_elem_info_set_dimension_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_id snd_ctl_elem_info_get_id_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_numid snd_ctl_elem_info_get_numid_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_interface snd_ctl_elem_info_get_interface_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_device snd_ctl_elem_info_get_device_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_subdevice snd_ctl_elem_info_get_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_name snd_ctl_elem_info_get_name_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_get_index snd_ctl_elem_info_get_index_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_set_id snd_ctl_elem_info_set_id_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_set_numid snd_ctl_elem_info_set_numid_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_set_interface snd_ctl_elem_info_set_interface_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_set_device snd_ctl_elem_info_set_device_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_set_subdevice snd_ctl_elem_info_set_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_set_name snd_ctl_elem_info_set_name_dylibloader_wrapper_asound
+#define snd_ctl_elem_info_set_index snd_ctl_elem_info_set_index_dylibloader_wrapper_asound
+#define snd_ctl_add_integer_elem_set snd_ctl_add_integer_elem_set_dylibloader_wrapper_asound
+#define snd_ctl_add_integer64_elem_set snd_ctl_add_integer64_elem_set_dylibloader_wrapper_asound
+#define snd_ctl_add_boolean_elem_set snd_ctl_add_boolean_elem_set_dylibloader_wrapper_asound
+#define snd_ctl_add_enumerated_elem_set snd_ctl_add_enumerated_elem_set_dylibloader_wrapper_asound
+#define snd_ctl_add_bytes_elem_set snd_ctl_add_bytes_elem_set_dylibloader_wrapper_asound
+#define snd_ctl_elem_add_integer snd_ctl_elem_add_integer_dylibloader_wrapper_asound
+#define snd_ctl_elem_add_integer64 snd_ctl_elem_add_integer64_dylibloader_wrapper_asound
+#define snd_ctl_elem_add_boolean snd_ctl_elem_add_boolean_dylibloader_wrapper_asound
+#define snd_ctl_elem_add_enumerated snd_ctl_elem_add_enumerated_dylibloader_wrapper_asound
+#define snd_ctl_elem_add_iec958 snd_ctl_elem_add_iec958_dylibloader_wrapper_asound
+#define snd_ctl_elem_remove snd_ctl_elem_remove_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_sizeof snd_ctl_elem_value_sizeof_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_malloc snd_ctl_elem_value_malloc_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_free snd_ctl_elem_value_free_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_clear snd_ctl_elem_value_clear_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_copy snd_ctl_elem_value_copy_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_compare snd_ctl_elem_value_compare_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_id snd_ctl_elem_value_get_id_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_numid snd_ctl_elem_value_get_numid_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_interface snd_ctl_elem_value_get_interface_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_device snd_ctl_elem_value_get_device_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_subdevice snd_ctl_elem_value_get_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_name snd_ctl_elem_value_get_name_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_index snd_ctl_elem_value_get_index_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_id snd_ctl_elem_value_set_id_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_numid snd_ctl_elem_value_set_numid_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_interface snd_ctl_elem_value_set_interface_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_device snd_ctl_elem_value_set_device_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_subdevice snd_ctl_elem_value_set_subdevice_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_name snd_ctl_elem_value_set_name_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_index snd_ctl_elem_value_set_index_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_boolean snd_ctl_elem_value_get_boolean_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_integer snd_ctl_elem_value_get_integer_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_integer64 snd_ctl_elem_value_get_integer64_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_enumerated snd_ctl_elem_value_get_enumerated_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_byte snd_ctl_elem_value_get_byte_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_boolean snd_ctl_elem_value_set_boolean_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_integer snd_ctl_elem_value_set_integer_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_integer64 snd_ctl_elem_value_set_integer64_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_enumerated snd_ctl_elem_value_set_enumerated_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_byte snd_ctl_elem_value_set_byte_dylibloader_wrapper_asound
+#define snd_ctl_elem_set_bytes snd_ctl_elem_set_bytes_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_bytes snd_ctl_elem_value_get_bytes_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_get_iec958 snd_ctl_elem_value_get_iec958_dylibloader_wrapper_asound
+#define snd_ctl_elem_value_set_iec958 snd_ctl_elem_value_set_iec958_dylibloader_wrapper_asound
+#define snd_tlv_parse_dB_info snd_tlv_parse_dB_info_dylibloader_wrapper_asound
+#define snd_tlv_get_dB_range snd_tlv_get_dB_range_dylibloader_wrapper_asound
+#define snd_tlv_convert_to_dB snd_tlv_convert_to_dB_dylibloader_wrapper_asound
+#define snd_tlv_convert_from_dB snd_tlv_convert_from_dB_dylibloader_wrapper_asound
+#define snd_ctl_get_dB_range snd_ctl_get_dB_range_dylibloader_wrapper_asound
+#define snd_ctl_convert_to_dB snd_ctl_convert_to_dB_dylibloader_wrapper_asound
+#define snd_ctl_convert_from_dB snd_ctl_convert_from_dB_dylibloader_wrapper_asound
+#define snd_hctl_compare_fast snd_hctl_compare_fast_dylibloader_wrapper_asound
+#define snd_hctl_open snd_hctl_open_dylibloader_wrapper_asound
+#define snd_hctl_open_ctl snd_hctl_open_ctl_dylibloader_wrapper_asound
+#define snd_hctl_close snd_hctl_close_dylibloader_wrapper_asound
+#define snd_hctl_nonblock snd_hctl_nonblock_dylibloader_wrapper_asound
+#define snd_hctl_poll_descriptors_count snd_hctl_poll_descriptors_count_dylibloader_wrapper_asound
+#define snd_hctl_poll_descriptors snd_hctl_poll_descriptors_dylibloader_wrapper_asound
+#define snd_hctl_poll_descriptors_revents snd_hctl_poll_descriptors_revents_dylibloader_wrapper_asound
+#define snd_hctl_get_count snd_hctl_get_count_dylibloader_wrapper_asound
+#define snd_hctl_set_compare snd_hctl_set_compare_dylibloader_wrapper_asound
+#define snd_hctl_first_elem snd_hctl_first_elem_dylibloader_wrapper_asound
+#define snd_hctl_last_elem snd_hctl_last_elem_dylibloader_wrapper_asound
+#define snd_hctl_find_elem snd_hctl_find_elem_dylibloader_wrapper_asound
+#define snd_hctl_set_callback snd_hctl_set_callback_dylibloader_wrapper_asound
+#define snd_hctl_set_callback_private snd_hctl_set_callback_private_dylibloader_wrapper_asound
+#define snd_hctl_get_callback_private snd_hctl_get_callback_private_dylibloader_wrapper_asound
+#define snd_hctl_load snd_hctl_load_dylibloader_wrapper_asound
+#define snd_hctl_free snd_hctl_free_dylibloader_wrapper_asound
+#define snd_hctl_handle_events snd_hctl_handle_events_dylibloader_wrapper_asound
+#define snd_hctl_name snd_hctl_name_dylibloader_wrapper_asound
+#define snd_hctl_wait snd_hctl_wait_dylibloader_wrapper_asound
+#define snd_hctl_ctl snd_hctl_ctl_dylibloader_wrapper_asound
+#define snd_hctl_elem_next snd_hctl_elem_next_dylibloader_wrapper_asound
+#define snd_hctl_elem_prev snd_hctl_elem_prev_dylibloader_wrapper_asound
+#define snd_hctl_elem_info snd_hctl_elem_info_dylibloader_wrapper_asound
+#define snd_hctl_elem_read snd_hctl_elem_read_dylibloader_wrapper_asound
+#define snd_hctl_elem_write snd_hctl_elem_write_dylibloader_wrapper_asound
+#define snd_hctl_elem_tlv_read snd_hctl_elem_tlv_read_dylibloader_wrapper_asound
+#define snd_hctl_elem_tlv_write snd_hctl_elem_tlv_write_dylibloader_wrapper_asound
+#define snd_hctl_elem_tlv_command snd_hctl_elem_tlv_command_dylibloader_wrapper_asound
+#define snd_hctl_elem_get_hctl snd_hctl_elem_get_hctl_dylibloader_wrapper_asound
+#define snd_hctl_elem_get_id snd_hctl_elem_get_id_dylibloader_wrapper_asound
+#define snd_hctl_elem_get_numid snd_hctl_elem_get_numid_dylibloader_wrapper_asound
+#define snd_hctl_elem_get_interface snd_hctl_elem_get_interface_dylibloader_wrapper_asound
+#define snd_hctl_elem_get_device snd_hctl_elem_get_device_dylibloader_wrapper_asound
+#define snd_hctl_elem_get_subdevice snd_hctl_elem_get_subdevice_dylibloader_wrapper_asound
+#define snd_hctl_elem_get_name snd_hctl_elem_get_name_dylibloader_wrapper_asound
+#define snd_hctl_elem_get_index snd_hctl_elem_get_index_dylibloader_wrapper_asound
+#define snd_hctl_elem_set_callback snd_hctl_elem_set_callback_dylibloader_wrapper_asound
+#define snd_hctl_elem_get_callback_private snd_hctl_elem_get_callback_private_dylibloader_wrapper_asound
+#define snd_hctl_elem_set_callback_private snd_hctl_elem_set_callback_private_dylibloader_wrapper_asound
+#define snd_sctl_build snd_sctl_build_dylibloader_wrapper_asound
+#define snd_sctl_free snd_sctl_free_dylibloader_wrapper_asound
+#define snd_sctl_install snd_sctl_install_dylibloader_wrapper_asound
+#define snd_sctl_remove snd_sctl_remove_dylibloader_wrapper_asound
+#define snd_mixer_open snd_mixer_open_dylibloader_wrapper_asound
+#define snd_mixer_close snd_mixer_close_dylibloader_wrapper_asound
+#define snd_mixer_first_elem snd_mixer_first_elem_dylibloader_wrapper_asound
+#define snd_mixer_last_elem snd_mixer_last_elem_dylibloader_wrapper_asound
+#define snd_mixer_handle_events snd_mixer_handle_events_dylibloader_wrapper_asound
+#define snd_mixer_attach snd_mixer_attach_dylibloader_wrapper_asound
+#define snd_mixer_attach_hctl snd_mixer_attach_hctl_dylibloader_wrapper_asound
+#define snd_mixer_detach snd_mixer_detach_dylibloader_wrapper_asound
+#define snd_mixer_detach_hctl snd_mixer_detach_hctl_dylibloader_wrapper_asound
+#define snd_mixer_get_hctl snd_mixer_get_hctl_dylibloader_wrapper_asound
+#define snd_mixer_poll_descriptors_count snd_mixer_poll_descriptors_count_dylibloader_wrapper_asound
+#define snd_mixer_poll_descriptors snd_mixer_poll_descriptors_dylibloader_wrapper_asound
+#define snd_mixer_poll_descriptors_revents snd_mixer_poll_descriptors_revents_dylibloader_wrapper_asound
+#define snd_mixer_load snd_mixer_load_dylibloader_wrapper_asound
+#define snd_mixer_free snd_mixer_free_dylibloader_wrapper_asound
+#define snd_mixer_wait snd_mixer_wait_dylibloader_wrapper_asound
+#define snd_mixer_set_compare snd_mixer_set_compare_dylibloader_wrapper_asound
+#define snd_mixer_set_callback snd_mixer_set_callback_dylibloader_wrapper_asound
+#define snd_mixer_get_callback_private snd_mixer_get_callback_private_dylibloader_wrapper_asound
+#define snd_mixer_set_callback_private snd_mixer_set_callback_private_dylibloader_wrapper_asound
+#define snd_mixer_get_count snd_mixer_get_count_dylibloader_wrapper_asound
+#define snd_mixer_class_unregister snd_mixer_class_unregister_dylibloader_wrapper_asound
+#define snd_mixer_elem_next snd_mixer_elem_next_dylibloader_wrapper_asound
+#define snd_mixer_elem_prev snd_mixer_elem_prev_dylibloader_wrapper_asound
+#define snd_mixer_elem_set_callback snd_mixer_elem_set_callback_dylibloader_wrapper_asound
+#define snd_mixer_elem_get_callback_private snd_mixer_elem_get_callback_private_dylibloader_wrapper_asound
+#define snd_mixer_elem_set_callback_private snd_mixer_elem_set_callback_private_dylibloader_wrapper_asound
+#define snd_mixer_elem_get_type snd_mixer_elem_get_type_dylibloader_wrapper_asound
+#define snd_mixer_class_register snd_mixer_class_register_dylibloader_wrapper_asound
+#define snd_mixer_elem_new snd_mixer_elem_new_dylibloader_wrapper_asound
+#define snd_mixer_elem_add snd_mixer_elem_add_dylibloader_wrapper_asound
+#define snd_mixer_elem_remove snd_mixer_elem_remove_dylibloader_wrapper_asound
+#define snd_mixer_elem_free snd_mixer_elem_free_dylibloader_wrapper_asound
+#define snd_mixer_elem_info snd_mixer_elem_info_dylibloader_wrapper_asound
+#define snd_mixer_elem_value snd_mixer_elem_value_dylibloader_wrapper_asound
+#define snd_mixer_elem_attach snd_mixer_elem_attach_dylibloader_wrapper_asound
+#define snd_mixer_elem_detach snd_mixer_elem_detach_dylibloader_wrapper_asound
+#define snd_mixer_elem_empty snd_mixer_elem_empty_dylibloader_wrapper_asound
+#define snd_mixer_elem_get_private snd_mixer_elem_get_private_dylibloader_wrapper_asound
+#define snd_mixer_class_sizeof snd_mixer_class_sizeof_dylibloader_wrapper_asound
+#define snd_mixer_class_malloc snd_mixer_class_malloc_dylibloader_wrapper_asound
+#define snd_mixer_class_free snd_mixer_class_free_dylibloader_wrapper_asound
+#define snd_mixer_class_copy snd_mixer_class_copy_dylibloader_wrapper_asound
+#define snd_mixer_class_get_mixer snd_mixer_class_get_mixer_dylibloader_wrapper_asound
+#define snd_mixer_class_get_event snd_mixer_class_get_event_dylibloader_wrapper_asound
+#define snd_mixer_class_get_private snd_mixer_class_get_private_dylibloader_wrapper_asound
+#define snd_mixer_class_get_compare snd_mixer_class_get_compare_dylibloader_wrapper_asound
+#define snd_mixer_class_set_event snd_mixer_class_set_event_dylibloader_wrapper_asound
+#define snd_mixer_class_set_private snd_mixer_class_set_private_dylibloader_wrapper_asound
+#define snd_mixer_class_set_private_free snd_mixer_class_set_private_free_dylibloader_wrapper_asound
+#define snd_mixer_class_set_compare snd_mixer_class_set_compare_dylibloader_wrapper_asound
+#define snd_mixer_selem_channel_name snd_mixer_selem_channel_name_dylibloader_wrapper_asound
+#define snd_mixer_selem_register snd_mixer_selem_register_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_id snd_mixer_selem_get_id_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_name snd_mixer_selem_get_name_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_index snd_mixer_selem_get_index_dylibloader_wrapper_asound
+#define snd_mixer_find_selem snd_mixer_find_selem_dylibloader_wrapper_asound
+#define snd_mixer_selem_is_active snd_mixer_selem_is_active_dylibloader_wrapper_asound
+#define snd_mixer_selem_is_playback_mono snd_mixer_selem_is_playback_mono_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_playback_channel snd_mixer_selem_has_playback_channel_dylibloader_wrapper_asound
+#define snd_mixer_selem_is_capture_mono snd_mixer_selem_is_capture_mono_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_capture_channel snd_mixer_selem_has_capture_channel_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_capture_group snd_mixer_selem_get_capture_group_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_common_volume snd_mixer_selem_has_common_volume_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_playback_volume snd_mixer_selem_has_playback_volume_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_playback_volume_joined snd_mixer_selem_has_playback_volume_joined_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_capture_volume snd_mixer_selem_has_capture_volume_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_capture_volume_joined snd_mixer_selem_has_capture_volume_joined_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_common_switch snd_mixer_selem_has_common_switch_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_playback_switch snd_mixer_selem_has_playback_switch_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_playback_switch_joined snd_mixer_selem_has_playback_switch_joined_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_capture_switch snd_mixer_selem_has_capture_switch_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_capture_switch_joined snd_mixer_selem_has_capture_switch_joined_dylibloader_wrapper_asound
+#define snd_mixer_selem_has_capture_switch_exclusive snd_mixer_selem_has_capture_switch_exclusive_dylibloader_wrapper_asound
+#define snd_mixer_selem_ask_playback_vol_dB snd_mixer_selem_ask_playback_vol_dB_dylibloader_wrapper_asound
+#define snd_mixer_selem_ask_capture_vol_dB snd_mixer_selem_ask_capture_vol_dB_dylibloader_wrapper_asound
+#define snd_mixer_selem_ask_playback_dB_vol snd_mixer_selem_ask_playback_dB_vol_dylibloader_wrapper_asound
+#define snd_mixer_selem_ask_capture_dB_vol snd_mixer_selem_ask_capture_dB_vol_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_playback_volume snd_mixer_selem_get_playback_volume_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_capture_volume snd_mixer_selem_get_capture_volume_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_playback_dB snd_mixer_selem_get_playback_dB_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_capture_dB snd_mixer_selem_get_capture_dB_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_playback_switch snd_mixer_selem_get_playback_switch_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_capture_switch snd_mixer_selem_get_capture_switch_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_playback_volume snd_mixer_selem_set_playback_volume_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_capture_volume snd_mixer_selem_set_capture_volume_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_playback_dB snd_mixer_selem_set_playback_dB_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_capture_dB snd_mixer_selem_set_capture_dB_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_playback_volume_all snd_mixer_selem_set_playback_volume_all_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_capture_volume_all snd_mixer_selem_set_capture_volume_all_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_playback_dB_all snd_mixer_selem_set_playback_dB_all_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_capture_dB_all snd_mixer_selem_set_capture_dB_all_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_playback_switch snd_mixer_selem_set_playback_switch_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_capture_switch snd_mixer_selem_set_capture_switch_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_playback_switch_all snd_mixer_selem_set_playback_switch_all_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_capture_switch_all snd_mixer_selem_set_capture_switch_all_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_playback_volume_range snd_mixer_selem_get_playback_volume_range_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_playback_dB_range snd_mixer_selem_get_playback_dB_range_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_playback_volume_range snd_mixer_selem_set_playback_volume_range_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_capture_volume_range snd_mixer_selem_get_capture_volume_range_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_capture_dB_range snd_mixer_selem_get_capture_dB_range_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_capture_volume_range snd_mixer_selem_set_capture_volume_range_dylibloader_wrapper_asound
+#define snd_mixer_selem_is_enumerated snd_mixer_selem_is_enumerated_dylibloader_wrapper_asound
+#define snd_mixer_selem_is_enum_playback snd_mixer_selem_is_enum_playback_dylibloader_wrapper_asound
+#define snd_mixer_selem_is_enum_capture snd_mixer_selem_is_enum_capture_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_enum_items snd_mixer_selem_get_enum_items_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_enum_item_name snd_mixer_selem_get_enum_item_name_dylibloader_wrapper_asound
+#define snd_mixer_selem_get_enum_item snd_mixer_selem_get_enum_item_dylibloader_wrapper_asound
+#define snd_mixer_selem_set_enum_item snd_mixer_selem_set_enum_item_dylibloader_wrapper_asound
+#define snd_mixer_selem_id_sizeof snd_mixer_selem_id_sizeof_dylibloader_wrapper_asound
+#define snd_mixer_selem_id_malloc snd_mixer_selem_id_malloc_dylibloader_wrapper_asound
+#define snd_mixer_selem_id_free snd_mixer_selem_id_free_dylibloader_wrapper_asound
+#define snd_mixer_selem_id_copy snd_mixer_selem_id_copy_dylibloader_wrapper_asound
+#define snd_mixer_selem_id_get_name snd_mixer_selem_id_get_name_dylibloader_wrapper_asound
+#define snd_mixer_selem_id_get_index snd_mixer_selem_id_get_index_dylibloader_wrapper_asound
+#define snd_mixer_selem_id_set_name snd_mixer_selem_id_set_name_dylibloader_wrapper_asound
+#define snd_mixer_selem_id_set_index snd_mixer_selem_id_set_index_dylibloader_wrapper_asound
+#define snd_seq_open snd_seq_open_dylibloader_wrapper_asound
+#define snd_seq_open_lconf snd_seq_open_lconf_dylibloader_wrapper_asound
+#define snd_seq_name snd_seq_name_dylibloader_wrapper_asound
+#define snd_seq_type snd_seq_type_dylibloader_wrapper_asound
+#define snd_seq_close snd_seq_close_dylibloader_wrapper_asound
+#define snd_seq_poll_descriptors_count snd_seq_poll_descriptors_count_dylibloader_wrapper_asound
+#define snd_seq_poll_descriptors snd_seq_poll_descriptors_dylibloader_wrapper_asound
+#define snd_seq_poll_descriptors_revents snd_seq_poll_descriptors_revents_dylibloader_wrapper_asound
+#define snd_seq_nonblock snd_seq_nonblock_dylibloader_wrapper_asound
+#define snd_seq_client_id snd_seq_client_id_dylibloader_wrapper_asound
+#define snd_seq_get_output_buffer_size snd_seq_get_output_buffer_size_dylibloader_wrapper_asound
+#define snd_seq_get_input_buffer_size snd_seq_get_input_buffer_size_dylibloader_wrapper_asound
+#define snd_seq_set_output_buffer_size snd_seq_set_output_buffer_size_dylibloader_wrapper_asound
+#define snd_seq_set_input_buffer_size snd_seq_set_input_buffer_size_dylibloader_wrapper_asound
+#define snd_seq_system_info_sizeof snd_seq_system_info_sizeof_dylibloader_wrapper_asound
+#define snd_seq_system_info_malloc snd_seq_system_info_malloc_dylibloader_wrapper_asound
+#define snd_seq_system_info_free snd_seq_system_info_free_dylibloader_wrapper_asound
+#define snd_seq_system_info_copy snd_seq_system_info_copy_dylibloader_wrapper_asound
+#define snd_seq_system_info_get_queues snd_seq_system_info_get_queues_dylibloader_wrapper_asound
+#define snd_seq_system_info_get_clients snd_seq_system_info_get_clients_dylibloader_wrapper_asound
+#define snd_seq_system_info_get_ports snd_seq_system_info_get_ports_dylibloader_wrapper_asound
+#define snd_seq_system_info_get_channels snd_seq_system_info_get_channels_dylibloader_wrapper_asound
+#define snd_seq_system_info_get_cur_clients snd_seq_system_info_get_cur_clients_dylibloader_wrapper_asound
+#define snd_seq_system_info_get_cur_queues snd_seq_system_info_get_cur_queues_dylibloader_wrapper_asound
+#define snd_seq_system_info snd_seq_system_info_dylibloader_wrapper_asound
+#define snd_seq_client_info_sizeof snd_seq_client_info_sizeof_dylibloader_wrapper_asound
+#define snd_seq_client_info_malloc snd_seq_client_info_malloc_dylibloader_wrapper_asound
+#define snd_seq_client_info_free snd_seq_client_info_free_dylibloader_wrapper_asound
+#define snd_seq_client_info_copy snd_seq_client_info_copy_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_client snd_seq_client_info_get_client_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_type snd_seq_client_info_get_type_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_name snd_seq_client_info_get_name_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_broadcast_filter snd_seq_client_info_get_broadcast_filter_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_error_bounce snd_seq_client_info_get_error_bounce_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_card snd_seq_client_info_get_card_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_pid snd_seq_client_info_get_pid_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_event_filter snd_seq_client_info_get_event_filter_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_num_ports snd_seq_client_info_get_num_ports_dylibloader_wrapper_asound
+#define snd_seq_client_info_get_event_lost snd_seq_client_info_get_event_lost_dylibloader_wrapper_asound
+#define snd_seq_client_info_set_client snd_seq_client_info_set_client_dylibloader_wrapper_asound
+#define snd_seq_client_info_set_name snd_seq_client_info_set_name_dylibloader_wrapper_asound
+#define snd_seq_client_info_set_broadcast_filter snd_seq_client_info_set_broadcast_filter_dylibloader_wrapper_asound
+#define snd_seq_client_info_set_error_bounce snd_seq_client_info_set_error_bounce_dylibloader_wrapper_asound
+#define snd_seq_client_info_set_event_filter snd_seq_client_info_set_event_filter_dylibloader_wrapper_asound
+#define snd_seq_client_info_event_filter_clear snd_seq_client_info_event_filter_clear_dylibloader_wrapper_asound
+#define snd_seq_client_info_event_filter_add snd_seq_client_info_event_filter_add_dylibloader_wrapper_asound
+#define snd_seq_client_info_event_filter_del snd_seq_client_info_event_filter_del_dylibloader_wrapper_asound
+#define snd_seq_client_info_event_filter_check snd_seq_client_info_event_filter_check_dylibloader_wrapper_asound
+#define snd_seq_get_client_info snd_seq_get_client_info_dylibloader_wrapper_asound
+#define snd_seq_get_any_client_info snd_seq_get_any_client_info_dylibloader_wrapper_asound
+#define snd_seq_set_client_info snd_seq_set_client_info_dylibloader_wrapper_asound
+#define snd_seq_query_next_client snd_seq_query_next_client_dylibloader_wrapper_asound
+#define snd_seq_client_pool_sizeof snd_seq_client_pool_sizeof_dylibloader_wrapper_asound
+#define snd_seq_client_pool_malloc snd_seq_client_pool_malloc_dylibloader_wrapper_asound
+#define snd_seq_client_pool_free snd_seq_client_pool_free_dylibloader_wrapper_asound
+#define snd_seq_client_pool_copy snd_seq_client_pool_copy_dylibloader_wrapper_asound
+#define snd_seq_client_pool_get_client snd_seq_client_pool_get_client_dylibloader_wrapper_asound
+#define snd_seq_client_pool_get_output_pool snd_seq_client_pool_get_output_pool_dylibloader_wrapper_asound
+#define snd_seq_client_pool_get_input_pool snd_seq_client_pool_get_input_pool_dylibloader_wrapper_asound
+#define snd_seq_client_pool_get_output_room snd_seq_client_pool_get_output_room_dylibloader_wrapper_asound
+#define snd_seq_client_pool_get_output_free snd_seq_client_pool_get_output_free_dylibloader_wrapper_asound
+#define snd_seq_client_pool_get_input_free snd_seq_client_pool_get_input_free_dylibloader_wrapper_asound
+#define snd_seq_client_pool_set_output_pool snd_seq_client_pool_set_output_pool_dylibloader_wrapper_asound
+#define snd_seq_client_pool_set_input_pool snd_seq_client_pool_set_input_pool_dylibloader_wrapper_asound
+#define snd_seq_client_pool_set_output_room snd_seq_client_pool_set_output_room_dylibloader_wrapper_asound
+#define snd_seq_get_client_pool snd_seq_get_client_pool_dylibloader_wrapper_asound
+#define snd_seq_set_client_pool snd_seq_set_client_pool_dylibloader_wrapper_asound
+#define snd_seq_port_info_sizeof snd_seq_port_info_sizeof_dylibloader_wrapper_asound
+#define snd_seq_port_info_malloc snd_seq_port_info_malloc_dylibloader_wrapper_asound
+#define snd_seq_port_info_free snd_seq_port_info_free_dylibloader_wrapper_asound
+#define snd_seq_port_info_copy snd_seq_port_info_copy_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_client snd_seq_port_info_get_client_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_port snd_seq_port_info_get_port_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_addr snd_seq_port_info_get_addr_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_name snd_seq_port_info_get_name_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_capability snd_seq_port_info_get_capability_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_type snd_seq_port_info_get_type_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_midi_channels snd_seq_port_info_get_midi_channels_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_midi_voices snd_seq_port_info_get_midi_voices_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_synth_voices snd_seq_port_info_get_synth_voices_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_read_use snd_seq_port_info_get_read_use_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_write_use snd_seq_port_info_get_write_use_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_port_specified snd_seq_port_info_get_port_specified_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_timestamping snd_seq_port_info_get_timestamping_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_timestamp_real snd_seq_port_info_get_timestamp_real_dylibloader_wrapper_asound
+#define snd_seq_port_info_get_timestamp_queue snd_seq_port_info_get_timestamp_queue_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_client snd_seq_port_info_set_client_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_port snd_seq_port_info_set_port_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_addr snd_seq_port_info_set_addr_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_name snd_seq_port_info_set_name_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_capability snd_seq_port_info_set_capability_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_type snd_seq_port_info_set_type_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_midi_channels snd_seq_port_info_set_midi_channels_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_midi_voices snd_seq_port_info_set_midi_voices_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_synth_voices snd_seq_port_info_set_synth_voices_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_port_specified snd_seq_port_info_set_port_specified_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_timestamping snd_seq_port_info_set_timestamping_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_timestamp_real snd_seq_port_info_set_timestamp_real_dylibloader_wrapper_asound
+#define snd_seq_port_info_set_timestamp_queue snd_seq_port_info_set_timestamp_queue_dylibloader_wrapper_asound
+#define snd_seq_create_port snd_seq_create_port_dylibloader_wrapper_asound
+#define snd_seq_delete_port snd_seq_delete_port_dylibloader_wrapper_asound
+#define snd_seq_get_port_info snd_seq_get_port_info_dylibloader_wrapper_asound
+#define snd_seq_get_any_port_info snd_seq_get_any_port_info_dylibloader_wrapper_asound
+#define snd_seq_set_port_info snd_seq_set_port_info_dylibloader_wrapper_asound
+#define snd_seq_query_next_port snd_seq_query_next_port_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_sizeof snd_seq_port_subscribe_sizeof_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_malloc snd_seq_port_subscribe_malloc_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_free snd_seq_port_subscribe_free_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_copy snd_seq_port_subscribe_copy_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_get_sender snd_seq_port_subscribe_get_sender_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_get_dest snd_seq_port_subscribe_get_dest_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_get_queue snd_seq_port_subscribe_get_queue_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_get_exclusive snd_seq_port_subscribe_get_exclusive_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_get_time_update snd_seq_port_subscribe_get_time_update_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_get_time_real snd_seq_port_subscribe_get_time_real_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_set_sender snd_seq_port_subscribe_set_sender_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_set_dest snd_seq_port_subscribe_set_dest_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_set_queue snd_seq_port_subscribe_set_queue_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_set_exclusive snd_seq_port_subscribe_set_exclusive_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_set_time_update snd_seq_port_subscribe_set_time_update_dylibloader_wrapper_asound
+#define snd_seq_port_subscribe_set_time_real snd_seq_port_subscribe_set_time_real_dylibloader_wrapper_asound
+#define snd_seq_get_port_subscription snd_seq_get_port_subscription_dylibloader_wrapper_asound
+#define snd_seq_subscribe_port snd_seq_subscribe_port_dylibloader_wrapper_asound
+#define snd_seq_unsubscribe_port snd_seq_unsubscribe_port_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_sizeof snd_seq_query_subscribe_sizeof_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_malloc snd_seq_query_subscribe_malloc_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_free snd_seq_query_subscribe_free_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_copy snd_seq_query_subscribe_copy_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_client snd_seq_query_subscribe_get_client_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_port snd_seq_query_subscribe_get_port_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_root snd_seq_query_subscribe_get_root_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_type snd_seq_query_subscribe_get_type_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_index snd_seq_query_subscribe_get_index_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_num_subs snd_seq_query_subscribe_get_num_subs_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_addr snd_seq_query_subscribe_get_addr_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_queue snd_seq_query_subscribe_get_queue_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_exclusive snd_seq_query_subscribe_get_exclusive_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_time_update snd_seq_query_subscribe_get_time_update_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_get_time_real snd_seq_query_subscribe_get_time_real_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_set_client snd_seq_query_subscribe_set_client_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_set_port snd_seq_query_subscribe_set_port_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_set_root snd_seq_query_subscribe_set_root_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_set_type snd_seq_query_subscribe_set_type_dylibloader_wrapper_asound
+#define snd_seq_query_subscribe_set_index snd_seq_query_subscribe_set_index_dylibloader_wrapper_asound
+#define snd_seq_query_port_subscribers snd_seq_query_port_subscribers_dylibloader_wrapper_asound
+#define snd_seq_queue_info_sizeof snd_seq_queue_info_sizeof_dylibloader_wrapper_asound
+#define snd_seq_queue_info_malloc snd_seq_queue_info_malloc_dylibloader_wrapper_asound
+#define snd_seq_queue_info_free snd_seq_queue_info_free_dylibloader_wrapper_asound
+#define snd_seq_queue_info_copy snd_seq_queue_info_copy_dylibloader_wrapper_asound
+#define snd_seq_queue_info_get_queue snd_seq_queue_info_get_queue_dylibloader_wrapper_asound
+#define snd_seq_queue_info_get_name snd_seq_queue_info_get_name_dylibloader_wrapper_asound
+#define snd_seq_queue_info_get_owner snd_seq_queue_info_get_owner_dylibloader_wrapper_asound
+#define snd_seq_queue_info_get_locked snd_seq_queue_info_get_locked_dylibloader_wrapper_asound
+#define snd_seq_queue_info_get_flags snd_seq_queue_info_get_flags_dylibloader_wrapper_asound
+#define snd_seq_queue_info_set_name snd_seq_queue_info_set_name_dylibloader_wrapper_asound
+#define snd_seq_queue_info_set_owner snd_seq_queue_info_set_owner_dylibloader_wrapper_asound
+#define snd_seq_queue_info_set_locked snd_seq_queue_info_set_locked_dylibloader_wrapper_asound
+#define snd_seq_queue_info_set_flags snd_seq_queue_info_set_flags_dylibloader_wrapper_asound
+#define snd_seq_create_queue snd_seq_create_queue_dylibloader_wrapper_asound
+#define snd_seq_alloc_named_queue snd_seq_alloc_named_queue_dylibloader_wrapper_asound
+#define snd_seq_alloc_queue snd_seq_alloc_queue_dylibloader_wrapper_asound
+#define snd_seq_free_queue snd_seq_free_queue_dylibloader_wrapper_asound
+#define snd_seq_get_queue_info snd_seq_get_queue_info_dylibloader_wrapper_asound
+#define snd_seq_set_queue_info snd_seq_set_queue_info_dylibloader_wrapper_asound
+#define snd_seq_query_named_queue snd_seq_query_named_queue_dylibloader_wrapper_asound
+#define snd_seq_get_queue_usage snd_seq_get_queue_usage_dylibloader_wrapper_asound
+#define snd_seq_set_queue_usage snd_seq_set_queue_usage_dylibloader_wrapper_asound
+#define snd_seq_queue_status_sizeof snd_seq_queue_status_sizeof_dylibloader_wrapper_asound
+#define snd_seq_queue_status_malloc snd_seq_queue_status_malloc_dylibloader_wrapper_asound
+#define snd_seq_queue_status_free snd_seq_queue_status_free_dylibloader_wrapper_asound
+#define snd_seq_queue_status_copy snd_seq_queue_status_copy_dylibloader_wrapper_asound
+#define snd_seq_queue_status_get_queue snd_seq_queue_status_get_queue_dylibloader_wrapper_asound
+#define snd_seq_queue_status_get_events snd_seq_queue_status_get_events_dylibloader_wrapper_asound
+#define snd_seq_queue_status_get_tick_time snd_seq_queue_status_get_tick_time_dylibloader_wrapper_asound
+#define snd_seq_queue_status_get_real_time snd_seq_queue_status_get_real_time_dylibloader_wrapper_asound
+#define snd_seq_queue_status_get_status snd_seq_queue_status_get_status_dylibloader_wrapper_asound
+#define snd_seq_get_queue_status snd_seq_get_queue_status_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_sizeof snd_seq_queue_tempo_sizeof_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_malloc snd_seq_queue_tempo_malloc_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_free snd_seq_queue_tempo_free_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_copy snd_seq_queue_tempo_copy_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_get_queue snd_seq_queue_tempo_get_queue_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_get_tempo snd_seq_queue_tempo_get_tempo_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_get_ppq snd_seq_queue_tempo_get_ppq_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_get_skew snd_seq_queue_tempo_get_skew_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_get_skew_base snd_seq_queue_tempo_get_skew_base_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_set_tempo snd_seq_queue_tempo_set_tempo_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_set_ppq snd_seq_queue_tempo_set_ppq_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_set_skew snd_seq_queue_tempo_set_skew_dylibloader_wrapper_asound
+#define snd_seq_queue_tempo_set_skew_base snd_seq_queue_tempo_set_skew_base_dylibloader_wrapper_asound
+#define snd_seq_get_queue_tempo snd_seq_get_queue_tempo_dylibloader_wrapper_asound
+#define snd_seq_set_queue_tempo snd_seq_set_queue_tempo_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_sizeof snd_seq_queue_timer_sizeof_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_malloc snd_seq_queue_timer_malloc_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_free snd_seq_queue_timer_free_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_copy snd_seq_queue_timer_copy_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_get_queue snd_seq_queue_timer_get_queue_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_get_type snd_seq_queue_timer_get_type_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_get_id snd_seq_queue_timer_get_id_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_get_resolution snd_seq_queue_timer_get_resolution_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_set_type snd_seq_queue_timer_set_type_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_set_id snd_seq_queue_timer_set_id_dylibloader_wrapper_asound
+#define snd_seq_queue_timer_set_resolution snd_seq_queue_timer_set_resolution_dylibloader_wrapper_asound
+#define snd_seq_get_queue_timer snd_seq_get_queue_timer_dylibloader_wrapper_asound
+#define snd_seq_set_queue_timer snd_seq_set_queue_timer_dylibloader_wrapper_asound
+#define snd_seq_free_event snd_seq_free_event_dylibloader_wrapper_asound
+#define snd_seq_event_length snd_seq_event_length_dylibloader_wrapper_asound
+#define snd_seq_event_output snd_seq_event_output_dylibloader_wrapper_asound
+#define snd_seq_event_output_buffer snd_seq_event_output_buffer_dylibloader_wrapper_asound
+#define snd_seq_event_output_direct snd_seq_event_output_direct_dylibloader_wrapper_asound
+#define snd_seq_event_input snd_seq_event_input_dylibloader_wrapper_asound
+#define snd_seq_event_input_pending snd_seq_event_input_pending_dylibloader_wrapper_asound
+#define snd_seq_drain_output snd_seq_drain_output_dylibloader_wrapper_asound
+#define snd_seq_event_output_pending snd_seq_event_output_pending_dylibloader_wrapper_asound
+#define snd_seq_extract_output snd_seq_extract_output_dylibloader_wrapper_asound
+#define snd_seq_drop_output snd_seq_drop_output_dylibloader_wrapper_asound
+#define snd_seq_drop_output_buffer snd_seq_drop_output_buffer_dylibloader_wrapper_asound
+#define snd_seq_drop_input snd_seq_drop_input_dylibloader_wrapper_asound
+#define snd_seq_drop_input_buffer snd_seq_drop_input_buffer_dylibloader_wrapper_asound
+#define snd_seq_remove_events_sizeof snd_seq_remove_events_sizeof_dylibloader_wrapper_asound
+#define snd_seq_remove_events_malloc snd_seq_remove_events_malloc_dylibloader_wrapper_asound
+#define snd_seq_remove_events_free snd_seq_remove_events_free_dylibloader_wrapper_asound
+#define snd_seq_remove_events_copy snd_seq_remove_events_copy_dylibloader_wrapper_asound
+#define snd_seq_remove_events_get_condition snd_seq_remove_events_get_condition_dylibloader_wrapper_asound
+#define snd_seq_remove_events_get_queue snd_seq_remove_events_get_queue_dylibloader_wrapper_asound
+#define snd_seq_remove_events_get_time snd_seq_remove_events_get_time_dylibloader_wrapper_asound
+#define snd_seq_remove_events_get_dest snd_seq_remove_events_get_dest_dylibloader_wrapper_asound
+#define snd_seq_remove_events_get_channel snd_seq_remove_events_get_channel_dylibloader_wrapper_asound
+#define snd_seq_remove_events_get_event_type snd_seq_remove_events_get_event_type_dylibloader_wrapper_asound
+#define snd_seq_remove_events_get_tag snd_seq_remove_events_get_tag_dylibloader_wrapper_asound
+#define snd_seq_remove_events_set_condition snd_seq_remove_events_set_condition_dylibloader_wrapper_asound
+#define snd_seq_remove_events_set_queue snd_seq_remove_events_set_queue_dylibloader_wrapper_asound
+#define snd_seq_remove_events_set_time snd_seq_remove_events_set_time_dylibloader_wrapper_asound
+#define snd_seq_remove_events_set_dest snd_seq_remove_events_set_dest_dylibloader_wrapper_asound
+#define snd_seq_remove_events_set_channel snd_seq_remove_events_set_channel_dylibloader_wrapper_asound
+#define snd_seq_remove_events_set_event_type snd_seq_remove_events_set_event_type_dylibloader_wrapper_asound
+#define snd_seq_remove_events_set_tag snd_seq_remove_events_set_tag_dylibloader_wrapper_asound
+#define snd_seq_remove_events snd_seq_remove_events_dylibloader_wrapper_asound
+#define snd_seq_set_bit snd_seq_set_bit_dylibloader_wrapper_asound
+#define snd_seq_unset_bit snd_seq_unset_bit_dylibloader_wrapper_asound
+#define snd_seq_change_bit snd_seq_change_bit_dylibloader_wrapper_asound
+#define snd_seq_get_bit snd_seq_get_bit_dylibloader_wrapper_asound
+#define snd_seq_control_queue snd_seq_control_queue_dylibloader_wrapper_asound
+#define snd_seq_create_simple_port snd_seq_create_simple_port_dylibloader_wrapper_asound
+#define snd_seq_delete_simple_port snd_seq_delete_simple_port_dylibloader_wrapper_asound
+#define snd_seq_connect_from snd_seq_connect_from_dylibloader_wrapper_asound
+#define snd_seq_connect_to snd_seq_connect_to_dylibloader_wrapper_asound
+#define snd_seq_disconnect_from snd_seq_disconnect_from_dylibloader_wrapper_asound
+#define snd_seq_disconnect_to snd_seq_disconnect_to_dylibloader_wrapper_asound
+#define snd_seq_set_client_name snd_seq_set_client_name_dylibloader_wrapper_asound
+#define snd_seq_set_client_event_filter snd_seq_set_client_event_filter_dylibloader_wrapper_asound
+#define snd_seq_set_client_pool_output snd_seq_set_client_pool_output_dylibloader_wrapper_asound
+#define snd_seq_set_client_pool_output_room snd_seq_set_client_pool_output_room_dylibloader_wrapper_asound
+#define snd_seq_set_client_pool_input snd_seq_set_client_pool_input_dylibloader_wrapper_asound
+#define snd_seq_sync_output_queue snd_seq_sync_output_queue_dylibloader_wrapper_asound
+#define snd_seq_parse_address snd_seq_parse_address_dylibloader_wrapper_asound
+#define snd_seq_reset_pool_output snd_seq_reset_pool_output_dylibloader_wrapper_asound
+#define snd_seq_reset_pool_input snd_seq_reset_pool_input_dylibloader_wrapper_asound
+#define snd_midi_event_new snd_midi_event_new_dylibloader_wrapper_asound
+#define snd_midi_event_resize_buffer snd_midi_event_resize_buffer_dylibloader_wrapper_asound
+#define snd_midi_event_free snd_midi_event_free_dylibloader_wrapper_asound
+#define snd_midi_event_init snd_midi_event_init_dylibloader_wrapper_asound
+#define snd_midi_event_reset_encode snd_midi_event_reset_encode_dylibloader_wrapper_asound
+#define snd_midi_event_reset_decode snd_midi_event_reset_decode_dylibloader_wrapper_asound
+#define snd_midi_event_no_status snd_midi_event_no_status_dylibloader_wrapper_asound
+#define snd_midi_event_encode snd_midi_event_encode_dylibloader_wrapper_asound
+#define snd_midi_event_encode_byte snd_midi_event_encode_byte_dylibloader_wrapper_asound
+#define snd_midi_event_decode snd_midi_event_decode_dylibloader_wrapper_asound
+extern const char* (*snd_asoundlib_version_dylibloader_wrapper_asound)( void);
+extern void* (*snd_dlopen_dylibloader_wrapper_asound)(const char*, int);
+extern void* (*snd_dlsym_dylibloader_wrapper_asound)( void*,const char*,const char*);
+extern int (*snd_dlclose_dylibloader_wrapper_asound)( void*);
+extern int (*snd_async_add_handler_dylibloader_wrapper_asound)( snd_async_handler_t**, int, snd_async_callback_t, void*);
+extern int (*snd_async_del_handler_dylibloader_wrapper_asound)( snd_async_handler_t*);
+extern int (*snd_async_handler_get_fd_dylibloader_wrapper_asound)( snd_async_handler_t*);
+extern int (*snd_async_handler_get_signo_dylibloader_wrapper_asound)( snd_async_handler_t*);
+extern void* (*snd_async_handler_get_callback_private_dylibloader_wrapper_asound)( snd_async_handler_t*);
+extern struct snd_shm_area* (*snd_shm_area_create_dylibloader_wrapper_asound)( int, void*);
+extern struct snd_shm_area* (*snd_shm_area_share_dylibloader_wrapper_asound)(struct snd_shm_area*);
+extern int (*snd_shm_area_destroy_dylibloader_wrapper_asound)(struct snd_shm_area*);
+extern int (*snd_user_file_dylibloader_wrapper_asound)(const char*, char**);
+extern int (*snd_input_stdio_open_dylibloader_wrapper_asound)( snd_input_t**,const char*,const char*);
+extern int (*snd_input_stdio_attach_dylibloader_wrapper_asound)( snd_input_t**, FILE*, int);
+extern int (*snd_input_buffer_open_dylibloader_wrapper_asound)( snd_input_t**,const char*, ssize_t);
+extern int (*snd_input_close_dylibloader_wrapper_asound)( snd_input_t*);
+extern int (*snd_input_scanf_dylibloader_wrapper_asound)( snd_input_t*,const char*,...);
+extern char* (*snd_input_gets_dylibloader_wrapper_asound)( snd_input_t*, char*, size_t);
+extern int (*snd_input_getc_dylibloader_wrapper_asound)( snd_input_t*);
+extern int (*snd_input_ungetc_dylibloader_wrapper_asound)( snd_input_t*, int);
+extern int (*snd_output_stdio_open_dylibloader_wrapper_asound)( snd_output_t**,const char*,const char*);
+extern int (*snd_output_stdio_attach_dylibloader_wrapper_asound)( snd_output_t**, FILE*, int);
+extern int (*snd_output_buffer_open_dylibloader_wrapper_asound)( snd_output_t**);
+extern size_t (*snd_output_buffer_string_dylibloader_wrapper_asound)( snd_output_t*, char**);
+extern int (*snd_output_close_dylibloader_wrapper_asound)( snd_output_t*);
+extern int (*snd_output_printf_dylibloader_wrapper_asound)( snd_output_t*,const char*,...);
+extern int (*snd_output_vprintf_dylibloader_wrapper_asound)( snd_output_t*,const char*, va_list);
+extern int (*snd_output_puts_dylibloader_wrapper_asound)( snd_output_t*,const char*);
+extern int (*snd_output_putc_dylibloader_wrapper_asound)( snd_output_t*, int);
+extern int (*snd_output_flush_dylibloader_wrapper_asound)( snd_output_t*);
+extern const char* (*snd_strerror_dylibloader_wrapper_asound)( int);
+extern int (*snd_lib_error_set_handler_dylibloader_wrapper_asound)( snd_lib_error_handler_t);
+extern snd_local_error_handler_t (*snd_lib_error_set_local_dylibloader_wrapper_asound)( snd_local_error_handler_t);
+extern int (*snd_config_top_dylibloader_wrapper_asound)( snd_config_t**);
+extern int (*snd_config_load_dylibloader_wrapper_asound)( snd_config_t*, snd_input_t*);
+extern int (*snd_config_load_override_dylibloader_wrapper_asound)( snd_config_t*, snd_input_t*);
+extern int (*snd_config_save_dylibloader_wrapper_asound)( snd_config_t*, snd_output_t*);
+extern int (*snd_config_update_dylibloader_wrapper_asound)( void);
+extern int (*snd_config_update_r_dylibloader_wrapper_asound)( snd_config_t**, snd_config_update_t**,const char*);
+extern int (*snd_config_update_free_dylibloader_wrapper_asound)( snd_config_update_t*);
+extern int (*snd_config_update_free_global_dylibloader_wrapper_asound)( void);
+extern int (*snd_config_update_ref_dylibloader_wrapper_asound)( snd_config_t**);
+extern void (*snd_config_ref_dylibloader_wrapper_asound)( snd_config_t*);
+extern void (*snd_config_unref_dylibloader_wrapper_asound)( snd_config_t*);
+extern int (*snd_config_search_dylibloader_wrapper_asound)( snd_config_t*,const char*, snd_config_t**);
+extern int (*snd_config_searchv_dylibloader_wrapper_asound)( snd_config_t*, snd_config_t**,...);
+extern int (*snd_config_search_definition_dylibloader_wrapper_asound)( snd_config_t*,const char*,const char*, snd_config_t**);
+extern int (*snd_config_expand_dylibloader_wrapper_asound)( snd_config_t*, snd_config_t*,const char*, snd_config_t*, snd_config_t**);
+extern int (*snd_config_evaluate_dylibloader_wrapper_asound)( snd_config_t*, snd_config_t*, snd_config_t*, snd_config_t**);
+extern int (*snd_config_add_dylibloader_wrapper_asound)( snd_config_t*, snd_config_t*);
+extern int (*snd_config_delete_dylibloader_wrapper_asound)( snd_config_t*);
+extern int (*snd_config_delete_compound_members_dylibloader_wrapper_asound)(const snd_config_t*);
+extern int (*snd_config_copy_dylibloader_wrapper_asound)( snd_config_t**, snd_config_t*);
+extern int (*snd_config_make_dylibloader_wrapper_asound)( snd_config_t**,const char*, snd_config_type_t);
+extern int (*snd_config_make_integer_dylibloader_wrapper_asound)( snd_config_t**,const char*);
+extern int (*snd_config_make_integer64_dylibloader_wrapper_asound)( snd_config_t**,const char*);
+extern int (*snd_config_make_real_dylibloader_wrapper_asound)( snd_config_t**,const char*);
+extern int (*snd_config_make_string_dylibloader_wrapper_asound)( snd_config_t**,const char*);
+extern int (*snd_config_make_pointer_dylibloader_wrapper_asound)( snd_config_t**,const char*);
+extern int (*snd_config_make_compound_dylibloader_wrapper_asound)( snd_config_t**,const char*, int);
+extern int (*snd_config_imake_integer_dylibloader_wrapper_asound)( snd_config_t**,const char*,const long);
+extern int (*snd_config_imake_integer64_dylibloader_wrapper_asound)( snd_config_t**,const char*,const long long);
+extern int (*snd_config_imake_real_dylibloader_wrapper_asound)( snd_config_t**,const char*,const double);
+extern int (*snd_config_imake_string_dylibloader_wrapper_asound)( snd_config_t**,const char*,const char*);
+extern int (*snd_config_imake_safe_string_dylibloader_wrapper_asound)( snd_config_t**,const char*,const char*);
+extern int (*snd_config_imake_pointer_dylibloader_wrapper_asound)( snd_config_t**,const char*,const void*);
+extern snd_config_type_t (*snd_config_get_type_dylibloader_wrapper_asound)(const snd_config_t*);
+extern int (*snd_config_set_id_dylibloader_wrapper_asound)( snd_config_t*,const char*);
+extern int (*snd_config_set_integer_dylibloader_wrapper_asound)( snd_config_t*, long);
+extern int (*snd_config_set_integer64_dylibloader_wrapper_asound)( snd_config_t*, long long);
+extern int (*snd_config_set_real_dylibloader_wrapper_asound)( snd_config_t*, double);
+extern int (*snd_config_set_string_dylibloader_wrapper_asound)( snd_config_t*,const char*);
+extern int (*snd_config_set_ascii_dylibloader_wrapper_asound)( snd_config_t*,const char*);
+extern int (*snd_config_set_pointer_dylibloader_wrapper_asound)( snd_config_t*,const void*);
+extern int (*snd_config_get_id_dylibloader_wrapper_asound)(const snd_config_t*,const char**);
+extern int (*snd_config_get_integer_dylibloader_wrapper_asound)(const snd_config_t*, long*);
+extern int (*snd_config_get_integer64_dylibloader_wrapper_asound)(const snd_config_t*, long long*);
+extern int (*snd_config_get_real_dylibloader_wrapper_asound)(const snd_config_t*, double*);
+extern int (*snd_config_get_ireal_dylibloader_wrapper_asound)(const snd_config_t*, double*);
+extern int (*snd_config_get_string_dylibloader_wrapper_asound)(const snd_config_t*,const char**);
+extern int (*snd_config_get_ascii_dylibloader_wrapper_asound)(const snd_config_t*, char**);
+extern int (*snd_config_get_pointer_dylibloader_wrapper_asound)(const snd_config_t*,const void**);
+extern int (*snd_config_test_id_dylibloader_wrapper_asound)(const snd_config_t*,const char*);
+extern snd_config_iterator_t (*snd_config_iterator_first_dylibloader_wrapper_asound)(const snd_config_t*);
+extern snd_config_iterator_t (*snd_config_iterator_next_dylibloader_wrapper_asound)(const snd_config_iterator_t);
+extern snd_config_iterator_t (*snd_config_iterator_end_dylibloader_wrapper_asound)(const snd_config_t*);
+extern snd_config_t* (*snd_config_iterator_entry_dylibloader_wrapper_asound)(const snd_config_iterator_t);
+extern int (*snd_config_get_bool_ascii_dylibloader_wrapper_asound)(const char*);
+extern int (*snd_config_get_bool_dylibloader_wrapper_asound)(const snd_config_t*);
+extern int (*snd_config_get_ctl_iface_ascii_dylibloader_wrapper_asound)(const char*);
+extern int (*snd_config_get_ctl_iface_dylibloader_wrapper_asound)(const snd_config_t*);
+extern int (*snd_names_list_dylibloader_wrapper_asound)(const char*, snd_devname_t**);
+extern void (*snd_names_list_free_dylibloader_wrapper_asound)( snd_devname_t*);
+extern int (*snd_pcm_open_dylibloader_wrapper_asound)( snd_pcm_t**,const char*, snd_pcm_stream_t, int);
+extern int (*snd_pcm_open_lconf_dylibloader_wrapper_asound)( snd_pcm_t**,const char*, snd_pcm_stream_t, int, snd_config_t*);
+extern int (*snd_pcm_open_fallback_dylibloader_wrapper_asound)( snd_pcm_t**, snd_config_t*,const char*,const char*, snd_pcm_stream_t, int);
+extern int (*snd_pcm_close_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern const char* (*snd_pcm_name_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern snd_pcm_type_t (*snd_pcm_type_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern snd_pcm_stream_t (*snd_pcm_stream_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_poll_descriptors_count_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_poll_descriptors_dylibloader_wrapper_asound)( snd_pcm_t*,struct pollfd*, unsigned int);
+extern int (*snd_pcm_poll_descriptors_revents_dylibloader_wrapper_asound)( snd_pcm_t*,struct pollfd*, unsigned int, unsigned short*);
+extern int (*snd_pcm_nonblock_dylibloader_wrapper_asound)( snd_pcm_t*, int);
+extern int (*snd_async_add_pcm_handler_dylibloader_wrapper_asound)( snd_async_handler_t**, snd_pcm_t*, snd_async_callback_t, void*);
+extern snd_pcm_t* (*snd_async_handler_get_pcm_dylibloader_wrapper_asound)( snd_async_handler_t*);
+extern int (*snd_pcm_info_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_info_t*);
+extern int (*snd_pcm_hw_params_current_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_free_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_sw_params_current_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*);
+extern int (*snd_pcm_sw_params_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*);
+extern int (*snd_pcm_prepare_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_reset_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_status_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_status_t*);
+extern int (*snd_pcm_start_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_drop_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_drain_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_pause_dylibloader_wrapper_asound)( snd_pcm_t*, int);
+extern snd_pcm_state_t (*snd_pcm_state_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_hwsync_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_delay_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sframes_t*);
+extern int (*snd_pcm_resume_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_htimestamp_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_uframes_t*, snd_htimestamp_t*);
+extern snd_pcm_sframes_t (*snd_pcm_avail_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern snd_pcm_sframes_t (*snd_pcm_avail_update_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_avail_delay_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sframes_t*, snd_pcm_sframes_t*);
+extern snd_pcm_sframes_t (*snd_pcm_rewindable_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern snd_pcm_sframes_t (*snd_pcm_rewind_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_uframes_t);
+extern snd_pcm_sframes_t (*snd_pcm_forwardable_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern snd_pcm_sframes_t (*snd_pcm_forward_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_uframes_t);
+extern snd_pcm_sframes_t (*snd_pcm_writei_dylibloader_wrapper_asound)( snd_pcm_t*,const void*, snd_pcm_uframes_t);
+extern snd_pcm_sframes_t (*snd_pcm_readi_dylibloader_wrapper_asound)( snd_pcm_t*, void*, snd_pcm_uframes_t);
+extern snd_pcm_sframes_t (*snd_pcm_writen_dylibloader_wrapper_asound)( snd_pcm_t*, void**, snd_pcm_uframes_t);
+extern snd_pcm_sframes_t (*snd_pcm_readn_dylibloader_wrapper_asound)( snd_pcm_t*, void**, snd_pcm_uframes_t);
+extern int (*snd_pcm_wait_dylibloader_wrapper_asound)( snd_pcm_t*, int);
+extern int (*snd_pcm_link_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_t*);
+extern int (*snd_pcm_unlink_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern snd_pcm_chmap_query_t** (*snd_pcm_query_chmaps_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern snd_pcm_chmap_query_t** (*snd_pcm_query_chmaps_from_hw_dylibloader_wrapper_asound)( int, int, int, snd_pcm_stream_t);
+extern void (*snd_pcm_free_chmaps_dylibloader_wrapper_asound)( snd_pcm_chmap_query_t**);
+extern snd_pcm_chmap_t* (*snd_pcm_get_chmap_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_set_chmap_dylibloader_wrapper_asound)( snd_pcm_t*,const snd_pcm_chmap_t*);
+extern const char* (*snd_pcm_chmap_type_name_dylibloader_wrapper_asound)(enum snd_pcm_chmap_type);
+extern const char* (*snd_pcm_chmap_name_dylibloader_wrapper_asound)(enum snd_pcm_chmap_position);
+extern const char* (*snd_pcm_chmap_long_name_dylibloader_wrapper_asound)(enum snd_pcm_chmap_position);
+extern int (*snd_pcm_chmap_print_dylibloader_wrapper_asound)(const snd_pcm_chmap_t*, size_t, char*);
+extern unsigned int (*snd_pcm_chmap_from_string_dylibloader_wrapper_asound)(const char*);
+extern snd_pcm_chmap_t* (*snd_pcm_chmap_parse_string_dylibloader_wrapper_asound)(const char*);
+extern int (*snd_pcm_recover_dylibloader_wrapper_asound)( snd_pcm_t*, int, int);
+extern int (*snd_pcm_set_params_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_format_t, snd_pcm_access_t, unsigned int, unsigned int, int, unsigned int);
+extern int (*snd_pcm_get_params_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_uframes_t*, snd_pcm_uframes_t*);
+extern size_t (*snd_pcm_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_pcm_info_malloc_dylibloader_wrapper_asound)( snd_pcm_info_t**);
+extern void (*snd_pcm_info_free_dylibloader_wrapper_asound)( snd_pcm_info_t*);
+extern void (*snd_pcm_info_copy_dylibloader_wrapper_asound)( snd_pcm_info_t*,const snd_pcm_info_t*);
+extern unsigned int (*snd_pcm_info_get_device_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern unsigned int (*snd_pcm_info_get_subdevice_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern snd_pcm_stream_t (*snd_pcm_info_get_stream_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern int (*snd_pcm_info_get_card_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern const char* (*snd_pcm_info_get_id_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern const char* (*snd_pcm_info_get_name_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern const char* (*snd_pcm_info_get_subdevice_name_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern snd_pcm_class_t (*snd_pcm_info_get_class_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern snd_pcm_subclass_t (*snd_pcm_info_get_subclass_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern unsigned int (*snd_pcm_info_get_subdevices_count_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern unsigned int (*snd_pcm_info_get_subdevices_avail_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern snd_pcm_sync_id_t (*snd_pcm_info_get_sync_dylibloader_wrapper_asound)(const snd_pcm_info_t*);
+extern void (*snd_pcm_info_set_device_dylibloader_wrapper_asound)( snd_pcm_info_t*, unsigned int);
+extern void (*snd_pcm_info_set_subdevice_dylibloader_wrapper_asound)( snd_pcm_info_t*, unsigned int);
+extern void (*snd_pcm_info_set_stream_dylibloader_wrapper_asound)( snd_pcm_info_t*, snd_pcm_stream_t);
+extern int (*snd_pcm_hw_params_any_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_can_mmap_sample_resolution_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_is_double_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_is_batch_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_is_block_transfer_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_is_monotonic_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_can_overrange_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_can_pause_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_can_resume_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_is_half_duplex_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_is_joint_duplex_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_can_sync_start_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_can_disable_period_wakeup_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_supports_audio_wallclock_ts_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_supports_audio_ts_type_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, int);
+extern int (*snd_pcm_hw_params_get_rate_numden_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, unsigned int*);
+extern int (*snd_pcm_hw_params_get_sbits_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_get_fifo_size_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*);
+extern size_t (*snd_pcm_hw_params_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_pcm_hw_params_malloc_dylibloader_wrapper_asound)( snd_pcm_hw_params_t**);
+extern void (*snd_pcm_hw_params_free_dylibloader_wrapper_asound)( snd_pcm_hw_params_t*);
+extern void (*snd_pcm_hw_params_copy_dylibloader_wrapper_asound)( snd_pcm_hw_params_t*,const snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_get_access_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_access_t*);
+extern int (*snd_pcm_hw_params_test_access_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_access_t);
+extern int (*snd_pcm_hw_params_set_access_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_access_t);
+extern int (*snd_pcm_hw_params_set_access_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_access_t*);
+extern int (*snd_pcm_hw_params_set_access_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_access_t*);
+extern int (*snd_pcm_hw_params_set_access_mask_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_access_mask_t*);
+extern int (*snd_pcm_hw_params_get_access_mask_dylibloader_wrapper_asound)( snd_pcm_hw_params_t*, snd_pcm_access_mask_t*);
+extern int (*snd_pcm_hw_params_get_format_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_format_t*);
+extern int (*snd_pcm_hw_params_test_format_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_format_t);
+extern int (*snd_pcm_hw_params_set_format_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_format_t);
+extern int (*snd_pcm_hw_params_set_format_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_format_t*);
+extern int (*snd_pcm_hw_params_set_format_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_format_t*);
+extern int (*snd_pcm_hw_params_set_format_mask_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_format_mask_t*);
+extern void (*snd_pcm_hw_params_get_format_mask_dylibloader_wrapper_asound)( snd_pcm_hw_params_t*, snd_pcm_format_mask_t*);
+extern int (*snd_pcm_hw_params_get_subformat_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_subformat_t*);
+extern int (*snd_pcm_hw_params_test_subformat_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_subformat_t);
+extern int (*snd_pcm_hw_params_set_subformat_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_subformat_t);
+extern int (*snd_pcm_hw_params_set_subformat_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_subformat_t*);
+extern int (*snd_pcm_hw_params_set_subformat_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_subformat_t*);
+extern int (*snd_pcm_hw_params_set_subformat_mask_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_subformat_mask_t*);
+extern void (*snd_pcm_hw_params_get_subformat_mask_dylibloader_wrapper_asound)( snd_pcm_hw_params_t*, snd_pcm_subformat_mask_t*);
+extern int (*snd_pcm_hw_params_get_channels_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_get_channels_min_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_get_channels_max_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_test_channels_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int);
+extern int (*snd_pcm_hw_params_set_channels_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int);
+extern int (*snd_pcm_hw_params_set_channels_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_set_channels_max_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_set_channels_minmax_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, unsigned int*);
+extern int (*snd_pcm_hw_params_set_channels_near_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_set_channels_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_set_channels_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_get_rate_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_rate_min_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_rate_max_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_test_rate_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_rate_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_rate_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_rate_max_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_rate_minmax_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_rate_near_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_rate_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_rate_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_rate_resample_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int);
+extern int (*snd_pcm_hw_params_get_rate_resample_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_set_export_buffer_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int);
+extern int (*snd_pcm_hw_params_get_export_buffer_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_set_period_wakeup_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int);
+extern int (*snd_pcm_hw_params_get_period_wakeup_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_get_period_time_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_period_time_min_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_period_time_max_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_test_period_time_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_period_time_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_period_time_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_period_time_max_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_period_time_minmax_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_period_time_near_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_period_time_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_period_time_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_period_size_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_uframes_t*, int*);
+extern int (*snd_pcm_hw_params_get_period_size_min_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_uframes_t*, int*);
+extern int (*snd_pcm_hw_params_get_period_size_max_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_uframes_t*, int*);
+extern int (*snd_pcm_hw_params_test_period_size_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t, int);
+extern int (*snd_pcm_hw_params_set_period_size_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t, int);
+extern int (*snd_pcm_hw_params_set_period_size_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*, int*);
+extern int (*snd_pcm_hw_params_set_period_size_max_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*, int*);
+extern int (*snd_pcm_hw_params_set_period_size_minmax_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*, int*, snd_pcm_uframes_t*, int*);
+extern int (*snd_pcm_hw_params_set_period_size_near_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*, int*);
+extern int (*snd_pcm_hw_params_set_period_size_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*, int*);
+extern int (*snd_pcm_hw_params_set_period_size_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*, int*);
+extern int (*snd_pcm_hw_params_set_period_size_integer_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_get_periods_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_periods_min_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_periods_max_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_test_periods_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_periods_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_periods_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_periods_max_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_periods_minmax_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_periods_near_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_periods_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_periods_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_periods_integer_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*);
+extern int (*snd_pcm_hw_params_get_buffer_time_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_buffer_time_min_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_buffer_time_max_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_test_buffer_time_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_buffer_time_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_buffer_time_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_buffer_time_max_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_buffer_time_minmax_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_buffer_time_near_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_buffer_time_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_buffer_time_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_buffer_size_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_hw_params_get_buffer_size_min_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_hw_params_get_buffer_size_max_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_hw_params_test_buffer_size_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t);
+extern int (*snd_pcm_hw_params_set_buffer_size_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t);
+extern int (*snd_pcm_hw_params_set_buffer_size_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_hw_params_set_buffer_size_max_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_hw_params_set_buffer_size_minmax_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_hw_params_set_buffer_size_near_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_hw_params_set_buffer_size_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_hw_params_set_buffer_size_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_hw_params_get_min_align_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, snd_pcm_uframes_t*);
+extern size_t (*snd_pcm_sw_params_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_pcm_sw_params_malloc_dylibloader_wrapper_asound)( snd_pcm_sw_params_t**);
+extern void (*snd_pcm_sw_params_free_dylibloader_wrapper_asound)( snd_pcm_sw_params_t*);
+extern void (*snd_pcm_sw_params_copy_dylibloader_wrapper_asound)( snd_pcm_sw_params_t*,const snd_pcm_sw_params_t*);
+extern int (*snd_pcm_sw_params_get_boundary_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_sw_params_set_tstamp_mode_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, snd_pcm_tstamp_t);
+extern int (*snd_pcm_sw_params_get_tstamp_mode_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, snd_pcm_tstamp_t*);
+extern int (*snd_pcm_sw_params_set_avail_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, snd_pcm_uframes_t);
+extern int (*snd_pcm_sw_params_get_avail_min_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_sw_params_set_period_event_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, int);
+extern int (*snd_pcm_sw_params_get_period_event_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, int*);
+extern int (*snd_pcm_sw_params_set_start_threshold_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, snd_pcm_uframes_t);
+extern int (*snd_pcm_sw_params_get_start_threshold_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_sw_params_set_stop_threshold_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, snd_pcm_uframes_t);
+extern int (*snd_pcm_sw_params_get_stop_threshold_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_sw_params_set_silence_threshold_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, snd_pcm_uframes_t);
+extern int (*snd_pcm_sw_params_get_silence_threshold_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_sw_params_set_silence_size_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, snd_pcm_uframes_t);
+extern int (*snd_pcm_sw_params_get_silence_size_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, snd_pcm_uframes_t*);
+extern size_t (*snd_pcm_access_mask_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_pcm_access_mask_malloc_dylibloader_wrapper_asound)( snd_pcm_access_mask_t**);
+extern void (*snd_pcm_access_mask_free_dylibloader_wrapper_asound)( snd_pcm_access_mask_t*);
+extern void (*snd_pcm_access_mask_copy_dylibloader_wrapper_asound)( snd_pcm_access_mask_t*,const snd_pcm_access_mask_t*);
+extern void (*snd_pcm_access_mask_none_dylibloader_wrapper_asound)( snd_pcm_access_mask_t*);
+extern void (*snd_pcm_access_mask_any_dylibloader_wrapper_asound)( snd_pcm_access_mask_t*);
+extern int (*snd_pcm_access_mask_test_dylibloader_wrapper_asound)(const snd_pcm_access_mask_t*, snd_pcm_access_t);
+extern int (*snd_pcm_access_mask_empty_dylibloader_wrapper_asound)(const snd_pcm_access_mask_t*);
+extern void (*snd_pcm_access_mask_set_dylibloader_wrapper_asound)( snd_pcm_access_mask_t*, snd_pcm_access_t);
+extern void (*snd_pcm_access_mask_reset_dylibloader_wrapper_asound)( snd_pcm_access_mask_t*, snd_pcm_access_t);
+extern size_t (*snd_pcm_format_mask_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_pcm_format_mask_malloc_dylibloader_wrapper_asound)( snd_pcm_format_mask_t**);
+extern void (*snd_pcm_format_mask_free_dylibloader_wrapper_asound)( snd_pcm_format_mask_t*);
+extern void (*snd_pcm_format_mask_copy_dylibloader_wrapper_asound)( snd_pcm_format_mask_t*,const snd_pcm_format_mask_t*);
+extern void (*snd_pcm_format_mask_none_dylibloader_wrapper_asound)( snd_pcm_format_mask_t*);
+extern void (*snd_pcm_format_mask_any_dylibloader_wrapper_asound)( snd_pcm_format_mask_t*);
+extern int (*snd_pcm_format_mask_test_dylibloader_wrapper_asound)(const snd_pcm_format_mask_t*, snd_pcm_format_t);
+extern int (*snd_pcm_format_mask_empty_dylibloader_wrapper_asound)(const snd_pcm_format_mask_t*);
+extern void (*snd_pcm_format_mask_set_dylibloader_wrapper_asound)( snd_pcm_format_mask_t*, snd_pcm_format_t);
+extern void (*snd_pcm_format_mask_reset_dylibloader_wrapper_asound)( snd_pcm_format_mask_t*, snd_pcm_format_t);
+extern size_t (*snd_pcm_subformat_mask_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_pcm_subformat_mask_malloc_dylibloader_wrapper_asound)( snd_pcm_subformat_mask_t**);
+extern void (*snd_pcm_subformat_mask_free_dylibloader_wrapper_asound)( snd_pcm_subformat_mask_t*);
+extern void (*snd_pcm_subformat_mask_copy_dylibloader_wrapper_asound)( snd_pcm_subformat_mask_t*,const snd_pcm_subformat_mask_t*);
+extern void (*snd_pcm_subformat_mask_none_dylibloader_wrapper_asound)( snd_pcm_subformat_mask_t*);
+extern void (*snd_pcm_subformat_mask_any_dylibloader_wrapper_asound)( snd_pcm_subformat_mask_t*);
+extern int (*snd_pcm_subformat_mask_test_dylibloader_wrapper_asound)(const snd_pcm_subformat_mask_t*, snd_pcm_subformat_t);
+extern int (*snd_pcm_subformat_mask_empty_dylibloader_wrapper_asound)(const snd_pcm_subformat_mask_t*);
+extern void (*snd_pcm_subformat_mask_set_dylibloader_wrapper_asound)( snd_pcm_subformat_mask_t*, snd_pcm_subformat_t);
+extern void (*snd_pcm_subformat_mask_reset_dylibloader_wrapper_asound)( snd_pcm_subformat_mask_t*, snd_pcm_subformat_t);
+extern size_t (*snd_pcm_status_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_pcm_status_malloc_dylibloader_wrapper_asound)( snd_pcm_status_t**);
+extern void (*snd_pcm_status_free_dylibloader_wrapper_asound)( snd_pcm_status_t*);
+extern void (*snd_pcm_status_copy_dylibloader_wrapper_asound)( snd_pcm_status_t*,const snd_pcm_status_t*);
+extern snd_pcm_state_t (*snd_pcm_status_get_state_dylibloader_wrapper_asound)(const snd_pcm_status_t*);
+extern void (*snd_pcm_status_get_trigger_tstamp_dylibloader_wrapper_asound)(const snd_pcm_status_t*, snd_timestamp_t*);
+extern void (*snd_pcm_status_get_trigger_htstamp_dylibloader_wrapper_asound)(const snd_pcm_status_t*, snd_htimestamp_t*);
+extern void (*snd_pcm_status_get_tstamp_dylibloader_wrapper_asound)(const snd_pcm_status_t*, snd_timestamp_t*);
+extern void (*snd_pcm_status_get_htstamp_dylibloader_wrapper_asound)(const snd_pcm_status_t*, snd_htimestamp_t*);
+extern void (*snd_pcm_status_get_audio_htstamp_dylibloader_wrapper_asound)(const snd_pcm_status_t*, snd_htimestamp_t*);
+extern void (*snd_pcm_status_get_driver_htstamp_dylibloader_wrapper_asound)(const snd_pcm_status_t*, snd_htimestamp_t*);
+extern snd_pcm_sframes_t (*snd_pcm_status_get_delay_dylibloader_wrapper_asound)(const snd_pcm_status_t*);
+extern snd_pcm_uframes_t (*snd_pcm_status_get_avail_dylibloader_wrapper_asound)(const snd_pcm_status_t*);
+extern snd_pcm_uframes_t (*snd_pcm_status_get_avail_max_dylibloader_wrapper_asound)(const snd_pcm_status_t*);
+extern snd_pcm_uframes_t (*snd_pcm_status_get_overrange_dylibloader_wrapper_asound)(const snd_pcm_status_t*);
+extern const char* (*snd_pcm_type_name_dylibloader_wrapper_asound)( snd_pcm_type_t);
+extern const char* (*snd_pcm_stream_name_dylibloader_wrapper_asound)(const snd_pcm_stream_t);
+extern const char* (*snd_pcm_access_name_dylibloader_wrapper_asound)(const snd_pcm_access_t);
+extern const char* (*snd_pcm_format_name_dylibloader_wrapper_asound)(const snd_pcm_format_t);
+extern const char* (*snd_pcm_format_description_dylibloader_wrapper_asound)(const snd_pcm_format_t);
+extern const char* (*snd_pcm_subformat_name_dylibloader_wrapper_asound)(const snd_pcm_subformat_t);
+extern const char* (*snd_pcm_subformat_description_dylibloader_wrapper_asound)(const snd_pcm_subformat_t);
+extern snd_pcm_format_t (*snd_pcm_format_value_dylibloader_wrapper_asound)(const char*);
+extern const char* (*snd_pcm_tstamp_mode_name_dylibloader_wrapper_asound)(const snd_pcm_tstamp_t);
+extern const char* (*snd_pcm_state_name_dylibloader_wrapper_asound)(const snd_pcm_state_t);
+extern int (*snd_pcm_dump_dylibloader_wrapper_asound)( snd_pcm_t*, snd_output_t*);
+extern int (*snd_pcm_dump_hw_setup_dylibloader_wrapper_asound)( snd_pcm_t*, snd_output_t*);
+extern int (*snd_pcm_dump_sw_setup_dylibloader_wrapper_asound)( snd_pcm_t*, snd_output_t*);
+extern int (*snd_pcm_dump_setup_dylibloader_wrapper_asound)( snd_pcm_t*, snd_output_t*);
+extern int (*snd_pcm_hw_params_dump_dylibloader_wrapper_asound)( snd_pcm_hw_params_t*, snd_output_t*);
+extern int (*snd_pcm_sw_params_dump_dylibloader_wrapper_asound)( snd_pcm_sw_params_t*, snd_output_t*);
+extern int (*snd_pcm_status_dump_dylibloader_wrapper_asound)( snd_pcm_status_t*, snd_output_t*);
+extern int (*snd_pcm_mmap_begin_dylibloader_wrapper_asound)( snd_pcm_t*,const snd_pcm_channel_area_t**, snd_pcm_uframes_t*, snd_pcm_uframes_t*);
+extern snd_pcm_sframes_t (*snd_pcm_mmap_commit_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_uframes_t, snd_pcm_uframes_t);
+extern snd_pcm_sframes_t (*snd_pcm_mmap_writei_dylibloader_wrapper_asound)( snd_pcm_t*,const void*, snd_pcm_uframes_t);
+extern snd_pcm_sframes_t (*snd_pcm_mmap_readi_dylibloader_wrapper_asound)( snd_pcm_t*, void*, snd_pcm_uframes_t);
+extern snd_pcm_sframes_t (*snd_pcm_mmap_writen_dylibloader_wrapper_asound)( snd_pcm_t*, void**, snd_pcm_uframes_t);
+extern snd_pcm_sframes_t (*snd_pcm_mmap_readn_dylibloader_wrapper_asound)( snd_pcm_t*, void**, snd_pcm_uframes_t);
+extern int (*snd_pcm_format_signed_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern int (*snd_pcm_format_unsigned_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern int (*snd_pcm_format_linear_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern int (*snd_pcm_format_float_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern int (*snd_pcm_format_little_endian_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern int (*snd_pcm_format_big_endian_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern int (*snd_pcm_format_cpu_endian_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern int (*snd_pcm_format_width_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern int (*snd_pcm_format_physical_width_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern snd_pcm_format_t (*snd_pcm_build_linear_format_dylibloader_wrapper_asound)( int, int, int, int);
+extern ssize_t (*snd_pcm_format_size_dylibloader_wrapper_asound)( snd_pcm_format_t, size_t);
+extern uint8_t (*snd_pcm_format_silence_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern uint16_t (*snd_pcm_format_silence_16_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern uint32_t (*snd_pcm_format_silence_32_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern uint64_t (*snd_pcm_format_silence_64_dylibloader_wrapper_asound)( snd_pcm_format_t);
+extern int (*snd_pcm_format_set_silence_dylibloader_wrapper_asound)( snd_pcm_format_t, void*, unsigned int);
+extern snd_pcm_sframes_t (*snd_pcm_bytes_to_frames_dylibloader_wrapper_asound)( snd_pcm_t*, ssize_t);
+extern ssize_t (*snd_pcm_frames_to_bytes_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sframes_t);
+extern long (*snd_pcm_bytes_to_samples_dylibloader_wrapper_asound)( snd_pcm_t*, ssize_t);
+extern ssize_t (*snd_pcm_samples_to_bytes_dylibloader_wrapper_asound)( snd_pcm_t*, long);
+extern int (*snd_pcm_area_silence_dylibloader_wrapper_asound)(const snd_pcm_channel_area_t*, snd_pcm_uframes_t, unsigned int, snd_pcm_format_t);
+extern int (*snd_pcm_areas_silence_dylibloader_wrapper_asound)(const snd_pcm_channel_area_t*, snd_pcm_uframes_t, unsigned int, snd_pcm_uframes_t, snd_pcm_format_t);
+extern int (*snd_pcm_area_copy_dylibloader_wrapper_asound)(const snd_pcm_channel_area_t*, snd_pcm_uframes_t,const snd_pcm_channel_area_t*, snd_pcm_uframes_t, unsigned int, snd_pcm_format_t);
+extern int (*snd_pcm_areas_copy_dylibloader_wrapper_asound)(const snd_pcm_channel_area_t*, snd_pcm_uframes_t,const snd_pcm_channel_area_t*, snd_pcm_uframes_t, unsigned int, snd_pcm_uframes_t, snd_pcm_format_t);
+extern snd_pcm_t* (*snd_pcm_hook_get_pcm_dylibloader_wrapper_asound)( snd_pcm_hook_t*);
+extern void* (*snd_pcm_hook_get_private_dylibloader_wrapper_asound)( snd_pcm_hook_t*);
+extern void (*snd_pcm_hook_set_private_dylibloader_wrapper_asound)( snd_pcm_hook_t*, void*);
+extern int (*snd_pcm_hook_add_dylibloader_wrapper_asound)( snd_pcm_hook_t**, snd_pcm_t*, snd_pcm_hook_type_t, snd_pcm_hook_func_t, void*);
+extern int (*snd_pcm_hook_remove_dylibloader_wrapper_asound)( snd_pcm_hook_t*);
+extern snd_pcm_uframes_t (*snd_pcm_meter_get_bufsize_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern unsigned int (*snd_pcm_meter_get_channels_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern unsigned int (*snd_pcm_meter_get_rate_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern snd_pcm_uframes_t (*snd_pcm_meter_get_now_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern snd_pcm_uframes_t (*snd_pcm_meter_get_boundary_dylibloader_wrapper_asound)( snd_pcm_t*);
+extern int (*snd_pcm_meter_add_scope_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_scope_t*);
+extern snd_pcm_scope_t* (*snd_pcm_meter_search_scope_dylibloader_wrapper_asound)( snd_pcm_t*,const char*);
+extern int (*snd_pcm_scope_malloc_dylibloader_wrapper_asound)( snd_pcm_scope_t**);
+extern void (*snd_pcm_scope_set_ops_dylibloader_wrapper_asound)( snd_pcm_scope_t*,const snd_pcm_scope_ops_t*);
+extern void (*snd_pcm_scope_set_name_dylibloader_wrapper_asound)( snd_pcm_scope_t*,const char*);
+extern const char* (*snd_pcm_scope_get_name_dylibloader_wrapper_asound)( snd_pcm_scope_t*);
+extern void* (*snd_pcm_scope_get_callback_private_dylibloader_wrapper_asound)( snd_pcm_scope_t*);
+extern void (*snd_pcm_scope_set_callback_private_dylibloader_wrapper_asound)( snd_pcm_scope_t*, void*);
+extern int (*snd_pcm_scope_s16_open_dylibloader_wrapper_asound)( snd_pcm_t*,const char*, snd_pcm_scope_t**);
+extern int16_t* (*snd_pcm_scope_s16_get_channel_buffer_dylibloader_wrapper_asound)( snd_pcm_scope_t*, unsigned int);
+extern int (*snd_spcm_init_dylibloader_wrapper_asound)( snd_pcm_t*, unsigned int, unsigned int, snd_pcm_format_t, snd_pcm_subformat_t, snd_spcm_latency_t, snd_pcm_access_t, snd_spcm_xrun_type_t);
+extern int (*snd_spcm_init_duplex_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_t*, unsigned int, unsigned int, snd_pcm_format_t, snd_pcm_subformat_t, snd_spcm_latency_t, snd_pcm_access_t, snd_spcm_xrun_type_t, snd_spcm_duplex_type_t);
+extern int (*snd_spcm_init_get_params_dylibloader_wrapper_asound)( snd_pcm_t*, unsigned int*, snd_pcm_uframes_t*, snd_pcm_uframes_t*);
+extern const char* (*snd_pcm_start_mode_name_dylibloader_wrapper_asound)( snd_pcm_start_t);
+extern const char* (*snd_pcm_xrun_mode_name_dylibloader_wrapper_asound)( snd_pcm_xrun_t);
+extern int (*snd_pcm_sw_params_set_start_mode_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, snd_pcm_start_t);
+extern snd_pcm_start_t (*snd_pcm_sw_params_get_start_mode_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*);
+extern int (*snd_pcm_sw_params_set_xrun_mode_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, snd_pcm_xrun_t);
+extern snd_pcm_xrun_t (*snd_pcm_sw_params_get_xrun_mode_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*);
+extern int (*snd_pcm_sw_params_set_xfer_align_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, snd_pcm_uframes_t);
+extern int (*snd_pcm_sw_params_get_xfer_align_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, snd_pcm_uframes_t*);
+extern int (*snd_pcm_sw_params_set_sleep_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_sw_params_t*, unsigned int);
+extern int (*snd_pcm_sw_params_get_sleep_min_dylibloader_wrapper_asound)(const snd_pcm_sw_params_t*, unsigned int*);
+extern int (*snd_pcm_hw_params_get_tick_time_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_tick_time_min_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_get_tick_time_max_dylibloader_wrapper_asound)(const snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_test_tick_time_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_tick_time_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int, int);
+extern int (*snd_pcm_hw_params_set_tick_time_min_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_tick_time_max_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_tick_time_minmax_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_tick_time_near_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_tick_time_first_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_pcm_hw_params_set_tick_time_last_dylibloader_wrapper_asound)( snd_pcm_t*, snd_pcm_hw_params_t*, unsigned int*, int*);
+extern int (*snd_rawmidi_open_dylibloader_wrapper_asound)( snd_rawmidi_t**, snd_rawmidi_t**,const char*, int);
+extern int (*snd_rawmidi_open_lconf_dylibloader_wrapper_asound)( snd_rawmidi_t**, snd_rawmidi_t**,const char*, int, snd_config_t*);
+extern int (*snd_rawmidi_close_dylibloader_wrapper_asound)( snd_rawmidi_t*);
+extern int (*snd_rawmidi_poll_descriptors_count_dylibloader_wrapper_asound)( snd_rawmidi_t*);
+extern int (*snd_rawmidi_poll_descriptors_dylibloader_wrapper_asound)( snd_rawmidi_t*,struct pollfd*, unsigned int);
+extern int (*snd_rawmidi_poll_descriptors_revents_dylibloader_wrapper_asound)( snd_rawmidi_t*,struct pollfd*, unsigned int, unsigned short*);
+extern int (*snd_rawmidi_nonblock_dylibloader_wrapper_asound)( snd_rawmidi_t*, int);
+extern size_t (*snd_rawmidi_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_rawmidi_info_malloc_dylibloader_wrapper_asound)( snd_rawmidi_info_t**);
+extern void (*snd_rawmidi_info_free_dylibloader_wrapper_asound)( snd_rawmidi_info_t*);
+extern void (*snd_rawmidi_info_copy_dylibloader_wrapper_asound)( snd_rawmidi_info_t*,const snd_rawmidi_info_t*);
+extern unsigned int (*snd_rawmidi_info_get_device_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern unsigned int (*snd_rawmidi_info_get_subdevice_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern snd_rawmidi_stream_t (*snd_rawmidi_info_get_stream_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern int (*snd_rawmidi_info_get_card_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern unsigned int (*snd_rawmidi_info_get_flags_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern const char* (*snd_rawmidi_info_get_id_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern const char* (*snd_rawmidi_info_get_name_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern const char* (*snd_rawmidi_info_get_subdevice_name_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern unsigned int (*snd_rawmidi_info_get_subdevices_count_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern unsigned int (*snd_rawmidi_info_get_subdevices_avail_dylibloader_wrapper_asound)(const snd_rawmidi_info_t*);
+extern void (*snd_rawmidi_info_set_device_dylibloader_wrapper_asound)( snd_rawmidi_info_t*, unsigned int);
+extern void (*snd_rawmidi_info_set_subdevice_dylibloader_wrapper_asound)( snd_rawmidi_info_t*, unsigned int);
+extern void (*snd_rawmidi_info_set_stream_dylibloader_wrapper_asound)( snd_rawmidi_info_t*, snd_rawmidi_stream_t);
+extern int (*snd_rawmidi_info_dylibloader_wrapper_asound)( snd_rawmidi_t*, snd_rawmidi_info_t*);
+extern size_t (*snd_rawmidi_params_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_rawmidi_params_malloc_dylibloader_wrapper_asound)( snd_rawmidi_params_t**);
+extern void (*snd_rawmidi_params_free_dylibloader_wrapper_asound)( snd_rawmidi_params_t*);
+extern void (*snd_rawmidi_params_copy_dylibloader_wrapper_asound)( snd_rawmidi_params_t*,const snd_rawmidi_params_t*);
+extern int (*snd_rawmidi_params_set_buffer_size_dylibloader_wrapper_asound)( snd_rawmidi_t*, snd_rawmidi_params_t*, size_t);
+extern size_t (*snd_rawmidi_params_get_buffer_size_dylibloader_wrapper_asound)(const snd_rawmidi_params_t*);
+extern int (*snd_rawmidi_params_set_avail_min_dylibloader_wrapper_asound)( snd_rawmidi_t*, snd_rawmidi_params_t*, size_t);
+extern size_t (*snd_rawmidi_params_get_avail_min_dylibloader_wrapper_asound)(const snd_rawmidi_params_t*);
+extern int (*snd_rawmidi_params_set_no_active_sensing_dylibloader_wrapper_asound)( snd_rawmidi_t*, snd_rawmidi_params_t*, int);
+extern int (*snd_rawmidi_params_get_no_active_sensing_dylibloader_wrapper_asound)(const snd_rawmidi_params_t*);
+extern int (*snd_rawmidi_params_dylibloader_wrapper_asound)( snd_rawmidi_t*, snd_rawmidi_params_t*);
+extern int (*snd_rawmidi_params_current_dylibloader_wrapper_asound)( snd_rawmidi_t*, snd_rawmidi_params_t*);
+extern size_t (*snd_rawmidi_status_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_rawmidi_status_malloc_dylibloader_wrapper_asound)( snd_rawmidi_status_t**);
+extern void (*snd_rawmidi_status_free_dylibloader_wrapper_asound)( snd_rawmidi_status_t*);
+extern void (*snd_rawmidi_status_copy_dylibloader_wrapper_asound)( snd_rawmidi_status_t*,const snd_rawmidi_status_t*);
+extern void (*snd_rawmidi_status_get_tstamp_dylibloader_wrapper_asound)(const snd_rawmidi_status_t*, snd_htimestamp_t*);
+extern size_t (*snd_rawmidi_status_get_avail_dylibloader_wrapper_asound)(const snd_rawmidi_status_t*);
+extern size_t (*snd_rawmidi_status_get_xruns_dylibloader_wrapper_asound)(const snd_rawmidi_status_t*);
+extern int (*snd_rawmidi_status_dylibloader_wrapper_asound)( snd_rawmidi_t*, snd_rawmidi_status_t*);
+extern int (*snd_rawmidi_drain_dylibloader_wrapper_asound)( snd_rawmidi_t*);
+extern int (*snd_rawmidi_drop_dylibloader_wrapper_asound)( snd_rawmidi_t*);
+extern ssize_t (*snd_rawmidi_write_dylibloader_wrapper_asound)( snd_rawmidi_t*,const void*, size_t);
+extern ssize_t (*snd_rawmidi_read_dylibloader_wrapper_asound)( snd_rawmidi_t*, void*, size_t);
+extern const char* (*snd_rawmidi_name_dylibloader_wrapper_asound)( snd_rawmidi_t*);
+extern snd_rawmidi_type_t (*snd_rawmidi_type_dylibloader_wrapper_asound)( snd_rawmidi_t*);
+extern snd_rawmidi_stream_t (*snd_rawmidi_stream_dylibloader_wrapper_asound)( snd_rawmidi_t*);
+extern int (*snd_timer_query_open_dylibloader_wrapper_asound)( snd_timer_query_t**,const char*, int);
+extern int (*snd_timer_query_open_lconf_dylibloader_wrapper_asound)( snd_timer_query_t**,const char*, int, snd_config_t*);
+extern int (*snd_timer_query_close_dylibloader_wrapper_asound)( snd_timer_query_t*);
+extern int (*snd_timer_query_next_device_dylibloader_wrapper_asound)( snd_timer_query_t*, snd_timer_id_t*);
+extern int (*snd_timer_query_info_dylibloader_wrapper_asound)( snd_timer_query_t*, snd_timer_ginfo_t*);
+extern int (*snd_timer_query_params_dylibloader_wrapper_asound)( snd_timer_query_t*, snd_timer_gparams_t*);
+extern int (*snd_timer_query_status_dylibloader_wrapper_asound)( snd_timer_query_t*, snd_timer_gstatus_t*);
+extern int (*snd_timer_open_dylibloader_wrapper_asound)( snd_timer_t**,const char*, int);
+extern int (*snd_timer_open_lconf_dylibloader_wrapper_asound)( snd_timer_t**,const char*, int, snd_config_t*);
+extern int (*snd_timer_close_dylibloader_wrapper_asound)( snd_timer_t*);
+extern int (*snd_async_add_timer_handler_dylibloader_wrapper_asound)( snd_async_handler_t**, snd_timer_t*, snd_async_callback_t, void*);
+extern snd_timer_t* (*snd_async_handler_get_timer_dylibloader_wrapper_asound)( snd_async_handler_t*);
+extern int (*snd_timer_poll_descriptors_count_dylibloader_wrapper_asound)( snd_timer_t*);
+extern int (*snd_timer_poll_descriptors_dylibloader_wrapper_asound)( snd_timer_t*,struct pollfd*, unsigned int);
+extern int (*snd_timer_poll_descriptors_revents_dylibloader_wrapper_asound)( snd_timer_t*,struct pollfd*, unsigned int, unsigned short*);
+extern int (*snd_timer_info_dylibloader_wrapper_asound)( snd_timer_t*, snd_timer_info_t*);
+extern int (*snd_timer_params_dylibloader_wrapper_asound)( snd_timer_t*, snd_timer_params_t*);
+extern int (*snd_timer_status_dylibloader_wrapper_asound)( snd_timer_t*, snd_timer_status_t*);
+extern int (*snd_timer_start_dylibloader_wrapper_asound)( snd_timer_t*);
+extern int (*snd_timer_stop_dylibloader_wrapper_asound)( snd_timer_t*);
+extern int (*snd_timer_continue_dylibloader_wrapper_asound)( snd_timer_t*);
+extern ssize_t (*snd_timer_read_dylibloader_wrapper_asound)( snd_timer_t*, void*, size_t);
+extern size_t (*snd_timer_id_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_timer_id_malloc_dylibloader_wrapper_asound)( snd_timer_id_t**);
+extern void (*snd_timer_id_free_dylibloader_wrapper_asound)( snd_timer_id_t*);
+extern void (*snd_timer_id_copy_dylibloader_wrapper_asound)( snd_timer_id_t*,const snd_timer_id_t*);
+extern void (*snd_timer_id_set_class_dylibloader_wrapper_asound)( snd_timer_id_t*, int);
+extern int (*snd_timer_id_get_class_dylibloader_wrapper_asound)( snd_timer_id_t*);
+extern void (*snd_timer_id_set_sclass_dylibloader_wrapper_asound)( snd_timer_id_t*, int);
+extern int (*snd_timer_id_get_sclass_dylibloader_wrapper_asound)( snd_timer_id_t*);
+extern void (*snd_timer_id_set_card_dylibloader_wrapper_asound)( snd_timer_id_t*, int);
+extern int (*snd_timer_id_get_card_dylibloader_wrapper_asound)( snd_timer_id_t*);
+extern void (*snd_timer_id_set_device_dylibloader_wrapper_asound)( snd_timer_id_t*, int);
+extern int (*snd_timer_id_get_device_dylibloader_wrapper_asound)( snd_timer_id_t*);
+extern void (*snd_timer_id_set_subdevice_dylibloader_wrapper_asound)( snd_timer_id_t*, int);
+extern int (*snd_timer_id_get_subdevice_dylibloader_wrapper_asound)( snd_timer_id_t*);
+extern size_t (*snd_timer_ginfo_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_timer_ginfo_malloc_dylibloader_wrapper_asound)( snd_timer_ginfo_t**);
+extern void (*snd_timer_ginfo_free_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern void (*snd_timer_ginfo_copy_dylibloader_wrapper_asound)( snd_timer_ginfo_t*,const snd_timer_ginfo_t*);
+extern int (*snd_timer_ginfo_set_tid_dylibloader_wrapper_asound)( snd_timer_ginfo_t*, snd_timer_id_t*);
+extern snd_timer_id_t* (*snd_timer_ginfo_get_tid_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern unsigned int (*snd_timer_ginfo_get_flags_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern int (*snd_timer_ginfo_get_card_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern char* (*snd_timer_ginfo_get_id_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern char* (*snd_timer_ginfo_get_name_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern unsigned long (*snd_timer_ginfo_get_resolution_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern unsigned long (*snd_timer_ginfo_get_resolution_min_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern unsigned long (*snd_timer_ginfo_get_resolution_max_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern unsigned int (*snd_timer_ginfo_get_clients_dylibloader_wrapper_asound)( snd_timer_ginfo_t*);
+extern size_t (*snd_timer_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_timer_info_malloc_dylibloader_wrapper_asound)( snd_timer_info_t**);
+extern void (*snd_timer_info_free_dylibloader_wrapper_asound)( snd_timer_info_t*);
+extern void (*snd_timer_info_copy_dylibloader_wrapper_asound)( snd_timer_info_t*,const snd_timer_info_t*);
+extern int (*snd_timer_info_is_slave_dylibloader_wrapper_asound)( snd_timer_info_t*);
+extern int (*snd_timer_info_get_card_dylibloader_wrapper_asound)( snd_timer_info_t*);
+extern const char* (*snd_timer_info_get_id_dylibloader_wrapper_asound)( snd_timer_info_t*);
+extern const char* (*snd_timer_info_get_name_dylibloader_wrapper_asound)( snd_timer_info_t*);
+extern long (*snd_timer_info_get_resolution_dylibloader_wrapper_asound)( snd_timer_info_t*);
+extern size_t (*snd_timer_params_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_timer_params_malloc_dylibloader_wrapper_asound)( snd_timer_params_t**);
+extern void (*snd_timer_params_free_dylibloader_wrapper_asound)( snd_timer_params_t*);
+extern void (*snd_timer_params_copy_dylibloader_wrapper_asound)( snd_timer_params_t*,const snd_timer_params_t*);
+extern int (*snd_timer_params_set_auto_start_dylibloader_wrapper_asound)( snd_timer_params_t*, int);
+extern int (*snd_timer_params_get_auto_start_dylibloader_wrapper_asound)( snd_timer_params_t*);
+extern int (*snd_timer_params_set_exclusive_dylibloader_wrapper_asound)( snd_timer_params_t*, int);
+extern int (*snd_timer_params_get_exclusive_dylibloader_wrapper_asound)( snd_timer_params_t*);
+extern int (*snd_timer_params_set_early_event_dylibloader_wrapper_asound)( snd_timer_params_t*, int);
+extern int (*snd_timer_params_get_early_event_dylibloader_wrapper_asound)( snd_timer_params_t*);
+extern void (*snd_timer_params_set_ticks_dylibloader_wrapper_asound)( snd_timer_params_t*, long);
+extern long (*snd_timer_params_get_ticks_dylibloader_wrapper_asound)( snd_timer_params_t*);
+extern void (*snd_timer_params_set_queue_size_dylibloader_wrapper_asound)( snd_timer_params_t*, long);
+extern long (*snd_timer_params_get_queue_size_dylibloader_wrapper_asound)( snd_timer_params_t*);
+extern void (*snd_timer_params_set_filter_dylibloader_wrapper_asound)( snd_timer_params_t*, unsigned int);
+extern unsigned int (*snd_timer_params_get_filter_dylibloader_wrapper_asound)( snd_timer_params_t*);
+extern size_t (*snd_timer_status_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_timer_status_malloc_dylibloader_wrapper_asound)( snd_timer_status_t**);
+extern void (*snd_timer_status_free_dylibloader_wrapper_asound)( snd_timer_status_t*);
+extern void (*snd_timer_status_copy_dylibloader_wrapper_asound)( snd_timer_status_t*,const snd_timer_status_t*);
+extern snd_htimestamp_t (*snd_timer_status_get_timestamp_dylibloader_wrapper_asound)( snd_timer_status_t*);
+extern long (*snd_timer_status_get_resolution_dylibloader_wrapper_asound)( snd_timer_status_t*);
+extern long (*snd_timer_status_get_lost_dylibloader_wrapper_asound)( snd_timer_status_t*);
+extern long (*snd_timer_status_get_overrun_dylibloader_wrapper_asound)( snd_timer_status_t*);
+extern long (*snd_timer_status_get_queue_dylibloader_wrapper_asound)( snd_timer_status_t*);
+extern long (*snd_timer_info_get_ticks_dylibloader_wrapper_asound)( snd_timer_info_t*);
+extern int (*snd_hwdep_open_dylibloader_wrapper_asound)( snd_hwdep_t**,const char*, int);
+extern int (*snd_hwdep_close_dylibloader_wrapper_asound)( snd_hwdep_t*);
+extern int (*snd_hwdep_poll_descriptors_dylibloader_wrapper_asound)( snd_hwdep_t*,struct pollfd*, unsigned int);
+extern int (*snd_hwdep_poll_descriptors_count_dylibloader_wrapper_asound)( snd_hwdep_t*);
+extern int (*snd_hwdep_poll_descriptors_revents_dylibloader_wrapper_asound)( snd_hwdep_t*,struct pollfd*, unsigned int, unsigned short*);
+extern int (*snd_hwdep_nonblock_dylibloader_wrapper_asound)( snd_hwdep_t*, int);
+extern int (*snd_hwdep_info_dylibloader_wrapper_asound)( snd_hwdep_t*, snd_hwdep_info_t*);
+extern int (*snd_hwdep_dsp_status_dylibloader_wrapper_asound)( snd_hwdep_t*, snd_hwdep_dsp_status_t*);
+extern int (*snd_hwdep_dsp_load_dylibloader_wrapper_asound)( snd_hwdep_t*, snd_hwdep_dsp_image_t*);
+extern int (*snd_hwdep_ioctl_dylibloader_wrapper_asound)( snd_hwdep_t*, unsigned int, void*);
+extern ssize_t (*snd_hwdep_write_dylibloader_wrapper_asound)( snd_hwdep_t*,const void*, size_t);
+extern ssize_t (*snd_hwdep_read_dylibloader_wrapper_asound)( snd_hwdep_t*, void*, size_t);
+extern size_t (*snd_hwdep_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_hwdep_info_malloc_dylibloader_wrapper_asound)( snd_hwdep_info_t**);
+extern void (*snd_hwdep_info_free_dylibloader_wrapper_asound)( snd_hwdep_info_t*);
+extern void (*snd_hwdep_info_copy_dylibloader_wrapper_asound)( snd_hwdep_info_t*,const snd_hwdep_info_t*);
+extern unsigned int (*snd_hwdep_info_get_device_dylibloader_wrapper_asound)(const snd_hwdep_info_t*);
+extern int (*snd_hwdep_info_get_card_dylibloader_wrapper_asound)(const snd_hwdep_info_t*);
+extern const char* (*snd_hwdep_info_get_id_dylibloader_wrapper_asound)(const snd_hwdep_info_t*);
+extern const char* (*snd_hwdep_info_get_name_dylibloader_wrapper_asound)(const snd_hwdep_info_t*);
+extern snd_hwdep_iface_t (*snd_hwdep_info_get_iface_dylibloader_wrapper_asound)(const snd_hwdep_info_t*);
+extern void (*snd_hwdep_info_set_device_dylibloader_wrapper_asound)( snd_hwdep_info_t*, unsigned int);
+extern size_t (*snd_hwdep_dsp_status_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_hwdep_dsp_status_malloc_dylibloader_wrapper_asound)( snd_hwdep_dsp_status_t**);
+extern void (*snd_hwdep_dsp_status_free_dylibloader_wrapper_asound)( snd_hwdep_dsp_status_t*);
+extern void (*snd_hwdep_dsp_status_copy_dylibloader_wrapper_asound)( snd_hwdep_dsp_status_t*,const snd_hwdep_dsp_status_t*);
+extern unsigned int (*snd_hwdep_dsp_status_get_version_dylibloader_wrapper_asound)(const snd_hwdep_dsp_status_t*);
+extern const char* (*snd_hwdep_dsp_status_get_id_dylibloader_wrapper_asound)(const snd_hwdep_dsp_status_t*);
+extern unsigned int (*snd_hwdep_dsp_status_get_num_dsps_dylibloader_wrapper_asound)(const snd_hwdep_dsp_status_t*);
+extern unsigned int (*snd_hwdep_dsp_status_get_dsp_loaded_dylibloader_wrapper_asound)(const snd_hwdep_dsp_status_t*);
+extern unsigned int (*snd_hwdep_dsp_status_get_chip_ready_dylibloader_wrapper_asound)(const snd_hwdep_dsp_status_t*);
+extern size_t (*snd_hwdep_dsp_image_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_hwdep_dsp_image_malloc_dylibloader_wrapper_asound)( snd_hwdep_dsp_image_t**);
+extern void (*snd_hwdep_dsp_image_free_dylibloader_wrapper_asound)( snd_hwdep_dsp_image_t*);
+extern void (*snd_hwdep_dsp_image_copy_dylibloader_wrapper_asound)( snd_hwdep_dsp_image_t*,const snd_hwdep_dsp_image_t*);
+extern unsigned int (*snd_hwdep_dsp_image_get_index_dylibloader_wrapper_asound)(const snd_hwdep_dsp_image_t*);
+extern const char* (*snd_hwdep_dsp_image_get_name_dylibloader_wrapper_asound)(const snd_hwdep_dsp_image_t*);
+extern const void* (*snd_hwdep_dsp_image_get_image_dylibloader_wrapper_asound)(const snd_hwdep_dsp_image_t*);
+extern size_t (*snd_hwdep_dsp_image_get_length_dylibloader_wrapper_asound)(const snd_hwdep_dsp_image_t*);
+extern void (*snd_hwdep_dsp_image_set_index_dylibloader_wrapper_asound)( snd_hwdep_dsp_image_t*, unsigned int);
+extern void (*snd_hwdep_dsp_image_set_name_dylibloader_wrapper_asound)( snd_hwdep_dsp_image_t*,const char*);
+extern void (*snd_hwdep_dsp_image_set_image_dylibloader_wrapper_asound)( snd_hwdep_dsp_image_t*, void*);
+extern void (*snd_hwdep_dsp_image_set_length_dylibloader_wrapper_asound)( snd_hwdep_dsp_image_t*, size_t);
+extern int (*snd_card_load_dylibloader_wrapper_asound)( int);
+extern int (*snd_card_next_dylibloader_wrapper_asound)( int*);
+extern int (*snd_card_get_index_dylibloader_wrapper_asound)(const char*);
+extern int (*snd_card_get_name_dylibloader_wrapper_asound)( int, char**);
+extern int (*snd_card_get_longname_dylibloader_wrapper_asound)( int, char**);
+extern int (*snd_device_name_hint_dylibloader_wrapper_asound)( int,const char*, void***);
+extern int (*snd_device_name_free_hint_dylibloader_wrapper_asound)( void**);
+extern char* (*snd_device_name_get_hint_dylibloader_wrapper_asound)(const void*,const char*);
+extern int (*snd_ctl_open_dylibloader_wrapper_asound)( snd_ctl_t**,const char*, int);
+extern int (*snd_ctl_open_lconf_dylibloader_wrapper_asound)( snd_ctl_t**,const char*, int, snd_config_t*);
+extern int (*snd_ctl_open_fallback_dylibloader_wrapper_asound)( snd_ctl_t**, snd_config_t*,const char*,const char*, int);
+extern int (*snd_ctl_close_dylibloader_wrapper_asound)( snd_ctl_t*);
+extern int (*snd_ctl_nonblock_dylibloader_wrapper_asound)( snd_ctl_t*, int);
+extern int (*snd_async_add_ctl_handler_dylibloader_wrapper_asound)( snd_async_handler_t**, snd_ctl_t*, snd_async_callback_t, void*);
+extern snd_ctl_t* (*snd_async_handler_get_ctl_dylibloader_wrapper_asound)( snd_async_handler_t*);
+extern int (*snd_ctl_poll_descriptors_count_dylibloader_wrapper_asound)( snd_ctl_t*);
+extern int (*snd_ctl_poll_descriptors_dylibloader_wrapper_asound)( snd_ctl_t*,struct pollfd*, unsigned int);
+extern int (*snd_ctl_poll_descriptors_revents_dylibloader_wrapper_asound)( snd_ctl_t*,struct pollfd*, unsigned int, unsigned short*);
+extern int (*snd_ctl_subscribe_events_dylibloader_wrapper_asound)( snd_ctl_t*, int);
+extern int (*snd_ctl_card_info_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_card_info_t*);
+extern int (*snd_ctl_elem_list_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_list_t*);
+extern int (*snd_ctl_elem_info_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_read_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_value_t*);
+extern int (*snd_ctl_elem_write_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_value_t*);
+extern int (*snd_ctl_elem_lock_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_id_t*);
+extern int (*snd_ctl_elem_unlock_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_id_t*);
+extern int (*snd_ctl_elem_tlv_read_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*, unsigned int*, unsigned int);
+extern int (*snd_ctl_elem_tlv_write_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*,const unsigned int*);
+extern int (*snd_ctl_elem_tlv_command_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*,const unsigned int*);
+extern int (*snd_ctl_hwdep_next_device_dylibloader_wrapper_asound)( snd_ctl_t*, int*);
+extern int (*snd_ctl_hwdep_info_dylibloader_wrapper_asound)( snd_ctl_t*, snd_hwdep_info_t*);
+extern int (*snd_ctl_pcm_next_device_dylibloader_wrapper_asound)( snd_ctl_t*, int*);
+extern int (*snd_ctl_pcm_info_dylibloader_wrapper_asound)( snd_ctl_t*, snd_pcm_info_t*);
+extern int (*snd_ctl_pcm_prefer_subdevice_dylibloader_wrapper_asound)( snd_ctl_t*, int);
+extern int (*snd_ctl_rawmidi_next_device_dylibloader_wrapper_asound)( snd_ctl_t*, int*);
+extern int (*snd_ctl_rawmidi_info_dylibloader_wrapper_asound)( snd_ctl_t*, snd_rawmidi_info_t*);
+extern int (*snd_ctl_rawmidi_prefer_subdevice_dylibloader_wrapper_asound)( snd_ctl_t*, int);
+extern int (*snd_ctl_set_power_state_dylibloader_wrapper_asound)( snd_ctl_t*, unsigned int);
+extern int (*snd_ctl_get_power_state_dylibloader_wrapper_asound)( snd_ctl_t*, unsigned int*);
+extern int (*snd_ctl_read_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_event_t*);
+extern int (*snd_ctl_wait_dylibloader_wrapper_asound)( snd_ctl_t*, int);
+extern const char* (*snd_ctl_name_dylibloader_wrapper_asound)( snd_ctl_t*);
+extern snd_ctl_type_t (*snd_ctl_type_dylibloader_wrapper_asound)( snd_ctl_t*);
+extern const char* (*snd_ctl_elem_type_name_dylibloader_wrapper_asound)( snd_ctl_elem_type_t);
+extern const char* (*snd_ctl_elem_iface_name_dylibloader_wrapper_asound)( snd_ctl_elem_iface_t);
+extern const char* (*snd_ctl_event_type_name_dylibloader_wrapper_asound)( snd_ctl_event_type_t);
+extern unsigned int (*snd_ctl_event_elem_get_mask_dylibloader_wrapper_asound)(const snd_ctl_event_t*);
+extern unsigned int (*snd_ctl_event_elem_get_numid_dylibloader_wrapper_asound)(const snd_ctl_event_t*);
+extern void (*snd_ctl_event_elem_get_id_dylibloader_wrapper_asound)(const snd_ctl_event_t*, snd_ctl_elem_id_t*);
+extern snd_ctl_elem_iface_t (*snd_ctl_event_elem_get_interface_dylibloader_wrapper_asound)(const snd_ctl_event_t*);
+extern unsigned int (*snd_ctl_event_elem_get_device_dylibloader_wrapper_asound)(const snd_ctl_event_t*);
+extern unsigned int (*snd_ctl_event_elem_get_subdevice_dylibloader_wrapper_asound)(const snd_ctl_event_t*);
+extern const char* (*snd_ctl_event_elem_get_name_dylibloader_wrapper_asound)(const snd_ctl_event_t*);
+extern unsigned int (*snd_ctl_event_elem_get_index_dylibloader_wrapper_asound)(const snd_ctl_event_t*);
+extern int (*snd_ctl_elem_list_alloc_space_dylibloader_wrapper_asound)( snd_ctl_elem_list_t*, unsigned int);
+extern void (*snd_ctl_elem_list_free_space_dylibloader_wrapper_asound)( snd_ctl_elem_list_t*);
+extern char* (*snd_ctl_ascii_elem_id_get_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*);
+extern int (*snd_ctl_ascii_elem_id_parse_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*,const char*);
+extern int (*snd_ctl_ascii_value_parse_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_value_t*, snd_ctl_elem_info_t*,const char*);
+extern size_t (*snd_ctl_elem_id_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_ctl_elem_id_malloc_dylibloader_wrapper_asound)( snd_ctl_elem_id_t**);
+extern void (*snd_ctl_elem_id_free_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*);
+extern void (*snd_ctl_elem_id_clear_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*);
+extern void (*snd_ctl_elem_id_copy_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*,const snd_ctl_elem_id_t*);
+extern unsigned int (*snd_ctl_elem_id_get_numid_dylibloader_wrapper_asound)(const snd_ctl_elem_id_t*);
+extern snd_ctl_elem_iface_t (*snd_ctl_elem_id_get_interface_dylibloader_wrapper_asound)(const snd_ctl_elem_id_t*);
+extern unsigned int (*snd_ctl_elem_id_get_device_dylibloader_wrapper_asound)(const snd_ctl_elem_id_t*);
+extern unsigned int (*snd_ctl_elem_id_get_subdevice_dylibloader_wrapper_asound)(const snd_ctl_elem_id_t*);
+extern const char* (*snd_ctl_elem_id_get_name_dylibloader_wrapper_asound)(const snd_ctl_elem_id_t*);
+extern unsigned int (*snd_ctl_elem_id_get_index_dylibloader_wrapper_asound)(const snd_ctl_elem_id_t*);
+extern void (*snd_ctl_elem_id_set_numid_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*, unsigned int);
+extern void (*snd_ctl_elem_id_set_interface_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*, snd_ctl_elem_iface_t);
+extern void (*snd_ctl_elem_id_set_device_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*, unsigned int);
+extern void (*snd_ctl_elem_id_set_subdevice_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*, unsigned int);
+extern void (*snd_ctl_elem_id_set_name_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*,const char*);
+extern void (*snd_ctl_elem_id_set_index_dylibloader_wrapper_asound)( snd_ctl_elem_id_t*, unsigned int);
+extern size_t (*snd_ctl_card_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_ctl_card_info_malloc_dylibloader_wrapper_asound)( snd_ctl_card_info_t**);
+extern void (*snd_ctl_card_info_free_dylibloader_wrapper_asound)( snd_ctl_card_info_t*);
+extern void (*snd_ctl_card_info_clear_dylibloader_wrapper_asound)( snd_ctl_card_info_t*);
+extern void (*snd_ctl_card_info_copy_dylibloader_wrapper_asound)( snd_ctl_card_info_t*,const snd_ctl_card_info_t*);
+extern int (*snd_ctl_card_info_get_card_dylibloader_wrapper_asound)(const snd_ctl_card_info_t*);
+extern const char* (*snd_ctl_card_info_get_id_dylibloader_wrapper_asound)(const snd_ctl_card_info_t*);
+extern const char* (*snd_ctl_card_info_get_driver_dylibloader_wrapper_asound)(const snd_ctl_card_info_t*);
+extern const char* (*snd_ctl_card_info_get_name_dylibloader_wrapper_asound)(const snd_ctl_card_info_t*);
+extern const char* (*snd_ctl_card_info_get_longname_dylibloader_wrapper_asound)(const snd_ctl_card_info_t*);
+extern const char* (*snd_ctl_card_info_get_mixername_dylibloader_wrapper_asound)(const snd_ctl_card_info_t*);
+extern const char* (*snd_ctl_card_info_get_components_dylibloader_wrapper_asound)(const snd_ctl_card_info_t*);
+extern size_t (*snd_ctl_event_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_ctl_event_malloc_dylibloader_wrapper_asound)( snd_ctl_event_t**);
+extern void (*snd_ctl_event_free_dylibloader_wrapper_asound)( snd_ctl_event_t*);
+extern void (*snd_ctl_event_clear_dylibloader_wrapper_asound)( snd_ctl_event_t*);
+extern void (*snd_ctl_event_copy_dylibloader_wrapper_asound)( snd_ctl_event_t*,const snd_ctl_event_t*);
+extern snd_ctl_event_type_t (*snd_ctl_event_get_type_dylibloader_wrapper_asound)(const snd_ctl_event_t*);
+extern size_t (*snd_ctl_elem_list_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_ctl_elem_list_malloc_dylibloader_wrapper_asound)( snd_ctl_elem_list_t**);
+extern void (*snd_ctl_elem_list_free_dylibloader_wrapper_asound)( snd_ctl_elem_list_t*);
+extern void (*snd_ctl_elem_list_clear_dylibloader_wrapper_asound)( snd_ctl_elem_list_t*);
+extern void (*snd_ctl_elem_list_copy_dylibloader_wrapper_asound)( snd_ctl_elem_list_t*,const snd_ctl_elem_list_t*);
+extern void (*snd_ctl_elem_list_set_offset_dylibloader_wrapper_asound)( snd_ctl_elem_list_t*, unsigned int);
+extern unsigned int (*snd_ctl_elem_list_get_used_dylibloader_wrapper_asound)(const snd_ctl_elem_list_t*);
+extern unsigned int (*snd_ctl_elem_list_get_count_dylibloader_wrapper_asound)(const snd_ctl_elem_list_t*);
+extern void (*snd_ctl_elem_list_get_id_dylibloader_wrapper_asound)(const snd_ctl_elem_list_t*, unsigned int, snd_ctl_elem_id_t*);
+extern unsigned int (*snd_ctl_elem_list_get_numid_dylibloader_wrapper_asound)(const snd_ctl_elem_list_t*, unsigned int);
+extern snd_ctl_elem_iface_t (*snd_ctl_elem_list_get_interface_dylibloader_wrapper_asound)(const snd_ctl_elem_list_t*, unsigned int);
+extern unsigned int (*snd_ctl_elem_list_get_device_dylibloader_wrapper_asound)(const snd_ctl_elem_list_t*, unsigned int);
+extern unsigned int (*snd_ctl_elem_list_get_subdevice_dylibloader_wrapper_asound)(const snd_ctl_elem_list_t*, unsigned int);
+extern const char* (*snd_ctl_elem_list_get_name_dylibloader_wrapper_asound)(const snd_ctl_elem_list_t*, unsigned int);
+extern unsigned int (*snd_ctl_elem_list_get_index_dylibloader_wrapper_asound)(const snd_ctl_elem_list_t*, unsigned int);
+extern size_t (*snd_ctl_elem_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_ctl_elem_info_malloc_dylibloader_wrapper_asound)( snd_ctl_elem_info_t**);
+extern void (*snd_ctl_elem_info_free_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*);
+extern void (*snd_ctl_elem_info_clear_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*);
+extern void (*snd_ctl_elem_info_copy_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*,const snd_ctl_elem_info_t*);
+extern snd_ctl_elem_type_t (*snd_ctl_elem_info_get_type_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_readable_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_writable_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_volatile_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_inactive_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_locked_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_tlv_readable_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_tlv_writable_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_tlv_commandable_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_owner_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_is_user_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern pid_t (*snd_ctl_elem_info_get_owner_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern unsigned int (*snd_ctl_elem_info_get_count_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern long (*snd_ctl_elem_info_get_min_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern long (*snd_ctl_elem_info_get_max_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern long (*snd_ctl_elem_info_get_step_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern long long (*snd_ctl_elem_info_get_min64_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern long long (*snd_ctl_elem_info_get_max64_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern long long (*snd_ctl_elem_info_get_step64_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern unsigned int (*snd_ctl_elem_info_get_items_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern void (*snd_ctl_elem_info_set_item_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*, unsigned int);
+extern const char* (*snd_ctl_elem_info_get_item_name_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_get_dimensions_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern int (*snd_ctl_elem_info_get_dimension_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*, unsigned int);
+extern int (*snd_ctl_elem_info_set_dimension_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*,const int [4]);
+extern void (*snd_ctl_elem_info_get_id_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*, snd_ctl_elem_id_t*);
+extern unsigned int (*snd_ctl_elem_info_get_numid_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern snd_ctl_elem_iface_t (*snd_ctl_elem_info_get_interface_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern unsigned int (*snd_ctl_elem_info_get_device_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern unsigned int (*snd_ctl_elem_info_get_subdevice_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern const char* (*snd_ctl_elem_info_get_name_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern unsigned int (*snd_ctl_elem_info_get_index_dylibloader_wrapper_asound)(const snd_ctl_elem_info_t*);
+extern void (*snd_ctl_elem_info_set_id_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*,const snd_ctl_elem_id_t*);
+extern void (*snd_ctl_elem_info_set_numid_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*, unsigned int);
+extern void (*snd_ctl_elem_info_set_interface_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*, snd_ctl_elem_iface_t);
+extern void (*snd_ctl_elem_info_set_device_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*, unsigned int);
+extern void (*snd_ctl_elem_info_set_subdevice_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*, unsigned int);
+extern void (*snd_ctl_elem_info_set_name_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*,const char*);
+extern void (*snd_ctl_elem_info_set_index_dylibloader_wrapper_asound)( snd_ctl_elem_info_t*, unsigned int);
+extern int (*snd_ctl_add_integer_elem_set_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_info_t*, unsigned int, unsigned int, long, long, long);
+extern int (*snd_ctl_add_integer64_elem_set_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_info_t*, unsigned int, unsigned int, long long, long long, long long);
+extern int (*snd_ctl_add_boolean_elem_set_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_info_t*, unsigned int, unsigned int);
+extern int (*snd_ctl_add_enumerated_elem_set_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_info_t*, unsigned int, unsigned int, unsigned int,const char* []);
+extern int (*snd_ctl_add_bytes_elem_set_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_info_t*, unsigned int, unsigned int);
+extern int (*snd_ctl_elem_add_integer_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*, unsigned int, long, long, long);
+extern int (*snd_ctl_elem_add_integer64_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*, unsigned int, long long, long long, long long);
+extern int (*snd_ctl_elem_add_boolean_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*, unsigned int);
+extern int (*snd_ctl_elem_add_enumerated_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*, unsigned int, unsigned int,const char* []);
+extern int (*snd_ctl_elem_add_iec958_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*);
+extern int (*snd_ctl_elem_remove_dylibloader_wrapper_asound)( snd_ctl_t*, snd_ctl_elem_id_t*);
+extern size_t (*snd_ctl_elem_value_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_ctl_elem_value_malloc_dylibloader_wrapper_asound)( snd_ctl_elem_value_t**);
+extern void (*snd_ctl_elem_value_free_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*);
+extern void (*snd_ctl_elem_value_clear_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*);
+extern void (*snd_ctl_elem_value_copy_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*,const snd_ctl_elem_value_t*);
+extern int (*snd_ctl_elem_value_compare_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*,const snd_ctl_elem_value_t*);
+extern void (*snd_ctl_elem_value_get_id_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*, snd_ctl_elem_id_t*);
+extern unsigned int (*snd_ctl_elem_value_get_numid_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*);
+extern snd_ctl_elem_iface_t (*snd_ctl_elem_value_get_interface_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*);
+extern unsigned int (*snd_ctl_elem_value_get_device_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*);
+extern unsigned int (*snd_ctl_elem_value_get_subdevice_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*);
+extern const char* (*snd_ctl_elem_value_get_name_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*);
+extern unsigned int (*snd_ctl_elem_value_get_index_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*);
+extern void (*snd_ctl_elem_value_set_id_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*,const snd_ctl_elem_id_t*);
+extern void (*snd_ctl_elem_value_set_numid_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, unsigned int);
+extern void (*snd_ctl_elem_value_set_interface_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, snd_ctl_elem_iface_t);
+extern void (*snd_ctl_elem_value_set_device_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, unsigned int);
+extern void (*snd_ctl_elem_value_set_subdevice_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, unsigned int);
+extern void (*snd_ctl_elem_value_set_name_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*,const char*);
+extern void (*snd_ctl_elem_value_set_index_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, unsigned int);
+extern int (*snd_ctl_elem_value_get_boolean_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*, unsigned int);
+extern long (*snd_ctl_elem_value_get_integer_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*, unsigned int);
+extern long long (*snd_ctl_elem_value_get_integer64_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*, unsigned int);
+extern unsigned int (*snd_ctl_elem_value_get_enumerated_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*, unsigned int);
+extern unsigned char (*snd_ctl_elem_value_get_byte_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*, unsigned int);
+extern void (*snd_ctl_elem_value_set_boolean_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, unsigned int, long);
+extern void (*snd_ctl_elem_value_set_integer_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, unsigned int, long);
+extern void (*snd_ctl_elem_value_set_integer64_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, unsigned int, long long);
+extern void (*snd_ctl_elem_value_set_enumerated_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, unsigned int, unsigned int);
+extern void (*snd_ctl_elem_value_set_byte_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, unsigned int, unsigned char);
+extern void (*snd_ctl_elem_set_bytes_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*, void*, size_t);
+extern const void* (*snd_ctl_elem_value_get_bytes_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*);
+extern void (*snd_ctl_elem_value_get_iec958_dylibloader_wrapper_asound)(const snd_ctl_elem_value_t*, snd_aes_iec958_t*);
+extern void (*snd_ctl_elem_value_set_iec958_dylibloader_wrapper_asound)( snd_ctl_elem_value_t*,const snd_aes_iec958_t*);
+extern int (*snd_tlv_parse_dB_info_dylibloader_wrapper_asound)( unsigned int*, unsigned int, unsigned int**);
+extern int (*snd_tlv_get_dB_range_dylibloader_wrapper_asound)( unsigned int*, long, long, long*, long*);
+extern int (*snd_tlv_convert_to_dB_dylibloader_wrapper_asound)( unsigned int*, long, long, long, long*);
+extern int (*snd_tlv_convert_from_dB_dylibloader_wrapper_asound)( unsigned int*, long, long, long, long*, int);
+extern int (*snd_ctl_get_dB_range_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*, long*, long*);
+extern int (*snd_ctl_convert_to_dB_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*, long, long*);
+extern int (*snd_ctl_convert_from_dB_dylibloader_wrapper_asound)( snd_ctl_t*,const snd_ctl_elem_id_t*, long, long*, int);
+extern int (*snd_hctl_compare_fast_dylibloader_wrapper_asound)(const snd_hctl_elem_t*,const snd_hctl_elem_t*);
+extern int (*snd_hctl_open_dylibloader_wrapper_asound)( snd_hctl_t**,const char*, int);
+extern int (*snd_hctl_open_ctl_dylibloader_wrapper_asound)( snd_hctl_t**, snd_ctl_t*);
+extern int (*snd_hctl_close_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern int (*snd_hctl_nonblock_dylibloader_wrapper_asound)( snd_hctl_t*, int);
+extern int (*snd_hctl_poll_descriptors_count_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern int (*snd_hctl_poll_descriptors_dylibloader_wrapper_asound)( snd_hctl_t*,struct pollfd*, unsigned int);
+extern int (*snd_hctl_poll_descriptors_revents_dylibloader_wrapper_asound)( snd_hctl_t*,struct pollfd*, unsigned int, unsigned short*);
+extern unsigned int (*snd_hctl_get_count_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern int (*snd_hctl_set_compare_dylibloader_wrapper_asound)( snd_hctl_t*, snd_hctl_compare_t);
+extern snd_hctl_elem_t* (*snd_hctl_first_elem_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern snd_hctl_elem_t* (*snd_hctl_last_elem_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern snd_hctl_elem_t* (*snd_hctl_find_elem_dylibloader_wrapper_asound)( snd_hctl_t*,const snd_ctl_elem_id_t*);
+extern void (*snd_hctl_set_callback_dylibloader_wrapper_asound)( snd_hctl_t*, snd_hctl_callback_t);
+extern void (*snd_hctl_set_callback_private_dylibloader_wrapper_asound)( snd_hctl_t*, void*);
+extern void* (*snd_hctl_get_callback_private_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern int (*snd_hctl_load_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern int (*snd_hctl_free_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern int (*snd_hctl_handle_events_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern const char* (*snd_hctl_name_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern int (*snd_hctl_wait_dylibloader_wrapper_asound)( snd_hctl_t*, int);
+extern snd_ctl_t* (*snd_hctl_ctl_dylibloader_wrapper_asound)( snd_hctl_t*);
+extern snd_hctl_elem_t* (*snd_hctl_elem_next_dylibloader_wrapper_asound)( snd_hctl_elem_t*);
+extern snd_hctl_elem_t* (*snd_hctl_elem_prev_dylibloader_wrapper_asound)( snd_hctl_elem_t*);
+extern int (*snd_hctl_elem_info_dylibloader_wrapper_asound)( snd_hctl_elem_t*, snd_ctl_elem_info_t*);
+extern int (*snd_hctl_elem_read_dylibloader_wrapper_asound)( snd_hctl_elem_t*, snd_ctl_elem_value_t*);
+extern int (*snd_hctl_elem_write_dylibloader_wrapper_asound)( snd_hctl_elem_t*, snd_ctl_elem_value_t*);
+extern int (*snd_hctl_elem_tlv_read_dylibloader_wrapper_asound)( snd_hctl_elem_t*, unsigned int*, unsigned int);
+extern int (*snd_hctl_elem_tlv_write_dylibloader_wrapper_asound)( snd_hctl_elem_t*,const unsigned int*);
+extern int (*snd_hctl_elem_tlv_command_dylibloader_wrapper_asound)( snd_hctl_elem_t*,const unsigned int*);
+extern snd_hctl_t* (*snd_hctl_elem_get_hctl_dylibloader_wrapper_asound)( snd_hctl_elem_t*);
+extern void (*snd_hctl_elem_get_id_dylibloader_wrapper_asound)(const snd_hctl_elem_t*, snd_ctl_elem_id_t*);
+extern unsigned int (*snd_hctl_elem_get_numid_dylibloader_wrapper_asound)(const snd_hctl_elem_t*);
+extern snd_ctl_elem_iface_t (*snd_hctl_elem_get_interface_dylibloader_wrapper_asound)(const snd_hctl_elem_t*);
+extern unsigned int (*snd_hctl_elem_get_device_dylibloader_wrapper_asound)(const snd_hctl_elem_t*);
+extern unsigned int (*snd_hctl_elem_get_subdevice_dylibloader_wrapper_asound)(const snd_hctl_elem_t*);
+extern const char* (*snd_hctl_elem_get_name_dylibloader_wrapper_asound)(const snd_hctl_elem_t*);
+extern unsigned int (*snd_hctl_elem_get_index_dylibloader_wrapper_asound)(const snd_hctl_elem_t*);
+extern void (*snd_hctl_elem_set_callback_dylibloader_wrapper_asound)( snd_hctl_elem_t*, snd_hctl_elem_callback_t);
+extern void* (*snd_hctl_elem_get_callback_private_dylibloader_wrapper_asound)(const snd_hctl_elem_t*);
+extern void (*snd_hctl_elem_set_callback_private_dylibloader_wrapper_asound)( snd_hctl_elem_t*, void*);
+extern int (*snd_sctl_build_dylibloader_wrapper_asound)( snd_sctl_t**, snd_ctl_t*, snd_config_t*, snd_config_t*, int);
+extern int (*snd_sctl_free_dylibloader_wrapper_asound)( snd_sctl_t*);
+extern int (*snd_sctl_install_dylibloader_wrapper_asound)( snd_sctl_t*);
+extern int (*snd_sctl_remove_dylibloader_wrapper_asound)( snd_sctl_t*);
+extern int (*snd_mixer_open_dylibloader_wrapper_asound)( snd_mixer_t**, int);
+extern int (*snd_mixer_close_dylibloader_wrapper_asound)( snd_mixer_t*);
+extern snd_mixer_elem_t* (*snd_mixer_first_elem_dylibloader_wrapper_asound)( snd_mixer_t*);
+extern snd_mixer_elem_t* (*snd_mixer_last_elem_dylibloader_wrapper_asound)( snd_mixer_t*);
+extern int (*snd_mixer_handle_events_dylibloader_wrapper_asound)( snd_mixer_t*);
+extern int (*snd_mixer_attach_dylibloader_wrapper_asound)( snd_mixer_t*,const char*);
+extern int (*snd_mixer_attach_hctl_dylibloader_wrapper_asound)( snd_mixer_t*, snd_hctl_t*);
+extern int (*snd_mixer_detach_dylibloader_wrapper_asound)( snd_mixer_t*,const char*);
+extern int (*snd_mixer_detach_hctl_dylibloader_wrapper_asound)( snd_mixer_t*, snd_hctl_t*);
+extern int (*snd_mixer_get_hctl_dylibloader_wrapper_asound)( snd_mixer_t*,const char*, snd_hctl_t**);
+extern int (*snd_mixer_poll_descriptors_count_dylibloader_wrapper_asound)( snd_mixer_t*);
+extern int (*snd_mixer_poll_descriptors_dylibloader_wrapper_asound)( snd_mixer_t*,struct pollfd*, unsigned int);
+extern int (*snd_mixer_poll_descriptors_revents_dylibloader_wrapper_asound)( snd_mixer_t*,struct pollfd*, unsigned int, unsigned short*);
+extern int (*snd_mixer_load_dylibloader_wrapper_asound)( snd_mixer_t*);
+extern void (*snd_mixer_free_dylibloader_wrapper_asound)( snd_mixer_t*);
+extern int (*snd_mixer_wait_dylibloader_wrapper_asound)( snd_mixer_t*, int);
+extern int (*snd_mixer_set_compare_dylibloader_wrapper_asound)( snd_mixer_t*, snd_mixer_compare_t);
+extern void (*snd_mixer_set_callback_dylibloader_wrapper_asound)( snd_mixer_t*, snd_mixer_callback_t);
+extern void* (*snd_mixer_get_callback_private_dylibloader_wrapper_asound)(const snd_mixer_t*);
+extern void (*snd_mixer_set_callback_private_dylibloader_wrapper_asound)( snd_mixer_t*, void*);
+extern unsigned int (*snd_mixer_get_count_dylibloader_wrapper_asound)(const snd_mixer_t*);
+extern int (*snd_mixer_class_unregister_dylibloader_wrapper_asound)( snd_mixer_class_t*);
+extern snd_mixer_elem_t* (*snd_mixer_elem_next_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern snd_mixer_elem_t* (*snd_mixer_elem_prev_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern void (*snd_mixer_elem_set_callback_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_elem_callback_t);
+extern void* (*snd_mixer_elem_get_callback_private_dylibloader_wrapper_asound)(const snd_mixer_elem_t*);
+extern void (*snd_mixer_elem_set_callback_private_dylibloader_wrapper_asound)( snd_mixer_elem_t*, void*);
+extern snd_mixer_elem_type_t (*snd_mixer_elem_get_type_dylibloader_wrapper_asound)(const snd_mixer_elem_t*);
+extern int (*snd_mixer_class_register_dylibloader_wrapper_asound)( snd_mixer_class_t*, snd_mixer_t*);
+extern int (*snd_mixer_elem_new_dylibloader_wrapper_asound)( snd_mixer_elem_t**, snd_mixer_elem_type_t, int, void*, void*);
+extern int (*snd_mixer_elem_add_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_class_t*);
+extern int (*snd_mixer_elem_remove_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern void (*snd_mixer_elem_free_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_elem_info_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_elem_value_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_elem_attach_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_hctl_elem_t*);
+extern int (*snd_mixer_elem_detach_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_hctl_elem_t*);
+extern int (*snd_mixer_elem_empty_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern void* (*snd_mixer_elem_get_private_dylibloader_wrapper_asound)(const snd_mixer_elem_t*);
+extern size_t (*snd_mixer_class_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_mixer_class_malloc_dylibloader_wrapper_asound)( snd_mixer_class_t**);
+extern void (*snd_mixer_class_free_dylibloader_wrapper_asound)( snd_mixer_class_t*);
+extern void (*snd_mixer_class_copy_dylibloader_wrapper_asound)( snd_mixer_class_t*,const snd_mixer_class_t*);
+extern snd_mixer_t* (*snd_mixer_class_get_mixer_dylibloader_wrapper_asound)(const snd_mixer_class_t*);
+extern snd_mixer_event_t (*snd_mixer_class_get_event_dylibloader_wrapper_asound)(const snd_mixer_class_t*);
+extern void* (*snd_mixer_class_get_private_dylibloader_wrapper_asound)(const snd_mixer_class_t*);
+extern snd_mixer_compare_t (*snd_mixer_class_get_compare_dylibloader_wrapper_asound)(const snd_mixer_class_t*);
+extern int (*snd_mixer_class_set_event_dylibloader_wrapper_asound)( snd_mixer_class_t*, snd_mixer_event_t);
+extern int (*snd_mixer_class_set_private_dylibloader_wrapper_asound)( snd_mixer_class_t*, void*);
+extern int (*snd_mixer_class_set_private_free_dylibloader_wrapper_asound)( snd_mixer_class_t*, void*);
+extern int (*snd_mixer_class_set_compare_dylibloader_wrapper_asound)( snd_mixer_class_t*, snd_mixer_compare_t);
+extern const char* (*snd_mixer_selem_channel_name_dylibloader_wrapper_asound)( snd_mixer_selem_channel_id_t);
+extern int (*snd_mixer_selem_register_dylibloader_wrapper_asound)( snd_mixer_t*,struct snd_mixer_selem_regopt*, snd_mixer_class_t**);
+extern void (*snd_mixer_selem_get_id_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_id_t*);
+extern const char* (*snd_mixer_selem_get_name_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern unsigned int (*snd_mixer_selem_get_index_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern snd_mixer_elem_t* (*snd_mixer_find_selem_dylibloader_wrapper_asound)( snd_mixer_t*,const snd_mixer_selem_id_t*);
+extern int (*snd_mixer_selem_is_active_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_is_playback_mono_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_playback_channel_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t);
+extern int (*snd_mixer_selem_is_capture_mono_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_capture_channel_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t);
+extern int (*snd_mixer_selem_get_capture_group_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_common_volume_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_playback_volume_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_playback_volume_joined_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_capture_volume_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_capture_volume_joined_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_common_switch_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_playback_switch_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_playback_switch_joined_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_capture_switch_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_capture_switch_joined_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_has_capture_switch_exclusive_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_ask_playback_vol_dB_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long, long*);
+extern int (*snd_mixer_selem_ask_capture_vol_dB_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long, long*);
+extern int (*snd_mixer_selem_ask_playback_dB_vol_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long, int, long*);
+extern int (*snd_mixer_selem_ask_capture_dB_vol_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long, int, long*);
+extern int (*snd_mixer_selem_get_playback_volume_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, long*);
+extern int (*snd_mixer_selem_get_capture_volume_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, long*);
+extern int (*snd_mixer_selem_get_playback_dB_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, long*);
+extern int (*snd_mixer_selem_get_capture_dB_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, long*);
+extern int (*snd_mixer_selem_get_playback_switch_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, int*);
+extern int (*snd_mixer_selem_get_capture_switch_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, int*);
+extern int (*snd_mixer_selem_set_playback_volume_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, long);
+extern int (*snd_mixer_selem_set_capture_volume_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, long);
+extern int (*snd_mixer_selem_set_playback_dB_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, long, int);
+extern int (*snd_mixer_selem_set_capture_dB_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, long, int);
+extern int (*snd_mixer_selem_set_playback_volume_all_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long);
+extern int (*snd_mixer_selem_set_capture_volume_all_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long);
+extern int (*snd_mixer_selem_set_playback_dB_all_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long, int);
+extern int (*snd_mixer_selem_set_capture_dB_all_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long, int);
+extern int (*snd_mixer_selem_set_playback_switch_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, int);
+extern int (*snd_mixer_selem_set_capture_switch_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, int);
+extern int (*snd_mixer_selem_set_playback_switch_all_dylibloader_wrapper_asound)( snd_mixer_elem_t*, int);
+extern int (*snd_mixer_selem_set_capture_switch_all_dylibloader_wrapper_asound)( snd_mixer_elem_t*, int);
+extern int (*snd_mixer_selem_get_playback_volume_range_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long*, long*);
+extern int (*snd_mixer_selem_get_playback_dB_range_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long*, long*);
+extern int (*snd_mixer_selem_set_playback_volume_range_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long, long);
+extern int (*snd_mixer_selem_get_capture_volume_range_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long*, long*);
+extern int (*snd_mixer_selem_get_capture_dB_range_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long*, long*);
+extern int (*snd_mixer_selem_set_capture_volume_range_dylibloader_wrapper_asound)( snd_mixer_elem_t*, long, long);
+extern int (*snd_mixer_selem_is_enumerated_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_is_enum_playback_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_is_enum_capture_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_get_enum_items_dylibloader_wrapper_asound)( snd_mixer_elem_t*);
+extern int (*snd_mixer_selem_get_enum_item_name_dylibloader_wrapper_asound)( snd_mixer_elem_t*, unsigned int, size_t, char*);
+extern int (*snd_mixer_selem_get_enum_item_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, unsigned int*);
+extern int (*snd_mixer_selem_set_enum_item_dylibloader_wrapper_asound)( snd_mixer_elem_t*, snd_mixer_selem_channel_id_t, unsigned int);
+extern size_t (*snd_mixer_selem_id_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_mixer_selem_id_malloc_dylibloader_wrapper_asound)( snd_mixer_selem_id_t**);
+extern void (*snd_mixer_selem_id_free_dylibloader_wrapper_asound)( snd_mixer_selem_id_t*);
+extern void (*snd_mixer_selem_id_copy_dylibloader_wrapper_asound)( snd_mixer_selem_id_t*,const snd_mixer_selem_id_t*);
+extern const char* (*snd_mixer_selem_id_get_name_dylibloader_wrapper_asound)(const snd_mixer_selem_id_t*);
+extern unsigned int (*snd_mixer_selem_id_get_index_dylibloader_wrapper_asound)(const snd_mixer_selem_id_t*);
+extern void (*snd_mixer_selem_id_set_name_dylibloader_wrapper_asound)( snd_mixer_selem_id_t*,const char*);
+extern void (*snd_mixer_selem_id_set_index_dylibloader_wrapper_asound)( snd_mixer_selem_id_t*, unsigned int);
+extern int (*snd_seq_open_dylibloader_wrapper_asound)( snd_seq_t**,const char*, int, int);
+extern int (*snd_seq_open_lconf_dylibloader_wrapper_asound)( snd_seq_t**,const char*, int, int, snd_config_t*);
+extern const char* (*snd_seq_name_dylibloader_wrapper_asound)( snd_seq_t*);
+extern snd_seq_type_t (*snd_seq_type_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_close_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_poll_descriptors_count_dylibloader_wrapper_asound)( snd_seq_t*, short);
+extern int (*snd_seq_poll_descriptors_dylibloader_wrapper_asound)( snd_seq_t*,struct pollfd*, unsigned int, short);
+extern int (*snd_seq_poll_descriptors_revents_dylibloader_wrapper_asound)( snd_seq_t*,struct pollfd*, unsigned int, unsigned short*);
+extern int (*snd_seq_nonblock_dylibloader_wrapper_asound)( snd_seq_t*, int);
+extern int (*snd_seq_client_id_dylibloader_wrapper_asound)( snd_seq_t*);
+extern size_t (*snd_seq_get_output_buffer_size_dylibloader_wrapper_asound)( snd_seq_t*);
+extern size_t (*snd_seq_get_input_buffer_size_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_set_output_buffer_size_dylibloader_wrapper_asound)( snd_seq_t*, size_t);
+extern int (*snd_seq_set_input_buffer_size_dylibloader_wrapper_asound)( snd_seq_t*, size_t);
+extern size_t (*snd_seq_system_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_system_info_malloc_dylibloader_wrapper_asound)( snd_seq_system_info_t**);
+extern void (*snd_seq_system_info_free_dylibloader_wrapper_asound)( snd_seq_system_info_t*);
+extern void (*snd_seq_system_info_copy_dylibloader_wrapper_asound)( snd_seq_system_info_t*,const snd_seq_system_info_t*);
+extern int (*snd_seq_system_info_get_queues_dylibloader_wrapper_asound)(const snd_seq_system_info_t*);
+extern int (*snd_seq_system_info_get_clients_dylibloader_wrapper_asound)(const snd_seq_system_info_t*);
+extern int (*snd_seq_system_info_get_ports_dylibloader_wrapper_asound)(const snd_seq_system_info_t*);
+extern int (*snd_seq_system_info_get_channels_dylibloader_wrapper_asound)(const snd_seq_system_info_t*);
+extern int (*snd_seq_system_info_get_cur_clients_dylibloader_wrapper_asound)(const snd_seq_system_info_t*);
+extern int (*snd_seq_system_info_get_cur_queues_dylibloader_wrapper_asound)(const snd_seq_system_info_t*);
+extern int (*snd_seq_system_info_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_system_info_t*);
+extern size_t (*snd_seq_client_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_client_info_malloc_dylibloader_wrapper_asound)( snd_seq_client_info_t**);
+extern void (*snd_seq_client_info_free_dylibloader_wrapper_asound)( snd_seq_client_info_t*);
+extern void (*snd_seq_client_info_copy_dylibloader_wrapper_asound)( snd_seq_client_info_t*,const snd_seq_client_info_t*);
+extern int (*snd_seq_client_info_get_client_dylibloader_wrapper_asound)(const snd_seq_client_info_t*);
+extern snd_seq_client_type_t (*snd_seq_client_info_get_type_dylibloader_wrapper_asound)(const snd_seq_client_info_t*);
+extern const char* (*snd_seq_client_info_get_name_dylibloader_wrapper_asound)( snd_seq_client_info_t*);
+extern int (*snd_seq_client_info_get_broadcast_filter_dylibloader_wrapper_asound)(const snd_seq_client_info_t*);
+extern int (*snd_seq_client_info_get_error_bounce_dylibloader_wrapper_asound)(const snd_seq_client_info_t*);
+extern int (*snd_seq_client_info_get_card_dylibloader_wrapper_asound)(const snd_seq_client_info_t*);
+extern int (*snd_seq_client_info_get_pid_dylibloader_wrapper_asound)(const snd_seq_client_info_t*);
+extern const unsigned char* (*snd_seq_client_info_get_event_filter_dylibloader_wrapper_asound)(const snd_seq_client_info_t*);
+extern int (*snd_seq_client_info_get_num_ports_dylibloader_wrapper_asound)(const snd_seq_client_info_t*);
+extern int (*snd_seq_client_info_get_event_lost_dylibloader_wrapper_asound)(const snd_seq_client_info_t*);
+extern void (*snd_seq_client_info_set_client_dylibloader_wrapper_asound)( snd_seq_client_info_t*, int);
+extern void (*snd_seq_client_info_set_name_dylibloader_wrapper_asound)( snd_seq_client_info_t*,const char*);
+extern void (*snd_seq_client_info_set_broadcast_filter_dylibloader_wrapper_asound)( snd_seq_client_info_t*, int);
+extern void (*snd_seq_client_info_set_error_bounce_dylibloader_wrapper_asound)( snd_seq_client_info_t*, int);
+extern void (*snd_seq_client_info_set_event_filter_dylibloader_wrapper_asound)( snd_seq_client_info_t*, unsigned char*);
+extern void (*snd_seq_client_info_event_filter_clear_dylibloader_wrapper_asound)( snd_seq_client_info_t*);
+extern void (*snd_seq_client_info_event_filter_add_dylibloader_wrapper_asound)( snd_seq_client_info_t*, int);
+extern void (*snd_seq_client_info_event_filter_del_dylibloader_wrapper_asound)( snd_seq_client_info_t*, int);
+extern int (*snd_seq_client_info_event_filter_check_dylibloader_wrapper_asound)( snd_seq_client_info_t*, int);
+extern int (*snd_seq_get_client_info_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_client_info_t*);
+extern int (*snd_seq_get_any_client_info_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_client_info_t*);
+extern int (*snd_seq_set_client_info_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_client_info_t*);
+extern int (*snd_seq_query_next_client_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_client_info_t*);
+extern size_t (*snd_seq_client_pool_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_client_pool_malloc_dylibloader_wrapper_asound)( snd_seq_client_pool_t**);
+extern void (*snd_seq_client_pool_free_dylibloader_wrapper_asound)( snd_seq_client_pool_t*);
+extern void (*snd_seq_client_pool_copy_dylibloader_wrapper_asound)( snd_seq_client_pool_t*,const snd_seq_client_pool_t*);
+extern int (*snd_seq_client_pool_get_client_dylibloader_wrapper_asound)(const snd_seq_client_pool_t*);
+extern size_t (*snd_seq_client_pool_get_output_pool_dylibloader_wrapper_asound)(const snd_seq_client_pool_t*);
+extern size_t (*snd_seq_client_pool_get_input_pool_dylibloader_wrapper_asound)(const snd_seq_client_pool_t*);
+extern size_t (*snd_seq_client_pool_get_output_room_dylibloader_wrapper_asound)(const snd_seq_client_pool_t*);
+extern size_t (*snd_seq_client_pool_get_output_free_dylibloader_wrapper_asound)(const snd_seq_client_pool_t*);
+extern size_t (*snd_seq_client_pool_get_input_free_dylibloader_wrapper_asound)(const snd_seq_client_pool_t*);
+extern void (*snd_seq_client_pool_set_output_pool_dylibloader_wrapper_asound)( snd_seq_client_pool_t*, size_t);
+extern void (*snd_seq_client_pool_set_input_pool_dylibloader_wrapper_asound)( snd_seq_client_pool_t*, size_t);
+extern void (*snd_seq_client_pool_set_output_room_dylibloader_wrapper_asound)( snd_seq_client_pool_t*, size_t);
+extern int (*snd_seq_get_client_pool_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_client_pool_t*);
+extern int (*snd_seq_set_client_pool_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_client_pool_t*);
+extern size_t (*snd_seq_port_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_port_info_malloc_dylibloader_wrapper_asound)( snd_seq_port_info_t**);
+extern void (*snd_seq_port_info_free_dylibloader_wrapper_asound)( snd_seq_port_info_t*);
+extern void (*snd_seq_port_info_copy_dylibloader_wrapper_asound)( snd_seq_port_info_t*,const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_client_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_port_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern const snd_seq_addr_t* (*snd_seq_port_info_get_addr_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern const char* (*snd_seq_port_info_get_name_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern unsigned int (*snd_seq_port_info_get_capability_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern unsigned int (*snd_seq_port_info_get_type_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_midi_channels_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_midi_voices_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_synth_voices_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_read_use_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_write_use_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_port_specified_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_timestamping_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_timestamp_real_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern int (*snd_seq_port_info_get_timestamp_queue_dylibloader_wrapper_asound)(const snd_seq_port_info_t*);
+extern void (*snd_seq_port_info_set_client_dylibloader_wrapper_asound)( snd_seq_port_info_t*, int);
+extern void (*snd_seq_port_info_set_port_dylibloader_wrapper_asound)( snd_seq_port_info_t*, int);
+extern void (*snd_seq_port_info_set_addr_dylibloader_wrapper_asound)( snd_seq_port_info_t*,const snd_seq_addr_t*);
+extern void (*snd_seq_port_info_set_name_dylibloader_wrapper_asound)( snd_seq_port_info_t*,const char*);
+extern void (*snd_seq_port_info_set_capability_dylibloader_wrapper_asound)( snd_seq_port_info_t*, unsigned int);
+extern void (*snd_seq_port_info_set_type_dylibloader_wrapper_asound)( snd_seq_port_info_t*, unsigned int);
+extern void (*snd_seq_port_info_set_midi_channels_dylibloader_wrapper_asound)( snd_seq_port_info_t*, int);
+extern void (*snd_seq_port_info_set_midi_voices_dylibloader_wrapper_asound)( snd_seq_port_info_t*, int);
+extern void (*snd_seq_port_info_set_synth_voices_dylibloader_wrapper_asound)( snd_seq_port_info_t*, int);
+extern void (*snd_seq_port_info_set_port_specified_dylibloader_wrapper_asound)( snd_seq_port_info_t*, int);
+extern void (*snd_seq_port_info_set_timestamping_dylibloader_wrapper_asound)( snd_seq_port_info_t*, int);
+extern void (*snd_seq_port_info_set_timestamp_real_dylibloader_wrapper_asound)( snd_seq_port_info_t*, int);
+extern void (*snd_seq_port_info_set_timestamp_queue_dylibloader_wrapper_asound)( snd_seq_port_info_t*, int);
+extern int (*snd_seq_create_port_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_port_info_t*);
+extern int (*snd_seq_delete_port_dylibloader_wrapper_asound)( snd_seq_t*, int);
+extern int (*snd_seq_get_port_info_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_port_info_t*);
+extern int (*snd_seq_get_any_port_info_dylibloader_wrapper_asound)( snd_seq_t*, int, int, snd_seq_port_info_t*);
+extern int (*snd_seq_set_port_info_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_port_info_t*);
+extern int (*snd_seq_query_next_port_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_port_info_t*);
+extern size_t (*snd_seq_port_subscribe_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_port_subscribe_malloc_dylibloader_wrapper_asound)( snd_seq_port_subscribe_t**);
+extern void (*snd_seq_port_subscribe_free_dylibloader_wrapper_asound)( snd_seq_port_subscribe_t*);
+extern void (*snd_seq_port_subscribe_copy_dylibloader_wrapper_asound)( snd_seq_port_subscribe_t*,const snd_seq_port_subscribe_t*);
+extern const snd_seq_addr_t* (*snd_seq_port_subscribe_get_sender_dylibloader_wrapper_asound)(const snd_seq_port_subscribe_t*);
+extern const snd_seq_addr_t* (*snd_seq_port_subscribe_get_dest_dylibloader_wrapper_asound)(const snd_seq_port_subscribe_t*);
+extern int (*snd_seq_port_subscribe_get_queue_dylibloader_wrapper_asound)(const snd_seq_port_subscribe_t*);
+extern int (*snd_seq_port_subscribe_get_exclusive_dylibloader_wrapper_asound)(const snd_seq_port_subscribe_t*);
+extern int (*snd_seq_port_subscribe_get_time_update_dylibloader_wrapper_asound)(const snd_seq_port_subscribe_t*);
+extern int (*snd_seq_port_subscribe_get_time_real_dylibloader_wrapper_asound)(const snd_seq_port_subscribe_t*);
+extern void (*snd_seq_port_subscribe_set_sender_dylibloader_wrapper_asound)( snd_seq_port_subscribe_t*,const snd_seq_addr_t*);
+extern void (*snd_seq_port_subscribe_set_dest_dylibloader_wrapper_asound)( snd_seq_port_subscribe_t*,const snd_seq_addr_t*);
+extern void (*snd_seq_port_subscribe_set_queue_dylibloader_wrapper_asound)( snd_seq_port_subscribe_t*, int);
+extern void (*snd_seq_port_subscribe_set_exclusive_dylibloader_wrapper_asound)( snd_seq_port_subscribe_t*, int);
+extern void (*snd_seq_port_subscribe_set_time_update_dylibloader_wrapper_asound)( snd_seq_port_subscribe_t*, int);
+extern void (*snd_seq_port_subscribe_set_time_real_dylibloader_wrapper_asound)( snd_seq_port_subscribe_t*, int);
+extern int (*snd_seq_get_port_subscription_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_port_subscribe_t*);
+extern int (*snd_seq_subscribe_port_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_port_subscribe_t*);
+extern int (*snd_seq_unsubscribe_port_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_port_subscribe_t*);
+extern size_t (*snd_seq_query_subscribe_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_query_subscribe_malloc_dylibloader_wrapper_asound)( snd_seq_query_subscribe_t**);
+extern void (*snd_seq_query_subscribe_free_dylibloader_wrapper_asound)( snd_seq_query_subscribe_t*);
+extern void (*snd_seq_query_subscribe_copy_dylibloader_wrapper_asound)( snd_seq_query_subscribe_t*,const snd_seq_query_subscribe_t*);
+extern int (*snd_seq_query_subscribe_get_client_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern int (*snd_seq_query_subscribe_get_port_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern const snd_seq_addr_t* (*snd_seq_query_subscribe_get_root_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern snd_seq_query_subs_type_t (*snd_seq_query_subscribe_get_type_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern int (*snd_seq_query_subscribe_get_index_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern int (*snd_seq_query_subscribe_get_num_subs_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern const snd_seq_addr_t* (*snd_seq_query_subscribe_get_addr_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern int (*snd_seq_query_subscribe_get_queue_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern int (*snd_seq_query_subscribe_get_exclusive_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern int (*snd_seq_query_subscribe_get_time_update_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern int (*snd_seq_query_subscribe_get_time_real_dylibloader_wrapper_asound)(const snd_seq_query_subscribe_t*);
+extern void (*snd_seq_query_subscribe_set_client_dylibloader_wrapper_asound)( snd_seq_query_subscribe_t*, int);
+extern void (*snd_seq_query_subscribe_set_port_dylibloader_wrapper_asound)( snd_seq_query_subscribe_t*, int);
+extern void (*snd_seq_query_subscribe_set_root_dylibloader_wrapper_asound)( snd_seq_query_subscribe_t*,const snd_seq_addr_t*);
+extern void (*snd_seq_query_subscribe_set_type_dylibloader_wrapper_asound)( snd_seq_query_subscribe_t*, snd_seq_query_subs_type_t);
+extern void (*snd_seq_query_subscribe_set_index_dylibloader_wrapper_asound)( snd_seq_query_subscribe_t*, int);
+extern int (*snd_seq_query_port_subscribers_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_query_subscribe_t*);
+extern size_t (*snd_seq_queue_info_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_queue_info_malloc_dylibloader_wrapper_asound)( snd_seq_queue_info_t**);
+extern void (*snd_seq_queue_info_free_dylibloader_wrapper_asound)( snd_seq_queue_info_t*);
+extern void (*snd_seq_queue_info_copy_dylibloader_wrapper_asound)( snd_seq_queue_info_t*,const snd_seq_queue_info_t*);
+extern int (*snd_seq_queue_info_get_queue_dylibloader_wrapper_asound)(const snd_seq_queue_info_t*);
+extern const char* (*snd_seq_queue_info_get_name_dylibloader_wrapper_asound)(const snd_seq_queue_info_t*);
+extern int (*snd_seq_queue_info_get_owner_dylibloader_wrapper_asound)(const snd_seq_queue_info_t*);
+extern int (*snd_seq_queue_info_get_locked_dylibloader_wrapper_asound)(const snd_seq_queue_info_t*);
+extern unsigned int (*snd_seq_queue_info_get_flags_dylibloader_wrapper_asound)(const snd_seq_queue_info_t*);
+extern void (*snd_seq_queue_info_set_name_dylibloader_wrapper_asound)( snd_seq_queue_info_t*,const char*);
+extern void (*snd_seq_queue_info_set_owner_dylibloader_wrapper_asound)( snd_seq_queue_info_t*, int);
+extern void (*snd_seq_queue_info_set_locked_dylibloader_wrapper_asound)( snd_seq_queue_info_t*, int);
+extern void (*snd_seq_queue_info_set_flags_dylibloader_wrapper_asound)( snd_seq_queue_info_t*, unsigned int);
+extern int (*snd_seq_create_queue_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_queue_info_t*);
+extern int (*snd_seq_alloc_named_queue_dylibloader_wrapper_asound)( snd_seq_t*,const char*);
+extern int (*snd_seq_alloc_queue_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_free_queue_dylibloader_wrapper_asound)( snd_seq_t*, int);
+extern int (*snd_seq_get_queue_info_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_queue_info_t*);
+extern int (*snd_seq_set_queue_info_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_queue_info_t*);
+extern int (*snd_seq_query_named_queue_dylibloader_wrapper_asound)( snd_seq_t*,const char*);
+extern int (*snd_seq_get_queue_usage_dylibloader_wrapper_asound)( snd_seq_t*, int);
+extern int (*snd_seq_set_queue_usage_dylibloader_wrapper_asound)( snd_seq_t*, int, int);
+extern size_t (*snd_seq_queue_status_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_queue_status_malloc_dylibloader_wrapper_asound)( snd_seq_queue_status_t**);
+extern void (*snd_seq_queue_status_free_dylibloader_wrapper_asound)( snd_seq_queue_status_t*);
+extern void (*snd_seq_queue_status_copy_dylibloader_wrapper_asound)( snd_seq_queue_status_t*,const snd_seq_queue_status_t*);
+extern int (*snd_seq_queue_status_get_queue_dylibloader_wrapper_asound)(const snd_seq_queue_status_t*);
+extern int (*snd_seq_queue_status_get_events_dylibloader_wrapper_asound)(const snd_seq_queue_status_t*);
+extern snd_seq_tick_time_t (*snd_seq_queue_status_get_tick_time_dylibloader_wrapper_asound)(const snd_seq_queue_status_t*);
+extern const snd_seq_real_time_t* (*snd_seq_queue_status_get_real_time_dylibloader_wrapper_asound)(const snd_seq_queue_status_t*);
+extern unsigned int (*snd_seq_queue_status_get_status_dylibloader_wrapper_asound)(const snd_seq_queue_status_t*);
+extern int (*snd_seq_get_queue_status_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_queue_status_t*);
+extern size_t (*snd_seq_queue_tempo_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_queue_tempo_malloc_dylibloader_wrapper_asound)( snd_seq_queue_tempo_t**);
+extern void (*snd_seq_queue_tempo_free_dylibloader_wrapper_asound)( snd_seq_queue_tempo_t*);
+extern void (*snd_seq_queue_tempo_copy_dylibloader_wrapper_asound)( snd_seq_queue_tempo_t*,const snd_seq_queue_tempo_t*);
+extern int (*snd_seq_queue_tempo_get_queue_dylibloader_wrapper_asound)(const snd_seq_queue_tempo_t*);
+extern unsigned int (*snd_seq_queue_tempo_get_tempo_dylibloader_wrapper_asound)(const snd_seq_queue_tempo_t*);
+extern int (*snd_seq_queue_tempo_get_ppq_dylibloader_wrapper_asound)(const snd_seq_queue_tempo_t*);
+extern unsigned int (*snd_seq_queue_tempo_get_skew_dylibloader_wrapper_asound)(const snd_seq_queue_tempo_t*);
+extern unsigned int (*snd_seq_queue_tempo_get_skew_base_dylibloader_wrapper_asound)(const snd_seq_queue_tempo_t*);
+extern void (*snd_seq_queue_tempo_set_tempo_dylibloader_wrapper_asound)( snd_seq_queue_tempo_t*, unsigned int);
+extern void (*snd_seq_queue_tempo_set_ppq_dylibloader_wrapper_asound)( snd_seq_queue_tempo_t*, int);
+extern void (*snd_seq_queue_tempo_set_skew_dylibloader_wrapper_asound)( snd_seq_queue_tempo_t*, unsigned int);
+extern void (*snd_seq_queue_tempo_set_skew_base_dylibloader_wrapper_asound)( snd_seq_queue_tempo_t*, unsigned int);
+extern int (*snd_seq_get_queue_tempo_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_queue_tempo_t*);
+extern int (*snd_seq_set_queue_tempo_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_queue_tempo_t*);
+extern size_t (*snd_seq_queue_timer_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_queue_timer_malloc_dylibloader_wrapper_asound)( snd_seq_queue_timer_t**);
+extern void (*snd_seq_queue_timer_free_dylibloader_wrapper_asound)( snd_seq_queue_timer_t*);
+extern void (*snd_seq_queue_timer_copy_dylibloader_wrapper_asound)( snd_seq_queue_timer_t*,const snd_seq_queue_timer_t*);
+extern int (*snd_seq_queue_timer_get_queue_dylibloader_wrapper_asound)(const snd_seq_queue_timer_t*);
+extern snd_seq_queue_timer_type_t (*snd_seq_queue_timer_get_type_dylibloader_wrapper_asound)(const snd_seq_queue_timer_t*);
+extern const snd_timer_id_t* (*snd_seq_queue_timer_get_id_dylibloader_wrapper_asound)(const snd_seq_queue_timer_t*);
+extern unsigned int (*snd_seq_queue_timer_get_resolution_dylibloader_wrapper_asound)(const snd_seq_queue_timer_t*);
+extern void (*snd_seq_queue_timer_set_type_dylibloader_wrapper_asound)( snd_seq_queue_timer_t*, snd_seq_queue_timer_type_t);
+extern void (*snd_seq_queue_timer_set_id_dylibloader_wrapper_asound)( snd_seq_queue_timer_t*,const snd_timer_id_t*);
+extern void (*snd_seq_queue_timer_set_resolution_dylibloader_wrapper_asound)( snd_seq_queue_timer_t*, unsigned int);
+extern int (*snd_seq_get_queue_timer_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_queue_timer_t*);
+extern int (*snd_seq_set_queue_timer_dylibloader_wrapper_asound)( snd_seq_t*, int, snd_seq_queue_timer_t*);
+extern int (*snd_seq_free_event_dylibloader_wrapper_asound)( snd_seq_event_t*);
+extern ssize_t (*snd_seq_event_length_dylibloader_wrapper_asound)( snd_seq_event_t*);
+extern int (*snd_seq_event_output_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_event_t*);
+extern int (*snd_seq_event_output_buffer_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_event_t*);
+extern int (*snd_seq_event_output_direct_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_event_t*);
+extern int (*snd_seq_event_input_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_event_t**);
+extern int (*snd_seq_event_input_pending_dylibloader_wrapper_asound)( snd_seq_t*, int);
+extern int (*snd_seq_drain_output_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_event_output_pending_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_extract_output_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_event_t**);
+extern int (*snd_seq_drop_output_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_drop_output_buffer_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_drop_input_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_drop_input_buffer_dylibloader_wrapper_asound)( snd_seq_t*);
+extern size_t (*snd_seq_remove_events_sizeof_dylibloader_wrapper_asound)( void);
+extern int (*snd_seq_remove_events_malloc_dylibloader_wrapper_asound)( snd_seq_remove_events_t**);
+extern void (*snd_seq_remove_events_free_dylibloader_wrapper_asound)( snd_seq_remove_events_t*);
+extern void (*snd_seq_remove_events_copy_dylibloader_wrapper_asound)( snd_seq_remove_events_t*,const snd_seq_remove_events_t*);
+extern unsigned int (*snd_seq_remove_events_get_condition_dylibloader_wrapper_asound)(const snd_seq_remove_events_t*);
+extern int (*snd_seq_remove_events_get_queue_dylibloader_wrapper_asound)(const snd_seq_remove_events_t*);
+extern const snd_seq_timestamp_t* (*snd_seq_remove_events_get_time_dylibloader_wrapper_asound)(const snd_seq_remove_events_t*);
+extern const snd_seq_addr_t* (*snd_seq_remove_events_get_dest_dylibloader_wrapper_asound)(const snd_seq_remove_events_t*);
+extern int (*snd_seq_remove_events_get_channel_dylibloader_wrapper_asound)(const snd_seq_remove_events_t*);
+extern int (*snd_seq_remove_events_get_event_type_dylibloader_wrapper_asound)(const snd_seq_remove_events_t*);
+extern int (*snd_seq_remove_events_get_tag_dylibloader_wrapper_asound)(const snd_seq_remove_events_t*);
+extern void (*snd_seq_remove_events_set_condition_dylibloader_wrapper_asound)( snd_seq_remove_events_t*, unsigned int);
+extern void (*snd_seq_remove_events_set_queue_dylibloader_wrapper_asound)( snd_seq_remove_events_t*, int);
+extern void (*snd_seq_remove_events_set_time_dylibloader_wrapper_asound)( snd_seq_remove_events_t*,const snd_seq_timestamp_t*);
+extern void (*snd_seq_remove_events_set_dest_dylibloader_wrapper_asound)( snd_seq_remove_events_t*,const snd_seq_addr_t*);
+extern void (*snd_seq_remove_events_set_channel_dylibloader_wrapper_asound)( snd_seq_remove_events_t*, int);
+extern void (*snd_seq_remove_events_set_event_type_dylibloader_wrapper_asound)( snd_seq_remove_events_t*, int);
+extern void (*snd_seq_remove_events_set_tag_dylibloader_wrapper_asound)( snd_seq_remove_events_t*, int);
+extern int (*snd_seq_remove_events_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_remove_events_t*);
+extern void (*snd_seq_set_bit_dylibloader_wrapper_asound)( int, void*);
+extern void (*snd_seq_unset_bit_dylibloader_wrapper_asound)( int, void*);
+extern int (*snd_seq_change_bit_dylibloader_wrapper_asound)( int, void*);
+extern int (*snd_seq_get_bit_dylibloader_wrapper_asound)( int, void*);
+extern int (*snd_seq_control_queue_dylibloader_wrapper_asound)( snd_seq_t*, int, int, int, snd_seq_event_t*);
+extern int (*snd_seq_create_simple_port_dylibloader_wrapper_asound)( snd_seq_t*,const char*, unsigned int, unsigned int);
+extern int (*snd_seq_delete_simple_port_dylibloader_wrapper_asound)( snd_seq_t*, int);
+extern int (*snd_seq_connect_from_dylibloader_wrapper_asound)( snd_seq_t*, int, int, int);
+extern int (*snd_seq_connect_to_dylibloader_wrapper_asound)( snd_seq_t*, int, int, int);
+extern int (*snd_seq_disconnect_from_dylibloader_wrapper_asound)( snd_seq_t*, int, int, int);
+extern int (*snd_seq_disconnect_to_dylibloader_wrapper_asound)( snd_seq_t*, int, int, int);
+extern int (*snd_seq_set_client_name_dylibloader_wrapper_asound)( snd_seq_t*,const char*);
+extern int (*snd_seq_set_client_event_filter_dylibloader_wrapper_asound)( snd_seq_t*, int);
+extern int (*snd_seq_set_client_pool_output_dylibloader_wrapper_asound)( snd_seq_t*, size_t);
+extern int (*snd_seq_set_client_pool_output_room_dylibloader_wrapper_asound)( snd_seq_t*, size_t);
+extern int (*snd_seq_set_client_pool_input_dylibloader_wrapper_asound)( snd_seq_t*, size_t);
+extern int (*snd_seq_sync_output_queue_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_parse_address_dylibloader_wrapper_asound)( snd_seq_t*, snd_seq_addr_t*,const char*);
+extern int (*snd_seq_reset_pool_output_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_seq_reset_pool_input_dylibloader_wrapper_asound)( snd_seq_t*);
+extern int (*snd_midi_event_new_dylibloader_wrapper_asound)( size_t, snd_midi_event_t**);
+extern int (*snd_midi_event_resize_buffer_dylibloader_wrapper_asound)( snd_midi_event_t*, size_t);
+extern void (*snd_midi_event_free_dylibloader_wrapper_asound)( snd_midi_event_t*);
+extern void (*snd_midi_event_init_dylibloader_wrapper_asound)( snd_midi_event_t*);
+extern void (*snd_midi_event_reset_encode_dylibloader_wrapper_asound)( snd_midi_event_t*);
+extern void (*snd_midi_event_reset_decode_dylibloader_wrapper_asound)( snd_midi_event_t*);
+extern void (*snd_midi_event_no_status_dylibloader_wrapper_asound)( snd_midi_event_t*, int);
+extern long (*snd_midi_event_encode_dylibloader_wrapper_asound)( snd_midi_event_t*,const unsigned char*, long, snd_seq_event_t*);
+extern int (*snd_midi_event_encode_byte_dylibloader_wrapper_asound)( snd_midi_event_t*, int, snd_seq_event_t*);
+extern long (*snd_midi_event_decode_dylibloader_wrapper_asound)( snd_midi_event_t*, unsigned char*, long,const snd_seq_event_t*);
+int initialize_asound(int verbose);
+#ifdef __cplusplus
+}
+#endif
+#endif
 #else
 #include <alsa/asoundlib.h>
 #endif
@@ -2341,7 +7654,7 @@ void AudioDriverALSA::finish() {
 #include "core/os/os.h"
 
 #ifdef SOWRAP_ENABLED
-#include "drivers/alsa/asound-so_wrap.h"
+
 #else
 #include <alsa/asoundlib.h>
 #endif
@@ -3022,7 +8335,7 @@ EGLManager::~EGLManager() {
 
 #ifdef ALSAMIDI_ENABLED
 #ifdef SOWRAP_ENABLED
-#include "drivers/alsa/asound-so_wrap.h"
+
 #else
 #include <alsa/asoundlib.h>
 #endif
@@ -6136,3 +11449,618 @@ void MIDIDriverWinMidi::close()
 }
 
 #endif // WINMIDI_ENABLED
+
+
+// --- Merged from drivers/png/image_loader_png.cpp ---
+
+
+#include "drivers/png/png_driver_common.h"
+
+Error ImageLoaderPNG::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
+	const uint64_t buffer_size = f->get_length();
+	Vector<uint8_t> file_buffer;
+	Error err = file_buffer.resize(buffer_size);
+	if (err) {
+		return err;
+	}
+	{
+		uint8_t *writer = file_buffer.ptrw();
+		f->get_buffer(writer, buffer_size);
+	}
+	const uint8_t *reader = file_buffer.ptr();
+	return PNGDriverCommon::png_to_image(reader, buffer_size, p_flags & FLAG_FORCE_LINEAR, p_image);
+}
+
+void ImageLoaderPNG::get_recognized_extensions(List<String> *p_extensions) const {
+	p_extensions->push_back("png");
+}
+
+Ref<Image> ImageLoaderPNG::load_mem_png(const uint8_t *p_png, int p_size) {
+	Ref<Image> img;
+	img.instantiate();
+
+	// the value of p_force_linear does not matter since it only applies to 16 bit
+	Error err = PNGDriverCommon::png_to_image(p_png, p_size, false, img);
+	ERR_FAIL_COND_V(err, Ref<Image>());
+
+	return img;
+}
+
+Ref<Image> ImageLoaderPNG::unpack_mem_png(const uint8_t *p_png, int p_size) {
+	ERR_FAIL_COND_V(p_size < 4, Ref<Image>());
+	ERR_FAIL_COND_V(p_png[0] != 'P' || p_png[1] != 'N' || p_png[2] != 'G' || p_png[3] != ' ', Ref<Image>());
+	return load_mem_png(&p_png[4], p_size - 4);
+}
+
+Ref<Image> ImageLoaderPNG::lossless_unpack_png(const Vector<uint8_t> &p_data) {
+	return unpack_mem_png(p_data.ptr(), p_data.size());
+}
+
+Vector<uint8_t> ImageLoaderPNG::lossless_pack_png(const Ref<Image> &p_image) {
+	Vector<uint8_t> out_buffer;
+
+	// add Godot's own "PNG " prefix
+	if (out_buffer.resize(4) != OK) {
+		ERR_FAIL_V(Vector<uint8_t>());
+	}
+
+	// scope for writer lifetime
+	{
+		// must be closed before call to image_to_png
+		uint8_t *writer = out_buffer.ptrw();
+		memcpy(writer, "PNG ", 4);
+	}
+
+	Error err = PNGDriverCommon::image_to_png(p_image, out_buffer);
+	if (err) {
+		ERR_FAIL_V(Vector<uint8_t>());
+	}
+
+	return out_buffer;
+}
+
+ImageLoaderPNG::ImageLoaderPNG() {
+	Image::_png_mem_loader_func = load_mem_png;
+	Image::_png_mem_unpacker_func = unpack_mem_png;
+	Image::png_unpacker = lossless_unpack_png;
+	Image::png_packer = lossless_pack_png;
+}
+
+// ============================================================================
+// Merged from drivers/png/png_driver_common.cpp
+// ============================================================================
+
+#include "drivers/png/png_driver_common.h"
+
+#ifdef TOOLS_ENABLED
+#include "core/config/engine.h"
+#endif
+
+#include <png.h>
+
+namespace PNGDriverCommon
+{
+
+// Print any warnings.
+// On error, set explain and return true.
+// Call should be wrapped in ERR_FAIL_COND
+static bool check_error(const png_image& image)
+{
+	const png_uint_32 failed = PNG_IMAGE_FAILED(image);
+	if (failed & PNG_IMAGE_ERROR) {
+		return true;
+	}
+	else if (failed) {
+#ifdef TOOLS_ENABLED
+		// suppress this warning, to avoid log spam when opening assetlib
+		const static char* const noisy = "iCCP: known incorrect sRGB profile";
+		if (Engine::is_editor_hint() && !strcmp(image.message, noisy)) {
+			return false;
+		}
+#endif
+		WARN_PRINT(image.message);
+	}
+	return false;
+}
+
+Error png_to_image(const uint8_t* p_source, size_t p_size, bool p_force_linear, Ref<Image> p_image)
+{
+	png_image png_img;
+	memset(&png_img, 0, sizeof(png_img));
+	png_img.version = PNG_IMAGE_VERSION;
+
+	// fetch image properties
+	int success = png_image_begin_read_from_memory(&png_img, p_source, p_size);
+	ERR_FAIL_COND_V_MSG(check_error(png_img), ERR_FILE_CORRUPT, png_img.message);
+	ERR_FAIL_COND_V(!success, ERR_FILE_CORRUPT);
+
+	// flags to be masked out of input format to give target format
+	const png_uint_32 format_mask = ~(
+		// convert component order to RGBA
+		PNG_FORMAT_FLAG_BGR |
+		PNG_FORMAT_FLAG_AFIRST
+		// convert 16 bit components to 8 bit
+		| PNG_FORMAT_FLAG_LINEAR
+		// convert indexed image to direct color
+		| PNG_FORMAT_FLAG_COLORMAP);
+
+	png_img.format &= format_mask;
+
+	Image::Format dest_format;
+	switch (png_img.format) {
+	case PNG_FORMAT_GRAY:
+		dest_format = Image::FORMAT_L8;
+		break;
+	case PNG_FORMAT_GA:
+		dest_format = Image::FORMAT_LA8;
+		break;
+	case PNG_FORMAT_RGB:
+		dest_format = Image::FORMAT_RGB8;
+		break;
+	case PNG_FORMAT_RGBA:
+		dest_format = Image::FORMAT_RGBA8;
+		break;
+	default:
+		png_image_free(&png_img); // only required when we return before finish_read
+		ERR_PRINT("Unsupported png format.");
+		return ERR_UNAVAILABLE;
+	}
+
+	if (!p_force_linear) {
+		// assume 16 bit pngs without sRGB or gAMA chunks are in sRGB format
+		png_img.flags |= PNG_IMAGE_FLAG_16BIT_sRGB;
+	}
+
+	const png_uint_32 stride = PNG_IMAGE_ROW_STRIDE(png_img);
+	Vector<uint8_t> buffer;
+	Error err = buffer.resize(PNG_IMAGE_BUFFER_SIZE(png_img, stride));
+	if (err) {
+		png_image_free(&png_img); // only required when we return before finish_read
+		return err;
+	}
+	uint8_t* writer = buffer.ptrw();
+
+	// read image data to buffer and release libpng resources
+	success = png_image_finish_read(&png_img, nullptr, writer, stride, nullptr);
+	ERR_FAIL_COND_V_MSG(check_error(png_img), ERR_FILE_CORRUPT, png_img.message);
+	ERR_FAIL_COND_V(!success, ERR_FILE_CORRUPT);
+
+	// print_line("png width: "+itos(png_img.width)+" height: "+itos(png_img.height));
+	p_image->set_data(png_img.width, png_img.height, false, dest_format, buffer);
+
+	return OK;
+}
+
+} // namespace PNGDriverCommon
+
+
+
+// ============================================================================
+// Merged from drivers/png/resource_saver_png.cpp
+// ============================================================================
+
+#include "core/io/file_access.h"
+#include "core/io/image.h"
+#include "drivers/png/png_driver_common.h"
+
+#include "scene/resources/image_texture.h"
+
+Error ResourceSaverPNG::save(
+	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
+{
+	Ref<ImageTexture> texture = p_resource;
+
+	ERR_FAIL_COND_V_MSG(
+		texture.is_null(), ERR_INVALID_PARAMETER, "Can't save invalid texture as PNG.");
+	ERR_FAIL_COND_V_MSG(
+		!texture->get_width(), ERR_INVALID_PARAMETER, "Can't save empty texture as PNG.");
+
+	Ref<Image> img = texture->get_image();
+
+	Error err = save_image(p_path, img);
+
+	return err;
+}
+
+Error ResourceSaverPNG::save_image(const String& p_path, const Ref<Image>& p_img)
+{
+	Vector<uint8_t> buffer;
+	Error err = PNGDriverCommon::image_to_png(p_img, buffer);
+	ERR_FAIL_COND_V_MSG(err, err, "Can't convert image to PNG.");
+	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::WRITE, &err);
+	ERR_FAIL_COND_V_MSG(err, err, vformat("Can't save PNG at path: '%s'.", p_path));
+
+	const uint8_t* reader = buffer.ptr();
+
+	file->store_buffer(reader, buffer.size());
+	if (file->get_error() != OK && file->get_error() != ERR_FILE_EOF) {
+		return ERR_CANT_CREATE;
+	}
+
+	return OK;
+}
+
+Vector<uint8_t> ResourceSaverPNG::save_image_to_buffer(const Ref<Image>& p_img)
+{
+	Vector<uint8_t> buffer;
+	Error err = PNGDriverCommon::image_to_png(p_img, buffer);
+	ERR_FAIL_COND_V_MSG(err, Vector<uint8_t>(), "Can't convert image to PNG.");
+	return buffer;
+}
+
+ResourceSaverPNG::ResourceSaverPNG()
+{
+	Image::save_png_func = &save_image;
+	Image::save_png_buffer_func = &save_image_to_buffer;
+}
+
+Error PNGDriverCommon::image_to_png(Ref<Image> const&, Vector<unsigned char>&) { return OK; }
+
+bool ResourceSaverPNG::recognize(const Ref<Resource>& p_resource) const { return false; }
+
+void ResourceSaverPNG::get_recognized_extensions(
+	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+{
+}
+
+
+// --- Merged from drivers/sdl/joypad_sdl.cpp ---
+#if defined(SDL_ENABLED)
+#include "drivers/sdl/joypad_sdl.h"
+
+#ifdef SDL_ENABLED
+
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_gamepad.h>
+#include <SDL3/SDL_iostream.h>
+#include <SDL3/SDL_joystick.h>
+#include "core/input/input.h"
+
+// Macro to skip the SDL joystick event handling if the device is an SDL gamepad, because
+// there are separate events for SDL gamepads
+#define SKIP_EVENT_FOR_GAMEPAD                                                                     \
+	if (SDL_IsGamepad(sdl_event.jdevice.which)) {                                                  \
+		continue;                                                                                  \
+	}
+
+JoypadSDL::~JoypadSDL()
+{
+	// Process any remaining input events
+	process_events();
+	for (int i = 0; i < Input::JOYPADS_MAX; i++) {
+		if (joypads[i].attached) {
+			close_joypad(i);
+		}
+	}
+	SDL_Quit();
+}
+
+Error JoypadSDL::initialize()
+{
+	SDL_SetHint(SDL_HINT_JOYSTICK_THREAD, "1");
+	SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+	ERR_FAIL_COND_V_MSG(!SDL_Init(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD), FAILED, SDL_GetError());
+
+	// Add Godot's mapping database from memory
+	int i = 0;
+	while (DefaultControllerMappings::mappings[i]) {
+		String mapping_string = DefaultControllerMappings::mappings[i++];
+		CharString data = mapping_string.utf8();
+		SDL_IOStream* rw = SDL_IOFromMem((void*)data.ptr(), data.size());
+		SDL_AddGamepadMappingsFromIO(rw, true);
+	}
+
+	// Make sure that we handle already connected joypads when the driver is initialized.
+	process_events();
+
+	print_verbose("SDL: Init OK!");
+	return OK;
+}
+
+void JoypadSDL::process_events()
+{
+	// Update rumble first for it to be applied when we handle SDL events
+	for (int i = 0; i < Input::JOYPADS_MAX; i++) {
+		Joypad& joy = joypads[i];
+		if (joy.attached && joy.supports_force_feedback) {
+			uint64_t timestamp = Input::get_joy_vibration_timestamp(i);
+
+			// Update the joypad rumble only if there was a new vibration request
+			if (timestamp > joy.ff_effect_timestamp) {
+				joy.ff_effect_timestamp = timestamp;
+
+				SDL_Joystick* sdl_joy = SDL_GetJoystickFromID(joypads[i].sdl_instance_idx);
+				Vector2 strength = Input::get_joy_vibration_strength(i);
+				// Invalid values for strength are filtered by Input::start_joy_vibration().
+
+				float duration = Input::get_joy_vibration_duration(i);
+				Uint32 duration_ms = 0;
+				if (duration < 0.0f) {
+					continue; // Invalid duration.
+				}
+				else if (duration == 0.0f) {
+					duration_ms = 0xFFFF; // SDL_MAX_RUMBLE_DURATION_MS
+				}
+				else {
+					duration_ms = duration * 1000;
+				}
+
+				/*
+					If the vibration was requested to start, SDL_RumbleJoystick will start it.
+					If the vibration was requested to stop, strength and duration will be 0, so SDL
+				   will stop the rumble.
+
+					Here strength.y goes first and then strength.x, because
+				   Input.get_joy_vibration_strength().x is vibration's weak magnitude (high
+				   frequency rumble), and .y is strong magnitude (low frequency rumble),
+					SDL_RumbleJoystick takes low frequency rumble first and then high frequency
+				   rumble.
+
+					Rumble strength goes from 0 to 0xFFFF.
+				*/
+				SDL_RumbleJoystick(
+					sdl_joy, strength.y * UINT16_MAX, strength.x * UINT16_MAX, duration_ms);
+			}
+		}
+	}
+
+	SDL_Event sdl_event;
+	while (SDL_PollEvent(&sdl_event)) {
+		// A new joypad was attached
+		if (sdl_event.type == SDL_EVENT_JOYSTICK_ADDED) {
+			int joy_id = Input::get_unused_joy_id();
+			if (joy_id == -1) {
+				// There is no space for more joypads...
+				print_error("A new joypad was attached but couldn't allocate a new id for it "
+							"because joypad limit was reached.");
+			}
+			else {
+				SDL_Joystick* joy = nullptr;
+				SDL_Gamepad* gamepad = nullptr;
+				String device_name;
+
+				// Gamepads must be opened with SDL_OpenGamepad to get their special remapped events
+				if (SDL_IsGamepad(sdl_event.jdevice.which)) {
+					gamepad = SDL_OpenGamepad(sdl_event.jdevice.which);
+
+					ERR_CONTINUE_MSG(!gamepad, vformat("Error opening gamepad at index %d: %s",
+												   sdl_event.jdevice.which, SDL_GetError()));
+
+					device_name = SDL_GetGamepadName(gamepad);
+					joy = SDL_GetGamepadJoystick(gamepad);
+
+					print_verbose(
+						vformat("SDL: Gamepad %s connected", SDL_GetGamepadName(gamepad)));
+				}
+				else {
+					joy = SDL_OpenJoystick(sdl_event.jdevice.which);
+					ERR_CONTINUE_MSG(!joy, vformat("Error opening joystick at index %d: %s",
+											   sdl_event.jdevice.which, SDL_GetError()));
+
+					device_name = SDL_GetJoystickName(joy);
+
+					print_verbose(vformat("SDL: Joystick %s connected", SDL_GetJoystickName(joy)));
+				}
+
+				const int MAX_GUID_SIZE = 64;
+				char guid[MAX_GUID_SIZE] = {};
+				SDL_GUID joy_guid = SDL_GetJoystickGUID(joy);
+				SDL_GUIDToString(joy_guid, guid, MAX_GUID_SIZE);
+				SDL_PropertiesID propertiesID = SDL_GetJoystickProperties(joy);
+
+				joypads[joy_id].attached = true;
+				joypads[joy_id].sdl_instance_idx = sdl_event.jdevice.which;
+				joypads[joy_id].supports_force_feedback = SDL_GetBooleanProperty(
+					propertiesID, SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN, false);
+				joypads[joy_id].guid = String(String(guid));
+				joypads[joy_id].supports_motion_sensors =
+					SDL_GamepadHasSensor(gamepad, SDL_SENSOR_ACCEL) ||
+					SDL_GamepadHasSensor(gamepad, SDL_SENSOR_GYRO);
+
+				sdl_instance_id_to_joypad_id.insert(sdl_event.jdevice.which, joy_id);
+
+				const String serial = String(SDL_GetJoystickSerial(joy));
+
+#if defined(WINDOWS_ENABLED) || defined(LINUXBSD_ENABLED) || defined(MACOS_ENABLED)
+				const uint64_t steam_handle = SDL_GetGamepadSteamHandle(gamepad);
+#endif
+
+#ifdef WINDOWS_ENABLED
+				const int player_index = SDL_GetJoystickPlayerIndex(joy);
+				if (player_index >= 0 &&
+					joy_guid.data[14] == 'x') { // See also "SDL_IsJoystickXInput" in
+												// "thirdparty/sdl/joystick/SDL_joystick.c".
+					// For XInput controllers SDL_GetJoystickPlayerIndex returns the XInput user
+					// index.
+					joypad_info["xinput_index"] = itos(player_index);
+				}
+#endif
+
+				Input::set_joy_features(joy_id, &joypads[joy_id]);
+
+				if (joypads[joy_id].supports_motion_sensors) {
+					// Data rate for all sensors should be the same.
+					Input::set_joy_motion_sensors_rate(
+						joy_id, SDL_GetGamepadSensorDataRate(gamepad, SDL_SENSOR_ACCEL));
+				}
+			}
+			// An event for an attached joypad
+		}
+		else if (sdl_event.type >= SDL_EVENT_JOYSTICK_AXIS_MOTION &&
+				   sdl_event.type < SDL_EVENT_FINGER_DOWN &&
+				   sdl_instance_id_to_joypad_id.has(sdl_event.jdevice.which)) {
+			int joy_id = sdl_instance_id_to_joypad_id.get(sdl_event.jdevice.which);
+
+			switch (sdl_event.type) {
+			case SDL_EVENT_JOYSTICK_REMOVED:
+				close_joypad(joy_id);
+				break;
+
+			case SDL_EVENT_JOYSTICK_AXIS_MOTION:
+				SKIP_EVENT_FOR_GAMEPAD;
+
+				Input::joy_axis(joy_id,
+					static_cast<JoyAxis>(
+						sdl_event.jaxis.axis), // Godot joy axis constants are already intentionally
+											   // the same as SDL's
+					((sdl_event.jaxis.value - SDL_JOYSTICK_AXIS_MIN) /
+							(float)(SDL_JOYSTICK_AXIS_MAX - SDL_JOYSTICK_AXIS_MIN) -
+						0.5f) *
+						2.0f);
+				break;
+
+			case SDL_EVENT_JOYSTICK_BUTTON_UP:
+			case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
+				SKIP_EVENT_FOR_GAMEPAD;
+
+				// Some devices report pressing buttons with indices like 232+, 241+, etc. that are
+				// not valid, so we ignore them here.
+				if (sdl_event.jbutton.button >= (int)JoyButton::MAX) {
+					continue;
+				}
+
+				Input::joy_button(joy_id,
+					static_cast<JoyButton>(
+						sdl_event.jbutton
+							.button), // Godot button constants are intentionally the same as SDL's,
+									  // so we can just straight up use them
+					sdl_event.jbutton.down);
+				break;
+
+			case SDL_EVENT_JOYSTICK_HAT_MOTION:
+				SKIP_EVENT_FOR_GAMEPAD;
+
+				Input::joy_hat(joy_id,
+					(uint32_t)sdl_event.jhat.value // Godot hat masks are identical to SDL hat
+												   // masks, so we can just use them as-is.
+				);
+				break;
+
+			case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
+				float axis_value;
+
+				if (sdl_event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER ||
+					sdl_event.gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+					// Gamepad triggers go from 0 to SDL_JOYSTICK_AXIS_MAX
+					axis_value = sdl_event.gaxis.value / (float)SDL_JOYSTICK_AXIS_MAX;
+				}
+				else {
+					// Other axis go from SDL_JOYSTICK_AXIS_MIN to SDL_JOYSTICK_AXIS_MAX
+					axis_value = ((sdl_event.gaxis.value - SDL_JOYSTICK_AXIS_MIN) /
+										 (float)(SDL_JOYSTICK_AXIS_MAX - SDL_JOYSTICK_AXIS_MIN) -
+									 0.5f) *
+								 2.0f;
+				}
+
+				Input::joy_axis(joy_id,
+					static_cast<JoyAxis>(
+						sdl_event.gaxis.axis), // Godot joy axis constants are already intentionally
+											   // the same as SDL's
+					axis_value);
+			} break;
+
+			// Do note SDL gamepads do not have separate events for the dpad
+			case SDL_EVENT_GAMEPAD_BUTTON_UP:
+			case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+				Input::joy_button(joy_id,
+					static_cast<JoyButton>(
+						sdl_event.gbutton
+							.button), // Godot button constants are intentionally the same as SDL's,
+									  // so we can just straight up use them
+					sdl_event.gbutton.down);
+				break;
+
+			case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN:
+			case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION:
+			case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
+				Input::joy_touchpad(joy_id, sdl_event.gtouchpad.touchpad,
+					sdl_event.gtouchpad.finger,
+					Vector2(sdl_event.gtouchpad.x, sdl_event.gtouchpad.y),
+					sdl_event.gtouchpad.pressure, sdl_event.type != SDL_EVENT_GAMEPAD_TOUCHPAD_UP);
+				break;
+			}
+		}
+	}
+
+	for (int i = 0; i < Input::JOYPADS_MAX; i++) {
+		Joypad& joy = joypads[i];
+		if (!joy.attached || !joy.supports_motion_sensors) {
+			continue;
+		}
+		SDL_Gamepad* gamepad = SDL_GetGamepadFromID(joy.sdl_instance_idx);
+		// gamepad should not be NULL since joy.supports_motion_sensors is true here.
+
+		float accel_data[3];
+		float gyro_data[3];
+		SDL_GetGamepadSensorData(gamepad, SDL_SENSOR_ACCEL, accel_data, 3);
+		SDL_GetGamepadSensorData(gamepad, SDL_SENSOR_GYRO, gyro_data, 3);
+
+		Input::joy_motion_sensors(i,
+			Vector3(-accel_data[0], -accel_data[1], -accel_data[2]),
+			Vector3(gyro_data[0], gyro_data[1], gyro_data[2]));
+	}
+}
+
+void JoypadSDL::close_joypad(int p_pad_idx)
+{
+	int sdl_instance_idx = joypads[p_pad_idx].sdl_instance_idx;
+
+	joypads[p_pad_idx].attached = false;
+	sdl_instance_id_to_joypad_id.erase(sdl_instance_idx);
+
+	if (SDL_IsGamepad(sdl_instance_idx)) {
+		SDL_Gamepad* gamepad = SDL_GetGamepadFromID(sdl_instance_idx);
+		SDL_CloseGamepad(gamepad);
+	}
+	else {
+		SDL_Joystick* joy = SDL_GetJoystickFromID(sdl_instance_idx);
+		SDL_CloseJoystick(joy);
+	}
+}
+
+bool JoypadSDL::Joypad::has_joy_light() const
+{
+	SDL_Joystick* joystick = get_sdl_joystick();
+	SDL_PropertiesID properties_id = SDL_GetJoystickProperties(joystick);
+	if (properties_id == 0) {
+		return false;
+	}
+	return SDL_GetBooleanProperty(properties_id, SDL_PROP_JOYSTICK_CAP_RGB_LED_BOOLEAN, false) ||
+		   SDL_GetBooleanProperty(properties_id, SDL_PROP_JOYSTICK_CAP_MONO_LED_BOOLEAN, false);
+}
+
+void JoypadSDL::Joypad::set_joy_light(const Color& p_color)
+{
+	SDL_SetJoystickLED(get_sdl_joystick(), p_color.get_r8(), p_color.get_g8(), p_color.get_b8());
+}
+
+bool JoypadSDL::Joypad::has_joy_motion_sensors() const { return supports_motion_sensors; }
+
+void JoypadSDL::Joypad::set_joy_motion_sensors_enabled(bool p_enable)
+{
+	SDL_Gamepad* gamepad = get_sdl_gamepad();
+	SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_ACCEL, p_enable);
+	SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_GYRO, p_enable);
+}
+
+bool JoypadSDL::Joypad::has_joy_vibration() const { return supports_force_feedback; }
+
+int JoypadSDL::Joypad::get_joy_num_touchpads() const
+{
+	return SDL_GetNumGamepadTouchpads(get_sdl_gamepad());
+}
+
+SDL_Joystick* JoypadSDL::Joypad::get_sdl_joystick() const
+{
+	return SDL_GetJoystickFromID(sdl_instance_idx);
+}
+
+SDL_Gamepad* JoypadSDL::Joypad::get_sdl_gamepad() const
+{
+	return SDL_GetGamepadFromID(sdl_instance_idx);
+}
+
+#endif // SDL_ENABLED
+#endif // defined(SDL_ENABLED)

@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_lru)
 
-#include "core/templates/lru.h"
+#include "core/templates/hash_map.h"
 
 namespace TestLRU {
 

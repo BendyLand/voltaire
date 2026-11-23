@@ -31,9 +31,9 @@
 
 #import "display_server_macos_base.h"
 
-#import "godot_application_delegate.h"
+#import "platform/macos/os_macos.h"
 #import "key_mapping_macos.h"
-#import "tts_macos.h"
+#import "platform/macos/display_server_macos_base.h"
 
 #include "core/config/project_settings.h"
 #include "core/os/main_loop.h"

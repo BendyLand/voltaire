@@ -284,7 +284,7 @@ public:
 };
 
 // --- Folded from core/string/plural_rules.h ---
-#include "core/templates/lru.h"
+#include "core/templates/hash_map.h"
 #include "core/types.h"
 
 class Expression;

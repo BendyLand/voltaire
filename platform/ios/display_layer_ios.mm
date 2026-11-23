@@ -29,9 +29,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "display_layer_ios.h"
+#import "platform/ios/os_ios.h"
 
-#import "display_server_ios.h"
+#import "platform/ios/os_ios.h"
 #import "os_ios.h"
 
 #include "core/config/project_settings.h"

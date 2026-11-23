@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_paged_array)
 
-#include "core/templates/paged_array.h"
+#include "core/templates/paged_allocator.h"
 
 namespace TestPagedArray {
 

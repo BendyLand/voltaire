@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_application.h"
+#import "platform/macos/os_macos.h"
 
 #import "display_server_macos.h"
-#import "godot_application_delegate.h"
+#import "platform/macos/os_macos.h"
 #import "os_macos.h"
 
 GodotApplication *GodotApp = nil;

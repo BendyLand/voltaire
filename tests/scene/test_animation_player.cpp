@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_animation_player)
 
-#include "scene/animation/animation_player.h"
+#include "scene/animation/animation_mixer.h"
 #include "scene/resources/animation.h"
 
 namespace TestAnimationPlayer {

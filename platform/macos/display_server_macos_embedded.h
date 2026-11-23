@@ -217,3 +217,139 @@ public:
 	DisplayServerMacOSEmbedded(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, Error &r_error);
 	~DisplayServerMacOSEmbedded();
 };
+
+// --- Folded from platform/macos/embedded_debugger.h ---
+#include "core/templates/hash_map.h"
+
+class DisplayServerMacOSEmbedded;
+
+class EmbeddedDebugger final
+{
+#ifdef DEBUG_ENABLED
+	typedef Error (*ParseMessageFunc)(const Array& p_args);
+
+	struct Data
+	{
+		DisplayServerMacOSEmbedded* ds = nullptr;
+		HashMap<String, ParseMessageFunc> parse_message_handlers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void _init_parse_message_handlers();
+
+	static Error _msg_window_size(const Array& p_args);
+	static Error _msg_mouse_set_mode(const Array& p_args);
+	static Error _msg_event(const Array& p_args);
+	static Error _msg_win_event(const Array& p_args);
+	static Error _msg_notification(const Array& p_args);
+	static Error _msg_ime_update(const Array& p_args);
+	static Error _msg_ds_state(const Array& p_args);
+#endif
+
+public:
+	EmbeddedDebugger() = delete;
+
+	static void initialize(DisplayServerMacOSEmbedded* p_ds);
+	static void deinitialize();
+
+#ifdef DEBUG_ENABLED
+	static Error parse_message(
+		void* p_user, const String& p_msg, const Array& p_args, bool& r_captured);
+#endif
+};
+
+// --- Folded from platform/macos/embedded_gl_manager.h ---
+#if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
+
+#include "core/error/error_list.h"
+#include "core/math/vector2i.h"
+#include "core/templates/rb_map.h"
+#include "servers/display/display_server_enums.h"
+
+#import <AppKit/AppKit.h>
+#import <ApplicationServices/ApplicationServices.h>
+#import <CoreVideo/CoreVideo.h>
+
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations") // OpenGL is deprecated in macOS 10.14.
+
+typedef CGLContextObj (*CGLGetCurrentContextPtr)();
+typedef CGLError (*CGLTexImageIOSurface2DPtr)(CGLContextObj ctx, GLenum target, GLenum internal_format,
+		GLsizei width, GLsizei height, GLenum format, GLenum type, IOSurfaceRef ioSurface, GLuint plane);
+typedef const char *(*CGLErrorStringPtr)(CGLError);
+
+class GLManagerEmbedded {
+	/// @brief The number of framebuffers to create for each window.
+	///
+	/// Triple-buffering is used to avoid stuttering.
+	static constexpr uint32_t BUFFER_COUNT = 3;
+
+	// The display ID for which vsync is used. If this value is -1, vsync is disabled.
+	constexpr static uint32_t INVALID_DISPLAY_ID = static_cast<uint32_t>(-1);
+
+	struct FrameBuffer {
+		IOSurfaceRef surface = nullptr;
+		unsigned int tex = 0;
+		unsigned int fbo = 0;
+	};
+
+	struct GLWindow {
+		uint32_t width = 0;
+		uint32_t height = 0;
+		CALayer *layer = nullptr;
+		NSOpenGLContext *context = nullptr;
+		FrameBuffer framebuffers[BUFFER_COUNT];
+		uint32_t current_fb = 0;
+		bool is_valid = false;
+
+		void destroy_framebuffers();
+
+		~GLWindow() { destroy_framebuffers(); }
+	};
+
+	RBMap<DisplayServerEnums::WindowID, GLWindow> windows;
+	typedef RBMap<DisplayServerEnums::WindowID, GLWindow>::Element GLWindowElement;
+
+	NSOpenGLContext *shared_context = nullptr;
+	DisplayServerEnums::WindowID current_window = DisplayServerEnums::INVALID_WINDOW_ID;
+
+	Error create_context(GLWindow &p_win);
+
+	bool framework_loaded = false;
+	CGLGetCurrentContextPtr CGLGetCurrentContext = nullptr;
+	CGLTexImageIOSurface2DPtr CGLTexImageIOSurface2D = nullptr;
+	CGLErrorStringPtr CGLErrorString = nullptr;
+
+	uint32_t display_id = INVALID_DISPLAY_ID;
+	CVDisplayLinkRef display_link = nullptr;
+	bool vsync_enabled = false;
+	bool display_link_running = false;
+	dispatch_semaphore_t display_semaphore = nullptr;
+
+	void create_display_link();
+	void release_display_link();
+
+public:
+	Error window_create(DisplayServerEnums::WindowID p_window_id, CALayer *p_layer, int p_width, int p_height);
+	void window_destroy(DisplayServerEnums::WindowID p_window_id);
+	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height);
+	Size2i window_get_size(DisplayServerEnums::WindowID p_window_id) const;
+
+	void set_display_id(uint32_t p_display_id);
+	void set_vsync_enabled(bool p_enabled);
+	bool is_vsync_enabled() const { return vsync_enabled; }
+
+	void release_current();
+	void swap_buffers();
+
+	void window_make_current(DisplayServerEnums::WindowID p_window_id);
+
+	Error initialize();
+
+	GLManagerEmbedded();
+	~GLManagerEmbedded();
+};
+
+GODOT_CLANG_WARNING_PUSH
+
+#endif // MACOS_ENABLED && GLES3_ENABLED

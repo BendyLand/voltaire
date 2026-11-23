@@ -83,7 +83,7 @@ public:
 
 // --- End modules/raycast/raycast_occlusion_cull.h ---
 #include "core/io/image.h"
-#include "core/math/static_raycaster.h"
+#include "core/math/geometry_3d.h"
 #include "register_types.h"
 #include "scene/3d/visual_instance_3d.h"
 

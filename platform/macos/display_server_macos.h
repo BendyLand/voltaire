@@ -443,3 +443,290 @@ public:
 	DisplayServerMacOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
 	~DisplayServerMacOS();
 };
+
+// --- Folded from platform/macos/gl_manager_macos_angle.h ---
+#if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
+
+#include "core/templates/vector.h"
+#include "drivers/egl/egl_manager.h"
+#include "servers/display/display_server_enums.h"
+
+// Suppress redefinition conflicts
+#define FontVariation __FontVariation
+#define BitMap __BitMap
+
+#import <AppKit/AppKit.h>
+#import <ApplicationServices/ApplicationServices.h>
+#import <CoreVideo/CoreVideo.h>
+
+#undef BitMap
+#undef FontVariation
+
+class GLManagerANGLE_MacOS : public EGLManager {
+private:
+	virtual const char *_get_platform_extension_name() const override;
+	virtual EGLenum _get_platform_extension_enum() const override;
+	virtual EGLenum _get_platform_api_enum() const override;
+	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
+	virtual Vector<EGLint> _get_platform_context_attribs() const override;
+
+public:
+	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {}
+
+	GLManagerANGLE_MacOS() {}
+	~GLManagerANGLE_MacOS() {}
+};
+
+#endif // MACOS_ENABLED && GLES3_ENABLED
+
+// --- Folded from platform/macos/gl_manager_macos_legacy.h ---
+#if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
+
+#include "platform/macos/platform_gl.h"
+
+#include "core/error/error_list.h"
+#include "core/templates/rb_map.h"
+#include "servers/display/display_server_enums.h"
+
+#import <AppKit/AppKit.h>
+#import <ApplicationServices/ApplicationServices.h>
+#import <CoreVideo/CoreVideo.h>
+
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations") // OpenGL is deprecated in macOS 10.14.
+
+typedef CGLError (*CGLEnablePtr)(CGLContextObj ctx, CGLContextEnable pname);
+typedef CGLError (*CGLSetParameterPtr)(CGLContextObj ctx, CGLContextParameter pname, const GLint *params);
+typedef CGLContextObj (*CGLGetCurrentContextPtr)();
+
+class GLManagerLegacy_MacOS {
+	struct GLWindow {
+		id window_view = nullptr;
+		NSOpenGLContext *context = nullptr;
+	};
+
+	RBMap<DisplayServerEnums::WindowID, GLWindow> windows;
+
+	NSOpenGLContext *shared_context = nullptr;
+	DisplayServerEnums::WindowID current_window = DisplayServerEnums::INVALID_WINDOW_ID;
+
+	Error create_context(GLWindow &win);
+
+	bool framework_loaded = false;
+	bool use_vsync = false;
+	CGLEnablePtr CGLEnable = nullptr;
+	CGLSetParameterPtr CGLSetParameter = nullptr;
+	CGLGetCurrentContextPtr CGLGetCurrentContext = nullptr;
+
+public:
+	Error window_create(DisplayServerEnums::WindowID p_window_id, id p_view, int p_width, int p_height);
+	void window_destroy(DisplayServerEnums::WindowID p_window_id);
+	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height);
+
+	void release_current();
+	void swap_buffers();
+
+	void window_make_current(DisplayServerEnums::WindowID p_window_id);
+
+	void window_set_per_pixel_transparency_enabled(DisplayServerEnums::WindowID p_window_id, bool p_enabled);
+
+	Error initialize();
+
+	void set_use_vsync(bool p_use);
+	bool is_using_vsync() const;
+
+	NSOpenGLContext *get_context(DisplayServerEnums::WindowID p_window_id);
+
+	GLManagerLegacy_MacOS();
+	~GLManagerLegacy_MacOS();
+};
+
+GODOT_CLANG_WARNING_PUSH
+
+#endif // MACOS_ENABLED && GLES3_ENABLED
+
+// --- Folded from platform/macos/godot_core_cursor.h ---
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+constexpr int32_t GDCoreCursorWindowMove = 39;
+
+// Expose private interface for CoreCursor.
+@interface GodotCoreCursor : NSCursor
+
+@property(readonly, nonatomic) int32_t _coreCursorType;
+
+- (id)initWithType:(int32_t)type;
+
+@end
+
+// --- Folded from platform/macos/godot_open_save_delegate.h ---
+#include "core/templates/hash_map.h"
+
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+
+@interface GodotOpenSaveDelegate : NSObject <NSOpenSavePanelDelegate> {
+	NSSavePanel *dialog;
+	NSMutableArray *allowed_types;
+	Vector<Vector<String>> preferred_types;
+
+	HashMap<int, String> ctr_ids;
+	Dictionary options;
+	int cur_index;
+	int ctr_id;
+
+	String root;
+}
+
+- (void)makeAccessoryView:(NSSavePanel *)p_panel filters:(const Vector<String> &)p_filters options:(const TypedArray<Dictionary> &)p_options;
+- (void)setFileTypes:(NSMutableArray *)p_allowed_types pref:(const Vector<Vector<String>> &)p_preftypes;
+- (void)popupOptionAction:(id)p_sender;
+- (void)popupCheckAction:(id)p_sender;
+- (void)popupFileAction:(id)p_sender;
+- (int)getIndex;
+- (Dictionary)getSelection;
+- (int)setDefaultInt:(const String &)p_name value:(int)p_value;
+- (int)setDefaultBool:(const String &)p_name value:(bool)p_value;
+- (void)setRootPath:(const String &)p_root_path;
+- (String)validateFilename:(const String &)p_path;
+
+@end
+
+// --- Folded from platform/macos/godot_progress_view.h ---
+#include "platform/macos/display_server_macos_base.h"
+
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+@interface GodotProgressView : NSView {
+	DisplayServerEnums::ProgressState pr_state;
+	float pr_value;
+	float pr_offset;
+}
+- (void)setValue:(float)value;
+- (void)setState:(DisplayServerEnums::ProgressState)state;
+@end
+
+// --- Folded from platform/macos/godot_status_item.h ---
+#include "core/input/input_enums.h"
+
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+@interface GodotStatusItemDelegate : NSObject {
+	Callable cb;
+}
+
+- (IBAction)click:(id)sender;
+
+- (void)setCallback:(const Callable &)callback;
+
+@end
+
+// --- Folded from platform/macos/godot_window_delegate.h ---
+#include "servers/display/display_server_enums.h"
+
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+class DisplayServerMacOS;
+
+@interface GodotWindowDelegate : NSObject <NSWindowDelegate>
+
+- (void)setWindowID:(DisplayServerEnums::WindowID)wid;
+
+- (instancetype)initWithDisplayServer:(DisplayServerMacOS *)p_ds;
+
+@end
+
+// --- Folded from platform/macos/godot_window.h ---
+#include "servers/display/display_server_enums.h"
+
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+@interface GodotWindow : NSWindow {
+	DisplayServerEnums::WindowID window_id;
+	NSTimeInterval anim_duration;
+}
+
+- (void)setWindowID:(DisplayServerEnums::WindowID)wid;
+- (void)setAnimDuration:(NSTimeInterval)duration;
+
+@end
+
+// --- Folded from platform/macos/godot_button_view.h ---
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+@interface GodotButtonView : NSView {
+	NSTrackingArea *tracking_area;
+	NSPoint offset;
+	CGFloat spacing;
+	bool mouse_in_group;
+	bool rtl;
+	NSButton *close_button;
+	NSButton *miniaturize_button;
+	NSButton *zoom_button;
+}
+
+- (void)initButtons:(CGFloat)button_spacing offset:(NSPoint)button_offset rtl:(bool)is_rtl;
+- (void)displayButtons;
+- (void)setOffset:(NSPoint)button_offset;
+- (NSPoint)getOffset;
+
+@end
+
+// --- Folded from platform/macos/godot_content_view.h ---
+#include "core/input/input_enums.h"
+#include "core/typedefs.h"
+#include "servers/display/display_server_enums.h"
+
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+#if defined(GLES3_ENABLED)
+#import <AppKit/NSOpenGLView.h>
+#define RootView NSOpenGLView
+#else
+#define RootView NSView
+#endif
+
+#import <QuartzCore/CAMetalLayer.h>
+
+@interface GodotContentLayerDelegate : NSObject <CALayerDelegate> {
+	DisplayServerEnums::WindowID window_id;
+	bool need_redraw;
+}
+
+- (void)setWindowID:(DisplayServerEnums::WindowID)wid;
+- (void)setNeedRedraw:(bool)redraw;
+
+@end
+
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations") // OpenGL is deprecated in macOS 10.14.
+
+@interface GodotContentView : RootView <NSTextInputClient> {
+	DisplayServerEnums::WindowID window_id;
+	NSTrackingArea *tracking_area;
+	NSMutableAttributedString *marked_text;
+	bool ime_input_event_in_progress;
+	bool mouse_down_control;
+	bool ignore_momentum_scroll;
+	bool last_pen_inverted;
+	bool ime_suppress_next_keyup;
+	id layer_delegate;
+	NSMutableSet<NSString *> *registered_observers;
+}
+
+- (void)processScrollEvent:(NSEvent *)event button:(MouseButton)button factor:(double)factor;
+- (void)processPanEvent:(NSEvent *)event dx:(double)dx dy:(double)dy;
+- (void)processMouseEvent:(NSEvent *)event index:(MouseButton)index pressed:(bool)pressed outofstream:(bool)outofstream;
+- (void)setWindowID:(DisplayServerEnums::WindowID)wid;
+- (void)updateLayerDelegate;
+- (void)cancelComposition;
+
+@end
+
+GODOT_CLANG_WARNING_POP

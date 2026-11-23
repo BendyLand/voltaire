@@ -45,3 +45,17 @@ GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
 
 VLTR_GCC_WARNING_POP
 GODOT_CLANG_WARNING_POP
+
+// --- Folded from drivers/d3d12/godot_d3d12ma.h ---
+#include "core/typedefs.h"
+
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
+
+#include <dxgi1_6.h>
+
+#define D3D12MA_D3D12_HEADERS_ALREADY_INCLUDED
+#include <thirdparty/d3d12ma/D3D12MemAlloc.h> // IWYU pragma: export.
+
+VLTR_GCC_WARNING_POP
+GODOT_CLANG_WARNING_POP

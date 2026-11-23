@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_path_3d)
 
 #ifndef _3D_DISABLED
 
-#include "scene/3d/path_3d.h"
+#include "scene/3d/node_3d.h"
 
 namespace TestPath3D {
 

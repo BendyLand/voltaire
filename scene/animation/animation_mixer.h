@@ -32,7 +32,210 @@
 #pragma once
 
 #include "core/templates/a_hash_map.h"
-#include "scene/animation/tween.h"
+// --- Inlined/Folded from scene/animation/tween.h ---
+#include "core/types.h"
+
+class Tweener;
+class Node;
+class SceneTree;
+
+class Tween final : public RefCounted
+{
+	friend class Tweener;
+
+public:
+	enum TweenProcessMode
+	{
+		TWEEN_PROCESS_PHYSICS,
+		TWEEN_PROCESS_IDLE,
+	};
+
+	enum TweenPauseMode
+	{
+		TWEEN_PAUSE_BOUND,
+		TWEEN_PAUSE_STOP,
+		TWEEN_PAUSE_PROCESS,
+	};
+
+	enum TransitionType
+	{
+		TRANS_LINEAR,
+		TRANS_SINE,
+		TRANS_QUINT,
+		TRANS_QUART,
+		TRANS_QUAD,
+		TRANS_EXPO,
+		TRANS_ELASTIC,
+		TRANS_CUBIC,
+		TRANS_CIRC,
+		TRANS_BOUNCE,
+		TRANS_BACK,
+		TRANS_SPRING,
+		TRANS_MAX
+	};
+
+	enum EaseType
+	{
+		EASE_IN,
+		EASE_OUT,
+		EASE_IN_OUT,
+		EASE_OUT_IN,
+		EASE_MAX
+	};
+
+private:
+	TweenProcessMode process_mode = TweenProcessMode::TWEEN_PROCESS_IDLE;
+	TweenPauseMode pause_mode = TweenPauseMode::TWEEN_PAUSE_BOUND;
+	TransitionType default_transition = TransitionType::TRANS_LINEAR;
+	EaseType default_ease = EaseType::EASE_IN_OUT;
+
+	bool is_in_tree = false;
+	LocalVector<List<Ref<Tweener>>> tweeners;
+	LocalVector<Ref<Tween>> subtweens;
+	double total_time = 0;
+	int current_step = -1;
+	int loops = 1;
+	int loops_done = 0;
+	float speed_scale = 1;
+	bool ignore_time_scale = false;
+
+	Node* bound_node = nullptr;
+	bool is_bound = false;
+	bool started = false;
+	bool running = true;
+	bool in_step = false;
+	bool dead = false;
+	bool valid = false;
+	bool default_parallel = false;
+	bool parallel_enabled = false;
+#ifdef DEBUG_ENABLED
+	bool is_infinite = false;
+#endif
+
+	typedef real_t (*interpolater)(real_t t, real_t b, real_t c, real_t d);
+	static interpolater interpolaters[TRANS_MAX][EASE_MAX];
+
+	void _start_tweeners();
+	void _stop_internal(bool p_reset);
+
+protected:
+	String _to_string();
+
+public:
+	Ref<Tweener> tween_interval(double p_time);
+	Ref<Tweener> tween_subtween(Tween* rp_subtween);
+	Ref<Tweener> tween_callback(void (*p_callback)() = nullptr);
+	Ref<Tweener> tween_property(const Vector<String>& p_property, double p_duration);
+	Ref<Tweener> tween_method(double p_duration);
+	void append(Ref<Tweener> p_tweener);
+
+	bool custom_step(double p_delta);
+	void stop();
+	void pause();
+	void play();
+	void kill();
+
+	bool has_tweeners() const;
+	bool is_running();
+	bool is_valid();
+	void clear();
+
+	Tween* bind_node(const Node* rp_node);
+	Tween* set_process_mode(TweenProcessMode p_mode);
+	TweenProcessMode get_process_mode() const;
+	Tween* set_pause_mode(TweenPauseMode p_mode);
+	TweenPauseMode get_pause_mode() const;
+	Tween* set_ignore_time_scale(bool p_ignore = true);
+	bool is_ignoring_time_scale() const;
+
+	Tween* set_parallel(bool p_parallel);
+	Tween* set_loops(int p_loops);
+	int get_loops_left() const;
+	Tween* set_speed_scale(float p_speed);
+	Tween* set_trans(TransitionType p_trans);
+	TransitionType get_trans() const;
+	Tween* set_ease(EaseType p_ease);
+	EaseType get_ease() const;
+
+	Tween* parallel();
+	Tween* chain();
+
+	static real_t run_equation(
+		TransitionType p_trans_type, EaseType p_ease_type, real_t t, real_t b, real_t c, real_t d);
+
+	bool step(double p_delta);
+	bool can_process(bool p_tree_paused) const;
+	Node* get_bound_node() const;
+	double get_total_time() const;
+
+	Tween();
+	explicit Tween(bool p_in_tree);
+	~Tween();
+};
+
+class Tweener final : public RefCounted
+{
+	friend class Tween;
+
+public:
+	enum Type
+	{
+		TWEENER_INTERVAL,
+		TWEENER_CALLBACK,
+		TWEENER_SUBTWEEN,
+		TWEENER_PROPERTY,
+		TWEENER_METHOD,
+		TWEENER_AWAIT,
+	};
+
+	Type get_type() const { return type; }
+
+	Ref<Tweener> from(double p_value);
+	Ref<Tweener> from_current();
+	Ref<Tweener> as_relative();
+	Ref<Tweener> set_trans(Tween::TransitionType p_trans);
+	Ref<Tweener> set_ease(Tween::EaseType p_ease);
+	Ref<Tweener> set_custom_interpolator(real_t (*p_interpolator)(real_t));
+	Ref<Tweener> set_delay(double p_delay);
+	Ref<Tweener> set_timeout(double p_timeout);
+
+	void set_tween(const Ref<Tween>& p_tween);
+	void start();
+	bool step(double& r_delta);
+
+	Tweener();
+	explicit Tweener(Type p_type);
+	Tweener(Type p_type, double p_duration);
+	explicit Tweener(const Ref<Tween>& p_subtween);
+	~Tweener() = default;
+
+	Ref<Tween> subtween;
+
+private:
+	Ref<Tween> _get_tween();
+	void _finish();
+
+	Type type = TWEENER_INTERVAL;
+	Tween* tween = nullptr;
+	Ref<RefCounted> ref_copy; // Makes sure that RefCounted objects are not freed too early.
+	Vector<String> property;
+	real_t (*custom_interpolator)(real_t) = nullptr;
+	void (*callback)() = nullptr;
+
+	double elapsed_time = 0.0;
+	double duration = 0.0;
+	double delay = 0.0;
+	double timeout = -1.0;
+	double initial_val = 0.0;
+	Tween::TransitionType trans_type = Tween::TRANS_MAX;
+	Tween::EaseType ease_type = Tween::EASE_MAX;
+
+	bool finished = false;
+	bool do_continue = true;
+	bool do_continue_delayed = false;
+	bool relative = false;
+	bool received = false;
+};
 #include "scene/main/node.h"
 #include "scene/resources/animation.h"
 // --- Folded from scene/resources/animation_library.h ---
@@ -1411,3 +1614,255 @@ public:
 
 
 // --- End scene/audio/audio_stream_player.h ---
+
+// --- Folded from scene/animation/animation_player.h ---
+#include "scene/resources/animation.h"
+
+class AnimationPlayer : public AnimationMixer
+{
+#ifndef DISABLE_DEPRECATED
+public:
+	enum AnimationProcessCallback
+	{
+		ANIMATION_PROCESS_PHYSICS,
+		ANIMATION_PROCESS_IDLE,
+		ANIMATION_PROCESS_MANUAL,
+	};
+
+	enum AnimationMethodCallMode
+	{
+		ANIMATION_METHOD_CALL_DEFERRED,
+		ANIMATION_METHOD_CALL_IMMEDIATE,
+	};
+#endif // DISABLE_DEPRECATED
+
+private:
+	AHashMap<String, String> animation_next_set; // For auto advance.
+
+	String finished_anim;
+
+	float speed_scale = 1.0;
+	double default_blend_time = 0.0;
+
+	bool auto_capture = true;
+	double auto_capture_duration = -1.0;
+	Tween::TransitionType auto_capture_transition_type = Tween::TRANS_LINEAR;
+	Tween::EaseType auto_capture_ease_type = Tween::EASE_IN;
+
+	struct PlaybackData
+	{
+		bool is_enabled = false;
+		String animation_name;
+		double animation_length = 0.0;
+		double pos = 0.0;
+		float speed_scale = 1.0;
+		double start_time = 0.0;
+		double end_time = 0.0;
+
+		double get_start_time() const
+		{
+			if (is_enabled && (Animation::is_less_approx(start_time, 0) ||
+								  Animation::is_greater_approx(start_time, animation_length))) {
+				return 0;
+			}
+			return start_time;
+		}
+
+		double get_end_time() const
+		{
+			if (is_enabled && (Animation::is_less_approx(end_time, 0) ||
+								  Animation::is_greater_approx(end_time, animation_length))) {
+				return animation_length;
+			}
+			return end_time;
+		}
+	};
+
+	struct Blend
+	{
+		PlaybackData data;
+		double blend_time = 0.0;
+		double blend_left = 0.0;
+	};
+
+	struct Playback
+	{
+		PlaybackData current;
+		String assigned;
+		bool seeked = false;
+		bool internal_seeked = false;
+		bool started = false;
+		LocalVector<Blend> blend;
+	} playback;
+
+	struct BlendKey
+	{
+		String from;
+		String to;
+
+		static uint32_t hash(const BlendKey& p_key)
+		{
+			return hash_one_uint64((uint64_t(p_key.from.hash()) << 32) | uint32_t(p_key.to.hash()));
+		}
+
+		bool operator==(const BlendKey& bk) const { return from == bk.from && to == bk.to; }
+
+		bool operator<(const BlendKey& bk) const
+		{
+			if (from == bk.from) {
+				return to < bk.to;
+			}
+			return from < bk.from;
+		}
+	};
+
+	HashMap<BlendKey, double, BlendKey> blend_times;
+
+	List<String> playback_queue;
+	bool end_reached = false;
+	bool end_notify = false;
+
+	String autoplay;
+
+	bool movie_quit_on_finish = false;
+	bool clear_cache_on_stop = true;
+
+	void _play(const String& p_name, double p_custom_blend = -1, float p_custom_scale = 1.0,
+		bool p_from_end = false);
+	void _capture(const String& p_name, bool p_from_end = false, double p_duration = -1.0,
+		Tween::TransitionType p_trans_type = Tween::TRANS_LINEAR,
+		Tween::EaseType p_ease_type = Tween::EASE_IN);
+	void _process_playback_data(PlaybackData& cd, double p_delta, float p_blend, bool p_seeked,
+		bool p_internal_seeked, bool p_started, bool p_is_current = false);
+	void _blend_playback_data(double p_delta, bool p_started);
+	void _stop_internal(bool p_reset, bool p_keep_state);
+	void _check_immediately_after_start();
+
+	float get_current_blend_amount();
+
+	bool playing = false;
+
+protected:
+	void _notification(int p_what);
+
+	// Make animation instances.
+	virtual void _blend_capture(double p_delta) override;
+	virtual bool _blend_pre_process(
+		double p_delta, int p_track_count, const AHashMap<NodePath, int>& p_track_map) override;
+	virtual void _blend_post_process() override;
+
+	virtual void _animation_changed(const String& p_name) override;
+	virtual void _animation_removed(const String& p_name, const String& p_library) override;
+	virtual void _rename_animation(const String& p_from_name, const String& p_to_name);
+
+#ifndef DISABLE_DEPRECATED
+	void _set_process_callback_bind_compat_80813(AnimationProcessCallback p_mode);
+	AnimationProcessCallback _get_process_callback_bind_compat_80813() const;
+	void _set_method_call_mode_bind_compat_80813(AnimationMethodCallMode p_mode);
+	AnimationMethodCallMode _get_method_call_mode_bind_compat_80813() const;
+	void _set_root_bind_compat_80813(const NodePath& p_root);
+	NodePath _get_root_bind_compat_80813() const;
+	void _seek_bind_compat_80813(double p_time, bool p_update = false);
+	void _play_bind_compat_84906(const String& p_name = String(), double p_custom_blend = -1,
+		float p_custom_scale = 1.0, bool p_from_end = false);
+	void _play_backwards_bind_compat_84906(
+		const String& p_name = String(), double p_custom_blend = -1);
+
+	Vector<String> _get_queue_bind_compat_110767();
+	String _get_current_animation_bind_compat_110767() const;
+	void _set_current_animation_bind_compat_110767(const String& p_animation);
+	String _get_assigned_animation_bind_compat_110767() const;
+	void _set_assigned_animation_bind_compat_110767(const String& p_animation);
+	String _get_autoplay_bind_compat_110767() const;
+	void _set_autoplay_bind_compat_110767(const String& p_name);
+
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+public:
+	void animation_set_next(const String& p_animation, const String& p_next);
+	String animation_get_next(const String& p_animation) const;
+
+	void set_blend_time(const String& p_animation1, const String& p_animation2, double p_time);
+	double get_blend_time(const String& p_animation1, const String& p_animation2) const;
+
+	void set_default_blend_time(double p_default);
+	double get_default_blend_time() const;
+
+	void set_auto_capture(bool p_auto_capture);
+	bool is_auto_capture() const;
+	void set_auto_capture_duration(double p_auto_capture_duration);
+	double get_auto_capture_duration() const;
+	void set_auto_capture_transition_type(Tween::TransitionType p_auto_capture_transition_type);
+	Tween::TransitionType get_auto_capture_transition_type() const;
+	void set_auto_capture_ease_type(Tween::EaseType p_auto_capture_ease_type);
+	Tween::EaseType get_auto_capture_ease_type() const;
+
+#ifdef TOOLS_ENABLED
+	void get_argument_options(
+		const String& p_function, int p_idx, List<String>* r_options) const override;
+#endif
+
+	void play(const String& p_name = String(), double p_custom_blend = -1,
+		float p_custom_scale = 1.0, bool p_from_end = false);
+	void play_section_with_markers(const String& p_name = String(),
+		const String& p_start_marker = String(), const String& p_end_marker = String(),
+		double p_custom_blend = -1, float p_custom_scale = 1.0, bool p_from_end = false);
+	void play_section(const String& p_name = String(), double p_start_time = -1,
+		double p_end_time = -1, double p_custom_blend = -1, float p_custom_scale = 1.0,
+		bool p_from_end = false);
+	void play_backwards(const String& p_name = String(), double p_custom_blend = -1);
+	void play_section_with_markers_backwards(const String& p_name = String(),
+		const String& p_start_marker = String(), const String& p_end_marker = String(),
+		double p_custom_blend = -1);
+	void play_section_backwards(const String& p_name = String(), double p_start_time = -1,
+		double p_end_time = -1, double p_custom_blend = -1);
+	void play_with_capture(const String& p_name = String(), double p_duration = -1.0,
+		double p_custom_blend = -1, float p_custom_scale = 1.0, bool p_from_end = false,
+		Tween::TransitionType p_trans_type = Tween::TRANS_LINEAR,
+		Tween::EaseType p_ease_type = Tween::EASE_IN);
+	void queue(const String& p_name);
+	void clear_queue();
+	void pause();
+	void stop(bool p_keep_state = false);
+	bool is_playing() const;
+	String get_current_animation() const;
+	void set_current_animation(const String& p_animation);
+	String get_assigned_animation() const;
+	void set_assigned_animation(const String& p_animation);
+	bool is_valid() const;
+
+	void set_speed_scale(float p_speed);
+	float get_speed_scale() const;
+	float get_playing_speed() const;
+
+	void set_autoplay(const String& p_name);
+	String get_autoplay() const;
+
+	void set_movie_quit_on_finish_enabled(bool p_enabled);
+	bool is_movie_quit_on_finish_enabled() const;
+
+	void set_clear_cache_on_stop_enabled(bool p_enabled);
+	bool is_clear_cache_on_stop_enabled() const;
+
+	void seek_internal(double p_time, bool p_update = false, bool p_update_only = false,
+		bool p_is_internal_seek = false);
+	void seek(double p_time, bool p_update = false, bool p_update_only = false);
+
+	double get_current_animation_position() const;
+	double get_current_animation_length() const;
+
+	void set_section_with_markers(
+		const String& p_start_marker = String(), const String& p_end_marker = String());
+	void set_section(double p_start_time = -1, double p_end_time = -1);
+	void reset_section();
+
+	double get_section_start_time() const;
+	double get_section_end_time() const;
+	bool has_section() const;
+
+	virtual void advance(double p_time) override;
+
+	AnimationPlayer();
+	~AnimationPlayer();
+};

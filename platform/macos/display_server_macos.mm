@@ -31,18 +31,18 @@
 
 #import "display_server_macos.h"
 
-#import "godot_application.h"
-#import "godot_application_delegate.h"
-#import "godot_button_view.h"
-#import "godot_content_view.h"
-#import "godot_core_cursor.h"
-#import "godot_menu_delegate.h"
-#import "godot_menu_item.h"
-#import "godot_open_save_delegate.h"
-#import "godot_progress_view.h"
-#import "godot_status_item.h"
-#import "godot_window.h"
-#import "godot_window_delegate.h"
+#import "platform/macos/os_macos.h"
+#import "platform/macos/os_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/native_menu_macos.h"
+#import "platform/macos/native_menu_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
 #import "key_mapping_macos.h"
 #import "native_menu_macos.h"
 #import "os_macos.h"
@@ -73,9 +73,9 @@
 
 #if defined(GLES3_ENABLED)
 #if defined(ANGLE_ENABLED)
-#include "gl_manager_macos_angle.h"
+#include "platform/macos/display_server_macos.h"
 #endif
-#include "gl_manager_macos_legacy.h"
+#include "platform/macos/display_server_macos.h"
 
 #include "drivers/gles3/rasterizer_gles3.h"
 #endif
@@ -85,7 +85,7 @@
 #include "servers/rendering/rendering_device.h"
 
 #if defined(VULKAN_ENABLED)
-#import "rendering_context_driver_vulkan_macos.h"
+#import "platform/macos/display_server_macos_base.h"
 #endif
 #if defined(METAL_ENABLED)
 #import "drivers/metal/rendering_context_driver_metal.h"
@@ -95,7 +95,7 @@
 // Keep Quartz after rendering includes, as it includes system GL.h
 // which clashes with GLAD.
 #ifdef TOOLS_ENABLED
-#import "macos_quartz_core_spi.h"
+#import "platform/macos/display_server_macos_base.h"
 #endif
 
 #include <AppKit/AppKit.h>

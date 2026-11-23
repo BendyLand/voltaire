@@ -2846,4 +2846,12 @@ public:
 
 using RD = RenderingDevice;
 
+// --- Folded from core/utils.h ---
+#include "core/typedefs.h"
 
+namespace Utils
+{
+	_ALWAYS_INLINE_ constexpr uint32_t set_flag(uint32_t p_value, uint32_t p_flag) { return p_value | p_flag; }
+	_ALWAYS_INLINE_ constexpr bool has_flag(uint32_t p_value, uint32_t p_flag) { return (p_value & p_flag) != 0; }
+	_ALWAYS_INLINE_ constexpr uint32_t clear_flag(uint32_t p_value, uint32_t p_flag) { return p_value &= ~p_flag; }
+}; // namespace Utils

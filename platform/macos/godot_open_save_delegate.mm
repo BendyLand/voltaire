@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_open_save_delegate.h"
+#import "platform/macos/display_server_macos.h"
 
 @implementation GodotOpenSaveDelegate
 

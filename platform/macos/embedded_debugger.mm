@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "embedded_debugger.h"
+#include "platform/macos/display_server_macos_embedded.h"
 
 #include "display_server_macos_embedded.h"
 

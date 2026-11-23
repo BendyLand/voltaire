@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_astar)
 
-#include "core/math/a_star.h"
+#include "core/math/geometry_3d.h"
 
 namespace TestAStar {
 

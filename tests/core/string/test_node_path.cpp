@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_node_path)
 
-#include "core/string/node_path.h"
+#include "core/types.h"
 
 namespace TestNodePath {
 

@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/io/resource.h"
-#include "core/templates/lru.h"
+#include "core/templates/hash_map.h"
 #include "servers/text/text_server.h"
 
 class TextLine;

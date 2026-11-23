@@ -29,12 +29,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_window_delegate.h"
+#import "platform/macos/display_server_macos.h"
 
 #import "display_server_macos.h"
-#import "godot_button_view.h"
-#import "godot_content_view.h"
-#import "godot_window.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
 
 #include "servers/display/accessibility_server.h"
 

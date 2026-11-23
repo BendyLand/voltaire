@@ -31,12 +31,73 @@
 
 #pragma once
 
-#include "crash_handler_macos.h"
+// --- Inlined/Folded from platform/macos/crash_handler_macos.h ---
+class CrashHandler {
+	bool disabled;
+
+public:
+	void initialize();
+
+	void disable();
+	bool is_disabled() const { return disabled; }
+
+	CrashHandler();
+	~CrashHandler();
+};
 
 #include "core/input/input_event.h"
 #include "core/templates/rb_map.h"
 #import "drivers/coreaudio/audio_driver_coreaudio.h"
-#import "drivers/coremidi/midi_driver_coremidi.h"
+// --- Inlined/Folded from drivers/coremidi/midi_driver_coremidi.h ---
+#ifdef COREMIDI_ENABLED
+
+#include "core/os/midi_driver.h"
+#include "core/os/mutex.h"
+#include "core/templates/vector.h"
+
+#import <CoreMIDI/CoreMIDI.h>
+
+#include <cstdio>
+
+class MIDIDriverCoreMidi final
+{
+	struct InputConnection
+	{
+		InputConnection() = default;
+		InputConnection(int p_device_index, MIDIEndpointRef p_source);
+		MIDIDriver::Parser parser;
+		MIDIEndpointRef source;
+	};
+
+public:
+	struct Data
+	{
+		MIDIClientRef client = 0;
+		MIDIPortRef port_in = 0;
+		Vector<InputConnection*> connected_sources;
+		Mutex mutex;
+		bool core_midi_closed = false;
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+	static void read(
+		const MIDIPacketList* packet_list, void* read_proc_ref_con, void* src_conn_ref_con);
+
+public:
+	static void initialize();
+	static void finalize();
+	static Error open();
+	static void close();
+
+	MIDIDriverCoreMidi() = delete;
+	MIDIDriverCoreMidi(const MIDIDriverCoreMidi&) = delete;
+	MIDIDriverCoreMidi& operator=(const MIDIDriverCoreMidi&) = delete;
+	~MIDIDriverCoreMidi() = delete;
+};
+
+#endif // COREMIDI_ENABLED
 #include "drivers/unix/os_unix.h"
 #include "servers/audio/audio_server.h"
 
@@ -213,3 +274,65 @@ public:
 };
 
 #endif
+
+// --- Folded from platform/macos/dir_access_macos.h ---
+#if defined(UNIX_ENABLED)
+
+#include "drivers/unix/dir_access_unix.h"
+
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+class DirAccessMacOS : public DirAccessUnix {
+
+protected:
+	virtual String fix_unicode_name(const char *p_name) const override;
+
+	virtual int get_drive_count() override;
+	virtual String get_drive(int p_drive) override;
+
+	virtual bool is_hidden(const String &p_name) override;
+	virtual bool is_case_sensitive(const String &p_path) const override;
+
+	virtual String get_filesystem_type() const override;
+
+	virtual bool is_bundle(const String &p_file) const override;
+};
+
+#endif // UNIX ENABLED
+
+// --- Folded from platform/macos/godot_application.h ---
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+#import <IOKit/hidsystem/ev_keymap.h>
+
+@class GodotApplicationDelegate;
+
+@interface GodotApplication : NSApplication
+
+extern "C" GodotApplication *GodotApp;
+
+@property(readonly, nonatomic) GodotApplicationDelegate *godotDelegate;
+
+- (GodotApplication *)init;
+
+- (void)activateApplication;
+@end
+
+// --- Folded from platform/macos/godot_application_delegate.h ---
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+class OS_MacOS_NSApp;
+
+@interface GodotApplicationDelegate : NSObject <NSUserInterfaceItemSearching, NSApplicationDelegate, NSMenuItemValidation>
+
+- (GodotApplicationDelegate *)initWithOS:(OS_MacOS_NSApp *)os;
+
+- (bool)getHighContrast;
+- (bool)getReduceMotion;
+- (bool)getReduceTransparency;
+- (bool)getVoiceOver;
+@end

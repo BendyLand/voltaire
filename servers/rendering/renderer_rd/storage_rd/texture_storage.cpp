@@ -31,7 +31,7 @@
 
 #include "core/config/engine.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_rd/effects/copy_effects.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
@@ -7580,7 +7580,7 @@ bool RendererRD::LightStorage::has_directional_shadows(unsigned int p_index) { r
 // Merged from servers/rendering/renderer_rd/storage_rd/mesh_storage.cpp
 // ============================================================================
 
-#include "mesh_storage.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
@@ -10021,7 +10021,7 @@ void RendererRD::MeshStorage::finalize()
 // ============================================================================
 
 #include "particles_storage.h"
-#include "servers/rendering/renderer_rd/effects/copy_effects.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_viewport.h"
@@ -11574,7 +11574,7 @@ void RendererRD::ParticlesStorage::ParticlesShaderData::set_code(const String& p
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 

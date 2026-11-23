@@ -37,7 +37,2880 @@
 #include "core/types.h"
 #include "core/version.h"
 #include "openxr_api.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+// --- Inlined/Folded from modules/openxr/extensions/openxr_extensions.h ---
+#include <openxr/openxr.h>
+#include "modules/openxr/openxr_api.h"
+// --- Folded from modules/openxr/openxr_interface.h ---
+// A note on multithreading and thread safety in OpenXR.
+//
+// Most entry points will be called from the main thread in Godot
+// however a number of entry points will be called from the
+// rendering thread, potentially while we're already processing
+// the next frame on the main thread.
+//
+// OpenXR itself has been designed with threading in mind including
+// a high likelihood that the XR runtime runs in separate threads
+// as well.
+// Hence all the frame timing information, use of swapchains and
+// sync functions.
+// Do note that repeated calls to tracking APIs will provide
+// increasingly more accurate data for the same timestamp as
+// tracking data is continuously updated.
+//
+// For our code we mostly implement this in our OpenXRAPI class.
+// We store data accessed from the rendering thread in a separate
+// struct, setting values through our renderer command queue.
+//
+// As some data is setup before we start rendering, and cleaned up
+// after we've stopped, that is accessed directly from both threads.
+
+#include "modules/openxr/openxr_api.h"
+#include "servers/xr/xr_interface.h"
+#include "servers/xr/xr_tracker.h"
+
+// declare some default strings
+#define INTERACTION_PROFILE_NONE "/interaction_profiles/none"
+
+class OpenXRInterface final : public XRInterface
+{
+private:
+	bool initialized = false;
+	bool reference_stage_changing = false;
+	XRInterface::TrackingStatus tracking_state;
+
+	// At a minimum we need a tracker for our head
+	Ref<XRTracker> head;
+	Transform3D head_transform;
+	Vector3 head_linear_velocity;
+	Vector3 head_angular_velocity;
+	XRPose::TrackingConfidence head_confidence;
+	Transform3D transform_for_view[2]; // We currently assume 2, but could be 4 for VARJO which we
+									   // do not support yet
+
+	XRVRS xr_vrs;
+
+	void _load_action_map();
+
+	struct Action
+	{						// An action we've registered with OpenXR
+		String action_name; // Name of our action as presented to Godot (can be altered from the
+							// action map)
+		OpenXRAction::ActionType action_type; // The action type of this action
+		RID action_rid;						  // RID of the action registered with our OpenXR API
+	};
+
+	struct ActionSet
+	{							 // An action set we've registered with OpenXR
+		String action_set_name;	 // Name of our action set
+		bool is_active;			 // If true this action set is active and we will sync it
+		Vector<Action*> actions; // List of actions in this action set
+		RID action_set_rid;		 // RID of the action registered with our OpenXR API
+	};
+
+	struct Tracker
+	{							 // A tracker we've registered with OpenXR
+		String tracker_name;	 // Name of our tracker (can be altered from the action map)
+		Vector<Action*> actions; // Actions related to this tracker
+		Ref<XRTracker>
+			controller_tracker;	 // Our positional tracker object that holds our tracker state
+		RID tracker_rid;		 // RID of the tracker registered with our OpenXR API
+		RID interaction_profile; // RID of the interaction profile bound to this tracker (can be
+								 // null)
+	};
+
+	Vector<ActionSet*> action_sets;
+	Vector<RID> interaction_profiles;
+	Vector<Tracker*> trackers;
+
+	ActionSet* create_action_set(
+		const String& p_action_set_name, const String& p_localized_name, const int p_priority);
+	void free_action_sets();
+
+	Action* create_action(ActionSet* p_action_set, const String& p_action_name,
+		const String& p_localized_name, OpenXRAction::ActionType p_action_type,
+		const Vector<Tracker*> p_trackers);
+	Action* find_action(const String& p_action_name);
+	void free_actions(ActionSet* p_action_set);
+
+	Tracker* find_tracker(const String& p_tracker_name, bool p_create = false);
+	void handle_tracker(Tracker* p_tracker);
+	void free_trackers();
+
+	void free_interaction_profiles();
+
+	void _set_default_pos(Transform3D& r_transform, double p_world_scale, uint64_t p_eye);
+
+protected:
+
+public:
+	virtual String get_name() const override;
+	virtual uint32_t get_capabilities() const override;
+
+	virtual PackedStringArray get_suggested_tracker_names() const override;
+	virtual TrackingStatus get_tracking_status() const override;
+
+	bool is_hand_tracking_supported();
+	bool is_hand_interaction_supported() const;
+	bool is_eye_gaze_interaction_supported();
+
+	bool initialize_on_startup() const;
+	virtual bool is_initialized() const override;
+	virtual bool initialize() override;
+	virtual void uninitialize() override;
+
+	virtual void trigger_haptic_pulse(const String& p_action_name, const String& p_tracker_name,
+		double p_frequency, double p_amplitude, double p_duration_sec,
+		double p_delay_sec = 0) override;
+
+	virtual bool supports_play_area_mode(XRInterface::PlayAreaMode p_mode) override;
+	virtual XRInterface::PlayAreaMode get_play_area_mode() const override;
+	virtual bool set_play_area_mode(XRInterface::PlayAreaMode p_mode) override;
+	virtual PackedVector3Array get_play_area() const override;
+
+	float get_display_refresh_rate() const;
+	void set_display_refresh_rate(float p_refresh_rate);
+
+	bool is_action_set_active(const String& p_action_set) const;
+	void set_action_set_active(const String& p_action_set, bool p_active);
+
+	double get_render_target_size_multiplier() const;
+	void set_render_target_size_multiplier(double multiplier);
+
+	bool is_foveation_supported() const;
+
+	int get_foveation_level() const;
+	void set_foveation_level(int p_foveation_level);
+
+	bool get_foveation_dynamic() const;
+	void set_foveation_dynamic(bool p_foveation_dynamic);
+
+	bool get_foveation_with_subsampled_images() const;
+	void set_foveation_with_subsampled_images(bool p_enabled);
+
+	float get_vrs_min_radius() const;
+	void set_vrs_min_radius(float p_vrs_min_radius);
+
+	float get_vrs_strength() const;
+	void set_vrs_strength(float p_vrs_strength);
+
+	virtual Size2 get_render_target_size() override;
+	virtual uint32_t get_view_count() override;
+	virtual Transform3D get_camera_transform() override;
+	virtual Transform3D get_transform_for_view(
+		uint32_t p_view, const Transform3D& p_cam_transform) override;
+	virtual Projection get_projection_for_view(
+		uint32_t p_view, double p_aspect, double p_z_near, double p_z_far) override;
+
+	virtual Rect2i get_render_region() override;
+
+	virtual RID get_color_texture() override;
+	virtual RID get_depth_texture() override;
+	virtual RID get_velocity_texture() override;
+	virtual RID get_velocity_depth_texture() override;
+	virtual Size2i get_velocity_target_size() override;
+
+	virtual void process() override;
+	virtual void pre_render() override;
+	bool pre_draw_viewport(RID p_render_target) override;
+	virtual Vector<RenderingServerTypes::BlitToScreen> post_draw_viewport(
+		RID p_render_target, const Rect2& p_screen_rect) override;
+	virtual void end_frame() override;
+
+	virtual bool is_passthrough_supported() override;
+	virtual bool is_passthrough_enabled() override;
+	virtual bool start_passthrough() override;
+	virtual void stop_passthrough() override;
+
+	virtual XRInterface::EnvironmentBlendMode get_environment_blend_mode() const override;
+	virtual bool set_environment_blend_mode(XRInterface::EnvironmentBlendMode mode) override;
+
+	void on_state_ready();
+	void on_state_visible();
+	void on_state_focused();
+	void on_state_synchronized();
+	void on_state_stopping();
+	void on_state_loss_pending();
+	void on_state_exiting();
+	void on_reference_space_change_pending(XrReferenceSpaceType p_type);
+	void on_refresh_rate_changes(float p_new_rate);
+	void tracker_profile_changed(RID p_tracker, RID p_interaction_profile);
+
+	/** Session */
+	enum SessionState
+	{ // Should mirror XrSessionState
+		SESSION_STATE_UNKNOWN = 0,
+		SESSION_STATE_IDLE = 1,
+		SESSION_STATE_READY = 2,
+		SESSION_STATE_SYNCHRONIZED = 3,
+		SESSION_STATE_VISIBLE = 4,
+		SESSION_STATE_FOCUSED = 5,
+		SESSION_STATE_STOPPING = 6,
+		SESSION_STATE_LOSS_PENDING = 7,
+		SESSION_STATE_EXITING = 8,
+	};
+
+	SessionState get_session_state();
+
+	/** User presence. */
+	bool is_user_presence_supported() const;
+	bool is_user_present() const;
+
+	/** Hand tracking. */
+	enum Hand
+	{
+		HAND_LEFT,
+		HAND_RIGHT,
+		HAND_MAX,
+	};
+
+	enum HandMotionRange
+	{
+		HAND_MOTION_RANGE_UNOBSTRUCTED,
+		HAND_MOTION_RANGE_CONFORM_TO_CONTROLLER,
+		HAND_MOTION_RANGE_MAX
+	};
+
+	void set_motion_range(const Hand p_hand, const HandMotionRange p_motion_range);
+	HandMotionRange get_motion_range(const Hand p_hand) const;
+
+	enum HandTrackedSource
+	{
+		HAND_TRACKED_SOURCE_UNKNOWN,
+		HAND_TRACKED_SOURCE_UNOBSTRUCTED,
+		HAND_TRACKED_SOURCE_CONTROLLER,
+		HAND_TRACKED_SOURCE_MAX
+	};
+
+	HandTrackedSource get_hand_tracking_source(const Hand p_hand) const;
+
+	enum HandJoints
+	{
+		HAND_JOINT_PALM = 0,
+		HAND_JOINT_WRIST = 1,
+		HAND_JOINT_THUMB_METACARPAL = 2,
+		HAND_JOINT_THUMB_PROXIMAL = 3,
+		HAND_JOINT_THUMB_DISTAL = 4,
+		HAND_JOINT_THUMB_TIP = 5,
+		HAND_JOINT_INDEX_METACARPAL = 6,
+		HAND_JOINT_INDEX_PROXIMAL = 7,
+		HAND_JOINT_INDEX_INTERMEDIATE = 8,
+		HAND_JOINT_INDEX_DISTAL = 9,
+		HAND_JOINT_INDEX_TIP = 10,
+		HAND_JOINT_MIDDLE_METACARPAL = 11,
+		HAND_JOINT_MIDDLE_PROXIMAL = 12,
+		HAND_JOINT_MIDDLE_INTERMEDIATE = 13,
+		HAND_JOINT_MIDDLE_DISTAL = 14,
+		HAND_JOINT_MIDDLE_TIP = 15,
+		HAND_JOINT_RING_METACARPAL = 16,
+		HAND_JOINT_RING_PROXIMAL = 17,
+		HAND_JOINT_RING_INTERMEDIATE = 18,
+		HAND_JOINT_RING_DISTAL = 19,
+		HAND_JOINT_RING_TIP = 20,
+		HAND_JOINT_LITTLE_METACARPAL = 21,
+		HAND_JOINT_LITTLE_PROXIMAL = 22,
+		HAND_JOINT_LITTLE_INTERMEDIATE = 23,
+		HAND_JOINT_LITTLE_DISTAL = 24,
+		HAND_JOINT_LITTLE_TIP = 25,
+		HAND_JOINT_MAX = 26,
+	};
+
+	enum HandJointFlags
+	{
+		HAND_JOINT_NONE = 0,
+		HAND_JOINT_ORIENTATION_VALID = 1,
+		HAND_JOINT_ORIENTATION_TRACKED = 2,
+		HAND_JOINT_POSITION_VALID = 4,
+		HAND_JOINT_POSITION_TRACKED = 8,
+		HAND_JOINT_LINEAR_VELOCITY_VALID = 16,
+		HAND_JOINT_ANGULAR_VELOCITY_VALID = 32,
+	};
+
+	uint32_t get_hand_joint_flags(Hand p_hand, HandJoints p_joint) const;
+	Quaternion get_hand_joint_rotation(Hand p_hand, HandJoints p_joint) const;
+	Vector3 get_hand_joint_position(Hand p_hand, HandJoints p_joint) const;
+	float get_hand_joint_radius(Hand p_hand, HandJoints p_joint) const;
+
+	Vector3 get_hand_joint_linear_velocity(Hand p_hand, HandJoints p_joint) const;
+	Vector3 get_hand_joint_angular_velocity(Hand p_hand, HandJoints p_joint) const;
+
+	virtual RID get_vrs_texture() override;
+	virtual VRSTextureFormat get_vrs_texture_format() override;
+
+	// Performance settings.
+	enum PerfSettingsLevel
+	{
+		PERF_SETTINGS_LEVEL_POWER_SAVINGS,
+		PERF_SETTINGS_LEVEL_SUSTAINED_LOW,
+		PERF_SETTINGS_LEVEL_SUSTAINED_HIGH,
+		PERF_SETTINGS_LEVEL_BOOST,
+	};
+
+	enum PerfSettingsSubDomain
+	{
+		PERF_SETTINGS_SUB_DOMAIN_COMPOSITING,
+		PERF_SETTINGS_SUB_DOMAIN_RENDERING,
+		PERF_SETTINGS_SUB_DOMAIN_THERMAL,
+	};
+
+	enum PerfSettingsNotificationLevel
+	{
+		PERF_SETTINGS_NOTIF_LEVEL_NORMAL,
+		PERF_SETTINGS_NOTIF_LEVEL_WARNING,
+		PERF_SETTINGS_NOTIF_LEVEL_IMPAIRED,
+	};
+
+	void set_cpu_level(PerfSettingsLevel p_level);
+	void set_gpu_level(PerfSettingsLevel p_level);
+	void on_cpu_level_changed(PerfSettingsSubDomain p_sub_domain,
+		PerfSettingsNotificationLevel p_from_level, PerfSettingsNotificationLevel p_to_level);
+	void on_gpu_level_changed(PerfSettingsSubDomain p_sub_domain,
+		PerfSettingsNotificationLevel p_from_level, PerfSettingsNotificationLevel p_to_level);
+
+	OpenXRInterface();
+	~OpenXRInterface();
+};
+
+// --- Folded from modules/openxr/scene/openxr_scene.h ---
+#include <openxr/openxr.h>
+#include "modules/modules_enabled.gen.h"
+#include "scene/3d/node_3d.h"
+#include "scene/3d/skeleton_3d.h"
+#include "scene/3d/visual_instance_3d.h"
+#include "servers/xr/xr_tracker.h"
+
+class JavaObject;
+class MeshInstance3D;
+class Mesh;
+class OpenXRAPI;
+class OpenXRCompositionLayerExtension;
+class OpenXRHandTrackingExtension;
+class SubViewport;
+class Camera3D;
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRCompositionLayer
+
+class OpenXRCompositionLayer final : public Node3D
+{
+public:
+	enum LayerType
+	{
+		LAYER_QUAD,
+		LAYER_CYLINDER,
+		LAYER_EQUIRECT,
+	};
+
+	// Must be identical to Filter enum definition in OpenXRCompositionLayerExtension.
+	enum Filter
+	{
+		FILTER_NEAREST,
+		FILTER_LINEAR,
+		FILTER_CUBIC,
+	};
+
+	// Must be identical to MipmapMode enum definition in OpenXRCompositionLayerExtension.
+	enum MipmapMode
+	{
+		MIPMAP_MODE_DISABLED,
+		MIPMAP_MODE_NEAREST,
+		MIPMAP_MODE_LINEAR,
+	};
+
+	// Must be identical to Wrap enum definition in OpenXRCompositionLayerExtension.
+	enum Wrap
+	{
+		WRAP_CLAMP_TO_BORDER,
+		WRAP_CLAMP_TO_EDGE,
+		WRAP_REPEAT,
+		WRAP_MIRRORED_REPEAT,
+		WRAP_MIRROR_CLAMP_TO_EDGE,
+	};
+
+	// Must be identical to Swizzle enum definition in OpenXRCompositionLayerExtension.
+	enum Swizzle
+	{
+		SWIZZLE_RED,
+		SWIZZLE_GREEN,
+		SWIZZLE_BLUE,
+		SWIZZLE_ALPHA,
+		SWIZZLE_ZERO,
+		SWIZZLE_ONE,
+	};
+
+	// Must be identical to EyeVisibility enum definition in OpenXRCompositionLayerExtension.
+	enum EyeVisibility
+	{
+		EYE_VISIBILITY_BOTH,
+		EYE_VISIBILITY_LEFT,
+		EYE_VISIBILITY_RIGHT,
+	};
+
+private:
+	RID composition_layer;
+	LayerType layer_type = LAYER_QUAD;
+
+	// Quad parameters.
+	Size2 quad_size = Size2(1.0, 1.0);
+
+	// Cylinder / Equirect shared parameters.
+	float radius = 1.0;
+	uint32_t fallback_segments = 10;
+
+	// Cylinder parameters.
+	float aspect_ratio = 1.0;
+	float central_angle = Math::PI / 2.0;
+
+	// Equirect parameters.
+	float central_horizontal_angle = Math::PI / 2.0;
+	float upper_vertical_angle = Math::PI / 4.0;
+	float lower_vertical_angle = Math::PI / 4.0;
+
+	SubViewport* layer_viewport = nullptr;
+	bool use_android_surface = false;
+	Size2i android_surface_size = Size2i(1024, 1024);
+	bool enable_hole_punch = false;
+	bool alpha_blend = false;
+	int sort_order = 1;
+	bool protected_content = false;
+	MeshInstance3D* fallback = nullptr;
+	bool should_update_fallback_mesh = false;
+	bool openxr_session_running = false;
+	bool registered = false;
+
+	Filter min_filter = FILTER_LINEAR;
+	Filter mag_filter = FILTER_LINEAR;
+	MipmapMode mipmap_mode = MIPMAP_MODE_LINEAR;
+	Wrap horizontal_wrap = WRAP_CLAMP_TO_BORDER;
+	Wrap vertical_wrap = WRAP_CLAMP_TO_BORDER;
+	Swizzle red_swizzle = SWIZZLE_RED;
+	Swizzle green_swizzle = SWIZZLE_GREEN;
+	Swizzle blue_swizzle = SWIZZLE_BLUE;
+	Swizzle alpha_swizzle = SWIZZLE_ALPHA;
+	float max_anisotropy = 1.0;
+	Color border_color = {0.0, 0.0, 0.0, 0.0};
+	EyeVisibility eye_visibility = EYE_VISIBILITY_BOTH;
+
+	bool _should_use_fallback_node();
+	void _create_fallback_node();
+	void _reset_fallback_material();
+	void _remove_fallback_node();
+
+	void _setup_composition_layer();
+	void _clear_composition_layer();
+
+	void _viewport_size_changed();
+
+	Camera3D* _get_xrcamera3d_ancestor() const;
+
+	void _notification(int p_what);
+
+	void _on_openxr_session_begun();
+	void _on_openxr_session_stopping();
+
+	bool _should_register();
+
+	Ref<Mesh> _create_fallback_mesh();
+	XrStructureType _get_openxr_type() const;
+
+	void update_transform();
+	void update_fallback_mesh();
+
+	static Vector<OpenXRCompositionLayer*> composition_layer_nodes;
+	bool is_viewport_in_use(SubViewport* p_viewport);
+
+public:
+	LayerType get_layer_type() const { return layer_type; }
+
+	void set_layer_viewport(SubViewport* p_viewport);
+	SubViewport* get_layer_viewport() const;
+
+	void set_use_android_surface(bool p_use_android_surface);
+	bool get_use_android_surface() const;
+
+	void set_android_surface_size(Size2i p_size);
+	Size2i get_android_surface_size() const;
+
+	bool get_enable_hole_punch() const;
+
+	int get_sort_order() const;
+
+	void set_alpha_blend(bool p_alpha_blend);
+	bool get_alpha_blend() const;
+
+	Ref<JavaObject> get_android_surface();
+	bool is_natively_supported() const;
+
+	void set_protected_content(bool p_protected_content);
+	bool is_protected_content() const;
+
+	void set_min_filter(Filter p_mode);
+	Filter get_min_filter() const;
+
+	void set_mag_filter(Filter p_mode);
+	Filter get_mag_filter() const;
+
+	void set_mipmap_mode(MipmapMode p_mode);
+	MipmapMode get_mipmap_mode() const;
+
+	void set_horizontal_wrap(Wrap p_mode);
+	Wrap get_horizontal_wrap() const;
+
+	void set_vertical_wrap(Wrap p_mode);
+	Wrap get_vertical_wrap() const;
+
+	void set_red_swizzle(Swizzle p_mode);
+	Swizzle get_red_swizzle() const;
+
+	void set_green_swizzle(Swizzle p_mode);
+	Swizzle get_green_swizzle() const;
+
+	void set_blue_swizzle(Swizzle p_mode);
+	Swizzle get_blue_swizzle() const;
+
+	void set_alpha_swizzle(Swizzle p_mode);
+	Swizzle get_alpha_swizzle() const;
+
+	void set_max_anisotropy(float p_value);
+	float get_max_anisotropy() const;
+
+	void set_border_color(const Color& p_color);
+	Color get_border_color() const;
+
+	void set_eye_visibility(EyeVisibility p_eye_visibility);
+	EyeVisibility get_eye_visibility() const;
+
+	// Quad properties.
+	void set_quad_size(const Size2& p_size);
+	Size2 get_quad_size() const;
+
+	// Cylinder & Equirect shared properties.
+	void set_radius(float p_radius);
+	float get_radius() const;
+
+	void set_fallback_segments(uint32_t p_fallback_segments);
+	uint32_t get_fallback_segments() const;
+
+	// Cylinder properties.
+	void set_aspect_ratio(float p_aspect_ratio);
+	float get_aspect_ratio() const;
+
+	void set_central_angle(float p_angle);
+	float get_central_angle() const;
+
+	// Equirect properties.
+	void set_central_horizontal_angle(float p_angle);
+	float get_central_horizontal_angle() const;
+
+	void set_upper_vertical_angle(float p_angle);
+	float get_upper_vertical_angle() const;
+
+	void set_lower_vertical_angle(float p_angle);
+	float get_lower_vertical_angle() const;
+
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	Vector2 intersects_ray(const Vector3& p_origin, const Vector3& p_direction) const;
+
+	OpenXRCompositionLayer(LayerType p_type = LAYER_QUAD);
+	~OpenXRCompositionLayer() = default;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRHand
+
+class OpenXRHand final : public Node3D
+{
+public:
+	enum Hands
+	{
+		HAND_LEFT,
+		HAND_RIGHT,
+		HAND_MAX
+	};
+
+	enum MotionRange
+	{
+		MOTION_RANGE_UNOBSTRUCTED,
+		MOTION_RANGE_CONFORM_TO_CONTROLLER,
+		MOTION_RANGE_MAX
+	};
+
+	enum SkeletonRig
+	{
+		SKELETON_RIG_OPENXR,
+		SKELETON_RIG_HUMANOID,
+		SKELETON_RIG_MAX
+	};
+
+	enum BoneUpdate
+	{
+		BONE_UPDATE_FULL,
+		BONE_UPDATE_ROTATION_ONLY,
+		BONE_UPDATE_MAX
+	};
+
+private:
+	struct JointData
+	{
+		int bone = -1;
+		int parent_joint = -1;
+	};
+
+	Hands hand = HAND_LEFT;
+	MotionRange motion_range = MOTION_RANGE_UNOBSTRUCTED;
+	NodePath hand_skeleton;
+	SkeletonRig skeleton_rig = SKELETON_RIG_OPENXR;
+	BoneUpdate bone_update = BONE_UPDATE_FULL;
+
+	JointData joints[XR_HAND_JOINT_COUNT_EXT];
+
+	void _set_motion_range();
+
+	Skeleton3D* get_skeleton();
+	void _get_joint_data();
+	void _update_skeleton();
+
+public:
+	OpenXRHand();
+
+	void set_hand(Hands p_hand);
+	Hands get_hand() const;
+
+	void set_motion_range(MotionRange p_motion_range);
+	MotionRange get_motion_range() const;
+
+	void set_hand_skeleton(const NodePath& p_hand_skeleton);
+	NodePath get_hand_skeleton() const;
+
+	void set_skeleton_rig(SkeletonRig p_skeleton_rig);
+	SkeletonRig get_skeleton_rig() const;
+
+	void set_bone_update(BoneUpdate p_bone_update);
+	BoneUpdate get_bone_update() const;
+
+	void _notification(int p_what);
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRVisibilityMask
+
+class OpenXRVisibilityMask final : public Node3D
+{
+public:
+	RenderInstance3D render_instance;
+
+private:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+
+	void _on_openxr_session_begun();
+	void _on_openxr_session_stopping();
+
+public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	AABB get_aabb() const;
+
+	OpenXRVisibilityMask() = default;
+	~OpenXRVisibilityMask() = default;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRRenderModel & OpenXRRenderModelManager
+
+#ifdef MODULE_GLTF_ENABLED
+class OpenXRRenderModel final : public Node3D
+{
+private:
+	RID render_model;
+	Node3D* scene = nullptr;
+	HashMap<String, Node3D*> animatable_nodes;
+
+	void _load_render_model_scene();
+	void _on_render_model_top_level_path_changed(RID p_render_model);
+	void _notification(int p_what);
+
+public:
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	RID get_render_model() const;
+	void set_render_model(RID p_render_model);
+
+	String get_top_level_path() const;
+};
+
+class OpenXRRenderModelManager final : public Node3D
+{
+public:
+	enum RenderModelTracker
+	{
+		RENDER_MODEL_TRACKER_ANY,
+		RENDER_MODEL_TRACKER_NONE_SET,
+		RENDER_MODEL_TRACKER_LEFT_HAND,
+		RENDER_MODEL_TRACKER_RIGHT_HAND,
+	};
+
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	void set_tracker(RenderModelTracker p_tracker);
+	RenderModelTracker get_tracker() const;
+
+	void set_make_local_to_pose(const String& p_action);
+	String get_make_local_to_pose() const;
+
+private:
+	HashMap<RID, Node3D*> render_models;
+	Node3D* container = nullptr;
+
+	bool is_dirty = false;
+	RenderModelTracker tracker = RENDER_MODEL_TRACKER_ANY;
+	String make_local_to_pose;
+
+	Ref<XRTracker> positional_tracker;
+	XrPath xr_path = XR_NULL_PATH;
+
+	bool _has_filters();
+	void _on_render_model_added(RID p_render_model);
+	void _on_render_model_removed(RID p_render_model);
+	void _on_render_model_top_level_path_changed(RID p_path);
+	void _update_models();
+	void _notification(int p_what);
+};
+#endif // MODULE_GLTF_ENABLED
+
+// --- End modules/openxr/scene/openxr_scene.h ---
+
+// --- End modules/openxr/openxr_interface.h ---
+#include "core/math/quaternion.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/rid_owner.h"
+#include "core/templates/vector.h"
+#include "core/types.h"
+#include "modules/modules_enabled.gen.h"
+#include "servers/xr/xr_tracker.h"
+
+#ifdef XR_USE_PLATFORM_ANDROID
+#include <jni.h>
+#include <openxr/openxr_platform.h>
+#endif
+
+#ifdef ANDROID_ENABLED
+#include <jni.h>
+
+typedef XrResult(XRAPI_PTR* PFN_xrCreateSwapchainAndroidSurfaceKHR)(
+	XrSession session, const XrSwapchainCreateInfo* info, XrSwapchain* swapchain, jobject* surface);
+#endif
+
+#ifdef MODULE_GLTF_ENABLED
+class GLTFDocument;
+class GLTFState;
+class Node3D;
+template <typename T> class TypedArray;
+#endif
+
+class JavaObject;
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXREyeGazeInteractionExtension
+
+class OpenXREyeGazeInteractionExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+
+	static PackedStringArray get_suggested_tracker_names();
+
+	static bool is_available();
+	static bool supports_eye_gaze_interaction();
+
+	static bool get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose);
+
+	struct Data
+	{
+		bool available = false;
+		XrSystemEyeGazeInteractionPropertiesEXT properties;
+		bool init_eye_gaze_pose = false;
+		RID eye_tracker;
+		RID eye_action;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXREyeGazeInteractionExtension() = delete;
+	OpenXREyeGazeInteractionExtension(const OpenXREyeGazeInteractionExtension&) = delete;
+	OpenXREyeGazeInteractionExtension& operator=(const OpenXREyeGazeInteractionExtension&) = delete;
+	~OpenXREyeGazeInteractionExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRUserPresenceExtension
+
+class OpenXRUserPresenceExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+
+	static void on_state_ready();
+	static void on_state_stopping();
+
+	static bool on_event_polled(const XrEventDataBuffer& event);
+
+	static bool is_user_present();
+	static bool is_active();
+
+	struct Data
+	{
+		bool available = false;
+		XrSystemUserPresencePropertiesEXT properties;
+		bool user_present = true;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRUserPresenceExtension() = delete;
+	OpenXRUserPresenceExtension(const OpenXRUserPresenceExtension&) = delete;
+	OpenXRUserPresenceExtension& operator=(const OpenXRUserPresenceExtension&) = delete;
+	~OpenXRUserPresenceExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRAndroidThreadSettingsExtension
+
+class OpenXRAndroidThreadSettingsExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(XrInstance p_instance);
+	static void on_session_created(XrSession p_session);
+
+	enum ThreadType
+	{
+		THREAD_TYPE_APPLICATION_MAIN,
+		THREAD_TYPE_APPLICATION_WORKER,
+		THREAD_TYPE_RENDERER_MAIN,
+		THREAD_TYPE_RENDERER_WORKER,
+	};
+
+	static bool set_application_thread_type(ThreadType p_thread_type, uint32_t p_thread_id = 0);
+
+private:
+	static bool _initialize_openxr_android_thread_settings_extension();
+	static void _set_render_thread_type();
+
+#ifdef XR_USE_PLATFORM_ANDROID
+	EXT_PROTO_XRRESULT_FUNC3(xrSetAndroidApplicationThreadKHR, (XrSession), session,
+		(XrAndroidThreadTypeKHR), threadType, (uint32_t), threadId);
+#endif
+
+public:
+	struct Data
+	{
+		bool available = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRAndroidThreadSettingsExtension() = delete;
+	OpenXRAndroidThreadSettingsExtension(const OpenXRAndroidThreadSettingsExtension&) = delete;
+	OpenXRAndroidThreadSettingsExtension& operator=(
+		const OpenXRAndroidThreadSettingsExtension&) = delete;
+	~OpenXRAndroidThreadSettingsExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRDisplayRefreshRateExtension
+
+class OpenXRDisplayRefreshRateExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+	static bool on_event_polled(const XrEventDataBuffer& event);
+
+	static float get_refresh_rate();
+	static void set_refresh_rate(float p_refresh_rate);
+
+private:
+	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateDisplayRefreshRatesFB, (XrSession), session, (uint32_t),
+		displayRefreshRateCapacityInput, (uint32_t*), displayRefreshRateCountOutput, (float*),
+		displayRefreshRates);
+	EXT_PROTO_XRRESULT_FUNC2(
+		xrGetDisplayRefreshRateFB, (XrSession), session, (float*), display_refresh_rate);
+	EXT_PROTO_XRRESULT_FUNC2(
+		xrRequestDisplayRefreshRateFB, (XrSession), session, (float), display_refresh_rate);
+
+public:
+	struct Data
+	{
+		bool display_refresh_rate_ext = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRDisplayRefreshRateExtension() = delete;
+	OpenXRDisplayRefreshRateExtension(const OpenXRDisplayRefreshRateExtension&) = delete;
+	OpenXRDisplayRefreshRateExtension& operator=(const OpenXRDisplayRefreshRateExtension&) = delete;
+	~OpenXRDisplayRefreshRateExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRPerformanceSettingsExtension
+
+class OpenXRPerformanceSettingsExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static bool on_event_polled(const XrEventDataBuffer& event);
+
+	static bool is_available();
+
+	static void set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level);
+	static void set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level);
+
+private:
+	static XrPerfSettingsLevelEXT level_to_openxr(OpenXRInterface::PerfSettingsLevel p_level);
+	static OpenXRInterface::PerfSettingsSubDomain openxr_to_sub_domain(
+		XrPerfSettingsSubDomainEXT p_sub_domain);
+	static OpenXRInterface::PerfSettingsNotificationLevel openxr_to_notification_level(
+		XrPerfSettingsNotificationLevelEXT p_notification_level);
+
+	EXT_PROTO_XRRESULT_FUNC3(xrPerfSettingsSetPerformanceLevelEXT, (XrSession), session,
+		(XrPerfSettingsDomainEXT), domain, (XrPerfSettingsLevelEXT), level)
+
+public:
+	struct Data
+	{
+		bool available = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRPerformanceSettingsExtension() = delete;
+	OpenXRPerformanceSettingsExtension(const OpenXRPerformanceSettingsExtension&) = delete;
+	OpenXRPerformanceSettingsExtension& operator=(
+		const OpenXRPerformanceSettingsExtension&) = delete;
+	~OpenXRPerformanceSettingsExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRDebugUtilsExtension
+
+class OpenXRDebugUtilsExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+
+	static bool get_active();
+
+	static void set_object_name(
+		XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name);
+	static void begin_debug_label_region(const char* p_label_name);
+	static void end_debug_label_region();
+	static void insert_debug_label(const char* p_label_name);
+
+private:
+	static XrBool32 XRAPI_PTR _debug_callback(
+		XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
+		XrDebugUtilsMessageTypeFlagsEXT p_message_types,
+		const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data);
+	static XrBool32 debug_callback(XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
+		XrDebugUtilsMessageTypeFlagsEXT p_message_types,
+		const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data);
+
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateDebugUtilsMessengerEXT, (XrInstance), p_instance,
+		(const XrDebugUtilsMessengerCreateInfoEXT*), p_create_info, (XrDebugUtilsMessengerEXT*),
+		p_messenger)
+	EXT_PROTO_XRRESULT_FUNC1(
+		xrDestroyDebugUtilsMessengerEXT, (XrDebugUtilsMessengerEXT), p_messenger)
+	EXT_PROTO_XRRESULT_FUNC2(xrSetDebugUtilsObjectNameEXT, (XrInstance), p_instance,
+		(const XrDebugUtilsObjectNameInfoEXT*), p_name_info)
+	EXT_PROTO_XRRESULT_FUNC2(xrSessionBeginDebugUtilsLabelRegionEXT, (XrSession), p_session,
+		(const XrDebugUtilsLabelEXT*), p_label_info)
+	EXT_PROTO_XRRESULT_FUNC1(xrSessionEndDebugUtilsLabelRegionEXT, (XrSession), p_session)
+	EXT_PROTO_XRRESULT_FUNC2(xrSessionInsertDebugUtilsLabelEXT, (XrSession), p_session,
+		(const XrDebugUtilsLabelEXT*), p_label_info)
+
+public:
+	struct Data
+	{
+		bool debug_utils_ext = false;
+		XrDebugUtilsMessengerEXT default_messenger = XR_NULL_HANDLE;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRDebugUtilsExtension() = delete;
+	OpenXRDebugUtilsExtension(const OpenXRDebugUtilsExtension&) = delete;
+	OpenXRDebugUtilsExtension& operator=(const OpenXRDebugUtilsExtension&) = delete;
+	~OpenXRDebugUtilsExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRVisibilityMaskExtension
+
+class OpenXRVisibilityMaskExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+
+	static void on_session_created(const XrSession p_instance);
+	static void on_session_destroyed();
+
+	static void on_pre_render();
+	static bool on_event_polled(const XrEventDataBuffer& event);
+
+	static bool is_available();
+	static RID get_mesh();
+
+private:
+	struct MeshData
+	{
+		Vector<XrVector2f> vertices;
+		Vector<uint32_t> indices;
+	};
+
+	static void _update_mesh_data(uint32_t p_view);
+	static void _update_mesh();
+
+	EXT_PROTO_XRRESULT_FUNC5(xrGetVisibilityMaskKHR, (XrSession), session,
+		(XrViewConfigurationType), viewConfigurationType, (uint32_t), viewIndex,
+		(XrVisibilityMaskTypeKHR), visibilityMaskType, (XrVisibilityMaskKHR*), visibilityMask);
+
+public:
+	struct Data
+	{
+		bool available = false;
+		bool is_dirty = false;
+		RID shader;
+		RID material;
+		RID mesh;
+		uint32_t mesh_count = 0;
+		MeshData mesh_data[4];
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRVisibilityMaskExtension() = delete;
+	OpenXRVisibilityMaskExtension(const OpenXRVisibilityMaskExtension&) = delete;
+	OpenXRVisibilityMaskExtension& operator=(const OpenXRVisibilityMaskExtension&) = delete;
+	~OpenXRVisibilityMaskExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRCompositionLayerExtension
+
+class OpenXRCompositionLayerExtension final
+{
+public:
+	// Must be identical to Filter enum definition in OpenXRCompositionLayer.
+	enum Filter
+	{
+		FILTER_NEAREST,
+		FILTER_LINEAR,
+		FILTER_CUBIC,
+	};
+
+	// Must be identical to MipmapMode enum definition in OpenXRCompositionLayer.
+	enum MipmapMode
+	{
+		MIPMAP_MODE_DISABLED,
+		MIPMAP_MODE_NEAREST,
+		MIPMAP_MODE_LINEAR,
+	};
+
+	// Must be identical to Wrap enum definition in OpenXRCompositionLayer.
+	enum Wrap
+	{
+		WRAP_CLAMP_TO_BORDER,
+		WRAP_CLAMP_TO_EDGE,
+		WRAP_REPEAT,
+		WRAP_MIRRORED_REPEAT,
+		WRAP_MIRROR_CLAMP_TO_EDGE,
+	};
+
+	// Must be identical to Swizzle enum definition in OpenXRCompositionLayer.
+	enum Swizzle
+	{
+		SWIZZLE_RED,
+		SWIZZLE_GREEN,
+		SWIZZLE_BLUE,
+		SWIZZLE_ALPHA,
+		SWIZZLE_ZERO,
+		SWIZZLE_ONE,
+	};
+
+	// Must be identical to EyeVisibility enum definition in OpenXRCompositionLayer.
+	enum EyeVisibility
+	{
+		EYE_VISIBILITY_BOTH,
+		EYE_VISIBILITY_LEFT,
+		EYE_VISIBILITY_RIGHT,
+	};
+
+	enum PoseSpace
+	{
+		POSE_WORLD_LOCKED,
+		POSE_HEAD_LOCKED,
+	};
+
+	struct SwapchainState
+	{
+		Filter min_filter = Filter::FILTER_LINEAR;
+		Filter mag_filter = Filter::FILTER_LINEAR;
+		MipmapMode mipmap_mode = MipmapMode::MIPMAP_MODE_LINEAR;
+		Wrap horizontal_wrap = Wrap::WRAP_CLAMP_TO_BORDER;
+		Wrap vertical_wrap = Wrap::WRAP_CLAMP_TO_BORDER;
+		Swizzle red_swizzle = Swizzle::SWIZZLE_RED;
+		Swizzle green_swizzle = Swizzle::SWIZZLE_GREEN;
+		Swizzle blue_swizzle = Swizzle::SWIZZLE_BLUE;
+		Swizzle alpha_swizzle = Swizzle::SWIZZLE_ALPHA;
+		float max_anisotropy = 1.0;
+		Color border_color = {0.0, 0.0, 0.0, 0.0};
+	};
+
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_session_created(const XrSession p_session);
+	static void on_session_destroyed();
+	static void on_pre_render();
+
+	static int get_composition_layer_count();
+	static XrCompositionLayerBaseHeader* get_composition_layer(int p_index);
+	static int get_composition_layer_order(int p_index);
+
+	static RID composition_layer_create(XrCompositionLayerBaseHeader* p_openxr_layer);
+	static void composition_layer_free(RID p_layer);
+
+	static void composition_layer_register(RID p_layer);
+	static void composition_layer_unregister(RID p_layer);
+
+#define OPENXR_LAYER_FUNC1_DECL(m_name, m_arg1)                                                    \
+	static void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1);                          \
+	static void composition_layer_##m_name(RID p_layer, m_arg1 p1);
+
+#define OPENXR_LAYER_FUNC2_DECL(m_name, m_arg1, m_arg2)                                            \
+	static void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1, m_arg2 p2);               \
+	static void composition_layer_##m_name(RID p_layer, m_arg1 p1, m_arg2 p2);
+
+	OPENXR_LAYER_FUNC2_DECL(set_viewport, RID, const Size2i&);
+	OPENXR_LAYER_FUNC2_DECL(set_use_android_surface, bool, const Size2i&);
+	OPENXR_LAYER_FUNC1_DECL(set_sort_order, int);
+	OPENXR_LAYER_FUNC1_DECL(set_alpha_blend, bool);
+	OPENXR_LAYER_FUNC1_DECL(set_transform, const Transform3D&);
+	OPENXR_LAYER_FUNC1_DECL(set_protected_content, bool);
+
+	OPENXR_LAYER_FUNC1_DECL(set_min_filter, Filter);
+	OPENXR_LAYER_FUNC1_DECL(set_mag_filter, Filter);
+	OPENXR_LAYER_FUNC1_DECL(set_mipmap_mode, MipmapMode);
+	OPENXR_LAYER_FUNC1_DECL(set_horizontal_wrap, Wrap);
+	OPENXR_LAYER_FUNC1_DECL(set_vertical_wrap, Wrap);
+	OPENXR_LAYER_FUNC1_DECL(set_red_swizzle, Swizzle);
+	OPENXR_LAYER_FUNC1_DECL(set_blue_swizzle, Swizzle);
+	OPENXR_LAYER_FUNC1_DECL(set_green_swizzle, Swizzle);
+	OPENXR_LAYER_FUNC1_DECL(set_alpha_swizzle, Swizzle);
+	OPENXR_LAYER_FUNC1_DECL(set_max_anisotropy, float);
+	OPENXR_LAYER_FUNC1_DECL(set_border_color, const Color&);
+	OPENXR_LAYER_FUNC1_DECL(set_pose_space, PoseSpace);
+	OPENXR_LAYER_FUNC1_DECL(set_eye_visibility, EyeVisibility);
+
+	OPENXR_LAYER_FUNC1_DECL(set_quad_size, const Size2&);
+
+	OPENXR_LAYER_FUNC1_DECL(set_cylinder_radius, float);
+	OPENXR_LAYER_FUNC1_DECL(set_cylinder_aspect_ratio, float);
+	OPENXR_LAYER_FUNC1_DECL(set_cylinder_central_angle, float);
+
+	OPENXR_LAYER_FUNC1_DECL(set_equirect_radius, float);
+	OPENXR_LAYER_FUNC1_DECL(set_equirect_central_horizontal_angle, float);
+	OPENXR_LAYER_FUNC1_DECL(set_equirect_upper_vertical_angle, float);
+	OPENXR_LAYER_FUNC1_DECL(set_equirect_lower_vertical_angle, float);
+
+#undef OPENXR_LAYER_FUNC1_DECL
+#undef OPENXR_LAYER_FUNC2_DECL
+
+	static Ref<JavaObject> composition_layer_get_android_surface(RID p_layer);
+
+	static bool is_available(XrStructureType p_which);
+
+	static bool is_android_surface_swapchain_available()
+	{
+		return data != nullptr && data->android_surface_ext_available;
+	}
+
+private:
+	static void _composition_layer_free_rt(RID p_layer);
+	static void _composition_layer_register_rt(RID p_layer);
+	static void _composition_layer_unregister_rt(RID p_layer);
+
+#ifdef ANDROID_ENABLED
+	static bool create_android_surface_swapchain(
+		XrSwapchainCreateInfo* p_info, XrSwapchain* r_swapchain, jobject* r_surface);
+
+	EXT_PROTO_XRRESULT_FUNC1(xrDestroySwapchain, (XrSwapchain), swapchain)
+	EXT_PROTO_XRRESULT_FUNC4(xrCreateSwapchainAndroidSurfaceKHR, (XrSession), session,
+		(const XrSwapchainCreateInfo*), info, (XrSwapchain*), swapchain, (jobject*), surface)
+#endif
+
+	struct CompositionLayer
+	{
+		union
+		{
+			XrCompositionLayerBaseHeader composition_layer;
+			XrCompositionLayerQuad composition_layer_quad;
+			XrCompositionLayerCylinderKHR composition_layer_cylinder;
+			XrCompositionLayerEquirect2KHR composition_layer_equirect;
+		};
+
+		int sort_order = 1;
+		bool alpha_blend = false;
+		bool extension_property_values_changed = true;
+
+		struct
+		{
+			RID viewport;
+			Size2i viewport_size;
+			OpenXRAPI::OpenXRSwapChainInfo swapchain_info;
+			bool static_image = false;
+			bool swapchain_protected_content = false;
+		} subviewport;
+
+#ifdef ANDROID_ENABLED
+		struct
+		{
+			XrSwapchain swapchain = XR_NULL_HANDLE;
+			Ref<JavaObject> surface;
+		} android_surface;
+#endif
+
+		PoseSpace pose_space = POSE_WORLD_LOCKED;
+		XrSpace layer_reference_space = XR_NULL_HANDLE;
+
+		bool use_android_surface = false;
+		bool protected_content = false;
+		Size2i swapchain_size;
+
+		SwapchainState swapchain_state;
+		bool swapchain_state_is_dirty = false;
+
+		void set_viewport(RID p_viewport, const Size2i& p_size);
+		void set_use_android_surface(bool p_use_android_surface, const Size2i& p_size);
+
+		void set_sort_order(int p_sort_order) { sort_order = p_sort_order; }
+
+		void set_alpha_blend(bool p_alpha_blend);
+
+		void set_protected_content(bool p_protected_content)
+		{
+			protected_content = p_protected_content;
+		}
+
+		void set_transform(const Transform3D& p_transform);
+
+		void set_min_filter(Filter p_mode);
+		void set_mag_filter(Filter p_mode);
+		void set_mipmap_mode(MipmapMode p_mode);
+		void set_horizontal_wrap(Wrap p_mode);
+		void set_vertical_wrap(Wrap p_mode);
+		void set_red_swizzle(Swizzle p_mode);
+		void set_green_swizzle(Swizzle p_mode);
+		void set_blue_swizzle(Swizzle p_mode);
+		void set_alpha_swizzle(Swizzle p_mode);
+		void set_max_anisotropy(float p_value);
+		void set_border_color(const Color& p_color);
+		void set_pose_space(PoseSpace p_pose_space);
+		void set_eye_visibility(EyeVisibility p_eye_visibility);
+
+		void set_quad_size(const Size2& p_size);
+
+		void set_cylinder_radius(float p_radius);
+		void set_cylinder_aspect_ratio(float p_aspect_ratio);
+		void set_cylinder_central_angle(float p_central_angle);
+
+		void set_equirect_radius(float p_radius);
+		void set_equirect_central_horizontal_angle(float p_angle);
+		void set_equirect_upper_vertical_angle(float p_angle);
+		void set_equirect_lower_vertical_angle(float p_angle);
+
+		Ref<JavaObject> get_android_surface();
+		void on_pre_render();
+		XrCompositionLayerBaseHeader* get_composition_layer();
+		void free();
+
+	private:
+		void update_swapchain_state();
+		void update_swapchain_sub_image(XrSwapchainSubImage& r_subimage);
+		bool update_and_acquire_swapchain(bool p_static_image);
+		RID get_current_swapchain_texture();
+		void free_swapchain();
+
+#ifdef ANDROID_ENABLED
+		void create_android_surface();
+#endif
+	};
+
+public:
+	struct Data
+	{
+		bool cylinder_ext_available = false;
+		bool equirect_ext_available = false;
+		bool android_surface_ext_available = false;
+		Mutex composition_layer_mutex;
+		RID_Owner<CompositionLayer, true> composition_layer_owner;
+		LocalVector<CompositionLayer*> registered_composition_layers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRCompositionLayerExtension() = delete;
+	OpenXRCompositionLayerExtension(const OpenXRCompositionLayerExtension&) = delete;
+	OpenXRCompositionLayerExtension& operator=(const OpenXRCompositionLayerExtension&) = delete;
+	~OpenXRCompositionLayerExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRFBUpdateSwapchainExtension
+
+class OpenXRFBUpdateSwapchainExtension final
+{
+protected:
+	friend class OpenXRFBFoveationExtension;
+
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+
+	static bool is_enabled();
+	static bool is_android_ext_enabled();
+
+	static void update_swapchain_state(XrSwapchain p_swapchain,
+		const OpenXRCompositionLayerExtension::SwapchainState* p_swapchain_state);
+
+	static void update_swapchain_surface_size(XrSwapchain p_swapchain, const Size2i& p_size);
+
+private:
+	static uint32_t filter_to_gl(OpenXRCompositionLayerExtension::Filter p_filter,
+		OpenXRCompositionLayerExtension::MipmapMode p_mipmap_mode =
+			OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_DISABLED);
+	static uint32_t wrap_to_gl(OpenXRCompositionLayerExtension::Wrap p_wrap);
+	static uint32_t swizzle_to_gl(OpenXRCompositionLayerExtension::Swizzle p_swizzle);
+
+	static uint32_t filter_to_vk(OpenXRCompositionLayerExtension::Filter p_filter);
+	static uint32_t mipmap_mode_to_vk(OpenXRCompositionLayerExtension::MipmapMode p_mipmap);
+	static uint32_t wrap_to_vk(OpenXRCompositionLayerExtension::Wrap p_wrap);
+	static uint32_t swizzle_to_vk(OpenXRCompositionLayerExtension::Swizzle p_swizzle);
+
+	EXT_PROTO_XRRESULT_FUNC2(xrUpdateSwapchainFB, (XrSwapchain), swapchain,
+		(const XrSwapchainStateBaseHeaderFB*), state);
+	EXT_PROTO_XRRESULT_FUNC2(
+		xrGetSwapchainStateFB, (XrSwapchain), swapchain, (XrSwapchainStateBaseHeaderFB*), state);
+
+public:
+	struct Data
+	{
+		String rendering_driver;
+		bool fb_swapchain_update_state_ext = false;
+		bool fb_swapchain_update_state_vulkan_ext = false;
+		bool fb_swapchain_update_state_opengles_ext = false;
+		bool fb_swapchain_update_state_android_ext = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize(const String& p_rendering_driver = String());
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRFBUpdateSwapchainExtension() = delete;
+	OpenXRFBUpdateSwapchainExtension(const OpenXRFBUpdateSwapchainExtension&) = delete;
+	OpenXRFBUpdateSwapchainExtension& operator=(const OpenXRFBUpdateSwapchainExtension&) = delete;
+	~OpenXRFBUpdateSwapchainExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRFBFoveationExtension
+
+class OpenXRFBFoveationExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+
+	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+	static void* set_swapchain_create_info_and_get_next_pointer(void* p_next_pointer);
+
+	static void on_main_swapchains_created();
+
+	static bool is_enabled();
+
+	static XrFoveationLevelFB get_foveation_level();
+	static void set_foveation_level(XrFoveationLevelFB p_foveation_level);
+
+	static XrFoveationDynamicFB get_foveation_dynamic();
+	static void set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic);
+
+	static bool is_foveation_eye_tracked_enabled();
+	static void get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets);
+
+	static void set_foveation_with_subsampled_images_enabled(bool p_enabled);
+	static bool is_foveation_with_subsampled_images_enabled();
+
+	static void set_foveation_with_subsampled_images_active(bool p_active);
+
+private:
+	static void _update_profile_rt();
+	static void update_profile();
+
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateFoveationProfileFB, (XrSession), session,
+		(const XrFoveationProfileCreateInfoFB*), create_info, (XrFoveationProfileFB*), profile);
+	EXT_PROTO_XRRESULT_FUNC1(xrDestroyFoveationProfileFB, (XrFoveationProfileFB), profile);
+	EXT_PROTO_XRRESULT_FUNC2(xrGetFoveationEyeTrackedStateMETA, (XrSession), session,
+		(XrFoveationEyeTrackedStateMETA*), foveationState);
+
+public:
+	struct Data;
+
+	static inline Data* data = nullptr;
+
+	static void initialize(const String& p_rendering_driver = String());
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRFBFoveationExtension() = delete;
+	OpenXRFBFoveationExtension(const OpenXRFBFoveationExtension&) = delete;
+	OpenXRFBFoveationExtension& operator=(const OpenXRFBFoveationExtension&) = delete;
+	~OpenXRFBFoveationExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRFrameSynthesisExtension
+
+class OpenXRFrameSynthesisExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+
+	static void prepare_view_configuration(uint32_t p_view_count);
+	static void* set_view_configuration_and_get_next_pointer(
+		uint32_t p_view, void* p_next_pointer);
+	static void print_view_configuration_info(uint32_t p_view);
+
+	static void on_session_destroyed();
+
+	static void on_main_swapchains_created();
+	static void on_pre_draw_viewport(RID p_render_target);
+	static void on_post_draw_viewport(RID p_render_target);
+	static void* set_projection_views_and_get_next_pointer(int p_view_index, void* p_next_pointer);
+
+	static bool is_available();
+
+	static bool is_enabled();
+	static void set_enabled(bool p_enabled);
+
+	static bool get_relax_frame_interval();
+	static void set_relax_frame_interval(bool p_relax_frame_interval);
+
+	static void skip_next_frame();
+
+protected:
+	static void _set_render_state_enabled_rt(bool p_enabled);
+	static void _set_relax_frame_interval_rt(bool p_relax_frame_interval);
+	static void _set_skip_next_frame_rt();
+
+private:
+	enum SwapchainTypes
+	{
+		SWAPCHAIN_MOTION_VECTOR,
+		SWAPCHAIN_DEPTH,
+		SWAPCHAIN_MAX
+	};
+
+	static void free_swapchains();
+
+	struct RenderState
+	{
+		bool enabled = true;
+		bool relax_frame_interval = false;
+		bool skip_next_frame = false;
+
+		LocalVector<XrFrameSynthesisConfigViewEXT> config_views;
+		OpenXRAPI::OpenXRSwapChainInfo swapchains[SWAPCHAIN_MAX];
+		LocalVector<XrFrameSynthesisInfoEXT> frame_synthesis_info;
+		Transform3D previous_transform;
+	};
+
+public:
+	struct Data
+	{
+		bool frame_synthesis_ext = false;
+		bool enabled = true;
+		bool relax_frame_interval = false;
+		RenderState render_state;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRFrameSynthesisExtension() = delete;
+	OpenXRFrameSynthesisExtension(const OpenXRFrameSynthesisExtension&) = delete;
+	OpenXRFrameSynthesisExtension& operator=(const OpenXRFrameSynthesisExtension&) = delete;
+	~OpenXRFrameSynthesisExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRFutureResult & OpenXRFutureExtension
+
+class OpenXRFutureExtension;
+
+class OpenXRFutureResult final : public RefCounted
+{
+	friend class OpenXRFutureExtension;
+
+protected:
+	void _mark_as_finished();
+	void _mark_as_cancelled();
+
+public:
+	enum ResultStatus
+	{
+		RESULT_RUNNING,
+		RESULT_FINISHED,
+		RESULT_CANCELLED,
+	};
+
+	ResultStatus get_status() const;
+	XrFutureEXT get_future() const;
+
+	void cancel_future();
+
+private:
+	ResultStatus status = RESULT_RUNNING;
+	XrFutureEXT future;
+
+	uint64_t _get_future() const;
+};
+
+class OpenXRFutureExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+	static void on_session_destroyed();
+
+	static void on_process();
+
+	static bool is_active();
+
+	static void cancel_future(XrFutureEXT p_future);
+
+private:
+	static void _cancel_future(uint64_t p_future);
+
+	EXT_PROTO_XRRESULT_FUNC3(xrPollFutureEXT, (XrInstance), instance, (const XrFuturePollInfoEXT*),
+		poll_info, (XrFuturePollResultEXT*), poll_result);
+	EXT_PROTO_XRRESULT_FUNC2(
+		xrCancelFutureEXT, (XrInstance), instance, (const XrFutureCancelInfoEXT*), cancel_info);
+
+public:
+	struct Data
+	{
+		bool future_ext = false;
+		HashMap<XrFutureEXT, Ref<OpenXRFutureResult>> futures;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRFutureExtension() = delete;
+	OpenXRFutureExtension(const OpenXRFutureExtension&) = delete;
+	OpenXRFutureExtension& operator=(const OpenXRFutureExtension&) = delete;
+	~OpenXRFutureExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRHandTrackingExtension
+
+class OpenXRHandTrackingExtension final
+{
+public:
+	enum HandTrackedHands
+	{
+		OPENXR_TRACKED_LEFT_HAND,
+		OPENXR_TRACKED_RIGHT_HAND,
+		OPENXR_MAX_TRACKED_HANDS
+	};
+
+	enum HandTrackedSource
+	{
+		OPENXR_SOURCE_UNKNOWN,
+		OPENXR_SOURCE_UNOBSTRUCTED,
+		OPENXR_SOURCE_CONTROLLER,
+		OPENXR_SOURCE_NOT_TRACKED,
+		OPENXR_SOURCE_MAX
+	};
+
+	struct HandTracker
+	{
+		bool is_initialized = false;
+		Ref<XRTracker> godot_tracker;
+		HandTrackedSource source = OPENXR_SOURCE_UNKNOWN;
+	};
+
+	static void on_instance_destroyed();
+	static void on_session_destroyed();
+
+	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
+	static void on_state_ready();
+	static void on_process();
+	static void on_state_stopping();
+
+	static bool get_active();
+	static const HandTracker* get_hand_tracker(HandTrackedHands p_hand);
+
+private:
+	static void cleanup_hand_tracking();
+
+public:
+	struct Data
+	{
+		HandTracker hand_trackers[OPENXR_MAX_TRACKED_HANDS];
+		bool hand_tracking_ext = false;
+		bool hand_motion_range_ext = false;
+		bool hand_tracking_source_ext = false;
+		bool unobstructed_data_source = false;
+		bool controller_data_source = false;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRHandTrackingExtension() = delete;
+	OpenXRHandTrackingExtension(const OpenXRHandTrackingExtension&) = delete;
+	OpenXRHandTrackingExtension& operator=(const OpenXRHandTrackingExtension&) = delete;
+	~OpenXRHandTrackingExtension() = delete;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// OpenXRRenderModelData & OpenXRRenderModelExtension
+
+#ifdef MODULE_GLTF_ENABLED
+class OpenXRRenderModelData final : public RefCounted
+{
+private:
+	Ref<GLTFDocument> gltf_document;
+	Ref<GLTFState> gltf_state;
+	PackedStringArray node_names;
+
+public:
+	Ref<GLTFState> get_gltf_state();
+
+	bool parse_gltf_document(const PackedByteArray& p_bytes);
+	Node3D* new_scene_instance();
+
+	void set_node_names(const PackedStringArray& p_node_names);
+	PackedStringArray get_node_names() const;
+	const String get_node_name(uint32_t p_node_index) const;
+
+	OpenXRRenderModelData();
+	~OpenXRRenderModelData();
+};
+
+class OpenXRRenderModelExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_session_created(const XrSession p_session);
+	static void on_instance_destroyed();
+	static void on_session_destroyed();
+
+	static bool on_event_polled(const XrEventDataBuffer& event);
+	static void on_sync_actions();
+
+	static bool is_active();
+
+	// Render model.
+	static bool has_render_model(RID p_render_model);
+	static RID render_model_create(XrRenderModelIdEXT p_render_model_id);
+	static void render_model_destroy(RID p_render_model);
+
+	static TypedArray<RID> render_model_get_all();
+	static Node3D* render_model_new_scene_instance(RID p_render_model);
+	static PackedStringArray render_model_get_subaction_paths(RID p_render_model);
+	static XrPath render_model_get_top_level_path(RID p_render_model);
+	static String render_model_get_top_level_path_as_string(RID p_render_model);
+	static XRPose::TrackingConfidence render_model_get_confidence(RID p_render_model);
+	static Transform3D render_model_get_root_transform(RID p_render_model);
+	static uint32_t render_model_get_animatable_node_count(RID p_render_model);
+	static String render_model_get_animatable_node_name(RID p_render_model, uint32_t p_index);
+	static bool render_model_is_animatable_node_visible(RID p_render_model, uint32_t p_index);
+	static Transform3D render_model_get_animatable_node_transform(
+		RID p_render_model, uint32_t p_index);
+
+private:
+	static void _clear_interaction_data();
+	static bool _update_interaction_data();
+
+	struct RenderModel
+	{
+		XrRenderModelIdEXT xr_render_model_id = XR_NULL_RENDER_MODEL_ID_EXT;
+		XrRenderModelEXT xr_render_model = XR_NULL_HANDLE;
+		uint32_t animatable_node_count = 0;
+		Ref<OpenXRRenderModelData> render_model_data;
+		XrSpace xr_space = XR_NULL_HANDLE;
+		XRPose::TrackingConfidence confidence =
+			XRPose::TrackingConfidence::XR_TRACKING_CONFIDENCE_NONE;
+		Transform3D root_transform;
+		LocalVector<XrRenderModelNodeStateEXT> node_states;
+		XrPath top_level_path = XR_NULL_PATH;
+	};
+
+	static Ref<OpenXRRenderModelData> _get_render_model_data(
+		XrUuidEXT p_cache_id, uint32_t p_animatable_node_count);
+	static Ref<OpenXRRenderModelData> _load_asset(
+		XrRenderModelAssetEXT p_asset, uint32_t p_animatable_node_count);
+	static void _clear_render_model_data();
+
+	static RID _render_model_create(uint64_t p_render_model_id);
+
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateRenderModelEXT, (XrSession), session,
+		(const XrRenderModelCreateInfoEXT*), createInfo, (XrRenderModelEXT*), renderModel);
+	EXT_PROTO_XRRESULT_FUNC1(xrDestroyRenderModelEXT, (XrRenderModelEXT), renderModel);
+	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelPropertiesEXT, (XrRenderModelEXT), renderModel,
+		(const XrRenderModelPropertiesGetInfoEXT*), getInfo, (XrRenderModelPropertiesEXT*),
+		properties);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateRenderModelSpaceEXT, (XrSession), session,
+		(const XrRenderModelSpaceCreateInfoEXT*), createInfo, (XrSpace*), space);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateRenderModelAssetEXT, (XrSession), session,
+		(const XrRenderModelAssetCreateInfoEXT*), createInfo, (XrRenderModelAssetEXT*), asset);
+	EXT_PROTO_XRRESULT_FUNC1(xrDestroyRenderModelAssetEXT, (XrRenderModelAssetEXT), asset);
+	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelAssetDataEXT, (XrRenderModelAssetEXT), asset,
+		(const XrRenderModelAssetDataGetInfoEXT*), getInfo, (XrRenderModelAssetDataEXT*), buffer);
+	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelAssetPropertiesEXT, (XrRenderModelAssetEXT), asset,
+		(const XrRenderModelAssetPropertiesGetInfoEXT*), getInfo,
+		(XrRenderModelAssetPropertiesEXT*), properties);
+	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelStateEXT, (XrRenderModelEXT), renderModel,
+		(const XrRenderModelStateGetInfoEXT*), getInfo, (XrRenderModelStateEXT*), state);
+	EXT_PROTO_XRRESULT_FUNC5(xrEnumerateInteractionRenderModelIdsEXT, (XrSession), session,
+		(const XrInteractionRenderModelIdsEnumerateInfoEXT*), getInfo, (uint32_t),
+		renderModelIdCapacityInput, (uint32_t*), renderModelIdCountOutput, (XrRenderModelIdEXT*),
+		renderModelIds);
+	EXT_PROTO_XRRESULT_FUNC5(xrEnumerateRenderModelSubactionPathsEXT, (XrRenderModelEXT),
+		renderModel, (const XrInteractionRenderModelSubactionPathInfoEXT*), info, (uint32_t),
+		pathCapacityInput, (uint32_t*), pathCountOutput, (XrPath*), paths);
+	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelPoseTopLevelUserPathEXT, (XrRenderModelEXT),
+		renderModel, (const XrInteractionRenderModelTopLevelUserPathGetInfoEXT*), info, (XrPath*),
+		topLevelUserPath);
+
+	EXT_PROTO_XRRESULT_FUNC4(xrLocateSpace, (XrSpace), space, (XrSpace), baseSpace, (XrTime), time,
+		(XrSpaceLocation*), location);
+	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpace, (XrSpace), space);
+	EXT_PROTO_XRRESULT_FUNC5(xrPathToString, (XrInstance), instance, (XrPath), path, (uint32_t),
+		bufferCapacityInput, (uint32_t*), bufferCountOutput, (char*), buffer);
+
+public:
+	struct Data
+	{
+		bool uuid_ext = false;
+		bool render_model_ext = false;
+		bool interaction_render_model_ext = false;
+		bool xr_sync_has_run = false;
+		bool _interaction_data_dirty = true;
+		HashMap<XrRenderModelIdEXT, RID> interaction_render_models;
+		Vector<XrPath> toplevel_paths;
+		RID_Owner<RenderModel, true> render_model_owner;
+		HashMap<XrUuidEXT, Ref<OpenXRRenderModelData>, HashMapHasherXrUuidEXT>
+			render_model_data_cache;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRRenderModelExtension() = delete;
+	OpenXRRenderModelExtension(const OpenXRRenderModelExtension&) = delete;
+	OpenXRRenderModelExtension& operator=(const OpenXRRenderModelExtension&) = delete;
+	~OpenXRRenderModelExtension() = delete;
+};
+#endif // MODULE_GLTF_ENABLED
+
+// --- Folded from modules/openxr/extensions/openxr_interaction_profile_extension.h ---
+#include <openxr/openxr.h>
+#include "modules/openxr/openxr_api.h"
+#include "core/templates/hash_map.h"
+#include "core/types.h"
+
+class OpenXRInteractionProfileExtension final
+{
+public:
+	enum ProfileKind
+	{
+		PROFILE_HTC_CONTROLLER = 0,
+		PROFILE_HTC_VIVE_TRACKER,
+		PROFILE_HUAWEI_CONTROLLER,
+		PROFILE_KHR_GENERIC_CONTROLLER,
+		PROFILE_META_CONTROLLER,
+		PROFILE_ML2_CONTROLLER,
+		PROFILE_MXINK,
+		PROFILE_PALM_POSE,
+		PROFILE_PICO_CONTROLLER,
+		PROFILE_VALVE_CONTROLLER,
+		PROFILE_WMR_CONTROLLER,
+		PROFILE_HAND_INTERACTION,
+		PROFILE_LOCAL_FLOOR,
+		PROFILE_DPAD_BINDING,
+		PROFILE_VALVE_ANALOG_THRESHOLD,
+		PROFILE_COMPOSITION_LAYER_DEPTH,
+		PROFILE_MAX
+	};
+
+	enum HTCControllers
+	{
+		HTC_VIVE_COSMOS = 0,
+		HTC_VIVE_FOCUS3 = 1,
+		HTC_HAND_INTERACTION = 2,
+		HTC_MAX_CONTROLLERS = 3
+	};
+
+	enum MetaControllers
+	{
+		META_TOUCH_PROXIMITY = 0,
+		META_TOUCH_PRO = 1,
+		META_TOUCH_PLUS = 2,
+		META_MAX_CONTROLLERS = 3
+	};
+
+	enum WMRControllers
+	{
+		WMR_HPMR = 0,
+		WMR_SAMSUNG_ODESSY = 1,
+		WMR_HAND_INTERACTION = 2,
+		WMR_MAX_CONTROLLERS = 3
+	};
+
+private:
+	ProfileKind kind = PROFILE_KHR_GENERIC_CONTROLLER;
+	bool flags[3] = {false, false, false};
+
+public:
+	explicit OpenXRInteractionProfileExtension(
+		ProfileKind p_kind = PROFILE_KHR_GENERIC_CONTROLLER);
+
+	ProfileKind get_kind() const { return kind; }
+
+	HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	PackedStringArray get_suggested_tracker_names() const;
+	bool on_event_polled(const XrEventDataBuffer& p_event);
+	void on_register_metadata();
+
+	bool is_available(int p_subindex = 0) const;
+
+	static inline OpenXRInteractionProfileExtension* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	static OpenXRInteractionProfileExtension* get_profile(ProfileKind p_kind);
+	static bool is_profile_available(ProfileKind p_kind, int p_subindex = 0);
+	static HashMap<String, bool*> get_all_requested_extensions(XrVersion p_version);
+};
+
+class OpenXRDpadBindingModifier final : public OpenXRBindingModifier
+{
+private:
+	PackedByteArray dpad_bindings_data;
+	XrInteractionProfileDpadBindingEXT* dpad_bindings = nullptr;
+	String input_path;
+	Ref<OpenXRActionSet> action_set;
+	Ref<OpenXRHapticBase> on_haptic;
+	Ref<OpenXRHapticBase> off_haptic;
+
+public:
+	OpenXRDpadBindingModifier();
+
+	void set_action_set(const Ref<OpenXRActionSet>& p_action_set);
+	Ref<OpenXRActionSet> get_action_set() const;
+
+	void set_input_path(const String& p_input_path);
+	String get_input_path() const;
+
+	void set_threshold(float p_threshold);
+	float get_threshold() const;
+
+	void set_threshold_released(float p_threshold);
+	float get_threshold_released() const;
+
+	void set_center_region(float p_center_region);
+	float get_center_region() const;
+
+	void set_wedge_angle(float p_wedge_angle);
+	float get_wedge_angle() const;
+
+	void set_wedge_angle_deg(float p_wedge_angle);
+	float get_wedge_angle_deg() const;
+
+	void set_is_sticky(bool p_sticky);
+	bool get_is_sticky() const;
+
+	void set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic);
+	Ref<OpenXRHapticBase> get_on_haptic() const;
+
+	void set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic);
+	Ref<OpenXRHapticBase> get_off_haptic() const;
+
+	virtual String get_description() const override { return "DPad modifier"; }
+	virtual PackedByteArray get_ip_modification() override;
+};
+
+class OpenXRAnalogThresholdModifier final : public OpenXRBindingModifier
+{
+private:
+	XrInteractionProfileAnalogThresholdVALVE analog_threshold;
+	Ref<OpenXRHapticBase> on_haptic;
+	Ref<OpenXRHapticBase> off_haptic;
+
+public:
+	OpenXRAnalogThresholdModifier();
+
+	void set_on_threshold(float p_threshold);
+	float get_on_threshold() const;
+
+	void set_off_threshold(float p_threshold);
+	float get_off_threshold() const;
+
+	void set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic);
+	Ref<OpenXRHapticBase> get_on_haptic() const;
+
+	void set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic);
+	Ref<OpenXRHapticBase> get_off_haptic() const;
+
+	virtual String get_description() const override { return "Analog threshold modifier"; }
+	virtual PackedByteArray get_ip_modification() override;
+};
+
+// --- End modules/openxr/extensions/openxr_interaction_profile_extension.h ---
+
+// --- Folded from modules/openxr/extensions/spatial_entities/openxr_spatial_entities.h ---
+#include <openxr/openxr.h>
+#include "modules/openxr/openxr_api.h"
+
+#include "core/templates/rid_owner.h"
+#include "scene/resources/mesh.h"
+#include "servers/xr/xr_tracker.h"
+
+#ifndef PHYSICS_3D_DISABLED
+#include "scene/resources/3d/shape_3d.h"
+#endif
+
+#define XR_NULL_ENTITY 0x7FFFFFFF
+
+// Persistence configuration (folded into OpenXRStructureBase)
+using OpenXRSpatialContextPersistenceConfig = OpenXRStructureBase;
+
+// Consolidated capability configuration wrapper for XrSpatialCapabilityConfigurationBaseHeaderEXT
+class OpenXRSpatialCapabilityConfigurationBaseHeader final : public RefCounted
+{
+public:
+	enum CapabilityType
+	{
+		CAPABILITY_NONE,
+		CAPABILITY_ANCHOR,
+		CAPABILITY_PLANE_TRACKING,
+		CAPABILITY_QR_CODE,
+		CAPABILITY_MICRO_QR_CODE,
+		CAPABILITY_ARUCO,
+		CAPABILITY_APRIL_TAG,
+	};
+
+	enum ArucoDict
+	{
+		ARUCO_DICT_4X4_50 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_50_EXT,
+		ARUCO_DICT_4X4_100 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_100_EXT,
+		ARUCO_DICT_4X4_250 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_250_EXT,
+		ARUCO_DICT_4X4_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_1000_EXT,
+		ARUCO_DICT_5X5_50 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_50_EXT,
+		ARUCO_DICT_5X5_100 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_100_EXT,
+		ARUCO_DICT_5X5_250 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_250_EXT,
+		ARUCO_DICT_5X5_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_1000_EXT,
+		ARUCO_DICT_6X6_50 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_50_EXT,
+		ARUCO_DICT_6X6_100 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_100_EXT,
+		ARUCO_DICT_6X6_250 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_250_EXT,
+		ARUCO_DICT_6X6_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_1000_EXT,
+		ARUCO_DICT_7X7_50 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_50_EXT,
+		ARUCO_DICT_7X7_100 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_100_EXT,
+		ARUCO_DICT_7X7_250 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_250_EXT,
+		ARUCO_DICT_7X7_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_1000_EXT,
+	};
+
+	enum AprilTagDict
+	{
+		APRIL_TAG_DICT_16H5 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_16H5_EXT,
+		APRIL_TAG_DICT_25H9 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_25H9_EXT,
+		APRIL_TAG_DICT_36H10 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H10_EXT,
+		APRIL_TAG_DICT_36H11 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT,
+	};
+
+	OpenXRSpatialCapabilityConfigurationBaseHeader(CapabilityType p_capability_type = CAPABILITY_NONE);
+	~OpenXRSpatialCapabilityConfigurationBaseHeader();
+
+	void set_capability_type(CapabilityType p_capability_type);
+	CapabilityType get_capability_type() const { return capability_type; }
+
+	bool has_valid_configuration() const;
+	uint64_t _get_configurationgd();
+	XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration();
+
+	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
+
+	// Plane tracking configuration queries
+	bool get_supports_mesh_2d();
+	bool get_supports_polygons();
+	bool get_supports_labels();
+
+	// ArUco dictionary configuration
+	void set_aruco_dict(XrSpatialMarkerArucoDictEXT p_dict);
+	XrSpatialMarkerArucoDictEXT get_aruco_dict() const;
+
+	// AprilTag dictionary configuration
+	void set_april_dict(XrSpatialMarkerAprilTagDictEXT p_dict);
+	XrSpatialMarkerAprilTagDictEXT get_april_dict() const;
+
+private:
+	CapabilityType capability_type = CAPABILITY_NONE;
+	int supports_mesh_2d = -1;
+	int supports_polygons = -1;
+	int supports_labels = -1;
+	XrSpatialMarkerArucoDictEXT aruco_dict = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_1000_EXT;
+	XrSpatialMarkerAprilTagDictEXT april_dict = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT;
+
+	Vector<XrSpatialComponentTypeEXT> enabled_components;
+
+	union ConfigPayload
+	{
+		XrSpatialCapabilityConfigurationBaseHeaderEXT base;
+		XrSpatialCapabilityConfigurationAnchorEXT anchor;
+		XrSpatialCapabilityConfigurationPlaneTrackingEXT plane;
+		XrSpatialCapabilityConfigurationQrCodeEXT qrcode;
+		XrSpatialCapabilityConfigurationMicroQrCodeEXT micro_qrcode;
+		XrSpatialCapabilityConfigurationArucoMarkerEXT aruco;
+		XrSpatialCapabilityConfigurationAprilTagEXT april_tag;
+
+		ConfigPayload()
+			: base{XR_TYPE_UNKNOWN, nullptr, XR_SPATIAL_CAPABILITY_MAX_ENUM_EXT, 0, nullptr}
+		{
+		}
+	} config;
+
+	PackedInt64Array _get_enabled_components() const;
+	void _set_aruco_dict(ArucoDict p_dict);
+	ArucoDict _get_aruco_dict() const;
+	void _set_april_dict(AprilTagDict p_dict);
+	AprilTagDict _get_april_dict() const;
+};
+
+// Consolidated wrapper class for spatial component data returned by discovery and update queries
+class OpenXRSpatialComponentData final : public RefCounted
+{
+public:
+	enum ComponentKind
+	{
+		COMPONENT_NONE,
+		COMPONENT_QUERY_RESULT,
+		COMPONENT_BOUNDED_2D,
+		COMPONENT_BOUNDED_3D,
+		COMPONENT_PARENT,
+		COMPONENT_MESH_2D,
+		COMPONENT_MESH_3D,
+		COMPONENT_ANCHOR,
+		COMPONENT_PERSISTENCE,
+		COMPONENT_PLANE_ALIGNMENT,
+		COMPONENT_POLYGON_2D,
+		COMPONENT_PLANE_SEMANTIC_LABEL,
+		COMPONENT_MARKER,
+	};
+
+	enum PlaneAlignment
+	{
+		PLANE_ALIGNMENT_HORIZONTAL_UPWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_UPWARD_EXT,
+		PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD_EXT,
+		PLANE_ALIGNMENT_VERTICAL = XR_SPATIAL_PLANE_ALIGNMENT_VERTICAL_EXT,
+		PLANE_ALIGNMENT_ARBITRARY = XR_SPATIAL_PLANE_ALIGNMENT_ARBITRARY_EXT,
+	};
+
+	enum PlaneSemanticLabel
+	{
+		PLANE_SEMANTIC_LABEL_UNCATEGORIZED = XR_SPATIAL_PLANE_SEMANTIC_LABEL_UNCATEGORIZED_EXT,
+		PLANE_SEMANTIC_LABEL_FLOOR = XR_SPATIAL_PLANE_SEMANTIC_LABEL_FLOOR_EXT,
+		PLANE_SEMANTIC_LABEL_WALL = XR_SPATIAL_PLANE_SEMANTIC_LABEL_WALL_EXT,
+		PLANE_SEMANTIC_LABEL_CEILING = XR_SPATIAL_PLANE_SEMANTIC_LABEL_CEILING_EXT,
+		PLANE_SEMANTIC_LABEL_TABLE = XR_SPATIAL_PLANE_SEMANTIC_LABEL_TABLE_EXT,
+	};
+
+	enum MarkerType
+	{
+		MARKER_TYPE_UNKNOWN,
+		MARKER_TYPE_QRCODE,
+		MARKER_TYPE_MICRO_QRCODE,
+		MARKER_TYPE_ARUCO,
+		MARKER_TYPE_APRIL_TAG,
+		MARKER_TYPE_MAX
+	};
+
+	OpenXRSpatialComponentData(ComponentKind p_kind = COMPONENT_NONE);
+	~OpenXRSpatialComponentData();
+
+	OpenXRSpatialComponentData(const OpenXRSpatialComponentData&) = delete;
+	OpenXRSpatialComponentData& operator=(const OpenXRSpatialComponentData&) = delete;
+
+	void set_component_kind(ComponentKind p_kind);
+	ComponentKind get_component_kind() const { return component_kind; }
+
+	void set_capacity(uint32_t p_capacity);
+	int64_t get_capacity() const { return capacity; }
+
+	int64_t _get_component_typegd() const;
+	XrSpatialComponentTypeEXT get_component_type() const;
+	void* get_structure_data(void* p_next);
+
+	// COMPONENT_QUERY_RESULT accessors
+	XrSpatialEntityIdEXT get_entity_id(int64_t p_index) const;
+	XrSpatialEntityTrackingStateEXT get_entity_state(int64_t p_index) const;
+	static String get_entity_tracking_state_name(XrSpatialEntityTrackingStateEXT p_tracking_state);
+
+	// COMPONENT_BOUNDED_2D / COMPONENT_BOUNDED_3D accessors
+	Transform3D get_center_pose(int64_t p_index) const;
+	Transform3D get_center_pose_2d(int64_t p_index) const;
+	Transform3D get_center_pose_3d(int64_t p_index) const;
+	Vector2 get_size_2d(int64_t p_index) const;
+	Vector3 get_size_3d(int64_t p_index) const;
+
+	// COMPONENT_PARENT accessors
+	RID get_parent(int64_t p_index) const;
+
+	// COMPONENT_MESH_2D / COMPONENT_MESH_3D / COMPONENT_POLYGON_2D accessors
+	Transform3D get_transform(int64_t p_index) const;
+	PackedVector2Array get_vertices(RID p_snapshot, int64_t p_index) const;
+	PackedInt32Array get_indices(RID p_snapshot, int64_t p_index) const;
+	Ref<Mesh> get_mesh(int64_t p_index) const;
+
+	// COMPONENT_ANCHOR accessors
+	Transform3D get_entity_pose(int64_t p_index) const;
+
+	// COMPONENT_PERSISTENCE accessors
+	XrUuid get_persistent_uuid(int64_t p_index) const;
+	XrSpatialPersistenceStateEXT get_persistent_state(int64_t p_index) const;
+	static String get_persistence_state_name(XrSpatialPersistenceStateEXT p_state);
+
+	// COMPONENT_PLANE_ALIGNMENT accessors
+	XrSpatialPlaneAlignmentEXT get_plane_alignment(int64_t p_index) const;
+
+	// COMPONENT_PLANE_SEMANTIC_LABEL accessors
+	XrSpatialPlaneSemanticLabelEXT get_plane_semantic_label(int64_t p_index) const;
+
+	// COMPONENT_MARKER accessors
+	MarkerType get_marker_type(int64_t p_index) const;
+	uint32_t get_marker_id(int64_t p_index) const;
+	XrSpatialBufferEXT get_marker_data(int64_t p_index) const;
+
+private:
+	ComponentKind component_kind = COMPONENT_NONE;
+	uint32_t capacity = 0;
+	void* data_ptr = nullptr;
+	XrSpatialEntityTrackingStateEXT* entity_states_ptr = nullptr;
+
+	union StructurePayload
+	{
+		XrSpatialComponentDataQueryResultEXT query_result;
+		XrSpatialComponentBounded2DListEXT bounded2d_list;
+		XrSpatialComponentBounded3DListEXT bounded3d_list;
+		XrSpatialComponentParentListEXT parent_list;
+		XrSpatialComponentMesh2DListEXT mesh2d_list;
+		XrSpatialComponentMesh3DListEXT mesh3d_list;
+		XrSpatialComponentAnchorListEXT anchor_list;
+		XrSpatialComponentPersistenceListEXT persistence_list;
+		XrSpatialComponentPlaneAlignmentListEXT plane_alignment_list;
+		XrSpatialComponentPolygon2DListEXT polygon2d_list;
+		XrSpatialComponentPlaneSemanticLabelListEXT plane_semantic_label_list;
+		XrSpatialComponentMarkerListEXT marker_list;
+
+		StructurePayload()
+			: query_result{XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT, nullptr, 0, 0, nullptr,
+				  0, 0, nullptr}
+		{
+		}
+	} structure;
+
+	void _free_buffers();
+	void _init_structure_header();
+
+	uint64_t _get_entity_id(int64_t p_index) const;
+	String _get_persistent_uuid(int64_t p_index) const;
+	uint64_t _get_persistent_state(int64_t p_index) const;
+	PlaneAlignment _get_plane_alignment(int64_t p_index) const;
+	PlaneSemanticLabel _get_plane_semantic_label(int64_t p_index) const;
+};
+
+// Unified tracker for spatial entities (generic, anchor, plane, marker), composing XRTracker
+class OpenXRSpatialEntityTracker final : public RefCounted
+{
+public:
+	enum EntityType
+	{
+		ENTITY_GENERIC,
+		ENTITY_ANCHOR,
+		ENTITY_PLANE,
+		ENTITY_MARKER,
+	};
+
+	enum EntityTrackingState
+	{
+		ENTITY_TRACKING_STATE_STOPPED = XR_SPATIAL_ENTITY_TRACKING_STATE_STOPPED_EXT,
+		ENTITY_TRACKING_STATE_PAUSED = XR_SPATIAL_ENTITY_TRACKING_STATE_PAUSED_EXT,
+		ENTITY_TRACKING_STATE_TRACKING = XR_SPATIAL_ENTITY_TRACKING_STATE_TRACKING_EXT,
+	};
+
+	OpenXRSpatialEntityTracker(EntityType p_entity_type = ENTITY_GENERIC);
+	~OpenXRSpatialEntityTracker() override;
+
+	const Ref<XRTracker>& get_xr_tracker() const { return xr_tracker; }
+
+	// Composed XRTracker forwarding helpers
+	void set_tracker_type(XRServer::TrackerType p_type) { xr_tracker->set_tracker_type(p_type); }
+	XRServer::TrackerType get_tracker_type() const { return xr_tracker->get_tracker_type(); }
+	void set_tracker_name(const String& p_name) { xr_tracker->set_tracker_name(p_name); }
+	String get_tracker_name() const { return xr_tracker->get_tracker_name(); }
+	void set_tracker_desc(const String& p_desc) { xr_tracker->set_tracker_desc(p_desc); }
+	String get_tracker_desc() const { return xr_tracker->get_tracker_desc(); }
+	void set_has_tracking_data(bool p_has_tracking_data)
+	{
+		xr_tracker->set_has_tracking_data(p_has_tracking_data);
+	}
+	bool get_has_tracking_data() const { return xr_tracker->get_has_tracking_data(); }
+	bool has_pose(const String& p_action_name) const { return xr_tracker->has_pose(p_action_name); }
+	Ref<XRPose> get_pose(const String& p_action_name) const
+	{
+		return xr_tracker->get_pose(p_action_name);
+	}
+	void invalidate_pose(const String& p_action_name)
+	{
+		xr_tracker->invalidate_pose(p_action_name);
+	}
+	void set_pose(const String& p_action_name, const Transform3D& p_transform,
+		const Vector3& p_linear_velocity, const Vector3& p_angular_velocity,
+		const XRPose::TrackingConfidence p_tracking_confidence =
+			XRPose::XR_TRACKING_CONFIDENCE_HIGH)
+	{
+		xr_tracker->set_pose(p_action_name, p_transform, p_linear_velocity, p_angular_velocity,
+			p_tracking_confidence);
+	}
+
+	void set_entity_type(EntityType p_entity_type) { entity_type = p_entity_type; }
+	EntityType get_entity_type() const { return entity_type; }
+
+	void set_spatial_context(const RID& p_spatial_context);
+	RID get_spatial_context() const;
+
+	void set_entity(const RID& p_entity);
+	RID get_entity() const;
+
+	void set_spatial_tracking_state(const XrSpatialEntityTrackingStateEXT p_state);
+	XrSpatialEntityTrackingStateEXT get_spatial_tracking_state() const;
+
+	void add_next(Ref<OpenXRStructureBase> p_next);
+	void remove_next(Ref<OpenXRStructureBase> p_next);
+	Ref<OpenXRStructureBase> get_next() const;
+
+	// Anchor fields & methods
+	bool has_uuid() const;
+	XrUuid get_uuid() const;
+	void set_uuid(const XrUuid& p_uuid);
+
+	// Shared Plane / Marker bounds
+	void set_bounds_size(const Vector2& p_bounds_size);
+	Vector2 get_bounds_size() const;
+
+	// Plane fields & methods
+	void set_plane_alignment(OpenXRSpatialComponentData::PlaneAlignment p_plane_alignment);
+	OpenXRSpatialComponentData::PlaneAlignment get_plane_alignment() const;
+
+	void set_plane_label(const String& p_plane_label);
+	String get_plane_label() const;
+
+	void set_mesh_data(const Transform3D& p_origin, const PackedVector2Array& p_vertices,
+		const PackedInt32Array& p_indices = PackedInt32Array());
+	void clear_mesh_data();
+
+	Transform3D get_mesh_offset() const;
+	Ref<Mesh> get_mesh() { return mesh.mesh; }
+#ifndef PHYSICS_3D_DISABLED
+	Ref<Shape3D> get_shape(real_t p_thickness = 0.01);
+#endif
+
+	// Marker fields & methods
+	void set_marker_type(OpenXRSpatialComponentData::MarkerType p_marker_type);
+	OpenXRSpatialComponentData::MarkerType get_marker_type() const;
+
+	void set_marker_id(uint32_t p_id);
+	uint32_t get_marker_id() const;
+
+private:
+	Ref<XRTracker> xr_tracker;
+	EntityType entity_type = ENTITY_GENERIC;
+	RID spatial_context;
+	RID spatial_entity;
+	XrSpatialEntityTrackingStateEXT spatial_tracking_state =
+		XR_SPATIAL_ENTITY_TRACKING_STATE_PAUSED_EXT;
+	Ref<OpenXRStructureBase> next;
+
+	// Anchor data
+	XrUuid uuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+	// Plane & Marker data
+	Vector2 bounds_size;
+	OpenXRSpatialComponentData::PlaneAlignment plane_alignment =
+		OpenXRSpatialComponentData::PLANE_ALIGNMENT_HORIZONTAL_UPWARD;
+	String plane_label;
+
+	struct MeshData
+	{
+		bool has_mesh_data = false;
+		Transform3D origin;
+		PackedVector2Array vertices;
+		PackedInt32Array indices;
+
+		Ref<Mesh> mesh;
+#ifndef PHYSICS_3D_DISABLED
+		Ref<Shape3D> shape3d;
+#endif
+	} mesh;
+
+	struct Edge
+	{
+		int32_t a;
+		int32_t b;
+
+		static _FORCE_INLINE_ uint32_t hash(const Edge& p_edge)
+		{
+			uint32_t h = hash_murmur3_one_32(p_edge.a);
+			return hash_murmur3_one_32(p_edge.b, h);
+		}
+
+		bool operator==(const Edge& p_edge) const { return (a == p_edge.a && b == p_edge.b); }
+
+		Edge(int32_t p_a = 0, int32_t p_b = 0)
+		{
+			a = p_a;
+			b = p_b;
+			if (a < b) {
+				SWAP(a, b);
+			}
+		}
+	};
+
+	OpenXRSpatialComponentData::MarkerType marker_type =
+		OpenXRSpatialComponentData::MARKER_TYPE_UNKNOWN;
+	uint32_t marker_id = 0;
+
+	void _set_spatial_tracking_state(const EntityTrackingState p_state);
+	EntityTrackingState _get_spatial_tracking_state() const;
+
+	String _get_uuid() const;
+	void _set_uuid(const String& p_uuid);
+	static bool uuid_is_equal(const XrUuid& p_a, const XrUuid& p_b);
+};
+
+using OpenXRAnchorTracker = OpenXRSpatialEntityTracker;
+using OpenXRMarkerTracker = OpenXRSpatialEntityTracker;
+using OpenXRPlaneTracker = OpenXRSpatialEntityTracker;
+
+// Spatial entity extension
+class OpenXRSpatialEntityExtension final
+{
+public:
+	enum Capability
+	{
+		CAPABILITY_PLANE_TRACKING = XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,
+		CAPABILITY_MARKER_TRACKING_QR_CODE = XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT,
+		CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE =
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT,
+		CAPABILITY_MARKER_TRACKING_ARUCO_MARKER =
+			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT,
+		CAPABILITY_MARKER_TRACKING_APRIL_TAG = XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT,
+		CAPABILITY_ANCHOR = XR_SPATIAL_CAPABILITY_ANCHOR_EXT,
+	};
+
+	enum ComponentType
+	{
+		COMPONENT_TYPE_BOUNDED_2D = XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT,
+		COMPONENT_TYPE_BOUNDED_3D = XR_SPATIAL_COMPONENT_TYPE_BOUNDED_3D_EXT,
+		COMPONENT_TYPE_PARENT = XR_SPATIAL_COMPONENT_TYPE_PARENT_EXT,
+		COMPONENT_TYPE_MESH_3D = XR_SPATIAL_COMPONENT_TYPE_MESH_3D_EXT,
+		COMPONENT_TYPE_PLANE_ALIGNMENT = XR_SPATIAL_COMPONENT_TYPE_PLANE_ALIGNMENT_EXT,
+		COMPONENT_TYPE_MESH_2D = XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT,
+		COMPONENT_TYPE_POLYGON_2D = XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT,
+		COMPONENT_TYPE_PLANE_SEMANTIC_LABEL = XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT,
+		COMPONENT_TYPE_MARKER = XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT,
+		COMPONENT_TYPE_ANCHOR = XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT,
+		COMPONENT_TYPE_PERSISTENCE = XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT,
+	};
+
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+	static void on_session_destroyed();
+
+	static bool on_event_polled(const XrEventDataBuffer& event);
+
+	static bool get_active();
+	static bool supports_capability(XrSpatialCapabilityEXT p_capability);
+	static bool supports_component_type(
+		XrSpatialCapabilityEXT p_capability, XrSpatialComponentTypeEXT p_component_type);
+
+	// Spatial contexts
+	static bool get_spatial_context_ready(RID p_spatial_context);
+	static void free_spatial_context(RID p_spatial_context);
+	static XrSpatialContextEXT get_spatial_context_handle(RID p_spatial_context);
+
+	// Update query
+	static RID update_spatial_entities(RID p_spatial_context, const LocalVector<RID>& p_entities,
+		const LocalVector<XrSpatialComponentTypeEXT>& p_component_types,
+		Ref<OpenXRStructureBase> p_next);
+
+	// Snapshot data
+	static void free_spatial_snapshot(RID p_spatial_snapshot);
+	static XrSpatialSnapshotEXT get_spatial_snapshot_handle(RID p_spatial_snapshot);
+	static RID get_spatial_snapshot_context(RID p_spatial_snapshot);
+
+	// Buffers from snapshot
+	static String get_string(RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static PackedByteArray get_uint8_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static Vector<uint16_t> get_uint16_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static Vector<uint32_t> get_uint32_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static PackedFloat32Array get_float_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static PackedVector2Array get_vector2_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+	static PackedVector3Array get_vector3_buffer(
+		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
+
+	// Entities
+	static RID find_spatial_entity(XrSpatialEntityIdEXT p_entity_id);
+	static RID add_spatial_entity(
+		RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id, XrSpatialEntityEXT p_entity);
+	static RID make_spatial_entity(RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id);
+	static XrSpatialEntityIdEXT get_spatial_entity_id(RID p_entity);
+	static RID get_spatial_entity_context(RID p_entity);
+	static void free_spatial_entity(RID p_entity);
+
+	static String get_spatial_capability_name(XrSpatialCapabilityEXT p_capability);
+	static String get_spatial_component_type_name(XrSpatialComponentTypeEXT p_component_type);
+	static String get_spatial_feature_name(XrSpatialCapabilityFeatureEXT p_feature);
+
+private:
+	// Capabilities
+	struct SpatialEntityCapabality
+	{
+		Vector<XrSpatialComponentTypeEXT> component_types;
+		Vector<XrSpatialCapabilityFeatureEXT> features;
+	};
+	static bool _load_capabilities();
+
+	static bool _supports_capability(Capability p_capability);
+	static bool _supports_component_type(Capability p_capability, ComponentType p_component_type);
+
+	// Spatial context
+	struct SpatialContextData
+	{
+		XrSpatialContextEXT spatial_context = XR_NULL_HANDLE;
+	};
+
+	static uint64_t _get_spatial_context_handle(RID p_spatial_context);
+
+	// Snapshot data
+	struct SpatialSnapshotData
+	{
+		RID spatial_context;
+		XrSpatialSnapshotEXT spatial_snapshot = XR_NULL_HANDLE;
+	};
+
+	static uint64_t _get_spatial_snapshot_handle(RID p_spatial_snapshot);
+
+	// Buffers from snapshot
+	static String _get_string(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedByteArray _get_uint8_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedInt32Array _get_uint16_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedInt32Array _get_uint32_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedFloat32Array _get_float_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedVector2Array _get_vector2_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+	static PackedVector3Array _get_vector3_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
+
+	// Entities
+	struct SpatialEntityData
+	{
+		RID spatial_context;
+		XrSpatialEntityIdEXT entity_id = XR_NULL_ENTITY;
+		XrSpatialEntityEXT entity = XR_NULL_HANDLE;
+	};
+
+	static RID _find_entity(uint64_t p_entity_id);
+	static RID _add_entity(RID p_spatial_context, uint64_t p_entity_id, uint64_t p_entity);
+	static RID _make_entity(RID p_spatial_context, uint64_t p_entity_id);
+	static uint64_t _get_entity_id(RID p_entity);
+
+	// OpenXR API call wrappers
+	EXT_PROTO_XRRESULT_FUNC5(xrEnumerateSpatialCapabilitiesEXT, (XrInstance), instance,
+		(XrSystemId), system_id, (uint32_t), capability_capacity_input, (uint32_t*),
+		capability_count_output, (XrSpatialCapabilityEXT*), capabilities);
+	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSpatialCapabilityComponentTypesEXT, (XrInstance), instance,
+		(XrSystemId), systemId, (XrSpatialCapabilityEXT), capability,
+		(XrSpatialCapabilityComponentTypesEXT*), capability_components);
+	EXT_PROTO_XRRESULT_FUNC6(xrEnumerateSpatialCapabilityFeaturesEXT, (XrInstance), instance,
+		(XrSystemId), systemId, (XrSpatialCapabilityEXT), capability, (uint32_t),
+		capability_feature_capacity_input, (uint32_t*), capability_feature_count_output,
+		(XrSpatialCapabilityFeatureEXT*), capability_features);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialContextAsyncEXT, (XrSession), session,
+		(const XrSpatialContextCreateInfoEXT*), create_info, (XrFutureEXT*), future);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialContextCompleteEXT, (XrSession), session, (XrFutureEXT),
+		future, (XrCreateSpatialContextCompletionEXT*), completion);
+	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpatialContextEXT, (XrSpatialContextEXT), spatial_context);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialDiscoverySnapshotAsyncEXT, (XrSpatialContextEXT),
+		spatial_context, (const XrSpatialDiscoverySnapshotCreateInfoEXT*), create_info,
+		(XrFutureEXT*), future);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialDiscoverySnapshotCompleteEXT, (XrSpatialContextEXT),
+		spatial_context, (const XrCreateSpatialDiscoverySnapshotCompletionInfoEXT*),
+		create_snapshot_completion_info, (XrCreateSpatialDiscoverySnapshotCompletionEXT*),
+		completion);
+	EXT_PROTO_XRRESULT_FUNC3(xrQuerySpatialComponentDataEXT, (XrSpatialSnapshotEXT), snapshot,
+		(const XrSpatialComponentDataQueryConditionEXT*), query_condition,
+		(XrSpatialComponentDataQueryResultEXT*), query_result);
+	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpatialSnapshotEXT, (XrSpatialSnapshotEXT), snapshot);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialEntityFromIdEXT, (XrSpatialContextEXT), spatial_context,
+		(const XrSpatialEntityFromIdCreateInfoEXT*), create_info, (XrSpatialEntityEXT*),
+		spatial_entity);
+	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpatialEntityEXT, (XrSpatialEntityEXT), spatial_entity);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialUpdateSnapshotEXT, (XrSpatialContextEXT),
+		spatial_context, (const XrSpatialUpdateSnapshotCreateInfoEXT*), createInfo,
+		(XrSpatialSnapshotEXT*), snapshot);
+	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferStringEXT, (XrSpatialSnapshotEXT), snapshot,
+		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
+		buffer_count_output, (char*), buffer);
+	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferUint8EXT, (XrSpatialSnapshotEXT), snapshot,
+		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
+		buffer_count_output, (uint8_t*), buffer);
+	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferUint16EXT, (XrSpatialSnapshotEXT), snapshot,
+		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
+		buffer_count_output, (uint16_t*), buffer);
+	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferUint32EXT, (XrSpatialSnapshotEXT), snapshot,
+		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
+		buffer_count_output, (uint32_t*), buffer);
+	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferFloatEXT, (XrSpatialSnapshotEXT), snapshot,
+		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
+		buffer_count_output, (float*), buffer);
+	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferVector2fEXT, (XrSpatialSnapshotEXT), snapshot,
+		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
+		buffer_count_output, (XrVector2f*), buffer);
+	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferVector3fEXT, (XrSpatialSnapshotEXT), snapshot,
+		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
+		buffer_count_output, (XrVector3f*), buffer);
+
+public:
+	struct Data
+	{
+		bool spatial_entity_ext = false;
+		HashMap<XrSpatialCapabilityEXT, SpatialEntityCapabality> supported_capabilities;
+		int capabilities_load_state = 0;
+		RID_Owner<SpatialContextData> spatial_context_owner;
+		RID_Owner<SpatialSnapshotData> spatial_snapshot_owner;
+		RID_Owner<SpatialEntityData> spatial_entity_owner;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRSpatialEntityExtension() = delete;
+	OpenXRSpatialEntityExtension(const OpenXRSpatialEntityExtension&) = delete;
+	OpenXRSpatialEntityExtension& operator=(const OpenXRSpatialEntityExtension&) = delete;
+	~OpenXRSpatialEntityExtension() = delete;
+};
+
+// (Persistent) anchor logic
+class OpenXRSpatialAnchorCapability final
+{
+public:
+	enum PersistenceScope
+	{
+		PERSISTENCE_SCOPE_SYSTEM_MANAGED = XR_SPATIAL_PERSISTENCE_SCOPE_SYSTEM_MANAGED_EXT,
+		PERSISTENCE_SCOPE_LOCAL_ANCHORS = XR_SPATIAL_PERSISTENCE_SCOPE_LOCAL_ANCHORS_EXT,
+	};
+
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void on_instance_destroyed();
+	static void on_session_created(const XrSession p_session);
+	static void on_session_destroyed();
+
+	static void on_process();
+
+	static bool is_spatial_anchor_supported();
+	static bool is_spatial_persistence_supported();
+
+	// Persistence scopes
+	static bool is_persistence_scope_supported(XrSpatialPersistenceScopeEXT p_scope);
+
+	static XrSpatialPersistenceContextEXT get_persistence_context_handle(RID p_persistence_context);
+	static void free_persistence_context(RID p_persistence_context);
+
+	static Ref<OpenXRAnchorTracker> create_new_anchor(const Transform3D& p_transform,
+		RID p_spatial_context = RID(),
+		Ref<OpenXRStructureBase> p_next = Ref<OpenXRStructureBase>());
+	static void remove_anchor(Ref<OpenXRAnchorTracker> p_anchor_tracker);
+
+	static String get_spatial_persistence_scope_name(XrSpatialPersistenceScopeEXT p_scope);
+	static String get_spatial_persistence_context_result_name(
+		XrSpatialPersistenceContextResultEXT p_result);
+
+private:
+	static bool _load_supported_persistence_scopes();
+
+	struct PersistenceContextData
+	{
+		XrSpatialPersistenceScopeEXT scope;
+		XrSpatialPersistenceContextEXT persistence_context = XR_NULL_HANDLE;
+	};
+
+	static bool _is_persistence_scope_supported(PersistenceScope p_scope);
+	static uint64_t _get_persistence_context_handle(RID p_persistence_context);
+
+	static void _on_persistence_context_completed(RID p_persistence_context);
+	static Ref<OpenXRFutureResult> _create_spatial_context();
+	static void _on_spatial_context_created(RID p_spatial_context);
+	static void _on_spatial_discovery_recommended(RID p_spatial_context);
+
+	EXT_PROTO_XRRESULT_FUNC4(xrCreateSpatialAnchorEXT, (XrSpatialContextEXT), spatialContext,
+		(const XrSpatialAnchorCreateInfoEXT*), create_info, (XrSpatialEntityIdEXT*),
+		anchor_entity_id, (XrSpatialEntityEXT*), anchor_entity);
+
+	EXT_PROTO_XRRESULT_FUNC5(xrEnumerateSpatialPersistenceScopesEXT, (XrInstance), instance,
+		(XrSystemId), system_id, (uint32_t), persistence_scope_capacity_input, (uint32_t*),
+		persistence_scope_count_output, (XrSpatialPersistenceScopeEXT*), persistence_scopes);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialPersistenceContextAsyncEXT, (XrSession), session,
+		(const XrSpatialPersistenceContextCreateInfoEXT*), create_info, (XrFutureEXT*), future);
+	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialPersistenceContextCompleteEXT, (XrSession), session,
+		(XrFutureEXT), future, (XrCreateSpatialPersistenceContextCompletionEXT*), completion);
+	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpatialPersistenceContextEXT,
+		(XrSpatialPersistenceContextEXT), persistence_context);
+
+	EXT_PROTO_XRRESULT_FUNC3(xrPersistSpatialEntityAsyncEXT, (XrSpatialPersistenceContextEXT),
+		persistence_context, (const XrSpatialEntityPersistInfoEXT*), persist_info, (XrFutureEXT*),
+		future);
+	EXT_PROTO_XRRESULT_FUNC3(xrPersistSpatialEntityCompleteEXT, (XrSpatialPersistenceContextEXT),
+		persistence_context, (XrFutureEXT), future, (XrPersistSpatialEntityCompletionEXT*),
+		completion);
+	EXT_PROTO_XRRESULT_FUNC3(xrUnpersistSpatialEntityAsyncEXT, (XrSpatialPersistenceContextEXT),
+		persistence_context, (const XrSpatialEntityUnpersistInfoEXT*), unpersist_info,
+		(XrFutureEXT*), future);
+	EXT_PROTO_XRRESULT_FUNC3(xrUnpersistSpatialEntityCompleteEXT, (XrSpatialPersistenceContextEXT),
+		persistence_context, (XrFutureEXT), future, (XrUnpersistSpatialEntityCompletionEXT*),
+		completion);
+
+public:
+	struct Data
+	{
+		bool spatial_anchor_ext = false;
+		bool spatial_persistence_ext = false;
+		bool spatial_persistence_operations_ext = false;
+		bool spatial_anchor_supported = false;
+		RID spatial_context;
+		RID persistence_context;
+		bool need_discovery = false;
+		int discovery_cooldown = 0;
+		Ref<OpenXRFutureResult> discovery_query_result;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> anchor_configuration;
+		Ref<OpenXRSpatialContextPersistenceConfig> persistence_configuration;
+		Vector<XrSpatialPersistenceScopeEXT> supported_persistence_scopes;
+		RID_Owner<PersistenceContextData> persistence_context_owner;
+		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRAnchorTracker>>> anchor_trackers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRSpatialAnchorCapability() = delete;
+	OpenXRSpatialAnchorCapability(const OpenXRSpatialAnchorCapability&) = delete;
+	OpenXRSpatialAnchorCapability& operator=(const OpenXRSpatialAnchorCapability&) = delete;
+	~OpenXRSpatialAnchorCapability() = delete;
+};
+
+// Marker tracking logic
+class OpenXRSpatialMarkerTrackingCapability final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_session_created(const XrSession p_session);
+	static void on_session_destroyed();
+
+	static void on_process();
+
+	static bool is_qrcode_supported();
+	static bool is_micro_qrcode_supported();
+	static bool is_aruco_supported();
+	static bool is_april_tag_supported();
+
+private:
+	static Ref<OpenXRFutureResult> _create_spatial_context();
+	static void _on_spatial_context_created(RID p_spatial_context);
+	static void _on_spatial_discovery_recommended(RID p_spatial_context);
+
+public:
+	struct Data
+	{
+		bool spatial_marker_tracking_ext = false;
+		RID spatial_context;
+		bool need_discovery = false;
+		int discovery_cooldown = 0;
+		Ref<OpenXRFutureResult> discovery_query_result;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> qrcode_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> micro_qrcode_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> aruco_configuration;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> april_tag_configuration;
+		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRMarkerTracker>>> marker_trackers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRSpatialMarkerTrackingCapability() = delete;
+	OpenXRSpatialMarkerTrackingCapability(const OpenXRSpatialMarkerTrackingCapability&) = delete;
+	OpenXRSpatialMarkerTrackingCapability& operator=(
+		const OpenXRSpatialMarkerTrackingCapability&) = delete;
+	~OpenXRSpatialMarkerTrackingCapability() = delete;
+};
+
+// Plane tracking logic
+class OpenXRSpatialPlaneTrackingCapability final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_session_created(const XrSession p_session);
+	static void on_session_destroyed();
+
+	static void on_process();
+
+	static bool is_supported();
+
+private:
+	static Ref<OpenXRFutureResult> _create_spatial_context();
+	static void _on_spatial_context_created(RID p_spatial_context);
+	static void _on_spatial_discovery_recommended(RID p_spatial_context);
+
+public:
+	struct Data
+	{
+		bool spatial_plane_tracking_ext = false;
+		bool spatial_plane_tracking_supported = false;
+		RID spatial_context;
+		bool need_discovery = false;
+		int discovery_cooldown = 0;
+		Ref<OpenXRFutureResult> discovery_query_result;
+		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> plane_configuration;
+		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRPlaneTracker>>> plane_trackers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRSpatialPlaneTrackingCapability() = delete;
+	OpenXRSpatialPlaneTrackingCapability(const OpenXRSpatialPlaneTrackingCapability&) = delete;
+	OpenXRSpatialPlaneTrackingCapability& operator=(
+		const OpenXRSpatialPlaneTrackingCapability&) = delete;
+	~OpenXRSpatialPlaneTrackingCapability() = delete;
+};
+
+// --- End modules/openxr/extensions/spatial_entities/openxr_spatial_entities.h ---
 #include "servers/rendering/renderer.h"
 #include "servers/xr/xr_tracker.h"
 
@@ -45,13 +2918,103 @@
 #include "core/os/os.h"
 #endif
 
-#include "extensions/openxr_extensions.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
+
 
 #include "openxr_platform_inc.h" // IWYU pragma: keep.
 
 #ifdef VULKAN_ENABLED
-#include "extensions/platform/openxr_vulkan_extension.h"
+// --- Inlined/Folded from modules/openxr/extensions/platform/openxr_vulkan_extension.h ---
+#include "modules/openxr/openxr_api.h"
+#include "core/templates/vector.h"
+#include "core/types.h"
+
+// Always include this as late as possible.
+#include "modules/openxr/openxr_platform_inc.h" // IWYU pragma: keep.
+
+class OpenXRVulkanExtension final
+{
+public:
+
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void* set_session_create_and_get_next_pointer(void* p_next_pointer);
+
+	static bool create_vulkan_instance(
+		const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance);
+	static bool get_physical_device(VkPhysicalDevice* r_device);
+	static bool create_vulkan_device(
+		const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device);
+	static void set_direct_queue_family_and_index(
+		uint32_t p_queue_family_index, uint32_t p_queue_index);
+	static bool use_subsampled_images();
+	static bool use_fragment_density_offsets();
+	static void get_fragment_density_offsets(
+		LocalVector<VkOffset2D>& r_offets, const Vector2i& p_granularity);
+
+	static void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
+	static void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
+	static String get_swapchain_format_name(int64_t p_swapchain_format);
+	static bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format,
+		uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size,
+		void** r_swapchain_graphics_data);
+	static void cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data);
+	static bool create_projection_fov(
+		const XrFovf p_fov, double p_z_near, double p_z_far, Projection& r_camera_matrix);
+	static RID get_texture(void* p_swapchain_graphics_data, int p_image_index);
+	static RID get_density_map(void* p_swapchain_graphics_data, int p_image_index);
+
+private:
+	static XrGraphicsBindingVulkanKHR
+		graphics_binding_vulkan; // declaring this as static so we don't need to know its size and
+								 // we only need it once when creating our session
+
+	struct SwapchainGraphicsData
+	{
+		bool is_multiview;
+		Vector<RID> texture_rids;
+		Vector<RID> density_map_rids;
+	};
+
+	static bool check_graphics_api_support(XrVersion p_desired_version);
+
+	EXT_PROTO_XRRESULT_FUNC3(xrGetVulkanGraphicsRequirements2KHR, (XrInstance), p_instance,
+		(XrSystemId), p_system_id, (XrGraphicsRequirementsVulkanKHR*), p_graphics_requirements)
+	EXT_PROTO_XRRESULT_FUNC4(xrCreateVulkanInstanceKHR, (XrInstance), p_instance,
+		(const XrVulkanInstanceCreateInfoKHR*), p_create_info, (VkInstance*), r_vulkan_instance,
+		(VkResult*), r_vulkan_result)
+	EXT_PROTO_XRRESULT_FUNC3(xrGetVulkanGraphicsDevice2KHR, (XrInstance), p_instance,
+		(const XrVulkanGraphicsDeviceGetInfoKHR*), p_get_info, (VkPhysicalDevice*),
+		r_vulkan_physical_device)
+	EXT_PROTO_XRRESULT_FUNC4(xrCreateVulkanDeviceKHR, (XrInstance), p_instance,
+		(const XrVulkanDeviceCreateInfoKHR*), p_create_info, (VkDevice*), r_device, (VkResult*),
+		r_result)
+	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSwapchainImages, (XrSwapchain), p_swapchain, (uint32_t),
+		p_image_capacity_input, (uint32_t*), p_image_count_output, (XrSwapchainImageBaseHeader*),
+		p_images)
+
+public:
+	struct Data
+	{
+		VkInstance vulkan_instance = nullptr;
+		VkPhysicalDevice vulkan_physical_device = nullptr;
+		VkDevice vulkan_device = nullptr;
+		uint32_t vulkan_queue_family_index = UINT32_MAX;
+		uint32_t vulkan_queue_index = UINT32_MAX;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXRVulkanExtension() = delete;
+	OpenXRVulkanExtension(const OpenXRVulkanExtension&) = delete;
+	OpenXRVulkanExtension& operator=(const OpenXRVulkanExtension&) = delete;
+	~OpenXRVulkanExtension() = delete;
+};
 #endif
 
 #ifdef METAL_ENABLED
@@ -59,7 +3022,98 @@
 #endif
 
 #if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
-#include "extensions/platform/openxr_opengl_extension.h"
+// --- Inlined/Folded from modules/openxr/extensions/platform/openxr_opengl_extension.h ---
+#ifdef GLES3_ENABLED
+
+#include "modules/openxr/openxr_api.h"
+#include "core/templates/vector.h"
+#include "core/types.h"
+
+// Always include this as late as possible.
+#include "modules/openxr/openxr_platform_inc.h" // IWYU pragma: keep.
+
+class OpenXROpenGLExtension final
+{
+public:
+	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+
+	static void on_instance_created(const XrInstance p_instance);
+	static void* set_session_create_and_get_next_pointer(void* p_next_pointer);
+
+	static void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
+	static void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
+	static String get_swapchain_format_name(int64_t p_swapchain_format);
+	static bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format,
+		uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size,
+		void** r_swapchain_graphics_data);
+	static void cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data);
+	static bool create_projection_fov(
+		const XrFovf p_fov, double p_z_near, double p_z_far, Projection& r_camera_matrix);
+	static RID get_texture(void* p_swapchain_graphics_data, int p_image_index);
+
+	static RID get_density_map(void* p_swapchain_graphics_data, int p_image_index)
+	{
+		return RID();
+	}
+
+private:
+
+#ifdef WIN32
+	static XrGraphicsBindingOpenGLWin32KHR graphics_binding_gl;
+#elif defined(ANDROID_ENABLED)
+	static XrGraphicsBindingOpenGLESAndroidKHR graphics_binding_gl;
+#elif defined(LINUXBSD_ENABLED)
+#ifdef X11_ENABLED
+	static XrGraphicsBindingOpenGLXlibKHR graphics_binding_gl;
+#endif
+#if defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
+	static XrGraphicsBindingEGLMNDX graphics_binding_egl;
+
+#endif
+#else
+#error "OpenXR with OpenGL isn't supported on this platform"
+#endif
+
+	struct SwapchainGraphicsData
+	{
+		bool is_multiview;
+		Vector<RID> texture_rids;
+	};
+
+	static bool check_graphics_api_support(XrVersion p_desired_version);
+
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+	EXT_PROTO_XRRESULT_FUNC3(xrGetOpenGLESGraphicsRequirementsKHR, (XrInstance), p_instance,
+		(XrSystemId), p_system_id, (XrGraphicsRequirementsOpenGLESKHR*), p_graphics_requirements)
+#else
+	EXT_PROTO_XRRESULT_FUNC3(xrGetOpenGLGraphicsRequirementsKHR, (XrInstance), p_instance,
+		(XrSystemId), p_system_id, (XrGraphicsRequirementsOpenGLKHR*), p_graphics_requirements)
+#endif
+	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSwapchainImages, (XrSwapchain), p_swapchain, (uint32_t),
+		p_image_capacity_input, (uint32_t*), p_image_count_output, (XrSwapchainImageBaseHeader*),
+		p_images)
+
+public:
+	struct Data
+	{
+#if defined(LINUXBSD_ENABLED) && defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
+		bool egl_extension_enabled = false;
+#endif
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	OpenXROpenGLExtension() = delete;
+	OpenXROpenGLExtension(const OpenXROpenGLExtension&) = delete;
+	OpenXROpenGLExtension& operator=(const OpenXROpenGLExtension&) = delete;
+	~OpenXROpenGLExtension() = delete;
+};
+
+#endif // GLES3_ENABLED
 #endif
 
 #ifdef D3D12_ENABLED
@@ -2988,13 +6042,13 @@ OpenXRAPIExtension::OpenXRAPIExtension() {}
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "extensions/openxr_extensions.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
+
 #include "modules/modules_enabled.gen.h"
 #include "openxr_api.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
 #include "register_types.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
 
 #ifdef ANDROID_ENABLED
 #include "extensions/platform/openxr_android_extension.h"
@@ -3053,8 +6107,8 @@ void initialize_openxr_module(ModuleInitializationLevel p_level) {}
 #include "core/config/engine.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
-#include "extensions/openxr_extensions.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
+
 #include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server_types.h"
 
@@ -5320,17 +8374,17 @@ Ref<OpenXRActionSet> OpenXRActionMap::find_action_set(String const&) const
 // Merged from modules/openxr/scene/openxr_scene.cpp
 // ============================================================================
 
-#include "modules/openxr/extensions/openxr_extensions.h"
+
 #include "modules/openxr/openxr_api.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
 #include "platform/android/api/java_class_wrapper.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
-#include "scene/3d/xr/xr_nodes.h"
+#include "scene/3d/node_3d.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/mesh.h"
@@ -6448,7 +9502,7 @@ void OpenXRRenderModelManager::_update_models() {}
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
 #include "platform/android/api/java_class_wrapper.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/texture_storage.h"
@@ -9789,7 +12843,7 @@ HashMap<String, bool*> OpenXRFBFoveationExtension::get_requested_extensions(XrVe
 #include "modules/openxr/openxr_api.h"
 #include "core/math/math_funcs.h"
 #include "core/string/print_string.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
 
 #ifndef XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME
 #define XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME "XR_LOGITECH_mx_ink_stylus_interaction"
@@ -10319,7 +13373,7 @@ PackedByteArray OpenXRAnalogThresholdModifier::get_ip_modification()
 #include <openxr/openxr.h>
 #include "modules/openxr/openxr_api.h"
 #include "core/config/project_settings.h"
-#include "modules/openxr/extensions/openxr_extensions.h"
+
 #include "scene/resources/3d/primitive_meshes.h"
 #include "servers/xr/xr_server.h"
 
@@ -13007,3 +16061,924 @@ void OpenXRSpatialPlaneTrackingCapability::on_session_created(XrSession_T* p_ses
 void OpenXRSpatialPlaneTrackingCapability::on_session_destroyed() {}
 
 void OpenXRSpatialPlaneTrackingCapability::on_process() {}
+
+
+// --- Merged from modules/openxr/extensions/platform/openxr_vulkan_extension.cpp ---
+#if defined(VULKAN_ENABLED)
+#include "modules/openxr/openxr_api.h"
+
+#include "core/string/print_string.h"
+
+#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
+
+void OpenXRVulkanExtension::initialize()
+{
+	if (data == nullptr) {
+		data = memnew(Data);
+		VulkanHooks::bind<OpenXRVulkanExtension>();
+	}
+}
+
+void OpenXRVulkanExtension::finalize()
+{
+	if (data != nullptr) {
+		VulkanHooks::reset();
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
+HashMap<String, bool*> OpenXRVulkanExtension::get_requested_extensions(XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+	request_extensions[XR_KHR_VULKAN_ENABLE2_EXTENSION_NAME] = nullptr; // must be available
+
+	return request_extensions;
+}
+
+void OpenXRVulkanExtension::on_instance_created(const XrInstance p_instance)
+{
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	// Obtain pointers to functions we're accessing here, they are (not yet) part of core.
+
+	EXT_INIT_XR_FUNC(xrGetVulkanGraphicsRequirements2KHR);
+	EXT_INIT_XR_FUNC(xrCreateVulkanInstanceKHR);
+	EXT_INIT_XR_FUNC(xrGetVulkanGraphicsDevice2KHR);
+	EXT_INIT_XR_FUNC(xrCreateVulkanDeviceKHR);
+	EXT_INIT_XR_FUNC(xrEnumerateSwapchainImages);
+}
+
+void OpenXRVulkanExtension::set_direct_queue_family_and_index(
+	uint32_t p_queue_family_index, uint32_t p_queue_index)
+{
+	ERR_FAIL_NULL(data);
+	data->vulkan_queue_family_index = p_queue_family_index;
+	data->vulkan_queue_index = p_queue_index;
+}
+
+bool OpenXRVulkanExtension::use_fragment_density_offsets()
+{
+	if (!OpenXRFBFoveationExtension::is_initialized()) {
+		return false;
+	}
+
+	return OpenXRFBFoveationExtension::is_foveation_eye_tracked_enabled();
+}
+
+void OpenXRVulkanExtension::get_fragment_density_offsets(
+	LocalVector<VkOffset2D>& r_vk_offsets, const Vector2i& p_granularity)
+{
+	if (!OpenXRFBFoveationExtension::is_initialized()) {
+		return;
+	}
+
+	LocalVector<Vector2i> offsets;
+	OpenXRFBFoveationExtension::get_fragment_density_offsets(offsets);
+
+	r_vk_offsets.reserve(offsets.size());
+	for (Vector2i offset : offsets) {
+		offset = ((offset + p_granularity / 2) / p_granularity) * p_granularity;
+
+		r_vk_offsets.push_back(VkOffset2D{offset.x, offset.y});
+	}
+}
+
+bool OpenXRVulkanExtension::use_subsampled_images()
+{
+	if (!OpenXRFBFoveationExtension::is_initialized()) {
+		return false;
+	}
+
+	return OpenXRFBFoveationExtension::is_foveation_with_subsampled_images_enabled();
+}
+
+XrGraphicsBindingVulkanKHR OpenXRVulkanExtension::graphics_binding_vulkan;
+
+void* OpenXRVulkanExtension::set_session_create_and_get_next_pointer(void* p_next_pointer)
+{
+	DEV_ASSERT(data->vulkan_queue_family_index < UINT32_MAX &&
+			   "Direct queue family index was not specified yet.");
+	DEV_ASSERT(data->vulkan_queue_index < UINT32_MAX && "Direct queue index was not specified yet.");
+
+	graphics_binding_vulkan.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
+	graphics_binding_vulkan.next = p_next_pointer;
+	graphics_binding_vulkan.instance = data->vulkan_instance;
+	graphics_binding_vulkan.physicalDevice = data->vulkan_physical_device;
+	graphics_binding_vulkan.device = data->vulkan_device;
+	graphics_binding_vulkan.queueFamilyIndex = data->vulkan_queue_family_index;
+	graphics_binding_vulkan.queueIndex = data->vulkan_queue_index;
+
+	return &graphics_binding_vulkan;
+}
+
+void OpenXRVulkanExtension::get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains)
+{
+	// We might want to do more here especially if we keep things in linear color space
+	// Possibly add in R10G10B10A2 as an option if we're using the mobile renderer.
+	p_usable_swap_chains.push_back(VK_FORMAT_R8G8B8A8_SRGB);
+	p_usable_swap_chains.push_back(VK_FORMAT_B8G8R8A8_SRGB);
+	p_usable_swap_chains.push_back(VK_FORMAT_R8G8B8A8_UINT);
+	p_usable_swap_chains.push_back(VK_FORMAT_B8G8R8A8_UINT);
+}
+
+void OpenXRVulkanExtension::get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains)
+{
+	// Note, it is very likely we do NOT support any of depth formats where we can combine our
+	// stencil support (e.g. _S8_UINT). Right now this isn't a problem but once stencil support
+	// becomes an issue, we need to check for this in the rendering engine and create a separate
+	// buffer for the stencil.
+
+	p_usable_swap_chains.push_back(VK_FORMAT_D24_UNORM_S8_UINT);
+	p_usable_swap_chains.push_back(VK_FORMAT_D32_SFLOAT_S8_UINT);
+	p_usable_swap_chains.push_back(VK_FORMAT_D32_SFLOAT);
+}
+
+bool OpenXRVulkanExtension::create_projection_fov(
+	const XrFovf p_fov, double p_z_near, double p_z_far, Projection& r_camera_matrix)
+{
+	OpenXRUtil::XrMatrix4x4f matrix;
+	OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(&matrix, p_fov, (float)p_z_near, (float)p_z_far);
+
+	for (int j = 0; j < 4; j++) {
+		for (int i = 0; i < 4; i++) {
+			r_camera_matrix.columns[j][i] = matrix.m[j * 4 + i];
+		}
+	}
+
+	return true;
+}
+
+RID OpenXRVulkanExtension::get_texture(void* p_swapchain_graphics_data, int p_image_index)
+{
+	SwapchainGraphicsData* data = (SwapchainGraphicsData*)p_swapchain_graphics_data;
+	ERR_FAIL_NULL_V(data, RID());
+
+	ERR_FAIL_INDEX_V(p_image_index, data->texture_rids.size(), RID());
+	return data->texture_rids[p_image_index];
+}
+
+RID OpenXRVulkanExtension::get_density_map(void* p_swapchain_graphics_data, int p_image_index)
+{
+	SwapchainGraphicsData* data = (SwapchainGraphicsData*)p_swapchain_graphics_data;
+	ERR_FAIL_NULL_V(data, RID());
+
+	ERR_FAIL_INDEX_V(p_image_index, data->density_map_rids.size(), RID());
+	return data->density_map_rids[p_image_index];
+}
+
+void OpenXRVulkanExtension::cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data)
+{
+	if (*p_swapchain_graphics_data == nullptr) {
+		return;
+	}
+
+	SwapchainGraphicsData* data = (SwapchainGraphicsData*)*p_swapchain_graphics_data;
+
+	ERR_FAIL_NULL(Renderer::data);
+	ERR_FAIL_NULL(RD::data);
+
+	for (const RID& texture_rid : data->texture_rids) {
+		// This should clean up our RIDs and associated texture objects but shouldn't destroy the
+		// images, they are owned by our XrSwapchain.
+		RD::free_rid(texture_rid);
+	}
+	data->texture_rids.clear();
+
+	for (int i = 0; i < data->density_map_rids.size(); i++) {
+		if (data->density_map_rids[i].is_valid()) {
+			RD::free_rid(data->density_map_rids[i]);
+		}
+	}
+	data->density_map_rids.clear();
+
+	memdelete(data);
+	*p_swapchain_graphics_data = nullptr;
+}
+
+#define ENUM_TO_STRING_CASE(e)                                                                     \
+	case e: {                                                                                      \
+		return String(#e);                                                                         \
+	} break;
+
+String OpenXRVulkanExtension::get_swapchain_format_name(int64_t p_swapchain_format)
+{
+	// This really should be in vulkan_context...
+	VkFormat format = VkFormat(p_swapchain_format);
+	switch (format) {
+		ENUM_TO_STRING_CASE(VK_FORMAT_UNDEFINED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R4G4_UNORM_PACK8)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R4G4B4A4_UNORM_PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B4G4R4A4_UNORM_PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R5G6B5_UNORM_PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B5G6R5_UNORM_PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R5G5B5A1_UNORM_PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B5G5R5A1_UNORM_PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A1R5G5B5_UNORM_PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8_SRGB)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8_SRGB)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8_SRGB)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8_SRGB)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8A8_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8A8_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8A8_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8A8_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8A8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8A8_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R8G8B8A8_SRGB)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8A8_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8A8_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8A8_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8A8_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8A8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8A8_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8A8_SRGB)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A8B8G8R8_UNORM_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A8B8G8R8_SNORM_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A8B8G8R8_USCALED_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A8B8G8R8_SSCALED_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A8B8G8R8_UINT_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A8B8G8R8_SINT_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A8B8G8R8_SRGB_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2R10G10B10_UNORM_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2R10G10B10_SNORM_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2R10G10B10_USCALED_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2R10G10B10_SSCALED_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2R10G10B10_UINT_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2R10G10B10_SINT_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2B10G10R10_UNORM_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2B10G10R10_SNORM_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2B10G10R10_USCALED_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2B10G10R10_SSCALED_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2B10G10R10_UINT_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A2B10G10R10_SINT_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16A16_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16A16_SNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16A16_USCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16A16_SSCALED)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16A16_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16A16_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R16G16B16A16_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32G32_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32G32_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32G32_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32G32B32_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32G32B32_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32G32B32_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32G32B32A32_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32G32B32A32_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R32G32B32A32_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64G64_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64G64_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64G64_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64G64B64_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64G64B64_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64G64B64_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64G64B64A64_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64G64B64A64_SINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R64G64B64A64_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B10G11R11_UFLOAT_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_D16_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_X8_D24_UNORM_PACK32)
+		ENUM_TO_STRING_CASE(VK_FORMAT_D32_SFLOAT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_S8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_D16_UNORM_S8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_D24_UNORM_S8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_D32_SFLOAT_S8_UINT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC1_RGB_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC1_RGB_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC1_RGBA_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC1_RGBA_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC2_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC2_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC3_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC3_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC4_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC4_SNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC5_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC5_SNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC6H_UFLOAT_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC6H_SFLOAT_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC7_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_BC7_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_EAC_R11_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_EAC_R11_SNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_EAC_R11G11_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_EAC_R11G11_SNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_4x4_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_4x4_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_5x4_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_5x4_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_5x5_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_5x5_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_6x5_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_6x5_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_6x6_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_6x6_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_8x5_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_8x5_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_8x6_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_8x6_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_8x8_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_8x8_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x5_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x5_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x6_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x6_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x8_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x8_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x10_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x10_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_12x10_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_12x10_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_12x12_UNORM_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_12x12_SRGB_BLOCK)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G8B8G8R8_422_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B8G8R8G8_422_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G8_B8R8_2PLANE_420_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G8_B8R8_2PLANE_422_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R10X6_UNORM_PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R10X6G10X6_UNORM_2PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R12X4_UNORM_PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R12X4G12X4_UNORM_2PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G16B16G16R16_422_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_B16G16R16G16_422_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G16_B16R16_2PLANE_420_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G16_B16R16_2PLANE_422_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM)
+		ENUM_TO_STRING_CASE(VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG)
+		ENUM_TO_STRING_CASE(VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG)
+		ENUM_TO_STRING_CASE(VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG)
+		ENUM_TO_STRING_CASE(VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG)
+		ENUM_TO_STRING_CASE(VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG)
+		ENUM_TO_STRING_CASE(VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG)
+		ENUM_TO_STRING_CASE(VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG)
+		ENUM_TO_STRING_CASE(VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_5x4_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_5x5_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_6x5_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_6x6_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_8x5_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_8x6_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_8x8_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x5_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x6_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_10x10_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G8_B8R8_2PLANE_444_UNORM_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_G16_B16R16_2PLANE_444_UNORM_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A4R4G4B4_UNORM_PACK16_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_A4B4G4R4_UNORM_PACK16_EXT)
+		ENUM_TO_STRING_CASE(VK_FORMAT_MAX_ENUM)
+	default: {
+		return String("Swapchain format ") + String::num_int64(int64_t(p_swapchain_format));
+	} break;
+	}
+}
+
+bool OpenXRVulkanExtension::create_vulkan_instance(
+	const VkInstanceCreateInfo* p_create_info, VkInstance* r_instance)
+{
+	return true;
+}
+
+bool OpenXRVulkanExtension::get_physical_device(VkPhysicalDevice* r_physical_device)
+{
+	return true;
+}
+
+bool OpenXRVulkanExtension::create_vulkan_device(
+	const VkDeviceCreateInfo* p_create_info, VkDevice* r_device)
+{
+	return true;
+}
+
+bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain_T* p_swapchain, long p_index,
+	unsigned int p_width, unsigned int p_height, unsigned int p_layers, unsigned int p_format,
+	void** r_image_data)
+{
+	return true;
+}
+#ifdef ENUM_TO_STRING_CASE
+#undef ENUM_TO_STRING_CASE
+#endif
+#endif // defined(VULKAN_ENABLED)
+
+
+// --- Merged from modules/openxr/extensions/platform/openxr_opengl_extension.cpp ---
+#if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
+
+
+#ifdef GLES3_ENABLED
+
+#include "modules/openxr/openxr_api.h"
+#include "drivers/gles3/storage/texture_storage.h"
+#include "servers/display/display_server.h"
+
+void OpenXROpenGLExtension::initialize()
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+}
+
+void OpenXROpenGLExtension::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+
+// OpenXR requires us to submit sRGB textures so that it recognizes the content
+// as being in sRGB color space. We do fall back on "normal" textures but this
+// will likely result in incorrect colors as OpenXR will double the sRGB conversion.
+// All major XR runtimes support sRGB textures.
+
+// In OpenGL output of the fragment shader is assumed to be in the color space of
+// the developers choice, however a linear to sRGB HW conversion can be enabled
+// through enabling GL_FRAMEBUFFER_SRGB if an sRGB color attachment is used.
+// This is a global setting.
+// See: https://www.khronos.org/opengl/wiki/Framebuffer
+
+// In OpenGLES output of the fragment shader is assumed to be in linear color space
+// and will be converted by default to sRGB if an sRGB color attachment is used.
+// The extension GL_EXT_sRGB_write_control was introduced to enable turning this
+// feature off.
+// See: https://registry.khronos.org/OpenGL/extensions/EXT/EXT_sRGB_write_control.txt
+
+HashMap<String, bool*> OpenXROpenGLExtension::get_requested_extensions(XrVersion p_version)
+{
+	HashMap<String, bool*> request_extensions;
+
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+	request_extensions[XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME] = nullptr;
+#else
+	request_extensions[XR_KHR_OPENGL_ENABLE_EXTENSION_NAME] = nullptr;
+#endif
+#if defined(LINUXBSD_ENABLED) && defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
+	request_extensions[XR_MNDX_EGL_ENABLE_EXTENSION_NAME] = &data->egl_extension_enabled;
+#endif
+
+	return request_extensions;
+}
+
+void OpenXROpenGLExtension::on_instance_created(const XrInstance p_instance)
+{
+	// Obtain pointers to functions we're accessing here.
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+	EXT_INIT_XR_FUNC(xrGetOpenGLESGraphicsRequirementsKHR);
+#else
+	EXT_INIT_XR_FUNC(xrGetOpenGLGraphicsRequirementsKHR);
+#endif
+	EXT_INIT_XR_FUNC(xrEnumerateSwapchainImages);
+}
+
+#ifdef WIN32
+XrGraphicsBindingOpenGLWin32KHR OpenXROpenGLExtension::graphics_binding_gl;
+#elif defined(ANDROID_ENABLED)
+XrGraphicsBindingOpenGLESAndroidKHR OpenXROpenGLExtension::graphics_binding_gl;
+#elif defined(LINUXBSD_ENABLED)
+#ifdef X11_ENABLED
+XrGraphicsBindingOpenGLXlibKHR OpenXROpenGLExtension::graphics_binding_gl;
+#endif
+#if defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
+XrGraphicsBindingEGLMNDX OpenXROpenGLExtension::graphics_binding_egl;
+#endif
+#endif
+
+void* OpenXROpenGLExtension::set_session_create_and_get_next_pointer(void* p_next_pointer)
+{
+	GLint gl_version_major = 0;
+	GLint gl_version_minor = 0;
+	glGetIntegerv(GL_MAJOR_VERSION, &gl_version_major);
+	glGetIntegerv(GL_MINOR_VERSION, &gl_version_minor);
+
+	XrVersion desired_version = XR_MAKE_VERSION(gl_version_major, gl_version_minor, 0);
+
+	if (!check_graphics_api_support(desired_version)) {
+		__print_line("OpenXR: Trying to initialize with OpenGL anyway...");
+		// return p_next_pointer;
+	}
+
+#ifdef WIN32
+	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR,
+	graphics_binding_gl.next = p_next_pointer;
+
+	graphics_binding_gl.hDC =
+		(HDC)DisplayServer::window_get_native_handle(DisplayServerEnums::WINDOW_VIEW);
+	graphics_binding_gl.hGLRC =
+		(HGLRC)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
+#elif defined(ANDROID_ENABLED)
+	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR;
+	graphics_binding_gl.next = p_next_pointer;
+
+	graphics_binding_gl.display =
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::DISPLAY_HANDLE);
+	graphics_binding_gl.config =
+		(EGLConfig)0; // https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/master/src/tests/hello_xr/graphicsplugin_opengles.cpp#L122
+	graphics_binding_gl.context =
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
+#else
+#if defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
+	if (DisplayServer::get_name() == "Wayland") {
+		ERR_FAIL_COND_V_MSG(!data->egl_extension_enabled, p_next_pointer,
+			"OpenXR cannot initialize on Wayland without the XR_MNDX_egl_enable extension.");
+
+		graphics_binding_egl.type = XR_TYPE_GRAPHICS_BINDING_EGL_MNDX;
+		graphics_binding_egl.next = p_next_pointer;
+
+		graphics_binding_egl.getProcAddress = eglGetProcAddress;
+		graphics_binding_egl.display =
+			(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::EGL_DISPLAY);
+		graphics_binding_egl.config =
+			(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::EGL_CONFIG);
+		graphics_binding_egl.context =
+			(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
+
+		return &graphics_binding_egl;
+	}
+#endif
+#if defined(X11_ENABLED)
+	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR;
+	graphics_binding_gl.next = p_next_pointer;
+
+	void* display_handle =
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::DISPLAY_HANDLE);
+	void* glxcontext_handle =
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
+	void* glxdrawable_handle =
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::WINDOW_HANDLE);
+	void* glx_fbconfig_handle =
+		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::GLX_FBCONFIG);
+	VisualID glx_visualid =
+		(VisualID)DisplayServer::window_get_native_handle(DisplayServerEnums::GLX_VISUALID);
+
+	graphics_binding_gl.xDisplay = (Display*)display_handle;
+	graphics_binding_gl.glxContext = (GLXContext)glxcontext_handle;
+	graphics_binding_gl.glxDrawable = (GLXDrawable)glxdrawable_handle;
+	graphics_binding_gl.glxFBConfig = (GLXFBConfig)glx_fbconfig_handle;
+	graphics_binding_gl.visualid = glx_visualid;
+#endif
+#endif
+
+#if defined(WIN32) || defined(ANDROID_ENABLED) || defined(X11_ENABLED)
+	return &graphics_binding_gl;
+#else
+	return p_next_pointer;
+#endif
+}
+
+void OpenXROpenGLExtension::get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains)
+{
+	p_usable_swap_chains.push_back(GL_SRGB8_ALPHA8);
+	p_usable_swap_chains.push_back(GL_RGBA8);
+}
+
+void OpenXROpenGLExtension::get_usable_depth_formats(Vector<int64_t>& p_usable_depth_formats)
+{
+	p_usable_depth_formats.push_back(GL_DEPTH_COMPONENT32F);
+	p_usable_depth_formats.push_back(GL_DEPTH24_STENCIL8);
+	p_usable_depth_formats.push_back(GL_DEPTH32F_STENCIL8);
+	p_usable_depth_formats.push_back(GL_DEPTH_COMPONENT24);
+}
+
+bool OpenXROpenGLExtension::get_swapchain_image_data(XrSwapchain p_swapchain,
+	int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count,
+	uint32_t p_array_size, void** r_swapchain_graphics_data)
+{
+	uint32_t swapchain_length;
+	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
+	if (XR_FAILED(result)) {
+		// print_line("OpenXR: Failed to get swapchain image count [",
+		// OpenXRAPI::get_error_string(result), "]");
+		return false;
+	}
+
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+	LocalVector<XrSwapchainImageOpenGLESKHR> images;
+#else
+	LocalVector<XrSwapchainImageOpenGLKHR> images;
+#endif
+	images.resize(swapchain_length);
+
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+	for (XrSwapchainImageOpenGLESKHR& image : images) {
+		image.type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR;
+#else
+	for (XrSwapchainImageOpenGLKHR& image : images) {
+		image.type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR;
+#endif
+		image.next = nullptr;
+		image.image = 0;
+	}
+
+	result = xrEnumerateSwapchainImages(p_swapchain, swapchain_length, &swapchain_length,
+		(XrSwapchainImageBaseHeader*)images.ptr());
+	if (XR_FAILED(result)) {
+		// print_line("OpenXR: Failed to get swapchain images [",
+		// OpenXRAPI::get_error_string(result), "]");
+		return false;
+	}
+
+	SwapchainGraphicsData* data = memnew(SwapchainGraphicsData);
+	if (data == nullptr) {
+		// print_line("OpenXR: Failed to allocate memory for swapchain data");
+		return false;
+	}
+	*r_swapchain_graphics_data = data;
+	data->is_multiview = (p_array_size > 1);
+
+	Image::Format format = Image::FORMAT_RGBA8;
+
+	Vector<RID> texture_rids;
+
+	for (uint64_t i = 0; i < swapchain_length; i++) {
+		RID texture_rid = GLES3::TextureStorage::texture_create_from_native_handle(
+			p_array_size == 1 ? RSE::TEXTURE_TYPE_2D : RSE::TEXTURE_TYPE_LAYERED, format,
+			images[i].image, p_width, p_height, 1, p_array_size);
+
+		texture_rids.push_back(texture_rid);
+	}
+
+	data->texture_rids = texture_rids;
+
+	return true;
+}
+
+bool OpenXROpenGLExtension::create_projection_fov(
+	const XrFovf p_fov, double p_z_near, double p_z_far, Projection& r_camera_matrix)
+{
+	OpenXRUtil::XrMatrix4x4f matrix;
+	OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(&matrix, p_fov, (float)p_z_near, (float)p_z_far);
+
+	for (int j = 0; j < 4; j++) {
+		for (int i = 0; i < 4; i++) {
+			r_camera_matrix.columns[j][i] = matrix.m[j * 4 + i];
+		}
+	}
+
+	return true;
+}
+
+RID OpenXROpenGLExtension::get_texture(void* p_swapchain_graphics_data, int p_image_index)
+{
+	SwapchainGraphicsData* data = (SwapchainGraphicsData*)p_swapchain_graphics_data;
+	ERR_FAIL_NULL_V(data, RID());
+
+	ERR_FAIL_INDEX_V(p_image_index, data->texture_rids.size(), RID());
+	return data->texture_rids[p_image_index];
+}
+
+void OpenXROpenGLExtension::cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data)
+{
+	if (*p_swapchain_graphics_data == nullptr) {
+		return;
+	}
+
+	SwapchainGraphicsData* data = (SwapchainGraphicsData*)*p_swapchain_graphics_data;
+
+	for (const RID& texture_rid : data->texture_rids) {
+		GLES3::TextureStorage::texture_free(texture_rid);
+	}
+	data->texture_rids.clear();
+
+	memdelete(data);
+	*p_swapchain_graphics_data = nullptr;
+}
+
+#define ENUM_TO_STRING_CASE(e)                                                                     \
+	case e: {                                                                                      \
+		return String(#e);                                                                         \
+	} break;
+
+String OpenXROpenGLExtension::get_swapchain_format_name(int64_t p_swapchain_format)
+{
+	// These are somewhat different per platform, will need to weed some stuff out...
+	switch (p_swapchain_format) {
+#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
+		// using definitions from GLES3/gl3.h
+
+		ENUM_TO_STRING_CASE(GL_RGBA4)
+		ENUM_TO_STRING_CASE(GL_RGB5_A1)
+		ENUM_TO_STRING_CASE(GL_RGB565)
+		ENUM_TO_STRING_CASE(GL_RGB8)
+		ENUM_TO_STRING_CASE(GL_RGBA8)
+		ENUM_TO_STRING_CASE(GL_RGB10_A2)
+		ENUM_TO_STRING_CASE(GL_RGBA32F)
+		ENUM_TO_STRING_CASE(GL_RGB32F)
+		ENUM_TO_STRING_CASE(GL_RGBA16F)
+		ENUM_TO_STRING_CASE(GL_RGB16F)
+		ENUM_TO_STRING_CASE(GL_R11F_G11F_B10F)
+		ENUM_TO_STRING_CASE(GL_UNSIGNED_INT_10F_11F_11F_REV)
+		ENUM_TO_STRING_CASE(GL_RGB9_E5)
+		ENUM_TO_STRING_CASE(GL_UNSIGNED_INT_5_9_9_9_REV)
+		ENUM_TO_STRING_CASE(GL_RGBA32UI)
+		ENUM_TO_STRING_CASE(GL_RGB32UI)
+		ENUM_TO_STRING_CASE(GL_RGBA16UI)
+		ENUM_TO_STRING_CASE(GL_RGB16UI)
+		ENUM_TO_STRING_CASE(GL_RGBA8UI)
+		ENUM_TO_STRING_CASE(GL_RGB8UI)
+		ENUM_TO_STRING_CASE(GL_RGBA32I)
+		ENUM_TO_STRING_CASE(GL_RGB32I)
+		ENUM_TO_STRING_CASE(GL_RGBA16I)
+		ENUM_TO_STRING_CASE(GL_RGB16I)
+		ENUM_TO_STRING_CASE(GL_RGBA8I)
+		ENUM_TO_STRING_CASE(GL_RGB8I)
+		ENUM_TO_STRING_CASE(GL_RG)
+		ENUM_TO_STRING_CASE(GL_RG_INTEGER)
+		ENUM_TO_STRING_CASE(GL_R8)
+		ENUM_TO_STRING_CASE(GL_RG8)
+		ENUM_TO_STRING_CASE(GL_R16F)
+		ENUM_TO_STRING_CASE(GL_R32F)
+		ENUM_TO_STRING_CASE(GL_RG16F)
+		ENUM_TO_STRING_CASE(GL_RG32F)
+		ENUM_TO_STRING_CASE(GL_R8I)
+		ENUM_TO_STRING_CASE(GL_R8UI)
+		ENUM_TO_STRING_CASE(GL_R16I)
+		ENUM_TO_STRING_CASE(GL_R16UI)
+		ENUM_TO_STRING_CASE(GL_R32I)
+		ENUM_TO_STRING_CASE(GL_R32UI)
+		ENUM_TO_STRING_CASE(GL_RG8I)
+		ENUM_TO_STRING_CASE(GL_RG8UI)
+		ENUM_TO_STRING_CASE(GL_RG16I)
+		ENUM_TO_STRING_CASE(GL_RG16UI)
+		ENUM_TO_STRING_CASE(GL_RG32I)
+		ENUM_TO_STRING_CASE(GL_RG32UI)
+		ENUM_TO_STRING_CASE(GL_R8_SNORM)
+		ENUM_TO_STRING_CASE(GL_RG8_SNORM)
+		ENUM_TO_STRING_CASE(GL_RGB8_SNORM)
+		ENUM_TO_STRING_CASE(GL_RGBA8_SNORM)
+		ENUM_TO_STRING_CASE(GL_RGB10_A2UI)
+		ENUM_TO_STRING_CASE(GL_SRGB)
+		ENUM_TO_STRING_CASE(GL_SRGB8)
+		ENUM_TO_STRING_CASE(GL_SRGB8_ALPHA8)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_R11_EAC)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_SIGNED_R11_EAC)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_RG11_EAC)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_SIGNED_RG11_EAC)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_RGB8_ETC2)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_SRGB8_ETC2)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_RGBA8_ETC2_EAC)
+		ENUM_TO_STRING_CASE(GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC)
+		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT16)
+		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT24)
+		ENUM_TO_STRING_CASE(GL_DEPTH24_STENCIL8)
+
+#else
+		// using definitions from GLAD
+		ENUM_TO_STRING_CASE(GL_R8_SNORM)
+		ENUM_TO_STRING_CASE(GL_RG8_SNORM)
+		ENUM_TO_STRING_CASE(GL_RGB8_SNORM)
+		ENUM_TO_STRING_CASE(GL_RGBA8_SNORM)
+		ENUM_TO_STRING_CASE(GL_R16_SNORM)
+		ENUM_TO_STRING_CASE(GL_RG16_SNORM)
+		ENUM_TO_STRING_CASE(GL_RGB16_SNORM)
+		ENUM_TO_STRING_CASE(GL_RGBA16_SNORM)
+		ENUM_TO_STRING_CASE(GL_RGB4)
+		ENUM_TO_STRING_CASE(GL_RGB5)
+		ENUM_TO_STRING_CASE(GL_RGB8)
+		ENUM_TO_STRING_CASE(GL_RGB10)
+		ENUM_TO_STRING_CASE(GL_RGB12)
+		ENUM_TO_STRING_CASE(GL_RGB16)
+		ENUM_TO_STRING_CASE(GL_RGBA2)
+		ENUM_TO_STRING_CASE(GL_RGBA4)
+		ENUM_TO_STRING_CASE(GL_RGB5_A1)
+		ENUM_TO_STRING_CASE(GL_RGBA8)
+		ENUM_TO_STRING_CASE(GL_RGB10_A2)
+		ENUM_TO_STRING_CASE(GL_RGBA12)
+		ENUM_TO_STRING_CASE(GL_RGBA16)
+		ENUM_TO_STRING_CASE(GL_RGBA32F)
+		ENUM_TO_STRING_CASE(GL_RGB32F)
+		ENUM_TO_STRING_CASE(GL_RGBA16F)
+		ENUM_TO_STRING_CASE(GL_RGB16F)
+		ENUM_TO_STRING_CASE(GL_RGBA32UI)
+		ENUM_TO_STRING_CASE(GL_RGB32UI)
+		ENUM_TO_STRING_CASE(GL_RGBA16UI)
+		ENUM_TO_STRING_CASE(GL_RGB16UI)
+		ENUM_TO_STRING_CASE(GL_RGBA8UI)
+		ENUM_TO_STRING_CASE(GL_RGB8UI)
+		ENUM_TO_STRING_CASE(GL_RGBA32I)
+		ENUM_TO_STRING_CASE(GL_RGB32I)
+		ENUM_TO_STRING_CASE(GL_RGBA16I)
+		ENUM_TO_STRING_CASE(GL_RGB16I)
+		ENUM_TO_STRING_CASE(GL_RGBA8I)
+		ENUM_TO_STRING_CASE(GL_RGB8I)
+		ENUM_TO_STRING_CASE(GL_RGB10_A2UI)
+		ENUM_TO_STRING_CASE(GL_SRGB)
+		ENUM_TO_STRING_CASE(GL_SRGB8)
+		ENUM_TO_STRING_CASE(GL_SRGB_ALPHA)
+		ENUM_TO_STRING_CASE(GL_SRGB8_ALPHA8)
+		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT16)
+		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT24)
+		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT32)
+		ENUM_TO_STRING_CASE(GL_DEPTH24_STENCIL8)
+		ENUM_TO_STRING_CASE(GL_R11F_G11F_B10F)
+		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT32F)
+		ENUM_TO_STRING_CASE(GL_DEPTH32F_STENCIL8)
+#endif
+	default: {
+		return String("Swapchain format 0x") + String::num_int64(p_swapchain_format, 16);
+	} break;
+	}
+}
+
+bool OpenXROpenGLExtension::check_graphics_api_support(unsigned long p_api) { return false; }
+
+#endif // GLES3_ENABLED
+#ifdef ENUM_TO_STRING_CASE
+#undef ENUM_TO_STRING_CASE
+#endif
+#endif // defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)

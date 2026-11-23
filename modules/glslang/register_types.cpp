@@ -31,7 +31,7 @@
 
 #include "core/config/engine.h"
 #include "register_types.h"
-#include "shader_compile.h"
+#include "modules/glslang/register_types.h"
 
 #ifdef D3D12_ENABLED
 #include "core/os/os.h"

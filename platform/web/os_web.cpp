@@ -32,7 +32,7 @@
 #include "os_web.h"
 
 #include "platform/web/os_web.h"
-#include "godot_js.h"
+#include "platform/web/os_web.h"
 // --- Inlined from platform/web/ip_web.h ---
 #include "core/io/ip.h"
 

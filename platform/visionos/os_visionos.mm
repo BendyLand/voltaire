@@ -31,7 +31,7 @@
 
 #import "os_visionos.h"
 
-#import "display_server_visionos.h"
+#import "platform/visionos/os_visionos.h"
 
 #ifdef VISIONOS_ENABLED
 

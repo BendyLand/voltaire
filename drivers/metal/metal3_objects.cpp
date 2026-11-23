@@ -49,7 +49,7 @@
 /* permissions and limitations under the License.                         */
 /**************************************************************************/
 
-#include "metal3_objects.h"
+#include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include "drivers/metal/metal_utils.h"
 #include "drivers/metal/pixel_formats.h"

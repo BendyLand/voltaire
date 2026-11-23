@@ -34,9 +34,9 @@
 #include "core/config/project_settings.h"
 #include "core/os/keyboard.h"
 #include "core/string/ustring.h"
-#import "drivers/apple_embedded/display_layer_apple_embedded.h"
+#import "drivers/apple_embedded/apple_embedded.h"
 #import "drivers/apple_embedded/display_server_apple_embedded.h"
-#import "drivers/apple_embedded/godot_view_renderer.h"
+#import "drivers/apple_embedded/godot_view_apple_embedded.h"
 
 #import <CoreMotion/CoreMotion.h>
 

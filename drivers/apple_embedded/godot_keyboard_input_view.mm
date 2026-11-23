@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_keyboard_input_view.h"
+#import "drivers/apple_embedded/display_server_apple_embedded.h"
 
 #include "core/os/keyboard.h"
 #import "drivers/apple_embedded/display_server_apple_embedded.h"

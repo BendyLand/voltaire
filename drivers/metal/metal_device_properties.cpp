@@ -53,7 +53,7 @@
 
 #include "core/os/os.h"
 #include "drivers/metal/metal_utils.h"
-#include "servers/rendering/renderer_rd/effects/upscale_effects.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 
 #include <MetalFX/MetalFX.hpp>
 #include <spirv_cross.hpp>

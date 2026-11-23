@@ -4025,20 +4025,12 @@ project "voltaire"
         -- Core & MbedTLS Godot platform glue
         "core/crypto/crypto.cpp",
         "core/input/default_controller_mappings.gen.cpp",
-        "core/input/input.cpp",
         "core/io/file_access.cpp",
-        "core/io/image.cpp",
         "core/io/resource_loader.cpp",
-        "core/io/stream_peer.cpp",
-        "core/math/convex_hull.cpp",
         "core/math/geometry_3d.cpp",
-        "core/math/math_primitives.cpp",
-        "core/math/math_transforms.cpp",
         "core/math/math_vectors.cpp",
-        "core/os/os.cpp",
         "core/register_core_types.cpp",
         "core/script_encryption_key.gen.cpp",
-        "core/string/translation.cpp",
         "core/string/ustring.cpp",
         "core/version_hash.gen.cpp",
         "thirdparty/mbedtls/godot/godot_mbedtls_platform.cpp",
@@ -4048,23 +4040,16 @@ project "voltaire"
 
         -- Scene (always-enabled)
         "scene/2d/node_2d.cpp",
-        "scene/2d/physics/physics_body_2d.cpp",
-        "scene/animation/animation_tree.cpp",
         "scene/gui/control.cpp",
         "scene/gui/dialogs.cpp",
-        "scene/gui/text_edit.cpp",
         "scene/main/scene_tree.cpp",
         "scene/register_scene_types.cpp",
-        "scene/resources/material.cpp",
         "scene/resources/mesh.cpp",
         "scene/resources/texture.cpp",
 
         -- Servers (always-enabled)
-        "servers/physics_2d/physics_server_2d.cpp",
-        "servers/physics_3d/physics_server_3d.cpp",
         "servers/register_server_types.cpp",
         "servers/rendering/renderer.cpp",
-        "servers/rendering/renderer_rd/effects/copy_effects.cpp",
         "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.cpp",
         "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.cpp",
         "servers/rendering/renderer_rd/renderer_compositor_rd.cpp",
@@ -4075,7 +4060,6 @@ project "voltaire"
 
         -- Drivers (common)
         "drivers/alsa/asound-so_wrap.c",
-        "drivers/png/image_loader_png.cpp",
         "drivers/register_driver_types.cpp",
         "drivers/unix/os_unix.cpp",
 
@@ -4096,7 +4080,6 @@ project "voltaire"
         "modules/jpg/image_loader_libjpeg_turbo.cpp",
         "modules/ktx/texture_loader_ktx.cpp",
         "modules/mbedtls/crypto_mbedtls.cpp",
-        "modules/mbedtls/mbedtls_cpp_compat.c",
         "modules/mp3/audio_stream_mp3.cpp",
         "modules/multiplayer/scene_multiplayer.cpp",
         "modules/noise/fastnoise_lite.cpp",
@@ -4119,9 +4102,6 @@ project "voltaire"
     if not disable_3d then
         files {
             "scene/3d/node_3d.cpp",
-            "scene/3d/physics/physics_body_3d.cpp",
-            "scene/3d/visual_instance_3d.cpp",
-            "scene/resources/3d/primitive_meshes.cpp",
             "modules/csg/csg_shape.cpp",
             "modules/fbx/fbx_document.cpp",
             "modules/gltf/gltf_document.cpp",
@@ -4140,22 +4120,16 @@ project "voltaire"
     end
     if not disable_nav_2d then
         files {
-            "scene/2d/navigation/navigation_2d.cpp",
-            "servers/navigation_2d/navigation_server_2d.cpp",
             "modules/navigation_2d/nav_map_2d.cpp",
         }
     end
     if not disable_nav_3d then
         files {
-            "scene/3d/navigation/navigation_3d.cpp",
-            "servers/navigation_3d/navigation_server_3d.cpp",
             "modules/navigation_3d/nav_map_3d.cpp",
         }
     end
     if not disable_xr then
         files {
-            "scene/3d/xr/xr_nodes.cpp",
-            "servers/xr/xr_server.cpp",
             "modules/mobile_vr/mobile_vr_interface.cpp",
         }
     end
@@ -4166,7 +4140,6 @@ project "voltaire"
         files {
             "drivers/gles3/rasterizer_canvas_gles3.cpp",
             "drivers/gles3/rasterizer_scene_gles3.cpp",
-            "drivers/gles3/storage/utilities.cpp",
         }
     end
     if use_vulkan then
@@ -4176,7 +4149,6 @@ project "voltaire"
         files { "modules/glslang/register_types.cpp" }
     end
     if use_sdl then
-        files { "drivers/sdl/joypad_sdl.cpp" }
     end
     if has_theora then
         filter "platforms:not rv64"
@@ -4193,13 +4165,10 @@ project "voltaire"
     if has_camera then
         files { "modules/camera/register_types.cpp" }
         if target_platform == "linuxbsd" then
-            files { "modules/camera/camera_linux.cpp" }
         elseif target_platform == "windows" then
-            files { "modules/camera/camera_win.cpp" }
         elseif target_platform == "macos" or target_platform == "ios" or target_platform == "visionos" then
             files { "modules/camera/camera_apple.mm" }
         elseif target_platform == "android" then
-            files { "modules/camera/camera_android.cpp" }
         end
     end
     if has_openxr then
@@ -4208,10 +4177,8 @@ project "voltaire"
             files { "modules/openxr/extensions/platform/openxr_android_extension.cpp" }
         end
         if use_vulkan then
-            files { "modules/openxr/extensions/platform/openxr_vulkan_extension.cpp" }
         end
         if use_opengl3 and target_platform ~= "macos" then
-            files { "modules/openxr/extensions/platform/openxr_opengl_extension.cpp" }
         end
         if use_d3d12 then
             files { "modules/openxr/extensions/platform/openxr_d3d12_extension.cpp" }
@@ -4243,7 +4210,6 @@ project "voltaire"
             "editor/editor_ui.cpp",
             "editor/export/editor_export.cpp",
             "editor/export/register_exporters.gen.cpp",
-            "editor/import/3d/resource_importer_scene.cpp",
             "editor/project_upgrade/renames_map_3_to_4.cpp",
             "editor/translations/doc_translations.gen.cpp",
             "editor/translations/editor_translations.gen.cpp",
@@ -4252,12 +4218,6 @@ project "voltaire"
             "modules/lightmapper_rd/lightmapper_rd.cpp",
             "modules/xatlas_unwrap/register_types.cpp",
             "platform/android/export/export.cpp",
-            "platform/ios/export/export.cpp",
-            "platform/linuxbsd/export/export.cpp",
-            "platform/macos/export/export.cpp",
-            "platform/visionos/export/export.cpp",
-            "platform/web/export/export.cpp",
-            "platform/windows/export/export.cpp",
         }
     filter {}
 
@@ -4307,10 +4267,8 @@ project "voltaire"
         if opt_bool("x11") then
             files { "platform/linuxbsd/x11/display_server_x11.cpp" }
             if opt_bool("sowrap") then
-                files { "platform/linuxbsd/x11/dynwrappers/xlib-so_wrap.c" }
             end
             if use_opengl3 then
-                files { "platform/linuxbsd/x11/gl_manager_x11.cpp" }
             end
         end
         if opt_bool("wayland") then
@@ -4319,10 +4277,8 @@ project "voltaire"
                 "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.c",
             }
             if opt_bool("sowrap") then
-                files { "platform/linuxbsd/wayland/dynwrappers/wayland-client-core-so_wrap.c" }
             end
             if use_opengl3 then
-                files { "platform/linuxbsd/wayland/egl_manager_wayland.cpp" }
             end
         end
 

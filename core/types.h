@@ -36,7 +36,207 @@
 #include "core/os/memory.h"
 #include "core/typedefs.h"
 #include "core/os/mutex.h"
-#include "core/templates/ref.h"
+// --- Inlined/Folded from core/templates/ref.h ---
+#ifndef REF_H
+#define REF_H
+
+#include <atomic>
+#include <type_traits>
+#include <utility>
+#include "core/os/memory.h"
+#include "core/typedefs.h"
+
+class RefCounted
+{
+	mutable std::atomic<uint32_t> _ref_count{0};
+	mutable std::atomic<uint32_t> _ref_count_init{0};
+
+public:
+	_FORCE_INLINE_ bool reference() const
+	{
+		uint32_t count = _ref_count.fetch_add(1, std::memory_order_relaxed);
+		return count > 0 || _ref_count_init.exchange(1, std::memory_order_acq_rel) == 0;
+	}
+
+	_FORCE_INLINE_ bool unreference() const
+	{
+		if (_ref_count.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+			memdelete(const_cast<RefCounted*>(this));
+			return true;
+		}
+		return false;
+	}
+
+	_FORCE_INLINE_ uint32_t get_reference_count() const
+	{
+		return _ref_count.load(std::memory_order_relaxed);
+	}
+
+	RefCounted() = default;
+	virtual ~RefCounted() = default;
+
+	RefCounted(const RefCounted&) = delete;
+	RefCounted& operator=(const RefCounted&) = delete;
+};
+
+template <typename T> class Ref
+{
+	T* data = nullptr;
+
+	_FORCE_INLINE_ void ref(T* p_ptr)
+	{
+		if (p_ptr == data) {
+			return;
+		}
+		unref();
+		if (p_ptr && p_ptr->reference()) {
+			data = p_ptr;
+		}
+	}
+
+public:
+	// --- Constructors ---
+	_FORCE_INLINE_ Ref() = default;
+
+	_FORCE_INLINE_ Ref(std::nullptr_t) {}
+
+	_FORCE_INLINE_ Ref(T* p_ptr)
+	{
+		if (p_ptr) {
+			ref(p_ptr);
+		}
+	}
+
+	_FORCE_INLINE_ Ref(const Ref& p_from) { ref(p_from.data); }
+
+	_FORCE_INLINE_ Ref(Ref&& p_from) noexcept : data(p_from.data) { p_from.data = nullptr; }
+
+	// Universal converting copy constructor (Upcasts & Downcasts)
+	template <typename U,
+		typename = std::enable_if_t<!std::is_same_v<T, U> &&
+									(std::is_base_of_v<T, U> || std::is_base_of_v<U, T>)>>
+	_FORCE_INLINE_ Ref(const Ref<U>& p_from)
+	{
+		if constexpr (std::is_base_of_v<T, U>) {
+			ref(p_from.ptr());
+		}
+		else if constexpr (std::is_base_of_v<U, T>) {
+			ref(dynamic_cast<T*>(p_from.ptr()));
+		}
+	}
+
+	// Converting move constructor (Upcast only)
+	template <typename U,
+		typename = std::enable_if_t<!std::is_same_v<T, U> && std::is_base_of_v<T, U>>>
+	_FORCE_INLINE_ Ref(Ref<U>&& p_from) noexcept : data(p_from.data)
+	{
+		p_from.data = nullptr;
+	}
+
+	_FORCE_INLINE_ ~Ref() { unref(); }
+
+	// --- Lifecycle & Mutators ---
+	_FORCE_INLINE_ void unref()
+	{
+		if (data) {
+			data->unreference();
+			data = nullptr;
+		}
+	}
+
+	template <typename... Args> _FORCE_INLINE_ void instantiate(Args&&... p_args)
+	{
+		ref(memnew(T(std::forward<Args>(p_args)...)));
+	}
+
+	// --- Assignment Operators ---
+	_FORCE_INLINE_ Ref& operator=(const Ref& p_from)
+	{
+		if (this != &p_from) {
+			ref(p_from.data);
+		}
+		return *this;
+	}
+
+	_FORCE_INLINE_ Ref& operator=(Ref&& p_from) noexcept
+	{
+		if (this != &p_from) {
+			unref();
+			data = p_from.data;
+			p_from.data = nullptr;
+		}
+		return *this;
+	}
+
+	// Universal converting copy assignment (Upcasts & Downcasts)
+	template <typename U,
+		typename = std::enable_if_t<!std::is_same_v<T, U> &&
+									(std::is_base_of_v<T, U> || std::is_base_of_v<U, T>)>>
+	_FORCE_INLINE_ Ref& operator=(const Ref<U>& p_from)
+	{
+		if constexpr (std::is_base_of_v<T, U>) {
+			ref(p_from.ptr());
+		}
+		else if constexpr (std::is_base_of_v<U, T>) {
+			ref(dynamic_cast<T*>(p_from.ptr()));
+		}
+		return *this;
+	}
+
+	// Converting move assignment (Upcast only)
+	template <typename U,
+		typename = std::enable_if_t<!std::is_same_v<T, U> && std::is_base_of_v<T, U>>>
+	_FORCE_INLINE_ Ref& operator=(Ref<U>&& p_from) noexcept
+	{
+		unref();
+		data = p_from.data;
+		p_from.data = nullptr;
+		return *this;
+	}
+
+	_FORCE_INLINE_ Ref& operator=(T* p_ptr)
+	{
+		ref(p_ptr);
+		return *this;
+	}
+
+	_FORCE_INLINE_ Ref& operator=(std::nullptr_t)
+	{
+		unref();
+		return *this;
+	}
+
+	_FORCE_INLINE_ T* ptr() const { return data; }
+
+	_FORCE_INLINE_ T* operator->() const { return data; }
+
+	_FORCE_INLINE_ T& operator*() const { return *data; }
+
+	_FORCE_INLINE_ explicit operator bool() const { return data != nullptr; }
+
+	_FORCE_INLINE_ bool is_valid() const { return data != nullptr; }
+
+	_FORCE_INLINE_ bool is_null() const { return data == nullptr; }
+
+	_FORCE_INLINE_ bool operator==(const Ref& p_r) const { return data == p_r.data; }
+
+	_FORCE_INLINE_ bool operator!=(const Ref& p_r) const { return data != p_r.data; }
+
+	_FORCE_INLINE_ bool operator==(const T* p_ptr) const { return data == p_ptr; }
+
+	_FORCE_INLINE_ bool operator!=(const T* p_ptr) const { return data != p_ptr; }
+
+	_FORCE_INLINE_ bool operator<(const Ref& p_r) const { return data < p_r.data; }
+
+	template <typename U> friend class Ref;
+};
+
+template <typename T, typename... Args> _FORCE_INLINE_ Ref<T> memnew_ref(Args&&... p_args)
+{
+	return Ref<T>(memnew(T(std::forward<Args>(p_args)...)));
+}
+
+#endif // REF_H
 
 // Math primitives
 #include "core/math/basis.h"
@@ -57,14 +257,98 @@
 #include "core/math/projection.h"
 
 // Strings & Paths
-#include "core/string/node_path.h"
+// --- Inlined/Folded from core/string/node_path.h ---
+#include <climits>
+#include "core/string/ustring.h"
+
+// Represents a path to a node or property in a hierarchy of nodes
+// Note that NodePath is (effectively) const: If you hold a NodePath,
+// you can expect it to remain unchanged, even if you make copies of
+// it. This is achieved through copy-on-write (CoW).
+class [[nodiscard]] _WARN_UNUSED_ NodePath
+{
+	struct Data
+	{
+		SafeRefCount refcount;
+		Vector<String> path;
+		Vector<String> subpath;
+		String concatenated_path;
+		String concatenated_subpath;
+		bool absolute;
+		mutable bool hash_cache_valid;
+		mutable uint32_t hash_cache;
+	};
+
+	mutable Data* data = nullptr;
+	void unref();
+
+	void _update_hash_cache() const;
+
+	// Copies the underlying data.
+	// Every non-const function must call this before starting to mutate data.
+	void _copy_on_write();
+
+public:
+	bool is_absolute() const;
+	int get_name_count() const;
+	String get_name(int p_idx) const;
+	int get_subname_count() const;
+	String get_subname(int p_idx) const;
+	int get_total_name_count() const;
+	Vector<String> get_names() const;
+	Vector<String> get_subnames() const;
+	String get_concatenated_names() const;
+	String get_concatenated_subnames() const;
+	NodePath slice(int p_begin, int p_end = INT_MAX) const;
+
+	NodePath rel_path_to(const NodePath& p_np) const;
+	NodePath get_as_property_path() const;
+
+	void prepend_period();
+
+	_FORCE_INLINE_ uint32_t hash() const
+	{
+		if (!data) {
+			return 0;
+		}
+		if (!data->hash_cache_valid) {
+			_update_hash_cache();
+		}
+		return data->hash_cache;
+	}
+
+	explicit operator String() const;
+	bool is_empty() const;
+
+	bool operator==(const NodePath& p_path) const;
+	bool operator!=(const NodePath& p_path) const;
+	void operator=(const NodePath& p_path);
+
+	void simplify();
+	NodePath simplified() const;
+
+	NodePath(const Vector<String>& p_path, bool p_absolute);
+	NodePath(
+		const Vector<String>& p_path, const Vector<String>& p_subpath, bool p_absolute);
+	NodePath(const NodePath& p_path);
+	NodePath(const String& p_path);
+
+	NodePath() {}
+
+	~NodePath();
+};
+
+// Zero-constructing NodePath initializes data to nullptr (and thus empty).
+template <> struct is_zero_constructible<NodePath> : std::true_type
+{
+};
 #include "core/string/ustring.h"
 
 // Core Identifiers & Handles
 #include "core/templates/rid.h"
 
 // Native Container Templates
-#include "core/templates/cowdata.h"
+#include "core/templates/vector.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/list.h"

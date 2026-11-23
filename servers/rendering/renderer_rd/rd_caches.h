@@ -34,7 +34,7 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/paged_allocator.h"
 #include "servers/rendering/rendering_device.h"
-#include "core/os/spin_lock.h"
+#include "core/os/mutex.h"
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/rb_map.h"

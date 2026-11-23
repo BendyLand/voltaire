@@ -71,3 +71,19 @@ class String;
 
 // Implemented in subclasses
 extern GDTView *GDTViewCreate();
+
+// --- Folded from drivers/apple_embedded/godot_view_renderer.h ---
+#import <UIKit/UIKit.h>
+
+@protocol GDTViewRendererProtocol <NSObject>
+
+@property(assign, readonly, nonatomic) BOOL hasFinishedSetup;
+
+- (BOOL)setupView:(UIView *)view;
+- (void)renderOnView:(UIView *)view;
+
+@end
+
+@interface GDTViewRenderer : NSObject <GDTViewRendererProtocol>
+
+@end

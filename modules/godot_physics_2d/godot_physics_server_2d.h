@@ -38,7 +38,7 @@
 #include "core/templates/list.h"
 #include "core/templates/pair.h"
 #include "core/templates/self_list.h"
-#include "core/templates/vset.h"
+#include "core/templates/vector.h"
 #include "core/typedefs.h"
 // --- Folded from modules/godot_physics_2d/godot_shape_2d.h ---
 #include "core/math/rect2.h"
@@ -1817,7 +1817,7 @@ struct BVH_ABB {
 // --- End core/math/bvh_abb.h ---
 #include "core/math/vector3.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/pooled_list.h"
+#include "core/templates/local_vector.h"
 
 #define BVHABB_CLASS BVH_ABB<BOUNDS, POINT>
 

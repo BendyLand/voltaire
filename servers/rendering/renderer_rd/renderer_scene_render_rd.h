@@ -32,8 +32,8 @@
 #pragma once
 
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/renderer_rd/effects/copy_effects.h"
-#include "servers/rendering/renderer_rd/effects/upscale_effects.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 // --- Folded from servers/rendering/renderer_rd/storage_rd/render_data_rd.h ---
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
@@ -1515,8 +1515,8 @@ public:
 #include "servers/rendering/rendering_server_types.h"
 #include "core/templates/paged_allocator.h"
 
-#include "servers/rendering/renderer_rd/effects/copy_effects.h"
-#include "servers/rendering/renderer_rd/effects/upscale_effects.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 
 #include "servers/rendering/renderer_rd/shaders/forward_clustered/best_fit_normal.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/forward_clustered/integrate_dfg.glsl.gen.h"

@@ -479,7 +479,7 @@ void DynamicBVH::ray_query(const Vector3 &p_from, const Vector3 &p_to, QueryResu
 #include "core/math/transform_interpolator.h"
 // --- Folded from core/templates/bin_sorted_array.h ---
 #include "core/templates/local_vector.h"
-#include "core/templates/paged_array.h"
+#include "core/templates/paged_allocator.h"
 
 template <typename T>
 class _WARN_UNUSED_ BinSortedArray {
@@ -628,7 +628,7 @@ public:
 // --- End core/templates/bin_sorted_array.h ---
 #include "core/templates/local_vector.h"
 #include "core/templates/paged_allocator.h"
-#include "core/templates/paged_array.h"
+#include "core/templates/paged_allocator.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "core/math/plane.h"

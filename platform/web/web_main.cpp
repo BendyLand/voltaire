@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "platform/web/os_web.h"
-#include "godot_js.h"
+#include "platform/web/os_web.h"
 #include "os_web.h"
 
 #include "core/config/engine.h"

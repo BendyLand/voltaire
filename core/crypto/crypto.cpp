@@ -542,7 +542,7 @@ int mbedtls_base64_decode(unsigned char *dst, size_t dlen, size_t *olen, const u
 /**************************************************************************/
 
 #include "core/crypto/crypto_core.h"
-#include "hashing_context.h"
+#include "core/crypto/crypto.h"
 
 Error HashingContext::start(HashType p_type)
 {

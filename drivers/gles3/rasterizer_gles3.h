@@ -40,7 +40,504 @@
 
 #include "drivers/gles3/shaders/canvas.glsl.gen.h"
 #include "drivers/gles3/shaders/canvas_occlusion.glsl.gen.h"
-#include "drivers/gles3/storage/material_storage.h"
+// --- Inlined/Folded from drivers/gles3/storage/material_storage.h ---
+#ifdef GLES3_ENABLED
+
+#include "core/templates/rid_owner.h"
+#include "core/templates/self_list.h"
+#include "drivers/gles3/shaders/canvas.glsl.gen.h"
+#include "drivers/gles3/shaders/particles.glsl.gen.h"
+#include "drivers/gles3/shaders/scene.glsl.gen.h"
+#include "drivers/gles3/shaders/sky.glsl.gen.h"
+#include "drivers/gles3/shaders/tex_blit.glsl.gen.h"
+#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
+#include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/storage/utilities.h"
+
+namespace GLES3
+{
+
+enum
+{
+	PARTICLES_MAX_USERDATAS = 6
+};
+
+struct ShaderData
+{
+	enum BlendMode
+	{ // Used internally.
+		BLEND_MODE_MIX,
+		BLEND_MODE_ADD,
+		BLEND_MODE_SUB,
+		BLEND_MODE_MUL,
+		BLEND_MODE_PREMULT_ALPHA,
+		BLEND_MODE_PMALPHA = BLEND_MODE_PREMULT_ALPHA,
+		BLEND_MODE_ALPHA_TO_COVERAGE,
+		BLEND_MODE_DISABLED,
+		BLEND_MODE_LCD,
+	};
+
+	enum DepthDraw
+	{
+		DEPTH_DRAW_DISABLED,
+		DEPTH_DRAW_OPAQUE,
+		DEPTH_DRAW_ALWAYS
+	};
+
+	enum DepthTest
+	{
+		DEPTH_TEST_DISABLED,
+		DEPTH_TEST_ENABLED,
+		DEPTH_TEST_ENABLED_INVERTED,
+	};
+
+	enum StencilCompare
+	{
+		STENCIL_COMPARE_LESS,
+		STENCIL_COMPARE_EQUAL,
+		STENCIL_COMPARE_LESS_OR_EQUAL,
+		STENCIL_COMPARE_GREATER,
+		STENCIL_COMPARE_NOT_EQUAL,
+		STENCIL_COMPARE_GREATER_OR_EQUAL,
+		STENCIL_COMPARE_ALWAYS,
+		STENCIL_COMPARE_MAX
+	};
+
+	enum StencilFlags
+	{
+		STENCIL_FLAG_READ = 1,
+		STENCIL_FLAG_WRITE = 2,
+		STENCIL_FLAG_WRITE_DEPTH_FAIL = 4,
+	};
+
+	enum AlphaAntiAliasing
+	{
+		ALPHA_ANTIALIASING_OFF,
+		ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE,
+		ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE
+	};
+
+	RSE::ShaderMode mode = RSE::SHADER_MAX;
+	String path;
+	HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
+	HashMap<String, HashMap<int, RID>> default_texture_params;
+
+	bool valid = false;
+	RID version;
+
+	Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
+
+	Vector<uint32_t> ubo_offsets;
+	uint32_t ubo_size = 0;
+
+	String code;
+
+	BlendMode blend_mode = BLEND_MODE_MIX;
+	AlphaAntiAliasing alpha_antialiasing_mode = ALPHA_ANTIALIASING_OFF;
+	DepthDraw depth_draw = DEPTH_DRAW_OPAQUE;
+	DepthTest depth_test = DEPTH_TEST_ENABLED;
+	RSE::CullMode cull_mode = RSE::CULL_MODE_BACK;
+
+	StencilCompare stencil_compare = STENCIL_COMPARE_ALWAYS;
+	uint32_t stencil_flags = 0;
+	int32_t stencil_reference = -1;
+	bool stencil_enabled = false;
+
+	bool uses_point_size = false;
+	bool uses_alpha = false;
+	bool compiler_alpha_clip = false;
+	bool uses_blend_alpha = false;
+	bool uses_depth_prepass_alpha = false;
+	bool uses_discard = false;
+	bool uses_roughness = false;
+	bool uses_normal = false;
+	bool uses_particle_trails = false;
+	bool wireframe = false;
+
+	bool unshaded = false;
+	bool uses_vertex = false;
+	bool uses_position = false;
+	bool uses_sss = false;
+	bool uses_transmittance = false;
+	bool uses_screen_texture = false;
+	bool uses_screen_texture_mipmaps = false;
+	bool uses_depth_texture = false;
+	bool uses_normal_texture = false;
+	bool uses_bent_normal_texture = false;
+	bool uses_sdf = false;
+	bool uses_time = false;
+	bool uses_vertex_time = false;
+	bool uses_fragment_time = false;
+	bool uses_half_res = false;
+	bool uses_quarter_res = false;
+	bool uses_light = false;
+	bool uses_collision = false;
+	bool writes_modelview_or_projection = false;
+	bool uses_world_coordinates = false;
+	bool uses_tangent = false;
+	bool writes_tangent = false;
+	bool uses_color = false;
+	bool uses_uv = false;
+	bool uses_uv2 = false;
+	bool uses_custom0 = false;
+	bool uses_custom1 = false;
+	bool uses_custom2 = false;
+	bool uses_custom3 = false;
+	bool uses_bones = false;
+	bool uses_weights = false;
+
+	uint64_t vertex_input_mask = 0;
+
+	bool userdatas_used[PARTICLES_MAX_USERDATAS] = {};
+	uint32_t userdata_count = 0;
+
+	explicit ShaderData(RSE::ShaderMode p_mode) : mode(p_mode) {}
+	~ShaderData();
+
+	void set_path_hint(const String& p_hint);
+	void set_default_texture_parameter(const String& p_name, RID p_texture, int p_index);
+	void get_instance_param_list(List<InstanceShaderParam>* p_param_list) const;
+	bool is_parameter_texture(const String& p_param) const;
+
+	void set_code(const String& p_code);
+	bool is_animated() const;
+	bool casts_shadows() const;
+	RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
+
+private:
+	void _set_code_canvas(const String& p_code);
+	void _set_code_sky(const String& p_code);
+	void _set_code_scene(const String& p_code);
+	void _set_code_particles(const String& p_code);
+	void _set_code_tex_blit(const String& p_code);
+};
+
+struct Material;
+
+struct Shader
+{
+	ShaderData* data = nullptr;
+	String code;
+	String path_hint;
+	RSE::ShaderMode mode;
+	HashMap<String, HashMap<int, RID>> default_texture_parameter;
+	HashSet<Material*> owners;
+};
+
+struct MaterialData
+{
+	ShaderData* shader_data = nullptr;
+	uint64_t last_pass = 0;
+	uint32_t index = 0;
+	RID next_pass;
+	RID uniform_set;
+	uint8_t priority = 0;
+	bool uniform_set_updated = false;
+
+	explicit MaterialData(ShaderData* p_shader_data = nullptr) : shader_data(p_shader_data) {}
+	~MaterialData();
+
+	RID get_default_texture_id(
+		ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint);
+
+	void set_render_priority(int p_priority);
+	void set_next_pass(RID p_pass);
+	void bind_uniforms();
+
+	// Used internally by all Materials
+protected:
+	Vector<uint8_t> ubo_data;
+	GLuint uniform_buffer = GLuint(0);
+	Vector<RID> texture_cache;
+
+private:
+	friend class MaterialStorage;
+	RID self;
+	List<RID>::Element* global_buffer_E = nullptr;
+	List<RID>::Element* global_texture_E = nullptr;
+	uint64_t global_textures_pass = 0;
+	HashMap<String, uint64_t> used_global_textures;
+};
+
+struct Material
+{
+	RID self;
+	MaterialData* data = nullptr;
+	Shader* shader = nullptr;
+	// shortcut to shader data and type
+	RSE::ShaderMode shader_mode = RSE::SHADER_MAX;
+	uint32_t shader_id = 0;
+	bool uniform_dirty = false;
+	bool texture_dirty = false;
+	int32_t priority = 0;
+	RID next_pass;
+	SelfList<Material> update_element;
+
+	Dependency dependency;
+
+	Material() : update_element(this) {}
+};
+
+struct GlobalShaderUniforms
+{
+	enum
+	{
+		BUFFER_DIRTY_REGION_SIZE = 1024
+	};
+
+	struct Variable
+	{
+		HashSet<RID> texture_materials;
+
+		RSE::GlobalShaderParameterType type;
+		int32_t buffer_index;
+		int32_t buffer_elements;
+	};
+
+	HashMap<String, Variable> variables;
+
+	struct Value
+	{
+		float x;
+		float y;
+		float z;
+		float w;
+	};
+
+	struct ValueInt
+	{
+		int32_t x;
+		int32_t y;
+		int32_t z;
+		int32_t w;
+	};
+
+	struct ValueUInt
+	{
+		uint32_t x;
+		uint32_t y;
+		uint32_t z;
+		uint32_t w;
+	};
+
+	struct ValueUsage
+	{
+		uint32_t elements = 0;
+	};
+
+	List<RID> materials_using_buffer;
+	List<RID> materials_using_texture;
+
+	GLuint buffer = GLuint(0);
+	Value* buffer_values = nullptr;
+	ValueUsage* buffer_usage = nullptr;
+	bool* buffer_dirty_regions = nullptr;
+	uint32_t buffer_dirty_region_count = 0;
+
+	uint32_t buffer_size = 0;
+
+	bool must_update_texture_materials = false;
+	bool must_update_buffer_materials = false;
+
+	HashMap<RID, int32_t> instance_buffer_pos;
+};
+
+class MaterialStorage final
+{
+private:
+	friend struct MaterialData;
+
+	/* GLOBAL SHADER UNIFORM API */
+
+	static inline GlobalShaderUniforms global_shader_uniforms;
+
+	static int32_t _global_shader_uniform_allocate(uint32_t p_elements);
+	static void _global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements);
+
+	/* SHADER API */
+
+	static inline RID_Owner<Shader, true> shader_owner;
+
+	/* MATERIAL API */
+	static inline RID_Owner<Material, true> material_owner;
+
+	static inline SelfList<Material>::List material_update_list;
+	static inline HashSet<RID> dummy_embedded_set;
+
+public:
+	struct Shaders
+	{
+		CanvasShaderGLES3 canvas_shader;
+		SkyShaderGLES3 sky_shader;
+		SceneShaderGLES3 scene_shader;
+		ParticlesShaderGLES3 particles_process_shader;
+		TexBlitShaderGLES3 tex_blit_shader;
+
+		ShaderCompiler compiler_canvas;
+		ShaderCompiler compiler_scene;
+		ShaderCompiler compiler_particles;
+		ShaderCompiler compiler_sky;
+		ShaderCompiler compiler_tex_blit;
+	};
+
+	static inline Shaders* shaders = nullptr;
+
+	MaterialStorage() = delete;
+	MaterialStorage(const MaterialStorage&) = delete;
+	MaterialStorage& operator=(const MaterialStorage&) = delete;
+	~MaterialStorage() = delete;
+
+	static void initialize();
+	static void finalize();
+
+	static _FORCE_INLINE_ void store_transform(const Transform3D& p_mtx, float* p_array)
+	{
+		p_array[0] = p_mtx.basis.rows[0][0];
+		p_array[1] = p_mtx.basis.rows[1][0];
+		p_array[2] = p_mtx.basis.rows[2][0];
+		p_array[3] = 0;
+		p_array[4] = p_mtx.basis.rows[0][1];
+		p_array[5] = p_mtx.basis.rows[1][1];
+		p_array[6] = p_mtx.basis.rows[2][1];
+		p_array[7] = 0;
+		p_array[8] = p_mtx.basis.rows[0][2];
+		p_array[9] = p_mtx.basis.rows[1][2];
+		p_array[10] = p_mtx.basis.rows[2][2];
+		p_array[11] = 0;
+		p_array[12] = p_mtx.origin.x;
+		p_array[13] = p_mtx.origin.y;
+		p_array[14] = p_mtx.origin.z;
+		p_array[15] = 1;
+	}
+
+	static _FORCE_INLINE_ void store_transform_3x3(const Basis& p_mtx, float* p_array)
+	{
+		p_array[0] = p_mtx.rows[0][0];
+		p_array[1] = p_mtx.rows[1][0];
+		p_array[2] = p_mtx.rows[2][0];
+		p_array[3] = 0;
+		p_array[4] = p_mtx.rows[0][1];
+		p_array[5] = p_mtx.rows[1][1];
+		p_array[6] = p_mtx.rows[2][1];
+		p_array[7] = 0;
+		p_array[8] = p_mtx.rows[0][2];
+		p_array[9] = p_mtx.rows[1][2];
+		p_array[10] = p_mtx.rows[2][2];
+		p_array[11] = 0;
+	}
+
+	static _FORCE_INLINE_ void store_camera(const Projection& p_mtx, float* p_array)
+	{
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				p_array[i * 4 + j] = p_mtx.columns[i][j];
+			}
+		}
+	}
+
+	/* GLOBAL SHADER UNIFORM API */
+
+	static void _update_global_shader_uniforms();
+
+	static void global_shader_parameter_remove(const String& p_name);
+	static Vector<String> global_shader_parameter_get_list();
+
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
+		const String& p_name);
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type_internal(
+		const String& p_name);
+
+	static void global_shader_parameters_load_settings(bool p_load_textures = true);
+	static void global_shader_parameters_clear();
+
+	static int32_t global_shader_parameters_instance_allocate(RID p_instance);
+	static void global_shader_parameters_instance_free(RID p_instance);
+
+	static GLuint global_shader_parameters_get_uniform_buffer();
+
+	/* SHADER API */
+
+	static Shader* get_shader(RID p_rid) { return shader_owner.get_or_null(p_rid); }
+
+	static bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
+
+	static void _shader_make_dirty(Shader* p_shader);
+
+	static RID shader_allocate();
+	static void shader_initialize(RID p_rid, bool p_embedded = true);
+	static void shader_free(RID p_rid);
+
+	static void shader_set_code(RID p_shader, const String& p_code);
+	static void shader_set_path_hint(RID p_shader, const String& p_path);
+	static String shader_get_code(RID p_shader);
+
+	static void shader_set_default_texture_parameter(
+		RID p_shader, const String& p_name, RID p_texture, int p_index);
+	static RID shader_get_default_texture_parameter(
+		RID p_shader, const String& p_name, int p_index);
+
+	static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
+		RID p_shader);
+
+	static void shader_embedded_set_lock() {}
+
+	static const HashSet<RID>& shader_embedded_set_get()
+	{
+		return dummy_embedded_set;
+	}
+
+	static void shader_embedded_set_unlock() {}
+
+	/* MATERIAL API */
+
+	static Material* get_material(RID p_rid) { return material_owner.get_or_null(p_rid); }
+
+	static bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
+
+	static void _material_queue_update(Material* material, bool p_uniform, bool p_texture);
+	static void _update_queued_materials();
+
+	static RID material_allocate();
+	static void material_initialize(RID p_rid);
+	static void material_free(RID p_rid);
+
+	static void material_set_shader(RID p_material, RID p_shader);
+
+	static void material_set_next_pass(RID p_material, RID p_next_material);
+	static void material_set_render_priority(RID p_material, int priority);
+
+	static bool material_is_animated(RID p_material);
+	static bool material_casts_shadows(RID p_material);
+	static RSE::CullMode material_get_cull_mode(RID p_material);
+
+	static void material_get_instance_shader_parameters(
+		RID p_material, List<InstanceShaderParam>* r_parameters);
+
+	static void material_update_dependency(RID p_material, DependencyTracker* p_instance);
+
+	static _FORCE_INLINE_ uint32_t material_get_shader_id(RID p_material)
+	{
+		Material* material = material_owner.get_or_null(p_material);
+		return material->shader_id;
+	}
+
+	static _FORCE_INLINE_ MaterialData* material_get_data(RID p_material, RSE::ShaderMode p_shader_mode)
+	{
+		Material* material = material_owner.get_or_null(p_material);
+		if (!material || material->shader_mode != p_shader_mode) {
+			return nullptr;
+		}
+		else {
+			return material->data;
+		}
+	}
+};
+
+} // namespace GLES3
+
+#endif // GLES3_ENABLED
 #include "drivers/gles3/storage/mesh_storage.h"
 #include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/rendering_server_enums.h"
@@ -479,10 +976,1012 @@ public:
 #include "core/templates/paged_allocator.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
-#include "drivers/gles3/storage/light_storage.h"
-#include "drivers/gles3/storage/material_storage.h"
+// --- Inlined/Folded from drivers/gles3/storage/light_storage.h ---
+#ifdef GLES3_ENABLED
+
+#include <platform_gl.h>
+#include "core/templates/local_vector.h"
+#include "core/templates/rid_owner.h"
+#include "drivers/gles3/storage/texture_storage.h"
+#include "drivers/gles3/storage/utilities.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/storage/utilities.h"
+
+namespace GLES3
+{
+
+struct DirectionalShadow
+{
+	GLuint depth = 0;
+	GLuint fbo = 0;
+
+	int light_count = 0;
+	int size = 0;
+	bool use_16_bits = true;
+	int current_light = 0;
+};
+
+struct Light
+{
+	RSE::LightType type;
+	float param[RSE::LIGHT_PARAM_MAX];
+	Color color = Color(1, 1, 1, 1);
+	RID projector;
+	bool shadow = false;
+	bool negative = false;
+	bool reverse_cull = false;
+	RSE::LightBakeMode bake_mode = RSE::LIGHT_BAKE_DYNAMIC;
+	uint32_t max_sdfgi_cascade = 2;
+	uint32_t cull_mask = 0xFFFFFFFF;
+	uint32_t shadow_caster_mask = 0xFFFFFFFF;
+	bool distance_fade = false;
+	real_t distance_fade_begin = 40.0;
+	real_t distance_fade_shadow = 50.0;
+	real_t distance_fade_length = 10.0;
+	RSE::LightOmniShadowMode omni_shadow_mode = RSE::LIGHT_OMNI_SHADOW_DUAL_PARABOLOID;
+	RSE::LightDirectionalShadowMode directional_shadow_mode =
+		RSE::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL;
+	bool directional_blend_splits = false;
+	RSE::LightDirectionalSkyMode directional_sky_mode =
+		RSE::LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_AND_SKY;
+	Vector2 area_size = Vector2(1, 1);
+	bool area_normalize_energy = true;
+	RID area_texture;
+	uint64_t version = 0;
+
+	Dependency dependency;
+};
+
+struct LightInstance
+{
+	struct ShadowTransform
+	{
+		Projection camera;
+		Transform3D transform;
+		float farplane;
+		float split;
+		float bias_scale;
+		float shadow_texel_size;
+		float range_begin;
+		Rect2 atlas_rect;
+		Vector2 uv_scale;
+	};
+
+	ShadowTransform shadow_transform[6];
+	RSE::LightType light_type = RSE::LIGHT_DIRECTIONAL;
+
+	AABB aabb;
+	RID self;
+	RID light;
+	Transform3D transform;
+
+	uint64_t shadow_pass = 0;
+	uint64_t last_scene_pass = 0;
+	uint64_t last_scene_shadow_pass = 0;
+	uint64_t last_pass = 0;
+	uint32_t cull_mask = 0;
+	uint32_t light_directional_index = 0;
+
+	Rect2 directional_rect;
+
+	HashSet<RID> shadow_atlases;
+
+	int32_t gl_id = -1;
+	int32_t shadow_id = -1;
+
+	LightInstance() {}
+};
+
+/* REFLECTION PROBE */
+
+struct ReflectionProbe
+{
+	RSE::ReflectionProbeUpdateMode update_mode = RSE::REFLECTION_PROBE_UPDATE_ONCE;
+	float intensity = 1.0;
+	float blend_distance = 1.0;
+	RSE::ReflectionProbeAmbientMode ambient_mode = RSE::REFLECTION_PROBE_AMBIENT_ENVIRONMENT;
+	Color ambient_color;
+	float ambient_color_energy = 1.0;
+	float max_distance = 0;
+	Vector3 size = Vector3(20, 20, 20);
+	Vector3 origin_offset;
+	bool interior = false;
+	bool box_projection = false;
+	bool enable_shadows = false;
+	uint32_t cull_mask = (1 << 20) - 1;
+	uint32_t reflection_mask = (1 << 20) - 1;
+	float mesh_lod_threshold = 0.01;
+	float baked_exposure = 1.0;
+
+	Dependency dependency;
+};
+
+/* REFLECTION ATLAS */
+
+struct ReflectionAtlas
+{
+	int count = 0;
+	int size = 0;
+
+	int mipmap_count = 1;
+	int mipmap_size[8];
+	GLuint depth = 0;
+
+	struct Reflection
+	{
+		RID owner;
+		GLuint color = 0;
+		GLuint radiance = 0;
+		GLuint fbos[7];
+	};
+
+	Vector<Reflection> reflections;
+
+	Ref<RenderSceneBuffersGLES3> render_buffers;
+};
+
+/* REFLECTION PROBE INSTANCE */
+
+struct ReflectionProbeInstance
+{
+	RID probe;
+	int atlas_index = -1;
+	RID atlas;
+
+	bool dirty = true;
+	bool rendering = false;
+	int processing_layer = 0;
+
+	uint64_t last_pass = 0;
+	uint32_t cull_mask = 0;
+
+	Transform3D transform;
+};
+
+/* LIGHTMAP */
+
+struct Lightmap
+{
+	RID light_texture;
+	RID shadow_texture;
+	bool uses_spherical_harmonics = false;
+	bool interior = false;
+	AABB bounds = AABB(Vector3(), Vector3(1, 1, 1));
+	float baked_exposure = 1.0;
+	Vector2i light_texture_size;
+	int32_t array_index = -1;
+	RSE::ShadowmaskMode shadowmask_mode = RSE::SHADOWMASK_MODE_NONE;
+	PackedVector3Array points;
+	PackedColorArray point_sh;
+	PackedInt32Array tetrahedra;
+	PackedInt32Array bsp_tree;
+
+	struct BSP
+	{
+		static const int32_t EMPTY_LEAF = INT32_MIN;
+		float plane[4];
+		int32_t over = EMPTY_LEAF, under = EMPTY_LEAF;
+	};
+
+	Dependency dependency;
+};
+
+struct LightmapInstance
+{
+	RID lightmap;
+	Transform3D transform;
+};
+
+class LightStorage
+{
+public:
+	enum ShadowAtlastQuadrant : uint32_t
+	{
+		QUADRANT_SHIFT = 27,
+		OMNI_LIGHT_FLAG = 1 << 26,
+		SHADOW_INDEX_MASK = OMNI_LIGHT_FLAG - 1,
+		SHADOW_INVALID = 0xFFFFFFFF
+	};
+
+	struct ShadowAtlas
+	{
+		struct Quadrant
+		{
+			uint32_t subdivision = 0;
+
+			struct Shadow
+			{
+				RID owner;
+				bool owner_is_omni = false;
+				uint64_t version = 0;
+				uint64_t alloc_tick = 0;
+
+				Shadow() {}
+			};
+
+			Vector<Shadow> shadows;
+			LocalVector<GLuint> textures;
+			LocalVector<GLuint> fbos;
+
+			Quadrant() {}
+		} quadrants[4];
+
+		int size_order[4] = {0, 1, 2, 3};
+		uint32_t smallest_subdiv = 0;
+
+		int size = 0;
+		bool use_16_bits = true;
+
+		GLuint debug_texture = 0;
+		GLuint debug_fbo = 0;
+
+		HashMap<RID, uint32_t> shadow_owners;
+	};
+
+	/* Static Storage State */
+	static inline RID_Owner<Light, true> light_owner;
+	static inline RID_Owner<LightInstance> light_instance_owner;
+	static inline RID_Owner<ReflectionProbe, true> reflection_probe_owner;
+	static inline RID_Owner<ReflectionAtlas> reflection_atlas_owner;
+	static inline RID_Owner<ReflectionProbeInstance> reflection_probe_instance_owner;
+
+	static inline float lightmap_probe_capture_update_speed = 4;
+	static inline RID_Owner<Lightmap, true> lightmap_owner;
+	static inline RID_Owner<LightmapInstance> lightmap_instance_owner;
+
+	static inline uint64_t shadow_atlas_realloc_tolerance_msec = 500;
+	static inline RID_Owner<ShadowAtlas> shadow_atlas_owner;
+	static inline DirectionalShadow directional_shadow;
+
+	/* Internal static helpers */
+	static void _shadow_atlas_invalidate_shadow(ShadowAtlas::Quadrant::Shadow* p_shadow,
+		RID p_atlas, ShadowAtlas* p_shadow_atlas, uint32_t p_quadrant, uint32_t p_shadow_idx);
+	static bool _shadow_atlas_find_shadow(ShadowAtlas* shadow_atlas, int* p_in_quadrants,
+		int p_quadrant_count, int p_current_subdiv, uint64_t p_tick, bool p_omni, int& r_quadrant,
+		int& r_shadow);
+
+public:
+	LightStorage() = delete;
+	LightStorage(const LightStorage&) = delete;
+	LightStorage& operator=(const LightStorage&) = delete;
+	~LightStorage() = delete;
+
+	static void initialize();
+
+	/* Light API */
+	static Light* get_light(RID p_rid) { return light_owner.get_or_null(p_rid); }
+
+	static bool owns_light(RID p_rid) { return light_owner.owns(p_rid); }
+
+	static void _light_initialize(RID p_rid, RSE::LightType p_type);
+
+	static RID directional_light_allocate();
+	static void directional_light_initialize(RID p_rid);
+	static RID omni_light_allocate();
+	static void omni_light_initialize(RID p_rid);
+	static RID spot_light_allocate();
+	static void spot_light_initialize(RID p_rid);
+	static RID area_light_allocate();
+	static void area_light_initialize(RID p_rid);
+
+	static void light_free(RID p_rid);
+
+	static void light_set_color(RID p_light, const Color& p_color);
+	static void light_set_param(RID p_light, RSE::LightParam p_param, float p_value);
+	static void light_set_shadow(RID p_light, bool p_enabled);
+	static void light_set_projector(RID p_light, RID p_texture);
+	static void light_set_negative(RID p_light, bool p_enable);
+	static void light_set_cull_mask(RID p_light, uint32_t p_mask);
+	static void light_set_distance_fade(
+		RID p_light, bool p_enabled, float p_begin, float p_shadow, float p_length);
+	static void light_set_reverse_cull_face_mode(RID p_light, bool p_enabled);
+	static void light_set_shadow_caster_mask(RID p_light, uint32_t p_caster_mask);
+	static uint32_t light_get_shadow_caster_mask(RID p_light);
+	static void light_set_bake_mode(RID p_light, RSE::LightBakeMode p_bake_mode);
+
+	static void light_set_max_sdfgi_cascade(RID p_light, uint32_t p_cascade) {}
+
+	static void light_omni_set_shadow_mode(RID p_light, RSE::LightOmniShadowMode p_mode);
+
+	static void light_directional_set_shadow_mode(
+		RID p_light, RSE::LightDirectionalShadowMode p_mode);
+	static void light_directional_set_blend_splits(RID p_light, bool p_enable);
+	static bool light_directional_get_blend_splits(RID p_light);
+	static void light_directional_set_sky_mode(RID p_light, RSE::LightDirectionalSkyMode p_mode);
+	static RSE::LightDirectionalSkyMode light_directional_get_sky_mode(RID p_light);
+
+	static void light_area_set_size(RID p_light, const Vector2& p_size);
+	static Vector2 light_area_get_size(RID p_light);
+
+	static void light_area_set_normalize_energy(RID p_light, bool p_enabled);
+	static bool light_area_get_normalize_energy(RID p_light);
+	static void light_area_set_texture(RID p_light, RID p_texture);
+	static RID light_area_get_texture(RID p_light);
+
+	static RSE::LightDirectionalShadowMode light_directional_get_shadow_mode(RID p_light);
+	static RSE::LightOmniShadowMode light_omni_get_shadow_mode(RID p_light);
+
+	static RSE::LightType light_get_type(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, RSE::LIGHT_DIRECTIONAL);
+		return light->type;
+	}
+
+	static AABB light_get_aabb(RID p_light);
+
+	static float light_get_param(RID p_light, RSE::LightParam p_param)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, 0);
+		return light->param[p_param];
+	}
+
+	_FORCE_INLINE_ static RID light_get_projector(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, RID());
+		return light->projector;
+	}
+
+	static Color light_get_color(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, Color());
+		return light->color;
+	}
+
+	_FORCE_INLINE_ static bool light_is_distance_fade_enabled(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		return light ? light->distance_fade : false;
+	}
+
+	_FORCE_INLINE_ static float light_get_distance_fade_begin(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		return light ? light->distance_fade_begin : 0.0f;
+	}
+
+	_FORCE_INLINE_ static float light_get_distance_fade_shadow(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		return light ? light->distance_fade_shadow : 0.0f;
+	}
+
+	_FORCE_INLINE_ static float light_get_distance_fade_length(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		return light ? light->distance_fade_length : 0.0f;
+	}
+
+	static bool light_has_shadow(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, false);
+		return light->shadow;
+	}
+
+	static bool light_has_projector(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, false);
+		return TextureStorage::owns_texture(light->projector);
+	}
+
+	_FORCE_INLINE_ static bool light_is_negative(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, false);
+		return light->negative;
+	}
+
+	_FORCE_INLINE_ static float light_get_transmittance_bias(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, 0.0);
+		return light->param[RSE::LIGHT_PARAM_TRANSMITTANCE_BIAS];
+	}
+
+	static bool light_get_reverse_cull_face_mode(RID p_light)
+	{
+		const Light* light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, false);
+		return light->reverse_cull;
+	}
+
+	static RSE::LightBakeMode light_get_bake_mode(RID p_light);
+
+	static uint32_t light_get_max_sdfgi_cascade(RID p_light) { return 0; }
+
+	static uint64_t light_get_version(RID p_light);
+	static uint32_t light_get_cull_mask(RID p_light);
+
+	/* LIGHT INSTANCE API */
+
+	static LightInstance* get_light_instance(RID p_rid)
+	{
+		return light_instance_owner.get_or_null(p_rid);
+	}
+
+	static bool owns_light_instance(RID p_rid) { return light_instance_owner.owns(p_rid); }
+
+	static RID light_instance_create(RID p_light);
+	static void light_instance_free(RID p_light_instance);
+
+	static void light_instance_set_transform(RID p_light_instance, const Transform3D& p_transform);
+	static void light_instance_set_aabb(RID p_light_instance, const AABB& p_aabb);
+	static void light_instance_set_shadow_transform(RID p_light_instance,
+		const Projection& p_projection, const Transform3D& p_transform, float p_far, float p_split,
+		int p_pass, float p_shadow_texel_size, float p_bias_scale = 1.0, float p_range_begin = 0,
+		const Vector2& p_uv_scale = Vector2());
+	static void light_instance_mark_visible(RID p_light_instance);
+
+	static bool light_instance_is_shadow_visible_at_position(
+		RID p_light_instance, const Vector3& p_position)
+	{
+		const LightInstance* light_instance = light_instance_owner.get_or_null(p_light_instance);
+		ERR_FAIL_NULL_V(light_instance, false);
+		const Light* light = light_owner.get_or_null(light_instance->light);
+		ERR_FAIL_NULL_V(light, false);
+
+		if (!light->shadow) {
+			return false;
+		}
+
+		if (!light->distance_fade) {
+			return true;
+		}
+
+		real_t distance = p_position.distance_to(light_instance->transform.origin);
+
+		if (distance > light->distance_fade_shadow + light->distance_fade_length) {
+			return false;
+		}
+
+		return true;
+	}
+
+	_FORCE_INLINE_ static RID light_instance_get_base_light(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->light : RID();
+	}
+
+	_FORCE_INLINE_ static Transform3D light_instance_get_base_transform(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->transform : Transform3D();
+	}
+
+	_FORCE_INLINE_ static AABB light_instance_get_base_aabb(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->aabb : AABB();
+	}
+
+	_FORCE_INLINE_ static void light_instance_set_cull_mask(
+		RID p_light_instance, uint32_t p_cull_mask)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		if (li) {
+			li->cull_mask = p_cull_mask;
+		}
+	}
+
+	_FORCE_INLINE_ static uint32_t light_instance_get_cull_mask(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->cull_mask : 0;
+	}
+
+	_FORCE_INLINE_ static GLuint light_instance_get_shadow_texture(
+		RID p_light_instance, RID p_shadow_atlas)
+	{
+#ifdef DEBUG_ENABLED
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		ERR_FAIL_COND_V(!li->shadow_atlases.has(p_shadow_atlas), 0);
+#endif
+		ShadowAtlas* shadow_atlas = shadow_atlas_owner.get_or_null(p_shadow_atlas);
+		ERR_FAIL_NULL_V(shadow_atlas, 0);
+#ifdef DEBUG_ENABLED
+		ERR_FAIL_COND_V(!shadow_atlas->shadow_owners.has(p_light_instance), 0);
+#endif
+		uint32_t key = shadow_atlas->shadow_owners[p_light_instance];
+
+		uint32_t quadrant = (key >> QUADRANT_SHIFT) & 0x3;
+		uint32_t shadow = key & SHADOW_INDEX_MASK;
+
+		ERR_FAIL_COND_V(shadow >= (uint32_t)shadow_atlas->quadrants[quadrant].shadows.size(), 0);
+
+		return shadow_atlas_get_quadrant_shadow_texture(p_shadow_atlas, quadrant, shadow);
+	}
+
+	_FORCE_INLINE_ static bool light_instance_has_shadow_atlas(
+		RID p_light_instance, RID p_shadow_atlas)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_atlases.has(p_shadow_atlas) : false;
+	}
+
+	_FORCE_INLINE_ static float light_instance_get_shadow_texel_size(
+		RID p_light_instance, RID p_shadow_atlas)
+	{
+#ifdef DEBUG_ENABLED
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		ERR_FAIL_COND_V(!li->shadow_atlases.has(p_shadow_atlas), 0);
+#endif
+		ShadowAtlas* shadow_atlas = shadow_atlas_owner.get_or_null(p_shadow_atlas);
+		ERR_FAIL_NULL_V(shadow_atlas, 0);
+#ifdef DEBUG_ENABLED
+		ERR_FAIL_COND_V(!shadow_atlas->shadow_owners.has(p_light_instance), 0);
+#endif
+		uint32_t key = shadow_atlas->shadow_owners[p_light_instance];
+
+		uint32_t quadrant = (key >> QUADRANT_SHIFT) & 0x3;
+		uint32_t quadrant_size = shadow_atlas->size >> 1;
+		uint32_t shadow_size = (quadrant_size / shadow_atlas->quadrants[quadrant].subdivision);
+
+		return float(1.0) / shadow_size;
+	}
+
+	_FORCE_INLINE_ static Projection light_instance_get_shadow_camera(
+		RID p_light_instance, int p_index)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_transform[p_index].camera : Projection();
+	}
+
+	_FORCE_INLINE_ static Transform3D light_instance_get_shadow_transform(
+		RID p_light_instance, int p_index)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_transform[p_index].transform : Transform3D();
+	}
+
+	_FORCE_INLINE_ static float light_instance_get_shadow_bias_scale(
+		RID p_light_instance, int p_index)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_transform[p_index].bias_scale : 0.0f;
+	}
+
+	_FORCE_INLINE_ static float light_instance_get_shadow_range(RID p_light_instance, int p_index)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_transform[p_index].farplane : 0.0f;
+	}
+
+	_FORCE_INLINE_ static float light_instance_get_shadow_range_begin(
+		RID p_light_instance, int p_index)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_transform[p_index].range_begin : 0.0f;
+	}
+
+	_FORCE_INLINE_ static Vector2 light_instance_get_shadow_uv_scale(
+		RID p_light_instance, int p_index)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_transform[p_index].uv_scale : Vector2();
+	}
+
+	_FORCE_INLINE_ static void light_instance_set_directional_shadow_atlas_rect(
+		RID p_light_instance, int p_index, const Rect2 p_atlas_rect)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		if (li) {
+			li->shadow_transform[p_index].atlas_rect = p_atlas_rect;
+		}
+	}
+
+	_FORCE_INLINE_ static Rect2 light_instance_get_directional_shadow_atlas_rect(
+		RID p_light_instance, int p_index)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_transform[p_index].atlas_rect : Rect2();
+	}
+
+	_FORCE_INLINE_ static float light_instance_get_directional_shadow_split(
+		RID p_light_instance, int p_index)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_transform[p_index].split : 0.0f;
+	}
+
+	_FORCE_INLINE_ static float light_instance_get_directional_shadow_texel_size(
+		RID p_light_instance, int p_index)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_transform[p_index].shadow_texel_size : 0.0f;
+	}
+
+	_FORCE_INLINE_ static void light_instance_set_render_pass(RID p_light_instance, uint64_t p_pass)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		if (li) {
+			li->last_pass = p_pass;
+		}
+	}
+
+	_FORCE_INLINE_ static uint64_t light_instance_get_render_pass(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->last_pass : 0;
+	}
+
+	_FORCE_INLINE_ static void light_instance_set_shadow_pass(RID p_light_instance, uint64_t p_pass)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		if (li) {
+			li->last_scene_shadow_pass = p_pass;
+		}
+	}
+
+	_FORCE_INLINE_ static uint64_t light_instance_get_shadow_pass(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->last_scene_shadow_pass : 0;
+	}
+
+	_FORCE_INLINE_ static void light_instance_set_directional_rect(
+		RID p_light_instance, const Rect2& p_directional_rect)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		if (li) {
+			li->directional_rect = p_directional_rect;
+		}
+	}
+
+	_FORCE_INLINE_ static Rect2 light_instance_get_directional_rect(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->directional_rect : Rect2();
+	}
+
+	_FORCE_INLINE_ static RSE::LightType light_instance_get_type(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->light_type : RSE::LIGHT_DIRECTIONAL;
+	}
+
+	_FORCE_INLINE_ static int32_t light_instance_get_gl_id(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->gl_id : -1;
+	}
+
+	_FORCE_INLINE_ static int32_t light_instance_get_shadow_id(RID p_light_instance)
+	{
+		LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
+		return li ? li->shadow_id : -1;
+	}
+
+	/* PROBE API */
+
+	static ReflectionProbe* get_reflection_probe(RID p_rid)
+	{
+		return reflection_probe_owner.get_or_null(p_rid);
+	}
+
+	static bool owns_reflection_probe(RID p_rid) { return reflection_probe_owner.owns(p_rid); }
+
+	static RID reflection_probe_allocate();
+	static void reflection_probe_initialize(RID p_rid);
+	static void reflection_probe_free(RID p_rid);
+
+	static void reflection_probe_set_update_mode(
+		RID p_probe, RSE::ReflectionProbeUpdateMode p_mode);
+	static void reflection_probe_set_intensity(RID p_probe, float p_intensity);
+	static void reflection_probe_set_blend_distance(RID p_probe, float p_blend_distance);
+	static void reflection_probe_set_ambient_mode(
+		RID p_probe, RSE::ReflectionProbeAmbientMode p_mode);
+	static void reflection_probe_set_ambient_color(RID p_probe, const Color& p_color);
+	static void reflection_probe_set_ambient_energy(RID p_probe, float p_energy);
+	static void reflection_probe_set_max_distance(RID p_probe, float p_distance);
+	static void reflection_probe_set_size(RID p_probe, const Vector3& p_size);
+	static void reflection_probe_set_origin_offset(RID p_probe, const Vector3& p_offset);
+	static void reflection_probe_set_as_interior(RID p_probe, bool p_enable);
+	static void reflection_probe_set_enable_box_projection(RID p_probe, bool p_enable);
+	static void reflection_probe_set_enable_shadows(RID p_probe, bool p_enable);
+	static void reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers);
+	static void reflection_probe_set_reflection_mask(RID p_probe, uint32_t p_layers);
+	static void reflection_probe_set_resolution(RID p_probe, int p_resolution);
+	static void reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_ratio);
+	static float reflection_probe_get_mesh_lod_threshold(RID p_probe);
+
+	static AABB reflection_probe_get_aabb(RID p_probe);
+	static RSE::ReflectionProbeUpdateMode reflection_probe_get_update_mode(RID p_probe);
+	static uint32_t reflection_probe_get_cull_mask(RID p_probe);
+	static uint32_t reflection_probe_get_reflection_mask(RID p_probe);
+	static Vector3 reflection_probe_get_size(RID p_probe);
+	static Vector3 reflection_probe_get_origin_offset(RID p_probe);
+	static float reflection_probe_get_origin_max_distance(RID p_probe);
+	static bool reflection_probe_renders_shadows(RID p_probe);
+
+	static Dependency* reflection_probe_get_dependency(RID p_probe);
+
+	/* REFLECTION ATLAS */
+
+	static bool owns_reflection_atlas(RID p_rid) { return reflection_atlas_owner.owns(p_rid); }
+
+	static RID reflection_atlas_create();
+	static void reflection_atlas_free(RID p_ref_atlas);
+	static int reflection_atlas_get_size(RID p_ref_atlas);
+	static void reflection_atlas_set_size(
+		RID p_ref_atlas, int p_reflection_size, int p_reflection_count);
+
+	/* REFLECTION PROBE INSTANCE */
+
+	static bool owns_reflection_probe_instance(RID p_rid)
+	{
+		return reflection_probe_instance_owner.owns(p_rid);
+	}
+
+	static RID reflection_probe_instance_create(RID p_probe);
+	static void reflection_probe_instance_free(RID p_instance);
+	static void reflection_probe_instance_set_transform(
+		RID p_instance, const Transform3D& p_transform);
+	static bool reflection_probe_has_atlas_index(RID p_instance);
+	static void reflection_probe_release_atlas_index(RID p_instance);
+	static bool reflection_probe_instance_needs_redraw(RID p_instance);
+	static bool reflection_probe_instance_has_reflection(RID p_instance);
+	static bool reflection_probe_instance_begin_render(RID p_instance, RID p_reflection_atlas);
+	static bool reflection_probe_instance_end_render(RID p_instance, RID p_reflection_atlas);
+	static Ref<RenderSceneBuffers> reflection_probe_atlas_get_render_buffers(
+		RID p_reflection_atlas);
+	static bool reflection_probe_instance_postprocess_step(RID p_instance);
+
+	_FORCE_INLINE_ static RID reflection_probe_instance_get_probe(RID p_instance)
+	{
+		ReflectionProbeInstance* rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		return rpi ? rpi->probe : RID();
+	}
+
+	_FORCE_INLINE_ static RID reflection_probe_instance_get_atlas(RID p_instance)
+	{
+		ReflectionProbeInstance* rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		return rpi ? rpi->atlas : RID();
+	}
+
+	static Transform3D reflection_probe_instance_get_transform(RID p_instance)
+	{
+		ReflectionProbeInstance* rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		return rpi ? rpi->transform : Transform3D();
+	}
+
+	static GLuint reflection_probe_instance_get_texture(RID p_instance);
+	static GLuint reflection_probe_instance_get_framebuffer(RID p_instance, int p_index);
+
+	/* LIGHTMAP CAPTURE */
+
+	static Lightmap* get_lightmap(RID p_rid) { return lightmap_owner.get_or_null(p_rid); }
+
+	static bool owns_lightmap(RID p_rid) { return lightmap_owner.owns(p_rid); }
+
+	static RID lightmap_allocate();
+	static void lightmap_initialize(RID p_rid);
+	static void lightmap_free(RID p_rid);
+
+	static void lightmap_set_textures(RID p_lightmap, RID p_light, bool p_uses_spherical_harmonics);
+	static void lightmap_set_probe_bounds(RID p_lightmap, const AABB& p_bounds);
+	static void lightmap_set_probe_interior(RID p_lightmap, bool p_interior);
+	static void lightmap_set_probe_capture_data(RID p_lightmap, const PackedVector3Array& p_points,
+		const PackedColorArray& p_point_sh, const PackedInt32Array& p_tetrahedra,
+		const PackedInt32Array& p_bsp_tree);
+	static void lightmap_set_baked_exposure_normalization(RID p_lightmap, float p_exposure);
+	static PackedVector3Array lightmap_get_probe_capture_points(RID p_lightmap);
+	static PackedColorArray lightmap_get_probe_capture_sh(RID p_lightmap);
+	static PackedInt32Array lightmap_get_probe_capture_tetrahedra(RID p_lightmap);
+	static PackedInt32Array lightmap_get_probe_capture_bsp_tree(RID p_lightmap);
+	static AABB lightmap_get_aabb(RID p_lightmap);
+	static void lightmap_tap_sh_light(RID p_lightmap, const Vector3& p_point, Color* r_sh);
+	static bool lightmap_is_interior(RID p_lightmap);
+	static void lightmap_set_probe_capture_update_speed(float p_speed);
+	static float lightmap_get_probe_capture_update_speed();
+
+	static void lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow);
+	static RSE::ShadowmaskMode lightmap_get_shadowmask_mode(RID p_lightmap);
+	static void lightmap_set_shadowmask_mode(RID p_lightmap, RSE::ShadowmaskMode p_mode);
+
+	/* LIGHTMAP INSTANCE */
+
+	static LightmapInstance* get_lightmap_instance(RID p_rid)
+	{
+		return lightmap_instance_owner.get_or_null(p_rid);
+	}
+
+	static bool owns_lightmap_instance(RID p_rid) { return lightmap_instance_owner.owns(p_rid); }
+
+	static RID lightmap_instance_create(RID p_lightmap);
+	static void lightmap_instance_free(RID p_lightmap);
+	static void lightmap_instance_set_transform(RID p_lightmap, const Transform3D& p_transform);
+
+	/* SHADOW ATLAS API */
+	static bool owns_shadow_atlas(RID p_rid) { return shadow_atlas_owner.owns(p_rid); }
+
+	static RID shadow_atlas_create();
+	static void shadow_atlas_free(RID p_atlas);
+	static void shadow_atlas_set_size(RID p_atlas, int p_size, bool p_16_bits = true);
+	static void shadow_atlas_set_quadrant_subdivision(
+		RID p_atlas, int p_quadrant, int p_subdivision);
+	static bool shadow_atlas_update_light(
+		RID p_atlas, RID p_light_instance, float p_coverage, uint64_t p_light_version);
+
+	_FORCE_INLINE_ static bool shadow_atlas_owns_light_instance(RID p_atlas, RID p_light_instance)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, false);
+		return atlas->shadow_owners.has(p_light_instance);
+	}
+
+	_FORCE_INLINE_ static uint32_t shadow_atlas_get_light_instance_key(
+		RID p_atlas, RID p_light_instance)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, -1);
+		return atlas->shadow_owners[p_light_instance];
+	}
+
+	_FORCE_INLINE_ static int shadow_atlas_get_size(RID p_atlas)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		return atlas ? atlas->size : 0;
+	}
+
+	_FORCE_INLINE_ static GLuint shadow_atlas_get_debug_fb(RID p_atlas)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, 0);
+
+		if (atlas->debug_fbo != 0) {
+			return atlas->debug_fbo;
+		}
+		glGenFramebuffers(1, &atlas->debug_fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, atlas->debug_fbo);
+
+		if (atlas->debug_texture == 0) {
+			atlas->debug_texture = shadow_atlas_get_debug_texture(p_atlas);
+		}
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, atlas->debug_texture);
+
+		glFramebufferTexture2D(
+			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, atlas->debug_texture, 0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+
+		return atlas->debug_fbo;
+	}
+
+	_FORCE_INLINE_ static GLuint shadow_atlas_get_debug_texture(RID p_atlas)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, 0);
+
+		if (atlas->debug_texture != 0) {
+			return atlas->debug_texture;
+		}
+
+		glGenTextures(1, &atlas->debug_texture);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, atlas->debug_texture);
+
+		glTexImage2D(
+			GL_TEXTURE_2D, 0, GL_R8, atlas->size, atlas->size, 0, GL_RED, GL_UNSIGNED_INT, nullptr);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ONE);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		return atlas->debug_texture;
+	}
+
+	_FORCE_INLINE_ static int shadow_atlas_get_quadrant_shadows_length(
+		RID p_atlas, uint32_t p_quadrant)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, 0);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_quadrant, 4, 0);
+		return atlas->quadrants[p_quadrant].shadows.size();
+	}
+
+	_FORCE_INLINE_ static uint32_t shadow_atlas_get_quadrant_shadows_allocated(
+		RID p_atlas, uint32_t p_quadrant)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, 0);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_quadrant, 4, 0);
+		return atlas->quadrants[p_quadrant].textures.size();
+	}
+
+	_FORCE_INLINE_ static uint32_t shadow_atlas_get_quadrant_subdivision(
+		RID p_atlas, uint32_t p_quadrant)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, 0);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_quadrant, 4, 0);
+		return atlas->quadrants[p_quadrant].subdivision;
+	}
+
+	_FORCE_INLINE_ static GLuint shadow_atlas_get_quadrant_shadow_texture(
+		RID p_atlas, uint32_t p_quadrant, uint32_t p_shadow)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, 0);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_quadrant, 4, 0);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_shadow, atlas->quadrants[p_quadrant].textures.size(), 0);
+		return atlas->quadrants[p_quadrant].textures[p_shadow];
+	}
+
+	_FORCE_INLINE_ static GLuint shadow_atlas_get_quadrant_shadow_fb(
+		RID p_atlas, uint32_t p_quadrant, uint32_t p_shadow)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, 0);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_quadrant, 4, 0);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_shadow, atlas->quadrants[p_quadrant].fbos.size(), 0);
+		return atlas->quadrants[p_quadrant].fbos[p_shadow];
+	}
+
+	_FORCE_INLINE_ static int shadow_atlas_get_quadrant_shadow_size(
+		RID p_atlas, uint32_t p_quadrant)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, 0);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_quadrant, 4, 0);
+		return (atlas->size >> 1) / atlas->quadrants[p_quadrant].subdivision;
+	}
+
+	_FORCE_INLINE_ static bool shadow_atlas_get_quadrant_shadow_is_omni(
+		RID p_atlas, uint32_t p_quadrant, uint32_t p_shadow)
+	{
+		ShadowAtlas* atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, false);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_quadrant, 4, false);
+		ERR_FAIL_UNSIGNED_INDEX_V(
+			p_shadow, (uint32_t)atlas->quadrants[p_quadrant].shadows.size(), false);
+		return atlas->quadrants[p_quadrant].shadows[p_shadow].owner_is_omni;
+	}
+
+	static void shadow_atlas_update(RID p_atlas);
+
+	static void directional_shadow_atlas_set_size(int p_size, bool p_16_bits = true);
+	static int get_directional_light_shadow_size(RID p_light_instance);
+	static void set_directional_shadow_count(int p_count);
+
+	static Rect2i get_directional_shadow_rect();
+	static void update_directional_shadow_atlas();
+
+	_FORCE_INLINE_ static GLuint directional_shadow_get_texture()
+	{
+		return directional_shadow.depth;
+	}
+
+	_FORCE_INLINE_ static int directional_shadow_get_size() { return directional_shadow.size; }
+
+	_FORCE_INLINE_ static GLuint direction_shadow_get_fb() { return directional_shadow.fbo; }
+
+	_FORCE_INLINE_ static void directional_shadow_increase_current_light()
+	{
+		directional_shadow.current_light++;
+	}
+};
+
+} // namespace GLES3
+
+#endif // GLES3_ENABLED
+
 #include "drivers/gles3/storage/mesh_storage.h"
-#include "servers/rendering/environment/renderer_fog.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_server_enums.h"
@@ -1681,14 +3180,474 @@ public:
 
 
 // --- End drivers/gles3/rasterizer_scene_gles3.h ---
-#include "drivers/gles3/storage/light_storage.h"
-#include "drivers/gles3/storage/material_storage.h"
+
+
 #include "drivers/gles3/storage/mesh_storage.h"
-#include "drivers/gles3/storage/particles_storage.h"
+// --- Inlined/Folded from drivers/gles3/storage/particles_storage.h ---
+#ifdef GLES3_ENABLED
+
+#include "core/templates/rid_owner.h"
+#include "core/templates/self_list.h"
+#include "drivers/gles3/shaders/particles_copy.glsl.gen.h"
+#include "servers/rendering/storage/particles_storage.h"
+#include "servers/rendering/storage/utilities.h"
+
+#include <platform_gl.h>
+
+namespace GLES3 {
+
+enum ParticlesUniformLocation {
+	PARTICLES_FRAME_UNIFORM_LOCATION,
+	PARTICLES_GLOBALS_UNIFORM_LOCATION,
+	PARTICLES_MATERIAL_UNIFORM_LOCATION,
+};
+
+class ParticlesStorage final {
+private:
+	static inline bool _initialized = false;
+
+	/* PARTICLES */
+
+	struct ParticleInstanceData3D {
+		float xform[12];
+		float color[2]; // Color and custom are packed together into one vec4;
+		float custom[2];
+	};
+
+	struct ParticleInstanceData2D {
+		float xform[8];
+		float color[2]; // Color and custom are packed together into one vec4;
+		float custom[2];
+	};
+
+	struct ParticlesViewSort {
+		Vector3 z_dir;
+		bool operator()(const ParticleInstanceData3D &p_a, const ParticleInstanceData3D &p_b) const {
+			return z_dir.dot(Vector3(p_a.xform[3], p_a.xform[7], p_a.xform[11])) < z_dir.dot(Vector3(p_b.xform[3], p_b.xform[7], p_b.xform[11]));
+		}
+	};
+
+	struct ParticlesFrameParams {
+		enum {
+			MAX_ATTRACTORS = 32,
+			MAX_COLLIDERS = 32,
+			MAX_3D_TEXTURES = 0 // GLES3 renderer doesn't support using 3D textures for flow field or collisions.
+		};
+
+		enum AttractorType {
+			ATTRACTOR_TYPE_SPHERE,
+			ATTRACTOR_TYPE_BOX,
+			ATTRACTOR_TYPE_VECTOR_FIELD,
+		};
+
+		struct Attractor {
+			float transform[16];
+			float extents[4]; // Extents or radius. w-channel is padding.
+
+			uint32_t type;
+			float strength;
+			float attenuation;
+			float directionality;
+		};
+
+		enum CollisionType {
+			COLLISION_TYPE_SPHERE,
+			COLLISION_TYPE_BOX,
+			COLLISION_TYPE_SDF,
+			COLLISION_TYPE_HEIGHT_FIELD,
+			COLLISION_TYPE_2D_SDF,
+		};
+
+		struct Collider {
+			float transform[16];
+			float extents[4]; // Extents or radius. w-channel is padding.
+
+			uint32_t type;
+			float scale;
+			float pad0;
+			float pad1;
+		};
+
+		uint32_t emitting;
+		uint32_t cycle;
+		float system_phase;
+		float prev_system_phase;
+
+		float explosiveness;
+		float randomness;
+		float time;
+		float delta;
+
+		float particle_size;
+		float amount_ratio;
+		float pad1;
+		float pad2;
+
+		uint32_t random_seed;
+		uint32_t attractor_count;
+		uint32_t collider_count;
+		uint32_t frame;
+
+		float emission_transform[16];
+		float emitter_velocity[3];
+		float interp_to_end;
+
+		Attractor attractors[MAX_ATTRACTORS];
+		Collider colliders[MAX_COLLIDERS];
+	};
+
+	static_assert(sizeof(ParticlesFrameParams) % 16 == 0, "ParticlesFrameParams size must be a multiple of 16 bytes");
+	static_assert(sizeof(ParticlesFrameParams) < 16384, "ParticlesFrameParams must be 16384 bytes or smaller");
+
+	struct Particles {
+		RSE::ParticlesMode mode = RSE::PARTICLES_MODE_3D;
+		bool inactive = true;
+		double inactive_time = 0.0;
+		bool emitting = false;
+		bool one_shot = false;
+		float amount_ratio = 1.0;
+		int amount = 0;
+		double lifetime = 1.0;
+		double pre_process_time = 0.0;
+		real_t request_process_time = 0.0;
+		real_t request_process_time_residual = 0.0;
+		real_t explosiveness = 0.0;
+		real_t randomness = 0.0;
+		bool restart_request = false;
+		AABB custom_aabb = AABB(Vector3(-4, -4, -4), Vector3(8, 8, 8));
+		bool use_local_coords = false;
+		bool has_collision_cache = false;
+
+		bool has_sdf_collision = false;
+		Transform2D sdf_collision_transform;
+		Rect2 sdf_collision_to_screen;
+		GLuint sdf_collision_texture = 0;
+
+		RID process_material;
+		uint32_t frame_counter = 0;
+
+		RSE::ParticlesTransformAlign transform_align = RSE::PARTICLES_TRANSFORM_ALIGN_DISABLED;
+		RSE::ParticlesTransformAlignAxis transform_align_axis = RSE::PARTICLES_ALIGN_AXIS_Y;
+		RSE::ParticlesTransformAlignCustomSrc transform_align_channel_filter = RSE::PARTICLES_ALIGN_CHANNEL_FILTER_X;
+		RSE::ParticlesDrawOrder draw_order = RSE::PARTICLES_DRAW_ORDER_INDEX;
+
+		Vector<RID> draw_passes;
+
+		GLuint frame_params_ubo = 0;
+
+		// We may process particles multiple times each frame (if they have a fixed FPS higher than the game FPS).
+		// Unfortunately, this means we can't just use a round-robin system of 3 buffers.
+		// To ensure the sort buffer is accurate, we copy the last frame instance buffer just before processing.
+
+		// Transform Feedback buffer and VAO for rendering.
+		// Each frame we render to this one.
+		GLuint front_vertex_array = 0; // Binds process buffer. Used for processing.
+		GLuint front_process_buffer = 0; // Transform + color + custom data + userdata + velocity + flags. Only needed for processing.
+		GLuint front_instance_buffer = 0; // Transform + color + custom data. In packed format needed for rendering.
+
+		// VAO for transform feedback, contains last frame's data.
+		// Read from this one for particles process and then copy to last frame buffer.
+		GLuint back_vertex_array = 0; // Binds process buffer. Used for processing.
+		GLuint back_process_buffer = 0; // Transform + color + custom data + userdata + velocity + flags. Only needed for processing.
+		GLuint back_instance_buffer = 0; // Transform + color + custom data. In packed format needed for rendering.
+
+		uint64_t last_change = 0;
+
+		uint32_t instance_buffer_size_cache = 0;
+		uint32_t instance_buffer_stride_cache = 0;
+		uint32_t num_attrib_arrays_cache = 0;
+		uint32_t process_buffer_stride_cache = 0;
+
+		// Only ever copied to, holds last frame's instance data, then swaps with sort_buffer.
+		GLuint last_frame_buffer = 0;
+		bool last_frame_buffer_filled = false;
+		float last_frame_phase = 0.0;
+
+		// The frame-before-last's instance buffer.
+		// Use this to copy data back for sorting or computing AABB.
+		GLuint sort_buffer = 0;
+		bool sort_buffer_filled = false;
+		float sort_buffer_phase = 0.0;
+
+		uint32_t userdata_count = 0;
+
+		bool dirty = false;
+		SelfList<Particles> update_list;
+
+		double phase = 0.0;
+		double prev_phase = 0.0;
+		uint64_t prev_ticks = 0;
+		uint32_t random_seed = 0;
+
+		uint32_t cycle_number = 0;
+
+		double speed_scale = 1.0;
+
+		int fixed_fps = 30;
+		bool interpolate = true;
+		bool fractional_delta = false;
+		double frame_remainder = 0;
+		real_t collision_base_size = 0.01;
+
+		bool clear = true;
+
+		Transform3D emission_transform;
+		Vector3 emitter_velocity;
+		float interp_to_end = 0.0;
+
+		HashSet<RID> collisions;
+
+		Dependency dependency;
+
+		double trail_length = 1.0;
+		bool trails_enabled = false;
+
+		Particles() :
+				update_list(this) {
+			random_seed = Math::rand();
+		}
+	};
+
+	static void _particles_process(Particles *p_particles, double p_delta);
+	static void _particles_free_data(Particles *particles);
+	static void _particles_update_buffers(Particles *particles);
+	static void _particles_allocate_history_buffers(Particles *particles);
+	static void _particles_update_instance_buffer(Particles *particles, const Vector3 &p_axis, const Vector3 &p_up_axis);
+
+	template <typename T>
+	static void _particles_reverse_lifetime_sort(Particles *particles);
+
+	struct ParticlesShader {
+		RID default_shader;
+		RID default_material;
+		RID default_shader_version;
+
+		ParticlesCopyShaderGLES3 copy_shader;
+		RID copy_shader_version;
+	};
+
+	static inline ParticlesShader particles_shader;
+
+	static inline SelfList<Particles>::List particle_update_list;
+
+	static inline RID_Owner<Particles, true> particles_owner;
+
+	/* Particles Collision */
+
+	struct ParticlesCollision {
+		RSE::ParticlesCollisionType type = RSE::PARTICLES_COLLISION_TYPE_SPHERE_ATTRACT;
+		uint32_t cull_mask = 0xFFFFFFFF;
+		float radius = 1.0;
+		Vector3 extents = Vector3(1, 1, 1);
+		float attractor_strength = 1.0;
+		float attractor_attenuation = 1.0;
+		float attractor_directionality = 0.0;
+		GLuint field_texture = 0;
+		GLuint heightfield_texture = 0;
+		GLuint heightfield_fb = 0;
+		Size2i heightfield_fb_size;
+		uint32_t heightfield_mask = (1 << 20) - 1;
+
+		RSE::ParticlesCollisionHeightfieldResolution heightfield_resolution = RSE::PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_1024;
+
+		Dependency dependency;
+	};
+
+	struct ParticlesCollisionInstance {
+		RID collision;
+		Transform3D transform;
+		bool active = false;
+	};
+
+	static inline RID_Owner<ParticlesCollision, true> particles_collision_owner;
+	static inline RID_Owner<ParticlesCollisionInstance> particles_collision_instance_owner;
+
+public:
+	ParticlesStorage() = delete;
+	~ParticlesStorage() = delete;
+	ParticlesStorage(const ParticlesStorage &) = delete;
+	ParticlesStorage &operator=(const ParticlesStorage &) = delete;
+
+	static void initialize();
+	static void finalize();
+
+	static bool is_initialized() { return _initialized; }
+
+	static bool free(RID p_rid);
+
+	/* PARTICLES */
+
+	static bool owns_particles(RID p_rid) { return particles_owner.owns(p_rid); }
+
+	static RID particles_allocate();
+	static void particles_initialize(RID p_rid);
+	static void particles_free(RID p_rid);
+
+	static void particles_set_mode(RID p_particles, RSE::ParticlesMode p_mode);
+	static void particles_emit(RID p_particles, const Transform3D &p_transform, const Vector3 &p_velocity, const Color &p_color, const Color &p_custom, uint32_t p_emit_flags);
+	static void particles_set_emitting(RID p_particles, bool p_emitting);
+	static void particles_set_amount(RID p_particles, int p_amount);
+	static void particles_set_amount_ratio(RID p_particles, float p_amount_ratio);
+	static void particles_set_lifetime(RID p_particles, double p_lifetime);
+	static void particles_set_one_shot(RID p_particles, bool p_one_shot);
+	static void particles_set_pre_process_time(RID p_particles, double p_time);
+	static void particles_request_process_time(RID p_particles, real_t p_request_process_time, real_t p_request_process_time_residual);
+	static void particles_set_explosiveness_ratio(RID p_particles, real_t p_ratio);
+	static void particles_set_randomness_ratio(RID p_particles, real_t p_ratio);
+	static void particles_set_custom_aabb(RID p_particles, const AABB &p_aabb);
+	static void particles_set_speed_scale(RID p_particles, double p_scale);
+	static void particles_set_use_local_coordinates(RID p_particles, bool p_enable);
+	static void particles_set_process_material(RID p_particles, RID p_material);
+	static RID particles_get_process_material(RID p_particles);
+	static void particles_set_fixed_fps(RID p_particles, int p_fps);
+	static void particles_set_interpolate(RID p_particles, bool p_enable);
+	static void particles_set_fractional_delta(RID p_particles, bool p_enable);
+	static void particles_set_subemitter(RID p_particles, RID p_subemitter_particles);
+	static void particles_set_view_axis(RID p_particles, const Vector3 &p_axis, const Vector3 &p_up_axis);
+	static void particles_set_collision_base_size(RID p_particles, real_t p_size);
+
+	static void particles_set_transform_align(RID p_particles, RSE::ParticlesTransformAlign p_transform_align);
+	static void particles_set_transform_align_channel_filter(RID p_particles, RSE::ParticlesTransformAlignCustomSrc p_channel_filter);
+	static void particles_set_transform_align_axis(RID p_particles, RSE::ParticlesTransformAlignAxis p_rotation_axis);
+
+	static void particles_set_seed(RID p_particles, uint32_t p_seed);
+
+	static void particles_set_trails(RID p_particles, bool p_enable, double p_length);
+	static void particles_set_trail_bind_poses(RID p_particles, const Vector<Transform3D> &p_bind_poses);
+
+	static void particles_restart(RID p_particles);
+
+	static void particles_set_draw_order(RID p_particles, RSE::ParticlesDrawOrder p_order);
+
+	static void particles_set_draw_passes(RID p_particles, int p_count);
+	static void particles_set_draw_pass_mesh(RID p_particles, int p_pass, RID p_mesh);
+
+	static void particles_request_process(RID p_particles);
+	static AABB particles_get_current_aabb(RID p_particles);
+	static AABB particles_get_aabb(RID p_particles);
+
+	static void particles_set_emission_transform(RID p_particles, const Transform3D &p_transform);
+	static void particles_set_emitter_velocity(RID p_particles, const Vector3 &p_velocity);
+	static void particles_set_interp_to_end(RID p_particles, float p_interp);
+
+	static bool particles_get_emitting(RID p_particles);
+	static int particles_get_draw_passes(RID p_particles);
+	static RID particles_get_draw_pass_mesh(RID p_particles, int p_pass);
+
+	static void particles_add_collision(RID p_particles, RID p_instance);
+	static void particles_remove_collision(RID p_particles, RID p_instance);
+
+	static void particles_set_canvas_sdf_collision(RID p_particles, bool p_enable, const Transform2D &p_xform, const Rect2 &p_to_screen, GLuint p_texture);
+
+	static void update_particles();
+	static bool particles_is_inactive(RID p_particles);
+
+	static _FORCE_INLINE_ RSE::ParticlesMode particles_get_mode(RID p_particles) {
+		Particles *particles = particles_owner.get_or_null(p_particles);
+		ERR_FAIL_NULL_V(particles, RSE::PARTICLES_MODE_2D);
+		return particles->mode;
+	}
+
+	static _FORCE_INLINE_ uint32_t particles_get_amount(RID p_particles) {
+		Particles *particles = particles_owner.get_or_null(p_particles);
+		ERR_FAIL_NULL_V(particles, 0);
+
+		return particles->amount;
+	}
+
+	static _FORCE_INLINE_ GLuint particles_get_gl_buffer(RID p_particles) {
+		Particles *particles = particles_owner.get_or_null(p_particles);
+		if (particles == nullptr) {
+			return 0;
+		}
+
+		if ((particles->draw_order == RSE::PARTICLES_DRAW_ORDER_VIEW_DEPTH || particles->draw_order == RSE::PARTICLES_DRAW_ORDER_REVERSE_LIFETIME) && particles->sort_buffer_filled) {
+			return particles->sort_buffer;
+		}
+		return particles->back_instance_buffer;
+	}
+
+	static _FORCE_INLINE_ GLuint particles_get_prev_gl_buffer(RID p_particles) {
+		Particles *particles = particles_owner.get_or_null(p_particles);
+		ERR_FAIL_NULL_V(particles, 0);
+
+		return particles->front_instance_buffer;
+	}
+
+	static _FORCE_INLINE_ uint64_t particles_get_last_change(RID p_particles) {
+		Particles *particles = particles_owner.get_or_null(p_particles);
+		ERR_FAIL_NULL_V(particles, 0);
+
+		return particles->last_change;
+	}
+
+	static _FORCE_INLINE_ bool particles_has_collision(RID p_particles) {
+		Particles *particles = particles_owner.get_or_null(p_particles);
+		ERR_FAIL_NULL_V(particles, false);
+
+		return particles->has_collision_cache;
+	}
+
+	static _FORCE_INLINE_ uint32_t particles_is_using_local_coords(RID p_particles) {
+		Particles *particles = particles_owner.get_or_null(p_particles);
+		ERR_FAIL_NULL_V(particles, false);
+
+		return particles->use_local_coords;
+	}
+
+	static Dependency *particles_get_dependency(RID p_particles);
+
+	/* PARTICLES COLLISION */
+	static bool owns_particles_collision(RID p_rid) { return particles_collision_owner.owns(p_rid); }
+
+	static RID particles_collision_allocate();
+	static void particles_collision_initialize(RID p_rid);
+	static void particles_collision_free(RID p_rid);
+
+	static void particles_collision_set_collision_type(RID p_particles_collision, RSE::ParticlesCollisionType p_type);
+	static void particles_collision_set_cull_mask(RID p_particles_collision, uint32_t p_cull_mask);
+	static void particles_collision_set_sphere_radius(RID p_particles_collision, real_t p_radius);
+	static void particles_collision_set_box_extents(RID p_particles_collision, const Vector3 &p_extents);
+	static void particles_collision_set_attractor_strength(RID p_particles_collision, real_t p_strength);
+	static void particles_collision_set_attractor_directionality(RID p_particles_collision, real_t p_directionality);
+	static void particles_collision_set_attractor_attenuation(RID p_particles_collision, real_t p_curve);
+	static void particles_collision_set_field_texture(RID p_particles_collision, RID p_texture);
+	static void particles_collision_height_field_update(RID p_particles_collision);
+	static void particles_collision_set_height_field_resolution(RID p_particles_collision, RSE::ParticlesCollisionHeightfieldResolution p_resolution);
+	static AABB particles_collision_get_aabb(RID p_particles_collision);
+	static Vector3 particles_collision_get_extents(RID p_particles_collision);
+	static bool particles_collision_is_heightfield(RID p_particles_collision);
+	static GLuint particles_collision_get_heightfield_framebuffer(RID p_particles_collision);
+	static uint32_t particles_collision_get_height_field_mask(RID p_particles_collision);
+	static void particles_collision_set_height_field_mask(RID p_particles_collision, uint32_t p_heightfield_mask);
+	static uint32_t particles_collision_get_cull_mask(RID p_particles_collision);
+
+	static _FORCE_INLINE_ Size2i particles_collision_get_heightfield_size(RID p_particles_collision) {
+		ParticlesCollision *particles_collision = particles_collision_owner.get_or_null(p_particles_collision);
+		ERR_FAIL_NULL_V(particles_collision, Size2i());
+		ERR_FAIL_COND_V(particles_collision->type != RSE::PARTICLES_COLLISION_TYPE_HEIGHTFIELD_COLLIDE, Size2i());
+
+		return particles_collision->heightfield_fb_size;
+	}
+
+	static Dependency *particles_collision_get_dependency(RID p_particles);
+
+	/* PARTICLES COLLISION INSTANCE */
+	static bool owns_particles_collision_instance(RID p_rid) { return particles_collision_instance_owner.owns(p_rid); }
+
+	static RID particles_collision_instance_create(RID p_collision);
+	static void particles_collision_instance_free(RID p_rid);
+	static void particles_collision_instance_set_transform(RID p_collision_instance, const Transform3D &p_transform);
+	static void particles_collision_instance_set_active(RID p_collision_instance, bool p_active);
+};
+
+} // namespace GLES3
+
+#endif // GLES3_ENABLED
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/environment/renderer_fog.h"
+#include "servers/rendering/renderer.h"
 
 class RasterizerGLES3 final
 {

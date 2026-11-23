@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "midi_driver_coremidi.h"
+#import "platform/macos/os_macos.h"
 
 #ifdef COREMIDI_ENABLED
 

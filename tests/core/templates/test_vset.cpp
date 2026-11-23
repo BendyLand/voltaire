@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_vset)
 
-#include "core/templates/vset.h"
+#include "core/templates/vector.h"
 
 namespace TestVSet {
 

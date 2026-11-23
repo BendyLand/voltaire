@@ -36,7 +36,7 @@
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/templates/fixed_vector.h"
-#include "core/utils.h"
+#include "servers/rendering/rendering_device.h"
 #include "modules/modules_enabled.gen.h"
 #include "rendering_device.h"
 #include "servers/rendering/rendering_device_binds.h"
@@ -45,7 +45,7 @@
 #include "servers/rendering/shader_compiler.h"
 
 #ifdef MODULE_GLSLANG_ENABLED
-#include "modules/glslang/shader_compile.h"
+#include "modules/glslang/register_types.h"
 #endif
 
 #define FORCE_SEPARATE_PRESENT_QUEUE 0
@@ -8218,7 +8218,7 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 #include "servers/rendering/rendering_device_binds.h"
 #include "servers/rendering/rendering_device_commons.h"
 #ifdef MODULE_GLSLANG_ENABLED
-#include "modules/glslang/shader_compile.h"
+#include "modules/glslang/register_types.h"
 #endif
 
 #include <thirdparty/spirv-reflect/spirv_reflect.h>

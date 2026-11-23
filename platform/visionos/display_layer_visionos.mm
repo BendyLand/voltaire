@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "display_layer_visionos.h"
+#import "platform/visionos/os_visionos.h"
 
 @implementation GDTMetalLayer
 

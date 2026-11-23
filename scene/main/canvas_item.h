@@ -556,5 +556,129 @@ public:
 	~CanvasItem();
 };
 
+// --- Folded from scene/main/canvas_layer.h ---
+#include "scene/main/node.h"
 
+class Viewport;
 
+class CanvasLayer : public Node
+{
+	mutable bool locrotscale_dirty = false;
+	mutable Vector2 ofs;
+	mutable Size2 scale = Vector2(1, 1);
+	mutable real_t rot = 0.0;
+	int layer = 1;
+	Transform2D transform;
+	RID canvas;
+
+	Viewport* custom_viewport = nullptr;
+
+	RID viewport;
+	Viewport* vp = nullptr;
+
+	int sort_index = 0;
+	bool visible = true;
+
+	bool follow_viewport = false;
+	float follow_viewport_scale = 1.0;
+
+	struct ParallaxState
+	{
+		Point2 offset;
+		real_t scale = 1.0;
+		Point2 base_offset;
+		Point2 base_scale = Vector2(1, 1);
+		Point2 screen_offset;
+		String group_name;
+		Point2 limit_begin;
+		Point2 limit_end;
+		Point2 final_offset;
+		bool ignore_camera_zoom = false;
+	};
+
+	bool parallax_enabled = false;
+	ParallaxState parallax;
+
+	void _update_xform();
+	void _update_locrotscale() const;
+	void _update_follow_viewport(bool p_force_exit = false);
+	void _update_scroll();
+
+protected:
+	void _notification(int p_what);
+
+public:
+	void update_draw_order();
+
+	void set_layer(int p_xform);
+	int get_layer() const;
+
+	void set_visible(bool p_visible);
+	bool is_visible() const;
+	void show();
+	void hide();
+
+	void set_transform(const Transform2D& p_xform);
+	Transform2D get_transform() const;
+	Transform2D get_final_transform() const;
+
+	void set_offset(const Vector2& p_offset);
+	Vector2 get_offset() const;
+
+	void set_rotation(real_t p_radians);
+	real_t get_rotation() const;
+
+	void set_scale(const Size2& p_scale);
+	Size2 get_scale() const;
+
+	Size2 get_viewport_size() const;
+
+	RID get_viewport() const;
+
+	void set_custom_viewport(Node* p_viewport);
+	Node* get_custom_viewport() const;
+
+	void reset_sort_index();
+	int get_sort_index();
+
+	void set_follow_viewport(bool p_enable);
+	bool is_following_viewport() const;
+
+	void set_follow_viewport_scale(float p_ratio);
+	float get_follow_viewport_scale() const;
+
+	RID get_canvas() const;
+
+	// Parallax background support.
+	void set_parallax_enabled(bool p_enabled);
+	bool is_parallax_enabled() const { return parallax_enabled; }
+
+	void _camera_moved(const Transform2D& p_transform, const Point2& p_screen_offset,
+		const Point2& p_adj_screen_offset);
+
+	void set_scroll_offset(const Point2& p_ofs);
+	Point2 get_scroll_offset() const;
+
+	void set_scroll_scale(real_t p_scale);
+	real_t get_scroll_scale() const;
+
+	void set_scroll_base_offset(const Point2& p_ofs);
+	Point2 get_scroll_base_offset() const;
+
+	void set_scroll_base_scale(const Point2& p_ofs);
+	Point2 get_scroll_base_scale() const;
+
+	void set_limit_begin(const Point2& p_ofs);
+	Point2 get_limit_begin() const;
+
+	void set_limit_end(const Point2& p_ofs);
+	Point2 get_limit_end() const;
+
+	void set_ignore_camera_zoom(bool p_ignore);
+	bool is_ignore_camera_zoom() const;
+
+	Vector2 get_final_offset() const;
+
+	CanvasLayer(bool p_parallax = false);
+	~CanvasLayer();
+};

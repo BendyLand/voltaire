@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_triangle_mesh)
 
 #ifndef _3D_DISABLED
 
-#include "core/math/triangle_mesh.h"
+#include "core/math/geometry_3d.h"
 #include "scene/resources/3d/primitive_meshes.h"
 
 namespace TestTriangleMesh {

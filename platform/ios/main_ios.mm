@@ -34,7 +34,7 @@
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
 #import "drivers/apple_embedded/godot_app_delegate.h"
-#import "drivers/apple_embedded/main_utilities.h"
+#import "drivers/apple_embedded/godot_app_delegate.h"
 #include "main/main.h"
 
 #import <UIKit/UIKit.h>

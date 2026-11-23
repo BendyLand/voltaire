@@ -29,9 +29,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "godot_view_visionos.h"
+// --- Inlined/Folded from platform/visionos/godot_view_visionos.h ---
+#include "drivers/apple_embedded/godot_view_apple_embedded.h"
 
-#include "display_layer_visionos.h"
+@interface GDTViewVisionOS : GDTView
+
+@end
+
+#include "platform/visionos/os_visionos.h"
 
 #include "core/error/error_macros.h"
 

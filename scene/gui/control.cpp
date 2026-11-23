@@ -41,7 +41,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "core/os/os.h"
 #include "core/string/string_builder.h"
 #include "scene/gui/scroll_container.h"
-#include "scene/main/canvas_layer.h"
+#include "scene/main/canvas_item.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/theme/theme_db.h"
@@ -3826,11 +3826,11 @@ void MenuBar::move_child_notify(Node* p_child) {}
 #include <cmath>
 #include <thirdparty/misc/r128.h>
 #include "core/string/translation_server.h"
-#include "range.h"
+#include "scene/gui/scroll_bar.h"
 #include "core/config/engine.h"
 // --- Inlined from scene/gui/progress_bar.h ---
 #include "scene/gui/control.h"
-#include "scene/gui/range.h"
+#include "scene/gui/scroll_bar.h"
 
 class ProgressBar : public Control
 {
@@ -3961,11 +3961,11 @@ private:
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/renderer.h"
-#include "scene/gui/range.h"
+#include "scene/gui/scroll_bar.h"
 #include "core/input/input.h"
-#include "scene/gui/range.h"
+#include "scene/gui/scroll_bar.h"
 #include "core/math/expression.h"
-#include "scene/gui/line_edit.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/window.h"
 #include "scroll_bar.h"
 #include "servers/display/display_server.h"
@@ -5332,7 +5332,7 @@ ScrollBar::~ScrollBar() {}
 #include "scene/main/timer.h"
 #include "scene/gui/scroll_container.h"
 #include "scene/gui/button.h"
-#include "scene/gui/popup.h"
+#include "scene/gui/popup_menu.h"
 #include "scene/gui/scroll_container.h"
 #include "scene/resources/text_line.h"
 #include "core/types.h"

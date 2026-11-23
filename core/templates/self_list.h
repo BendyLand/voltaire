@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/error/error_macros.h"
-#include "core/templates/sort_list.h"
+#include "core/templates/list.h"
 #include "core/typedefs.h"
 
 template <typename T> class _WARN_UNUSED_ SelfList

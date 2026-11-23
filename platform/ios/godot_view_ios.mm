@@ -29,9 +29,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_view_ios.h"
+// --- Inlined/Folded from platform/ios/godot_view_ios.h ---
+#include "drivers/apple_embedded/godot_view_apple_embedded.h"
 
-#import "display_layer_ios.h"
+@interface GDTViewIOS : GDTView
+
+@end
+
+#import "platform/ios/os_ios.h"
 
 #include "core/config/project_settings.h"
 #include "core/error/error_macros.h"

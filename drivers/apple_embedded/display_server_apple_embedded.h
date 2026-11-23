@@ -39,7 +39,30 @@
 #include "servers/rendering/rendering_device.h"
 
 #if defined(VULKAN_ENABLED)
-#import "drivers/apple_embedded/rendering_context_driver_vulkan_apple_embedded.h"
+// --- Inlined/Folded from drivers/apple_embedded/rendering_context_driver_vulkan_apple_embedded.h ---
+#ifdef VULKAN_ENABLED
+
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+
+#import <QuartzCore/CAMetalLayer.h>
+
+class RenderingContextDriverVulkanAppleEmbedded : public RenderingContextDriverVulkan {
+private:
+	virtual const char *_get_platform_surface_extension() const override final;
+
+protected:
+	SurfaceID surface_create(const void *p_platform_data) override final;
+
+public:
+	struct WindowPlatformData {
+		CAMetalLayer *const *layer_ptr;
+	};
+
+	RenderingContextDriverVulkanAppleEmbedded();
+	~RenderingContextDriverVulkanAppleEmbedded();
+};
+
+#endif // VULKAN_ENABLED
 
 #include <drivers/vulkan/godot_vulkan.h>
 #endif // VULKAN_ENABLED
@@ -260,3 +283,56 @@ public:
 	virtual void set_native_icon(const String &p_filename) override;
 	virtual void set_icon(const Ref<Image> &p_icon) override;
 };
+
+// --- Folded from drivers/apple_embedded/godot_keyboard_input_view.h ---
+#import <UIKit/UIKit.h>
+
+@interface GDTKeyboardInputView : UITextView
+
+- (BOOL)becomeFirstResponderWithString:(NSString *)existingString cursorStart:(NSInteger)start cursorEnd:(NSInteger)end;
+
+@end
+
+// --- Folded from drivers/apple_embedded/key_mapping_apple_embedded.h ---
+#include "core/os/keyboard.h"
+
+#import <UIKit/UIKit.h>
+
+class KeyMappingAppleEmbedded {
+	KeyMappingAppleEmbedded() {}
+
+public:
+	static void initialize();
+	static Key remap_key(CFIndex p_keycode);
+	static KeyLocation key_location(CFIndex p_keycode);
+};
+
+// --- Folded from drivers/apple_embedded/tts_apple_embedded.h ---
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/list.h"
+
+#if __has_include(<AVFAudio/AVSpeechSynthesis.h>)
+#import <AVFAudio/AVSpeechSynthesis.h>
+#else
+#import <AVFoundation/AVFoundation.h>
+#endif
+
+struct TTSUtterance;
+
+@interface GDTTTS : NSObject <AVSpeechSynthesizerDelegate> {
+	bool speaking;
+	HashMap<id, int64_t> ids;
+
+	AVSpeechSynthesizer *av_synth;
+	List<TTSUtterance> queue;
+}
+
+- (void)pauseSpeaking;
+- (void)resumeSpeaking;
+- (void)stopSpeaking;
+- (bool)isSpeaking;
+- (bool)isPaused;
+- (void)speak:(const String &)text voice:(const String &)voice volume:(int)volume pitch:(float)pitch rate:(float)rate utterance_id:(int64_t)utterance_id interrupt:(bool)interrupt;
+- (Array)getVoices;
+@end

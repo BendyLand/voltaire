@@ -2112,7 +2112,7 @@ void EditorUI::_ps_toggle_use_3d()
 // Merged from editor/ui_widgets.cpp
 // ============================================================================
 
-#include "core/config/project_format.h"
+#include "core/config/project_settings.h"
 #include "core/io/file_access.h"
 #include "core/os/keyboard.h"
 #include "editor/editor_ui.h"

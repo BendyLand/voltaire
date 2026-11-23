@@ -43,7 +43,7 @@
 #include <ufbx.h>
 #include "core/io/resource.h"
 #include "modules/gltf/gltf_state.h"
-#include "modules/gltf/gltf_structures.h"
+#include "modules/gltf/gltf_state.h"
 
 class FBXState final : public Resource
 {
@@ -72,7 +72,7 @@ public:
 
 	FBXState();
 };
-#include "modules/gltf/gltf_defines.h"
+#include "modules/gltf/gltf_state.h"
 #include "modules/gltf/gltf_document.h"
 
 class FBXDocument final : public Resource
@@ -180,9 +180,9 @@ public:
 #endif // TOOLS_ENABLED
 
 // --- End modules/fbx/fbx_document.h ---
-#include "modules/gltf/gltf_defines.h"
-#include "modules/gltf/gltf_extensions.h"
-#include "modules/gltf/gltf_structures.h"
+#include "modules/gltf/gltf_state.h"
+#include "modules/gltf/gltf_state.h"
+#include "modules/gltf/gltf_state.h"
 #include "scene/3d/bone_attachment_3d.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/importer_mesh_instance_3d.h"

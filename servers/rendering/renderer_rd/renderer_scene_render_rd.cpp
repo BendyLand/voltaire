@@ -35,7 +35,7 @@
 #include "core/io/image.h"
 #include "core/os/memory.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
-#include "servers/rendering/renderer_rd/effects/copy_effects.h"
+#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
@@ -3512,7 +3512,7 @@ void ShaderRD::_compile_variant(uint32_t p_variant, CompileData p_data)
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/storage/material_storage.h"
-#include "servers/rendering/storage/variant_converters.h"
+#include "servers/rendering/renderer_scene_render.h"
 
 using namespace RendererRD;
 

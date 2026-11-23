@@ -31,7 +31,7 @@
 
 #import "display_server_macos_embedded.h"
 
-#import "embedded_debugger.h"
+#import "platform/macos/display_server_macos_embedded.h"
 
 #import "core/config/project_settings.h"
 #import "core/debugger/engine_debugger.h"
@@ -43,7 +43,7 @@
 #import "servers/display/native_menu.h"
 
 #if defined(GLES3_ENABLED)
-#import "embedded_gl_manager.h"
+#import "platform/macos/display_server_macos_embedded.h"
 
 #import "drivers/gles3/rasterizer_gles3.h"
 
@@ -55,7 +55,7 @@
 #import "servers/rendering/rendering_device.h"
 
 #if defined(VULKAN_ENABLED)
-#import "rendering_context_driver_vulkan_macos.h"
+#import "platform/macos/display_server_macos_base.h"
 #endif // VULKAN_ENABLED
 #if defined(METAL_ENABLED)
 #import "drivers/metal/rendering_context_driver_metal.h"
@@ -64,7 +64,7 @@
 
 // Keep Quartz after rendering includes, as it includes system GL.h
 // which clashes with GLAD.
-#import "macos_quartz_core_spi.h"
+#import "platform/macos/display_server_macos_base.h"
 
 DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, Error &r_error) {
 	EmbeddedDebugger::initialize(this);

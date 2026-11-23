@@ -41,7 +41,7 @@
 #include "core/io/stream_peer.h"
 #include "core/version.h"
 #include "gltf_document.h"
-#include "gltf_extensions.h"
+#include "modules/gltf/gltf_state.h"
 #include "gltf_state.h"
 #include "scene/3d/bone_attachment_3d.h"
 #include "scene/3d/camera_3d.h"
@@ -49,7 +49,7 @@
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/visual_instance_3d.h"
-#include "scene/animation/animation_player.h"
+#include "scene/animation/animation_mixer.h"
 #include "scene/resources/3d/skin.h"
 #include "scene/resources/compressed_texture.h"
 #include "scene/resources/image_texture.h"
@@ -2673,7 +2673,7 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {}
 // Merged from modules/gltf/gltf_extensions.cpp
 // ============================================================================
 
-#include "gltf_extensions.h"
+#include "modules/gltf/gltf_state.h"
 
 #include "gltf_state.h"
 #include "scene/3d/visual_instance_3d.h"
@@ -2681,8 +2681,8 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {}
 #include <cfloat>
 
 #ifndef PHYSICS_3D_DISABLED
-#include "core/math/convex_hull.h"
-#include "scene/3d/physics/collision_object_3d.h"
+#include "core/math/geometry_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
 #include "scene/resources/3d/shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
@@ -3311,7 +3311,7 @@ GLTFMeshIndex _get_or_insert_mesh_in_state(
 // Merged from modules/gltf/gltf_structures.cpp
 // ============================================================================
 
-#include "gltf_structures.h"
+#include "modules/gltf/gltf_state.h"
 
 #include "core/types.h"
 #include "gltf_state.h"

@@ -35,7 +35,7 @@
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
-#include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/rendering_device.h"

@@ -1368,11 +1368,11 @@ public:
 // --- End modules/jolt_physics/objects/jolt_objects_3d.h ---
 
 // --- Folded from modules/jolt_physics/spaces/jolt_space_3d.h ---
-#include "modules/jolt_physics/jolt_globals.h"
+#include "modules/jolt_physics/jolt_physics_server_3d.h"
 
 #include "core/math/vector3.h"
 #include "core/os/mutex.h"
-#include "core/os/spin_lock.h"
+#include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/hashfuncs.h"
@@ -4345,7 +4345,7 @@ void JoltPhysicsServer3D::soft_body_get_collision_exceptions(RID p_body, List<RI
 
 #include "register_types.h"
 
-#include "jolt_globals.h"
+#include "modules/jolt_physics/jolt_physics_server_3d.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
 void uninitialize_jolt_physics_module(ModuleInitializationLevel p_level)
@@ -4369,7 +4369,7 @@ void initialize_jolt_physics_module(ModuleInitializationLevel p_level) {}
 // ============================================================================
 
 
-#include "jolt_globals.h"
+#include "modules/jolt_physics/jolt_physics_server_3d.h"
 
 
 #include "core/os/memory.h"
@@ -4507,7 +4507,7 @@ void jolt_deinitialize() {
 // ============================================================================
 
 
-#include "modules/jolt_physics/jolt_globals.h"
+#include "modules/jolt_physics/jolt_physics_server_3d.h"
 #include "modules/jolt_physics/jolt_physics_server_3d.h"
 
 
@@ -6749,7 +6749,7 @@ PhysicsDirectSpaceState3D *PhysicsDirectBodyState3D::get_space_state() {
 // ============================================================================
 
 
-#include "modules/jolt_physics/jolt_globals.h"
+#include "modules/jolt_physics/jolt_physics_server_3d.h"
 #include "modules/jolt_physics/jolt_physics_server_3d.h"
 
 
@@ -8948,7 +8948,7 @@ void JoltJoint3D::_rebuild_6dof() {
 // ============================================================================
 
 
-#include "modules/jolt_physics/jolt_globals.h"
+#include "modules/jolt_physics/jolt_physics_server_3d.h"
 #include "modules/jolt_physics/jolt_physics_server_3d.h"
 
 
@@ -10694,7 +10694,7 @@ bool PhysicsDirectSpaceState3D::rest_info(const PS3DT::ShapeParameters &p_shape_
 // ============================================================================
 
 
-#include "modules/jolt_physics/jolt_globals.h"
+#include "modules/jolt_physics/jolt_physics_server_3d.h"
 
 
 // keep includes...

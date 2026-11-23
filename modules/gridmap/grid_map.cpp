@@ -40,13 +40,13 @@
 #include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "core/math/convex_hull.h"
+#include "core/math/geometry_3d.h"
 #include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/physics_material.h"
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef NAVIGATION_3D_DISABLED
-#include "scene/resources/3d/navigation_mesh_source_geometry_data_3d.h"
+#include "servers/navigation_3d/navigation_server_3d.h"
 #include "servers/navigation_3d/navigation_server_3d.h"
 
 RID GridMap::_navmesh_source_geometry_parser;

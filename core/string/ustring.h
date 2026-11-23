@@ -157,7 +157,7 @@ constexpr bool is_hyphen(char32_t p_char) {
 }
 
 // --- End core/string/char_utils.h ---
-#include "core/templates/cowdata.h"
+#include "core/templates/vector.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/vector.h"
 #include "core/typedefs.h"

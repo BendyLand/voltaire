@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_menu_delegate.h"
+#import "platform/macos/native_menu_macos.h"
 
 #import "display_server_macos.h"
-#import "godot_menu_item.h"
+#import "platform/macos/native_menu_macos.h"
 #import "key_mapping_macos.h"
 #import "native_menu_macos.h"
 

@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "key_mapping_apple_embedded.h"
+#import "drivers/apple_embedded/display_server_apple_embedded.h"
 
 #include "core/templates/hash_map.h"
 

@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_sprite_2d)
 
-#include "scene/2d/sprite_2d.h"
+#include "scene/2d/node_2d.h"
 
 namespace TestSprite2D {
 

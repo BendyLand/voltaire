@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include <thirdparty/misc/smolv.h>
-#include "core/utils.h"
+#include "servers/rendering/rendering_device.h"
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"

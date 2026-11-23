@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_content_view.h"
+#import "platform/macos/display_server_macos.h"
 
 #import "display_server_macos.h"
-#import "godot_window.h"
+#import "platform/macos/display_server_macos.h"
 #import "key_mapping_macos.h"
 
 #include "core/input/input.h"

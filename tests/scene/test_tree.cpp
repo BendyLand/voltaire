@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_tree)
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/tree.h"
+#include "scene/gui/dialogs.h"
 
 namespace TestTree {
 

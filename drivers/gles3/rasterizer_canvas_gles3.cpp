@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "drivers/gles3/rasterizer_gles3.h"
-#include "drivers/gles3/storage/material_storage.h"
+#include "drivers/gles3/rasterizer_gles3.h"
 
 #ifdef GLES3_ENABLED
 
@@ -39,7 +39,7 @@
 #include "core/math/geometry_2d.h"
 #include "core/math/transform_interpolator.h"
 #include "drivers/gles3/storage/mesh_storage.h"
-#include "drivers/gles3/storage/particles_storage.h"
+#include "drivers/gles3/rasterizer_gles3.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "servers/rendering/renderer.h"
@@ -4246,10 +4246,10 @@ ShaderGLES3::~ShaderGLES3()
 // ============================================================================
 
 #include "drivers/gles3/rasterizer_gles3.h"
-#include "drivers/gles3/storage/light_storage.h"
-#include "drivers/gles3/storage/material_storage.h"
+#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/rasterizer_gles3.h"
 #include "drivers/gles3/storage/mesh_storage.h"
-#include "drivers/gles3/storage/particles_storage.h"
+#include "drivers/gles3/rasterizer_gles3.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
 #include "rasterizer_gles3.h"

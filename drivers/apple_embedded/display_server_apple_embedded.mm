@@ -37,12 +37,12 @@
 #include "core/os/os.h"
 #import "drivers/apple_embedded/app_delegate_service.h"
 #import "drivers/apple_embedded/apple_embedded.h"
-#import "drivers/apple_embedded/godot_keyboard_input_view.h"
+#import "drivers/apple_embedded/display_server_apple_embedded.h"
 #import "drivers/apple_embedded/godot_view_apple_embedded.h"
 #import "drivers/apple_embedded/godot_view_controller.h"
-#import "drivers/apple_embedded/key_mapping_apple_embedded.h"
+#import "drivers/apple_embedded/display_server_apple_embedded.h"
 #import "drivers/apple_embedded/os_apple_embedded.h"
-#import "drivers/apple_embedded/tts_apple_embedded.h"
+#import "drivers/apple_embedded/display_server_apple_embedded.h"
 #include "servers/display/native_menu.h"
 
 #import <GameController/GameController.h>

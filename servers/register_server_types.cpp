@@ -32,7 +32,7 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "register_server_types.h"
+#include "main/main.h"
 #include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
 #include "servers/camera/camera_feed.h"
@@ -40,7 +40,7 @@
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/native_menu.h"
-#include "servers/movie_writer/movie_writer.h"
+#include "main/main.h"
 #include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
@@ -373,7 +373,7 @@ void CameraFeed::set_ycbcr_images(Ref<Image> const&, Ref<Image> const&) {}
 #include "core/io/dir_access.h"
 #include "core/os/time.h"
 #include "core/templates/rb_set.h"
-#include "servers/movie_writer/movie_writer.h"
+#include "main/main.h"
 #include "scene/main/window.h"
 #include "servers/audio/audio_server.h"
 #include "servers/display/display_server_enums.h"
@@ -518,7 +518,7 @@ void MovieWriter::end() {}
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "servers/movie_writer/movie_writer.h"
+#include "main/main.h"
 
 uint32_t MovieWriterPNGWAV::get_audio_mix_rate() const { return mix_rate; }
 
@@ -13446,3 +13446,4965 @@ void NativeMenu::clear(const RID& p_rid)
 		data->driver->clear(p_rid);
 	}
 }
+
+
+// --- Merged from servers/physics_2d/physics_server_2d.cpp ---
+#include "servers/physics_2d/physics_server_2d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+#ifdef MODULE_GODOT_PHYSICS_2D_ENABLED
+#include "modules/godot_physics_2d/godot_physics_server_2d.h"
+#endif
+
+void PhysicsServer2D::initialize(bool p_using_threads)
+{
+#ifdef MODULE_GODOT_PHYSICS_2D_ENABLED
+	if (is_initialized()) {
+		return;
+	}
+	if (!data) {
+		data = memnew(Data);
+	}
+	data->server = memnew(GodotPhysicsServer2D(p_using_threads));
+	data->server->init();
+#endif
+}
+
+void PhysicsServer2D::finalize()
+{
+	if (!data) {
+		return;
+	}
+#ifdef MODULE_GODOT_PHYSICS_2D_ENABLED
+	if (data->server) {
+		data->server->finish();
+		memdelete(data->server);
+		data->server = nullptr;
+	}
+#endif
+	memdelete(data);
+	data = nullptr;
+}
+
+#ifdef MODULE_GODOT_PHYSICS_2D_ENABLED
+
+RID PhysicsServer2D::world_boundary_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->world_boundary_shape_create();
+}
+
+RID PhysicsServer2D::separation_ray_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->separation_ray_shape_create();
+}
+
+RID PhysicsServer2D::segment_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->segment_shape_create();
+}
+
+RID PhysicsServer2D::circle_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->circle_shape_create();
+}
+
+RID PhysicsServer2D::rectangle_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->rectangle_shape_create();
+}
+
+RID PhysicsServer2D::capsule_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->capsule_shape_create();
+}
+
+RID PhysicsServer2D::convex_polygon_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->convex_polygon_shape_create();
+}
+
+RID PhysicsServer2D::concave_polygon_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->concave_polygon_shape_create();
+}
+
+void PhysicsServer2D::shape_set_custom_solver_bias(RID p_shape, real_t p_bias)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->shape_set_custom_solver_bias(p_shape, p_bias);
+}
+
+PS2DE::ShapeType PhysicsServer2D::shape_get_type(RID p_shape)
+{
+	ERR_FAIL_COND_V(!is_initialized(), PS2DE::ShapeType());
+	return data->server->shape_get_type(p_shape);
+}
+
+real_t PhysicsServer2D::shape_get_custom_solver_bias(RID p_shape)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->shape_get_custom_solver_bias(p_shape);
+}
+
+bool PhysicsServer2D::shape_collide(RID p_shape_A, const Transform2D& p_xform_A, const Vector2& p_motion_A, RID p_shape_B, const Transform2D& p_xform_B, const Vector2& p_motion_B, Vector2* r_results, int p_result_max, int& r_result_count)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->shape_collide(p_shape_A, p_xform_A, p_motion_A, p_shape_B, p_xform_B, p_motion_B, r_results, p_result_max, r_result_count);
+}
+
+RID PhysicsServer2D::space_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->space_create();
+}
+
+void PhysicsServer2D::space_set_active(RID p_space, bool p_active)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->space_set_active(p_space, p_active);
+}
+
+bool PhysicsServer2D::space_is_active(RID p_space)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->space_is_active(p_space);
+}
+
+void PhysicsServer2D::space_set_param(RID p_space, PS2DE::SpaceParameter p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->space_set_param(p_space, p_param, p_value);
+}
+
+real_t PhysicsServer2D::space_get_param(RID p_space, PS2DE::SpaceParameter p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->space_get_param(p_space, p_param);
+}
+
+PhysicsDirectSpaceState2D* PhysicsServer2D::space_get_direct_state(RID p_space)
+{
+	ERR_FAIL_COND_V(!is_initialized(), nullptr);
+	return data->server->space_get_direct_state(p_space);
+}
+
+void PhysicsServer2D::space_set_debug_contacts(RID p_space, int p_max_contacts)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->space_set_debug_contacts(p_space, p_max_contacts);
+}
+
+Vector<Vector2> PhysicsServer2D::space_get_contacts(RID p_space)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Vector<Vector2>());
+	return data->server->space_get_contacts(p_space);
+}
+
+int PhysicsServer2D::space_get_contact_count(RID p_space)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->space_get_contact_count(p_space);
+}
+
+RID PhysicsServer2D::area_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->area_create();
+}
+
+void PhysicsServer2D::area_set_space(RID p_area, RID p_space)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_space(p_area, p_space);
+}
+
+RID PhysicsServer2D::area_get_space(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->area_get_space(p_area);
+}
+
+void PhysicsServer2D::area_add_shape(RID p_area, RID p_shape, const Transform2D& p_transform, bool p_disabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_add_shape(p_area, p_shape, p_transform, p_disabled);
+}
+
+void PhysicsServer2D::area_set_shape(RID p_area, int p_shape_idx, RID p_shape)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_shape(p_area, p_shape_idx, p_shape);
+}
+
+void PhysicsServer2D::area_set_shape_transform(RID p_area, int p_shape_idx, const Transform2D& p_transform)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_shape_transform(p_area, p_shape_idx, p_transform);
+}
+
+int PhysicsServer2D::area_get_shape_count(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->area_get_shape_count(p_area);
+}
+
+RID PhysicsServer2D::area_get_shape(RID p_area, int p_shape_idx)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->area_get_shape(p_area, p_shape_idx);
+}
+
+Transform2D PhysicsServer2D::area_get_shape_transform(RID p_area, int p_shape_idx)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Transform2D());
+	return data->server->area_get_shape_transform(p_area, p_shape_idx);
+}
+
+void PhysicsServer2D::area_remove_shape(RID p_area, int p_shape_idx)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_remove_shape(p_area, p_shape_idx);
+}
+
+void PhysicsServer2D::area_clear_shapes(RID p_area)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_clear_shapes(p_area);
+}
+
+void PhysicsServer2D::area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_shape_disabled(p_area, p_shape, p_disabled);
+}
+
+void PhysicsServer2D::area_set_transform(RID p_area, const Transform2D& p_transform)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_transform(p_area, p_transform);
+}
+
+Transform2D PhysicsServer2D::area_get_transform(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Transform2D());
+	return data->server->area_get_transform(p_area);
+}
+
+void PhysicsServer2D::area_set_collision_layer(RID p_area, uint32_t p_layer)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_collision_layer(p_area, p_layer);
+}
+
+uint32_t PhysicsServer2D::area_get_collision_layer(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->area_get_collision_layer(p_area);
+}
+
+void PhysicsServer2D::area_set_collision_mask(RID p_area, uint32_t p_mask)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_collision_mask(p_area, p_mask);
+}
+
+uint32_t PhysicsServer2D::area_get_collision_mask(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->area_get_collision_mask(p_area);
+}
+
+void PhysicsServer2D::area_set_monitorable(RID p_area, bool p_monitorable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_monitorable(p_area, p_monitorable);
+}
+
+void PhysicsServer2D::area_set_pickable(RID p_area, bool p_pickable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_pickable(p_area, p_pickable);
+}
+
+RID PhysicsServer2D::body_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->body_create();
+}
+
+void PhysicsServer2D::body_set_space(RID p_body, RID p_space)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_space(p_body, p_space);
+}
+
+RID PhysicsServer2D::body_get_space(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->body_get_space(p_body);
+}
+
+void PhysicsServer2D::body_set_mode(RID p_body, PS2DE::BodyMode p_mode)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_mode(p_body, p_mode);
+}
+
+PS2DE::BodyMode PhysicsServer2D::body_get_mode(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), PS2DE::BodyMode());
+	return data->server->body_get_mode(p_body);
+}
+
+void PhysicsServer2D::body_add_shape(RID p_body, RID p_shape, const Transform2D& p_transform, bool p_disabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_shape(p_body, p_shape, p_transform, p_disabled);
+}
+
+void PhysicsServer2D::body_set_shape(RID p_body, int p_shape_idx, RID p_shape)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_shape(p_body, p_shape_idx, p_shape);
+}
+
+void PhysicsServer2D::body_set_shape_transform(RID p_body, int p_shape_idx, const Transform2D& p_transform)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_shape_transform(p_body, p_shape_idx, p_transform);
+}
+
+int PhysicsServer2D::body_get_shape_count(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_shape_count(p_body);
+}
+
+RID PhysicsServer2D::body_get_shape(RID p_body, int p_shape_idx)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->body_get_shape(p_body, p_shape_idx);
+}
+
+Transform2D PhysicsServer2D::body_get_shape_transform(RID p_body, int p_shape_idx)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Transform2D());
+	return data->server->body_get_shape_transform(p_body, p_shape_idx);
+}
+
+void PhysicsServer2D::body_set_shape_disabled(RID p_body, int p_shape, bool p_disabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_shape_disabled(p_body, p_shape, p_disabled);
+}
+
+void PhysicsServer2D::body_set_shape_as_one_way_collision(RID p_body, int p_shape, bool p_enabled, real_t p_margin, const Vector2& p_direction)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_shape_as_one_way_collision(p_body, p_shape, p_enabled, p_margin, p_direction);
+}
+
+void PhysicsServer2D::body_remove_shape(RID p_body, int p_shape_idx)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_remove_shape(p_body, p_shape_idx);
+}
+
+void PhysicsServer2D::body_clear_shapes(RID p_body)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_clear_shapes(p_body);
+}
+
+void PhysicsServer2D::body_set_continuous_collision_detection_mode(RID p_body, PS2DE::CCDMode p_mode)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_continuous_collision_detection_mode(p_body, p_mode);
+}
+
+PS2DE::CCDMode PhysicsServer2D::body_get_continuous_collision_detection_mode(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), PS2DE::CCDMode());
+	return data->server->body_get_continuous_collision_detection_mode(p_body);
+}
+
+void PhysicsServer2D::body_set_collision_layer(RID p_body, uint32_t p_layer)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_collision_layer(p_body, p_layer);
+}
+
+uint32_t PhysicsServer2D::body_get_collision_layer(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_collision_layer(p_body);
+}
+
+void PhysicsServer2D::body_set_collision_mask(RID p_body, uint32_t p_mask)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_collision_mask(p_body, p_mask);
+}
+
+uint32_t PhysicsServer2D::body_get_collision_mask(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_collision_mask(p_body);
+}
+
+void PhysicsServer2D::body_set_collision_priority(RID p_body, real_t p_priority)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_collision_priority(p_body, p_priority);
+}
+
+real_t PhysicsServer2D::body_get_collision_priority(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_collision_priority(p_body);
+}
+
+void PhysicsServer2D::body_reset_mass_properties(RID p_body)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_reset_mass_properties(p_body);
+}
+
+void PhysicsServer2D::body_apply_central_impulse(RID p_body, const Vector2& p_impulse)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_central_impulse(p_body, p_impulse);
+}
+
+void PhysicsServer2D::body_apply_torque_impulse(RID p_body, real_t p_torque)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_torque_impulse(p_body, p_torque);
+}
+
+void PhysicsServer2D::body_apply_impulse(RID p_body, const Vector2& p_impulse, const Vector2& p_position)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_impulse(p_body, p_impulse, p_position);
+}
+
+void PhysicsServer2D::body_apply_central_force(RID p_body, const Vector2& p_force)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_central_force(p_body, p_force);
+}
+
+void PhysicsServer2D::body_apply_force(RID p_body, const Vector2& p_force, const Vector2& p_position)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_force(p_body, p_force, p_position);
+}
+
+void PhysicsServer2D::body_apply_torque(RID p_body, real_t p_torque)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_torque(p_body, p_torque);
+}
+
+void PhysicsServer2D::body_add_constant_central_force(RID p_body, const Vector2& p_force)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_constant_central_force(p_body, p_force);
+}
+
+void PhysicsServer2D::body_add_constant_force(RID p_body, const Vector2& p_force, const Vector2& p_position)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_constant_force(p_body, p_force, p_position);
+}
+
+void PhysicsServer2D::body_add_constant_torque(RID p_body, real_t p_torque)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_constant_torque(p_body, p_torque);
+}
+
+void PhysicsServer2D::body_set_constant_force(RID p_body, const Vector2& p_force)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_constant_force(p_body, p_force);
+}
+
+Vector2 PhysicsServer2D::body_get_constant_force(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Vector2());
+	return data->server->body_get_constant_force(p_body);
+}
+
+void PhysicsServer2D::body_set_constant_torque(RID p_body, real_t p_torque)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_constant_torque(p_body, p_torque);
+}
+
+real_t PhysicsServer2D::body_get_constant_torque(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_constant_torque(p_body);
+}
+
+void PhysicsServer2D::body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_axis_velocity(p_body, p_axis_velocity);
+}
+
+void PhysicsServer2D::body_add_collision_exception(RID p_body, RID p_body_b)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_collision_exception(p_body, p_body_b);
+}
+
+void PhysicsServer2D::body_remove_collision_exception(RID p_body, RID p_body_b)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_remove_collision_exception(p_body, p_body_b);
+}
+
+void PhysicsServer2D::body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_get_collision_exceptions(p_body, p_exceptions);
+}
+
+void PhysicsServer2D::body_set_max_contacts_reported(RID p_body, int p_contacts)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_max_contacts_reported(p_body, p_contacts);
+}
+
+int PhysicsServer2D::body_get_max_contacts_reported(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_max_contacts_reported(p_body);
+}
+
+void PhysicsServer2D::body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_contacts_reported_depth_threshold(p_body, p_threshold);
+}
+
+real_t PhysicsServer2D::body_get_contacts_reported_depth_threshold(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_contacts_reported_depth_threshold(p_body);
+}
+
+void PhysicsServer2D::body_set_omit_force_integration(RID p_body, bool p_omit)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_omit_force_integration(p_body, p_omit);
+}
+
+bool PhysicsServer2D::body_is_omitting_force_integration(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->body_is_omitting_force_integration(p_body);
+}
+
+bool PhysicsServer2D::body_collide_shape(RID p_body, int p_body_shape, RID p_shape, const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results, int p_result_max, int& r_result_count)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->body_collide_shape(p_body, p_body_shape, p_shape, p_shape_xform, p_motion, r_results, p_result_max, r_result_count);
+}
+
+void PhysicsServer2D::body_set_pickable(RID p_body, bool p_pickable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_pickable(p_body, p_pickable);
+}
+
+PhysicsDirectBodyState2D* PhysicsServer2D::body_get_direct_state(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), nullptr);
+	return data->server->body_get_direct_state(p_body);
+}
+
+bool PhysicsServer2D::body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters, PS2DT::MotionResult* r_result)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->body_test_motion(p_body, p_parameters, r_result);
+}
+
+RID PhysicsServer2D::joint_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->joint_create();
+}
+
+void PhysicsServer2D::joint_clear(RID p_joint)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_clear(p_joint);
+}
+
+void PhysicsServer2D::joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_set_param(p_joint, p_param, p_value);
+}
+
+real_t PhysicsServer2D::joint_get_param(RID p_joint, PS2DE::JointParam p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->joint_get_param(p_joint, p_param);
+}
+
+void PhysicsServer2D::joint_disable_collisions_between_bodies(RID p_joint, const bool p_disable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_disable_collisions_between_bodies(p_joint, p_disable);
+}
+
+bool PhysicsServer2D::joint_is_disabled_collisions_between_bodies(RID p_joint)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->joint_is_disabled_collisions_between_bodies(p_joint);
+}
+
+void PhysicsServer2D::joint_make_pin(RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_make_pin(p_joint, p_anchor, p_body_a, p_body_b);
+}
+
+void PhysicsServer2D::joint_make_groove(RID p_joint, const Vector2& p_a_groove1, const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_make_groove(p_joint, p_a_groove1, p_a_groove2, p_b_anchor, p_body_a, p_body_b);
+}
+
+void PhysicsServer2D::joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a, const Vector2& p_anchor_b, RID p_body_a, RID p_body_b)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_make_damped_spring(p_joint, p_anchor_a, p_anchor_b, p_body_a, p_body_b);
+}
+
+void PhysicsServer2D::pin_joint_set_param(RID p_joint, PS2DE::PinJointParam p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->pin_joint_set_param(p_joint, p_param, p_value);
+}
+
+real_t PhysicsServer2D::pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->pin_joint_get_param(p_joint, p_param);
+}
+
+void PhysicsServer2D::pin_joint_set_flag(RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->pin_joint_set_flag(p_joint, p_flag, p_enabled);
+}
+
+bool PhysicsServer2D::pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->pin_joint_get_flag(p_joint, p_flag);
+}
+
+void PhysicsServer2D::damped_spring_joint_set_param(RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->damped_spring_joint_set_param(p_joint, p_param, p_value);
+}
+
+real_t PhysicsServer2D::damped_spring_joint_get_param(RID p_joint, PS2DE::DampedSpringParam p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->damped_spring_joint_get_param(p_joint, p_param);
+}
+
+PS2DE::JointType PhysicsServer2D::joint_get_type(RID p_joint)
+{
+	ERR_FAIL_COND_V(!is_initialized(), PS2DE::JointType());
+	return data->server->joint_get_type(p_joint);
+}
+
+void PhysicsServer2D::free_rid(RID p_rid)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->free_rid(p_rid);
+}
+
+void PhysicsServer2D::set_active(bool p_active)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->set_active(p_active);
+}
+
+void PhysicsServer2D::init()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->init();
+}
+
+void PhysicsServer2D::step(real_t p_step)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->step(p_step);
+}
+
+void PhysicsServer2D::sync()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->sync();
+}
+
+void PhysicsServer2D::flush_queries()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->flush_queries();
+}
+
+void PhysicsServer2D::end_sync()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->end_sync();
+}
+
+void PhysicsServer2D::finish()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->finish();
+}
+
+bool PhysicsServer2D::is_flushing_queries()
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->is_flushing_queries();
+}
+
+int PhysicsServer2D::get_process_info(PS2DE::ProcessInfo p_info)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->get_process_info(p_info);
+}
+
+#else // !MODULE_GODOT_PHYSICS_2D_ENABLED
+
+RID PhysicsServer2D::world_boundary_shape_create() { return RID(); }
+RID PhysicsServer2D::separation_ray_shape_create() { return RID(); }
+RID PhysicsServer2D::segment_shape_create() { return RID(); }
+RID PhysicsServer2D::circle_shape_create() { return RID(); }
+RID PhysicsServer2D::rectangle_shape_create() { return RID(); }
+RID PhysicsServer2D::capsule_shape_create() { return RID(); }
+RID PhysicsServer2D::convex_polygon_shape_create() { return RID(); }
+RID PhysicsServer2D::concave_polygon_shape_create() { return RID(); }
+void PhysicsServer2D::shape_set_custom_solver_bias(RID p_shape, real_t p_bias) {}
+PS2DE::ShapeType PhysicsServer2D::shape_get_type(RID p_shape) { return PS2DE::SHAPE_CUSTOM; }
+real_t PhysicsServer2D::shape_get_custom_solver_bias(RID p_shape) { return 0; }
+bool PhysicsServer2D::shape_collide(RID p_shape_A, const Transform2D& p_xform_A, const Vector2& p_motion_A, RID p_shape_B, const Transform2D& p_xform_B, const Vector2& p_motion_B, Vector2* r_results, int p_result_max, int& r_result_count) { r_result_count = 0; return false; }
+RID PhysicsServer2D::space_create() { return RID(); }
+void PhysicsServer2D::space_set_active(RID p_space, bool p_active) {}
+bool PhysicsServer2D::space_is_active(RID p_space) { return false; }
+void PhysicsServer2D::space_set_param(RID p_space, PS2DE::SpaceParameter p_param, real_t p_value) {}
+real_t PhysicsServer2D::space_get_param(RID p_space, PS2DE::SpaceParameter p_param) { return 0; }
+PhysicsDirectSpaceState2D* PhysicsServer2D::space_get_direct_state(RID p_space) { return nullptr; }
+void PhysicsServer2D::space_set_debug_contacts(RID p_space, int p_max_contacts) {}
+Vector<Vector2> PhysicsServer2D::space_get_contacts(RID p_space) { return Vector<Vector2>(); }
+int PhysicsServer2D::space_get_contact_count(RID p_space) { return 0; }
+RID PhysicsServer2D::area_create() { return RID(); }
+void PhysicsServer2D::area_set_space(RID p_area, RID p_space) {}
+RID PhysicsServer2D::area_get_space(RID p_area) { return RID(); }
+void PhysicsServer2D::area_add_shape(RID p_area, RID p_shape, const Transform2D& p_transform, bool p_disabled) {}
+void PhysicsServer2D::area_set_shape(RID p_area, int p_shape_idx, RID p_shape) {}
+void PhysicsServer2D::area_set_shape_transform(RID p_area, int p_shape_idx, const Transform2D& p_transform) {}
+int PhysicsServer2D::area_get_shape_count(RID p_area) { return 0; }
+RID PhysicsServer2D::area_get_shape(RID p_area, int p_shape_idx) { return RID(); }
+Transform2D PhysicsServer2D::area_get_shape_transform(RID p_area, int p_shape_idx) { return Transform2D(); }
+void PhysicsServer2D::area_remove_shape(RID p_area, int p_shape_idx) {}
+void PhysicsServer2D::area_clear_shapes(RID p_area) {}
+void PhysicsServer2D::area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled) {}
+void PhysicsServer2D::area_set_transform(RID p_area, const Transform2D& p_transform) {}
+Transform2D PhysicsServer2D::area_get_transform(RID p_area) { return Transform2D(); }
+void PhysicsServer2D::area_set_collision_layer(RID p_area, uint32_t p_layer) {}
+uint32_t PhysicsServer2D::area_get_collision_layer(RID p_area) { return 0; }
+void PhysicsServer2D::area_set_collision_mask(RID p_area, uint32_t p_mask) {}
+uint32_t PhysicsServer2D::area_get_collision_mask(RID p_area) { return 0; }
+void PhysicsServer2D::area_set_monitorable(RID p_area, bool p_monitorable) {}
+void PhysicsServer2D::area_set_pickable(RID p_area, bool p_pickable) {}
+RID PhysicsServer2D::body_create() { return RID(); }
+void PhysicsServer2D::body_set_space(RID p_body, RID p_space) {}
+RID PhysicsServer2D::body_get_space(RID p_body) { return RID(); }
+void PhysicsServer2D::body_set_mode(RID p_body, PS2DE::BodyMode p_mode) {}
+PS2DE::BodyMode PhysicsServer2D::body_get_mode(RID p_body) { return PS2DE::BODY_MODE_STATIC; }
+void PhysicsServer2D::body_add_shape(RID p_body, RID p_shape, const Transform2D& p_transform, bool p_disabled) {}
+void PhysicsServer2D::body_set_shape(RID p_body, int p_shape_idx, RID p_shape) {}
+void PhysicsServer2D::body_set_shape_transform(RID p_body, int p_shape_idx, const Transform2D& p_transform) {}
+int PhysicsServer2D::body_get_shape_count(RID p_body) { return 0; }
+RID PhysicsServer2D::body_get_shape(RID p_body, int p_shape_idx) { return RID(); }
+Transform2D PhysicsServer2D::body_get_shape_transform(RID p_body, int p_shape_idx) { return Transform2D(); }
+void PhysicsServer2D::body_set_shape_disabled(RID p_body, int p_shape, bool p_disabled) {}
+void PhysicsServer2D::body_set_shape_as_one_way_collision(RID p_body, int p_shape, bool p_enabled, real_t p_margin, const Vector2& p_direction) {}
+void PhysicsServer2D::body_remove_shape(RID p_body, int p_shape_idx) {}
+void PhysicsServer2D::body_clear_shapes(RID p_body) {}
+void PhysicsServer2D::body_set_continuous_collision_detection_mode(RID p_body, PS2DE::CCDMode p_mode) {}
+PS2DE::CCDMode PhysicsServer2D::body_get_continuous_collision_detection_mode(RID p_body) { return PS2DE::CCD_MODE_DISABLED; }
+void PhysicsServer2D::body_set_collision_layer(RID p_body, uint32_t p_layer) {}
+uint32_t PhysicsServer2D::body_get_collision_layer(RID p_body) { return 0; }
+void PhysicsServer2D::body_set_collision_mask(RID p_body, uint32_t p_mask) {}
+uint32_t PhysicsServer2D::body_get_collision_mask(RID p_body) { return 0; }
+void PhysicsServer2D::body_set_collision_priority(RID p_body, real_t p_priority) {}
+real_t PhysicsServer2D::body_get_collision_priority(RID p_body) { return 0; }
+void PhysicsServer2D::body_reset_mass_properties(RID p_body) {}
+void PhysicsServer2D::body_apply_central_impulse(RID p_body, const Vector2& p_impulse) {}
+void PhysicsServer2D::body_apply_torque_impulse(RID p_body, real_t p_torque) {}
+void PhysicsServer2D::body_apply_impulse(RID p_body, const Vector2& p_impulse, const Vector2& p_position) {}
+void PhysicsServer2D::body_apply_central_force(RID p_body, const Vector2& p_force) {}
+void PhysicsServer2D::body_apply_force(RID p_body, const Vector2& p_force, const Vector2& p_position) {}
+void PhysicsServer2D::body_apply_torque(RID p_body, real_t p_torque) {}
+void PhysicsServer2D::body_add_constant_central_force(RID p_body, const Vector2& p_force) {}
+void PhysicsServer2D::body_add_constant_force(RID p_body, const Vector2& p_force, const Vector2& p_position) {}
+void PhysicsServer2D::body_add_constant_torque(RID p_body, real_t p_torque) {}
+void PhysicsServer2D::body_set_constant_force(RID p_body, const Vector2& p_force) {}
+Vector2 PhysicsServer2D::body_get_constant_force(RID p_body) { return Vector2(); }
+void PhysicsServer2D::body_set_constant_torque(RID p_body, real_t p_torque) {}
+real_t PhysicsServer2D::body_get_constant_torque(RID p_body) { return 0; }
+void PhysicsServer2D::body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity) {}
+void PhysicsServer2D::body_add_collision_exception(RID p_body, RID p_body_b) {}
+void PhysicsServer2D::body_remove_collision_exception(RID p_body, RID p_body_b) {}
+void PhysicsServer2D::body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) {}
+void PhysicsServer2D::body_set_max_contacts_reported(RID p_body, int p_contacts) {}
+int PhysicsServer2D::body_get_max_contacts_reported(RID p_body) { return 0; }
+void PhysicsServer2D::body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold) {}
+real_t PhysicsServer2D::body_get_contacts_reported_depth_threshold(RID p_body) { return 0; }
+void PhysicsServer2D::body_set_omit_force_integration(RID p_body, bool p_omit) {}
+bool PhysicsServer2D::body_is_omitting_force_integration(RID p_body) { return false; }
+bool PhysicsServer2D::body_collide_shape(RID p_body, int p_body_shape, RID p_shape, const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results, int p_result_max, int& r_result_count) { r_result_count = 0; return false; }
+void PhysicsServer2D::body_set_pickable(RID p_body, bool p_pickable) {}
+PhysicsDirectBodyState2D* PhysicsServer2D::body_get_direct_state(RID p_body) { return nullptr; }
+bool PhysicsServer2D::body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters, PS2DT::MotionResult* r_result) { return false; }
+RID PhysicsServer2D::joint_create() { return RID(); }
+void PhysicsServer2D::joint_clear(RID p_joint) {}
+void PhysicsServer2D::joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value) {}
+real_t PhysicsServer2D::joint_get_param(RID p_joint, PS2DE::JointParam p_param) { return 0; }
+void PhysicsServer2D::joint_disable_collisions_between_bodies(RID p_joint, const bool p_disable) {}
+bool PhysicsServer2D::joint_is_disabled_collisions_between_bodies(RID p_joint) { return false; }
+void PhysicsServer2D::joint_make_pin(RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b) {}
+void PhysicsServer2D::joint_make_groove(RID p_joint, const Vector2& p_a_groove1, const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b) {}
+void PhysicsServer2D::joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a, const Vector2& p_anchor_b, RID p_body_a, RID p_body_b) {}
+void PhysicsServer2D::pin_joint_set_param(RID p_joint, PS2DE::PinJointParam p_param, real_t p_value) {}
+real_t PhysicsServer2D::pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param) { return 0; }
+void PhysicsServer2D::pin_joint_set_flag(RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled) {}
+bool PhysicsServer2D::pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag) { return false; }
+void PhysicsServer2D::damped_spring_joint_set_param(RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value) {}
+real_t PhysicsServer2D::damped_spring_joint_get_param(RID p_joint, PS2DE::DampedSpringParam p_param) { return 0; }
+PS2DE::JointType PhysicsServer2D::joint_get_type(RID p_joint) { return PS2DE::JOINT_TYPE_PIN; }
+void PhysicsServer2D::free_rid(RID p_rid) {}
+void PhysicsServer2D::set_active(bool p_active) {}
+void PhysicsServer2D::init() {}
+void PhysicsServer2D::step(real_t p_step) {}
+void PhysicsServer2D::sync() {}
+void PhysicsServer2D::flush_queries() {}
+void PhysicsServer2D::end_sync() {}
+void PhysicsServer2D::finish() {}
+bool PhysicsServer2D::is_flushing_queries() { return false; }
+int PhysicsServer2D::get_process_info(PS2DE::ProcessInfo p_info) { return 0; }
+
+#endif // MODULE_GODOT_PHYSICS_2D_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_2d/direct_states/physics_direct_body_state_2d.cpp
+// ============================================================================
+
+#include "servers/physics_2d/physics_server_2d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+#ifndef MODULE_GODOT_PHYSICS_2D_ENABLED
+
+PhysicsDirectBodyState2D::PhysicsDirectBodyState2D(GodotBody2D* p_body) : body(p_body) {}
+
+Vector2 PhysicsDirectBodyState2D::get_total_gravity() const { return Vector2(); }
+real_t PhysicsDirectBodyState2D::get_total_linear_damp() const { return 0.0; }
+real_t PhysicsDirectBodyState2D::get_total_angular_damp() const { return 0.0; }
+
+Vector2 PhysicsDirectBodyState2D::get_center_of_mass() const { return Vector2(); }
+Vector2 PhysicsDirectBodyState2D::get_center_of_mass_local() const { return Vector2(); }
+real_t PhysicsDirectBodyState2D::get_inverse_mass() const { return 0.0; }
+real_t PhysicsDirectBodyState2D::get_inverse_inertia() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::set_linear_velocity(const Vector2& p_velocity) {}
+Vector2 PhysicsDirectBodyState2D::get_linear_velocity() const { return Vector2(); }
+
+void PhysicsDirectBodyState2D::set_angular_velocity(real_t p_velocity) {}
+real_t PhysicsDirectBodyState2D::get_angular_velocity() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::set_transform(const Transform2D& p_transform) {}
+Transform2D PhysicsDirectBodyState2D::get_transform() const { return Transform2D(); }
+
+Vector2 PhysicsDirectBodyState2D::get_velocity_at_local_position(const Vector2& p_position) const { return Vector2(); }
+
+void PhysicsDirectBodyState2D::apply_central_impulse(const Vector2& p_impulse) {}
+void PhysicsDirectBodyState2D::apply_torque_impulse(real_t p_torque) {}
+void PhysicsDirectBodyState2D::apply_impulse(const Vector2& p_impulse, const Vector2& p_position) {}
+
+void PhysicsDirectBodyState2D::apply_central_force(const Vector2& p_force) {}
+void PhysicsDirectBodyState2D::apply_force(const Vector2& p_force, const Vector2& p_position) {}
+void PhysicsDirectBodyState2D::apply_torque(real_t p_torque) {}
+
+void PhysicsDirectBodyState2D::add_constant_central_force(const Vector2& p_force) {}
+void PhysicsDirectBodyState2D::add_constant_force(const Vector2& p_force, const Vector2& p_position) {}
+void PhysicsDirectBodyState2D::add_constant_torque(real_t p_torque) {}
+
+void PhysicsDirectBodyState2D::set_constant_force(const Vector2& p_force) {}
+Vector2 PhysicsDirectBodyState2D::get_constant_force() const { return Vector2(); }
+
+void PhysicsDirectBodyState2D::set_constant_torque(real_t p_torque) {}
+real_t PhysicsDirectBodyState2D::get_constant_torque() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::set_sleep_state(bool p_enable) {}
+bool PhysicsDirectBodyState2D::is_sleeping() const { return false; }
+
+void PhysicsDirectBodyState2D::set_collision_layer(uint32_t p_layer) {}
+uint32_t PhysicsDirectBodyState2D::get_collision_layer() const { return 0; }
+
+void PhysicsDirectBodyState2D::set_collision_mask(uint32_t p_mask) {}
+uint32_t PhysicsDirectBodyState2D::get_collision_mask() const { return 0; }
+
+int PhysicsDirectBodyState2D::get_contact_count() const { return 0; }
+
+Vector2 PhysicsDirectBodyState2D::get_contact_local_position(int p_contact_idx) const { return Vector2(); }
+Vector2 PhysicsDirectBodyState2D::get_contact_local_normal(int p_contact_idx) const { return Vector2(); }
+int PhysicsDirectBodyState2D::get_contact_local_shape(int p_contact_idx) const { return 0; }
+Vector2 PhysicsDirectBodyState2D::get_contact_local_velocity_at_position(int p_contact_idx) const { return Vector2(); }
+
+RID PhysicsDirectBodyState2D::get_contact_collider(int p_contact_idx) const { return RID(); }
+Vector2 PhysicsDirectBodyState2D::get_contact_collider_position(int p_contact_idx) const { return Vector2(); }
+int PhysicsDirectBodyState2D::get_contact_collider_shape(int p_contact_idx) const { return 0; }
+Vector2 PhysicsDirectBodyState2D::get_contact_collider_velocity_at_position(int p_contact_idx) const { return Vector2(); }
+Vector2 PhysicsDirectBodyState2D::get_contact_impulse(int p_contact_idx) const { return Vector2(); }
+
+real_t PhysicsDirectBodyState2D::get_step() const { return 0.0; }
+
+void PhysicsDirectBodyState2D::integrate_forces() {}
+
+PhysicsDirectSpaceState2D* PhysicsDirectBodyState2D::get_space_state() { return nullptr; }
+
+#endif // !MODULE_GODOT_PHYSICS_2D_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_2d/direct_states/physics_direct_space_state_2d.cpp
+// ============================================================================
+
+#include "servers/physics_2d/physics_server_2d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+Vector<real_t> PhysicsDirectSpaceState2D::_cast_motion(
+	PhysicsShapeQueryParameters2D* rp_shape_query)
+{
+	real_t closest_safe = 1.0f, closest_unsafe = 1.0f;
+	bool res = cast_motion(rp_shape_query->get_parameters(), closest_safe, closest_unsafe);
+	if (!res) {
+		return Vector<real_t>();
+	}
+	Vector<real_t> ret;
+	ret.resize(2);
+	ret.write[0] = closest_safe;
+	ret.write[1] = closest_unsafe;
+	return ret;
+}
+
+#ifndef MODULE_GODOT_PHYSICS_2D_ENABLED
+
+PhysicsDirectSpaceState2D::PhysicsDirectSpaceState2D(GodotSpace2D* p_space) : space(p_space) {}
+
+bool PhysicsDirectSpaceState2D::intersect_ray(
+	const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result)
+{
+	return false;
+}
+
+int PhysicsDirectSpaceState2D::intersect_point(
+	const PS2DT::PointParameters& p_parameters,
+	PS2DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+int PhysicsDirectSpaceState2D::intersect_shape(
+	const PS2DT::ShapeParameters& p_parameters,
+	PS2DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+bool PhysicsDirectSpaceState2D::cast_motion(
+	const PS2DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
+	real_t& p_closest_unsafe)
+{
+	return false;
+}
+
+bool PhysicsDirectSpaceState2D::collide_shape(
+	const PS2DT::ShapeParameters& p_parameters, Vector2* r_results,
+	int p_result_max, int& r_result_count)
+{
+	r_result_count = 0;
+	return false;
+}
+
+bool PhysicsDirectSpaceState2D::rest_info(
+	const PS2DT::ShapeParameters& p_parameters,
+	PS2DT::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+#endif // !MODULE_GODOT_PHYSICS_2D_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_2d/queries/physics_ray_query_parameters_2d.cpp
+// ============================================================================
+
+#include "servers/physics_2d/physics_server_2d.h"
+
+Ref<PhysicsRayQueryParameters2D> PhysicsRayQueryParameters2D::create(
+	Vector2 p_from, Vector2 p_to, uint32_t p_mask, const TypedArray<RID>& p_exclude)
+{
+	Ref<PhysicsRayQueryParameters2D> params;
+	params.instantiate();
+	params->set_from(p_from);
+	params->set_to(p_to);
+	params->set_collision_mask(p_mask);
+	params->set_exclude(p_exclude);
+	return params;
+}
+
+
+
+void PhysicsRayQueryParameters2D::set_exclude(TypedArray<RID> const&) {}
+
+// ============================================================================
+// Merged from servers/physics_2d/queries/physics_shape_query_parameters_2d.cpp
+// ============================================================================
+
+#include "core/io/resource.h"
+#include "servers/physics_2d/physics_server_2d.h"
+
+Ref<Resource> PhysicsShapeQueryParameters2D::get_shape() const { return shape_ref; }
+
+void PhysicsShapeQueryParameters2D::set_shape(const Ref<Resource>& p_shape_ref)
+{
+	ERR_FAIL_COND(p_shape_ref.is_null());
+	shape_ref = p_shape_ref;
+	parameters.shape_rid = p_shape_ref->get_rid();
+}
+
+void PhysicsShapeQueryParameters2D::set_shape_rid(const RID& p_shape)
+{
+	if (parameters.shape_rid != p_shape) {
+		shape_ref = Ref<Resource>();
+		parameters.shape_rid = p_shape;
+	}
+}
+
+
+
+// ============================================================================
+// Merged from servers/physics_2d/queries/physics_testmotion_query_result_2d.cpp
+// ============================================================================
+
+#include "servers/physics_2d/physics_server_2d.h"
+
+Vector2 PhysicsTestMotionResult2D::get_travel() const { return result.travel; }
+
+Vector2 PhysicsTestMotionResult2D::get_remainder() const { return result.remainder; }
+
+Vector2 PhysicsTestMotionResult2D::get_collision_point() const { return result.collision_point; }
+
+Vector2 PhysicsTestMotionResult2D::get_collision_normal() const { return result.collision_normal; }
+
+Vector2 PhysicsTestMotionResult2D::get_collider_velocity() const
+{
+	return result.collider_velocity;
+}
+
+RID PhysicsTestMotionResult2D::get_collider_rid() const { return result.collider; }
+
+int PhysicsTestMotionResult2D::get_collider_shape() const { return result.collider_shape; }
+
+int PhysicsTestMotionResult2D::get_collision_local_shape() const
+{
+	return result.collision_local_shape;
+}
+
+real_t PhysicsTestMotionResult2D::get_collision_depth() const { return result.collision_depth; }
+
+real_t PhysicsTestMotionResult2D::get_collision_safe_fraction() const
+{
+	return result.collision_safe_fraction;
+}
+
+real_t PhysicsTestMotionResult2D::get_collision_unsafe_fraction() const
+{
+	return result.collision_unsafe_fraction;
+}
+
+
+// --- Merged from servers/physics_3d/physics_server_3d.cpp ---
+#include "servers/physics_3d/physics_server_3d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+#ifdef MODULE_JOLT_PHYSICS_ENABLED
+#include "modules/jolt_physics/jolt_physics_server_3d.h"
+#include "modules/jolt_physics/jolt_physics_server_3d.h"
+#endif
+
+void PhysicsServer3D::initialize(bool p_on_separate_thread)
+{
+#ifdef MODULE_JOLT_PHYSICS_ENABLED
+	if (is_initialized()) {
+		return;
+	}
+	jolt_initialize();
+	if (!data) {
+		data = memnew(Data);
+	}
+	data->server = memnew(JoltPhysicsServer3D(p_on_separate_thread));
+	data->server->init();
+#endif
+}
+
+void PhysicsServer3D::finalize()
+{
+	if (!data) {
+		return;
+	}
+#ifdef MODULE_JOLT_PHYSICS_ENABLED
+	if (data->server) {
+		data->server->finish();
+		memdelete(data->server);
+		data->server = nullptr;
+	}
+	jolt_deinitialize();
+#endif
+	memdelete(data);
+	data = nullptr;
+}
+
+#ifdef MODULE_JOLT_PHYSICS_ENABLED
+
+void PhysicsServer3D::soft_body_update_rendering_server(RID p_body, PhysicsServer3DRenderingServerHandler* rp_rendering_server_handler)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_update_rendering_server(p_body, rp_rendering_server_handler);
+}
+
+RID PhysicsServer3D::shape_create(PS3DE::ShapeType p_shape)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->shape_create(p_shape);
+}
+
+RID PhysicsServer3D::world_boundary_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->world_boundary_shape_create();
+}
+
+RID PhysicsServer3D::separation_ray_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->separation_ray_shape_create();
+}
+
+RID PhysicsServer3D::sphere_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->sphere_shape_create();
+}
+
+RID PhysicsServer3D::box_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->box_shape_create();
+}
+
+RID PhysicsServer3D::capsule_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->capsule_shape_create();
+}
+
+RID PhysicsServer3D::cylinder_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->cylinder_shape_create();
+}
+
+RID PhysicsServer3D::convex_polygon_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->convex_polygon_shape_create();
+}
+
+RID PhysicsServer3D::concave_polygon_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->concave_polygon_shape_create();
+}
+
+RID PhysicsServer3D::heightmap_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->heightmap_shape_create();
+}
+
+RID PhysicsServer3D::custom_shape_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->custom_shape_create();
+}
+
+void PhysicsServer3D::shape_set_custom_solver_bias(RID p_shape, real_t p_bias)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->shape_set_custom_solver_bias(p_shape, p_bias);
+}
+
+PS3DE::ShapeType PhysicsServer3D::shape_get_type(RID p_shape)
+{
+	ERR_FAIL_COND_V(!is_initialized(), PS3DE::ShapeType());
+	return data->server->shape_get_type(p_shape);
+}
+
+void PhysicsServer3D::shape_set_margin(RID p_shape, real_t p_margin)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->shape_set_margin(p_shape, p_margin);
+}
+
+real_t PhysicsServer3D::shape_get_margin(RID p_shape)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->shape_get_margin(p_shape);
+}
+
+real_t PhysicsServer3D::shape_get_custom_solver_bias(RID p_shape)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->shape_get_custom_solver_bias(p_shape);
+}
+
+RID PhysicsServer3D::space_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->space_create();
+}
+
+void PhysicsServer3D::space_set_active(RID p_space, bool p_active)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->space_set_active(p_space, p_active);
+}
+
+bool PhysicsServer3D::space_is_active(RID p_space)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->space_is_active(p_space);
+}
+
+void PhysicsServer3D::space_set_param(RID p_space, PS3DE::SpaceParameter p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->space_set_param(p_space, p_param, p_value);
+}
+
+real_t PhysicsServer3D::space_get_param(RID p_space, PS3DE::SpaceParameter p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->space_get_param(p_space, p_param);
+}
+
+PhysicsDirectSpaceState3D* PhysicsServer3D::space_get_direct_state(RID p_space)
+{
+	ERR_FAIL_COND_V(!is_initialized(), nullptr);
+	return data->server->space_get_direct_state(p_space);
+}
+
+void PhysicsServer3D::space_set_debug_contacts(RID p_space, int p_max_contacts)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->space_set_debug_contacts(p_space, p_max_contacts);
+}
+
+Vector<Vector3> PhysicsServer3D::space_get_contacts(RID p_space)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Vector<Vector3>());
+	return data->server->space_get_contacts(p_space);
+}
+
+int PhysicsServer3D::space_get_contact_count(RID p_space)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->space_get_contact_count(p_space);
+}
+
+RID PhysicsServer3D::area_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->area_create();
+}
+
+void PhysicsServer3D::area_set_space(RID p_area, RID p_space)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_space(p_area, p_space);
+}
+
+RID PhysicsServer3D::area_get_space(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->area_get_space(p_area);
+}
+
+void PhysicsServer3D::area_add_shape(RID p_area, RID p_shape, const Transform3D& p_transform, bool p_disabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_add_shape(p_area, p_shape, p_transform, p_disabled);
+}
+
+void PhysicsServer3D::area_set_shape(RID p_area, int p_shape_idx, RID p_shape)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_shape(p_area, p_shape_idx, p_shape);
+}
+
+void PhysicsServer3D::area_set_shape_transform(RID p_area, int p_shape_idx, const Transform3D& p_transform)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_shape_transform(p_area, p_shape_idx, p_transform);
+}
+
+int PhysicsServer3D::area_get_shape_count(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->area_get_shape_count(p_area);
+}
+
+RID PhysicsServer3D::area_get_shape(RID p_area, int p_shape_idx)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->area_get_shape(p_area, p_shape_idx);
+}
+
+Transform3D PhysicsServer3D::area_get_shape_transform(RID p_area, int p_shape_idx)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Transform3D());
+	return data->server->area_get_shape_transform(p_area, p_shape_idx);
+}
+
+void PhysicsServer3D::area_remove_shape(RID p_area, int p_shape_idx)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_remove_shape(p_area, p_shape_idx);
+}
+
+void PhysicsServer3D::area_clear_shapes(RID p_area)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_clear_shapes(p_area);
+}
+
+void PhysicsServer3D::area_set_shape_disabled(RID p_area, int p_shape_idx, bool p_disabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_shape_disabled(p_area, p_shape_idx, p_disabled);
+}
+
+void PhysicsServer3D::area_set_transform(RID p_area, const Transform3D& p_transform)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_transform(p_area, p_transform);
+}
+
+Transform3D PhysicsServer3D::area_get_transform(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Transform3D());
+	return data->server->area_get_transform(p_area);
+}
+
+void PhysicsServer3D::area_set_collision_layer(RID p_area, uint32_t p_layer)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_collision_layer(p_area, p_layer);
+}
+
+uint32_t PhysicsServer3D::area_get_collision_layer(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->area_get_collision_layer(p_area);
+}
+
+void PhysicsServer3D::area_set_collision_mask(RID p_area, uint32_t p_mask)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_collision_mask(p_area, p_mask);
+}
+
+uint32_t PhysicsServer3D::area_get_collision_mask(RID p_area)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->area_get_collision_mask(p_area);
+}
+
+void PhysicsServer3D::area_set_monitorable(RID p_area, bool p_monitorable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_monitorable(p_area, p_monitorable);
+}
+
+void PhysicsServer3D::area_set_ray_pickable(RID p_area, bool p_enable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->area_set_ray_pickable(p_area, p_enable);
+}
+
+RID PhysicsServer3D::body_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->body_create();
+}
+
+void PhysicsServer3D::body_set_space(RID p_body, RID p_space)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_space(p_body, p_space);
+}
+
+RID PhysicsServer3D::body_get_space(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->body_get_space(p_body);
+}
+
+void PhysicsServer3D::body_set_mode(RID p_body, PS3DE::BodyMode p_mode)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_mode(p_body, p_mode);
+}
+
+PS3DE::BodyMode PhysicsServer3D::body_get_mode(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), PS3DE::BodyMode());
+	return data->server->body_get_mode(p_body);
+}
+
+void PhysicsServer3D::body_add_shape(RID p_body, RID p_shape, const Transform3D& p_transform, bool p_disabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_shape(p_body, p_shape, p_transform, p_disabled);
+}
+
+void PhysicsServer3D::body_set_shape(RID p_body, int p_shape_idx, RID p_shape)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_shape(p_body, p_shape_idx, p_shape);
+}
+
+void PhysicsServer3D::body_set_shape_transform(RID p_body, int p_shape_idx, const Transform3D& p_transform)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_shape_transform(p_body, p_shape_idx, p_transform);
+}
+
+int PhysicsServer3D::body_get_shape_count(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_shape_count(p_body);
+}
+
+RID PhysicsServer3D::body_get_shape(RID p_body, int p_shape_idx)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->body_get_shape(p_body, p_shape_idx);
+}
+
+Transform3D PhysicsServer3D::body_get_shape_transform(RID p_body, int p_shape_idx)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Transform3D());
+	return data->server->body_get_shape_transform(p_body, p_shape_idx);
+}
+
+void PhysicsServer3D::body_remove_shape(RID p_body, int p_shape_idx)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_remove_shape(p_body, p_shape_idx);
+}
+
+void PhysicsServer3D::body_clear_shapes(RID p_body)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_clear_shapes(p_body);
+}
+
+void PhysicsServer3D::body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_shape_disabled(p_body, p_shape_idx, p_disabled);
+}
+
+void PhysicsServer3D::body_set_enable_continuous_collision_detection(RID p_body, bool p_enable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_enable_continuous_collision_detection(p_body, p_enable);
+}
+
+bool PhysicsServer3D::body_is_continuous_collision_detection_enabled(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->body_is_continuous_collision_detection_enabled(p_body);
+}
+
+void PhysicsServer3D::body_set_collision_layer(RID p_body, uint32_t p_layer)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_collision_layer(p_body, p_layer);
+}
+
+uint32_t PhysicsServer3D::body_get_collision_layer(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_collision_layer(p_body);
+}
+
+void PhysicsServer3D::body_set_collision_mask(RID p_body, uint32_t p_mask)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_collision_mask(p_body, p_mask);
+}
+
+uint32_t PhysicsServer3D::body_get_collision_mask(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_collision_mask(p_body);
+}
+
+void PhysicsServer3D::body_set_collision_priority(RID p_body, real_t p_priority)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_collision_priority(p_body, p_priority);
+}
+
+real_t PhysicsServer3D::body_get_collision_priority(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_collision_priority(p_body);
+}
+
+void PhysicsServer3D::body_set_user_flags(RID p_body, uint32_t p_flags)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_user_flags(p_body, p_flags);
+}
+
+uint32_t PhysicsServer3D::body_get_user_flags(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_user_flags(p_body);
+}
+
+void PhysicsServer3D::body_reset_mass_properties(RID p_body)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_reset_mass_properties(p_body);
+}
+
+void PhysicsServer3D::body_apply_central_impulse(RID p_body, const Vector3& p_impulse)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_central_impulse(p_body, p_impulse);
+}
+
+void PhysicsServer3D::body_apply_impulse(RID p_body, const Vector3& p_impulse, const Vector3& p_position)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_impulse(p_body, p_impulse, p_position);
+}
+
+void PhysicsServer3D::body_apply_torque_impulse(RID p_body, const Vector3& p_impulse)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_torque_impulse(p_body, p_impulse);
+}
+
+void PhysicsServer3D::body_apply_central_force(RID p_body, const Vector3& p_force)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_central_force(p_body, p_force);
+}
+
+void PhysicsServer3D::body_apply_force(RID p_body, const Vector3& p_force, const Vector3& p_position)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_force(p_body, p_force, p_position);
+}
+
+void PhysicsServer3D::body_apply_torque(RID p_body, const Vector3& p_torque)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_apply_torque(p_body, p_torque);
+}
+
+void PhysicsServer3D::body_add_constant_central_force(RID p_body, const Vector3& p_force)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_constant_central_force(p_body, p_force);
+}
+
+void PhysicsServer3D::body_add_constant_force(RID p_body, const Vector3& p_force, const Vector3& p_position)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_constant_force(p_body, p_force, p_position);
+}
+
+void PhysicsServer3D::body_add_constant_torque(RID p_body, const Vector3& p_torque)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_constant_torque(p_body, p_torque);
+}
+
+void PhysicsServer3D::body_set_constant_force(RID p_body, const Vector3& p_force)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_constant_force(p_body, p_force);
+}
+
+Vector3 PhysicsServer3D::body_get_constant_force(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Vector3());
+	return data->server->body_get_constant_force(p_body);
+}
+
+void PhysicsServer3D::body_set_constant_torque(RID p_body, const Vector3& p_torque)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_constant_torque(p_body, p_torque);
+}
+
+Vector3 PhysicsServer3D::body_get_constant_torque(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Vector3());
+	return data->server->body_get_constant_torque(p_body);
+}
+
+void PhysicsServer3D::body_set_axis_velocity(RID p_body, const Vector3& p_axis_velocity)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_axis_velocity(p_body, p_axis_velocity);
+}
+
+void PhysicsServer3D::body_set_axis_lock(RID p_body, PS3DE::BodyAxis p_axis, bool p_lock)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_axis_lock(p_body, p_axis, p_lock);
+}
+
+bool PhysicsServer3D::body_is_axis_locked(RID p_body, PS3DE::BodyAxis p_axis)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->body_is_axis_locked(p_body, p_axis);
+}
+
+void PhysicsServer3D::body_add_collision_exception(RID p_body, RID p_body_b)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_add_collision_exception(p_body, p_body_b);
+}
+
+void PhysicsServer3D::body_remove_collision_exception(RID p_body, RID p_body_b)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_remove_collision_exception(p_body, p_body_b);
+}
+
+void PhysicsServer3D::body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_get_collision_exceptions(p_body, p_exceptions);
+}
+
+void PhysicsServer3D::body_set_max_contacts_reported(RID p_body, int p_contacts)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_max_contacts_reported(p_body, p_contacts);
+}
+
+int PhysicsServer3D::body_get_max_contacts_reported(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_max_contacts_reported(p_body);
+}
+
+void PhysicsServer3D::body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_contacts_reported_depth_threshold(p_body, p_threshold);
+}
+
+real_t PhysicsServer3D::body_get_contacts_reported_depth_threshold(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->body_get_contacts_reported_depth_threshold(p_body);
+}
+
+void PhysicsServer3D::body_set_omit_force_integration(RID p_body, bool p_omit)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_omit_force_integration(p_body, p_omit);
+}
+
+bool PhysicsServer3D::body_is_omitting_force_integration(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->body_is_omitting_force_integration(p_body);
+}
+
+void PhysicsServer3D::body_set_ray_pickable(RID p_body, bool p_enable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->body_set_ray_pickable(p_body, p_enable);
+}
+
+PhysicsDirectBodyState3D* PhysicsServer3D::body_get_direct_state(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), nullptr);
+	return data->server->body_get_direct_state(p_body);
+}
+
+bool PhysicsServer3D::body_test_motion(RID p_body, const PS3DT::MotionParameters& p_parameters, PS3DT::MotionResult* r_result)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->body_test_motion(p_body, p_parameters, r_result);
+}
+
+RID PhysicsServer3D::soft_body_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->soft_body_create();
+}
+
+void PhysicsServer3D::soft_body_set_space(RID p_body, RID p_space)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_space(p_body, p_space);
+}
+
+RID PhysicsServer3D::soft_body_get_space(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->soft_body_get_space(p_body);
+}
+
+void PhysicsServer3D::soft_body_set_mesh(RID p_body, RID p_mesh)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_mesh(p_body, p_mesh);
+}
+
+AABB PhysicsServer3D::soft_body_get_bounds(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), AABB());
+	return data->server->soft_body_get_bounds(p_body);
+}
+
+void PhysicsServer3D::soft_body_set_collision_layer(RID p_body, uint32_t p_layer)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_collision_layer(p_body, p_layer);
+}
+
+uint32_t PhysicsServer3D::soft_body_get_collision_layer(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->soft_body_get_collision_layer(p_body);
+}
+
+void PhysicsServer3D::soft_body_set_collision_mask(RID p_body, uint32_t p_mask)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_collision_mask(p_body, p_mask);
+}
+
+uint32_t PhysicsServer3D::soft_body_get_collision_mask(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->soft_body_get_collision_mask(p_body);
+}
+
+void PhysicsServer3D::soft_body_add_collision_exception(RID p_body, RID p_body_b)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_add_collision_exception(p_body, p_body_b);
+}
+
+void PhysicsServer3D::soft_body_remove_collision_exception(RID p_body, RID p_body_b)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_remove_collision_exception(p_body, p_body_b);
+}
+
+void PhysicsServer3D::soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_get_collision_exceptions(p_body, p_exceptions);
+}
+
+void PhysicsServer3D::soft_body_set_transform(RID p_body, const Transform3D& p_transform)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_transform(p_body, p_transform);
+}
+
+void PhysicsServer3D::soft_body_set_ray_pickable(RID p_body, bool p_enable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_ray_pickable(p_body, p_enable);
+}
+
+void PhysicsServer3D::soft_body_set_simulation_precision(RID p_body, int p_simulation_precision)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_simulation_precision(p_body, p_simulation_precision);
+}
+
+int PhysicsServer3D::soft_body_get_simulation_precision(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->soft_body_get_simulation_precision(p_body);
+}
+
+void PhysicsServer3D::soft_body_set_total_mass(RID p_body, real_t p_total_mass)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_total_mass(p_body, p_total_mass);
+}
+
+real_t PhysicsServer3D::soft_body_get_total_mass(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->soft_body_get_total_mass(p_body);
+}
+
+void PhysicsServer3D::soft_body_set_linear_stiffness(RID p_body, real_t p_stiffness)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_linear_stiffness(p_body, p_stiffness);
+}
+
+real_t PhysicsServer3D::soft_body_get_linear_stiffness(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->soft_body_get_linear_stiffness(p_body);
+}
+
+void PhysicsServer3D::soft_body_set_shrinking_factor(RID p_body, real_t p_shrinking_factor)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_shrinking_factor(p_body, p_shrinking_factor);
+}
+
+real_t PhysicsServer3D::soft_body_get_shrinking_factor(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->soft_body_get_shrinking_factor(p_body);
+}
+
+void PhysicsServer3D::soft_body_set_pressure_coefficient(RID p_body, real_t p_pressure_coefficient)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_pressure_coefficient(p_body, p_pressure_coefficient);
+}
+
+real_t PhysicsServer3D::soft_body_get_pressure_coefficient(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->soft_body_get_pressure_coefficient(p_body);
+}
+
+void PhysicsServer3D::soft_body_set_damping_coefficient(RID p_body, real_t p_damping_coefficient)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_damping_coefficient(p_body, p_damping_coefficient);
+}
+
+real_t PhysicsServer3D::soft_body_get_damping_coefficient(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->soft_body_get_damping_coefficient(p_body);
+}
+
+void PhysicsServer3D::soft_body_set_drag_coefficient(RID p_body, real_t p_drag_coefficient)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_set_drag_coefficient(p_body, p_drag_coefficient);
+}
+
+real_t PhysicsServer3D::soft_body_get_drag_coefficient(RID p_body)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->soft_body_get_drag_coefficient(p_body);
+}
+
+void PhysicsServer3D::soft_body_move_point(RID p_body, int p_point_index, const Vector3& p_global_position)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_move_point(p_body, p_point_index, p_global_position);
+}
+
+Vector3 PhysicsServer3D::soft_body_get_point_global_position(RID p_body, int p_point_index)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Vector3());
+	return data->server->soft_body_get_point_global_position(p_body, p_point_index);
+}
+
+void PhysicsServer3D::soft_body_apply_point_impulse(RID p_body, int p_point_index, const Vector3& p_impulse)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_apply_point_impulse(p_body, p_point_index, p_impulse);
+}
+
+void PhysicsServer3D::soft_body_apply_point_force(RID p_body, int p_point_index, const Vector3& p_force)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_apply_point_force(p_body, p_point_index, p_force);
+}
+
+void PhysicsServer3D::soft_body_apply_central_impulse(RID p_body, const Vector3& p_impulse)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_apply_central_impulse(p_body, p_impulse);
+}
+
+void PhysicsServer3D::soft_body_apply_central_force(RID p_body, const Vector3& p_force)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_apply_central_force(p_body, p_force);
+}
+
+void PhysicsServer3D::soft_body_remove_all_pinned_points(RID p_body)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_remove_all_pinned_points(p_body);
+}
+
+void PhysicsServer3D::soft_body_pin_point(RID p_body, int p_point_index, bool p_pin)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->soft_body_pin_point(p_body, p_point_index, p_pin);
+}
+
+bool PhysicsServer3D::soft_body_is_point_pinned(RID p_body, int p_point_index)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->soft_body_is_point_pinned(p_body, p_point_index);
+}
+
+RID PhysicsServer3D::joint_create()
+{
+	ERR_FAIL_COND_V(!is_initialized(), RID());
+	return data->server->joint_create();
+}
+
+void PhysicsServer3D::joint_clear(RID p_joint)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_clear(p_joint);
+}
+
+PS3DE::JointType PhysicsServer3D::joint_get_type(RID p_joint)
+{
+	ERR_FAIL_COND_V(!is_initialized(), PS3DE::JointType());
+	return data->server->joint_get_type(p_joint);
+}
+
+void PhysicsServer3D::joint_set_solver_priority(RID p_joint, int p_priority)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_set_solver_priority(p_joint, p_priority);
+}
+
+int PhysicsServer3D::joint_get_solver_priority(RID p_joint)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->joint_get_solver_priority(p_joint);
+}
+
+void PhysicsServer3D::joint_disable_collisions_between_bodies(RID p_joint, bool p_disable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_disable_collisions_between_bodies(p_joint, p_disable);
+}
+
+bool PhysicsServer3D::joint_is_disabled_collisions_between_bodies(RID p_joint)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->joint_is_disabled_collisions_between_bodies(p_joint);
+}
+
+void PhysicsServer3D::joint_make_pin(RID p_joint, RID p_body_A, const Vector3& p_local_A, RID p_body_B, const Vector3& p_local_B)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_make_pin(p_joint, p_body_A, p_local_A, p_body_B, p_local_B);
+}
+
+void PhysicsServer3D::pin_joint_set_param(RID p_joint, PS3DE::PinJointParam p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->pin_joint_set_param(p_joint, p_param, p_value);
+}
+
+real_t PhysicsServer3D::pin_joint_get_param(RID p_joint, PS3DE::PinJointParam p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->pin_joint_get_param(p_joint, p_param);
+}
+
+void PhysicsServer3D::pin_joint_set_local_a(RID p_joint, const Vector3& p_A)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->pin_joint_set_local_a(p_joint, p_A);
+}
+
+Vector3 PhysicsServer3D::pin_joint_get_local_a(RID p_joint)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Vector3());
+	return data->server->pin_joint_get_local_a(p_joint);
+}
+
+void PhysicsServer3D::pin_joint_set_local_b(RID p_joint, const Vector3& p_B)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->pin_joint_set_local_b(p_joint, p_B);
+}
+
+Vector3 PhysicsServer3D::pin_joint_get_local_b(RID p_joint)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Vector3());
+	return data->server->pin_joint_get_local_b(p_joint);
+}
+
+void PhysicsServer3D::joint_make_hinge(RID p_joint, RID p_body_A, const Transform3D& p_hinge_A, RID p_body_B, const Transform3D& p_hinge_B)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_make_hinge(p_joint, p_body_A, p_hinge_A, p_body_B, p_hinge_B);
+}
+
+void PhysicsServer3D::joint_make_hinge_simple(RID p_joint, RID p_body_A, const Vector3& p_pivot_A, const Vector3& p_axis_A, RID p_body_B, const Vector3& p_pivot_B, const Vector3& p_axis_B)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_make_hinge_simple(p_joint, p_body_A, p_pivot_A, p_axis_A, p_body_B, p_pivot_B, p_axis_B);
+}
+
+void PhysicsServer3D::hinge_joint_set_param(RID p_joint, PS3DE::HingeJointParam p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->hinge_joint_set_param(p_joint, p_param, p_value);
+}
+
+real_t PhysicsServer3D::hinge_joint_get_param(RID p_joint, PS3DE::HingeJointParam p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->hinge_joint_get_param(p_joint, p_param);
+}
+
+void PhysicsServer3D::hinge_joint_set_flag(RID p_joint, PS3DE::HingeJointFlag p_flag, bool p_enabled)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->hinge_joint_set_flag(p_joint, p_flag, p_enabled);
+}
+
+bool PhysicsServer3D::hinge_joint_get_flag(RID p_joint, PS3DE::HingeJointFlag p_flag)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->hinge_joint_get_flag(p_joint, p_flag);
+}
+
+void PhysicsServer3D::joint_make_slider(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_make_slider(p_joint, p_body_A, p_local_frame_A, p_body_B, p_local_frame_B);
+}
+
+void PhysicsServer3D::slider_joint_set_param(RID p_joint, PS3DE::SliderJointParam p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->slider_joint_set_param(p_joint, p_param, p_value);
+}
+
+real_t PhysicsServer3D::slider_joint_get_param(RID p_joint, PS3DE::SliderJointParam p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->slider_joint_get_param(p_joint, p_param);
+}
+
+void PhysicsServer3D::joint_make_cone_twist(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_make_cone_twist(p_joint, p_body_A, p_local_frame_A, p_body_B, p_local_frame_B);
+}
+
+void PhysicsServer3D::cone_twist_joint_set_param(RID p_joint, PS3DE::ConeTwistJointParam p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->cone_twist_joint_set_param(p_joint, p_param, p_value);
+}
+
+real_t PhysicsServer3D::cone_twist_joint_get_param(RID p_joint, PS3DE::ConeTwistJointParam p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->cone_twist_joint_get_param(p_joint, p_param);
+}
+
+void PhysicsServer3D::joint_make_generic_6dof(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->joint_make_generic_6dof(p_joint, p_body_A, p_local_frame_A, p_body_B, p_local_frame_B);
+}
+
+void PhysicsServer3D::generic_6dof_joint_set_param(RID p_joint, Vector3::Axis p_arg1, PS3DE::G6DOFJointAxisParam p_param, real_t p_value)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->generic_6dof_joint_set_param(p_joint, p_arg1, p_param, p_value);
+}
+
+real_t PhysicsServer3D::generic_6dof_joint_get_param(RID p_joint, Vector3::Axis p_arg1, PS3DE::G6DOFJointAxisParam p_param)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->generic_6dof_joint_get_param(p_joint, p_arg1, p_param);
+}
+
+void PhysicsServer3D::generic_6dof_joint_set_flag(RID p_joint, Vector3::Axis p_arg1, PS3DE::G6DOFJointAxisFlag p_flag, bool p_enable)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->generic_6dof_joint_set_flag(p_joint, p_arg1, p_flag, p_enable);
+}
+
+bool PhysicsServer3D::generic_6dof_joint_get_flag(RID p_joint, Vector3::Axis p_arg1, PS3DE::G6DOFJointAxisFlag p_flag)
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->generic_6dof_joint_get_flag(p_joint, p_arg1, p_flag);
+}
+
+void PhysicsServer3D::generic_6dof_joint_set_angular_target_rotation(RID p_joint, const Quaternion& p_target_rotation)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->generic_6dof_joint_set_angular_target_rotation(p_joint, p_target_rotation);
+}
+
+Quaternion PhysicsServer3D::generic_6dof_joint_get_angular_target_rotation(RID p_joint)
+{
+	ERR_FAIL_COND_V(!is_initialized(), Quaternion());
+	return data->server->generic_6dof_joint_get_angular_target_rotation(p_joint);
+}
+
+void PhysicsServer3D::free_rid(RID p_rid)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->free_rid(p_rid);
+}
+
+void PhysicsServer3D::set_active(bool p_active)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->set_active(p_active);
+}
+
+void PhysicsServer3D::init()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->init();
+}
+
+void PhysicsServer3D::step(real_t p_step)
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->step(p_step);
+}
+
+void PhysicsServer3D::sync()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->sync();
+}
+
+void PhysicsServer3D::flush_queries()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->flush_queries();
+}
+
+void PhysicsServer3D::end_sync()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->end_sync();
+}
+
+void PhysicsServer3D::finish()
+{
+	ERR_FAIL_COND(!is_initialized());
+	data->server->finish();
+}
+
+bool PhysicsServer3D::is_flushing_queries()
+{
+	ERR_FAIL_COND_V(!is_initialized(), false);
+	return data->server->is_flushing_queries();
+}
+
+int PhysicsServer3D::get_process_info(PS3DE::ProcessInfo p_info)
+{
+	ERR_FAIL_COND_V(!is_initialized(), 0);
+	return data->server->get_process_info(p_info);
+}
+
+#else // !MODULE_JOLT_PHYSICS_ENABLED
+
+void PhysicsServer3D::soft_body_update_rendering_server(RID p_body, PhysicsServer3DRenderingServerHandler* rp_rendering_server_handler) {}
+RID PhysicsServer3D::shape_create(PS3DE::ShapeType p_shape) { return RID(); }
+RID PhysicsServer3D::world_boundary_shape_create() { return RID(); }
+RID PhysicsServer3D::separation_ray_shape_create() { return RID(); }
+RID PhysicsServer3D::sphere_shape_create() { return RID(); }
+RID PhysicsServer3D::box_shape_create() { return RID(); }
+RID PhysicsServer3D::capsule_shape_create() { return RID(); }
+RID PhysicsServer3D::cylinder_shape_create() { return RID(); }
+RID PhysicsServer3D::convex_polygon_shape_create() { return RID(); }
+RID PhysicsServer3D::concave_polygon_shape_create() { return RID(); }
+RID PhysicsServer3D::heightmap_shape_create() { return RID(); }
+RID PhysicsServer3D::custom_shape_create() { return RID(); }
+void PhysicsServer3D::shape_set_custom_solver_bias(RID p_shape, real_t p_bias) {}
+PS3DE::ShapeType PhysicsServer3D::shape_get_type(RID p_shape) { return PS3DE::SHAPE_CUSTOM; }
+void PhysicsServer3D::shape_set_margin(RID p_shape, real_t p_margin) {}
+real_t PhysicsServer3D::shape_get_margin(RID p_shape) { return 0; }
+real_t PhysicsServer3D::shape_get_custom_solver_bias(RID p_shape) { return 0; }
+RID PhysicsServer3D::space_create() { return RID(); }
+void PhysicsServer3D::space_set_active(RID p_space, bool p_active) {}
+bool PhysicsServer3D::space_is_active(RID p_space) { return false; }
+void PhysicsServer3D::space_set_param(RID p_space, PS3DE::SpaceParameter p_param, real_t p_value) {}
+real_t PhysicsServer3D::space_get_param(RID p_space, PS3DE::SpaceParameter p_param) { return 0; }
+PhysicsDirectSpaceState3D* PhysicsServer3D::space_get_direct_state(RID p_space) { return nullptr; }
+void PhysicsServer3D::space_set_debug_contacts(RID p_space, int p_max_contacts) {}
+Vector<Vector3> PhysicsServer3D::space_get_contacts(RID p_space) { return Vector<Vector3>(); }
+int PhysicsServer3D::space_get_contact_count(RID p_space) { return 0; }
+RID PhysicsServer3D::area_create() { return RID(); }
+void PhysicsServer3D::area_set_space(RID p_area, RID p_space) {}
+RID PhysicsServer3D::area_get_space(RID p_area) { return RID(); }
+void PhysicsServer3D::area_add_shape(RID p_area, RID p_shape, const Transform3D& p_transform, bool p_disabled) {}
+void PhysicsServer3D::area_set_shape(RID p_area, int p_shape_idx, RID p_shape) {}
+void PhysicsServer3D::area_set_shape_transform(RID p_area, int p_shape_idx, const Transform3D& p_transform) {}
+int PhysicsServer3D::area_get_shape_count(RID p_area) { return 0; }
+RID PhysicsServer3D::area_get_shape(RID p_area, int p_shape_idx) { return RID(); }
+Transform3D PhysicsServer3D::area_get_shape_transform(RID p_area, int p_shape_idx) { return Transform3D(); }
+void PhysicsServer3D::area_remove_shape(RID p_area, int p_shape_idx) {}
+void PhysicsServer3D::area_clear_shapes(RID p_area) {}
+void PhysicsServer3D::area_set_shape_disabled(RID p_area, int p_shape_idx, bool p_disabled) {}
+void PhysicsServer3D::area_set_transform(RID p_area, const Transform3D& p_transform) {}
+Transform3D PhysicsServer3D::area_get_transform(RID p_area) { return Transform3D(); }
+void PhysicsServer3D::area_set_collision_layer(RID p_area, uint32_t p_layer) {}
+uint32_t PhysicsServer3D::area_get_collision_layer(RID p_area) { return 0; }
+void PhysicsServer3D::area_set_collision_mask(RID p_area, uint32_t p_mask) {}
+uint32_t PhysicsServer3D::area_get_collision_mask(RID p_area) { return 0; }
+void PhysicsServer3D::area_set_monitorable(RID p_area, bool p_monitorable) {}
+void PhysicsServer3D::area_set_ray_pickable(RID p_area, bool p_enable) {}
+RID PhysicsServer3D::body_create() { return RID(); }
+void PhysicsServer3D::body_set_space(RID p_body, RID p_space) {}
+RID PhysicsServer3D::body_get_space(RID p_body) { return RID(); }
+void PhysicsServer3D::body_set_mode(RID p_body, PS3DE::BodyMode p_mode) {}
+PS3DE::BodyMode PhysicsServer3D::body_get_mode(RID p_body) { return PS3DE::BODY_MODE_STATIC; }
+void PhysicsServer3D::body_add_shape(RID p_body, RID p_shape, const Transform3D& p_transform, bool p_disabled) {}
+void PhysicsServer3D::body_set_shape(RID p_body, int p_shape_idx, RID p_shape) {}
+void PhysicsServer3D::body_set_shape_transform(RID p_body, int p_shape_idx, const Transform3D& p_transform) {}
+int PhysicsServer3D::body_get_shape_count(RID p_body) { return 0; }
+RID PhysicsServer3D::body_get_shape(RID p_body, int p_shape_idx) { return RID(); }
+Transform3D PhysicsServer3D::body_get_shape_transform(RID p_body, int p_shape_idx) { return Transform3D(); }
+void PhysicsServer3D::body_remove_shape(RID p_body, int p_shape_idx) {}
+void PhysicsServer3D::body_clear_shapes(RID p_body) {}
+void PhysicsServer3D::body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled) {}
+void PhysicsServer3D::body_set_enable_continuous_collision_detection(RID p_body, bool p_enable) {}
+bool PhysicsServer3D::body_is_continuous_collision_detection_enabled(RID p_body) { return false; }
+void PhysicsServer3D::body_set_collision_layer(RID p_body, uint32_t p_layer) {}
+uint32_t PhysicsServer3D::body_get_collision_layer(RID p_body) { return 0; }
+void PhysicsServer3D::body_set_collision_mask(RID p_body, uint32_t p_mask) {}
+uint32_t PhysicsServer3D::body_get_collision_mask(RID p_body) { return 0; }
+void PhysicsServer3D::body_set_collision_priority(RID p_body, real_t p_priority) {}
+real_t PhysicsServer3D::body_get_collision_priority(RID p_body) { return 0; }
+void PhysicsServer3D::body_set_user_flags(RID p_body, uint32_t p_flags) {}
+uint32_t PhysicsServer3D::body_get_user_flags(RID p_body) { return 0; }
+void PhysicsServer3D::body_reset_mass_properties(RID p_body) {}
+void PhysicsServer3D::body_apply_central_impulse(RID p_body, const Vector3& p_impulse) {}
+void PhysicsServer3D::body_apply_impulse(RID p_body, const Vector3& p_impulse, const Vector3& p_position) {}
+void PhysicsServer3D::body_apply_torque_impulse(RID p_body, const Vector3& p_impulse) {}
+void PhysicsServer3D::body_apply_central_force(RID p_body, const Vector3& p_force) {}
+void PhysicsServer3D::body_apply_force(RID p_body, const Vector3& p_force, const Vector3& p_position) {}
+void PhysicsServer3D::body_apply_torque(RID p_body, const Vector3& p_torque) {}
+void PhysicsServer3D::body_add_constant_central_force(RID p_body, const Vector3& p_force) {}
+void PhysicsServer3D::body_add_constant_force(RID p_body, const Vector3& p_force, const Vector3& p_position) {}
+void PhysicsServer3D::body_add_constant_torque(RID p_body, const Vector3& p_torque) {}
+void PhysicsServer3D::body_set_constant_force(RID p_body, const Vector3& p_force) {}
+Vector3 PhysicsServer3D::body_get_constant_force(RID p_body) { return Vector3(); }
+void PhysicsServer3D::body_set_constant_torque(RID p_body, const Vector3& p_torque) {}
+Vector3 PhysicsServer3D::body_get_constant_torque(RID p_body) { return Vector3(); }
+void PhysicsServer3D::body_set_axis_velocity(RID p_body, const Vector3& p_axis_velocity) {}
+void PhysicsServer3D::body_set_axis_lock(RID p_body, PS3DE::BodyAxis p_axis, bool p_lock) {}
+bool PhysicsServer3D::body_is_axis_locked(RID p_body, PS3DE::BodyAxis p_axis) { return false; }
+void PhysicsServer3D::body_add_collision_exception(RID p_body, RID p_body_b) {}
+void PhysicsServer3D::body_remove_collision_exception(RID p_body, RID p_body_b) {}
+void PhysicsServer3D::body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) {}
+void PhysicsServer3D::body_set_max_contacts_reported(RID p_body, int p_contacts) {}
+int PhysicsServer3D::body_get_max_contacts_reported(RID p_body) { return 0; }
+void PhysicsServer3D::body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold) {}
+real_t PhysicsServer3D::body_get_contacts_reported_depth_threshold(RID p_body) { return 0; }
+void PhysicsServer3D::body_set_omit_force_integration(RID p_body, bool p_omit) {}
+bool PhysicsServer3D::body_is_omitting_force_integration(RID p_body) { return false; }
+void PhysicsServer3D::body_set_ray_pickable(RID p_body, bool p_enable) {}
+PhysicsDirectBodyState3D* PhysicsServer3D::body_get_direct_state(RID p_body) { return nullptr; }
+bool PhysicsServer3D::body_test_motion(RID p_body, const PS3DT::MotionParameters& p_parameters, PS3DT::MotionResult* r_result) { return false; }
+RID PhysicsServer3D::soft_body_create() { return RID(); }
+void PhysicsServer3D::soft_body_set_space(RID p_body, RID p_space) {}
+RID PhysicsServer3D::soft_body_get_space(RID p_body) { return RID(); }
+void PhysicsServer3D::soft_body_set_mesh(RID p_body, RID p_mesh) {}
+AABB PhysicsServer3D::soft_body_get_bounds(RID p_body) { return AABB(); }
+void PhysicsServer3D::soft_body_set_collision_layer(RID p_body, uint32_t p_layer) {}
+uint32_t PhysicsServer3D::soft_body_get_collision_layer(RID p_body) { return 0; }
+void PhysicsServer3D::soft_body_set_collision_mask(RID p_body, uint32_t p_mask) {}
+uint32_t PhysicsServer3D::soft_body_get_collision_mask(RID p_body) { return 0; }
+void PhysicsServer3D::soft_body_add_collision_exception(RID p_body, RID p_body_b) {}
+void PhysicsServer3D::soft_body_remove_collision_exception(RID p_body, RID p_body_b) {}
+void PhysicsServer3D::soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) {}
+void PhysicsServer3D::soft_body_set_transform(RID p_body, const Transform3D& p_transform) {}
+void PhysicsServer3D::soft_body_set_ray_pickable(RID p_body, bool p_enable) {}
+void PhysicsServer3D::soft_body_set_simulation_precision(RID p_body, int p_simulation_precision) {}
+int PhysicsServer3D::soft_body_get_simulation_precision(RID p_body) { return 0; }
+void PhysicsServer3D::soft_body_set_total_mass(RID p_body, real_t p_total_mass) {}
+real_t PhysicsServer3D::soft_body_get_total_mass(RID p_body) { return 0; }
+void PhysicsServer3D::soft_body_set_linear_stiffness(RID p_body, real_t p_stiffness) {}
+real_t PhysicsServer3D::soft_body_get_linear_stiffness(RID p_body) { return 0; }
+void PhysicsServer3D::soft_body_set_shrinking_factor(RID p_body, real_t p_shrinking_factor) {}
+real_t PhysicsServer3D::soft_body_get_shrinking_factor(RID p_body) { return 0; }
+void PhysicsServer3D::soft_body_set_pressure_coefficient(RID p_body, real_t p_pressure_coefficient) {}
+real_t PhysicsServer3D::soft_body_get_pressure_coefficient(RID p_body) { return 0; }
+void PhysicsServer3D::soft_body_set_damping_coefficient(RID p_body, real_t p_damping_coefficient) {}
+real_t PhysicsServer3D::soft_body_get_damping_coefficient(RID p_body) { return 0; }
+void PhysicsServer3D::soft_body_set_drag_coefficient(RID p_body, real_t p_drag_coefficient) {}
+real_t PhysicsServer3D::soft_body_get_drag_coefficient(RID p_body) { return 0; }
+void PhysicsServer3D::soft_body_move_point(RID p_body, int p_point_index, const Vector3& p_global_position) {}
+Vector3 PhysicsServer3D::soft_body_get_point_global_position(RID p_body, int p_point_index) { return Vector3(); }
+void PhysicsServer3D::soft_body_apply_point_impulse(RID p_body, int p_point_index, const Vector3& p_impulse) {}
+void PhysicsServer3D::soft_body_apply_point_force(RID p_body, int p_point_index, const Vector3& p_force) {}
+void PhysicsServer3D::soft_body_apply_central_impulse(RID p_body, const Vector3& p_impulse) {}
+void PhysicsServer3D::soft_body_apply_central_force(RID p_body, const Vector3& p_force) {}
+void PhysicsServer3D::soft_body_remove_all_pinned_points(RID p_body) {}
+void PhysicsServer3D::soft_body_pin_point(RID p_body, int p_point_index, bool p_pin) {}
+bool PhysicsServer3D::soft_body_is_point_pinned(RID p_body, int p_point_index) { return false; }
+RID PhysicsServer3D::joint_create() { return RID(); }
+void PhysicsServer3D::joint_clear(RID p_joint) {}
+PS3DE::JointType PhysicsServer3D::joint_get_type(RID p_joint) { return PS3DE::JOINT_TYPE_PIN; }
+void PhysicsServer3D::joint_set_solver_priority(RID p_joint, int p_priority) {}
+int PhysicsServer3D::joint_get_solver_priority(RID p_joint) { return 0; }
+void PhysicsServer3D::joint_disable_collisions_between_bodies(RID p_joint, bool p_disable) {}
+bool PhysicsServer3D::joint_is_disabled_collisions_between_bodies(RID p_joint) { return false; }
+void PhysicsServer3D::joint_make_pin(RID p_joint, RID p_body_A, const Vector3& p_local_A, RID p_body_B, const Vector3& p_local_B) {}
+void PhysicsServer3D::pin_joint_set_param(RID p_joint, PS3DE::PinJointParam p_param, real_t p_value) {}
+real_t PhysicsServer3D::pin_joint_get_param(RID p_joint, PS3DE::PinJointParam p_param) { return 0; }
+void PhysicsServer3D::pin_joint_set_local_a(RID p_joint, const Vector3& p_A) {}
+Vector3 PhysicsServer3D::pin_joint_get_local_a(RID p_joint) { return Vector3(); }
+void PhysicsServer3D::pin_joint_set_local_b(RID p_joint, const Vector3& p_B) {}
+Vector3 PhysicsServer3D::pin_joint_get_local_b(RID p_joint) { return Vector3(); }
+void PhysicsServer3D::joint_make_hinge(RID p_joint, RID p_body_A, const Transform3D& p_hinge_A, RID p_body_B, const Transform3D& p_hinge_B) {}
+void PhysicsServer3D::joint_make_hinge_simple(RID p_joint, RID p_body_A, const Vector3& p_pivot_A, const Vector3& p_axis_A, RID p_body_B, const Vector3& p_pivot_B, const Vector3& p_axis_B) {}
+void PhysicsServer3D::hinge_joint_set_param(RID p_joint, PS3DE::HingeJointParam p_param, real_t p_value) {}
+real_t PhysicsServer3D::hinge_joint_get_param(RID p_joint, PS3DE::HingeJointParam p_param) { return 0; }
+void PhysicsServer3D::hinge_joint_set_flag(RID p_joint, PS3DE::HingeJointFlag p_flag, bool p_enabled) {}
+bool PhysicsServer3D::hinge_joint_get_flag(RID p_joint, PS3DE::HingeJointFlag p_flag) { return false; }
+void PhysicsServer3D::joint_make_slider(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B) {}
+void PhysicsServer3D::slider_joint_set_param(RID p_joint, PS3DE::SliderJointParam p_param, real_t p_value) {}
+real_t PhysicsServer3D::slider_joint_get_param(RID p_joint, PS3DE::SliderJointParam p_param) { return 0; }
+void PhysicsServer3D::joint_make_cone_twist(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B) {}
+void PhysicsServer3D::cone_twist_joint_set_param(RID p_joint, PS3DE::ConeTwistJointParam p_param, real_t p_value) {}
+real_t PhysicsServer3D::cone_twist_joint_get_param(RID p_joint, PS3DE::ConeTwistJointParam p_param) { return 0; }
+void PhysicsServer3D::joint_make_generic_6dof(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B) {}
+void PhysicsServer3D::generic_6dof_joint_set_param(RID p_joint, Vector3::Axis p_arg1, PS3DE::G6DOFJointAxisParam p_param, real_t p_value) {}
+real_t PhysicsServer3D::generic_6dof_joint_get_param(RID p_joint, Vector3::Axis p_arg1, PS3DE::G6DOFJointAxisParam p_param) { return 0; }
+void PhysicsServer3D::generic_6dof_joint_set_flag(RID p_joint, Vector3::Axis p_arg1, PS3DE::G6DOFJointAxisFlag p_flag, bool p_enable) {}
+bool PhysicsServer3D::generic_6dof_joint_get_flag(RID p_joint, Vector3::Axis p_arg1, PS3DE::G6DOFJointAxisFlag p_flag) { return false; }
+void PhysicsServer3D::generic_6dof_joint_set_angular_target_rotation(RID p_joint, const Quaternion& p_target_rotation) {}
+Quaternion PhysicsServer3D::generic_6dof_joint_get_angular_target_rotation(RID p_joint) { return Quaternion(); }
+void PhysicsServer3D::free_rid(RID p_rid) {}
+void PhysicsServer3D::set_active(bool p_active) {}
+void PhysicsServer3D::init() {}
+void PhysicsServer3D::step(real_t p_step) {}
+void PhysicsServer3D::sync() {}
+void PhysicsServer3D::flush_queries() {}
+void PhysicsServer3D::end_sync() {}
+void PhysicsServer3D::finish() {}
+bool PhysicsServer3D::is_flushing_queries() { return false; }
+int PhysicsServer3D::get_process_info(PS3DE::ProcessInfo p_info) { return 0; }
+
+#endif // MODULE_JOLT_PHYSICS_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_3d/physics_server_3d_rendering_server_handler.cpp
+// ============================================================================
+
+#include "servers/physics_3d/physics_server_3d.h"
+
+#include "servers/rendering/renderer.h"
+
+void PhysicsServer3DRenderingServerHandler::prepare(RID p_mesh_rid, int p_surface)
+{
+	clear();
+
+	ERR_FAIL_COND(!p_mesh_rid.is_valid());
+
+	mesh = p_mesh_rid;
+	surface = p_surface;
+
+	RenderingServerTypes::SurfaceData surface_data = Renderer::mesh_get_surface(mesh, surface);
+
+	uint32_t surface_offsets[RSE::ARRAY_MAX];
+	uint32_t vertex_stride;
+	uint32_t normal_tangent_stride;
+	uint32_t attrib_stride;
+	uint32_t skin_stride;
+	Renderer::mesh_surface_make_offsets_from_format(surface_data.format,
+		surface_data.vertex_count, surface_data.index_count, surface_offsets, vertex_stride,
+		normal_tangent_stride, attrib_stride, skin_stride);
+
+	buffer = surface_data.vertex_data;
+	stride = vertex_stride;
+	normal_stride = normal_tangent_stride;
+	offset_vertices = surface_offsets[RSE::ARRAY_VERTEX];
+	offset_normal = surface_offsets[RSE::ARRAY_NORMAL];
+}
+
+void PhysicsServer3DRenderingServerHandler::clear()
+{
+	buffer.resize(0);
+	stride = 0;
+	normal_stride = 0;
+	offset_vertices = 0;
+	offset_normal = 0;
+
+	surface = 0;
+	mesh = RID();
+}
+
+void PhysicsServer3DRenderingServerHandler::open() { write_buffer = buffer.ptrw(); }
+
+void PhysicsServer3DRenderingServerHandler::close() { write_buffer = nullptr; }
+
+void PhysicsServer3DRenderingServerHandler::commit_changes()
+{
+	Renderer::mesh_surface_update_vertex_region(mesh, surface, 0, buffer);
+}
+
+void PhysicsServer3DRenderingServerHandler::set_vertex(int p_vertex_id, const Vector3& p_vertex)
+{
+	ERR_FAIL_NULL(write_buffer);
+	float* vertex_buffer =
+		reinterpret_cast<float*>(write_buffer + p_vertex_id * stride + offset_vertices);
+	*vertex_buffer++ = (float)p_vertex.x;
+	*vertex_buffer++ = (float)p_vertex.y;
+	*vertex_buffer++ = (float)p_vertex.z;
+}
+
+void PhysicsServer3DRenderingServerHandler::set_normal(int p_vertex_id, const Vector3& p_normal)
+{
+	ERR_FAIL_NULL(write_buffer);
+	Vector2 res = p_normal.octahedron_encode();
+	uint32_t value = 0;
+	value |= (uint16_t)CLAMP(res.x * 65535, 0, 65535);
+	value |= (uint16_t)CLAMP(res.y * 65535, 0, 65535) << 16;
+	memcpy(&write_buffer[p_vertex_id * normal_stride + offset_normal], &value, sizeof(uint32_t));
+}
+
+void PhysicsServer3DRenderingServerHandler::set_aabb(const AABB& p_aabb)
+{
+	Renderer::mesh_set_custom_aabb(mesh, p_aabb);
+}
+
+// ============================================================================
+// Merged from servers/physics_3d/direct_states/physics_direct_body_state_3d.cpp
+// ============================================================================
+
+#include "servers/physics_3d/physics_server_3d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+#ifndef MODULE_JOLT_PHYSICS_ENABLED
+
+PhysicsDirectBodyState3D::PhysicsDirectBodyState3D(JoltBody3D* p_body) : body(p_body) {}
+
+Vector3 PhysicsDirectBodyState3D::get_total_gravity() const { return Vector3(); }
+real_t PhysicsDirectBodyState3D::get_total_angular_damp() const { return 0.0; }
+real_t PhysicsDirectBodyState3D::get_total_linear_damp() const { return 0.0; }
+
+Vector3 PhysicsDirectBodyState3D::get_center_of_mass() const { return Vector3(); }
+Vector3 PhysicsDirectBodyState3D::get_center_of_mass_local() const { return Vector3(); }
+Basis PhysicsDirectBodyState3D::get_principal_inertia_axes() const { return Basis(); }
+real_t PhysicsDirectBodyState3D::get_inverse_mass() const { return 0.0; }
+Vector3 PhysicsDirectBodyState3D::get_inverse_inertia() const { return Vector3(); }
+Basis PhysicsDirectBodyState3D::get_inverse_inertia_tensor() const { return Basis(); }
+
+void PhysicsDirectBodyState3D::set_linear_velocity(const Vector3& p_velocity) {}
+Vector3 PhysicsDirectBodyState3D::get_linear_velocity() const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::set_angular_velocity(const Vector3& p_velocity) {}
+Vector3 PhysicsDirectBodyState3D::get_angular_velocity() const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::set_transform(const Transform3D& p_transform) {}
+Transform3D PhysicsDirectBodyState3D::get_transform() const { return Transform3D(); }
+
+Vector3 PhysicsDirectBodyState3D::get_velocity_at_local_position(const Vector3& p_position) const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::apply_central_impulse(const Vector3& p_impulse) {}
+void PhysicsDirectBodyState3D::apply_impulse(const Vector3& p_impulse, const Vector3& p_position) {}
+void PhysicsDirectBodyState3D::apply_torque_impulse(const Vector3& p_impulse) {}
+
+void PhysicsDirectBodyState3D::apply_central_force(const Vector3& p_force) {}
+void PhysicsDirectBodyState3D::apply_force(const Vector3& p_force, const Vector3& p_position) {}
+void PhysicsDirectBodyState3D::apply_torque(const Vector3& p_torque) {}
+
+void PhysicsDirectBodyState3D::add_constant_central_force(const Vector3& p_force) {}
+void PhysicsDirectBodyState3D::add_constant_force(const Vector3& p_force, const Vector3& p_position) {}
+void PhysicsDirectBodyState3D::add_constant_torque(const Vector3& p_torque) {}
+
+void PhysicsDirectBodyState3D::set_constant_force(const Vector3& p_force) {}
+Vector3 PhysicsDirectBodyState3D::get_constant_force() const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::set_constant_torque(const Vector3& p_torque) {}
+Vector3 PhysicsDirectBodyState3D::get_constant_torque() const { return Vector3(); }
+
+void PhysicsDirectBodyState3D::set_sleep_state(bool p_sleep) {}
+bool PhysicsDirectBodyState3D::is_sleeping() const { return false; }
+
+void PhysicsDirectBodyState3D::set_collision_layer(uint32_t p_layer) {}
+uint32_t PhysicsDirectBodyState3D::get_collision_layer() const { return 0; }
+
+void PhysicsDirectBodyState3D::set_collision_mask(uint32_t p_mask) {}
+uint32_t PhysicsDirectBodyState3D::get_collision_mask() const { return 0; }
+
+int PhysicsDirectBodyState3D::get_contact_count() const { return 0; }
+
+Vector3 PhysicsDirectBodyState3D::get_contact_local_position(int p_contact_idx) const { return Vector3(); }
+Vector3 PhysicsDirectBodyState3D::get_contact_local_normal(int p_contact_idx) const { return Vector3(); }
+Vector3 PhysicsDirectBodyState3D::get_contact_impulse(int p_contact_idx) const { return Vector3(); }
+int PhysicsDirectBodyState3D::get_contact_local_shape(int p_contact_idx) const { return 0; }
+Vector3 PhysicsDirectBodyState3D::get_contact_local_velocity_at_position(int p_contact_idx) const { return Vector3(); }
+
+RID PhysicsDirectBodyState3D::get_contact_collider(int p_contact_idx) const { return RID(); }
+Vector3 PhysicsDirectBodyState3D::get_contact_collider_position(int p_contact_idx) const { return Vector3(); }
+int PhysicsDirectBodyState3D::get_contact_collider_shape(int p_contact_idx) const { return 0; }
+Vector3 PhysicsDirectBodyState3D::get_contact_collider_velocity_at_position(int p_contact_idx) const { return Vector3(); }
+
+real_t PhysicsDirectBodyState3D::get_step() const { return 0.0; }
+
+void PhysicsDirectBodyState3D::integrate_forces() {}
+
+PhysicsDirectSpaceState3D* PhysicsDirectBodyState3D::get_space_state() { return nullptr; }
+
+#endif // !MODULE_JOLT_PHYSICS_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_3d/direct_states/physics_direct_space_state_3d.cpp
+// ============================================================================
+
+#include "servers/physics_3d/physics_server_3d.h"
+
+#include "modules/modules_enabled.gen.h"
+
+Vector<real_t> PhysicsDirectSpaceState3D::_cast_motion(
+	PhysicsShapeQueryParameters3D* rp_shape_query)
+{
+	real_t closest_safe = 1.0f, closest_unsafe = 1.0f;
+	bool res = cast_motion(rp_shape_query->get_parameters(), closest_safe, closest_unsafe);
+	if (!res) {
+		return Vector<real_t>();
+	}
+	Vector<real_t> ret;
+	ret.resize(2);
+	ret.write[0] = closest_safe;
+	ret.write[1] = closest_unsafe;
+	return ret;
+}
+
+#ifndef MODULE_JOLT_PHYSICS_ENABLED
+
+PhysicsDirectSpaceState3D::PhysicsDirectSpaceState3D(JoltSpace3D* p_space) : space(p_space) {}
+
+bool PhysicsDirectSpaceState3D::intersect_ray(
+	const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result)
+{
+	return false;
+}
+
+int PhysicsDirectSpaceState3D::intersect_point(
+	const PS3DT::PointParameters& p_point_params,
+	PS3DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+int PhysicsDirectSpaceState3D::intersect_shape(
+	const PS3DT::ShapeParameters& p_shape_params,
+	PS3DT::ShapeResult* r_results, int p_result_max)
+{
+	return 0;
+}
+
+bool PhysicsDirectSpaceState3D::cast_motion(
+	const PS3DT::ShapeParameters& p_shape_params, real_t& r_closest_safe,
+	real_t& r_closest_unsafe, PS3DT::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+bool PhysicsDirectSpaceState3D::collide_shape(
+	const PS3DT::ShapeParameters& p_shape_params, Vector3* r_results,
+	int p_result_max, int& r_result_count)
+{
+	r_result_count = 0;
+	return false;
+}
+
+bool PhysicsDirectSpaceState3D::rest_info(
+	const PS3DT::ShapeParameters& p_shape_params,
+	PS3DT::ShapeRestInfo* r_info)
+{
+	return false;
+}
+
+Vector3 PhysicsDirectSpaceState3D::get_closest_point_to_object_volume(
+	RID p_object, Vector3 p_point) const
+{
+	return Vector3();
+}
+
+bool PhysicsDirectSpaceState3D::body_test_motion(const JoltBody3D& p_body,
+	const PS3DT::MotionParameters& p_parameters, PS3DT::MotionResult* r_result) const
+{
+	return false;
+}
+
+#endif // !MODULE_JOLT_PHYSICS_ENABLED
+
+// ============================================================================
+// Merged from servers/physics_3d/queries/physics_shape_query_parameters_3d.cpp
+// ============================================================================
+
+#include "core/io/resource.h"
+#include "servers/physics_3d/physics_server_3d.h"
+
+Ref<Resource> PhysicsShapeQueryParameters3D::get_shape() const { return shape_ref; }
+
+void PhysicsShapeQueryParameters3D::set_shape(const Ref<Resource>& p_shape_ref)
+{
+	ERR_FAIL_COND(p_shape_ref.is_null());
+	shape_ref = p_shape_ref;
+	parameters.shape_rid = p_shape_ref->get_rid();
+}
+
+void PhysicsShapeQueryParameters3D::set_shape_rid(const RID& p_shape)
+{
+	if (parameters.shape_rid != p_shape) {
+		shape_ref = Ref<Resource>();
+		parameters.shape_rid = p_shape;
+	}
+}
+
+
+
+// ============================================================================
+// Merged from servers/physics_3d/queries/physics_testmotion_query_result_3d.cpp
+// ============================================================================
+
+#include "servers/physics_3d/physics_server_3d.h"
+
+Vector3 PhysicsTestMotionResult3D::get_travel() const { return result.travel; }
+
+Vector3 PhysicsTestMotionResult3D::get_remainder() const { return result.remainder; }
+
+real_t PhysicsTestMotionResult3D::get_collision_safe_fraction() const
+{
+	return result.collision_safe_fraction;
+}
+
+real_t PhysicsTestMotionResult3D::get_collision_unsafe_fraction() const
+{
+	return result.collision_unsafe_fraction;
+}
+
+int PhysicsTestMotionResult3D::get_collision_count() const { return result.collision_count; }
+
+Vector3 PhysicsTestMotionResult3D::get_collision_point(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, Vector3());
+	return result.collisions[p_collision_index].position;
+}
+
+Vector3 PhysicsTestMotionResult3D::get_collision_normal(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, Vector3());
+	return result.collisions[p_collision_index].normal;
+}
+
+Vector3 PhysicsTestMotionResult3D::get_collider_velocity(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, Vector3());
+	return result.collisions[p_collision_index].collider_velocity;
+}
+
+RID PhysicsTestMotionResult3D::get_collider_rid(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, RID());
+	return result.collisions[p_collision_index].collider;
+}
+
+int PhysicsTestMotionResult3D::get_collider_shape(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, 0);
+	return result.collisions[p_collision_index].collider_shape;
+}
+
+int PhysicsTestMotionResult3D::get_collision_local_shape(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, 0);
+	return result.collisions[p_collision_index].local_shape;
+}
+
+real_t PhysicsTestMotionResult3D::get_collision_depth(int p_collision_index) const
+{
+	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, 0.0);
+	return result.collisions[p_collision_index].depth;
+}
+
+
+// --- Merged from servers/navigation_2d/navigation_server_2d.cpp ---
+#if !defined(NAVIGATION_2D_DISABLED)
+#include "servers/navigation_2d/navigation_server_2d.h"
+
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "scene/main/node.h" // IWYU pragma: keep. Needed to bind `Node *` arg.
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationPathQueryParameters2D
+
+void NavigationPathQueryParameters2D::set_pathfinding_algorithm(
+	const NavigationPathQueryParameters2D::PathfindingAlgorithm p_pathfinding_algorithm)
+{
+	pathfinding_algorithm = p_pathfinding_algorithm;
+}
+
+NavigationPathQueryParameters2D::PathfindingAlgorithm
+NavigationPathQueryParameters2D::get_pathfinding_algorithm() const
+{
+	return pathfinding_algorithm;
+}
+
+void NavigationPathQueryParameters2D::set_path_postprocessing(
+	const NavigationPathQueryParameters2D::PathPostProcessing p_path_postprocessing)
+{
+	path_postprocessing = p_path_postprocessing;
+}
+
+NavigationPathQueryParameters2D::PathPostProcessing
+NavigationPathQueryParameters2D::get_path_postprocessing() const
+{
+	return path_postprocessing;
+}
+
+void NavigationPathQueryParameters2D::set_map(RID p_map) { map = p_map; }
+
+RID NavigationPathQueryParameters2D::get_map() const { return map; }
+
+void NavigationPathQueryParameters2D::set_start_position(Vector2 p_start_position)
+{
+	start_position = p_start_position;
+}
+
+Vector2 NavigationPathQueryParameters2D::get_start_position() const { return start_position; }
+
+void NavigationPathQueryParameters2D::set_target_position(Vector2 p_target_position)
+{
+	target_position = p_target_position;
+}
+
+Vector2 NavigationPathQueryParameters2D::get_target_position() const { return target_position; }
+
+void NavigationPathQueryParameters2D::set_navigation_layers(uint32_t p_navigation_layers)
+{
+	navigation_layers = p_navigation_layers;
+}
+
+uint32_t NavigationPathQueryParameters2D::get_navigation_layers() const
+{
+	return navigation_layers;
+}
+
+void NavigationPathQueryParameters2D::set_metadata_flags(uint32_t p_flags)
+{
+	metadata_flags = (int64_t)p_flags;
+}
+
+uint32_t NavigationPathQueryParameters2D::get_metadata_flags() const
+{
+	return (int64_t)metadata_flags;
+}
+
+void NavigationPathQueryParameters2D::set_simplify_path(bool p_enabled)
+{
+	simplify_path = p_enabled;
+}
+
+bool NavigationPathQueryParameters2D::get_simplify_path() const { return simplify_path; }
+
+void NavigationPathQueryParameters2D::set_simplify_epsilon(real_t p_epsilon)
+{
+	simplify_epsilon = MAX(0.0, p_epsilon);
+}
+
+real_t NavigationPathQueryParameters2D::get_simplify_epsilon() const { return simplify_epsilon; }
+
+void NavigationPathQueryParameters2D::set_path_return_max_length(float p_length)
+{
+	path_return_max_length = MAX(0.0, p_length);
+}
+
+float NavigationPathQueryParameters2D::get_path_return_max_length() const
+{
+	return path_return_max_length;
+}
+
+void NavigationPathQueryParameters2D::set_path_return_max_radius(float p_radius)
+{
+	path_return_max_radius = MAX(0.0, p_radius);
+}
+
+float NavigationPathQueryParameters2D::get_path_return_max_radius() const
+{
+	return path_return_max_radius;
+}
+
+void NavigationPathQueryParameters2D::set_path_search_max_polygons(int p_max_polygons)
+{
+	path_search_max_polygons = p_max_polygons;
+}
+
+int NavigationPathQueryParameters2D::get_path_search_max_polygons() const
+{
+	return path_search_max_polygons;
+}
+
+void NavigationPathQueryParameters2D::set_path_search_max_distance(float p_distance)
+{
+	path_search_max_distance = MAX(0.0, p_distance);
+}
+
+float NavigationPathQueryParameters2D::get_path_search_max_distance() const
+{
+	return path_search_max_distance;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationPathQueryResult2D
+
+void NavigationPathQueryResult2D::set_path(const Vector<Vector2>& p_path) { path = p_path; }
+
+const Vector<Vector2>& NavigationPathQueryResult2D::get_path() const { return path; }
+
+void NavigationPathQueryResult2D::set_path_types(const Vector<int32_t>& p_path_types)
+{
+	path_types = p_path_types;
+}
+
+const Vector<int32_t>& NavigationPathQueryResult2D::get_path_types() const { return path_types; }
+
+void NavigationPathQueryResult2D::set_path_owner_ids(const Vector<int64_t>& p_path_owner_ids)
+{
+	path_owner_ids = p_path_owner_ids;
+}
+
+const Vector<int64_t>& NavigationPathQueryResult2D::get_path_owner_ids() const
+{
+	return path_owner_ids;
+}
+
+void NavigationPathQueryResult2D::set_path_length(float p_length) { path_length = p_length; }
+
+float NavigationPathQueryResult2D::get_path_length() const { return path_length; }
+
+void NavigationPathQueryResult2D::reset() {}
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationServer2D
+
+bool NavigationServer2D::get_debug_enabled() { return data->debug_enabled; }
+
+#ifdef DEBUG_ENABLED
+
+bool NavigationServer2D::get_debug_navigation_enabled() { return data->debug_navigation_enabled; }
+
+bool NavigationServer2D::get_debug_avoidance_enabled() { return data->debug_avoidance_enabled; }
+
+void NavigationServer2D::set_debug_navigation_link_connection_color(const Color& p_color)
+{
+	data->debug_navigation_link_connection_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_link_connection_color()
+{
+	return data->debug_navigation_link_connection_color;
+}
+
+void NavigationServer2D::set_debug_navigation_link_connection_disabled_color(const Color& p_color)
+{
+	data->debug_navigation_link_connection_disabled_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_link_connection_disabled_color()
+{
+	return data->debug_navigation_link_connection_disabled_color;
+}
+
+void NavigationServer2D::set_debug_navigation_enable_edge_lines(const bool p_value)
+{
+	data->debug_navigation_enable_edge_lines = p_value;
+}
+
+bool NavigationServer2D::get_debug_navigation_enable_edge_lines()
+{
+	return data->debug_navigation_enable_edge_lines;
+}
+
+void NavigationServer2D::set_debug_navigation_agent_path_color(const Color& p_color)
+{
+	data->debug_navigation_agent_path_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_agent_path_color()
+{
+	return data->debug_navigation_agent_path_color;
+}
+
+void NavigationServer2D::set_debug_navigation_enable_agent_paths(const bool p_value)
+{
+	data->debug_navigation_enable_agent_paths = p_value;
+}
+
+bool NavigationServer2D::get_debug_navigation_enable_agent_paths()
+{
+	return data->debug_navigation_enable_agent_paths;
+}
+
+void NavigationServer2D::set_debug_navigation_agent_path_point_size(real_t p_point_size)
+{
+	data->debug_navigation_agent_path_point_size = p_point_size;
+}
+
+real_t NavigationServer2D::get_debug_navigation_agent_path_point_size()
+{
+	return data->debug_navigation_agent_path_point_size;
+}
+
+void NavigationServer2D::set_debug_navigation_avoidance_enable_agents_radius(const bool p_value)
+{
+	data->debug_navigation_avoidance_enable_agents_radius = p_value;
+}
+
+bool NavigationServer2D::get_debug_navigation_avoidance_enable_agents_radius()
+{
+	return data->debug_navigation_avoidance_enable_agents_radius;
+}
+
+void NavigationServer2D::set_debug_navigation_avoidance_enable_obstacles_radius(const bool p_value)
+{
+	data->debug_navigation_avoidance_enable_obstacles_radius = p_value;
+}
+
+bool NavigationServer2D::get_debug_navigation_avoidance_enable_obstacles_radius()
+{
+	return data->debug_navigation_avoidance_enable_obstacles_radius;
+}
+
+void NavigationServer2D::set_debug_navigation_avoidance_agents_radius_color(const Color& p_color)
+{
+	data->debug_navigation_avoidance_agents_radius_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_avoidance_agents_radius_color()
+{
+	return data->debug_navigation_avoidance_agents_radius_color;
+}
+
+void NavigationServer2D::set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color)
+{
+	data->debug_navigation_avoidance_obstacles_radius_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_avoidance_obstacles_radius_color()
+{
+	return data->debug_navigation_avoidance_obstacles_radius_color;
+}
+
+void NavigationServer2D::set_debug_navigation_avoidance_static_obstacle_pushin_face_color(
+	const Color& p_color)
+{
+	data->debug_navigation_avoidance_static_obstacle_pushin_face_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_avoidance_static_obstacle_pushin_face_color()
+{
+	return data->debug_navigation_avoidance_static_obstacle_pushin_face_color;
+}
+
+void NavigationServer2D::set_debug_navigation_avoidance_static_obstacle_pushout_face_color(
+	const Color& p_color)
+{
+	data->debug_navigation_avoidance_static_obstacle_pushout_face_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_avoidance_static_obstacle_pushout_face_color()
+{
+	return data->debug_navigation_avoidance_static_obstacle_pushout_face_color;
+}
+
+void NavigationServer2D::set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(
+	const Color& p_color)
+{
+	data->debug_navigation_avoidance_static_obstacle_pushin_edge_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_avoidance_static_obstacle_pushin_edge_color()
+{
+	return data->debug_navigation_avoidance_static_obstacle_pushin_edge_color;
+}
+
+void NavigationServer2D::set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(
+	const Color& p_color)
+{
+	data->debug_navigation_avoidance_static_obstacle_pushout_edge_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_avoidance_static_obstacle_pushout_edge_color()
+{
+	return data->debug_navigation_avoidance_static_obstacle_pushout_edge_color;
+}
+
+void NavigationServer2D::set_debug_navigation_avoidance_enable_obstacles_static(const bool p_value)
+{
+	data->debug_navigation_avoidance_enable_obstacles_static = p_value;
+}
+
+bool NavigationServer2D::get_debug_navigation_avoidance_enable_obstacles_static()
+{
+	return data->debug_navigation_avoidance_enable_obstacles_static;
+}
+
+void NavigationServer2D::set_debug_navigation_geometry_face_color(const Color& p_color)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_geometry_face_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_geometry_face_color()
+{
+	if (!data) {
+		return Color(0.0, 1.0, 1.0, 0.4);
+	}
+	return data->debug_navigation_geometry_face_color;
+}
+
+void NavigationServer2D::set_debug_navigation_geometry_edge_color(const Color& p_color)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_geometry_edge_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_geometry_edge_color()
+{
+	if (!data) {
+		return Color(0.0, 1.0, 1.0, 0.8);
+	}
+	return data->debug_navigation_geometry_edge_color;
+}
+
+void NavigationServer2D::set_debug_navigation_geometry_face_disabled_color(const Color& p_color)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_geometry_face_disabled_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_geometry_face_disabled_color()
+{
+	if (!data) {
+		return Color(1.0, 0.0, 0.0, 0.4);
+	}
+	return data->debug_navigation_geometry_face_disabled_color;
+}
+
+void NavigationServer2D::set_debug_navigation_geometry_edge_disabled_color(const Color& p_color)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_geometry_edge_disabled_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_geometry_edge_disabled_color()
+{
+	if (!data) {
+		return Color(1.0, 0.0, 0.0, 0.8);
+	}
+	return data->debug_navigation_geometry_edge_disabled_color;
+}
+
+void NavigationServer2D::set_debug_navigation_edge_connection_color(const Color& p_color)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_edge_connection_color = p_color;
+}
+
+Color NavigationServer2D::get_debug_navigation_edge_connection_color()
+{
+	if (!data) {
+		return Color(1.0, 0.0, 1.0, 0.4);
+	}
+	return data->debug_navigation_edge_connection_color;
+}
+
+void NavigationServer2D::set_debug_navigation_enable_edge_connections(bool p_enable)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_enable_edge_connections = p_enable;
+}
+
+bool NavigationServer2D::get_debug_navigation_enable_edge_connections()
+{
+	if (!data) {
+		return false;
+	}
+	return data->debug_navigation_enable_edge_connections;
+}
+
+void NavigationServer2D::set_debug_navigation_enable_geometry_face_random_color(bool p_enable)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_enable_geometry_face_random_color = p_enable;
+}
+
+bool NavigationServer2D::get_debug_navigation_enable_geometry_face_random_color()
+{
+	if (!data) {
+		return false;
+	}
+	return data->debug_navigation_enable_geometry_face_random_color;
+}
+
+void NavigationServer2D::set_debug_navigation_enable_agent_radius(bool p_enable)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_enable_agent_radius = p_enable;
+}
+
+bool NavigationServer2D::get_debug_navigation_enable_agent_radius()
+{
+	if (!data) {
+		return false;
+	}
+	return data->debug_navigation_enable_agent_radius;
+}
+
+void NavigationServer2D::set_debug_navigation_enable_obstacles(bool p_enable)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_enable_obstacles = p_enable;
+}
+
+bool NavigationServer2D::get_debug_navigation_enable_obstacles()
+{
+	if (!data) {
+		return false;
+	}
+	return data->debug_navigation_enable_obstacles;
+}
+
+void NavigationServer2D::set_debug_navigation_enable_link_connections(bool p_enable)
+{
+	if (!data) {
+		return;
+	}
+	data->debug_navigation_enable_link_connections = p_enable;
+}
+
+bool NavigationServer2D::get_debug_navigation_enable_link_connections()
+{
+	if (!data) {
+		return false;
+	}
+	return data->debug_navigation_enable_link_connections;
+}
+#endif // DEBUG_ENABLED
+
+struct NavigationServer2D::NavMap
+{
+};
+struct NavigationServer2D::NavRegion
+{
+};
+struct NavigationServer2D::NavLink
+{
+};
+struct NavigationServer2D::NavAgent
+{
+};
+struct NavigationServer2D::NavObstacle
+{
+};
+
+void NavigationServer2D::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+}
+
+void NavigationServer2D::finalize()
+{
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
+void NavigationServer2D::process(double p_delta_time) {}
+
+void NavigationServer2D::free_rid(RID p_rid) {}
+
+int NavigationServer2D::get_process_info(ProcessInfo p_info) { return 0; }
+
+RID NavigationServer2D::map_create() { return RID(); }
+
+void NavigationServer2D::map_set_active(RID p_map, bool p_active) {}
+
+void NavigationServer2D::map_set_cell_size(RID p_map, real_t p_cell_size) {}
+
+real_t NavigationServer2D::map_get_link_connection_radius(RID p_map) { return 0.0; }
+
+bool NavigationServer2D::map_get_use_edge_connections(RID p_map) { return false; }
+
+real_t NavigationServer2D::map_get_edge_connection_margin(RID p_map) { return 0.0; }
+
+void NavigationServer2D::region_set_map(RID p_region, RID p_map) {}
+
+void NavigationServer2D::region_set_transform(RID p_region, Transform2D p_transform) {}
+
+void NavigationServer2D::region_set_use_edge_connections(RID p_region, bool p_enabled) {}
+
+void NavigationServer2D::region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers) {}
+
+void NavigationServer2D::region_set_enter_cost(RID p_region, real_t p_enter_cost) {}
+
+void NavigationServer2D::region_set_travel_cost(RID p_region, real_t p_travel_cost) {}
+
+int NavigationServer2D::region_get_connections_count(RID p_region) { return 0; }
+
+Vector2 NavigationServer2D::region_get_connection_pathway_start(RID p_region, int p_connection_id)
+{
+	return Vector2();
+}
+
+Vector2 NavigationServer2D::region_get_connection_pathway_end(RID p_region, int p_connection_id)
+{
+	return Vector2();
+}
+
+RID NavigationServer2D::link_create() { return RID(); }
+
+void NavigationServer2D::link_set_map(RID p_link, RID p_map) {}
+
+void NavigationServer2D::link_set_enabled(RID p_link, bool p_enabled) {}
+
+void NavigationServer2D::link_set_bidirectional(RID p_link, bool p_bidirectional) {}
+
+void NavigationServer2D::link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers) {}
+
+void NavigationServer2D::link_set_enter_cost(RID p_link, real_t p_enter_cost) {}
+
+void NavigationServer2D::link_set_travel_cost(RID p_link, real_t p_travel_cost) {}
+
+RID NavigationServer2D::obstacle_create() { return RID(); }
+
+void NavigationServer2D::obstacle_set_map(RID p_obstacle, RID p_map) {}
+
+void NavigationServer2D::obstacle_set_radius(RID p_obstacle, real_t p_radius) {}
+
+void NavigationServer2D::obstacle_set_velocity(RID p_obstacle, Vector2 p_velocity) {}
+
+void NavigationServer2D::obstacle_set_vertices(RID p_obstacle, const Vector<Vector2>& p_vertices) {}
+
+void NavigationServer2D::obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers) {}
+
+void NavigationServer2D::obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled) {}
+
+void NavigationServer2D::obstacle_set_paused(RID p_obstacle, bool p_paused) {}
+
+void NavigationServer2D::agent_set_map(RID p_agent, RID p_map) {}
+
+void NavigationServer2D::agent_set_position(RID p_agent, Vector2 p_position) {}
+
+void NavigationServer2D::agent_set_velocity(RID p_agent, Vector2 p_velocity) {}
+
+void NavigationServer2D::agent_set_velocity_forced(RID p_agent, Vector2 p_velocity) {}
+
+void NavigationServer2D::agent_set_radius(RID p_agent, real_t p_radius) {}
+
+void NavigationServer2D::agent_set_neighbor_distance(RID p_agent, real_t p_distance) {}
+
+void NavigationServer2D::agent_set_max_neighbors(RID p_agent, int p_count) {}
+
+void NavigationServer2D::agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon) {}
+
+void NavigationServer2D::agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon) {}
+
+void NavigationServer2D::agent_set_max_speed(RID p_agent, real_t p_max_speed) {}
+
+void NavigationServer2D::agent_set_avoidance_layers(RID p_agent, uint32_t p_layers) {}
+
+void NavigationServer2D::agent_set_avoidance_mask(RID p_agent, uint32_t p_mask) {}
+
+void NavigationServer2D::agent_set_avoidance_priority(RID p_agent, real_t p_priority) {}
+
+void NavigationServer2D::agent_set_paused(RID p_agent, bool p_paused) {}
+#endif // !defined(NAVIGATION_2D_DISABLED)
+
+
+// --- Merged from servers/navigation_3d/navigation_server_3d.cpp ---
+#if !defined(NAVIGATION_3D_DISABLED)
+#include "servers/navigation_3d/navigation_server_3d.h"
+
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "scene/main/node.h" // IWYU pragma: keep. Needed to bind `Node *` arg.
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationPathQueryParameters3D
+
+void NavigationPathQueryParameters3D::set_pathfinding_algorithm(
+	const NavigationPathQueryParameters3D::PathfindingAlgorithm p_pathfinding_algorithm)
+{
+	pathfinding_algorithm = p_pathfinding_algorithm;
+}
+
+NavigationPathQueryParameters3D::PathfindingAlgorithm
+NavigationPathQueryParameters3D::get_pathfinding_algorithm() const
+{
+	return pathfinding_algorithm;
+}
+
+void NavigationPathQueryParameters3D::set_path_postprocessing(
+	const NavigationPathQueryParameters3D::PathPostProcessing p_path_postprocessing)
+{
+	path_postprocessing = p_path_postprocessing;
+}
+
+NavigationPathQueryParameters3D::PathPostProcessing
+NavigationPathQueryParameters3D::get_path_postprocessing() const
+{
+	return path_postprocessing;
+}
+
+void NavigationPathQueryParameters3D::set_map(RID p_map) { map = p_map; }
+
+RID NavigationPathQueryParameters3D::get_map() const { return map; }
+
+void NavigationPathQueryParameters3D::set_start_position(Vector3 p_start_position)
+{
+	start_position = p_start_position;
+}
+
+Vector3 NavigationPathQueryParameters3D::get_start_position() const { return start_position; }
+
+void NavigationPathQueryParameters3D::set_target_position(Vector3 p_target_position)
+{
+	target_position = p_target_position;
+}
+
+Vector3 NavigationPathQueryParameters3D::get_target_position() const { return target_position; }
+
+void NavigationPathQueryParameters3D::set_navigation_layers(uint32_t p_navigation_layers)
+{
+	navigation_layers = p_navigation_layers;
+}
+
+uint32_t NavigationPathQueryParameters3D::get_navigation_layers() const
+{
+	return navigation_layers;
+}
+
+void NavigationPathQueryParameters3D::set_metadata_flags(uint32_t p_flags)
+{
+	metadata_flags = (int64_t)p_flags;
+}
+
+uint32_t NavigationPathQueryParameters3D::get_metadata_flags() const
+{
+	return (int64_t)metadata_flags;
+}
+
+void NavigationPathQueryParameters3D::set_simplify_path(bool p_enabled)
+{
+	simplify_path = p_enabled;
+}
+
+bool NavigationPathQueryParameters3D::get_simplify_path() const { return simplify_path; }
+
+void NavigationPathQueryParameters3D::set_simplify_epsilon(real_t p_epsilon)
+{
+	simplify_epsilon = MAX(0.0, p_epsilon);
+}
+
+real_t NavigationPathQueryParameters3D::get_simplify_epsilon() const { return simplify_epsilon; }
+
+void NavigationPathQueryParameters3D::set_path_return_max_length(float p_length)
+{
+	path_return_max_length = MAX(0.0, p_length);
+}
+
+float NavigationPathQueryParameters3D::get_path_return_max_length() const
+{
+	return path_return_max_length;
+}
+
+void NavigationPathQueryParameters3D::set_path_return_max_radius(float p_radius)
+{
+	path_return_max_radius = MAX(0.0, p_radius);
+}
+
+float NavigationPathQueryParameters3D::get_path_return_max_radius() const
+{
+	return path_return_max_radius;
+}
+
+void NavigationPathQueryParameters3D::set_path_search_max_polygons(int p_max_polygons)
+{
+	path_search_max_polygons = p_max_polygons;
+}
+
+int NavigationPathQueryParameters3D::get_path_search_max_polygons() const
+{
+	return path_search_max_polygons;
+}
+
+void NavigationPathQueryParameters3D::set_path_search_max_distance(float p_distance)
+{
+	path_search_max_distance = MAX(0.0, p_distance);
+}
+
+float NavigationPathQueryParameters3D::get_path_search_max_distance() const
+{
+	return path_search_max_distance;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationPathQueryResult3D
+
+void NavigationPathQueryResult3D::set_path(const Vector<Vector3>& p_path) { path = p_path; }
+
+const Vector<Vector3>& NavigationPathQueryResult3D::get_path() const { return path; }
+
+void NavigationPathQueryResult3D::set_path_types(const Vector<int32_t>& p_path_types)
+{
+	path_types = p_path_types;
+}
+
+const Vector<int32_t>& NavigationPathQueryResult3D::get_path_types() const { return path_types; }
+
+void NavigationPathQueryResult3D::set_path_owner_ids(const Vector<int64_t>& p_path_owner_ids)
+{
+	path_owner_ids = p_path_owner_ids;
+}
+
+const Vector<int64_t>& NavigationPathQueryResult3D::get_path_owner_ids() const
+{
+	return path_owner_ids;
+}
+
+void NavigationPathQueryResult3D::set_path_length(float p_length) { path_length = p_length; }
+
+float NavigationPathQueryResult3D::get_path_length() const { return path_length; }
+
+void NavigationPathQueryResult3D::reset() {}
+
+////////////////////////////////////////////////////////////////////////////
+// NavigationServer3D
+
+bool NavigationServer3D::get_debug_enabled() { return data->debug_enabled; }
+
+#ifdef DEBUG_ENABLED
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_face_material()
+{
+	if (data->debug_navigation_geometry_face_material.is_valid()) {
+		return data->debug_navigation_geometry_face_material;
+	}
+
+	Ref<StandardMaterial3D> face_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	face_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	face_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+	face_material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
+	data->debug_navigation_geometry_face_material = face_material;
+
+	return data->debug_navigation_geometry_face_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_edge_material()
+{
+	if (data->debug_navigation_geometry_edge_material.is_valid()) {
+		return data->debug_navigation_geometry_edge_material;
+	}
+
+	Ref<StandardMaterial3D> line_material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	line_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	data->debug_navigation_geometry_edge_material = line_material;
+
+	return data->debug_navigation_geometry_edge_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_face_disabled_material()
+{
+	if (data->debug_navigation_geometry_face_disabled_material.is_valid()) {
+		return data->debug_navigation_geometry_face_disabled_material;
+	}
+
+	Ref<StandardMaterial3D> face_disabled_material =
+		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	face_disabled_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	face_disabled_material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+
+	data->debug_navigation_geometry_face_disabled_material = face_disabled_material;
+
+	return data->debug_navigation_geometry_face_disabled_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_geometry_edge_disabled_material()
+{
+	if (data->debug_navigation_geometry_edge_disabled_material.is_valid()) {
+		return data->debug_navigation_geometry_edge_disabled_material;
+	}
+
+	Ref<StandardMaterial3D> line_disabled_material =
+		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	line_disabled_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+
+	data->debug_navigation_geometry_edge_disabled_material = line_disabled_material;
+
+	return data->debug_navigation_geometry_edge_disabled_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_edge_connections_material()
+{
+	if (data->debug_navigation_edge_connections_material.is_valid()) {
+		return data->debug_navigation_edge_connections_material;
+	}
+
+	Ref<StandardMaterial3D> edge_connections_material =
+		Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	edge_connections_material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	edge_connections_material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
+
+	data->debug_navigation_edge_connections_material = edge_connections_material;
+
+	return data->debug_navigation_edge_connections_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_link_connections_material()
+{
+	if (data->debug_navigation_link_connections_material.is_valid()) {
+		return data->debug_navigation_link_connections_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
+
+	data->debug_navigation_link_connections_material = material;
+	return data->debug_navigation_link_connections_material;
+}
+
+Ref<StandardMaterial3D>
+NavigationServer3D::get_debug_navigation_link_connections_disabled_material()
+{
+	if (data->debug_navigation_link_connections_disabled_material.is_valid()) {
+		return data->debug_navigation_link_connections_disabled_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
+
+	data->debug_navigation_link_connections_disabled_material = material;
+	return data->debug_navigation_link_connections_disabled_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_agent_path_line_material()
+{
+	if (data->debug_navigation_agent_path_line_material.is_valid()) {
+		return data->debug_navigation_agent_path_line_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+
+	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
+
+	data->debug_navigation_agent_path_line_material = material;
+	return data->debug_navigation_agent_path_line_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_agent_path_point_material()
+{
+	if (data->debug_navigation_agent_path_point_material.is_valid()) {
+		return data->debug_navigation_agent_path_point_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_point_size(data->debug_navigation_agent_path_point_size);
+	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MAX - 2);
+
+	data->debug_navigation_agent_path_point_material = material;
+	return data->debug_navigation_agent_path_point_material;
+}
+
+Ref<StandardMaterial3D> NavigationServer3D::get_debug_navigation_avoidance_agents_radius_material()
+{
+	if (data->debug_navigation_avoidance_agents_radius_material.is_valid()) {
+		return data->debug_navigation_avoidance_agents_radius_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
+	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
+
+	data->debug_navigation_avoidance_agents_radius_material = material;
+	return data->debug_navigation_avoidance_agents_radius_material;
+}
+
+Ref<StandardMaterial3D>
+NavigationServer3D::get_debug_navigation_avoidance_obstacles_radius_material()
+{
+	if (data->debug_navigation_avoidance_obstacles_radius_material.is_valid()) {
+		return data->debug_navigation_avoidance_obstacles_radius_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
+	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
+
+	data->debug_navigation_avoidance_obstacles_radius_material = material;
+	return data->debug_navigation_avoidance_obstacles_radius_material;
+}
+
+Ref<StandardMaterial3D>
+NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_face_material()
+{
+	if (data->debug_navigation_avoidance_static_obstacle_pushin_face_material.is_valid()) {
+		return data->debug_navigation_avoidance_static_obstacle_pushin_face_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
+	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
+
+	data->debug_navigation_avoidance_static_obstacle_pushin_face_material = material;
+	return data->debug_navigation_avoidance_static_obstacle_pushin_face_material;
+}
+
+Ref<StandardMaterial3D>
+NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_face_material()
+{
+	if (data->debug_navigation_avoidance_static_obstacle_pushout_face_material.is_valid()) {
+		return data->debug_navigation_avoidance_static_obstacle_pushout_face_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+	material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+	material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
+	material->set_render_priority(StandardMaterial3D::RENDER_PRIORITY_MIN + 2);
+
+	data->debug_navigation_avoidance_static_obstacle_pushout_face_material = material;
+	return data->debug_navigation_avoidance_static_obstacle_pushout_face_material;
+}
+
+Ref<StandardMaterial3D>
+NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_edge_material()
+{
+	if (data->debug_navigation_avoidance_static_obstacle_pushin_edge_material.is_valid()) {
+		return data->debug_navigation_avoidance_static_obstacle_pushin_edge_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+
+	data->debug_navigation_avoidance_static_obstacle_pushin_edge_material = material;
+	return data->debug_navigation_avoidance_static_obstacle_pushin_edge_material;
+}
+
+Ref<StandardMaterial3D>
+NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_edge_material()
+{
+	if (data->debug_navigation_avoidance_static_obstacle_pushout_edge_material.is_valid()) {
+		return data->debug_navigation_avoidance_static_obstacle_pushout_edge_material;
+	}
+
+	Ref<StandardMaterial3D> material = Ref<StandardMaterial3D>(memnew(StandardMaterial3D));
+	material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
+
+	data->debug_navigation_avoidance_static_obstacle_pushout_edge_material = material;
+	return data->debug_navigation_avoidance_static_obstacle_pushout_edge_material;
+}
+
+void NavigationServer3D::set_debug_navigation_edge_connection_color(const Color& p_color)
+{
+	data->debug_navigation_edge_connection_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_edge_connection_color()
+{
+	return data->debug_navigation_edge_connection_color;
+}
+
+void NavigationServer3D::set_debug_navigation_geometry_edge_color(const Color& p_color)
+{
+	data->debug_navigation_geometry_edge_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_geometry_edge_color()
+{
+	return data->debug_navigation_geometry_edge_color;
+}
+
+void NavigationServer3D::set_debug_navigation_geometry_face_color(const Color& p_color)
+{
+	data->debug_navigation_geometry_face_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_geometry_face_color()
+{
+	return data->debug_navigation_geometry_face_color;
+}
+
+void NavigationServer3D::set_debug_navigation_geometry_edge_disabled_color(const Color& p_color)
+{
+	data->debug_navigation_geometry_edge_disabled_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_geometry_edge_disabled_color()
+{
+	return data->debug_navigation_geometry_edge_disabled_color;
+}
+
+void NavigationServer3D::set_debug_navigation_geometry_face_disabled_color(const Color& p_color)
+{
+	data->debug_navigation_geometry_face_disabled_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_geometry_face_disabled_color()
+{
+	return data->debug_navigation_geometry_face_disabled_color;
+}
+
+void NavigationServer3D::set_debug_navigation_link_connection_color(const Color& p_color)
+{
+	data->debug_navigation_link_connection_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_link_connection_color()
+{
+	return data->debug_navigation_link_connection_color;
+}
+
+void NavigationServer3D::set_debug_navigation_link_connection_disabled_color(const Color& p_color)
+{
+	data->debug_navigation_link_connection_disabled_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_link_connection_disabled_color()
+{
+	return data->debug_navigation_link_connection_disabled_color;
+}
+
+void NavigationServer3D::set_debug_navigation_agent_path_point_size(real_t p_point_size)
+{
+	data->debug_navigation_agent_path_point_size = MAX(0.1, p_point_size);
+	if (data->debug_navigation_agent_path_point_material.is_valid()) {
+		data->debug_navigation_agent_path_point_material->set_point_size(
+			data->debug_navigation_agent_path_point_size);
+	}
+}
+
+real_t NavigationServer3D::get_debug_navigation_agent_path_point_size()
+{
+	return data->debug_navigation_agent_path_point_size;
+}
+
+void NavigationServer3D::set_debug_navigation_agent_path_color(const Color& p_color)
+{
+	data->debug_navigation_agent_path_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_agent_path_color()
+{
+	return data->debug_navigation_agent_path_color;
+}
+
+bool NavigationServer3D::get_debug_navigation_enable_edge_connections()
+{
+	return data->debug_navigation_enable_edge_connections;
+}
+
+void NavigationServer3D::set_debug_navigation_enable_edge_connections_xray(const bool p_value)
+{
+	data->debug_navigation_enable_edge_connections_xray = p_value;
+}
+
+bool NavigationServer3D::get_debug_navigation_enable_edge_connections_xray()
+{
+	return data->debug_navigation_enable_edge_connections_xray;
+}
+
+bool NavigationServer3D::get_debug_navigation_enable_edge_lines()
+{
+	return data->debug_navigation_enable_edge_lines;
+}
+
+void NavigationServer3D::set_debug_navigation_enable_edge_lines_xray(const bool p_value)
+{
+	data->debug_navigation_enable_edge_lines_xray = p_value;
+}
+
+bool NavigationServer3D::get_debug_navigation_enable_edge_lines_xray()
+{
+	return data->debug_navigation_enable_edge_lines_xray;
+}
+
+bool NavigationServer3D::get_debug_navigation_enable_geometry_face_random_color()
+{
+	return data->debug_navigation_enable_geometry_face_random_color;
+}
+
+bool NavigationServer3D::get_debug_navigation_enable_link_connections()
+{
+	return data->debug_navigation_enable_link_connections;
+}
+
+void NavigationServer3D::set_debug_navigation_enable_link_connections_xray(const bool p_value)
+{
+	data->debug_navigation_enable_link_connections_xray = p_value;
+}
+
+bool NavigationServer3D::get_debug_navigation_enable_link_connections_xray()
+{
+	return data->debug_navigation_enable_link_connections_xray;
+}
+
+bool NavigationServer3D::get_debug_navigation_avoidance_enable_agents_radius()
+{
+	return data->debug_navigation_avoidance_enable_agents_radius;
+}
+
+bool NavigationServer3D::get_debug_navigation_avoidance_enable_obstacles_radius()
+{
+	return data->debug_navigation_avoidance_enable_obstacles_radius;
+}
+
+bool NavigationServer3D::get_debug_navigation_avoidance_enable_obstacles_static()
+{
+	return data->debug_navigation_avoidance_enable_obstacles_static;
+}
+
+void NavigationServer3D::set_debug_navigation_avoidance_agents_radius_color(const Color& p_color)
+{
+	data->debug_navigation_avoidance_agents_radius_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_avoidance_agents_radius_color()
+{
+	return data->debug_navigation_avoidance_agents_radius_color;
+}
+
+void NavigationServer3D::set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color)
+{
+	data->debug_navigation_avoidance_obstacles_radius_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_avoidance_obstacles_radius_color()
+{
+	return data->debug_navigation_avoidance_obstacles_radius_color;
+}
+
+void NavigationServer3D::set_debug_navigation_avoidance_static_obstacle_pushin_face_color(
+	const Color& p_color)
+{
+	data->debug_navigation_avoidance_static_obstacle_pushin_face_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_face_color()
+{
+	return data->debug_navigation_avoidance_static_obstacle_pushin_face_color;
+}
+
+void NavigationServer3D::set_debug_navigation_avoidance_static_obstacle_pushout_face_color(
+	const Color& p_color)
+{
+	data->debug_navigation_avoidance_static_obstacle_pushout_face_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_face_color()
+{
+	return data->debug_navigation_avoidance_static_obstacle_pushout_face_color;
+}
+
+void NavigationServer3D::set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(
+	const Color& p_color)
+{
+	data->debug_navigation_avoidance_static_obstacle_pushin_edge_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushin_edge_color()
+{
+	return data->debug_navigation_avoidance_static_obstacle_pushin_edge_color;
+}
+
+void NavigationServer3D::set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(
+	const Color& p_color)
+{
+	data->debug_navigation_avoidance_static_obstacle_pushout_edge_color = p_color;
+}
+
+Color NavigationServer3D::get_debug_navigation_avoidance_static_obstacle_pushout_edge_color()
+{
+	return data->debug_navigation_avoidance_static_obstacle_pushout_edge_color;
+}
+
+bool NavigationServer3D::get_debug_navigation_enable_agent_paths()
+{
+	return data->debug_navigation_enable_agent_paths;
+}
+
+void NavigationServer3D::set_debug_navigation_enable_agent_paths_xray(const bool p_value)
+{
+	data->debug_navigation_enable_agent_paths_xray = p_value;
+}
+
+bool NavigationServer3D::get_debug_navigation_enable_agent_paths_xray()
+{
+	return data->debug_navigation_enable_agent_paths_xray;
+}
+
+bool NavigationServer3D::get_debug_navigation_enabled() { return data->debug_navigation_enabled; }
+
+bool NavigationServer3D::get_debug_avoidance_enabled() { return data->debug_avoidance_enabled; }
+
+#endif // DEBUG_ENABLED
+
+struct NavigationServer3D::NavMap
+{
+};
+struct NavigationServer3D::NavRegion
+{
+};
+struct NavigationServer3D::NavLink
+{
+};
+struct NavigationServer3D::NavAgent
+{
+};
+struct NavigationServer3D::NavObstacle
+{
+};
+
+void NavigationServer3D::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+}
+
+void NavigationServer3D::finalize()
+{
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
+void NavigationServer3D::set_active(bool p_active) {}
+
+void NavigationServer3D::sync() {}
+
+void NavigationServer3D::process(double p_delta_time) {}
+
+void NavigationServer3D::physics_process(double p_delta_time) {}
+
+void NavigationServer3D::free_rid(RID p_rid) {}
+
+int NavigationServer3D::get_process_info(ProcessInfo p_info) { return 0; }
+
+RID NavigationServer3D::map_create() { return RID(); }
+
+RID NavigationServer3D::region_create() { return RID(); }
+
+void NavigationServer3D::region_set_map(RID p_region, RID p_map) {}
+
+void NavigationServer3D::region_set_transform(RID p_region, Transform3D p_transform) {}
+
+void NavigationServer3D::region_set_enabled(RID p_region, bool p_enabled) {}
+
+void NavigationServer3D::region_set_use_edge_connections(RID p_region, bool p_enabled) {}
+
+void NavigationServer3D::region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers) {}
+
+void NavigationServer3D::region_set_enter_cost(RID p_region, real_t p_enter_cost) {}
+
+void NavigationServer3D::region_set_travel_cost(RID p_region, real_t p_travel_cost) {}
+
+RID NavigationServer3D::link_create() { return RID(); }
+
+void NavigationServer3D::link_set_map(RID p_link, RID p_map) {}
+
+void NavigationServer3D::link_set_start_position(RID p_link, Vector3 p_position) {}
+
+void NavigationServer3D::link_set_end_position(RID p_link, Vector3 p_position) {}
+
+void NavigationServer3D::link_set_enabled(RID p_link, bool p_enabled) {}
+
+void NavigationServer3D::link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers) {}
+
+void NavigationServer3D::link_set_enter_cost(RID p_link, real_t p_enter_cost) {}
+
+void NavigationServer3D::link_set_travel_cost(RID p_link, real_t p_travel_cost) {}
+
+RID NavigationServer3D::obstacle_create() { return RID(); }
+
+void NavigationServer3D::obstacle_set_map(RID p_obstacle, RID p_map) {}
+
+void NavigationServer3D::obstacle_set_use_3d_avoidance(RID p_obstacle, bool p_enabled) {}
+
+void NavigationServer3D::obstacle_set_position(RID p_obstacle, Vector3 p_position) {}
+
+void NavigationServer3D::obstacle_set_radius(RID p_obstacle, real_t p_radius) {}
+
+void NavigationServer3D::obstacle_set_vertices(RID p_obstacle, const Vector<Vector3>& p_vertices) {}
+
+void NavigationServer3D::obstacle_set_height(RID p_obstacle, real_t p_height) {}
+
+void NavigationServer3D::obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled) {}
+
+void NavigationServer3D::obstacle_set_velocity(RID p_obstacle, Vector3 p_velocity) {}
+
+void NavigationServer3D::obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers) {}
+
+void NavigationServer3D::obstacle_set_paused(RID p_obstacle, bool p_paused) {}
+
+RID NavigationServer3D::agent_create() { return RID(); }
+
+void NavigationServer3D::agent_set_map(RID p_agent, RID p_map) {}
+
+void NavigationServer3D::agent_set_position(RID p_agent, Vector3 p_position) {}
+
+void NavigationServer3D::agent_set_velocity(RID p_agent, Vector3 p_velocity) {}
+
+void NavigationServer3D::agent_set_velocity_forced(RID p_agent, Vector3 p_velocity) {}
+
+void NavigationServer3D::agent_set_radius(RID p_agent, real_t p_radius) {}
+
+void NavigationServer3D::agent_set_height(RID p_agent, real_t p_height) {}
+
+void NavigationServer3D::agent_set_neighbor_distance(RID p_agent, real_t p_distance) {}
+
+void NavigationServer3D::agent_set_max_neighbors(RID p_agent, int p_count) {}
+
+void NavigationServer3D::agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon) {}
+
+void NavigationServer3D::agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon) {}
+
+void NavigationServer3D::agent_set_max_speed(RID p_agent, real_t p_max_speed) {}
+
+void NavigationServer3D::agent_set_avoidance_layers(RID p_agent, uint32_t p_layers) {}
+
+void NavigationServer3D::agent_set_avoidance_mask(RID p_agent, uint32_t p_mask) {}
+
+void NavigationServer3D::agent_set_avoidance_priority(RID p_agent, real_t p_priority) {}
+
+void NavigationServer3D::agent_set_paused(RID p_agent, bool p_paused) {}
+#endif // !defined(NAVIGATION_3D_DISABLED)
+
+
+// --- Merged from servers/xr/xr_server.cpp ---
+#if !defined(XR_DISABLED)
+#include "core/config/project_settings.h"
+#include "servers/rendering/renderer.h"
+#include "servers/xr/xr_interface.h"
+#include "servers/xr/xr_tracker.h"
+// Inlined servers/xr/xr_server.compat.inc
+#ifndef DISABLE_DEPRECATED
+
+#include "servers/xr/xr_server.h"
+
+void XRServer::_add_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker)
+{
+	add_tracker(p_tracker);
+}
+
+void XRServer::_remove_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker)
+{
+	remove_tracker(p_tracker);
+}
+
+Ref<XRTracker> XRServer::_get_tracker_bind_compat_90645(const String& p_name)
+{
+	return get_tracker(p_name);
+}
+
+void XRServer::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
+
+
+
+#include "servers/xr/xr_server.h"
+
+XRServer::XRMode XRServer::xr_mode = XRMODE_DEFAULT;
+
+void XRServer::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+}
+
+void XRServer::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+XRServer::XRMode XRServer::get_xr_mode() { return xr_mode; }
+
+void XRServer::set_xr_mode(XRServer::XRMode p_mode) { xr_mode = p_mode; }
+
+double XRServer::get_world_scale()
+{
+	ERR_FAIL_NULL_V(data, 1.0);
+	if (Renderer::data && Renderer::is_on_render_thread()) {
+		// Return the value with which we're currently rendering,
+		// if we're on the render thread
+		return data->render_state.world_scale;
+	}
+	else {
+		// Return our current value
+		return data->world_scale;
+	}
+}
+
+void XRServer::set_world_scale(double p_world_scale)
+{
+	ERR_FAIL_NULL(data);
+	if (p_world_scale < 0.01) {
+		p_world_scale = 0.01;
+	}
+	else if (p_world_scale > 1000.0) {
+		p_world_scale = 1000.0;
+	}
+
+	data->world_scale = p_world_scale;
+	set_render_world_scale(data->world_scale);
+}
+
+void XRServer::_set_render_world_scale(double p_world_scale)
+{
+	// Must be called from rendering thread!
+	ERR_NOT_ON_RENDER_THREAD;
+
+	ERR_FAIL_NULL(data);
+	data->render_state.world_scale = p_world_scale;
+}
+
+void XRServer::_set_render_world_origin(const Transform3D& p_world_origin)
+{
+	// Must be called from rendering thread!
+	ERR_NOT_ON_RENDER_THREAD;
+
+	ERR_FAIL_NULL(data);
+	data->render_state.world_origin = p_world_origin;
+}
+
+void XRServer::_set_render_reference_frame(const Transform3D& p_reference_frame)
+{
+	// Must be called from rendering thread!
+	ERR_NOT_ON_RENDER_THREAD;
+
+	ERR_FAIL_NULL(data);
+	data->render_state.reference_frame = p_reference_frame;
+}
+
+Transform3D XRServer::get_reference_frame() { return Transform3D(); }
+
+void XRServer::set_camera_locked_to_origin(bool p_enable)
+{
+	ERR_FAIL_NULL(data);
+	data->camera_locked_to_origin = p_enable;
+}
+
+Ref<XRInterface> XRServer::get_primary_interface()
+{
+	Ref<XRInterface> xri = memnew(XRInterface);
+	return xri;
+}
+
+void XRServer::remove_tracker(const Ref<XRTracker>& p_tracker) {}
+
+void XRServer::set_primary_interface(const Ref<XRInterface>& p_primary_interface) {}
+
+void XRServer::add_tracker(const Ref<XRTracker>& p_tracker) {}
+
+Ref<XRTracker> XRServer::get_tracker(const String& p_name)
+{
+	Ref<XRTracker> xpt = memnew(XRTracker);
+	return xpt;
+}
+
+void XRServer::set_render_world_scale(double p_scale) {}
+
+void XRServer::remove_interface(const Ref<XRInterface>& p_interface) {}
+
+Transform3D XRServer::get_world_origin() { return Transform3D(); }
+
+void XRServer::set_world_origin(const Transform3D& p_world_origin) {}
+
+void XRServer::_process() {}
+
+void XRServer::clear_reference_frame() {}
+
+void XRServer::add_interface(const Ref<XRInterface>& p_interface) {}
+
+// ============================================================================
+// Merged from servers/xr/xr_interface.cpp
+// ============================================================================
+
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/rendering_device.h"
+#include "servers/xr/xr_server.h"
+#include "servers/xr/xr_interface.h"
+
+bool XRInterface::is_primary()
+{
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), false);
+
+	return XRServer::get_primary_interface() == this;
+}
+
+void XRInterface::set_primary(bool p_primary)
+{
+	ERR_FAIL_COND(!XRServer::is_initialized());
+
+	if (p_primary) {
+		ERR_FAIL_COND(!is_initialized());
+
+		XRServer::set_primary_interface(this);
+	}
+	else if (XRServer::get_primary_interface() == this) {
+		XRServer::set_primary_interface(nullptr);
+	}
+}
+
+// query if this interface supports this play area mode
+bool XRInterface::supports_play_area_mode(XRInterface::PlayAreaMode p_mode)
+{
+	return p_mode == XR_PLAY_AREA_UNKNOWN;
+}
+
+// get the current play area mode
+XRInterface::PlayAreaMode XRInterface::get_play_area_mode() const { return XR_PLAY_AREA_UNKNOWN; }
+
+// change the play area mode, note that this should return false if the mode is not available
+bool XRInterface::set_play_area_mode(XRInterface::PlayAreaMode p_mode)
+{
+	return p_mode == XR_PLAY_AREA_UNKNOWN;
+}
+
+// if available, returns an array of vectors denoting the play area the player can move around in
+PackedVector3Array XRInterface::get_play_area() const
+{
+	// Return an empty array by default.
+	// Note implementation is responsible for applying our reference frame and world scale to the
+	// raw data. `play_area_changed` should be emitted if play area data is available and either the
+	// reference frame or world scale changes.
+	return PackedVector3Array();
+}
+
+/** these will only be implemented on AR interfaces, so we want dummies for VR **/
+bool XRInterface::get_anchor_detection_is_enabled() const { return false; }
+
+void XRInterface::set_anchor_detection_is_enabled(bool p_enable) {}
+
+int XRInterface::get_camera_feed_id() { return 0; }
+
+RID XRInterface::get_vrs_texture() { return RID(); }
+
+/** these are optional, so we want dummies **/
+
+RID XRInterface::get_color_texture() { return RID(); }
+
+RID XRInterface::get_depth_texture() { return RID(); }
+
+RID XRInterface::get_velocity_texture() { return RID(); }
+
+RID XRInterface::get_velocity_depth_texture() { return RID(); }
+
+Size2i XRInterface::get_velocity_target_size() { return Size2i(); }
+
+Rect2i XRInterface::get_render_region() { return Rect2i(); }
+
+PackedStringArray XRInterface::get_suggested_tracker_names() const
+{
+	PackedStringArray arr;
+
+	return arr;
+}
+
+PackedStringArray XRInterface::get_suggested_pose_names(const String& p_tracker_name) const
+{
+	PackedStringArray arr;
+
+	return arr;
+}
+
+XRInterface::TrackingStatus XRInterface::get_tracking_status() const { return XR_UNKNOWN_TRACKING; }
+
+void XRInterface::trigger_haptic_pulse(const String& p_action_name,
+	const String& p_tracker_name, double p_frequency, double p_amplitude, double p_duration_sec,
+	double p_delay_sec)
+{
+}
+
+String XRInterface::get_name() const { return String(); }
+
+uint32_t XRInterface::get_capabilities() const { return 0; }
+
+bool XRInterface::is_initialized() const { return true; }
+
+bool XRInterface::initialize() { return true; }
+
+void XRInterface::uninitialize() {}
+
+Transform3D XRInterface::get_camera_transform() { return Transform3D(); }
+
+void XRInterface::process() {}
+
+Size2 XRInterface::get_render_target_size() { return Size2(); }
+
+uint32_t XRInterface::get_view_count() { return 0; }
+
+Transform3D XRInterface::get_transform_for_view(uint32_t p_view, const Transform3D& p_cam_transform)
+{
+	return Transform3D();
+}
+
+Projection XRInterface::get_projection_for_view(
+	uint32_t p_view, double p_aspect, double p_z_near, double p_z_far)
+{
+	return Projection();
+}
+
+Vector<RenderingServerTypes::BlitToScreen> XRInterface::post_draw_viewport(
+	RID p_render_target, const Rect2& p_screen_rect)
+{
+	return Vector<RenderingServerTypes::BlitToScreen>();
+}
+
+// XRVRS
+
+XRVRS::~XRVRS()
+{
+	if (vrs_texture.is_valid()) {
+		ERR_FAIL_NULL(Renderer::data);
+		Renderer::free_rid(vrs_texture);
+		vrs_texture = RID();
+	}
+}
+
+float XRVRS::get_vrs_min_radius() const { return vrs_min_radius; }
+
+void XRVRS::set_vrs_min_radius(float p_vrs_min_radius)
+{
+	if (p_vrs_min_radius < 1.0) {
+		WARN_PRINT_ONCE("VRS minimum radius can not be set below 1.0");
+		vrs_min_radius = 1.0;
+	}
+	else if (p_vrs_min_radius > 100.0) {
+		WARN_PRINT_ONCE("VRS minimum radius can not be set above 100.0");
+		vrs_min_radius = 100.0;
+	}
+	else {
+		vrs_min_radius = p_vrs_min_radius;
+		vrs_dirty = true;
+	}
+}
+
+float XRVRS::get_vrs_strength() const { return vrs_strength; }
+
+void XRVRS::set_vrs_strength(float p_vrs_strength)
+{
+	if (p_vrs_strength < 0.1) {
+		WARN_PRINT_ONCE("VRS strength can not be set below 0.1");
+		vrs_strength = 0.1;
+	}
+	else if (p_vrs_strength > 10.0) {
+		WARN_PRINT_ONCE("VRS strength can not be set above 10.0");
+		vrs_strength = 10.0;
+	}
+	else {
+		vrs_strength = p_vrs_strength;
+		vrs_dirty = true;
+	}
+}
+
+Rect2i XRVRS::get_vrs_render_region() const { return vrs_render_region; }
+
+void XRVRS::set_vrs_render_region(const Rect2i& p_vrs_render_region)
+{
+	vrs_render_region = p_vrs_render_region;
+	vrs_dirty = true;
+}
+
+RID XRVRS::make_vrs_texture(const Size2& p_target_size, const Vector<Vector2>& p_eye_foci)
+{
+	ERR_FAIL_COND_V(p_eye_foci.is_empty(), RID());
+
+	Size2i texel_size = RD::vrs_get_texel_size();
+
+	// Should return sensible data or graphics API does not support VRS.
+	ERR_FAIL_COND_V(texel_size.x < 1 || texel_size.y < 1, RID());
+
+	Size2 vrs_size =
+		Size2(0.5 + p_target_size.x / texel_size.x, 0.5 + p_target_size.y / texel_size.y).floor();
+
+	// Make sure we have at least one pixel.
+	vrs_size = vrs_size.maxf(1.0);
+
+	float max_radius =
+		0.5 * MIN(vrs_size.x, vrs_size.y); // Maximum radius that fits inside of our image
+	float min_radius =
+		vrs_min_radius * max_radius / 100.0; // Minimum radius as a percentage of our size
+	real_t outer_radius = MAX(1.0, (max_radius - min_radius) / vrs_strength);
+	Size2 vrs_sizei = vrs_size;
+
+	// Our density map is now unified, with a value of (0.0, 0.0) meaning a 1x1 texel size and
+	// (1.0, 1.0) an max texel size. For our standard VRS extension on Vulkan this means a maximum
+	// of 8x8. For the density map extension this scales depending on the max texel size.
+
+	if (target_size != vrs_sizei || eye_foci != p_eye_foci || vrs_dirty) {
+		// Out with the old.
+		if (vrs_texture.is_valid()) {
+			Renderer::free_rid(vrs_texture);
+			vrs_texture = RID();
+		}
+
+		// In with the new.
+		Vector<Ref<Image>> images;
+		target_size = vrs_sizei;
+		eye_foci = p_eye_foci;
+
+		Size2 region_ratio = Size2(1.0, 1.0);
+		Point2i region_offset;
+		if (vrs_render_region != Rect2i()) {
+			region_ratio = (Size2)vrs_render_region.size / p_target_size;
+			region_offset = (Point2)vrs_render_region.position / p_target_size * vrs_sizei;
+		}
+
+		for (int i = 0; i < eye_foci.size() && i < RendererSceneRender::MAX_RENDER_VIEWS; i++) {
+			PackedByteArray data;
+			data.resize(vrs_sizei.x * vrs_sizei.y * 2);
+			uint8_t* data_ptr = data.ptrw();
+
+			Vector2i view_center;
+			view_center.x =
+				int(vrs_size.x * (eye_foci[i].x + 1.0) * region_ratio.x * 0.5) + region_offset.x;
+			view_center.y =
+				int(vrs_size.y * (-eye_foci[i].y + 1.0) * region_ratio.y * 0.5) + region_offset.y;
+
+			int d = 0;
+			for (int y = 0; y < vrs_sizei.y; y++) {
+				for (int x = 0; x < vrs_sizei.x; x++) {
+					Vector2 offset = Vector2(x - view_center.x, y - view_center.y) / region_ratio;
+					real_t density = MAX(offset.length() - min_radius, 0.0) / outer_radius;
+					data_ptr[d++] = CLAMP(255.0 * density, 0, 255);
+					data_ptr[d++] = CLAMP(255.0 * density, 0, 255);
+				}
+			}
+			images.push_back(
+				Image::create_from_data(vrs_sizei.x, vrs_sizei.y, false, Image::FORMAT_RG8, data));
+		}
+
+		if (images.size() == 1) {
+			vrs_texture = Renderer::texture_2d_create(images[0]);
+		}
+		else {
+			vrs_texture = Renderer::texture_2d_layered_create(
+				images, RSE::TEXTURE_LAYERED_2D_ARRAY);
+		}
+
+		vrs_dirty = false;
+	}
+
+	return vrs_texture;
+}
+
+
+
+// ============================================================================
+// Merged from servers/xr/xr_tracker.cpp
+// ============================================================================
+
+#include "servers/xr/xr_tracker.h"
+
+// XRPose
+
+void XRPose::set_has_tracking_data(const bool p_has_tracking_data)
+{
+	has_tracking_data = p_has_tracking_data;
+}
+
+bool XRPose::get_has_tracking_data() const { return has_tracking_data; }
+
+void XRPose::set_name(const String& p_name) { name = p_name; }
+
+String XRPose::get_name() const { return name; }
+
+void XRPose::set_transform(const Transform3D p_transform) { transform = p_transform; }
+
+Transform3D XRPose::get_transform() const { return transform; }
+
+Transform3D XRPose::get_adjusted_transform() const
+{
+	Transform3D adjusted_transform = transform;
+
+	ERR_FAIL_COND_V(!XRServer::is_initialized(), transform);
+
+	// apply world scale
+	adjusted_transform.origin *= XRServer::get_world_scale();
+
+	// apply reference frame
+	adjusted_transform = XRServer::get_reference_frame() * adjusted_transform;
+
+	return adjusted_transform;
+}
+
+void XRPose::set_linear_velocity(const Vector3 p_velocity) { linear_velocity = p_velocity; }
+
+Vector3 XRPose::get_linear_velocity() const { return linear_velocity; }
+
+void XRPose::set_angular_velocity(const Vector3 p_velocity) { angular_velocity = p_velocity; }
+
+Vector3 XRPose::get_angular_velocity() const { return angular_velocity; }
+
+void XRPose::set_tracking_confidence(const XRPose::TrackingConfidence p_tracking_confidence)
+{
+	tracking_confidence = p_tracking_confidence;
+}
+
+XRPose::TrackingConfidence XRPose::get_tracking_confidence() const { return tracking_confidence; }
+
+// XRTracker
+
+XRTracker::BodyData* XRTracker::_ensure_body_data()
+{
+	if (!body_data) {
+		body_data = memnew(BodyData);
+	}
+	return body_data;
+}
+
+XRTracker::HandData* XRTracker::_ensure_hand_data()
+{
+	if (!hand_data) {
+		hand_data = memnew(HandData);
+	}
+	return hand_data;
+}
+
+void XRTracker::set_tracker_type(XRServer::TrackerType p_type)
+{
+	type = p_type;
+	if (type == XRServer::TRACKER_BODY) {
+		_ensure_body_data();
+	}
+	else if (type == XRServer::TRACKER_HAND) {
+		_ensure_hand_data();
+		if (tracker_hand == TRACKER_HAND_UNKNOWN) {
+			tracker_hand = TRACKER_HAND_LEFT;
+		}
+	}
+}
+
+XRServer::TrackerType XRTracker::get_tracker_type() const { return type; }
+
+void XRTracker::set_tracker_name(const String& p_name)
+{
+	// Note: this should not be changed after the tracker is registered with the XRServer!
+	name = p_name;
+}
+
+String XRTracker::get_tracker_name() const { return name; }
+
+void XRTracker::set_tracker_desc(const String& p_desc) { description = p_desc; }
+
+String XRTracker::get_tracker_desc() const { return description; }
+
+void XRTracker::set_tracker_profile(const String& p_profile) { profile = p_profile; }
+
+String XRTracker::get_tracker_profile() const { return profile; }
+
+XRTracker::TrackerHand XRTracker::get_tracker_hand() const { return tracker_hand; }
+
+void XRTracker::set_tracker_hand(const XRTracker::TrackerHand p_hand)
+{
+	ERR_FAIL_INDEX(p_hand, TRACKER_HAND_MAX);
+	if (type == XRServer::TRACKER_BODY) {
+		ERR_FAIL_COND_MSG(p_hand != TRACKER_HAND_UNKNOWN, "Body tracker cannot specify hand.");
+	}
+	else if (type == XRServer::TRACKER_HAND) {
+		ERR_FAIL_COND_MSG(p_hand != TRACKER_HAND_LEFT && p_hand != TRACKER_HAND_RIGHT,
+			"Hand tracker must specify hand.");
+	}
+	tracker_hand = p_hand;
+}
+
+void XRTracker::set_has_tracking_data(bool p_has_tracking_data)
+{
+	has_tracking_data = p_has_tracking_data;
+}
+
+bool XRTracker::get_has_tracking_data() const { return has_tracking_data; }
+
+bool XRTracker::has_pose(const String& p_action_name) const
+{
+	return poses.has(p_action_name);
+}
+
+Ref<XRPose> XRTracker::get_pose(const String& p_action_name) const
+{
+	Ref<XRPose> pose;
+	if (poses.has(p_action_name)) {
+		pose = poses[p_action_name];
+	}
+	return pose;
+}
+
+void XRTracker::invalidate_pose(const String& p_action_name)
+{
+	if (poses.has(p_action_name)) {
+		poses[p_action_name]->set_has_tracking_data(false);
+	}
+}
+
+void XRTracker::set_pose(const String& p_action_name, const Transform3D& p_transform,
+	const Vector3& p_linear_velocity, const Vector3& p_angular_velocity,
+	const XRPose::TrackingConfidence p_tracking_confidence)
+{
+	Ref<XRPose> new_pose;
+	if (poses.has(p_action_name)) {
+		new_pose = poses[p_action_name];
+	}
+	else {
+		new_pose.instantiate();
+		new_pose->set_name(p_action_name);
+		poses[p_action_name] = new_pose;
+	}
+
+	new_pose->set_has_tracking_data(p_tracking_confidence != XRPose::XR_TRACKING_CONFIDENCE_NONE);
+	new_pose->set_transform(p_transform);
+	new_pose->set_linear_velocity(p_linear_velocity);
+	new_pose->set_angular_velocity(p_angular_velocity);
+	new_pose->set_tracking_confidence(p_tracking_confidence);
+}
+
+void XRTracker::set_input(const String& p_action_name, bool p_value)
+{
+	InputValue val;
+	val.type = InputValue::INPUT_BOOL;
+	val.bool_val = p_value;
+	inputs[p_action_name] = val;
+}
+
+void XRTracker::set_input(const String& p_action_name, float p_value)
+{
+	InputValue val;
+	val.type = InputValue::INPUT_FLOAT;
+	val.float_val = p_value;
+	inputs[p_action_name] = val;
+}
+
+void XRTracker::set_input(const String& p_action_name, const Vector2& p_value)
+{
+	InputValue val;
+	val.type = InputValue::INPUT_VECTOR2;
+	val.vec2_val.x = p_value.x;
+	val.vec2_val.y = p_value.y;
+	inputs[p_action_name] = val;
+}
+
+XRTracker::InputValue XRTracker::get_input(const String& p_action_name) const
+{
+	if (inputs.has(p_action_name)) {
+		return inputs[p_action_name];
+	}
+	return InputValue();
+}
+
+bool XRTracker::is_button_pressed(const String& p_action_name) const
+{
+	const InputValue* val = inputs.getptr(p_action_name);
+	if (!val) {
+		return false;
+	}
+	if (val->type == InputValue::INPUT_BOOL) {
+		return val->bool_val;
+	}
+	if (val->type == InputValue::INPUT_FLOAT) {
+		return val->float_val > 0.0f;
+	}
+	return false;
+}
+
+float XRTracker::get_input_float(const String& p_action_name) const
+{
+	const InputValue* val = inputs.getptr(p_action_name);
+	if (!val) {
+		return 0.0f;
+	}
+	if (val->type == InputValue::INPUT_FLOAT) {
+		return val->float_val;
+	}
+	if (val->type == InputValue::INPUT_BOOL) {
+		return val->bool_val ? 1.0f : 0.0f;
+	}
+	return 0.0f;
+}
+
+Vector2 XRTracker::get_input_vector2(const String& p_action_name) const
+{
+	const InputValue* val = inputs.getptr(p_action_name);
+	if (val && val->type == InputValue::INPUT_VECTOR2) {
+		return Vector2(val->vec2_val.x, val->vec2_val.y);
+	}
+	return Vector2();
+}
+
+void XRTracker::set_body_flags(uint32_t p_body_flags)
+{
+	_ensure_body_data()->body_flags = p_body_flags;
+}
+
+uint32_t XRTracker::get_body_flags() const
+{
+	return body_data ? body_data->body_flags : 0;
+}
+
+void XRTracker::set_joint_flags(Joint p_joint, uint32_t p_flags)
+{
+	ERR_FAIL_INDEX(p_joint, JOINT_MAX);
+	_ensure_body_data()->joint_flags[p_joint] = p_flags;
+}
+
+uint32_t XRTracker::get_joint_flags(Joint p_joint) const
+{
+	ERR_FAIL_INDEX_V(p_joint, JOINT_MAX, uint32_t());
+	return body_data ? body_data->joint_flags[p_joint] : 0;
+}
+
+void XRTracker::set_joint_transform(Joint p_joint, const Transform3D& p_transform)
+{
+	ERR_FAIL_INDEX(p_joint, JOINT_MAX);
+	_ensure_body_data()->joint_transforms[p_joint] = p_transform;
+}
+
+Transform3D XRTracker::get_joint_transform(Joint p_joint) const
+{
+	ERR_FAIL_INDEX_V(p_joint, JOINT_MAX, Transform3D());
+	return body_data ? body_data->joint_transforms[p_joint] : Transform3D();
+}
+
+void XRTracker::set_hand_tracking_source(HandTrackingSource p_source)
+{
+	_ensure_hand_data()->hand_tracking_source = p_source;
+}
+
+XRTracker::HandTrackingSource XRTracker::get_hand_tracking_source() const
+{
+	return hand_data ? hand_data->hand_tracking_source : HAND_TRACKING_SOURCE_UNKNOWN;
+}
+
+void XRTracker::set_hand_joint_flags(HandJoint p_joint, uint32_t p_flags)
+{
+	ERR_FAIL_INDEX(p_joint, HAND_JOINT_MAX);
+	_ensure_hand_data()->hand_joint_flags[p_joint] = p_flags;
+}
+
+uint32_t XRTracker::get_hand_joint_flags(HandJoint p_joint) const
+{
+	ERR_FAIL_INDEX_V(p_joint, HAND_JOINT_MAX, uint32_t());
+	return hand_data ? hand_data->hand_joint_flags[p_joint] : 0;
+}
+
+void XRTracker::set_hand_joint_transform(HandJoint p_joint, const Transform3D& p_transform)
+{
+	ERR_FAIL_INDEX(p_joint, HAND_JOINT_MAX);
+	_ensure_hand_data()->hand_joint_transforms[p_joint] = p_transform;
+}
+
+Transform3D XRTracker::get_hand_joint_transform(HandJoint p_joint) const
+{
+	ERR_FAIL_INDEX_V(p_joint, HAND_JOINT_MAX, Transform3D());
+	return hand_data ? hand_data->hand_joint_transforms[p_joint] : Transform3D();
+}
+
+void XRTracker::set_hand_joint_radius(HandJoint p_joint, float p_radius)
+{
+	ERR_FAIL_INDEX(p_joint, HAND_JOINT_MAX);
+	_ensure_hand_data()->hand_joint_radii[p_joint] = p_radius;
+}
+
+float XRTracker::get_hand_joint_radius(HandJoint p_joint) const
+{
+	ERR_FAIL_INDEX_V(p_joint, HAND_JOINT_MAX, 0.0f);
+	return hand_data ? hand_data->hand_joint_radii[p_joint] : 0.0f;
+}
+
+void XRTracker::set_hand_joint_linear_velocity(HandJoint p_joint, const Vector3& p_velocity)
+{
+	ERR_FAIL_INDEX(p_joint, HAND_JOINT_MAX);
+	_ensure_hand_data()->hand_joint_linear_velocities[p_joint] = p_velocity;
+}
+
+Vector3 XRTracker::get_hand_joint_linear_velocity(HandJoint p_joint) const
+{
+	ERR_FAIL_INDEX_V(p_joint, HAND_JOINT_MAX, Vector3());
+	return hand_data ? hand_data->hand_joint_linear_velocities[p_joint] : Vector3();
+}
+
+void XRTracker::set_hand_joint_angular_velocity(HandJoint p_joint, const Vector3& p_velocity)
+{
+	ERR_FAIL_INDEX(p_joint, HAND_JOINT_MAX);
+	_ensure_hand_data()->hand_joint_angular_velocities[p_joint] = p_velocity;
+}
+
+Vector3 XRTracker::get_hand_joint_angular_velocity(HandJoint p_joint) const
+{
+	ERR_FAIL_INDEX_V(p_joint, HAND_JOINT_MAX, Vector3());
+	return hand_data ? hand_data->hand_joint_angular_velocities[p_joint] : Vector3();
+}
+
+float XRTracker::get_blend_shape(BlendShapeEntry p_blend_shape) const
+{
+	ERR_FAIL_INDEX_V(p_blend_shape, FT_MAX, 0.0f);
+	if (blend_shapes.size() != FT_MAX) {
+		return 0.0f;
+	}
+	return blend_shapes[p_blend_shape];
+}
+
+void XRTracker::set_blend_shape(BlendShapeEntry p_blend_shape, float p_value)
+{
+	ERR_FAIL_INDEX(p_blend_shape, FT_MAX);
+	if (blend_shapes.size() != FT_MAX) {
+		blend_shapes.resize_initialized(FT_MAX);
+	}
+	blend_shapes.set(p_blend_shape, p_value);
+}
+
+PackedFloat32Array XRTracker::get_blend_shapes() const
+{
+	if (blend_shapes.size() == FT_MAX) {
+		return blend_shapes;
+	}
+	PackedFloat32Array data;
+	data.resize_initialized(FT_MAX);
+	return data;
+}
+
+void XRTracker::set_blend_shapes(const PackedFloat32Array& p_blend_shapes)
+{
+	ERR_FAIL_COND(p_blend_shapes.size() != FT_MAX);
+	blend_shapes = p_blend_shapes;
+}
+
+XRTracker::XRTracker(XRServer::TrackerType p_type)
+{
+	if (p_type != XRServer::TRACKER_UNKNOWN) {
+		set_tracker_type(p_type);
+	}
+}
+
+XRTracker::~XRTracker()
+{
+	if (body_data) {
+		memdelete(body_data);
+		body_data = nullptr;
+	}
+	if (hand_data) {
+		memdelete(hand_data);
+		hand_data = nullptr;
+	}
+}
+#endif // !defined(XR_DISABLED)

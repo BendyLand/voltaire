@@ -31,10 +31,10 @@
 
 #import "os_macos.h"
 
-#import "dir_access_macos.h"
+#import "platform/macos/os_macos.h"
 #import "display_server_macos.h"
-#import "godot_application.h"
-#import "godot_application_delegate.h"
+#import "platform/macos/os_macos.h"
+#import "platform/macos/os_macos.h"
 
 #ifdef TOOLS_ENABLED
 #import "display_server_macos_embedded.h"

@@ -34,7 +34,7 @@
 #include "core/io/resource.h"
 #include "core/io/stream_peer.h"
 #include "core/templates/rb_set.h"
-#include "scene/main/multiplayer_api.h"
+#include "scene/main/scene_tree.h"
 
 class Node;
 class MultiplayerSynchronizer;

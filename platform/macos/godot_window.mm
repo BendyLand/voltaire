@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_window.h"
+#import "platform/macos/display_server_macos.h"
 
 #import "display_server_macos.h"
 

@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "godot_progress_view.h"
+#import "platform/macos/display_server_macos.h"
 
 @implementation GodotProgressView
 

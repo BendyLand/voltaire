@@ -33,7 +33,7 @@
 #include "register_types.h"
 
 #include "core/error/error_macros.h"
-#include "core/io/zip_io.h"
+#include "core/io/file_access.h"
 #include "core/os/time.h"
 
 // ZIPPacker

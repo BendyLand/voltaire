@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/config/project_format.h"
+#include "core/config/project_settings.h"
 // --- Folded from editor/ui_widgets.h ---
 #include "core/input/input.h"
 #include "core/input/input_event.h"
@@ -523,7 +523,7 @@ public:
 // --- End editor/project_upgrade/project_converter_3_to_4.h ---
 
 // --- Folded from editor/project_manager/project_manager.h ---
-#include "core/config/project_format.h"
+#include "core/config/project_settings.h"
 
 
 class ProjectManager

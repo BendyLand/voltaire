@@ -34,7 +34,7 @@
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/paged_array.h"
+#include "core/templates/paged_allocator.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/sort_array.h"

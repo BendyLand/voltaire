@@ -1222,3 +1222,708 @@ _FORCE_INLINE_ Vector3 octahedron_map_decode(const Vector2 &p_uv) {
 	return n.normalized();
 }
 } //namespace Geometry3D
+
+// --- Folded from core/math/a_star.h ---
+#include "core/templates/a_hash_map.h"
+#include "core/templates/local_vector.h"
+#include "core/types.h"
+
+/**
+	A* pathfinding algorithm.
+*/
+
+class AStar3D : public RefCounted
+{
+	friend class AStar2D;
+
+	struct Point
+	{
+		int64_t id = 0;
+		Vector3 pos;
+		real_t weight_scale = 0;
+		bool enabled = false;
+
+		AHashMap<int64_t, Point*> neighbors = 4u;
+		AHashMap<int64_t, Point*> unlinked_neighbours = 4u;
+
+		// Used for pathfinding.
+		Point* prev_point = nullptr;
+		real_t g_score = 0;
+		real_t f_score = 0;
+		uint64_t open_pass = 0;
+		uint64_t closed_pass = 0;
+
+		// Used for getting closest_point_of_last_pathing_call.
+		real_t abs_g_score = 0;
+		real_t abs_f_score = 0;
+	};
+
+	struct SortPoints
+	{
+		_FORCE_INLINE_ bool operator()(const Point* p_left, const Point* p_right) const
+		{ // Returns true when the Point A is worse than Point B.
+			if (p_left->f_score > p_right->f_score) {
+				return true;
+			}
+			else if (p_left->f_score < p_right->f_score) {
+				return false;
+			}
+			else {
+				return p_left->g_score <
+					   p_right->g_score; // If the f_costs are the same then prioritize the points
+										 // that are further away from the start.
+			}
+		}
+	};
+
+	struct Segment
+	{
+		Pair<int64_t, int64_t> key;
+
+		enum
+		{
+			NONE = 0,
+			FORWARD = 1,
+			BACKWARD = 2,
+			BIDIRECTIONAL = FORWARD | BACKWARD
+		};
+
+		unsigned char direction = NONE;
+
+		static uint32_t hash(const Segment& p_seg) { return HashMapHasherDefault::hash(p_seg.key); }
+
+		bool operator==(const Segment& p_s) const { return key == p_s.key; }
+
+		Segment() {}
+
+		Segment(int64_t p_from, int64_t p_to)
+		{
+			if (p_from < p_to) {
+				key.first = p_from;
+				key.second = p_to;
+				direction = FORWARD;
+			}
+			else {
+				key.first = p_to;
+				key.second = p_from;
+				direction = BACKWARD;
+			}
+		}
+	};
+
+	mutable int64_t last_free_id = 0;
+	uint64_t pass = 1;
+
+	AHashMap<int64_t, Point*> points;
+	HashSet<Segment, Segment> segments;
+	Point* last_closest_point = nullptr;
+	bool neighbor_filter_enabled = false;
+
+	bool _solve(Point* p_begin_point, Point* p_end_point, bool p_allow_partial_path);
+
+protected:
+
+	virtual real_t _estimate_cost(int64_t p_from_id, int64_t p_end_id);
+	virtual real_t _compute_cost(int64_t p_from_id, int64_t p_to_id);
+
+#ifndef DISABLE_DEPRECATED
+	Vector<int64_t> _get_id_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id);
+	Vector<Vector3> _get_point_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id);
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	int64_t get_available_point_id() const;
+
+	void add_point(int64_t p_id, const Vector3& p_pos, real_t p_weight_scale = 1);
+	Vector3 get_point_position(int64_t p_id) const;
+	void set_point_position(int64_t p_id, const Vector3& p_pos);
+	real_t get_point_weight_scale(int64_t p_id) const;
+	void set_point_weight_scale(int64_t p_id, real_t p_weight_scale);
+	void remove_point(int64_t p_id);
+	bool has_point(int64_t p_id) const;
+	Vector<int64_t> get_point_connections(int64_t p_id);
+	PackedInt64Array get_point_ids();
+
+	bool is_neighbor_filter_enabled() const;
+	void set_neighbor_filter_enabled(bool p_enabled);
+
+	void set_point_disabled(int64_t p_id, bool p_disabled = true);
+	bool is_point_disabled(int64_t p_id) const;
+
+	void connect_points(int64_t p_id, int64_t p_with_id, bool p_bidirectional = true);
+	void disconnect_points(int64_t p_id, int64_t p_with_id, bool p_bidirectional = true);
+	bool are_points_connected(int64_t p_id, int64_t p_with_id, bool p_bidirectional = true) const;
+
+	int64_t get_point_count() const;
+	int64_t get_point_capacity() const;
+	void reserve_space(int64_t p_num_nodes);
+	void clear();
+
+	int64_t get_closest_point(const Vector3& p_point, bool p_include_disabled = false) const;
+	Vector3 get_closest_position_in_segment(const Vector3& p_point) const;
+
+	Vector<Vector3> get_point_path(
+		int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
+	Vector<int64_t> get_id_path(
+		int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
+
+	~AStar3D();
+};
+
+class AStar2D final : public RefCounted
+{
+	AStar3D astar;
+
+	bool _solve(
+		AStar3D::Point* p_begin_point, AStar3D::Point* p_end_point, bool p_allow_partial_path);
+
+protected:
+	virtual real_t _estimate_cost(int64_t p_from_id, int64_t p_end_id);
+	virtual real_t _compute_cost(int64_t p_from_id, int64_t p_to_id);
+
+#ifndef DISABLE_DEPRECATED
+	Vector<int64_t> _get_id_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id);
+	Vector<Vector2> _get_point_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id);
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	int64_t get_available_point_id() const;
+
+	void add_point(int64_t p_id, const Vector2& p_pos, real_t p_weight_scale = 1);
+	Vector2 get_point_position(int64_t p_id) const;
+	void set_point_position(int64_t p_id, const Vector2& p_pos);
+	real_t get_point_weight_scale(int64_t p_id) const;
+	void set_point_weight_scale(int64_t p_id, real_t p_weight_scale);
+	void remove_point(int64_t p_id);
+	bool has_point(int64_t p_id) const;
+	Vector<int64_t> get_point_connections(int64_t p_id);
+	PackedInt64Array get_point_ids();
+
+	bool is_neighbor_filter_enabled() const;
+	void set_neighbor_filter_enabled(bool p_enabled);
+
+	void set_point_disabled(int64_t p_id, bool p_disabled = true);
+	bool is_point_disabled(int64_t p_id) const;
+
+	void connect_points(int64_t p_id, int64_t p_with_id, bool p_bidirectional = true);
+	void disconnect_points(int64_t p_id, int64_t p_with_id, bool p_bidirectional = true);
+	bool are_points_connected(int64_t p_id, int64_t p_with_id, bool p_bidirectional = true) const;
+
+	int64_t get_point_count() const;
+	int64_t get_point_capacity() const;
+	void reserve_space(int64_t p_num_nodes);
+	void clear();
+
+	int64_t get_closest_point(const Vector2& p_point, bool p_include_disabled = false) const;
+	Vector2 get_closest_position_in_segment(const Vector2& p_point) const;
+
+	Vector<Vector2> get_point_path(
+		int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
+	Vector<int64_t> get_id_path(
+		int64_t p_from_id, int64_t p_to_id, bool p_allow_partial_path = false);
+};
+
+class AStarGrid2D final : public RefCounted
+{
+public:
+	enum DiagonalMode
+	{
+		DIAGONAL_MODE_ALWAYS,
+		DIAGONAL_MODE_NEVER,
+		DIAGONAL_MODE_AT_LEAST_ONE_WALKABLE,
+		DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES,
+		DIAGONAL_MODE_MAX,
+	};
+
+	enum Heuristic
+	{
+		HEURISTIC_EUCLIDEAN,
+		HEURISTIC_MANHATTAN,
+		HEURISTIC_OCTILE,
+		HEURISTIC_CHEBYSHEV,
+		HEURISTIC_MAX,
+	};
+
+	enum CellShape
+	{
+		CELL_SHAPE_SQUARE,
+		CELL_SHAPE_ISOMETRIC_RIGHT,
+		CELL_SHAPE_ISOMETRIC_DOWN,
+		CELL_SHAPE_MAX,
+	};
+
+private:
+	Rect2i region;
+	Vector2 offset;
+	Size2 cell_size = Size2(1, 1);
+	bool dirty = false;
+	CellShape cell_shape = CELL_SHAPE_SQUARE;
+
+	bool jumping_enabled = false;
+	DiagonalMode diagonal_mode = DIAGONAL_MODE_ALWAYS;
+	Heuristic default_compute_heuristic = HEURISTIC_EUCLIDEAN;
+	Heuristic default_estimate_heuristic = HEURISTIC_EUCLIDEAN;
+
+	struct Point
+	{
+		Vector2i id;
+
+		Vector2 pos;
+		real_t weight_scale = 1.0;
+
+		// Used for pathfinding.
+		Point* prev_point = nullptr;
+		real_t g_score = 0;
+		real_t f_score = 0;
+		uint64_t open_pass = 0;
+		uint64_t closed_pass = 0;
+
+		// Used for getting last_closest_point.
+		real_t abs_g_score = 0;
+		real_t abs_f_score = 0;
+
+		Point() {}
+
+		Point(const Vector2i& p_id, const Vector2& p_pos) : id(p_id), pos(p_pos) {}
+	};
+
+	struct SortPoints
+	{
+		_FORCE_INLINE_ bool operator()(const Point* p_left, const Point* p_right) const
+		{ // Returns true when the Point A is worse than Point B.
+			if (p_left->f_score > p_right->f_score) {
+				return true;
+			}
+			else if (p_left->f_score < p_right->f_score) {
+				return false;
+			}
+			else {
+				return p_left->g_score <
+					   p_right->g_score; // If the f_costs are the same then prioritize the points
+										 // that are further away from the start.
+			}
+		}
+	};
+
+	LocalVector<bool> solid_mask;
+	LocalVector<LocalVector<Point>> points;
+	Point* end = nullptr;
+	Point* last_closest_point = nullptr;
+
+	uint64_t pass = 1;
+
+private: // Internal routines.
+	_FORCE_INLINE_ size_t _to_mask_index(int32_t p_x, int32_t p_y) const
+	{
+		return ((p_y - region.position.y + 1) * (region.size.x + 2)) + p_x - region.position.x + 1;
+	}
+
+	_FORCE_INLINE_ bool _is_walkable(int32_t p_x, int32_t p_y) const
+	{
+		return !solid_mask[_to_mask_index(p_x, p_y)];
+	}
+
+	_FORCE_INLINE_ Point* _get_point(int32_t p_x, int32_t p_y)
+	{
+		if (region.has_point(Vector2i(p_x, p_y))) {
+			return &points[p_y - region.position.y][p_x - region.position.x];
+		}
+		return nullptr;
+	}
+
+	_FORCE_INLINE_ void _set_solid_unchecked(int32_t p_x, int32_t p_y, bool p_solid)
+	{
+		solid_mask[_to_mask_index(p_x, p_y)] = p_solid;
+	}
+
+	_FORCE_INLINE_ void _set_solid_unchecked(const Vector2i& p_id, bool p_solid)
+	{
+		solid_mask[_to_mask_index(p_id.x, p_id.y)] = p_solid;
+	}
+
+	_FORCE_INLINE_ bool _get_solid_unchecked(const Vector2i& p_id) const
+	{
+		return solid_mask[_to_mask_index(p_id.x, p_id.y)];
+	}
+
+	_FORCE_INLINE_ Point* _get_point_unchecked(int32_t p_x, int32_t p_y)
+	{
+		return &points[p_y - region.position.y][p_x - region.position.x];
+	}
+
+	_FORCE_INLINE_ Point* _get_point_unchecked(const Vector2i& p_id)
+	{
+		return &points[p_id.y - region.position.y][p_id.x - region.position.x];
+	}
+
+	_FORCE_INLINE_ const Point* _get_point_unchecked(const Vector2i& p_id) const
+	{
+		return &points[p_id.y - region.position.y][p_id.x - region.position.x];
+	}
+
+	void _get_nbors(Point* p_point, LocalVector<Point*>& r_nbors);
+	Point* _jump(Point* p_from, Point* p_to);
+	bool _solve(Point* p_begin_point, Point* p_end_point, bool p_allow_partial_path);
+	Point* _forced_successor(
+		int32_t p_x, int32_t p_y, int32_t p_dx, int32_t p_dy, bool p_inclusive = false);
+
+protected:
+
+	virtual real_t _estimate_cost(const Vector2i& p_from_id, const Vector2i& p_end_id);
+	virtual real_t _compute_cost(const Vector2i& p_from_id, const Vector2i& p_to_id);
+
+#ifndef DISABLE_DEPRECATED
+	Vector<Vector2i> _get_id_path_bind_compat_88047(
+		const Vector2i& p_from, const Vector2i& p_to);
+	Vector<Vector2> _get_point_path_bind_compat_88047(const Vector2i& p_from, const Vector2i& p_to);
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	void set_region(const Rect2i& p_region);
+	Rect2i get_region() const;
+
+	void set_size(const Size2i& p_size);
+	Size2i get_size() const;
+
+	void set_offset(const Vector2& p_offset);
+	Vector2 get_offset() const;
+
+	void set_cell_size(const Size2& p_cell_size);
+	Size2 get_cell_size() const;
+
+	void set_cell_shape(CellShape p_cell_shape);
+	CellShape get_cell_shape() const;
+
+	void update();
+
+	bool is_in_bounds(int32_t p_x, int32_t p_y) const;
+	bool is_in_boundsv(const Vector2i& p_id) const;
+	bool is_dirty() const;
+
+	void set_jumping_enabled(bool p_enabled);
+	bool is_jumping_enabled() const;
+
+	void set_diagonal_mode(DiagonalMode p_diagonal_mode);
+	DiagonalMode get_diagonal_mode() const;
+
+	void set_default_compute_heuristic(Heuristic p_heuristic);
+	Heuristic get_default_compute_heuristic() const;
+
+	void set_default_estimate_heuristic(Heuristic p_heuristic);
+	Heuristic get_default_estimate_heuristic() const;
+
+	void set_point_solid(const Vector2i& p_id, bool p_solid = true);
+	bool is_point_solid(const Vector2i& p_id) const;
+
+	void set_point_weight_scale(const Vector2i& p_id, real_t p_weight_scale);
+	real_t get_point_weight_scale(const Vector2i& p_id) const;
+
+	void fill_solid_region(const Rect2i& p_region, bool p_solid = true);
+	void fill_weight_scale_region(const Rect2i& p_region, real_t p_weight_scale);
+
+	void clear();
+
+	Vector2 get_point_position(const Vector2i& p_id) const;
+	Vector<Vector2> get_point_path(
+		const Vector2i& p_from, const Vector2i& p_to, bool p_allow_partial_path = false);
+	Vector<Vector2i> get_id_path(
+		const Vector2i& p_from, const Vector2i& p_to, bool p_allow_partial_path = false);
+};
+
+// --- Folded from core/math/convex_hull.h ---
+/*
+Copyright (c) 2011 Ole Kniemeyer, MAXON, www.maxon.net
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it freely,
+subject to the following restrictions:
+1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+*/
+
+#include "core/math/vector3.h"
+#include "core/templates/list.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/vector.h"
+
+/// Convex hull implementation based on Preparata and Hong
+/// See https://code.google.com/archive/p/bullet/issues/275
+/// Ole Kniemeyer, MAXON Computer GmbH
+class ConvexHullComputer {
+public:
+	class Edge {
+	private:
+		int32_t next = 0;
+		int32_t reverse = 0;
+		int32_t target_vertex = 0;
+
+		friend class ConvexHullComputer;
+
+	public:
+		int32_t get_next_relative() const {
+			return next;
+		}
+
+		int32_t get_source_vertex() const {
+			return (this + reverse)->target_vertex;
+		}
+
+		int32_t get_target_vertex() const {
+			return target_vertex;
+		}
+
+		const Edge *get_next_edge_of_vertex() const // clockwise list of all edges of a vertex
+		{
+			return this + next;
+		}
+
+		const Edge *get_next_edge_of_face() const // counter-clockwise list of all edges of a face
+		{
+			return (this + reverse)->get_next_edge_of_vertex();
+		}
+
+		const Edge *get_reverse_edge() const {
+			return this + reverse;
+		}
+	};
+
+	// Vertices of the output hull
+	LocalVector<Vector3> vertices;
+
+	// Edges of the output hull
+	LocalVector<Edge> edges;
+
+	// Faces of the convex hull. Each entry is an index into the "edges" array pointing to an edge of the face. Faces are planar n-gons
+	LocalVector<int32_t> faces;
+
+	/*
+		Compute convex hull of "count" vertices stored in "coords".
+		If "shrink" is positive, the convex hull is shrunken by that amount (each face is moved by "shrink" length units
+		towards the center along its normal).
+		If "shrinkClamp" is positive, "shrink" is clamped to not exceed "shrinkClamp * innerRadius", where "innerRadius"
+		is the minimum distance of a face to the center of the convex hull.
+		The returned value is the amount by which the hull has been shrunken. If it is negative, the amount was so large
+		that the resulting convex hull is empty.
+		The output convex hull can be found in the member variables "vertices", "edges", "faces".
+		*/
+	real_t compute(const Vector3 *p_coords, int32_t p_count, real_t p_shrink, real_t p_shrink_clamp);
+
+	static Error convex_hull(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_mesh);
+};
+
+class QuickHull {
+public:
+	struct Edge {
+		union {
+			uint32_t vertices[2];
+			uint64_t id = 0;
+		};
+
+		static uint32_t hash(const Edge &p_edge) {
+			return hash_one_uint64(p_edge.id);
+		}
+
+		bool operator<(const Edge &p_edge) const {
+			return id < p_edge.id;
+		}
+		bool operator==(const Edge &p_edge) const {
+			return id == p_edge.id;
+		}
+
+		Edge(int p_vtx_a = 0, int p_vtx_b = 0) {
+			if (p_vtx_a > p_vtx_b) {
+				SWAP(p_vtx_a, p_vtx_b);
+			}
+
+			vertices[0] = p_vtx_a;
+			vertices[1] = p_vtx_b;
+		}
+	};
+
+	struct Face {
+		Plane plane;
+		uint32_t vertices[3] = { 0 };
+		Vector<int> points_over;
+
+		bool operator<(const Face &p_face) const {
+			return points_over.size() < p_face.points_over.size();
+		}
+	};
+
+private:
+	struct FaceConnect {
+		List<Face>::Element *left = nullptr;
+		List<Face>::Element *right = nullptr;
+	};
+	struct RetFaceConnect {
+		List<Geometry3D::MeshData::Face>::Element *left = nullptr;
+		List<Geometry3D::MeshData::Face>::Element *right = nullptr;
+	};
+
+public:
+	static uint32_t debug_stop_after;
+	static Error build(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_mesh);
+};
+
+// --- Folded from core/math/static_raycaster.h ---
+#include "core/templates/hash_set.h"
+#include "core/types.h"
+
+class StaticRaycaster final : public RefCounted
+{
+public:
+	struct EmbreeState;
+
+private:
+	EmbreeState* embree_state = nullptr;
+
+public:
+	// Compatible with embree4 rays.
+	struct alignas(16) Ray
+	{
+		const static unsigned int INVALID_GEOMETRY_ID = ((unsigned int)-1); // from rtcore_common.h
+
+		/*! Default construction does nothing. */
+		_FORCE_INLINE_ Ray() : geomID(INVALID_GEOMETRY_ID) {}
+
+		/*! Constructs a ray from origin, direction, and ray segment. Near
+		 *  has to be smaller than far. */
+		_FORCE_INLINE_ Ray(const Vector3& p_org, const Vector3& p_dir, float p_tnear = 0.0f,
+			float p_tfar = Math::INF)
+			: org(p_org), tnear(p_tnear), dir(p_dir), time(0.0f), tfar(p_tfar), mask(-1), u(0.0),
+			  v(0.0), primID(INVALID_GEOMETRY_ID), geomID(INVALID_GEOMETRY_ID),
+			  instID(INVALID_GEOMETRY_ID)
+		{
+		}
+
+		/*! Tests if we hit something. */
+		_FORCE_INLINE_ explicit operator bool() const { return geomID != INVALID_GEOMETRY_ID; }
+
+	public:
+		Vector3 org;		//!< Ray origin + tnear
+		float tnear;		//!< Start of ray segment
+		Vector3 dir;		//!< Ray direction + tfar
+		float time;			//!< Time of this ray for motion blur.
+		float tfar;			//!< End of ray segment
+		unsigned int mask;	//!< used to mask out objects during traversal
+		unsigned int id;	//!< ray ID
+		unsigned int flags; //!< ray flags
+
+		Vector3 normal;		 //!< Not normalized geometry normal
+		float u;			 //!< Barycentric u coordinate of hit
+		float v;			 //!< Barycentric v coordinate of hit
+		unsigned int primID; //!< primitive ID
+		unsigned int geomID; //!< geometry ID
+		unsigned int instID; //!< instance ID
+	};
+
+	bool intersect(Ray& p_ray);
+	void intersect(Vector<Ray>& r_rays);
+
+	void add_mesh(
+		const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices, unsigned int p_id);
+	void commit();
+
+	void set_mesh_filter(const HashSet<int>& p_mesh_ids);
+	void clear_mesh_filter();
+
+	static Ref<StaticRaycaster> create();
+	static void free();
+
+	StaticRaycaster();
+	~StaticRaycaster();
+};
+
+// --- Folded from core/math/triangle_mesh.h ---
+#include "core/math/face3.h"
+#include "core/types.h"
+
+class TriangleMesh : public RefCounted
+{
+public:
+	struct Triangle
+	{
+		Vector3 normal;
+		int indices[3];
+		int32_t surface_index = 0;
+	};
+
+	struct BVH
+	{
+		AABB aabb;
+		Vector3 center; // used for sorting
+		int left = -1;
+		int right = -1;
+		int32_t face_index = -1;
+	};
+
+protected:
+
+private:
+	Vector<Triangle> triangles;
+	Vector<Vector3> vertices;
+
+	struct BVHCmpX
+	{
+		bool operator()(const BVH* p_left, const BVH* p_right) const
+		{
+			return p_left->center.x < p_right->center.x;
+		}
+	};
+
+	struct BVHCmpY
+	{
+		bool operator()(const BVH* p_left, const BVH* p_right) const
+		{
+			return p_left->center.y < p_right->center.y;
+		}
+	};
+
+	struct BVHCmpZ
+	{
+		bool operator()(const BVH* p_left, const BVH* p_right) const
+		{
+			return p_left->center.z < p_right->center.z;
+		}
+	};
+
+	int _create_bvh(BVH* p_bvh, BVH** p_bb, int p_from, int p_size, int p_depth, int& r_max_depth,
+		int& r_max_alloc);
+
+	Vector<BVH> bvh;
+	int max_depth = 0;
+	bool valid = false;
+
+public:
+	bool is_valid() const;
+	bool intersect_segment(const Vector3& p_begin, const Vector3& p_end, Vector3& r_point,
+		Vector3& r_normal, int32_t* r_surf_index = nullptr, int32_t* r_face_index = nullptr) const;
+	bool intersect_ray(const Vector3& p_begin, const Vector3& p_dir, Vector3& r_point,
+		Vector3& r_normal, int32_t* r_surf_index = nullptr, int32_t* r_face_index = nullptr) const;
+	bool inside_convex_shape(const Plane* p_planes, int p_plane_count, const Vector3* p_points,
+		int p_point_count, Vector3 p_scale = Vector3(1, 1, 1)) const;
+	Vector<Face3> get_faces() const;
+
+	const Vector<Triangle>& get_triangles() const { return triangles; }
+
+	const Vector<Vector3>& get_vertices() const { return vertices; }
+
+	const Vector<BVH>& get_bvh() const { return bvh; }
+
+	void get_indices(Vector<int>* r_triangles_indices) const;
+
+	void create(const Vector<Vector3>& p_faces,
+		const Vector<int32_t>& p_surface_indices = Vector<int32_t>());
+
+	// Wrapped functions for compatibility with method bindings
+	// and user exposed script api that can't use more native types.
+	bool create_from_faces(const Vector<Vector3>& p_faces);
+	Vector<Vector3> get_faces_scriptwrap() const;
+
+	TriangleMesh();
+};

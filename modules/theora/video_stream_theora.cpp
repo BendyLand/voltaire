@@ -48,7 +48,7 @@ public:
 #include <vorbis/vorbisenc.h>
 #include "core/io/file_access.h"
 #include "servers/audio/audio_server.h"
-#include "servers/movie_writer/movie_writer.h"
+#include "main/main.h"
 
 class MovieWriterOGV final : public MovieWriter
 {

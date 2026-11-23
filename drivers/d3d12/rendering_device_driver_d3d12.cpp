@@ -36,7 +36,7 @@
 #include "core/os/os.h"
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
-#include <drivers/d3d12/godot_d3d12ma.h>
+#include "drivers/d3d12/godot_d3dx12.h"
 #include <drivers/d3d12/godot_nir.h>
 #include <dxgi1_6.h>
 

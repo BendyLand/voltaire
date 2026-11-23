@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "rendering_context_driver_vulkan_apple_embedded.h"
+#import "drivers/apple_embedded/display_server_apple_embedded.h"
 
 #ifdef VULKAN_ENABLED
 

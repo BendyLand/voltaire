@@ -43,7 +43,7 @@ public:
 	ImageLoaderLibJPEGTurbo() = default;
 };
 
-#include "servers/movie_writer/movie_writer.h"
+#include "main/main.h"
 
 class MovieWriterMJPEG final : public MovieWriter
 {

@@ -69,7 +69,7 @@ struct CSGBrush
 		const Vector<bool>& p_invert_faces);
 	void copy_from(const CSGBrush& p_brush, const Transform3D& p_xform);
 };
-#include "scene/3d/path_3d.h"
+#include "scene/3d/node_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/mesh.h"
 

@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_hashing_context)
 
-#include "core/crypto/hashing_context.h"
+#include "core/crypto/crypto.h"
 
 namespace TestHashingContext {
 

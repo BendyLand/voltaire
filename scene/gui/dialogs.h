@@ -1541,7 +1541,7 @@ public:
 // --- Folded from scene/gui/color_picker.h ---
 #include "scene/gui/button.h"
 #include "scene/gui/control.h"
-#include "scene/gui/popup.h"
+#include "scene/gui/popup_menu.h"
 #include "scene/resources/shader.h"
 
 class ColorMode;
@@ -2818,3 +2818,3261 @@ public:
 
 
 // --- End scene/gui/rich_text_label.h ---
+
+// --- Folded from scene/gui/line_edit.h ---
+#include "scene/gui/control.h"
+#include "scene/gui/popup_menu.h"
+
+class LineEdit : public Control
+{
+public:
+	enum MenuItems
+	{
+		MENU_CUT,
+		MENU_COPY,
+		MENU_PASTE,
+		MENU_CLEAR,
+		MENU_SELECT_ALL,
+		MENU_UNDO,
+		MENU_REDO,
+		MENU_SUBMENU_TEXT_DIR,
+		MENU_DIR_INHERITED,
+		MENU_DIR_AUTO,
+		MENU_DIR_LTR,
+		MENU_DIR_RTL,
+		MENU_DISPLAY_UCC,
+		MENU_SUBMENU_INSERT_UCC,
+		MENU_INSERT_LRM,
+		MENU_INSERT_RLM,
+		MENU_INSERT_LRE,
+		MENU_INSERT_RLE,
+		MENU_INSERT_LRO,
+		MENU_INSERT_RLO,
+		MENU_INSERT_PDF,
+		MENU_INSERT_ALM,
+		MENU_INSERT_LRI,
+		MENU_INSERT_RLI,
+		MENU_INSERT_FSI,
+		MENU_INSERT_PDI,
+		MENU_INSERT_ZWJ,
+		MENU_INSERT_ZWNJ,
+		MENU_INSERT_WJ,
+		MENU_INSERT_SHY,
+		MENU_EMOJI_AND_SYMBOL,
+		MENU_MAX
+	};
+
+	// Keep synced with DisplayServerEnums::VirtualKeyboardType enum.
+	enum VirtualKeyboardType
+	{
+		KEYBOARD_TYPE_DEFAULT,
+		KEYBOARD_TYPE_MULTILINE,
+		KEYBOARD_TYPE_NUMBER,
+		KEYBOARD_TYPE_NUMBER_DECIMAL,
+		KEYBOARD_TYPE_PHONE,
+		KEYBOARD_TYPE_EMAIL_ADDRESS,
+		KEYBOARD_TYPE_PASSWORD,
+		KEYBOARD_TYPE_URL
+	};
+
+	enum ExpandMode
+	{
+		EXPAND_MODE_ORIGINAL_SIZE,
+		EXPAND_MODE_FIT_TO_TEXT,
+		EXPAND_MODE_FIT_TO_LINE_EDIT,
+	};
+
+private:
+	HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_LEFT;
+
+	bool editing = false;
+	bool keep_editing_on_text_submit = false;
+	bool editable = false;
+	bool pass = false;
+	bool text_changed_dirty = false;
+	ExpandMode icon_expand_mode = EXPAND_MODE_ORIGINAL_SIZE;
+
+	enum AltInputMode
+	{
+		ALT_INPUT_NONE,
+		ALT_INPUT_UNICODE,
+		ALT_INPUT_OEM,
+		ALT_INPUT_WIN,
+	};
+
+	AltInputMode alt_mode = ALT_INPUT_NONE;
+	bool alt_start = false;
+	bool alt_start_no_hold = false;
+	uint32_t alt_code = 0;
+
+	String undo_text;
+	String text;
+	String placeholder;
+	String placeholder_translated;
+	String secret_character = U"•";
+	String ime_text;
+	Point2 ime_selection;
+
+	RID text_rid;
+	RID accessibility_text_root_element;
+	float full_width = 0.0;
+
+	bool selecting_enabled = true;
+	bool deselect_on_focus_loss_enabled = true;
+	bool drag_and_drop_selection_enabled = true;
+
+	bool context_menu_enabled = true;
+	bool emoji_menu_enabled = true;
+	bool backspace_deletes_composite_character_enabled = false;
+	PopupMenu* menu = nullptr;
+	PopupMenu* menu_dir = nullptr;
+	PopupMenu* menu_ctl = nullptr;
+
+	bool caret_mid_grapheme_enabled = false;
+
+	int caret_column = 0;
+	float scroll_offset = 0.0;
+	int max_length = 0; // 0 for no maximum.
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+	TextDirection input_direction = TEXT_DIRECTION_LTR;
+	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+	bool draw_control_chars = false;
+
+	bool expand_to_text_length = false;
+	bool window_has_focus = true;
+
+	bool clear_button_enabled = false;
+
+	bool shortcut_keys_enabled = true;
+
+	bool virtual_keyboard_enabled = true;
+	bool virtual_keyboard_show_on_focus = true;
+	VirtualKeyboardType virtual_keyboard_type = KEYBOARD_TYPE_DEFAULT;
+
+	bool middle_mouse_paste_enabled = true;
+
+	bool drag_action = false;
+	bool drag_caret_force_displayed = false;
+
+	Ref<Texture2D> right_icon;
+	bool flat = false;
+	bool spin_box_mode = false;
+	float right_icon_scale = 1.0;
+
+	struct Selection
+	{
+		int begin = 0;
+		int end = 0;
+		int start_column = 0;
+		bool enabled = false;
+		bool creating = false;
+		bool double_click = false;
+		bool drag_attempt = false;
+	};
+
+	Selection selection;
+
+	struct TextOperation
+	{
+		int caret_column = 0;
+		float scroll_offset = 0.0;
+		String text;
+	};
+
+	List<TextOperation> undo_stack;
+	List<TextOperation>::Element* undo_stack_pos = nullptr;
+
+	struct ClearButtonStatus
+	{
+		bool press_attempt = false;
+		bool pressing_inside = false;
+	} clear_button_status;
+
+	uint64_t last_dblclk = 0;
+	Vector2 last_dblclk_pos;
+
+	bool caret_blink_enabled = false;
+	bool caret_force_displayed = false;
+	bool draw_caret = true;
+	float caret_blink_interval = 0.65;
+	double caret_blink_timer = 0.0;
+	bool caret_can_draw = false;
+
+	bool pending_select_all_on_focus = false;
+	bool select_all_on_focus = false;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+		Ref<StyleBox> read_only;
+		Ref<StyleBox> focus;
+
+		Ref<Font> font;
+		int font_size = 0;
+		Color font_color;
+		Color font_uneditable_color;
+		Color font_selected_color;
+		int font_outline_size;
+		Color font_outline_color;
+		Color font_placeholder_color;
+		int caret_width = 0;
+		Color caret_color;
+		int minimum_character_width = 0;
+		Color selection_color;
+
+		Ref<Texture2D> clear_icon;
+		Color clear_button_color;
+		Color clear_button_color_pressed;
+
+		float base_scale = 1.0;
+	};
+
+	ThemeCache theme_cache;
+
+	void _close_ime_window();
+	void _update_ime_window_position();
+
+	void _clear_undo_stack();
+	void _clear_redo();
+	void _create_undo_state();
+
+	Key _get_menu_action_accelerator(const String& p_action);
+	void _generate_context_menu();
+	void _update_context_menu();
+
+	void _shape();
+	void _fit_to_width();
+	void _text_changed();
+	void _emit_text_change();
+
+	void shift_selection_check_pre(bool);
+	void shift_selection_check_post(bool);
+
+	void selection_fill_at_caret();
+	void set_scroll_offset(float p_pos);
+	float get_scroll_offset() const;
+
+	void set_caret_at_pixel_pos(int p_x);
+	Vector2 get_caret_pixel_pos();
+
+	void _reset_caret_blink_timer();
+	void _toggle_draw_caret();
+	void _validate_caret_can_draw();
+
+	void clear_internal();
+
+	void _editor_settings_changed();
+
+	void _swap_current_input_direction();
+	void _move_caret_left(bool p_select, bool p_move_by_word = false);
+	void _move_caret_right(bool p_select, bool p_move_by_word = false);
+	void _move_caret_start(bool p_select);
+	void _move_caret_end(bool p_select);
+	void _backspace(bool p_word = false, bool p_all_to_left = false);
+	void _delete(bool p_word = false, bool p_all_to_right = false);
+	void _texture_changed();
+
+	void _edit(bool p_show_virtual_keyboard = true, bool p_hide_focus = false);
+	Point2 _get_right_icon_size(Ref<Texture2D> p_right_icon) const;
+
+protected:
+	bool _is_over_clear_button(const Point2& p_pos) const;
+
+	virtual void _update_theme_item_cache() override;
+
+	void _notification(int p_what);
+	static void _bind_methods();
+
+#ifndef DISABLE_DEPRECATED
+	void _edit_bind_compat_111117();
+	static void _bind_compatibility_methods();
+#endif
+
+	virtual void unhandled_key_input(const InputEvent& p_event) override;
+	virtual String _get_accessibility_name() const override;
+
+public:
+	void edit(bool p_hide_focus = false);
+	void unedit();
+	bool is_editing() const;
+	void set_keep_editing_on_text_submit(bool p_enabled);
+	bool is_editing_kept_on_text_submit() const;
+
+	bool has_ime_text() const;
+	void cancel_ime();
+	void apply_ime();
+
+	void set_horizontal_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_horizontal_alignment() const;
+
+	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
+
+	void menu_option(int p_option);
+	void set_context_menu_enabled(bool p_enable);
+	bool is_context_menu_enabled();
+	PopupMenu* get_menu() const;
+	bool is_menu_visible() const;
+
+	void show_emoji_and_symbol_picker();
+
+	void set_emoji_menu_enabled(bool p_enabled);
+	bool is_emoji_menu_enabled() const;
+
+	void set_backspace_deletes_composite_character_enabled(bool p_enabled);
+	bool is_backspace_deletes_composite_character_enabled() const;
+
+	void select(int p_from = 0, int p_to = -1);
+	void select_all();
+	void selection_delete();
+	void deselect();
+	bool has_selection() const;
+	String get_selected_text();
+	int get_selection_from_column() const;
+	int get_selection_to_column() const;
+
+	void delete_char();
+	void delete_text(int p_from_column, int p_to_column);
+
+	void _set_text(String p_text, bool p_emit_signal = false);
+	void set_text(String p_text);
+	String get_text() const;
+	void set_text_with_selection(const String& p_text); // Set text, while preserving selection.
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_draw_control_chars(bool p_draw_control_chars);
+	bool get_draw_control_chars() const;
+
+	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
+
+	void set_placeholder(String p_text);
+	String get_placeholder() const;
+
+	void set_caret_column(int p_column);
+	int get_caret_column() const;
+	int get_next_composite_character_column(int p_column) const;
+	int get_previous_composite_character_column(int p_column) const;
+
+	void set_max_length(int p_max_length);
+	int get_max_length() const;
+
+	void insert_text_at_caret(String p_text);
+	void clear();
+
+	void set_caret_mid_grapheme_enabled(const bool p_enabled);
+	bool is_caret_mid_grapheme_enabled() const;
+
+	bool is_caret_blink_enabled() const;
+	void set_caret_blink_enabled(const bool p_enabled);
+
+	float get_caret_blink_interval() const;
+	void set_caret_blink_interval(const float p_interval);
+
+	void set_caret_force_displayed(const bool p_enabled);
+	bool is_caret_force_displayed() const;
+
+	void copy_text();
+	void cut_text();
+	void paste_text();
+	bool has_undo() const;
+	bool has_redo() const;
+	void undo();
+	void redo();
+
+	void set_editable(bool p_editable);
+	bool is_editable() const;
+
+	void set_secret(bool p_secret);
+	bool is_secret() const;
+
+	void set_secret_character(const String& p_string);
+	String get_secret_character() const;
+
+	virtual Size2 get_minimum_size() const override;
+
+	void set_expand_to_text_length_enabled(bool p_enabled);
+	bool is_expand_to_text_length_enabled() const;
+
+	void set_clear_button_enabled(bool p_enabled);
+	bool is_clear_button_enabled() const;
+
+	void set_shortcut_keys_enabled(bool p_enabled);
+	bool is_shortcut_keys_enabled() const;
+
+	void set_virtual_keyboard_enabled(bool p_enable);
+	bool is_virtual_keyboard_enabled() const;
+
+	void set_virtual_keyboard_show_on_focus(bool p_show_on_focus);
+	bool get_virtual_keyboard_show_on_focus() const;
+
+	void set_virtual_keyboard_type(VirtualKeyboardType p_type);
+	VirtualKeyboardType get_virtual_keyboard_type() const;
+
+	void set_middle_mouse_paste_enabled(bool p_enabled);
+	bool is_middle_mouse_paste_enabled() const;
+
+	void set_selecting_enabled(bool p_enabled);
+	bool is_selecting_enabled() const;
+
+	void set_deselect_on_focus_loss_enabled(const bool p_enabled);
+	bool is_deselect_on_focus_loss_enabled() const;
+
+	void set_drag_and_drop_selection_enabled(const bool p_enabled);
+	bool is_drag_and_drop_selection_enabled() const;
+
+	void set_right_icon(const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_right_icon();
+
+	void set_icon_expand_mode(ExpandMode p_mode);
+	ExpandMode get_icon_expand_mode() const;
+
+	void set_right_icon_scale(float p_scale);
+	float get_right_icon_scale() const;
+
+	void set_flat(bool p_enabled);
+	bool is_flat() const;
+
+	void set_spin_box_mode(bool p_enabled) { spin_box_mode = p_enabled; }
+	bool is_spin_box_mode() const { return spin_box_mode; }
+
+	void set_select_all_on_focus(bool p_enabled);
+	bool is_select_all_on_focus() const;
+	void clear_pending_select_all_on_focus(); // For other controls, e.g. SpinBox.
+
+	virtual bool is_text_field() const override;
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	void show_virtual_keyboard();
+
+	LineEdit(const String& p_placeholder = String());
+	~LineEdit();
+};
+
+// --- Folded from scene/gui/spin_box.h ---
+#include "scene/gui/control.h"
+
+#include "scene/gui/scroll_bar.h"
+#include "scene/main/timer.h"
+
+class SpinBox : public Control
+{
+	LineEdit* line_edit = nullptr;
+	bool update_on_text_changed = false;
+	bool accepted = true;
+
+	struct SizingCache
+	{
+		int buttons_block_width = 0;
+		int buttons_width = 0;
+		int buttons_vertical_separation = 0;
+		int buttons_left = 0;
+		int button_up_height = 0;
+		int button_down_height = 0;
+		int second_button_top = 0;
+		int buttons_separator_top = 0;
+		int field_and_buttons_separator_left = 0;
+		int field_and_buttons_separator_width = 0;
+	} sizing_cache;
+
+	Timer* range_click_timer = nullptr;
+	void _release_mouse_from_drag_mode();
+	void _arrow_clicked(bool p_up);
+
+	void _update_text(bool p_only_update_if_value_changed = false);
+	void _text_submitted(const String& p_string);
+	void _text_changed(const String& p_string);
+
+	String prefix;
+	String suffix;
+	String last_text_value;
+	double custom_arrow_step = 0.0;
+	bool custom_arrow_round = false;
+
+	void _line_edit_input(const InputEvent& p_event);
+
+	struct Drag
+	{
+		double base_val = 0.0;
+		bool allowed = false;
+		bool enabled = false;
+		Vector2 capture_pos;
+		double diff_y = 0.0;
+	} drag;
+
+	struct StateCache
+	{
+		bool up_button_hovered = false;
+		bool up_button_pressed = false;
+		bool up_button_disabled = false;
+		bool down_button_hovered = false;
+		bool down_button_pressed = false;
+		bool down_button_disabled = false;
+	} state_cache;
+
+	void _line_edit_editing_toggled(bool p_toggled_on);
+
+	inline void _compute_sizes();
+	inline int _get_widest_button_icon_width();
+
+	struct ThemeCache
+	{
+		Ref<Texture2D> up_icon;
+		Ref<Texture2D> up_hover_icon;
+		Ref<Texture2D> up_pressed_icon;
+		Ref<Texture2D> up_disabled_icon;
+		Ref<Texture2D> down_icon;
+		Ref<Texture2D> down_hover_icon;
+		Ref<Texture2D> down_pressed_icon;
+		Ref<Texture2D> down_disabled_icon;
+
+		Ref<StyleBox> up_base_stylebox;
+		Ref<StyleBox> up_hover_stylebox;
+		Ref<StyleBox> up_pressed_stylebox;
+		Ref<StyleBox> up_disabled_stylebox;
+		Ref<StyleBox> down_base_stylebox;
+		Ref<StyleBox> down_hover_stylebox;
+		Ref<StyleBox> down_pressed_stylebox;
+		Ref<StyleBox> down_disabled_stylebox;
+
+		Color up_icon_modulate;
+		Color up_hover_icon_modulate;
+		Color up_pressed_icon_modulate;
+		Color up_disabled_icon_modulate;
+		Color down_icon_modulate;
+		Color down_hover_icon_modulate;
+		Color down_pressed_icon_modulate;
+		Color down_disabled_icon_modulate;
+
+		Ref<StyleBox> field_and_buttons_separator;
+		Ref<StyleBox> up_down_buttons_separator;
+
+		int buttons_vertical_separation = 0;
+		int field_and_buttons_separation = 0;
+		int buttons_width = 0;
+#ifndef DISABLE_DEPRECATED
+		Ref<Texture2D> updown_icon;
+		bool is_updown_assigned = false;
+		bool set_min_buttons_width_from_icons = false;
+#endif
+	} theme_cache;
+
+	void _mouse_exited();
+	void _update_buttons_state_for_current_value();
+
+protected:
+	void _value_changed(double p_value);
+
+	void _notification(int p_what);
+
+public:
+	NumericRange range;
+
+	double get_value() const { return range.value; }
+	double get_min() const { return range.min; }
+	double get_max() const { return range.max; }
+	double get_step() const { return range.step; }
+	double get_page() const { return range.page; }
+	double get_as_ratio() const { return range.get_as_ratio(); }
+
+	void set_value(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			_value_changed(range.value);
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_value_no_signal(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			_value_changed(range.value);
+			queue_redraw();
+		}
+	}
+
+	void set_min(double p_min)
+	{
+		if (range.set_min(p_min)) {
+			_value_changed(range.value);
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_max(double p_max)
+	{
+		if (range.set_max(p_max)) {
+			_value_changed(range.value);
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_step(double p_step)
+	{
+		if (range.set_step(p_step)) {
+			queue_accessibility_update();
+		}
+	}
+
+	void set_page(double p_page)
+	{
+		if (range.set_page(p_page)) {
+			_value_changed(range.value);
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_as_ratio(double p_value)
+	{
+		if (range.set_as_ratio(p_value)) {
+			_value_changed(range.value);
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_allow_greater(bool p_allow) { range.allow_greater = p_allow; }
+	bool is_greater_allowed() const { return range.allow_greater; }
+	void set_allow_lesser(bool p_allow) { range.allow_lesser = p_allow; }
+	bool is_lesser_allowed() const { return range.allow_lesser; }
+	void set_use_rounded_values(bool p_enable) { range.rounded_values = p_enable; }
+	bool is_using_rounded_values() const { return range.rounded_values; }
+	bool is_ratio_exp() const { return range.exp_ratio; }
+
+	LineEdit* get_line_edit();
+
+	virtual Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override
+	{
+		PackedStringArray warnings = Control::get_configuration_warnings();
+		range.append_configuration_warnings(warnings);
+		return warnings;
+	}
+
+	void set_horizontal_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_horizontal_alignment() const;
+
+	void set_editable(bool p_enabled);
+	bool is_editable() const;
+
+	void set_suffix(const String& p_suffix);
+	String get_suffix() const;
+
+	void set_prefix(const String& p_prefix);
+	String get_prefix() const;
+
+	void set_update_on_text_changed(bool p_enabled);
+	bool get_update_on_text_changed() const;
+
+	void set_select_all_on_focus(bool p_enabled);
+	bool is_select_all_on_focus() const;
+
+	void apply();
+	void set_custom_arrow_step(const double p_custom_arrow_step);
+	double get_custom_arrow_step() const;
+
+	void set_custom_arrow_round(bool p_round);
+	bool is_custom_arrow_rounding() const;
+
+	SpinBox();
+};
+
+// --- End scene/gui/spin_box.h ---
+
+// --- Folded from scene/gui/text_edit.h ---
+#include <type_traits>
+
+#include "scene/gui/control.h"
+#include "scene/gui/popup_menu.h"
+#include "scene/gui/scroll_bar.h"
+#include "scene/main/timer.h"
+// --- Folded from scene/resources/syntax_highlighter.h ---
+#include "core/io/resource.h"
+#include "core/templates/rb_map.h"
+
+class TextEdit;
+
+class CodeHighlighter : public Resource
+{
+private:
+	struct ColorRegion
+	{
+		Color color;
+		String start_key;
+		String end_key;
+		bool line_only = false;
+	};
+
+	TextEdit* text_edit = nullptr;
+
+	Vector<ColorRegion> color_regions;
+	HashMap<int, int> color_region_cache;
+
+	Color font_color;
+	Color member_color;
+	Color function_color;
+	Color symbol_color;
+	Color number_color;
+
+	bool uint_suffix_enabled = false;
+
+	void _lines_edited_from(int p_from_line, int p_to_line);
+
+public:
+	void clear_highlighting_cache();
+	void _clear_highlighting_cache();
+
+	void update_cache();
+	void _update_cache();
+
+	void set_text_edit(TextEdit* p_text_edit);
+	TextEdit* get_text_edit() const;
+
+	void add_keyword_color(const String& p_keyword, const Color& p_color);
+	void remove_keyword_color(const String& p_keyword);
+	bool has_keyword_color(const String& p_keyword) const;
+	Color get_keyword_color(const String& p_keyword) const;
+
+	void clear_keyword_colors();
+
+	void add_member_keyword_color(const String& p_member_keyword, const Color& p_color);
+	void remove_member_keyword_color(const String& p_member_keyword);
+	bool has_member_keyword_color(const String& p_member_keyword) const;
+	Color get_member_keyword_color(const String& p_member_keyword) const;
+
+	void clear_member_keyword_colors();
+
+	void add_color_region(const String& p_start_key, const String& p_end_key, const Color& p_color,
+		bool p_line_only = false);
+	void remove_color_region(const String& p_start_key);
+	bool has_color_region(const String& p_start_key) const;
+
+	void clear_color_regions();
+
+	void set_number_color(Color p_color);
+	Color get_number_color() const;
+
+	void set_symbol_color(Color p_color);
+	Color get_symbol_color() const;
+
+	void set_function_color(Color p_color);
+	Color get_function_color() const;
+
+	void set_member_variable_color(Color p_color);
+	Color get_member_variable_color() const;
+
+	void set_uint_suffix_enabled(bool p_enabled);
+};
+
+// --- End scene/resources/syntax_highlighter.h ---
+#include "scene/resources/text_paragraph.h"
+
+class TextEdit : public Control
+{
+public:
+	/* Edit Actions. */
+	enum EditAction
+	{
+		ACTION_NONE,
+		ACTION_TYPING,
+		ACTION_BACKSPACE,
+		ACTION_DELETE,
+	};
+
+	/* Caret. */
+	enum CaretType
+	{
+		CARET_TYPE_LINE,
+		CARET_TYPE_BLOCK
+	};
+
+	/* Selection */
+	enum SelectionMode
+	{
+		SELECTION_MODE_NONE,
+		SELECTION_MODE_SHIFT,
+		SELECTION_MODE_POINTER,
+		SELECTION_MODE_WORD,
+		SELECTION_MODE_LINE
+	};
+
+	/* Line Wrapping.*/
+	enum LineWrappingMode
+	{
+		LINE_WRAPPING_NONE,
+		LINE_WRAPPING_BOUNDARY
+	};
+
+	/* Gutters. */
+	enum GutterType
+	{
+		GUTTER_TYPE_STRING,
+		GUTTER_TYPE_ICON,
+		GUTTER_TYPE_CUSTOM
+	};
+
+	/* Context Menu. */
+	enum MenuItems
+	{
+		MENU_CUT,
+		MENU_COPY,
+		MENU_PASTE,
+		MENU_CLEAR,
+		MENU_SELECT_ALL,
+		MENU_UNDO,
+		MENU_REDO,
+		MENU_SUBMENU_TEXT_DIR,
+		MENU_DIR_INHERITED,
+		MENU_DIR_AUTO,
+		MENU_DIR_LTR,
+		MENU_DIR_RTL,
+		MENU_DISPLAY_UCC,
+		MENU_SUBMENU_INSERT_UCC,
+		MENU_INSERT_LRM,
+		MENU_INSERT_RLM,
+		MENU_INSERT_LRE,
+		MENU_INSERT_RLE,
+		MENU_INSERT_LRO,
+		MENU_INSERT_RLO,
+		MENU_INSERT_PDF,
+		MENU_INSERT_ALM,
+		MENU_INSERT_LRI,
+		MENU_INSERT_RLI,
+		MENU_INSERT_FSI,
+		MENU_INSERT_PDI,
+		MENU_INSERT_ZWJ,
+		MENU_INSERT_ZWNJ,
+		MENU_INSERT_WJ,
+		MENU_INSERT_SHY,
+		MENU_EMOJI_AND_SYMBOL,
+		MENU_MAX
+
+	};
+
+	/* Search. */
+	enum SearchFlags
+	{
+		SEARCH_MATCH_CASE = 1,
+		SEARCH_WHOLE_WORDS = 2,
+		SEARCH_BACKWARDS = 4
+	};
+
+	/* Code Completion. */
+	enum CodeCompletionKind
+	{
+		KIND_CLASS,
+		KIND_FUNCTION,
+		KIND_SIGNAL,
+		KIND_VARIABLE,
+		KIND_MEMBER,
+		KIND_ENUM,
+		KIND_CONSTANT,
+		KIND_NODE_PATH,
+		KIND_FILE_PATH,
+		KIND_PLAIN_TEXT,
+		KIND_KEYWORD,
+	};
+
+	enum CodeCompletionLocation
+	{
+		LOCATION_LOCAL = 0,
+		LOCATION_PARENT_MASK = 1 << 8,
+		LOCATION_OTHER_USER_CODE = 1 << 9,
+		LOCATION_OTHER = 1 << 10,
+	};
+
+private:
+	struct GutterInfo
+	{
+		GutterType type = GutterType::GUTTER_TYPE_STRING;
+		String name = "";
+		int width = 24;
+		bool draw = true;
+		bool clickable = false;
+		bool overwritable = false;
+	};
+
+	class Text
+	{
+	public:
+		struct Gutter
+		{
+			bool clickable = false;
+
+			Ref<Texture2D> icon;
+			String text = "";
+			Color color = Color(1, 1, 1);
+		};
+
+		struct Line
+		{
+			Vector<Gutter> gutters;
+
+			String data;
+			Ref<TextParagraph> data_buf;
+			Vector<RID> accessibility_text_root_element;
+
+			String ime_data;
+
+			Color background_color = Color(0, 0, 0, 0);
+			bool hidden = false;
+			int line_count = 0;
+			int height = 0;
+			int width = 0;
+			float indent_ofs = -1.0;
+
+			Line() { data_buf.instantiate(); }
+		};
+
+	private:
+		bool is_dirty = false;
+		bool tab_size_dirty = false;
+
+		mutable Vector<Line> text;
+		Ref<Font> font;
+		int font_size = -1;
+		int font_height = 0;
+
+		String language;
+		TextServer::Direction direction = TextServer::DIRECTION_AUTO;
+		uint32_t brk_flags = TextServer::BREAK_MANDATORY;
+		bool draw_control_chars = false;
+		String custom_word_separators;
+		bool use_default_word_separators = true;
+		bool use_custom_word_separators = false;
+
+		mutable bool max_line_width_dirty = true;
+		mutable bool max_line_height_dirty = true;
+		mutable int max_line_width = 0;
+		mutable int max_line_height = 0;
+		mutable int total_visible_line_count = 0;
+		int width = -1;
+
+		int tab_size = 4;
+		int gutter_count = 0;
+		bool indent_wrapped_lines = false;
+
+	public:
+		void set_tab_size(int p_tab_size);
+		int get_tab_size() const;
+		void set_indent_wrapped_lines(bool p_enabled);
+		bool is_indent_wrapped_lines() const;
+
+		void set_font(const Ref<Font>& p_font);
+		void set_font_size(int p_font_size);
+		void set_direction_and_language(
+			TextServer::Direction p_direction, const String& p_language);
+		void set_draw_control_chars(bool p_enabled);
+
+		int get_line_height() const;
+		int get_line_width(int p_line, int p_wrap_index = -1) const;
+		int get_max_width() const;
+		int get_total_visible_line_count() const;
+
+		void set_use_default_word_separators(bool p_enabled);
+		bool is_default_word_separators_enabled() const;
+
+		void set_use_custom_word_separators(bool p_enabled);
+		bool is_custom_word_separators_enabled() const;
+
+		void set_custom_word_separators(const String& p_separators);
+		String get_enabled_word_separators() const;
+		String get_custom_word_separators() const;
+		String get_default_word_separators() const;
+
+		void set_width(float p_width);
+		float get_width() const;
+		void set_brk_flags(uint32_t p_flags);
+		uint32_t get_brk_flags() const;
+		int get_line_wrap_amount(int p_line) const;
+
+		const Vector<RID> get_accessibility_elements(int p_line);
+		void update_accessibility(int p_line, RID p_root);
+
+		void clear_accessibility()
+		{
+			for (int i = 0; i < text.size(); i++) {
+				text.write[i].accessibility_text_root_element.clear();
+			}
+		}
+
+		Vector<Vector2i> get_line_wrap_ranges(int p_line) const;
+		const Ref<TextParagraph> get_line_data(int p_line) const;
+		float get_indent_offset(int p_line, bool p_rtl) const;
+
+		void set_hidden(int p_line, bool p_hidden);
+		bool is_hidden(int p_line) const;
+		void remove_range(int p_from_line, int p_to_line);
+
+		int size() const { return text.size(); }
+
+		void clear();
+
+		void invalidate_cache(int p_line, bool p_text_changed = false);
+		void invalidate_font();
+		void invalidate_all();
+		void invalidate_all_lines();
+
+		_FORCE_INLINE_ const String& operator[](int p_line) const;
+		_FORCE_INLINE_ const String& get_text_with_ime(int p_line) const;
+
+		/* Gutters. */
+		void add_gutter(int p_at);
+		void remove_gutter(int p_gutter);
+		void move_gutters(int p_from_line, int p_to_line);
+
+		void set_line_gutter_text(int p_line, int p_gutter, const String& p_text)
+		{
+			text.write[p_line].gutters.write[p_gutter].text = p_text;
+		}
+
+		const String& get_line_gutter_text(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].text;
+		}
+
+		void set_line_gutter_icon(int p_line, int p_gutter, const Ref<Texture2D>& p_icon)
+		{
+			text.write[p_line].gutters.write[p_gutter].icon = p_icon;
+		}
+
+		const Ref<Texture2D>& get_line_gutter_icon(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].icon;
+		}
+
+		void set_line_gutter_item_color(int p_line, int p_gutter, const Color& p_color)
+		{
+			text.write[p_line].gutters.write[p_gutter].color = p_color;
+		}
+
+		const Color& get_line_gutter_item_color(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].color;
+		}
+
+		void set_line_gutter_clickable(int p_line, int p_gutter, bool p_clickable)
+		{
+			text.write[p_line].gutters.write[p_gutter].clickable = p_clickable;
+		}
+
+		bool is_line_gutter_clickable(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].clickable;
+		}
+
+		/* Line style. */
+		void set_line_background_color(int p_line, const Color& p_color)
+		{
+			text.write[p_line].background_color = p_color;
+		}
+
+		const Color get_line_background_color(int p_line) const
+		{
+			return text[p_line].background_color;
+		}
+	};
+
+	/* Text */
+	Text text;
+	RID text_ci;
+	bool setting_text = false;
+
+	enum AltInputMode
+	{
+		ALT_INPUT_NONE,
+		ALT_INPUT_UNICODE,
+		ALT_INPUT_OEM,
+		ALT_INPUT_WIN,
+	};
+
+	AltInputMode alt_mode = ALT_INPUT_NONE;
+	bool alt_start = false;
+	bool alt_start_no_hold = false;
+	uint32_t alt_code = 0;
+
+	bool tab_input_mode = true;
+
+	// Text properties.
+	String ime_text = "";
+	Point2 ime_selection;
+
+	// Placeholder
+	String placeholder_text = "";
+	Ref<TextParagraph> placeholder_data_buf;
+	int placeholder_line_height = -1;
+	int placeholder_max_width = -1;
+
+	Vector<String> placeholder_wrapped_rows;
+
+	void _update_placeholder();
+	bool _using_placeholder() const;
+
+	/* Initialize to opposite first, so we get past the early-out in set_editable. */
+	bool editable = false;
+
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+	TextDirection input_direction = TEXT_DIRECTION_LTR;
+
+	String language = "";
+
+	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+
+	void _clear();
+	void _update_caches(bool p_invalidate_all = false);
+
+	void _close_ime_window();
+	void _update_ime_window_position();
+	void _update_ime_text();
+
+	// User control.
+	bool overtype_mode = false;
+	bool context_menu_enabled = true;
+	bool emoji_menu_enabled = true;
+	bool backspace_deletes_composite_character_enabled = false;
+	bool shortcut_keys_enabled = true;
+	bool virtual_keyboard_enabled = true;
+	bool virtual_keyboard_show_on_focus = true;
+	bool middle_mouse_paste_enabled = true;
+	bool empty_selection_clipboard_enabled = true;
+
+	// Overridable actions.
+	String cut_copy_line = "";
+
+	// Context menu.
+	PopupMenu* menu = nullptr;
+	PopupMenu* menu_dir = nullptr;
+	PopupMenu* menu_ctl = nullptr;
+
+	Key _get_menu_action_accelerator(const String& p_action);
+	void _generate_context_menu();
+
+	/* Versioning */
+	struct Caret;
+
+	struct TextOperation
+	{
+		enum Type
+		{
+			TYPE_NONE,
+			TYPE_INSERT,
+			TYPE_REMOVE
+		};
+
+		Vector<Caret> start_carets;
+		Vector<Caret> end_carets;
+
+		Type type = TYPE_NONE;
+		int from_line = 0;
+		int from_column = 0;
+		int to_line = 0;
+		int to_column = 0;
+		String text;
+		uint32_t prev_version = 0;
+		uint32_t version = 0;
+		bool chain_forward = false;
+		bool chain_backward = false;
+	};
+
+	bool undo_enabled = true;
+	int undo_stack_max_size = 50;
+
+	EditAction current_action = EditAction::ACTION_NONE;
+	bool pending_action_end = false;
+	bool in_action = false;
+
+	int complex_operation_count = 0;
+	bool next_operation_is_complex = false;
+
+	TextOperation current_op;
+	List<TextOperation> undo_stack;
+	List<TextOperation>::Element* undo_stack_pos = nullptr;
+
+	Timer* idle_detect = nullptr;
+
+	uint32_t version = 0;
+	uint32_t saved_version = 0;
+
+	void _push_current_op();
+	void _do_text_op(const TextOperation& p_op, bool p_reverse);
+	void _clear_redo();
+
+	/* Search */
+	String search_text = "";
+	uint32_t search_flags = 0;
+
+	int _get_column_pos_of_word(const String& p_key, const String& p_search,
+		uint32_t p_search_flags, int p_from_column) const;
+
+	/* Mouse */
+	struct LineDrawingCache
+	{
+		int y_offset = 0;
+		Vector<int> first_visible_chars;
+		Vector<int> last_visible_chars;
+	};
+
+	HashMap<int, LineDrawingCache> line_drawing_cache;
+
+	int _get_char_pos_for_line(int p_px, int p_line, int p_wrap_index = 0) const;
+
+	/* Caret. */
+	struct Selection
+	{
+		bool active = false;
+
+		int origin_line = 0;
+		int origin_column = 0;
+		int origin_last_fit_x = 0;
+		int word_begin_column = 0;
+		int word_end_column = 0;
+	};
+
+	struct Caret
+	{
+		Selection selection;
+
+		Point2 draw_pos;
+		bool visible = false;
+		int last_fit_x = 0;
+		int line = 0;
+		int column = 0;
+	};
+
+	// Vector containing all the carets, index '0' is the "main caret" and should never be removed.
+	Vector<Caret> carets;
+
+	bool setting_caret_line = false;
+	bool caret_pos_dirty = false;
+	void _set_caret_pos_dirty(bool p_dirty);
+
+	int multicaret_edit_count = 0;
+	bool multicaret_edit_merge_queued = false;
+	HashSet<int> multicaret_edit_ignore_carets;
+
+	CaretType caret_type = CaretType::CARET_TYPE_LINE;
+
+	bool draw_caret = true;
+	bool draw_caret_when_editable_disabled = false;
+
+	bool caret_blink_enabled = false;
+	Timer* caret_blink_timer = nullptr;
+
+	bool move_caret_on_right_click = true;
+
+	bool caret_mid_grapheme_enabled = false;
+
+	bool multi_carets_enabled = true;
+
+	bool drag_action = false;
+	bool drag_caret_force_displayed = false;
+
+	void _caret_changed(int p_caret = -1);
+	void _emit_caret_changed();
+
+	void _show_virtual_keyboard();
+	void _reset_caret_blink_timer();
+	void _toggle_draw_caret();
+
+	int _get_column_x_offset_for_line(int p_char, int p_line, int p_column) const;
+	bool _is_line_col_in_range(int p_line, int p_column, int p_from_line, int p_from_column,
+		int p_to_line, int p_to_column, bool p_include_edges = true) const;
+
+	void _offset_carets_after(int p_old_line, int p_old_column, int p_new_line, int p_new_column,
+		bool p_include_selection_begin = true, bool p_include_selection_end = true);
+
+	void _cancel_drag_and_drop_text();
+
+	/* Selection. */
+	SelectionMode selecting_mode = SelectionMode::SELECTION_MODE_NONE;
+
+	bool selecting_enabled = true;
+	bool deselect_on_focus_loss_enabled = true;
+	bool drag_and_drop_selection_enabled = true;
+
+	bool use_selected_font_color = false;
+
+	bool selection_drag_attempt = false;
+	bool dragging_selection = false;
+	int drag_and_drop_origin_caret_index = -1;
+	int drag_caret_index = -1;
+
+	Timer* click_select_held = nullptr;
+	uint64_t last_dblclk = 0;
+	Vector2 last_dblclk_pos;
+
+	bool touch_dragging_starting = false;
+	bool touch_dragging_in_progress = false;
+	bool touch_dragging_deaccel = false;
+	Vector2 drag_accum;
+	Vector2 drag_from;
+	Vector2 drag_speed;
+	Vector2 last_drag_accum;
+	double time_since_motion = 0.0;
+	bool pan_gesture_performed = false;
+
+	enum SelectionHandleDragType
+	{
+		SELECTION_HANDLE_NONE,
+		SELECTION_HANDLE_START,
+		SELECTION_HANDLE_END,
+	};
+
+	SelectionHandleDragType selection_handle_drag_type = SELECTION_HANDLE_NONE;
+	float selection_handle_radius;
+	int dragging_caret_index = -1;
+	Vector2 selection_handle_drag_offset;
+	bool show_selection_handle = false;
+	bool selection_handle_enabled = true;
+	Vector<Point2i> _get_selection_handles_pos(int p_cursor) const;
+	bool _is_first_column(int p_line, int p_column) const;
+	void _draw_selection_handle(Vector2 p_pos) const;
+
+	void _cancel_inertial_scroll();
+
+	void _on_drag_or_mouse_motion_event(Vector2i p_event_position, bool p_is_left_click_or_drag);
+
+	void _selection_changed(int p_caret = -1);
+	void _click_selection_held();
+
+	void _pre_shift_selection(int p_caret);
+
+	bool _selection_contains(int p_caret, int p_line, int p_column, bool p_include_edges = true,
+		bool p_only_selections = true) const;
+
+	/* Line wrapping. */
+	LineWrappingMode line_wrapping_mode = LineWrappingMode::LINE_WRAPPING_NONE;
+	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_WORD_SMART;
+
+	int wrap_at_column = 0;
+
+	void _update_wrap_at_column(bool p_force = false);
+
+	/* Viewport. */
+	ScrollBar* h_scroll = nullptr;
+	ScrollBar* v_scroll = nullptr;
+
+	Vector2i content_size_cache;
+	bool fit_content_height = false;
+	bool fit_content_width = false;
+	bool scroll_past_end_of_file_enabled = false;
+
+	// Smooth scrolling.
+	bool smooth_scroll_enabled = false;
+	float target_v_scroll = 0.0;
+	float v_scroll_speed = 80.0;
+
+	// Scrolling.
+	int first_visible_line = 0;
+	int first_visible_line_wrap_ofs = 0;
+	int first_visible_col = 0;
+
+	bool scrolling = false;
+	bool updating_scrolls = false;
+
+	void _update_scrollbars();
+	int _get_control_height() const;
+
+	void _v_scroll_input();
+	void _scroll_moved(double p_to_val);
+
+	double _get_visible_lines_offset() const;
+	double _get_v_scroll_offset() const;
+
+	void _scroll_up(real_t p_delta, bool p_animate);
+	void _scroll_down(real_t p_delta, bool p_animate);
+
+	void _scroll_lines_up();
+	void _scroll_lines_down();
+
+	void _adjust_viewport_to_caret_horizontally(int p_caret = 0, bool p_maximize_selection = true);
+
+	// Minimap.
+	bool draw_minimap = false;
+
+	int minimap_width = 80;
+	Point2 minimap_char_size = Point2(1, 2);
+	int minimap_line_spacing = 1;
+
+	// Minimap scroll.
+	bool minimap_clicked = false;
+	bool hovering_minimap = false;
+	bool dragging_minimap = false;
+	bool can_drag_minimap = false;
+
+	double minimap_scroll_ratio = 0.0;
+	double minimap_scroll_click_pos = 0.0;
+
+	void _update_minimap_hover();
+	void _update_minimap_click();
+	void _update_minimap_drag();
+
+	/* Gutters. */
+	Vector<GutterInfo> gutters;
+	int gutters_width = 0;
+	int gutter_padding = 0;
+	Vector2i hovered_gutter = Vector2i(-1, -1); // X = gutter index, Y = row.
+
+	void _update_gutter_width();
+	Vector2i _get_hovered_gutter(const Point2& p_mouse_pos) const;
+
+	/* Syntax highlighting. */
+	Ref<CodeHighlighter> syntax_highlighter;
+	HashMap<int, Vector<Pair<int64_t, Color>>> syntax_highlighting_cache;
+
+	Vector<Pair<int64_t, Color>> _get_line_syntax_highlighting(int p_line);
+	void _clear_syntax_highlighting_cache();
+	void _syntax_highlighter_changed();
+
+	/* Code editing features (composed). */
+	enum MainGutterType
+	{
+		MAIN_GUTTER_BREAKPOINT = 0x01,
+		MAIN_GUTTER_BOOKMARK = 0x02,
+		MAIN_GUTTER_EXECUTING = 0x04
+	};
+
+	enum DelimiterType
+	{
+		TYPE_STRING,
+		TYPE_COMMENT,
+	};
+
+	struct BracePair
+	{
+		String open_key = "";
+		String close_key = "";
+	};
+
+	struct Delimiter
+	{
+		DelimiterType type;
+		String start_key = "";
+		String end_key = "";
+		bool line_only = true;
+	};
+
+	struct CodeFeatures
+	{
+		/* Indent management */
+		int indent_size = 4;
+		String indent_text = "\t";
+		bool auto_indent = false;
+		HashSet<char32_t> auto_indent_prefixes;
+		bool indent_using_spaces = false;
+
+		/* Auto brace completion */
+		bool auto_brace_completion_enabled = false;
+		Vector<BracePair> auto_brace_completion_pairs;
+
+		/* Main Gutter */
+		int main_gutter = -1;
+		HashMap<int, bool> breakpointed_lines;
+		HashMap<int, bool> bookmarked_lines;
+		HashMap<int, bool> executing_lines;
+		bool draw_breakpoints = false;
+		bool draw_bookmarks = false;
+		bool draw_executing_lines = false;
+
+		/* Line numbers */
+		int line_number_gutter = -1;
+		int line_number_digits = 1;
+		int line_numbers_min_digits = 3;
+		String line_number_padding = " ";
+		HashMap<int, RID> line_number_text_cache;
+
+		/* Fold Gutter */
+		int fold_gutter = -1;
+		bool draw_fold_gutter = false;
+
+		/* Line Folding */
+		bool line_folding_enabled = false;
+		String code_region_start_string;
+		String code_region_end_string;
+		String code_region_start_tag = "region";
+		String code_region_end_tag = "endregion";
+
+		/* Delimiters */
+		bool setting_delimiters = false;
+		Vector<Delimiter> delimiters;
+		Vector<RBMap<int, int>> delimiter_cache;
+
+		/* Code Hint */
+		String code_hint = "";
+		bool code_hint_draw_below = true;
+		int code_hint_xpos = -0xFFFF;
+
+		/* Code Completion */
+		bool code_completion_enabled = false;
+		bool code_completion_forced = false;
+		Vector2 completion_touch_drag_accum;
+		bool code_completion_active = false;
+		bool is_code_completion_scroll_hovered = false;
+		bool is_code_completion_scroll_pressed = false;
+		bool is_code_completion_drag_started = false;
+		Vector<RID> code_completion_ac_items;
+		RID code_completion_ac_scroll_element;
+		RID code_completion_ac_root_element;
+		int code_completion_line_ofs = 0;
+		int code_completion_current_selected = 0;
+		int code_completion_force_item_center = -1;
+		int code_completion_longest_line = 0;
+		Rect2i code_completion_rect;
+		Rect2i code_completion_scroll_rect;
+		float code_completion_pan_offset = 0.0f;
+		HashSet<char32_t> code_completion_prefixes;
+		String code_completion_base;
+		String code_completion_line;
+		int code_completion_caret_line = 0;
+		int code_completion_caret_column = 0;
+
+		/* Line length guidelines */
+		Vector<int> line_length_guideline_columns;
+
+		/* Symbol lookup */
+		bool symbol_lookup_on_click_enabled = false;
+		Point2i symbol_lookup_pos;
+		String symbol_lookup_new_word;
+		String symbol_lookup_word;
+
+		/* Symbol tooltip */
+		bool symbol_tooltip_on_hover_enabled = false;
+		Point2i symbol_tooltip_pos;
+		String symbol_tooltip_word;
+		Timer* symbol_tooltip_timer = nullptr;
+
+		/* Callbacks */
+		int lines_edited_changed = 0;
+		int lines_edited_from = -1;
+		int lines_edited_to = -1;
+	};
+
+	bool code_mode = false;
+	CodeFeatures code;
+
+	int _calculate_spaces_till_next_left_indent(int p_column) const;
+	int _calculate_spaces_till_next_right_indent(int p_column) const;
+	int _get_auto_brace_pair_open_at_pos(int p_line, int p_col);
+	int _get_auto_brace_pair_close_at_pos(int p_line, int p_col);
+
+	_FORCE_INLINE_ bool _is_bookmark_only() const
+	{
+		return code.draw_bookmarks && !code.draw_executing_lines && !code.draw_breakpoints;
+	}
+
+	void _ensure_code_gutters();
+	void _update_draw_main_gutter();
+	void _main_gutter_draw_callback(int p_line, int p_gutter, const Rect2& p_region);
+	void _clear_line_number_text_cache();
+	void _update_line_number_gutter_width();
+	void _line_number_draw_callback(int p_line, int p_gutter, const Rect2& p_region);
+	void _fold_gutter_draw_callback(int p_line, int p_gutter, Rect2 p_region);
+	void _gutter_clicked(int p_line, int p_gutter);
+	void _update_gutter_indexes();
+	void _update_code_region_tags();
+	bool _fold_line(int p_line);
+	bool _unfold_line(int p_line);
+
+	void _update_delimiter_cache(int p_from_line = 0, int p_to_line = -1);
+	int _is_in_delimiter(int p_line, int p_column, DelimiterType p_type) const;
+	void _add_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only, DelimiterType p_type);
+	void _remove_delimiter(const String& p_start_key, DelimiterType p_type);
+	bool _has_delimiter(const String& p_start_key, DelimiterType p_type) const;
+	void _set_delimiters(const Vector<String>& p_delimiters, DelimiterType p_type);
+	void _clear_delimiters(DelimiterType p_type);
+	Vector<String> _get_delimiters(DelimiterType p_type) const;
+
+	void _update_scroll_selected_line(float p_mouse_y);
+	void _filter_code_completion_candidates_impl();
+	void _on_symbol_tooltip_timer_timeout();
+
+	void _code_lines_edited_from(int p_from_line, int p_to_line);
+	void _code_text_set();
+	void _code_line_col_changed();
+	void _code_text_changed();
+
+	/* Visual. */
+	struct ThemeCache
+	{
+		float base_scale = 1.0;
+
+		/* Search */
+		Color search_result_color = Color(1, 1, 1);
+		Color search_result_border_color = Color(1, 1, 1);
+
+		/* Caret */
+		int caret_width = 1;
+		Color caret_color = Color(1, 1, 1);
+		Color caret_background_color = Color(0, 0, 0);
+
+		/* Selection */
+		Color font_selected_color = Color(0, 0, 0, 0);
+		Color selection_color = Color(1, 1, 1);
+
+		/* Other visuals */
+		Ref<StyleBox> style_normal;
+		Ref<StyleBox> style_focus;
+		Ref<StyleBox> style_readonly;
+
+		Ref<Texture2D> tab_icon;
+		Ref<Texture2D> space_icon;
+
+		Ref<Font> font;
+		int font_size = 16;
+		Color font_color = Color(1, 1, 1);
+		Color font_readonly_color = Color(1, 1, 1);
+		Color font_placeholder_color = Color(1, 1, 1, 0.6);
+
+		int outline_size = 0;
+		Color outline_color = Color(1, 1, 1);
+
+		int line_spacing = 1;
+		int wrap_offset = 10;
+
+		Color current_line_color = Color(1, 1, 1);
+		Color word_highlighted_color = Color(1, 1, 1);
+
+		/* Code mode gutters */
+		Color code_folding_color = Color(1, 1, 1);
+		Color folded_code_region_color = Color(1, 1, 1);
+		Ref<Texture2D> can_fold_icon;
+		Ref<Texture2D> folded_icon;
+		Ref<Texture2D> can_fold_code_region_icon;
+		Ref<Texture2D> folded_code_region_icon;
+		Ref<Texture2D> folded_eol_icon;
+		Ref<Texture2D> completion_color_bg;
+
+		Color breakpoint_color = Color(1, 1, 1);
+		Ref<Texture2D> breakpoint_icon;
+
+		Color bookmark_color = Color(1, 1, 1);
+		Ref<Texture2D> bookmark_icon;
+
+		Color executing_line_color = Color(1, 1, 1);
+		Ref<Texture2D> executing_line_icon;
+
+		Color line_number_color = Color(1, 1, 1);
+
+		/* Code Completion */
+		Ref<StyleBox> code_completion_style;
+		int code_completion_icon_separation = 0;
+
+		int code_completion_max_width = 0;
+		int code_completion_max_lines = 7;
+		int code_completion_scroll_width = 0;
+		Color code_completion_scroll_color = Color(0, 0, 0, 0);
+		Color code_completion_scroll_hovered_color = Color(0, 0, 0, 0);
+		Color code_completion_background_color = Color(0, 0, 0, 0);
+		Color code_completion_selected_color = Color(0, 0, 0, 0);
+		Color code_completion_existing_color = Color(0, 0, 0, 0);
+
+		/* Code hint */
+		Ref<StyleBox> code_hint_style;
+		Color code_hint_color;
+
+		/* Line length guideline & brace mismatch */
+		Color line_length_guideline_color;
+		Color brace_mismatch_color;
+
+#ifndef DISABLE_DEPRECATED
+		Color background_color = Color(1, 1, 1);
+#endif // DISABLE_DEPRECATED
+	} theme_cache;
+
+	bool window_has_focus = true;
+	bool first_draw = true;
+
+	bool highlight_current_line = false;
+	bool highlight_all_occurrences = false;
+	bool draw_control_chars = false;
+	bool draw_tabs = false;
+	bool draw_spaces = false;
+
+	// FIXME: Helper method to draw unfilled rects, should be moved to Renderer.
+	void _draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const Color& p_color,
+		real_t p_width = -1.0, bool p_antialiased = false) const;
+
+	/* Theme. */
+	Ref<StyleBox> _get_current_stylebox() const;
+
+	/*** Super internal Core API. Everything builds on it. ***/
+	bool text_changed_dirty = false;
+	void _text_changed();
+	void _emit_text_changed();
+
+	void _base_insert_text(
+		int p_line, int p_char, const String& p_text, int& r_end_line, int& r_end_column);
+	String _base_get_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column) const;
+	void _base_remove_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column);
+
+	/* Input actions. */
+	void _swap_current_input_direction();
+	void _move_caret_left(bool p_select, bool p_move_by_word = false);
+	void _move_caret_right(bool p_select, bool p_move_by_word = false);
+	void _move_caret_up(bool p_select);
+	void _move_caret_down(bool p_select);
+	void _move_caret_to_line_start(bool p_select);
+	void _move_caret_to_line_end(bool p_select);
+	void _move_caret_page_up(bool p_select);
+	void _move_caret_page_down(bool p_select);
+	void _move_caret_document_start(bool p_select);
+	void _move_caret_document_end(bool p_select);
+	bool _clear_carets_and_selection();
+
+protected:
+	void _notification(int p_what);
+
+#ifndef DISABLE_DEPRECATED
+	void _set_selection_mode_bind_compat_86978(
+		SelectionMode p_mode, int p_line = -1, int p_column = -1, int p_caret = 0);
+	Point2i _get_line_column_at_pos_bind_compat_100913(
+		const Point2i& p_pos, bool p_allow_out_of_bounds = true) const;
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+	void _draw_guidelines();
+
+	virtual void _update_theme_item_cache() override;
+
+	virtual String _get_accessibility_name() const override;
+
+	// Brace matching.
+	struct BraceMatchingData
+	{
+		int open_match_line = -1;
+		int open_match_column = -1;
+		bool open_matching = false;
+		bool open_mismatch = false;
+		int close_match_line = -1;
+		int close_match_column = -1;
+		bool close_matching = false;
+		bool close_mismatch = false;
+	};
+
+	bool highlight_matching_braces_enabled = false;
+
+	// Line hiding.
+	bool hiding_enabled = false;
+
+	void _set_hiding_enabled(bool p_enabled);
+	bool _is_hiding_enabled() const;
+
+	void _set_line_as_hidden(int p_line, bool p_hidden);
+	bool _is_line_hidden(int p_line) const;
+
+	void _unhide_all_lines();
+	void _unhide_carets();
+
+	int _get_wrapped_indent_level(int p_line, int& r_first_wrap) const;
+	float _get_wrap_indent_offset(int p_line, int p_wrap_index, bool p_rtl) const;
+
+	// Symbol lookup.
+	String lookup_symbol_word;
+	void _set_symbol_lookup_word(const String& p_symbol);
+
+	/* Text manipulation */
+	void _copy_internal(int p_caret);
+
+public:
+	/* General overrides. */
+	virtual Size2 get_minimum_size() const override;
+	virtual bool is_text_field() const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
+
+	/* Text */
+	// Text properties.
+	RID get_text_canvas_item() const;
+
+	bool has_ime_text() const;
+	void cancel_ime();
+
+	void set_editable(bool p_editable);
+	bool is_editable() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
+
+	void set_tab_size(const int p_size);
+	int get_tab_size() const;
+
+	void set_indent_wrapped_lines(bool p_enabled);
+	bool is_indent_wrapped_lines() const;
+
+	void set_tab_input_mode(bool p_enabled);
+	bool get_tab_input_mode() const;
+
+	// User controls
+	void set_overtype_mode_enabled(bool p_enabled);
+	bool is_overtype_mode_enabled() const;
+
+	void set_context_menu_enabled(bool p_enabled);
+	bool is_context_menu_enabled() const;
+
+	void show_emoji_and_symbol_picker();
+
+	void set_emoji_menu_enabled(bool p_enabled);
+	bool is_emoji_menu_enabled() const;
+
+	void set_backspace_deletes_composite_character_enabled(bool p_enabled);
+	bool is_backspace_deletes_composite_character_enabled() const;
+
+	void set_shortcut_keys_enabled(bool p_enabled);
+	bool is_shortcut_keys_enabled() const;
+
+	void set_virtual_keyboard_enabled(bool p_enabled);
+	bool is_virtual_keyboard_enabled() const;
+
+	void set_virtual_keyboard_show_on_focus(bool p_show_on_focus);
+	bool get_virtual_keyboard_show_on_focus() const;
+
+	void set_middle_mouse_paste_enabled(bool p_enabled);
+	bool is_middle_mouse_paste_enabled() const;
+
+	void set_empty_selection_clipboard_enabled(bool p_enabled);
+	bool is_empty_selection_clipboard_enabled() const;
+
+	// Text manipulation
+	void clear();
+
+	void _set_text(const String& p_text, bool p_emit_signal = false);
+	void set_text(const String& p_text);
+	String get_text() const;
+
+	int get_line_count() const;
+
+	void set_placeholder(const String& p_text);
+	String get_placeholder() const;
+
+	String get_line(int p_line) const;
+	String get_line_with_ime(int p_line) const;
+
+	int get_line_width(int p_line, int p_wrap_index = -1) const;
+	int get_line_height() const;
+
+	int get_indent_level(int p_line) const;
+	int get_first_non_whitespace_column(int p_line) const;
+
+	void remove_line_at(int p_line, bool p_move_carets_down = true);
+
+	int get_last_unhidden_line() const;
+	int get_next_visible_line_offset_from(int p_line_from, int p_visible_amount) const;
+	Point2i get_next_visible_line_index_offset_from(
+		int p_line_from, int p_wrap_index_from, int p_visible_amount) const;
+
+	// Overridable actions
+	void copy(int p_caret = -1);
+
+	// Context menu.
+	PopupMenu* get_menu() const;
+	bool is_menu_visible() const;
+	void menu_option(int p_option);
+
+	/* Versioning */
+	void start_action(EditAction p_action);
+	void end_action();
+	EditAction get_current_action() const;
+
+	void begin_complex_operation();
+	void end_complex_operation();
+
+	bool has_undo() const;
+	bool has_redo() const;
+	void undo();
+	void redo();
+	void clear_undo_history();
+
+	bool is_insert_text_operation() const;
+
+	void tag_saved_version();
+
+	uint32_t get_version() const;
+	uint32_t get_saved_version() const;
+
+	/* Search */
+	void set_search_text(const String& p_search_text);
+	void set_search_flags(uint32_t p_flags);
+
+	Point2i search(
+		const String& p_key, uint32_t p_search_flags, int p_from_line, int p_from_column) const;
+
+	/* Mouse */
+	Point2 get_local_mouse_pos() const;
+
+	String get_word_at_pos(const Vector2& p_pos) const;
+	String get_word(int p_line, int p_column) const;
+
+	Point2i get_line_column_at_pos(
+		const Point2i& p_pos, bool p_clamp_line = true, bool p_clamp_column = true) const;
+	Point2i get_pos_at_line_column(int p_line, int p_column) const;
+	Rect2i get_rect_at_line_column(int p_line, int p_column) const;
+	int get_line_start_margin() const;
+
+	int get_minimap_line_at_pos(const Point2i& p_pos) const;
+
+	bool is_dragging_cursor() const;
+	bool is_mouse_over_selection(bool p_edges = true, int p_caret = -1) const;
+
+	/* Caret */
+	void set_caret_type(CaretType p_type);
+	CaretType get_caret_type() const;
+
+	bool is_caret_blink_enabled() const;
+
+	float get_caret_blink_interval() const;
+
+	void set_draw_caret_when_editable_disabled(bool p_enable);
+	bool is_drawing_caret_when_editable_disabled() const;
+
+	void set_move_caret_on_right_click_enabled(bool p_enabled);
+	bool is_move_caret_on_right_click_enabled() const;
+
+	void set_caret_mid_grapheme_enabled(bool p_enabled);
+	bool is_caret_mid_grapheme_enabled() const;
+
+	void set_multiple_carets_enabled(bool p_enabled);
+	bool is_multiple_carets_enabled() const;
+
+	int add_caret(int p_line, int p_column);
+	void remove_caret(int p_caret);
+	void remove_drag_caret();
+	void remove_secondary_carets();
+	int get_caret_count() const;
+	void add_caret_at_carets(bool p_below);
+
+	Vector<int> get_sorted_carets(bool p_include_ignored_carets = false) const;
+	void collapse_carets(int p_from_line, int p_from_column, int p_to_line, int p_to_column,
+		bool p_inclusive = false);
+
+	void merge_overlapping_carets();
+	void begin_multicaret_edit();
+	void end_multicaret_edit();
+	bool is_in_mulitcaret_edit() const;
+	bool multicaret_edit_ignore_caret(int p_caret) const;
+
+	bool is_caret_visible(int p_caret = 0) const;
+	Point2 get_caret_draw_pos(int p_caret = 0) const;
+
+	void set_caret_line(int p_line, bool p_adjust_viewport = true, bool p_can_be_hidden = true,
+		int p_wrap_index = 0, int p_caret = 0);
+	int get_caret_line(int p_caret = 0) const;
+
+	void set_caret_column(int p_column, bool p_adjust_viewport = true, int p_caret = 0);
+	int get_caret_column(int p_caret = 0) const;
+	int get_next_composite_character_column(int p_line, int p_column) const;
+	int get_previous_composite_character_column(int p_line, int p_column) const;
+
+	int get_caret_wrap_index(int p_caret = 0) const;
+
+	String get_word_under_caret(int p_caret = -1) const;
+
+	/* Selection. */
+	void set_selecting_enabled(bool p_enabled);
+	bool is_selecting_enabled() const;
+
+	void set_deselect_on_focus_loss_enabled(bool p_enabled);
+	bool is_deselect_on_focus_loss_enabled() const;
+
+	void set_drag_and_drop_selection_enabled(bool p_enabled);
+	bool is_drag_and_drop_selection_enabled() const;
+
+	void set_selection_mode(SelectionMode p_mode);
+	SelectionMode get_selection_mode() const;
+
+	void select_all();
+	void select_word_under_caret(int p_caret = -1);
+	void add_selection_for_next_occurrence();
+	void skip_selection_for_next_occurrence();
+	void select(int p_origin_line, int p_origin_column, int p_caret_line, int p_caret_column,
+		int p_caret = 0);
+
+	bool has_selection(int p_caret = -1) const;
+
+	String get_selected_text(int p_caret = -1);
+	int get_selection_at_line_column(
+		int p_line, int p_column, bool p_include_edges = true, bool p_only_selections = true) const;
+	Vector<Point2i> get_line_ranges_from_carets(
+		bool p_only_selections = false, bool p_merge_adjacent = true) const;
+
+	void set_selection_origin_line(
+		int p_line, bool p_can_be_hidden = true, int p_wrap_index = -1, int p_caret = 0);
+	void set_selection_origin_column(int p_column, int p_caret = 0);
+	int get_selection_origin_line(int p_caret = 0) const;
+	int get_selection_origin_column(int p_caret = 0) const;
+
+	int get_selection_from_line(int p_caret = 0) const;
+	int get_selection_from_column(int p_caret = 0) const;
+	int get_selection_to_line(int p_caret = 0) const;
+	int get_selection_to_column(int p_caret = 0) const;
+
+	bool is_caret_after_selection_origin(int p_caret = 0) const;
+
+	void deselect(int p_caret = -1);
+
+	void set_selection_handle_enabled(bool p_enabled);
+	bool is_selection_handle_enabled() const;
+
+	/* Line wrapping. */
+	void set_line_wrapping_mode(LineWrappingMode p_wrapping_mode);
+	LineWrappingMode get_line_wrapping_mode() const;
+
+	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode() const;
+
+	bool is_line_wrapped(int p_line) const;
+	int get_line_wrap_count(int p_line) const;
+	int get_line_wrap_index_at_column(int p_line, int p_column) const;
+
+	Vector<String> get_line_wrapped_text(int p_line) const;
+
+	/* Viewport. */
+	// Scrolling.
+	void set_smooth_scroll_enabled(bool p_enabled);
+	bool is_smooth_scroll_enabled() const;
+
+	void set_scroll_past_end_of_file_enabled(bool p_enabled);
+	bool is_scroll_past_end_of_file_enabled() const;
+
+	ScrollBar* get_v_scroll_bar() const;
+	ScrollBar* get_h_scroll_bar() const;
+
+	void set_v_scroll(double p_scroll);
+	double get_v_scroll() const;
+
+	void set_h_scroll(int p_scroll);
+	int get_h_scroll() const;
+
+	void set_v_scroll_speed(float p_speed);
+	float get_v_scroll_speed() const;
+
+	void set_fit_content_height_enabled(bool p_enabled);
+	bool is_fit_content_height_enabled() const;
+
+	void set_fit_content_width_enabled(bool p_enabled);
+	bool is_fit_content_width_enabled() const;
+
+	double get_scroll_pos_for_line(int p_line, int p_wrap_index = 0) const;
+
+	// Visible lines.
+	void set_line_as_first_visible(int p_line, int p_wrap_index = 0);
+	int get_first_visible_line() const;
+
+	void set_line_as_center_visible(int p_line, int p_wrap_index = 0);
+
+	void set_line_as_last_visible(int p_line, int p_wrap_index = 0);
+	int get_last_full_visible_line() const;
+	int get_last_full_visible_line_wrap_index() const;
+
+	int get_visible_line_count() const;
+	int get_visible_line_count_in_range(int p_from, int p_to) const;
+	int get_total_visible_line_count() const;
+
+	// Auto Adjust
+	bool is_line_in_viewport(int p_line) const;
+	void adjust_viewport_to_caret(int p_caret = 0);
+	void center_viewport_to_caret(int p_caret = 0);
+
+	// Minimap
+	void set_draw_minimap(bool p_enabled);
+	bool is_drawing_minimap() const;
+
+	void set_minimap_width(int p_minimap_width);
+	int get_minimap_width() const;
+
+	int get_minimap_visible_lines() const;
+
+	/* Gutters. */
+	void add_gutter(int p_at = -1);
+	void remove_gutter(int p_gutter);
+	int get_gutter_count() const;
+
+	Vector2i get_hovered_gutter() const { return hovered_gutter; }
+
+	void set_gutter_name(int p_gutter, const String& p_name);
+	String get_gutter_name(int p_gutter) const;
+
+	void set_gutter_type(int p_gutter, GutterType p_type);
+	GutterType get_gutter_type(int p_gutter) const;
+
+	void set_gutter_width(int p_gutter, int p_width);
+	int get_gutter_width(int p_gutter) const;
+	int get_total_gutter_width() const;
+
+	void set_gutter_draw(int p_gutter, bool p_draw);
+	bool is_gutter_drawn(int p_gutter) const;
+
+	void set_gutter_clickable(int p_gutter, bool p_clickable);
+	bool is_gutter_clickable(int p_gutter) const;
+
+	void set_gutter_overwritable(int p_gutter, bool p_overwritable);
+	bool is_gutter_overwritable(int p_gutter) const;
+
+	void merge_gutters(int p_from_line, int p_to_line);
+
+	void set_line_gutter_text(int p_line, int p_gutter, const String& p_text);
+	String get_line_gutter_text(int p_line, int p_gutter) const;
+
+	void set_line_gutter_icon(int p_line, int p_gutter, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_line_gutter_icon(int p_line, int p_gutter) const;
+
+	void set_line_gutter_item_color(int p_line, int p_gutter, const Color& p_color);
+	Color get_line_gutter_item_color(int p_line, int p_gutter) const;
+
+	void set_line_gutter_clickable(int p_line, int p_gutter, bool p_clickable);
+	bool is_line_gutter_clickable(int p_line, int p_gutter) const;
+
+	// Line style
+	void set_line_background_color(int p_line, const Color& p_color);
+	Color get_line_background_color(int p_line) const;
+
+	/* Syntax Highlighting. */
+	void set_syntax_highlighter(Ref<CodeHighlighter> p_syntax_highlighter);
+	Ref<CodeHighlighter> get_syntax_highlighter() const;
+
+	/* Code Mode & Code Features. */
+	void set_code_mode(bool p_enabled);
+	bool is_code_mode() const { return code_mode; }
+
+	// Indent management
+	void set_indent_size(const int p_size);
+	int get_indent_size() const;
+
+	void set_indent_using_spaces(const bool p_use_spaces);
+	bool is_indent_using_spaces() const;
+
+	void set_auto_indent_enabled(bool p_enabled);
+	bool is_auto_indent_enabled() const;
+
+	void set_auto_indent_prefixes(const Vector<String>& p_prefixes);
+	Vector<String> get_auto_indent_prefixes() const;
+
+	// Auto brace completion
+	void set_auto_brace_completion_enabled(bool p_enabled);
+	bool is_auto_brace_completion_enabled() const;
+
+	void set_highlight_matching_braces_enabled(bool p_enabled);
+	bool is_highlight_matching_braces_enabled() const;
+
+	void add_auto_brace_completion_pair(const String& p_open_key, const String& p_close_key);
+
+	bool has_auto_brace_completion_open_key(const String& p_open_key) const;
+	bool has_auto_brace_completion_close_key(const String& p_close_key) const;
+
+	String get_auto_brace_completion_close_key(const String& p_open_key) const;
+
+	// Main Gutter
+	void set_draw_breakpoints_gutter(bool p_draw);
+	bool is_drawing_breakpoints_gutter() const;
+
+	void set_draw_bookmarks_gutter(bool p_draw);
+	bool is_drawing_bookmarks_gutter() const;
+
+	void set_draw_executing_lines_gutter(bool p_draw);
+	bool is_drawing_executing_lines_gutter() const;
+
+	void set_line_as_breakpoint(int p_line, bool p_breakpointed);
+	bool is_line_breakpointed(int p_line) const;
+	void clear_breakpointed_lines();
+	PackedInt32Array get_breakpointed_lines() const;
+
+	void set_line_as_bookmarked(int p_line, bool p_bookmarked);
+	bool is_line_bookmarked(int p_line) const;
+	void clear_bookmarked_lines();
+	PackedInt32Array get_bookmarked_lines() const;
+
+	void set_line_as_executing(int p_line, bool p_executing);
+	bool is_line_executing(int p_line) const;
+	void clear_executing_lines();
+	PackedInt32Array get_executing_lines() const;
+
+	// Line numbers
+	void set_draw_line_numbers(bool p_draw);
+	bool is_draw_line_numbers_enabled() const;
+	void set_line_numbers_zero_padded(bool p_zero_padded);
+	bool is_line_numbers_zero_padded() const;
+	void set_line_numbers_min_digits(int p_count);
+	int get_line_numbers_min_digits() const;
+
+	// Fold gutter
+	void set_draw_fold_gutter(bool p_draw);
+	bool is_drawing_fold_gutter() const;
+
+	// Line Folding
+	void set_line_folding_enabled(bool p_enabled);
+	bool is_line_folding_enabled() const;
+
+	bool can_fold_line(int p_line) const;
+
+	void fold_line(int p_line);
+	void unfold_line(int p_line);
+	void fold_all_lines();
+	void unfold_all_lines();
+	void toggle_foldable_line(int p_line);
+	void toggle_foldable_lines_at_carets();
+
+	int get_folded_line_header(int p_line) const;
+	bool is_line_folded(int p_line) const;
+	Vector<int> get_folded_lines_bind() const;
+	PackedInt32Array get_folded_lines() const;
+
+	// Code region
+	void create_code_region();
+	String get_code_region_start_tag() const;
+	String get_code_region_end_tag() const;
+	void set_code_region_tags(const String& p_start = "region", const String& p_end = "endregion");
+	bool is_line_code_region_start(int p_line) const;
+	bool is_line_code_region_end(int p_line) const;
+
+	// Delimiters
+	void add_string_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only = false);
+	void remove_string_delimiter(const String& p_start_key);
+	bool has_string_delimiter(const String& p_start_key) const;
+
+	void set_string_delimiters(const Vector<String>& p_string_delimiters);
+	void clear_string_delimiters();
+	Vector<String> get_string_delimiters() const;
+
+	int is_in_string(int p_line, int p_column = -1) const;
+
+	void add_comment_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only = false);
+	void remove_comment_delimiter(const String& p_start_key);
+	bool has_comment_delimiter(const String& p_start_key) const;
+
+	void set_comment_delimiters(const Vector<String>& p_comment_delimiters);
+	void clear_comment_delimiters();
+	Vector<String> get_comment_delimiters() const;
+
+	int is_in_comment(int p_line, int p_column = -1) const;
+
+	String get_delimiter_start_key(int p_delimiter_idx) const;
+	String get_delimiter_end_key(int p_delimiter_idx) const;
+
+	Point2 get_delimiter_start_position(int p_line, int p_column) const;
+	Point2 get_delimiter_end_position(int p_line, int p_column) const;
+
+	// Code hint
+	void set_code_hint(const String& p_hint);
+	void set_code_hint_draw_below(bool p_below);
+
+	// Code Completion
+	void set_code_completion_enabled(bool p_enable);
+	bool is_code_completion_enabled() const;
+
+	void set_code_completion_prefixes(const Vector<String>& p_prefixes);
+	Vector<String> get_code_completion_prefixes() const;
+
+	String get_text_for_code_completion() const;
+
+	void request_code_completion(bool p_force = false);
+	void update_code_completion_options(bool p_forced = false);
+
+	int get_code_completion_selected_index() const;
+	void set_code_completion_selected_index(int p_index);
+
+	void confirm_code_completion(bool p_replace = false);
+	void cancel_code_completion();
+
+	// Line length guidelines
+	void set_line_length_guidelines(Vector<int> p_guideline_columns);
+	Vector<int> get_line_length_guidelines() const;
+
+	// Symbol lookup
+	void set_symbol_lookup_on_click_enabled(bool p_enabled);
+	bool is_symbol_lookup_on_click_enabled() const;
+
+	String get_text_for_symbol_lookup() const;
+	String get_text_with_cursor_char(int p_line, int p_column) const;
+	String get_lookup_word(int p_line, int p_column) const;
+
+	void set_symbol_lookup_word_as_valid(bool p_valid);
+
+	// Symbol tooltip
+	void set_symbol_tooltip_on_hover_enabled(bool p_enabled);
+	bool is_symbol_tooltip_on_hover_enabled() const;
+
+	/* Visual. */
+	void set_highlight_current_line(bool p_enabled);
+	bool is_highlight_current_line_enabled() const;
+
+	void set_highlight_all_occurrences(bool p_enabled);
+	bool is_highlight_all_occurrences_enabled() const;
+
+	void set_draw_control_chars(bool p_enabled);
+	bool get_draw_control_chars() const;
+
+	void set_draw_tabs(bool p_enabled);
+	bool is_drawing_tabs() const;
+
+	void set_draw_spaces(bool p_enabled);
+	bool is_drawing_spaces() const;
+
+	Color get_font_color() const;
+
+	/* Behavior */
+
+	String get_default_word_separators() const;
+
+	void set_use_default_word_separators(bool p_enabled);
+	bool is_default_word_separators_enabled() const;
+
+	void set_custom_word_separators(const String& p_separators);
+	void set_use_custom_word_separators(bool p_enabled);
+	bool is_custom_word_separators_enabled() const;
+
+	String get_custom_word_separators() const;
+
+	/* Deprecated. */
+#ifndef DISABLE_DEPRECATED
+	Vector<int> get_caret_index_edit_order();
+	void adjust_carets_after_edit(
+		int p_caret, int p_from_line, int p_from_col, int p_to_line, int p_to_col);
+
+	int get_selection_line(int p_caret = 0) const;
+	int get_selection_column(int p_caret = 0) const;
+#endif
+
+	TextEdit(const String& p_placeholder = String());
+	template <typename T, typename = std::enable_if_t<std::is_same_v<T, bool>>>
+	explicit TextEdit(T p_code_mode) : TextEdit(String())
+	{
+		if (p_code_mode) {
+			set_code_mode(true);
+		}
+	}
+	~TextEdit();
+};
+
+// --- Folded from scene/gui/tree.h ---
+#include "scene/gui/control.h"
+#include "scene/resources/text_paragraph.h"
+#include "servers/display/accessibility_server.h"
+
+class LineEdit;
+class Popup;
+class PopupMenu;
+class ScrollBar;
+class Slider;
+class TextEdit;
+class Timer;
+class Tree;
+
+class TreeItem
+{
+public:
+	enum TreeCellMode
+	{
+		CELL_MODE_STRING,
+		CELL_MODE_CHECK,
+		CELL_MODE_RANGE,
+		CELL_MODE_ICON,
+		CELL_MODE_CUSTOM,
+	};
+
+private:
+	friend class Tree;
+
+	struct Cell
+	{
+		mutable RID accessibility_cell_element;
+		TreeCellMode mode = TreeItem::CELL_MODE_STRING;
+
+		Ref<Texture2D> icon;
+		Ref<Texture2D> icon_overlay;
+		Rect2i icon_region;
+		String text;
+		String xl_text;
+		Node::AutoTranslateMode auto_translate_mode = Node::AUTO_TRANSLATE_MODE_INHERIT;
+		String description;
+		bool edit_multiline = false;
+		String suffix;
+		Ref<TextParagraph> text_buf;
+		String language;
+		TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+		Control::TextDirection text_direction = Control::TEXT_DIRECTION_INHERITED;
+		TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
+		uint32_t autowrap_trim_flags =
+			TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
+		bool dirty = true;
+		double min = 0.0;
+		double max = 100.0;
+		double step = 1.0;
+		double val = 0.0;
+		int icon_max_w = 0;
+		bool expr = false;
+		bool checked = false;
+		bool indeterminate = false;
+		bool editable = false;
+		bool selected = false;
+		bool selectable = true;
+		bool custom_color = false;
+		Color color;
+		bool custom_bg_color = false;
+		bool custom_bg_outline = false;
+		Color bg_color;
+		bool custom_button = false;
+		bool expand_right = false;
+		Color icon_color = Color(1, 1, 1);
+		Ref<StyleBox> custom_stylebox;
+
+		Rect2 focus_rect;
+		Size2i cached_minimum_size;
+		bool cached_minimum_size_dirty = true;
+
+		HorizontalAlignment text_alignment = HORIZONTAL_ALIGNMENT_LEFT;
+
+		String tooltip;
+
+		struct Button
+		{
+			mutable RID accessibility_button_element;
+			int id = 0;
+			bool disabled = false;
+			Ref<Texture2D> texture;
+			Color color = Color(1, 1, 1, 1);
+			String tooltip;
+			String description;
+		};
+
+		Vector<Button> buttons;
+
+		Ref<Font> custom_font;
+		int custom_font_size = -1;
+
+		Cell()
+		{
+			text_buf.instantiate();
+			text_buf->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
+		}
+
+		Size2 get_icon_size() const;
+		void draw_icon(const RID& p_where, const Point2& p_pos, const Size2& p_size = Size2(),
+			const Rect2i& p_region = Rect2i(), const Color& p_color = Color()) const;
+	};
+
+	mutable RID accessibility_row_element;
+	mutable bool accessibility_row_dirty = true;
+
+	Vector<Cell> cells;
+
+	Rect2 focus_rect;
+	bool collapsed = false; // Won't show children.
+	bool visible = true;
+	bool parent_visible_in_tree = true;
+	bool disable_folding = false;
+	bool accepts_children = true;
+	int custom_min_height = 0;
+
+	TreeItem* parent = nullptr; // Parent item.
+	TreeItem* prev = nullptr;	// Previous in list.
+	TreeItem* next = nullptr;	// Next in list.
+	TreeItem* first_child = nullptr;
+	TreeItem* last_child = nullptr;
+
+	int cached_start = 0;
+	int cached_label_height = 0;
+	int cached_total_end = 0;
+	Point2 sticky_offset;
+
+	LocalVector<TreeItem*> children_cache;
+	bool is_root = false; // For tree root.
+	Tree* tree = nullptr; // Tree (for reference).
+
+	void _changed_notify(int p_cell);
+	void _changed_notify();
+	void _cell_selected(int p_cell, bool p_set_as_cursor);
+	void _cell_deselected(int p_cell);
+	void _handle_visibility_changed(bool p_visible);
+	void _propagate_visibility_changed(bool p_parent_visible_in_tree);
+
+	void _change_tree(Tree* p_tree);
+
+	_FORCE_INLINE_ void _create_children_cache()
+	{
+		if (children_cache.is_empty()) {
+			TreeItem* c = first_child;
+			while (c) {
+				children_cache.push_back(c);
+				c = c->next;
+			}
+		}
+	}
+
+	_FORCE_INLINE_ void _unlink_from_tree()
+	{
+		if (accessibility_row_element.is_valid()) {
+			AccessibilityServer::free_element(accessibility_row_element);
+			accessibility_row_element = RID();
+		}
+		for (Cell& cell : cells) {
+			if (cell.accessibility_cell_element.is_valid()) {
+				AccessibilityServer::free_element(cell.accessibility_cell_element);
+				cell.accessibility_cell_element = RID();
+			}
+			for (Cell::Button& btn : cell.buttons) {
+				if (btn.accessibility_button_element.is_valid()) {
+					AccessibilityServer::free_element(
+						btn.accessibility_button_element);
+					btn.accessibility_button_element = RID();
+				}
+			}
+		}
+		TreeItem* p = get_prev();
+		if (p) {
+			p->next = next;
+		}
+		if (next) {
+			next->prev = p;
+		}
+		if (parent) {
+			if (!parent->children_cache.is_empty()) {
+				parent->children_cache.erase(this);
+			}
+			if (parent->first_child == this) {
+				parent->first_child = next;
+			}
+			if (parent->last_child == this) {
+				parent->last_child = prev;
+			}
+		}
+	}
+
+	bool _is_any_collapsed(bool p_only_visible);
+
+protected:
+#ifndef DISABLE_DEPRECATED
+	void _select_bind_compat_119367(int p_column);
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	TreeItem(Tree* p_tree);
+	// Cell mode.
+	void set_cell_mode(int p_column, TreeCellMode p_mode);
+	TreeCellMode get_cell_mode(int p_column) const;
+
+	// Auto translate mode.
+	void set_auto_translate_mode(int p_column, Node::AutoTranslateMode p_mode);
+	Node::AutoTranslateMode get_auto_translate_mode(int p_column) const;
+
+	// Multiline editable.
+	void set_edit_multiline(int p_column, bool p_multiline);
+	bool is_edit_multiline(int p_column) const;
+
+	// Check mode.
+	void set_checked(int p_column, bool p_checked);
+	void set_indeterminate(int p_column, bool p_indeterminate);
+	bool is_checked(int p_column) const;
+	bool is_indeterminate(int p_column) const;
+
+	void propagate_check(int p_column, bool p_emit_signal = true);
+
+	String atr(int p_column, const String& p_text) const;
+
+private:
+	// Check helpers.
+	void _propagate_check_through_children(int p_column, bool p_checked, bool p_emit_signal);
+	void _propagate_check_through_parents(int p_column, bool p_emit_signal);
+
+	TreeItem* _get_prev_in_tree(bool p_wrap = false, bool p_include_invisible = false);
+	TreeItem* _get_next_in_tree(bool p_wrap = false, bool p_include_invisible = false);
+
+public:
+	String get_text(int p_column) const;
+
+	String get_description(int p_column) const;
+
+	void set_text_direction(int p_column, Control::TextDirection p_text_direction);
+	Control::TextDirection get_text_direction(int p_column) const;
+
+	void set_autowrap_mode(int p_column, TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode(int p_column) const;
+
+	void set_autowrap_trim_flags(int p_column, uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags(int p_column) const;
+
+	void set_text_overrun_behavior(int p_column, TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior(int p_column) const;
+
+	void set_structured_text_bidi_override(int p_column, TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override(int p_column) const;
+
+	void set_language(int p_column, const String& p_language);
+	String get_language(int p_column) const;
+
+	void set_suffix(int p_column, String p_suffix);
+	String get_suffix(int p_column) const;
+
+	void set_icon(int p_column, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_icon(int p_column) const;
+
+	void set_icon_overlay(int p_column, const Ref<Texture2D>& p_icon_overlay);
+	Ref<Texture2D> get_icon_overlay(int p_column) const;
+
+	void set_icon_region(int p_column, const Rect2& p_icon_region);
+	Rect2 get_icon_region(int p_column) const;
+
+	void set_icon_modulate(int p_column, const Color& p_modulate);
+	Color get_icon_modulate(int p_column) const;
+
+	void set_icon_max_width(int p_column, int p_max);
+	int get_icon_max_width(int p_column) const;
+
+	void clear_buttons();
+	int get_button_count(int p_column) const;
+	String get_button_tooltip_text(int p_column, int p_index) const;
+	Ref<Texture2D> get_button(int p_column, int p_index) const;
+	int get_button_id(int p_column, int p_index) const;
+	int get_button_by_id(int p_column, int p_id) const;
+	Color get_button_color(int p_column, int p_index) const;
+	void set_button_tooltip_text(int p_column, int p_index, const String& p_tooltip);
+	void set_button(int p_column, int p_index, const Ref<Texture2D>& p_button);
+	void set_button_color(int p_column, int p_index, const Color& p_color);
+	void set_button_disabled(int p_column, int p_index, bool p_disabled);
+	bool is_button_disabled(int p_column, int p_index) const;
+
+	// Range works for mode number or mode combo.
+	void set_range(int p_column, double p_value);
+	double get_range(int p_column) const;
+
+	void set_range_config(
+		int p_column, double p_min, double p_max, double p_step, bool p_exp = false);
+	void get_range_config(int p_column, double& r_min, double& r_max, double& r_step) const;
+	bool is_range_exponential(int p_column) const;
+
+	void set_collapsed(bool p_collapsed);
+	bool is_collapsed();
+
+	void set_collapsed_recursive(bool p_collapsed);
+	bool is_any_collapsed(bool p_only_visible = false);
+
+	void set_visible(bool p_visible);
+	bool is_visible();
+	bool is_visible_in_tree() const;
+
+	void uncollapse_tree();
+
+	void set_custom_minimum_height(int p_height);
+	int get_custom_minimum_height() const;
+
+	void set_custom_stylebox(int p_column, const Ref<StyleBox>& p_stylebox);
+	Ref<StyleBox> get_custom_stylebox(int p_column) const;
+
+	void set_selectable(int p_column, bool p_selectable);
+	bool is_selectable(int p_column) const;
+
+	bool is_selected(int p_column);
+	bool is_any_column_selected() const;
+	void select(int p_column, bool p_set_as_cursor = true);
+	void deselect(int p_column);
+	void set_as_cursor(int p_column);
+
+	void set_editable(int p_column, bool p_editable);
+	bool is_editable(int p_column);
+
+	void set_custom_color(int p_column, const Color& p_color);
+	Color get_custom_color(int p_column) const;
+	void clear_custom_color(int p_column);
+
+	void set_custom_font(int p_column, const Ref<Font>& p_font);
+	Ref<Font> get_custom_font(int p_column) const;
+
+	void set_custom_font_size(int p_column, int p_font_size);
+	int get_custom_font_size(int p_column) const;
+
+	void set_custom_bg_color(int p_column, const Color& p_color, bool p_bg_outline = false);
+	void clear_custom_bg_color(int p_column);
+	Color get_custom_bg_color(int p_column) const;
+
+	void set_custom_as_button(int p_column, bool p_button);
+	bool is_custom_set_as_button(int p_column) const;
+
+	void set_tooltip_text(int p_column, const String& p_tooltip);
+	String get_tooltip_text(int p_column) const;
+
+	void set_text_alignment(int p_column, HorizontalAlignment p_alignment);
+	HorizontalAlignment get_text_alignment(int p_column) const;
+
+	void set_expand_right(int p_column, bool p_enable);
+	bool get_expand_right(int p_column) const;
+
+	void set_disable_folding(bool p_disable);
+	bool is_folding_disabled() const;
+
+	void set_accept_children(bool p_allowed);
+	bool is_accepting_children() const;
+
+	Size2 get_minimum_size(int p_column);
+
+	// Item manipulation.
+	TreeItem* create_child(int p_index = -1);
+	void add_child(TreeItem* p_item);
+	void remove_child(TreeItem* p_item);
+
+	Tree* get_tree() const;
+
+	TreeItem* get_prev();
+	TreeItem* get_next() const;
+	TreeItem* get_parent() const;
+	TreeItem* get_first_child() const;
+	TreeItem* get_last_child() const;
+
+	TreeItem* get_prev_in_tree(bool p_wrap = false);
+	TreeItem* get_next_in_tree(bool p_wrap = false);
+
+	TreeItem* get_prev_visible(bool p_wrap = false);
+	TreeItem* get_next_visible(bool p_wrap = false);
+
+	TreeItem* get_child(int p_index);
+	int get_visible_child_count();
+	int get_child_count();
+	Vector<TreeItem*> get_children();
+	void clear_children();
+	int get_index();
+
+#ifdef DEV_ENABLED
+	// This debugging code can be removed once the current refactoring of this class is complete.
+	void validate_cache() const;
+#else
+	void validate_cache() const {}
+#endif
+
+	void move_before(TreeItem* p_item);
+	void move_after(TreeItem* p_item);
+
+	~TreeItem();
+};
+
+class Tree : public Control
+{
+public:
+	enum SelectMode
+	{
+		SELECT_SINGLE,
+		SELECT_ROW,
+		SELECT_MULTI
+	};
+
+	enum DropModeFlags
+	{
+		DROP_MODE_DISABLED = 0,
+		DROP_MODE_ON_ITEM = 1,
+		DROP_MODE_INBETWEEN = 2
+	};
+
+	enum ScrollHintMode
+	{
+		SCROLL_HINT_MODE_DISABLED,
+		SCROLL_HINT_MODE_BOTH,
+		SCROLL_HINT_MODE_TOP,
+		SCROLL_HINT_MODE_BOTTOM,
+	};
+
+private:
+	friend class TreeItem;
+
+	TreeItem* root = nullptr;
+	TreeItem* popup_edited_item = nullptr;
+	TreeItem* selected_item = nullptr;
+	TreeItem* edited_item = nullptr;
+	TreeItem* shift_anchor = nullptr;
+
+	TreeItem* popup_pressing_edited_item = nullptr; // Candidate.
+	int popup_pressing_edited_item_column = -1;
+
+	TreeItem* drop_mode_over = nullptr;
+	int drop_mode_section = 0;
+	bool drop_mode_unchanged = false;
+	bool dragging_within_self = false;
+
+	TreeItem* single_select_defer = nullptr;
+	int single_select_defer_column = 0;
+
+	int pressed_button = -1;
+	bool pressing_for_editor = false;
+	Vector2 pressing_pos;
+
+	Vector2 hovered_pos = Vector2(-1.0, -1.0);
+	bool is_mouse_hovering = false;
+
+	float range_drag_base = 0.0;
+	bool range_drag_enabled = false;
+	Vector2 range_drag_capture_pos;
+
+	bool propagate_mouse_activated = false;
+	float content_scale_factor = 0.0;
+
+	int sticky_stack_end = 0;
+	LocalVector<TreeItem*> sticky_candidates;
+	LocalVector<TreeItem*> sticky_list;
+
+	Rect2 custom_popup_rect;
+	int edited_col = -1;
+	int selected_col = -1;
+	int selected_button = -1;
+	int popup_edited_item_col = -1;
+	bool hide_root = false;
+	SelectMode select_mode = SELECT_SINGLE;
+
+	int blocked = 0;
+
+	int drop_mode_flags = 0;
+	static constexpr int COLUMN_NOT_FOUND = -100;
+
+	struct ColumnInfo
+	{
+		mutable RID accessibility_col_element;
+		int custom_min_width = 0;
+		int expand_ratio = 1;
+		bool expand = true;
+		bool clip_content = false;
+		String title_tooltip;
+		String title;
+		String xl_title;
+		HorizontalAlignment title_alignment = HORIZONTAL_ALIGNMENT_CENTER;
+		Ref<TextParagraph> text_buf;
+		String language;
+		Control::TextDirection text_direction = Control::TEXT_DIRECTION_INHERITED;
+
+		mutable int cached_minimum_width = 0;
+		mutable bool cached_minimum_width_dirty = true;
+
+		ColumnInfo() { text_buf.instantiate(); }
+	};
+
+	bool show_column_titles = false;
+
+	bool popup_edit_committed = true;
+	int scroll_pending = 0;
+	RID accessibility_scroll_element;
+	RID stylebox_ci;	// Separate canvas item for drawing native styleboxes.
+	RID custom_ci;		// Separate canvas item for drawing custom content.
+	RID header_ci;		// Separate canvas item for drawing column headers.
+	RID content_ci;		// Separate canvas item for drawing tree rows.
+	RID last_sticky_ci; // Separate canvas item for drawing the last sticky item, which can
+						// partially hide underneath other sticky items.
+	RID drop_indicator_ci;
+
+	Control* popup_editor_vb = nullptr;
+	Popup* popup_editor = nullptr;
+	LineEdit* line_editor = nullptr;
+	TextEdit* text_editor = nullptr;
+	Slider* value_editor = nullptr;
+	bool updating_value_editor = false;
+	uint64_t focus_in_id = 0;
+	PopupMenu* popup_menu = nullptr;
+
+	Vector<ColumnInfo> columns;
+
+	Timer* range_click_timer = nullptr;
+	TreeItem* range_item_last = nullptr;
+	bool range_up_last = false;
+	void _range_click_timeout();
+
+	int compute_item_height(TreeItem* p_item) const;
+	int get_item_height(TreeItem* p_item) const;
+	Point2i convert_rtl_position(const Point2i& p_pos, int p_width = 0) const;
+	Point2 convert_rtl_position(const Point2& p_pos, int p_width = 0) const;
+	Rect2i convert_rtl_rect(const Rect2i& p_rect) const;
+	void _update_all();
+	void update_column(int p_col);
+	void update_item_cell(TreeItem* p_item, int p_col) const;
+	void update_item_cache(TreeItem* p_item) const;
+	void draw_item_rect(const TreeItem::Cell& p_cell, const Rect2i& p_rect, const Color& p_color,
+		const Color& p_icon_color, int p_ol_size, const Color& p_ol_color, const RID& p_ci) const;
+	int draw_item(const Point2i& p_pos, const Point2& p_draw_ofs, const Size2& p_draw_size,
+		TreeItem* p_item, int& r_self_height, const RID& p_ci);
+	void select_single_item(TreeItem* p_selected, TreeItem* p_current, int p_col,
+		TreeItem* p_prev = nullptr, bool* r_in_range = nullptr, bool p_force_deselect = false);
+	int propagate_mouse_event(const Point2i& p_pos, int x_ofs, int y_ofs, int x_limit,
+		bool p_double_click, TreeItem* p_item, MouseButton p_button, const InputEvent& p_mod,
+		bool p_first_call = true, bool p_skip_children = false);
+	void _line_editor_submit(String p_text);
+	void _apply_multiline_edit(bool p_hide_focus = false);
+	void _text_editor_popup_modal_close();
+	void _text_editor_gui_input(const InputEvent& p_event);
+	void value_editor_changed(double p_value);
+	void _update_popup_menu(const TreeItem::Cell& p_cell);
+
+	void popup_select(int p_option);
+
+	void item_edited(
+		int p_column, TreeItem* p_item, MouseButton p_custom_mouse_index = MouseButton::NONE);
+	void item_changed(int p_column, TreeItem* p_item);
+	void item_selected(int p_column, TreeItem* p_item, bool p_set_as_cursor);
+	void item_deselected(int p_column, TreeItem* p_item);
+	void update_min_size_for_item_change();
+
+	void propagate_set_columns(TreeItem* p_item);
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel_style;
+		Ref<StyleBox> focus_style;
+
+		Ref<Font> font;
+		Ref<Font> tb_font;
+		int font_size = 0;
+		int tb_font_size = 0;
+
+		Ref<StyleBox> hovered;
+		Ref<StyleBox> hovered_dimmed;
+		Ref<StyleBox> hovered_selected;
+		Ref<StyleBox> hovered_selected_focus;
+		Ref<StyleBox> selected;
+		Ref<StyleBox> selected_focus;
+		Ref<StyleBox> cursor;
+		Ref<StyleBox> cursor_unfocus;
+		Ref<StyleBox> button_hover;
+		Ref<StyleBox> button_pressed;
+		Ref<StyleBox> title_button;
+		Ref<StyleBox> title_button_hover;
+		Ref<StyleBox> title_button_pressed;
+		Ref<StyleBox> custom_button;
+		Ref<StyleBox> custom_button_hover;
+		Ref<StyleBox> custom_button_pressed;
+
+		Color title_button_color;
+
+		Ref<Texture2D> checked;
+		Ref<Texture2D> unchecked;
+		Ref<Texture2D> checked_disabled;
+		Ref<Texture2D> unchecked_disabled;
+		Ref<Texture2D> indeterminate;
+		Ref<Texture2D> indeterminate_disabled;
+		Ref<Texture2D> arrow;
+		Ref<Texture2D> arrow_collapsed;
+		Ref<Texture2D> arrow_collapsed_mirrored;
+		Ref<Texture2D> select_arrow;
+		Ref<Texture2D> updown;
+		Ref<Texture2D> scroll_hint;
+
+		Color font_color;
+		Color font_hovered_color;
+		Color font_hovered_dimmed_color;
+		Color font_hovered_selected_color;
+		Color font_selected_color;
+		Color font_disabled_color;
+		Color guide_color;
+		Color drop_on_item_color;
+		Color drop_position_color;
+		Color relationship_line_color;
+		Color parent_hl_line_color;
+		Color children_hl_line_color;
+		Color custom_button_font_highlight;
+		Color font_outline_color;
+		Color scroll_hint_color;
+
+		float base_scale = 1.0;
+		int font_outline_size = 0;
+
+		int h_separation = 0;
+		int v_separation = 0;
+		int inner_item_margin_bottom = 0;
+		int inner_item_margin_left = 0;
+		int inner_item_margin_right = 0;
+		int inner_item_margin_top = 0;
+		int item_margin = 0;
+		int check_h_separation = 0;
+		int icon_h_separation = 0;
+		int button_margin = 0;
+		int icon_max_width = 0;
+		Point2 offset;
+
+		int draw_relationship_lines = 0;
+		int relationship_line_width = 0;
+		int parent_hl_line_width = 0;
+		int children_hl_line_width = 0;
+		int parent_hl_line_margin = 0;
+		int draw_guides = 0;
+
+		int dragging_unfold_wait_msec = 500;
+
+		int scroll_border = 0;
+		int scroll_speed = 0;
+		int scroll_max_sticky_items = 5;
+
+		int scrollbar_margin_top = -1;
+		int scrollbar_margin_right = -1;
+		int scrollbar_margin_bottom = -1;
+		int scrollbar_margin_left = -1;
+		int scrollbar_h_separation = 0;
+		int scrollbar_v_separation = 0;
+	} theme_cache;
+
+	struct Cache
+	{
+		enum ClickType
+		{
+			CLICK_NONE,
+			CLICK_TITLE,
+			CLICK_BUTTON,
+		};
+
+		ClickType click_type = Cache::CLICK_NONE;
+		int click_index = -1;
+		int click_id = -1;
+		TreeItem* click_item = nullptr;
+		int click_column = 0;
+		int hover_header_column = -1;
+		bool hover_header_row = false;
+		Point2 click_pos;
+
+		TreeItem* hover_item = nullptr;
+		int hover_column = -1;
+		int hover_button_index_in_column = -1;
+
+		bool rtl = false;
+		int font_height = -1;
+	} cache;
+
+	int _get_title_button_height() const;
+	Size2 _get_cell_icon_size(const TreeItem::Cell& p_cell) const;
+
+	void _scroll_moved(float p_value);
+	ScrollBar* h_scroll = nullptr;
+	ScrollBar* v_scroll = nullptr;
+
+	bool h_scroll_enabled = true;
+	bool v_scroll_enabled = true;
+
+	Size2 get_internal_min_size() const;
+
+	Rect2 search_item_rect(TreeItem* p_from, TreeItem* p_item);
+	uint64_t last_keypress = 0;
+	String incr_search;
+	bool cursor_can_exit_tree = true;
+	void _do_incr_search(const String& p_add);
+	void _incr_search_as_needed(const InputEvent& p_event_key);
+
+	TreeItem* _search_item_text(TreeItem* p_at, const String& p_find, int* r_col, bool p_selectable,
+		bool p_backwards = false);
+
+	TreeItem* _find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_column, int& r_height,
+		int& r_section, bool p_sticky_check = true) const;
+
+	void _find_button_at_pos(
+		const Point2& p_pos, TreeItem*& r_item, int& r_column, int& r_index, int& r_section) const;
+
+	struct FindColumnButtonResult
+	{
+		int column_index = -1;
+		int button_index = -1;
+		int column_width = -1;
+		int column_offset = -1;
+		int pos_x = -1;
+	};
+
+	FindColumnButtonResult _find_column_and_button_at_pos(
+		int p_x, const TreeItem* p_item, int p_x_ofs, int p_x_limit) const;
+
+	float drag_speed = 0.0;
+	float drag_from = 0.0;
+	float drag_accum = 0.0;
+	bool drag_touching = false;
+	bool drag_touching_deaccel = false;
+	bool click_handled = false;
+	bool allow_rmb_select = false;
+	bool scrolling = false;
+	bool using_native_touch = true;
+
+	ScrollHintMode scroll_hint_mode = SCROLL_HINT_MODE_DISABLED;
+	bool tile_scroll_hint = false;
+
+	bool allow_reselect = false;
+	bool allow_search = true;
+
+	bool force_edit_checkbox_only_on_checkbox = false;
+
+	bool hide_folding = false;
+
+	bool enable_recursive_folding = true;
+
+	bool enable_drag_unfolding = true;
+	Timer* dropping_unfold_timer = nullptr;
+	void _on_dropping_unfold_timer_timeout();
+	void _reset_drop_mode_over();
+
+	bool enable_auto_tooltip = true;
+
+	bool hovered_update_queued = false;
+	void _determine_hovered_item();
+	void _queue_update_hovered_item();
+
+	int _count_selected_items(TreeItem* p_from) const;
+	bool _is_branch_selected(TreeItem* p_from) const;
+	bool _is_sibling_branch_selected(TreeItem* p_from) const;
+	void _go_left();
+	void _go_right();
+	void _go_down();
+	void _go_up();
+	void _shift_select_range(TreeItem* new_item);
+
+	bool _scroll(bool p_horizontal, float p_pages);
+
+	Rect2 _get_scrollbar_layout_rect() const;
+	Rect2 _get_content_rect() const; // Considering the background stylebox and scrollbars.
+	Rect2 _get_item_focus_rect(const TreeItem* p_item) const;
+
+	void _check_item_accessibility(
+		TreeItem* p_item, PackedStringArray& r_warnings, int& r_row) const;
+
+	void _accessibility_clean_info(TreeItem* p_item);
+	void _accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_row, int p_level);
+
+protected:
+	virtual void _update_theme_item_cache() override;
+
+	void _notification(int p_what);
+
+public:
+	PackedStringArray get_accessibility_configuration_warnings() const;
+	virtual RID get_focused_accessibility_element() const override;
+
+	virtual void set_self_modulate(const Color& p_self_modulate) override;
+
+	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2& p_at) const override;
+
+	TreeItem* get_item_at_position(const Point2& p_pos) const;
+	int get_column_at_position(const Point2& p_pos) const;
+	int get_drop_section_at_position(const Point2& p_pos) const;
+	int get_button_id_at_position(const Point2& p_pos) const;
+
+	void clear();
+
+	TreeItem* create_item(TreeItem* p_parent = nullptr, int p_index = -1);
+	TreeItem* get_root() const;
+	TreeItem* get_last_item() const;
+
+	void set_column_custom_minimum_width(int p_column, int p_min_width);
+	void set_column_expand(int p_column, bool p_expand);
+	void set_column_expand_ratio(int p_column, int p_ratio);
+	void set_column_clip_content(int p_column, bool p_fit);
+	int get_column_minimum_width(int p_column) const;
+	int get_column_width(int p_column) const;
+	int get_column_expand_ratio(int p_column) const;
+
+	bool is_column_expanding(int p_column) const;
+	bool is_column_clipping_content(int p_column) const;
+
+	void set_hide_root(bool p_enabled);
+	bool is_root_hidden() const;
+	TreeItem* get_next_selected(TreeItem* p_item);
+	TreeItem* get_selected() const;
+	void set_selected(TreeItem* p_item, int p_column = 0);
+	int get_selected_column() const;
+	int get_pressed_button() const;
+	void set_select_mode(SelectMode p_mode);
+	SelectMode get_select_mode() const;
+	void deselect_all();
+	bool is_anything_selected();
+
+	void set_columns(int p_columns);
+	int get_columns() const;
+
+	void set_column_title(int p_column, const String& p_title);
+	String get_column_title(int p_column) const;
+
+	void set_column_title_tooltip_text(int p_column, const String& p_tooltip);
+	String get_column_title_tooltip_text(int p_column) const;
+
+	void set_column_title_alignment(int p_column, HorizontalAlignment p_alignment);
+	HorizontalAlignment get_column_title_alignment(int p_column) const;
+
+	void set_column_title_direction(int p_column, Control::TextDirection p_text_direction);
+	Control::TextDirection get_column_title_direction(int p_column) const;
+
+	void set_column_title_language(int p_column, const String& p_language);
+	String get_column_title_language(int p_column) const;
+
+	void set_column_titles_visible(bool p_show);
+	bool are_column_titles_visible() const;
+
+	RID get_custom_drawing_canvas_item() const { return custom_ci; }
+
+	TreeItem* get_edited() const;
+	int get_edited_column() const;
+
+	void ensure_cursor_is_visible();
+
+	Rect2 get_custom_popup_rect() const;
+
+	int get_item_offset(TreeItem* p_item) const;
+	Rect2 get_item_rect(TreeItem* p_item, int p_column = -1, int p_button = -1) const;
+	bool edit_selected(bool p_force_edit = false);
+	bool is_editing();
+	void set_editor_selection(int p_from_line, int p_to_line, int p_from_column = -1,
+		int p_to_column = -1, int p_caret = 0);
+
+	// First item that starts with the text, from the current focused item down and wraps around.
+	TreeItem* search_item_text(
+		const String& p_find, int* r_col = nullptr, bool p_selectable = false);
+	// First item that matches the whole text, from the first item down.
+	TreeItem* get_item_with_text(const String& p_find) const;
+
+	Point2 get_scroll() const;
+	void set_h_scroll_enabled(bool p_enable);
+	bool is_h_scroll_enabled() const;
+	void set_v_scroll_enabled(bool p_enable);
+	bool is_v_scroll_enabled() const;
+
+	void set_scroll_hint_mode(ScrollHintMode p_mode);
+	ScrollHintMode get_scroll_hint_mode() const;
+
+	void set_tile_scroll_hint(bool p_enable);
+	bool is_scroll_hint_tiled();
+
+	void set_cursor_can_exit_tree(bool p_enable);
+
+	ScrollBar* get_vscroll_bar() { return v_scroll; }
+
+	void set_hide_folding(bool p_hide);
+	bool is_folding_hidden() const;
+
+	void set_enable_recursive_folding(bool p_enable);
+	bool is_recursive_folding_enabled() const;
+
+	void set_enable_drag_unfolding(bool p_enable);
+	bool is_drag_unfolding_enabled() const;
+
+	void set_drop_mode_flags(int p_flags);
+	int get_drop_mode_flags() const;
+
+	void set_edit_checkbox_cell_only_when_checkbox_is_pressed(bool p_enable);
+	bool get_edit_checkbox_cell_only_when_checkbox_is_pressed() const;
+
+	void set_allow_rmb_select(bool p_allow);
+	bool get_allow_rmb_select() const;
+
+	void set_allow_reselect(bool p_allow);
+	bool get_allow_reselect() const;
+
+	void set_allow_search(bool p_allow);
+	bool get_allow_search() const;
+
+	void set_auto_tooltip(bool p_enable);
+	bool is_auto_tooltip_enabled() const;
+
+	Size2 get_minimum_size() const override;
+
+	Tree() = default;
+	~Tree();
+};

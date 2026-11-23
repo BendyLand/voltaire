@@ -56,4 +56,14 @@ public:
 	AppleEmbedded();
 };
 
+// --- Folded from drivers/apple_embedded/display_layer_apple_embedded.h ---
+#import <QuartzCore/CAMetalLayer.h>
 
+@protocol GDTDisplayLayer <NSObject>
+
+- (void)startRenderDisplayLayer;
+- (void)stopRenderDisplayLayer;
+- (void)initializeDisplayLayer;
+- (void)layoutDisplayLayer;
+
+@end

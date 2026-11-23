@@ -31,7 +31,7 @@
 
 #import "os_ios.h"
 
-#import "display_server_ios.h"
+#import "platform/ios/os_ios.h"
 
 #ifdef IOS_ENABLED
 

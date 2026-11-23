@@ -33,7 +33,7 @@
 
 #include "core/os/os.h"
 #include "core/templates/sort_array.h"
-#include "drivers/metal/metal3_objects.h"
+#include "drivers/metal/rendering_device_driver_metal3.h"
 #include "drivers/metal/metal_objects_shared.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
