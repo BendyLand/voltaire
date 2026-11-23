@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_array)
 
-#include "tests/test_tools.h"
+#include "tests/test_utils.h"
 
 namespace TestArray {
 

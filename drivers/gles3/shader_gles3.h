@@ -32,13 +32,83 @@
 #pragma once
 
 #ifdef GLES3_ENABLED
+// --- Unified from platform/*/platform_gl.h ---
+#if defined(ANDROID_ENABLED)
+#ifndef GLES_API_ENABLED
+#define GLES_API_ENABLED
+#endif
+#include <GLES3/gl3.h>
+#include <GLES3/gl3ext.h>
+#elif defined(IOS_ENABLED)
+#ifdef GLES3_ENABLED
+#ifndef GLES_API_ENABLED
+#define GLES_API_ENABLED
+#endif
+#include <ES3/gl.h>
+#endif
+#elif defined(LINUXBSD_ENABLED)
+#ifndef GL_API_ENABLED
+#define GL_API_ENABLED
+#endif
+#ifndef GLES_API_ENABLED
+#define GLES_API_ENABLED
+#endif
+#ifndef GLAD_GLES2
+#define GLAD_GLES2
+#endif
+#include <thirdparty/glad/glad/gl.h>
+#elif defined(MACOS_ENABLED) || defined(WINDOWS_ENABLED)
+#ifndef GL_API_ENABLED
+#define GL_API_ENABLED
+#endif
+#ifdef ANGLE_ENABLED
+#ifndef GLES_API_ENABLED
+#define GLES_API_ENABLED
+#endif
+#ifndef GLAD_GLES2
+#define GLAD_GLES2
+#endif
+#endif
+#include <thirdparty/glad/glad/gl.h>
+#elif defined(WEB_ENABLED)
+#ifndef GLES_API_ENABLED
+#define GLES_API_ENABLED // Allow using GLES.
+#endif
 
-#include <platform_gl.h>
+// Make using *glGetProcAddress() an error on the web.
+#define glGetProcAddress(n) static_assert(false, "Usage of glGetProcessAddress() on the web is a bug.")
+#define eglGetProcAddress(n) static_assert(false, "Usage of eglGetProcessAddress() on the web is a bug.")
+
+// --- Inlined/Folded from platform/web/godot_webgl2.h ---
+#include <GLES3/gl3.h>
+#include <webgl/webgl2.h>
+
+#define GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_NUM_VIEWS_OVR 0x9630
+#define GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_BASE_VIEW_INDEX_OVR 0x9632
+#define GL_MAX_VIEWS_OVR 0x9631
+#define GL_FRAMEBUFFER_INCOMPLETE_VIEW_TARGETS_OVR 0x9633
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void godot_webgl2_glFramebufferTextureMultiviewOVR(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint baseViewIndex, GLsizei numViews);
+void godot_webgl2_glFramebufferTextureMultisampleMultiviewOVR(GLenum target, GLenum attachment, GLuint texture, GLint level, GLsizei samples, GLint baseViewIndex, GLsizei numViews);
+void godot_webgl2_glGetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, GLvoid *data);
+
+#define glFramebufferTextureMultiviewOVR godot_webgl2_glFramebufferTextureMultiviewOVR
+#define glFramebufferTextureMultisampleMultiviewOVR godot_webgl2_glFramebufferTextureMultisampleMultiviewOVR
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+// --- End platform/*/platform_gl.h ---
 #include "core/templates/a_hash_map.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 
 class StringBuilder;
 

@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_gradient_texture)
 
-#include "scene/resources/gradient.h"
+#include "scene/resources/material.h"
 
 namespace TestGradientTexture {
 

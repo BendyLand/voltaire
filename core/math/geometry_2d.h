@@ -160,7 +160,7 @@ public:
 // --- End core/math/delaunay_2d.h ---
 #include "core/math/math_funcs.h"
 #include "core/math/vector2.h"
-#include "core/math/vector2i.h"
+#include "core/templates/hashfuncs.h"
 #include "core/math/vector3.h"
 #include "core/templates/vector.h"
 

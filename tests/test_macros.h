@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/types.h"
-#include "core/core_globals.h" // IWYU pragma: keep. Used in macro.
+#include "core/types.h" // IWYU pragma: keep. Used in macro.
 
 #if defined(_MSC_VER) && !defined(DOCTEST_THREAD_LOCAL)
 // NOTE: We must disable the THREAD_LOCAL entirely in doctest to prevent crashes on debugging.

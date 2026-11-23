@@ -34,7 +34,7 @@
 TEST_FORCE_LINK(test_curve_3d)
 
 #include "core/math/math_funcs.h"
-#include "scene/resources/curve.h"
+#include "scene/resources/material.h"
 
 namespace TestCurve3D {
 

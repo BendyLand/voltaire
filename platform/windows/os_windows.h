@@ -946,7 +946,7 @@ public:
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
 #include "drivers/egl/egl_manager.h"
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 
 #include <windows.h>
 
@@ -974,7 +974,7 @@ public:
 
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_map.h"
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 
 #include <windows.h>
 

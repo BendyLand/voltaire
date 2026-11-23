@@ -34,7 +34,7 @@
 TEST_FORCE_LINK(test_vector2i)
 
 #include "core/math/vector2.h"
-#include "core/math/vector2i.h"
+#include "core/templates/hashfuncs.h"
 
 namespace TestVector2i {
 

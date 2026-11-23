@@ -239,15 +239,837 @@ template <typename T, typename... Args> _FORCE_INLINE_ Ref<T> memnew_ref(Args&&.
 #endif // REF_H
 
 // Math primitives
-#include "core/math/transform_3d.h"
-#include "core/math/color.h"
+// --- Folded from core/math/transform_3d.h ---
+#include "core/math/aabb.h"
+// --- Inlined/Folded from core/math/basis.h ---
+// --- Inlined/Folded from core/math/quaternion.h ---
+#include "core/math/math_funcs.h"
+#include "core/math/vector3.h"
+#include "core/string/ustring.h"
+
+struct [[nodiscard]] Quaternion {
+	real_t x = 0.0f;
+	real_t y = 0.0f;
+	real_t z = 0.0f;
+	real_t w = 1.0f;
+
+	constexpr real_t &operator[](int p_idx) {
+		// The pointer math below assumes that the elements are placed back-to-back, like an array.
+		// This is always true in practice, but technically not guaranteed; we safety-check it here.
+		static_assert(offsetof(Quaternion, x) == 0 * sizeof(real_t));
+		static_assert(offsetof(Quaternion, y) == 1 * sizeof(real_t));
+		static_assert(offsetof(Quaternion, z) == 2 * sizeof(real_t));
+		static_assert(offsetof(Quaternion, w) == 3 * sizeof(real_t));
+		static_assert(sizeof(Quaternion) == 4 * sizeof(real_t));
+
+		DEV_ASSERT((unsigned int)p_idx < 4);
+		return (&x)[p_idx];
+	}
+	constexpr const real_t &operator[](int p_idx) const {
+		DEV_ASSERT((unsigned int)p_idx < 4);
+		return (&x)[p_idx];
+	}
+
+	_FORCE_INLINE_ real_t length_squared() const;
+	bool is_equal_approx(const Quaternion &p_quaternion) const;
+	bool is_same(const Quaternion &p_quaternion) const;
+	bool is_finite() const;
+	real_t length() const;
+	void normalize();
+	Quaternion normalized() const;
+	bool is_normalized() const;
+	Quaternion inverse() const;
+	Quaternion log() const;
+	Quaternion exp() const;
+	_FORCE_INLINE_ real_t dot(const Quaternion &p_q) const;
+	real_t angle_to(const Quaternion &p_to) const;
+
+	Vector3 get_euler(EulerOrder p_order = EulerOrder::YXZ) const;
+	static Quaternion from_euler(const Vector3 &p_euler);
+
+	Quaternion slerp(const Quaternion &p_to, real_t p_weight) const;
+	Quaternion slerpni(const Quaternion &p_to, real_t p_weight) const;
+	Quaternion spherical_cubic_interpolate(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, real_t p_weight) const;
+	Quaternion spherical_cubic_interpolate_in_time(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const;
+
+	Vector3 get_axis() const;
+	real_t get_angle() const;
+
+	_FORCE_INLINE_ void get_axis_angle(Vector3 &r_axis, real_t &r_angle) const {
+		r_angle = 2 * Math::acos(w);
+		real_t r = ((real_t)1) / Math::sqrt(1 - w * w);
+		r_axis.x = x * r;
+		r_axis.y = y * r;
+		r_axis.z = z * r;
+	}
+
+	constexpr void operator*=(const Quaternion &p_q);
+	constexpr Quaternion operator*(const Quaternion &p_q) const;
+
+	_FORCE_INLINE_ Vector3 xform(const Vector3 &p_v) const {
+#ifdef MATH_CHECKS
+		ERR_FAIL_COND_V_MSG(!is_normalized(), p_v, "The quaternion " + operator String() + " must be normalized.");
+#endif
+		Vector3 u(x, y, z);
+		Vector3 uv = u.cross(p_v);
+		return p_v + ((uv * w) + u.cross(uv)) * ((real_t)2);
+	}
+
+	_FORCE_INLINE_ Vector3 xform_inv(const Vector3 &p_v) const {
+		return inverse().xform(p_v);
+	}
+
+	constexpr void operator+=(const Quaternion &p_q);
+	constexpr void operator-=(const Quaternion &p_q);
+	constexpr void operator*=(real_t p_s);
+	constexpr void operator/=(real_t p_s);
+	constexpr Quaternion operator+(const Quaternion &p_q2) const;
+	constexpr Quaternion operator-(const Quaternion &p_q2) const;
+	constexpr Quaternion operator-() const;
+	constexpr Quaternion operator*(real_t p_s) const;
+	constexpr Quaternion operator/(real_t p_s) const;
+
+	constexpr bool operator==(const Quaternion &p_quaternion) const;
+	constexpr bool operator!=(const Quaternion &p_quaternion) const;
+
+	explicit operator String() const;
+
+	constexpr Quaternion() = default;
+
+	constexpr Quaternion(real_t p_x, real_t p_y, real_t p_z, real_t p_w) :
+			x(p_x), y(p_y), z(p_z), w(p_w) {}
+
+	Quaternion(const Vector3 &p_axis, real_t p_angle);
+
+	Quaternion(const Vector3 &p_v0, const Vector3 &p_v1) { // Shortest arc.
+#ifdef MATH_CHECKS
+		ERR_FAIL_COND_MSG(p_v0.is_zero_approx() || p_v1.is_zero_approx(), "The vectors must not be zero.");
+#endif
+#ifdef REAL_T_IS_DOUBLE
+		constexpr real_t ALMOST_ONE = 0.999999999999999;
+#else
+		constexpr real_t ALMOST_ONE = 0.99999975f;
+#endif
+		Vector3 n0 = p_v0.normalized();
+		Vector3 n1 = p_v1.normalized();
+		real_t d = n0.dot(n1);
+		if (Math::abs(d) > ALMOST_ONE) {
+			if (d >= 0) {
+				return; // Vectors are same.
+			}
+			Vector3 axis = n0.get_any_perpendicular();
+			x = axis.x;
+			y = axis.y;
+			z = axis.z;
+			w = 0;
+		} else {
+			Vector3 c = n0.cross(n1);
+			real_t s = Math::sqrt((1.0f + d) * 2.0f);
+			real_t rs = 1.0f / s;
+
+			x = c.x * rs;
+			y = c.y * rs;
+			z = c.z * rs;
+			w = s * 0.5f;
+		}
+		normalize();
+	}
+};
+
+real_t Quaternion::dot(const Quaternion &p_q) const {
+	return x * p_q.x + y * p_q.y + z * p_q.z + w * p_q.w;
+}
+
+real_t Quaternion::length_squared() const {
+	return dot(*this);
+}
+
+constexpr void Quaternion::operator+=(const Quaternion &p_q) {
+	x += p_q.x;
+	y += p_q.y;
+	z += p_q.z;
+	w += p_q.w;
+}
+
+constexpr void Quaternion::operator-=(const Quaternion &p_q) {
+	x -= p_q.x;
+	y -= p_q.y;
+	z -= p_q.z;
+	w -= p_q.w;
+}
+
+constexpr void Quaternion::operator*=(real_t p_s) {
+	x *= p_s;
+	y *= p_s;
+	z *= p_s;
+	w *= p_s;
+}
+
+constexpr void Quaternion::operator/=(real_t p_s) {
+	*this *= (1 / p_s);
+}
+
+constexpr Quaternion Quaternion::operator+(const Quaternion &p_q2) const {
+	const Quaternion &q1 = *this;
+	return Quaternion(q1.x + p_q2.x, q1.y + p_q2.y, q1.z + p_q2.z, q1.w + p_q2.w);
+}
+
+constexpr Quaternion Quaternion::operator-(const Quaternion &p_q2) const {
+	const Quaternion &q1 = *this;
+	return Quaternion(q1.x - p_q2.x, q1.y - p_q2.y, q1.z - p_q2.z, q1.w - p_q2.w);
+}
+
+constexpr Quaternion Quaternion::operator-() const {
+	const Quaternion &q2 = *this;
+	return Quaternion(-q2.x, -q2.y, -q2.z, -q2.w);
+}
+
+constexpr Quaternion Quaternion::operator*(real_t p_s) const {
+	return Quaternion(x * p_s, y * p_s, z * p_s, w * p_s);
+}
+
+constexpr Quaternion Quaternion::operator/(real_t p_s) const {
+	return *this * (1 / p_s);
+}
+
+constexpr bool Quaternion::operator==(const Quaternion &p_quaternion) const {
+	return x == p_quaternion.x && y == p_quaternion.y && z == p_quaternion.z && w == p_quaternion.w;
+}
+
+constexpr bool Quaternion::operator!=(const Quaternion &p_quaternion) const {
+	return x != p_quaternion.x || y != p_quaternion.y || z != p_quaternion.z || w != p_quaternion.w;
+}
+
+constexpr void Quaternion::operator*=(const Quaternion &p_q) {
+	real_t xx = w * p_q.x + x * p_q.w + y * p_q.z - z * p_q.y;
+	real_t yy = w * p_q.y + y * p_q.w + z * p_q.x - x * p_q.z;
+	real_t zz = w * p_q.z + z * p_q.w + x * p_q.y - y * p_q.x;
+	w = w * p_q.w - x * p_q.x - y * p_q.y - z * p_q.z;
+	x = xx;
+	y = yy;
+	z = zz;
+}
+
+constexpr Quaternion Quaternion::operator*(const Quaternion &p_q) const {
+	Quaternion r = *this;
+	r *= p_q;
+	return r;
+}
+
+constexpr Quaternion operator*(real_t p_real, const Quaternion &p_quaternion) {
+	return p_quaternion * p_real;
+}
+#include "core/math/vector3.h"
+
+struct [[nodiscard]] Basis {
+	static const Basis FLIP_X;
+	static const Basis FLIP_Y;
+	static const Basis FLIP_Z;
+
+	Vector3 rows[3] = {
+		Vector3(1, 0, 0),
+		Vector3(0, 1, 0),
+		Vector3(0, 0, 1)
+	};
+
+	constexpr const Vector3 &operator[](int p_row) const {
+		return rows[p_row];
+	}
+	constexpr Vector3 &operator[](int p_row) {
+		return rows[p_row];
+	}
+
+	void invert();
+	void transpose();
+
+	Basis inverse() const;
+	Basis transposed() const;
+
+	_FORCE_INLINE_ real_t determinant() const;
+
+	void rotate(const Vector3 &p_axis, real_t p_angle);
+	Basis rotated(const Vector3 &p_axis, real_t p_angle) const;
+
+	void rotate_local(const Vector3 &p_axis, real_t p_angle);
+	Basis rotated_local(const Vector3 &p_axis, real_t p_angle) const;
+
+	void rotate(const Vector3 &p_euler, EulerOrder p_order = EulerOrder::YXZ);
+	Basis rotated(const Vector3 &p_euler, EulerOrder p_order = EulerOrder::YXZ) const;
+
+	void rotate(const Quaternion &p_quaternion);
+	Basis rotated(const Quaternion &p_quaternion) const;
+
+	Vector3 get_euler_normalized(EulerOrder p_order = EulerOrder::YXZ) const;
+	void get_rotation_axis_angle(Vector3 &p_axis, real_t &p_angle) const;
+	void get_rotation_axis_angle_local(Vector3 &p_axis, real_t &p_angle) const;
+	Quaternion get_rotation_quaternion() const;
+
+	void rotate_to_align(Vector3 p_start_direction, Vector3 p_end_direction);
+
+	Vector3 rotref_posscale_decomposition(Basis &r_rotref) const;
+
+	Vector3 get_euler(EulerOrder p_order = EulerOrder::YXZ) const;
+	void set_euler(const Vector3 &p_euler, EulerOrder p_order = EulerOrder::YXZ);
+	static Basis from_euler(const Vector3 &p_euler, EulerOrder p_order = EulerOrder::YXZ) {
+		Basis b;
+		b.set_euler(p_euler, p_order);
+		return b;
+	}
+
+	Quaternion get_quaternion() const;
+	void set_quaternion(const Quaternion &p_quaternion);
+
+	void get_axis_angle(Vector3 &r_axis, real_t &r_angle) const;
+	void set_axis_angle(const Vector3 &p_axis, real_t p_angle);
+
+	void scale(const Vector3 &p_scale);
+	Basis scaled(const Vector3 &p_scale) const;
+
+	void scale_local(const Vector3 &p_scale);
+	Basis scaled_local(const Vector3 &p_scale) const;
+
+	void scale_orthogonal(const Vector3 &p_scale);
+	Basis scaled_orthogonal(const Vector3 &p_scale) const;
+	real_t get_uniform_scale() const;
+
+	Vector3 get_scale() const;
+	Vector3 get_scale_abs() const;
+	Vector3 get_scale_global() const;
+
+	void set_axis_angle_scale(const Vector3 &p_axis, real_t p_angle, const Vector3 &p_scale);
+	void set_euler_scale(const Vector3 &p_euler, const Vector3 &p_scale, EulerOrder p_order = EulerOrder::YXZ);
+	void set_quaternion_scale(const Quaternion &p_quaternion, const Vector3 &p_scale);
+
+	// transposed dot products
+	_FORCE_INLINE_ real_t tdotx(const Vector3 &p_v) const {
+		return rows[0][0] * p_v[0] + rows[1][0] * p_v[1] + rows[2][0] * p_v[2];
+	}
+	_FORCE_INLINE_ real_t tdoty(const Vector3 &p_v) const {
+		return rows[0][1] * p_v[0] + rows[1][1] * p_v[1] + rows[2][1] * p_v[2];
+	}
+	_FORCE_INLINE_ real_t tdotz(const Vector3 &p_v) const {
+		return rows[0][2] * p_v[0] + rows[1][2] * p_v[1] + rows[2][2] * p_v[2];
+	}
+
+	bool is_equal_approx(const Basis &p_basis) const;
+	bool is_same(const Basis &p_basis) const;
+	bool is_finite() const;
+
+	constexpr bool operator==(const Basis &p_matrix) const;
+	constexpr bool operator!=(const Basis &p_matrix) const;
+
+	_FORCE_INLINE_ Vector3 xform(const Vector3 &p_vector) const;
+	_FORCE_INLINE_ Vector3 xform_inv(const Vector3 &p_vector) const;
+	_FORCE_INLINE_ void operator*=(const Basis &p_matrix);
+	_FORCE_INLINE_ Basis operator*(const Basis &p_matrix) const;
+	constexpr void operator+=(const Basis &p_matrix);
+	constexpr Basis operator+(const Basis &p_matrix) const;
+	constexpr void operator-=(const Basis &p_matrix);
+	constexpr Basis operator-(const Basis &p_matrix) const;
+	constexpr void operator*=(real_t p_val);
+	constexpr Basis operator*(real_t p_val) const;
+	constexpr void operator/=(real_t p_val);
+	constexpr Basis operator/(real_t p_val) const;
+
+	bool is_orthogonal() const;
+	bool is_orthonormal() const;
+	bool is_conformal() const;
+	bool is_diagonal() const;
+	bool is_rotation() const;
+
+	Basis lerp(const Basis &p_to, real_t p_weight) const;
+	Basis slerp(const Basis &p_to, real_t p_weight) const;
+	void rotate_sh(real_t *p_values);
+
+	explicit operator String() const;
+
+	/* create / set */
+
+	_FORCE_INLINE_ void set(real_t p_xx, real_t p_xy, real_t p_xz, real_t p_yx, real_t p_yy, real_t p_yz, real_t p_zx, real_t p_zy, real_t p_zz) {
+		rows[0][0] = p_xx;
+		rows[0][1] = p_xy;
+		rows[0][2] = p_xz;
+		rows[1][0] = p_yx;
+		rows[1][1] = p_yy;
+		rows[1][2] = p_yz;
+		rows[2][0] = p_zx;
+		rows[2][1] = p_zy;
+		rows[2][2] = p_zz;
+	}
+	_FORCE_INLINE_ void set_columns(const Vector3 &p_x, const Vector3 &p_y, const Vector3 &p_z) {
+		set_column(0, p_x);
+		set_column(1, p_y);
+		set_column(2, p_z);
+	}
+
+	_FORCE_INLINE_ Vector3 get_column(int p_index) const {
+		// Get actual basis axis column (we store transposed as rows for performance).
+		return Vector3(rows[0][p_index], rows[1][p_index], rows[2][p_index]);
+	}
+
+	_FORCE_INLINE_ void set_column(int p_index, const Vector3 &p_value) {
+		// Set actual basis axis column (we store transposed as rows for performance).
+		rows[0][p_index] = p_value.x;
+		rows[1][p_index] = p_value.y;
+		rows[2][p_index] = p_value.z;
+	}
+
+	_FORCE_INLINE_ Vector3 get_main_diagonal() const {
+		return Vector3(rows[0][0], rows[1][1], rows[2][2]);
+	}
+
+	_FORCE_INLINE_ void set_zero() {
+		rows[0].zero();
+		rows[1].zero();
+		rows[2].zero();
+	}
+
+	_FORCE_INLINE_ Basis transpose_xform(const Basis &p_m) const {
+		return Basis(
+				rows[0].x * p_m[0].x + rows[1].x * p_m[1].x + rows[2].x * p_m[2].x,
+				rows[0].x * p_m[0].y + rows[1].x * p_m[1].y + rows[2].x * p_m[2].y,
+				rows[0].x * p_m[0].z + rows[1].x * p_m[1].z + rows[2].x * p_m[2].z,
+				rows[0].y * p_m[0].x + rows[1].y * p_m[1].x + rows[2].y * p_m[2].x,
+				rows[0].y * p_m[0].y + rows[1].y * p_m[1].y + rows[2].y * p_m[2].y,
+				rows[0].y * p_m[0].z + rows[1].y * p_m[1].z + rows[2].y * p_m[2].z,
+				rows[0].z * p_m[0].x + rows[1].z * p_m[1].x + rows[2].z * p_m[2].x,
+				rows[0].z * p_m[0].y + rows[1].z * p_m[1].y + rows[2].z * p_m[2].y,
+				rows[0].z * p_m[0].z + rows[1].z * p_m[1].z + rows[2].z * p_m[2].z);
+	}
+	constexpr Basis(real_t p_xx, real_t p_xy, real_t p_xz, real_t p_yx, real_t p_yy, real_t p_yz, real_t p_zx, real_t p_zy, real_t p_zz) :
+			rows{
+				{ p_xx, p_xy, p_xz },
+				{ p_yx, p_yy, p_yz },
+				{ p_zx, p_zy, p_zz },
+			} {}
+
+	void orthonormalize();
+	Basis orthonormalized() const;
+
+	void orthogonalize();
+	Basis orthogonalized() const;
+
+#ifdef MATH_CHECKS
+	bool is_symmetric() const;
+#endif
+	Basis diagonalize();
+
+	operator Quaternion() const { return get_quaternion(); }
+
+	static Basis looking_at(const Vector3 &p_target, const Vector3 &p_up = Vector3::UP, bool p_use_model_front = false);
+
+	Basis(const Quaternion &p_quaternion) { set_quaternion(p_quaternion); }
+	Basis(const Quaternion &p_quaternion, const Vector3 &p_scale) { set_quaternion_scale(p_quaternion, p_scale); }
+
+	Basis(const Vector3 &p_axis, real_t p_angle) { set_axis_angle(p_axis, p_angle); }
+	Basis(const Vector3 &p_axis, real_t p_angle, const Vector3 &p_scale) { set_axis_angle_scale(p_axis, p_angle, p_scale); }
+	static Basis from_scale(const Vector3 &p_scale);
+
+	constexpr Basis(const Vector3 &p_x_axis, const Vector3 &p_y_axis, const Vector3 &p_z_axis) :
+			rows{
+				{ p_x_axis.x, p_y_axis.x, p_z_axis.x },
+				{ p_x_axis.y, p_y_axis.y, p_z_axis.y },
+				{ p_x_axis.z, p_y_axis.z, p_z_axis.z },
+			} {}
+
+	Basis() = default;
+
+private:
+	// Helper method.
+	void _set_diagonal(const Vector3 &p_diag);
+};
+
+inline constexpr Basis Basis::FLIP_X = { { -1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
+inline constexpr Basis Basis::FLIP_Y = { { 1, 0, 0 }, { 0, -1, 0 }, { 0, 0, 1 } };
+inline constexpr Basis Basis::FLIP_Z = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, -1 } };
+
+constexpr bool Basis::operator==(const Basis &p_matrix) const {
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			if (rows[i][j] != p_matrix.rows[i][j]) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+constexpr bool Basis::operator!=(const Basis &p_matrix) const {
+	return (!(*this == p_matrix));
+}
+
+_FORCE_INLINE_ void Basis::operator*=(const Basis &p_matrix) {
+	set(
+			p_matrix.tdotx(rows[0]), p_matrix.tdoty(rows[0]), p_matrix.tdotz(rows[0]),
+			p_matrix.tdotx(rows[1]), p_matrix.tdoty(rows[1]), p_matrix.tdotz(rows[1]),
+			p_matrix.tdotx(rows[2]), p_matrix.tdoty(rows[2]), p_matrix.tdotz(rows[2]));
+}
+
+_FORCE_INLINE_ Basis Basis::operator*(const Basis &p_matrix) const {
+	return Basis(
+			p_matrix.tdotx(rows[0]), p_matrix.tdoty(rows[0]), p_matrix.tdotz(rows[0]),
+			p_matrix.tdotx(rows[1]), p_matrix.tdoty(rows[1]), p_matrix.tdotz(rows[1]),
+			p_matrix.tdotx(rows[2]), p_matrix.tdoty(rows[2]), p_matrix.tdotz(rows[2]));
+}
+
+constexpr void Basis::operator+=(const Basis &p_matrix) {
+	rows[0] += p_matrix.rows[0];
+	rows[1] += p_matrix.rows[1];
+	rows[2] += p_matrix.rows[2];
+}
+
+constexpr Basis Basis::operator+(const Basis &p_matrix) const {
+	Basis ret(*this);
+	ret += p_matrix;
+	return ret;
+}
+
+constexpr void Basis::operator-=(const Basis &p_matrix) {
+	rows[0] -= p_matrix.rows[0];
+	rows[1] -= p_matrix.rows[1];
+	rows[2] -= p_matrix.rows[2];
+}
+
+constexpr Basis Basis::operator-(const Basis &p_matrix) const {
+	Basis ret(*this);
+	ret -= p_matrix;
+	return ret;
+}
+
+constexpr void Basis::operator*=(real_t p_val) {
+	rows[0] *= p_val;
+	rows[1] *= p_val;
+	rows[2] *= p_val;
+}
+
+constexpr Basis Basis::operator*(real_t p_val) const {
+	Basis ret(*this);
+	ret *= p_val;
+	return ret;
+}
+
+constexpr void Basis::operator/=(real_t p_val) {
+	rows[0] /= p_val;
+	rows[1] /= p_val;
+	rows[2] /= p_val;
+}
+
+constexpr Basis Basis::operator/(real_t p_val) const {
+	Basis ret(*this);
+	ret /= p_val;
+	return ret;
+}
+
+Vector3 Basis::xform(const Vector3 &p_vector) const {
+	return Vector3(
+			rows[0].dot(p_vector),
+			rows[1].dot(p_vector),
+			rows[2].dot(p_vector));
+}
+
+Vector3 Basis::xform_inv(const Vector3 &p_vector) const {
+	return Vector3(
+			(rows[0][0] * p_vector.x) + (rows[1][0] * p_vector.y) + (rows[2][0] * p_vector.z),
+			(rows[0][1] * p_vector.x) + (rows[1][1] * p_vector.y) + (rows[2][1] * p_vector.z),
+			(rows[0][2] * p_vector.x) + (rows[1][2] * p_vector.y) + (rows[2][2] * p_vector.z));
+}
+
+real_t Basis::determinant() const {
+	return rows[0][0] * (rows[1][1] * rows[2][2] - rows[2][1] * rows[1][2]) -
+			rows[1][0] * (rows[0][1] * rows[2][2] - rows[2][1] * rows[0][2]) +
+			rows[2][0] * (rows[0][1] * rows[1][2] - rows[1][1] * rows[0][2]);
+}
+#include "core/math/plane.h"
+#include "core/templates/vector.h"
+
+struct [[nodiscard]] Transform3D {
+	static const Transform3D FLIP_X;
+	static const Transform3D FLIP_Y;
+	static const Transform3D FLIP_Z;
+
+	Basis basis;
+	Vector3 origin;
+
+	void invert();
+	Transform3D inverse() const;
+
+	void affine_invert();
+	Transform3D affine_inverse() const;
+
+	Transform3D rotated(const Vector3 &p_axis, real_t p_angle) const;
+	Transform3D rotated_local(const Vector3 &p_axis, real_t p_angle) const;
+
+	void rotate(const Vector3 &p_axis, real_t p_angle);
+	void rotate_basis(const Vector3 &p_axis, real_t p_angle);
+
+	void set_look_at(const Vector3 &p_eye, const Vector3 &p_target, const Vector3 &p_up = Vector3::UP, bool p_use_model_front = false);
+	Transform3D looking_at(const Vector3 &p_target, const Vector3 &p_up = Vector3::UP, bool p_use_model_front = false) const;
+
+	void scale(const Vector3 &p_scale);
+	Transform3D scaled(const Vector3 &p_scale) const;
+	Transform3D scaled_local(const Vector3 &p_scale) const;
+	void scale_basis(const Vector3 &p_scale);
+	void translate_local(real_t p_tx, real_t p_ty, real_t p_tz);
+	void translate_local(const Vector3 &p_translation);
+	Transform3D translated(const Vector3 &p_translation) const;
+	Transform3D translated_local(const Vector3 &p_translation) const;
+
+	const Basis &get_basis() const { return basis; }
+	void set_basis(const Basis &p_basis) { basis = p_basis; }
+
+	const Vector3 &get_origin() const { return origin; }
+	void set_origin(const Vector3 &p_origin) { origin = p_origin; }
+
+	void orthonormalize();
+	Transform3D orthonormalized() const;
+	void orthogonalize();
+	Transform3D orthogonalized() const;
+	bool is_equal_approx(const Transform3D &p_transform) const;
+	bool is_same(const Transform3D &p_transform) const;
+	bool is_finite() const;
+
+	constexpr bool operator==(const Transform3D &p_transform) const;
+	constexpr bool operator!=(const Transform3D &p_transform) const;
+
+	_FORCE_INLINE_ Vector3 xform(const Vector3 &p_vector) const;
+	_FORCE_INLINE_ AABB xform(const AABB &p_aabb) const;
+	_FORCE_INLINE_ Vector<Vector3> xform(const Vector<Vector3> &p_array) const;
+
+	// NOTE: These are UNSAFE with non-uniform scaling, and will produce incorrect results.
+	// They use the transpose.
+	// For safe inverse transforms, xform by the affine_inverse.
+	_FORCE_INLINE_ Vector3 xform_inv(const Vector3 &p_vector) const;
+	_FORCE_INLINE_ AABB xform_inv(const AABB &p_aabb) const;
+	_FORCE_INLINE_ Vector<Vector3> xform_inv(const Vector<Vector3> &p_array) const;
+
+	// Safe with non-uniform scaling (uses affine_inverse).
+	_FORCE_INLINE_ Plane xform(const Plane &p_plane) const;
+	_FORCE_INLINE_ Plane xform_inv(const Plane &p_plane) const;
+
+	// These fast versions use precomputed affine inverse, and should be used in bottleneck areas where
+	// multiple planes are to be transformed.
+	_FORCE_INLINE_ Plane xform_fast(const Plane &p_plane, const Basis &p_basis_inverse_transpose) const;
+	static _FORCE_INLINE_ Plane xform_inv_fast(const Plane &p_plane, const Transform3D &p_inverse, const Basis &p_basis_transpose);
+
+	void operator*=(const Transform3D &p_transform);
+	Transform3D operator*(const Transform3D &p_transform) const;
+	constexpr void operator*=(real_t p_val);
+	constexpr Transform3D operator*(real_t p_val) const;
+	constexpr void operator/=(real_t p_val);
+	constexpr Transform3D operator/(real_t p_val) const;
+
+	Transform3D interpolate_with(const Transform3D &p_transform, real_t p_c) const;
+
+	_FORCE_INLINE_ Transform3D inverse_xform(const Transform3D &p_transform) const {
+		Vector3 v = p_transform.origin - origin;
+		return Transform3D(basis.transpose_xform(p_transform.basis),
+				basis.xform(v));
+	}
+
+	void set(real_t p_xx, real_t p_xy, real_t p_xz, real_t p_yx, real_t p_yy, real_t p_yz, real_t p_zx, real_t p_zy, real_t p_zz, real_t p_tx, real_t p_ty, real_t p_tz) {
+		basis.set(p_xx, p_xy, p_xz, p_yx, p_yy, p_yz, p_zx, p_zy, p_zz);
+		origin.x = p_tx;
+		origin.y = p_ty;
+		origin.z = p_tz;
+	}
+
+	explicit operator String() const;
+
+	Transform3D() = default;
+	constexpr Transform3D(const Basis &p_basis, const Vector3 &p_origin = Vector3()) :
+			basis(p_basis),
+			origin(p_origin) {}
+	constexpr Transform3D(const Vector3 &p_x, const Vector3 &p_y, const Vector3 &p_z, const Vector3 &p_origin) :
+			basis(p_x, p_y, p_z),
+			origin(p_origin) {}
+	constexpr Transform3D(real_t p_xx, real_t p_xy, real_t p_xz, real_t p_yx, real_t p_yy, real_t p_yz, real_t p_zx, real_t p_zy, real_t p_zz, real_t p_ox, real_t p_oy, real_t p_oz) :
+			basis(p_xx, p_xy, p_xz, p_yx, p_yy, p_yz, p_zx, p_zy, p_zz),
+			origin(p_ox, p_oy, p_oz) {}
+};
+
+inline constexpr Transform3D Transform3D::FLIP_X = { Basis::FLIP_X };
+inline constexpr Transform3D Transform3D::FLIP_Y = { Basis::FLIP_Y };
+inline constexpr Transform3D Transform3D::FLIP_Z = { Basis::FLIP_Z };
+
+constexpr bool Transform3D::operator==(const Transform3D &p_transform) const {
+	return (basis == p_transform.basis && origin == p_transform.origin);
+}
+
+constexpr bool Transform3D::operator!=(const Transform3D &p_transform) const {
+	return (basis != p_transform.basis || origin != p_transform.origin);
+}
+
+constexpr void Transform3D::operator*=(real_t p_val) {
+	origin *= p_val;
+	basis *= p_val;
+}
+
+constexpr Transform3D Transform3D::operator*(real_t p_val) const {
+	Transform3D ret(*this);
+	ret *= p_val;
+	return ret;
+}
+
+constexpr void Transform3D::operator/=(real_t p_val) {
+	basis /= p_val;
+	origin /= p_val;
+}
+
+constexpr Transform3D Transform3D::operator/(real_t p_val) const {
+	Transform3D ret(*this);
+	ret /= p_val;
+	return ret;
+}
+
+_FORCE_INLINE_ Vector3 Transform3D::xform(const Vector3 &p_vector) const {
+	return Vector3(
+			basis[0].dot(p_vector) + origin.x,
+			basis[1].dot(p_vector) + origin.y,
+			basis[2].dot(p_vector) + origin.z);
+}
+
+_FORCE_INLINE_ Vector3 Transform3D::xform_inv(const Vector3 &p_vector) const {
+	Vector3 v = p_vector - origin;
+
+	return Vector3(
+			(basis.rows[0][0] * v.x) + (basis.rows[1][0] * v.y) + (basis.rows[2][0] * v.z),
+			(basis.rows[0][1] * v.x) + (basis.rows[1][1] * v.y) + (basis.rows[2][1] * v.z),
+			(basis.rows[0][2] * v.x) + (basis.rows[1][2] * v.y) + (basis.rows[2][2] * v.z));
+}
+
+// Neither the plane regular xform or xform_inv are particularly efficient,
+// as they do a basis inverse. For xforming a large number
+// of planes it is better to pre-calculate the inverse transpose basis once
+// and reuse it for each plane, by using the 'fast' version of the functions.
+_FORCE_INLINE_ Plane Transform3D::xform(const Plane &p_plane) const {
+	Basis b = basis.inverse();
+	b.transpose();
+	return xform_fast(p_plane, b);
+}
+
+_FORCE_INLINE_ Plane Transform3D::xform_inv(const Plane &p_plane) const {
+	Transform3D inv = affine_inverse();
+	Basis basis_transpose = basis.transposed();
+	return xform_inv_fast(p_plane, inv, basis_transpose);
+}
+
+_FORCE_INLINE_ AABB Transform3D::xform(const AABB &p_aabb) const {
+	/* https://dev.theomader.com/transform-bounding-boxes/ */
+	Vector3 min = p_aabb.position;
+	Vector3 max = p_aabb.position + p_aabb.size;
+	Vector3 tmin, tmax;
+	for (int i = 0; i < 3; i++) {
+		tmin[i] = tmax[i] = origin[i];
+		for (int j = 0; j < 3; j++) {
+			real_t e = basis[i][j] * min[j];
+			real_t f = basis[i][j] * max[j];
+			if (e < f) {
+				tmin[i] += e;
+				tmax[i] += f;
+			} else {
+				tmin[i] += f;
+				tmax[i] += e;
+			}
+		}
+	}
+	AABB r_aabb;
+	r_aabb.position = tmin;
+	r_aabb.size = tmax - tmin;
+	return r_aabb;
+}
+
+_FORCE_INLINE_ AABB Transform3D::xform_inv(const AABB &p_aabb) const {
+	/* define vertices */
+	Vector3 vertices[8] = {
+		Vector3(p_aabb.position.x + p_aabb.size.x, p_aabb.position.y + p_aabb.size.y, p_aabb.position.z + p_aabb.size.z),
+		Vector3(p_aabb.position.x + p_aabb.size.x, p_aabb.position.y + p_aabb.size.y, p_aabb.position.z),
+		Vector3(p_aabb.position.x + p_aabb.size.x, p_aabb.position.y, p_aabb.position.z + p_aabb.size.z),
+		Vector3(p_aabb.position.x + p_aabb.size.x, p_aabb.position.y, p_aabb.position.z),
+		Vector3(p_aabb.position.x, p_aabb.position.y + p_aabb.size.y, p_aabb.position.z + p_aabb.size.z),
+		Vector3(p_aabb.position.x, p_aabb.position.y + p_aabb.size.y, p_aabb.position.z),
+		Vector3(p_aabb.position.x, p_aabb.position.y, p_aabb.position.z + p_aabb.size.z),
+		Vector3(p_aabb.position.x, p_aabb.position.y, p_aabb.position.z)
+	};
+
+	AABB ret;
+
+	ret.position = xform_inv(vertices[0]);
+
+	for (int i = 1; i < 8; i++) {
+		ret.expand_to(xform_inv(vertices[i]));
+	}
+
+	return ret;
+}
+
+Vector<Vector3> Transform3D::xform(const Vector<Vector3> &p_array) const {
+	Vector<Vector3> array;
+	array.resize(p_array.size());
+
+	const Vector3 *r = p_array.ptr();
+	Vector3 *w = array.ptrw();
+
+	for (int i = 0; i < p_array.size(); ++i) {
+		w[i] = xform(r[i]);
+	}
+	return array;
+}
+
+Vector<Vector3> Transform3D::xform_inv(const Vector<Vector3> &p_array) const {
+	Vector<Vector3> array;
+	array.resize(p_array.size());
+
+	const Vector3 *r = p_array.ptr();
+	Vector3 *w = array.ptrw();
+
+	for (int i = 0; i < p_array.size(); ++i) {
+		w[i] = xform_inv(r[i]);
+	}
+	return array;
+}
+
+_FORCE_INLINE_ Plane Transform3D::xform_fast(const Plane &p_plane, const Basis &p_basis_inverse_transpose) const {
+	// Transform a single point on the plane.
+	Vector3 point = p_plane.normal * p_plane.d;
+	point = xform(point);
+
+	// Use inverse transpose for correct normals with non-uniform scaling.
+	Vector3 normal = p_basis_inverse_transpose.xform(p_plane.normal);
+	normal.normalize();
+
+	real_t d = normal.dot(point);
+	return Plane(normal, d);
+}
+
+_FORCE_INLINE_ Plane Transform3D::xform_inv_fast(const Plane &p_plane, const Transform3D &p_inverse, const Basis &p_basis_transpose) {
+	// Transform a single point on the plane.
+	Vector3 point = p_plane.normal * p_plane.d;
+	point = p_inverse.xform(point);
+
+	// Note that instead of precalculating the transpose, an alternative
+	// would be to use the transpose for the basis transform.
+	// However that would be less SIMD friendly (requiring a swizzle).
+	// So the cost is one extra precalced value in the calling code.
+	// This is probably worth it, as this could be used in bottleneck areas. And
+	// where it is not a bottleneck, the non-fast method is fine.
+
+	// Use transpose for correct normals with non-uniform scaling.
+	Vector3 normal = p_basis_transpose.xform(p_plane.normal);
+	normal.normalize();
+
+	real_t d = normal.dot(point);
+	return Plane(normal, d);
+}
+// --- End core/math/transform_3d.h ---
+#include "core/templates/hashfuncs.h"
 #include "core/math/math_defs.h"
 #include "core/math/math_funcs.h"
-#include "core/math/transform_3d.h"
+
 // --- Folded from core/math/face3.h ---
 #include "core/math/aabb.h"
 #include "core/math/plane.h"
-#include "core/math/transform_3d.h"
+
 #include "core/math/vector3.h"
 
 struct [[nodiscard]] Face3 {
@@ -453,10 +1275,276 @@ template <>
 struct is_zero_constructible<Face3> : std::true_type {};
 // --- End core/math/face3.h ---
 #include "core/math/rect2.h"
-#include "core/math/transform_2d.h"
-#include "core/math/transform_3d.h"
+// --- Folded from core/math/transform_2d.h ---
+#include "core/math/math_funcs.h"
+#include "core/math/rect2.h"
 #include "core/math/vector2.h"
-#include "core/math/vector2i.h"
+#include "core/templates/vector.h"
+
+class String;
+
+struct [[nodiscard]] Transform2D {
+	// WARNING: The basis of Transform2D is stored differently from Basis.
+	// In terms of columns array, the basis matrix looks like "on paper":
+	// M = (columns[0][0] columns[1][0])
+	//     (columns[0][1] columns[1][1])
+	// This is such that the columns, which can be interpreted as basis vectors
+	// of the coordinate system "painted" on the object, can be accessed as columns[i].
+	// NOTE: This is the opposite of the indices in mathematical texts,
+	// meaning: $M_{12}$ in a math book corresponds to columns[1][0] here.
+	// This requires additional care when working with explicit indices.
+	// See https://en.wikipedia.org/wiki/Row-_and_column-major_order for further reading.
+
+	// WARNING: Be aware that unlike 3D code, 2D code uses a left-handed coordinate system:
+	// Y-axis points down, and angle is measure from +X to +Y in a clockwise-fashion.
+
+	static const Transform2D FLIP_X;
+	static const Transform2D FLIP_Y;
+
+	Vector2 columns[3] = {
+		{ 1, 0 },
+		{ 0, 1 },
+		{ 0, 0 },
+	};
+
+	_FORCE_INLINE_ real_t tdotx(const Vector2 &p_v) const { return columns[0][0] * p_v.x + columns[1][0] * p_v.y; }
+	_FORCE_INLINE_ real_t tdoty(const Vector2 &p_v) const { return columns[0][1] * p_v.x + columns[1][1] * p_v.y; }
+
+	constexpr const Vector2 &operator[](int p_idx) const { return columns[p_idx]; }
+	constexpr Vector2 &operator[](int p_idx) { return columns[p_idx]; }
+
+	void invert();
+	Transform2D inverse() const;
+
+	void affine_invert();
+	Transform2D affine_inverse() const;
+
+	void set_rotation(real_t p_rot);
+	real_t get_rotation() const;
+	real_t get_skew() const;
+	void set_skew(real_t p_angle);
+	_FORCE_INLINE_ void set_rotation_and_scale(real_t p_rot, const Size2 &p_scale);
+	_FORCE_INLINE_ void set_rotation_scale_and_skew(real_t p_rot, const Size2 &p_scale, real_t p_skew);
+	void rotate(real_t p_angle);
+
+	void scale(const Size2 &p_scale);
+	void scale_basis(const Size2 &p_scale);
+	void translate_local(real_t p_tx, real_t p_ty);
+	void translate_local(const Vector2 &p_translation);
+
+	real_t determinant() const;
+
+	Size2 get_scale() const;
+	void set_scale(const Size2 &p_scale);
+
+	_FORCE_INLINE_ const Vector2 &get_origin() const { return columns[2]; }
+	_FORCE_INLINE_ void set_origin(const Vector2 &p_origin) { columns[2] = p_origin; }
+
+	Transform2D scaled(const Size2 &p_scale) const;
+	Transform2D scaled_local(const Size2 &p_scale) const;
+	Transform2D translated(const Vector2 &p_offset) const;
+	Transform2D translated_local(const Vector2 &p_offset) const;
+	Transform2D rotated(real_t p_angle) const;
+	Transform2D rotated_local(real_t p_angle) const;
+
+	Transform2D untranslated() const;
+
+	void orthonormalize();
+	Transform2D orthonormalized() const;
+	bool is_conformal() const;
+	bool is_equal_approx(const Transform2D &p_transform) const;
+	bool is_same(const Transform2D &p_transform) const;
+	bool is_finite() const;
+
+	Transform2D looking_at(const Vector2 &p_target) const;
+
+	constexpr bool operator==(const Transform2D &p_transform) const;
+	constexpr bool operator!=(const Transform2D &p_transform) const;
+
+	void operator*=(const Transform2D &p_transform);
+	Transform2D operator*(const Transform2D &p_transform) const;
+	constexpr void operator*=(real_t p_val);
+	constexpr Transform2D operator*(real_t p_val) const;
+	constexpr void operator/=(real_t p_val);
+	constexpr Transform2D operator/(real_t p_val) const;
+
+	Transform2D interpolate_with(const Transform2D &p_transform, real_t p_c) const;
+
+	_FORCE_INLINE_ Vector2 basis_xform(const Vector2 &p_vec) const;
+	_FORCE_INLINE_ Vector2 basis_xform_inv(const Vector2 &p_vec) const;
+	_FORCE_INLINE_ Vector2 xform(const Vector2 &p_vec) const;
+	_FORCE_INLINE_ Vector2 xform_inv(const Vector2 &p_vec) const;
+	_FORCE_INLINE_ Rect2 xform(const Rect2 &p_rect) const;
+	_FORCE_INLINE_ Rect2 xform_inv(const Rect2 &p_rect) const;
+	_FORCE_INLINE_ Vector<Vector2> xform(const Vector<Vector2> &p_array) const;
+	_FORCE_INLINE_ Vector<Vector2> xform_inv(const Vector<Vector2> &p_array) const;
+
+	explicit operator String() const;
+
+	constexpr Transform2D(real_t p_xx, real_t p_xy, real_t p_yx, real_t p_yy, real_t p_ox, real_t p_oy) :
+			columns{
+				{ p_xx, p_xy },
+				{ p_yx, p_yy },
+				{ p_ox, p_oy },
+			} {}
+
+	constexpr Transform2D(const Vector2 &p_x, const Vector2 &p_y, const Vector2 &p_origin) :
+			columns{ p_x, p_y, p_origin } {}
+
+	Transform2D(real_t p_rot, const Vector2 &p_pos);
+
+	Transform2D(real_t p_rot, const Size2 &p_scale, real_t p_skew, const Vector2 &p_pos);
+
+	Transform2D() = default;
+};
+
+inline constexpr Transform2D Transform2D::FLIP_X = { { -1, 0 }, { 0, 1 }, { 0, 0 } };
+inline constexpr Transform2D Transform2D::FLIP_Y = { { 1, 0 }, { 0, -1 }, { 0, 0 } };
+
+constexpr bool Transform2D::operator==(const Transform2D &p_transform) const {
+	for (int i = 0; i < 3; i++) {
+		if (columns[i] != p_transform.columns[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+constexpr bool Transform2D::operator!=(const Transform2D &p_transform) const {
+	for (int i = 0; i < 3; i++) {
+		if (columns[i] != p_transform.columns[i]) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+constexpr void Transform2D::operator*=(real_t p_val) {
+	columns[0] *= p_val;
+	columns[1] *= p_val;
+	columns[2] *= p_val;
+}
+
+constexpr Transform2D Transform2D::operator*(real_t p_val) const {
+	Transform2D ret(*this);
+	ret *= p_val;
+	return ret;
+}
+
+constexpr void Transform2D::operator/=(real_t p_val) {
+	columns[0] /= p_val;
+	columns[1] /= p_val;
+	columns[2] /= p_val;
+}
+
+constexpr Transform2D Transform2D::operator/(real_t p_val) const {
+	Transform2D ret(*this);
+	ret /= p_val;
+	return ret;
+}
+
+Vector2 Transform2D::basis_xform(const Vector2 &p_vec) const {
+	return Vector2(
+			tdotx(p_vec),
+			tdoty(p_vec));
+}
+
+Vector2 Transform2D::basis_xform_inv(const Vector2 &p_vec) const {
+	return Vector2(
+			columns[0].dot(p_vec),
+			columns[1].dot(p_vec));
+}
+
+Vector2 Transform2D::xform(const Vector2 &p_vec) const {
+	return Vector2(
+				   tdotx(p_vec),
+				   tdoty(p_vec)) +
+			columns[2];
+}
+
+Vector2 Transform2D::xform_inv(const Vector2 &p_vec) const {
+	Vector2 v = p_vec - columns[2];
+
+	return Vector2(
+			columns[0].dot(v),
+			columns[1].dot(v));
+}
+
+Rect2 Transform2D::xform(const Rect2 &p_rect) const {
+	Vector2 x = columns[0] * p_rect.size.x;
+	Vector2 y = columns[1] * p_rect.size.y;
+	Vector2 pos = xform(p_rect.position);
+
+	Rect2 new_rect;
+	new_rect.position = pos;
+	new_rect.expand_to(pos + x);
+	new_rect.expand_to(pos + y);
+	new_rect.expand_to(pos + x + y);
+	return new_rect;
+}
+
+void Transform2D::set_rotation_and_scale(real_t p_rot, const Size2 &p_scale) {
+	columns[0][0] = Math::cos(p_rot) * p_scale.x;
+	columns[1][1] = Math::cos(p_rot) * p_scale.y;
+	columns[1][0] = -Math::sin(p_rot) * p_scale.y;
+	columns[0][1] = Math::sin(p_rot) * p_scale.x;
+}
+
+void Transform2D::set_rotation_scale_and_skew(real_t p_rot, const Size2 &p_scale, real_t p_skew) {
+	columns[0][0] = Math::cos(p_rot) * p_scale.x;
+	columns[1][1] = Math::cos(p_rot + p_skew) * p_scale.y;
+	columns[1][0] = -Math::sin(p_rot + p_skew) * p_scale.y;
+	columns[0][1] = Math::sin(p_rot) * p_scale.x;
+}
+
+Rect2 Transform2D::xform_inv(const Rect2 &p_rect) const {
+	Vector2 ends[4] = {
+		xform_inv(p_rect.position),
+		xform_inv(Vector2(p_rect.position.x, p_rect.position.y + p_rect.size.y)),
+		xform_inv(Vector2(p_rect.position.x + p_rect.size.x, p_rect.position.y + p_rect.size.y)),
+		xform_inv(Vector2(p_rect.position.x + p_rect.size.x, p_rect.position.y))
+	};
+
+	Rect2 new_rect;
+	new_rect.position = ends[0];
+	new_rect.expand_to(ends[1]);
+	new_rect.expand_to(ends[2]);
+	new_rect.expand_to(ends[3]);
+
+	return new_rect;
+}
+
+Vector<Vector2> Transform2D::xform(const Vector<Vector2> &p_array) const {
+	Vector<Vector2> array;
+	array.resize(p_array.size());
+
+	const Vector2 *r = p_array.ptr();
+	Vector2 *w = array.ptrw();
+
+	for (int i = 0; i < p_array.size(); ++i) {
+		w[i] = xform(r[i]);
+	}
+	return array;
+}
+
+Vector<Vector2> Transform2D::xform_inv(const Vector<Vector2> &p_array) const {
+	Vector<Vector2> array;
+	array.resize(p_array.size());
+
+	const Vector2 *r = p_array.ptr();
+	Vector2 *w = array.ptrw();
+
+	for (int i = 0; i < p_array.size(); ++i) {
+		w[i] = xform_inv(r[i]);
+	}
+	return array;
+}
+// --- End core/math/transform_2d.h ---
+
+#include "core/math/vector2.h"
+#include "core/templates/hashfuncs.h"
 #include "core/math/vector3.h"
 #include "core/math/projection.h"
 
@@ -549,7 +1637,7 @@ template <> struct is_zero_constructible<NodePath> : std::true_type
 #include "core/string/ustring.h"
 
 // Core Identifiers & Handles
-#include "core/templates/rid.h"
+#include "core/templates/hashfuncs.h"
 
 // Native Container Templates
 #include "core/templates/vector.h"
@@ -557,7 +1645,674 @@ template <> struct is_zero_constructible<NodePath> : std::true_type
 #include "core/templates/hash_set.h"
 #include "core/templates/list.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/paged_allocator.h"
+// --- Folded from core/templates/paged_allocator.h ---
+#include <type_traits>
+#include <typeinfo> // IWYU pragma: keep // Used in macro.
+// --- Folded from core/core_globals.h ---
+// Home for state needed from global functions
+// that cannot be stored in Engine or OS due to e.g. circular includes
+
+class CoreGlobals
+{
+public:
+	static inline bool leak_reporting_enabled = true;
+	static inline bool print_line_enabled = true;
+	static inline bool print_error_enabled = true;
+	static inline bool print_ready = false;
+};
+// --- End core/core_globals.h ---
+// --- Folded from core/math/math_funcs_binary.h ---
+#include "core/typedefs.h"
+
+namespace Math {
+
+/* Functions to handle powers of 2 and shifting. */
+
+// Returns `true` if a positive integer is a power of 2, `false` otherwise.
+template <typename T>
+constexpr bool is_power_of_2(const T p_x) {
+	return p_x && ((p_x & (p_x - 1)) == 0);
+}
+
+// Function to find the next power of 2 to an integer.
+constexpr uint64_t next_power_of_2(uint64_t p_number) {
+	if (p_number == 0) {
+		return 0;
+	}
+
+	--p_number;
+	p_number |= p_number >> 1;
+	p_number |= p_number >> 2;
+	p_number |= p_number >> 4;
+	p_number |= p_number >> 8;
+	p_number |= p_number >> 16;
+	p_number |= p_number >> 32;
+
+	return ++p_number;
+}
+
+constexpr uint32_t next_power_of_2(uint32_t p_number) {
+	if (p_number == 0) {
+		return 0;
+	}
+
+	--p_number;
+	p_number |= p_number >> 1;
+	p_number |= p_number >> 2;
+	p_number |= p_number >> 4;
+	p_number |= p_number >> 8;
+	p_number |= p_number >> 16;
+
+	return ++p_number;
+}
+
+// Function to find the previous power of 2 to an integer.
+constexpr uint64_t previous_power_of_2(uint64_t p_number) {
+	p_number |= p_number >> 1;
+	p_number |= p_number >> 2;
+	p_number |= p_number >> 4;
+	p_number |= p_number >> 8;
+	p_number |= p_number >> 16;
+	p_number |= p_number >> 32;
+	return p_number - (p_number >> 1);
+}
+
+constexpr uint32_t previous_power_of_2(uint32_t p_number) {
+	p_number |= p_number >> 1;
+	p_number |= p_number >> 2;
+	p_number |= p_number >> 4;
+	p_number |= p_number >> 8;
+	p_number |= p_number >> 16;
+	return p_number - (p_number >> 1);
+}
+
+// Function to find the closest power of 2 to an integer.
+constexpr uint64_t closest_power_of_2(uint64_t p_number) {
+	uint64_t nx = next_power_of_2(p_number);
+	uint64_t px = previous_power_of_2(p_number);
+	return (nx - p_number) > (p_number - px) ? px : nx;
+}
+
+constexpr uint32_t closest_power_of_2(uint32_t p_number) {
+	uint32_t nx = next_power_of_2(p_number);
+	uint32_t px = previous_power_of_2(p_number);
+	return (nx - p_number) > (p_number - px) ? px : nx;
+}
+
+// Get a shift value from a power of 2.
+constexpr int32_t get_shift_from_power_of_2(uint64_t p_bits) {
+	for (uint64_t i = 0; i < (uint64_t)64; i++) {
+		if (p_bits == (uint64_t)((uint64_t)1 << i)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+constexpr int32_t get_shift_from_power_of_2(uint32_t p_bits) {
+	for (uint32_t i = 0; i < (uint32_t)32; i++) {
+		if (p_bits == (uint32_t)((uint32_t)1 << i)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+template <typename T>
+constexpr T nearest_power_of_2_templated(T p_number) {
+	--p_number;
+
+	// The number of operations on x is the base two logarithm
+	// of the number of bits in the type. Add three to account
+	// for sizeof(T) being in bytes.
+	constexpr size_t shift_steps = get_shift_from_power_of_2((uint64_t)sizeof(T)) + 3;
+
+	// If the compiler is smart, it unrolls this loop.
+	// If it's dumb, this is a bit slow.
+	for (size_t i = 0; i < shift_steps; i++) {
+		p_number |= p_number >> (1 << i);
+	}
+
+	return ++p_number;
+}
+
+// Function to find the nearest (bigger) power of 2 to an integer.
+constexpr uint64_t nearest_shift(uint64_t p_number) {
+	uint64_t i = 63;
+	do {
+		i--;
+		if (p_number & ((uint64_t)1 << i)) {
+			return i + (uint64_t)1;
+		}
+	} while (i != 0);
+
+	return 0;
+}
+
+constexpr uint32_t nearest_shift(uint32_t p_number) {
+	uint32_t i = 31;
+	do {
+		i--;
+		if (p_number & ((uint32_t)1 << i)) {
+			return i + (uint32_t)1;
+		}
+	} while (i != 0);
+
+	return 0;
+}
+
+// constexpr function to find the floored log2 of a number
+template <typename T>
+constexpr T floor_log2(T p_x) {
+	return p_x < 2 ? p_x : 1 + floor_log2(p_x >> 1);
+}
+
+// Get the number of bits needed to represent the number.
+// IE, if you pass in 8, you will get 4.
+// If you want to know how many bits are needed to store 8 values however, pass in (8 - 1).
+template <typename T>
+constexpr T get_num_bits(T p_x) {
+	return floor_log2(p_x);
+}
+
+} //namespace Math
+// --- End core/math/math_funcs_binary.h ---
+#include "core/os/memory.h"
+#include "core/os/mutex.h"
+#include "core/string/ustring.h"
+#include "core/typedefs.h"
+
+template <typename T, bool thread_safe = false, uint32_t DEFAULT_PAGE_SIZE = 4096>
+class PagedAllocator
+{
+	T** page_pool = nullptr;
+	T*** available_pool = nullptr;
+	uint32_t pages_allocated = 0;
+	uint32_t allocs_available = 0;
+
+	uint32_t page_shift = 0;
+	uint32_t page_mask = 0;
+	uint32_t page_size = 0;
+	SpinLock spin_lock;
+
+public:
+	template <typename... Args> T* alloc(Args&&... p_args)
+	{
+		if constexpr (thread_safe) {
+			spin_lock.lock();
+		}
+		if (unlikely(allocs_available == 0)) {
+			uint32_t pages_used = pages_allocated;
+
+			pages_allocated++;
+			page_pool = (T**)memrealloc(page_pool, sizeof(T*) * pages_allocated);
+			available_pool = (T***)memrealloc(available_pool, sizeof(T**) * pages_allocated);
+
+			page_pool[pages_used] = (T*)memalloc(sizeof(T) * page_size);
+			available_pool[pages_used] = (T**)memalloc(sizeof(T*) * page_size);
+
+			for (uint32_t i = 0; i < page_size; i++) {
+				available_pool[0][i] = &page_pool[pages_used][i];
+			}
+			allocs_available += page_size;
+		}
+
+		allocs_available--;
+		T* alloc = available_pool[allocs_available >> page_shift][allocs_available & page_mask];
+		if constexpr (thread_safe) {
+			spin_lock.unlock();
+		}
+		memnew_placement(alloc, T(p_args...));
+		return alloc;
+	}
+
+	void free(T* p_mem)
+	{
+		if constexpr (thread_safe) {
+			spin_lock.lock();
+		}
+		p_mem->~T();
+		available_pool[allocs_available >> page_shift][allocs_available & page_mask] = p_mem;
+		allocs_available++;
+		if constexpr (thread_safe) {
+			spin_lock.unlock();
+		}
+	}
+
+	template <typename... Args> T* new_allocation(Args&&... p_args) { return alloc(p_args...); }
+
+	void delete_allocation(T* p_mem) { free(p_mem); }
+
+private:
+	void _reset(bool p_allow_unfreed)
+	{
+		if (!p_allow_unfreed || !std::is_trivially_destructible_v<T>) {
+			ERR_FAIL_COND(allocs_available < pages_allocated * page_size);
+		}
+		if (pages_allocated) {
+			for (uint32_t i = 0; i < pages_allocated; i++) {
+				memfree(page_pool[i]);
+				memfree(available_pool[i]);
+			}
+			memfree(page_pool);
+			memfree(available_pool);
+			page_pool = nullptr;
+			available_pool = nullptr;
+			pages_allocated = 0;
+			allocs_available = 0;
+		}
+	}
+
+public:
+	void reset(bool p_allow_unfreed = false)
+	{
+		if constexpr (thread_safe) {
+			spin_lock.lock();
+		}
+		_reset(p_allow_unfreed);
+		if constexpr (thread_safe) {
+			spin_lock.unlock();
+		}
+	}
+
+	bool is_configured() const
+	{
+		if constexpr (thread_safe) {
+			spin_lock.lock();
+		}
+		bool result = page_size > 0;
+		if constexpr (thread_safe) {
+			spin_lock.unlock();
+		}
+		return result;
+	}
+
+	void configure(uint32_t p_page_size)
+	{
+		if constexpr (thread_safe) {
+			spin_lock.lock();
+		}
+		ERR_FAIL_COND(page_pool != nullptr); // Safety check.
+		ERR_FAIL_COND(p_page_size == 0);
+		page_size = Math::nearest_power_of_2_templated(p_page_size);
+		page_mask = page_size - 1;
+		page_shift = Math::get_shift_from_power_of_2(page_size);
+		if constexpr (thread_safe) {
+			spin_lock.unlock();
+		}
+	}
+
+	// Power of 2 recommended because of alignment with OS page sizes.
+	// Even if element is bigger, it's still a multiple and gets rounded to amount of pages.
+	PagedAllocator(uint32_t p_page_size = DEFAULT_PAGE_SIZE) { configure(p_page_size); }
+
+	~PagedAllocator()
+	{
+		if constexpr (thread_safe) {
+			spin_lock.lock();
+		}
+		bool leaked = allocs_available < pages_allocated * page_size;
+		if (leaked) {
+			if (CoreGlobals::leak_reporting_enabled) {
+				ERR_PRINT(String("Pages in use exist at exit in PagedAllocator: ") +
+						  String(typeid(T).name()));
+			}
+		}
+		else {
+			_reset(false);
+		}
+		if constexpr (thread_safe) {
+			spin_lock.unlock();
+		}
+	}
+};
+
+// --- Folded from core/templates/paged_array.h ---
+
+#include "core/os/memory.h"
+#include "core/os/mutex.h"
+#include "core/typedefs.h"
+
+#include <type_traits>
+
+// PagedArray is used mainly for filling a very large array from multiple threads efficiently and without causing major fragmentation
+
+// PageArrayPool manages central page allocation in a thread safe matter
+
+template <typename T>
+class PagedArrayPool {
+	T **page_pool = nullptr;
+	uint32_t pages_allocated = 0;
+
+	uint32_t *available_page_pool = nullptr;
+	uint32_t pages_available = 0;
+
+	uint32_t page_size = 0;
+	SpinLock spin_lock;
+
+public:
+	struct PageInfo {
+		T *page = nullptr;
+		uint32_t page_id = 0;
+	};
+
+	PageInfo alloc_page() {
+		spin_lock.lock();
+		if (unlikely(pages_available == 0)) {
+			uint32_t pages_used = pages_allocated;
+
+			pages_allocated++;
+			page_pool = (T **)memrealloc(page_pool, sizeof(T *) * pages_allocated);
+			available_page_pool = (uint32_t *)memrealloc(available_page_pool, sizeof(uint32_t) * pages_allocated);
+
+			page_pool[pages_used] = (T *)memalloc(sizeof(T) * page_size);
+			available_page_pool[0] = pages_used;
+
+			pages_available++;
+		}
+
+		pages_available--;
+		uint32_t page_id = available_page_pool[pages_available];
+		T *page = page_pool[page_id];
+		spin_lock.unlock();
+
+		return PageInfo{ page, page_id };
+	}
+
+	void free_page(uint32_t p_page_id) {
+		spin_lock.lock();
+		available_page_pool[pages_available] = p_page_id;
+		pages_available++;
+		spin_lock.unlock();
+	}
+
+	uint32_t get_page_size_shift() const {
+		return Math::get_shift_from_power_of_2(page_size);
+	}
+
+	uint32_t get_page_size_mask() const {
+		return page_size - 1;
+	}
+
+	void reset() {
+		ERR_FAIL_COND(pages_available < pages_allocated);
+		if (pages_allocated) {
+			for (uint32_t i = 0; i < pages_allocated; i++) {
+				memfree(page_pool[i]);
+			}
+			memfree(page_pool);
+			memfree(available_page_pool);
+			page_pool = nullptr;
+			available_page_pool = nullptr;
+			pages_allocated = 0;
+			pages_available = 0;
+		}
+	}
+	bool is_configured() const {
+		return page_size > 0;
+	}
+
+	void configure(uint32_t p_page_size) {
+		ERR_FAIL_COND(page_pool != nullptr); // Safety check.
+		ERR_FAIL_COND(p_page_size == 0);
+		page_size = Math::nearest_power_of_2_templated(p_page_size);
+	}
+
+	PagedArrayPool(uint32_t p_page_size = 4096) { // power of 2 recommended because of alignment with OS page sizes. Even if element is bigger, its still a multiple and get rounded amount of pages
+		configure(p_page_size);
+	}
+
+	~PagedArrayPool() {
+		ERR_FAIL_COND_MSG(pages_available < pages_allocated, "Pages in use exist at exit in PagedArrayPool");
+		reset();
+	}
+};
+
+// PageArray is a local array that is optimized to grow in place, then be cleared often.
+// It does so by allocating pages from a PagedArrayPool.
+// It is safe to use multiple PagedArrays from different threads, sharing a single PagedArrayPool
+
+template <typename T>
+class _WARN_UNUSED_ PagedArray {
+	PagedArrayPool<T> *page_pool = nullptr;
+
+	T **page_data = nullptr;
+	uint32_t *page_ids = nullptr;
+	uint32_t max_pages_used = 0;
+	uint32_t page_size_shift = 0;
+	uint32_t page_size_mask = 0;
+	uint64_t count = 0;
+
+	_FORCE_INLINE_ uint32_t _get_pages_in_use() const {
+		if (count == 0) {
+			return 0;
+		} else {
+			return ((count - 1) >> page_size_shift) + 1;
+		}
+	}
+
+	void _grow_page_array() {
+		//no more room in the page array to put the new page, make room
+		if (max_pages_used == 0) {
+			max_pages_used = 1;
+		} else {
+			max_pages_used *= 2; // increase in powers of 2 to keep allocations to minimum
+		}
+		page_data = (T **)memrealloc(page_data, sizeof(T *) * max_pages_used);
+		page_ids = (uint32_t *)memrealloc(page_ids, sizeof(uint32_t) * max_pages_used);
+	}
+
+public:
+	_FORCE_INLINE_ const T &operator[](uint64_t p_index) const {
+		CRASH_BAD_UNSIGNED_INDEX(p_index, count);
+		uint32_t page = p_index >> page_size_shift;
+		uint32_t offset = p_index & page_size_mask;
+
+		return page_data[page][offset];
+	}
+	_FORCE_INLINE_ T &operator[](uint64_t p_index) {
+		CRASH_BAD_UNSIGNED_INDEX(p_index, count);
+		uint32_t page = p_index >> page_size_shift;
+		uint32_t offset = p_index & page_size_mask;
+
+		return page_data[page][offset];
+	}
+
+	_FORCE_INLINE_ void push_back(const T &p_value) {
+		uint32_t remainder = count & page_size_mask;
+		if (unlikely(remainder == 0)) {
+			// at 0, so time to request a new page
+			uint32_t page_count = _get_pages_in_use();
+			uint32_t new_page_count = page_count + 1;
+
+			if (unlikely(new_page_count > max_pages_used)) {
+				ERR_FAIL_NULL(page_pool); // Safety check.
+
+				_grow_page_array(); //keep out of inline
+			}
+
+			typename PagedArrayPool<T>::PageInfo page_info = page_pool->alloc_page();
+			page_data[page_count] = page_info.page;
+			page_ids[page_count] = page_info.page_id;
+		}
+
+		// place the new value
+		uint32_t page = count >> page_size_shift;
+		uint32_t offset = count & page_size_mask;
+
+		if constexpr (!std::is_trivially_constructible_v<T>) {
+			memnew_placement(&page_data[page][offset], T(p_value));
+		} else {
+			page_data[page][offset] = p_value;
+		}
+
+		count++;
+	}
+
+	_FORCE_INLINE_ void pop_back() {
+		ERR_FAIL_COND(count == 0);
+
+		if constexpr (!std::is_trivially_destructible_v<T>) {
+			uint32_t page = (count - 1) >> page_size_shift;
+			uint32_t offset = (count - 1) & page_size_mask;
+			page_data[page][offset].~T();
+		}
+
+		uint32_t remainder = count & page_size_mask;
+		if (unlikely(remainder == 1)) {
+			// one element remained, so page must be freed.
+			uint32_t last_page = _get_pages_in_use() - 1;
+			page_pool->free_page(page_ids[last_page]);
+		}
+		count--;
+	}
+
+	void remove_at_unordered(uint64_t p_index) {
+		ERR_FAIL_UNSIGNED_INDEX(p_index, count);
+		(*this)[p_index] = (*this)[count - 1];
+		pop_back();
+	}
+
+	void clear() {
+		//destruct if needed
+		if constexpr (!std::is_trivially_destructible_v<T>) {
+			for (uint64_t i = 0; i < count; i++) {
+				uint32_t page = i >> page_size_shift;
+				uint32_t offset = i & page_size_mask;
+				page_data[page][offset].~T();
+			}
+		}
+
+		//return the pages to the pagepool, so they can be used by another array eventually
+		uint32_t pages_used = _get_pages_in_use();
+		for (uint32_t i = 0; i < pages_used; i++) {
+			page_pool->free_page(page_ids[i]);
+		}
+
+		count = 0;
+
+		//note we leave page_data and page_indices intact for next use. If you really want to clear them call reset()
+	}
+
+	void reset() {
+		clear();
+		if (page_data) {
+			memfree(page_data);
+			memfree(page_ids);
+			page_data = nullptr;
+			page_ids = nullptr;
+			max_pages_used = 0;
+		}
+	}
+
+	// This takes the pages from a source array and merges them to this one
+	// resulting order is undefined, but content is merged very efficiently,
+	// making it ideal to fill content on several threads to later join it.
+
+	void merge_unordered(PagedArray<T> &p_array) {
+		ERR_FAIL_COND(page_pool != p_array.page_pool);
+
+		uint32_t remainder = count & page_size_mask;
+
+		T *remainder_page = nullptr;
+		uint32_t remainder_page_id = 0;
+
+		if (remainder > 0) {
+			uint32_t last_page = _get_pages_in_use() - 1;
+			remainder_page = page_data[last_page];
+			remainder_page_id = page_ids[last_page];
+		}
+
+		count -= remainder;
+
+		uint32_t src_page_index = 0;
+		uint32_t page_size = page_size_mask + 1;
+
+		while (p_array.count > 0) {
+			uint32_t page_count = _get_pages_in_use();
+			uint32_t new_page_count = page_count + 1;
+
+			if (unlikely(new_page_count > max_pages_used)) {
+				_grow_page_array(); //keep out of inline
+			}
+
+			page_data[page_count] = p_array.page_data[src_page_index];
+			page_ids[page_count] = p_array.page_ids[src_page_index];
+
+			uint32_t take = MIN(p_array.count, page_size); //pages to take away
+			p_array.count -= take;
+			count += take;
+			src_page_index++;
+		}
+
+		//handle the remainder page if exists
+		if (remainder_page) {
+			uint32_t new_remainder = count & page_size_mask;
+
+			if (new_remainder > 0) {
+				//must merge old remainder with new remainder
+
+				T *dst_page = page_data[_get_pages_in_use() - 1];
+				uint32_t to_copy = MIN(page_size - new_remainder, remainder);
+
+				for (uint32_t i = 0; i < to_copy; i++) {
+					if constexpr (!std::is_trivially_constructible_v<T>) {
+						memnew_placement(&dst_page[i + new_remainder], T(remainder_page[i + remainder - to_copy]));
+					} else {
+						dst_page[i + new_remainder] = remainder_page[i + remainder - to_copy];
+					}
+
+					if constexpr (!std::is_trivially_destructible_v<T>) {
+						remainder_page[i + remainder - to_copy].~T();
+					}
+				}
+
+				remainder -= to_copy; //subtract what was copied from remainder
+				count += to_copy; //add what was copied to the count
+
+				if (remainder == 0) {
+					//entire remainder copied, let go of remainder page
+					page_pool->free_page(remainder_page_id);
+					remainder_page = nullptr;
+				}
+			}
+
+			if (remainder > 0) {
+				//there is still remainder, append it
+				uint32_t page_count = _get_pages_in_use();
+				uint32_t new_page_count = page_count + 1;
+
+				if (unlikely(new_page_count > max_pages_used)) {
+					_grow_page_array(); //keep out of inline
+				}
+
+				page_data[page_count] = remainder_page;
+				page_ids[page_count] = remainder_page_id;
+
+				count += remainder;
+			}
+		}
+	}
+
+	_FORCE_INLINE_ uint64_t size() const {
+		return count;
+	}
+
+	void set_page_pool(PagedArrayPool<T> *p_page_pool) {
+		ERR_FAIL_COND(max_pages_used > 0); // Safety check.
+
+		page_pool = p_page_pool;
+		page_size_mask = page_pool->get_page_size_mask();
+		page_size_shift = page_pool->get_page_size_shift();
+	}
+
+	~PagedArray() {
+		reset();
+	}
+};
+// --- End core/templates/paged_allocator.h ---
 // --- Inlined/Folded from core/templates/ring_buffer.h ---
 #include "core/templates/local_vector.h"
 
@@ -772,7 +2527,314 @@ struct HashMapHasherDefaultImpl<Ref<T>> {
 	}
 };
 
-#include "core/math/expression.h"
+// --- Folded from core/math/expression.h ---
+
+
+class Expression : public RefCounted
+{
+protected:
+	String expression;
+
+	int str_ofs = 0;
+	bool expression_dirty = false;
+
+	bool _compile_expression();
+
+	enum TokenType
+	{
+		TK_CURLY_BRACKET_OPEN,
+		TK_CURLY_BRACKET_CLOSE,
+		TK_BRACKET_OPEN,
+		TK_BRACKET_CLOSE,
+		TK_PARENTHESIS_OPEN,
+		TK_PARENTHESIS_CLOSE,
+		TK_IDENTIFIER,
+		TK_BUILTIN_FUNC,
+		TK_SELF,
+		TK_CONSTANT,
+		TK_BASIC_TYPE,
+		TK_COLON,
+		TK_COMMA,
+		TK_PERIOD,
+		TK_OP_IN,
+		TK_OP_EQUAL,
+		TK_OP_NOT_EQUAL,
+		TK_OP_LESS,
+		TK_OP_LESS_EQUAL,
+		TK_OP_GREATER,
+		TK_OP_GREATER_EQUAL,
+		TK_OP_AND,
+		TK_OP_OR,
+		TK_OP_NOT,
+		TK_OP_ADD,
+		TK_OP_SUB,
+		TK_OP_MUL,
+		TK_OP_DIV,
+		TK_OP_MOD,
+		TK_OP_POW,
+		TK_OP_SHIFT_LEFT,
+		TK_OP_SHIFT_RIGHT,
+		TK_OP_BIT_AND,
+		TK_OP_BIT_OR,
+		TK_OP_BIT_XOR,
+		TK_OP_BIT_INVERT,
+		TK_INPUT,
+		TK_EOF,
+		TK_ERROR,
+		TK_MAX
+	};
+
+	static const char* token_name[TK_MAX];
+
+	struct Token
+	{
+		TokenType type;
+	};
+
+	void _set_error(const String& p_err)
+	{
+		if (error_set) {
+			return;
+		}
+		error_str = p_err;
+		error_set = true;
+	}
+
+	Error _get_token(Token& r_token);
+
+	String error_str;
+	bool error_set = true;
+
+	struct ENode
+	{
+		enum Type
+		{
+			TYPE_INPUT,
+			TYPE_CONSTANT,
+			TYPE_SELF,
+			TYPE_OPERATOR,
+			TYPE_INDEX,
+			TYPE_NAMED_INDEX,
+			TYPE_ARRAY,
+			TYPE_DICTIONARY,
+			TYPE_CONSTRUCTOR,
+			TYPE_BUILTIN_FUNC,
+			TYPE_CALL
+		};
+
+		ENode* next = nullptr;
+
+		Type type = TYPE_INPUT;
+
+		int input_index = 0;
+		ENode* nodes[2] = {nullptr, nullptr};
+		ENode* base = nullptr;
+		ENode* index = nullptr;
+		String name;
+		Vector<ENode*> arguments;
+
+		~ENode()
+		{
+			if (next) {
+				memdelete(next);
+			}
+		}
+	};
+
+	struct ExpressionNode
+	{
+		bool is_op = false;
+
+		union
+		{
+			ENode* node = nullptr;
+		};
+	};
+
+	ENode* _parse_expression();
+
+	ENode* alloc_node(ENode::Type p_type = ENode::TYPE_INPUT)
+	{
+		ENode* node = memnew(ENode);
+		node->type = p_type;
+		node->next = nodes;
+		nodes = node;
+		return node;
+	}
+
+	ENode* root = nullptr;
+	ENode* nodes = nullptr;
+
+	Vector<String> input_names;
+
+	bool execution_error = false;
+
+protected:
+
+public:
+	Error parse(const String& p_expression, const Vector<String>& p_input_names = Vector<String>());
+	bool has_execute_failed() const;
+	String get_error_text() const;
+
+	~Expression();
+};
+// --- End core/math/expression.h ---
 #include "thirdparty/openxr/include/openxr/openxr.h"
+
+
+// --- Folded from core/math/random_pcg.h ---
+#include "core/math/math_funcs.h"
+
+#include <thirdparty/misc/pcg.h>
+
+#include <cmath> // ldexp
+
+#if defined(__GNUC__)
+#define CLZ32(m_x) __builtin_clz(m_x)
+#elif defined(_MSC_VER)
+#include <intrin.h>
+static int __bsr_clz32(uint32_t p_x) {
+	unsigned long index;
+	_BitScanReverse(&index, p_x);
+	return 31 - index;
+}
+#define CLZ32(m_x) __bsr_clz32(m_x)
+#endif
+
+template <typename T>
+class Vector;
+
+class RandomPCG {
+	pcg32_random_t pcg;
+	uint64_t current_seed = 0; // The seed the current generator state started from.
+	uint64_t current_inc = 0;
+
+public:
+	static const uint64_t DEFAULT_SEED = 12047754176567800795U;
+	static const uint64_t DEFAULT_INC = PCG_DEFAULT_INC_64;
+
+	RandomPCG(uint64_t p_seed = DEFAULT_SEED, uint64_t p_inc = DEFAULT_INC);
+
+	_FORCE_INLINE_ void seed(uint64_t p_seed) {
+		current_seed = p_seed;
+		pcg32_srandom_r(&pcg, current_seed, current_inc);
+	}
+	_FORCE_INLINE_ uint64_t get_seed() { return current_seed; }
+
+	_FORCE_INLINE_ void set_state(uint64_t p_state) { pcg.state = p_state; }
+	_FORCE_INLINE_ uint64_t get_state() const { return pcg.state; }
+
+	void randomize();
+	_FORCE_INLINE_ uint32_t rand() {
+		return pcg32_random_r(&pcg);
+	}
+	_FORCE_INLINE_ uint32_t rand(uint32_t p_bounds) {
+		return pcg32_boundedrand_r(&pcg, p_bounds);
+	}
+
+	int64_t rand_weighted(const Vector<float> &p_weights);
+
+	// Obtaining floating point numbers in [0, 1] range with "good enough" uniformity.
+	// These functions sample the output of rand() as the fraction part of an infinite binary number,
+	// with some tricks applied to reduce ops and branching:
+	// 1. Instead of shifting to the first 1 and connecting random bits, we simply set the MSB and LSB to 1.
+	//    Provided that the RNG is actually uniform bit by bit, this should have the exact same effect.
+	// 2. In order to compensate for exponent info loss, we count zeros from another random number,
+	//    and just add that to the initial offset.
+	//    This has the same probability as counting and shifting an actual bit stream: 2^-n for n zeroes.
+	// For all numbers above 2^-96 (2^-64 for floats), the functions should be uniform.
+	// However, all numbers below that threshold are floored to 0.
+	// The thresholds are chosen to minimize rand() calls while keeping the numbers within a totally subjective quality standard.
+	// If clz or ldexp isn't available, fall back to bit truncation for performance, sacrificing uniformity.
+	_FORCE_INLINE_ double randd() {
+#if defined(CLZ32)
+		uint32_t proto_exp_offset = rand();
+		if (unlikely(proto_exp_offset == 0)) {
+			return 0;
+		}
+		uint64_t significand = (((uint64_t)rand()) << 32) | rand() | 0x8000000000000001U;
+		return std::ldexp((double)significand, -64 - CLZ32(proto_exp_offset));
+#else
+#pragma message("RandomPCG::randd - intrinsic clz is not available, falling back to bit truncation")
+		return (double)(((((uint64_t)rand()) << 32) | rand()) & 0x1FFFFFFFFFFFFFU) / (double)0x1FFFFFFFFFFFFFU;
+#endif
+	}
+	_FORCE_INLINE_ float randf() {
+#if defined(CLZ32)
+		uint32_t proto_exp_offset = rand();
+		if (unlikely(proto_exp_offset == 0)) {
+			return 0;
+		}
+		return std::ldexp((float)(rand() | 0x80000001), -32 - CLZ32(proto_exp_offset));
+#else
+#pragma message("RandomPCG::randf - intrinsic clz is not available, falling back to bit truncation")
+		return (float)(rand() & 0xFFFFFF) / (float)0xFFFFFF;
+#endif
+	}
+
+	_FORCE_INLINE_ double randfn(double p_mean, double p_deviation) {
+		double temp = randd();
+		if (temp < CMP_EPSILON) {
+			temp += CMP_EPSILON; // To prevent generating of INF value in log function, resulting to return NaN value from this function.
+		}
+		return p_mean + p_deviation * (Math::cos(Math::TAU * randd()) * Math::sqrt(-2.0 * Math::log(temp))); // Box-Muller transform.
+	}
+	_FORCE_INLINE_ float randfn(float p_mean, float p_deviation) {
+		float temp = randf();
+		if (temp < CMP_EPSILON) {
+			temp += CMP_EPSILON; // To prevent generating of INF value in log function, resulting to return NaN value from this function.
+		}
+		return p_mean + p_deviation * (Math::cos((float)Math::TAU * randf()) * Math::sqrt(-2.0 * Math::log(temp))); // Box-Muller transform.
+	}
+
+	double random(double p_from, double p_to);
+	float random(float p_from, float p_to);
+	int random(int p_from, int p_to);
+};
+
+// --- Folded from core/math/random_number_generator.h ---
+
+
+class RandomNumberGenerator : public RefCounted
+{
+protected:
+	RandomPCG randbase;
+
+
+public:
+	_FORCE_INLINE_ void set_seed(uint64_t p_seed) { randbase.seed(p_seed); }
+
+	_FORCE_INLINE_ uint64_t get_seed() { return randbase.get_seed(); }
+
+	_FORCE_INLINE_ void set_state(uint64_t p_state) { randbase.set_state(p_state); }
+
+	_FORCE_INLINE_ uint64_t get_state() const { return randbase.get_state(); }
+
+	_FORCE_INLINE_ void randomize() { randbase.randomize(); }
+
+	_FORCE_INLINE_ uint32_t randi() { return randbase.rand(); }
+
+	_FORCE_INLINE_ real_t randf() { return randbase.randf(); }
+
+	_FORCE_INLINE_ real_t randf_range(real_t p_from, real_t p_to)
+	{
+		return randbase.random(p_from, p_to);
+	}
+
+	_FORCE_INLINE_ real_t randfn(real_t p_mean = 0.0, real_t p_deviation = 1.0)
+	{
+		return randbase.randfn(p_mean, p_deviation);
+	}
+
+	_FORCE_INLINE_ int randi_range(int p_from, int p_to) { return randbase.random(p_from, p_to); }
+
+	_FORCE_INLINE_ int64_t rand_weighted(const Vector<float>& p_weights)
+	{
+		return randbase.rand_weighted(p_weights);
+	}
+
+	RandomNumberGenerator() { randbase.randomize(); }
+};
+// --- End core/math/random_pcg.h ---
 
 #endif // TYPES_H

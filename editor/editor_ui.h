@@ -35,11 +35,11 @@
 // --- Folded from editor/ui_widgets.h ---
 #include "core/input/input.h"
 #include "core/input/input_event.h"
-#include "core/math/color.h"
+#include "core/templates/hashfuncs.h"
 #include "core/math/rect2.h"
 #include "core/string/ustring.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/rid.h"
+#include "core/templates/hashfuncs.h"
 #include "scene/resources/font.h"
 
 // Composable, zero-inheritance Canvas UI state structs and drawing primitives

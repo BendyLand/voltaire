@@ -29,9 +29,109 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "os_visionos.h"
+// --- Inlined from platform/visionos/os_visionos.h ---
+#ifdef VISIONOS_ENABLED
 
-#import "platform/visionos/os_visionos.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_VisionOS final
+{
+public:
+	OS_VisionOS() = delete;
+	~OS_VisionOS() = delete;
+	OS_VisionOS(const OS_VisionOS&) = delete;
+	OS_VisionOS& operator=(const OS_VisionOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // VISIONOS_ENABLED
+
+// --- Folded from platform/visionos/display_server_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerVisionOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerVisionOS();
+
+public:
+	static void register_visionos_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/visionos/display_layer_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+@end
+// --- End platform/visionos/os_visionos.h ---
+
+// --- Inlined from platform/visionos/os_visionos.h ---
+#ifdef VISIONOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_VisionOS final
+{
+public:
+	OS_VisionOS() = delete;
+	~OS_VisionOS() = delete;
+	OS_VisionOS(const OS_VisionOS&) = delete;
+	OS_VisionOS& operator=(const OS_VisionOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // VISIONOS_ENABLED
+
+// --- Folded from platform/visionos/display_server_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerVisionOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerVisionOS();
+
+public:
+	static void register_visionos_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/visionos/display_layer_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+@end
+// --- End platform/visionos/os_visionos.h ---
 
 #ifdef VISIONOS_ENABLED
 
@@ -79,7 +179,57 @@ String OS::get_name() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/visionos/os_visionos.h"
+// --- Inlined from platform/visionos/os_visionos.h ---
+#ifdef VISIONOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_VisionOS final
+{
+public:
+	OS_VisionOS() = delete;
+	~OS_VisionOS() = delete;
+	OS_VisionOS(const OS_VisionOS&) = delete;
+	OS_VisionOS& operator=(const OS_VisionOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // VISIONOS_ENABLED
+
+// --- Folded from platform/visionos/display_server_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerVisionOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerVisionOS();
+
+public:
+	static void register_visionos_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/visionos/display_layer_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+@end
+// --- End platform/visionos/os_visionos.h ---
 
 @implementation GDTMetalLayer
 
@@ -126,7 +276,57 @@ String OS::get_name() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/visionos/os_visionos.h"
+// --- Inlined from platform/visionos/os_visionos.h ---
+#ifdef VISIONOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_VisionOS final
+{
+public:
+	OS_VisionOS() = delete;
+	~OS_VisionOS() = delete;
+	OS_VisionOS(const OS_VisionOS&) = delete;
+	OS_VisionOS& operator=(const OS_VisionOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // VISIONOS_ENABLED
+
+// --- Folded from platform/visionos/display_server_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerVisionOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerVisionOS();
+
+public:
+	static void register_visionos_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/visionos/display_layer_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+@end
+// --- End platform/visionos/os_visionos.h ---
 
 DisplayServerVisionOS::DisplayServerVisionOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) :
 		DisplayServerAppleEmbedded(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_parent_window, r_error) {
@@ -224,7 +424,57 @@ float DisplayServerVisionOS::_screen_current_edr_headroom() const {
 
 @end
 
-#include "platform/visionos/os_visionos.h"
+// --- Inlined from platform/visionos/os_visionos.h ---
+#ifdef VISIONOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_VisionOS final
+{
+public:
+	OS_VisionOS() = delete;
+	~OS_VisionOS() = delete;
+	OS_VisionOS(const OS_VisionOS&) = delete;
+	OS_VisionOS& operator=(const OS_VisionOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // VISIONOS_ENABLED
+
+// --- Folded from platform/visionos/display_server_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerVisionOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerVisionOS();
+
+public:
+	static void register_visionos_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/visionos/display_layer_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+@end
+// --- End platform/visionos/os_visionos.h ---
 
 #include "core/error/error_macros.h"
 
@@ -304,7 +554,57 @@ GDTView *GDTViewCreate() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/visionos/os_visionos.h"
+// --- Inlined from platform/visionos/os_visionos.h ---
+#ifdef VISIONOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_VisionOS final
+{
+public:
+	OS_VisionOS() = delete;
+	~OS_VisionOS() = delete;
+	OS_VisionOS(const OS_VisionOS&) = delete;
+	OS_VisionOS& operator=(const OS_VisionOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // VISIONOS_ENABLED
+
+// --- Folded from platform/visionos/display_server_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerVisionOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerVisionOS();
+
+public:
+	static void register_visionos_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/visionos/display_layer_visionos.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+@end
+// --- End platform/visionos/os_visionos.h ---
 
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"

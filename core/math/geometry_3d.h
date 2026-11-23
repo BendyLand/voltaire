@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/math/color.h"
+#include "core/templates/hashfuncs.h"
 // --- Folded from core/math/delaunay_3d.h ---
 #include "core/math/aabb.h"
 #include "core/math/projection.h"

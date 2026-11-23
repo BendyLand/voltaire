@@ -10,7 +10,7 @@ def register_platform_apis_builder(target, source):
     with methods.generated_wrapper(str(target[0])) as file:
         file.write(
             f"""\
-#include "platform/register_platform_apis.h"
+#include "main/main.h"
 
 void register_platform_apis() {{
 	{api_reg}

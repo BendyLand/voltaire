@@ -68,7 +68,6 @@ public:
 
 // --- Folded from core/io/json_resource_format.h ---
 #include "core/io/resource_loader.h"
-#include "core/io/resource_saver.h"
 #include "core/io/resource_uid.h"
 
 class ResourceFormatLoaderJSON : public ResourceFormatLoader

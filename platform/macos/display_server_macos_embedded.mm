@@ -36,8 +36,7 @@
 #import "core/debugger/engine_debugger.h"
 #import "core/input/input.h"
 #import "core/input/input_event.h"
-#import "core/io/marshalls.h"
-#import "core/os/main_loop.h"
+#import "core/io/resource_loader.h"
 #import "core/os/os.h"
 #import "servers/display/display_server.h"
 
@@ -46,7 +45,7 @@
 
 #import "drivers/gles3/rasterizer_gles3.h"
 
-#import <platform_gl.h>
+#import "drivers/gles3/shader_gles3.h"
 #endif
 
 #if defined(RD_ENABLED)
@@ -865,7 +864,6 @@ Error DisplayServerMacOSEmbeddedState::deserialize(const PackedByteArray &p_data
 #include "core/input/input.h"
 #include "core/input/input_event.h"
 #include "core/input/input.h"
-#include "core/os/main_loop.h"
 #include "core/os/os.h"
 
 void EmbeddedDebugger::initialize(DisplayServerMacOSEmbedded* p_ds)
@@ -1077,7 +1075,7 @@ Error EmbeddedDebugger::parse_message(
 
 #import "drivers/gles3/rasterizer_gles3.h"
 
-#import <platform_gl.h>
+#import "drivers/gles3/shader_gles3.h"
 
 #import <QuartzCore/QuartzCore.h>
 #include <dlfcn.h>

@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/io/image.h"
-#include "core/templates/rid.h"
+#include "core/templates/hashfuncs.h"
 #include "core/types.h"
 
 template <typename T> class TypedArray;
@@ -1113,7 +1113,7 @@ public:
 // --- Folded from servers/text/text_server_dummy.h ---
 /*************************************************************************/
 
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 
 
 class TextServerDummy : public TextServer

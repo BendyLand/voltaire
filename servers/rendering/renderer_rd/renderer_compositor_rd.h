@@ -40,16 +40,16 @@
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/paged_allocator.h"
+#include "core/types.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/sort_array.h"
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/shader_language.h"
-#include "servers/rendering/storage/utilities.h"
+#include "servers/rendering/renderer.h"
 
 namespace RendererRD
 {
@@ -850,12 +850,11 @@ public:
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 
-#include "servers/rendering/renderer_rd/shader_rd.h"
+#include "servers/rendering/renderer.h"
 
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 
 struct Projection;
 
@@ -1350,23 +1349,21 @@ public:
 // --- End servers/rendering/renderer_rd/storage_rd/material_storage.h ---
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_language.h"
 #include "core/templates/local_vector.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
-#include "servers/rendering/storage/utilities.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 // --- Folded from servers/rendering/renderer_rd/rd_caches.h ---
 #include "core/templates/local_vector.h"
-#include "core/templates/paged_allocator.h"
+#include "core/types.h"
 #include "servers/rendering/rendering_device.h"
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
-#include "core/templates/rid.h"
+#include "core/templates/hashfuncs.h"
 #include "core/templates/vector.h"
 #include "servers/rendering/rendering_server_enums.h"
 
@@ -5529,9 +5526,9 @@ private:
 #endif
 
 #ifdef METAL_ENABLED
-#include "core/templates/paged_allocator.h"
+#include "core/types.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
 
 namespace MTLFX
 {
@@ -6474,7 +6471,7 @@ public:
 };
 
 // --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/light_storage.h ---
-#include "core/templates/paged_allocator.h"
+#include "core/types.h"
 #include "core/templates/rid_owner.h"
 
 // --- Folded from servers/rendering/renderer_rd/storage_rd/forward_id_storage.h ---
@@ -6545,7 +6542,6 @@ public:
 
 // --- End servers/rendering/renderer_rd/storage_rd/forward_id_storage.h ---
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 
 class ClusterBuilderRD;
 class ClusterBuilderSharedDataRD;
@@ -7942,7 +7938,7 @@ private:
 
 
 // --- End servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.h ---
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 
 class RenderDataRD
 {
@@ -8019,7 +8015,6 @@ public:
 
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 
@@ -9245,8 +9240,8 @@ public:
 // --- Folded from servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h ---
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
-#include "servers/rendering/rendering_server_types.h"
-#include "core/templates/paged_allocator.h"
+#include "servers/rendering/rendering_device.h"
+#include "core/types.h"
 
 
 
@@ -10726,8 +10721,8 @@ public:
 // --- Folded from servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h ---
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
-#include "servers/rendering/rendering_server_types.h"
-#include "core/templates/paged_allocator.h"
+#include "servers/rendering/rendering_device.h"
+#include "core/types.h"
 
 
 
@@ -12050,12 +12045,11 @@ public:
 } // namespace RendererSceneRenderImplementation
 
 // --- End servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h ---
-#include "servers/rendering/renderer_viewport.h"
+#include "servers/rendering/renderer.h"
 
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_language.h"
 
 typedef uint64_t PolygonID;
@@ -12854,7 +12848,6 @@ public:
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 
 namespace RendererRD
 {
@@ -13723,10 +13716,9 @@ public:
 
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 
 namespace RendererRD
 {
@@ -14367,9 +14359,9 @@ public:
 
 // --- Folded from servers/rendering/renderer_rd/storage_rd/utilities.h ---
 #include "core/templates/rid_owner.h"
-#include "servers/rendering/rendering_device_commons.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/storage/utilities.h"
+#include "servers/rendering/renderer.h"
 
 namespace RendererRD
 {

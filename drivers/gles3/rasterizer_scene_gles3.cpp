@@ -31,16 +31,15 @@
 
 #include "drivers/gles3/rasterizer_gles3.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 
 #ifdef GLES3_ENABLED
 
 #include "core/config/project_settings.h"
 #include "core/templates/sort_array.h"
 #include "drivers/gles3/rasterizer_gles3.h"
-#include "servers/camera/camera_server.h"
+#include "servers/xr/xr_server.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/storage/ltc_lut.gen.h"
 
 RenderGeometryInstance* RasterizerSceneGLES3::geometry_instance_create(RID p_base)
@@ -5652,7 +5651,7 @@ void GLES3::GI::sdfgi_reset() {}
 #if defined(GLES3_ENABLED)
 #include "drivers/gles3/rasterizer_gles3.h"
 
-#include <platform_gl.h>
+#include "drivers/gles3/shader_gles3.h"
 
 // RasterizerUtilGLES3
 
@@ -5685,7 +5684,7 @@ void RasterizerUtilGLES3::clear_stencil(int32_t p_stencil)
 #include "drivers/gles3/rasterizer_gles3.h"
 
 #ifdef ANDROID_ENABLED
-#include <platform_egl.h>
+#include "drivers/egl/egl_manager.h"
 #endif
 
 #ifdef WEB_ENABLED
@@ -9058,7 +9057,7 @@ void GLES3::LightStorage::initialize() {}
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "drivers/gles3/rasterizer_gles3.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
 using namespace GLES3;
@@ -11376,7 +11375,6 @@ void GLES3::MaterialStorage::finalize()
 
 #include "drivers/gles3/rasterizer_gles3.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_viewport.h"
 
 using namespace GLES3;
 
@@ -20051,8 +20049,7 @@ void GLES3::TextureStorage::texture_set_format(RID p_texture, Image::Format p_fo
 #include "core/math/geometry_3d.h"
 #include "drivers/gles3/rasterizer_gles3.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 
 void RasterizerCanvasGLES3::_update_transform_2d_to_mat4(
 	const Transform2D& p_transform, float* p_mat4)
@@ -24254,7 +24251,7 @@ ShaderGLES3::~ShaderGLES3()
 // ============================================================================
 
 #include "drivers/gles3/rasterizer_gles3.h"
-#include "servers/rendering/storage/utilities.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
@@ -24266,8 +24263,7 @@ ShaderGLES3::~ShaderGLES3()
 #include "drivers/gles3/rasterizer_gles3.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 
 #define _EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB 0x8242
 #define _EXT_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH_ARB 0x8243
@@ -24306,10 +24302,10 @@ ShaderGLES3::~ShaderGLES3()
 #endif
 #endif
 
-#include <platform_gl.h>
+#include "drivers/gles3/shader_gles3.h"
 
 #if defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
-#include <platform_egl.h>
+#include "drivers/egl/egl_manager.h"
 #endif
 
 #if defined(GLAD_ENABLED) || defined(EGL_ENABLED) || defined(ANDROID_ENABLED)

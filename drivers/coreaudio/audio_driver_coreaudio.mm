@@ -35,7 +35,7 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/math/math_funcs_binary.h"
+#include "core/types.h"
 #include "core/os/os.h"
 
 #define kOutputBus 0
@@ -851,7 +851,7 @@ String to_string(NSString *p_str) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/apple/os_log_logger.h"
+#include "drivers/coreaudio/audio_driver_coreaudio.h"
 
 #include "core/os/memory.h"
 #include "core/string/print_string.h"
@@ -977,7 +977,7 @@ void OsLogLogger::log_error(const char *p_function, const char *p_file, int p_li
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/apple/thread_apple.h"
+#include "core/os/thread.h"
 
 #include "core/error/error_macros.h"
 #include "core/string/ustring.h"

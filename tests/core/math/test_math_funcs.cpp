@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/math/math_funcs_binary.h"
+#include "core/types.h"
 #include "tests/test_macros.h"
 
 TEST_FORCE_LINK(test_math_funcs)

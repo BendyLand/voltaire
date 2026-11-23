@@ -36,7 +36,7 @@ TEST_FORCE_LINK(test_foldable_container)
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "scene/gui/control.h"
-#include "scene/gui/scroll_container.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 

@@ -101,7 +101,15 @@ def make_license_header(target, source):
         if reading:
             out_file.write("\tnullptr,\n};\n\n")
 
+    certs_buf = methods.get_buffer("thirdparty/certs/ca-bundle.crt")
+    certs_decomp_size = len(certs_buf)
+    certs_comp = methods.compress_buffer(certs_buf)
+
     with methods.generated_wrapper(str(target[0])) as file:
+        file.write('#define _SYSTEM_CERTS_PATH ""\n#define BUILTIN_CERTS_ENABLED\n\n')
+        file.write(f"inline constexpr int _certs_compressed_size = {len(certs_comp)};\n")
+        file.write(f"inline constexpr int _certs_uncompressed_size = {certs_decomp_size};\n")
+        file.write(f"inline constexpr unsigned char _certs_compressed[] = {{\n{methods.format_buffer(certs_comp, 1)}\n}};\n\n")
         write_md_sections(file, "AUTHORS.md", authors_sections)
         write_md_sections(file, "DONORS.md", donors_sections)
         file.write(f"""\

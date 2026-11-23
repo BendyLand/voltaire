@@ -53,7 +53,7 @@
 /**************************************************************************/
 
 
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
 
 #include <Metal/Metal.hpp>
 
@@ -731,7 +731,7 @@ protected:
 /* permissions and limitations under the License.                         */
 /**************************************************************************/
 
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
 
 #include <Metal/Metal.hpp>
 
@@ -882,7 +882,7 @@ private:
 };
 
 // --- End drivers/metal/metal_device_properties.h ---
-#include "servers/rendering/rendering_device_commons.h"
+#include "servers/rendering/rendering_device.h"
 
 #ifdef __OBJC__
 #include <Metal/Metal.h>
@@ -2629,7 +2629,7 @@ private:
 // --- End drivers/metal/metal_device_profile.h ---
 
 // --- Folded from drivers/metal/rendering_shader_container_metal.h ---
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
 
 constexpr uint32_t R32UI_ALIGNMENT_CONSTANT_ID = 65535;
 /// Metal buffer index for the view mask when rendering multi-view.
@@ -2831,7 +2831,7 @@ public:
 	RenderingShaderContainerFormatMetal(const MetalDeviceProfile *p_device_profile, bool p_export = false);
 	virtual ~RenderingShaderContainerFormatMetal() = default;
 };
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
 
 #include <Metal/Metal.hpp>
 

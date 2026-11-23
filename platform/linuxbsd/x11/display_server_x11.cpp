@@ -38,14 +38,12 @@
 #include "core/input/input.h"
 #include "core/io/file_access.h"
 #include "core/math/math_funcs.h"
-#include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/string/ustring.h"
 #include "core/io/resource_loader.h"
 #include "drivers/unix/os_unix.h"
 #include "main/main.h"
-#include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 // --- Inlined from platform/linuxbsd/x11/key_mapping_x11.h ---
@@ -6975,7 +6973,7 @@ void DisplayServerX11::process_events()
 #undef ABSDIFF
 #endif
 // --- Merged from platform/linuxbsd/x11/gl_manager_x11.cpp ---
-#include "core/os/main_loop.h"
+#include "core/os/os.h"
 #include "platform/linuxbsd/x11/display_server_x11.h"
 
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
@@ -7458,9 +7456,9 @@ Vector<EGLint> GLManagerEGL_X11::_get_platform_context_attribs() const {
 
 #define glXCreateContextAttribsARB glad_glXCreateContextAttribsARB
 
-#include <platform_gl.h>
+#include "drivers/gles3/shader_gles3.h"
 #include <thirdparty/glad/glad/glx.h>
-#include "core/core_globals.h"
+#include "core/types.h"
 #include "core/string/print_string.h"
 #include "core/types.h"
 #include "platform/linuxbsd/x11/display_server_x11.h"

@@ -192,4 +192,35 @@ public:
 	static int get_cached_resource_count();
 };
 
+// --- Folded from scene/property_list_helper.h ---
+class PropertyListHelper
+{
+	static HashMap<String, Vector<PropertyListHelper*>> base_helpers;
+
+	String prefix;
+
+	bool allow_oob_assign = false;
+
+	int _call_array_length_getter() const;
+
+public:
+	static void clear_base_helpers();
+	static void register_base_helper(const String& p_class_name, PropertyListHelper* p_helper);
+
+	static Vector<PropertyListHelper*> get_helpers_for_class(const String& p_class_name);
+
+	void set_prefix(const String& p_prefix);
+
+	bool is_initialized() const;
+	bool is_property_valid(const String& p_property, int* r_index = nullptr) const;
+
+	bool property_can_revert(const String& p_property) const;
+
+	void enable_out_of_bounds_assign() { allow_oob_assign = true; }
+
+	void clear();
+};
+// --- End scene/property_list_helper.h ---
+
+
 

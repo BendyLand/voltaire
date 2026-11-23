@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_translation)
 #include "core/string/translation_server.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/import/3d/resource_importer_scene.h"
+#include "modules/gltf/gltf_document.h"
 #endif
 
 #include "tests/test_utils.h"

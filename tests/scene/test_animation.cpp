@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_animation)
 
-#include "scene/resources/animation.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestAnimation {
 

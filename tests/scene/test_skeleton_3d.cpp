@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_skeleton_3d)
 
 #ifndef _3D_DISABLED
 
-#include "scene/3d/skeleton_3d.h"
+#include "scene/3d/node_3d.h"
 
 namespace TestSkeleton3D {
 

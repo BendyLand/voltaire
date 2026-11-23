@@ -53,7 +53,7 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
@@ -5732,7 +5732,7 @@ void RenderingContextDriverMetal::surface_destroy(SurfaceID p_surface) {
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include "core/io/file_access.h"
-#include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "core/templates/span.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"

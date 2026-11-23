@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_theme)
 
 #include "scene/resources/image_texture.h"
 #include "scene/resources/theme.h"
-#include "tests/test_tools.h"
+#include "tests/test_utils.h"
 
 namespace TestTheme {
 

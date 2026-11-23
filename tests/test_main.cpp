@@ -33,7 +33,6 @@
 
 #include "core/config/engine.h"
 #include "core/input/input.h"
-#include "core/input/input_map.h"
 #include "core/io/dir_access.h"
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
@@ -41,7 +40,7 @@
 #include "scene/main/window.h"
 #include "scene/resources/theme.h"
 #include "servers/audio/audio_server.h"
-#include "servers/display/accessibility_server.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "tests/display_server_mock.h"
 #include "tests/force_link.gen.h"

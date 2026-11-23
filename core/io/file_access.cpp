@@ -30,9 +30,9 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/crypto/crypto_core.h"
+#include "core/crypto/crypto.h"
 #include "core/io/file_access_wrappers.h"
-#include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
 #include "core/io/resource_uid.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
@@ -1874,7 +1874,7 @@ zlib_filefunc_def zipio_create_io(Ref<FileAccess> *p_data) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/crypto/crypto_core.h"
+#include "core/crypto/crypto.h"
 #include "core/io/file_access.h"
 #include "core/io/file_access_wrappers.h"
 #include "core/version.h"
@@ -2171,7 +2171,6 @@ PCKPacker::~PCKPacker()
 #include <climits>
 #include <cstdio>
 #include "core/io/resource_loader.h"
-#include "marshalls.h"
 #include "core/types.h"
 
 #define ERR_FAIL_ADD_OF(a, b, err)                                                                 \
@@ -2359,7 +2358,7 @@ Vector<float> vector3_to_float32_array(const Vector3* p_vecs, size_t p_count)
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
 #include "core/io/compression.h"
 
 int PackedDataContainer::size() const { return _size(0); }
@@ -2975,7 +2974,7 @@ bool ResourceFormatSaverJSON::recognize(const Ref<Resource>& p_resource) const
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/crypto/crypto_core.h"
+#include "core/crypto/crypto.h"
 #include "core/os/time.h"
 #include "core/io/config_file.h"
 
@@ -5352,7 +5351,7 @@ DirAccess::~DirAccess() { _delete_temp(); }
 /**************************************************************************/
 
 #include <cstdio>
-#include "core/core_globals.h"
+#include "core/types.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/time.h"
@@ -5361,7 +5360,7 @@ DirAccess::~DirAccess() { _delete_temp(); }
 #include "modules/modules_enabled.gen.h" // For regex.
 
 #ifdef MODULE_REGEX_ENABLED
-#include "modules/regex/regex.h"
+#include "core/string/translation_server.h"
 #endif // MODULE_REGEX_ENABLED
 
 #if defined(MINGW_ENABLED) || defined(_MSC_VER)
@@ -5577,7 +5576,7 @@ CompositeLogger::~CompositeLogger()
 
 #include "core/config/project_settings.h"
 #include "core/io/compression.h"
-#include "core/math/math_funcs_binary.h"
+#include "core/types.h"
 #include "core/os/os.h"
 #include "core/version.h"
 
@@ -7742,7 +7741,7 @@ FileAccessZip::~FileAccessZip() { _close(); }
 
 
 // --- Merged from core/io/stream_peer.cpp ---
-#include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
 #include "core/io/stream_peer.h"
 
 Error StreamPeer::_put_data(const Vector<uint8_t>& p_data)
@@ -10811,7 +10810,7 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 // ============================================================================
 
 #include "core/config/project_settings.h"
-#include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
 #include "core/io/stream_peer.h"
 
 void PacketPeer::set_encode_buffer_max_size(int p_max_size)
@@ -12963,7 +12962,6 @@ Ref<Resource> ResourceFormatLoader::load(const String& p_path, const String& p_o
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "core/io/resource_saver.h"
 
 Ref<ResourceFormatSaver> ResourceSaver::saver[MAX_SAVERS];
 
@@ -13203,12 +13201,12 @@ Ref<ResourceFormatSaver> ResourceSaver::_find_custom_resource_format_saver(const
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/crypto/crypto_core.h"
+#include "core/crypto/crypto.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/io/stream_peer.h"
-#include "core/math/random_pcg.h"
+#include "core/types.h"
 #include "core/io/resource_uid.h"
 
 // These constants are off by 1, causing the 'z' and '9' characters never to be used.
@@ -13890,7 +13888,7 @@ String ResourceFormatLoaderImage::get_resource_type(const String &p_path) const 
 
 #include "core/io/resource_loader.h"
 #include "core/math/math_funcs.h"
-#include "core/math/random_pcg.h"
+#include "core/types.h"
 #include "core/os/os.h"
 #include "core/io/resource.h"
 #include "scene/main/node.h" //only so casting works
@@ -14279,7 +14277,6 @@ void Resource::setup_local_to_scene() {}
 #include "core/version.h"
 #include "core/io/resource_loader.h"
 #include "scene/main/node.h"
-#include "scene/resources/packed_scene.h"
 
 // #define print_bl(m_what) print_line(m_what)
 #define print_bl(m_what) (void)(m_what)
@@ -20945,4 +20942,17701 @@ void Image::copy_internals_from(const Ref<Image>& p_image)
 	height = p_image->height;
 	mipmaps = p_image->mipmaps;
 	data = p_image->data;
+}
+
+// === Merged from core/string/ustring.cpp ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include <cstdio>
+#include <thirdparty/grisu2/grisu2.h>
+#include "core/crypto/crypto.h"
+#include "core/io/ip.h"
+#include "core/templates/hashfuncs.h"
+#include "core/math/math_funcs.h"
+#include "core/os/os.h"
+#include "core/string/print_string.h"
+#include "core/string/ustring.h"
+#include "core/string/translation_server.h"
+// --- Inlined from core/string/ucaps.h ---
+// This file was generated using the `misc/scripts/ucaps_fetch.py` script.
+
+#define LTU_LEN 1505
+#define UTL_LEN 1488
+
+static const int caps_table[LTU_LEN][2] = {
+	{ 0x0061, 0x0041 },
+	{ 0x0062, 0x0042 },
+	{ 0x0063, 0x0043 },
+	{ 0x0064, 0x0044 },
+	{ 0x0065, 0x0045 },
+	{ 0x0066, 0x0046 },
+	{ 0x0067, 0x0047 },
+	{ 0x0068, 0x0048 },
+	{ 0x0069, 0x0049 },
+	{ 0x006A, 0x004A },
+	{ 0x006B, 0x004B },
+	{ 0x006C, 0x004C },
+	{ 0x006D, 0x004D },
+	{ 0x006E, 0x004E },
+	{ 0x006F, 0x004F },
+	{ 0x0070, 0x0050 },
+	{ 0x0071, 0x0051 },
+	{ 0x0072, 0x0052 },
+	{ 0x0073, 0x0053 },
+	{ 0x0074, 0x0054 },
+	{ 0x0075, 0x0055 },
+	{ 0x0076, 0x0056 },
+	{ 0x0077, 0x0057 },
+	{ 0x0078, 0x0058 },
+	{ 0x0079, 0x0059 },
+	{ 0x007A, 0x005A },
+	{ 0x00B5, 0x039C },
+	{ 0x00E0, 0x00C0 },
+	{ 0x00E1, 0x00C1 },
+	{ 0x00E2, 0x00C2 },
+	{ 0x00E3, 0x00C3 },
+	{ 0x00E4, 0x00C4 },
+	{ 0x00E5, 0x00C5 },
+	{ 0x00E6, 0x00C6 },
+	{ 0x00E7, 0x00C7 },
+	{ 0x00E8, 0x00C8 },
+	{ 0x00E9, 0x00C9 },
+	{ 0x00EA, 0x00CA },
+	{ 0x00EB, 0x00CB },
+	{ 0x00EC, 0x00CC },
+	{ 0x00ED, 0x00CD },
+	{ 0x00EE, 0x00CE },
+	{ 0x00EF, 0x00CF },
+	{ 0x00F0, 0x00D0 },
+	{ 0x00F1, 0x00D1 },
+	{ 0x00F2, 0x00D2 },
+	{ 0x00F3, 0x00D3 },
+	{ 0x00F4, 0x00D4 },
+	{ 0x00F5, 0x00D5 },
+	{ 0x00F6, 0x00D6 },
+	{ 0x00F8, 0x00D8 },
+	{ 0x00F9, 0x00D9 },
+	{ 0x00FA, 0x00DA },
+	{ 0x00FB, 0x00DB },
+	{ 0x00FC, 0x00DC },
+	{ 0x00FD, 0x00DD },
+	{ 0x00FE, 0x00DE },
+	{ 0x00FF, 0x0178 },
+	{ 0x0101, 0x0100 },
+	{ 0x0103, 0x0102 },
+	{ 0x0105, 0x0104 },
+	{ 0x0107, 0x0106 },
+	{ 0x0109, 0x0108 },
+	{ 0x010B, 0x010A },
+	{ 0x010D, 0x010C },
+	{ 0x010F, 0x010E },
+	{ 0x0111, 0x0110 },
+	{ 0x0113, 0x0112 },
+	{ 0x0115, 0x0114 },
+	{ 0x0117, 0x0116 },
+	{ 0x0119, 0x0118 },
+	{ 0x011B, 0x011A },
+	{ 0x011D, 0x011C },
+	{ 0x011F, 0x011E },
+	{ 0x0121, 0x0120 },
+	{ 0x0123, 0x0122 },
+	{ 0x0125, 0x0124 },
+	{ 0x0127, 0x0126 },
+	{ 0x0129, 0x0128 },
+	{ 0x012B, 0x012A },
+	{ 0x012D, 0x012C },
+	{ 0x012F, 0x012E },
+	{ 0x0131, 0x0049 },
+	{ 0x0133, 0x0132 },
+	{ 0x0135, 0x0134 },
+	{ 0x0137, 0x0136 },
+	{ 0x013A, 0x0139 },
+	{ 0x013C, 0x013B },
+	{ 0x013E, 0x013D },
+	{ 0x0140, 0x013F },
+	{ 0x0142, 0x0141 },
+	{ 0x0144, 0x0143 },
+	{ 0x0146, 0x0145 },
+	{ 0x0148, 0x0147 },
+	{ 0x014B, 0x014A },
+	{ 0x014D, 0x014C },
+	{ 0x014F, 0x014E },
+	{ 0x0151, 0x0150 },
+	{ 0x0153, 0x0152 },
+	{ 0x0155, 0x0154 },
+	{ 0x0157, 0x0156 },
+	{ 0x0159, 0x0158 },
+	{ 0x015B, 0x015A },
+	{ 0x015D, 0x015C },
+	{ 0x015F, 0x015E },
+	{ 0x0161, 0x0160 },
+	{ 0x0163, 0x0162 },
+	{ 0x0165, 0x0164 },
+	{ 0x0167, 0x0166 },
+	{ 0x0169, 0x0168 },
+	{ 0x016B, 0x016A },
+	{ 0x016D, 0x016C },
+	{ 0x016F, 0x016E },
+	{ 0x0171, 0x0170 },
+	{ 0x0173, 0x0172 },
+	{ 0x0175, 0x0174 },
+	{ 0x0177, 0x0176 },
+	{ 0x017A, 0x0179 },
+	{ 0x017C, 0x017B },
+	{ 0x017E, 0x017D },
+	{ 0x017F, 0x0053 },
+	{ 0x0180, 0x0243 },
+	{ 0x0183, 0x0182 },
+	{ 0x0185, 0x0184 },
+	{ 0x0188, 0x0187 },
+	{ 0x018C, 0x018B },
+	{ 0x0192, 0x0191 },
+	{ 0x0195, 0x01F6 },
+	{ 0x0199, 0x0198 },
+	{ 0x019A, 0x023D },
+	{ 0x019B, 0xA7DC },
+	{ 0x019E, 0x0220 },
+	{ 0x01A1, 0x01A0 },
+	{ 0x01A3, 0x01A2 },
+	{ 0x01A5, 0x01A4 },
+	{ 0x01A8, 0x01A7 },
+	{ 0x01AD, 0x01AC },
+	{ 0x01B0, 0x01AF },
+	{ 0x01B4, 0x01B3 },
+	{ 0x01B6, 0x01B5 },
+	{ 0x01B9, 0x01B8 },
+	{ 0x01BD, 0x01BC },
+	{ 0x01BF, 0x01F7 },
+	{ 0x01C5, 0x01C4 },
+	{ 0x01C6, 0x01C4 },
+	{ 0x01C8, 0x01C7 },
+	{ 0x01C9, 0x01C7 },
+	{ 0x01CB, 0x01CA },
+	{ 0x01CC, 0x01CA },
+	{ 0x01CE, 0x01CD },
+	{ 0x01D0, 0x01CF },
+	{ 0x01D2, 0x01D1 },
+	{ 0x01D4, 0x01D3 },
+	{ 0x01D6, 0x01D5 },
+	{ 0x01D8, 0x01D7 },
+	{ 0x01DA, 0x01D9 },
+	{ 0x01DC, 0x01DB },
+	{ 0x01DD, 0x018E },
+	{ 0x01DF, 0x01DE },
+	{ 0x01E1, 0x01E0 },
+	{ 0x01E3, 0x01E2 },
+	{ 0x01E5, 0x01E4 },
+	{ 0x01E7, 0x01E6 },
+	{ 0x01E9, 0x01E8 },
+	{ 0x01EB, 0x01EA },
+	{ 0x01ED, 0x01EC },
+	{ 0x01EF, 0x01EE },
+	{ 0x01F2, 0x01F1 },
+	{ 0x01F3, 0x01F1 },
+	{ 0x01F5, 0x01F4 },
+	{ 0x01F9, 0x01F8 },
+	{ 0x01FB, 0x01FA },
+	{ 0x01FD, 0x01FC },
+	{ 0x01FF, 0x01FE },
+	{ 0x0201, 0x0200 },
+	{ 0x0203, 0x0202 },
+	{ 0x0205, 0x0204 },
+	{ 0x0207, 0x0206 },
+	{ 0x0209, 0x0208 },
+	{ 0x020B, 0x020A },
+	{ 0x020D, 0x020C },
+	{ 0x020F, 0x020E },
+	{ 0x0211, 0x0210 },
+	{ 0x0213, 0x0212 },
+	{ 0x0215, 0x0214 },
+	{ 0x0217, 0x0216 },
+	{ 0x0219, 0x0218 },
+	{ 0x021B, 0x021A },
+	{ 0x021D, 0x021C },
+	{ 0x021F, 0x021E },
+	{ 0x0223, 0x0222 },
+	{ 0x0225, 0x0224 },
+	{ 0x0227, 0x0226 },
+	{ 0x0229, 0x0228 },
+	{ 0x022B, 0x022A },
+	{ 0x022D, 0x022C },
+	{ 0x022F, 0x022E },
+	{ 0x0231, 0x0230 },
+	{ 0x0233, 0x0232 },
+	{ 0x023C, 0x023B },
+	{ 0x023F, 0x2C7E },
+	{ 0x0240, 0x2C7F },
+	{ 0x0242, 0x0241 },
+	{ 0x0247, 0x0246 },
+	{ 0x0249, 0x0248 },
+	{ 0x024B, 0x024A },
+	{ 0x024D, 0x024C },
+	{ 0x024F, 0x024E },
+	{ 0x0250, 0x2C6F },
+	{ 0x0251, 0x2C6D },
+	{ 0x0252, 0x2C70 },
+	{ 0x0253, 0x0181 },
+	{ 0x0254, 0x0186 },
+	{ 0x0256, 0x0189 },
+	{ 0x0257, 0x018A },
+	{ 0x0259, 0x018F },
+	{ 0x025B, 0x0190 },
+	{ 0x025C, 0xA7AB },
+	{ 0x0260, 0x0193 },
+	{ 0x0261, 0xA7AC },
+	{ 0x0263, 0x0194 },
+	{ 0x0264, 0xA7CB },
+	{ 0x0265, 0xA78D },
+	{ 0x0266, 0xA7AA },
+	{ 0x0268, 0x0197 },
+	{ 0x0269, 0x0196 },
+	{ 0x026A, 0xA7AE },
+	{ 0x026B, 0x2C62 },
+	{ 0x026C, 0xA7AD },
+	{ 0x026F, 0x019C },
+	{ 0x0271, 0x2C6E },
+	{ 0x0272, 0x019D },
+	{ 0x0275, 0x019F },
+	{ 0x027D, 0x2C64 },
+	{ 0x0280, 0x01A6 },
+	{ 0x0282, 0xA7C5 },
+	{ 0x0283, 0x01A9 },
+	{ 0x0287, 0xA7B1 },
+	{ 0x0288, 0x01AE },
+	{ 0x0289, 0x0244 },
+	{ 0x028A, 0x01B1 },
+	{ 0x028B, 0x01B2 },
+	{ 0x028C, 0x0245 },
+	{ 0x0292, 0x01B7 },
+	{ 0x029D, 0xA7B2 },
+	{ 0x029E, 0xA7B0 },
+	{ 0x0345, 0x0399 },
+	{ 0x0371, 0x0370 },
+	{ 0x0373, 0x0372 },
+	{ 0x0377, 0x0376 },
+	{ 0x037B, 0x03FD },
+	{ 0x037C, 0x03FE },
+	{ 0x037D, 0x03FF },
+	{ 0x03AC, 0x0386 },
+	{ 0x03AD, 0x0388 },
+	{ 0x03AE, 0x0389 },
+	{ 0x03AF, 0x038A },
+	{ 0x03B1, 0x0391 },
+	{ 0x03B2, 0x0392 },
+	{ 0x03B3, 0x0393 },
+	{ 0x03B4, 0x0394 },
+	{ 0x03B5, 0x0395 },
+	{ 0x03B6, 0x0396 },
+	{ 0x03B7, 0x0397 },
+	{ 0x03B8, 0x0398 },
+	{ 0x03B9, 0x0399 },
+	{ 0x03BA, 0x039A },
+	{ 0x03BB, 0x039B },
+	{ 0x03BC, 0x039C },
+	{ 0x03BD, 0x039D },
+	{ 0x03BE, 0x039E },
+	{ 0x03BF, 0x039F },
+	{ 0x03C0, 0x03A0 },
+	{ 0x03C1, 0x03A1 },
+	{ 0x03C2, 0x03A3 },
+	{ 0x03C3, 0x03A3 },
+	{ 0x03C4, 0x03A4 },
+	{ 0x03C5, 0x03A5 },
+	{ 0x03C6, 0x03A6 },
+	{ 0x03C7, 0x03A7 },
+	{ 0x03C8, 0x03A8 },
+	{ 0x03C9, 0x03A9 },
+	{ 0x03CA, 0x03AA },
+	{ 0x03CB, 0x03AB },
+	{ 0x03CC, 0x038C },
+	{ 0x03CD, 0x038E },
+	{ 0x03CE, 0x038F },
+	{ 0x03D0, 0x0392 },
+	{ 0x03D1, 0x0398 },
+	{ 0x03D5, 0x03A6 },
+	{ 0x03D6, 0x03A0 },
+	{ 0x03D7, 0x03CF },
+	{ 0x03D9, 0x03D8 },
+	{ 0x03DB, 0x03DA },
+	{ 0x03DD, 0x03DC },
+	{ 0x03DF, 0x03DE },
+	{ 0x03E1, 0x03E0 },
+	{ 0x03E3, 0x03E2 },
+	{ 0x03E5, 0x03E4 },
+	{ 0x03E7, 0x03E6 },
+	{ 0x03E9, 0x03E8 },
+	{ 0x03EB, 0x03EA },
+	{ 0x03ED, 0x03EC },
+	{ 0x03EF, 0x03EE },
+	{ 0x03F0, 0x039A },
+	{ 0x03F1, 0x03A1 },
+	{ 0x03F2, 0x03F9 },
+	{ 0x03F3, 0x037F },
+	{ 0x03F5, 0x0395 },
+	{ 0x03F8, 0x03F7 },
+	{ 0x03FB, 0x03FA },
+	{ 0x0430, 0x0410 },
+	{ 0x0431, 0x0411 },
+	{ 0x0432, 0x0412 },
+	{ 0x0433, 0x0413 },
+	{ 0x0434, 0x0414 },
+	{ 0x0435, 0x0415 },
+	{ 0x0436, 0x0416 },
+	{ 0x0437, 0x0417 },
+	{ 0x0438, 0x0418 },
+	{ 0x0439, 0x0419 },
+	{ 0x043A, 0x041A },
+	{ 0x043B, 0x041B },
+	{ 0x043C, 0x041C },
+	{ 0x043D, 0x041D },
+	{ 0x043E, 0x041E },
+	{ 0x043F, 0x041F },
+	{ 0x0440, 0x0420 },
+	{ 0x0441, 0x0421 },
+	{ 0x0442, 0x0422 },
+	{ 0x0443, 0x0423 },
+	{ 0x0444, 0x0424 },
+	{ 0x0445, 0x0425 },
+	{ 0x0446, 0x0426 },
+	{ 0x0447, 0x0427 },
+	{ 0x0448, 0x0428 },
+	{ 0x0449, 0x0429 },
+	{ 0x044A, 0x042A },
+	{ 0x044B, 0x042B },
+	{ 0x044C, 0x042C },
+	{ 0x044D, 0x042D },
+	{ 0x044E, 0x042E },
+	{ 0x044F, 0x042F },
+	{ 0x0450, 0x0400 },
+	{ 0x0451, 0x0401 },
+	{ 0x0452, 0x0402 },
+	{ 0x0453, 0x0403 },
+	{ 0x0454, 0x0404 },
+	{ 0x0455, 0x0405 },
+	{ 0x0456, 0x0406 },
+	{ 0x0457, 0x0407 },
+	{ 0x0458, 0x0408 },
+	{ 0x0459, 0x0409 },
+	{ 0x045A, 0x040A },
+	{ 0x045B, 0x040B },
+	{ 0x045C, 0x040C },
+	{ 0x045D, 0x040D },
+	{ 0x045E, 0x040E },
+	{ 0x045F, 0x040F },
+	{ 0x0461, 0x0460 },
+	{ 0x0463, 0x0462 },
+	{ 0x0465, 0x0464 },
+	{ 0x0467, 0x0466 },
+	{ 0x0469, 0x0468 },
+	{ 0x046B, 0x046A },
+	{ 0x046D, 0x046C },
+	{ 0x046F, 0x046E },
+	{ 0x0471, 0x0470 },
+	{ 0x0473, 0x0472 },
+	{ 0x0475, 0x0474 },
+	{ 0x0477, 0x0476 },
+	{ 0x0479, 0x0478 },
+	{ 0x047B, 0x047A },
+	{ 0x047D, 0x047C },
+	{ 0x047F, 0x047E },
+	{ 0x0481, 0x0480 },
+	{ 0x048B, 0x048A },
+	{ 0x048D, 0x048C },
+	{ 0x048F, 0x048E },
+	{ 0x0491, 0x0490 },
+	{ 0x0493, 0x0492 },
+	{ 0x0495, 0x0494 },
+	{ 0x0497, 0x0496 },
+	{ 0x0499, 0x0498 },
+	{ 0x049B, 0x049A },
+	{ 0x049D, 0x049C },
+	{ 0x049F, 0x049E },
+	{ 0x04A1, 0x04A0 },
+	{ 0x04A3, 0x04A2 },
+	{ 0x04A5, 0x04A4 },
+	{ 0x04A7, 0x04A6 },
+	{ 0x04A9, 0x04A8 },
+	{ 0x04AB, 0x04AA },
+	{ 0x04AD, 0x04AC },
+	{ 0x04AF, 0x04AE },
+	{ 0x04B1, 0x04B0 },
+	{ 0x04B3, 0x04B2 },
+	{ 0x04B5, 0x04B4 },
+	{ 0x04B7, 0x04B6 },
+	{ 0x04B9, 0x04B8 },
+	{ 0x04BB, 0x04BA },
+	{ 0x04BD, 0x04BC },
+	{ 0x04BF, 0x04BE },
+	{ 0x04C2, 0x04C1 },
+	{ 0x04C4, 0x04C3 },
+	{ 0x04C6, 0x04C5 },
+	{ 0x04C8, 0x04C7 },
+	{ 0x04CA, 0x04C9 },
+	{ 0x04CC, 0x04CB },
+	{ 0x04CE, 0x04CD },
+	{ 0x04CF, 0x04C0 },
+	{ 0x04D1, 0x04D0 },
+	{ 0x04D3, 0x04D2 },
+	{ 0x04D5, 0x04D4 },
+	{ 0x04D7, 0x04D6 },
+	{ 0x04D9, 0x04D8 },
+	{ 0x04DB, 0x04DA },
+	{ 0x04DD, 0x04DC },
+	{ 0x04DF, 0x04DE },
+	{ 0x04E1, 0x04E0 },
+	{ 0x04E3, 0x04E2 },
+	{ 0x04E5, 0x04E4 },
+	{ 0x04E7, 0x04E6 },
+	{ 0x04E9, 0x04E8 },
+	{ 0x04EB, 0x04EA },
+	{ 0x04ED, 0x04EC },
+	{ 0x04EF, 0x04EE },
+	{ 0x04F1, 0x04F0 },
+	{ 0x04F3, 0x04F2 },
+	{ 0x04F5, 0x04F4 },
+	{ 0x04F7, 0x04F6 },
+	{ 0x04F9, 0x04F8 },
+	{ 0x04FB, 0x04FA },
+	{ 0x04FD, 0x04FC },
+	{ 0x04FF, 0x04FE },
+	{ 0x0501, 0x0500 },
+	{ 0x0503, 0x0502 },
+	{ 0x0505, 0x0504 },
+	{ 0x0507, 0x0506 },
+	{ 0x0509, 0x0508 },
+	{ 0x050B, 0x050A },
+	{ 0x050D, 0x050C },
+	{ 0x050F, 0x050E },
+	{ 0x0511, 0x0510 },
+	{ 0x0513, 0x0512 },
+	{ 0x0515, 0x0514 },
+	{ 0x0517, 0x0516 },
+	{ 0x0519, 0x0518 },
+	{ 0x051B, 0x051A },
+	{ 0x051D, 0x051C },
+	{ 0x051F, 0x051E },
+	{ 0x0521, 0x0520 },
+	{ 0x0523, 0x0522 },
+	{ 0x0525, 0x0524 },
+	{ 0x0527, 0x0526 },
+	{ 0x0529, 0x0528 },
+	{ 0x052B, 0x052A },
+	{ 0x052D, 0x052C },
+	{ 0x052F, 0x052E },
+	{ 0x0561, 0x0531 },
+	{ 0x0562, 0x0532 },
+	{ 0x0563, 0x0533 },
+	{ 0x0564, 0x0534 },
+	{ 0x0565, 0x0535 },
+	{ 0x0566, 0x0536 },
+	{ 0x0567, 0x0537 },
+	{ 0x0568, 0x0538 },
+	{ 0x0569, 0x0539 },
+	{ 0x056A, 0x053A },
+	{ 0x056B, 0x053B },
+	{ 0x056C, 0x053C },
+	{ 0x056D, 0x053D },
+	{ 0x056E, 0x053E },
+	{ 0x056F, 0x053F },
+	{ 0x0570, 0x0540 },
+	{ 0x0571, 0x0541 },
+	{ 0x0572, 0x0542 },
+	{ 0x0573, 0x0543 },
+	{ 0x0574, 0x0544 },
+	{ 0x0575, 0x0545 },
+	{ 0x0576, 0x0546 },
+	{ 0x0577, 0x0547 },
+	{ 0x0578, 0x0548 },
+	{ 0x0579, 0x0549 },
+	{ 0x057A, 0x054A },
+	{ 0x057B, 0x054B },
+	{ 0x057C, 0x054C },
+	{ 0x057D, 0x054D },
+	{ 0x057E, 0x054E },
+	{ 0x057F, 0x054F },
+	{ 0x0580, 0x0550 },
+	{ 0x0581, 0x0551 },
+	{ 0x0582, 0x0552 },
+	{ 0x0583, 0x0553 },
+	{ 0x0584, 0x0554 },
+	{ 0x0585, 0x0555 },
+	{ 0x0586, 0x0556 },
+	{ 0x10D0, 0x1C90 },
+	{ 0x10D1, 0x1C91 },
+	{ 0x10D2, 0x1C92 },
+	{ 0x10D3, 0x1C93 },
+	{ 0x10D4, 0x1C94 },
+	{ 0x10D5, 0x1C95 },
+	{ 0x10D6, 0x1C96 },
+	{ 0x10D7, 0x1C97 },
+	{ 0x10D8, 0x1C98 },
+	{ 0x10D9, 0x1C99 },
+	{ 0x10DA, 0x1C9A },
+	{ 0x10DB, 0x1C9B },
+	{ 0x10DC, 0x1C9C },
+	{ 0x10DD, 0x1C9D },
+	{ 0x10DE, 0x1C9E },
+	{ 0x10DF, 0x1C9F },
+	{ 0x10E0, 0x1CA0 },
+	{ 0x10E1, 0x1CA1 },
+	{ 0x10E2, 0x1CA2 },
+	{ 0x10E3, 0x1CA3 },
+	{ 0x10E4, 0x1CA4 },
+	{ 0x10E5, 0x1CA5 },
+	{ 0x10E6, 0x1CA6 },
+	{ 0x10E7, 0x1CA7 },
+	{ 0x10E8, 0x1CA8 },
+	{ 0x10E9, 0x1CA9 },
+	{ 0x10EA, 0x1CAA },
+	{ 0x10EB, 0x1CAB },
+	{ 0x10EC, 0x1CAC },
+	{ 0x10ED, 0x1CAD },
+	{ 0x10EE, 0x1CAE },
+	{ 0x10EF, 0x1CAF },
+	{ 0x10F0, 0x1CB0 },
+	{ 0x10F1, 0x1CB1 },
+	{ 0x10F2, 0x1CB2 },
+	{ 0x10F3, 0x1CB3 },
+	{ 0x10F4, 0x1CB4 },
+	{ 0x10F5, 0x1CB5 },
+	{ 0x10F6, 0x1CB6 },
+	{ 0x10F7, 0x1CB7 },
+	{ 0x10F8, 0x1CB8 },
+	{ 0x10F9, 0x1CB9 },
+	{ 0x10FA, 0x1CBA },
+	{ 0x10FD, 0x1CBD },
+	{ 0x10FE, 0x1CBE },
+	{ 0x10FF, 0x1CBF },
+	{ 0x13F8, 0x13F0 },
+	{ 0x13F9, 0x13F1 },
+	{ 0x13FA, 0x13F2 },
+	{ 0x13FB, 0x13F3 },
+	{ 0x13FC, 0x13F4 },
+	{ 0x13FD, 0x13F5 },
+	{ 0x1C80, 0x0412 },
+	{ 0x1C81, 0x0414 },
+	{ 0x1C82, 0x041E },
+	{ 0x1C83, 0x0421 },
+	{ 0x1C84, 0x0422 },
+	{ 0x1C85, 0x0422 },
+	{ 0x1C86, 0x042A },
+	{ 0x1C87, 0x0462 },
+	{ 0x1C88, 0xA64A },
+	{ 0x1C8A, 0x1C89 },
+	{ 0x1D79, 0xA77D },
+	{ 0x1D7D, 0x2C63 },
+	{ 0x1D8E, 0xA7C6 },
+	{ 0x1E01, 0x1E00 },
+	{ 0x1E03, 0x1E02 },
+	{ 0x1E05, 0x1E04 },
+	{ 0x1E07, 0x1E06 },
+	{ 0x1E09, 0x1E08 },
+	{ 0x1E0B, 0x1E0A },
+	{ 0x1E0D, 0x1E0C },
+	{ 0x1E0F, 0x1E0E },
+	{ 0x1E11, 0x1E10 },
+	{ 0x1E13, 0x1E12 },
+	{ 0x1E15, 0x1E14 },
+	{ 0x1E17, 0x1E16 },
+	{ 0x1E19, 0x1E18 },
+	{ 0x1E1B, 0x1E1A },
+	{ 0x1E1D, 0x1E1C },
+	{ 0x1E1F, 0x1E1E },
+	{ 0x1E21, 0x1E20 },
+	{ 0x1E23, 0x1E22 },
+	{ 0x1E25, 0x1E24 },
+	{ 0x1E27, 0x1E26 },
+	{ 0x1E29, 0x1E28 },
+	{ 0x1E2B, 0x1E2A },
+	{ 0x1E2D, 0x1E2C },
+	{ 0x1E2F, 0x1E2E },
+	{ 0x1E31, 0x1E30 },
+	{ 0x1E33, 0x1E32 },
+	{ 0x1E35, 0x1E34 },
+	{ 0x1E37, 0x1E36 },
+	{ 0x1E39, 0x1E38 },
+	{ 0x1E3B, 0x1E3A },
+	{ 0x1E3D, 0x1E3C },
+	{ 0x1E3F, 0x1E3E },
+	{ 0x1E41, 0x1E40 },
+	{ 0x1E43, 0x1E42 },
+	{ 0x1E45, 0x1E44 },
+	{ 0x1E47, 0x1E46 },
+	{ 0x1E49, 0x1E48 },
+	{ 0x1E4B, 0x1E4A },
+	{ 0x1E4D, 0x1E4C },
+	{ 0x1E4F, 0x1E4E },
+	{ 0x1E51, 0x1E50 },
+	{ 0x1E53, 0x1E52 },
+	{ 0x1E55, 0x1E54 },
+	{ 0x1E57, 0x1E56 },
+	{ 0x1E59, 0x1E58 },
+	{ 0x1E5B, 0x1E5A },
+	{ 0x1E5D, 0x1E5C },
+	{ 0x1E5F, 0x1E5E },
+	{ 0x1E61, 0x1E60 },
+	{ 0x1E63, 0x1E62 },
+	{ 0x1E65, 0x1E64 },
+	{ 0x1E67, 0x1E66 },
+	{ 0x1E69, 0x1E68 },
+	{ 0x1E6B, 0x1E6A },
+	{ 0x1E6D, 0x1E6C },
+	{ 0x1E6F, 0x1E6E },
+	{ 0x1E71, 0x1E70 },
+	{ 0x1E73, 0x1E72 },
+	{ 0x1E75, 0x1E74 },
+	{ 0x1E77, 0x1E76 },
+	{ 0x1E79, 0x1E78 },
+	{ 0x1E7B, 0x1E7A },
+	{ 0x1E7D, 0x1E7C },
+	{ 0x1E7F, 0x1E7E },
+	{ 0x1E81, 0x1E80 },
+	{ 0x1E83, 0x1E82 },
+	{ 0x1E85, 0x1E84 },
+	{ 0x1E87, 0x1E86 },
+	{ 0x1E89, 0x1E88 },
+	{ 0x1E8B, 0x1E8A },
+	{ 0x1E8D, 0x1E8C },
+	{ 0x1E8F, 0x1E8E },
+	{ 0x1E91, 0x1E90 },
+	{ 0x1E93, 0x1E92 },
+	{ 0x1E95, 0x1E94 },
+	{ 0x1E9B, 0x1E60 },
+	{ 0x1EA1, 0x1EA0 },
+	{ 0x1EA3, 0x1EA2 },
+	{ 0x1EA5, 0x1EA4 },
+	{ 0x1EA7, 0x1EA6 },
+	{ 0x1EA9, 0x1EA8 },
+	{ 0x1EAB, 0x1EAA },
+	{ 0x1EAD, 0x1EAC },
+	{ 0x1EAF, 0x1EAE },
+	{ 0x1EB1, 0x1EB0 },
+	{ 0x1EB3, 0x1EB2 },
+	{ 0x1EB5, 0x1EB4 },
+	{ 0x1EB7, 0x1EB6 },
+	{ 0x1EB9, 0x1EB8 },
+	{ 0x1EBB, 0x1EBA },
+	{ 0x1EBD, 0x1EBC },
+	{ 0x1EBF, 0x1EBE },
+	{ 0x1EC1, 0x1EC0 },
+	{ 0x1EC3, 0x1EC2 },
+	{ 0x1EC5, 0x1EC4 },
+	{ 0x1EC7, 0x1EC6 },
+	{ 0x1EC9, 0x1EC8 },
+	{ 0x1ECB, 0x1ECA },
+	{ 0x1ECD, 0x1ECC },
+	{ 0x1ECF, 0x1ECE },
+	{ 0x1ED1, 0x1ED0 },
+	{ 0x1ED3, 0x1ED2 },
+	{ 0x1ED5, 0x1ED4 },
+	{ 0x1ED7, 0x1ED6 },
+	{ 0x1ED9, 0x1ED8 },
+	{ 0x1EDB, 0x1EDA },
+	{ 0x1EDD, 0x1EDC },
+	{ 0x1EDF, 0x1EDE },
+	{ 0x1EE1, 0x1EE0 },
+	{ 0x1EE3, 0x1EE2 },
+	{ 0x1EE5, 0x1EE4 },
+	{ 0x1EE7, 0x1EE6 },
+	{ 0x1EE9, 0x1EE8 },
+	{ 0x1EEB, 0x1EEA },
+	{ 0x1EED, 0x1EEC },
+	{ 0x1EEF, 0x1EEE },
+	{ 0x1EF1, 0x1EF0 },
+	{ 0x1EF3, 0x1EF2 },
+	{ 0x1EF5, 0x1EF4 },
+	{ 0x1EF7, 0x1EF6 },
+	{ 0x1EF9, 0x1EF8 },
+	{ 0x1EFB, 0x1EFA },
+	{ 0x1EFD, 0x1EFC },
+	{ 0x1EFF, 0x1EFE },
+	{ 0x1F00, 0x1F08 },
+	{ 0x1F01, 0x1F09 },
+	{ 0x1F02, 0x1F0A },
+	{ 0x1F03, 0x1F0B },
+	{ 0x1F04, 0x1F0C },
+	{ 0x1F05, 0x1F0D },
+	{ 0x1F06, 0x1F0E },
+	{ 0x1F07, 0x1F0F },
+	{ 0x1F10, 0x1F18 },
+	{ 0x1F11, 0x1F19 },
+	{ 0x1F12, 0x1F1A },
+	{ 0x1F13, 0x1F1B },
+	{ 0x1F14, 0x1F1C },
+	{ 0x1F15, 0x1F1D },
+	{ 0x1F20, 0x1F28 },
+	{ 0x1F21, 0x1F29 },
+	{ 0x1F22, 0x1F2A },
+	{ 0x1F23, 0x1F2B },
+	{ 0x1F24, 0x1F2C },
+	{ 0x1F25, 0x1F2D },
+	{ 0x1F26, 0x1F2E },
+	{ 0x1F27, 0x1F2F },
+	{ 0x1F30, 0x1F38 },
+	{ 0x1F31, 0x1F39 },
+	{ 0x1F32, 0x1F3A },
+	{ 0x1F33, 0x1F3B },
+	{ 0x1F34, 0x1F3C },
+	{ 0x1F35, 0x1F3D },
+	{ 0x1F36, 0x1F3E },
+	{ 0x1F37, 0x1F3F },
+	{ 0x1F40, 0x1F48 },
+	{ 0x1F41, 0x1F49 },
+	{ 0x1F42, 0x1F4A },
+	{ 0x1F43, 0x1F4B },
+	{ 0x1F44, 0x1F4C },
+	{ 0x1F45, 0x1F4D },
+	{ 0x1F51, 0x1F59 },
+	{ 0x1F53, 0x1F5B },
+	{ 0x1F55, 0x1F5D },
+	{ 0x1F57, 0x1F5F },
+	{ 0x1F60, 0x1F68 },
+	{ 0x1F61, 0x1F69 },
+	{ 0x1F62, 0x1F6A },
+	{ 0x1F63, 0x1F6B },
+	{ 0x1F64, 0x1F6C },
+	{ 0x1F65, 0x1F6D },
+	{ 0x1F66, 0x1F6E },
+	{ 0x1F67, 0x1F6F },
+	{ 0x1F70, 0x1FBA },
+	{ 0x1F71, 0x1FBB },
+	{ 0x1F72, 0x1FC8 },
+	{ 0x1F73, 0x1FC9 },
+	{ 0x1F74, 0x1FCA },
+	{ 0x1F75, 0x1FCB },
+	{ 0x1F76, 0x1FDA },
+	{ 0x1F77, 0x1FDB },
+	{ 0x1F78, 0x1FF8 },
+	{ 0x1F79, 0x1FF9 },
+	{ 0x1F7A, 0x1FEA },
+	{ 0x1F7B, 0x1FEB },
+	{ 0x1F7C, 0x1FFA },
+	{ 0x1F7D, 0x1FFB },
+	{ 0x1F80, 0x1F88 },
+	{ 0x1F81, 0x1F89 },
+	{ 0x1F82, 0x1F8A },
+	{ 0x1F83, 0x1F8B },
+	{ 0x1F84, 0x1F8C },
+	{ 0x1F85, 0x1F8D },
+	{ 0x1F86, 0x1F8E },
+	{ 0x1F87, 0x1F8F },
+	{ 0x1F90, 0x1F98 },
+	{ 0x1F91, 0x1F99 },
+	{ 0x1F92, 0x1F9A },
+	{ 0x1F93, 0x1F9B },
+	{ 0x1F94, 0x1F9C },
+	{ 0x1F95, 0x1F9D },
+	{ 0x1F96, 0x1F9E },
+	{ 0x1F97, 0x1F9F },
+	{ 0x1FA0, 0x1FA8 },
+	{ 0x1FA1, 0x1FA9 },
+	{ 0x1FA2, 0x1FAA },
+	{ 0x1FA3, 0x1FAB },
+	{ 0x1FA4, 0x1FAC },
+	{ 0x1FA5, 0x1FAD },
+	{ 0x1FA6, 0x1FAE },
+	{ 0x1FA7, 0x1FAF },
+	{ 0x1FB0, 0x1FB8 },
+	{ 0x1FB1, 0x1FB9 },
+	{ 0x1FB3, 0x1FBC },
+	{ 0x1FBE, 0x0399 },
+	{ 0x1FC3, 0x1FCC },
+	{ 0x1FD0, 0x1FD8 },
+	{ 0x1FD1, 0x1FD9 },
+	{ 0x1FE0, 0x1FE8 },
+	{ 0x1FE1, 0x1FE9 },
+	{ 0x1FE5, 0x1FEC },
+	{ 0x1FF3, 0x1FFC },
+	{ 0x214E, 0x2132 },
+	{ 0x2170, 0x2160 },
+	{ 0x2171, 0x2161 },
+	{ 0x2172, 0x2162 },
+	{ 0x2173, 0x2163 },
+	{ 0x2174, 0x2164 },
+	{ 0x2175, 0x2165 },
+	{ 0x2176, 0x2166 },
+	{ 0x2177, 0x2167 },
+	{ 0x2178, 0x2168 },
+	{ 0x2179, 0x2169 },
+	{ 0x217A, 0x216A },
+	{ 0x217B, 0x216B },
+	{ 0x217C, 0x216C },
+	{ 0x217D, 0x216D },
+	{ 0x217E, 0x216E },
+	{ 0x217F, 0x216F },
+	{ 0x2184, 0x2183 },
+	{ 0x24D0, 0x24B6 },
+	{ 0x24D1, 0x24B7 },
+	{ 0x24D2, 0x24B8 },
+	{ 0x24D3, 0x24B9 },
+	{ 0x24D4, 0x24BA },
+	{ 0x24D5, 0x24BB },
+	{ 0x24D6, 0x24BC },
+	{ 0x24D7, 0x24BD },
+	{ 0x24D8, 0x24BE },
+	{ 0x24D9, 0x24BF },
+	{ 0x24DA, 0x24C0 },
+	{ 0x24DB, 0x24C1 },
+	{ 0x24DC, 0x24C2 },
+	{ 0x24DD, 0x24C3 },
+	{ 0x24DE, 0x24C4 },
+	{ 0x24DF, 0x24C5 },
+	{ 0x24E0, 0x24C6 },
+	{ 0x24E1, 0x24C7 },
+	{ 0x24E2, 0x24C8 },
+	{ 0x24E3, 0x24C9 },
+	{ 0x24E4, 0x24CA },
+	{ 0x24E5, 0x24CB },
+	{ 0x24E6, 0x24CC },
+	{ 0x24E7, 0x24CD },
+	{ 0x24E8, 0x24CE },
+	{ 0x24E9, 0x24CF },
+	{ 0x2C30, 0x2C00 },
+	{ 0x2C31, 0x2C01 },
+	{ 0x2C32, 0x2C02 },
+	{ 0x2C33, 0x2C03 },
+	{ 0x2C34, 0x2C04 },
+	{ 0x2C35, 0x2C05 },
+	{ 0x2C36, 0x2C06 },
+	{ 0x2C37, 0x2C07 },
+	{ 0x2C38, 0x2C08 },
+	{ 0x2C39, 0x2C09 },
+	{ 0x2C3A, 0x2C0A },
+	{ 0x2C3B, 0x2C0B },
+	{ 0x2C3C, 0x2C0C },
+	{ 0x2C3D, 0x2C0D },
+	{ 0x2C3E, 0x2C0E },
+	{ 0x2C3F, 0x2C0F },
+	{ 0x2C40, 0x2C10 },
+	{ 0x2C41, 0x2C11 },
+	{ 0x2C42, 0x2C12 },
+	{ 0x2C43, 0x2C13 },
+	{ 0x2C44, 0x2C14 },
+	{ 0x2C45, 0x2C15 },
+	{ 0x2C46, 0x2C16 },
+	{ 0x2C47, 0x2C17 },
+	{ 0x2C48, 0x2C18 },
+	{ 0x2C49, 0x2C19 },
+	{ 0x2C4A, 0x2C1A },
+	{ 0x2C4B, 0x2C1B },
+	{ 0x2C4C, 0x2C1C },
+	{ 0x2C4D, 0x2C1D },
+	{ 0x2C4E, 0x2C1E },
+	{ 0x2C4F, 0x2C1F },
+	{ 0x2C50, 0x2C20 },
+	{ 0x2C51, 0x2C21 },
+	{ 0x2C52, 0x2C22 },
+	{ 0x2C53, 0x2C23 },
+	{ 0x2C54, 0x2C24 },
+	{ 0x2C55, 0x2C25 },
+	{ 0x2C56, 0x2C26 },
+	{ 0x2C57, 0x2C27 },
+	{ 0x2C58, 0x2C28 },
+	{ 0x2C59, 0x2C29 },
+	{ 0x2C5A, 0x2C2A },
+	{ 0x2C5B, 0x2C2B },
+	{ 0x2C5C, 0x2C2C },
+	{ 0x2C5D, 0x2C2D },
+	{ 0x2C5E, 0x2C2E },
+	{ 0x2C5F, 0x2C2F },
+	{ 0x2C61, 0x2C60 },
+	{ 0x2C65, 0x023A },
+	{ 0x2C66, 0x023E },
+	{ 0x2C68, 0x2C67 },
+	{ 0x2C6A, 0x2C69 },
+	{ 0x2C6C, 0x2C6B },
+	{ 0x2C73, 0x2C72 },
+	{ 0x2C76, 0x2C75 },
+	{ 0x2C81, 0x2C80 },
+	{ 0x2C83, 0x2C82 },
+	{ 0x2C85, 0x2C84 },
+	{ 0x2C87, 0x2C86 },
+	{ 0x2C89, 0x2C88 },
+	{ 0x2C8B, 0x2C8A },
+	{ 0x2C8D, 0x2C8C },
+	{ 0x2C8F, 0x2C8E },
+	{ 0x2C91, 0x2C90 },
+	{ 0x2C93, 0x2C92 },
+	{ 0x2C95, 0x2C94 },
+	{ 0x2C97, 0x2C96 },
+	{ 0x2C99, 0x2C98 },
+	{ 0x2C9B, 0x2C9A },
+	{ 0x2C9D, 0x2C9C },
+	{ 0x2C9F, 0x2C9E },
+	{ 0x2CA1, 0x2CA0 },
+	{ 0x2CA3, 0x2CA2 },
+	{ 0x2CA5, 0x2CA4 },
+	{ 0x2CA7, 0x2CA6 },
+	{ 0x2CA9, 0x2CA8 },
+	{ 0x2CAB, 0x2CAA },
+	{ 0x2CAD, 0x2CAC },
+	{ 0x2CAF, 0x2CAE },
+	{ 0x2CB1, 0x2CB0 },
+	{ 0x2CB3, 0x2CB2 },
+	{ 0x2CB5, 0x2CB4 },
+	{ 0x2CB7, 0x2CB6 },
+	{ 0x2CB9, 0x2CB8 },
+	{ 0x2CBB, 0x2CBA },
+	{ 0x2CBD, 0x2CBC },
+	{ 0x2CBF, 0x2CBE },
+	{ 0x2CC1, 0x2CC0 },
+	{ 0x2CC3, 0x2CC2 },
+	{ 0x2CC5, 0x2CC4 },
+	{ 0x2CC7, 0x2CC6 },
+	{ 0x2CC9, 0x2CC8 },
+	{ 0x2CCB, 0x2CCA },
+	{ 0x2CCD, 0x2CCC },
+	{ 0x2CCF, 0x2CCE },
+	{ 0x2CD1, 0x2CD0 },
+	{ 0x2CD3, 0x2CD2 },
+	{ 0x2CD5, 0x2CD4 },
+	{ 0x2CD7, 0x2CD6 },
+	{ 0x2CD9, 0x2CD8 },
+	{ 0x2CDB, 0x2CDA },
+	{ 0x2CDD, 0x2CDC },
+	{ 0x2CDF, 0x2CDE },
+	{ 0x2CE1, 0x2CE0 },
+	{ 0x2CE3, 0x2CE2 },
+	{ 0x2CEC, 0x2CEB },
+	{ 0x2CEE, 0x2CED },
+	{ 0x2CF3, 0x2CF2 },
+	{ 0x2D00, 0x10A0 },
+	{ 0x2D01, 0x10A1 },
+	{ 0x2D02, 0x10A2 },
+	{ 0x2D03, 0x10A3 },
+	{ 0x2D04, 0x10A4 },
+	{ 0x2D05, 0x10A5 },
+	{ 0x2D06, 0x10A6 },
+	{ 0x2D07, 0x10A7 },
+	{ 0x2D08, 0x10A8 },
+	{ 0x2D09, 0x10A9 },
+	{ 0x2D0A, 0x10AA },
+	{ 0x2D0B, 0x10AB },
+	{ 0x2D0C, 0x10AC },
+	{ 0x2D0D, 0x10AD },
+	{ 0x2D0E, 0x10AE },
+	{ 0x2D0F, 0x10AF },
+	{ 0x2D10, 0x10B0 },
+	{ 0x2D11, 0x10B1 },
+	{ 0x2D12, 0x10B2 },
+	{ 0x2D13, 0x10B3 },
+	{ 0x2D14, 0x10B4 },
+	{ 0x2D15, 0x10B5 },
+	{ 0x2D16, 0x10B6 },
+	{ 0x2D17, 0x10B7 },
+	{ 0x2D18, 0x10B8 },
+	{ 0x2D19, 0x10B9 },
+	{ 0x2D1A, 0x10BA },
+	{ 0x2D1B, 0x10BB },
+	{ 0x2D1C, 0x10BC },
+	{ 0x2D1D, 0x10BD },
+	{ 0x2D1E, 0x10BE },
+	{ 0x2D1F, 0x10BF },
+	{ 0x2D20, 0x10C0 },
+	{ 0x2D21, 0x10C1 },
+	{ 0x2D22, 0x10C2 },
+	{ 0x2D23, 0x10C3 },
+	{ 0x2D24, 0x10C4 },
+	{ 0x2D25, 0x10C5 },
+	{ 0x2D27, 0x10C7 },
+	{ 0x2D2D, 0x10CD },
+	{ 0xA641, 0xA640 },
+	{ 0xA643, 0xA642 },
+	{ 0xA645, 0xA644 },
+	{ 0xA647, 0xA646 },
+	{ 0xA649, 0xA648 },
+	{ 0xA64B, 0xA64A },
+	{ 0xA64D, 0xA64C },
+	{ 0xA64F, 0xA64E },
+	{ 0xA651, 0xA650 },
+	{ 0xA653, 0xA652 },
+	{ 0xA655, 0xA654 },
+	{ 0xA657, 0xA656 },
+	{ 0xA659, 0xA658 },
+	{ 0xA65B, 0xA65A },
+	{ 0xA65D, 0xA65C },
+	{ 0xA65F, 0xA65E },
+	{ 0xA661, 0xA660 },
+	{ 0xA663, 0xA662 },
+	{ 0xA665, 0xA664 },
+	{ 0xA667, 0xA666 },
+	{ 0xA669, 0xA668 },
+	{ 0xA66B, 0xA66A },
+	{ 0xA66D, 0xA66C },
+	{ 0xA681, 0xA680 },
+	{ 0xA683, 0xA682 },
+	{ 0xA685, 0xA684 },
+	{ 0xA687, 0xA686 },
+	{ 0xA689, 0xA688 },
+	{ 0xA68B, 0xA68A },
+	{ 0xA68D, 0xA68C },
+	{ 0xA68F, 0xA68E },
+	{ 0xA691, 0xA690 },
+	{ 0xA693, 0xA692 },
+	{ 0xA695, 0xA694 },
+	{ 0xA697, 0xA696 },
+	{ 0xA699, 0xA698 },
+	{ 0xA69B, 0xA69A },
+	{ 0xA723, 0xA722 },
+	{ 0xA725, 0xA724 },
+	{ 0xA727, 0xA726 },
+	{ 0xA729, 0xA728 },
+	{ 0xA72B, 0xA72A },
+	{ 0xA72D, 0xA72C },
+	{ 0xA72F, 0xA72E },
+	{ 0xA733, 0xA732 },
+	{ 0xA735, 0xA734 },
+	{ 0xA737, 0xA736 },
+	{ 0xA739, 0xA738 },
+	{ 0xA73B, 0xA73A },
+	{ 0xA73D, 0xA73C },
+	{ 0xA73F, 0xA73E },
+	{ 0xA741, 0xA740 },
+	{ 0xA743, 0xA742 },
+	{ 0xA745, 0xA744 },
+	{ 0xA747, 0xA746 },
+	{ 0xA749, 0xA748 },
+	{ 0xA74B, 0xA74A },
+	{ 0xA74D, 0xA74C },
+	{ 0xA74F, 0xA74E },
+	{ 0xA751, 0xA750 },
+	{ 0xA753, 0xA752 },
+	{ 0xA755, 0xA754 },
+	{ 0xA757, 0xA756 },
+	{ 0xA759, 0xA758 },
+	{ 0xA75B, 0xA75A },
+	{ 0xA75D, 0xA75C },
+	{ 0xA75F, 0xA75E },
+	{ 0xA761, 0xA760 },
+	{ 0xA763, 0xA762 },
+	{ 0xA765, 0xA764 },
+	{ 0xA767, 0xA766 },
+	{ 0xA769, 0xA768 },
+	{ 0xA76B, 0xA76A },
+	{ 0xA76D, 0xA76C },
+	{ 0xA76F, 0xA76E },
+	{ 0xA77A, 0xA779 },
+	{ 0xA77C, 0xA77B },
+	{ 0xA77F, 0xA77E },
+	{ 0xA781, 0xA780 },
+	{ 0xA783, 0xA782 },
+	{ 0xA785, 0xA784 },
+	{ 0xA787, 0xA786 },
+	{ 0xA78C, 0xA78B },
+	{ 0xA791, 0xA790 },
+	{ 0xA793, 0xA792 },
+	{ 0xA794, 0xA7C4 },
+	{ 0xA797, 0xA796 },
+	{ 0xA799, 0xA798 },
+	{ 0xA79B, 0xA79A },
+	{ 0xA79D, 0xA79C },
+	{ 0xA79F, 0xA79E },
+	{ 0xA7A1, 0xA7A0 },
+	{ 0xA7A3, 0xA7A2 },
+	{ 0xA7A5, 0xA7A4 },
+	{ 0xA7A7, 0xA7A6 },
+	{ 0xA7A9, 0xA7A8 },
+	{ 0xA7B5, 0xA7B4 },
+	{ 0xA7B7, 0xA7B6 },
+	{ 0xA7B9, 0xA7B8 },
+	{ 0xA7BB, 0xA7BA },
+	{ 0xA7BD, 0xA7BC },
+	{ 0xA7BF, 0xA7BE },
+	{ 0xA7C1, 0xA7C0 },
+	{ 0xA7C3, 0xA7C2 },
+	{ 0xA7C8, 0xA7C7 },
+	{ 0xA7CA, 0xA7C9 },
+	{ 0xA7CD, 0xA7CC },
+	{ 0xA7CF, 0xA7CE },
+	{ 0xA7D1, 0xA7D0 },
+	{ 0xA7D3, 0xA7D2 },
+	{ 0xA7D5, 0xA7D4 },
+	{ 0xA7D7, 0xA7D6 },
+	{ 0xA7D9, 0xA7D8 },
+	{ 0xA7DB, 0xA7DA },
+	{ 0xA7F6, 0xA7F5 },
+	{ 0xAB53, 0xA7B3 },
+	{ 0xAB70, 0x13A0 },
+	{ 0xAB71, 0x13A1 },
+	{ 0xAB72, 0x13A2 },
+	{ 0xAB73, 0x13A3 },
+	{ 0xAB74, 0x13A4 },
+	{ 0xAB75, 0x13A5 },
+	{ 0xAB76, 0x13A6 },
+	{ 0xAB77, 0x13A7 },
+	{ 0xAB78, 0x13A8 },
+	{ 0xAB79, 0x13A9 },
+	{ 0xAB7A, 0x13AA },
+	{ 0xAB7B, 0x13AB },
+	{ 0xAB7C, 0x13AC },
+	{ 0xAB7D, 0x13AD },
+	{ 0xAB7E, 0x13AE },
+	{ 0xAB7F, 0x13AF },
+	{ 0xAB80, 0x13B0 },
+	{ 0xAB81, 0x13B1 },
+	{ 0xAB82, 0x13B2 },
+	{ 0xAB83, 0x13B3 },
+	{ 0xAB84, 0x13B4 },
+	{ 0xAB85, 0x13B5 },
+	{ 0xAB86, 0x13B6 },
+	{ 0xAB87, 0x13B7 },
+	{ 0xAB88, 0x13B8 },
+	{ 0xAB89, 0x13B9 },
+	{ 0xAB8A, 0x13BA },
+	{ 0xAB8B, 0x13BB },
+	{ 0xAB8C, 0x13BC },
+	{ 0xAB8D, 0x13BD },
+	{ 0xAB8E, 0x13BE },
+	{ 0xAB8F, 0x13BF },
+	{ 0xAB90, 0x13C0 },
+	{ 0xAB91, 0x13C1 },
+	{ 0xAB92, 0x13C2 },
+	{ 0xAB93, 0x13C3 },
+	{ 0xAB94, 0x13C4 },
+	{ 0xAB95, 0x13C5 },
+	{ 0xAB96, 0x13C6 },
+	{ 0xAB97, 0x13C7 },
+	{ 0xAB98, 0x13C8 },
+	{ 0xAB99, 0x13C9 },
+	{ 0xAB9A, 0x13CA },
+	{ 0xAB9B, 0x13CB },
+	{ 0xAB9C, 0x13CC },
+	{ 0xAB9D, 0x13CD },
+	{ 0xAB9E, 0x13CE },
+	{ 0xAB9F, 0x13CF },
+	{ 0xABA0, 0x13D0 },
+	{ 0xABA1, 0x13D1 },
+	{ 0xABA2, 0x13D2 },
+	{ 0xABA3, 0x13D3 },
+	{ 0xABA4, 0x13D4 },
+	{ 0xABA5, 0x13D5 },
+	{ 0xABA6, 0x13D6 },
+	{ 0xABA7, 0x13D7 },
+	{ 0xABA8, 0x13D8 },
+	{ 0xABA9, 0x13D9 },
+	{ 0xABAA, 0x13DA },
+	{ 0xABAB, 0x13DB },
+	{ 0xABAC, 0x13DC },
+	{ 0xABAD, 0x13DD },
+	{ 0xABAE, 0x13DE },
+	{ 0xABAF, 0x13DF },
+	{ 0xABB0, 0x13E0 },
+	{ 0xABB1, 0x13E1 },
+	{ 0xABB2, 0x13E2 },
+	{ 0xABB3, 0x13E3 },
+	{ 0xABB4, 0x13E4 },
+	{ 0xABB5, 0x13E5 },
+	{ 0xABB6, 0x13E6 },
+	{ 0xABB7, 0x13E7 },
+	{ 0xABB8, 0x13E8 },
+	{ 0xABB9, 0x13E9 },
+	{ 0xABBA, 0x13EA },
+	{ 0xABBB, 0x13EB },
+	{ 0xABBC, 0x13EC },
+	{ 0xABBD, 0x13ED },
+	{ 0xABBE, 0x13EE },
+	{ 0xABBF, 0x13EF },
+	{ 0xFF41, 0xFF21 },
+	{ 0xFF42, 0xFF22 },
+	{ 0xFF43, 0xFF23 },
+	{ 0xFF44, 0xFF24 },
+	{ 0xFF45, 0xFF25 },
+	{ 0xFF46, 0xFF26 },
+	{ 0xFF47, 0xFF27 },
+	{ 0xFF48, 0xFF28 },
+	{ 0xFF49, 0xFF29 },
+	{ 0xFF4A, 0xFF2A },
+	{ 0xFF4B, 0xFF2B },
+	{ 0xFF4C, 0xFF2C },
+	{ 0xFF4D, 0xFF2D },
+	{ 0xFF4E, 0xFF2E },
+	{ 0xFF4F, 0xFF2F },
+	{ 0xFF50, 0xFF30 },
+	{ 0xFF51, 0xFF31 },
+	{ 0xFF52, 0xFF32 },
+	{ 0xFF53, 0xFF33 },
+	{ 0xFF54, 0xFF34 },
+	{ 0xFF55, 0xFF35 },
+	{ 0xFF56, 0xFF36 },
+	{ 0xFF57, 0xFF37 },
+	{ 0xFF58, 0xFF38 },
+	{ 0xFF59, 0xFF39 },
+	{ 0xFF5A, 0xFF3A },
+	{ 0x10428, 0x10400 },
+	{ 0x10429, 0x10401 },
+	{ 0x1042A, 0x10402 },
+	{ 0x1042B, 0x10403 },
+	{ 0x1042C, 0x10404 },
+	{ 0x1042D, 0x10405 },
+	{ 0x1042E, 0x10406 },
+	{ 0x1042F, 0x10407 },
+	{ 0x10430, 0x10408 },
+	{ 0x10431, 0x10409 },
+	{ 0x10432, 0x1040A },
+	{ 0x10433, 0x1040B },
+	{ 0x10434, 0x1040C },
+	{ 0x10435, 0x1040D },
+	{ 0x10436, 0x1040E },
+	{ 0x10437, 0x1040F },
+	{ 0x10438, 0x10410 },
+	{ 0x10439, 0x10411 },
+	{ 0x1043A, 0x10412 },
+	{ 0x1043B, 0x10413 },
+	{ 0x1043C, 0x10414 },
+	{ 0x1043D, 0x10415 },
+	{ 0x1043E, 0x10416 },
+	{ 0x1043F, 0x10417 },
+	{ 0x10440, 0x10418 },
+	{ 0x10441, 0x10419 },
+	{ 0x10442, 0x1041A },
+	{ 0x10443, 0x1041B },
+	{ 0x10444, 0x1041C },
+	{ 0x10445, 0x1041D },
+	{ 0x10446, 0x1041E },
+	{ 0x10447, 0x1041F },
+	{ 0x10448, 0x10420 },
+	{ 0x10449, 0x10421 },
+	{ 0x1044A, 0x10422 },
+	{ 0x1044B, 0x10423 },
+	{ 0x1044C, 0x10424 },
+	{ 0x1044D, 0x10425 },
+	{ 0x1044E, 0x10426 },
+	{ 0x1044F, 0x10427 },
+	{ 0x104D8, 0x104B0 },
+	{ 0x104D9, 0x104B1 },
+	{ 0x104DA, 0x104B2 },
+	{ 0x104DB, 0x104B3 },
+	{ 0x104DC, 0x104B4 },
+	{ 0x104DD, 0x104B5 },
+	{ 0x104DE, 0x104B6 },
+	{ 0x104DF, 0x104B7 },
+	{ 0x104E0, 0x104B8 },
+	{ 0x104E1, 0x104B9 },
+	{ 0x104E2, 0x104BA },
+	{ 0x104E3, 0x104BB },
+	{ 0x104E4, 0x104BC },
+	{ 0x104E5, 0x104BD },
+	{ 0x104E6, 0x104BE },
+	{ 0x104E7, 0x104BF },
+	{ 0x104E8, 0x104C0 },
+	{ 0x104E9, 0x104C1 },
+	{ 0x104EA, 0x104C2 },
+	{ 0x104EB, 0x104C3 },
+	{ 0x104EC, 0x104C4 },
+	{ 0x104ED, 0x104C5 },
+	{ 0x104EE, 0x104C6 },
+	{ 0x104EF, 0x104C7 },
+	{ 0x104F0, 0x104C8 },
+	{ 0x104F1, 0x104C9 },
+	{ 0x104F2, 0x104CA },
+	{ 0x104F3, 0x104CB },
+	{ 0x104F4, 0x104CC },
+	{ 0x104F5, 0x104CD },
+	{ 0x104F6, 0x104CE },
+	{ 0x104F7, 0x104CF },
+	{ 0x104F8, 0x104D0 },
+	{ 0x104F9, 0x104D1 },
+	{ 0x104FA, 0x104D2 },
+	{ 0x104FB, 0x104D3 },
+	{ 0x10597, 0x10570 },
+	{ 0x10598, 0x10571 },
+	{ 0x10599, 0x10572 },
+	{ 0x1059A, 0x10573 },
+	{ 0x1059B, 0x10574 },
+	{ 0x1059C, 0x10575 },
+	{ 0x1059D, 0x10576 },
+	{ 0x1059E, 0x10577 },
+	{ 0x1059F, 0x10578 },
+	{ 0x105A0, 0x10579 },
+	{ 0x105A1, 0x1057A },
+	{ 0x105A3, 0x1057C },
+	{ 0x105A4, 0x1057D },
+	{ 0x105A5, 0x1057E },
+	{ 0x105A6, 0x1057F },
+	{ 0x105A7, 0x10580 },
+	{ 0x105A8, 0x10581 },
+	{ 0x105A9, 0x10582 },
+	{ 0x105AA, 0x10583 },
+	{ 0x105AB, 0x10584 },
+	{ 0x105AC, 0x10585 },
+	{ 0x105AD, 0x10586 },
+	{ 0x105AE, 0x10587 },
+	{ 0x105AF, 0x10588 },
+	{ 0x105B0, 0x10589 },
+	{ 0x105B1, 0x1058A },
+	{ 0x105B3, 0x1058C },
+	{ 0x105B4, 0x1058D },
+	{ 0x105B5, 0x1058E },
+	{ 0x105B6, 0x1058F },
+	{ 0x105B7, 0x10590 },
+	{ 0x105B8, 0x10591 },
+	{ 0x105B9, 0x10592 },
+	{ 0x105BB, 0x10594 },
+	{ 0x105BC, 0x10595 },
+	{ 0x10CC0, 0x10C80 },
+	{ 0x10CC1, 0x10C81 },
+	{ 0x10CC2, 0x10C82 },
+	{ 0x10CC3, 0x10C83 },
+	{ 0x10CC4, 0x10C84 },
+	{ 0x10CC5, 0x10C85 },
+	{ 0x10CC6, 0x10C86 },
+	{ 0x10CC7, 0x10C87 },
+	{ 0x10CC8, 0x10C88 },
+	{ 0x10CC9, 0x10C89 },
+	{ 0x10CCA, 0x10C8A },
+	{ 0x10CCB, 0x10C8B },
+	{ 0x10CCC, 0x10C8C },
+	{ 0x10CCD, 0x10C8D },
+	{ 0x10CCE, 0x10C8E },
+	{ 0x10CCF, 0x10C8F },
+	{ 0x10CD0, 0x10C90 },
+	{ 0x10CD1, 0x10C91 },
+	{ 0x10CD2, 0x10C92 },
+	{ 0x10CD3, 0x10C93 },
+	{ 0x10CD4, 0x10C94 },
+	{ 0x10CD5, 0x10C95 },
+	{ 0x10CD6, 0x10C96 },
+	{ 0x10CD7, 0x10C97 },
+	{ 0x10CD8, 0x10C98 },
+	{ 0x10CD9, 0x10C99 },
+	{ 0x10CDA, 0x10C9A },
+	{ 0x10CDB, 0x10C9B },
+	{ 0x10CDC, 0x10C9C },
+	{ 0x10CDD, 0x10C9D },
+	{ 0x10CDE, 0x10C9E },
+	{ 0x10CDF, 0x10C9F },
+	{ 0x10CE0, 0x10CA0 },
+	{ 0x10CE1, 0x10CA1 },
+	{ 0x10CE2, 0x10CA2 },
+	{ 0x10CE3, 0x10CA3 },
+	{ 0x10CE4, 0x10CA4 },
+	{ 0x10CE5, 0x10CA5 },
+	{ 0x10CE6, 0x10CA6 },
+	{ 0x10CE7, 0x10CA7 },
+	{ 0x10CE8, 0x10CA8 },
+	{ 0x10CE9, 0x10CA9 },
+	{ 0x10CEA, 0x10CAA },
+	{ 0x10CEB, 0x10CAB },
+	{ 0x10CEC, 0x10CAC },
+	{ 0x10CED, 0x10CAD },
+	{ 0x10CEE, 0x10CAE },
+	{ 0x10CEF, 0x10CAF },
+	{ 0x10CF0, 0x10CB0 },
+	{ 0x10CF1, 0x10CB1 },
+	{ 0x10CF2, 0x10CB2 },
+	{ 0x10D70, 0x10D50 },
+	{ 0x10D71, 0x10D51 },
+	{ 0x10D72, 0x10D52 },
+	{ 0x10D73, 0x10D53 },
+	{ 0x10D74, 0x10D54 },
+	{ 0x10D75, 0x10D55 },
+	{ 0x10D76, 0x10D56 },
+	{ 0x10D77, 0x10D57 },
+	{ 0x10D78, 0x10D58 },
+	{ 0x10D79, 0x10D59 },
+	{ 0x10D7A, 0x10D5A },
+	{ 0x10D7B, 0x10D5B },
+	{ 0x10D7C, 0x10D5C },
+	{ 0x10D7D, 0x10D5D },
+	{ 0x10D7E, 0x10D5E },
+	{ 0x10D7F, 0x10D5F },
+	{ 0x10D80, 0x10D60 },
+	{ 0x10D81, 0x10D61 },
+	{ 0x10D82, 0x10D62 },
+	{ 0x10D83, 0x10D63 },
+	{ 0x10D84, 0x10D64 },
+	{ 0x10D85, 0x10D65 },
+	{ 0x118C0, 0x118A0 },
+	{ 0x118C1, 0x118A1 },
+	{ 0x118C2, 0x118A2 },
+	{ 0x118C3, 0x118A3 },
+	{ 0x118C4, 0x118A4 },
+	{ 0x118C5, 0x118A5 },
+	{ 0x118C6, 0x118A6 },
+	{ 0x118C7, 0x118A7 },
+	{ 0x118C8, 0x118A8 },
+	{ 0x118C9, 0x118A9 },
+	{ 0x118CA, 0x118AA },
+	{ 0x118CB, 0x118AB },
+	{ 0x118CC, 0x118AC },
+	{ 0x118CD, 0x118AD },
+	{ 0x118CE, 0x118AE },
+	{ 0x118CF, 0x118AF },
+	{ 0x118D0, 0x118B0 },
+	{ 0x118D1, 0x118B1 },
+	{ 0x118D2, 0x118B2 },
+	{ 0x118D3, 0x118B3 },
+	{ 0x118D4, 0x118B4 },
+	{ 0x118D5, 0x118B5 },
+	{ 0x118D6, 0x118B6 },
+	{ 0x118D7, 0x118B7 },
+	{ 0x118D8, 0x118B8 },
+	{ 0x118D9, 0x118B9 },
+	{ 0x118DA, 0x118BA },
+	{ 0x118DB, 0x118BB },
+	{ 0x118DC, 0x118BC },
+	{ 0x118DD, 0x118BD },
+	{ 0x118DE, 0x118BE },
+	{ 0x118DF, 0x118BF },
+	{ 0x16E60, 0x16E40 },
+	{ 0x16E61, 0x16E41 },
+	{ 0x16E62, 0x16E42 },
+	{ 0x16E63, 0x16E43 },
+	{ 0x16E64, 0x16E44 },
+	{ 0x16E65, 0x16E45 },
+	{ 0x16E66, 0x16E46 },
+	{ 0x16E67, 0x16E47 },
+	{ 0x16E68, 0x16E48 },
+	{ 0x16E69, 0x16E49 },
+	{ 0x16E6A, 0x16E4A },
+	{ 0x16E6B, 0x16E4B },
+	{ 0x16E6C, 0x16E4C },
+	{ 0x16E6D, 0x16E4D },
+	{ 0x16E6E, 0x16E4E },
+	{ 0x16E6F, 0x16E4F },
+	{ 0x16E70, 0x16E50 },
+	{ 0x16E71, 0x16E51 },
+	{ 0x16E72, 0x16E52 },
+	{ 0x16E73, 0x16E53 },
+	{ 0x16E74, 0x16E54 },
+	{ 0x16E75, 0x16E55 },
+	{ 0x16E76, 0x16E56 },
+	{ 0x16E77, 0x16E57 },
+	{ 0x16E78, 0x16E58 },
+	{ 0x16E79, 0x16E59 },
+	{ 0x16E7A, 0x16E5A },
+	{ 0x16E7B, 0x16E5B },
+	{ 0x16E7C, 0x16E5C },
+	{ 0x16E7D, 0x16E5D },
+	{ 0x16E7E, 0x16E5E },
+	{ 0x16E7F, 0x16E5F },
+	{ 0x16EBB, 0x16EA0 },
+	{ 0x16EBC, 0x16EA1 },
+	{ 0x16EBD, 0x16EA2 },
+	{ 0x16EBE, 0x16EA3 },
+	{ 0x16EBF, 0x16EA4 },
+	{ 0x16EC0, 0x16EA5 },
+	{ 0x16EC1, 0x16EA6 },
+	{ 0x16EC2, 0x16EA7 },
+	{ 0x16EC3, 0x16EA8 },
+	{ 0x16EC4, 0x16EA9 },
+	{ 0x16EC5, 0x16EAA },
+	{ 0x16EC6, 0x16EAB },
+	{ 0x16EC7, 0x16EAC },
+	{ 0x16EC8, 0x16EAD },
+	{ 0x16EC9, 0x16EAE },
+	{ 0x16ECA, 0x16EAF },
+	{ 0x16ECB, 0x16EB0 },
+	{ 0x16ECC, 0x16EB1 },
+	{ 0x16ECD, 0x16EB2 },
+	{ 0x16ECE, 0x16EB3 },
+	{ 0x16ECF, 0x16EB4 },
+	{ 0x16ED0, 0x16EB5 },
+	{ 0x16ED1, 0x16EB6 },
+	{ 0x16ED2, 0x16EB7 },
+	{ 0x16ED3, 0x16EB8 },
+	{ 0x1E922, 0x1E900 },
+	{ 0x1E923, 0x1E901 },
+	{ 0x1E924, 0x1E902 },
+	{ 0x1E925, 0x1E903 },
+	{ 0x1E926, 0x1E904 },
+	{ 0x1E927, 0x1E905 },
+	{ 0x1E928, 0x1E906 },
+	{ 0x1E929, 0x1E907 },
+	{ 0x1E92A, 0x1E908 },
+	{ 0x1E92B, 0x1E909 },
+	{ 0x1E92C, 0x1E90A },
+	{ 0x1E92D, 0x1E90B },
+	{ 0x1E92E, 0x1E90C },
+	{ 0x1E92F, 0x1E90D },
+	{ 0x1E930, 0x1E90E },
+	{ 0x1E931, 0x1E90F },
+	{ 0x1E932, 0x1E910 },
+	{ 0x1E933, 0x1E911 },
+	{ 0x1E934, 0x1E912 },
+	{ 0x1E935, 0x1E913 },
+	{ 0x1E936, 0x1E914 },
+	{ 0x1E937, 0x1E915 },
+	{ 0x1E938, 0x1E916 },
+	{ 0x1E939, 0x1E917 },
+	{ 0x1E93A, 0x1E918 },
+	{ 0x1E93B, 0x1E919 },
+	{ 0x1E93C, 0x1E91A },
+	{ 0x1E93D, 0x1E91B },
+	{ 0x1E93E, 0x1E91C },
+	{ 0x1E93F, 0x1E91D },
+	{ 0x1E940, 0x1E91E },
+	{ 0x1E941, 0x1E91F },
+	{ 0x1E942, 0x1E920 },
+	{ 0x1E943, 0x1E921 },
+};
+
+static const int reverse_caps_table[UTL_LEN][2] = {
+	{ 0x0041, 0x0061 },
+	{ 0x0042, 0x0062 },
+	{ 0x0043, 0x0063 },
+	{ 0x0044, 0x0064 },
+	{ 0x0045, 0x0065 },
+	{ 0x0046, 0x0066 },
+	{ 0x0047, 0x0067 },
+	{ 0x0048, 0x0068 },
+	{ 0x0049, 0x0069 },
+	{ 0x004A, 0x006A },
+	{ 0x004B, 0x006B },
+	{ 0x004C, 0x006C },
+	{ 0x004D, 0x006D },
+	{ 0x004E, 0x006E },
+	{ 0x004F, 0x006F },
+	{ 0x0050, 0x0070 },
+	{ 0x0051, 0x0071 },
+	{ 0x0052, 0x0072 },
+	{ 0x0053, 0x0073 },
+	{ 0x0054, 0x0074 },
+	{ 0x0055, 0x0075 },
+	{ 0x0056, 0x0076 },
+	{ 0x0057, 0x0077 },
+	{ 0x0058, 0x0078 },
+	{ 0x0059, 0x0079 },
+	{ 0x005A, 0x007A },
+	{ 0x00C0, 0x00E0 },
+	{ 0x00C1, 0x00E1 },
+	{ 0x00C2, 0x00E2 },
+	{ 0x00C3, 0x00E3 },
+	{ 0x00C4, 0x00E4 },
+	{ 0x00C5, 0x00E5 },
+	{ 0x00C6, 0x00E6 },
+	{ 0x00C7, 0x00E7 },
+	{ 0x00C8, 0x00E8 },
+	{ 0x00C9, 0x00E9 },
+	{ 0x00CA, 0x00EA },
+	{ 0x00CB, 0x00EB },
+	{ 0x00CC, 0x00EC },
+	{ 0x00CD, 0x00ED },
+	{ 0x00CE, 0x00EE },
+	{ 0x00CF, 0x00EF },
+	{ 0x00D0, 0x00F0 },
+	{ 0x00D1, 0x00F1 },
+	{ 0x00D2, 0x00F2 },
+	{ 0x00D3, 0x00F3 },
+	{ 0x00D4, 0x00F4 },
+	{ 0x00D5, 0x00F5 },
+	{ 0x00D6, 0x00F6 },
+	{ 0x00D8, 0x00F8 },
+	{ 0x00D9, 0x00F9 },
+	{ 0x00DA, 0x00FA },
+	{ 0x00DB, 0x00FB },
+	{ 0x00DC, 0x00FC },
+	{ 0x00DD, 0x00FD },
+	{ 0x00DE, 0x00FE },
+	{ 0x0100, 0x0101 },
+	{ 0x0102, 0x0103 },
+	{ 0x0104, 0x0105 },
+	{ 0x0106, 0x0107 },
+	{ 0x0108, 0x0109 },
+	{ 0x010A, 0x010B },
+	{ 0x010C, 0x010D },
+	{ 0x010E, 0x010F },
+	{ 0x0110, 0x0111 },
+	{ 0x0112, 0x0113 },
+	{ 0x0114, 0x0115 },
+	{ 0x0116, 0x0117 },
+	{ 0x0118, 0x0119 },
+	{ 0x011A, 0x011B },
+	{ 0x011C, 0x011D },
+	{ 0x011E, 0x011F },
+	{ 0x0120, 0x0121 },
+	{ 0x0122, 0x0123 },
+	{ 0x0124, 0x0125 },
+	{ 0x0126, 0x0127 },
+	{ 0x0128, 0x0129 },
+	{ 0x012A, 0x012B },
+	{ 0x012C, 0x012D },
+	{ 0x012E, 0x012F },
+	{ 0x0130, 0x0069 },
+	{ 0x0132, 0x0133 },
+	{ 0x0134, 0x0135 },
+	{ 0x0136, 0x0137 },
+	{ 0x0139, 0x013A },
+	{ 0x013B, 0x013C },
+	{ 0x013D, 0x013E },
+	{ 0x013F, 0x0140 },
+	{ 0x0141, 0x0142 },
+	{ 0x0143, 0x0144 },
+	{ 0x0145, 0x0146 },
+	{ 0x0147, 0x0148 },
+	{ 0x014A, 0x014B },
+	{ 0x014C, 0x014D },
+	{ 0x014E, 0x014F },
+	{ 0x0150, 0x0151 },
+	{ 0x0152, 0x0153 },
+	{ 0x0154, 0x0155 },
+	{ 0x0156, 0x0157 },
+	{ 0x0158, 0x0159 },
+	{ 0x015A, 0x015B },
+	{ 0x015C, 0x015D },
+	{ 0x015E, 0x015F },
+	{ 0x0160, 0x0161 },
+	{ 0x0162, 0x0163 },
+	{ 0x0164, 0x0165 },
+	{ 0x0166, 0x0167 },
+	{ 0x0168, 0x0169 },
+	{ 0x016A, 0x016B },
+	{ 0x016C, 0x016D },
+	{ 0x016E, 0x016F },
+	{ 0x0170, 0x0171 },
+	{ 0x0172, 0x0173 },
+	{ 0x0174, 0x0175 },
+	{ 0x0176, 0x0177 },
+	{ 0x0178, 0x00FF },
+	{ 0x0179, 0x017A },
+	{ 0x017B, 0x017C },
+	{ 0x017D, 0x017E },
+	{ 0x0181, 0x0253 },
+	{ 0x0182, 0x0183 },
+	{ 0x0184, 0x0185 },
+	{ 0x0186, 0x0254 },
+	{ 0x0187, 0x0188 },
+	{ 0x0189, 0x0256 },
+	{ 0x018A, 0x0257 },
+	{ 0x018B, 0x018C },
+	{ 0x018E, 0x01DD },
+	{ 0x018F, 0x0259 },
+	{ 0x0190, 0x025B },
+	{ 0x0191, 0x0192 },
+	{ 0x0193, 0x0260 },
+	{ 0x0194, 0x0263 },
+	{ 0x0196, 0x0269 },
+	{ 0x0197, 0x0268 },
+	{ 0x0198, 0x0199 },
+	{ 0x019C, 0x026F },
+	{ 0x019D, 0x0272 },
+	{ 0x019F, 0x0275 },
+	{ 0x01A0, 0x01A1 },
+	{ 0x01A2, 0x01A3 },
+	{ 0x01A4, 0x01A5 },
+	{ 0x01A6, 0x0280 },
+	{ 0x01A7, 0x01A8 },
+	{ 0x01A9, 0x0283 },
+	{ 0x01AC, 0x01AD },
+	{ 0x01AE, 0x0288 },
+	{ 0x01AF, 0x01B0 },
+	{ 0x01B1, 0x028A },
+	{ 0x01B2, 0x028B },
+	{ 0x01B3, 0x01B4 },
+	{ 0x01B5, 0x01B6 },
+	{ 0x01B7, 0x0292 },
+	{ 0x01B8, 0x01B9 },
+	{ 0x01BC, 0x01BD },
+	{ 0x01C4, 0x01C6 },
+	{ 0x01C5, 0x01C6 },
+	{ 0x01C7, 0x01C9 },
+	{ 0x01C8, 0x01C9 },
+	{ 0x01CA, 0x01CC },
+	{ 0x01CB, 0x01CC },
+	{ 0x01CD, 0x01CE },
+	{ 0x01CF, 0x01D0 },
+	{ 0x01D1, 0x01D2 },
+	{ 0x01D3, 0x01D4 },
+	{ 0x01D5, 0x01D6 },
+	{ 0x01D7, 0x01D8 },
+	{ 0x01D9, 0x01DA },
+	{ 0x01DB, 0x01DC },
+	{ 0x01DE, 0x01DF },
+	{ 0x01E0, 0x01E1 },
+	{ 0x01E2, 0x01E3 },
+	{ 0x01E4, 0x01E5 },
+	{ 0x01E6, 0x01E7 },
+	{ 0x01E8, 0x01E9 },
+	{ 0x01EA, 0x01EB },
+	{ 0x01EC, 0x01ED },
+	{ 0x01EE, 0x01EF },
+	{ 0x01F1, 0x01F3 },
+	{ 0x01F2, 0x01F3 },
+	{ 0x01F4, 0x01F5 },
+	{ 0x01F6, 0x0195 },
+	{ 0x01F7, 0x01BF },
+	{ 0x01F8, 0x01F9 },
+	{ 0x01FA, 0x01FB },
+	{ 0x01FC, 0x01FD },
+	{ 0x01FE, 0x01FF },
+	{ 0x0200, 0x0201 },
+	{ 0x0202, 0x0203 },
+	{ 0x0204, 0x0205 },
+	{ 0x0206, 0x0207 },
+	{ 0x0208, 0x0209 },
+	{ 0x020A, 0x020B },
+	{ 0x020C, 0x020D },
+	{ 0x020E, 0x020F },
+	{ 0x0210, 0x0211 },
+	{ 0x0212, 0x0213 },
+	{ 0x0214, 0x0215 },
+	{ 0x0216, 0x0217 },
+	{ 0x0218, 0x0219 },
+	{ 0x021A, 0x021B },
+	{ 0x021C, 0x021D },
+	{ 0x021E, 0x021F },
+	{ 0x0220, 0x019E },
+	{ 0x0222, 0x0223 },
+	{ 0x0224, 0x0225 },
+	{ 0x0226, 0x0227 },
+	{ 0x0228, 0x0229 },
+	{ 0x022A, 0x022B },
+	{ 0x022C, 0x022D },
+	{ 0x022E, 0x022F },
+	{ 0x0230, 0x0231 },
+	{ 0x0232, 0x0233 },
+	{ 0x023A, 0x2C65 },
+	{ 0x023B, 0x023C },
+	{ 0x023D, 0x019A },
+	{ 0x023E, 0x2C66 },
+	{ 0x0241, 0x0242 },
+	{ 0x0243, 0x0180 },
+	{ 0x0244, 0x0289 },
+	{ 0x0245, 0x028C },
+	{ 0x0246, 0x0247 },
+	{ 0x0248, 0x0249 },
+	{ 0x024A, 0x024B },
+	{ 0x024C, 0x024D },
+	{ 0x024E, 0x024F },
+	{ 0x0370, 0x0371 },
+	{ 0x0372, 0x0373 },
+	{ 0x0376, 0x0377 },
+	{ 0x037F, 0x03F3 },
+	{ 0x0386, 0x03AC },
+	{ 0x0388, 0x03AD },
+	{ 0x0389, 0x03AE },
+	{ 0x038A, 0x03AF },
+	{ 0x038C, 0x03CC },
+	{ 0x038E, 0x03CD },
+	{ 0x038F, 0x03CE },
+	{ 0x0391, 0x03B1 },
+	{ 0x0392, 0x03B2 },
+	{ 0x0393, 0x03B3 },
+	{ 0x0394, 0x03B4 },
+	{ 0x0395, 0x03B5 },
+	{ 0x0396, 0x03B6 },
+	{ 0x0397, 0x03B7 },
+	{ 0x0398, 0x03B8 },
+	{ 0x0399, 0x03B9 },
+	{ 0x039A, 0x03BA },
+	{ 0x039B, 0x03BB },
+	{ 0x039C, 0x03BC },
+	{ 0x039D, 0x03BD },
+	{ 0x039E, 0x03BE },
+	{ 0x039F, 0x03BF },
+	{ 0x03A0, 0x03C0 },
+	{ 0x03A1, 0x03C1 },
+	{ 0x03A3, 0x03C3 },
+	{ 0x03A4, 0x03C4 },
+	{ 0x03A5, 0x03C5 },
+	{ 0x03A6, 0x03C6 },
+	{ 0x03A7, 0x03C7 },
+	{ 0x03A8, 0x03C8 },
+	{ 0x03A9, 0x03C9 },
+	{ 0x03AA, 0x03CA },
+	{ 0x03AB, 0x03CB },
+	{ 0x03CF, 0x03D7 },
+	{ 0x03D8, 0x03D9 },
+	{ 0x03DA, 0x03DB },
+	{ 0x03DC, 0x03DD },
+	{ 0x03DE, 0x03DF },
+	{ 0x03E0, 0x03E1 },
+	{ 0x03E2, 0x03E3 },
+	{ 0x03E4, 0x03E5 },
+	{ 0x03E6, 0x03E7 },
+	{ 0x03E8, 0x03E9 },
+	{ 0x03EA, 0x03EB },
+	{ 0x03EC, 0x03ED },
+	{ 0x03EE, 0x03EF },
+	{ 0x03F4, 0x03B8 },
+	{ 0x03F7, 0x03F8 },
+	{ 0x03F9, 0x03F2 },
+	{ 0x03FA, 0x03FB },
+	{ 0x03FD, 0x037B },
+	{ 0x03FE, 0x037C },
+	{ 0x03FF, 0x037D },
+	{ 0x0400, 0x0450 },
+	{ 0x0401, 0x0451 },
+	{ 0x0402, 0x0452 },
+	{ 0x0403, 0x0453 },
+	{ 0x0404, 0x0454 },
+	{ 0x0405, 0x0455 },
+	{ 0x0406, 0x0456 },
+	{ 0x0407, 0x0457 },
+	{ 0x0408, 0x0458 },
+	{ 0x0409, 0x0459 },
+	{ 0x040A, 0x045A },
+	{ 0x040B, 0x045B },
+	{ 0x040C, 0x045C },
+	{ 0x040D, 0x045D },
+	{ 0x040E, 0x045E },
+	{ 0x040F, 0x045F },
+	{ 0x0410, 0x0430 },
+	{ 0x0411, 0x0431 },
+	{ 0x0412, 0x0432 },
+	{ 0x0413, 0x0433 },
+	{ 0x0414, 0x0434 },
+	{ 0x0415, 0x0435 },
+	{ 0x0416, 0x0436 },
+	{ 0x0417, 0x0437 },
+	{ 0x0418, 0x0438 },
+	{ 0x0419, 0x0439 },
+	{ 0x041A, 0x043A },
+	{ 0x041B, 0x043B },
+	{ 0x041C, 0x043C },
+	{ 0x041D, 0x043D },
+	{ 0x041E, 0x043E },
+	{ 0x041F, 0x043F },
+	{ 0x0420, 0x0440 },
+	{ 0x0421, 0x0441 },
+	{ 0x0422, 0x0442 },
+	{ 0x0423, 0x0443 },
+	{ 0x0424, 0x0444 },
+	{ 0x0425, 0x0445 },
+	{ 0x0426, 0x0446 },
+	{ 0x0427, 0x0447 },
+	{ 0x0428, 0x0448 },
+	{ 0x0429, 0x0449 },
+	{ 0x042A, 0x044A },
+	{ 0x042B, 0x044B },
+	{ 0x042C, 0x044C },
+	{ 0x042D, 0x044D },
+	{ 0x042E, 0x044E },
+	{ 0x042F, 0x044F },
+	{ 0x0460, 0x0461 },
+	{ 0x0462, 0x0463 },
+	{ 0x0464, 0x0465 },
+	{ 0x0466, 0x0467 },
+	{ 0x0468, 0x0469 },
+	{ 0x046A, 0x046B },
+	{ 0x046C, 0x046D },
+	{ 0x046E, 0x046F },
+	{ 0x0470, 0x0471 },
+	{ 0x0472, 0x0473 },
+	{ 0x0474, 0x0475 },
+	{ 0x0476, 0x0477 },
+	{ 0x0478, 0x0479 },
+	{ 0x047A, 0x047B },
+	{ 0x047C, 0x047D },
+	{ 0x047E, 0x047F },
+	{ 0x0480, 0x0481 },
+	{ 0x048A, 0x048B },
+	{ 0x048C, 0x048D },
+	{ 0x048E, 0x048F },
+	{ 0x0490, 0x0491 },
+	{ 0x0492, 0x0493 },
+	{ 0x0494, 0x0495 },
+	{ 0x0496, 0x0497 },
+	{ 0x0498, 0x0499 },
+	{ 0x049A, 0x049B },
+	{ 0x049C, 0x049D },
+	{ 0x049E, 0x049F },
+	{ 0x04A0, 0x04A1 },
+	{ 0x04A2, 0x04A3 },
+	{ 0x04A4, 0x04A5 },
+	{ 0x04A6, 0x04A7 },
+	{ 0x04A8, 0x04A9 },
+	{ 0x04AA, 0x04AB },
+	{ 0x04AC, 0x04AD },
+	{ 0x04AE, 0x04AF },
+	{ 0x04B0, 0x04B1 },
+	{ 0x04B2, 0x04B3 },
+	{ 0x04B4, 0x04B5 },
+	{ 0x04B6, 0x04B7 },
+	{ 0x04B8, 0x04B9 },
+	{ 0x04BA, 0x04BB },
+	{ 0x04BC, 0x04BD },
+	{ 0x04BE, 0x04BF },
+	{ 0x04C0, 0x04CF },
+	{ 0x04C1, 0x04C2 },
+	{ 0x04C3, 0x04C4 },
+	{ 0x04C5, 0x04C6 },
+	{ 0x04C7, 0x04C8 },
+	{ 0x04C9, 0x04CA },
+	{ 0x04CB, 0x04CC },
+	{ 0x04CD, 0x04CE },
+	{ 0x04D0, 0x04D1 },
+	{ 0x04D2, 0x04D3 },
+	{ 0x04D4, 0x04D5 },
+	{ 0x04D6, 0x04D7 },
+	{ 0x04D8, 0x04D9 },
+	{ 0x04DA, 0x04DB },
+	{ 0x04DC, 0x04DD },
+	{ 0x04DE, 0x04DF },
+	{ 0x04E0, 0x04E1 },
+	{ 0x04E2, 0x04E3 },
+	{ 0x04E4, 0x04E5 },
+	{ 0x04E6, 0x04E7 },
+	{ 0x04E8, 0x04E9 },
+	{ 0x04EA, 0x04EB },
+	{ 0x04EC, 0x04ED },
+	{ 0x04EE, 0x04EF },
+	{ 0x04F0, 0x04F1 },
+	{ 0x04F2, 0x04F3 },
+	{ 0x04F4, 0x04F5 },
+	{ 0x04F6, 0x04F7 },
+	{ 0x04F8, 0x04F9 },
+	{ 0x04FA, 0x04FB },
+	{ 0x04FC, 0x04FD },
+	{ 0x04FE, 0x04FF },
+	{ 0x0500, 0x0501 },
+	{ 0x0502, 0x0503 },
+	{ 0x0504, 0x0505 },
+	{ 0x0506, 0x0507 },
+	{ 0x0508, 0x0509 },
+	{ 0x050A, 0x050B },
+	{ 0x050C, 0x050D },
+	{ 0x050E, 0x050F },
+	{ 0x0510, 0x0511 },
+	{ 0x0512, 0x0513 },
+	{ 0x0514, 0x0515 },
+	{ 0x0516, 0x0517 },
+	{ 0x0518, 0x0519 },
+	{ 0x051A, 0x051B },
+	{ 0x051C, 0x051D },
+	{ 0x051E, 0x051F },
+	{ 0x0520, 0x0521 },
+	{ 0x0522, 0x0523 },
+	{ 0x0524, 0x0525 },
+	{ 0x0526, 0x0527 },
+	{ 0x0528, 0x0529 },
+	{ 0x052A, 0x052B },
+	{ 0x052C, 0x052D },
+	{ 0x052E, 0x052F },
+	{ 0x0531, 0x0561 },
+	{ 0x0532, 0x0562 },
+	{ 0x0533, 0x0563 },
+	{ 0x0534, 0x0564 },
+	{ 0x0535, 0x0565 },
+	{ 0x0536, 0x0566 },
+	{ 0x0537, 0x0567 },
+	{ 0x0538, 0x0568 },
+	{ 0x0539, 0x0569 },
+	{ 0x053A, 0x056A },
+	{ 0x053B, 0x056B },
+	{ 0x053C, 0x056C },
+	{ 0x053D, 0x056D },
+	{ 0x053E, 0x056E },
+	{ 0x053F, 0x056F },
+	{ 0x0540, 0x0570 },
+	{ 0x0541, 0x0571 },
+	{ 0x0542, 0x0572 },
+	{ 0x0543, 0x0573 },
+	{ 0x0544, 0x0574 },
+	{ 0x0545, 0x0575 },
+	{ 0x0546, 0x0576 },
+	{ 0x0547, 0x0577 },
+	{ 0x0548, 0x0578 },
+	{ 0x0549, 0x0579 },
+	{ 0x054A, 0x057A },
+	{ 0x054B, 0x057B },
+	{ 0x054C, 0x057C },
+	{ 0x054D, 0x057D },
+	{ 0x054E, 0x057E },
+	{ 0x054F, 0x057F },
+	{ 0x0550, 0x0580 },
+	{ 0x0551, 0x0581 },
+	{ 0x0552, 0x0582 },
+	{ 0x0553, 0x0583 },
+	{ 0x0554, 0x0584 },
+	{ 0x0555, 0x0585 },
+	{ 0x0556, 0x0586 },
+	{ 0x10A0, 0x2D00 },
+	{ 0x10A1, 0x2D01 },
+	{ 0x10A2, 0x2D02 },
+	{ 0x10A3, 0x2D03 },
+	{ 0x10A4, 0x2D04 },
+	{ 0x10A5, 0x2D05 },
+	{ 0x10A6, 0x2D06 },
+	{ 0x10A7, 0x2D07 },
+	{ 0x10A8, 0x2D08 },
+	{ 0x10A9, 0x2D09 },
+	{ 0x10AA, 0x2D0A },
+	{ 0x10AB, 0x2D0B },
+	{ 0x10AC, 0x2D0C },
+	{ 0x10AD, 0x2D0D },
+	{ 0x10AE, 0x2D0E },
+	{ 0x10AF, 0x2D0F },
+	{ 0x10B0, 0x2D10 },
+	{ 0x10B1, 0x2D11 },
+	{ 0x10B2, 0x2D12 },
+	{ 0x10B3, 0x2D13 },
+	{ 0x10B4, 0x2D14 },
+	{ 0x10B5, 0x2D15 },
+	{ 0x10B6, 0x2D16 },
+	{ 0x10B7, 0x2D17 },
+	{ 0x10B8, 0x2D18 },
+	{ 0x10B9, 0x2D19 },
+	{ 0x10BA, 0x2D1A },
+	{ 0x10BB, 0x2D1B },
+	{ 0x10BC, 0x2D1C },
+	{ 0x10BD, 0x2D1D },
+	{ 0x10BE, 0x2D1E },
+	{ 0x10BF, 0x2D1F },
+	{ 0x10C0, 0x2D20 },
+	{ 0x10C1, 0x2D21 },
+	{ 0x10C2, 0x2D22 },
+	{ 0x10C3, 0x2D23 },
+	{ 0x10C4, 0x2D24 },
+	{ 0x10C5, 0x2D25 },
+	{ 0x10C7, 0x2D27 },
+	{ 0x10CD, 0x2D2D },
+	{ 0x13A0, 0xAB70 },
+	{ 0x13A1, 0xAB71 },
+	{ 0x13A2, 0xAB72 },
+	{ 0x13A3, 0xAB73 },
+	{ 0x13A4, 0xAB74 },
+	{ 0x13A5, 0xAB75 },
+	{ 0x13A6, 0xAB76 },
+	{ 0x13A7, 0xAB77 },
+	{ 0x13A8, 0xAB78 },
+	{ 0x13A9, 0xAB79 },
+	{ 0x13AA, 0xAB7A },
+	{ 0x13AB, 0xAB7B },
+	{ 0x13AC, 0xAB7C },
+	{ 0x13AD, 0xAB7D },
+	{ 0x13AE, 0xAB7E },
+	{ 0x13AF, 0xAB7F },
+	{ 0x13B0, 0xAB80 },
+	{ 0x13B1, 0xAB81 },
+	{ 0x13B2, 0xAB82 },
+	{ 0x13B3, 0xAB83 },
+	{ 0x13B4, 0xAB84 },
+	{ 0x13B5, 0xAB85 },
+	{ 0x13B6, 0xAB86 },
+	{ 0x13B7, 0xAB87 },
+	{ 0x13B8, 0xAB88 },
+	{ 0x13B9, 0xAB89 },
+	{ 0x13BA, 0xAB8A },
+	{ 0x13BB, 0xAB8B },
+	{ 0x13BC, 0xAB8C },
+	{ 0x13BD, 0xAB8D },
+	{ 0x13BE, 0xAB8E },
+	{ 0x13BF, 0xAB8F },
+	{ 0x13C0, 0xAB90 },
+	{ 0x13C1, 0xAB91 },
+	{ 0x13C2, 0xAB92 },
+	{ 0x13C3, 0xAB93 },
+	{ 0x13C4, 0xAB94 },
+	{ 0x13C5, 0xAB95 },
+	{ 0x13C6, 0xAB96 },
+	{ 0x13C7, 0xAB97 },
+	{ 0x13C8, 0xAB98 },
+	{ 0x13C9, 0xAB99 },
+	{ 0x13CA, 0xAB9A },
+	{ 0x13CB, 0xAB9B },
+	{ 0x13CC, 0xAB9C },
+	{ 0x13CD, 0xAB9D },
+	{ 0x13CE, 0xAB9E },
+	{ 0x13CF, 0xAB9F },
+	{ 0x13D0, 0xABA0 },
+	{ 0x13D1, 0xABA1 },
+	{ 0x13D2, 0xABA2 },
+	{ 0x13D3, 0xABA3 },
+	{ 0x13D4, 0xABA4 },
+	{ 0x13D5, 0xABA5 },
+	{ 0x13D6, 0xABA6 },
+	{ 0x13D7, 0xABA7 },
+	{ 0x13D8, 0xABA8 },
+	{ 0x13D9, 0xABA9 },
+	{ 0x13DA, 0xABAA },
+	{ 0x13DB, 0xABAB },
+	{ 0x13DC, 0xABAC },
+	{ 0x13DD, 0xABAD },
+	{ 0x13DE, 0xABAE },
+	{ 0x13DF, 0xABAF },
+	{ 0x13E0, 0xABB0 },
+	{ 0x13E1, 0xABB1 },
+	{ 0x13E2, 0xABB2 },
+	{ 0x13E3, 0xABB3 },
+	{ 0x13E4, 0xABB4 },
+	{ 0x13E5, 0xABB5 },
+	{ 0x13E6, 0xABB6 },
+	{ 0x13E7, 0xABB7 },
+	{ 0x13E8, 0xABB8 },
+	{ 0x13E9, 0xABB9 },
+	{ 0x13EA, 0xABBA },
+	{ 0x13EB, 0xABBB },
+	{ 0x13EC, 0xABBC },
+	{ 0x13ED, 0xABBD },
+	{ 0x13EE, 0xABBE },
+	{ 0x13EF, 0xABBF },
+	{ 0x13F0, 0x13F8 },
+	{ 0x13F1, 0x13F9 },
+	{ 0x13F2, 0x13FA },
+	{ 0x13F3, 0x13FB },
+	{ 0x13F4, 0x13FC },
+	{ 0x13F5, 0x13FD },
+	{ 0x1C89, 0x1C8A },
+	{ 0x1C90, 0x10D0 },
+	{ 0x1C91, 0x10D1 },
+	{ 0x1C92, 0x10D2 },
+	{ 0x1C93, 0x10D3 },
+	{ 0x1C94, 0x10D4 },
+	{ 0x1C95, 0x10D5 },
+	{ 0x1C96, 0x10D6 },
+	{ 0x1C97, 0x10D7 },
+	{ 0x1C98, 0x10D8 },
+	{ 0x1C99, 0x10D9 },
+	{ 0x1C9A, 0x10DA },
+	{ 0x1C9B, 0x10DB },
+	{ 0x1C9C, 0x10DC },
+	{ 0x1C9D, 0x10DD },
+	{ 0x1C9E, 0x10DE },
+	{ 0x1C9F, 0x10DF },
+	{ 0x1CA0, 0x10E0 },
+	{ 0x1CA1, 0x10E1 },
+	{ 0x1CA2, 0x10E2 },
+	{ 0x1CA3, 0x10E3 },
+	{ 0x1CA4, 0x10E4 },
+	{ 0x1CA5, 0x10E5 },
+	{ 0x1CA6, 0x10E6 },
+	{ 0x1CA7, 0x10E7 },
+	{ 0x1CA8, 0x10E8 },
+	{ 0x1CA9, 0x10E9 },
+	{ 0x1CAA, 0x10EA },
+	{ 0x1CAB, 0x10EB },
+	{ 0x1CAC, 0x10EC },
+	{ 0x1CAD, 0x10ED },
+	{ 0x1CAE, 0x10EE },
+	{ 0x1CAF, 0x10EF },
+	{ 0x1CB0, 0x10F0 },
+	{ 0x1CB1, 0x10F1 },
+	{ 0x1CB2, 0x10F2 },
+	{ 0x1CB3, 0x10F3 },
+	{ 0x1CB4, 0x10F4 },
+	{ 0x1CB5, 0x10F5 },
+	{ 0x1CB6, 0x10F6 },
+	{ 0x1CB7, 0x10F7 },
+	{ 0x1CB8, 0x10F8 },
+	{ 0x1CB9, 0x10F9 },
+	{ 0x1CBA, 0x10FA },
+	{ 0x1CBD, 0x10FD },
+	{ 0x1CBE, 0x10FE },
+	{ 0x1CBF, 0x10FF },
+	{ 0x1E00, 0x1E01 },
+	{ 0x1E02, 0x1E03 },
+	{ 0x1E04, 0x1E05 },
+	{ 0x1E06, 0x1E07 },
+	{ 0x1E08, 0x1E09 },
+	{ 0x1E0A, 0x1E0B },
+	{ 0x1E0C, 0x1E0D },
+	{ 0x1E0E, 0x1E0F },
+	{ 0x1E10, 0x1E11 },
+	{ 0x1E12, 0x1E13 },
+	{ 0x1E14, 0x1E15 },
+	{ 0x1E16, 0x1E17 },
+	{ 0x1E18, 0x1E19 },
+	{ 0x1E1A, 0x1E1B },
+	{ 0x1E1C, 0x1E1D },
+	{ 0x1E1E, 0x1E1F },
+	{ 0x1E20, 0x1E21 },
+	{ 0x1E22, 0x1E23 },
+	{ 0x1E24, 0x1E25 },
+	{ 0x1E26, 0x1E27 },
+	{ 0x1E28, 0x1E29 },
+	{ 0x1E2A, 0x1E2B },
+	{ 0x1E2C, 0x1E2D },
+	{ 0x1E2E, 0x1E2F },
+	{ 0x1E30, 0x1E31 },
+	{ 0x1E32, 0x1E33 },
+	{ 0x1E34, 0x1E35 },
+	{ 0x1E36, 0x1E37 },
+	{ 0x1E38, 0x1E39 },
+	{ 0x1E3A, 0x1E3B },
+	{ 0x1E3C, 0x1E3D },
+	{ 0x1E3E, 0x1E3F },
+	{ 0x1E40, 0x1E41 },
+	{ 0x1E42, 0x1E43 },
+	{ 0x1E44, 0x1E45 },
+	{ 0x1E46, 0x1E47 },
+	{ 0x1E48, 0x1E49 },
+	{ 0x1E4A, 0x1E4B },
+	{ 0x1E4C, 0x1E4D },
+	{ 0x1E4E, 0x1E4F },
+	{ 0x1E50, 0x1E51 },
+	{ 0x1E52, 0x1E53 },
+	{ 0x1E54, 0x1E55 },
+	{ 0x1E56, 0x1E57 },
+	{ 0x1E58, 0x1E59 },
+	{ 0x1E5A, 0x1E5B },
+	{ 0x1E5C, 0x1E5D },
+	{ 0x1E5E, 0x1E5F },
+	{ 0x1E60, 0x1E61 },
+	{ 0x1E62, 0x1E63 },
+	{ 0x1E64, 0x1E65 },
+	{ 0x1E66, 0x1E67 },
+	{ 0x1E68, 0x1E69 },
+	{ 0x1E6A, 0x1E6B },
+	{ 0x1E6C, 0x1E6D },
+	{ 0x1E6E, 0x1E6F },
+	{ 0x1E70, 0x1E71 },
+	{ 0x1E72, 0x1E73 },
+	{ 0x1E74, 0x1E75 },
+	{ 0x1E76, 0x1E77 },
+	{ 0x1E78, 0x1E79 },
+	{ 0x1E7A, 0x1E7B },
+	{ 0x1E7C, 0x1E7D },
+	{ 0x1E7E, 0x1E7F },
+	{ 0x1E80, 0x1E81 },
+	{ 0x1E82, 0x1E83 },
+	{ 0x1E84, 0x1E85 },
+	{ 0x1E86, 0x1E87 },
+	{ 0x1E88, 0x1E89 },
+	{ 0x1E8A, 0x1E8B },
+	{ 0x1E8C, 0x1E8D },
+	{ 0x1E8E, 0x1E8F },
+	{ 0x1E90, 0x1E91 },
+	{ 0x1E92, 0x1E93 },
+	{ 0x1E94, 0x1E95 },
+	{ 0x1E9E, 0x00DF },
+	{ 0x1EA0, 0x1EA1 },
+	{ 0x1EA2, 0x1EA3 },
+	{ 0x1EA4, 0x1EA5 },
+	{ 0x1EA6, 0x1EA7 },
+	{ 0x1EA8, 0x1EA9 },
+	{ 0x1EAA, 0x1EAB },
+	{ 0x1EAC, 0x1EAD },
+	{ 0x1EAE, 0x1EAF },
+	{ 0x1EB0, 0x1EB1 },
+	{ 0x1EB2, 0x1EB3 },
+	{ 0x1EB4, 0x1EB5 },
+	{ 0x1EB6, 0x1EB7 },
+	{ 0x1EB8, 0x1EB9 },
+	{ 0x1EBA, 0x1EBB },
+	{ 0x1EBC, 0x1EBD },
+	{ 0x1EBE, 0x1EBF },
+	{ 0x1EC0, 0x1EC1 },
+	{ 0x1EC2, 0x1EC3 },
+	{ 0x1EC4, 0x1EC5 },
+	{ 0x1EC6, 0x1EC7 },
+	{ 0x1EC8, 0x1EC9 },
+	{ 0x1ECA, 0x1ECB },
+	{ 0x1ECC, 0x1ECD },
+	{ 0x1ECE, 0x1ECF },
+	{ 0x1ED0, 0x1ED1 },
+	{ 0x1ED2, 0x1ED3 },
+	{ 0x1ED4, 0x1ED5 },
+	{ 0x1ED6, 0x1ED7 },
+	{ 0x1ED8, 0x1ED9 },
+	{ 0x1EDA, 0x1EDB },
+	{ 0x1EDC, 0x1EDD },
+	{ 0x1EDE, 0x1EDF },
+	{ 0x1EE0, 0x1EE1 },
+	{ 0x1EE2, 0x1EE3 },
+	{ 0x1EE4, 0x1EE5 },
+	{ 0x1EE6, 0x1EE7 },
+	{ 0x1EE8, 0x1EE9 },
+	{ 0x1EEA, 0x1EEB },
+	{ 0x1EEC, 0x1EED },
+	{ 0x1EEE, 0x1EEF },
+	{ 0x1EF0, 0x1EF1 },
+	{ 0x1EF2, 0x1EF3 },
+	{ 0x1EF4, 0x1EF5 },
+	{ 0x1EF6, 0x1EF7 },
+	{ 0x1EF8, 0x1EF9 },
+	{ 0x1EFA, 0x1EFB },
+	{ 0x1EFC, 0x1EFD },
+	{ 0x1EFE, 0x1EFF },
+	{ 0x1F08, 0x1F00 },
+	{ 0x1F09, 0x1F01 },
+	{ 0x1F0A, 0x1F02 },
+	{ 0x1F0B, 0x1F03 },
+	{ 0x1F0C, 0x1F04 },
+	{ 0x1F0D, 0x1F05 },
+	{ 0x1F0E, 0x1F06 },
+	{ 0x1F0F, 0x1F07 },
+	{ 0x1F18, 0x1F10 },
+	{ 0x1F19, 0x1F11 },
+	{ 0x1F1A, 0x1F12 },
+	{ 0x1F1B, 0x1F13 },
+	{ 0x1F1C, 0x1F14 },
+	{ 0x1F1D, 0x1F15 },
+	{ 0x1F28, 0x1F20 },
+	{ 0x1F29, 0x1F21 },
+	{ 0x1F2A, 0x1F22 },
+	{ 0x1F2B, 0x1F23 },
+	{ 0x1F2C, 0x1F24 },
+	{ 0x1F2D, 0x1F25 },
+	{ 0x1F2E, 0x1F26 },
+	{ 0x1F2F, 0x1F27 },
+	{ 0x1F38, 0x1F30 },
+	{ 0x1F39, 0x1F31 },
+	{ 0x1F3A, 0x1F32 },
+	{ 0x1F3B, 0x1F33 },
+	{ 0x1F3C, 0x1F34 },
+	{ 0x1F3D, 0x1F35 },
+	{ 0x1F3E, 0x1F36 },
+	{ 0x1F3F, 0x1F37 },
+	{ 0x1F48, 0x1F40 },
+	{ 0x1F49, 0x1F41 },
+	{ 0x1F4A, 0x1F42 },
+	{ 0x1F4B, 0x1F43 },
+	{ 0x1F4C, 0x1F44 },
+	{ 0x1F4D, 0x1F45 },
+	{ 0x1F59, 0x1F51 },
+	{ 0x1F5B, 0x1F53 },
+	{ 0x1F5D, 0x1F55 },
+	{ 0x1F5F, 0x1F57 },
+	{ 0x1F68, 0x1F60 },
+	{ 0x1F69, 0x1F61 },
+	{ 0x1F6A, 0x1F62 },
+	{ 0x1F6B, 0x1F63 },
+	{ 0x1F6C, 0x1F64 },
+	{ 0x1F6D, 0x1F65 },
+	{ 0x1F6E, 0x1F66 },
+	{ 0x1F6F, 0x1F67 },
+	{ 0x1F88, 0x1F80 },
+	{ 0x1F89, 0x1F81 },
+	{ 0x1F8A, 0x1F82 },
+	{ 0x1F8B, 0x1F83 },
+	{ 0x1F8C, 0x1F84 },
+	{ 0x1F8D, 0x1F85 },
+	{ 0x1F8E, 0x1F86 },
+	{ 0x1F8F, 0x1F87 },
+	{ 0x1F98, 0x1F90 },
+	{ 0x1F99, 0x1F91 },
+	{ 0x1F9A, 0x1F92 },
+	{ 0x1F9B, 0x1F93 },
+	{ 0x1F9C, 0x1F94 },
+	{ 0x1F9D, 0x1F95 },
+	{ 0x1F9E, 0x1F96 },
+	{ 0x1F9F, 0x1F97 },
+	{ 0x1FA8, 0x1FA0 },
+	{ 0x1FA9, 0x1FA1 },
+	{ 0x1FAA, 0x1FA2 },
+	{ 0x1FAB, 0x1FA3 },
+	{ 0x1FAC, 0x1FA4 },
+	{ 0x1FAD, 0x1FA5 },
+	{ 0x1FAE, 0x1FA6 },
+	{ 0x1FAF, 0x1FA7 },
+	{ 0x1FB8, 0x1FB0 },
+	{ 0x1FB9, 0x1FB1 },
+	{ 0x1FBA, 0x1F70 },
+	{ 0x1FBB, 0x1F71 },
+	{ 0x1FBC, 0x1FB3 },
+	{ 0x1FC8, 0x1F72 },
+	{ 0x1FC9, 0x1F73 },
+	{ 0x1FCA, 0x1F74 },
+	{ 0x1FCB, 0x1F75 },
+	{ 0x1FCC, 0x1FC3 },
+	{ 0x1FD8, 0x1FD0 },
+	{ 0x1FD9, 0x1FD1 },
+	{ 0x1FDA, 0x1F76 },
+	{ 0x1FDB, 0x1F77 },
+	{ 0x1FE8, 0x1FE0 },
+	{ 0x1FE9, 0x1FE1 },
+	{ 0x1FEA, 0x1F7A },
+	{ 0x1FEB, 0x1F7B },
+	{ 0x1FEC, 0x1FE5 },
+	{ 0x1FF8, 0x1F78 },
+	{ 0x1FF9, 0x1F79 },
+	{ 0x1FFA, 0x1F7C },
+	{ 0x1FFB, 0x1F7D },
+	{ 0x1FFC, 0x1FF3 },
+	{ 0x2126, 0x03C9 },
+	{ 0x212A, 0x006B },
+	{ 0x212B, 0x00E5 },
+	{ 0x2132, 0x214E },
+	{ 0x2160, 0x2170 },
+	{ 0x2161, 0x2171 },
+	{ 0x2162, 0x2172 },
+	{ 0x2163, 0x2173 },
+	{ 0x2164, 0x2174 },
+	{ 0x2165, 0x2175 },
+	{ 0x2166, 0x2176 },
+	{ 0x2167, 0x2177 },
+	{ 0x2168, 0x2178 },
+	{ 0x2169, 0x2179 },
+	{ 0x216A, 0x217A },
+	{ 0x216B, 0x217B },
+	{ 0x216C, 0x217C },
+	{ 0x216D, 0x217D },
+	{ 0x216E, 0x217E },
+	{ 0x216F, 0x217F },
+	{ 0x2183, 0x2184 },
+	{ 0x24B6, 0x24D0 },
+	{ 0x24B7, 0x24D1 },
+	{ 0x24B8, 0x24D2 },
+	{ 0x24B9, 0x24D3 },
+	{ 0x24BA, 0x24D4 },
+	{ 0x24BB, 0x24D5 },
+	{ 0x24BC, 0x24D6 },
+	{ 0x24BD, 0x24D7 },
+	{ 0x24BE, 0x24D8 },
+	{ 0x24BF, 0x24D9 },
+	{ 0x24C0, 0x24DA },
+	{ 0x24C1, 0x24DB },
+	{ 0x24C2, 0x24DC },
+	{ 0x24C3, 0x24DD },
+	{ 0x24C4, 0x24DE },
+	{ 0x24C5, 0x24DF },
+	{ 0x24C6, 0x24E0 },
+	{ 0x24C7, 0x24E1 },
+	{ 0x24C8, 0x24E2 },
+	{ 0x24C9, 0x24E3 },
+	{ 0x24CA, 0x24E4 },
+	{ 0x24CB, 0x24E5 },
+	{ 0x24CC, 0x24E6 },
+	{ 0x24CD, 0x24E7 },
+	{ 0x24CE, 0x24E8 },
+	{ 0x24CF, 0x24E9 },
+	{ 0x2C00, 0x2C30 },
+	{ 0x2C01, 0x2C31 },
+	{ 0x2C02, 0x2C32 },
+	{ 0x2C03, 0x2C33 },
+	{ 0x2C04, 0x2C34 },
+	{ 0x2C05, 0x2C35 },
+	{ 0x2C06, 0x2C36 },
+	{ 0x2C07, 0x2C37 },
+	{ 0x2C08, 0x2C38 },
+	{ 0x2C09, 0x2C39 },
+	{ 0x2C0A, 0x2C3A },
+	{ 0x2C0B, 0x2C3B },
+	{ 0x2C0C, 0x2C3C },
+	{ 0x2C0D, 0x2C3D },
+	{ 0x2C0E, 0x2C3E },
+	{ 0x2C0F, 0x2C3F },
+	{ 0x2C10, 0x2C40 },
+	{ 0x2C11, 0x2C41 },
+	{ 0x2C12, 0x2C42 },
+	{ 0x2C13, 0x2C43 },
+	{ 0x2C14, 0x2C44 },
+	{ 0x2C15, 0x2C45 },
+	{ 0x2C16, 0x2C46 },
+	{ 0x2C17, 0x2C47 },
+	{ 0x2C18, 0x2C48 },
+	{ 0x2C19, 0x2C49 },
+	{ 0x2C1A, 0x2C4A },
+	{ 0x2C1B, 0x2C4B },
+	{ 0x2C1C, 0x2C4C },
+	{ 0x2C1D, 0x2C4D },
+	{ 0x2C1E, 0x2C4E },
+	{ 0x2C1F, 0x2C4F },
+	{ 0x2C20, 0x2C50 },
+	{ 0x2C21, 0x2C51 },
+	{ 0x2C22, 0x2C52 },
+	{ 0x2C23, 0x2C53 },
+	{ 0x2C24, 0x2C54 },
+	{ 0x2C25, 0x2C55 },
+	{ 0x2C26, 0x2C56 },
+	{ 0x2C27, 0x2C57 },
+	{ 0x2C28, 0x2C58 },
+	{ 0x2C29, 0x2C59 },
+	{ 0x2C2A, 0x2C5A },
+	{ 0x2C2B, 0x2C5B },
+	{ 0x2C2C, 0x2C5C },
+	{ 0x2C2D, 0x2C5D },
+	{ 0x2C2E, 0x2C5E },
+	{ 0x2C2F, 0x2C5F },
+	{ 0x2C60, 0x2C61 },
+	{ 0x2C62, 0x026B },
+	{ 0x2C63, 0x1D7D },
+	{ 0x2C64, 0x027D },
+	{ 0x2C67, 0x2C68 },
+	{ 0x2C69, 0x2C6A },
+	{ 0x2C6B, 0x2C6C },
+	{ 0x2C6D, 0x0251 },
+	{ 0x2C6E, 0x0271 },
+	{ 0x2C6F, 0x0250 },
+	{ 0x2C70, 0x0252 },
+	{ 0x2C72, 0x2C73 },
+	{ 0x2C75, 0x2C76 },
+	{ 0x2C7E, 0x023F },
+	{ 0x2C7F, 0x0240 },
+	{ 0x2C80, 0x2C81 },
+	{ 0x2C82, 0x2C83 },
+	{ 0x2C84, 0x2C85 },
+	{ 0x2C86, 0x2C87 },
+	{ 0x2C88, 0x2C89 },
+	{ 0x2C8A, 0x2C8B },
+	{ 0x2C8C, 0x2C8D },
+	{ 0x2C8E, 0x2C8F },
+	{ 0x2C90, 0x2C91 },
+	{ 0x2C92, 0x2C93 },
+	{ 0x2C94, 0x2C95 },
+	{ 0x2C96, 0x2C97 },
+	{ 0x2C98, 0x2C99 },
+	{ 0x2C9A, 0x2C9B },
+	{ 0x2C9C, 0x2C9D },
+	{ 0x2C9E, 0x2C9F },
+	{ 0x2CA0, 0x2CA1 },
+	{ 0x2CA2, 0x2CA3 },
+	{ 0x2CA4, 0x2CA5 },
+	{ 0x2CA6, 0x2CA7 },
+	{ 0x2CA8, 0x2CA9 },
+	{ 0x2CAA, 0x2CAB },
+	{ 0x2CAC, 0x2CAD },
+	{ 0x2CAE, 0x2CAF },
+	{ 0x2CB0, 0x2CB1 },
+	{ 0x2CB2, 0x2CB3 },
+	{ 0x2CB4, 0x2CB5 },
+	{ 0x2CB6, 0x2CB7 },
+	{ 0x2CB8, 0x2CB9 },
+	{ 0x2CBA, 0x2CBB },
+	{ 0x2CBC, 0x2CBD },
+	{ 0x2CBE, 0x2CBF },
+	{ 0x2CC0, 0x2CC1 },
+	{ 0x2CC2, 0x2CC3 },
+	{ 0x2CC4, 0x2CC5 },
+	{ 0x2CC6, 0x2CC7 },
+	{ 0x2CC8, 0x2CC9 },
+	{ 0x2CCA, 0x2CCB },
+	{ 0x2CCC, 0x2CCD },
+	{ 0x2CCE, 0x2CCF },
+	{ 0x2CD0, 0x2CD1 },
+	{ 0x2CD2, 0x2CD3 },
+	{ 0x2CD4, 0x2CD5 },
+	{ 0x2CD6, 0x2CD7 },
+	{ 0x2CD8, 0x2CD9 },
+	{ 0x2CDA, 0x2CDB },
+	{ 0x2CDC, 0x2CDD },
+	{ 0x2CDE, 0x2CDF },
+	{ 0x2CE0, 0x2CE1 },
+	{ 0x2CE2, 0x2CE3 },
+	{ 0x2CEB, 0x2CEC },
+	{ 0x2CED, 0x2CEE },
+	{ 0x2CF2, 0x2CF3 },
+	{ 0xA640, 0xA641 },
+	{ 0xA642, 0xA643 },
+	{ 0xA644, 0xA645 },
+	{ 0xA646, 0xA647 },
+	{ 0xA648, 0xA649 },
+	{ 0xA64A, 0xA64B },
+	{ 0xA64C, 0xA64D },
+	{ 0xA64E, 0xA64F },
+	{ 0xA650, 0xA651 },
+	{ 0xA652, 0xA653 },
+	{ 0xA654, 0xA655 },
+	{ 0xA656, 0xA657 },
+	{ 0xA658, 0xA659 },
+	{ 0xA65A, 0xA65B },
+	{ 0xA65C, 0xA65D },
+	{ 0xA65E, 0xA65F },
+	{ 0xA660, 0xA661 },
+	{ 0xA662, 0xA663 },
+	{ 0xA664, 0xA665 },
+	{ 0xA666, 0xA667 },
+	{ 0xA668, 0xA669 },
+	{ 0xA66A, 0xA66B },
+	{ 0xA66C, 0xA66D },
+	{ 0xA680, 0xA681 },
+	{ 0xA682, 0xA683 },
+	{ 0xA684, 0xA685 },
+	{ 0xA686, 0xA687 },
+	{ 0xA688, 0xA689 },
+	{ 0xA68A, 0xA68B },
+	{ 0xA68C, 0xA68D },
+	{ 0xA68E, 0xA68F },
+	{ 0xA690, 0xA691 },
+	{ 0xA692, 0xA693 },
+	{ 0xA694, 0xA695 },
+	{ 0xA696, 0xA697 },
+	{ 0xA698, 0xA699 },
+	{ 0xA69A, 0xA69B },
+	{ 0xA722, 0xA723 },
+	{ 0xA724, 0xA725 },
+	{ 0xA726, 0xA727 },
+	{ 0xA728, 0xA729 },
+	{ 0xA72A, 0xA72B },
+	{ 0xA72C, 0xA72D },
+	{ 0xA72E, 0xA72F },
+	{ 0xA732, 0xA733 },
+	{ 0xA734, 0xA735 },
+	{ 0xA736, 0xA737 },
+	{ 0xA738, 0xA739 },
+	{ 0xA73A, 0xA73B },
+	{ 0xA73C, 0xA73D },
+	{ 0xA73E, 0xA73F },
+	{ 0xA740, 0xA741 },
+	{ 0xA742, 0xA743 },
+	{ 0xA744, 0xA745 },
+	{ 0xA746, 0xA747 },
+	{ 0xA748, 0xA749 },
+	{ 0xA74A, 0xA74B },
+	{ 0xA74C, 0xA74D },
+	{ 0xA74E, 0xA74F },
+	{ 0xA750, 0xA751 },
+	{ 0xA752, 0xA753 },
+	{ 0xA754, 0xA755 },
+	{ 0xA756, 0xA757 },
+	{ 0xA758, 0xA759 },
+	{ 0xA75A, 0xA75B },
+	{ 0xA75C, 0xA75D },
+	{ 0xA75E, 0xA75F },
+	{ 0xA760, 0xA761 },
+	{ 0xA762, 0xA763 },
+	{ 0xA764, 0xA765 },
+	{ 0xA766, 0xA767 },
+	{ 0xA768, 0xA769 },
+	{ 0xA76A, 0xA76B },
+	{ 0xA76C, 0xA76D },
+	{ 0xA76E, 0xA76F },
+	{ 0xA779, 0xA77A },
+	{ 0xA77B, 0xA77C },
+	{ 0xA77D, 0x1D79 },
+	{ 0xA77E, 0xA77F },
+	{ 0xA780, 0xA781 },
+	{ 0xA782, 0xA783 },
+	{ 0xA784, 0xA785 },
+	{ 0xA786, 0xA787 },
+	{ 0xA78B, 0xA78C },
+	{ 0xA78D, 0x0265 },
+	{ 0xA790, 0xA791 },
+	{ 0xA792, 0xA793 },
+	{ 0xA796, 0xA797 },
+	{ 0xA798, 0xA799 },
+	{ 0xA79A, 0xA79B },
+	{ 0xA79C, 0xA79D },
+	{ 0xA79E, 0xA79F },
+	{ 0xA7A0, 0xA7A1 },
+	{ 0xA7A2, 0xA7A3 },
+	{ 0xA7A4, 0xA7A5 },
+	{ 0xA7A6, 0xA7A7 },
+	{ 0xA7A8, 0xA7A9 },
+	{ 0xA7AA, 0x0266 },
+	{ 0xA7AB, 0x025C },
+	{ 0xA7AC, 0x0261 },
+	{ 0xA7AD, 0x026C },
+	{ 0xA7AE, 0x026A },
+	{ 0xA7B0, 0x029E },
+	{ 0xA7B1, 0x0287 },
+	{ 0xA7B2, 0x029D },
+	{ 0xA7B3, 0xAB53 },
+	{ 0xA7B4, 0xA7B5 },
+	{ 0xA7B6, 0xA7B7 },
+	{ 0xA7B8, 0xA7B9 },
+	{ 0xA7BA, 0xA7BB },
+	{ 0xA7BC, 0xA7BD },
+	{ 0xA7BE, 0xA7BF },
+	{ 0xA7C0, 0xA7C1 },
+	{ 0xA7C2, 0xA7C3 },
+	{ 0xA7C4, 0xA794 },
+	{ 0xA7C5, 0x0282 },
+	{ 0xA7C6, 0x1D8E },
+	{ 0xA7C7, 0xA7C8 },
+	{ 0xA7C9, 0xA7CA },
+	{ 0xA7CB, 0x0264 },
+	{ 0xA7CC, 0xA7CD },
+	{ 0xA7CE, 0xA7CF },
+	{ 0xA7D0, 0xA7D1 },
+	{ 0xA7D2, 0xA7D3 },
+	{ 0xA7D4, 0xA7D5 },
+	{ 0xA7D6, 0xA7D7 },
+	{ 0xA7D8, 0xA7D9 },
+	{ 0xA7DA, 0xA7DB },
+	{ 0xA7DC, 0x019B },
+	{ 0xA7F5, 0xA7F6 },
+	{ 0xFF21, 0xFF41 },
+	{ 0xFF22, 0xFF42 },
+	{ 0xFF23, 0xFF43 },
+	{ 0xFF24, 0xFF44 },
+	{ 0xFF25, 0xFF45 },
+	{ 0xFF26, 0xFF46 },
+	{ 0xFF27, 0xFF47 },
+	{ 0xFF28, 0xFF48 },
+	{ 0xFF29, 0xFF49 },
+	{ 0xFF2A, 0xFF4A },
+	{ 0xFF2B, 0xFF4B },
+	{ 0xFF2C, 0xFF4C },
+	{ 0xFF2D, 0xFF4D },
+	{ 0xFF2E, 0xFF4E },
+	{ 0xFF2F, 0xFF4F },
+	{ 0xFF30, 0xFF50 },
+	{ 0xFF31, 0xFF51 },
+	{ 0xFF32, 0xFF52 },
+	{ 0xFF33, 0xFF53 },
+	{ 0xFF34, 0xFF54 },
+	{ 0xFF35, 0xFF55 },
+	{ 0xFF36, 0xFF56 },
+	{ 0xFF37, 0xFF57 },
+	{ 0xFF38, 0xFF58 },
+	{ 0xFF39, 0xFF59 },
+	{ 0xFF3A, 0xFF5A },
+	{ 0x10400, 0x10428 },
+	{ 0x10401, 0x10429 },
+	{ 0x10402, 0x1042A },
+	{ 0x10403, 0x1042B },
+	{ 0x10404, 0x1042C },
+	{ 0x10405, 0x1042D },
+	{ 0x10406, 0x1042E },
+	{ 0x10407, 0x1042F },
+	{ 0x10408, 0x10430 },
+	{ 0x10409, 0x10431 },
+	{ 0x1040A, 0x10432 },
+	{ 0x1040B, 0x10433 },
+	{ 0x1040C, 0x10434 },
+	{ 0x1040D, 0x10435 },
+	{ 0x1040E, 0x10436 },
+	{ 0x1040F, 0x10437 },
+	{ 0x10410, 0x10438 },
+	{ 0x10411, 0x10439 },
+	{ 0x10412, 0x1043A },
+	{ 0x10413, 0x1043B },
+	{ 0x10414, 0x1043C },
+	{ 0x10415, 0x1043D },
+	{ 0x10416, 0x1043E },
+	{ 0x10417, 0x1043F },
+	{ 0x10418, 0x10440 },
+	{ 0x10419, 0x10441 },
+	{ 0x1041A, 0x10442 },
+	{ 0x1041B, 0x10443 },
+	{ 0x1041C, 0x10444 },
+	{ 0x1041D, 0x10445 },
+	{ 0x1041E, 0x10446 },
+	{ 0x1041F, 0x10447 },
+	{ 0x10420, 0x10448 },
+	{ 0x10421, 0x10449 },
+	{ 0x10422, 0x1044A },
+	{ 0x10423, 0x1044B },
+	{ 0x10424, 0x1044C },
+	{ 0x10425, 0x1044D },
+	{ 0x10426, 0x1044E },
+	{ 0x10427, 0x1044F },
+	{ 0x104B0, 0x104D8 },
+	{ 0x104B1, 0x104D9 },
+	{ 0x104B2, 0x104DA },
+	{ 0x104B3, 0x104DB },
+	{ 0x104B4, 0x104DC },
+	{ 0x104B5, 0x104DD },
+	{ 0x104B6, 0x104DE },
+	{ 0x104B7, 0x104DF },
+	{ 0x104B8, 0x104E0 },
+	{ 0x104B9, 0x104E1 },
+	{ 0x104BA, 0x104E2 },
+	{ 0x104BB, 0x104E3 },
+	{ 0x104BC, 0x104E4 },
+	{ 0x104BD, 0x104E5 },
+	{ 0x104BE, 0x104E6 },
+	{ 0x104BF, 0x104E7 },
+	{ 0x104C0, 0x104E8 },
+	{ 0x104C1, 0x104E9 },
+	{ 0x104C2, 0x104EA },
+	{ 0x104C3, 0x104EB },
+	{ 0x104C4, 0x104EC },
+	{ 0x104C5, 0x104ED },
+	{ 0x104C6, 0x104EE },
+	{ 0x104C7, 0x104EF },
+	{ 0x104C8, 0x104F0 },
+	{ 0x104C9, 0x104F1 },
+	{ 0x104CA, 0x104F2 },
+	{ 0x104CB, 0x104F3 },
+	{ 0x104CC, 0x104F4 },
+	{ 0x104CD, 0x104F5 },
+	{ 0x104CE, 0x104F6 },
+	{ 0x104CF, 0x104F7 },
+	{ 0x104D0, 0x104F8 },
+	{ 0x104D1, 0x104F9 },
+	{ 0x104D2, 0x104FA },
+	{ 0x104D3, 0x104FB },
+	{ 0x10570, 0x10597 },
+	{ 0x10571, 0x10598 },
+	{ 0x10572, 0x10599 },
+	{ 0x10573, 0x1059A },
+	{ 0x10574, 0x1059B },
+	{ 0x10575, 0x1059C },
+	{ 0x10576, 0x1059D },
+	{ 0x10577, 0x1059E },
+	{ 0x10578, 0x1059F },
+	{ 0x10579, 0x105A0 },
+	{ 0x1057A, 0x105A1 },
+	{ 0x1057C, 0x105A3 },
+	{ 0x1057D, 0x105A4 },
+	{ 0x1057E, 0x105A5 },
+	{ 0x1057F, 0x105A6 },
+	{ 0x10580, 0x105A7 },
+	{ 0x10581, 0x105A8 },
+	{ 0x10582, 0x105A9 },
+	{ 0x10583, 0x105AA },
+	{ 0x10584, 0x105AB },
+	{ 0x10585, 0x105AC },
+	{ 0x10586, 0x105AD },
+	{ 0x10587, 0x105AE },
+	{ 0x10588, 0x105AF },
+	{ 0x10589, 0x105B0 },
+	{ 0x1058A, 0x105B1 },
+	{ 0x1058C, 0x105B3 },
+	{ 0x1058D, 0x105B4 },
+	{ 0x1058E, 0x105B5 },
+	{ 0x1058F, 0x105B6 },
+	{ 0x10590, 0x105B7 },
+	{ 0x10591, 0x105B8 },
+	{ 0x10592, 0x105B9 },
+	{ 0x10594, 0x105BB },
+	{ 0x10595, 0x105BC },
+	{ 0x10C80, 0x10CC0 },
+	{ 0x10C81, 0x10CC1 },
+	{ 0x10C82, 0x10CC2 },
+	{ 0x10C83, 0x10CC3 },
+	{ 0x10C84, 0x10CC4 },
+	{ 0x10C85, 0x10CC5 },
+	{ 0x10C86, 0x10CC6 },
+	{ 0x10C87, 0x10CC7 },
+	{ 0x10C88, 0x10CC8 },
+	{ 0x10C89, 0x10CC9 },
+	{ 0x10C8A, 0x10CCA },
+	{ 0x10C8B, 0x10CCB },
+	{ 0x10C8C, 0x10CCC },
+	{ 0x10C8D, 0x10CCD },
+	{ 0x10C8E, 0x10CCE },
+	{ 0x10C8F, 0x10CCF },
+	{ 0x10C90, 0x10CD0 },
+	{ 0x10C91, 0x10CD1 },
+	{ 0x10C92, 0x10CD2 },
+	{ 0x10C93, 0x10CD3 },
+	{ 0x10C94, 0x10CD4 },
+	{ 0x10C95, 0x10CD5 },
+	{ 0x10C96, 0x10CD6 },
+	{ 0x10C97, 0x10CD7 },
+	{ 0x10C98, 0x10CD8 },
+	{ 0x10C99, 0x10CD9 },
+	{ 0x10C9A, 0x10CDA },
+	{ 0x10C9B, 0x10CDB },
+	{ 0x10C9C, 0x10CDC },
+	{ 0x10C9D, 0x10CDD },
+	{ 0x10C9E, 0x10CDE },
+	{ 0x10C9F, 0x10CDF },
+	{ 0x10CA0, 0x10CE0 },
+	{ 0x10CA1, 0x10CE1 },
+	{ 0x10CA2, 0x10CE2 },
+	{ 0x10CA3, 0x10CE3 },
+	{ 0x10CA4, 0x10CE4 },
+	{ 0x10CA5, 0x10CE5 },
+	{ 0x10CA6, 0x10CE6 },
+	{ 0x10CA7, 0x10CE7 },
+	{ 0x10CA8, 0x10CE8 },
+	{ 0x10CA9, 0x10CE9 },
+	{ 0x10CAA, 0x10CEA },
+	{ 0x10CAB, 0x10CEB },
+	{ 0x10CAC, 0x10CEC },
+	{ 0x10CAD, 0x10CED },
+	{ 0x10CAE, 0x10CEE },
+	{ 0x10CAF, 0x10CEF },
+	{ 0x10CB0, 0x10CF0 },
+	{ 0x10CB1, 0x10CF1 },
+	{ 0x10CB2, 0x10CF2 },
+	{ 0x10D50, 0x10D70 },
+	{ 0x10D51, 0x10D71 },
+	{ 0x10D52, 0x10D72 },
+	{ 0x10D53, 0x10D73 },
+	{ 0x10D54, 0x10D74 },
+	{ 0x10D55, 0x10D75 },
+	{ 0x10D56, 0x10D76 },
+	{ 0x10D57, 0x10D77 },
+	{ 0x10D58, 0x10D78 },
+	{ 0x10D59, 0x10D79 },
+	{ 0x10D5A, 0x10D7A },
+	{ 0x10D5B, 0x10D7B },
+	{ 0x10D5C, 0x10D7C },
+	{ 0x10D5D, 0x10D7D },
+	{ 0x10D5E, 0x10D7E },
+	{ 0x10D5F, 0x10D7F },
+	{ 0x10D60, 0x10D80 },
+	{ 0x10D61, 0x10D81 },
+	{ 0x10D62, 0x10D82 },
+	{ 0x10D63, 0x10D83 },
+	{ 0x10D64, 0x10D84 },
+	{ 0x10D65, 0x10D85 },
+	{ 0x118A0, 0x118C0 },
+	{ 0x118A1, 0x118C1 },
+	{ 0x118A2, 0x118C2 },
+	{ 0x118A3, 0x118C3 },
+	{ 0x118A4, 0x118C4 },
+	{ 0x118A5, 0x118C5 },
+	{ 0x118A6, 0x118C6 },
+	{ 0x118A7, 0x118C7 },
+	{ 0x118A8, 0x118C8 },
+	{ 0x118A9, 0x118C9 },
+	{ 0x118AA, 0x118CA },
+	{ 0x118AB, 0x118CB },
+	{ 0x118AC, 0x118CC },
+	{ 0x118AD, 0x118CD },
+	{ 0x118AE, 0x118CE },
+	{ 0x118AF, 0x118CF },
+	{ 0x118B0, 0x118D0 },
+	{ 0x118B1, 0x118D1 },
+	{ 0x118B2, 0x118D2 },
+	{ 0x118B3, 0x118D3 },
+	{ 0x118B4, 0x118D4 },
+	{ 0x118B5, 0x118D5 },
+	{ 0x118B6, 0x118D6 },
+	{ 0x118B7, 0x118D7 },
+	{ 0x118B8, 0x118D8 },
+	{ 0x118B9, 0x118D9 },
+	{ 0x118BA, 0x118DA },
+	{ 0x118BB, 0x118DB },
+	{ 0x118BC, 0x118DC },
+	{ 0x118BD, 0x118DD },
+	{ 0x118BE, 0x118DE },
+	{ 0x118BF, 0x118DF },
+	{ 0x16E40, 0x16E60 },
+	{ 0x16E41, 0x16E61 },
+	{ 0x16E42, 0x16E62 },
+	{ 0x16E43, 0x16E63 },
+	{ 0x16E44, 0x16E64 },
+	{ 0x16E45, 0x16E65 },
+	{ 0x16E46, 0x16E66 },
+	{ 0x16E47, 0x16E67 },
+	{ 0x16E48, 0x16E68 },
+	{ 0x16E49, 0x16E69 },
+	{ 0x16E4A, 0x16E6A },
+	{ 0x16E4B, 0x16E6B },
+	{ 0x16E4C, 0x16E6C },
+	{ 0x16E4D, 0x16E6D },
+	{ 0x16E4E, 0x16E6E },
+	{ 0x16E4F, 0x16E6F },
+	{ 0x16E50, 0x16E70 },
+	{ 0x16E51, 0x16E71 },
+	{ 0x16E52, 0x16E72 },
+	{ 0x16E53, 0x16E73 },
+	{ 0x16E54, 0x16E74 },
+	{ 0x16E55, 0x16E75 },
+	{ 0x16E56, 0x16E76 },
+	{ 0x16E57, 0x16E77 },
+	{ 0x16E58, 0x16E78 },
+	{ 0x16E59, 0x16E79 },
+	{ 0x16E5A, 0x16E7A },
+	{ 0x16E5B, 0x16E7B },
+	{ 0x16E5C, 0x16E7C },
+	{ 0x16E5D, 0x16E7D },
+	{ 0x16E5E, 0x16E7E },
+	{ 0x16E5F, 0x16E7F },
+	{ 0x16EA0, 0x16EBB },
+	{ 0x16EA1, 0x16EBC },
+	{ 0x16EA2, 0x16EBD },
+	{ 0x16EA3, 0x16EBE },
+	{ 0x16EA4, 0x16EBF },
+	{ 0x16EA5, 0x16EC0 },
+	{ 0x16EA6, 0x16EC1 },
+	{ 0x16EA7, 0x16EC2 },
+	{ 0x16EA8, 0x16EC3 },
+	{ 0x16EA9, 0x16EC4 },
+	{ 0x16EAA, 0x16EC5 },
+	{ 0x16EAB, 0x16EC6 },
+	{ 0x16EAC, 0x16EC7 },
+	{ 0x16EAD, 0x16EC8 },
+	{ 0x16EAE, 0x16EC9 },
+	{ 0x16EAF, 0x16ECA },
+	{ 0x16EB0, 0x16ECB },
+	{ 0x16EB1, 0x16ECC },
+	{ 0x16EB2, 0x16ECD },
+	{ 0x16EB3, 0x16ECE },
+	{ 0x16EB4, 0x16ECF },
+	{ 0x16EB5, 0x16ED0 },
+	{ 0x16EB6, 0x16ED1 },
+	{ 0x16EB7, 0x16ED2 },
+	{ 0x16EB8, 0x16ED3 },
+	{ 0x1E900, 0x1E922 },
+	{ 0x1E901, 0x1E923 },
+	{ 0x1E902, 0x1E924 },
+	{ 0x1E903, 0x1E925 },
+	{ 0x1E904, 0x1E926 },
+	{ 0x1E905, 0x1E927 },
+	{ 0x1E906, 0x1E928 },
+	{ 0x1E907, 0x1E929 },
+	{ 0x1E908, 0x1E92A },
+	{ 0x1E909, 0x1E92B },
+	{ 0x1E90A, 0x1E92C },
+	{ 0x1E90B, 0x1E92D },
+	{ 0x1E90C, 0x1E92E },
+	{ 0x1E90D, 0x1E92F },
+	{ 0x1E90E, 0x1E930 },
+	{ 0x1E90F, 0x1E931 },
+	{ 0x1E910, 0x1E932 },
+	{ 0x1E911, 0x1E933 },
+	{ 0x1E912, 0x1E934 },
+	{ 0x1E913, 0x1E935 },
+	{ 0x1E914, 0x1E936 },
+	{ 0x1E915, 0x1E937 },
+	{ 0x1E916, 0x1E938 },
+	{ 0x1E917, 0x1E939 },
+	{ 0x1E918, 0x1E93A },
+	{ 0x1E919, 0x1E93B },
+	{ 0x1E91A, 0x1E93C },
+	{ 0x1E91B, 0x1E93D },
+	{ 0x1E91C, 0x1E93E },
+	{ 0x1E91D, 0x1E93F },
+	{ 0x1E91E, 0x1E940 },
+	{ 0x1E91F, 0x1E941 },
+	{ 0x1E920, 0x1E942 },
+	{ 0x1E921, 0x1E943 },
+};
+
+inline int _find_upper(int p_ch) {
+	int low = 0;
+	int high = LTU_LEN - 1;
+	int middle;
+
+	while (low <= high) {
+		middle = (low + high) / 2;
+
+		if (p_ch < caps_table[middle][0]) {
+			high = middle - 1; // Search low end of array.
+		} else if (caps_table[middle][0] < p_ch) {
+			low = middle + 1; // Search high end of array.
+		} else {
+			return caps_table[middle][1];
+		}
+	}
+
+	return p_ch;
+}
+
+inline int _find_lower(int p_ch) {
+	int low = 0;
+	int high = UTL_LEN - 1;
+	int middle;
+
+	while (low <= high) {
+		middle = (low + high) / 2;
+
+		if (p_ch < reverse_caps_table[middle][0]) {
+			high = middle - 1; // Search low end of array.
+		} else if (reverse_caps_table[middle][0] < p_ch) {
+			low = middle + 1; // Search high end of array.
+		} else {
+			return reverse_caps_table[middle][1];
+		}
+	}
+
+	return p_ch;
+}
+
+// --- End core/string/ucaps.h ---
+#include "core/version_generated.gen.h"
+#include "core/string/ustring.h"
+
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS // to disable build-time warning which suggested to use strcpy_s
+								// instead strcpy
+#endif
+
+#if defined(MINGW_ENABLED) || defined(_MSC_VER)
+#define snprintf _snprintf_s
+#endif
+
+static const int MAX_DECIMALS = 32;
+
+static _FORCE_INLINE_ char32_t lower_case(char32_t p_char)
+{
+	return (is_ascii_upper_case(p_char) ? (p_char + ('a' - 'A')) : p_char);
+}
+
+// Case-insensitive version of are_spans_equal
+template <typename T1, typename T2>
+static bool strings_equal_lower(const T1* p_lhs_begin, const T2* p_rhs_begin, size_t p_len)
+{
+	for (size_t i = 0; i < p_len; ++i) {
+		if (_find_lower(p_lhs_begin[i]) != _find_lower(p_rhs_begin[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+Error String::parse_url(
+	String& r_scheme, String& r_host, int& r_port, String& r_path, String& r_fragment) const
+{
+	// Splits the URL into scheme, host, port, path, fragment. Strip credentials when present.
+	String base = *this;
+	r_scheme = "";
+	r_host = "";
+	r_port = 0;
+	r_path = "";
+	r_fragment = "";
+
+	int pos = base.find("://");
+	// Scheme
+	if (pos != -1) {
+		bool is_scheme_valid = true;
+		for (int i = 0; i < pos; i++) {
+			if (!is_ascii_alphanumeric_char(base[i]) && base[i] != '+' && base[i] != '-' &&
+				base[i] != '.') {
+				is_scheme_valid = false;
+				break;
+			}
+		}
+		if (is_scheme_valid) {
+			r_scheme = base.substr(0, pos + 3).to_lower();
+			base = base.substr(pos + 3);
+		}
+	}
+	pos = base.find_char('#');
+	// Fragment
+	if (pos != -1) {
+		r_fragment = base.substr(pos + 1);
+		base = base.substr(0, pos);
+	}
+	pos = base.find_char('/');
+	// Path
+	if (pos != -1) {
+		r_path = base.substr(pos);
+		base = base.substr(0, pos);
+	}
+	// Host
+	pos = base.find_char('@');
+	if (pos != -1) {
+		// Strip credentials
+		base = base.substr(pos + 1);
+	}
+	if (base.begins_with("[")) {
+		// Literal IPv6
+		pos = base.rfind_char(']');
+		if (pos == -1) {
+			return ERR_INVALID_PARAMETER;
+		}
+		r_host = base.substr(1, pos - 1);
+		base = base.substr(pos + 1);
+	}
+	else {
+		// Anything else
+		if (base.get_slice_count(":") > 2) {
+			return ERR_INVALID_PARAMETER;
+		}
+		pos = base.rfind_char(':');
+		if (pos == -1) {
+			r_host = base;
+			base = "";
+		}
+		else {
+			r_host = base.substr(0, pos);
+			base = base.substr(pos);
+		}
+	}
+	if (r_host.is_empty()) {
+		return ERR_INVALID_PARAMETER;
+	}
+	r_host = r_host.to_lower();
+	// Port
+	if (base.begins_with(":")) {
+		base = base.substr(1);
+		if (!base.is_valid_int()) {
+			return ERR_INVALID_PARAMETER;
+		}
+		r_port = base.to_int();
+		if (r_port < 1 || r_port > 65535) {
+			return ERR_INVALID_PARAMETER;
+		}
+	}
+	return OK;
+}
+
+void String::append_latin1(const Span<char>& p_cstr)
+{
+	if (p_cstr.is_empty()) {
+		return;
+	}
+
+	const int prev_length = length();
+	resize_uninitialized(prev_length + p_cstr.size() + 1); // include 0
+
+	const char* src = p_cstr.ptr();
+	const char* end = src + p_cstr.size();
+	char32_t* dst = ptrw() + prev_length;
+
+	for (; src < end; ++src, ++dst) {
+		// If char is int8_t, a set sign bit will be reinterpreted as 256 - val implicitly.
+		if (unlikely(*src == '\0')) {
+			// NUL in string is allowed by the unicode standard, but unsupported in our
+			// implementation right now.
+			print_unicode_error("Unexpected NUL character", true);
+			*dst = _replacement_char;
+		}
+		else {
+			*dst = static_cast<uint8_t>(*src);
+		}
+	}
+	*dst = 0;
+}
+
+Error String::append_utf32(const Span<char32_t>& p_cstr)
+{
+	if (p_cstr.is_empty()) {
+		return OK;
+	}
+
+	Error error = OK;
+
+	const int prev_length = length();
+	resize_uninitialized(prev_length + p_cstr.size() + 1);
+	const char32_t* src = p_cstr.ptr();
+	const char32_t* end = p_cstr.ptr() + p_cstr.size();
+	char32_t* dst = ptrw() + prev_length;
+
+	// Copy the string, and check for UTF-32 problems.
+	for (; src < end; ++src, ++dst) {
+		const char32_t chr = *src;
+		if (unlikely(chr == U'\0')) {
+			// NUL in string is allowed by the unicode standard, but unsupported in our
+			// implementation right now.
+			print_unicode_error("Unexpected NUL character", true);
+			*dst = _replacement_char;
+			error = ERR_PARSE_ERROR;
+		}
+		else if (unlikely((chr & 0xfffff800) == 0xd800)) {
+			print_unicode_error(vformat("Unpaired surrogate (%x)", (uint32_t)chr), true);
+			*dst = _replacement_char;
+			error = ERR_PARSE_ERROR;
+		}
+		else if (unlikely(chr > 0x10ffff)) {
+			print_unicode_error(vformat("Invalid unicode codepoint (%x)", (uint32_t)chr), true);
+			*dst = _replacement_char;
+			error = ERR_PARSE_ERROR;
+		}
+		else {
+			*dst = chr;
+		}
+	}
+	*dst = 0;
+	return error;
+}
+
+void String::append_utf32_unchecked(const Span<char32_t>& p_span)
+{
+	const int prev_length = length();
+	resize_uninitialized(prev_length + p_span.size() + 1); // + 1 for \0
+	char32_t* dst = ptrw() + prev_length;
+	memcpy(dst, p_span.ptr(), p_span.size() * sizeof(char32_t));
+	*(dst + p_span.size()) = _null;
+}
+
+String String::operator+(const String& p_str) const
+{
+	String res = *this;
+	res += p_str;
+	return res;
+}
+
+String String::operator+(const char* p_str) const
+{
+	String res = *this;
+	res += p_str;
+	return res;
+}
+
+String String::operator+(const wchar_t* p_str) const
+{
+	String res = *this;
+	res += p_str;
+	return res;
+}
+
+String String::operator+(const char32_t* p_str) const
+{
+	String res = *this;
+	res += p_str;
+	return res;
+}
+
+String String::operator+(char32_t p_char) const
+{
+	String res = *this;
+	res += p_char;
+	return res;
+}
+
+String operator+(const char* p_chr, const String& p_str)
+{
+	String tmp = p_chr;
+	tmp += p_str;
+	return tmp;
+}
+
+String operator+(const wchar_t* p_chr, const String& p_str)
+{
+#ifdef WINDOWS_ENABLED
+	// wchar_t is 16-bit
+	String tmp = String::utf16((const char16_t*)p_chr);
+#else
+	// wchar_t is 32-bit
+	String tmp = (const char32_t*)p_chr;
+#endif
+	tmp += p_str;
+	return tmp;
+}
+
+String operator+(char32_t p_chr, const String& p_str) { return (String::chr(p_chr) + p_str); }
+
+String& String::operator+=(const String& p_str)
+{
+	if (is_empty()) {
+		*this = p_str;
+		return *this;
+	}
+	append_utf32_unchecked(p_str);
+	return *this;
+}
+
+String& String::operator+=(const char* p_str)
+{
+	append_latin1(p_str);
+	return *this;
+}
+
+String& String::operator+=(const wchar_t* p_str)
+{
+#ifdef WINDOWS_ENABLED
+	// wchar_t is 16-bit
+	*this += String::utf16((const char16_t*)p_str);
+#else
+	// wchar_t is 32-bit
+	*this += String((const char32_t*)p_str);
+#endif
+	return *this;
+}
+
+String& String::operator+=(const char32_t* p_str)
+{
+	append_utf32(Span(p_str, strlen(p_str)));
+	return *this;
+}
+
+String& String::operator+=(char32_t p_char)
+{
+	append_utf32(Span(&p_char, 1));
+	return *this;
+}
+
+bool String::operator==(const char* p_str) const
+{
+	// Compare Latin-1 encoded c-string.
+	return span() == Span(p_str, strlen(p_str)).reinterpret<uint8_t>();
+}
+
+bool String::operator==(const wchar_t* p_str) const
+{
+#ifdef WINDOWS_ENABLED
+	// wchar_t is 16-bit, parse as UTF-16
+	return *this == String::utf16((const char16_t*)p_str);
+#else
+	// wchar_t is 32-bit, compare char by char
+	return *this == (const char32_t*)p_str;
+#endif
+}
+
+bool String::operator==(const char32_t* p_str) const
+{
+	// Compare UTF-32 encoded c-string.
+	return span() == Span(p_str, strlen(p_str));
+}
+
+bool String::operator==(const String& p_str) const { return span() == p_str.span(); }
+
+bool String::operator==(const Span<char32_t>& p_str_range) const { return span() == p_str_range; }
+
+bool operator==(const char* p_chr, const String& p_str) { return p_str == p_chr; }
+
+bool operator==(const wchar_t* p_chr, const String& p_str)
+{
+#ifdef WINDOWS_ENABLED
+	// wchar_t is 16-bit
+	return p_str == String::utf16((const char16_t*)p_chr);
+#else
+	// wchar_t is 32-bit
+	return p_str == (const char32_t*)p_chr;
+#endif
+}
+
+bool operator!=(const char* p_chr, const String& p_str) { return !(p_str == p_chr); }
+
+bool operator!=(const wchar_t* p_chr, const String& p_str)
+{
+#ifdef WINDOWS_ENABLED
+	// wchar_t is 16-bit
+	return !(p_str == String::utf16((const char16_t*)p_chr));
+#else
+	// wchar_t is 32-bit
+	return !(p_str == String((const char32_t*)p_chr));
+#endif
+}
+
+bool String::operator!=(const char* p_str) const { return (!(*this == p_str)); }
+
+bool String::operator!=(const wchar_t* p_str) const { return (!(*this == p_str)); }
+
+bool String::operator!=(const char32_t* p_str) const { return (!(*this == p_str)); }
+
+bool String::operator!=(const String& p_str) const { return !((*this == p_str)); }
+
+bool String::operator<=(const String& p_str) const { return !(p_str < *this); }
+
+bool String::operator>(const String& p_str) const { return p_str < *this; }
+
+bool String::operator>=(const String& p_str) const { return !(*this < p_str); }
+
+bool String::operator<(const char* p_str) const
+{
+	if (is_empty() && p_str[0] == 0) {
+		return false;
+	}
+	if (is_empty()) {
+		return true;
+	}
+	return str_compare(get_data(), p_str) < 0;
+}
+
+bool String::operator<(const wchar_t* p_str) const
+{
+	if (is_empty() && p_str[0] == 0) {
+		return false;
+	}
+	if (is_empty()) {
+		return true;
+	}
+
+#ifdef WINDOWS_ENABLED
+	// wchar_t is 16-bit
+	return str_compare(get_data(), String::utf16((const char16_t*)p_str).get_data()) < 0;
+#else
+	// wchar_t is 32-bit
+	return str_compare(get_data(), (const char32_t*)p_str) < 0;
+#endif
+}
+
+bool String::operator<(const char32_t* p_str) const
+{
+	if (is_empty() && p_str[0] == 0) {
+		return false;
+	}
+	if (is_empty()) {
+		return true;
+	}
+
+	return str_compare(get_data(), p_str) < 0;
+}
+
+bool String::operator<(const String& p_str) const { return operator<(p_str.get_data()); }
+
+signed char String::nocasecmp_to(const String& p_str) const
+{
+	if (is_empty() && p_str.is_empty()) {
+		return 0;
+	}
+	if (is_empty()) {
+		return -1;
+	}
+	if (p_str.is_empty()) {
+		return 1;
+	}
+
+	const char32_t* that_str = p_str.get_data();
+	const char32_t* this_str = get_data();
+
+	while (true) {
+		if (*that_str == 0 && *this_str == 0) { // If both strings are at the end, they are equal.
+			return 0;
+		}
+		else if (*this_str == 0) { // If at the end of this, and not of other, we are less.
+			return -1;
+		}
+		else if (*that_str == 0) { // If at end of other, and not of this, we are greater.
+			return 1;
+		}
+		else if (_find_upper(*this_str) <
+				   _find_upper(*that_str)) { // If current character in this is less, we are less.
+			return -1;
+		}
+		else if (_find_upper(*this_str) >
+				   _find_upper(
+					   *that_str)) { // If current character in this is greater, we are greater.
+			return 1;
+		}
+
+		this_str++;
+		that_str++;
+	}
+}
+
+signed char String::casecmp_to(const String& p_str) const
+{
+	if (is_empty() && p_str.is_empty()) {
+		return 0;
+	}
+	if (is_empty()) {
+		return -1;
+	}
+	if (p_str.is_empty()) {
+		return 1;
+	}
+
+	const char32_t* that_str = p_str.get_data();
+	const char32_t* this_str = get_data();
+
+	while (true) {
+		if (*that_str == 0 && *this_str == 0) { // If both strings are at the end, they are equal.
+			return 0;
+		}
+		else if (*this_str == 0) { // If at the end of this, and not of other, we are less.
+			return -1;
+		}
+		else if (*that_str == 0) { // If at end of other, and not of this, we are greater.
+			return 1;
+		}
+		else if (*this_str < *that_str) { // If current character in this is less, we are less.
+			return -1;
+		}
+		else if (*this_str >
+				   *that_str) { // If current character in this is greater, we are greater.
+			return 1;
+		}
+
+		this_str++;
+		that_str++;
+	}
+}
+
+static _FORCE_INLINE_ signed char natural_cmp_common(
+	const char32_t*& r_this_str, const char32_t*& r_that_str)
+{
+	// Keep ptrs to start of numerical sequences.
+	const char32_t* this_substr = r_this_str;
+	const char32_t* that_substr = r_that_str;
+
+	// Compare lengths of both numerical sequences, ignoring leading zeros.
+	while (is_digit(*r_this_str)) {
+		r_this_str++;
+	}
+	while (is_digit(*r_that_str)) {
+		r_that_str++;
+	}
+	while (*this_substr == '0') {
+		this_substr++;
+	}
+	while (*that_substr == '0') {
+		that_substr++;
+	}
+	int this_len = r_this_str - this_substr;
+	int that_len = r_that_str - that_substr;
+
+	if (this_len < that_len) {
+		return -1;
+	}
+	else if (this_len > that_len) {
+		return 1;
+	}
+
+	// If lengths equal, compare lexicographically.
+	while (this_substr != r_this_str && that_substr != r_that_str) {
+		if (*this_substr < *that_substr) {
+			return -1;
+		}
+		else if (*this_substr > *that_substr) {
+			return 1;
+		}
+		this_substr++;
+		that_substr++;
+	}
+
+	return 0;
+}
+
+static _FORCE_INLINE_ signed char naturalcasecmp_to_base(
+	const char32_t* p_this_str, const char32_t* p_that_str)
+{
+	if (p_this_str && p_that_str) {
+		while (*p_this_str == '.' || *p_that_str == '.') {
+			if (*p_this_str++ != '.') {
+				return 1;
+			}
+			if (*p_that_str++ != '.') {
+				return -1;
+			}
+			if (!*p_that_str) {
+				return 1;
+			}
+			if (!*p_this_str) {
+				return -1;
+			}
+		}
+
+		while (*p_this_str) {
+			if (!*p_that_str) {
+				return 1;
+			}
+			else if (is_digit(*p_this_str)) {
+				if (!is_digit(*p_that_str)) {
+					return -1;
+				}
+
+				signed char ret = natural_cmp_common(p_this_str, p_that_str);
+				if (ret) {
+					return ret;
+				}
+			}
+			else if (is_digit(*p_that_str)) {
+				return 1;
+			}
+			else {
+				if (*p_this_str <
+					*p_that_str) { // If current character in this is less, we are less.
+					return -1;
+				}
+				else if (*p_this_str > *p_that_str) { // If current character in this is greater,
+														// we are greater.
+					return 1;
+				}
+
+				p_this_str++;
+				p_that_str++;
+			}
+		}
+		if (*p_that_str) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+signed char String::naturalcasecmp_to(const String& p_str) const
+{
+	const char32_t* this_str = get_data();
+	const char32_t* that_str = p_str.get_data();
+
+	return naturalcasecmp_to_base(this_str, that_str);
+}
+
+static _FORCE_INLINE_ signed char naturalnocasecmp_to_base(
+	const char32_t* p_this_str, const char32_t* p_that_str)
+{
+	if (p_this_str && p_that_str) {
+		while (*p_this_str == '.' || *p_that_str == '.') {
+			if (*p_this_str++ != '.') {
+				return 1;
+			}
+			if (*p_that_str++ != '.') {
+				return -1;
+			}
+			if (!*p_that_str) {
+				return 1;
+			}
+			if (!*p_this_str) {
+				return -1;
+			}
+		}
+
+		while (*p_this_str) {
+			if (!*p_that_str) {
+				return 1;
+			}
+			else if (is_digit(*p_this_str)) {
+				if (!is_digit(*p_that_str)) {
+					return -1;
+				}
+
+				signed char ret = natural_cmp_common(p_this_str, p_that_str);
+				if (ret) {
+					return ret;
+				}
+			}
+			else if (is_digit(*p_that_str)) {
+				return 1;
+			}
+			else {
+				if (_find_upper(*p_this_str) <
+					_find_upper(
+						*p_that_str)) { // If current character in this is less, we are less.
+					return -1;
+				}
+				else if (_find_upper(*p_this_str) >
+						   _find_upper(*p_that_str)) { // If current character in this is greater,
+													   // we are greater.
+					return 1;
+				}
+
+				p_this_str++;
+				p_that_str++;
+			}
+		}
+		if (*p_that_str) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+signed char String::naturalnocasecmp_to(const String& p_str) const
+{
+	const char32_t* this_str = get_data();
+	const char32_t* that_str = p_str.get_data();
+
+	return naturalnocasecmp_to_base(this_str, that_str);
+}
+
+static _FORCE_INLINE_ signed char file_cmp_common(
+	const char32_t*& r_this_str, const char32_t*& r_that_str)
+{
+	// Compare leading `_` sequences.
+	while ((*r_this_str == '_' && *r_that_str) || (*r_this_str && *r_that_str == '_')) {
+		// Sort `_` lower than everything except `.`
+		if (*r_this_str != '_') {
+			return *r_this_str == '.' ? -1 : 1;
+		}
+		else if (*r_that_str != '_') {
+			return *r_that_str == '.' ? 1 : -1;
+		}
+		r_this_str++;
+		r_that_str++;
+	}
+
+	return 0;
+}
+
+signed char String::filecasecmp_to(const String& p_str) const
+{
+	const char32_t* this_str = get_data();
+	const char32_t* that_str = p_str.get_data();
+
+	signed char ret = file_cmp_common(this_str, that_str);
+	if (ret) {
+		return ret;
+	}
+
+	return naturalcasecmp_to_base(this_str, that_str);
+}
+
+signed char String::filenocasecmp_to(const String& p_str) const
+{
+	const char32_t* this_str = get_data();
+	const char32_t* that_str = p_str.get_data();
+
+	signed char ret = file_cmp_common(this_str, that_str);
+	if (ret) {
+		return ret;
+	}
+
+	return naturalnocasecmp_to_base(this_str, that_str);
+}
+
+String String::_separate_compound_words() const
+{
+	if (length() == 0) {
+		return *this;
+	}
+
+	const char32_t* cstr = get_data();
+	int start_index = 0;
+	String new_string;
+
+	bool is_prev_upper = is_unicode_upper_case(cstr[0]);
+	bool is_prev_lower = is_unicode_lower_case(cstr[0]);
+	bool is_prev_digit = is_digit(cstr[0]);
+
+	for (int i = 1; i < length(); i++) {
+		const bool is_curr_upper = is_unicode_upper_case(cstr[i]);
+		const bool is_curr_lower = is_unicode_lower_case(cstr[i]);
+		const bool is_curr_digit = is_digit(cstr[i]);
+
+		bool is_next_lower = false;
+		if (i + 1 < length()) {
+			is_next_lower = is_unicode_lower_case(cstr[i + 1]);
+		}
+
+		const bool cond_a = is_prev_lower && is_curr_upper; // aA
+		const bool cond_b =
+			(is_prev_upper || is_prev_digit) && is_curr_upper && is_next_lower; // AAa, 2Aa
+		const bool cond_c = is_prev_digit && is_curr_lower && is_next_lower;	// 2aa
+		const bool cond_d = (is_prev_upper || is_prev_lower) && is_curr_digit;	// A2, a2
+
+		if (cond_a || cond_b || cond_c || cond_d) {
+			new_string += substr(start_index, i - start_index) + " ";
+			start_index = i;
+		}
+
+		is_prev_upper = is_curr_upper;
+		is_prev_lower = is_curr_lower;
+		is_prev_digit = is_curr_digit;
+	}
+
+	new_string += substr(start_index, size() - start_index);
+
+	for (int i = 0; i < new_string.size(); i++) {
+		const bool whitespace = is_whitespace(new_string[i]);
+		const bool underscore = is_underscore(new_string[i]);
+		const bool hyphen = is_hyphen(new_string[i]);
+
+		if (whitespace || underscore || hyphen) {
+			new_string[i] = ' ';
+		}
+	}
+
+	return new_string.to_lower();
+}
+
+String String::capitalize() const
+{
+	String words = _separate_compound_words().strip_edges();
+	String ret;
+	for (int i = 0; i < words.get_slice_count(" "); i++) {
+		String slice = words.get_slicec(' ', i);
+		if (slice.length() > 0) {
+			slice[0] = _find_upper(slice[0]);
+			if (i > 0) {
+				ret += " ";
+			}
+			ret += slice;
+		}
+	}
+	return ret;
+}
+
+String String::to_camel_case() const
+{
+	String words = _separate_compound_words().strip_edges();
+	String ret;
+	for (int i = 0; i < words.get_slice_count(" "); i++) {
+		String slice = words.get_slicec(' ', i);
+		if (slice.length() > 0) {
+			if (i == 0) {
+				slice[0] = _find_lower(slice[0]);
+			}
+			else {
+				slice[0] = _find_upper(slice[0]);
+			}
+			ret += slice;
+		}
+	}
+	return ret;
+}
+
+String String::to_pascal_case() const
+{
+	String words = _separate_compound_words().strip_edges();
+	String ret;
+	for (int i = 0; i < words.get_slice_count(" "); i++) {
+		String slice = words.get_slicec(' ', i);
+		if (slice.length() > 0) {
+			slice[0] = _find_upper(slice[0]);
+			ret += slice;
+		}
+	}
+	return ret;
+}
+
+String String::to_snake_case() const { return _separate_compound_words().replace_char(' ', '_'); }
+
+String String::to_kebab_case() const { return _separate_compound_words().replace_char(' ', '-'); }
+
+String String::get_with_code_lines() const
+{
+	const Vector<String> lines = split("\n");
+	String ret;
+	for (int i = 0; i < lines.size(); i++) {
+		if (i > 0) {
+			ret += "\n";
+		}
+		ret += vformat("%4d | %s", i + 1, lines[i]);
+	}
+	return ret;
+}
+
+int String::get_slice_count(const String& p_splitter) const
+{
+	if (is_empty()) {
+		return 0;
+	}
+	if (p_splitter.is_empty()) {
+		return 0;
+	}
+
+	int pos = 0;
+	int slices = 1;
+
+	while ((pos = find(p_splitter, pos)) >= 0) {
+		slices++;
+		pos += p_splitter.length();
+	}
+
+	return slices;
+}
+
+int String::get_slice_count(const char* p_splitter) const
+{
+	if (is_empty()) {
+		return 0;
+	}
+	if (p_splitter == nullptr || *p_splitter == '\0') {
+		return 0;
+	}
+
+	int pos = 0;
+	int slices = 1;
+	int splitter_length = strlen(p_splitter);
+
+	while ((pos = find(p_splitter, pos)) >= 0) {
+		slices++;
+		pos += splitter_length;
+	}
+
+	return slices;
+}
+
+String String::get_slice(const String& p_splitter, int p_slice) const
+{
+	if (is_empty() || p_splitter.is_empty()) {
+		return "";
+	}
+
+	int pos = 0;
+	int prev_pos = 0;
+	// int slices=1;
+	if (p_slice < 0) {
+		return "";
+	}
+	if (find(p_splitter) == -1) {
+		return *this;
+	}
+
+	int i = 0;
+	while (true) {
+		pos = find(p_splitter, pos);
+		if (pos == -1) {
+			pos = length(); // reached end
+		}
+
+		int from = prev_pos;
+		// int to=pos;
+
+		if (p_slice == i) {
+			return substr(from, pos - from);
+		}
+
+		if (pos == length()) { // reached end and no find
+			break;
+		}
+		pos += p_splitter.length();
+		prev_pos = pos;
+		i++;
+	}
+
+	return ""; // no find!
+}
+
+String String::get_slice(const char* p_splitter, int p_slice) const
+{
+	if (is_empty() || p_splitter == nullptr || *p_splitter == '\0') {
+		return "";
+	}
+
+	int pos = 0;
+	int prev_pos = 0;
+	// int slices=1;
+	if (p_slice < 0) {
+		return "";
+	}
+	if (find(p_splitter) == -1) {
+		return *this;
+	}
+
+	int i = 0;
+	const int splitter_length = strlen(p_splitter);
+	while (true) {
+		pos = find(p_splitter, pos);
+		if (pos == -1) {
+			pos = length(); // reached end
+		}
+
+		int from = prev_pos;
+		// int to=pos;
+
+		if (p_slice == i) {
+			return substr(from, pos - from);
+		}
+
+		if (pos == length()) { // reached end and no find
+			break;
+		}
+		pos += splitter_length;
+		prev_pos = pos;
+		i++;
+	}
+
+	return ""; // no find!
+}
+
+String String::get_slicec(char32_t p_splitter, int p_slice) const
+{
+	if (is_empty()) {
+		return String();
+	}
+
+	if (p_slice < 0) {
+		return String();
+	}
+
+	const char32_t* c = ptr();
+	int i = 0;
+	int prev = 0;
+	int count = 0;
+	while (true) {
+		if (c[i] == 0 || c[i] == p_splitter) {
+			if (p_slice == count) {
+				return substr(prev, i - prev);
+			}
+			else if (c[i] == 0) {
+				return String();
+			}
+			else {
+				count++;
+				prev = i + 1;
+			}
+		}
+
+		i++;
+	}
+}
+
+Vector<String> String::split_spaces(int p_maxsplit) const
+{
+	Vector<String> ret;
+	int from = 0;
+	int i = 0;
+	int len = length();
+	if (len == 0) {
+		return ret;
+	}
+
+	bool inside = false;
+
+	while (true) {
+		bool empty = operator[](i) < 33;
+
+		if (i == 0) {
+			inside = !empty;
+		}
+
+		if (!empty && !inside) {
+			inside = true;
+			from = i;
+		}
+
+		if (empty && inside) {
+			if (p_maxsplit > 0 && p_maxsplit == ret.size()) {
+				// Put rest of the string and leave cycle.
+				ret.push_back(substr(from));
+				break;
+			}
+			ret.push_back(substr(from, i - from));
+			inside = false;
+		}
+
+		if (i == len) {
+			break;
+		}
+		i++;
+	}
+
+	return ret;
+}
+
+Vector<String> String::split(const String& p_splitter, bool p_allow_empty, int p_maxsplit) const
+{
+	Vector<String> ret;
+
+	if (is_empty()) {
+		if (p_allow_empty) {
+			ret.push_back("");
+		}
+		return ret;
+	}
+
+	int from = 0;
+	int len = length();
+
+	while (true) {
+		int end;
+		if (p_splitter.is_empty()) {
+			end = from + 1;
+		}
+		else {
+			end = find(p_splitter, from);
+			if (end < 0) {
+				end = len;
+			}
+		}
+		if (p_allow_empty || (end > from)) {
+			if (p_maxsplit <= 0) {
+				ret.push_back(substr(from, end - from));
+			}
+			else {
+				// Put rest of the string and leave cycle.
+				if (p_maxsplit == ret.size()) {
+					ret.push_back(substr(from, len));
+					break;
+				}
+
+				// Otherwise, push items until positive limit is reached.
+				ret.push_back(substr(from, end - from));
+			}
+		}
+
+		if (end == len) {
+			break;
+		}
+
+		from = end + p_splitter.length();
+	}
+
+	return ret;
+}
+
+Vector<String> String::split(const char* p_splitter, bool p_allow_empty, int p_maxsplit) const
+{
+	Vector<String> ret;
+
+	if (is_empty()) {
+		if (p_allow_empty) {
+			ret.push_back("");
+		}
+		return ret;
+	}
+
+	int from = 0;
+	int len = length();
+	const int splitter_length = strlen(p_splitter);
+
+	while (true) {
+		int end;
+		if (p_splitter == nullptr || *p_splitter == '\0') {
+			end = from + 1;
+		}
+		else {
+			end = find(p_splitter, from);
+			if (end < 0) {
+				end = len;
+			}
+		}
+		if (p_allow_empty || (end > from)) {
+			if (p_maxsplit <= 0) {
+				ret.push_back(substr(from, end - from));
+			}
+			else {
+				// Put rest of the string and leave cycle.
+				if (p_maxsplit == ret.size()) {
+					ret.push_back(substr(from, len));
+					break;
+				}
+
+				// Otherwise, push items until positive limit is reached.
+				ret.push_back(substr(from, end - from));
+			}
+		}
+
+		if (end == len) {
+			break;
+		}
+
+		from = end + splitter_length;
+	}
+
+	return ret;
+}
+
+Vector<String> String::rsplit(const String& p_splitter, bool p_allow_empty, int p_maxsplit) const
+{
+	Vector<String> ret;
+	const int len = length();
+	int remaining_len = len;
+
+	while (true) {
+		if (remaining_len < p_splitter.length() || (p_maxsplit > 0 && p_maxsplit == ret.size())) {
+			// no room for another splitter or hit max splits, push what's left and we're done
+			if (p_allow_empty || remaining_len > 0) {
+				ret.push_back(substr(0, remaining_len));
+			}
+			break;
+		}
+
+		int left_edge;
+		if (p_splitter.is_empty()) {
+			left_edge = remaining_len - 1;
+			if (left_edge == 0) {
+				left_edge--; // Skip to the < 0 condition.
+			}
+		}
+		else {
+			left_edge = rfind(p_splitter, remaining_len - p_splitter.length());
+		}
+
+		if (left_edge < 0) {
+			// no more splitters, we're done
+			ret.push_back(substr(0, remaining_len));
+			break;
+		}
+
+		int substr_start = left_edge + p_splitter.length();
+		if (p_allow_empty || substr_start < remaining_len) {
+			ret.push_back(substr(substr_start, remaining_len - substr_start));
+		}
+
+		remaining_len = left_edge;
+	}
+
+	ret.reverse();
+	return ret;
+}
+
+Vector<String> String::rsplit(const char* p_splitter, bool p_allow_empty, int p_maxsplit) const
+{
+	Vector<String> ret;
+	const int len = length();
+	const int splitter_length = strlen(p_splitter);
+	int remaining_len = len;
+
+	while (true) {
+		if (remaining_len < splitter_length || (p_maxsplit > 0 && p_maxsplit == ret.size())) {
+			// no room for another splitter or hit max splits, push what's left and we're done
+			if (p_allow_empty || remaining_len > 0) {
+				ret.push_back(substr(0, remaining_len));
+			}
+			break;
+		}
+
+		int left_edge;
+		if (p_splitter == nullptr || *p_splitter == '\0') {
+			left_edge = remaining_len - 1;
+			if (left_edge == 0) {
+				left_edge--; // Skip to the < 0 condition.
+			}
+		}
+		else {
+			left_edge = rfind(p_splitter, remaining_len - splitter_length);
+		}
+
+		if (left_edge < 0) {
+			// no more splitters, we're done
+			ret.push_back(substr(0, remaining_len));
+			break;
+		}
+
+		int substr_start = left_edge + splitter_length;
+		if (p_allow_empty || substr_start < remaining_len) {
+			ret.push_back(substr(substr_start, remaining_len - substr_start));
+		}
+
+		remaining_len = left_edge;
+	}
+
+	ret.reverse();
+	return ret;
+}
+
+Vector<double> String::split_floats(const String& p_splitter, bool p_allow_empty) const
+{
+	Vector<double> ret;
+	int from = 0;
+	int len = length();
+	if (len == 0) {
+		return ret;
+	}
+
+	String buffer = *this;
+	while (true) {
+		int end = find(p_splitter, from);
+		if (end < 0) {
+			end = len;
+		}
+		if (p_allow_empty || (end > from)) {
+			buffer[end] = 0;
+			ret.push_back(String::to_float(&buffer.get_data()[from]));
+			buffer[end] = _cowdata.get(end);
+		}
+
+		if (end == len) {
+			break;
+		}
+
+		from = end + p_splitter.length();
+	}
+
+	return ret;
+}
+
+Vector<float> String::split_floats_mk(const Vector<String>& p_splitters, bool p_allow_empty) const
+{
+	Vector<float> ret;
+	int from = 0;
+	int len = length();
+	if (len == 0) {
+		return ret;
+	}
+
+	String buffer = *this;
+	while (true) {
+		int idx = 0;
+		int end = findmk(p_splitters, from, &idx);
+		int spl_len = 1;
+		if (end < 0) {
+			end = len;
+		}
+		else {
+			spl_len = p_splitters[idx].length();
+		}
+
+		if (p_allow_empty || (end > from)) {
+			buffer[end] = 0;
+			ret.push_back(String::to_float(&buffer.get_data()[from]));
+			buffer[end] = _cowdata.get(end);
+		}
+
+		if (end == len) {
+			break;
+		}
+
+		from = end + spl_len;
+	}
+
+	return ret;
+}
+
+Vector<int> String::split_ints(const String& p_splitter, bool p_allow_empty) const
+{
+	Vector<int> ret;
+	int from = 0;
+	int len = length();
+	if (len == 0) {
+		return ret;
+	}
+
+	while (true) {
+		int end = find(p_splitter, from);
+		if (end < 0) {
+			end = len;
+		}
+		if (p_allow_empty || (end > from)) {
+			ret.push_back(String::to_int(&get_data()[from], end - from));
+		}
+
+		if (end == len) {
+			break;
+		}
+
+		from = end + p_splitter.length();
+	}
+
+	return ret;
+}
+
+Vector<int> String::split_ints_mk(const Vector<String>& p_splitters, bool p_allow_empty) const
+{
+	Vector<int> ret;
+	int from = 0;
+	int len = length();
+	if (len == 0) {
+		return ret;
+	}
+
+	while (true) {
+		int idx = 0;
+		int end = findmk(p_splitters, from, &idx);
+		int spl_len = 1;
+		if (end < 0) {
+			end = len;
+		}
+		else {
+			spl_len = p_splitters[idx].length();
+		}
+
+		if (p_allow_empty || (end > from)) {
+			ret.push_back(String::to_int(&get_data()[from], end - from));
+		}
+
+		if (end == len) {
+			break;
+		}
+
+		from = end + spl_len;
+	}
+
+	return ret;
+}
+
+String String::join(const Vector<String>& p_parts) const
+{
+	if (p_parts.is_empty()) {
+		return String();
+	}
+	else if (p_parts.size() == 1) {
+		return p_parts[0];
+	}
+
+	const int this_length = length();
+
+	int new_size = (p_parts.size() - 1) * this_length;
+	for (const String& part : p_parts) {
+		new_size += part.length();
+	}
+	new_size += 1;
+
+	String ret;
+	ret.resize_uninitialized(new_size);
+	char32_t* ret_ptrw = ret.ptrw();
+	const char32_t* this_ptr = ptr();
+
+	bool first = true;
+	for (const String& part : p_parts) {
+		if (first) {
+			first = false;
+		}
+		else if (this_length) {
+			memcpy(ret_ptrw, this_ptr, this_length * sizeof(char32_t));
+			ret_ptrw += this_length;
+		}
+
+		const int part_length = part.length();
+		if (part_length) {
+			memcpy(ret_ptrw, part.ptr(), part_length * sizeof(char32_t));
+			ret_ptrw += part_length;
+		}
+	}
+
+	*ret_ptrw = 0;
+
+	return ret;
+}
+
+char32_t String::char_uppercase(char32_t p_char) { return _find_upper(p_char); }
+
+char32_t String::char_lowercase(char32_t p_char) { return _find_lower(p_char); }
+
+String String::to_upper() const
+{
+	if (is_empty()) {
+		return *this;
+	}
+
+	String upper;
+	upper.resize_uninitialized(size());
+	const char32_t* old_ptr = ptr();
+	char32_t* upper_ptrw = upper.ptrw();
+
+	while (*old_ptr) {
+		*upper_ptrw++ = _find_upper(*old_ptr++);
+	}
+
+	*upper_ptrw = 0;
+
+	return upper;
+}
+
+String String::to_lower() const
+{
+	if (is_empty()) {
+		return *this;
+	}
+
+	String lower;
+	lower.resize_uninitialized(size());
+	const char32_t* old_ptr = ptr();
+	char32_t* lower_ptrw = lower.ptrw();
+
+	while (*old_ptr) {
+		*lower_ptrw++ = _find_lower(*old_ptr++);
+	}
+
+	*lower_ptrw = 0;
+
+	return lower;
+}
+
+String String::num(double p_num, int p_decimals)
+{
+	if (Math::is_nan(p_num)) {
+		return "nan";
+	}
+
+	if (Math::is_inf(p_num)) {
+		if (std::signbit(p_num)) {
+			return "-inf";
+		}
+		else {
+			return "inf";
+		}
+	}
+
+	if (p_decimals < 0) {
+		p_decimals = 14;
+		const double abs_num = Math::abs(p_num);
+		if (abs_num > 10) {
+			// We want to align the digits to the above reasonable default, so we only
+			// need to subtract log10 for numbers with a positive power of ten.
+			p_decimals -= (int)std::floor(std::log10(abs_num));
+		}
+	}
+	if (p_decimals > MAX_DECIMALS) {
+		p_decimals = MAX_DECIMALS;
+	}
+
+	char fmt[7];
+	fmt[0] = '%';
+	fmt[1] = '.';
+
+	if (p_decimals < 0) {
+		fmt[1] = 'l';
+		fmt[2] = 'f';
+		fmt[3] = 0;
+	}
+	else if (p_decimals < 10) {
+		fmt[2] = '0' + p_decimals;
+		fmt[3] = 'l';
+		fmt[4] = 'f';
+		fmt[5] = 0;
+	}
+	else {
+		fmt[2] = '0' + (p_decimals / 10);
+		fmt[3] = '0' + (p_decimals % 10);
+		fmt[4] = 'l';
+		fmt[5] = 'f';
+		fmt[6] = 0;
+	}
+	// if we want to convert a double with as much decimal places as
+	// DBL_MAX or DBL_MIN then we would theoretically need a buffer of at least
+	// DBL_MAX_10_EXP + 2 for DBL_MAX and DBL_MAX_10_EXP + 4 for DBL_MIN.
+	// BUT those values where still giving me exceptions, so I tested from
+	// DBL_MAX_10_EXP + 10 incrementing one by one and DBL_MAX_10_EXP + 17 (325)
+	// was the first buffer size not to throw an exception
+	char buf[325];
+
+#if defined(__GNUC__) || defined(_MSC_VER)
+	// PLEASE NOTE that, albeit vcrt online reference states that snprintf
+	// should safely truncate the output to the given buffer size, we have
+	// found a case where this is not true, so we should create a buffer
+	// as big as needed
+	snprintf(buf, 325, fmt, p_num);
+#else
+	sprintf(buf, fmt, p_num);
+#endif
+
+	buf[324] = 0;
+	// Destroy trailing zeroes, except one after period.
+	{
+		bool period = false;
+		int z = 0;
+		while (buf[z]) {
+			if (buf[z] == '.') {
+				period = true;
+			}
+			z++;
+		}
+
+		if (period) {
+			z--;
+			while (z > 0) {
+				if (buf[z] == '0') {
+					buf[z] = 0;
+				}
+				else if (buf[z] == '.') {
+					buf[z + 1] = '0';
+					break;
+				}
+				else {
+					break;
+				}
+
+				z--;
+			}
+		}
+	}
+
+	return buf;
+}
+
+String String::num_int64(int64_t p_num, int p_base, bool p_capitalize_hex)
+{
+	ERR_FAIL_COND_V_MSG(p_base < 2 || p_base > 36, "",
+		"Cannot convert to base " + itos(p_base) + ", since the value is " +
+			(p_base < 2 ? "less than 2." : "greater than 36."));
+
+	bool sign = p_num < 0;
+
+	int64_t n = p_num;
+
+	int chars = 0;
+	do {
+		n /= p_base;
+		chars++;
+	} while (n);
+
+	if (sign) {
+		chars++;
+	}
+	String s;
+	s.resize_uninitialized(chars + 1);
+	char32_t* c = s.ptrw();
+	c[chars] = 0;
+	n = p_num;
+	do {
+		int mod = Math::abs(n % p_base);
+		if (mod >= 10) {
+			char a = (p_capitalize_hex ? 'A' : 'a');
+			c[--chars] = a + (mod - 10);
+		}
+		else {
+			c[--chars] = '0' + mod;
+		}
+
+		n /= p_base;
+	} while (n);
+
+	if (sign) {
+		c[0] = '-';
+	}
+
+	return s;
+}
+
+String String::num_uint64(uint64_t p_num, int p_base, bool p_capitalize_hex)
+{
+	ERR_FAIL_COND_V_MSG(p_base < 2 || p_base > 36, "",
+		"Cannot convert to base " + itos(p_base) + ", since the value is " +
+			(p_base < 2 ? "less than 2." : "greater than 36."));
+
+	uint64_t n = p_num;
+
+	int chars = 0;
+	do {
+		n /= p_base;
+		chars++;
+	} while (n);
+
+	String s;
+	s.resize_uninitialized(chars + 1);
+	char32_t* c = s.ptrw();
+	c[chars] = 0;
+	n = p_num;
+	do {
+		int mod = n % p_base;
+		if (mod >= 10) {
+			char a = (p_capitalize_hex ? 'A' : 'a');
+			c[--chars] = a + (mod - 10);
+		}
+		else {
+			c[--chars] = '0' + mod;
+		}
+
+		n /= p_base;
+	} while (n);
+
+	return s;
+}
+
+String String::num_real(double p_num, bool p_trailing)
+{
+	if (Math::is_nan(p_num) || Math::is_inf(p_num)) {
+		return num(p_num, 0);
+	}
+
+	if (p_num == (double)(int64_t)p_num) {
+		if (p_trailing) {
+			return num_int64((int64_t)p_num) + ".0";
+		}
+		else {
+			return num_int64((int64_t)p_num);
+		}
+	}
+
+	int decimals = 14;
+	// We want to align the digits to the above sane default, so we only need
+	// to subtract log10 for numbers with a positive power of ten magnitude.
+	const double abs_num = Math::abs(p_num);
+	if (abs_num > 10) {
+		decimals -= (int)std::floor(std::log10(abs_num));
+	}
+
+	return num(p_num, decimals);
+}
+
+String String::num_real(float p_num, bool p_trailing)
+{
+	if (Math::is_nan(p_num) || Math::is_inf(p_num)) {
+		return num(p_num, 0);
+	}
+
+	if (p_num == (float)(int64_t)p_num) {
+		if (p_trailing) {
+			return num_int64((int64_t)p_num) + ".0";
+		}
+		else {
+			return num_int64((int64_t)p_num);
+		}
+	}
+	int decimals = 6;
+	// We want to align the digits to the above sane default, so we only need
+	// to subtract log10 for numbers with a positive power of ten magnitude.
+	const float abs_num = Math::abs(p_num);
+	if (abs_num > 10) {
+		decimals -= (int)std::floor(std::log10(abs_num));
+	}
+	return num(p_num, decimals);
+}
+
+String String::num_scientific(double p_num)
+{
+	if (Math::is_nan(p_num) || Math::is_inf(p_num)) {
+		return num(p_num, 0);
+	}
+	char buffer[256];
+	char* last = grisu2::to_chars(buffer, p_num);
+	return String::ascii(Span(buffer, last - buffer));
+}
+
+String String::num_scientific(float p_num)
+{
+	if (Math::is_nan(p_num) || Math::is_inf(p_num)) {
+		return num(p_num, 0);
+	}
+	char buffer[256];
+	char* last = grisu2::to_chars(buffer, p_num);
+	return String::ascii(Span(buffer, last - buffer));
+}
+
+String String::md5(const uint8_t* p_md5) { return String::hex_encode_buffer(p_md5, 16); }
+
+String String::hex_encode_buffer(const uint8_t* p_buffer, int p_len)
+{
+	static const char hex[16] = {
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+	String ret;
+	ret.resize_uninitialized(p_len * 2 + 1);
+	char32_t* ret_ptrw = ret.ptrw();
+
+	for (int i = 0; i < p_len; i++) {
+		*ret_ptrw++ = hex[p_buffer[i] >> 4];
+		*ret_ptrw++ = hex[p_buffer[i] & 0xF];
+	}
+
+	*ret_ptrw = 0;
+
+	return ret;
+}
+
+Vector<uint8_t> String::hex_decode() const
+{
+	ERR_FAIL_COND_V_MSG(
+		length() % 2 != 0, Vector<uint8_t>(), "Hexadecimal string of uneven length.");
+
+#define HEX_TO_BYTE(m_output, m_index)                                                             \
+	uint8_t m_output;                                                                              \
+	c = operator[](m_index);                                                                       \
+	if (is_digit(c)) {                                                                             \
+		m_output = c - '0';                                                                        \
+	} \
+	else if (c >= 'a' && c <= 'f') {                                                             \
+		m_output = c - 'a' + 10;                                                                   \
+	} \
+	else if (c >= 'A' && c <= 'F') {                                                             \
+		m_output = c - 'A' + 10;                                                                   \
+	} \
+	else {                                                                                       \
+		ERR_FAIL_V_MSG(Vector<uint8_t>(),                                                          \
+			"Invalid hexadecimal character \"" + chr(c) + "\" at index " + m_index + ".");         \
+	}
+
+	Vector<uint8_t> out;
+	int len = length() / 2;
+	out.resize_uninitialized(len);
+	uint8_t* out_ptrw = out.ptrw();
+	for (int i = 0; i < len; i++) {
+		char32_t c;
+		HEX_TO_BYTE(first, i * 2);
+		HEX_TO_BYTE(second, i * 2 + 1);
+		out_ptrw[i] = first * 16 + second;
+	}
+	return out;
+#undef HEX_TO_BYTE
+}
+
+void String::print_unicode_error(const String& p_message, bool p_critical) const
+{
+	if (p_critical) {
+		print_error(
+			vformat(U"Unicode parsing error, some characters were replaced with � (U+FFFD): %s",
+				p_message));
+	}
+	else {
+		print_error(vformat("Unicode parsing error: %s", p_message));
+	}
+}
+
+CharString String::ascii(bool p_allow_extended) const
+{
+	if (!length()) {
+		return CharString();
+	}
+
+	CharString cs;
+	cs.resize_uninitialized(size());
+	char* cs_ptrw = cs.ptrw();
+	const char32_t* this_ptr = ptr();
+
+	for (int i = 0; i < size(); i++) {
+		char32_t c = this_ptr[i];
+		if ((c <= 0x7f) || (c <= 0xff && p_allow_extended)) {
+			cs_ptrw[i] = char(c);
+		}
+		else {
+			print_unicode_error(vformat(
+				"Invalid unicode codepoint (%x), cannot represent as ASCII/Latin-1", (uint32_t)c));
+			cs_ptrw[i] = 0x20; // ASCII doesn't have a replacement character like unicode, 0x1a is
+							   // sometimes used but is kinda arcane.
+		}
+	}
+
+	return cs;
+}
+
+Error String::append_ascii(const Span<char>& p_range)
+{
+	if (p_range.is_empty()) {
+		return OK;
+	}
+
+	const int prev_length = length();
+	resize_uninitialized(prev_length + p_range.size() + 1); // Include \0
+
+	const char* src = p_range.ptr();
+	const char* end = src + p_range.size();
+	char32_t* dst = ptrw() + prev_length;
+	bool decode_failed = false;
+
+	for (; src < end; ++src, ++dst) {
+		// If char is int8_t, a set sign bit will be reinterpreted as 256 - val implicitly.
+		const uint8_t chr = *src;
+		if (unlikely(chr == '\0')) {
+			// NUL in string is allowed by the unicode standard, but unsupported in our
+			// implementation right now.
+			print_unicode_error("Unexpected NUL character", true);
+			*dst = _replacement_char;
+		}
+		else if (unlikely(chr > 127)) {
+			print_unicode_error(vformat("Invalid ASCII codepoint (%x)", (uint32_t)chr), true);
+			decode_failed = true;
+			*dst = _replacement_char;
+		}
+		else {
+			*dst = chr;
+		}
+	}
+	*dst = _null;
+	return decode_failed ? ERR_INVALID_DATA : OK;
+}
+
+Error String::append_utf8(const char* p_utf8, int p_len)
+{
+	if (!p_utf8) {
+		return ERR_INVALID_DATA;
+	}
+
+	/* HANDLE BOM (Byte Order Mark) */
+	if (p_len < 0 || p_len >= 3) {
+		bool has_bom =
+			uint8_t(p_utf8[0]) == 0xef && uint8_t(p_utf8[1]) == 0xbb && uint8_t(p_utf8[2]) == 0xbf;
+		if (has_bom) {
+			// 8-bit encoding, byte order has no meaning in UTF-8, just skip it
+			if (p_len >= 0) {
+				p_len -= 3;
+			}
+			p_utf8 += 3;
+		}
+	}
+
+	if (p_len < 0) {
+		p_len = strlen(p_utf8);
+	}
+
+	const int prev_length = length();
+	// If all utf8 characters maps to ASCII, then the max size will be p_len, and we add +1 for the
+	// null termination.
+	resize_uninitialized(prev_length + p_len + 1);
+	char32_t* dst = ptrw() + prev_length;
+
+	Error result = Error::OK;
+
+	const uint8_t* ptrtmp = (uint8_t*)p_utf8;
+	const uint8_t* ptr_limit = (uint8_t*)p_utf8 + p_len;
+
+	while (ptrtmp < ptr_limit && *ptrtmp) {
+		uint8_t c = *ptrtmp;
+		uint32_t unicode = _replacement_char;
+		uint32_t size = 1;
+
+		if ((c & 0b10000000) == 0) {
+			unicode = c;
+			if (unicode > 0x7F) {
+				unicode = _replacement_char;
+				print_unicode_error(vformat("Invalid unicode codepoint (%d)", unicode), true);
+				result = Error::ERR_INVALID_DATA;
+			}
+		}
+		else if ((c & 0b11100000) == 0b11000000) {
+			if (ptrtmp + 1 >= ptr_limit) {
+				print_unicode_error(vformat("Missing %x UTF-8 continuation byte", c), true);
+				result = Error::ERR_INVALID_DATA;
+			}
+			else {
+				uint8_t c2 = *(ptrtmp + 1);
+
+				if ((c2 & 0b11000000) == 0b10000000) {
+					unicode = (uint32_t)((c & 0b00011111) << 6) | (uint32_t)(c2 & 0b00111111);
+
+					if (unicode < 0x80) {
+						unicode = _replacement_char;
+						print_unicode_error(vformat("Overlong encoding (%x %x)", c, c2));
+						result = Error::ERR_INVALID_DATA;
+					}
+					else if (unicode > 0x7FF) {
+						unicode = _replacement_char;
+						print_unicode_error(
+							vformat("Invalid unicode codepoint (%d)", unicode), true);
+						result = Error::ERR_INVALID_DATA;
+					}
+					else {
+						size = 2;
+					}
+				}
+				else {
+					print_unicode_error(
+						vformat("Byte %x is not a correct continuation byte after %x", c2, c));
+					result = Error::ERR_INVALID_DATA;
+				}
+			}
+		}
+		else if ((c & 0b11110000) == 0b11100000) {
+			uint32_t range_min = (c == 0xE0) ? 0xA0 : 0x80;
+			uint32_t range_max = (c == 0xED) ? 0x9F : 0xBF;
+			uint8_t c2 = (ptrtmp + 1) < ptr_limit ? *(ptrtmp + 1) : 0;
+			uint8_t c3 = (ptrtmp + 2) < ptr_limit ? *(ptrtmp + 2) : 0;
+			bool c2_valid = c2 && (c2 >= range_min) && (c2 <= range_max);
+			bool c3_valid = c3 && ((c3 & 0b11000000) == 0b10000000);
+
+			if (c2_valid && c3_valid) {
+				unicode = (uint32_t)((c & 0b00001111) << 12) | (uint32_t)((c2 & 0b00111111) << 6) |
+						  (uint32_t)(c3 & 0b00111111);
+
+				if (unicode < 0x800) {
+					unicode = _replacement_char;
+					print_unicode_error(vformat("Overlong encoding (%x %x %x)", c, c2, c3));
+					result = Error::ERR_INVALID_DATA;
+				}
+				else if (unicode > 0xFFFF) {
+					unicode = _replacement_char;
+					print_unicode_error(vformat("Invalid unicode codepoint (%d)", unicode), true);
+					result = Error::ERR_INVALID_DATA;
+				}
+				else {
+					size = 3;
+				}
+			}
+			else {
+				if (c2 == 0) {
+					print_unicode_error(vformat("Missing %x UTF-8 continuation byte", c), true);
+				}
+				else if (c2_valid == false) {
+					print_unicode_error(
+						vformat("Byte %x is not a correct continuation byte after %x", c2, c));
+				}
+				else if (c3 == 0) {
+					print_unicode_error(
+						vformat("Missing %x %x UTF-8 continuation byte", c, c2), true);
+				}
+				else {
+					print_unicode_error(vformat(
+						"Byte %x is not a correct continuation byte after %x %x", c3, c, c2));
+					// The unicode specification, in paragraphe 3.9 "Unicode Encoding Forms"
+					// Conformance state : "Only when a sequence of two or three bytes is a
+					// truncated version of a sequence which is otherwise well-formed to that point,
+					// is more than one byte replaced with a single U+FFFD" So here we replace the
+					// first 2 bytes with one single replacement_char.
+					size = 2;
+				}
+
+				result = Error::ERR_INVALID_DATA;
+			}
+		}
+		else if ((c & 0b11111000) == 0b11110000) {
+			uint32_t range_min = (c == 0xF0) ? 0x90 : 0x80;
+			uint32_t range_max = (c == 0xF4) ? 0x8F : 0xBF;
+
+			uint8_t c2 = ((ptrtmp + 1) < ptr_limit) ? *(ptrtmp + 1) : 0;
+			uint8_t c3 = ((ptrtmp + 2) < ptr_limit) ? *(ptrtmp + 2) : 0;
+			uint8_t c4 = ((ptrtmp + 3) < ptr_limit) ? *(ptrtmp + 3) : 0;
+
+			bool c2_valid = c2 && (c2 >= range_min) && (c2 <= range_max);
+			bool c3_valid = c3 && ((c3 & 0b11000000) == 0b10000000);
+			bool c4_valid = c4 && ((c4 & 0b11000000) == 0b10000000);
+
+			if (c2_valid && c3_valid && c4_valid) {
+				unicode = (uint32_t)((c & 0b00000111) << 18) | (uint32_t)((c2 & 0b00111111) << 12) |
+						  (uint32_t)((c3 & 0b00111111) << 6) | (uint32_t)(c4 & 0b00111111);
+
+				if (unicode < 0x10000) {
+					unicode = _replacement_char;
+					print_unicode_error(vformat("Overlong encoding (%x %x %x %x)", c, c2, c3, c4));
+					result = Error::ERR_INVALID_DATA;
+				}
+				else if (unicode > 0x10FFFF) {
+					unicode = _replacement_char;
+					print_unicode_error(vformat("Invalid unicode codepoint (%d)", unicode), true);
+					result = Error::ERR_INVALID_DATA;
+				}
+				else {
+					size = 4;
+				}
+			}
+			else {
+				if (c2 == 0) {
+					print_unicode_error(vformat("Missing %x UTF-8 continuation byte", c), true);
+				}
+				else if (c2_valid == false) {
+					print_unicode_error(
+						vformat("Byte %x is not a correct continuation byte after %x", c2, c));
+				}
+				else if (c3 == 0) {
+					print_unicode_error(
+						vformat("Missing %x %x UTF-8 continuation byte", c, c2), true);
+				}
+				else if (c3_valid == false) {
+					print_unicode_error(vformat(
+						"Byte %x is not a correct continuation byte after %x %x", c3, c, c2));
+					size = 2;
+				}
+				else if (c4 == 0) {
+					print_unicode_error(
+						vformat("Missing %x %x %x UTF-8 continuation byte", c, c2, c3), true);
+				}
+				else {
+					print_unicode_error(
+						vformat("Byte %x is not a correct continuation byte after %x %x %x", c4, c,
+							c2, c3));
+					size = 3;
+				}
+
+				result = Error::ERR_INVALID_DATA;
+			}
+		}
+		else {
+			print_unicode_error(vformat("Invalid UTF-8 leading byte (%x)", c), true);
+			result = Error::ERR_INVALID_DATA;
+		}
+
+		(*dst++) = unicode;
+		ptrtmp += size;
+	}
+
+	(*dst++) = 0;
+	resize_uninitialized(dst - ptr());
+
+	return result;
+}
+
+CharString String::utf8(Vector<uint8_t>* r_ch_length_map) const
+{
+	int l = length();
+	if (!l) {
+		return CharString();
+	}
+
+	uint8_t* map_ptr = nullptr;
+	if (r_ch_length_map) {
+		r_ch_length_map->resize_uninitialized(l);
+		map_ptr = r_ch_length_map->ptrw();
+	}
+
+	const char32_t* d = &operator[](0);
+	int fl = 0;
+	for (int i = 0; i < l; i++) {
+		uint32_t c = d[i];
+		int ch_w = 1;
+		if (c <= 0x7f) { // 7 bits.
+			ch_w = 1;
+		}
+		else if (c <= 0x7ff) { // 11 bits
+			ch_w = 2;
+		}
+		else if (c <= 0xffff) { // 16 bits
+			ch_w = 3;
+		}
+		else if (c <= 0x001fffff) { // 21 bits
+			ch_w = 4;
+		}
+		else if (c <= 0x03ffffff) { // 26 bits
+			ch_w = 5;
+			print_unicode_error(vformat("Invalid unicode codepoint (%x)", c));
+		}
+		else if (c <= 0x7fffffff) { // 31 bits
+			ch_w = 6;
+			print_unicode_error(vformat("Invalid unicode codepoint (%x)", c));
+		}
+		else {
+			ch_w = 1;
+			print_unicode_error(
+				vformat("Invalid unicode codepoint (%x), cannot represent as UTF-8", c), true);
+		}
+		fl += ch_w;
+		if (map_ptr) {
+			map_ptr[i] = ch_w;
+		}
+	}
+
+	CharString utf8s;
+	if (fl == 0) {
+		return utf8s;
+	}
+
+	utf8s.resize_uninitialized(fl + 1);
+	uint8_t* cdst = (uint8_t*)utf8s.get_data();
+
+#define APPEND_CHAR(m_c) *(cdst++) = m_c
+
+	for (int i = 0; i < l; i++) {
+		uint32_t c = d[i];
+
+		if (c <= 0x7f) { // 7 bits.
+			APPEND_CHAR(c);
+		}
+		else if (c <= 0x7ff) {							  // 11 bits
+			APPEND_CHAR(uint32_t(0xc0 | ((c >> 6) & 0x1f)));  // Top 5 bits.
+			APPEND_CHAR(uint32_t(0x80 | (c & 0x3f)));		  // Bottom 6 bits.
+		}
+		else if (c <= 0xffff) {							  // 16 bits
+			APPEND_CHAR(uint32_t(0xe0 | ((c >> 12) & 0x0f))); // Top 4 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 6) & 0x3f)));  // Middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | (c & 0x3f)));		  // Bottom 6 bits.
+		}
+		else if (c <= 0x001fffff) {						  // 21 bits
+			APPEND_CHAR(uint32_t(0xf0 | ((c >> 18) & 0x07))); // Top 3 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 12) & 0x3f))); // Upper middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 6) & 0x3f)));  // Lower middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | (c & 0x3f)));		  // Bottom 6 bits.
+		}
+		else if (c <= 0x03ffffff) {						  // 26 bits
+			APPEND_CHAR(uint32_t(0xf8 | ((c >> 24) & 0x03))); // Top 2 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 18) & 0x3f))); // Upper middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 12) & 0x3f))); // middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 6) & 0x3f)));  // Lower middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | (c & 0x3f)));		  // Bottom 6 bits.
+		}
+		else if (c <= 0x7fffffff) {						  // 31 bits
+			APPEND_CHAR(uint32_t(0xfc | ((c >> 30) & 0x01))); // Top 1 bit.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 24) & 0x3f))); // Upper upper middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 18) & 0x3f))); // Lower upper middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 12) & 0x3f))); // Upper lower middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((c >> 6) & 0x3f)));  // Lower lower middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | (c & 0x3f)));		  // Bottom 6 bits.
+		}
+		else {
+			// the string is a valid UTF32, so it should never happen ...
+			print_unicode_error(vformat("Non scalar value (%x)", c), true);
+			APPEND_CHAR(uint32_t(0xe0 | ((_replacement_char >> 12) & 0x0f))); // Top 4 bits.
+			APPEND_CHAR(uint32_t(0x80 | ((_replacement_char >> 6) & 0x3f)));  // Middle 6 bits.
+			APPEND_CHAR(uint32_t(0x80 | (_replacement_char & 0x3f)));		  // Bottom 6 bits.
+		}
+	}
+#undef APPEND_CHAR
+	*cdst = 0; // trailing zero
+
+	return utf8s;
+}
+
+Error String::append_utf16(const char16_t* p_utf16, int p_len, bool p_default_little_endian)
+{
+	if (!p_utf16) {
+		return ERR_INVALID_DATA;
+	}
+
+	int cstr_size = 0;
+	int str_size = 0;
+
+	bool byteswap = !p_default_little_endian;
+	/* HANDLE BOM (Byte Order Mark) */
+	if (p_len < 0 || p_len >= 1) {
+		bool has_bom = false;
+		if (uint16_t(p_utf16[0]) == 0xfeff) { // correct BOM, read as is
+			has_bom = true;
+			byteswap = false;
+		}
+		else if (uint16_t(p_utf16[0]) == 0xfffe) { // backwards BOM, swap bytes
+			has_bom = true;
+			byteswap = true;
+		}
+		if (has_bom) {
+			if (p_len >= 0) {
+				p_len -= 1;
+			}
+			p_utf16 += 1;
+		}
+	}
+
+	bool decode_error = false;
+	{
+		const char16_t* ptrtmp = p_utf16;
+		const char16_t* ptrtmp_limit = p_len >= 0 ? &p_utf16[p_len] : nullptr;
+		uint32_t c_prev = 0;
+		bool skip = false;
+		while (ptrtmp != ptrtmp_limit && *ptrtmp) {
+			uint32_t c = (byteswap) ? BSWAP16(*ptrtmp) : *ptrtmp;
+
+			if ((c & 0xfffffc00) == 0xd800) { // lead surrogate
+				if (skip) {
+					print_unicode_error(
+						vformat("Unpaired lead surrogate (%x [trail?] %x)", c_prev, c));
+					decode_error = true;
+				}
+				skip = true;
+			}
+			else if ((c & 0xfffffc00) == 0xdc00) { // trail surrogate
+				if (skip) {
+					str_size--;
+				}
+				else {
+					print_unicode_error(
+						vformat("Unpaired trail surrogate (%x [lead?] %x)", c_prev, c));
+					decode_error = true;
+				}
+				skip = false;
+			}
+			else {
+				skip = false;
+			}
+
+			c_prev = c;
+			str_size++;
+			cstr_size++;
+			ptrtmp++;
+		}
+
+		if (skip) {
+			print_unicode_error(vformat("Unpaired lead surrogate (%x [eol])", c_prev));
+			decode_error = true;
+		}
+	}
+
+	if (str_size == 0) {
+		clear();
+		return OK; // empty string
+	}
+
+	const int prev_length = length();
+	resize_uninitialized(prev_length + str_size + 1);
+	char32_t* dst = ptrw() + prev_length;
+	dst[str_size] = 0;
+
+	bool skip = false;
+	uint32_t c_prev = 0;
+	while (cstr_size) {
+		uint32_t c = (byteswap) ? BSWAP16(*p_utf16) : *p_utf16;
+
+		if ((c & 0xfffffc00) == 0xd800) { // lead surrogate
+			if (skip) {
+				*(dst++) = c_prev; // unpaired, store as is
+			}
+			skip = true;
+		}
+		else if ((c & 0xfffffc00) == 0xdc00) { // trail surrogate
+			if (skip) {
+				*(dst++) =
+					(c_prev << 10UL) + c - ((0xd800 << 10UL) + 0xdc00 - 0x10000); // decode pair
+			}
+			else {
+				*(dst++) = c; // unpaired, store as is
+			}
+			skip = false;
+		}
+		else {
+			*(dst++) = c;
+			skip = false;
+		}
+
+		cstr_size--;
+		p_utf16++;
+		c_prev = c;
+	}
+
+	if (skip) {
+		*(dst++) = c_prev;
+	}
+
+	if (decode_error) {
+		return ERR_PARSE_ERROR;
+	}
+	else {
+		return OK;
+	}
+}
+
+Char16String String::utf16() const
+{
+	int l = length();
+	if (!l) {
+		return Char16String();
+	}
+
+	const char32_t* d = &operator[](0);
+	int fl = 0;
+	for (int i = 0; i < l; i++) {
+		uint32_t c = d[i];
+		if (c <= 0xffff) { // 16 bits.
+			fl += 1;
+			if ((c & 0xfffff800) == 0xd800) {
+				print_unicode_error(vformat("Unpaired surrogate (%x)", c));
+			}
+		}
+		else if (c <= 0x10ffff) { // 32 bits.
+			fl += 2;
+		}
+		else {
+			print_unicode_error(
+				vformat("Invalid unicode codepoint (%x), cannot represent as UTF-16", c), true);
+			fl += 1;
+		}
+	}
+
+	Char16String utf16s;
+	if (fl == 0) {
+		return utf16s;
+	}
+
+	utf16s.resize_uninitialized(fl + 1);
+	uint16_t* cdst = (uint16_t*)utf16s.get_data();
+
+#define APPEND_CHAR(m_c) *(cdst++) = m_c
+
+	for (int i = 0; i < l; i++) {
+		uint32_t c = d[i];
+
+		if (c <= 0xffff) { // 16 bits.
+			APPEND_CHAR(c);
+		}
+		else if (c <= 0x10ffff) {						 // 32 bits.
+			APPEND_CHAR(uint32_t((c >> 10) + 0xd7c0));	 // lead surrogate.
+			APPEND_CHAR(uint32_t((c & 0x3ff) | 0xdc00)); // trail surrogate.
+		}
+		else {
+			// the string is a valid UTF32, so it should never happen ...
+			APPEND_CHAR(uint32_t((_replacement_char >> 10) + 0xd7c0));
+			APPEND_CHAR(uint32_t((_replacement_char & 0x3ff) | 0xdc00));
+		}
+	}
+#undef APPEND_CHAR
+	*cdst = 0; // trailing zero
+
+	return utf16s;
+}
+
+int64_t String::hex_to_int() const
+{
+	int len = length();
+	if (len == 0) {
+		return 0;
+	}
+
+	const char32_t* s = ptr();
+
+	int64_t sign = s[0] == '-' ? -1 : 1;
+
+	if (sign < 0) {
+		s++;
+	}
+
+	if (len > 2 && s[0] == '0' && lower_case(s[1]) == 'x') {
+		s += 2;
+	}
+
+	int64_t hex = 0;
+
+	while (*s) {
+		char32_t c = lower_case(*s);
+		int64_t n;
+		if (is_digit(c)) {
+			n = c - '0';
+		}
+		else if (c >= 'a' && c <= 'f') {
+			n = (c - 'a') + 10;
+		}
+		else {
+			ERR_FAIL_V_MSG(0,
+				vformat(R"(Invalid hexadecimal notation character "%c" (U+%04X) in string "%s".)",
+					*s, static_cast<int32_t>(*s), *this));
+		}
+		// Check for overflow/underflow, with special case to ensure INT64_MIN does not result in
+		// error
+		bool overflow = ((hex > INT64_MAX / 16) &&
+							(sign == 1 || (sign == -1 && hex != (INT64_MAX >> 4) + 1))) ||
+						(sign == -1 && hex == (INT64_MAX >> 4) + 1 && c > '0');
+		ERR_FAIL_COND_V_MSG(overflow, sign == 1 ? INT64_MAX : INT64_MIN,
+			"Cannot represent " + *this + " as a 64-bit signed integer, since the value is " +
+				(sign == 1 ? "too large." : "too small."));
+		hex *= 16;
+		hex += n;
+		s++;
+	}
+
+	return hex * sign;
+}
+
+int64_t String::bin_to_int() const
+{
+	int len = length();
+	if (len == 0) {
+		return 0;
+	}
+
+	const char32_t* s = ptr();
+
+	int64_t sign = s[0] == '-' ? -1 : 1;
+
+	if (sign < 0) {
+		s++;
+	}
+
+	if (len > 2 && s[0] == '0' && lower_case(s[1]) == 'b') {
+		s += 2;
+	}
+
+	int64_t binary = 0;
+
+	while (*s) {
+		char32_t c = lower_case(*s);
+		int64_t n;
+		if (c == '0' || c == '1') {
+			n = c - '0';
+		}
+		else {
+			return 0;
+		}
+		// Check for overflow/underflow, with special case to ensure INT64_MIN does not result in
+		// error
+		bool overflow = ((binary > INT64_MAX / 2) &&
+							(sign == 1 || (sign == -1 && binary != (INT64_MAX >> 1) + 1))) ||
+						(sign == -1 && binary == (INT64_MAX >> 1) + 1 && c > '0');
+		ERR_FAIL_COND_V_MSG(overflow, sign == 1 ? INT64_MAX : INT64_MIN,
+			"Cannot represent " + *this + " as a 64-bit signed integer, since the value is " +
+				(sign == 1 ? "too large." : "too small."));
+		binary *= 2;
+		binary += n;
+		s++;
+	}
+
+	return binary * sign;
+}
+
+template <typename C, typename T> _ALWAYS_INLINE_ int64_t _to_int(const T& p_in, int p_to)
+{
+	// Accumulate the total number in an unsigned integer as the range is:
+	// +9223372036854775807 to -9223372036854775808 and the smallest negative
+	// number does not fit inside an int64_t. So we accumulate the positive
+	// number in an unsigned, and then at the very end convert to its signed
+	// form.
+	uint64_t integer = 0;
+	uint8_t digits = 0;
+	bool positive = true;
+
+	for (int i = 0; i < p_to; i++) {
+		C c = p_in[i];
+		if (is_digit(c)) {
+			// No need to do expensive checks unless we're approaching INT64_MAX / INT64_MIN.
+			if (unlikely(digits > 18)) {
+				bool overflow = (integer > INT64_MAX / 10) ||
+								(integer == INT64_MAX / 10 &&
+									((positive && c > '7') || (!positive && c > '8')));
+				ERR_FAIL_COND_V_MSG(overflow, positive ? INT64_MAX : INT64_MIN,
+					"Cannot represent " + String(p_in) +
+						" as a 64-bit signed integer, since the value is " +
+						(positive ? "too large." : "too small."));
+			}
+
+			integer *= 10;
+			integer += c - '0';
+			++digits;
+
+		}
+		else if (integer == 0 && c == '-') {
+			positive = !positive;
+		}
+	}
+
+	if (positive) {
+		return int64_t(integer);
+	}
+	else {
+		return int64_t(integer * uint64_t(-1));
+	}
+}
+
+int64_t String::to_int() const
+{
+	if (length() == 0) {
+		return 0;
+	}
+
+	int to = (find_char('.') >= 0) ? find_char('.') : length();
+
+	return _to_int<char32_t>(*this, to);
+}
+
+int64_t String::to_int(const char* p_str, int p_len)
+{
+	int to = 0;
+	if (p_len >= 0) {
+		to = p_len;
+	}
+	else {
+		while (p_str[to] != 0 && p_str[to] != '.') {
+			to++;
+		}
+	}
+
+	return _to_int<char>(p_str, to);
+}
+
+int64_t String::to_int(const wchar_t* p_str, int p_len)
+{
+	int to = 0;
+	if (p_len >= 0) {
+		to = p_len;
+	}
+	else {
+		while (p_str[to] != 0 && p_str[to] != '.') {
+			to++;
+		}
+	}
+
+	return _to_int<wchar_t>(p_str, to);
+}
+
+bool String::is_numeric() const
+{
+	if (length() == 0) {
+		return false;
+	}
+
+	int s = 0;
+	if (operator[](0) == '-') {
+		++s;
+	}
+	bool dot = false;
+	for (int i = s; i < length(); i++) {
+		char32_t c = operator[](i);
+		if (c == '.') {
+			if (dot) {
+				return false;
+			}
+			dot = true;
+		}
+		else if (!is_digit(c)) {
+			return false;
+		}
+	}
+
+	return true; // TODO: Use the parser below for this instead
+}
+
+template <typename C>
+static double built_in_strtod(
+	/* A decimal ASCII floating-point number,
+	 * optionally preceded by white space. Must
+	 * have form "-I.FE-X", where I is the integer
+	 * part of the mantissa, F is the fractional
+	 * part of the mantissa, and X is the
+	 * exponent. Either of the signs may be "+",
+	 * "-", or omitted. Either I or F may be
+	 * omitted, or both. The decimal point isn't
+	 * necessary unless F is present. The "E" may
+	 * actually be an "e". E and X may both be
+	 * omitted (but not just one). */
+	const C* p_string,
+	/* If non-nullptr, store terminating Cacter's
+	 * address here. */
+	C** r_end = nullptr)
+{
+	/* Largest possible base 10 exponent. Any
+	 * exponent larger than this will already
+	 * produce underflow or overflow, so there's
+	 * no need to worry about additional digits. */
+	static const int maxExponent = 511;
+	/* Table giving binary powers of 10. Entry
+	 * is 10^2^i. Used to convert decimal
+	 * exponents into floating-point numbers. */
+	static const double powersOf10[] = {
+		10., 100., 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256};
+
+	bool sign, expSign = false;
+	double fraction, dblExp;
+	const double* d;
+	const C* p;
+	int c;
+	/* Exponent read from "EX" field. */
+	int exp = 0;
+	/* Exponent that derives from the fractional
+	 * part. Under normal circumstances, it is
+	 * the negative of the number of digits in F.
+	 * However, if I is very long, the last digits
+	 * of I get dropped (otherwise a long I with a
+	 * large negative exponent could cause an
+	 * unnecessary overflow on I alone). In this
+	 * case, fracExp is incremented one for each
+	 * dropped digit. */
+	int fracExp = 0;
+	/* Number of digits in mantissa. */
+	int mantSize;
+	/* Number of mantissa digits BEFORE decimal point. */
+	int decPt;
+	/* Temporarily holds location of exponent in string. */
+	const C* pExp;
+
+	/*
+	 * Strip off leading blanks and check for a sign.
+	 */
+
+	p = p_string;
+	while (*p == ' ' || *p == '\t' || *p == '\n') {
+		p += 1;
+	}
+	if (*p == '-') {
+		sign = true;
+		p += 1;
+	}
+	else {
+		if (*p == '+') {
+			p += 1;
+		}
+		sign = false;
+	}
+
+	/*
+	 * Count the number of digits in the mantissa (including the decimal
+	 * point), and also locate the decimal point.
+	 */
+
+	decPt = -1;
+	for (mantSize = 0;; mantSize += 1) {
+		c = *p;
+		if (!is_digit(c)) {
+			if ((c != '.') || (decPt >= 0)) {
+				break;
+			}
+			decPt = mantSize;
+		}
+		p += 1;
+	}
+
+	/*
+	 * Now suck up the digits in the mantissa. Use two integers to collect 9
+	 * digits each (this is faster than using floating-point). If the mantissa
+	 * has more than 18 digits, ignore the extras, since they can't affect the
+	 * value anyway.
+	 */
+
+	pExp = p;
+	p -= mantSize;
+	if (decPt < 0) {
+		decPt = mantSize;
+	}
+	else {
+		mantSize -= 1; /* One of the digits was the point. */
+	}
+	if (mantSize > 18) {
+		fracExp = decPt - 18;
+		mantSize = 18;
+	}
+	else {
+		fracExp = decPt - mantSize;
+	}
+	if (mantSize == 0) {
+		fraction = 0.0;
+		p = p_string;
+		goto done;
+	}
+	else {
+		int frac1, frac2;
+
+		frac1 = 0;
+		for (; mantSize > 9; mantSize -= 1) {
+			c = *p;
+			p += 1;
+			if (c == '.') {
+				c = *p;
+				p += 1;
+			}
+			frac1 = 10 * frac1 + (c - '0');
+		}
+		frac2 = 0;
+		for (; mantSize > 0; mantSize -= 1) {
+			c = *p;
+			p += 1;
+			if (c == '.') {
+				c = *p;
+				p += 1;
+			}
+			frac2 = 10 * frac2 + (c - '0');
+		}
+		fraction = (1.0e9 * frac1) + frac2;
+	}
+
+	/*
+	 * Skim off the exponent.
+	 */
+
+	p = pExp;
+	if ((*p == 'E') || (*p == 'e')) {
+		p += 1;
+		if (*p == '-') {
+			expSign = true;
+			p += 1;
+		}
+		else {
+			if (*p == '+') {
+				p += 1;
+			}
+			expSign = false;
+		}
+		if (!is_digit(char32_t(*p))) {
+			p = pExp;
+			goto done;
+		}
+		while (is_digit(char32_t(*p))) {
+			exp = exp * 10 + (*p - '0');
+			p += 1;
+		}
+	}
+	if (expSign) {
+		exp = fracExp - exp;
+	}
+	else {
+		exp = fracExp + exp;
+	}
+
+	/*
+	 * Generate a floating-point number that represents the exponent. Do this
+	 * by processing the exponent one bit at a time to combine many powers of
+	 * 2 of 10. Then combine the exponent with the fraction.
+	 */
+
+	if (exp < 0) {
+		expSign = true;
+		exp = -exp;
+	}
+	else {
+		expSign = false;
+	}
+
+	if (exp > maxExponent) {
+		exp = maxExponent;
+		WARN_PRINT("Exponent too high");
+	}
+	dblExp = 1.0;
+	for (d = powersOf10; exp != 0; exp >>= 1, ++d) {
+		if (exp & 01) {
+			dblExp *= *d;
+		}
+	}
+	if (expSign) {
+		fraction /= dblExp;
+	}
+	else {
+		fraction *= dblExp;
+	}
+
+done:
+	if (r_end != nullptr) {
+		*r_end = (C*)p;
+	}
+
+	if (sign) {
+		return -fraction;
+	}
+	return fraction;
+}
+
+#define READING_SIGN 0
+#define READING_INT 1
+#define READING_DEC 2
+#define READING_EXP 3
+#define READING_DONE 4
+
+double String::to_float(const char* p_str) { return built_in_strtod<char>(p_str); }
+
+double String::to_float(const char32_t* p_str, const char32_t** r_end)
+{
+	return built_in_strtod<char32_t>(p_str, (char32_t**)r_end);
+}
+
+double String::to_float(const wchar_t* p_str, const wchar_t** r_end)
+{
+	return built_in_strtod<wchar_t>(p_str, (wchar_t**)r_end);
+}
+
+uint32_t String::num_characters(int64_t p_int)
+{
+	int r = 1;
+	if (p_int < 0) {
+		r += 1;
+		if (p_int == INT64_MIN) {
+			p_int = INT64_MAX;
+		}
+		else {
+			p_int = -p_int;
+		}
+	}
+	while (p_int >= 10) {
+		p_int /= 10;
+		r++;
+	}
+	return r;
+}
+
+int64_t String::to_int(const char32_t* p_str, int p_len, bool p_clamp)
+{
+	if (p_len == 0 || !p_str[0]) {
+		return 0;
+	}
+	///@todo make more exact so saving and loading does not lose precision
+
+	int64_t integer = 0;
+	int64_t sign = 1;
+	int reading = READING_SIGN;
+
+	const char32_t* str = p_str;
+	const char32_t* limit = &p_str[p_len];
+
+	while (*str && reading != READING_DONE && str != limit) {
+		char32_t c = *(str++);
+		switch (reading) {
+		case READING_SIGN: {
+			if (is_digit(c)) {
+				reading = READING_INT;
+				// let it fallthrough
+			}
+			else if (c == '-') {
+				sign = -1;
+				reading = READING_INT;
+				break;
+			}
+			else if (c == '+') {
+				sign = 1;
+				reading = READING_INT;
+				break;
+			}
+			else {
+				break;
+			}
+			[[fallthrough]];
+		}
+		case READING_INT: {
+			if (is_digit(c)) {
+				if (integer > INT64_MAX / 10) {
+					String number("");
+					str = p_str;
+					while (*str && str != limit) {
+						number += *(str++);
+					}
+					if (p_clamp) {
+						if (sign == 1) {
+							return INT64_MAX;
+						}
+						else {
+							return INT64_MIN;
+						}
+					}
+					else {
+						ERR_FAIL_V_MSG(sign == 1 ? INT64_MAX : INT64_MIN,
+							"Cannot represent " + number +
+								" as a 64-bit signed integer, since the value is " +
+								(sign == 1 ? "too large." : "too small."));
+					}
+				}
+				integer *= 10;
+				integer += c - '0';
+			}
+			else {
+				reading = READING_DONE;
+			}
+
+		} break;
+		}
+	}
+
+	return sign * integer;
+}
+
+double String::to_float() const
+{
+	if (is_empty()) {
+		return 0;
+	}
+	return built_in_strtod<char32_t>(get_data());
+}
+
+uint32_t String::hash(const char* p_cstr)
+{
+	// static_cast: avoid negative values on platforms where char is signed.
+	uint32_t hashv = 5381;
+	uint32_t c = static_cast<uint8_t>(*p_cstr++);
+
+	while (c) {
+		hashv = ((hashv << 5) + hashv) + c; /* hash * 33 + c */
+		c = static_cast<uint8_t>(*p_cstr++);
+	}
+
+	return hashv;
+}
+
+uint32_t String::hash(const char* p_cstr, int p_len)
+{
+	uint32_t hashv = 5381;
+	for (int i = 0; i < p_len; i++) {
+		// static_cast: avoid negative values on platforms where char is signed.
+		hashv = ((hashv << 5) + hashv) + static_cast<uint8_t>(p_cstr[i]); /* hash * 33 + c */
+	}
+
+	return hashv;
+}
+
+uint32_t String::hash(const wchar_t* p_cstr, int p_len)
+{
+	// Avoid negative values on platforms where wchar_t is signed. Account for different sizes.
+	using wide_unsigned = std::conditional<sizeof(wchar_t) == 2, uint16_t, uint32_t>::type;
+
+	uint32_t hashv = 5381;
+	for (int i = 0; i < p_len; i++) {
+		hashv = ((hashv << 5) + hashv) + static_cast<wide_unsigned>(p_cstr[i]); /* hash * 33 + c */
+	}
+
+	return hashv;
+}
+
+uint32_t String::hash(const wchar_t* p_cstr)
+{
+	// Avoid negative values on platforms where wchar_t is signed. Account for different sizes.
+	using wide_unsigned = std::conditional<sizeof(wchar_t) == 2, uint16_t, uint32_t>::type;
+
+	uint32_t hashv = 5381;
+	uint32_t c = static_cast<wide_unsigned>(*p_cstr++);
+
+	while (c) {
+		hashv = ((hashv << 5) + hashv) + c; /* hash * 33 + c */
+		c = static_cast<wide_unsigned>(*p_cstr++);
+	}
+
+	return hashv;
+}
+
+uint32_t String::hash(const char32_t* p_cstr, int p_len)
+{
+	uint32_t hashv = 5381;
+	for (int i = 0; i < p_len; i++) {
+		hashv = ((hashv << 5) + hashv) + p_cstr[i]; /* hash * 33 + c */
+	}
+
+	return hashv;
+}
+
+uint32_t String::hash(const char32_t* p_cstr)
+{
+	uint32_t hashv = 5381;
+	uint32_t c = *p_cstr++;
+
+	while (c) {
+		hashv = ((hashv << 5) + hashv) + c; /* hash * 33 + c */
+		c = *p_cstr++;
+	}
+
+	return hashv;
+}
+
+uint32_t String::hash() const
+{
+	/* simple djb2 hashing */
+
+	const char32_t* chr = get_data();
+	uint32_t hashv = 5381;
+	uint32_t c = *chr++;
+
+	while (c) {
+		hashv = ((hashv << 5) + hashv) + c; /* hash * 33 + c */
+		c = *chr++;
+	}
+
+	return hashv;
+}
+
+uint64_t String::hash64() const
+{
+	/* simple djb2 hashing */
+
+	const char32_t* chr = get_data();
+	uint64_t hashv = 5381;
+	uint64_t c = *chr++;
+
+	while (c) {
+		hashv = ((hashv << 5) + hashv) + c; /* hash * 33 + c */
+		c = *chr++;
+	}
+
+	return hashv;
+}
+
+String String::md5_text() const
+{
+	CharString cs = utf8();
+	unsigned char hash[16];
+	CryptoCore::md5((unsigned char*)cs.ptr(), cs.length(), hash);
+	return String::hex_encode_buffer(hash, 16);
+}
+
+String String::sha1_text() const
+{
+	CharString cs = utf8();
+	unsigned char hash[20];
+	CryptoCore::sha1((unsigned char*)cs.ptr(), cs.length(), hash);
+	return String::hex_encode_buffer(hash, 20);
+}
+
+String String::sha256_text() const
+{
+	CharString cs = utf8();
+	unsigned char hash[32];
+	CryptoCore::sha256((unsigned char*)cs.ptr(), cs.length(), hash);
+	return String::hex_encode_buffer(hash, 32);
+}
+
+Vector<uint8_t> String::md5_buffer() const
+{
+	CharString cs = utf8();
+	unsigned char hash[16];
+	CryptoCore::md5((unsigned char*)cs.ptr(), cs.length(), hash);
+
+	Vector<uint8_t> ret;
+	ret.resize_uninitialized(16);
+	uint8_t* ret_ptrw = ret.ptrw();
+	for (int i = 0; i < 16; i++) {
+		ret_ptrw[i] = hash[i];
+	}
+	return ret;
+}
+
+Vector<uint8_t> String::sha1_buffer() const
+{
+	CharString cs = utf8();
+	unsigned char hash[20];
+	CryptoCore::sha1((unsigned char*)cs.ptr(), cs.length(), hash);
+
+	Vector<uint8_t> ret;
+	ret.resize_uninitialized(20);
+	uint8_t* ret_ptrw = ret.ptrw();
+	for (int i = 0; i < 20; i++) {
+		ret_ptrw[i] = hash[i];
+	}
+
+	return ret;
+}
+
+Vector<uint8_t> String::sha256_buffer() const
+{
+	CharString cs = utf8();
+	unsigned char hash[32];
+	CryptoCore::sha256((unsigned char*)cs.ptr(), cs.length(), hash);
+
+	Vector<uint8_t> ret;
+	ret.resize_uninitialized(32);
+	uint8_t* ret_ptrw = ret.ptrw();
+	for (int i = 0; i < 32; i++) {
+		ret_ptrw[i] = hash[i];
+	}
+	return ret;
+}
+
+String String::insert(int p_at_pos, const String& p_string) const
+{
+	if (p_string.is_empty() || p_at_pos < 0) {
+		return *this;
+	}
+
+	if (p_at_pos > length()) {
+		p_at_pos = length();
+	}
+
+	String ret;
+	ret.resize_uninitialized(length() + p_string.length() + 1);
+	char32_t* ret_ptrw = ret.ptrw();
+	const char32_t* this_ptr = ptr();
+
+	if (p_at_pos > 0) {
+		memcpy(ret_ptrw, this_ptr, p_at_pos * sizeof(char32_t));
+		ret_ptrw += p_at_pos;
+	}
+
+	memcpy(ret_ptrw, p_string.ptr(), p_string.length() * sizeof(char32_t));
+	ret_ptrw += p_string.length();
+
+	if (p_at_pos < length()) {
+		memcpy(ret_ptrw, this_ptr + p_at_pos, (length() - p_at_pos) * sizeof(char32_t));
+		ret_ptrw += length() - p_at_pos;
+	}
+
+	*ret_ptrw = 0;
+
+	return ret;
+}
+
+String String::erase(int p_pos, int p_chars) const
+{
+	ERR_FAIL_COND_V_MSG(p_pos < 0, "",
+		vformat("Invalid starting position for `String.erase()`: %d. Starting position must be "
+				"positive or zero.",
+			p_pos));
+	ERR_FAIL_COND_V_MSG(p_chars < 0, "",
+		vformat("Invalid character count for `String.erase()`: %d. Character count must be "
+				"positive or zero.",
+			p_chars));
+	return left(p_pos) + substr(p_pos + p_chars);
+}
+
+template <class T> static bool _contains_char(char32_t p_c, const T* p_chars, int p_chars_len)
+{
+	for (int i = 0; i < p_chars_len; ++i) {
+		if (p_c == (char32_t)p_chars[i]) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+String String::remove_char(char32_t p_char) const
+{
+	if (p_char == 0) {
+		return *this;
+	}
+
+	int len = length();
+	if (len == 0) {
+		return *this;
+	}
+
+	int index = 0;
+	const char32_t* old_ptr = ptr();
+	for (; index < len; ++index) {
+		if (old_ptr[index] == p_char) {
+			break;
+		}
+	}
+
+	// If no occurrence of `char` was found, return this.
+	if (index == len) {
+		return *this;
+	}
+
+	// If we found at least one occurrence of `char`, create new string, allocating enough space for
+	// the current length minus one.
+	String new_string;
+	new_string.resize_uninitialized(len);
+	char32_t* new_ptr = new_string.ptrw();
+
+	// Copy part of input before `char`.
+	memcpy(new_ptr, old_ptr, index * sizeof(char32_t));
+
+	int new_size = index;
+
+	// Copy rest, skipping `char`.
+	for (++index; index < len; ++index) {
+		const char32_t old_char = old_ptr[index];
+		if (old_char != p_char) {
+			new_ptr[new_size] = old_char;
+			++new_size;
+		}
+	}
+
+	new_ptr[new_size] = _null;
+
+	// Shrink new string to fit.
+	new_string.resize_uninitialized(new_size + 1);
+
+	return new_string;
+}
+
+template <class T>
+static String _remove_chars_common(const String& p_this, const T* p_chars, int p_chars_len)
+{
+	// Delegate if p_chars has a single element.
+	if (p_chars_len == 1) {
+		return p_this.remove_char(*p_chars);
+	}
+	else if (p_chars_len == 0) {
+		return p_this;
+	}
+
+	int len = p_this.length();
+
+	if (len == 0) {
+		return p_this;
+	}
+
+	int index = 0;
+	const char32_t* old_ptr = p_this.ptr();
+	for (; index < len; ++index) {
+		if (_contains_char(old_ptr[index], p_chars, p_chars_len)) {
+			break;
+		}
+	}
+
+	// If no occurrence of `chars` was found, return this.
+	if (index == len) {
+		return p_this;
+	}
+
+	// If we found at least one occurrence of `chars`, create new string, allocating enough space
+	// for the current length minus one.
+	String new_string;
+	new_string.resize_uninitialized(len);
+	char32_t* new_ptr = new_string.ptrw();
+
+	// Copy part of input before `char`.
+	memcpy(new_ptr, old_ptr, index * sizeof(char32_t));
+
+	int new_size = index;
+
+	// Copy rest, skipping `chars`.
+	for (++index; index < len; ++index) {
+		const char32_t old_char = old_ptr[index];
+		if (!_contains_char(old_char, p_chars, p_chars_len)) {
+			new_ptr[new_size] = old_char;
+			++new_size;
+		}
+	}
+
+	new_ptr[new_size] = 0;
+
+	// Shrink new string to fit.
+	new_string.resize_uninitialized(new_size + 1);
+
+	return new_string;
+}
+
+String String::remove_chars(const String& p_chars) const
+{
+	return _remove_chars_common(*this, p_chars.ptr(), p_chars.length());
+}
+
+String String::remove_chars(const char* p_chars) const
+{
+	return _remove_chars_common(*this, p_chars, strlen(p_chars));
+}
+
+String String::substr(int p_from, int p_chars) const
+{
+	if (p_chars == -1) {
+		p_chars = length() - p_from;
+	}
+
+	if (is_empty() || p_from < 0 || p_from >= length() || p_chars <= 0) {
+		return "";
+	}
+
+	if ((p_from + p_chars) > length()) {
+		p_chars = length() - p_from;
+	}
+
+	if (p_from == 0 && p_chars >= length()) {
+		return String(*this);
+	}
+
+	String s;
+	s.append_utf32_unchecked(Span(ptr() + p_from, p_chars));
+	return s;
+}
+
+int String::find(const String& p_str, int p_from) const
+{
+	const int str_len = p_str.length();
+	const int len = length();
+
+	if (p_from < 0) {
+		p_from = len - str_len + p_from + 1;
+	}
+	if (p_from < 0 || p_from > len - str_len || p_str.is_empty()) {
+		return -1; // Still out of bounds
+	}
+
+	if (p_str.length() == 1) {
+		// Optimize with single-char implementation.
+		return span().find(p_str[0], p_from);
+	}
+
+	return span().find_sequence(p_str.span(), p_from);
+}
+
+int String::find(const char* p_str, int p_from) const
+{
+	const int str_len = strlen(p_str);
+	const int len = length();
+
+	if (p_from < 0) {
+		p_from = len - str_len + p_from + 1;
+	}
+	if (p_from < 0 || p_from > len - str_len || str_len == 0) {
+		return -1; // Still out of bounds
+	}
+
+	if (str_len == 1) {
+		return find_char(*p_str, p_from); // Optimize with single-char find.
+	}
+
+	return span().find_sequence(Span((const unsigned char*)p_str, str_len), p_from);
+}
+
+int String::find_char(char32_t p_char, int p_from) const
+{
+	if (p_from < 0) {
+		p_from = length() + p_from;
+	}
+	if (p_from < 0 || p_from >= length()) {
+		return -1;
+	}
+	return span().find(p_char, p_from);
+}
+
+int String::findmk(const Vector<String>& p_keys, int p_from, int* r_key) const
+{
+	if (p_from < 0) {
+		return -1;
+	}
+	if (p_keys.is_empty()) {
+		return -1;
+	}
+
+	// int str_len=p_str.length();
+	const String* keys = &p_keys[0];
+	int key_count = p_keys.size();
+	int len = length();
+
+	if (len == 0) {
+		return -1; // won't find anything!
+	}
+
+	const char32_t* src = get_data();
+
+	for (int i = p_from; i < len; i++) {
+		for (int k = 0; k < key_count; k++) {
+			const int str_len = keys[k].length();
+
+			if (i + str_len > len) {
+				continue; // Can't find this key here.
+			}
+
+			const char32_t* str = keys[k].get_data();
+			if (are_spans_equal(src + i, str, str_len)) {
+				if (r_key) {
+					*r_key = k;
+				}
+				return i;
+			}
+		}
+	}
+
+	return -1;
+}
+
+int String::findn(const String& p_str, int p_from) const
+{
+	const int str_len = p_str.length();
+	const int len = length();
+
+	if (p_from < 0) {
+		p_from = len - str_len + p_from + 1;
+	}
+	if (p_from < 0 || p_from > len - str_len || p_str.is_empty()) {
+		return -1; // Still out of bounds
+	}
+
+	const char32_t* src = get_data();
+	const char32_t* str = p_str.get_data();
+
+	for (int i = p_from; i <= (len - str_len); i++) {
+		if (strings_equal_lower(src + i, str, str_len)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int String::findn(const char* p_str, int p_from) const
+{
+	const int str_len = strlen(p_str);
+	const int len = length();
+
+	if (p_from < 0) {
+		p_from = len - str_len + p_from + 1;
+	}
+	if (p_from < 0 || p_from > len - str_len || str_len == 0) {
+		return -1; // Still out of bounds
+	}
+
+	const char32_t* src = get_data();
+
+	for (int i = p_from; i <= (len - str_len); i++) {
+		if (strings_equal_lower(src + i, p_str, str_len)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int String::rfind(const String& p_str, int p_from) const
+{
+	const int str_len = p_str.length();
+	const int len = length();
+
+	if (p_from < 0) {
+		p_from = len - str_len + p_from + 1;
+	}
+	if (p_from < 0 || p_from > len - str_len || p_str.is_empty()) {
+		return -1; // Still out of bounds
+	}
+
+	if (p_str.length() == 1) {
+		// Optimize with single-char implementation.
+		return span().rfind(p_str[0], p_from);
+	}
+
+	return span().rfind_sequence(p_str.span(), p_from);
+}
+
+int String::rfind(const char* p_str, int p_from) const
+{
+	const int str_len = strlen(p_str);
+	const int len = length();
+
+	if (p_from < 0) {
+		p_from = len - str_len + p_from + 1;
+	}
+	if (p_from < 0 || p_from > len - str_len || str_len == 0) {
+		return -1; // Still out of bounds
+	}
+
+	if (str_len == 1) {
+		// Optimize with single-char implementation.
+		return span().rfind(p_str[0], p_from);
+	}
+
+	return span().rfind_sequence(Span((const unsigned char*)p_str, str_len), p_from);
+}
+
+int String::rfind_char(char32_t p_char, int p_from) const
+{
+	if (p_from < 0) {
+		p_from = length() + p_from;
+	}
+	if (p_from < 0 || p_from >= length()) {
+		return -1;
+	}
+	return span().rfind(p_char, p_from);
+}
+
+int String::rfindn(const String& p_str, int p_from) const
+{
+	const int str_len = p_str.length();
+	const int len = length();
+
+	if (p_from < 0) {
+		p_from = len - str_len + p_from + 1;
+	}
+	if (p_from < 0 || p_from > len - str_len || p_str.is_empty()) {
+		return -1; // Still out of bounds
+	}
+
+	const char32_t* src = get_data();
+	const char32_t* str = p_str.get_data();
+
+	for (int i = p_from; i >= 0; i--) {
+		if (strings_equal_lower(src + i, str, str_len)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int String::rfindn(const char* p_str, int p_from) const
+{
+	const int str_len = strlen(p_str);
+	const int len = length();
+
+	if (p_from < 0) {
+		p_from = len - str_len + p_from + 1;
+	}
+	if (p_from < 0 || p_from > len - str_len || str_len == 0) {
+		return -1; // Still out of bounds
+	}
+
+	const char32_t* src = get_data();
+
+	for (int i = p_from; i >= 0; i--) {
+		if (strings_equal_lower(src + i, p_str, str_len)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+bool String::ends_with(const String& p_string) const
+{
+	const int l = p_string.length();
+	if (l > length()) {
+		return false;
+	}
+	if (l == 0) {
+		return true;
+	}
+
+	return memcmp(ptr() + (length() - l), p_string.ptr(), l * sizeof(char32_t)) == 0;
+}
+
+bool String::ends_with(const char* p_string) const
+{
+	if (!p_string) {
+		return false;
+	}
+
+	int l = strlen(p_string);
+	if (l > length()) {
+		return false;
+	}
+
+	if (l == 0) {
+		return true;
+	}
+
+	const char32_t* s = &operator[](length() - l);
+
+	for (int i = 0; i < l; i++) {
+		if (static_cast<char32_t>(p_string[i]) != s[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool String::begins_with(const String& p_string) const
+{
+	const int l = p_string.length();
+	if (l > length()) {
+		return false;
+	}
+	if (l == 0) {
+		return true;
+	}
+
+	return memcmp(ptr(), p_string.ptr(), l * sizeof(char32_t)) == 0;
+}
+
+bool String::begins_with(const char* p_string) const
+{
+	if (!p_string) {
+		return false;
+	}
+
+	int l = length();
+	if (l == 0) {
+		return *p_string == 0;
+	}
+
+	const char32_t* str = &operator[](0);
+	int i = 0;
+
+	while (*p_string && i < l) {
+		if ((char32_t)*p_string != str[i]) {
+			return false;
+		}
+		i++;
+		p_string++;
+	}
+
+	return *p_string == 0;
+}
+
+bool String::is_enclosed_in(const String& p_string) const
+{
+	return begins_with(p_string) && ends_with(p_string);
+}
+
+bool String::is_subsequence_of(const String& p_string) const
+{
+	return _base_is_subsequence_of(p_string, false);
+}
+
+bool String::is_subsequence_ofn(const String& p_string) const
+{
+	return _base_is_subsequence_of(p_string, true);
+}
+
+bool String::is_quoted() const { return is_enclosed_in("\"") || is_enclosed_in("'"); }
+
+bool String::is_lowercase() const
+{
+	for (const char32_t* str = &operator[](0); *str; str++) {
+		if (is_unicode_upper_case(*str)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+int String::_count(const String& p_string, int p_from, int p_to, bool p_case_insensitive) const
+{
+	if (p_string.is_empty()) {
+		return 0;
+	}
+	int len = length();
+	int slen = p_string.length();
+	if (len < slen) {
+		return 0;
+	}
+	String str;
+	if (p_from >= 0 && p_to >= 0) {
+		if (p_to == 0) {
+			p_to = len;
+		}
+		else if (p_from >= p_to) {
+			return 0;
+		}
+		if (p_from == 0 && p_to == len) {
+			str = *this;
+		}
+		else {
+			str = substr(p_from, p_to - p_from);
+		}
+	}
+	else {
+		return 0;
+	}
+	int c = 0;
+	int idx = 0;
+	while ((idx = p_case_insensitive ? str.findn(p_string, idx) : str.find(p_string, idx)) != -1) {
+		// Skip the occurrence itself.
+		idx += slen;
+		++c;
+	}
+	return c;
+}
+
+int String::_count(const char* p_string, int p_from, int p_to, bool p_case_insensitive) const
+{
+	int substring_length = strlen(p_string);
+	if (substring_length == 0) {
+		return 0;
+	}
+	const int source_length = length();
+
+	if (source_length < substring_length) {
+		return 0;
+	}
+	String str;
+	int search_limit = p_to;
+	if (p_from >= 0 && p_to >= 0) {
+		if (p_to == 0) {
+			search_limit = source_length;
+		}
+		else if (p_from >= p_to) {
+			return 0;
+		}
+		if (p_from == 0 && search_limit == source_length) {
+			str = *this;
+		}
+		else {
+			str = substr(p_from, search_limit - p_from);
+		}
+	}
+	else {
+		return 0;
+	}
+	int c = 0;
+	int idx = 0;
+	while ((idx = p_case_insensitive ? str.findn(p_string, idx) : str.find(p_string, idx)) != -1) {
+		// Skip the occurrence itself.
+		idx += substring_length;
+		++c;
+	}
+	return c;
+}
+
+int String::count(const String& p_string, int p_from, int p_to) const
+{
+	return _count(p_string, p_from, p_to, false);
+}
+
+int String::count(const char* p_string, int p_from, int p_to) const
+{
+	return _count(p_string, p_from, p_to, false);
+}
+
+int String::countn(const String& p_string, int p_from, int p_to) const
+{
+	return _count(p_string, p_from, p_to, true);
+}
+
+int String::countn(const char* p_string, int p_from, int p_to) const
+{
+	return _count(p_string, p_from, p_to, true);
+}
+
+bool String::_base_is_subsequence_of(const String& p_string, bool p_case_insensitive) const
+{
+	int len = length();
+	if (len == 0) {
+		// Technically an empty string is subsequence of any string
+		return true;
+	}
+
+	if (len > p_string.length()) {
+		return false;
+	}
+
+	const char32_t* src = &operator[](0);
+	const char32_t* tgt = &p_string[0];
+
+	for (; *src && *tgt; tgt++) {
+		bool match = false;
+		if (p_case_insensitive) {
+			char32_t srcc = _find_lower(*src);
+			char32_t tgtc = _find_lower(*tgt);
+			match = srcc == tgtc;
+		}
+		else {
+			match = *src == *tgt;
+		}
+		if (match) {
+			src++;
+			if (!*src) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+Vector<String> String::bigrams() const
+{
+	int n_pairs = length() - 1;
+	Vector<String> b;
+	if (n_pairs <= 0) {
+		return b;
+	}
+	b.resize_initialized(n_pairs);
+	String* b_ptrw = b.ptrw();
+	for (int i = 0; i < n_pairs; i++) {
+		b_ptrw[i] = substr(i, 2);
+	}
+	return b;
+}
+
+// Similarity according to Sorensen-Dice coefficient
+float String::similarity(const String& p_string) const
+{
+	if (operator==(p_string)) {
+		// Equal strings are totally similar
+		return 1.0f;
+	}
+	if (length() < 2 || p_string.length() < 2) {
+		// No way to calculate similarity without a single bigram
+		return 0.0f;
+	}
+
+	const int src_size = length() - 1;
+	const int tgt_size = p_string.length() - 1;
+
+	const int sum = src_size + tgt_size;
+	int inter = 0;
+	for (int i = 0; i < src_size; i++) {
+		const char32_t i0 = get(i);
+		const char32_t i1 = get(i + 1);
+
+		for (int j = 0; j < tgt_size; j++) {
+			if (i0 == p_string.get(j) && i1 == p_string.get(j + 1)) {
+				inter++;
+				break;
+			}
+		}
+	}
+
+	return (2.0f * inter) / sum;
+}
+
+static bool _wildcard_match(
+	const char32_t* p_pattern, const char32_t* p_string, bool p_case_sensitive)
+{
+	switch (*p_pattern) {
+	case '\0':
+		return !*p_string;
+	case '*':
+		return _wildcard_match(p_pattern + 1, p_string, p_case_sensitive) ||
+			   (*p_string && _wildcard_match(p_pattern, p_string + 1, p_case_sensitive));
+	case '?':
+		return *p_string && (*p_string != '.') &&
+			   _wildcard_match(p_pattern + 1, p_string + 1, p_case_sensitive);
+	default:
+
+		return (p_case_sensitive ? (*p_string == *p_pattern)
+								 : (_find_upper(*p_string) == _find_upper(*p_pattern))) &&
+			   _wildcard_match(p_pattern + 1, p_string + 1, p_case_sensitive);
+	}
+}
+
+bool String::match(const String& p_wildcard) const
+{
+	if (!p_wildcard.length() || !length()) {
+		return false;
+	}
+
+	return _wildcard_match(p_wildcard.get_data(), get_data(), true);
+}
+
+bool String::matchn(const String& p_wildcard) const
+{
+	if (!p_wildcard.length() || !length()) {
+		return false;
+	}
+	return _wildcard_match(p_wildcard.get_data(), get_data(), false);
+}
+
+static String _replace_common(
+	const String& p_this, const String& p_key, const String& p_with, bool p_case_insensitive)
+{
+	if (p_key.is_empty() || p_this.is_empty()) {
+		return p_this;
+	}
+
+	const size_t key_length = p_key.length();
+
+	int search_from = 0;
+	int result = 0;
+
+	LocalVector<int> found;
+
+	while ((result = (p_case_insensitive ? p_this.findn(p_key, search_from)
+										 : p_this.find(p_key, search_from))) >= 0) {
+		found.push_back(result);
+		ERR_FAIL_COND_V_MSG((result + key_length) > INT32_MAX, p_this, "Key length too long");
+		search_from = result + key_length;
+	}
+
+	if (found.is_empty()) {
+		return p_this;
+	}
+
+	String new_string;
+
+	const int with_length = p_with.length();
+	const int old_length = p_this.length();
+
+	new_string.resize_uninitialized(
+		old_length + int(found.size()) * (with_length - key_length) + 1);
+
+	char32_t* new_ptrw = new_string.ptrw();
+	const char32_t* old_ptr = p_this.ptr();
+	const char32_t* with_ptr = p_with.ptr();
+
+	int last_pos = 0;
+
+	for (const int& pos : found) {
+		if (last_pos != pos) {
+			memcpy(new_ptrw, old_ptr + last_pos, (pos - last_pos) * sizeof(char32_t));
+			new_ptrw += (pos - last_pos);
+		}
+		if (with_length) {
+			memcpy(new_ptrw, with_ptr, with_length * sizeof(char32_t));
+			new_ptrw += with_length;
+		}
+		last_pos = pos + key_length;
+	}
+
+	if (last_pos != old_length) {
+		memcpy(new_ptrw, old_ptr + last_pos, (old_length - last_pos) * sizeof(char32_t));
+		new_ptrw += old_length - last_pos;
+	}
+
+	*new_ptrw = 0;
+
+	return new_string;
+}
+
+static String _replace_common(
+	const String& p_this, const char* p_key, const char* p_with, bool p_case_insensitive)
+{
+	size_t key_length = strlen(p_key);
+
+	if (key_length == 0 || p_this.is_empty()) {
+		return p_this;
+	}
+
+	int search_from = 0;
+	int result = 0;
+
+	LocalVector<int> found;
+
+	while ((result = (p_case_insensitive ? p_this.findn(p_key, search_from)
+										 : p_this.find(p_key, search_from))) >= 0) {
+		found.push_back(result);
+		ERR_FAIL_COND_V_MSG((result + key_length) > INT32_MAX, p_this, "Key length too long");
+		search_from = result + key_length;
+	}
+
+	if (found.is_empty()) {
+		return p_this;
+	}
+
+	String new_string;
+
+	// Create string to speed up copying as we can't do `memcopy` between `char32_t` and `char`.
+	const String with_string(p_with);
+	const int with_length = with_string.length();
+	const int old_length = p_this.length();
+
+	new_string.resize_uninitialized(
+		old_length + int(found.size()) * (with_length - key_length) + 1);
+
+	char32_t* new_ptrw = new_string.ptrw();
+	const char32_t* old_ptr = p_this.ptr();
+	const char32_t* with_ptr = with_string.ptr();
+
+	int last_pos = 0;
+
+	for (const int& pos : found) {
+		if (last_pos != pos) {
+			memcpy(new_ptrw, old_ptr + last_pos, (pos - last_pos) * sizeof(char32_t));
+			new_ptrw += (pos - last_pos);
+		}
+		if (with_length) {
+			memcpy(new_ptrw, with_ptr, with_length * sizeof(char32_t));
+			new_ptrw += with_length;
+		}
+		last_pos = pos + key_length;
+	}
+
+	if (last_pos != old_length) {
+		memcpy(new_ptrw, old_ptr + last_pos, (old_length - last_pos) * sizeof(char32_t));
+		new_ptrw += old_length - last_pos;
+	}
+
+	*new_ptrw = 0;
+
+	return new_string;
+}
+
+String String::replace(const String& p_key, const String& p_with) const
+{
+	return _replace_common(*this, p_key, p_with, false);
+}
+
+String String::replace(const char* p_key, const char* p_with) const
+{
+	return _replace_common(*this, p_key, p_with, false);
+}
+
+String String::replace_first(const String& p_key, const String& p_with) const
+{
+	int pos = find(p_key);
+	if (pos >= 0) {
+		const int old_length = length();
+		const int key_length = p_key.length();
+		const int with_length = p_with.length();
+
+		String new_string;
+		new_string.resize_uninitialized(old_length + (with_length - key_length) + 1);
+
+		char32_t* new_ptrw = new_string.ptrw();
+		const char32_t* old_ptr = ptr();
+		const char32_t* with_ptr = p_with.ptr();
+
+		if (pos > 0) {
+			memcpy(new_ptrw, old_ptr, pos * sizeof(char32_t));
+			new_ptrw += pos;
+		}
+
+		if (with_length) {
+			memcpy(new_ptrw, with_ptr, with_length * sizeof(char32_t));
+			new_ptrw += with_length;
+		}
+		pos += key_length;
+
+		if (pos != old_length) {
+			memcpy(new_ptrw, old_ptr + pos, (old_length - pos) * sizeof(char32_t));
+			new_ptrw += (old_length - pos);
+		}
+
+		*new_ptrw = 0;
+
+		return new_string;
+	}
+
+	return *this;
+}
+
+String String::replace_first(const char* p_key, const char* p_with) const
+{
+	int pos = find(p_key);
+	if (pos >= 0) {
+		const int old_length = length();
+		const int key_length = strlen(p_key);
+		const int with_length = strlen(p_with);
+
+		String new_string;
+		new_string.resize_uninitialized(old_length + (with_length - key_length) + 1);
+
+		char32_t* new_ptrw = new_string.ptrw();
+		const char32_t* old_ptr = ptr();
+
+		if (pos > 0) {
+			memcpy(new_ptrw, old_ptr, pos * sizeof(char32_t));
+			new_ptrw += pos;
+		}
+
+		for (int i = 0; i < with_length; ++i) {
+			*new_ptrw++ = p_with[i];
+		}
+		pos += key_length;
+
+		if (pos != old_length) {
+			memcpy(new_ptrw, old_ptr + pos, (old_length - pos) * sizeof(char32_t));
+			new_ptrw += (old_length - pos);
+		}
+
+		*new_ptrw = 0;
+
+		return new_string;
+	}
+
+	return *this;
+}
+
+String String::replace_char(char32_t p_key, char32_t p_with) const
+{
+	ERR_FAIL_COND_V_MSG(p_with == 0, *this, "`with` must not be the NUL character.");
+
+	if (p_key == 0) {
+		return *this;
+	}
+
+	int len = length();
+	if (len == 0) {
+		return *this;
+	}
+
+	int index = 0;
+	const char32_t* old_ptr = ptr();
+	for (; index < len; ++index) {
+		if (old_ptr[index] == p_key) {
+			break;
+		}
+	}
+
+	// If no occurrence of `key` was found, return this.
+	if (index == len) {
+		return *this;
+	}
+
+	// If we found at least one occurrence of `key`, create new string.
+	String new_string;
+	new_string.resize_uninitialized(len + 1);
+	char32_t* new_ptr = new_string.ptrw();
+
+	// Copy part of input before `key`.
+	memcpy(new_ptr, old_ptr, index * sizeof(char32_t));
+
+	new_ptr[index] = p_with;
+
+	// Copy or replace rest of input.
+	for (++index; index < len; ++index) {
+		if (old_ptr[index] == p_key) {
+			new_ptr[index] = p_with;
+		}
+		else {
+			new_ptr[index] = old_ptr[index];
+		}
+	}
+
+	new_ptr[index] = _null;
+
+	return new_string;
+}
+
+template <class T>
+static String _replace_chars_common(
+	const String& p_this, const T* p_keys, int p_keys_len, char32_t p_with)
+{
+	ERR_FAIL_COND_V_MSG(p_with == 0, p_this, "`with` must not be the NUL character.");
+
+	// Delegate if p_keys is a single element.
+	if (p_keys_len == 1) {
+		return p_this.replace_char(*p_keys, p_with);
+	}
+	else if (p_keys_len == 0) {
+		return p_this;
+	}
+
+	int len = p_this.length();
+	if (len == 0) {
+		return p_this;
+	}
+
+	int index = 0;
+	const char32_t* old_ptr = p_this.ptr();
+	for (; index < len; ++index) {
+		if (_contains_char(old_ptr[index], p_keys, p_keys_len)) {
+			break;
+		}
+	}
+
+	// If no occurrence of `keys` was found, return this.
+	if (index == len) {
+		return p_this;
+	}
+
+	// If we found at least one occurrence of `keys`, create new string.
+	String new_string;
+	new_string.resize_uninitialized(len + 1);
+	char32_t* new_ptr = new_string.ptrw();
+
+	// Copy part of input before `key`.
+	memcpy(new_ptr, old_ptr, index * sizeof(char32_t));
+
+	new_ptr[index] = p_with;
+
+	// Copy or replace rest of input.
+	for (++index; index < len; ++index) {
+		const char32_t old_char = old_ptr[index];
+		if (_contains_char(old_char, p_keys, p_keys_len)) {
+			new_ptr[index] = p_with;
+		}
+		else {
+			new_ptr[index] = old_char;
+		}
+	}
+
+	new_ptr[index] = 0;
+
+	return new_string;
+}
+
+String String::replace_chars(const String& p_keys, char32_t p_with) const
+{
+	return _replace_chars_common(*this, p_keys.ptr(), p_keys.length(), p_with);
+}
+
+String String::replace_chars(const char* p_keys, char32_t p_with) const
+{
+	return _replace_chars_common(*this, p_keys, strlen(p_keys), p_with);
+}
+
+String String::replacen(const String& p_key, const String& p_with) const
+{
+	return _replace_common(*this, p_key, p_with, true);
+}
+
+String String::replacen(const char* p_key, const char* p_with) const
+{
+	return _replace_common(*this, p_key, p_with, true);
+}
+
+String String::repeat(int p_count) const
+{
+	ERR_FAIL_COND_V_MSG(p_count < 0, "", "Parameter count should be a positive number.");
+
+	if (p_count == 0) {
+		return "";
+	}
+
+	if (p_count == 1) {
+		return *this;
+	}
+
+	int len = length();
+	String new_string = *this;
+	new_string.resize_uninitialized(p_count * len + 1);
+
+	char32_t* dst = new_string.ptrw();
+	int offset = 1;
+	int stride = 1;
+	while (offset < p_count) {
+		memcpy(dst + offset * len, dst, stride * len * sizeof(char32_t));
+		offset += stride;
+		stride = MIN(stride * 2, p_count - offset);
+	}
+	dst[p_count * len] = _null;
+	return new_string;
+}
+
+String String::reverse() const
+{
+	int len = length();
+	if (len <= 1) {
+		return *this;
+	}
+	String new_string;
+	new_string.resize_uninitialized(len + 1);
+
+	const char32_t* src = ptr();
+	char32_t* dst = new_string.ptrw();
+	for (int i = 0; i < len; i++) {
+		dst[i] = src[len - i - 1];
+	}
+	dst[len] = _null;
+	return new_string;
+}
+
+String String::left(int p_len) const
+{
+	if (p_len < 0) {
+		p_len = length() + p_len;
+	}
+
+	if (p_len <= 0) {
+		return "";
+	}
+
+	if (p_len >= length()) {
+		return *this;
+	}
+
+	String s;
+	s.append_utf32_unchecked(Span(ptr(), p_len));
+	return s;
+}
+
+String String::right(int p_len) const
+{
+	if (p_len < 0) {
+		p_len = length() + p_len;
+	}
+
+	if (p_len <= 0) {
+		return "";
+	}
+
+	if (p_len >= length()) {
+		return *this;
+	}
+
+	String s;
+	s.append_utf32_unchecked(Span(ptr() + length() - p_len, p_len));
+	return s;
+}
+
+char32_t String::unicode_at(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx, length(), 0);
+	return operator[](p_idx);
+}
+
+String String::indent(const String& p_prefix) const
+{
+	String new_string;
+	int line_start = 0;
+
+	for (int i = 0; i < length(); i++) {
+		const char32_t c = operator[](i);
+		if (c == '\n') {
+			if (i == line_start) {
+				new_string += c; // Leave empty lines empty.
+			}
+			else {
+				new_string += p_prefix + substr(line_start, i - line_start + 1);
+			}
+			line_start = i + 1;
+		}
+	}
+	if (line_start != length()) {
+		new_string += p_prefix + substr(line_start);
+	}
+	return new_string;
+}
+
+String String::dedent() const
+{
+	String new_string;
+	String indent;
+	bool has_indent = false;
+	bool has_text = false;
+	int line_start = 0;
+	int indent_stop = -1;
+
+	for (int i = 0; i < length(); i++) {
+		char32_t c = operator[](i);
+		if (c == '\n') {
+			if (has_text) {
+				new_string += substr(indent_stop, i - indent_stop);
+			}
+			new_string += "\n";
+			has_text = false;
+			line_start = i + 1;
+			indent_stop = -1;
+		}
+		else if (!has_text) {
+			if (c > 32) {
+				has_text = true;
+				if (!has_indent) {
+					has_indent = true;
+					indent = substr(line_start, i - line_start);
+					indent_stop = i;
+				}
+			}
+			if (has_indent && indent_stop < 0) {
+				int j = i - line_start;
+				if (j >= indent.length() || c != indent[j]) {
+					indent_stop = i;
+				}
+			}
+		}
+	}
+
+	if (has_text) {
+		new_string += substr(indent_stop, length() - indent_stop);
+	}
+
+	return new_string;
+}
+
+String String::strip_edges(bool p_left, bool p_right) const
+{
+	int len = length();
+	int beg = 0, end = len;
+
+	if (p_left) {
+		for (int i = 0; i < len; i++) {
+			if (operator[](i) <= 32) {
+				beg++;
+			}
+			else {
+				break;
+			}
+		}
+	}
+
+	if (p_right) {
+		for (int i = len - 1; i >= 0; i--) {
+			if (operator[](i) <= 32) {
+				end--;
+			}
+			else {
+				break;
+			}
+		}
+	}
+
+	if (beg == 0 && end == len) {
+		return *this;
+	}
+
+	return substr(beg, end - beg);
+}
+
+String String::strip_escapes() const
+{
+	String new_string;
+	for (int i = 0; i < length(); i++) {
+		// Escape characters on first page of the ASCII table, before 32 (Space).
+		if (operator[](i) < 32) {
+			continue;
+		}
+		new_string += operator[](i);
+	}
+
+	return new_string;
+}
+
+String String::lstrip(const String& p_chars) const
+{
+	int len = length();
+	int beg;
+
+	for (beg = 0; beg < len; beg++) {
+		if (p_chars.find_char(get(beg)) == -1) {
+			break;
+		}
+	}
+
+	if (beg == 0) {
+		return *this;
+	}
+
+	return substr(beg, len - beg);
+}
+
+String String::rstrip(const String& p_chars) const
+{
+	int len = length();
+	int end;
+
+	for (end = len - 1; end >= 0; end--) {
+		if (p_chars.find_char(get(end)) == -1) {
+			break;
+		}
+	}
+
+	if (end == len - 1) {
+		return *this;
+	}
+
+	return substr(0, end + 1);
+}
+
+bool String::is_network_share_path() const { return begins_with("//") || begins_with("\\\\"); }
+
+String String::simplify_path() const
+{
+	String s = *this;
+	String drive;
+
+	// Check if we have a special path (like res://) or a protocol identifier.
+	int p = s.find("://");
+	bool found = false;
+	if (p > 0) {
+		bool only_chars = true;
+		for (int i = 0; i < p; i++) {
+			if (!is_ascii_alphanumeric_char(s[i])) {
+				only_chars = false;
+				break;
+			}
+		}
+		if (only_chars) {
+			found = true;
+			drive = s.substr(0, p + 3);
+			s = s.substr(p + 3);
+		}
+	}
+	if (!found) {
+		if (is_network_share_path()) {
+			// Network path, beginning with // or \\.
+			drive = s.substr(0, 2);
+			s = s.substr(2);
+		}
+		else if (s.begins_with("/") || s.begins_with("\\")) {
+			// Absolute path.
+			drive = s.substr(0, 1);
+			s = s.substr(1);
+		}
+		else {
+			// Windows-style drive path, like C:/ or C:\.
+			p = s.find(":/");
+			if (p == -1) {
+				p = s.find(":\\");
+			}
+			if (p != -1 && p < s.find_char('/')) {
+				drive = s.substr(0, p + 2);
+				s = s.substr(p + 2);
+			}
+		}
+	}
+
+	s = s.replace_char('\\', '/');
+	while (true) { // in case of using 2 or more slash
+		String compare = s.replace("//", "/");
+		if (s == compare) {
+			break;
+		}
+		else {
+			s = compare;
+		}
+	}
+	Vector<String> dirs = s.split("/", false);
+	bool absolute_path = is_absolute_path();
+
+	absolute_path =
+		absolute_path &&
+		!begins_with("res://"); // FIXME: Some code (GLTF importer) rely on accessing files up from
+								// `res://`, this probably should be disabled in the future.
+
+	for (int i = 0; i < dirs.size(); i++) {
+		String d = dirs[i];
+		if (d == ".") {
+			dirs.remove_at(i);
+			i--;
+		}
+		else if (d == "..") {
+			if (i != 0 && dirs[i - 1] != "..") {
+				dirs.remove_at(i);
+				dirs.remove_at(i - 1);
+				i -= 2;
+			}
+			else if (absolute_path && i == 0) {
+				dirs.remove_at(i);
+				i--;
+			}
+		}
+	}
+
+	s = "";
+
+	for (int i = 0; i < dirs.size(); i++) {
+		if (i > 0) {
+			s += "/";
+		}
+		s += dirs[i];
+	}
+
+	return drive + s;
+}
+
+static int _humanize_digits(int p_num)
+{
+	if (p_num < 100) {
+		return 2;
+	}
+	else if (p_num < 1024) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+String String::humanize_size(uint64_t p_size)
+{
+	int magnitude = 0;
+	uint64_t _div = 1;
+	while (p_size > _div * 1024 && magnitude < 6) {
+		_div *= 1024;
+		magnitude++;
+	}
+
+	if (magnitude == 0) {
+		return String::num_uint64(p_size) + " " + RTR("B");
+	}
+	else {
+		String suffix;
+		switch (magnitude) {
+		case 1:
+			suffix = RTR("KiB");
+			break;
+		case 2:
+			suffix = RTR("MiB");
+			break;
+		case 3:
+			suffix = RTR("GiB");
+			break;
+		case 4:
+			suffix = RTR("TiB");
+			break;
+		case 5:
+			suffix = RTR("PiB");
+			break;
+		case 6:
+			suffix = RTR("EiB");
+			break;
+		}
+
+		const double divisor = _div;
+		const int digits = _humanize_digits(p_size / _div);
+		return String::num(p_size / divisor).pad_decimals(digits) + " " + suffix;
+	}
+}
+
+bool String::is_absolute_path() const
+{
+	if (length() > 1) {
+		return (operator[](0) == '/' || operator[](0) == '\\' || find(":/") != -1 ||
+				find(":\\") != -1);
+	}
+	else if ((length()) == 1) {
+		return (operator[](0) == '/' || operator[](0) == '\\');
+	}
+	else {
+		return false;
+	}
+}
+
+String String::validate_ascii_identifier() const
+{
+	if (is_empty()) {
+		return "_"; // Empty string is not a valid identifier.
+	}
+
+	String result;
+	if (is_digit(operator[](0))) {
+		result = "_" + *this;
+	}
+	else {
+		result = *this;
+	}
+
+	int len = result.length();
+	char32_t* buffer = result.ptrw();
+	for (int i = 0; i < len; i++) {
+		if (!is_ascii_identifier_char(buffer[i])) {
+			buffer[i] = '_';
+		}
+	}
+
+	return result;
+}
+
+String String::validate_unicode_identifier() const
+{
+	if (is_empty()) {
+		return "_"; // Empty string is not a valid identifier.
+	}
+
+	String result;
+	if (is_unicode_identifier_start(operator[](0))) {
+		result = *this;
+	}
+	else {
+		result = "_" + *this;
+	}
+
+	int len = result.length();
+	char32_t* buffer = result.ptrw();
+	for (int i = 0; i < len; i++) {
+		if (!is_unicode_identifier_continue(buffer[i])) {
+			buffer[i] = '_';
+		}
+	}
+
+	return result;
+}
+
+bool String::is_valid_ascii_identifier() const
+{
+	int len = length();
+
+	if (len == 0) {
+		return false;
+	}
+
+	if (is_digit(operator[](0))) {
+		return false;
+	}
+
+	const char32_t* str = &operator[](0);
+
+	for (int i = 0; i < len; i++) {
+		if (!is_ascii_identifier_char(str[i])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool String::is_valid_unicode_identifier() const
+{
+	const char32_t* str = ptr();
+	int len = length();
+
+	if (len == 0) {
+		return false; // Empty string.
+	}
+
+	if (!is_unicode_identifier_start(str[0])) {
+		return false;
+	}
+
+	for (int i = 1; i < len; i++) {
+		if (!is_unicode_identifier_continue(str[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool String::is_valid_string() const
+{
+	int l = length();
+	const char32_t* src = get_data();
+	bool valid = true;
+	for (int i = 0; i < l; i++) {
+		valid = valid && (src[i] < 0xd800 || (src[i] > 0xdfff && src[i] <= 0x10ffff));
+	}
+	return valid;
+}
+
+String String::uri_encode() const
+{
+	const CharString temp = utf8();
+	String res;
+
+	for (int i = 0; i < temp.length(); ++i) {
+		uint8_t ord = uint8_t(temp[i]);
+		if (ord == '.' || ord == '-' || ord == '~' || is_ascii_identifier_char(ord)) {
+			res += ord;
+		}
+		else {
+			char p[4] = {'%', 0, 0, 0};
+			p[1] = hex_char_table_upper[ord >> 4];
+			p[2] = hex_char_table_upper[ord & 0xF];
+			res += p;
+		}
+	}
+	return res;
+}
+
+String String::uri_decode() const
+{
+	CharString src = utf8();
+	CharString res;
+	for (int i = 0; i < src.length(); ++i) {
+		if (src[i] == '%' && i + 2 < src.length()) {
+			char ord1 = src[i + 1];
+			if (is_digit(ord1) || is_ascii_upper_case(ord1)) {
+				char ord2 = src[i + 2];
+				if (is_digit(ord2) || is_ascii_upper_case(ord2)) {
+					char bytes[3] = {(char)ord1, (char)ord2, 0};
+					res += (char)strtol(bytes, nullptr, 16);
+					i += 2;
+				}
+			}
+			else {
+				res += src[i];
+			}
+		}
+		else if (src[i] == '+') {
+			res += ' ';
+		}
+		else {
+			res += src[i];
+		}
+	}
+	return String::utf8(res);
+}
+
+String String::uri_file_decode() const
+{
+	CharString src = utf8();
+	CharString res;
+	for (int i = 0; i < src.length(); ++i) {
+		if (src[i] == '%' && i + 2 < src.length()) {
+			char ord1 = src[i + 1];
+			if (is_digit(ord1) || is_ascii_upper_case(ord1)) {
+				char ord2 = src[i + 2];
+				if (is_digit(ord2) || is_ascii_upper_case(ord2)) {
+					char bytes[3] = {(char)ord1, (char)ord2, 0};
+					res += (char)strtol(bytes, nullptr, 16);
+					i += 2;
+				}
+			}
+			else {
+				res += src[i];
+			}
+		}
+		else {
+			res += src[i];
+		}
+	}
+	return String::utf8(res);
+}
+
+String String::c_unescape() const
+{
+	String escaped = *this;
+	escaped = escaped.replace("\\a", "\a");
+	escaped = escaped.replace("\\b", "\b");
+	escaped = escaped.replace("\\f", "\f");
+	escaped = escaped.replace("\\n", "\n");
+	escaped = escaped.replace("\\r", "\r");
+	escaped = escaped.replace("\\t", "\t");
+	escaped = escaped.replace("\\v", "\v");
+	escaped = escaped.replace("\\'", "\'");
+	escaped = escaped.replace("\\\"", "\"");
+	escaped = escaped.replace("\\\\", "\\");
+
+	return escaped;
+}
+
+String String::c_escape() const
+{
+	String escaped = *this;
+	escaped = escaped.replace("\\", "\\\\");
+	escaped = escaped.replace("\a", "\\a");
+	escaped = escaped.replace("\b", "\\b");
+	escaped = escaped.replace("\f", "\\f");
+	escaped = escaped.replace("\n", "\\n");
+	escaped = escaped.replace("\r", "\\r");
+	escaped = escaped.replace("\t", "\\t");
+	escaped = escaped.replace("\v", "\\v");
+	escaped = escaped.replace("\'", "\\'");
+	escaped = escaped.replace("\"", "\\\"");
+
+	return escaped;
+}
+
+String String::c_escape_multiline() const
+{
+	String escaped = *this;
+	escaped = escaped.replace("\\", "\\\\");
+	escaped = escaped.replace("\"", "\\\"");
+
+	return escaped;
+}
+
+String String::json_escape() const
+{
+	String escaped = *this;
+	escaped = escaped.replace("\\", "\\\\");
+	escaped = escaped.replace("\b", "\\b");
+	escaped = escaped.replace("\f", "\\f");
+	escaped = escaped.replace("\n", "\\n");
+	escaped = escaped.replace("\r", "\\r");
+	escaped = escaped.replace("\t", "\\t");
+	escaped = escaped.replace("\v", "\\v");
+	escaped = escaped.replace("\"", "\\\"");
+
+	return escaped;
+}
+
+String String::xml_escape(bool p_escape_quotes) const
+{
+	String str = *this;
+	str = str.replace("&", "&amp;");
+	str = str.replace("<", "&lt;");
+	str = str.replace(">", "&gt;");
+	if (p_escape_quotes) {
+		str = str.replace("'", "&apos;");
+		str = str.replace("\"", "&quot;");
+	}
+	/*
+for (int i=1;i<32;i++) {
+	char chr[2]={i,0};
+	str=str.replace(chr,"&#"+String::num(i)+";");
+}*/
+	return str;
+}
+
+static _FORCE_INLINE_ int _xml_unescape(const char32_t* p_src, int p_src_len, char32_t* p_dst)
+{
+	int len = 0;
+	while (p_src_len) {
+		if (*p_src == '&') {
+			int eat = 0;
+
+			if (p_src_len >= 4 && p_src[1] == '#') {
+				char32_t c = 0;
+				bool overflow = false;
+				if (p_src[2] == 'x') {
+					// Hex entity &#x<num>;
+					for (int i = 3; i < p_src_len; i++) {
+						eat = i + 1;
+						char32_t ct = p_src[i];
+						if (ct == ';') {
+							break;
+						}
+						else if (is_digit(ct)) {
+							ct = ct - '0';
+						}
+						else if (ct >= 'a' && ct <= 'f') {
+							ct = (ct - 'a') + 10;
+						}
+						else if (ct >= 'A' && ct <= 'F') {
+							ct = (ct - 'A') + 10;
+						}
+						else {
+							break;
+						}
+						if (c > (UINT32_MAX >> 4)) {
+							overflow = true;
+							break;
+						}
+						c <<= 4;
+						c |= ct;
+					}
+				}
+				else {
+					// Decimal entity &#<num>;
+					for (int i = 2; i < p_src_len; i++) {
+						eat = i + 1;
+						char32_t ct = p_src[i];
+						if (ct == ';' || !is_digit(ct)) {
+							break;
+						}
+					}
+					if (p_src[eat - 1] == ';') {
+						int64_t val = String::to_int(p_src + 2, eat - 3);
+						if (val > 0 && val <= UINT32_MAX) {
+							c = (char32_t)val;
+						}
+						else {
+							overflow = true;
+						}
+					}
+				}
+
+				// Value must be non-zero, in the range of char32_t,
+				// actually end with ';'. If invalid, leave the entity as-is
+				if (c == '\0' || overflow || p_src[eat - 1] != ';') {
+					eat = 1;
+					c = *p_src;
+				}
+				if (p_dst) {
+					*p_dst = c;
+				}
+
+			}
+			else if (p_src_len >= 4 && p_src[1] == 'g' && p_src[2] == 't' && p_src[3] == ';') {
+				if (p_dst) {
+					*p_dst = '>';
+				}
+				eat = 4;
+			}
+			else if (p_src_len >= 4 && p_src[1] == 'l' && p_src[2] == 't' && p_src[3] == ';') {
+				if (p_dst) {
+					*p_dst = '<';
+				}
+				eat = 4;
+			}
+			else if (p_src_len >= 5 && p_src[1] == 'a' && p_src[2] == 'm' && p_src[3] == 'p' &&
+					   p_src[4] == ';') {
+				if (p_dst) {
+					*p_dst = '&';
+				}
+				eat = 5;
+			}
+			else if (p_src_len >= 6 && p_src[1] == 'q' && p_src[2] == 'u' && p_src[3] == 'o' &&
+					   p_src[4] == 't' && p_src[5] == ';') {
+				if (p_dst) {
+					*p_dst = '"';
+				}
+				eat = 6;
+			}
+			else if (p_src_len >= 6 && p_src[1] == 'a' && p_src[2] == 'p' && p_src[3] == 'o' &&
+					   p_src[4] == 's' && p_src[5] == ';') {
+				if (p_dst) {
+					*p_dst = '\'';
+				}
+				eat = 6;
+			}
+			else {
+				if (p_dst) {
+					*p_dst = *p_src;
+				}
+				eat = 1;
+			}
+
+			if (p_dst) {
+				p_dst++;
+			}
+
+			len++;
+			p_src += eat;
+			p_src_len -= eat;
+		}
+		else {
+			if (p_dst) {
+				*p_dst = *p_src;
+				p_dst++;
+			}
+			len++;
+			p_src++;
+			p_src_len--;
+		}
+	}
+
+	return len;
+}
+
+String String::xml_unescape() const
+{
+	String str;
+	int l = length();
+	int len = _xml_unescape(get_data(), l, nullptr);
+	if (len == 0) {
+		return String();
+	}
+	str.resize_uninitialized(len + 1);
+	char32_t* str_ptrw = str.ptrw();
+	_xml_unescape(get_data(), l, str_ptrw);
+	str_ptrw[len] = 0;
+	return str;
+}
+
+String String::pad_decimals(int p_digits) const
+{
+	String s = *this;
+	int c = s.find_char('.');
+
+	if (c == -1) {
+		if (p_digits <= 0) {
+			return s;
+		}
+		s += ".";
+		c = s.length() - 1;
+	}
+	else {
+		if (p_digits <= 0) {
+			return s.substr(0, c);
+		}
+	}
+
+	if (s.length() - (c + 1) > p_digits) {
+		return s.substr(0, c + p_digits + 1);
+	}
+	else {
+		int zeros_to_add = p_digits - s.length() + (c + 1);
+		return s + String("0").repeat(zeros_to_add);
+	}
+}
+
+String String::pad_zeros(int p_digits) const
+{
+	String s = *this;
+	int end = s.find_char('.');
+
+	if (end == -1) {
+		end = s.length();
+	}
+
+	if (end == 0) {
+		return s;
+	}
+
+	int begin = 0;
+
+	while (begin < end && !is_digit(s[begin])) {
+		begin++;
+	}
+
+	int zeros_to_add = p_digits - (end - begin);
+
+	if (zeros_to_add <= 0) {
+		return s;
+	}
+	else {
+		return s.insert(begin, String("0").repeat(zeros_to_add));
+	}
+}
+
+String String::trim_prefix(const String& p_prefix) const
+{
+	String s = *this;
+	if (s.begins_with(p_prefix)) {
+		return s.substr(p_prefix.length());
+	}
+	return s;
+}
+
+String String::trim_prefix(const char* p_prefix) const
+{
+	String s = *this;
+	if (s.begins_with(p_prefix)) {
+		int prefix_length = strlen(p_prefix);
+		return s.substr(prefix_length);
+	}
+	return s;
+}
+
+String String::trim_suffix(const String& p_suffix) const
+{
+	String s = *this;
+	if (s.ends_with(p_suffix)) {
+		return s.substr(0, s.length() - p_suffix.length());
+	}
+	return s;
+}
+
+String String::trim_suffix(const char* p_suffix) const
+{
+	String s = *this;
+	if (s.ends_with(p_suffix)) {
+		return s.substr(0, s.length() - strlen(p_suffix));
+	}
+	return s;
+}
+
+bool String::is_valid_int() const
+{
+	int len = length();
+
+	if (len == 0) {
+		return false;
+	}
+
+	int from = 0;
+	if (len != 1 && (operator[](0) == '+' || operator[](0) == '-')) {
+		from++;
+	}
+
+	for (int i = from; i < len; i++) {
+		if (!is_digit(operator[](i))) {
+			return false; // no start with number plz
+		}
+	}
+
+	return true;
+}
+
+bool String::is_valid_hex_number(bool p_with_prefix) const
+{
+	int len = length();
+
+	if (len == 0) {
+		return false;
+	}
+
+	int from = 0;
+	if (len != 1 && (operator[](0) == '+' || operator[](0) == '-')) {
+		from++;
+	}
+
+	if (p_with_prefix) {
+		if (len < 3) {
+			return false;
+		}
+		if (operator[](from) != '0' || operator[](from + 1) != 'x') {
+			return false;
+		}
+		from += 2;
+	}
+
+	if (from == len) {
+		return false;
+	}
+
+	for (int i = from; i < len; i++) {
+		char32_t c = operator[](i);
+		if (is_hex_digit(c)) {
+			continue;
+		}
+		return false;
+	}
+
+	return true;
+}
+
+bool String::is_valid_float() const
+{
+	int len = length();
+
+	if (len == 0) {
+		return false;
+	}
+
+	int from = 0;
+	if (operator[](0) == '+' || operator[](0) == '-') {
+		from++;
+	}
+
+	bool exponent_found = false;
+	bool period_found = false;
+	bool sign_found = false;
+	bool exponent_values_found = false;
+	bool numbers_found = false;
+
+	for (int i = from; i < len; i++) {
+		const char32_t c = operator[](i);
+		if (is_digit(c)) {
+			if (exponent_found) {
+				exponent_values_found = true;
+			}
+			else {
+				numbers_found = true;
+			}
+		}
+		else if (numbers_found && !exponent_found && (c == 'e' || c == 'E')) {
+			exponent_found = true;
+		}
+		else if (!period_found && !exponent_found && c == '.') {
+			period_found = true;
+		}
+		else if ((c == '-' || c == '+') && exponent_found && !exponent_values_found &&
+				   !sign_found) {
+			sign_found = true;
+		}
+		else {
+			return false; // no start with number plz
+		}
+	}
+
+	return numbers_found;
+}
+
+String String::path_to_file(const String& p_path) const
+{
+	// Don't get base dir for src, this is expected to be a dir already.
+	String src = replace_char('\\', '/');
+	String dst = p_path.replace_char('\\', '/').get_base_dir();
+	String rel = src.path_to(dst);
+	if (rel == dst) { // failed
+		return p_path;
+	}
+	else {
+		return rel + p_path.get_file();
+	}
+}
+
+String String::path_to(const String& p_path) const
+{
+	String src = replace_char('\\', '/');
+	String dst = p_path.replace_char('\\', '/');
+	if (!src.ends_with("/")) {
+		src += "/";
+	}
+	if (!dst.ends_with("/")) {
+		dst += "/";
+	}
+
+	if (src.begins_with("res://") && dst.begins_with("res://")) {
+		src = src.replace("res://", "/");
+		dst = dst.replace("res://", "/");
+
+	}
+	else if (src.begins_with("user://") && dst.begins_with("user://")) {
+		src = src.replace("user://", "/");
+		dst = dst.replace("user://", "/");
+
+	}
+	else if (src.begins_with("/") && dst.begins_with("/")) {
+		// nothing
+	}
+	else {
+		// dos style
+		String src_begin = src.get_slicec('/', 0);
+		String dst_begin = dst.get_slicec('/', 0);
+
+		if (src_begin != dst_begin) {
+			return p_path; // impossible to do this
+		}
+
+		src = src.substr(src_begin.length());
+		dst = dst.substr(dst_begin.length());
+	}
+
+	// remove leading and trailing slash and split
+	Vector<String> src_dirs = src.substr(1, src.length() - 2).split("/");
+	Vector<String> dst_dirs = dst.substr(1, dst.length() - 2).split("/");
+
+	// find common parent
+	int common_parent = 0;
+
+	while (true) {
+		if (src_dirs.size() == common_parent) {
+			break;
+		}
+		if (dst_dirs.size() == common_parent) {
+			break;
+		}
+		if (src_dirs[common_parent] != dst_dirs[common_parent]) {
+			break;
+		}
+		common_parent++;
+	}
+
+	common_parent--;
+
+	int dirs_to_backtrack = (src_dirs.size() - 1) - common_parent;
+	String dir = String("../").repeat(dirs_to_backtrack);
+
+	for (int i = common_parent + 1; i < dst_dirs.size(); i++) {
+		dir += dst_dirs[i] + "/";
+	}
+
+	if (dir.length() == 0) {
+		dir = "./";
+	}
+	return dir;
+}
+
+bool String::is_valid_html_color() const { return Color::html_is_valid(*this); }
+
+// Changes made to the set of invalid filename characters must also be reflected in the String
+// documentation for is_valid_filename.
+static const char* invalid_filename_characters[] = {
+	":", "/", "\\", "?", "*", "\"", "|", "%", "<", ">"};
+
+bool String::is_valid_filename() const
+{
+	String stripped = strip_edges();
+	if (*this != stripped) {
+		return false;
+	}
+
+	if (stripped.is_empty()) {
+		return false;
+	}
+
+	for (const char* ch : invalid_filename_characters) {
+		if (contains(ch)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+String String::validate_filename() const
+{
+	String name = strip_edges();
+	for (const char* ch : invalid_filename_characters) {
+		name = name.replace(ch, "_");
+	}
+	return name;
+}
+
+bool String::is_valid_ip_address() const { return IPAddress::is_valid_ip_address(*this); }
+
+bool String::is_resource_file() const { return begins_with("res://") && find("::") == -1; }
+
+bool String::is_relative_path() const { return !is_absolute_path(); }
+
+String String::get_base_dir() const
+{
+	int end = 0;
+
+	// URL scheme style base.
+	int basepos = find("://");
+	if (basepos != -1) {
+		end = basepos + 3;
+	}
+
+	// Windows top level directory base.
+	if (end == 0) {
+		basepos = find(":/");
+		if (basepos == -1) {
+			basepos = find(":\\");
+		}
+		if (basepos != -1) {
+			end = basepos + 2;
+		}
+	}
+
+	// Windows UNC network share path.
+	if (end == 0) {
+		if (is_network_share_path()) {
+			basepos = find_char('/', 2);
+			if (basepos == -1) {
+				basepos = find_char('\\', 2);
+			}
+			int servpos = find_char('/', basepos + 1);
+			if (servpos == -1) {
+				servpos = find_char('\\', basepos + 1);
+			}
+			if (servpos != -1) {
+				end = servpos + 1;
+			}
+		}
+	}
+
+	// Unix root directory base.
+	if (end == 0) {
+		if (begins_with("/")) {
+			end = 1;
+		}
+	}
+
+	String rs;
+	String base;
+	if (end != 0) {
+		rs = substr(end, length());
+		base = substr(0, end);
+	}
+	else {
+		rs = *this;
+	}
+
+	int sep = MAX(rs.rfind_char('/'), rs.rfind_char('\\'));
+	if (sep == -1) {
+		return base;
+	}
+
+	return base + rs.substr(0, sep);
+}
+
+String String::get_file() const
+{
+	int sep = MAX(rfind_char('/'), rfind_char('\\'));
+	if (sep == -1) {
+		return *this;
+	}
+
+	return substr(sep + 1, length());
+}
+
+String String::get_extension() const
+{
+	int pos = rfind_char('.');
+	if (pos < 0 || pos < MAX(rfind_char('/'), rfind_char('\\'))) {
+		return "";
+	}
+
+	return substr(pos + 1, length());
+}
+
+String String::path_join(const String& p_file) const
+{
+	if (is_empty()) {
+		return p_file;
+	}
+	if (operator[](length() - 1) == '/' || (p_file.size() > 0 && p_file.operator[](0) == '/')) {
+		return *this + p_file;
+	}
+	return *this + "/" + p_file;
+}
+
+String String::property_name_encode() const
+{
+	// Escape and quote strings with extended ASCII or further Unicode characters
+	// as well as '"', '=' or ' ' (32)
+	const char32_t* cstr = get_data();
+	for (int i = 0; cstr[i]; i++) {
+		if (cstr[i] == '=' || cstr[i] == '"' || cstr[i] == ';' || cstr[i] == '[' ||
+			cstr[i] == ']' || cstr[i] < 33 || cstr[i] > 126) {
+			return "\"" + c_escape_multiline() + "\"";
+		}
+	}
+	// Keep as is
+	return *this;
+}
+
+// Changes made to the set of invalid characters must also be reflected in the String documentation.
+
+static const char32_t invalid_node_name_characters[] = {
+	'.', ':', '@', '/', '\"', UNIQUE_NODE_PREFIX[0], 0};
+
+String String::get_invalid_node_name_characters(bool p_allow_internal)
+{
+	// Do not use this function for critical validation.
+	String r;
+	const char32_t* c = invalid_node_name_characters;
+	while (*c) {
+		if (p_allow_internal && *c == '@') {
+			c++;
+			continue;
+		}
+
+		if (c != invalid_node_name_characters) {
+			r += " ";
+		}
+		r += String::chr(*c);
+		c++;
+	}
+	return r;
+}
+
+String String::validate_node_name() const
+{
+	// This is a critical validation in node addition, so it must be optimized.
+	const char32_t* cn = ptr();
+	if (cn == nullptr) {
+		return String();
+	}
+	bool valid = true;
+	uint32_t idx = 0;
+	while (cn[idx]) {
+		const char32_t* c = invalid_node_name_characters;
+		while (*c) {
+			if (cn[idx] == *c) {
+				valid = false;
+				break;
+			}
+			c++;
+		}
+		if (!valid) {
+			break;
+		}
+		idx++;
+	}
+
+	if (valid) {
+		return *this;
+	}
+
+	String validated = *this;
+	char32_t* nn = validated.ptrw();
+	while (nn[idx]) {
+		const char32_t* c = invalid_node_name_characters;
+		while (*c) {
+			if (nn[idx] == *c) {
+				nn[idx] = '_';
+				break;
+			}
+			c++;
+		}
+		idx++;
+	}
+
+	return validated;
+}
+
+String String::get_basename() const
+{
+	int pos = rfind_char('.');
+	if (pos < 0 || pos < MAX(rfind_char('/'), rfind_char('\\'))) {
+		return *this;
+	}
+
+	return substr(0, pos);
+}
+
+String itos(int64_t p_val) { return String::num_int64(p_val); }
+
+String uitos(uint64_t p_val) { return String::num_uint64(p_val); }
+
+String rtos(double p_val) { return String::num(p_val); }
+
+String rtoss(double p_val) { return String::num_scientific(p_val); }
+
+// Right-pad with a character.
+String String::rpad(int p_min_length, const String& p_character) const
+{
+	String s = *this;
+	int padding = p_min_length - s.length();
+	if (padding > 0) {
+		s += p_character.repeat(padding);
+	}
+	return s;
+}
+
+// Left-pad with a character.
+String String::lpad(int p_min_length, const String& p_character) const
+{
+	String s = *this;
+	int padding = p_min_length - s.length();
+	if (padding > 0) {
+		s = p_character.repeat(padding) + s;
+	}
+	return s;
+}
+
+String String::quote(const String& p_quotechar) const { return p_quotechar + *this + p_quotechar; }
+
+String String::unquote() const
+{
+	if (!is_quoted()) {
+		return *this;
+	}
+
+	return substr(1, length() - 2);
+}
+
+Vector<uint8_t> String::to_ascii_buffer() const
+{
+	const String* s = this;
+	if (s->is_empty()) {
+		return Vector<uint8_t>();
+	}
+	CharString charstr = s->ascii();
+
+	Vector<uint8_t> retval;
+	size_t len = charstr.length();
+	retval.resize_uninitialized(len);
+	uint8_t* w = retval.ptrw();
+	memcpy(w, charstr.ptr(), len);
+
+	return retval;
+}
+
+Vector<uint8_t> String::to_utf8_buffer() const
+{
+	const String* s = this;
+	if (s->is_empty()) {
+		return Vector<uint8_t>();
+	}
+	CharString charstr = s->utf8();
+
+	Vector<uint8_t> retval;
+	size_t len = charstr.length();
+	retval.resize_uninitialized(len);
+	uint8_t* w = retval.ptrw();
+	memcpy(w, charstr.ptr(), len);
+
+	return retval;
+}
+
+Vector<uint8_t> String::to_utf16_buffer() const
+{
+	const String* s = this;
+	if (s->is_empty()) {
+		return Vector<uint8_t>();
+	}
+	Char16String charstr = s->utf16();
+
+	Vector<uint8_t> retval;
+	size_t len = charstr.length() * sizeof(char16_t);
+	retval.resize_uninitialized(len);
+	uint8_t* w = retval.ptrw();
+	memcpy(w, (const void*)charstr.ptr(), len);
+
+	return retval;
+}
+
+Vector<uint8_t> String::to_utf32_buffer() const
+{
+	const String* s = this;
+	if (s->is_empty()) {
+		return Vector<uint8_t>();
+	}
+
+	Vector<uint8_t> retval;
+	size_t len = s->length() * sizeof(char32_t);
+	retval.resize_uninitialized(len);
+	uint8_t* w = retval.ptrw();
+	memcpy(w, (const void*)s->ptr(), len);
+
+	return retval;
+}
+
+Vector<uint8_t> String::to_wchar_buffer() const
+{
+#ifdef WINDOWS_ENABLED
+	return to_utf16_buffer();
+#else
+	return to_utf32_buffer();
+#endif
+}
+
+Vector<uint8_t> String::to_multibyte_char_buffer(const String& p_encoding) const
+{
+	return OS::string_to_multibyte(p_encoding, *this);
+}
+
+#ifdef TOOLS_ENABLED
+/**
+ * "Tools TRanslate". Performs string replacement for internationalization
+ * within the editor. A translation context can optionally be specified to
+ * disambiguate between identical source strings in translations. When
+ * placeholders are desired, use `vformat(TTR("Example: %s"), some_string)`.
+ * If a string mentions a quantity (and may therefore need a dynamic plural form),
+ * use `TTRN()` instead of `TTR()`.
+ *
+ * NOTE: Only use `TTR()` in editor-only code (typically within the `editor/` folder).
+ * For translations that can be supplied by exported projects, use `RTR()` instead.
+ */
+String TTR(const String& p_text, const String& p_context)
+{
+	if (TranslationServer::is_initialized()) {
+		return TranslationServer::get_editor_domain()->translate(
+			p_text, p_context);
+	}
+
+	return p_text;
+}
+
+/**
+ * "Tools TRanslate for N items". Performs string replacement for
+ * internationalization within the editor. A translation context can optionally
+ * be specified to disambiguate between identical source strings in
+ * translations. Use `TTR()` if the string doesn't need dynamic plural form.
+ * When placeholders are desired, use
+ * `vformat(TTRN("%d item", "%d items", some_integer), some_integer)`.
+ * The placeholder must be present in both strings to avoid run-time warnings in `vformat()`.
+ *
+ * NOTE: Only use `TTRN()` in editor-only code (typically within the `editor/` folder).
+ * For translations that can be supplied by exported projects, use `RTRN()` instead.
+ */
+String TTRN(const String& p_text, const String& p_text_plural, int p_n, const String& p_context)
+{
+	if (TranslationServer::is_initialized()) {
+		return TranslationServer::get_editor_domain()->translate_plural(
+			p_text, p_text_plural, p_n, p_context);
+	}
+
+	// Return message based on English plural rule if translation is not possible.
+	if (p_n == 1) {
+		return p_text;
+	}
+	return p_text_plural;
+}
+
+/**
+ * "Docs TRanslate". Used for the editor class reference documentation,
+ * handling descriptions extracted from the XML.
+ * It also replaces `$DOCS_URL` with the actual URL to the documentation's branch,
+ * to allow dehardcoding it in the XML and doing proper substitutions everywhere.
+ */
+String DTR(const String& p_text, const String& p_context)
+{
+	// Comes straight from the XML, so remove indentation and any trailing whitespace.
+	const String text = p_text.dedent().strip_edges();
+
+	if (TranslationServer::is_initialized()) {
+		return String(
+			TranslationServer::get_doc_domain()->translate(text, p_context))
+			.replace("$DOCS_URL", VLTR_VERSION_DOCS_URL);
+	}
+
+	return text.replace("$DOCS_URL", VLTR_VERSION_DOCS_URL);
+}
+
+/**
+ * "Docs TRanslate for N items". Used for the editor class reference documentation
+ * (with support for plurals), handling descriptions extracted from the XML.
+ * It also replaces `$DOCS_URL` with the actual URL to the documentation's branch,
+ * to allow dehardcoding it in the XML and doing proper substitutions everywhere.
+ */
+String DTRN(const String& p_text, const String& p_text_plural, int p_n, const String& p_context)
+{
+	const String text = p_text.dedent().strip_edges();
+	const String text_plural = p_text_plural.dedent().strip_edges();
+
+	if (TranslationServer::is_initialized()) {
+		return String(TranslationServer::get_doc_domain()->translate_plural(
+						  text, text_plural, p_n, p_context))
+			.replace("$DOCS_URL", VLTR_VERSION_DOCS_URL);
+	}
+
+	// Return message based on English plural rule if translation is not possible.
+	if (p_n == 1) {
+		return text.replace("$DOCS_URL", VLTR_VERSION_DOCS_URL);
+	}
+	return text_plural.replace("$DOCS_URL", VLTR_VERSION_DOCS_URL);
+}
+#endif
+
+/**
+ * "Run-time TRanslate". Performs string replacement f
+or internationalization
+ * without the editor. A translation context can optionally be specified to
+ * disambiguate between identical source strings in translations. When
+ * placeholders are desired, use `vformat(RTR("Example: %s"), some_string)`.
+ * If a string mentions a quantity (and may therefore need a dynamic plural form),
+ * use `RTRN()` instead of `RTR()`.
+ *
+ * NOTE: Do not use `RTR()` in editor-only code (typically within the `editor/`
+ * folder). For editor translations, use `TTR()` instead.
+ */
+String RTR(const String& p_text, const String& p_context)
+{
+	if (TranslationServer::is_initialized()) {
+#ifdef TOOLS_ENABLED
+		String rtr =
+			TranslationServer::get_editor_domain()->translate(p_text, p_context);
+		if (!rtr.is_empty() && rtr != p_text) {
+			return rtr;
+		}
+#endif // TOOLS_ENABLED
+		return TranslationServer::translate(p_text, p_context);
+	}
+
+	return p_text;
+}
+
+/**
+ * "Run-time TRanslate for N items". Performs string replacement for
+ * internationalization without the editor. A translation context can optionally
+ * be specified to disambiguate between identical source strings in translations.
+ * Use `RTR()` if the string doesn't need dynamic plural form. When placeholders
+ * are desired, use `vformat(RTRN("%d item", "%d items", some_integer), some_integer)`.
+ * The placeholder must be present in both strings to avoid run-time warnings in `vformat()`.
+ *
+ * NOTE: Do not use `RTRN()` in editor-only code (typically within the `editor/`
+ * folder). For editor translations, use `TTRN()` instead.
+ */
+String RTRN(const String& p_text, const String& p_text_plural, int p_n, const String& p_context)
+{
+	if (TranslationServer::is_initialized()) {
+#ifdef TOOLS_ENABLED
+		String rtr = TranslationServer::get_editor_domain()->translate_plural(
+			p_text, p_text_plural, p_n, p_context);
+		if (!rtr.is_empty() && rtr != p_text && rtr != p_text_plural) {
+			return rtr;
+		}
+#endif // TOOLS_ENABLED
+		return TranslationServer::translate_plural(
+			p_text, p_text_plural, p_n, p_context);
+	}
+
+	// Return message based on English plural rule if translation is not possible.
+	if (p_n == 1) {
+		return p_text;
+	}
+	return p_text_plural;
+}
+
+
+
+// ============================================================================
+// Merged from core/string/char_range.cpp
+// ============================================================================
+
+// This file was generated using the `misc/scripts/char_range_fetch.py` script.
+
+#include "core/string/ustring.h"
+
+// Unicode Derived Core Properties
+// Source: https://www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt
+
+const int xid_start_size = 692;
+const CharRange xid_start[xid_start_size] = {
+	{ 0x41, 0x5a },
+	{ 0x5f, 0x5f },
+	{ 0x61, 0x7a },
+	{ 0xaa, 0xaa },
+	{ 0xb5, 0xb5 },
+	{ 0xba, 0xba },
+	{ 0xc0, 0xd6 },
+	{ 0xd8, 0xf6 },
+	{ 0xf8, 0x2c1 },
+	{ 0x2c6, 0x2d1 },
+	{ 0x2e0, 0x2e4 },
+	{ 0x2ec, 0x2ec },
+	{ 0x2ee, 0x2ee },
+	{ 0x370, 0x374 },
+	{ 0x376, 0x377 },
+	{ 0x37b, 0x37d },
+	{ 0x37f, 0x37f },
+	{ 0x386, 0x386 },
+	{ 0x388, 0x38a },
+	{ 0x38c, 0x38c },
+	{ 0x38e, 0x3a1 },
+	{ 0x3a3, 0x3f5 },
+	{ 0x3f7, 0x481 },
+	{ 0x48a, 0x52f },
+	{ 0x531, 0x556 },
+	{ 0x559, 0x559 },
+	{ 0x560, 0x588 },
+	{ 0x5d0, 0x5ea },
+	{ 0x5ef, 0x5f2 },
+	{ 0x620, 0x64a },
+	{ 0x66e, 0x66f },
+	{ 0x671, 0x6d3 },
+	{ 0x6d5, 0x6d5 },
+	{ 0x6e5, 0x6e6 },
+	{ 0x6ee, 0x6ef },
+	{ 0x6fa, 0x6fc },
+	{ 0x6ff, 0x6ff },
+	{ 0x710, 0x710 },
+	{ 0x712, 0x72f },
+	{ 0x74d, 0x7a5 },
+	{ 0x7b1, 0x7b1 },
+	{ 0x7ca, 0x7ea },
+	{ 0x7f4, 0x7f5 },
+	{ 0x7fa, 0x7fa },
+	{ 0x800, 0x815 },
+	{ 0x81a, 0x81a },
+	{ 0x824, 0x824 },
+	{ 0x828, 0x828 },
+	{ 0x840, 0x858 },
+	{ 0x860, 0x86a },
+	{ 0x870, 0x887 },
+	{ 0x889, 0x88f },
+	{ 0x8a0, 0x8c9 },
+	{ 0x904, 0x939 },
+	{ 0x93d, 0x93d },
+	{ 0x950, 0x950 },
+	{ 0x958, 0x961 },
+	{ 0x971, 0x980 },
+	{ 0x985, 0x98c },
+	{ 0x98f, 0x990 },
+	{ 0x993, 0x9a8 },
+	{ 0x9aa, 0x9b0 },
+	{ 0x9b2, 0x9b2 },
+	{ 0x9b6, 0x9b9 },
+	{ 0x9bd, 0x9bd },
+	{ 0x9ce, 0x9ce },
+	{ 0x9dc, 0x9dd },
+	{ 0x9df, 0x9e1 },
+	{ 0x9f0, 0x9f1 },
+	{ 0x9fc, 0x9fc },
+	{ 0xa05, 0xa0a },
+	{ 0xa0f, 0xa10 },
+	{ 0xa13, 0xa28 },
+	{ 0xa2a, 0xa30 },
+	{ 0xa32, 0xa33 },
+	{ 0xa35, 0xa36 },
+	{ 0xa38, 0xa39 },
+	{ 0xa59, 0xa5c },
+	{ 0xa5e, 0xa5e },
+	{ 0xa72, 0xa74 },
+	{ 0xa85, 0xa8d },
+	{ 0xa8f, 0xa91 },
+	{ 0xa93, 0xaa8 },
+	{ 0xaaa, 0xab0 },
+	{ 0xab2, 0xab3 },
+	{ 0xab5, 0xab9 },
+	{ 0xabd, 0xabd },
+	{ 0xad0, 0xad0 },
+	{ 0xae0, 0xae1 },
+	{ 0xaf9, 0xaf9 },
+	{ 0xb05, 0xb0c },
+	{ 0xb0f, 0xb10 },
+	{ 0xb13, 0xb28 },
+	{ 0xb2a, 0xb30 },
+	{ 0xb32, 0xb33 },
+	{ 0xb35, 0xb39 },
+	{ 0xb3d, 0xb3d },
+	{ 0xb5c, 0xb5d },
+	{ 0xb5f, 0xb61 },
+	{ 0xb71, 0xb71 },
+	{ 0xb83, 0xb83 },
+	{ 0xb85, 0xb8a },
+	{ 0xb8e, 0xb90 },
+	{ 0xb92, 0xb95 },
+	{ 0xb99, 0xb9a },
+	{ 0xb9c, 0xb9c },
+	{ 0xb9e, 0xb9f },
+	{ 0xba3, 0xba4 },
+	{ 0xba8, 0xbaa },
+	{ 0xbae, 0xbb9 },
+	{ 0xbd0, 0xbd0 },
+	{ 0xc05, 0xc0c },
+	{ 0xc0e, 0xc10 },
+	{ 0xc12, 0xc28 },
+	{ 0xc2a, 0xc39 },
+	{ 0xc3d, 0xc3d },
+	{ 0xc58, 0xc5a },
+	{ 0xc5c, 0xc5d },
+	{ 0xc60, 0xc61 },
+	{ 0xc80, 0xc80 },
+	{ 0xc85, 0xc8c },
+	{ 0xc8e, 0xc90 },
+	{ 0xc92, 0xca8 },
+	{ 0xcaa, 0xcb3 },
+	{ 0xcb5, 0xcb9 },
+	{ 0xcbd, 0xcbd },
+	{ 0xcdc, 0xcde },
+	{ 0xce0, 0xce1 },
+	{ 0xcf1, 0xcf2 },
+	{ 0xd04, 0xd0c },
+	{ 0xd0e, 0xd10 },
+	{ 0xd12, 0xd3a },
+	{ 0xd3d, 0xd3d },
+	{ 0xd4e, 0xd4e },
+	{ 0xd54, 0xd56 },
+	{ 0xd5f, 0xd61 },
+	{ 0xd7a, 0xd7f },
+	{ 0xd85, 0xd96 },
+	{ 0xd9a, 0xdb1 },
+	{ 0xdb3, 0xdbb },
+	{ 0xdbd, 0xdbd },
+	{ 0xdc0, 0xdc6 },
+	{ 0xe01, 0xe30 },
+	{ 0xe32, 0xe32 },
+	{ 0xe40, 0xe46 },
+	{ 0xe81, 0xe82 },
+	{ 0xe84, 0xe84 },
+	{ 0xe86, 0xe8a },
+	{ 0xe8c, 0xea3 },
+	{ 0xea5, 0xea5 },
+	{ 0xea7, 0xeb0 },
+	{ 0xeb2, 0xeb2 },
+	{ 0xebd, 0xebd },
+	{ 0xec0, 0xec4 },
+	{ 0xec6, 0xec6 },
+	{ 0xedc, 0xedf },
+	{ 0xf00, 0xf00 },
+	{ 0xf40, 0xf47 },
+	{ 0xf49, 0xf6c },
+	{ 0xf88, 0xf8c },
+	{ 0x1000, 0x102a },
+	{ 0x103f, 0x103f },
+	{ 0x1050, 0x1055 },
+	{ 0x105a, 0x105d },
+	{ 0x1061, 0x1061 },
+	{ 0x1065, 0x1066 },
+	{ 0x106e, 0x1070 },
+	{ 0x1075, 0x1081 },
+	{ 0x108e, 0x108e },
+	{ 0x10a0, 0x10c5 },
+	{ 0x10c7, 0x10c7 },
+	{ 0x10cd, 0x10cd },
+	{ 0x10d0, 0x10fa },
+	{ 0x10fc, 0x1248 },
+	{ 0x124a, 0x124d },
+	{ 0x1250, 0x1256 },
+	{ 0x1258, 0x1258 },
+	{ 0x125a, 0x125d },
+	{ 0x1260, 0x1288 },
+	{ 0x128a, 0x128d },
+	{ 0x1290, 0x12b0 },
+	{ 0x12b2, 0x12b5 },
+	{ 0x12b8, 0x12be },
+	{ 0x12c0, 0x12c0 },
+	{ 0x12c2, 0x12c5 },
+	{ 0x12c8, 0x12d6 },
+	{ 0x12d8, 0x1310 },
+	{ 0x1312, 0x1315 },
+	{ 0x1318, 0x135a },
+	{ 0x1380, 0x138f },
+	{ 0x13a0, 0x13f5 },
+	{ 0x13f8, 0x13fd },
+	{ 0x1401, 0x166c },
+	{ 0x166f, 0x167f },
+	{ 0x1681, 0x169a },
+	{ 0x16a0, 0x16ea },
+	{ 0x16ee, 0x16f8 },
+	{ 0x1700, 0x1711 },
+	{ 0x171f, 0x1731 },
+	{ 0x1740, 0x1751 },
+	{ 0x1760, 0x176c },
+	{ 0x176e, 0x1770 },
+	{ 0x1780, 0x17b3 },
+	{ 0x17d7, 0x17d7 },
+	{ 0x17dc, 0x17dc },
+	{ 0x1820, 0x1878 },
+	{ 0x1880, 0x18a8 },
+	{ 0x18aa, 0x18aa },
+	{ 0x18b0, 0x18f5 },
+	{ 0x1900, 0x191e },
+	{ 0x1950, 0x196d },
+	{ 0x1970, 0x1974 },
+	{ 0x1980, 0x19ab },
+	{ 0x19b0, 0x19c9 },
+	{ 0x1a00, 0x1a16 },
+	{ 0x1a20, 0x1a54 },
+	{ 0x1aa7, 0x1aa7 },
+	{ 0x1b05, 0x1b33 },
+	{ 0x1b45, 0x1b4c },
+	{ 0x1b83, 0x1ba0 },
+	{ 0x1bae, 0x1baf },
+	{ 0x1bba, 0x1be5 },
+	{ 0x1c00, 0x1c23 },
+	{ 0x1c4d, 0x1c4f },
+	{ 0x1c5a, 0x1c7d },
+	{ 0x1c80, 0x1c8a },
+	{ 0x1c90, 0x1cba },
+	{ 0x1cbd, 0x1cbf },
+	{ 0x1ce9, 0x1cec },
+	{ 0x1cee, 0x1cf3 },
+	{ 0x1cf5, 0x1cf6 },
+	{ 0x1cfa, 0x1cfa },
+	{ 0x1d00, 0x1dbf },
+	{ 0x1e00, 0x1f15 },
+	{ 0x1f18, 0x1f1d },
+	{ 0x1f20, 0x1f45 },
+	{ 0x1f48, 0x1f4d },
+	{ 0x1f50, 0x1f57 },
+	{ 0x1f59, 0x1f59 },
+	{ 0x1f5b, 0x1f5b },
+	{ 0x1f5d, 0x1f5d },
+	{ 0x1f5f, 0x1f7d },
+	{ 0x1f80, 0x1fb4 },
+	{ 0x1fb6, 0x1fbc },
+	{ 0x1fbe, 0x1fbe },
+	{ 0x1fc2, 0x1fc4 },
+	{ 0x1fc6, 0x1fcc },
+	{ 0x1fd0, 0x1fd3 },
+	{ 0x1fd6, 0x1fdb },
+	{ 0x1fe0, 0x1fec },
+	{ 0x1ff2, 0x1ff4 },
+	{ 0x1ff6, 0x1ffc },
+	{ 0x2071, 0x2071 },
+	{ 0x207f, 0x207f },
+	{ 0x2090, 0x209c },
+	{ 0x2102, 0x2102 },
+	{ 0x2107, 0x2107 },
+	{ 0x210a, 0x2113 },
+	{ 0x2115, 0x2115 },
+	{ 0x2118, 0x211d },
+	{ 0x2124, 0x2124 },
+	{ 0x2126, 0x2126 },
+	{ 0x2128, 0x2128 },
+	{ 0x212a, 0x2139 },
+	{ 0x213c, 0x213f },
+	{ 0x2145, 0x2149 },
+	{ 0x214e, 0x214e },
+	{ 0x2160, 0x2188 },
+	{ 0x2c00, 0x2ce4 },
+	{ 0x2ceb, 0x2cee },
+	{ 0x2cf2, 0x2cf3 },
+	{ 0x2d00, 0x2d25 },
+	{ 0x2d27, 0x2d27 },
+	{ 0x2d2d, 0x2d2d },
+	{ 0x2d30, 0x2d67 },
+	{ 0x2d6f, 0x2d6f },
+	{ 0x2d80, 0x2d96 },
+	{ 0x2da0, 0x2da6 },
+	{ 0x2da8, 0x2dae },
+	{ 0x2db0, 0x2db6 },
+	{ 0x2db8, 0x2dbe },
+	{ 0x2dc0, 0x2dc6 },
+	{ 0x2dc8, 0x2dce },
+	{ 0x2dd0, 0x2dd6 },
+	{ 0x2dd8, 0x2dde },
+	{ 0x3005, 0x3007 },
+	{ 0x3021, 0x3029 },
+	{ 0x3031, 0x3035 },
+	{ 0x3038, 0x303c },
+	{ 0x3041, 0x3096 },
+	{ 0x309d, 0x309f },
+	{ 0x30a1, 0x30fa },
+	{ 0x30fc, 0x30ff },
+	{ 0x3105, 0x312f },
+	{ 0x3131, 0x318e },
+	{ 0x31a0, 0x31bf },
+	{ 0x31f0, 0x31ff },
+	{ 0x3400, 0x4dbf },
+	{ 0x4e00, 0xa48c },
+	{ 0xa4d0, 0xa4fd },
+	{ 0xa500, 0xa60c },
+	{ 0xa610, 0xa61f },
+	{ 0xa62a, 0xa62b },
+	{ 0xa640, 0xa66e },
+	{ 0xa67f, 0xa69d },
+	{ 0xa6a0, 0xa6ef },
+	{ 0xa717, 0xa71f },
+	{ 0xa722, 0xa788 },
+	{ 0xa78b, 0xa7dc },
+	{ 0xa7f1, 0xa801 },
+	{ 0xa803, 0xa805 },
+	{ 0xa807, 0xa80a },
+	{ 0xa80c, 0xa822 },
+	{ 0xa840, 0xa873 },
+	{ 0xa882, 0xa8b3 },
+	{ 0xa8f2, 0xa8f7 },
+	{ 0xa8fb, 0xa8fb },
+	{ 0xa8fd, 0xa8fe },
+	{ 0xa90a, 0xa925 },
+	{ 0xa930, 0xa946 },
+	{ 0xa960, 0xa97c },
+	{ 0xa984, 0xa9b2 },
+	{ 0xa9cf, 0xa9cf },
+	{ 0xa9e0, 0xa9e4 },
+	{ 0xa9e6, 0xa9ef },
+	{ 0xa9fa, 0xa9fe },
+	{ 0xaa00, 0xaa28 },
+	{ 0xaa40, 0xaa42 },
+	{ 0xaa44, 0xaa4b },
+	{ 0xaa60, 0xaa76 },
+	{ 0xaa7a, 0xaa7a },
+	{ 0xaa7e, 0xaaaf },
+	{ 0xaab1, 0xaab1 },
+	{ 0xaab5, 0xaab6 },
+	{ 0xaab9, 0xaabd },
+	{ 0xaac0, 0xaac0 },
+	{ 0xaac2, 0xaac2 },
+	{ 0xaadb, 0xaadd },
+	{ 0xaae0, 0xaaea },
+	{ 0xaaf2, 0xaaf4 },
+	{ 0xab01, 0xab06 },
+	{ 0xab09, 0xab0e },
+	{ 0xab11, 0xab16 },
+	{ 0xab20, 0xab26 },
+	{ 0xab28, 0xab2e },
+	{ 0xab30, 0xab5a },
+	{ 0xab5c, 0xab69 },
+	{ 0xab70, 0xabe2 },
+	{ 0xac00, 0xd7a3 },
+	{ 0xd7b0, 0xd7c6 },
+	{ 0xd7cb, 0xd7fb },
+	{ 0xf900, 0xfa6d },
+	{ 0xfa70, 0xfad9 },
+	{ 0xfb00, 0xfb06 },
+	{ 0xfb13, 0xfb17 },
+	{ 0xfb1d, 0xfb1d },
+	{ 0xfb1f, 0xfb28 },
+	{ 0xfb2a, 0xfb36 },
+	{ 0xfb38, 0xfb3c },
+	{ 0xfb3e, 0xfb3e },
+	{ 0xfb40, 0xfb41 },
+	{ 0xfb43, 0xfb44 },
+	{ 0xfb46, 0xfbb1 },
+	{ 0xfbd3, 0xfc5d },
+	{ 0xfc64, 0xfd3d },
+	{ 0xfd50, 0xfd8f },
+	{ 0xfd92, 0xfdc7 },
+	{ 0xfdf0, 0xfdf9 },
+	{ 0xfe71, 0xfe71 },
+	{ 0xfe73, 0xfe73 },
+	{ 0xfe77, 0xfe77 },
+	{ 0xfe79, 0xfe79 },
+	{ 0xfe7b, 0xfe7b },
+	{ 0xfe7d, 0xfe7d },
+	{ 0xfe7f, 0xfefc },
+	{ 0xff21, 0xff3a },
+	{ 0xff41, 0xff5a },
+	{ 0xff66, 0xff9d },
+	{ 0xffa0, 0xffbe },
+	{ 0xffc2, 0xffc7 },
+	{ 0xffca, 0xffcf },
+	{ 0xffd2, 0xffd7 },
+	{ 0xffda, 0xffdc },
+	{ 0x10000, 0x1000b },
+	{ 0x1000d, 0x10026 },
+	{ 0x10028, 0x1003a },
+	{ 0x1003c, 0x1003d },
+	{ 0x1003f, 0x1004d },
+	{ 0x10050, 0x1005d },
+	{ 0x10080, 0x100fa },
+	{ 0x10140, 0x10174 },
+	{ 0x10280, 0x1029c },
+	{ 0x102a0, 0x102d0 },
+	{ 0x10300, 0x1031f },
+	{ 0x1032d, 0x1034a },
+	{ 0x10350, 0x10375 },
+	{ 0x10380, 0x1039d },
+	{ 0x103a0, 0x103c3 },
+	{ 0x103c8, 0x103cf },
+	{ 0x103d1, 0x103d5 },
+	{ 0x10400, 0x1049d },
+	{ 0x104b0, 0x104d3 },
+	{ 0x104d8, 0x104fb },
+	{ 0x10500, 0x10527 },
+	{ 0x10530, 0x10563 },
+	{ 0x10570, 0x1057a },
+	{ 0x1057c, 0x1058a },
+	{ 0x1058c, 0x10592 },
+	{ 0x10594, 0x10595 },
+	{ 0x10597, 0x105a1 },
+	{ 0x105a3, 0x105b1 },
+	{ 0x105b3, 0x105b9 },
+	{ 0x105bb, 0x105bc },
+	{ 0x105c0, 0x105f3 },
+	{ 0x10600, 0x10736 },
+	{ 0x10740, 0x10755 },
+	{ 0x10760, 0x10767 },
+	{ 0x10780, 0x10785 },
+	{ 0x10787, 0x107b0 },
+	{ 0x107b2, 0x107ba },
+	{ 0x10800, 0x10805 },
+	{ 0x10808, 0x10808 },
+	{ 0x1080a, 0x10835 },
+	{ 0x10837, 0x10838 },
+	{ 0x1083c, 0x1083c },
+	{ 0x1083f, 0x10855 },
+	{ 0x10860, 0x10876 },
+	{ 0x10880, 0x1089e },
+	{ 0x108e0, 0x108f2 },
+	{ 0x108f4, 0x108f5 },
+	{ 0x10900, 0x10915 },
+	{ 0x10920, 0x10939 },
+	{ 0x10940, 0x10959 },
+	{ 0x10980, 0x109b7 },
+	{ 0x109be, 0x109bf },
+	{ 0x10a00, 0x10a00 },
+	{ 0x10a10, 0x10a13 },
+	{ 0x10a15, 0x10a17 },
+	{ 0x10a19, 0x10a35 },
+	{ 0x10a60, 0x10a7c },
+	{ 0x10a80, 0x10a9c },
+	{ 0x10ac0, 0x10ac7 },
+	{ 0x10ac9, 0x10ae4 },
+	{ 0x10b00, 0x10b35 },
+	{ 0x10b40, 0x10b55 },
+	{ 0x10b60, 0x10b72 },
+	{ 0x10b80, 0x10b91 },
+	{ 0x10c00, 0x10c48 },
+	{ 0x10c80, 0x10cb2 },
+	{ 0x10cc0, 0x10cf2 },
+	{ 0x10d00, 0x10d23 },
+	{ 0x10d4a, 0x10d65 },
+	{ 0x10d6f, 0x10d85 },
+	{ 0x10e80, 0x10ea9 },
+	{ 0x10eb0, 0x10eb1 },
+	{ 0x10ec2, 0x10ec7 },
+	{ 0x10f00, 0x10f1c },
+	{ 0x10f27, 0x10f27 },
+	{ 0x10f30, 0x10f45 },
+	{ 0x10f70, 0x10f81 },
+	{ 0x10fb0, 0x10fc4 },
+	{ 0x10fe0, 0x10ff6 },
+	{ 0x11003, 0x11037 },
+	{ 0x11071, 0x11072 },
+	{ 0x11075, 0x11075 },
+	{ 0x11083, 0x110af },
+	{ 0x110d0, 0x110e8 },
+	{ 0x11103, 0x11126 },
+	{ 0x11144, 0x11144 },
+	{ 0x11147, 0x11147 },
+	{ 0x11150, 0x11172 },
+	{ 0x11176, 0x11176 },
+	{ 0x11183, 0x111b2 },
+	{ 0x111c1, 0x111c4 },
+	{ 0x111da, 0x111da },
+	{ 0x111dc, 0x111dc },
+	{ 0x11200, 0x11211 },
+	{ 0x11213, 0x1122b },
+	{ 0x1123f, 0x11240 },
+	{ 0x11280, 0x11286 },
+	{ 0x11288, 0x11288 },
+	{ 0x1128a, 0x1128d },
+	{ 0x1128f, 0x1129d },
+	{ 0x1129f, 0x112a8 },
+	{ 0x112b0, 0x112de },
+	{ 0x11305, 0x1130c },
+	{ 0x1130f, 0x11310 },
+	{ 0x11313, 0x11328 },
+	{ 0x1132a, 0x11330 },
+	{ 0x11332, 0x11333 },
+	{ 0x11335, 0x11339 },
+	{ 0x1133d, 0x1133d },
+	{ 0x11350, 0x11350 },
+	{ 0x1135d, 0x11361 },
+	{ 0x11380, 0x11389 },
+	{ 0x1138b, 0x1138b },
+	{ 0x1138e, 0x1138e },
+	{ 0x11390, 0x113b5 },
+	{ 0x113b7, 0x113b7 },
+	{ 0x113d1, 0x113d1 },
+	{ 0x113d3, 0x113d3 },
+	{ 0x11400, 0x11434 },
+	{ 0x11447, 0x1144a },
+	{ 0x1145f, 0x11461 },
+	{ 0x11480, 0x114af },
+	{ 0x114c4, 0x114c5 },
+	{ 0x114c7, 0x114c7 },
+	{ 0x11580, 0x115ae },
+	{ 0x115d8, 0x115db },
+	{ 0x11600, 0x1162f },
+	{ 0x11644, 0x11644 },
+	{ 0x11680, 0x116aa },
+	{ 0x116b8, 0x116b8 },
+	{ 0x11700, 0x1171a },
+	{ 0x11740, 0x11746 },
+	{ 0x11800, 0x1182b },
+	{ 0x118a0, 0x118df },
+	{ 0x118ff, 0x11906 },
+	{ 0x11909, 0x11909 },
+	{ 0x1190c, 0x11913 },
+	{ 0x11915, 0x11916 },
+	{ 0x11918, 0x1192f },
+	{ 0x1193f, 0x1193f },
+	{ 0x11941, 0x11941 },
+	{ 0x119a0, 0x119a7 },
+	{ 0x119aa, 0x119d0 },
+	{ 0x119e1, 0x119e1 },
+	{ 0x119e3, 0x119e3 },
+	{ 0x11a00, 0x11a00 },
+	{ 0x11a0b, 0x11a32 },
+	{ 0x11a3a, 0x11a3a },
+	{ 0x11a50, 0x11a50 },
+	{ 0x11a5c, 0x11a89 },
+	{ 0x11a9d, 0x11a9d },
+	{ 0x11ab0, 0x11af8 },
+	{ 0x11bc0, 0x11be0 },
+	{ 0x11c00, 0x11c08 },
+	{ 0x11c0a, 0x11c2e },
+	{ 0x11c40, 0x11c40 },
+	{ 0x11c72, 0x11c8f },
+	{ 0x11d00, 0x11d06 },
+	{ 0x11d08, 0x11d09 },
+	{ 0x11d0b, 0x11d30 },
+	{ 0x11d46, 0x11d46 },
+	{ 0x11d60, 0x11d65 },
+	{ 0x11d67, 0x11d68 },
+	{ 0x11d6a, 0x11d89 },
+	{ 0x11d98, 0x11d98 },
+	{ 0x11db0, 0x11ddb },
+	{ 0x11ee0, 0x11ef2 },
+	{ 0x11f02, 0x11f02 },
+	{ 0x11f04, 0x11f10 },
+	{ 0x11f12, 0x11f33 },
+	{ 0x11fb0, 0x11fb0 },
+	{ 0x12000, 0x12399 },
+	{ 0x12400, 0x1246e },
+	{ 0x12480, 0x12543 },
+	{ 0x12f90, 0x12ff0 },
+	{ 0x13000, 0x1342f },
+	{ 0x13441, 0x13446 },
+	{ 0x13460, 0x143fa },
+	{ 0x14400, 0x14646 },
+	{ 0x16100, 0x1611d },
+	{ 0x16800, 0x16a38 },
+	{ 0x16a40, 0x16a5e },
+	{ 0x16a70, 0x16abe },
+	{ 0x16ad0, 0x16aed },
+	{ 0x16b00, 0x16b2f },
+	{ 0x16b40, 0x16b43 },
+	{ 0x16b63, 0x16b77 },
+	{ 0x16b7d, 0x16b8f },
+	{ 0x16d40, 0x16d6c },
+	{ 0x16e40, 0x16e7f },
+	{ 0x16ea0, 0x16eb8 },
+	{ 0x16ebb, 0x16ed3 },
+	{ 0x16f00, 0x16f4a },
+	{ 0x16f50, 0x16f50 },
+	{ 0x16f93, 0x16f9f },
+	{ 0x16fe0, 0x16fe1 },
+	{ 0x16fe3, 0x16fe3 },
+	{ 0x16ff2, 0x16ff6 },
+	{ 0x17000, 0x18cd5 },
+	{ 0x18cff, 0x18d1e },
+	{ 0x18d80, 0x18df2 },
+	{ 0x1aff0, 0x1aff3 },
+	{ 0x1aff5, 0x1affb },
+	{ 0x1affd, 0x1affe },
+	{ 0x1b000, 0x1b122 },
+	{ 0x1b132, 0x1b132 },
+	{ 0x1b150, 0x1b152 },
+	{ 0x1b155, 0x1b155 },
+	{ 0x1b164, 0x1b167 },
+	{ 0x1b170, 0x1b2fb },
+	{ 0x1bc00, 0x1bc6a },
+	{ 0x1bc70, 0x1bc7c },
+	{ 0x1bc80, 0x1bc88 },
+	{ 0x1bc90, 0x1bc99 },
+	{ 0x1d400, 0x1d454 },
+	{ 0x1d456, 0x1d49c },
+	{ 0x1d49e, 0x1d49f },
+	{ 0x1d4a2, 0x1d4a2 },
+	{ 0x1d4a5, 0x1d4a6 },
+	{ 0x1d4a9, 0x1d4ac },
+	{ 0x1d4ae, 0x1d4b9 },
+	{ 0x1d4bb, 0x1d4bb },
+	{ 0x1d4bd, 0x1d4c3 },
+	{ 0x1d4c5, 0x1d505 },
+	{ 0x1d507, 0x1d50a },
+	{ 0x1d50d, 0x1d514 },
+	{ 0x1d516, 0x1d51c },
+	{ 0x1d51e, 0x1d539 },
+	{ 0x1d53b, 0x1d53e },
+	{ 0x1d540, 0x1d544 },
+	{ 0x1d546, 0x1d546 },
+	{ 0x1d54a, 0x1d550 },
+	{ 0x1d552, 0x1d6a5 },
+	{ 0x1d6a8, 0x1d6c0 },
+	{ 0x1d6c2, 0x1d6da },
+	{ 0x1d6dc, 0x1d6fa },
+	{ 0x1d6fc, 0x1d714 },
+	{ 0x1d716, 0x1d734 },
+	{ 0x1d736, 0x1d74e },
+	{ 0x1d750, 0x1d76e },
+	{ 0x1d770, 0x1d788 },
+	{ 0x1d78a, 0x1d7a8 },
+	{ 0x1d7aa, 0x1d7c2 },
+	{ 0x1d7c4, 0x1d7cb },
+	{ 0x1df00, 0x1df1e },
+	{ 0x1df25, 0x1df2a },
+	{ 0x1e030, 0x1e06d },
+	{ 0x1e100, 0x1e12c },
+	{ 0x1e137, 0x1e13d },
+	{ 0x1e14e, 0x1e14e },
+	{ 0x1e290, 0x1e2ad },
+	{ 0x1e2c0, 0x1e2eb },
+	{ 0x1e4d0, 0x1e4eb },
+	{ 0x1e5d0, 0x1e5ed },
+	{ 0x1e5f0, 0x1e5f0 },
+	{ 0x1e6c0, 0x1e6de },
+	{ 0x1e6e0, 0x1e6e2 },
+	{ 0x1e6e4, 0x1e6e5 },
+	{ 0x1e6e7, 0x1e6ed },
+	{ 0x1e6f0, 0x1e6f4 },
+	{ 0x1e6fe, 0x1e6ff },
+	{ 0x1e7e0, 0x1e7e6 },
+	{ 0x1e7e8, 0x1e7eb },
+	{ 0x1e7ed, 0x1e7ee },
+	{ 0x1e7f0, 0x1e7fe },
+	{ 0x1e800, 0x1e8c4 },
+	{ 0x1e900, 0x1e943 },
+	{ 0x1e94b, 0x1e94b },
+	{ 0x1ee00, 0x1ee03 },
+	{ 0x1ee05, 0x1ee1f },
+	{ 0x1ee21, 0x1ee22 },
+	{ 0x1ee24, 0x1ee24 },
+	{ 0x1ee27, 0x1ee27 },
+	{ 0x1ee29, 0x1ee32 },
+	{ 0x1ee34, 0x1ee37 },
+	{ 0x1ee39, 0x1ee39 },
+	{ 0x1ee3b, 0x1ee3b },
+	{ 0x1ee42, 0x1ee42 },
+	{ 0x1ee47, 0x1ee47 },
+	{ 0x1ee49, 0x1ee49 },
+	{ 0x1ee4b, 0x1ee4b },
+	{ 0x1ee4d, 0x1ee4f },
+	{ 0x1ee51, 0x1ee52 },
+	{ 0x1ee54, 0x1ee54 },
+	{ 0x1ee57, 0x1ee57 },
+	{ 0x1ee59, 0x1ee59 },
+	{ 0x1ee5b, 0x1ee5b },
+	{ 0x1ee5d, 0x1ee5d },
+	{ 0x1ee5f, 0x1ee5f },
+	{ 0x1ee61, 0x1ee62 },
+	{ 0x1ee64, 0x1ee64 },
+	{ 0x1ee67, 0x1ee6a },
+	{ 0x1ee6c, 0x1ee72 },
+	{ 0x1ee74, 0x1ee77 },
+	{ 0x1ee79, 0x1ee7c },
+	{ 0x1ee7e, 0x1ee7e },
+	{ 0x1ee80, 0x1ee89 },
+	{ 0x1ee8b, 0x1ee9b },
+	{ 0x1eea1, 0x1eea3 },
+	{ 0x1eea5, 0x1eea9 },
+	{ 0x1eeab, 0x1eebb },
+	{ 0x20000, 0x2a6df },
+	{ 0x2a700, 0x2b81d },
+	{ 0x2b820, 0x2cead },
+	{ 0x2ceb0, 0x2ebe0 },
+	{ 0x2ebf0, 0x2ee5d },
+	{ 0x2f800, 0x2fa1d },
+	{ 0x30000, 0x3134a },
+	{ 0x31350, 0x33479 },
+};
+
+const int xid_continue_size = 806;
+const CharRange xid_continue[xid_continue_size] = {
+	{ 0x30, 0x39 },
+	{ 0x41, 0x5a },
+	{ 0x5f, 0x5f },
+	{ 0x61, 0x7a },
+	{ 0xaa, 0xaa },
+	{ 0xb5, 0xb5 },
+	{ 0xb7, 0xb7 },
+	{ 0xba, 0xba },
+	{ 0xc0, 0xd6 },
+	{ 0xd8, 0xf6 },
+	{ 0xf8, 0x2c1 },
+	{ 0x2c6, 0x2d1 },
+	{ 0x2e0, 0x2e4 },
+	{ 0x2ec, 0x2ec },
+	{ 0x2ee, 0x2ee },
+	{ 0x300, 0x374 },
+	{ 0x376, 0x377 },
+	{ 0x37b, 0x37d },
+	{ 0x37f, 0x37f },
+	{ 0x386, 0x38a },
+	{ 0x38c, 0x38c },
+	{ 0x38e, 0x3a1 },
+	{ 0x3a3, 0x3f5 },
+	{ 0x3f7, 0x481 },
+	{ 0x483, 0x487 },
+	{ 0x48a, 0x52f },
+	{ 0x531, 0x556 },
+	{ 0x559, 0x559 },
+	{ 0x560, 0x588 },
+	{ 0x591, 0x5bd },
+	{ 0x5bf, 0x5bf },
+	{ 0x5c1, 0x5c2 },
+	{ 0x5c4, 0x5c5 },
+	{ 0x5c7, 0x5c7 },
+	{ 0x5d0, 0x5ea },
+	{ 0x5ef, 0x5f2 },
+	{ 0x610, 0x61a },
+	{ 0x620, 0x669 },
+	{ 0x66e, 0x6d3 },
+	{ 0x6d5, 0x6dc },
+	{ 0x6df, 0x6e8 },
+	{ 0x6ea, 0x6fc },
+	{ 0x6ff, 0x6ff },
+	{ 0x710, 0x74a },
+	{ 0x74d, 0x7b1 },
+	{ 0x7c0, 0x7f5 },
+	{ 0x7fa, 0x7fa },
+	{ 0x7fd, 0x7fd },
+	{ 0x800, 0x82d },
+	{ 0x840, 0x85b },
+	{ 0x860, 0x86a },
+	{ 0x870, 0x887 },
+	{ 0x889, 0x88f },
+	{ 0x897, 0x8e1 },
+	{ 0x8e3, 0x963 },
+	{ 0x966, 0x96f },
+	{ 0x971, 0x983 },
+	{ 0x985, 0x98c },
+	{ 0x98f, 0x990 },
+	{ 0x993, 0x9a8 },
+	{ 0x9aa, 0x9b0 },
+	{ 0x9b2, 0x9b2 },
+	{ 0x9b6, 0x9b9 },
+	{ 0x9bc, 0x9c4 },
+	{ 0x9c7, 0x9c8 },
+	{ 0x9cb, 0x9ce },
+	{ 0x9d7, 0x9d7 },
+	{ 0x9dc, 0x9dd },
+	{ 0x9df, 0x9e3 },
+	{ 0x9e6, 0x9f1 },
+	{ 0x9fc, 0x9fc },
+	{ 0x9fe, 0x9fe },
+	{ 0xa01, 0xa03 },
+	{ 0xa05, 0xa0a },
+	{ 0xa0f, 0xa10 },
+	{ 0xa13, 0xa28 },
+	{ 0xa2a, 0xa30 },
+	{ 0xa32, 0xa33 },
+	{ 0xa35, 0xa36 },
+	{ 0xa38, 0xa39 },
+	{ 0xa3c, 0xa3c },
+	{ 0xa3e, 0xa42 },
+	{ 0xa47, 0xa48 },
+	{ 0xa4b, 0xa4d },
+	{ 0xa51, 0xa51 },
+	{ 0xa59, 0xa5c },
+	{ 0xa5e, 0xa5e },
+	{ 0xa66, 0xa75 },
+	{ 0xa81, 0xa83 },
+	{ 0xa85, 0xa8d },
+	{ 0xa8f, 0xa91 },
+	{ 0xa93, 0xaa8 },
+	{ 0xaaa, 0xab0 },
+	{ 0xab2, 0xab3 },
+	{ 0xab5, 0xab9 },
+	{ 0xabc, 0xac5 },
+	{ 0xac7, 0xac9 },
+	{ 0xacb, 0xacd },
+	{ 0xad0, 0xad0 },
+	{ 0xae0, 0xae3 },
+	{ 0xae6, 0xaef },
+	{ 0xaf9, 0xaff },
+	{ 0xb01, 0xb03 },
+	{ 0xb05, 0xb0c },
+	{ 0xb0f, 0xb10 },
+	{ 0xb13, 0xb28 },
+	{ 0xb2a, 0xb30 },
+	{ 0xb32, 0xb33 },
+	{ 0xb35, 0xb39 },
+	{ 0xb3c, 0xb44 },
+	{ 0xb47, 0xb48 },
+	{ 0xb4b, 0xb4d },
+	{ 0xb55, 0xb57 },
+	{ 0xb5c, 0xb5d },
+	{ 0xb5f, 0xb63 },
+	{ 0xb66, 0xb6f },
+	{ 0xb71, 0xb71 },
+	{ 0xb82, 0xb83 },
+	{ 0xb85, 0xb8a },
+	{ 0xb8e, 0xb90 },
+	{ 0xb92, 0xb95 },
+	{ 0xb99, 0xb9a },
+	{ 0xb9c, 0xb9c },
+	{ 0xb9e, 0xb9f },
+	{ 0xba3, 0xba4 },
+	{ 0xba8, 0xbaa },
+	{ 0xbae, 0xbb9 },
+	{ 0xbbe, 0xbc2 },
+	{ 0xbc6, 0xbc8 },
+	{ 0xbca, 0xbcd },
+	{ 0xbd0, 0xbd0 },
+	{ 0xbd7, 0xbd7 },
+	{ 0xbe6, 0xbef },
+	{ 0xc00, 0xc0c },
+	{ 0xc0e, 0xc10 },
+	{ 0xc12, 0xc28 },
+	{ 0xc2a, 0xc39 },
+	{ 0xc3c, 0xc44 },
+	{ 0xc46, 0xc48 },
+	{ 0xc4a, 0xc4d },
+	{ 0xc55, 0xc56 },
+	{ 0xc58, 0xc5a },
+	{ 0xc5c, 0xc5d },
+	{ 0xc60, 0xc63 },
+	{ 0xc66, 0xc6f },
+	{ 0xc80, 0xc83 },
+	{ 0xc85, 0xc8c },
+	{ 0xc8e, 0xc90 },
+	{ 0xc92, 0xca8 },
+	{ 0xcaa, 0xcb3 },
+	{ 0xcb5, 0xcb9 },
+	{ 0xcbc, 0xcc4 },
+	{ 0xcc6, 0xcc8 },
+	{ 0xcca, 0xccd },
+	{ 0xcd5, 0xcd6 },
+	{ 0xcdc, 0xcde },
+	{ 0xce0, 0xce3 },
+	{ 0xce6, 0xcef },
+	{ 0xcf1, 0xcf3 },
+	{ 0xd00, 0xd0c },
+	{ 0xd0e, 0xd10 },
+	{ 0xd12, 0xd44 },
+	{ 0xd46, 0xd48 },
+	{ 0xd4a, 0xd4e },
+	{ 0xd54, 0xd57 },
+	{ 0xd5f, 0xd63 },
+	{ 0xd66, 0xd6f },
+	{ 0xd7a, 0xd7f },
+	{ 0xd81, 0xd83 },
+	{ 0xd85, 0xd96 },
+	{ 0xd9a, 0xdb1 },
+	{ 0xdb3, 0xdbb },
+	{ 0xdbd, 0xdbd },
+	{ 0xdc0, 0xdc6 },
+	{ 0xdca, 0xdca },
+	{ 0xdcf, 0xdd4 },
+	{ 0xdd6, 0xdd6 },
+	{ 0xdd8, 0xddf },
+	{ 0xde6, 0xdef },
+	{ 0xdf2, 0xdf3 },
+	{ 0xe01, 0xe3a },
+	{ 0xe40, 0xe4e },
+	{ 0xe50, 0xe59 },
+	{ 0xe81, 0xe82 },
+	{ 0xe84, 0xe84 },
+	{ 0xe86, 0xe8a },
+	{ 0xe8c, 0xea3 },
+	{ 0xea5, 0xea5 },
+	{ 0xea7, 0xebd },
+	{ 0xec0, 0xec4 },
+	{ 0xec6, 0xec6 },
+	{ 0xec8, 0xece },
+	{ 0xed0, 0xed9 },
+	{ 0xedc, 0xedf },
+	{ 0xf00, 0xf00 },
+	{ 0xf18, 0xf19 },
+	{ 0xf20, 0xf29 },
+	{ 0xf35, 0xf35 },
+	{ 0xf37, 0xf37 },
+	{ 0xf39, 0xf39 },
+	{ 0xf3e, 0xf47 },
+	{ 0xf49, 0xf6c },
+	{ 0xf71, 0xf84 },
+	{ 0xf86, 0xf97 },
+	{ 0xf99, 0xfbc },
+	{ 0xfc6, 0xfc6 },
+	{ 0x1000, 0x1049 },
+	{ 0x1050, 0x109d },
+	{ 0x10a0, 0x10c5 },
+	{ 0x10c7, 0x10c7 },
+	{ 0x10cd, 0x10cd },
+	{ 0x10d0, 0x10fa },
+	{ 0x10fc, 0x1248 },
+	{ 0x124a, 0x124d },
+	{ 0x1250, 0x1256 },
+	{ 0x1258, 0x1258 },
+	{ 0x125a, 0x125d },
+	{ 0x1260, 0x1288 },
+	{ 0x128a, 0x128d },
+	{ 0x1290, 0x12b0 },
+	{ 0x12b2, 0x12b5 },
+	{ 0x12b8, 0x12be },
+	{ 0x12c0, 0x12c0 },
+	{ 0x12c2, 0x12c5 },
+	{ 0x12c8, 0x12d6 },
+	{ 0x12d8, 0x1310 },
+	{ 0x1312, 0x1315 },
+	{ 0x1318, 0x135a },
+	{ 0x135d, 0x135f },
+	{ 0x1369, 0x1371 },
+	{ 0x1380, 0x138f },
+	{ 0x13a0, 0x13f5 },
+	{ 0x13f8, 0x13fd },
+	{ 0x1401, 0x166c },
+	{ 0x166f, 0x167f },
+	{ 0x1681, 0x169a },
+	{ 0x16a0, 0x16ea },
+	{ 0x16ee, 0x16f8 },
+	{ 0x1700, 0x1715 },
+	{ 0x171f, 0x1734 },
+	{ 0x1740, 0x1753 },
+	{ 0x1760, 0x176c },
+	{ 0x176e, 0x1770 },
+	{ 0x1772, 0x1773 },
+	{ 0x1780, 0x17d3 },
+	{ 0x17d7, 0x17d7 },
+	{ 0x17dc, 0x17dd },
+	{ 0x17e0, 0x17e9 },
+	{ 0x180b, 0x180d },
+	{ 0x180f, 0x1819 },
+	{ 0x1820, 0x1878 },
+	{ 0x1880, 0x18aa },
+	{ 0x18b0, 0x18f5 },
+	{ 0x1900, 0x191e },
+	{ 0x1920, 0x192b },
+	{ 0x1930, 0x193b },
+	{ 0x1946, 0x196d },
+	{ 0x1970, 0x1974 },
+	{ 0x1980, 0x19ab },
+	{ 0x19b0, 0x19c9 },
+	{ 0x19d0, 0x19da },
+	{ 0x1a00, 0x1a1b },
+	{ 0x1a20, 0x1a5e },
+	{ 0x1a60, 0x1a7c },
+	{ 0x1a7f, 0x1a89 },
+	{ 0x1a90, 0x1a99 },
+	{ 0x1aa7, 0x1aa7 },
+	{ 0x1ab0, 0x1abd },
+	{ 0x1abf, 0x1add },
+	{ 0x1ae0, 0x1aeb },
+	{ 0x1b00, 0x1b4c },
+	{ 0x1b50, 0x1b59 },
+	{ 0x1b6b, 0x1b73 },
+	{ 0x1b80, 0x1bf3 },
+	{ 0x1c00, 0x1c37 },
+	{ 0x1c40, 0x1c49 },
+	{ 0x1c4d, 0x1c7d },
+	{ 0x1c80, 0x1c8a },
+	{ 0x1c90, 0x1cba },
+	{ 0x1cbd, 0x1cbf },
+	{ 0x1cd0, 0x1cd2 },
+	{ 0x1cd4, 0x1cfa },
+	{ 0x1d00, 0x1f15 },
+	{ 0x1f18, 0x1f1d },
+	{ 0x1f20, 0x1f45 },
+	{ 0x1f48, 0x1f4d },
+	{ 0x1f50, 0x1f57 },
+	{ 0x1f59, 0x1f59 },
+	{ 0x1f5b, 0x1f5b },
+	{ 0x1f5d, 0x1f5d },
+	{ 0x1f5f, 0x1f7d },
+	{ 0x1f80, 0x1fb4 },
+	{ 0x1fb6, 0x1fbc },
+	{ 0x1fbe, 0x1fbe },
+	{ 0x1fc2, 0x1fc4 },
+	{ 0x1fc6, 0x1fcc },
+	{ 0x1fd0, 0x1fd3 },
+	{ 0x1fd6, 0x1fdb },
+	{ 0x1fe0, 0x1fec },
+	{ 0x1ff2, 0x1ff4 },
+	{ 0x1ff6, 0x1ffc },
+	{ 0x200c, 0x200d },
+	{ 0x203f, 0x2040 },
+	{ 0x2054, 0x2054 },
+	{ 0x2071, 0x2071 },
+	{ 0x207f, 0x207f },
+	{ 0x2090, 0x209c },
+	{ 0x20d0, 0x20dc },
+	{ 0x20e1, 0x20e1 },
+	{ 0x20e5, 0x20f0 },
+	{ 0x2102, 0x2102 },
+	{ 0x2107, 0x2107 },
+	{ 0x210a, 0x2113 },
+	{ 0x2115, 0x2115 },
+	{ 0x2118, 0x211d },
+	{ 0x2124, 0x2124 },
+	{ 0x2126, 0x2126 },
+	{ 0x2128, 0x2128 },
+	{ 0x212a, 0x2139 },
+	{ 0x213c, 0x213f },
+	{ 0x2145, 0x2149 },
+	{ 0x214e, 0x214e },
+	{ 0x2160, 0x2188 },
+	{ 0x2c00, 0x2ce4 },
+	{ 0x2ceb, 0x2cf3 },
+	{ 0x2d00, 0x2d25 },
+	{ 0x2d27, 0x2d27 },
+	{ 0x2d2d, 0x2d2d },
+	{ 0x2d30, 0x2d67 },
+	{ 0x2d6f, 0x2d6f },
+	{ 0x2d7f, 0x2d96 },
+	{ 0x2da0, 0x2da6 },
+	{ 0x2da8, 0x2dae },
+	{ 0x2db0, 0x2db6 },
+	{ 0x2db8, 0x2dbe },
+	{ 0x2dc0, 0x2dc6 },
+	{ 0x2dc8, 0x2dce },
+	{ 0x2dd0, 0x2dd6 },
+	{ 0x2dd8, 0x2dde },
+	{ 0x2de0, 0x2dff },
+	{ 0x3005, 0x3007 },
+	{ 0x3021, 0x302f },
+	{ 0x3031, 0x3035 },
+	{ 0x3038, 0x303c },
+	{ 0x3041, 0x3096 },
+	{ 0x3099, 0x309a },
+	{ 0x309d, 0x309f },
+	{ 0x30a1, 0x30ff },
+	{ 0x3105, 0x312f },
+	{ 0x3131, 0x318e },
+	{ 0x31a0, 0x31bf },
+	{ 0x31f0, 0x31ff },
+	{ 0x3400, 0x4dbf },
+	{ 0x4e00, 0xa48c },
+	{ 0xa4d0, 0xa4fd },
+	{ 0xa500, 0xa60c },
+	{ 0xa610, 0xa62b },
+	{ 0xa640, 0xa66f },
+	{ 0xa674, 0xa67d },
+	{ 0xa67f, 0xa6f1 },
+	{ 0xa717, 0xa71f },
+	{ 0xa722, 0xa788 },
+	{ 0xa78b, 0xa7dc },
+	{ 0xa7f1, 0xa827 },
+	{ 0xa82c, 0xa82c },
+	{ 0xa840, 0xa873 },
+	{ 0xa880, 0xa8c5 },
+	{ 0xa8d0, 0xa8d9 },
+	{ 0xa8e0, 0xa8f7 },
+	{ 0xa8fb, 0xa8fb },
+	{ 0xa8fd, 0xa92d },
+	{ 0xa930, 0xa953 },
+	{ 0xa960, 0xa97c },
+	{ 0xa980, 0xa9c0 },
+	{ 0xa9cf, 0xa9d9 },
+	{ 0xa9e0, 0xa9fe },
+	{ 0xaa00, 0xaa36 },
+	{ 0xaa40, 0xaa4d },
+	{ 0xaa50, 0xaa59 },
+	{ 0xaa60, 0xaa76 },
+	{ 0xaa7a, 0xaac2 },
+	{ 0xaadb, 0xaadd },
+	{ 0xaae0, 0xaaef },
+	{ 0xaaf2, 0xaaf6 },
+	{ 0xab01, 0xab06 },
+	{ 0xab09, 0xab0e },
+	{ 0xab11, 0xab16 },
+	{ 0xab20, 0xab26 },
+	{ 0xab28, 0xab2e },
+	{ 0xab30, 0xab5a },
+	{ 0xab5c, 0xab69 },
+	{ 0xab70, 0xabea },
+	{ 0xabec, 0xabed },
+	{ 0xabf0, 0xabf9 },
+	{ 0xac00, 0xd7a3 },
+	{ 0xd7b0, 0xd7c6 },
+	{ 0xd7cb, 0xd7fb },
+	{ 0xf900, 0xfa6d },
+	{ 0xfa70, 0xfad9 },
+	{ 0xfb00, 0xfb06 },
+	{ 0xfb13, 0xfb17 },
+	{ 0xfb1d, 0xfb28 },
+	{ 0xfb2a, 0xfb36 },
+	{ 0xfb38, 0xfb3c },
+	{ 0xfb3e, 0xfb3e },
+	{ 0xfb40, 0xfb41 },
+	{ 0xfb43, 0xfb44 },
+	{ 0xfb46, 0xfbb1 },
+	{ 0xfbd3, 0xfc5d },
+	{ 0xfc64, 0xfd3d },
+	{ 0xfd50, 0xfd8f },
+	{ 0xfd92, 0xfdc7 },
+	{ 0xfdf0, 0xfdf9 },
+	{ 0xfe00, 0xfe0f },
+	{ 0xfe20, 0xfe2f },
+	{ 0xfe33, 0xfe34 },
+	{ 0xfe4d, 0xfe4f },
+	{ 0xfe71, 0xfe71 },
+	{ 0xfe73, 0xfe73 },
+	{ 0xfe77, 0xfe77 },
+	{ 0xfe79, 0xfe79 },
+	{ 0xfe7b, 0xfe7b },
+	{ 0xfe7d, 0xfe7d },
+	{ 0xfe7f, 0xfefc },
+	{ 0xff10, 0xff19 },
+	{ 0xff21, 0xff3a },
+	{ 0xff3f, 0xff3f },
+	{ 0xff41, 0xff5a },
+	{ 0xff65, 0xffbe },
+	{ 0xffc2, 0xffc7 },
+	{ 0xffca, 0xffcf },
+	{ 0xffd2, 0xffd7 },
+	{ 0xffda, 0xffdc },
+	{ 0x10000, 0x1000b },
+	{ 0x1000d, 0x10026 },
+	{ 0x10028, 0x1003a },
+	{ 0x1003c, 0x1003d },
+	{ 0x1003f, 0x1004d },
+	{ 0x10050, 0x1005d },
+	{ 0x10080, 0x100fa },
+	{ 0x10140, 0x10174 },
+	{ 0x101fd, 0x101fd },
+	{ 0x10280, 0x1029c },
+	{ 0x102a0, 0x102d0 },
+	{ 0x102e0, 0x102e0 },
+	{ 0x10300, 0x1031f },
+	{ 0x1032d, 0x1034a },
+	{ 0x10350, 0x1037a },
+	{ 0x10380, 0x1039d },
+	{ 0x103a0, 0x103c3 },
+	{ 0x103c8, 0x103cf },
+	{ 0x103d1, 0x103d5 },
+	{ 0x10400, 0x1049d },
+	{ 0x104a0, 0x104a9 },
+	{ 0x104b0, 0x104d3 },
+	{ 0x104d8, 0x104fb },
+	{ 0x10500, 0x10527 },
+	{ 0x10530, 0x10563 },
+	{ 0x10570, 0x1057a },
+	{ 0x1057c, 0x1058a },
+	{ 0x1058c, 0x10592 },
+	{ 0x10594, 0x10595 },
+	{ 0x10597, 0x105a1 },
+	{ 0x105a3, 0x105b1 },
+	{ 0x105b3, 0x105b9 },
+	{ 0x105bb, 0x105bc },
+	{ 0x105c0, 0x105f3 },
+	{ 0x10600, 0x10736 },
+	{ 0x10740, 0x10755 },
+	{ 0x10760, 0x10767 },
+	{ 0x10780, 0x10785 },
+	{ 0x10787, 0x107b0 },
+	{ 0x107b2, 0x107ba },
+	{ 0x10800, 0x10805 },
+	{ 0x10808, 0x10808 },
+	{ 0x1080a, 0x10835 },
+	{ 0x10837, 0x10838 },
+	{ 0x1083c, 0x1083c },
+	{ 0x1083f, 0x10855 },
+	{ 0x10860, 0x10876 },
+	{ 0x10880, 0x1089e },
+	{ 0x108e0, 0x108f2 },
+	{ 0x108f4, 0x108f5 },
+	{ 0x10900, 0x10915 },
+	{ 0x10920, 0x10939 },
+	{ 0x10940, 0x10959 },
+	{ 0x10980, 0x109b7 },
+	{ 0x109be, 0x109bf },
+	{ 0x10a00, 0x10a03 },
+	{ 0x10a05, 0x10a06 },
+	{ 0x10a0c, 0x10a13 },
+	{ 0x10a15, 0x10a17 },
+	{ 0x10a19, 0x10a35 },
+	{ 0x10a38, 0x10a3a },
+	{ 0x10a3f, 0x10a3f },
+	{ 0x10a60, 0x10a7c },
+	{ 0x10a80, 0x10a9c },
+	{ 0x10ac0, 0x10ac7 },
+	{ 0x10ac9, 0x10ae6 },
+	{ 0x10b00, 0x10b35 },
+	{ 0x10b40, 0x10b55 },
+	{ 0x10b60, 0x10b72 },
+	{ 0x10b80, 0x10b91 },
+	{ 0x10c00, 0x10c48 },
+	{ 0x10c80, 0x10cb2 },
+	{ 0x10cc0, 0x10cf2 },
+	{ 0x10d00, 0x10d27 },
+	{ 0x10d30, 0x10d39 },
+	{ 0x10d40, 0x10d65 },
+	{ 0x10d69, 0x10d6d },
+	{ 0x10d6f, 0x10d85 },
+	{ 0x10e80, 0x10ea9 },
+	{ 0x10eab, 0x10eac },
+	{ 0x10eb0, 0x10eb1 },
+	{ 0x10ec2, 0x10ec7 },
+	{ 0x10efa, 0x10f1c },
+	{ 0x10f27, 0x10f27 },
+	{ 0x10f30, 0x10f50 },
+	{ 0x10f70, 0x10f85 },
+	{ 0x10fb0, 0x10fc4 },
+	{ 0x10fe0, 0x10ff6 },
+	{ 0x11000, 0x11046 },
+	{ 0x11066, 0x11075 },
+	{ 0x1107f, 0x110ba },
+	{ 0x110c2, 0x110c2 },
+	{ 0x110d0, 0x110e8 },
+	{ 0x110f0, 0x110f9 },
+	{ 0x11100, 0x11134 },
+	{ 0x11136, 0x1113f },
+	{ 0x11144, 0x11147 },
+	{ 0x11150, 0x11173 },
+	{ 0x11176, 0x11176 },
+	{ 0x11180, 0x111c4 },
+	{ 0x111c9, 0x111cc },
+	{ 0x111ce, 0x111da },
+	{ 0x111dc, 0x111dc },
+	{ 0x11200, 0x11211 },
+	{ 0x11213, 0x11237 },
+	{ 0x1123e, 0x11241 },
+	{ 0x11280, 0x11286 },
+	{ 0x11288, 0x11288 },
+	{ 0x1128a, 0x1128d },
+	{ 0x1128f, 0x1129d },
+	{ 0x1129f, 0x112a8 },
+	{ 0x112b0, 0x112ea },
+	{ 0x112f0, 0x112f9 },
+	{ 0x11300, 0x11303 },
+	{ 0x11305, 0x1130c },
+	{ 0x1130f, 0x11310 },
+	{ 0x11313, 0x11328 },
+	{ 0x1132a, 0x11330 },
+	{ 0x11332, 0x11333 },
+	{ 0x11335, 0x11339 },
+	{ 0x1133b, 0x11344 },
+	{ 0x11347, 0x11348 },
+	{ 0x1134b, 0x1134d },
+	{ 0x11350, 0x11350 },
+	{ 0x11357, 0x11357 },
+	{ 0x1135d, 0x11363 },
+	{ 0x11366, 0x1136c },
+	{ 0x11370, 0x11374 },
+	{ 0x11380, 0x11389 },
+	{ 0x1138b, 0x1138b },
+	{ 0x1138e, 0x1138e },
+	{ 0x11390, 0x113b5 },
+	{ 0x113b7, 0x113c0 },
+	{ 0x113c2, 0x113c2 },
+	{ 0x113c5, 0x113c5 },
+	{ 0x113c7, 0x113ca },
+	{ 0x113cc, 0x113d3 },
+	{ 0x113e1, 0x113e2 },
+	{ 0x11400, 0x1144a },
+	{ 0x11450, 0x11459 },
+	{ 0x1145e, 0x11461 },
+	{ 0x11480, 0x114c5 },
+	{ 0x114c7, 0x114c7 },
+	{ 0x114d0, 0x114d9 },
+	{ 0x11580, 0x115b5 },
+	{ 0x115b8, 0x115c0 },
+	{ 0x115d8, 0x115dd },
+	{ 0x11600, 0x11640 },
+	{ 0x11644, 0x11644 },
+	{ 0x11650, 0x11659 },
+	{ 0x11680, 0x116b8 },
+	{ 0x116c0, 0x116c9 },
+	{ 0x116d0, 0x116e3 },
+	{ 0x11700, 0x1171a },
+	{ 0x1171d, 0x1172b },
+	{ 0x11730, 0x11739 },
+	{ 0x11740, 0x11746 },
+	{ 0x11800, 0x1183a },
+	{ 0x118a0, 0x118e9 },
+	{ 0x118ff, 0x11906 },
+	{ 0x11909, 0x11909 },
+	{ 0x1190c, 0x11913 },
+	{ 0x11915, 0x11916 },
+	{ 0x11918, 0x11935 },
+	{ 0x11937, 0x11938 },
+	{ 0x1193b, 0x11943 },
+	{ 0x11950, 0x11959 },
+	{ 0x119a0, 0x119a7 },
+	{ 0x119aa, 0x119d7 },
+	{ 0x119da, 0x119e1 },
+	{ 0x119e3, 0x119e4 },
+	{ 0x11a00, 0x11a3e },
+	{ 0x11a47, 0x11a47 },
+	{ 0x11a50, 0x11a99 },
+	{ 0x11a9d, 0x11a9d },
+	{ 0x11ab0, 0x11af8 },
+	{ 0x11b60, 0x11b67 },
+	{ 0x11bc0, 0x11be0 },
+	{ 0x11bf0, 0x11bf9 },
+	{ 0x11c00, 0x11c08 },
+	{ 0x11c0a, 0x11c36 },
+	{ 0x11c38, 0x11c40 },
+	{ 0x11c50, 0x11c59 },
+	{ 0x11c72, 0x11c8f },
+	{ 0x11c92, 0x11ca7 },
+	{ 0x11ca9, 0x11cb6 },
+	{ 0x11d00, 0x11d06 },
+	{ 0x11d08, 0x11d09 },
+	{ 0x11d0b, 0x11d36 },
+	{ 0x11d3a, 0x11d3a },
+	{ 0x11d3c, 0x11d3d },
+	{ 0x11d3f, 0x11d47 },
+	{ 0x11d50, 0x11d59 },
+	{ 0x11d60, 0x11d65 },
+	{ 0x11d67, 0x11d68 },
+	{ 0x11d6a, 0x11d8e },
+	{ 0x11d90, 0x11d91 },
+	{ 0x11d93, 0x11d98 },
+	{ 0x11da0, 0x11da9 },
+	{ 0x11db0, 0x11ddb },
+	{ 0x11de0, 0x11de9 },
+	{ 0x11ee0, 0x11ef6 },
+	{ 0x11f00, 0x11f10 },
+	{ 0x11f12, 0x11f3a },
+	{ 0x11f3e, 0x11f42 },
+	{ 0x11f50, 0x11f5a },
+	{ 0x11fb0, 0x11fb0 },
+	{ 0x12000, 0x12399 },
+	{ 0x12400, 0x1246e },
+	{ 0x12480, 0x12543 },
+	{ 0x12f90, 0x12ff0 },
+	{ 0x13000, 0x1342f },
+	{ 0x13440, 0x13455 },
+	{ 0x13460, 0x143fa },
+	{ 0x14400, 0x14646 },
+	{ 0x16100, 0x16139 },
+	{ 0x16800, 0x16a38 },
+	{ 0x16a40, 0x16a5e },
+	{ 0x16a60, 0x16a69 },
+	{ 0x16a70, 0x16abe },
+	{ 0x16ac0, 0x16ac9 },
+	{ 0x16ad0, 0x16aed },
+	{ 0x16af0, 0x16af4 },
+	{ 0x16b00, 0x16b36 },
+	{ 0x16b40, 0x16b43 },
+	{ 0x16b50, 0x16b59 },
+	{ 0x16b63, 0x16b77 },
+	{ 0x16b7d, 0x16b8f },
+	{ 0x16d40, 0x16d6c },
+	{ 0x16d70, 0x16d79 },
+	{ 0x16e40, 0x16e7f },
+	{ 0x16ea0, 0x16eb8 },
+	{ 0x16ebb, 0x16ed3 },
+	{ 0x16f00, 0x16f4a },
+	{ 0x16f4f, 0x16f87 },
+	{ 0x16f8f, 0x16f9f },
+	{ 0x16fe0, 0x16fe1 },
+	{ 0x16fe3, 0x16fe4 },
+	{ 0x16ff0, 0x16ff6 },
+	{ 0x17000, 0x18cd5 },
+	{ 0x18cff, 0x18d1e },
+	{ 0x18d80, 0x18df2 },
+	{ 0x1aff0, 0x1aff3 },
+	{ 0x1aff5, 0x1affb },
+	{ 0x1affd, 0x1affe },
+	{ 0x1b000, 0x1b122 },
+	{ 0x1b132, 0x1b132 },
+	{ 0x1b150, 0x1b152 },
+	{ 0x1b155, 0x1b155 },
+	{ 0x1b164, 0x1b167 },
+	{ 0x1b170, 0x1b2fb },
+	{ 0x1bc00, 0x1bc6a },
+	{ 0x1bc70, 0x1bc7c },
+	{ 0x1bc80, 0x1bc88 },
+	{ 0x1bc90, 0x1bc99 },
+	{ 0x1bc9d, 0x1bc9e },
+	{ 0x1ccf0, 0x1ccf9 },
+	{ 0x1cf00, 0x1cf2d },
+	{ 0x1cf30, 0x1cf46 },
+	{ 0x1d165, 0x1d169 },
+	{ 0x1d16d, 0x1d172 },
+	{ 0x1d17b, 0x1d182 },
+	{ 0x1d185, 0x1d18b },
+	{ 0x1d1aa, 0x1d1ad },
+	{ 0x1d242, 0x1d244 },
+	{ 0x1d400, 0x1d454 },
+	{ 0x1d456, 0x1d49c },
+	{ 0x1d49e, 0x1d49f },
+	{ 0x1d4a2, 0x1d4a2 },
+	{ 0x1d4a5, 0x1d4a6 },
+	{ 0x1d4a9, 0x1d4ac },
+	{ 0x1d4ae, 0x1d4b9 },
+	{ 0x1d4bb, 0x1d4bb },
+	{ 0x1d4bd, 0x1d4c3 },
+	{ 0x1d4c5, 0x1d505 },
+	{ 0x1d507, 0x1d50a },
+	{ 0x1d50d, 0x1d514 },
+	{ 0x1d516, 0x1d51c },
+	{ 0x1d51e, 0x1d539 },
+	{ 0x1d53b, 0x1d53e },
+	{ 0x1d540, 0x1d544 },
+	{ 0x1d546, 0x1d546 },
+	{ 0x1d54a, 0x1d550 },
+	{ 0x1d552, 0x1d6a5 },
+	{ 0x1d6a8, 0x1d6c0 },
+	{ 0x1d6c2, 0x1d6da },
+	{ 0x1d6dc, 0x1d6fa },
+	{ 0x1d6fc, 0x1d714 },
+	{ 0x1d716, 0x1d734 },
+	{ 0x1d736, 0x1d74e },
+	{ 0x1d750, 0x1d76e },
+	{ 0x1d770, 0x1d788 },
+	{ 0x1d78a, 0x1d7a8 },
+	{ 0x1d7aa, 0x1d7c2 },
+	{ 0x1d7c4, 0x1d7cb },
+	{ 0x1d7ce, 0x1d7ff },
+	{ 0x1da00, 0x1da36 },
+	{ 0x1da3b, 0x1da6c },
+	{ 0x1da75, 0x1da75 },
+	{ 0x1da84, 0x1da84 },
+	{ 0x1da9b, 0x1da9f },
+	{ 0x1daa1, 0x1daaf },
+	{ 0x1df00, 0x1df1e },
+	{ 0x1df25, 0x1df2a },
+	{ 0x1e000, 0x1e006 },
+	{ 0x1e008, 0x1e018 },
+	{ 0x1e01b, 0x1e021 },
+	{ 0x1e023, 0x1e024 },
+	{ 0x1e026, 0x1e02a },
+	{ 0x1e030, 0x1e06d },
+	{ 0x1e08f, 0x1e08f },
+	{ 0x1e100, 0x1e12c },
+	{ 0x1e130, 0x1e13d },
+	{ 0x1e140, 0x1e149 },
+	{ 0x1e14e, 0x1e14e },
+	{ 0x1e290, 0x1e2ae },
+	{ 0x1e2c0, 0x1e2f9 },
+	{ 0x1e4d0, 0x1e4f9 },
+	{ 0x1e5d0, 0x1e5fa },
+	{ 0x1e6c0, 0x1e6de },
+	{ 0x1e6e0, 0x1e6f5 },
+	{ 0x1e6fe, 0x1e6ff },
+	{ 0x1e7e0, 0x1e7e6 },
+	{ 0x1e7e8, 0x1e7eb },
+	{ 0x1e7ed, 0x1e7ee },
+	{ 0x1e7f0, 0x1e7fe },
+	{ 0x1e800, 0x1e8c4 },
+	{ 0x1e8d0, 0x1e8d6 },
+	{ 0x1e900, 0x1e94b },
+	{ 0x1e950, 0x1e959 },
+	{ 0x1ee00, 0x1ee03 },
+	{ 0x1ee05, 0x1ee1f },
+	{ 0x1ee21, 0x1ee22 },
+	{ 0x1ee24, 0x1ee24 },
+	{ 0x1ee27, 0x1ee27 },
+	{ 0x1ee29, 0x1ee32 },
+	{ 0x1ee34, 0x1ee37 },
+	{ 0x1ee39, 0x1ee39 },
+	{ 0x1ee3b, 0x1ee3b },
+	{ 0x1ee42, 0x1ee42 },
+	{ 0x1ee47, 0x1ee47 },
+	{ 0x1ee49, 0x1ee49 },
+	{ 0x1ee4b, 0x1ee4b },
+	{ 0x1ee4d, 0x1ee4f },
+	{ 0x1ee51, 0x1ee52 },
+	{ 0x1ee54, 0x1ee54 },
+	{ 0x1ee57, 0x1ee57 },
+	{ 0x1ee59, 0x1ee59 },
+	{ 0x1ee5b, 0x1ee5b },
+	{ 0x1ee5d, 0x1ee5d },
+	{ 0x1ee5f, 0x1ee5f },
+	{ 0x1ee61, 0x1ee62 },
+	{ 0x1ee64, 0x1ee64 },
+	{ 0x1ee67, 0x1ee6a },
+	{ 0x1ee6c, 0x1ee72 },
+	{ 0x1ee74, 0x1ee77 },
+	{ 0x1ee79, 0x1ee7c },
+	{ 0x1ee7e, 0x1ee7e },
+	{ 0x1ee80, 0x1ee89 },
+	{ 0x1ee8b, 0x1ee9b },
+	{ 0x1eea1, 0x1eea3 },
+	{ 0x1eea5, 0x1eea9 },
+	{ 0x1eeab, 0x1eebb },
+	{ 0x1fbf0, 0x1fbf9 },
+	{ 0x20000, 0x2a6df },
+	{ 0x2a700, 0x2b81d },
+	{ 0x2b820, 0x2cead },
+	{ 0x2ceb0, 0x2ebe0 },
+	{ 0x2ebf0, 0x2ee5d },
+	{ 0x2f800, 0x2fa1d },
+	{ 0x30000, 0x3134a },
+	{ 0x31350, 0x33479 },
+	{ 0xe0100, 0xe01ef },
+};
+
+const int uppercase_letter_size = 660;
+const CharRange uppercase_letter[uppercase_letter_size] = {
+	{ 0x41, 0x5a },
+	{ 0xc0, 0xd6 },
+	{ 0xd8, 0xde },
+	{ 0x100, 0x100 },
+	{ 0x102, 0x102 },
+	{ 0x104, 0x104 },
+	{ 0x106, 0x106 },
+	{ 0x108, 0x108 },
+	{ 0x10a, 0x10a },
+	{ 0x10c, 0x10c },
+	{ 0x10e, 0x10e },
+	{ 0x110, 0x110 },
+	{ 0x112, 0x112 },
+	{ 0x114, 0x114 },
+	{ 0x116, 0x116 },
+	{ 0x118, 0x118 },
+	{ 0x11a, 0x11a },
+	{ 0x11c, 0x11c },
+	{ 0x11e, 0x11e },
+	{ 0x120, 0x120 },
+	{ 0x122, 0x122 },
+	{ 0x124, 0x124 },
+	{ 0x126, 0x126 },
+	{ 0x128, 0x128 },
+	{ 0x12a, 0x12a },
+	{ 0x12c, 0x12c },
+	{ 0x12e, 0x12e },
+	{ 0x130, 0x130 },
+	{ 0x132, 0x132 },
+	{ 0x134, 0x134 },
+	{ 0x136, 0x136 },
+	{ 0x139, 0x139 },
+	{ 0x13b, 0x13b },
+	{ 0x13d, 0x13d },
+	{ 0x13f, 0x13f },
+	{ 0x141, 0x141 },
+	{ 0x143, 0x143 },
+	{ 0x145, 0x145 },
+	{ 0x147, 0x147 },
+	{ 0x14a, 0x14a },
+	{ 0x14c, 0x14c },
+	{ 0x14e, 0x14e },
+	{ 0x150, 0x150 },
+	{ 0x152, 0x152 },
+	{ 0x154, 0x154 },
+	{ 0x156, 0x156 },
+	{ 0x158, 0x158 },
+	{ 0x15a, 0x15a },
+	{ 0x15c, 0x15c },
+	{ 0x15e, 0x15e },
+	{ 0x160, 0x160 },
+	{ 0x162, 0x162 },
+	{ 0x164, 0x164 },
+	{ 0x166, 0x166 },
+	{ 0x168, 0x168 },
+	{ 0x16a, 0x16a },
+	{ 0x16c, 0x16c },
+	{ 0x16e, 0x16e },
+	{ 0x170, 0x170 },
+	{ 0x172, 0x172 },
+	{ 0x174, 0x174 },
+	{ 0x176, 0x176 },
+	{ 0x178, 0x179 },
+	{ 0x17b, 0x17b },
+	{ 0x17d, 0x17d },
+	{ 0x181, 0x182 },
+	{ 0x184, 0x184 },
+	{ 0x186, 0x187 },
+	{ 0x189, 0x18b },
+	{ 0x18e, 0x191 },
+	{ 0x193, 0x194 },
+	{ 0x196, 0x198 },
+	{ 0x19c, 0x19d },
+	{ 0x19f, 0x1a0 },
+	{ 0x1a2, 0x1a2 },
+	{ 0x1a4, 0x1a4 },
+	{ 0x1a6, 0x1a7 },
+	{ 0x1a9, 0x1a9 },
+	{ 0x1ac, 0x1ac },
+	{ 0x1ae, 0x1af },
+	{ 0x1b1, 0x1b3 },
+	{ 0x1b5, 0x1b5 },
+	{ 0x1b7, 0x1b8 },
+	{ 0x1bc, 0x1bc },
+	{ 0x1c4, 0x1c4 },
+	{ 0x1c7, 0x1c7 },
+	{ 0x1ca, 0x1ca },
+	{ 0x1cd, 0x1cd },
+	{ 0x1cf, 0x1cf },
+	{ 0x1d1, 0x1d1 },
+	{ 0x1d3, 0x1d3 },
+	{ 0x1d5, 0x1d5 },
+	{ 0x1d7, 0x1d7 },
+	{ 0x1d9, 0x1d9 },
+	{ 0x1db, 0x1db },
+	{ 0x1de, 0x1de },
+	{ 0x1e0, 0x1e0 },
+	{ 0x1e2, 0x1e2 },
+	{ 0x1e4, 0x1e4 },
+	{ 0x1e6, 0x1e6 },
+	{ 0x1e8, 0x1e8 },
+	{ 0x1ea, 0x1ea },
+	{ 0x1ec, 0x1ec },
+	{ 0x1ee, 0x1ee },
+	{ 0x1f1, 0x1f1 },
+	{ 0x1f4, 0x1f4 },
+	{ 0x1f6, 0x1f8 },
+	{ 0x1fa, 0x1fa },
+	{ 0x1fc, 0x1fc },
+	{ 0x1fe, 0x1fe },
+	{ 0x200, 0x200 },
+	{ 0x202, 0x202 },
+	{ 0x204, 0x204 },
+	{ 0x206, 0x206 },
+	{ 0x208, 0x208 },
+	{ 0x20a, 0x20a },
+	{ 0x20c, 0x20c },
+	{ 0x20e, 0x20e },
+	{ 0x210, 0x210 },
+	{ 0x212, 0x212 },
+	{ 0x214, 0x214 },
+	{ 0x216, 0x216 },
+	{ 0x218, 0x218 },
+	{ 0x21a, 0x21a },
+	{ 0x21c, 0x21c },
+	{ 0x21e, 0x21e },
+	{ 0x220, 0x220 },
+	{ 0x222, 0x222 },
+	{ 0x224, 0x224 },
+	{ 0x226, 0x226 },
+	{ 0x228, 0x228 },
+	{ 0x22a, 0x22a },
+	{ 0x22c, 0x22c },
+	{ 0x22e, 0x22e },
+	{ 0x230, 0x230 },
+	{ 0x232, 0x232 },
+	{ 0x23a, 0x23b },
+	{ 0x23d, 0x23e },
+	{ 0x241, 0x241 },
+	{ 0x243, 0x246 },
+	{ 0x248, 0x248 },
+	{ 0x24a, 0x24a },
+	{ 0x24c, 0x24c },
+	{ 0x24e, 0x24e },
+	{ 0x370, 0x370 },
+	{ 0x372, 0x372 },
+	{ 0x376, 0x376 },
+	{ 0x37f, 0x37f },
+	{ 0x386, 0x386 },
+	{ 0x388, 0x38a },
+	{ 0x38c, 0x38c },
+	{ 0x38e, 0x38f },
+	{ 0x391, 0x3a1 },
+	{ 0x3a3, 0x3ab },
+	{ 0x3cf, 0x3cf },
+	{ 0x3d2, 0x3d4 },
+	{ 0x3d8, 0x3d8 },
+	{ 0x3da, 0x3da },
+	{ 0x3dc, 0x3dc },
+	{ 0x3de, 0x3de },
+	{ 0x3e0, 0x3e0 },
+	{ 0x3e2, 0x3e2 },
+	{ 0x3e4, 0x3e4 },
+	{ 0x3e6, 0x3e6 },
+	{ 0x3e8, 0x3e8 },
+	{ 0x3ea, 0x3ea },
+	{ 0x3ec, 0x3ec },
+	{ 0x3ee, 0x3ee },
+	{ 0x3f4, 0x3f4 },
+	{ 0x3f7, 0x3f7 },
+	{ 0x3f9, 0x3fa },
+	{ 0x3fd, 0x42f },
+	{ 0x460, 0x460 },
+	{ 0x462, 0x462 },
+	{ 0x464, 0x464 },
+	{ 0x466, 0x466 },
+	{ 0x468, 0x468 },
+	{ 0x46a, 0x46a },
+	{ 0x46c, 0x46c },
+	{ 0x46e, 0x46e },
+	{ 0x470, 0x470 },
+	{ 0x472, 0x472 },
+	{ 0x474, 0x474 },
+	{ 0x476, 0x476 },
+	{ 0x478, 0x478 },
+	{ 0x47a, 0x47a },
+	{ 0x47c, 0x47c },
+	{ 0x47e, 0x47e },
+	{ 0x480, 0x480 },
+	{ 0x48a, 0x48a },
+	{ 0x48c, 0x48c },
+	{ 0x48e, 0x48e },
+	{ 0x490, 0x490 },
+	{ 0x492, 0x492 },
+	{ 0x494, 0x494 },
+	{ 0x496, 0x496 },
+	{ 0x498, 0x498 },
+	{ 0x49a, 0x49a },
+	{ 0x49c, 0x49c },
+	{ 0x49e, 0x49e },
+	{ 0x4a0, 0x4a0 },
+	{ 0x4a2, 0x4a2 },
+	{ 0x4a4, 0x4a4 },
+	{ 0x4a6, 0x4a6 },
+	{ 0x4a8, 0x4a8 },
+	{ 0x4aa, 0x4aa },
+	{ 0x4ac, 0x4ac },
+	{ 0x4ae, 0x4ae },
+	{ 0x4b0, 0x4b0 },
+	{ 0x4b2, 0x4b2 },
+	{ 0x4b4, 0x4b4 },
+	{ 0x4b6, 0x4b6 },
+	{ 0x4b8, 0x4b8 },
+	{ 0x4ba, 0x4ba },
+	{ 0x4bc, 0x4bc },
+	{ 0x4be, 0x4be },
+	{ 0x4c0, 0x4c1 },
+	{ 0x4c3, 0x4c3 },
+	{ 0x4c5, 0x4c5 },
+	{ 0x4c7, 0x4c7 },
+	{ 0x4c9, 0x4c9 },
+	{ 0x4cb, 0x4cb },
+	{ 0x4cd, 0x4cd },
+	{ 0x4d0, 0x4d0 },
+	{ 0x4d2, 0x4d2 },
+	{ 0x4d4, 0x4d4 },
+	{ 0x4d6, 0x4d6 },
+	{ 0x4d8, 0x4d8 },
+	{ 0x4da, 0x4da },
+	{ 0x4dc, 0x4dc },
+	{ 0x4de, 0x4de },
+	{ 0x4e0, 0x4e0 },
+	{ 0x4e2, 0x4e2 },
+	{ 0x4e4, 0x4e4 },
+	{ 0x4e6, 0x4e6 },
+	{ 0x4e8, 0x4e8 },
+	{ 0x4ea, 0x4ea },
+	{ 0x4ec, 0x4ec },
+	{ 0x4ee, 0x4ee },
+	{ 0x4f0, 0x4f0 },
+	{ 0x4f2, 0x4f2 },
+	{ 0x4f4, 0x4f4 },
+	{ 0x4f6, 0x4f6 },
+	{ 0x4f8, 0x4f8 },
+	{ 0x4fa, 0x4fa },
+	{ 0x4fc, 0x4fc },
+	{ 0x4fe, 0x4fe },
+	{ 0x500, 0x500 },
+	{ 0x502, 0x502 },
+	{ 0x504, 0x504 },
+	{ 0x506, 0x506 },
+	{ 0x508, 0x508 },
+	{ 0x50a, 0x50a },
+	{ 0x50c, 0x50c },
+	{ 0x50e, 0x50e },
+	{ 0x510, 0x510 },
+	{ 0x512, 0x512 },
+	{ 0x514, 0x514 },
+	{ 0x516, 0x516 },
+	{ 0x518, 0x518 },
+	{ 0x51a, 0x51a },
+	{ 0x51c, 0x51c },
+	{ 0x51e, 0x51e },
+	{ 0x520, 0x520 },
+	{ 0x522, 0x522 },
+	{ 0x524, 0x524 },
+	{ 0x526, 0x526 },
+	{ 0x528, 0x528 },
+	{ 0x52a, 0x52a },
+	{ 0x52c, 0x52c },
+	{ 0x52e, 0x52e },
+	{ 0x531, 0x556 },
+	{ 0x10a0, 0x10c5 },
+	{ 0x10c7, 0x10c7 },
+	{ 0x10cd, 0x10cd },
+	{ 0x13a0, 0x13f5 },
+	{ 0x1c89, 0x1c89 },
+	{ 0x1c90, 0x1cba },
+	{ 0x1cbd, 0x1cbf },
+	{ 0x1e00, 0x1e00 },
+	{ 0x1e02, 0x1e02 },
+	{ 0x1e04, 0x1e04 },
+	{ 0x1e06, 0x1e06 },
+	{ 0x1e08, 0x1e08 },
+	{ 0x1e0a, 0x1e0a },
+	{ 0x1e0c, 0x1e0c },
+	{ 0x1e0e, 0x1e0e },
+	{ 0x1e10, 0x1e10 },
+	{ 0x1e12, 0x1e12 },
+	{ 0x1e14, 0x1e14 },
+	{ 0x1e16, 0x1e16 },
+	{ 0x1e18, 0x1e18 },
+	{ 0x1e1a, 0x1e1a },
+	{ 0x1e1c, 0x1e1c },
+	{ 0x1e1e, 0x1e1e },
+	{ 0x1e20, 0x1e20 },
+	{ 0x1e22, 0x1e22 },
+	{ 0x1e24, 0x1e24 },
+	{ 0x1e26, 0x1e26 },
+	{ 0x1e28, 0x1e28 },
+	{ 0x1e2a, 0x1e2a },
+	{ 0x1e2c, 0x1e2c },
+	{ 0x1e2e, 0x1e2e },
+	{ 0x1e30, 0x1e30 },
+	{ 0x1e32, 0x1e32 },
+	{ 0x1e34, 0x1e34 },
+	{ 0x1e36, 0x1e36 },
+	{ 0x1e38, 0x1e38 },
+	{ 0x1e3a, 0x1e3a },
+	{ 0x1e3c, 0x1e3c },
+	{ 0x1e3e, 0x1e3e },
+	{ 0x1e40, 0x1e40 },
+	{ 0x1e42, 0x1e42 },
+	{ 0x1e44, 0x1e44 },
+	{ 0x1e46, 0x1e46 },
+	{ 0x1e48, 0x1e48 },
+	{ 0x1e4a, 0x1e4a },
+	{ 0x1e4c, 0x1e4c },
+	{ 0x1e4e, 0x1e4e },
+	{ 0x1e50, 0x1e50 },
+	{ 0x1e52, 0x1e52 },
+	{ 0x1e54, 0x1e54 },
+	{ 0x1e56, 0x1e56 },
+	{ 0x1e58, 0x1e58 },
+	{ 0x1e5a, 0x1e5a },
+	{ 0x1e5c, 0x1e5c },
+	{ 0x1e5e, 0x1e5e },
+	{ 0x1e60, 0x1e60 },
+	{ 0x1e62, 0x1e62 },
+	{ 0x1e64, 0x1e64 },
+	{ 0x1e66, 0x1e66 },
+	{ 0x1e68, 0x1e68 },
+	{ 0x1e6a, 0x1e6a },
+	{ 0x1e6c, 0x1e6c },
+	{ 0x1e6e, 0x1e6e },
+	{ 0x1e70, 0x1e70 },
+	{ 0x1e72, 0x1e72 },
+	{ 0x1e74, 0x1e74 },
+	{ 0x1e76, 0x1e76 },
+	{ 0x1e78, 0x1e78 },
+	{ 0x1e7a, 0x1e7a },
+	{ 0x1e7c, 0x1e7c },
+	{ 0x1e7e, 0x1e7e },
+	{ 0x1e80, 0x1e80 },
+	{ 0x1e82, 0x1e82 },
+	{ 0x1e84, 0x1e84 },
+	{ 0x1e86, 0x1e86 },
+	{ 0x1e88, 0x1e88 },
+	{ 0x1e8a, 0x1e8a },
+	{ 0x1e8c, 0x1e8c },
+	{ 0x1e8e, 0x1e8e },
+	{ 0x1e90, 0x1e90 },
+	{ 0x1e92, 0x1e92 },
+	{ 0x1e94, 0x1e94 },
+	{ 0x1e9e, 0x1e9e },
+	{ 0x1ea0, 0x1ea0 },
+	{ 0x1ea2, 0x1ea2 },
+	{ 0x1ea4, 0x1ea4 },
+	{ 0x1ea6, 0x1ea6 },
+	{ 0x1ea8, 0x1ea8 },
+	{ 0x1eaa, 0x1eaa },
+	{ 0x1eac, 0x1eac },
+	{ 0x1eae, 0x1eae },
+	{ 0x1eb0, 0x1eb0 },
+	{ 0x1eb2, 0x1eb2 },
+	{ 0x1eb4, 0x1eb4 },
+	{ 0x1eb6, 0x1eb6 },
+	{ 0x1eb8, 0x1eb8 },
+	{ 0x1eba, 0x1eba },
+	{ 0x1ebc, 0x1ebc },
+	{ 0x1ebe, 0x1ebe },
+	{ 0x1ec0, 0x1ec0 },
+	{ 0x1ec2, 0x1ec2 },
+	{ 0x1ec4, 0x1ec4 },
+	{ 0x1ec6, 0x1ec6 },
+	{ 0x1ec8, 0x1ec8 },
+	{ 0x1eca, 0x1eca },
+	{ 0x1ecc, 0x1ecc },
+	{ 0x1ece, 0x1ece },
+	{ 0x1ed0, 0x1ed0 },
+	{ 0x1ed2, 0x1ed2 },
+	{ 0x1ed4, 0x1ed4 },
+	{ 0x1ed6, 0x1ed6 },
+	{ 0x1ed8, 0x1ed8 },
+	{ 0x1eda, 0x1eda },
+	{ 0x1edc, 0x1edc },
+	{ 0x1ede, 0x1ede },
+	{ 0x1ee0, 0x1ee0 },
+	{ 0x1ee2, 0x1ee2 },
+	{ 0x1ee4, 0x1ee4 },
+	{ 0x1ee6, 0x1ee6 },
+	{ 0x1ee8, 0x1ee8 },
+	{ 0x1eea, 0x1eea },
+	{ 0x1eec, 0x1eec },
+	{ 0x1eee, 0x1eee },
+	{ 0x1ef0, 0x1ef0 },
+	{ 0x1ef2, 0x1ef2 },
+	{ 0x1ef4, 0x1ef4 },
+	{ 0x1ef6, 0x1ef6 },
+	{ 0x1ef8, 0x1ef8 },
+	{ 0x1efa, 0x1efa },
+	{ 0x1efc, 0x1efc },
+	{ 0x1efe, 0x1efe },
+	{ 0x1f08, 0x1f0f },
+	{ 0x1f18, 0x1f1d },
+	{ 0x1f28, 0x1f2f },
+	{ 0x1f38, 0x1f3f },
+	{ 0x1f48, 0x1f4d },
+	{ 0x1f59, 0x1f59 },
+	{ 0x1f5b, 0x1f5b },
+	{ 0x1f5d, 0x1f5d },
+	{ 0x1f5f, 0x1f5f },
+	{ 0x1f68, 0x1f6f },
+	{ 0x1fb8, 0x1fbb },
+	{ 0x1fc8, 0x1fcb },
+	{ 0x1fd8, 0x1fdb },
+	{ 0x1fe8, 0x1fec },
+	{ 0x1ff8, 0x1ffb },
+	{ 0x2102, 0x2102 },
+	{ 0x2107, 0x2107 },
+	{ 0x210b, 0x210d },
+	{ 0x2110, 0x2112 },
+	{ 0x2115, 0x2115 },
+	{ 0x2119, 0x211d },
+	{ 0x2124, 0x2124 },
+	{ 0x2126, 0x2126 },
+	{ 0x2128, 0x2128 },
+	{ 0x212a, 0x212d },
+	{ 0x2130, 0x2133 },
+	{ 0x213e, 0x213f },
+	{ 0x2145, 0x2145 },
+	{ 0x2160, 0x216f },
+	{ 0x2183, 0x2183 },
+	{ 0x24b6, 0x24cf },
+	{ 0x2c00, 0x2c2f },
+	{ 0x2c60, 0x2c60 },
+	{ 0x2c62, 0x2c64 },
+	{ 0x2c67, 0x2c67 },
+	{ 0x2c69, 0x2c69 },
+	{ 0x2c6b, 0x2c6b },
+	{ 0x2c6d, 0x2c70 },
+	{ 0x2c72, 0x2c72 },
+	{ 0x2c75, 0x2c75 },
+	{ 0x2c7e, 0x2c80 },
+	{ 0x2c82, 0x2c82 },
+	{ 0x2c84, 0x2c84 },
+	{ 0x2c86, 0x2c86 },
+	{ 0x2c88, 0x2c88 },
+	{ 0x2c8a, 0x2c8a },
+	{ 0x2c8c, 0x2c8c },
+	{ 0x2c8e, 0x2c8e },
+	{ 0x2c90, 0x2c90 },
+	{ 0x2c92, 0x2c92 },
+	{ 0x2c94, 0x2c94 },
+	{ 0x2c96, 0x2c96 },
+	{ 0x2c98, 0x2c98 },
+	{ 0x2c9a, 0x2c9a },
+	{ 0x2c9c, 0x2c9c },
+	{ 0x2c9e, 0x2c9e },
+	{ 0x2ca0, 0x2ca0 },
+	{ 0x2ca2, 0x2ca2 },
+	{ 0x2ca4, 0x2ca4 },
+	{ 0x2ca6, 0x2ca6 },
+	{ 0x2ca8, 0x2ca8 },
+	{ 0x2caa, 0x2caa },
+	{ 0x2cac, 0x2cac },
+	{ 0x2cae, 0x2cae },
+	{ 0x2cb0, 0x2cb0 },
+	{ 0x2cb2, 0x2cb2 },
+	{ 0x2cb4, 0x2cb4 },
+	{ 0x2cb6, 0x2cb6 },
+	{ 0x2cb8, 0x2cb8 },
+	{ 0x2cba, 0x2cba },
+	{ 0x2cbc, 0x2cbc },
+	{ 0x2cbe, 0x2cbe },
+	{ 0x2cc0, 0x2cc0 },
+	{ 0x2cc2, 0x2cc2 },
+	{ 0x2cc4, 0x2cc4 },
+	{ 0x2cc6, 0x2cc6 },
+	{ 0x2cc8, 0x2cc8 },
+	{ 0x2cca, 0x2cca },
+	{ 0x2ccc, 0x2ccc },
+	{ 0x2cce, 0x2cce },
+	{ 0x2cd0, 0x2cd0 },
+	{ 0x2cd2, 0x2cd2 },
+	{ 0x2cd4, 0x2cd4 },
+	{ 0x2cd6, 0x2cd6 },
+	{ 0x2cd8, 0x2cd8 },
+	{ 0x2cda, 0x2cda },
+	{ 0x2cdc, 0x2cdc },
+	{ 0x2cde, 0x2cde },
+	{ 0x2ce0, 0x2ce0 },
+	{ 0x2ce2, 0x2ce2 },
+	{ 0x2ceb, 0x2ceb },
+	{ 0x2ced, 0x2ced },
+	{ 0x2cf2, 0x2cf2 },
+	{ 0xa640, 0xa640 },
+	{ 0xa642, 0xa642 },
+	{ 0xa644, 0xa644 },
+	{ 0xa646, 0xa646 },
+	{ 0xa648, 0xa648 },
+	{ 0xa64a, 0xa64a },
+	{ 0xa64c, 0xa64c },
+	{ 0xa64e, 0xa64e },
+	{ 0xa650, 0xa650 },
+	{ 0xa652, 0xa652 },
+	{ 0xa654, 0xa654 },
+	{ 0xa656, 0xa656 },
+	{ 0xa658, 0xa658 },
+	{ 0xa65a, 0xa65a },
+	{ 0xa65c, 0xa65c },
+	{ 0xa65e, 0xa65e },
+	{ 0xa660, 0xa660 },
+	{ 0xa662, 0xa662 },
+	{ 0xa664, 0xa664 },
+	{ 0xa666, 0xa666 },
+	{ 0xa668, 0xa668 },
+	{ 0xa66a, 0xa66a },
+	{ 0xa66c, 0xa66c },
+	{ 0xa680, 0xa680 },
+	{ 0xa682, 0xa682 },
+	{ 0xa684, 0xa684 },
+	{ 0xa686, 0xa686 },
+	{ 0xa688, 0xa688 },
+	{ 0xa68a, 0xa68a },
+	{ 0xa68c, 0xa68c },
+	{ 0xa68e, 0xa68e },
+	{ 0xa690, 0xa690 },
+	{ 0xa692, 0xa692 },
+	{ 0xa694, 0xa694 },
+	{ 0xa696, 0xa696 },
+	{ 0xa698, 0xa698 },
+	{ 0xa69a, 0xa69a },
+	{ 0xa722, 0xa722 },
+	{ 0xa724, 0xa724 },
+	{ 0xa726, 0xa726 },
+	{ 0xa728, 0xa728 },
+	{ 0xa72a, 0xa72a },
+	{ 0xa72c, 0xa72c },
+	{ 0xa72e, 0xa72e },
+	{ 0xa732, 0xa732 },
+	{ 0xa734, 0xa734 },
+	{ 0xa736, 0xa736 },
+	{ 0xa738, 0xa738 },
+	{ 0xa73a, 0xa73a },
+	{ 0xa73c, 0xa73c },
+	{ 0xa73e, 0xa73e },
+	{ 0xa740, 0xa740 },
+	{ 0xa742, 0xa742 },
+	{ 0xa744, 0xa744 },
+	{ 0xa746, 0xa746 },
+	{ 0xa748, 0xa748 },
+	{ 0xa74a, 0xa74a },
+	{ 0xa74c, 0xa74c },
+	{ 0xa74e, 0xa74e },
+	{ 0xa750, 0xa750 },
+	{ 0xa752, 0xa752 },
+	{ 0xa754, 0xa754 },
+	{ 0xa756, 0xa756 },
+	{ 0xa758, 0xa758 },
+	{ 0xa75a, 0xa75a },
+	{ 0xa75c, 0xa75c },
+	{ 0xa75e, 0xa75e },
+	{ 0xa760, 0xa760 },
+	{ 0xa762, 0xa762 },
+	{ 0xa764, 0xa764 },
+	{ 0xa766, 0xa766 },
+	{ 0xa768, 0xa768 },
+	{ 0xa76a, 0xa76a },
+	{ 0xa76c, 0xa76c },
+	{ 0xa76e, 0xa76e },
+	{ 0xa779, 0xa779 },
+	{ 0xa77b, 0xa77b },
+	{ 0xa77d, 0xa77e },
+	{ 0xa780, 0xa780 },
+	{ 0xa782, 0xa782 },
+	{ 0xa784, 0xa784 },
+	{ 0xa786, 0xa786 },
+	{ 0xa78b, 0xa78b },
+	{ 0xa78d, 0xa78d },
+	{ 0xa790, 0xa790 },
+	{ 0xa792, 0xa792 },
+	{ 0xa796, 0xa796 },
+	{ 0xa798, 0xa798 },
+	{ 0xa79a, 0xa79a },
+	{ 0xa79c, 0xa79c },
+	{ 0xa79e, 0xa79e },
+	{ 0xa7a0, 0xa7a0 },
+	{ 0xa7a2, 0xa7a2 },
+	{ 0xa7a4, 0xa7a4 },
+	{ 0xa7a6, 0xa7a6 },
+	{ 0xa7a8, 0xa7a8 },
+	{ 0xa7aa, 0xa7ae },
+	{ 0xa7b0, 0xa7b4 },
+	{ 0xa7b6, 0xa7b6 },
+	{ 0xa7b8, 0xa7b8 },
+	{ 0xa7ba, 0xa7ba },
+	{ 0xa7bc, 0xa7bc },
+	{ 0xa7be, 0xa7be },
+	{ 0xa7c0, 0xa7c0 },
+	{ 0xa7c2, 0xa7c2 },
+	{ 0xa7c4, 0xa7c7 },
+	{ 0xa7c9, 0xa7c9 },
+	{ 0xa7cb, 0xa7cc },
+	{ 0xa7ce, 0xa7ce },
+	{ 0xa7d0, 0xa7d0 },
+	{ 0xa7d2, 0xa7d2 },
+	{ 0xa7d4, 0xa7d4 },
+	{ 0xa7d6, 0xa7d6 },
+	{ 0xa7d8, 0xa7d8 },
+	{ 0xa7da, 0xa7da },
+	{ 0xa7dc, 0xa7dc },
+	{ 0xa7f5, 0xa7f5 },
+	{ 0xff21, 0xff3a },
+	{ 0x10400, 0x10427 },
+	{ 0x104b0, 0x104d3 },
+	{ 0x10570, 0x1057a },
+	{ 0x1057c, 0x1058a },
+	{ 0x1058c, 0x10592 },
+	{ 0x10594, 0x10595 },
+	{ 0x10c80, 0x10cb2 },
+	{ 0x10d50, 0x10d65 },
+	{ 0x118a0, 0x118bf },
+	{ 0x16e40, 0x16e5f },
+	{ 0x16ea0, 0x16eb8 },
+	{ 0x1d400, 0x1d419 },
+	{ 0x1d434, 0x1d44d },
+	{ 0x1d468, 0x1d481 },
+	{ 0x1d49c, 0x1d49c },
+	{ 0x1d49e, 0x1d49f },
+	{ 0x1d4a2, 0x1d4a2 },
+	{ 0x1d4a5, 0x1d4a6 },
+	{ 0x1d4a9, 0x1d4ac },
+	{ 0x1d4ae, 0x1d4b5 },
+	{ 0x1d4d0, 0x1d4e9 },
+	{ 0x1d504, 0x1d505 },
+	{ 0x1d507, 0x1d50a },
+	{ 0x1d50d, 0x1d514 },
+	{ 0x1d516, 0x1d51c },
+	{ 0x1d538, 0x1d539 },
+	{ 0x1d53b, 0x1d53e },
+	{ 0x1d540, 0x1d544 },
+	{ 0x1d546, 0x1d546 },
+	{ 0x1d54a, 0x1d550 },
+	{ 0x1d56c, 0x1d585 },
+	{ 0x1d5a0, 0x1d5b9 },
+	{ 0x1d5d4, 0x1d5ed },
+	{ 0x1d608, 0x1d621 },
+	{ 0x1d63c, 0x1d655 },
+	{ 0x1d670, 0x1d689 },
+	{ 0x1d6a8, 0x1d6c0 },
+	{ 0x1d6e2, 0x1d6fa },
+	{ 0x1d71c, 0x1d734 },
+	{ 0x1d756, 0x1d76e },
+	{ 0x1d790, 0x1d7a8 },
+	{ 0x1d7ca, 0x1d7ca },
+	{ 0x1e900, 0x1e921 },
+	{ 0x1f130, 0x1f149 },
+	{ 0x1f150, 0x1f169 },
+	{ 0x1f170, 0x1f189 },
+};
+
+const int lowercase_letter_size = 677;
+const CharRange lowercase_letter[lowercase_letter_size] = {
+	{ 0x61, 0x7a },
+	{ 0xaa, 0xaa },
+	{ 0xb5, 0xb5 },
+	{ 0xba, 0xba },
+	{ 0xdf, 0xf6 },
+	{ 0xf8, 0xff },
+	{ 0x101, 0x101 },
+	{ 0x103, 0x103 },
+	{ 0x105, 0x105 },
+	{ 0x107, 0x107 },
+	{ 0x109, 0x109 },
+	{ 0x10b, 0x10b },
+	{ 0x10d, 0x10d },
+	{ 0x10f, 0x10f },
+	{ 0x111, 0x111 },
+	{ 0x113, 0x113 },
+	{ 0x115, 0x115 },
+	{ 0x117, 0x117 },
+	{ 0x119, 0x119 },
+	{ 0x11b, 0x11b },
+	{ 0x11d, 0x11d },
+	{ 0x11f, 0x11f },
+	{ 0x121, 0x121 },
+	{ 0x123, 0x123 },
+	{ 0x125, 0x125 },
+	{ 0x127, 0x127 },
+	{ 0x129, 0x129 },
+	{ 0x12b, 0x12b },
+	{ 0x12d, 0x12d },
+	{ 0x12f, 0x12f },
+	{ 0x131, 0x131 },
+	{ 0x133, 0x133 },
+	{ 0x135, 0x135 },
+	{ 0x137, 0x138 },
+	{ 0x13a, 0x13a },
+	{ 0x13c, 0x13c },
+	{ 0x13e, 0x13e },
+	{ 0x140, 0x140 },
+	{ 0x142, 0x142 },
+	{ 0x144, 0x144 },
+	{ 0x146, 0x146 },
+	{ 0x148, 0x149 },
+	{ 0x14b, 0x14b },
+	{ 0x14d, 0x14d },
+	{ 0x14f, 0x14f },
+	{ 0x151, 0x151 },
+	{ 0x153, 0x153 },
+	{ 0x155, 0x155 },
+	{ 0x157, 0x157 },
+	{ 0x159, 0x159 },
+	{ 0x15b, 0x15b },
+	{ 0x15d, 0x15d },
+	{ 0x15f, 0x15f },
+	{ 0x161, 0x161 },
+	{ 0x163, 0x163 },
+	{ 0x165, 0x165 },
+	{ 0x167, 0x167 },
+	{ 0x169, 0x169 },
+	{ 0x16b, 0x16b },
+	{ 0x16d, 0x16d },
+	{ 0x16f, 0x16f },
+	{ 0x171, 0x171 },
+	{ 0x173, 0x173 },
+	{ 0x175, 0x175 },
+	{ 0x177, 0x177 },
+	{ 0x17a, 0x17a },
+	{ 0x17c, 0x17c },
+	{ 0x17e, 0x180 },
+	{ 0x183, 0x183 },
+	{ 0x185, 0x185 },
+	{ 0x188, 0x188 },
+	{ 0x18c, 0x18d },
+	{ 0x192, 0x192 },
+	{ 0x195, 0x195 },
+	{ 0x199, 0x19b },
+	{ 0x19e, 0x19e },
+	{ 0x1a1, 0x1a1 },
+	{ 0x1a3, 0x1a3 },
+	{ 0x1a5, 0x1a5 },
+	{ 0x1a8, 0x1a8 },
+	{ 0x1aa, 0x1ab },
+	{ 0x1ad, 0x1ad },
+	{ 0x1b0, 0x1b0 },
+	{ 0x1b4, 0x1b4 },
+	{ 0x1b6, 0x1b6 },
+	{ 0x1b9, 0x1ba },
+	{ 0x1bd, 0x1bf },
+	{ 0x1c6, 0x1c6 },
+	{ 0x1c9, 0x1c9 },
+	{ 0x1cc, 0x1cc },
+	{ 0x1ce, 0x1ce },
+	{ 0x1d0, 0x1d0 },
+	{ 0x1d2, 0x1d2 },
+	{ 0x1d4, 0x1d4 },
+	{ 0x1d6, 0x1d6 },
+	{ 0x1d8, 0x1d8 },
+	{ 0x1da, 0x1da },
+	{ 0x1dc, 0x1dd },
+	{ 0x1df, 0x1df },
+	{ 0x1e1, 0x1e1 },
+	{ 0x1e3, 0x1e3 },
+	{ 0x1e5, 0x1e5 },
+	{ 0x1e7, 0x1e7 },
+	{ 0x1e9, 0x1e9 },
+	{ 0x1eb, 0x1eb },
+	{ 0x1ed, 0x1ed },
+	{ 0x1ef, 0x1f0 },
+	{ 0x1f3, 0x1f3 },
+	{ 0x1f5, 0x1f5 },
+	{ 0x1f9, 0x1f9 },
+	{ 0x1fb, 0x1fb },
+	{ 0x1fd, 0x1fd },
+	{ 0x1ff, 0x1ff },
+	{ 0x201, 0x201 },
+	{ 0x203, 0x203 },
+	{ 0x205, 0x205 },
+	{ 0x207, 0x207 },
+	{ 0x209, 0x209 },
+	{ 0x20b, 0x20b },
+	{ 0x20d, 0x20d },
+	{ 0x20f, 0x20f },
+	{ 0x211, 0x211 },
+	{ 0x213, 0x213 },
+	{ 0x215, 0x215 },
+	{ 0x217, 0x217 },
+	{ 0x219, 0x219 },
+	{ 0x21b, 0x21b },
+	{ 0x21d, 0x21d },
+	{ 0x21f, 0x21f },
+	{ 0x221, 0x221 },
+	{ 0x223, 0x223 },
+	{ 0x225, 0x225 },
+	{ 0x227, 0x227 },
+	{ 0x229, 0x229 },
+	{ 0x22b, 0x22b },
+	{ 0x22d, 0x22d },
+	{ 0x22f, 0x22f },
+	{ 0x231, 0x231 },
+	{ 0x233, 0x239 },
+	{ 0x23c, 0x23c },
+	{ 0x23f, 0x240 },
+	{ 0x242, 0x242 },
+	{ 0x247, 0x247 },
+	{ 0x249, 0x249 },
+	{ 0x24b, 0x24b },
+	{ 0x24d, 0x24d },
+	{ 0x24f, 0x293 },
+	{ 0x296, 0x2b8 },
+	{ 0x2c0, 0x2c1 },
+	{ 0x2e0, 0x2e4 },
+	{ 0x345, 0x345 },
+	{ 0x371, 0x371 },
+	{ 0x373, 0x373 },
+	{ 0x377, 0x377 },
+	{ 0x37a, 0x37d },
+	{ 0x390, 0x390 },
+	{ 0x3ac, 0x3ce },
+	{ 0x3d0, 0x3d1 },
+	{ 0x3d5, 0x3d7 },
+	{ 0x3d9, 0x3d9 },
+	{ 0x3db, 0x3db },
+	{ 0x3dd, 0x3dd },
+	{ 0x3df, 0x3df },
+	{ 0x3e1, 0x3e1 },
+	{ 0x3e3, 0x3e3 },
+	{ 0x3e5, 0x3e5 },
+	{ 0x3e7, 0x3e7 },
+	{ 0x3e9, 0x3e9 },
+	{ 0x3eb, 0x3eb },
+	{ 0x3ed, 0x3ed },
+	{ 0x3ef, 0x3f3 },
+	{ 0x3f5, 0x3f5 },
+	{ 0x3f8, 0x3f8 },
+	{ 0x3fb, 0x3fc },
+	{ 0x430, 0x45f },
+	{ 0x461, 0x461 },
+	{ 0x463, 0x463 },
+	{ 0x465, 0x465 },
+	{ 0x467, 0x467 },
+	{ 0x469, 0x469 },
+	{ 0x46b, 0x46b },
+	{ 0x46d, 0x46d },
+	{ 0x46f, 0x46f },
+	{ 0x471, 0x471 },
+	{ 0x473, 0x473 },
+	{ 0x475, 0x475 },
+	{ 0x477, 0x477 },
+	{ 0x479, 0x479 },
+	{ 0x47b, 0x47b },
+	{ 0x47d, 0x47d },
+	{ 0x47f, 0x47f },
+	{ 0x481, 0x481 },
+	{ 0x48b, 0x48b },
+	{ 0x48d, 0x48d },
+	{ 0x48f, 0x48f },
+	{ 0x491, 0x491 },
+	{ 0x493, 0x493 },
+	{ 0x495, 0x495 },
+	{ 0x497, 0x497 },
+	{ 0x499, 0x499 },
+	{ 0x49b, 0x49b },
+	{ 0x49d, 0x49d },
+	{ 0x49f, 0x49f },
+	{ 0x4a1, 0x4a1 },
+	{ 0x4a3, 0x4a3 },
+	{ 0x4a5, 0x4a5 },
+	{ 0x4a7, 0x4a7 },
+	{ 0x4a9, 0x4a9 },
+	{ 0x4ab, 0x4ab },
+	{ 0x4ad, 0x4ad },
+	{ 0x4af, 0x4af },
+	{ 0x4b1, 0x4b1 },
+	{ 0x4b3, 0x4b3 },
+	{ 0x4b5, 0x4b5 },
+	{ 0x4b7, 0x4b7 },
+	{ 0x4b9, 0x4b9 },
+	{ 0x4bb, 0x4bb },
+	{ 0x4bd, 0x4bd },
+	{ 0x4bf, 0x4bf },
+	{ 0x4c2, 0x4c2 },
+	{ 0x4c4, 0x4c4 },
+	{ 0x4c6, 0x4c6 },
+	{ 0x4c8, 0x4c8 },
+	{ 0x4ca, 0x4ca },
+	{ 0x4cc, 0x4cc },
+	{ 0x4ce, 0x4cf },
+	{ 0x4d1, 0x4d1 },
+	{ 0x4d3, 0x4d3 },
+	{ 0x4d5, 0x4d5 },
+	{ 0x4d7, 0x4d7 },
+	{ 0x4d9, 0x4d9 },
+	{ 0x4db, 0x4db },
+	{ 0x4dd, 0x4dd },
+	{ 0x4df, 0x4df },
+	{ 0x4e1, 0x4e1 },
+	{ 0x4e3, 0x4e3 },
+	{ 0x4e5, 0x4e5 },
+	{ 0x4e7, 0x4e7 },
+	{ 0x4e9, 0x4e9 },
+	{ 0x4eb, 0x4eb },
+	{ 0x4ed, 0x4ed },
+	{ 0x4ef, 0x4ef },
+	{ 0x4f1, 0x4f1 },
+	{ 0x4f3, 0x4f3 },
+	{ 0x4f5, 0x4f5 },
+	{ 0x4f7, 0x4f7 },
+	{ 0x4f9, 0x4f9 },
+	{ 0x4fb, 0x4fb },
+	{ 0x4fd, 0x4fd },
+	{ 0x4ff, 0x4ff },
+	{ 0x501, 0x501 },
+	{ 0x503, 0x503 },
+	{ 0x505, 0x505 },
+	{ 0x507, 0x507 },
+	{ 0x509, 0x509 },
+	{ 0x50b, 0x50b },
+	{ 0x50d, 0x50d },
+	{ 0x50f, 0x50f },
+	{ 0x511, 0x511 },
+	{ 0x513, 0x513 },
+	{ 0x515, 0x515 },
+	{ 0x517, 0x517 },
+	{ 0x519, 0x519 },
+	{ 0x51b, 0x51b },
+	{ 0x51d, 0x51d },
+	{ 0x51f, 0x51f },
+	{ 0x521, 0x521 },
+	{ 0x523, 0x523 },
+	{ 0x525, 0x525 },
+	{ 0x527, 0x527 },
+	{ 0x529, 0x529 },
+	{ 0x52b, 0x52b },
+	{ 0x52d, 0x52d },
+	{ 0x52f, 0x52f },
+	{ 0x560, 0x588 },
+	{ 0x10d0, 0x10fa },
+	{ 0x10fc, 0x10ff },
+	{ 0x13f8, 0x13fd },
+	{ 0x1c80, 0x1c88 },
+	{ 0x1c8a, 0x1c8a },
+	{ 0x1d00, 0x1dbf },
+	{ 0x1e01, 0x1e01 },
+	{ 0x1e03, 0x1e03 },
+	{ 0x1e05, 0x1e05 },
+	{ 0x1e07, 0x1e07 },
+	{ 0x1e09, 0x1e09 },
+	{ 0x1e0b, 0x1e0b },
+	{ 0x1e0d, 0x1e0d },
+	{ 0x1e0f, 0x1e0f },
+	{ 0x1e11, 0x1e11 },
+	{ 0x1e13, 0x1e13 },
+	{ 0x1e15, 0x1e15 },
+	{ 0x1e17, 0x1e17 },
+	{ 0x1e19, 0x1e19 },
+	{ 0x1e1b, 0x1e1b },
+	{ 0x1e1d, 0x1e1d },
+	{ 0x1e1f, 0x1e1f },
+	{ 0x1e21, 0x1e21 },
+	{ 0x1e23, 0x1e23 },
+	{ 0x1e25, 0x1e25 },
+	{ 0x1e27, 0x1e27 },
+	{ 0x1e29, 0x1e29 },
+	{ 0x1e2b, 0x1e2b },
+	{ 0x1e2d, 0x1e2d },
+	{ 0x1e2f, 0x1e2f },
+	{ 0x1e31, 0x1e31 },
+	{ 0x1e33, 0x1e33 },
+	{ 0x1e35, 0x1e35 },
+	{ 0x1e37, 0x1e37 },
+	{ 0x1e39, 0x1e39 },
+	{ 0x1e3b, 0x1e3b },
+	{ 0x1e3d, 0x1e3d },
+	{ 0x1e3f, 0x1e3f },
+	{ 0x1e41, 0x1e41 },
+	{ 0x1e43, 0x1e43 },
+	{ 0x1e45, 0x1e45 },
+	{ 0x1e47, 0x1e47 },
+	{ 0x1e49, 0x1e49 },
+	{ 0x1e4b, 0x1e4b },
+	{ 0x1e4d, 0x1e4d },
+	{ 0x1e4f, 0x1e4f },
+	{ 0x1e51, 0x1e51 },
+	{ 0x1e53, 0x1e53 },
+	{ 0x1e55, 0x1e55 },
+	{ 0x1e57, 0x1e57 },
+	{ 0x1e59, 0x1e59 },
+	{ 0x1e5b, 0x1e5b },
+	{ 0x1e5d, 0x1e5d },
+	{ 0x1e5f, 0x1e5f },
+	{ 0x1e61, 0x1e61 },
+	{ 0x1e63, 0x1e63 },
+	{ 0x1e65, 0x1e65 },
+	{ 0x1e67, 0x1e67 },
+	{ 0x1e69, 0x1e69 },
+	{ 0x1e6b, 0x1e6b },
+	{ 0x1e6d, 0x1e6d },
+	{ 0x1e6f, 0x1e6f },
+	{ 0x1e71, 0x1e71 },
+	{ 0x1e73, 0x1e73 },
+	{ 0x1e75, 0x1e75 },
+	{ 0x1e77, 0x1e77 },
+	{ 0x1e79, 0x1e79 },
+	{ 0x1e7b, 0x1e7b },
+	{ 0x1e7d, 0x1e7d },
+	{ 0x1e7f, 0x1e7f },
+	{ 0x1e81, 0x1e81 },
+	{ 0x1e83, 0x1e83 },
+	{ 0x1e85, 0x1e85 },
+	{ 0x1e87, 0x1e87 },
+	{ 0x1e89, 0x1e89 },
+	{ 0x1e8b, 0x1e8b },
+	{ 0x1e8d, 0x1e8d },
+	{ 0x1e8f, 0x1e8f },
+	{ 0x1e91, 0x1e91 },
+	{ 0x1e93, 0x1e93 },
+	{ 0x1e95, 0x1e9d },
+	{ 0x1e9f, 0x1e9f },
+	{ 0x1ea1, 0x1ea1 },
+	{ 0x1ea3, 0x1ea3 },
+	{ 0x1ea5, 0x1ea5 },
+	{ 0x1ea7, 0x1ea7 },
+	{ 0x1ea9, 0x1ea9 },
+	{ 0x1eab, 0x1eab },
+	{ 0x1ead, 0x1ead },
+	{ 0x1eaf, 0x1eaf },
+	{ 0x1eb1, 0x1eb1 },
+	{ 0x1eb3, 0x1eb3 },
+	{ 0x1eb5, 0x1eb5 },
+	{ 0x1eb7, 0x1eb7 },
+	{ 0x1eb9, 0x1eb9 },
+	{ 0x1ebb, 0x1ebb },
+	{ 0x1ebd, 0x1ebd },
+	{ 0x1ebf, 0x1ebf },
+	{ 0x1ec1, 0x1ec1 },
+	{ 0x1ec3, 0x1ec3 },
+	{ 0x1ec5, 0x1ec5 },
+	{ 0x1ec7, 0x1ec7 },
+	{ 0x1ec9, 0x1ec9 },
+	{ 0x1ecb, 0x1ecb },
+	{ 0x1ecd, 0x1ecd },
+	{ 0x1ecf, 0x1ecf },
+	{ 0x1ed1, 0x1ed1 },
+	{ 0x1ed3, 0x1ed3 },
+	{ 0x1ed5, 0x1ed5 },
+	{ 0x1ed7, 0x1ed7 },
+	{ 0x1ed9, 0x1ed9 },
+	{ 0x1edb, 0x1edb },
+	{ 0x1edd, 0x1edd },
+	{ 0x1edf, 0x1edf },
+	{ 0x1ee1, 0x1ee1 },
+	{ 0x1ee3, 0x1ee3 },
+	{ 0x1ee5, 0x1ee5 },
+	{ 0x1ee7, 0x1ee7 },
+	{ 0x1ee9, 0x1ee9 },
+	{ 0x1eeb, 0x1eeb },
+	{ 0x1eed, 0x1eed },
+	{ 0x1eef, 0x1eef },
+	{ 0x1ef1, 0x1ef1 },
+	{ 0x1ef3, 0x1ef3 },
+	{ 0x1ef5, 0x1ef5 },
+	{ 0x1ef7, 0x1ef7 },
+	{ 0x1ef9, 0x1ef9 },
+	{ 0x1efb, 0x1efb },
+	{ 0x1efd, 0x1efd },
+	{ 0x1eff, 0x1f07 },
+	{ 0x1f10, 0x1f15 },
+	{ 0x1f20, 0x1f27 },
+	{ 0x1f30, 0x1f37 },
+	{ 0x1f40, 0x1f45 },
+	{ 0x1f50, 0x1f57 },
+	{ 0x1f60, 0x1f67 },
+	{ 0x1f70, 0x1f7d },
+	{ 0x1f80, 0x1f87 },
+	{ 0x1f90, 0x1f97 },
+	{ 0x1fa0, 0x1fa7 },
+	{ 0x1fb0, 0x1fb4 },
+	{ 0x1fb6, 0x1fb7 },
+	{ 0x1fbe, 0x1fbe },
+	{ 0x1fc2, 0x1fc4 },
+	{ 0x1fc6, 0x1fc7 },
+	{ 0x1fd0, 0x1fd3 },
+	{ 0x1fd6, 0x1fd7 },
+	{ 0x1fe0, 0x1fe7 },
+	{ 0x1ff2, 0x1ff4 },
+	{ 0x1ff6, 0x1ff7 },
+	{ 0x2071, 0x2071 },
+	{ 0x207f, 0x207f },
+	{ 0x2090, 0x209c },
+	{ 0x210a, 0x210a },
+	{ 0x210e, 0x210f },
+	{ 0x2113, 0x2113 },
+	{ 0x212f, 0x212f },
+	{ 0x2134, 0x2134 },
+	{ 0x2139, 0x2139 },
+	{ 0x213c, 0x213d },
+	{ 0x2146, 0x2149 },
+	{ 0x214e, 0x214e },
+	{ 0x2170, 0x217f },
+	{ 0x2184, 0x2184 },
+	{ 0x24d0, 0x24e9 },
+	{ 0x2c30, 0x2c5f },
+	{ 0x2c61, 0x2c61 },
+	{ 0x2c65, 0x2c66 },
+	{ 0x2c68, 0x2c68 },
+	{ 0x2c6a, 0x2c6a },
+	{ 0x2c6c, 0x2c6c },
+	{ 0x2c71, 0x2c71 },
+	{ 0x2c73, 0x2c74 },
+	{ 0x2c76, 0x2c7d },
+	{ 0x2c81, 0x2c81 },
+	{ 0x2c83, 0x2c83 },
+	{ 0x2c85, 0x2c85 },
+	{ 0x2c87, 0x2c87 },
+	{ 0x2c89, 0x2c89 },
+	{ 0x2c8b, 0x2c8b },
+	{ 0x2c8d, 0x2c8d },
+	{ 0x2c8f, 0x2c8f },
+	{ 0x2c91, 0x2c91 },
+	{ 0x2c93, 0x2c93 },
+	{ 0x2c95, 0x2c95 },
+	{ 0x2c97, 0x2c97 },
+	{ 0x2c99, 0x2c99 },
+	{ 0x2c9b, 0x2c9b },
+	{ 0x2c9d, 0x2c9d },
+	{ 0x2c9f, 0x2c9f },
+	{ 0x2ca1, 0x2ca1 },
+	{ 0x2ca3, 0x2ca3 },
+	{ 0x2ca5, 0x2ca5 },
+	{ 0x2ca7, 0x2ca7 },
+	{ 0x2ca9, 0x2ca9 },
+	{ 0x2cab, 0x2cab },
+	{ 0x2cad, 0x2cad },
+	{ 0x2caf, 0x2caf },
+	{ 0x2cb1, 0x2cb1 },
+	{ 0x2cb3, 0x2cb3 },
+	{ 0x2cb5, 0x2cb5 },
+	{ 0x2cb7, 0x2cb7 },
+	{ 0x2cb9, 0x2cb9 },
+	{ 0x2cbb, 0x2cbb },
+	{ 0x2cbd, 0x2cbd },
+	{ 0x2cbf, 0x2cbf },
+	{ 0x2cc1, 0x2cc1 },
+	{ 0x2cc3, 0x2cc3 },
+	{ 0x2cc5, 0x2cc5 },
+	{ 0x2cc7, 0x2cc7 },
+	{ 0x2cc9, 0x2cc9 },
+	{ 0x2ccb, 0x2ccb },
+	{ 0x2ccd, 0x2ccd },
+	{ 0x2ccf, 0x2ccf },
+	{ 0x2cd1, 0x2cd1 },
+	{ 0x2cd3, 0x2cd3 },
+	{ 0x2cd5, 0x2cd5 },
+	{ 0x2cd7, 0x2cd7 },
+	{ 0x2cd9, 0x2cd9 },
+	{ 0x2cdb, 0x2cdb },
+	{ 0x2cdd, 0x2cdd },
+	{ 0x2cdf, 0x2cdf },
+	{ 0x2ce1, 0x2ce1 },
+	{ 0x2ce3, 0x2ce4 },
+	{ 0x2cec, 0x2cec },
+	{ 0x2cee, 0x2cee },
+	{ 0x2cf3, 0x2cf3 },
+	{ 0x2d00, 0x2d25 },
+	{ 0x2d27, 0x2d27 },
+	{ 0x2d2d, 0x2d2d },
+	{ 0xa641, 0xa641 },
+	{ 0xa643, 0xa643 },
+	{ 0xa645, 0xa645 },
+	{ 0xa647, 0xa647 },
+	{ 0xa649, 0xa649 },
+	{ 0xa64b, 0xa64b },
+	{ 0xa64d, 0xa64d },
+	{ 0xa64f, 0xa64f },
+	{ 0xa651, 0xa651 },
+	{ 0xa653, 0xa653 },
+	{ 0xa655, 0xa655 },
+	{ 0xa657, 0xa657 },
+	{ 0xa659, 0xa659 },
+	{ 0xa65b, 0xa65b },
+	{ 0xa65d, 0xa65d },
+	{ 0xa65f, 0xa65f },
+	{ 0xa661, 0xa661 },
+	{ 0xa663, 0xa663 },
+	{ 0xa665, 0xa665 },
+	{ 0xa667, 0xa667 },
+	{ 0xa669, 0xa669 },
+	{ 0xa66b, 0xa66b },
+	{ 0xa66d, 0xa66d },
+	{ 0xa681, 0xa681 },
+	{ 0xa683, 0xa683 },
+	{ 0xa685, 0xa685 },
+	{ 0xa687, 0xa687 },
+	{ 0xa689, 0xa689 },
+	{ 0xa68b, 0xa68b },
+	{ 0xa68d, 0xa68d },
+	{ 0xa68f, 0xa68f },
+	{ 0xa691, 0xa691 },
+	{ 0xa693, 0xa693 },
+	{ 0xa695, 0xa695 },
+	{ 0xa697, 0xa697 },
+	{ 0xa699, 0xa699 },
+	{ 0xa69b, 0xa69d },
+	{ 0xa723, 0xa723 },
+	{ 0xa725, 0xa725 },
+	{ 0xa727, 0xa727 },
+	{ 0xa729, 0xa729 },
+	{ 0xa72b, 0xa72b },
+	{ 0xa72d, 0xa72d },
+	{ 0xa72f, 0xa731 },
+	{ 0xa733, 0xa733 },
+	{ 0xa735, 0xa735 },
+	{ 0xa737, 0xa737 },
+	{ 0xa739, 0xa739 },
+	{ 0xa73b, 0xa73b },
+	{ 0xa73d, 0xa73d },
+	{ 0xa73f, 0xa73f },
+	{ 0xa741, 0xa741 },
+	{ 0xa743, 0xa743 },
+	{ 0xa745, 0xa745 },
+	{ 0xa747, 0xa747 },
+	{ 0xa749, 0xa749 },
+	{ 0xa74b, 0xa74b },
+	{ 0xa74d, 0xa74d },
+	{ 0xa74f, 0xa74f },
+	{ 0xa751, 0xa751 },
+	{ 0xa753, 0xa753 },
+	{ 0xa755, 0xa755 },
+	{ 0xa757, 0xa757 },
+	{ 0xa759, 0xa759 },
+	{ 0xa75b, 0xa75b },
+	{ 0xa75d, 0xa75d },
+	{ 0xa75f, 0xa75f },
+	{ 0xa761, 0xa761 },
+	{ 0xa763, 0xa763 },
+	{ 0xa765, 0xa765 },
+	{ 0xa767, 0xa767 },
+	{ 0xa769, 0xa769 },
+	{ 0xa76b, 0xa76b },
+	{ 0xa76d, 0xa76d },
+	{ 0xa76f, 0xa778 },
+	{ 0xa77a, 0xa77a },
+	{ 0xa77c, 0xa77c },
+	{ 0xa77f, 0xa77f },
+	{ 0xa781, 0xa781 },
+	{ 0xa783, 0xa783 },
+	{ 0xa785, 0xa785 },
+	{ 0xa787, 0xa787 },
+	{ 0xa78c, 0xa78c },
+	{ 0xa78e, 0xa78e },
+	{ 0xa791, 0xa791 },
+	{ 0xa793, 0xa795 },
+	{ 0xa797, 0xa797 },
+	{ 0xa799, 0xa799 },
+	{ 0xa79b, 0xa79b },
+	{ 0xa79d, 0xa79d },
+	{ 0xa79f, 0xa79f },
+	{ 0xa7a1, 0xa7a1 },
+	{ 0xa7a3, 0xa7a3 },
+	{ 0xa7a5, 0xa7a5 },
+	{ 0xa7a7, 0xa7a7 },
+	{ 0xa7a9, 0xa7a9 },
+	{ 0xa7af, 0xa7af },
+	{ 0xa7b5, 0xa7b5 },
+	{ 0xa7b7, 0xa7b7 },
+	{ 0xa7b9, 0xa7b9 },
+	{ 0xa7bb, 0xa7bb },
+	{ 0xa7bd, 0xa7bd },
+	{ 0xa7bf, 0xa7bf },
+	{ 0xa7c1, 0xa7c1 },
+	{ 0xa7c3, 0xa7c3 },
+	{ 0xa7c8, 0xa7c8 },
+	{ 0xa7ca, 0xa7ca },
+	{ 0xa7cd, 0xa7cd },
+	{ 0xa7cf, 0xa7cf },
+	{ 0xa7d1, 0xa7d1 },
+	{ 0xa7d3, 0xa7d3 },
+	{ 0xa7d5, 0xa7d5 },
+	{ 0xa7d7, 0xa7d7 },
+	{ 0xa7d9, 0xa7d9 },
+	{ 0xa7db, 0xa7db },
+	{ 0xa7f1, 0xa7f4 },
+	{ 0xa7f6, 0xa7f6 },
+	{ 0xa7f8, 0xa7fa },
+	{ 0xab30, 0xab5a },
+	{ 0xab5c, 0xab69 },
+	{ 0xab70, 0xabbf },
+	{ 0xfb00, 0xfb06 },
+	{ 0xfb13, 0xfb17 },
+	{ 0xff41, 0xff5a },
+	{ 0x10428, 0x1044f },
+	{ 0x104d8, 0x104fb },
+	{ 0x10597, 0x105a1 },
+	{ 0x105a3, 0x105b1 },
+	{ 0x105b3, 0x105b9 },
+	{ 0x105bb, 0x105bc },
+	{ 0x10780, 0x10780 },
+	{ 0x10783, 0x10785 },
+	{ 0x10787, 0x107b0 },
+	{ 0x107b2, 0x107ba },
+	{ 0x10cc0, 0x10cf2 },
+	{ 0x10d70, 0x10d85 },
+	{ 0x118c0, 0x118df },
+	{ 0x16e60, 0x16e7f },
+	{ 0x16ebb, 0x16ed3 },
+	{ 0x1d41a, 0x1d433 },
+	{ 0x1d44e, 0x1d454 },
+	{ 0x1d456, 0x1d467 },
+	{ 0x1d482, 0x1d49b },
+	{ 0x1d4b6, 0x1d4b9 },
+	{ 0x1d4bb, 0x1d4bb },
+	{ 0x1d4bd, 0x1d4c3 },
+	{ 0x1d4c5, 0x1d4cf },
+	{ 0x1d4ea, 0x1d503 },
+	{ 0x1d51e, 0x1d537 },
+	{ 0x1d552, 0x1d56b },
+	{ 0x1d586, 0x1d59f },
+	{ 0x1d5ba, 0x1d5d3 },
+	{ 0x1d5ee, 0x1d607 },
+	{ 0x1d622, 0x1d63b },
+	{ 0x1d656, 0x1d66f },
+	{ 0x1d68a, 0x1d6a5 },
+	{ 0x1d6c2, 0x1d6da },
+	{ 0x1d6dc, 0x1d6e1 },
+	{ 0x1d6fc, 0x1d714 },
+	{ 0x1d716, 0x1d71b },
+	{ 0x1d736, 0x1d74e },
+	{ 0x1d750, 0x1d755 },
+	{ 0x1d770, 0x1d788 },
+	{ 0x1d78a, 0x1d78f },
+	{ 0x1d7aa, 0x1d7c2 },
+	{ 0x1d7c4, 0x1d7c9 },
+	{ 0x1d7cb, 0x1d7cb },
+	{ 0x1df00, 0x1df09 },
+	{ 0x1df0b, 0x1df1e },
+	{ 0x1df25, 0x1df2a },
+	{ 0x1e030, 0x1e06d },
+	{ 0x1e922, 0x1e943 },
+};
+
+const int unicode_letter_size = 761;
+const CharRange unicode_letter[unicode_letter_size] = {
+	{ 0x41, 0x5a },
+	{ 0x61, 0x7a },
+	{ 0xaa, 0xaa },
+	{ 0xb5, 0xb5 },
+	{ 0xba, 0xba },
+	{ 0xc0, 0xd6 },
+	{ 0xd8, 0xf6 },
+	{ 0xf8, 0x2c1 },
+	{ 0x2c6, 0x2d1 },
+	{ 0x2e0, 0x2e4 },
+	{ 0x2ec, 0x2ec },
+	{ 0x2ee, 0x2ee },
+	{ 0x345, 0x345 },
+	{ 0x363, 0x374 },
+	{ 0x376, 0x377 },
+	{ 0x37a, 0x37d },
+	{ 0x37f, 0x37f },
+	{ 0x386, 0x386 },
+	{ 0x388, 0x38a },
+	{ 0x38c, 0x38c },
+	{ 0x38e, 0x3a1 },
+	{ 0x3a3, 0x3f5 },
+	{ 0x3f7, 0x481 },
+	{ 0x48a, 0x52f },
+	{ 0x531, 0x556 },
+	{ 0x559, 0x559 },
+	{ 0x560, 0x588 },
+	{ 0x5b0, 0x5bd },
+	{ 0x5bf, 0x5bf },
+	{ 0x5c1, 0x5c2 },
+	{ 0x5c4, 0x5c5 },
+	{ 0x5c7, 0x5c7 },
+	{ 0x5d0, 0x5ea },
+	{ 0x5ef, 0x5f2 },
+	{ 0x610, 0x61a },
+	{ 0x620, 0x657 },
+	{ 0x659, 0x65f },
+	{ 0x66e, 0x6d3 },
+	{ 0x6d5, 0x6dc },
+	{ 0x6e1, 0x6e8 },
+	{ 0x6ed, 0x6ef },
+	{ 0x6fa, 0x6fc },
+	{ 0x6ff, 0x6ff },
+	{ 0x710, 0x73f },
+	{ 0x74d, 0x7b1 },
+	{ 0x7ca, 0x7ea },
+	{ 0x7f4, 0x7f5 },
+	{ 0x7fa, 0x7fa },
+	{ 0x800, 0x817 },
+	{ 0x81a, 0x82c },
+	{ 0x840, 0x858 },
+	{ 0x860, 0x86a },
+	{ 0x870, 0x887 },
+	{ 0x889, 0x88f },
+	{ 0x897, 0x897 },
+	{ 0x8a0, 0x8c9 },
+	{ 0x8d4, 0x8df },
+	{ 0x8e3, 0x8e9 },
+	{ 0x8f0, 0x93b },
+	{ 0x93d, 0x94c },
+	{ 0x94e, 0x950 },
+	{ 0x955, 0x963 },
+	{ 0x971, 0x983 },
+	{ 0x985, 0x98c },
+	{ 0x98f, 0x990 },
+	{ 0x993, 0x9a8 },
+	{ 0x9aa, 0x9b0 },
+	{ 0x9b2, 0x9b2 },
+	{ 0x9b6, 0x9b9 },
+	{ 0x9bd, 0x9c4 },
+	{ 0x9c7, 0x9c8 },
+	{ 0x9cb, 0x9cc },
+	{ 0x9ce, 0x9ce },
+	{ 0x9d7, 0x9d7 },
+	{ 0x9dc, 0x9dd },
+	{ 0x9df, 0x9e3 },
+	{ 0x9f0, 0x9f1 },
+	{ 0x9fc, 0x9fc },
+	{ 0xa01, 0xa03 },
+	{ 0xa05, 0xa0a },
+	{ 0xa0f, 0xa10 },
+	{ 0xa13, 0xa28 },
+	{ 0xa2a, 0xa30 },
+	{ 0xa32, 0xa33 },
+	{ 0xa35, 0xa36 },
+	{ 0xa38, 0xa39 },
+	{ 0xa3e, 0xa42 },
+	{ 0xa47, 0xa48 },
+	{ 0xa4b, 0xa4c },
+	{ 0xa51, 0xa51 },
+	{ 0xa59, 0xa5c },
+	{ 0xa5e, 0xa5e },
+	{ 0xa70, 0xa75 },
+	{ 0xa81, 0xa83 },
+	{ 0xa85, 0xa8d },
+	{ 0xa8f, 0xa91 },
+	{ 0xa93, 0xaa8 },
+	{ 0xaaa, 0xab0 },
+	{ 0xab2, 0xab3 },
+	{ 0xab5, 0xab9 },
+	{ 0xabd, 0xac5 },
+	{ 0xac7, 0xac9 },
+	{ 0xacb, 0xacc },
+	{ 0xad0, 0xad0 },
+	{ 0xae0, 0xae3 },
+	{ 0xaf9, 0xafc },
+	{ 0xb01, 0xb03 },
+	{ 0xb05, 0xb0c },
+	{ 0xb0f, 0xb10 },
+	{ 0xb13, 0xb28 },
+	{ 0xb2a, 0xb30 },
+	{ 0xb32, 0xb33 },
+	{ 0xb35, 0xb39 },
+	{ 0xb3d, 0xb44 },
+	{ 0xb47, 0xb48 },
+	{ 0xb4b, 0xb4c },
+	{ 0xb56, 0xb57 },
+	{ 0xb5c, 0xb5d },
+	{ 0xb5f, 0xb63 },
+	{ 0xb71, 0xb71 },
+	{ 0xb82, 0xb83 },
+	{ 0xb85, 0xb8a },
+	{ 0xb8e, 0xb90 },
+	{ 0xb92, 0xb95 },
+	{ 0xb99, 0xb9a },
+	{ 0xb9c, 0xb9c },
+	{ 0xb9e, 0xb9f },
+	{ 0xba3, 0xba4 },
+	{ 0xba8, 0xbaa },
+	{ 0xbae, 0xbb9 },
+	{ 0xbbe, 0xbc2 },
+	{ 0xbc6, 0xbc8 },
+	{ 0xbca, 0xbcc },
+	{ 0xbd0, 0xbd0 },
+	{ 0xbd7, 0xbd7 },
+	{ 0xc00, 0xc0c },
+	{ 0xc0e, 0xc10 },
+	{ 0xc12, 0xc28 },
+	{ 0xc2a, 0xc39 },
+	{ 0xc3d, 0xc44 },
+	{ 0xc46, 0xc48 },
+	{ 0xc4a, 0xc4c },
+	{ 0xc55, 0xc56 },
+	{ 0xc58, 0xc5a },
+	{ 0xc5c, 0xc5d },
+	{ 0xc60, 0xc63 },
+	{ 0xc80, 0xc83 },
+	{ 0xc85, 0xc8c },
+	{ 0xc8e, 0xc90 },
+	{ 0xc92, 0xca8 },
+	{ 0xcaa, 0xcb3 },
+	{ 0xcb5, 0xcb9 },
+	{ 0xcbd, 0xcc4 },
+	{ 0xcc6, 0xcc8 },
+	{ 0xcca, 0xccc },
+	{ 0xcd5, 0xcd6 },
+	{ 0xcdc, 0xcde },
+	{ 0xce0, 0xce3 },
+	{ 0xcf1, 0xcf3 },
+	{ 0xd00, 0xd0c },
+	{ 0xd0e, 0xd10 },
+	{ 0xd12, 0xd3a },
+	{ 0xd3d, 0xd44 },
+	{ 0xd46, 0xd48 },
+	{ 0xd4a, 0xd4c },
+	{ 0xd4e, 0xd4e },
+	{ 0xd54, 0xd57 },
+	{ 0xd5f, 0xd63 },
+	{ 0xd7a, 0xd7f },
+	{ 0xd81, 0xd83 },
+	{ 0xd85, 0xd96 },
+	{ 0xd9a, 0xdb1 },
+	{ 0xdb3, 0xdbb },
+	{ 0xdbd, 0xdbd },
+	{ 0xdc0, 0xdc6 },
+	{ 0xdcf, 0xdd4 },
+	{ 0xdd6, 0xdd6 },
+	{ 0xdd8, 0xddf },
+	{ 0xdf2, 0xdf3 },
+	{ 0xe01, 0xe3a },
+	{ 0xe40, 0xe46 },
+	{ 0xe4d, 0xe4d },
+	{ 0xe81, 0xe82 },
+	{ 0xe84, 0xe84 },
+	{ 0xe86, 0xe8a },
+	{ 0xe8c, 0xea3 },
+	{ 0xea5, 0xea5 },
+	{ 0xea7, 0xeb9 },
+	{ 0xebb, 0xebd },
+	{ 0xec0, 0xec4 },
+	{ 0xec6, 0xec6 },
+	{ 0xecd, 0xecd },
+	{ 0xedc, 0xedf },
+	{ 0xf00, 0xf00 },
+	{ 0xf40, 0xf47 },
+	{ 0xf49, 0xf6c },
+	{ 0xf71, 0xf83 },
+	{ 0xf88, 0xf97 },
+	{ 0xf99, 0xfbc },
+	{ 0x1000, 0x1036 },
+	{ 0x1038, 0x1038 },
+	{ 0x103b, 0x103f },
+	{ 0x1050, 0x108f },
+	{ 0x109a, 0x109d },
+	{ 0x10a0, 0x10c5 },
+	{ 0x10c7, 0x10c7 },
+	{ 0x10cd, 0x10cd },
+	{ 0x10d0, 0x10fa },
+	{ 0x10fc, 0x1248 },
+	{ 0x124a, 0x124d },
+	{ 0x1250, 0x1256 },
+	{ 0x1258, 0x1258 },
+	{ 0x125a, 0x125d },
+	{ 0x1260, 0x1288 },
+	{ 0x128a, 0x128d },
+	{ 0x1290, 0x12b0 },
+	{ 0x12b2, 0x12b5 },
+	{ 0x12b8, 0x12be },
+	{ 0x12c0, 0x12c0 },
+	{ 0x12c2, 0x12c5 },
+	{ 0x12c8, 0x12d6 },
+	{ 0x12d8, 0x1310 },
+	{ 0x1312, 0x1315 },
+	{ 0x1318, 0x135a },
+	{ 0x1380, 0x138f },
+	{ 0x13a0, 0x13f5 },
+	{ 0x13f8, 0x13fd },
+	{ 0x1401, 0x166c },
+	{ 0x166f, 0x167f },
+	{ 0x1681, 0x169a },
+	{ 0x16a0, 0x16ea },
+	{ 0x16ee, 0x16f8 },
+	{ 0x1700, 0x1713 },
+	{ 0x171f, 0x1733 },
+	{ 0x1740, 0x1753 },
+	{ 0x1760, 0x176c },
+	{ 0x176e, 0x1770 },
+	{ 0x1772, 0x1773 },
+	{ 0x1780, 0x17b3 },
+	{ 0x17b6, 0x17c8 },
+	{ 0x17d7, 0x17d7 },
+	{ 0x17dc, 0x17dc },
+	{ 0x1820, 0x1878 },
+	{ 0x1880, 0x18aa },
+	{ 0x18b0, 0x18f5 },
+	{ 0x1900, 0x191e },
+	{ 0x1920, 0x192b },
+	{ 0x1930, 0x1938 },
+	{ 0x1950, 0x196d },
+	{ 0x1970, 0x1974 },
+	{ 0x1980, 0x19ab },
+	{ 0x19b0, 0x19c9 },
+	{ 0x1a00, 0x1a1b },
+	{ 0x1a20, 0x1a5e },
+	{ 0x1a61, 0x1a74 },
+	{ 0x1aa7, 0x1aa7 },
+	{ 0x1abf, 0x1ac0 },
+	{ 0x1acc, 0x1ace },
+	{ 0x1b00, 0x1b33 },
+	{ 0x1b35, 0x1b43 },
+	{ 0x1b45, 0x1b4c },
+	{ 0x1b80, 0x1ba9 },
+	{ 0x1bac, 0x1baf },
+	{ 0x1bba, 0x1be5 },
+	{ 0x1be7, 0x1bf1 },
+	{ 0x1c00, 0x1c36 },
+	{ 0x1c4d, 0x1c4f },
+	{ 0x1c5a, 0x1c7d },
+	{ 0x1c80, 0x1c8a },
+	{ 0x1c90, 0x1cba },
+	{ 0x1cbd, 0x1cbf },
+	{ 0x1ce9, 0x1cec },
+	{ 0x1cee, 0x1cf3 },
+	{ 0x1cf5, 0x1cf6 },
+	{ 0x1cfa, 0x1cfa },
+	{ 0x1d00, 0x1dbf },
+	{ 0x1dd3, 0x1df4 },
+	{ 0x1e00, 0x1f15 },
+	{ 0x1f18, 0x1f1d },
+	{ 0x1f20, 0x1f45 },
+	{ 0x1f48, 0x1f4d },
+	{ 0x1f50, 0x1f57 },
+	{ 0x1f59, 0x1f59 },
+	{ 0x1f5b, 0x1f5b },
+	{ 0x1f5d, 0x1f5d },
+	{ 0x1f5f, 0x1f7d },
+	{ 0x1f80, 0x1fb4 },
+	{ 0x1fb6, 0x1fbc },
+	{ 0x1fbe, 0x1fbe },
+	{ 0x1fc2, 0x1fc4 },
+	{ 0x1fc6, 0x1fcc },
+	{ 0x1fd0, 0x1fd3 },
+	{ 0x1fd6, 0x1fdb },
+	{ 0x1fe0, 0x1fec },
+	{ 0x1ff2, 0x1ff4 },
+	{ 0x1ff6, 0x1ffc },
+	{ 0x2071, 0x2071 },
+	{ 0x207f, 0x207f },
+	{ 0x2090, 0x209c },
+	{ 0x2102, 0x2102 },
+	{ 0x2107, 0x2107 },
+	{ 0x210a, 0x2113 },
+	{ 0x2115, 0x2115 },
+	{ 0x2119, 0x211d },
+	{ 0x2124, 0x2124 },
+	{ 0x2126, 0x2126 },
+	{ 0x2128, 0x2128 },
+	{ 0x212a, 0x212d },
+	{ 0x212f, 0x2139 },
+	{ 0x213c, 0x213f },
+	{ 0x2145, 0x2149 },
+	{ 0x214e, 0x214e },
+	{ 0x2160, 0x2188 },
+	{ 0x24b6, 0x24e9 },
+	{ 0x2c00, 0x2ce4 },
+	{ 0x2ceb, 0x2cee },
+	{ 0x2cf2, 0x2cf3 },
+	{ 0x2d00, 0x2d25 },
+	{ 0x2d27, 0x2d27 },
+	{ 0x2d2d, 0x2d2d },
+	{ 0x2d30, 0x2d67 },
+	{ 0x2d6f, 0x2d6f },
+	{ 0x2d80, 0x2d96 },
+	{ 0x2da0, 0x2da6 },
+	{ 0x2da8, 0x2dae },
+	{ 0x2db0, 0x2db6 },
+	{ 0x2db8, 0x2dbe },
+	{ 0x2dc0, 0x2dc6 },
+	{ 0x2dc8, 0x2dce },
+	{ 0x2dd0, 0x2dd6 },
+	{ 0x2dd8, 0x2dde },
+	{ 0x2de0, 0x2dff },
+	{ 0x2e2f, 0x2e2f },
+	{ 0x3005, 0x3007 },
+	{ 0x3021, 0x3029 },
+	{ 0x3031, 0x3035 },
+	{ 0x3038, 0x303c },
+	{ 0x3041, 0x3096 },
+	{ 0x309d, 0x309f },
+	{ 0x30a1, 0x30fa },
+	{ 0x30fc, 0x30ff },
+	{ 0x3105, 0x312f },
+	{ 0x3131, 0x318e },
+	{ 0x31a0, 0x31bf },
+	{ 0x31f0, 0x31ff },
+	{ 0x3400, 0x4dbf },
+	{ 0x4e00, 0xa48c },
+	{ 0xa4d0, 0xa4fd },
+	{ 0xa500, 0xa60c },
+	{ 0xa610, 0xa61f },
+	{ 0xa62a, 0xa62b },
+	{ 0xa640, 0xa66e },
+	{ 0xa674, 0xa67b },
+	{ 0xa67f, 0xa6ef },
+	{ 0xa717, 0xa71f },
+	{ 0xa722, 0xa788 },
+	{ 0xa78b, 0xa7dc },
+	{ 0xa7f1, 0xa805 },
+	{ 0xa807, 0xa827 },
+	{ 0xa840, 0xa873 },
+	{ 0xa880, 0xa8c3 },
+	{ 0xa8c5, 0xa8c5 },
+	{ 0xa8f2, 0xa8f7 },
+	{ 0xa8fb, 0xa8fb },
+	{ 0xa8fd, 0xa8ff },
+	{ 0xa90a, 0xa92a },
+	{ 0xa930, 0xa952 },
+	{ 0xa960, 0xa97c },
+	{ 0xa980, 0xa9b2 },
+	{ 0xa9b4, 0xa9bf },
+	{ 0xa9cf, 0xa9cf },
+	{ 0xa9e0, 0xa9ef },
+	{ 0xa9fa, 0xa9fe },
+	{ 0xaa00, 0xaa36 },
+	{ 0xaa40, 0xaa4d },
+	{ 0xaa60, 0xaa76 },
+	{ 0xaa7a, 0xaabe },
+	{ 0xaac0, 0xaac0 },
+	{ 0xaac2, 0xaac2 },
+	{ 0xaadb, 0xaadd },
+	{ 0xaae0, 0xaaef },
+	{ 0xaaf2, 0xaaf5 },
+	{ 0xab01, 0xab06 },
+	{ 0xab09, 0xab0e },
+	{ 0xab11, 0xab16 },
+	{ 0xab20, 0xab26 },
+	{ 0xab28, 0xab2e },
+	{ 0xab30, 0xab5a },
+	{ 0xab5c, 0xab69 },
+	{ 0xab70, 0xabea },
+	{ 0xac00, 0xd7a3 },
+	{ 0xd7b0, 0xd7c6 },
+	{ 0xd7cb, 0xd7fb },
+	{ 0xf900, 0xfa6d },
+	{ 0xfa70, 0xfad9 },
+	{ 0xfb00, 0xfb06 },
+	{ 0xfb13, 0xfb17 },
+	{ 0xfb1d, 0xfb28 },
+	{ 0xfb2a, 0xfb36 },
+	{ 0xfb38, 0xfb3c },
+	{ 0xfb3e, 0xfb3e },
+	{ 0xfb40, 0xfb41 },
+	{ 0xfb43, 0xfb44 },
+	{ 0xfb46, 0xfbb1 },
+	{ 0xfbd3, 0xfd3d },
+	{ 0xfd50, 0xfd8f },
+	{ 0xfd92, 0xfdc7 },
+	{ 0xfdf0, 0xfdfb },
+	{ 0xfe70, 0xfe74 },
+	{ 0xfe76, 0xfefc },
+	{ 0xff21, 0xff3a },
+	{ 0xff41, 0xff5a },
+	{ 0xff66, 0xffbe },
+	{ 0xffc2, 0xffc7 },
+	{ 0xffca, 0xffcf },
+	{ 0xffd2, 0xffd7 },
+	{ 0xffda, 0xffdc },
+	{ 0x10000, 0x1000b },
+	{ 0x1000d, 0x10026 },
+	{ 0x10028, 0x1003a },
+	{ 0x1003c, 0x1003d },
+	{ 0x1003f, 0x1004d },
+	{ 0x10050, 0x1005d },
+	{ 0x10080, 0x100fa },
+	{ 0x10140, 0x10174 },
+	{ 0x10280, 0x1029c },
+	{ 0x102a0, 0x102d0 },
+	{ 0x10300, 0x1031f },
+	{ 0x1032d, 0x1034a },
+	{ 0x10350, 0x1037a },
+	{ 0x10380, 0x1039d },
+	{ 0x103a0, 0x103c3 },
+	{ 0x103c8, 0x103cf },
+	{ 0x103d1, 0x103d5 },
+	{ 0x10400, 0x1049d },
+	{ 0x104b0, 0x104d3 },
+	{ 0x104d8, 0x104fb },
+	{ 0x10500, 0x10527 },
+	{ 0x10530, 0x10563 },
+	{ 0x10570, 0x1057a },
+	{ 0x1057c, 0x1058a },
+	{ 0x1058c, 0x10592 },
+	{ 0x10594, 0x10595 },
+	{ 0x10597, 0x105a1 },
+	{ 0x105a3, 0x105b1 },
+	{ 0x105b3, 0x105b9 },
+	{ 0x105bb, 0x105bc },
+	{ 0x105c0, 0x105f3 },
+	{ 0x10600, 0x10736 },
+	{ 0x10740, 0x10755 },
+	{ 0x10760, 0x10767 },
+	{ 0x10780, 0x10785 },
+	{ 0x10787, 0x107b0 },
+	{ 0x107b2, 0x107ba },
+	{ 0x10800, 0x10805 },
+	{ 0x10808, 0x10808 },
+	{ 0x1080a, 0x10835 },
+	{ 0x10837, 0x10838 },
+	{ 0x1083c, 0x1083c },
+	{ 0x1083f, 0x10855 },
+	{ 0x10860, 0x10876 },
+	{ 0x10880, 0x1089e },
+	{ 0x108e0, 0x108f2 },
+	{ 0x108f4, 0x108f5 },
+	{ 0x10900, 0x10915 },
+	{ 0x10920, 0x10939 },
+	{ 0x10940, 0x10959 },
+	{ 0x10980, 0x109b7 },
+	{ 0x109be, 0x109bf },
+	{ 0x10a00, 0x10a03 },
+	{ 0x10a05, 0x10a06 },
+	{ 0x10a0c, 0x10a13 },
+	{ 0x10a15, 0x10a17 },
+	{ 0x10a19, 0x10a35 },
+	{ 0x10a60, 0x10a7c },
+	{ 0x10a80, 0x10a9c },
+	{ 0x10ac0, 0x10ac7 },
+	{ 0x10ac9, 0x10ae4 },
+	{ 0x10b00, 0x10b35 },
+	{ 0x10b40, 0x10b55 },
+	{ 0x10b60, 0x10b72 },
+	{ 0x10b80, 0x10b91 },
+	{ 0x10c00, 0x10c48 },
+	{ 0x10c80, 0x10cb2 },
+	{ 0x10cc0, 0x10cf2 },
+	{ 0x10d00, 0x10d27 },
+	{ 0x10d4a, 0x10d65 },
+	{ 0x10d69, 0x10d69 },
+	{ 0x10d6f, 0x10d85 },
+	{ 0x10e80, 0x10ea9 },
+	{ 0x10eab, 0x10eac },
+	{ 0x10eb0, 0x10eb1 },
+	{ 0x10ec2, 0x10ec7 },
+	{ 0x10efa, 0x10efc },
+	{ 0x10f00, 0x10f1c },
+	{ 0x10f27, 0x10f27 },
+	{ 0x10f30, 0x10f45 },
+	{ 0x10f70, 0x10f81 },
+	{ 0x10fb0, 0x10fc4 },
+	{ 0x10fe0, 0x10ff6 },
+	{ 0x11000, 0x11045 },
+	{ 0x11071, 0x11075 },
+	{ 0x11080, 0x110b8 },
+	{ 0x110c2, 0x110c2 },
+	{ 0x110d0, 0x110e8 },
+	{ 0x11100, 0x11132 },
+	{ 0x11144, 0x11147 },
+	{ 0x11150, 0x11172 },
+	{ 0x11176, 0x11176 },
+	{ 0x11180, 0x111bf },
+	{ 0x111c1, 0x111c4 },
+	{ 0x111ce, 0x111cf },
+	{ 0x111da, 0x111da },
+	{ 0x111dc, 0x111dc },
+	{ 0x11200, 0x11211 },
+	{ 0x11213, 0x11234 },
+	{ 0x11237, 0x11237 },
+	{ 0x1123e, 0x11241 },
+	{ 0x11280, 0x11286 },
+	{ 0x11288, 0x11288 },
+	{ 0x1128a, 0x1128d },
+	{ 0x1128f, 0x1129d },
+	{ 0x1129f, 0x112a8 },
+	{ 0x112b0, 0x112e8 },
+	{ 0x11300, 0x11303 },
+	{ 0x11305, 0x1130c },
+	{ 0x1130f, 0x11310 },
+	{ 0x11313, 0x11328 },
+	{ 0x1132a, 0x11330 },
+	{ 0x11332, 0x11333 },
+	{ 0x11335, 0x11339 },
+	{ 0x1133d, 0x11344 },
+	{ 0x11347, 0x11348 },
+	{ 0x1134b, 0x1134c },
+	{ 0x11350, 0x11350 },
+	{ 0x11357, 0x11357 },
+	{ 0x1135d, 0x11363 },
+	{ 0x11380, 0x11389 },
+	{ 0x1138b, 0x1138b },
+	{ 0x1138e, 0x1138e },
+	{ 0x11390, 0x113b5 },
+	{ 0x113b7, 0x113c0 },
+	{ 0x113c2, 0x113c2 },
+	{ 0x113c5, 0x113c5 },
+	{ 0x113c7, 0x113ca },
+	{ 0x113cc, 0x113cd },
+	{ 0x113d1, 0x113d1 },
+	{ 0x113d3, 0x113d3 },
+	{ 0x11400, 0x11441 },
+	{ 0x11443, 0x11445 },
+	{ 0x11447, 0x1144a },
+	{ 0x1145f, 0x11461 },
+	{ 0x11480, 0x114c1 },
+	{ 0x114c4, 0x114c5 },
+	{ 0x114c7, 0x114c7 },
+	{ 0x11580, 0x115b5 },
+	{ 0x115b8, 0x115be },
+	{ 0x115d8, 0x115dd },
+	{ 0x11600, 0x1163e },
+	{ 0x11640, 0x11640 },
+	{ 0x11644, 0x11644 },
+	{ 0x11680, 0x116b5 },
+	{ 0x116b8, 0x116b8 },
+	{ 0x11700, 0x1171a },
+	{ 0x1171d, 0x1172a },
+	{ 0x11740, 0x11746 },
+	{ 0x11800, 0x11838 },
+	{ 0x118a0, 0x118df },
+	{ 0x118ff, 0x11906 },
+	{ 0x11909, 0x11909 },
+	{ 0x1190c, 0x11913 },
+	{ 0x11915, 0x11916 },
+	{ 0x11918, 0x11935 },
+	{ 0x11937, 0x11938 },
+	{ 0x1193b, 0x1193c },
+	{ 0x1193f, 0x11942 },
+	{ 0x119a0, 0x119a7 },
+	{ 0x119aa, 0x119d7 },
+	{ 0x119da, 0x119df },
+	{ 0x119e1, 0x119e1 },
+	{ 0x119e3, 0x119e4 },
+	{ 0x11a00, 0x11a32 },
+	{ 0x11a35, 0x11a3e },
+	{ 0x11a50, 0x11a97 },
+	{ 0x11a9d, 0x11a9d },
+	{ 0x11ab0, 0x11af8 },
+	{ 0x11b60, 0x11b67 },
+	{ 0x11bc0, 0x11be0 },
+	{ 0x11c00, 0x11c08 },
+	{ 0x11c0a, 0x11c36 },
+	{ 0x11c38, 0x11c3e },
+	{ 0x11c40, 0x11c40 },
+	{ 0x11c72, 0x11c8f },
+	{ 0x11c92, 0x11ca7 },
+	{ 0x11ca9, 0x11cb6 },
+	{ 0x11d00, 0x11d06 },
+	{ 0x11d08, 0x11d09 },
+	{ 0x11d0b, 0x11d36 },
+	{ 0x11d3a, 0x11d3a },
+	{ 0x11d3c, 0x11d3d },
+	{ 0x11d3f, 0x11d41 },
+	{ 0x11d43, 0x11d43 },
+	{ 0x11d46, 0x11d47 },
+	{ 0x11d60, 0x11d65 },
+	{ 0x11d67, 0x11d68 },
+	{ 0x11d6a, 0x11d8e },
+	{ 0x11d90, 0x11d91 },
+	{ 0x11d93, 0x11d96 },
+	{ 0x11d98, 0x11d98 },
+	{ 0x11db0, 0x11ddb },
+	{ 0x11ee0, 0x11ef6 },
+	{ 0x11f00, 0x11f10 },
+	{ 0x11f12, 0x11f3a },
+	{ 0x11f3e, 0x11f40 },
+	{ 0x11fb0, 0x11fb0 },
+	{ 0x12000, 0x12399 },
+	{ 0x12400, 0x1246e },
+	{ 0x12480, 0x12543 },
+	{ 0x12f90, 0x12ff0 },
+	{ 0x13000, 0x1342f },
+	{ 0x13441, 0x13446 },
+	{ 0x13460, 0x143fa },
+	{ 0x14400, 0x14646 },
+	{ 0x16100, 0x1612e },
+	{ 0x16800, 0x16a38 },
+	{ 0x16a40, 0x16a5e },
+	{ 0x16a70, 0x16abe },
+	{ 0x16ad0, 0x16aed },
+	{ 0x16b00, 0x16b2f },
+	{ 0x16b40, 0x16b43 },
+	{ 0x16b63, 0x16b77 },
+	{ 0x16b7d, 0x16b8f },
+	{ 0x16d40, 0x16d6c },
+	{ 0x16e40, 0x16e7f },
+	{ 0x16ea0, 0x16eb8 },
+	{ 0x16ebb, 0x16ed3 },
+	{ 0x16f00, 0x16f4a },
+	{ 0x16f4f, 0x16f87 },
+	{ 0x16f8f, 0x16f9f },
+	{ 0x16fe0, 0x16fe1 },
+	{ 0x16fe3, 0x16fe3 },
+	{ 0x16ff0, 0x16ff6 },
+	{ 0x17000, 0x18cd5 },
+	{ 0x18cff, 0x18d1e },
+	{ 0x18d80, 0x18df2 },
+	{ 0x1aff0, 0x1aff3 },
+	{ 0x1aff5, 0x1affb },
+	{ 0x1affd, 0x1affe },
+	{ 0x1b000, 0x1b122 },
+	{ 0x1b132, 0x1b132 },
+	{ 0x1b150, 0x1b152 },
+	{ 0x1b155, 0x1b155 },
+	{ 0x1b164, 0x1b167 },
+	{ 0x1b170, 0x1b2fb },
+	{ 0x1bc00, 0x1bc6a },
+	{ 0x1bc70, 0x1bc7c },
+	{ 0x1bc80, 0x1bc88 },
+	{ 0x1bc90, 0x1bc99 },
+	{ 0x1bc9e, 0x1bc9e },
+	{ 0x1d400, 0x1d454 },
+	{ 0x1d456, 0x1d49c },
+	{ 0x1d49e, 0x1d49f },
+	{ 0x1d4a2, 0x1d4a2 },
+	{ 0x1d4a5, 0x1d4a6 },
+	{ 0x1d4a9, 0x1d4ac },
+	{ 0x1d4ae, 0x1d4b9 },
+	{ 0x1d4bb, 0x1d4bb },
+	{ 0x1d4bd, 0x1d4c3 },
+	{ 0x1d4c5, 0x1d505 },
+	{ 0x1d507, 0x1d50a },
+	{ 0x1d50d, 0x1d514 },
+	{ 0x1d516, 0x1d51c },
+	{ 0x1d51e, 0x1d539 },
+	{ 0x1d53b, 0x1d53e },
+	{ 0x1d540, 0x1d544 },
+	{ 0x1d546, 0x1d546 },
+	{ 0x1d54a, 0x1d550 },
+	{ 0x1d552, 0x1d6a5 },
+	{ 0x1d6a8, 0x1d6c0 },
+	{ 0x1d6c2, 0x1d6da },
+	{ 0x1d6dc, 0x1d6fa },
+	{ 0x1d6fc, 0x1d714 },
+	{ 0x1d716, 0x1d734 },
+	{ 0x1d736, 0x1d74e },
+	{ 0x1d750, 0x1d76e },
+	{ 0x1d770, 0x1d788 },
+	{ 0x1d78a, 0x1d7a8 },
+	{ 0x1d7aa, 0x1d7c2 },
+	{ 0x1d7c4, 0x1d7cb },
+	{ 0x1df00, 0x1df1e },
+	{ 0x1df25, 0x1df2a },
+	{ 0x1e000, 0x1e006 },
+	{ 0x1e008, 0x1e018 },
+	{ 0x1e01b, 0x1e021 },
+	{ 0x1e023, 0x1e024 },
+	{ 0x1e026, 0x1e02a },
+	{ 0x1e030, 0x1e06d },
+	{ 0x1e08f, 0x1e08f },
+	{ 0x1e100, 0x1e12c },
+	{ 0x1e137, 0x1e13d },
+	{ 0x1e14e, 0x1e14e },
+	{ 0x1e290, 0x1e2ad },
+	{ 0x1e2c0, 0x1e2eb },
+	{ 0x1e4d0, 0x1e4eb },
+	{ 0x1e5d0, 0x1e5ed },
+	{ 0x1e5f0, 0x1e5f0 },
+	{ 0x1e6c0, 0x1e6de },
+	{ 0x1e6e0, 0x1e6f5 },
+	{ 0x1e6fe, 0x1e6ff },
+	{ 0x1e7e0, 0x1e7e6 },
+	{ 0x1e7e8, 0x1e7eb },
+	{ 0x1e7ed, 0x1e7ee },
+	{ 0x1e7f0, 0x1e7fe },
+	{ 0x1e800, 0x1e8c4 },
+	{ 0x1e900, 0x1e943 },
+	{ 0x1e947, 0x1e947 },
+	{ 0x1e94b, 0x1e94b },
+	{ 0x1ee00, 0x1ee03 },
+	{ 0x1ee05, 0x1ee1f },
+	{ 0x1ee21, 0x1ee22 },
+	{ 0x1ee24, 0x1ee24 },
+	{ 0x1ee27, 0x1ee27 },
+	{ 0x1ee29, 0x1ee32 },
+	{ 0x1ee34, 0x1ee37 },
+	{ 0x1ee39, 0x1ee39 },
+	{ 0x1ee3b, 0x1ee3b },
+	{ 0x1ee42, 0x1ee42 },
+	{ 0x1ee47, 0x1ee47 },
+	{ 0x1ee49, 0x1ee49 },
+	{ 0x1ee4b, 0x1ee4b },
+	{ 0x1ee4d, 0x1ee4f },
+	{ 0x1ee51, 0x1ee52 },
+	{ 0x1ee54, 0x1ee54 },
+	{ 0x1ee57, 0x1ee57 },
+	{ 0x1ee59, 0x1ee59 },
+	{ 0x1ee5b, 0x1ee5b },
+	{ 0x1ee5d, 0x1ee5d },
+	{ 0x1ee5f, 0x1ee5f },
+	{ 0x1ee61, 0x1ee62 },
+	{ 0x1ee64, 0x1ee64 },
+	{ 0x1ee67, 0x1ee6a },
+	{ 0x1ee6c, 0x1ee72 },
+	{ 0x1ee74, 0x1ee77 },
+	{ 0x1ee79, 0x1ee7c },
+	{ 0x1ee7e, 0x1ee7e },
+	{ 0x1ee80, 0x1ee89 },
+	{ 0x1ee8b, 0x1ee9b },
+	{ 0x1eea1, 0x1eea3 },
+	{ 0x1eea5, 0x1eea9 },
+	{ 0x1eeab, 0x1eebb },
+	{ 0x1f130, 0x1f149 },
+	{ 0x1f150, 0x1f169 },
+	{ 0x1f170, 0x1f189 },
+	{ 0x20000, 0x2a6df },
+	{ 0x2a700, 0x2b81d },
+	{ 0x2b820, 0x2cead },
+	{ 0x2ceb0, 0x2ebe0 },
+	{ 0x2ebf0, 0x2ee5d },
+	{ 0x2f800, 0x2fa1d },
+	{ 0x30000, 0x3134a },
+	{ 0x31350, 0x33479 },
+};
+
+
+// --- Merged from core/string/translation.cpp ---
+#include "core/os/thread.h"
+#include "core/string/translation_server.h"
+#include "core/templates/pair.h"
+#include "core/types.h"
+#include "core/string/translation_server.h"
+
+extern "C"
+{
+#include <thirdparty/misc/smaz.h>
+}
+
+struct CompressedString
+{
+	int orig_len = 0;
+	CharString compressed;
+	int offset = 0;
+};
+
+void _check_for_incompatibility(const String& p_msgctxt, const String& p_msgid)
+{
+	// Gettext PO and MO files use an empty untranslated string without context
+	// to store metadata.
+	if (p_msgctxt.is_empty() && p_msgid.is_empty()) {
+		WARN_PRINT("Both context and the untranslated string are empty. This may cause issues with "
+				   "the translation system and external tools.");
+	}
+
+	// The EOT character (0x04) is used as a separator between context and
+	// untranslated string in the MO file format. This convention is also used
+	// by `get_message_list()`.
+	//
+	// It's unusual to have this character in the context or untranslated
+	// string. But it doesn't do any harm as long as you are aware of this when
+	// using the relevant APIs and tools.
+	if (p_msgctxt.contains_char(0x04)) {
+		WARN_PRINT(vformat("Found EOT character (0x04) within context '%s'. This may cause issues "
+						   "with the translation system and external tools.",
+			p_msgctxt));
+	}
+	if (p_msgid.contains_char(0x04)) {
+		WARN_PRINT(vformat("Found EOT character (0x04) within untranslated string '%s'. This may "
+						   "cause issues with the translation system and external tools.",
+			p_msgid));
+	}
+}
+
+bool Translation::generate(const Ref<Translation>& p_from)
+{
+	// This method compresses a Translation instance.
+	// Right now, it doesn't handle context or plurals.
+#ifdef TOOLS_ENABLED
+	ERR_FAIL_COND_V(p_from.is_null(), false);
+
+	List<String> keys;
+	{
+		List<String> raw_keys;
+		p_from->get_message_list(&raw_keys);
+
+		for (const String& key : raw_keys) {
+			const String key_str = key;
+			int p = key_str.find_char(0x04);
+			if (p == -1) {
+				keys.push_back(key);
+			}
+			else {
+				const String& msgctxt = key_str.substr(0, p);
+				const String& msgid = key_str.substr(p + 1);
+				WARN_PRINT(vformat("Optimized translation does not support context, ignoring "
+								   "message '%s' with context '%s'.",
+					msgid, msgctxt));
+			}
+		}
+	}
+
+	int size = Math::larger_prime(keys.size());
+
+	Vector<Vector<Pair<int, CharString>>> buckets;
+	Vector<HashMap<uint32_t, int>> table;
+	Vector<uint32_t> hfunc_table;
+	Vector<CompressedString> compressed;
+
+	table.resize(size);
+	hfunc_table.resize(size);
+	buckets.resize(size);
+	compressed.resize(keys.size());
+
+	int idx = 0;
+	int total_compression_size = 0;
+
+	for (const String& E : keys) {
+		// hash string
+		CharString cs = E.utf8();
+		uint32_t h = hash(0, cs.get_data());
+		Pair<int, CharString> p;
+		p.first = idx;
+		p.second = cs;
+		buckets.write[h % size].push_back(p);
+
+		// compress string
+		CharString src_s = p_from->get_message(E).utf8();
+		CompressedString ps;
+		ps.orig_len = src_s.size();
+		ps.offset = total_compression_size;
+
+		if (ps.orig_len != 0) {
+			CharString dst_s;
+			dst_s.resize_uninitialized(src_s.size());
+			int ret = smaz_compress(src_s.get_data(), src_s.size(), dst_s.ptrw(), src_s.size());
+			if (ret >= src_s.size()) {
+				// if compressed is larger than original, just use original
+				ps.orig_len = src_s.size();
+				ps.compressed = src_s;
+			}
+			else {
+				dst_s.resize_uninitialized(ret);
+				ps.compressed = dst_s;
+			}
+		}
+		else {
+			ps.orig_len = 1;
+			ps.compressed.resize_uninitialized(1);
+			ps.compressed[0] = 0;
+		}
+
+		compressed.write[idx] = ps;
+		total_compression_size += ps.compressed.size();
+		idx++;
+	}
+
+	int bucket_table_size = 0;
+
+	for (int i = 0; i < size; i++) {
+		const Vector<Pair<int, CharString>>& b = buckets[i];
+		HashMap<uint32_t, int>& t = table.write[i];
+
+		if (b.is_empty()) {
+			continue;
+		}
+
+		int d = 1;
+		int item = 0;
+
+		while (item < b.size()) {
+			uint32_t slot = hash(d, b[item].second.get_data());
+			if (t.has(slot)) {
+				item = 0;
+				d++;
+				t.clear();
+			}
+			else {
+				t[slot] = b[item].first;
+				item++;
+			}
+		}
+
+		hfunc_table.write[i] = d;
+		bucket_table_size += 2 + b.size() * 4;
+	}
+
+	ERR_FAIL_COND_V(bucket_table_size == 0, false);
+
+	String from_locale = p_from->get_locale();
+
+	hash_table.resize(size);
+	bucket_table.resize(bucket_table_size);
+
+	int* htwb = hash_table.ptrw();
+	int* btwb = bucket_table.ptrw();
+
+	uint32_t* htw = (uint32_t*)&htwb[0];
+	uint32_t* btw = (uint32_t*)&btwb[0];
+
+	int btindex = 0;
+
+	for (int i = 0; i < size; i++) {
+		const HashMap<uint32_t, int>& t = table[i];
+		if (t.is_empty()) {
+			htw[i] = 0xFFFFFFFF; // nothing
+			continue;
+		}
+
+		htw[i] = btindex;
+		btw[btindex++] = t.size();
+		btw[btindex++] = hfunc_table[i];
+
+		for (const KeyValue<uint32_t, int>& E : t) {
+			btw[btindex++] = E.key;
+			btw[btindex++] = compressed[E.value].offset;
+			btw[btindex++] = compressed[E.value].compressed.size();
+			btw[btindex++] = compressed[E.value].orig_len;
+		}
+	}
+
+	strings.resize(total_compression_size);
+	uint8_t* cw = strings.ptrw();
+
+	for (int i = 0; i < compressed.size(); i++) {
+		memcpy(&cw[compressed[i].offset], compressed[i].compressed.get_data(),
+			compressed[i].compressed.size());
+	}
+
+	ERR_FAIL_COND_V(btindex != bucket_table_size, false);
+	translation_map.clear();
+	set_locale(from_locale);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+Vector<String> Translation::_get_message_list() const
+{
+	if (bucket_table.size() > 0) {
+		WARN_PRINT_ONCE("Optimized translation does not store the message texts to be translated.");
+		return {};
+	}
+
+	List<String> msgstrs;
+	get_message_list(&msgstrs);
+
+	Vector<String> keys;
+	keys.resize(msgstrs.size());
+	int idx = 0;
+	for (const String& msgstr : msgstrs) {
+		keys.write[idx++] = msgstr;
+	}
+	return keys;
+}
+
+Vector<String> Translation::get_translated_message_list() const
+{
+	if (bucket_table.size() > 0) {
+		Vector<String> msgs;
+
+		const int* htr = hash_table.ptr();
+		const uint32_t* htptr = (const uint32_t*)&htr[0];
+		const int* btr = bucket_table.ptr();
+		const uint32_t* btptr = (const uint32_t*)&btr[0];
+		const uint8_t* sr = strings.ptr();
+		const char* sptr = (const char*)&sr[0];
+
+		for (int i = 0; i < hash_table.size(); i++) {
+			uint32_t p = htptr[i];
+			if (p != 0xFFFFFFFF) {
+				const Bucket& bucket = *(const Bucket*)&btptr[p];
+				for (int j = 0; j < bucket.size; j++) {
+					if (bucket.elem[j].comp_size == bucket.elem[j].uncomp_size) {
+						String rstr = String::utf8(
+							&sptr[bucket.elem[j].str_offset], bucket.elem[j].uncomp_size);
+						msgs.push_back(rstr);
+					}
+					else {
+						CharString uncomp;
+						uncomp.resize_uninitialized(bucket.elem[j].uncomp_size + 1);
+						smaz_decompress(&sptr[bucket.elem[j].str_offset], bucket.elem[j].comp_size,
+							uncomp.ptrw(), bucket.elem[j].uncomp_size);
+						String rstr = String::utf8(uncomp.get_data());
+						msgs.push_back(rstr);
+					}
+				}
+			}
+		}
+		return msgs;
+	}
+
+	Vector<String> msgstrs;
+	for (const KeyValue<MessageKey, Vector<String>>& E : translation_map) {
+		for (const String& msgstr : E.value) {
+			msgstrs.push_back(msgstr);
+		}
+	}
+	return msgstrs;
+}
+
+void Translation::set_locale(const String& p_locale)
+{
+	locale = TranslationServer::standardize_locale(p_locale);
+
+	if (plural_rules_cache && plural_rules_override.is_empty()) {
+		memdelete(plural_rules_cache);
+		plural_rules_cache = nullptr;
+	}
+}
+
+void Translation::add_message(
+	const String& p_src_text, const String& p_xlated_text, const String& p_context)
+{
+	_check_for_incompatibility(p_context, p_src_text);
+	translation_map[{p_context, p_src_text}] = {p_xlated_text};
+}
+
+void Translation::add_plural_message(const String& p_src_text,
+	const Vector<String>& p_plural_xlated_texts, const String& p_context)
+{
+	ERR_FAIL_COND_MSG(p_plural_xlated_texts.is_empty(),
+		"Parameter vector p_plural_xlated_texts passed in is empty.");
+
+	Vector<String> msgstrs;
+	msgstrs.resize(p_plural_xlated_texts.size());
+	for (int i = 0; i < p_plural_xlated_texts.size(); i++) {
+		msgstrs.write[i] = p_plural_xlated_texts[i];
+	}
+
+	_check_for_incompatibility(p_context, p_src_text);
+	translation_map[{p_context, p_src_text}] = msgstrs;
+}
+
+String Translation::get_message(const String& p_src_text, const String& p_context) const
+{
+	if (bucket_table.size() > 0) {
+		// p_context passed in is ignored in compressed mode.
+		int htsize = hash_table.size();
+
+		if (htsize == 0) {
+			return String();
+		}
+
+		CharString str = p_src_text.utf8();
+		uint32_t h = hash(0, str.get_data());
+
+		const int* htr = hash_table.ptr();
+		const uint32_t* htptr = (const uint32_t*)&htr[0];
+		const int* btr = bucket_table.ptr();
+		const uint32_t* btptr = (const uint32_t*)&btr[0];
+		const uint8_t* sr = strings.ptr();
+		const char* sptr = (const char*)&sr[0];
+
+		uint32_t p = htptr[h % htsize];
+
+		if (p == 0xFFFFFFFF) {
+			return String(); // nothing
+		}
+
+		const Bucket& bucket = *(const Bucket*)&btptr[p];
+
+		h = hash(bucket.func, str.get_data());
+
+		int idx = -1;
+
+		for (int i = 0; i < bucket.size; i++) {
+			if (bucket.elem[i].key == h) {
+				idx = i;
+				break;
+			}
+		}
+
+		if (idx == -1) {
+			return String();
+		}
+
+		if (bucket.elem[idx].comp_size == bucket.elem[idx].uncomp_size) {
+			return String::utf8(&sptr[bucket.elem[idx].str_offset], bucket.elem[idx].uncomp_size);
+		}
+		else {
+			CharString uncomp;
+			uncomp.resize_uninitialized(bucket.elem[idx].uncomp_size + 1);
+			smaz_decompress(&sptr[bucket.elem[idx].str_offset], bucket.elem[idx].comp_size,
+				uncomp.ptrw(), bucket.elem[idx].uncomp_size);
+			return String::utf8(uncomp.get_data());
+		}
+	}
+
+	const Vector<String>* msgstrs = translation_map.getptr({p_context, p_src_text});
+	if (msgstrs == nullptr) {
+		return String();
+	}
+
+	DEV_ASSERT(!msgstrs->is_empty()); // Should be prevented when adding messages.
+	return msgstrs->get(0);
+}
+
+String Translation::get_plural_message(const String& p_src_text,
+	const String& p_plural_text, int p_n, const String& p_context) const
+{
+	if (bucket_table.size() > 0) {
+		// The use of plurals translation is not yet supported in compressed mode.
+		return get_message(p_src_text, p_context);
+	}
+
+	ERR_FAIL_COND_V_MSG(p_n < 0, String(),
+		"N passed into translation to get a plural message should not be negative. For negative "
+		"numbers, use singular translation please. Search \"gettext PO Plural Forms\" online for "
+		"details on translating negative numbers.");
+
+	const Vector<String>* msgstrs = translation_map.getptr({p_context, p_src_text});
+	if (msgstrs == nullptr) {
+		return String();
+	}
+
+	const int index = _get_plural_rules()->evaluate(p_n);
+	ERR_FAIL_INDEX_V_MSG(index, msgstrs->size(), String(),
+		"Plural index returned or number of plural translations is not valid.");
+	return msgstrs->get(index);
+}
+
+void Translation::erase_message(const String& p_src_text, const String& p_context)
+{
+	translation_map.erase({p_context, p_src_text});
+}
+
+void Translation::get_message_list(List<String>* r_messages) const
+{
+	if (bucket_table.size() > 0) {
+		WARN_PRINT_ONCE("Optimized translation does not store the message texts to be translated.");
+		return;
+	}
+
+	for (const KeyValue<MessageKey, Vector<String>>& E : translation_map) {
+		if (E.key.msgctxt.is_empty()) {
+			r_messages->push_back(E.key.msgid);
+		}
+		else {
+			// Separated by the EOT character. Compatible with the MO file format.
+			r_messages->push_back(vformat("%s\x04%s", E.key.msgctxt, E.key.msgid));
+		}
+	}
+}
+
+int Translation::get_message_count() const
+{
+	if (bucket_table.size() > 0) {
+		WARN_PRINT_ONCE("Optimized translation does not store the message texts to be translated.");
+		return 0;
+	}
+
+	return translation_map.size();
+}
+
+PluralRules* Translation::_get_plural_rules() const
+{
+	if (plural_rules_cache) {
+		return plural_rules_cache;
+	}
+
+	if (!plural_rules_override.is_empty()) {
+		plural_rules_cache = PluralRules::parse(plural_rules_override);
+	}
+
+	if (!plural_rules_cache) {
+		// Locale's default plural rules.
+		const String& default_rule = TranslationServer::get_plural_rules(locale);
+		if (!default_rule.is_empty()) {
+			plural_rules_cache = PluralRules::parse(default_rule);
+		}
+
+		// Use English plural rules as a fallback.
+		if (!plural_rules_cache) {
+			plural_rules_cache = PluralRules::parse("nplurals=2; plural=(n != 1);");
+		}
+	}
+
+	DEV_ASSERT(plural_rules_cache != nullptr);
+	return plural_rules_cache;
+}
+
+void Translation::set_plural_rules_override(const String& p_rules)
+{
+	plural_rules_override = p_rules;
+	if (plural_rules_cache) {
+		memdelete(plural_rules_cache);
+		plural_rules_cache = nullptr;
+	}
+}
+
+String Translation::get_plural_rules_override() const { return plural_rules_override; }
+
+int Translation::get_nplurals() const { return _get_plural_rules()->get_nplurals(); }
+
+Translation::~Translation()
+{
+	if (plural_rules_cache) {
+		memdelete(plural_rules_cache);
+		plural_rules_cache = nullptr;
+	}
+}
+
+// ==========================================================================
+// plural_rules.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "core/types.h"
+#include "core/string/translation_server.h"
+
+int PluralRules::_find_unquoted(const String& p_src, char32_t p_chr) const
+{
+	const int len = p_src.length();
+	if (len == 0) {
+		return -1;
+	}
+
+	const char32_t* src = p_src.get_data();
+	bool in_quote = false;
+	for (int i = 0; i < len; i++) {
+		if (in_quote) {
+			if (src[i] == ')') {
+				in_quote = false;
+			}
+		}
+		else {
+			if (src[i] == '(') {
+				in_quote = true;
+			}
+			else if (src[i] == p_chr) {
+				return i;
+			}
+		}
+	}
+
+	return -1;
+}
+
+void PluralRules::_cache_plural_tests(const String& p_plural_rule, Ref<EQNode>& p_node)
+{
+	// Some examples of p_plural_rule passed in can have the form:
+	// "n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5"
+	// (Arabic) "n >= 2" (French) // When evaluating the last, especially careful with this one. "n
+	// != 1" (English)
+
+	String rule = p_plural_rule;
+	if (rule.begins_with("(") && rule.ends_with(")")) {
+		int bcount = 0;
+		for (int i = 1; i < rule.length() - 1 && bcount >= 0; i++) {
+			if (rule[i] == '(') {
+				bcount++;
+			}
+			else if (rule[i] == ')') {
+				bcount--;
+			}
+		}
+		if (bcount == 0) {
+			rule = rule.substr(1, rule.length() - 2);
+		}
+	}
+
+	int first_ques_mark = _find_unquoted(rule, '?');
+	int first_colon = _find_unquoted(rule, ':');
+
+	if (first_ques_mark == -1) {
+		p_node->regex = rule.strip_edges();
+		return;
+	}
+
+	p_node->regex = rule.substr(0, first_ques_mark).strip_edges();
+
+	p_node->left.instantiate();
+	_cache_plural_tests(
+		rule.substr(first_ques_mark + 1, first_colon - first_ques_mark - 1).strip_edges(),
+		p_node->left);
+	p_node->right.instantiate();
+	_cache_plural_tests(rule.substr(first_colon + 1).strip_edges(), p_node->right);
+}
+
+PluralRules::PluralRules(int p_nplurals, const String& p_plural)
+	: nplurals(p_nplurals), plural(p_plural)
+{
+	equi_tests.instantiate();
+	_cache_plural_tests(plural, equi_tests);
+
+	expr.instantiate();
+}
+
+int PluralRules::evaluate(int p_n) const { return 0; }
+
+PluralRules* PluralRules::parse(const String& p_rules)
+{
+	// `p_rules` should be in the format "nplurals=<N>; plural=<Expression>;".
+
+	const int nplurals_eq = p_rules.find_char('=');
+	ERR_FAIL_COND_V_MSG(nplurals_eq == -1, nullptr,
+		"Invalid plural rules format. Missing equal sign for `nplurals`.");
+
+	const int nplurals_semi_col = p_rules.find_char(';', nplurals_eq);
+	ERR_FAIL_COND_V_MSG(nplurals_semi_col == -1, nullptr,
+		"Invalid plural rules format. Missing semicolon for `nplurals`.");
+
+	const String nplurals_str =
+		p_rules.substr(nplurals_eq + 1, nplurals_semi_col - (nplurals_eq + 1)).strip_edges();
+	ERR_FAIL_COND_V_MSG(!nplurals_str.is_valid_int(), nullptr,
+		"Invalid plural rules format. `nplurals` should be an integer.");
+
+	const int nplurals = nplurals_str.to_int();
+	ERR_FAIL_COND_V_MSG(
+		nplurals < 1, nullptr, "Invalid plural rules format. `nplurals` should be at least 1.");
+
+	const int expression_eq = p_rules.find_char('=', nplurals_semi_col + 1);
+	ERR_FAIL_COND_V_MSG(expression_eq == -1, nullptr,
+		"Invalid plural rules format. Missing equal sign for `plural`.");
+
+	int expression_end = p_rules.rfind_char(';');
+	if (expression_end == -1) {
+		WARN_PRINT("Invalid plural rules format. Missing semicolon at the end of `plural` "
+				   "expression. Assuming ends at the end of the string.");
+		expression_end = p_rules.length();
+	}
+
+	const int expression_start = expression_eq + 1;
+	ERR_FAIL_COND_V_MSG(expression_end <= expression_start, nullptr,
+		"Invalid plural rules format. `plural` expression is empty.");
+
+	const String& plural =
+		p_rules.substr(expression_start, expression_end - expression_start).strip_edges();
+	return memnew(PluralRules(nplurals, plural));
+}
+
+// ==========================================================================
+// translation_domain.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "core/string/translation_server.h"
+
+struct _character_accent_pair
+{
+	const char32_t character;
+	const char32_t* accented_character;
+};
+
+static _character_accent_pair _character_to_accented[] = {
+	{'A', U"Å"},
+	{'B', U"ß"},
+	{'C', U"Ç"},
+	{'D', U"Ð"},
+	{'E', U"É"},
+	{'F', U"F́"},
+	{'G', U"Ĝ"},
+	{'H', U"Ĥ"},
+	{'I', U"Ĩ"},
+	{'J', U"Ĵ"},
+	{'K', U"ĸ"},
+	{'L', U"Ł"},
+	{'M', U"Ḿ"},
+	{'N', U"й"},
+	{'O', U"Ö"},
+	{'P', U"Ṕ"},
+	{'Q', U"Q́"},
+	{'R', U"Ř"},
+	{'S', U"Ŝ"},
+	{'T', U"Ŧ"},
+	{'U', U"Ũ"},
+	{'V', U"Ṽ"},
+	{'W', U"Ŵ"},
+	{'X', U"X́"},
+	{'Y', U"Ÿ"},
+	{'Z', U"Ž"},
+	{'a', U"á"},
+	{'b', U"ḅ"},
+	{'c', U"ć"},
+	{'d', U"d́"},
+	{'e', U"é"},
+	{'f', U"f́"},
+	{'g', U"ǵ"},
+	{'h', U"h̀"},
+	{'i', U"í"},
+	{'j', U"ǰ"},
+	{'k', U"ḱ"},
+	{'l', U"ł"},
+	{'m', U"m̀"},
+	{'n', U"ή"},
+	{'o', U"ô"},
+	{'p', U"ṕ"},
+	{'q', U"q́"},
+	{'r', U"ŕ"},
+	{'s', U"š"},
+	{'t', U"ŧ"},
+	{'u', U"ü"},
+	{'v', U"ṽ"},
+	{'w', U"ŵ"},
+	{'x', U"x́"},
+	{'y', U"ý"},
+	{'z', U"ź"},
+};
+
+String TranslationDomain::_get_override_string(const String& p_message) const
+{
+	String res;
+	for (int i = 0; i < p_message.length(); i++) {
+		if (pseudolocalization.skip_placeholders_enabled && _is_placeholder(p_message, i)) {
+			res += p_message[i];
+			res += p_message[i + 1];
+			i++;
+			continue;
+		}
+		res += '*';
+	}
+	return res;
+}
+
+String TranslationDomain::_double_vowels(const String& p_message) const
+{
+	String res;
+	for (int i = 0; i < p_message.length(); i++) {
+		if (pseudolocalization.skip_placeholders_enabled && _is_placeholder(p_message, i)) {
+			res += p_message[i];
+			res += p_message[i + 1];
+			i++;
+			continue;
+		}
+		res += p_message[i];
+		if (p_message[i] == 'a' || p_message[i] == 'e' || p_message[i] == 'i' ||
+			p_message[i] == 'o' || p_message[i] == 'u' || p_message[i] == 'A' ||
+			p_message[i] == 'E' || p_message[i] == 'I' || p_message[i] == 'O' ||
+			p_message[i] == 'U') {
+			res += p_message[i];
+		}
+	}
+	return res;
+}
+
+String TranslationDomain::_replace_with_accented_string(const String& p_message) const
+{
+	String res;
+	for (int i = 0; i < p_message.length(); i++) {
+		if (pseudolocalization.skip_placeholders_enabled && _is_placeholder(p_message, i)) {
+			res += p_message[i];
+			res += p_message[i + 1];
+			i++;
+			continue;
+		}
+		const char32_t* accented = _get_accented_version(p_message[i]);
+		if (accented) {
+			res += accented;
+		}
+		else {
+			res += p_message[i];
+		}
+	}
+	return res;
+}
+
+String TranslationDomain::_wrap_with_fakebidi_characters(const String& p_message) const
+{
+	String res;
+	char32_t fakebidiprefix = U'\u202e';
+	char32_t fakebidisuffix = U'\u202c';
+	res += fakebidiprefix;
+	// The fake bidi unicode gets popped at every newline so pushing it back at every newline.
+	for (int i = 0; i < p_message.length(); i++) {
+		if (p_message[i] == '\n') {
+			res += fakebidisuffix;
+			res += p_message[i];
+			res += fakebidiprefix;
+		}
+		else if (pseudolocalization.skip_placeholders_enabled && _is_placeholder(p_message, i)) {
+			res += fakebidisuffix;
+			res += p_message[i];
+			res += p_message[i + 1];
+			res += fakebidiprefix;
+			i++;
+		}
+		else {
+			res += p_message[i];
+		}
+	}
+	res += fakebidisuffix;
+	return res;
+}
+
+String TranslationDomain::_add_padding(const String& p_message, int p_length) const
+{
+	String underscores = String("_").repeat(p_length * pseudolocalization.expansion_ratio / 2);
+	String prefix = pseudolocalization.prefix + underscores;
+	String suffix = underscores + pseudolocalization.suffix;
+
+	return prefix + p_message + suffix;
+}
+
+const char32_t* TranslationDomain::_get_accented_version(char32_t p_character) const
+{
+	if (!is_ascii_alphabet_char(p_character)) {
+		return nullptr;
+	}
+
+	for (unsigned int i = 0; i < std_size(_character_to_accented); i++) {
+		if (_character_to_accented[i].character == p_character) {
+			return _character_to_accented[i].accented_character;
+		}
+	}
+
+	return nullptr;
+}
+
+bool TranslationDomain::_is_placeholder(const String& p_message, int p_index) const
+{
+	return p_index < p_message.length() - 1 && p_message[p_index] == '%' &&
+		   (p_message[p_index + 1] == 's' || p_message[p_index + 1] == 'c' ||
+			   p_message[p_index + 1] == 'd' || p_message[p_index + 1] == 'o' ||
+			   p_message[p_index + 1] == 'x' || p_message[p_index + 1] == 'X' ||
+			   p_message[p_index + 1] == 'f');
+}
+
+String TranslationDomain::get_message_from_translations(
+	const String& p_locale, const String& p_message, const String& p_context) const
+{
+	String res;
+	int best_score = 0;
+
+	for (const Ref<Translation>& E : translations) {
+		int score = TranslationServer::compare_locales(p_locale, E->get_locale());
+		if (score > 0 && score >= best_score) {
+			const String r = E->get_message(p_message, p_context);
+			if (r.is_empty()) {
+				continue;
+			}
+			res = r;
+			best_score = score;
+			if (score == 10) {
+				break; // Exact match, skip the rest.
+			}
+		}
+	}
+
+	return res;
+}
+
+String TranslationDomain::get_message_from_translations(const String& p_locale,
+	const String& p_message, const String& p_message_plural, int p_n,
+	const String& p_context) const
+{
+	String res;
+	int best_score = 0;
+
+	for (const Ref<Translation>& E : translations) {
+		int score = TranslationServer::compare_locales(p_locale, E->get_locale());
+		if (score > 0 && score >= best_score) {
+			const String r = E->get_plural_message(p_message, p_message_plural, p_n, p_context);
+			if (r.is_empty()) {
+				continue;
+			}
+			res = r;
+			best_score = score;
+			if (score == 10) {
+				break; // Exact match, skip the rest.
+			}
+		}
+	}
+
+	return res;
+}
+
+PackedStringArray TranslationDomain::get_loaded_locales() const
+{
+	PackedStringArray locales;
+	for (const Ref<Translation>& E : translations) {
+		const String& locale = E->get_locale();
+		if (!locales.has(locale)) {
+			locales.push_back(locale);
+		}
+	}
+	return locales;
+}
+
+#ifndef DISABLE_DEPRECATED
+Ref<Translation> TranslationDomain::get_translation_object(const String& p_locale) const
+{
+	Ref<Translation> res;
+	int best_score = 0;
+
+	for (const Ref<Translation>& E : translations) {
+		int score = TranslationServer::compare_locales(p_locale, E->get_locale());
+		if (score > 0 && score >= best_score) {
+			res = E;
+			best_score = score;
+			if (score == 10) {
+				break; // Exact match, skip the rest.
+			}
+		}
+	}
+	return res;
+}
+#endif
+
+void TranslationDomain::add_translation(const Ref<Translation>& p_translation)
+{
+	ERR_FAIL_COND_MSG(p_translation.is_null(), "Invalid translation provided.");
+	translations.insert(p_translation);
+}
+
+void TranslationDomain::remove_translation(const Ref<Translation>& p_translation)
+{
+	translations.erase(p_translation);
+}
+
+void TranslationDomain::clear() { translations.clear(); }
+
+const HashSet<Ref<Translation>> TranslationDomain::get_translations() const
+{
+	return HashSet<Ref<Translation>>(translations);
+}
+
+HashSet<Ref<Translation>> TranslationDomain::find_translations(
+	const String& p_locale, bool p_exact) const
+{
+	HashSet<Ref<Translation>> res;
+	if (p_exact) {
+		for (const Ref<Translation>& E : translations) {
+			if (E->get_locale() == p_locale) {
+				res.insert(E);
+			}
+		}
+	}
+	else {
+		for (const Ref<Translation>& E : translations) {
+			if (TranslationServer::compare_locales(p_locale, E->get_locale()) >
+				0) {
+				res.insert(E);
+			}
+		}
+	}
+	return res;
+}
+
+bool TranslationDomain::has_translation(const Ref<Translation>& p_translation) const
+{
+	return translations.has(p_translation);
+}
+
+bool TranslationDomain::has_translation_for_locale(const String& p_locale, bool p_exact) const
+{
+	if (p_exact) {
+		for (const Ref<Translation>& E : translations) {
+			if (E->get_locale() == p_locale) {
+				return true;
+			}
+		}
+	}
+	else {
+		for (const Ref<Translation>& E : translations) {
+			if (TranslationServer::compare_locales(p_locale, E->get_locale()) >
+				0) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+String TranslationDomain::translate(
+	const String& p_message, const String& p_context) const
+{
+	if (!enabled) {
+		return p_message;
+	}
+
+	const String& locale = locale_override.is_empty()
+							   ? TranslationServer::get_locale()
+							   : locale_override;
+	String res = get_message_from_translations(locale, p_message, p_context);
+
+	const bool& allow_fallback = TranslationServer::is_fallback_allowed();
+	const String& fallback = TranslationServer::get_fallback_locale();
+	if (res.is_empty() && allow_fallback && fallback.length() >= 2) {
+		res = get_message_from_translations(fallback, p_message, p_context);
+	}
+
+	if (res.is_empty()) {
+		return pseudolocalization.enabled ? pseudolocalize(p_message) : p_message;
+	}
+	return pseudolocalization.enabled ? pseudolocalize(res) : res;
+}
+
+String TranslationDomain::translate_plural(const String& p_message,
+	const String& p_message_plural, int p_n, const String& p_context) const
+{
+	if (!enabled) {
+		return p_n == 1 ? p_message : p_message_plural;
+	}
+
+	const String& locale = locale_override.is_empty()
+							   ? TranslationServer::get_locale()
+							   : locale_override;
+	String res =
+		get_message_from_translations(locale, p_message, p_message_plural, p_n, p_context);
+
+	const bool& allow_fallback = TranslationServer::is_fallback_allowed();
+	const String& fallback = TranslationServer::get_fallback_locale();
+	if (res.is_empty() && allow_fallback && fallback.length() >= 2) {
+		res = get_message_from_translations(fallback, p_message, p_message_plural, p_n, p_context);
+	}
+
+	if (res.is_empty()) {
+		if (p_n == 1) {
+			return p_message;
+		}
+		return p_message_plural;
+	}
+	return res;
+}
+
+String TranslationDomain::get_locale_override() const { return locale_override; }
+
+void TranslationDomain::set_locale_override(const String& p_locale)
+{
+	locale_override = p_locale.is_empty()
+						  ? p_locale
+						  : TranslationServer::standardize_locale(p_locale);
+}
+
+bool TranslationDomain::is_enabled() const { return enabled; }
+
+void TranslationDomain::set_enabled(bool p_enabled) { enabled = p_enabled; }
+
+bool TranslationDomain::is_pseudolocalization_enabled() const { return pseudolocalization.enabled; }
+
+void TranslationDomain::set_pseudolocalization_enabled(bool p_enabled)
+{
+	pseudolocalization.enabled = p_enabled;
+}
+
+bool TranslationDomain::is_pseudolocalization_accents_enabled() const
+{
+	return pseudolocalization.accents_enabled;
+}
+
+void TranslationDomain::set_pseudolocalization_accents_enabled(bool p_enabled)
+{
+	pseudolocalization.accents_enabled = p_enabled;
+}
+
+bool TranslationDomain::is_pseudolocalization_double_vowels_enabled() const
+{
+	return pseudolocalization.double_vowels_enabled;
+}
+
+void TranslationDomain::set_pseudolocalization_double_vowels_enabled(bool p_enabled)
+{
+	pseudolocalization.double_vowels_enabled = p_enabled;
+}
+
+bool TranslationDomain::is_pseudolocalization_fake_bidi_enabled() const
+{
+	return pseudolocalization.fake_bidi_enabled;
+}
+
+void TranslationDomain::set_pseudolocalization_fake_bidi_enabled(bool p_enabled)
+{
+	pseudolocalization.fake_bidi_enabled = p_enabled;
+}
+
+bool TranslationDomain::is_pseudolocalization_override_enabled() const
+{
+	return pseudolocalization.override_enabled;
+}
+
+void TranslationDomain::set_pseudolocalization_override_enabled(bool p_enabled)
+{
+	pseudolocalization.override_enabled = p_enabled;
+}
+
+bool TranslationDomain::is_pseudolocalization_skip_placeholders_enabled() const
+{
+	return pseudolocalization.skip_placeholders_enabled;
+}
+
+void TranslationDomain::set_pseudolocalization_skip_placeholders_enabled(bool p_enabled)
+{
+	pseudolocalization.skip_placeholders_enabled = p_enabled;
+}
+
+float TranslationDomain::get_pseudolocalization_expansion_ratio() const
+{
+	return pseudolocalization.expansion_ratio;
+}
+
+void TranslationDomain::set_pseudolocalization_expansion_ratio(float p_ratio)
+{
+	pseudolocalization.expansion_ratio = p_ratio;
+}
+
+String TranslationDomain::get_pseudolocalization_prefix() const
+{
+	return pseudolocalization.prefix;
+}
+
+void TranslationDomain::set_pseudolocalization_prefix(const String& p_prefix)
+{
+	pseudolocalization.prefix = p_prefix;
+}
+
+String TranslationDomain::get_pseudolocalization_suffix() const
+{
+	return pseudolocalization.suffix;
+}
+
+void TranslationDomain::set_pseudolocalization_suffix(const String& p_suffix)
+{
+	pseudolocalization.suffix = p_suffix;
+}
+
+String TranslationDomain::pseudolocalize(const String& p_message) const
+{
+	if (p_message.is_empty()) {
+		return p_message;
+	}
+
+	String message = p_message;
+	int length = message.length();
+	if (pseudolocalization.override_enabled) {
+		message = _get_override_string(message);
+	}
+
+	if (pseudolocalization.double_vowels_enabled) {
+		message = _double_vowels(message);
+	}
+
+	if (pseudolocalization.accents_enabled) {
+		message = _replace_with_accented_string(message);
+	}
+
+	if (pseudolocalization.fake_bidi_enabled) {
+		message = _wrap_with_fakebidi_characters(message);
+	}
+
+	return _add_padding(message, length);
+}
+
+// ==========================================================================
+// translation_server.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "core/config/engine.h"
+#include "core/config/project_settings.h"
+#include "core/io/resource_loader.h"
+#include "core/os/os.h"
+// --- Inlined from core/string/locales.h ---
+// Windows has some weird locale identifiers which do not honor the ISO 639-1
+// standardized nomenclature. Whenever those don't conflict with existing ISO
+// identifiers, we override them.
+//
+// Reference:
+// - https://msdn.microsoft.com/en-us/library/windows/desktop/ms693062(v=vs.85).aspx
+
+static const char *locale_renames[][2] = {
+	{ "in", "id" }, //  Indonesian
+	{ "iw", "he" }, //  Hebrew
+	{ "no", "nb" }, //  Norwegian Bokmål
+	{ "C", "en" }, // Locale is not set, fallback to English.
+	{ nullptr, nullptr }
+};
+
+// Additional script information to preferred scripts.
+// Language code, script code, default country, supported countries.
+// Reference:
+// - https://lh.2xlibre.net/locales/
+// - https://www.localeplanet.com/icu/index.html
+// - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f
+
+static const char *locale_scripts[][4] = {
+	{ "az", "Latn", "", "AZ" },
+	{ "az", "Arab", "", "IR" },
+	{ "bs", "Latn", "", "BA" },
+	{ "ff", "Latn", "", "BF,CM,GH,GM,GN,GW,LR,MR,NE,NG,SL,SN" },
+	{ "pa", "Arab", "PK", "PK" },
+	{ "pa", "Guru", "IN", "IN" },
+	{ "sd", "Arab", "PK", "PK" },
+	{ "sd", "Deva", "IN", "IN" },
+	{ "shi", "Tfng", "", "MA" },
+	{ "sr", "Cyrl", "", "BA,RS,XK" },
+	{ "sr", "Latn", "", "ME" },
+	{ "uz", "Latn", "", "UZ" },
+	{ "uz", "Arab", "AF", "AF" },
+	{ "vai", "Vaii", "", "LR" },
+	{ "yue", "Hans", "CN", "CN" },
+	{ "yue", "Hant", "HK", "HK" },
+	{ "zh", "Hans", "CN", "CN,SG" },
+	{ "zh", "Hant", "TW", "HK,MO,TW" },
+	{ nullptr, nullptr, nullptr, nullptr }
+};
+
+// Additional mapping for outdated, temporary or exceptionally reserved country codes.
+// Reference:
+// - https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+// - https://www.iso.org/obp/ui/#search/code/
+
+static const char *country_renames[][2] = {
+	{ "BU", "MM" }, // Burma, name changed to Myanmar.
+	{ "KV", "XK" }, // Kosovo (temporary FIPS code to European Commission code), no official ISO code assigned.
+	{ "TP", "TL" }, // East Timor, name changed to Timor-Leste.
+	{ "UK", "GB" }, // United Kingdom, exceptionally reserved code.
+	{ nullptr, nullptr }
+};
+
+// Country code, country name.
+// Reference:
+// - https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+// - https://www.iso.org/obp/ui/#search/code/
+
+static const char *country_names[][2] = {
+	{ "AC", "Ascension Island" }, // Exceptionally reserved.
+	{ "AD", "Andorra" },
+	{ "AE", "United Arab Emirates" },
+	{ "AF", "Afghanistan" },
+	{ "AG", "Antigua and Barbuda" },
+	{ "AI", "Anguilla" },
+	{ "AL", "Albania" },
+	{ "AM", "Armenia" },
+	{ "AN", "Netherlands Antilles" }, // Transitionally reserved, divided into BQ, CW and SX.
+	{ "AO", "Angola" },
+	{ "AQ", "Antarctica" },
+	{ "AR", "Argentina" },
+	{ "AS", "American Samoa" },
+	{ "AT", "Austria" },
+	{ "AU", "Australia" },
+	{ "AW", "Aruba" },
+	{ "AX", "Åland Islands" },
+	{ "AZ", "Azerbaijan" },
+	{ "BA", "Bosnia and Herzegovina" },
+	{ "BB", "Barbados" },
+	{ "BD", "Bangladesh" },
+	{ "BE", "Belgium" },
+	{ "BF", "Burkina Faso" },
+	{ "BG", "Bulgaria" },
+	{ "BH", "Bahrain" },
+	{ "BI", "Burundi" },
+	{ "BJ", "Benin" },
+	{ "BL", "St. Barthélemy" },
+	{ "BM", "Bermuda" },
+	{ "BN", "Brunei" },
+	{ "BO", "Bolivia" },
+	{ "BQ", "Caribbean Netherlands" },
+	{ "BR", "Brazil" },
+	{ "BS", "Bahamas" },
+	{ "BT", "Bhutan" },
+	{ "BV", "Bouvet Island" },
+	{ "BW", "Botswana" },
+	{ "BY", "Belarus" },
+	{ "BZ", "Belize" },
+	{ "CA", "Canada" },
+	{ "CC", "Cocos (Keeling) Islands" },
+	{ "CD", "Congo - Kinshasa" },
+	{ "CF", "Central African Republic" },
+	{ "CG", "Congo - Brazzaville" },
+	{ "CH", "Switzerland" },
+	{ "CI", "Côte d'Ivoire" },
+	{ "CK", "Cook Islands" },
+	{ "CL", "Chile" },
+	{ "CM", "Cameroon" },
+	{ "CN", "China" },
+	{ "CO", "Colombia" },
+	{ "CP", "Clipperton Island" }, // Exceptionally reserved.
+	{ "CR", "Costa Rica" },
+	{ "CQ", "Island of Sark" }, // Exceptionally reserved.
+	{ "CU", "Cuba" },
+	{ "CV", "Cabo Verde" },
+	{ "CW", "Curaçao" },
+	{ "CX", "Christmas Island" },
+	{ "CY", "Cyprus" },
+	{ "CZ", "Czechia" },
+	{ "DE", "Germany" },
+	{ "DG", "Diego Garcia" }, // Exceptionally reserved.
+	{ "DJ", "Djibouti" },
+	{ "DK", "Denmark" },
+	{ "DM", "Dominica" },
+	{ "DO", "Dominican Republic" },
+	{ "DZ", "Algeria" },
+	{ "EA", "Ceuta and Melilla" }, // Exceptionally reserved.
+	{ "EC", "Ecuador" },
+	{ "EE", "Estonia" },
+	{ "EG", "Egypt" },
+	{ "EH", "Western Sahara" },
+	{ "ER", "Eritrea" },
+	{ "ES", "Spain" },
+	{ "ET", "Ethiopia" },
+	{ "EU", "European Union" }, // Exceptionally reserved.
+	{ "EZ", "Eurozone" }, // Exceptionally reserved.
+	{ "FI", "Finland" },
+	{ "FJ", "Fiji" },
+	{ "FK", "Falkland Islands" },
+	{ "FM", "Micronesia" },
+	{ "FO", "Faroe Islands" },
+	{ "FR", "France" },
+	{ "FX", "France, Metropolitan" }, // Exceptionally reserved.
+	{ "GA", "Gabon" },
+	{ "GB", "United Kingdom" },
+	{ "GD", "Grenada" },
+	{ "GE", "Georgia" },
+	{ "GF", "French Guiana" },
+	{ "GG", "Guernsey" },
+	{ "GH", "Ghana" },
+	{ "GI", "Gibraltar" },
+	{ "GL", "Greenland" },
+	{ "GM", "Gambia" },
+	{ "GN", "Guinea" },
+	{ "GP", "Guadeloupe" },
+	{ "GQ", "Equatorial Guinea" },
+	{ "GR", "Greece" },
+	{ "GS", "South Georgia and South Sandwich Islands" },
+	{ "GT", "Guatemala" },
+	{ "GU", "Guam" },
+	{ "GW", "Guinea-Bissau" },
+	{ "GY", "Guyana" },
+	{ "HK", "Hong Kong" },
+	{ "HM", "Heard Island and McDonald Islands" },
+	{ "HN", "Honduras" },
+	{ "HR", "Croatia" },
+	{ "HT", "Haiti" },
+	{ "HU", "Hungary" },
+	{ "IC", "Canary Islands" }, // Exceptionally reserved.
+	{ "ID", "Indonesia" },
+	{ "IE", "Ireland" },
+	{ "IL", "Israel" },
+	{ "IM", "Isle of Man" },
+	{ "IN", "India" },
+	{ "IO", "British Indian Ocean Territory" },
+	{ "IQ", "Iraq" },
+	{ "IR", "Iran" },
+	{ "IS", "Iceland" },
+	{ "IT", "Italy" },
+	{ "JE", "Jersey" },
+	{ "JM", "Jamaica" },
+	{ "JO", "Jordan" },
+	{ "JP", "Japan" },
+	{ "KE", "Kenya" },
+	{ "KG", "Kyrgyzstan" },
+	{ "KH", "Cambodia" },
+	{ "KI", "Kiribati" },
+	{ "KM", "Comoros" },
+	{ "KN", "St. Kitts and Nevis" },
+	{ "KP", "North Korea" },
+	{ "KR", "South Korea" },
+	{ "KW", "Kuwait" },
+	{ "KY", "Cayman Islands" },
+	{ "KZ", "Kazakhstan" },
+	{ "LA", "Laos" },
+	{ "LB", "Lebanon" },
+	{ "LC", "St. Lucia" },
+	{ "LI", "Liechtenstein" },
+	{ "LK", "Sri Lanka" },
+	{ "LR", "Liberia" },
+	{ "LS", "Lesotho" },
+	{ "LT", "Lithuania" },
+	{ "LU", "Luxembourg" },
+	{ "LV", "Latvia" },
+	{ "LY", "Libya" },
+	{ "MA", "Morocco" },
+	{ "MC", "Monaco" },
+	{ "MD", "Moldova" },
+	{ "ME", "Montenegro" },
+	{ "MF", "St. Martin" },
+	{ "MG", "Madagascar" },
+	{ "MH", "Marshall Islands" },
+	{ "MK", "North Macedonia" },
+	{ "ML", "Mali" },
+	{ "MM", "Myanmar" },
+	{ "MN", "Mongolia" },
+	{ "MO", "Macao" },
+	{ "MP", "Northern Mariana Islands" },
+	{ "MQ", "Martinique" },
+	{ "MR", "Mauritania" },
+	{ "MS", "Montserrat" },
+	{ "MT", "Malta" },
+	{ "MU", "Mauritius" },
+	{ "MV", "Maldives" },
+	{ "MW", "Malawi" },
+	{ "MX", "Mexico" },
+	{ "MY", "Malaysia" },
+	{ "MZ", "Mozambique" },
+	{ "NA", "Namibia" },
+	{ "NC", "New Caledonia" },
+	{ "NE", "Niger" },
+	{ "NF", "Norfolk Island" },
+	{ "NG", "Nigeria" },
+	{ "NI", "Nicaragua" },
+	{ "NL", "Netherlands" },
+	{ "NO", "Norway" },
+	{ "NP", "Nepal" },
+	{ "NR", "Nauru" },
+	{ "NU", "Niue" },
+	{ "NZ", "New Zealand" },
+	{ "OM", "Oman" },
+	{ "PA", "Panama" },
+	{ "PE", "Peru" },
+	{ "PF", "French Polynesia" },
+	{ "PG", "Papua New Guinea" },
+	{ "PH", "Philippines" },
+	{ "PK", "Pakistan" },
+	{ "PL", "Poland" },
+	{ "PM", "St. Pierre and Miquelon" },
+	{ "PN", "Pitcairn Islands" },
+	{ "PR", "Puerto Rico" },
+	{ "PS", "Palestine" },
+	{ "PT", "Portugal" },
+	{ "PW", "Palau" },
+	{ "PY", "Paraguay" },
+	{ "QA", "Qatar" },
+	{ "RE", "Réunion" },
+	{ "RO", "Romania" },
+	{ "RS", "Serbia" },
+	{ "RU", "Russia" },
+	{ "RW", "Rwanda" },
+	{ "SA", "Saudi Arabia" },
+	{ "SB", "Solomon Islands" },
+	{ "SC", "Seychelles" },
+	{ "SD", "Sudan" },
+	{ "SE", "Sweden" },
+	{ "SG", "Singapore" },
+	{ "SH", "St. Helena, Ascension and Tristan da Cunha" },
+	{ "SI", "Slovenia" },
+	{ "SJ", "Svalbard and Jan Mayen" },
+	{ "SK", "Slovakia" },
+	{ "SL", "Sierra Leone" },
+	{ "SM", "San Marino" },
+	{ "SN", "Senegal" },
+	{ "SO", "Somalia" },
+	{ "SR", "Suriname" },
+	{ "SS", "South Sudan" },
+	{ "ST", "Sao Tome and Principe" },
+	{ "SV", "El Salvador" },
+	{ "SX", "Sint Maarten" },
+	{ "SY", "Syria" },
+	{ "SZ", "Eswatini" },
+	{ "TA", "Tristan da Cunha" }, // Exceptionally reserved.
+	{ "TC", "Turks and Caicos Islands" },
+	{ "TD", "Chad" },
+	{ "TF", "French Southern Territories" },
+	{ "TG", "Togo" },
+	{ "TH", "Thailand" },
+	{ "TJ", "Tajikistan" },
+	{ "TK", "Tokelau" },
+	{ "TL", "Timor-Leste" },
+	{ "TM", "Turkmenistan" },
+	{ "TN", "Tunisia" },
+	{ "TO", "Tonga" },
+	{ "TR", "Turkey" },
+	{ "TT", "Trinidad and Tobago" },
+	{ "TV", "Tuvalu" },
+	{ "TW", "Taiwan" },
+	{ "TZ", "Tanzania" },
+	{ "UA", "Ukraine" },
+	{ "UG", "Uganda" },
+	{ "UM", "U.S. Outlying Islands" },
+	{ "US", "United States of America" },
+	{ "UY", "Uruguay" },
+	{ "UZ", "Uzbekistan" },
+	{ "VA", "Holy See" },
+	{ "VC", "St. Vincent and the Grenadines" },
+	{ "VE", "Venezuela" },
+	{ "VG", "British Virgin Islands" },
+	{ "VI", "U.S. Virgin Islands" },
+	{ "VN", "Viet Nam" },
+	{ "VU", "Vanuatu" },
+	{ "WF", "Wallis and Futuna" },
+	{ "WS", "Samoa" },
+	{ "XK", "Kosovo" }, // Temporary code, no official ISO code assigned.
+	{ "YE", "Yemen" },
+	{ "YT", "Mayotte" },
+	{ "ZA", "South Africa" },
+	{ "ZM", "Zambia" },
+	{ "ZW", "Zimbabwe" },
+	{ nullptr, nullptr }
+};
+
+// Languages code, language name.
+// Reference:
+// - https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
+// - https://www.localeplanet.com/icu/index.html
+// - https://lh.2xlibre.net/locales/
+
+static const char *language_list[][2] = {
+	{ "aa", "Afar" },
+	{ "ab", "Abkhazian" },
+	{ "ace", "Achinese" },
+	{ "ach", "Acoli" },
+	{ "ada", "Adangme" },
+	{ "ady", "Adyghe" },
+	{ "ae", "Avestan" },
+	{ "aeb", "Tunisian Arabic" },
+	{ "af", "Afrikaans" },
+	{ "afh", "Afrihili" },
+	{ "agq", "Aghem" },
+	{ "ain", "Ainu" },
+	{ "agr", "Aguaruna" },
+	{ "ak", "Akan" },
+	{ "akk", "Akkadian" },
+	{ "akz", "Alabama" },
+	{ "ale", "Aleut" },
+	{ "aln", "Gheg Albanian" },
+	{ "alt", "Southern Altai" },
+	{ "am", "Amharic" },
+	{ "an", "Aragonese" },
+	{ "ang", "Old English" },
+	{ "anp", "Angika" },
+	{ "ar", "Arabic" },
+	{ "arc", "Aramaic" },
+	{ "arn", "Mapudungun" },
+	{ "aro", "Araona" },
+	{ "arp", "Arapaho" },
+	{ "arq", "Algerian Arabic" },
+	{ "ars", "Najdi Arabic" },
+	{ "arw", "Arawak" },
+	{ "ary", "Moroccan Arabic" },
+	{ "arz", "Egyptian Arabic" },
+	{ "as", "Assamese" },
+	{ "asa", "Asu" },
+	{ "ase", "American Sign Language" },
+	{ "ast", "Asturian" },
+	{ "av", "Avaric" },
+	{ "avk", "Kotava" },
+	{ "awa", "Awadhi" },
+	{ "ayc", "Southern Aymara" },
+	{ "ay", "Aymara" },
+	{ "az", "Azerbaijani" },
+	{ "ba", "Bashkir" },
+	{ "bal", "Baluchi" },
+	{ "ban", "Balinese" },
+	{ "bar", "Bavarian" },
+	{ "bas", "Bassa" },
+	{ "bax", "Bamun" },
+	{ "bbc", "Batak Toba" },
+	{ "bbj", "Ghomala" },
+	{ "be", "Belarusian" },
+	{ "bej", "Beja" },
+	{ "bem", "Bemba" },
+	{ "ber", "Berber" },
+	{ "bew", "Betawi" },
+	{ "bez", "Bena" },
+	{ "bfd", "Bafut" },
+	{ "bfq", "Badaga" },
+	{ "bg", "Bulgarian" },
+	{ "bhb", "Bhili" },
+	{ "bgn", "Western Balochi" },
+	{ "bho", "Bhojpuri" },
+	{ "bi", "Bislama" },
+	{ "bik", "Bikol" },
+	{ "bin", "Bini" },
+	{ "bjn", "Banjar" },
+	{ "bkm", "Kom" },
+	{ "bla", "Siksika" },
+	{ "bm", "Bambara" },
+	{ "bn", "Bengali" },
+	{ "bo", "Tibetan" },
+	{ "bpy", "Bishnupriya" },
+	{ "bqi", "Bakhtiari" },
+	{ "br", "Breton" },
+	{ "brh", "Brahui" },
+	{ "brx", "Bodo" },
+	{ "bs", "Bosnian" },
+	{ "bss", "Akoose" },
+	{ "bua", "Buriat" },
+	{ "bug", "Buginese" },
+	{ "bum", "Bulu" },
+	{ "byn", "Bilin" },
+	{ "byv", "Medumba" },
+	{ "ca", "Catalan" },
+	{ "cad", "Caddo" },
+	{ "car", "Carib" },
+	{ "cay", "Cayuga" },
+	{ "cch", "Atsam" },
+	{ "ccp", "Chakma" },
+	{ "ce", "Chechen" },
+	{ "ceb", "Cebuano" },
+	{ "cgg", "Chiga" },
+	{ "ch", "Chamorro" },
+	{ "chb", "Chibcha" },
+	{ "chg", "Chagatai" },
+	{ "chk", "Chuukese" },
+	{ "chm", "Mari" },
+	{ "chn", "Chinook Jargon" },
+	{ "cho", "Choctaw" },
+	{ "chp", "Chipewyan" },
+	{ "chr", "Cherokee" },
+	{ "chy", "Cheyenne" },
+	{ "cic", "Chickasaw" },
+	{ "ckb", "Central Kurdish" },
+	{ "cmn", "Mandarin Chinese" },
+	{ "co", "Corsican" },
+	{ "cop", "Coptic" },
+	{ "cps", "Capiznon" },
+	{ "cr", "Cree" },
+	{ "crh", "Crimean Tatar" },
+	{ "crs", "Seselwa Creole French" },
+	{ "cs", "Czech" },
+	{ "csb", "Kashubian" },
+	{ "cu", "Church Slavic" },
+	{ "cv", "Chuvash" },
+	{ "cy", "Welsh" },
+	{ "da", "Danish" },
+	{ "dak", "Dakota" },
+	{ "dar", "Dargwa" },
+	{ "dav", "Taita" },
+	{ "de", "German" },
+	{ "del", "Delaware" },
+	{ "den", "Slave" },
+	{ "dgr", "Dogrib" },
+	{ "din", "Dinka" },
+	{ "dje", "Zarma" },
+	{ "doi", "Dogri" },
+	{ "dsb", "Lower Sorbian" },
+	{ "dtp", "Central Dusun" },
+	{ "dua", "Duala" },
+	{ "dum", "Middle Dutch" },
+	{ "dv", "Dhivehi" },
+	{ "dyo", "Jola-Fonyi" },
+	{ "dyu", "Dyula" },
+	{ "dz", "Dzongkha" },
+	{ "dzg", "Dazaga" },
+	{ "ebu", "Embu" },
+	{ "ee", "Ewe" },
+	{ "efi", "Efik" },
+	{ "egl", "Emilian" },
+	{ "egy", "Ancient Egyptian" },
+	{ "eka", "Ekajuk" },
+	{ "el", "Greek" },
+	{ "elx", "Elamite" },
+	{ "en", "English" },
+	{ "enm", "Middle English" },
+	{ "eo", "Esperanto" },
+	{ "es", "Spanish" },
+	{ "esu", "Central Yupik" },
+	{ "et", "Estonian" },
+	{ "eu", "Basque" },
+	{ "ewo", "Ewondo" },
+	{ "ext", "Extremaduran" },
+	{ "fa", "Persian" },
+	{ "fan", "Fang" },
+	{ "fat", "Fanti" },
+	{ "ff", "Fulah" },
+	{ "fi", "Finnish" },
+	{ "fil", "Filipino" },
+	{ "fit", "Tornedalen Finnish" },
+	{ "fj", "Fijian" },
+	{ "fo", "Faroese" },
+	{ "fon", "Fon" },
+	{ "fr", "French" },
+	{ "frc", "Cajun French" },
+	{ "frm", "Middle French" },
+	{ "fro", "Old French" },
+	{ "frp", "Arpitan" },
+	{ "frr", "Northern Frisian" },
+	{ "frs", "Eastern Frisian" },
+	{ "fur", "Friulian" },
+	{ "fy", "Western Frisian" },
+	{ "ga", "Irish" },
+	{ "gaa", "Ga" },
+	{ "gag", "Gagauz" },
+	{ "gan", "Gan Chinese" },
+	{ "gay", "Gayo" },
+	{ "gba", "Gbaya" },
+	{ "gbz", "Zoroastrian Dari" },
+	{ "gd", "Scottish Gaelic" },
+	{ "gez", "Geez" },
+	{ "gil", "Gilbertese" },
+	{ "gl", "Galician" },
+	{ "glk", "Gilaki" },
+	{ "gmh", "Middle High German" },
+	{ "gn", "Guarani" },
+	{ "goh", "Old High German" },
+	{ "gom", "Goan Konkani" },
+	{ "gon", "Gondi" },
+	{ "gor", "Gorontalo" },
+	{ "got", "Gothic" },
+	{ "grb", "Grebo" },
+	{ "grc", "Ancient Greek" },
+	{ "gsw", "Swiss German" },
+	{ "gu", "Gujarati" },
+	{ "guc", "Wayuu" },
+	{ "gur", "Frafra" },
+	{ "guz", "Gusii" },
+	{ "gv", "Manx" },
+	{ "gwi", "Gwichʼin" },
+	{ "ha", "Hausa" },
+	{ "hai", "Haida" },
+	{ "hak", "Hakka Chinese" },
+	{ "haw", "Hawaiian" },
+	{ "he", "Hebrew" },
+	{ "hi", "Hindi" },
+	{ "hif", "Fiji Hindi" },
+	{ "hil", "Hiligaynon" },
+	{ "hit", "Hittite" },
+	{ "hmn", "Hmong" },
+	{ "ho", "Hiri Motu" },
+	{ "hne", "Chhattisgarhi" },
+	{ "hr", "Croatian" },
+	{ "hsb", "Upper Sorbian" },
+	{ "hsn", "Xiang Chinese" },
+	{ "ht", "Haitian" },
+	{ "hu", "Hungarian" },
+	{ "hup", "Hupa" },
+	{ "hus", "Huastec" },
+	{ "hy", "Armenian" },
+	{ "hz", "Herero" },
+	{ "ia", "Interlingua" },
+	{ "iba", "Iban" },
+	{ "ibb", "Ibibio" },
+	{ "id", "Indonesian" },
+	{ "ie", "Interlingue" },
+	{ "ig", "Igbo" },
+	{ "ii", "Sichuan Yi" },
+	{ "ik", "Inupiaq" },
+	{ "ilo", "Iloko" },
+	{ "inh", "Ingush" },
+	{ "io", "Ido" },
+	{ "is", "Icelandic" },
+	{ "it", "Italian" },
+	{ "iu", "Inuktitut" },
+	{ "izh", "Ingrian" },
+	{ "ja", "Japanese" },
+	{ "jam", "Jamaican Creole English" },
+	{ "jbo", "Lojban" },
+	{ "jgo", "Ngomba" },
+	{ "jmc", "Machame" },
+	{ "jpr", "Judeo-Persian" },
+	{ "jrb", "Judeo-Arabic" },
+	{ "jut", "Jutish" },
+	{ "jv", "Javanese" },
+	{ "ka", "Georgian" },
+	{ "kaa", "Kara-Kalpak" },
+	{ "kab", "Kabyle" },
+	{ "kac", "Kachin" },
+	{ "kaj", "Jju" },
+	{ "kam", "Kamba" },
+	{ "kaw", "Kawi" },
+	{ "kbd", "Kabardian" },
+	{ "kbl", "Kanembu" },
+	{ "kcg", "Tyap" },
+	{ "kde", "Makonde" },
+	{ "kea", "Kabuverdianu" },
+	{ "ken", "Kenyang" },
+	{ "kfo", "Koro" },
+	{ "kg", "Kongo" },
+	{ "kgp", "Kaingang" },
+	{ "kha", "Khasi" },
+	{ "kho", "Khotanese" },
+	{ "khq", "Koyra Chiini" },
+	{ "khw", "Khowar" },
+	{ "ki", "Kikuyu" },
+	{ "kiu", "Kirmanjki" },
+	{ "kj", "Kuanyama" },
+	{ "kk", "Kazakh" },
+	{ "kkj", "Kako" },
+	{ "kl", "Kalaallisut" },
+	{ "kln", "Kalenjin" },
+	{ "km", "Central Khmer" },
+	{ "kmb", "Kimbundu" },
+	{ "kn", "Kannada" },
+	{ "ko", "Korean" },
+	{ "koi", "Komi-Permyak" },
+	{ "kok", "Konkani" },
+	{ "kos", "Kosraean" },
+	{ "kpe", "Kpelle" },
+	{ "kr", "Kanuri" },
+	{ "krc", "Karachay-Balkar" },
+	{ "kri", "Krio" },
+	{ "krj", "Kinaray-a" },
+	{ "krl", "Karelian" },
+	{ "kru", "Kurukh" },
+	{ "ks", "Kashmiri" },
+	{ "ksb", "Shambala" },
+	{ "ksf", "Bafia" },
+	{ "ksh", "Colognian" },
+	{ "ku", "Kurdish" },
+	{ "kum", "Kumyk" },
+	{ "kut", "Kutenai" },
+	{ "kv", "Komi" },
+	{ "kw", "Cornish" },
+	{ "ky", "Kirghiz" },
+	{ "la", "Latin" },
+	{ "lad", "Ladino" },
+	{ "lag", "Langi" },
+	{ "lah", "Lahnda" },
+	{ "lam", "Lamba" },
+	{ "lb", "Luxembourgish" },
+	{ "lez", "Lezghian" },
+	{ "lfn", "Lingua Franca Nova" },
+	{ "lg", "Ganda" },
+	{ "li", "Limburgan" },
+	{ "lij", "Ligurian" },
+	{ "liv", "Livonian" },
+	{ "lkt", "Lakota" },
+	{ "lmo", "Lombard" },
+	{ "ln", "Lingala" },
+	{ "lo", "Lao" },
+	{ "lol", "Mongo" },
+	{ "lou", "Louisiana Creole" },
+	{ "loz", "Lozi" },
+	{ "lrc", "Northern Luri" },
+	{ "lt", "Lithuanian" },
+	{ "ltg", "Latgalian" },
+	{ "lu", "Luba-Katanga" },
+	{ "lua", "Luba-Lulua" },
+	{ "lui", "Luiseno" },
+	{ "lun", "Lunda" },
+	{ "luo", "Luo" },
+	{ "lus", "Mizo" },
+	{ "luy", "Luyia" },
+	{ "lv", "Latvian" },
+	{ "lzh", "Literary Chinese" },
+	{ "lzz", "Laz" },
+	{ "mad", "Madurese" },
+	{ "maf", "Mafa" },
+	{ "mag", "Magahi" },
+	{ "mai", "Maithili" },
+	{ "mak", "Makasar" },
+	{ "man", "Mandingo" },
+	{ "mas", "Masai" },
+	{ "mde", "Maba" },
+	{ "mdf", "Moksha" },
+	{ "mdr", "Mandar" },
+	{ "men", "Mende" },
+	{ "mer", "Meru" },
+	{ "mfe", "Morisyen" },
+	{ "mg", "Malagasy" },
+	{ "mga", "Middle Irish" },
+	{ "mgh", "Makhuwa-Meetto" },
+	{ "mgo", "Metaʼ" },
+	{ "mh", "Marshallese" },
+	{ "mhr", "Eastern Mari" },
+	{ "mi", "Māori" },
+	{ "mic", "Mi'kmaq" },
+	{ "min", "Minangkabau" },
+	{ "miq", "Mískito" },
+	{ "mjw", "Karbi" },
+	{ "mk", "Macedonian" },
+	{ "ml", "Malayalam" },
+	{ "mn", "Mongolian" },
+	{ "mnc", "Manchu" },
+	{ "mni", "Manipuri" },
+	{ "mnw", "Mon" },
+	{ "mos", "Mossi" },
+	{ "moh", "Mohawk" },
+	{ "mr", "Marathi" },
+	{ "mrj", "Western Mari" },
+	{ "ms", "Malay" },
+	{ "mt", "Maltese" },
+	{ "mua", "Mundang" },
+	{ "mus", "Muscogee" },
+	{ "mwl", "Mirandese" },
+	{ "mwr", "Marwari" },
+	{ "mwv", "Mentawai" },
+	{ "my", "Burmese" },
+	{ "mye", "Myene" },
+	{ "myv", "Erzya" },
+	{ "mzn", "Mazanderani" },
+	{ "na", "Nauru" },
+	{ "nah", "Nahuatl" },
+	{ "nan", "Min Nan Chinese" },
+	{ "nap", "Neapolitan" },
+	{ "naq", "Nama" },
+	{ "nan", "Min Nan Chinese" },
+	{ "nb", "Norwegian Bokmål" },
+	{ "nd", "North Ndebele" },
+	{ "nds", "Low German" },
+	{ "ne", "Nepali" },
+	{ "new", "Newari" },
+	{ "nhn", "Central Nahuatl" },
+	{ "ng", "Ndonga" },
+	{ "nia", "Nias" },
+	{ "niu", "Niuean" },
+	{ "njo", "Ao Naga" },
+	{ "nl", "Dutch" },
+	{ "nmg", "Kwasio" },
+	{ "nn", "Norwegian Nynorsk" },
+	{ "nnh", "Ngiemboon" },
+	{ "nog", "Nogai" },
+	{ "non", "Old Norse" },
+	{ "nov", "Novial" },
+	{ "nqo", "N'ko" },
+	{ "nr", "South Ndebele" },
+	{ "nso", "Pedi" },
+	{ "nus", "Nuer" },
+	{ "nv", "Navajo" },
+	{ "nwc", "Classical Newari" },
+	{ "ny", "Nyanja" },
+	{ "nym", "Nyamwezi" },
+	{ "nyn", "Nyankole" },
+	{ "nyo", "Nyoro" },
+	{ "nzi", "Nzima" },
+	{ "oc", "Occitan" },
+	{ "oj", "Ojibwa" },
+	{ "om", "Oromo" },
+	{ "or", "Odia" },
+	{ "os", "Ossetic" },
+	{ "osa", "Osage" },
+	{ "ota", "Ottoman Turkish" },
+	{ "pa", "Panjabi" },
+	{ "pag", "Pangasinan" },
+	{ "pal", "Pahlavi" },
+	{ "pam", "Pampanga" },
+	{ "pap", "Papiamento" },
+	{ "pau", "Palauan" },
+	{ "pcd", "Picard" },
+	{ "pcm", "Nigerian Pidgin" },
+	{ "pdc", "Pennsylvania German" },
+	{ "pdt", "Plautdietsch" },
+	{ "peo", "Old Persian" },
+	{ "pfl", "Palatine German" },
+	{ "phn", "Phoenician" },
+	{ "pi", "Pali" },
+	{ "pl", "Polish" },
+	{ "pms", "Piedmontese" },
+	{ "pnt", "Pontic" },
+	{ "pon", "Pohnpeian" },
+	{ "pr", "Pirate" },
+	{ "prg", "Prussian" },
+	{ "pro", "Old Provençal" },
+	{ "prs", "Dari" },
+	{ "ps", "Pushto" },
+	{ "pt", "Portuguese" },
+	{ "qu", "Quechua" },
+	{ "quc", "K'iche" },
+	{ "qug", "Chimborazo Highland Quichua" },
+	{ "quy", "Ayacucho Quechua" },
+	{ "quz", "Cusco Quechua" },
+	{ "raj", "Rajasthani" },
+	{ "rap", "Rapanui" },
+	{ "rar", "Rarotongan" },
+	{ "rgn", "Romagnol" },
+	{ "rif", "Riffian" },
+	{ "rm", "Romansh" },
+	{ "rn", "Rundi" },
+	{ "ro", "Romanian" },
+	{ "rof", "Rombo" },
+	{ "rom", "Romany" },
+	{ "rtm", "Rotuman" },
+	{ "ru", "Russian" },
+	{ "rue", "Rusyn" },
+	{ "rug", "Roviana" },
+	{ "rup", "Aromanian" },
+	{ "rw", "Kinyarwanda" },
+	{ "rwk", "Rwa" },
+	{ "sa", "Sanskrit" },
+	{ "sad", "Sandawe" },
+	{ "sah", "Sakha" },
+	{ "sam", "Samaritan Aramaic" },
+	{ "saq", "Samburu" },
+	{ "sas", "Sasak" },
+	{ "sat", "Santali" },
+	{ "saz", "Saurashtra" },
+	{ "sba", "Ngambay" },
+	{ "sbp", "Sangu" },
+	{ "sc", "Sardinian" },
+	{ "scn", "Sicilian" },
+	{ "sco", "Scots" },
+	{ "sd", "Sindhi" },
+	{ "sdc", "Sassarese Sardinian" },
+	{ "sdh", "Southern Kurdish" },
+	{ "se", "Northern Sami" },
+	{ "see", "Seneca" },
+	{ "seh", "Sena" },
+	{ "sei", "Seri" },
+	{ "sel", "Selkup" },
+	{ "ses", "Koyraboro Senni" },
+	{ "sg", "Sango" },
+	{ "sga", "Old Irish" },
+	{ "sgs", "Samogitian" },
+	{ "sh", "Serbo-Croatian" },
+	{ "shi", "Tachelhit" },
+	{ "shn", "Shan" },
+	{ "shs", "Shuswap" },
+	{ "shu", "Chadian Arabic" },
+	{ "si", "Sinhala" },
+	{ "sid", "Sidamo" },
+	{ "sk", "Slovak" },
+	{ "sl", "Slovenian" },
+	{ "sli", "Lower Silesian" },
+	{ "sly", "Selayar" },
+	{ "sm", "Samoan" },
+	{ "sma", "Southern Sami" },
+	{ "smj", "Lule Sami" },
+	{ "smn", "Inari Sami" },
+	{ "sms", "Skolt Sami" },
+	{ "sn", "Shona" },
+	{ "snk", "Soninke" },
+	{ "so", "Somali" },
+	{ "sog", "Sogdien" },
+	{ "son", "Songhai" },
+	{ "sq", "Albanian" },
+	{ "sr", "Serbian" },
+	{ "srn", "Sranan Tongo" },
+	{ "srr", "Serer" },
+	{ "ss", "Swati" },
+	{ "ssy", "Saho" },
+	{ "st", "Southern Sotho" },
+	{ "stq", "Saterland Frisian" },
+	{ "su", "Sundanese" },
+	{ "suk", "Sukuma" },
+	{ "sus", "Susu" },
+	{ "sux", "Sumerian" },
+	{ "sv", "Swedish" },
+	{ "sw", "Swahili" },
+	{ "swb", "Comorian" },
+	{ "swc", "Congo Swahili" },
+	{ "syc", "Classical Syriac" },
+	{ "syr", "Syriac" },
+	{ "szl", "Silesian" },
+	{ "ta", "Tamil" },
+	{ "tcy", "Tulu" },
+	{ "te", "Telugu" },
+	{ "tem", "Timne" },
+	{ "teo", "Teso" },
+	{ "ter", "Tereno" },
+	{ "tet", "Tetum" },
+	{ "tg", "Tajik" },
+	{ "th", "Thai" },
+	{ "the", "Chitwania Tharu" },
+	{ "ti", "Tigrinya" },
+	{ "tig", "Tigre" },
+	{ "tiv", "Tiv" },
+	{ "tk", "Turkmen" },
+	{ "tkl", "Tokelau" },
+	{ "tkr", "Tsakhur" },
+	{ "tl", "Tagalog" },
+	{ "tlh", "Klingon" },
+	{ "tli", "Tlingit" },
+	{ "tly", "Talysh" },
+	{ "tmh", "Tamashek" },
+	{ "tn", "Tswana" },
+	{ "to", "Tongan" },
+	{ "tok", "Toki Pona" },
+	{ "tog", "Nyasa Tonga" },
+	{ "tpi", "Tok Pisin" },
+	{ "tr", "Turkish" },
+	{ "tru", "Turoyo" },
+	{ "trv", "Taroko" },
+	{ "ts", "Tsonga" },
+	{ "tsd", "Tsakonian" },
+	{ "tsi", "Tsimshian" },
+	{ "tt", "Tatar" },
+	{ "ttt", "Muslim Tat" },
+	{ "tum", "Tumbuka" },
+	{ "tvl", "Tuvalu" },
+	{ "tw", "Twi" },
+	{ "twq", "Tasawaq" },
+	{ "ty", "Tahitian" },
+	{ "tyv", "Tuvinian" },
+	{ "tzm", "Central Atlas Tamazight" },
+	{ "udm", "Udmurt" },
+	{ "ug", "Uyghur" },
+	{ "uga", "Ugaritic" },
+	{ "uk", "Ukrainian" },
+	{ "umb", "Umbundu" },
+	{ "unm", "Unami" },
+	{ "ur", "Urdu" },
+	{ "uz", "Uzbek" },
+	{ "vai", "Vai" },
+	{ "ve", "Venda" },
+	{ "vec", "Venetian" },
+	{ "vep", "Veps" },
+	{ "vi", "Vietnamese" },
+	{ "vls", "West Flemish" },
+	{ "vmf", "Main-Franconian" },
+	{ "vo", "Volapük" },
+	{ "vot", "Votic" },
+	{ "vro", "Võro" },
+	{ "vun", "Vunjo" },
+	{ "wa", "Walloon" },
+	{ "wae", "Walser" },
+	{ "wal", "Wolaytta" },
+	{ "war", "Waray" },
+	{ "was", "Washo" },
+	{ "wbp", "Warlpiri" },
+	{ "wo", "Wolof" },
+	{ "wuu", "Wu Chinese" },
+	{ "xal", "Kalmyk" },
+	{ "xh", "Xhosa" },
+	{ "xmf", "Mingrelian" },
+	{ "xog", "Soga" },
+	{ "yao", "Yao" },
+	{ "yap", "Yapese" },
+	{ "yav", "Yangben" },
+	{ "ybb", "Yemba" },
+	{ "yi", "Yiddish" },
+	{ "yo", "Yoruba" },
+	{ "yrl", "Nheengatu" },
+	{ "yue", "Yue Chinese" },
+	{ "yuw", "Papua New Guinea" },
+	{ "za", "Zhuang" },
+	{ "zap", "Zapotec" },
+	{ "zbl", "Blissymbols" },
+	{ "zea", "Zeelandic" },
+	{ "zen", "Zenaga" },
+	{ "zgh", "Standard Moroccan Tamazight" },
+	{ "zh", "Chinese" },
+	{ "zu", "Zulu" },
+	{ "zun", "Zuni" },
+	{ "zza", "Zaza" },
+	{ nullptr, nullptr },
+};
+
+// Scripts used by languages.
+// Reference:
+// - https://www.unicode.org/cldr/charts/48/supplemental/languages_and_scripts.html
+
+static const char *language_script_list[][2] = {
+	{ "aa", "Latn" },
+	{ "ab", "Cyrl" },
+	{ "ace", "Latn" },
+	{ "ach", "Latn" },
+	{ "ada", "Latn" },
+	{ "ady", "Cyrl" },
+	{ "ae", "Avst" },
+	{ "aeb", "Arab" },
+	{ "af", "Latn" },
+	{ "afh", "Latn" },
+	{ "agq", "Latn" },
+	{ "ain", "Kana Latn" },
+	{ "agr", "Latn" },
+	{ "ak", "Latn" },
+	{ "akk", "Xsux" },
+	{ "akz", "Latn" },
+	{ "ale", "Latn" },
+	{ "aln", "Latn" },
+	{ "alt", "Cyrl" },
+	{ "am", "Ethi" },
+	{ "an", "Latn" },
+	{ "ang", "Latn" },
+	{ "anp", "Deva" },
+	{ "ar", "Arab Syrc" },
+	{ "arc", "Armi Nbat Palm" },
+	{ "arn", "Latn" },
+	{ "aro", "Latn" },
+	{ "arp", "Latn" },
+	{ "arq", "Arab" },
+	{ "ars", "Arab" },
+	{ "arw", "Latn" },
+	{ "ary", "Arab" },
+	{ "arz", "Arab" },
+	{ "as", "Beng" },
+	{ "asa", "Latn" },
+	{ "ast", "Latn" },
+	{ "av", "Cyrl" },
+	{ "avk", "Latn" },
+	{ "awa", "Deva" },
+	{ "ayc", "Latn" },
+	{ "ay", "Latn" },
+	{ "az", "Latn Arab Cyrl" },
+	{ "ba", "Cyrl" },
+	{ "bal", "Arab Latn" },
+	{ "ban", "Latn Bali" },
+	{ "bar", "Latn" },
+	{ "bas", "Latn" },
+	{ "bax", "Bamu" },
+	{ "bbc", "Latn Batk" },
+	{ "bbj", "Latn" },
+	{ "be", "Cyrl" },
+	{ "bej", "Arab" },
+	{ "bem", "Latn" },
+	{ "ber", "Latn Arab Tfng" },
+	{ "bew", "Latn" },
+	{ "bez", "Latn" },
+	{ "bfd", "Latn" },
+	{ "bfq", "Taml" },
+	{ "bg", "Cyrl" },
+	{ "bhb", "Deva" },
+	{ "bgn", "Arab" },
+	{ "bho", "Deva" },
+	{ "bi", "Latn" },
+	{ "bik", "Latn" },
+	{ "bin", "Latn" },
+	{ "bjn", "Latn" },
+	{ "bkm", "Latn" },
+	{ "bla", "Latn" },
+	{ "bm", "Latn Nkoo" },
+	{ "bn", "Beng" },
+	{ "bo", "Tibt" },
+	{ "bpy", "Beng" },
+	{ "bqi", "Arab" },
+	{ "br", "Latn" },
+	{ "brh", "Arab Latn" },
+	{ "brx", "Deva" },
+	{ "bs", "Latn Cyrl" },
+	{ "bss", "Latn" },
+	{ "bua", "Cyrl" },
+	{ "bug", "Latn Bug" },
+	{ "bum", "Latn" },
+	{ "byn", "Ethi" },
+	{ "byv", "Latn" },
+	{ "ca", "Latn" },
+	{ "cad", "Latn" },
+	{ "car", "Latn" },
+	{ "cay", "Latn" },
+	{ "cch", "Latn" },
+	{ "ccp", "Cakm Beng" },
+	{ "ce", "Cyrl" },
+	{ "ceb", "Latn" },
+	{ "cgg", "Latn" },
+	{ "ch", "Latn" },
+	{ "chb", "Latn" },
+	{ "chg", "Arab" },
+	{ "chk", "Latn" },
+	{ "chm", "Cyrl" },
+	{ "chn", "Latn" },
+	{ "cho", "Latn" },
+	{ "chp", "Latn Cans" },
+	{ "chr", "Cher" },
+	{ "chy", "Latn" },
+	{ "cic", "Latn" },
+	{ "ckb", "Arab" },
+	{ "cmn", "Hant Hans Hani" },
+	{ "co", "Latn" },
+	{ "cop", "Copt Arab Grek" },
+	{ "cps", "Latn" },
+	{ "cr", "Cans Latn" },
+	{ "crh", "Cyrl" },
+	{ "crs", "Latn" },
+	{ "cs", "Latn" },
+	{ "csb", "Latn" },
+	{ "cu", "Cyrl" },
+	{ "cv", "Cyrl" },
+	{ "cy", "Latn" },
+	{ "da", "Latn" },
+	{ "dak", "Latn" },
+	{ "dar", "Cyrl" },
+	{ "dav", "Latn" },
+	{ "de", "Latn Runr" },
+	{ "del", "Latn" },
+	{ "den", "Latn Cans" },
+	{ "dgr", "Latn" },
+	{ "din", "Latn" },
+	{ "dje", "Latn" },
+	{ "doi", "Deva Arab Takr" },
+	{ "dsb", "Latn" },
+	{ "dtp", "Latn" },
+	{ "dua", "Latn" },
+	{ "dum", "Latn" },
+	{ "dv", "Thaa" },
+	{ "dyo", "Latn Arab" },
+	{ "dyu", "Latn" },
+	{ "dz", "Tibt" },
+	{ "dzg", "Latn" },
+	{ "ebu", "Latn" },
+	{ "ee", "Latn" },
+	{ "efi", "Latn" },
+	{ "egl", "Latn" },
+	{ "egy", "Egyp" },
+	{ "eka", "Latn" },
+	{ "el", "Grek" },
+	{ "elx", "Xsux" },
+	{ "en", "Latn Dsrt Shaw" },
+	{ "enm", "Latn" },
+	{ "eo", "Latn" },
+	{ "es", "Latn" },
+	{ "esu", "Latn" },
+	{ "et", "Latn" },
+	{ "eu", "Latn" },
+	{ "ewo", "Latn" },
+	{ "ext", "Latn" },
+	{ "fa", "Arab" },
+	{ "fan", "Latn" },
+	{ "fat", "Latn" },
+	{ "ff", "Latn Adlm" },
+	{ "fi", "Latn" },
+	{ "fil", "Latn Tglg" },
+	{ "fit", "Latn" },
+	{ "fj", "Latn" },
+	{ "fo", "Latn" },
+	{ "fon", "Latn" },
+	{ "fr", "Latn Dupl" },
+	{ "frc", "Latn" },
+	{ "frm", "Latn" },
+	{ "fro", "Latn" },
+	{ "frp", "Latn" },
+	{ "frr", "Latn" },
+	{ "frs", "Latn" },
+	{ "fur", "Latn" },
+	{ "fy", "Latn" },
+	{ "ga", "Latn" },
+	{ "gaa", "Latn" },
+	{ "gag", "Latn Cyrl" },
+	{ "gan", "Hans Hani" },
+	{ "gay", "Latn" },
+	{ "gba", "Latn" },
+	{ "gbz", "Arab" },
+	{ "gd", "Latn" },
+	{ "gez", "Ethi" },
+	{ "gil", "Latn" },
+	{ "gl", "Latn" },
+	{ "glk", "Arab" },
+	{ "gmh", "Latn" },
+	{ "gn", "Latn" },
+	{ "goh", "Latn" },
+	{ "gom", "Deav Latn Knda Mlym Arab" },
+	{ "gon", "Deva Telu" },
+	{ "gor", "Latn" },
+	{ "got", "Goth" },
+	{ "grb", "Latn" },
+	{ "grc", "Grek" },
+	{ "gsw", "Latn" },
+	{ "gu", "Gujr" },
+	{ "guc", "Latn" },
+	{ "gur", "Latn" },
+	{ "guz", "Latn" },
+	{ "gv", "Latn" },
+	{ "gwi", "Latn" },
+	{ "ha", "Latn Arab" },
+	{ "hai", "Latn" },
+	{ "hak", "Hans Hant Hani" },
+	{ "haw", "Latn" },
+	{ "he", "Hebr" },
+	{ "hi", "Deva Latn Mahj" },
+	{ "hif", "Deva Latn" },
+	{ "hil", "Latn" },
+	{ "hit", "Xsux" },
+	{ "hmn", "Latn Hmng" },
+	{ "ho", "Latn" },
+	{ "hne", "Deva" },
+	{ "hr", "Latn" },
+	{ "hsb", "Latn" },
+	{ "hsn", "Hans Hani" },
+	{ "ht", "Latn" },
+	{ "hu", "Latn" },
+	{ "hup", "Latn" },
+	{ "hus", "Latn" },
+	{ "hy", "Armn" },
+	{ "hz", "Latn" },
+	{ "ia", "Latn" },
+	{ "iba", "Latn" },
+	{ "ibb", "Latn" },
+	{ "id", "Latn Arab" },
+	{ "ie", "Latn" },
+	{ "ig", "Latn" },
+	{ "ii", "Yiii Latn" },
+	{ "ik", "Latn" },
+	{ "ilo", "Latn" },
+	{ "inh", "Cyrl" },
+	{ "io", "Latn" },
+	{ "is", "Latn" },
+	{ "it", "Latn" },
+	{ "iu", "Cans Latn" },
+	{ "izh", "Latn" },
+	{ "ja", "Jpan Hani Hira Kana" },
+	{ "jam", "Latn" },
+	{ "jbo", "Latn" },
+	{ "jgo", "Latn" },
+	{ "jmc", "Latn" },
+	{ "jpr", "Hebr" },
+	{ "jrb", "Hebr" },
+	{ "jut", "Latn" },
+	{ "jv", "Latn Java" },
+	{ "ka", "Geor" },
+	{ "kaa", "Cyrl Latn" },
+	{ "kab", "Latn" },
+	{ "kac", "Latn" },
+	{ "kaj", "Latn" },
+	{ "kam", "Latn" },
+	{ "kaw", "Bali Java Kawi" },
+	{ "kbd", "Cyrl" },
+	{ "kbl", "Arab" },
+	{ "kcg", "Latn" },
+	{ "kde", "Latn" },
+	{ "kea", "Latn" },
+	{ "ken", "Latn" },
+	{ "kfo", "Latn" },
+	{ "kg", "Latn" },
+	{ "kgp", "Latn" },
+	{ "kha", "Latn Beng" },
+	{ "kho", "Brah Khar" },
+	{ "khq", "Latn" },
+	{ "khw", "Arab" },
+	{ "ki", "Latn" },
+	{ "kiu", "Latn" },
+	{ "kj", "Latn" },
+	{ "kk", "Cyrl Arab" },
+	{ "kkj", "Latn" },
+	{ "kl", "Latn" },
+	{ "kln", "Latn" },
+	{ "km", "Khmr" },
+	{ "kmb", "Latn" },
+	{ "kn", "Knda" },
+	{ "ko", "Kore Hang Hani" },
+	{ "koi", "Cyrl" },
+	{ "kok", "Deva Latn" },
+	{ "kos", "Latn" },
+	{ "kpe", "Latn" },
+	{ "kr", "Latn" },
+	{ "krc", "Cyrl" },
+	{ "kri", "Latn" },
+	{ "krj", "Latn" },
+	{ "krl", "Latn" },
+	{ "kru", "Deva" },
+	{ "ks", "Arab Deva" },
+	{ "ksb", "Latn" },
+	{ "ksf", "Latn" },
+	{ "ksh", "Latn" },
+	{ "ku", "Latn Arab Cyrl" },
+	{ "kum", "Cyrl" },
+	{ "kut", "Latn" },
+	{ "kv", "Cyrl Perm" },
+	{ "kw", "Latn" },
+	{ "ky", "Cyrl Arab Latn" },
+	{ "la", "Latn" },
+	{ "lad", "Hebr" },
+	{ "lag", "Latn" },
+	{ "lah", "Arab" },
+	{ "lam", "Latn" },
+	{ "lb", "Latn" },
+	{ "lez", "Cyrl Aghb" },
+	{ "lfn", "Latn Cyrl" },
+	{ "lg", "Latn" },
+	{ "li", "Latn" },
+	{ "lij", "Latn" },
+	{ "liv", "Latn" },
+	{ "lkt", "Latn" },
+	{ "lmo", "Latn" },
+	{ "ln", "Latn" },
+	{ "lo", "Laoo" },
+	{ "lol", "Latn" },
+	{ "lou", "Latn" },
+	{ "loz", "Latn" },
+	{ "lrc", "Arab" },
+	{ "lt", "Latn" },
+	{ "ltg", "Latn" },
+	{ "lu", "Latn" },
+	{ "lua", "Latn" },
+	{ "lui", "Latn" },
+	{ "lun", "Latn" },
+	{ "luo", "Latn" },
+	{ "lus", "Beng" },
+	{ "luy", "Latn" },
+	{ "lv", "Latn" },
+	{ "lzh", "Hant" },
+	{ "lzz", "Latn Geor" },
+	{ "mad", "Latn" },
+	{ "maf", "Latn" },
+	{ "mag", "Deva" },
+	{ "mai", "Deva Tirh" },
+	{ "mak", "Latn Bugi" },
+	{ "man", "Latn Nkoo" },
+	{ "mas", "Latn" },
+	{ "mde", "Arab Latn" },
+	{ "mdf", "Cyrl" },
+	{ "mdr", "Latn Bugi" },
+	{ "men", "Latn Mend" },
+	{ "mer", "Latn" },
+	{ "mfe", "Latn" },
+	{ "mg", "Latn" },
+	{ "mga", "Latn" },
+	{ "mgh", "Latn" },
+	{ "mgo", "Latn" },
+	{ "mh", "Latn" },
+	{ "mhr", "Cyrl" },
+	{ "mi", "Latn" },
+	{ "mic", "Latn" },
+	{ "min", "Latn" },
+	{ "miq", "Latn" },
+	{ "mjw", "Latn" },
+	{ "mk", "Cyrl" },
+	{ "ml", "Mlym" },
+	{ "mn", "Cyrl Mong Phag" },
+	{ "mnc", "Mong" },
+	{ "mni", "Beng Mtei" },
+	{ "mnw", "Mymr" },
+	{ "mos", "Latn" },
+	{ "moh", "Latn" },
+	{ "mr", "Deva Modi" },
+	{ "mrj", "Cyrl" },
+	{ "ms", "Latn Arab" },
+	{ "mt", "Latn" },
+	{ "mua", "Latn" },
+	{ "mus", "Latn" },
+	{ "mwl", "Latn" },
+	{ "mwr", "Deva" },
+	{ "mwv", "Latn" },
+	{ "my", "Mymr" },
+	{ "mye", "Latn" },
+	{ "myv", "Cyrl" },
+	{ "mzn", "Arab" },
+	{ "na", "Latn" },
+	{ "nah", "Latn" },
+	{ "nan", "Hans Hant Hani" },
+	{ "nap", "Latn" },
+	{ "naq", "Latn" },
+	{ "nan", "Latn Hans Hant Hani" },
+	{ "nb", "Latn" },
+	{ "nd", "Latn" },
+	{ "nds", "Latn" },
+	{ "ne", "Deva" },
+	{ "new", "Deva" },
+	{ "nhn", "Latn" },
+	{ "ng", "Latn" },
+	{ "nia", "Latn" },
+	{ "niu", "Latn" },
+	{ "njo", "Latn" },
+	{ "nl", "Latn" },
+	{ "nmg", "Latn" },
+	{ "nn", "Latn" },
+	{ "nnh", "Latn" },
+	{ "nog", "Cyrl" },
+	{ "non", "Runr" },
+	{ "nov", "Latn" },
+	{ "nqo", "Nkoo" },
+	{ "nr", "Latn" },
+	{ "nso", "Latn" },
+	{ "nus", "Latn" },
+	{ "nv", "Latn" },
+	{ "nwc", "Ranj Newa Deva Sidd Brah" },
+	{ "ny", "Latn" },
+	{ "nym", "Latn" },
+	{ "nyn", "Latn" },
+	{ "nyo", "Latn" },
+	{ "nzi", "Latn" },
+	{ "oc", "Latn" },
+	{ "oj", "Cans Latn" },
+	{ "om", "Latn Ethi" },
+	{ "or", "Orya" },
+	{ "os", "Cyrl" },
+	{ "osa", "Osge Latn" },
+	{ "ota", "Arab" },
+	{ "pa", "Guru Arab" },
+	{ "pag", "Latn" },
+	{ "pal", "Phli Phlp" },
+	{ "pam", "Latn" },
+	{ "pap", "Latn" },
+	{ "pau", "Latn" },
+	{ "pcd", "Latn" },
+	{ "pcm", "Latn" },
+	{ "pdc", "Latn" },
+	{ "pdt", "Latn" },
+	{ "peo", "Xpeo" },
+	{ "pfl", "Latn" },
+	{ "phn", "Phnx" },
+	{ "pi", "Latn Deva Mymr Sinh Thai" },
+	{ "pl", "Latn" },
+	{ "pms", "Latn" },
+	{ "pnt", "Grek Cyrl Latn" },
+	{ "pon", "Latn" },
+	{ "pr", "Latn" },
+	{ "prg", "Latn" },
+	{ "pro", "Latn" },
+	{ "prs", "Arab" },
+	{ "ps", "Arab" },
+	{ "pt", "Latn" },
+	{ "qu", "Latn" },
+	{ "quc", "Latn" },
+	{ "qug", "Latn" },
+	{ "quy", "Latn" },
+	{ "quz", "Latn" },
+	{ "raj", "Deva" },
+	{ "rap", "Latn" },
+	{ "rar", "Latn" },
+	{ "rgn", "Latn" },
+	{ "rif", "Latn Tfng" },
+	{ "rm", "Latn" },
+	{ "rn", "Latn" },
+	{ "ro", "Latn Cyrl" },
+	{ "rof", "Latn" },
+	{ "rom", "Latn Cyrl" },
+	{ "rtm", "Latn" },
+	{ "ru", "Cyrl" },
+	{ "rue", "Cyrl" },
+	{ "rug", "Latn" },
+	{ "rup", "Latn" },
+	{ "rw", "Latn" },
+	{ "rwk", "Latn" },
+	{ "sa", "Deva Gran Shrd Sidd Sinh" },
+	{ "sad", "Latn" },
+	{ "sah", "Cyrl" },
+	{ "sam", "Samr Hebr" },
+	{ "saq", "Latn" },
+	{ "sas", "Latn" },
+	{ "sat", "Olck Beng Deva Latn Orya" },
+	{ "saz", "Saur" },
+	{ "sba", "Latn" },
+	{ "sbp", "Latn" },
+	{ "sc", "Latn" },
+	{ "scn", "Latn" },
+	{ "sco", "Latn" },
+	{ "sd", "Arab Deva Khoj Sind" },
+	{ "sdc", "Latn" },
+	{ "sdh", "Arab" },
+	{ "se", "Latn Cyrl Arab" },
+	{ "see", "Latn" },
+	{ "seh", "Latn" },
+	{ "sei", "Latn" },
+	{ "sel", "Cyrl" },
+	{ "ses", "Latn" },
+	{ "sg", "Latn" },
+	{ "sga", "Latn Ogam" },
+	{ "sgs", "Latn" },
+	{ "sh", "Latn Cyrl" },
+	{ "shi", "Tfng Latn Arab" },
+	{ "shn", "Mymr" },
+	{ "shs", "Latn Dupl" },
+	{ "shu", "Arab" },
+	{ "si", "Sinh" },
+	{ "sid", "Latn" },
+	{ "sk", "Latn" },
+	{ "sl", "Latn" },
+	{ "sli", "Latn" },
+	{ "sly", "Latn" },
+	{ "sm", "Latn" },
+	{ "sma", "Latn" },
+	{ "smj", "Latn" },
+	{ "smn", "Latn" },
+	{ "sms", "Latn" },
+	{ "sn", "Latn" },
+	{ "snk", "Latn" },
+	{ "so", "Latn Arab Osma" },
+	{ "sog", "Sogd Syrc Mani" },
+	{ "son", "Latn Arab" },
+	{ "sq", "Latn Elba" },
+	{ "sr", "Cyrl Latn" },
+	{ "srn", "Latn" },
+	{ "srr", "Latn" },
+	{ "ss", "Latn" },
+	{ "ssy", "Latn" },
+	{ "st", "Latn" },
+	{ "stq", "Latn" },
+	{ "su", "Latn Sund" },
+	{ "suk", "Latn" },
+	{ "sus", "Latn Arab" },
+	{ "sux", "Xsux" },
+	{ "sv", "Latn" },
+	{ "sw", "Latn" },
+	{ "swb", "Arab Latn" },
+	{ "swc", "Arab Latn" },
+	{ "syc", "Syrc" },
+	{ "syr", "Syrc" },
+	{ "szl", "Latn" },
+	{ "ta", "Taml" },
+	{ "tcy", "Knda" },
+	{ "te", "Telu" },
+	{ "tem", "Latn" },
+	{ "teo", "Latn" },
+	{ "ter", "Latn" },
+	{ "tet", "Latn" },
+	{ "tg", "Cyrl Arab Latn" },
+	{ "th", "Thai" },
+	{ "the", "Deva" },
+	{ "ti", "Ethi" },
+	{ "tig", "Ethi" },
+	{ "tiv", "Latn" },
+	{ "tk", "Latn Arab Cyrl" },
+	{ "tkl", "Latn" },
+	{ "tkr", "Latn Cyrl" },
+	{ "tl", "Latn Arab Blis" },
+	{ "tlh", "Piqd Latn" },
+	{ "tli", "Latn" },
+	{ "tly", "Latn Arab Cyrl" },
+	{ "tmh", "Latn" },
+	{ "tn", "Latn" },
+	{ "to", "Latn" },
+	{ "tog", "Latn" },
+	{ "tok", "Latn" },
+	{ "tpi", "Latn" },
+	{ "tr", "Latn Arab" },
+	{ "tru", "Latn Syrc" },
+	{ "trv", "Latn" },
+	{ "ts", "Latn" },
+	{ "tsd", "Grek" },
+	{ "tsi", "Latn" },
+	{ "tt", "Cyrl" },
+	{ "ttt", "Latn Arab Cyrl" },
+	{ "tum", "Latn" },
+	{ "tvl", "Latn" },
+	{ "tw", "Latn" },
+	{ "twq", "Latn" },
+	{ "ty", "Latn" },
+	{ "tyv", "Cyrl" },
+	{ "tzm", "Latn Tfng" },
+	{ "udm", "Cyrl Latn" },
+	{ "ug", "Arab Cyrl Latn" },
+	{ "uga", "Ugar" },
+	{ "uk", "Cyrl" },
+	{ "umb", "Latn" },
+	{ "unm", "Latn" },
+	{ "ur", "Arab" },
+	{ "uz", "Latn Cyrl Arab" },
+	{ "vai", "Vaii Latn" },
+	{ "ve", "Latn" },
+	{ "vec", "Latn" },
+	{ "vep", "Latn" },
+	{ "vi", "Latn Hani" },
+	{ "vls", "Latn" },
+	{ "vmf", "Latn" },
+	{ "vo", "Latn" },
+	{ "vot", "Latn" },
+	{ "vro", "Latn" },
+	{ "vun", "Latn" },
+	{ "wa", "Latn" },
+	{ "wae", "Latn" },
+	{ "wal", "Ethi" },
+	{ "war", "Latn" },
+	{ "was", "Latn" },
+	{ "wbp", "Latn" },
+	{ "wo", "Latn Arab" },
+	{ "wuu", "Hans Hani" },
+	{ "xal", "Cyrl" },
+	{ "xh", "Latn" },
+	{ "xmf", "Geor" },
+	{ "xog", "Latn" },
+	{ "yao", "Latn" },
+	{ "yap", "Latn" },
+	{ "yav", "Latn" },
+	{ "ybb", "Latn" },
+	{ "yi", "Hebr" },
+	{ "yo", "Latn" },
+	{ "yrl", "Latn" },
+	{ "yue", "Hant Hans Hani" },
+	{ "yuw", "Latn" },
+	{ "za", "Latn Hans Hani" },
+	{ "zap", "Latn" },
+	{ "zbl", "Blis" },
+	{ "zea", "Latn" },
+	{ "zen", "Tfng" },
+	{ "zgh", "Tfng" },
+	{ "zh", "Hans Hant Hani Bopo Latn Phag" },
+	{ "zu", "Latn" },
+	{ "zun", "Latn" },
+	{ "zza", "Latn" },
+	{ nullptr, nullptr },
+};
+
+// Additional regional variants.
+// Variant name, supported languages.
+
+static const char *locale_variants[][2] = {
+	{ "valencia", "ca" },
+	{ "iqtelif", "tt" },
+	{ "saaho", "aa" },
+	{ "tradnl", "es" },
+	{ nullptr, nullptr },
+};
+
+// Script names and codes (excludes typographic variants, special codes, reserved codes and aliases for combined scripts).
+// Reference:
+// - https://en.wikipedia.org/wiki/ISO_15924
+
+static const char *script_list[][2] = {
+	{ "Adlam", "Adlm" },
+	{ "Afaka", "Afak" },
+	{ "Caucasian Albanian", "Aghb" },
+	{ "Ahom", "Ahom" },
+	{ "Arabic", "Arab" },
+	{ "Imperial Aramaic", "Armi" },
+	{ "Armenian", "Armn" },
+	{ "Avestan", "Avst" },
+	{ "Balinese", "Bali" },
+	{ "Bamum", "Bamu" },
+	{ "Bassa Vah", "Bass" },
+	{ "Batak", "Batk" },
+	{ "Bengali", "Beng" },
+	{ "Bhaiksuki", "Bhks" },
+	{ "Blissymbols", "Blis" },
+	{ "Bopomofo", "Bopo" },
+	{ "Brahmi", "Brah" },
+	{ "Braille", "Brai" },
+	{ "Buginese", "Bugi" },
+	{ "Buhid", "Buhd" },
+	{ "Chakma", "Cakm" },
+	{ "Unified Canadian Aboriginal", "Cans" },
+	{ "Carian", "Cari" },
+	{ "Cham", "Cham" },
+	{ "Cherokee", "Cher" },
+	{ "Chorasmian", "Chrs" },
+	{ "Cirth", "Cirt" },
+	{ "Coptic", "Copt" },
+	{ "Cypro-Minoan", "Cpmn" },
+	{ "Cypriot", "Cprt" },
+	{ "Cyrillic", "Cyrl" },
+	{ "Devanagari", "Deva" },
+	{ "Dives Akuru", "Diak" },
+	{ "Dogra", "Dogr" },
+	{ "Deseret", "Dsrt" },
+	{ "Duployan", "Dupl" },
+	{ "Egyptian demotic", "Egyd" },
+	{ "Egyptian hieratic", "Egyh" },
+	{ "Egyptian hieroglyphs", "Egyp" },
+	{ "Elbasan", "Elba" },
+	{ "Elymaic", "Elym" },
+	{ "Ethiopic", "Ethi" },
+	{ "Khutsuri", "Geok" },
+	{ "Georgian", "Geor" },
+	{ "Glagolitic", "Glag" },
+	{ "Gunjala Gondi", "Gong" },
+	{ "Masaram Gondi", "Gonm" },
+	{ "Gothic", "Goth" },
+	{ "Grantha", "Gran" },
+	{ "Greek", "Grek" },
+	{ "Gujarati", "Gujr" },
+	{ "Gurmukhi", "Guru" },
+	{ "Hangul", "Hang" },
+	{ "Han", "Hani" },
+	{ "Hanunoo", "Hano" },
+	{ "Simplified Han", "Hans" },
+	{ "Traditional Han", "Hant" },
+	{ "Hatran", "Hatr" },
+	{ "Hebrew", "Hebr" },
+	{ "Hiragana", "Hira" },
+	{ "Anatolian Hieroglyphs", "Hluw" },
+	{ "Pahawh Hmong", "Hmng" },
+	{ "Nyiakeng Puachue Hmong", "Hmnp" },
+	{ "Old Hungarian", "Hung" },
+	{ "Indus", "Inds" },
+	{ "Old Italic", "Ital" },
+	{ "Javanese", "Java" },
+	{ "Jurchen", "Jurc" },
+	{ "Kayah Li", "Kali" },
+	{ "Katakana", "Kana" },
+	{ "Kawi", "Kawi" },
+	{ "Kharoshthi", "Khar" },
+	{ "Khmer", "Khmr" },
+	{ "Khojki", "Khoj" },
+	{ "Khitan large script", "Kitl" },
+	{ "Khitan small script", "Kits" },
+	{ "Kannada", "Knda" },
+	{ "Kpelle", "Kpel" },
+	{ "Kaithi", "Kthi" },
+	{ "Tai Tham", "Lana" },
+	{ "Lao", "Laoo" },
+	{ "Latin", "Latn" },
+	{ "Leke", "Leke" },
+	{ "Lepcha", "Lepc" },
+	{ "Limbu", "Limb" },
+	{ "Linear A", "Lina" },
+	{ "Linear B", "Linb" },
+	{ "Lisu", "Lisu" },
+	{ "Loma", "Loma" },
+	{ "Lycian", "Lyci" },
+	{ "Lydian", "Lydi" },
+	{ "Mahajani", "Mahj" },
+	{ "Makasar", "Maka" },
+	{ "Mandaic", "Mand" },
+	{ "Manichaean", "Mani" },
+	{ "Marchen", "Marc" },
+	{ "Mayan Hieroglyphs", "Maya" },
+	{ "Medefaidrin", "Medf" },
+	{ "Mende Kikakui", "Mend" },
+	{ "Meroitic Cursive", "Merc" },
+	{ "Meroitic Hieroglyphs", "Mero" },
+	{ "Malayalam", "Mlym" },
+	{ "Modi", "Modi" },
+	{ "Mongolian", "Mong" },
+	{ "Moon", "Moon" },
+	{ "Mro", "Mroo" },
+	{ "Meitei Mayek", "Mtei" },
+	{ "Multani", "Mult" },
+	{ "Myanmar / Burmese", "Mymr" },
+	{ "Nag Mundari", "Nagm" },
+	{ "Nandinagari", "Nand" },
+	{ "Old North Arabian", "Narb" },
+	{ "Nabataean", "Nbat" },
+	{ "Newa", "Newa" },
+	{ "Naxi Dongba", "Nkdb" },
+	{ "Nakhi Geba", "Nkgb" },
+	{ "N'ko", "Nkoo" },
+	{ "Nüshu", "Nshu" },
+	{ "Ogham", "Ogam" },
+	{ "Ol Chiki", "Olck" },
+	{ "Old Turkic", "Orkh" },
+	{ "Oriya", "Orya" },
+	{ "Osage", "Osge" },
+	{ "Osmanya", "Osma" },
+	{ "Old Uyghur", "Ougr" },
+	{ "Palmyrene", "Palm" },
+	{ "Pau Cin Hau", "Pauc" },
+	{ "Proto-Cuneiform", "Pcun" },
+	{ "Proto-Elamite", "Pelm" },
+	{ "Old Permic", "Perm" },
+	{ "Phags-pa", "Phag" },
+	{ "Inscriptional Pahlavi", "Phli" },
+	{ "Psalter Pahlavi", "Phlp" },
+	{ "Book Pahlavi", "Phlv" },
+	{ "Phoenician", "Phnx" },
+	{ "Klingon", "Piqd" },
+	{ "Miao", "Plrd" },
+	{ "Inscriptional Parthian", "Prti" },
+	{ "Proto-Sinaitic", "Psin" },
+	{ "Ranjana", "Ranj" },
+	{ "Rejang", "Rjng" },
+	{ "Hanifi Rohingya", "Rohg" },
+	{ "Rongorongo", "Roro" },
+	{ "Runic", "Runr" },
+	{ "Samaritan", "Samr" },
+	{ "Sarati", "Sara" },
+	{ "Old South Arabian", "Sarb" },
+	{ "Saurashtra", "Saur" },
+	{ "SignWriting", "Sgnw" },
+	{ "Shavian", "Shaw" },
+	{ "Sharada", "Shrd" },
+	{ "Shuishu", "Shui" },
+	{ "Siddham", "Sidd" },
+	{ "Khudawadi", "Sind" },
+	{ "Sinhala", "Sinh" },
+	{ "Sogdian", "Sogd" },
+	{ "Old Sogdian", "Sogo" },
+	{ "Sora Sompeng", "Sora" },
+	{ "Soyombo", "Soyo" },
+	{ "Sundanese", "Sund" },
+	{ "Syloti Nagri", "Sylo" },
+	{ "Syriac", "Syrc" },
+	{ "Tagbanwa", "Tagb" },
+	{ "Takri", "Takr" },
+	{ "Tai Le", "Tale" },
+	{ "New Tai Lue", "Talu" },
+	{ "Tamil", "Taml" },
+	{ "Tangut", "Tang" },
+	{ "Tai Viet", "Tavt" },
+	{ "Telugu", "Telu" },
+	{ "Tengwar", "Teng" },
+	{ "Tifinagh", "Tfng" },
+	{ "Tagalog", "Tglg" },
+	{ "Thaana", "Thaa" },
+	{ "Thai", "Thai" },
+	{ "Tibetan", "Tibt" },
+	{ "Tirhuta", "Tirh" },
+	{ "Tangsa", "Tnsa" },
+	{ "Toto", "Toto" },
+	{ "Ugaritic", "Ugar" },
+	{ "Vai", "Vaii" },
+	{ "Visible Speech", "Visp" },
+	{ "Vithkuqi", "Vith" },
+	{ "Warang Citi", "Wara" },
+	{ "Wancho", "Wcho" },
+	{ "Woleai", "Wole" },
+	{ "Old Persian", "Xpeo" },
+	{ "Cuneiform", "Xsux" },
+	{ "Yezidi", "Yezi" },
+	{ "Yi", "Yiii" },
+	{ "Zanabazar Square", "Zanb" },
+	{ nullptr, nullptr }
+};
+
+// Plural rules.
+// Reference:
+// - https://cgit.git.savannah.gnu.org/cgit/gettext.git/tree/gettext-tools/src/plural-table.c
+// - https://github.com/unicode-org/cldr/blob/release-47/common/supplemental/plurals.xml
+static const char *plural_rules[][2] = {
+	{ "bm bo dz hnj id ig ii in ja jbo jv jw kde kea km ko lkt lo ms my nqo osa root sah ses sg su th to tpi vi wo yo yue zh", "nplurals=1; plural=0;" },
+	{ "af an asa ast az bal bem bez bg brx ca ce cgg chr ckb da de dv ee el en eo es et eu fi fo fur fy gl gsw ha haw he hu ia io it jgo ji jmc ka kaj kcg kk kkj kl ks ksb ku ky lb lg lij mas mgo ml mn mr nah nb nd ne nl nn nnh no nr ny nyn om or os pap ps pt rm rof rwk saq sc sd sdh seh sn so sq ss ssy st sv sw syr ta te teo tig tk tn tr ts ug ur uz ve vo vun wae xh xog yi", "nplurals=2; plural=(n != 1);" },
+	{ "ak bho csw ff fr guw hy kab ln mg nso pa pt_BR si ti wa", "nplurals=2; plural=(n > 1);" },
+	{ "is mk", "nplurals=2; plural=(n%10==1 && n%100!=11);" },
+	{ "tzm", "nplurals=2; plural=(n<=1 || (n>=11 && n<=99));" },
+	{ "am as bn doi fa gu hi kn pcm zu", "nplurals=2; plural=(n==0 || n==1);" },
+	{ "ceb fil tl", "nplurals=2; plural=(n==1 || n==2 || n==3 || (n%10!=4 && n%10!=6 && n%10!=9));" },
+	{ "prg", "nplurals=3; plural=(n%10==0 || (n%100>=11 && n%100<=19) ? 0 : n%10==1 && n%100!=11 ? 1 : 2);" },
+	{ "lv", "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);" },
+	{ "lt", "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%100<10 || n%100>=20) ? 1 : 2);" },
+	{ "be hr ru sr uk", "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);" },
+	{ "bs sh", "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);" },
+	{ "lag", "nplurals=3; plural=(n==0 ? 0 : (n==0 || n==1) && n!=0 ? 1 : 2);" },
+	{ "blo ksh", "nplurals=3; plural=(n==0 ? 0 : n==1 ? 1 : 2);" },
+	{ "shi", "nplurals=3; plural=(n==0 || n==1 ? 0 : n>=2 && n<=10 ? 1 : 2);" },
+	{ "pl", "nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);" },
+	{ "mo", "nplurals=3; plural=(n==1 ? 0 : n==0 || (n!=1 && n%100>=1 && n%100<=19) ? 1 : 2);" },
+	{ "iu iw naq sat se sma smi smj smn sms", "nplurals=3; plural=(n==1 ? 0 : n==2 ? 1 : 2);" },
+	{ "cs sk", "nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;" },
+	{ "ro", "nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2;" },
+	{ "ga", "nplurals=3; plural=n==1 ? 0 : n==2 ? 1 : 2;" },
+	{ "sl", "nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);" },
+	{ "dsb hsb", "nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100>=3 && n%100<=4 ? 2 : 3);" },
+	{ "gv", "nplurals=4; plural=(n%10==1 ? 0 : n%10==2 ? 1 : n%100==0 || n%100==20 || n%100==40 || n%100==60 || n%100==80 ? 2 : 3);" },
+	{ "gd", "nplurals=4; plural=(n==1 || n==11 ? 0 : n==2 || n==12 ? 1 : (n>=3 && n<=10) || (n>=13 && n<=19) ? 2 : 3);" },
+	{ "br", "nplurals=5; plural=(n%10==1 && n%100!=11 && n%100!=71 && n%100!=91 ? 0 : n%10==2 && n%100!=12 && n%100!=72 && n%100!=92 ? 1 : ((n%10>=3 && n%10<=4) || n%10==9) && (n%100<10 || n%100>19) && (n%100<70 || n%100>79) && (n%100<90 || n%100>99) ? 2 : n!=0 && n%1000000==0 ? 3 : 4);" },
+	{ "mt", "nplurals=5; plural=(n==1 ? 0 : n==2 ? 1 : n==0 || (n%100>=3 && n%100<=10) ? 2 : n%100>=11 && n%100<=19 ? 3 : 4);" },
+	{ "kw", "nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n%100==2 || n%100==22 || n%100==42 || n%100==62 || n%100==82 || (n%1000==0 && ((n%100000>=1000 && n%100000<=20000) || n%100000==40000 || n%100000==60000 || n%100000==80000)) || (n!=0 && n%1000000==100000) ? 2 : n%100==3 || n%100==23 || n%100==43 || n%100==63 || n%100==83 ? 3 : n!=1 && (n%100==1 || n%100==21 || n%100==41 || n%100==61 || n%100==81) ? 4 : 5);" },
+	{ "ar ars", "nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5);" },
+	{ "cy", "nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n==3 ? 3 : n==6 ? 4 : 5);" },
+	{ nullptr, nullptr }
+};
+
+static const struct NumSystemData {
+	const char *locales;
+	const char32_t *digits;
+	const char32_t *percent_sign;
+	const char32_t *exp_l;
+	const char32_t *exp_u;
+} num_system_data[] = {
+	// Eastern Arabic numerals.
+	{ "ar ar_AE ar_BH ar_DJ ar_EG ar_ER ar_IL ar_IQ ar_JO ar_KM ar_KW ar_LB ar_MR ar_OM ar_PS ar_QA ar_SA ar_SD ar_SO ar_SS ar_SY ar_TD ar_YE ckb ckb_IQ ckb_IR sd sd_PK sd_Arab sd_Arab_PK", U"٠١٢٣٤٥٦٧٨٩٫", U"٪", U"اس", U"اس" },
+	// Persian and Urdu numerals.
+	{ "fa fa_AF fa_IR ks ks_IN ks_Arab ks_Arab_IN lrc lrc_IQ lrc_IR mzn mzn_IR pa_PK pa_Arab pa_Arab_PK ps ps_AF ps_PK ur_IN uz_AF uz_Arab uz_Arab_AF", U"۰۱۲۳۴۵۶۷۸۹٫", U"٪", U"اس", U"اس" },
+	// Bengali numerals.
+	{ "as as_IN bn bn_BD bn_IN mni mni_IN mni_Beng mni_Beng_IN", U"০১২৩৪৫৬৭৮৯.", U"%", U"e", U"E" },
+	// Devanagari numerals.
+	{ "mr mr_IN ne ne_IN ne_NP sa sa_IN", U"०१२३४५६७८९.", U"%", U"e", U"E" },
+	// Dzongkha numerals.
+	{ "dz dz_BT", U"༠༡༢༣༤༥༦༧༨༩.", U"%", U"e", U"E" },
+	// Santali numerals.
+	{ "sat sat_IN sat_Olck sat_Olck_IN", U"᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙.", U"%", U"e", U"E" },
+	// Burmese numerals.
+	{ "my my_MM", U"၀၁၂၃၄၅၆၇၈၉.", U"%", U"e", U"E" },
+	// Chakma numerals.
+	{ "ccp ccp_BD ccp_IN", U"𑄶𑄷𑄸𑄹𑄺𑄻𑄼𑄽𑄾𑄿.", U"%", U"e", U"E" },
+	// Adlam numerals.
+	{ "ff ff_Adlm_BF ff_Adlm_CM ff_Adlm_GH ff_Adlm_GM ff_Adlm_GN ff_Adlm_GW ff_Adlm_LR ff_Adlm_MR ff_Adlm_NE ff_Adlm_NG ff_Adlm_SL ff_Adlm_SN", U"𞥐𞥑𞥒𞥓𞥔𞥕𞥖𞥗𞥘𞥙.", U"%", U"𞤉", U"𞤉" },
+	// End sentinel.
+	{ nullptr, nullptr, nullptr, nullptr, nullptr }
+};
+
+// --- End core/string/locales.h ---
+#include "core/string/translation_server.h"
+
+// --- translation_server.compat.inc ---
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#ifndef DISABLE_DEPRECATED
+
+
+String TranslationServer::_standardize_locale_bind_compat_98972(const String& p_locale)
+{
+	return standardize_locale(p_locale, false);
+}
+
+void TranslationServer::_bind_compatibility_methods() {}
+
+#endif // DISABLE_DEPRECATED
+
+
+void TranslationServer::init_locale_info()
+{
+	// Init locale info.
+	language_map.clear();
+	int idx = 0;
+	while (language_list[idx][0] != nullptr) {
+		language_map[language_list[idx][0]] = String::utf8(language_list[idx][1]);
+		idx++;
+	}
+
+	// Init locale-script map.
+	locale_script_info.clear();
+	idx = 0;
+	while (locale_scripts[idx][0] != nullptr) {
+		LocaleScriptInfo info;
+		info.name = locale_scripts[idx][0];
+		info.script = locale_scripts[idx][1];
+		info.default_country = locale_scripts[idx][2];
+		Vector<String> supported_countries = String(locale_scripts[idx][3]).split(",", false);
+		for (int i = 0; i < supported_countries.size(); i++) {
+			info.supported_countries.insert(supported_countries[i]);
+		}
+		locale_script_info.push_back(info);
+		idx++;
+	}
+
+	// Init supported script list.
+	script_map.clear();
+	idx = 0;
+	while (script_list[idx][0] != nullptr) {
+		script_map[script_list[idx][1]] = String::utf8(script_list[idx][0]);
+		idx++;
+	}
+
+	// Init regional variant map.
+	variant_map.clear();
+	idx = 0;
+	while (locale_variants[idx][0] != nullptr) {
+		variant_map[locale_variants[idx][0]] = locale_variants[idx][1];
+		idx++;
+	}
+
+	// Init locale renames.
+	locale_rename_map.clear();
+	idx = 0;
+	while (locale_renames[idx][0] != nullptr) {
+		if (!String(locale_renames[idx][1]).is_empty()) {
+			locale_rename_map[locale_renames[idx][0]] = locale_renames[idx][1];
+		}
+		idx++;
+	}
+
+	// Init locale scripts.
+	language_script_map.clear();
+	idx = 0;
+	while (language_script_list[idx][0] != nullptr) {
+		HashSet<String>& set = language_script_map[language_script_list[idx][0]];
+		Vector<String> scripts = String(language_script_list[idx][1]).split(" ");
+		for (const String& s : scripts) {
+			set.insert(s);
+		}
+		idx++;
+	}
+
+	// Init country names.
+	country_name_map.clear();
+	idx = 0;
+	while (country_names[idx][0] != nullptr) {
+		country_name_map[String(country_names[idx][0])] = String::utf8(country_names[idx][1]);
+		idx++;
+	}
+
+	// Init country renames.
+	country_rename_map.clear();
+	idx = 0;
+	while (country_renames[idx][0] != nullptr) {
+		if (!String(country_renames[idx][1]).is_empty()) {
+			country_rename_map[country_renames[idx][0]] = country_renames[idx][1];
+		}
+		idx++;
+	}
+
+	// Init plural rules.
+	plural_rules_map.clear();
+	idx = 0;
+	while (plural_rules[idx][0] != nullptr) {
+		const Vector<String> rule_locs = String(plural_rules[idx][0]).split(" ");
+		const String rule = String(plural_rules[idx][1]);
+		for (const String& l : rule_locs) {
+			plural_rules_map[l] = rule;
+		}
+		idx++;
+	}
+
+	// Init number systems.
+	num_system_map.clear();
+	idx = 0;
+	while (num_system_data[idx].locales != nullptr) {
+		const NumSystemData& nsd = num_system_data[idx];
+
+		// These fields must not be empty.
+		DEV_ASSERT(nsd.percent_sign && nsd.percent_sign[0] != '\0');
+		DEV_ASSERT(nsd.digits && nsd.digits[0] != '\0');
+		DEV_ASSERT(nsd.exp_l && nsd.exp_l[0] != '\0');
+		DEV_ASSERT(nsd.exp_u && nsd.exp_u[0] != '\0');
+		DEV_ASSERT(strlen(nsd.digits) == 11);
+
+		const Vector<String> locales = String(nsd.locales).split(" ");
+		for (const String& l : locales) {
+			num_system_map[l] = idx;
+		}
+		idx++;
+	}
+}
+
+TranslationServer::Locale::operator String() const
+{
+	String out = language;
+	if (!script.is_empty()) {
+		out = out + "_" + script;
+	}
+	if (!country.is_empty()) {
+		out = out + "_" + country;
+	}
+	if (!variant.is_empty()) {
+		out = out + "_" + variant;
+	}
+	return out;
+}
+
+TranslationServer::Locale::Locale(
+	const String& p_locale, bool p_add_defaults)
+{
+	// Replaces '-' with '_' for macOS style locales.
+	String univ_locale = p_locale.replace_char('-', '_');
+
+	// Extract locale elements.
+	Vector<String> locale_elements = univ_locale.get_slicec('@', 0).split("_");
+	language = locale_elements[0];
+	if (locale_elements.size() >= 2) {
+		if (locale_elements[1].length() == 4 && is_ascii_upper_case(locale_elements[1][0]) &&
+			is_ascii_lower_case(locale_elements[1][1]) &&
+			is_ascii_lower_case(locale_elements[1][2]) &&
+			is_ascii_lower_case(locale_elements[1][3])) {
+			script = locale_elements[1];
+		}
+		if (locale_elements[1].length() == 2 && is_ascii_upper_case(locale_elements[1][0]) &&
+			is_ascii_upper_case(locale_elements[1][1])) {
+			country = locale_elements[1];
+		}
+	}
+	if (locale_elements.size() >= 3) {
+		if (locale_elements[2].length() == 2 && is_ascii_upper_case(locale_elements[2][0]) &&
+			is_ascii_upper_case(locale_elements[2][1])) {
+			country = locale_elements[2];
+		}
+		else if (TranslationServer::variant_map.has(locale_elements[2].to_lower()) &&
+				   TranslationServer::variant_map[locale_elements[2].to_lower()] == language) {
+			variant = locale_elements[2].to_lower();
+		}
+	}
+	if (locale_elements.size() >= 4) {
+		if (TranslationServer::variant_map.has(locale_elements[3].to_lower()) &&
+			TranslationServer::variant_map[locale_elements[3].to_lower()] == language) {
+			variant = locale_elements[3].to_lower();
+		}
+	}
+
+	// Try extract script and variant from the extra part.
+	Vector<String> script_extra = univ_locale.get_slicec('@', 1).split(";");
+	for (int i = 0; i < script_extra.size(); i++) {
+		if (script_extra[i].to_lower() == "cyrillic") {
+			script = "Cyrl";
+			break;
+		}
+		else if (script_extra[i].to_lower() == "latin") {
+			script = "Latn";
+			break;
+		}
+		else if (script_extra[i].to_lower() == "devanagari") {
+			script = "Deva";
+			break;
+		}
+		else if (TranslationServer::variant_map.has(script_extra[i].to_lower()) &&
+				   TranslationServer::variant_map[script_extra[i].to_lower()] == language) {
+			variant = script_extra[i].to_lower();
+		}
+	}
+
+	// Handles known non-ISO language names used e.g. on Windows.
+	if (TranslationServer::locale_rename_map.has(language)) {
+		language = TranslationServer::locale_rename_map[language];
+	}
+
+	// Handle country renames.
+	if (TranslationServer::country_rename_map.has(country)) {
+		country = TranslationServer::country_rename_map[country];
+	}
+
+	// Remove unsupported script codes.
+	if (!TranslationServer::script_map.has(script)) {
+		script = "";
+	}
+
+	// Add script code base on language and country codes for some ambiguous cases.
+	if (p_add_defaults) {
+		if (script.is_empty()) {
+			for (int i = 0; i < TranslationServer::locale_script_info.size(); i++) {
+				const LocaleScriptInfo& info = TranslationServer::locale_script_info[i];
+				if (info.name == language) {
+					if (country.is_empty() || info.supported_countries.has(country)) {
+						script = info.script;
+						break;
+					}
+				}
+			}
+		}
+		if (!script.is_empty() && country.is_empty()) {
+			// Add conntry code based on script for some ambiguous cases.
+			for (int i = 0; i < TranslationServer::locale_script_info.size(); i++) {
+				const LocaleScriptInfo& info = TranslationServer::locale_script_info[i];
+				if (info.name == language && info.script == script) {
+					country = info.default_country;
+					break;
+				}
+			}
+		}
+	}
+}
+
+String TranslationServer::format_number(const String& p_string, const String& p_locale)
+{
+	ERR_FAIL_COND_V(p_locale.is_empty(), p_string);
+	if (!num_system_map.has(p_locale)) {
+		return p_string;
+	}
+
+	int index = num_system_map[p_locale];
+	const NumSystemData& nsd = num_system_data[index];
+
+	String res = p_string;
+	res = res.replace("e", nsd.exp_l);
+	res = res.replace("E", nsd.exp_u);
+	char32_t* res_data = res.ptrw();
+	for (int j = 0; j < res.length(); j++) {
+		if (res_data[j] >= 0x30 && res_data[j] <= 0x39) {
+			res_data[j] = nsd.digits[res_data[j] - 0x30];
+		}
+		else if (res_data[j] == '.' || res_data[j] == ',') {
+			res_data[j] = nsd.digits[10];
+		}
+	}
+	return res;
+}
+
+String TranslationServer::parse_number(const String& p_string, const String& p_locale)
+{
+	ERR_FAIL_COND_V(p_locale.is_empty(), p_string);
+	if (!num_system_map.has(p_locale)) {
+		return p_string;
+	}
+
+	int index = num_system_map[p_locale];
+	const NumSystemData& nsd = num_system_data[index];
+
+	String res = p_string;
+	res = res.replace(nsd.exp_l, "e");
+	res = res.replace(nsd.exp_u, "E");
+	char32_t* res_data = res.ptrw();
+	for (int j = 0; j < res.length(); j++) {
+		if (res_data[j] == nsd.digits[10]) {
+			res_data[j] = '.';
+		}
+		else {
+			for (int k = 0; k < 10; k++) {
+				if (res_data[j] == nsd.digits[k]) {
+					res_data[j] = 0x30 + k;
+				}
+			}
+		}
+	}
+	return res;
+}
+
+String TranslationServer::get_percent_sign(const String& p_locale)
+{
+	ERR_FAIL_COND_V(p_locale.is_empty(), "%");
+	if (!num_system_map.has(p_locale)) {
+		return "%";
+	}
+
+	int index = num_system_map[p_locale];
+	return num_system_data[index].percent_sign;
+}
+
+String TranslationServer::standardize_locale(const String& p_locale, bool p_add_defaults)
+{
+	return Locale(p_locale, p_add_defaults).operator String();
+}
+
+int TranslationServer::compare_locales(const String& p_locale_a, const String& p_locale_b)
+{
+	if (p_locale_a == p_locale_b) {
+		// Exact match.
+		return 10;
+	}
+
+	const String cache_key = p_locale_a + "|" + p_locale_b;
+	const int* cached_result = data->locale_compare_cache.getptr(cache_key);
+	if (cached_result) {
+		return *cached_result;
+	}
+
+	Locale locale_a = Locale(p_locale_a, true);
+	Locale locale_b = Locale(p_locale_b, true);
+
+	if (locale_a == locale_b) {
+		// Exact match.
+		data->locale_compare_cache.insert(cache_key, 10);
+		return 10;
+	}
+
+	if (locale_a.language != locale_b.language) {
+		// No match.
+		data->locale_compare_cache.insert(cache_key, 0);
+		return 0;
+	}
+
+	// Matching language, both locales have extra parts. Compare the
+	// remaining elements. If both elements are non-empty, check the
+	// match to increase or decrease the score. If either element or
+	// both are empty, leave the score as is.
+	int score = 5;
+	if (!locale_a.script.is_empty() && !locale_b.script.is_empty()) {
+		if (locale_a.script == locale_b.script) {
+			score++;
+		}
+		else {
+			score--;
+		}
+	}
+	if (!locale_a.country.is_empty() && !locale_b.country.is_empty()) {
+		if (locale_a.country == locale_b.country) {
+			score++;
+		}
+		else {
+			score--;
+		}
+	}
+	if (!locale_a.variant.is_empty() && !locale_b.variant.is_empty()) {
+		if (locale_a.variant == locale_b.variant) {
+			score++;
+		}
+		else {
+			score--;
+		}
+	}
+
+	data->locale_compare_cache.insert(cache_key, score);
+	return score;
+}
+
+String TranslationServer::get_locale_name(const String& p_locale)
+{
+	String lang_name, script_name, country_name;
+	Vector<String> locale_elements = standardize_locale(p_locale).split("_");
+	lang_name = locale_elements[0];
+	if (locale_elements.size() >= 2) {
+		if (locale_elements[1].length() == 4 && is_ascii_upper_case(locale_elements[1][0]) &&
+			is_ascii_lower_case(locale_elements[1][1]) &&
+			is_ascii_lower_case(locale_elements[1][2]) &&
+			is_ascii_lower_case(locale_elements[1][3])) {
+			script_name = locale_elements[1];
+		}
+		if (locale_elements[1].length() == 2 && is_ascii_upper_case(locale_elements[1][0]) &&
+			is_ascii_upper_case(locale_elements[1][1])) {
+			country_name = locale_elements[1];
+		}
+	}
+	if (locale_elements.size() >= 3) {
+		if (locale_elements[2].length() == 2 && is_ascii_upper_case(locale_elements[2][0]) &&
+			is_ascii_upper_case(locale_elements[2][1])) {
+			country_name = locale_elements[2];
+		}
+	}
+
+	String name = get_language_name(lang_name);
+	if (!script_name.is_empty()) {
+		name = name + " (" + get_script_name(script_name) + ")";
+	}
+	if (!country_name.is_empty()) {
+		name = name + ", " + get_country_name(country_name);
+	}
+	return name;
+}
+
+String TranslationServer::get_plural_rules(const String& p_locale)
+{
+	const String* rule = plural_rules_map.getptr(p_locale);
+	if (rule) {
+		return *rule;
+	}
+
+	Locale l = Locale(p_locale, false);
+	if (!l.country.is_empty()) {
+		rule = plural_rules_map.getptr(l.language + "_" + l.country);
+		if (rule) {
+			return *rule;
+		}
+	}
+	rule = plural_rules_map.getptr(l.language);
+	if (rule) {
+		return *rule;
+	}
+	return String();
+}
+
+Vector<String> TranslationServer::get_all_languages()
+{
+	Vector<String> languages;
+
+	for (const KeyValue<String, String>& E : language_map) {
+		languages.push_back(E.key);
+	}
+
+	return languages;
+}
+
+String TranslationServer::get_language_name(const String& p_language)
+{
+	if (language_map.has(p_language)) {
+		return language_map[p_language];
+	}
+	else {
+		return p_language;
+	}
+}
+
+Vector<String> TranslationServer::get_all_scripts()
+{
+	Vector<String> scripts;
+
+	for (const KeyValue<String, String>& E : script_map) {
+		scripts.push_back(E.key);
+	}
+
+	return scripts;
+}
+
+String TranslationServer::get_script_name(const String& p_script)
+{
+	if (script_map.has(p_script)) {
+		return script_map[p_script];
+	}
+	else {
+		return p_script;
+	}
+}
+
+Vector<String> TranslationServer::get_all_countries()
+{
+	Vector<String> countries;
+
+	for (const KeyValue<String, String>& E : country_name_map) {
+		countries.push_back(E.key);
+	}
+
+	return countries;
+}
+
+String TranslationServer::get_country_name(const String& p_country)
+{
+	if (country_name_map.has(p_country)) {
+		return country_name_map[p_country];
+	}
+	else {
+		return p_country;
+	}
+}
+
+void TranslationServer::set_locale(const String& p_locale)
+{
+	ERR_FAIL_COND_MSG(p_locale.is_empty(), "Locale cannot be an empty string.");
+
+	String new_locale = standardize_locale(p_locale);
+	if (data->locale == new_locale) {
+		return;
+	}
+
+	data->locale = new_locale;
+	ResourceLoader::reload_translation_remaps();
+}
+
+String TranslationServer::get_locale() { return data->locale; }
+
+void TranslationServer::set_fallback_allowed(const bool& p_allow) { data->allow_fallback = p_allow; }
+
+bool TranslationServer::is_fallback_allowed() { return data->allow_fallback; }
+
+void TranslationServer::set_fallback_locale(const String& p_locale) { data->fallback = p_locale; }
+
+String TranslationServer::get_fallback_locale() { return data->fallback; }
+
+bool TranslationServer::is_script_suppored_by_locale(
+	const String& p_locale, const String& p_script)
+{
+	Locale l = Locale(p_locale, true);
+	if (l.script == p_script) {
+		return true;
+	}
+	if (!language_script_map.has(l.language)) {
+		return false;
+	}
+	return language_script_map[l.language].has(p_script);
+}
+
+PackedStringArray TranslationServer::get_loaded_locales()
+{
+	return data->main_domain->get_loaded_locales();
+}
+
+void TranslationServer::add_translation(const Ref<Translation>& p_translation)
+{
+	data->main_domain->add_translation(p_translation);
+}
+
+void TranslationServer::remove_translation(const Ref<Translation>& p_translation)
+{
+	data->main_domain->remove_translation(p_translation);
+}
+
+#ifndef DISABLE_DEPRECATED
+Ref<Translation> TranslationServer::get_translation_object(const String& p_locale)
+{
+	return data->main_domain->get_translation_object(p_locale);
+}
+#endif
+
+bool TranslationServer::has_translation(const Ref<Translation>& p_translation)
+{
+	return data->main_domain->has_translation(p_translation);
+}
+
+bool TranslationServer::has_translation_for_locale(const String& p_locale, bool p_exact)
+{
+	return data->main_domain->has_translation_for_locale(p_locale, p_exact);
+}
+
+void TranslationServer::clear() { data->main_domain->clear(); }
+
+String TranslationServer::translate(
+	const String& p_message, const String& p_context)
+{
+	return data->main_domain->translate(p_message, p_context);
+}
+
+String TranslationServer::translate_plural(const String& p_message,
+	const String& p_message_plural, int p_n, const String& p_context)
+{
+	return data->main_domain->translate_plural(p_message, p_message_plural, p_n, p_context);
+}
+
+bool TranslationServer::has_domain(const String& p_domain)
+{
+	if (p_domain == String()) {
+		return true;
+	}
+	return data->custom_domains.has(p_domain);
+}
+
+Ref<TranslationDomain> TranslationServer::get_or_add_domain(const String& p_domain)
+{
+	if (p_domain == String()) {
+		return data->main_domain;
+	}
+	const Ref<TranslationDomain>* domain = data->custom_domains.getptr(p_domain);
+	if (domain) {
+		if (domain->is_valid()) {
+			return *domain;
+		}
+		ERR_PRINT("Bug (please report): Found invalid translation domain.");
+	}
+	Ref<TranslationDomain> new_domain = memnew(TranslationDomain);
+	data->custom_domains[p_domain] = new_domain;
+	return new_domain;
+}
+
+void TranslationServer::remove_domain(const String& p_domain)
+{
+	ERR_FAIL_COND_MSG(p_domain == String(), "Cannot remove main translation domain.");
+	data->custom_domains.erase(p_domain);
+}
+
+String TranslationServer::get_tool_locale()
+{
+#ifdef TOOLS_ENABLED
+	if (Engine::is_editor_hint() ||
+		Engine::is_project_manager_hint()) {
+		if (data->editor_domain->has_translation_for_locale(data->locale, true)) {
+			return data->locale;
+		}
+		return "en";
+	}
+#endif
+
+	Ref<Translation> res;
+	int best_score = 0;
+
+	for (const Ref<Translation>& E : data->main_domain->get_translations()) {
+		int score = TranslationServer::compare_locales(data->locale, E->get_locale());
+		if (score > 0 && score >= best_score) {
+			res = E;
+			best_score = score;
+			if (score == 10) {
+				return data->locale; // Exact match.
+			}
+		}
+	}
+	return res.is_valid() ? res->get_locale() : data->fallback;
+}
+
+bool TranslationServer::is_pseudolocalization_enabled()
+{
+	return data->main_domain->is_pseudolocalization_enabled();
+}
+
+void TranslationServer::set_pseudolocalization_enabled(bool p_enabled)
+{
+	data->main_domain->set_pseudolocalization_enabled(p_enabled);
+
+	ResourceLoader::reload_translation_remaps();
+}
+
+String TranslationServer::pseudolocalize(const String& p_message)
+{
+	return data->main_domain->pseudolocalize(p_message);
+}
+
+
+void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domain)
+{
+	DEV_ASSERT(p_domain.is_valid());
+
+	p_domain->clear();
+	const String prop = "internationalization/locale/translations";
+	if (!ProjectSettings::has_setting(prop)) {
+		return;
+	}
+}
+void TranslationServer::get_argument_options(
+	const String& p_function, int p_idx, List<String>* r_options) {}
+
+void TranslationServer::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+
+	data->main_domain.instantiate();
+
+#ifdef TOOLS_ENABLED
+	data->editor_domain = get_or_add_domain("godot.editor");
+	data->property_domain = get_or_add_domain("godot.properties");
+	data->doc_domain = get_or_add_domain("godot.documentation");
+#endif // TOOLS_ENABLED
+
+	init_locale_info();
+}
+
+void TranslationServer::finalize()
+{
+	if (!data) {
+		return;
+	}
+	memdelete(data);
+	data = nullptr;
+}
+
+void TranslationServer::setup() {}
+
+// ============================================================================
+// Merged from core/string/node_path.cpp
+// ============================================================================
+
+#include "core/types.h"
+
+void NodePath::_update_hash_cache() const
+{
+	String path = get_concatenated_names();
+	String subpath = get_concatenated_subnames();
+	uint32_t hash =
+		HashMapHasherDefault::hash(Pair<const String&, const String&>(path, subpath));
+	data->hash_cache = is_absolute() ? hash : ~hash;
+	data->hash_cache_valid = true;
+}
+
+void NodePath::prepend_period()
+{
+	if (data->path.size() && data->path[0] != ".") {
+		_copy_on_write();
+		data->path.insert(0, ".");
+		data->concatenated_path = String();
+		data->hash_cache_valid = false;
+	}
+}
+
+bool NodePath::is_absolute() const
+{
+	if (!data) {
+		return false;
+	}
+
+	return data->absolute;
+}
+
+int NodePath::get_name_count() const
+{
+	if (!data) {
+		return 0;
+	}
+
+	return data->path.size();
+}
+
+String NodePath::get_name(int p_idx) const
+{
+	ERR_FAIL_NULL_V(data, String());
+	ERR_FAIL_INDEX_V(p_idx, data->path.size(), String());
+	return data->path[p_idx];
+}
+
+int NodePath::get_subname_count() const
+{
+	if (!data) {
+		return 0;
+	}
+
+	return data->subpath.size();
+}
+
+String NodePath::get_subname(int p_idx) const
+{
+	ERR_FAIL_NULL_V(data, String());
+	ERR_FAIL_INDEX_V(p_idx, data->subpath.size(), String());
+	return data->subpath[p_idx];
+}
+
+int NodePath::get_total_name_count() const
+{
+	if (!data) {
+		return 0;
+	}
+
+	return data->path.size() + data->subpath.size();
+}
+
+void NodePath::unref()
+{
+	if (data && data->refcount.unref()) {
+		memdelete(data);
+	}
+	data = nullptr;
+}
+
+bool NodePath::operator==(const NodePath& p_path) const
+{
+	if (data == p_path.data) {
+		return true;
+	}
+
+	if (!data || !p_path.data) {
+		return false;
+	}
+
+	if (data->hash_cache_valid && p_path.data->hash_cache_valid) {
+		if (data->hash_cache != p_path.data->hash_cache) {
+			return false;
+		}
+	}
+
+	if (data->absolute != p_path.data->absolute) {
+		return false;
+	}
+
+	int path_size = data->path.size();
+
+	if (path_size != p_path.data->path.size()) {
+		return false;
+	}
+
+	int subpath_size = data->subpath.size();
+
+	if (subpath_size != p_path.data->subpath.size()) {
+		return false;
+	}
+
+	const String* l_path_ptr = data->path.ptr();
+	const String* r_path_ptr = p_path.data->path.ptr();
+
+	for (int i = 0; i < path_size; i++) {
+		if (l_path_ptr[i] != r_path_ptr[i]) {
+			return false;
+		}
+	}
+
+	const String* l_subpath_ptr = data->subpath.ptr();
+	const String* r_subpath_ptr = p_path.data->subpath.ptr();
+
+	for (int i = 0; i < subpath_size; i++) {
+		if (l_subpath_ptr[i] != r_subpath_ptr[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool NodePath::operator!=(const NodePath& p_path) const { return (!(*this == p_path)); }
+
+void NodePath::operator=(const NodePath& p_path)
+{
+	if (this == &p_path) {
+		return;
+	}
+
+	unref();
+
+	if (p_path.data && p_path.data->refcount.ref()) {
+		data = p_path.data;
+	}
+}
+
+void NodePath::_copy_on_write()
+{
+	if (!data) {
+		return; // No data; nothing to do.
+	}
+
+	if (data->refcount.get() == 1) {
+		return; // Already the only owner of data.
+	}
+
+	// Make a copy.
+	Data* new_data = memnew(Data);
+	new_data->refcount.init();
+	new_data->path = data->path;
+	new_data->subpath = data->subpath;
+	new_data->concatenated_path = data->concatenated_path;
+	new_data->concatenated_subpath = data->concatenated_subpath;
+	new_data->absolute = data->absolute;
+	new_data->hash_cache_valid = data->hash_cache_valid;
+	new_data->hash_cache = data->hash_cache;
+	unref();
+	data = new_data;
+}
+
+NodePath::operator String() const
+{
+	if (!data) {
+		return String();
+	}
+
+	String ret;
+	if (data->absolute) {
+		ret = "/";
+	}
+
+	ret += get_concatenated_names();
+
+	String subpath = get_concatenated_subnames();
+	if (!subpath.is_empty()) {
+		ret += ":" + subpath;
+	}
+
+	return ret;
+}
+
+Vector<String> NodePath::get_names() const
+{
+	if (data) {
+		return data->path;
+	}
+	return Vector<String>();
+}
+
+Vector<String> NodePath::get_subnames() const
+{
+	if (data) {
+		return data->subpath;
+	}
+	return Vector<String>();
+}
+
+String NodePath::get_concatenated_names() const
+{
+	ERR_FAIL_NULL_V(data, String());
+
+	if (data->concatenated_path.is_empty()) {
+		int pc = data->path.size();
+		String concatenated;
+		const String* sn = data->path.ptr();
+		for (int i = 0; i < pc; i++) {
+			if (i > 0) {
+				concatenated += "/";
+			}
+			concatenated += sn[i];
+		}
+		data->concatenated_path = concatenated;
+	}
+	return data->concatenated_path;
+}
+
+String NodePath::get_concatenated_subnames() const
+{
+	ERR_FAIL_NULL_V(data, String());
+
+	if (data->concatenated_subpath.is_empty()) {
+		int spc = data->subpath.size();
+		String concatenated;
+		const String* ssn = data->subpath.ptr();
+		for (int i = 0; i < spc; i++) {
+			if (i > 0) {
+				concatenated += ":";
+			}
+			concatenated += ssn[i];
+		}
+		data->concatenated_subpath = concatenated;
+	}
+	return data->concatenated_subpath;
+}
+
+NodePath NodePath::slice(int p_begin, int p_end) const
+{
+	const int name_count = get_name_count();
+	const int total_count = get_total_name_count();
+
+	int begin = CLAMP(p_begin, -total_count, total_count);
+	if (begin < 0) {
+		begin += total_count;
+	}
+	int end = CLAMP(p_end, -total_count, total_count);
+	if (end < 0) {
+		end += total_count;
+	}
+	const int sub_begin = MAX(begin - name_count, 0);
+	const int sub_end = MAX(end - name_count, 0);
+
+	const Vector<String> names = get_names().slice(begin, end);
+	const Vector<String> sub_names = get_subnames().slice(sub_begin, sub_end);
+	const bool absolute = is_absolute() && (begin == 0);
+	return NodePath(names, sub_names, absolute);
+}
+
+NodePath NodePath::rel_path_to(const NodePath& p_np) const
+{
+	ERR_FAIL_COND_V(!is_absolute(), NodePath());
+	ERR_FAIL_COND_V(!p_np.is_absolute(), NodePath());
+
+	Vector<String> src_dirs = get_names();
+	Vector<String> dst_dirs = p_np.get_names();
+
+	// find common parent
+	int common_parent = 0;
+
+	while (true) {
+		if (src_dirs.size() == common_parent) {
+			break;
+		}
+		if (dst_dirs.size() == common_parent) {
+			break;
+		}
+		if (src_dirs[common_parent] != dst_dirs[common_parent]) {
+			break;
+		}
+		common_parent++;
+	}
+
+	common_parent--;
+
+	Vector<String> relpath;
+	relpath.resize(src_dirs.size() + dst_dirs.size() + 1);
+
+	String* relpath_ptr = relpath.ptrw();
+
+	int path_size = 0;
+	String back_str("..");
+	for (int i = common_parent + 1; i < src_dirs.size(); i++) {
+		relpath_ptr[path_size++] = back_str;
+	}
+
+	for (int i = common_parent + 1; i < dst_dirs.size(); i++) {
+		relpath_ptr[path_size++] = dst_dirs[i];
+	}
+
+	if (path_size == 0) {
+		relpath_ptr[path_size++] = ".";
+	}
+
+	relpath.resize(path_size);
+
+	return NodePath(relpath, p_np.get_subnames(), false);
+}
+
+NodePath NodePath::get_as_property_path() const
+{
+	if (!data || !data->path.size()) {
+		return *this;
+	}
+	else {
+		Vector<String> new_path = data->subpath;
+
+		String initial_subname = data->path[0];
+
+		for (int i = 1; i < data->path.size(); i++) {
+			initial_subname += "/" + data->path[i];
+		}
+		new_path.insert(0, initial_subname);
+
+		return NodePath(Vector<String>(), new_path, false);
+	}
+}
+
+bool NodePath::is_empty() const { return !data; }
+
+void NodePath::simplify()
+{
+	if (!data) {
+		return;
+	}
+	_copy_on_write();
+	for (int i = 0; i < data->path.size(); i++) {
+		if (data->path.size() == 1) {
+			break;
+		}
+		if (data->path[i] == ".") {
+			data->path.remove_at(i);
+			i--;
+		}
+		else if (i > 0 && data->path[i] == ".." && data->path[i - 1] != "." &&
+				   data->path[i - 1] != "..") {
+			// remove both
+			data->path.remove_at(i - 1);
+			data->path.remove_at(i - 1);
+			i -= 2;
+			if (data->path.is_empty()) {
+				data->path.push_back(".");
+				break;
+			}
+		}
+	}
+	data->concatenated_path = String();
+	data->hash_cache_valid = false;
+}
+
+NodePath NodePath::simplified() const
+{
+	NodePath np = *this;
+	np.simplify();
+	return np;
+}
+
+NodePath::NodePath(const Vector<String>& p_path, bool p_absolute)
+{
+	if (p_path.is_empty() && !p_absolute) {
+		return;
+	}
+
+	data = memnew(Data);
+	data->refcount.init();
+	data->absolute = p_absolute;
+	data->path = p_path;
+	data->hash_cache_valid = false;
+}
+
+NodePath::NodePath(
+	const Vector<String>& p_path, const Vector<String>& p_subpath, bool p_absolute)
+{
+	if (p_path.is_empty() && p_subpath.is_empty() && !p_absolute) {
+		return;
+	}
+
+	data = memnew(Data);
+	data->refcount.init();
+	data->absolute = p_absolute;
+	data->path = p_path;
+	data->subpath = p_subpath;
+	data->hash_cache_valid = false;
+}
+
+NodePath::NodePath(const NodePath& p_path)
+{
+	if (p_path.data && p_path.data->refcount.ref()) {
+		data = p_path.data;
+	}
+}
+
+NodePath::NodePath(const String& p_path)
+{
+	if (p_path.length() == 0) {
+		return;
+	}
+
+	String path = p_path;
+	Vector<String> subpath;
+
+	bool absolute = (path[0] == '/');
+	bool last_is_slash = true;
+	int slices = 0;
+	int subpath_pos = path.find_char(':');
+
+	if (subpath_pos != -1) {
+		int from = subpath_pos + 1;
+
+		for (int i = from; i <= path.length(); i++) {
+			if (path[i] == ':' || path[i] == 0) {
+				String str = path.substr(from, i - from);
+				if (str.is_empty()) {
+					if (path[i] == 0) {
+						continue; // Allow end-of-path :
+					}
+
+					ERR_FAIL_MSG(vformat("Invalid NodePath '%s'.", p_path));
+				}
+				subpath.push_back(str);
+
+				from = i + 1;
+			}
+		}
+
+		path = path.substr(0, subpath_pos);
+	}
+
+	for (int i = (int)absolute; i < path.length(); i++) {
+		if (path[i] == '/') {
+			last_is_slash = true;
+		}
+		else {
+			if (last_is_slash) {
+				slices++;
+			}
+
+			last_is_slash = false;
+		}
+	}
+
+	if (slices == 0 && !absolute && !subpath.size()) {
+		return;
+	}
+
+	data = memnew(Data);
+	data->refcount.init();
+	data->absolute = absolute;
+	data->subpath = subpath;
+	data->hash_cache_valid = false;
+
+	if (slices == 0) {
+		return;
+	}
+	data->path.resize(slices);
+	last_is_slash = true;
+	int from = (int)absolute;
+	int slice = 0;
+
+	for (int i = (int)absolute; i < path.length() + 1; i++) {
+		if (path[i] == '/' || path[i] == 0) {
+			if (!last_is_slash) {
+				String name = path.substr(from, i - from);
+				ERR_FAIL_INDEX(slice, data->path.size());
+				data->path.write[slice++] = name;
+			}
+			from = i + 1;
+			last_is_slash = true;
+		}
+		else {
+			last_is_slash = false;
+		}
+	}
+}
+
+NodePath::~NodePath() { unref(); }
+
+// ==========================================================================
+// print_string.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include <cstdio>
+#include "core/types.h"
+#include "core/os/os.h"
+#include "core/string/print_string.h"
+
+static PrintHandlerList* print_handler_list = nullptr;
+static thread_local bool is_printing = false;
+
+static void __print_fallback(const String& p_string, bool p_err, bool p_reentrance)
+{
+	if (p_reentrance) {
+		fprintf(p_err ? stderr : stdout,
+			"While attempting to print an error, another error was printed:\n");
+	}
+
+	fprintf(p_err ? stderr : stdout, "%s\n", p_string.utf8().get_data());
+}
+
+void add_print_handler(PrintHandlerList* p_handler)
+{
+	_global_lock();
+	p_handler->next = print_handler_list;
+	print_handler_list = p_handler;
+	_global_unlock();
+}
+
+void remove_print_handler(const PrintHandlerList* p_handler)
+{
+	_global_lock();
+
+	PrintHandlerList* prev = nullptr;
+	PrintHandlerList* l = print_handler_list;
+
+	while (l) {
+		if (l == p_handler) {
+			if (prev) {
+				prev->next = l->next;
+			}
+			else {
+				print_handler_list = l->next;
+			}
+			break;
+		}
+		prev = l;
+		l = l->next;
+	}
+	// OS::print("print handler list is %p\n",print_handler_list);
+
+	_global_unlock();
+	ERR_FAIL_NULL(l);
+}
+
+void __print_line(const String& p_string)
+{
+	if (!CoreGlobals::print_line_enabled) {
+		return;
+	}
+
+	if (!CoreGlobals::print_ready) {
+		__print_fallback(p_string, false, false);
+		return;
+	}
+
+	if (is_printing) {
+		__print_fallback(p_string, false, true);
+		return;
+	}
+
+	is_printing = true;
+
+	OS::print("%s\n", p_string.utf8().get_data());
+
+	_global_lock();
+	PrintHandlerList* l = print_handler_list;
+	while (l) {
+		l->printfunc(l->userdata, p_string, false, false);
+		l = l->next;
+	}
+
+	_global_unlock();
+
+	is_printing = false;
+}
+
+void __print_line_rich(const String& p_string)
+{
+	if (!CoreGlobals::print_line_enabled) {
+		return;
+	}
+
+	// Convert a subset of BBCode tags to ANSI escape codes for correct display in the terminal.
+	// Support of those ANSI escape codes varies across terminal emulators,
+	// especially for italic and strikethrough.
+
+	String output;
+	int pos = 0;
+	bool in_named_url = false;
+	while (pos <= p_string.length()) {
+		int brk_pos = p_string.find_char('[', pos);
+
+		if (brk_pos < 0) {
+			brk_pos = p_string.length();
+		}
+
+		String txt = brk_pos > pos ? p_string.substr(pos, brk_pos - pos) : "";
+		if (brk_pos == p_string.length()) {
+			output += txt;
+			break;
+		}
+
+		int brk_end = p_string.find_char(']', brk_pos + 1);
+
+		if (brk_end == -1) {
+			txt += p_string.substr(brk_pos);
+			output += txt;
+			break;
+		}
+		pos = brk_end + 1;
+		output += txt;
+
+		String tag = p_string.substr(brk_pos + 1, brk_end - brk_pos - 1);
+		if (tag == "b") {
+			output += "\u001b[1m";
+		}
+		else if (tag == "/b") {
+			output += "\u001b[22m";
+		}
+		else if (tag == "i") {
+			output += "\u001b[3m";
+		}
+		else if (tag == "/i") {
+			output += "\u001b[23m";
+		}
+		else if (tag == "u") {
+			output += "\u001b[4m";
+		}
+		else if (tag == "/u") {
+			output += "\u001b[24m";
+		}
+		else if (tag == "s") {
+			output += "\u001b[9m";
+		}
+		else if (tag == "/s") {
+			output += "\u001b[29m";
+		}
+		else if (tag == "indent") {
+			output += "    ";
+		}
+		else if (tag == "/indent") {
+			output += "";
+		}
+		else if (tag == "code") {
+			output += "\u001b[2m";
+		}
+		else if (tag == "/code") {
+			output += "\u001b[22m";
+		}
+		else if (tag.begins_with("url=")) {
+			// Support named URLs using OSC 8 escape codes:
+			// <https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda>
+			in_named_url = true;
+			const String url_link = tag.substr(strlen("url="));
+			output += vformat("\u001b]8;;%s\u001b\\", url_link);
+		}
+		else if (tag == "url") {
+			output += "";
+		}
+		else if (tag == "/url") {
+			if (in_named_url) {
+				output += "\u001b]8;;\u001b\\";
+				in_named_url = false;
+			}
+			else {
+				// While it's legal to close an URL that was never opened using OSC 8 escape codes,
+				// it would result in the code being printed to unsupported terminal emulators
+				// when using unnamed URLs.
+				output += "";
+			}
+		}
+		else if (tag == "center") {
+			output += "\n\t\t\t";
+		}
+		else if (tag == "/center") {
+			output += "";
+		}
+		else if (tag == "right") {
+			output += "\n\t\t\t\t\t\t";
+		}
+		else if (tag == "/right") {
+			output += "";
+		}
+		else if (tag.begins_with("color=")) {
+			String color_name = tag.trim_prefix("color=");
+			if (color_name == "black") {
+				output += "\u001b[30m";
+			}
+			else if (color_name == "red") {
+				output += "\u001b[91m";
+			}
+			else if (color_name == "green") {
+				output += "\u001b[92m";
+			}
+			else if (color_name == "lime") {
+				output += "\u001b[92m";
+			}
+			else if (color_name == "yellow") {
+				output += "\u001b[93m";
+			}
+			else if (color_name == "blue") {
+				output += "\u001b[94m";
+			}
+			else if (color_name == "magenta") {
+				output += "\u001b[95m";
+			}
+			else if (color_name == "pink") {
+				output += "\u001b[38;5;218m";
+			}
+			else if (color_name == "purple") {
+				output += "\u001b[38;5;98m";
+			}
+			else if (color_name == "cyan") {
+				output += "\u001b[96m";
+			}
+			else if (color_name == "white") {
+				output += "\u001b[97m";
+			}
+			else if (color_name == "orange") {
+				output += "\u001b[38;5;208m";
+			}
+			else if (color_name == "gray") {
+				output += "\u001b[90m";
+			}
+			else {
+				Color c = Color::from_string(color_name, Color());
+				output += vformat("\u001b[38;2;%d;%d;%dm", c.r * 255, c.g * 255, c.b * 255);
+			}
+		}
+		else if (tag == "/color") {
+			output += "\u001b[39m";
+		}
+		else if (tag.begins_with("bgcolor=")) {
+			String color_name = tag.trim_prefix("bgcolor=");
+			if (color_name == "black") {
+				output += "\u001b[40m";
+			}
+			else if (color_name == "red") {
+				output += "\u001b[101m";
+			}
+			else if (color_name == "green") {
+				output += "\u001b[102m";
+			}
+			else if (color_name == "lime") {
+				output += "\u001b[102m";
+			}
+			else if (color_name == "yellow") {
+				output += "\u001b[103m";
+			}
+			else if (color_name == "blue") {
+				output += "\u001b[104m";
+			}
+			else if (color_name == "magenta") {
+				output += "\u001b[105m";
+			}
+			else if (color_name == "pink") {
+				output += "\u001b[48;5;218m";
+			}
+			else if (color_name == "purple") {
+				output += "\u001b[48;5;98m";
+			}
+			else if (color_name == "cyan") {
+				output += "\u001b[106m";
+			}
+			else if (color_name == "white") {
+				output += "\u001b[107m";
+			}
+			else if (color_name == "orange") {
+				output += "\u001b[48;5;208m";
+			}
+			else if (color_name == "gray") {
+				output += "\u001b[100m";
+			}
+			else {
+				Color c = Color::from_string(color_name, Color());
+				output += vformat("\u001b[48;2;%d;%d;%dm", c.r * 255, c.g * 255, c.b * 255);
+			}
+		}
+		else if (tag == "/bgcolor") {
+			output += "\u001b[49m";
+		}
+		else if (tag.begins_with("fgcolor=")) {
+			String color_name = tag.trim_prefix("fgcolor=");
+			if (color_name == "black") {
+				output += "\u001b[30;40m";
+			}
+			else if (color_name == "red") {
+				output += "\u001b[91;101m";
+			}
+			else if (color_name == "green") {
+				output += "\u001b[92;102m";
+			}
+			else if (color_name == "lime") {
+				output += "\u001b[92;102m";
+			}
+			else if (color_name == "yellow") {
+				output += "\u001b[93;103m";
+			}
+			else if (color_name == "blue") {
+				output += "\u001b[94;104m";
+			}
+			else if (color_name == "magenta") {
+				output += "\u001b[95;105m";
+			}
+			else if (color_name == "pink") {
+				output += "\u001b[38;5;218;48;5;218m";
+			}
+			else if (color_name == "purple") {
+				output += "\u001b[38;5;98;48;5;98m";
+			}
+			else if (color_name == "cyan") {
+				output += "\u001b[96;106m";
+			}
+			else if (color_name == "white") {
+				output += "\u001b[97;107m";
+			}
+			else if (color_name == "orange") {
+				output += "\u001b[38;5;208;48;5;208m";
+			}
+			else if (color_name == "gray") {
+				output += "\u001b[90;100m";
+			}
+			else {
+				Color c = Color::from_string(color_name, Color());
+				output += vformat("\u001b[38;2;%d;%d;%d;48;2;%d;%d;%dm", c.r * 255, c.g * 255,
+					c.b * 255, c.r * 255, c.g * 255, c.b * 255);
+			}
+		}
+		else if (tag == "/fgcolor") {
+			output += "\u001b[39;49m";
+		}
+		else {
+			output += "[";
+			pos = brk_pos + 1;
+		}
+	}
+	output += "\u001b[0m"; // Reset.
+
+	if (!CoreGlobals::print_ready) {
+		__print_fallback(output, false, false);
+		return;
+	}
+
+	if (is_printing) {
+		__print_fallback(output, false, true);
+		return;
+	}
+
+	is_printing = true;
+
+	OS::print_rich("%s\n", output.utf8().get_data());
+
+	_global_lock();
+	PrintHandlerList* l = print_handler_list;
+	while (l) {
+		l->printfunc(l->userdata, p_string, false, true);
+		l = l->next;
+	}
+
+	_global_unlock();
+
+	is_printing = false;
+}
+
+void print_raw(const String& p_string)
+{
+	if (!CoreGlobals::print_ready) {
+		__print_fallback(p_string, false, false);
+		return;
+	}
+
+	if (is_printing) {
+		__print_fallback(p_string, true, true);
+		return;
+	}
+
+	is_printing = true;
+
+	OS::print("%s", p_string.utf8().get_data());
+
+	is_printing = false;
+}
+
+void print_error(const String& p_string)
+{
+	if (!CoreGlobals::print_error_enabled) {
+		return;
+	}
+
+	if (!CoreGlobals::print_ready) {
+		__print_fallback(p_string, false, false);
+		return;
+	}
+
+	if (is_printing) {
+		__print_fallback(p_string, true, true);
+		return;
+	}
+
+	is_printing = true;
+
+	OS::printerr("%s\n", p_string.utf8().get_data());
+
+	_global_lock();
+	PrintHandlerList* l = print_handler_list;
+	while (l) {
+		l->printfunc(l->userdata, p_string, true, false);
+		l = l->next;
+	}
+
+	_global_unlock();
+
+	is_printing = false;
+}
+
+bool is_print_verbose_enabled() { return OS::is_stdout_verbose(); }
+
+// ==========================================================================
+// string_builder.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "core/string/ustring.h"
+
+StringBuilder &StringBuilder::append(const String &p_string) {
+	if (p_string.is_empty()) {
+		return *this;
+	}
+
+	strings.push_back(p_string);
+	appended_strings.push_back(-1);
+
+	string_length += p_string.length();
+
+	return *this;
+}
+
+StringBuilder &StringBuilder::append(const char *p_cstring) {
+	int32_t len = strlen(p_cstring);
+
+	c_strings.push_back(p_cstring);
+	appended_strings.push_back(len);
+
+	string_length += len;
+
+	return *this;
+}
+
+String StringBuilder::as_string() const {
+	if (string_length == 0) {
+		return "";
+	}
+
+	String string;
+	string.resize_uninitialized(string_length + 1);
+	char32_t *buffer = string.ptrw();
+
+	int current_position = 0;
+
+	int godot_string_elem = 0;
+	int c_string_elem = 0;
+
+	for (uint32_t i = 0; i < appended_strings.size(); i++) {
+		const int32_t str_len = appended_strings[i];
+
+		if (str_len == -1) {
+			// Godot string
+			const String &s = strings[godot_string_elem];
+
+			memcpy(buffer + current_position, s.ptr(), s.length() * sizeof(char32_t));
+
+			current_position += s.length();
+
+			godot_string_elem++;
+		} else {
+			const char *s = c_strings[c_string_elem];
+
+			for (int32_t j = 0; j < str_len; j++) {
+				buffer[current_position + j] = s[j];
+			}
+
+			current_position += str_len;
+
+			c_string_elem++;
+		}
+	}
+	buffer[current_position] = 0;
+
+	return string;
+}
+
+// ==========================================================================
+// fuzzy_search.cpp
+// ==========================================================================
+
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "core/string/translation_server.h"
+
+static const String boundary_chars = "/\\-_. ";
+
+static bool _is_valid_interval(const Vector2i& p_interval)
+{
+	// Empty intervals are represented as (-1, -1).
+	return p_interval.x >= 0 && p_interval.y >= p_interval.x;
+}
+
+static Vector2i _extend_interval(const Vector2i& p_a, const Vector2i& p_b)
+{
+	if (!_is_valid_interval(p_a)) {
+		return p_b;
+	}
+	if (!_is_valid_interval(p_b)) {
+		return p_a;
+	}
+	return Vector2i(MIN(p_a.x, p_b.x), MAX(p_a.y, p_b.y));
+}
+
+static bool _is_word_boundary(const String& p_str, int p_index)
+{
+	if (p_index == -1 || p_index == p_str.size()) {
+		return true;
+	}
+	return boundary_chars.find_char(p_str[p_index]) != -1;
+}
+
+bool FuzzySearchToken::try_exact_match(
+	FuzzyTokenMatch& p_match, const String& p_target, int p_offset) const
+{
+	p_match.token_idx = idx;
+	p_match.token_length = string.length();
+	int match_idx = p_target.find(string, p_offset);
+	if (match_idx == -1) {
+		return false;
+	}
+	p_match.add_substring(match_idx, string.length());
+	return true;
+}
+
+bool FuzzySearchToken::try_fuzzy_match(
+	FuzzyTokenMatch& p_match, const String& p_target, int p_offset, int p_miss_budget) const
+{
+	p_match.token_idx = idx;
+	p_match.token_length = string.length();
+	int run_start = -1;
+	int run_len = 0;
+
+	// Search for the subsequence p_token in p_target starting from p_offset, recording each
+	// substring for later scoring and display.
+	for (int i = 0; i < string.length(); i++) {
+		int new_offset = p_target.find_char(string[i], p_offset);
+		if (new_offset < 0) {
+			p_miss_budget--;
+			if (p_miss_budget < 0) {
+				return false;
+			}
+		}
+		else {
+			if (run_start == -1 || p_offset != new_offset) {
+				if (run_start != -1) {
+					p_match.add_substring(run_start, run_len);
+				}
+				run_start = new_offset;
+				run_len = 1;
+			}
+			else {
+				run_len += 1;
+			}
+			p_offset = new_offset + 1;
+		}
+	}
+
+	if (run_start != -1) {
+		p_match.add_substring(run_start, run_len);
+	}
+
+	return true;
+}
+
+void FuzzyTokenMatch::add_substring(int p_substring_start, int p_substring_length)
+{
+	substrings.append(Vector2i(p_substring_start, p_substring_length));
+	matched_length += p_substring_length;
+	Vector2i substring_interval = {p_substring_start, p_substring_start + p_substring_length - 1};
+	interval = _extend_interval(interval, substring_interval);
+}
+
+bool FuzzyTokenMatch::intersects(const Vector2i& p_other_interval) const
+{
+	if (!_is_valid_interval(interval) || !_is_valid_interval(p_other_interval)) {
+		return false;
+	}
+	return interval.y >= p_other_interval.x && interval.x <= p_other_interval.y;
+}
+
+bool FuzzySearchMatch::_can_add_token_match(const FuzzyTokenMatch& p_match) const
+{
+	if (p_match.get_miss_count() > miss_budget) {
+		return false;
+	}
+
+	if (p_match.intersects(match_interval)) {
+		if (token_matches.size() == 1) {
+			return false;
+		}
+		for (const FuzzyTokenMatch& existing_match : token_matches) {
+			if (existing_match.intersects(p_match.interval)) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool FuzzyTokenMatch::is_case_insensitive(const String& p_original, const String& p_adjusted) const
+{
+	for (const Vector2i& substr : substrings) {
+		const int end = substr.x + substr.y;
+		for (int i = substr.x; i < end; i++) {
+			if (p_original[i] != p_adjusted[i]) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void FuzzySearchMatch::_score_token_match(FuzzyTokenMatch& p_match, bool p_case_insensitive) const
+{
+	// This can always be tweaked more. The intuition is that exact matches should almost always
+	// be prioritized over broken up matches, and other criteria more or less act as tie breakers.
+
+	p_match.score = -20 * p_match.get_miss_count() - (p_case_insensitive ? 3 : 0);
+
+	for (const Vector2i& substring : p_match.substrings) {
+		// Score longer substrings higher than short substrings.
+		int substring_score = substring.y * substring.y;
+		// Score matches deeper in path higher than shallower matches
+		if (substring.x > dir_index) {
+			substring_score *= 2;
+		}
+		// Score matches on a word boundary higher than matches within a word
+		if (_is_word_boundary(target, substring.x - 1) ||
+			_is_word_boundary(target, substring.x + substring.y)) {
+			substring_score += 4;
+		}
+		// Score exact query matches higher than non-compact subsequence matches
+		if (substring.y == p_match.token_length) {
+			substring_score += 100;
+		}
+		p_match.score += substring_score;
+	}
+}
+
+void FuzzySearchMatch::_maybe_apply_token_order_score_bonus()
+{
+	// This adds a small bonus to results which match tokens in the same order they appear in the
+	// query.
+	if (token_matches.is_empty()) {
+		return;
+	}
+
+	int* token_range_starts = (int*)alloca(sizeof(int) * token_matches.size());
+
+	for (const FuzzyTokenMatch& match : token_matches) {
+		token_range_starts[match.token_idx] = match.interval.x;
+	}
+
+	for (int i = 1; i < token_matches.size(); i++) {
+		// Individual tokens can match without a range if the missed-character budget allows for it.
+		// If the i'th token matches in this manner, skip ahead so we check neither (i-1, i) nor (i,
+		// i+1). It's safe that this skips i=0 since any valid start will be > -1.
+		if (token_range_starts[i] == -1) {
+			i++;
+			continue;
+		}
+		if (token_range_starts[i - 1] > token_range_starts[i]) {
+			return;
+		}
+	}
+
+	score += 1;
+}
+
+void FuzzySearchMatch::_add_token_match(const FuzzyTokenMatch& p_match)
+{
+	score += p_match.score;
+	match_interval = _extend_interval(match_interval, p_match.interval);
+	miss_budget -= p_match.get_miss_count();
+	token_matches.append(p_match);
+}
+
+static void remove_low_scores(Vector<Ref<FuzzySearchMatch>>& p_results, float p_cull_score)
+{
+	// Removes all results with score < p_cull_score in-place.
+	int i = 0;
+	int j = p_results.size() - 1;
+	Ref<FuzzySearchMatch>* results = p_results.ptrw();
+
+	while (true) {
+		// Advances i to an element to remove and j to an element to keep.
+		while (j >= i && results[j]->get_score() < p_cull_score) {
+			j--;
+		}
+		while (i < j && results[i]->get_score() >= p_cull_score) {
+			i++;
+		}
+		if (i >= j) {
+			break;
+		}
+		results[i++] = results[j--];
+	}
+
+	p_results.resize(j + 1);
+}
+
+Vector<FuzzySearchToken> FuzzySearch::_get_tokens(const String& p_query) const
+{
+	Vector<FuzzySearchToken> tokens;
+
+	for (const String& string : p_query.split(" ", false)) {
+		tokens.append({
+			static_cast<int>(tokens.size()),
+			case_sensitive ? string : string.to_lower(),
+		});
+	}
+
+	struct TokenComparator
+	{
+		bool operator()(const FuzzySearchToken& p_left, const FuzzySearchToken& p_right) const
+		{
+			if (p_left.string.length() == p_right.string.length()) {
+				return p_left.idx < p_right.idx;
+			}
+			return p_left.string.length() > p_right.string.length();
+		}
+	};
+
+	// Prioritize matching longer tokens before shorter ones since match overlaps are not accepted.
+	tokens.sort_custom<TokenComparator>();
+	return tokens;
+}
+
+void FuzzySearch::_sort_and_filter(Vector<Ref<FuzzySearchMatch>>& p_results) const
+{
+	if (p_results.is_empty()) {
+		return;
+	}
+
+	if (filter_low_scores) {
+		float avg_score = 0;
+		float max_score = 0;
+
+		for (const Ref<FuzzySearchMatch>& result : p_results) {
+			avg_score += result->get_score();
+			max_score = MAX(max_score, result->get_score());
+		}
+
+		avg_score /= p_results.size();
+		float cull_score = MIN(filter_cutoff, Math::lerp(avg_score, max_score, filter_factor));
+		remove_low_scores(p_results, cull_score);
+	}
+
+	struct FuzzySearchResultComparator
+	{
+		bool operator()(
+			const Ref<FuzzySearchMatch>& p_lhs, const Ref<FuzzySearchMatch>& p_rhs) const
+		{
+			// Sort on (score, length, alphanumeric) to ensure consistent ordering.
+			if (p_lhs->score == p_rhs->score) {
+				if (p_lhs->target.length() == p_rhs->target.length()) {
+					return p_lhs->target < p_rhs->target;
+				}
+				return p_lhs->target.length() < p_rhs->target.length();
+			}
+			return p_lhs->score > p_rhs->score;
+		}
+	};
+
+	SortArray<Ref<FuzzySearchMatch>, FuzzySearchResultComparator> sorter;
+
+	if (p_results.size() > max_results) {
+		sorter.partial_sort(0, p_results.size(), max_results, p_results.ptrw());
+		p_results.resize(max_results);
+	}
+	else {
+		sorter.sort(p_results.ptrw(), p_results.size());
+	}
+}
+
+void FuzzySearch::set_case_sensitive(bool p_case_sensitive) { case_sensitive = p_case_sensitive; }
+
+bool FuzzySearch::_search_tokens(const Vector<FuzzySearchToken>& p_tokens, const String& p_target,
+	Ref<FuzzySearchMatch>& r_result) const
+{
+	r_result->target = p_target;
+	r_result->dir_index = p_target.rfind_char('/');
+	r_result->miss_budget = max_misses;
+	r_result->token_matches.reserve(p_tokens.size());
+
+	String adjusted_target = case_sensitive ? p_target : p_target.to_lower();
+
+	// For each token, eagerly generate subsequences starting from index 0 and keep the best scoring
+	// one which does not conflict with prior token matches. This is not ensured to find the highest
+	// scoring combination of matches, or necessarily the highest scoring single subsequence, as it
+	// only considers eager subsequences for a given index, and likewise eagerly finds matches for
+	// each token in sequence.
+	for (const FuzzySearchToken& token : p_tokens) {
+		FuzzyTokenMatch best_match;
+		int offset = start_offset;
+
+		while (true) {
+			FuzzyTokenMatch match;
+			if (exact_token_matches) {
+				if (!token.try_exact_match(match, adjusted_target, offset)) {
+					break;
+				}
+			}
+			else {
+				if (!token.try_fuzzy_match(match, adjusted_target, offset, r_result->miss_budget)) {
+					break;
+				}
+			}
+			if (r_result->_can_add_token_match(match)) {
+				r_result->_score_token_match(
+					match, match.is_case_insensitive(p_target, adjusted_target));
+				if (best_match.token_idx == -1 || best_match.score < match.score) {
+					best_match = match;
+				}
+			}
+			if (_is_valid_interval(match.interval)) {
+				offset = match.interval.x + 1;
+			}
+			else {
+				break;
+			}
+		}
+
+		if (best_match.token_idx == -1) {
+			return false;
+		}
+
+		r_result->_add_token_match(best_match);
+	}
+
+	if (r_result->match_interval.x == -1) {
+		// Reject matches which rely entirely on misses.
+		return false;
+	}
+
+	r_result->_maybe_apply_token_order_score_bonus();
+	return true;
+}
+
+Ref<FuzzySearchMatch> FuzzySearch::search(const String& p_query, const String& p_target) const
+{
+	Ref<FuzzySearchMatch> result;
+	result.instantiate();
+	if (_search_tokens(_get_tokens(p_query), p_target, result)) {
+		return result;
+	}
+	return nullptr;
+}
+
+Vector<Ref<FuzzySearchMatch>> FuzzySearch::search_all(
+	const String& p_query, const PackedStringArray& p_targets) const
+{
+	Vector<Ref<FuzzySearchMatch>> results;
+	const Vector<FuzzySearchToken> tokens = _get_tokens(p_query);
+
+	for (int i = 0; i < p_targets.size(); i++) {
+		Ref<FuzzySearchMatch> result;
+		result.instantiate();
+		result->original_index = i;
+		if (_search_tokens(tokens, p_targets[i], result)) {
+			results.append(result);
+		}
+	}
+
+	_sort_and_filter(results);
+	return results;
 }

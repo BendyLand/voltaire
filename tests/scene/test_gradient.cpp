@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_gradient)
 
-#include "scene/resources/gradient.h"
+#include "scene/resources/material.h"
 
 namespace TestGradient {
 

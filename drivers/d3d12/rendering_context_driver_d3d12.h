@@ -33,11 +33,11 @@
 // --- Folded from drivers/d3d12/rendering_device_driver_d3d12.h ---
 #include "core/templates/a_hash_map.h"
 #include "core/templates/hash_map.h"
-#include "core/templates/paged_allocator.h"
+#include "core/types.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/self_list.h"
 // --- Folded from drivers/d3d12/rendering_shader_container_d3d12.h ---
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
 
 #define NIR_ENABLED 1
 
@@ -253,7 +253,7 @@ public:
 
 
 // --- End drivers/d3d12/rendering_shader_container_d3d12.h ---
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
 
 // --- Inlined/Folded from drivers/d3d12/godot_d3dx12.h ---
 #include "core/typedefs.h"
@@ -1210,8 +1210,8 @@ public:
 };
 
 // --- End drivers/d3d12/rendering_device_driver_d3d12.h ---
-#include "servers/display/display_server_enums.h"
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/rendering_device.h"
 
 
 

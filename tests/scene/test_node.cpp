@@ -34,11 +34,11 @@
 TEST_FORCE_LINK(test_node)
 
 #include "core/io/file_access.h"
-#include "core/io/resource_saver.h"
+#include "core/io/resource_loader.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/resources/packed_scene.h"
+#include "scene/main/node.h"
 #include "tests/test_utils.h"
 
 namespace TestNode {

@@ -32,20 +32,17 @@
 #pragma once
 
 #include "core/math/aabb.h"
-#include "core/math/transform_3d.h"
+#include "core/types.h"
 #include "core/math/vector3.h"
-#include "core/templates/paged_allocator.h"
-#include "core/templates/rid.h"
+#include "core/types.h"
+#include "core/templates/hashfuncs.h"
 #include "core/templates/rid_owner.h"
 #include "core/types.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 
 class DependencyTracker;
 class Image;

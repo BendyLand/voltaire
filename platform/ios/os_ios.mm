@@ -29,9 +29,171 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "os_ios.h"
+// --- Inlined from platform/ios/os_ios.h ---
+#ifdef IOS_ENABLED
 
-#import "platform/ios/os_ios.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_IOS final
+{
+public:
+	OS_IOS() = delete;
+	~OS_IOS() = delete;
+	OS_IOS(const OS_IOS&) = delete;
+	OS_IOS& operator=(const OS_IOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // IOS_ENABLED
+
+// --- Folded from platform/ios/display_server_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerIOS final : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerIOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerIOS();
+
+public:
+	static void register_ios_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/ios/device_metrics.h ---
+#import <Foundation/Foundation.h>
+
+@interface GDTDeviceMetrics : NSObject
+
+@property(nonatomic, class, readonly, strong) NSDictionary<NSArray *, NSNumber *> *dpiList;
+
+@end
+
+// --- Folded from platform/ios/display_layer_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+#if defined(GLES3_ENABLED)
+#import <OpenGLES/EAGLDrawable.h>
+#endif
+#import <QuartzCore/QuartzCore.h>
+
+// An ugly workaround for iOS simulator
+#if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#if defined(__IPHONE_13_0)
+API_AVAILABLE(ios(13.0))
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#else
+@interface GDTMetalLayer : CALayer <GDTDisplayLayer>
+#endif
+#else
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#endif
+@end
+
+#if defined(GLES3_ENABLED)
+API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
+@interface GDTOpenGLLayer : CAEAGLLayer <GDTDisplayLayer>
+
+@end
+#endif
+// --- End platform/ios/os_ios.h ---
+
+// --- Inlined from platform/ios/os_ios.h ---
+#ifdef IOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_IOS final
+{
+public:
+	OS_IOS() = delete;
+	~OS_IOS() = delete;
+	OS_IOS(const OS_IOS&) = delete;
+	OS_IOS& operator=(const OS_IOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // IOS_ENABLED
+
+// --- Folded from platform/ios/display_server_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerIOS final : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerIOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerIOS();
+
+public:
+	static void register_ios_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/ios/device_metrics.h ---
+#import <Foundation/Foundation.h>
+
+@interface GDTDeviceMetrics : NSObject
+
+@property(nonatomic, class, readonly, strong) NSDictionary<NSArray *, NSNumber *> *dpiList;
+
+@end
+
+// --- Folded from platform/ios/display_layer_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+#if defined(GLES3_ENABLED)
+#import <OpenGLES/EAGLDrawable.h>
+#endif
+#import <QuartzCore/QuartzCore.h>
+
+// An ugly workaround for iOS simulator
+#if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#if defined(__IPHONE_13_0)
+API_AVAILABLE(ios(13.0))
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#else
+@interface GDTMetalLayer : CALayer <GDTDisplayLayer>
+#endif
+#else
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#endif
+@end
+
+#if defined(GLES3_ENABLED)
+API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
+@interface GDTOpenGLLayer : CAEAGLLayer <GDTDisplayLayer>
+
+@end
+#endif
+// --- End platform/ios/os_ios.h ---
 
 #ifdef IOS_ENABLED
 
@@ -79,7 +241,88 @@ String OS::get_name() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/ios/os_ios.h"
+// --- Inlined from platform/ios/os_ios.h ---
+#ifdef IOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_IOS final
+{
+public:
+	OS_IOS() = delete;
+	~OS_IOS() = delete;
+	OS_IOS(const OS_IOS&) = delete;
+	OS_IOS& operator=(const OS_IOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // IOS_ENABLED
+
+// --- Folded from platform/ios/display_server_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerIOS final : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerIOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerIOS();
+
+public:
+	static void register_ios_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/ios/device_metrics.h ---
+#import <Foundation/Foundation.h>
+
+@interface GDTDeviceMetrics : NSObject
+
+@property(nonatomic, class, readonly, strong) NSDictionary<NSArray *, NSNumber *> *dpiList;
+
+@end
+
+// --- Folded from platform/ios/display_layer_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+#if defined(GLES3_ENABLED)
+#import <OpenGLES/EAGLDrawable.h>
+#endif
+#import <QuartzCore/QuartzCore.h>
+
+// An ugly workaround for iOS simulator
+#if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#if defined(__IPHONE_13_0)
+API_AVAILABLE(ios(13.0))
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#else
+@interface GDTMetalLayer : CALayer <GDTDisplayLayer>
+#endif
+#else
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#endif
+@end
+
+#if defined(GLES3_ENABLED)
+API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
+@interface GDTOpenGLLayer : CAEAGLLayer <GDTDisplayLayer>
+
+@end
+#endif
+// --- End platform/ios/os_ios.h ---
 
 @implementation GDTDeviceMetrics
 
@@ -307,7 +550,88 @@ String OS::get_name() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/ios/os_ios.h"
+// --- Inlined from platform/ios/os_ios.h ---
+#ifdef IOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_IOS final
+{
+public:
+	OS_IOS() = delete;
+	~OS_IOS() = delete;
+	OS_IOS(const OS_IOS&) = delete;
+	OS_IOS& operator=(const OS_IOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // IOS_ENABLED
+
+// --- Folded from platform/ios/display_server_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerIOS final : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerIOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerIOS();
+
+public:
+	static void register_ios_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/ios/device_metrics.h ---
+#import <Foundation/Foundation.h>
+
+@interface GDTDeviceMetrics : NSObject
+
+@property(nonatomic, class, readonly, strong) NSDictionary<NSArray *, NSNumber *> *dpiList;
+
+@end
+
+// --- Folded from platform/ios/display_layer_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+#if defined(GLES3_ENABLED)
+#import <OpenGLES/EAGLDrawable.h>
+#endif
+#import <QuartzCore/QuartzCore.h>
+
+// An ugly workaround for iOS simulator
+#if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#if defined(__IPHONE_13_0)
+API_AVAILABLE(ios(13.0))
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#else
+@interface GDTMetalLayer : CALayer <GDTDisplayLayer>
+#endif
+#else
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#endif
+@end
+
+#if defined(GLES3_ENABLED)
+API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
+@interface GDTOpenGLLayer : CAEAGLLayer <GDTDisplayLayer>
+
+@end
+#endif
+// --- End platform/ios/os_ios.h ---
 
 
 #include "core/config/project_settings.h"
@@ -500,7 +824,88 @@ String OS::get_name() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/ios/os_ios.h"
+// --- Inlined from platform/ios/os_ios.h ---
+#ifdef IOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_IOS final
+{
+public:
+	OS_IOS() = delete;
+	~OS_IOS() = delete;
+	OS_IOS(const OS_IOS&) = delete;
+	OS_IOS& operator=(const OS_IOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // IOS_ENABLED
+
+// --- Folded from platform/ios/display_server_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerIOS final : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerIOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerIOS();
+
+public:
+	static void register_ios_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/ios/device_metrics.h ---
+#import <Foundation/Foundation.h>
+
+@interface GDTDeviceMetrics : NSObject
+
+@property(nonatomic, class, readonly, strong) NSDictionary<NSArray *, NSNumber *> *dpiList;
+
+@end
+
+// --- Folded from platform/ios/display_layer_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+#if defined(GLES3_ENABLED)
+#import <OpenGLES/EAGLDrawable.h>
+#endif
+#import <QuartzCore/QuartzCore.h>
+
+// An ugly workaround for iOS simulator
+#if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#if defined(__IPHONE_13_0)
+API_AVAILABLE(ios(13.0))
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#else
+@interface GDTMetalLayer : CALayer <GDTDisplayLayer>
+#endif
+#else
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#endif
+@end
+
+#if defined(GLES3_ENABLED)
+API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
+@interface GDTOpenGLLayer : CAEAGLLayer <GDTDisplayLayer>
+
+@end
+#endif
+// --- End platform/ios/os_ios.h ---
 
 
 #import <UIKit/UIKit.h>
@@ -645,7 +1050,88 @@ float DisplayServerIOS::_screen_current_edr_headroom() const {
 
 @end
 
-#import "platform/ios/os_ios.h"
+// --- Inlined from platform/ios/os_ios.h ---
+#ifdef IOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_IOS final
+{
+public:
+	OS_IOS() = delete;
+	~OS_IOS() = delete;
+	OS_IOS(const OS_IOS&) = delete;
+	OS_IOS& operator=(const OS_IOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // IOS_ENABLED
+
+// --- Folded from platform/ios/display_server_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerIOS final : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerIOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerIOS();
+
+public:
+	static void register_ios_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/ios/device_metrics.h ---
+#import <Foundation/Foundation.h>
+
+@interface GDTDeviceMetrics : NSObject
+
+@property(nonatomic, class, readonly, strong) NSDictionary<NSArray *, NSNumber *> *dpiList;
+
+@end
+
+// --- Folded from platform/ios/display_layer_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+#if defined(GLES3_ENABLED)
+#import <OpenGLES/EAGLDrawable.h>
+#endif
+#import <QuartzCore/QuartzCore.h>
+
+// An ugly workaround for iOS simulator
+#if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#if defined(__IPHONE_13_0)
+API_AVAILABLE(ios(13.0))
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#else
+@interface GDTMetalLayer : CALayer <GDTDisplayLayer>
+#endif
+#else
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#endif
+@end
+
+#if defined(GLES3_ENABLED)
+API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
+@interface GDTOpenGLLayer : CAEAGLLayer <GDTDisplayLayer>
+
+@end
+#endif
+// --- End platform/ios/os_ios.h ---
 
 #include "core/config/project_settings.h"
 #include "core/error/error_macros.h"
@@ -739,7 +1225,88 @@ GDTView *GDTViewCreate() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/ios/os_ios.h"
+// --- Inlined from platform/ios/os_ios.h ---
+#ifdef IOS_ENABLED
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+class OS_IOS final
+{
+public:
+	OS_IOS() = delete;
+	~OS_IOS() = delete;
+	OS_IOS(const OS_IOS&) = delete;
+	OS_IOS& operator=(const OS_IOS&) = delete;
+
+	static void setup();
+	static String get_name();
+};
+
+#endif // IOS_ENABLED
+
+// --- Folded from platform/ios/display_server_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+class DisplayServerIOS final : public DisplayServerAppleEmbedded {
+
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerIOS(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerIOS();
+
+public:
+	static void register_ios_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+
+	virtual String get_name() const override;
+
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+protected:
+	virtual bool _screen_hdr_is_supported() const override;
+	virtual float _screen_potential_edr_headroom() const override;
+	virtual float _screen_current_edr_headroom() const override;
+};
+
+// --- Folded from platform/ios/device_metrics.h ---
+#import <Foundation/Foundation.h>
+
+@interface GDTDeviceMetrics : NSObject
+
+@property(nonatomic, class, readonly, strong) NSDictionary<NSArray *, NSNumber *> *dpiList;
+
+@end
+
+// --- Folded from platform/ios/display_layer_ios.h ---
+#include "drivers/apple_embedded/os_apple_embedded.h"
+
+#if defined(GLES3_ENABLED)
+#import <OpenGLES/EAGLDrawable.h>
+#endif
+#import <QuartzCore/QuartzCore.h>
+
+// An ugly workaround for iOS simulator
+#if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#if defined(__IPHONE_13_0)
+API_AVAILABLE(ios(13.0))
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#else
+@interface GDTMetalLayer : CALayer <GDTDisplayLayer>
+#endif
+#else
+@interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
+#endif
+@end
+
+#if defined(GLES3_ENABLED)
+API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
+@interface GDTOpenGLLayer : CAEAGLLayer <GDTDisplayLayer>
+
+@end
+#endif
+// --- End platform/ios/os_ios.h ---
 
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"

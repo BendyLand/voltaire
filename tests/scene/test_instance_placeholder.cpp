@@ -35,10 +35,9 @@ TEST_FORCE_LINK(test_instance_placeholder)
 
 #include "core/io/dir_access.h"
 #include "core/io/resource_loader.h"
-#include "core/io/resource_saver.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/resources/packed_scene.h"
+#include "scene/main/node.h"
 #include "tests/test_utils.h"
 
 namespace TestInstancePlaceholder {

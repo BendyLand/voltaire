@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_parallax_2d)
 
-#include "scene/2d/line_2d.h"
+#include "scene/2d/node_2d.h"
 
 // Test cases for the Parallax2D class to ensure its properties are set and retrieved correctly.
 

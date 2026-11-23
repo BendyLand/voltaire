@@ -34,9 +34,31 @@
 #ifdef EGL_ENABLED
 
 #include "core/templates/local_vector.h"
-#include "servers/display/display_server_enums.h"
-
-#include <platform_egl.h>
+#include "servers/display/display_server.h"
+// --- Unified from platform/*/platform_egl.h ---
+#if defined(ANDROID_ENABLED)
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#elif defined(LINUXBSD_ENABLED)
+#include <thirdparty/glad/glad/egl.h>
+#elif defined(WINDOWS_ENABLED)
+#if defined(ANGLE_ENABLED) && defined(EGL_STATIC)
+#define KHRONOS_STATIC 1
+#undef KHRONOS_APICALL
+#define KHRONOS_APICALL
+#include <thirdparty/angle/include/EGL/egl.h>
+#include <thirdparty/angle/include/EGL/eglext.h>
+#undef KHRONOS_STATIC
+#endif
+#elif defined(MACOS_ENABLED)
+#if defined(ANGLE_ENABLED) && defined(EGL_STATIC)
+#define KHRONOS_STATIC 1
+#include <thirdparty/angle/include/EGL/egl.h>
+#include <thirdparty/angle/include/EGL/eglext.h>
+#undef KHRONOS_STATIC
+#endif
+#endif
+// --- End platform/*/platform_egl.h ---
 
 class EGLManager {
 private:

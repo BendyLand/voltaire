@@ -35,7 +35,6 @@ TEST_FORCE_LINK(test_arraymesh)
 
 #ifndef _3D_DISABLED
 
-#include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
 

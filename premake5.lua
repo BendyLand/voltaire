@@ -3648,8 +3648,6 @@ if target_platform == "windows" then
         }
         files {
             "platform/windows/tts_windows.cpp",
-            "platform/windows/tts_driver_sapi.cpp",
-            "platform/windows/winrt_utils.cpp",
         }
         if use_winrt then
             defines { "WINRT_ENABLED" }
@@ -4017,9 +4015,7 @@ project "voltaire"
     files {
         -- Core & MbedTLS Godot platform glue
         "core/io/file_access.cpp",
-        "core/math/geometry_3d.cpp",
         "core/register_core_types.cpp",
-        "core/string/ustring.cpp",
         "thirdparty/mbedtls/godot/godot_mbedtls_platform.cpp",
 
         -- Main
@@ -4027,18 +4023,13 @@ project "voltaire"
 
         -- Scene (always-enabled)
         "scene/2d/node_2d.cpp",
-        "scene/gui/dialogs.cpp",
         "scene/main/scene_tree.cpp",
         "scene/resources/mesh.cpp",
-        "scene/resources/texture.cpp",
 
         -- Servers (always-enabled)
         "servers/register_server_types.cpp",
         "servers/rendering/renderer.cpp",
-        "servers/rendering/renderer_rd/renderer_compositor_rd.cpp",
-        "servers/rendering/renderer_rd/storage_rd/texture_storage.cpp",
         "servers/rendering/rendering_device.cpp",
-        "servers/rendering/shader_language.cpp",
 
         -- Drivers (common)
         "drivers/register_driver_types.cpp",
@@ -4046,19 +4037,12 @@ project "voltaire"
         -- Modules (always-enabled)
         "modules/multiplayer/scene_multiplayer.cpp",
         "modules/svg/image_loader_svg.cpp",
-        "modules/text_server_adv/text_server_adv.cpp",
     }
 
     -- Feature-conditional scene/server/module files
-    if not disable_3d then
+    if not disable_3d or has_openxr then
         files {
-            "scene/3d/node_3d.cpp",
             "modules/gltf/gltf_document.cpp",
-        }
-    end
-    if not disable_phys_2d or not disable_phys_3d then
-        files {
-            "modules/jolt_physics/jolt_physics_server_3d.cpp",
         }
     end
     if not disable_nav_2d then
@@ -4071,17 +4055,10 @@ project "voltaire"
             "modules/navigation_3d/nav_map_3d.cpp",
         }
     end
-    if not disable_xr then
-    end
-    if has_webxr then
-    end
     if use_opengl3 then
         files {
             "drivers/gles3/rasterizer_scene_gles3.cpp",
         }
-    end
-    if use_vulkan then
-        files { "drivers/vulkan/rendering_device_driver_vulkan.cpp" }
     end
     if use_rd then
     end
@@ -4106,13 +4083,8 @@ project "voltaire"
         end
     end
     if has_openxr then
-        files { "modules/openxr/openxr_api.cpp" }
         if target_platform == "android" then
             files { "modules/openxr/extensions/platform/openxr_android_extension.cpp" }
-        end
-        if use_vulkan then
-        end
-        if use_opengl3 and target_platform ~= "macos" then
         end
         if use_d3d12 then
             files { "modules/openxr/extensions/platform/openxr_d3d12_extension.cpp" }
@@ -4124,7 +4096,7 @@ project "voltaire"
         end
     end
     if betsy_templates or cvtt_templates then
-        files { "modules/lightmapper_rd/lightmapper_rd.cpp" }
+        files { "platform/android/export/export.cpp" }
     end
 
     -- Editor-only sources & platform exporters
@@ -4134,7 +4106,6 @@ project "voltaire"
             "editor/project_upgrade/renames_map_3_to_4.cpp",
             "editor/translations/editor_translations.gen.cpp",
             "editor/translations/property_translations.gen.cpp",
-            "modules/lightmapper_rd/lightmapper_rd.cpp",
             "platform/android/export/export.cpp",
         }
     filter {}
@@ -4184,11 +4155,6 @@ project "voltaire"
         end
         if opt_bool("x11") then
             files { "platform/linuxbsd/x11/display_server_x11.cpp" }
-        end
-        if opt_bool("wayland") then
-            files {
-                "platform/linuxbsd/wayland/display_server_wayland.cpp",
-            }
         end
 
         if use_accesskit then
@@ -4273,14 +4239,7 @@ project "voltaire"
 
         files {
             "platform/windows/os_windows.cpp",
-            "platform/windows/display_server_windows.cpp",
-            "drivers/wasapi/audio_driver_wasapi.cpp",
         }
-        if use_angle then
-        end
-        if use_xaudio2 then
-            files { "drivers/xaudio2/audio_driver_xaudio2.cpp" }
-        end
         if use_d3d12 then
             apply_d3d12_mesa_settings()
             files {
@@ -4515,8 +4474,6 @@ project "voltaire"
         defines { "XR_OS_ANDROID", "XR_USE_PLATFORM_ANDROID", "JSON_USE_EXCEPTION=0" }
         files {
             "platform/android/os_android.cpp",
-            "platform/android/java_class_wrapper.cpp",
-            "platform/android/display_server_android.cpp",
         }
         filter "platforms:arm64"
             linkoptions { "-target", "aarch64-linux-android" .. tostring(android_api) }
@@ -4578,7 +4535,6 @@ project "voltaire"
 
     elseif target_platform == "web" then
         files {
-            "platform/web/display_server_web.cpp",
             "platform/web/os_web.cpp",
         }
 

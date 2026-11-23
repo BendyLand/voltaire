@@ -729,7 +729,7 @@ public:
 };
 
 // --- Folded from scene/resources/text_paragraph.h ---
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 #include "core/templates/local_vector.h"
 
 #include "servers/text/text_server.h"

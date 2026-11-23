@@ -316,7 +316,7 @@ int process_args(int p_argc, char **p_args, char **r_args);
 
 
 // --- Folded from drivers/apple_embedded/display_server_apple_embedded.h ---
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #if defined(RD_ENABLED)

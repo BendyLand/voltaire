@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_expression)
 
-#include "core/math/expression.h"
+#include "core/types.h"
 
 namespace TestExpression {
 

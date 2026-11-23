@@ -33,7 +33,7 @@
 
 #ifdef METAL_ENABLED
 
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
 
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>

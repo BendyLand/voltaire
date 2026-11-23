@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/crypto/crypto_core.h"
+#include "core/crypto/crypto.h"
 #include "core/io/compression.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"

@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "modules/register_module_types.h"
+#include "main/main.h"
 
 #include "core/config/project_settings.h"
 #include "core/math/geometry_2d.h"

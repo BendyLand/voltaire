@@ -35,8 +35,8 @@ TEST_FORCE_LINK(test_convert_transform_modifier_3d)
 
 #ifndef _3D_DISABLED
 
-#include "core/math/random_pcg.h"
-#include "scene/3d/skeleton_3d.h"
+#include "core/types.h"
+#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 

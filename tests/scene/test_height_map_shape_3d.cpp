@@ -36,7 +36,7 @@ TEST_FORCE_LINK(test_height_map_shape_3d)
 #ifndef PHYSICS_3D_DISABLED
 
 #include "core/io/image.h"
-#include "scene/resources/3d/shape_3d.h"
+#include "scene/resources/mesh.h"
 
 namespace TestHeightMapShape3D {
 

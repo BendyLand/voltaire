@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "../scene_multiplayer.h"
+#include "scene/main/scene_tree.h"
 
 #include "core/os/os.h"
 #include "scene/2d/node_2d.h"
@@ -118,3 +118,43 @@ TEST_CASE("[Multiplayer][MultiplayerAPI] Authentication validation") {
 }
 
 } // namespace TestSceneMultiplayer
+
+// --- Folded from modules/multiplayer/tests/test_multiplayer_spawner.h ---
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
+#include "tests/test_macros.h"
+#include "tests/test_utils.h"
+
+namespace TestMultiplayerSpawner
+{
+class Wasp : public Node
+{
+	int _size = 0;
+
+public:
+	int get_size() const { return _size; }
+
+	void set_size(int p_size) { _size = p_size; }
+
+	Wasp()
+	{
+		set_name("Wasp");
+		set_scene_file_path("wasp.tscn");
+	}
+};
+
+class SpawnWasps
+{
+public:
+	Wasp* create_wasps(int p_size)
+	{
+		Wasp* wasp = memnew(Wasp);
+		wasp->set_size(p_size);
+		return wasp;
+	}
+
+	int echo_size(int p_size) { return p_size; }
+};
+
+} // namespace TestMultiplayerSpawner
+// --- End modules/multiplayer/tests/test_multiplayer_spawner.h ---

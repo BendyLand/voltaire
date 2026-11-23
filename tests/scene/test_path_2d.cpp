@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_path_2d)
 
-#include "scene/2d/line_2d.h"
+#include "scene/2d/node_2d.h"
 
 namespace TestPath2D {
 

@@ -32,11 +32,11 @@
 #pragma once
 
 #include "core/math/rect2.h"
-#include "core/math/transform_2d.h"
+#include "core/types.h"
 #include "core/math/vector2.h"
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/rid.h"
+#include "core/templates/hashfuncs.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
@@ -113,7 +113,7 @@ public:
 	~NavigationMeshSourceGeometryData2D() { clear(); }
 };
 // --- Inlined/Folded from scene/resources/2d/navigation_polygon.h ---
-#include "scene/resources/navigation_mesh.h"
+#include "scene/resources/mesh.h"
 
 class NavigationPolygon : public Resource
 {
@@ -945,13 +945,13 @@ private:
 
 #include "core/math/math_defs.h"
 #include "core/math/rect2.h"
-#include "core/math/transform_2d.h"
+#include "core/types.h"
 #include "core/math/vector2.h"
 #include "core/os/mutex.h"
 #include "core/templates/a_hash_map.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/rid.h"
+#include "core/templates/hashfuncs.h"
 #include "core/templates/self_list.h"
 #include "core/templates/vector.h"
 #include "core/types.h"

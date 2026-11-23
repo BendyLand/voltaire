@@ -112,7 +112,6 @@ public:
 
 // --- End platform/android/audio_driver_opensl.h ---
 
-#include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "drivers/unix/os_unix.h"
 
@@ -907,7 +906,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_plugin_GodotPlugin_nativeEmitS
 
 // --- Folded from platform/android/api/jni_singleton.h ---
 #include "core/templates/rb_map.h"
-#include "platform/android/api/java_class_wrapper.h"
+#include "main/main.h"
 
 class JNISingleton
 {
@@ -1271,7 +1270,7 @@ public:
 
 // --- End platform/android/java_godot_view_wrapper.h ---
 
-#include "core/math/color.h"
+#include "core/templates/hashfuncs.h"
 #include "core/templates/list.h"
 #include "core/templates/vector.h"
 

@@ -33,7 +33,133 @@
 
 #include "core/io/resource.h"
 #include "core/templates/self_list.h"
-#include "scene/resources/shader.h"
+// --- Folded from scene/resources/shader.h ---
+#include "core/io/resource.h"
+// --- Folded from scene/resources/shader_include.h ---
+#include "core/io/resource.h"
+#include "core/templates/hash_set.h"
+
+class ShaderInclude : public Resource
+{
+private:
+	String code;
+	String include_path;
+	HashSet<Ref<ShaderInclude>> dependencies;
+	void _dependency_changed();
+
+protected:
+
+public:
+	void set_code(const String& p_text);
+	String get_code() const;
+
+	void set_include_path(const String& p_path);
+};
+
+
+
+// --- End scene/resources/shader_include.h ---
+
+using Texture = Resource;
+class Texture2D;
+
+class Shader : public Resource
+{
+public:
+	// Must be kept in sync with the List<String> of shader types in
+	// `servers/rendering/shader_types.cpp`.
+	enum Mode
+	{
+		MODE_SPATIAL,
+		MODE_CANVAS_ITEM,
+		MODE_PARTICLES,
+		MODE_SKY,
+		MODE_FOG,
+		MODE_TEXTURE_BLIT,
+		MODE_MAX
+	};
+
+private:
+	mutable RID shader_rid;
+	mutable String preprocessed_code;
+	mutable Mutex shader_rid_mutex;
+
+	Mode mode = MODE_SPATIAL;
+	HashSet<Ref<ShaderInclude>> include_dependencies;
+	String code;
+	String include_path;
+
+	HashMap<String, HashMap<int, Ref<Texture>>> default_textures;
+
+	void _check_shader_rid() const;
+	void _dependency_changed();
+	void _recompile();
+	virtual void _update_shader() const; // used for visual shader
+
+protected:
+#ifndef DISABLE_DEPRECATED
+	void _set_default_texture_parameter_bind_compat_95126(
+		const String& p_name, const Ref<Texture2D>& p_texture, int p_index = 0);
+	Ref<Texture2D> _get_default_texture_parameter_bind_compat_95126(
+		const String& p_name, int p_index = 0) const;
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+
+public:
+	// void set_mode(Mode p_mode);
+	virtual Mode get_mode() const;
+
+	virtual void set_path(const String& p_path, bool p_take_over = false) override;
+	void set_include_path(const String& p_path);
+
+	void set_code(const String& p_code);
+	String get_code() const;
+
+	void inspect_native_shader_code();
+
+
+	void set_default_texture_parameter(
+		const String& p_name, const Ref<Texture>& p_texture, int p_index = 0);
+	Ref<Texture> get_default_texture_parameter(const String& p_name, int p_index = 0) const;
+	void get_default_texture_parameter_list(List<String>* r_textures) const;
+
+	virtual bool is_text_shader() const;
+
+	virtual RID get_rid() const override;
+
+	Shader();
+	~Shader();
+};
+
+// --- Folded from scene/resources/shader_resource_format.h ---
+#include "core/io/resource_loader.h"
+
+class ResourceFormatLoaderShader final : public ResourceFormatLoader
+{
+public:
+	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
+		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
+		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual void get_recognized_extensions_for_type(
+		const String& p_type, List<String>* p_extensions) const override;
+	virtual bool handles_type(const String& p_type) const override;
+	virtual String get_resource_type(const String& p_path) const override;
+};
+
+class ResourceFormatSaverShader final : public ResourceFormatSaver
+{
+public:
+	virtual Error save(
+		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
+	virtual void get_recognized_extensions(
+		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
+	virtual bool recognize(const Ref<Resource>& p_resource) const override;
+};
+
+// --- End scene/resources/shader_resource_format.h ---
+// --- End scene/resources/shader.h ---
 #include "servers/rendering/rendering_server_enums.h"
 
 class Material : public Resource
@@ -1042,10 +1168,374 @@ public:
 
 // --- Folded from scene/resources/particle_process_material.h ---
 #include "core/templates/rb_set.h"
-#include "core/templates/rid.h"
+#include "core/templates/hashfuncs.h"
 #include "core/templates/self_list.h"
 // --- Folded from scene/resources/curve_texture.h ---
-#include "scene/resources/curve.h"
+// --- Folded from scene/resources/curve.h ---
+#include "core/io/resource.h"
+#include "core/templates/rb_map.h"
+
+// y(x) curve
+class Curve : public Resource
+{
+public:
+	static const char* SIGNAL_RANGE_CHANGED;
+	static const char* SIGNAL_DOMAIN_CHANGED;
+
+	enum TangentMode
+	{
+		TANGENT_FREE = 0,
+		TANGENT_LINEAR,
+		TANGENT_MODE_COUNT
+	};
+
+	struct Point
+	{
+		Vector2 position;
+		real_t left_tangent = 0.0;
+		real_t right_tangent = 0.0;
+		TangentMode left_mode = TANGENT_FREE;
+		TangentMode right_mode = TANGENT_FREE;
+
+		Point() {}
+
+		Point(const Vector2& p_position, real_t p_left = 0.0, real_t p_right = 0.0,
+			TangentMode p_left_mode = TANGENT_FREE, TangentMode p_right_mode = TANGENT_FREE)
+		{
+			position = p_position;
+			left_tangent = p_left;
+			right_tangent = p_right;
+			left_mode = p_left_mode;
+			right_mode = p_right_mode;
+		}
+	};
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	Curve() = default;
+
+	int get_point_count() const { return _points.size(); }
+
+	void set_point_count(int p_count);
+
+	int add_point(Vector2 p_position, real_t p_left_tangent = 0, real_t p_right_tangent = 0,
+		TangentMode p_left_mode = TANGENT_FREE, TangentMode p_right_mode = TANGENT_FREE);
+	int add_point_no_update(Vector2 p_position, real_t p_left_tangent = 0,
+		real_t p_right_tangent = 0, TangentMode p_left_mode = TANGENT_FREE,
+		TangentMode p_right_mode = TANGENT_FREE);
+	void remove_point(int p_index);
+	void clear_points();
+
+	int get_index(real_t p_offset) const;
+
+	void set_point_value(int p_index, real_t p_position);
+	int set_point_offset(int p_index, real_t p_offset);
+	Vector2 get_point_position(int p_index) const;
+
+	Point get_point(int p_index) const;
+
+	real_t get_min_value() const { return _min_value; }
+
+	void set_min_value(real_t p_min) {}
+
+	real_t get_max_value() const { return _max_value; }
+
+	void set_max_value(real_t p_max) {}
+
+	real_t get_value_range() const { return _max_value - _min_value; }
+
+	real_t get_min_domain() const { return _min_domain; }
+
+	void set_min_domain(real_t p_min);
+
+	real_t get_max_domain() const { return _max_domain; }
+
+	void set_max_domain(real_t p_max);
+
+	real_t get_domain_range() const { return _max_domain - _min_domain; }
+
+	real_t sample(real_t p_offset) const;
+	real_t sample_local_nocheck(int p_index, real_t p_local_offset) const;
+
+	void clean_dupes();
+
+	void set_point_left_tangent(int p_index, real_t p_tangent);
+	void set_point_right_tangent(int p_index, real_t p_tangent);
+	void set_point_left_mode(int p_index, TangentMode p_mode);
+	void set_point_right_mode(int p_index, TangentMode p_mode);
+
+	real_t get_point_left_tangent(int p_index) const;
+	real_t get_point_right_tangent(int p_index) const;
+	TangentMode get_point_left_mode(int p_index) const;
+	TangentMode get_point_right_mode(int p_index) const;
+
+	void update_auto_tangents(int p_index);
+
+	void bake();
+	void _bake() const;
+
+	int get_bake_resolution() const { return _bake_resolution; }
+
+	void set_bake_resolution(int p_resolution);
+	real_t sample_baked(real_t p_offset) const;
+
+	void ensure_default_setup(real_t p_min, real_t p_max);
+
+protected:
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+
+private:
+	bool _filter_property(const String& p_name, int p_index) const;
+
+	void mark_dirty();
+	int _add_point(Vector2 p_position, real_t p_left_tangent = 0, real_t p_right_tangent = 0,
+		TangentMode p_left_mode = TANGENT_FREE, TangentMode p_right_mode = TANGENT_FREE,
+		bool p_mark_dirty = true);
+	void _remove_point(int p_index, bool p_mark_dirty = true);
+	void _set_point_position(int p_index, const Vector2& p_position);
+
+	LocalVector<Point> _points;
+	mutable bool _baked_cache_dirty = false;
+	mutable Vector<real_t> _baked_cache;
+	int _bake_resolution = 100;
+	real_t _min_value = 0.0;
+	real_t _max_value = 1.0;
+	real_t _min_domain = 0.0;
+	real_t _max_domain = 1.0;
+};
+
+class Curve2D : public Resource
+{
+	struct Point
+	{
+		Vector2 in;
+		Vector2 out;
+		Vector2 position;
+	};
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	LocalVector<Point> points;
+
+	struct BakedPoint
+	{
+		real_t ofs = 0.0;
+		Vector2 point;
+	};
+
+	mutable bool baked_cache_dirty = false;
+	mutable PackedVector2Array baked_point_cache;
+	mutable PackedVector2Array baked_forward_vector_cache;
+	mutable Vector<real_t> baked_dist_cache;
+	mutable real_t baked_max_ofs = 0.0;
+
+	void mark_dirty();
+
+	static Vector2 _calculate_tangent(const Vector2& p_begin, const Vector2& p_control_1,
+		const Vector2& p_control_2, const Vector2& p_end, const real_t p_t);
+	void _bake() const;
+
+	real_t bake_interval = 5.0;
+
+	struct Interval
+	{
+		int idx;
+		real_t frac;
+	};
+
+	Interval _find_interval(real_t p_offset) const;
+	Vector2 _sample_baked(Interval p_interval, bool p_cubic) const;
+	Transform2D _sample_posture(Interval p_interval) const;
+
+	void _bake_segment2d(RBMap<real_t, Vector2>& r_bake, real_t p_begin, real_t p_end,
+		const Vector2& p_a, const Vector2& p_out, const Vector2& p_b, const Vector2& p_in,
+		int p_depth, int p_max_depth, real_t p_tol) const;
+	void _bake_segment2d_even_length(RBMap<real_t, Vector2>& r_bake, real_t p_begin, real_t p_end,
+		const Vector2& p_a, const Vector2& p_out, const Vector2& p_b, const Vector2& p_in,
+		int p_depth, int p_max_depth, real_t p_length) const;
+
+	void _add_point(const Vector2& p_position, const Vector2& p_in = Vector2(),
+		const Vector2& p_out = Vector2(), int p_atpos = -1);
+	void _remove_point(int p_index);
+
+	Vector<RBMap<real_t, Vector2>> _tessellate_even_length(
+		int p_max_stages = 5, real_t p_length = 0.2) const;
+	bool _filter_property(const String& p_name, int p_index) const;
+
+protected:
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+
+public:
+	int get_point_count() const;
+	void set_point_count(int p_count);
+	void add_point(const Vector2& p_position, const Vector2& p_in = Vector2(),
+		const Vector2& p_out = Vector2(), int p_atpos = -1);
+	void set_point_position(int p_index, const Vector2& p_position);
+	Vector2 get_point_position(int p_index) const;
+	void set_point_in(int p_index, const Vector2& p_in);
+	Vector2 get_point_in(int p_index) const;
+	void set_point_out(int p_index, const Vector2& p_out);
+	Vector2 get_point_out(int p_index) const;
+	void remove_point(int p_index);
+	void clear_points();
+
+	Vector2 sample(int p_index, real_t p_offset) const;
+	Vector2 samplef(real_t p_findex) const;
+
+	void set_bake_interval(real_t p_tolerance);
+	real_t get_bake_interval() const;
+
+	real_t get_baked_length() const;
+	Vector2 sample_baked(real_t p_offset, bool p_cubic = false) const;
+	Transform2D sample_baked_with_rotation(real_t p_offset, bool p_cubic = false) const;
+	PackedVector2Array get_points() const;
+	PackedVector2Array get_baked_points() const; // useful for going through
+	Vector2 get_closest_point(const Vector2& p_to_point) const;
+	real_t get_closest_offset(const Vector2& p_to_point) const;
+
+	PackedVector2Array tessellate(
+		int p_max_stages = 5, real_t p_tolerance = 4) const; // useful for display
+	PackedVector2Array tessellate_even_length(
+		int p_max_stages = 5, real_t p_length = 20.0) const; // Useful for baking.
+
+	Curve2D();
+};
+
+class Curve3D : public Resource
+{
+	struct Point
+	{
+		Vector3 in;
+		Vector3 out;
+		Vector3 position;
+		real_t tilt = 0.0;
+	};
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	LocalVector<Point> points;
+#ifdef TOOLS_ENABLED
+	// For Path3DGizmo.
+	mutable Vector<size_t> points_in_cache;
+#endif
+
+	bool closed = false;
+
+	mutable bool baked_cache_dirty = false;
+	mutable PackedVector3Array baked_point_cache;
+	mutable Vector<real_t> baked_tilt_cache;
+	mutable PackedVector3Array baked_up_vector_cache;
+	mutable PackedVector3Array baked_forward_vector_cache;
+	mutable Vector<real_t> baked_dist_cache;
+	mutable real_t baked_max_ofs = 0.0;
+
+	void mark_dirty();
+
+	static Vector3 _calculate_tangent(const Vector3& p_begin, const Vector3& p_control_1,
+		const Vector3& p_control_2, const Vector3& p_end, const real_t p_t);
+	void _bake() const;
+
+	struct Interval
+	{
+		int idx;
+		real_t frac;
+	};
+
+	Interval _find_interval(real_t p_offset) const;
+	Vector3 _sample_baked(Interval p_interval, bool p_cubic) const;
+	real_t _sample_baked_tilt(Interval p_interval) const;
+	Basis _sample_posture(Interval p_interval, bool p_apply_tilt = false) const;
+	Basis _compose_posture(int p_index) const;
+
+	real_t bake_interval = 0.2;
+	bool up_vector_enabled = true;
+
+	void _bake_segment3d(RBMap<real_t, Vector3>& r_bake, real_t p_begin, real_t p_end,
+		const Vector3& p_a, const Vector3& p_out, const Vector3& p_b, const Vector3& p_in,
+		int p_depth, int p_max_depth, real_t p_tol) const;
+	void _bake_segment3d_even_length(RBMap<real_t, Vector3>& r_bake, real_t p_begin, real_t p_end,
+		const Vector3& p_a, const Vector3& p_out, const Vector3& p_b, const Vector3& p_in,
+		int p_depth, int p_max_depth, real_t p_length) const;
+
+	void _add_point(const Vector3& p_position, const Vector3& p_in = Vector3(),
+		const Vector3& p_out = Vector3(), int p_atpos = -1);
+	void _remove_point(int p_index);
+
+	Vector<RBMap<real_t, Vector3>> _tessellate_even_length(
+		int p_max_stages = 5, real_t p_length = 0.2) const;
+	bool _filter_property(const String& p_name, int p_index) const;
+
+protected:
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+
+public:
+#ifdef TOOLS_ENABLED
+	// For Path3DGizmo.
+	Basis get_point_baked_posture(int p_index, bool p_apply_tilt = false) const;
+#endif
+
+	int get_point_count() const;
+	void set_point_count(int p_count);
+	void add_point(const Vector3& p_position, const Vector3& p_in = Vector3(),
+		const Vector3& p_out = Vector3(), int p_atpos = -1);
+	void set_point_position(int p_index, const Vector3& p_position);
+	Vector3 get_point_position(int p_index) const;
+	void set_point_tilt(int p_index, real_t p_tilt);
+	real_t get_point_tilt(int p_index) const;
+	void set_point_in(int p_index, const Vector3& p_in);
+	Vector3 get_point_in(int p_index) const;
+	void set_point_out(int p_index, const Vector3& p_out);
+	Vector3 get_point_out(int p_index) const;
+	void remove_point(int p_index);
+	void clear_points();
+
+	Vector3 sample(int p_index, real_t p_offset) const;
+	Vector3 samplef(real_t p_findex) const;
+
+	void set_closed(bool p_closed);
+	bool is_closed() const;
+	void set_bake_interval(real_t p_tolerance);
+	real_t get_bake_interval() const;
+	void set_up_vector_enabled(bool p_enable);
+	bool is_up_vector_enabled() const;
+
+	real_t get_baked_length() const;
+	Vector3 sample_baked(real_t p_offset, bool p_cubic = false) const;
+	Transform3D sample_baked_with_rotation(
+		real_t p_offset, bool p_cubic = false, bool p_apply_tilt = false) const;
+	real_t sample_baked_tilt(real_t p_offset) const;
+	Vector3 sample_baked_up_vector(real_t p_offset, bool p_apply_tilt = false) const;
+	PackedVector3Array get_baked_points() const; // Useful for going through.
+	Vector<real_t> get_baked_tilts() const;		 // useful for going through
+	PackedVector3Array get_baked_up_vectors() const;
+	Vector<real_t> get_baked_dist_cache() const;
+	Vector3 get_closest_point(const Vector3& p_to_point) const;
+	real_t get_closest_offset(const Vector3& p_to_point) const;
+	PackedVector3Array get_points() const;
+
+	PackedVector3Array tessellate(
+		int p_max_stages = 5, real_t p_tolerance = 4) const; // Useful for display.
+	PackedVector3Array tessellate_even_length(
+		int p_max_stages = 5, real_t p_length = 0.2) const; // Useful for baking.
+
+	Curve3D();
+};
+// --- End scene/resources/curve.h ---
 #include "scene/resources/texture.h"
 
 class CurveTexture final : public Texture2D
@@ -1611,7 +2101,7 @@ public:
 
 // --- Folded from scene/resources/camera_attributes.h ---
 #include "core/io/resource.h"
-#include "core/templates/rid.h"
+#include "core/templates/hashfuncs.h"
 
 class CameraAttributes : public Resource
 {
@@ -1792,3 +2282,298 @@ public:
 };
 #endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 // --- End scene/resources/physics_material.h ---
+
+// --- Folded from scene/resources/gradient.h ---
+#include <thirdparty/misc/ok_color.h>
+#include "core/io/resource.h"
+
+class Gradient : public Resource
+{
+public:
+	enum InterpolationMode
+	{
+		GRADIENT_INTERPOLATE_LINEAR,
+		GRADIENT_INTERPOLATE_CONSTANT,
+		GRADIENT_INTERPOLATE_CUBIC,
+	};
+
+	enum ColorSpace
+	{
+		GRADIENT_COLOR_SPACE_SRGB,
+		GRADIENT_COLOR_SPACE_LINEAR_SRGB,
+		GRADIENT_COLOR_SPACE_OKLAB,
+	};
+
+	struct Point
+	{
+		float offset = 0.0;
+		Color color;
+
+		bool operator<(const Point& p_point) const { return offset < p_point.offset; }
+	};
+
+private:
+	LocalVector<Point> points;
+	bool is_sorted = true;
+	InterpolationMode interpolation_mode = GRADIENT_INTERPOLATE_LINEAR;
+	ColorSpace interpolation_color_space = GRADIENT_COLOR_SPACE_SRGB;
+
+	_FORCE_INLINE_ void _update_sorting()
+	{
+		if (!is_sorted) {
+			points.sort();
+			is_sorted = true;
+		}
+	}
+
+	_FORCE_INLINE_ Color transform_color_space(const Color p_color) const
+	{
+		switch (interpolation_color_space) {
+		case GRADIENT_COLOR_SPACE_SRGB:
+		default:
+			return p_color;
+
+		case GRADIENT_COLOR_SPACE_LINEAR_SRGB:
+			return p_color.srgb_to_linear();
+
+		case GRADIENT_COLOR_SPACE_OKLAB:
+			Color linear_color = p_color.srgb_to_linear();
+			ok_color::RGB rgb{};
+			rgb.r = linear_color.r;
+			rgb.g = linear_color.g;
+			rgb.b = linear_color.b;
+
+			ok_color ok_color;
+			ok_color::Lab lab_color = ok_color.linear_srgb_to_oklab(rgb);
+
+			// Constructs an RGB color using the Lab values directly. This allows reusing the
+			// interpolation code.
+			return {lab_color.L, lab_color.a, lab_color.b, linear_color.a};
+		}
+	}
+
+	_FORCE_INLINE_ Color inv_transform_color_space(const Color p_color) const
+	{
+		switch (interpolation_color_space) {
+		case GRADIENT_COLOR_SPACE_SRGB:
+		default:
+			return p_color;
+
+		case GRADIENT_COLOR_SPACE_LINEAR_SRGB:
+			return p_color.linear_to_srgb();
+
+		case GRADIENT_COLOR_SPACE_OKLAB:
+			ok_color::Lab lab{};
+			lab.L = p_color.r;
+			lab.a = p_color.g;
+			lab.b = p_color.b;
+
+			ok_color new_ok_color;
+			ok_color::RGB ok_rgb = new_ok_color.oklab_to_linear_srgb(lab);
+			Color linear{ok_rgb.r, ok_rgb.g, ok_rgb.b, p_color.a};
+			return linear.linear_to_srgb();
+		}
+	}
+
+protected:
+
+public:
+	Gradient();
+	virtual ~Gradient();
+
+	void add_point(float p_offset, const Color& p_color);
+	void remove_point(int p_index);
+	void reverse();
+
+	void set_offset(int pos, const float offset);
+	float get_offset(int pos);
+
+	void set_color(int pos, const Color& color);
+	Color get_color(int pos);
+
+	void set_offsets(const Vector<float>& p_offsets);
+	Vector<float> get_offsets() const;
+
+	void set_colors(const Vector<Color>& p_colors);
+	Vector<Color> get_colors() const;
+
+	void set_interpolation_mode(InterpolationMode p_interp_mode);
+	InterpolationMode get_interpolation_mode();
+
+	void set_interpolation_color_space(Gradient::ColorSpace p_color_space);
+	ColorSpace get_interpolation_color_space();
+
+	_FORCE_INLINE_ Color get_color_at_offset(float p_offset)
+	{
+		if (points.is_empty()) {
+			return Color(0, 0, 0, 1);
+		}
+
+		_update_sorting();
+
+		// Binary search.
+		int low = 0;
+		int high = points.size() - 1;
+		int middle = 0;
+
+#ifdef DEBUG_ENABLED
+		if (low > high) {
+			ERR_PRINT("low > high, this may be a bug");
+		}
+#endif
+
+		while (low <= high) {
+			middle = (low + high) / 2;
+			const Point& point = points[middle];
+			if (point.offset > p_offset) {
+				high = middle - 1; // search low end of array
+			}
+			else if (point.offset < p_offset) {
+				low = middle + 1; // search high end of array
+			}
+			else {
+				return point.color;
+			}
+		}
+
+		// Return sampled value.
+		if (points[middle].offset > p_offset) {
+			middle--;
+		}
+		int first = middle;
+		int second = middle + 1;
+		if (second >= (int)points.size()) {
+			return points[points.size() - 1].color;
+		}
+		if (first < 0) {
+			return points[0].color;
+		}
+		const Point& point1 = points[first];
+		const Point& point2 = points[second];
+		float weight = (p_offset - point1.offset) / (point2.offset - point1.offset);
+
+		switch (interpolation_mode) {
+		case GRADIENT_INTERPOLATE_CONSTANT: {
+			return point1.color;
+		}
+		case GRADIENT_INTERPOLATE_LINEAR:
+		default: { // Fallback to linear interpolation.
+			Color color1 = transform_color_space(point1.color);
+			Color color2 = transform_color_space(point2.color);
+
+			Color interpolated = color1.lerp(color2, weight);
+			return inv_transform_color_space(interpolated);
+		}
+		case GRADIENT_INTERPOLATE_CUBIC: {
+			int p0 = first - 1;
+			int p3 = second + 1;
+			if (p3 >= (int)points.size()) {
+				p3 = second;
+			}
+			if (p0 < 0) {
+				p0 = first;
+			}
+			const Point& point0 = points[p0];
+			const Point& point3 = points[p3];
+
+			Color color0 = transform_color_space(point0.color);
+			Color color1 = transform_color_space(point1.color);
+			Color color2 = transform_color_space(point2.color);
+			Color color3 = transform_color_space(point3.color);
+
+			Color interpolated;
+			interpolated[0] =
+				Math::cubic_interpolate(color1[0], color2[0], color0[0], color3[0], weight);
+			interpolated[1] =
+				Math::cubic_interpolate(color1[1], color2[1], color0[1], color3[1], weight);
+			interpolated[2] =
+				Math::cubic_interpolate(color1[2], color2[2], color0[2], color3[2], weight);
+			interpolated[3] =
+				Math::cubic_interpolate(color1[3], color2[3], color0[3], color3[3], weight);
+
+			return inv_transform_color_space(interpolated);
+		}
+		}
+	}
+
+	int get_point_count() const;
+};
+
+// --- Folded from scene/resources/gradient_texture.h ---
+#include "scene/resources/texture.h"
+
+class GradientTexture2D final : public Texture2D
+{
+public:
+	enum Fill
+	{
+		FILL_LINEAR,
+		FILL_RADIAL,
+		FILL_SQUARE,
+		FILL_CONIC,
+	};
+
+	enum Repeat
+	{
+		REPEAT_NONE,
+		REPEAT,
+		REPEAT_MIRROR,
+	};
+
+private:
+	Ref<Gradient> gradient;
+	mutable RID texture;
+
+	int width = 64;
+	int height = 64;
+
+	bool is_1d = false;
+	bool use_hdr = false;
+
+	Vector2 fill_from;
+	Vector2 fill_to = Vector2(1, 0);
+
+	Fill fill = FILL_LINEAR;
+	Repeat repeat = REPEAT_NONE;
+
+	float _get_gradient_offset_at(int x, int y) const;
+
+	mutable bool update_pending = false;
+	void _queue_update();
+	void _update() const;
+
+public:
+	void set_gradient(Ref<Gradient> p_gradient);
+	Ref<Gradient> get_gradient() const;
+
+	void set_width(int p_width);
+	virtual int get_width() const override;
+	void set_height(int p_height);
+	virtual int get_height() const override;
+
+	bool is_1d_texture() const { return is_1d; }
+
+	void set_use_hdr(bool p_enabled);
+	bool is_using_hdr() const;
+
+	void set_fill(Fill p_fill);
+	Fill get_fill() const;
+	void set_fill_from(Vector2 p_fill_from);
+	Vector2 get_fill_from() const;
+	void set_fill_to(Vector2 p_fill_to);
+	Vector2 get_fill_to() const;
+
+	void set_repeat(Repeat p_repeat);
+	Repeat get_repeat() const;
+
+	virtual RID get_rid() const override;
+
+	virtual bool has_alpha() const override { return true; }
+
+	virtual Ref<Image> get_image() const override;
+	void update_now() const;
+
+	explicit GradientTexture2D(bool p_1d = false);
+	virtual ~GradientTexture2D();
+};
+// --- End scene/resources/gradient.h ---

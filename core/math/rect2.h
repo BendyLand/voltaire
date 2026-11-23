@@ -444,7 +444,6 @@ template <> struct is_zero_constructible<Rect2> : std::true_type
 
 // --- Folded from core/math/rect2i.h ---
 #include "core/error/error_macros.h"
-#include "core/math/vector2i.h"
 #include "core/templates/hashfuncs.h"
 
 class String;

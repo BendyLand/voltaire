@@ -478,7 +478,79 @@ public:
 // --- Folded from core/io/resource_format_binary.h ---
 #include "core/io/file_access.h"
 
-#include "core/io/resource_saver.h"
+// --- Folded from core/io/resource_saver.h ---
+#include "core/io/resource.h"
+
+class ResourceFormatSaver : public RefCounted
+{
+protected:
+
+public:
+	virtual Error save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0);
+	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid);
+	virtual bool recognize(const Ref<Resource>& p_resource) const;
+	virtual void get_recognized_extensions(
+		const Ref<Resource>& p_resource, List<String>* p_extensions) const;
+	virtual bool recognize_path(const Ref<Resource>& p_resource, const String& p_path) const;
+
+	virtual ~ResourceFormatSaver() {}
+};
+
+typedef void (*ResourceSavedCallback)(Ref<Resource> p_resource, const String& p_path);
+typedef ResourceUID::ID (*ResourceSaverGetResourceIDForPath)(const String& p_path, bool p_generate);
+
+class ResourceSaver
+{
+	enum
+	{
+		MAX_SAVERS = 64
+	};
+
+	static Ref<ResourceFormatSaver> saver[MAX_SAVERS];
+	static int saver_count;
+	static bool timestamp_on_save;
+	static ResourceSavedCallback save_callback;
+	static ResourceSaverGetResourceIDForPath save_get_id_for_path;
+
+	static Ref<ResourceFormatSaver> _find_custom_resource_format_saver(const String& p_path);
+
+public:
+	enum SaverFlags
+	{
+		FLAG_NONE = 0,
+		FLAG_RELATIVE_PATHS = 1,
+		FLAG_BUNDLE_RESOURCES = 2,
+		FLAG_CHANGE_PATH = 4,
+		FLAG_OMIT_EDITOR_PROPERTIES = 8,
+		FLAG_SAVE_BIG_ENDIAN = 16,
+		FLAG_COMPRESS = 32,
+		FLAG_REPLACE_SUBRESOURCE_PATHS = 64,
+	};
+
+	static Error save(
+		Resource* rp_resource, const String& p_path = "", uint32_t p_flags = (uint32_t)FLAG_NONE);
+	static void get_recognized_extensions(
+		const Ref<Resource>& p_resource, List<String>* p_extensions);
+	static void add_resource_format_saver(
+		Ref<ResourceFormatSaver> p_format_saver, bool p_at_front = false);
+	static void remove_resource_format_saver(Ref<ResourceFormatSaver> p_format_saver);
+
+	static Error set_uid(const String& p_path, ResourceUID::ID p_uid);
+
+	static void set_timestamp_on_save(bool p_timestamp) { timestamp_on_save = p_timestamp; }
+
+	static bool get_timestamp_on_save() { return timestamp_on_save; }
+
+	static ResourceUID::ID get_resource_id_for_path(const String& p_path, bool p_generate = false);
+
+	static void set_save_callback(ResourceSavedCallback p_callback);
+	static void set_get_resource_id_for_path(ResourceSaverGetResourceIDForPath p_callback);
+
+	static bool add_custom_resource_format_saver(const String& p_script_path);
+	static void add_custom_savers();
+	static void remove_custom_savers();
+};
+// --- End core/io/resource_saver.h ---
 #include "core/templates/rb_map.h"
 
 class ResourceLoaderBinary
@@ -698,7 +770,7 @@ Error image_to_png(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer);
 
 // --- Folded from core/io/resource_importer.h ---
 
-#include "core/io/resource_saver.h"
+
 
 class ResourceImporter;
 class ResourceFormatImporter;
@@ -941,3 +1013,205 @@ public:
 	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid) override;
 };
 // --- End core/io/resource_importer.h ---
+
+// --- Folded from core/io/marshalls.h ---
+#include "core/math/math_defs.h"
+#include "core/typedefs.h"
+#include "core/types.h"
+
+// uintr_t is only for pairing with real_t, and we only need it in here.
+#ifdef REAL_T_IS_DOUBLE
+typedef uint64_t uintr_t;
+#else
+typedef uint32_t uintr_t;
+#endif
+
+/**
+ * Miscellaneous helpers for marshaling data types, and encoding
+ * in an endian independent way
+ */
+
+union MarshallFloat
+{
+	uint32_t i; ///< int
+	float f;	///< float
+};
+
+union MarshallDouble
+{
+	uint64_t l; ///< long long
+	double d;	///< double
+};
+
+// Behaves like one of the above, depending on compilation setting.
+union MarshallReal
+{
+	uintr_t i;
+	real_t r;
+};
+
+static inline unsigned int encode_uint16(uint16_t p_uint, uint8_t* p_arr)
+{
+	for (int i = 0; i < 2; i++) {
+		*p_arr = p_uint & 0xFF;
+		p_arr++;
+		p_uint >>= 8;
+	}
+
+	return sizeof(uint16_t);
+}
+
+static inline unsigned int encode_uint32(uint32_t p_uint, uint8_t* p_arr)
+{
+	for (int i = 0; i < 4; i++) {
+		*p_arr = p_uint & 0xFF;
+		p_arr++;
+		p_uint >>= 8;
+	}
+
+	return sizeof(uint32_t);
+}
+
+static inline unsigned int encode_half(float p_float, uint8_t* p_arr)
+{
+	encode_uint16(Math::make_half_float(p_float), p_arr);
+
+	return sizeof(uint16_t);
+}
+
+static inline unsigned int encode_float(float p_float, uint8_t* p_arr)
+{
+	MarshallFloat mf;
+	mf.f = p_float;
+	encode_uint32(mf.i, p_arr);
+
+	return sizeof(uint32_t);
+}
+
+static inline unsigned int encode_uint64(uint64_t p_uint, uint8_t* p_arr)
+{
+	for (int i = 0; i < 8; i++) {
+		*p_arr = p_uint & 0xFF;
+		p_arr++;
+		p_uint >>= 8;
+	}
+
+	return sizeof(uint64_t);
+}
+
+static inline unsigned int encode_double(double p_double, uint8_t* p_arr)
+{
+	MarshallDouble md;
+	md.d = p_double;
+	encode_uint64(md.l, p_arr);
+
+	return sizeof(uint64_t);
+}
+
+static inline unsigned int encode_uintr(uintr_t p_uint, uint8_t* p_arr)
+{
+	for (size_t i = 0; i < sizeof(uintr_t); i++) {
+		*p_arr = p_uint & 0xFF;
+		p_arr++;
+		p_uint >>= 8;
+	}
+
+	return sizeof(uintr_t);
+}
+
+static inline unsigned int encode_real(real_t p_real, uint8_t* p_arr)
+{
+	MarshallReal mr;
+	mr.r = p_real;
+	encode_uintr(mr.i, p_arr);
+
+	return sizeof(uintr_t);
+}
+
+static inline int encode_cstring(const char* p_string, uint8_t* p_data)
+{
+	int len = 0;
+
+	while (*p_string) {
+		if (p_data) {
+			*p_data = (uint8_t)*p_string;
+			p_data++;
+		}
+		p_string++;
+		len++;
+	}
+
+	if (p_data) {
+		*p_data = 0;
+	}
+	return len + 1;
+}
+
+static inline uint16_t decode_uint16(const uint8_t* p_arr)
+{
+	uint16_t u = 0;
+
+	for (int i = 0; i < 2; i++) {
+		uint16_t b = *p_arr;
+		b <<= (i * 8);
+		u |= b;
+		p_arr++;
+	}
+
+	return u;
+}
+
+static inline uint32_t decode_uint32(const uint8_t* p_arr)
+{
+	uint32_t u = 0;
+
+	for (int i = 0; i < 4; i++) {
+		uint32_t b = *p_arr;
+		b <<= (i * 8);
+		u |= b;
+		p_arr++;
+	}
+
+	return u;
+}
+
+static inline float decode_half(const uint8_t* p_arr)
+{
+	return Math::half_to_float(decode_uint16(p_arr));
+}
+
+static inline float decode_float(const uint8_t* p_arr)
+{
+	MarshallFloat mf;
+	mf.i = decode_uint32(p_arr);
+	return mf.f;
+}
+
+static inline uint64_t decode_uint64(const uint8_t* p_arr)
+{
+	uint64_t u = 0;
+
+	for (int i = 0; i < 8; i++) {
+		uint64_t b = (*p_arr) & 0xFF;
+		b <<= (i * 8);
+		u |= b;
+		p_arr++;
+	}
+
+	return u;
+}
+
+static inline double decode_double(const uint8_t* p_arr)
+{
+	MarshallDouble md;
+	md.l = decode_uint64(p_arr);
+	return md.d;
+}
+
+class EncodedObjectAsID : public RefCounted
+{
+protected:
+};
+
+Vector<float> vector3_to_float32_array(const Vector3* p_vecs, size_t p_count);
+// --- End core/io/marshalls.h ---

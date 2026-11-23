@@ -38,14 +38,13 @@
 #endif
 
 #include "core/config/engine.h"
-#include "core/crypto/crypto_core.h"
+#include "core/crypto/crypto.h"
 #include "core/input/input.h"
 #include "core/io/file_access.h"
-#include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
 #include "core/version_generated.gen.h"
-#include "drivers/apple/os_log_logger.h"
+#include "drivers/coreaudio/audio_driver_coreaudio.h"
 #include "main/main.h"
 
 #ifdef SDL_ENABLED
@@ -1479,7 +1478,6 @@ void MIDIDriverCoreMidi::close() {
 
 #include "core/config/project_settings.h"
 #include "core/object/script_language.h"
-#include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/version.h"
@@ -2075,7 +2073,7 @@ GodotApplication *GodotApp = nil;
 
 #import "core/input/input.h"
 #import "core/input/input_event.h"
-#import "core/os/main_loop.h"
+#import "core/os/os.h"
 #import "main/main.h"
 
 #import <Carbon/Carbon.h>

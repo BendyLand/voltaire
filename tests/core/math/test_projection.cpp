@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_projection)
 #include "core/math/plane.h"
 #include "core/math/projection.h"
 #include "core/math/rect2.h"
-#include "core/math/transform_3d.h"
+#include "core/types.h"
 
 namespace TestProjection {
 

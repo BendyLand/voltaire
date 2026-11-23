@@ -762,3 +762,88 @@ public:
 	MIDIDriver& operator=(const MIDIDriver&) = delete;
 	~MIDIDriver() = delete;
 };
+
+// --- Folded from core/os/thread_safe.h ---
+#include "core/os/mutex.h" // IWYU pragma: keep // Used in macro.
+
+#define _THREAD_SAFE_CLASS_ mutable Mutex _thread_safe_;
+#define _THREAD_SAFE_METHOD_ MutexLock _thread_safe_method_(_thread_safe_);
+#define _THREAD_SAFE_LOCK_ _thread_safe_.lock();
+#define _THREAD_SAFE_UNLOCK_ _thread_safe_.unlock();
+
+bool is_current_thread_safe_for_nodes();
+void set_current_thread_safe_for_nodes(bool p_safe);
+// --- End core/os/thread_safe.h ---
+
+// --- Folded from core/os/main_loop.h ---
+#include "core/typedefs.h"
+
+class MainLoop final
+{
+private:
+	static inline bool _active = false;
+
+	static void _default_initialize() {}
+	static void _default_iteration_prepare() {}
+	static bool _default_physics_process(double p_time)
+	{
+		(void)p_time;
+		return false;
+	}
+	static void _default_iteration_end() {}
+	static bool _default_process(double p_time)
+	{
+		(void)p_time;
+		return false;
+	}
+	static void _default_finalize() {}
+	static void _default_notification(int p_notification) { (void)p_notification; }
+	static void _default_destroy() {}
+
+public:
+	MainLoop() = delete;
+
+	enum
+	{
+		// make sure these are replicated in Node
+		NOTIFICATION_OS_MEMORY_WARNING = 2009,
+		NOTIFICATION_TRANSLATION_CHANGED = 2010,
+		NOTIFICATION_WM_ABOUT = 2011,
+		NOTIFICATION_CRASH = 2012,
+		NOTIFICATION_OS_IME_UPDATE = 2013,
+		NOTIFICATION_APPLICATION_RESUMED = 2014,
+		NOTIFICATION_APPLICATION_PAUSED = 2015,
+		NOTIFICATION_APPLICATION_FOCUS_IN = 2016,
+		NOTIFICATION_APPLICATION_FOCUS_OUT = 2017,
+		NOTIFICATION_TEXT_SERVER_CHANGED = 2018,
+		NOTIFICATION_APPLICATION_PIP_MODE_ENTERED = 2019,
+		NOTIFICATION_APPLICATION_PIP_MODE_EXITED = 2020,
+	};
+
+	inline static void (*initialize)() = &_default_initialize;
+	inline static void (*iteration_prepare)() = &_default_iteration_prepare;
+	inline static bool (*physics_process)(double p_time) = &_default_physics_process;
+	inline static void (*iteration_end)() = &_default_iteration_end;
+	inline static bool (*process)(double p_time) = &_default_process;
+	inline static void (*finalize)() = &_default_finalize;
+	inline static void (*notification)(int p_notification) = &_default_notification;
+	inline static void (*destroy)() = &_default_destroy;
+
+	template <typename Impl> static void bind()
+	{
+		initialize = &Impl::initialize_tree;
+		iteration_prepare = &Impl::iteration_prepare;
+		physics_process = &Impl::physics_process;
+		iteration_end = &Impl::iteration_end;
+		process = &Impl::process;
+		finalize = &Impl::finalize_tree;
+		notification = &Impl::notification;
+		destroy = &Impl::finalize;
+		_active = true;
+	}
+
+	static void reset_backend();
+	static void clear();
+	_FORCE_INLINE_ static bool is_active() { return _active; }
+};
+// --- End core/os/main_loop.h ---

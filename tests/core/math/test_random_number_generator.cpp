@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_random_number_generator)
 
-#include "core/math/random_pcg.h"
+#include "core/types.h"
 
 namespace TestRandomNumberGenerator {
 

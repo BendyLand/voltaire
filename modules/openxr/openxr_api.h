@@ -375,9 +375,9 @@ public:
 // --- End modules/openxr/action_map/openxr_action_map.h ---
 #include "core/error/error_macros.h"
 #include "core/math/projection.h"
-#include "core/math/transform_3d.h"
+#include "core/types.h"
 #include "core/math/vector2.h"
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/rid_owner.h"

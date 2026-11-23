@@ -32,11 +32,11 @@
 #pragma once
 
 #include "core/math/aabb.h"
-#include "core/math/transform_3d.h"
+#include "core/types.h"
 #include "core/math/vector3.h"
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/rid.h"
+#include "core/templates/hashfuncs.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
@@ -115,7 +115,7 @@ public:
 
 	~NavigationMeshSourceGeometryData3D() { clear(); }
 };
-#include "scene/resources/navigation_mesh.h"
+#include "scene/resources/mesh.h"
 
 namespace NavigationEnums3D {
 

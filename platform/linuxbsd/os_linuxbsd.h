@@ -1834,7 +1834,7 @@ public:
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
 #include "core/templates/safe_refcount.h"
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 #include "core/types.h"
 
 struct DBusMessage;

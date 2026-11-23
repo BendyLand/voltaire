@@ -32,15 +32,13 @@
 #include <cstdlib>
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/core_globals.h"
+#include "core/types.h"
 #include "core/crypto/crypto.h"
 #include "core/input/input.h"
-#include "core/input/input_map.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access_wrappers.h"
 #include "core/io/image.h"
 #include "core/io/resource_loader.h"
-#include "core/io/resource_saver.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "main/main.h"
@@ -295,19 +293,17 @@ private:
 
 // --- End main/performance.h ---
 #include "main/splash.gen.h"
-#include "modules/register_module_types.h"
-#include "platform/register_platform_apis.h"
+#include "main/main.h"
 #include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/main/node.h"
 #include "main/main.h"
-#include "scene/resources/packed_scene.h"
+#include "scene/main/node.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/theme.h"
 #include "servers/audio/audio_server.h"
-#include "servers/camera/camera_server.h"
-#include "servers/display/accessibility_server.h"
+#include "servers/xr/xr_server.h"
 #include "servers/display/display_server.h"
 #include "main/main.h"
 #include "servers/rendering/renderer.h"
@@ -344,7 +340,7 @@ private:
 #endif
 
 #ifdef TOOLS_ENABLED
-#include "editor/doc/doc_data_class_path.gen.h"
+#include "editor/themes/builtin_fonts.gen.h"
 #include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/editor_ui.h"
@@ -404,7 +400,7 @@ public:
 
 #include "modules/modules_enabled.gen.h" // For mono.
 #ifdef MODULE_TEXT_SERVER_ADV_ENABLED
-#include "modules/register_module_types.h"
+#include "main/main.h"
 #endif
 
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
@@ -5679,8 +5675,7 @@ SteamTracker::~SteamTracker() {
 
 
 // --- Merged from platform/android/api/api.cpp ---
-#include "platform/register_platform_apis.h"
-#include "platform/android/api/java_class_wrapper.h"
+#include "main/main.h"
 #include "platform/android/os_android.h"
 
 void unregister_android_api()
@@ -5720,7 +5715,7 @@ void register_android_api() {}
 // Merged from platform/ios/api/api.cpp
 // ============================================================================
 
-#include "platform/register_platform_apis.h"
+#include "main/main.h"
 
 #if defined(IOS_ENABLED)
 
@@ -5743,7 +5738,7 @@ void unregister_ios_api() {}
 // Merged from platform/visionos/api/api.cpp
 // ============================================================================
 
-#include "platform/register_platform_apis.h"
+#include "main/main.h"
 
 #if defined(VISIONOS_ENABLED)
 
@@ -5766,7 +5761,7 @@ void unregister_visionos_api() {}
 // Merged from platform/web/api/api.cpp
 // ============================================================================
 
-#include "platform/register_platform_apis.h"
+#include "main/main.h"
 #include "platform/web/os_web.h"
 
 void unregister_web_api() {}

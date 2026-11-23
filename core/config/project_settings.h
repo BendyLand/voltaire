@@ -147,7 +147,7 @@ static inline bool vltr_project_valid(const VoltaireProjectFile* p_file)
 		   p_file->config.main_scene[sizeof(p_file->config.main_scene) - 1] == '\0' &&
 		   p_file->config.icon_path[sizeof(p_file->config.icon_path) - 1] == '\0';
 }
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 #include "core/templates/rb_map.h"
 #include "core/types.h"
 

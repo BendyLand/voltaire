@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_viewport)
 
 #include "scene/2d/node_2d.h"
 #include "scene/gui/control.h"
-#include "scene/gui/scroll_container.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/canvas_item.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"

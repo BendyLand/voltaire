@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_marshalls)
 
-#include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
 
 namespace TestMarshalls {
 

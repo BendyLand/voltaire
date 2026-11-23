@@ -340,7 +340,7 @@ class OS_MacOS_NSApp;
 // --- Folded from platform/macos/display_server_macos.h ---
 #if defined(MACOS_ENABLED)
 // --- Inlined/Folded from platform/macos/display_server_macos_base.h ---
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 #include "core/typedefs.h" // IWYU pragma: keep. Prevent macOS `MAX`/`MIN` from being defined.
 #include "servers/display/display_server.h"
 
@@ -1033,7 +1033,7 @@ public:
 
 #include "core/templates/vector.h"
 #include "drivers/egl/egl_manager.h"
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 
 // Suppress redefinition conflicts
 #define FontVariation __FontVariation
@@ -1066,11 +1066,11 @@ public:
 // --- Folded from platform/macos/gl_manager_macos_legacy.h ---
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
-#include "platform/macos/platform_gl.h"
+#include "drivers/gles3/shader_gles3.h"
 
 #include "core/typedefs.h"
 #include "core/templates/rb_map.h"
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 
 #import <AppKit/AppKit.h>
 #import <ApplicationServices/ApplicationServices.h>
@@ -1209,7 +1209,7 @@ constexpr int32_t GDCoreCursorWindowMove = 39;
 @end
 
 // --- Folded from platform/macos/godot_window_delegate.h ---
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
@@ -1225,7 +1225,7 @@ class DisplayServerMacOS;
 @end
 
 // --- Folded from platform/macos/godot_window.h ---
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
@@ -1265,7 +1265,7 @@ class DisplayServerMacOS;
 // --- Folded from platform/macos/godot_content_view.h ---
 #include "core/input/input_event.h"
 #include "core/typedefs.h"
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
@@ -1546,9 +1546,9 @@ public:
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
 #include "core/typedefs.h"
-#include "core/math/vector2i.h"
+#include "core/templates/hashfuncs.h"
 #include "core/templates/rb_map.h"
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 
 #import <AppKit/AppKit.h>
 #import <ApplicationServices/ApplicationServices.h>

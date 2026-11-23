@@ -37,7 +37,7 @@
 // the old way leaked memory
 // this is not used as often as for more performance to make sense
 
-#include "core/math/color.h"
+#include "core/templates/hashfuncs.h"
 
 struct NamedColor {
 	const char *name;

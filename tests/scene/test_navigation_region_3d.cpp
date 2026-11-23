@@ -37,11 +37,10 @@ TEST_FORCE_LINK(test_navigation_region_3d)
 
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
-#include "scene/3d/skeleton_3d.h"
 #include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/resources/3d/primitive_meshes.h"
+#include "scene/resources/mesh.h"
 
 namespace TestNavigationRegion3D {
 

@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_color)
 
-#include "core/math/color.h"
+#include "core/templates/hashfuncs.h"
 
 namespace TestColor {
 

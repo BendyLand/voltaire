@@ -34,7 +34,7 @@
 TEST_FORCE_LINK(test_input_event)
 
 #include "core/input/input_event.h"
-#include "core/input/input_map.h"
+#include "core/input/input.h"
 #include "core/math/rect2.h"
 #include "tests/signal_watcher.h"
 

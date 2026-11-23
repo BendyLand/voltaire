@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_packed_scene)
 
-#include "scene/resources/packed_scene.h"
+#include "scene/main/node.h"
 
 namespace TestPackedScene {
 

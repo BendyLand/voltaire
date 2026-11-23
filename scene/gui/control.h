@@ -34,7 +34,7 @@
 #include "scene/main/canvas_item.h"
 #include "scene/resources/environment.h"
 #include "scene/resources/theme.h"
-#include "servers/display/accessibility_server.h"
+#include "servers/display/display_server.h"
 
 class Label;
 class Panel;

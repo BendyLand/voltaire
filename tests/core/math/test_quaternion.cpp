@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_quaternion)
 
 #include "core/math/math_defs.h"
 #include "core/math/math_funcs.h"
-#include "core/math/transform_3d.h"
+#include "core/types.h"
 #include "core/math/vector3.h"
 
 namespace TestQuaternion {

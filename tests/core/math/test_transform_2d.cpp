@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_transform_2d)
 
-#include "core/math/transform_2d.h"
+#include "core/types.h"
 
 namespace TestTransform2D {
 

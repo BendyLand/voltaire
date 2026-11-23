@@ -51,7 +51,7 @@ public:
 
 #ifdef GLES3_ENABLED
 
-#include <platform_gl.h>
+#include "drivers/gles3/shader_gles3.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/rid_owner.h"
@@ -334,10 +334,9 @@ public:
 #endif // GLES3_ENABLED
 
 // --- End drivers/gles3/effects/gles3_effects.h ---
-#include "servers/rendering/rendering_device_commons.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 #undef ConnectFlags // Defined by windows.h through egl.h, breaks object.h.
 
 #ifdef ANDROID_ENABLED
@@ -832,7 +831,7 @@ public:
 // --- Folded from drivers/gles3/storage/texture_storage.h ---
 #ifdef GLES3_ENABLED
 
-#include <platform_gl.h>
+#include "drivers/gles3/shader_gles3.h"
 #include "core/io/image.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_map.h"
@@ -840,7 +839,7 @@ public:
 #include "drivers/gles3/shaders/gles3_shaders.gen.h"
 
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 
 #ifndef _GL_TEXTURE_EXTERNAL_OES
 #define _GL_TEXTURE_EXTERNAL_OES 0x8D65
@@ -1678,10 +1677,9 @@ public:
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "drivers/gles3/shaders/gles3_shaders.gen.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 
 namespace GLES3
 {
@@ -2168,15 +2166,13 @@ public:
 // --- Folded from drivers/gles3/storage/mesh_storage.h ---
 #ifdef GLES3_ENABLED
 
-#include <platform_gl.h>
+#include "drivers/gles3/shader_gles3.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "drivers/gles3/shaders/gles3_shaders.gen.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 #include "servers/rendering/renderer.h"
 
 namespace GLES3
@@ -2909,9 +2905,9 @@ public:
 
 #endif // GLES3_ENABLED
 // --- End drivers/gles3/storage/mesh_storage.h ---
-#include "servers/rendering/renderer_viewport.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/renderer_viewport.h"
+#include "servers/rendering/renderer.h"
 
 namespace GLES3
 {
@@ -3342,19 +3338,18 @@ public:
 #include "core/math/aabb.h"
 #include "core/math/projection.h"
 #include "core/math/vector3.h"
-#include "core/templates/paged_allocator.h"
+#include "core/types.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 // --- Inlined/Folded from drivers/gles3/storage/light_storage.h ---
 #ifdef GLES3_ENABLED
 
-#include <platform_gl.h>
+#include "drivers/gles3/shader_gles3.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
 
 
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 
 namespace GLES3
 {
@@ -4352,7 +4347,7 @@ public:
 
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/rendering_device.h"
 
 namespace GLES3
 {
@@ -5557,9 +5552,8 @@ public:
 #include "core/templates/self_list.h"
 #include "drivers/gles3/shaders/gles3_shaders.gen.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/utilities.h"
 
-#include <platform_gl.h>
+#include "drivers/gles3/shader_gles3.h"
 
 namespace GLES3 {
 

@@ -33,7 +33,7 @@
 
 #include "scene/main/viewport.h"
 #include "scene/resources/theme.h"
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 
 class Font;
 class StyleBox;

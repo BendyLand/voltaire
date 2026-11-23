@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_transform_3d)
 
-#include "core/math/transform_3d.h"
+#include "core/types.h"
 
 namespace TestTransform3D {
 

@@ -1668,7 +1668,7 @@ static const float earth_gravity = 9.80665;
 
 #include "core/config/project_settings.h"
 #import "drivers/apple_embedded/os_apple_embedded.h"
-#include "servers/camera/camera_server.h"
+#include "servers/xr/xr_server.h"
 
 #import <AVFoundation/AVFoundation.h>
 #import <GameController/GameController.h>

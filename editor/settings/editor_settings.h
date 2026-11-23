@@ -34,7 +34,7 @@
 #include "core/input/input_event.h"
 #include "core/io/config_file.h"
 #include "core/io/resource.h"
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 
 class EditorSettings final
 {
@@ -280,7 +280,7 @@ public:
 #include "core/io/resource_loader.h"
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
-#include "core/os/thread_safe.h"
+#include "core/os/os.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/safe_refcount.h"
 #include "scene/main/node.h"

@@ -37,7 +37,7 @@
 // IWYU pragma: begin_keep
 
 #ifdef VULKAN_ENABLED
-#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
 #endif
 
 #ifdef X11_ENABLED

@@ -1623,7 +1623,7 @@ public:
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
-#include "scene/resources/shader.h"
+#include "scene/resources/material.h"
 
 class ShaderPreprocessor
 {

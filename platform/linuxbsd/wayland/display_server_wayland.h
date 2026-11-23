@@ -370,7 +370,7 @@ int initialize_libdecor(int verbose);
 #include "core/input/input_event.h"
 #include "core/os/os.h"
 #include "core/os/thread.h"
-#include "servers/display/display_server_enums.h"
+#include "servers/display/display_server.h"
 // --- Folded from platform/linuxbsd/wayland/wayland_embedder.h ---
 #ifdef WAYLAND_ENABLED
 
@@ -2952,7 +2952,7 @@ public:
 #ifdef EGL_ENABLED
 
 #ifdef GLAD_ENABLED
-#include <platform_egl.h>
+#include "drivers/egl/egl_manager.h"
 #else
 #include <EGL/egl.h>
 #include <EGL/eglext.h>

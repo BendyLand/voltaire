@@ -37,16 +37,15 @@
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
-#import "drivers/apple/os_log_logger.h"
+#import "drivers/coreaudio/audio_driver_coreaudio.h"
 #import "drivers/apple_embedded/os_apple_embedded.h"
 #ifdef SDL_ENABLED
 #include "core/input/input.h"
 #endif
 #include "main/main.h"
-#include "servers/camera/camera_server.h"
+#include "servers/xr/xr_server.h"
 
 #import <AVFoundation/AVFAudio.h>
 #import <AudioToolbox/AudioServices.h>
@@ -1047,7 +1046,6 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 #import "drivers/apple_embedded/os_apple_embedded.h"
 
 #include "core/config/project_settings.h"
-#include "core/os/main_loop.h"
 #include "core/os/os.h"
 #import "drivers/apple_embedded/os_apple_embedded.h"
 #import "drivers/coreaudio/audio_driver_coreaudio.h"

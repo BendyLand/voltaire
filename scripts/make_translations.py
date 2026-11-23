@@ -14,7 +14,7 @@ import utils
 def make_translations(target, source):
     target_h, target_cpp = str(target[0]), str(target[1])
 
-    category = os.path.basename(target_h).split("_")[0]
+    category = os.path.basename(target_cpp).split("_")[0]
     valid_sources = [src for src in source if os.path.isfile(src)]
     sorted_paths = sorted(
         [os.path.abspath(src) for src in valid_sources],
@@ -120,7 +120,7 @@ match run:
         )
     case 2:
         make_translations(
-            ["editor/translations/doc_translations.gen.h", "editor/translations/doc_translations.gen.cpp"],
+            ["editor/translations/extractable_translations.gen.h", "editor/translations/doc_translations.gen.cpp"],
             []
         )
     case 3:
@@ -128,5 +128,7 @@ match run:
             ["editor/translations/extractable_translations.gen.h", "editor/translations/extractable_translations.gen.cpp"],
             ["editor/translations/extractable/ar.po", "editor/translations/extractable/bg.po", "editor/translations/extractable/ca.po", "editor/translations/extractable/cs.po", "editor/translations/extractable/de.po", "editor/translations/extractable/el.po", "editor/translations/extractable/es.po", "editor/translations/extractable/es_AR.po", "editor/translations/extractable/et.po", "editor/translations/extractable/extractable.pot", "editor/translations/extractable/fa.po", "editor/translations/extractable/fi.po", "editor/translations/extractable/fr.po", "editor/translations/extractable/he.po", "editor/translations/extractable/id.po", "editor/translations/extractable/it.po", "editor/translations/extractable/ja.po", "editor/translations/extractable/ko.po", "editor/translations/extractable/lv.po", "editor/translations/extractable/nl.po", "editor/translations/extractable/pl.po", "editor/translations/extractable/pt.po", "editor/translations/extractable/pt_BR.po", "editor/translations/extractable/ru.po", "editor/translations/extractable/sk.po", "editor/translations/extractable/sv.po", "editor/translations/extractable/th.po", "editor/translations/extractable/tr.po", "editor/translations/extractable/uk.po", "editor/translations/extractable/vi.po", "editor/translations/extractable/zh_Hans.po", "editor/translations/extractable/zh_Hant.po"]
         )
+        with open("editor/translations/extractable_translations.gen.h", "a", encoding="utf-8", newline="\n") as f:
+            f.write("extern const EditorTranslationList _doc_translations[];\n")
     case _:
         print("No commands left to run.")
