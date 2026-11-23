@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/macos/native_menu_macos.h"
+#import "platform/macos/display_server_macos.h"
 
 @implementation GodotMenuItem
 

@@ -38,7 +38,7 @@
 
 #ifdef VULKAN_ENABLED
 #include "servers/rendering/rendering_context_driver.h"
-#include "servers/rendering/rendering_shader_container.h"
+#include "servers/rendering/rendering_device_driver.h"
 #endif
 
 #ifdef X11_ENABLED

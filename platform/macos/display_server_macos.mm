@@ -36,15 +36,15 @@
 #import "platform/macos/display_server_macos.h"
 #import "platform/macos/display_server_macos.h"
 #import "platform/macos/display_server_macos.h"
-#import "platform/macos/native_menu_macos.h"
-#import "platform/macos/native_menu_macos.h"
 #import "platform/macos/display_server_macos.h"
 #import "platform/macos/display_server_macos.h"
 #import "platform/macos/display_server_macos.h"
 #import "platform/macos/display_server_macos.h"
 #import "platform/macos/display_server_macos.h"
-#import "key_mapping_macos.h"
-#import "native_menu_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
 #import "os_macos.h"
 
 #include "core/config/project_settings.h"
@@ -63,7 +63,7 @@
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 
 #ifdef TOOLS_ENABLED
-#import "display_server_macos_embedded.h"
+#import "platform/macos/display_server_macos.h"
 
 #import "editor/embedded_process_macos.h"
 #endif
@@ -85,7 +85,7 @@
 #include "servers/rendering/rendering_device.h"
 
 #if defined(VULKAN_ENABLED)
-#import "platform/macos/display_server_macos_base.h"
+#import "platform/macos/display_server_macos.h"
 #endif
 #if defined(METAL_ENABLED)
 #import "drivers/metal/rendering_context_driver_metal.h"
@@ -95,7 +95,7 @@
 // Keep Quartz after rendering includes, as it includes system GL.h
 // which clashes with GLAD.
 #ifdef TOOLS_ENABLED
-#import "platform/macos/display_server_macos_base.h"
+#import "platform/macos/display_server_macos.h"
 #endif
 
 #include <AppKit/AppKit.h>

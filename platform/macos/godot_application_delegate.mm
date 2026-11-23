@@ -32,9 +32,9 @@
 #import "platform/macos/os_macos.h"
 
 #import "display_server_macos.h"
-#import "platform/macos/native_menu_macos.h"
-#import "key_mapping_macos.h"
-#import "native_menu_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
 #import "os_macos.h"
 
 #import "core/input/input.h"

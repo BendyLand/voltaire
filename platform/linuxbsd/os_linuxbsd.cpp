@@ -2676,7 +2676,7 @@ void CrashHandler::initialize() {}
 #include "servers/display/display_server.h"
 
 #ifdef SOWRAP_ENABLED
-#include "dbus-so_wrap.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 #else
 #include <dbus/dbus.h>
 #endif
@@ -3274,7 +3274,7 @@ void FreeDesktopPortalDesktop::_thread_monitor(void* p_userdata) {}
 #include "core/config/project_settings.h"
 
 #ifdef SOWRAP_ENABLED
-#include "dbus-so_wrap.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 #else
 #include <dbus/dbus.h>
 #endif
@@ -3394,7 +3394,7 @@ void FreeDesktopScreenSaver::inhibit() {}
 #ifdef DBUS_ENABLED
 
 #ifdef SOWRAP_ENABLED
-#include "dbus-so_wrap.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 #else
 #include <dbus/dbus.h>
 #endif
@@ -3815,3 +3815,164 @@ void TTS_Linux::finalize()
 }
 
 void TTS_Linux::speech_init_thread_func(void* p_userdata) {}
+
+
+// --- Merged from platform/linuxbsd/godot_linuxbsd.cpp ---
+#if !defined(LIBGODOT_ENABLED)
+#include <clocale>
+#include <cstdio>
+#include <cstdlib>
+#include <unistd.h>
+#include "main/main.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
+
+#if defined(ASAN_ENABLED)
+#include <sys/resource.h>
+#endif
+
+#if defined(__x86_64) || defined(__x86_64__)
+void __cpuid(int* r_cpuinfo, int p_info)
+{
+	// Note: Some compilers have a buggy `__cpuid` intrinsic, using inline assembly (based on
+	// LLVM-20 implementation) instead.
+	__asm__ __volatile__(
+		"xchgq %%rbx, %q1;"
+		"cpuid;"
+		"xchgq %%rbx, %q1;"
+		: "=a"(r_cpuinfo[0]), "=r"(r_cpuinfo[1]), "=c"(r_cpuinfo[2]), "=d"(r_cpuinfo[3])
+		: "0"(p_info));
+}
+#endif
+
+// For export templates, add a section; the exporter will patch it to enclose
+// the data appended to the executable (bundled PCK).
+#if !defined(TOOLS_ENABLED) && defined(__GNUC__)
+static const char dummy[8] __attribute__((section("pck"), used)) = {0};
+
+// Dummy function to prevent LTO from discarding "pck" section.
+extern "C" const char* pck_section_dummy_call() __attribute__((used));
+
+extern "C" const char* pck_section_dummy_call() { return &dummy[0]; }
+#endif
+
+int main(int argc, char* argv[])
+{
+#if defined(__x86_64) || defined(__x86_64__)
+	int cpuinfo[4];
+	__cpuid(cpuinfo, 0x01);
+
+	if (!(cpuinfo[2] & (1 << 20))) {
+		printf("A CPU with SSE4.2 instruction set support is required.\n");
+
+		int ret = system("zenity --warning --title \"Godot Engine\" --text \"A CPU with SSE4.2 "
+						 "instruction set support is required.\" 2> /dev/null");
+		if (ret != 0) {
+			ret = system("kdialog --title \"Godot Engine\" --sorry \"A CPU with SSE4.2 instruction "
+						 "set support is required.\" 2> /dev/null");
+		}
+		if (ret != 0) {
+			ret = system("Xdialog --title \"Godot Engine\" --msgbox \"A CPU with SSE4.2 "
+						 "instruction set support is required.\" 0 0 2> /dev/null");
+		}
+		if (ret != 0) {
+			ret = system("xmessage -center -title \"Godot Engine\" \"A CPU with SSE4.2 instruction "
+						 "set support is required.\" 2> /dev/null");
+		}
+		abort();
+	}
+#endif
+
+#if defined(ASAN_ENABLED)
+	// Note: Set stack size to be at least 30 MB (vs 8 MB default) to avoid overflow, address
+	// sanitizer can increase stack usage up to 3 times.
+	struct rlimit stack_lim = {0x1E00000, 0x1E00000};
+	setrlimit(RLIMIT_STACK, &stack_lim);
+#endif
+	setlocale(LC_CTYPE, "");
+
+	char* cwd = (char*)malloc(PATH_MAX);
+	ERR_FAIL_NULL_V(cwd, ERR_OUT_OF_MEMORY);
+	char* ret = getcwd(cwd, PATH_MAX);
+
+	// Initialize core system primitives (DirAccess, FileAccess, IP resolver, posix threads)
+	OS::initialize_core();
+
+	// Initialize platform subsystems (DisplayServer drivers: Wayland/X11, Audio, Loggers)
+	OS::initialize();
+
+	Error err = Main::setup(argv[0], argc - 1, &argv[1]);
+	if (err != OK) {
+		OS::finalize_core();
+		free(cwd);
+		if (err == ERR_HELP) { // Returned by --help and --version, so success.
+			return EXIT_SUCCESS;
+		}
+		return EXIT_FAILURE;
+	}
+
+	if (Main::start() == EXIT_SUCCESS) {
+		OS_LinuxBSD::run();
+	}
+	else {
+		OS::set_exit_code(EXIT_FAILURE);
+	}
+	Main::cleanup();
+
+	// Clean up OS state after engine subsystems tear down
+	OS::finalize();
+	OS::finalize_core();
+
+	if (ret) { // Previous getcwd was successful
+		if (chdir(cwd) != 0) {
+			ERR_PRINT("Couldn't return to previous working directory.");
+		}
+	}
+	free(cwd);
+	return OS::get_exit_code();
+}
+#endif // !defined(LIBGODOT_ENABLED)
+
+
+// --- Merged from platform/linuxbsd/libgodot_linuxbsd.cpp ---
+#if defined(LIBGODOT_ENABLED)
+#include "platform/linuxbsd/os_linuxbsd.h"
+
+#include "core/extension/godot_instance.h"
+#include "core/extension/libgodot.h"
+#include "main/main.h"
+
+static OS_LinuxBSD *os = nullptr;
+
+static GodotInstance *instance = nullptr;
+
+GDExtensionObjectPtr libgodot_create_godot_instance(int p_argc, char *p_argv[], GDExtensionInitializationFunction p_init_func) {
+	ERR_FAIL_COND_V_MSG(instance != nullptr, nullptr, "Only one Godot Instance may be created.");
+
+	os = new OS_LinuxBSD();
+
+	Error err = Main::setup(p_argv[0], p_argc - 1, &p_argv[1], false);
+	if (err != OK) {
+		return nullptr;
+	}
+
+	instance = memnew(GodotInstance);
+	if (!instance->initialize(p_init_func)) {
+		memdelete(instance);
+		// Note: When Godot Engine supports reinitialization, clear the instance pointer here.
+		//instance = nullptr;
+		return nullptr;
+	}
+
+	return (GDExtensionObjectPtr)instance;
+}
+
+void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
+	GodotInstance *godot_instance = (GodotInstance *)p_godot_instance;
+	if (instance == godot_instance) {
+		godot_instance->stop();
+		memdelete(godot_instance);
+		instance = nullptr;
+		Main::cleanup();
+	}
+}
+#endif // defined(LIBGODOT_ENABLED)

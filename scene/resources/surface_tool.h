@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/math/vector4.h"
+#include "core/math/projection.h"
 #include "core/templates/local_vector.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/rendering_server_enums.h"

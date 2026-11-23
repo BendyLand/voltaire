@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_vector4)
 
-#include "core/math/vector4.h"
+#include "core/math/projection.h"
 
 namespace TestVector4 {
 

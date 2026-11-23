@@ -1,36 +1,8 @@
-/**************************************************************************/
-/*  lightmapper_rd.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
+#include "modules/modules_enabled.gen.h"
 
+#if defined(MODULE_LIGHTMAPPER_RD_ENABLED)
 #include "core/config/project_settings.h"
-#include "register_types.h"
+#include "modules/register_module_types.h"
 #include "core/io/dir_access.h"
 #include "core/math/geometry_2d.h"
 #include "core/math/geometry_3d.h"
@@ -374,7 +346,7 @@ struct Lightmapper::RDState
 #include "lm_raster.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_device_binds.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
 // uncomment this if you want to see textures from all the process saved
@@ -1381,3 +1353,1558 @@ void uninitialize_lightmapper_rd_module(ModuleInitializationLevel p_level)
 }
 
 void initialize_lightmapper_rd_module(ModuleInitializationLevel p_level) {}
+#endif // defined(MODULE_LIGHTMAPPER_RD_ENABLED)
+
+
+// --- Merged from modules/xatlas_unwrap/register_types.cpp ---
+#if defined(MODULE_XATLAS_UNWRAP_ENABLED)
+#include "modules/register_module_types.h"
+
+#include "core/crypto/crypto_core.h"
+#include "core/error/error_macros.h"
+#include "core/os/memory.h"
+
+#include <xatlas.h>
+
+#include <cstring>
+
+extern bool (*array_mesh_lightmap_unwrap_callback)(float p_texel_size, const float *p_vertices, const float *p_normals, int p_vertex_count, const int *p_indices, int p_index_count, const uint8_t *p_cache_data, bool *r_use_cache, uint8_t **r_mesh_cache, int *r_mesh_cache_size, float **r_uv, int **r_vertex, int *r_vertex_count, int **r_index, int *r_index_count, int *r_size_hint_x, int *r_size_hint_y);
+
+bool xatlas_mesh_lightmap_unwrap_callback(float p_texel_size, const float *p_vertices, const float *p_normals, int p_vertex_count, const int *p_indices, int p_index_count, const uint8_t *p_cache_data, bool *r_use_cache, uint8_t **r_mesh_cache, int *r_mesh_cache_size, float **r_uv, int **r_vertex, int *r_vertex_count, int **r_index, int *r_index_count, int *r_size_hint_x, int *r_size_hint_y) {
+	CryptoCore::MD5Context ctx;
+	ctx.start();
+
+	ctx.update((unsigned char *)&p_texel_size, sizeof(float));
+	ctx.update((unsigned char *)p_indices, sizeof(int) * p_index_count);
+	ctx.update((unsigned char *)p_vertices, sizeof(float) * p_vertex_count * 3);
+	ctx.update((unsigned char *)p_normals, sizeof(float) * p_vertex_count * 3);
+
+	unsigned char hash[16];
+	ctx.finish(hash);
+
+	bool cached = false;
+	unsigned int cache_idx = 0;
+
+	*r_mesh_cache = nullptr;
+	*r_mesh_cache_size = 0;
+
+	if (p_cache_data) {
+		//Check if hash is in cache data
+		int *cache_data = (int *)p_cache_data;
+		int n_entries = cache_data[0];
+		unsigned int read_idx = 1;
+		for (int i = 0; i < n_entries; ++i) {
+			if (memcmp(&cache_data[read_idx], hash, 16) == 0) {
+				cached = true;
+				cache_idx = read_idx;
+				break;
+			}
+
+			read_idx += 4; // hash
+			read_idx += 2; // size hint
+
+			int vertex_count = cache_data[read_idx];
+			read_idx += 1; // vertex count
+			read_idx += vertex_count; // vertex
+			read_idx += vertex_count * 2; // uvs
+
+			int index_count = cache_data[read_idx];
+			read_idx += 1; // index count
+			read_idx += index_count; // indices
+		}
+	}
+
+	if (cached) {
+		int *cache_data = (int *)p_cache_data;
+
+		cache_idx += 4;
+
+		// Load size
+		*r_size_hint_x = cache_data[cache_idx];
+		*r_size_hint_y = cache_data[cache_idx + 1];
+		cache_idx += 2;
+
+		// Load vertices
+		*r_vertex_count = cache_data[cache_idx];
+		cache_idx++;
+		*r_vertex = &cache_data[cache_idx];
+		cache_idx += *r_vertex_count;
+
+		// Load UVs
+		*r_uv = (float *)&cache_data[cache_idx];
+		cache_idx += *r_vertex_count * 2;
+
+		// Load indices
+		*r_index_count = cache_data[cache_idx];
+		cache_idx++;
+		*r_index = &cache_data[cache_idx];
+	} else {
+		// set up input mesh
+		xatlas::MeshDecl input_mesh;
+		input_mesh.indexData = p_indices;
+		input_mesh.indexCount = p_index_count;
+		input_mesh.indexFormat = xatlas::IndexFormat::UInt32;
+
+		input_mesh.vertexCount = p_vertex_count;
+		input_mesh.vertexPositionData = p_vertices;
+		input_mesh.vertexPositionStride = sizeof(float) * 3;
+		input_mesh.vertexNormalData = p_normals;
+		input_mesh.vertexNormalStride = sizeof(uint32_t) * 3;
+		input_mesh.vertexUvData = nullptr;
+		input_mesh.vertexUvStride = 0;
+
+		xatlas::ChartOptions chart_options;
+		chart_options.fixWinding = true;
+
+		ERR_FAIL_COND_V_MSG(p_texel_size <= 0.0f, false, "Texel size must be greater than 0.");
+
+		xatlas::PackOptions pack_options;
+		pack_options.padding = 1;
+		pack_options.maxChartSize = 4094; // Lightmap atlassing needs 2 for padding between meshes, so 4096-2
+		pack_options.blockAlign = true;
+		pack_options.texelsPerUnit = 1.0 / p_texel_size;
+
+		xatlas::Atlas *atlas = xatlas::Create();
+
+		xatlas::AddMeshError err = xatlas::AddMesh(atlas, input_mesh, 1);
+		ERR_FAIL_COND_V_MSG(err != xatlas::AddMeshError::Success, false, xatlas::StringForEnum(err));
+
+		xatlas::Generate(atlas, chart_options, pack_options);
+
+		*r_size_hint_x = atlas->width;
+		*r_size_hint_y = atlas->height;
+
+		float w = *r_size_hint_x;
+		float h = *r_size_hint_y;
+
+		if (w == 0 || h == 0) {
+			xatlas::Destroy(atlas);
+			return false; //could not bake because there is no area
+		}
+
+		const xatlas::Mesh &output = atlas->meshes[0];
+
+		*r_vertex = (int *)memalloc(sizeof(int) * output.vertexCount);
+		ERR_FAIL_NULL_V_MSG(*r_vertex, false, "Out of memory.");
+		*r_uv = (float *)memalloc(sizeof(float) * output.vertexCount * 2);
+		ERR_FAIL_NULL_V_MSG(*r_uv, false, "Out of memory.");
+		*r_index = (int *)memalloc(sizeof(int) * output.indexCount);
+		ERR_FAIL_NULL_V_MSG(*r_index, false, "Out of memory.");
+
+		float max_x = 0;
+		float max_y = 0;
+		for (uint32_t i = 0; i < output.vertexCount; i++) {
+			(*r_vertex)[i] = output.vertexArray[i].xref;
+			(*r_uv)[i * 2 + 0] = output.vertexArray[i].uv[0] / w;
+			(*r_uv)[i * 2 + 1] = output.vertexArray[i].uv[1] / h;
+			max_x = MAX(max_x, output.vertexArray[i].uv[0]);
+			max_y = MAX(max_y, output.vertexArray[i].uv[1]);
+		}
+
+		*r_vertex_count = output.vertexCount;
+
+		for (uint32_t i = 0; i < output.indexCount; i++) {
+			(*r_index)[i] = output.indexArray[i];
+		}
+
+		*r_index_count = output.indexCount;
+
+		xatlas::Destroy(atlas);
+	}
+
+	if (*r_use_cache) {
+		// Build cache data for current mesh
+
+		unsigned int new_cache_size = 4 + 2 + 1 + *r_vertex_count + (*r_vertex_count * 2) + 1 + *r_index_count; // hash + size hint + vertex_count + vertices + uvs + index_count + indices
+		new_cache_size *= sizeof(int);
+		int *new_cache_data = (int *)memalloc(new_cache_size);
+		unsigned int new_cache_idx = 0;
+
+		// hash
+		memcpy(&new_cache_data[new_cache_idx], hash, 16);
+		new_cache_idx += 4;
+
+		// size hint
+		new_cache_data[new_cache_idx] = *r_size_hint_x;
+		new_cache_data[new_cache_idx + 1] = *r_size_hint_y;
+		new_cache_idx += 2;
+
+		// vertex count
+		new_cache_data[new_cache_idx] = *r_vertex_count;
+		new_cache_idx++;
+
+		// vertices
+		memcpy(&new_cache_data[new_cache_idx], *r_vertex, sizeof(int) * (*r_vertex_count));
+		new_cache_idx += *r_vertex_count;
+
+		// uvs
+		memcpy(&new_cache_data[new_cache_idx], *r_uv, sizeof(float) * (*r_vertex_count) * 2);
+		new_cache_idx += *r_vertex_count * 2;
+
+		// index count
+		new_cache_data[new_cache_idx] = *r_index_count;
+		new_cache_idx++;
+
+		// indices
+		memcpy(&new_cache_data[new_cache_idx], *r_index, sizeof(int) * (*r_index_count));
+
+		// Return cache data to the caller
+		*r_mesh_cache = (uint8_t *)new_cache_data;
+		*r_mesh_cache_size = new_cache_size;
+	}
+
+	*r_use_cache = cached; // Return whether cache was used.
+
+	return true;
+}
+
+void initialize_xatlas_unwrap_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	array_mesh_lightmap_unwrap_callback = xatlas_mesh_lightmap_unwrap_callback;
+}
+
+void uninitialize_xatlas_unwrap_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+#endif // defined(MODULE_XATLAS_UNWRAP_ENABLED)
+
+
+// --- Merged from modules/betsy/image_compress_betsy.cpp ---
+#if defined(MODULE_BETSY_ENABLED)
+#include "modules/betsy/alpha_stitch.glsl.gen.h"
+#include "modules/register_module_types.h"
+#include "modules/betsy/bc1.glsl.gen.h"
+#include "modules/betsy/bc4.glsl.gen.h"
+#include "modules/betsy/bc6h.glsl.gen.h"
+// --- Inlined from modules/betsy/betsy_bc1.h ---
+static unsigned char stb__OMatch5[256][2] = {
+	{ 0, 0 },
+	{ 0, 0 },
+	{ 0, 1 },
+	{ 0, 1 },
+	{ 1, 0 },
+	{ 1, 0 },
+	{ 1, 0 },
+	{ 1, 1 },
+	{ 1, 1 },
+	{ 2, 0 },
+	{ 2, 0 },
+	{ 0, 4 },
+	{ 2, 1 },
+	{ 2, 1 },
+	{ 2, 1 },
+	{ 3, 0 },
+	{ 3, 0 },
+	{ 3, 0 },
+	{ 3, 1 },
+	{ 1, 5 },
+	{ 3, 2 },
+	{ 3, 2 },
+	{ 4, 0 },
+	{ 4, 0 },
+	{ 4, 1 },
+	{ 4, 1 },
+	{ 4, 2 },
+	{ 4, 2 },
+	{ 4, 2 },
+	{ 3, 5 },
+	{ 5, 1 },
+	{ 5, 1 },
+	{ 5, 2 },
+	{ 4, 4 },
+	{ 5, 3 },
+	{ 5, 3 },
+	{ 5, 3 },
+	{ 6, 2 },
+	{ 6, 2 },
+	{ 6, 2 },
+	{ 6, 3 },
+	{ 5, 5 },
+	{ 6, 4 },
+	{ 6, 4 },
+	{ 4, 8 },
+	{ 7, 3 },
+	{ 7, 3 },
+	{ 7, 3 },
+	{ 7, 4 },
+	{ 7, 4 },
+	{ 7, 4 },
+	{ 7, 5 },
+	{ 5, 9 },
+	{ 7, 6 },
+	{ 7, 6 },
+	{ 8, 4 },
+	{ 8, 4 },
+	{ 8, 5 },
+	{ 8, 5 },
+	{ 8, 6 },
+	{ 8, 6 },
+	{ 8, 6 },
+	{ 7, 9 },
+	{ 9, 5 },
+	{ 9, 5 },
+	{ 9, 6 },
+	{ 8, 8 },
+	{ 9, 7 },
+	{ 9, 7 },
+	{ 9, 7 },
+	{ 10, 6 },
+	{ 10, 6 },
+	{ 10, 6 },
+	{ 10, 7 },
+	{ 9, 9 },
+	{ 10, 8 },
+	{ 10, 8 },
+	{ 8, 12 },
+	{ 11, 7 },
+	{ 11, 7 },
+	{ 11, 7 },
+	{ 11, 8 },
+	{ 11, 8 },
+	{ 11, 8 },
+	{ 11, 9 },
+	{ 9, 13 },
+	{ 11, 10 },
+	{ 11, 10 },
+	{ 12, 8 },
+	{ 12, 8 },
+	{ 12, 9 },
+	{ 12, 9 },
+	{ 12, 10 },
+	{ 12, 10 },
+	{ 12, 10 },
+	{ 11, 13 },
+	{ 13, 9 },
+	{ 13, 9 },
+	{ 13, 10 },
+	{ 12, 12 },
+	{ 13, 11 },
+	{ 13, 11 },
+	{ 13, 11 },
+	{ 14, 10 },
+	{ 14, 10 },
+	{ 14, 10 },
+	{ 14, 11 },
+	{ 13, 13 },
+	{ 14, 12 },
+	{ 14, 12 },
+	{ 12, 16 },
+	{ 15, 11 },
+	{ 15, 11 },
+	{ 15, 11 },
+	{ 15, 12 },
+	{ 15, 12 },
+	{ 15, 12 },
+	{ 15, 13 },
+	{ 13, 17 },
+	{ 15, 14 },
+	{ 15, 14 },
+	{ 16, 12 },
+	{ 16, 12 },
+	{ 16, 13 },
+	{ 16, 13 },
+	{ 16, 14 },
+	{ 16, 14 },
+	{ 16, 14 },
+	{ 15, 17 },
+	{ 17, 13 },
+	{ 17, 13 },
+	{ 17, 14 },
+	{ 16, 16 },
+	{ 17, 15 },
+	{ 17, 15 },
+	{ 17, 15 },
+	{ 18, 14 },
+	{ 18, 14 },
+	{ 18, 14 },
+	{ 18, 15 },
+	{ 17, 17 },
+	{ 18, 16 },
+	{ 18, 16 },
+	{ 16, 20 },
+	{ 19, 15 },
+	{ 19, 15 },
+	{ 19, 15 },
+	{ 19, 16 },
+	{ 19, 16 },
+	{ 19, 16 },
+	{ 19, 17 },
+	{ 17, 21 },
+	{ 19, 18 },
+	{ 19, 18 },
+	{ 20, 16 },
+	{ 20, 16 },
+	{ 20, 17 },
+	{ 20, 17 },
+	{ 20, 18 },
+	{ 20, 18 },
+	{ 20, 18 },
+	{ 19, 21 },
+	{ 21, 17 },
+	{ 21, 17 },
+	{ 21, 18 },
+	{ 20, 20 },
+	{ 21, 19 },
+	{ 21, 19 },
+	{ 21, 19 },
+	{ 22, 18 },
+	{ 22, 18 },
+	{ 22, 18 },
+	{ 22, 19 },
+	{ 21, 21 },
+	{ 22, 20 },
+	{ 22, 20 },
+	{ 20, 24 },
+	{ 23, 19 },
+	{ 23, 19 },
+	{ 23, 19 },
+	{ 23, 20 },
+	{ 23, 20 },
+	{ 23, 20 },
+	{ 23, 21 },
+	{ 21, 25 },
+	{ 23, 22 },
+	{ 23, 22 },
+	{ 24, 20 },
+	{ 24, 20 },
+	{ 24, 21 },
+	{ 24, 21 },
+	{ 24, 22 },
+	{ 24, 22 },
+	{ 24, 22 },
+	{ 23, 25 },
+	{ 25, 21 },
+	{ 25, 21 },
+	{ 25, 22 },
+	{ 24, 24 },
+	{ 25, 23 },
+	{ 25, 23 },
+	{ 25, 23 },
+	{ 26, 22 },
+	{ 26, 22 },
+	{ 26, 22 },
+	{ 26, 23 },
+	{ 25, 25 },
+	{ 26, 24 },
+	{ 26, 24 },
+	{ 24, 28 },
+	{ 27, 23 },
+	{ 27, 23 },
+	{ 27, 23 },
+	{ 27, 24 },
+	{ 27, 24 },
+	{ 27, 24 },
+	{ 27, 25 },
+	{ 25, 29 },
+	{ 27, 26 },
+	{ 27, 26 },
+	{ 28, 24 },
+	{ 28, 24 },
+	{ 28, 25 },
+	{ 28, 25 },
+	{ 28, 26 },
+	{ 28, 26 },
+	{ 28, 26 },
+	{ 27, 29 },
+	{ 29, 25 },
+	{ 29, 25 },
+	{ 29, 26 },
+	{ 28, 28 },
+	{ 29, 27 },
+	{ 29, 27 },
+	{ 29, 27 },
+	{ 30, 26 },
+	{ 30, 26 },
+	{ 30, 26 },
+	{ 30, 27 },
+	{ 29, 29 },
+	{ 30, 28 },
+	{ 30, 28 },
+	{ 30, 28 },
+	{ 31, 27 },
+	{ 31, 27 },
+	{ 31, 27 },
+	{ 31, 28 },
+	{ 31, 28 },
+	{ 31, 28 },
+	{ 31, 29 },
+	{ 31, 29 },
+	{ 31, 30 },
+	{ 31, 30 },
+	{ 31, 30 },
+	{ 31, 31 },
+	{ 31, 31 },
+};
+
+static unsigned char stb__OMatch6[256][2] = {
+	{ 0, 0 },
+	{ 0, 1 },
+	{ 1, 0 },
+	{ 1, 0 },
+	{ 1, 1 },
+	{ 2, 0 },
+	{ 2, 1 },
+	{ 3, 0 },
+	{ 3, 0 },
+	{ 3, 1 },
+	{ 4, 0 },
+	{ 4, 0 },
+	{ 4, 1 },
+	{ 5, 0 },
+	{ 5, 1 },
+	{ 6, 0 },
+	{ 6, 0 },
+	{ 6, 1 },
+	{ 7, 0 },
+	{ 7, 0 },
+	{ 7, 1 },
+	{ 8, 0 },
+	{ 8, 1 },
+	{ 8, 1 },
+	{ 8, 2 },
+	{ 9, 1 },
+	{ 9, 2 },
+	{ 9, 2 },
+	{ 9, 3 },
+	{ 10, 2 },
+	{ 10, 3 },
+	{ 10, 3 },
+	{ 10, 4 },
+	{ 11, 3 },
+	{ 11, 4 },
+	{ 11, 4 },
+	{ 11, 5 },
+	{ 12, 4 },
+	{ 12, 5 },
+	{ 12, 5 },
+	{ 12, 6 },
+	{ 13, 5 },
+	{ 13, 6 },
+	{ 8, 16 },
+	{ 13, 7 },
+	{ 14, 6 },
+	{ 14, 7 },
+	{ 9, 17 },
+	{ 14, 8 },
+	{ 15, 7 },
+	{ 15, 8 },
+	{ 11, 16 },
+	{ 15, 9 },
+	{ 15, 10 },
+	{ 16, 8 },
+	{ 16, 9 },
+	{ 16, 10 },
+	{ 15, 13 },
+	{ 17, 9 },
+	{ 17, 10 },
+	{ 17, 11 },
+	{ 15, 16 },
+	{ 18, 10 },
+	{ 18, 11 },
+	{ 18, 12 },
+	{ 16, 16 },
+	{ 19, 11 },
+	{ 19, 12 },
+	{ 19, 13 },
+	{ 17, 17 },
+	{ 20, 12 },
+	{ 20, 13 },
+	{ 20, 14 },
+	{ 19, 16 },
+	{ 21, 13 },
+	{ 21, 14 },
+	{ 21, 15 },
+	{ 20, 17 },
+	{ 22, 14 },
+	{ 22, 15 },
+	{ 25, 10 },
+	{ 22, 16 },
+	{ 23, 15 },
+	{ 23, 16 },
+	{ 26, 11 },
+	{ 23, 17 },
+	{ 24, 16 },
+	{ 24, 17 },
+	{ 27, 12 },
+	{ 24, 18 },
+	{ 25, 17 },
+	{ 25, 18 },
+	{ 28, 13 },
+	{ 25, 19 },
+	{ 26, 18 },
+	{ 26, 19 },
+	{ 29, 14 },
+	{ 26, 20 },
+	{ 27, 19 },
+	{ 27, 20 },
+	{ 30, 15 },
+	{ 27, 21 },
+	{ 28, 20 },
+	{ 28, 21 },
+	{ 28, 21 },
+	{ 28, 22 },
+	{ 29, 21 },
+	{ 29, 22 },
+	{ 24, 32 },
+	{ 29, 23 },
+	{ 30, 22 },
+	{ 30, 23 },
+	{ 25, 33 },
+	{ 30, 24 },
+	{ 31, 23 },
+	{ 31, 24 },
+	{ 27, 32 },
+	{ 31, 25 },
+	{ 31, 26 },
+	{ 32, 24 },
+	{ 32, 25 },
+	{ 32, 26 },
+	{ 31, 29 },
+	{ 33, 25 },
+	{ 33, 26 },
+	{ 33, 27 },
+	{ 31, 32 },
+	{ 34, 26 },
+	{ 34, 27 },
+	{ 34, 28 },
+	{ 32, 32 },
+	{ 35, 27 },
+	{ 35, 28 },
+	{ 35, 29 },
+	{ 33, 33 },
+	{ 36, 28 },
+	{ 36, 29 },
+	{ 36, 30 },
+	{ 35, 32 },
+	{ 37, 29 },
+	{ 37, 30 },
+	{ 37, 31 },
+	{ 36, 33 },
+	{ 38, 30 },
+	{ 38, 31 },
+	{ 41, 26 },
+	{ 38, 32 },
+	{ 39, 31 },
+	{ 39, 32 },
+	{ 42, 27 },
+	{ 39, 33 },
+	{ 40, 32 },
+	{ 40, 33 },
+	{ 43, 28 },
+	{ 40, 34 },
+	{ 41, 33 },
+	{ 41, 34 },
+	{ 44, 29 },
+	{ 41, 35 },
+	{ 42, 34 },
+	{ 42, 35 },
+	{ 45, 30 },
+	{ 42, 36 },
+	{ 43, 35 },
+	{ 43, 36 },
+	{ 46, 31 },
+	{ 43, 37 },
+	{ 44, 36 },
+	{ 44, 37 },
+	{ 44, 37 },
+	{ 44, 38 },
+	{ 45, 37 },
+	{ 45, 38 },
+	{ 40, 48 },
+	{ 45, 39 },
+	{ 46, 38 },
+	{ 46, 39 },
+	{ 41, 49 },
+	{ 46, 40 },
+	{ 47, 39 },
+	{ 47, 40 },
+	{ 43, 48 },
+	{ 47, 41 },
+	{ 47, 42 },
+	{ 48, 40 },
+	{ 48, 41 },
+	{ 48, 42 },
+	{ 47, 45 },
+	{ 49, 41 },
+	{ 49, 42 },
+	{ 49, 43 },
+	{ 47, 48 },
+	{ 50, 42 },
+	{ 50, 43 },
+	{ 50, 44 },
+	{ 48, 48 },
+	{ 51, 43 },
+	{ 51, 44 },
+	{ 51, 45 },
+	{ 49, 49 },
+	{ 52, 44 },
+	{ 52, 45 },
+	{ 52, 46 },
+	{ 51, 48 },
+	{ 53, 45 },
+	{ 53, 46 },
+	{ 53, 47 },
+	{ 52, 49 },
+	{ 54, 46 },
+	{ 54, 47 },
+	{ 57, 42 },
+	{ 54, 48 },
+	{ 55, 47 },
+	{ 55, 48 },
+	{ 58, 43 },
+	{ 55, 49 },
+	{ 56, 48 },
+	{ 56, 49 },
+	{ 59, 44 },
+	{ 56, 50 },
+	{ 57, 49 },
+	{ 57, 50 },
+	{ 60, 45 },
+	{ 57, 51 },
+	{ 58, 50 },
+	{ 58, 51 },
+	{ 61, 46 },
+	{ 58, 52 },
+	{ 59, 51 },
+	{ 59, 52 },
+	{ 62, 47 },
+	{ 59, 53 },
+	{ 60, 52 },
+	{ 60, 53 },
+	{ 60, 53 },
+	{ 60, 54 },
+	{ 61, 53 },
+	{ 61, 54 },
+	{ 61, 54 },
+	{ 61, 55 },
+	{ 62, 54 },
+	{ 62, 55 },
+	{ 62, 55 },
+	{ 62, 56 },
+	{ 63, 55 },
+	{ 63, 56 },
+	{ 63, 56 },
+	{ 63, 57 },
+	{ 63, 58 },
+	{ 63, 59 },
+	{ 63, 59 },
+	{ 63, 60 },
+	{ 63, 61 },
+	{ 63, 62 },
+	{ 63, 62 },
+	{ 63, 63 },
+};
+
+// --- End modules/betsy/betsy_bc1.h ---
+#include "core/config/project_settings.h"
+#include "core/os/os.h"
+// --- Inlined from modules/betsy/image_compress_betsy.h ---
+#include "core/io/image.h"
+#include "core/os/condition_variable.h"
+
+class RDShaderFile;
+class RenderingDevice;
+class RenderingContextDriver;
+
+enum BetsyFormat
+{
+	BETSY_FORMAT_BC1,
+	BETSY_FORMAT_BC1_DITHER,
+	BETSY_FORMAT_BC3,
+	BETSY_FORMAT_BC4_SIGNED,
+	BETSY_FORMAT_BC4_UNSIGNED,
+	BETSY_FORMAT_BC5_SIGNED,
+	BETSY_FORMAT_BC5_UNSIGNED,
+	BETSY_FORMAT_BC6_SIGNED,
+	BETSY_FORMAT_BC6_UNSIGNED,
+	BETSY_FORMAT_MAX,
+};
+
+enum BetsyShaderType
+{
+	BETSY_SHADER_BC1_STANDARD,
+	BETSY_SHADER_BC1_DITHER,
+	BETSY_SHADER_BC4_SIGNED,
+	BETSY_SHADER_BC4_UNSIGNED,
+	BETSY_SHADER_BC6_SIGNED,
+	BETSY_SHADER_BC6_UNSIGNED,
+	BETSY_SHADER_ALPHA_STITCH,
+	BETSY_SHADER_RGB_TO_RGBA_FLOAT,
+	BETSY_SHADER_RGB_TO_RGBA_HALF,
+	BETSY_SHADER_RGB_TO_RGBA_UNORM8,
+	BETSY_SHADER_RGB_TO_RGBA_UNORM16,
+	BETSY_SHADER_MAX,
+};
+
+struct BC6PushConstant
+{
+	float sizeX;
+	float sizeY;
+	uint32_t padding[2] = {0};
+};
+
+struct BC1PushConstant
+{
+	uint32_t num_refines;
+	uint32_t padding[3] = {0};
+};
+
+struct BC4PushConstant
+{
+	uint32_t channel_idx;
+	uint32_t padding[3] = {0};
+};
+
+struct RGBToRGBAPushConstant
+{
+	uint32_t width;
+	uint32_t height;
+	uint32_t padding[2];
+};
+
+void free_device();
+
+Error _betsy_compress_bptc(
+	Image* r_img, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format);
+Error _betsy_compress_s3tc(Image* r_img, Image::UsedChannels p_channels);
+
+class BetsyCompressor
+{
+	mutable CommandQueueMT command_queue;
+	bool exit = false;
+
+	struct BetsyShader
+	{
+		RID compiled;
+		RID pipeline;
+	};
+
+	// Resources shared by all compression formats.
+	RenderingContextDriver* compress_rcd = nullptr;
+	BetsyShader cached_shaders[BETSY_SHADER_MAX];
+	RID src_sampler;
+
+	// Format-specific resources.
+	RID dxt1_encoding_table_buffer;
+
+	void _init();
+	void _thread_loop();
+	void _thread_exit();
+
+	Error _get_shader(BetsyFormat p_format, const String& p_version, BetsyShader& r_shader);
+	Error _compress(BetsyFormat p_format, Image* r_img);
+
+public:
+	void init();
+	void finish();
+
+	Error compress(BetsyFormat p_format, Image* r_img)
+	{
+		Error err;
+		command_queue.push_and_ret(this, &BetsyCompressor::_compress, &err, p_format, r_img);
+		return err;
+	}
+};
+
+
+
+// --- End modules/betsy/image_compress_betsy.h ---
+#include "modules/betsy/rgb_to_rgba.glsl.gen.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/rendering_context_driver.h"
+#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
+
+#if defined(VULKAN_ENABLED)
+#define Window VkXlibWindow
+#define Font VkXlibFont
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+#undef Font
+#undef Window
+#ifdef None
+#undef None
+#endif
+#ifdef Status
+#undef Status
+#endif
+#ifdef Bool
+#undef Bool
+#endif
+#ifdef True
+#undef True
+#endif
+#ifdef False
+#undef False
+#endif
+#ifdef Always
+#undef Always
+#endif
+#endif
+#if defined(METAL_ENABLED)
+#include "drivers/metal/rendering_context_driver_metal.h"
+#endif
+
+static Mutex betsy_mutex;
+static BetsyCompressor* betsy = nullptr;
+
+static const BetsyShaderType FORMAT_TO_TYPE[BETSY_FORMAT_MAX] = {
+	BETSY_SHADER_BC1_STANDARD,
+	BETSY_SHADER_BC1_DITHER,
+	BETSY_SHADER_BC1_STANDARD,
+	BETSY_SHADER_BC4_SIGNED,
+	BETSY_SHADER_BC4_UNSIGNED,
+	BETSY_SHADER_BC4_SIGNED,
+	BETSY_SHADER_BC4_UNSIGNED,
+	BETSY_SHADER_BC6_SIGNED,
+	BETSY_SHADER_BC6_UNSIGNED,
+};
+
+static const RDC::DataFormat BETSY_TO_RD_FORMAT[BETSY_FORMAT_MAX] = {
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32_UINT,
+	RDC::DATA_FORMAT_R32G32B32A32_UINT,
+	RDC::DATA_FORMAT_R32G32B32A32_UINT,
+};
+
+static const Image::Format BETSY_TO_IMAGE_FORMAT[BETSY_FORMAT_MAX] = {
+	Image::FORMAT_DXT1,
+	Image::FORMAT_DXT1,
+	Image::FORMAT_DXT5,
+	Image::FORMAT_RGTC_R,
+	Image::FORMAT_RGTC_R,
+	Image::FORMAT_RGTC_RG,
+	Image::FORMAT_RGTC_RG,
+	Image::FORMAT_BPTC_RGBF,
+	Image::FORMAT_BPTC_RGBFU,
+};
+
+void BetsyCompressor::init() {}
+
+void BetsyCompressor::finish() {}
+
+Error BetsyCompressor::_compress(BetsyFormat p_format, Image* r_img) { return OK; }
+
+void BetsyCompressor::_thread_exit()
+{
+	exit = true;
+
+	if (RD::data != nullptr) {
+		if (dxt1_encoding_table_buffer.is_valid()) {
+			RD::free_rid(dxt1_encoding_table_buffer);
+		}
+
+		RD::free_rid(src_sampler);
+
+		// Clear the shader cache, pipelines will be unreferenced automatically.
+		for (int i = 0; i < BETSY_SHADER_MAX; i++) {
+			if (cached_shaders[i].compiled.is_valid()) {
+				RD::free_rid(cached_shaders[i].compiled);
+			}
+		}
+
+		// Free the RD (and RCD if necessary).
+		memdelete(RD::data);
+		RD::data = nullptr;
+		if (compress_rcd != nullptr) {
+			memdelete(compress_rcd);
+			compress_rcd = nullptr;
+		}
+	}
+}
+
+// Helper functions.
+
+static int get_next_multiple(int n, int m) { return n + (m - (n % m)); }
+
+static Error get_src_texture_format(Image* r_img, RDC::DataFormat& r_format, bool& r_is_rgb)
+{
+	r_is_rgb = false;
+
+	switch (r_img->get_format()) {
+	case Image::FORMAT_L8:
+		r_img->convert(Image::FORMAT_RGBA8);
+		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case Image::FORMAT_LA8:
+		r_img->convert(Image::FORMAT_RGBA8);
+		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case Image::FORMAT_R8:
+		r_format = RDC::DATA_FORMAT_R8_UNORM;
+		break;
+	case Image::FORMAT_RG8:
+		r_format = RDC::DATA_FORMAT_R8G8_UNORM;
+		break;
+	case Image::FORMAT_RGB8:
+		r_is_rgb = true;
+		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case Image::FORMAT_RGBA8:
+		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case Image::FORMAT_RH:
+		r_format = RDC::DATA_FORMAT_R16_SFLOAT;
+		break;
+	case Image::FORMAT_RGH:
+		r_format = RDC::DATA_FORMAT_R16G16_SFLOAT;
+		break;
+	case Image::FORMAT_RGBH:
+		r_is_rgb = true;
+		r_format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
+		break;
+	case Image::FORMAT_RGBAH:
+		r_format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
+		break;
+	case Image::FORMAT_RF:
+		r_format = RDC::DATA_FORMAT_R32_SFLOAT;
+		break;
+	case Image::FORMAT_RGF:
+		r_format = RDC::DATA_FORMAT_R32G32_SFLOAT;
+		break;
+	case Image::FORMAT_RGBF:
+		r_is_rgb = true;
+		r_format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
+		break;
+	case Image::FORMAT_RGBAF:
+		r_format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
+		break;
+	case Image::FORMAT_RGBE9995:
+		r_format = RDC::DATA_FORMAT_E5B9G9R9_UFLOAT_PACK32;
+		break;
+	case Image::FORMAT_R16:
+		r_format = RDC::DATA_FORMAT_R16_UNORM;
+		break;
+	case Image::FORMAT_RG16:
+		r_format = RDC::DATA_FORMAT_R16G16_UNORM;
+		break;
+	case Image::FORMAT_RGB16:
+		r_is_rgb = true;
+		r_format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
+		break;
+	case Image::FORMAT_RGBA16:
+		r_format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
+		break;
+	default: {
+		return ERR_UNAVAILABLE;
+	}
+	}
+
+	return OK;
+}
+
+void ensure_betsy_exists()
+{
+	betsy_mutex.lock();
+	if (betsy == nullptr) {
+		betsy = memnew(BetsyCompressor);
+		betsy->init();
+	}
+	betsy_mutex.unlock();
+}
+
+Error _betsy_compress_bptc(
+	Image* r_img, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format)
+{
+	ensure_betsy_exists();
+	Image::Format format = r_img->get_format();
+	Error result = ERR_UNAVAILABLE;
+
+	if (format >= Image::FORMAT_RF && format <= Image::FORMAT_RGBE9995) {
+		if ((p_bptc_format == Image::BPTC_DETECT && r_img->detect_signed()) ||
+			p_bptc_format == Image::BPTC_FORCE_SIGNED) {
+			result = betsy->compress(BETSY_FORMAT_BC6_SIGNED, r_img);
+		}
+		else {
+			result = betsy->compress(BETSY_FORMAT_BC6_UNSIGNED, r_img);
+		}
+	}
+
+	return result;
+}
+
+Error _betsy_compress_s3tc(Image* r_img, Image::UsedChannels p_channels)
+{
+	ensure_betsy_exists();
+	Error result = ERR_UNAVAILABLE;
+
+	switch (p_channels) {
+	case Image::USED_CHANNELS_RGB:
+	case Image::USED_CHANNELS_L:
+		result = betsy->compress(BETSY_FORMAT_BC1, r_img);
+		break;
+	case Image::USED_CHANNELS_RGBA:
+	case Image::USED_CHANNELS_LA:
+		result = betsy->compress(BETSY_FORMAT_BC3, r_img);
+		break;
+	case Image::USED_CHANNELS_R:
+		result = betsy->compress(BETSY_FORMAT_BC4_UNSIGNED, r_img);
+		break;
+	case Image::USED_CHANNELS_RG:
+		result = betsy->compress(BETSY_FORMAT_BC5_UNSIGNED, r_img);
+		break;
+	default:
+		break;
+	}
+
+	return result;
+}
+
+void free_device()
+{
+	if (betsy != nullptr) {
+		betsy->finish();
+		memdelete(betsy);
+	}
+}
+
+void initialize_betsy_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	Image::_image_compress_bptc_rd_func = _betsy_compress_bptc;
+	Image::_image_compress_bc_rd_func = _betsy_compress_s3tc;
+}
+
+void uninitialize_betsy_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	free_device();
+}
+#endif // defined(MODULE_BETSY_ENABLED)
+
+
+// --- Merged from modules/cvtt/image_compress_cvtt.cpp ---
+#if defined(MODULE_CVTT_ENABLED)
+#include <ConvectionKernels.h>
+#include "modules/register_module_types.h"
+#include "core/os/os.h"
+#include "core/string/print_string.h"
+#include "core/templates/safe_refcount.h"
+// --- Inlined from modules/cvtt/image_compress_cvtt.h ---
+#include "core/io/image.h"
+
+void image_compress_cvtt(Image *p_image, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format);
+void image_decompress_cvtt(Image *p_image);
+
+// --- End modules/cvtt/image_compress_cvtt.h ---
+
+struct CVTTCompressionJobParams
+{
+	bool is_hdr = false;
+	bool is_signed = false;
+	int bytes_per_pixel = 0;
+	cvtt::BC7EncodingPlan bc7_plan;
+	cvtt::Options options;
+};
+
+struct CVTTCompressionRowTask
+{
+	Vector<uint8_t> in_mm;
+	uint8_t* out_mm_bytes = nullptr;
+	int y_start = 0;
+	int width = 0;
+	int height = 0;
+};
+
+struct CVTTCompressionJobQueue
+{
+	CVTTCompressionJobParams job_params;
+	const CVTTCompressionRowTask* job_tasks = nullptr;
+	uint32_t num_tasks = 0;
+	SafeNumeric<uint32_t> current_task;
+};
+
+static void _digest_row_task(
+	const CVTTCompressionJobParams& p_job_params, const CVTTCompressionRowTask& p_row_task)
+{
+	const uint8_t* in_bytes = p_row_task.in_mm.ptr();
+	uint8_t* out_bytes = p_row_task.out_mm_bytes;
+	int w = p_row_task.width;
+	int h = p_row_task.height;
+
+	int y_start = p_row_task.y_start;
+	int y_end = y_start + 4;
+
+	int bytes_per_pixel = p_job_params.bytes_per_pixel;
+	bool is_hdr = p_job_params.is_hdr;
+	bool is_signed = p_job_params.is_signed;
+
+	cvtt::PixelBlockU8 input_blocks_ldr[cvtt::NumParallelBlocks];
+	cvtt::PixelBlockF16 input_blocks_hdr[cvtt::NumParallelBlocks];
+
+	for (int x_start = 0; x_start < w; x_start += 4 * cvtt::NumParallelBlocks) {
+		int x_end = x_start + 4 * cvtt::NumParallelBlocks;
+
+		for (int y = y_start; y < y_end; y++) {
+			int first_input_element = (y - y_start) * 4;
+			const uint8_t* row_start;
+			if (y >= h) {
+				row_start = in_bytes + (h - 1) * (w * bytes_per_pixel);
+			}
+			else {
+				row_start = in_bytes + y * (w * bytes_per_pixel);
+			}
+
+			for (int x = x_start; x < x_end; x++) {
+				const uint8_t* pixel_start;
+				if (x >= w) {
+					pixel_start = row_start + (w - 1) * bytes_per_pixel;
+				}
+				else {
+					pixel_start = row_start + x * bytes_per_pixel;
+				}
+
+				int block_index = (x - x_start) / 4;
+				int block_element = (x - x_start) % 4 + first_input_element;
+				if (is_hdr) {
+					memcpy(input_blocks_hdr[block_index].m_pixels[block_element], pixel_start,
+						bytes_per_pixel);
+					input_blocks_hdr[block_index].m_pixels[block_element][3] =
+						0x3c00; // 1.0 (unused)
+				}
+				else {
+					memcpy(input_blocks_ldr[block_index].m_pixels[block_element], pixel_start,
+						bytes_per_pixel);
+				}
+			}
+		}
+
+		uint8_t output_blocks[16 * cvtt::NumParallelBlocks];
+
+		if (is_hdr) {
+			if (is_signed) {
+				cvtt::Kernels::EncodeBC6HS(output_blocks, input_blocks_hdr, p_job_params.options);
+			}
+			else {
+				cvtt::Kernels::EncodeBC6HU(output_blocks, input_blocks_hdr, p_job_params.options);
+			}
+		}
+		else {
+			cvtt::Kernels::EncodeBC7(
+				output_blocks, input_blocks_ldr, p_job_params.options, p_job_params.bc7_plan);
+		}
+
+		unsigned int num_real_blocks = ((w - x_start) + 3) / 4;
+		if (num_real_blocks > cvtt::NumParallelBlocks) {
+			num_real_blocks = cvtt::NumParallelBlocks;
+		}
+
+		memcpy(out_bytes, output_blocks, 16 * num_real_blocks);
+		out_bytes += 16 * num_real_blocks;
+	}
+}
+
+void image_compress_cvtt(
+	Image* p_image, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format)
+{
+	uint64_t start_time = OS::get_ticks_msec();
+
+	if (p_image->is_compressed()) {
+		return; // do not compress, already compressed
+	}
+
+	int w = p_image->get_width();
+	int h = p_image->get_height();
+
+	if (w % 4 != 0 || h % 4 != 0) {
+		w = w <= 2 ? w : (w + 3) & ~3;
+		h = h <= 2 ? h : (h + 3) & ~3;
+	}
+
+	bool is_ldr = (p_image->get_format() <= Image::FORMAT_RGBA8);
+	bool is_hdr = (p_image->get_format() >= Image::FORMAT_RF) &&
+				  (p_image->get_format() <= Image::FORMAT_RGBE9995);
+
+	if (!is_ldr && !is_hdr) {
+		return; // Not a usable source format
+	}
+
+	cvtt::Options options;
+	uint32_t flags = cvtt::Flags::Default;
+	flags |= cvtt::Flags::BC7_RespectPunchThrough;
+	if (p_channels == Image::USED_CHANNELS_RG) { // guessing this is a normal map
+		flags |= cvtt::Flags::Uniform;
+	}
+	options.flags = flags;
+
+	Image::Format target_format = Image::FORMAT_BPTC_RGBA;
+
+	bool is_signed = false;
+	if (is_hdr) {
+		if (p_image->get_format() != Image::FORMAT_RGBH) {
+			p_image->convert(Image::FORMAT_RGBH);
+		}
+
+		switch (p_bptc_format) {
+		case Image::BPTC_DETECT:
+			is_signed = p_image->detect_signed();
+			break;
+		case Image::BPTC_FORCE_SIGNED:
+			is_signed = true;
+			break;
+		case Image::BPTC_FORCE_UNSIGNED:
+			is_signed = false;
+			break;
+		}
+		target_format = is_signed ? Image::FORMAT_BPTC_RGBF : Image::FORMAT_BPTC_RGBFU;
+	}
+	else {
+		p_image->convert(Image::FORMAT_RGBA8); // still uses RGBA to convert
+	}
+
+	Vector<uint8_t> data;
+	int64_t target_size = Image::get_image_data_size(w, h, target_format, p_image->has_mipmaps());
+	int mm_count =
+		p_image->has_mipmaps() ? Image::get_image_required_mipmaps(w, h, target_format) : 0;
+	data.resize(target_size);
+
+	uint8_t* wb = data.ptrw();
+
+	int64_t dst_ofs = 0;
+
+	CVTTCompressionJobQueue job_queue;
+	job_queue.job_params.is_hdr = is_hdr;
+	job_queue.job_params.is_signed = is_signed;
+	job_queue.job_params.options = options;
+	job_queue.job_params.bytes_per_pixel = is_hdr ? 6 : 4;
+	cvtt::Kernels::ConfigureBC7EncodingPlanFromQuality(job_queue.job_params.bc7_plan, 5);
+
+	// Amdahl's law (Wikipedia)
+	// If a program needs 20 hours to complete using a single thread, but a one-hour portion of the
+	// program cannot be parallelized, therefore only the remaining 19 hours (p = 0.95) of execution
+	// time can be parallelized, then regardless of how many threads are devoted to a parallelized
+	// execution of this program, the minimum execution time cannot be less than one hour.
+	//
+	// The number of executions with different inputs can be increased while the latency is the
+	// same.
+
+	Vector<CVTTCompressionRowTask> tasks;
+
+	for (int i = 0; i <= mm_count; i++) {
+		Vector<uint8_t> in_data;
+		int width, height;
+		Image::get_image_mipmap_offset_and_dimensions(w, h, target_format, i, width, height);
+
+		int bw = width % 4 != 0 ? width + (4 - width % 4) : width;
+		int bh = height % 4 != 0 ? height + (4 - height % 4) : height;
+
+		int64_t src_mip_ofs, src_mip_size;
+		int src_mip_w, src_mip_h;
+		p_image->get_mipmap_offset_size_and_dimensions(
+			i, src_mip_ofs, src_mip_size, src_mip_w, src_mip_h);
+
+		// Pad textures to nearest block by smearing.
+		if (width != src_mip_w || height != src_mip_h) {
+			const uint8_t* src_mip_read = p_image->ptr() + src_mip_ofs;
+
+			// Reserve the buffer for padded image data.
+			int px_size = Image::get_format_pixel_size(p_image->get_format());
+			in_data.resize(width * height * px_size);
+			uint8_t* ptrw = in_data.ptrw();
+
+			int x = 0, y = 0;
+			for (y = 0; y < src_mip_h; y++) {
+				for (x = 0; x < src_mip_w; x++) {
+					memcpy(ptrw + (width * y + x) * px_size,
+						src_mip_read + (src_mip_w * y + x) * px_size, px_size);
+				}
+
+				// First, smear in x.
+				for (; x < width; x++) {
+					memcpy(ptrw + (width * y + x) * px_size, ptrw + (width * y + x - 1) * px_size,
+						px_size);
+				}
+			}
+
+			// Then, smear in y.
+			for (; y < height; y++) {
+				for (x = 0; x < width; x++) {
+					memcpy(ptrw + (width * y + x) * px_size,
+						ptrw + (width * y + x - width) * px_size, px_size);
+				}
+			}
+		}
+		else {
+			// Create a buffer filled with the source mip layer data.
+			in_data.resize(src_mip_size);
+			memcpy(in_data.ptrw(), p_image->ptr() + src_mip_ofs, src_mip_size);
+		}
+
+		// const uint8_t *in_bytes = &rb[src_ofs];
+		uint8_t* out_bytes = &wb[dst_ofs];
+
+		for (int y_start = 0; y_start < height; y_start += 4) {
+			CVTTCompressionRowTask row_task;
+			row_task.width = width;
+			row_task.height = height;
+			row_task.y_start = y_start;
+			row_task.in_mm = in_data;
+			row_task.out_mm_bytes = out_bytes;
+
+			tasks.push_back(row_task);
+
+			out_bytes += 16 * (bw / 4);
+		}
+
+		dst_ofs += Image::get_format_pixels_shifted(target_format, MAX(4, bw) * MAX(4, bh));
+	}
+
+	const CVTTCompressionRowTask* tasks_rb = tasks.ptr();
+
+	job_queue.job_tasks = &tasks_rb[0];
+	job_queue.num_tasks = static_cast<uint32_t>(tasks.size());
+
+	p_image->set_data(w, h, p_image->has_mipmaps(), target_format, data);
+
+	print_verbose(
+		vformat("CVTT: Encoding took %d ms.", OS::get_ticks_msec() - start_time));
+}
+
+void image_decompress_cvtt(Image* p_image)
+{
+	Image::Format target_format;
+	bool is_signed = false;
+	bool is_hdr = false;
+
+	Image::Format input_format = p_image->get_format();
+
+	switch (input_format) {
+	case Image::FORMAT_BPTC_RGBA:
+		target_format = Image::FORMAT_RGBA8;
+		break;
+	case Image::FORMAT_BPTC_RGBF:
+	case Image::FORMAT_BPTC_RGBFU:
+		target_format = Image::FORMAT_RGBH;
+		is_signed = (input_format == Image::FORMAT_BPTC_RGBF);
+		is_hdr = true;
+		break;
+	default:
+		return; // Invalid input format
+	};
+
+	int w = p_image->get_width();
+	int h = p_image->get_height();
+
+	const uint8_t* rb = p_image->get_data().ptr();
+
+	Vector<uint8_t> data;
+	int64_t target_size = Image::get_image_data_size(w, h, target_format, p_image->has_mipmaps());
+	int mm_count = p_image->get_mipmap_count();
+	data.resize(target_size);
+
+	uint8_t* wb = data.ptrw();
+
+	int bytes_per_pixel = is_hdr ? 6 : 4;
+
+	int64_t dst_ofs = 0;
+
+	for (int i = 0; i <= mm_count; i++) {
+		int64_t src_ofs = p_image->get_mipmap_offset(i);
+
+		const uint8_t* in_bytes = &rb[src_ofs];
+		uint8_t* out_bytes = &wb[dst_ofs];
+
+		cvtt::PixelBlockU8 output_blocks_ldr[cvtt::NumParallelBlocks];
+		cvtt::PixelBlockF16 output_blocks_hdr[cvtt::NumParallelBlocks];
+
+		for (int y_start = 0; y_start < h; y_start += 4) {
+			int y_end = y_start + 4;
+
+			for (int x_start = 0; x_start < w; x_start += 4 * cvtt::NumParallelBlocks) {
+				uint8_t input_blocks[16 * cvtt::NumParallelBlocks];
+				memset(input_blocks, 0, sizeof(input_blocks));
+
+				unsigned int num_real_blocks = ((w - x_start) + 3) / 4;
+				if (num_real_blocks > cvtt::NumParallelBlocks) {
+					num_real_blocks = cvtt::NumParallelBlocks;
+				}
+
+				memcpy(input_blocks, in_bytes, 16 * num_real_blocks);
+				in_bytes += 16 * num_real_blocks;
+
+				int x_end = x_start + 4 * num_real_blocks;
+
+				if (is_hdr) {
+					if (is_signed) {
+						cvtt::Kernels::DecodeBC6HS(output_blocks_hdr, input_blocks);
+					}
+					else {
+						cvtt::Kernels::DecodeBC6HU(output_blocks_hdr, input_blocks);
+					}
+				}
+				else {
+					cvtt::Kernels::DecodeBC7(output_blocks_ldr, input_blocks);
+				}
+
+				for (int y = y_start; y < y_end; y++) {
+					int first_input_element = (y - y_start) * 4;
+					uint8_t* row_start;
+					if (y >= h) {
+						row_start = out_bytes + (h - 1) * (w * bytes_per_pixel);
+					}
+					else {
+						row_start = out_bytes + y * (w * bytes_per_pixel);
+					}
+
+					for (int x = x_start; x < x_end; x++) {
+						uint8_t* pixel_start;
+						if (x >= w) {
+							pixel_start = row_start + (w - 1) * bytes_per_pixel;
+						}
+						else {
+							pixel_start = row_start + x * bytes_per_pixel;
+						}
+
+						int block_index = (x - x_start) / 4;
+						int block_element = (x - x_start) % 4 + first_input_element;
+						if (is_hdr) {
+							memcpy(pixel_start,
+								output_blocks_hdr[block_index].m_pixels[block_element],
+								bytes_per_pixel);
+						}
+						else {
+							memcpy(pixel_start,
+								output_blocks_ldr[block_index].m_pixels[block_element],
+								bytes_per_pixel);
+						}
+					}
+				}
+			}
+		}
+
+		dst_ofs += w * h * bytes_per_pixel;
+		w >>= 1;
+		h >>= 1;
+	}
+	p_image->set_data(
+		p_image->get_width(), p_image->get_height(), p_image->has_mipmaps(), target_format, data);
+}
+
+void initialize_cvtt_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	Image::_image_compress_bptc_func = image_compress_cvtt;
+}
+
+void uninitialize_cvtt_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+#endif // defined(MODULE_CVTT_ENABLED)

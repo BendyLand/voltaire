@@ -1323,7 +1323,7 @@ void GodotPhysicsServer2D::flush_queries() {}
 
 #include "core/config/project_settings.h"
 #include "godot_physics_server_2d.h"
-#include "register_types.h"
+#include "modules/register_module_types.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 void uninitialize_godot_physics_2d_module(ModuleInitializationLevel p_level)

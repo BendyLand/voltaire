@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_fixed_vector)
 
-#include "core/templates/fixed_vector.h"
+#include "core/templates/span.h"
 
 namespace TestFixedVector {
 

@@ -41,7 +41,7 @@ TEST_FORCE_LINK(test_navigation_agent_2d)
 #include "scene/2d/node_2d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/resources/world_2d.h"
+#include "scene/main/viewport.h"
 
 namespace TestNavigationAgent2D {
 

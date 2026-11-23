@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/macos/display_server_macos_base.h"
+#import "platform/macos/display_server_macos.h"
 
 #ifdef VULKAN_ENABLED
 

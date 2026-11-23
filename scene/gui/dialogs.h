@@ -31,9 +31,2110 @@
 
 #pragma once
 
-#include "scene/gui/button.h"
+// --- Inlined/Folded from scene/gui/button.h ---
+#include "core/input/input_event.h"
 #include "scene/gui/control.h"
-#include "scene/gui/label.h"
+#include "scene/resources/bit_map.h"
+#include "scene/resources/text_line.h"
+#include "scene/resources/text_line.h"
+
+class Button;
+class ButtonGroup;
+
+struct ButtonBehavior
+{
+	enum ActionMode
+	{
+		ACTION_MODE_BUTTON_PRESS,
+		ACTION_MODE_BUTTON_RELEASE,
+	};
+
+	enum DrawMode
+	{
+		DRAW_NORMAL,
+		DRAW_PRESSED,
+		DRAW_HOVER,
+		DRAW_DISABLED,
+		DRAW_HOVER_PRESSED,
+	};
+
+	uint32_t button_mask = 0;
+	int click_margin = 0;
+	int touch_index = -1;
+	ActionMode action_mode = ACTION_MODE_BUTTON_RELEASE;
+
+	bool toggle_mode = false;
+	bool shortcut_in_tooltip = true;
+	bool was_mouse_pressed = false;
+	bool keep_pressed_outside = false;
+	bool shortcut_feedback = true;
+	bool in_shortcut_feedback = false;
+
+	bool pressed = false;
+	bool hovering = false;
+	bool press_attempt = false;
+	bool pressing_inside = false;
+	bool pressed_down_with_focus = false;
+	bool disabled = false;
+
+	Ref<Shortcut> shortcut;
+	Ref<ButtonGroup> button_group;
+
+	bool is_disabled() const { return disabled; }
+	bool is_pressing() const { return press_attempt; }
+	bool is_pressed() const { return toggle_mode ? pressed : press_attempt; }
+	bool is_hovered() const { return hovering; }
+
+	DrawMode get_draw_mode() const;
+};
+
+class Button : public Control
+{
+public:
+	using ActionMode = ButtonBehavior::ActionMode;
+	using DrawMode = ButtonBehavior::DrawMode;
+
+	static constexpr ActionMode ACTION_MODE_BUTTON_PRESS = ButtonBehavior::ACTION_MODE_BUTTON_PRESS;
+	static constexpr ActionMode ACTION_MODE_BUTTON_RELEASE = ButtonBehavior::ACTION_MODE_BUTTON_RELEASE;
+
+	static constexpr DrawMode DRAW_NORMAL = ButtonBehavior::DRAW_NORMAL;
+	static constexpr DrawMode DRAW_PRESSED = ButtonBehavior::DRAW_PRESSED;
+	static constexpr DrawMode DRAW_HOVER = ButtonBehavior::DRAW_HOVER;
+	static constexpr DrawMode DRAW_DISABLED = ButtonBehavior::DRAW_DISABLED;
+	static constexpr DrawMode DRAW_HOVER_PRESSED = ButtonBehavior::DRAW_HOVER_PRESSED;
+
+	enum Style
+	{
+		STYLE_STANDARD,
+		STYLE_CHECK_BOX,
+		STYLE_CHECK_BUTTON,
+		STYLE_LINK,
+		STYLE_TEXTURE,
+		STYLE_COLOR_SWATCH,
+	};
+
+	enum UnderlineMode
+	{
+		UNDERLINE_MODE_ALWAYS,
+		UNDERLINE_MODE_ON_HOVER,
+		UNDERLINE_MODE_NEVER,
+	};
+
+	enum StretchMode
+	{
+		STRETCH_SCALE,
+		STRETCH_TILE,
+		STRETCH_KEEP,
+		STRETCH_KEEP_CENTERED,
+		STRETCH_KEEP_ASPECT,
+		STRETCH_KEEP_ASPECT_CENTERED,
+		STRETCH_KEEP_ASPECT_COVERED,
+	};
+
+	struct TextureSet
+	{
+		Ref<Texture2D> normal;
+		Ref<Texture2D> pressed;
+		Ref<Texture2D> hover;
+		Ref<Texture2D> disabled;
+		Ref<Texture2D> focused;
+		Ref<BitMap> click_mask;
+		StretchMode stretch_mode = STRETCH_KEEP;
+		Rect2 texture_region;
+		Rect2 position_rect;
+		bool ignore_texture_size = false;
+		bool tile = false;
+		bool hflip = false;
+		bool vflip = false;
+	};
+
+	ButtonBehavior behavior;
+	TextureSet textures;
+
+private:
+	Style style = STYLE_STANDARD;
+	bool flat = false;
+	String text;
+	String xl_text;
+	Ref<TextParagraph> text_buf;
+	Ref<TextLine> link_text_buf;
+
+	UnderlineMode underline_mode = UNDERLINE_MODE_ALWAYS;
+	String uri;
+	Color swatch_color;
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
+	uint32_t autowrap_flags_trim = TextServer::BREAK_TRIM_END_EDGE_SPACES;
+	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
+
+	Ref<Texture2D> icon;
+	bool expand_icon = false;
+	bool clip_text = false;
+	HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_CENTER;
+	HorizontalAlignment horizontal_icon_alignment = HORIZONTAL_ALIGNMENT_LEFT;
+	VerticalAlignment vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER;
+	float _internal_margin[4] = {};
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+		Ref<StyleBox> normal_mirrored;
+		Ref<StyleBox> pressed;
+		Ref<StyleBox> pressed_mirrored;
+		Ref<StyleBox> hover;
+		Ref<StyleBox> hover_mirrored;
+		Ref<StyleBox> hover_pressed;
+		Ref<StyleBox> hover_pressed_mirrored;
+		Ref<StyleBox> disabled;
+		Ref<StyleBox> disabled_mirrored;
+		Ref<StyleBox> focus;
+
+		Size2 max_style_size;
+		float style_margin_left = 0;
+		float style_margin_right = 0;
+		float style_margin_top = 0;
+		float style_margin_bottom = 0;
+
+		bool align_to_largest_stylebox = false;
+
+		Color font_color;
+		Color font_focus_color;
+		Color font_pressed_color;
+		Color font_hover_color;
+		Color font_hover_pressed_color;
+		Color font_disabled_color;
+
+		Ref<Font> font;
+		int font_size = 0;
+		int outline_size = 0;
+		Color font_outline_color;
+
+		Color icon_normal_color;
+		Color icon_focus_color;
+		Color icon_pressed_color;
+		Color icon_hover_color;
+		Color icon_hover_pressed_color;
+		Color icon_disabled_color;
+
+		Ref<Texture2D> icon;
+
+		Ref<Texture2D> checked;
+		Ref<Texture2D> unchecked;
+		Ref<Texture2D> checked_disabled;
+		Ref<Texture2D> unchecked_disabled;
+		Ref<Texture2D> checked_mirrored;
+		Ref<Texture2D> unchecked_mirrored;
+		Ref<Texture2D> checked_disabled_mirrored;
+		Ref<Texture2D> unchecked_disabled_mirrored;
+		Ref<Texture2D> radio_checked;
+		Ref<Texture2D> radio_unchecked;
+		Ref<Texture2D> radio_checked_disabled;
+		Ref<Texture2D> radio_unchecked_disabled;
+
+		Color check_checked_color = Color(1, 1, 1);
+		Color check_unchecked_color = Color(1, 1, 1);
+
+		int h_separation = 0;
+		int check_v_offset = 0;
+		int underline_spacing = 0;
+		int icon_max_width = 0;
+		int line_spacing = 0;
+	} theme_cache;
+
+	void _shape(Ref<TextParagraph> p_paragraph = Ref<TextParagraph>(), String p_text = "") const;
+	void _update_style_margins(const Ref<StyleBox>& p_stylebox);
+	Size2 _get_check_icon_size() const;
+
+protected:
+	virtual void _update_theme_item_cache() override;
+
+	void _set_internal_margin(Side p_side, float p_value);
+	virtual void _queue_update_size_cache();
+	virtual String _get_translated_text(const String& p_text) const;
+
+	Size2 _fit_icon_size(const Size2& p_size) const;
+	Ref<StyleBox> _get_current_stylebox() const;
+	Size2 _get_largest_stylebox_size() const;
+	void _notification(int p_what);
+
+	virtual String _get_accessibility_name() const override;
+
+public:
+	Style get_style() const { return style; }
+	void set_style(Style p_style);
+
+	DrawMode get_draw_mode() const { return behavior.get_draw_mode(); }
+	bool is_pressed() const { return behavior.is_pressed(); }
+	bool is_pressing() const { return behavior.is_pressing(); }
+	bool is_hovered() const { return behavior.is_hovered(); }
+	bool is_disabled() const { return behavior.is_disabled(); }
+	bool is_radio() const { return behavior.button_group.is_valid(); }
+
+	void set_pressed(bool p_pressed);
+	void set_pressed_no_signal(bool p_pressed);
+	void set_toggle_mode(bool p_on);
+	bool is_toggle_mode() const { return behavior.toggle_mode; }
+	void set_disabled(bool p_disabled);
+
+	void set_shortcut_in_tooltip(bool p_on);
+	bool is_shortcut_in_tooltip_enabled() const { return behavior.shortcut_in_tooltip; }
+
+	void set_action_mode(ActionMode p_mode) { behavior.action_mode = p_mode; }
+	ActionMode get_action_mode() const { return behavior.action_mode; }
+
+	void set_keep_pressed_outside(bool p_on) { behavior.keep_pressed_outside = p_on; }
+	bool is_keep_pressed_outside() const { return behavior.keep_pressed_outside; }
+
+	void set_shortcut_feedback(bool p_enable) { behavior.shortcut_feedback = p_enable; }
+	bool is_shortcut_feedback() const { return behavior.shortcut_feedback; }
+
+	void set_button_mask(uint32_t p_mask) { behavior.button_mask = p_mask; }
+	uint32_t get_button_mask() const { return behavior.button_mask; }
+
+	void set_shortcut(const Ref<Shortcut>& p_shortcut);
+	Ref<Shortcut> get_shortcut() const { return behavior.shortcut; }
+
+	void set_button_group(const Ref<ButtonGroup>& p_group);
+	Ref<ButtonGroup> get_button_group() const { return behavior.button_group; }
+
+	virtual void pressed();
+	virtual void toggled(bool p_pressed);
+
+	virtual bool has_point(const Point2& p_point) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2()) const override;
+	virtual Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override;
+
+	Size2 get_minimum_size_for_text_and_icon(const String& p_text, Ref<Texture2D> p_icon) const;
+
+	void set_text(const String& p_text);
+	String get_text() const;
+
+	void set_uri(const String& p_uri);
+	String get_uri() const { return uri; }
+	void set_underline_mode(UnderlineMode p_mode) { underline_mode = p_mode; }
+	UnderlineMode get_underline_mode() const { return underline_mode; }
+
+	void set_swatch_color(const Color& p_color);
+	Color get_swatch_color() const { return swatch_color; }
+
+	void set_texture_normal(const Ref<Texture2D>& p_normal) { textures.normal = p_normal; }
+	void set_texture_pressed(const Ref<Texture2D>& p_pressed) { textures.pressed = p_pressed; }
+	void set_texture_hover(const Ref<Texture2D>& p_hover) { textures.hover = p_hover; }
+	void set_texture_disabled(const Ref<Texture2D>& p_disabled) { textures.disabled = p_disabled; }
+	void set_texture_focused(const Ref<Texture2D>& p_focused) { textures.focused = p_focused; }
+	void set_click_mask(const Ref<BitMap>& p_click_mask) { textures.click_mask = p_click_mask; }
+
+	Ref<Texture2D> get_texture_normal() const { return textures.normal; }
+	Ref<Texture2D> get_texture_pressed() const { return textures.pressed; }
+	Ref<Texture2D> get_texture_hover() const { return textures.hover; }
+	Ref<Texture2D> get_texture_disabled() const { return textures.disabled; }
+	Ref<Texture2D> get_texture_focused() const { return textures.focused; }
+	Ref<BitMap> get_click_mask() const { return textures.click_mask; }
+
+	void set_ignore_texture_size(bool p_ignore) { textures.ignore_texture_size = p_ignore; }
+	bool get_ignore_texture_size() const { return textures.ignore_texture_size; }
+	void set_stretch_mode(StretchMode p_mode) { textures.stretch_mode = p_mode; }
+	StretchMode get_stretch_mode() const { return textures.stretch_mode; }
+	void set_flip_h(bool p_flip) { textures.hflip = p_flip; }
+	bool is_flipped_h() const { return textures.hflip; }
+	void set_flip_v(bool p_flip) { textures.vflip = p_flip; }
+	bool is_flipped_v() const { return textures.vflip; }
+
+	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior() const;
+
+	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode() const;
+
+	void set_autowrap_trim_flags(uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_button_icon(const Ref<Texture2D>& p_icon) { icon = p_icon; }
+	Ref<Texture2D> get_button_icon() const;
+
+	void set_expand_icon(bool p_enabled);
+	bool is_expand_icon() const;
+
+	void set_flat(bool p_enabled);
+	bool is_flat() const;
+
+	void set_clip_text(bool p_enabled);
+	bool get_clip_text() const;
+
+	void set_text_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_text_alignment() const;
+
+	void set_icon_alignment(HorizontalAlignment p_alignment);
+	void set_vertical_icon_alignment(VerticalAlignment p_alignment);
+	HorizontalAlignment get_icon_alignment() const;
+	VerticalAlignment get_vertical_icon_alignment() const;
+
+	Button(const String& p_text = String(), Style p_style = STYLE_STANDARD);
+	~Button();
+};
+
+class ButtonGroup : public Resource
+{
+	friend class Button;
+	HashSet<Button*> buttons;
+	bool allow_unpress = false;
+
+public:
+	Button* get_pressed_button();
+	void get_buttons(List<Button*>* r_buttons);
+	void set_allow_unpress(bool p_enabled) { allow_unpress = p_enabled; }
+	bool is_allow_unpress() const { return allow_unpress; }
+	ButtonGroup();
+};
+
+// --- Folded from scene/gui/menu_bar.h ---
+// --- Inlined/Folded from scene/gui/popup_menu.h ---
+#include "core/input/input_event.h"
+// --- Inlined/Folded from scene/gui/popup.h ---
+#include "core/templates/local_vector.h"
+#include "scene/main/window.h"
+
+class Panel;
+
+struct PopupTracker
+{
+	enum HideReason
+	{
+		HIDE_REASON_NONE,
+		HIDE_REASON_CANCELED,  // E.g., because of rupture of UI flow (app unfocused). Includes
+							   // closed programmatically.
+		HIDE_REASON_UNFOCUSED, // E.g., user clicked outside.
+	};
+
+	LocalVector<Window*> visible_parents;
+	bool popped_up = false;
+	HideReason hide_reason = HIDE_REASON_NONE;
+
+	void configure_window(Window* p_window);
+	void initialize_visible_parents(Window* p_window);
+	void deinitialize_visible_parents(Window* p_window);
+	void post_popup();
+	bool handle_cancel_input(const Window* p_window, const InputEvent& p_event);
+	bool handle_parent_focused(const Window* p_window);
+	void close_pressed(Window* p_window);
+	static Rect2i adjust_popup_rect(const Window* p_window);
+};
+
+class Popup : public Window
+{
+public:
+	using HideReason = PopupTracker::HideReason;
+	static constexpr HideReason HIDE_REASON_NONE = PopupTracker::HIDE_REASON_NONE;
+	static constexpr HideReason HIDE_REASON_CANCELED = PopupTracker::HIDE_REASON_CANCELED;
+	static constexpr HideReason HIDE_REASON_UNFOCUSED = PopupTracker::HIDE_REASON_UNFOCUSED;
+
+private:
+	PopupTracker tracker;
+	bool is_panel = false;
+	Panel* panel = nullptr;
+	bool close_on_accept = false;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel_style;
+	} theme_cache;
+
+	mutable Rect2i pre_popup_rect;
+
+	void _update_shadow_offsets() const;
+	void _update_child_rects() const;
+
+protected:
+	void _close_pressed();
+	void _parent_focused();
+	virtual Rect2i _popup_adjust_rect() const override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
+	virtual void _post_popup() override;
+	virtual Size2 _get_contents_minimum_size() const override;
+
+	void _notification(int p_what);
+
+public:
+	HideReason get_hide_reason() const { return tracker.hide_reason; }
+
+	void set_panel_enabled(bool p_enabled);
+	bool is_panel_enabled() const { return is_panel; }
+	Panel* get_panel() const { return panel; }
+
+	void set_close_on_accept(bool p_enable) { close_on_accept = p_enable; }
+	bool is_closing_on_accept() const { return close_on_accept; }
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	Popup(bool p_panel = false);
+	~Popup();
+};
+#include "scene/gui/scroll_container.h"
+#include "scene/property_list_helper.h"
+#include "scene/resources/text_line.h"
+#include "servers/display/native_menu.h"
+
+class Panel;
+class LineEdit;
+class Timer;
+class PopupMenuItems;
+
+class PopupMenu : public Window
+{
+	friend class PopupMenuItems;
+
+public:
+	using HideReason = PopupTracker::HideReason;
+	static constexpr HideReason HIDE_REASON_NONE = PopupTracker::HIDE_REASON_NONE;
+	static constexpr HideReason HIDE_REASON_CANCELED = PopupTracker::HIDE_REASON_CANCELED;
+	static constexpr HideReason HIDE_REASON_UNFOCUSED = PopupTracker::HIDE_REASON_UNFOCUSED;
+
+private:
+	PopupTracker tracker;
+
+	static HashMap<NativeMenu::SystemMenus, PopupMenu*> system_menus;
+
+	struct Item
+	{
+		mutable RID accessibility_item_element;
+		mutable bool accessibility_item_dirty = true;
+
+		Ref<Texture2D> icon;
+		int icon_max_width = 0;
+		Color icon_modulate = Color(1, 1, 1, 1);
+		String text;
+		String xl_text;
+		Ref<TextLine> text_buf;
+		Ref<TextLine> accel_text_buf;
+
+		String language;
+		Control::TextDirection text_direction = Control::TEXT_DIRECTION_AUTO;
+		AutoTranslateMode auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
+
+		bool checked = false;
+		bool visible = true;
+
+		enum
+		{
+			CHECKABLE_TYPE_NONE,
+			CHECKABLE_TYPE_CHECK_BOX,
+			CHECKABLE_TYPE_RADIO_BUTTON,
+		} checkable_type = CHECKABLE_TYPE_NONE;
+
+		int max_states = 0;
+		int state = 0;
+		bool separator = false;
+		bool disabled = false;
+		bool indeterminate = false;
+		bool dirty = true;
+		int id = 0;
+		String submenu_name; // Compatibility.
+		PopupMenu* submenu = nullptr;
+		String tooltip;
+		Key accel = Key::NONE;
+		int _ofs_cache = 0;
+		int _height_cache = 0;
+		int indent = 0;
+		Ref<Shortcut> shortcut;
+		bool shortcut_is_global = false;
+		bool shortcut_is_disabled = false;
+		bool allow_echo = false;
+		bool submenu_bound = false;
+
+		// Returns (0,0) if icon is null.
+		Size2 get_icon_size() const { return icon.is_null() ? Size2() : icon->get_size(); }
+
+		Item()
+		{
+			text_buf.instantiate();
+			accel_text_buf.instantiate();
+			checkable_type = CHECKABLE_TYPE_NONE;
+		}
+
+		Item(bool p_dummy) {}
+	};
+
+	RID accessibility_scroll_element;
+
+	mutable Rect2i pre_popup_rect;
+	void _update_shadow_offsets() const;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	// To make Item available.
+	friend class OptionButton;
+	friend class MenuButton;
+
+	RID global_menu;
+	RID system_menu;
+	NativeMenu::SystemMenus system_menu_id = NativeMenu::INVALID_MENU_ID;
+	bool prefer_native = false;
+
+	bool activated_by_keyboard = false;
+
+	Timer* close_suspended_timer = nullptr;
+	bool close_was_suspended = false;
+	Timer* submenu_timer = nullptr;
+	List<Rect2> autohide_areas;
+	mutable Vector<Item> items;
+	uint32_t initial_button_mask = 0;
+	bool during_grabbed_click = false;
+	bool is_scrolling = false;
+	int mouse_over = -1;
+	int prev_mouse_over = -1;
+	int submenu_over = -1;
+	int this_submenu_index =
+		-1; // Always -1 for the parent popup, and always a positive int for every open submenu.
+	int active_submenu_index = -1; // A positive int for the parent popup if any submenu is open.
+	bool is_active_submenu_left = false;
+	Vector<Point2> active_submenu_target_line;
+	Point2 last_submenu_mouse_position;
+	int submenu_mouse_exited_ticks_msec = -1;
+	bool mouse_movement_was_tested = false;
+	Point2 panel_offset_start;
+	float submenu_timer_popup_delay = 0.2;
+	const float CLOSE_SUSPENDED_TIMER_DELAY = 0.5;
+	String _get_accel_text(const Item& p_item) const;
+	int _get_mouse_over(const Point2& p_over) const;
+	void _mouse_over_update(const Point2& p_over);
+	virtual Size2 _get_contents_minimum_size() const override;
+
+	int _get_item_height(int p_idx) const;
+	int _get_items_total_height() const;
+	Size2 _get_item_icon_size(int p_idx) const;
+
+	void _shape_item(int p_idx) const;
+
+	void _activate_submenu(int p_over, bool p_by_keyboard = false);
+	void _submenu_timeout();
+	bool _is_mouse_moving_toward_submenu(const Vector2& p_relative, bool p_is_submenu_left,
+		const Vector2& p_mouse_position, const Vector<Point2>& p_active_submenu_target_line) const;
+	void _close_or_suspend();
+	void _close_suspended_timeout();
+
+	uint64_t popup_time_msec = 0;
+	bool hide_on_item_selection = true;
+	bool hide_on_checkable_item_selection = true;
+	bool hide_on_multistate_item_selection = false;
+	Vector2 moved;
+
+	HashMap<Ref<Shortcut>, int> shortcut_refcount;
+
+	void _ref_shortcut(Ref<Shortcut> p_sc);
+	void _unref_shortcut(Ref<Shortcut> p_sc);
+
+	void _shortcut_changed();
+
+	bool allow_search = true;
+	uint64_t search_time_msec = 0;
+	String search_string = "";
+
+	bool search_bar_enabled = false;
+	int search_bar_min_item_count = 0;
+	bool search_bar_fuzzy_search_enabled = true;
+	int search_bar_fuzzy_search_max_misses = 2;
+	Panel* panel = nullptr;
+	Control* vbox_container = nullptr;
+	LineEdit* search_bar = nullptr;
+	ScrollContainer* scroll_container = nullptr;
+	PopupMenuItems* control = nullptr;
+
+	const float DEFAULT_GAMEPAD_EVENT_DELAY_MS = 0.5;
+	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 20;
+	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
+	bool joypad_event_process = false;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel_style;
+		Ref<StyleBox> hover_style;
+
+		Ref<StyleBox> separator_style;
+		Ref<StyleBox> labeled_separator_left;
+		Ref<StyleBox> labeled_separator_right;
+
+		int v_separation = 0;
+		int h_separation = 0;
+		int search_bar_separation = 0;
+		int indent = 0;
+		int item_start_padding = 0;
+		int item_end_padding = 0;
+		int icon_max_width = 0;
+		int gutter_compact = 0;
+
+		Ref<Texture2D> checked;
+		Ref<Texture2D> checked_disabled;
+		Ref<Texture2D> unchecked;
+		Ref<Texture2D> unchecked_disabled;
+		Ref<Texture2D> indeterminate;
+		Ref<Texture2D> indeterminate_disabled;
+		Ref<Texture2D> radio_checked;
+		Ref<Texture2D> radio_checked_disabled;
+		Ref<Texture2D> radio_unchecked;
+		Ref<Texture2D> radio_unchecked_disabled;
+
+		Ref<Texture2D> search;
+		Ref<Texture2D> submenu;
+		Ref<Texture2D> submenu_mirrored;
+
+		Ref<Font> font;
+		int font_size = 0;
+		Ref<Font> font_separator;
+		int font_separator_size = 0;
+
+		Color font_color;
+		Color font_hover_color;
+		Color font_disabled_color;
+		Color font_accelerator_color;
+		int font_outline_size = 0;
+		Color font_outline_color;
+
+		Color font_separator_color;
+		int font_separator_outline_size = 0;
+		Color font_separator_outline_color;
+	} theme_cache;
+
+	void _draw_items();
+	void _update_search_bar_visibility();
+	void _items_focus_entered();
+	void _search_bar_text_changed(const String& p_new_text);
+	void _search_bar_focus_entered();
+	void _filter_items(const String& p_query);
+
+	void _close_pressed();
+	void _menu_changed();
+	void _input_from_window_internal(const InputEvent& p_event);
+	bool _set_item_accelerator(int p_index, const InputEvent& p_ie);
+	void _set_item_checkable_type(int p_index, int p_checkable_type);
+	int _get_item_checkable_type(int p_index) const;
+	void _native_popup(const Rect2i& p_rect);
+	String _atr(int p_idx, const String& p_text) const;
+	void _submenu_hidden();
+
+	bool shrink_height = true;
+	bool shrink_width = true;
+
+protected:
+	virtual void _pre_popup(const Size2i& p_size) override;
+	virtual void _post_popup() override;
+	virtual Rect2i _popup_adjust_rect() const override;
+
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
+
+	virtual void _popup_base(const Rect2i& p_bounds = Rect2i()) override;
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+	virtual String _get_accessibility_name() const override;
+
+#ifndef DISABLE_DEPRECATED
+	void _add_shortcut_bind_compat_36493(
+		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+	void _add_icon_shortcut_bind_compat_36493(const Ref<Texture2D>& p_icon,
+		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+	void _clear_bind_compat_79965();
+
+	void _set_system_menu_root_bind_compat_87452(const String& p_special);
+	String _get_system_menu_root_bind_compat_87452() const;
+
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	// ATTENTION: This is used by the POT generator's scene parser. If the number of properties
+	// returned by `_get_items()` ever changes, this value should be updated to reflect the new
+	// size.
+	static const int ITEM_PROPERTY_SIZE = 10;
+
+	virtual RID get_focused_accessibility_element() const override;
+
+	HideReason get_hide_reason() const { return tracker.hide_reason; }
+
+	void _parent_focused();
+
+	RID bind_global_menu();
+	void unbind_global_menu();
+	bool is_system_menu() const;
+
+	void set_system_menu(NativeMenu::SystemMenus p_system_menu_id);
+	NativeMenu::SystemMenus get_system_menu() const;
+
+	void add_item(const String& p_label, int p_id = -1, Key p_accel = Key::NONE);
+	void add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1,
+		Key p_accel = Key::NONE);
+	void add_check_item(const String& p_label, int p_id = -1, Key p_accel = Key::NONE);
+	void add_icon_check_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1,
+		Key p_accel = Key::NONE);
+	void add_radio_check_item(const String& p_label, int p_id = -1, Key p_accel = Key::NONE);
+	void add_icon_radio_check_item(const Ref<Texture2D>& p_icon, const String& p_label,
+		int p_id = -1, Key p_accel = Key::NONE);
+
+	void add_multistate_item(const String& p_label, int p_max_states, int p_default_state = 0,
+		int p_id = -1, Key p_accel = Key::NONE);
+
+	void add_shortcut(const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false,
+		bool p_allow_echo = false);
+	void add_icon_shortcut(const Ref<Texture2D>& p_icon, const Ref<Shortcut>& p_shortcut,
+		int p_id = -1, bool p_global = false, bool p_allow_echo = false);
+	void add_check_shortcut(const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+	void add_icon_check_shortcut(const Ref<Texture2D>& p_icon, const Ref<Shortcut>& p_shortcut,
+		int p_id = -1, bool p_global = false);
+	void add_radio_check_shortcut(
+		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+	void add_icon_radio_check_shortcut(const Ref<Texture2D>& p_icon,
+		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+
+	void add_submenu_item(const String& p_label, const String& p_submenu, int p_id = -1);
+	void add_submenu_node_item(const String& p_label, PopupMenu* p_submenu, int p_id = -1);
+
+	void set_item_text(int p_idx, const String& p_text);
+
+	void set_item_text_direction(int p_idx, Control::TextDirection p_text_direction);
+	void set_item_language(int p_idx, const String& p_language);
+	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
+	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
+	void set_item_icon_max_width(int p_idx, int p_width);
+	void set_item_icon_modulate(int p_idx, const Color& p_modulate);
+	void set_item_checked(int p_idx, bool p_checked);
+	void set_item_indeterminate(int p_idx, bool p_indeterminate);
+	void set_item_id(int p_idx, int p_id);
+	void set_item_accelerator(int p_idx, Key p_accel);
+	void set_item_disabled(int p_idx, bool p_disabled);
+	void set_item_submenu(int p_idx, const String& p_submenu);
+	void set_item_submenu_node(int p_idx, PopupMenu* p_submenu);
+	void set_item_as_separator(int p_idx, bool p_separator);
+	void set_item_as_checkable(int p_idx, bool p_checkable);
+	void set_item_as_radio_checkable(int p_idx, bool p_radio_checkable);
+	void set_item_tooltip(int p_idx, const String& p_tooltip);
+	void set_item_shortcut(int p_idx, const Ref<Shortcut>& p_shortcut, bool p_global = false);
+	void set_item_indent(int p_idx, int p_indent);
+	void set_item_max_states(int p_idx, int p_max_states);
+	void set_item_multistate(int p_idx, int p_state);
+	void toggle_item_multistate(int p_idx);
+	void set_item_shortcut_disabled(int p_idx, bool p_disabled);
+	void set_item_index(int p_idx, int p_target_idx);
+
+	void toggle_item_checked(int p_idx);
+
+	String get_item_text(int p_idx) const;
+	String get_item_xl_text(int p_idx) const;
+	Control::TextDirection get_item_text_direction(int p_idx) const;
+	String get_item_language(int p_idx) const;
+	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
+	int get_item_idx_from_text(const String& text) const;
+	Ref<Texture2D> get_item_icon(int p_idx) const;
+	int get_item_icon_max_width(int p_idx) const;
+	Color get_item_icon_modulate(int p_idx) const;
+	bool is_item_checked(int p_idx) const;
+	bool is_item_indeterminate(int p_idx) const;
+	int get_item_id(int p_idx) const;
+	int get_item_index(int p_id) const;
+	Key get_item_accelerator(int p_idx) const;
+	bool is_item_disabled(int p_idx) const;
+	String get_item_submenu(int p_idx) const;
+	PopupMenu* get_item_submenu_node(int p_idx) const;
+	bool is_item_separator(int p_idx) const;
+	bool is_item_checkable(int p_idx) const;
+	bool is_item_radio_checkable(int p_idx) const;
+	bool is_item_shortcut_disabled(int p_idx) const;
+	bool is_item_shortcut_global(int p_idx) const;
+	String get_item_tooltip(int p_idx) const;
+	Ref<Shortcut> get_item_shortcut(int p_idx) const;
+	int get_item_indent(int p_idx) const;
+	int get_item_max_states(int p_idx) const;
+	int get_item_state(int p_idx) const;
+
+	void set_focused_item(int p_idx);
+	int get_focused_item() const;
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+
+	void set_prefer_native_menu(bool p_enabled);
+	bool is_prefer_native_menu() const;
+
+	void set_search_bar_enabled(bool p_enabled);
+	bool is_search_bar_enabled() const;
+
+	void set_search_bar_min_item_count(int p_count);
+	int get_search_bar_min_item_count() const;
+
+	void set_search_bar_fuzzy_search_enabled(bool p_enabled);
+	bool is_search_bar_fuzzy_search_enabled() const;
+
+	void set_search_bar_fuzzy_search_max_misses(int p_max_misses);
+	int get_search_bar_fuzzy_search_max_misses() const;
+
+	bool is_native_menu() const;
+
+	void scroll_to_item(int p_idx);
+
+	bool activate_item_by_event(const InputEvent& p_event, bool p_for_global_only = false);
+	void activate_item(int p_idx);
+
+	void _about_to_popup();
+	void _about_to_close();
+
+	void remove_item(int p_idx);
+
+	void add_separator(const String& p_text = String(), int p_id = -1);
+
+	void clear(bool p_free_submenus = true);
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	void add_autohide_area(const Rect2& p_area);
+	void clear_autohide_areas();
+
+	void set_hide_on_item_selection(bool p_enabled);
+	bool is_hide_on_item_selection() const;
+
+	void set_hide_on_checkable_item_selection(bool p_enabled);
+	bool is_hide_on_checkable_item_selection() const;
+
+	void set_hide_on_multistate_item_selection(bool p_enabled);
+	bool is_hide_on_multistate_item_selection() const;
+
+	void set_submenu_popup_delay(float p_time);
+	float get_submenu_popup_delay() const;
+
+	void set_allow_search(bool p_allow);
+	bool get_allow_search() const;
+
+	void set_shrink_height(bool p_shrink);
+	bool get_shrink_height() const;
+
+	void set_shrink_width(bool p_shrink);
+	bool get_shrink_width() const;
+
+	virtual void set_visible(bool p_visible) override;
+
+	PopupMenu();
+	~PopupMenu();
+};
+
+class PopupMenuItems : public Control
+{
+	PopupMenu* popup = nullptr;
+
+public:
+	PopupMenuItems(PopupMenu* p_popup) : popup(p_popup) {}
+
+	virtual RID get_focused_accessibility_element() const override;
+};
+
+class MenuBar : public Control
+{
+	Mutex mutex;
+
+	bool switch_on_hover = true;
+	bool disable_shortcuts = false;
+	bool prefer_native = true;
+	bool flat = false;
+	int start_index = -1;
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+
+	struct Menu
+	{
+		String name;
+		String tooltip;
+
+		Ref<TextLine> text_buf;
+		bool hidden = false;
+		bool disabled = false;
+		RID submenu_rid;
+		NativeMenu::SystemMenus sysmenu_id = NativeMenu::INVALID_MENU_ID;
+
+		Menu(const String& p_name)
+		{
+			name = p_name;
+			text_buf.instantiate();
+		}
+
+		Menu() { text_buf.instantiate(); }
+	};
+
+	Vector<Menu> menu_cache;
+
+	int focused_menu = -1;
+	int selected_menu = -1;
+	int active_menu = -1;
+
+	Vector2i old_mouse_pos;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+		Ref<StyleBox> normal_mirrored;
+		Ref<StyleBox> disabled;
+		Ref<StyleBox> disabled_mirrored;
+		Ref<StyleBox> pressed;
+		Ref<StyleBox> pressed_mirrored;
+		Ref<StyleBox> hover;
+		Ref<StyleBox> hover_mirrored;
+		Ref<StyleBox> hover_pressed;
+		Ref<StyleBox> hover_pressed_mirrored;
+
+		Ref<Font> font;
+		int font_size = 0;
+		int outline_size = 0;
+		Color font_outline_color;
+
+		Color font_color;
+		Color font_disabled_color;
+		Color font_pressed_color;
+		Color font_hover_color;
+		Color font_hover_pressed_color;
+		Color font_focus_color;
+
+		int h_separation = 0;
+	} theme_cache;
+
+	int _get_index_at_point(const Point2& p_point) const;
+	Rect2 _get_menu_item_rect(int p_index) const;
+	void _draw_menu_item(int p_index);
+
+	void shape(Menu& p_menu);
+	void _refresh_menu_names();
+	Vector<PopupMenu*> _get_popups() const;
+	int get_menu_idx_from_control(PopupMenu* p_child) const;
+
+	void _open_popup(int p_index, bool p_focus_item = false);
+	void _popup_visibility_changed(bool p_visible);
+
+	String global_menu_tag;
+
+	void bind_global_menu();
+	void unbind_global_menu();
+
+protected:
+	void _notification(int p_what);
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+public:
+	void set_switch_on_hover(bool p_enabled);
+	bool is_switch_on_hover();
+	void set_disable_shortcuts(bool p_disabled);
+
+	void set_prefer_global_menu(bool p_enabled);
+	bool is_prefer_global_menu() const;
+
+	bool is_native_menu() const;
+
+	virtual Size2 get_minimum_size() const override;
+
+	int get_menu_count() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_start_index(int p_index);
+	int get_start_index() const;
+
+	void set_flat(bool p_enabled);
+	bool is_flat() const;
+
+	void set_menu_title(int p_menu, const String& p_title);
+	String get_menu_title(int p_menu) const;
+
+	void set_menu_tooltip(int p_menu, const String& p_tooltip);
+	String get_menu_tooltip(int p_menu) const;
+
+	void set_menu_disabled(int p_menu, bool p_disabled);
+	bool is_menu_disabled(int p_menu) const;
+
+	void set_menu_hidden(int p_menu, bool p_hidden);
+	bool is_menu_hidden(int p_menu) const;
+
+	PopupMenu* get_menu_popup(int p_menu) const;
+
+	virtual String get_tooltip(const Point2& p_pos) const;
+
+	MenuBar();
+	~MenuBar() = default;
+};
+
+
+
+// --- End scene/gui/menu_bar.h ---
+
+// --- Folded from scene/gui/menu_button.h ---
+
+#include "scene/gui/control.h"
+
+#include "scene/property_list_helper.h"
+
+class MenuButton : public Control
+{
+	bool switch_on_hover = false;
+	bool disable_shortcuts = false;
+	Button* button = nullptr;
+	PopupMenu* popup = nullptr;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+protected:
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+public:
+	void pressed();
+
+	Button* get_button() const { return button; }
+	PopupMenu* get_popup() const;
+	void show_popup();
+
+	void set_text(const String& p_text)
+	{
+		if (button) {
+			button->set_text(p_text);
+		}
+	}
+	String get_text() const { return button ? button->get_text() : String(); }
+	void set_flat(bool p_flat)
+	{
+		if (button) {
+			button->set_flat(p_flat);
+		}
+	}
+	bool is_flat() const { return button ? button->is_flat() : true; }
+	void set_disabled(bool p_disabled)
+	{
+		if (button) {
+			button->set_disabled(p_disabled);
+		}
+	}
+	bool is_disabled() const { return button ? button->is_disabled() : false; }
+
+	void set_switch_on_hover(bool p_enabled);
+	bool is_switch_on_hover();
+	void set_disable_shortcuts(bool p_disabled);
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+
+	virtual Size2 get_minimum_size() const override
+	{
+		return button ? button->get_minimum_size() : Size2();
+	}
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	MenuButton(const String& p_text = String());
+	~MenuButton();
+};
+
+// --- End scene/gui/menu_button.h ---
+
+// --- Folded from scene/gui/option_button.h ---
+
+#include "scene/gui/control.h"
+
+#include "scene/property_list_helper.h"
+
+class OptionButton : public Control
+{
+	bool disable_shortcuts = false;
+	Button* button = nullptr;
+	PopupMenu* popup = nullptr;
+	int current = -1;
+	bool fit_to_longest_item = true;
+	Vector2 _cached_size;
+	bool cache_refresh_pending = false;
+	bool allow_reselect = false;
+	bool initialized = false;
+	int queued_current = -1;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+
+		Color font_color;
+		Color font_focus_color;
+		Color font_pressed_color;
+		Color font_hover_color;
+		Color font_hover_pressed_color;
+		Color font_disabled_color;
+
+		int h_separation = 0;
+
+		Ref<Texture2D> arrow_icon;
+		int arrow_margin = 0;
+		int modulate_arrow = 0;
+	};
+
+	ThemeCache theme_cache;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	void _focused(int p_which);
+	void _selected(int p_which);
+	void _select(int p_which, bool p_emit = false);
+	void _select_int(int p_which);
+	void _refresh_size_cache();
+
+	void _dummy_setter() {}
+
+	void pressed();
+
+protected:
+	Size2 get_minimum_size() const override;
+	void _queue_update_size_cache();
+	String _get_translated_text(const String& p_text) const;
+
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+public:
+	static const int ITEM_PROPERTY_SIZE = 5;
+
+	Button* get_button() const { return button; }
+	void set_text(const String& p_text)
+	{
+		if (button) {
+			button->set_text(p_text);
+		}
+	}
+	String get_text() const { return button ? button->get_text() : String(); }
+	void set_disabled(bool p_disabled)
+	{
+		if (button) {
+			button->set_disabled(p_disabled);
+		}
+	}
+	bool is_disabled() const { return button ? button->is_disabled() : false; }
+
+	void add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1);
+	void add_item(const String& p_label, int p_id = -1);
+
+	void set_item_text(int p_idx, const String& p_text);
+	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
+	void set_item_id(int p_idx, int p_id);
+	void set_item_tooltip(int p_idx, const String& p_tooltip);
+	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
+
+	String get_item_text(int p_idx) const;
+	Ref<Texture2D> get_item_icon(int p_idx) const;
+	int get_item_id(int p_idx) const;
+	int get_item_index(int p_id) const;
+	bool is_item_disabled(int p_idx) const;
+	bool is_item_separator(int p_idx) const;
+	String get_item_tooltip(int p_idx) const;
+	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
+
+	bool is_search_bar_enabled() const;
+
+	int get_search_bar_min_item_count() const;
+
+	void set_search_bar_fuzzy_search_enabled(bool p_enabled);
+	bool is_search_bar_fuzzy_search_enabled() const;
+
+	void set_search_bar_fuzzy_search_max_misses(int p_max_misses);
+	int get_search_bar_fuzzy_search_max_misses() const;
+
+	bool has_selectable_items() const;
+	int get_selectable_item(bool p_from_last = false) const;
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+	void set_fit_to_longest_item(bool p_fit);
+	bool is_fit_to_longest_item() const;
+
+	void set_allow_reselect(bool p_allow);
+	bool get_allow_reselect() const;
+
+	void add_separator(const String& p_text = "");
+
+	void clear();
+
+	void select(int p_idx);
+	int get_selected() const;
+	int get_selected_id() const;
+
+	void remove_item(int p_idx);
+
+	PopupMenu* get_popup() const;
+	void show_popup();
+
+	void set_disable_shortcuts(bool p_disabled);
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	OptionButton(const String& p_text = String());
+	~OptionButton();
+};
+
+// --- End scene/gui/option_button.h ---
+
+// --- Folded from scene/gui/texture_rect.h ---
+#include "scene/gui/control.h"
+
+class TextureRect : public Control
+{
+public:
+	enum ExpandMode
+	{
+		EXPAND_KEEP_SIZE,
+		EXPAND_IGNORE_SIZE,
+		EXPAND_FIT_WIDTH,
+		EXPAND_FIT_WIDTH_PROPORTIONAL,
+		EXPAND_FIT_HEIGHT,
+		EXPAND_FIT_HEIGHT_PROPORTIONAL,
+	};
+
+	enum StretchMode
+	{
+		STRETCH_SCALE,
+		STRETCH_TILE,
+		STRETCH_KEEP,
+		STRETCH_KEEP_CENTERED,
+		STRETCH_KEEP_ASPECT,
+		STRETCH_KEEP_ASPECT_CENTERED,
+		STRETCH_KEEP_ASPECT_COVERED,
+	};
+
+private:
+	bool hflip = false;
+	bool vflip = false;
+	Ref<Texture2D> texture;
+	ExpandMode expand_mode = EXPAND_KEEP_SIZE;
+	StretchMode stretch_mode = STRETCH_SCALE;
+
+	void _texture_changed();
+
+protected:
+	void _notification(int p_what);
+	virtual Size2 get_minimum_size() const override;
+
+public:
+	void set_texture(const Ref<Texture2D>& p_tex);
+	Ref<Texture2D> get_texture() const;
+
+	void set_expand_mode(ExpandMode p_mode);
+	ExpandMode get_expand_mode() const;
+
+	void set_stretch_mode(StretchMode p_mode);
+	StretchMode get_stretch_mode() const;
+
+	void set_flip_h(bool p_flip);
+	bool is_flipped_h() const;
+
+	void set_flip_v(bool p_flip);
+	bool is_flipped_v() const;
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	TextureRect();
+	~TextureRect();
+};
+
+
+
+// --- End scene/gui/texture_rect.h ---
+#include "scene/gui/control.h"
+// --- Inlined/Folded from scene/gui/label.h ---
+#include "scene/gui/control.h"
+// --- Folded from scene/resources/label_settings.h ---
+#include "core/io/resource.h"
+#include "scene/property_list_helper.h"
+#include "scene/resources/font.h"
+
+/*************************************************************************/
+
+class LabelSettings : public Resource
+{
+public:
+	struct StackedOutlineData
+	{
+		int32_t size = 0;
+		Color color;
+	};
+
+	struct StackedShadowData
+	{
+		Vector2 offset = Vector2(1, 1);
+		Color color;
+		int32_t outline_size = 0;
+	};
+
+private:
+	real_t line_spacing = 3;
+	real_t paragraph_spacing = 0;
+
+	Ref<Font> font;
+	int font_size = Font::DEFAULT_FONT_SIZE;
+	Color font_color = Color(1, 1, 1);
+
+	int outline_size = 0;
+	Color outline_color = Color(1, 1, 1);
+
+	int shadow_size = 1;
+	Color shadow_color = Color(0, 0, 0, 0);
+	Vector2 shadow_offset = Vector2(1, 1);
+
+	Vector<StackedOutlineData> stacked_outline_data;
+	Vector<StackedShadowData> stacked_shadow_data;
+
+	static inline PropertyListHelper stacked_outline_base_property_helper;
+	static inline PropertyListHelper stacked_shadow_base_property_helper;
+	PropertyListHelper stacked_outline_property_helper;
+	PropertyListHelper stacked_shadow_property_helper;
+
+	void _font_changed();
+
+protected:
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return stacked_outline_property_helper.property_can_revert(p_name) ||
+			   stacked_shadow_property_helper.property_can_revert(p_name);
+	}
+
+public:
+	void set_line_spacing(real_t p_spacing);
+	real_t get_line_spacing() const;
+
+	void set_paragraph_spacing(real_t p_spacing);
+	real_t get_paragraph_spacing() const;
+
+	void set_font(const Ref<Font>& p_font);
+	Ref<Font> get_font() const;
+
+	void set_font_size(int p_size);
+	int get_font_size() const;
+
+	void set_font_color(const Color& p_color);
+	Color get_font_color() const;
+
+	void set_outline_size(int p_size);
+	int get_outline_size() const;
+
+	void set_outline_color(const Color& p_color);
+	Color get_outline_color() const;
+
+	void set_shadow_size(int p_size);
+	int get_shadow_size() const;
+
+	void set_shadow_color(const Color& p_color);
+	Color get_shadow_color() const;
+
+	void set_shadow_offset(const Vector2& p_offset);
+	Vector2 get_shadow_offset() const;
+
+	Vector<StackedOutlineData> get_stacked_outline_data() const;
+	int get_stacked_outline_count() const;
+	void set_stacked_outline_count(int p_count);
+	void add_stacked_outline(int p_index = -1);
+	void move_stacked_outline(int p_from_index, int p_to_position);
+	void remove_stacked_outline(int p_index);
+	void set_stacked_outline_size(int p_index, int p_size);
+	int get_stacked_outline_size(int p_index) const;
+	void set_stacked_outline_color(int p_index, const Color& p_color);
+	Color get_stacked_outline_color(int p_index) const;
+
+	Vector<StackedShadowData> get_stacked_shadow_data() const;
+	int get_stacked_shadow_count() const;
+	void set_stacked_shadow_count(int p_count);
+	void add_stacked_shadow(int p_index = -1);
+	void move_stacked_shadow(int p_from_index, int p_to_position);
+	void remove_stacked_shadow(int p_index);
+	void set_stacked_shadow_offset(int p_index, const Vector2& p_offset);
+	Vector2 get_stacked_shadow_offset(int p_index) const;
+	void set_stacked_shadow_color(int p_index, const Color& p_color);
+	Color get_stacked_shadow_color(int p_index) const;
+	void set_stacked_shadow_outline_size(int p_index, int p_size);
+	int get_stacked_shadow_outline_size(int p_index) const;
+
+	LabelSettings() {}
+};
+
+
+
+// --- End scene/resources/label_settings.h ---
+
+class Label : public Control
+{
+private:
+	HorizontalAlignment horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT;
+	VerticalAlignment vertical_alignment = VERTICAL_ALIGNMENT_TOP;
+	String text;
+	String xl_text;
+	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
+	uint32_t autowrap_flags_trim =
+		TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
+	uint32_t jst_flags =
+		TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
+		TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+		TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
+	bool clip = false;
+	String el_char = U"…";
+	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
+	mutable Size2 minsize;
+	bool uppercase = false;
+
+	struct Paragraph
+	{
+		bool lines_dirty = true;
+		bool dirty = true;
+		int start = 0;
+
+		String text;
+		RID text_rid;
+		Vector<RID> lines_rid;
+	};
+
+	mutable bool dirty = true;
+	mutable bool font_dirty = true;
+	mutable bool text_dirty = true;
+	mutable Vector<Paragraph> paragraphs;
+	mutable int total_line_count = 0;
+	String paragraph_separator = "\\n";
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+	TextServer::VisibleCharactersBehavior visible_chars_behavior =
+		TextServer::VC_CHARS_BEFORE_SHAPING;
+	int visible_chars = -1;
+	float visible_ratio = 1.0;
+	int lines_skipped = 0;
+	int max_lines_visible = -1;
+	PackedFloat32Array tab_stops;
+
+	Ref<LabelSettings> settings;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal_style;
+		Ref<StyleBox> focus_style;
+		Ref<Font> font;
+
+		int font_size = 0;
+		int line_spacing = 0;
+		int paragraph_spacing = 0;
+		Color font_color;
+		Color font_shadow_color;
+		Point2 font_shadow_offset;
+		Color font_outline_color;
+		int font_outline_size;
+		int font_shadow_outline_size;
+	};
+
+	ThemeCache theme_cache;
+
+	Rect2 _get_line_rect(int p_para, int p_line) const;
+	void _ensure_shaped() const;
+	void _update_visible() const;
+	void _shape() const;
+	void _invalidate();
+	void _maximum_size_changed();
+
+protected:
+	RID get_line_rid(int p_line) const;
+	Rect2 get_line_rect(int p_line) const;
+	int get_layout_data(Vector2& r_offset, int& r_last_line, int& r_line_spacing) const;
+
+	void _notification(int p_what);
+
+public:
+	virtual Size2 get_minimum_size() const override;
+	virtual Size2 get_desired_size() const override;
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	void set_horizontal_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_horizontal_alignment() const;
+
+	void set_vertical_alignment(VerticalAlignment p_alignment);
+	VerticalAlignment get_vertical_alignment() const;
+
+	void set_text(const String& p_string);
+	String get_text() const;
+
+	void set_label_settings(const Ref<LabelSettings>& p_settings);
+	Ref<LabelSettings> get_label_settings() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_paragraph_separator(const String& p_paragraph_separator);
+	String get_paragraph_separator() const;
+
+	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
+
+	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode() const;
+
+	void set_autowrap_trim_flags(uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags() const;
+
+	void set_justification_flags(uint32_t p_flags);
+	uint32_t get_justification_flags() const;
+
+	void set_uppercase(bool p_uppercase);
+	bool is_uppercase() const;
+
+	void set_visible_characters_behavior(TextServer::VisibleCharactersBehavior p_behavior);
+	TextServer::VisibleCharactersBehavior get_visible_characters_behavior() const;
+
+	void set_visible_characters(int p_amount);
+	int get_visible_characters() const;
+	int get_total_character_count() const;
+
+	void set_visible_ratio(float p_ratio);
+	float get_visible_ratio() const;
+
+	void set_clip_text(bool p_clip);
+	bool is_clipping_text() const;
+
+	void set_tab_stops(const PackedFloat32Array& p_tab_stops);
+	PackedFloat32Array get_tab_stops() const;
+
+	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior() const;
+
+	void set_ellipsis_char(const String& p_char);
+	String get_ellipsis_char() const;
+
+	void set_lines_skipped(int p_lines);
+	int get_lines_skipped() const;
+
+	void set_max_lines_visible(int p_lines);
+	int get_max_lines_visible() const;
+
+	int get_line_height(int p_line = -1) const;
+	int get_line_count() const;
+	int get_visible_line_count() const;
+
+	Rect2 get_character_bounds(int p_pos) const;
+
+	Label(const String& p_text = String()) : text(p_text) {}
+	~Label();
+
+	template <typename... VarArgsFunc, typename... VarArgs>
+	void draw_text(bool p_rtl, int p_ellipsis_pos, int p_ellipsis_gl_size,
+		const Glyph* p_ellipsis_glyphs, bool p_trim_chars, int p_para_start, int p_visible_chars,
+		bool p_trim_glyphs_ltr, int& p_processed_glyphs_step, int p_processed_glyphs,
+		int p_visible_glyphs, bool p_trim_glyphs_rtl, int p_total_glyphs, const RID& p_ci,
+		const Vector2& p_ofs, int p_gl_size, int p_trim_pos, const Glyph* p_glyphs,
+		const Color& p_color,
+		void (*p_draw_func)(const Glyph& p_gl, const RID& p_canvas,
+			const Color& p_font_outline_color, const Vector2& p_ofs, VarArgsFunc... p_args),
+		VarArgs&&... p_args)
+	{
+		p_processed_glyphs_step = p_processed_glyphs;
+		Vector2 offset_step = p_ofs; /* Draw RTL ellipsis string when necessary. */
+		if (p_rtl && p_ellipsis_pos >= 0) {
+			for (int gl_idx = p_ellipsis_gl_size - 1; gl_idx >= 0; gl_idx--) {
+				for (int j = 0; j < p_ellipsis_glyphs[gl_idx].repeat; j++) {
+					bool skip =
+						(p_trim_chars &&
+							p_ellipsis_glyphs[gl_idx].end + p_para_start > p_visible_chars) ||
+						(p_trim_glyphs_ltr && (p_processed_glyphs_step >= p_visible_glyphs)) ||
+						(p_trim_glyphs_rtl &&
+							(p_processed_glyphs_step < p_total_glyphs - p_visible_glyphs));
+					if (!skip) {
+						p_draw_func(p_ellipsis_glyphs[gl_idx], p_ci, p_color, offset_step,
+							std::forward<VarArgs>(p_args)...);
+					}
+					p_processed_glyphs_step++;
+					offset_step.x += p_ellipsis_glyphs[gl_idx].advance;
+				}
+			}
+		}									  /* Draw main text. */
+		for (int j = 0; j < p_gl_size; j++) { /* Trim when necessary. */
+			if (p_trim_pos >= 0) {
+				if (p_rtl) {
+					if (j < p_trim_pos) {
+						continue;
+					}
+				}
+				else {
+					if (j >= p_trim_pos) {
+						break;
+					}
+				}
+			}
+			for (int k = 0; k < p_glyphs[j].repeat; k++) {
+				bool skip = (p_trim_chars && p_glyphs[j].end + p_para_start > p_visible_chars) ||
+							(p_trim_glyphs_ltr && (p_processed_glyphs_step >= p_visible_glyphs)) ||
+							(p_trim_glyphs_rtl &&
+								(p_processed_glyphs_step < p_total_glyphs - p_visible_glyphs));
+				if (!skip) {
+					p_draw_func(
+						p_glyphs[j], p_ci, p_color, offset_step, std::forward<VarArgs>(p_args)...);
+				}
+				p_processed_glyphs_step++;
+				offset_step.x += p_glyphs[j].advance;
+			}
+		} /* Draw LTR ellipsis string when necessary. */
+		if (!p_rtl && p_ellipsis_pos >= 0) {
+			for (int gl_idx = 0; gl_idx < p_ellipsis_gl_size; gl_idx++) {
+				for (int j = 0; j < p_ellipsis_glyphs[gl_idx].repeat; j++) {
+					bool skip =
+						(p_trim_chars &&
+							p_ellipsis_glyphs[gl_idx].end + p_para_start > p_visible_chars) ||
+						(p_trim_glyphs_ltr && (p_processed_glyphs_step >= p_visible_glyphs)) ||
+						(p_trim_glyphs_rtl &&
+							(p_processed_glyphs_step < p_total_glyphs - p_visible_glyphs));
+					if (!skip) {
+						p_draw_func(p_ellipsis_glyphs[gl_idx], p_ci, p_color, offset_step,
+							std::forward<VarArgs>(p_args)...);
+					}
+					p_processed_glyphs_step++;
+					offset_step.x += p_ellipsis_glyphs[gl_idx].advance;
+				}
+			}
+		}
+	}
+};
+
+// --- Folded from scene/gui/item_list.h ---
+#include "scene/gui/control.h"
+#include "scene/gui/scroll_container.h"
+#include "scene/property_list_helper.h"
+#include "scene/resources/text_line.h"
+
+class ItemList : public Control
+{
+public:
+	enum IconMode
+	{
+		ICON_MODE_TOP,
+		ICON_MODE_LEFT
+	};
+
+	enum SelectMode
+	{
+		SELECT_SINGLE,
+		SELECT_MULTI,
+		SELECT_TOGGLE,
+	};
+
+	enum ScrollHintMode
+	{
+		SCROLL_HINT_MODE_DISABLED,
+		SCROLL_HINT_MODE_BOTH,
+		SCROLL_HINT_MODE_TOP,
+		SCROLL_HINT_MODE_BOTTOM,
+	};
+
+private:
+	struct Item
+	{
+		mutable RID accessibility_item_element;
+		mutable bool accessibility_item_dirty = true;
+
+		Ref<Texture2D> icon;
+		bool icon_transposed = false;
+		Rect2i icon_region;
+		Color icon_modulate = Color(1, 1, 1, 1);
+		Ref<Texture2D> tag_icon;
+		String text;
+		String xl_text;
+		Ref<TextParagraph> text_buf;
+		String language;
+		TextDirection text_direction = TEXT_DIRECTION_AUTO;
+		AutoTranslateMode auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
+
+		bool selectable = true;
+		bool selected = false;
+		bool disabled = false;
+		bool tooltip_enabled = true;
+		String tooltip;
+		Color custom_fg;
+		Color custom_bg = Color(0.0, 0.0, 0.0, 0.0);
+
+		int column = 0;
+		Rect2 rect_cache;
+		Rect2 min_rect_cache;
+
+		Size2 get_icon_size() const;
+
+		bool operator<(const Item& p_another) const { return text < p_another.text; }
+
+		Item() { text_buf.instantiate(); }
+
+		Item(bool p_dummy) {}
+	};
+
+	RID accessibility_scroll_element;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	int current = -1;
+	int hovered = -1;
+	int prev_hovered = -1;
+	int shift_anchor = -1;
+
+	bool shape_changed = true;
+
+	bool ensure_selected_visible = false;
+	bool same_column_width = false;
+	bool allow_search = true;
+
+	bool auto_width = false;
+	float auto_width_value = 0.0;
+
+	bool auto_height = false;
+	float auto_height_value = 0.0;
+
+	bool wraparound_items = true;
+
+	Vector<Item> items;
+	Vector<int> separators;
+
+	SelectMode select_mode = SELECT_SINGLE;
+	IconMode icon_mode = ICON_MODE_LEFT;
+	ScrollBar* scroll_bar_v = nullptr;
+	ScrollBar* scroll_bar_h = nullptr;
+	TextServer::OverrunBehavior text_overrun_behavior = TextServer::OVERRUN_TRIM_ELLIPSIS;
+
+	ScrollHintMode scroll_hint_mode = SCROLL_HINT_MODE_DISABLED;
+	bool tile_scroll_hint = false;
+
+	uint64_t search_time_msec = 0;
+	String search_string;
+
+	int current_columns = 1;
+	int fixed_column_width = 0;
+	int max_text_lines = 1;
+	int max_columns = 1;
+
+	Size2 fixed_icon_size;
+	Size2 fixed_tag_icon_size;
+
+	int defer_select_single = -1;
+	bool allow_rmb_select = false;
+	bool allow_reselect = false;
+
+	real_t icon_scale = 1.0;
+
+	bool do_autoscroll_to_bottom = false;
+
+	void _scroll_changed(double);
+	void _mouse_exited();
+	void _shift_range_select(int p_from, int p_to);
+
+protected:
+	struct ThemeCache
+	{
+		int h_separation = 0;
+		int v_separation = 0;
+		int scroll_bar_h_separation = 0;
+
+		Ref<StyleBox> panel_style;
+		Ref<StyleBox> focus_style;
+
+		Ref<Font> font;
+		int font_size = 0;
+		Color font_color;
+		Color font_hovered_color;
+		Color font_hovered_selected_color;
+		Color font_selected_color;
+		int font_outline_size = 0;
+		Color font_outline_color;
+		Color font_disabled_color;
+		Color font_disabled_hovered_color;
+
+		int line_separation = 0;
+		int icon_margin = 0;
+		Ref<StyleBox> hovered_style;
+		Ref<StyleBox> hovered_selected_style;
+		Ref<StyleBox> hovered_selected_focus_style;
+		Ref<StyleBox> selected_style;
+		Ref<StyleBox> selected_focus_style;
+		Ref<StyleBox> cursor_style;
+		Ref<StyleBox> cursor_focus_style;
+		Ref<StyleBox> disabled_style;
+		Ref<StyleBox> disabled_hovered_style;
+		Color guide_color;
+
+		Ref<Texture2D> scroll_hint;
+		Color scroll_hint_color;
+	} theme_cache;
+
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+public:
+	virtual RID get_focused_accessibility_element() const override;
+
+	int add_item(const String& p_item, const Ref<Texture2D>& p_texture = Ref<Texture2D>(),
+		bool p_selectable = true);
+	int add_icon_item(const Ref<Texture2D>& p_item, bool p_selectable = true);
+
+	void set_item_text(int p_idx, const String& p_text);
+	String get_item_text(int p_idx) const;
+
+	void set_item_text_direction(int p_idx, TextDirection p_text_direction);
+	TextDirection get_item_text_direction(int p_idx) const;
+
+	void set_item_language(int p_idx, const String& p_language);
+	String get_item_language(int p_idx) const;
+
+	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
+	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
+
+	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_item_icon(int p_idx) const;
+
+	void set_item_icon_transposed(int p_idx, const bool transposed);
+	bool is_item_icon_transposed(int p_idx) const;
+
+	void set_item_icon_region(int p_idx, const Rect2& p_region);
+	Rect2 get_item_icon_region(int p_idx) const;
+
+	void set_item_icon_modulate(int p_idx, const Color& p_modulate);
+	Color get_item_icon_modulate(int p_idx) const;
+
+	void set_item_selectable(int p_idx, bool p_selectable);
+	bool is_item_selectable(int p_idx) const;
+
+	void set_item_disabled(int p_idx, bool p_disabled);
+	bool is_item_disabled(int p_idx) const;
+
+	void set_item_tag_icon(int p_idx, const Ref<Texture2D>& p_tag_icon);
+
+	void set_item_tooltip_enabled(int p_idx, const bool p_enabled);
+	bool is_item_tooltip_enabled(int p_idx) const;
+
+	void set_item_tooltip(int p_idx, const String& p_tooltip);
+	String get_item_tooltip(int p_idx) const;
+
+	void set_item_custom_bg_color(int p_idx, const Color& p_custom_bg_color);
+	Color get_item_custom_bg_color(int p_idx) const;
+
+	void set_item_custom_fg_color(int p_idx, const Color& p_custom_fg_color);
+	Color get_item_custom_fg_color(int p_idx) const;
+
+	Rect2 get_item_rect(int p_idx, bool p_expand = true) const;
+
+	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior() const;
+
+	void select(int p_idx, bool p_single = true);
+	void deselect(int p_idx);
+	void deselect_all();
+	bool is_selected(int p_idx) const;
+	Vector<int> get_selected_items();
+	bool is_anything_selected();
+
+	void set_current(int p_current);
+	int get_current() const;
+
+	void move_item(int p_from_idx, int p_to_idx);
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+	void remove_item(int p_idx);
+
+	void clear();
+
+	void set_fixed_column_width(int p_size);
+	int get_fixed_column_width() const;
+
+	void set_same_column_width(bool p_enable);
+	bool is_same_column_width() const;
+
+	void set_max_text_lines(int p_lines);
+	int get_max_text_lines() const;
+
+	void set_max_columns(int p_amount);
+	int get_max_columns() const;
+
+	void set_select_mode(SelectMode p_mode);
+	SelectMode get_select_mode() const;
+
+	void set_icon_mode(IconMode p_mode);
+	IconMode get_icon_mode() const;
+
+	void set_fixed_icon_size(const Size2i& p_size);
+	Size2i get_fixed_icon_size() const;
+
+	void set_fixed_tag_icon_size(const Size2i& p_size);
+
+	void set_allow_rmb_select(bool p_allow);
+	bool get_allow_rmb_select() const;
+
+	void set_allow_reselect(bool p_allow);
+	bool get_allow_reselect() const;
+
+	void set_allow_search(bool p_allow);
+	bool get_allow_search() const;
+
+	void ensure_current_is_visible();
+	void center_on_current(bool p_center_verically = true, bool p_center_horizontally = true);
+
+	void sort_items_by_text();
+
+	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2& p_at) const override;
+	int get_item_at_position(const Point2& p_pos, bool p_exact = false) const;
+	bool is_pos_at_end_of_items(const Point2& p_pos) const;
+
+	void set_icon_scale(real_t p_scale);
+	real_t get_icon_scale() const;
+
+	void set_auto_width(bool p_enable);
+	bool has_auto_width() const;
+
+	void set_auto_height(bool p_enable);
+	bool has_auto_height() const;
+
+	void set_wraparound_items(bool p_enable);
+	bool has_wraparound_items() const;
+
+	Size2 get_minimum_size() const override;
+
+	void set_autoscroll_to_bottom(const bool p_enable);
+
+	void force_update_list_size();
+
+	ScrollBar* get_v_scroll_bar() { return scroll_bar_v; }
+
+	ScrollBar* get_h_scroll_bar() { return scroll_bar_h; }
+
+	void set_scroll_hint_mode(ScrollHintMode p_mode);
+	ScrollHintMode get_scroll_hint_mode() const;
+
+	void set_tile_scroll_hint(bool p_enable);
+	bool is_scroll_hint_tiled();
+
+	ItemList();
+	~ItemList();
+};
+
+
+
+// --- End scene/gui/item_list.h ---
+
+// --- Folded from scene/gui/nine_patch_rect.h ---
+#include "scene/gui/control.h"
+
+class NinePatchRect : public Control
+{
+public:
+	enum AxisStretchMode
+	{
+		AXIS_STRETCH_MODE_STRETCH,
+		AXIS_STRETCH_MODE_TILE,
+		AXIS_STRETCH_MODE_TILE_FIT,
+	};
+
+	bool draw_center = true;
+	int margin[4] = {};
+	Rect2 region_rect;
+	Ref<Texture2D> texture;
+
+	AxisStretchMode axis_h = AXIS_STRETCH_MODE_STRETCH;
+	AxisStretchMode axis_v = AXIS_STRETCH_MODE_STRETCH;
+
+	void _texture_changed();
+
+protected:
+	void _notification(int p_what);
+	virtual Size2 get_minimum_size() const override;
+
+public:
+	void set_texture(const Ref<Texture2D>& p_tex);
+	Ref<Texture2D> get_texture() const;
+
+	void set_patch_margin(Side p_side, int p_size);
+	int get_patch_margin(Side p_side) const;
+
+	void set_region_rect(const Rect2& p_region_rect);
+	Rect2 get_region_rect() const;
+
+	void set_draw_center(bool p_enabled);
+	bool is_draw_center_enabled() const;
+
+	void set_h_axis_stretch_mode(AxisStretchMode p_mode);
+	AxisStretchMode get_h_axis_stretch_mode() const;
+
+	void set_v_axis_stretch_mode(AxisStretchMode p_mode);
+	AxisStretchMode get_v_axis_stretch_mode() const;
+
+	NinePatchRect();
+	~NinePatchRect();
+};
+
+
+
+// --- End scene/gui/nine_patch_rect.h ---
+
+// --- Folded from scene/gui/reference_rect.h ---
+#include "scene/gui/control.h"
+
+class ReferenceRect : public Control {
+
+	Color border_color = Color(1, 0, 0);
+	float border_width = 1.0;
+	bool editor_only = true;
+
+protected:
+	void _notification(int p_what);
+
+public:
+	void set_border_color(const Color &p_color);
+	Color get_border_color() const;
+
+	void set_border_width(float p_width);
+	float get_border_width() const;
+
+	void set_editor_only(const bool &p_enabled);
+	bool get_editor_only() const;
+};
+
+// --- End scene/gui/reference_rect.h ---
 // --- Folded from scene/gui/panel.h ---
 #include "scene/gui/control.h"
 
@@ -1539,9 +3640,9 @@ public:
 // --- End scene/gui/graph_edit.h ---
 
 // --- Folded from scene/gui/color_picker.h ---
-#include "scene/gui/button.h"
+
 #include "scene/gui/control.h"
-#include "scene/gui/popup_menu.h"
+
 #include "scene/resources/shader.h"
 
 class ColorMode;
@@ -1980,11 +4081,11 @@ public:
 // --- Folded from scene/gui/rich_text_label.h ---
 #include "core/templates/rid_owner.h"
 #include "scene/gui/control.h"
-#include "scene/resources/text_paragraph.h"
+#include "scene/resources/text_line.h"
 #include "scene/resources/text_line.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/themes/editor_scale.h"
+#include "editor/file_system/editor_paths.h"
 #endif
 
 class PopupMenu;
@@ -2821,7 +4922,7 @@ public:
 
 // --- Folded from scene/gui/line_edit.h ---
 #include "scene/gui/control.h"
-#include "scene/gui/popup_menu.h"
+
 
 class LineEdit : public Control
 {
@@ -3259,8 +5360,8 @@ public:
 // --- Folded from scene/gui/spin_box.h ---
 #include "scene/gui/control.h"
 
-#include "scene/gui/scroll_bar.h"
-#include "scene/main/timer.h"
+#include "scene/gui/scroll_container.h"
+#include "scene/main/scene_tree.h"
 
 class SpinBox : public Control
 {
@@ -3494,9 +5595,9 @@ public:
 #include <type_traits>
 
 #include "scene/gui/control.h"
-#include "scene/gui/popup_menu.h"
-#include "scene/gui/scroll_bar.h"
-#include "scene/main/timer.h"
+
+#include "scene/gui/scroll_container.h"
+#include "scene/main/scene_tree.h"
 // --- Folded from scene/resources/syntax_highlighter.h ---
 #include "core/io/resource.h"
 #include "core/templates/rb_map.h"
@@ -3576,7 +5677,7 @@ public:
 };
 
 // --- End scene/resources/syntax_highlighter.h ---
-#include "scene/resources/text_paragraph.h"
+#include "scene/resources/text_line.h"
 
 class TextEdit : public Control
 {
@@ -5163,7 +7264,7 @@ public:
 
 // --- Folded from scene/gui/tree.h ---
 #include "scene/gui/control.h"
-#include "scene/resources/text_paragraph.h"
+#include "scene/resources/text_line.h"
 #include "servers/display/accessibility_server.h"
 
 class LineEdit;

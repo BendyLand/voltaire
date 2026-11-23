@@ -1539,7 +1539,7 @@ int Compression::decompress_dynamic(Vector<uint8_t> *p_dst_vect, int64_t p_max_d
 /**************************************************************************/
 
 #include <zstd.h>
-#include "core/error/error_list.h"
+#include "core/typedefs.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
 #include "core/io/compression.h"
@@ -2412,7 +2412,7 @@ int PackedDataContainerRef::size() const { return from->_size(offset); }
 
 #include "config_file.h"
 #include "core/io/file_access_wrappers.h"
-#include "core/string/string_builder.h"
+#include "core/string/ustring.h"
 
 void ConfigFile::erase_section_key(const String& p_section, const String& p_key) {}
 
@@ -4335,7 +4335,7 @@ XMLParser::~XMLParser()
 #include "core/io/config_file.h"
 
 #include "core/io/file_access.h"
-#include "core/string/translation.h"
+#include "core/string/translation_server.h"
 
 Ref<Resource> TranslationLoaderPO::load_translation(Ref<FileAccess> r_file, Error *r_error) {
 	if (r_error) {
@@ -5358,7 +5358,7 @@ DirAccess::~DirAccess() { _delete_temp(); }
 #include "core/io/file_access.h"
 #include "core/os/time.h"
 #include "core/templates/rb_set.h"
-#include "logger.h"
+#include "core/os/os.h"
 #include "modules/modules_enabled.gen.h" // For regex.
 
 #ifdef MODULE_REGEX_ENABLED
@@ -8793,7 +8793,7 @@ Error StreamPeerGZIP::finish()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/stream_peer_tls.h"
+#include "core/io/stream_peer.h"
 
 #include "modules/modules_enabled.gen.h"
 
@@ -8863,7 +8863,7 @@ StreamPeerTLS::~StreamPeerTLS() {}
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/socket_server.h"
+#include "core/io/stream_peer_socket.h"
 
 Error SocketServer::_listen(const NetSocket::Address& p_addr)
 {
@@ -8984,11 +8984,11 @@ SocketServer::~SocketServer() { stop(); }
 // Merged from core/io/http_client.cpp
 // ============================================================================
 
-#include "core/io/http_client.h"
+#include "core/io/stream_peer.h"
 
 #ifndef WEB_ENABLED
 #include "core/io/stream_peer_socket.h"
-#include "core/io/stream_peer_tls.h"
+#include "core/io/stream_peer.h"
 #include "core/os/os.h"
 #include "core/version.h"
 #endif
@@ -9839,7 +9839,7 @@ HTTPClient::~HTTPClient() {}
 // Merged from core/io/ip.cpp
 // ============================================================================
 
-#include "core/os/semaphore.h"
+#include "core/os/mutex.h"
 #include "core/os/thread.h"
 #include "core/templates/hash_map.h"
 #include "core/io/ip.h"
@@ -10169,7 +10169,7 @@ void IP::reset_backend()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/ip_address.h"
+#include "core/io/ip.h"
 /*
 IPAddress::operator Variant() const {
 	return operator String();
@@ -10498,7 +10498,7 @@ Ref<NetSocket> NetSocket::create() {
 #include "core/io/file_access.h"
 #include "core/io/stream_peer_socket.h"
 #include "core/os/os.h"
-#include "core/string/string_builder.h"
+#include "core/string/ustring.h"
 
 #define FILESYSTEM_CACHE_VERSION 1
 #define FILESYSTEM_PROTOCOL_VERSION 1

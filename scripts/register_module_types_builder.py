@@ -7,12 +7,16 @@ import methods
 
 
 def register_module_types_builder(target, source):
-    modules = OrderedDict(
-        (k, v) for k, v in source[0].items() if os.path.isdir(v)
-    )
-    mod_inc = "\n".join(
-        [f'#include "{value}/register_types.h"' for value in modules.values()]
-    )
+    modules = OrderedDict(source[0].items())
+    decls = []
+    for key, val in modules.items():
+        rt_hdr = f"{val}/register_types.h"
+        if os.path.exists(rt_hdr):
+            decls.append(f'#include "{rt_hdr}"')
+        elif key not in ("freetype", "msdfgen"):
+            decls.append(f"void initialize_{key}_module(ModuleInitializationLevel p_level);")
+            decls.append(f"void uninitialize_{key}_module(ModuleInitializationLevel p_level);")
+    mod_inc = "\n".join(decls)
     mod_init = "\n".join([f"""\
 #ifdef MODULE_{key.upper()}_ENABLED
 	initialize_{key}_module(p_level);

@@ -14032,7 +14032,7 @@ int Animation::_track_find_key_bind_compat_92861(
 // --- animation_library.cpp ---
 
 #include "scene/animation/animation_mixer.h"
-#include "scene/scene_string_names.h"
+#include "scene/main/node.h"
 
 bool AnimationLibrary::is_valid_animation_name(const String& p_name)
 {
@@ -16339,7 +16339,7 @@ void MeshLibrary::clear() {}
 
 // --- skin.cpp ---
 
-#include "scene/resources/3d/skin.h"
+#include "scene/3d/skeleton_3d.h"
 
 void Skin::set_bind_count(int p_size)
 {

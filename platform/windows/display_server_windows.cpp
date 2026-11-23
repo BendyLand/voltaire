@@ -8402,3 +8402,2787 @@ DisplayServerWindows::~DisplayServerWindows() {
 
 	OleUninitialize();
 }
+
+
+// --- Merged from platform/windows/key_mapping_windows.cpp ---
+#include "platform/windows/display_server_windows.h"
+
+#include "core/templates/hash_map.h"
+
+// This provides translation from Windows virtual key codes to Godot and back.
+// See WinUser.h and the below for documentation:
+// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+
+struct HashMapHasherKeys {
+	static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
+	static _FORCE_INLINE_ uint32_t hash(const char32_t p_uchar) { return hash_fmix32(p_uchar); }
+	static _FORCE_INLINE_ uint32_t hash(const unsigned p_key) { return hash_fmix32(p_key); }
+};
+
+HashMap<unsigned int, Key, HashMapHasherKeys> vk_map;
+HashMap<unsigned int, Key, HashMapHasherKeys> scansym_map;
+HashMap<Key, unsigned int, HashMapHasherKeys> scansym_map_inv;
+HashMap<unsigned int, Key, HashMapHasherKeys> scansym_map_ext;
+HashMap<unsigned int, KeyLocation, HashMapHasherKeys> location_map;
+
+void KeyMappingWindows::initialize() {
+	// VK_LBUTTON (0x01)
+	// VK_RBUTTON (0x02)
+	// VK_CANCEL (0x03)
+	// VK_MBUTTON (0x04)
+	// VK_XBUTTON1 (0x05)
+	// VK_XBUTTON2 (0x06), We have no mappings for the above;as we only map keyboard buttons here.
+	// 0x07 is undefined.
+	vk_map[VK_BACK] = Key::BACKSPACE; // (0x08)
+	vk_map[VK_TAB] = Key::TAB; // (0x09)
+	// 0x0A-0B are reserved.
+	vk_map[VK_CLEAR] = Key::CLEAR; // (0x0C)
+	vk_map[VK_RETURN] = Key::ENTER; // (0x0D)
+	// 0x0E-0F are undefined.
+	vk_map[VK_SHIFT] = Key::SHIFT; // (0x10)
+	vk_map[VK_CONTROL] = Key::CTRL; // (0x11)
+	vk_map[VK_MENU] = Key::ALT; // (0x12)
+	vk_map[VK_PAUSE] = Key::PAUSE; // (0x13)
+	vk_map[VK_CAPITAL] = Key::CAPSLOCK; // (0x14)
+	// 0x15-1A are IME keys.
+	vk_map[VK_ESCAPE] = Key::ESCAPE; // (0x1B)
+	// 0x1C-1F are IME keys.
+	vk_map[VK_SPACE] = Key::SPACE; // (0x20)
+	vk_map[VK_PRIOR] = Key::PAGEUP; // (0x21)
+	vk_map[VK_NEXT] = Key::PAGEDOWN; // (0x22)
+	vk_map[VK_END] = Key::END; // (0x23)
+	vk_map[VK_HOME] = Key::HOME; // (0x24)
+	vk_map[VK_LEFT] = Key::LEFT; // (0x25)
+	vk_map[VK_UP] = Key::UP; // (0x26)
+	vk_map[VK_RIGHT] = Key::RIGHT; // (0x27)
+	vk_map[VK_DOWN] = Key::DOWN; // (0x28)
+	// VK_SELECT (0x29), Old select key; e.g. on Digital Equipment Corporation keyboards.
+	vk_map[VK_PRINT] = Key::PRINT; // (0x2A), Old IBM key; modern keyboards use VK_SNAPSHOT.
+	// VK_EXECUTE (0x2B), Old and uncommon.
+	vk_map[VK_SNAPSHOT] = Key::PRINT; // (0x2C)
+	vk_map[VK_INSERT] = Key::INSERT; // (0x2D)
+	vk_map[VK_DELETE] = Key::KEY_DELETE; // (0x2E)
+	vk_map[VK_HELP] = Key::HELP; // (0x2F)
+	vk_map[0x30] = Key::KEY_0; // 0 key.
+	vk_map[0x31] = Key::KEY_1; // 1 key.
+	vk_map[0x32] = Key::KEY_2; // 2 key.
+	vk_map[0x33] = Key::KEY_3; // 3 key.
+	vk_map[0x34] = Key::KEY_4; // 4 key.
+	vk_map[0x35] = Key::KEY_5; // 5 key.
+	vk_map[0x36] = Key::KEY_6; // 6 key.
+	vk_map[0x37] = Key::KEY_7; // 7 key.
+	vk_map[0x38] = Key::KEY_8; // 8 key.
+	vk_map[0x39] = Key::KEY_9; // 9 key.
+	// 0x3A-40 are undefined.
+	vk_map[0x41] = Key::A; // A key.
+	vk_map[0x42] = Key::B; // B key.
+	vk_map[0x43] = Key::C; // C key.
+	vk_map[0x44] = Key::D; // D key.
+	vk_map[0x45] = Key::E; // E key.
+	vk_map[0x46] = Key::F; // F key.
+	vk_map[0x47] = Key::G; // G key.
+	vk_map[0x48] = Key::H; // H key.
+	vk_map[0x49] = Key::I; // I key
+	vk_map[0x4A] = Key::J; // J key.
+	vk_map[0x4B] = Key::K; // K key.
+	vk_map[0x4C] = Key::L; // L key.
+	vk_map[0x4D] = Key::M; // M key.
+	vk_map[0x4E] = Key::N; // N key.
+	vk_map[0x4F] = Key::O; // O key.
+	vk_map[0x50] = Key::P; // P key.
+	vk_map[0x51] = Key::Q; // Q key.
+	vk_map[0x52] = Key::R; // R key.
+	vk_map[0x53] = Key::S; // S key.
+	vk_map[0x54] = Key::T; // T key.
+	vk_map[0x55] = Key::U; // U key.
+	vk_map[0x56] = Key::V; // V key.
+	vk_map[0x57] = Key::W; // W key.
+	vk_map[0x58] = Key::X; // X key.
+	vk_map[0x59] = Key::Y; // Y key.
+	vk_map[0x5A] = Key::Z; // Z key.
+	vk_map[VK_LWIN] = (Key)Key::META; // (0x5B)
+	vk_map[VK_RWIN] = (Key)Key::META; // (0x5C)
+	vk_map[VK_APPS] = Key::MENU; // (0x5D)
+	// 0x5E is reserved.
+	vk_map[VK_SLEEP] = Key::STANDBY; // (0x5F)
+	vk_map[VK_NUMPAD0] = Key::KP_0; // (0x60)
+	vk_map[VK_NUMPAD1] = Key::KP_1; // (0x61)
+	vk_map[VK_NUMPAD2] = Key::KP_2; // (0x62)
+	vk_map[VK_NUMPAD3] = Key::KP_3; // (0x63)
+	vk_map[VK_NUMPAD4] = Key::KP_4; // (0x64)
+	vk_map[VK_NUMPAD5] = Key::KP_5; // (0x65)
+	vk_map[VK_NUMPAD6] = Key::KP_6; // (0x66)
+	vk_map[VK_NUMPAD7] = Key::KP_7; // (0x67)
+	vk_map[VK_NUMPAD8] = Key::KP_8; // (0x68)
+	vk_map[VK_NUMPAD9] = Key::KP_9; // (0x69)
+	vk_map[VK_MULTIPLY] = Key::KP_MULTIPLY; // (0x6A)
+	vk_map[VK_ADD] = Key::KP_ADD; // (0x6B)
+	vk_map[VK_SEPARATOR] = Key::KP_PERIOD; // (0x6C)
+	vk_map[VK_SUBTRACT] = Key::KP_SUBTRACT; // (0x6D)
+	vk_map[VK_DECIMAL] = Key::KP_PERIOD; // (0x6E)
+	vk_map[VK_DIVIDE] = Key::KP_DIVIDE; // (0x6F)
+	vk_map[VK_F1] = Key::F1; // (0x70)
+	vk_map[VK_F2] = Key::F2; // (0x71)
+	vk_map[VK_F3] = Key::F3; // (0x72)
+	vk_map[VK_F4] = Key::F4; // (0x73)
+	vk_map[VK_F5] = Key::F5; // (0x74)
+	vk_map[VK_F6] = Key::F6; // (0x75)
+	vk_map[VK_F7] = Key::F7; // (0x76)
+	vk_map[VK_F8] = Key::F8; // (0x77)
+	vk_map[VK_F9] = Key::F9; // (0x78)
+	vk_map[VK_F10] = Key::F10; // (0x79)
+	vk_map[VK_F11] = Key::F11; // (0x7A)
+	vk_map[VK_F12] = Key::F12; // (0x7B)
+	vk_map[VK_F13] = Key::F13; // (0x7C)
+	vk_map[VK_F14] = Key::F14; // (0x7D)
+	vk_map[VK_F15] = Key::F15; // (0x7E)
+	vk_map[VK_F16] = Key::F16; // (0x7F)
+	vk_map[VK_F17] = Key::F17; // (0x80)
+	vk_map[VK_F18] = Key::F18; // (0x81)
+	vk_map[VK_F19] = Key::F19; // (0x82)
+	vk_map[VK_F20] = Key::F20; // (0x83)
+	vk_map[VK_F21] = Key::F21; // (0x84)
+	vk_map[VK_F22] = Key::F22; // (0x85)
+	vk_map[VK_F23] = Key::F23; // (0x86)
+	vk_map[VK_F24] = Key::F24; // (0x87)
+	// 0x88-8F are reserved for UI navigation.
+	vk_map[VK_NUMLOCK] = Key::NUMLOCK; // (0x90)
+	vk_map[VK_SCROLL] = Key::SCROLLLOCK; // (0x91)
+	vk_map[VK_OEM_NEC_EQUAL] = Key::EQUAL; // (0x92), OEM NEC PC-9800 numpad '=' key.
+	// 0x93-96 are OEM specific (e.g. used by Fujitsu/OASYS);
+	// 0x97-9F are unassigned.
+	vk_map[VK_LSHIFT] = Key::SHIFT; // (0xA0)
+	vk_map[VK_RSHIFT] = Key::SHIFT; // (0xA1)
+	vk_map[VK_LCONTROL] = Key::CTRL; // (0xA2)
+	vk_map[VK_RCONTROL] = Key::CTRL; // (0xA3)
+	vk_map[VK_LMENU] = Key::MENU; // (0xA4)
+	vk_map[VK_RMENU] = Key::MENU; // (0xA5)
+	vk_map[VK_BROWSER_BACK] = Key::BACK; // (0xA6)
+	vk_map[VK_BROWSER_FORWARD] = Key::FORWARD; // (0xA7)
+	vk_map[VK_BROWSER_REFRESH] = Key::REFRESH; // (0xA8)
+	vk_map[VK_BROWSER_STOP] = Key::STOP; // (0xA9)
+	vk_map[VK_BROWSER_SEARCH] = Key::SEARCH; // (0xAA)
+	vk_map[VK_BROWSER_FAVORITES] = Key::FAVORITES; // (0xAB)
+	vk_map[VK_BROWSER_HOME] = Key::HOMEPAGE; // (0xAC)
+	vk_map[VK_VOLUME_MUTE] = Key::VOLUMEMUTE; // (0xAD)
+	vk_map[VK_VOLUME_DOWN] = Key::VOLUMEDOWN; // (0xAE)
+	vk_map[VK_VOLUME_UP] = Key::VOLUMEUP; // (0xAF)
+	vk_map[VK_MEDIA_NEXT_TRACK] = Key::MEDIANEXT; // (0xB0)
+	vk_map[VK_MEDIA_PREV_TRACK] = Key::MEDIAPREVIOUS; // (0xB1)
+	vk_map[VK_MEDIA_STOP] = Key::MEDIASTOP; // (0xB2)
+	vk_map[VK_MEDIA_PLAY_PAUSE] = Key::MEDIAPLAY; // (0xB3), Media button play/pause toggle.
+	vk_map[VK_LAUNCH_MAIL] = Key::LAUNCHMAIL; // (0xB4)
+	vk_map[VK_LAUNCH_MEDIA_SELECT] = Key::LAUNCHMEDIA; // (0xB5)
+	vk_map[VK_LAUNCH_APP1] = Key::LAUNCH0; // (0xB6)
+	vk_map[VK_LAUNCH_APP2] = Key::LAUNCH1; // (0xB7)
+	// 0xB8-B9 are reserved.
+	vk_map[VK_OEM_1] = Key::SEMICOLON; // (0xBA), Misc. character;can vary by keyboard/region. For US standard keyboards;the ';:' key.
+	vk_map[VK_OEM_PLUS] = Key::EQUAL; // (0xBB)
+	vk_map[VK_OEM_COMMA] = Key::COMMA; // (0xBC)
+	vk_map[VK_OEM_MINUS] = Key::MINUS; // (0xBD)
+	vk_map[VK_OEM_PERIOD] = Key::PERIOD; // (0xBE)
+	vk_map[VK_OEM_2] = Key::SLASH; // (0xBF), For US standard keyboards;the '/?' key.
+	vk_map[VK_OEM_3] = Key::QUOTELEFT; // (0xC0), For US standard keyboards;the '`~' key.
+	// 0xC1-D7 are reserved. 0xD8-DA are unassigned.
+	// 0xC3-DA may be used for old gamepads? Maybe we want to support this? See WinUser.h.
+	vk_map[VK_OEM_4] = Key::BRACKETLEFT; // (0xDB),  For US standard keyboards;the '[{' key.
+	vk_map[VK_OEM_5] = Key::BACKSLASH; // (0xDC), For US standard keyboards;the '\|' key.
+	vk_map[VK_OEM_6] = Key::BRACKETRIGHT; // (0xDD), For US standard keyboards;the ']}' key.
+	vk_map[VK_OEM_7] = Key::APOSTROPHE; // (0xDE), For US standard keyboards;single quote/double quote.
+	// VK_OEM_8 (0xDF)
+	// 0xE0 is reserved. 0xE1 is OEM specific.
+	vk_map[VK_OEM_102] = Key::BAR; // (0xE2), Either angle bracket or backslash key on the RT 102-key keyboard.
+	vk_map[VK_ICO_HELP] = Key::HELP; // (0xE3)
+	// 0xE4 is OEM (e.g. ICO) specific.
+	// VK_PROCESSKEY (0xE5), For IME.
+	vk_map[VK_ICO_CLEAR] = Key::CLEAR; // (0xE6)
+	// VK_PACKET (0xE7), Used to pass Unicode characters as if they were keystrokes.
+	// 0xE8 is unassigned.
+	// 0xE9-F5 are OEM (Nokia/Ericsson) specific.
+	vk_map[VK_ATTN] = Key::ESCAPE; // (0xF6), Old IBM 'ATTN' key used on midrange computers ;e.g. AS/400.
+	vk_map[VK_CRSEL] = Key::TAB; // (0xF7), Old IBM 3270 'CrSel' (cursor select) key; used to select data fields.
+	// VK_EXSEL (0xF7), Old IBM 3270 extended selection key.
+	// VK_EREOF (0xF8), Old IBM 3270 erase to end of field key.
+	vk_map[VK_PLAY] = Key::MEDIAPLAY; // (0xFA), Old IBM 3270 'Play' key.
+	// VK_ZOOM (0xFB), Old IBM 3290 'Zoom' key.
+	// VK_NONAME (0xFC), Reserved.
+	// VK_PA1 (0xFD), Old IBM 3270 PA1 key.
+	vk_map[VK_OEM_CLEAR] = Key::CLEAR; // (0xFE), OEM specific clear key. Unclear how it differs from normal clear.
+
+	scansym_map[0x00] = Key::PAUSE;
+	scansym_map[0x01] = Key::ESCAPE;
+	scansym_map[0x02] = Key::KEY_1;
+	scansym_map[0x03] = Key::KEY_2;
+	scansym_map[0x04] = Key::KEY_3;
+	scansym_map[0x05] = Key::KEY_4;
+	scansym_map[0x06] = Key::KEY_5;
+	scansym_map[0x07] = Key::KEY_6;
+	scansym_map[0x08] = Key::KEY_7;
+	scansym_map[0x09] = Key::KEY_8;
+	scansym_map[0x0A] = Key::KEY_9;
+	scansym_map[0x0B] = Key::KEY_0;
+	scansym_map[0x0C] = Key::MINUS;
+	scansym_map[0x0D] = Key::EQUAL;
+	scansym_map[0x0E] = Key::BACKSPACE;
+	scansym_map[0x0F] = Key::TAB;
+	scansym_map[0x10] = Key::Q;
+	scansym_map[0x11] = Key::W;
+	scansym_map[0x12] = Key::E;
+	scansym_map[0x13] = Key::R;
+	scansym_map[0x14] = Key::T;
+	scansym_map[0x15] = Key::Y;
+	scansym_map[0x16] = Key::U;
+	scansym_map[0x17] = Key::I;
+	scansym_map[0x18] = Key::O;
+	scansym_map[0x19] = Key::P;
+	scansym_map[0x1A] = Key::BRACKETLEFT;
+	scansym_map[0x1B] = Key::BRACKETRIGHT;
+	scansym_map[0x1C] = Key::ENTER;
+	scansym_map[0x1D] = Key::CTRL;
+	scansym_map[0x1E] = Key::A;
+	scansym_map[0x1F] = Key::S;
+	scansym_map[0x20] = Key::D;
+	scansym_map[0x21] = Key::F;
+	scansym_map[0x22] = Key::G;
+	scansym_map[0x23] = Key::H;
+	scansym_map[0x24] = Key::J;
+	scansym_map[0x25] = Key::K;
+	scansym_map[0x26] = Key::L;
+	scansym_map[0x27] = Key::SEMICOLON;
+	scansym_map[0x28] = Key::APOSTROPHE;
+	scansym_map[0x29] = Key::QUOTELEFT;
+	scansym_map[0x2A] = Key::SHIFT;
+	scansym_map[0x2B] = Key::BACKSLASH;
+	scansym_map[0x2C] = Key::Z;
+	scansym_map[0x2D] = Key::X;
+	scansym_map[0x2E] = Key::C;
+	scansym_map[0x2F] = Key::V;
+	scansym_map[0x30] = Key::B;
+	scansym_map[0x31] = Key::N;
+	scansym_map[0x32] = Key::M;
+	scansym_map[0x33] = Key::COMMA;
+	scansym_map[0x34] = Key::PERIOD;
+	scansym_map[0x35] = Key::SLASH;
+	scansym_map[0x36] = Key::SHIFT;
+	scansym_map[0x37] = Key::KP_MULTIPLY;
+	scansym_map[0x38] = Key::ALT;
+	scansym_map[0x39] = Key::SPACE;
+	scansym_map[0x3A] = Key::CAPSLOCK;
+	scansym_map[0x3B] = Key::F1;
+	scansym_map[0x3C] = Key::F2;
+	scansym_map[0x3D] = Key::F3;
+	scansym_map[0x3E] = Key::F4;
+	scansym_map[0x3F] = Key::F5;
+	scansym_map[0x40] = Key::F6;
+	scansym_map[0x41] = Key::F7;
+	scansym_map[0x42] = Key::F8;
+	scansym_map[0x43] = Key::F9;
+	scansym_map[0x44] = Key::F10;
+	scansym_map[0x45] = Key::NUMLOCK;
+	scansym_map[0x46] = Key::SCROLLLOCK;
+	scansym_map[0x47] = Key::KP_7;
+	scansym_map[0x48] = Key::KP_8;
+	scansym_map[0x49] = Key::KP_9;
+	scansym_map[0x4A] = Key::KP_SUBTRACT;
+	scansym_map[0x4B] = Key::KP_4;
+	scansym_map[0x4C] = Key::KP_5;
+	scansym_map[0x4D] = Key::KP_6;
+	scansym_map[0x4E] = Key::KP_ADD;
+	scansym_map[0x4F] = Key::KP_1;
+	scansym_map[0x50] = Key::KP_2;
+	scansym_map[0x51] = Key::KP_3;
+	scansym_map[0x52] = Key::KP_0;
+	scansym_map[0x53] = Key::KP_PERIOD;
+	scansym_map[0x56] = Key::SECTION;
+	scansym_map[0x57] = Key::F11;
+	scansym_map[0x58] = Key::F12;
+	scansym_map[0x5B] = Key::META;
+	scansym_map[0x5C] = Key::META;
+	scansym_map[0x5D] = Key::MENU;
+	scansym_map[0x64] = Key::F13;
+	scansym_map[0x65] = Key::F14;
+	scansym_map[0x66] = Key::F15;
+	scansym_map[0x67] = Key::F16;
+	scansym_map[0x68] = Key::F17;
+	scansym_map[0x69] = Key::F18;
+	scansym_map[0x6A] = Key::F19;
+	scansym_map[0x6B] = Key::F20;
+	scansym_map[0x6C] = Key::F21;
+	scansym_map[0x6D] = Key::F22;
+	scansym_map[0x6E] = Key::F23;
+	//	scansym_map[0x71] = Key::JIS_KANA;
+	//	scansym_map[0x72] = Key::JIS_EISU;
+	scansym_map[0x76] = Key::F24;
+
+	for (const KeyValue<unsigned int, Key> &E : scansym_map) {
+		scansym_map_inv[E.value] = E.key;
+	}
+
+	scansym_map_ext[0x09] = Key::MENU;
+	scansym_map_ext[0x10] = Key::MEDIAPREVIOUS;
+	scansym_map_ext[0x19] = Key::MEDIANEXT;
+	scansym_map_ext[0x1C] = Key::KP_ENTER;
+	scansym_map_ext[0x20] = Key::VOLUMEMUTE;
+	scansym_map_ext[0x21] = Key::LAUNCH1;
+	scansym_map_ext[0x22] = Key::MEDIAPLAY;
+	scansym_map_ext[0x24] = Key::MEDIASTOP;
+	scansym_map_ext[0x2E] = Key::VOLUMEDOWN;
+	scansym_map_ext[0x30] = Key::VOLUMEUP;
+	scansym_map_ext[0x32] = Key::HOMEPAGE;
+	scansym_map_ext[0x35] = Key::KP_DIVIDE;
+	scansym_map_ext[0x37] = Key::PRINT;
+	scansym_map_ext[0x3A] = Key::KP_ADD;
+	scansym_map_ext[0x45] = Key::NUMLOCK;
+	scansym_map_ext[0x47] = Key::HOME;
+	scansym_map_ext[0x48] = Key::UP;
+	scansym_map_ext[0x49] = Key::PAGEUP;
+	scansym_map_ext[0x4A] = Key::KP_SUBTRACT;
+	scansym_map_ext[0x4B] = Key::LEFT;
+	scansym_map_ext[0x4C] = Key::KP_5;
+	scansym_map_ext[0x4D] = Key::RIGHT;
+	scansym_map_ext[0x4E] = Key::KP_ADD;
+	scansym_map_ext[0x4F] = Key::END;
+	scansym_map_ext[0x50] = Key::DOWN;
+	scansym_map_ext[0x51] = Key::PAGEDOWN;
+	scansym_map_ext[0x52] = Key::INSERT;
+	scansym_map_ext[0x53] = Key::KEY_DELETE;
+	scansym_map_ext[0x5D] = Key::MENU;
+	scansym_map_ext[0x5F] = Key::STANDBY;
+	scansym_map_ext[0x65] = Key::SEARCH;
+	scansym_map_ext[0x66] = Key::FAVORITES;
+	scansym_map_ext[0x67] = Key::REFRESH;
+	scansym_map_ext[0x68] = Key::STOP;
+	scansym_map_ext[0x69] = Key::FORWARD;
+	scansym_map_ext[0x6A] = Key::BACK;
+	scansym_map_ext[0x6B] = Key::LAUNCH0;
+	scansym_map_ext[0x6C] = Key::LAUNCHMAIL;
+	scansym_map_ext[0x6D] = Key::LAUNCHMEDIA;
+	scansym_map_ext[0x78] = Key::MEDIARECORD;
+
+	// Scancode to physical location map.
+	// Shift.
+	location_map[0x2A] = KeyLocation::LEFT;
+	location_map[0x36] = KeyLocation::RIGHT;
+	// Meta.
+	location_map[0x5B] = KeyLocation::LEFT;
+	location_map[0x5C] = KeyLocation::RIGHT;
+	// Ctrl and Alt must be handled differently.
+}
+
+Key KeyMappingWindows::get_keysym(unsigned int p_code) {
+	const Key *key = vk_map.getptr(p_code);
+	if (key) {
+		return *key;
+	}
+	return Key::UNKNOWN;
+}
+
+unsigned int KeyMappingWindows::get_scancode(Key p_keycode) {
+	const unsigned int *key = scansym_map_inv.getptr(p_keycode);
+	if (key) {
+		return *key;
+	}
+	return 0;
+}
+
+Key KeyMappingWindows::get_scansym(unsigned int p_code, bool p_extended) {
+	if (p_extended) {
+		const Key *key = scansym_map_ext.getptr(p_code);
+		if (key) {
+			return *key;
+		}
+	}
+	const Key *key = scansym_map.getptr(p_code);
+	if (key) {
+		return *key;
+	}
+	return Key::NONE;
+}
+
+bool KeyMappingWindows::is_extended_key(unsigned int p_code) {
+	return p_code == VK_INSERT ||
+			p_code == VK_DELETE ||
+			p_code == VK_HOME ||
+			p_code == VK_END ||
+			p_code == VK_PRIOR ||
+			p_code == VK_NEXT ||
+			p_code == VK_LEFT ||
+			p_code == VK_UP ||
+			p_code == VK_RIGHT ||
+			p_code == VK_DOWN;
+}
+
+KeyLocation KeyMappingWindows::get_location(unsigned int p_code, bool p_extended) {
+	// Right- ctrl and alt have the same scancode as left, but are in the extended keys.
+	const Key *key = scansym_map.getptr(p_code);
+	if (key && (*key == Key::CTRL || *key == Key::ALT)) {
+		return p_extended ? KeyLocation::RIGHT : KeyLocation::LEFT;
+	}
+	const KeyLocation *location = location_map.getptr(p_code);
+	if (location) {
+		return *location;
+	}
+	return KeyLocation::UNSPECIFIED;
+}
+
+
+// --- Merged from platform/windows/native_menu_windows.cpp ---
+#include "platform/windows/display_server_windows.h"
+
+#include "platform/windows/display_server_windows.h"
+
+#include "scene/resources/image_texture.h"
+
+HBITMAP NativeMenuWindows::_make_bitmap(const Ref<Image> &p_img) const {
+	p_img->convert(Image::FORMAT_RGBA8);
+
+	Vector2i texture_size = p_img->get_size();
+	UINT image_size = texture_size.width * texture_size.height;
+
+	COLORREF *buffer = nullptr;
+
+	BITMAPV5HEADER bi;
+	ZeroMemory(&bi, sizeof(bi));
+	bi.bV5Size = sizeof(bi);
+	bi.bV5Width = texture_size.width;
+	bi.bV5Height = -texture_size.height;
+	bi.bV5Planes = 1;
+	bi.bV5BitCount = 32;
+	bi.bV5Compression = BI_BITFIELDS;
+	bi.bV5RedMask = 0x00ff0000;
+	bi.bV5GreenMask = 0x0000ff00;
+	bi.bV5BlueMask = 0x000000ff;
+	bi.bV5AlphaMask = 0xff000000;
+
+	HDC dc = GetDC(nullptr);
+	HBITMAP bitmap = CreateDIBSection(dc, reinterpret_cast<BITMAPINFO *>(&bi), DIB_RGB_COLORS, reinterpret_cast<void **>(&buffer), nullptr, 0);
+	for (UINT index = 0; index < image_size; index++) {
+		int row_index = std::floor(index / texture_size.width);
+		int column_index = (index % int(texture_size.width));
+		const Color &c = p_img->get_pixel(column_index, row_index);
+		*(buffer + index) = c.to_argb32();
+	}
+	ReleaseDC(nullptr, dc);
+
+	return bitmap;
+}
+
+void NativeMenuWindows::_menu_activate(HMENU p_menu, int p_index) const {
+	if (menu_lookup.has(p_menu)) {
+		MenuData *md = menus.get_or_null(menu_lookup[p_menu]);
+		if (md) {
+			int count = GetMenuItemCount(md->menu);
+			if (p_index >= 0 && p_index < count) {
+				MENUITEMINFOW item;
+				ZeroMemory(&item, sizeof(item));
+				item.cbSize = sizeof(item);
+				item.fMask = MIIM_STATE | MIIM_DATA;
+				if (GetMenuItemInfoW(md->menu, p_index, true, &item)) {
+					MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+					if (item_data) {
+						if (item_data->callback.is_valid()) {
+							Variant ret;
+							Callable::CallError ce;
+							const Variant *args[1] = { &item_data->meta };
+
+							item_data->callback.callp(args, 1, ret, ce);
+							if (ce.error != Callable::CallError::CALL_OK) {
+								ERR_PRINT(vformat("Failed to execute menu callback: %s.", Variant::get_callable_error_text(item_data->callback, args, 1, ce)));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+bool NativeMenuWindows::has_feature(Feature p_feature) const {
+	switch (p_feature) {
+		// case FEATURE_GLOBAL_MENU:
+		// case FEATURE_OPEN_CLOSE_CALLBACK:
+		// case FEATURE_HOVER_CALLBACK:
+		// case FEATURE_KEY_CALLBACK:
+		case FEATURE_POPUP_MENU:
+			return true;
+		default:
+			return false;
+	}
+}
+
+bool NativeMenuWindows::has_system_menu(SystemMenus p_menu_id) const {
+	return false;
+}
+
+RID NativeMenuWindows::get_system_menu(SystemMenus p_menu_id) const {
+	return RID();
+}
+
+RID NativeMenuWindows::create_menu() {
+	MenuData *md = memnew(MenuData);
+	md->menu = CreatePopupMenu();
+
+	MENUINFO menu_info;
+	ZeroMemory(&menu_info, sizeof(menu_info));
+	menu_info.cbSize = sizeof(menu_info);
+	menu_info.fMask = MIM_STYLE;
+	menu_info.dwStyle = MNS_NOTIFYBYPOS;
+	SetMenuInfo(md->menu, &menu_info);
+
+	RID rid = menus.make_rid(md);
+	menu_lookup[md->menu] = rid;
+	return rid;
+}
+
+bool NativeMenuWindows::has_menu(const RID &p_rid) const {
+	return menus.owns(p_rid);
+}
+
+void NativeMenuWindows::free_menu(const RID &p_rid) {
+	MenuData *md = menus.get_or_null(p_rid);
+	if (md) {
+		clear(p_rid);
+		DestroyMenu(md->menu);
+		menus.free(p_rid);
+		menu_lookup.erase(md->menu);
+		memdelete(md);
+	}
+}
+
+Size2 NativeMenuWindows::get_size(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Size2());
+
+	Size2 size;
+	int count = GetMenuItemCount(md->menu);
+	for (int i = 0; i < count; i++) {
+		RECT rect;
+		if (GetMenuItemRect(nullptr, md->menu, i, &rect)) {
+			size.x = MAX(size.x, rect.right - rect.left);
+			size.y += rect.bottom - rect.top;
+		}
+	}
+	return size;
+}
+
+void NativeMenuWindows::popup(const RID &p_rid, const Vector2i &p_position) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	HWND hwnd = (HWND)DisplayServer::window_get_native_handle(DisplayServerEnums::WINDOW_HANDLE, DisplayServerEnums::MAIN_WINDOW_ID);
+	UINT flags = TPM_HORIZONTAL | TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_VERPOSANIMATION;
+	if (md->is_rtl) {
+		flags |= TPM_LAYOUTRTL;
+	}
+	SetForegroundWindow(hwnd);
+	TrackPopupMenuEx(md->menu, flags, p_position.x, p_position.y, hwnd, nullptr);
+
+	if (md->close_cb.is_valid()) {
+		Variant ret;
+		Callable::CallError ce;
+		md->close_cb.callp(nullptr, 0, ret, ce);
+		if (ce.error != Callable::CallError::CALL_OK) {
+			ERR_PRINT(vformat("Failed to execute popup close callback: %s.", Variant::get_callable_error_text(md->close_cb, nullptr, 0, ce)));
+		}
+	}
+
+	PostMessage(hwnd, WM_NULL, 0, 0);
+}
+
+void NativeMenuWindows::set_interface_direction(const RID &p_rid, bool p_is_rtl) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	if (md->is_rtl == p_is_rtl) {
+		return;
+	}
+	md->is_rtl = p_is_rtl;
+}
+
+void NativeMenuWindows::set_popup_open_callback(const RID &p_rid, const Callable &p_callback) {
+	// Not supported.
+}
+
+Callable NativeMenuWindows::get_popup_open_callback(const RID &p_rid) const {
+	// Not supported.
+	return Callable();
+}
+
+void NativeMenuWindows::set_popup_close_callback(const RID &p_rid, const Callable &p_callback) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	md->close_cb = p_callback;
+}
+
+Callable NativeMenuWindows::get_popup_close_callback(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Callable());
+
+	return md->close_cb;
+}
+
+void NativeMenuWindows::set_minimum_width(const RID &p_rid, float p_width) {
+	// Not supported.
+}
+
+float NativeMenuWindows::get_minimum_width(const RID &p_rid) const {
+	// Not supported.
+	return 0.f;
+}
+
+bool NativeMenuWindows::is_opened(const RID &p_rid) const {
+	// Not supported.
+	return false;
+}
+
+int NativeMenuWindows::add_submenu_item(const RID &p_rid, const String &p_label, const RID &p_submenu_rid, const Variant &p_tag, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	MenuData *md_sub = menus.get_or_null(p_submenu_rid);
+	ERR_FAIL_NULL_V(md, -1);
+	ERR_FAIL_NULL_V(md_sub, -1);
+	ERR_FAIL_COND_V_MSG(md->menu == md_sub->menu, -1, "Can't set submenu to self!");
+
+	if (p_index == -1) {
+		p_index = GetMenuItemCount(md->menu);
+	} else {
+		p_index = CLAMP(p_index, 0, GetMenuItemCount(md->menu));
+	}
+
+	MenuItemData *item_data = memnew(MenuItemData);
+	item_data->meta = p_tag;
+	item_data->checkable_type = CHECKABLE_TYPE_NONE;
+	item_data->max_states = 0;
+	item_data->state = 0;
+
+	Char16String label = p_label.utf16();
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA | MIIM_SUBMENU;
+	item.fType = MFT_STRING;
+	item.hSubMenu = md_sub->menu;
+	item.dwItemData = (ULONG_PTR)item_data;
+	item.dwTypeData = (LPWSTR)label.get_data();
+
+	if (!InsertMenuItemW(md->menu, p_index, true, &item)) {
+		memdelete(item_data);
+		return -1;
+	}
+	return p_index;
+}
+
+int NativeMenuWindows::add_item(const RID &p_rid, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	if (p_index == -1) {
+		p_index = GetMenuItemCount(md->menu);
+	} else {
+		p_index = CLAMP(p_index, 0, GetMenuItemCount(md->menu));
+	}
+
+	MenuItemData *item_data = memnew(MenuItemData);
+	item_data->callback = p_callback;
+	item_data->meta = p_tag;
+	item_data->checkable_type = CHECKABLE_TYPE_NONE;
+	item_data->max_states = 0;
+	item_data->state = 0;
+
+	Char16String label = p_label.utf16();
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA;
+	item.fType = MFT_STRING;
+	item.dwItemData = (ULONG_PTR)item_data;
+	item.dwTypeData = (LPWSTR)label.get_data();
+
+	if (!InsertMenuItemW(md->menu, p_index, true, &item)) {
+		memdelete(item_data);
+		return -1;
+	}
+	return p_index;
+}
+
+int NativeMenuWindows::add_check_item(const RID &p_rid, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	if (p_index == -1) {
+		p_index = GetMenuItemCount(md->menu);
+	} else {
+		p_index = CLAMP(p_index, 0, GetMenuItemCount(md->menu));
+	}
+
+	MenuItemData *item_data = memnew(MenuItemData);
+	item_data->callback = p_callback;
+	item_data->meta = p_tag;
+	item_data->checkable_type = CHECKABLE_TYPE_CHECK_BOX;
+	item_data->max_states = 0;
+	item_data->state = 0;
+
+	Char16String label = p_label.utf16();
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA;
+	item.fType = MFT_STRING;
+	item.dwItemData = (ULONG_PTR)item_data;
+	item.dwTypeData = (LPWSTR)label.get_data();
+
+	if (!InsertMenuItemW(md->menu, p_index, true, &item)) {
+		memdelete(item_data);
+		return -1;
+	}
+	return p_index;
+}
+
+int NativeMenuWindows::add_icon_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	if (p_index == -1) {
+		p_index = GetMenuItemCount(md->menu);
+	} else {
+		p_index = CLAMP(p_index, 0, GetMenuItemCount(md->menu));
+	}
+
+	MenuItemData *item_data = memnew(MenuItemData);
+	item_data->callback = p_callback;
+	item_data->meta = p_tag;
+	item_data->checkable_type = CHECKABLE_TYPE_NONE;
+	item_data->max_states = 0;
+	item_data->state = 0;
+	if (p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
+		item_data->img = p_icon->get_image();
+		item_data->img = item_data->img->duplicate();
+		if (item_data->img->is_compressed()) {
+			item_data->img->decompress();
+		}
+		item_data->bmp = _make_bitmap(item_data->img);
+	}
+
+	Char16String label = p_label.utf16();
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA | MIIM_BITMAP;
+	item.fType = MFT_STRING;
+	item.dwItemData = (ULONG_PTR)item_data;
+	item.dwTypeData = (LPWSTR)label.get_data();
+	item.hbmpItem = item_data->bmp;
+
+	if (!InsertMenuItemW(md->menu, p_index, true, &item)) {
+		memdelete(item_data);
+		return -1;
+	}
+	return p_index;
+}
+
+int NativeMenuWindows::add_icon_check_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	if (p_index == -1) {
+		p_index = GetMenuItemCount(md->menu);
+	} else {
+		p_index = CLAMP(p_index, 0, GetMenuItemCount(md->menu));
+	}
+
+	MenuItemData *item_data = memnew(MenuItemData);
+	item_data->callback = p_callback;
+	item_data->meta = p_tag;
+	item_data->checkable_type = CHECKABLE_TYPE_CHECK_BOX;
+	item_data->max_states = 0;
+	item_data->state = 0;
+	if (p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
+		item_data->img = p_icon->get_image();
+		item_data->img = item_data->img->duplicate();
+		if (item_data->img->is_compressed()) {
+			item_data->img->decompress();
+		}
+		item_data->bmp = _make_bitmap(item_data->img);
+	}
+
+	Char16String label = p_label.utf16();
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA | MIIM_BITMAP;
+	item.fType = MFT_STRING;
+	item.dwItemData = (ULONG_PTR)item_data;
+	item.dwTypeData = (LPWSTR)label.get_data();
+	item.hbmpItem = item_data->bmp;
+
+	if (!InsertMenuItemW(md->menu, p_index, true, &item)) {
+		memdelete(item_data);
+		return -1;
+	}
+	return p_index;
+}
+
+int NativeMenuWindows::add_radio_check_item(const RID &p_rid, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	if (p_index == -1) {
+		p_index = GetMenuItemCount(md->menu);
+	} else {
+		p_index = CLAMP(p_index, 0, GetMenuItemCount(md->menu));
+	}
+
+	MenuItemData *item_data = memnew(MenuItemData);
+	item_data->callback = p_callback;
+	item_data->meta = p_tag;
+	item_data->checkable_type = CHECKABLE_TYPE_RADIO_BUTTON;
+	item_data->max_states = 0;
+	item_data->state = 0;
+
+	Char16String label = p_label.utf16();
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA;
+	item.fType = MFT_STRING | MFT_RADIOCHECK;
+	item.dwItemData = (ULONG_PTR)item_data;
+	item.dwTypeData = (LPWSTR)label.get_data();
+
+	if (!InsertMenuItemW(md->menu, p_index, true, &item)) {
+		memdelete(item_data);
+		return -1;
+	}
+	return p_index;
+}
+
+int NativeMenuWindows::add_icon_radio_check_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	if (p_index == -1) {
+		p_index = GetMenuItemCount(md->menu);
+	} else {
+		p_index = CLAMP(p_index, 0, GetMenuItemCount(md->menu));
+	}
+
+	MenuItemData *item_data = memnew(MenuItemData);
+	item_data->callback = p_callback;
+	item_data->meta = p_tag;
+	item_data->checkable_type = CHECKABLE_TYPE_RADIO_BUTTON;
+	item_data->max_states = 0;
+	item_data->state = 0;
+	if (p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
+		item_data->img = p_icon->get_image();
+		item_data->img = item_data->img->duplicate();
+		if (item_data->img->is_compressed()) {
+			item_data->img->decompress();
+		}
+		item_data->bmp = _make_bitmap(item_data->img);
+	}
+
+	Char16String label = p_label.utf16();
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA | MIIM_BITMAP;
+	item.fType = MFT_STRING | MFT_RADIOCHECK;
+	item.dwItemData = (ULONG_PTR)item_data;
+	item.dwTypeData = (LPWSTR)label.get_data();
+	item.hbmpItem = item_data->bmp;
+
+	if (!InsertMenuItemW(md->menu, p_index, true, &item)) {
+		memdelete(item_data);
+		return -1;
+	}
+	return p_index;
+}
+
+int NativeMenuWindows::add_multistate_item(const RID &p_rid, const String &p_label, int p_max_states, int p_default_state, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	if (p_index == -1) {
+		p_index = GetMenuItemCount(md->menu);
+	} else {
+		p_index = CLAMP(p_index, 0, GetMenuItemCount(md->menu));
+	}
+
+	MenuItemData *item_data = memnew(MenuItemData);
+	item_data->callback = p_callback;
+	item_data->meta = p_tag;
+	item_data->checkable_type = CHECKABLE_TYPE_NONE;
+	item_data->max_states = p_max_states;
+	item_data->state = p_default_state;
+
+	Char16String label = p_label.utf16();
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA;
+	item.fType = MFT_STRING;
+	item.dwItemData = (ULONG_PTR)item_data;
+	item.dwTypeData = (LPWSTR)label.get_data();
+
+	if (!InsertMenuItemW(md->menu, p_index, true, &item)) {
+		memdelete(item_data);
+		return -1;
+	}
+	return p_index;
+}
+
+int NativeMenuWindows::add_separator(const RID &p_rid, int p_index) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	if (p_index == -1) {
+		p_index = GetMenuItemCount(md->menu);
+	} else {
+		p_index = CLAMP(p_index, 0, GetMenuItemCount(md->menu));
+	}
+
+	MenuItemData *item_data = memnew(MenuItemData);
+	item_data->checkable_type = CHECKABLE_TYPE_NONE;
+	item_data->max_states = 0;
+	item_data->state = 0;
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_DATA;
+	item.fType = MFT_SEPARATOR;
+	item.dwItemData = (ULONG_PTR)item_data;
+
+	if (!InsertMenuItemW(md->menu, p_index, true, &item)) {
+		memdelete(item_data);
+		return -1;
+	}
+	return p_index;
+}
+
+int NativeMenuWindows::find_item_index_with_text(const RID &p_rid, const String &p_text) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	MENUITEMINFOW item;
+	int count = GetMenuItemCount(md->menu);
+	for (int i = 0; i < count; i++) {
+		ZeroMemory(&item, sizeof(item));
+		item.cbSize = sizeof(item);
+		item.fMask = MIIM_STRING;
+		item.dwTypeData = nullptr;
+		if (GetMenuItemInfoW(md->menu, i, true, &item)) {
+			item.cch++;
+			Char16String str;
+			str.resize_uninitialized(item.cch);
+			item.dwTypeData = (LPWSTR)str.ptrw();
+			if (GetMenuItemInfoW(md->menu, i, true, &item)) {
+				if (String::utf16((const char16_t *)str.get_data()) == p_text) {
+					return i;
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+int NativeMenuWindows::find_item_index_with_tag(const RID &p_rid, const Variant &p_tag) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	MENUITEMINFOW item;
+	int count = GetMenuItemCount(md->menu);
+	for (int i = 0; i < count; i++) {
+		ZeroMemory(&item, sizeof(item));
+		item.cbSize = sizeof(item);
+		item.fMask = MIIM_DATA;
+		if (GetMenuItemInfoW(md->menu, i, true, &item)) {
+			MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+			if (item_data) {
+				if (item_data->meta == p_tag) {
+					return i;
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+bool NativeMenuWindows::is_item_checked(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, false);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_STATE | MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			return item_data->checked;
+		}
+	}
+	return false;
+}
+
+bool NativeMenuWindows::is_item_checkable(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, false);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			return item_data->checkable_type == CHECKABLE_TYPE_CHECK_BOX;
+		}
+	}
+	return false;
+}
+
+bool NativeMenuWindows::is_item_radio_checkable(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, false);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			return item_data->checkable_type == CHECKABLE_TYPE_RADIO_BUTTON;
+		}
+	}
+	return false;
+}
+
+Callable NativeMenuWindows::get_item_callback(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, Callable());
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Callable());
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, Callable());
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			return item_data->callback;
+		}
+	}
+	return Callable();
+}
+
+Callable NativeMenuWindows::get_item_key_callback(const RID &p_rid, int p_idx) const {
+	// Not supported.
+	return Callable();
+}
+
+Variant NativeMenuWindows::get_item_tag(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, Variant());
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Variant());
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, Variant());
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			return item_data->meta;
+		}
+	}
+	return Variant();
+}
+
+String NativeMenuWindows::get_item_text(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, String());
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, String());
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, String());
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_STRING;
+	item.dwTypeData = nullptr;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		item.cch++;
+		Char16String str;
+		str.resize_uninitialized(item.cch);
+		item.dwTypeData = (LPWSTR)str.ptrw();
+		if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+			return String::utf16((const char16_t *)str.get_data());
+		}
+	}
+	return String();
+}
+
+RID NativeMenuWindows::get_item_submenu(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, RID());
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, RID());
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, RID());
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_SUBMENU;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		if (menu_lookup.has(item.hSubMenu)) {
+			return menu_lookup[item.hSubMenu];
+		}
+	}
+	return RID();
+}
+
+Key NativeMenuWindows::get_item_accelerator(const RID &p_rid, int p_idx) const {
+	// Not supported.
+	return Key::NONE;
+}
+
+bool NativeMenuWindows::is_item_disabled(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, false);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_STATE;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		return (item.fState & MFS_DISABLED) == MFS_DISABLED;
+	}
+	return false;
+}
+
+bool NativeMenuWindows::is_item_hidden(const RID &p_rid, int p_idx) const {
+	// Not supported.
+	return false;
+}
+
+String NativeMenuWindows::get_item_tooltip(const RID &p_rid, int p_idx) const {
+	// Not supported.
+	return String();
+}
+
+int NativeMenuWindows::get_item_state(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, -1);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, -1);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			return item_data->state;
+		}
+	}
+	return -1;
+}
+
+int NativeMenuWindows::get_item_max_states(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, -1);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, -1);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			return item_data->max_states;
+		}
+	}
+	return -1;
+}
+
+Ref<Texture2D> NativeMenuWindows::get_item_icon(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, Ref<Texture2D>());
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Ref<Texture2D>());
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, Ref<Texture2D>());
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			return ImageTexture::create_from_image(item_data->img);
+		}
+	}
+	return Ref<Texture2D>();
+}
+
+int NativeMenuWindows::get_item_indentation_level(const RID &p_rid, int p_idx) const {
+	// Not supported.
+	return 0;
+}
+
+void NativeMenuWindows::set_item_checked(const RID &p_rid, int p_idx, bool p_checked) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_STATE | MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			item_data->checked = p_checked;
+			if (p_checked) {
+				item.fState |= MFS_CHECKED;
+			} else {
+				item.fState &= ~MFS_CHECKED;
+			}
+		}
+		SetMenuItemInfoW(md->menu, p_idx, true, &item);
+	}
+}
+
+void NativeMenuWindows::set_item_checkable(const RID &p_rid, int p_idx, bool p_checkable) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			item.fType &= ~MFT_RADIOCHECK;
+			item_data->checkable_type = (p_checkable) ? CHECKABLE_TYPE_CHECK_BOX : CHECKABLE_TYPE_NONE;
+			SetMenuItemInfoW(md->menu, p_idx, true, &item);
+		}
+	}
+}
+
+void NativeMenuWindows::set_item_radio_checkable(const RID &p_rid, int p_idx, bool p_checkable) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			if (p_checkable) {
+				item.fType |= MFT_RADIOCHECK;
+				item_data->checkable_type = CHECKABLE_TYPE_CHECK_BOX;
+			} else {
+				item.fType &= ~MFT_RADIOCHECK;
+				item_data->checkable_type = CHECKABLE_TYPE_NONE;
+			}
+			SetMenuItemInfoW(md->menu, p_idx, true, &item);
+		}
+	}
+}
+
+void NativeMenuWindows::set_item_callback(const RID &p_rid, int p_idx, const Callable &p_callback) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			item_data->callback = p_callback;
+		}
+	}
+}
+
+void NativeMenuWindows::set_item_key_callback(const RID &p_rid, int p_idx, const Callable &p_key_callback) {
+	// Not supported.
+}
+
+void NativeMenuWindows::set_item_hover_callbacks(const RID &p_rid, int p_idx, const Callable &p_callback) {
+	// Not supported.
+}
+
+void NativeMenuWindows::set_item_tag(const RID &p_rid, int p_idx, const Variant &p_tag) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			item_data->meta = p_tag;
+		}
+	}
+}
+
+void NativeMenuWindows::set_item_text(const RID &p_rid, int p_idx, const String &p_text) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	Char16String label = p_text.utf16();
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		item.dwTypeData = (LPWSTR)label.get_data();
+		SetMenuItemInfoW(md->menu, p_idx, true, &item);
+	}
+}
+
+void NativeMenuWindows::set_item_submenu(const RID &p_rid, int p_idx, const RID &p_submenu_rid) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_SUBMENU;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		if (p_submenu_rid.is_valid()) {
+			MenuData *md_sub = menus.get_or_null(p_submenu_rid);
+			ERR_FAIL_NULL(md_sub);
+			ERR_FAIL_COND_MSG(md->menu == md_sub->menu, "Can't set submenu to self!");
+			item.hSubMenu = md_sub->menu;
+		} else {
+			item.hSubMenu = nullptr;
+		}
+		SetMenuItemInfoW(md->menu, p_idx, true, &item);
+	}
+}
+
+void NativeMenuWindows::set_item_accelerator(const RID &p_rid, int p_idx, Key p_keycode) {
+	// Not supported.
+}
+
+void NativeMenuWindows::set_item_disabled(const RID &p_rid, int p_idx, bool p_disabled) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_STATE;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		if (p_disabled) {
+			item.fState |= MFS_DISABLED;
+		} else {
+			item.fState &= ~MFS_DISABLED;
+		}
+		SetMenuItemInfoW(md->menu, p_idx, true, &item);
+	}
+}
+
+void NativeMenuWindows::set_item_hidden(const RID &p_rid, int p_idx, bool p_hidden) {
+	// Not supported.
+}
+
+void NativeMenuWindows::set_item_tooltip(const RID &p_rid, int p_idx, const String &p_tooltip) {
+	// Not supported.
+}
+
+void NativeMenuWindows::set_item_state(const RID &p_rid, int p_idx, int p_state) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			item_data->state = p_state;
+		}
+	}
+}
+
+void NativeMenuWindows::set_item_max_states(const RID &p_rid, int p_idx, int p_max_states) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			item_data->max_states = p_max_states;
+		}
+	}
+}
+
+void NativeMenuWindows::set_item_icon(const RID &p_rid, int p_idx, const Ref<Texture2D> &p_icon) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA | MIIM_BITMAP;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			if (item_data->bmp) {
+				DeleteObject(item_data->bmp);
+			}
+			if (p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
+				item_data->img = p_icon->get_image();
+				item_data->img = item_data->img->duplicate();
+				if (item_data->img->is_compressed()) {
+					item_data->img->decompress();
+				}
+				item_data->bmp = _make_bitmap(item_data->img);
+			} else {
+				item_data->img = Ref<Image>();
+				item_data->bmp = nullptr;
+			}
+			item.hbmpItem = item_data->bmp;
+			SetMenuItemInfoW(md->menu, p_idx, true, &item);
+		}
+	}
+}
+
+void NativeMenuWindows::set_item_indentation_level(const RID &p_rid, int p_idx, int p_level) {
+	// Not supported.
+}
+
+int NativeMenuWindows::set_item_index(const RID &p_rid, int p_idx, int p_target_idx) {
+	ERR_FAIL_COND_V(p_idx < 0, -1);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND_V(p_idx >= count, -1);
+	ERR_FAIL_INDEX_V(p_target_idx, count, -1);
+
+	// Get item text separately.
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_STRING;
+	item.dwTypeData = nullptr;
+	Char16String str;
+	if (!GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		return -1;
+	}
+	item.cch++;
+	str.resize_uninitialized(item.cch);
+	item.dwTypeData = (LPWSTR)str.ptrw();
+	if (!GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		return -1;
+	}
+
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_FTYPE | MIIM_DATA | MIIM_STRING | MIIM_STATE | MIIM_SUBMENU | MIIM_BITMAP;
+	if (!GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		return -1;
+	}
+
+	item.dwTypeData = (LPWSTR)str.get_data();
+
+	if (!RemoveMenu(md->menu, p_idx, MF_BYPOSITION)) {
+		return -1;
+	}
+	if (!InsertMenuItemW(md->menu, p_target_idx, true, &item)) {
+		// Delete item if failed to insert.
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			if (item_data->bmp) {
+				DeleteObject(item_data->bmp);
+			}
+			memdelete(item_data);
+		}
+		return -1;
+	}
+
+	return p_target_idx;
+}
+
+int NativeMenuWindows::get_item_count(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, 0);
+
+	return GetMenuItemCount(md->menu);
+}
+
+bool NativeMenuWindows::is_system_menu(const RID &p_rid) const {
+	return false;
+}
+
+void NativeMenuWindows::remove_item(const RID &p_rid, int p_idx) {
+	ERR_FAIL_COND(p_idx < 0);
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int count = GetMenuItemCount(md->menu);
+	ERR_FAIL_COND(p_idx >= count);
+
+	MENUITEMINFOW item;
+	ZeroMemory(&item, sizeof(item));
+	item.cbSize = sizeof(item);
+	item.fMask = MIIM_DATA;
+	if (GetMenuItemInfoW(md->menu, p_idx, true, &item)) {
+		MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+		if (item_data) {
+			if (item_data->bmp) {
+				DeleteObject(item_data->bmp);
+			}
+			memdelete(item_data);
+		}
+	}
+	RemoveMenu(md->menu, p_idx, MF_BYPOSITION);
+}
+
+void NativeMenuWindows::clear(const RID &p_rid) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	MENUITEMINFOW item;
+	int count = GetMenuItemCount(md->menu);
+	for (int i = 0; i < count; i++) {
+		ZeroMemory(&item, sizeof(item));
+		item.cbSize = sizeof(item);
+		item.fMask = MIIM_DATA;
+		if (GetMenuItemInfoW(md->menu, 0, true, &item)) {
+			MenuItemData *item_data = (MenuItemData *)item.dwItemData;
+			if (item_data) {
+				if (item_data->bmp) {
+					DeleteObject(item_data->bmp);
+				}
+				memdelete(item_data);
+			}
+		}
+		RemoveMenu(md->menu, 0, MF_BYPOSITION);
+	}
+}
+
+NativeMenuWindows::NativeMenuWindows() {}
+
+NativeMenuWindows::~NativeMenuWindows() {}
+
+
+// --- Merged from platform/windows/gl_manager_windows_native.cpp ---
+#include "platform/windows/display_server_windows.h"
+
+#if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
+
+#include "core/config/project_settings.h"
+#include "core/os/os.h"
+#include "core/version.h"
+
+#include <thirdparty/misc/nvapi_minimal.h>
+
+#include <dwmapi.h>
+
+#include <cstdio>
+#include <cstdlib>
+
+#define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
+#define WGL_CONTEXT_FLAGS_ARB 0x2094
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x00000002
+#define WGL_CONTEXT_PROFILE_MASK_ARB 0x9126
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
+
+#define _WGL_CONTEXT_DEBUG_BIT_ARB 0x0001
+
+typedef HGLRC(APIENTRY *PFNWGLCREATECONTEXT)(HDC);
+typedef BOOL(APIENTRY *PFNWGLDELETECONTEXT)(HGLRC);
+typedef BOOL(APIENTRY *PFNWGLMAKECURRENT)(HDC, HGLRC);
+typedef HGLRC(APIENTRY *PFNWGLCREATECONTEXTATTRIBSARBPROC)(HDC, HGLRC, const int *);
+typedef void *(APIENTRY *PFNWGLGETPROCADDRESS)(LPCSTR);
+
+static String gl_format_error_message(DWORD id) {
+	LPWSTR messageBuffer = nullptr;
+	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			nullptr, id, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&messageBuffer, 0, nullptr);
+
+	String msg = "Error " + itos(id) + ": " + String::utf16((const char16_t *)messageBuffer, size);
+
+	LocalFree(messageBuffer);
+
+	return msg;
+}
+
+const int OGL_THREAD_CONTROL_ID = 0x20C1221E;
+const int OGL_THREAD_CONTROL_DISABLE = 0x00000002;
+const int OGL_THREAD_CONTROL_ENABLE = 0x00000001;
+const int VRR_MODE_ID = 0x1194F158;
+const int VRR_MODE_FULLSCREEN_ONLY = 0x1;
+
+typedef int(__cdecl *NvAPI_Initialize_t)();
+typedef int(__cdecl *NvAPI_Unload_t)();
+typedef int(__cdecl *NvAPI_GetErrorMessage_t)(unsigned int, NvAPI_ShortString);
+typedef int(__cdecl *NvAPI_DRS_CreateSession_t)(NvDRSSessionHandle *);
+typedef int(__cdecl *NvAPI_DRS_DestroySession_t)(NvDRSSessionHandle);
+typedef int(__cdecl *NvAPI_DRS_LoadSettings_t)(NvDRSSessionHandle);
+typedef int(__cdecl *NvAPI_DRS_CreateProfile_t)(NvDRSSessionHandle, NVDRS_PROFILE *, NvDRSProfileHandle *);
+typedef int(__cdecl *NvAPI_DRS_CreateApplication_t)(NvDRSSessionHandle, NvDRSProfileHandle, NVDRS_APPLICATION *);
+typedef int(__cdecl *NvAPI_DRS_SaveSettings_t)(NvDRSSessionHandle);
+typedef int(__cdecl *NvAPI_DRS_SetSetting_t)(NvDRSSessionHandle, NvDRSProfileHandle, NVDRS_SETTING *);
+typedef int(__cdecl *NvAPI_DRS_FindProfileByName_t)(NvDRSSessionHandle, NvAPI_UnicodeString, NvDRSProfileHandle *);
+typedef int(__cdecl *NvAPI_DRS_GetApplicationInfo_t)(NvDRSSessionHandle, NvDRSProfileHandle, NvAPI_UnicodeString, NVDRS_APPLICATION *);
+typedef int(__cdecl *NvAPI_DRS_DeleteProfile_t)(NvDRSSessionHandle, NvDRSProfileHandle);
+NvAPI_GetErrorMessage_t NvAPI_GetErrorMessage__;
+
+static bool nvapi_err_check(const char *msg, int status) {
+	if (status != 0) {
+		if (OS::is_stdout_verbose()) {
+			NvAPI_ShortString err_desc = { 0 };
+			NvAPI_GetErrorMessage__(status, err_desc);
+			print_verbose(vformat("%s: %s(code %d)", msg, err_desc, status));
+		}
+		return false;
+	}
+	return true;
+}
+
+// On windows we have to customize the NVIDIA application profile:
+// * disable threaded optimization when using NVIDIA cards to avoid stuttering, see
+//   https://stackoverflow.com/questions/36959508/nvidia-graphics-driver-causing-noticeable-frame-stuttering/37632948
+//   https://github.com/Ryujinx/Ryujinx/blob/master/src/Ryujinx.Common/GraphicsDriver/NVThreadedOptimization.cs
+// * disable G-SYNC in windowed mode, as it results in unstable editor refresh rates
+void GLManagerNative_Windows::_nvapi_setup_profile() {
+	HMODULE nvapi = nullptr;
+#ifdef _WIN64
+	nvapi = LoadLibraryA("nvapi64.dll");
+#else
+	nvapi = LoadLibraryA("nvapi.dll");
+#endif
+
+	if (nvapi == nullptr) {
+		return;
+	}
+
+	void *(__cdecl * NvAPI_QueryInterface)(unsigned int interface_id) = nullptr;
+
+	NvAPI_QueryInterface = (void *(__cdecl *)(unsigned int))(void *)GetProcAddress(nvapi, "nvapi_QueryInterface");
+
+	if (NvAPI_QueryInterface == nullptr) {
+		print_verbose("Error getting NVAPI NvAPI_QueryInterface");
+		return;
+	}
+
+	// Setup NVAPI function pointers
+	NvAPI_Initialize_t NvAPI_Initialize = (NvAPI_Initialize_t)NvAPI_QueryInterface(0x0150E828);
+	NvAPI_GetErrorMessage__ = (NvAPI_GetErrorMessage_t)NvAPI_QueryInterface(0x6C2D048C);
+	NvAPI_DRS_CreateSession_t NvAPI_DRS_CreateSession = (NvAPI_DRS_CreateSession_t)NvAPI_QueryInterface(0x0694D52E);
+	NvAPI_DRS_DestroySession_t NvAPI_DRS_DestroySession = (NvAPI_DRS_DestroySession_t)NvAPI_QueryInterface(0xDAD9CFF8);
+	NvAPI_Unload_t NvAPI_Unload = (NvAPI_Unload_t)NvAPI_QueryInterface(0xD22BDD7E);
+	NvAPI_DRS_LoadSettings_t NvAPI_DRS_LoadSettings = (NvAPI_DRS_LoadSettings_t)NvAPI_QueryInterface(0x375DBD6B);
+	NvAPI_DRS_CreateProfile_t NvAPI_DRS_CreateProfile = (NvAPI_DRS_CreateProfile_t)NvAPI_QueryInterface(0xCC176068);
+	NvAPI_DRS_CreateApplication_t NvAPI_DRS_CreateApplication = (NvAPI_DRS_CreateApplication_t)NvAPI_QueryInterface(0x4347A9DE);
+	NvAPI_DRS_SaveSettings_t NvAPI_DRS_SaveSettings = (NvAPI_DRS_SaveSettings_t)NvAPI_QueryInterface(0xFCBC7E14);
+	NvAPI_DRS_SetSetting_t NvAPI_DRS_SetSetting = (NvAPI_DRS_SetSetting_t)NvAPI_QueryInterface(0x577DD202);
+	NvAPI_DRS_FindProfileByName_t NvAPI_DRS_FindProfileByName = (NvAPI_DRS_FindProfileByName_t)NvAPI_QueryInterface(0x7E4A9A0B);
+	NvAPI_DRS_GetApplicationInfo_t NvAPI_DRS_GetApplicationInfo = (NvAPI_DRS_GetApplicationInfo_t)NvAPI_QueryInterface(0xED1F8C69);
+	NvAPI_DRS_DeleteProfile_t NvAPI_DRS_DeleteProfile = (NvAPI_DRS_DeleteProfile_t)NvAPI_QueryInterface(0x17093206);
+
+	if (!nvapi_err_check("NVAPI: Init failed", NvAPI_Initialize())) {
+		return;
+	}
+
+	print_verbose("NVAPI: Init OK!");
+
+	NvDRSSessionHandle session_handle;
+
+	if (NvAPI_DRS_CreateSession == nullptr) {
+		return;
+	}
+
+	if (!nvapi_err_check("NVAPI: Error creating DRS session", NvAPI_DRS_CreateSession(&session_handle))) {
+		NvAPI_Unload();
+		return;
+	}
+
+	if (!nvapi_err_check("NVAPI: Error loading DRS settings", NvAPI_DRS_LoadSettings(session_handle))) {
+		NvAPI_DRS_DestroySession(session_handle);
+		NvAPI_Unload();
+		return;
+	}
+
+	String app_executable_name = OS::get_executable_path().get_file();
+	String app_profile_name = GLOBAL_GET("application/config/name");
+	// We need a name anyways, so let's use the engine name if an application name is not available
+	// (this is used mostly by the Project Manager)
+	if (app_profile_name.is_empty()) {
+		app_profile_name = VLTR_VERSION_NAME;
+	}
+	String old_profile_name = app_profile_name + " Nvidia Profile";
+	Char16String app_profile_name_u16 = app_profile_name.utf16();
+	Char16String old_profile_name_u16 = old_profile_name.utf16();
+	Char16String app_executable_name_u16 = app_executable_name.utf16();
+
+	// A previous error in app creation logic could result in invalid profiles,
+	// clean these if they exist before proceeding.
+	NvDRSProfileHandle old_profile_handle;
+
+	int old_status = NvAPI_DRS_FindProfileByName(session_handle, (NvU16 *)(old_profile_name_u16.ptrw()), &old_profile_handle);
+
+	if (old_status == 0) {
+		print_verbose("NVAPI: Deleting old profile...");
+
+		if (!nvapi_err_check("NVAPI: Error deleting old profile", NvAPI_DRS_DeleteProfile(session_handle, old_profile_handle))) {
+			NvAPI_DRS_DestroySession(session_handle);
+			NvAPI_Unload();
+			return;
+		}
+
+		if (!nvapi_err_check("NVAPI: Error deleting old profile", NvAPI_DRS_SaveSettings(session_handle))) {
+			NvAPI_DRS_DestroySession(session_handle);
+			NvAPI_Unload();
+			return;
+		}
+	}
+
+	NvDRSProfileHandle profile_handle = nullptr;
+
+	int profile_status = NvAPI_DRS_FindProfileByName(session_handle, (NvU16 *)(app_profile_name_u16.ptrw()), &profile_handle);
+
+	if (profile_status != 0) {
+		print_verbose("NVAPI: Profile not found, creating...");
+
+		NVDRS_PROFILE profile_info;
+		profile_info.version = NVDRS_PROFILE_VER;
+		profile_info.isPredefined = 0;
+		memcpy(profile_info.profileName, app_profile_name_u16.get_data(), sizeof(char16_t) * app_profile_name_u16.size());
+
+		if (!nvapi_err_check("NVAPI: Error creating profile", NvAPI_DRS_CreateProfile(session_handle, &profile_info, &profile_handle))) {
+			NvAPI_DRS_DestroySession(session_handle);
+			NvAPI_Unload();
+			return;
+		}
+	}
+
+	NVDRS_APPLICATION_V4 app;
+	app.version = NVDRS_APPLICATION_VER_V4;
+
+	int app_status = NvAPI_DRS_GetApplicationInfo(session_handle, profile_handle, (NvU16 *)(app_executable_name_u16.ptrw()), &app);
+
+	if (app_status != 0) {
+		print_verbose("NVAPI: Application not found in profile, creating...");
+
+		app.isPredefined = 0;
+		memcpy(app.appName, app_executable_name_u16.get_data(), sizeof(char16_t) * app_executable_name_u16.size());
+		memcpy(app.launcher, L"", sizeof(wchar_t));
+		memcpy(app.fileInFolder, L"", sizeof(wchar_t));
+
+		if (!nvapi_err_check("NVAPI: Error creating application", NvAPI_DRS_CreateApplication(session_handle, profile_handle, &app))) {
+			NvAPI_DRS_DestroySession(session_handle);
+			NvAPI_Unload();
+			return;
+		}
+	}
+
+	NVDRS_SETTING ogl_thread_control_setting = {};
+	ogl_thread_control_setting.version = NVDRS_SETTING_VER;
+	ogl_thread_control_setting.settingId = OGL_THREAD_CONTROL_ID;
+	ogl_thread_control_setting.settingType = NVDRS_DWORD_TYPE;
+	int thread_control_val = OGL_THREAD_CONTROL_DISABLE;
+	if (!GLOBAL_GET("rendering/gl_compatibility/nvidia_disable_threaded_optimization")) {
+		thread_control_val = OGL_THREAD_CONTROL_ENABLE;
+	}
+	ogl_thread_control_setting.u32CurrentValue = thread_control_val;
+
+	if (!nvapi_err_check("NVAPI: Error calling NvAPI_DRS_SetSetting", NvAPI_DRS_SetSetting(session_handle, profile_handle, &ogl_thread_control_setting))) {
+		NvAPI_DRS_DestroySession(session_handle);
+		NvAPI_Unload();
+		return;
+	}
+
+	NVDRS_SETTING vrr_mode_setting = {};
+	vrr_mode_setting.version = NVDRS_SETTING_VER;
+	vrr_mode_setting.settingId = VRR_MODE_ID;
+	vrr_mode_setting.settingType = NVDRS_DWORD_TYPE;
+	vrr_mode_setting.u32CurrentValue = VRR_MODE_FULLSCREEN_ONLY;
+
+	if (!nvapi_err_check("NVAPI: Error calling NvAPI_DRS_SetSetting", NvAPI_DRS_SetSetting(session_handle, profile_handle, &vrr_mode_setting))) {
+		NvAPI_DRS_DestroySession(session_handle);
+		NvAPI_Unload();
+		return;
+	}
+
+	if (!nvapi_err_check("NVAPI: Error saving settings", NvAPI_DRS_SaveSettings(session_handle))) {
+		NvAPI_DRS_DestroySession(session_handle);
+		NvAPI_Unload();
+		return;
+	}
+
+	if (thread_control_val == OGL_THREAD_CONTROL_DISABLE) {
+		print_verbose("NVAPI: Disabled OpenGL threaded optimization successfully");
+	} else {
+		print_verbose("NVAPI: Enabled OpenGL threaded optimization successfully");
+	}
+	print_verbose("NVAPI: Disabled G-SYNC for windowed mode successfully");
+
+	NvAPI_DRS_DestroySession(session_handle);
+}
+
+int GLManagerNative_Windows::_find_or_create_display(GLWindow &win) {
+	// find display NYI, only 1 supported so far
+	if (_displays.size()) {
+		return 0;
+	}
+
+	// create
+	GLDisplay d_temp = {};
+	_displays.push_back(d_temp);
+	int new_display_id = _displays.size() - 1;
+
+	// create context
+	GLDisplay &d = _displays[new_display_id];
+	Error err = _create_context(win, d);
+
+	if (err != OK) {
+		// not good
+		// delete the _display?
+		_displays.remove_at(new_display_id);
+		return -1;
+	}
+
+	return new_display_id;
+}
+
+static Error _configure_pixel_format(HDC hDC) {
+	static PIXELFORMATDESCRIPTOR pfd = {
+		sizeof(PIXELFORMATDESCRIPTOR), // Size Of This Pixel Format Descriptor
+		1,
+		PFD_DRAW_TO_WINDOW | // Format Must Support Window
+				PFD_SUPPORT_OPENGL | // Format Must Support OpenGL
+				PFD_DOUBLEBUFFER,
+		(BYTE)PFD_TYPE_RGBA,
+		(BYTE)(OS::is_layered_allowed() ? 32 : 24),
+		(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Color Bits Ignored
+		(BYTE)(OS::is_layered_allowed() ? 8 : 0), // Alpha Buffer
+		(BYTE)0, // Shift Bit Ignored
+		(BYTE)0, // No Accumulation Buffer
+		(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Accumulation Bits Ignored
+		(BYTE)24, // 24Bit Z-Buffer (Depth Buffer)
+		(BYTE)0, // No Stencil Buffer
+		(BYTE)0, // No Auxiliary Buffer
+		(BYTE)PFD_MAIN_PLANE, // Main Drawing Layer
+		(BYTE)0, // Reserved
+		0, 0, 0 // Layer Masks Ignored
+	};
+
+	int pixel_format = ChoosePixelFormat(hDC, &pfd);
+	if (!pixel_format) // Did Windows Find A Matching Pixel Format?
+	{
+		return ERR_CANT_CREATE; // Return FALSE
+	}
+
+	BOOL ret = SetPixelFormat(hDC, pixel_format, &pfd);
+	if (!ret) // Are We Able To Set The Pixel Format?
+	{
+		return ERR_CANT_CREATE; // Return FALSE
+	}
+
+	return OK;
+}
+
+PFNWGLCREATECONTEXT gd_wglCreateContext;
+PFNWGLMAKECURRENT gd_wglMakeCurrent;
+PFNWGLDELETECONTEXT gd_wglDeleteContext;
+PFNWGLGETPROCADDRESS gd_wglGetProcAddress;
+
+Error GLManagerNative_Windows::_create_context(GLWindow &win, GLDisplay &gl_display) {
+	Error err = _configure_pixel_format(win.hDC);
+	if (err != OK) {
+		return err;
+	}
+
+	HMODULE module = LoadLibraryW(L"opengl32.dll");
+	if (!module) {
+		return ERR_CANT_CREATE;
+	}
+	gd_wglCreateContext = (PFNWGLCREATECONTEXT)(void *)GetProcAddress(module, "wglCreateContext");
+	gd_wglMakeCurrent = (PFNWGLMAKECURRENT)(void *)GetProcAddress(module, "wglMakeCurrent");
+	gd_wglDeleteContext = (PFNWGLDELETECONTEXT)(void *)GetProcAddress(module, "wglDeleteContext");
+	gd_wglGetProcAddress = (PFNWGLGETPROCADDRESS)(void *)GetProcAddress(module, "wglGetProcAddress");
+	if (!gd_wglCreateContext || !gd_wglMakeCurrent || !gd_wglDeleteContext || !gd_wglGetProcAddress) {
+		return ERR_CANT_CREATE;
+	}
+
+	gl_display.hRC = gd_wglCreateContext(win.hDC);
+	if (!gl_display.hRC) // Are We Able To Get A Rendering Context?
+	{
+		return ERR_CANT_CREATE; // Return FALSE
+	}
+
+	if (!gd_wglMakeCurrent(win.hDC, gl_display.hRC)) {
+		ERR_PRINT("Could not attach OpenGL context to newly created window: " + gl_format_error_message(GetLastError()));
+	}
+
+	int attribs[] = {
+		WGL_CONTEXT_MAJOR_VERSION_ARB, 3, //we want a 3.3 context
+		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+		//and it shall be forward compatible so that we can only use up to date functionality
+		WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+		WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB /*| _WGL_CONTEXT_DEBUG_BIT_ARB*/,
+		0
+	}; //zero indicates the end of the array
+
+	PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = nullptr; //pointer to the method
+	wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)gd_wglGetProcAddress("wglCreateContextAttribsARB");
+
+	if (wglCreateContextAttribsARB == nullptr) //OpenGL 3.0 is not supported
+	{
+		gd_wglDeleteContext(gl_display.hRC);
+		gl_display.hRC = nullptr;
+		return ERR_CANT_CREATE;
+	}
+
+	HGLRC new_hRC = wglCreateContextAttribsARB(win.hDC, nullptr, attribs);
+	if (!new_hRC) {
+		gd_wglDeleteContext(gl_display.hRC);
+		gl_display.hRC = nullptr;
+		return ERR_CANT_CREATE;
+	}
+
+	if (!gd_wglMakeCurrent(win.hDC, nullptr)) {
+		ERR_PRINT("Could not detach OpenGL context from newly created window: " + gl_format_error_message(GetLastError()));
+	}
+
+	gd_wglDeleteContext(gl_display.hRC);
+	gl_display.hRC = new_hRC;
+
+	if (!gd_wglMakeCurrent(win.hDC, gl_display.hRC)) // Try to activate the rendering context.
+	{
+		ERR_PRINT("Could not attach OpenGL context to newly created window with replaced OpenGL context: " + gl_format_error_message(GetLastError()));
+		gd_wglDeleteContext(gl_display.hRC);
+		gl_display.hRC = nullptr;
+		return ERR_CANT_CREATE;
+	}
+
+	if (!wglSwapIntervalEXT) {
+		wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)gd_wglGetProcAddress("wglSwapIntervalEXT");
+	}
+
+	return OK;
+}
+
+Error GLManagerNative_Windows::window_create(DisplayServerEnums::WindowID p_window_id, HWND p_hwnd, HINSTANCE p_hinstance, int p_width, int p_height) {
+	HDC hDC = GetDC(p_hwnd);
+	if (!hDC) {
+		return ERR_CANT_CREATE;
+	}
+
+	// configure the HDC to use a compatible pixel format
+	Error result = _configure_pixel_format(hDC);
+	if (result != OK) {
+		return result;
+	}
+
+	GLWindow win;
+	win.hwnd = p_hwnd;
+	win.hDC = hDC;
+
+	win.gldisplay_id = _find_or_create_display(win);
+
+	if (win.gldisplay_id == -1) {
+		return FAILED;
+	}
+
+	// WARNING: `p_window_id` is an eternally growing integer since popup windows keep coming and going
+	// and each of them has a higher id than the previous, so it must be used in a map not a vector.
+	_windows[p_window_id] = win;
+
+	// make current
+	window_make_current(p_window_id);
+
+	return OK;
+}
+
+void GLManagerNative_Windows::window_destroy(DisplayServerEnums::WindowID p_window_id) {
+	GLWindow &win = get_window(p_window_id);
+	if (_current_window == &win) {
+		_current_window = nullptr;
+	}
+	_windows.erase(p_window_id);
+}
+
+void GLManagerNative_Windows::release_current() {
+	if (!_current_window) {
+		return;
+	}
+
+	if (!gd_wglMakeCurrent(_current_window->hDC, nullptr)) {
+		ERR_PRINT("Could not detach OpenGL context from window marked current: " + gl_format_error_message(GetLastError()));
+	}
+
+	_current_window = nullptr;
+}
+
+void GLManagerNative_Windows::window_make_current(DisplayServerEnums::WindowID p_window_id) {
+	if (p_window_id == -1) {
+		return;
+	}
+
+	// crash if our data structures are out of sync, i.e. not found
+	GLWindow &win = _windows[p_window_id];
+
+	// noop
+	if (&win == _current_window) {
+		return;
+	}
+
+	const GLDisplay &disp = get_display(win.gldisplay_id);
+	if (!gd_wglMakeCurrent(win.hDC, disp.hRC)) {
+		ERR_PRINT("Could not switch OpenGL context to other window: " + gl_format_error_message(GetLastError()));
+	}
+
+	_current_window = &win;
+}
+
+void GLManagerNative_Windows::swap_buffers() {
+	SwapBuffers(_current_window->hDC);
+}
+
+Error GLManagerNative_Windows::initialize() {
+	_nvapi_setup_profile();
+	return OK;
+}
+
+void GLManagerNative_Windows::set_use_vsync(DisplayServerEnums::WindowID p_window_id, bool p_use) {
+	GLWindow &win = get_window(p_window_id);
+
+	if (&win != _current_window) {
+		window_make_current(p_window_id);
+	}
+
+	if (wglSwapIntervalEXT) {
+		win.use_vsync = p_use;
+
+		if (!wglSwapIntervalEXT(p_use ? 1 : 0)) {
+			WARN_PRINT_ONCE("Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.");
+		}
+	} else {
+		WARN_PRINT_ONCE("Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.");
+	}
+}
+
+bool GLManagerNative_Windows::is_using_vsync(DisplayServerEnums::WindowID p_window_id) const {
+	return get_window(p_window_id).use_vsync;
+}
+
+HDC GLManagerNative_Windows::get_hdc(DisplayServerEnums::WindowID p_window_id) {
+	return get_window(p_window_id).hDC;
+}
+
+HGLRC GLManagerNative_Windows::get_hglrc(DisplayServerEnums::WindowID p_window_id) {
+	const GLWindow &win = get_window(p_window_id);
+	const GLDisplay &disp = get_display(win.gldisplay_id);
+	return disp.hRC;
+}
+
+GLManagerNative_Windows::GLManagerNative_Windows() {
+	direct_render = false;
+	glx_minor = glx_major = 0;
+	_current_window = nullptr;
+}
+
+GLManagerNative_Windows::~GLManagerNative_Windows() {
+	release_current();
+}
+
+#endif // WINDOWS_ENABLED && GLES3_ENABLED
+
+#ifdef WGL_CONTEXT_MAJOR_VERSION_ARB
+#undef WGL_CONTEXT_MAJOR_VERSION_ARB
+#endif
+#ifdef WGL_CONTEXT_MINOR_VERSION_ARB
+#undef WGL_CONTEXT_MINOR_VERSION_ARB
+#endif
+#ifdef WGL_CONTEXT_FLAGS_ARB
+#undef WGL_CONTEXT_FLAGS_ARB
+#endif
+#ifdef WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
+#undef WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
+#endif
+#ifdef WGL_CONTEXT_PROFILE_MASK_ARB
+#undef WGL_CONTEXT_PROFILE_MASK_ARB
+#endif
+#ifdef WGL_CONTEXT_CORE_PROFILE_BIT_ARB
+#undef WGL_CONTEXT_CORE_PROFILE_BIT_ARB
+#endif
+
+
+// --- Merged from platform/windows/wgl_detect_version.cpp ---
+#if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
+
+#include "platform/windows/display_server_windows.h"
+
+#include "platform/windows/os_windows.h"
+
+#include "core/os/os.h"
+#include "core/string/print_string.h"
+#include "core/string/ustring.h"
+
+#include <windows.h>
+
+#include <dwmapi.h>
+
+#include <cstdio>
+#include <cstdlib>
+
+#define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
+#define WGL_CONTEXT_FLAGS_ARB 0x2094
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x00000002
+#define WGL_CONTEXT_PROFILE_MASK_ARB 0x9126
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
+#define WGL_VENDOR 0x1F00
+#define WGL_RENDERER 0x1F01
+#define WGL_VERSION 0x1F02
+
+typedef HGLRC(APIENTRY *PFNWGLCREATECONTEXT)(HDC);
+typedef BOOL(APIENTRY *PFNWGLDELETECONTEXT)(HGLRC);
+typedef BOOL(APIENTRY *PFNWGLMAKECURRENT)(HDC, HGLRC);
+typedef HGLRC(APIENTRY *PFNWGLCREATECONTEXTATTRIBSARBPROC)(HDC, HGLRC, const int *);
+typedef void *(APIENTRY *PFNWGLGETPROCADDRESS)(LPCSTR);
+typedef const char *(APIENTRY *PFNWGLGETSTRINGPROC)(unsigned int);
+
+Dictionary detect_wgl() {
+	Dictionary gl_info;
+	gl_info["version"] = 0;
+	gl_info["vendor"] = String();
+	gl_info["name"] = String();
+
+	PFNWGLCREATECONTEXT gd_wglCreateContext;
+	PFNWGLMAKECURRENT gd_wglMakeCurrent;
+	PFNWGLDELETECONTEXT gd_wglDeleteContext;
+	PFNWGLGETPROCADDRESS gd_wglGetProcAddress;
+
+	HMODULE module = LoadLibraryW(L"opengl32.dll");
+	if (!module) {
+		return gl_info;
+	}
+	gd_wglCreateContext = (PFNWGLCREATECONTEXT)(void *)GetProcAddress(module, "wglCreateContext");
+	gd_wglMakeCurrent = (PFNWGLMAKECURRENT)(void *)GetProcAddress(module, "wglMakeCurrent");
+	gd_wglDeleteContext = (PFNWGLDELETECONTEXT)(void *)GetProcAddress(module, "wglDeleteContext");
+	gd_wglGetProcAddress = (PFNWGLGETPROCADDRESS)(void *)GetProcAddress(module, "wglGetProcAddress");
+	if (!gd_wglCreateContext || !gd_wglMakeCurrent || !gd_wglDeleteContext || !gd_wglGetProcAddress) {
+		return gl_info;
+	}
+
+	LPCWSTR class_name = L"EngineWGLDetect";
+	HINSTANCE hInstance = OS_Windows::get_hinstance();
+	WNDCLASSW wc = {};
+
+	wc.lpfnWndProc = DefWindowProcW;
+	wc.hInstance = hInstance;
+	wc.lpszClassName = class_name;
+
+	RegisterClassW(&wc);
+
+	HWND hWnd = CreateWindowExW(WS_EX_APPWINDOW, class_name, L"", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
+	if (hWnd) {
+		HDC hDC = GetDC(hWnd);
+		if (hDC) {
+			static PIXELFORMATDESCRIPTOR pfd = {
+				sizeof(PIXELFORMATDESCRIPTOR), // Size Of This Pixel Format Descriptor
+				1,
+				PFD_DRAW_TO_WINDOW | // Format Must Support Window
+						PFD_SUPPORT_OPENGL | // Format Must Support OpenGL
+						PFD_DOUBLEBUFFER,
+				(BYTE)PFD_TYPE_RGBA,
+				(BYTE)(OS::is_layered_allowed() ? 32 : 24),
+				(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Color Bits Ignored
+				(BYTE)(OS::is_layered_allowed() ? 8 : 0), // Alpha Buffer
+				(BYTE)0, // Shift Bit Ignored
+				(BYTE)0, // No Accumulation Buffer
+				(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Accumulation Bits Ignored
+				(BYTE)24, // 24Bit Z-Buffer (Depth Buffer)
+				(BYTE)0, // No Stencil Buffer
+				(BYTE)0, // No Auxiliary Buffer
+				(BYTE)PFD_MAIN_PLANE, // Main Drawing Layer
+				(BYTE)0, // Reserved
+				0, 0, 0 // Layer Masks Ignored
+			};
+
+			int pixel_format = ChoosePixelFormat(hDC, &pfd);
+			SetPixelFormat(hDC, pixel_format, &pfd);
+
+			HGLRC hRC = gd_wglCreateContext(hDC);
+			if (hRC) {
+				if (gd_wglMakeCurrent(hDC, hRC)) {
+					int attribs[] = {
+						WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+						WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+						WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+						WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+						0
+					};
+
+					PFNWGLCREATECONTEXTATTRIBSARBPROC gd_wglCreateContextAttribsARB = nullptr;
+					gd_wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)gd_wglGetProcAddress("wglCreateContextAttribsARB");
+					if (gd_wglCreateContextAttribsARB) {
+						HGLRC new_hRC = gd_wglCreateContextAttribsARB(hDC, nullptr, attribs);
+						if (new_hRC) {
+							if (gd_wglMakeCurrent(hDC, new_hRC)) {
+								PFNWGLGETSTRINGPROC gd_wglGetString = (PFNWGLGETSTRINGPROC)(void *)GetProcAddress(module, "glGetString");
+								if (gd_wglGetString) {
+									const char *prefixes[] = {
+										"OpenGL ES-CM ",
+										"OpenGL ES-CL ",
+										"OpenGL ES ",
+										"OpenGL SC ",
+										nullptr
+									};
+									const char *version = (const char *)gd_wglGetString(WGL_VERSION);
+									if (version) {
+										const String device_vendor = String::utf8((const char *)gd_wglGetString(WGL_VENDOR)).strip_edges().trim_suffix(" Corporation");
+										const String device_name = String::utf8((const char *)gd_wglGetString(WGL_RENDERER)).strip_edges().trim_suffix("/PCIe/SSE2");
+										for (int i = 0; prefixes[i]; i++) {
+											size_t length = strlen(prefixes[i]);
+											if (strncmp(version, prefixes[i], length) == 0) {
+												version += length;
+												break;
+											}
+										}
+										int major = 0;
+										int minor = 0;
+#ifdef _MSC_VER
+										sscanf_s(version, "%d.%d", &major, &minor);
+#else
+										sscanf(version, "%d.%d", &major, &minor);
+#endif
+										print_verbose(vformat("Native OpenGL API detected: %d.%d: %s - %s", major, minor, device_vendor, device_name));
+										gl_info["vendor"] = device_vendor;
+										gl_info["name"] = device_name;
+										gl_info["version"] = major * 10000 + minor;
+									}
+								}
+							}
+							gd_wglMakeCurrent(nullptr, nullptr);
+							gd_wglDeleteContext(new_hRC);
+						}
+					}
+				}
+				gd_wglMakeCurrent(nullptr, nullptr);
+				gd_wglDeleteContext(hRC);
+			}
+			ReleaseDC(hWnd, hDC);
+		}
+		DestroyWindow(hWnd);
+	}
+	UnregisterClassW(class_name, hInstance);
+
+	return gl_info;
+}
+
+#endif // WINDOWS_ENABLED && GLES3_ENABLED
+
+
+// --- Merged from platform/windows/rendering_context_driver_vulkan_windows.cpp ---
+#if defined(WINDOWS_ENABLED) && defined(VULKAN_ENABLED)
+
+#include "platform/windows/display_server_windows.h"
+
+#include "core/os/os.h"
+
+#include <drivers/vulkan/godot_vulkan.h>
+
+const char *RenderingContextDriverVulkanWindows::_get_platform_surface_extension() const {
+	return VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+}
+
+RenderingContextDriverVulkanWindows::RenderingContextDriverVulkanWindows() {
+	// Workaround for Vulkan not working on setups with AMD integrated graphics + NVIDIA dedicated GPU (GH-57708).
+	// This prevents using AMD integrated graphics with Vulkan entirely, but it allows the engine to start
+	// even on outdated/broken driver setups.
+	OS::set_environment("DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1", "1");
+}
+
+RenderingContextDriverVulkanWindows::~RenderingContextDriverVulkanWindows() {
+	// Does nothing.
+}
+
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWindows::surface_create(const void *p_platform_data) {
+	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
+
+	VkWin32SurfaceCreateInfoKHR create_info = {};
+	create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	create_info.hinstance = wpd->instance;
+	create_info.hwnd = wpd->window;
+
+	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
+	VkResult err = vkCreateWin32SurfaceKHR(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
+	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
+
+	Surface *surface = memnew(Surface);
+	surface->vk_surface = vk_surface;
+	return SurfaceID(surface);
+}
+
+#endif // WINDOWS_ENABLED && VULKAN_ENABLED
+
+
+// --- Merged from platform/windows/drop_target_windows.cpp ---
+#include "platform/windows/display_server_windows.h"
+
+#include "core/io/dir_access.h"
+#include "core/math/random_pcg.h"
+#include "core/os/time.h"
+
+#include <fileapi.h>
+#include <shellapi.h>
+
+// Helpers
+
+static String create_temp_dir() {
+	Char16String buf;
+	int bufsize = GetTempPathW(0, nullptr) + 1;
+	buf.resize_uninitialized(bufsize);
+	if (GetTempPathW(bufsize, (LPWSTR)buf.ptrw()) == 0) {
+		return "";
+	}
+
+	String tmp_dir = String::utf16((const char16_t *)buf.ptr());
+	RandomPCG gen(Time::get_ticks_usec());
+
+	const int attempts = 4;
+
+	for (int i = 0; i < attempts; ++i) {
+		uint32_t rnd = gen.rand();
+		String dirname = "godot_tmp_" + String::num_uint64(rnd);
+		String res_dir = tmp_dir.path_join(dirname);
+		Char16String res_dir16 = res_dir.utf16();
+
+		if (CreateDirectoryW((LPCWSTR)res_dir16.ptr(), nullptr)) {
+			return res_dir;
+		}
+	}
+
+	return "";
+}
+
+static bool remove_dir_recursive(const String &p_dir) {
+	Ref<DirAccess> dir_access = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+	if (dir_access->change_dir(p_dir) != OK) {
+		return false;
+	}
+	return dir_access->erase_contents_recursive() == OK;
+}
+
+static bool stream2file(IStream *p_stream, FILEDESCRIPTORW *p_desc, const String &p_path) {
+	if (DirAccess::make_dir_recursive_absolute(p_path.get_base_dir()) != OK) {
+		return false;
+	}
+
+	Char16String path16 = p_path.utf16();
+	DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
+
+	if (p_desc->dwFlags & FD_ATTRIBUTES) {
+		dwFlagsAndAttributes = p_desc->dwFileAttributes;
+	}
+
+	HANDLE file = CreateFileW(
+			(LPCWSTR)path16.ptr(),
+			GENERIC_WRITE,
+			0,
+			nullptr,
+			CREATE_NEW,
+			dwFlagsAndAttributes,
+			nullptr);
+
+	if (!file) {
+		return false;
+	}
+
+	const int bufsize = 4096;
+	char buf[bufsize];
+	ULONG nread = 0;
+	DWORD nwritten = 0;
+	HRESULT read_result = S_OK;
+	bool result = true;
+
+	while (true) {
+		read_result = p_stream->Read(buf, bufsize, &nread);
+		if (read_result != S_OK && read_result != S_FALSE) {
+			result = false;
+			goto cleanup;
+		}
+
+		if (!nread) {
+			break;
+		}
+
+		while (nread > 0) {
+			if (!WriteFile(file, buf, nread, &nwritten, nullptr) || !nwritten) {
+				result = false;
+				goto cleanup;
+			}
+			nread -= nwritten;
+		}
+	}
+
+cleanup:
+	CloseHandle(file);
+	return result;
+}
+
+// DropTargetWindows
+
+bool DropTargetWindows::is_valid_filedescriptor() {
+	return cf_filedescriptor != 0 && cf_filecontents != 0;
+}
+
+HRESULT DropTargetWindows::handle_hdrop_format(Vector<String> *p_files, IDataObject *pDataObj) {
+	FORMATETC fmt = { CF_HDROP, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+	STGMEDIUM stg;
+	HRESULT res = S_OK;
+
+	if (pDataObj->GetData(&fmt, &stg) != S_OK) {
+		return E_UNEXPECTED;
+	}
+
+	HDROP hDropInfo = (HDROP)GlobalLock(stg.hGlobal);
+
+	Char16String buf;
+
+	if (hDropInfo == nullptr) {
+		ReleaseStgMedium(&stg);
+		return E_UNEXPECTED;
+	}
+
+	int fcount = DragQueryFileW(hDropInfo, 0xFFFFFFFF, nullptr, 0);
+
+	for (int i = 0; i < fcount; i++) {
+		int buffsize = DragQueryFileW(hDropInfo, i, nullptr, 0);
+		buf.resize_uninitialized(buffsize + 1);
+		if (DragQueryFileW(hDropInfo, i, (LPWSTR)buf.ptrw(), buffsize + 1) == 0) {
+			res = E_UNEXPECTED;
+			goto cleanup;
+		}
+		String file = String::utf16((const char16_t *)buf.ptr());
+		p_files->push_back(file);
+	}
+
+cleanup:
+	GlobalUnlock(stg.hGlobal);
+	ReleaseStgMedium(&stg);
+
+	return res;
+}
+
+HRESULT DropTargetWindows::handle_filedescriptor_format(Vector<String> *p_files, IDataObject *pDataObj) {
+	FORMATETC fmt = { cf_filedescriptor, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+	STGMEDIUM stg;
+	HRESULT res = S_OK;
+
+	if (pDataObj->GetData(&fmt, &stg) != S_OK) {
+		return E_UNEXPECTED;
+	}
+
+	FILEGROUPDESCRIPTORW *filegroup_desc = (FILEGROUPDESCRIPTORW *)GlobalLock(stg.hGlobal);
+
+	if (!filegroup_desc) {
+		ReleaseStgMedium(&stg);
+		return E_UNEXPECTED;
+	}
+
+	tmp_path = create_temp_dir();
+	Ref<DirAccess> dir_access = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+	PackedStringArray copied;
+
+	if (dir_access->change_dir(tmp_path) != OK) {
+		res = E_UNEXPECTED;
+		goto cleanup;
+	}
+
+	for (int i = 0; i < (int)filegroup_desc->cItems; ++i) {
+		res = save_as_file(tmp_path, filegroup_desc->fgd + i, pDataObj, i);
+		if (res != S_OK) {
+			res = E_UNEXPECTED;
+			goto cleanup;
+		}
+	}
+
+	copied = dir_access->get_files();
+	for (const String &file : copied) {
+		p_files->push_back(tmp_path.path_join(file));
+	}
+
+	copied = dir_access->get_directories();
+	for (const String &dir : copied) {
+		p_files->push_back(tmp_path.path_join(dir));
+	}
+
+cleanup:
+	GlobalUnlock(filegroup_desc);
+	ReleaseStgMedium(&stg);
+	if (res != S_OK) {
+		remove_dir_recursive(tmp_path);
+		tmp_path.clear();
+	}
+	return res;
+}
+
+HRESULT DropTargetWindows::save_as_file(const String &p_out_dir, FILEDESCRIPTORW *p_file_desc, IDataObject *pDataObj, int p_file_idx) {
+	String relpath = String::utf16((const char16_t *)p_file_desc->cFileName);
+	String fullpath = p_out_dir.path_join(relpath);
+
+	if (p_file_desc->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+		if (DirAccess::make_dir_recursive_absolute(fullpath) != OK) {
+			return E_UNEXPECTED;
+		}
+		return S_OK;
+	}
+
+	FORMATETC fmt = { cf_filecontents, nullptr, DVASPECT_CONTENT, p_file_idx, TYMED_ISTREAM };
+	STGMEDIUM stg;
+	HRESULT res = S_OK;
+
+	if (pDataObj->GetData(&fmt, &stg) != S_OK) {
+		return E_UNEXPECTED;
+	}
+
+	IStream *stream = stg.pstm;
+	if (stream == nullptr) {
+		res = E_UNEXPECTED;
+		goto cleanup;
+	}
+
+	if (!stream2file(stream, p_file_desc, fullpath)) {
+		res = E_UNEXPECTED;
+		goto cleanup;
+	}
+
+cleanup:
+	ReleaseStgMedium(&stg);
+	return res;
+}
+
+DropTargetWindows::DropTargetWindows(DisplayServerWindows::WindowData *p_window_data) :
+		ref_count(1), window_data(p_window_data) {
+	cf_filedescriptor = RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW);
+	cf_filecontents = RegisterClipboardFormat(CFSTR_FILECONTENTS);
+}
+
+HRESULT STDMETHODCALLTYPE DropTargetWindows::QueryInterface(REFIID riid, void **ppvObject) {
+	if (riid == IID_IUnknown || riid == IID_IDropTarget) {
+		*ppvObject = static_cast<IDropTarget *>(this);
+		AddRef();
+		return S_OK;
+	}
+	*ppvObject = nullptr;
+	return E_NOINTERFACE;
+}
+
+ULONG STDMETHODCALLTYPE DropTargetWindows::AddRef() {
+	return InterlockedIncrement(&ref_count);
+}
+
+ULONG STDMETHODCALLTYPE DropTargetWindows::Release() {
+	ULONG count = InterlockedDecrement(&ref_count);
+	if (count == 0) {
+		memfree(this);
+	}
+	return count;
+}
+
+HRESULT STDMETHODCALLTYPE DropTargetWindows::DragEnter(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect) {
+	(void)grfKeyState;
+	(void)pt;
+
+	FORMATETC hdrop_fmt = { CF_HDROP, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+	FORMATETC filedesc_fmt = { cf_filedescriptor, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+
+	if (!window_data->drop_files_callback.is_valid()) {
+		*pdwEffect = DROPEFFECT_NONE;
+	} else if (pDataObj->QueryGetData(&hdrop_fmt) == S_OK) {
+		*pdwEffect = DROPEFFECT_COPY;
+	} else if (is_valid_filedescriptor() && pDataObj->QueryGetData(&filedesc_fmt) == S_OK) {
+		*pdwEffect = DROPEFFECT_COPY;
+	} else {
+		*pdwEffect = DROPEFFECT_NONE;
+	}
+
+	return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DropTargetWindows::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect) {
+	(void)grfKeyState;
+	(void)pt;
+
+	*pdwEffect = DROPEFFECT_COPY;
+	return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DropTargetWindows::DragLeave() {
+	return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DropTargetWindows::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect) {
+	(void)grfKeyState;
+	(void)pt;
+
+	*pdwEffect = DROPEFFECT_NONE;
+
+	if (!window_data->drop_files_callback.is_valid()) {
+		return S_OK;
+	}
+
+	FORMATETC hdrop_fmt = { CF_HDROP, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+	FORMATETC filedesc_fmt = { cf_filedescriptor, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+	Vector<String> files;
+
+	if (pDataObj->QueryGetData(&hdrop_fmt) == S_OK) {
+		HRESULT res = handle_hdrop_format(&files, pDataObj);
+		if (res != S_OK) {
+			return res;
+		}
+	} else if (pDataObj->QueryGetData(&filedesc_fmt) == S_OK && is_valid_filedescriptor()) {
+		HRESULT res = handle_filedescriptor_format(&files, pDataObj);
+		if (res != S_OK) {
+			return res;
+		}
+	} else {
+		return E_UNEXPECTED;
+	}
+
+	if (!files.size()) {
+		return S_OK;
+	}
+
+	Variant v_files = files;
+	const Variant *v_args[1] = { &v_files };
+	Variant ret;
+	Callable::CallError ce;
+	window_data->drop_files_callback.callp((const Variant **)&v_args, 1, ret, ce);
+
+	if (!tmp_path.is_empty()) {
+		remove_dir_recursive(tmp_path);
+		tmp_path.clear();
+	}
+
+	if (ce.error != Callable::CallError::CALL_OK) {
+		ERR_PRINT(vformat("Failed to execute drop files callback: %s.", Variant::get_callable_error_text(window_data->drop_files_callback, v_args, 1, ce)));
+		return E_UNEXPECTED;
+	}
+
+	*pdwEffect = DROPEFFECT_COPY;
+	return S_OK;
+}
+
+
+// --- Merged from platform/windows/gl_manager_windows_angle.cpp ---
+#if defined(ANGLE_ENABLED)
+#include "platform/windows/display_server_windows.h"
+
+#if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
+
+#include <EGL/eglext_angle.h>
+
+const char *GLManagerANGLE_Windows::_get_platform_extension_name() const {
+	return "EGL_ANGLE_platform_angle";
+}
+
+EGLenum GLManagerANGLE_Windows::_get_platform_extension_enum() const {
+	return EGL_PLATFORM_ANGLE_ANGLE;
+}
+
+Vector<EGLAttrib> GLManagerANGLE_Windows::_get_platform_display_attributes() const {
+	Vector<EGLAttrib> ret;
+	ret.push_back(EGL_PLATFORM_ANGLE_TYPE_ANGLE);
+	ret.push_back(EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE);
+	ret.push_back(EGL_NONE);
+
+	return ret;
+}
+
+EGLenum GLManagerANGLE_Windows::_get_platform_api_enum() const {
+	return EGL_OPENGL_ES_API;
+}
+
+Vector<EGLint> GLManagerANGLE_Windows::_get_platform_context_attribs() const {
+	Vector<EGLint> ret;
+	ret.push_back(EGL_CONTEXT_CLIENT_VERSION);
+	ret.push_back(3);
+	ret.push_back(EGL_NONE);
+
+	return ret;
+}
+
+void GLManagerANGLE_Windows::window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {
+	window_make_current(p_window_id);
+	eglWaitNative(EGL_CORE_NATIVE_ENGINE);
+}
+
+#endif // WINDOWS_ENABLED && GLES3_ENABLED
+#endif // defined(ANGLE_ENABLED)

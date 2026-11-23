@@ -66,7 +66,7 @@
 
 #include "modules/openxr/openxr_api.h"
 #include "servers/xr/xr_interface.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 // declare some default strings
 #define INTERACTION_PROFILE_NONE "/interaction_profiles/none"
@@ -376,7 +376,7 @@ public:
 #include "scene/3d/node_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/3d/visual_instance_3d.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 class JavaObject;
 class MeshInstance3D;
@@ -784,13 +784,13 @@ private:
 // --- End modules/openxr/scene/openxr_scene.h ---
 
 // --- End modules/openxr/openxr_interface.h ---
-#include "core/math/quaternion.h"
+#include "core/math/transform_3d.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
 #include "modules/modules_enabled.gen.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 #ifdef XR_USE_PLATFORM_ANDROID
 #include <jni.h>
@@ -2061,7 +2061,7 @@ public:
 
 #include "core/templates/rid_owner.h"
 #include "scene/resources/mesh.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/resources/3d/shape_3d.h"
@@ -2912,7 +2912,7 @@ public:
 
 // --- End modules/openxr/extensions/spatial_entities/openxr_spatial_entities.h ---
 #include "servers/rendering/renderer.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 #ifdef ANDROID_ENABLED
 #include "core/os/os.h"
@@ -6047,7 +6047,7 @@ OpenXRAPIExtension::OpenXRAPIExtension() {}
 #include "modules/modules_enabled.gen.h"
 #include "openxr_api.h"
 
-#include "register_types.h"
+#include "modules/register_module_types.h"
 
 
 #ifdef ANDROID_ENABLED
@@ -9505,7 +9505,7 @@ void OpenXRRenderModelManager::_update_models() {}
 
 #include "platform/android/api/java_class_wrapper.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/texture_storage.h"
+#include "servers/rendering/renderer.h"
 #include "servers/xr/xr_server.h"
 
 #ifdef XR_USE_PLATFORM_ANDROID

@@ -34,7 +34,7 @@
 
 #import "camera_apple.h"
 
-#include "servers/camera/camera_feed.h"
+#include "servers/camera/camera_server.h"
 
 #import <AVFoundation/AVFoundation.h>
 #ifdef IOS_ENABLED

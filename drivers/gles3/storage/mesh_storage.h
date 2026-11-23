@@ -41,9 +41,9 @@
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/mesh_storage.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
-#include "servers/rendering/storage/mesh_storage.h"
+#include "servers/rendering/renderer.h"
 
 namespace GLES3
 {

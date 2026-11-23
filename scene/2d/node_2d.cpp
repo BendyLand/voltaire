@@ -1345,7 +1345,7 @@ void AudioStreamPlayer2D::_bind_compatibility_methods() {}
 #include "scene/2d/node_2d.h"
 #include "scene/animation/animation_mixer.h"
 #include "scene/main/viewport.h"
-#include "scene/resources/world_2d.h"
+#include "scene/main/viewport.h"
 #include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
 #include "servers/physics_2d/physics_server_2d.h"
@@ -1634,7 +1634,7 @@ String AudioStreamPlayer2D::_get_actual_bus() {}
 // ============================================================================
 
 #include "core/config/engine.h"
-#include "core/math/random_number_generator.h"
+#include "core/math/random_pcg.h"
 #include "core/math/transform_interpolator.h"
 // --- cpu_particles_2d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
@@ -2136,9 +2136,9 @@ public:
 
 // --- End scene/2d/gpu_particles_2d.h ---
 #include "scene/main/scene_tree.h"
-#include "scene/resources/atlas_texture.h"
+#include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
-#include "scene/resources/gradient_texture.h"
+#include "scene/resources/gradient.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
@@ -3133,9 +3133,9 @@ void GPUParticles2D::_bind_compatibility_methods() {}
 #endif // DISABLE_DEPRECATED
 
 
-#include "scene/resources/atlas_texture.h"
+#include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
-#include "scene/resources/gradient_texture.h"
+#include "scene/resources/gradient.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
@@ -4263,7 +4263,7 @@ void LineBuilder::new_arc(Vector2 center, Vector2 vbegin, float angle_delta, Col
 #include "core/math/geometry_2d.h"
 #include "scene/2d/line_2d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/timer.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
 
@@ -6009,7 +6009,7 @@ public:
 #ifndef NAVIGATION_2D_DISABLED
 #include <thirdparty/clipper2/include/clipper2/clipper.h>
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "scene/resources/2d/navigation_polygon.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 
@@ -6114,7 +6114,7 @@ public:
 #ifndef NAVIGATION_2D_DISABLED
 #include <thirdparty/clipper2/include/clipper2/clipper.h>
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "scene/resources/2d/navigation_polygon.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 
@@ -6176,7 +6176,7 @@ Rect2 MultiMeshInstance2D::_edit_get_rect() const
 
 #ifndef NAVIGATION_2D_DISABLED
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "scene/resources/2d/navigation_polygon.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 
 RID Polygon2D::_navmesh_source_geometry_parser;
@@ -6868,7 +6868,7 @@ public:
 #include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
-#include "scene/resources/world_2d.h"
+#include "scene/main/viewport.h"
 #include "servers/rendering/renderer.h"
 #include "scene/2d/line_2d.h"
 
@@ -10124,7 +10124,7 @@ Vector2 KinematicCollision2D::get_collider_velocity() const { return result.coll
 
 #include "scene/2d/node_2d.h"
 
-#include "scene/resources/world_2d.h"
+#include "scene/main/viewport.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 void CollisionState2D::init(bool p_area, PS2DE::BodyMode p_mode) {
@@ -11019,7 +11019,7 @@ public:
 #include "core/math/geometry_2d.h"
 #include "scene/2d/node_2d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/2d/shape_2d.h"
+#include "scene/2d/node_2d.h"
 
 void CollisionPolygon2D::_build_polygon() {
 	if (!collision_state) {
@@ -11279,7 +11279,7 @@ public:
 // --- End scene/2d/physics/ray_cast_2d.h ---
 #include "scene/2d/node_2d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/world_2d.h"
+#include "scene/main/viewport.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 Vector2 RayCast2D::get_target_position() const { return target_position; }
@@ -11410,11 +11410,11 @@ void RayCast2D::_update_raycast_state() {}
 #include "core/config/engine.h"
 #include "scene/2d/node_2d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/world_2d.h"
+#include "scene/main/viewport.h"
 #include "servers/physics_2d/physics_server_2d.h"
 // --- Inlined from scene/2d/physics/shape_cast_2d.h ---
 #include "scene/2d/node_2d.h"
-#include "scene/resources/2d/shape_2d.h"
+#include "scene/2d/node_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 class ShapeCast2D : public Node2D
@@ -11644,7 +11644,7 @@ void ShapeCast2D::_update_shapecast_state() {}
 #include "servers/display/display_server.h"
 // --- Inlined from scene/2d/physics/touch_screen_button.h ---
 #include "scene/2d/node_2d.h"
-#include "scene/resources/2d/shape_2d.h"
+#include "scene/2d/node_2d.h"
 #include "scene/resources/bit_map.h"
 #include "scene/resources/texture.h"
 
@@ -12118,7 +12118,7 @@ PackedStringArray Joint2D::get_configuration_warnings() const {
 // Merged from scene/resources/2d/shape_2d.cpp
 // ============================================================================
 
-#include "scene/resources/2d/shape_2d.h"
+#include "scene/2d/node_2d.h"
 
 #include "core/config/project_settings.h"
 #include "core/math/geometry_2d.h"
@@ -12756,8 +12756,8 @@ Shape2D::~Shape2D()
 #include "core/math/random_pcg.h"
 #include "scene/main/scene_tree.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "scene/resources/2d/navigation_polygon.h"
-#include "scene/resources/world_2d.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
+#include "scene/main/viewport.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 #include "servers/rendering/renderer.h"
 
@@ -14333,7 +14333,7 @@ void NavigationRegion2D::_region_enter_navigation_map() {}
 #include <thirdparty/misc/polypartition.h>
 #include "core/math/geometry_2d.h"
 #include "core/os/mutex.h"
-#include "scene/resources/2d/navigation_polygon.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 
 NavigationPolygon::NavigationPolygon() :

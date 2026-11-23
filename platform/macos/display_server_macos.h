@@ -31,7 +31,283 @@
 
 #pragma once
 
-#include "display_server_macos_base.h"
+// --- Inlined/Folded from platform/macos/display_server_macos_base.h ---
+#include "core/os/thread_safe.h"
+#include "core/typedefs.h" // IWYU pragma: keep. Prevent macOS `MAX`/`MIN` from being defined.
+#include "servers/display/display_server.h"
+
+#define FontVariation __FontVariation
+
+#import <AppKit/AppKit.h>
+#import <IOKit/pwr_mgt/IOPMLib.h>
+
+#undef FontVariation
+
+class RenderingContextDriver;
+class RenderingDevice;
+
+class DisplayServerMacOSBase : public DisplayServerDriver {
+
+	id tts = nullptr;
+	IOPMAssertionID screen_keep_on_assertion = kIOPMNullAssertionID;
+
+	struct LayoutInfo {
+		String name;
+		String code;
+	};
+	mutable Vector<LayoutInfo> kbd_layouts;
+	mutable int current_layout = 0;
+	mutable bool keyboard_layout_dirty = true;
+
+	Callable system_theme_changed;
+
+	constexpr static CGFloat HARDWARE_REFERENCE_LUMINANCE_NITS = 100.0f;
+
+public:
+	struct HDROutput {
+		static constexpr float AUTO_MAX_LUMINANCE = -1.0f;
+
+		bool requested = false;
+		float max_luminance = AUTO_MAX_LUMINANCE;
+
+		bool is_auto_max_luminance() const { return max_luminance < 0.0f; }
+	};
+
+protected:
+	_THREAD_SAFE_CLASS_
+
+	DisplayServerEnums::MouseMode mouse_mode = DisplayServerEnums::MOUSE_MODE_VISIBLE;
+	DisplayServerEnums::MouseMode mouse_mode_base = DisplayServerEnums::MOUSE_MODE_VISIBLE;
+	DisplayServerEnums::MouseMode mouse_mode_override = DisplayServerEnums::MOUSE_MODE_VISIBLE;
+	bool mouse_mode_override_enabled = false;
+
+	void _mouse_update_mode();
+	virtual void _mouse_apply_mode(DisplayServerEnums::MouseMode p_prev_mode, DisplayServerEnums::MouseMode p_new_mode) = 0;
+
+	String im_text;
+	Point2i im_selection;
+
+	DisplayServerEnums::CursorShape cursor_shape = DisplayServerEnums::CURSOR_ARROW;
+
+	void initialize_tts() const;
+
+	static CGDirectDisplayID _get_display_id_for_screen(NSScreen *p_screen);
+
+	void _update_keyboard_layouts() const;
+	static void _keyboard_layout_changed(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef user_info);
+
+#if defined(RD_ENABLED)
+	RenderingContextDriver *rendering_context = nullptr;
+	RenderingDevice *rendering_device = nullptr;
+#endif
+
+	virtual HDROutput &_get_hdr_output(DisplayServerEnums::WindowID p_window) = 0;
+	virtual const HDROutput &_get_hdr_output(DisplayServerEnums::WindowID p_window) const = 0;
+
+	constexpr float _calculate_current_reference_luminance(CGFloat p_max_potential_edr_value, CGFloat p_max_edr_value) const;
+	void _update_hdr_output(DisplayServerEnums::WindowID p_window, const HDROutput &p_hdr);
+
+public:
+	virtual bool has_window(DisplayServerEnums::WindowID p_window) const { return p_window == DisplayServerEnums::MAIN_WINDOW_ID; }
+
+	virtual bool tts_is_speaking() const override;
+	virtual bool tts_is_paused() const override;
+	virtual TypedArray<Dictionary> tts_get_voices() const override;
+
+	virtual void tts_speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0, bool p_interrupt = false) override;
+	virtual void tts_pause() override;
+	virtual void tts_resume() override;
+	virtual void tts_stop() override;
+
+	void emit_system_theme_changed();
+	virtual bool is_dark_mode_supported() const override;
+	virtual bool is_dark_mode() const override;
+	virtual Color get_accent_color() const override;
+	virtual Color get_base_color() const override;
+	virtual void set_system_theme_change_callback(const Callable &p_callable) override;
+
+	virtual void send_window_event_by_id(DisplayServerEnums::WindowEvent p_event, DisplayServerEnums::WindowID p_id = DisplayServerEnums::MAIN_WINDOW_ID) const = 0;
+
+	virtual void mouse_set_mode(DisplayServerEnums::MouseMode p_mode) override;
+	virtual DisplayServerEnums::MouseMode mouse_get_mode() const override;
+	virtual void mouse_set_mode_override(DisplayServerEnums::MouseMode p_mode) override;
+	virtual DisplayServerEnums::MouseMode mouse_get_mode_override() const override;
+	virtual void mouse_set_mode_override_enabled(bool p_override_enabled) override;
+	virtual bool mouse_is_mode_override_enabled() const override;
+
+	virtual void clipboard_set(const String &p_text) override;
+	virtual String clipboard_get() const override;
+	virtual Ref<Image> clipboard_get_image() const override;
+	virtual bool clipboard_has() const override;
+	virtual bool clipboard_has_image() const override;
+
+	virtual int get_primary_screen() const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual void screen_set_keep_on(bool p_enable) override;
+	virtual bool screen_is_kept_on() const override;
+
+	virtual int accessibility_should_increase_contrast() const override;
+	virtual int accessibility_should_reduce_animation() const override;
+	virtual int accessibility_should_reduce_transparency() const override;
+	virtual int accessibility_screen_reader_active() const override;
+
+	void update_im_text(const Point2i &p_selection, const String &p_text);
+	virtual Point2i ime_get_selection() const override;
+	virtual String ime_get_text() const override;
+
+	virtual DisplayServerEnums::CursorShape cursor_get_shape() const override;
+
+	virtual void beep() const override;
+
+	virtual int keyboard_get_layout_count() const override;
+	virtual int keyboard_get_current_layout() const override;
+	virtual void keyboard_set_current_layout(int p_index) override;
+	virtual String keyboard_get_layout_language(int p_index) const override;
+	virtual String keyboard_get_layout_name(int p_index) const override;
+	virtual Key keyboard_get_keycode_from_physical(Key p_keycode) const override;
+	virtual Key keyboard_get_label_from_physical(Key p_keycode) const override;
+	virtual void show_emoji_and_symbol_picker() const override;
+
+	virtual void window_get_edr_values(DisplayServerEnums::WindowID p_window, CGFloat *r_max_potential_edr_value = nullptr, CGFloat *r_max_edr_value = nullptr) const = 0;
+	virtual bool window_is_hdr_output_supported(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual void window_request_hdr_output(const bool p_enable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual bool window_is_hdr_output_requested(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual bool window_is_hdr_output_enabled(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_hdr_output_reference_luminance(const float p_reference_luminance, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual float window_get_hdr_output_reference_luminance(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual float window_get_hdr_output_current_reference_luminance(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_hdr_output_max_luminance(const float p_max_luminance, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual float window_get_hdr_output_max_luminance(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual float window_get_hdr_output_current_max_luminance(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual float window_get_output_max_linear_value(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	DisplayServerMacOSBase();
+	~DisplayServerMacOSBase();
+};
+
+// --- Folded from platform/macos/macos_quartz_core_spi.h ---
+// Copyright 2014 The Chromium Authors. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the OpenEmu Team nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY OpenEmu Team ''AS IS'' AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL OpenEmu Team BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#import <Foundation/Foundation.h>
+#import <Quartz/Quartz.h>
+
+#include <cstdint>
+
+// https://chromium.googlesource.com/chromium/src/+/refs/heads/main/ui/base/cocoa/remote_layer_api.h
+
+// The CAContextID type identifies a CAContext across processes. This is the
+// token that is passed from the process that is sharing the CALayer that it is
+// rendering to the process that will be displaying that CALayer.
+typedef uint32_t CAContextID;
+
+// The CAContext has a static CAContextID which can be sent to another process.
+// When a CALayerHost is created using that CAContextID in another process, the
+// content displayed by that CALayerHost will be the content of the CALayer
+// that is set as the |layer| property on the CAContext.
+@interface CAContext : NSObject
++ (instancetype)contextWithCGSConnection:(CAContextID)contextId options:(NSDictionary *)optionsDict;
+@property(readonly) CAContextID contextId;
+@property(retain) CALayer *layer;
+@end
+
+// The CALayerHost is created in the process that will display the content
+// being rendered by another process. Setting the |contextId| property on
+// an object of this class will make this layer display the content of the
+// CALayer that is set to the CAContext with that CAContextID in the layer
+// sharing process.
+@interface CALayerHost : CALayer
+@property CAContextID contextId;
+@end
+
+// The CGSConnectionID is used to create the CAContext in the process that is
+// going to share the CALayers that it is rendering to another process to
+// display.
+typedef uint32_t CGSConnectionID;
+extern "C" CGSConnectionID CGSMainConnectionID(void);
+
+extern "C" NSString *const kCAContextCIFilterBehavior;
+
+// --- Folded from platform/macos/rendering_context_driver_vulkan_macos.h ---
+#ifdef VULKAN_ENABLED
+
+#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+
+#import <QuartzCore/CAMetalLayer.h>
+
+class RenderingContextDriverVulkanMacOS : public RenderingContextDriverVulkan {
+private:
+	virtual const char *_get_platform_surface_extension() const override final;
+
+protected:
+	SurfaceID surface_create(const void *p_platform_data) override final;
+
+public:
+	struct WindowPlatformData {
+		CAMetalLayer *const *layer_ptr;
+	};
+
+	RenderingContextDriverVulkanMacOS();
+	~RenderingContextDriverVulkanMacOS();
+};
+
+#endif // VULKAN_ENABLED
+
+// --- Folded from platform/macos/tts_macos.h ---
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/list.h"
+
+#import <AppKit/AppKit.h>
+
+#if __has_include(<AVFAudio/AVSpeechSynthesis.h>)
+#import <AVFAudio/AVSpeechSynthesis.h>
+#else
+#import <AVFoundation/AVFoundation.h>
+#endif
+
+struct TTSUtterance;
+
+@interface TTS_MacOS : NSObject <AVSpeechSynthesizerDelegate> {
+	bool speaking;
+	HashMap<id, int64_t> ids;
+
+	id synth;
+	List<TTSUtterance> queue;
+}
+
+- (void)pauseSpeaking;
+- (void)resumeSpeaking;
+- (void)stopSpeaking;
+- (bool)isSpeaking;
+- (bool)isPaused;
+- (void)speak:(const String &)text voice:(const String &)voice volume:(int)volume pitch:(float)pitch rate:(float)rate utterance_id:(int64_t)utterance_id interrupt:(bool)interrupt;
+- (Array)getVoices;
+@end
 
 #include "core/os/process_id.h"
 
@@ -484,7 +760,7 @@ public:
 
 #include "platform/macos/platform_gl.h"
 
-#include "core/error/error_list.h"
+#include "core/typedefs.h"
 #include "core/templates/rb_map.h"
 #include "servers/display/display_server_enums.h"
 
@@ -594,7 +870,7 @@ constexpr int32_t GDCoreCursorWindowMove = 39;
 @end
 
 // --- Folded from platform/macos/godot_progress_view.h ---
-#include "platform/macos/display_server_macos_base.h"
+
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
@@ -609,7 +885,7 @@ constexpr int32_t GDCoreCursorWindowMove = 39;
 @end
 
 // --- Folded from platform/macos/godot_status_item.h ---
-#include "core/input/input_enums.h"
+#include "core/input/input_event.h"
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
@@ -679,7 +955,7 @@ class DisplayServerMacOS;
 @end
 
 // --- Folded from platform/macos/godot_content_view.h ---
-#include "core/input/input_enums.h"
+#include "core/input/input_event.h"
 #include "core/typedefs.h"
 #include "servers/display/display_server_enums.h"
 
@@ -730,3 +1006,531 @@ GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations") // OpenGL is de
 @end
 
 GODOT_CLANG_WARNING_POP
+
+// --- Folded from platform/macos/display_server_macos_embedded.h ---
+@class CAContext;
+@class CALayer;
+class InputEvent;
+class NativeMenu;
+
+#ifdef GLES3_ENABLED
+class GLManagerEmbedded;
+#endif
+
+struct DisplayServerMacOSEmbeddedState {
+	/*! Default to a scale of 2.0, which is the most common. */
+	float screen_max_scale = 2.0f;
+	float screen_dpi = 96.0f;
+	/*! Scale for window displaying embedded content */
+	float screen_window_scale = 2.0f;
+	/*! The display ID of the window which is displaying the embedded process content. */
+	uint32_t display_id = -1;
+
+	/*! The current maximum EDR value for the display. */
+	double screen_max_edr = 1.0;
+	/*! The maximum possible EDR value for the display. */
+	double screen_max_potential_edr = 1.0;
+
+	void serialize(PackedByteArray &r_data);
+	Error deserialize(const PackedByteArray &p_data);
+
+	_FORCE_INLINE_ bool operator==(const DisplayServerMacOSEmbeddedState &p_other) const {
+		return screen_max_scale == p_other.screen_max_scale && screen_dpi == p_other.screen_dpi && screen_window_scale == p_other.screen_window_scale && display_id == p_other.display_id && screen_max_edr == p_other.screen_max_edr && screen_max_potential_edr == p_other.screen_max_potential_edr;
+	}
+};
+
+/// "Embedded" as in "Embedded in the Godot editor window".
+class DisplayServerMacOSEmbedded : public DisplayServerMacOSBase {
+
+	DisplayServerMacOSEmbeddedState state;
+
+	HashMap<DisplayServerEnums::WindowID, ObjectID> window_attached_instance_id;
+
+	HashMap<DisplayServerEnums::WindowID, Callable> window_event_callbacks;
+	HashMap<DisplayServerEnums::WindowID, Callable> window_resize_callbacks;
+	HashMap<DisplayServerEnums::WindowID, Callable> input_event_callbacks;
+	HashMap<DisplayServerEnums::WindowID, Callable> input_text_callbacks;
+
+	DisplayServerEnums::WindowID window_id_counter = DisplayServerEnums::MAIN_WINDOW_ID;
+
+	bool transparent = false;
+
+	CAContext *ca_context = nullptr;
+	// Either be a CAMetalLayer or a CALayer depending on the rendering driver.
+	CALayer *layer = nullptr;
+#ifdef GLES3_ENABLED
+	GLManagerEmbedded *gl_manager = nullptr;
+#endif
+
+	String rendering_driver;
+
+	HDROutput hdr_output;
+
+	HDROutput &_get_hdr_output(DisplayServerEnums::WindowID p_window) override;
+	const HDROutput &_get_hdr_output(DisplayServerEnums::WindowID p_window) const override;
+
+	Point2i ime_last_position;
+
+	// Convert source pixel size to render pixel size, accounting for the
+	// difference between display scale and render scale when hiDPI is disabled.
+	Size2i _source_to_render_size(const Size2i &p_source_size) const;
+
+	void _mouse_apply_mode(DisplayServerEnums::MouseMode p_prev_mode, DisplayServerEnums::MouseMode p_new_mode) override;
+
+	struct Joy {
+		String name;
+		uint64_t timestamp = 0;
+
+		Joy() = default;
+		Joy(const String &p_name) :
+				name(p_name) {}
+	};
+	HashMap<int, Joy> joysticks;
+
+public:
+	static void register_embedded_driver();
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	static Vector<String> get_rendering_drivers_func();
+
+	void _window_set_size(const Size2i p_size, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID);
+
+	// MARK: - Events
+
+	virtual void process_events() override;
+
+	virtual void window_set_rect_changed_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_window_event_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_input_event_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_input_text_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_drop_files_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	static void _dispatch_input_events(const Ref<InputEvent> &p_event);
+	void send_input_event(const Ref<InputEvent> &p_event, DisplayServerEnums::WindowID p_id = DisplayServerEnums::MAIN_WINDOW_ID) const;
+	void send_input_text(const String &p_text, DisplayServerEnums::WindowID p_id = DisplayServerEnums::MAIN_WINDOW_ID) const;
+	virtual void send_window_event_by_id(DisplayServerEnums::WindowEvent p_event, DisplayServerEnums::WindowID p_id = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	void _window_callback(const Callable &p_callable, const Variant &p_arg) const;
+
+	// MARK: - Mouse
+	virtual void warp_mouse(const Point2i &p_position) override;
+	virtual Point2i mouse_get_position() const override;
+	virtual uint32_t mouse_get_button_state() const override;
+
+	// MARK: - Window
+
+	virtual bool has_feature(DisplayServerEnums::Feature p_feature) const override;
+	virtual String get_name() const override;
+
+	virtual int get_screen_count() const override;
+	virtual Point2i screen_get_position(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual Size2i screen_get_size(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual Rect2i screen_get_usable_rect(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual Vector<DisplayServerEnums::WindowID> get_window_list() const override;
+
+	virtual DisplayServerEnums::WindowID get_window_at_screen_position(const Point2i &p_position) const override;
+
+	virtual void window_attach_instance_id(ObjectID p_instance, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual ObjectID window_get_attached_instance_id(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_title(const String &p_title, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	virtual int window_get_current_screen(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual void window_set_current_screen(int p_screen, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	virtual Point2i window_get_position(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual Point2i window_get_position_with_decorations(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual void window_set_position(const Point2i &p_position, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	virtual void window_set_transient(DisplayServerEnums::WindowID p_window, DisplayServerEnums::WindowID p_parent) override;
+
+	virtual void window_set_max_size(const Size2i p_size, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual Size2i window_get_max_size(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_min_size(const Size2i p_size, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual Size2i window_get_min_size(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_size(const Size2i p_size, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual Size2i window_get_size(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual Size2i window_get_size_with_decorations(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_mode(DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual DisplayServerEnums::WindowMode window_get_mode(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual bool window_is_maximize_allowed(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_flag(DisplayServerEnums::WindowFlags p_flag, bool p_enabled, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual bool window_get_flag(DisplayServerEnums::WindowFlags p_flag, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_request_attention(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_taskbar_progress_value(float p_value, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_taskbar_progress_state(DisplayServerEnums::ProgressState p_state, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_move_to_foreground(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual bool window_is_focused(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual float screen_get_max_scale() const override;
+
+	virtual bool window_can_draw(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual bool can_any_window_draw() const override;
+
+	virtual void window_set_ime_active(const bool p_active, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_ime_position(const Point2i &p_pos, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	virtual void window_set_vsync_mode(DisplayServerEnums::VSyncMode p_vsync_mode, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual DisplayServerEnums::VSyncMode window_get_vsync_mode(DisplayServerEnums::WindowID p_vsync_mode) const override;
+
+	virtual void cursor_set_shape(DisplayServerEnums::CursorShape p_shape) override;
+	virtual void cursor_set_custom_image(const Ref<Resource> &p_cursor, DisplayServerEnums::CursorShape p_shape = DisplayServerEnums::CURSOR_ARROW, const Vector2 &p_hotspot = Vector2()) override;
+
+	void window_get_edr_values(DisplayServerEnums::WindowID p_window, CGFloat *r_max_potential_edr_value, CGFloat *r_max_edr_value) const override;
+	void update_screen_parameters();
+
+	void set_state(const DisplayServerMacOSEmbeddedState &p_state);
+	virtual void swap_buffers() override;
+
+	DisplayServerMacOSEmbedded(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, Error &r_error);
+	~DisplayServerMacOSEmbedded();
+};
+
+// --- Folded from platform/macos/embedded_debugger.h ---
+#include "core/templates/hash_map.h"
+
+class DisplayServerMacOSEmbedded;
+
+class EmbeddedDebugger final
+{
+#ifdef DEBUG_ENABLED
+	typedef Error (*ParseMessageFunc)(const Array& p_args);
+
+	struct Data
+	{
+		DisplayServerMacOSEmbedded* ds = nullptr;
+		HashMap<String, ParseMessageFunc> parse_message_handlers;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void _init_parse_message_handlers();
+
+	static Error _msg_window_size(const Array& p_args);
+	static Error _msg_mouse_set_mode(const Array& p_args);
+	static Error _msg_event(const Array& p_args);
+	static Error _msg_win_event(const Array& p_args);
+	static Error _msg_notification(const Array& p_args);
+	static Error _msg_ime_update(const Array& p_args);
+	static Error _msg_ds_state(const Array& p_args);
+#endif
+
+public:
+	EmbeddedDebugger() = delete;
+
+	static void initialize(DisplayServerMacOSEmbedded* p_ds);
+	static void deinitialize();
+
+#ifdef DEBUG_ENABLED
+	static Error parse_message(
+		void* p_user, const String& p_msg, const Array& p_args, bool& r_captured);
+#endif
+};
+
+// --- Folded from platform/macos/embedded_gl_manager.h ---
+#if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
+
+#include "core/typedefs.h"
+#include "core/math/vector2i.h"
+#include "core/templates/rb_map.h"
+#include "servers/display/display_server_enums.h"
+
+#import <AppKit/AppKit.h>
+#import <ApplicationServices/ApplicationServices.h>
+#import <CoreVideo/CoreVideo.h>
+
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations") // OpenGL is deprecated in macOS 10.14.
+
+typedef CGLContextObj (*CGLGetCurrentContextPtr)();
+typedef CGLError (*CGLTexImageIOSurface2DPtr)(CGLContextObj ctx, GLenum target, GLenum internal_format,
+		GLsizei width, GLsizei height, GLenum format, GLenum type, IOSurfaceRef ioSurface, GLuint plane);
+typedef const char *(*CGLErrorStringPtr)(CGLError);
+
+class GLManagerEmbedded {
+	/// @brief The number of framebuffers to create for each window.
+	///
+	/// Triple-buffering is used to avoid stuttering.
+	static constexpr uint32_t BUFFER_COUNT = 3;
+
+	// The display ID for which vsync is used. If this value is -1, vsync is disabled.
+	constexpr static uint32_t INVALID_DISPLAY_ID = static_cast<uint32_t>(-1);
+
+	struct FrameBuffer {
+		IOSurfaceRef surface = nullptr;
+		unsigned int tex = 0;
+		unsigned int fbo = 0;
+	};
+
+	struct GLWindow {
+		uint32_t width = 0;
+		uint32_t height = 0;
+		CALayer *layer = nullptr;
+		NSOpenGLContext *context = nullptr;
+		FrameBuffer framebuffers[BUFFER_COUNT];
+		uint32_t current_fb = 0;
+		bool is_valid = false;
+
+		void destroy_framebuffers();
+
+		~GLWindow() { destroy_framebuffers(); }
+	};
+
+	RBMap<DisplayServerEnums::WindowID, GLWindow> windows;
+	typedef RBMap<DisplayServerEnums::WindowID, GLWindow>::Element GLWindowElement;
+
+	NSOpenGLContext *shared_context = nullptr;
+	DisplayServerEnums::WindowID current_window = DisplayServerEnums::INVALID_WINDOW_ID;
+
+	Error create_context(GLWindow &p_win);
+
+	bool framework_loaded = false;
+	CGLGetCurrentContextPtr CGLGetCurrentContext = nullptr;
+	CGLTexImageIOSurface2DPtr CGLTexImageIOSurface2D = nullptr;
+	CGLErrorStringPtr CGLErrorString = nullptr;
+
+	uint32_t display_id = INVALID_DISPLAY_ID;
+	CVDisplayLinkRef display_link = nullptr;
+	bool vsync_enabled = false;
+	bool display_link_running = false;
+	dispatch_semaphore_t display_semaphore = nullptr;
+
+	void create_display_link();
+	void release_display_link();
+
+public:
+	Error window_create(DisplayServerEnums::WindowID p_window_id, CALayer *p_layer, int p_width, int p_height);
+	void window_destroy(DisplayServerEnums::WindowID p_window_id);
+	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height);
+	Size2i window_get_size(DisplayServerEnums::WindowID p_window_id) const;
+
+	void set_display_id(uint32_t p_display_id);
+	void set_vsync_enabled(bool p_enabled);
+	bool is_vsync_enabled() const { return vsync_enabled; }
+
+	void release_current();
+	void swap_buffers();
+
+	void window_make_current(DisplayServerEnums::WindowID p_window_id);
+
+	Error initialize();
+
+	GLManagerEmbedded();
+	~GLManagerEmbedded();
+};
+
+GODOT_CLANG_WARNING_PUSH
+
+#endif // MACOS_ENABLED && GLES3_ENABLED
+
+// --- Folded from platform/macos/key_mapping_macos.h ---
+#include "core/os/keyboard.h"
+
+class KeyMappingMacOS {
+	KeyMappingMacOS() {}
+
+	static bool is_numpad_key(unsigned int p_key);
+
+public:
+	static void initialize();
+
+	// Mappings input.
+	static Key translate_key(unsigned int p_key);
+	static unsigned int unmap_key(Key p_key);
+	static Key remap_key(unsigned int p_key, unsigned int p_state, bool p_unicode);
+	static KeyLocation translate_location(unsigned int p_key);
+
+	// Mapping for menu shortcuts.
+	static String keycode_get_native_string(Key p_keycode);
+	static unsigned int keycode_get_native_mask(Key p_keycode);
+};
+
+// --- Folded from platform/macos/native_menu_macos.h ---
+#include "core/templates/hash_map.h"
+#include "core/templates/rid_owner.h"
+#include "servers/display/native_menu.h"
+
+#import <AppKit/AppKit.h>
+#import <ApplicationServices/ApplicationServices.h>
+
+class NativeMenuMacOS : public NativeMenuDriver {
+
+	struct MenuData {
+		NSMenu *menu = nullptr;
+
+		Callable open_cb;
+		Callable close_cb;
+		bool is_open = false;
+		bool is_system = false;
+	};
+
+	mutable RID_PtrOwner<MenuData> menus;
+	HashMap<NSMenu *, RID> menu_lookup;
+
+	NSMenu *main_menu_ns = nullptr;
+	NSMenu *application_menu_ns = nullptr;
+	NSMenu *window_menu_ns = nullptr;
+	NSMenu *help_menu_ns = nullptr;
+	NSMenu *dock_menu_ns = nullptr;
+
+	RID main_menu;
+	RID application_menu;
+	RID window_menu;
+	RID help_menu;
+	RID dock_menu;
+
+	void _update_align(MenuData *p_md);
+
+	int _get_system_menu_start(const NSMenu *p_menu) const;
+	int _get_system_menu_count(const NSMenu *p_menu) const;
+	bool _is_menu_opened(NSMenu *p_menu) const;
+	NSMenuItem *_menu_add_item(NSMenu *p_menu, const String &p_label, Key p_accel, int p_index, int *r_out);
+
+public:
+	void _register_system_menus(NSMenu *p_main_menu, NSMenu *p_application_menu, NSMenu *p_window_menu, NSMenu *p_help_menu, NSMenu *p_dock_menu);
+	NSMenu *_get_dock_menu();
+
+	void _menu_need_update(NSMenu *p_menu);
+	void _menu_open(NSMenu *p_menu);
+	void _menu_close(NSMenu *p_menu);
+	void _menu_close_cb(const RID &p_rid);
+
+	virtual bool has_feature(Feature p_feature) const override;
+
+	virtual bool has_system_menu(SystemMenus p_menu_id) const override;
+	virtual RID get_system_menu(SystemMenus p_menu_id) const override;
+
+	virtual RID create_menu() override;
+	virtual bool has_menu(const RID &p_rid) const override;
+	virtual void free_menu(const RID &p_rid) override;
+
+	NSMenu *get_native_menu_handle(const RID &p_rid);
+
+	virtual String get_system_menu_text(SystemMenus p_menu_id) const override;
+	virtual void set_system_menu_text(SystemMenus p_menu_id, const String &p_name) override;
+
+	virtual Size2 get_size(const RID &p_rid) const override;
+	virtual void popup(const RID &p_rid, const Vector2i &p_position) override;
+
+	virtual void set_interface_direction(const RID &p_rid, bool p_is_rtl) override;
+	virtual void set_popup_open_callback(const RID &p_rid, const Callable &p_callback) override;
+	virtual Callable get_popup_open_callback(const RID &p_rid) const override;
+	virtual void set_popup_close_callback(const RID &p_rid, const Callable &p_callback) override;
+	virtual Callable get_popup_close_callback(const RID &p_rid) const override;
+	virtual void set_minimum_width(const RID &p_rid, float p_width) override;
+	virtual float get_minimum_width(const RID &p_rid) const override;
+
+	virtual bool is_opened(const RID &p_rid) const override;
+
+	virtual int add_submenu_item(const RID &p_rid, const String &p_label, const RID &p_submenu_rid, const Variant &p_tag = Variant(), int p_index = -1) override;
+	virtual int add_item(const RID &p_rid, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_check_item(const RID &p_rid, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_icon_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_icon_check_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_radio_check_item(const RID &p_rid, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_icon_radio_check_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_multistate_item(const RID &p_rid, const String &p_label, int p_max_states, int p_default_state, const Callable &p_callback = Callable(), const Callable &p_key_callback = Callable(), const Variant &p_tag = Variant(), Key p_accel = Key::NONE, int p_index = -1) override;
+	virtual int add_separator(const RID &p_rid, int p_index = -1) override;
+
+	virtual int find_item_index_with_text(const RID &p_rid, const String &p_text) const override;
+	virtual int find_item_index_with_tag(const RID &p_rid, const Variant &p_tag) const override;
+
+	virtual bool is_item_checked(const RID &p_rid, int p_idx) const override;
+	virtual bool is_item_indeterminate(const RID &p_rid, int p_idx) const override;
+	virtual bool is_item_checkable(const RID &p_rid, int p_idx) const override;
+	virtual bool is_item_radio_checkable(const RID &p_rid, int p_idx) const override;
+	virtual Callable get_item_callback(const RID &p_rid, int p_idx) const override;
+	virtual Callable get_item_key_callback(const RID &p_rid, int p_idx) const override;
+	virtual Variant get_item_tag(const RID &p_rid, int p_idx) const override;
+	virtual String get_item_text(const RID &p_rid, int p_idx) const override;
+	virtual RID get_item_submenu(const RID &p_rid, int p_idx) const override;
+	virtual Key get_item_accelerator(const RID &p_rid, int p_idx) const override;
+	virtual bool is_item_disabled(const RID &p_rid, int p_idx) const override;
+	virtual bool is_item_hidden(const RID &p_rid, int p_idx) const override;
+	virtual String get_item_tooltip(const RID &p_rid, int p_idx) const override;
+	virtual int get_item_state(const RID &p_rid, int p_idx) const override;
+	virtual int get_item_max_states(const RID &p_rid, int p_idx) const override;
+	virtual Ref<Texture2D> get_item_icon(const RID &p_rid, int p_idx) const override;
+	virtual int get_item_indentation_level(const RID &p_rid, int p_idx) const override;
+
+	virtual void set_item_checked(const RID &p_rid, int p_idx, bool p_checked) override;
+	virtual void set_item_indeterminate(const RID &p_rid, int p_idx, bool p_cindeterminate) override;
+	virtual void set_item_checkable(const RID &p_rid, int p_idx, bool p_checkable) override;
+	virtual void set_item_radio_checkable(const RID &p_rid, int p_idx, bool p_checkable) override;
+	virtual void set_item_callback(const RID &p_rid, int p_idx, const Callable &p_callback) override;
+	virtual void set_item_key_callback(const RID &p_rid, int p_idx, const Callable &p_key_callback) override;
+	virtual void set_item_hover_callbacks(const RID &p_rid, int p_idx, const Callable &p_callback) override;
+	virtual void set_item_tag(const RID &p_rid, int p_idx, const Variant &p_tag) override;
+	virtual void set_item_text(const RID &p_rid, int p_idx, const String &p_text) override;
+	virtual void set_item_submenu(const RID &p_rid, int p_idx, const RID &p_submenu_rid) override;
+	virtual void set_item_accelerator(const RID &p_rid, int p_idx, Key p_keycode) override;
+	virtual void set_item_disabled(const RID &p_rid, int p_idx, bool p_disabled) override;
+	virtual void set_item_hidden(const RID &p_rid, int p_idx, bool p_hidden) override;
+	virtual void set_item_tooltip(const RID &p_rid, int p_idx, const String &p_tooltip) override;
+	virtual void set_item_state(const RID &p_rid, int p_idx, int p_state) override;
+	virtual void set_item_max_states(const RID &p_rid, int p_idx, int p_max_states) override;
+	virtual void set_item_icon(const RID &p_rid, int p_idx, const Ref<Texture2D> &p_icon) override;
+	virtual void set_item_indentation_level(const RID &p_rid, int p_idx, int p_level) override;
+	virtual int set_item_index(const RID &p_rid, int p_idx, int p_target_idx) override;
+
+	virtual int get_item_count(const RID &p_rid) const override;
+	virtual bool is_system_menu(const RID &p_rid) const override;
+
+	virtual void remove_item(const RID &p_rid, int p_idx) override;
+	virtual void clear(const RID &p_rid) override;
+
+	NativeMenuMacOS();
+	~NativeMenuMacOS();
+};
+
+// --- Folded from platform/macos/godot_menu_delegate.h ---
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+@interface GodotMenuDelegate : NSObject <NSMenuDelegate> {
+}
+
+- (void)doNothing:(id)sender;
+
+@end
+
+// --- Folded from platform/macos/godot_menu_item.h ---
+#include "core/io/image.h"
+#include "core/os/keyboard.h"
+
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
+
+#define MENU_TAG_START 0x00004447
+#define MENU_TAG_END 0xFFFF4447
+
+enum GlobalMenuCheckType {
+	CHECKABLE_TYPE_NONE,
+	CHECKABLE_TYPE_CHECK_BOX,
+	CHECKABLE_TYPE_RADIO_BUTTON,
+};
+
+@interface GodotMenuItem : NSObject {
+@public
+	Callable callback;
+	Callable key_callback;
+	Callable hover_callback;
+	Variant meta;
+	Key accel;
+	GlobalMenuCheckType checkable_type;
+	bool checked;
+	bool enabled;
+	bool indeterminate;
+	int max_states;
+	int state;
+	int indent;
+	Ref<Image> img;
+}
+
+@end

@@ -164,7 +164,7 @@ public:
 // --- Folded from drivers/winmidi/midi_driver_winmidi.h ---
 #ifdef WINMIDI_ENABLED
 
-#include "core/os/midi_driver.h"
+#include "core/os/os.h"
 #include "core/templates/vector.h"
 
 #include <windows.h>
@@ -866,7 +866,7 @@ void init_thread_win();
 // --- Folded from platform/windows/windows_terminal_logger.h ---
 #ifdef WINDOWS_ENABLED
 
-#include "core/io/logger.h"
+#include "core/os/os.h"
 
 class WindowsTerminalLogger : public StdLogger {
 public:

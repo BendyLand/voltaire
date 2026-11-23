@@ -41,7 +41,7 @@
 #include "core/templates/vector.h"
 #include "core/types.h"
 // --- Inlined/Folded from scene/resources/3d/navigation_mesh_source_geometry_data_3d.h ---
-#include "core/os/rw_lock.h"
+#include "core/os/mutex.h"
 #include "scene/resources/mesh.h"
 
 class NavigationMeshSourceGeometryData3D : public Resource

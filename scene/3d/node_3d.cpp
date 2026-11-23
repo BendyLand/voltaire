@@ -4063,7 +4063,7 @@ void SkeletonModifier3D::process_modification(double) {}
 // --- bone_attachment_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
-#include "bone_attachment_3d.h"
+#include "scene/3d/skeleton_3d.h"
 
 void BoneAttachment3D::_on_bone_pose_update_bind_compat_90575(int p_bone_index)
 {
@@ -4073,7 +4073,7 @@ void BoneAttachment3D::_on_bone_pose_update_bind_compat_90575(int p_bone_index)
 void BoneAttachment3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-#include "bone_attachment_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "core/config/engine.h"
 
 void BoneAttachment3D::_transform_changed()
@@ -15194,7 +15194,7 @@ AABB MultiMeshInstance3D::get_aabb() const
 // Merged from scene/3d/importer_mesh_instance_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/importer_mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
 
 void ImporterMeshInstance3D::set_mesh(const Ref<ImporterMesh>& p_mesh) { mesh = p_mesh; }
@@ -15274,7 +15274,7 @@ ImporterMeshInstance3D::get_visibility_range_fade_mode() const
 
 #include "core/config/engine.h"
 #include "core/math/geometry_3d.h"
-#include "scene/resources/atlas_texture.h"
+#include "scene/resources/image_texture.h"
 #include "servers/rendering/renderer.h"
 
 Color Sprite3D::_get_color_accum()
@@ -16627,7 +16627,7 @@ FogVolume::~FogVolume()
 #include "core/io/resource_saver.h"
 #include "core/math/geometry_2d.h"
 #include "scene/3d/visual_instance_3d.h"
-#include "scene/3d/importer_mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
 #include "scene/resources/surface_tool.h"
@@ -17237,7 +17237,7 @@ VisibleOnScreenNotifier3D::~VisibleOnScreenNotifier3D()
 // ============================================================================
 
 #include "core/config/engine.h"
-#include "core/math/random_number_generator.h"
+#include "core/math/random_pcg.h"
 // --- Inlined from scene/3d/cpu_particles_3d.h ---
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/curve.h"
@@ -17556,7 +17556,7 @@ public:
 #include "scene/3d/camera_3d.h"
 // --- Inlined from scene/3d/gpu_particles_3d.h ---
 #include "scene/3d/visual_instance_3d.h"
-#include "scene/resources/3d/skin.h"
+#include "scene/3d/skeleton_3d.h"
 
 class Mesh;
 
@@ -17752,7 +17752,7 @@ public:
 // --- End scene/3d/gpu_particles_3d.h ---
 #include "scene/main/viewport.h"
 #include "scene/resources/material.h"
-#include "scene/resources/gradient_texture.h"
+#include "scene/resources/gradient.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
@@ -18364,7 +18364,7 @@ PackedStringArray CPUParticles3D::get_configuration_warnings() const { return Pa
 
 
 #include "scene/resources/material.h"
-#include "scene/resources/gradient_texture.h"
+#include "scene/resources/gradient.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
@@ -24693,7 +24693,7 @@ PackedStringArray XROrigin3D::get_configuration_warnings() const
 // ==========================================================================
 // --- Inlined from scene/3d/xr/xr_body_modifier_3d.h ---
 #include "scene/3d/skeleton_3d.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 class Skeleton3D;
 
@@ -25300,7 +25300,7 @@ void XRBodyModifier3D::_process_hand_modification(Skeleton3D *p_skeleton) {
 // Merged from scene/3d/xr/xr_face_modifier_3d.cpp
 // ==========================================================================
 
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 #include "servers/xr/xr_server.h"
 // --- Inlined from scene/3d/xr/xr_face_modifier_3d.h ---
 #include "core/templates/rb_map.h"

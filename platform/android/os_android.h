@@ -921,3 +921,573 @@ public:
 
 
 // --- End platform/android/api/jni_singleton.h ---
+
+#ifdef ANDROID_ENABLED
+// --- Folded from platform/android/display_server_android.h ---
+#include "servers/display/display_server.h"
+
+class InputEvent;
+
+#if defined(RD_ENABLED)
+class RenderingContextDriver;
+class RenderingDevice;
+#endif
+
+class DisplayServerAndroid : public DisplayServerDriver {
+
+	String rendering_driver;
+
+	// https://developer.android.com/reference/android/view/PointerIcon
+	// mapping between Godot's cursor shape to Android's'
+	int android_cursors[DisplayServerEnums::CURSOR_MAX] = {
+		1000, //DisplayServerEnums::CURSOR_ARROW
+		1008, //DisplayServerEnums::CURSOR_IBEAM
+		1002, //DisplayServerEnums::CURSOR_POINTIN
+		1007, //DisplayServerEnums::CURSOR_CROSS
+		1004, //DisplayServerEnums::CURSOR_WAIT
+		1004, //DisplayServerEnums::CURSOR_BUSY
+		1021, //DisplayServerEnums::CURSOR_DRAG
+		1021, //DisplayServerEnums::CURSOR_CAN_DRO
+		1000, //DisplayServerEnums::CURSOR_FORBIDD (no corresponding icon in Android's icon so fallback to default)
+		1015, //DisplayServerEnums::CURSOR_VSIZE
+		1014, //DisplayServerEnums::CURSOR_HSIZE
+		1017, //DisplayServerEnums::CURSOR_BDIAGSI
+		1016, //DisplayServerEnums::CURSOR_FDIAGSI
+		1020, //DisplayServerEnums::CURSOR_MOVE
+		1015, //DisplayServerEnums::CURSOR_VSPLIT
+		1014, //DisplayServerEnums::CURSOR_HSPLIT
+		1003, //DisplayServerEnums::CURSOR_HELP
+	};
+	const int CURSOR_TYPE_NULL = 0;
+	DisplayServerEnums::MouseMode mouse_mode = DisplayServerEnums::MouseMode::MOUSE_MODE_VISIBLE;
+	DisplayServerEnums::MouseMode mouse_mode_base = DisplayServerEnums::MouseMode::MOUSE_MODE_VISIBLE;
+	DisplayServerEnums::MouseMode mouse_mode_override = DisplayServerEnums::MouseMode::MOUSE_MODE_VISIBLE;
+	bool mouse_mode_override_enabled = false;
+	void _mouse_update_mode();
+
+	bool keep_screen_on;
+	bool swap_buffers_flag;
+
+	DisplayServerEnums::CursorShape cursor_shape = DisplayServerEnums::CursorShape::CURSOR_ARROW;
+
+#if defined(RD_ENABLED)
+	RenderingDevice *rendering_device = nullptr;
+#endif
+
+	ObjectID window_attached_instance_id;
+
+	Callable window_event_callback;
+	Callable input_event_callback;
+	Callable input_text_callback;
+	Callable rect_changed_callback;
+
+	Callable system_theme_changed;
+	Callable hardware_keyboard_connection_changed;
+
+	Callable dialog_callback;
+	Callable input_dialog_callback;
+
+	Callable file_picker_callback;
+
+	template <typename... Args>
+	void _window_callback(const Callable &p_callable, bool p_deferred, const Args &...p_rest_args) const;
+
+	static void _dispatch_input_events(const Ref<InputEvent> &p_event);
+
+public:
+	virtual bool has_feature(DisplayServerEnums::Feature p_feature) const override;
+	virtual String get_name() const override;
+
+	virtual bool tts_is_speaking() const override;
+	virtual bool tts_is_paused() const override;
+	virtual TypedArray<Dictionary> tts_get_voices() const override;
+
+	virtual void tts_speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0, bool p_interrupt = false) override;
+	virtual void tts_pause() override;
+	virtual void tts_resume() override;
+	virtual void tts_stop() override;
+
+	virtual bool is_dark_mode_supported() const override;
+	virtual bool is_dark_mode() const override;
+	virtual void set_system_theme_change_callback(const Callable &p_callable) override;
+	void emit_system_theme_changed();
+
+	virtual void clipboard_set(const String &p_text) override;
+	virtual String clipboard_get() const override;
+	virtual bool clipboard_has() const override;
+
+	virtual Error dialog_show(String p_title, String p_description, Vector<String> p_buttons, const Callable &p_callback) override;
+	void emit_dialog_callback(int p_button_index);
+
+	virtual Error dialog_input_text(String p_title, String p_description, String p_partial, const Callable &p_callback) override;
+	void emit_input_dialog_callback(String p_text);
+
+	virtual Error file_dialog_show(const String &p_title, const String &p_current_directory, const String &p_filename, bool p_show_hidden, const DisplayServerEnums::FileDialogMode p_mode, const Vector<String> &p_filters, const Callable &p_callback, DisplayServerEnums::WindowID p_window_id) override;
+	void emit_file_picker_callback(bool p_ok, const Vector<String> &p_selected_paths);
+
+	virtual Color get_accent_color() const override;
+	virtual Color get_base_color() const override;
+
+	virtual TypedArray<Rect2> get_display_cutouts(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual Rect2i get_display_safe_area(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+
+	virtual void screen_set_keep_on(bool p_enable) override;
+	virtual bool screen_is_kept_on() const override;
+
+	virtual void screen_set_orientation(DisplayServerEnums::ScreenOrientation p_orientation, int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) override;
+	virtual DisplayServerEnums::ScreenOrientation screen_get_orientation(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	int get_display_rotation() const;
+
+	virtual int get_screen_count() const override;
+	virtual int get_primary_screen() const override;
+	virtual Point2i screen_get_position(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual Size2i screen_get_size(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual Rect2i screen_get_usable_rect(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual int screen_get_dpi(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_scale(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override;
+	virtual bool is_touchscreen_available() const override;
+
+	virtual void virtual_keyboard_show(const String &p_existing_text, const Rect2 &p_screen_rect = Rect2(), DisplayServerEnums::VirtualKeyboardType p_type = DisplayServerEnums::KEYBOARD_TYPE_DEFAULT, int p_max_length = -1, int p_cursor_start = -1, int p_cursor_end = -1) override;
+	virtual void virtual_keyboard_hide() override;
+	virtual int virtual_keyboard_get_height() const override;
+	virtual bool has_hardware_keyboard() const override;
+	virtual void set_hardware_keyboard_connection_change_callback(const Callable &p_callable) override;
+	void emit_hardware_keyboard_connection_changed(bool p_connected);
+
+	virtual void window_set_window_event_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_input_event_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_input_text_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_rect_changed_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_set_drop_files_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	void send_window_event(DisplayServerEnums::WindowEvent p_event, bool p_deferred = false) const;
+	void send_input_event(const Ref<InputEvent> &p_event) const;
+	void send_input_text(const String &p_text) const;
+
+	virtual Vector<DisplayServerEnums::WindowID> get_window_list() const override;
+	virtual DisplayServerEnums::WindowID get_window_at_screen_position(const Point2i &p_position) const override;
+
+	virtual int64_t window_get_native_handle(DisplayServerEnums::HandleType p_handle_type, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_attach_instance_id(ObjectID p_instance, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual ObjectID window_get_attached_instance_id(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual void window_set_title(const String &p_title, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	virtual int window_get_current_screen(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual void window_set_current_screen(int p_screen, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	virtual Point2i window_get_position(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual Point2i window_get_position_with_decorations(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual void window_set_position(const Point2i &p_position, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	virtual void window_set_transient(DisplayServerEnums::WindowID p_window, DisplayServerEnums::WindowID p_parent) override;
+
+	virtual void window_set_max_size(const Size2i p_size, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual Size2i window_get_max_size(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_min_size(const Size2i p_size, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual Size2i window_get_min_size(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_size(const Size2i p_size, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual Size2i window_get_size(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+	virtual Size2i window_get_size_with_decorations(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_mode(DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual DisplayServerEnums::WindowMode window_get_mode(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual bool window_is_maximize_allowed(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_set_flag(DisplayServerEnums::WindowFlags p_flag, bool p_enabled, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual bool window_get_flag(DisplayServerEnums::WindowFlags p_flag, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual void window_request_attention(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void window_move_to_foreground(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual bool window_is_focused(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual bool window_can_draw(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
+
+	virtual bool can_any_window_draw() const override;
+
+	virtual void window_set_vsync_mode(DisplayServerEnums::VSyncMode p_vsync_mode, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual DisplayServerEnums::VSyncMode window_get_vsync_mode(DisplayServerEnums::WindowID p_vsync_mode) const override;
+
+	virtual void window_set_color(const Color &p_color) override;
+
+	virtual void process_events() override;
+
+	void process_accelerometer(const Vector3 &p_accelerometer);
+	void process_gravity(const Vector3 &p_gravity);
+	void process_magnetometer(const Vector3 &p_magnetometer);
+	void process_gyroscope(const Vector3 &p_gyroscope);
+
+	void _cursor_set_shape_helper(DisplayServerEnums::CursorShape p_shape, bool force = false);
+	virtual void cursor_set_shape(DisplayServerEnums::CursorShape p_shape) override;
+	virtual DisplayServerEnums::CursorShape cursor_get_shape() const override;
+	virtual void cursor_set_custom_image(const Ref<Resource> &p_cursor, DisplayServerEnums::CursorShape p_shape = DisplayServerEnums::CURSOR_ARROW, const Vector2 &p_hotspot = Vector2()) override;
+
+	virtual void mouse_set_mode(DisplayServerEnums::MouseMode p_mode) override;
+	virtual DisplayServerEnums::MouseMode mouse_get_mode() const override;
+	virtual void mouse_set_mode_override(DisplayServerEnums::MouseMode p_mode) override;
+	virtual DisplayServerEnums::MouseMode mouse_get_mode_override() const override;
+	virtual void mouse_set_mode_override_enabled(bool p_override_enabled) override;
+	virtual bool mouse_is_mode_override_enabled() const override;
+
+	static DisplayServerDriver *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	static Vector<String> get_rendering_drivers_func();
+	static void register_android_driver();
+
+#ifdef VULKAN_ENABLED
+	static bool check_vulkan_global_context(bool p_vulkan_requirements_met);
+	static void free_vulkan_global_context();
+#endif
+
+	void reset_window();
+	void notify_surface_changed(int p_width, int p_height);
+	void notify_application_paused();
+
+	virtual Point2i mouse_get_position() const override;
+	virtual uint32_t mouse_get_button_state() const override;
+
+	void reset_swap_buffers_flag();
+	bool should_swap_buffers() const;
+	virtual void swap_buffers() override;
+
+	virtual void set_native_icon(const String &p_filename) override;
+	virtual void set_icon(const Ref<Image> &p_icon) override;
+
+	virtual bool is_window_transparency_available() const override;
+
+	virtual bool is_in_pip_mode(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void pip_mode_enter(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void pip_mode_set_aspect_ratio(int p_numerator, int p_denominator, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+	virtual void pip_mode_set_auto_enter_on_background(bool p_auto_enter_on_background, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
+
+	DisplayServerAndroid(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
+	~DisplayServerAndroid();
+};
+#endif // ANDROID_ENABLED
+
+#ifdef ANDROID_ENABLED
+// --- Folded from platform/android/java_godot_io_wrapper.h ---
+#include "core/math/rect2.h"
+
+#include <android/log.h>
+#include <jni.h>
+
+// Class that makes functions in java/src/org/godotengine/godot/GodotIO.java callable from C++
+class GodotIOJavaWrapper {
+private:
+	jobject godot_io_instance;
+	jclass cls;
+
+	jmethodID _open_URI = nullptr;
+	jmethodID _get_cache_dir = nullptr;
+	jmethodID _get_data_dir = nullptr;
+	jmethodID _get_temp_dir = nullptr;
+	jmethodID _get_display_cutouts = nullptr;
+	jmethodID _get_display_rotation = nullptr;
+	jmethodID _get_display_safe_area = nullptr;
+	jmethodID _get_locale = nullptr;
+	jmethodID _get_model = nullptr;
+	jmethodID _get_screen_DPI = nullptr;
+	jmethodID _get_scaled_density = nullptr;
+	jmethodID _get_screen_refresh_rate = nullptr;
+	jmethodID _get_unique_id = nullptr;
+	jmethodID _show_keyboard = nullptr;
+	jmethodID _hide_keyboard = nullptr;
+	jmethodID _has_hardware_keyboard = nullptr;
+	jmethodID _set_screen_orientation = nullptr;
+	jmethodID _get_screen_orientation = nullptr;
+	jmethodID _get_system_dir = nullptr;
+
+public:
+	GodotIOJavaWrapper(JNIEnv *p_env, jobject p_godot_io_instance);
+	~GodotIOJavaWrapper();
+
+	jobject get_instance();
+
+	Error open_uri(const String &p_uri);
+	String get_cache_dir();
+	String get_temp_dir();
+	String get_user_data_dir(const String &p_user_dir);
+	String get_locale();
+	String get_model();
+	int get_screen_dpi();
+	float get_scaled_density();
+	float get_screen_refresh_rate(float fallback);
+	TypedArray<Rect2> get_display_cutouts();
+	Rect2i get_display_safe_area();
+	String get_unique_id();
+	bool has_vk();
+	bool has_hardware_keyboard();
+	void show_vk(const String &p_existing, int p_type, int p_max_input_length, int p_cursor_start, int p_cursor_end);
+	void hide_vk();
+	int get_vk_height();
+	void set_vk_height(int p_height);
+	void set_screen_orientation(int p_orient);
+	int get_screen_orientation();
+	String get_system_dir(int p_dir, bool p_shared_storage);
+	int get_display_rotation();
+};
+#endif // ANDROID_ENABLED
+
+#ifdef ANDROID_ENABLED
+// --- Folded from platform/android/java_godot_wrapper.h ---
+// --- Folded from platform/android/java_godot_view_wrapper.h ---
+#include "core/math/vector2.h"
+
+#include <android/log.h>
+#include <jni.h>
+
+// Class that makes functions in java/src/org/godotengine/godot/GodotRenderView.java callable from C++
+class GodotJavaViewWrapper {
+private:
+	jclass _cls;
+
+	jobject _godot_view;
+
+	jmethodID _can_capture_pointer = nullptr;
+	jmethodID _request_pointer_capture = nullptr;
+	jmethodID _release_pointer_capture = nullptr;
+
+	jmethodID _configure_pointer_icon = nullptr;
+	jmethodID _set_pointer_icon = nullptr;
+
+public:
+	GodotJavaViewWrapper(jobject godot_view);
+
+	bool can_update_pointer_icon() const;
+	bool can_capture_pointer() const;
+
+	void request_pointer_capture();
+	void release_pointer_capture();
+
+	void configure_pointer_icon(int pointer_type, const String &image_path, const Vector2 &p_hotspot);
+	void set_pointer_icon(int pointer_type);
+
+	~GodotJavaViewWrapper();
+};
+
+// --- End platform/android/java_godot_view_wrapper.h ---
+
+#include "core/math/color.h"
+#include "core/templates/list.h"
+#include "core/templates/vector.h"
+
+#include <jni.h>
+
+// Class that makes functions in java/src/org/godotengine/godot/Godot.kt callable from C++
+class GodotJavaWrapper {
+private:
+	jobject godot_native_bridge;
+	jclass godot_native_bridge_class;
+
+	GodotJavaViewWrapper *godot_view = nullptr;
+
+	jmethodID _restart = nullptr;
+	jmethodID _finish = nullptr;
+	jmethodID _set_keep_screen_on = nullptr;
+	jmethodID _alert = nullptr;
+	jmethodID _is_dark_mode_supported = nullptr;
+	jmethodID _is_dark_mode = nullptr;
+	jmethodID _get_accent_color = nullptr;
+	jmethodID _get_base_color = nullptr;
+	jmethodID _get_clipboard = nullptr;
+	jmethodID _set_clipboard = nullptr;
+	jmethodID _has_clipboard = nullptr;
+	jmethodID _show_dialog = nullptr;
+	jmethodID _show_input_dialog = nullptr;
+	jmethodID _show_file_picker = nullptr;
+	jmethodID _request_permission = nullptr;
+	jmethodID _request_permissions = nullptr;
+	jmethodID _get_granted_permissions = nullptr;
+	jmethodID _get_gdextension_list_config_file = nullptr;
+	jmethodID _get_ca_certificates = nullptr;
+	jmethodID _init_input_devices = nullptr;
+	jmethodID _vibrate = nullptr;
+	jmethodID _get_input_fallback_mapping = nullptr;
+	jmethodID _on_godot_setup_completed = nullptr;
+	jmethodID _on_godot_main_loop_started = nullptr;
+	jmethodID _on_godot_terminating = nullptr;
+	jmethodID _create_new_godot_instance = nullptr;
+	jmethodID _get_render_view = nullptr;
+	jmethodID _begin_benchmark_measure = nullptr;
+	jmethodID _end_benchmark_measure = nullptr;
+	jmethodID _dump_benchmark = nullptr;
+	jmethodID _check_internal_feature_support = nullptr;
+	jmethodID _sign_apk = nullptr;
+	jmethodID _verify_apk = nullptr;
+	jmethodID _enable_immersive_mode = nullptr;
+	jmethodID _is_in_immersive_mode = nullptr;
+	jmethodID _set_window_color = nullptr;
+	jmethodID _on_editor_workspace_selected = nullptr;
+	jmethodID _on_distraction_free_mode_changed = nullptr;
+	jmethodID _get_activity = nullptr;
+	jmethodID _build_env_connect = nullptr;
+	jmethodID _build_env_disconnect = nullptr;
+	jmethodID _build_env_execute = nullptr;
+	jmethodID _build_env_cancel = nullptr;
+	jmethodID _build_env_clean_project = nullptr;
+	jmethodID _is_pip_mode_supported = nullptr;
+	jmethodID _is_in_pip_mode = nullptr;
+	jmethodID _enter_pip_mode = nullptr;
+	jmethodID _set_pip_mode_aspect_ratio = nullptr;
+	jmethodID _set_auto_enter_pip_mode_on_background = nullptr;
+
+public:
+	GodotJavaWrapper(JNIEnv *p_env, jobject p_godot_native_bridge);
+	~GodotJavaWrapper();
+
+	jobject get_activity();
+
+	GodotJavaViewWrapper *get_godot_view();
+
+	void on_godot_setup_completed(JNIEnv *p_env = nullptr);
+	void on_godot_main_loop_started(JNIEnv *p_env = nullptr);
+	void on_godot_terminating(JNIEnv *p_env = nullptr);
+	void restart(JNIEnv *p_env = nullptr);
+	bool force_quit(JNIEnv *p_env = nullptr, int p_instance_id = 0);
+	void set_keep_screen_on(bool p_enabled);
+	void alert(const String &p_message, const String &p_title);
+	bool is_dark_mode_supported();
+	bool is_dark_mode();
+	Color get_accent_color();
+	Color get_base_color();
+	bool has_get_clipboard();
+	String get_clipboard();
+	bool has_set_clipboard();
+	void set_clipboard(const String &p_text);
+	bool has_has_clipboard();
+	bool has_clipboard();
+	Error show_dialog(const String &p_title, const String &p_description, const Vector<String> &p_buttons);
+	Error show_input_dialog(const String &p_title, const String &p_message, const String &p_existing_text);
+	Error show_file_picker(const String &p_current_directory, const String &p_filename, int p_mode, const Vector<String> &p_filters);
+	bool request_permission(const String &p_name);
+	bool request_permissions();
+	Vector<String> get_granted_permissions() const;
+	String get_ca_certificates() const;
+	void init_input_devices();
+	void vibrate(int p_duration_ms, float p_amplitude = -1.0);
+	String get_input_fallback_mapping();
+	int create_new_godot_instance(const List<String> &args);
+	void begin_benchmark_measure(const String &p_context, const String &p_label);
+	void end_benchmark_measure(const String &p_context, const String &p_label);
+	void dump_benchmark(const String &benchmark_file);
+
+	// Return the list of gdextensions config file.
+	Vector<String> get_gdextension_list_config_file() const;
+
+	// Return true if the given feature is supported.
+	bool check_internal_feature_support(const String &p_feature) const;
+
+	// Sign and verify apks
+	Error sign_apk(const String &p_input_path, const String &p_output_path, const String &p_keystore_path, const String &p_keystore_user, const String &p_keystore_password);
+	Error verify_apk(const String &p_apk_path);
+
+	void enable_immersive_mode(bool p_enabled);
+	bool is_in_immersive_mode();
+
+	void set_window_color(const Color &p_color);
+
+	void on_editor_workspace_selected(const String &p_workspace);
+	void on_distraction_free_mode_changed(bool p_enabled);
+
+	bool build_env_connect(const Callable &p_callback);
+	void build_env_disconnect();
+	int build_env_execute(const String &p_build_tool, const List<String> &p_arguments, const String &p_project_path, const String &p_gradle_build_directory, const Callable &p_output_callback, const Callable &p_result_callback);
+	void build_env_cancel(int p_job_id);
+	void build_env_clean_project(const String &p_project_path, const String &p_gradle_build_directory, const Callable &p_callback);
+
+	bool is_pip_mode_supported();
+	bool is_in_pip_mode();
+	void enter_pip_mode();
+	void set_pip_mode_aspect_ratio(int p_numerator, int p_denominator);
+	void set_auto_enter_pip_mode_on_background(bool p_auto_enter_on_background);
+};
+#endif // ANDROID_ENABLED
+
+#ifdef ANDROID_ENABLED
+// --- Folded from platform/android/thread_jandroid.h ---
+#include <jni.h>
+
+void init_thread_jandroid(JavaVM *p_jvm, JNIEnv *p_env);
+
+void setup_android_thread();
+JNIEnv *get_jni_env();
+#endif // ANDROID_ENABLED
+
+#ifdef ANDROID_ENABLED
+// --- Folded from platform/android/jni_utils.h ---
+#include "core/string/ustring.h"
+
+#include <jni.h>
+
+jobject _variant_to_jobject(JNIEnv *env, Variant::Type p_type, const Variant *p_arg, int p_depth = 0);
+
+String _get_class_name(JNIEnv *env, jclass cls, bool *array);
+
+Variant _jobject_to_variant(JNIEnv *env, jobject obj, int p_depth = 0);
+
+Variant::Type get_jni_type(const String &p_type);
+
+/**
+ * Convert a Godot Callable to a org.godotengine.godot.variant.Callable java object.
+ * @param p_env JNI environment instance
+ * @param p_callable Callable parameter to convert. If null or invalid type, a null jobject is returned.
+ * @return org.godotengine.godot.variant.Callable jobject or null
+ */
+jobject callable_to_jcallable(JNIEnv *p_env, const Variant &p_callable);
+
+/**
+ * Convert a org.godotengine.godot.variant.Callable java object to a Godot Callable variant.
+ * @param p_env JNI environment instance
+ * @param p_jcallable_obj org.godotengine.godot.variant.Callable java object to convert.
+ * @return Callable variant
+ */
+Callable jcallable_to_callable(JNIEnv *p_env, jobject p_jcallable_obj);
+
+/**
+ * Converts a java.lang.CharSequence object to a Godot String.
+ * @param p_env  JNI environment instance
+ * @param p_charsequence java.lang.CharSequence object to convert
+ * @return Godot String instance.
+ */
+String charsequence_to_string(JNIEnv *p_env, jobject p_charsequence);
+
+/**
+ * Converts JNI jstring to Godot String.
+ * @param source Source JNI string. If null an empty string is returned.
+ * @param env JNI environment instance. If null obtained by get_jni_env().
+ * @return Godot string instance.
+ */
+static inline String jstring_to_string(jstring source, JNIEnv *env = nullptr) {
+	String result;
+	if (source) {
+		if (!env) {
+			env = get_jni_env();
+		}
+		const char *const source_utf8 = env->GetStringUTFChars(source, nullptr);
+		if (source_utf8) {
+			result.append_utf8(source_utf8);
+			env->ReleaseStringUTFChars(source, source_utf8);
+		}
+	}
+	return result;
+}
+
+/**
+ * Set up thread-safe Android ClassLoader (used by jni_find_class() below).
+ */
+void setup_android_class_loader();
+void cleanup_android_class_loader();
+
+/**
+ * Thread-safe JNI class finder using Android ClassLoader.
+ * Works on any thread, unlike standard FindClass which may fail on non-main threads.
+ * @param p_env JNI environment instance.
+ * @param p_class_name Class name to find.
+ * @return jclass reference or null if not found.
+ */
+jclass jni_find_class(JNIEnv *p_env, const char *p_class_name);
+#endif // ANDROID_ENABLED

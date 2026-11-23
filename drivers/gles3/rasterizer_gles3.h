@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/renderer.h"
 #ifdef GLES3_ENABLED
 #include "drivers/gles3/storage/utilities.h"
 // --- Folded from drivers/gles3/rasterizer_canvas_gles3.h ---
@@ -53,7 +53,7 @@
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_compiler.h"
 #include "servers/rendering/shader_language.h"
-#include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
 namespace GLES3
@@ -539,9 +539,9 @@ public:
 
 #endif // GLES3_ENABLED
 #include "drivers/gles3/storage/mesh_storage.h"
-#include "servers/rendering/renderer_canvas_render.h"
+#include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/renderer_canvas_render.h"
+#include "servers/rendering/renderer_viewport.h"
 
 namespace GLES3
 {
@@ -972,7 +972,7 @@ public:
 #include "core/math/aabb.h"
 #include "core/math/projection.h"
 #include "core/math/vector3.h"
-#include "core/math/vector3i.h"
+#include "core/math/vector3.h"
 #include "core/templates/paged_allocator.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
@@ -3189,7 +3189,7 @@ public:
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "drivers/gles3/shaders/particles_copy.glsl.gen.h"
-#include "servers/rendering/storage/particles_storage.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
 #include <platform_gl.h>

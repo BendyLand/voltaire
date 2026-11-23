@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_label)
 
 #if defined(MODULE_TEXT_SERVER_FB_ENABLED) || defined(MODULE_TEXT_SERVER_ADV_ENABLED)
 
-#include "scene/gui/label.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 

@@ -3373,7 +3373,7 @@ void RasterizerCanvasGLES3::finalize()
 #ifdef GLES3_ENABLED
 
 #include "core/io/dir_access.h"
-#include "core/string/string_builder.h"
+#include "core/string/ustring.h"
 #include "drivers/gles3/storage/utilities.h"
 
 #ifndef WEB_ENABLED
@@ -4265,7 +4265,7 @@ ShaderGLES3::~ShaderGLES3()
 #include "drivers/gles3/rasterizer_gles3.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_scene_cull.h"
+#include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_server_types.h"
 
 #define _EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB 0x8242

@@ -527,7 +527,7 @@ Texture3D::~Texture3D()
 
 // --- atlas_texture.cpp ---
 
-#include "atlas_texture.h"
+#include "scene/resources/image_texture.h"
 
 #include "core/os/os.h"
 #include "servers/rendering/renderer.h"
@@ -1005,7 +1005,7 @@ AtlasTexture::~AtlasTexture()
 #include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 #ifdef MODULE_SVG_ENABLED
-#include "modules/svg/image_loader_svg.h"
+#include "core/io/image_loader.h"
 #endif
 
 Mutex ImageTexture::svg_mutex;
@@ -1864,7 +1864,7 @@ public:
 
 // --- End scene/resources/external_texture.h ---
 
-#include "servers/camera/camera_feed.h"
+#include "servers/camera/camera_server.h"
 #include "servers/rendering/renderer.h"
 
 void ExternalTexture::set_source_mode(SourceMode p_mode)
@@ -2125,7 +2125,7 @@ public:
 
 
 // --- End scene/resources/drawable_texture_2d.h ---
-#include "scene/resources/atlas_texture.h"
+#include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
@@ -2489,7 +2489,7 @@ CurveTexture::~CurveTexture()
 
 // --- gradient_texture.cpp ---
 
-#include "gradient_texture.h"
+#include "scene/resources/gradient.h"
 
 #include "core/math/geometry_2d.h"
 #include "servers/rendering/renderer.h"
@@ -3402,7 +3402,7 @@ void BitMap::blit(const Vector2i& p_pos, const Ref<BitMap>& p_bitmap)
 
 // --- sprite_frames.cpp ---
 
-#include "scene/scene_string_names.h"
+#include "scene/main/node.h"
 #include "scene/3d/visual_instance_3d.h"
 
 void SpriteFrames::add_frame(
@@ -3577,7 +3577,7 @@ void SpriteFrames::get_argument_options(
 // Merged from scene/resources/compressed_texture.cpp
 // ============================================================================
 
-#include "compressed_texture.h"
+#include "scene/resources/image_texture.h"
 
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
@@ -4579,9 +4579,9 @@ CompressedTextureLayered::~CompressedTextureLayered()
 
 // --- compressed_texture_resource_format.cpp ---
 
-#include "scene/resources/compressed_texture.h"
+#include "scene/resources/image_texture.h"
 
-#include "scene/resources/compressed_texture.h"
+#include "scene/resources/image_texture.h"
 
 Ref<Resource> ResourceFormatLoaderCompressedTexture::load(const String& p_path,
 	const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress,
@@ -6840,7 +6840,7 @@ PackedColorArray ColorPalette::get_colors() const { return colors; }
 #include "font.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/text_line.h"
-#include "scene/resources/text_paragraph.h"
+#include "scene/resources/text_line.h"
 #include "scene/resources/theme.h"
 #include "scene/theme/theme_db.h"
 #include "servers/rendering/renderer.h"
@@ -8934,7 +8934,7 @@ void TextLine::_bind_compatibility_methods() {}
 
 // --- text_paragraph.cpp ---
 
-#include "text_paragraph.h"
+#include "scene/resources/text_line.h"
 
 RID TextParagraph::get_rid() const { return rid; }
 
@@ -9826,7 +9826,7 @@ void TextParagraph::_bind_compatibility_methods() {}
 
 // --- label_settings.cpp ---
 
-#include "scene/gui/label.h"
+#include "scene/gui/dialogs.h"
 
 void LabelSettings::_font_changed() { emit_changed(); }
 
@@ -16578,7 +16578,7 @@ void ResourceFormatSaverShader::get_recognized_extensions(
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "scene/resources/environment.h"
-#include "scene/resources/gradient_texture.h"
+#include "scene/resources/gradient.h"
 #include "scene/resources/environment.h"
 #include "servers/rendering/renderer.h"
 
@@ -17973,7 +17973,7 @@ Sky::~Sky()
 #include "core/config/project_settings.h"
 #include "scene/2d/node_2d.h"
 #include "servers/rendering/renderer.h"
-#include "scene/resources/world_2d.h"
+#include "scene/main/viewport.h"
 
 #ifndef NAVIGATION_2D_DISABLED
 #include "servers/navigation_2d/navigation_server_2d.h"

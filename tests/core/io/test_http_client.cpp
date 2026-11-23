@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_http_client)
 
-#include "core/io/http_client.h"
+#include "core/io/stream_peer.h"
 
 #include "modules/modules_enabled.gen.h" // For mbedtls.
 

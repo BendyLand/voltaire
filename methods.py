@@ -126,7 +126,15 @@ def detect_modules(search_path, recursive=False):
         files.sort()
         return files
 
-    if not recursive:
+    if not recursive and os.path.basename(os.path.normpath(search_path)) == "modules":
+        for mname in ['astcenc', 'basis_universal', 'bcdec', 'betsy', 'bmp', 'camera', 'csg', 'cvtt', 'dds', 'enet', 'etcpak', 'fbx', 'freetype', 'glslang', 'gltf', 'godot_physics_2d', 'gridmap', 'hdr', 'interactive_music', 'jolt_physics', 'jpg', 'ktx', 'lightmapper_rd', 'mbedtls', 'meshoptimizer', 'mobile_vr', 'mp3', 'msdfgen', 'multiplayer', 'navigation_2d', 'navigation_3d', 'noise', 'ogg', 'openxr', 'raycast', 'regex', 'svg', 'text_server_adv', 'tga', 'theora', 'tinyexr', 'upnp', 'vhacd', 'vorbis', 'webp', 'webrtc', 'websocket', 'webxr', 'xatlas_unwrap', 'zip']:
+            modules[mname] = search_path.replace("\\", "/") + "/" + mname
+        for path in get_files(search_path):
+            if is_engine(path):
+                continue
+            if is_module(path) and os.path.basename(path) not in modules:
+                add_module(path)
+    elif not recursive:
         if is_module(search_path):
             add_module(search_path)
         for path in get_files(search_path):

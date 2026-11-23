@@ -43,7 +43,7 @@
 #include "drivers/gles3/rasterizer_gles3.h"
 #include "drivers/gles3/storage/texture_storage.h"
 #include "drivers/gles3/storage/utilities.h"
-#include "servers/camera/camera_feed.h"
+#include "servers/camera/camera_server.h"
 #include "servers/camera/camera_server.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"

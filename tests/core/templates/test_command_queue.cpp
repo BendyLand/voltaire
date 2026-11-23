@@ -36,7 +36,7 @@ TEST_FORCE_LINK(test_command_queue)
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "core/os/thread.h"
-#include "core/templates/command_queue_mt.h"
+#include "core/os/condition_variable.h"
 
 namespace TestCommandQueue {
 

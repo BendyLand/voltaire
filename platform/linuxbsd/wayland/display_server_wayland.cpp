@@ -70,7 +70,7 @@
 #include "platform/linuxbsd/os_linuxbsd.h"
 
 #ifdef SOWRAP_ENABLED
-#include "dbus-so_wrap.h"
+#include "platform/linuxbsd/os_linuxbsd.h"
 #else
 #include <dbus/dbus.h>
 #endif

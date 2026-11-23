@@ -305,7 +305,7 @@ private:
 #include "scene/property_list_helper.h"
 #include "main/main.h"
 #include "scene/resources/packed_scene.h"
-#include "scene/resources/world_2d.h"
+#include "scene/main/viewport.h"
 #include "scene/theme/theme_db.h"
 #include "servers/audio/audio_server.h"
 #include "servers/camera/camera_server.h"
@@ -316,7 +316,7 @@ private:
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/shader_language.h"
-#include "servers/rendering/storage/texture_storage.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 
 // 2D
@@ -350,7 +350,7 @@ private:
 #ifdef TOOLS_ENABLED
 #include "editor/doc/doc_data_class_path.gen.h"
 #include "editor/editor_ui.h"
-#include "editor/file_system/editor_file_system.h"
+#include "editor/file_system/editor_paths.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
@@ -409,7 +409,7 @@ public:
 
 #include "modules/modules_enabled.gen.h" // For mono.
 #ifdef MODULE_TEXT_SERVER_ADV_ENABLED
-#include "modules/text_server_adv/register_types.h"
+#include "modules/register_module_types.h"
 #endif
 
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
@@ -5681,3 +5681,114 @@ SteamTracker::~SteamTracker() {
 }
 
 #endif // STEAMAPI_ENABLED
+
+
+// --- Merged from platform/android/api/api.cpp ---
+#include "platform/android/api/api.h"
+#include "platform/android/api/java_class_wrapper.h"
+#include "platform/android/os_android.h"
+
+void unregister_android_api()
+{
+#if !defined(ANDROID_ENABLED)
+	JavaClassWrapper::finalize();
+#endif
+}
+
+#if !defined(ANDROID_ENABLED)
+
+String JavaClass::get_java_class_name() const { return ""; }
+
+Ref<JavaClass> JavaClass::get_java_parent_class() const { return Ref<JavaClass>(); }
+
+bool JavaClass::has_java_method(const String&) const { return false; }
+
+JavaClass::JavaClass() {}
+
+JavaClass::~JavaClass() {}
+
+Ref<JavaClass> JavaObject::get_java_class() const { return Ref<JavaClass>(); }
+
+bool JavaObject::has_java_method(const String&) const { return false; }
+
+void JavaClassWrapper::initialize() {}
+
+void JavaClassWrapper::finalize() {}
+
+Ref<JavaClass> JavaClassWrapper::_wrap(const String&, bool) { return Ref<JavaClass>(); }
+
+void register_android_api() {}
+
+#endif
+
+// ============================================================================
+// Merged from platform/ios/api/api.cpp
+// ============================================================================
+
+#include "platform/ios/api/api.h"
+
+#if defined(IOS_ENABLED)
+
+void register_ios_api() {
+	godot_apple_embedded_plugins_initialize();
+}
+
+void unregister_ios_api() {
+	godot_apple_embedded_plugins_deinitialize();
+}
+
+#else
+
+void register_ios_api() {}
+void unregister_ios_api() {}
+
+#endif // IOS_ENABLED
+
+// ============================================================================
+// Merged from platform/visionos/api/api.cpp
+// ============================================================================
+
+#include "platform/visionos/api/api.h"
+
+#if defined(VISIONOS_ENABLED)
+
+void register_visionos_api() {
+	godot_apple_embedded_plugins_initialize();
+}
+
+void unregister_visionos_api() {
+	godot_apple_embedded_plugins_deinitialize();
+}
+
+#else
+
+void register_visionos_api() {}
+void unregister_visionos_api() {}
+
+#endif // VISIONOS_ENABLED
+
+// ============================================================================
+// Merged from platform/web/api/api.cpp
+// ============================================================================
+
+#include "platform/web/api/api.h"
+#include "platform/web/os_web.h"
+
+void unregister_web_api() {}
+
+void register_web_api() {}
+
+#if !defined(WEB_ENABLED)
+
+bool JavaScriptBridge::pwa_needs_update() { return false; }
+
+Error JavaScriptBridge::pwa_update() { return ERR_UNAVAILABLE; }
+
+void JavaScriptBridge::force_fs_sync() {}
+
+void JavaScriptBridge::download_buffer(
+	Vector<uint8_t> p_arr, const String& p_name, const String& p_mime)
+{
+}
+
+#endif

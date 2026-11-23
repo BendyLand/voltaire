@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "nav_map_2d.h"
-#include "register_types.h"
+#include "modules/register_module_types.h"
 
 #include "core/config/project_settings.h"
 #include "core/math/geometry_2d.h"
@@ -46,7 +46,7 @@
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "scene/resources/2d/navigation_polygon.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 
 Mutex NavMeshGenerator2D::baking_navmesh_mutex;
 Mutex NavMeshGenerator2D::generator_task_mutex;

@@ -39,7 +39,7 @@ STATIC_ASSERT_INCOMPLETE_TYPE(class, Renderer);
 #include "core/input/input_map.h"
 #include "core/math/transform_2d.h"
 #include "core/os/os.h"
-#include "core/string/string_builder.h"
+#include "core/string/ustring.h"
 #include "scene/gui/scroll_container.h"
 #include "scene/main/canvas_item.h"
 #include "scene/main/scene_tree.h"
@@ -2335,15 +2335,15 @@ void Control::_bind_compatibility_methods() {}
 // Merged from scene/gui/button.cpp
 // ============================================================================
 
-#include "button.h"
+#include "scene/gui/dialogs.h"
 #include "core/os/os.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
-#include "scene/gui/button.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/window.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "scene/gui/button.h"
+#include "scene/gui/dialogs.h"
 
 ButtonBehavior::DrawMode ButtonBehavior::get_draw_mode() const
 {
@@ -3826,11 +3826,11 @@ void MenuBar::move_child_notify(Node* p_child) {}
 #include <cmath>
 #include <thirdparty/misc/r128.h>
 #include "core/string/translation_server.h"
-#include "scene/gui/scroll_bar.h"
+#include "scene/gui/scroll_container.h"
 #include "core/config/engine.h"
 // --- Inlined from scene/gui/progress_bar.h ---
 #include "scene/gui/control.h"
-#include "scene/gui/scroll_bar.h"
+#include "scene/gui/scroll_container.h"
 
 class ProgressBar : public Control
 {
@@ -3961,13 +3961,13 @@ private:
 #include "scene/theme/theme_db.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/renderer.h"
-#include "scene/gui/scroll_bar.h"
+#include "scene/gui/scroll_container.h"
 #include "core/input/input.h"
-#include "scene/gui/scroll_bar.h"
+#include "scene/gui/scroll_container.h"
 #include "core/math/expression.h"
 #include "scene/gui/dialogs.h"
 #include "scene/main/window.h"
-#include "scroll_bar.h"
+#include "scene/gui/scroll_container.h"
 #include "servers/display/display_server.h"
 
 double NumericRange::snapped_r128(double p_value, double p_step)
@@ -5317,7 +5317,7 @@ ScrollBar::~ScrollBar() {}
 
 #include "core/config/project_settings.h"
 #include "scene/gui/dialogs.h"
-#include "scene/gui/button.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/window.h"
 #include "scene/theme/theme_db.h"
 #include "scroll_container.h"
@@ -5328,11 +5328,11 @@ ScrollBar::~ScrollBar() {}
 #include "scene/main/viewport.h"
 #include "scene/gui/scroll_container.h"
 #include <cfloat>
-#include "scene/gui/label.h"
-#include "scene/main/timer.h"
+#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #include "scene/gui/scroll_container.h"
-#include "scene/gui/button.h"
-#include "scene/gui/popup_menu.h"
+#include "scene/gui/dialogs.h"
+#include "scene/gui/dialogs.h"
 #include "scene/gui/scroll_container.h"
 #include "scene/resources/text_line.h"
 #include "core/types.h"

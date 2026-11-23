@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/io/ip_address.h"
+#include "core/io/ip.h"
 #include "core/io/net_socket.h"
 #include "core/io/stream_peer.h"
 
@@ -101,4 +101,39 @@ public:
 
 	StreamPeerSocket(Domain p_domain = DOMAIN_TCP);
 	~StreamPeerSocket() override;
+};
+
+// --- Folded from core/io/socket_server.h ---
+#include "core/io/ip.h"
+#include "core/io/net_socket.h"
+
+class SocketServer final : public RefCounted
+{
+private:
+	enum
+	{
+		MAX_PENDING_CONNECTIONS = 8,
+	};
+
+	StreamPeerSocket::Domain domain = StreamPeerSocket::DOMAIN_TCP;
+	Ref<NetSocket> _sock;
+
+	Error _listen(const NetSocket::Address& p_addr);
+
+public:
+	Error listen(uint16_t p_port, const IPAddress& p_bind_address = IPAddress("*"));
+	Error listen_path(const String& p_path);
+	Error listen(const String& p_path) { return listen_path(p_path); }
+
+	int get_local_port() const;
+
+	bool is_listening() const;
+	bool is_connection_available() const;
+	Ref<StreamPeerSocket> take_connection();
+	Ref<StreamPeerSocket> take_socket_connection() { return take_connection(); }
+
+	void stop(); // Stop listening
+
+	SocketServer();
+	~SocketServer() override;
 };

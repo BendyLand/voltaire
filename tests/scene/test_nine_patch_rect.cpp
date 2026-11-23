@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_nine_patch_rect)
 
-#include "scene/gui/label.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/texture.h"

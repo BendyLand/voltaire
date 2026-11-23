@@ -383,7 +383,7 @@ public:
 #include "core/templates/rid_owner.h"
 #include "core/templates/vector.h"
 #include "core/types.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 ///////////////////////////////////////////////////////////////////////////
 // OpenXR Function Pointer & Enum Macros

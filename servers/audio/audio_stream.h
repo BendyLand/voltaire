@@ -33,7 +33,7 @@
 
 #include "core/io/resource.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/ring_buffer.h"
+#include "core/types.h"
 #include "servers/audio/audio_server.h"
 
 class AudioStream;

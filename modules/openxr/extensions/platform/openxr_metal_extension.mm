@@ -33,7 +33,7 @@
 
 #include "../../openxr_api.h"
 
-#import "drivers/metal/rendering_device_driver_metal.h"
+#import "drivers/metal/rendering_device_driver_metal3.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server.h"
 

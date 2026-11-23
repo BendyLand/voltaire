@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/os/rw_lock.h"
+#include "core/os/mutex.h"
 #include "scene/resources/mesh.h"
 
 class NavigationMesh : public Resource

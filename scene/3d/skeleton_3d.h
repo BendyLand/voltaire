@@ -33,7 +33,60 @@
 
 #include "core/templates/a_hash_map.h"
 #include "scene/3d/node_3d.h"
-#include "scene/resources/3d/skin.h"
+// --- Inlined/Folded from scene/resources/3d/skin.h ---
+#include "core/io/resource.h"
+
+class Skin : public Resource
+{
+	struct Bind
+	{
+		int bone = -1;
+		String name;
+		Transform3D pose;
+	};
+
+	Vector<Bind> binds;
+
+	Bind* binds_ptr = nullptr;
+	int bind_count = 0;
+
+protected:
+	virtual void reset_state() override;
+
+public:
+	void set_bind_count(int p_size);
+
+	inline int get_bind_count() const { return bind_count; }
+
+	void add_bind(int p_bone, const Transform3D& p_pose);
+	void add_named_bind(const String& p_name, const Transform3D& p_pose);
+
+	void set_bind_bone(int p_index, int p_bone);
+	void set_bind_pose(int p_index, const Transform3D& p_pose);
+	void set_bind_name(int p_index, const String& p_name);
+
+	inline int get_bind_bone(int p_index) const
+	{
+		ERR_FAIL_INDEX_V(p_index, bind_count, -1);
+		return binds_ptr[p_index].bone;
+	}
+
+	inline String get_bind_name(int p_index) const
+	{
+		ERR_FAIL_INDEX_V(p_index, bind_count, String());
+		return binds_ptr[p_index].name;
+	}
+
+	inline Transform3D get_bind_pose(int p_index) const
+	{
+		ERR_FAIL_INDEX_V(p_index, bind_count, Transform3D());
+		return binds_ptr[p_index].pose;
+	}
+
+	void clear_binds();
+
+	Skin() = default;
+};
 
 typedef int BoneId;
 
@@ -1855,3 +1908,109 @@ public:
 };
 
 // --- End scene/3d/physics/collision_shape_3d.h ---
+
+// --- Folded from scene/3d/bone_attachment_3d.h ---
+class BoneAttachment3D : public Node3D
+{
+	bool bound = false;
+	String bone_name;
+	int bone_idx = -1;
+
+	bool override_pose = false;
+	bool _override_dirty = false;
+	bool overriding = false;
+
+	bool use_external_skeleton = false;
+	NodePath external_skeleton_node;
+
+	void _check_bind();
+	void _check_unbind();
+
+	bool updating = false;
+	void _transform_changed();
+	void _update_external_skeleton_cache();
+
+protected:
+	void _notification(int p_what);
+
+#ifndef DISABLE_DEPRECATED
+	virtual void _on_bone_pose_update_bind_compat_90575(int p_bone_index);
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	Skeleton3D* get_skeleton();
+
+	void set_bone_name(const String& p_name);
+	String get_bone_name() const;
+
+	void set_bone_idx(const int& p_idx);
+	int get_bone_idx() const;
+
+	void set_override_pose(bool p_override_pose);
+	bool get_override_pose() const;
+
+	void set_use_external_skeleton(bool p_use_external_skeleton);
+	bool get_use_external_skeleton() const;
+	void set_external_skeleton(NodePath p_external_skeleton);
+	NodePath get_external_skeleton() const;
+
+	virtual void on_skeleton_update();
+
+#ifdef TOOLS_ENABLED
+	virtual void notify_rebind_required();
+#endif
+
+	BoneAttachment3D() = default;
+};
+
+// --- Folded from scene/3d/importer_mesh_instance_3d.h ---
+#include "scene/3d/node_3d.h"
+#include "scene/3d/visual_instance_3d.h"
+
+class ImporterMesh;
+
+class ImporterMeshInstance3D : public Node3D
+{
+	Ref<ImporterMesh> mesh;
+	Ref<Skin> skin;
+	NodePath skeleton_path;
+	Vector<Ref<Material>> surface_materials;
+	uint32_t layer_mask = 1;
+	RenderInstance3D::ShadowCastingSetting shadow_casting_setting =
+		RenderInstance3D::SHADOW_CASTING_SETTING_ON;
+	float visibility_range_begin = 0.0;
+	float visibility_range_end = 0.0;
+	float visibility_range_begin_margin = 0.0;
+	float visibility_range_end_margin = 0.0;
+	RenderInstance3D::VisibilityRangeFadeMode visibility_range_fade_mode =
+		RenderInstance3D::VISIBILITY_RANGE_FADE_DISABLED;
+
+public:
+	void set_mesh(const Ref<ImporterMesh>& p_mesh);
+	Ref<ImporterMesh> get_mesh() const;
+
+	void set_skin(const Ref<Skin>& p_skin);
+	Ref<Skin> get_skin() const;
+
+	void set_surface_material(int p_idx, const Ref<Material>& p_material);
+	Ref<Material> get_surface_material(int p_idx) const;
+
+	void set_skeleton_path(const NodePath& p_path);
+	NodePath get_skeleton_path() const;
+
+	void set_layer_mask(const uint32_t p_layer_mask);
+	uint32_t get_layer_mask() const;
+
+	void set_cast_shadows_setting(RenderInstance3D::ShadowCastingSetting p_shadow_casting_setting);
+	RenderInstance3D::ShadowCastingSetting get_cast_shadows_setting() const;
+
+	float get_visibility_range_begin() const;
+	float get_visibility_range_end() const;
+	float get_visibility_range_begin_margin() const;
+	float get_visibility_range_end_margin() const;
+
+	RenderInstance3D::VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
+};

@@ -29,13 +29,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "servers/rendering/renderer_rd/environment/rd_environment.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/rd_caches.h"
 #include "core/config/project_settings.h"
-#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
@@ -6980,6 +6980,3449 @@ void RendererSceneRenderImplementation::SceneShaderForwardClustered::set_default
 }
 
 void RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData::set_code(
+	const String& p_code)
+{
+}
+#ifdef PRELOAD_PIPELINES_ON_SURFACE_CACHE_CONSTRUCTION
+#undef PRELOAD_PIPELINES_ON_SURFACE_CACHE_CONSTRUCTION
+#endif
+
+
+// --- Merged from servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.cpp ---
+#include "servers/rendering/renderer_rd/rd_caches.h"
+#include "core/config/project_settings.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
+#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/storage/utilities.h"
+
+#ifndef XR_DISABLED
+#include "servers/xr/xr_interface.h"
+#include "servers/xr/xr_server.h"
+#endif
+#include "core/math/math_defs.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+
+// --- Merged from servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.cpp ---
+
+#define PRELOAD_PIPELINES_ON_SURFACE_CACHE_CONSTRUCTION 1
+
+using namespace RendererSceneRenderImplementation;
+
+void RenderForwardMobile::ForwardIDStorageMobile::initialize()
+{
+	ERR_FAIL_COND(data != nullptr);
+	data = memnew(Data);
+	RendererRD::ForwardIDStorage::bind<ForwardIDStorageMobile>();
+}
+
+void RenderForwardMobile::ForwardIDStorageMobile::finalize()
+{
+	if (!data) {
+		return;
+	}
+	RendererRD::ForwardIDStorage::reset();
+	memdelete(data);
+	data = nullptr;
+}
+
+RendererRD::ForwardID RenderForwardMobile::ForwardIDStorageMobile::allocate_forward_id(
+	RendererRD::ForwardIDType p_type)
+{
+	ERR_FAIL_NULL_V(data, -1);
+
+	int32_t index = -1;
+	for (uint32_t i = 0; i < data->forward_id_allocators[p_type].allocations.size(); i++) {
+		if (data->forward_id_allocators[p_type].allocations[i] == false) {
+			index = i;
+			break;
+		}
+	}
+
+	if (index == -1) {
+		index = data->forward_id_allocators[p_type].allocations.size();
+		data->forward_id_allocators[p_type].allocations.push_back(true);
+		data->forward_id_allocators[p_type].map.push_back(0xFF);
+		data->forward_id_allocators[p_type].last_pass.push_back(0);
+	}
+	else {
+		data->forward_id_allocators[p_type].allocations[index] = true;
+	}
+
+	return index;
+}
+
+void RenderForwardMobile::ForwardIDStorageMobile::free_forward_id(
+	RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id)
+{
+	ERR_FAIL_NULL(data);
+	ERR_FAIL_INDEX(
+		p_id, (RendererRD::ForwardID)data->forward_id_allocators[p_type].allocations.size());
+	data->forward_id_allocators[p_type].allocations[p_id] = false;
+}
+
+void RenderForwardMobile::ForwardIDStorageMobile::map_forward_id(RendererRD::ForwardIDType p_type,
+	RendererRD::ForwardID p_id, uint32_t p_index, uint64_t p_last_pass)
+{
+	ERR_FAIL_NULL(data);
+	data->forward_id_allocators[p_type].map[p_id] = p_index;
+	data->forward_id_allocators[p_type].last_pass[p_id] = p_last_pass;
+}
+
+void RenderForwardMobile::fill_push_constant_instance_indices(
+	SceneState::InstanceData* p_instance_data, const GeometryInstanceForwardMobile* p_instance)
+{
+	ERR_FAIL_NULL(ForwardIDStorageMobile::data);
+	ForwardIDStorageMobile::ForwardIDAllocator* allocators =
+		ForwardIDStorageMobile::data->forward_id_allocators;
+
+	uint64_t current_frame = RendererCompositor::get_frame_number();
+
+	p_instance_data->omni_lights[0] = 0xFFFFFFFF;
+	p_instance_data->omni_lights[1] = 0xFFFFFFFF;
+
+	uint32_t idx = 0;
+	for (uint32_t i = 0; i < p_instance->omni_light_count; i++) {
+		uint32_t ofs = idx < 4 ? 0 : 1;
+		uint32_t shift = (idx & 0x3) << 3;
+		uint32_t mask = ~(0xFF << shift);
+
+		if (allocators[RendererRD::FORWARD_ID_TYPE_OMNI_LIGHT]
+				.last_pass[p_instance->omni_lights[i]] == current_frame) {
+			p_instance_data->omni_lights[ofs] &= mask;
+			p_instance_data->omni_lights[ofs] |=
+				uint32_t(allocators[RendererRD::FORWARD_ID_TYPE_OMNI_LIGHT]
+							 .map[p_instance->omni_lights[i]])
+				<< shift;
+			idx++;
+		}
+	}
+
+	p_instance_data->spot_lights[0] = 0xFFFFFFFF;
+	p_instance_data->spot_lights[1] = 0xFFFFFFFF;
+
+	idx = 0;
+	for (uint32_t i = 0; i < p_instance->spot_light_count; i++) {
+		uint32_t ofs = idx < 4 ? 0 : 1;
+		uint32_t shift = (idx & 0x3) << 3;
+		uint32_t mask = ~(0xFF << shift);
+		if (allocators[RendererRD::FORWARD_ID_TYPE_SPOT_LIGHT]
+				.last_pass[p_instance->spot_lights[i]] == current_frame) {
+			p_instance_data->spot_lights[ofs] &= mask;
+			p_instance_data->spot_lights[ofs] |=
+				uint32_t(allocators[RendererRD::FORWARD_ID_TYPE_SPOT_LIGHT]
+							 .map[p_instance->spot_lights[i]])
+				<< shift;
+			idx++;
+		}
+	}
+
+	p_instance_data->area_lights[0] = 0xFFFFFFFF;
+	p_instance_data->area_lights[1] = 0xFFFFFFFF;
+
+	idx = 0;
+	for (uint32_t i = 0; i < p_instance->area_light_count; i++) {
+		uint32_t ofs = idx < 4 ? 0 : 1;
+		uint32_t shift = (idx & 0x3) << 3;
+		uint32_t mask = ~(0xFF << shift);
+		if (allocators[RendererRD::FORWARD_ID_TYPE_AREA_LIGHT]
+				.last_pass[p_instance->area_lights[i]] == current_frame) {
+			p_instance_data->area_lights[ofs] &= mask;
+			p_instance_data->area_lights[ofs] |=
+				uint32_t(allocators[RendererRD::FORWARD_ID_TYPE_AREA_LIGHT]
+							 .map[p_instance->area_lights[i]])
+				<< shift;
+			idx++;
+		}
+	}
+
+	p_instance_data->decals[0] = 0xFFFFFFFF;
+	p_instance_data->decals[1] = 0xFFFFFFFF;
+
+	idx = 0;
+	for (uint32_t i = 0; i < p_instance->decals_count; i++) {
+		uint32_t ofs = idx < 4 ? 0 : 1;
+		uint32_t shift = (idx & 0x3) << 3;
+		uint32_t mask = ~(0xFF << shift);
+		if (allocators[RendererRD::FORWARD_ID_TYPE_DECAL].last_pass[p_instance->decals[i]] ==
+			current_frame) {
+			p_instance_data->decals[ofs] &= mask;
+			p_instance_data->decals[ofs] |=
+				uint32_t(allocators[RendererRD::FORWARD_ID_TYPE_DECAL].map[p_instance->decals[i]])
+				<< shift;
+			idx++;
+		}
+	}
+
+	p_instance_data->reflection_probes[0] = 0xFFFFFFFF;
+	p_instance_data->reflection_probes[1] = 0xFFFFFFFF;
+
+	ForwardIDByMapSort sorted_reflection_probes[MAX_RDL_CULL];
+	for (uint32_t i = 0; i < p_instance->reflection_probe_count; i++) {
+		sorted_reflection_probes[i].forward_id = p_instance->reflection_probes[i];
+		sorted_reflection_probes[i].map = allocators[RendererRD::FORWARD_ID_TYPE_REFLECTION_PROBE]
+											  .map[p_instance->reflection_probes[i]];
+	}
+
+	SortArray<ForwardIDByMapSort> sort_array;
+	sort_array.sort(sorted_reflection_probes, p_instance->reflection_probe_count);
+
+	idx = 0;
+	for (uint32_t i = 0; i < p_instance->reflection_probe_count; i++) {
+		uint32_t ofs = idx < 4 ? 0 : 1;
+		uint32_t shift = (idx & 0x3) << 3;
+		uint32_t mask = ~(0xFF << shift);
+		if (allocators[RendererRD::FORWARD_ID_TYPE_REFLECTION_PROBE]
+				.last_pass[sorted_reflection_probes[i].forward_id] == current_frame) {
+			p_instance_data->reflection_probes[ofs] &= mask;
+			p_instance_data->reflection_probes[ofs] |=
+				uint32_t(allocators[RendererRD::FORWARD_ID_TYPE_REFLECTION_PROBE]
+							 .map[sorted_reflection_probes[i].forward_id])
+				<< shift;
+			idx++;
+		}
+	}
+}
+
+void RenderForwardMobile::RenderBufferDataForwardMobile::free_data()
+{
+	// this should already be done but JIC..
+	if (render_buffers) {
+		render_buffers->clear_context(RB_SCOPE_MOBILE);
+	}
+}
+
+void RenderForwardMobile::RenderBufferDataForwardMobile::configure(
+	RenderSceneBuffersRD* p_render_buffers)
+{
+	if (render_buffers) {
+		// JIC
+		free_data();
+	}
+
+	render_buffers = p_render_buffers;
+	ERR_FAIL_NULL(render_buffers); // Huh? really?
+}
+
+RID RendererSceneRenderImplementation::RenderForwardMobile::RenderBufferDataForwardMobile::
+	get_motion_vectors_fb()
+{
+	ERR_FAIL_NULL_V(render_buffers, RID());
+
+	RID velocity = render_buffers->get_velocity_buffer(false);
+	RID velocity_depth = render_buffers->get_velocity_depth_buffer();
+
+	if (velocity.is_valid() && velocity_depth.is_valid()) {
+		Vector<RID> textures;
+		textures.push_back(velocity);
+		textures.push_back(velocity_depth);
+
+		Vector<RD::FramebufferPass> passes;
+		RD::FramebufferPass pass;
+		pass.color_attachments.push_back(0);
+		pass.depth_attachment = 1;
+		passes.push_back(pass);
+
+		uint32_t view_count = render_buffers->get_view_count();
+
+		return FramebufferCacheRD::get_cache_multipass(textures, passes, view_count);
+	}
+
+	return RID();
+}
+
+RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(
+	FramebufferConfigType p_config_type, bool p_resolve_depth)
+{
+	ERR_FAIL_NULL_V(render_buffers, RID());
+
+	// We use our framebuffer cache here instead of building these in
+	// RenderBufferDataForwardMobile::configure This approach ensures we only build the framebuffers
+	// we actually need for this viewport. In the (near) future this means that if we cycle through
+	// a texture chain for our render target, we'll also support this.
+
+	RSE::ViewportMSAA msaa_3d = render_buffers->get_msaa_3d();
+	bool use_msaa = msaa_3d != RSE::VIEWPORT_MSAA_DISABLED;
+
+	uint32_t view_count = render_buffers->get_view_count();
+
+	RID vrs_texture;
+#ifndef XR_DISABLED
+	if (render_buffers->get_vrs_mode() == RSE::VIEWPORT_VRS_XR) {
+		Ref<XRInterface> interface = XRServer::get_primary_interface();
+		if (interface.is_valid() && RD::vrs_get_method() == RD::VRS_METHOD_FRAGMENT_DENSITY_MAP &&
+			interface->get_vrs_texture_format() ==
+				XRInterface::XR_VRS_TEXTURE_FORMAT_FRAGMENT_DENSITY_MAP) {
+			vrs_texture = interface->get_vrs_texture();
+		}
+	}
+#endif // XR_DISABLED
+	if (vrs_texture.is_null() && render_buffers->has_texture(RB_SCOPE_VRS, RB_TEXTURE)) {
+		vrs_texture = render_buffers->get_texture(RB_SCOPE_VRS, RB_TEXTURE);
+	}
+
+	Vector<RID> textures;
+	int color_buffer_id = 0;
+	int depth_buffer_id = 1;
+	if (p_config_type == FB_CONFIG_RENDER_AND_POST_PASS && vrs_texture.is_valid() &&
+		RendererRD::TextureStorage::render_target_is_subsampled_enabled(render_buffers->get_render_target())) {
+		textures.push_back(use_msaa ? render_buffers->get_color_msaa_subsampled()
+									: render_buffers->get_color_subsampled()); // 0 - color buffer.
+		textures.push_back(use_msaa ? render_buffers->get_depth_msaa_subsampled()
+									: render_buffers->get_depth_subsampled()); // 1 - depth buffer.
+	}
+	else {
+		textures.push_back(use_msaa ? render_buffers->get_color_msaa()
+									: render_buffers->get_internal_texture()); // 0 - color buffer.
+		textures.push_back(use_msaa ? render_buffers->get_depth_msaa()
+									: render_buffers->get_depth_texture()); // 1 - depth buffer.
+	}
+	if (vrs_texture.is_valid()) {
+		textures.push_back(vrs_texture); // 2 - vrs texture.
+	}
+	if (use_msaa) {
+		color_buffer_id = textures.size();
+		textures.push_back(render_buffers->get_internal_texture()); // Color buffer for resolve.
+	}
+	if (use_msaa && p_resolve_depth) {
+		depth_buffer_id = textures.size();
+		textures.push_back(render_buffers->get_depth_texture()); // Depth buffer for resolve.
+	}
+
+	// Now define our subpasses.
+	Vector<RD::FramebufferPass> passes;
+
+	switch (p_config_type) {
+	case FB_CONFIG_RENDER_PASS: {
+		RD::FramebufferPass pass;
+		pass.color_attachments.push_back(0);
+		pass.depth_attachment = 1;
+
+		if (use_msaa) {
+			// Add color resolve.
+			pass.resolve_attachments.push_back(color_buffer_id);
+
+			if (p_resolve_depth) {
+				// Add depth resolve.
+				pass.depth_resolve_attachment = depth_buffer_id;
+			}
+		}
+		passes.push_back(pass);
+
+		return FramebufferCacheRD::get_cache_multipass(textures, passes, view_count);
+	} break;
+
+	case FB_CONFIG_RENDER_AND_POST_PASS: {
+		Size2i target_size = render_buffers->get_target_size();
+		Size2i internal_size = render_buffers->get_internal_size();
+
+		// Can't do our blit pass if resolutions don't match, this should already have been checked.
+		ERR_FAIL_COND_V(target_size != internal_size, RID());
+
+		RD::FramebufferPass pass;
+		pass.color_attachments.push_back(0);
+		pass.depth_attachment = 1;
+
+		if (use_msaa) {
+			// Add color resolve.
+			pass.resolve_attachments.push_back(color_buffer_id);
+
+			if (p_resolve_depth) {
+				// Add depth resolve.
+				pass.depth_resolve_attachment = depth_buffer_id;
+			}
+		}
+
+		passes.push_back(pass);
+
+		// Add blit to 2D pass.
+		RID render_target = render_buffers->get_render_target();
+		ERR_FAIL_COND_V(render_target.is_null(), RID());
+		RID target_buffer;
+		if (view_count > 1 ||
+			RendererRD::TextureStorage::render_target_get_msaa(render_target) == RSE::VIEWPORT_MSAA_DISABLED) {
+			target_buffer = RendererRD::TextureStorage::render_target_get_rd_texture(render_target);
+		}
+		else {
+			target_buffer = RendererRD::TextureStorage::render_target_get_rd_texture_msaa(render_target);
+			RendererRD::TextureStorage::render_target_set_msaa_needs_resolve(
+				render_target, true); // Make sure this gets resolved.
+		}
+		ERR_FAIL_COND_V(target_buffer.is_null(), RID());
+
+		int target_buffer_id = textures.size();
+		textures.push_back(target_buffer); // Target buffer.
+
+		RD::FramebufferPass blit_pass;
+		blit_pass.input_attachments.push_back(
+			color_buffer_id); // Read from our (resolved) color buffer.
+		blit_pass.color_attachments.push_back(target_buffer_id); // Write into our target buffer.
+		// This doesn't need VRS or depth.
+		passes.push_back(blit_pass);
+
+		return FramebufferCacheRD::get_cache_multipass(textures, passes, view_count);
+	} break;
+	default:
+		break;
+	};
+
+	return RID();
+}
+
+RID RenderForwardMobile::reflection_probe_create_framebuffer(RID p_color, RID p_depth)
+{
+	// Our attachments
+	Vector<RID> attachments;
+	attachments.push_back(p_color); // 0
+	attachments.push_back(p_depth); // 1
+
+	return RD::framebuffer_create(attachments);
+}
+
+void RenderForwardMobile::setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers)
+{
+	Ref<RenderBufferDataForwardMobile> rb_data;
+	rb_data.instantiate();
+
+	p_render_buffers->set_custom_data(RB_SCOPE_MOBILE, rb_data);
+}
+
+uint32_t RenderForwardMobile::get_pipeline_compilations(RSE::PipelineSource p_source)
+{
+	return SceneShaderForwardMobile::get_pipeline_compilations(p_source);
+}
+
+String RenderForwardMobile::get_name() { return "forward_mobile"; }
+
+bool RenderForwardMobile::free(RID p_rid)
+{
+	if (RendererSceneRenderRD::free(p_rid)) {
+		return true;
+	}
+	return false;
+}
+
+void RenderForwardMobile::update()
+{
+	RendererSceneRenderRD::update();
+	_update_global_pipeline_data_requirements_from_project();
+	_update_global_pipeline_data_requirements_from_light_storage();
+}
+
+RDC::DataFormat RenderForwardMobile::_render_buffers_get_preferred_color_format()
+{
+	// Using 32bit buffers enables AFBC on mobile devices which should have a definite performance
+	// improvement (MALI G710 and newer support this on 64bit RTs)
+	return RDC::DATA_FORMAT_A2B10G10R10_UNORM_PACK32;
+}
+
+bool RenderForwardMobile::_render_buffers_can_be_storage()
+{
+	// Doesn't support storage
+	return false;
+}
+
+RID RenderForwardMobile::_setup_render_pass_uniform_set(RenderListType p_render_list,
+	const RenderDataRD* p_render_data, bool p_is_multiview, RID p_radiance_texture,
+	const RendererRD::Samplers& p_samplers, bool p_use_directional_shadow_atlas,
+	uint32_t p_pass_offset)
+{
+	bool is_multiview = p_is_multiview;
+
+	Ref<RenderBufferDataForwardMobile> rb_data;
+	Ref<RenderSceneBuffersRD> rb;
+	if (p_render_data && p_render_data->render_buffers.is_valid()) {
+		rb = p_render_data->render_buffers;
+		if (rb->has_custom_data(RB_SCOPE_MOBILE)) {
+			// Our forward mobile custom data buffer will only be available when we're rendering our
+			// normal view. This will not be available when rendering reflection probes.
+			rb_data = rb->get_custom_data(RB_SCOPE_MOBILE);
+		}
+	}
+
+	// default render buffer and scene state uniform set
+	// loaded into set 1
+
+	thread_local LocalVector<RD::Uniform> uniforms;
+	uniforms.clear();
+
+	{
+		RD::Uniform u;
+		u.binding = 0;
+		u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC;
+		// Negative on purpose. We've created multiple uniform_buffers by calling
+		// prepare_for_upload() many times in a row, now we must reference those. We use 0u -
+		// p_pass_offset instead of -p_pass_offset to make MSVC warnings shut up. See the "Tricks"
+		// section of MultiUmaBuffer documentation.
+		u.append_id(data->scene_state.uniform_buffers._get(uint32_t(0u - p_pass_offset)));
+		uniforms.push_back(u);
+	}
+
+	{
+		RD::Uniform u;
+		u.binding = 1;
+		u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC;
+		if (data->scene_state.instance_buffer[p_render_list].get_size(0u) == 0u) {
+			// Any buffer will do since it's not used, so just create one.
+			// We can't use scene_shader.default_vec4_xform_buffer because it's not dynamic.
+			data->scene_state.instance_buffer[p_render_list].set_storage_size(
+				0u, INSTANCE_DATA_BUFFER_MIN_SIZE * sizeof(SceneState::InstanceData));
+			data->scene_state.instance_buffer[p_render_list].prepare_for_upload();
+		}
+		RID instance_buffer = data->scene_state.instance_buffer[p_render_list]._get(0u);
+		u.append_id(instance_buffer);
+		uniforms.push_back(u);
+	}
+
+	{
+		RID radiance_texture;
+		if (p_radiance_texture.is_valid()) {
+			radiance_texture = p_radiance_texture;
+		}
+		else {
+			radiance_texture = RendererRD::TextureStorage::texture_rd_get_default(
+				RendererSceneRenderRD::is_using_radiance_octmap_array()
+					? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK
+					: RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
+		}
+		RD::Uniform u;
+		u.binding = 2;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
+		u.append_id(radiance_texture);
+		uniforms.push_back(u);
+	}
+
+	{
+		RID ref_texture =
+			(p_render_data && p_render_data->reflection_atlas.is_valid())
+				? RendererRD::LightStorage::reflection_atlas_get_texture(p_render_data->reflection_atlas)
+				: RID();
+		RD::Uniform u;
+		u.binding = 3;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
+		if (ref_texture.is_valid()) {
+			u.append_id(ref_texture);
+		}
+		else {
+			u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
+				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK));
+		}
+		uniforms.push_back(u);
+	}
+
+	{
+		RD::Uniform u;
+		u.binding = 4;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
+		RID texture;
+		if (p_render_data && p_render_data->shadow_atlas.is_valid()) {
+			texture = RendererRD::LightStorage::shadow_atlas_get_texture(p_render_data->shadow_atlas);
+		}
+		if (!texture.is_valid()) {
+			texture = RendererRD::TextureStorage::texture_rd_get_default(
+				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_DEPTH);
+		}
+		u.append_id(texture);
+		uniforms.push_back(u);
+	}
+	{
+		RD::Uniform u;
+		u.binding = 5;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
+		if (p_use_directional_shadow_atlas &&
+			RendererRD::LightStorage::directional_shadow_get_texture().is_valid()) {
+			u.append_id(RendererRD::LightStorage::directional_shadow_get_texture());
+		}
+		else {
+			u.append_id(RendererRD::TextureStorage::texture_rd_get_default(
+				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_DEPTH));
+		}
+		uniforms.push_back(u);
+	}
+
+	/* we have limited ability to keep textures like this so we're moving this to a set we change
+	 * before drawing geometry and just pushing the needed texture in */
+	{
+		Vector<RID> textures;
+		textures.resize(data->scene_state.max_lightmaps * 2);
+
+		RID default_tex = RendererRD::TextureStorage::texture_rd_get_default(
+			RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
+		for (uint32_t i = 0; i < data->scene_state.max_lightmaps * 2; i++) {
+			uint32_t current_lightmap_index =
+				i < data->scene_state.max_lightmaps ? i : i - data->scene_state.max_lightmaps;
+
+			if (p_render_data && current_lightmap_index < p_render_data->lightmaps->size()) {
+				RID base = RendererRD::LightStorage::lightmap_instance_get_lightmap(
+					(*p_render_data->lightmaps)[current_lightmap_index]);
+				RID texture;
+
+				if (i < data->scene_state.max_lightmaps) {
+					// Lightmap
+					texture = RendererRD::LightStorage::lightmap_get_texture(base);
+				}
+				else {
+					// Shadowmask
+					texture = RendererRD::LightStorage::shadowmask_get_texture(base);
+				}
+
+				if (texture.is_valid()) {
+					RID rd_texture = RendererRD::TextureStorage::texture_get_rd_texture(texture);
+					textures.write[i] = rd_texture;
+					continue;
+				}
+			}
+
+			textures.write[i] = default_tex;
+		}
+		RD::Uniform u(RDC::UNIFORM_TYPE_TEXTURE, 6, textures);
+		uniforms.push_back(u);
+	}
+
+	/*
+	{
+		RD::Uniform u;
+		u.binding = 7;
+		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		u.ids.resize(MAX_VOXEL_GI_INSTANCESS);
+		RID default_tex =
+	texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
+		for (int i = 0; i < MAX_VOXEL_GI_INSTANCESS; i++) {
+			if (i < (int)p_voxel_gi_instances.size()) {
+				RID tex = gi.voxel_gi_instance_get_texture(p_voxel_gi_instances[i]);
+				if (!tex.is_valid()) {
+					tex = default_tex;
+				}
+				u.ids.write[i] = tex;
+			}
+			else {
+				u.ids.write[i] = default_tex;
+			}
+		}
+
+		uniforms.push_back(u);
+	}
+	*/
+
+	{
+		RD::Uniform u;
+		u.binding = 9;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
+		RID texture;
+		if (rb.is_valid() && rb->has_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH)) {
+			texture = rb->get_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH);
+		}
+		else if (is_multiview) {
+			texture = RendererRD::TextureStorage::texture_rd_get_default(
+				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_DEPTH);
+		}
+		else {
+			texture = RendererRD::TextureStorage::texture_rd_get_default(
+				RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_DEPTH);
+		}
+		u.append_id(texture);
+		uniforms.push_back(u);
+	}
+	{
+		RD::Uniform u;
+		u.binding = 10;
+		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
+		RID texture = rb_data.is_valid() ? rb->get_back_buffer_texture() : RID();
+		if (texture.is_null()) {
+			if (is_multiview) {
+				texture = RendererRD::TextureStorage::texture_rd_get_default(
+					RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_DEPTH);
+			}
+			else {
+				texture = RendererRD::TextureStorage::texture_rd_get_default(
+					RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
+			}
+		}
+		u.append_id(texture);
+		uniforms.push_back(u);
+	}
+
+	{
+		RD::Uniform u;
+		u.binding = 11;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
+		RID sampler;
+		switch (RendererSceneRenderRD::decals_get_filter()) {
+		case RSE::DECAL_FILTER_NEAREST: {
+			sampler = p_samplers.get_sampler(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::DECAL_FILTER_LINEAR: {
+			sampler = p_samplers.get_sampler(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::DECAL_FILTER_NEAREST_MIPMAPS: {
+			sampler = p_samplers.get_sampler(RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
+				RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::DECAL_FILTER_LINEAR_MIPMAPS: {
+			sampler = p_samplers.get_sampler(RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
+				RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::DECAL_FILTER_NEAREST_MIPMAPS_ANISOTROPIC: {
+			sampler = p_samplers.get_sampler(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC,
+				RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::DECAL_FILTER_LINEAR_MIPMAPS_ANISOTROPIC: {
+			sampler = p_samplers.get_sampler(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC,
+				RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		}
+
+		u.append_id(sampler);
+		uniforms.push_back(u);
+	}
+
+	{
+		RD::Uniform u;
+		u.binding = 12;
+		u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
+		RID sampler;
+		switch (RendererSceneRenderRD::light_projectors_get_filter()) {
+		case RSE::LIGHT_PROJECTOR_FILTER_NEAREST: {
+			sampler = p_samplers.get_sampler(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::LIGHT_PROJECTOR_FILTER_LINEAR: {
+			sampler = p_samplers.get_sampler(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS: {
+			sampler = p_samplers.get_sampler(RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
+				RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS: {
+			sampler = p_samplers.get_sampler(RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
+				RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS_ANISOTROPIC: {
+			sampler = p_samplers.get_sampler(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC,
+				RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		case RSE::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS_ANISOTROPIC: {
+			sampler = p_samplers.get_sampler(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC,
+				RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+		} break;
+		}
+
+		u.append_id(sampler);
+		uniforms.push_back(u);
+	}
+
+	p_samplers.append_uniforms(uniforms, 13);
+
+	return UniformSetCacheRD::get_cache_vec(
+		SceneShaderForwardMobile::get_default_shader_rd(is_multiview), RENDER_PASS_UNIFORM_SET, uniforms);
+}
+
+void RenderForwardMobile::_setup_lightmaps(const RenderDataRD* p_render_data,
+	const PagedArray<RID>& p_lightmaps, const Transform3D& p_cam_transform)
+{
+	// This probably needs to change...
+	data->scene_state.lightmaps_used = 0;
+	for (int i = 0; i < (int)p_lightmaps.size(); i++) {
+		if (i >= (int)data->scene_state.max_lightmaps) {
+			break;
+		}
+
+		RID lightmap = RendererRD::LightStorage::lightmap_instance_get_lightmap(p_lightmaps[i]);
+
+		// Transform (for directional lightmaps).
+		Basis to_lm =
+			RendererRD::LightStorage::lightmap_instance_get_transform(p_lightmaps[i]).basis.inverse() *
+			p_cam_transform.basis;
+		to_lm = to_lm.inverse().transposed(); // will transform normals
+		RendererRD::MaterialStorage::store_transform_3x3(
+			to_lm, data->scene_state.lightmaps[i].normal_xform);
+
+		// Light texture size.
+		Vector2i lightmap_size = RendererRD::LightStorage::lightmap_get_light_texture_size(lightmap);
+		data->scene_state.lightmaps[i].texture_size[0] = lightmap_size[0];
+		data->scene_state.lightmaps[i].texture_size[1] = lightmap_size[1];
+
+		// Exposure.
+		data->scene_state.lightmaps[i].exposure_normalization = 1.0;
+		data->scene_state.lightmaps[i].flags = RendererRD::LightStorage::lightmap_get_shadowmask_mode(lightmap);
+		if (p_render_data->camera_attributes.is_valid()) {
+			float baked_exposure =
+				RendererRD::LightStorage::lightmap_get_baked_exposure_normalization(lightmap);
+			float enf = RendererCameraAttributes::camera_attributes_get_exposure_normalization_factor(
+				p_render_data->camera_attributes);
+			data->scene_state.lightmaps[i].exposure_normalization = enf / baked_exposure;
+		}
+
+		data->scene_state.lightmap_ids[i] = p_lightmaps[i];
+		data->scene_state.lightmap_has_sh[i] = RendererRD::LightStorage::lightmap_uses_spherical_harmonics(lightmap);
+
+		data->scene_state.lightmaps_used++;
+	}
+}
+
+void RenderForwardMobile::_pre_opaque_render(RenderDataRD* p_render_data)
+{
+	p_render_data->shadows.clear();
+	p_render_data->directional_shadows.clear();
+
+	float lod_distance_multiplier = p_render_data->scene_data->cam_projection.get_lod_multiplier();
+	{
+		for (int i = 0; i < p_render_data->render_shadow_count; i++) {
+			RID li = p_render_data->render_shadows[i].light;
+			RID base = RendererRD::LightStorage::light_instance_get_base_light(li);
+
+			if (RendererRD::LightStorage::light_get_type(base) == RSE::LIGHT_DIRECTIONAL) {
+				p_render_data->directional_shadows.push_back(i);
+			}
+			else if (RendererRD::LightStorage::light_get_type(base) == RSE::LIGHT_OMNI &&
+					   RendererRD::LightStorage::light_omni_get_shadow_mode(base) ==
+						   RSE::LIGHT_OMNI_SHADOW_CUBE) {
+				p_render_data->cube_shadows.push_back(i);
+			}
+			else {
+				p_render_data->shadows.push_back(i);
+			}
+		}
+
+		// cube shadows are rendered in their own way
+		for (const int& index : p_render_data->cube_shadows) {
+			_render_shadow_pass(p_render_data->render_shadows[index].light,
+				p_render_data->shadow_atlas, p_render_data->render_shadows[index].pass,
+				p_render_data->render_shadows[index].instances, lod_distance_multiplier,
+				p_render_data->scene_data->screen_mesh_lod_threshold, true, true, true,
+				p_render_data->render_info, p_render_data->scene_data->cam_transform);
+		}
+
+		if (p_render_data->directional_shadows.size()) {
+			// open the pass for directional shadows
+			RendererRD::LightStorage::update_directional_shadow_atlas();
+			RD::draw_list_end();
+		}
+	}
+
+	bool render_shadows =
+		p_render_data->directional_shadows.size() || p_render_data->shadows.size();
+
+	// prepare shadow rendering
+	if (render_shadows) {
+		RENDER_TIMESTAMP("Render Shadows");
+
+		_render_shadow_begin();
+
+		// render directional shadows
+		for (uint32_t i = 0; i < p_render_data->directional_shadows.size(); i++) {
+			_render_shadow_pass(
+				p_render_data->render_shadows[p_render_data->directional_shadows[i]].light,
+				p_render_data->shadow_atlas,
+				p_render_data->render_shadows[p_render_data->directional_shadows[i]].pass,
+				p_render_data->render_shadows[p_render_data->directional_shadows[i]].instances,
+				lod_distance_multiplier, p_render_data->scene_data->screen_mesh_lod_threshold,
+				false, i == p_render_data->directional_shadows.size() - 1, false,
+				p_render_data->render_info, p_render_data->scene_data->cam_transform);
+		}
+		// render positional shadows
+		for (uint32_t i = 0; i < p_render_data->shadows.size(); i++) {
+			_render_shadow_pass(p_render_data->render_shadows[p_render_data->shadows[i]].light,
+				p_render_data->shadow_atlas,
+				p_render_data->render_shadows[p_render_data->shadows[i]].pass,
+				p_render_data->render_shadows[p_render_data->shadows[i]].instances,
+				lod_distance_multiplier, p_render_data->scene_data->screen_mesh_lod_threshold,
+				i == 0, i == p_render_data->shadows.size() - 1, true, p_render_data->render_info,
+				p_render_data->scene_data->cam_transform);
+		}
+
+		_render_shadow_process();
+
+		_render_shadow_end();
+	}
+}
+
+void RenderForwardMobile::_render_shadow_pass(RID p_light, RID p_shadow_atlas, int p_pass,
+	const PagedArray<RenderGeometryInstance*>& p_instances, float p_lod_distance_multiplier,
+	float p_screen_mesh_lod_threshold, bool p_open_pass, bool p_close_pass, bool p_clear_region,
+	RenderingServerTypes::RenderInfo* p_render_info, const Transform3D& p_main_cam_transform)
+{
+	ERR_FAIL_COND(!RendererRD::LightStorage::owns_light_instance(p_light));
+
+	RID base = RendererRD::LightStorage::light_instance_get_base_light(p_light);
+
+	Rect2i atlas_rect;
+	uint32_t atlas_size = 1;
+	RID atlas_fb;
+
+	bool using_dual_paraboloid = false;
+	bool using_dual_paraboloid_flip = false;
+	Vector2i dual_paraboloid_offset;
+	RID render_fb;
+	RID render_texture;
+	float zfar;
+
+	bool use_pancake = false;
+	bool render_cubemap = false;
+	bool finalize_cubemap = false;
+
+	bool flip_y = false;
+
+	Projection light_projection;
+	Transform3D light_transform;
+
+	if (RendererRD::LightStorage::light_get_type(base) == RSE::LIGHT_DIRECTIONAL) {
+		// set pssm stuff
+		uint64_t last_scene_shadow_pass = RendererRD::LightStorage::light_instance_get_shadow_pass(p_light);
+		if (last_scene_shadow_pass != RendererSceneRenderRD::get_scene_pass()) {
+			RendererRD::LightStorage::light_instance_set_directional_rect(
+				p_light, RendererRD::LightStorage::get_directional_shadow_rect());
+			RendererRD::LightStorage::directional_shadow_increase_current_light();
+			RendererRD::LightStorage::light_instance_set_shadow_pass(
+				p_light, RendererSceneRenderRD::get_scene_pass());
+		}
+
+		use_pancake =
+			RendererRD::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SHADOW_PANCAKE_SIZE) > 0;
+		light_projection = RendererRD::LightStorage::light_instance_get_shadow_camera(p_light, p_pass);
+		light_transform = RendererRD::LightStorage::light_instance_get_shadow_transform(p_light, p_pass);
+
+		atlas_rect = RendererRD::LightStorage::light_instance_get_directional_rect(p_light);
+
+		if (RendererRD::LightStorage::light_directional_get_shadow_mode(base) ==
+			RSE::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS) {
+			atlas_rect.size.width /= 2;
+			atlas_rect.size.height /= 2;
+
+			if (p_pass == 1) {
+				atlas_rect.position.x += atlas_rect.size.width;
+			}
+			else if (p_pass == 2) {
+				atlas_rect.position.y += atlas_rect.size.height;
+			}
+			else if (p_pass == 3) {
+				atlas_rect.position += atlas_rect.size;
+			}
+		}
+		else if (RendererRD::LightStorage::light_directional_get_shadow_mode(base) ==
+				   RSE::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS) {
+			atlas_rect.size.height /= 2;
+
+			if (p_pass == 0) {
+			}
+			else {
+				atlas_rect.position.y += atlas_rect.size.height;
+			}
+		}
+
+		float directional_shadow_size = RendererRD::LightStorage::directional_shadow_get_size();
+		Rect2 atlas_rect_norm = atlas_rect;
+		atlas_rect_norm.position /= directional_shadow_size;
+		atlas_rect_norm.size /= directional_shadow_size;
+		RendererRD::LightStorage::light_instance_set_directional_shadow_atlas_rect(
+			p_light, p_pass, atlas_rect_norm);
+
+		zfar = RendererLightStorage::light_get_param(base, RSE::LIGHT_PARAM_RANGE);
+
+		render_fb = RendererRD::LightStorage::direction_shadow_get_fb();
+		render_texture = RID();
+		flip_y = true;
+
+	}
+	else {
+		// set from shadow atlas
+
+		ERR_FAIL_COND(!RendererRD::LightStorage::owns_shadow_atlas(p_shadow_atlas));
+		ERR_FAIL_COND(!RendererRD::LightStorage::shadow_atlas_owns_light_instance(p_shadow_atlas, p_light));
+
+		RendererLightStorage::shadow_atlas_update(p_shadow_atlas);
+
+		uint32_t key = RendererRD::LightStorage::shadow_atlas_get_light_instance_key(p_shadow_atlas, p_light);
+
+		uint32_t quadrant = (key >> RendererRD::LightStorage::QUADRANT_SHIFT) & 0x3;
+		uint32_t shadow = key & RendererRD::LightStorage::SHADOW_INDEX_MASK;
+		uint32_t subdivision =
+			RendererRD::LightStorage::shadow_atlas_get_quadrant_subdivision(p_shadow_atlas, quadrant);
+
+		ERR_FAIL_INDEX((int)shadow,
+			RendererRD::LightStorage::shadow_atlas_get_quadrant_shadow_size(p_shadow_atlas, quadrant));
+
+		uint32_t shadow_atlas_size = RendererRD::LightStorage::shadow_atlas_get_size(p_shadow_atlas);
+		uint32_t quadrant_size = shadow_atlas_size >> 1;
+
+		atlas_rect.position.x = (quadrant & 1) * quadrant_size;
+		atlas_rect.position.y = (quadrant >> 1) * quadrant_size;
+
+		uint32_t shadow_size = (quadrant_size / subdivision);
+		atlas_rect.position.x += (shadow % subdivision) * shadow_size;
+		atlas_rect.position.y += (shadow / subdivision) * shadow_size;
+
+		atlas_rect.size.width = shadow_size;
+		atlas_rect.size.height = shadow_size;
+
+		zfar = RendererRD::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_RANGE);
+
+		if (RendererRD::LightStorage::light_get_type(base) == RSE::LIGHT_OMNI) {
+			bool wrap = (shadow + 1) % subdivision == 0;
+			dual_paraboloid_offset = wrap ? Vector2i(1 - subdivision, 1) : Vector2i(1, 0);
+
+			if (RendererRD::LightStorage::light_omni_get_shadow_mode(base) == RSE::LIGHT_OMNI_SHADOW_CUBE) {
+				render_texture = RendererRD::LightStorage::get_cubemap(shadow_size / 2);
+				render_fb = RendererRD::LightStorage::get_cubemap_fb(shadow_size / 2, p_pass);
+
+				light_projection = RendererRD::LightStorage::light_instance_get_shadow_camera(p_light, p_pass);
+				light_transform =
+					RendererRD::LightStorage::light_instance_get_shadow_transform(p_light, p_pass);
+				render_cubemap = true;
+				finalize_cubemap = p_pass == 5;
+				atlas_fb = RendererRD::LightStorage::shadow_atlas_get_fb(p_shadow_atlas);
+
+				atlas_size = shadow_atlas_size;
+
+				if (p_pass == 0) {
+					_render_shadow_begin();
+				}
+
+			}
+			else {
+				atlas_rect.position.x += 1;
+				atlas_rect.position.y += 1;
+				atlas_rect.size.x -= 2;
+				atlas_rect.size.y -= 2;
+
+				atlas_rect.position += p_pass * atlas_rect.size * dual_paraboloid_offset;
+
+				light_projection = RendererRD::LightStorage::light_instance_get_shadow_camera(p_light, 0);
+				light_transform = RendererRD::LightStorage::light_instance_get_shadow_transform(p_light, 0);
+
+				using_dual_paraboloid = true;
+				using_dual_paraboloid_flip = p_pass == 1;
+				render_fb = RendererRD::LightStorage::shadow_atlas_get_fb(p_shadow_atlas);
+				flip_y = true;
+			}
+
+		}
+		else if (RendererRD::LightStorage::light_get_type(base) == RSE::LIGHT_SPOT) {
+			light_projection = RendererRD::LightStorage::light_instance_get_shadow_camera(p_light, 0);
+			light_transform = RendererRD::LightStorage::light_instance_get_shadow_transform(p_light, 0);
+
+			render_fb = RendererRD::LightStorage::shadow_atlas_get_fb(p_shadow_atlas);
+
+			flip_y = true;
+		}
+		else if (RendererRD::LightStorage::light_get_type(base) == RSE::LIGHT_AREA) {
+			Vector2 area_size = RendererRD::LightStorage::light_area_get_size(base);
+			zfar = RendererRD::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_RANGE) +
+				   area_size.length() / 2.0;
+
+			light_transform = RendererRD::LightStorage::light_instance_get_shadow_transform(p_light, 0);
+			light_projection = RendererRD::LightStorage::light_instance_get_shadow_camera(p_light, 0);
+
+			render_fb = RendererRD::LightStorage::shadow_atlas_get_fb(p_shadow_atlas);
+			flip_y = true;
+			using_dual_paraboloid = true;
+		}
+	}
+
+	if (render_cubemap) {
+		// rendering to cubemap
+		_render_shadow_append(render_fb, p_instances, light_projection, light_transform, zfar, 0, 0,
+			false, false, use_pancake, p_lod_distance_multiplier, p_screen_mesh_lod_threshold,
+			Rect2(), false, true, true, true, p_render_info, p_main_cam_transform);
+		if (finalize_cubemap) {
+			_render_shadow_process();
+			_render_shadow_end();
+
+			// reblit
+			Rect2 atlas_rect_norm = atlas_rect;
+			atlas_rect_norm.position /= float(atlas_size);
+			atlas_rect_norm.size /= float(atlas_size);
+			RendererRD::CopyEffects::copy_cubemap_to_dp(render_texture, atlas_fb,
+				atlas_rect_norm, atlas_rect.size, light_projection.get_z_near(), zfar, false);
+			atlas_rect_norm.position += Vector2(dual_paraboloid_offset) * atlas_rect_norm.size;
+			RendererRD::CopyEffects::copy_cubemap_to_dp(render_texture, atlas_fb,
+				atlas_rect_norm, atlas_rect.size, light_projection.get_z_near(), zfar, true);
+
+			// restore transform so it can be properly used
+			RendererRD::LightStorage::light_instance_set_shadow_transform(p_light, Projection(),
+				RendererRD::LightStorage::light_instance_get_base_transform(p_light), zfar, 0, 0, 0);
+		}
+
+	}
+	else {
+		// render shadow
+		_render_shadow_append(render_fb, p_instances, light_projection, light_transform, zfar, 0, 0,
+			using_dual_paraboloid, using_dual_paraboloid_flip, use_pancake,
+			p_lod_distance_multiplier, p_screen_mesh_lod_threshold, atlas_rect, flip_y,
+			p_clear_region, p_open_pass, p_close_pass, p_render_info, p_main_cam_transform);
+	}
+}
+
+void RenderForwardMobile::_render_shadow_begin()
+{
+	data->scene_state.shadow_passes.clear();
+	RD::draw_command_begin_label("Shadow Setup");
+	_update_render_base_uniform_set();
+
+	data->render_list[RENDER_LIST_SECONDARY].clear();
+}
+
+void RenderForwardMobile::_render_shadow_append(RID p_framebuffer,
+	const PagedArray<RenderGeometryInstance*>& p_instances, const Projection& p_projection,
+	const Transform3D& p_transform, float p_zfar, float p_bias, float p_normal_bias, bool p_use_dp,
+	bool p_use_dp_flip, bool p_use_pancake, float p_lod_distance_multiplier,
+	float p_screen_mesh_lod_threshold, const Rect2i& p_rect, bool p_flip_y, bool p_clear_region,
+	bool p_begin, bool p_end, RenderingServerTypes::RenderInfo* p_render_info,
+	const Transform3D& p_main_cam_transform)
+{
+	SceneState::ShadowPass shadow_pass;
+
+	if (p_render_info) {
+		p_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_SHADOW]
+						   [RSE::VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME] = p_instances.size();
+		p_render_info->info[RSE::VIEWPORT_RENDER_INFO_TYPE_SHADOW]
+						   [RSE::VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME] = p_instances.size();
+	}
+
+	RenderSceneDataRD scene_data;
+	scene_data.flip_y = !p_flip_y; // Q: Why is this inverted? Do we assume flip in shadow logic?
+	scene_data.cam_projection = p_projection;
+	scene_data.cam_transform = p_transform;
+	scene_data.view_projection[0] = p_projection;
+	scene_data.z_near = 0.0;
+	scene_data.z_far = p_zfar;
+	scene_data.lod_distance_multiplier = p_lod_distance_multiplier;
+	scene_data.dual_paraboloid_side = p_use_dp_flip ? -1 : 1;
+	scene_data.opaque_prepass_threshold = 0.1;
+	scene_data.time = RendererSceneRenderRD::data->time;
+	scene_data.time_step = RendererSceneRenderRD::data->time_step;
+	scene_data.main_cam_transform = p_main_cam_transform;
+
+	RenderDataRD render_data;
+	render_data.scene_data = &scene_data;
+	render_data.instances = &p_instances;
+	render_data.render_info = p_render_info;
+
+	Size2i screen_size = RD::framebuffer_get_size(p_framebuffer);
+	Size2i viewport_size = p_rect.size;
+	if (viewport_size == Size2()) {
+		viewport_size = screen_size;
+	}
+	_setup_environment(
+		&render_data, true, screen_size, viewport_size, Color(), false, p_use_pancake);
+
+	if (RendererSceneRenderRD::get_debug_draw_mode() == RSE::VIEWPORT_DEBUG_DRAW_DISABLE_LOD) {
+		scene_data.screen_mesh_lod_threshold = 0.0;
+	}
+	else {
+		scene_data.screen_mesh_lod_threshold = p_screen_mesh_lod_threshold;
+	}
+
+	PassMode pass_mode = p_use_dp ? PASS_MODE_SHADOW_DP : PASS_MODE_SHADOW;
+
+	uint32_t render_list_from = data->render_list[RENDER_LIST_SECONDARY].elements.size();
+	_fill_render_list(RENDER_LIST_SECONDARY, &render_data, pass_mode, true);
+	uint32_t render_list_size =
+		data->render_list[RENDER_LIST_SECONDARY].elements.size() - render_list_from;
+	data->render_list[RENDER_LIST_SECONDARY].sort_by_key_range(render_list_from, render_list_size);
+	_fill_instance_data(RENDER_LIST_SECONDARY, render_list_from, render_list_size, false);
+
+	{
+		// regular forward for now
+		bool flip_cull = p_use_dp_flip;
+		if (p_flip_y) {
+			flip_cull = !flip_cull;
+		}
+
+		shadow_pass.element_from = render_list_from;
+		shadow_pass.element_count = render_list_size;
+		shadow_pass.flip_cull = flip_cull;
+		shadow_pass.pass_mode = pass_mode;
+
+		shadow_pass.rp_uniform_set = RID(); // will be filled later when instance buffer is complete
+		shadow_pass.screen_mesh_lod_threshold = scene_data.screen_mesh_lod_threshold;
+		shadow_pass.lod_distance_multiplier = scene_data.lod_distance_multiplier;
+
+		shadow_pass.framebuffer = p_framebuffer;
+		shadow_pass.clear_depth = p_begin || p_clear_region;
+		shadow_pass.rect = p_rect;
+
+		data->scene_state.shadow_passes.push_back(shadow_pass);
+	}
+}
+
+void RenderForwardMobile::_render_shadow_process()
+{
+	if (data->scene_state.instance_buffer[RENDER_LIST_SECONDARY].get_size(0u) > 0u) {
+		RD::buffer_flush(data->scene_state.instance_buffer[RENDER_LIST_SECONDARY]._get(0u));
+	}
+
+	// render shadows one after the other, so this can be done un-barriered and the driver can
+	// optimize (as well as allow us to run compute at the same time)
+
+	for (uint32_t i = 0; i < data->scene_state.shadow_passes.size(); i++) {
+		// render passes need to be configured after instance buffer is done, since they need the
+		// latest version
+		SceneState::ShadowPass& shadow_pass = data->scene_state.shadow_passes[i];
+		shadow_pass.rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_SECONDARY, nullptr,
+			false, RID(), RendererRD::MaterialStorage::samplers_rd_get_default(),
+			false, data->scene_state.shadow_passes.size() - 1u - i);
+	}
+
+	RD::draw_command_end_label();
+}
+
+void RenderForwardMobile::_render_shadow_end()
+{
+	RD::draw_command_begin_label("Shadow Render");
+
+	for (SceneState::ShadowPass& shadow_pass : data->scene_state.shadow_passes) {
+		RenderListParameters render_list_parameters(
+			data->render_list[RENDER_LIST_SECONDARY].elements.ptr() + shadow_pass.element_from,
+			data->render_list[RENDER_LIST_SECONDARY].element_info.ptr() + shadow_pass.element_from,
+			shadow_pass.element_count, shadow_pass.flip_cull, shadow_pass.pass_mode,
+			shadow_pass.rp_uniform_set, SceneShaderForwardMobile::data->default_specialization, false, Vector2(),
+			shadow_pass.lod_distance_multiplier, shadow_pass.screen_mesh_lod_threshold, 1,
+			shadow_pass.element_from);
+		_render_list_with_draw_list(&render_list_parameters, shadow_pass.framebuffer,
+			shadow_pass.clear_depth ? RD::DRAW_CLEAR_DEPTH : RD::DRAW_DEFAULT_ALL, Vector<Color>(),
+			0.0f, 0, shadow_pass.rect);
+	}
+
+	RD::draw_command_end_label();
+}
+
+void RenderForwardMobile::_render_material(const Transform3D& p_cam_transform,
+	const Projection& p_cam_projection, bool p_cam_orthogonal,
+	const PagedArray<RenderGeometryInstance*>& p_instances, RID p_framebuffer,
+	const Rect2i& p_region, float p_exposure_normalization)
+{
+	RENDER_TIMESTAMP("Setup Rendering 3D Material");
+
+	RD::draw_command_begin_label("Render 3D Material");
+
+	_update_render_base_uniform_set();
+
+	RenderSceneDataRD scene_data;
+	scene_data.cam_projection = p_cam_projection;
+	scene_data.cam_transform = p_cam_transform;
+	scene_data.view_projection[0] = p_cam_projection;
+	scene_data.dual_paraboloid_side = 0;
+	scene_data.material_uv2_mode = false;
+	scene_data.opaque_prepass_threshold = 0.0f;
+	scene_data.emissive_exposure_normalization = p_exposure_normalization;
+	scene_data.time = RendererSceneRenderRD::data->time;
+	scene_data.time_step = RendererSceneRenderRD::data->time_step;
+	scene_data.main_cam_transform = p_cam_transform;
+
+	RenderDataRD render_data;
+	render_data.scene_data = &scene_data;
+	render_data.instances = &p_instances;
+
+	Size2i screen_size = RD::framebuffer_get_size(p_framebuffer);
+	Size2i viewport_size = p_region.size;
+	if (viewport_size == Size2()) {
+		viewport_size = screen_size;
+	}
+	_setup_environment(&render_data, true, screen_size, viewport_size, Color());
+
+	PassMode pass_mode = PASS_MODE_DEPTH_MATERIAL;
+	_fill_render_list(RENDER_LIST_SECONDARY, &render_data, pass_mode);
+	data->render_list[RENDER_LIST_SECONDARY].sort_by_key();
+	_fill_instance_data(RENDER_LIST_SECONDARY);
+
+	RID rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_SECONDARY, nullptr, false,
+		RID(), RendererRD::MaterialStorage::samplers_rd_get_default());
+
+	RENDER_TIMESTAMP("Render 3D Material");
+
+	RD::draw_command_end_label();
+}
+
+void RenderForwardMobile::_render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers,
+	const Vector3i& p_from, const Vector3i& p_size, const AABB& p_bounds,
+	const PagedArray<RenderGeometryInstance*>& p_instances, const RID& p_albedo_texture,
+	const RID& p_emission_texture, const RID& p_emission_aniso_texture,
+	const RID& p_geom_facing_texture, float p_exposure_normalization)
+{
+	// we don't do SDFGI in low end..
+}
+
+void RenderForwardMobile::_render_particle_collider_heightfield(RID p_fb,
+	const Transform3D& p_cam_transform, const Projection& p_cam_projection,
+	const PagedArray<RenderGeometryInstance*>& p_instances)
+{
+	RENDER_TIMESTAMP("Setup GPUParticlesCollisionHeightField3D");
+
+	RD::draw_command_begin_label("Render Collider Heightfield");
+
+	_update_render_base_uniform_set();
+
+	RenderSceneDataRD scene_data;
+	scene_data.flip_y = true;
+	scene_data.cam_projection = p_cam_projection;
+	scene_data.cam_transform = p_cam_transform;
+	scene_data.view_projection[0] = p_cam_projection;
+	scene_data.z_near = 0.0;
+	scene_data.z_far = p_cam_projection.get_z_far();
+	scene_data.dual_paraboloid_side = 0;
+	scene_data.opaque_prepass_threshold = 0.0;
+	scene_data.time = RendererSceneRenderRD::data->time;
+	scene_data.time_step = RendererSceneRenderRD::data->time_step;
+	scene_data.main_cam_transform = p_cam_transform;
+
+	RenderDataRD render_data;
+	render_data.scene_data = &scene_data;
+	render_data.instances = &p_instances;
+
+	Size2i screen_size = RD::framebuffer_get_size(p_fb);
+	_setup_environment(&render_data, true, screen_size, screen_size, Color(), false, false);
+
+	PassMode pass_mode = PASS_MODE_SHADOW;
+
+	_fill_render_list(RENDER_LIST_SECONDARY, &render_data, pass_mode);
+	data->render_list[RENDER_LIST_SECONDARY].sort_by_key();
+	_fill_instance_data(RENDER_LIST_SECONDARY);
+
+	RID rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_SECONDARY, nullptr, false,
+		RID(), RendererRD::MaterialStorage::samplers_rd_get_default());
+
+	RENDER_TIMESTAMP("Render Collider Heightfield");
+
+	{
+		// regular forward for now
+		RenderListParameters render_list_params(data->render_list[RENDER_LIST_SECONDARY].elements.ptr(),
+			data->render_list[RENDER_LIST_SECONDARY].element_info.ptr(),
+			data->render_list[RENDER_LIST_SECONDARY].elements.size(), false, pass_mode, rp_uniform_set,
+			SceneShaderForwardMobile::data->default_specialization);
+		_render_list_with_draw_list(&render_list_params, p_fb);
+	}
+	RD::draw_command_end_label();
+}
+
+void RenderForwardMobile::base_uniforms_changed()
+{
+	if (!data->render_base_uniform_set.is_null() && RD::uniform_set_is_valid(data->render_base_uniform_set)) {
+		RD::free_rid(data->render_base_uniform_set);
+	}
+	data->render_base_uniform_set = RID();
+}
+
+void RenderForwardMobile::_update_render_base_uniform_set()
+{
+	if (data->render_base_uniform_set.is_null() || !RD::uniform_set_is_valid(data->render_base_uniform_set) ||
+		(data->lightmap_texture_array_version != RendererRD::LightStorage::lightmap_array_get_version())) {
+		if (data->render_base_uniform_set.is_valid() &&
+			RD::uniform_set_is_valid(data->render_base_uniform_set)) {
+			RD::free_rid(data->render_base_uniform_set);
+		}
+
+		data->lightmap_texture_array_version = RendererRD::LightStorage::lightmap_array_get_version();
+
+		thread_local LocalVector<RD::Uniform> uniforms;
+		uniforms.clear();
+
+		{
+			RD::Uniform u;
+			u.binding = 2;
+			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
+			u.append_id(SceneShaderForwardMobile::data->shadow_sampler);
+			u.immutable_sampler = true;
+			uniforms.push_back(u);
+		}
+
+		{
+			RD::Uniform u;
+			u.binding = 3;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.append_id(RendererRD::LightStorage::get_omni_light_buffer());
+			uniforms.push_back(u);
+		}
+		{
+			RD::Uniform u;
+			u.binding = 4;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.append_id(RendererRD::LightStorage::get_spot_light_buffer());
+			uniforms.push_back(u);
+		}
+		{
+			RD::Uniform u;
+			u.binding = 5;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.append_id(RendererRD::LightStorage::get_area_light_buffer());
+			uniforms.push_back(u);
+		}
+
+		{
+			RD::Uniform u;
+			u.binding = 6;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.append_id(RendererRD::LightStorage::get_reflection_probe_buffer());
+			uniforms.push_back(u);
+		}
+		{
+			RD::Uniform u;
+			u.binding = 7;
+			u.uniform_type = RDC::UNIFORM_TYPE_UNIFORM_BUFFER;
+			u.append_id(RendererRD::LightStorage::get_directional_light_buffer());
+			uniforms.push_back(u);
+		}
+		{
+			RD::Uniform u;
+			u.binding = 8;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.append_id(data->scene_state.lightmap_buffer);
+			uniforms.push_back(u);
+		}
+		{
+			RD::Uniform u;
+			u.binding = 9;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.append_id(data->scene_state.lightmap_capture_buffer);
+			uniforms.push_back(u);
+		}
+		{
+			RD::Uniform u;
+			u.binding = 10;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
+			RID decal_atlas =
+				RendererRD::TextureStorage::decal_atlas_get_texture();
+			u.append_id(decal_atlas);
+			uniforms.push_back(u);
+		}
+		{
+			RD::Uniform u;
+			u.binding = 11;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
+			RID decal_atlas =
+				RendererRD::TextureStorage::decal_atlas_get_texture_srgb();
+			u.append_id(decal_atlas);
+			uniforms.push_back(u);
+		}
+		{
+			RD::Uniform u;
+			u.binding = 12;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.append_id(RendererRD::TextureStorage::get_decal_buffer());
+			uniforms.push_back(u);
+		}
+
+		{
+			RD::Uniform u;
+			u.uniform_type = RDC::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.binding = 13;
+			u.append_id(RendererRD::MaterialStorage::global_shader_uniforms_get_storage_buffer());
+			uniforms.push_back(u);
+		}
+
+		{
+			RD::Uniform u;
+			u.binding = 14;
+			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER;
+			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
+				RSE::CanvasItemTextureFilter::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
+				RSE::CanvasItemTextureRepeat::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
+			uniforms.push_back(u);
+		}
+
+		{ // Lookup-table for Area Lights - Linearly transformed cosines (LTC)
+			if (data->ltc.lut1_texture.is_null() || data->ltc.lut2_texture.is_null()) {
+				Ref<Image> lut1_image;
+				int dimensions = LTC_LUT_DIMENSIONS;
+				int lut1_bytes = 4 * dimensions * dimensions;
+				size_t lut1_size = lut1_bytes * 4; // float
+
+				Vector<uint8_t> lut1_data;
+				lut1_data.resize(lut1_size);
+
+				memcpy(lut1_data.ptrw(), LTC_LUT1, lut1_size);
+				lut1_image = Image::create_from_data(
+					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut1_data);
+
+				data->ltc.lut1_texture = Renderer::texture_2d_create(lut1_image);
+
+				int lut2_bytes = 4 * dimensions * dimensions;
+				size_t lut2_size = lut2_bytes * 4;
+
+				Ref<Image> lut2_image;
+				Vector<uint8_t> lut2_data;
+				lut2_data.resize(lut2_size);
+
+				memcpy(lut2_data.ptrw(), LTC_LUT2, lut2_size);
+				lut2_image = Image::create_from_data(
+					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut2_data);
+
+				data->ltc.lut2_texture = Renderer::texture_2d_create(lut2_image);
+			}
+		}
+
+		{
+			RD::Uniform u;
+			u.binding = 15;
+			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
+			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
+			u.append_id(RendererRD::TextureStorage::texture_get_rd_texture(
+				data->ltc.lut1_texture));
+			uniforms.push_back(u);
+		}
+
+		{
+			RD::Uniform u;
+			u.binding = 16;
+			u.uniform_type = RDC::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
+			u.append_id(RendererRD::MaterialStorage::sampler_rd_get_default(
+				RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
+			u.append_id(RendererRD::TextureStorage::texture_get_rd_texture(
+				data->ltc.lut2_texture));
+			uniforms.push_back(u);
+		}
+
+		{
+			RD::Uniform u;
+			u.binding = 17;
+			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
+			RID decal_atlas =
+				RendererRD::TextureStorage::area_light_atlas_get_texture();
+			u.append_id(decal_atlas);
+			uniforms.push_back(u);
+		}
+
+		data->render_base_uniform_set = UniformSetCacheRD::get_cache_vec(
+			SceneShaderForwardMobile::data->default_shader_rd, SCENE_UNIFORM_SET, uniforms);
+	}
+}
+
+RID RenderForwardMobile::_render_buffers_get_normal_texture(
+	Ref<RenderSceneBuffersRD> p_render_buffers)
+{
+	return RID();
+}
+
+RID RenderForwardMobile::_render_buffers_get_velocity_texture(
+	Ref<RenderSceneBuffersRD> p_render_buffers)
+{
+	return RID();
+}
+
+void RenderForwardMobile::SceneState::grow_instance_buffer(
+	RenderListType p_render_list, uint32_t p_req_element_count, bool p_append)
+{
+	if (p_req_element_count > 0) {
+		if (instance_buffer[p_render_list].get_size(0u) <
+			p_req_element_count * sizeof(SceneState::InstanceData)) {
+			instance_buffer[p_render_list].uninit();
+			uint32_t new_size = Math::nearest_power_of_2_templated(
+				MAX(uint64_t(INSTANCE_DATA_BUFFER_MIN_SIZE), p_req_element_count));
+			instance_buffer[p_render_list].set_storage_size(
+				0u, new_size * sizeof(SceneState::InstanceData));
+			curr_gpu_ptr[p_render_list] = nullptr;
+		}
+
+		const bool must_remap = instance_buffer[p_render_list].prepare_for_map(p_append);
+		if (must_remap) {
+			curr_gpu_ptr[p_render_list] = nullptr;
+		}
+	}
+}
+
+void RenderForwardMobile::_fill_instance_data(
+	RenderListType p_render_list, uint32_t p_offset, int32_t p_max_elements, bool p_update_buffer)
+{
+	RenderList* rl = &data->render_list[p_render_list];
+	uint32_t element_total = p_max_elements >= 0 ? uint32_t(p_max_elements) : rl->elements.size();
+
+	rl->element_info.resize(p_offset + element_total);
+
+	uint64_t frame = RendererCompositor::get_frame_number();
+
+	data->scene_state.grow_instance_buffer(p_render_list, p_offset + element_total, p_offset != 0u);
+	if (!data->scene_state.curr_gpu_ptr[p_render_list] && element_total > 0u) {
+		// The old buffer was replaced for another larger one. We must start copying from scratch.
+		element_total += p_offset;
+		p_offset = 0u;
+		data->scene_state.curr_gpu_ptr[p_render_list] = reinterpret_cast<SceneState::InstanceData*>(
+			data->scene_state.instance_buffer[p_render_list].map_raw_for_upload(0u));
+	}
+	for (uint32_t i = 0; i < element_total; i++) {
+		GeometryInstanceSurfaceDataCache* surface = rl->elements[i + p_offset];
+		GeometryInstanceForwardMobile* inst = surface->owner;
+
+		SceneState::InstanceData instance_data;
+
+		if (inst->prev_transform_dirty && frame > inst->prev_transform_change_frame &&
+			inst->prev_transform_change_frame) {
+			inst->prev_transform = inst->transform;
+			inst->prev_transform_dirty = false;
+		}
+
+		if (inst->store_transform_cache) {
+			RendererRD::MaterialStorage::store_transform_transposed_3x4(
+				inst->transform, instance_data.transform);
+			RendererRD::MaterialStorage::store_transform_transposed_3x4(
+				inst->prev_transform, instance_data.prev_transform);
+
+#ifdef REAL_T_IS_DOUBLE
+			// Split the origin into two components, the float approximation and the missing
+			// precision. In the shader we will combine these back together to restore the lost
+			// precision.
+			RendererRD::MaterialStorage::split_double(inst->transform.origin.x,
+				&instance_data.transform[3], &instance_data.model_precision[0]);
+			RendererRD::MaterialStorage::split_double(inst->transform.origin.y,
+				&instance_data.transform[7], &instance_data.model_precision[1]);
+			RendererRD::MaterialStorage::split_double(inst->transform.origin.z,
+				&instance_data.transform[11], &instance_data.model_precision[2]);
+			RendererRD::MaterialStorage::split_double(inst->prev_transform.origin.x,
+				&instance_data.prev_transform[3], &instance_data.prev_model_precision[0]);
+			RendererRD::MaterialStorage::split_double(inst->prev_transform.origin.y,
+				&instance_data.prev_transform[7], &instance_data.prev_model_precision[1]);
+			RendererRD::MaterialStorage::split_double(inst->prev_transform.origin.z,
+				&instance_data.prev_transform[11], &instance_data.prev_model_precision[2]);
+#endif
+		}
+		else {
+			RendererRD::MaterialStorage::store_transform_transposed_3x4(
+				Transform3D(), instance_data.transform);
+			RendererRD::MaterialStorage::store_transform_transposed_3x4(
+				Transform3D(), instance_data.prev_transform);
+#ifdef REAL_T_IS_DOUBLE
+			memset(instance_data.model_precision, 0, sizeof(instance_data.model_precision));
+			memset(
+				instance_data.prev_model_precision, 0, sizeof(instance_data.prev_model_precision));
+#endif
+		}
+
+		instance_data.flags = inst->flags_cache;
+		instance_data.gi_offset = inst->gi_offset_cache;
+		instance_data.layer_mask = inst->layer_mask;
+		instance_data.instance_uniforms_ofs = uint32_t(inst->shader_uniforms_offset);
+		instance_data.set_lightmap_uv_scale(inst->lightmap_uv_scale);
+
+		AABB surface_aabb = AABB(Vector3(0.0, 0.0, 0.0), Vector3(1.0, 1.0, 1.0));
+		uint64_t format = RendererRD::MeshStorage::mesh_surface_get_format(surface->surface);
+		Vector4 uv_scale = Vector4(0.0, 0.0, 0.0, 0.0);
+
+		if (format & RSE::ARRAY_FLAG_COMPRESS_ATTRIBUTES) {
+			surface_aabb = RendererRD::MeshStorage::mesh_surface_get_aabb(surface->surface);
+			uv_scale = RendererRD::MeshStorage::mesh_surface_get_uv_scale(surface->surface);
+		}
+
+		fill_push_constant_instance_indices(&instance_data, inst);
+
+		instance_data.set_compressed_aabb(surface_aabb);
+		instance_data.set_uv_scale(uv_scale);
+
+		data->scene_state.curr_gpu_ptr[p_render_list][i + p_offset] = instance_data;
+
+		RenderElementInfo& element_info = rl->element_info[p_offset + i];
+
+		// Sets lod_index and uses_lightmap at once.
+		element_info.value = uint32_t(surface->sort.sort_key1 & 0x1FF);
+	}
+
+	if (p_update_buffer && element_total > 0u) {
+		RenderingDevice::buffer_flush(data->scene_state.instance_buffer[p_render_list]._get(0u));
+	}
+}
+
+void RenderForwardMobile::_fill_render_list(RenderListType p_render_list,
+	const RenderDataRD* p_render_data, PassMode p_pass_mode, bool p_append)
+{
+	if (p_render_list == RENDER_LIST_OPAQUE) {
+		data->scene_state.used_screen_texture = false;
+		data->scene_state.used_depth_texture = false;
+		data->scene_state.used_lightmap = false;
+	}
+	uint32_t lightmap_captures_used = 0;
+
+	Plane near_plane(-p_render_data->scene_data->cam_transform.basis.get_column(Vector3::AXIS_Z),
+		p_render_data->scene_data->cam_transform.origin);
+	near_plane.d += p_render_data->scene_data->cam_projection.get_z_near();
+	float z_max = p_render_data->scene_data->cam_projection.get_z_far() -
+				  p_render_data->scene_data->cam_projection.get_z_near();
+
+	RenderList* rl = &data->render_list[p_render_list];
+
+	// Parse any updates on our geometry, updates surface caches and such
+	_update_dirty_geometry_instances();
+
+	if (!p_append) {
+		rl->clear();
+		if (p_render_list == RENDER_LIST_OPAQUE) {
+			data->render_list[RENDER_LIST_ALPHA].clear(); // opaque fills alpha too
+		}
+	}
+
+	// fill list
+
+	for (int i = 0; i < (int)p_render_data->instances->size(); i++) {
+		GeometryInstanceForwardMobile* inst =
+			static_cast<GeometryInstanceForwardMobile*>((*p_render_data->instances)[i]);
+
+		Vector3 center = inst->transform.origin;
+		if (p_render_data->scene_data->cam_orthogonal) {
+			if (inst->use_aabb_center) {
+				center = inst->transformed_aabb.get_support(-near_plane.normal);
+			}
+			inst->depth = near_plane.distance_to(center) - inst->sorting_offset;
+		}
+		else {
+			if (inst->use_aabb_center) {
+				center = inst->transformed_aabb.position + (inst->transformed_aabb.size * 0.5);
+			}
+			inst->depth = p_render_data->scene_data->cam_transform.origin.distance_to(center) -
+						  inst->sorting_offset;
+		}
+		uint32_t depth_layer = CLAMP(int(inst->depth * 16 / z_max), 0, 15);
+
+		uint32_t flags = inst->base_flags; // fill flags if appropriate
+
+		if (inst->non_uniform_scale) {
+			flags |= INSTANCE_DATA_FLAGS_NON_UNIFORM_SCALE;
+		}
+
+		bool uses_lightmap = false;
+		// bool uses_gi = false;
+
+		if (p_render_list == RENDER_LIST_OPAQUE) {
+			if (inst->lightmap_instance.is_valid()) {
+				int32_t lightmap_cull_index = -1;
+				for (uint32_t j = 0; j < data->scene_state.lightmaps_used; j++) {
+					if (data->scene_state.lightmap_ids[j] == inst->lightmap_instance) {
+						lightmap_cull_index = j;
+						break;
+					}
+				}
+				if (lightmap_cull_index >= 0) {
+					inst->gi_offset_cache = inst->lightmap_slice_index << 16;
+					inst->gi_offset_cache |= lightmap_cull_index;
+					flags |= INSTANCE_DATA_FLAG_USE_LIGHTMAP;
+					if (data->scene_state.lightmap_has_sh[lightmap_cull_index]) {
+						flags |= INSTANCE_DATA_FLAG_USE_SH_LIGHTMAP;
+					}
+					uses_lightmap = true;
+				}
+				else {
+					inst->gi_offset_cache = 0xFFFFFFFF;
+				}
+
+			}
+			else if (inst->lightmap_sh) {
+				if (lightmap_captures_used < data->scene_state.max_lightmap_captures) {
+					const Color* src_capture = inst->lightmap_sh->sh;
+					LightmapCaptureData& lcd =
+						data->scene_state.lightmap_captures[lightmap_captures_used];
+					for (int j = 0; j < 9; j++) {
+						lcd.sh[j * 4 + 0] = src_capture[j].r;
+						lcd.sh[j * 4 + 1] = src_capture[j].g;
+						lcd.sh[j * 4 + 2] = src_capture[j].b;
+						lcd.sh[j * 4 + 3] = src_capture[j].a;
+					}
+					flags |= INSTANCE_DATA_FLAG_USE_LIGHTMAP_CAPTURE;
+					inst->gi_offset_cache = lightmap_captures_used;
+					lightmap_captures_used++;
+					uses_lightmap = true;
+				}
+			}
+		}
+		inst->flags_cache = flags;
+
+		GeometryInstanceSurfaceDataCache* surf = inst->surface_caches;
+
+		float lod_distance = 0.0;
+
+		if (p_render_data->scene_data->cam_orthogonal) {
+			lod_distance = 1.0;
+		}
+		else {
+			Vector3 aabb_min = inst->transformed_aabb.position;
+			Vector3 aabb_max = inst->transformed_aabb.position + inst->transformed_aabb.size;
+			Vector3 camera_position = p_render_data->scene_data->main_cam_transform.origin;
+			Vector3 surface_distance = Vector3(0.0, 0.0, 0.0)
+										   .max(aabb_min - camera_position)
+										   .max(camera_position - aabb_max);
+
+			lod_distance = surface_distance.length();
+		}
+
+		while (surf) {
+			surf->sort.uses_lightmap = 0;
+
+			// LOD
+
+			if (p_render_data->scene_data->screen_mesh_lod_threshold > 0.0 &&
+				RendererRD::MeshStorage::mesh_surface_has_lod(surf->surface)) {
+				uint32_t indices = 0;
+				surf->sort.lod_index = RendererRD::MeshStorage::mesh_surface_get_lod(surf->surface,
+					inst->lod_model_scale * inst->lod_bias,
+					lod_distance * p_render_data->scene_data->lod_distance_multiplier,
+					p_render_data->
+scene_data->screen_mesh_lod_threshold, indices);
+				if (p_render_data->render_info) {
+					indices = _indices_to_primitives(surf->primitive, indices);
+					if (p_render_list == RENDER_LIST_OPAQUE) { // opaque
+						p_render_data->render_info
+							->info[RSE::VIEWPORT_RENDER_INFO_TYPE_VISIBLE]
+								  [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] += indices;
+					}
+					else if (p_render_list == RENDER_LIST_SECONDARY) { // shadow
+						p_render_data->render_info
+							->info[RSE::VIEWPORT_RENDER_INFO_TYPE_SHADOW]
+								  [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] += indices;
+					}
+				}
+			}
+			else {
+				surf->sort.lod_index = 0;
+				if (p_render_data->render_info) {
+					uint32_t to_draw =
+						RendererRD::MeshStorage::mesh_surface_get_vertices_drawn_count(
+							surf->surface);
+					to_draw = _indices_to_primitives(surf->primitive, to_draw);
+					to_draw *= inst->instance_count;
+					if (p_render_list == RENDER_LIST_OPAQUE) { // opaque
+						p_render_data->render_info
+							->info[RSE::VIEWPORT_RENDER_INFO_TYPE_VISIBLE]
+								  [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] += to_draw;
+					}
+					else if (p_render_list == RENDER_LIST_SECONDARY) { // shadow
+						p_render_data->render_info
+							->info[RSE::VIEWPORT_RENDER_INFO_TYPE_SHADOW]
+								  [RSE::VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME] += to_draw;
+					}
+				}
+			}
+
+			// ADD Element
+			if (p_pass_mode == PASS_MODE_COLOR || p_pass_mode == PASS_MODE_COLOR_TRANSPARENT ||
+				p_pass_mode == PASS_MODE_MOTION_VECTORS) {
+#ifdef DEBUG_ENABLED
+				bool force_alpha = unlikely(RendererSceneRenderRD::get_debug_draw_mode() ==
+											RSE::VIEWPORT_DEBUG_DRAW_OVERDRAW);
+#else
+				bool force_alpha = false;
+#endif
+				if (!force_alpha &&
+					(surf->flags & GeometryInstanceSurfaceDataCache::FLAG_PASS_OPAQUE)) {
+					rl->add_element(surf);
+				}
+				if (force_alpha ||
+					(surf->flags & GeometryInstanceSurfaceDataCache::FLAG_PASS_ALPHA)) {
+					data->render_list[RENDER_LIST_ALPHA].add_element(surf);
+				}
+
+				if (uses_lightmap) {
+					surf->sort.uses_lightmap = 1; // This needs to become our lightmap index but
+												  // we'll do that in a separate PR.
+					data->scene_state.used_lightmap = true;
+				}
+
+				if (surf->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_SCREEN_TEXTURE) {
+					data->scene_state.used_screen_texture = true;
+				}
+				if (surf->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_DEPTH_TEXTURE) {
+					data->scene_state.used_depth_texture = true;
+				}
+				if ((surf->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_STENCIL) &&
+					!force_alpha &&
+					(surf->flags & (GeometryInstanceSurfaceDataCache::FLAG_PASS_DEPTH |
+									   GeometryInstanceSurfaceDataCache::FLAG_PASS_OPAQUE))) {
+					data->scene_state.used_opaque_stencil = true;
+				}
+
+			}
+			else if (p_pass_mode == PASS_MODE_SHADOW || p_pass_mode == PASS_MODE_SHADOW_DP) {
+				if (surf->flags & GeometryInstanceSurfaceDataCache::FLAG_PASS_SHADOW) {
+					rl->add_element(surf);
+				}
+			}
+			else if (p_pass_mode == PASS_MODE_DEPTH_MATERIAL) {
+				if (surf->flags & (GeometryInstanceSurfaceDataCache::FLAG_PASS_DEPTH |
+									  GeometryInstanceSurfaceDataCache::FLAG_PASS_OPAQUE |
+									  GeometryInstanceSurfaceDataCache::FLAG_PASS_ALPHA)) {
+					rl->add_element(surf);
+				}
+			}
+			else {
+				if (surf->flags & (GeometryInstanceSurfaceDataCache::FLAG_PASS_DEPTH |
+									  GeometryInstanceSurfaceDataCache::FLAG_PASS_OPAQUE)) {
+					rl->add_element(surf);
+				}
+			}
+
+			surf->sort.depth_layer = depth_layer;
+
+			surf = surf->next;
+		}
+	}
+}
+
+void RenderForwardMobile::_setup_environment(const RenderDataRD* p_render_data, bool p_no_fog,
+	const Size2i& p_screen_size, const Size2& p_viewport_size, const Color& p_default_bg_color,
+	bool p_opaque_render_buffers, bool p_pancake_shadows)
+{
+	RID env = RendererSceneRender::is_environment(p_render_data->environment)
+				  ? p_render_data->environment
+				  : RID();
+	RID reflection_probe_instance =
+		p_render_data->reflection_probe.is_valid()
+			? RendererRD::LightStorage::reflection_probe_instance_get_probe(
+				  p_render_data->reflection_probe)
+			: RID();
+
+	// May do this earlier in RenderSceneRenderRD::render_scene
+	if (data->scene_state.uniform_buffers.get_size(0u) == 0u) {
+		data->scene_state.uniform_buffers.set_uniform_size(
+			0u, p_render_data->scene_data->get_uniform_buffer_size_bytes());
+	}
+
+	float luminance_multiplier = p_render_data->render_buffers.is_valid()
+									 ? p_render_data->render_buffers->get_luminance_multiplier()
+									 : 1.0;
+
+	// Start a new setup.
+	data->scene_state.uniform_buffers.prepare_for_upload();
+	p_render_data->scene_data->update_ubo(data->scene_state.uniform_buffers.get_for_upload(0u),
+		RendererSceneRenderRD::get_debug_draw_mode(), env, reflection_probe_instance,
+		p_render_data->camera_attributes, p_pancake_shadows, p_screen_size, p_viewport_size,
+		p_default_bg_color, luminance_multiplier, p_opaque_render_buffers, false);
+}
+
+RenderGeometryInstance* RenderForwardMobile::geometry_instance_create(RID p_base)
+{
+	RSE::InstanceType type = RendererUtilities::get_base_type(p_base);
+	ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
+
+	GeometryInstanceForwardMobile* ginstance = data->geometry_instance_alloc.alloc();
+	ginstance->data = memnew(GeometryInstanceForwardMobile::Data);
+
+	ginstance->data->base = p_base;
+	ginstance->data->base_type = type;
+	ginstance->data->dependency_tracker.userdata = ginstance;
+	ginstance->data->dependency_tracker.changed_callback = _geometry_instance_dependency_changed;
+	ginstance->data->dependency_tracker.deleted_callback = _geometry_instance_dependency_deleted;
+
+	ginstance->_mark_dirty();
+
+	return ginstance;
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::GeometryInstanceForwardMobile::
+	set_transform(
+		const Transform3D& p_transform, const AABB& p_aabb, const AABB& p_transformed_aabb)
+{
+	uint64_t frame = RendererCompositor::get_frame_number();
+	if (frame != prev_transform_change_frame) {
+		prev_transform = transform;
+		prev_transform_change_frame = frame;
+		prev_transform_dirty = true;
+	}
+
+	RenderGeometryInstance::set_transform(p_transform, p_aabb, p_transformed_aabb);
+}
+
+void RenderForwardMobile::GeometryInstanceForwardMobile::set_use_lightmap(
+	RID p_lightmap_instance, const Rect2& p_lightmap_uv_scale, int p_lightmap_slice_index)
+{
+	lightmap_instance = p_lightmap_instance;
+	lightmap_uv_scale = p_lightmap_uv_scale;
+	lightmap_slice_index = p_lightmap_slice_index;
+
+	_mark_dirty();
+}
+
+void RenderForwardMobile::GeometryInstanceForwardMobile::set_lightmap_capture(const Color* p_sh9)
+{
+	if (p_sh9) {
+		if (lightmap_sh == nullptr) {
+			lightmap_sh =
+				RenderForwardMobile::data->geometry_instance_lightmap_sh.alloc();
+		}
+
+		memcpy(lightmap_sh->sh, p_sh9, sizeof(Color) * 9);
+	}
+	else {
+		if (lightmap_sh != nullptr) {
+			RenderForwardMobile::data->geometry_instance_lightmap_sh.free(lightmap_sh);
+			lightmap_sh = nullptr;
+		}
+	}
+	_mark_dirty();
+}
+
+void RenderForwardMobile::geometry_instance_free(RenderGeometryInstance* p_geometry_instance)
+{
+	GeometryInstanceForwardMobile* ginstance =
+		static_cast<GeometryInstanceForwardMobile*>(p_geometry_instance);
+	ERR_FAIL_NULL(ginstance);
+	if (ginstance->lightmap_sh != nullptr) {
+		data->geometry_instance_lightmap_sh.free(ginstance->lightmap_sh);
+	}
+	GeometryInstanceSurfaceDataCache* surf = ginstance->surface_caches;
+	while (surf) {
+		GeometryInstanceSurfaceDataCache* next = surf->next;
+		data->geometry_instance_surface_alloc.free(surf);
+		surf = next;
+	}
+	memdelete(ginstance->data);
+	data->geometry_instance_alloc.free(ginstance);
+}
+
+uint32_t RenderForwardMobile::geometry_instance_get_pair_mask()
+{
+	return ((1 << RSE::INSTANCE_LIGHT) + (1 << RSE::INSTANCE_REFLECTION_PROBE) +
+			(1 << RSE::INSTANCE_DECAL));
+}
+
+uint32_t RenderForwardMobile::get_max_lights_total()
+{
+	return (uint32_t)RenderForwardMobile::get_max_elements();
+}
+
+uint32_t RenderForwardMobile::get_max_lights_per_mesh() { return (uint32_t)MAX_RDL_CULL; }
+
+void RenderForwardMobile::GeometryInstanceForwardMobile::clear_light_instances()
+{
+	omni_light_count = 0;
+	spot_light_count = 0;
+	area_light_count = 0;
+}
+
+void RenderForwardMobile::GeometryInstanceForwardMobile::pair_light_instance(
+	const RID p_light_instance, RSE::LightType light_type, uint32_t placement_idx)
+{
+	if (placement_idx < (uint32_t)MAX_RDL_CULL) {
+		RendererRD::ForwardID light_id =
+			RendererRD::LightStorage::light_instance_get_forward_id(
+				p_light_instance);
+		switch (light_type) {
+		case RSE::LIGHT_OMNI: {
+			omni_lights[placement_idx] = light_id;
+			if (placement_idx >= omni_light_count) {
+				omni_light_count = placement_idx + 1;
+			}
+		} break;
+		case RSE::LIGHT_SPOT: {
+			spot_lights[placement_idx] = light_id;
+			if (placement_idx >= spot_light_count) {
+				spot_light_count = placement_idx + 1;
+			}
+		} break;
+		case RSE::LIGHT_AREA: {
+			area_lights[placement_idx] = light_id;
+			if (placement_idx >= area_light_count) {
+				area_light_count = placement_idx + 1;
+			}
+		} break;
+		default:
+			break;
+		}
+	}
+}
+
+void RenderForwardMobile::GeometryInstanceForwardMobile::pair_reflection_probe_instances(
+	const RID* p_reflection_probe_instances, uint32_t p_reflection_probe_instance_count)
+{
+	reflection_probe_count = p_reflection_probe_instance_count < (uint32_t)MAX_RDL_CULL
+								 ? p_reflection_probe_instance_count
+								 : (uint32_t)MAX_RDL_CULL;
+	for (uint32_t i = 0; i < reflection_probe_count; i++) {
+		reflection_probes[i] =
+			RendererRD::LightStorage::reflection_probe_instance_get_forward_id(
+				p_reflection_probe_instances[i]);
+	}
+}
+
+void RenderForwardMobile::GeometryInstanceForwardMobile::pair_decal_instances(
+	const RID* p_decal_instances, uint32_t p_decal_instance_count)
+{
+	decals_count = p_decal_instance_count < (uint32_t)MAX_RDL_CULL ? p_decal_instance_count
+																   : (uint32_t)MAX_RDL_CULL;
+	for (uint32_t i = 0; i < decals_count; i++) {
+		decals[i] = RendererRD::TextureStorage::decal_instance_get_forward_id(
+			p_decal_instances[i]);
+	}
+}
+
+void RenderForwardMobile::GeometryInstanceForwardMobile::set_softshadow_projector_pairing(
+	bool p_softshadow, bool p_projector)
+{
+	use_projector = p_projector;
+	use_soft_shadow = p_softshadow;
+}
+
+void RenderForwardMobile::GeometryInstanceForwardMobile::_mark_dirty()
+{
+	if (dirty_list_element.in_list()) {
+		return;
+	}
+
+	// clear surface caches
+	GeometryInstanceSurfaceDataCache* surf = surface_caches;
+
+	while (surf) {
+		GeometryInstanceSurfaceDataCache* next = surf->next;
+		RenderForwardMobile::data->geometry_instance_surface_alloc.free(surf);
+		surf = next;
+	}
+
+	surface_caches = nullptr;
+
+	RenderForwardMobile::data->geometry_instance_dirty_list.add(&dirty_list_element);
+}
+
+void RenderForwardMobile::_update_global_pipeline_data_requirements_from_light_storage()
+{
+	data->global_pipeline_data_required.use_shadow_cubemaps = RendererRD::LightStorage::get_shadow_cubemaps_used();
+	data->global_pipeline_data_required.use_shadow_dual_paraboloid =
+		RendererRD::LightStorage::get_shadow_dual_paraboloid_used();
+}
+
+void RenderForwardMobile::_geometry_instance_add_surface_with_material(
+	GeometryInstanceForwardMobile* ginstance, uint32_t p_surface,
+	SceneShaderForwardMobile::MaterialData* p_material, uint32_t p_material_id,
+	uint32_t p_shader_id, RID p_mesh)
+{
+	uint32_t flags = 0;
+
+	if (p_material->shader_data->uses_sss) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SUBSURFACE_SCATTERING;
+	}
+
+	if (p_material->shader_data->uses_screen_texture) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SCREEN_TEXTURE;
+		data->global_surface_data.screen_texture_used = true;
+	}
+
+	if (p_material->shader_data->uses_depth_texture) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_DEPTH_TEXTURE;
+		data->global_surface_data.depth_texture_used = true;
+	}
+
+	if (p_material->shader_data->uses_normal_texture) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_NORMAL_TEXTURE;
+	}
+
+	if (ginstance->data->cast_double_sided_shadows) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_DOUBLE_SIDED_SHADOWS;
+	}
+
+	if (p_material->shader_data->stencil_enabled) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_STENCIL;
+	}
+
+	if (p_material->shader_data->uses_alpha_pass()) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_ALPHA;
+		if (p_material->shader_data->uses_depth_in_alpha_pass()) {
+			flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_DEPTH;
+			flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_SHADOW;
+		}
+	}
+	else {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_OPAQUE;
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_DEPTH;
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_SHADOW;
+	}
+
+	if (p_material->shader_data->uses_particle_trails) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_PARTICLE_TRAILS;
+	}
+
+	if (p_material->shader_data->stencil_enabled) {
+		if (p_material->shader_data->stencil_flags &
+			SceneShaderForwardMobile::ShaderData::STENCIL_FLAG_READ) {
+			// Stencil materials which read from the stencil buffer must be in the alpha pass.
+			// This is critical to preserve compatibility once we'll have the compositor.
+			if (!(flags & GeometryInstanceSurfaceDataCache::FLAG_PASS_ALPHA)) {
+				String shader_path = p_material->shader_data->path.is_empty()
+										 ? ""
+										 : "(" + p_material->shader_data->path + ")";
+				ERR_PRINT_ED(vformat("Attempting to use a shader %s that reads stencil but is not "
+									 "in the alpha queue. Ensure the material uses alpha blending "
+									 "or has depth_draw disabled or depth_test disabled.",
+					shader_path));
+			}
+		}
+	}
+
+	SceneShaderForwardMobile::MaterialData* material_shadow = nullptr;
+	void* surface_shadow = nullptr;
+	if (p_material->shader_data->uses_shared_shadow_material()) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SHARED_SHADOW_MATERIAL;
+		material_shadow = static_cast<SceneShaderForwardMobile::MaterialData*>(
+			RendererRD::MaterialStorage::material_get_data(
+				SceneShaderForwardMobile::data->default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+
+		RID shadow_mesh = RendererRD::MeshStorage::mesh_get_shadow_mesh(p_mesh);
+
+		if (shadow_mesh.is_valid()) {
+			surface_shadow = RendererRD::MeshStorage::mesh_get_surface(shadow_mesh, p_surface);
+		}
+
+	}
+	else {
+		material_shadow = p_material;
+	}
+
+	GeometryInstanceSurfaceDataCache* sdcache = data->geometry_instance_surface_alloc.alloc();
+
+	sdcache->flags = flags;
+
+	sdcache->shader = p_material->shader_data;
+	sdcache->material = p_material;
+	sdcache->material_uniform_set = p_material->uniform_set;
+	sdcache->surface = RendererRD::MeshStorage::mesh_get_surface(p_mesh, p_surface);
+	sdcache->primitive = RendererRD::MeshStorage::mesh_surface_get_primitive(sdcache->surface);
+	sdcache->surface_index = p_surface;
+
+	if (ginstance->data->dirty_dependencies) {
+		RendererUtilities::base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
+	}
+
+	// shadow
+	sdcache->shader_shadow = material_shadow->shader_data;
+	sdcache->material_uniform_set_shadow = material_shadow->uniform_set;
+
+	sdcache->surface_shadow = surface_shadow ? surface_shadow : sdcache->surface;
+
+	sdcache->owner = ginstance;
+
+	sdcache->next = ginstance->surface_caches;
+	ginstance->surface_caches = sdcache;
+
+	// sortkey
+
+	sdcache->sort.sort_key1 = 0;
+	sdcache->sort.sort_key2 = 0;
+
+	sdcache->sort.surface_index = p_surface;
+	sdcache->sort.material_id_hi = (p_material_id & 0xFF000000) >> 24;
+	sdcache->sort.material_id_lo = (p_material_id & 0x00FFFFFF);
+	sdcache->sort.shader_id = p_shader_id;
+	sdcache->sort.geometry_id = p_mesh.get_local_index();
+	sdcache->sort.priority = p_material->priority;
+
+	uint64_t format = RendererRD::MeshStorage::mesh_surface_get_format(sdcache->surface);
+	if (p_material->shader_data->uses_tangent && !p_material->shader_data->writes_tangent &&
+		!(format & RSE::ARRAY_FORMAT_TANGENT)) {
+		String shader_path = p_material->shader_data->path.is_empty()
+								 ? ""
+								 : "(" + p_material->shader_data->path + ")";
+		String mesh_path = RendererRD::MeshStorage::mesh_get_path(p_mesh).is_empty()
+							   ? ""
+							   : "(" + RendererRD::MeshStorage::mesh_get_path(p_mesh) + ")";
+		WARN_PRINT_ED(vformat(
+			"Attempting to use a shader %s that requires tangents with a mesh %s that doesn't "
+			"contain tangents. Ensure that meshes are imported with the 'ensure_tangents' option. "
+			"If creating your own meshes, add an `ARRAY_TANGENT` array (when using ArrayMesh) or "
+			"call `generate_tangents()` (when using SurfaceTool).",
+			shader_path, mesh_path));
+	}
+
+#if PRELOAD_PIPELINES_ON_SURFACE_CACHE_CONSTRUCTION
+	if (!sdcache->compilation_dirty_element.in_list()) {
+		data->geometry_surface_compilation_dirty_list.add(&sdcache->compilation_dirty_element);
+	}
+
+	if (!sdcache->compilation_all_element.in_list()) {
+		data->geometry_surface_compilation_all_list.add(&sdcache->compilation_all_element);
+	}
+#endif
+}
+
+void RenderForwardMobile::_geometry_instance_add_surface_with_material_chain(
+	GeometryInstanceForwardMobile* ginstance, uint32_t p_surface,
+	SceneShaderForwardMobile::MaterialData* p_material, RID p_mat_src, RID p_mesh)
+{
+	SceneShaderForwardMobile::MaterialData* material = p_material;
+
+	_geometry_instance_add_surface_with_material(ginstance, p_surface, material,
+		p_mat_src.get_local_index(), RendererRD::MaterialStorage::material_get_shader_id(p_mat_src), p_mesh);
+
+	while (material->next_pass.is_valid()) {
+		RID next_pass = material->next_pass;
+		material = static_cast<SceneShaderForwardMobile::MaterialData*>(
+			RendererRD::MaterialStorage::material_get_data(
+				next_pass, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		if (!material || !material->shader_data->is_valid()) {
+			break;
+		}
+		if (ginstance->data->dirty_dependencies) {
+			RendererRD::MaterialStorage::material_update_dependency(
+				next_pass, &ginstance->data->dependency_tracker);
+		}
+		_geometry_instance_add_surface_with_material(ginstance, p_surface, material,
+			next_pass.get_local_index(), RendererRD::MaterialStorage::material_get_shader_id(next_pass),
+			p_mesh);
+	}
+}
+
+void RenderForwardMobile::_geometry_instance_add_surface(
+	GeometryInstanceForwardMobile* ginstance, uint32_t p_surface, RID p_material, RID p_mesh)
+{
+	RID m_src;
+
+	m_src = ginstance->data->material_override.is_valid() ? ginstance->data->material_override
+														  : p_material;
+
+	SceneShaderForwardMobile::MaterialData* material = nullptr;
+
+	if (m_src.is_valid()) {
+		material = static_cast<SceneShaderForwardMobile::MaterialData*>(
+			RendererRD::MaterialStorage::material_get_data(
+				m_src, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		if (!material || !material->shader_data->is_valid()) {
+			material = nullptr;
+		}
+	}
+
+	if (material) {
+		if (ginstance->data->dirty_dependencies) {
+			RendererRD::MaterialStorage::material_update_dependency(
+				m_src, &ginstance->data->dependency_tracker);
+		}
+	}
+	else {
+		material = static_cast<SceneShaderForwardMobile::MaterialData*>(
+			RendererRD::MaterialStorage::material_get_data(
+				SceneShaderForwardMobile::data->default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		m_src = SceneShaderForwardMobile::data->default_material;
+	}
+
+	ERR_FAIL_NULL(material);
+
+	_geometry_instance_add_surface_with_material_chain(
+		ginstance, p_surface, material, m_src, p_mesh);
+
+	if (ginstance->data->material_overlay.is_valid()) {
+		m_src = ginstance->data->material_overlay;
+
+		material = static_cast<SceneShaderForwardMobile::MaterialData*>(
+			RendererRD::MaterialStorage::material_get_data(
+				m_src, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		if (material && material->shader_data->is_valid()) {
+			if (ginstance->data->dirty_dependencies) {
+				RendererRD::MaterialStorage::material_update_dependency(
+					m_src, &ginstance->data->dependency_tracker);
+			}
+
+			_geometry_instance_add_surface_with_material_chain(
+				ginstance, p_surface, material, m_src, p_mesh);
+		}
+	}
+}
+
+void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance* p_geometry_instance)
+{
+	GeometryInstanceForwardMobile* ginstance =
+		static_cast<GeometryInstanceForwardMobile*>(p_geometry_instance);
+
+	if (ginstance->data->dirty_dependencies) {
+		ginstance->data->dependency_tracker.update_begin();
+	}
+
+	// add geometry for drawing
+	switch (ginstance->data->base_type) {
+	case RSE::INSTANCE_MESH: {
+		const RID* materials = nullptr;
+		uint32_t surface_count;
+		RID mesh = ginstance->data->base;
+
+		materials =
+			RendererRD::MeshStorage::mesh_get_surface_count_and_materials(mesh, surface_count);
+		if (materials) {
+			// if no materials, no surfaces.
+			const RID* inst_materials = ginstance->data->surface_materials.ptr();
+			uint32_t surf_mat_count = ginstance->data->surface_materials.size();
+
+			for (uint32_t j = 0; j < surface_count; j++) {
+				RID material = (j < surf_mat_count && inst_materials[j].is_valid())
+								   ? inst_materials[j]
+								   : materials[j];
+				_geometry_instance_add_surface(ginstance, j, material, mesh);
+			}
+		}
+
+		ginstance->instance_count = 1;
+
+	} break;
+
+	case RSE::INSTANCE_MULTIMESH: {
+		RID mesh = RendererRD::MeshStorage::_multimesh_get_mesh(ginstance->data->base);
+		if (mesh.is_valid()) {
+			const RID* materials = nullptr;
+			uint32_t surface_count;
+
+			materials =
+				RendererRD::MeshStorage::mesh_get_surface_count_and_materials(mesh, surface_count);
+			if (materials) {
+				for (uint32_t j = 0; j < surface_count; j++) {
+					_geometry_instance_add_surface(ginstance, j, materials[j], mesh);
+				}
+			}
+
+			ginstance->instance_count =
+				RendererRD::MeshStorage::multimesh_get_instances_to_draw(ginstance->data->base);
+		}
+
+	} break;
+#if 0
+		case RSE::INSTANCE_IMMEDIATE: {
+			RasterizerStorageGLES3::Immediate *immediate = storage->immediate_owner.get_or_null(inst->base);
+			ERR_CONTINUE(!immediate);
+
+			_add_geometry(immediate, inst, nullptr, -1, p_depth_pass, p_shadow_pass);
+
+		} break;
+#endif
+	case RSE::INSTANCE_PARTICLES: {
+		int draw_passes = RendererRD::ParticlesStorage::particles_get_draw_passes(ginstance->data->base);
+
+		for (int j = 0; j < draw_passes; j++) {
+			RID mesh = RendererRD::ParticlesStorage::particles_get_draw_pass_mesh(ginstance->data->base, j);
+			if (!mesh.is_valid()) {
+				continue;
+			}
+
+			const RID* materials = nullptr;
+			uint32_t surface_count;
+
+			materials =
+				RendererRD::MeshStorage::mesh_get_surface_count_and_materials(mesh, surface_count);
+			if (materials) {
+				for (uint32_t k = 0; k < surface_count; k++) {
+					_geometry_instance_add_surface(ginstance, k, materials[k], mesh);
+				}
+			}
+		}
+
+		ginstance->instance_count =
+			RendererRD::ParticlesStorage::particles_get_amount(ginstance->data->base, ginstance->trail_steps);
+
+	} break;
+
+	default: {
+	}
+	}
+
+	// Fill push constant
+
+	bool store_transform = true;
+	ginstance->base_flags = 0;
+
+	if (ginstance->data->base_type == RSE::INSTANCE_MULTIMESH) {
+		ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH;
+
+		if (RendererRD::MeshStorage::multimesh_get_transform_format(ginstance->data->base) ==
+			RSE::MULTIMESH_TRANSFORM_2D) {
+			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_FORMAT_2D;
+		}
+		if (RendererRD::MeshStorage::multimesh_uses_colors(ginstance->data->base)) {
+			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_COLOR;
+		}
+		if (RendererRD::MeshStorage::multimesh_uses_custom_data(ginstance->data->base)) {
+			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_CUSTOM_DATA;
+		}
+		if (RendererRD::MeshStorage::multimesh_uses_indirect(ginstance->data->base)) {
+			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_INDIRECT;
+		}
+
+		ginstance->transforms_uniform_set = RendererRD::MeshStorage::multimesh_get_3d_uniform_set(
+			ginstance->data->base, SceneShaderForwardMobile::data->default_shader_rd, TRANSFORMS_UNIFORM_SET);
+
+	}
+	else if (ginstance->data->base_type == RSE::INSTANCE_PARTICLES) {
+		ginstance->base_flags |= INSTANCE_DATA_FLAG_PARTICLES;
+		ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH;
+		if (false) { // 2D particles
+			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_FORMAT_2D;
+		}
+
+		ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_COLOR;
+		ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_CUSTOM_DATA;
+
+		// for particles, stride is the trail size
+		ginstance->base_flags |=
+			(ginstance->trail_steps << INSTANCE_DATA_FLAGS_PARTICLE_TRAIL_SHIFT);
+
+		if (!RendererRD::ParticlesStorage::particles_is_using_local_coords(ginstance->data->base)) {
+			store_transform = false;
+		}
+		ginstance->transforms_uniform_set =
+			RendererRD::ParticlesStorage::particles_get_instance_buffer_uniform_set(
+				ginstance->data->base, SceneShaderForwardMobile::data->default_shader_rd, TRANSFORMS_UNIFORM_SET);
+
+		if (RendererRD::ParticlesStorage::particles_get_frame_counter(ginstance->data->base) == 0) {
+			// Particles haven't been cleared or updated, update once now to ensure they are ready
+			// to render.
+			RendererRD::ParticlesStorage::update_particles();
+		}
+
+		if (ginstance->data->dirty_dependencies) {
+			RendererRD::ParticlesStorage::particles_update_dependency(
+				ginstance->data->base, &ginstance->data->dependency_tracker);
+		}
+	}
+	else if (ginstance->data->base_type == RSE::INSTANCE_MESH) {
+		if (RendererRD::MeshStorage::skeleton_is_valid(ginstance->data->skeleton)) {
+			ginstance->transforms_uniform_set =
+				RendererRD::MeshStorage::skeleton_get_3d_uniform_set(ginstance->data->skeleton,
+					SceneShaderForwardMobile::data->default_shader_rd, TRANSFORMS_UNIFORM_SET);
+			if (ginstance->data->dirty_dependencies) {
+				RendererRD::MeshStorage::skeleton_update_dependency(
+					ginstance->data->skeleton, &ginstance->data->dependency_tracker);
+			}
+		}
+		else {
+			ginstance->transforms_uniform_set = RID();
+		}
+	}
+
+	ginstance->store_transform_cache = store_transform;
+
+	if (ginstance->data->dirty_dependencies) {
+		ginstance->data->dependency_tracker.update_end();
+		ginstance->data->dirty_dependencies = false;
+	}
+
+	ginstance->dirty_list_element.remove_from_list();
+}
+
+static RD::FramebufferFormatID _get_color_framebuffer_format_for_pipeline_mobile(
+	RDC::DataFormat p_color_format, bool p_can_be_storage, RDC::TextureSamples p_samples,
+	RDC::TextureSamples p_target_samples, bool p_vrs, bool p_post_pass, bool p_hdr,
+	uint32_t p_view_count)
+{
+	const bool multisampling = p_samples > RDC::TEXTURE_SAMPLES_1;
+	RD::AttachmentFormat attachment;
+
+	RD::AttachmentFormat unused_attachment;
+	unused_attachment.usage_flags = RD::AttachmentFormat::UNUSED_ATTACHMENT;
+
+	thread_local Vector<RD::AttachmentFormat> attachments;
+	attachments.clear();
+
+	// Color attachment.
+	attachment.samples = p_samples;
+	attachment.format = p_color_format;
+	attachment.usage_flags =
+		RenderSceneBuffersRD::get_color_usage_bits(false, multisampling, p_can_be_storage);
+	attachments.push_back(attachment);
+
+	// Depth attachment.
+	attachment.samples = p_samples;
+	attachment.format =
+		RenderSceneBuffersRD::get_depth_format(false, multisampling, p_can_be_storage);
+	attachment.usage_flags =
+		RenderSceneBuffersRD::get_depth_usage_bits(false, multisampling, p_can_be_storage);
+	attachments.push_back(attachment);
+
+	if (p_vrs) {
+		// VRS attachment.
+		attachment.samples = RDC::TEXTURE_SAMPLES_1;
+		attachment.format = RenderSceneBuffersRD::get_vrs_format();
+		attachment.usage_flags = RenderSceneBuffersRD::get_vrs_usage_bits();
+		attachments.push_back(attachment);
+	}
+
+	if (multisampling) {
+		// Resolve attachment.
+		attachment.samples = RDC::TEXTURE_SAMPLES_1;
+		attachment.format = p_color_format;
+		attachment.usage_flags =
+			RenderSceneBuffersRD::get_color_usage_bits(true, false, p_can_be_storage);
+		attachments.push_back(attachment);
+	}
+
+	RD::FramebufferPass pass;
+	thread_local Vector<RD::FramebufferPass> passes;
+	passes.clear();
+	pass.color_attachments.clear();
+	pass.color_attachments.push_back(0);
+	pass.depth_attachment = 1;
+
+	if (multisampling) {
+		pass.resolve_attachments.push_back(attachments.size() - 1);
+	}
+
+	passes.push_back(pass);
+
+	if (p_post_pass) {
+		attachment.format =
+			RendererRD::TextureStorage::render_target_get_color_format(p_hdr, false);
+
+		if (p_view_count > 1 || p_target_samples == RDC::TEXTURE_SAMPLES_1) {
+			attachment.samples = RDC::TEXTURE_SAMPLES_1;
+			attachment.usage_flags =
+				RendererRD::TextureStorage::render_target_get_color_usage_bits(false);
+		}
+		else {
+			attachment.samples = p_target_samples;
+			attachment.usage_flags =
+				RendererRD::TextureStorage::render_target_get_color_usage_bits(true);
+		}
+
+		attachments.push_back(attachment);
+
+		RD::FramebufferPass blit_pass;
+		blit_pass.input_attachments.push_back(multisampling ? (attachments.size() - 2) : 0);
+		blit_pass.color_attachments.push_back(attachments.size() - 1);
+		passes.push_back(blit_pass);
+	}
+
+	int32_t vrs_attachment = p_vrs ? 2 : -1;
+	return RD::framebuffer_format_create_multipass(
+		attachments, passes, p_view_count, vrs_attachment);
+}
+
+static RD::FramebufferFormatID _get_reflection_probe_color_framebuffer_format_for_pipeline_mobile(
+	bool p_storage)
+{
+	RD::AttachmentFormat attachment;
+	thread_local Vector<RD::AttachmentFormat> attachments;
+	attachments.clear();
+
+	attachment.format = RendererRD::LightStorage::get_reflection_probe_color_format();
+	attachment.usage_flags =
+		RendererRD::LightStorage::get_reflection_probe_color_usage_bits(p_storage);
+	attachments.push_back(attachment);
+
+	attachment.format = RendererRD::LightStorage::get_reflection_probe_depth_format();
+	attachment.usage_flags = RendererRD::LightStorage::get_reflection_probe_depth_usage_bits();
+	attachments.push_back(attachment);
+
+	return RD::framebuffer_format_create(attachments);
+}
+
+static RD::FramebufferFormatID _get_shadow_cubemap_framebuffer_format_for_pipeline_mobile()
+{
+	thread_local LocalVector<RD::AttachmentFormat> attachments;
+	attachments.clear();
+
+	RD::AttachmentFormat attachment;
+	attachment.format = RendererRD::LightStorage::get_cubemap_depth_format();
+	attachment.usage_flags = RendererRD::LightStorage::get_cubemap_depth_usage_bits();
+	attachments.push_back(attachment);
+
+	return RD::framebuffer_format_create(Vector<RD::AttachmentFormat>(attachments));
+}
+
+static RD::FramebufferFormatID _get_shadow_atlas_framebuffer_format_for_pipeline_mobile(bool p_use_16_bits)
+{
+	thread_local LocalVector<RD::AttachmentFormat> attachments;
+	attachments.clear();
+
+	RD::AttachmentFormat attachment;
+	attachment.format = RendererRD::LightStorage::get_shadow_atlas_depth_format(p_use_16_bits);
+	attachment.usage_flags = RendererRD::LightStorage::get_shadow_atlas_depth_usage_bits();
+	attachments.push_back(attachment);
+
+	return RD::framebuffer_format_create(Vector<RD::AttachmentFormat>(attachments));
+}
+
+void RenderForwardMobile::_mesh_compile_pipeline_for_surface(
+	SceneShaderForwardMobile::ShaderData* p_shader, void* p_mesh_surface, bool p_instanced_surface,
+	RSE::PipelineSource p_source, SceneShaderForwardMobile::ShaderData::PipelineKey& r_pipeline_key,
+	Vector<ShaderPipelinePair>* r_pipeline_pairs)
+{
+	if (data->disable_ubershaders) {
+		return;
+	}
+
+	uint64_t input_mask = p_shader->get_vertex_input_mask(r_pipeline_key.version, true);
+	bool emulate_point_size = p_shader->uses_point_size && SceneShaderForwardMobile::data->emulate_point_size;
+	r_pipeline_key.vertex_format_id = RendererRD::MeshStorage::mesh_surface_get_vertex_format(
+		p_mesh_surface, input_mask, p_instanced_surface, false, emulate_point_size);
+	r_pipeline_key.ubershader = true;
+	p_shader->pipeline_hash_map.compile_pipeline(
+		r_pipeline_key, r_pipeline_key.hash(), p_source, r_pipeline_key.ubershader);
+
+	if (r_pipeline_pairs != nullptr) {
+		r_pipeline_pairs->push_back({p_shader, r_pipeline_key});
+	}
+}
+
+void RenderForwardMobile::_mesh_compile_pipelines_for_surface(const SurfacePipelineData& p_surface,
+	const GlobalPipelineData& p_global, RSE::PipelineSource p_source,
+	Vector<ShaderPipelinePair>* r_pipeline_pairs)
+{
+	bool octmap_use_storage = !((RendererRD::CopyEffects::get_raster_effects() &
+									RendererRD::CopyEffects::RASTER_EFFECT_OCTMAP) != 0);
+
+	// Set the attributes common to all pipelines.
+	SceneShaderForwardMobile::ShaderData::PipelineKey pipeline_key;
+	pipeline_key.cull_mode = RDC::POLYGON_CULL_DISABLED;
+	pipeline_key.primitive_type =
+		RendererRD::MeshStorage::mesh_surface_get_primitive(p_surface.mesh_surface);
+	pipeline_key.wireframe = false;
+
+	const bool multiview_enabled =
+		p_global.use_multiview && SceneShaderForwardMobile::is_multiview_shader_group_enabled();
+	const bool buffers_can_be_storage = _render_buffers_can_be_storage();
+	const uint32_t vrs_iterations = p_global.use_vrs ? 2 : 1;
+
+	const uint32_t post_pass_start = p_global.use_separate_post_pass ? 0 : 1;
+	const uint32_t post_pass_iterations =
+		p_global.use_subpass_post_pass ? 2 : (post_pass_start + 1);
+
+	const uint32_t hdr_start = p_global.use_ldr_render_target ? 0 : 1;
+	const uint32_t hdr_target_iterations = p_global.use_hdr_render_target ? 2 : 1;
+
+	for (uint32_t use_vrs = 0; use_vrs < vrs_iterations; use_vrs++) {
+		for (uint32_t use_post_pass = post_pass_start; use_post_pass < post_pass_iterations;
+			 use_post_pass++) {
+			const uint32_t hdr_iterations = use_post_pass ? hdr_target_iterations : (hdr_start + 1);
+			for (uint32_t use_hdr = hdr_start; use_hdr < hdr_iterations; use_hdr++) {
+				const RDC::DataFormat buffers_color_format =
+					use_hdr ? RDC::DATA_FORMAT_R16G16B16A16_SFLOAT
+							: _render_buffers_get_preferred_color_format();
+				pipeline_key.version = SceneShaderForwardMobile::SHADER_VERSION_COLOR_PASS;
+				pipeline_key.framebuffer_format_id =
+					_get_color_framebuffer_format_for_pipeline_mobile(buffers_color_format,
+						buffers_can_be_storage, RDC::TextureSamples(p_global.texture_samples),
+						RDC::TextureSamples(p_global.target_samples), use_vrs, use_post_pass,
+						use_hdr, 1);
+				_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface,
+					p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
+
+				if (p_global.use_lightmaps && p_surface.can_use_lightmap) {
+					pipeline_key.version =
+						SceneShaderForwardMobile::SHADER_VERSION_LIGHTMAP_COLOR_PASS;
+					_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface,
+						p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
+				}
+
+				if (multiview_enabled) {
+					// View count is assumed to be 2 as the configuration is dependent on the
+					// viewport. It's likely a safe assumption for stereo rendering.
+					const uint32_t view_count = 2;
+					pipeline_key.version =
+						SceneShaderForwardMobile::SHADER_VERSION_COLOR_PASS_MULTIVIEW;
+					pipeline_key.framebuffer_format_id =
+						_get_color_framebuffer_format_for_pipeline_mobile(buffers_color_format,
+							buffers_can_be_storage, RDC::TextureSamples(p_global.texture_samples),
+							RDC::TextureSamples(p_global.target_samples), use_vrs, use_post_pass,
+							use_hdr, view_count);
+					_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface,
+						p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
+
+					if (p_global.use_lightmaps && p_surface.can_use_lightmap) {
+						pipeline_key.version =
+							SceneShaderForwardMobile::SHADER_VERSION_LIGHTMAP_COLOR_PASS_MULTIVIEW;
+						_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface,
+							p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
+					}
+				}
+			}
+		}
+	}
+
+	if (p_global.use_reflection_probes) {
+		pipeline_key.version = SceneShaderForwardMobile::SHADER_VERSION_COLOR_PASS;
+		pipeline_key.framebuffer_format_id =
+			_get_reflection_probe_color_framebuffer_format_for_pipeline_mobile(octmap_use_storage);
+		_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface,
+			p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
+	}
+
+	if (!p_surface.uses_depth) {
+		return;
+	}
+
+	if (p_global.use_shadow_cubemaps) {
+		pipeline_key.version = SceneShaderForwardMobile::SHADER_VERSION_SHADOW_PASS;
+		pipeline_key.framebuffer_format_id = _get_shadow_cubemap_framebuffer_format_for_pipeline_mobile();
+		_mesh_compile_pipeline_for_surface(p_surface.shader_shadow, p_surface.mesh_surface_shadow,
+			p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
+	}
+
+	const uint32_t use_16_bits_start = p_global.use_32_bit_shadows ? 0 : 1;
+	const uint32_t use_16_bits_iterations = p_global.use_16_bit_shadows ? 2 : 1;
+	for (uint32_t use_16_bits = use_16_bits_start; use_16_bits < use_16_bits_iterations;
+		 use_16_bits++) {
+		pipeline_key.version = SceneShaderForwardMobile::SHADER_VERSION_SHADOW_PASS;
+		pipeline_key.framebuffer_format_id =
+			_get_shadow_atlas_framebuffer_format_for_pipeline_mobile(use_16_bits);
+		_mesh_compile_pipeline_for_surface(p_surface.shader_shadow, p_surface.mesh_surface_shadow,
+			p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
+
+		if (p_global.use_shadow_dual_paraboloid) {
+			pipeline_key.version = SceneShaderForwardMobile::SHADER_VERSION_SHADOW_PASS_DP;
+			_mesh_compile_pipeline_for_surface(p_surface.shader_shadow,
+				p_surface.mesh_surface_shadow, p_surface.instanced, p_source, pipeline_key,
+				r_pipeline_pairs);
+		}
+
+		if (multiview_enabled) {
+			pipeline_key.version = SceneShaderForwardMobile::SHADER_VERSION_SHADOW_PASS_MULTIVIEW;
+			_mesh_compile_pipeline_for_surface(p_surface.shader_shadow,
+				p_surface.mesh_surface_shadow, p_surface.instanced, p_source, pipeline_key,
+				r_pipeline_pairs);
+		}
+	}
+}
+
+void RenderForwardMobile::_mesh_generate_all_pipelines_for_surface_cache(
+	GeometryInstanceSurfaceDataCache* p_surface_cache, const GlobalPipelineData& p_global)
+{
+	bool uses_alpha_pass =
+		(p_surface_cache->flags & GeometryInstanceSurfaceDataCache::FLAG_PASS_ALPHA) != 0;
+	SurfacePipelineData surface;
+	surface.mesh_surface = p_surface_cache->surface;
+	surface.mesh_surface_shadow = p_surface_cache->surface_shadow;
+	surface.shader = p_surface_cache->shader;
+	surface.shader_shadow = p_surface_cache->shader_shadow;
+	surface.instanced = p_surface_cache->owner->mesh_instance.is_valid();
+	surface.uses_opaque = !uses_alpha_pass;
+	surface.uses_transparent = uses_alpha_pass;
+	surface.uses_depth =
+		(p_surface_cache->flags & (GeometryInstanceSurfaceDataCache::FLAG_PASS_DEPTH |
+									  GeometryInstanceSurfaceDataCache::FLAG_PASS_OPAQUE |
+									  GeometryInstanceSurfaceDataCache::FLAG_PASS_SHADOW)) != 0;
+	surface.can_use_lightmap =
+		p_surface_cache->owner->lightmap_instance.is_valid() || p_surface_cache->owner->lightmap_sh;
+	_mesh_compile_pipelines_for_surface(surface, p_global, RSE::PIPELINE_SOURCE_SURFACE);
+}
+
+void RenderForwardMobile::_update_dirty_geometry_instances()
+{
+	while (data->geometry_instance_dirty_list.first()) {
+		_geometry_instance_update(data->geometry_instance_dirty_list.first()->self());
+	}
+
+	_update_dirty_geometry_pipelines();
+}
+
+void RenderForwardMobile::_update_dirty_geometry_pipelines()
+{
+	if (data->global_pipeline_data_required.key != data->global_pipeline_data_compiled.key) {
+		// Go through the entire list of surfaces and compile pipelines for everything again.
+		SelfList<GeometryInstanceSurfaceDataCache>* list =
+			data->geometry_surface_compilation_all_list.first();
+		while (list != nullptr) {
+			GeometryInstanceSurfaceDataCache* surface_cache = list->self();
+			_mesh_generate_all_pipelines_for_surface_cache(
+				surface_cache, data->global_pipeline_data_required);
+
+			if (surface_cache->compilation_dirty_element.in_list()) {
+				// Remove any elements from the dirty list as they don't need to be processed again.
+				data->geometry_surface_compilation_dirty_list.remove(
+					&surface_cache->compilation_dirty_element);
+			}
+
+			list = list->next();
+		}
+
+		data->global_pipeline_data_compiled.key = data->global_pipeline_data_required.key;
+	}
+	else {
+		// Compile pipelines only for the dirty list.
+		if (!data->geometry_surface_compilation_dirty_list.first()) {
+			return;
+		}
+
+		while (data->geometry_surface_compilation_dirty_list.first() != nullptr) {
+			GeometryInstanceSurfaceDataCache* surface_cache =
+				data->geometry_surface_compilation_dirty_list.first()->self();
+			_mesh_generate_all_pipelines_for_surface_cache(
+				surface_cache, data->global_pipeline_data_compiled);
+			surface_cache->compilation_dirty_element.remove_from_list();
+		}
+	}
+}
+
+void RenderForwardMobile::_geometry_instance_dependency_changed(
+	Dependency::DependencyChangedNotification p_notification, DependencyTracker* p_tracker)
+{
+	switch (p_notification) {
+	case Dependency::DEPENDENCY_CHANGED_MATERIAL:
+	case Dependency::DEPENDENCY_CHANGED_MESH:
+	case Dependency::DEPENDENCY_CHANGED_PARTICLES:
+	case Dependency::DEPENDENCY_CHANGED_MULTIMESH:
+	case Dependency::DEPENDENCY_CHANGED_SKELETON_DATA: {
+		static_cast<RenderGeometryInstance*>(p_tracker->userdata)->_mark_dirty();
+		static_cast<GeometryInstanceForwardMobile*>(p_tracker->userdata)->data->dirty_dependencies =
+			true;
+	} break;
+	case Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES: {
+		GeometryInstanceForwardMobile* ginstance =
+			static_cast<GeometryInstanceForwardMobile*>(p_tracker->userdata);
+		if (ginstance->data->base_type == RSE::INSTANCE_MULTIMESH) {
+			ginstance->instance_count =
+				RendererRD::MeshStorage::multimesh_get_instances_to_draw(ginstance->data->base);
+		}
+	} break;
+	default: {
+		// rest of notifications of no interest
+	} break;
+	}
+}
+
+void RenderForwardMobile::_geometry_instance_dependency_deleted(
+	const RID& p_dependency, DependencyTracker* p_tracker)
+{
+	static_cast<RenderGeometryInstance*>(p_tracker->userdata)->_mark_dirty();
+	static_cast<GeometryInstanceForwardMobile*>(p_tracker->userdata)->data->dirty_dependencies =
+		true;
+}
+
+bool RenderForwardMobile::is_dynamic_gi_supported() { return false; }
+
+bool RenderForwardMobile::is_volumetric_supported() { return false; }
+
+uint32_t RenderForwardMobile::get_max_elements() { return 256; }
+
+void RenderForwardMobile::_update_shader_quality_settings()
+{
+	SceneShaderForwardMobile::ShaderSpecialization specialization = {};
+	specialization.soft_shadow_samples = RendererSceneRenderRD::soft_shadow_samples_get();
+	specialization.penumbra_shadow_samples = RendererSceneRenderRD::penumbra_shadow_samples_get();
+	specialization.directional_soft_shadow_samples =
+		RendererSceneRenderRD::directional_soft_shadow_samples_get();
+	specialization.directional_penumbra_shadow_samples =
+		RendererSceneRenderRD::directional_penumbra_shadow_samples_get();
+	specialization.decal_use_mipmaps =
+		RendererSceneRenderRD::decals_get_filter() == RSE::DECAL_FILTER_NEAREST_MIPMAPS ||
+		RendererSceneRenderRD::decals_get_filter() == RSE::DECAL_FILTER_LINEAR_MIPMAPS ||
+		RendererSceneRenderRD::decals_get_filter() ==
+			RSE::DECAL_FILTER_NEAREST_MIPMAPS_ANISOTROPIC ||
+		RendererSceneRenderRD::decals_get_filter() == RSE::DECAL_FILTER_LINEAR_MIPMAPS_ANISOTROPIC;
+
+	specialization.projector_use_mipmaps =
+		RendererSceneRenderRD::light_projectors_get_filter() ==
+			RSE::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS ||
+		RendererSceneRenderRD::light_projectors_get_filter() ==
+			RSE::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS ||
+		RendererSceneRenderRD::light_projectors_get_filter() ==
+			RSE::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS_ANISOTROPIC ||
+		RendererSceneRenderRD::light_projectors_get_filter() ==
+			RSE::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS_ANISOTROPIC;
+
+	specialization.use_lightmap_bicubic_filter =
+		RendererSceneRenderRD::lightmap_filter_bicubic_get();
+	specialization.use_material_debanding = RendererSceneRenderRD::material_use_debanding_get();
+	specialization.luminance_multiplier = 2.0f;
+	SceneShaderForwardMobile::set_default_specialization(specialization);
+
+	base_uniforms_changed(); // also need this
+}
+
+void RenderForwardMobile::initialize()
+{
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+	SceneShaderForwardMobile::initialize();
+}
+
+void RenderForwardMobile::finalize()
+{
+	if (!data) {
+		return;
+	}
+	ForwardIDStorageMobile::finalize();
+	RendererLightStorage::directional_shadow_atlas_set_size(0);
+
+	if (data->ltc.lut1_texture.is_valid()) {
+		Renderer::free_rid(data->ltc.lut1_texture);
+	}
+	if (data->ltc.lut2_texture.is_valid()) {
+		Renderer::free_rid(data->ltc.lut2_texture);
+	}
+
+	{
+		data->scene_state.uniform_buffers.uninit();
+		for (uint32_t i = 0; i < RENDER_LIST_MAX; i++) {
+			data->scene_state.instance_buffer[i].uninit();
+		}
+		RD::free_rid(data->scene_state.lightmap_buffer);
+		RD::free_rid(data->scene_state.lightmap_capture_buffer);
+		memdelete_arr(data->scene_state.lightmap_captures);
+	}
+
+	SceneShaderForwardMobile::finalize();
+	memdelete(data);
+	data = nullptr;
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::_render_list_with_draw_list(
+	RendererSceneRenderImplementation::RenderForwardMobile::RenderListParameters* p_params,
+	RID p_draw_list, unsigned int p_flags, const Vector<Color>& p_clear_colors, float p_clear_depth,
+	unsigned int p_clear_stencil, const Rect2& p_region)
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::
+	_update_global_pipeline_data_requirements_from_project()
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::mesh_generate_pipelines(
+	RID p_mesh, bool p_background_compilation)
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::_render_scene(
+	RenderDataRD* p_render_data, const Color& p_default_bg_color)
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::_render_uv2(
+	const PagedArray<RenderGeometryInstance*>& p_instances, RID p_albedo_array,
+	const Rect2i& p_rect)
+{
+}
+
+void RendererSceneRenderImplementation::RenderForwardMobile::enable_features(
+	unsigned int p_features)
+{
+}
+#undef PRELOAD_PIPELINES_ON_SURFACE_CACHE_CONSTRUCTION
+
+// --- Merged from servers/rendering/renderer_rd/forward_mobile/scene_shader_forward_mobile.cpp ---
+
+using namespace RendererSceneRenderImplementation;
+
+bool SceneShaderForwardMobile::ShaderData::is_animated() const
+{
+	return (uses_fragment_time && uses_discard) || (uses_vertex_time && uses_vertex);
+}
+
+bool SceneShaderForwardMobile::ShaderData::casts_shadows() const
+{
+	bool has_read_screen_alpha = uses_screen_texture || uses_depth_texture || uses_normal_texture;
+	bool has_base_alpha =
+		(uses_alpha && (!uses_alpha_clip || uses_alpha_antialiasing)) || has_read_screen_alpha;
+	bool has_alpha = has_base_alpha || uses_blend_alpha;
+
+	return !has_alpha || (uses_depth_prepass_alpha && !(depth_draw == DEPTH_DRAW_DISABLED ||
+														  depth_test != DEPTH_TEST_ENABLED));
+}
+
+RenderingServerTypes::ShaderNativeSourceCode
+SceneShaderForwardMobile::ShaderData::get_native_source_code() const
+{
+	if (version.is_valid()) {
+		MutexLock lock(SceneShaderForwardMobile::shader_mutex);
+		return SceneShaderForwardMobile::data->shader.version_get_native_source_code(version);
+	}
+	else {
+		return RenderingServerTypes::ShaderNativeSourceCode();
+	}
+}
+
+Pair<ShaderRD*, RID> SceneShaderForwardMobile::ShaderData::get_native_shader_and_version() const
+{
+	if (version.is_valid()) {
+		MutexLock lock(SceneShaderForwardMobile::shader_mutex);
+		return {&SceneShaderForwardMobile::data->shader, version};
+	}
+	else {
+		return {};
+	}
+}
+
+void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeline_key)
+{
+#if PRINT_PIPELINE_COMPILATION_KEYS
+	print_line("HASH:", p_pipeline_key.hash(), "VERSION:", version,
+		"VERTEX:", p_pipeline_key.vertex_format_id,
+		"FRAMEBUFFER:", p_pipeline_key.framebuffer_format_id, "CULL:", p_pipeline_key.cull_mode,
+		"PRIMITIVE:", p_pipeline_key.primitive_type, "VERSION:", p_pipeline_key.version,
+		"SPEC PACKED #0:", p_pipeline_key.shader_specialization.packed_0,
+		"SPEC PACKED #1:", p_pipeline_key.shader_specialization.packed_1,
+		"SPEC PACKED #2:", p_pipeline_key.shader_specialization.packed_2,
+		"RENDER PASS:", p_pipeline_key.render_pass, "WIREFRAME:", p_pipeline_key.wireframe);
+#endif
+
+	RDC::PipelineColorBlendState::Attachment blend_attachment =
+		blend_mode_to_blend_attachment(BlendMode(blend_mode));
+	RDC::PipelineColorBlendState blend_state_blend;
+	blend_state_blend.attachments.push_back(blend_attachment);
+	RDC::PipelineColorBlendState blend_state_opaque =
+		RDC::PipelineColorBlendState::create_disabled(1);
+	RDC::PipelineColorBlendState blend_state_opaque_specular =
+		RDC::PipelineColorBlendState::create_disabled(2);
+	RDC::PipelineColorBlendState blend_state_depth_normal_roughness =
+		RDC::PipelineColorBlendState::create_disabled(1);
+	RDC::PipelineColorBlendState blend_state_depth_normal_roughness_giprobe =
+		RDC::PipelineColorBlendState::create_disabled(2);
+
+	// update pipelines
+
+	RDC::PipelineDepthStencilState depth_stencil_state;
+
+	if (depth_test != DEPTH_TEST_DISABLED) {
+		depth_stencil_state.enable_depth_test = true;
+		depth_stencil_state.enable_depth_write = depth_draw != DEPTH_DRAW_DISABLED ? true : false;
+		depth_stencil_state.depth_compare_operator = RDC::COMPARE_OP_GREATER_OR_EQUAL;
+
+		if (depth_test == DEPTH_TEST_ENABLED_INVERTED) {
+			depth_stencil_state.depth_compare_operator = RDC::COMPARE_OP_LESS;
+		}
+	}
+
+	RDC::RenderPrimitive primitive_rd_table[RSE::PRIMITIVE_MAX] = {
+		RDC::RENDER_PRIMITIVE_POINTS,
+		RDC::RENDER_PRIMITIVE_LINES,
+		RDC::RENDER_PRIMITIVE_LINESTRIPS,
+		RDC::RENDER_PRIMITIVE_TRIANGLES,
+		RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS,
+	};
+
+	depth_stencil_state.enable_stencil = stencil_enabled;
+	if (stencil_enabled) {
+		static const RDC::CompareOperator stencil_compare_rd_table[STENCIL_COMPARE_MAX] = {
+			RDC::COMPARE_OP_LESS,
+			RDC::COMPARE_OP_EQUAL,
+			RDC::COMPARE_OP_LESS_OR_EQUAL,
+			RDC::COMPARE_OP_GREATER,
+			RDC::COMPARE_OP_NOT_EQUAL,
+			RDC::COMPARE_OP_GREATER_OR_EQUAL,
+			RDC::COMPARE_OP_ALWAYS,
+		};
+
+		uint32_t stencil_mask = 255;
+
+		RDC::PipelineDepthStencilState::StencilOperationState op;
+		op.fail = RDC::STENCIL_OP_KEEP;
+		op.pass = RDC::STENCIL_OP_KEEP;
+		op.depth_fail = RDC::STENCIL_OP_KEEP;
+		op.compare = stencil_compare_rd_table[stencil_compare];
+		op.compare_mask = 0;
+		op.write_mask = 0;
+		op.reference = stencil_reference;
+
+		if (stencil_flags & STENCIL_FLAG_READ) {
+			op.compare_mask = stencil_mask;
+		}
+
+		if (stencil_flags & STENCIL_FLAG_WRITE) {
+			op.pass = RDC::STENCIL_OP_REPLACE;
+			op.write_mask = stencil_mask;
+		}
+
+		if (stencil_flags & STENCIL_FLAG_WRITE_DEPTH_FAIL) {
+			op.depth_fail = RDC::STENCIL_OP_REPLACE;
+			op.write_mask = stencil_mask;
+		}
+
+		depth_stencil_state.front_op = op;
+		depth_stencil_state.back_op = op;
+	}
+
+	bool emulate_point_size_flag =
+		uses_point_size && SceneShaderForwardMobile::data->emulate_point_size;
+
+	RDC::RenderPrimitive primitive_rd;
+	if (uses_point_size) {
+		primitive_rd =
+			emulate_point_size_flag ? RDC::RENDER_PRIMITIVE_TRIANGLES : RDC::RENDER_PRIMITIVE_POINTS;
+	}
+	else {
+		primitive_rd = primitive_rd_table[p_pipeline_key.primitive_type];
+	}
+
+	RDC::PipelineRasterizationState raster_state;
+	raster_state.cull_mode = p_pipeline_key.cull_mode;
+	raster_state.wireframe = wireframe || p_pipeline_key.wireframe;
+
+	RDC::PipelineMultisampleState multisample_state;
+	multisample_state.sample_count =
+		RD::framebuffer_format_get_texture_samples(p_pipeline_key.framebuffer_format_id, 0);
+
+	RDC::PipelineColorBlendState blend_state;
+	if (uses_alpha || uses_blend_alpha) {
+		// These flags should only go through if we have some form of MSAA.
+		if (alpha_antialiasing_mode == ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE) {
+			multisample_state.enable_alpha_to_coverage = true;
+		}
+		else if (alpha_antialiasing_mode == ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE) {
+			multisample_state.enable_alpha_to_coverage = true;
+			multisample_state.enable_alpha_to_one = true;
+		}
+
+		if (p_pipeline_key.version == SHADER_VERSION_COLOR_PASS ||
+			p_pipeline_key.version == SHADER_VERSION_COLOR_PASS_MULTIVIEW ||
+			p_pipeline_key.version == SHADER_VERSION_LIGHTMAP_COLOR_PASS ||
+			p_pipeline_key.version == SHADER_VERSION_LIGHTMAP_COLOR_PASS_MULTIVIEW ||
+			p_pipeline_key.version == SHADER_VERSION_MOTION_VECTORS_MULTIVIEW) {
+			blend_state = blend_state_blend;
+			if (depth_draw == DEPTH_DRAW_OPAQUE && !uses_alpha_clip) {
+				// Alpha does not write to depth.
+				depth_stencil_state.enable_depth_write = false;
+			}
+		}
+		else if (p_pipeline_key.version == SHADER_VERSION_SHADOW_PASS ||
+				   p_pipeline_key.version == SHADER_VERSION_SHADOW_PASS_MULTIVIEW ||
+				   p_pipeline_key.version == SHADER_VERSION_SHADOW_PASS_DP) {
+			// Contains nothing.
+		}
+		else if (p_pipeline_key.version == SHADER_VERSION_DEPTH_PASS_WITH_MATERIAL) {
+			// Writes to normal and roughness in opaque way.
+			blend_state = RDC::PipelineColorBlendState::create_disabled(5);
+		}
+		else {
+			// Do not use this version (error case).
+		}
+	}
+	else {
+		if (p_pipeline_key.version == SHADER_VERSION_COLOR_PASS ||
+			p_pipeline_key.version == SHADER_VERSION_COLOR_PASS_MULTIVIEW ||
+			p_pipeline_key.version == SHADER_VERSION_LIGHTMAP_COLOR_PASS ||
+			p_pipeline_key.version == SHADER_VERSION_LIGHTMAP_COLOR_PASS_MULTIVIEW ||
+			p_pipeline_key.version == SHADER_VERSION_MOTION_VECTORS_MULTIVIEW) {
+			blend_state = blend_state_opaque;
+		}
+		else if (p_pipeline_key.version == SHADER_VERSION_SHADOW_PASS ||
+				   p_pipeline_key.version == SHADER_VERSION_SHADOW_PASS_MULTIVIEW ||
+				   p_pipeline_key.version == SHADER_VERSION_SHADOW_PASS_DP) {
+			// Contains nothing.
+		}
+		else if (p_pipeline_key.version == SHADER_VERSION_DEPTH_PASS_WITH_MATERIAL) {
+			// Writes to normal and roughness in opaque way.
+			blend_state = RDC::PipelineColorBlendState::create_disabled(5);
+		}
+		else {
+			// Unknown pipeline version.
+		}
+	}
+
+	// Convert the specialization from the key to pipeline specialization constants.
+	Vector<RDC::PipelineSpecializationConstant> specialization_constants;
+	RDC::PipelineSpecializationConstant sc;
+	sc.constant_id = 0;
+	sc.int_value = p_pipeline_key.shader_specialization.packed_0;
+	sc.type = RDC::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
+	specialization_constants.push_back(sc);
+
+	sc.constant_id = 1;
+	sc.int_value = p_pipeline_key.shader_specialization.packed_1;
+	sc.type = RDC::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
+	specialization_constants.push_back(sc);
+
+	sc.constant_id = 2;
+	sc.float_value = p_pipeline_key.shader_specialization.packed_2;
+	sc.type = RDC::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_FLOAT;
+	specialization_constants.push_back(sc);
+
+	sc = {}; // Sanitize value bits. "bool_value" only assigns 8 bits and keeps the remaining bits
+			 // intact.
+	sc.constant_id = 3;
+	sc.bool_value = emulate_point_size_flag;
+	sc.type = RDC::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_BOOL;
+	specialization_constants.push_back(sc);
+
+	RID shader_rid = get_shader_variant(p_pipeline_key.version, p_pipeline_key.ubershader);
+	ERR_FAIL_COND(shader_rid.is_null());
+
+	RID pipeline = RD::render_pipeline_create(shader_rid, p_pipeline_key.framebuffer_format_id,
+		p_pipeline_key.vertex_format_id, primitive_rd, raster_state, multisample_state,
+		depth_stencil_state, blend_state, 0, p_pipeline_key.render_pass, specialization_constants);
+
+	// Don't print error when it's expected.
+	if (unlikely(pipeline.is_null() &&
+				 RD::get_driver_workarounds().dont_print_on_render_pipeline_creation_failure)) {
+		return;
+	}
+
+	ERR_FAIL_COND(pipeline.is_null());
+
+	pipeline_hash_map.add_compiled_pipeline(p_pipeline_key.hash(), pipeline);
+}
+
+RDC::PolygonCullMode SceneShaderForwardMobile::ShaderData::get_cull_mode_from_cull_variant(
+	CullVariant p_cull_variant)
+{
+	const RDC::PolygonCullMode cull_mode_rd_table[CULL_VARIANT_MAX][3] = {
+		{RDC::POLYGON_CULL_DISABLED, RDC::POLYGON_CULL_FRONT, RDC::POLYGON_CULL_BACK},
+		{RDC::POLYGON_CULL_DISABLED, RDC::POLYGON_CULL_BACK, RDC::POLYGON_CULL_FRONT},
+		{RDC::POLYGON_CULL_DISABLED, RDC::POLYGON_CULL_DISABLED, RDC::POLYGON_CULL_DISABLED}};
+
+	return cull_mode_rd_table[p_cull_variant][cull_mode];
+}
+
+void SceneShaderForwardMobile::ShaderData::_clear_vertex_input_mask_cache()
+{
+	for (uint32_t i = 0; i < VERTEX_INPUT_MASKS_SIZE; i++) {
+		vertex_input_masks[i].store(0);
+	}
+}
+
+uint64_t SceneShaderForwardMobile::ShaderData::get_vertex_input_mask(
+	ShaderVersion p_shader_version, bool p_ubershader)
+{
+	// Vertex input masks require knowledge of the shader. Since querying the shader can be
+	// expensive due to high contention and the necessary mutex, we cache the result instead. It is
+	// intentional for the range of the input masks to be different than the versions available in
+	// the shaders as it'll only ever use the regular variants or the FP16 ones.
+	uint32_t input_mask_index = p_shader_version + (p_ubershader ? SHADER_VERSION_MAX : 0);
+	uint64_t input_mask = vertex_input_masks[input_mask_index].load(std::memory_order_relaxed);
+	if (input_mask == 0) {
+		RID shader_rid = get_shader_variant(p_shader_version, p_ubershader);
+		ERR_FAIL_COND_V(shader_rid.is_null(), 0);
+
+		input_mask = RD::shader_get_vertex_input_attribute_mask(shader_rid);
+		vertex_input_masks[input_mask_index].store(input_mask, std::memory_order_relaxed);
+	}
+
+	return input_mask;
+}
+
+bool SceneShaderForwardMobile::ShaderData::is_valid() const
+{
+	if (version.is_valid()) {
+		MutexLock lock(SceneShaderForwardMobile::shader_mutex);
+		ERR_FAIL_NULL_V(SceneShaderForwardMobile::data, false);
+		return SceneShaderForwardMobile::data->shader.version_is_valid(version);
+	}
+	else {
+		return false;
+	}
+}
+
+SceneShaderForwardMobile::ShaderData::ShaderData() : shader_list_element(this)
+{
+	pipeline_hash_map.set_creation_object_and_function(this, &ShaderData::_create_pipeline);
+	pipeline_hash_map.set_compilations(SceneShaderForwardMobile::data->pipeline_compilations,
+		&SceneShaderForwardMobile::shader_mutex);
+}
+
+RendererRD::MaterialStorage::ShaderData* SceneShaderForwardMobile::_create_shader_func()
+{
+	MutexLock lock(SceneShaderForwardMobile::shader_mutex);
+	ShaderData* shader_data = memnew(ShaderData);
+	data->shader_list.add(&shader_data->shader_list_element);
+	return shader_data;
+}
+
+void SceneShaderForwardMobile::MaterialData::set_render_priority(int p_priority)
+{
+	priority = p_priority - RSE::MATERIAL_RENDER_PRIORITY_MIN; // 8 bits
+}
+
+void SceneShaderForwardMobile::MaterialData::set_next_pass(RID p_pass) { next_pass = p_pass; }
+
+SceneShaderForwardMobile::MaterialData::~MaterialData()
+{
+	free_parameters_uniform_set(uniform_set);
+}
+
+RendererRD::MaterialStorage::MaterialData* SceneShaderForwardMobile::_create_material_func(
+	ShaderData* p_shader)
+{
+	MaterialData* material_data = memnew(MaterialData);
+	material_data->shader_data = p_shader;
+	// update will happen later anyway so do nothing.
+	return material_data;
+}
+
+/* Scene Shader */
+
+void SceneShaderForwardMobile::initialize(const String& p_defines)
+{
+	if (!data) {
+		data = memnew(Data);
+	}
+	if (!p_defines.is_empty()) {
+		init(p_defines);
+	}
+}
+
+uint32_t SceneShaderForwardMobile::get_pipeline_compilations(RSE::PipelineSource p_source)
+{
+	MutexLock lock(SceneShaderForwardMobile::shader_mutex);
+	return data->pipeline_compilations[p_source];
+}
+
+void SceneShaderForwardMobile::enable_fp32_shader_group()
+{
+	data->shader.enable_group(SHADER_GROUP_FP32);
+
+	if (is_multiview_shader_group_enabled()) {
+		enable_multiview_shader_group();
+	}
+}
+
+void SceneShaderForwardMobile::enable_fp16_shader_group()
+{
+	data->shader.enable_group(SHADER_GROUP_FP16);
+
+	if (is_multiview_shader_group_enabled()) {
+		enable_multiview_shader_group();
+	}
+}
+
+void SceneShaderForwardMobile::enable_multiview_shader_group()
+{
+	if (data->shader.is_group_enabled(SHADER_GROUP_FP32)) {
+		data->shader.enable_group(SHADER_GROUP_FP32_MULTIVIEW);
+	}
+
+	if (data->shader.is_group_enabled(SHADER_GROUP_FP16)) {
+		data->shader.enable_group(SHADER_GROUP_FP16_MULTIVIEW);
+	}
+}
+
+bool SceneShaderForwardMobile::is_multiview_shader_group_enabled()
+{
+	return data->shader.is_group_enabled(SHADER_GROUP_FP32_MULTIVIEW) ||
+		   data->shader.is_group_enabled(SHADER_GROUP_FP16_MULTIVIEW);
+}
+
+void SceneShaderForwardMobile::finalize()
+{
+	if (!data) {
+		return;
+	}
+	RD::free_rid(data->default_vec4_xform_buffer);
+	RD::free_rid(data->shadow_sampler);
+
+	RendererRD::MaterialStorage::shader_free(data->overdraw_material_shader);
+	RendererRD::MaterialStorage::shader_free(data->default_shader);
+	RendererRD::MaterialStorage::shader_free(data->debug_shadow_splits_material_shader);
+
+	RendererRD::MaterialStorage::material_free(data->overdraw_material);
+	RendererRD::MaterialStorage::material_free(data->default_material);
+	RendererRD::MaterialStorage::material_free(data->debug_shadow_splits_material);
+
+	memdelete(data);
+	data = nullptr;
+}
+
+RID RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::get_shader_variant(
+	RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderVersion p_version,
+	bool p_is_wireframe) const
+{
+	return RID();
+}
+
+void RendererSceneRenderImplementation::SceneShaderForwardMobile::set_default_specialization(
+	const RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderSpecialization&
+		p_specialization)
+{
+}
+
+RID RendererSceneRenderImplementation::SceneShaderForwardMobile::get_default_shader_rd(
+	bool p_wireframe)
+{
+	return RID();
+}
+
+void RendererSceneRenderImplementation::SceneShaderForwardMobile::init(const String p_defines)
+{
+}
+
+void RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::set_code(
 	const String& p_code)
 {
 }

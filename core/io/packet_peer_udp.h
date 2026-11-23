@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/io/ip_address.h"
+#include "core/io/ip.h"
 #include "core/io/net_socket.h"
 #include "core/io/packet_peer.h"
 

@@ -31,7 +31,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/xml_parser.h"
-#include "register_types.h"
+#include "modules/register_module_types.h"
 #include "core/error/error_macros.h"
 #include "core/io/file_access.h"
 #include "core/math/math_funcs_binary.h"

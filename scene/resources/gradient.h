@@ -246,4 +246,80 @@ public:
 	int get_point_count() const;
 };
 
+// --- Folded from scene/resources/gradient_texture.h ---
+#include "scene/resources/texture.h"
 
+class GradientTexture2D final : public Texture2D
+{
+public:
+	enum Fill
+	{
+		FILL_LINEAR,
+		FILL_RADIAL,
+		FILL_SQUARE,
+		FILL_CONIC,
+	};
+
+	enum Repeat
+	{
+		REPEAT_NONE,
+		REPEAT,
+		REPEAT_MIRROR,
+	};
+
+private:
+	Ref<Gradient> gradient;
+	mutable RID texture;
+
+	int width = 64;
+	int height = 64;
+
+	bool is_1d = false;
+	bool use_hdr = false;
+
+	Vector2 fill_from;
+	Vector2 fill_to = Vector2(1, 0);
+
+	Fill fill = FILL_LINEAR;
+	Repeat repeat = REPEAT_NONE;
+
+	float _get_gradient_offset_at(int x, int y) const;
+
+	mutable bool update_pending = false;
+	void _queue_update();
+	void _update() const;
+
+public:
+	void set_gradient(Ref<Gradient> p_gradient);
+	Ref<Gradient> get_gradient() const;
+
+	void set_width(int p_width);
+	virtual int get_width() const override;
+	void set_height(int p_height);
+	virtual int get_height() const override;
+
+	bool is_1d_texture() const { return is_1d; }
+
+	void set_use_hdr(bool p_enabled);
+	bool is_using_hdr() const;
+
+	void set_fill(Fill p_fill);
+	Fill get_fill() const;
+	void set_fill_from(Vector2 p_fill_from);
+	Vector2 get_fill_from() const;
+	void set_fill_to(Vector2 p_fill_to);
+	Vector2 get_fill_to() const;
+
+	void set_repeat(Repeat p_repeat);
+	Repeat get_repeat() const;
+
+	virtual RID get_rid() const override;
+
+	virtual bool has_alpha() const override { return true; }
+
+	virtual Ref<Image> get_image() const override;
+	void update_now() const;
+
+	explicit GradientTexture2D(bool p_1d = false);
+	virtual ~GradientTexture2D();
+};

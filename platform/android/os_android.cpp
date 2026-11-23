@@ -32,10 +32,10 @@
 #include "os_android.h"
 
 #include "platform/android/os_android.h"
-#include "display_server_android.h"
 #include "platform/android/os_android.h"
-#include "java_godot_io_wrapper.h"
-#include "java_godot_wrapper.h"
+#include "platform/android/os_android.h"
+#include "platform/android/os_android.h"
+#include "platform/android/os_android.h"
 #include "platform/android/os_android.h"
 
 #ifndef TOOLS_ENABLED
@@ -1079,3 +1079,1656 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 }
 #endif
 
+
+// --- Merged from platform/android/file_access_android.cpp ---
+#include "platform/android/os_android.h"
+
+#include "platform/android/os_android.h"
+
+#include "core/string/print_string.h"
+
+#include <android/asset_manager_jni.h>
+
+AAssetManager *FileAccessAndroid::asset_manager = nullptr;
+jobject FileAccessAndroid::j_asset_manager = nullptr;
+
+String FileAccessAndroid::get_path() const {
+	return path_src;
+}
+
+String FileAccessAndroid::get_path_absolute() const {
+	return absolute_path;
+}
+
+Error FileAccessAndroid::open_internal(const String &p_path, int p_mode_flags) {
+	_close();
+
+	path_src = p_path;
+	String path = fix_path(p_path).simplify_path();
+	absolute_path = path;
+	if (path.begins_with("/")) {
+		path = path.substr(1);
+	} else if (path.begins_with("res://")) {
+		path = path.substr(6);
+	}
+
+	ERR_FAIL_COND_V(p_mode_flags & FileAccess::WRITE, ERR_UNAVAILABLE); //can't write on android..
+	asset = AAssetManager_open(asset_manager, path.utf8().get_data(), AASSET_MODE_STREAMING);
+	if (!asset) {
+		return ERR_CANT_OPEN;
+	}
+	len = AAsset_getLength(asset);
+	pos = 0;
+	eof = false;
+
+	return OK;
+}
+
+void FileAccessAndroid::_close() {
+	if (!asset) {
+		return;
+	}
+	AAsset_close(asset);
+	asset = nullptr;
+}
+
+bool FileAccessAndroid::is_open() const {
+	return asset != nullptr;
+}
+
+void FileAccessAndroid::seek(uint64_t p_position) {
+	ERR_FAIL_NULL(asset);
+
+	AAsset_seek(asset, p_position, SEEK_SET);
+	pos = p_position;
+	if (pos > len) {
+		pos = len;
+		eof = true;
+	} else {
+		eof = false;
+	}
+}
+
+void FileAccessAndroid::seek_end(int64_t p_position) {
+	ERR_FAIL_NULL(asset);
+	AAsset_seek(asset, p_position, SEEK_END);
+	pos = len + p_position;
+}
+
+uint64_t FileAccessAndroid::get_position() const {
+	return pos;
+}
+
+uint64_t FileAccessAndroid::get_length() const {
+	return len;
+}
+
+bool FileAccessAndroid::eof_reached() const {
+	return eof;
+}
+
+uint64_t FileAccessAndroid::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
+	ERR_FAIL_COND_V(!p_dst && p_length > 0, -1);
+
+	int r = AAsset_read(asset, p_dst, p_length);
+
+	if (pos + p_length > len) {
+		eof = true;
+	}
+
+	if (r >= 0) {
+		pos += r;
+		if (pos > len) {
+			pos = len;
+		}
+	}
+
+	return r;
+}
+
+int64_t FileAccessAndroid::_get_size(const String &p_file) {
+	return AAsset_getLength64(asset);
+}
+
+Error FileAccessAndroid::get_error() const {
+	return eof ? ERR_FILE_EOF : OK; // not sure what else it may happen
+}
+
+void FileAccessAndroid::flush() {
+	ERR_FAIL();
+}
+
+bool FileAccessAndroid::store_buffer(const uint8_t *p_src, uint64_t p_length) {
+	ERR_FAIL_V(false);
+}
+
+bool FileAccessAndroid::file_exists(const String &p_path) {
+	String path = fix_path(p_path).simplify_path();
+	if (path.begins_with("/")) {
+		path = path.substr(1);
+	} else if (path.begins_with("res://")) {
+		path = path.substr(6);
+	}
+
+	AAsset *at = AAssetManager_open(asset_manager, path.utf8().get_data(), AASSET_MODE_STREAMING);
+
+	if (!at) {
+		return false;
+	}
+
+	AAsset_close(at);
+	return true;
+}
+
+void FileAccessAndroid::close() {
+	_close();
+}
+
+FileAccessAndroid::~FileAccessAndroid() {
+	_close();
+}
+
+void FileAccessAndroid::setup(jobject p_asset_manager) {
+	JNIEnv *env = get_jni_env();
+	j_asset_manager = env->NewGlobalRef(p_asset_manager);
+	asset_manager = AAssetManager_fromJava(env, j_asset_manager);
+}
+
+void FileAccessAndroid::terminate() {
+	JNIEnv *env = get_jni_env();
+	ERR_FAIL_NULL(env);
+
+	env->DeleteGlobalRef(j_asset_manager);
+}
+
+
+// --- Merged from platform/android/file_access_filesystem_jandroid.cpp ---
+#include "platform/android/os_android.h"
+
+#include "platform/android/os_android.h"
+
+#include "core/templates/local_vector.h"
+
+#include <unistd.h>
+
+jobject FileAccessFilesystemJAndroid::file_access_handler = nullptr;
+jclass FileAccessFilesystemJAndroid::cls;
+
+jmethodID FileAccessFilesystemJAndroid::_file_open = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_get_size = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_seek = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_seek_end = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_read = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_tell = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_eof = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_set_eof = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_close = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_write = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_flush = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_exists = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_last_modified = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_last_accessed = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_resize = nullptr;
+jmethodID FileAccessFilesystemJAndroid::_file_size = nullptr;
+
+String FileAccessFilesystemJAndroid::get_path() const {
+	return path_src;
+}
+
+String FileAccessFilesystemJAndroid::get_path_absolute() const {
+	return absolute_path;
+}
+
+Error FileAccessFilesystemJAndroid::open_internal(const String &p_path, int p_mode_flags) {
+	if (is_open()) {
+		_close();
+	}
+
+	if (_file_open) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, ERR_UNCONFIGURED);
+
+		String path = fix_path(p_path).simplify_path();
+		jstring js = env->NewStringUTF(path.utf8().get_data());
+		int res = env->CallIntMethod(file_access_handler, _file_open, js, p_mode_flags);
+		env->DeleteLocalRef(js);
+
+		if (res < 0) {
+			// Errors are passed back as their negative value to differentiate from the positive file id.
+			return static_cast<Error>(-res);
+		}
+
+		id = res;
+		path_src = p_path;
+		absolute_path = path;
+		return OK;
+	} else {
+		return ERR_UNCONFIGURED;
+	}
+}
+
+void FileAccessFilesystemJAndroid::_close() {
+	if (!is_open()) {
+		return;
+	}
+
+	if (_file_close) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL(env);
+		env->CallVoidMethod(file_access_handler, _file_close, id);
+	}
+	id = 0;
+}
+
+bool FileAccessFilesystemJAndroid::is_open() const {
+	return id != 0;
+}
+
+void FileAccessFilesystemJAndroid::seek(uint64_t p_position) {
+	if (_file_seek) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL(env);
+		ERR_FAIL_COND_MSG(!is_open(), "File must be opened before use.");
+		env->CallVoidMethod(file_access_handler, _file_seek, id, p_position);
+	}
+}
+
+void FileAccessFilesystemJAndroid::seek_end(int64_t p_position) {
+	if (_file_seek_end) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL(env);
+		ERR_FAIL_COND_MSG(!is_open(), "File must be opened before use.");
+		env->CallVoidMethod(file_access_handler, _file_seek_end, id, p_position);
+	}
+}
+
+uint64_t FileAccessFilesystemJAndroid::get_position() const {
+	if (_file_tell) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, 0);
+		ERR_FAIL_COND_V_MSG(!is_open(), 0, "File must be opened before use.");
+		return env->CallLongMethod(file_access_handler, _file_tell, id);
+	} else {
+		return 0;
+	}
+}
+
+uint64_t FileAccessFilesystemJAndroid::get_length() const {
+	if (_file_get_size) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, 0);
+		ERR_FAIL_COND_V_MSG(!is_open(), 0, "File must be opened before use.");
+		return env->CallLongMethod(file_access_handler, _file_get_size, id);
+	} else {
+		return 0;
+	}
+}
+
+bool FileAccessFilesystemJAndroid::eof_reached() const {
+	if (_file_eof) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, false);
+		ERR_FAIL_COND_V_MSG(!is_open(), false, "File must be opened before use.");
+		return env->CallBooleanMethod(file_access_handler, _file_eof, id);
+	} else {
+		return false;
+	}
+}
+
+void FileAccessFilesystemJAndroid::_set_eof(bool eof) {
+	if (_file_set_eof) {
+		ERR_FAIL_COND_MSG(!is_open(), "File must be opened before use.");
+
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL(env);
+		env->CallVoidMethod(file_access_handler, _file_set_eof, id, eof);
+	}
+}
+
+String FileAccessFilesystemJAndroid::get_line() const {
+	ERR_FAIL_COND_V_MSG(!is_open(), String(), "File must be opened before use.");
+
+	const size_t buffer_size_limit = 2048;
+	const uint64_t file_size = get_length();
+	const uint64_t start_position = get_position();
+
+	String result;
+	LocalVector<uint8_t> line_buffer;
+	size_t current_buffer_size = 0;
+	uint64_t line_buffer_position = 0;
+
+	while (true) {
+		size_t line_buffer_size = MIN(buffer_size_limit, file_size - get_position());
+		if (line_buffer_size <= 0) {
+			const_cast<FileAccessFilesystemJAndroid *>(this)->_set_eof(true);
+			break;
+		}
+
+		current_buffer_size += line_buffer_size;
+		line_buffer.resize(current_buffer_size);
+
+		uint64_t bytes_read = get_buffer(&line_buffer[line_buffer_position], current_buffer_size - line_buffer_position);
+		if (bytes_read <= 0) {
+			break;
+		}
+
+		for (; bytes_read > 0; line_buffer_position++, bytes_read--) {
+			uint8_t elem = line_buffer[line_buffer_position];
+			if (elem == '\r' || elem == '\n' || elem == '\0') {
+				// Found the end of the line
+				const bool is_crlf = elem == '\r' && line_buffer_position + 1 < current_buffer_size && line_buffer[line_buffer_position + 1] == '\n';
+				const_cast<FileAccessFilesystemJAndroid *>(this)->seek(start_position + line_buffer_position + (is_crlf ? 2 : 1));
+				if (result.append_utf8((const char *)line_buffer.ptr(), line_buffer_position)) {
+					return String();
+				}
+				return result;
+			}
+		}
+	}
+
+	if (result.append_utf8((const char *)line_buffer.ptr(), line_buffer_position)) {
+		return String();
+	}
+	return result;
+}
+
+uint64_t FileAccessFilesystemJAndroid::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
+	if (_file_read) {
+		ERR_FAIL_COND_V_MSG(!is_open(), 0, "File must be opened before use.");
+		if (p_length == 0) {
+			return 0;
+		}
+
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, 0);
+
+		jobject j_buffer = env->NewDirectByteBuffer(p_dst, p_length);
+		int length = env->CallIntMethod(file_access_handler, _file_read, id, j_buffer);
+		env->DeleteLocalRef(j_buffer);
+		return length;
+	} else {
+		return 0;
+	}
+}
+
+bool FileAccessFilesystemJAndroid::store_buffer(const uint8_t *p_src, uint64_t p_length) {
+	if (_file_write) {
+		ERR_FAIL_COND_V_MSG(!is_open(), false, "File must be opened before use.");
+		ERR_FAIL_COND_V(!p_src && p_length > 0, false);
+		if (p_length == 0) {
+			return true;
+		}
+
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, false);
+
+		jobject j_buffer = env->NewDirectByteBuffer((void *)p_src, p_length);
+		bool ok = env->CallBooleanMethod(file_access_handler, _file_write, id, j_buffer);
+		env->DeleteLocalRef(j_buffer);
+		return ok;
+	} else {
+		return false;
+	}
+}
+
+Error FileAccessFilesystemJAndroid::get_error() const {
+	if (eof_reached()) {
+		return ERR_FILE_EOF;
+	}
+	return OK;
+}
+
+Error FileAccessFilesystemJAndroid::resize(int64_t p_length) {
+	if (_file_resize) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, FAILED);
+		ERR_FAIL_COND_V_MSG(!is_open(), FAILED, "File must be opened before use.");
+		int res = env->CallIntMethod(file_access_handler, _file_resize, id, p_length);
+		return static_cast<Error>(res);
+	} else {
+		return ERR_UNAVAILABLE;
+	}
+}
+
+void FileAccessFilesystemJAndroid::flush() {
+	if (_file_flush) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL(env);
+		ERR_FAIL_COND_MSG(!is_open(), "File must be opened before use.");
+		env->CallVoidMethod(file_access_handler, _file_flush, id);
+	}
+}
+
+bool FileAccessFilesystemJAndroid::file_exists(const String &p_path) {
+	if (_file_exists) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, false);
+
+		String path = fix_path(p_path).simplify_path();
+		jstring js = env->NewStringUTF(path.utf8().get_data());
+		bool result = env->CallBooleanMethod(file_access_handler, _file_exists, js);
+		env->DeleteLocalRef(js);
+		return result;
+	} else {
+		return false;
+	}
+}
+
+uint64_t FileAccessFilesystemJAndroid::_get_modified_time(const String &p_file) {
+	if (_file_last_modified) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, 0);
+
+		String path = fix_path(p_file).simplify_path();
+		jstring js = env->NewStringUTF(path.utf8().get_data());
+		uint64_t result = env->CallLongMethod(file_access_handler, _file_last_modified, js);
+		env->DeleteLocalRef(js);
+		return result;
+	} else {
+		return 0;
+	}
+}
+
+uint64_t FileAccessFilesystemJAndroid::_get_access_time(const String &p_file) {
+	if (_file_last_accessed) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, 0);
+
+		String path = fix_path(p_file).simplify_path();
+		jstring js = env->NewStringUTF(path.utf8().get_data());
+		uint64_t result = env->CallLongMethod(file_access_handler, _file_last_accessed, js);
+		env->DeleteLocalRef(js);
+		return result;
+	} else {
+		return 0;
+	}
+}
+
+int64_t FileAccessFilesystemJAndroid::_get_size(const String &p_file) {
+	if (_file_size) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, -1);
+
+		String path = fix_path(p_file).simplify_path();
+		jstring js = env->NewStringUTF(path.utf8().get_data());
+		int64_t result = env->CallLongMethod(file_access_handler, _file_size, js);
+		env->DeleteLocalRef(js);
+		return result;
+	} else {
+		return -1;
+	}
+}
+
+void FileAccessFilesystemJAndroid::setup(jobject p_file_access_handler) {
+	JNIEnv *env = get_jni_env();
+	file_access_handler = env->NewGlobalRef(p_file_access_handler);
+
+	jclass c = env->GetObjectClass(file_access_handler);
+	cls = (jclass)env->NewGlobalRef(c);
+
+	_file_open = env->GetMethodID(cls, "fileOpen", "(Ljava/lang/String;I)I");
+	_file_get_size = env->GetMethodID(cls, "fileGetSize", "(I)J");
+	_file_tell = env->GetMethodID(cls, "fileGetPosition", "(I)J");
+	_file_eof = env->GetMethodID(cls, "isFileEof", "(I)Z");
+	_file_set_eof = env->GetMethodID(cls, "setFileEof", "(IZ)V");
+	_file_seek = env->GetMethodID(cls, "fileSeek", "(IJ)V");
+	_file_seek_end = env->GetMethodID(cls, "fileSeekFromEnd", "(IJ)V");
+	_file_read = env->GetMethodID(cls, "fileRead", "(ILjava/nio/ByteBuffer;)I");
+	_file_close = env->GetMethodID(cls, "fileClose", "(I)V");
+	_file_write = env->GetMethodID(cls, "fileWrite", "(ILjava/nio/ByteBuffer;)Z");
+	_file_flush = env->GetMethodID(cls, "fileFlush", "(I)V");
+	_file_exists = env->GetMethodID(cls, "fileExists", "(Ljava/lang/String;)Z");
+	_file_last_modified = env->GetMethodID(cls, "fileLastModified", "(Ljava/lang/String;)J");
+	_file_last_accessed = env->GetMethodID(cls, "fileLastAccessed", "(Ljava/lang/String;)J");
+	_file_resize = env->GetMethodID(cls, "fileResize", "(IJ)I");
+	_file_size = env->GetMethodID(cls, "fileSize", "(Ljava/lang/String;)J");
+}
+
+void FileAccessFilesystemJAndroid::terminate() {
+	JNIEnv *env = get_jni_env();
+	ERR_FAIL_NULL(env);
+
+	env->DeleteGlobalRef(cls);
+	env->DeleteGlobalRef(file_access_handler);
+}
+
+void FileAccessFilesystemJAndroid::close() {
+	if (is_open()) {
+		_close();
+	}
+}
+
+FileAccessFilesystemJAndroid::FileAccessFilesystemJAndroid() {
+	id = 0;
+}
+
+FileAccessFilesystemJAndroid::~FileAccessFilesystemJAndroid() {
+	if (is_open()) {
+		_close();
+	}
+}
+
+
+// --- Merged from platform/android/audio_driver_opensl.cpp ---
+#include "platform/android/os_android.h"
+
+#include "core/os/os.h"
+
+#define MAX_NUMBER_INTERFACES 3
+#define MAX_NUMBER_OUTPUT_DEVICES 6
+
+/* Structure for passing information to callback function */
+
+void AudioDriverOpenSL::_buffer_callback(
+		SLAndroidSimpleBufferQueueItf queueItf) {
+	bool mix = true;
+
+	if (pause) {
+		mix = false;
+	} else {
+		mix = mutex.try_lock();
+	}
+
+	if (mix) {
+		audio_server_process(buffer_size, mixdown_buffer);
+	} else {
+		int32_t *src_buff = mixdown_buffer;
+		for (unsigned int i = 0; i < buffer_size * 2; i++) {
+			src_buff[i] = 0;
+		}
+	}
+
+	if (mix) {
+		mutex.unlock();
+	}
+
+	const int32_t *src_buff = mixdown_buffer;
+
+	int16_t *ptr = (int16_t *)buffers[last_free];
+	last_free = (last_free + 1) % BUFFER_COUNT;
+
+	for (unsigned int i = 0; i < buffer_size * 2; i++) {
+		ptr[i] = src_buff[i] >> 16;
+	}
+
+	(*queueItf)->Enqueue(queueItf, ptr, 4 * buffer_size);
+}
+
+void AudioDriverOpenSL::_buffer_callbacks(
+		SLAndroidSimpleBufferQueueItf queueItf,
+		void *pContext) {
+	AudioDriverOpenSL *ad = static_cast<AudioDriverOpenSL *>(pContext);
+
+	ad->_buffer_callback(queueItf);
+}
+
+Error AudioDriverOpenSL::init() {
+	SLresult res;
+	SLEngineOption EngineOption[] = {
+		{ (SLuint32)SL_ENGINEOPTION_THREADSAFE, (SLuint32)SL_BOOLEAN_TRUE }
+	};
+	res = slCreateEngine(&sl, 1, EngineOption, 0, nullptr, nullptr);
+	ERR_FAIL_COND_V_MSG(res != SL_RESULT_SUCCESS, ERR_INVALID_PARAMETER, "Could not initialize OpenSL.");
+
+	res = (*sl)->Realize(sl, SL_BOOLEAN_FALSE);
+	ERR_FAIL_COND_V_MSG(res != SL_RESULT_SUCCESS, ERR_INVALID_PARAMETER, "Could not realize OpenSL.");
+
+	return OK;
+}
+
+void AudioDriverOpenSL::start() {
+	active = false;
+
+	SLresult res;
+
+	buffer_size = 1024;
+
+	for (int i = 0; i < BUFFER_COUNT; i++) {
+		buffers[i] = memnew_arr(int16_t, buffer_size * 2);
+		memset(buffers[i], 0, buffer_size * 4);
+	}
+
+	mixdown_buffer = memnew_arr(int32_t, buffer_size * 2);
+
+	/* Callback context for the buffer queue callback function */
+
+	/* Get the SL Engine Interface which is implicit */
+	res = (*sl)->GetInterface(sl, SL_IID_ENGINE, (void *)&EngineItf);
+
+	ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+
+	{
+		const SLInterfaceID ids[1] = { SL_IID_ENVIRONMENTALREVERB };
+		const SLboolean req[1] = { SL_BOOLEAN_FALSE };
+		res = (*EngineItf)->CreateOutputMix(EngineItf, &OutputMix, 0, ids, req);
+	}
+
+	ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+	// Realizing the Output Mix object in synchronous mode.
+	res = (*OutputMix)->Realize(OutputMix, SL_BOOLEAN_FALSE);
+	ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+
+	SLDataLocator_AndroidSimpleBufferQueue loc_bufq = { SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, BUFFER_COUNT };
+	/* Setup the format of the content in the buffer queue */
+	pcm.formatType = SL_DATAFORMAT_PCM;
+	pcm.numChannels = 2;
+	pcm.samplesPerSec = SL_SAMPLINGRATE_44_1;
+	pcm.bitsPerSample = SL_PCMSAMPLEFORMAT_FIXED_16;
+	pcm.containerSize = SL_PCMSAMPLEFORMAT_FIXED_16;
+	pcm.channelMask = SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT;
+	pcm.endianness = SL_BYTEORDER_LITTLEENDIAN;
+
+	audioSource.pFormat = (void *)&pcm;
+	audioSource.pLocator = (void *)&loc_bufq;
+
+	/* Setup the data sink structure */
+	locator_outputmix.locatorType = SL_DATALOCATOR_OUTPUTMIX;
+	locator_outputmix.outputMix = OutputMix;
+	audioSink.pLocator = (void *)&locator_outputmix;
+	audioSink.pFormat = nullptr;
+
+	/* Create the music player */
+	{
+		const SLInterfaceID ids[2] = { SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND };
+		const SLboolean req[2] = { SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE };
+
+		res = (*EngineItf)->CreateAudioPlayer(EngineItf, &player, &audioSource, &audioSink, 1, ids, req);
+		ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+	}
+	/* Realizing the player in synchronous mode. */
+	res = (*player)->Realize(player, SL_BOOLEAN_FALSE);
+	ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+	/* Get seek and play interfaces */
+	res = (*player)->GetInterface(player, SL_IID_PLAY, (void *)&playItf);
+	ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+	res = (*player)->GetInterface(player, SL_IID_BUFFERQUEUE,
+			(void *)&bufferQueueItf);
+	ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+	/* Setup to receive buffer queue event callbacks */
+	res = (*bufferQueueItf)->RegisterCallback(bufferQueueItf, _buffer_callbacks, this);
+	ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+
+	last_free = 0;
+
+	//fill up buffers
+	for (int i = 0; i < BUFFER_COUNT; i++) {
+		/* Enqueue a few buffers to get the ball rolling */
+		res = (*bufferQueueItf)->Enqueue(bufferQueueItf, buffers[i], 4 * buffer_size); /* Size given in */
+	}
+
+	res = (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
+	ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+
+	active = true;
+}
+
+void AudioDriverOpenSL::_record_buffer_callback(SLAndroidSimpleBufferQueueItf queueItf) {
+	for (int i = 0; i < rec_buffer.size(); i++) {
+		int32_t sample = rec_buffer[i] << 16;
+		input_buffer_write(sample);
+		input_buffer_write(sample); // call twice to convert to Stereo
+	}
+
+	SLresult res = (*recordBufferQueueItf)->Enqueue(recordBufferQueueItf, rec_buffer.ptrw(), rec_buffer.size() * sizeof(int16_t));
+	ERR_FAIL_COND(res != SL_RESULT_SUCCESS);
+}
+
+void AudioDriverOpenSL::_record_buffer_callbacks(SLAndroidSimpleBufferQueueItf queueItf, void *pContext) {
+	AudioDriverOpenSL *ad = static_cast<AudioDriverOpenSL *>(pContext);
+
+	ad->_record_buffer_callback(queueItf);
+}
+
+Error AudioDriverOpenSL::init_input_device() {
+	SLDataLocator_IODevice loc_dev = {
+		SL_DATALOCATOR_IODEVICE,
+		SL_IODEVICE_AUDIOINPUT,
+		SL_DEFAULTDEVICEID_AUDIOINPUT,
+		nullptr
+	};
+	SLDataSource recSource = { &loc_dev, nullptr };
+
+	SLDataLocator_AndroidSimpleBufferQueue loc_bq = {
+		SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
+		2
+	};
+	SLDataFormat_PCM format_pcm = {
+		SL_DATAFORMAT_PCM,
+		1,
+		SL_SAMPLINGRATE_44_1,
+		SL_PCMSAMPLEFORMAT_FIXED_16,
+		SL_PCMSAMPLEFORMAT_FIXED_16,
+		SL_SPEAKER_FRONT_CENTER,
+		SL_BYTEORDER_LITTLEENDIAN
+	};
+	SLDataSink recSnk = { &loc_bq, &format_pcm };
+
+	const SLInterfaceID ids[2] = { SL_IID_ANDROIDSIMPLEBUFFERQUEUE, SL_IID_ANDROIDCONFIGURATION };
+	const SLboolean req[2] = { SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE };
+
+	SLresult res = (*EngineItf)->CreateAudioRecorder(EngineItf, &recorder, &recSource, &recSnk, 2, ids, req);
+	ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+
+	res = (*recorder)->Realize(recorder, SL_BOOLEAN_FALSE);
+	ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+
+	res = (*recorder)->GetInterface(recorder, SL_IID_RECORD, (void *)&recordItf);
+	ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+
+	res = (*recorder)->GetInterface(recorder, SL_IID_ANDROIDSIMPLEBUFFERQUEUE, (void *)&recordBufferQueueItf);
+	ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+
+	res = (*recordBufferQueueItf)->RegisterCallback(recordBufferQueueItf, _record_buffer_callbacks, this);
+	ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+
+	SLuint32 state;
+	res = (*recordItf)->GetRecordState(recordItf, &state);
+	ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+
+	if (state != SL_RECORDSTATE_STOPPED) {
+		res = (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_STOPPED);
+		ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+
+		res = (*recordBufferQueueItf)->Clear(recordBufferQueueItf);
+		ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+	}
+
+	const int rec_buffer_frames = 2048;
+	rec_buffer.resize(rec_buffer_frames);
+	input_buffer_init(rec_buffer_frames);
+
+	res = (*recordBufferQueueItf)->Enqueue(recordBufferQueueItf, rec_buffer.ptrw(), rec_buffer.size() * sizeof(int16_t));
+	ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+
+	res = (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
+	ERR_FAIL_COND_V(res != SL_RESULT_SUCCESS, ERR_CANT_OPEN);
+
+	return OK;
+}
+
+Error AudioDriverOpenSL::input_start() {
+	if (recordItf || recordBufferQueueItf) {
+		return ERR_ALREADY_IN_USE;
+	}
+
+	if (OS::request_permission("RECORD_AUDIO")) {
+		Error err = init_input_device();
+		if (err != OK) {
+			input_stop();
+		}
+		return err;
+	}
+
+	WARN_PRINT("Unable to start audio capture - No RECORD_AUDIO permission");
+	return ERR_UNAUTHORIZED;
+}
+
+Error AudioDriverOpenSL::input_stop() {
+	if (recordItf) {
+		(*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_STOPPED);
+		recordItf = nullptr;
+	}
+
+	if (recordBufferQueueItf) {
+		(*recordBufferQueueItf)->Clear(recordBufferQueueItf);
+		recordBufferQueueItf = nullptr;
+	}
+	if (recorder) {
+		(*recorder)->Destroy(recorder);
+		recorder = nullptr;
+	}
+
+	return OK;
+}
+
+int AudioDriverOpenSL::get_mix_rate() const {
+	return 44100; // hardcoded for Android, as selected by SL_SAMPLINGRATE_44_1
+}
+
+AudioDriver::SpeakerMode AudioDriverOpenSL::get_speaker_mode() const {
+	return SPEAKER_MODE_STEREO;
+}
+
+void AudioDriverOpenSL::lock() {
+	if (active) {
+		mutex.lock();
+	}
+}
+
+void AudioDriverOpenSL::unlock() {
+	if (active) {
+		mutex.unlock();
+	}
+}
+
+void AudioDriverOpenSL::finish() {
+	if (recordItf) {
+		(*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_STOPPED);
+		recordItf = nullptr;
+	}
+	if (recorder) {
+		(*recorder)->Destroy(recorder);
+		recorder = nullptr;
+	}
+	if (playItf) {
+		(*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);
+		playItf = nullptr;
+	}
+	if (player) {
+		(*player)->Destroy(player);
+		player = nullptr;
+	}
+	if (OutputMix) {
+		(*OutputMix)->Destroy(OutputMix);
+		OutputMix = nullptr;
+	}
+	if (sl) {
+		(*sl)->Destroy(sl);
+		sl = nullptr;
+	}
+}
+
+void AudioDriverOpenSL::set_pause(bool p_pause) {
+	pause = p_pause;
+
+	if (active && playItf) {
+		if (pause) {
+			(*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PAUSED);
+		} else {
+			(*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
+		}
+	}
+}
+
+AudioDriverOpenSL::AudioDriverOpenSL() {
+}
+
+
+// --- Merged from platform/android/dir_access_jandroid.cpp ---
+#include "platform/android/os_android.h"
+
+#include "platform/android/os_android.h"
+#include "platform/android/os_android.h"
+
+#include "core/string/print_string.h"
+
+jobject DirAccessJAndroid::dir_access_handler = nullptr;
+jclass DirAccessJAndroid::cls = nullptr;
+jmethodID DirAccessJAndroid::_dir_open = nullptr;
+jmethodID DirAccessJAndroid::_dir_next = nullptr;
+jmethodID DirAccessJAndroid::_dir_close = nullptr;
+jmethodID DirAccessJAndroid::_dir_is_dir = nullptr;
+jmethodID DirAccessJAndroid::_dir_exists = nullptr;
+jmethodID DirAccessJAndroid::_file_exists = nullptr;
+jmethodID DirAccessJAndroid::_get_drive_count = nullptr;
+jmethodID DirAccessJAndroid::_get_drive = nullptr;
+jmethodID DirAccessJAndroid::_make_dir = nullptr;
+jmethodID DirAccessJAndroid::_get_space_left = nullptr;
+jmethodID DirAccessJAndroid::_rename = nullptr;
+jmethodID DirAccessJAndroid::_remove = nullptr;
+jmethodID DirAccessJAndroid::_current_is_hidden = nullptr;
+
+Error DirAccessJAndroid::list_dir_begin() {
+	list_dir_end();
+	int res = dir_open(current_dir);
+	if (res <= 0) {
+		return ERR_CANT_OPEN;
+	}
+
+	id = res;
+
+	return OK;
+}
+
+String DirAccessJAndroid::get_next() {
+	ERR_FAIL_COND_V(id == 0, "");
+	if (_dir_next) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, "");
+		jstring str = (jstring)env->CallObjectMethod(dir_access_handler, _dir_next, id);
+		if (!str) {
+			return "";
+		}
+
+		String ret = jstring_to_string((jstring)str, env);
+		env->DeleteLocalRef((jobject)str);
+		return ret;
+	} else {
+		return "";
+	}
+}
+
+bool DirAccessJAndroid::current_is_dir() const {
+	if (_dir_is_dir) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, false);
+		return env->CallBooleanMethod(dir_access_handler, _dir_is_dir, id);
+	} else {
+		return false;
+	}
+}
+
+bool DirAccessJAndroid::current_is_hidden() const {
+	if (_current_is_hidden) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, false);
+		return env->CallBooleanMethod(dir_access_handler, _current_is_hidden, id);
+	}
+	return false;
+}
+
+void DirAccessJAndroid::list_dir_end() {
+	if (id == 0) {
+		return;
+	}
+
+	dir_close(id);
+	id = 0;
+}
+
+int DirAccessJAndroid::get_drive_count() {
+	if (_get_drive_count) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, 0);
+		return env->CallIntMethod(dir_access_handler, _get_drive_count, get_access_type());
+	} else {
+		return 0;
+	}
+}
+
+String DirAccessJAndroid::get_drive(int p_drive) {
+	if (_get_drive) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, "");
+		jstring j_drive = (jstring)env->CallObjectMethod(dir_access_handler, _get_drive, get_access_type(), p_drive);
+		if (!j_drive) {
+			return "";
+		}
+
+		String drive = jstring_to_string(j_drive, env);
+		env->DeleteLocalRef(j_drive);
+		return drive;
+	} else {
+		return "";
+	}
+}
+
+String DirAccessJAndroid::_get_root_string() const {
+	if (get_access_type() == ACCESS_FILESYSTEM) {
+		return "/";
+	}
+	return DirAccessUnix::_get_root_string();
+}
+
+String DirAccessJAndroid::get_current_dir(bool p_include_drive) const {
+	String base = _get_root_path();
+	String bd = current_dir;
+	if (!base.is_empty()) {
+		bd = current_dir.replace_first(base, "");
+	}
+
+	String root_string = _get_root_string();
+	if (bd.begins_with(root_string)) {
+		return bd;
+	} else if (bd.begins_with("/")) {
+		return root_string + bd.substr(1);
+	} else {
+		return root_string + bd;
+	}
+}
+
+Error DirAccessJAndroid::change_dir(String p_dir) {
+	String new_dir = get_absolute_path(p_dir);
+	if (new_dir == current_dir) {
+		return OK;
+	}
+
+	if (!dir_exists(new_dir)) {
+		return ERR_INVALID_PARAMETER;
+	}
+
+	current_dir = new_dir;
+	return OK;
+}
+
+String DirAccessJAndroid::get_absolute_path(String p_path) {
+	if (current_dir != "" && p_path == current_dir) {
+		return current_dir;
+	}
+
+	if (p_path.is_relative_path()) {
+		p_path = get_current_dir().path_join(p_path);
+	}
+
+	p_path = fix_path(p_path);
+	p_path = p_path.simplify_path();
+	return p_path;
+}
+
+bool DirAccessJAndroid::file_exists(String p_file) {
+	if (_file_exists) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, false);
+
+		String path = get_absolute_path(p_file);
+		jstring j_path = env->NewStringUTF(path.utf8().get_data());
+		bool result = env->CallBooleanMethod(dir_access_handler, _file_exists, get_access_type(), j_path);
+		env->DeleteLocalRef(j_path);
+		return result;
+	} else {
+		return false;
+	}
+}
+
+bool DirAccessJAndroid::dir_exists(String p_dir) {
+	if (_dir_exists) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, false);
+
+		String path = get_absolute_path(p_dir);
+		jstring j_path = env->NewStringUTF(path.utf8().get_data());
+		bool result = env->CallBooleanMethod(dir_access_handler, _dir_exists, get_access_type(), j_path);
+		env->DeleteLocalRef(j_path);
+		return result;
+	} else {
+		return false;
+	}
+}
+
+Error DirAccessJAndroid::make_dir(String p_dir) {
+	// Check if the directory exists already
+	if (dir_exists(p_dir)) {
+		return ERR_ALREADY_EXISTS;
+	}
+
+	if (_make_dir) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, ERR_UNCONFIGURED);
+
+		String path = get_absolute_path(p_dir);
+		jstring j_dir = env->NewStringUTF(path.utf8().get_data());
+		bool result = env->CallBooleanMethod(dir_access_handler, _make_dir, get_access_type(), j_dir);
+		env->DeleteLocalRef(j_dir);
+		if (result) {
+			return OK;
+		} else {
+			return FAILED;
+		}
+	} else {
+		return ERR_UNCONFIGURED;
+	}
+}
+
+Error DirAccessJAndroid::make_dir_recursive(const String &p_dir) {
+	Error err = make_dir(p_dir);
+	if (err != OK && err != ERR_ALREADY_EXISTS) {
+		ERR_FAIL_V_MSG(err, "Could not create directory: " + p_dir);
+	}
+	return OK;
+}
+
+Error DirAccessJAndroid::rename(String p_from, String p_to) {
+	if (_rename) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, ERR_UNCONFIGURED);
+
+		String from_path = get_absolute_path(p_from);
+		jstring j_from = env->NewStringUTF(from_path.utf8().get_data());
+
+		String to_path = get_absolute_path(p_to);
+		jstring j_to = env->NewStringUTF(to_path.utf8().get_data());
+
+		bool result = env->CallBooleanMethod(dir_access_handler, _rename, get_access_type(), j_from, j_to);
+		env->DeleteLocalRef(j_from);
+		env->DeleteLocalRef(j_to);
+		if (result) {
+			return OK;
+		} else {
+			return FAILED;
+		}
+	} else {
+		return ERR_UNCONFIGURED;
+	}
+}
+
+Error DirAccessJAndroid::remove(String p_name) {
+	if (_remove) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, ERR_UNCONFIGURED);
+
+		String path = get_absolute_path(p_name);
+		jstring j_name = env->NewStringUTF(path.utf8().get_data());
+		bool result = env->CallBooleanMethod(dir_access_handler, _remove, get_access_type(), j_name);
+		env->DeleteLocalRef(j_name);
+		if (result) {
+			return OK;
+		} else {
+			return FAILED;
+		}
+	} else {
+		return ERR_UNCONFIGURED;
+	}
+}
+
+uint64_t DirAccessJAndroid::get_space_left() {
+	if (_get_space_left) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, 0);
+		return env->CallLongMethod(dir_access_handler, _get_space_left, get_access_type());
+	} else {
+		return 0;
+	}
+}
+
+void DirAccessJAndroid::setup(jobject p_dir_access_handler) {
+	JNIEnv *env = get_jni_env();
+	dir_access_handler = env->NewGlobalRef(p_dir_access_handler);
+
+	jclass c = env->GetObjectClass(dir_access_handler);
+	cls = (jclass)env->NewGlobalRef(c);
+
+	_dir_open = env->GetMethodID(cls, "dirOpen", "(ILjava/lang/String;)I");
+	_dir_next = env->GetMethodID(cls, "dirNext", "(I)Ljava/lang/String;");
+	_dir_close = env->GetMethodID(cls, "dirClose", "(I)V");
+	_dir_is_dir = env->GetMethodID(cls, "dirIsDir", "(I)Z");
+	_dir_exists = env->GetMethodID(cls, "dirExists", "(ILjava/lang/String;)Z");
+	_file_exists = env->GetMethodID(cls, "fileExists", "(ILjava/lang/String;)Z");
+	_get_drive_count = env->GetMethodID(cls, "getDriveCount", "(I)I");
+	_get_drive = env->GetMethodID(cls, "getDrive", "(II)Ljava/lang/String;");
+	_make_dir = env->GetMethodID(cls, "makeDir", "(ILjava/lang/String;)Z");
+	_get_space_left = env->GetMethodID(cls, "getSpaceLeft", "(I)J");
+	_rename = env->GetMethodID(cls, "rename", "(ILjava/lang/String;Ljava/lang/String;)Z");
+	_remove = env->GetMethodID(cls, "remove", "(ILjava/lang/String;)Z");
+	_current_is_hidden = env->GetMethodID(cls, "isCurrentHidden", "(I)Z");
+}
+
+void DirAccessJAndroid::terminate() {
+	JNIEnv *env = get_jni_env();
+	ERR_FAIL_NULL(env);
+
+	env->DeleteGlobalRef(cls);
+	env->DeleteGlobalRef(dir_access_handler);
+}
+
+DirAccessJAndroid::DirAccessJAndroid() {
+}
+
+DirAccessJAndroid::~DirAccessJAndroid() {
+	list_dir_end();
+}
+
+int DirAccessJAndroid::dir_open(String p_path) {
+	if (_dir_open) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, 0);
+
+		String path = get_absolute_path(p_path);
+		jstring js = env->NewStringUTF(path.utf8().get_data());
+		int dirId = env->CallIntMethod(dir_access_handler, _dir_open, get_access_type(), js);
+		env->DeleteLocalRef(js);
+		return dirId;
+	} else {
+		return 0;
+	}
+}
+
+void DirAccessJAndroid::dir_close(int p_id) {
+	if (_dir_close) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL(env);
+		env->CallVoidMethod(dir_access_handler, _dir_close, p_id);
+	}
+}
+
+
+// --- Merged from platform/android/tts_android.cpp ---
+#include "platform/android/os_android.h"
+
+#include "platform/android/os_android.h"
+#include "platform/android/os_android.h"
+
+#include "core/config/project_settings.h"
+#include "core/os/os.h"
+#include "servers/display/display_server.h"
+
+bool TTS_Android::initialized = false;
+jobject TTS_Android::tts = nullptr;
+jclass TTS_Android::cls = nullptr;
+
+Thread TTS_Android::init_thread;
+SafeFlag TTS_Android::quit_request;
+SafeFlag TTS_Android::init_done;
+
+jmethodID TTS_Android::_init = nullptr;
+jmethodID TTS_Android::_is_speaking = nullptr;
+jmethodID TTS_Android::_is_paused = nullptr;
+jmethodID TTS_Android::_get_state = nullptr;
+jmethodID TTS_Android::_get_voices = nullptr;
+jmethodID TTS_Android::_speak = nullptr;
+jmethodID TTS_Android::_pause_speaking = nullptr;
+jmethodID TTS_Android::_resume_speaking = nullptr;
+jmethodID TTS_Android::_stop_speaking = nullptr;
+
+HashMap<int64_t, Char16String> TTS_Android::ids;
+
+void TTS_Android::_thread_function(void *self) {
+	JNIEnv *env = get_jni_env();
+	ERR_FAIL_NULL(env);
+
+	env->CallVoidMethod(tts, _init);
+
+	uint64_t sleep = 200;
+	while (env->CallIntMethod(tts, _get_state) == INIT_STATE_UNKNOWN && !quit_request.is_set()) {
+		OS::delay_usec(1000 * sleep);
+	}
+	init_done.set();
+}
+
+void TTS_Android::initialize_tts(bool p_wait) {
+	if (!_init || !_get_state || !tts) {
+		return;
+	}
+	JNIEnv *env = get_jni_env();
+	ERR_FAIL_NULL(env);
+
+	if (!init_thread.is_started() && !init_done.is_set()) {
+		init_thread.start(TTS_Android::_thread_function, nullptr);
+	}
+
+	if (env->CallIntMethod(tts, _get_state) == INIT_STATE_SUCCESS) {
+		initialized = true;
+		return;
+	}
+
+	// If it's not initialized at launch wait for 1 second for TTS init.
+	if (p_wait) {
+		uint64_t sleep = 200;
+		uint64_t wait = 1000000;
+		uint64_t time = OS::get_ticks_usec();
+		while (OS::get_ticks_usec() - time < wait) {
+			OS::delay_usec(1000 * sleep);
+			if (init_done.is_set()) {
+				break;
+			}
+		}
+	}
+
+	if (env->CallIntMethod(tts, _get_state) == INIT_STATE_SUCCESS) {
+		initialized = true;
+	}
+}
+
+void TTS_Android::setup(jobject p_tts) {
+	JNIEnv *env = get_jni_env();
+	ERR_FAIL_NULL(env);
+
+	tts = env->NewGlobalRef(p_tts);
+	quit_request.clear();
+	init_done.clear();
+
+	jclass c = env->GetObjectClass(tts);
+	cls = (jclass)env->NewGlobalRef(c);
+
+	_init = env->GetMethodID(cls, "init", "()V");
+	_is_speaking = env->GetMethodID(cls, "isSpeaking", "()Z");
+	_is_paused = env->GetMethodID(cls, "isPaused", "()Z");
+	_get_state = env->GetMethodID(cls, "getState", "()I");
+	_get_voices = env->GetMethodID(cls, "getVoices", "()[Ljava/lang/String;");
+	_speak = env->GetMethodID(cls, "speak", "(Ljava/lang/String;Ljava/lang/String;IFFJZ)V");
+	_pause_speaking = env->GetMethodID(cls, "pauseSpeaking", "()V");
+	_resume_speaking = env->GetMethodID(cls, "resumeSpeaking", "()V");
+	_stop_speaking = env->GetMethodID(cls, "stopSpeaking", "()V");
+
+	bool tts_enabled = GLOBAL_GET("audio/general/text_to_speech");
+	if (tts_enabled) {
+		initialize_tts(false);
+	}
+}
+
+void TTS_Android::terminate() {
+	JNIEnv *env = get_jni_env();
+	ERR_FAIL_NULL(env);
+
+	if (init_thread.is_started()) {
+		quit_request.set();
+		init_thread.wait_to_finish();
+	}
+
+	if (cls) {
+		env->DeleteGlobalRef(cls);
+	}
+	if (tts) {
+		env->DeleteGlobalRef(tts);
+	}
+}
+
+void TTS_Android::_java_utterance_callback(int p_event, int64_t p_id, int p_pos) {
+	if (unlikely(!initialized)) {
+		initialize_tts();
+	}
+	ERR_FAIL_COND_MSG(!initialized || tts == nullptr, "Text to Speech not initialized.");
+	if (ids.has(p_id)) {
+		int pos = 0;
+		if ((DisplayServerEnums::TTSUtteranceEvent)p_event == DisplayServerEnums::TTS_UTTERANCE_BOUNDARY) {
+			// Convert position from UTF-16 to UTF-32.
+			const Char16String &string = ids[p_id];
+			for (int i = 0; i < MIN(p_pos, string.length()); i++) {
+				char16_t c = string[i];
+				if ((c & 0xfffffc00) == 0xd800) {
+					i++;
+				}
+				pos++;
+			}
+		} else if ((DisplayServerEnums::TTSUtteranceEvent)p_event != DisplayServerEnums::TTS_UTTERANCE_STARTED) {
+			ids.erase(p_id);
+		}
+		DisplayServer::tts_post_utterance_event((DisplayServerEnums::TTSUtteranceEvent)p_event, p_id, pos);
+	}
+}
+
+bool TTS_Android::is_speaking() {
+	if (unlikely(!initialized)) {
+		initialize_tts();
+	}
+	ERR_FAIL_COND_V_MSG(!initialized || tts == nullptr, false, "Text to Speech not initialized.");
+	if (_is_speaking) {
+		JNIEnv *env = get_jni_env();
+
+		ERR_FAIL_NULL_V(env, false);
+		return env->CallBooleanMethod(tts, _is_speaking);
+	} else {
+		return false;
+	}
+}
+
+bool TTS_Android::is_paused() {
+	if (unlikely(!initialized)) {
+		initialize_tts();
+	}
+	ERR_FAIL_COND_V_MSG(!initialized || tts == nullptr, false, "Text to Speech not initialized.");
+	if (_is_paused) {
+		JNIEnv *env = get_jni_env();
+
+		ERR_FAIL_NULL_V(env, false);
+		return env->CallBooleanMethod(tts, _is_paused);
+	} else {
+		return false;
+	}
+}
+
+Array TTS_Android::get_voices() {
+	if (unlikely(!initialized)) {
+		initialize_tts();
+	}
+	ERR_FAIL_COND_V_MSG(!initialized || tts == nullptr, Array(), "Text to Speech not initialized.");
+	Array list;
+	if (_get_voices) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, list);
+
+		jobject voices_object = env->CallObjectMethod(tts, _get_voices);
+		jobjectArray *arr = reinterpret_cast<jobjectArray *>(&voices_object);
+
+		jsize len = env->GetArrayLength(*arr);
+		for (int i = 0; i < len; i++) {
+			jstring jStr = (jstring)env->GetObjectArrayElement(*arr, i);
+			String str = jstring_to_string(jStr, env);
+			Vector<String> tokens = str.split(";", true, 2);
+			if (tokens.size() == 2) {
+				Dictionary voice_d;
+				voice_d["name"] = tokens[1];
+				voice_d["id"] = tokens[1];
+				voice_d["language"] = tokens[0];
+				list.push_back(voice_d);
+			}
+			env->DeleteLocalRef(jStr);
+		}
+	}
+	return list;
+}
+
+void TTS_Android::speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt) {
+	if (unlikely(!initialized)) {
+		initialize_tts();
+	}
+	ERR_FAIL_COND_MSG(!initialized || tts == nullptr, "Text to Speech not initialized.");
+	if (p_interrupt) {
+		stop();
+	}
+
+	if (p_text.is_empty()) {
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
+		return;
+	}
+
+	ids[p_utterance_id] = p_text.utf16();
+
+	if (_speak) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL(env);
+
+		jstring jStrT = env->NewStringUTF(p_text.utf8().get_data());
+		jstring jStrV = env->NewStringUTF(p_voice.utf8().get_data());
+		env->CallVoidMethod(tts, _speak, jStrT, jStrV, CLAMP(p_volume, 0, 100), CLAMP(p_pitch, 0.f, 2.f), CLAMP(p_rate, 0.1f, 10.f), p_utterance_id, p_interrupt);
+		env->DeleteLocalRef(jStrT);
+		env->DeleteLocalRef(jStrV);
+	}
+}
+
+void TTS_Android::pause() {
+	if (unlikely(!initialized)) {
+		initialize_tts();
+	}
+	ERR_FAIL_COND_MSG(!initialized || tts == nullptr, "Text to Speech not initialized.");
+	if (_pause_speaking) {
+		JNIEnv *env = get_jni_env();
+
+		ERR_FAIL_NULL(env);
+		env->CallVoidMethod(tts, _pause_speaking);
+	}
+}
+
+void TTS_Android::resume() {
+	if (unlikely(!initialized)) {
+		initialize_tts();
+	}
+	ERR_FAIL_COND_MSG(!initialized || tts == nullptr, "Text to Speech not initialized.");
+	if (_resume_speaking) {
+		JNIEnv *env = get_jni_env();
+
+		ERR_FAIL_NULL(env);
+		env->CallVoidMethod(tts, _resume_speaking);
+	}
+}
+
+void TTS_Android::stop() {
+	if (unlikely(!initialized)) {
+		initialize_tts();
+	}
+	ERR_FAIL_COND_MSG(!initialized || tts == nullptr, "Text to Speech not initialized.");
+	for (const KeyValue<int64_t, Char16String> &E : ids) {
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, E.key);
+	}
+	ids.clear();
+
+	if (_stop_speaking) {
+		JNIEnv *env = get_jni_env();
+
+		ERR_FAIL_NULL(env);
+		env->CallVoidMethod(tts, _stop_speaking);
+	}
+}
+
+
+// --- Merged from platform/android/thread_jandroid.cpp ---
+#include "platform/android/os_android.h"
+
+#include "core/os/thread.h"
+
+#include <android/log.h>
+
+static JavaVM *java_vm = nullptr;
+static thread_local JNIEnv *env = nullptr;
+
+// The logic here need to improve, init_thread/term_tread are designed to work with Thread::callback
+// Calling init_thread from setup_android_thread and get_jni_env to setup an env we're keeping and not detaching
+// could cause issues on app termination.
+//
+// We should be making sure that any thread started calls a nice cleanup function when it's done,
+// especially now that we use many more threads.
+
+static void init_thread() {
+	if (env) {
+		// thread never detached! just keep using...
+		return;
+	}
+
+	java_vm->AttachCurrentThread(&env, nullptr);
+}
+
+static void term_thread() {
+	java_vm->DetachCurrentThread();
+
+	// this is no longer valid, must called init_thread to re-establish
+	env = nullptr;
+}
+
+void init_thread_jandroid(JavaVM *p_jvm, JNIEnv *p_env) {
+	java_vm = p_jvm;
+	env = p_env;
+	Thread::_set_platform_functions({ .init = init_thread, .term = &term_thread });
+}
+
+void setup_android_thread() {
+	if (!env) {
+		// !BAS! see remarks above
+		init_thread();
+	}
+}
+
+JNIEnv *get_jni_env() {
+	if (!env) {
+		// !BAS! see remarks above
+		init_thread();
+	}
+
+	return env;
+}
+
+
+// --- Merged from platform/android/net_socket_android.cpp ---
+#include "platform/android/os_android.h"
+
+#include "platform/android/os_android.h"
+
+jobject NetSocketAndroid::net_utils = nullptr;
+jclass NetSocketAndroid::cls = nullptr;
+jmethodID NetSocketAndroid::_multicast_lock_acquire = nullptr;
+jmethodID NetSocketAndroid::_multicast_lock_release = nullptr;
+
+void NetSocketAndroid::setup(jobject p_net_utils) {
+	JNIEnv *env = get_jni_env();
+
+	net_utils = env->NewGlobalRef(p_net_utils);
+
+	jclass c = env->GetObjectClass(net_utils);
+	cls = (jclass)env->NewGlobalRef(c);
+
+	_multicast_lock_acquire = env->GetMethodID(cls, "multicastLockAcquire", "()V");
+	_multicast_lock_release = env->GetMethodID(cls, "multicastLockRelease", "()V");
+}
+
+void NetSocketAndroid::terminate() {
+	JNIEnv *env = get_jni_env();
+	ERR_FAIL_NULL(env);
+
+	env->DeleteGlobalRef(cls);
+	env->DeleteGlobalRef(net_utils);
+}
+
+void NetSocketAndroid::multicast_lock_acquire() {
+	if (_multicast_lock_acquire) {
+		JNIEnv *env = get_jni_env();
+		env->CallVoidMethod(net_utils, _multicast_lock_acquire);
+	}
+}
+
+void NetSocketAndroid::multicast_lock_release() {
+	if (_multicast_lock_release) {
+		JNIEnv *env = get_jni_env();
+		env->CallVoidMethod(net_utils, _multicast_lock_release);
+	}
+}
+
+Ref<NetSocket> NetSocketAndroid::_create_func() {
+	return memnew(NetSocketAndroid);
+}
+
+void NetSocketAndroid::make_default() {
+	_create = _create_func;
+}
+
+NetSocketAndroid::~NetSocketAndroid() {
+	close();
+}
+
+void NetSocketAndroid::close() {
+	NetSocketUnix::close();
+	if (wants_broadcast) {
+		multicast_lock_release();
+	}
+	if (multicast_groups) {
+		multicast_lock_release();
+	}
+	wants_broadcast = false;
+	multicast_groups = 0;
+}
+
+Error NetSocketAndroid::set_broadcasting_enabled(bool p_enabled) {
+	Error err = NetSocketUnix::set_broadcasting_enabled(p_enabled);
+	if (err != OK) {
+		return err;
+	}
+
+	if (p_enabled != wants_broadcast) {
+		if (p_enabled) {
+			multicast_lock_acquire();
+		} else {
+			multicast_lock_release();
+		}
+
+		wants_broadcast = p_enabled;
+	}
+
+	return OK;
+}
+
+Error NetSocketAndroid::join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
+	Error err = NetSocketUnix::join_multicast_group(p_multi_address, p_if_name);
+	if (err != OK) {
+		return err;
+	}
+
+	if (!multicast_groups) {
+		multicast_lock_acquire();
+	}
+	multicast_groups++;
+
+	return OK;
+}
+
+Error NetSocketAndroid::leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
+	Error err = NetSocketUnix::leave_multicast_group(p_multi_address, p_if_name);
+	if (err != OK) {
+		return err;
+	}
+
+	ERR_FAIL_COND_V(multicast_groups == 0, ERR_BUG);
+
+	multicast_groups--;
+	if (!multicast_groups) {
+		multicast_lock_release();
+	}
+
+	return OK;
+}

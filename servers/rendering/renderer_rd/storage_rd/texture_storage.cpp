@@ -31,12 +31,12 @@
 
 #include "core/config/engine.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/rd_caches.h"
-#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/storage/texture_storage.h"
+#include "servers/rendering/renderer.h"
 #include "texture_storage.h"
 
 using namespace RendererRD;
@@ -4470,9 +4470,9 @@ void RendererRD::TextureStorage::texture_set_format(RID p_texture, Image::Format
 #include "core/config/project_settings.h"
 #include "core/math/geometry_3d.h"
 #include "core/os/os.h"
-#include "light_storage.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 
 using namespace RendererRD;
@@ -7584,7 +7584,7 @@ bool RendererRD::LightStorage::has_directional_shadows(unsigned int p_index) { r
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/storage/mesh_storage.h"
+#include "servers/rendering/renderer.h"
 
 using namespace RendererRD;
 
@@ -10020,8 +10020,8 @@ void RendererRD::MeshStorage::finalize()
 // Merged from servers/rendering/renderer_rd/storage_rd/particles_storage.cpp
 // ============================================================================
 
-#include "particles_storage.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer_viewport.h"
@@ -11565,17 +11565,17 @@ void RendererRD::ParticlesStorage::ParticlesShaderData::set_code(const String& p
 // Merged from servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.cpp
 // ============================================================================
 
-#include "servers/rendering/renderer_rd/environment/rd_environment.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
-#include "servers/rendering/rendering_device_binds.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/particles_storage.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 
 // --- Merged from servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.cpp ---

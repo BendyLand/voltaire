@@ -173,7 +173,7 @@ public:
 // --- End servers/rendering/environment/renderer_gi.h ---
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_device_enums.h"
+#include "servers/rendering/rendering_device_commons.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
 // --- Folded from servers/rendering/storage/camera_attributes_storage.h ---
@@ -305,7 +305,7 @@ public:
 #include "core/math/vector3.h"
 #include "core/templates/rid.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/storage/render_scene_buffers.h"
+#include "servers/rendering/renderer_scene_render.h"
 
 namespace LightStorage
 {
@@ -1337,10 +1337,1524 @@ public:
 		api.set_directional_shadow_count(p_count);
 	}
 };
-#include "servers/rendering/storage/material_storage.h"
-#include "servers/rendering/storage/mesh_storage.h"
-#include "servers/rendering/storage/particles_storage.h"
-#include "servers/rendering/storage/texture_storage.h"
+// --- Inlined/Folded from servers/rendering/storage/material_storage.h ---
+#include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/storage/utilities.h"
+
+struct InstanceShaderParam
+{
+	int index;
+};
+
+namespace MaterialStorage
+{
+
+struct API
+{
+	/* GLOBAL SHADER UNIFORM API */
+	void (*global_shader_parameter_remove)(const String& p_name) = nullptr;
+	Vector<String> (*global_shader_parameter_get_list)() = nullptr;
+	RSE::GlobalShaderParameterType (*global_shader_parameter_get_type)(
+		const String& p_name) = nullptr;
+	void (*global_shader_parameters_load_settings)(bool p_load_textures) = nullptr;
+	void (*global_shader_parameters_clear)() = nullptr;
+	int32_t (*global_shader_parameters_instance_allocate)(RID p_instance) = nullptr;
+	void (*global_shader_parameters_instance_free)(RID p_instance) = nullptr;
+	void (*finalize)() = nullptr;
+
+	/* SHADER API */
+	RID (*shader_allocate)() = nullptr;
+	void (*shader_initialize)(RID p_rid, bool p_embedded) = nullptr;
+	void (*shader_free)(RID p_rid) = nullptr;
+	void (*shader_set_code)(RID p_shader, const String& p_code) = nullptr;
+	void (*shader_set_path_hint)(RID p_shader, const String& p_path) = nullptr;
+	String (*shader_get_code)(RID p_shader) = nullptr;
+	void (*shader_set_default_texture_parameter)(
+		RID p_shader, const String& p_name, RID p_texture, int p_index) = nullptr;
+	RID(*shader_get_default_texture_parameter)
+	(RID p_shader, const String& p_name, int p_index) = nullptr;
+	RenderingServerTypes::ShaderNativeSourceCode (*shader_get_native_source_code)(
+		RID p_shader) = nullptr;
+	void (*shader_embedded_set_lock)() = nullptr;
+	const HashSet<RID>& (*shader_embedded_set_get)() = nullptr;
+	void (*shader_embedded_set_unlock)() = nullptr;
+
+	/* MATERIAL API */
+	RID (*material_allocate)() = nullptr;
+	void (*material_initialize)(RID p_rid) = nullptr;
+	void (*material_free)(RID p_rid) = nullptr;
+	void (*material_set_render_priority)(RID p_material, int priority) = nullptr;
+	void (*material_set_shader)(RID p_shader_material, RID p_shader) = nullptr;
+	void (*material_set_next_pass)(RID p_material, RID p_next_material) = nullptr;
+	bool (*material_is_animated)(RID p_material) = nullptr;
+	bool (*material_casts_shadows)(RID p_material) = nullptr;
+	RSE::CullMode (*material_get_cull_mode)(RID p_material) = nullptr;
+	void (*material_get_instance_shader_parameters)(
+		RID p_material, List<InstanceShaderParam>* r_parameters) = nullptr;
+	void (*material_update_dependency)(RID p_material, DependencyTracker* p_instance) = nullptr;
+};
+
+}; // namespace MaterialStorage
+
+class RendererMaterialStorage final
+{
+private:
+    static inline MaterialStorage::API api;
+
+public:
+    RendererMaterialStorage() = delete;
+    RendererMaterialStorage(const RendererMaterialStorage&) = delete;
+    RendererMaterialStorage& operator=(const RendererMaterialStorage&) = delete;
+    ~RendererMaterialStorage() = delete;
+
+    template <typename StorageImpl>
+    static void bind()
+    {
+        /* GLOBAL SHADER UNIFORM API */
+        api.global_shader_parameter_remove = &StorageImpl::global_shader_parameter_remove;
+        api.global_shader_parameter_get_list = &StorageImpl::global_shader_parameter_get_list;
+        api.global_shader_parameter_get_type = &StorageImpl::global_shader_parameter_get_type;
+        api.global_shader_parameters_load_settings = &StorageImpl::global_shader_parameters_load_settings;
+        api.global_shader_parameters_clear = &StorageImpl::global_shader_parameters_clear;
+        api.global_shader_parameters_instance_allocate = &StorageImpl::global_shader_parameters_instance_allocate;
+        api.global_shader_parameters_instance_free = &StorageImpl::global_shader_parameters_instance_free;
+        api.finalize = &StorageImpl::finalize;
+
+        /* SHADER API */
+        api.shader_allocate = &StorageImpl::shader_allocate;
+        api.shader_initialize = &StorageImpl::shader_initialize;
+        api.shader_free = &StorageImpl::shader_free;
+        api.shader_set_code = &StorageImpl::shader_set_code;
+        api.shader_set_path_hint = &StorageImpl::shader_set_path_hint;
+        api.shader_get_code = &StorageImpl::shader_get_code;
+        api.shader_set_default_texture_parameter = &StorageImpl::shader_set_default_texture_parameter;
+        api.shader_get_default_texture_parameter = &StorageImpl::shader_get_default_texture_parameter;
+        api.shader_get_native_source_code = &StorageImpl::shader_get_native_source_code;
+        api.shader_embedded_set_lock = &StorageImpl::shader_embedded_set_lock;
+        api.shader_embedded_set_get = &StorageImpl::shader_embedded_set_get;
+        api.shader_embedded_set_unlock = &StorageImpl::shader_embedded_set_unlock;
+
+        /* MATERIAL API */
+        api.material_allocate = &StorageImpl::material_allocate;
+        api.material_initialize = &StorageImpl::material_initialize;
+        api.material_free = &StorageImpl::material_free;
+        api.material_set_render_priority = &StorageImpl::material_set_render_priority;
+        api.material_set_shader = &StorageImpl::material_set_shader;
+        api.material_set_next_pass = &StorageImpl::material_set_next_pass;
+        api.material_is_animated = &StorageImpl::material_is_animated;
+        api.material_casts_shadows = &StorageImpl::material_casts_shadows;
+        api.material_get_cull_mode = &StorageImpl::material_get_cull_mode;
+        api.material_get_instance_shader_parameters = &StorageImpl::material_get_instance_shader_parameters;
+        api.material_update_dependency = &StorageImpl::material_update_dependency;
+    }
+
+    /* GLOBAL SHADER UNIFORM API */
+    _FORCE_INLINE_ static void global_shader_parameter_remove(const String& p_name)
+    {
+        api.global_shader_parameter_remove(p_name);
+    }
+
+    _FORCE_INLINE_ static Vector<String> global_shader_parameter_get_list()
+    {
+        return api.global_shader_parameter_get_list();
+    }
+
+    _FORCE_INLINE_ static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
+        const String& p_name)
+    {
+        return api.global_shader_parameter_get_type(p_name);
+    }
+
+    _FORCE_INLINE_ static void global_shader_parameters_load_settings(bool p_load_textures = true)
+    {
+        api.global_shader_parameters_load_settings(p_load_textures);
+    }
+
+    _FORCE_INLINE_ static void global_shader_parameters_clear()
+    {
+        api.global_shader_parameters_clear();
+    }
+
+    _FORCE_INLINE_ static int32_t global_shader_parameters_instance_allocate(RID p_instance)
+    {
+        return api.global_shader_parameters_instance_allocate(p_instance);
+    }
+
+    _FORCE_INLINE_ static void global_shader_parameters_instance_free(RID p_instance)
+    {
+        api.global_shader_parameters_instance_free(p_instance);
+    }
+
+    /* SHADER API */
+    _FORCE_INLINE_ static RID shader_allocate()
+    {
+        return api.shader_allocate();
+    }
+
+    _FORCE_INLINE_ static void shader_initialize(RID p_rid, bool p_embedded = true)
+    {
+        api.shader_initialize(p_rid, p_embedded);
+    }
+
+    _FORCE_INLINE_ static void shader_free(RID p_rid)
+    {
+        api.shader_free(p_rid);
+    }
+
+    _FORCE_INLINE_ static void shader_set_code(RID p_shader, const String& p_code)
+    {
+        api.shader_set_code(p_shader, p_code);
+    }
+
+    _FORCE_INLINE_ static void shader_set_path_hint(RID p_shader, const String& p_path)
+    {
+        api.shader_set_path_hint(p_shader, p_path);
+    }
+
+    _FORCE_INLINE_ static String shader_get_code(RID p_shader)
+    {
+        return api.shader_get_code(p_shader);
+    }
+
+    _FORCE_INLINE_ static void shader_set_default_texture_parameter(
+        RID p_shader, const String& p_name, RID p_texture, int p_index)
+    {
+        api.shader_set_default_texture_parameter(p_shader, p_name, p_texture, p_index);
+    }
+
+    _FORCE_INLINE_ static RID shader_get_default_texture_parameter(
+        RID p_shader, const String& p_name, int p_index)
+    {
+        return api.shader_get_default_texture_parameter(p_shader, p_name, p_index);
+    }
+
+    _FORCE_INLINE_ static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
+        RID p_shader)
+    {
+        return api.shader_get_native_source_code(p_shader);
+    }
+
+    _FORCE_INLINE_ static void shader_embedded_set_lock()
+    {
+        api.shader_embedded_set_lock();
+    }
+
+    _FORCE_INLINE_ static const HashSet<RID>& shader_embedded_set_get()
+    {
+        return api.shader_embedded_set_get();
+    }
+
+    _FORCE_INLINE_ static void shader_embedded_set_unlock()
+    {
+        api.shader_embedded_set_unlock();
+    }
+
+    /* MATERIAL API */
+    _FORCE_INLINE_ static RID material_allocate()
+    {
+        return api.material_allocate();
+    }
+
+    _FORCE_INLINE_ static void material_initialize(RID p_rid)
+    {
+        api.material_initialize(p_rid);
+    }
+
+    _FORCE_INLINE_ static void material_free(RID p_rid)
+    {
+        api.material_free(p_rid);
+    }
+
+    _FORCE_INLINE_ static void material_set_render_priority(RID p_material, int priority)
+    {
+        api.material_set_render_priority(p_material, priority);
+    }
+
+    _FORCE_INLINE_ static void material_set_shader(RID p_shader_material, RID p_shader)
+    {
+        api.material_set_shader(p_shader_material, p_shader);
+    }
+
+    _FORCE_INLINE_ static void material_set_next_pass(RID p_material, RID p_next_material)
+    {
+        api.material_set_next_pass(p_material, p_next_material);
+    }
+
+    _FORCE_INLINE_ static bool material_is_animated(RID p_material)
+    {
+        return api.material_is_animated(p_material);
+    }
+
+    _FORCE_INLINE_ static bool material_casts_shadows(RID p_material)
+    {
+        return api.material_casts_shadows(p_material);
+    }
+
+    _FORCE_INLINE_ static RSE::CullMode material_get_cull_mode(RID p_material)
+    {
+        return api.material_get_cull_mode(p_material);
+    }
+
+    _FORCE_INLINE_ static void material_get_instance_shader_parameters(
+        RID p_material, List<InstanceShaderParam>* r_parameters)
+    {
+        api.material_get_instance_shader_parameters(p_material, r_parameters);
+    }
+
+    _FORCE_INLINE_ static void material_update_dependency(RID p_material, DependencyTracker* p_instance)
+    {
+        api.material_update_dependency(p_material, p_instance);
+    }
+
+    _FORCE_INLINE_ static void finalize()
+    {
+        if (api.finalize) {
+            api.finalize();
+        }
+    }
+};
+// --- Inlined/Folded from servers/rendering/storage/mesh_storage.h ---
+#include "core/math/color.h"
+#include "core/math/transform_2d.h"
+#include "core/templates/local_vector.h"
+#include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/storage/utilities.h"
+
+struct InterpolationData
+{
+    void notify_free_multimesh(RID p_rid);
+    LocalVector<RID> multimesh_interpolate_update_list;
+    LocalVector<RID> multimesh_transform_update_lists[2];
+    LocalVector<RID>* multimesh_transform_update_list_curr =
+        &multimesh_transform_update_lists[0];
+    LocalVector<RID>* multimesh_transform_update_list_prev =
+        &multimesh_transform_update_lists[1];
+};
+
+class RendererMeshStorage final
+{
+public:
+    RendererMeshStorage() = delete;
+    RendererMeshStorage(const RendererMeshStorage&) = delete;
+    RendererMeshStorage& operator=(const RendererMeshStorage&) = delete;
+    ~RendererMeshStorage() = delete;
+
+    /* MESH API */
+
+    inline static RID (*mesh_allocate)() = nullptr;
+    inline static void (*mesh_initialize)(RID p_rid) = nullptr;
+    inline static void (*mesh_free)(RID p_rid) = nullptr;
+
+    inline static void (*mesh_set_blend_shape_count)(RID p_mesh, int p_blend_shape_count) = nullptr;
+    inline static bool (*mesh_needs_instance)(RID p_mesh, bool p_has_skeleton) = nullptr;
+
+    inline static void (*mesh_add_surface)(
+        RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface) = nullptr;
+
+    inline static int (*mesh_get_blend_shape_count)(RID p_mesh) = nullptr;
+
+    inline static void (*mesh_set_blend_shape_mode)(RID p_mesh, RSE::BlendShapeMode p_mode) = nullptr;
+    inline static RSE::BlendShapeMode (*mesh_get_blend_shape_mode)(RID p_mesh) = nullptr;
+
+    inline static void (*mesh_surface_update_vertex_region)(
+        RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) = nullptr;
+    inline static void (*mesh_surface_update_attribute_region)(
+        RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) = nullptr;
+    inline static void (*mesh_surface_update_skin_region)(
+        RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) = nullptr;
+    inline static void (*mesh_surface_update_index_region)(
+        RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) = nullptr;
+
+    inline static void (*mesh_surface_set_material)(RID p_mesh, int p_surface, RID p_material) = nullptr;
+    inline static RID (*mesh_surface_get_material)(RID p_mesh, int p_surface) = nullptr;
+
+    inline static RenderingServerTypes::SurfaceData (*mesh_get_surface)(RID p_mesh, int p_surface) = nullptr;
+
+    inline static RID (*mesh_surface_get_vertex_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
+    inline static RID (*mesh_surface_get_attribute_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
+    inline static RID (*mesh_surface_get_skin_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
+    inline static RID (*mesh_surface_get_index_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
+
+    inline static int (*mesh_get_surface_count)(RID p_mesh) = nullptr;
+
+    inline static void (*mesh_set_custom_aabb)(RID p_mesh, const AABB& p_aabb) = nullptr;
+    inline static AABB (*mesh_get_custom_aabb)(RID p_mesh) = nullptr;
+    inline static AABB (*mesh_get_aabb)(RID p_mesh, RID p_skeleton) = nullptr;
+
+    inline static void (*mesh_set_path)(RID p_mesh, const String& p_path) = nullptr;
+    inline static String (*mesh_get_path)(RID p_mesh) = nullptr;
+    inline static void (*mesh_set_shadow_mesh)(RID p_mesh, RID p_shadow_mesh) = nullptr;
+
+    inline static void (*mesh_clear)(RID p_mesh) = nullptr;
+    inline static void (*mesh_surface_remove)(RID p_mesh, int p_surface) = nullptr;
+    inline static void (*mesh_debug_usage)(List<RenderingServerTypes::MeshInfo>* r_info) = nullptr;
+
+    /* MESH INSTANCE API */
+
+    inline static RID (*mesh_instance_create)(RID p_base) = nullptr;
+    inline static void (*mesh_instance_free)(RID p_mesh_instance) = nullptr;
+    inline static void (*mesh_instance_set_skeleton)(RID p_mesh_instance, RID p_skeleton) = nullptr;
+    inline static void (*mesh_instance_set_blend_shape_weight)(
+        RID p_mesh_instance, int p_shape, float p_weight) = nullptr;
+    inline static void (*mesh_instance_check_for_update)(RID p_mesh_instance) = nullptr;
+    inline static void (*mesh_instance_set_canvas_item_transform)(
+        RID p_mesh_instance, const Transform2D& p_transform) = nullptr;
+    inline static void (*update_mesh_instances)() = nullptr;
+
+    /* MULTIMESH STRUCTS & BACKEND DISPATCH HOOKS */
+
+    struct MultiMeshInterpolator
+    {
+        RSE::MultimeshTransformFormat _transform_format = RSE::MULTIMESH_TRANSFORM_3D;
+        bool _use_colors = false;
+        bool _use_custom_data = false;
+
+        int _stride = 0;
+        int _vf_size_xform = 0;
+        int _vf_size_color = 0;
+        int _vf_size_data = 0;
+        int _num_instances = 0;
+
+        int quality = 0;
+        bool interpolated = false;
+        bool on_interpolate_update_list = false;
+        bool on_transform_update_list = false;
+
+        Vector<float> _data_prev;
+        Vector<float> _data_curr;
+        Vector<float> _data_interpolated;
+    };
+
+    inline static RID (*_multimesh_allocate)() = nullptr;
+    inline static void (*_multimesh_initialize)(RID p_rid) = nullptr;
+    inline static void (*_multimesh_free)(RID p_rid) = nullptr;
+
+    inline static void (*_multimesh_allocate_data)(RID p_multimesh, int p_instances,
+        RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors,
+        bool p_use_custom_data, bool p_use_indirect) = nullptr;
+
+    inline static int (*_multimesh_get_instance_count)(RID p_multimesh) = nullptr;
+
+    inline static void (*_multimesh_set_mesh)(RID p_multimesh, RID p_mesh) = nullptr;
+    inline static void (*_multimesh_instance_set_transform)(
+        RID p_multimesh, int p_index, const Transform3D& p_transform) = nullptr;
+    inline static void (*_multimesh_instance_set_transform_2d)(
+        RID p_multimesh, int p_index, const Transform2D& p_transform) = nullptr;
+    inline static void (*_multimesh_instance_set_color)(
+        RID p_multimesh, int p_index, const Color& p_color) = nullptr;
+    inline static void (*_multimesh_instance_set_custom_data)(
+        RID p_multimesh, int p_index, const Color& p_color) = nullptr;
+
+    inline static void (*_multimesh_set_custom_aabb)(RID p_multimesh, const AABB& p_aabb) = nullptr;
+    inline static AABB (*_multimesh_get_custom_aabb)(RID p_multimesh) = nullptr;
+
+    inline static RID (*_multimesh_get_mesh)(RID p_multimesh) = nullptr;
+
+    inline static Transform3D (*_multimesh_instance_get_transform)(RID p_multimesh, int p_index) = nullptr;
+    inline static Transform2D (*_multimesh_instance_get_transform_2d)(RID p_multimesh, int p_index) = nullptr;
+    inline static Color (*_multimesh_instance_get_color)(RID p_multimesh, int p_index) = nullptr;
+    inline static Color (*_multimesh_instance_get_custom_data)(RID p_multimesh, int p_index) = nullptr;
+
+    inline static void (*_multimesh_set_buffer)(RID p_multimesh, const Vector<float>& p_buffer) = nullptr;
+    inline static RID (*_multimesh_get_command_buffer_rd_rid)(RID p_multimesh) = nullptr;
+    inline static RID (*_multimesh_get_buffer_rd_rid)(RID p_multimesh) = nullptr;
+    inline static Vector<float> (*_multimesh_get_buffer)(RID p_multimesh) = nullptr;
+
+    inline static void (*_multimesh_set_visible_instances)(RID p_multimesh, int p_visible) = nullptr;
+    inline static int (*_multimesh_get_visible_instances)(RID p_multimesh) = nullptr;
+
+    inline static AABB (*_multimesh_get_aabb)(RID p_multimesh) = nullptr;
+
+    inline static MultiMeshInterpolator* (*_multimesh_get_interpolator)(RID p_multimesh) = nullptr;
+
+    /* MULTIMESH PUBLIC FRONTEND API */
+
+    static _FORCE_INLINE_ RID multimesh_allocate() { return _multimesh_allocate(); }
+    static _FORCE_INLINE_ void multimesh_initialize(RID p_rid) { _multimesh_initialize(p_rid); }
+    static _FORCE_INLINE_ void multimesh_free(RID p_rid) { _multimesh_free(p_rid); }
+
+    static void multimesh_allocate_data(RID p_multimesh, int p_instances,
+        RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors = false,
+        bool p_use_custom_data = false, bool p_use_indirect = false);
+
+    static int multimesh_get_instance_count(RID p_multimesh);
+
+    static void multimesh_set_mesh(RID p_multimesh, RID p_mesh);
+    static void multimesh_instance_set_transform(
+        RID p_multimesh, int p_index, const Transform3D& p_transform);
+    static void multimesh_instance_set_transform_2d(
+        RID p_multimesh, int p_index, const Transform2D& p_transform);
+    static void multimesh_instance_set_color(RID p_multimesh, int p_index, const Color& p_color);
+    static void multimesh_instance_set_custom_data(
+        RID p_multimesh, int p_index, const Color& p_color);
+
+    static void multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb);
+    static AABB multimesh_get_custom_aabb(RID p_multimesh);
+
+    static RID multimesh_get_mesh(RID p_multimesh);
+
+    static Transform3D multimesh_instance_get_transform(RID p_multimesh, int p_index);
+    static Transform2D multimesh_instance_get_transform_2d(RID p_multimesh, int p_index);
+    static Color multimesh_instance_get_color(RID p_multimesh, int p_index);
+    static Color multimesh_instance_get_custom_data(RID p_multimesh, int p_index);
+
+    static void multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer);
+    static RID multimesh_get_command_buffer_rd_rid(RID p_multimesh);
+    static RID multimesh_get_buffer_rd_rid(RID p_multimesh);
+    static Vector<float> multimesh_get_buffer(RID p_multimesh);
+
+    static void multimesh_set_buffer_interpolated(
+        RID p_multimesh, const Vector<float>& p_buffer, const Vector<float>& p_buffer_prev);
+    static void multimesh_set_physics_interpolated(RID p_multimesh, bool p_interpolated);
+    static void multimesh_set_physics_interpolation_quality(
+        RID p_multimesh, RSE::MultimeshPhysicsInterpolationQuality p_quality);
+    static void multimesh_instance_reset_physics_interpolation(RID p_multimesh, int p_index);
+    static void multimesh_instances_reset_physics_interpolation(RID p_multimesh);
+
+    static void multimesh_set_visible_instances(RID p_multimesh, int p_visible);
+    static int multimesh_get_visible_instances(RID p_multimesh);
+
+    static AABB multimesh_get_aabb(RID p_multimesh);
+
+private:
+    static void _multimesh_add_to_interpolation_lists(RID p_multimesh, MultiMeshInterpolator& r_mmi);
+
+public:
+    /* SKELETON API */
+
+    inline static RID (*skeleton_allocate)() = nullptr;
+    inline static void (*skeleton_initialize)(RID p_rid) = nullptr;
+    inline static void (*skeleton_free)(RID p_rid) = nullptr;
+
+    inline static void (*skeleton_allocate_data)(
+        RID p_skeleton, int p_bones, bool p_2d_skeleton) = nullptr;
+    inline static void (*skeleton_set_base_transform_2d)(
+        RID p_skeleton, const Transform2D& p_base_transform) = nullptr;
+    inline static int (*skeleton_get_bone_count)(RID p_skeleton) = nullptr;
+    inline static void (*skeleton_bone_set_transform)(
+        RID p_skeleton, int p_bone, const Transform3D& p_transform) = nullptr;
+    inline static Transform3D (*skeleton_bone_get_transform)(RID p_skeleton, int p_bone) = nullptr;
+    inline static void (*skeleton_bone_set_transform_2d)(
+        RID p_skeleton, int p_bone, const Transform2D& p_transform) = nullptr;
+    inline static Transform2D (*skeleton_bone_get_transform_2d)(RID p_skeleton, int p_bone) = nullptr;
+
+    inline static void (*skeleton_update_dependency)(RID p_base, DependencyTracker* p_instance) = nullptr;
+
+    /* INTERPOLATION */
+
+    inline static InterpolationData _interpolation_data;
+
+    static void update_interpolation_tick(bool p_process = true);
+    static void update_interpolation_frame(bool p_process = true);
+};
+// --- Inlined/Folded from servers/rendering/storage/particles_storage.h ---
+#include "core/math/aabb.h"
+#include "core/math/color.h"
+#include "core/math/math_defs.h"
+#include "core/math/transform_3d.h"
+#include "core/math/vector3.h"
+#include "core/templates/rid.h"
+#include "core/templates/vector.h"
+#include "servers/rendering/rendering_server_enums.h"
+
+class RendererParticlesStorage
+{
+public:
+	/* PARTICLES FUNCTION POINTERS */
+	inline static RID (*particles_allocate)() = nullptr;
+	inline static void (*particles_initialize)(RID p_rid) = nullptr;
+	inline static void (*particles_free)(RID p_rid) = nullptr;
+
+	inline static void (*particles_set_mode)(RID p_particles, RSE::ParticlesMode p_mode) = nullptr;
+
+	inline static void (*particles_set_emitting)(RID p_particles, bool p_emitting) = nullptr;
+	inline static bool (*particles_get_emitting)(RID p_particles) = nullptr;
+
+	inline static void (*particles_set_amount)(RID p_particles, int p_amount) = nullptr;
+	inline static void (*particles_set_amount_ratio)(RID p_particles, float p_amount_ratio) = nullptr;
+	inline static void (*particles_set_lifetime)(RID p_particles, double p_lifetime) = nullptr;
+	inline static void (*particles_set_one_shot)(RID p_particles, bool p_one_shot) = nullptr;
+	inline static void (*particles_set_pre_process_time)(RID p_particles, double p_time) = nullptr;
+	inline static void (*particles_request_process_time)(
+		RID p_particles, real_t p_request_process_time, real_t p_request_process_time_residual) = nullptr;
+	inline static void (*particles_set_explosiveness_ratio)(RID p_particles, real_t p_ratio) = nullptr;
+	inline static void (*particles_set_randomness_ratio)(RID p_particles, real_t p_ratio) = nullptr;
+	inline static void (*particles_set_custom_aabb)(RID p_particles, const AABB &p_aabb) = nullptr;
+	inline static void (*particles_set_speed_scale)(RID p_particles, double p_scale) = nullptr;
+	inline static void (*particles_set_use_local_coordinates)(RID p_particles, bool p_enable) = nullptr;
+	inline static void (*particles_set_process_material)(RID p_particles, RID p_material) = nullptr;
+	inline static RID (*particles_get_process_material)(RID p_particles) = nullptr;
+	inline static void (*particles_set_fixed_fps)(RID p_particles, int p_fps) = nullptr;
+	inline static void (*particles_set_interpolate)(RID p_particles, bool p_enable) = nullptr;
+	inline static void (*particles_set_fractional_delta)(RID p_particles, bool p_enable) = nullptr;
+	inline static void (*particles_set_collision_base_size)(RID p_particles, real_t p_size) = nullptr;
+
+	inline static void (*particles_set_transform_align)(
+		RID p_particles, RSE::ParticlesTransformAlign p_transform_align) = nullptr;
+	inline static void (*particles_set_transform_align_channel_filter)(
+		RID p_particles, RSE::ParticlesTransformAlignCustomSrc p_channel_filter) = nullptr;
+	inline static void (*particles_set_transform_align_axis)(
+		RID p_particles, RSE::ParticlesTransformAlignAxis p_rotation_axis) = nullptr;
+
+	inline static void (*particles_set_seed)(RID p_particles, uint32_t p_seed) = nullptr;
+
+	inline static void (*particles_set_trails)(RID p_particles, bool p_enable, double p_length) = nullptr;
+	inline static void (*particles_set_trail_bind_poses)(
+		RID p_particles, const Vector<Transform3D> &p_bind_poses) = nullptr;
+
+	inline static void (*particles_restart)(RID p_particles) = nullptr;
+	inline static void (*particles_emit)(
+		RID p_particles, const Transform3D &p_transform, const Vector3 &p_velocity,
+		const Color &p_color, const Color &p_custom, uint32_t p_emit_flags) = nullptr;
+	inline static void (*particles_set_subemitter)(RID p_particles, RID p_subemitter_particles) = nullptr;
+
+	inline static bool (*particles_is_inactive)(RID p_particles) = nullptr;
+
+	inline static void (*particles_set_draw_order)(RID p_particles, RSE::ParticlesDrawOrder p_order) = nullptr;
+
+	inline static void (*particles_set_draw_passes)(RID p_particles, int p_count) = nullptr;
+	inline static void (*particles_set_draw_pass_mesh)(RID p_particles, int p_pass, RID p_mesh) = nullptr;
+
+	inline static void (*particles_request_process)(RID p_particles) = nullptr;
+	inline static AABB (*particles_get_current_aabb)(RID p_particles) = nullptr;
+	inline static AABB (*particles_get_aabb)(RID p_particles) = nullptr;
+
+	inline static void (*particles_set_emission_transform)(
+		RID p_particles, const Transform3D &p_transform) = nullptr;
+	inline static void (*particles_set_emitter_velocity)(RID p_particles, const Vector3 &p_velocity) = nullptr;
+	inline static void (*particles_set_interp_to_end)(RID p_particles, float p_interp_to_end) = nullptr;
+
+	inline static int (*particles_get_draw_passes)(RID p_particles) = nullptr;
+	inline static RID (*particles_get_draw_pass_mesh)(RID p_particles, int p_pass) = nullptr;
+
+	inline static void (*particles_set_view_axis)(
+		RID p_particles, const Vector3 &p_axis, const Vector3 &p_up_axis) = nullptr;
+
+	inline static void (*particles_add_collision)(RID p_particles, RID p_particles_collision_instance) = nullptr;
+	inline static void (*particles_remove_collision)(RID p_particles, RID p_particles_collision_instance) = nullptr;
+
+	inline static void (*update_particles)() = nullptr;
+
+	/* PARTICLES COLLISION FUNCTION POINTERS */
+	inline static RID (*particles_collision_allocate)() = nullptr;
+	inline static void (*particles_collision_initialize)(RID p_rid) = nullptr;
+	inline static void (*particles_collision_free)(RID p_rid) = nullptr;
+
+	inline static void (*particles_collision_set_collision_type)(
+		RID p_particles_collision, RSE::ParticlesCollisionType p_type) = nullptr;
+	inline static void (*particles_collision_set_cull_mask)(
+		RID p_particles_collision, uint32_t p_cull_mask) = nullptr;
+	inline static void (*particles_collision_set_sphere_radius)(
+		RID p_particles_collision, real_t p_radius) = nullptr;
+	inline static void (*particles_collision_set_box_extents)(
+		RID p_particles_collision, const Vector3 &p_extents) = nullptr;
+	inline static void (*particles_collision_set_attractor_strength)(
+		RID p_particles_collision, real_t p_strength) = nullptr;
+	inline static void (*particles_collision_set_attractor_directionality)(
+		RID p_particles_collision, real_t p_directionality) = nullptr;
+	inline static void (*particles_collision_set_attractor_attenuation)(
+		RID p_particles_collision, real_t p_curve) = nullptr;
+	inline static void (*particles_collision_set_field_texture)(
+		RID p_particles_collision, RID p_texture) = nullptr;
+	inline static void (*particles_collision_height_field_update)(RID p_particles_collision) = nullptr;
+	inline static void (*particles_collision_set_height_field_resolution)(
+		RID p_particles_collision, RSE::ParticlesCollisionHeightfieldResolution p_resolution) = nullptr;
+	inline static AABB (*particles_collision_get_aabb)(RID p_particles_collision) = nullptr;
+	inline static bool (*particles_collision_is_heightfield)(RID p_particles_collision) = nullptr;
+	inline static uint32_t (*particles_collision_get_height_field_mask)(RID p_particles_collision) = nullptr;
+	inline static void (*particles_collision_set_height_field_mask)(
+		RID p_particles_collision, uint32_t p_heightfield_mask) = nullptr;
+	inline static uint32_t (*particles_collision_get_cull_mask)(RID p_particles_collision) = nullptr;
+
+	inline static RID (*particles_collision_instance_create)(RID p_collision) = nullptr;
+	inline static void (*particles_collision_instance_free)(RID p_rid) = nullptr;
+	inline static void (*particles_collision_instance_set_transform)(
+		RID p_collision_instance, const Transform3D &p_transform) = nullptr;
+	inline static void (*particles_collision_instance_set_active)(
+		RID p_collision_instance, bool p_active) = nullptr;
+
+	/* BIND TEMPLATE */
+	template <typename T>
+	static void bind()
+	{
+		particles_allocate = T::particles_allocate;
+		particles_initialize = T::particles_initialize;
+		particles_free = T::particles_free;
+
+		particles_set_mode = T::particles_set_mode;
+
+		particles_set_emitting = T::particles_set_emitting;
+		particles_get_emitting = T::particles_get_emitting;
+
+		particles_set_amount = T::particles_set_amount;
+		particles_set_amount_ratio = T::particles_set_amount_ratio;
+		particles_set_lifetime = T::particles_set_lifetime;
+		particles_set_one_shot = T::particles_set_one_shot;
+		particles_set_pre_process_time = T::particles_set_pre_process_time;
+		particles_request_process_time = T::particles_request_process_time;
+		particles_set_explosiveness_ratio = T::particles_set_explosiveness_ratio;
+		particles_set_randomness_ratio = T::particles_set_randomness_ratio;
+		particles_set_custom_aabb = T::particles_set_custom_aabb;
+		particles_set_speed_scale = T::particles_set_speed_scale;
+		particles_set_use_local_coordinates = T::particles_set_use_local_coordinates;
+		particles_set_process_material = T::particles_set_process_material;
+		particles_get_process_material = T::particles_get_process_material;
+		particles_set_fixed_fps = T::particles_set_fixed_fps;
+		particles_set_interpolate = T::particles_set_interpolate;
+		particles_set_fractional_delta = T::particles_set_fractional_delta;
+		particles_set_collision_base_size = T::particles_set_collision_base_size;
+
+		particles_set_transform_align = T::particles_set_transform_align;
+		particles_set_transform_align_channel_filter = T::particles_set_transform_align_channel_filter;
+		particles_set_transform_align_axis = T::particles_set_transform_align_axis;
+
+		particles_set_seed = T::particles_set_seed;
+
+		particles_set_trails = T::particles_set_trails;
+		particles_set_trail_bind_poses = T::particles_set_trail_bind_poses;
+
+		particles_restart = T::particles_restart;
+		particles_emit = T::particles_emit;
+		particles_set_subemitter = T::particles_set_subemitter;
+
+		particles_is_inactive = T::particles_is_inactive;
+
+		particles_set_draw_order = T::particles_set_draw_order;
+
+		particles_set_draw_passes = T::particles_set_draw_passes;
+		particles_set_draw_pass_mesh = T::particles_set_draw_pass_mesh;
+
+		particles_request_process = T::particles_request_process;
+		particles_get_current_aabb = T::particles_get_current_aabb;
+		particles_get_aabb = T::particles_get_aabb;
+
+		particles_set_emission_transform = T::particles_set_emission_transform;
+		particles_set_emitter_velocity = T::particles_set_emitter_velocity;
+		particles_set_interp_to_end = T::particles_set_interp_to_end;
+
+		particles_get_draw_passes = T::particles_get_draw_passes;
+		particles_get_draw_pass_mesh = T::particles_get_draw_pass_mesh;
+
+		particles_set_view_axis = T::particles_set_view_axis;
+
+		particles_add_collision = T::particles_add_collision;
+		particles_remove_collision = T::particles_remove_collision;
+
+		update_particles = T::update_particles;
+
+		particles_collision_allocate = T::particles_collision_allocate;
+		particles_collision_initialize = T::particles_collision_initialize;
+		particles_collision_free = T::particles_collision_free;
+
+		particles_collision_set_collision_type = T::particles_collision_set_collision_type;
+		particles_collision_set_cull_mask = T::particles_collision_set_cull_mask;
+		particles_collision_set_sphere_radius = T::particles_collision_set_sphere_radius;
+		particles_collision_set_box_extents = T::particles_collision_set_box_extents;
+		particles_collision_set_attractor_strength = T::particles_collision_set_attractor_strength;
+		particles_collision_set_attractor_directionality = T::particles_collision_set_attractor_directionality;
+		particles_collision_set_attractor_attenuation = T::particles_collision_set_attractor_attenuation;
+		particles_collision_set_field_texture = T::particles_collision_set_field_texture;
+		particles_collision_height_field_update = T::particles_collision_height_field_update;
+		particles_collision_set_height_field_resolution = T::particles_collision_set_height_field_resolution;
+		particles_collision_get_aabb = T::particles_collision_get_aabb;
+		particles_collision_is_heightfield = T::particles_collision_is_heightfield;
+		particles_collision_get_height_field_mask = T::particles_collision_get_height_field_mask;
+		particles_collision_set_height_field_mask = T::particles_collision_set_height_field_mask;
+		particles_collision_get_cull_mask = T::particles_collision_get_cull_mask;
+
+		particles_collision_instance_create = T::particles_collision_instance_create;
+		particles_collision_instance_free = T::particles_collision_instance_free;
+		particles_collision_instance_set_transform = T::particles_collision_instance_set_transform;
+		particles_collision_instance_set_active = T::particles_collision_instance_set_active;
+	}
+};
+// --- Inlined/Folded from servers/rendering/storage/texture_storage.h ---
+#include "core/io/image.h"
+#include "core/math/aabb.h"
+#include "core/math/color.h"
+#include "core/math/rect2.h"
+#include "core/math/transform_3d.h"
+#include "core/math/vector3.h"
+#include "core/templates/rid.h"
+#include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/rendering_server_types.h"
+
+struct RenderTargetSetOverrideFn
+{
+	void (*ptr)(RID, RID, RID, RID, RID) = nullptr;
+
+	void operator=(void (*p_ptr)(RID, RID, RID, RID, RID)) { ptr = p_ptr; }
+
+	_FORCE_INLINE_ void operator()(RID p_render_target, RID p_color_texture, RID p_depth_texture,
+		RID p_velocity = RID(), RID p_velocity_depth = RID()) const
+	{
+		if (ptr) {
+			ptr(p_render_target, p_color_texture, p_depth_texture, p_velocity, p_velocity_depth);
+		}
+	}
+};
+
+namespace TextureStorage
+{
+
+struct API
+{
+	Color (*get_default_clear_color)() = nullptr;
+	/* CANVAS TEXTURE API */
+	RID (*canvas_texture_allocate)() = nullptr;
+	void (*canvas_texture_initialize)(RID p_rid) = nullptr;
+	void (*canvas_texture_free)(RID p_rid) = nullptr;
+
+	void (*canvas_texture_set_channel)(
+		RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture) = nullptr;
+	void (*canvas_texture_set_shading_parameters)(
+		RID p_canvas_texture, const Color& p_base_color, float p_shininess) = nullptr;
+	void (*canvas_texture_set_texture_filter)(
+		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter) = nullptr;
+	void (*canvas_texture_set_texture_repeat)(
+		RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat) = nullptr;
+	void (*set_default_clear_color)(const Color& p_color) = nullptr;
+
+	/* TEXTURE 2D / GENERAL API */
+	RID (*texture_allocate)() = nullptr;
+	void (*texture_free)(RID p_rid) = nullptr;
+
+	void (*texture_2d_initialize)(RID p_texture, const Ref<Image>& p_image) = nullptr;
+	void (*texture_2d_update)(RID p_texture, const Ref<Image>& p_image, int p_layer) = nullptr;
+	Ref<Image> (*texture_2d_get)(RID p_texture) = nullptr;
+	Ref<Image> (*texture_2d_layer_get)(RID p_texture, int p_layer) = nullptr;
+
+	void (*texture_2d_placeholder_initialize)(RID p_texture) = nullptr;
+
+	void (*texture_2d_layered_initialize)(RID p_texture, const Vector<Ref<Image>>& p_layers,
+		RSE::TextureLayeredType p_layered_type) = nullptr;
+	void (*texture_2d_layered_placeholder_initialize)(
+		RID p_texture, RSE::TextureLayeredType p_layered_type) = nullptr;
+
+	void (*texture_3d_initialize)(RID p_texture, Image::Format p_format, int p_width, int p_height,
+		int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data) = nullptr;
+	void (*texture_3d_update)(RID p_texture, const Vector<Ref<Image>>& p_data) = nullptr;
+	Vector<Ref<Image>> (*texture_3d_get)(RID p_texture) = nullptr;
+	void (*texture_3d_placeholder_initialize)(RID p_texture) = nullptr;
+
+	void (*texture_proxy_initialize)(RID p_texture, RID p_base) = nullptr;
+	void (*texture_proxy_update)(RID p_proxy, RID p_base) = nullptr;
+
+	void (*texture_drawable_initialize)(RID p_texture, int p_width, int p_height,
+		RSE::TextureDrawableFormat p_format, const Color& p_color, bool p_has_mipmaps) = nullptr;
+	void (*texture_drawable_generate_mipmaps)(RID p_texture) = nullptr;
+	RID (*texture_drawable_get_default_material)() = nullptr;
+
+	void (*texture_external_initialize)(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer) = nullptr;
+	void (*texture_external_update)(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer) = nullptr;
+
+	uint64_t (*texture_get_native_handle)(RID p_texture, bool p_srgb) = nullptr;
+
+	void (*texture_set_format)(RID p_texture, Image::Format p_format) = nullptr;
+	Image::Format (*texture_get_format)(RID p_texture) = nullptr;
+
+	void (*texture_set_path)(RID p_texture, const String& p_path) = nullptr;
+	String (*texture_get_path)(RID p_texture) = nullptr;
+	void (*texture_set_size_override)(RID p_texture, int p_width, int p_height) = nullptr;
+
+	void (*texture_replace)(RID p_texture, RID p_by_texture) = nullptr;
+	void (*texture_set_force_redraw_if_visible)(RID p_texture, bool p_enable) = nullptr;
+	Size2 (*texture_size_with_proxy)(RID p_proxy) = nullptr;
+
+	/* DECAL API */
+	RID (*decal_allocate)() = nullptr;
+	void (*decal_initialize)(RID p_rid) = nullptr;
+	void (*decal_free)(RID p_rid) = nullptr;
+
+	void (*decal_set_size)(RID p_decal, const Vector3& p_size) = nullptr;
+	void (*decal_set_texture)(RID p_decal, RSE::DecalTexture p_type, RID p_texture) = nullptr;
+	void (*decal_set_emission_energy)(RID p_decal, float p_energy) = nullptr;
+	void (*decal_set_albedo_mix)(RID p_decal, float p_mix) = nullptr;
+	void (*decal_set_modulate)(RID p_decal, const Color& p_modulate) = nullptr;
+	void (*decal_set_cull_mask)(RID p_decal, uint32_t p_layers) = nullptr;
+	void (*decal_set_distance_fade)(
+		RID p_decal, bool p_enabled, float p_begin, float p_length) = nullptr;
+	void (*decal_set_fade)(RID p_decal, float p_above, float p_below) = nullptr;
+	void (*decal_set_normal_fade)(RID p_decal, float p_fade) = nullptr;
+
+	AABB (*decal_get_aabb)(RID p_decal) = nullptr;
+	uint32_t (*decal_get_cull_mask)(RID p_decal) = nullptr;
+
+	RID (*decal_instance_create)(RID p_decal) = nullptr;
+	void (*decal_instance_free)(RID p_decal_instance) = nullptr;
+	void (*decal_instance_set_transform)(
+		RID p_decal_instance, const Transform3D& p_transform) = nullptr;
+	void (*decal_instance_set_sorting_offset)(
+		RID p_decal_instance, float p_sorting_offset) = nullptr;
+
+	/* RENDER TARGET API */
+	RID (*render_target_create)() = nullptr;
+	void (*render_target_free)(RID p_render_target) = nullptr;
+
+	void (*render_target_set_position)(RID p_render_target, int p_x, int p_y) = nullptr;
+	Point2i (*render_target_get_position)(RID p_render_target) = nullptr;
+
+	void (*render_target_set_size)(
+		RID p_render_target, int p_width, int p_height, uint32_t p_view_count) = nullptr;
+	Size2i (*render_target_get_size)(RID p_render_target) = nullptr;
+
+	void (*render_target_set_transparent)(RID p_render_target, bool p_is_transparent) = nullptr;
+	void (*render_target_set_direct_to_screen)(
+		RID p_render_target, bool p_direct_to_screen) = nullptr;
+
+	RID (*render_target_get_texture)(RID p_render_target) = nullptr;
+
+	void (*render_target_set_msaa)(RID p_render_target, RSE::ViewportMSAA p_msaa) = nullptr;
+	RSE::ViewportMSAA (*render_target_get_msaa)(RID p_render_target) = nullptr;
+	bool (*render_target_get_msaa_needs_resolve)(RID p_render_target) = nullptr;
+	void (*render_target_do_msaa_resolve)(RID p_render_target) = nullptr;
+
+	void (*render_target_set_use_hdr)(RID p_render_target, bool p_use_hdr) = nullptr;
+	bool (*render_target_is_using_hdr)(RID p_render_target) = nullptr;
+
+	void (*render_target_set_use_debanding)(RID p_render_target, bool p_use_debanding) = nullptr;
+
+	void (*render_target_set_vrs_mode)(RID p_render_target, RSE::ViewportVRSMode p_mode) = nullptr;
+	void (*render_target_set_vrs_update_mode)(
+		RID p_render_target, RSE::ViewportVRSUpdateMode p_mode) = nullptr;
+	void (*render_target_set_vrs_texture)(RID p_render_target, RID p_texture) = nullptr;
+
+	void (*render_target_request_clear)(RID p_render_target, const Color& p_clear_color) = nullptr;
+	bool (*render_target_is_clear_requested)(RID p_render_target) = nullptr;
+	Color (*render_target_get_clear_request_color)(RID p_render_target) = nullptr;
+	void (*render_target_do_clear_request)(RID p_render_target) = nullptr;
+
+	void (*render_target_set_sdf_size_and_scale)(RID p_render_target,
+		RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale) = nullptr;
+	Rect2i (*render_target_get_sdf_rect)(RID p_render_target) = nullptr;
+	void (*render_target_mark_sdf_enabled)(RID p_render_target, bool p_enabled) = nullptr;
+
+	RenderTargetSetOverrideFn render_target_set_override;
+
+	RID (*render_target_get_override_color)(RID p_render_target) = nullptr;
+	RID (*render_target_get_override_depth)(RID p_render_target) = nullptr;
+	RID (*render_target_get_override_velocity)(RID p_render_target) = nullptr;
+	RID (*render_target_get_override_velocity_depth)(RID p_render_target) = nullptr;
+
+	void (*render_target_set_render_region)(
+		RID p_render_target, const Rect2i& p_render_region) = nullptr;
+	Rect2i (*render_target_get_render_region)(RID p_render_target) = nullptr;
+
+	void (*render_target_set_velocity_target_size)(
+		RID p_render_target, const Size2i& p_target_size) = nullptr;
+	Size2i (*render_target_get_velocity_target_size)(RID p_render_target) = nullptr;
+
+	bool (*render_target_was_used)(RID p_render_target) = nullptr;
+	void (*render_target_set_as_unused)(RID p_render_target) = nullptr;
+};
+
+}; // namespace TextureStorage
+
+class RendererTextureStorage final
+{
+private:
+	static inline TextureStorage::API api;
+
+public:
+	RendererTextureStorage() = delete;
+	RendererTextureStorage(const RendererTextureStorage&) = delete;
+	RendererTextureStorage& operator=(const RendererTextureStorage&) = delete;
+	~RendererTextureStorage() = delete;
+
+	template <typename StorageImpl> static void bind()
+	{
+		api.set_default_clear_color = &StorageImpl::set_default_clear_color;
+		api.get_default_clear_color = &StorageImpl::get_default_clear_color;
+		/* CANVAS TEXTURE API */
+		api.canvas_texture_allocate = &StorageImpl::canvas_texture_allocate;
+		api.canvas_texture_initialize = &StorageImpl::canvas_texture_initialize;
+		api.canvas_texture_free = &StorageImpl::canvas_texture_free;
+		api.canvas_texture_set_channel = &StorageImpl::canvas_texture_set_channel;
+		api.canvas_texture_set_shading_parameters =
+			&StorageImpl::canvas_texture_set_shading_parameters;
+		api.canvas_texture_set_texture_filter = &StorageImpl::canvas_texture_set_texture_filter;
+		api.canvas_texture_set_texture_repeat = &StorageImpl::canvas_texture_set_texture_repeat;
+
+		/* TEXTURE 2D / GENERAL API */
+		api.texture_allocate = &StorageImpl::texture_allocate;
+		api.texture_free = &StorageImpl::texture_free;
+		api.texture_2d_initialize = &StorageImpl::texture_2d_initialize;
+		api.texture_2d_update = &StorageImpl::texture_2d_update;
+		api.texture_2d_get = &StorageImpl::texture_2d_get;
+		api.texture_2d_layer_get = &StorageImpl::texture_2d_layer_get;
+		api.texture_2d_placeholder_initialize = &StorageImpl::texture_2d_placeholder_initialize;
+		api.texture_2d_layered_initialize = &StorageImpl::texture_2d_layered_initialize;
+		api.texture_2d_layered_placeholder_initialize =
+			&StorageImpl::texture_2d_layered_placeholder_initialize;
+		api.texture_3d_initialize = &StorageImpl::texture_3d_initialize;
+		api.texture_3d_update = &StorageImpl::texture_3d_update;
+		api.texture_3d_get = &StorageImpl::texture_3d_get;
+		api.texture_3d_placeholder_initialize = &StorageImpl::texture_3d_placeholder_initialize;
+		api.texture_proxy_initialize = &StorageImpl::texture_proxy_initialize;
+		api.texture_proxy_update = &StorageImpl::texture_proxy_update;
+		api.texture_drawable_initialize = &StorageImpl::texture_drawable_initialize;
+		api.texture_drawable_generate_mipmaps = &StorageImpl::texture_drawable_generate_mipmaps;
+		api.texture_drawable_get_default_material =
+			&StorageImpl::texture_drawable_get_default_material;
+		api.texture_external_initialize = &StorageImpl::texture_external_initialize;
+		api.texture_external_update = &StorageImpl::texture_external_update;
+		api.texture_get_native_handle = &StorageImpl::texture_get_native_handle;
+		api.texture_set_format = &StorageImpl::texture_set_format;
+		api.texture_get_format = &StorageImpl::texture_get_format;
+		api.texture_set_path = &StorageImpl::texture_set_path;
+		api.texture_get_path = &StorageImpl::texture_get_path;
+		api.texture_set_size_override = &StorageImpl::texture_set_size_override;
+		api.texture_replace = &StorageImpl::texture_replace;
+		api.texture_set_force_redraw_if_visible = &StorageImpl::texture_set_force_redraw_if_visible;
+		api.texture_size_with_proxy = &StorageImpl::texture_size_with_proxy;
+
+		/* DECAL API */
+		api.decal_allocate = &StorageImpl::decal_allocate;
+		api.decal_initialize = &StorageImpl::decal_initialize;
+		api.decal_free = &StorageImpl::decal_free;
+		api.decal_set_size = &StorageImpl::decal_set_size;
+		api.decal_set_texture = &StorageImpl::decal_set_texture;
+		api.decal_set_emission_energy = &StorageImpl::decal_set_emission_energy;
+		api.decal_set_albedo_mix = &StorageImpl::decal_set_albedo_mix;
+		api.decal_set_modulate = &StorageImpl::decal_set_modulate;
+		api.decal_set_cull_mask = &StorageImpl::decal_set_cull_mask;
+		api.decal_set_distance_fade = &StorageImpl::decal_set_distance_fade;
+		api.decal_set_fade = &StorageImpl::decal_set_fade;
+		api.decal_set_normal_fade = &StorageImpl::decal_set_normal_fade;
+		api.decal_get_aabb = &StorageImpl::decal_get_aabb;
+		api.decal_get_cull_mask = &StorageImpl::decal_get_cull_mask;
+		api.decal_instance_create = &StorageImpl::decal_instance_create;
+		api.decal_instance_free = &StorageImpl::decal_instance_free;
+		api.decal_instance_set_transform = &StorageImpl::decal_instance_set_transform;
+		api.decal_instance_set_sorting_offset = &StorageImpl::decal_instance_set_sorting_offset;
+
+		/* RENDER TARGET API */
+		api.render_target_create = &StorageImpl::render_target_create;
+		api.render_target_free = &StorageImpl::render_target_free;
+		api.render_target_set_position = &StorageImpl::render_target_set_position;
+		api.render_target_get_position = &StorageImpl::render_target_get_position;
+		api.render_target_set_size = &StorageImpl::render_target_set_size;
+		api.render_target_get_size = &StorageImpl::render_target_get_size;
+		api.render_target_set_transparent = &StorageImpl::render_target_set_transparent;
+		api.render_target_set_direct_to_screen = &StorageImpl::render_target_set_direct_to_screen;
+		api.render_target_get_texture = &StorageImpl::render_target_get_texture;
+		api.render_target_set_msaa = &StorageImpl::render_target_set_msaa;
+		api.render_target_get_msaa = &StorageImpl::render_target_get_msaa;
+		api.render_target_get_msaa_needs_resolve =
+			&StorageImpl::render_target_get_msaa_needs_resolve;
+		api.render_target_do_msaa_resolve = &StorageImpl::render_target_do_msaa_resolve;
+		api.render_target_set_use_hdr = &StorageImpl::render_target_set_use_hdr;
+		api.render_target_is_using_hdr = &StorageImpl::render_target_is_using_hdr;
+		api.render_target_set_use_debanding = &StorageImpl::render_target_set_use_debanding;
+		api.render_target_set_vrs_mode = &StorageImpl::render_target_set_vrs_mode;
+		api.render_target_set_vrs_update_mode = &StorageImpl::render_target_set_vrs_update_mode;
+		api.render_target_set_vrs_texture = &StorageImpl::render_target_set_vrs_texture;
+		api.render_target_request_clear = &StorageImpl::render_target_request_clear;
+		api.render_target_is_clear_requested = &StorageImpl::render_target_is_clear_requested;
+		api.render_target_get_clear_request_color =
+			&StorageImpl::render_target_get_clear_request_color;
+		api.render_target_do_clear_request = &StorageImpl::render_target_do_clear_request;
+		api.render_target_set_sdf_size_and_scale =
+			&StorageImpl::render_target_set_sdf_size_and_scale;
+		api.render_target_get_sdf_rect = &StorageImpl::render_target_get_sdf_rect;
+		api.render_target_mark_sdf_enabled = &StorageImpl::render_target_mark_sdf_enabled;
+		api.render_target_set_override = &StorageImpl::render_target_set_override;
+		api.render_target_get_override_color = &StorageImpl::render_target_get_override_color;
+		api.render_target_get_override_depth = &StorageImpl::render_target_get_override_depth;
+		api.render_target_get_override_velocity = &StorageImpl::render_target_get_override_velocity;
+		api.render_target_get_override_velocity_depth =
+			&StorageImpl::render_target_get_override_velocity_depth;
+		api.render_target_set_render_region = &StorageImpl::render_target_set_render_region;
+		api.render_target_get_render_region = &StorageImpl::render_target_get_render_region;
+		api.render_target_set_velocity_target_size =
+			&StorageImpl::render_target_set_velocity_target_size;
+		api.render_target_get_velocity_target_size =
+			&StorageImpl::render_target_get_velocity_target_size;
+		api.render_target_was_used = &StorageImpl::render_target_was_used;
+		api.render_target_set_as_unused = &StorageImpl::render_target_set_as_unused;
+	}
+
+	/* CANVAS TEXTURE API */
+	_FORCE_INLINE_ static RID canvas_texture_allocate() { return api.canvas_texture_allocate(); }
+
+	_FORCE_INLINE_ static void canvas_texture_initialize(RID p_rid)
+	{
+		api.canvas_texture_initialize(p_rid);
+	}
+
+	_FORCE_INLINE_ static void canvas_texture_free(RID p_rid) { api.canvas_texture_free(p_rid); }
+
+	_FORCE_INLINE_ static void canvas_texture_set_channel(
+		RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
+	{
+		api.canvas_texture_set_channel(p_canvas_texture, p_channel, p_texture);
+	}
+
+	_FORCE_INLINE_ static void canvas_texture_set_shading_parameters(
+		RID p_canvas_texture, const Color& p_base_color, float p_shininess)
+	{
+		api.canvas_texture_set_shading_parameters(p_canvas_texture, p_base_color, p_shininess);
+	}
+
+	_FORCE_INLINE_ static void canvas_texture_set_texture_filter(
+		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
+	{
+		api.canvas_texture_set_texture_filter(p_canvas_texture, p_filter);
+	}
+
+	_FORCE_INLINE_ static void canvas_texture_set_texture_repeat(
+		RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat)
+	{
+		api.canvas_texture_set_texture_repeat(p_canvas_texture, p_repeat);
+	}
+
+	/* TEXTURE 2D / GENERAL API */
+	_FORCE_INLINE_ static RID texture_allocate() { return api.texture_allocate(); }
+
+	_FORCE_INLINE_ static void texture_free(RID p_rid) { api.texture_free(p_rid); }
+
+	_FORCE_INLINE_ static void texture_2d_initialize(RID p_texture, const Ref<Image>& p_image)
+	{
+		api.texture_2d_initialize(p_texture, p_image);
+	}
+
+	_FORCE_INLINE_ static void texture_2d_update(
+		RID p_texture, const Ref<Image>& p_image, int p_layer)
+	{
+		api.texture_2d_update(p_texture, p_image, p_layer);
+	}
+
+	_FORCE_INLINE_ static Ref<Image> texture_2d_get(RID p_texture)
+	{
+		return api.texture_2d_get(p_texture);
+	}
+
+	_FORCE_INLINE_ static Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer)
+	{
+		return api.texture_2d_layer_get(p_texture, p_layer);
+	}
+
+	_FORCE_INLINE_ static void texture_2d_placeholder_initialize(RID p_texture)
+	{
+		api.texture_2d_placeholder_initialize(p_texture);
+	}
+
+	_FORCE_INLINE_ static void texture_2d_layered_initialize(
+		RID p_texture, const Vector<Ref<Image>>& p_layers, RSE::TextureLayeredType p_layered_type)
+	{
+		api.texture_2d_layered_initialize(p_texture, p_layers, p_layered_type);
+	}
+
+	_FORCE_INLINE_ static void texture_2d_layered_placeholder_initialize(
+		RID p_texture, RSE::TextureLayeredType p_layered_type)
+	{
+		api.texture_2d_layered_placeholder_initialize(p_texture, p_layered_type);
+	}
+
+	_FORCE_INLINE_ static void texture_3d_initialize(RID p_texture, Image::Format p_format,
+		int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
+	{
+		api.texture_3d_initialize(
+			p_texture, p_format, p_width, p_height, p_depth, p_mipmaps, p_data);
+	}
+
+	_FORCE_INLINE_ static void texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data)
+	{
+		api.texture_3d_update(p_texture, p_data);
+	}
+
+	_FORCE_INLINE_ static Vector<Ref<Image>> texture_3d_get(RID p_texture)
+	{
+		return api.texture_3d_get(p_texture);
+	}
+
+	_FORCE_INLINE_ static void texture_3d_placeholder_initialize(RID p_texture)
+	{
+		api.texture_3d_placeholder_initialize(p_texture);
+	}
+
+	_FORCE_INLINE_ static void texture_proxy_initialize(RID p_texture, RID p_base)
+	{
+		api.texture_proxy_initialize(p_texture, p_base);
+	}
+
+	_FORCE_INLINE_ static void texture_proxy_update(RID p_proxy, RID p_base)
+	{
+		api.texture_proxy_update(p_proxy, p_base);
+	}
+
+	_FORCE_INLINE_ static void texture_drawable_initialize(RID p_texture, int p_width, int p_height,
+		RSE::TextureDrawableFormat p_format, const Color& p_color, bool p_has_mipmaps)
+	{
+		api.texture_drawable_initialize(
+			p_texture, p_width, p_height, p_format, p_color, p_has_mipmaps);
+	}
+
+	_FORCE_INLINE_ static void texture_drawable_generate_mipmaps(RID p_texture)
+	{
+		api.texture_drawable_generate_mipmaps(p_texture);
+	}
+
+	_FORCE_INLINE_ static RID texture_drawable_get_default_material()
+	{
+		return api.texture_drawable_get_default_material();
+	}
+
+	_FORCE_INLINE_ static void texture_external_initialize(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
+	{
+		api.texture_external_initialize(p_texture, p_width, p_height, p_external_buffer);
+	}
+
+	_FORCE_INLINE_ static void texture_external_update(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
+	{
+		api.texture_external_update(p_texture, p_width, p_height, p_external_buffer);
+	}
+
+	_FORCE_INLINE_ static uint64_t texture_get_native_handle(RID p_texture, bool p_srgb)
+	{
+		return api.texture_get_native_handle(p_texture, p_srgb);
+	}
+
+	_FORCE_INLINE_ static void texture_set_format(RID p_texture, Image::Format p_format)
+	{
+		api.texture_set_format(p_texture, p_format);
+	}
+
+	_FORCE_INLINE_ static Image::Format texture_get_format(RID p_texture)
+	{
+		return api.texture_get_format(p_texture);
+	}
+
+	_FORCE_INLINE_ static void texture_set_path(RID p_texture, const String& p_path)
+	{
+		api.texture_set_path(p_texture, p_path);
+	}
+
+	_FORCE_INLINE_ static String texture_get_path(RID p_texture)
+	{
+		return api.texture_get_path(p_texture);
+	}
+
+	_FORCE_INLINE_ static void texture_set_size_override(RID p_texture, int p_width, int p_height)
+	{
+		api.texture_set_size_override(p_texture, p_width, p_height);
+	}
+
+	_FORCE_INLINE_ static void texture_replace(RID p_texture, RID p_by_texture)
+	{
+		api.texture_replace(p_texture, p_by_texture);
+	}
+
+	_FORCE_INLINE_ static void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable)
+	{
+		api.texture_set_force_redraw_if_visible(p_texture, p_enable);
+	}
+
+	_FORCE_INLINE_ static Size2 texture_size_with_proxy(RID p_proxy)
+	{
+		return api.texture_size_with_proxy(p_proxy);
+	}
+
+	/* DECAL API */
+	_FORCE_INLINE_ static RID decal_allocate() { return api.decal_allocate(); }
+
+	_FORCE_INLINE_ static void decal_initialize(RID p_rid) { api.decal_initialize(p_rid); }
+
+	_FORCE_INLINE_ static void decal_free(RID p_rid) { api.decal_free(p_rid); }
+
+	_FORCE_INLINE_ static void decal_set_size(RID p_decal, const Vector3& p_size)
+	{
+		api.decal_set_size(p_decal, p_size);
+	}
+
+	_FORCE_INLINE_ static void decal_set_texture(
+		RID p_decal, RSE::DecalTexture p_type, RID p_texture)
+	{
+		api.decal_set_texture(p_decal, p_type, p_texture);
+	}
+
+	_FORCE_INLINE_ static void decal_set_emission_energy(RID p_decal, float p_energy)
+	{
+		api.decal_set_emission_energy(p_decal, p_energy);
+	}
+
+	_FORCE_INLINE_ static void decal_set_albedo_mix(RID p_decal, float p_mix)
+	{
+		api.decal_set_albedo_mix(p_decal, p_mix);
+	}
+
+	_FORCE_INLINE_ static void decal_set_modulate(RID p_decal, const Color& p_modulate)
+	{
+		api.decal_set_modulate(p_decal, p_modulate);
+	}
+
+	_FORCE_INLINE_ static void decal_set_cull_mask(RID p_decal, uint32_t p_layers)
+	{
+		api.decal_set_cull_mask(p_decal, p_layers);
+	}
+
+	_FORCE_INLINE_ static void decal_set_distance_fade(
+		RID p_decal, bool p_enabled, float p_begin, float p_length)
+	{
+		api.decal_set_distance_fade(p_decal, p_enabled, p_begin, p_length);
+	}
+
+	_FORCE_INLINE_ static void decal_set_fade(RID p_decal, float p_above, float p_below)
+	{
+		api.decal_set_fade(p_decal, p_above, p_below);
+	}
+
+	_FORCE_INLINE_ static void decal_set_normal_fade(RID p_decal, float p_fade)
+	{
+		api.decal_set_normal_fade(p_decal, p_fade);
+	}
+
+	_FORCE_INLINE_ static AABB decal_get_aabb(RID p_decal) { return api.decal_get_aabb(p_decal); }
+
+	_FORCE_INLINE_ static uint32_t decal_get_cull_mask(RID p_decal)
+	{
+		return api.decal_get_cull_mask(p_decal);
+	}
+
+	_FORCE_INLINE_ static RID decal_instance_create(RID p_decal)
+	{
+		return api.decal_instance_create(p_decal);
+	}
+
+	_FORCE_INLINE_ static void decal_instance_free(RID p_decal_instance)
+	{
+		api.decal_instance_free(p_decal_instance);
+	}
+
+	_FORCE_INLINE_ static void decal_instance_set_transform(
+		RID p_decal_instance, const Transform3D& p_transform)
+	{
+		api.decal_instance_set_transform(p_decal_instance, p_transform);
+	}
+
+	_FORCE_INLINE_ static void decal_instance_set_sorting_offset(
+		RID p_decal_instance, float p_sorting_offset)
+	{
+		api.decal_instance_set_sorting_offset(p_decal_instance, p_sorting_offset);
+	}
+
+	/* RENDER TARGET API */
+	_FORCE_INLINE_ static RID render_target_create() { return api.render_target_create(); }
+
+	_FORCE_INLINE_ static void render_target_free(RID p_render_target)
+	{
+		api.render_target_free(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_position(RID p_render_target, int p_x, int p_y)
+	{
+		api.render_target_set_position(p_render_target, p_x, p_y);
+	}
+
+	_FORCE_INLINE_ static Point2i render_target_get_position(RID p_render_target)
+	{
+		return api.render_target_get_position(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_size(
+		RID p_render_target, int p_width, int p_height, uint32_t p_view_count)
+	{
+		api.render_target_set_size(p_render_target, p_width, p_height, p_view_count);
+	}
+
+	_FORCE_INLINE_ static Size2i render_target_get_size(RID p_render_target)
+	{
+		return api.render_target_get_size(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_transparent(
+		RID p_render_target, bool p_is_transparent)
+	{
+		api.render_target_set_transparent(p_render_target, p_is_transparent);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_direct_to_screen(
+		RID p_render_target, bool p_direct_to_screen)
+	{
+		api.render_target_set_direct_to_screen(p_render_target, p_direct_to_screen);
+	}
+
+	_FORCE_INLINE_ static RID render_target_get_texture(RID p_render_target)
+	{
+		return api.render_target_get_texture(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa)
+	{
+		api.render_target_set_msaa(p_render_target, p_msaa);
+	}
+
+	_FORCE_INLINE_ static RSE::ViewportMSAA render_target_get_msaa(RID p_render_target)
+	{
+		return api.render_target_get_msaa(p_render_target);
+	}
+
+	_FORCE_INLINE_ static bool render_target_get_msaa_needs_resolve(RID p_render_target)
+	{
+		return api.render_target_get_msaa_needs_resolve(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_do_msaa_resolve(RID p_render_target)
+	{
+		api.render_target_do_msaa_resolve(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr)
+	{
+		api.render_target_set_use_hdr(p_render_target, p_use_hdr);
+	}
+
+	_FORCE_INLINE_ static bool render_target_is_using_hdr(RID p_render_target)
+	{
+		return api.render_target_is_using_hdr(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_use_debanding(
+		RID p_render_target, bool p_use_debanding)
+	{
+		api.render_target_set_use_debanding(p_render_target, p_use_debanding);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_vrs_mode(
+		RID p_render_target, RSE::ViewportVRSMode p_mode)
+	{
+		api.render_target_set_vrs_mode(p_render_target, p_mode);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_vrs_update_mode(
+		RID p_render_target, RSE::ViewportVRSUpdateMode p_mode)
+	{
+		api.render_target_set_vrs_update_mode(p_render_target, p_mode);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_vrs_texture(RID p_render_target, RID p_texture)
+	{
+		api.render_target_set_vrs_texture(p_render_target, p_texture);
+	}
+
+	_FORCE_INLINE_ static void render_target_request_clear(
+		RID p_render_target, const Color& p_clear_color)
+	{
+		api.render_target_request_clear(p_render_target, p_clear_color);
+	}
+
+	_FORCE_INLINE_ static bool render_target_is_clear_requested(RID p_render_target)
+	{
+		return api.render_target_is_clear_requested(p_render_target);
+	}
+
+	_FORCE_INLINE_ static Color render_target_get_clear_request_color(RID p_render_target)
+	{
+		return api.render_target_get_clear_request_color(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_do_clear_request(RID p_render_target)
+	{
+		api.render_target_do_clear_request(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_sdf_size_and_scale(
+		RID p_render_target, RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale)
+	{
+		api.render_target_set_sdf_size_and_scale(p_render_target, p_size, p_scale);
+	}
+
+	_FORCE_INLINE_ static Rect2i render_target_get_sdf_rect(RID p_render_target)
+	{
+		return api.render_target_get_sdf_rect(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled)
+	{
+		api.render_target_mark_sdf_enabled(p_render_target, p_enabled);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_override(RID p_render_target, RID p_color_texture,
+		RID p_depth_texture, RID p_velocity = RID(), RID p_velocity_depth = RID())
+	{
+		api.render_target_set_override(
+			p_render_target, p_color_texture, p_depth_texture, p_velocity, p_velocity_depth);
+	}
+
+	_FORCE_INLINE_ static RID render_target_get_override_color(RID p_render_target)
+	{
+		return api.render_target_get_override_color(p_render_target);
+	}
+
+	_FORCE_INLINE_ static RID render_target_get_override_depth(RID p_render_target)
+	{
+		return api.render_target_get_override_depth(p_render_target);
+	}
+
+	_FORCE_INLINE_ static RID render_target_get_override_velocity(RID p_render_target)
+	{
+		return api.render_target_get_override_velocity(p_render_target);
+	}
+
+	_FORCE_INLINE_ static RID render_target_get_override_velocity_depth(RID p_render_target)
+	{
+		return api.render_target_get_override_velocity_depth(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_render_region(
+		RID p_render_target, const Rect2i& p_render_region)
+	{
+		api.render_target_set_render_region(p_render_target, p_render_region);
+	}
+
+	_FORCE_INLINE_ static Rect2i render_target_get_render_region(RID p_render_target)
+	{
+		return api.render_target_get_render_region(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_velocity_target_size(
+		RID p_render_target, const Size2i& p_target_size)
+	{
+		api.render_target_set_velocity_target_size(p_render_target, p_target_size);
+	}
+
+	_FORCE_INLINE_ static Size2i render_target_get_velocity_target_size(RID p_render_target)
+	{
+		return api.render_target_get_velocity_target_size(p_render_target);
+	}
+
+	_FORCE_INLINE_ static bool render_target_was_used(RID p_render_target)
+	{
+		return api.render_target_was_used(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void render_target_set_as_unused(RID p_render_target)
+	{
+		api.render_target_set_as_unused(p_render_target);
+	}
+
+	_FORCE_INLINE_ static void set_default_clear_color(const Color& p_color)
+	{
+		if (api.set_default_clear_color) {
+			api.set_default_clear_color(p_color);
+		}
+	}
+
+	_FORCE_INLINE_ static Color get_default_clear_color()
+	{
+		if (api.get_default_clear_color) {
+			return api.get_default_clear_color();
+		}
+		return Color();
+
+	}
+};
 
 namespace Geometry3D
 {

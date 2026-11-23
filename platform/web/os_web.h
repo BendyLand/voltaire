@@ -318,7 +318,7 @@ public:
 // --- Folded from platform/web/webmidi_driver.h ---
 
 
-#include "core/os/midi_driver.h"
+#include "core/os/os.h"
 
 class MIDIDriverWebMidi final
 {
@@ -434,7 +434,7 @@ public:
 // --- Folded from platform/web/display_server_web.h ---
 
 
-#include "core/input/input_enums.h"
+#include "core/input/input_event.h"
 #include "core/os/keyboard.h"
 #include "servers/display/display_server.h"
 

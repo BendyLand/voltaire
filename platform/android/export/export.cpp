@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "core/os/os.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
 #include "export.h"
@@ -114,10 +114,10 @@ struct PluginConfigAndroid {
 
 #include "core/io/image.h"
 #include "core/io/file_access.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 // --- Folded from platform/android/export/gradle_export_util.h ---
 #include "core/crypto/crypto_core.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "servers/display/display_server_enums.h"
 
 const String VLTR_PROJECT_NAME_XML_STRING = R"(<?xml version="1.0" encoding="utf-8"?>
@@ -569,7 +569,7 @@ public:
 
 // --- End platform/android/export/android_editor_gradle_runner.h ---
 
-#include "../java_godot_wrapper.h"
+#include "platform/android/os_android.h"
 #include "../os_android.h"
 
 #include "editor/settings/editor_settings.h"
@@ -745,18 +745,18 @@ void AndroidEditorGradleRunner::_android_gradle_build_cancel() {
 #include "core/io/marshalls.h"
 #include "core/math/random_pcg.h"
 #include "core/os/os.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "core/string/translation_server.h"
 #include "core/version.h"
-#include "editor/export/editor_export_platform.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
+#include "editor/editor_ui.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/themes/editor_scale.h"
+#include "editor/file_system/editor_paths.h"
 
 #include "logo_svg.gen.h"
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For mono.
-#include "modules/svg/image_loader_svg.h"
+#include "core/io/image_loader.h"
 #include "run_icon_svg.gen.h"
 #include "scene/resources/image_texture.h"
 
@@ -770,7 +770,7 @@ void AndroidEditorGradleRunner::_android_gradle_build_cancel() {
 #endif
 
 #ifndef ANDROID_ENABLED
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #endif
 
 static String _get_android_build_directory(const Ref<EditorExportPreset>& p_preset)
@@ -2183,8 +2183,8 @@ void PluginConfigAndroid::get_plugins_names(
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
-#include "editor/export/editor_export_platform.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
+#include "editor/editor_ui.h"
 
 #include "modules/regex/regex.h"
 
@@ -2428,10 +2428,10 @@ Error _store_temp_file(const String& p_simplified_path, const Vector<uint8_t>& p
 
 
 // --- Merged from platform/ios/export/export.cpp ---
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "platform/ios/export/export.h"
 // --- Inlined from platform/ios/export/export_plugin.h ---
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 
 class EditorExportPlatformIOS : public EditorExportPlatformAppleEmbedded
 {
@@ -2596,11 +2596,11 @@ Error EditorExportPlatformIOS::_export_icons(
 
 
 // --- Merged from platform/linuxbsd/export/export.cpp ---
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "platform/linuxbsd/export/export.h"
 // --- Inlined from platform/linuxbsd/export/export_plugin.h ---
 #include "core/os/process_id.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "scene/resources/image_texture.h"
 
 class EditorExportPlatformLinuxBSD : public EditorExportPlatformPC
@@ -2744,14 +2744,14 @@ void register_linuxbsd_exporter()
 #include "core/io/file_access.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "editor/export/editor_export_platform.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
+#include "editor/editor_ui.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/themes/editor_scale.h"
+#include "editor/file_system/editor_paths.h"
 
 #include "platform/linuxbsd/export/logo_svg.gen.h"
-#include "modules/svg/image_loader_svg.h"
+#include "core/io/image_loader.h"
 #include "platform/linuxbsd/export/run_icon_svg.gen.h"
 
 Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportPreset>& p_preset,
@@ -3088,7 +3088,7 @@ Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>
 
 
 // --- Merged from platform/macos/export/export.cpp ---
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
 #include "platform/macos/export/export.h"
 // --- Inlined from platform/macos/export/export_plugin.h ---
@@ -3096,7 +3096,7 @@ Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>
 #include "core/io/dir_access.h"
 #include "core/io/image.h"
 #include "core/os/process_id.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "scene/resources/image_texture.h"
 
 // Optional environment variables for defining confidential information. If any
@@ -3271,15 +3271,15 @@ void register_macos_exporter() {}
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
 #include "drivers/png/png_driver_common.h"
-#include "editor/export/editor_export_platform.h"
-#include "editor/export/editor_export_platform.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
+#include "editor/editor_ui.h"
+#include "editor/editor_ui.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/themes/editor_scale.h"
+#include "editor/file_system/editor_paths.h"
 
 #include "platform/macos/export/logo_svg.gen.h"
-#include "modules/svg/image_loader_svg.h"
+#include "core/io/image_loader.h"
 #include "platform/macos/export/run_icon_svg.gen.h"
 #include "scene/resources/image_texture.h"
 
@@ -3524,10 +3524,10 @@ Error EditorExportPlatformMacOS::_copy_and_sign_files(Ref<DirAccess>& dir_access
 
 
 // --- Merged from platform/visionos/export/export.cpp ---
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "platform/visionos/export/export.h"
 // --- Inlined from platform/visionos/export/export_plugin.h ---
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 
 class EditorExportPlatformVisionOS : public EditorExportPlatformAppleEmbedded
 {
@@ -3676,15 +3676,15 @@ void EditorExportPlatformVisionOS::get_export_options(
 
 
 // --- Merged from platform/web/export/export.cpp ---
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
 #include "platform/web/export/export.h"
 // --- Inlined from platform/web/export/export_plugin.h ---
-#include "editor/export/editor_export_platform.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
+#include "editor/editor_ui.h"
 // --- Folded from platform/web/export/editor_http_server.h ---
-#include "core/io/socket_server.h"
-#include "core/io/stream_peer_tls.h"
+#include "core/io/stream_peer_socket.h"
+#include "core/io/stream_peer.h"
 
 class EditorHTTPServer : public RefCounted
 {
@@ -4070,15 +4070,15 @@ EditorHTTPServer::~EditorHTTPServer() {
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "editor/export/editor_export_platform.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
+#include "editor/editor_ui.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/themes/editor_scale.h"
+#include "editor/file_system/editor_paths.h"
 
 #include "platform/web/export/logo_svg.gen.h"
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For mono.
-#include "modules/svg/image_loader_svg.h"
+#include "core/io/image_loader.h"
 #include "platform/web/export/run_icon_svg.gen.h"
 #include "scene/resources/image_texture.h"
 
@@ -4377,12 +4377,12 @@ void register_web_exporter() {}
 
 
 // --- Merged from platform/windows/export/export.cpp ---
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
 #include "platform/windows/export/export.h"
 // --- Inlined from platform/windows/export/export_plugin.h ---
 #include "core/os/process_id.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 
 // Optional environment variables for defining confidential information. If any
 // of these is set, they will override the values set in the credentials file.
@@ -4483,14 +4483,14 @@ void register_windows_exporter_types() {}
 #include "core/io/file_access.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "editor/export/editor_export_platform.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
+#include "editor/editor_ui.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/themes/editor_scale.h"
+#include "editor/file_system/editor_paths.h"
 
 #include "platform/windows/export/logo_svg.gen.h"
-#include "modules/svg/image_loader_svg.h"
+#include "core/io/image_loader.h"
 #include "platform/windows/export/run_icon_svg.gen.h"
 #include "scene/resources/image_texture.h"
 // --- Inlined from platform/windows/export/template_modifier.h ---
@@ -4797,7 +4797,7 @@ void register_windows_exporter() {}
 
 #include "core/io/dir_access.h"
 #include "core/io/image.h"
-#include "editor/export/editor_export_platform.h"
+#include "editor/editor_ui.h"
 
 
 void TemplateModifier::ByteStream::save(uint8_t p_value, Vector<uint8_t>& r_bytes) const

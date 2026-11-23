@@ -33,7 +33,7 @@
 
 #ifdef X11_ENABLED
 
-#include "core/input/input_enums.h"
+#include "core/input/input_event.h"
 #include "core/os/mutex.h"
 #include "core/os/process_id.h"
 #include "core/os/thread.h"

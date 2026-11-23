@@ -40,3 +40,17 @@ enum ModuleInitializationLevel {
 
 void initialize_modules(ModuleInitializationLevel p_level);
 void uninitialize_modules(ModuleInitializationLevel p_level);
+
+#include "modules/modules_enabled.gen.h"
+
+#ifdef MODULE_OPENXR_ENABLED
+#define MODULE_OPENXR_HAS_PREREGISTER
+#endif
+
+inline void initialize_freetype_module(ModuleInitializationLevel p_level) {}
+inline void uninitialize_freetype_module(ModuleInitializationLevel p_level) {}
+inline void initialize_msdfgen_module(ModuleInitializationLevel p_level) {}
+inline void uninitialize_msdfgen_module(ModuleInitializationLevel p_level) {}
+
+void initialize_text_server_adv_module(ModuleInitializationLevel p_level);
+void uninitialize_text_server_adv_module(ModuleInitializationLevel p_level);

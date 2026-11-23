@@ -340,7 +340,7 @@ public:
 // --- End drivers/vulkan/vulkan_hooks.h ---
 
 // --- Folded from drivers/vulkan/rendering_shader_container_vulkan.h ---
-#include "servers/rendering/rendering_shader_container.h"
+#include "servers/rendering/rendering_device_driver.h"
 
 class RenderingShaderContainerVulkan : public RenderingShaderContainer
 {

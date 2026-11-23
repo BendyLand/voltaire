@@ -33,7 +33,7 @@
 
 #import "display_server_macos.h"
 #import "platform/macos/display_server_macos.h"
-#import "key_mapping_macos.h"
+#import "platform/macos/display_server_macos.h"
 
 #include "core/input/input.h"
 #include "core/input/input_event.h"

@@ -34,7 +34,7 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "core/templates/fixed_vector.h"
+#include "core/templates/span.h"
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
 // --- Inlined from drivers/vulkan/rendering_device_driver_vulkan.h ---
 #include "core/templates/hash_map.h"
@@ -902,9 +902,9 @@ using VKC = RenderingContextDriverVulkan;
 
 #if defined(SWAPPY_FRAME_PACING_ENABLED)
 #include <thirdparty/swappy-frame-pacing/swappyVk.h>
-#include "platform/android/java_godot_wrapper.h"
 #include "platform/android/os_android.h"
-#include "platform/android/thread_jandroid.h"
+#include "platform/android/os_android.h"
+#include "platform/android/os_android.h"
 #endif
 
 #define ARRAY_SIZE(a) std_size(a)

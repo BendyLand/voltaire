@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/io/logger.h"
+#include "core/os/os.h"
 
 #include <os/log.h>
 

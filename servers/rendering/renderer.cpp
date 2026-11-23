@@ -35,17 +35,17 @@
 #include "renderer.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/renderer_canvas_render.h"
+#include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/renderer_scene_cull.h"
+#include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_scene_render.h"
-#include "servers/rendering/storage/material_storage.h"
-#include "servers/rendering/storage/texture_storage.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
 RID Renderer::get_test_texture()
@@ -2912,9 +2912,9 @@ void Renderer::draw(bool p_swap_buffers, double frame_step)
 #include "core/io/image.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_scene_cull.h"
+#include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/storage/particles_storage.h"
+#include "servers/rendering/renderer.h"
 
 /* LightStorage */
 
@@ -3392,7 +3392,7 @@ RendererDummy::Utilities* RasterizerDummy::get_utilities() { return utilities; }
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/storage/texture_storage.h"
+#include "servers/rendering/renderer.h"
 
 // Use the same antialiasing feather size as flat StyleBox's default
 // (but doubled, as it's specified for both sides here).
@@ -6285,9 +6285,9 @@ void RendererCanvasCull::finalize() {}
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_scene_cull.h"
+#include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/storage/texture_storage.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef XR_DISABLED
 #include "servers/xr/xr_interface.h"
@@ -8084,7 +8084,7 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 #include "core/config/project_settings.h"
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
-#include "servers/rendering/renderer_canvas_render.h"
+#include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_scene_render.h"
 
@@ -9553,8 +9553,8 @@ AABB RenderGeometryInstance::get_aabb() {
 #endif
 #include "core/config/engine.h"
 #include "core/math/transform_interpolator.h"
-#include "servers/rendering/storage/mesh_storage.h"
-#include "servers/rendering/storage/render_scene_buffers.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
 #include "servers/rendering/storage/utilities.h"
 
@@ -11369,7 +11369,7 @@ Dependency::~Dependency() {
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/math/geometry_3d.h"
-#include "servers/rendering/renderer_scene_cull.h"
+#include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -11389,7 +11389,7 @@ Dependency::~Dependency() {
 #ifdef LIGHT_CULLER_DEBUG_FLASH
 #include "core/config/engine.h"
 #endif
-#include "servers/rendering/renderer_scene_cull.h"
+#include "servers/rendering/renderer_viewport.h"
 
 #include "modules/modules_enabled.gen.h"
 

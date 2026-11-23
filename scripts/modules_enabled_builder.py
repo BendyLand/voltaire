@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 
-import os
-from collections import OrderedDict
-
 import methods
 
 
 def modules_enabled_builder(target, source):
-    modules = sorted(
-        k for k, v in source[0].items() if os.path.isdir(v)
-    )
+    modules = sorted(source[0].keys())
     with methods.generated_wrapper(str(target[0])) as file:
         for module in modules:
             upper = module.upper()

@@ -29,9 +29,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "platform/macos/display_server_macos_embedded.h"
+#include "platform/macos/display_server_macos.h"
 
-#include "display_server_macos_embedded.h"
+#include "platform/macos/display_server_macos.h"
 
 #include "core/debugger/engine_debugger.h"
 #include "core/input/input.h"

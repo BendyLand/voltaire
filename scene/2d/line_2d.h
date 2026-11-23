@@ -418,7 +418,7 @@ public:
 // --- Folded from scene/2d/navigation/navigation_2d.h ---
 #include "scene/2d/node_2d.h"
 #include "scene/main/node.h"
-#include "scene/resources/2d/navigation_polygon.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 
 class NavigationMeshSourceGeometryData2D;
@@ -946,11 +946,11 @@ private:
 #include "scene/resources/physics_material.h"
 
 #ifndef PHYSICS_2D_DISABLED
-#include "scene/resources/2d/shape_2d.h"
+#include "scene/2d/node_2d.h"
 #endif // PHYSICS_2D_DISABLED
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "scene/resources/2d/navigation_polygon.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef DISABLE_DEPRECATED

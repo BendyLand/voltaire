@@ -37,7 +37,7 @@
 #include "core/templates/rb_map.h"
 #include "core/templates/self_list.h"
 // --- Folded from drivers/d3d12/rendering_shader_container_d3d12.h ---
-#include "servers/rendering/rendering_shader_container.h"
+#include "servers/rendering/rendering_device_driver.h"
 
 #define NIR_ENABLED 1
 
@@ -255,7 +255,35 @@ public:
 // --- End drivers/d3d12/rendering_shader_container_d3d12.h ---
 #include "servers/rendering/rendering_device_driver.h"
 
-#include <drivers/d3d12/godot_d3dx12.h>
+// --- Inlined/Folded from drivers/d3d12/godot_d3dx12.h ---
+#include "core/typedefs.h"
+
+#if !defined(_MSC_VER) && !defined(__REQUIRED_RPCNDR_H_VERSION__)
+// Match current version used by MinGW, MSVC and Direct3D 12 headers use 500.
+#define __REQUIRED_RPCNDR_H_VERSION__ 475
+#endif // !defined(_MSC_VER) && !defined(__REQUIRED_RPCNDR_H_VERSION__)
+
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
+
+#include <thirdparty/directx_headers/include/directx/d3dx12.h> // IWYU pragma: export.
+
+VLTR_GCC_WARNING_POP
+GODOT_CLANG_WARNING_POP
+
+// --- Folded from drivers/d3d12/godot_d3d12ma.h ---
+#include "core/typedefs.h"
+
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
+
+#include <dxgi1_6.h>
+
+#define D3D12MA_D3D12_HEADERS_ALREADY_INCLUDED
+#include <thirdparty/d3d12ma/D3D12MemAlloc.h> // IWYU pragma: export.
+
+VLTR_GCC_WARNING_POP
+GODOT_CLANG_WARNING_POP
 #include <wrl/client.h>
 
 #ifdef DEV_ENABLED
@@ -1185,7 +1213,7 @@ public:
 #include "servers/display/display_server_enums.h"
 #include "servers/rendering/rendering_context_driver.h"
 
-#include <drivers/d3d12/godot_d3dx12.h>
+
 
 #ifdef DCOMP_ENABLED
 #include <dcomp.h>
@@ -1278,7 +1306,7 @@ public:
 };
 
 // --- Folded from drivers/d3d12/d3d12_hooks.h ---
-#include <drivers/d3d12/godot_d3dx12.h>
+
 
 class D3D12Hooks final
 {

@@ -32,7 +32,7 @@
 #pragma once
 
 #include "core/io/stream_peer.h"
-#include "core/templates/ring_buffer.h"
+#include "core/types.h"
 
 class PacketPeer : public RefCounted
 {

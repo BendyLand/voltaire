@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_basis)
 
-#include "core/math/basis.h"
+#include "core/math/transform_3d.h"
 
 namespace TestBasis {
 

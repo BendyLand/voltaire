@@ -39,7 +39,7 @@
 #include "core/templates/list.h"
 #include "core/templates/pair.h"
 #include "core/templates/rid.h"
-#include "servers/rendering/rendering_device_enums.h"
+#include "servers/rendering/rendering_device_commons.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 class DependencyTracker;

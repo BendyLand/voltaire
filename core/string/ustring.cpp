@@ -32,7 +32,7 @@
 #include <cstdio>
 #include <thirdparty/grisu2/grisu2.h>
 #include "core/crypto/crypto_core.h"
-#include "core/io/ip_address.h"
+#include "core/io/ip.h"
 #include "core/math/color.h"
 #include "core/math/math_funcs.h"
 #include "core/os/os.h"
@@ -12462,7 +12462,7 @@ const CharRange unicode_letter[unicode_letter_size] = {
 #include "core/string/translation_server.h"
 #include "core/templates/pair.h"
 #include "core/types.h"
-#include "core/string/translation.h"
+#include "core/string/translation_server.h"
 
 extern "C"
 {
@@ -13115,7 +13115,7 @@ PluralRules* PluralRules::parse(const String& p_rules)
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/string/translation.h"
+#include "core/string/translation_server.h"
 #include "core/string/translation_server.h"
 
 struct _character_accent_pair
@@ -17216,7 +17216,7 @@ bool is_print_verbose_enabled() { return OS::is_stdout_verbose(); }
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/string/string_builder.h"
+#include "core/string/ustring.h"
 
 StringBuilder &StringBuilder::append(const String &p_string) {
 	if (p_string.is_empty()) {

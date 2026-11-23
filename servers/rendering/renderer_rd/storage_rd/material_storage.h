@@ -39,7 +39,7 @@
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_compiler.h"
 #include "servers/rendering/shader_language.h"
-#include "servers/rendering/storage/material_storage.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
 struct Projection;

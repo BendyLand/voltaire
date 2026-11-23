@@ -29,11 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "native_menu_macos.h"
+#import "platform/macos/display_server_macos.h"
 
 #import "display_server_macos.h"
-#import "platform/macos/native_menu_macos.h"
-#import "key_mapping_macos.h"
+#import "platform/macos/display_server_macos.h"
+#import "platform/macos/display_server_macos.h"
 
 #include "core/object/callable_mp.h"
 #include "scene/resources/image_texture.h"

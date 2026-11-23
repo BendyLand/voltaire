@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_tcp_server)
 
-#include "core/io/socket_server.h"
+#include "core/io/stream_peer_socket.h"
 #include "core/io/stream_peer_socket.h"
 #include "core/os/os.h"
 

@@ -33,7 +33,127 @@
 
 #include <cstdlib>
 #include "core/config/engine.h"
-#include "core/io/logger.h"
+// --- Inlined/Folded from core/io/logger.h ---
+#include <cstdarg>
+#include "core/io/file_access.h"
+#include "core/string/ustring.h"
+#include "core/templates/vector.h"
+#include "core/types.h"
+
+class FileAccess;
+class RegEx;
+
+class Logger
+{
+protected:
+	bool should_log(bool p_err);
+
+	static inline bool _flush_stdout_on_print = true;
+
+public:
+	enum ErrorType
+	{
+		ERR_ERROR,
+		ERR_WARNING,
+		ERR_SCRIPT,
+		ERR_SHADER
+	};
+
+	static constexpr const char* error_type_string(ErrorType p_type)
+	{
+		switch (p_type) {
+		case ERR_ERROR:
+			return "ERROR";
+		case ERR_WARNING:
+			return "WARNING";
+		case ERR_SCRIPT:
+			return "SCRIPT ERROR";
+		case ERR_SHADER:
+			return "SHADER ERROR";
+		}
+		return "UNKNOWN ERROR";
+	}
+
+	static constexpr const char* error_type_indent(ErrorType p_type)
+	{
+		switch (p_type) {
+		case ERR_ERROR:
+			return "   ";
+		case ERR_WARNING:
+			return "     ";
+		case ERR_SCRIPT:
+			return "          ";
+		case ERR_SHADER:
+			return "          ";
+		}
+		return "           ";
+	}
+
+	static void set_flush_stdout_on_print(bool p_value);
+
+	virtual void logv(
+		const char* p_format, va_list p_list, bool p_err) _PRINTF_FORMAT_ATTRIBUTE_2_0 = 0;
+
+	void logf(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
+	void logf_error(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
+
+	Logger() noexcept {}
+
+	virtual ~Logger() {}
+};
+
+/**
+ * Writes messages to stdout/stderr.
+ */
+class StdLogger : public Logger
+{
+public:
+	virtual void logv(
+		const char* p_format, va_list p_list, bool p_err) override _PRINTF_FORMAT_ATTRIBUTE_2_0;
+
+	virtual ~StdLogger() {}
+};
+
+/**
+ * Writes messages to the specified file.
+If the file already exists, creates a copy (backup)
+ * of it with timestamp appended to the file name. Maximum number of backups is configurable.
+ * When maximum is reached, the oldest backups are erased. With the maximum being equal to 1,
+ * it acts as a simple file logger.
+ */
+class RotatedFileLogger : public Logger
+{
+	String base_path;
+	int max_files;
+
+	Ref<FileAccess> file;
+
+	void clear_old_backups();
+	void rotate_file();
+
+	Ref<RegEx> strip_ansi_regex;
+
+public:
+	explicit RotatedFileLogger(const String& p_base_path, int p_max_files = 10);
+
+	virtual void logv(
+		const char* p_format, va_list p_list, bool p_err) override _PRINTF_FORMAT_ATTRIBUTE_2_0;
+};
+
+class CompositeLogger : public Logger
+{
+	Vector<Logger*> loggers;
+
+public:
+	explicit CompositeLogger(const Vector<Logger*>& p_loggers);
+
+	virtual void logv(
+		const char* p_format, va_list p_list, bool p_err) override _PRINTF_FORMAT_ATTRIBUTE_2_0;
+
+	void add_logger(Logger* p_logger);
+
+	virtual ~CompositeLogger();
+};
 // --- Folded from core/io/remote_filesystem_client.h ---
 #include "core/string/ustring.h"
 #include "core/templates/hash_set.h"
@@ -523,3 +643,118 @@ public:
 #endif
 };
 
+// --- Folded from core/os/midi_driver.h ---
+#include "core/input/input_event.h"
+#include "core/typedefs.h"
+#include "core/types.h"
+
+/**
+ * Multi-Platform abstraction for accessing to MIDI.
+ */
+
+class MIDIDriver final
+{
+	static uint8_t last_received_message;
+	static inline bool _is_bound = false;
+
+	static void _default_initialize_backend() {}
+	static void _default_finalize_backend() {}
+	static Error _default_open() { return ERR_UNAVAILABLE; }
+	static void _default_close() {}
+
+	inline static void (*_initialize_backend)() = &_default_initialize_backend;
+	inline static void (*_finalize_backend)() = &_default_finalize_backend;
+
+public:
+	struct Data
+	{
+		PackedStringArray connected_input_names;
+	};
+
+	static inline Data* data = nullptr;
+
+	// Categories of message for parser logic.
+	enum class MessageCategory
+	{
+		Data,
+		Voice,
+		SysExBegin,
+		SystemCommon, // excluding System Exclusive Begin/End
+		SysExEnd,
+		RealTime,
+	};
+
+	// Convert midi data to InputEventMIDI and send it to Input.
+	// p_data_len is the length of the buffer passed at p_data, this must be
+	// at least equal to the data required by the passed message type, but
+	// may be larger. Only the required data will be read.
+	static void send_event(int p_device_index, uint8_t p_status, const uint8_t* p_data = nullptr,
+		size_t p_data_len = 0);
+
+	class Parser
+	{
+	public:
+		Parser() = default;
+
+		Parser(int p_device_index) : device_index{p_device_index} {}
+
+		virtual ~Parser() = default;
+
+		// Push a byte of MIDI stream. Any completed messages will be
+		// forwarded to MIDIDriver::send_event.
+		void parse_fragment(uint8_t p_fragment);
+
+		static MessageCategory category(uint8_t p_midi_fragment);
+
+		// If the byte is a Voice Message status byte return the contained
+		// channel number, otherwise zero.
+		static uint8_t channel(uint8_t p_status_byte);
+
+		// If the byte is a status byte for a message with a fixed number of
+		// additional data bytes, return the number expected, otherwise zero.
+		static size_t expected_data(uint8_t p_status_byte);
+		static size_t expected_data(MIDIMessage p_msg_type);
+
+		// If the fragment is a status byte return the message type
+		// represented, otherwise MIDIMessage::NONE.
+		static MIDIMessage status_to_msg_enum(uint8_t p_status_byte);
+
+	private:
+		int device_index = 0;
+
+		static constexpr size_t DATA_BUFFER_SIZE = 2;
+
+		uint8_t status_byte = 0;
+		uint8_t data_buffer[DATA_BUFFER_SIZE] = {0};
+		size_t received_data_len = 0;
+		bool skipping_sys_ex = false;
+	};
+
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	_FORCE_INLINE_ static bool is_bound() { return _is_bound; }
+
+	inline static Error (*open)() = &_default_open;
+	inline static void (*close)() = &_default_close;
+
+	template <typename Impl> static void bind()
+	{
+		_initialize_backend = &Impl::initialize;
+		_finalize_backend = &Impl::finalize;
+		open = &Impl::open;
+		close = &Impl::close;
+		_is_bound = true;
+	}
+
+	static void reset_backend();
+
+	static void add_connected_input(const String& p_name);
+	static void clear_connected_inputs();
+	static PackedStringArray get_connected_inputs();
+
+	MIDIDriver() = delete;
+	MIDIDriver(const MIDIDriver&) = delete;
+	MIDIDriver& operator=(const MIDIDriver&) = delete;
+	~MIDIDriver() = delete;
+};

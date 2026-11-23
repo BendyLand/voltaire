@@ -1095,7 +1095,7 @@ public:
 };
 
 // --- Folded from scene/3d/xr/xr_nodes.h ---
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 /*
 	XRNode3D is a consolidated helper node that binds to an XRTracker

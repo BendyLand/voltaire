@@ -162,7 +162,7 @@ public:
 #include "core/math/vector2.h"
 #include "core/math/vector2i.h"
 #include "core/math/vector3.h"
-#include "core/math/vector3i.h"
+#include "core/math/vector3.h"
 #include "core/templates/vector.h"
 
 /*

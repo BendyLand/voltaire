@@ -34,7 +34,7 @@
 TEST_FORCE_LINK(test_shortcut)
 
 #include "core/input/input_event.h"
-#include "core/input/shortcut.h"
+#include "core/input/input_event.h"
 #include "core/os/keyboard.h"
 
 namespace TestShortcut {

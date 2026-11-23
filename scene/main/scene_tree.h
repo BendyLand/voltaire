@@ -41,7 +41,84 @@
 // --- Inlined/Folded from scene/main/multiplayer_api.h ---
 #include "core/templates/hash_set.h"
 #include "core/types.h"
-#include "scene/main/multiplayer_peer.h"
+// --- Inlined/Folded from scene/main/multiplayer_peer.h ---
+#include "core/io/packet_peer.h"
+
+class MultiplayerPeer : public PacketPeer
+{
+public:
+	enum TransferMode
+	{
+		TRANSFER_MODE_UNRELIABLE,
+		TRANSFER_MODE_UNRELIABLE_ORDERED,
+		TRANSFER_MODE_RELIABLE
+	};
+
+protected:
+
+private:
+	int transfer_channel = 0;
+	TransferMode transfer_mode = TRANSFER_MODE_RELIABLE;
+	bool refuse_connections = false;
+
+public:
+	enum
+	{
+		TARGET_PEER_BROADCAST = 0,
+		TARGET_PEER_SERVER = 1
+	};
+
+	enum ConnectionStatus
+	{
+		CONNECTION_DISCONNECTED,
+		CONNECTION_CONNECTING,
+		CONNECTION_CONNECTED,
+	};
+
+	virtual void set_transfer_channel(int p_channel);
+	virtual int get_transfer_channel() const;
+	virtual void set_transfer_mode(TransferMode p_mode);
+	virtual TransferMode get_transfer_mode() const;
+	virtual void set_refuse_new_connections(bool p_enable);
+	virtual bool is_refusing_new_connections() const;
+	virtual bool is_server_relay_supported() const;
+
+	virtual void set_target_peer(int p_peer_id) = 0;
+
+	virtual int get_packet_peer() const = 0;
+	virtual TransferMode get_packet_mode() const = 0;
+	virtual int get_packet_channel() const = 0;
+
+	virtual void disconnect_peer(int p_peer, bool p_force = false) = 0;
+
+	virtual bool is_server() const = 0;
+
+	virtual void poll() = 0;
+	virtual void close() = 0;
+
+	virtual int get_unique_id() const = 0;
+
+	virtual ConnectionStatus get_connection_status() const = 0;
+
+	uint32_t generate_unique_id() const;
+};
+
+class MultiplayerPeerExtension : public MultiplayerPeer
+{
+protected:
+
+	PackedByteArray script_buffer;
+
+public:
+	/* PacketPeer extension */
+	virtual Error get_packet(const uint8_t** r_buffer,
+		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
+	/* MultiplayerPeer extension */
+	virtual void set_refuse_new_connections(bool p_enable) override;
+	virtual bool is_refusing_new_connections() const override;
+	virtual bool is_server_relay_supported() const override;
+};
 
 class MultiplayerAPI : public RefCounted
 {
@@ -811,3 +888,55 @@ public:
 
 
 // --- End scene/main/missing_node.h ---
+
+// --- Folded from scene/main/timer.h ---
+#include "scene/main/node.h"
+
+class Timer : public Node
+{
+	double wait_time = 1.0;
+	bool one_shot = false;
+	bool autostart = false;
+	bool processing = false;
+	bool paused = false;
+	bool ignore_time_scale = false;
+
+	double time_left = -1.0;
+
+public:
+	enum TimerProcessCallback
+	{
+		TIMER_PROCESS_PHYSICS,
+		TIMER_PROCESS_IDLE,
+	};
+
+	void set_wait_time(double p_time);
+	double get_wait_time() const;
+
+	void set_one_shot(bool p_one_shot);
+	bool is_one_shot() const;
+
+	void set_autostart(bool p_start);
+	bool has_autostart() const;
+
+	void stop();
+
+	void set_paused(bool p_paused);
+	bool is_paused() const;
+
+	void set_ignore_time_scale(bool p_ignore);
+	bool is_ignoring_time_scale();
+
+	bool is_stopped() const;
+
+	double get_time_left() const;
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	void set_timer_process_callback(TimerProcessCallback p_callback);
+	TimerProcessCallback get_timer_process_callback() const;
+
+private:
+	TimerProcessCallback timer_process_callback = TIMER_PROCESS_IDLE;
+	void _set_process(bool p_process, bool p_force = false);
+};

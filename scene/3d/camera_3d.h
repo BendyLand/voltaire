@@ -151,7 +151,7 @@ public:
 // --- End scene/3d/velocity_tracker_3d.h ---
 #include "scene/resources/material.h"
 #include "scene/resources/environment.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 class Camera3D : public Node3D
 {
@@ -376,7 +376,7 @@ protected:
 // --- End scene/3d/audio_listener_3d.h ---
 
 // --- Folded from scene/3d/audio_stream_player_3d.h ---
-#include "core/templates/fixed_vector.h"
+#include "core/templates/span.h"
 #include "scene/3d/node_3d.h"
 #include "servers/audio/audio_server.h"
 

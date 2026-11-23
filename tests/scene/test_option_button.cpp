@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_option_button)
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/button.h"
+#include "scene/gui/dialogs.h"
 
 namespace TestOptionButton {
 

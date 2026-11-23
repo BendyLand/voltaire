@@ -335,9 +335,9 @@ public:
 #endif // GLES3_ENABLED
 
 // --- End drivers/gles3/effects/gles3_effects.h ---
-#include "servers/rendering/rendering_device_enums.h"
+#include "servers/rendering/rendering_device_commons.h"
 #include "servers/rendering/rendering_server_enums.h"
-#include "servers/rendering/storage/render_scene_buffers.h"
+#include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/storage/utilities.h"
 #undef ConnectFlags // Defined by windows.h through egl.h, breaks object.h.
 

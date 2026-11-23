@@ -35,21 +35,21 @@
 #include "main/main.h"
 #include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
-#include "servers/camera/camera_feed.h"
+#include "servers/camera/camera_server.h"
 #include "servers/camera/camera_server.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/native_menu.h"
 #include "main/main.h"
 #include "servers/rendering/renderer_rd/rd_caches.h"
-#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
-#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_device_binds.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_compiler.h"
-#include "servers/rendering/storage/render_scene_buffers.h"
+#include "servers/rendering/renderer_scene_render.h"
 #include "servers/text/text_server.h"
 
 // 2D physics and navigation.
@@ -72,7 +72,7 @@
 #ifndef XR_DISABLED
 #include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
 static bool has_server_feature_callback(const String& p_feature)
@@ -105,7 +105,7 @@ void register_server_types()
 // ============================================================================
 
 #include "servers/camera/camera_server.h"
-#include "servers/camera/camera_feed.h"
+#include "servers/camera/camera_server.h"
 
 ////////////////////////////////////////////////////////
 // CameraServer
@@ -258,7 +258,7 @@ RID CameraServer::feed_texture(int p_id, CameraServer::FeedImage p_texture)
 // Merged from servers/camera/camera_feed.cpp
 // ============================================================================
 
-#include "servers/camera/camera_feed.h"
+#include "servers/camera/camera_server.h"
 #include "servers/rendering/renderer.h"
 
 int CameraFeed::get_id() const { return id; }
@@ -672,7 +672,7 @@ void MovieWriterPNGWAV::write_end()
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "core/templates/pair.h"
-#include "scene/scene_string_names.h"
+#include "scene/main/node.h"
 #include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
 
@@ -2846,7 +2846,7 @@ AudioRBResampler::~AudioRBResampler() {
 // --- Inlined from servers/audio/effects/audio_effects.h ---
 #include "core/os/thread.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/ring_buffer.h"
+#include "core/types.h"
 #include "scene/resources/audio_stream_wav.h"
 #include "servers/audio/audio_server.h"
 // --- Folded from servers/audio/effects/eq_filter.h ---
@@ -17589,7 +17589,7 @@ void NavigationServer3D::agent_set_paused(RID p_agent, bool p_paused) {}
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer.h"
 #include "servers/xr/xr_interface.h"
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 // Inlined servers/xr/xr_server.compat.inc
 #ifndef DISABLE_DEPRECATED
 
@@ -18016,7 +18016,7 @@ RID XRVRS::make_vrs_texture(const Size2& p_target_size, const Vector<Vector2>& p
 // Merged from servers/xr/xr_tracker.cpp
 // ============================================================================
 
-#include "servers/xr/xr_tracker.h"
+#include "servers/xr/xr_server.h"
 
 // XRPose
 

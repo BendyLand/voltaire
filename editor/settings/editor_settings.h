@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/input/shortcut.h"
+#include "core/input/input_event.h"
 #include "core/io/config_file.h"
 #include "core/io/resource.h"
 #include "core/os/thread_safe.h"

@@ -35,13 +35,13 @@
 #include "core/input/input_event.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "core/templates/fixed_vector.h"
+#include "core/templates/span.h"
 #include "servers/rendering/rendering_device.h"
 #include "modules/modules_enabled.gen.h"
 #include "rendering_device.h"
-#include "servers/rendering/rendering_device_binds.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_commons.h"
-#include "servers/rendering/rendering_shader_container.h"
+#include "servers/rendering/rendering_device_driver.h"
 #include "servers/rendering/shader_compiler.h"
 
 #ifdef MODULE_GLSLANG_ENABLED
@@ -8215,7 +8215,7 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 // ============================================================================
 
 #include "modules/modules_enabled.gen.h" // For glslang.
-#include "servers/rendering/rendering_device_binds.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_commons.h"
 #ifdef MODULE_GLSLANG_ENABLED
 #include "modules/glslang/register_types.h"
@@ -8226,7 +8226,7 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 #include "servers/rendering/renderer_rd/shader_rd.h"
 #include "servers/rendering/rendering_context_driver.h"
 #include "servers/rendering/rendering_device_driver.h"
-#include "servers/rendering/rendering_shader_container.h"
+#include "servers/rendering/rendering_device_driver.h"
 #include "servers/rendering/shader_compiler.h"
 
 // --- Merged from servers/rendering/rendering_device_commons.cpp ---

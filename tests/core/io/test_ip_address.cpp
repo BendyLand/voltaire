@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_ip_address)
 
-#include "core/io/ip_address.h"
+#include "core/io/ip.h"
 
 namespace TestIPAddress {
 

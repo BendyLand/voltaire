@@ -37,7 +37,7 @@
 #import "platform/macos/os_macos.h"
 
 #ifdef TOOLS_ENABLED
-#import "display_server_macos_embedded.h"
+#import "platform/macos/display_server_macos.h"
 #endif
 
 #include "core/config/engine.h"

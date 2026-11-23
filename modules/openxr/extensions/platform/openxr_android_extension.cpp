@@ -32,9 +32,9 @@
 #include "openxr_android_extension.h"
 
 #include "../../openxr_api.h" // IWYU pragma: keep. `XR_FAILED` macro.
-#include "java_godot_wrapper.h"
+#include "platform/android/os_android.h"
 #include "os_android.h"
-#include "thread_jandroid.h"
+#include "platform/android/os_android.h"
 
 #include "core/os/os.h"
 

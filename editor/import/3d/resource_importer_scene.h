@@ -33,7 +33,7 @@
 
 #include "core/error/error_macros.h"
 #include "core/io/resource_importer.h"
-#include "scene/3d/importer_mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/resources/3d/importer_mesh.h"
 #include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/animation.h"

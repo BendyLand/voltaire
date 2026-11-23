@@ -2863,15 +2863,8 @@ if use_metal then
         buildoptions { "-fmodules", "-fcxx-modules" }
         filter "platforms:arm64"
             files {
-                "drivers/metal/metal3_objects.cpp",
-                "drivers/metal/metal_device_profile.cpp",
-                "drivers/metal/metal_device_properties.cpp",
-                "drivers/metal/metal_objects_shared.cpp",
-                "drivers/metal/pixel_formats.cpp",
-                "drivers/metal/rendering_context_driver_metal.cpp",
                 "drivers/metal/rendering_device_driver_metal.cpp",
                 "drivers/metal/rendering_device_driver_metal3.cpp",
-                "drivers/metal/rendering_shader_container_metal.cpp",
             }
         filter {}
     register_tp("tp_metal")
@@ -4023,12 +4016,10 @@ project "voltaire"
     -- -------------------------------------------------------------------------
     files {
         -- Core & MbedTLS Godot platform glue
-        "core/crypto/crypto.cpp",
         "core/input/default_controller_mappings.gen.cpp",
         "core/io/file_access.cpp",
         "core/io/resource_loader.cpp",
         "core/math/geometry_3d.cpp",
-        "core/math/math_vectors.cpp",
         "core/register_core_types.cpp",
         "core/script_encryption_key.gen.cpp",
         "core/string/ustring.cpp",
@@ -4043,7 +4034,6 @@ project "voltaire"
         "scene/gui/control.cpp",
         "scene/gui/dialogs.cpp",
         "scene/main/scene_tree.cpp",
-        "scene/register_scene_types.cpp",
         "scene/resources/mesh.cpp",
         "scene/resources/texture.cpp",
 
@@ -4051,51 +4041,26 @@ project "voltaire"
         "servers/register_server_types.cpp",
         "servers/rendering/renderer.cpp",
         "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.cpp",
-        "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.cpp",
         "servers/rendering/renderer_rd/renderer_compositor_rd.cpp",
-        "servers/rendering/renderer_rd/renderer_scene_render_rd.cpp",
         "servers/rendering/renderer_rd/storage_rd/texture_storage.cpp",
         "servers/rendering/rendering_device.cpp",
         "servers/rendering/shader_language.cpp",
 
         -- Drivers (common)
-        "drivers/alsa/asound-so_wrap.c",
         "drivers/register_driver_types.cpp",
-        "drivers/unix/os_unix.cpp",
 
         -- Platform API registry (common across all platforms)
-        "platform/android/api/api.cpp",
         "platform/register_platform_apis.gen.cpp",
 
         -- Modules (always-enabled)
         "modules/astcenc/image_compress_astcenc.cpp",
-        "modules/basis_universal/image_compress_basisu.cpp",
-        "modules/bcdec/image_decompress_bcdec.cpp",
-        "modules/bmp/image_loader_bmp.cpp",
-        "modules/dds/texture_loader_dds.cpp",
-        "modules/enet/enet_connection.cpp",
-        "modules/etcpak/image_compress_etcpak.cpp",
-        "modules/hdr/image_loader_hdr.cpp",
         "modules/interactive_music/audio_stream_interactive.cpp",
-        "modules/jpg/image_loader_libjpeg_turbo.cpp",
-        "modules/ktx/texture_loader_ktx.cpp",
-        "modules/mbedtls/crypto_mbedtls.cpp",
-        "modules/mp3/audio_stream_mp3.cpp",
         "modules/multiplayer/scene_multiplayer.cpp",
         "modules/noise/fastnoise_lite.cpp",
-        "modules/ogg/ogg_packet_sequence.cpp",
-        "modules/regex/regex.cpp",
+        "modules/camera/register_types.cpp",
         "modules/register_module_types.gen.cpp",
         "modules/svg/image_loader_svg.cpp",
         "modules/text_server_adv/text_server_adv.cpp",
-        "modules/tga/image_loader_tga.cpp",
-        "modules/tinyexr/image_loader_tinyexr.cpp",
-        "modules/upnp/upnp.cpp",
-        "modules/vorbis/audio_stream_ogg_vorbis.cpp",
-        "modules/webp/image_loader_webp.cpp",
-        "modules/webrtc/webrtc_peer_connection.cpp",
-        "modules/websocket/websocket_peer.cpp",
-        "modules/zip/zip_reader.cpp",
     }
 
     -- Feature-conditional scene/server/module files
@@ -4103,10 +4068,7 @@ project "voltaire"
         files {
             "scene/3d/node_3d.cpp",
             "modules/csg/csg_shape.cpp",
-            "modules/fbx/fbx_document.cpp",
             "modules/gltf/gltf_document.cpp",
-            "modules/gridmap/grid_map.cpp",
-            "modules/meshoptimizer/register_types.cpp",
         }
     end
     if not disable_phys_2d then
@@ -4115,7 +4077,6 @@ project "voltaire"
     if not disable_phys_3d then
         files {
             "modules/jolt_physics/jolt_physics_server_3d.cpp",
-            "modules/vhacd/register_types.cpp",
         }
     end
     if not disable_nav_2d then
@@ -4134,7 +4095,6 @@ project "voltaire"
         }
     end
     if has_webxr then
-        files { "modules/webxr/webxr_interface.cpp" }
     end
     if use_opengl3 then
         files {
@@ -4146,24 +4106,20 @@ project "voltaire"
         files { "drivers/vulkan/rendering_device_driver_vulkan.cpp" }
     end
     if use_rd then
-        files { "modules/glslang/register_types.cpp" }
     end
     if use_sdl then
     end
     if has_theora then
         filter "platforms:not rv64"
-            files { "modules/theora/video_stream_theora.cpp" }
         filter {}
     end
     for _, a in ipairs(active_arches) do
         if arch_supports_raycast(a) then
             filter("platforms:" .. a)
-                files { "modules/raycast/raycast_occlusion_cull.cpp" }
             filter {}
         end
     end
     if has_camera then
-        files { "modules/camera/register_types.cpp" }
         if target_platform == "linuxbsd" then
         elseif target_platform == "windows" then
         elseif target_platform == "macos" or target_platform == "ios" or target_platform == "visionos" then
@@ -4189,26 +4145,14 @@ project "voltaire"
             filter {}
         end
     end
-    if betsy_templates then
-        files { "modules/betsy/image_compress_betsy.cpp" }
-    else
-        filter "configurations:editor"
-            files { "modules/betsy/image_compress_betsy.cpp" }
-        filter {}
-    end
-    if cvtt_templates then
-        files { "modules/cvtt/image_compress_cvtt.cpp" }
-    else
-        filter "configurations:editor"
-            files { "modules/cvtt/image_compress_cvtt.cpp" }
-        filter {}
+    if betsy_templates or cvtt_templates then
+        files { "modules/lightmapper_rd/lightmapper_rd.cpp" }
     end
 
     -- Editor-only sources & platform exporters
     filter "configurations:editor"
         files {
             "editor/editor_ui.cpp",
-            "editor/export/editor_export.cpp",
             "editor/export/register_exporters.gen.cpp",
             "editor/project_upgrade/renames_map_3_to_4.cpp",
             "editor/translations/doc_translations.gen.cpp",
@@ -4216,7 +4160,6 @@ project "voltaire"
             "editor/translations/extractable_translations.gen.cpp",
             "editor/translations/property_translations.gen.cpp",
             "modules/lightmapper_rd/lightmapper_rd.cpp",
-            "modules/xatlas_unwrap/register_types.cpp",
             "platform/android/export/export.cpp",
         }
     filter {}
@@ -4257,9 +4200,7 @@ project "voltaire"
 
         files { "platform/linuxbsd/os_linuxbsd.cpp" }
         if library_type == "executable" then
-            files { "platform/linuxbsd/godot_linuxbsd.cpp" }
         else
-            files { "platform/linuxbsd/libgodot_linuxbsd.cpp" }
         end
         if opt_bool("sowrap") then
             files { "platform/linuxbsd/xkbcommon-so_wrap.c" }
@@ -4365,18 +4306,9 @@ project "voltaire"
         files {
             "platform/windows/os_windows.cpp",
             "platform/windows/display_server_windows.cpp",
-            "platform/windows/key_mapping_windows.cpp",
-            "platform/windows/windows_terminal_logger.cpp",
-            "platform/windows/windows_utils.cpp",
-            "platform/windows/native_menu_windows.cpp",
-            "platform/windows/gl_manager_windows_native.cpp",
-            "platform/windows/wgl_detect_version.cpp",
-            "platform/windows/rendering_context_driver_vulkan_windows.cpp",
-            "platform/windows/drop_target_windows.cpp",
             "drivers/wasapi/audio_driver_wasapi.cpp",
         }
         if use_angle then
-            files { "platform/windows/gl_manager_windows_angle.cpp" }
         end
         if use_xaudio2 then
             files { "drivers/xaudio2/audio_driver_xaudio2.cpp" }
@@ -4384,17 +4316,11 @@ project "voltaire"
         if use_d3d12 then
             apply_d3d12_mesa_settings()
             files {
-                "drivers/d3d12/d3d12_hooks.cpp",
-                "drivers/d3d12/dxil_hash.cpp",
-                "drivers/d3d12/rendering_context_driver_d3d12.cpp",
                 "drivers/d3d12/rendering_device_driver_d3d12.cpp",
-                "drivers/d3d12/rendering_shader_container_d3d12.cpp",
             }
         end
         if library_type == "executable" then
-            files { "platform/windows/godot_windows.cpp" }
         else
-            files { "platform/windows/libgodot_windows.cpp" }
         end
         if is_msvc then
             files { "platform/windows/crash_handler_windows_seh.cpp" }
@@ -4647,26 +4573,8 @@ project "voltaire"
         defines { "XR_OS_ANDROID", "XR_USE_PLATFORM_ANDROID", "JSON_USE_EXCEPTION=0" }
         files {
             "platform/android/os_android.cpp",
-            "platform/android/android_input_handler.cpp",
-            "platform/android/file_access_android.cpp",
-            "platform/android/file_access_filesystem_jandroid.cpp",
-            "platform/android/audio_driver_opensl.cpp",
-            "platform/android/dir_access_jandroid.cpp",
-            "platform/android/tts_android.cpp",
-            "platform/android/thread_jandroid.cpp",
-            "platform/android/net_socket_android.cpp",
-            "platform/android/java_godot_lib_jni.cpp",
             "platform/android/java_class_wrapper.cpp",
-            "platform/android/java_godot_wrapper.cpp",
-            "platform/android/java_godot_view_wrapper.cpp",
-            "platform/android/java_godot_io_wrapper.cpp",
-            "platform/android/jni_utils.cpp",
-            "platform/android/android_keys_utils.cpp",
             "platform/android/display_server_android.cpp",
-            "platform/android/plugin/godot_plugin_jni.cpp",
-            "platform/android/rendering_context_driver_vulkan_android.cpp",
-            "platform/android/variant/callable_jni.cpp",
-            "platform/android/dialog_utils_jni.cpp",
         }
         filter "platforms:arm64"
             linkoptions { "-target", "aarch64-linux-android" .. tostring(android_api) }
@@ -4751,13 +4659,7 @@ project "voltaire"
 
     elseif target_platform == "web" then
         files {
-            "platform/web/audio_driver_web.cpp",
-            "platform/web/webmidi_driver.cpp",
             "platform/web/display_server_web.cpp",
-            "platform/web/http_client_web.cpp",
-            "platform/web/javascript_bridge_singleton.cpp",
-            "platform/web/web_main.cpp",
-            "platform/web/web_runtime.cpp",
             "platform/web/os_web.cpp",
         }
 
